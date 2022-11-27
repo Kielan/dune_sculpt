@@ -73,7 +73,7 @@ macro(blender_include_dirs
 	unset(_ALL_INCS)
 endmacro()
 
-macro(blender_include_dirs_sys
+macro(dune_include_dirs_sys
 	includes)
 	set(_ALL_INCS "")
 	foreach(_INC ${ARGV})
@@ -89,7 +89,7 @@ macro(blender_include_dirs_sys
 	unset(_ALL_INCS)
 endmacro()
 
-macro(blender_source_group
+macro(dune_source_group
 	sources)
 
 	# Group by location on disk
@@ -110,7 +110,7 @@ endmacro()
 
 
 # only MSVC uses SOURCE_GROUP
-macro(blender_add_lib_nolist
+macro(dune_add_lib_nolist
 	name
 	sources
 	includes
@@ -132,7 +132,7 @@ macro(blender_add_lib_nolist
 endmacro()
 
 
-macro(blender_add_lib
+macro(dune_add_lib
 	name
 	sources
 	includes
@@ -435,23 +435,23 @@ macro(ADD_CHECK_CXX_COMPILER_FLAG
 	endif()
 endmacro()
 
-macro(get_blender_version)
-	# So cmake depends on BKE_blender.h, beware of inf-loops!
-	CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/source/blender/blenkernel/BKE_blender.h ${CMAKE_BINARY_DIR}/source/blender/blenkernel/BKE_blender.h.done)
+macro(get_dune_version)
+	# So cmake depends on KERNEL_dune.h, beware of inf-loops!
+	CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/source/dune/dunekernel/KERNEL_dune.h ${CMAKE_BINARY_DIR}/source/dune/dunekernel/KERNEL_dune.h.done)
 
-	file(STRINGS ${CMAKE_SOURCE_DIR}/source/blender/blenkernel/BKE_blender.h _contents REGEX "^#define[ \t]+BLENDER_.*$")
+	file(STRINGS ${CMAKE_SOURCE_DIR}/source/dune/dunekernel/KERNEL_dune.h _contents REGEX "^#define[ \t]+DUNE_.*$")
 
-	string(REGEX REPLACE ".*#define[ \t]+BLENDER_VERSION[ \t]+([0-9]+).*" "\\1" _out_version "${_contents}")
-	string(REGEX REPLACE ".*#define[ \t]+BLENDER_SUBVERSION[ \t]+([0-9]+).*" "\\1" _out_subversion "${_contents}")
-	string(REGEX REPLACE ".*#define[ \t]+BLENDER_VERSION_CHAR[ \t]+([a-z]+).*" "\\1" _out_version_char "${_contents}")
-	string(REGEX REPLACE ".*#define[ \t]+BLENDER_VERSION_CYCLE[ \t]+([a-z]+).*" "\\1" _out_version_cycle "${_contents}")
+	string(REGEX REPLACE ".*#define[ \t]+DUNE_VERSION[ \t]+([0-9]+).*" "\\1" _out_version "${_contents}")
+	string(REGEX REPLACE ".*#define[ \t]+DUNE_SUBVERSION[ \t]+([0-9]+).*" "\\1" _out_subversion "${_contents}")
+	string(REGEX REPLACE ".*#define[ \t]+DUNE_VERSION_CHAR[ \t]+([a-z]+).*" "\\1" _out_version_char "${_contents}")
+	string(REGEX REPLACE ".*#define[ \t]+DUNE_VERSION_CYCLE[ \t]+([a-z]+).*" "\\1" _out_version_cycle "${_contents}")
 
 	if(NOT ${_out_version} MATCHES "[0-9]+")
-		message(FATAL_ERROR "Version parsing failed for BLENDER_VERSION")
+		message(FATAL_ERROR "Version parsing failed for DUNE_VERSION")
 	endif()
 
 	if(NOT ${_out_subversion} MATCHES "[0-9]+")
-		message(FATAL_ERROR "Version parsing failed for BLENDER_SUBVERSION")
+		message(FATAL_ERROR "Version parsing failed for DUNE_SUBVERSION")
 	endif()
 
 	# clumsy regex, only single char are ok but it could be unset
@@ -460,29 +460,29 @@ macro(get_blender_version)
 	if(NOT _out_version_char_len EQUAL 1)
 		set(_out_version_char "")
 	elseif(NOT ${_out_version_char} MATCHES "[a-z]+")
-		message(FATAL_ERROR "Version parsing failed for BLENDER_VERSION_CHAR")
+		message(FATAL_ERROR "Version parsing failed for DUNE_VERSION_CHAR")
 	endif()
 
 	if(NOT ${_out_version_cycle} MATCHES "[a-z]+")
-		message(FATAL_ERROR "Version parsing failed for BLENDER_VERSION_CYCLE")
+		message(FATAL_ERROR "Version parsing failed for DUNE_VERSION_CYCLE")
 	endif()
 
-	math(EXPR BLENDER_VERSION_MAJOR "${_out_version} / 100")
-	math(EXPR BLENDER_VERSION_MINOR "${_out_version} % 100")
-	set(BLENDER_VERSION "${BLENDER_VERSION_MAJOR}.${BLENDER_VERSION_MINOR}")
+	math(EXPR DUNE_VERSION_MAJOR "${_out_version} / 100")
+	math(EXPR DUNE_VERSION_MINOR "${_out_version} % 100")
+	set(DUNE_VERSION "${DUNE_VERSION_MAJOR}.${DUNE_VERSION_MINOR}")
 
-	set(BLENDER_SUBVERSION ${_out_subversion})
-	set(BLENDER_VERSION_CHAR ${_out_version_char})
-	set(BLENDER_VERSION_CYCLE ${_out_version_cycle})
+	set(DUNE_SUBVERSION ${_out_subversion})
+	set(DUNE_VERSION_CHAR ${_out_version_char})
+	set(DUNE_VERSION_CYCLE ${_out_version_cycle})
 
 	# for packaging, alpha to numbers
-	string(COMPARE EQUAL "${BLENDER_VERSION_CHAR}" "" _out_version_char_empty)
+	string(COMPARE EQUAL "${DUNE_VERSION_CHAR}" "" _out_version_char_empty)
 	if(${_out_version_char_empty})
-		set(BLENDER_VERSION_CHAR_INDEX "0")
+		set(DUNE_VERSION_CHAR_INDEX "0")
 	else()
 		set(_char_ls a b c d e f g h i j k l m n o p q r s t u v w q y z)
-		list(FIND _char_ls ${BLENDER_VERSION_CHAR} _out_version_char_index)
-		math(EXPR BLENDER_VERSION_CHAR_INDEX "${_out_version_char_index} + 1")
+		list(FIND _char_ls ${DUNE_VERSION_CHAR} _out_version_char_index)
+		math(EXPR DUNE_VERSION_CHAR_INDEX "${_out_version_char_index} + 1")
 		unset(_char_ls)
 		unset(_out_version_char_index)
 	endif()
@@ -492,13 +492,13 @@ macro(get_blender_version)
 	unset(_out_version_char_empty)
 	unset(_out_version_cycle)
 
-	# message(STATUS "Version (Internal): ${BLENDER_VERSION}.${BLENDER_SUBVERSION}, Version (external): ${BLENDER_VERSION}${BLENDER_VERSION_CHAR}-${BLENDER_VERSION_CYCLE}")
+	# message(STATUS "Version (Internal): ${DUNE_VERSION}.${DUNE_SUBVERSION}, Version (external): ${DUNE_VERSION}${DUNE_VERSION_CHAR}-${DUNE_VERSION_CYCLE}")
 endmacro()
 
 
 # hacks to override initial project settings
-# these macros must be called directly before/after project(Blender) 
-macro(blender_project_hack_pre)
+# these macros must be called directly before/after project(Dune) 
+macro(dune_project_hack_pre)
 	# ----------------
 	# MINGW HACK START
 	# ignore system set flag, use our own
@@ -527,7 +527,7 @@ macro(blender_project_hack_pre)
 endmacro()
 
 
-macro(blender_project_hack_post)
+macro(dune_project_hack_post)
 	# --------------
 	# MINGW HACK END
 	if (_reset_standard_libraries)
