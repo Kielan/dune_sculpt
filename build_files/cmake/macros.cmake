@@ -56,7 +56,7 @@ endmacro()
 
 # Nicer makefiles with -I/1/foo/ instead of -I/1/2/3/../../foo/
 # use it instead of include_directories()
-macro(blender_include_dirs
+macro(dune_include_dirs
 	includes)
 	set(_ALL_INCS "")
 	foreach(_INC ${ARGV})
@@ -120,14 +120,14 @@ macro(dune_add_lib_nolist
 
 	# include_directories(${includes})
 	# include_directories(SYSTEM ${includes_sys})
-	blender_include_dirs("${includes}")
-	blender_include_dirs_sys("${includes_sys}")
+	dune_include_dirs("${includes}")
+	dune_include_dirs_sys("${includes_sys}")
 
 	add_library(${name} ${sources})
 
 	# works fine without having the includes
 	# listed is helpful for IDE's (QtCreator/MSVC)
-	blender_source_group("${sources}")
+	dune_source_group("${sources}")
 
 endmacro()
 
@@ -138,7 +138,7 @@ macro(dune_add_lib
 	includes
 	includes_sys)
 
-	blender_add_lib_nolist(${name} "${sources}" "${includes}" "${includes_sys}")
+	dune_add_lib_nolist(${name} "${sources}" "${includes}" "${includes_sys}")
 
 	set_property(GLOBAL APPEND PROPERTY BLENDER_LINK_LIBS ${name})
 endmacro()
