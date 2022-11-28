@@ -1319,3 +1319,665 @@ GHOST_TSuccess GHOST_SystemCocoa::handleDraggingEvent(GHOST_TEventType eventType
 
             /* Copy the image to ibuf, flipping it vertically. */
    
+            toIBuf = (uint8_t *)ibuf->rect;
+            for (y = 0; y < imgSize.height; y++) {
+              for (x = 0; x < imgSize.width; x++) {
+                to_i = (imgSize.height - y - 1) * imgSize.width + x;
+                from_i = y * imgSize.width + x;
+
+                toIBuf[4 * to_i] = rasterRGB[4 * from_i];          /* R */
+                toIBuf[4 * to_i + 1] = rasterRGB[4 * from_i + 1];  /* G */
+                toIBuf[4 * to_i + 2] = rasterRGB[4 * from_i + 2];  /* B */
+                toIBuf[4 * to_i + 3] = rasterRGBA[4 * from_i + 3]; /* A */
+              }
+            }
+
+            [blBitmapFormatImageRGB release];
+            [blBitmapFormatImageRGBA release];
+            [droppedImg release];
+          }
+
+          eventData = (GHOST_TEventDataPtr)ibuf;
+
+          break;
+        }
+        default:
+          return GHOST_kFailure;
+          break;
+      }
+
+      window->clientToScreenIntern(mouseX, mouseY, mouseX, mouseY);
+      pushEvent(new GHOST_EventDragnDrop(
+          getMilliSeconds(), eventType, draggedObjectType, window, mouseX, mouseY, eventData));
+
+      break;
+    }
+    default:
+      return GHOST_kFailure;
+  }
+  m_outsideLoopEventProcessed = true;
+  return GHOST_kSuccess;
+}
+
+void GHOST_SystemCocoa::handleQuitRequest()
+{
+  GHOST_Window *window = (GHOST_Window *)m_windowManager->getActiveWindow();
+
+  // Discard quit event if we are in cursor grab sequence
+  if (window && window->getCursorGrabModeIsWarp())
+    return;
+
+  // Push the event to Blender so it can open a dialog if needed
+  pushEvent(new GHOST_Event(getMilliSeconds(), GHOST_kEventQuitRequest, window));
+  m_outsideLoopEventProcessed = true;
+}
+
+bool GHOST_SystemCocoa::handleOpenDocumentRequest(void *filepathStr)
+{
+  NSString *filepath = (NSString *)filepathStr;
+  NSArray *windowsList;
+  char *temp_buff;
+  size_t filenameTextSize;
+
+  /* Check for blender opened windows and make the frontmost key. In case blender
+   * is minimized, opened on another desktop space, or in full-screen mode. */
+  windowsList = [NSApp orderedWindows];
+  if ([windowsList count]) {
+    [[windowsList objectAtIndex:0] makeKeyAndOrderFront:nil];
+  }
+
+  GHOST_Window *window = (GHOST_Window *)m_windowManager->getActiveWindow();
+
+  if (!window) {
+    return NO;
+  }
+
+  /* Discard event if we are in cursor grab sequence,
+   * it'll lead to "stuck cursor" situation if the alert panel is raised. */
+  if (window && window->getCursorGrabModeIsWarp()) {
+    return NO;
+  }
+
+  filenameTextSize = [filepath lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+  temp_buff = (char *)malloc(filenameTextSize + 1);
+
+  if (temp_buff == NULL) {
+    return GHOST_kFailure;
+  }
+
+  strncpy(temp_buff, [filepath cStringUsingEncoding:NSUTF8StringEncoding], filenameTextSize);
+  temp_buff[filenameTextSize] = '\0';
+
+  pushEvent(new GHOST_EventString(
+      getMilliSeconds(), GHOST_kEventOpenMainFile, window, (GHOST_TEventDataPtr)temp_buff));
+
+  return YES;
+}
+
+GHOST_TSuccess GHOST_SystemCocoa::handleTabletEvent(void *eventPtr, short eventType)
+{
+  NSEvent *event = (NSEvent *)eventPtr;
+  GHOST_IWindow *window;
+
+  window = m_windowManager->getWindowAssociatedWithOSWindow((void *)[event window]);
+  if (!window) {
+    // printf("\nW failure for event 0x%x",[event type]);
+    return GHOST_kFailure;
+  }
+
+  GHOST_TabletData &ct = ((GHOST_WindowCocoa *)window)->GetCocoaTabletData();
+
+  switch (eventType) {
+    case NSEventTypeTabletPoint:
+      // workaround 2 cornercases:
+      // 1. if [event isEnteringProximity] was not triggered since program-start
+      // 2. device is not sending [event pointingDeviceType], due no eraser
+      if (ct.Active == GHOST_kTabletModeNone)
+        ct.Active = GHOST_kTabletModeStylus;
+
+      ct.Pressure = [event pressure];
+      ct.Xtilt = [event tilt].x;
+      ct.Ytilt = [event tilt].y;
+      break;
+
+    case NSEventTypeTabletProximity:
+      /* Reset tablet data when device enters proximity or leaves. */
+      ct = GHOST_TABLET_DATA_NONE;
+      if ([event isEnteringProximity]) {
+        /* Pointer is entering tablet area proximity. */
+        switch ([event pointingDeviceType]) {
+          case NSPointingDeviceTypePen:
+            ct.Active = GHOST_kTabletModeStylus;
+            break;
+          case NSPointingDeviceTypeEraser:
+            ct.Active = GHOST_kTabletModeEraser;
+            break;
+          case NSPointingDeviceTypeCursor:
+          case NSPointingDeviceTypeUnknown:
+          default:
+            break;
+        }
+      }
+      break;
+
+    default:
+      GHOST_ASSERT(FALSE, "GHOST_SystemCocoa::handleTabletEvent : unknown event received");
+      return GHOST_kFailure;
+      break;
+  }
+  return GHOST_kSuccess;
+}
+
+bool GHOST_SystemCocoa::handleTabletEvent(void *eventPtr)
+{
+  NSEvent *event = (NSEvent *)eventPtr;
+
+  switch ([event subtype]) {
+    case NSEventSubtypeTabletPoint:
+      handleTabletEvent(eventPtr, NSEventTypeTabletPoint);
+      return true;
+    case NSEventSubtypeTabletProximity:
+      handleTabletEvent(eventPtr, NSEventTypeTabletProximity);
+      return true;
+    default:
+      // No tablet event included : do nothing
+      return false;
+  }
+}
+
+GHOST_TSuccess GHOST_SystemCocoa::handleMouseEvent(void *eventPtr)
+{
+  NSEvent *event = (NSEvent *)eventPtr;
+  GHOST_WindowCocoa *window;
+  CocoaWindow *cocoawindow;
+
+  /* [event window] returns other windows if mouse-over, that's OSX input standard
+   * however, if mouse exits window(s), the windows become inactive, until you click.
+   * We then fall back to the active window from ghost. */
+  window = (GHOST_WindowCocoa *)m_windowManager->getWindowAssociatedWithOSWindow(
+      (void *)[event window]);
+  if (!window) {
+    window = (GHOST_WindowCocoa *)m_windowManager->getActiveWindow();
+    if (!window) {
+      // printf("\nW failure for event 0x%x",[event type]);
+      return GHOST_kFailure;
+    }
+  }
+
+  cocoawindow = (CocoaWindow *)window->getOSWindow();
+
+  switch ([event type]) {
+    case NSEventTypeLeftMouseDown:
+      handleTabletEvent(event);  // Update window tablet state to be included in event.
+      pushEvent(new GHOST_EventButton([event timestamp] * 1000,
+                                      GHOST_kEventButtonDown,
+                                      window,
+                                      GHOST_kButtonMaskLeft,
+                                      window -> GetCocoaTabletData()));
+      break;
+    case NSEventTypeRightMouseDown:
+      handleTabletEvent(event);  // Update window tablet state to be included in event.
+      pushEvent(new GHOST_EventButton([event timestamp] * 1000,
+                                      GHOST_kEventButtonDown,
+                                      window,
+                                      GHOST_kButtonMaskRight,
+                                      window -> GetCocoaTabletData()));
+      break;
+    case NSEventTypeOtherMouseDown:
+      handleTabletEvent(event);  // Handle tablet events combined with mouse events
+      pushEvent(new GHOST_EventButton([event timestamp] * 1000,
+                                      GHOST_kEventButtonDown,
+                                      window,
+                                      convertButton([event buttonNumber]),
+                                      window -> GetCocoaTabletData()));
+      break;
+
+    case NSEventTypeLeftMouseUp:
+      handleTabletEvent(event);  // Update window tablet state to be included in event.
+      pushEvent(new GHOST_EventButton([event timestamp] * 1000,
+                                      GHOST_kEventButtonUp,
+                                      window,
+                                      GHOST_kButtonMaskLeft,
+                                      window -> GetCocoaTabletData()));
+      break;
+    case NSEventTypeRightMouseUp:
+      handleTabletEvent(event);  // Update window tablet state to be included in event.
+      pushEvent(new GHOST_EventButton([event timestamp] * 1000,
+                                      GHOST_kEventButtonUp,
+                                      window,
+                                      GHOST_kButtonMaskRight,
+                                      window -> GetCocoaTabletData()));
+      break;
+    case NSEventTypeOtherMouseUp:
+      handleTabletEvent(event);  // Update window tablet state to be included in event.
+      pushEvent(new GHOST_EventButton([event timestamp] * 1000,
+                                      GHOST_kEventButtonUp,
+                                      window,
+                                      convertButton([event buttonNumber]),
+                                      window -> GetCocoaTabletData()));
+      break;
+
+    case NSEventTypeLeftMouseDragged:
+    case NSEventTypeRightMouseDragged:
+    case NSEventTypeOtherMouseDragged:
+      handleTabletEvent(event);  // Update window tablet state to be included in event.
+
+    case NSEventTypeMouseMoved: {
+      GHOST_TGrabCursorMode grab_mode = window->getCursorGrabMode();
+
+      /* TODO: CHECK IF THIS IS A TABLET EVENT */
+      bool is_tablet = false;
+
+      if (is_tablet && window->getCursorGrabModeIsWarp()) {
+        grab_mode = GHOST_kGrabDisable;
+      }
+
+      switch (grab_mode) {
+        case GHOST_kGrabHide:  // Cursor hidden grab operation : no cursor move
+        {
+          int32_t x_warp, y_warp, x_accum, y_accum, x, y;
+
+          window->getCursorGrabInitPos(x_warp, y_warp);
+          window->screenToClientIntern(x_warp, y_warp, x_warp, y_warp);
+
+          window->getCursorGrabAccum(x_accum, y_accum);
+          x_accum += [event deltaX];
+          y_accum += -[event
+              deltaY];  // Strange Apple implementation (inverted coordinates for the deltaY) ...
+          window->setCursorGrabAccum(x_accum, y_accum);
+
+          window->clientToScreenIntern(x_warp + x_accum, y_warp + y_accum, x, y);
+          pushEvent(new GHOST_EventCursor([event timestamp] * 1000,
+                                          GHOST_kEventCursorMove,
+                                          window,
+                                          x,
+                                          y,
+                                          window -> GetCocoaTabletData()));
+          break;
+        }
+        case GHOST_kGrabWrap:  // Wrap cursor at area/window boundaries
+        {
+          NSTimeInterval timestamp = [event timestamp];
+          if (timestamp < m_last_warp_timestamp) {
+            /* After warping we can still receive older unwrapped mouse events,
+             * ignore those. */
+            break;
+          }
+
+          NSPoint mousePos = [event locationInWindow];
+          int32_t x_mouse = mousePos.x;
+          int32_t y_mouse = mousePos.y;
+          GHOST_Rect bounds, windowBounds, correctedBounds;
+
+          /* fallback to window bounds */
+          if (window->getCursorGrabBounds(bounds) == GHOST_kFailure)
+            window->getClientBounds(bounds);
+
+          /* Switch back to Cocoa coordinates orientation
+           * (y=0 at bottom, the same as blender internal BTW!), and to client coordinates. */
+          window->getClientBounds(windowBounds);
+          window->screenToClient(bounds.m_l, bounds.m_b, correctedBounds.m_l, correctedBounds.m_t);
+          window->screenToClient(bounds.m_r, bounds.m_t, correctedBounds.m_r, correctedBounds.m_b);
+          correctedBounds.m_b = (windowBounds.m_b - windowBounds.m_t) - correctedBounds.m_b;
+          correctedBounds.m_t = (windowBounds.m_b - windowBounds.m_t) - correctedBounds.m_t;
+
+          // Get accumulation from previous mouse warps
+          int32_t x_accum, y_accum;
+          window->getCursorGrabAccum(x_accum, y_accum);
+
+          // Warp mouse cursor if needed
+          int32_t warped_x_mouse = x_mouse;
+          int32_t warped_y_mouse = y_mouse;
+
+          correctedBounds.wrapPoint(
+              warped_x_mouse, warped_y_mouse, 4, window->getCursorGrabAxis());
+
+          // Set new cursor position
+          if (x_mouse != warped_x_mouse || y_mouse != warped_y_mouse) {
+            int32_t warped_x, warped_y;
+            window->clientToScreenIntern(warped_x_mouse, warped_y_mouse, warped_x, warped_y);
+            setMouseCursorPosition(warped_x, warped_y); /* wrap */
+            window->setCursorGrabAccum(x_accum + (x_mouse - warped_x_mouse),
+                                       y_accum + (y_mouse - warped_y_mouse));
+
+            /* This is the current time that matches NSEvent timestamp. */
+            m_last_warp_timestamp = [[NSProcessInfo processInfo] systemUptime];
+          }
+
+          // Generate event
+          int32_t x, y;
+          window->clientToScreenIntern(x_mouse + x_accum, y_mouse + y_accum, x, y);
+          pushEvent(new GHOST_EventCursor([event timestamp] * 1000,
+                                          GHOST_kEventCursorMove,
+                                          window,
+                                          x,
+                                          y,
+                                          window -> GetCocoaTabletData()));
+          break;
+        }
+        default: {
+          // Normal cursor operation: send mouse position in window
+          NSPoint mousePos = [event locationInWindow];
+          int32_t x, y;
+
+          window->clientToScreenIntern(mousePos.x, mousePos.y, x, y);
+          pushEvent(new GHOST_EventCursor([event timestamp] * 1000,
+                                          GHOST_kEventCursorMove,
+                                          window,
+                                          x,
+                                          y,
+                                          window -> GetCocoaTabletData()));
+          break;
+        }
+      }
+    } break;
+
+    case NSEventTypeScrollWheel: {
+      NSEventPhase momentumPhase = NSEventPhaseNone;
+      NSEventPhase phase = NSEventPhaseNone;
+
+      momentumPhase = [event momentumPhase];
+      phase = [event phase];
+
+      /* when pressing a key while momentum scrolling continues after
+       * lifting fingers off the trackpad, the action can unexpectedly
+       * change from e.g. scrolling to zooming. this works around the
+       * issue by ignoring momentum scroll after a key press */
+      if (momentumPhase) {
+        if (m_ignoreMomentumScroll)
+          break;
+      }
+      else {
+        m_ignoreMomentumScroll = false;
+      }
+
+      /* we assume phases are only set for gestures from trackpad or magic
+       * mouse events. note that using tablet at the same time may not work
+       * since this is a static variable */
+      if (phase == NSEventPhaseBegan && m_multitouchGestures)
+        m_multiTouchScroll = true;
+      else if (phase == NSEventPhaseEnded)
+        m_multiTouchScroll = false;
+
+      /* Standard scroll-wheel case, if no swiping happened,
+       * and no momentum (kinetic scroll) works. */
+      if (!m_multiTouchScroll && momentumPhase == NSEventPhaseNone) {
+        int32_t delta;
+
+        double deltaF = [event deltaY];
+
+        if (deltaF == 0.0)
+          deltaF = [event deltaX];  // make blender decide if it's horizontal scroll
+        if (deltaF == 0.0)
+          break;  // discard trackpad delta=0 events
+
+        delta = deltaF > 0.0 ? 1 : -1;
+        pushEvent(new GHOST_EventWheel([event timestamp] * 1000, window, delta));
+      }
+      else {
+        NSPoint mousePos = [event locationInWindow];
+        int32_t x, y;
+        double dx;
+        double dy;
+
+        /* with 10.7 nice scrolling deltas are supported */
+        dx = [event scrollingDeltaX];
+        dy = [event scrollingDeltaY];
+
+        /* However, Wacom tablet (intuos5) needs old deltas,
+         * it then has momentum and phase at zero. */
+        if (phase == NSEventPhaseNone && momentumPhase == NSEventPhaseNone) {
+          dx = [event deltaX];
+          dy = [event deltaY];
+        }
+        window->clientToScreenIntern(mousePos.x, mousePos.y, x, y);
+
+        NSPoint delta = [[cocoawindow contentView] convertPointToBacking:NSMakePoint(dx, dy)];
+        pushEvent(new GHOST_EventTrackpad([event timestamp] * 1000,
+                                          window,
+                                          GHOST_kTrackpadEventScroll,
+                                          x,
+                                          y,
+                                          delta.x,
+                                          delta.y,
+                                          [event isDirectionInvertedFromDevice]));
+      }
+    } break;
+
+    case NSEventTypeMagnify: {
+      NSPoint mousePos = [event locationInWindow];
+      int32_t x, y;
+      window->clientToScreenIntern(mousePos.x, mousePos.y, x, y);
+      pushEvent(new GHOST_EventTrackpad([event timestamp] * 1000,
+                                        window,
+                                        GHOST_kTrackpadEventMagnify,
+                                        x,
+                                        y,
+                                        [event magnification] * 125.0 + 0.1,
+                                        0,
+                                        false));
+    } break;
+
+    case NSEventTypeSmartMagnify: {
+      NSPoint mousePos = [event locationInWindow];
+      int32_t x, y;
+      window->clientToScreenIntern(mousePos.x, mousePos.y, x, y);
+      pushEvent(new GHOST_EventTrackpad(
+          [event timestamp] * 1000, window, GHOST_kTrackpadEventSmartMagnify, x, y, 0, 0, false));
+    } break;
+
+    case NSEventTypeRotate: {
+      NSPoint mousePos = [event locationInWindow];
+      int32_t x, y;
+      window->clientToScreenIntern(mousePos.x, mousePos.y, x, y);
+      pushEvent(new GHOST_EventTrackpad([event timestamp] * 1000,
+                                        window,
+                                        GHOST_kTrackpadEventRotate,
+                                        x,
+                                        y,
+                                        [event rotation] * -5.0,
+                                        0,
+                                        false));
+    }
+    default:
+      return GHOST_kFailure;
+      break;
+  }
+
+  return GHOST_kSuccess;
+}
+
+GHOST_TSuccess GHOST_SystemCocoa::handleKeyEvent(void *eventPtr)
+{
+  NSEvent *event = (NSEvent *)eventPtr;
+  GHOST_IWindow *window;
+  unsigned int modifiers;
+  NSString *characters;
+  NSData *convertedCharacters;
+  GHOST_TKey keyCode;
+  NSString *charsIgnoringModifiers;
+
+  window = m_windowManager->getWindowAssociatedWithOSWindow((void *)[event window]);
+  if (!window) {
+    // printf("\nW failure for event 0x%x",[event type]);
+    return GHOST_kFailure;
+  }
+
+  char utf8_buf[6] = {'\0'};
+
+  switch ([event type]) {
+
+    case NSEventTypeKeyDown:
+    case NSEventTypeKeyUp:
+      charsIgnoringModifiers = [event charactersIgnoringModifiers];
+      if ([charsIgnoringModifiers length] > 0) {
+        keyCode = convertKey([event keyCode],
+                             [charsIgnoringModifiers characterAtIndex:0],
+                             [event type] == NSEventTypeKeyDown ? kUCKeyActionDown :
+                                                                  kUCKeyActionUp);
+      }
+      else {
+        keyCode = convertKey([event keyCode],
+                             0,
+                             [event type] == NSEventTypeKeyDown ? kUCKeyActionDown :
+                                                                  kUCKeyActionUp);
+      }
+
+      characters = [event characters];
+      if ([characters length] > 0) {
+        convertedCharacters = [characters dataUsingEncoding:NSUTF8StringEncoding];
+
+        for (int x = 0; x < [convertedCharacters length]; x++) {
+          utf8_buf[x] = ((char *)[convertedCharacters bytes])[x];
+        }
+      }
+
+      /* arrow keys should not have utf8 */
+      if ((keyCode >= GHOST_kKeyLeftArrow) && (keyCode <= GHOST_kKeyDownArrow)) {
+        utf8_buf[0] = '\0';
+      }
+
+      /* F keys should not have utf8 */
+      if ((keyCode >= GHOST_kKeyF1) && (keyCode <= GHOST_kKeyF20))
+        utf8_buf[0] = '\0';
+
+      /* no text with command key pressed */
+      if (m_modifierMask & NSEventModifierFlagCommand)
+        utf8_buf[0] = '\0';
+
+      if ((keyCode == GHOST_kKeyQ) && (m_modifierMask & NSEventModifierFlagCommand))
+        break;  // Cmd-Q is directly handled by Cocoa
+
+      if ([event type] == NSEventTypeKeyDown) {
+        pushEvent(new GHOST_EventKey([event timestamp] * 1000,
+                                     GHOST_kEventKeyDown,
+                                     window,
+                                     keyCode,
+                                     [event isARepeat],
+                                     utf8_buf));
+#if 0
+        printf("Key down rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u utf8=%s\n",
+               [event keyCode],
+               [charsIgnoringModifiers length] > 0 ? [charsIgnoringModifiers characterAtIndex:0] :
+                                                     ' ',
+               keyCode,
+               utf8_buf);
+#endif
+      }
+      else {
+        pushEvent(new GHOST_EventKey(
+            [event timestamp] * 1000, GHOST_kEventKeyUp, window, keyCode, false, NULL));
+#if 0
+        printf("Key up rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u utf8=%s\n",
+               [event keyCode],
+               [charsIgnoringModifiers length] > 0 ? [charsIgnoringModifiers characterAtIndex:0] :
+                                                     ' ',
+               keyCode,
+               utf8_buf);
+#endif
+      }
+      m_ignoreMomentumScroll = true;
+      break;
+
+    case NSEventTypeFlagsChanged:
+      modifiers = [event modifierFlags];
+
+      if ((modifiers & NSEventModifierFlagShift) != (m_modifierMask & NSEventModifierFlagShift)) {
+        pushEvent(new GHOST_EventKey([event timestamp] * 1000,
+                                     (modifiers & NSEventModifierFlagShift) ? GHOST_kEventKeyDown :
+                                                                              GHOST_kEventKeyUp,
+                                     window,
+                                     GHOST_kKeyLeftShift,
+                                     false));
+      }
+      if ((modifiers & NSEventModifierFlagControl) !=
+          (m_modifierMask & NSEventModifierFlagControl)) {
+        pushEvent(new GHOST_EventKey(
+            [event timestamp] * 1000,
+            (modifiers & NSEventModifierFlagControl) ? GHOST_kEventKeyDown : GHOST_kEventKeyUp,
+            window,
+            GHOST_kKeyLeftControl,
+            false));
+      }
+      if ((modifiers & NSEventModifierFlagOption) !=
+          (m_modifierMask & NSEventModifierFlagOption)) {
+        pushEvent(new GHOST_EventKey(
+            [event timestamp] * 1000,
+            (modifiers & NSEventModifierFlagOption) ? GHOST_kEventKeyDown : GHOST_kEventKeyUp,
+            window,
+            GHOST_kKeyLeftAlt,
+            false));
+      }
+      if ((modifiers & NSEventModifierFlagCommand) !=
+          (m_modifierMask & NSEventModifierFlagCommand)) {
+        pushEvent(new GHOST_EventKey(
+            [event timestamp] * 1000,
+            (modifiers & NSEventModifierFlagCommand) ? GHOST_kEventKeyDown : GHOST_kEventKeyUp,
+            window,
+            GHOST_kKeyLeftOS,
+            false));
+      }
+
+      m_modifierMask = modifiers;
+      m_ignoreMomentumScroll = true;
+      break;
+
+    default:
+      return GHOST_kFailure;
+      break;
+  }
+
+  return GHOST_kSuccess;
+}
+
+#pragma mark Clipboard get/set
+
+char *GHOST_SystemCocoa::getClipboard(bool selection) const
+{
+  char *temp_buff;
+  size_t pastedTextSize;
+
+  @autoreleasepool {
+
+    NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
+
+    NSString *textPasted = [pasteBoard stringForType:NSStringPboardType];
+
+    if (textPasted == nil) {
+      return NULL;
+    }
+
+    pastedTextSize = [textPasted lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
+
+    temp_buff = (char *)malloc(pastedTextSize + 1);
+
+    if (temp_buff == NULL) {
+      return NULL;
+    }
+
+    strncpy(temp_buff, [textPasted cStringUsingEncoding:NSUTF8StringEncoding], pastedTextSize);
+
+    temp_buff[pastedTextSize] = '\0';
+
+    if (temp_buff) {
+      return temp_buff;
+    }
+    else {
+      return NULL;
+    }
+  }
+}
+
+void GHOST_SystemCocoa::putClipboard(const char *buffer, bool selection) const
+{
+  if (selection)
+    return;  // for copying the selection, used on X11
+
+  @autoreleasepool {
+
+    NSPasteboard *pasteBoard = NSPasteboard.generalPasteboard;
+    [pasteBoard declareTypes:@[ NSStringPboardType ] owner:nil];
+    NSString *textToCopy = [NSString stringWithCString:buffer encoding:NSUTF8StringEncoding];
+    [pasteBoard setString:textToCopy forType:NSStringPboardType];
+  }
+}
