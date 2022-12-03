@@ -22,8 +22,19 @@ Blender3d is written in using C/C++ and Python and code required handles for the
 ## Install
 This project uses CMake on Unix-like and MacOS. Go check them out if you don't have them locally installed.
 ```sh
-$ sudo apt install python-setuptools
+$ sudo apt install
 $ git clone https://github.com/
 $ cd dune
 $ make install
 ```
+
+### Code style
+Follow PEP 8
+```sh
+autopep8 --in-place --aggressive --max-line-length=88 <filename>
+```
+
+### Tests
+Using `ctest`.
+
+## Contributors
