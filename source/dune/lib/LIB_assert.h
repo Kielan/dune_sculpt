@@ -1,7 +1,6 @@
 #pragma once
 
 /**
- *
  * Defines:
  * - #LIB_assert
  * - #LIB_STATIC_ASSERT
