@@ -1313,3 +1313,139 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
   # disable numbered, false positives
   string(APPEND C_WARNINGS " -wd188,186,144,913,556,858,597,177,1292,167,279,592,94,2722,3199")
  
+elseif(CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  # most msvc warnings are C & C++
+  set(_WARNINGS
+    # warning level:
+    "/W3"
+    "/w34062"  # switch statement contains 'default' but no 'case' labels
+    "/w34115"  # 'type' : named type definition in parentheses
+    "/w34189"  # local variable is initialized but not referenced
+    # disable:
+    "/wd4018"  # signed/unsigned mismatch
+    "/wd4146"  # unary minus operator applied to unsigned type, result still unsigned
+    "/wd4065"  # switch statement contains 'default' but no 'case' labels
+    "/wd4127"  # conditional expression is constant
+    "/wd4181"  # qualifier applied to reference type; ignored
+    "/wd4200"  # zero-sized array in struct/union
+    "/wd4244"  # conversion from 'type1' to 'type2', possible loss of data
+    "/wd4267"  # conversion from 'size_t' to 'type', possible loss of data
+    "/wd4305"  # truncation from 'type1' to 'type2'
+    "/wd4800"  # forcing value to bool 'true' or 'false'
+    "/wd4828"  # The file contains a character that is illegal
+    "/wd4996"  # identifier was declared deprecated
+    "/wd4661"  # no suitable definition provided for explicit template instantiation request
+    # errors:
+    "/we4013"  # 'function' undefined; assuming extern returning int
+    "/we4133"  # incompatible pointer types
+    "/we4431"  # missing type specifier - int assumed
+  )
+
+  if(MSVC_VERSION GREATER_EQUAL 1911)
+    # see https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/c5038?view=vs-2017
+    string(APPEND _WARNINGS " /w35038") # order of initialization in c++ constructors
+  endif()
+
+  string(REPLACE ";" " " _WARNINGS "${_WARNINGS}")
+  set(C_WARNINGS "${_WARNINGS}")
+  unset(_WARNINGS)
+endif()
+
+if(WITH_COMPILER_SHORT_FILE_MACRO)
+  # Use '-fmacro-prefix-map' for Clang and GCC (MSVC doesn't support this).
+  ADD_CHECK_C_COMPILER_FLAG(C_PREFIX_MAP_FLAGS C_MACRO_PREFIX_MAP -fmacro-prefix-map=foo=bar)
+  if(C_MACRO_PREFIX_MAP AND CXX_MACRO_PREFIX_MAP)
+    if(APPLE)
+      if(XCODE AND ${XCODE_VERSION} VERSION_LESS 12.0)
+      # Developers may have say LLVM Clang-10.0.1 toolchain (which supports the flag)
+      # with Xcode-11 (the Clang of which doesn't support the flag).
+        message(WARNING
+          "-fmacro-prefix-map flag is NOT supported by Clang shipped with Xcode-${XCODE_VERSION}."
+          " Some Xcode functionality in Product menu may not work. Disabling WITH_COMPILER_SHORT_FILE_MACRO."
+        )
+        set(WITH_COMPILER_SHORT_FILE_MACRO OFF)
+      endif()
+    endif()
+    if(WITH_COMPILER_SHORT_FILE_MACRO)
+      path_ensure_trailing_slash(_src_dir "${CMAKE_SOURCE_DIR}")
+      path_ensure_trailing_slash(_bin_dir "${CMAKE_BINARY_DIR}")
+      # Keep this variable so it can be stripped from build-info.
+      set(PLATFORM_CFLAGS_FMACRO_PREFIX_MAP
+        "-fmacro-prefix-map=\"${_src_dir}\"=\"\" -fmacro-prefix-map=\"${_bin_dir}\"=\"\"")
+      string(APPEND PLATFORM_CFLAGS " ${PLATFORM_CFLAGS_FMACRO_PREFIX_MAP}")
+      unset(_src_dir)
+      unset(_bin_dir)
+    endif()
+  else()
+    message(WARNING
+      "-fmacro-prefix-map flag is NOT supported by C/C++ compiler."
+      " Disabling WITH_COMPILER_SHORT_FILE_MACRO."
+    )
+    set(WITH_COMPILER_SHORT_FILE_MACRO OFF)
+  endif()
+endif()
+
+# Include warnings first, so its possible to disable them with user defined flags
+# eg: -Wno-uninitialized
+set(CMAKE_C_FLAGS "${C_WARNINGS} ${CMAKE_C_FLAGS} ${PLATFORM_CFLAGS}")
+
+# defined above, platform specific but shared names
+mark_as_advanced(
+  CYCLES_OSL
+  OSL_LIB_EXEC
+  OSL_COMPILER
+  OSL_LIB_COMP
+  OSL_LIB_QUERY
+  OSL_INCLUDE_DIR
+)
+
+mark_as_advanced(
+  LLVM_CONFIG
+  LLVM_ROOT_DIR
+  LLVM_LIBRARY
+  LLVM_VERSION
+)
+
+#-------------------------------------------------------------------------------
+# Global Defines
+if(WITH_ASSERT_ABORT)
+  add_definitions(-DWITH_ASSERT_ABORT)
+endif()
+
+# message(STATUS "Using CFLAGS: ${CMAKE_C_FLAGS}")
+
+#-----------------------------------------------------------------------------
+# Libraries
+
+if(WITH_DUNE)
+  add_subdirectory(intern)
+  add_subdirectory(extern)
+
+  # source after intern and extern to gather all
+  # internal and external library information first, for test linking
+  add_subdirectory(source)
+
+#-----------------------------------------------------------------------------
+# Testing
+add_subdirectory(tests)
+
+#-----------------------------------------------------------------------------
+# Dune Sculpt Application
+if(WITH_DUNE)
+  add_subdirectory(source/creator)
+endif()
+
+#-----------------------------------------------------------------------------
+# Define 'heavy' submodules (for Ninja builder when using pools).
+setup_heavy_lib_pool()
+
+
+#-----------------------------------------------------------------------------
+# CPack for generating packages
+include(build_files/cmake/packaging.cmake)
+
+#-----------------------------------------------------------------------------
+# Use dynamic loading for OpenMP
+if(WITH_SCULPT)
+  openmp_delayload(dune)
+endif()
