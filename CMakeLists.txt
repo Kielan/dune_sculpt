@@ -618,7 +618,7 @@ endif()
 
 if(WITH_AUDASPACE)
   if(NOT WITH_SYSTEM_AUDASPACE)
-    set(AUDASPACE_C_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/extern/audaspace/bindings/C" "${CMAKE_BINARY_DIR}/extern/
+    set(AUDASPACE_C_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/extern/audaspace/bindings/C" "${CMAKE_BINARY_DIR}/extern/audaspace")
   endif()
 endif()
 
