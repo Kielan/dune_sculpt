@@ -1449,3 +1449,34 @@ include(build_files/cmake/packaging.cmake)
 if(WITH_SCULPT)
   openmp_delayload(dune)
 endif()
+
+#-----------------------------------------------------------------------------
+# Print Final Configuration
+
+if(FIRST_RUN)
+
+  set(_config_msg "\nDune Configuration\n=====================")
+
+  function(info_cfg_option
+    _setting
+    )
+
+    set(_msg "  - ${_setting}")
+    string(LENGTH "${_msg}" _len)
+    while("32" GREATER "${_len}")
+      string(APPEND _msg " ")
+      math(EXPR _len "${_len} + 1")
+    endwhile()
+
+    set(_config_msg "${_config_msg}\n${_msg}${${_setting}}" PARENT_SCOPE)
+  endfunction()
+
+  function(info_cfg_text
+    _text
+    )
+
+    set(_config_msg "${_config_msg}\n\n  ${_text}" PARENT_SCOPE)
+  endfunction()
+
+  message(STATUS "C Compiler:   \"${CMAKE_C_COMPILER_ID}\"")
+  
