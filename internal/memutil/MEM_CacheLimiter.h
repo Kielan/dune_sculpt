@@ -1,11 +1,11 @@
 #ifndef __MEM_CACHELIMITERC_API_H__
 #define __MEM_CACHELIMITERC_API_H__
 
-struct MEM_STRUCT_CacheLimiter;
-struct MEM_STRUCT_CacheLimiterHandle;
+struct MEM_CacheLimiter_struct;
+struct MEM_CacheLimiterHandle_struct;
 
-typedef struct MEM_STRUCT_CacheLimiter MEM_CacheLimiter;
-typedef struct MEM_STRUCT_CacheLimiterHandle MEM_CacheLimiterHandle;
+typedef struct MEM_CacheLimiter_struct MEM_CacheLimiter;
+typedef struct MEM_CacheLimiterHandle_struct MEM_CacheLimiterHandle;
 
 /* function used to remove data from memory */
 typedef void (*MEM_CacheLimiter_Destruct_Fn)(void *);
