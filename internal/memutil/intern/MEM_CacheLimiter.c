@@ -28,3 +28,6 @@ bool MEM_CacheLimiter_is_disabled(void)
 
 struct MEM_STRUCT_CacheLimiterHandle;
 struct MEM_STRUCT_CacheLimiter;
+
+typedef struct MEM_STRUCT_CacheLimiterHandle handle_t;
+typedef struct MEM_STRUCT_CacheLimiter cache_t;
