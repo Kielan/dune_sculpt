@@ -1,3 +1,7 @@
+#include <cstddef>
+
+#include "MEM_CacheLimiter.h"
+
 static bool is_disabled = false;
 
 static size_t &get_max()
@@ -26,8 +30,20 @@ bool MEM_CacheLimiter_is_disabled(void)
   return is_disabled;
 }
 
-struct MEM_STRUCT_CacheLimiterHandle;
-struct MEM_STRUCT_CacheLimiter;
+MEM_CacheLimiterHandle handle_t;
+MEM_CacheLimiter cache_t;
 
-typedef struct MEM_STRUCT_CacheLimiterHandle handle_t;
-typedef struct MEM_STRUCT_CacheLimiter cache_t;
+handle_t *insert(void *data);
+
+void destruct(void *data, list_type_iterator it);
+
+cache_t *get_cache()
+  {
+    return &cache;
+  }
+
+MEM_CacheLimiter_Destruct_Func data_destructor;
+
+MEM_CacheLimiter cache;
+
+list_t cclass_list;
