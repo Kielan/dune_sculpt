@@ -25,3 +25,6 @@ bool MEM_CacheLimiter_is_disabled(void)
 {
   return is_disabled;
 }
+
+struct MEM_STRUCT_CacheLimiterHandle;
+struct MEM_STRUCT_CacheLimiter;
