@@ -18,7 +18,7 @@
 
 ## Background
 Blender3d is written in using C/C++ and Python and code required handles for the 3 languages. This is a concise rewrite and cleanup.
-
+Including Sequencer for undo/redo, in source cachelimiter for gpu management and a C-lang only rewrite of GHOST (General Handy Operating System.)
 ## Install
 This project uses CMake on Unix-like and MacOS. Go check them out if you don't have them locally installed.
 ```sh
