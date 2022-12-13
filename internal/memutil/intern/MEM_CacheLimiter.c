@@ -82,3 +82,92 @@ void MEM_CacheLimiter_destruct(void *data, list_t_iterator it)
 
 MEM_CacheLimiterHandle_destruct_parent() {
 }
+
+MEM_CacheLimiterCClass()
+{
+  // should not happen, but don't leak memory in this case...
+  for (list_t_iterator it = cclass_list.begin(); it != cclass_list.end(); it++) {
+    (*it)->set_data(NULL);
+
+    delete *it;
+  }
+}
+
+// ----------------------------------------------------------------------
+
+static inline MEM_CacheLimiter *cast(MEM_CacheLimiter *l)
+{
+  return (MEM_CacheLimiter *)l;
+}
+
+static inline handle_t *cast(MEM_CacheLimiterHandle *l)
+{
+  return (handle_t *)l;
+}
+
+MEM_CacheLimiter *new_MEM_CacheLimiter(MEM_CacheLimiter_Destruct_Func data_destructor,
+                                        MEM_CacheLimiter_DataSize_Func data_size)
+{
+  return (MEM_CacheLimiter *)new MEM_CacheLimiter(data_destructor, data_size);
+}
+
+void delete_MEM_CacheLimiter(MEM_CacheLimiter *this)
+{
+  delete cast(this);
+}
+
+MEM_CacheLimiterHandle *MEM_CacheLimiter_insert(MEM_CacheLimiter *this, void *data)
+{
+  return (MEM_CacheLimiterHandle *)cast(this)->insert(data);
+}
+
+void MEM_CacheLimiter_enforce_limits(MEM_CacheLimiter *this)
+{
+  cast(this)->get_cache()->enforce_limits();
+}
+
+void MEM_CacheLimiter_unmanage(MEM_CacheLimiterHandle *handle)
+{
+  cast(handle)->unmanage();
+}
+
+void MEM_CacheLimiter_touch(MEM_CacheLimiterHandle *handle)
+{
+  cast(handle)->touch();
+}
+
+void MEM_CacheLimiter_ref(MEM_CacheLimiterHandle *handle)
+{
+  cast(handle)->ref();
+}
+
+void MEM_CacheLimiter_unref(MEM_CacheLimiterHandle *handle)
+{
+  cast(handle)->unref();
+}
+int MEM_CacheLimiter_get_refcount(MEM_CacheLimiterHandle *handle)
+{
+  return cast(handle)->get_refcount();
+}
+
+void *MEM_CacheLimiter_get(MEM_CacheLimiterHandle *handle)
+{
+  return cast(handle)->get()->get_data();
+}
+
+void MEM_CacheLimiter_ItemPriority_Func_set(MEM_CacheLimiterC *this,
+                                            MEM_CacheLimiter_ItemPriority_Func item_priority_func)
+{
+  cast(this)->get_cache()->set_item_priority_func(item_priority_func);
+}
+
+void MEM_CacheLimiter_ItemDestroyable_Func_set(
+    MEM_CacheLimiter *this, MEM_CacheLimiter_ItemDestroyable_Func item_destroyable_func)
+{
+  cast(this)->get_cache()->set_item_destroyable_func(item_destroyable_func);
+}
+
+size_t MEM_CacheLimiter_get_memory_in_use(MEM_CacheLimiter *this)
+{
+  return cast(this)->get_cache()->get_memory_in_use();
+}
