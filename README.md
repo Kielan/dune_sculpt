@@ -1,5 +1,5 @@
-# dune sculpt
-> Dune sculpt, Blender3d in c-lang currently in active development.
+## Dune Sculpt
+> Dune Sculpt, Blender3d in c-lang currently in active development.
 
 ## Table of Contents
 
