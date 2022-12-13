@@ -53,3 +53,32 @@ void MEM_CacheLimiterHandle_set_iter(list_t_iterator)
   {
     it = it_;
   }
+
+void MEM_CacheLimiterHandle_set_data(void *data_)
+  {
+    data = data_;
+  }
+
+void *MEM_CacheLimiterHandle_get_data() const
+  {
+    return data;
+  }
+
+handle_t *MEM_CacheLimiter_insert(void *data)
+{
+  cclass_list.push_back(new MEM_CacheLimiterHandle(data, this));
+  list_t_iterator it = cclass_list.end();
+  --it;
+  cclass_list.back()->set_iter(it);
+
+  return cache.insert(cclass_list.back());
+}
+
+void MEM_CacheLimiter_destruct(void *data, list_t_iterator it)
+{
+  data_destructor(data);
+  cclass_list.erase(it);
+}
+
+MEM_CacheLimiterHandle_destruct_parent() {
+}
