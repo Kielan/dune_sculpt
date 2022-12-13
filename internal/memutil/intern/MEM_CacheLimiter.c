@@ -47,3 +47,9 @@ MEM_CacheLimiter_Destruct_Func data_destructor;
 MEM_CacheLimiter cache;
 
 list_t cclass_list;
+
+/* list_t_iterator is not yet defined */
+void MEM_CacheLimiterHandle_set_iter(list_t_iterator)
+  {
+    it = it_;
+  }
