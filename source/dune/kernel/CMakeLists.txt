@@ -303,7 +303,7 @@ if(WITH_OPENVDB)
     ${OPENVDB_INCLUDE_DIRS}
   )
   list(APPEND LIB
-    bf_intern_openvdb
+    dune_intern_openvdb
     ${OPENVDB_LIBRARIES}
   )
   add_definitions(-DWITH_OPENVDB ${OPENVDB_DEFINITIONS})
@@ -314,7 +314,7 @@ if(WITH_QUADRIFLOW)
     ../../../intern/quadriflow
   )
   list(APPEND LIB
-    bf_intern_quadriflow
+    dune_intern_quadriflow
   )
   add_definitions(-DWITH_QUADRIFLOW)
 endif()
