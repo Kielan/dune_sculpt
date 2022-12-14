@@ -194,7 +194,7 @@ endif()
 if(WITH_CODEC_FFMPEG)
   list(APPEND SRC
     intern/writeffmpeg.c
-    BKE_writeffmpeg.h
+    KERNEL_writeffmpeg.h
   )
   list(APPEND INC
     ../../../intern/ffmpeg
