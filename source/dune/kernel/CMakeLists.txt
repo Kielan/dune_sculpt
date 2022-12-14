@@ -73,10 +73,10 @@ set(SRC
 )
 
 set(LIB
-  dune_blenfont
-  dune_blenlib
-  dune_blenloader
-  dune_blentranslation
+  dune_font
+  dune_lib
+  dune_loader
+  dune_translation
   dune_bmesh
   dune_depsgraph
   dune_draw
