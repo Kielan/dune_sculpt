@@ -760,7 +760,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
   const int required_mode = use_render ? eModifierMode_Render : eModifierMode_Realtime;
 
   /* Sculpt can skip certain modifiers. */
-  const bool has_multires = BKE_sculpt_multires_active(scene, ob) != nullptr;
+  const bool has_multires = KERNEL_sculpt_multires_active(scene, ob) != nullptr;
   bool multires_applied = false;
   const bool sculpt_mode = ob->mode & OB_MODE_SCULPT && ob->sculpt && !use_render;
   const bool sculpt_dyntopo = (sculpt_mode && ob->sculpt->bm) && !use_render;
@@ -810,15 +810,15 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
   /* Apply all leading deform modifiers. */
   if (use_deform) {
     for (; md; md = md->next, md_datamask = md_datamask->next) {
-      const ModifierTypeInfo *mti = BKE_modifier_get_info((ModifierType)md->type);
+      const ModifierTypeInfo *mti = KERNEL_modifier_get_info((ModifierType)md->type);
 
-      if (!BKE_modifier_is_enabled(scene, md, required_mode)) {
+      if (!KERNEL_modifier_is_enabled(scene, md, required_mode)) {
         continue;
       }
 
       if (mti->type == eModifierTypeType_OnlyDeform && !sculpt_dyntopo) {
         if (!deformed_verts) {
-          deformed_verts = BKE_mesh_vert_coords_alloc(mesh_input, &num_deformed_verts);
+          deformed_verts = KERNEL_mesh_vert_coords_alloc(mesh_input, &num_deformed_verts);
         }
         else if (isPrevDeform && mti->dependsOnNormals && mti->dependsOnNormals(md)) {
           if (mesh_final == nullptr) {
@@ -858,7 +858,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
   /* Apply all remaining constructive and deforming modifiers. */
   bool have_non_onlydeform_modifiers_appled = false;
   for (; md; md = md->next, md_datamask = md_datamask->next) {
-    const ModifierTypeInfo *mti = BKE_modifier_get_info((ModifierType)md->type);
+    const ModifierTypeInfo *mti = KERNEL_modifier_get_info((ModifierType)md->type);
 
     if (!KERNEL_modifier_is_enabled(scene, md, required_mode)) {
       continue;
@@ -941,9 +941,9 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
           mesh_final = KERNEL_mesh_copy_for_eval(mesh_input, true);
           ASSERT_IS_VALID_MESH(mesh_final);
         }
-        BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
+        KERNEL_mesh_vert_coords_apply(mesh_final, deformed_verts);
       }
-      BKE_modifier_deform_verts(md, &mectx, mesh_final, deformed_verts, num_deformed_verts);
+      KERNEL_modifier_deform_verts(md, &mectx, mesh_final, deformed_verts, num_deformed_verts);
     }
     else {
       bool check_for_needs_mapping = false;
@@ -956,13 +956,13 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
         }
       }
       else {
-        mesh_final = BKE_mesh_copy_for_eval(mesh_input, true);
+        mesh_final = KERNEL_mesh_copy_for_eval(mesh_input, true);
         ASSERT_IS_VALID_MESH(mesh_final);
         check_for_needs_mapping = true;
       }
 
       if (deformed_verts) {
-        BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
+        KERNEL_mesh_vert_coords_apply(mesh_final, deformed_verts);
       }
 
       have_non_onlydeform_modifiers_appled = true;
@@ -1035,8 +1035,8 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
       if (mesh_next) {
         /* if the modifier returned a new mesh, release the old one */
         if (mesh_final != mesh_next) {
-          BLI_assert(mesh_final != mesh_input);
-          BKE_id_free(nullptr, mesh_final);
+          LIB_assert(mesh_final != mesh_input);
+          KERNEL_id_free(nullptr, mesh_final);
         }
         mesh_final = mesh_next;
 
@@ -1065,14 +1065,14 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
         CustomData_MeshMasks_update(&temp_cddata_masks, &nextmask);
         mesh_set_only_copy(mesh_orco, &temp_cddata_masks);
 
-        mesh_next = BKE_modifier_modify_mesh(md, &mectx_orco, mesh_orco);
+        mesh_next = KERNEL_modifier_modify_mesh(md, &mectx_orco, mesh_orco);
         ASSERT_IS_VALID_MESH(mesh_next);
 
         if (mesh_next) {
           /* if the modifier returned a new mesh, release the old one */
           if (mesh_orco != mesh_next) {
-            BLI_assert(mesh_orco != mesh_input);
-            BKE_id_free(nullptr, mesh_orco);
+            LIB_assert(mesh_orco != mesh_input);
+            KERNEL_id_free(nullptr, mesh_orco);
           }
 
           mesh_orco = mesh_next;
@@ -1091,14 +1091,14 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
         nextmask.pmask |= CD_MASK_ORIGINDEX;
         mesh_set_only_copy(mesh_orco_cloth, &nextmask);
 
-        mesh_next = BKE_modifier_modify_mesh(md, &mectx_orco, mesh_orco_cloth);
+        mesh_next = KERNEL_modifier_modify_mesh(md, &mectx_orco, mesh_orco_cloth);
         ASSERT_IS_VALID_MESH(mesh_next);
 
         if (mesh_next) {
           /* if the modifier returned a new mesh, release the old one */
           if (mesh_orco_cloth != mesh_next) {
-            BLI_assert(mesh_orco != mesh_input);
-            BKE_id_free(nullptr, mesh_orco_cloth);
+            LIB_assert(mesh_orco != mesh_input);
+            KERNEL_id_free(nullptr, mesh_orco_cloth);
           }
 
           mesh_orco_cloth = mesh_next;
@@ -1117,7 +1117,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
     isPrevDeform = (mti->type == eModifierTypeType_OnlyDeform);
 
     /* grab modifiers until index i */
-    if ((index != -1) && (BLI_findindex(&ob->modifiers, md) >= index)) {
+    if ((index != -1) && (LIB_findindex(&ob->modifiers, md) >= index)) {
       break;
     }
 
@@ -1126,10 +1126,10 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
     }
   }
 
-  BLI_linklist_free((LinkNode *)datamasks, nullptr);
+  LIB_linklist_free((LinkNode *)datamasks, nullptr);
 
   for (md = firstmd; md; md = md->next) {
-    BKE_modifier_free_temporary_data(md);
+    KERNEL_modifier_free_temporary_data(md);
   }
 
   /* Yay, we are done. If we have a Mesh and deformed vertices,
@@ -1140,11 +1140,11 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
       mesh_final = mesh_input;
     }
     else {
-      mesh_final = BKE_mesh_copy_for_eval(mesh_input, true);
+      mesh_final = KERNEL_mesh_copy_for_eval(mesh_input, true);
     }
   }
   if (deformed_verts) {
-    BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
+    KERNEL_mesh_vert_coords_apply(mesh_final, deformed_verts);
     MEM_freeN(deformed_verts);
     deformed_verts = nullptr;
   }
@@ -1167,10 +1167,10 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
   }
 
   if (mesh_orco) {
-    BKE_id_free(nullptr, mesh_orco);
+    KERNEL_id_free(nullptr, mesh_orco);
   }
   if (mesh_orco_cloth) {
-    BKE_id_free(nullptr, mesh_orco_cloth);
+    KERNEL_id_free(nullptr, mesh_orco_cloth);
   }
 
   /* Compute normals. */
@@ -1180,8 +1180,8 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
   else {
     Mesh_Runtime *runtime = &mesh_input->runtime;
     if (runtime->mesh_eval == nullptr) {
-      BLI_assert(runtime->eval_mutex != nullptr);
-      BLI_mutex_lock((ThreadMutex *)runtime->eval_mutex);
+      LIB_assert(runtime->eval_mutex != nullptr);
+      LIB_mutex_lock((ThreadMutex *)runtime->eval_mutex);
       if (runtime->mesh_eval == nullptr) {
         /* Isolate since computing normals is multithreaded and we are holding a lock. */
         blender::threading::isolate_task([&] {
@@ -1192,7 +1192,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
           runtime->mesh_eval = mesh_final;
         });
       }
-      BLI_mutex_unlock((ThreadMutex *)runtime->eval_mutex);
+      LIB_mutex_unlock((ThreadMutex *)runtime->eval_mutex);
     }
     mesh_final = runtime->mesh_eval;
   }
