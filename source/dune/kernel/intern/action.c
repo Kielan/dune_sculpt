@@ -14,52 +14,52 @@
 #include "_object_types.h"
 #include "_scene_types.h"
 
-#include "LI_blenlib.h"
-#include "LI_ghash.h"
-#include "LI_math.h"
-#include "LI_session_uuid.h"
-#include "LI_string_utils.h"
-#include "LI_utildefines.h"
+#include "LIB_blenlib.h"
+#include "LIB_ghash.h"
+#include "LIB_math.h"
+#include "LIB_session_uuid.h"
+#include "LIB_string_utils.h"
+#include "LIB_utildefines.h"
 
 #include "BLT_translation.h"
 
-#include "KE_action.h"
-#include "KE_anim_data.h"
-#include "KE_anim_visualization.h"
-#include "KE_animsys.h"
-#include "KE_armature.h"
-#include "KE_asset.h"
-#include "KE_constraint.h"
-#include "KE_deform.h"
-#include "KE_fcurve.h"
-#include "KE_icons.h"
-#include "KE_idprop.h"
-#include "KE_idtype.h"
-#include "KE_lib_id.h"
-#include "KE_lib_query.h"
-#include "KE_main.h"
-#include "KE_object.h"
+#include "KERNEL_action.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_anim_visualization.h"
+#include "KERNEL_animsys.h"
+#include "KERNEL_armature.h"
+#include "KERNEL_asset.h"
+#include "KERNEL_constraint.h"
+#include "KERNEL_deform.h"
+#include "KERNEL_fcurve.h"
+#include "KERNEL_icons.h"
+#include "KERNEL_idprop.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_object.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
 
 #include "BIK_api.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "API_access.h"
+#include "API_prototypes.h"
 
 #include "LOADER_read_write.h"
 
 #include "CLG_log.h"
 
-static CLG_LogRef LOG = {"bke.action"};
+static CLG_LogRef LOG = {"kernel.action"};
 
 /* *********************** NOTE ON POSE AND ACTION **********************
  *
  * - Pose is the local (object level) component of armature. The current
  *   object pose is saved in files, and (will be) is presorted for dependency
  * - Actions have fewer (or other) channels, and write data to a Pose
- * - Currently ob->pose data is controlled in BKE_pose_where_is only. The (recalc)
+ * - Currently ob->pose data is controlled in KERNEL_pose_where_is only. The (recalc)
  *   event system takes care of calling that
  * - The NLA system (here too) uses Poses as interpolation format for Actions
  * - Therefore we assume poses to be static, and duplicates of poses have channels in
@@ -75,11 +75,11 @@ static CLG_LogRef LOG = {"bke.action"};
  * Only copy internal data of Action ID from source
  * to already allocated/initialized destination.
  * You probably never want to use that directly,
- * use #BKE_id_copy or #BKE_id_copy_ex for typical needs.
+ * use #KERNEL_id_copy or #KERNEL_id_copy_ex for typical needs.
  *
  * WARNING! This function will not handle ID user count!
  *
- * param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
+ * param flag: Copying options (see KERNEL_lib_id.h's LIB_ID_COPY_... flags for more).
  */
 static void action_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, const int flag)
 {
@@ -90,8 +90,8 @@ static void action_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, 
   FCurve *fcurve_dst, *fcurve_src;
 
   /* Duplicate the lists of groups and markers. */
-  BLIB_duplicatelist(&action_dst->groups, &action_src->groups);
-  BLIB_duplicatelist(&action_dst->markers, &action_src->markers);
+  LIB_duplicatelist(&action_dst->groups, &action_src->groups);
+  LIB_duplicatelist(&action_dst->markers, &action_src->markers);
 
   /* Copy F-Curves, fixing up the links as we go. */
   LIB_listbase_clear(&action_dst->curves);
@@ -101,9 +101,9 @@ static void action_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, 
 
     /* XXX TODO: pass subdata flag?
      * But surprisingly does not seem to be doing any ID refcounting... */
-    fcurve_dst = BKE_fcurve_copy(fcurve_src);
+    fcurve_dst = KERNEL_fcurve_copy(fcurve_src);
 
-    BLI_addtail(&action_dst->curves, fcurve_dst);
+    LIB_addtail(&action_dst->curves, fcurve_dst);
 
     /* Fix group links (kindof bad list-in-list search, but this is the most reliable way). */
     for (group_dst = action_dst->groups.first, group_src = action_src->groups.first;
@@ -127,7 +127,7 @@ static void action_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, 
     action_dst->preview = NULL;
   }
   else {
-    BKE_previewimg_id_copy(&action_dst->id, &action_src->id);
+    KERNEL_previewimg_id_copy(&action_dst->id, &action_src->id);
   }
 }
 
@@ -138,15 +138,15 @@ static void action_free_data(struct ID *id)
   /* No animdata here. */
 
   /* Free F-Curves. */
-  BKE_fcurves_free(&action->curves);
+  KERNEL_fcurves_free(&action->curves);
 
   /* Free groups. */
-  BLI_freelistN(&action->groups);
+  LIB_freelistN(&action->groups);
 
   /* Free pose-references (aka local markers). */
-  BLI_freelistN(&action->markers);
+  LIB_freelistN(&action->markers);
 
-  BKE_previewimg_free(&action->preview);
+  KERNEL_previewimg_free(&action->preview);
 }
 
 static void action_foreach_id(ID *id, LibraryForeachIDData *data)
@@ -154,113 +154,113 @@ static void action_foreach_id(ID *id, LibraryForeachIDData *data)
   bAction *act = (bAction *)id;
 
   LISTBASE_FOREACH (FCurve *, fcu, &act->curves) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, BKE_fcurve_foreach_id(fcu, data));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, KERNEL_fcurve_foreach_id(fcu, data));
   }
 
   LISTBASE_FOREACH (TimeMarker *, marker, &act->markers) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, marker->camera, IDWALK_CB_NOP);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, marker->camera, IDWALK_CB_NOP);
   }
 }
 
-static void action_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void action_blend_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   bAction *act = (bAction *)id;
 
-  BLO_write_id_struct(writer, bAction, id_address, &act->id);
-  BKE_id_blend_write(writer, &act->id);
+  LOADER_write_id_struct(writer, bAction, id_address, &act->id);
+  KERNEL_id_blend_write(writer, &act->id);
 
-  BKE_fcurve_blend_write(writer, &act->curves);
+  KERNEL_fcurve_blend_write(writer, &act->curves);
 
   LISTBASE_FOREACH (bActionGroup *, grp, &act->groups) {
-    BLO_write_struct(writer, bActionGroup, grp);
+    LOADER_write_struct(writer, bActionGroup, grp);
   }
 
   LISTBASE_FOREACH (TimeMarker *, marker, &act->markers) {
-    BLO_write_struct(writer, TimeMarker, marker);
+    LOADER_write_struct(writer, TimeMarker, marker);
   }
 
-  BKE_previewimg_blend_write(writer, act->preview);
+  KERNEL_previewimg_blend_write(writer, act->preview);
 }
 
-static void action_blend_read_data(BlendDataReader *reader, ID *id)
+static void action_dune_read_data(DuneDataReader *reader, ID *id)
 {
   bAction *act = (bAction *)id;
 
-  BLO_read_list(reader, &act->curves);
-  BLO_read_list(reader, &act->chanbase); /* XXX deprecated - old animation system */
-  BLO_read_list(reader, &act->groups);
-  BLO_read_list(reader, &act->markers);
+  LOADER_read_list(reader, &act->curves);
+  LOADER_read_list(reader, &act->chanbase); /* XXX deprecated - old animation system */
+  LOADER_read_list(reader, &act->groups);
+  LOADER_read_list(reader, &act->markers);
 
   /* XXX deprecated - old animation system <<< */
   LISTBASE_FOREACH (bActionChannel *, achan, &act->chanbase) {
-    BLO_read_data_address(reader, &achan->grp);
+    LO_read_data_address(reader, &achan->grp);
 
-    BLO_read_list(reader, &achan->constraintChannels);
+    LO_read_list(reader, &achan->constraintChannels);
   }
   /* >>> XXX deprecated - old animation system */
 
-  BKE_fcurve_blend_read_data(reader, &act->curves);
+  KE_fcurve_blend_read_data(reader, &act->curves);
 
   LISTBASE_FOREACH (bActionGroup *, agrp, &act->groups) {
-    BLO_read_data_address(reader, &agrp->channels.first);
-    BLO_read_data_address(reader, &agrp->channels.last);
+    LO_read_data_address(reader, &agrp->channels.first);
+    LO_read_data_address(reader, &agrp->channels.last);
   }
 
-  BLO_read_data_address(reader, &act->preview);
-  BKE_previewimg_blend_read(reader, act->preview);
+  LO_read_data_address(reader, &act->preview);
+  KE_previewimg_blend_read(reader, act->preview);
 }
 
 static void blend_read_lib_constraint_channels(BlendLibReader *reader, ID *id, ListBase *chanbase)
 {
   LISTBASE_FOREACH (bConstraintChannel *, chan, chanbase) {
-    BLO_read_id_address(reader, id->lib, &chan->ipo);
+    LO_read_id_address(reader, id->lib, &chan->ipo);
   }
 }
 
-static void action_blend_read_lib(BlendLibReader *reader, ID *id)
+static void action_blend_read_lib(DuneLibReader *reader, ID *id)
 {
   bAction *act = (bAction *)id;
 
   /* XXX deprecated - old animation system <<< */
   LISTBASE_FOREACH (bActionChannel *, chan, &act->chanbase) {
-    BLO_read_id_address(reader, act->id.lib, &chan->ipo);
-    blend_read_lib_constraint_channels(reader, &act->id, &chan->constraintChannels);
+    LO_read_id_address(reader, act->id.lib, &chan->ipo);
+    dune_read_lib_constraint_channels(reader, &act->id, &chan->constraintChannels);
   }
   /* >>> XXX deprecated - old animation system */
 
-  BKE_fcurve_blend_read_lib(reader, &act->id, &act->curves);
+  KE_fcurve_blend_read_lib(reader, &act->id, &act->curves);
 
   LISTBASE_FOREACH (TimeMarker *, marker, &act->markers) {
     if (marker->camera) {
-      BLO_read_id_address(reader, act->id.lib, &marker->camera);
+      LO_read_id_address(reader, act->id.lib, &marker->camera);
     }
   }
 }
 
-static void blend_read_expand_constraint_channels(BlendExpander *expander, ListBase *chanbase)
+static void dune_read_expand_constraint_channels(DuneExpander *expander, ListBase *chanbase)
 {
   LISTBASE_FOREACH (bConstraintChannel *, chan, chanbase) {
-    BLO_expand(expander, chan->ipo);
+    LO_expand(expander, chan->ipo);
   }
 }
 
-static void action_blend_read_expand(BlendExpander *expander, ID *id)
+static void action_blend_read_expand(DuneExpander *expander, ID *id)
 {
   bAction *act = (bAction *)id;
 
   /* XXX deprecated - old animation system -------------- */
   LISTBASE_FOREACH (bActionChannel *, chan, &act->chanbase) {
-    BLO_expand(expander, chan->ipo);
-    blend_read_expand_constraint_channels(expander, &chan->constraintChannels);
+    LO_expand(expander, chan->ipo);
+    dune_read_expand_constraint_channels(expander, &chan->constraintChannels);
   }
   /* --------------------------------------------------- */
 
   /* F-Curves in Action */
-  BKE_fcurve_blend_read_expand(expander, &act->curves);
+  KE_fcurve_blend_read_expand(expander, &act->curves);
 
   LISTBASE_FOREACH (TimeMarker *, marker, &act->markers) {
     if (marker->camera) {
-      BLO_expand(expander, marker->camera);
+      LO_expand(expander, marker->camera);
     }
   }
 }
@@ -279,10 +279,10 @@ static IDProperty *action_asset_type_property(const bAction *action)
 static void action_asset_pre_save(void *asset_ptr, struct AssetMetaData *asset_data)
 {
   bAction *action = (bAction *)asset_ptr;
-  BLI_assert(GS(action->id.name) == ID_AC);
+  LI_assert(GS(action->id.name) == ID_AC);
 
   IDProperty *action_type = action_asset_type_property(action);
-  BKE_asset_metadata_idprop_ensure(asset_data, action_type);
+  KE_asset_metadata_idprop_ensure(asset_data, action_type);
 }
 
 static AssetTypeInfo AssetType_AC = {
@@ -309,23 +309,23 @@ IDTypeInfo IDType_ID_AC = {
     .foreach_path = NULL,
     .owner_get = NULL,
 
-    .blend_write = action_blend_write,
-    .blend_read_data = action_blend_read_data,
-    .blend_read_lib = action_blend_read_lib,
-    .blend_read_expand = action_blend_read_expand,
+    .dune_write = action_dune_write,
+    .dune_read_data = action_dune_read_data,
+    .dune_read_lib = action_dune_read_lib,
+    .dune_read_expand = action_dune_read_expand,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
 /* ***************** Library data level operations on action ************** */
 
-bAction *BKE_action_add(Main *bmain, const char name[])
+bAction *KE_action_add(Main *bmain, const char name[])
 {
   bAction *act;
 
-  act = BKE_id_new(bmain, ID_AC, name);
+  act = KE_id_new(bmain, ID_AC, name);
 
   return act;
 }
@@ -413,11 +413,11 @@ bActionGroup *action_groups_add_new(bAction *act, const char name[])
 
   /* make it selected, with default name */
   agrp->flag = AGRP_SELECTED;
-  BLI_strncpy(agrp->name, name[0] ? name : DATA_("Group"), sizeof(agrp->name));
+  LIB_strncpy(agrp->name, name[0] ? name : DATA_("Group"), sizeof(agrp->name));
 
   /* add to action, and validate */
-  BLI_addtail(&act->groups, agrp);
-  BLI_uniquename(
+  LIB_addtail(&act->groups, agrp);
+  LIB_uniquename(
       &act->groups, agrp, DATA_("Group"), '.', offsetof(bActionGroup, name), sizeof(agrp->name));
 
   /* return the new group */
@@ -432,7 +432,7 @@ void action_groups_add_channel(bAction *act, bActionGroup *agrp, FCurve *fcurve)
   }
 
   /* if no channels anywhere, just add to two lists at the same time */
-  if (BLI_listbase_is_empty(&act->curves)) {
+  if (LIB_listbase_is_empty(&act->curves)) {
     fcurve->next = fcurve->prev = NULL;
 
     agrp->channels.first = agrp->channels.last = fcurve;
@@ -455,7 +455,7 @@ void action_groups_add_channel(bAction *act, bActionGroup *agrp, FCurve *fcurve)
      * which means that it should be able to fit in with the rest of the
      * list seamlessly
      */
-    BLI_insertlinkafter(&agrp->channels, agrp->channels.last, fcurve);
+    LIB_insertlinkafter(&agrp->channels, agrp->channels.last, fcurve);
   }
 
   /* otherwise, need to find the nearest F-Curve in group before/after current to link with */
@@ -475,7 +475,7 @@ void action_groups_add_channel(bAction *act, bActionGroup *agrp, FCurve *fcurve)
        */
       if (grp->channels.last) {
         /* once we've added, break here since we don't need to search any further... */
-        BLI_insertlinkafter(&act->curves, grp->channels.last, fcurve);
+        LIB_insertlinkafter(&act->curves, grp->channels.last, fcurve);
         break;
       }
     }
@@ -484,7 +484,7 @@ void action_groups_add_channel(bAction *act, bActionGroup *agrp, FCurve *fcurve)
      * first since group is (effectively) the first group. Thus, the existing first F-Curve becomes
      * the second in the chain, etc. */
     if (grp == NULL) {
-      BLI_insertlinkbefore(&act->curves, act->curves.first, fcurve);
+      LIB_insertlinkbefore(&act->curves, act->curves.first, fcurve);
     }
   }
 
@@ -492,7 +492,7 @@ void action_groups_add_channel(bAction *act, bActionGroup *agrp, FCurve *fcurve)
   fcurve->grp = agrp;
 }
 
-void BKE_action_groups_reconstruct(bAction *act)
+void KERNEL_action_groups_reconstruct(bAction *act)
 {
   /* Sanity check. */
   if (ELEM(NULL, act, act->groups.first)) {
@@ -502,7 +502,7 @@ void BKE_action_groups_reconstruct(bAction *act)
   /* Clear out all group channels. Channels that are actually in use are
    * reconstructed below; this step is necessary to clear out unused groups. */
   LISTBASE_FOREACH (bActionGroup *, group, &act->groups) {
-    BLI_listbase_clear(&group->channels);
+    LIB_listbase_clear(&group->channels);
   }
 
   /* Sort the channels into the group lists, destroying the act->curves list. */
@@ -510,25 +510,25 @@ void BKE_action_groups_reconstruct(bAction *act)
 
   LISTBASE_FOREACH_MUTABLE (FCurve *, fcurve, &act->curves) {
     if (fcurve->grp) {
-      BLI_assert(BLI_findindex(&act->groups, fcurve->grp) >= 0);
+      LIB_assert(LIB_findindex(&act->groups, fcurve->grp) >= 0);
 
-      BLI_addtail(&fcurve->grp->channels, fcurve);
+      LIB_addtail(&fcurve->grp->channels, fcurve);
     }
     else {
-      BLI_addtail(&ungrouped, fcurve);
+      LIB_addtail(&ungrouped, fcurve);
     }
   }
 
   /* Recombine into the main list. */
-  BLI_listbase_clear(&act->curves);
+  LIB_listbase_clear(&act->curves);
 
   LISTBASE_FOREACH (bActionGroup *, group, &act->groups) {
     /* Copy the list header to preserve the pointers in the group. */
     ListBase tmp = group->channels;
-    BLI_movelisttolist(&act->curves, &tmp);
+    LIB_movelisttolist(&act->curves, &tmp);
   }
 
-  BLI_movelisttolist(&act->curves, &ungrouped);
+  LIB_movelisttolist(&act->curves, &ungrouped);
 }
 
 void action_groups_remove_channel(bAction *act, FCurve *fcu)
@@ -544,7 +544,7 @@ void action_groups_remove_channel(bAction *act, FCurve *fcu)
 
     if (agrp->channels.first == agrp->channels.last) {
       if (agrp->channels.first == fcu) {
-        BLI_listbase_clear(&agrp->channels);
+        LIB_listbase_clear(&agrp->channels);
       }
     }
     else if (agrp->channels.first == fcu) {
@@ -568,10 +568,10 @@ void action_groups_remove_channel(bAction *act, FCurve *fcu)
   }
 
   /* now just remove from list */
-  BLI_remlink(&act->curves, fcu);
+  LIB_remlink(&act->curves, fcu);
 }
 
-bActionGroup *BKE_action_group_find_name(bAction *act, const char name[])
+bActionGroup *KERNEL_action_group_find_name(bAction *act, const char name[])
 {
   /* sanity checks */
   if (ELEM(NULL, act, act->groups.first, name) || (name[0] == 0)) {
