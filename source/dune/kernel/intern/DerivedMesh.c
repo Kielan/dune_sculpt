@@ -14,37 +14,37 @@
 
 #include "LIB_array.h"
 #include "LIB_bitmap.h"
-#include "LI_blenlib.h"
-#include "LI_linklist.h"
-#include "LI_math.h"
-#include "LI_math_vec_types.hh"
-#include "LI_task.h"
-#include "LI_task.hh"
-#include "LI_utildefines.h"
-#include "LI_vector.hh"
+#include "LIB_blenlib.h"
+#include "LIB_linklist.h"
+#include "LIB_math.h"
+#include "LIB_math_vec_types.hh"
+#include "LIB_task.h"
+#include "LIB_task.hh"
+#include "LIB_utildefines.h"
+#include "LIB_vector.hh"
 
-#include "KE_DerivedMesh.h"
-#include "KE_bvhutils.h"
-#include "KE_colorband.h"
-#include "KE_deform.h"
-#include "KE_editmesh.h"
-#include "KE_geometry_set.hh"
-#include "KE_geometry_set_instances.hh"
-#include "KE_key.h"
-#include "KE_layer.h"
-#include "KE_lib_id.h"
-#include "KE_material.h"
-#include "KE_mesh.h"
-#include "KE_mesh_iterators.h"
-#include "KE_mesh_mapping.h"
-#include "KE_mesh_runtime.h"
-#include "KE_mesh_tangent.h"
-#include "KE_mesh_wrapper.h"
-#include "KE_modifier.h"
-#include "KE_multires.h"
-#include "KE_object.h"
-#include "KE_object_deform.h"
-#include "KE_paint.h"
+#include "KERNEL_DerivedMesh.h"
+#include "KERNEL_bvhutils.h"
+#include "KERNEL_colorband.h"
+#include "KERNEL_deform.h"
+#include "KERNEL_editmesh.h"
+#include "KERNEL_geometry_set.hh"
+#include "KERNEL_geometry_set_instances.hh"
+#include "KERNEL_key.h"
+#include "KERNEL_layer.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_material.h"
+#include "KERNEL_mesh.h"
+#include "KERNEL_mesh_iterators.h"
+#include "KERNEL_mesh_mapping.h"
+#include "KERNEL_mesh_runtime.h"
+#include "KERNEL_mesh_tangent.h"
+#include "KERNEL_mesh_wrapper.h"
+#include "KERNEL_modifier.h"
+#include "KERNEL_multires.h"
+#include "KERNEL_object.h"
+#include "KERNEL_object_deform.h"
+#include "KERNEL_paint.h"
 
 #include "LIB_sys_types.h" /* for intptr_t support */
 
@@ -626,7 +626,7 @@ static void mesh_calc_modifier_final_normals(const Mesh *mesh_input,
      * note that this isn't a problem for subsurf (only quads) or editmode
      * which deals with drawing differently. */
     if (!do_loop_normals) {
-      BKE_mesh_ensure_normals_for_display(mesh_final);
+      KERNEL_mesh_ensure_normals_for_display(mesh_final);
     }
   }
 
@@ -647,19 +647,19 @@ static void mesh_calc_finalize(const Mesh *mesh_input, Mesh *mesh_eval)
 {
   /* Make sure the name is the same. This is because mesh allocation from template does not
    * take care of naming. */
-  BLI_strncpy(mesh_eval->id.name, mesh_input->id.name, sizeof(mesh_eval->id.name));
+  LIB_strncpy(mesh_eval->id.name, mesh_input->id.name, sizeof(mesh_eval->id.name));
   /* Make evaluated mesh to share same edit mesh pointer as original and copied meshes. */
   mesh_eval->edit_mesh = mesh_input->edit_mesh;
 }
 
-void BKE_mesh_wrapper_deferred_finalize(Mesh *me_eval,
+void KERNEL_mesh_wrapper_deferred_finalize(Mesh *me_eval,
                                         const CustomData_MeshMasks *cd_mask_finalize)
 {
   if (me_eval->runtime.wrapper_type_finalize & (1 << ME_WRAPPER_TYPE_BMESH)) {
     editbmesh_calc_modifier_final_normals(me_eval, cd_mask_finalize);
     me_eval->runtime.wrapper_type_finalize &= ~(1 << ME_WRAPPER_TYPE_BMESH);
   }
-  BLI_assert(me_eval->runtime.wrapper_type_finalize == 0);
+  LIB_assert(me_eval->runtime.wrapper_type_finalize == 0);
 }
 
 /**
@@ -676,14 +676,14 @@ static Mesh *modifier_modify_mesh_and_geometry_set(ModifierData *md,
                                                    GeometrySet &geometry_set)
 {
   Mesh *mesh_output = nullptr;
-  const ModifierTypeInfo *mti = BKE_modifier_get_info((ModifierType)md->type);
+  const ModifierTypeInfo *mti = KERNEL_modifier_get_info((ModifierType)md->type);
   if (mti->modifyGeometrySet == nullptr) {
-    mesh_output = BKE_modifier_modify_mesh(md, &mectx, input_mesh);
+    mesh_output = KERNEL_modifier_modify_mesh(md, &mectx, input_mesh);
   }
   else {
     /* For performance reasons, this should be called by the modifier and/or nodes themselves at
      * some point. */
-    BKE_mesh_wrapper_ensure_mdata(input_mesh);
+    KERNEL_mesh_wrapper_ensure_mdata(input_mesh);
 
     /* Adds a new mesh component to the geometry set based on the #input_mesh. */
     MeshComponent &mesh_component = geometry_set.get_component_for_write<MeshComponent>();
@@ -708,7 +708,7 @@ static Mesh *modifier_modify_mesh_and_geometry_set(ModifierData *md,
     /* Return an empty mesh instead of null. */
     if (mesh_output == nullptr) {
       mesh_output = BKE_mesh_new_nomain(0, 0, 0, 0, 0);
-      BKE_mesh_copy_parameters_for_eval(mesh_output, input_mesh);
+      KERNEL_mesh_copy_parameters_for_eval(mesh_output, input_mesh);
     }
   }
 
@@ -733,13 +733,13 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
    * constructive modifier is executed, or a deform modifier needs normals
    * or certain data layers. */
   Mesh *mesh_input = (Mesh *)ob->data;
-  BKE_mesh_assert_normals_dirty_or_calculated(mesh_input);
+  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh_input);
   Mesh *mesh_final = nullptr;
   Mesh *mesh_deform = nullptr;
   /* This geometry set contains the non-mesh data that might be generated by modifiers. */
   GeometrySet geometry_set_final;
 
-  BLI_assert((mesh_input->id.tag & LIB_TAG_COPIED_ON_WRITE_EVAL_RESULT) == 0);
+  LIB_assert((mesh_input->id.tag & LIB_TAG_COPIED_ON_WRITE_EVAL_RESULT) == 0);
 
   /* Deformed vertex locations array. Deform only modifier need this type of
    * float array rather than MVert*. Tracked along with mesh_final as an
@@ -790,7 +790,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
     /* XXX Currently, DPaint modifier just ignores this.
      *     Needs a stupid hack...
      *     The whole "modifier preview" thing has to be (re?)designed, anyway! */
-    previewmd = BKE_modifier_get_last_preview(scene, md, required_mode);
+    previewmd = KERNEL_modifier_get_last_preview(scene, md, required_mode);
   }
 
   /* Compute accumulated datamasks needed by each modifier. It helps to do
@@ -798,14 +798,14 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
    * an armature modifier, but not through a following subsurf modifier where
    * subdividing them is expensive. */
   CustomData_MeshMasks final_datamask = *dataMask;
-  CDMaskLink *datamasks = BKE_modifier_calc_data_masks(
+  CDMaskLink *datamasks = KERNEL_modifier_calc_data_masks(
       scene, ob, md, &final_datamask, required_mode, previewmd, &previewmask);
   CDMaskLink *md_datamask = datamasks;
   /* XXX Always copying POLYINDEX, else tessellated data are no more valid! */
   CustomData_MeshMasks append_mask = CD_MASK_BAREMESH_ORIGINDEX;
 
   /* Clear errors before evaluation. */
-  BKE_modifiers_clear_errors(ob);
+  KERNEL_modifiers_clear_errors(ob);
 
   /* Apply all leading deform modifiers. */
   if (use_deform) {
@@ -822,13 +822,13 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
         }
         else if (isPrevDeform && mti->dependsOnNormals && mti->dependsOnNormals(md)) {
           if (mesh_final == nullptr) {
-            mesh_final = BKE_mesh_copy_for_eval(mesh_input, true);
+            mesh_final = KERNEL_mesh_copy_for_eval(mesh_input, true);
             ASSERT_IS_VALID_MESH(mesh_final);
           }
-          BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
+          KERNEL_mesh_vert_coords_apply(mesh_final, deformed_verts);
         }
 
-        BKE_modifier_deform_verts(md, &mectx, mesh_final, deformed_verts, num_deformed_verts);
+        KERNEL_modifier_deform_verts(md, &mectx, mesh_final, deformed_verts, num_deformed_verts);
 
         isPrevDeform = true;
       }
@@ -837,7 +837,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
       }
 
       /* grab modifiers until index i */
-      if ((index != -1) && (BLI_findindex(&ob->modifiers, md) >= index)) {
+      if ((index != -1) && (LIB_findindex(&ob->modifiers, md) >= index)) {
         md = nullptr;
         break;
       }
@@ -847,10 +847,10 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
      * places that wish to use the original mesh but with deformed
      * coordinates (like vertex paint). */
     if (r_deform) {
-      mesh_deform = BKE_mesh_copy_for_eval(mesh_input, true);
+      mesh_deform = KERNEL_mesh_copy_for_eval(mesh_input, true);
 
       if (deformed_verts) {
-        BKE_mesh_vert_coords_apply(mesh_deform, deformed_verts);
+        KERNEL_mesh_vert_coords_apply(mesh_deform, deformed_verts);
       }
     }
   }
@@ -860,7 +860,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
   for (; md; md = md->next, md_datamask = md_datamask->next) {
     const ModifierTypeInfo *mti = BKE_modifier_get_info((ModifierType)md->type);
 
-    if (!BKE_modifier_is_enabled(scene, md, required_mode)) {
+    if (!KERNEL_modifier_is_enabled(scene, md, required_mode)) {
       continue;
     }
 
@@ -870,7 +870,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
 
     if ((mti->flags & eModifierTypeFlag_RequiresOriginalData) &&
         have_non_onlydeform_modifiers_appled) {
-      BKE_modifier_set_error(ob, md, "Modifier requires original data, bad stack position");
+      KERNEL_modifier_set_error(ob, md, "Modifier requires original data, bad stack position");
       continue;
     }
 
@@ -896,16 +896,16 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
 
       if (unsupported) {
         if (sculpt_dyntopo) {
-          BKE_modifier_set_error(ob, md, "Not supported in dyntopo");
+          KERNEL_modifier_set_error(ob, md, "Not supported in dyntopo");
         }
         else {
-          BKE_modifier_set_error(ob, md, "Not supported in sculpt mode");
+          KERNEL_modifier_set_error(ob, md, "Not supported in sculpt mode");
         }
         continue;
       }
     }
 
-    if (need_mapping && !BKE_modifier_supports_mapping(md)) {
+    if (need_mapping && !KERNEL_modifier_supports_mapping(md)) {
       continue;
     }
 
@@ -928,17 +928,17 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
           /* Deforming a mesh, read the vertex locations
            * out of the mesh and deform them. Once done with this
            * run of deformers verts will be written back. */
-          deformed_verts = BKE_mesh_vert_coords_alloc(mesh_final, &num_deformed_verts);
+          deformed_verts = KERNEL_mesh_vert_coords_alloc(mesh_final, &num_deformed_verts);
         }
         else {
-          deformed_verts = BKE_mesh_vert_coords_alloc(mesh_input, &num_deformed_verts);
+          deformed_verts = KERNEL_mesh_vert_coords_alloc(mesh_input, &num_deformed_verts);
         }
       }
       /* if this is not the last modifier in the stack then recalculate the normals
        * to avoid giving bogus normals to the next modifier see: T23673. */
       else if (isPrevDeform && mti->dependsOnNormals && mti->dependsOnNormals(md)) {
         if (mesh_final == nullptr) {
-          mesh_final = BKE_mesh_copy_for_eval(mesh_input, true);
+          mesh_final = KERNEL_mesh_copy_for_eval(mesh_input, true);
           ASSERT_IS_VALID_MESH(mesh_final);
         }
         BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
