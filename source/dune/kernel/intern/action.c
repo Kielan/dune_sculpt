@@ -8,37 +8,37 @@
 /* Allow using deprecated functionality for .blend file I/O. */
 #define DNA_DEPRECATED_ALLOW
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "_anim_types.h"
+#include "_armature_types.h"
+#include "_constraint_types.h"
+#include "_object_types.h"
+#include "_scene_types.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_math.h"
-#include "BLI_session_uuid.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "LI_blenlib.h"
+#include "LI_ghash.h"
+#include "LI_math.h"
+#include "LI_session_uuid.h"
+#include "LI_string_utils.h"
+#include "LI_utildefines.h"
 
 #include "BLT_translation.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_anim_visualization.h"
-#include "BKE_animsys.h"
-#include "BKE_armature.h"
-#include "BKE_asset.h"
-#include "BKE_constraint.h"
-#include "BKE_deform.h"
-#include "BKE_fcurve.h"
-#include "BKE_icons.h"
-#include "BKE_idprop.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_object.h"
+#include "KE_action.h"
+#include "KE_anim_data.h"
+#include "KE_anim_visualization.h"
+#include "KE_animsys.h"
+#include "KE_armature.h"
+#include "KE_asset.h"
+#include "KE_constraint.h"
+#include "KE_deform.h"
+#include "KE_fcurve.h"
+#include "KE_icons.h"
+#include "KE_idprop.h"
+#include "KE_idtype.h"
+#include "KE_lib_id.h"
+#include "KE_lib_query.h"
+#include "KE_main.h"
+#include "KE_object.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
@@ -48,7 +48,7 @@
 #include "RNA_access.h"
 #include "RNA_prototypes.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #include "CLG_log.h"
 
@@ -79,7 +79,7 @@ static CLG_LogRef LOG = {"bke.action"};
  *
  * WARNING! This function will not handle ID user count!
  *
- * \param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
+ * param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
  */
 static void action_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, const int flag)
 {
@@ -90,11 +90,11 @@ static void action_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, 
   FCurve *fcurve_dst, *fcurve_src;
 
   /* Duplicate the lists of groups and markers. */
-  BLI_duplicatelist(&action_dst->groups, &action_src->groups);
-  BLI_duplicatelist(&action_dst->markers, &action_src->markers);
+  BLIB_duplicatelist(&action_dst->groups, &action_src->groups);
+  BLIB_duplicatelist(&action_dst->markers, &action_src->markers);
 
   /* Copy F-Curves, fixing up the links as we go. */
-  BLI_listbase_clear(&action_dst->curves);
+  LIB_listbase_clear(&action_dst->curves);
 
   for (fcurve_src = action_src->curves.first; fcurve_src; fcurve_src = fcurve_src->next) {
     /* Duplicate F-Curve. */
