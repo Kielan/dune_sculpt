@@ -579,7 +579,7 @@ bActionGroup *KERNEL_action_group_find_name(bAction *act, const char name[])
   }
 
   /* do string comparisons */
-  return BLI_findstring(&act->groups, name, offsetof(bActionGroup, name));
+  return LIB_findstring(&act->groups, name, offsetof(bActionGroup, name));
 }
 
 void action_groups_clear_tempflags(bAction *act)
@@ -599,25 +599,25 @@ void action_groups_clear_tempflags(bAction *act)
 
 /* *************** Pose channels *************** */
 
-void BKE_pose_channel_session_uuid_generate(bPoseChannel *pchan)
+void KERNEL_pose_channel_session_uuid_generate(bPoseChannel *pchan)
 {
   pchan->runtime.session_uuid = BLI_session_uuid_generate();
 }
 
-bPoseChannel *BKE_pose_channel_find_name(const bPose *pose, const char *name)
+bPoseChannel *KERNEL_pose_channel_find_name(const bPose *pose, const char *name)
 {
   if (ELEM(NULL, pose, name) || (name[0] == '\0')) {
     return NULL;
   }
 
   if (pose->chanhash) {
-    return BLI_ghash_lookup(pose->chanhash, (const void *)name);
+    return LIB_ghash_lookup(pose->chanhash, (const void *)name);
   }
 
-  return BLI_findstring(&pose->chanbase, name, offsetof(bPoseChannel, name));
+  return LIB_findstring(&pose->chanbase, name, offsetof(bPoseChannel, name));
 }
 
-bPoseChannel *BKE_pose_channel_ensure(bPose *pose, const char *name)
+bPoseChannel *KERNEL_pose_channel_ensure(bPose *pose, const char *name)
 {
   bPoseChannel *chan;
 
@@ -626,7 +626,7 @@ bPoseChannel *BKE_pose_channel_ensure(bPose *pose, const char *name)
   }
 
   /* See if this channel exists */
-  chan = BKE_pose_channel_find_name(pose, name);
+  chan = KERNEL_pose_channel_find_name(pose, name);
   if (chan) {
     return chan;
   }
@@ -634,7 +634,7 @@ bPoseChannel *BKE_pose_channel_ensure(bPose *pose, const char *name)
   /* If not, create it and add it */
   chan = MEM_callocN(sizeof(bPoseChannel), "verifyPoseChannel");
 
-  BKE_pose_channel_session_uuid_generate(chan);
+  KERNEL_pose_channel_session_uuid_generate(chan);
 
   BLI_strncpy(chan->name, name, sizeof(chan->name));
 
@@ -658,21 +658,21 @@ bPoseChannel *BKE_pose_channel_ensure(bPose *pose, const char *name)
 
   chan->protectflag = OB_LOCK_ROT4D; /* lock by components by default */
 
-  BLI_addtail(&pose->chanbase, chan);
+  LIB_addtail(&pose->chanbase, chan);
   if (pose->chanhash) {
-    BLI_ghash_insert(pose->chanhash, chan->name, chan);
+    LIB_ghash_insert(pose->chanhash, chan->name, chan);
   }
 
   return chan;
 }
 
 #ifndef NDEBUG
-bool BKE_pose_channels_is_valid(const bPose *pose)
+bool KERNEL_pose_channels_is_valid(const bPose *pose)
 {
   if (pose->chanhash) {
     bPoseChannel *pchan;
     for (pchan = pose->chanbase.first; pchan; pchan = pchan->next) {
-      if (BLI_ghash_lookup(pose->chanhash, pchan->name) != pchan) {
+      if (LIB_ghash_lookup(pose->chanhash, pchan->name) != pchan) {
         return false;
       }
     }
@@ -683,7 +683,7 @@ bool BKE_pose_channels_is_valid(const bPose *pose)
 
 #endif
 
-bool BKE_pose_is_layer_visible(const bArmature *arm, const bPoseChannel *pchan)
+bool KERNEL_pose_is_layer_visible(const bArmature *arm, const bPoseChannel *pchan)
 {
   return (pchan->bone->layer & arm->layer);
 }
@@ -709,12 +709,12 @@ bPoseChannel *BKE_pose_channel_active(Object *ob, const bool check_arm_layer)
   return NULL;
 }
 
-bPoseChannel *BKE_pose_channel_active_if_layer_visible(struct Object *ob)
+bPoseChannel *KERNEL_pose_channel_active_if_layer_visible(struct Object *ob)
 {
-  return BKE_pose_channel_active(ob, true);
+  return KERNEL_pose_channel_active(ob, true);
 }
 
-bPoseChannel *BKE_pose_channel_active_or_first_selected(struct Object *ob)
+bPoseChannel *KERNEL_pose_channel_active_or_first_selected(struct Object *ob)
 {
   bArmature *arm = (ob) ? ob->data : NULL;
 
@@ -722,7 +722,7 @@ bPoseChannel *BKE_pose_channel_active_or_first_selected(struct Object *ob)
     return NULL;
   }
 
-  bPoseChannel *pchan = BKE_pose_channel_active_if_layer_visible(ob);
+  bPoseChannel *pchan = KERNEL_pose_channel_active_if_layer_visible(ob);
   if (pchan && (pchan->bone->flag & BONE_SELECTED) && PBONE_VISIBLE(arm, pchan->bone)) {
     return pchan;
   }
@@ -737,20 +737,20 @@ bPoseChannel *BKE_pose_channel_active_or_first_selected(struct Object *ob)
   return NULL;
 }
 
-bPoseChannel *BKE_pose_channel_get_mirrored(const bPose *pose, const char *name)
+bPoseChannel *KERNEL_pose_channel_get_mirrored(const bPose *pose, const char *name)
 {
   char name_flip[MAXBONENAME];
 
-  BLI_string_flip_side_name(name_flip, name, false, sizeof(name_flip));
+  LIB_string_flip_side_name(name_flip, name, false, sizeof(name_flip));
 
   if (!STREQ(name_flip, name)) {
-    return BKE_pose_channel_find_name(pose, name_flip);
+    return KERNEL_pose_channel_find_name(pose, name_flip);
   }
 
   return NULL;
 }
 
-const char *BKE_pose_ikparam_get_name(bPose *pose)
+const char *KERNEL_pose_ikparam_get_name(bPose *pose)
 {
   if (pose) {
     switch (pose->iksolver) {
@@ -763,7 +763,7 @@ const char *BKE_pose_ikparam_get_name(bPose *pose)
   return NULL;
 }
 
-void BKE_pose_copy_data_ex(bPose **dst,
+void KERNEL_pose_copy_data_ex(bPose **dst,
                            const bPose *src,
                            const int flag,
                            const bool copy_constraints)
@@ -779,15 +779,15 @@ void BKE_pose_copy_data_ex(bPose **dst,
 
   outPose = MEM_callocN(sizeof(bPose), "pose");
 
-  BLI_duplicatelist(&outPose->chanbase, &src->chanbase);
+  LIB_duplicatelist(&outPose->chanbase, &src->chanbase);
 
   /* Rebuild ghash here too, so that name lookups below won't be too bad...
    * BUT this will have the penalty that the ghash will be built twice
-   * if BKE_pose_rebuild() gets called after this...
+   * if KERNEL_pose_rebuild() gets called after this...
    */
   if (outPose->chanbase.first != outPose->chanbase.last) {
     outPose->chanhash = NULL;
-    BKE_pose_channels_hash_ensure(outPose);
+    KERNEL_pose_channels_hash_ensure(outPose);
   }
 
   outPose->iksolver = src->iksolver;
@@ -801,23 +801,23 @@ void BKE_pose_copy_data_ex(bPose **dst,
     }
 
     if ((flag & LIB_ID_CREATE_NO_MAIN) == 0) {
-      BKE_pose_channel_session_uuid_generate(pchan);
+      KERNEL_pose_channel_session_uuid_generate(pchan);
     }
 
     /* warning, O(n2) here, if done without the hash, but these are rarely used features. */
     if (pchan->custom_tx) {
-      pchan->custom_tx = BKE_pose_channel_find_name(outPose, pchan->custom_tx->name);
+      pchan->custom_tx = KERNEL_pose_channel_find_name(outPose, pchan->custom_tx->name);
     }
     if (pchan->bbone_prev) {
-      pchan->bbone_prev = BKE_pose_channel_find_name(outPose, pchan->bbone_prev->name);
+      pchan->bbone_prev = KERNEL_pose_channel_find_name(outPose, pchan->bbone_prev->name);
     }
     if (pchan->bbone_next) {
-      pchan->bbone_next = BKE_pose_channel_find_name(outPose, pchan->bbone_next->name);
+      pchan->bbone_next = KERNEL_pose_channel_find_name(outPose, pchan->bbone_next->name);
     }
 
     if (copy_constraints) {
-      /* #BKE_constraints_copy NULL's `listb` */
-      BKE_constraints_copy_ex(&listb, &pchan->constraints, flag, true);
+      /* #KERNEL_constraints_copy NULL's `listb` */
+      KERNEL_constraints_copy_ex(&listb, &pchan->constraints, flag, true);
 
       pchan->constraints = listb;
 
@@ -833,20 +833,20 @@ void BKE_pose_copy_data_ex(bPose **dst,
     pchan->draw_data = NULL; /* Drawing cache, no need to copy. */
 
     /* Runtime data, no need to copy. */
-    BKE_pose_channel_runtime_reset_on_copy(&pchan->runtime);
+    KERNEL_pose_channel_runtime_reset_on_copy(&pchan->runtime);
   }
 
   /* for now, duplicate Bone Groups too when doing this */
   if (copy_constraints) {
-    BLI_duplicatelist(&outPose->agroups, &src->agroups);
+    LIB_duplicatelist(&outPose->agroups, &src->agroups);
   }
 
   *dst = outPose;
 }
 
-void BKE_pose_copy_data(bPose **dst, const bPose *src, const bool copy_constraints)
+void KERNEL_pose_copy_data(bPose **dst, const bPose *src, const bool copy_constraints)
 {
-  BKE_pose_copy_data_ex(dst, src, 0, copy_constraints);
+  KERNEL_pose_copy_data_ex(dst, src, 0, copy_constraints);
 }
 
 void BKE_pose_itasc_init(bItasc *itasc)
