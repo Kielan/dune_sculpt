@@ -776,7 +776,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
   /* Get effective list of modifiers to execute. Some effects like shape keys
    * are added as virtual modifiers before the user created modifiers. */
   VirtualModifierData virtualModifierData;
-  ModifierData *firstmd = BKE_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
+  ModifierData *firstmd = KERNEL_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
   ModifierData *md = firstmd;
 
   /* Preview colors by modifiers such as dynamic paint, to show the results
@@ -1185,7 +1185,7 @@ static void mesh_calc_modifiers(struct Depsgraph *depsgraph,
       if (runtime->mesh_eval == nullptr) {
         /* Isolate since computing normals is multithreaded and we are holding a lock. */
         blender::threading::isolate_task([&] {
-          mesh_final = BKE_mesh_copy_for_eval(mesh_input, true);
+          mesh_final = KERNEL_mesh_copy_for_eval(mesh_input, true);
           mesh_calc_modifier_final_normals(
               mesh_input, &final_datamask, sculpt_dyntopo, mesh_final);
           mesh_calc_finalize(mesh_input, mesh_final);
@@ -1400,8 +1400,8 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
           KERNEL_mesh_ensure_default_orig_index_customdata(mesh_final);
           ASSERT_IS_VALID_MESH(mesh_final);
         }
-        BLI_assert(deformed_verts != nullptr);
-        BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
+        LIB_assert(deformed_verts != nullptr);
+        KERNEL_mesh_vert_coords_apply(mesh_final, deformed_verts);
       }
 
       if (mti->deformVertsEM) {
@@ -1416,7 +1416,7 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
       /* apply vertex coordinates or build a DerivedMesh as necessary */
       if (mesh_final) {
         if (deformed_verts) {
-          Mesh *mesh_tmp = BKE_mesh_copy_for_eval(mesh_final, false);
+          Mesh *mesh_tmp = KERNEL_mesh_copy_for_eval(mesh_final, false);
           if (mesh_final != mesh_cage) {
             KERNEL_id_free(nullptr, mesh_final);
           }
@@ -1960,8 +1960,8 @@ void mesh_get_mapped_verts_coords(Mesh *me_eval, float (*r_cos)[3], const int to
     MappedUserData userData;
     memset(r_cos, 0, sizeof(*r_cos) * totcos);
     userData.vertexcos = r_cos;
-    userData.vertex_visit = BLI_BITMAP_NEW(totcos, "vertexcos flags");
-    BKE_mesh_foreach_mapped_vert(me_eval, make_vertexcos__mapFunc, &userData, MESH_FOREACH_NOP);
+    userData.vertex_visit = LIB_BITMAP_NEW(totcos, "vertexcos flags");
+    KERNEL_mesh_foreach_mapped_vert(me_eval, make_vertexcos__mapFunc, &userData, MESH_FOREACH_NOP);
     MEM_freeN(userData.vertex_visit);
   }
   else {
@@ -2003,7 +2003,7 @@ static void mesh_init_origspace(Mesh *mesh)
       float min[2] = {FLT_MAX, FLT_MAX}, max[2] = {-FLT_MAX, -FLT_MAX};
       float translate[2], scale[2];
 
-      BKE_mesh_calc_poly_normal(mp, l, mv, p_nor);
+      KERNEL_mesh_calc_poly_normal(mp, l, mv, p_nor);
       axis_dominant_v3_to_m3(mat, p_nor);
 
       vcos_2d.resize(mp->totloop);
