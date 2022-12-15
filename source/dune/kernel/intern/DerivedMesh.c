@@ -1234,15 +1234,15 @@ bool editbmesh_modifier_is_enabled(const Scene *scene,
                                    ModifierData *md,
                                    bool has_prev_mesh)
 {
-  const ModifierTypeInfo *mti = BKE_modifier_get_info((ModifierType)md->type);
+  const ModifierTypeInfo *mti = KERNEL_modifier_get_info((ModifierType)md->type);
   const int required_mode = eModifierMode_Realtime | eModifierMode_Editmode;
 
-  if (!BKE_modifier_is_enabled(scene, md, required_mode)) {
+  if (!KERNEL_modifier_is_enabled(scene, md, required_mode)) {
     return false;
   }
 
   if ((mti->flags & eModifierTypeFlag_RequiresOriginalData) && has_prev_mesh) {
-    BKE_modifier_set_error(ob, md, "Modifier requires original data, bad stack position");
+    KERNEL_modifier_set_error(ob, md, "Modifier requires original data, bad stack position");
     return false;
   }
 
@@ -1263,8 +1263,8 @@ static void editbmesh_calc_modifier_final_normals(Mesh *mesh_final,
 
   if (do_loop_normals) {
     /* Compute loop normals */
-    BKE_mesh_calc_normals_split(mesh_final);
-    BKE_mesh_tessface_clear(mesh_final);
+    KERNEL_mesh_calc_normals_split(mesh_final);
+    KERNEL_mesh_tessface_clear(mesh_final);
   }
 
   /* BMESH_ONLY, ensure tessface's used for drawing,
@@ -1273,13 +1273,13 @@ static void editbmesh_calc_modifier_final_normals(Mesh *mesh_final,
    * but quiets annoying error messages since tessfaces won't be created. */
   if (final_datamask->fmask & CD_MASK_MFACE) {
     if (mesh_final->edit_mesh == nullptr) {
-      BKE_mesh_tessface_ensure(mesh_final);
+      KERNEL_mesh_tessface_ensure(mesh_final);
     }
   }
 
   /* same as mesh_calc_modifiers (if using loop normals, poly nors have already been computed). */
   if (!do_loop_normals) {
-    BKE_mesh_ensure_normals_for_display(mesh_final);
+    KERNEL_mesh_ensure_normals_for_display(mesh_final);
 
     /* Some modifiers, like data-transfer, may generate those data, we do not want to keep them,
      * as they are used by display code when available (i.e. even if autosmooth is disabled). */
@@ -1334,36 +1334,36 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
   /* Get effective list of modifiers to execute. Some effects like shape keys
    * are added as virtual modifiers before the user created modifiers. */
   VirtualModifierData virtualModifierData;
-  ModifierData *md = BKE_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
+  ModifierData *md = KERNEL_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
 
   /* Compute accumulated datamasks needed by each modifier. It helps to do
    * this fine grained so that for example vertex groups are preserved up to
    * an armature modifier, but not through a following subsurf modifier where
    * subdividing them is expensive. */
   CustomData_MeshMasks final_datamask = *dataMask;
-  CDMaskLink *datamasks = BKE_modifier_calc_data_masks(
+  CDMaskLink *datamasks = KERNEL_modifier_calc_data_masks(
       scene, ob, md, &final_datamask, required_mode, nullptr, nullptr);
   CDMaskLink *md_datamask = datamasks;
   CustomData_MeshMasks append_mask = CD_MASK_BAREMESH;
 
   /* Evaluate modifiers up to certain index to get the mesh cage. */
-  int cageIndex = BKE_modifiers_get_cage_index(scene, ob, nullptr, true);
+  int cageIndex = KERNEL_modifiers_get_cage_index(scene, ob, nullptr, true);
   if (r_cage && cageIndex == -1) {
-    mesh_cage = BKE_mesh_wrapper_from_editmesh_with_coords(
+    mesh_cage = KERNEL_mesh_wrapper_from_editmesh_with_coords(
         em_input, &final_datamask, nullptr, mesh_input);
   }
 
   /* The mesh from edit mode should not have any original index layers already, since those
    * are added during evaluation when necessary and are redundant on an original mesh. */
-  BLI_assert(CustomData_get_layer(&em_input->bm->pdata, CD_ORIGINDEX) == nullptr &&
+  LIB_assert(CustomData_get_layer(&em_input->bm->pdata, CD_ORIGINDEX) == nullptr &&
              CustomData_get_layer(&em_input->bm->edata, CD_ORIGINDEX) == nullptr &&
              CustomData_get_layer(&em_input->bm->pdata, CD_ORIGINDEX) == nullptr);
 
   /* Clear errors before evaluation. */
-  BKE_modifiers_clear_errors(ob);
+  KERNEL_modifiers_clear_errors(ob);
 
   for (int i = 0; md; i++, md = md->next, md_datamask = md_datamask->next) {
-    const ModifierTypeInfo *mti = BKE_modifier_get_info((ModifierType)md->type);
+    const ModifierTypeInfo *mti = KERNEL_modifier_get_info((ModifierType)md->type);
 
     if (!editbmesh_modifier_is_enabled(scene, ob, md, mesh_final != nullptr)) {
       continue;
@@ -1388,7 +1388,7 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
           /* Deforming a derived mesh, read the vertex locations
            * out of the mesh and deform them. Once done with this
            * run of deformers verts will be written back. */
-          deformed_verts = BKE_mesh_vert_coords_alloc(mesh_final, &num_deformed_verts);
+          deformed_verts = KERNEL_mesh_vert_coords_alloc(mesh_final, &num_deformed_verts);
         }
         else {
           deformed_verts = editbmesh_vert_coords_alloc(em_input, &num_deformed_verts);
@@ -1396,8 +1396,8 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
       }
       else if (isPrevDeform && mti->dependsOnNormals && mti->dependsOnNormals(md)) {
         if (mesh_final == nullptr) {
-          mesh_final = BKE_mesh_from_bmesh_for_eval_nomain(em_input->bm, nullptr, mesh_input);
-          BKE_mesh_ensure_default_orig_index_customdata(mesh_final);
+          mesh_final = KERNEL_mesh_from_bmesh_for_eval_nomain(em_input->bm, nullptr, mesh_input);
+          KERNEL_mesh_ensure_default_orig_index_customdata(mesh_final);
           ASSERT_IS_VALID_MESH(mesh_final);
         }
         BLI_assert(deformed_verts != nullptr);
@@ -1405,11 +1405,11 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
       }
 
       if (mti->deformVertsEM) {
-        BKE_modifier_deform_vertsEM(
+        KERNEL_modifier_deform_vertsEM(
             md, &mectx, em_input, mesh_final, deformed_verts, num_deformed_verts);
       }
       else {
-        BKE_modifier_deform_verts(md, &mectx, mesh_final, deformed_verts, num_deformed_verts);
+        KERNEL_modifier_deform_verts(md, &mectx, mesh_final, deformed_verts, num_deformed_verts);
       }
     }
     else {
@@ -1418,18 +1418,18 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
         if (deformed_verts) {
           Mesh *mesh_tmp = BKE_mesh_copy_for_eval(mesh_final, false);
           if (mesh_final != mesh_cage) {
-            BKE_id_free(nullptr, mesh_final);
+            KERNEL_id_free(nullptr, mesh_final);
           }
           mesh_final = mesh_tmp;
-          BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
+          KERNEL_mesh_vert_coords_apply(mesh_final, deformed_verts);
         }
         else if (mesh_final == mesh_cage) {
           /* 'me' may be changed by this modifier, so we need to copy it. */
-          mesh_final = BKE_mesh_copy_for_eval(mesh_final, false);
+          mesh_final = KERNEL_mesh_copy_for_eval(mesh_final, false);
         }
       }
       else {
-        mesh_final = BKE_mesh_wrapper_from_editmesh_with_coords(
+        mesh_final = KERNEL_mesh_wrapper_from_editmesh_with_coords(
             em_input, nullptr, deformed_verts, mesh_input);
         deformed_verts = nullptr;
       }
@@ -1447,13 +1447,13 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
         mask.pmask |= CD_MASK_ORIGINDEX;
         mesh_set_only_copy(mesh_orco, &mask);
 
-        Mesh *mesh_next = BKE_modifier_modify_mesh(md, &mectx_orco, mesh_orco);
+        Mesh *mesh_next = KERNEL_modifier_modify_mesh(md, &mectx_orco, mesh_orco);
         ASSERT_IS_VALID_MESH(mesh_next);
 
         if (mesh_next) {
           /* if the modifier returned a new dm, release the old one */
           if (mesh_orco && mesh_orco != mesh_next) {
-            BKE_id_free(nullptr, mesh_orco);
+            KERNEL_id_free(nullptr, mesh_orco);
           }
           mesh_orco = mesh_next;
         }
@@ -1484,7 +1484,7 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
 
       if (mesh_next) {
         if (mesh_final && mesh_final != mesh_next) {
-          BKE_id_free(nullptr, mesh_final);
+          KERNEL_id_free(nullptr, mesh_final);
         }
         mesh_final = mesh_next;
 
@@ -1498,8 +1498,8 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
 
     if (r_cage && i == cageIndex) {
       if (mesh_final && deformed_verts) {
-        mesh_cage = BKE_mesh_copy_for_eval(mesh_final, false);
-        BKE_mesh_vert_coords_apply(mesh_cage, deformed_verts);
+        mesh_cage = KERNEL_mesh_copy_for_eval(mesh_final, false);
+        KERNEL_mesh_vert_coords_apply(mesh_cage, deformed_verts);
       }
       else if (mesh_final) {
         mesh_cage = mesh_final;
@@ -1509,12 +1509,12 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
         /* Modifying the input mesh is weak, however as there can only be one object in edit mode
          * even if multiple are sharing the same mesh this should be thread safe. */
         if ((me_orig->id.tag & LIB_TAG_COPIED_ON_WRITE) && (ob->mode & OB_MODE_EDIT)) {
-          if (!BKE_mesh_runtime_ensure_edit_data(me_orig)) {
-            BKE_mesh_runtime_reset_edit_data(me_orig);
+          if (!KERNEL_mesh_runtime_ensure_edit_data(me_orig)) {
+            KERNEL_mesh_runtime_reset_edit_data(me_orig);
           }
           me_orig->runtime.edit_data->vertexCos = (const float(*)[3])MEM_dupallocN(deformed_verts);
         }
-        mesh_cage = BKE_mesh_wrapper_from_editmesh_with_coords(
+        mesh_cage = KERNEL_mesh_wrapper_from_editmesh_with_coords(
             em_input,
             &final_datamask,
             deformed_verts ? (const float(*)[3])MEM_dupallocN(deformed_verts) : nullptr,
@@ -1525,19 +1525,19 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
     isPrevDeform = (mti->type == eModifierTypeType_OnlyDeform);
   }
 
-  BLI_linklist_free((LinkNode *)datamasks, nullptr);
+  LIB_linklist_free((LinkNode *)datamasks, nullptr);
 
   /* Yay, we are done. If we have a DerivedMesh and deformed vertices need
    * to apply these back onto the DerivedMesh. If we have no DerivedMesh
    * then we need to build one. */
   if (mesh_final) {
     if (deformed_verts) {
-      Mesh *mesh_tmp = BKE_mesh_copy_for_eval(mesh_final, false);
+      Mesh *mesh_tmp = KERNEL_mesh_copy_for_eval(mesh_final, false);
       if (mesh_final != mesh_cage) {
-        BKE_id_free(nullptr, mesh_final);
+        KERNEL_id_free(nullptr, mesh_final);
       }
       mesh_final = mesh_tmp;
-      BKE_mesh_vert_coords_apply(mesh_final, deformed_verts);
+      KERNEL_mesh_vert_coords_apply(mesh_final, deformed_verts);
     }
   }
   else if (!deformed_verts && mesh_cage) {
@@ -1546,7 +1546,7 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
   }
   else {
     /* this is just a copy of the editmesh, no need to calc normals */
-    mesh_final = BKE_mesh_wrapper_from_editmesh_with_coords(
+    mesh_final = KERNEL_mesh_wrapper_from_editmesh_with_coords(
         em_input, &final_datamask, deformed_verts, mesh_input);
     deformed_verts = nullptr;
   }
@@ -1558,13 +1558,13 @@ static void editbmesh_calc_modifiers(struct Depsgraph *depsgraph,
   /* Add orco coordinates to final and deformed mesh if requested. */
   if (final_datamask.vmask & CD_MASK_ORCO) {
     /* FIXME(Campbell): avoid the need to convert to mesh data just to add an orco layer. */
-    BKE_mesh_wrapper_ensure_mdata(mesh_final);
+    KERNEL_mesh_wrapper_ensure_mdata(mesh_final);
 
     add_orco_mesh(ob, em_input, mesh_final, mesh_orco, CD_ORCO);
   }
 
   if (mesh_orco) {
-    BKE_id_free(nullptr, mesh_orco);
+    KERNEL_id_free(nullptr, mesh_orco);
   }
 
   /* Compute normals. */
@@ -1588,7 +1588,7 @@ static void mesh_build_extra_data(struct Depsgraph *depsgraph, Object *ob, Mesh 
   uint32_t eval_flags = DEG_get_eval_flags_for_id(depsgraph, &ob->id);
 
   if (eval_flags & DAG_EVAL_NEED_SHRINKWRAP_BOUNDARY) {
-    BKE_shrinkwrap_compute_boundary_data(mesh_eval);
+    KERNEL_shrinkwrap_compute_boundary_data(mesh_eval);
   }
 }
 
@@ -1630,7 +1630,7 @@ static void mesh_build_data(struct Depsgraph *depsgraph,
    * the final result might be freed prior to object). */
   Mesh *mesh = (Mesh *)ob->data;
   const bool is_mesh_eval_owned = (mesh_eval != mesh->runtime.mesh_eval);
-  BKE_object_eval_assign_data(ob, &mesh_eval->id, is_mesh_eval_owned);
+  KERNEL_object_eval_assign_data(ob, &mesh_eval->id, is_mesh_eval_owned);
 
   /* Add the final mesh as a non-owning component to the geometry set. */
   MeshComponent &mesh_component = geometry_set_eval->get_component_for_write<MeshComponent>();
@@ -1641,17 +1641,17 @@ static void mesh_build_data(struct Depsgraph *depsgraph,
   ob->runtime.last_data_mask = *dataMask;
   ob->runtime.last_need_mapping = need_mapping;
 
-  BKE_object_boundbox_calc_from_mesh(ob, mesh_eval);
+  KERNEL_object_boundbox_calc_from_mesh(ob, mesh_eval);
 
   /* Make sure that drivers can target shapekey properties.
    * Note that this causes a potential inconsistency, as the shapekey may have a
    * different topology than the evaluated mesh. */
-  BLI_assert(mesh->key == nullptr || DEG_is_evaluated_id(&mesh->key->id));
+  LIB_assert(mesh->key == nullptr || DEG_is_evaluated_id(&mesh->key->id));
   mesh_eval->key = mesh->key;
 
   if ((ob->mode & OB_MODE_ALL_SCULPT) && ob->sculpt) {
     if (DEG_is_active(depsgraph)) {
-      BKE_sculpt_update_object_after_eval(depsgraph, ob);
+      KERNEL_sculpt_update_object_after_eval(depsgraph, ob);
     }
   }
 
@@ -1674,8 +1674,8 @@ static void editbmesh_build_data(struct Depsgraph *depsgraph,
 
   /* The modifier stack result is expected to share edit mesh pointer with the input.
    * This is similar `mesh_calc_finalize()`. */
-  BKE_mesh_free_editmesh(me_final);
-  BKE_mesh_free_editmesh(me_cage);
+  KERNEL_mesh_free_editmesh(me_final);
+  KERNEL_mesh_free_editmesh(me_cage);
   me_final->edit_mesh = me_cage->edit_mesh = em;
 
   /* Object has edit_mesh but is not in edit mode (object shares mesh datablock with another object
@@ -1683,20 +1683,20 @@ static void editbmesh_build_data(struct Depsgraph *depsgraph,
    * Convert edit mesh to mesh until the draw manager can draw mesh wrapper which is not in the
    * edit mode. */
   if (!(obedit->mode & OB_MODE_EDIT)) {
-    BKE_mesh_wrapper_ensure_mdata(me_final);
+    KERNEL_mesh_wrapper_ensure_mdata(me_final);
     if (me_final != me_cage) {
-      BKE_mesh_wrapper_ensure_mdata(me_cage);
+      KERNEL_mesh_wrapper_ensure_mdata(me_cage);
     }
   }
 
   const bool is_mesh_eval_owned = (me_final != mesh->runtime.mesh_eval);
-  BKE_object_eval_assign_data(obedit, &me_final->id, is_mesh_eval_owned);
+  KERNEL_object_eval_assign_data(obedit, &me_final->id, is_mesh_eval_owned);
 
   obedit->runtime.editmesh_eval_cage = me_cage;
 
   obedit->runtime.geometry_set_eval = non_mesh_components;
 
-  BKE_object_boundbox_calc_from_mesh(obedit, me_final);
+  KERNEL_object_boundbox_calc_from_mesh(obedit, me_final);
 
   obedit->runtime.last_data_mask = *dataMask;
 }
@@ -1723,7 +1723,7 @@ static void object_get_datamask(const Depsgraph *depsgraph,
   Object *actob = view_layer->basact ? DEG_get_original_object(view_layer->basact->object) :
                                        nullptr;
   if (DEG_get_original_object(ob) == actob) {
-    bool editing = BKE_paint_select_face_test(actob);
+    bool editing = KERNEL_paint_select_face_test(actob);
 
     /* weight paint and face select need original indices because of selection buffer drawing */
     if (r_need_mapping) {
@@ -1756,15 +1756,15 @@ void makeDerivedMesh(struct Depsgraph *depsgraph,
                      Object *ob,
                      const CustomData_MeshMasks *dataMask)
 {
-  BLI_assert(ob->type == OB_MESH);
+  LIB_assert(ob->type == OB_MESH);
 
   /* Evaluated meshes aren't supposed to be created on original instances. If you do,
    * they aren't cleaned up properly on mode switch, causing crashes, e.g T58150. */
-  BLI_assert(ob->id.tag & LIB_TAG_COPIED_ON_WRITE);
+  LIB_assert(ob->id.tag & LIB_TAG_COPIED_ON_WRITE);
 
-  BKE_object_free_derived_caches(ob);
+  KERNEL_object_free_derived_caches(ob);
   if (DEG_is_active(depsgraph)) {
-    BKE_sculpt_update_object_before_eval(ob);
+    KERNEL_sculpt_update_object_before_eval(ob);
   }
 
   /* NOTE: Access the `edit_mesh` after freeing the derived caches, so that `ob->data` is restored
@@ -1793,11 +1793,11 @@ Mesh *mesh_get_eval_final(struct Depsgraph *depsgraph,
                           const CustomData_MeshMasks *dataMask)
 {
   /* This function isn't thread-safe and can't be used during evaluation. */
-  BLI_assert(DEG_is_evaluating(depsgraph) == false);
+  LIB_assert(DEG_is_evaluating(depsgraph) == false);
 
   /* Evaluated meshes aren't supposed to be created on original instances. If you do,
    * they aren't cleaned up properly on mode switch, causing crashes, e.g T58150. */
-  BLI_assert(ob->id.tag & LIB_TAG_COPIED_ON_WRITE);
+  LIB_assert(ob->id.tag & LIB_TAG_COPIED_ON_WRITE);
 
   /* if there's no evaluated mesh or the last data mask used doesn't include
    * the data we need, rebuild the derived mesh
@@ -1806,7 +1806,7 @@ Mesh *mesh_get_eval_final(struct Depsgraph *depsgraph,
   CustomData_MeshMasks cddata_masks = *dataMask;
   object_get_datamask(depsgraph, ob, &cddata_masks, &need_mapping);
 
-  Mesh *mesh_eval = BKE_object_get_evaluated_mesh(ob);
+  Mesh *mesh_eval = KERNEL_object_get_evaluated_mesh(ob);
   if ((mesh_eval == nullptr) ||
       !CustomData_MeshMasks_are_matching(&(ob->runtime.last_data_mask), &cddata_masks) ||
       (need_mapping && !ob->runtime.last_need_mapping)) {
@@ -1814,10 +1814,10 @@ Mesh *mesh_get_eval_final(struct Depsgraph *depsgraph,
 
     makeDerivedMesh(depsgraph, scene, ob, dataMask);
 
-    mesh_eval = BKE_object_get_evaluated_mesh(ob);
+    mesh_eval = KERNEL_object_get_evaluated_mesh(ob);
   }
 
-  BKE_mesh_assert_normals_dirty_or_calculated(mesh_eval);
+  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh_eval);
 
   return mesh_eval;
 }
@@ -1832,16 +1832,16 @@ Mesh *mesh_get_eval_deform(struct Depsgraph *depsgraph,
     /* There is no such a concept as deformed mesh in edit mode.
      * Explicitly disallow this request so that the evaluated result is not modified with evaluated
      * result from the wrong mode. */
-    BLI_assert_msg(0, "Request of derformed mesh of object which is in edit mode");
+    LIB_assert_msg(0, "Request of derformed mesh of object which is in edit mode");
     return nullptr;
   }
 
   /* This function isn't thread-safe and can't be used during evaluation. */
-  BLI_assert(DEG_is_evaluating(depsgraph) == false);
+  LIB_assert(DEG_is_evaluating(depsgraph) == false);
 
   /* Evaluated meshes aren't supposed to be created on original instances. If you do,
    * they aren't cleaned up properly on mode switch, causing crashes, e.g T58150. */
-  BLI_assert(ob->id.tag & LIB_TAG_COPIED_ON_WRITE);
+  LIB_assert(ob->id.tag & LIB_TAG_COPIED_ON_WRITE);
 
   /* if there's no derived mesh or the last data mask used doesn't include
    * the data we need, rebuild the derived mesh
@@ -1923,10 +1923,10 @@ Mesh *editbmesh_get_eval_cage_from_orig(struct Depsgraph *depsgraph,
                                         Object *obedit,
                                         const CustomData_MeshMasks *dataMask)
 {
-  BLI_assert((obedit->id.tag & LIB_TAG_COPIED_ON_WRITE) == 0);
+  LIB_assert((obedit->id.tag & LIB_TAG_COPIED_ON_WRITE) == 0);
   const Scene *scene_eval = (const Scene *)DEG_get_evaluated_id(depsgraph, (ID *)&scene->id);
   Object *obedit_eval = (Object *)DEG_get_evaluated_id(depsgraph, &obedit->id);
-  BMEditMesh *em_eval = BKE_editmesh_from_object(obedit_eval);
+  BMEditMesh *em_eval = KERNEL_editmesh_from_object(obedit_eval);
   return editbmesh_get_eval_cage(depsgraph, scene_eval, obedit_eval, em_eval, dataMask);
 }
 
@@ -1935,7 +1935,7 @@ Mesh *editbmesh_get_eval_cage_from_orig(struct Depsgraph *depsgraph,
 /* same as above but for vert coords */
 struct MappedUserData {
   float (*vertexcos)[3];
-  BLI_bitmap *vertex_visit;
+  LIB_bitmap *vertex_visit;
 };
 
 static void make_vertexcos__mapFunc(void *userData,
@@ -1945,12 +1945,12 @@ static void make_vertexcos__mapFunc(void *userData,
 {
   MappedUserData *mappedData = (MappedUserData *)userData;
 
-  if (BLI_BITMAP_TEST(mappedData->vertex_visit, index) == 0) {
+  if (LIB_BITMAP_TEST(mappedData->vertex_visit, index) == 0) {
     /* we need coord from prototype vertex, not from copies,
      * assume they stored in the beginning of vertex array stored in DM
      * (mirror modifier for eg does this) */
     copy_v3_v3(mappedData->vertexcos[index], co);
-    BLI_BITMAP_ENABLE(mappedData->vertex_visit, index);
+    LIB_BITMAP_ENABLE(mappedData->vertex_visit, index);
   }
 }
 
