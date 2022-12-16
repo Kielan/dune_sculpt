@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * Functions for evaluating the mask beziers into points for the outline and feather.
  */
 
@@ -9,19 +7,19 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "LIB_math.h"
+#include "LIB_utildefines.h"
 
-#include "DNA_mask_types.h"
-#include "DNA_object_types.h"
+#include "STRUCTS_mask_types.h"
+#include "STRUCTS_object_types.h"
 
-#include "BKE_curve.h"
-#include "BKE_mask.h"
+#include "KERNEL_curve.h"
+#include "KERNEL_mask.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-unsigned int BKE_mask_spline_resolution(MaskSpline *spline, int width, int height)
+unsigned int KERNEL_mask_spline_resolution(MaskSpline *spline, int width, int height)
 {
   float max_segment = 0.01f;
   unsigned int i, resol = 1;
@@ -60,7 +58,7 @@ unsigned int BKE_mask_spline_resolution(MaskSpline *spline, int width, int heigh
   return CLAMPIS(resol, 1, MASK_RESOL_MAX);
 }
 
-unsigned int BKE_mask_spline_feather_resolution(MaskSpline *spline, int width, int height)
+unsigned int KERNEL_mask_spline_feather_resolution(MaskSpline *spline, int width, int height)
 {
   const float max_segment = 0.005;
   unsigned int resol = BKE_mask_spline_resolution(spline, width, height);
@@ -99,7 +97,7 @@ unsigned int BKE_mask_spline_feather_resolution(MaskSpline *spline, int width, i
   return CLAMPIS(resol, 1, MASK_RESOL_MAX);
 }
 
-int BKE_mask_spline_differentiate_calc_total(const MaskSpline *spline, const unsigned int resol)
+int KERNEL_mask_spline_differentiate_calc_total(const MaskSpline *spline, const unsigned int resol)
 {
   if (spline->flag & MASK_SPLINE_CYCLIC) {
     return spline->tot_point * resol;
@@ -108,15 +106,15 @@ int BKE_mask_spline_differentiate_calc_total(const MaskSpline *spline, const uns
   return ((spline->tot_point - 1) * resol) + 1;
 }
 
-float (*BKE_mask_spline_differentiate_with_resolution(MaskSpline *spline,
+float (*KERNEL_mask_spline_differentiate_with_resolution(MaskSpline *spline,
                                                       const unsigned int resol,
                                                       unsigned int *r_tot_diff_point))[2]
 {
-  MaskSplinePoint *points_array = BKE_mask_spline_point_array(spline);
+  MaskSplinePoint *points_array = KERNEL_mask_spline_point_array(spline);
 
   MaskSplinePoint *point_curr, *point_prev;
   float(*diff_points)[2], (*fp)[2];
-  const int tot = BKE_mask_spline_differentiate_calc_total(spline, resol);
+  const int tot = KERNEL_mask_spline_differentiate_calc_total(spline, resol);
   int a;
 
   if (spline->tot_point <= 1) {
@@ -150,7 +148,7 @@ float (*BKE_mask_spline_differentiate_with_resolution(MaskSpline *spline,
     bezt_curr = &point_curr->bezt;
 
     for (j = 0; j < 2; j++) {
-      BKE_curve_forward_diff_bezier(bezt_prev->vec[1][j],
+      KERNEL_curve_forward_diff_bezier(bezt_prev->vec[1][j],
                                     bezt_prev->vec[2][j],
                                     bezt_curr->vec[0][j],
                                     bezt_curr->vec[1][j],
