@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * Contains management of #Main database itself.
  */
 
@@ -8,32 +6,32 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_mempool.h"
-#include "BLI_threads.h"
+#include "LIB_blenlib.h"
+#include "LIB_ghash.h"
+#include "LIB_mempool.h"
+#include "LIB_threads.h"
 
-#include "DNA_ID.h"
+#include "STRUCT_ID.h"
 
-#include "BKE_global.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_main_idmap.h"
+#include "KERNEL_global.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_main_idmap.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-Main *BKE_main_new(void)
+Main *KERNEL_main_new(void)
 {
   Main *bmain = MEM_callocN(sizeof(Main), "new main");
   bmain->lock = MEM_mallocN(sizeof(SpinLock), "main lock");
-  BLI_spin_init((SpinLock *)bmain->lock);
+  LIB_spin_init((SpinLock *)bmain->lock);
   return bmain;
 }
 
-void BKE_main_free(Main *mainvar)
+void KERNEL_main_free(Main *mainvar)
 {
   /* also call when reading a file, erase all, etc */
   ListBase *lbarray[INDEX_ID_MAX];
@@ -54,139 +52,139 @@ void BKE_main_free(Main *mainvar)
     for (id = lb->first; id != NULL; id = id_next) {
       id_next = id->next;
 #if 1
-      BKE_id_free_ex(mainvar, id, free_flag, false);
+      KERNEL_id_free_ex(mainvar, id, free_flag, false);
 #else
       /* errors freeing ID's can be hard to track down,
        * enable this so valgrind will give the line number in its error log */
       switch (a) {
         case 0:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 1:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 2:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 3:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 4:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 5:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 6:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 7:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 8:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 9:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 10:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 11:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 12:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 13:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 14:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 15:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 16:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 17:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 18:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 19:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 20:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 21:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 22:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 23:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 24:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 25:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 26:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 27:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 28:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 29:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 30:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 31:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 32:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 33:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         case 34:
-          BKE_id_free_ex(mainvar, id, free_flag, false);
+          KERNEL_id_free_ex(mainvar, id, free_flag, false);
           break;
         default:
-          BLI_assert_unreachable();
+          LIB_assert_unreachable();
           break;
       }
 #endif
     }
-    BLI_listbase_clear(lb);
+    LIB_listbase_clear(lb);
   }
 
   if (mainvar->relations) {
-    BKE_main_relations_free(mainvar);
+    KERNEL_main_relations_free(mainvar);
   }
 
   if (mainvar->id_map) {
-    BKE_main_idmap_destroy(mainvar->id_map);
+    KERNEL_main_idmap_destroy(mainvar->id_map);
   }
 
-  BLI_spin_end((SpinLock *)mainvar->lock);
+  LIB_spin_end((SpinLock *)mainvar->lock);
   MEM_freeN(mainvar->lock);
   MEM_freeN(mainvar);
 }
 
-bool BKE_main_is_empty(struct Main *bmain)
+bool KERNEL_main_is_empty(struct Main *bmain)
 {
   ID *id_iter;
   FOREACH_MAIN_ID_BEGIN (bmain, id_iter) {
@@ -196,14 +194,14 @@ bool BKE_main_is_empty(struct Main *bmain)
   return true;
 }
 
-void BKE_main_lock(struct Main *bmain)
+void KERNEL_main_lock(struct Main *bmain)
 {
-  BLI_spin_lock((SpinLock *)bmain->lock);
+  LIB_spin_lock((SpinLock *)bmain->lock);
 }
 
-void BKE_main_unlock(struct Main *bmain)
+void KERNEL_main_unlock(struct Main *bmain)
 {
-  BLI_spin_unlock((SpinLock *)bmain->lock);
+  LIB_spin_unlock((SpinLock *)bmain->lock);
 }
 
 static int main_relations_create_idlink_cb(LibraryIDLinkCallbackData *cb_data)
@@ -218,13 +216,13 @@ static int main_relations_create_idlink_cb(LibraryIDLinkCallbackData *cb_data)
 
     /* Add `id_pointer` as child of `id_self`. */
     {
-      if (!BLI_ghash_ensure_p(
+      if (!LIB_ghash_ensure_p(
               bmain_relations->relations_from_pointers, id_self, (void ***)&entry_p)) {
         *entry_p = MEM_callocN(sizeof(**entry_p), __func__);
         (*entry_p)->session_uuid = id_self->session_uuid;
       }
       else {
-        BLI_assert((*entry_p)->session_uuid == id_self->session_uuid);
+        LIB_assert((*entry_p)->session_uuid == id_self->session_uuid);
       }
       MainIDRelationsEntryItem *to_id_entry = BLI_mempool_alloc(bmain_relations->entry_items_pool);
       to_id_entry->next = (*entry_p)->to_ids;
@@ -237,15 +235,15 @@ static int main_relations_create_idlink_cb(LibraryIDLinkCallbackData *cb_data)
 
     /* Add `id_self` as parent of `id_pointer`. */
     if (*id_pointer != NULL) {
-      if (!BLI_ghash_ensure_p(
+      if (!LIB_ghash_ensure_p(
               bmain_relations->relations_from_pointers, *id_pointer, (void ***)&entry_p)) {
         *entry_p = MEM_callocN(sizeof(**entry_p), __func__);
         (*entry_p)->session_uuid = (*id_pointer)->session_uuid;
       }
       else {
-        BLI_assert((*entry_p)->session_uuid == (*id_pointer)->session_uuid);
+        LIB_assert((*entry_p)->session_uuid == (*id_pointer)->session_uuid);
       }
-      MainIDRelationsEntryItem *from_id_entry = BLI_mempool_alloc(
+      MainIDRelationsEntryItem *from_id_entry = LIB_mempool_alloc(
           bmain_relations->entry_items_pool);
       from_id_entry->next = (*entry_p)->from_ids;
       from_id_entry->id_pointer.from = id_self;
@@ -258,16 +256,16 @@ static int main_relations_create_idlink_cb(LibraryIDLinkCallbackData *cb_data)
   return IDWALK_RET_NOP;
 }
 
-void BKE_main_relations_create(Main *bmain, const short flag)
+void KERNEL_main_relations_create(Main *bmain, const short flag)
 {
   if (bmain->relations != NULL) {
-    BKE_main_relations_free(bmain);
+    KERNEL_main_relations_free(bmain);
   }
 
   bmain->relations = MEM_mallocN(sizeof(*bmain->relations), __func__);
   bmain->relations->relations_from_pointers = BLI_ghash_new(
-      BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, __func__);
-  bmain->relations->entry_items_pool = BLI_mempool_create(
+      LIB_ghashutil_ptrhash, LIB_ghashutil_ptrcmp, __func__);
+  bmain->relations->entry_items_pool = LIB_mempool_create(
       sizeof(MainIDRelationsEntryItem), 128, 128, BLI_MEMPOOL_NOP);
 
   bmain->relations->flag = flag;
@@ -279,33 +277,33 @@ void BKE_main_relations_create(Main *bmain, const short flag)
 
     /* Ensure all IDs do have an entry, even if they are not connected to any other. */
     MainIDRelationsEntry **entry_p;
-    if (!BLI_ghash_ensure_p(bmain->relations->relations_from_pointers, id, (void ***)&entry_p)) {
+    if (!LIB_ghash_ensure_p(bmain->relations->relations_from_pointers, id, (void ***)&entry_p)) {
       *entry_p = MEM_callocN(sizeof(**entry_p), __func__);
       (*entry_p)->session_uuid = id->session_uuid;
     }
     else {
-      BLI_assert((*entry_p)->session_uuid == id->session_uuid);
+      LIB_assert((*entry_p)->session_uuid == id->session_uuid);
     }
 
-    BKE_library_foreach_ID_link(
+    KERNEL_library_foreach_ID_link(
         NULL, id, main_relations_create_idlink_cb, bmain->relations, idwalk_flag);
   }
   FOREACH_MAIN_ID_END;
 }
 
-void BKE_main_relations_free(Main *bmain)
+void KERNEL_main_relations_free(Main *bmain)
 {
   if (bmain->relations != NULL) {
     if (bmain->relations->relations_from_pointers != NULL) {
-      BLI_ghash_free(bmain->relations->relations_from_pointers, NULL, MEM_freeN);
+      LIB_ghash_free(bmain->relations->relations_from_pointers, NULL, MEM_freeN);
     }
-    BLI_mempool_destroy(bmain->relations->entry_items_pool);
+    LIB_mempool_destroy(bmain->relations->entry_items_pool);
     MEM_freeN(bmain->relations);
     bmain->relations = NULL;
   }
 }
 
-void BKE_main_relations_tag_set(struct Main *bmain,
+void KERNEL_main_relations_tag_set(struct Main *bmain,
                                 const eMainIDRelationsEntryTags tag,
                                 const bool value)
 {
@@ -314,10 +312,10 @@ void BKE_main_relations_tag_set(struct Main *bmain,
   }
 
   GHashIterator *gh_iter;
-  for (gh_iter = BLI_ghashIterator_new(bmain->relations->relations_from_pointers);
-       !BLI_ghashIterator_done(gh_iter);
-       BLI_ghashIterator_step(gh_iter)) {
-    MainIDRelationsEntry *entry = BLI_ghashIterator_getValue(gh_iter);
+  for (gh_iter = LIB_ghashIterator_new(bmain->relations->relations_from_pointers);
+       !LIB_ghashIterator_done(gh_iter);
+       LIB_ghashIterator_step(gh_iter)) {
+    MainIDRelationsEntry *entry = LIB_ghashIterator_getValue(gh_iter);
     if (value) {
       entry->tags |= tag;
     }
@@ -325,18 +323,18 @@ void BKE_main_relations_tag_set(struct Main *bmain,
       entry->tags &= ~tag;
     }
   }
-  BLI_ghashIterator_free(gh_iter);
+  LIB_ghashIterator_free(gh_iter);
 }
 
-GSet *BKE_main_gset_create(Main *bmain, GSet *gset)
+GSet *KERNEL_main_gset_create(Main *bmain, GSet *gset)
 {
   if (gset == NULL) {
-    gset = BLI_gset_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, __func__);
+    gset = LIB_gset_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, __func__);
   }
 
   ID *id;
   FOREACH_MAIN_ID_BEGIN (bmain, id) {
-    BLI_gset_add(gset, id);
+    LIB_gset_add(gset, id);
   }
   FOREACH_MAIN_ID_END;
   return gset;
@@ -355,16 +353,16 @@ static LibWeakRefKey *lib_weak_key_create(LibWeakRefKey *key,
   if (key == NULL) {
     key = MEM_mallocN(sizeof(*key), __func__);
   }
-  BLI_strncpy(key->filepath, lib_path, sizeof(key->filepath));
-  BLI_strncpy(key->id_name, id_name, sizeof(key->id_name));
+  LIB_strncpy(key->filepath, lib_path, sizeof(key->filepath));
+  LIB_strncpy(key->id_name, id_name, sizeof(key->id_name));
   return key;
 }
 
 static uint lib_weak_key_hash(const void *ptr)
 {
   const LibWeakRefKey *string_pair = ptr;
-  uint hash = BLI_ghashutil_strhash_p_murmur(string_pair->filepath);
-  return hash ^ BLI_ghashutil_strhash_p_murmur(string_pair->id_name);
+  uint hash = LIB_ghashutil_strhash_p_murmur(string_pair->filepath);
+  return hash ^ LIB_ghashutil_strhash_p_murmur(string_pair->id_name);
 }
 
 static bool lib_weak_key_cmp(const void *a, const void *b)
@@ -376,9 +374,9 @@ static bool lib_weak_key_cmp(const void *a, const void *b)
            STREQ(string_pair_a->id_name, string_pair_b->id_name));
 }
 
-GHash *BKE_main_library_weak_reference_create(Main *bmain)
+GHash *KERNEL_main_library_weak_reference_create(Main *bmain)
 {
-  GHash *library_weak_reference_mapping = BLI_ghash_new(
+  GHash *library_weak_reference_mapping = LIB_ghash_new(
       lib_weak_key_hash, lib_weak_key_cmp, __func__);
 
   ListBase *lb;
@@ -387,10 +385,10 @@ GHash *BKE_main_library_weak_reference_create(Main *bmain)
     if (id_iter == NULL) {
       continue;
     }
-    if (!BKE_idtype_idcode_append_is_reusable(GS(id_iter->name))) {
+    if (!KERNEL_idtype_idcode_append_is_reusable(GS(id_iter->name))) {
       continue;
     }
-    BLI_assert(BKE_idtype_idcode_is_linkable(GS(id_iter->name)));
+    LIB_assert(KERNEL_idtype_idcode_is_linkable(GS(id_iter->name)));
 
     FOREACH_MAIN_LISTBASE_ID_BEGIN (lb, id_iter) {
       if (id_iter->library_weak_reference == NULL) {
@@ -399,7 +397,7 @@ GHash *BKE_main_library_weak_reference_create(Main *bmain)
       LibWeakRefKey *key = lib_weak_key_create(NULL,
                                                id_iter->library_weak_reference->library_filepath,
                                                id_iter->library_weak_reference->library_id_name);
-      BLI_ghash_insert(library_weak_reference_mapping, key, id_iter);
+      LIB_ghash_insert(library_weak_reference_mapping, key, id_iter);
     }
     FOREACH_MAIN_LISTBASE_ID_END;
   }
@@ -408,21 +406,21 @@ GHash *BKE_main_library_weak_reference_create(Main *bmain)
   return library_weak_reference_mapping;
 }
 
-void BKE_main_library_weak_reference_destroy(GHash *library_weak_reference_mapping)
+void KERNEL_main_library_weak_reference_destroy(GHash *library_weak_reference_mapping)
 {
-  BLI_ghash_free(library_weak_reference_mapping, MEM_freeN, NULL);
+  LIB_ghash_free(library_weak_reference_mapping, MEM_freeN, NULL);
 }
 
-ID *BKE_main_library_weak_reference_search_item(GHash *library_weak_reference_mapping,
+ID *KERNEL_main_library_weak_reference_search_item(GHash *library_weak_reference_mapping,
                                                 const char *library_filepath,
                                                 const char *library_id_name)
 {
   LibWeakRefKey key;
   lib_weak_key_create(&key, library_filepath, library_id_name);
-  return (ID *)BLI_ghash_lookup(library_weak_reference_mapping, &key);
+  return (ID *)LIB_ghash_lookup(library_weak_reference_mapping, &key);
 }
 
-void BKE_main_library_weak_reference_add_item(GHash *library_weak_reference_mapping,
+void KERNEL_main_library_weak_reference_add_item(GHash *library_weak_reference_mapping,
                                               const char *library_filepath,
                                               const char *library_id_name,
                                               ID *new_id)
