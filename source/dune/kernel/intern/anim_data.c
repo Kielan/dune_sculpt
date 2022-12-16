@@ -2,20 +2,20 @@
 
 #include <string.h>
 
-#include "KE_action.h"
-#include "KE_anim_data.h"
-#include "KE_animsys.h"
-#include "KE_context.h"
-#include "KE_fcurve.h"
-#include "KE_fcurve_driver.h"
-#include "KE_global.h"
-#include "KE_idtype.h"
-#include "KE_lib_id.h"
-#include "KE_lib_query.h"
-#include "KE_main.h"
-#include "KE_nla.h"
-#include "KE_node.h"
-#include "KE_report.h"
+#include "KERNEL_action.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_animsys.h"
+#include "KERNEL_context.h"
+#include "KERNEL_fcurve.h"
+#include "KERNEL_fcurve_driver.h"
+#include "KERNEL_global.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_nla.h"
+#include "KERNEL_node.h"
+#include "KERNEL_report.h"
 
 #include "_ID.h"
 #include "_anim_types.h"
@@ -167,7 +167,7 @@ bool KERNEL_animdata_action_editable(const AnimData *adt)
   return !is_tweaking_strip;
 }
 
-bool BKE_animdata_action_ensure_idroot(const ID *owner, bAction *action)
+bool KERNEL_animdata_action_ensure_idroot(const ID *owner, bAction *action)
 {
   const int idcode = GS(owner->name);
 
@@ -239,33 +239,33 @@ bool KERNEL_animdata_id_is_animated(const struct ID *id)
     return false;
   }
 
-  if (adt->action != NULL && !BLI_listbase_is_empty(&adt->action->curves)) {
+  if (adt->action != NULL && !LIB_listbase_is_empty(&adt->action->curves)) {
     return true;
   }
 
-  return !BLI_listbase_is_empty(&adt->drivers) || !BLI_listbase_is_empty(&adt->nla_tracks) ||
-         !BLI_listbase_is_empty(&adt->overrides);
+  return !LIB_listbase_is_empty(&adt->drivers) || !LIB_listbase_is_empty(&adt->nla_tracks) ||
+         !LIB_listbase_is_empty(&adt->overrides);
 }
 
-void BKE_animdata_foreach_id(AnimData *adt, LibraryForeachIDData *data)
+void KERNEL_animdata_foreach_id(AnimData *adt, LibraryForeachIDData *data)
 {
   LISTBASE_FOREACH (FCurve *, fcu, &adt->drivers) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, BKE_fcurve_foreach_id(fcu, data));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, KERNEL_fcurve_foreach_id(fcu, data));
   }
 
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, adt->action, IDWALK_CB_USER);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, adt->tmpact, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, adt->action, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, adt->tmpact, IDWALK_CB_USER);
 
   LISTBASE_FOREACH (NlaTrack *, nla_track, &adt->nla_tracks) {
     LISTBASE_FOREACH (NlaStrip *, nla_strip, &nla_track->strips) {
-      BKE_nla_strip_foreach_id(nla_strip, data);
+      KERNEL_nla_strip_foreach_id(nla_strip, data);
     }
   }
 }
 
 /* Copying -------------------------------------------- */
 
-AnimData *BKE_animdata_copy(Main *bmain, AnimData *adt, const int flag)
+AnimData *KERNEL_animdata_copy(Main *bmain, AnimData *adt, const int flag)
 {
   AnimData *dadt;
 
@@ -283,7 +283,7 @@ AnimData *BKE_animdata_copy(Main *bmain, AnimData *adt, const int flag)
     /* Recursive copy of 'real' IDs is a bit hairy. Even if do not want to deal with usercount
      *  when copying ID's data itself, we still need to do so with sub-IDs, since those will not be
      * handled by later 'update usercounts of used IDs' code as used e.g. at end of
-     * BKE_id_copy_ex().
+     * KERNEL_id_copy_ex().
      * So in case we do copy the ID and its sub-IDs in bmain, silence the 'no usercount' flag for
      * the sub-IDs copying.
      * NOTE: This is a bit weak, as usually when it comes to recursive ID copy. Should work for
@@ -293,8 +293,8 @@ AnimData *BKE_animdata_copy(Main *bmain, AnimData *adt, const int flag)
     const int id_copy_flag = (flag & LIB_ID_CREATE_NO_MAIN) == 0 ?
                                  flag & ~LIB_ID_CREATE_NO_USER_REFCOUNT :
                                  flag;
-    BLI_assert(bmain != NULL);
-    BLI_assert(dadt->action == NULL || dadt->action != dadt->tmpact);
+    LIB_assert(bmain != NULL);
+    LIB_assert(dadt->action == NULL || dadt->action != dadt->tmpact);
     dadt->action = (bAction *)BKE_id_copy_ex(bmain, (ID *)dadt->action, NULL, id_copy_flag);
     dadt->tmpact = (bAction *)BKE_id_copy_ex(bmain, (ID *)dadt->tmpact, NULL, id_copy_flag);
   }
@@ -304,20 +304,20 @@ AnimData *BKE_animdata_copy(Main *bmain, AnimData *adt, const int flag)
   }
 
   /* duplicate NLA data */
-  BKE_nla_tracks_copy_from_adt(bmain, dadt, adt, flag);
+  KERNEL_nla_tracks_copy_from_adt(bmain, dadt, adt, flag);
 
   /* duplicate drivers (F-Curves) */
-  BKE_fcurves_copy(&dadt->drivers, &adt->drivers);
+  KERNEL_fcurves_copy(&dadt->drivers, &adt->drivers);
   dadt->driver_array = NULL;
 
   /* don't copy overrides */
-  BLI_listbase_clear(&dadt->overrides);
+  LIB_listbase_clear(&dadt->overrides);
 
   /* return */
   return dadt;
 }
 
-bool BKE_animdata_copy_id(Main *bmain, ID *id_to, ID *id_from, const int flag)
+bool KERNEL_animdata_copy_id(Main *bmain, ID *id_to, ID *id_from, const int flag)
 {
   AnimData *adt;
 
@@ -325,12 +325,12 @@ bool BKE_animdata_copy_id(Main *bmain, ID *id_to, ID *id_from, const int flag)
     return false;
   }
 
-  BKE_animdata_free(id_to, (flag & LIB_ID_CREATE_NO_USER_REFCOUNT) == 0);
+  KERNEL_animdata_free(id_to, (flag & LIB_ID_CREATE_NO_USER_REFCOUNT) == 0);
 
-  adt = BKE_animdata_from_id(id_from);
+  adt = KERNEL_animdata_from_id(id_from);
   if (adt) {
     IdAdtTemplate *iat = (IdAdtTemplate *)id_to;
-    iat->adt = BKE_animdata_copy(bmain, adt, flag);
+    iat->adt = KERNEL_animdata_copy(bmain, adt, flag);
   }
 
   return true;
@@ -341,17 +341,17 @@ static void animdata_copy_id_action(Main *bmain,
                                     const bool set_newid,
                                     const bool do_linked_id)
 {
-  AnimData *adt = BKE_animdata_from_id(id);
+  AnimData *adt = KERNEL_animdata_from_id(id);
   if (adt) {
     if (adt->action && (do_linked_id || !ID_IS_LINKED(adt->action))) {
       id_us_min((ID *)adt->action);
-      adt->action = set_newid ? ID_NEW_SET(adt->action, BKE_id_copy(bmain, &adt->action->id)) :
-                                BKE_id_copy(bmain, &adt->action->id);
+      adt->action = set_newid ? ID_NEW_SET(adt->action, KERNEL_id_copy(bmain, &adt->action->id)) :
+                                KERNEL m_id_copy(bmain, &adt->action->id);
     }
     if (adt->tmpact && (do_linked_id || !ID_IS_LINKED(adt->tmpact))) {
       id_us_min((ID *)adt->tmpact);
-      adt->tmpact = set_newid ? ID_NEW_SET(adt->tmpact, BKE_id_copy(bmain, &adt->tmpact->id)) :
-                                BKE_id_copy(bmain, &adt->tmpact->id);
+      adt->tmpact = set_newid ? ID_NEW_SET(adt->tmpact, KERNEL_id_copy(bmain, &adt->tmpact->id)) :
+                                KERNEL_id_copy(bmain, &adt->tmpact->id);
     }
   }
   bNodeTree *ntree = ntreeFromID(id);
@@ -362,13 +362,13 @@ static void animdata_copy_id_action(Main *bmain,
    * collection here. */
 }
 
-void BKE_animdata_copy_id_action(Main *bmain, ID *id)
+void KERNEL_animdata_copy_id_action(Main *bmain, ID *id)
 {
   const bool is_id_liboverride = ID_IS_OVERRIDE_LIBRARY(id);
   animdata_copy_id_action(bmain, id, false, !is_id_liboverride);
 }
 
-void BKE_animdata_duplicate_id_action(struct Main *bmain,
+void KERNEL_animdata_duplicate_id_action(struct Main *bmain,
                                       struct ID *id,
                                       const eDupli_ID_Flags duplicate_flags)
 {
@@ -377,11 +377,11 @@ void BKE_animdata_duplicate_id_action(struct Main *bmain,
   }
 }
 
-void BKE_animdata_merge_copy(
+void KERNEL_animdata_merge_copy(
     Main *bmain, ID *dst_id, ID *src_id, eAnimData_MergeCopy_Modes action_mode, bool fix_drivers)
 {
-  AnimData *src = BKE_animdata_from_id(src_id);
-  AnimData *dst = BKE_animdata_from_id(dst_id);
+  AnimData *src = KERNEL_animdata_from_id(src_id);
+  AnimData *dst = KERNEL_animdata_from_id(dst_id);
 
   /* sanity checks */
   if (ELEM(NULL, dst, src)) {
@@ -399,8 +399,8 @@ void BKE_animdata_merge_copy(
   /* handle actions... */
   if (action_mode == ADT_MERGECOPY_SRC_COPY) {
     /* make a copy of the actions */
-    dst->action = (bAction *)BKE_id_copy(bmain, &src->action->id);
-    dst->tmpact = (bAction *)BKE_id_copy(bmain, &src->tmpact->id);
+    dst->action = (bAction *)KERNEL_id_copy(bmain, &src->action->id);
+    dst->tmpact = (bAction *)KERNEL_id_copy(bmain, &src->tmpact->id);
   }
   else if (action_mode == ADT_MERGECOPY_SRC_REF) {
     /* make a reference to it */
@@ -415,15 +415,15 @@ void BKE_animdata_merge_copy(
   if (src->nla_tracks.first) {
     ListBase tracks = {NULL, NULL};
 
-    BKE_nla_tracks_copy(bmain, &tracks, &src->nla_tracks, 0);
-    BLI_movelisttolist(&dst->nla_tracks, &tracks);
+    KERNEL_nla_tracks_copy(bmain, &tracks, &src->nla_tracks, 0);
+    LIB_movelisttolist(&dst->nla_tracks, &tracks);
   }
 
   /* duplicate drivers (F-Curves) */
   if (src->drivers.first) {
     ListBase drivers = {NULL, NULL};
 
-    BKE_fcurves_copy(&drivers, &src->drivers);
+    KERNEL_fcurves_copy(&drivers, &src->drivers);
 
     /* Fix up all driver targets using the old target id
      * - This assumes that the src ID is being merged into the dst ID
@@ -446,7 +446,7 @@ void BKE_animdata_merge_copy(
       }
     }
 
-    BLI_movelisttolist(&dst->drivers, &drivers);
+    LIB_movelisttolist(&dst->drivers, &drivers);
   }
 }
 
@@ -455,9 +455,9 @@ void BKE_animdata_merge_copy(
 /**
  * Helper heuristic for determining if a path is compatible with the basepath
  *
- * \param path: Full RNA-path from some data (usually an F-Curve) to compare
- * \param basepath: Shorter path fragment to look for
- * \return Whether there is a match
+ * param path: Full RNA-path from some data (usually an F-Curve) to compare
+ * param basepath: Shorter path fragment to look for
+ * return Whether there is a match
  */
 static bool animpath_matches_basepath(const char path[], const char basepath[])
 {
@@ -469,12 +469,12 @@ static void animpath_update_basepath(FCurve *fcu,
                                      const char *old_basepath,
                                      const char *new_basepath)
 {
-  BLI_assert(animpath_matches_basepath(fcu->rna_path, old_basepath));
+  LIB_assert(animpath_matches_basepath(fcu->rna_path, old_basepath));
   if (STREQ(old_basepath, new_basepath)) {
     return;
   }
 
-  char *new_path = BLI_sprintfN("%s%s", new_basepath, fcu->rna_path + strlen(old_basepath));
+  char *new_path = LIB_sprintfN("%s%s", new_basepath, fcu->rna_path + strlen(old_basepath));
   MEM_freeN(fcu->rna_path);
   fcu->rna_path = new_path;
 }
@@ -525,7 +525,7 @@ static void action_move_fcurves_by_basepath(bAction *srcAct,
       /* if grouped... */
       if (fcu->grp) {
         /* make sure there will be a matching group on the other side for the migrants */
-        agrp = BKE_action_group_find_name(dstAct, fcu->grp->name);
+        agrp = KERNEL_action_group_find_name(dstAct, fcu->grp->name);
 
         if (agrp == NULL) {
           /* add a new one with a similar name (usually will be the same though) */
@@ -547,7 +547,7 @@ static void action_move_fcurves_by_basepath(bAction *srcAct,
         action_groups_add_channel(dstAct, agrp, fcu);
       }
       else {
-        BLI_addtail(&dstAct->curves, fcu);
+        LIB_addtail(&dstAct->curves, fcu);
       }
     }
   }
@@ -564,8 +564,8 @@ static void action_move_fcurves_by_basepath(bAction *srcAct,
         /* if group is empty and tagged, then we can remove as this operation
          * moved out all the channels that were formerly here
          */
-        if (BLI_listbase_is_empty(&agrp->channels)) {
-          BLI_freelinkN(&srcAct->groups, agrp);
+        if (LIB_listbase_is_empty(&agrp->channels)) {
+          LIB_freelinkN(&srcAct->groups, agrp);
         }
         else {
           agrp->flag &= ~AGRP_TEMP;
@@ -583,15 +583,15 @@ static void animdata_move_drivers_by_basepath(AnimData *srcAdt,
   LISTBASE_FOREACH_MUTABLE (FCurve *, fcu, &srcAdt->drivers) {
     if (animpath_matches_basepath(fcu->rna_path, src_basepath)) {
       animpath_update_basepath(fcu, src_basepath, dst_basepath);
-      BLI_remlink(&srcAdt->drivers, fcu);
-      BLI_addtail(&dstAdt->drivers, fcu);
+      LIB_remlink(&srcAdt->drivers, fcu);
+      LIB_addtail(&dstAdt->drivers, fcu);
 
       /* TODO: add depsgraph flushing calls? */
     }
   }
 }
 
-void BKE_animdata_transfer_by_basepath(Main *bmain, ID *srcID, ID *dstID, ListBase *basepaths)
+void KERNEL_animdata_transfer_by_basepath(Main *bmain, ID *srcID, ID *dstID, ListBase *basepaths)
 {
   AnimData *srcAdt = NULL, *dstAdt = NULL;
 
@@ -604,8 +604,8 @@ void BKE_animdata_transfer_by_basepath(Main *bmain, ID *srcID, ID *dstID, ListBa
   }
 
   /* get animdata from src, and create for destination (if needed) */
-  srcAdt = BKE_animdata_from_id(srcID);
-  dstAdt = BKE_animdata_ensure_id(dstID);
+  srcAdt = KERNEL_animdata_from_id(srcID);
+  dstAdt = KERNEL_animdata_ensure_id(dstID);
 
   if (ELEM(NULL, srcAdt, dstAdt)) {
     if (G.debug & G_DEBUG) {
@@ -619,8 +619,8 @@ void BKE_animdata_transfer_by_basepath(Main *bmain, ID *srcID, ID *dstID, ListBa
     /* Set up an action if necessary,
      * and name it in a similar way so that it can be easily found again. */
     if (dstAdt->action == NULL) {
-      dstAdt->action = BKE_action_add(bmain, srcAdt->action->id.name + 2);
-      BKE_animdata_action_ensure_idroot(dstID, dstAdt->action);
+      dstAdt->action = KERNEL_action_add(bmain, srcAdt->action->id.name + 2);
+      KERNEL_animdata_action_ensure_idroot(dstID, dstAdt->action);
     }
     else if (dstAdt->action == srcAdt->action) {
       CLOG_WARN(&LOG,
@@ -632,8 +632,8 @@ void BKE_animdata_transfer_by_basepath(Main *bmain, ID *srcID, ID *dstID, ListBa
 
       /* TODO: review this... */
       id_us_min(&dstAdt->action->id);
-      dstAdt->action = BKE_action_add(bmain, dstAdt->action->id.name + 2);
-      BKE_animdata_action_ensure_idroot(dstID, dstAdt->action);
+      dstAdt->action = KERNEL_action_add(bmain, dstAdt->action->id.name + 2);
+      KERNEL_animdata_action_ensure_idroot(dstID, dstAdt->action);
     }
 
     /* loop over base paths, trying to fix for each one... */
@@ -697,21 +697,21 @@ static char *rna_path_rename_fix(ID *owner_id,
 
       /* add the part of the string that goes up to the start of the prefix */
       if (prefixPtr > oldpath) {
-        BLI_dynstr_nappend(ds, oldpath, prefixPtr - oldpath);
+        LIB_dynstr_nappend(ds, oldpath, prefixPtr - oldpath);
       }
 
       /* add the prefix */
-      BLI_dynstr_append(ds, prefix);
+      LIB_dynstr_append(ds, prefix);
 
       /* add the new name (complete with brackets) */
-      BLI_dynstr_append(ds, newName);
+      LIB_dynstr_append(ds, newName);
 
       /* add the postfix */
-      BLI_dynstr_append(ds, postfixPtr);
+      LIB_dynstr_append(ds, postfixPtr);
 
       /* create new path, and cleanup old data */
-      newPath = BLI_dynstr_get_cstring(ds);
-      BLI_dynstr_free(ds);
+      newPath = LIB_dynstr_get_cstring(ds);
+      LIB_dynstr_free(ds);
 
       /* check if the new path will solve our problems */
       /* TODO: will need to check whether this step really helps in practice */
