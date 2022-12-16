@@ -903,7 +903,7 @@ char *BKE_animsys_fix_rna_path_rename(ID *owner_id,
   return result;
 }
 
-void BKE_action_fix_paths_rename(ID *owner_id,
+void KERNEL_action_fix_paths_rename(ID *owner_id,
                                  bAction *act,
                                  const char *prefix,
                                  const char *oldName,
@@ -919,22 +919,22 @@ void BKE_action_fix_paths_rename(ID *owner_id,
     return;
   }
 
-  /* Name sanitation logic - copied from BKE_animdata_fix_paths_rename() */
+  /* Name sanitation logic - copied from KERNEL_animdata_fix_paths_rename() */
   if ((oldName != NULL) && (newName != NULL)) {
     /* pad the names with [" "] so that only exact matches are made */
     const size_t name_old_len = strlen(oldName);
     const size_t name_new_len = strlen(newName);
-    char *name_old_esc = BLI_array_alloca(name_old_esc, (name_old_len * 2) + 1);
-    char *name_new_esc = BLI_array_alloca(name_new_esc, (name_new_len * 2) + 1);
+    char *name_old_esc = LIB_array_alloca(name_old_esc, (name_old_len * 2) + 1);
+    char *name_new_esc = LIB_array_alloca(name_new_esc, (name_new_len * 2) + 1);
 
-    BLI_str_escape(name_old_esc, oldName, (name_old_len * 2) + 1);
-    BLI_str_escape(name_new_esc, newName, (name_new_len * 2) + 1);
-    oldN = BLI_sprintfN("[\"%s\"]", name_old_esc);
-    newN = BLI_sprintfN("[\"%s\"]", name_new_esc);
+    LIB_str_escape(name_old_esc, oldName, (name_old_len * 2) + 1);
+    LIB_str_escape(name_new_esc, newName, (name_new_len * 2) + 1);
+    oldN = LIB_sprintfN("[\"%s\"]", name_old_esc);
+    newN = LIB_sprintfN("[\"%s\"]", name_new_esc);
   }
   else {
-    oldN = BLI_sprintfN("[%d]", oldSubscript);
-    newN = BLI_sprintfN("[%d]", newSubscript);
+    oldN = LIB_sprintfN("[%d]", oldSubscript);
+    newN = LIB_sprintfN("[%d]", newSubscript);
   }
 
   /* fix paths in action */
@@ -946,7 +946,7 @@ void BKE_action_fix_paths_rename(ID *owner_id,
   MEM_freeN(newN);
 }
 
-void BKE_animdata_fix_paths_rename(ID *owner_id,
+void KERNEL_animdata_fix_paths_rename(ID *owner_id,
                                    AnimData *adt,
                                    ID *ref_id,
                                    const char *prefix,
@@ -968,17 +968,17 @@ void BKE_animdata_fix_paths_rename(ID *owner_id,
     /* Pad the names with [" "] so that only exact matches are made. */
     const size_t name_old_len = strlen(oldName);
     const size_t name_new_len = strlen(newName);
-    char *name_old_esc = BLI_array_alloca(name_old_esc, (name_old_len * 2) + 1);
-    char *name_new_esc = BLI_array_alloca(name_new_esc, (name_new_len * 2) + 1);
+    char *name_old_esc = LIB_array_alloca(name_old_esc, (name_old_len * 2) + 1);
+    char *name_new_esc = LIB_array_alloca(name_new_esc, (name_new_len * 2) + 1);
 
-    BLI_str_escape(name_old_esc, oldName, (name_old_len * 2) + 1);
-    BLI_str_escape(name_new_esc, newName, (name_new_len * 2) + 1);
-    oldN = BLI_sprintfN("[\"%s\"]", name_old_esc);
-    newN = BLI_sprintfN("[\"%s\"]", name_new_esc);
+    LIB_str_escape(name_old_esc, oldName, (name_old_len * 2) + 1);
+    LIB_str_escape(name_new_esc, newName, (name_new_len * 2) + 1);
+    oldN = LIB_sprintfN("[\"%s\"]", name_old_esc);
+    newN = LIB_sprintfN("[\"%s\"]", name_new_esc);
   }
   else {
-    oldN = BLI_sprintfN("[%d]", oldSubscript);
-    newN = BLI_sprintfN("[%d]", newSubscript);
+    oldN = LIB_sprintfN("[%d]", oldSubscript);
+    newN = LIB_sprintfN("[%d]", newSubscript);
   }
   /* Active action and temp action. */
   if (adt->action != NULL) {
@@ -1012,7 +1012,7 @@ void BKE_animdata_fix_paths_rename(ID *owner_id,
 
 /* Remove FCurves with Prefix  -------------------------------------- */
 
-/* Check RNA-Paths for a list of F-Curves */
+/* Check API-Paths for a list of F-Curves */
 static bool fcurves_path_remove_fix(const char *prefix, ListBase *curves)
 {
   FCurve *fcu, *fcn;
@@ -1027,8 +1027,8 @@ static bool fcurves_path_remove_fix(const char *prefix, ListBase *curves)
 
     if (fcu->rna_path) {
       if (STRPREFIX(fcu->rna_path, prefix)) {
-        BLI_remlink(curves, fcu);
-        BKE_fcurve_free(fcu);
+        LIB_remlink(curves, fcu);
+        KERNEL_fcurve_free(fcu);
         any_removed = true;
       }
     }
@@ -1036,7 +1036,7 @@ static bool fcurves_path_remove_fix(const char *prefix, ListBase *curves)
   return any_removed;
 }
 
-/* Check RNA-Paths for a list of F-Curves */
+/* Check API-Paths for a list of F-Curves */
 static bool nlastrips_path_remove_fix(const char *prefix, ListBase *strips)
 {
   NlaStrip *strip;
@@ -1055,7 +1055,7 @@ static bool nlastrips_path_remove_fix(const char *prefix, ListBase *strips)
   return any_removed;
 }
 
-bool BKE_animdata_fix_paths_remove(ID *id, const char *prefix)
+bool KERNEL_animdata_fix_paths_remove(ID *id, const char *prefix)
 {
   /* Only some ID-blocks have this info for now, so we cast the
    * types that do to be of type IdAdtTemplate
@@ -1122,7 +1122,7 @@ static void nlastrips_apply_all_curves_cb(ID *id, ListBase *strips, AllFCurvesCb
   }
 }
 
-/* Helper for BKE_fcurves_main_cb() - Dispatch wrapped operator to all F-Curves */
+/* Helper for KERNEL_fcurves_main_cb() - Dispatch wrapped operator to all F-Curves */
 static void adt_apply_all_fcurves_cb(ID *id, AnimData *adt, void *wrapper_data)
 {
   AllFCurvesCbWrapper *wrapper = wrapper_data;
@@ -1145,34 +1145,34 @@ static void adt_apply_all_fcurves_cb(ID *id, AnimData *adt, void *wrapper_data)
   }
 }
 
-void BKE_fcurves_id_cb(ID *id, ID_FCurve_Edit_Callback func, void *user_data)
+void KERNEL_fcurves_id_cb(ID *id, ID_FCurve_Edit_Callback func, void *user_data)
 {
-  AnimData *adt = BKE_animdata_from_id(id);
+  AnimData *adt = KERNEL_animdata_from_id(id);
   if (adt != NULL) {
     AllFCurvesCbWrapper wrapper = {func, user_data};
     adt_apply_all_fcurves_cb(id, adt, &wrapper);
   }
 }
 
-void BKE_fcurves_main_cb(Main *bmain, ID_FCurve_Edit_Callback func, void *user_data)
+void KERNEL_fcurves_main_cb(Main *bmain, ID_FCurve_Edit_Callback func, void *user_data)
 {
   /* Wrap F-Curve operation stuff to pass to the general AnimData-level func */
   AllFCurvesCbWrapper wrapper = {func, user_data};
 
   /* Use the AnimData-based function so that we don't have to reimplement all that stuff */
-  BKE_animdata_main_cb(bmain, adt_apply_all_fcurves_cb, &wrapper);
+  KERNEL_animdata_main_cb(bmain, adt_apply_all_fcurves_cb, &wrapper);
 }
 
 /* Whole Database Ops -------------------------------------------- */
 
-void BKE_animdata_main_cb(Main *bmain, ID_AnimData_Edit_Callback func, void *user_data)
+void KERNEL m_animdata_main_cb(Main *bmain, ID_AnimData_Edit_Callback func, void *user_data)
 {
   ID *id;
 
   /* standard data version */
 #define ANIMDATA_IDS_CB(first) \
   for (id = first; id; id = id->next) { \
-    AnimData *adt = BKE_animdata_from_id(id); \
+    AnimData *adt = KERNEL_animdata_from_id(id); \
     if (adt) { \
       func(id, adt, user_data); \
     } \
@@ -1182,10 +1182,10 @@ void BKE_animdata_main_cb(Main *bmain, ID_AnimData_Edit_Callback func, void *use
   /* "embedded" nodetree cases (i.e. scene/material/texture->nodetree) */
 #define ANIMDATA_NODETREE_IDS_CB(first, NtId_Type) \
   for (id = first; id; id = id->next) { \
-    AnimData *adt = BKE_animdata_from_id(id); \
+    AnimData *adt = KERNEL_animdata_from_id(id); \
     NtId_Type *ntp = (NtId_Type *)id; \
     if (ntp->nodetree) { \
-      AnimData *adt2 = BKE_animdata_from_id((ID *)ntp->nodetree); \
+      AnimData *adt2 = KERNEL_animdata_from_id((ID *)ntp->nodetree); \
       if (adt2) { \
         func(id, adt2, user_data); \
       } \
@@ -1281,10 +1281,10 @@ void BKE_animdata_fix_paths_rename_all(ID *ref_id,
                                        const char *newName)
 {
   Main *bmain = G.main; /* XXX UGLY! */
-  BKE_animdata_fix_paths_rename_all_ex(bmain, ref_id, prefix, oldName, newName, 0, 0, 1);
+  KERNEL_animdata_fix_paths_rename_all_ex(bmain, ref_id, prefix, oldName, newName, 0, 0, 1);
 }
 
-void BKE_animdata_fix_paths_rename_all_ex(Main *bmain,
+void KERNEL_animdata_fix_paths_rename_all_ex(Main *bmain,
                                           ID *ref_id,
                                           const char *prefix,
                                           const char *oldName,
@@ -1293,7 +1293,7 @@ void BKE_animdata_fix_paths_rename_all_ex(Main *bmain,
                                           const int newSubscript,
                                           const bool verify_paths)
 {
-  /* TODO: use BKE_animdata_main_cb for looping over all data. */
+  /* TODO: use KERNEL_animdata_main_cb for looping over all data. */
 
   ID *id;
 
@@ -1303,8 +1303,8 @@ void BKE_animdata_fix_paths_rename_all_ex(Main *bmain,
    */
 #define RENAMEFIX_ANIM_IDS(first) \
   for (id = first; id; id = id->next) { \
-    AnimData *adt = BKE_animdata_from_id(id); \
-    BKE_animdata_fix_paths_rename( \
+    AnimData *adt = KERNEL_animdata_from_id(id); \
+    KERNEL_animdata_fix_paths_rename( \
         id, adt, ref_id, prefix, oldName, newName, oldSubscript, newSubscript, verify_paths); \
   } \
   (void)0
@@ -1312,11 +1312,11 @@ void BKE_animdata_fix_paths_rename_all_ex(Main *bmain,
   /* another version of this macro for nodetrees */
 #define RENAMEFIX_ANIM_NODETREE_IDS(first, NtId_Type) \
   for (id = first; id; id = id->next) { \
-    AnimData *adt = BKE_animdata_from_id(id); \
+    AnimData *adt = KERNEL m_animdata_from_id(id); \
     NtId_Type *ntp = (NtId_Type *)id; \
     if (ntp->nodetree) { \
-      AnimData *adt2 = BKE_animdata_from_id((ID *)ntp->nodetree); \
-      BKE_animdata_fix_paths_rename((ID *)ntp->nodetree, \
+      AnimData *adt2 = KERNEL_animdata_from_id((ID *)ntp->nodetree); \
+      KERNEL_animdata_fix_paths_rename((ID *)ntp->nodetree, \
                                     adt2, \
                                     ref_id, \
                                     prefix, \
@@ -1326,7 +1326,7 @@ void BKE_animdata_fix_paths_rename_all_ex(Main *bmain,
                                     newSubscript, \
                                     verify_paths); \
     } \
-    BKE_animdata_fix_paths_rename( \
+    KERNEL_animdata_fix_paths_rename( \
         id, adt, ref_id, prefix, oldName, newName, oldSubscript, newSubscript, verify_paths); \
   } \
   (void)0
@@ -1409,46 +1409,46 @@ void BKE_animdata_fix_paths_rename_all_ex(Main *bmain,
 
 /* .blend file API -------------------------------------------- */
 
-void BKE_animdata_blend_write(BlendWriter *writer, struct AnimData *adt)
+void KERNEL_animdata_blend_write(BlendWriter *writer, struct AnimData *adt)
 {
   /* firstly, just write the AnimData block */
-  BLO_write_struct(writer, AnimData, adt);
+  LOADER_write_struct(writer, AnimData, adt);
 
   /* write drivers */
-  BKE_fcurve_blend_write(writer, &adt->drivers);
+  KERNEL_fcurve_blend_write(writer, &adt->drivers);
 
   /* write overrides */
   /* FIXME: are these needed? */
   LISTBASE_FOREACH (AnimOverride *, aor, &adt->overrides) {
     /* overrides consist of base data + rna_path */
-    BLO_write_struct(writer, AnimOverride, aor);
-    BLO_write_string(writer, aor->rna_path);
+    LOADER_write_struct(writer, AnimOverride, aor);
+    LOADER m_write_string(writer, aor->rna_path);
   }
 
   /* TODO: write the remaps (if they are needed). */
 
   /* write NLA data */
-  BKE_nla_blend_write(writer, &adt->nla_tracks);
+  KERNEL_nla_blend_write(writer, &adt->nla_tracks);
 }
 
-void BKE_animdata_blend_read_data(BlendDataReader *reader, AnimData *adt)
+void KERNEL_animdata_blend_read_data(BlendDataReader *reader, AnimData *adt)
 {
-  /* NOTE: must have called BLO_read_data_address already before doing this... */
+  /* NOTE: must have called LOADER_read_data_address already before doing this... */
   if (adt == NULL) {
     return;
   }
 
   /* link drivers */
-  BLO_read_list(reader, &adt->drivers);
-  BKE_fcurve_blend_read_data(reader, &adt->drivers);
+  LOADER_read_list(reader, &adt->drivers);
+  KERNEL M_fcurve_blend_read_data(reader, &adt->drivers);
   adt->driver_array = NULL;
 
   /* link overrides */
   /* TODO... */
 
   /* link NLA-data */
-  BLO_read_list(reader, &adt->nla_tracks);
-  BKE_nla_blend_read_data(reader, &adt->nla_tracks);
+  LOADER M_read_list(reader, &adt->nla_tracks);
+  KERNEL_nla_blend_read_data(reader, &adt->nla_tracks);
 
   /* relink active track/strip - even though strictly speaking this should only be used
    * if we're in 'tweaking mode', we need to be able to have this loaded back for
@@ -1456,38 +1456,38 @@ void BKE_animdata_blend_read_data(BlendDataReader *reader, AnimData *adt)
    */
   /* TODO: it's not really nice that anyone should be able to save the file in this
    *       state, but it's going to be too hard to enforce this single case. */
-  BLO_read_data_address(reader, &adt->act_track);
-  BLO_read_data_address(reader, &adt->actstrip);
+  LOADER_read_data_address(reader, &adt->act_track);
+  LOADER_read_data_address(reader, &adt->actstrip);
 }
 
-void BKE_animdata_blend_read_lib(BlendLibReader *reader, ID *id, AnimData *adt)
+void KERNEL_animdata_blend_read_lib(BlendLibReader *reader, ID *id, AnimData *adt)
 {
   if (adt == NULL) {
     return;
   }
 
   /* link action data */
-  BLO_read_id_address(reader, id->lib, &adt->action);
-  BLO_read_id_address(reader, id->lib, &adt->tmpact);
+  LOADER_read_id_address(reader, id->lib, &adt->action);
+  LOADER_read_id_address(reader, id->lib, &adt->tmpact);
 
   /* link drivers */
-  BKE_fcurve_blend_read_lib(reader, id, &adt->drivers);
+  KERNEL_fcurve_blend_read_lib(reader, id, &adt->drivers);
 
   /* overrides don't have lib-link for now, so no need to do anything */
 
   /* link NLA-data */
-  BKE_nla_blend_read_lib(reader, id, &adt->nla_tracks);
+  KERNEL_nla_blend_read_lib(reader, id, &adt->nla_tracks);
 }
 
-void BKE_animdata_blend_read_expand(struct BlendExpander *expander, AnimData *adt)
+void KERNEL_animdata_blend_read_expand(struct BlendExpander *expander, AnimData *adt)
 {
   /* own action */
-  BLO_expand(expander, adt->action);
-  BLO_expand(expander, adt->tmpact);
+  LOADER_expand(expander, adt->action);
+  LOADER_expand(expander, adt->tmpact);
 
   /* drivers - assume that these F-Curves have driver data to be in this list... */
-  BKE_fcurve_blend_read_expand(expander, &adt->drivers);
+  KERNEL_fcurve_blend_read_expand(expander, &adt->drivers);
 
   /* NLA data - referenced actions. */
-  BKE_nla_blend_read_expand(expander, &adt->nla_tracks);
+  KERNEL_nla_blend_read_expand(expander, &adt->nla_tracks);
 }
