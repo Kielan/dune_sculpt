@@ -2,41 +2,41 @@
 
 #include <string.h>
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_animsys.h"
-#include "BKE_context.h"
-#include "BKE_fcurve.h"
-#include "BKE_fcurve_driver.h"
-#include "BKE_global.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_nla.h"
-#include "BKE_node.h"
-#include "BKE_report.h"
+#include "KE_action.h"
+#include "KE_anim_data.h"
+#include "KE_animsys.h"
+#include "KE_context.h"
+#include "KE_fcurve.h"
+#include "KE_fcurve_driver.h"
+#include "KE_global.h"
+#include "KE_idtype.h"
+#include "KE_lib_id.h"
+#include "KE_lib_query.h"
+#include "KE_main.h"
+#include "KE_nla.h"
+#include "KE_node.h"
+#include "KE_report.h"
 
-#include "DNA_ID.h"
-#include "DNA_anim_types.h"
-#include "DNA_light_types.h"
-#include "DNA_material_types.h"
-#include "DNA_node_types.h"
-#include "DNA_space_types.h"
-#include "DNA_windowmanager_types.h"
-#include "DNA_world_types.h"
+#include "_ID.h"
+#include "_anim_types.h"
+#include "_light_types.h"
+#include "_material_types.h"
+#include "_node_types.h"
+#include "_space_types.h"
+#include "_windowmanager_types.h"
+#include "_world_types.h"
 
-#include "BLI_alloca.h"
-#include "BLI_dynstr.h"
-#include "BLI_listbase.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "LIB_alloca.h"
+#include "LIB_dynstr.h"
+#include "LIB_listbase.h"
+#include "LIB_string.h"
+#include "LIB_utildefines.h"
 
 #include "DEG_depsgraph.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
-#include "RNA_access.h"
+#include "API_access.h"
 
 #include "CLG_log.h"
 
@@ -49,7 +49,7 @@ static CLG_LogRef LOG = {"bke.anim_sys"};
 
 bool id_type_can_have_animdata(const short id_type)
 {
-  const IDTypeInfo *typeinfo = BKE_idtype_get_info_from_idcode(id_type);
+  const IDTypeInfo *typeinfo = KERNEL_idtype_get_info_from_idcode(id_type);
   if (typeinfo != NULL) {
     return (typeinfo->flags & IDTYPE_FLAGS_NO_ANIMDATA) == 0;
   }
@@ -66,7 +66,7 @@ bool id_can_have_animdata(const ID *id)
   return id_type_can_have_animdata(GS(id->name));
 }
 
-AnimData *BKE_animdata_from_id(const ID *id)
+AnimData *KERNEL_animdata_from_id(const ID *id)
 {
   /* In order for this to work, we assume that the #AnimData pointer is stored
    * immediately after the given ID-block in the struct, as per IdAdtTemplate. */
@@ -80,7 +80,7 @@ AnimData *BKE_animdata_from_id(const ID *id)
   return NULL;
 }
 
-AnimData *BKE_animdata_ensure_id(ID *id)
+AnimData *KERNEL_animdata_ensure_id(ID *id)
 {
   /* In order for this to work, we assume that the #AnimData pointer is stored
    * immediately after the given ID-block in the struct, as per IdAdtTemplate. */
@@ -108,13 +108,13 @@ AnimData *BKE_animdata_ensure_id(ID *id)
 
 /* Action Setter --------------------------------------- */
 
-bool BKE_animdata_set_action(ReportList *reports, ID *id, bAction *act)
+bool KERNEL_animdata_set_action(ReportList *reports, ID *id, bAction *act)
 {
-  AnimData *adt = BKE_animdata_from_id(id);
+  AnimData *adt = KERNEL_animdata_from_id(id);
 
   /* Animdata validity check. */
   if (adt == NULL) {
-    BKE_report(reports, RPT_WARNING, "No AnimData to set action on");
+    KERNEL_report(reports, RPT_WARNING, "No AnimData to set action on");
     return false;
   }
 
@@ -123,9 +123,9 @@ bool BKE_animdata_set_action(ReportList *reports, ID *id, bAction *act)
     return true;
   }
 
-  if (!BKE_animdata_action_editable(adt)) {
+  if (!KERNEL_animdata_action_editable(adt)) {
     /* Cannot remove, otherwise things turn to custard. */
-    BKE_report(reports, RPT_ERROR, "Cannot change action, as it is still being edited in NLA");
+    KERNEL_report(reports, RPT_ERROR, "Cannot change action, as it is still being edited in NLA");
     return false;
   }
 
@@ -141,9 +141,9 @@ bool BKE_animdata_set_action(ReportList *reports, ID *id, bAction *act)
   }
 
   /* Action must have same type as owner. */
-  if (!BKE_animdata_action_ensure_idroot(id, act)) {
+  if (!KERNEL_animdata_action_ensure_idroot(id, act)) {
     /* Cannot set to this type. */
-    BKE_reportf(
+    KERNEL_reportf(
         reports,
         RPT_ERROR,
         "Could not set action '%s' onto ID '%s', as it does not have suitably rooted paths "
@@ -159,7 +159,7 @@ bool BKE_animdata_set_action(ReportList *reports, ID *id, bAction *act)
   return true;
 }
 
-bool BKE_animdata_action_editable(const AnimData *adt)
+bool KERNEL_animdata_action_editable(const AnimData *adt)
 {
   /* Active action is only editable when it is not a tweaking strip. */
   const bool is_tweaking_strip = (adt->flag & ADT_NLA_EDIT_ON) || adt->actstrip != NULL ||
@@ -187,7 +187,7 @@ bool BKE_animdata_action_ensure_idroot(const ID *owner, bAction *action)
 
 /* Freeing -------------------------------------------- */
 
-void BKE_animdata_free(ID *id, const bool do_id_user)
+void KERNEL_animdata_free(ID *id, const bool do_id_user)
 {
   /* Only some ID-blocks have this info for now, so we cast the
    * types that do to be of type IdAdtTemplate
@@ -210,10 +210,10 @@ void BKE_animdata_free(ID *id, const bool do_id_user)
       }
 
       /* free nla data */
-      BKE_nla_tracks_free(&adt->nla_tracks, do_id_user);
+      KERNEL_nla_tracks_free(&adt->nla_tracks, do_id_user);
 
       /* free drivers - stored as a list of F-Curves */
-      BKE_fcurves_free(&adt->drivers);
+      KERNEL_fcurves_free(&adt->drivers);
 
       /* free driver array cache */
       MEM_SAFE_FREE(adt->driver_array);
@@ -228,13 +228,13 @@ void BKE_animdata_free(ID *id, const bool do_id_user)
   }
 }
 
-bool BKE_animdata_id_is_animated(const struct ID *id)
+bool KERNEL_animdata_id_is_animated(const struct ID *id)
 {
   if (id == NULL) {
     return false;
   }
 
-  const AnimData *adt = BKE_animdata_from_id((ID *)id);
+  const AnimData *adt = KERNEL_animdata_from_id((ID *)id);
   if (adt == NULL) {
     return false;
   }
