@@ -1,5 +1,4 @@
-/** \file
- * \ingroup bke
+/**
  *
  * This module exposes a rasterizer that works as a black box - implementation details
  * are confined to this file.
@@ -50,23 +49,23 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mask_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_vec_types.h"
+#include "STRUCTS_mask_types.h"
+#include "STRUCTS_scene_types.h"
+#include "STRUCTS_vec_types.h"
 
-#include "BLI_memarena.h"
-#include "BLI_scanfill.h"
-#include "BLI_utildefines.h"
+#include "LIB_memarena.h"
+#include "LIB_scanfill.h"
+#include "LIB_utildefines.h"
 
-#include "BLI_linklist.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_rect.h"
-#include "BLI_task.h"
+#include "LIB_linklist.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_rect.h"
+#include "LIB_task.h"
 
-#include "BKE_mask.h"
+#include "KERNEL_mask.h"
 
-#include "BLI_strict_flags.h"
+#include "LIB_strict_flags.h"
 
 /* this is rather and annoying hack, use define to isolate it.
  * problem is caused by scanfill removing edges on us. */
