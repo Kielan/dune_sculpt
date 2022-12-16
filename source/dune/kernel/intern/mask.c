@@ -5,9 +5,9 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_endian_switch.h"
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
+#include "LI_endian_switch.h"
+#include "LI_ghash.h"
+#include "LI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_string.h"
 #include "BLI_string_utils.h"
@@ -1719,7 +1719,7 @@ MaskLayerShape *BKE_mask_layer_shape_find_frame(MaskLayer *masklay, const int fr
   return NULL;
 }
 
-int BKE_mask_layer_shape_find_frame_range(MaskLayer *masklay,
+int KERNEL_mask_layer_shape_find_frame_range(MaskLayer *masklay,
                                           const float frame,
                                           MaskLayerShape **r_masklay_shape_a,
                                           MaskLayerShape **r_masklay_shape_b)
@@ -1758,17 +1758,347 @@ int BKE_mask_layer_shape_find_frame_range(MaskLayer *masklay,
   return 0;
 }
 
-MaskLayerShape *BKE_mask_layer_shape_verify_frame(MaskLayer *masklay, const int frame)
+MaskLayerShape *KERNEL_mask_layer_shape_verify_frame(MaskLayer *masklay, const int frame)
 {
   MaskLayerShape *masklay_shape;
 
-  masklay_shape = BKE_mask_layer_shape_find_frame(masklay, frame);
+  masklay_shape = KERNEL_mask_layer_shape_find_frame(masklay, frame);
 
   if (masklay_shape == NULL) {
-    masklay_shape = BKE_mask_layer_shape_alloc(masklay, frame);
-    BLI_addtail(&masklay->splines_shapes, masklay_shape);
-    BKE_mask_layer_shape_sort(masklay);
+    masklay_shape = KERNEL_mask_layer_shape_alloc(masklay, frame);
+    LIB_addtail(&masklay->splines_shapes, masklay_shape);
+    KERNEL_mask_layer_shape_sort(masklay);
   }
 
   return masklay_shape;
+}
+MaskLayerShape *KERNEL_mask_layer_shape_duplicate(MaskLayerShape *masklay_shape)
+{
+  MaskLayerShape *masklay_shape_copy;
+
+  masklay_shape_copy = MEM_dupallocN(masklay_shape);
+
+  if (LIKELY(masklay_shape_copy->data)) {
+    masklay_shape_copy->data = MEM_dupallocN(masklay_shape_copy->data);
+  }
+
+  return masklay_shape_copy;
+}
+
+void KERNEL_mask_layer_shape_unlink(MaskLayer *masklay, MaskLayerShape *masklay_shape)
+{
+  LIB_remlink(&masklay->splines_shapes, masklay_shape);
+
+  KERNEL_mask_layer_shape_free(masklay_shape);
+}
+
+static int mask_layer_shape_sort_cb(const void *masklay_shape_a_ptr,
+                                    const void *masklay_shape_b_ptr)
+{
+  const MaskLayerShape *masklay_shape_a = masklay_shape_a_ptr;
+  const MaskLayerShape *masklay_shape_b = masklay_shape_b_ptr;
+
+  if (masklay_shape_a->frame < masklay_shape_b->frame) {
+    return -1;
+  }
+  if (masklay_shape_a->frame > masklay_shape_b->frame) {
+    return 1;
+  }
+
+  return 0;
+}
+
+void KERNEL_mask_layer_shape_sort(MaskLayer *masklay)
+{
+  LIB_listbase_sort(&masklay->splines_shapes, mask_layer_shape_sort_cb);
+}
+
+bool KERNEL_mask_layer_shape_spline_from_index(MaskLayer *masklay,
+                                            int index,
+                                            MaskSpline **r_masklay_shape,
+                                            int *r_index)
+{
+  MaskSpline *spline;
+
+  for (spline = masklay->splines.first; spline; spline = spline->next) {
+    if (index < spline->tot_point) {
+      *r_masklay_shape = spline;
+      *r_index = index;
+      return true;
+    }
+    index -= spline->tot_point;
+  }
+
+  return false;
+}
+
+int KERNEL_mask_layer_shape_spline_to_index(MaskLayer *masklay, MaskSpline *spline)
+{
+  MaskSpline *spline_iter;
+  int i_abs = 0;
+  for (spline_iter = masklay->splines.first; spline_iter && spline_iter != spline;
+       i_abs += spline_iter->tot_point, spline_iter = spline_iter->next) {
+    /* pass */
+  }
+
+  return i_abs;
+}
+
+/* basic 2D interpolation functions, could make more comprehensive later */
+static void interp_weights_uv_v2_calc(float r_uv[2],
+                                      const float pt[2],
+                                      const float pt_a[2],
+                                      const float pt_b[2])
+{
+  const float segment_len = len_v2v2(pt_a, pt_b);
+  if (segment_len == 0.0f) {
+    r_uv[0] = 1.0f;
+    r_uv[1] = 0.0f;
+    return;
+  }
+
+  float pt_on_line[2];
+  r_uv[0] = closest_to_line_v2(pt_on_line, pt, pt_a, pt_b);
+
+  r_uv[1] = (len_v2v2(pt_on_line, pt) / segment_len) *
+            /* This line only sets the sign. */
+            ((line_point_side_v2(pt_a, pt_b, pt) < 0.0f) ? -1.0f : 1.0f);
+}
+
+static void interp_weights_uv_v2_apply(const float uv[2],
+                                       float r_pt[2],
+                                       const float pt_a[2],
+                                       const float pt_b[2])
+{
+  const float dvec[2] = {pt_b[0] - pt_a[0], pt_b[1] - pt_a[1]};
+
+  /* u */
+  madd_v2_v2v2fl(r_pt, pt_a, dvec, uv[0]);
+
+  /* v */
+  r_pt[0] += -dvec[1] * uv[1];
+  r_pt[1] += dvec[0] * uv[1];
+}
+
+void KERNEL_mask_layer_shape_changed_add(MaskLayer *masklay,
+                                      int index,
+                                      bool do_init,
+                                      bool do_init_interpolate)
+{
+  MaskLayerShape *masklay_shape;
+
+  /* spline index from masklay */
+  MaskSpline *spline;
+  int spline_point_index;
+
+  if (KERNEL_mask_layer_shape_spline_from_index(masklay, index, &spline, &spline_point_index)) {
+    /* sanity check */
+    /* The point has already been removed in this array
+     * so subtract one when comparing with the shapes. */
+    int tot = KERNEL_mask_layer_shape_totvert(masklay) - 1;
+
+    /* for interpolation */
+    /* TODO: assumes closed curve for now. */
+    float uv[3][2]; /* 3x 2D handles */
+    const int pi_curr = spline_point_index;
+    const int pi_prev = ((spline_point_index - 1) + spline->tot_point) % spline->tot_point;
+    const int pi_next = (spline_point_index + 1) % spline->tot_point;
+
+    const int index_offset = index - spline_point_index;
+    /* const int pi_curr_abs = index; */
+    const int pi_prev_abs = pi_prev + index_offset;
+    const int pi_next_abs = pi_next + index_offset;
+
+    if (do_init_interpolate) {
+      for (int i = 0; i < 3; i++) {
+        interp_weights_uv_v2_calc(uv[i],
+                                  spline->points[pi_curr].bezt.vec[i],
+                                  spline->points[pi_prev].bezt.vec[i],
+                                  spline->points[pi_next].bezt.vec[i]);
+      }
+    }
+
+    for (masklay_shape = masklay->splines_shapes.first; masklay_shape;
+         masklay_shape = masklay_shape->next) {
+      if (tot == masklay_shape->tot_vert) {
+        float *data_resized;
+
+        masklay_shape->tot_vert++;
+        data_resized = MEM_mallocN(
+            masklay_shape->tot_vert * sizeof(float) * MASK_OBJECT_SHAPE_ELEM_SIZE, __func__);
+        if (index > 0) {
+          memcpy(data_resized,
+                 masklay_shape->data,
+                 index * sizeof(float) * MASK_OBJECT_SHAPE_ELEM_SIZE);
+        }
+
+        if (index != masklay_shape->tot_vert - 1) {
+          memcpy(&data_resized[(index + 1) * MASK_OBJECT_SHAPE_ELEM_SIZE],
+                 masklay_shape->data + (index * MASK_OBJECT_SHAPE_ELEM_SIZE),
+                 (masklay_shape->tot_vert - (index + 1)) * sizeof(float) *
+                     MASK_OBJECT_SHAPE_ELEM_SIZE);
+        }
+
+        if (do_init) {
+          float *fp = &data_resized[index * MASK_OBJECT_SHAPE_ELEM_SIZE];
+
+          mask_layer_shape_from_mask_point(&spline->points[spline_point_index].bezt, fp);
+
+          if (do_init_interpolate && spline->tot_point > 2) {
+            for (int i = 0; i < 3; i++) {
+              interp_weights_uv_v2_apply(
+                  uv[i],
+                  &fp[i * 2],
+                  &data_resized[(pi_prev_abs * MASK_OBJECT_SHAPE_ELEM_SIZE) + (i * 2)],
+                  &data_resized[(pi_next_abs * MASK_OBJECT_SHAPE_ELEM_SIZE) + (i * 2)]);
+            }
+          }
+        }
+        else {
+          memset(&data_resized[index * MASK_OBJECT_SHAPE_ELEM_SIZE],
+                 0,
+                 sizeof(float) * MASK_OBJECT_SHAPE_ELEM_SIZE);
+        }
+
+        MEM_freeN(masklay_shape->data);
+        masklay_shape->data = data_resized;
+      }
+      else {
+        CLOG_ERROR(&LOG,
+                   "vert mismatch %d != %d (frame %d)",
+                   masklay_shape->tot_vert,
+                   tot,
+                   masklay_shape->frame);
+      }
+    }
+  }
+}
+
+void KERNEL_mask_layer_shape_changed_remove(MaskLayer *masklay, int index, int count)
+{
+  MaskLayerShape *masklay_shape;
+
+  /* the point has already been removed in this array so add one when comparing with the shapes */
+  int tot = KERNEL_mask_layer_shape_totvert(masklay);
+
+  for (masklay_shape = masklay->splines_shapes.first; masklay_shape;
+       masklay_shape = masklay_shape->next) {
+    if (tot == masklay_shape->tot_vert - count) {
+      float *data_resized;
+
+      masklay_shape->tot_vert -= count;
+      data_resized = MEM_mallocN(
+          masklay_shape->tot_vert * sizeof(float) * MASK_OBJECT_SHAPE_ELEM_SIZE, __func__);
+      if (index > 0) {
+        memcpy(data_resized,
+               masklay_shape->data,
+               index * sizeof(float) * MASK_OBJECT_SHAPE_ELEM_SIZE);
+      }
+
+      if (index != masklay_shape->tot_vert) {
+        memcpy(&data_resized[index * MASK_OBJECT_SHAPE_ELEM_SIZE],
+               masklay_shape->data + ((index + count) * MASK_OBJECT_SHAPE_ELEM_SIZE),
+               (masklay_shape->tot_vert - index) * sizeof(float) * MASK_OBJECT_SHAPE_ELEM_SIZE);
+      }
+
+      MEM_freeN(masklay_shape->data);
+      masklay_shape->data = data_resized;
+    }
+    else {
+      CLOG_ERROR(&LOG,
+                 "vert mismatch %d != %d (frame %d)",
+                 masklay_shape->tot_vert - count,
+                 tot,
+                 masklay_shape->frame);
+    }
+  }
+}
+
+int KERNEL_mask_get_duration(Mask *mask)
+{
+  return max_ii(1, mask->efra - mask->sfra);
+}
+
+/*********************** clipboard *************************/
+
+static void mask_clipboard_free_ex(bool final_free)
+{
+  KERNEL_mask_spline_free_list(&mask_clipboard.splines);
+  LIB_listbase_clear(&mask_clipboard.splines);
+  if (mask_clipboard.id_hash) {
+    if (final_free) {
+      BLI_ghash_free(mask_clipboard.id_hash, NULL, MEM_freeN);
+    }
+    else {
+      LIB_ghash_clear(mask_clipboard.id_hash, NULL, MEM_freeN);
+    }
+  }
+}
+
+void KERNEL_mask_clipboard_free(void)
+{
+  mask_clipboard_free_ex(true);
+}
+
+void KERNEL_mask_clipboard_copy_from_layer(MaskLayer *mask_layer)
+{
+  MaskSpline *spline;
+
+  /* Nothing to do if selection if disabled for the given layer. */
+  if (mask_layer->visibility_flag & MASK_HIDE_SELECT) {
+    return;
+  }
+
+  mask_clipboard_free_ex(false);
+  if (mask_clipboard.id_hash == NULL) {
+    mask_clipboard.id_hash = LIB_ghash_ptr_new("mask clipboard ID hash");
+  }
+
+  for (spline = mask_layer->splines.first; spline; spline = spline->next) {
+    if (spline->flag & SELECT) {
+      MaskSpline *spline_new = BKE_mask_spline_copy(spline);
+      for (int i = 0; i < spline_new->tot_point; i++) {
+        MaskSplinePoint *point = &spline_new->points[i];
+        if (point->parent.id) {
+          if (!LIB_ghash_lookup(mask_clipboard.id_hash, point->parent.id)) {
+            int len = strlen(point->parent.id->name);
+            char *name_copy = MEM_mallocN(len + 1, "mask clipboard ID name");
+            strcpy(name_copy, point->parent.id->name);
+            LIB_ghash_insert(mask_clipboard.id_hash, point->parent.id, name_copy);
+          }
+        }
+      }
+
+      LIB_addtail(&mask_clipboard.splines, spline_new);
+    }
+  }
+}
+
+bool KERNEL_mask_clipboard_is_empty(void)
+{
+  return LIB_listbase_is_empty(&mask_clipboard.splines);
+}
+
+void KERNEL_mask_clipboard_paste_to_layer(Main *bmain, MaskLayer *mask_layer)
+{
+  MaskSpline *spline;
+
+  for (spline = mask_clipboard.splines.first; spline; spline = spline->next) {
+    MaskSpline *spline_new = KERNEL_mask_spline_copy(spline);
+
+    for (int i = 0; i < spline_new->tot_point; i++) {
+      MaskSplinePoint *point = &spline_new->points[i];
+      if (point->parent.id) {
+        const char *id_name = LIB_ghash_lookup(mask_clipboard.id_hash, point->parent.id);
+        ListBase *listbase;
+
+        LIB_assert(id_name != NULL);
+
+        listbase = which_libbase(bmain, GS(id_name));
+        point->parent.id = LIB_findstring(listbase, id_name + 2, offsetof(ID, name) + 2);
+      }
+    }
+
+    LIB_addtail(&mask_layer->splines, spline_new);
+  }
 }
