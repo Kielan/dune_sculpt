@@ -36,18 +36,18 @@
 #include "BLT_translation.h"
 
 #include "KERNEL_anim_data.h"
-#include "BKE_brush.h"
-#include "BKE_curve.h"
-#include "BKE_displist.h"
-#include "BKE_editmesh.h"
-#include "BKE_gpencil.h"
-#include "BKE_icons.h"
-#include "BKE_idtype.h"
-#include "BKE_image.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
+#include "KERNEL_brush.h"
+#include "KERNEL_curve.h"
+#include "KERNEL_displist.h"
+#include "KERNEL_editmesh.h"
+#include "KERNEL_gpencil.h"
+#include "KERNEL_icons.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_image.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_material.h"
 #include "KERNEL_mesh.h"
 #include "KERNEL_node.h"
 #include "KERNEL_object.h"
@@ -70,7 +70,7 @@ static void material_init_data(ID *id)
 {
   Material *material = (Material *)id;
 
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(material, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(material, id));
 
   MEMCPY_STRUCT_AFTER(material, DNA_struct_default_get(Material), id);
 }
@@ -112,7 +112,7 @@ static void material_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const 
     material_dst->gp_style = MEM_dupallocN(material_src->gp_style);
   }
 
-  BLI_listbase_clear(&material_dst->gpumaterial);
+  LIB_listbase_clear(&material_dst->gpumaterial);
 
   /* TODO: Duplicate Engine Settings and set runtime to NULL. */
 }
@@ -135,22 +135,22 @@ static void material_free_data(ID *id)
 
   MEM_SAFE_FREE(material->gp_style);
 
-  BKE_icon_id_delete((ID *)material);
-  BKE_previewimg_free(&material->preview);
+  KERNEL_icon_id_delete((ID *)material);
+  KERNEL_previewimg_free(&material->preview);
 }
 
 static void material_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   Material *material = (Material *)id;
   /* Nodetrees **are owned by IDs**, treat them as mere sub-data and not real ID! */
-  BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-      data, BKE_library_foreach_ID_embedded(data, (ID **)&material->nodetree));
+  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+      data, KERNEL_library_foreach_ID_embedded(data, (ID **)&material->nodetree));
   if (material->texpaintslot != NULL) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, material->texpaintslot->ima, IDWALK_CB_NOP);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, material->texpaintslot->ima, IDWALK_CB_NOP);
   }
   if (material->gp_style != NULL) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, material->gp_style->sima, IDWALK_CB_USER);
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, material->gp_style->ima, IDWALK_CB_USER);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, material->gp_style->sima, IDWALK_CB_USER);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, material->gp_style->ima, IDWALK_CB_USER);
   }
 }
 
@@ -160,72 +160,73 @@ static void material_blend_write(BlendWriter *writer, ID *id, const void *id_add
 
   /* Clean up, important in undo case to reduce false detection of changed datablocks. */
   ma->texpaintslot = NULL;
-  BLI_listbase_clear(&ma->gpumaterial);
+  LIB_listbase_clear(&ma->gpumaterial);
 
   /* write LibData */
-  BLO_write_id_struct(writer, Material, id_address, &ma->id);
-  BKE_id_blend_write(writer, &ma->id);
+  LOADER_write_id_struct(writer, Material, id_address, &ma->id);
+  KERNEL_id_blend_write(writer, &ma->id);
 
   if (ma->adt) {
-    BKE_animdata_blend_write(writer, ma->adt);
+    KERNEL_animdata_blend_write(writer, ma->adt);
   }
 
   /* nodetree is integral part of material, no libdata */
   if (ma->nodetree) {
-    BLO_write_struct(writer, bNodeTree, ma->nodetree);
+    LOADER_write_struct(writer, bNodeTree, ma->nodetree);
     ntreeBlendWrite(writer, ma->nodetree);
   }
 
-  BKE_previewimg_blend_write(writer, ma->preview);
+  KERNEL_previewimg_blend_write(writer, ma->preview);
 
   /* grease pencil settings */
   if (ma->gp_style) {
-    BLO_write_struct(writer, MaterialGPencilStyle, ma->gp_style);
+    LOADER_write_struct(writer, MaterialGPencilStyle, ma->gp_style);
   }
 }
 
-static void material_blend_read_data(BlendDataReader *reader, ID *id)
+static void material_
+dune_read_data(BlendDataReader *reader, ID *id)
 {
   Material *ma = (Material *)id;
-  BLO_read_data_address(reader, &ma->adt);
-  BKE_animdata_blend_read_data(reader, ma->adt);
+  LOADER_read_data_address(reader, &ma->adt);
+  KERNEL_animdata_dune_read_data(reader, ma->adt);
 
   ma->texpaintslot = NULL;
 
-  BLO_read_data_address(reader, &ma->preview);
-  BKE_previewimg_blend_read(reader, ma->preview);
+  LOADER_read_data_address(reader, &ma->preview);
+  KERNEL_previewimg_dune_read(reader, ma->preview);
 
-  BLI_listbase_clear(&ma->gpumaterial);
+  LIB_listbase_clear(&ma->gpumaterial);
 
-  BLO_read_data_address(reader, &ma->gp_style);
+  LOADER_read_data_address(reader, &ma->gp_style);
 }
 
-static void material_blend_read_lib(BlendLibReader *reader, ID *id)
+static void material_dune_read_lib(DuneLibReader *reader, ID *id)
 {
   Material *ma = (Material *)id;
-  BLO_read_id_address(reader, ma->id.lib, &ma->ipo); /* XXX deprecated - old animation system */
+  LOADER_read_id_address(reader, ma->id.lib, &ma->ipo); /* XXX deprecated - old animation system */
 
   /* relink grease pencil settings */
   if (ma->gp_style != NULL) {
     MaterialGPencilStyle *gp_style = ma->gp_style;
     if (gp_style->sima != NULL) {
-      BLO_read_id_address(reader, ma->id.lib, &gp_style->sima);
+      LOADER_read_id_address(reader, ma->id.lib, &gp_style->sima);
     }
     if (gp_style->ima != NULL) {
-      BLO_read_id_address(reader, ma->id.lib, &gp_style->ima);
+      LOADER_read_id_address(reader, ma->id.lib, &gp_style->ima);
     }
   }
 }
 
-static void material_blend_read_expand(BlendExpander *expander, ID *id)
+static void material_dune_read_expand(DuneExpander *expander, ID *id)
 {
   Material *ma = (Material *)id;
-  BLO_expand(expander, ma->ipo); /* XXX deprecated - old animation system */
+  LOADER_expand(expander, ma->ipo); /* XXX deprecated - old animation system */
 
   if (ma->gp_style) {
     MaterialGPencilStyle *gp_style = ma->gp_style;
-    BLO_expand(expander, gp_style->sima);
-    BLO_expand(expander, gp_style->ima);
+    LOADER_expand(expander, gp_style->sima);
+    LOADER_expand(expander, gp_style->ima);
   }
 }
 
@@ -236,7 +237,7 @@ IDTypeInfo IDType_ID_MA = {
     .struct_size = sizeof(Material),
     .name = "Material",
     .name_plural = "materials",
-    .translation_context = BLT_I18NCONTEXT_ID_MATERIAL,
+    .translation_context = TRANSLATION_I18NCONTEXT_ID_MATERIAL,
     .flags = IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
@@ -249,17 +250,17 @@ IDTypeInfo IDType_ID_MA = {
     .foreach_path = NULL,
     .owner_get = NULL,
 
-    .blend_write = material_blend_write,
-    .blend_read_data = material_blend_read_data,
-    .blend_read_lib = material_blend_read_lib,
-    .blend_read_expand = material_blend_read_expand,
+    .dune_write = material_dune_write,
+    .dune_read_data = material_dune_read_data,
+    .dune_read_lib = material_dune_read_lib,
+    .dune_read_expand = material_dune_read_expand,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
-void BKE_gpencil_material_attr_init(Material *ma)
+void KERNEL_gpencil_material_attr_init(Material *ma)
 {
   if ((ma) && (ma->gp_style == NULL)) {
     ma->gp_style = MEM_callocN(sizeof(MaterialGPencilStyle), "Grease Pencil Material Settings");
@@ -278,7 +279,7 @@ void BKE_gpencil_material_attr_init(Material *ma)
   }
 }
 
-Material *BKE_material_add(Main *bmain, const char *name)
+Material *KERNEL_material_add(Main *bmain, const char *name)
 {
   Material *ma;
 
