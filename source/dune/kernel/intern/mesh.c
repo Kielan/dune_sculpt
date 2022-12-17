@@ -1463,3 +1463,529 @@ void BKE_mesh_assign_object(Main *bmain, Object *ob, Mesh *me)
 
   BKE_modifiers_test_object(ob);
 }
+
+void BKE_mesh_material_index_remove(Mesh *me, short index)
+{
+  MPoly *mp;
+  MFace *mf;
+  int i;
+
+  for (mp = me->mpoly, i = 0; i < me->totpoly; i++, mp++) {
+    if (mp->mat_nr && mp->mat_nr >= index) {
+      mp->mat_nr--;
+    }
+  }
+
+  for (mf = me->mface, i = 0; i < me->totface; i++, mf++) {
+    if (mf->mat_nr && mf->mat_nr >= index) {
+      mf->mat_nr--;
+    }
+  }
+}
+
+bool BKE_mesh_material_index_used(Mesh *me, short index)
+{
+  MPoly *mp;
+  MFace *mf;
+  int i;
+
+  for (mp = me->mpoly, i = 0; i < me->totpoly; i++, mp++) {
+    if (mp->mat_nr == index) {
+      return true;
+    }
+  }
+
+  for (mf = me->mface, i = 0; i < me->totface; i++, mf++) {
+    if (mf->mat_nr == index) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void BKE_mesh_material_index_clear(Mesh *me)
+{
+  MPoly *mp;
+  MFace *mf;
+  int i;
+
+  for (mp = me->mpoly, i = 0; i < me->totpoly; i++, mp++) {
+    mp->mat_nr = 0;
+  }
+
+  for (mf = me->mface, i = 0; i < me->totface; i++, mf++) {
+    mf->mat_nr = 0;
+  }
+}
+
+void BKE_mesh_material_remap(Mesh *me, const uint *remap, uint remap_len)
+{
+  const short remap_len_short = (short)remap_len;
+
+#define MAT_NR_REMAP(n) \
+  if (n < remap_len_short) { \
+    BLI_assert(n >= 0 && remap[n] < remap_len_short); \
+    n = remap[n]; \
+  } \
+  ((void)0)
+
+  if (me->edit_mesh) {
+    BMEditMesh *em = me->edit_mesh;
+    BMIter iter;
+    BMFace *efa;
+
+    BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
+      MAT_NR_REMAP(efa->mat_nr);
+    }
+  }
+  else {
+    int i;
+    for (i = 0; i < me->totpoly; i++) {
+      MAT_NR_REMAP(me->mpoly[i].mat_nr);
+    }
+  }
+
+#undef MAT_NR_REMAP
+}
+
+void BKE_mesh_smooth_flag_set(Mesh *me, const bool use_smooth)
+{
+  if (use_smooth) {
+    for (int i = 0; i < me->totpoly; i++) {
+      me->mpoly[i].flag |= ME_SMOOTH;
+    }
+  }
+  else {
+    for (int i = 0; i < me->totpoly; i++) {
+      me->mpoly[i].flag &= ~ME_SMOOTH;
+    }
+  }
+}
+
+int poly_find_loop_from_vert(const MPoly *poly, const MLoop *loopstart, uint vert)
+{
+  for (int j = 0; j < poly->totloop; j++, loopstart++) {
+    if (loopstart->v == vert) {
+      return j;
+    }
+  }
+
+  return -1;
+}
+
+int poly_get_adj_loops_from_vert(const MPoly *poly, const MLoop *mloop, uint vert, uint r_adj[2])
+{
+  int corner = poly_find_loop_from_vert(poly, &mloop[poly->loopstart], vert);
+
+  if (corner != -1) {
+    /* vertex was found */
+    r_adj[0] = ME_POLY_LOOP_PREV(mloop, poly, corner)->v;
+    r_adj[1] = ME_POLY_LOOP_NEXT(mloop, poly, corner)->v;
+  }
+
+  return corner;
+}
+
+int BKE_mesh_edge_other_vert(const MEdge *e, int v)
+{
+  if (e->v1 == v) {
+    return e->v2;
+  }
+  if (e->v2 == v) {
+    return e->v1;
+  }
+
+  return -1;
+}
+
+void BKE_mesh_looptri_get_real_edges(const Mesh *mesh, const MLoopTri *looptri, int r_edges[3])
+{
+  for (int i = 2, i_next = 0; i_next < 3; i = i_next++) {
+    const MLoop *l1 = &mesh->mloop[looptri->tri[i]], *l2 = &mesh->mloop[looptri->tri[i_next]];
+    const MEdge *e = &mesh->medge[l1->e];
+
+    bool is_real = (l1->v == e->v1 && l2->v == e->v2) || (l1->v == e->v2 && l2->v == e->v1);
+
+    r_edges[i] = is_real ? l1->e : -1;
+  }
+}
+
+bool BKE_mesh_minmax(const Mesh *me, float r_min[3], float r_max[3])
+{
+  using namespace blender;
+  if (me->totvert == 0) {
+    return false;
+  }
+
+  struct Result {
+    float3 min;
+    float3 max;
+  };
+
+  const Result minmax = threading::parallel_reduce(
+      IndexRange(me->totvert),
+      1024,
+      Result{float3(FLT_MAX), float3(-FLT_MAX)},
+      [&](IndexRange range, const Result &init) {
+        Result result = init;
+        for (const int i : range) {
+          math::min_max(float3(me->mvert[i].co), result.min, result.max);
+        }
+        return result;
+      },
+      [](const Result &a, const Result &b) {
+        return Result{math::min(a.min, b.min), math::max(a.max, b.max)};
+      });
+
+  copy_v3_v3(r_min, math::min(minmax.min, float3(r_min)));
+  copy_v3_v3(r_max, math::max(minmax.max, float3(r_max)));
+
+  return true;
+}
+
+void BKE_mesh_transform(Mesh *me, const float mat[4][4], bool do_keys)
+{
+  int i;
+  MVert *mvert = (MVert *)CustomData_duplicate_referenced_layer(&me->vdata, CD_MVERT, me->totvert);
+  float(*lnors)[3] = (float(*)[3])CustomData_duplicate_referenced_layer(
+      &me->ldata, CD_NORMAL, me->totloop);
+
+  /* If the referenced layer has been re-allocated need to update pointers stored in the mesh. */
+  BKE_mesh_update_customdata_pointers(me, false);
+
+  for (i = 0; i < me->totvert; i++, mvert++) {
+    mul_m4_v3(mat, mvert->co);
+  }
+
+  if (do_keys && me->key) {
+    LISTBASE_FOREACH (KeyBlock *, kb, &me->key->block) {
+      float *fp = (float *)kb->data;
+      for (i = kb->totelem; i--; fp += 3) {
+        mul_m4_v3(mat, fp);
+      }
+    }
+  }
+
+  /* don't update normals, caller can do this explicitly.
+   * We do update loop normals though, those may not be auto-generated
+   * (see e.g. STL import script)! */
+  if (lnors) {
+    float m3[3][3];
+
+    copy_m3_m4(m3, mat);
+    normalize_m3(m3);
+    for (i = 0; i < me->totloop; i++, lnors++) {
+      mul_m3_v3(m3, *lnors);
+    }
+  }
+}
+
+void BKE_mesh_translate(Mesh *me, const float offset[3], const bool do_keys)
+{
+  CustomData_duplicate_referenced_layer(&me->vdata, CD_MVERT, me->totvert);
+  /* If the referenced layer has been re-allocated need to update pointers stored in the mesh. */
+  BKE_mesh_update_customdata_pointers(me, false);
+
+  int i = me->totvert;
+  for (MVert *mvert = me->mvert; i--; mvert++) {
+    add_v3_v3(mvert->co, offset);
+  }
+
+  if (do_keys && me->key) {
+    LISTBASE_FOREACH (KeyBlock *, kb, &me->key->block) {
+      float *fp = (float *)kb->data;
+      for (i = kb->totelem; i--; fp += 3) {
+        add_v3_v3(fp, offset);
+      }
+    }
+  }
+}
+
+void BKE_mesh_tessface_ensure(Mesh *mesh)
+{
+  if (mesh->totpoly && mesh->totface == 0) {
+    BKE_mesh_tessface_calc(mesh);
+  }
+}
+
+void BKE_mesh_tessface_clear(Mesh *mesh)
+{
+  mesh_tessface_clear_intern(mesh, true);
+}
+
+void BKE_mesh_do_versions_cd_flag_init(Mesh *mesh)
+{
+  if (UNLIKELY(mesh->cd_flag)) {
+    return;
+  }
+
+  MVert *mv;
+  MEdge *med;
+  int i;
+
+  for (mv = mesh->mvert, i = 0; i < mesh->totvert; mv++, i++) {
+    if (mv->bweight != 0) {
+      mesh->cd_flag |= ME_CDFLAG_VERT_BWEIGHT;
+      break;
+    }
+  }
+
+  for (med = mesh->medge, i = 0; i < mesh->totedge; med++, i++) {
+    if (med->bweight != 0) {
+      mesh->cd_flag |= ME_CDFLAG_EDGE_BWEIGHT;
+      if (mesh->cd_flag & ME_CDFLAG_EDGE_CREASE) {
+        break;
+      }
+    }
+    if (med->crease != 0) {
+      mesh->cd_flag |= ME_CDFLAG_EDGE_CREASE;
+      if (mesh->cd_flag & ME_CDFLAG_EDGE_BWEIGHT) {
+        break;
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/* MSelect functions (currently used in weight paint mode) */
+
+void BKE_mesh_mselect_clear(Mesh *me)
+{
+  MEM_SAFE_FREE(me->mselect);
+  me->totselect = 0;
+}
+
+void BKE_mesh_mselect_validate(Mesh *me)
+{
+  MSelect *mselect_src, *mselect_dst;
+  int i_src, i_dst;
+
+  if (me->totselect == 0) {
+    return;
+  }
+
+  mselect_src = me->mselect;
+  mselect_dst = (MSelect *)MEM_malloc_arrayN(
+      (me->totselect), sizeof(MSelect), "Mesh selection history");
+
+  for (i_src = 0, i_dst = 0; i_src < me->totselect; i_src++) {
+    int index = mselect_src[i_src].index;
+    switch (mselect_src[i_src].type) {
+      case ME_VSEL: {
+        if (me->mvert[index].flag & SELECT) {
+          mselect_dst[i_dst] = mselect_src[i_src];
+          i_dst++;
+        }
+        break;
+      }
+      case ME_ESEL: {
+        if (me->medge[index].flag & SELECT) {
+          mselect_dst[i_dst] = mselect_src[i_src];
+          i_dst++;
+        }
+        break;
+      }
+      case ME_FSEL: {
+        if (me->mpoly[index].flag & SELECT) {
+          mselect_dst[i_dst] = mselect_src[i_src];
+          i_dst++;
+        }
+        break;
+      }
+      default: {
+        BLI_assert(0);
+        break;
+      }
+    }
+  }
+
+  MEM_freeN(mselect_src);
+
+  if (i_dst == 0) {
+    MEM_freeN(mselect_dst);
+    mselect_dst = nullptr;
+  }
+  else if (i_dst != me->totselect) {
+    mselect_dst = (MSelect *)MEM_reallocN(mselect_dst, sizeof(MSelect) * i_dst);
+  }
+
+  me->totselect = i_dst;
+  me->mselect = mselect_dst;
+}
+
+int BKE_mesh_mselect_find(Mesh *me, int index, int type)
+{
+  BLI_assert(ELEM(type, ME_VSEL, ME_ESEL, ME_FSEL));
+
+  for (int i = 0; i < me->totselect; i++) {
+    if ((me->mselect[i].index == index) && (me->mselect[i].type == type)) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+int BKE_mesh_mselect_active_get(Mesh *me, int type)
+{
+  BLI_assert(ELEM(type, ME_VSEL, ME_ESEL, ME_FSEL));
+
+  if (me->totselect) {
+    if (me->mselect[me->totselect - 1].type == type) {
+      return me->mselect[me->totselect - 1].index;
+    }
+  }
+  return -1;
+}
+
+void BKE_mesh_mselect_active_set(Mesh *me, int index, int type)
+{
+  const int msel_index = BKE_mesh_mselect_find(me, index, type);
+
+  if (msel_index == -1) {
+    /* add to the end */
+    me->mselect = (MSelect *)MEM_reallocN(me->mselect, sizeof(MSelect) * (me->totselect + 1));
+    me->mselect[me->totselect].index = index;
+    me->mselect[me->totselect].type = type;
+    me->totselect++;
+  }
+  else if (msel_index != me->totselect - 1) {
+    /* move to the end */
+    SWAP(MSelect, me->mselect[msel_index], me->mselect[me->totselect - 1]);
+  }
+
+  BLI_assert((me->mselect[me->totselect - 1].index == index) &&
+             (me->mselect[me->totselect - 1].type == type));
+}
+
+void BKE_mesh_count_selected_items(const Mesh *mesh, int r_count[3])
+{
+  r_count[0] = r_count[1] = r_count[2] = 0;
+  if (mesh->edit_mesh) {
+    BMesh *bm = mesh->edit_mesh->bm;
+    r_count[0] = bm->totvertsel;
+    r_count[1] = bm->totedgesel;
+    r_count[2] = bm->totfacesel;
+  }
+  /* We could support faces in paint modes. */
+}
+
+void BKE_mesh_vert_coords_get(const Mesh *mesh, float (*vert_coords)[3])
+{
+  const MVert *mv = mesh->mvert;
+  for (int i = 0; i < mesh->totvert; i++, mv++) {
+    copy_v3_v3(vert_coords[i], mv->co);
+  }
+}
+
+float (*BKE_mesh_vert_coords_alloc(const Mesh *mesh, int *r_vert_len))[3]
+{
+  float(*vert_coords)[3] = (float(*)[3])MEM_mallocN(sizeof(float[3]) * mesh->totvert, __func__);
+  BKE_mesh_vert_coords_get(mesh, vert_coords);
+  if (r_vert_len) {
+    *r_vert_len = mesh->totvert;
+  }
+  return vert_coords;
+}
+
+void BKE_mesh_vert_coords_apply(Mesh *mesh, const float (*vert_coords)[3])
+{
+  /* This will just return the pointer if it wasn't a referenced layer. */
+  MVert *mv = (MVert *)CustomData_duplicate_referenced_layer(
+      &mesh->vdata, CD_MVERT, mesh->totvert);
+  mesh->mvert = mv;
+  for (int i = 0; i < mesh->totvert; i++, mv++) {
+    copy_v3_v3(mv->co, vert_coords[i]);
+  }
+  BKE_mesh_normals_tag_dirty(mesh);
+}
+
+void BKE_mesh_vert_coords_apply_with_mat4(Mesh *mesh,
+                                          const float (*vert_coords)[3],
+                                          const float mat[4][4])
+{
+  /* This will just return the pointer if it wasn't a referenced layer. */
+  MVert *mv = (MVert *)CustomData_duplicate_referenced_layer(
+      &mesh->vdata, CD_MVERT, mesh->totvert);
+  mesh->mvert = mv;
+  for (int i = 0; i < mesh->totvert; i++, mv++) {
+    mul_v3_m4v3(mv->co, mat, vert_coords[i]);
+  }
+  BKE_mesh_normals_tag_dirty(mesh);
+}
+
+void BKE_mesh_anonymous_attributes_remove(Mesh *mesh)
+{
+  CustomData_free_layers_anonymous(&mesh->vdata, mesh->totvert);
+  CustomData_free_layers_anonymous(&mesh->edata, mesh->totedge);
+  CustomData_free_layers_anonymous(&mesh->pdata, mesh->totpoly);
+  CustomData_free_layers_anonymous(&mesh->ldata, mesh->totloop);
+}
+
+void BKE_mesh_calc_normals_split_ex(Mesh *mesh, MLoopNorSpaceArray *r_lnors_spacearr)
+{
+  float(*r_loopnors)[3];
+  short(*clnors)[2] = nullptr;
+
+  /* Note that we enforce computing clnors when the clnor space array is requested by caller here.
+   * However, we obviously only use the auto-smooth angle threshold
+   * only in case auto-smooth is enabled. */
+  const bool use_split_normals = (r_lnors_spacearr != nullptr) ||
+                                 ((mesh->flag & ME_AUTOSMOOTH) != 0);
+  const float split_angle = (mesh->flag & ME_AUTOSMOOTH) != 0 ? mesh->smoothresh : (float)M_PI;
+
+  if (CustomData_has_layer(&mesh->ldata, CD_NORMAL)) {
+    r_loopnors = (float(*)[3])CustomData_get_layer(&mesh->ldata, CD_NORMAL);
+    memset(r_loopnors, 0, sizeof(float[3]) * mesh->totloop);
+  }
+  else {
+    r_loopnors = (float(*)[3])CustomData_add_layer(
+        &mesh->ldata, CD_NORMAL, CD_CALLOC, nullptr, mesh->totloop);
+    CustomData_set_layer_flag(&mesh->ldata, CD_NORMAL, CD_FLAG_TEMPORARY);
+  }
+
+  /* may be nullptr */
+  clnors = (short(*)[2])CustomData_get_layer(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
+
+  BKE_mesh_normals_loop_split(mesh->mvert,
+                              BKE_mesh_vertex_normals_ensure(mesh),
+                              mesh->totvert,
+                              mesh->medge,
+                              mesh->totedge,
+                              mesh->mloop,
+                              r_loopnors,
+                              mesh->totloop,
+                              mesh->mpoly,
+                              BKE_mesh_poly_normals_ensure(mesh),
+                              mesh->totpoly,
+                              use_split_normals,
+                              split_angle,
+                              r_lnors_spacearr,
+                              clnors,
+                              nullptr);
+
+  BKE_mesh_assert_normals_dirty_or_calculated(mesh);
+}
+
+void BKE_mesh_calc_normals_split(Mesh *mesh)
+{
+  BKE_mesh_calc_normals_split_ex(mesh, nullptr);
+}
+
+/* Split faces helper functions. */
+
+struct SplitFaceNewVert {
+  struct SplitFaceNewVert *next;
+  int new_index;
+  int orig_index;
+  float *vnor;
+};
+
+struct SplitFaceNewEdge {
+  struct SplitFaceNewEdge *next;
+  int new_index;
+  int orig_index;
+  int v1;
+  int v2;
+};
