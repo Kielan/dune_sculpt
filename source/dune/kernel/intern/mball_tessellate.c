@@ -1362,3 +1362,96 @@ static void init_meta(Depsgraph *depsgraph, PROCESS *process, Scene *scene, Obje
     }
   }
 }
+
+void BKE_mball_polygonize(Depsgraph *depsgraph, Scene *scene, Object *ob, ListBase *dispbase)
+{
+  MetaBall *mb;
+  DispList *dl;
+  unsigned int a;
+  PROCESS process = {0};
+  bool is_render = DEG_get_mode(depsgraph) == DAG_EVAL_RENDER;
+
+  mb = ob->data;
+
+  process.thresh = mb->thresh;
+
+  if (process.thresh < 0.001f) {
+    process.converge_res = 16;
+  }
+  else if (process.thresh < 0.01f) {
+    process.converge_res = 8;
+  }
+  else if (process.thresh < 0.1f) {
+    process.converge_res = 4;
+  }
+  else {
+    process.converge_res = 2;
+  }
+
+  if (!is_render && (mb->flag == MB_UPDATE_NEVER)) {
+    return;
+  }
+  if ((G.moving & (G_TRANSFORM_OBJ | G_TRANSFORM_EDIT)) && mb->flag == MB_UPDATE_FAST) {
+    return;
+  }
+
+  if (is_render) {
+    process.size = mb->rendersize;
+  }
+  else {
+    process.size = mb->wiresize;
+    if ((G.moving & (G_TRANSFORM_OBJ | G_TRANSFORM_EDIT)) && mb->flag == MB_UPDATE_HALFRES) {
+      process.size *= 2.0f;
+    }
+  }
+
+  process.delta = process.size * 0.001f;
+
+  process.pgn_elements = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, "Metaball memarena");
+
+  /* initialize all mainb (MetaElems) */
+  init_meta(depsgraph, &process, scene, ob);
+
+  if (process.totelem > 0) {
+    build_bvh_spatial(&process, &process.metaball_bvh, 0, process.totelem, &process.allbb);
+
+    /* Don't polygonize meta-balls with too high resolution (base mball too small)
+     * NOTE: Eps was 0.0001f but this was giving problems for blood animation for
+     * the open movie "Sintel", using 0.00001f. */
+    if (ob->scale[0] > 0.00001f * (process.allbb.max[0] - process.allbb.min[0]) ||
+        ob->scale[1] > 0.00001f * (process.allbb.max[1] - process.allbb.min[1]) ||
+        ob->scale[2] > 0.00001f * (process.allbb.max[2] - process.allbb.min[2])) {
+      polygonize(&process);
+
+      /* add resulting surface to displist */
+      if (process.curindex) {
+
+        /* Avoid over-allocation since this is stored in the displist. */
+        if (process.curindex != process.totindex) {
+          process.indices = MEM_reallocN(process.indices, sizeof(int[4]) * process.curindex);
+        }
+        if (process.curvertex != process.totvertex) {
+          process.co = MEM_reallocN(process.co, process.curvertex * sizeof(float[3]));
+          process.no = MEM_reallocN(process.no, process.curvertex * sizeof(float[3]));
+        }
+
+        dl = MEM_callocN(sizeof(DispList), "mballdisp");
+        BLI_addtail(dispbase, dl);
+        dl->type = DL_INDEX4;
+        dl->nr = (int)process.curvertex;
+        dl->parts = (int)process.curindex;
+
+        dl->index = (int *)process.indices;
+
+        for (a = 0; a < process.curvertex; a++) {
+          normalize_v3(process.no[a]);
+        }
+
+        dl->verts = (float *)process.co;
+        dl->nors = (float *)process.no;
+      }
+    }
+  }
+
+  freepolygonize(&process);
+}
