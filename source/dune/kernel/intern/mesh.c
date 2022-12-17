@@ -413,3 +413,379 @@ enum {
   MESHCMP_CDLAYERS_MISMATCH,
   MESHCMP_ATTRIBUTE_VALUE_MISMATCH,
 };
+
+static const char *cmpcode_to_str(int code)
+{
+  switch (code) {
+    case MESHCMP_DVERT_WEIGHTMISMATCH:
+      return "Vertex Weight Mismatch";
+    case MESHCMP_DVERT_GROUPMISMATCH:
+      return "Vertex Group Mismatch";
+    case MESHCMP_DVERT_TOTGROUPMISMATCH:
+      return "Vertex Doesn't Belong To Same Number Of Groups";
+    case MESHCMP_LOOPCOLMISMATCH:
+      return "Vertex Color Mismatch";
+    case MESHCMP_LOOPUVMISMATCH:
+      return "UV Mismatch";
+    case MESHCMP_LOOPMISMATCH:
+      return "Loop Mismatch";
+    case MESHCMP_POLYVERTMISMATCH:
+      return "Loop Vert Mismatch In Poly Test";
+    case MESHCMP_POLYMISMATCH:
+      return "Loop Vert Mismatch";
+    case MESHCMP_EDGEUNKNOWN:
+      return "Edge Mismatch";
+    case MESHCMP_VERTCOMISMATCH:
+      return "Vertex Coordinate Mismatch";
+    case MESHCMP_CDLAYERS_MISMATCH:
+      return "CustomData Layer Count Mismatch";
+    case MESHCMP_ATTRIBUTE_VALUE_MISMATCH:
+      return "Attribute Value Mismatch";
+    default:
+      return "Mesh Comparison Code Unknown";
+  }
+}
+
+/** Thresh is threshold for comparing vertices, UV's, vertex colors, weights, etc. */
+static int customdata_compare(
+    CustomData *c1, CustomData *c2, const int total_length, Mesh *m1, Mesh *m2, const float thresh)
+{
+  const float thresh_sq = thresh * thresh;
+  CustomDataLayer *l1, *l2;
+  int layer_count1 = 0, layer_count2 = 0, j;
+  const uint64_t cd_mask_non_generic = CD_MASK_MVERT | CD_MASK_MEDGE | CD_MASK_MPOLY |
+                                       CD_MASK_MLOOPUV | CD_MASK_MLOOPCOL | CD_MASK_MDEFORMVERT;
+  const uint64_t cd_mask_all_attr = CD_MASK_PROP_ALL | cd_mask_non_generic;
+
+  for (int i = 0; i < c1->totlayer; i++) {
+    l1 = &c1->layers[i];
+    if ((CD_TYPE_AS_MASK(l1->type) & cd_mask_all_attr) && l1->anonymous_id == nullptr) {
+      layer_count1++;
+    }
+  }
+
+  for (int i = 0; i < c2->totlayer; i++) {
+    l2 = &c2->layers[i];
+    if ((CD_TYPE_AS_MASK(l2->type) & cd_mask_all_attr) && l2->anonymous_id == nullptr) {
+      layer_count2++;
+    }
+  }
+
+  if (layer_count1 != layer_count2) {
+    return MESHCMP_CDLAYERS_MISMATCH;
+  }
+
+  l1 = c1->layers;
+  l2 = c2->layers;
+
+  for (int i1 = 0; i1 < c1->totlayer; i1++) {
+    l1 = c1->layers + i1;
+    for (int i2 = 0; i2 < c2->totlayer; i2++) {
+      l2 = c2->layers + i2;
+      if (l1->type != l2->type || !STREQ(l1->name, l2->name) || l1->anonymous_id != nullptr ||
+          l2->anonymous_id != nullptr) {
+        continue;
+      }
+      /* At this point `l1` and `l2` have the same name and type, so they should be compared. */
+
+      switch (l1->type) {
+
+        case CD_MVERT: {
+          MVert *v1 = (MVert *)l1->data;
+          MVert *v2 = (MVert *)l2->data;
+          int vtot = m1->totvert;
+
+          for (j = 0; j < vtot; j++, v1++, v2++) {
+            for (int k = 0; k < 3; k++) {
+              if (compare_threshold_relative(v1->co[k], v2->co[k], thresh)) {
+                return MESHCMP_VERTCOMISMATCH;
+              }
+            }
+          }
+          break;
+        }
+
+        /* We're order-agnostic for edges here. */
+        case CD_MEDGE: {
+          MEdge *e1 = (MEdge *)l1->data;
+          MEdge *e2 = (MEdge *)l2->data;
+          int etot = m1->totedge;
+          EdgeHash *eh = BLI_edgehash_new_ex(__func__, etot);
+
+          for (j = 0; j < etot; j++, e1++) {
+            BLI_edgehash_insert(eh, e1->v1, e1->v2, e1);
+          }
+
+          for (j = 0; j < etot; j++, e2++) {
+            if (!BLI_edgehash_lookup(eh, e2->v1, e2->v2)) {
+              return MESHCMP_EDGEUNKNOWN;
+            }
+          }
+          BLI_edgehash_free(eh, nullptr);
+          break;
+        }
+        case CD_MPOLY: {
+          MPoly *p1 = (MPoly *)l1->data;
+          MPoly *p2 = (MPoly *)l2->data;
+          int ptot = m1->totpoly;
+
+          for (j = 0; j < ptot; j++, p1++, p2++) {
+            MLoop *lp1, *lp2;
+            int k;
+
+            if (p1->totloop != p2->totloop) {
+              return MESHCMP_POLYMISMATCH;
+            }
+
+            lp1 = m1->mloop + p1->loopstart;
+            lp2 = m2->mloop + p2->loopstart;
+
+            for (k = 0; k < p1->totloop; k++, lp1++, lp2++) {
+              if (lp1->v != lp2->v) {
+                return MESHCMP_POLYVERTMISMATCH;
+              }
+            }
+          }
+          break;
+        }
+        case CD_MLOOP: {
+          MLoop *lp1 = (MLoop *)l1->data;
+          MLoop *lp2 = (MLoop *)l2->data;
+          int ltot = m1->totloop;
+
+          for (j = 0; j < ltot; j++, lp1++, lp2++) {
+            if (lp1->v != lp2->v) {
+              return MESHCMP_LOOPMISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_MLOOPUV: {
+          MLoopUV *lp1 = (MLoopUV *)l1->data;
+          MLoopUV *lp2 = (MLoopUV *)l2->data;
+          int ltot = m1->totloop;
+
+          for (j = 0; j < ltot; j++, lp1++, lp2++) {
+            if (len_squared_v2v2(lp1->uv, lp2->uv) > thresh_sq) {
+              return MESHCMP_LOOPUVMISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_MLOOPCOL: {
+          MLoopCol *lp1 = (MLoopCol *)l1->data;
+          MLoopCol *lp2 = (MLoopCol *)l2->data;
+          int ltot = m1->totloop;
+
+          for (j = 0; j < ltot; j++, lp1++, lp2++) {
+            if (lp1->r != lp2->r || lp1->g != lp2->g || lp1->b != lp2->b || lp1->a != lp2->a) {
+              return MESHCMP_LOOPCOLMISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_MDEFORMVERT: {
+          MDeformVert *dv1 = (MDeformVert *)l1->data;
+          MDeformVert *dv2 = (MDeformVert *)l2->data;
+          int dvtot = m1->totvert;
+
+          for (j = 0; j < dvtot; j++, dv1++, dv2++) {
+            int k;
+            MDeformWeight *dw1 = dv1->dw, *dw2 = dv2->dw;
+
+            if (dv1->totweight != dv2->totweight) {
+              return MESHCMP_DVERT_TOTGROUPMISMATCH;
+            }
+
+            for (k = 0; k < dv1->totweight; k++, dw1++, dw2++) {
+              if (dw1->def_nr != dw2->def_nr) {
+                return MESHCMP_DVERT_GROUPMISMATCH;
+              }
+              if (fabsf(dw1->weight - dw2->weight) > thresh) {
+                return MESHCMP_DVERT_WEIGHTMISMATCH;
+              }
+            }
+          }
+          break;
+        }
+        case CD_PROP_FLOAT: {
+          const float *l1_data = (float *)l1->data;
+          const float *l2_data = (float *)l2->data;
+
+          for (int i = 0; i < total_length; i++) {
+            if (compare_threshold_relative(l1_data[i], l2_data[i], thresh)) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_PROP_FLOAT2: {
+          const float(*l1_data)[2] = (float(*)[2])l1->data;
+          const float(*l2_data)[2] = (float(*)[2])l2->data;
+
+          for (int i = 0; i < total_length; i++) {
+            if (compare_threshold_relative(l1_data[i][0], l2_data[i][0], thresh)) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+            if (compare_threshold_relative(l1_data[i][1], l2_data[i][1], thresh)) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_PROP_FLOAT3: {
+          const float(*l1_data)[3] = (float(*)[3])l1->data;
+          const float(*l2_data)[3] = (float(*)[3])l2->data;
+
+          for (int i = 0; i < total_length; i++) {
+            if (compare_threshold_relative(l1_data[i][0], l2_data[i][0], thresh)) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+            if (compare_threshold_relative(l1_data[i][1], l2_data[i][1], thresh)) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+            if (compare_threshold_relative(l1_data[i][2], l2_data[i][2], thresh)) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_PROP_INT32: {
+          const int *l1_data = (int *)l1->data;
+          const int *l2_data = (int *)l2->data;
+
+          for (int i = 0; i < total_length; i++) {
+            if (l1_data[i] != l2_data[i]) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_PROP_INT8: {
+          const int8_t *l1_data = (int8_t *)l1->data;
+          const int8_t *l2_data = (int8_t *)l2->data;
+
+          for (int i = 0; i < total_length; i++) {
+            if (l1_data[i] != l2_data[i]) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_PROP_BOOL: {
+          const bool *l1_data = (bool *)l1->data;
+          const bool *l2_data = (bool *)l2->data;
+
+          for (int i = 0; i < total_length; i++) {
+            if (l1_data[i] != l2_data[i]) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+          }
+          break;
+        }
+        case CD_PROP_COLOR: {
+          const MPropCol *l1_data = (MPropCol *)l1->data;
+          const MPropCol *l2_data = (MPropCol *)l2->data;
+
+          for (int i = 0; i < total_length; i++) {
+            for (j = 0; j < 4; j++) {
+              if (compare_threshold_relative(l1_data[i].color[j], l2_data[i].color[j], thresh)) {
+                return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+              }
+            }
+          }
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+const char *BKE_mesh_cmp(Mesh *me1, Mesh *me2, float thresh)
+{
+  int c;
+
+  if (!me1 || !me2) {
+    return "Requires two input meshes";
+  }
+
+  if (me1->totvert != me2->totvert) {
+    return "Number of verts don't match";
+  }
+
+  if (me1->totedge != me2->totedge) {
+    return "Number of edges don't match";
+  }
+
+  if (me1->totpoly != me2->totpoly) {
+    return "Number of faces don't match";
+  }
+
+  if (me1->totloop != me2->totloop) {
+    return "Number of loops don't match";
+  }
+
+  if ((c = customdata_compare(&me1->vdata, &me2->vdata, me1->totvert, me1, me2, thresh))) {
+    return cmpcode_to_str(c);
+  }
+
+  if ((c = customdata_compare(&me1->edata, &me2->edata, me1->totedge, me1, me2, thresh))) {
+    return cmpcode_to_str(c);
+  }
+
+  if ((c = customdata_compare(&me1->ldata, &me2->ldata, me1->totloop, me1, me2, thresh))) {
+    return cmpcode_to_str(c);
+  }
+
+  if ((c = customdata_compare(&me1->pdata, &me2->pdata, me1->totpoly, me1, me2, thresh))) {
+    return cmpcode_to_str(c);
+  }
+
+  return nullptr;
+}
+
+static void mesh_ensure_tessellation_customdata(Mesh *me)
+{
+  if (UNLIKELY((me->totface != 0) && (me->totpoly == 0))) {
+    /* Pass, otherwise this function  clears 'mface' before
+     * versioning 'mface -> mpoly' code kicks in T30583.
+     *
+     * Callers could also check but safer to do here - campbell */
+  }
+  else {
+    const int tottex_original = CustomData_number_of_layers(&me->ldata, CD_MLOOPUV);
+    const int totcol_original = CustomData_number_of_layers(&me->ldata, CD_MLOOPCOL);
+
+    const int tottex_tessface = CustomData_number_of_layers(&me->fdata, CD_MTFACE);
+    const int totcol_tessface = CustomData_number_of_layers(&me->fdata, CD_MCOL);
+
+    if (tottex_tessface != tottex_original || totcol_tessface != totcol_original) {
+      BKE_mesh_tessface_clear(me);
+
+      CustomData_from_bmeshpoly(&me->fdata, &me->ldata, me->totface);
+
+      /* TODO: add some `--debug-mesh` option. */
+      if (G.debug & G_DEBUG) {
+        /* NOTE(campbell): this warning may be un-called for if we are initializing the mesh for
+         * the first time from #BMesh, rather than giving a warning about this we could be smarter
+         * and check if there was any data to begin with, for now just print the warning with
+         * some info to help troubleshoot what's going on. */
+        printf(
+            "%s: warning! Tessellation uvs or vcol data got out of sync, "
+            "had to reset!\n    CD_MTFACE: %d != CD_MLOOPUV: %d || CD_MCOL: %d != CD_MLOOPCOL: "
+            "%d\n",
+            __func__,
+            tottex_tessface,
+            tottex_original,
+            totcol_tessface,
+            totcol_original);
+      }
+    }
+  }
+}
+
