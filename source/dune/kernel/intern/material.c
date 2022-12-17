@@ -89,7 +89,7 @@ static void material_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const 
       material_dst->nodetree = ntreeLocalize(material_src->nodetree);
     }
     else {
-      BKE_id_copy_ex(bmain,
+      KERNEL_id_copy_ex(bmain,
                      (ID *)material_src->nodetree,
                      (ID **)&material_dst->nodetree,
                      flag_private_id_data);
@@ -97,7 +97,7 @@ static void material_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const 
   }
 
   if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0) {
-    BKE_previewimg_id_copy(&material_dst->id, &material_src->id);
+    KERNEL_previewimg_id_copy(&material_dst->id, &material_src->id);
   }
   else {
     material_dst->preview = NULL;
@@ -173,7 +173,7 @@ static void material_blend_write(BlendWriter *writer, ID *id, const void *id_add
   /* nodetree is integral part of material, no libdata */
   if (ma->nodetree) {
     LOADER_write_struct(writer, bNodeTree, ma->nodetree);
-    ntreeBlendWrite(writer, ma->nodetree);
+    ntreeDuneWrite(writer, ma->nodetree);
   }
 
   KERNEL_previewimg_blend_write(writer, ma->preview);
@@ -185,7 +185,7 @@ static void material_blend_write(BlendWriter *writer, ID *id, const void *id_add
 }
 
 static void material_
-dune_read_data(BlendDataReader *reader, ID *id)
+dune_read_data(DuneDataReader *reader, ID *id)
 {
   Material *ma = (Material *)id;
   LOADER_read_data_address(reader, &ma->adt);
@@ -283,25 +283,25 @@ Material *KERNEL_material_add(Main *bmain, const char *name)
 {
   Material *ma;
 
-  ma = BKE_id_new(bmain, ID_MA, name);
+  ma = KERNEL_id_new(bmain, ID_MA, name);
 
   return ma;
 }
 
-Material *BKE_gpencil_material_add(Main *bmain, const char *name)
+Material *KERNEL_gpencil_material_add(Main *bmain, const char *name)
 {
   Material *ma;
 
-  ma = BKE_material_add(bmain, name);
+  ma = KERNEL_material_add(bmain, name);
 
   /* grease pencil settings */
   if (ma != NULL) {
-    BKE_gpencil_material_attr_init(ma);
+    KERNEL_gpencil_material_attr_init(ma);
   }
   return ma;
 }
 
-Material ***BKE_object_material_array_p(Object *ob)
+Material ***KERNEL_object_material_array_p(Object *ob)
 {
   if (ob->type == OB_MESH) {
     Mesh *me = ob->data;
@@ -334,7 +334,7 @@ Material ***BKE_object_material_array_p(Object *ob)
   return NULL;
 }
 
-short *BKE_object_material_len_p(Object *ob)
+short *KERNEL_object_material_len_p(Object *ob)
 {
   if (ob->type == OB_MESH) {
     Mesh *me = ob->data;
@@ -367,10 +367,10 @@ short *BKE_object_material_len_p(Object *ob)
   return NULL;
 }
 
-Material ***BKE_id_material_array_p(ID *id)
+Material ***KERNEL_id_material_array_p(ID *id)
 {
   /* ensure we don't try get materials from non-obdata */
-  BLI_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
+  LIB_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
 
   switch (GS(id->name)) {
     case ID_ME:
@@ -393,10 +393,10 @@ Material ***BKE_id_material_array_p(ID *id)
   return NULL;
 }
 
-short *BKE_id_material_len_p(ID *id)
+short *KERNEL_id_material_len_p(ID *id)
 {
   /* ensure we don't try get materials from non-obdata */
-  BLI_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
+  LIB_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
 
   switch (GS(id->name)) {
     case ID_ME:
@@ -422,14 +422,14 @@ short *BKE_id_material_len_p(ID *id)
 static void material_data_index_remove_id(ID *id, short index)
 {
   /* ensure we don't try get materials from non-obdata */
-  BLI_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
+  LIB_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
 
   switch (GS(id->name)) {
     case ID_ME:
-      BKE_mesh_material_index_remove((Mesh *)id, index);
+      KERNEL_mesh_material_index_remove((Mesh *)id, index);
       break;
     case ID_CU_LEGACY:
-      BKE_curve_material_index_remove((Curve *)id, index);
+      KERNEL_curve_material_index_remove((Curve *)id, index);
       break;
     case ID_MB:
     case ID_CV:
@@ -442,9 +442,9 @@ static void material_data_index_remove_id(ID *id, short index)
   }
 }
 
-bool BKE_object_material_slot_used(Object *object, short actcol)
+bool KERNEL_object_material_slot_used(Object *object, short actcol)
 {
-  if (!BKE_object_supports_material_slots(object)) {
+  if (!KERNEL_object_supports_material_slots(object)) {
     return false;
   }
 
@@ -461,14 +461,14 @@ bool BKE_object_material_slot_used(Object *object, short actcol)
 
   switch (GS(ob_data->name)) {
     case ID_ME:
-      return BKE_mesh_material_index_used((Mesh *)ob_data, actcol - 1);
+      return KERNEL_mesh_material_index_used((Mesh *)ob_data, actcol - 1);
     case ID_CU_LEGACY:
-      return BKE_curve_material_index_used((Curve *)ob_data, actcol - 1);
+      return KERNEL_curve_material_index_used((Curve *)ob_data, actcol - 1);
     case ID_MB:
       /* Meta-elements don't support materials at the moment. */
       return false;
     case ID_GD:
-      return BKE_gpencil_material_index_used((bGPdata *)ob_data, actcol - 1);
+      return KERNEL_gpencil_material_index_used((bGPdata *)ob_data, actcol - 1);
     default:
       return false;
   }
@@ -477,14 +477,14 @@ bool BKE_object_material_slot_used(Object *object, short actcol)
 static void material_data_index_clear_id(ID *id)
 {
   /* ensure we don't try get materials from non-obdata */
-  BLI_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
+  LIB_assert(OB_DATA_SUPPORT_ID(GS(id->name)));
 
   switch (GS(id->name)) {
     case ID_ME:
-      BKE_mesh_material_index_clear((Mesh *)id);
+      KERNEL_mesh_material_index_clear((Mesh *)id);
       break;
     case ID_CU_LEGACY:
-      BKE_curve_material_index_clear((Curve *)id);
+      KERNEL_curve_material_index_clear((Curve *)id);
       break;
     case ID_MB:
     case ID_CV:
@@ -497,13 +497,13 @@ static void material_data_index_clear_id(ID *id)
   }
 }
 
-void BKE_id_materials_copy(Main *bmain, ID *id_src, ID *id_dst)
+void KERNEL_id_materials_copy(Main *bmain, ID *id_src, ID *id_dst)
 {
-  Material ***matar_src = BKE_id_material_array_p(id_src);
-  const short *materials_len_p_src = BKE_id_material_len_p(id_src);
+  Material ***matar_src = KERNEL_id_material_array_p(id_src);
+  const short *materials_len_p_src = KERNEL_id_material_len_p(id_src);
 
-  Material ***matar_dst = BKE_id_material_array_p(id_dst);
-  short *materials_len_p_dst = BKE_id_material_len_p(id_dst);
+  Material ***matar_dst = KERNEL_id_material_array_p(id_dst);
+  short *materials_len_p_dst = KERNEL_id_material_len_p(id_dst);
 
   *materials_len_p_dst = *materials_len_p_src;
   if (*materials_len_p_src != 0) {
@@ -518,10 +518,10 @@ void BKE_id_materials_copy(Main *bmain, ID *id_src, ID *id_dst)
   }
 }
 
-void BKE_id_material_resize(Main *bmain, ID *id, short totcol, bool do_id_user)
+void KERNEL_id_material_resize(Main *bmain, ID *id, short totcol, bool do_id_user)
 {
-  Material ***matar = BKE_id_material_array_p(id);
-  short *totcolp = BKE_id_material_len_p(id);
+  Material ***matar = KERNEL_id_material_array_p(id);
+  short *totcolp = KERNEL_id_material_len_p(id);
 
   if (matar == NULL) {
     return;
@@ -549,11 +549,11 @@ void BKE_id_material_resize(Main *bmain, ID *id, short totcol, bool do_id_user)
   DEG_relations_tag_update(bmain);
 }
 
-void BKE_id_material_append(Main *bmain, ID *id, Material *ma)
+void KERNEL_id_material_append(Main *bmain, ID *id, Material *ma)
 {
   Material ***matar;
-  if ((matar = BKE_id_material_array_p(id))) {
-    short *totcol = BKE_id_material_len_p(id);
+  if ((matar = KERNEL_id_material_array_p(id))) {
+    short *totcol = KERNEL_id_material_len_p(id);
     Material **mat = MEM_callocN(sizeof(void *) * ((*totcol) + 1), "newmatar");
     if (*totcol) {
       memcpy(mat, *matar, sizeof(void *) * (*totcol));
@@ -566,20 +566,20 @@ void BKE_id_material_append(Main *bmain, ID *id, Material *ma)
     (*matar)[(*totcol)++] = ma;
 
     id_us_plus((ID *)ma);
-    BKE_objects_materials_test_all(bmain, id);
+    KERNEL_objects_materials_test_all(bmain, id);
 
     DEG_id_tag_update(id, ID_RECALC_COPY_ON_WRITE);
     DEG_relations_tag_update(bmain);
   }
 }
 
-Material *BKE_id_material_pop(Main *bmain, ID *id, int index_i)
+Material *KERNEL_id_material_pop(Main *bmain, ID *id, int index_i)
 {
   short index = (short)index_i;
   Material *ret = NULL;
   Material ***matar;
-  if ((matar = BKE_id_material_array_p(id))) {
-    short *totcol = BKE_id_material_len_p(id);
+  if ((matar = KERNEL_id_material_array_p(id))) {
+    short *totcol = KERNEL_id_material_len_p(id);
     if (index >= 0 && index < (*totcol)) {
       ret = (*matar)[index];
       id_us_min((ID *)ret);
@@ -598,7 +598,7 @@ Material *BKE_id_material_pop(Main *bmain, ID *id, int index_i)
 
         (*totcol)--;
         *matar = MEM_reallocN(*matar, sizeof(void *) * (*totcol));
-        BKE_objects_materials_test_all(bmain, id);
+        KERNEL_objects_materials_test_all(bmain, id);
       }
 
       material_data_index_remove_id(id, index);
@@ -611,11 +611,11 @@ Material *BKE_id_material_pop(Main *bmain, ID *id, int index_i)
   return ret;
 }
 
-void BKE_id_material_clear(Main *bmain, ID *id)
+void KERNEL_id_material_clear(Main *bmain, ID *id)
 {
   Material ***matar;
-  if ((matar = BKE_id_material_array_p(id))) {
-    short *totcol = BKE_id_material_len_p(id);
+  if ((matar = KERNEL_id_material_array_p(id))) {
+    short *totcol = KERNEL_id_material_len_p(id);
 
     while ((*totcol)--) {
       id_us_min((ID *)((*matar)[*totcol]));
@@ -626,7 +626,7 @@ void BKE_id_material_clear(Main *bmain, ID *id)
       *matar = NULL;
     }
 
-    BKE_objects_materials_test_all(bmain, id);
+    KERNEL_objects_materials_test_all(bmain, id);
     material_data_index_clear_id(id);
 
     DEG_id_tag_update(id, ID_RECALC_COPY_ON_WRITE);
@@ -634,7 +634,7 @@ void BKE_id_material_clear(Main *bmain, ID *id)
   }
 }
 
-Material **BKE_object_material_get_p(Object *ob, short act)
+Material **KERNEL_object_material_get_p(Object *ob, short act)
 {
   Material ***matarar, **ma_p;
   const short *totcolp;
@@ -644,7 +644,7 @@ Material **BKE_object_material_get_p(Object *ob, short act)
   }
 
   /* if object cannot have material, (totcolp == NULL) */
-  totcolp = BKE_object_material_len_p(ob);
+  totcolp = KERNEL_object_material_len_p(ob);
   if (totcolp == NULL || ob->totcol == 0) {
     return NULL;
   }
@@ -673,7 +673,7 @@ Material **BKE_object_material_get_p(Object *ob, short act)
       act = ob->totcol;
     }
 
-    matarar = BKE_object_material_array_p(ob);
+    matarar = KERNEL_object_material_array_p(ob);
 
     if (matarar && *matarar) {
       ma_p = &(*matarar)[act - 1];
@@ -686,9 +686,9 @@ Material **BKE_object_material_get_p(Object *ob, short act)
   return ma_p;
 }
 
-Material *BKE_object_material_get(Object *ob, short act)
+Material *KERNEL_object_material_get(Object *ob, short act)
 {
-  Material **ma_p = BKE_object_material_get_p(ob, act);
+  Material **ma_p = KERNEL_object_material_get_p(ob, act);
   return ma_p ? *ma_p : NULL;
 }
 
@@ -698,7 +698,7 @@ static ID *get_evaluated_object_data_with_materials(Object *ob)
   /* Meshes in edit mode need special handling. */
   if (ob->type == OB_MESH && ob->mode == OB_MODE_EDIT) {
     Mesh *mesh = ob->data;
-    Mesh *editmesh_eval_final = BKE_object_get_editmesh_eval_final(ob);
+    Mesh *editmesh_eval_final = KERNEL_object_get_editmesh_eval_final(ob);
     if (mesh->edit_mesh && editmesh_eval_final) {
       data = &editmesh_eval_final->id;
     }
