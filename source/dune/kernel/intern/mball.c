@@ -1,5 +1,4 @@
-/** \file
- * \ingroup bke
+/**
  *
  * MetaBalls are created from a single Object (with a name without number in it),
  * here the DispList and BoundBox also is located.
@@ -18,27 +17,27 @@
 #include "MEM_guardedalloc.h"
 
 /* Allow using deprecated functionality for .blend file I/O. */
-#define DNA_DEPRECATED_ALLOW
+#define STRUCTS_DEPRECATED_ALLOW
 
-#include "DNA_defaults.h"
-#include "DNA_material_types.h"
-#include "DNA_meta_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "STRUCTS_defaults.h"
+#include "STRUCTS_material_types.h"
+#include "STRUCTS_meta_types.h"
+#include "STRUCTS_object_types.h"
+#include "STRUCTS_scene_types.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "LIB_blenlib.h"
+#include "LIB_math.h"
+#include "LIB_string_utils.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
-#include "BKE_main.h"
+#include "KERNEL_main.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_curve.h"
-#include "BKE_displist.h"
-#include "BKE_idtype.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_curve.h"
+#include "KERNEL_displist.h"
+#include "KERNEL_idtype.h"
 #include "BKE_lib_id.h"
 #include "BKE_lib_query.h"
 #include "BKE_material.h"
@@ -48,13 +47,13 @@
 
 #include "DEG_depsgraph.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 static void metaball_init_data(ID *id)
 {
   MetaBall *metaball = (MetaBall *)id;
 
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(metaball, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(metaball, id));
 
   MEMCPY_STRUCT_AFTER(metaball, DNA_struct_default_get(MetaBall), id);
 }
@@ -67,7 +66,7 @@ static void metaball_copy_data(Main *UNUSED(bmain),
   MetaBall *metaball_dst = (MetaBall *)id_dst;
   const MetaBall *metaball_src = (const MetaBall *)id_src;
 
-  BLI_duplicatelist(&metaball_dst->elems, &metaball_src->elems);
+  LIB_duplicatelist(&metaball_dst->elems, &metaball_src->elems);
 
   metaball_dst->mat = MEM_dupallocN(metaball_src->mat);
 
@@ -80,13 +79,13 @@ static void metaball_free_data(ID *id)
 {
   MetaBall *metaball = (MetaBall *)id;
 
-  BKE_mball_batch_cache_free(metaball);
+  KERNEL_mball_batch_cache_free(metaball);
 
   MEM_SAFE_FREE(metaball->mat);
 
-  BLI_freelistN(&metaball->elems);
+  LIB_freelistN(&metaball->elems);
   if (metaball->disp.first) {
-    BKE_displist_free(&metaball->disp);
+    KERNEL_displist_free(&metaball->disp);
   }
 }
 
@@ -94,16 +93,16 @@ static void metaball_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   MetaBall *metaball = (MetaBall *)id;
   for (int i = 0; i < metaball->totcol; i++) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, metaball->mat[i], IDWALK_CB_USER);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, metaball->mat[i], IDWALK_CB_USER);
   }
 }
 
-static void metaball_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void metaball_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   MetaBall *mb = (MetaBall *)id;
 
   /* Clean up, important in undo case to reduce false detection of changed datablocks. */
-  BLI_listbase_clear(&mb->disp);
+  LIB_listbase_clear(&mb->disp);
   mb->editelems = NULL;
   /* Must always be cleared (meta's don't have their own edit-data). */
   mb->needs_flush_to_id = 0;
@@ -111,17 +110,17 @@ static void metaball_blend_write(BlendWriter *writer, ID *id, const void *id_add
   mb->batch_cache = NULL;
 
   /* write LibData */
-  BLO_write_id_struct(writer, MetaBall, id_address, &mb->id);
-  BKE_id_blend_write(writer, &mb->id);
+  LOADER_write_id_struct(writer, MetaBall, id_address, &mb->id);
+  KERNEL_id_blend_write(writer, &mb->id);
 
   /* direct data */
-  BLO_write_pointer_array(writer, mb->totcol, mb->mat);
+  LOADER_write_pointer_array(writer, mb->totcol, mb->mat);
   if (mb->adt) {
-    BKE_animdata_blend_write(writer, mb->adt);
+    KERNEL_animdata_blend_write(writer, mb->adt);
   }
 
   LISTBASE_FOREACH (MetaElem *, ml, &mb->elems) {
-    BLO_write_struct(writer, MetaElem, ml);
+    LOADER_write_struct(writer, MetaElem, ml);
   }
 }
 
