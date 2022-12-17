@@ -1,0 +1,18 @@
+#include "STRUCTS_mesh_types.h"
+#include "STRUCTS_meshdata_types.h"
+#include "STRUCTS_object_types.h"
+
+#include "KERNEL_customdata.h"
+#include "KE_material.h"
+#include "KE_mesh.h"
+#include "KE_mesh_boolean_convert.hh"
+
+#include "LI_alloca.h"
+#include "LI_array.hh"
+#include "LI_float4x4.hh"
+#include "LI_math.h"
+#include "LI_math_vec_types.hh"
+#include "LI_mesh_boolean.hh"
+#include "LI_mesh_intersect.hh"
+#include "LI_span.hh"
+#include "LI_task.hh"
