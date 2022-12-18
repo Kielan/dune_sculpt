@@ -1,36 +1,35 @@
-/** \file
- * \ingroup bke
+/**
  *
  * Mesh normal calculation functions.
  *
- * \see bmesh_mesh_normals.c for the equivalent #BMesh functionality.
+ * bmesh_mesh_normals.c for the equivalent #BMesh functionality.
  */
 
 #include <climits>
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "STRUCTS_mesh_types.h"
+#include "STRUCTS_meshdata_types.h"
 
-#include "BLI_alloca.h"
-#include "BLI_bitmap.h"
+#include "LIB_alloca.h"
+#include "LIB_bitmap.h"
 
-#include "BLI_linklist.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_math.h"
-#include "BLI_math_vec_types.hh"
-#include "BLI_memarena.h"
-#include "BLI_span.hh"
-#include "BLI_stack.h"
-#include "BLI_task.h"
-#include "BLI_task.hh"
-#include "BLI_utildefines.h"
+#include "LI_linklist.h"
+#include "LI_linklist_stack.h"
+#include "LI_math.h"
+#include "LI_math_vec_types.hh"
+#include "LI_memarena.h"
+#include "LI_span.hh"
+#include "LI_stack.h"
+#include "LI_task.h"
+#include "LI_task.hh"
+#include "LI_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_editmesh_cache.h"
-#include "BKE_global.h"
-#include "BKE_mesh.h"
+#include "KE_customdata.h"
+#include "KE_editmesh_cache.h"
+#include "KE_global.h"
+#include "KE_mesh.h"
 
 #include "atomic_ops.h"
 
@@ -44,13 +43,13 @@ using blender::Span;
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name Private Utility Functions
- * \{ */
+/** Private Utility Functions
+ */
 
 /**
  * A thread-safe version of #add_v3_v3 that uses a spin-lock.
  *
- * \note Avoid using this when the chance of contention is high.
+ * Avoid using this when the chance of contention is high.
  */
 static void add_v3_v3_atomic(float r[3], const float a[3])
 {
@@ -76,72 +75,72 @@ static void add_v3_v3_atomic(float r[3], const float a[3])
   /* Note that we do not need to loop here, since we 'locked' `r[0]`,
    * nobody should have changed it in the mean time. */
   virtual_lock = atomic_cas_float(&r[0], FLT_MAX, virtual_lock);
-  BLI_assert(virtual_lock == FLT_MAX);
+  LIB_assert(virtual_lock == FLT_MAX);
 
 #undef FLT_EQ_NONAN
 }
 
-/** \} */
+/* */
 
 /* -------------------------------------------------------------------- */
-/** \name Public Utility Functions
+/** Public Utility Functions
  *
  * Related to managing normals but not directly related to calculating normals.
- * \{ */
+ **/
 
-void BKE_mesh_normals_tag_dirty(Mesh *mesh)
+void KERNEL_mesh_normals_tag_dirty(Mesh *mesh)
 {
   mesh->runtime.vert_normals_dirty = true;
   mesh->runtime.poly_normals_dirty = true;
 }
 
-float (*BKE_mesh_vertex_normals_for_write(Mesh *mesh))[3]
+float (*KERNEL_mesh_vertex_normals_for_write(Mesh *mesh))[3]
 {
   if (mesh->runtime.vert_normals == nullptr) {
     mesh->runtime.vert_normals = (float(*)[3])MEM_malloc_arrayN(
         mesh->totvert, sizeof(float[3]), __func__);
   }
 
-  BLI_assert(MEM_allocN_len(mesh->runtime.vert_normals) >= sizeof(float[3]) * mesh->totvert);
+  LIB_assert(MEM_allocN_len(mesh->runtime.vert_normals) >= sizeof(float[3]) * mesh->totvert);
 
   return mesh->runtime.vert_normals;
 }
 
-float (*BKE_mesh_poly_normals_for_write(Mesh *mesh))[3]
+float (*KERNEL_mesh_poly_normals_for_write(Mesh *mesh))[3]
 {
   if (mesh->runtime.poly_normals == nullptr) {
     mesh->runtime.poly_normals = (float(*)[3])MEM_malloc_arrayN(
         mesh->totpoly, sizeof(float[3]), __func__);
   }
 
-  BLI_assert(MEM_allocN_len(mesh->runtime.poly_normals) >= sizeof(float[3]) * mesh->totpoly);
+  LIB_assert(MEM_allocN_len(mesh->runtime.poly_normals) >= sizeof(float[3]) * mesh->totpoly);
 
   return mesh->runtime.poly_normals;
 }
 
-void BKE_mesh_vertex_normals_clear_dirty(Mesh *mesh)
+void KERNEL_mesh_vertex_normals_clear_dirty(Mesh *mesh)
 {
   mesh->runtime.vert_normals_dirty = false;
-  BKE_mesh_assert_normals_dirty_or_calculated(mesh);
+  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh);
 }
 
-void BKE_mesh_poly_normals_clear_dirty(Mesh *mesh)
+void KERNEL_mesh_poly_normals_clear_dirty(Mesh *mesh)
 {
   mesh->runtime.poly_normals_dirty = false;
-  BKE_mesh_assert_normals_dirty_or_calculated(mesh);
+  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh);
 }
 
-bool BKE_mesh_vertex_normals_are_dirty(const Mesh *mesh)
+bool KERNEL_mesh_vertex_normals_are_dirty(const Mesh *mesh)
 {
   return mesh->runtime.vert_normals_dirty;
 }
 
-bool BKE_mesh_poly_normals_are_dirty(const Mesh *mesh)
+bool KERNEL_mesh_poly_normals_are_dirty(const Mesh *mesh)
 {
   return mesh->runtime.poly_normals_dirty;
 }
 
-void BKE_mesh_clear_derived_normals(Mesh *mesh)
+void KERNEL_mesh_clear_derived_normals(Mesh *mesh)
 {
   MEM_SAFE_FREE(mesh->runtime.vert_normals);
   MEM_SAFE_FREE(mesh->runtime.poly_normals);
@@ -150,21 +149,19 @@ void BKE_mesh_clear_derived_normals(Mesh *mesh)
   mesh->runtime.poly_normals_dirty = true;
 }
 
-void BKE_mesh_assert_normals_dirty_or_calculated(const Mesh *mesh)
+void KERNEL_mesh_assert_normals_dirty_or_calculated(const Mesh *mesh)
 {
   if (!mesh->runtime.vert_normals_dirty) {
-    BLI_assert(mesh->runtime.vert_normals || mesh->totvert == 0);
+    LIB_assert(mesh->runtime.vert_normals || mesh->totvert == 0);
   }
   if (!mesh->runtime.poly_normals_dirty) {
-    BLI_assert(mesh->runtime.poly_normals || mesh->totpoly == 0);
+    LIB_assert(mesh->runtime.poly_normals || mesh->totpoly == 0);
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Mesh Normal Calculation (Polygons)
- * \{ */
+/** Mesh Normal Calculation (Polygons)
+ */
 
 struct MeshCalcNormalsData_Poly {
   const MVert *mvert;
@@ -181,10 +178,10 @@ static void mesh_calc_normals_poly_fn(void *__restrict userdata,
 {
   const MeshCalcNormalsData_Poly *data = (MeshCalcNormalsData_Poly *)userdata;
   const MPoly *mp = &data->mpoly[pidx];
-  BKE_mesh_calc_poly_normal(mp, data->mloop + mp->loopstart, data->mvert, data->pnors[pidx]);
+  KERNEL_mesh_calc_poly_normal(mp, data->mloop + mp->loopstart, data->mvert, data->pnors[pidx]);
 }
 
-void BKE_mesh_calc_normals_poly(const MVert *mvert,
+void KERNEL_mesh_calc_normals_poly(const MVert *mvert,
                                 int UNUSED(mvert_len),
                                 const MLoop *mloop,
                                 int UNUSED(mloop_len),
@@ -193,10 +190,10 @@ void BKE_mesh_calc_normals_poly(const MVert *mvert,
                                 float (*r_poly_normals)[3])
 {
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  LIB_parallel_range_settings_defaults(&settings);
   settings.min_iter_per_thread = 1024;
 
-  BLI_assert((r_poly_normals != nullptr) || (mpoly_len == 0));
+  LIB_assert((r_poly_normals != nullptr) || (mpoly_len == 0));
 
   MeshCalcNormalsData_Poly data = {};
   data.mpoly = mpoly;
@@ -204,17 +201,15 @@ void BKE_mesh_calc_normals_poly(const MVert *mvert,
   data.mvert = mvert;
   data.pnors = r_poly_normals;
 
-  BLI_task_parallel_range(0, mpoly_len, &data, mesh_calc_normals_poly_fn, &settings);
+  LIB_task_parallel_range(0, mpoly_len, &data, mesh_calc_normals_poly_fn, &settings);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Mesh Normal Calculation (Polygons & Vertices)
+/** Mesh Normal Calculation (Polygons & Vertices)
  *
  * Take care making optimizations to this function as improvements to low-poly
  * meshes can slow down high-poly meshes. For details on performance, see D11993.
- * \{ */
+ */
 
 struct MeshCalcNormalsData_PolyAndVertex {
   const MVert *mvert;
@@ -303,7 +298,7 @@ static void mesh_calc_normals_poly_and_vertex_finalize_fn(
   }
 }
 
-void BKE_mesh_calc_normals_poly_and_vertex(const MVert *mvert,
+void KERNEL_mesh_calc_normals_poly_and_vertex(const MVert *mvert,
                                            const int mvert_len,
                                            const MLoop *mloop,
                                            const int UNUSED(mloop_len),
@@ -313,7 +308,7 @@ void BKE_mesh_calc_normals_poly_and_vertex(const MVert *mvert,
                                            float (*r_vert_normals)[3])
 {
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  LIB_parallel_range_settings_defaults(&settings);
   settings.min_iter_per_thread = 1024;
 
   memset(r_vert_normals, 0, sizeof(*r_vert_normals) * (size_t)mvert_len);
@@ -326,24 +321,22 @@ void BKE_mesh_calc_normals_poly_and_vertex(const MVert *mvert,
   data.vnors = r_vert_normals;
 
   /* Compute poly normals, accumulating them into vertex normals. */
-  BLI_task_parallel_range(
+  LIB_task_parallel_range(
       0, mpoly_len, &data, mesh_calc_normals_poly_and_vertex_accum_fn, &settings);
 
   /* Normalize and validate computed vertex normals. */
-  BLI_task_parallel_range(
+  LIB_task_parallel_range(
       0, mvert_len, &data, mesh_calc_normals_poly_and_vertex_finalize_fn, &settings);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Mesh Normal Calculation
- * \{ */
+/** Mesh Normal Calculation
+ */
 
-const float (*BKE_mesh_vertex_normals_ensure(const Mesh *mesh))[3]
+const float (*KERNEL_mesh_vertex_normals_ensure(const Mesh *mesh))[3]
 {
-  if (!(BKE_mesh_vertex_normals_are_dirty(mesh) || BKE_mesh_poly_normals_are_dirty(mesh))) {
-    BLI_assert(mesh->runtime.vert_normals != nullptr || mesh->totvert == 0);
+  if (!(KERNEL_mesh_vertex_normals_are_dirty(mesh) || BKE_mesh_poly_normals_are_dirty(mesh))) {
+    LIB_assert(mesh->runtime.vert_normals != nullptr || mesh->totvert == 0);
     return mesh->runtime.vert_normals;
   }
 
@@ -352,10 +345,10 @@ const float (*BKE_mesh_vertex_normals_ensure(const Mesh *mesh))[3]
   }
 
   ThreadMutex *normals_mutex = (ThreadMutex *)mesh->runtime.normals_mutex;
-  BLI_mutex_lock(normals_mutex);
-  if (!(BKE_mesh_vertex_normals_are_dirty(mesh) || BKE_mesh_poly_normals_are_dirty(mesh))) {
-    BLI_assert(mesh->runtime.vert_normals != nullptr);
-    BLI_mutex_unlock(normals_mutex);
+  LIB_mutex_lock(normals_mutex);
+  if (!(KERNEL_mesh_vertex_normals_are_dirty(mesh) || BKE_mesh_poly_normals_are_dirty(mesh))) {
+    LIB_assert(mesh->runtime.vert_normals != nullptr);
+    LIB_mutex_unlock(normals_mutex);
     return mesh->runtime.vert_normals;
   }
 
@@ -369,7 +362,7 @@ const float (*BKE_mesh_vertex_normals_ensure(const Mesh *mesh))[3]
     vert_normals = BKE_mesh_vertex_normals_for_write(&mesh_mutable);
     poly_normals = BKE_mesh_poly_normals_for_write(&mesh_mutable);
 
-    BKE_mesh_calc_normals_poly_and_vertex(mesh_mutable.mvert,
+    KERNEL_mesh_calc_normals_poly_and_vertex(mesh_mutable.mvert,
                                           mesh_mutable.totvert,
                                           mesh_mutable.mloop,
                                           mesh_mutable.totloop,
@@ -378,18 +371,18 @@ const float (*BKE_mesh_vertex_normals_ensure(const Mesh *mesh))[3]
                                           poly_normals,
                                           vert_normals);
 
-    BKE_mesh_vertex_normals_clear_dirty(&mesh_mutable);
-    BKE_mesh_poly_normals_clear_dirty(&mesh_mutable);
+    KERNEL_mesh_vertex_normals_clear_dirty(&mesh_mutable);
+    KERNEL_mesh_poly_normals_clear_dirty(&mesh_mutable);
   });
 
-  BLI_mutex_unlock(normals_mutex);
+  LIB_mutex_unlock(normals_mutex);
   return vert_normals;
 }
 
-const float (*BKE_mesh_poly_normals_ensure(const Mesh *mesh))[3]
+const float (*KERNEL_mesh_poly_normals_ensure(const Mesh *mesh))[3]
 {
-  if (!BKE_mesh_poly_normals_are_dirty(mesh)) {
-    BLI_assert(mesh->runtime.poly_normals != nullptr || mesh->totpoly == 0);
+  if (!KERNEL_mesh_poly_normals_are_dirty(mesh)) {
+    LIB_assert(mesh->runtime.poly_normals != nullptr || mesh->totpoly == 0);
     return mesh->runtime.poly_normals;
   }
 
@@ -398,10 +391,10 @@ const float (*BKE_mesh_poly_normals_ensure(const Mesh *mesh))[3]
   }
 
   ThreadMutex *normals_mutex = (ThreadMutex *)mesh->runtime.normals_mutex;
-  BLI_mutex_lock(normals_mutex);
-  if (!BKE_mesh_poly_normals_are_dirty(mesh)) {
-    BLI_assert(mesh->runtime.poly_normals != nullptr);
-    BLI_mutex_unlock(normals_mutex);
+  LIB_mutex_lock(normals_mutex);
+  if (!KERNEL_mesh_poly_normals_are_dirty(mesh)) {
+    LIB_assert(mesh->runtime.poly_normals != nullptr);
+    LIB_mutex_unlock(normals_mutex);
     return mesh->runtime.poly_normals;
   }
 
@@ -411,9 +404,9 @@ const float (*BKE_mesh_poly_normals_ensure(const Mesh *mesh))[3]
   blender::threading::isolate_task([&]() {
     Mesh &mesh_mutable = *const_cast<Mesh *>(mesh);
 
-    poly_normals = BKE_mesh_poly_normals_for_write(&mesh_mutable);
+    poly_normals = KERNEL_mesh_poly_normals_for_write(&mesh_mutable);
 
-    BKE_mesh_calc_normals_poly(mesh_mutable.mvert,
+    KERNEL_mesh_calc_normals_poly(mesh_mutable.mvert,
                                mesh_mutable.totvert,
                                mesh_mutable.mloop,
                                mesh_mutable.totloop,
@@ -421,45 +414,45 @@ const float (*BKE_mesh_poly_normals_ensure(const Mesh *mesh))[3]
                                mesh_mutable.totpoly,
                                poly_normals);
 
-    BKE_mesh_poly_normals_clear_dirty(&mesh_mutable);
+    KERNEL_mesh_poly_normals_clear_dirty(&mesh_mutable);
   });
 
-  BLI_mutex_unlock(normals_mutex);
+  LIB_mutex_unlock(normals_mutex);
   return poly_normals;
 }
 
-void BKE_mesh_ensure_normals_for_display(Mesh *mesh)
+void KERNEL_mesh_ensure_normals_for_display(Mesh *mesh)
 {
   switch ((eMeshWrapperType)mesh->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_SUBD:
     case ME_WRAPPER_TYPE_MDATA:
-      BKE_mesh_vertex_normals_ensure(mesh);
-      BKE_mesh_poly_normals_ensure(mesh);
+      KERNEL_mesh_vertex_normals_ensure(mesh);
+      KERNEL_mesh_poly_normals_ensure(mesh);
       break;
     case ME_WRAPPER_TYPE_BMESH: {
       struct BMEditMesh *em = mesh->edit_mesh;
       EditMeshData *emd = mesh->runtime.edit_data;
       if (emd->vertexCos) {
-        BKE_editmesh_cache_ensure_vert_normals(em, emd);
-        BKE_editmesh_cache_ensure_poly_normals(em, emd);
+        KERNEL_editmesh_cache_ensure_vert_normals(em, emd);
+        KERNEL_editmesh_cache_ensure_poly_normals(em, emd);
       }
       return;
     }
   }
 }
 
-void BKE_mesh_calc_normals(Mesh *mesh)
+void KERNEL_mesh_calc_normals(Mesh *mesh)
 {
 #ifdef DEBUG_TIME
-  TIMEIT_START_AVERAGED(BKE_mesh_calc_normals);
+  TIMEIT_START_AVERAGED(KERNEL_mesh_calc_normals);
 #endif
-  BKE_mesh_vertex_normals_ensure(mesh);
+  KERNEL_mesh_vertex_normals_ensure(mesh);
 #ifdef DEBUG_TIME
-  TIMEIT_END_AVERAGED(BKE_mesh_calc_normals);
+  TIMEIT_END_AVERAGED(KERNEL_mesh_calc_normals);
 #endif
 }
 
-void BKE_mesh_calc_normals_looptri(MVert *mverts,
+void KERNEL_mesh_calc_normals_looptri(MVert *mverts,
                                    int numVerts,
                                    const MLoop *mloop,
                                    const MLoopTri *looptri,
@@ -513,7 +506,7 @@ cleanup:
   }
 }
 
-void BKE_lnor_spacearr_init(MLoopNorSpaceArray *lnors_spacearr,
+void KERNEL_lnor_spacearr_init(MLoopNorSpaceArray *lnors_spacearr,
                             const int numLoops,
                             const char data_type)
 {
@@ -521,28 +514,28 @@ void BKE_lnor_spacearr_init(MLoopNorSpaceArray *lnors_spacearr,
     MemArena *mem;
 
     if (!lnors_spacearr->mem) {
-      lnors_spacearr->mem = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
+      lnors_spacearr->mem = BLI_memarena_new(LIB_MEMARENA_STD_BUFSIZE, __func__);
     }
     mem = lnors_spacearr->mem;
-    lnors_spacearr->lspacearr = (MLoopNorSpace **)BLI_memarena_calloc(
+    lnors_spacearr->lspacearr = (MLoopNorSpace **)LIB_memarena_calloc(
         mem, sizeof(MLoopNorSpace *) * (size_t)numLoops);
-    lnors_spacearr->loops_pool = (LinkNode *)BLI_memarena_alloc(
+    lnors_spacearr->loops_pool = (LinkNode *)LIB_memarena_alloc(
         mem, sizeof(LinkNode) * (size_t)numLoops);
 
     lnors_spacearr->num_spaces = 0;
   }
-  BLI_assert(ELEM(data_type, MLNOR_SPACEARR_BMLOOP_PTR, MLNOR_SPACEARR_LOOP_INDEX));
+  LIB_assert(ELEM(data_type, MLNOR_SPACEARR_BMLOOP_PTR, MLNOR_SPACEARR_LOOP_INDEX));
   lnors_spacearr->data_type = data_type;
 }
 
-void BKE_lnor_spacearr_tls_init(MLoopNorSpaceArray *lnors_spacearr,
+void KERNEL_lnor_spacearr_tls_init(MLoopNorSpaceArray *lnors_spacearr,
                                 MLoopNorSpaceArray *lnors_spacearr_tls)
 {
   *lnors_spacearr_tls = *lnors_spacearr;
-  lnors_spacearr_tls->mem = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
+  lnors_spacearr_tls->mem = LIB_memarena_new(LIB_MEMARENA_STD_BUFSIZE, __func__);
 }
 
-void BKE_lnor_spacearr_tls_join(MLoopNorSpaceArray *lnors_spacearr,
+void KERNEL_lnor_spacearr_tls_join(MLoopNorSpaceArray *lnors_spacearr,
                                 MLoopNorSpaceArray *lnors_spacearr_tls)
 {
   BLI_assert(lnors_spacearr->data_type == lnors_spacearr_tls->data_type);
