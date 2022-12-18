@@ -16,10 +16,10 @@
 #include "IMB_moviecache.h"
 
 #include "KERNEL_addon.h"
-#include "KERNEL_blender.h" /* own include */
-#include "KERNEL_blender_user_menu.h"
-#include "KERNEL_blender_version.h" /* own include */
-#include "KERNEL_blendfile.h"
+#include "KERNEL_dune.h" /* own include */
+#include "KERNEL_dune_user_menu.h"
+#include "KERNEL_dune_version.h" /* own include */
+#include "KERNEL_dunefile.h"
 #include "KERNEL_brush.h"
 #include "KERNEL_cachefile.h"
 #include "KERNEL_callbacks.h"
@@ -49,14 +49,14 @@ UserDef U;
 /* -------------------------------------------------------------------- */
 /* Dune Free on Exit */
 
-void KERNEL_blender_free(void)
+void KERNEL_dune_free(void)
 {
   /* samples are in a global list..., also sets G_MAIN->sound->sample NULL */
 
   /* Needs to run before main free as wm is still referenced for icons preview jobs. */
   KERNEL_studiolight_free();
 
-  BKE_main_free(G_MAIN);
+  KERNEL_main_free(G_MAIN);
   G_MAIN = NULL;
 
   if (G.log.file != NULL) {
@@ -80,7 +80,7 @@ void KERNEL_blender_free(void)
 }
 
 /* -------------------------------------------------------------------- */
-/** Blender Version Access */
+/** Dune Version Access */
 
 static char dune_version_string[48] = "";
 
@@ -167,7 +167,7 @@ static void keymap_item_free(wmKeyMapItem *kmi)
   }
 }
 
-void KERNEL_blender_userdef_data_swap(UserDef *userdef_a, UserDef *userdef_b)
+void KERNEL_dune_userdef_data_swap(UserDef *userdef_a, UserDef *userdef_b)
 {
   SWAP(UserDef, *userdef_a, *userdef_b);
 }
@@ -226,7 +226,7 @@ static void userdef_free_user_menus(UserDef *userdef)
 {
   for (bUserMenu *um = userdef->user_menus.first, *um_next; um; um = um_next) {
     um_next = um->next;
-    KERNEL_blender_user_menu_item_free_list(&um->items);
+    KERNEL_dune_user_menu_item_free_list(&um->items);
     MEM_freeN(um);
   }
 }
@@ -271,7 +271,7 @@ void KERNEL_dune_userdef_data_free(UserDef *userdef, bool clear_fonts)
 /* -------------------------------------------------------------------- */
 /** DUNE Preferences (Application Templates) */
 
-void KERNEL_blender_userdef_app_template_data_swap(UserDef *userdef_a, UserDef *userdef_b)
+void KERNEL_dune_userdef_app_template_data_swap(UserDef *userdef_a, UserDef *userdef_b)
 {
   /* TODO:
    * - various minor settings (add as needed).
@@ -328,15 +328,15 @@ void KERNEL_blender_userdef_app_template_data_swap(UserDef *userdef_a, UserDef *
 #undef FLAG_SWAP
 }
 
-void BKE_blender_userdef_app_template_data_set(UserDef *userdef)
+void KERNEL_dune_userdef_app_template_data_set(UserDef *userdef)
 {
-  BKE_blender_userdef_app_template_data_swap(&U, userdef);
-  BKE_blender_userdef_data_free(userdef, true);
+  KERNEL_dune_userdef_app_template_data_swap(&U, userdef);
+  KERNEL_dune_userdef_data_free(userdef, true);
 }
 
-void BKE_blender_userdef_app_template_data_set_and_free(UserDef *userdef)
+void KERNEL_blender_userdef_app_template_data_set_and_free(UserDef *userdef)
 {
-  BKE_blender_userdef_app_template_data_set(userdef);
+  KERNEL_dune_userdef_app_template_data_set(userdef);
   MEM_freeN(userdef);
 }
 
