@@ -35,7 +35,7 @@ unsigned int KERNEL_mask_spline_resolution(MaskSpline *spline, int width, int he
     unsigned int cur_resol;
 
     bezt_curr = &point->bezt;
-    bezt_next = BKE_mask_spline_point_next_bezt(spline, spline->points, point);
+    bezt_next = KERNEL_mask_spline_point_next_bezt(spline, spline->points, point);
 
     if (bezt_next == NULL) {
       break;
@@ -61,7 +61,7 @@ unsigned int KERNEL_mask_spline_resolution(MaskSpline *spline, int width, int he
 unsigned int KERNEL_mask_spline_feather_resolution(MaskSpline *spline, int width, int height)
 {
   const float max_segment = 0.005;
-  unsigned int resol = BKE_mask_spline_resolution(spline, width, height);
+  unsigned int resol = KERNEL_mask_spline_resolution(spline, width, height);
   float max_jump = 0.0f;
 
   /* avoid checking the featrher if we already hit the maximum value */
@@ -483,18 +483,18 @@ void KERNEL_mask_spline_feather_collapse_inner_loops(MaskSpline *spline,
 #undef BUCKET_INDEX
 }
 
-/** only called from #BKE_mask_spline_feather_differentiated_points_with_resolution() ! */
+/** only called from #KERNEL_mask_spline_feather_differentiated_points_with_resolution() ! */
 static float (*mask_spline_feather_differentiated_points_with_resolution__even(
     MaskSpline *spline,
     const unsigned int resol,
     const bool do_feather_isect,
     unsigned int *r_tot_feather_point))[2]
 {
-  MaskSplinePoint *points_array = BKE_mask_spline_point_array(spline);
+  MaskSplinePoint *points_array = KERNEL_mask_spline_point_array(spline);
   MaskSplinePoint *point_curr, *point_prev;
   float(*feather)[2], (*fp)[2];
 
-  const int tot = BKE_mask_spline_differentiate_calc_total(spline, resol);
+  const int tot = KERNEL_mask_spline_differentiate_calc_total(spline, resol);
   int a;
 
   /* tot+1 because of 'forward_diff_bezier' function */
@@ -564,7 +564,7 @@ static float (*mask_spline_feather_differentiated_points_with_resolution__double
     const bool do_feather_isect,
     unsigned int *r_tot_feather_point))[2]
 {
-  MaskSplinePoint *points_array = BKE_mask_spline_point_array(spline);
+  MaskSplinePoint *points_array = KERNEL_mask_spline_point_array(spline);
 
   MaskSplinePoint *point_curr, *point_prev;
   float(*feather)[2], (*fp)[2];
@@ -718,7 +718,7 @@ float (*KERNEL_mask_spline_feather_differentiated_points_with_resolution(
 
 float (*KERNEL_mask_spline_feather_points(MaskSpline *spline, int *r_tot_feather_point))[2]
 {
-  MaskSplinePoint *points_array = BKE_mask_spline_point_array(spline);
+  MaskSplinePoint *points_array = KERNEL_mask_spline_point_array(spline);
 
   int i, tot = 0;
   float(*feather)[2], (*fp)[2];
@@ -862,7 +862,7 @@ void KERNEL_mask_layer_evaluate_animation(MaskLayer *masklay, const float ctime)
       printf("%s: tween %d %d (%d %d)\n",
              __func__,
              (int)ctime,
-             BLI_listbase_count(&masklay->splines_shapes),
+             LIB_listbase_count(&masklay->splines_shapes),
              masklay_shape_a->frame,
              masklay_shape_b->frame);
 #endif
@@ -881,7 +881,7 @@ void KERNEL_mask_layer_evaluate_deform(MaskLayer *masklay, const float ctime)
   KERNEL_mask_layer_calc_handles(masklay);
   for (MaskSpline *spline = masklay->splines.first; spline != NULL; spline = spline->next) {
     bool need_handle_recalc = false;
-    BKE_mask_spline_ensure_deform(spline);
+    KERNEL_mask_spline_ensure_deform(spline);
     for (int i = 0; i < spline->tot_point; i++) {
       MaskSplinePoint *point = &spline->points[i];
       MaskSplinePoint *point_deform = &spline->points_deform[i];
@@ -914,7 +914,7 @@ void KERNEL_mask_eval_animation(struct Depsgraph *depsgraph, Mask *mask)
   DEG_debug_print_eval(depsgraph, __func__, mask->id.name, mask);
   for (MaskLayer *mask_layer = mask->masklayers.first; mask_layer != NULL;
        mask_layer = mask_layer->next) {
-    BKE_mask_layer_evaluate_animation(mask_layer, ctime);
+    KERNEL_mask_layer_evaluate_animation(mask_layer, ctime);
   }
 }
 
@@ -925,7 +925,7 @@ void KERNEL_mask_eval_update(struct Depsgraph *depsgraph, Mask *mask)
   DEG_debug_print_eval(depsgraph, __func__, mask->id.name, mask);
   for (MaskLayer *mask_layer = mask->masklayers.first; mask_layer != NULL;
        mask_layer = mask_layer->next) {
-    BKE_mask_layer_evaluate_deform(mask_layer, ctime);
+    KERNEL_mask_layer_evaluate_deform(mask_layer, ctime);
   }
 
   if (is_depsgraph_active) {
