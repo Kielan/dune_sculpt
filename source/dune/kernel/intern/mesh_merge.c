@@ -1,33 +1,30 @@
-/** \file
- * \ingroup bke
- */
 #include <string.h> /* for memcpy */
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "STRUCTS_mesh_types.h"
+#include "STRUCTS_meshdata_types.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_edgehash.h"
-#include "BLI_ghash.h"
-#include "BLI_utildefines.h"
-#include "BLI_utildefines_stack.h"
+#include "LI_bitmap.h"
+#include "LI_edgehash.h"
+#include "LI_ghash.h"
+#include "LI_utildefines.h"
+#include "LI_utildefines_stack.h"
 
-#include "BKE_customdata.h"
-#include "BKE_lib_id.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_mapping.h"
+#include "KE_customdata.h"
+#include "KE_lib_id.h"
+#include "KE_mesh.h"
+#include "KE_mesh_mapping.h"
 
 /**
  * Poly compare with vtargetmap
- * Function used by #BKE_mesh_merge_verts.
+ * Function used by #KERNEL_mesh_merge_verts.
  * The function compares poly_source after applying vtargetmap, with poly_target.
  * The two polys are identical if they share the same vertices in the same order,
  * or in reverse order, but starting position loopstart may be different.
  * The function is called with direct_reverse=1 for same order (i.e. same normal),
  * and may be called again with direct_reverse=-1 for reverse order.
- * \return 1 if polys are identical,  0 if polys are different.
+ * return 1 if polys are identical,  0 if polys are different.
  */
 static int cddm_poly_compare(MLoop *mloop_array,
                              MPoly *mpoly_source,
@@ -43,7 +40,7 @@ static int cddm_poly_compare(MLoop *mloop_array,
 
   MLoop *mloop_source, *mloop_target;
 
-  BLI_assert(ELEM(direct_reverse, 1, -1));
+  LIB_assert(ELEM(direct_reverse, 1, -1));
 
   i_loop_source = 0;
   mloop_source = mloop_array + mpoly_source->loopstart;
@@ -54,7 +51,7 @@ static int cddm_poly_compare(MLoop *mloop_array,
   }
   else {
     /* All source loop vertices should be mapped */
-    BLI_assert(false);
+    LIB_assert(false);
   }
 
   /* Find same vertex within mpoly_target's loops */
@@ -111,7 +108,7 @@ static int cddm_poly_compare(MLoop *mloop_array,
       }
       else {
         /* All source loop vertices should be mapped */
-        BLI_assert(false);
+        LIB_assert(false);
       }
 
     } while (vert_source == vert_target);
@@ -186,7 +183,7 @@ static bool poly_gset_compare_fn(const void *k1, const void *k2)
   return true;
 }
 
-Mesh *BKE_mesh_merge_verts(Mesh *mesh,
+Mesh *KERNEL_mesh_merge_verts(Mesh *mesh,
                            const int *vtargetmap,
                            const int tot_vtargetmap,
                            const int merge_mode)
@@ -231,7 +228,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
   STACK_DECLARE(mpoly);
   STACK_DECLARE(oldp);
 
-  EdgeHash *ehash = BLI_edgehash_new_ex(__func__, totedge);
+  EdgeHash *ehash = LIB_edgehash_new_ex(__func__, totedge);
 
   int i, j, c;
 
@@ -286,7 +283,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
     if (LIKELY(v1 != v2)) {
       void **val_p;
 
-      if (BLI_edgehash_ensure_p(ehash, v1, v2, &val_p)) {
+      if (LIB_edgehash_ensure_p(ehash, v1, v2, &val_p)) {
         newe[i] = POINTER_AS_INT(*val_p);
       }
       else {
@@ -309,9 +306,9 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
      * We use a BLI_ghash to speed it up with a first level check */
     PolyKey *mpgh;
     poly_keys = MEM_malloc_arrayN(totpoly, sizeof(PolyKey), __func__);
-    poly_gset = BLI_gset_new_ex(poly_gset_hash_fn, poly_gset_compare_fn, __func__, totpoly);
+    poly_gset = LIB_gset_new_ex(poly_gset_hash_fn, poly_gset_compare_fn, __func__, totpoly);
     /* Duplicates allowed because our compare function is not pure equality */
-    BLI_gset_flag_set(poly_gset, GHASH_FLAG_ALLOW_DUPES);
+    LIB_gset_flag_set(poly_gset, GHASH_FLAG_ALLOW_DUPES);
 
     mp = mesh->mpoly;
     mpgh = poly_keys;
@@ -324,16 +321,16 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
         mpgh->hash_sum += ml->v;
         mpgh->hash_xor ^= ml->v;
       }
-      BLI_gset_insert(poly_gset, mpgh);
+      LIB_gset_insert(poly_gset, mpgh);
     }
 
     /* Can we optimize by reusing an old `pmap`? How do we know an old `pmap` is stale? */
     /* When called by `MOD_array.c` the `cddm` has just been created, so it has no valid `pmap`. */
-    BKE_mesh_vert_poly_map_create(
+    KERNEL_mesh_vert_poly_map_create(
         &poly_map, &poly_map_mem, mesh->mpoly, mesh->mloop, totvert, totpoly, totloop);
   } /* done preparing for fast poly compare */
 
-  BLI_bitmap *vert_tag = BLI_BITMAP_NEW(mesh->totvert, __func__);
+  LIB_bitmap *vert_tag = LIB_BITMAP_NEW(mesh->totvert, __func__);
 
   mp = mesh->mpoly;
   mv = mesh->mvert;
@@ -349,11 +346,11 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
       if (vtargetmap[ml->v] == -1) {
         all_vertices_merged = false;
         /* This will be used to check for poly using several time the same vert. */
-        BLI_BITMAP_DISABLE(vert_tag, ml->v);
+        LIB_BITMAP_DISABLE(vert_tag, ml->v);
       }
       else {
         /* This will be used to check for poly using several time the same vert. */
-        BLI_BITMAP_DISABLE(vert_tag, vtargetmap[ml->v]);
+        LIB_BITMAP_DISABLE(vert_tag, vtargetmap[ml->v]);
       }
     }
 
@@ -382,7 +379,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
           pkey.hash_xor ^= v_target;
           pkey.totloops++;
         }
-        if (BLI_gset_haskey(poly_gset, &pkey)) {
+        if (LIB_gset_haskey(poly_gset, &pkey)) {
 
           /* There might be a poly that matches this one.
            * We could just leave it there and say there is, and do a "continue".
@@ -436,13 +433,13 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
         med = mesh->medge + ml->e;
         uint v1 = (vtargetmap[med->v1] != -1) ? vtargetmap[med->v1] : med->v1;
         uint v2 = (vtargetmap[med->v2] != -1) ? vtargetmap[med->v2] : med->v2;
-        BLI_assert((mlv == v1 && next_mlv == v2) || (mlv == v2 && next_mlv == v1));
+        LIB_assert((mlv == v1 && next_mlv == v2) || (mlv == v2 && next_mlv == v1));
       }
 #endif
       /* A loop is only valid if its matching edge is,
        * and it's not reusing a vertex already used by this poly. */
       if (LIKELY((newe[ml->e] != -1) && !BLI_BITMAP_TEST(vert_tag, mlv))) {
-        BLI_BITMAP_ENABLE(vert_tag, mlv);
+        LIB_BITMAP_ENABLE(vert_tag, mlv);
 
         if (UNLIKELY(last_valid_ml != NULL && need_edge_from_last_valid_ml)) {
           /* We need to create a new edge between last valid loop and this one! */
@@ -451,7 +448,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
           uint v1 = (vtargetmap[last_valid_ml->v] != -1) ? vtargetmap[last_valid_ml->v] :
                                                            last_valid_ml->v;
           uint v2 = mlv;
-          BLI_assert(v1 != v2);
+          LIB_assert(v1 != v2);
           if (BLI_edgehash_ensure_p(ehash, v1, v2, &val_p)) {
             last_valid_ml->e = POINTER_AS_INT(*val_p);
           }
@@ -484,7 +481,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
 
         /* We absolutely HAVE to handle edge index remapping here, otherwise potential newly
          * created edges in that part of code make remapping later totally unreliable. */
-        BLI_assert(newe[ml->e] != -1);
+        LIB_assert(newe[ml->e] != -1);
         last_valid_ml->e = newe[ml->e];
       }
       else {
@@ -505,7 +502,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
                                                        last_valid_ml->v;
       uint v2 = (vtargetmap[first_valid_ml->v] != -1) ? vtargetmap[first_valid_ml->v] :
                                                         first_valid_ml->v;
-      BLI_assert(v1 != v2);
+      LIB_assert(v1 != v2);
       if (BLI_edgehash_ensure_p(ehash, v1, v2, &val_p)) {
         last_valid_ml->e = POINTER_AS_INT(*val_p);
       }
@@ -526,7 +523,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
     }
 
     if (UNLIKELY(c == 0)) {
-      BLI_assert(created_edges == 0);
+      LIB_assert(created_edges == 0);
       continue;
     }
     if (UNLIKELY(c < 3)) {
@@ -545,7 +542,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
     mp_new = STACK_PUSH_RET_PTR(mpoly);
     *mp_new = *mp;
     mp_new->totloop = c;
-    BLI_assert(mp_new->totloop >= 3);
+    LIB_assert(mp_new->totloop >= 3);
     mp_new->loopstart = STACK_SIZE(mloop) - c;
 
     STACK_PUSH(oldp, i);
@@ -554,24 +551,24 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
   if (poly_gset) {
     // printf("hash quality %.6f\n", BLI_gset_calc_quality(poly_gset));
 
-    BLI_gset_free(poly_gset, NULL);
+    LIB_gset_free(poly_gset, NULL);
     MEM_freeN(poly_keys);
   }
 
   /* Create new cddm. */
-  result = BKE_mesh_new_nomain_from_template(
+  result = KERNEL_mesh_new_nomain_from_template(
       mesh, STACK_SIZE(mvert), STACK_SIZE(medge), 0, STACK_SIZE(mloop), STACK_SIZE(mpoly));
 
   /* Update edge indices and copy customdata. */
   med = medge;
   for (i = 0; i < result->totedge; i++, med++) {
-    BLI_assert(newv[med->v1] != -1);
+    LIB_assert(newv[med->v1] != -1);
     med->v1 = newv[med->v1];
-    BLI_assert(newv[med->v2] != -1);
+    LIB_assert(newv[med->v2] != -1);
     med->v2 = newv[med->v2];
 
     /* Can happen in case vtargetmap contains some double chains, we do not support that. */
-    BLI_assert(med->v1 != med->v2);
+    LIB_assert(med->v1 != med->v2);
 
     CustomData_copy_data(&mesh->edata, &result->edata, olde[i], i, 1);
   }
@@ -580,7 +577,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
   ml = mloop;
   for (i = 0; i < result->totloop; i++, ml++) {
     /* Edge remapping has already be done in main loop handling part above. */
-    BLI_assert(newv[ml->v] != -1);
+    LIB_assert(newv[ml->v] != -1);
     ml->v = newv[ml->v];
 
     CustomData_copy_data(&mesh->ldata, &result->ldata, oldl[i], i, 1);
@@ -630,7 +627,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
 
   MEM_freeN(vert_tag);
 
-  BLI_edgehash_free(ehash, NULL);
+  LIB_edgehash_free(ehash, NULL);
 
   if (poly_map != NULL) {
     MEM_freeN(poly_map);
@@ -639,7 +636,7 @@ Mesh *BKE_mesh_merge_verts(Mesh *mesh,
     MEM_freeN(poly_map_mem);
   }
 
-  BKE_id_free(NULL, mesh);
+  KERNEL_id_free(NULL, mesh);
 
   return result;
 }
