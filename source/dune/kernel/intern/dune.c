@@ -63,84 +63,78 @@ void KERNEL_blender_free(void)
     fclose(G.log.file);
   }
 
-  BKE_spacetypes_free(); /* after free main, it uses space callbacks */
+  KERNEL_spacetypes_free(); /* after free main, it uses space callbacks */
 
   IMB_exit();
-  BKE_cachefiles_exit();
+  KERNEL_cachefiles_exit();
   DEG_free_node_types();
 
-  BKE_brush_system_exit();
+  KERNEL_brush_system_exit();
   RE_texture_rng_exit();
 
-  BKE_callback_global_finalize();
+  KERNEL_callback_global_finalize();
 
   IMB_moviecache_destruct();
 
-  BKE_node_system_exit();
+  KERNEL_node_system_exit();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Blender Version Access
- * \{ */
+/** Blender Version Access */
 
-static char blender_version_string[48] = "";
+static char dune_version_string[48] = "";
 
-static void blender_version_init(void)
+static void dune_version_init(void)
 {
   const char *version_cycle = "";
-  if (STREQ(STRINGIFY(BLENDER_VERSION_CYCLE), "alpha")) {
+  if (STREQ(STRINGIFY(DUNR_VERSION_CYCLE), "alpha")) {
     version_cycle = " Alpha";
   }
-  else if (STREQ(STRINGIFY(BLENDER_VERSION_CYCLE), "beta")) {
+  else if (STREQ(STRINGIFY(DUNE_VERSION_CYCLE), "beta")) {
     version_cycle = " Beta";
   }
-  else if (STREQ(STRINGIFY(BLENDER_VERSION_CYCLE), "rc")) {
+  else if (STREQ(STRINGIFY(DUNE_VERSION_CYCLE), "rc")) {
     version_cycle = " Release Candidate";
   }
-  else if (STREQ(STRINGIFY(BLENDER_VERSION_CYCLE), "release")) {
+  else if (STREQ(STRINGIFY(DUNE_VERSION_CYCLE), "release")) {
     version_cycle = "";
   }
   else {
-    BLI_assert_msg(0, "Invalid Blender version cycle");
+    LIB_assert_msg(0, "Invalid Dune version cycle");
   }
 
-  BLI_snprintf(blender_version_string,
-               ARRAY_SIZE(blender_version_string),
+  LIB_snprintf(dune_version_string,
+               ARRAY_SIZE(dune_version_string),
                "%d.%01d.%d%s",
-               BLENDER_VERSION / 100,
-               BLENDER_VERSION % 100,
-               BLENDER_VERSION_PATCH,
+               DUNE_VERSION / 100,
+               DUNE_VERSION % 100,
+               DUNE_VERSION_PATCH,
                version_cycle);
 }
 
-const char *BKE_blender_version_string(void)
+const char *KERNEL_dune_version_string(void)
 {
-  return blender_version_string;
+  return dune_version_string;
 }
 
-bool BKE_blender_version_is_alpha(void)
+bool KERNEL_dune_version_is_alpha(void)
 {
-  bool is_alpha = STREQ(STRINGIFY(BLENDER_VERSION_CYCLE), "alpha");
+  bool is_alpha = STREQ(STRINGIFY(DUNE_VERSION_CYCLE), "alpha");
   return is_alpha;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Blender #Global Initialize/Clear
- * \{ */
+/** Dune #Global Initialize/Clear */
 
-void BKE_blender_globals_init(void)
+void KERNEL_dune_globals_init(void)
 {
-  blender_version_init();
+  dune_version_init();
 
   memset(&G, 0, sizeof(Global));
 
   U.savetime = 1;
 
-  G_MAIN = BKE_main_new();
+  G_MAIN = KERNEL_main_new();
 
   strcpy(G.ima, "//");
 
@@ -153,18 +147,15 @@ void BKE_blender_globals_init(void)
   G.log.level = 1;
 }
 
-void BKE_blender_globals_clear(void)
+void KERNEL_dune_globals_clear(void)
 {
-  BKE_main_free(G_MAIN); /* free all lib data */
+  KERNEL_main_free(G_MAIN); /* free all lib data */
 
   G_MAIN = NULL;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Blender Preferences
- * \{ */
+/**  Dune Preferences */
 
 static void keymap_item_free(wmKeyMapItem *kmi)
 {
@@ -176,20 +167,20 @@ static void keymap_item_free(wmKeyMapItem *kmi)
   }
 }
 
-void BKE_blender_userdef_data_swap(UserDef *userdef_a, UserDef *userdef_b)
+void KERNEL_blender_userdef_data_swap(UserDef *userdef_a, UserDef *userdef_b)
 {
   SWAP(UserDef, *userdef_a, *userdef_b);
 }
 
-void BKE_blender_userdef_data_set(UserDef *userdef)
+void KERNEL_dune_userdef_data_set(UserDef *userdef)
 {
-  BKE_blender_userdef_data_swap(&U, userdef);
-  BKE_blender_userdef_data_free(userdef, true);
+  KERNEL_dune_userdef_data_swap(&U, userdef);
+  KERNEL_dune_userdef_data_free(userdef, true);
 }
 
-void BKE_blender_userdef_data_set_and_free(UserDef *userdef)
+void KERNEL_dune_userdef_data_set_and_free(UserDef *userdef)
 {
-  BKE_blender_userdef_data_set(userdef);
+  KERNEL_dune_userdef_data_set(userdef);
   MEM_freeN(userdef);
 }
 
@@ -212,12 +203,12 @@ static void userdef_free_keymaps(UserDef *userdef)
       keymap_item_free(kmi);
     }
 
-    BLI_freelistN(&km->diff_items);
-    BLI_freelistN(&km->items);
+    LIB_freelistN(&km->diff_items);
+    LIB_freelistN(&km->items);
 
     MEM_freeN(km);
   }
-  BLI_listbase_clear(&userdef->user_keymaps);
+  LIB_listbase_clear(&userdef->user_keymaps);
 }
 
 static void userdef_free_keyconfig_prefs(UserDef *userdef)
@@ -228,14 +219,14 @@ static void userdef_free_keyconfig_prefs(UserDef *userdef)
     IDP_FreeProperty(kpt->prop);
     MEM_freeN(kpt);
   }
-  BLI_listbase_clear(&userdef->user_keyconfig_prefs);
+  LIB_listbase_clear(&userdef->user_keyconfig_prefs);
 }
 
 static void userdef_free_user_menus(UserDef *userdef)
 {
   for (bUserMenu *um = userdef->user_menus.first, *um_next; um; um = um_next) {
     um_next = um->next;
-    BKE_blender_user_menu_item_free_list(&um->items);
+    KERNEL_blender_user_menu_item_free_list(&um->items);
     MEM_freeN(um);
   }
 }
@@ -244,14 +235,14 @@ static void userdef_free_addons(UserDef *userdef)
 {
   for (bAddon *addon = userdef->addons.first, *addon_next; addon; addon = addon_next) {
     addon_next = addon->next;
-    BKE_addon_free(addon);
+    KERNEL_addon_free(addon);
   }
-  BLI_listbase_clear(&userdef->addons);
+  LIB_listbase_clear(&userdef->addons);
 }
 
-void BKE_blender_userdef_data_free(UserDef *userdef, bool clear_fonts)
+void KERNEL_dune_userdef_data_free(UserDef *userdef, bool clear_fonts)
 {
-#define U BLI_STATIC_ASSERT(false, "Global 'U' not allowed, only use arguments passed in!")
+#define U LIB_STATIC_ASSERT(false, "Global 'U' not allowed, only use arguments passed in!")
 #ifdef U /* quiet warning */
 #endif
 
@@ -267,23 +258,20 @@ void BKE_blender_userdef_data_free(UserDef *userdef, bool clear_fonts)
     BLF_default_set(-1);
   }
 
-  BLI_freelistN(&userdef->autoexec_paths);
-  BLI_freelistN(&userdef->asset_libraries);
+  LIB_freelistN(&userdef->autoexec_paths);
+  LIB_freelistN(&userdef->asset_libraries);
 
-  BLI_freelistN(&userdef->uistyles);
-  BLI_freelistN(&userdef->uifonts);
-  BLI_freelistN(&userdef->themes);
+  LIB_freelistN(&userdef->uistyles);
+  LIB_freelistN(&userdef->uifonts);
+  LIB_freelistN(&userdef->themes);
 
 #undef U
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Blender Preferences (Application Templates)
- * \{ */
+/** DUNE Preferences (Application Templates) */
 
-void BKE_blender_userdef_app_template_data_swap(UserDef *userdef_a, UserDef *userdef_b)
+void KERNEL_blender_userdef_app_template_data_swap(UserDef *userdef_a, UserDef *userdef_b)
 {
   /* TODO:
    * - various minor settings (add as needed).
@@ -352,13 +340,11 @@ void BKE_blender_userdef_app_template_data_set_and_free(UserDef *userdef)
   MEM_freeN(userdef);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Blender's AtExit
+/** DUNE's AtExit
  *
- * \note Don't use MEM_mallocN so functions can be registered at any time.
- * \{ */
+ * Don't use MEM_mallocN so functions can be registered at any time.
+ */
 
 static struct AtExitData {
   struct AtExitData *next;
@@ -367,7 +353,7 @@ static struct AtExitData {
   void *user_data;
 } *g_atexit = NULL;
 
-void BKE_blender_atexit_register(void (*func)(void *user_data), void *user_data)
+void KERNEL_dune_atexit_register(void (*func)(void *user_data), void *user_data)
 {
   struct AtExitData *ae = malloc(sizeof(*ae));
   ae->next = g_atexit;
@@ -376,7 +362,7 @@ void BKE_blender_atexit_register(void (*func)(void *user_data), void *user_data)
   g_atexit = ae;
 }
 
-void BKE_blender_atexit_unregister(void (*func)(void *user_data), const void *user_data)
+void KERNEL_dune_atexit_unregister(void (*func)(void *user_data), const void *user_data)
 {
   struct AtExitData *ae = g_atexit;
   struct AtExitData **ae_p = &g_atexit;
@@ -392,7 +378,7 @@ void BKE_blender_atexit_unregister(void (*func)(void *user_data), const void *us
   }
 }
 
-void BKE_blender_atexit(void)
+void KERNEL_dune_atexit(void)
 {
   struct AtExitData *ae = g_atexit, *ae_next;
   while (ae) {
