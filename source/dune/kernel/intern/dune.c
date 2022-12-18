@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * Application level startup/shutdown functionality.
  */
 
@@ -21,20 +19,20 @@
 #include "KERNEL_blender.h" /* own include */
 #include "KERNEL_blender_user_menu.h"
 #include "KERNEL_blender_version.h" /* own include */
-#include "KE_blendfile.h"
-#include "KE_brush.h"
-#include "KE_cachefile.h"
-#include "KE_callbacks.h"
-#include "KE_global.h"
-#include "KE_idprop.h"
-#include "KE_image.h"
-#include "KE_layer.h"
-#include "KE_main.h"
-#include "KE_node.h"
-#include "KE_report.h"
-#include "KE_scene.h"
-#include "KE_screen.h"
-#include "KE_studiolight.h"
+#include "KERNEL_blendfile.h"
+#include "KERNEL_brush.h"
+#include "KERNEL_cachefile.h"
+#include "KERNEL_callbacks.h"
+#include "KERNEL_global.h"
+#include "KERNEL_idprop.h"
+#include "KERNEL_image.h"
+#include "KERNEL_layer.h"
+#include "KERNEL_main.h"
+#include "KERNEL_node.h"
+#include "KERNEL_report.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_screen.h"
+#include "KERNEL_studiolight.h"
 
 #include "DEG_depsgraph.h"
 
@@ -56,7 +54,7 @@ void KERNEL_blender_free(void)
   /* samples are in a global list..., also sets G_MAIN->sound->sample NULL */
 
   /* Needs to run before main free as wm is still referenced for icons preview jobs. */
-  BKE_studiolight_free();
+  KERNEL_studiolight_free();
 
   BKE_main_free(G_MAIN);
   G_MAIN = NULL;
