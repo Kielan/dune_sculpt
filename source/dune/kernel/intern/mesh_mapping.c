@@ -1,32 +1,29 @@
-/** \file
- * \ingroup bke
- *
+/**
  * Functions for accessing mesh connectivity data.
  * eg: polys connected to verts, UV's connected to verts.
  */
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_meshdata_types.h"
-#include "DNA_vec_types.h"
+#include "STRUCTS_meshdata_types.h"
+#include "STRUCTS_vec_types.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_buffer.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "LI_bitmap.h"
+#include "LI_buffer.h"
+#include "LI_math.h"
+#include "LI_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_mesh_mapping.h"
-#include "BLI_memarena.h"
+#include "KE_customdata.h"
+#include "KE_mesh_mapping.h"
+#include "LI_memarena.h"
 
-#include "BLI_strict_flags.h"
+#include "LI_strict_flags.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Mesh Connectivity Mapping
- * \{ */
+/* Mesh Connectivity Mapping */
 
 /* ngon version wip, based on BM_uv_vert_map_create */
-UvVertMap *BKE_mesh_uv_vert_map_create(const MPoly *mpoly,
+UvVertMap *KERNEL_mesh_uv_vert_map_create(const MPoly *mpoly,
                                        const MLoop *mloop,
                                        const MLoopUV *mloopuv,
                                        uint totpoly,
@@ -42,7 +39,7 @@ UvVertMap *BKE_mesh_uv_vert_map_create(const MPoly *mpoly,
   int i, totuv, nverts;
 
   bool *winding = NULL;
-  BLI_buffer_declare_static(vec2f, tf_uv_buf, BLI_BUFFER_NOP, 32);
+  LIB_buffer_declare_static(vec2f, tf_uv_buf, BLI_BUFFER_NOP, 32);
 
   totuv = 0;
 
@@ -152,17 +149,17 @@ UvVertMap *BKE_mesh_uv_vert_map_create(const MPoly *mpoly,
     MEM_freeN(winding);
   }
 
-  BLI_buffer_free(&tf_uv_buf);
+  LIB_buffer_free(&tf_uv_buf);
 
   return vmap;
 }
 
-UvMapVert *BKE_mesh_uv_vert_map_get_vert(UvVertMap *vmap, uint v)
+UvMapVert *KERNEL_mesh_uv_vert_map_get_vert(UvVertMap *vmap, uint v)
 {
   return vmap->vert[v];
 }
 
-void BKE_mesh_uv_vert_map_free(UvVertMap *vmap)
+void KERNEL_mesh_uv_vert_map_free(UvVertMap *vmap)
 {
   if (vmap) {
     if (vmap->vert) {
@@ -180,7 +177,7 @@ void BKE_mesh_uv_vert_map_free(UvVertMap *vmap)
  * of polys or loops that use that vertex as a corner. The lists are allocated
  * from one memory pool.
  *
- * Wrapped by #BKE_mesh_vert_poly_map_create & BKE_mesh_vert_loop_map_create
+ * Wrapped by #KERNEL_mesh_vert_poly_map_create & BKE_mesh_vert_loop_map_create
  */
 static void mesh_vert_poly_or_loop_map_create(MeshElemMap **r_map,
                                               int **r_mem,
@@ -231,7 +228,7 @@ static void mesh_vert_poly_or_loop_map_create(MeshElemMap **r_map,
   *r_mem = indices;
 }
 
-void BKE_mesh_vert_poly_map_create(MeshElemMap **r_map,
+void KERNEL_mesh_vert_poly_map_create(MeshElemMap **r_map,
                                    int **r_mem,
                                    const MPoly *mpoly,
                                    const MLoop *mloop,
