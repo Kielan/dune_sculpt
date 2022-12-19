@@ -1316,3 +1316,321 @@ void ntreeDuneReadExpand(DuneExpander *expander, bNodeTree *ntree)
   expand_node_sockets(expander, &ntree->inputs);
   expand_node_sockets(expander, &ntree->outputs);
 }
+
+static void ntree_blend_read_expand(BlendExpander *expander, ID *id)
+{
+  bNodeTree *ntree = (bNodeTree *)id;
+  ntreeBlendReadExpand(expander, ntree);
+}
+
+IDTypeInfo IDType_ID_NT = {
+    /* id_code */ ID_NT,
+    /* id_filter */ FILTER_ID_NT,
+    /* main_listbase_index */ INDEX_ID_NT,
+    /* struct_size */ sizeof(bNodeTree),
+    /* name */ "NodeTree",
+    /* name_plural */ "node_groups",
+    /* translation_context */ BLT_I18NCONTEXT_ID_NODETREE,
+    /* flags */ IDTYPE_FLAGS_APPEND_IS_REUSABLE,
+    /* asset_type_info */ nullptr,
+
+    /* init_data */ ntree_init_data,
+    /* copy_data */ ntree_copy_data,
+    /* free_data */ ntree_free_data,
+    /* make_local */ nullptr,
+    /* foreach_id */ node_foreach_id,
+    /* foreach_cache */ node_foreach_cache,
+    /* foreach_path */ node_foreach_path,
+    /* owner_get */ node_owner_get,
+
+    /* blend_write */ ntree_blend_write,
+    /* blend_read_data */ ntree_blend_read_data,
+    /* blend_read_lib */ ntree_blend_read_lib,
+    /* blend_read_expand */ ntree_blend_read_expand,
+
+    /* blend_read_undo_preserve */ nullptr,
+
+    /* lib_override_apply_post */ nullptr,
+};
+
+static void node_add_sockets_from_type(bNodeTree *ntree, bNode *node, bNodeType *ntype)
+{
+  if (ntype->declare != nullptr) {
+    node_verify_sockets(ntree, node, true);
+    return;
+  }
+  bNodeSocketTemplate *sockdef;
+
+  if (ntype->inputs) {
+    sockdef = ntype->inputs;
+    while (sockdef->type != -1) {
+      node_add_socket_from_template(ntree, node, sockdef, SOCK_IN);
+      sockdef++;
+    }
+  }
+  if (ntype->outputs) {
+    sockdef = ntype->outputs;
+    while (sockdef->type != -1) {
+      node_add_socket_from_template(ntree, node, sockdef, SOCK_OUT);
+      sockdef++;
+    }
+  }
+}
+
+/* NOTE: This function is called to initialize node data based on the type.
+ * The bNodeType may not be registered at creation time of the node,
+ * so this can be delayed until the node type gets registered.
+ */
+static void node_init(const struct bContext *C, bNodeTree *ntree, bNode *node)
+{
+  bNodeType *ntype = node->typeinfo;
+  if (ntype == &NodeTypeUndefined) {
+    return;
+  }
+
+  /* only do this once */
+  if (node->flag & NODE_INIT) {
+    return;
+  }
+
+  node->flag = NODE_SELECT | NODE_OPTIONS | ntype->flag;
+  node->width = ntype->width;
+  node->miniwidth = 42.0f;
+  node->height = ntype->height;
+  node->color[0] = node->color[1] = node->color[2] = 0.608; /* default theme color */
+  /* initialize the node name with the node label.
+   * NOTE: do this after the initfunc so nodes get their data set which may be used in naming
+   * (node groups for example) */
+  /* XXX Do not use nodeLabel() here, it returns translated content for UI,
+   *     which should *only* be used in UI, *never* in data...
+   *     Data have their own translation option!
+   *     This solution may be a bit rougher than nodeLabel()'s returned string, but it's simpler
+   *     than adding "do_translate" flags to this func (and labelfunc() as well). */
+  BLI_strncpy(node->name, DATA_(ntype->ui_name), NODE_MAXSTR);
+  nodeUniqueName(ntree, node);
+
+  node_add_sockets_from_type(ntree, node, ntype);
+
+  if (ntype->initfunc != nullptr) {
+    ntype->initfunc(ntree, node);
+  }
+
+  if (ntree->typeinfo->node_add_init != nullptr) {
+    ntree->typeinfo->node_add_init(ntree, node);
+  }
+
+  if (node->id) {
+    id_us_plus(node->id);
+  }
+
+  /* extra init callback */
+  if (ntype->initfunc_api) {
+    PointerRNA ptr;
+    RNA_pointer_create((ID *)ntree, &RNA_Node, node, &ptr);
+
+    /* XXX Warning: context can be nullptr in case nodes are added in do_versions.
+     * Delayed init is not supported for nodes with context-based `initfunc_api` at the moment. */
+    BLI_assert(C != nullptr);
+    ntype->initfunc_api(C, &ptr);
+  }
+
+  node->flag |= NODE_INIT;
+}
+
+static void ntree_set_typeinfo(bNodeTree *ntree, bNodeTreeType *typeinfo)
+{
+  if (typeinfo) {
+    ntree->typeinfo = typeinfo;
+  }
+  else {
+    ntree->typeinfo = &NodeTreeTypeUndefined;
+  }
+
+  /* Deprecated integer type. */
+  ntree->type = ntree->typeinfo->type;
+  BKE_ntree_update_tag_all(ntree);
+}
+
+static void node_set_typeinfo(const struct bContext *C,
+                              bNodeTree *ntree,
+                              bNode *node,
+                              bNodeType *typeinfo)
+{
+  /* for nodes saved in older versions storage can get lost, make undefined then */
+  if (node->flag & NODE_INIT) {
+    if (typeinfo && typeinfo->storagename[0] && !node->storage) {
+      typeinfo = nullptr;
+    }
+  }
+
+  if (typeinfo) {
+    node->typeinfo = typeinfo;
+
+    /* deprecated integer type */
+    node->type = typeinfo->type;
+
+    /* initialize the node if necessary */
+    node_init(C, ntree, node);
+  }
+  else {
+    node->typeinfo = &NodeTypeUndefined;
+  }
+}
+
+static void node_socket_set_typeinfo(bNodeTree *ntree,
+                                     bNodeSocket *sock,
+                                     bNodeSocketType *typeinfo)
+{
+  if (typeinfo) {
+    sock->typeinfo = typeinfo;
+
+    /* deprecated integer type */
+    sock->type = typeinfo->type;
+
+    if (sock->default_value == nullptr) {
+      /* initialize the default_value pointer used by standard socket types */
+      node_socket_init_default_value(sock);
+    }
+  }
+  else {
+    sock->typeinfo = &NodeSocketTypeUndefined;
+  }
+  BKE_ntree_update_tag_socket_type(ntree, sock);
+}
+
+/* Set specific typeinfo pointers in all node trees on register/unregister */
+static void update_typeinfo(Main *bmain,
+                            const struct bContext *C,
+                            bNodeTreeType *treetype,
+                            bNodeType *nodetype,
+                            bNodeSocketType *socktype,
+                            bool unregister)
+{
+  if (!bmain) {
+    return;
+  }
+
+  FOREACH_NODETREE_BEGIN (bmain, ntree, id) {
+    if (treetype && STREQ(ntree->idname, treetype->idname)) {
+      ntree_set_typeinfo(ntree, unregister ? nullptr : treetype);
+    }
+
+    /* initialize nodes */
+    LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+      if (nodetype && STREQ(node->idname, nodetype->idname)) {
+        node_set_typeinfo(C, ntree, node, unregister ? nullptr : nodetype);
+      }
+
+      /* initialize node sockets */
+      LISTBASE_FOREACH (bNodeSocket *, sock, &node->inputs) {
+        if (socktype && STREQ(sock->idname, socktype->idname)) {
+          node_socket_set_typeinfo(ntree, sock, unregister ? nullptr : socktype);
+        }
+      }
+      LISTBASE_FOREACH (bNodeSocket *, sock, &node->outputs) {
+        if (socktype && STREQ(sock->idname, socktype->idname)) {
+          node_socket_set_typeinfo(ntree, sock, unregister ? nullptr : socktype);
+        }
+      }
+    }
+
+    /* initialize tree sockets */
+    LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->inputs) {
+      if (socktype && STREQ(sock->idname, socktype->idname)) {
+        node_socket_set_typeinfo(ntree, sock, unregister ? nullptr : socktype);
+      }
+    }
+    LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->outputs) {
+      if (socktype && STREQ(sock->idname, socktype->idname)) {
+        node_socket_set_typeinfo(ntree, sock, unregister ? nullptr : socktype);
+      }
+    }
+  }
+  FOREACH_NODETREE_END;
+}
+
+void ntreeSetTypes(const struct bContext *C, bNodeTree *ntree)
+{
+  ntree_set_typeinfo(ntree, ntreeTypeFind(ntree->idname));
+
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    node_set_typeinfo(C, ntree, node, nodeTypeFind(node->idname));
+
+    LISTBASE_FOREACH (bNodeSocket *, sock, &node->inputs) {
+      node_socket_set_typeinfo(ntree, sock, nodeSocketTypeFind(sock->idname));
+    }
+    LISTBASE_FOREACH (bNodeSocket *, sock, &node->outputs) {
+      node_socket_set_typeinfo(ntree, sock, nodeSocketTypeFind(sock->idname));
+    }
+  }
+
+  LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->inputs) {
+    node_socket_set_typeinfo(ntree, sock, nodeSocketTypeFind(sock->idname));
+  }
+  LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->outputs) {
+    node_socket_set_typeinfo(ntree, sock, nodeSocketTypeFind(sock->idname));
+  }
+}
+
+static GHash *nodetreetypes_hash = nullptr;
+static GHash *nodetypes_hash = nullptr;
+static GHash *nodesockettypes_hash = nullptr;
+
+bNodeTreeType *ntreeTypeFind(const char *idname)
+{
+  if (idname[0]) {
+    bNodeTreeType *nt = (bNodeTreeType *)BLI_ghash_lookup(nodetreetypes_hash, idname);
+    if (nt) {
+      return nt;
+    }
+  }
+
+  return nullptr;
+}
+
+void ntreeTypeAdd(bNodeTreeType *nt)
+{
+  BLI_ghash_insert(nodetreetypes_hash, nt->idname, nt);
+  /* XXX pass Main to register function? */
+  /* Probably not. It is pretty much expected we want to update G_MAIN here I think -
+   * or we'd want to update *all* active Mains, which we cannot do anyway currently. */
+  update_typeinfo(G_MAIN, nullptr, nt, nullptr, nullptr, false);
+}
+
+/* callback for hash value free function */
+static void ntree_free_type(void *treetype_v)
+{
+  bNodeTreeType *treetype = (bNodeTreeType *)treetype_v;
+  /* XXX pass Main to unregister function? */
+  /* Probably not. It is pretty much expected we want to update G_MAIN here I think -
+   * or we'd want to update *all* active Mains, which we cannot do anyway currently. */
+  update_typeinfo(G_MAIN, nullptr, treetype, nullptr, nullptr, true);
+  MEM_freeN(treetype);
+}
+
+void ntreeTypeFreeLink(const bNodeTreeType *nt)
+{
+  BLI_ghash_remove(nodetreetypes_hash, nt->idname, nullptr, ntree_free_type);
+}
+
+bool ntreeIsRegistered(bNodeTree *ntree)
+{
+  return (ntree->typeinfo != &NodeTreeTypeUndefined);
+}
+
+GHashIterator *ntreeTypeGetIterator()
+{
+  return BLI_ghashIterator_new(nodetreetypes_hash);
+}
+
+bNodeType *nodeTypeFind(const char *idname)
+{
+  if (idname[0]) {
+    bNodeType *nt = (bNodeType *)BLI_ghash_lookup(nodetypes_hash, idname);
+    if (nt) {
+      return nt;
+    }
+  }
+
+  return nullptr;
+}
