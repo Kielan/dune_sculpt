@@ -1634,3 +1634,660 @@ bNodeType *nodeTypeFind(const char *idname)
 
   return nullptr;
 }
+
+/* callback for hash value free function */
+static void node_free_type(void *nodetype_v)
+{
+  bNodeType *nodetype = (bNodeType *)nodetype_v;
+  /* XXX pass Main to unregister function? */
+  /* Probably not. It is pretty much expected we want to update G_MAIN here I think -
+   * or we'd want to update *all* active Mains, which we cannot do anyway currently. */
+  update_typeinfo(G_MAIN, nullptr, nullptr, nodetype, nullptr, true);
+
+  delete nodetype->fixed_declaration;
+  nodetype->fixed_declaration = nullptr;
+
+  /* Can be null when the type is not dynamically allocated. */
+  if (nodetype->free_self) {
+    nodetype->free_self(nodetype);
+  }
+}
+
+void nodeRegisterType(bNodeType *nt)
+{
+  /* debug only: basic verification of registered types */
+  BLI_assert(nt->idname[0] != '\0');
+  BLI_assert(nt->poll != nullptr);
+
+  if (nt->declare && !nt->declaration_is_dynamic) {
+    if (nt->fixed_declaration == nullptr) {
+      nt->fixed_declaration = new blender::nodes::NodeDeclaration();
+      blender::nodes::NodeDeclarationBuilder builder{*nt->fixed_declaration};
+      nt->declare(builder);
+    }
+  }
+
+  BLI_ghash_insert(nodetypes_hash, nt->idname, nt);
+  /* XXX pass Main to register function? */
+  /* Probably not. It is pretty much expected we want to update G_MAIN here I think -
+   * or we'd want to update *all* active Mains, which we cannot do anyway currently. */
+  update_typeinfo(G_MAIN, nullptr, nullptr, nt, nullptr, false);
+}
+
+void nodeUnregisterType(bNodeType *nt)
+{
+  BLI_ghash_remove(nodetypes_hash, nt->idname, nullptr, node_free_type);
+}
+
+bool nodeTypeUndefined(const bNode *node)
+{
+  return (node->typeinfo == &NodeTypeUndefined) ||
+         ((ELEM(node->type, NODE_GROUP, NODE_CUSTOM_GROUP)) && node->id &&
+          ID_IS_LINKED(node->id) && (node->id->tag & LIB_TAG_MISSING));
+}
+
+GHashIterator *nodeTypeGetIterator()
+{
+  return BLI_ghashIterator_new(nodetypes_hash);
+}
+
+bNodeSocketType *nodeSocketTypeFind(const char *idname)
+{
+  if (idname[0]) {
+    bNodeSocketType *st = (bNodeSocketType *)BLI_ghash_lookup(nodesockettypes_hash, idname);
+    if (st) {
+      return st;
+    }
+  }
+
+  return nullptr;
+}
+
+/* callback for hash value free function */
+static void node_free_socket_type(void *socktype_v)
+{
+  bNodeSocketType *socktype = (bNodeSocketType *)socktype_v;
+  /* XXX pass Main to unregister function? */
+  /* Probably not. It is pretty much expected we want to update G_MAIN here I think -
+   * or we'd want to update *all* active Mains, which we cannot do anyway currently. */
+  update_typeinfo(G_MAIN, nullptr, nullptr, nullptr, socktype, true);
+
+  socktype->free_self(socktype);
+}
+
+void nodeRegisterSocketType(bNodeSocketType *st)
+{
+  BLI_ghash_insert(nodesockettypes_hash, (void *)st->idname, st);
+  /* XXX pass Main to register function? */
+  /* Probably not. It is pretty much expected we want to update G_MAIN here I think -
+   * or we'd want to update *all* active Mains, which we cannot do anyway currently. */
+  update_typeinfo(G_MAIN, nullptr, nullptr, nullptr, st, false);
+}
+
+void nodeUnregisterSocketType(bNodeSocketType *st)
+{
+  BLI_ghash_remove(nodesockettypes_hash, st->idname, nullptr, node_free_socket_type);
+}
+
+bool nodeSocketIsRegistered(bNodeSocket *sock)
+{
+  return (sock->typeinfo != &NodeSocketTypeUndefined);
+}
+
+GHashIterator *nodeSocketTypeGetIterator()
+{
+  return BLI_ghashIterator_new(nodesockettypes_hash);
+}
+
+const char *nodeSocketTypeLabel(const bNodeSocketType *stype)
+{
+  /* Use socket type name as a fallback if label is undefined. */
+  return stype->label[0] != '\0' ? stype->label : RNA_struct_ui_name(stype->ext_socket.srna);
+}
+
+struct bNodeSocket *nodeFindSocket(const bNode *node,
+                                   eNodeSocketInOut in_out,
+                                   const char *identifier)
+{
+  const ListBase *sockets = (in_out == SOCK_IN) ? &node->inputs : &node->outputs;
+  LISTBASE_FOREACH (bNodeSocket *, sock, sockets) {
+    if (STREQ(sock->identifier, identifier)) {
+      return sock;
+    }
+  }
+  return nullptr;
+}
+
+namespace blender::bke {
+
+bNodeSocket *node_find_enabled_socket(bNode &node,
+                                      const eNodeSocketInOut in_out,
+                                      const StringRef name)
+{
+  ListBase *sockets = (in_out == SOCK_IN) ? &node.inputs : &node.outputs;
+  LISTBASE_FOREACH (bNodeSocket *, socket, sockets) {
+    if (!(socket->flag & SOCK_UNAVAIL) && socket->name == name) {
+      return socket;
+    }
+  }
+  return nullptr;
+}
+
+bNodeSocket *node_find_enabled_input_socket(bNode &node, StringRef name)
+{
+  return node_find_enabled_socket(node, SOCK_IN, name);
+}
+
+bNodeSocket *node_find_enabled_output_socket(bNode &node, StringRef name)
+{
+  return node_find_enabled_socket(node, SOCK_OUT, name);
+}
+
+}  // namespace blender::bke
+
+/* find unique socket identifier */
+static bool unique_identifier_check(void *arg, const char *identifier)
+{
+  const ListBase *lb = (const ListBase *)arg;
+  LISTBASE_FOREACH (bNodeSocket *, sock, lb) {
+    if (STREQ(sock->identifier, identifier)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bNodeSocket *make_socket(bNodeTree *ntree,
+                                bNode *UNUSED(node),
+                                int in_out,
+                                ListBase *lb,
+                                const char *idname,
+                                const char *identifier,
+                                const char *name)
+{
+  char auto_identifier[MAX_NAME];
+
+  if (identifier && identifier[0] != '\0') {
+    /* use explicit identifier */
+    BLI_strncpy(auto_identifier, identifier, sizeof(auto_identifier));
+  }
+  else {
+    /* if no explicit identifier is given, assign a unique identifier based on the name */
+    BLI_strncpy(auto_identifier, name, sizeof(auto_identifier));
+  }
+  /* Make the identifier unique. */
+  BLI_uniquename_cb(
+      unique_identifier_check, lb, "socket", '_', auto_identifier, sizeof(auto_identifier));
+
+  bNodeSocket *sock = MEM_cnew<bNodeSocket>("sock");
+  sock->in_out = in_out;
+
+  BLI_strncpy(sock->identifier, auto_identifier, NODE_MAXSTR);
+  sock->limit = (in_out == SOCK_IN ? 1 : 0xFFF);
+
+  BLI_strncpy(sock->name, name, NODE_MAXSTR);
+  sock->storage = nullptr;
+  sock->flag |= SOCK_COLLAPSED;
+  sock->type = SOCK_CUSTOM; /* int type undefined by default */
+
+  BLI_strncpy(sock->idname, idname, sizeof(sock->idname));
+  node_socket_set_typeinfo(ntree, sock, nodeSocketTypeFind(idname));
+
+  return sock;
+}
+
+static void socket_id_user_increment(bNodeSocket *sock)
+{
+  switch ((eNodeSocketDatatype)sock->type) {
+    case SOCK_OBJECT: {
+      bNodeSocketValueObject *default_value = (bNodeSocketValueObject *)sock->default_value;
+      id_us_plus((ID *)default_value->value);
+      break;
+    }
+    case SOCK_IMAGE: {
+      bNodeSocketValueImage *default_value = (bNodeSocketValueImage *)sock->default_value;
+      id_us_plus((ID *)default_value->value);
+      break;
+    }
+    case SOCK_COLLECTION: {
+      bNodeSocketValueCollection *default_value = (bNodeSocketValueCollection *)
+                                                      sock->default_value;
+      id_us_plus((ID *)default_value->value);
+      break;
+    }
+    case SOCK_TEXTURE: {
+      bNodeSocketValueTexture *default_value = (bNodeSocketValueTexture *)sock->default_value;
+      id_us_plus((ID *)default_value->value);
+      break;
+    }
+    case SOCK_MATERIAL: {
+      bNodeSocketValueMaterial *default_value = (bNodeSocketValueMaterial *)sock->default_value;
+      id_us_plus((ID *)default_value->value);
+      break;
+    }
+    case SOCK_FLOAT:
+    case SOCK_VECTOR:
+    case SOCK_RGBA:
+    case SOCK_BOOLEAN:
+    case SOCK_INT:
+    case SOCK_STRING:
+    case __SOCK_MESH:
+    case SOCK_CUSTOM:
+    case SOCK_SHADER:
+    case SOCK_GEOMETRY:
+      break;
+  }
+}
+
+/** \return True if the socket had an ID default value. */
+static bool socket_id_user_decrement(bNodeSocket *sock)
+{
+  switch ((eNodeSocketDatatype)sock->type) {
+    case SOCK_OBJECT: {
+      bNodeSocketValueObject *default_value = (bNodeSocketValueObject *)sock->default_value;
+      if (default_value->value != nullptr) {
+        id_us_min(&default_value->value->id);
+        return true;
+      }
+      break;
+    }
+    case SOCK_IMAGE: {
+      bNodeSocketValueImage *default_value = (bNodeSocketValueImage *)sock->default_value;
+      if (default_value->value != nullptr) {
+        id_us_min(&default_value->value->id);
+        return true;
+      }
+      break;
+    }
+    case SOCK_COLLECTION: {
+      bNodeSocketValueCollection *default_value = (bNodeSocketValueCollection *)
+                                                      sock->default_value;
+      if (default_value->value != nullptr) {
+        id_us_min(&default_value->value->id);
+        return true;
+      }
+      break;
+    }
+    case SOCK_TEXTURE: {
+      bNodeSocketValueTexture *default_value = (bNodeSocketValueTexture *)sock->default_value;
+      if (default_value->value != nullptr) {
+        id_us_min(&default_value->value->id);
+        return true;
+      }
+      break;
+    }
+    case SOCK_MATERIAL: {
+      bNodeSocketValueMaterial *default_value = (bNodeSocketValueMaterial *)sock->default_value;
+      if (default_value->value != nullptr) {
+        id_us_min(&default_value->value->id);
+        return true;
+      }
+      break;
+    }
+    case SOCK_FLOAT:
+    case SOCK_VECTOR:
+    case SOCK_RGBA:
+    case SOCK_BOOLEAN:
+    case SOCK_INT:
+    case SOCK_STRING:
+    case __SOCK_MESH:
+    case SOCK_CUSTOM:
+    case SOCK_SHADER:
+    case SOCK_GEOMETRY:
+      break;
+  }
+  return false;
+}
+
+void nodeModifySocketType(bNodeTree *ntree,
+                          bNode *UNUSED(node),
+                          bNodeSocket *sock,
+                          const char *idname)
+{
+  bNodeSocketType *socktype = nodeSocketTypeFind(idname);
+
+  if (!socktype) {
+    CLOG_ERROR(&LOG, "node socket type %s undefined", idname);
+    return;
+  }
+
+  if (sock->default_value) {
+    socket_id_user_decrement(sock);
+    MEM_freeN(sock->default_value);
+    sock->default_value = nullptr;
+  }
+
+  BLI_strncpy(sock->idname, idname, sizeof(sock->idname));
+  node_socket_set_typeinfo(ntree, sock, socktype);
+}
+
+void nodeModifySocketTypeStatic(
+    bNodeTree *ntree, bNode *node, bNodeSocket *sock, int type, int subtype)
+{
+  const char *idname = nodeStaticSocketType(type, subtype);
+
+  if (!idname) {
+    CLOG_ERROR(&LOG, "static node socket type %d undefined", type);
+    return;
+  }
+
+  nodeModifySocketType(ntree, node, sock, idname);
+}
+
+bNodeSocket *nodeAddSocket(bNodeTree *ntree,
+                           bNode *node,
+                           eNodeSocketInOut in_out,
+                           const char *idname,
+                           const char *identifier,
+                           const char *name)
+{
+  BLI_assert(node->type != NODE_FRAME);
+  BLI_assert(!(in_out == SOCK_IN && node->type == NODE_GROUP_INPUT));
+  BLI_assert(!(in_out == SOCK_OUT && node->type == NODE_GROUP_OUTPUT));
+
+  ListBase *lb = (in_out == SOCK_IN ? &node->inputs : &node->outputs);
+  bNodeSocket *sock = make_socket(ntree, node, in_out, lb, idname, identifier, name);
+
+  BLI_remlink(lb, sock); /* does nothing for new socket */
+  BLI_addtail(lb, sock);
+
+  BKE_ntree_update_tag_socket_new(ntree, sock);
+
+  return sock;
+}
+
+bool nodeIsStaticSocketType(const struct bNodeSocketType *stype)
+{
+  /*
+   * Cannot rely on type==SOCK_CUSTOM here, because type is 0 by default
+   * and can be changed on custom sockets.
+   */
+  return RNA_struct_is_a(stype->ext_socket.srna, &RNA_NodeSocketStandard);
+}
+
+const char *nodeStaticSocketType(int type, int subtype)
+{
+  switch (type) {
+    case SOCK_FLOAT:
+      switch (subtype) {
+        case PROP_UNSIGNED:
+          return "NodeSocketFloatUnsigned";
+        case PROP_PERCENTAGE:
+          return "NodeSocketFloatPercentage";
+        case PROP_FACTOR:
+          return "NodeSocketFloatFactor";
+        case PROP_ANGLE:
+          return "NodeSocketFloatAngle";
+        case PROP_TIME:
+          return "NodeSocketFloatTime";
+        case PROP_TIME_ABSOLUTE:
+          return "NodeSocketFloatTimeAbsolute";
+        case PROP_DISTANCE:
+          return "NodeSocketFloatDistance";
+        case PROP_NONE:
+        default:
+          return "NodeSocketFloat";
+      }
+    case SOCK_INT:
+      switch (subtype) {
+        case PROP_UNSIGNED:
+          return "NodeSocketIntUnsigned";
+        case PROP_PERCENTAGE:
+          return "NodeSocketIntPercentage";
+        case PROP_FACTOR:
+          return "NodeSocketIntFactor";
+        case PROP_NONE:
+        default:
+          return "NodeSocketInt";
+      }
+    case SOCK_BOOLEAN:
+      return "NodeSocketBool";
+    case SOCK_VECTOR:
+      switch (subtype) {
+        case PROP_TRANSLATION:
+          return "NodeSocketVectorTranslation";
+        case PROP_DIRECTION:
+          return "NodeSocketVectorDirection";
+        case PROP_VELOCITY:
+          return "NodeSocketVectorVelocity";
+        case PROP_ACCELERATION:
+          return "NodeSocketVectorAcceleration";
+        case PROP_EULER:
+          return "NodeSocketVectorEuler";
+        case PROP_XYZ:
+          return "NodeSocketVectorXYZ";
+        case PROP_NONE:
+        default:
+          return "NodeSocketVector";
+      }
+    case SOCK_RGBA:
+      return "NodeSocketColor";
+    case SOCK_STRING:
+      return "NodeSocketString";
+    case SOCK_SHADER:
+      return "NodeSocketShader";
+    case SOCK_OBJECT:
+      return "NodeSocketObject";
+    case SOCK_IMAGE:
+      return "NodeSocketImage";
+    case SOCK_GEOMETRY:
+      return "NodeSocketGeometry";
+    case SOCK_COLLECTION:
+      return "NodeSocketCollection";
+    case SOCK_TEXTURE:
+      return "NodeSocketTexture";
+    case SOCK_MATERIAL:
+      return "NodeSocketMaterial";
+  }
+  return nullptr;
+}
+
+const char *nodeStaticSocketInterfaceType(int type, int subtype)
+{
+  switch (type) {
+    case SOCK_FLOAT:
+      switch (subtype) {
+        case PROP_UNSIGNED:
+          return "NodeSocketInterfaceFloatUnsigned";
+        case PROP_PERCENTAGE:
+          return "NodeSocketInterfaceFloatPercentage";
+        case PROP_FACTOR:
+          return "NodeSocketInterfaceFloatFactor";
+        case PROP_ANGLE:
+          return "NodeSocketInterfaceFloatAngle";
+        case PROP_TIME:
+          return "NodeSocketInterfaceFloatTime";
+        case PROP_TIME_ABSOLUTE:
+          return "NodeSocketInterfaceFloatTimeAbsolute";
+        case PROP_DISTANCE:
+          return "NodeSocketInterfaceFloatDistance";
+        case PROP_NONE:
+        default:
+          return "NodeSocketInterfaceFloat";
+      }
+    case SOCK_INT:
+      switch (subtype) {
+        case PROP_UNSIGNED:
+          return "NodeSocketInterfaceIntUnsigned";
+        case PROP_PERCENTAGE:
+          return "NodeSocketInterfaceIntPercentage";
+        case PROP_FACTOR:
+          return "NodeSocketInterfaceIntFactor";
+        case PROP_NONE:
+        default:
+          return "NodeSocketInterfaceInt";
+      }
+    case SOCK_BOOLEAN:
+      return "NodeSocketInterfaceBool";
+    case SOCK_VECTOR:
+      switch (subtype) {
+        case PROP_TRANSLATION:
+          return "NodeSocketInterfaceVectorTranslation";
+        case PROP_DIRECTION:
+          return "NodeSocketInterfaceVectorDirection";
+        case PROP_VELOCITY:
+          return "NodeSocketInterfaceVectorVelocity";
+        case PROP_ACCELERATION:
+          return "NodeSocketInterfaceVectorAcceleration";
+        case PROP_EULER:
+          return "NodeSocketInterfaceVectorEuler";
+        case PROP_XYZ:
+          return "NodeSocketInterfaceVectorXYZ";
+        case PROP_NONE:
+        default:
+          return "NodeSocketInterfaceVector";
+      }
+    case SOCK_RGBA:
+      return "NodeSocketInterfaceColor";
+    case SOCK_STRING:
+      return "NodeSocketInterfaceString";
+    case SOCK_SHADER:
+      return "NodeSocketInterfaceShader";
+    case SOCK_OBJECT:
+      return "NodeSocketInterfaceObject";
+    case SOCK_IMAGE:
+      return "NodeSocketInterfaceImage";
+    case SOCK_GEOMETRY:
+      return "NodeSocketInterfaceGeometry";
+    case SOCK_COLLECTION:
+      return "NodeSocketInterfaceCollection";
+    case SOCK_TEXTURE:
+      return "NodeSocketInterfaceTexture";
+    case SOCK_MATERIAL:
+      return "NodeSocketInterfaceMaterial";
+  }
+  return nullptr;
+}
+
+const char *nodeStaticSocketLabel(int type, int UNUSED(subtype))
+{
+  switch (type) {
+    case SOCK_FLOAT:
+      return "Float";
+    case SOCK_INT:
+      return "Integer";
+    case SOCK_BOOLEAN:
+      return "Boolean";
+    case SOCK_VECTOR:
+      return "Vector";
+    case SOCK_RGBA:
+      return "Color";
+    case SOCK_STRING:
+      return "String";
+    case SOCK_SHADER:
+      return "Shader";
+    case SOCK_OBJECT:
+      return "Object";
+    case SOCK_IMAGE:
+      return "Image";
+    case SOCK_GEOMETRY:
+      return "Geometry";
+    case SOCK_COLLECTION:
+      return "Collection";
+    case SOCK_TEXTURE:
+      return "Texture";
+    case SOCK_MATERIAL:
+      return "Material";
+  }
+  return nullptr;
+}
+
+bNodeSocket *nodeAddStaticSocket(bNodeTree *ntree,
+                                 bNode *node,
+                                 eNodeSocketInOut in_out,
+                                 int type,
+                                 int subtype,
+                                 const char *identifier,
+                                 const char *name)
+{
+  const char *idname = nodeStaticSocketType(type, subtype);
+
+  if (!idname) {
+    CLOG_ERROR(&LOG, "static node socket type %d undefined", type);
+    return nullptr;
+  }
+
+  bNodeSocket *sock = nodeAddSocket(ntree, node, in_out, idname, identifier, name);
+  sock->type = type;
+  return sock;
+}
+
+static void node_socket_free(bNodeSocket *sock, const bool do_id_user)
+{
+  if (sock->prop) {
+    IDP_FreePropertyContent_ex(sock->prop, do_id_user);
+    MEM_freeN(sock->prop);
+  }
+
+  if (sock->default_value) {
+    if (do_id_user) {
+      socket_id_user_decrement(sock);
+    }
+    MEM_freeN(sock->default_value);
+  }
+}
+
+void nodeRemoveSocket(bNodeTree *ntree, bNode *node, bNodeSocket *sock)
+{
+  nodeRemoveSocketEx(ntree, node, sock, true);
+}
+
+void nodeRemoveSocketEx(struct bNodeTree *ntree,
+                        struct bNode *node,
+                        struct bNodeSocket *sock,
+                        bool do_id_user)
+{
+  LISTBASE_FOREACH_MUTABLE (bNodeLink *, link, &ntree->links) {
+    if (link->fromsock == sock || link->tosock == sock) {
+      nodeRemLink(ntree, link);
+    }
+  }
+
+  LISTBASE_FOREACH_MUTABLE (bNodeLink *, link, &node->internal_links) {
+    if (link->fromsock == sock || link->tosock == sock) {
+      BLI_remlink(&node->internal_links, link);
+      MEM_freeN(link);
+      BKE_ntree_update_tag_node_internal_link(ntree, node);
+    }
+  }
+
+  /* this is fast, this way we don't need an in_out argument */
+  BLI_remlink(&node->inputs, sock);
+  BLI_remlink(&node->outputs, sock);
+
+  node_socket_free(sock, do_id_user);
+  MEM_freeN(sock);
+
+  BKE_ntree_update_tag_socket_removed(ntree);
+}
+
+void nodeRemoveAllSockets(bNodeTree *ntree, bNode *node)
+{
+  LISTBASE_FOREACH_MUTABLE (bNodeLink *, link, &ntree->links) {
+    if (link->fromnode == node || link->tonode == node) {
+      nodeRemLink(ntree, link);
+    }
+  }
+
+  BLI_freelistN(&node->internal_links);
+
+  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->inputs) {
+    node_socket_free(sock, true);
+    MEM_freeN(sock);
+  }
+  BLI_listbase_clear(&node->inputs);
+
+  LISTBASE_FOREACH_MUTABLE (bNodeSocket *, sock, &node->outputs) {
+    node_socket_free(sock, true);
+    MEM_freeN(sock);
+  }
+  BLI_listbase_clear(&node->outputs);
+
+  BKE_ntree_update_tag_socket_removed(ntree);
+}
+
+bNode *nodeFindNodebyName(bNodeTree *ntree, const char *name)
+{
+  return (bNode *)BLI_findstring(&ntree->nodes, name, offsetof(bNode, name));
+}
+
