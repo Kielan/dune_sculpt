@@ -4213,3 +4213,1086 @@ bNodeInstanceKey BKE_node_instance_key(bNodeInstanceKey parent_key,
 
   return key;
 }
+
+static unsigned int node_instance_hash_key(const void *key)
+{
+  return ((const bNodeInstanceKey *)key)->value;
+}
+
+static bool node_instance_hash_key_cmp(const void *a, const void *b)
+{
+  unsigned int value_a = ((const bNodeInstanceKey *)a)->value;
+  unsigned int value_b = ((const bNodeInstanceKey *)b)->value;
+
+  return (value_a != value_b);
+}
+
+bNodeInstanceHash *BKE_node_instance_hash_new(const char *info)
+{
+  bNodeInstanceHash *hash = (bNodeInstanceHash *)MEM_mallocN(sizeof(bNodeInstanceHash), info);
+  hash->ghash = BLI_ghash_new(
+      node_instance_hash_key, node_instance_hash_key_cmp, "node instance hash ghash");
+  return hash;
+}
+
+void BKE_node_instance_hash_free(bNodeInstanceHash *hash, bNodeInstanceValueFP valfreefp)
+{
+  BLI_ghash_free(hash->ghash, nullptr, (GHashValFreeFP)valfreefp);
+  MEM_freeN(hash);
+}
+
+void BKE_node_instance_hash_insert(bNodeInstanceHash *hash, bNodeInstanceKey key, void *value)
+{
+  bNodeInstanceHashEntry *entry = (bNodeInstanceHashEntry *)value;
+  entry->key = key;
+  entry->tag = 0;
+  BLI_ghash_insert(hash->ghash, &entry->key, value);
+}
+
+void *BKE_node_instance_hash_lookup(bNodeInstanceHash *hash, bNodeInstanceKey key)
+{
+  return BLI_ghash_lookup(hash->ghash, &key);
+}
+
+int BKE_node_instance_hash_remove(bNodeInstanceHash *hash,
+                                  bNodeInstanceKey key,
+                                  bNodeInstanceValueFP valfreefp)
+{
+  return BLI_ghash_remove(hash->ghash, &key, nullptr, (GHashValFreeFP)valfreefp);
+}
+
+void BKE_node_instance_hash_clear(bNodeInstanceHash *hash, bNodeInstanceValueFP valfreefp)
+{
+  BLI_ghash_clear(hash->ghash, nullptr, (GHashValFreeFP)valfreefp);
+}
+
+void *BKE_node_instance_hash_pop(bNodeInstanceHash *hash, bNodeInstanceKey key)
+{
+  return BLI_ghash_popkey(hash->ghash, &key, nullptr);
+}
+
+int BKE_node_instance_hash_haskey(bNodeInstanceHash *hash, bNodeInstanceKey key)
+{
+  return BLI_ghash_haskey(hash->ghash, &key);
+}
+
+int BKE_node_instance_hash_size(bNodeInstanceHash *hash)
+{
+  return BLI_ghash_len(hash->ghash);
+}
+
+void BKE_node_instance_hash_clear_tags(bNodeInstanceHash *hash)
+{
+  bNodeInstanceHashIterator iter;
+
+  NODE_INSTANCE_HASH_ITER (iter, hash) {
+    bNodeInstanceHashEntry *value = (bNodeInstanceHashEntry *)
+        BKE_node_instance_hash_iterator_get_value(&iter);
+
+    value->tag = 0;
+  }
+}
+
+void BKE_node_instance_hash_tag(bNodeInstanceHash *UNUSED(hash), void *value)
+{
+  bNodeInstanceHashEntry *entry = (bNodeInstanceHashEntry *)value;
+  entry->tag = 1;
+}
+
+bool BKE_node_instance_hash_tag_key(bNodeInstanceHash *hash, bNodeInstanceKey key)
+{
+  bNodeInstanceHashEntry *entry = (bNodeInstanceHashEntry *)BKE_node_instance_hash_lookup(hash,
+                                                                                          key);
+
+  if (entry) {
+    entry->tag = 1;
+    return true;
+  }
+
+  return false;
+}
+
+void BKE_node_instance_hash_remove_untagged(bNodeInstanceHash *hash,
+                                            bNodeInstanceValueFP valfreefp)
+{
+  /* NOTE: Hash must not be mutated during iterating!
+   * Store tagged entries in a separate list and remove items afterward.
+   */
+  bNodeInstanceKey *untagged = (bNodeInstanceKey *)MEM_mallocN(
+      sizeof(bNodeInstanceKey) * BKE_node_instance_hash_size(hash),
+      "temporary node instance key list");
+  bNodeInstanceHashIterator iter;
+  int num_untagged = 0;
+  NODE_INSTANCE_HASH_ITER (iter, hash) {
+    bNodeInstanceHashEntry *value = (bNodeInstanceHashEntry *)
+        BKE_node_instance_hash_iterator_get_value(&iter);
+
+    if (!value->tag) {
+      untagged[num_untagged++] = BKE_node_instance_hash_iterator_get_key(&iter);
+    }
+  }
+
+  for (int i = 0; i < num_untagged; i++) {
+    BKE_node_instance_hash_remove(hash, untagged[i], valfreefp);
+  }
+
+  MEM_freeN(untagged);
+}
+
+/* ************** dependency stuff *********** */
+
+/* node is guaranteed to be not checked before */
+static int node_get_deplist_recurs(bNodeTree *ntree, bNode *node, bNode ***nsort)
+{
+  int level = 0xFFF;
+
+  node->done = true;
+
+  /* check linked nodes */
+  LISTBASE_FOREACH (bNodeLink *, link, &ntree->links) {
+    if (link->tonode == node) {
+      bNode *fromnode = link->fromnode;
+      if (fromnode->done == 0) {
+        fromnode->level = node_get_deplist_recurs(ntree, fromnode, nsort);
+      }
+      if (fromnode->level <= level) {
+        level = fromnode->level - 1;
+      }
+    }
+  }
+
+  /* check parent node */
+  if (node->parent) {
+    if (node->parent->done == 0) {
+      node->parent->level = node_get_deplist_recurs(ntree, node->parent, nsort);
+    }
+    if (node->parent->level <= level) {
+      level = node->parent->level - 1;
+    }
+  }
+
+  if (nsort) {
+    **nsort = node;
+    (*nsort)++;
+  }
+
+  return level;
+}
+
+void ntreeGetDependencyList(struct bNodeTree *ntree, struct bNode ***r_deplist, int *r_deplist_len)
+{
+  *r_deplist_len = 0;
+
+  /* first clear data */
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    node->done = false;
+    (*r_deplist_len)++;
+  }
+  if (*r_deplist_len == 0) {
+    *r_deplist = nullptr;
+    return;
+  }
+
+  bNode **nsort;
+  nsort = *r_deplist = (bNode **)MEM_callocN((*r_deplist_len) * sizeof(bNode *),
+                                             "sorted node array");
+
+  /* recursive check */
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    if (node->done == 0) {
+      node->level = node_get_deplist_recurs(ntree, node, &nsort);
+    }
+  }
+}
+
+/* only updates node->level for detecting cycles links */
+void ntreeUpdateNodeLevels(bNodeTree *ntree)
+{
+  /* first clear tag */
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    node->done = false;
+  }
+
+  /* recursive check */
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    if (node->done == 0) {
+      node->level = node_get_deplist_recurs(ntree, node, nullptr);
+    }
+  }
+}
+
+void ntreeUpdateAllNew(Main *main)
+{
+  Vector<bNodeTree *> new_ntrees;
+
+  /* Update all new node trees on file read or append, to add/remove sockets
+   * in groups nodes if the group changed, and handle any update flags that
+   * might have been set in file reading or versioning. */
+  FOREACH_NODETREE_BEGIN (main, ntree, owner_id) {
+    if (owner_id->tag & LIB_TAG_NEW) {
+      BKE_ntree_update_tag_all(ntree);
+    }
+  }
+  FOREACH_NODETREE_END;
+  BKE_ntree_update_main(main, nullptr);
+}
+
+void ntreeUpdateAllUsers(Main *main, ID *id)
+{
+  if (id == nullptr) {
+    return;
+  }
+
+  bool need_update = false;
+
+  /* Update all users of ngroup, to add/remove sockets as needed. */
+  FOREACH_NODETREE_BEGIN (main, ntree, owner_id) {
+    LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+      if (node->id == id) {
+        BKE_ntree_update_tag_node_property(ntree, node);
+        need_update = true;
+      }
+    }
+  }
+  FOREACH_NODETREE_END;
+  if (need_update) {
+    BKE_ntree_update_main(main, nullptr);
+  }
+}
+
+/* ************* node type access ********** */
+
+void nodeLabel(const bNodeTree *ntree, const bNode *node, char *label, int maxlen)
+{
+  label[0] = '\0';
+
+  if (node->label[0] != '\0') {
+    BLI_strncpy(label, node->label, maxlen);
+  }
+  else if (node->typeinfo->labelfunc) {
+    node->typeinfo->labelfunc(ntree, node, label, maxlen);
+  }
+
+  /* The previous methods (labelfunc) could not provide an adequate label for the node. */
+  if (label[0] == '\0') {
+    /* Kind of hacky and weak... Ideally would be better to use RNA here. :| */
+    const char *tmp = CTX_IFACE_(BLT_I18NCONTEXT_ID_NODETREE, node->typeinfo->ui_name);
+    if (tmp == node->typeinfo->ui_name) {
+      tmp = IFACE_(node->typeinfo->ui_name);
+    }
+    BLI_strncpy(label, tmp, maxlen);
+  }
+}
+
+const char *nodeSocketLabel(const bNodeSocket *sock)
+{
+  return (sock->label[0] != '\0') ? sock->label : sock->name;
+}
+
+static void node_type_base_defaults(bNodeType *ntype)
+{
+  /* default size values */
+  node_type_size_preset(ntype, NODE_SIZE_DEFAULT);
+  ntype->height = 100;
+  ntype->minheight = 30;
+  ntype->maxheight = FLT_MAX;
+}
+
+/* allow this node for any tree type */
+static bool node_poll_default(bNodeType *UNUSED(ntype),
+                              bNodeTree *UNUSED(ntree),
+                              const char **UNUSED(disabled_hint))
+{
+  return true;
+}
+
+/* use the basic poll function */
+static bool node_poll_instance_default(bNode *node, bNodeTree *ntree, const char **disabled_hint)
+{
+  return node->typeinfo->poll(node->typeinfo, ntree, disabled_hint);
+}
+
+void node_type_base(bNodeType *ntype, int type, const char *name, short nclass)
+{
+  /* Use static type info header to map static int type to identifier string and RNA struct type.
+   * Associate the RNA struct type with the bNodeType.
+   * Dynamically registered nodes will create an RNA type at runtime
+   * and call RNA_struct_blender_type_set, so this only needs to be done for old RNA types
+   * created in makesrna, which can not be associated to a bNodeType immediately,
+   * since bNodeTypes are registered afterward ...
+   */
+#define DefNode(Category, ID, DefFunc, EnumName, StructName, UIName, UIDesc) \
+  case ID: \
+    BLI_strncpy(ntype->idname, #Category #StructName, sizeof(ntype->idname)); \
+    ntype->rna_ext.srna = RNA_struct_find(#Category #StructName); \
+    BLI_assert(ntype->rna_ext.srna != nullptr); \
+    RNA_struct_blender_type_set(ntype->rna_ext.srna, ntype); \
+    break;
+
+  switch (type) {
+#include "NOD_static_types.h"
+  }
+
+  /* make sure we have a valid type (everything registered) */
+  BLI_assert(ntype->idname[0] != '\0');
+
+  ntype->type = type;
+  BLI_strncpy(ntype->ui_name, name, sizeof(ntype->ui_name));
+  ntype->nclass = nclass;
+
+  node_type_base_defaults(ntype);
+
+  ntype->poll = node_poll_default;
+  ntype->poll_instance = node_poll_instance_default;
+}
+
+void node_type_base_custom(bNodeType *ntype, const char *idname, const char *name, short nclass)
+{
+  BLI_strncpy(ntype->idname, idname, sizeof(ntype->idname));
+  ntype->type = NODE_CUSTOM;
+  BLI_strncpy(ntype->ui_name, name, sizeof(ntype->ui_name));
+  ntype->nclass = nclass;
+
+  node_type_base_defaults(ntype);
+}
+
+struct SocketTemplateIdentifierCallbackData {
+  bNodeSocketTemplate *list;
+  bNodeSocketTemplate *ntemp;
+};
+
+static bool unique_socket_template_identifier_check(void *arg, const char *name)
+{
+  SocketTemplateIdentifierCallbackData *data = (SocketTemplateIdentifierCallbackData *)arg;
+
+  for (bNodeSocketTemplate *ntemp = data->list; ntemp->type >= 0; ntemp++) {
+    if (ntemp != data->ntemp) {
+      if (STREQ(ntemp->identifier, name)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+static void unique_socket_template_identifier(bNodeSocketTemplate *list,
+                                              bNodeSocketTemplate *ntemp,
+                                              const char defname[],
+                                              char delim)
+{
+  SocketTemplateIdentifierCallbackData data;
+  data.list = list;
+  data.ntemp = ntemp;
+
+  BLI_uniquename_cb(unique_socket_template_identifier_check,
+                    &data,
+                    defname,
+                    delim,
+                    ntemp->identifier,
+                    sizeof(ntemp->identifier));
+}
+
+void node_type_socket_templates(struct bNodeType *ntype,
+                                struct bNodeSocketTemplate *inputs,
+                                struct bNodeSocketTemplate *outputs)
+{
+  ntype->inputs = inputs;
+  ntype->outputs = outputs;
+
+  /* automatically generate unique identifiers */
+  if (inputs) {
+    /* clear identifier strings (uninitialized memory) */
+    for (bNodeSocketTemplate *ntemp = inputs; ntemp->type >= 0; ntemp++) {
+      ntemp->identifier[0] = '\0';
+    }
+
+    for (bNodeSocketTemplate *ntemp = inputs; ntemp->type >= 0; ntemp++) {
+      BLI_strncpy(ntemp->identifier, ntemp->name, sizeof(ntemp->identifier));
+      unique_socket_template_identifier(inputs, ntemp, ntemp->identifier, '_');
+    }
+  }
+  if (outputs) {
+    /* clear identifier strings (uninitialized memory) */
+    for (bNodeSocketTemplate *ntemp = outputs; ntemp->type >= 0; ntemp++) {
+      ntemp->identifier[0] = '\0';
+    }
+
+    for (bNodeSocketTemplate *ntemp = outputs; ntemp->type >= 0; ntemp++) {
+      BLI_strncpy(ntemp->identifier, ntemp->name, sizeof(ntemp->identifier));
+      unique_socket_template_identifier(outputs, ntemp, ntemp->identifier, '_');
+    }
+  }
+}
+
+void node_type_init(struct bNodeType *ntype,
+                    void (*initfunc)(struct bNodeTree *ntree, struct bNode *node))
+{
+  ntype->initfunc = initfunc;
+}
+
+void node_type_size(struct bNodeType *ntype, int width, int minwidth, int maxwidth)
+{
+  ntype->width = width;
+  ntype->minwidth = minwidth;
+  if (maxwidth <= minwidth) {
+    ntype->maxwidth = FLT_MAX;
+  }
+  else {
+    ntype->maxwidth = maxwidth;
+  }
+}
+
+void node_type_size_preset(struct bNodeType *ntype, eNodeSizePreset size)
+{
+  switch (size) {
+    case NODE_SIZE_DEFAULT:
+      node_type_size(ntype, 140, 100, NODE_DEFAULT_MAX_WIDTH);
+      break;
+    case NODE_SIZE_SMALL:
+      node_type_size(ntype, 100, 80, NODE_DEFAULT_MAX_WIDTH);
+      break;
+    case NODE_SIZE_MIDDLE:
+      node_type_size(ntype, 150, 120, NODE_DEFAULT_MAX_WIDTH);
+      break;
+    case NODE_SIZE_LARGE:
+      node_type_size(ntype, 240, 140, NODE_DEFAULT_MAX_WIDTH);
+      break;
+  }
+}
+
+void node_type_storage(bNodeType *ntype,
+                       const char *storagename,
+                       void (*freefunc)(struct bNode *node),
+                       void (*copyfunc)(struct bNodeTree *dest_ntree,
+                                        struct bNode *dest_node,
+                                        const struct bNode *src_node))
+{
+  if (storagename) {
+    BLI_strncpy(ntype->storagename, storagename, sizeof(ntype->storagename));
+  }
+  else {
+    ntype->storagename[0] = '\0';
+  }
+  ntype->copyfunc = copyfunc;
+  ntype->freefunc = freefunc;
+}
+
+void node_type_update(struct bNodeType *ntype,
+                      void (*updatefunc)(struct bNodeTree *ntree, struct bNode *node))
+{
+  ntype->updatefunc = updatefunc;
+}
+
+void node_type_group_update(struct bNodeType *ntype,
+                            void (*group_update_func)(struct bNodeTree *ntree, struct bNode *node))
+{
+  ntype->group_update_func = group_update_func;
+}
+
+void node_type_exec(struct bNodeType *ntype,
+                    NodeInitExecFunction init_exec_fn,
+                    NodeFreeExecFunction free_exec_fn,
+                    NodeExecFunction exec_fn)
+{
+  ntype->init_exec_fn = init_exec_fn;
+  ntype->free_exec_fn = free_exec_fn;
+  ntype->exec_fn = exec_fn;
+}
+
+void node_type_gpu(struct bNodeType *ntype, NodeGPUExecFunction gpu_fn)
+{
+  ntype->gpu_fn = gpu_fn;
+}
+
+/* callbacks for undefined types */
+
+static bool node_undefined_poll(bNodeType *UNUSED(ntype),
+                                bNodeTree *UNUSED(nodetree),
+                                const char **UNUSED(r_disabled_hint))
+{
+  /* this type can not be added deliberately, it's just a placeholder */
+  return false;
+}
+
+/* register fallback types used for undefined tree, nodes, sockets */
+static void register_undefined_types()
+{
+  /* NOTE: these types are not registered in the type hashes,
+   * they are just used as placeholders in case the actual types are not registered.
+   */
+
+  NodeTreeTypeUndefined.type = NTREE_UNDEFINED;
+  strcpy(NodeTreeTypeUndefined.idname, "NodeTreeUndefined");
+  strcpy(NodeTreeTypeUndefined.ui_name, N_("Undefined"));
+  strcpy(NodeTreeTypeUndefined.ui_description, N_("Undefined Node Tree Type"));
+
+  node_type_base_custom(&NodeTypeUndefined, "NodeUndefined", "Undefined", 0);
+  NodeTypeUndefined.poll = node_undefined_poll;
+
+  BLI_strncpy(NodeSocketTypeUndefined.idname,
+              "NodeSocketUndefined",
+              sizeof(NodeSocketTypeUndefined.idname));
+  /* extra type info for standard socket types */
+  NodeSocketTypeUndefined.type = SOCK_CUSTOM;
+  NodeSocketTypeUndefined.subtype = PROP_NONE;
+
+  NodeSocketTypeUndefined.use_link_limits_of_type = true;
+  NodeSocketTypeUndefined.input_link_limit = 0xFFF;
+  NodeSocketTypeUndefined.output_link_limit = 0xFFF;
+}
+
+static void registerCompositNodes()
+{
+  register_node_type_cmp_group();
+
+  register_node_type_cmp_rlayers();
+  register_node_type_cmp_image();
+  register_node_type_cmp_texture();
+  register_node_type_cmp_value();
+  register_node_type_cmp_rgb();
+  register_node_type_cmp_curve_time();
+  register_node_type_cmp_scene_time();
+  register_node_type_cmp_movieclip();
+
+  register_node_type_cmp_composite();
+  register_node_type_cmp_viewer();
+  register_node_type_cmp_splitviewer();
+  register_node_type_cmp_output_file();
+  register_node_type_cmp_view_levels();
+
+  register_node_type_cmp_curve_rgb();
+  register_node_type_cmp_mix_rgb();
+  register_node_type_cmp_hue_sat();
+  register_node_type_cmp_brightcontrast();
+  register_node_type_cmp_gamma();
+  register_node_type_cmp_exposure();
+  register_node_type_cmp_invert();
+  register_node_type_cmp_alphaover();
+  register_node_type_cmp_zcombine();
+  register_node_type_cmp_colorbalance();
+  register_node_type_cmp_huecorrect();
+
+  register_node_type_cmp_normal();
+  register_node_type_cmp_curve_vec();
+  register_node_type_cmp_map_value();
+  register_node_type_cmp_map_range();
+  register_node_type_cmp_normalize();
+
+  register_node_type_cmp_filter();
+  register_node_type_cmp_blur();
+  register_node_type_cmp_dblur();
+  register_node_type_cmp_bilateralblur();
+  register_node_type_cmp_vecblur();
+  register_node_type_cmp_dilateerode();
+  register_node_type_cmp_inpaint();
+  register_node_type_cmp_despeckle();
+  register_node_type_cmp_defocus();
+  register_node_type_cmp_posterize();
+  register_node_type_cmp_sunbeams();
+  register_node_type_cmp_denoise();
+  register_node_type_cmp_antialiasing();
+
+  register_node_type_cmp_convert_color_space();
+  register_node_type_cmp_valtorgb();
+  register_node_type_cmp_rgbtobw();
+  register_node_type_cmp_setalpha();
+  register_node_type_cmp_idmask();
+  register_node_type_cmp_math();
+  register_node_type_cmp_seprgba();
+  register_node_type_cmp_combrgba();
+  register_node_type_cmp_sephsva();
+  register_node_type_cmp_combhsva();
+  register_node_type_cmp_sepyuva();
+  register_node_type_cmp_combyuva();
+  register_node_type_cmp_sepycca();
+  register_node_type_cmp_combycca();
+  register_node_type_cmp_premulkey();
+  register_node_type_cmp_separate_xyz();
+  register_node_type_cmp_combine_xyz();
+
+  register_node_type_cmp_diff_matte();
+  register_node_type_cmp_distance_matte();
+  register_node_type_cmp_chroma_matte();
+  register_node_type_cmp_color_matte();
+  register_node_type_cmp_channel_matte();
+  register_node_type_cmp_color_spill();
+  register_node_type_cmp_luma_matte();
+  register_node_type_cmp_doubleedgemask();
+  register_node_type_cmp_keyingscreen();
+  register_node_type_cmp_keying();
+  register_node_type_cmp_cryptomatte();
+  register_node_type_cmp_cryptomatte_legacy();
+
+  register_node_type_cmp_translate();
+  register_node_type_cmp_rotate();
+  register_node_type_cmp_scale();
+  register_node_type_cmp_flip();
+  register_node_type_cmp_crop();
+  register_node_type_cmp_displace();
+  register_node_type_cmp_mapuv();
+  register_node_type_cmp_glare();
+  register_node_type_cmp_tonemap();
+  register_node_type_cmp_lensdist();
+  register_node_type_cmp_transform();
+  register_node_type_cmp_stabilize2d();
+  register_node_type_cmp_moviedistortion();
+
+  register_node_type_cmp_colorcorrection();
+  register_node_type_cmp_boxmask();
+  register_node_type_cmp_ellipsemask();
+  register_node_type_cmp_bokehimage();
+  register_node_type_cmp_bokehblur();
+  register_node_type_cmp_switch();
+  register_node_type_cmp_switch_view();
+  register_node_type_cmp_pixelate();
+
+  register_node_type_cmp_mask();
+  register_node_type_cmp_trackpos();
+  register_node_type_cmp_planetrackdeform();
+  register_node_type_cmp_cornerpin();
+}
+
+static void registerShaderNodes()
+{
+  register_node_type_sh_group();
+
+  register_node_type_sh_camera();
+  register_node_type_sh_gamma();
+  register_node_type_sh_brightcontrast();
+  register_node_type_sh_value();
+  register_node_type_sh_rgb();
+  register_node_type_sh_wireframe();
+  register_node_type_sh_wavelength();
+  register_node_type_sh_blackbody();
+  register_node_type_sh_mix_rgb();
+  register_node_type_sh_valtorgb();
+  register_node_type_sh_rgbtobw();
+  register_node_type_sh_shadertorgb();
+  register_node_type_sh_normal();
+  register_node_type_sh_mapping();
+  register_node_type_sh_curve_float();
+  register_node_type_sh_curve_vec();
+  register_node_type_sh_curve_rgb();
+  register_node_type_sh_map_range();
+  register_node_type_sh_clamp();
+  register_node_type_sh_math();
+  register_node_type_sh_vect_math();
+  register_node_type_sh_vector_rotate();
+  register_node_type_sh_vect_transform();
+  register_node_type_sh_squeeze();
+  register_node_type_sh_invert();
+  register_node_type_sh_seprgb();
+  register_node_type_sh_combrgb();
+  register_node_type_sh_sephsv();
+  register_node_type_sh_combhsv();
+  register_node_type_sh_sepxyz();
+  register_node_type_sh_combxyz();
+  register_node_type_sh_hue_sat();
+
+  register_node_type_sh_attribute();
+  register_node_type_sh_bevel();
+  register_node_type_sh_displacement();
+  register_node_type_sh_vector_displacement();
+  register_node_type_sh_geometry();
+  register_node_type_sh_light_path();
+  register_node_type_sh_light_falloff();
+  register_node_type_sh_object_info();
+  register_node_type_sh_fresnel();
+  register_node_type_sh_layer_weight();
+  register_node_type_sh_tex_coord();
+  register_node_type_sh_particle_info();
+  register_node_type_sh_bump();
+  register_node_type_sh_vertex_color();
+
+  register_node_type_sh_background();
+  register_node_type_sh_bsdf_anisotropic();
+  register_node_type_sh_bsdf_diffuse();
+  register_node_type_sh_bsdf_principled();
+  register_node_type_sh_bsdf_glossy();
+  register_node_type_sh_bsdf_glass();
+  register_node_type_sh_bsdf_translucent();
+  register_node_type_sh_bsdf_transparent();
+  register_node_type_sh_bsdf_velvet();
+  register_node_type_sh_bsdf_toon();
+  register_node_type_sh_bsdf_hair();
+  register_node_type_sh_bsdf_hair_principled();
+  register_node_type_sh_emission();
+  register_node_type_sh_holdout();
+  register_node_type_sh_volume_absorption();
+  register_node_type_sh_volume_scatter();
+  register_node_type_sh_volume_principled();
+  register_node_type_sh_subsurface_scattering();
+  register_node_type_sh_mix_shader();
+  register_node_type_sh_add_shader();
+  register_node_type_sh_uvmap();
+  register_node_type_sh_uvalongstroke();
+  register_node_type_sh_eevee_specular();
+
+  register_node_type_sh_output_light();
+  register_node_type_sh_output_material();
+  register_node_type_sh_output_world();
+  register_node_type_sh_output_linestyle();
+  register_node_type_sh_output_aov();
+
+  register_node_type_sh_tex_image();
+  register_node_type_sh_tex_environment();
+  register_node_type_sh_tex_sky();
+  register_node_type_sh_tex_noise();
+  register_node_type_sh_tex_wave();
+  register_node_type_sh_tex_voronoi();
+  register_node_type_sh_tex_musgrave();
+  register_node_type_sh_tex_gradient();
+  register_node_type_sh_tex_magic();
+  register_node_type_sh_tex_checker();
+  register_node_type_sh_tex_brick();
+  register_node_type_sh_tex_pointdensity();
+  register_node_type_sh_tex_ies();
+  register_node_type_sh_tex_white_noise();
+}
+
+static void registerTextureNodes()
+{
+  register_node_type_tex_group();
+
+  register_node_type_tex_math();
+  register_node_type_tex_mix_rgb();
+  register_node_type_tex_valtorgb();
+  register_node_type_tex_rgbtobw();
+  register_node_type_tex_valtonor();
+  register_node_type_tex_curve_rgb();
+  register_node_type_tex_curve_time();
+  register_node_type_tex_invert();
+  register_node_type_tex_hue_sat();
+  register_node_type_tex_coord();
+  register_node_type_tex_distance();
+  register_node_type_tex_compose();
+  register_node_type_tex_decompose();
+
+  register_node_type_tex_output();
+  register_node_type_tex_viewer();
+  register_node_type_sh_script();
+  register_node_type_sh_tangent();
+  register_node_type_sh_normal_map();
+  register_node_type_sh_hair_info();
+  register_node_type_sh_point_info();
+  register_node_type_sh_volume_info();
+
+  register_node_type_tex_checker();
+  register_node_type_tex_texture();
+  register_node_type_tex_bricks();
+  register_node_type_tex_image();
+  register_node_type_sh_bsdf_refraction();
+  register_node_type_sh_ambient_occlusion();
+
+  register_node_type_tex_rotate();
+  register_node_type_tex_translate();
+  register_node_type_tex_scale();
+  register_node_type_tex_at();
+
+  register_node_type_tex_proc_voronoi();
+  register_node_type_tex_proc_blend();
+  register_node_type_tex_proc_magic();
+  register_node_type_tex_proc_marble();
+  register_node_type_tex_proc_clouds();
+  register_node_type_tex_proc_wood();
+  register_node_type_tex_proc_musgrave();
+  register_node_type_tex_proc_noise();
+  register_node_type_tex_proc_stucci();
+  register_node_type_tex_proc_distnoise();
+}
+
+static void registerGeometryNodes()
+{
+  register_node_type_geo_group();
+
+  register_node_type_geo_accumulate_field();
+  register_node_type_geo_attribute_capture();
+  register_node_type_geo_attribute_domain_size();
+  register_node_type_geo_attribute_statistic();
+  register_node_type_geo_boolean();
+  register_node_type_geo_bounding_box();
+  register_node_type_geo_collection_info();
+  register_node_type_geo_convex_hull();
+  register_node_type_geo_curve_endpoint_selection();
+  register_node_type_geo_curve_fill();
+  register_node_type_geo_curve_fillet();
+  register_node_type_geo_curve_handle_type_selection();
+  register_node_type_geo_curve_length();
+  register_node_type_geo_curve_primitive_arc();
+  register_node_type_geo_curve_primitive_bezier_segment();
+  register_node_type_geo_curve_primitive_circle();
+  register_node_type_geo_curve_primitive_line();
+  register_node_type_geo_curve_primitive_quadratic_bezier();
+  register_node_type_geo_curve_primitive_quadrilateral();
+  register_node_type_geo_curve_primitive_spiral();
+  register_node_type_geo_curve_primitive_star();
+  register_node_type_geo_curve_resample();
+  register_node_type_geo_curve_reverse();
+  register_node_type_geo_curve_sample();
+  register_node_type_geo_curve_set_handle_type();
+  register_node_type_geo_curve_spline_parameter();
+  register_node_type_geo_curve_spline_type();
+  register_node_type_geo_curve_subdivide();
+  register_node_type_geo_curve_to_mesh();
+  register_node_type_geo_curve_to_points();
+  register_node_type_geo_curve_trim();
+  register_node_type_geo_delete_geometry();
+  register_node_type_geo_duplicate_elements();
+  register_node_type_geo_distribute_points_on_faces();
+  register_node_type_geo_dual_mesh();
+  register_node_type_geo_edge_split();
+  register_node_type_geo_extrude_mesh();
+  register_node_type_geo_field_at_index();
+  register_node_type_geo_flip_faces();
+  register_node_type_geo_geometry_to_instance();
+  register_node_type_geo_image_texture();
+  register_node_type_geo_input_named_attribute();
+  register_node_type_geo_input_curve_handles();
+  register_node_type_geo_input_curve_tilt();
+  register_node_type_geo_input_id();
+  register_node_type_geo_input_index();
+  register_node_type_geo_input_material_index();
+  register_node_type_geo_input_material();
+  register_node_type_geo_input_mesh_edge_angle();
+  register_node_type_geo_input_mesh_edge_neighbors();
+  register_node_type_geo_input_mesh_edge_vertices();
+  register_node_type_geo_input_mesh_face_area();
+  register_node_type_geo_input_mesh_face_is_planar();
+  register_node_type_geo_input_mesh_face_neighbors();
+  register_node_type_geo_input_mesh_island();
+  register_node_type_geo_input_mesh_vertex_neighbors();
+  register_node_type_geo_input_normal();
+  register_node_type_geo_input_position();
+  register_node_type_geo_input_radius();
+  register_node_type_geo_input_scene_time();
+  register_node_type_geo_input_shade_smooth();
+  register_node_type_geo_input_spline_cyclic();
+  register_node_type_geo_input_spline_length();
+  register_node_type_geo_input_spline_resolution();
+  register_node_type_geo_input_tangent();
+  register_node_type_geo_instance_on_points();
+  register_node_type_geo_instances_to_points();
+  register_node_type_geo_is_viewport();
+  register_node_type_geo_join_geometry();
+  register_node_type_geo_material_replace();
+  register_node_type_geo_material_selection();
+  register_node_type_geo_merge_by_distance();
+  register_node_type_geo_mesh_primitive_circle();
+  register_node_type_geo_mesh_primitive_cone();
+  register_node_type_geo_mesh_primitive_cube();
+  register_node_type_geo_mesh_primitive_cylinder();
+  register_node_type_geo_mesh_primitive_grid();
+  register_node_type_geo_mesh_primitive_ico_sphere();
+  register_node_type_geo_mesh_primitive_line();
+  register_node_type_geo_mesh_primitive_uv_sphere();
+  register_node_type_geo_mesh_subdivide();
+  register_node_type_geo_mesh_to_curve();
+  register_node_type_geo_mesh_to_points();
+  register_node_type_geo_object_info();
+  register_node_type_geo_points_to_vertices();
+  register_node_type_geo_points_to_volume();
+  register_node_type_geo_proximity();
+  register_node_type_geo_raycast();
+  register_node_type_geo_realize_instances();
+  register_node_type_geo_remove_attribute();
+  register_node_type_geo_rotate_instances();
+  register_node_type_geo_scale_elements();
+  register_node_type_geo_scale_instances();
+  register_node_type_geo_separate_components();
+  register_node_type_geo_separate_geometry();
+  register_node_type_geo_set_curve_handles();
+  register_node_type_geo_set_curve_radius();
+  register_node_type_geo_set_curve_tilt();
+  register_node_type_geo_set_id();
+  register_node_type_geo_set_material_index();
+  register_node_type_geo_set_material();
+  register_node_type_geo_set_point_radius();
+  register_node_type_geo_set_position();
+  register_node_type_geo_set_shade_smooth();
+  register_node_type_geo_set_spline_cyclic();
+  register_node_type_geo_set_spline_resolution();
+  register_node_type_geo_store_named_attribute();
+  register_node_type_geo_string_join();
+  register_node_type_geo_string_to_curves();
+  register_node_type_geo_subdivision_surface();
+  register_node_type_geo_switch();
+  register_node_type_geo_transfer_attribute();
+  register_node_type_geo_transform();
+  register_node_type_geo_translate_instances();
+  register_node_type_geo_triangulate();
+  register_node_type_geo_viewer();
+  register_node_type_geo_volume_to_mesh();
+}
+
+static void registerFunctionNodes()
+{
+  register_node_type_fn_align_euler_to_vector();
+  register_node_type_fn_boolean_math();
+  register_node_type_fn_compare();
+  register_node_type_fn_float_to_int();
+  register_node_type_fn_input_bool();
+  register_node_type_fn_input_color();
+  register_node_type_fn_input_int();
+  register_node_type_fn_input_special_characters();
+  register_node_type_fn_input_string();
+  register_node_type_fn_input_vector();
+  register_node_type_fn_random_value();
+  register_node_type_fn_replace_string();
+  register_node_type_fn_rotate_euler();
+  register_node_type_fn_slice_string();
+  register_node_type_fn_string_length();
+  register_node_type_fn_value_to_string();
+}
+
+void BKE_node_system_init()
+{
+  nodetreetypes_hash = BLI_ghash_str_new("nodetreetypes_hash gh");
+  nodetypes_hash = BLI_ghash_str_new("nodetypes_hash gh");
+  nodesockettypes_hash = BLI_ghash_str_new("nodesockettypes_hash gh");
+
+  register_undefined_types();
+
+  register_standard_node_socket_types();
+
+  register_node_tree_type_cmp();
+  register_node_tree_type_sh();
+  register_node_tree_type_tex();
+  register_node_tree_type_geo();
+
+  register_node_type_frame();
+  register_node_type_reroute();
+  register_node_type_group_input();
+  register_node_type_group_output();
+
+  registerCompositNodes();
+  registerShaderNodes();
+  registerTextureNodes();
+  registerGeometryNodes();
+  registerFunctionNodes();
+}
+
+void BKE_node_system_exit()
+{
+  if (nodetypes_hash) {
+    NODE_TYPES_BEGIN (nt) {
+      if (nt->rna_ext.free) {
+        nt->rna_ext.free(nt->rna_ext.data);
+      }
+    }
+    NODE_TYPES_END;
+
+    BLI_ghash_free(nodetypes_hash, nullptr, node_free_type);
+    nodetypes_hash = nullptr;
+  }
+
+  if (nodesockettypes_hash) {
+    NODE_SOCKET_TYPES_BEGIN (st) {
+      if (st->ext_socket.free) {
+        st->ext_socket.free(st->ext_socket.data);
+      }
+      if (st->ext_interface.free) {
+        st->ext_interface.free(st->ext_interface.data);
+      }
+    }
+    NODE_SOCKET_TYPES_END;
+
+    BLI_ghash_free(nodesockettypes_hash, nullptr, node_free_socket_type);
+    nodesockettypes_hash = nullptr;
+  }
+
+  if (nodetreetypes_hash) {
+    NODE_TREE_TYPES_BEGIN (nt) {
+      if (nt->rna_ext.free) {
+        nt->rna_ext.free(nt->rna_ext.data);
+      }
+    }
+    NODE_TREE_TYPES_END;
+
+    BLI_ghash_free(nodetreetypes_hash, nullptr, ntree_free_type);
+    nodetreetypes_hash = nullptr;
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/* NodeTree Iterator Helpers (FOREACH_NODETREE_BEGIN) */
+
+void BKE_node_tree_iter_init(struct NodeTreeIterStore *ntreeiter, struct Main *bmain)
+{
+  ntreeiter->ngroup = (bNodeTree *)bmain->nodetrees.first;
+  ntreeiter->scene = (Scene *)bmain->scenes.first;
+  ntreeiter->mat = (Material *)bmain->materials.first;
+  ntreeiter->tex = (Tex *)bmain->textures.first;
+  ntreeiter->light = (Light *)bmain->lights.first;
+  ntreeiter->world = (World *)bmain->worlds.first;
+  ntreeiter->linestyle = (FreestyleLineStyle *)bmain->linestyles.first;
+  ntreeiter->simulation = (Simulation *)bmain->simulations.first;
+}
+bool BKE_node_tree_iter_step(struct NodeTreeIterStore *ntreeiter,
+                             bNodeTree **r_nodetree,
+                             struct ID **r_id)
+{
+  if (ntreeiter->ngroup) {
+    *r_nodetree = (bNodeTree *)ntreeiter->ngroup;
+    *r_id = (ID *)ntreeiter->ngroup;
+    ntreeiter->ngroup = (bNodeTree *)ntreeiter->ngroup->id.next;
+  }
+  else if (ntreeiter->scene) {
+    *r_nodetree = (bNodeTree *)ntreeiter->scene->nodetree;
+    *r_id = (ID *)ntreeiter->scene;
+    ntreeiter->scene = (Scene *)ntreeiter->scene->id.next;
+  }
+  else if (ntreeiter->mat) {
+    *r_nodetree = (bNodeTree *)ntreeiter->mat->nodetree;
+    *r_id = (ID *)ntreeiter->mat;
+    ntreeiter->mat = (Material *)ntreeiter->mat->id.next;
+  }
+  else if (ntreeiter->tex) {
+    *r_nodetree = (bNodeTree *)ntreeiter->tex->nodetree;
+    *r_id = (ID *)ntreeiter->tex;
+    ntreeiter->tex = (Tex *)ntreeiter->tex->id.next;
+  }
+  else if (ntreeiter->light) {
+    *r_nodetree = (bNodeTree *)ntreeiter->light->nodetree;
+    *r_id = (ID *)ntreeiter->light;
+    ntreeiter->light = (Light *)ntreeiter->light->id.next;
+  }
+  else if (ntreeiter->world) {
+    *r_nodetree = (bNodeTree *)ntreeiter->world->nodetree;
+    *r_id = (ID *)ntreeiter->world;
+    ntreeiter->world = (World *)ntreeiter->world->id.next;
+  }
+  else if (ntreeiter->linestyle) {
+    *r_nodetree = (bNodeTree *)ntreeiter->linestyle->nodetree;
+    *r_id = (ID *)ntreeiter->linestyle;
+    ntreeiter->linestyle = (FreestyleLineStyle *)ntreeiter->linestyle->id.next;
+  }
+  else if (ntreeiter->simulation) {
+    *r_nodetree = (bNodeTree *)ntreeiter->simulation->nodetree;
+    *r_id = (ID *)ntreeiter->simulation;
+    ntreeiter->simulation = (Simulation *)ntreeiter->simulation->id.next;
+  }
+  else {
+    return false;
+  }
+
+  return true;
+}
+
+/* -------------------------------------------------------------------- */
+/* NodeTree kernel functions */
+
+void BKE_nodetree_remove_layer_n(bNodeTree *ntree, Scene *scene, const int layer_index)
+{
+  BLI_assert(layer_index != -1);
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    if (node->type == CMP_NODE_R_LAYERS && (Scene *)node->id == scene) {
+      if (node->custom1 == layer_index) {
+        node->custom1 = 0;
+      }
+      else if (node->custom1 > layer_index) {
+        node->custom1--;
+      }
+    }
+  }
+}
