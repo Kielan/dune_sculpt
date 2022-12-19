@@ -24,40 +24,40 @@
 #include "STRUCTS_texture_types.h"
 #include "STRUCTS_world_types.h"
 
-#include "LI_color.hh"
-#include "LI_ghash.h"
-#include "LI_listbase.h"
-#include "LI_map.hh"
-#include "LI_path_util.h"
-#include "LI_set.hh"
-#include "LI_stack.hh"
-#include "LI_string.h"
-#include "LI_string_utils.h"
-#include "LI_threads.h"
-#include "LI_utildefines.h"
-#include "LI_vector_set.hh"
+#include "LIB_color.hh"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_map.hh"
+#include "LIB_path_util.h"
+#include "LIB_set.hh"
+#include "LIB_stack.hh"
+#include "LIB_string.h"
+#include "LIB_string_utils.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
+#include "LIB_vector_set.hh"
 #include "TRANSLATION_translation.h"
 
-#include "KE_anim_data.h"
-#include "KE_animsys.h"
-#include "KE_bpath.h"
-#include "KE_colortools.h"
-#include "KE_context.h"
-#include "KE_cryptomatte.h"
-#include "KE_global.h"
-#include "KE_icons.h"
-#include "KE_idprop.h"
-#include "KE_idtype.h"
-#include "KE_image_format.h"
-#include "KE_lib_id.h"
-#include "KE_lib_query.h"
-#include "KE_main.h"
-#include "KE_node.h"
-#include "KE_node_tree_update.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_animsys.h"
+#include "KERNEL_bpath.h"
+#include "KERNEL_colortools.h"
+#include "KERNEL_context.h"
+#include "KERNEL_cryptomatte.h"
+#include "KERNEL_global.h"
+#include "KERNEL_icons.h"
+#include "KERNEL_idprop.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_image_format.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_node.h"
+#include "KERNEL_node_tree_update.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_prototypes.h"
+#include "API_access.h"
+#include "API_define.h"
+#include "API_prototypes.h"
 
 #include "NOD_common.h"
 #include "NOD_composite.h"
@@ -130,13 +130,13 @@ static void ntree_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, c
   /* in case a running nodetree is copied */
   ntree_dst->execdata = nullptr;
 
-  BLI_listbase_clear(&ntree_dst->nodes);
-  BLI_listbase_clear(&ntree_dst->links);
+  LIB_listbase_clear(&ntree_dst->nodes);
+  LIB_listbase_clear(&ntree_dst->links);
 
   Map<const bNode *, bNode *> node_map;
   Map<const bNodeSocket *, bNodeSocket *> socket_map;
 
-  BLI_listbase_clear(&ntree_dst->nodes);
+  LIB_listbase_clear(&ntree_dst->nodes);
   LISTBASE_FOREACH (const bNode *, src_node, &ntree_src->nodes) {
     /* Don't find a unique name for every node, since they should have valid names already. */
     bNode *new_node = blender::bke::node_copy_with_mapping(
@@ -145,30 +145,30 @@ static void ntree_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, c
   }
 
   /* copy links */
-  BLI_listbase_clear(&ntree_dst->links);
+  LIB_listbase_clear(&ntree_dst->links);
   LISTBASE_FOREACH (const bNodeLink *, src_link, &ntree_src->links) {
     bNodeLink *dst_link = (bNodeLink *)MEM_dupallocN(src_link);
     dst_link->fromnode = node_map.lookup(src_link->fromnode);
     dst_link->fromsock = socket_map.lookup(src_link->fromsock);
     dst_link->tonode = node_map.lookup(src_link->tonode);
     dst_link->tosock = socket_map.lookup(src_link->tosock);
-    BLI_assert(dst_link->tosock);
+    LIB_assert(dst_link->tosock);
     dst_link->tosock->link = dst_link;
-    BLI_addtail(&ntree_dst->links, dst_link);
+    LIB_addtail(&ntree_dst->links, dst_link);
   }
 
   /* copy interface sockets */
-  BLI_listbase_clear(&ntree_dst->inputs);
+  LIB_listbase_clear(&ntree_dst->inputs);
   LISTBASE_FOREACH (const bNodeSocket *, src_socket, &ntree_src->inputs) {
     bNodeSocket *dst_socket = (bNodeSocket *)MEM_dupallocN(src_socket);
     node_socket_copy(dst_socket, src_socket, flag_subdata);
-    BLI_addtail(&ntree_dst->inputs, dst_socket);
+    LIB_addtail(&ntree_dst->inputs, dst_socket);
   }
-  BLI_listbase_clear(&ntree_dst->outputs);
+  LIB_listbase_clear(&ntree_dst->outputs);
   LISTBASE_FOREACH (const bNodeSocket *, src_socket, &ntree_src->outputs) {
     bNodeSocket *dst_socket = (bNodeSocket *)MEM_dupallocN(src_socket);
     node_socket_copy(dst_socket, src_socket, flag_subdata);
-    BLI_addtail(&ntree_dst->outputs, dst_socket);
+    LIB_addtail(&ntree_dst->outputs, dst_socket);
   }
 
   /* copy preview hash */
@@ -235,7 +235,7 @@ static void ntree_free_data(ID *id)
   /* Unregister associated RNA types. */
   ntreeInterfaceTypeFree(ntree);
 
-  BLI_freelistN(&ntree->links);
+  LIB_freelistN(&ntree->links);
 
   LISTBASE_FOREACH_MUTABLE (bNode *, node, &ntree->nodes) {
     node_free_node(ntree, node);
@@ -255,19 +255,19 @@ static void ntree_free_data(ID *id)
 
   /* free preview hash */
   if (ntree->previews) {
-    BKE_node_instance_hash_free(ntree->previews, (bNodeInstanceValueFP)BKE_node_preview_free);
+    KERNEL_node_instance_hash_free(ntree->previews, (bNodeInstanceValueFP)BKE_node_preview_free);
   }
 
   if (ntree->id.tag & LIB_TAG_LOCALIZED) {
-    BKE_libblock_free_data(&ntree->id, true);
+    KERNEL_libblock_free_data(&ntree->id, true);
   }
 
-  BKE_previewimg_free(&ntree->preview);
+  KERNEL_previewimg_free(&ntree->preview);
 }
 
 static void library_foreach_node_socket(LibraryForeachIDData *data, bNodeSocket *sock)
 {
-  BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
       data,
       IDP_foreach_property(
           sock->prop, IDP_TYPE_FILTER_ID, BKE_lib_query_idpropertiesForeachIDLink_callback, data));
@@ -275,28 +275,28 @@ static void library_foreach_node_socket(LibraryForeachIDData *data, bNodeSocket 
   switch ((eNodeSocketDatatype)sock->type) {
     case SOCK_OBJECT: {
       bNodeSocketValueObject *default_value = (bNodeSocketValueObject *)sock->default_value;
-      BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
+      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
       break;
     }
     case SOCK_IMAGE: {
       bNodeSocketValueImage *default_value = (bNodeSocketValueImage *)sock->default_value;
-      BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
+      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
       break;
     }
     case SOCK_COLLECTION: {
       bNodeSocketValueCollection *default_value = (bNodeSocketValueCollection *)
                                                       sock->default_value;
-      BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
+      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
       break;
     }
     case SOCK_TEXTURE: {
       bNodeSocketValueTexture *default_value = (bNodeSocketValueTexture *)sock->default_value;
-      BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
+      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
       break;
     }
     case SOCK_MATERIAL: {
       bNodeSocketValueMaterial *default_value = (bNodeSocketValueMaterial *)sock->default_value;
-      BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
+      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, default_value->value, IDWALK_CB_USER);
       break;
     }
     case SOCK_FLOAT:
