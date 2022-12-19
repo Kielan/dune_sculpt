@@ -3568,3 +3568,648 @@ bNodeTree *ntreeLocalize(bNodeTree *ntree)
 
   return ltree;
 }
+
+void ntreeLocalMerge(Main *bmain, bNodeTree *localtree, bNodeTree *ntree)
+{
+  if (ntree && localtree) {
+    if (ntree->typeinfo->local_merge) {
+      ntree->typeinfo->local_merge(bmain, localtree, ntree);
+    }
+
+    ntreeFreeTree(localtree);
+    MEM_freeN(localtree);
+  }
+}
+
+/* ************ NODE TREE INTERFACE *************** */
+
+static bNodeSocket *make_socket_interface(bNodeTree *ntree,
+                                          eNodeSocketInOut in_out,
+                                          const char *idname,
+                                          const char *name)
+{
+  bNodeSocketType *stype = nodeSocketTypeFind(idname);
+  if (stype == nullptr) {
+    return nullptr;
+  }
+
+  bNodeSocket *sock = MEM_cnew<bNodeSocket>("socket template");
+  BLI_strncpy(sock->idname, stype->idname, sizeof(sock->idname));
+  node_socket_set_typeinfo(ntree, sock, stype);
+  sock->in_out = in_out;
+  sock->type = SOCK_CUSTOM; /* int type undefined by default */
+
+  /* assign new unique index */
+  const int own_index = ntree->cur_index++;
+  /* use the own_index as socket identifier */
+  if (in_out == SOCK_IN) {
+    BLI_snprintf(sock->identifier, MAX_NAME, "Input_%d", own_index);
+  }
+  else {
+    BLI_snprintf(sock->identifier, MAX_NAME, "Output_%d", own_index);
+  }
+
+  sock->limit = (in_out == SOCK_IN ? 1 : 0xFFF);
+
+  BLI_strncpy(sock->name, name, NODE_MAXSTR);
+  sock->storage = nullptr;
+  sock->flag |= SOCK_COLLAPSED;
+
+  return sock;
+}
+
+bNodeSocket *ntreeFindSocketInterface(bNodeTree *ntree,
+                                      eNodeSocketInOut in_out,
+                                      const char *identifier)
+{
+  ListBase *sockets = (in_out == SOCK_IN) ? &ntree->inputs : &ntree->outputs;
+  LISTBASE_FOREACH (bNodeSocket *, iosock, sockets) {
+    if (STREQ(iosock->identifier, identifier)) {
+      return iosock;
+    }
+  }
+  return nullptr;
+}
+
+bNodeSocket *ntreeAddSocketInterface(bNodeTree *ntree,
+                                     eNodeSocketInOut in_out,
+                                     const char *idname,
+                                     const char *name)
+{
+  bNodeSocket *iosock = make_socket_interface(ntree, in_out, idname, name);
+  if (in_out == SOCK_IN) {
+    BLI_addtail(&ntree->inputs, iosock);
+  }
+  else if (in_out == SOCK_OUT) {
+    BLI_addtail(&ntree->outputs, iosock);
+  }
+  BKE_ntree_update_tag_interface(ntree);
+  return iosock;
+}
+
+bNodeSocket *ntreeInsertSocketInterface(bNodeTree *ntree,
+                                        eNodeSocketInOut in_out,
+                                        const char *idname,
+                                        bNodeSocket *next_sock,
+                                        const char *name)
+{
+  bNodeSocket *iosock = make_socket_interface(ntree, in_out, idname, name);
+  if (in_out == SOCK_IN) {
+    BLI_insertlinkbefore(&ntree->inputs, next_sock, iosock);
+  }
+  else if (in_out == SOCK_OUT) {
+    BLI_insertlinkbefore(&ntree->outputs, next_sock, iosock);
+  }
+  BKE_ntree_update_tag_interface(ntree);
+  return iosock;
+}
+
+struct bNodeSocket *ntreeAddSocketInterfaceFromSocket(bNodeTree *ntree,
+                                                      bNode *from_node,
+                                                      bNodeSocket *from_sock)
+{
+  bNodeSocket *iosock = ntreeAddSocketInterface(
+      ntree, static_cast<eNodeSocketInOut>(from_sock->in_out), from_sock->idname, from_sock->name);
+  if (iosock) {
+    if (iosock->typeinfo->interface_from_socket) {
+      iosock->typeinfo->interface_from_socket(ntree, iosock, from_node, from_sock);
+    }
+  }
+  return iosock;
+}
+
+struct bNodeSocket *ntreeInsertSocketInterfaceFromSocket(bNodeTree *ntree,
+                                                         bNodeSocket *next_sock,
+                                                         bNode *from_node,
+                                                         bNodeSocket *from_sock)
+{
+  bNodeSocket *iosock = ntreeInsertSocketInterface(
+      ntree,
+      static_cast<eNodeSocketInOut>(from_sock->in_out),
+      from_sock->idname,
+      next_sock,
+      from_sock->name);
+  if (iosock) {
+    if (iosock->typeinfo->interface_from_socket) {
+      iosock->typeinfo->interface_from_socket(ntree, iosock, from_node, from_sock);
+    }
+  }
+  return iosock;
+}
+
+void ntreeRemoveSocketInterface(bNodeTree *ntree, bNodeSocket *sock)
+{
+  /* this is fast, this way we don't need an in_out argument */
+  BLI_remlink(&ntree->inputs, sock);
+  BLI_remlink(&ntree->outputs, sock);
+
+  node_socket_interface_free(ntree, sock, true);
+  MEM_freeN(sock);
+
+  BKE_ntree_update_tag_interface(ntree);
+}
+
+/* generates a valid RNA identifier from the node tree name */
+static void ntree_interface_identifier_base(bNodeTree *ntree, char *base)
+{
+  /* generate a valid RNA identifier */
+  sprintf(base, "NodeTreeInterface_%s", ntree->id.name + 2);
+  RNA_identifier_sanitize(base, false);
+}
+
+/* check if the identifier is already in use */
+static bool ntree_interface_unique_identifier_check(void *UNUSED(data), const char *identifier)
+{
+  return (RNA_struct_find(identifier) != nullptr);
+}
+
+/* generates the actual unique identifier and ui name and description */
+static void ntree_interface_identifier(bNodeTree *ntree,
+                                       const char *base,
+                                       char *identifier,
+                                       int maxlen,
+                                       char *name,
+                                       char *description)
+{
+  /* There is a possibility that different node tree names get mapped to the same identifier
+   * after sanitation (e.g. "SomeGroup_A", "SomeGroup.A" both get sanitized to "SomeGroup_A").
+   * On top of the sanitized id string add a number suffix if necessary to avoid duplicates.
+   */
+  identifier[0] = '\0';
+  BLI_uniquename_cb(
+      ntree_interface_unique_identifier_check, nullptr, base, '_', identifier, maxlen);
+
+  sprintf(name, "Node Tree %s Interface", ntree->id.name + 2);
+  sprintf(description, "Interface properties of node group %s", ntree->id.name + 2);
+}
+
+static void ntree_interface_type_create(bNodeTree *ntree)
+{
+  /* strings are generated from base string + ID name, sizes are sufficient */
+  char base[MAX_ID_NAME + 64], identifier[MAX_ID_NAME + 64], name[MAX_ID_NAME + 64],
+      description[MAX_ID_NAME + 64];
+
+  /* generate a valid RNA identifier */
+  ntree_interface_identifier_base(ntree, base);
+  ntree_interface_identifier(ntree, base, identifier, sizeof(identifier), name, description);
+
+  /* register a subtype of PropertyGroup */
+  StructRNA *srna = RNA_def_struct_ptr(&BLENDER_RNA, identifier, &RNA_PropertyGroup);
+  RNA_def_struct_ui_text(srna, name, description);
+  RNA_def_struct_duplicate_pointers(&BLENDER_RNA, srna);
+
+  /* associate the RNA type with the node tree */
+  ntree->interface_type = srna;
+  RNA_struct_blender_type_set(srna, ntree);
+
+  /* add socket properties */
+  LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->inputs) {
+    bNodeSocketType *stype = sock->typeinfo;
+    if (stype && stype->interface_register_properties) {
+      stype->interface_register_properties(ntree, sock, srna);
+    }
+  }
+  LISTBASE_FOREACH (bNodeSocket *, sock, &ntree->outputs) {
+    bNodeSocketType *stype = sock->typeinfo;
+    if (stype && stype->interface_register_properties) {
+      stype->interface_register_properties(ntree, sock, srna);
+    }
+  }
+}
+
+StructRNA *ntreeInterfaceTypeGet(bNodeTree *ntree, bool create)
+{
+  if (ntree->interface_type) {
+    /* strings are generated from base string + ID name, sizes are sufficient */
+    char base[MAX_ID_NAME + 64], identifier[MAX_ID_NAME + 64], name[MAX_ID_NAME + 64],
+        description[MAX_ID_NAME + 64];
+
+    /* A bit of a hack: when changing the ID name, update the RNA type identifier too,
+     * so that the names match. This is not strictly necessary to keep it working,
+     * but better for identifying associated NodeTree blocks and RNA types.
+     */
+    StructRNA *srna = ntree->interface_type;
+
+    ntree_interface_identifier_base(ntree, base);
+
+    /* RNA identifier may have a number suffix, but should start with the idbase string */
+    if (!STREQLEN(RNA_struct_identifier(srna), base, sizeof(base))) {
+      /* generate new unique RNA identifier from the ID name */
+      ntree_interface_identifier(ntree, base, identifier, sizeof(identifier), name, description);
+
+      /* rename the RNA type */
+      RNA_def_struct_free_pointers(&BLENDER_RNA, srna);
+      RNA_def_struct_identifier(&BLENDER_RNA, srna, identifier);
+      RNA_def_struct_ui_text(srna, name, description);
+      RNA_def_struct_duplicate_pointers(&BLENDER_RNA, srna);
+    }
+  }
+  else if (create) {
+    ntree_interface_type_create(ntree);
+  }
+
+  return ntree->interface_type;
+}
+
+void ntreeInterfaceTypeFree(bNodeTree *ntree)
+{
+  if (ntree->interface_type) {
+    RNA_struct_free(&BLENDER_RNA, ntree->interface_type);
+    ntree->interface_type = nullptr;
+  }
+}
+
+void ntreeInterfaceTypeUpdate(bNodeTree *ntree)
+{
+  /* XXX it would be sufficient to just recreate all properties
+   * instead of re-registering the whole struct type,
+   * but there is currently no good way to do this in the RNA functions.
+   * Overhead should be negligible.
+   */
+  ntreeInterfaceTypeFree(ntree);
+  ntree_interface_type_create(ntree);
+}
+
+/* ************ find stuff *************** */
+
+bNode *ntreeFindType(const bNodeTree *ntree, int type)
+{
+  if (ntree) {
+    LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+      if (node->type == type) {
+        return node;
+      }
+    }
+  }
+  return nullptr;
+}
+
+bool ntreeHasTree(const bNodeTree *ntree, const bNodeTree *lookup)
+{
+  if (ntree == lookup) {
+    return true;
+  }
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    if (ELEM(node->type, NODE_GROUP, NODE_CUSTOM_GROUP) && node->id) {
+      if (ntreeHasTree((bNodeTree *)node->id, lookup)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bNodeLink *nodeFindLink(bNodeTree *ntree, const bNodeSocket *from, const bNodeSocket *to)
+{
+  LISTBASE_FOREACH (bNodeLink *, link, &ntree->links) {
+    if (link->fromsock == from && link->tosock == to) {
+      return link;
+    }
+    if (link->fromsock == to && link->tosock == from) { /* hrms? */
+      return link;
+    }
+  }
+  return nullptr;
+}
+
+int nodeCountSocketLinks(const bNodeTree *ntree, const bNodeSocket *sock)
+{
+  int tot = 0;
+  LISTBASE_FOREACH (const bNodeLink *, link, &ntree->links) {
+    if (link->fromsock == sock || link->tosock == sock) {
+      tot++;
+    }
+  }
+  return tot;
+}
+
+bNode *nodeGetActive(bNodeTree *ntree)
+{
+  if (ntree == nullptr) {
+    return nullptr;
+  }
+
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    if (node->flag & NODE_ACTIVE) {
+      return node;
+    }
+  }
+  return nullptr;
+}
+
+void nodeSetSelected(bNode *node, bool select)
+{
+  if (select) {
+    node->flag |= NODE_SELECT;
+  }
+  else {
+    node->flag &= ~NODE_SELECT;
+
+    /* deselect sockets too */
+    LISTBASE_FOREACH (bNodeSocket *, sock, &node->inputs) {
+      sock->flag &= ~NODE_SELECT;
+    }
+    LISTBASE_FOREACH (bNodeSocket *, sock, &node->outputs) {
+      sock->flag &= ~NODE_SELECT;
+    }
+  }
+}
+
+void nodeClearActive(bNodeTree *ntree)
+{
+  if (ntree == nullptr) {
+    return;
+  }
+
+  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    node->flag &= ~NODE_ACTIVE;
+  }
+}
+
+void nodeSetActive(bNodeTree *ntree, bNode *node)
+{
+  /* make sure only one node is active, and only one per ID type */
+  LISTBASE_FOREACH (bNode *, tnode, &ntree->nodes) {
+    tnode->flag &= ~NODE_ACTIVE;
+
+    if (node->typeinfo->nclass == NODE_CLASS_TEXTURE) {
+      tnode->flag &= ~NODE_ACTIVE_TEXTURE;
+    }
+  }
+
+  node->flag |= NODE_ACTIVE;
+  if (node->typeinfo->nclass == NODE_CLASS_TEXTURE) {
+    node->flag |= NODE_ACTIVE_TEXTURE;
+  }
+}
+
+int nodeSocketIsHidden(const bNodeSocket *sock)
+{
+  return ((sock->flag & (SOCK_HIDDEN | SOCK_UNAVAIL)) != 0);
+}
+
+void nodeSetSocketAvailability(bNodeTree *ntree, bNodeSocket *sock, bool is_available)
+{
+  const bool was_available = (sock->flag & SOCK_UNAVAIL) == 0;
+  if (is_available != was_available) {
+    BKE_ntree_update_tag_socket_availability(ntree, sock);
+  }
+
+  if (is_available) {
+    sock->flag &= ~SOCK_UNAVAIL;
+  }
+  else {
+    sock->flag |= SOCK_UNAVAIL;
+  }
+}
+
+int nodeSocketLinkLimit(const bNodeSocket *sock)
+{
+  bNodeSocketType *stype = sock->typeinfo;
+  if (sock->flag & SOCK_MULTI_INPUT) {
+    return 4095;
+  }
+  if (stype != nullptr && stype->use_link_limits_of_type) {
+    int limit = (sock->in_out == SOCK_IN) ? stype->input_link_limit : stype->output_link_limit;
+    return limit;
+  }
+
+  return sock->limit;
+}
+
+static void update_socket_declarations(ListBase *sockets,
+                                       Span<blender::nodes::SocketDeclarationPtr> declarations)
+{
+  int index;
+  LISTBASE_FOREACH_INDEX (bNodeSocket *, socket, sockets, index) {
+    const SocketDeclaration &socket_decl = *declarations[index];
+    socket->declaration = &socket_decl;
+  }
+}
+
+void nodeSocketDeclarationsUpdate(bNode *node)
+{
+  BLI_assert(node->declaration != nullptr);
+  update_socket_declarations(&node->inputs, node->declaration->inputs());
+  update_socket_declarations(&node->outputs, node->declaration->outputs());
+}
+
+bool nodeDeclarationEnsureOnOutdatedNode(bNodeTree *UNUSED(ntree), bNode *node)
+{
+  if (node->declaration != nullptr) {
+    return false;
+  }
+  if (node->typeinfo->declare == nullptr) {
+    return false;
+  }
+  if (node->typeinfo->declaration_is_dynamic) {
+    node->declaration = new blender::nodes::NodeDeclaration();
+    blender::nodes::NodeDeclarationBuilder builder{*node->declaration};
+    node->typeinfo->declare(builder);
+  }
+  else {
+    /* Declaration should have been created in #nodeRegisterType. */
+    BLI_assert(node->typeinfo->fixed_declaration != nullptr);
+    node->declaration = node->typeinfo->fixed_declaration;
+  }
+  return true;
+}
+
+bool nodeDeclarationEnsure(bNodeTree *ntree, bNode *node)
+{
+  if (nodeDeclarationEnsureOnOutdatedNode(ntree, node)) {
+    nodeSocketDeclarationsUpdate(node);
+    return true;
+  }
+  return false;
+}
+
+/* ************** Node Clipboard *********** */
+
+#define USE_NODE_CB_VALIDATE
+
+#ifdef USE_NODE_CB_VALIDATE
+/**
+ * This data structure is to validate the node on creation,
+ * otherwise we may reference missing data.
+ *
+ * Currently its only used for ID's, but nodes may one day
+ * reference other pointers which need validation.
+ */
+struct bNodeClipboardExtraInfo {
+  struct bNodeClipboardExtraInfo *next, *prev;
+  ID *id;
+  char id_name[MAX_ID_NAME];
+  char library_name[FILE_MAX];
+};
+#endif /* USE_NODE_CB_VALIDATE */
+
+struct bNodeClipboard {
+  ListBase nodes;
+
+#ifdef USE_NODE_CB_VALIDATE
+  ListBase nodes_extra_info;
+#endif
+
+  ListBase links;
+  int type;
+};
+
+static bNodeClipboard node_clipboard = {{nullptr}};
+
+void BKE_node_clipboard_init(const struct bNodeTree *ntree)
+{
+  node_clipboard.type = ntree->type;
+}
+
+void BKE_node_clipboard_clear()
+{
+  LISTBASE_FOREACH_MUTABLE (bNodeLink *, link, &node_clipboard.links) {
+    nodeRemLink(nullptr, link);
+  }
+  BLI_listbase_clear(&node_clipboard.links);
+
+  LISTBASE_FOREACH_MUTABLE (bNode *, node, &node_clipboard.nodes) {
+    node_free_node(nullptr, node);
+  }
+  BLI_listbase_clear(&node_clipboard.nodes);
+
+#ifdef USE_NODE_CB_VALIDATE
+  BLI_freelistN(&node_clipboard.nodes_extra_info);
+#endif
+}
+
+bool BKE_node_clipboard_validate()
+{
+  bool ok = true;
+
+#ifdef USE_NODE_CB_VALIDATE
+  bNodeClipboardExtraInfo *node_info;
+  bNode *node;
+
+  /* lists must be aligned */
+  BLI_assert(BLI_listbase_count(&node_clipboard.nodes) ==
+             BLI_listbase_count(&node_clipboard.nodes_extra_info));
+
+  for (node = (bNode *)node_clipboard.nodes.first,
+      node_info = (bNodeClipboardExtraInfo *)node_clipboard.nodes_extra_info.first;
+       node;
+       node = (bNode *)node->next, node_info = (bNodeClipboardExtraInfo *)node_info->next) {
+    /* validate the node against the stored node info */
+
+    /* re-assign each loop since we may clear,
+     * open a new file where the ID is valid, and paste again */
+    node->id = node_info->id;
+
+    /* currently only validate the ID */
+    if (node->id) {
+      /* We want to search into current blend file, so using G_MAIN is valid here too. */
+      ListBase *lb = which_libbase(G_MAIN, GS(node_info->id_name));
+      BLI_assert(lb != nullptr);
+
+      if (BLI_findindex(lb, node_info->id) == -1) {
+        /* May assign null. */
+        node->id = (ID *)BLI_findstring(lb, node_info->id_name + 2, offsetof(ID, name) + 2);
+
+        if (node->id == nullptr) {
+          ok = false;
+        }
+      }
+    }
+  }
+#endif /* USE_NODE_CB_VALIDATE */
+
+  return ok;
+}
+
+void BKE_node_clipboard_add_node(bNode *node)
+{
+#ifdef USE_NODE_CB_VALIDATE
+  /* add extra info */
+  bNodeClipboardExtraInfo *node_info = (bNodeClipboardExtraInfo *)MEM_mallocN(
+      sizeof(bNodeClipboardExtraInfo), __func__);
+
+  node_info->id = node->id;
+  if (node->id) {
+    BLI_strncpy(node_info->id_name, node->id->name, sizeof(node_info->id_name));
+    if (ID_IS_LINKED(node->id)) {
+      BLI_strncpy(
+          node_info->library_name, node->id->lib->filepath_abs, sizeof(node_info->library_name));
+    }
+    else {
+      node_info->library_name[0] = '\0';
+    }
+  }
+  else {
+    node_info->id_name[0] = '\0';
+    node_info->library_name[0] = '\0';
+  }
+  BLI_addtail(&node_clipboard.nodes_extra_info, node_info);
+  /* end extra info */
+#endif /* USE_NODE_CB_VALIDATE */
+
+  /* add node */
+  BLI_addtail(&node_clipboard.nodes, node);
+}
+
+void BKE_node_clipboard_add_link(bNodeLink *link)
+{
+  BLI_addtail(&node_clipboard.links, link);
+}
+
+const ListBase *BKE_node_clipboard_get_nodes()
+{
+  return &node_clipboard.nodes;
+}
+
+const ListBase *BKE_node_clipboard_get_links()
+{
+  return &node_clipboard.links;
+}
+
+int BKE_node_clipboard_get_type()
+{
+  return node_clipboard.type;
+}
+
+void BKE_node_clipboard_free()
+{
+  BKE_node_clipboard_validate();
+  BKE_node_clipboard_clear();
+}
+
+/* Node Instance Hash */
+
+const bNodeInstanceKey NODE_INSTANCE_KEY_BASE = {5381};
+const bNodeInstanceKey NODE_INSTANCE_KEY_NONE = {0};
+
+/* Generate a hash key from ntree and node names
+ * Uses the djb2 algorithm with xor by Bernstein:
+ * http://www.cse.yorku.ca/~oz/hash.html
+ */
+static bNodeInstanceKey node_hash_int_str(bNodeInstanceKey hash, const char *str)
+{
+  char c;
+
+  while ((c = *str++)) {
+    hash.value = ((hash.value << 5) + hash.value) ^ c; /* (hash * 33) ^ c */
+  }
+
+  /* separator '\0' character, to avoid ambiguity from concatenated strings */
+  hash.value = (hash.value << 5) + hash.value; /* hash * 33 */
+
+  return hash;
+}
+
+bNodeInstanceKey BKE_node_instance_key(bNodeInstanceKey parent_key,
+                                       const bNodeTree *ntree,
+                                       const bNode *node)
+{
+  bNodeInstanceKey key = node_hash_int_str(parent_key, ntree->id.name + 2);
+
+  if (node) {
+    key = node_hash_int_str(key, node->name);
+  }
+
+  return key;
+}
