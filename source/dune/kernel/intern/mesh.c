@@ -10,20 +10,20 @@
 #include "STRUCTS_meshdata_types.h"
 #include "STRUCTS_object_types.h"
 
-#include "LI_bitmap.h"
-#include "LI_edgehash.h"
-#include "LI_endian_switch.h"
-#include "LI_ghash.h"
-#include "LI_hash.h"
-#include "LI_index_range.hh"
-#include "LI_linklist.h"
-#include "LI_listbase.h"
-#include "LI_math.h"
-#include "LI_math_vector.hh"
-#include "LI_memarena.h"
-#include "LI_string.h"
-#include "LI_task.hh"
-#include "LI_utildefines.h"
+#include "LIB_bitmap.h"
+#include "LIB_edgehash.h"
+#include "LIB_endian_switch.h"
+#include "LIB_ghash.h"
+#include "LIB_hash.h"
+#include "LIB_index_range.hh"
+#include "LIB_linklist.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_math_vector.hh"
+#include "LIB_memarena.h"
+#include "LIB_string.h"
+#include "LIB_task.hh"
+#include "LIB_utildefines.h"
 
 #include "TRANSLATION_translation.h"
 
@@ -59,7 +59,7 @@ static void mesh_init_data(ID *id)
 {
   Mesh *mesh = (Mesh *)id;
 
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(mesh, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(mesh, id));
 
   MEMCPY_STRUCT_AFTER(mesh, DNA_struct_default_get(Mesh), id);
 
@@ -69,13 +69,13 @@ static void mesh_init_data(ID *id)
   CustomData_reset(&mesh->pdata);
   CustomData_reset(&mesh->ldata);
 
-  BKE_mesh_runtime_init_data(mesh);
+  KERNEL_mesh_runtime_init_data(mesh);
 
   /* A newly created mesh does not have normals, so tag them dirty. This will be cleared
-   * by #BKE_mesh_vertex_normals_clear_dirty or #BKE_mesh_poly_normals_ensure. */
-  BKE_mesh_normals_tag_dirty(mesh);
+   * by #KERNEL_mesh_vertex_normals_clear_dirty or #KERNEL_mesh_poly_normals_ensure. */
+  KERNEL_mesh_normals_tag_dirty(mesh);
 
-  mesh->face_sets_color_seed = BLI_hash_int(PIL_check_seconds_timer_i() & UINT_MAX);
+  mesh->face_sets_color_seed = LIB_hash_int(PIL_check_seconds_timer_i() & UINT_MAX);
 }
 
 static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int flag)
@@ -83,7 +83,7 @@ static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int 
   Mesh *mesh_dst = (Mesh *)id_dst;
   const Mesh *mesh_src = (const Mesh *)id_src;
 
-  BKE_mesh_runtime_reset_on_copy(mesh_dst, flag);
+  KERNEL_mesh_runtime_reset_on_copy(mesh_dst, flag);
   if ((mesh_src->id.tag & LIB_TAG_NO_MAIN) == 0) {
     /* This is a direct copy of a main mesh, so for now it has the same topology. */
     mesh_dst->runtime.deformed_only = true;
@@ -111,7 +111,7 @@ static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int 
 
   mesh_dst->mat = (Material **)MEM_dupallocN(mesh_src->mat);
 
-  BKE_defgroup_copy_list(&mesh_dst->vertex_group_names, &mesh_src->vertex_group_names);
+  KERNEL_defgroup_copy_list(&mesh_dst->vertex_group_names, &mesh_src->vertex_group_names);
 
   const eCDAllocType alloc_type = (flag & LIB_ID_COPY_CD_REFERENCE) ? CD_REFERENCE : CD_DUPLICATE;
   CustomData_copy(&mesh_src->vdata, &mesh_dst->vdata, mask.vmask, alloc_type, mesh_dst->totvert);
@@ -125,7 +125,7 @@ static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int 
     mesh_tessface_clear_intern(mesh_dst, false);
   }
 
-  BKE_mesh_update_customdata_pointers(mesh_dst, do_tessface);
+  KERNEL_mesh_update_customdata_pointers(mesh_dst, do_tessface);
 
   mesh_dst->cd_flag = mesh_src->cd_flag;
 
@@ -138,26 +138,26 @@ static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int 
    * avoiding recomputation in some cases. However, a copied mesh is often changed anyway, so that
    * idea is not clearly better. With proper reference counting, all custom data layers could be
    * copied as the cost would be much lower. */
-  BKE_mesh_normals_tag_dirty(mesh_dst);
+  KERNEL_mesh_normals_tag_dirty(mesh_dst);
 
   /* TODO: Do we want to add flag to prevent this? */
   if (mesh_src->key && (flag & LIB_ID_COPY_SHAPEKEY)) {
-    BKE_id_copy_ex(bmain, &mesh_src->key->id, (ID **)&mesh_dst->key, flag);
+    KERNEL_id_copy_ex(bmain, &mesh_src->key->id, (ID **)&mesh_dst->key, flag);
     /* XXX This is not nice, we need to make BKE_id_copy_ex fully re-entrant... */
     mesh_dst->key->from = &mesh_dst->id;
   }
 
-  BKE_mesh_assert_normals_dirty_or_calculated(mesh_dst);
+  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh_dst);
 }
 
-void BKE_mesh_free_editmesh(struct Mesh *mesh)
+void KERNEL_mesh_free_editmesh(struct Mesh *mesh)
 {
   if (mesh->edit_mesh == nullptr) {
     return;
   }
 
   if (mesh->edit_mesh->is_shallow_copy == false) {
-    BKE_editmesh_free_data(mesh->edit_mesh);
+    KERNEL_editmesh_free_data(mesh->edit_mesh);
   }
   MEM_freeN(mesh->edit_mesh);
   mesh->edit_mesh = nullptr;
@@ -167,11 +167,11 @@ static void mesh_free_data(ID *id)
 {
   Mesh *mesh = (Mesh *)id;
 
-  BLI_freelistN(&mesh->vertex_group_names);
+  LIB_freelistN(&mesh->vertex_group_names);
 
-  BKE_mesh_free_editmesh(mesh);
+  KERNEL_mesh_free_editmesh(mesh);
 
-  BKE_mesh_runtime_free_data(mesh);
+  KERNEL_mesh_runtime_free_data(mesh);
   mesh_clear_geometry(mesh);
   MEM_SAFE_FREE(mesh->mat);
 }
@@ -179,10 +179,10 @@ static void mesh_free_data(ID *id)
 static void mesh_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   Mesh *mesh = (Mesh *)id;
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->texcomesh, IDWALK_CB_NEVER_SELF);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->key, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->texcomesh, IDWALK_CB_NEVER_SELF);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->key, IDWALK_CB_USER);
   for (int i = 0; i < mesh->totcol; i++) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->mat[i], IDWALK_CB_USER);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->mat[i], IDWALK_CB_USER);
   }
 }
 
@@ -190,14 +190,14 @@ static void mesh_foreach_path(ID *id, BPathForeachPathData *bpath_data)
 {
   Mesh *me = (Mesh *)id;
   if (me->ldata.external) {
-    BKE_bpath_foreach_path_fixed_process(bpath_data, me->ldata.external->filename);
+    KERNEL_bpath_foreach_path_fixed_process(bpath_data, me->ldata.external->filename);
   }
 }
 
-static void mesh_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void mesh_blend_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Mesh *mesh = (Mesh *)id;
-  const bool is_undo = BLO_write_is_undo(writer);
+  const bool is_undo = LOADER_write_is_undo(writer);
 
   CustomDataLayer *vlayers = nullptr, vlayers_buff[CD_TEMP_CHUNK_SIZE];
   CustomDataLayer *elayers = nullptr, elayers_buff[CD_TEMP_CHUNK_SIZE];
@@ -241,12 +241,12 @@ static void mesh_blend_write(BlendWriter *writer, ID *id, const void *id_address
     CustomData_blend_write_prepare(&mesh->pdata, &players, players_buff, ARRAY_SIZE(players_buff));
   }
 
-  BLO_write_id_struct(writer, Mesh, id_address, &mesh->id);
-  BKE_id_blend_write(writer, &mesh->id);
+  LOADER_write_id_struct(writer, Mesh, id_address, &mesh->id);
+  KERNEL_id_dune_write(writer, &mesh->id);
 
   /* direct data */
   if (mesh->adt) {
-    BKE_animdata_blend_write(writer, mesh->adt);
+    KERNEL_animdata_dune_write(writer, mesh->adt);
   }
 
   BKE_defbase_blend_write(writer, &mesh->vertex_group_names);
