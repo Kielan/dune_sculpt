@@ -287,86 +287,86 @@ static void mesh_blend_write(DuneWriter *writer, ID *id, const void *id_address)
 static void mesh_blend_read_data(BlendDataReader *reader, ID *id)
 {
   Mesh *mesh = (Mesh *)id;
-  BLO_read_pointer_array(reader, (void **)&mesh->mat);
+  LOADER_read_pointer_array(reader, (void **)&mesh->mat);
 
-  BLO_read_data_address(reader, &mesh->mvert);
-  BLO_read_data_address(reader, &mesh->medge);
-  BLO_read_data_address(reader, &mesh->mface);
-  BLO_read_data_address(reader, &mesh->mloop);
-  BLO_read_data_address(reader, &mesh->mpoly);
-  BLO_read_data_address(reader, &mesh->tface);
-  BLO_read_data_address(reader, &mesh->mtface);
-  BLO_read_data_address(reader, &mesh->mcol);
-  BLO_read_data_address(reader, &mesh->dvert);
-  BLO_read_data_address(reader, &mesh->mloopcol);
-  BLO_read_data_address(reader, &mesh->mloopuv);
-  BLO_read_data_address(reader, &mesh->mselect);
+  LOADER_read_data_address(reader, &mesh->mvert);
+  LOADER_read_data_address(reader, &mesh->medge);
+  LOADER_read_data_address(reader, &mesh->mface);
+  LOADER_read_data_address(reader, &mesh->mloop);
+  LOADER_read_data_address(reader, &mesh->mpoly);
+  LOADER_read_data_address(reader, &mesh->tface);
+  LOADER_read_data_address(reader, &mesh->mtface);
+  LOADER_read_data_address(reader, &mesh->mcol);
+  LOADER_read_data_address(reader, &mesh->dvert);
+  LOADER_read_data_address(reader, &mesh->mloopcol);
+  LOADER_read_data_address(reader, &mesh->mloopuv);
+  LOADER_read_data_address(reader, &mesh->mselect);
 
   /* animdata */
-  BLO_read_data_address(reader, &mesh->adt);
-  BKE_animdata_blend_read_data(reader, mesh->adt);
+  LOADER_read_data_address(reader, &mesh->adt);
+  KERNEL_animdata_dune_read_data(reader, mesh->adt);
 
-  /* Normally BKE_defvert_blend_read should be called in CustomData_blend_read,
+  /* Normally KERNEL_defvert_blend_read should be called in CustomData_blend_read,
    * but for backwards compatibility in do_versions to work we do it here. */
-  BKE_defvert_blend_read(reader, mesh->totvert, mesh->dvert);
-  BLO_read_list(reader, &mesh->vertex_group_names);
+  KERNEL_defvert_blend_read(reader, mesh->totvert, mesh->dvert);
+  LOADER_read_list(reader, &mesh->vertex_group_names);
 
-  CustomData_blend_read(reader, &mesh->vdata, mesh->totvert);
-  CustomData_blend_read(reader, &mesh->edata, mesh->totedge);
-  CustomData_blend_read(reader, &mesh->fdata, mesh->totface);
-  CustomData_blend_read(reader, &mesh->ldata, mesh->totloop);
-  CustomData_blend_read(reader, &mesh->pdata, mesh->totpoly);
+  CustomData_dune_read(reader, &mesh->vdata, mesh->totvert);
+  CustomData_dune_read(reader, &mesh->edata, mesh->totedge);
+  CustomData_dune_read(reader, &mesh->fdata, mesh->totface);
+  CustomData_dune_read(reader, &mesh->ldata, mesh->totloop);
+  CustomData_dune_read(reader, &mesh->pdata, mesh->totpoly);
 
   mesh->texflag &= ~ME_AUTOSPACE_EVALUATED;
   mesh->edit_mesh = nullptr;
 
   memset(&mesh->runtime, 0, sizeof(mesh->runtime));
-  BKE_mesh_runtime_init_data(mesh);
+  KERNEL_mesh_runtime_init_data(mesh);
 
   /* happens with old files */
   if (mesh->mselect == nullptr) {
     mesh->totselect = 0;
   }
 
-  if (BLO_read_requires_endian_switch(reader) && mesh->tface) {
+  if (LOADER_read_requires_endian_switch(reader) && mesh->tface) {
     TFace *tf = mesh->tface;
     for (int i = 0; i < mesh->totface; i++, tf++) {
-      BLI_endian_switch_uint32_array(tf->col, 4);
+      LIB_endian_switch_uint32_array(tf->col, 4);
     }
   }
 
   /* We don't expect to load normals from files, since they are derived data. */
-  BKE_mesh_normals_tag_dirty(mesh);
-  BKE_mesh_assert_normals_dirty_or_calculated(mesh);
+  KERNEL_mesh_normals_tag_dirty(mesh);
+  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh);
 }
 
-static void mesh_blend_read_lib(BlendLibReader *reader, ID *id)
+static void mesh_dune_read_lib(DuneLibReader *reader, ID *id)
 {
   Mesh *me = (Mesh *)id;
   /* this check added for python created meshes */
   if (me->mat) {
     for (int i = 0; i < me->totcol; i++) {
-      BLO_read_id_address(reader, me->id.lib, &me->mat[i]);
+      LOADER_read_id_address(reader, me->id.lib, &me->mat[i]);
     }
   }
   else {
     me->totcol = 0;
   }
 
-  BLO_read_id_address(reader, me->id.lib, &me->ipo);  // XXX: deprecated: old anim sys
-  BLO_read_id_address(reader, me->id.lib, &me->key);
-  BLO_read_id_address(reader, me->id.lib, &me->texcomesh);
+  LOADER_read_id_address(reader, me->id.lib, &me->ipo);  // XXX: deprecated: old anim sys
+  LOADER_read_id_address(reader, me->id.lib, &me->key);
+  LOADER_read_id_address(reader, me->id.lib, &me->texcomesh);
 }
 
-static void mesh_read_expand(BlendExpander *expander, ID *id)
+static void mesh_read_expand(DuneExpander *expander, ID *id)
 {
   Mesh *me = (Mesh *)id;
   for (int a = 0; a < me->totcol; a++) {
-    BLO_expand(expander, me->mat[a]);
+    LOADER_expand(expander, me->mat[a]);
   }
 
-  BLO_expand(expander, me->key);
-  BLO_expand(expander, me->texcomesh);
+  LOADER_expand(expander, me->key);
+  LOADER_expand(expander, me->texcomesh);
 }
 
 IDTypeInfo IDType_ID_ME = {
@@ -389,12 +389,12 @@ IDTypeInfo IDType_ID_ME = {
     /* foreach_path */ mesh_foreach_path,
     /* owner_get */ nullptr,
 
-    /* blend_write */ mesh_blend_write,
-    /* blend_read_data */ mesh_blend_read_data,
-    /* blend_read_lib */ mesh_blend_read_lib,
-    /* blend_read_expand */ mesh_read_expand,
+    /* dune_write */ mesh_blend_write,
+    /* dune_read_data */ mesh_blend_read_data,
+    /* dune_read_lib */ mesh_blend_read_lib,
+    /* dune_read_expand */ mesh_read_expand,
 
-    /* blend_read_undo_preserve */ nullptr,
+    /* dune_read_undo_preserve */ nullptr,
 
     /* lib_override_apply_post */ nullptr,
 };
@@ -510,18 +510,18 @@ static int customdata_compare(
           MEdge *e1 = (MEdge *)l1->data;
           MEdge *e2 = (MEdge *)l2->data;
           int etot = m1->totedge;
-          EdgeHash *eh = BLI_edgehash_new_ex(__func__, etot);
+          EdgeHash *eh = LIB_edgehash_new_ex(__func__, etot);
 
           for (j = 0; j < etot; j++, e1++) {
-            BLI_edgehash_insert(eh, e1->v1, e1->v2, e1);
+            LIB_edgehash_insert(eh, e1->v1, e1->v2, e1);
           }
 
           for (j = 0; j < etot; j++, e2++) {
-            if (!BLI_edgehash_lookup(eh, e2->v1, e2->v2)) {
+            if (!LIB_edgehash_lookup(eh, e2->v1, e2->v2)) {
               return MESHCMP_EDGEUNKNOWN;
             }
           }
-          BLI_edgehash_free(eh, nullptr);
+          LIB_edgehash_free(eh, nullptr);
           break;
         }
         case CD_MPOLY: {
@@ -706,7 +706,7 @@ static int customdata_compare(
   return 0;
 }
 
-const char *BKE_mesh_cmp(Mesh *me1, Mesh *me2, float thresh)
+const char *KERNEL_mesh_cmp(Mesh *me1, Mesh *me2, float thresh)
 {
   int c;
 
@@ -765,7 +765,7 @@ static void mesh_ensure_tessellation_customdata(Mesh *me)
     const int totcol_tessface = CustomData_number_of_layers(&me->fdata, CD_MCOL);
 
     if (tottex_tessface != tottex_original || totcol_tessface != totcol_original) {
-      BKE_mesh_tessface_clear(me);
+      KERNEL_mesh_tessface_clear(me);
 
       CustomData_from_bmeshpoly(&me->fdata, &me->ldata, me->totface);
 
@@ -789,7 +789,7 @@ static void mesh_ensure_tessellation_customdata(Mesh *me)
   }
 }
 
-void BKE_mesh_ensure_skin_customdata(Mesh *me)
+void KERNEL_mesh_ensure_skin_customdata(Mesh *me)
 {
   BMesh *bm = me->edit_mesh ? me->edit_mesh->bm : nullptr;
   MVertSkin *vs;
@@ -822,7 +822,7 @@ void BKE_mesh_ensure_skin_customdata(Mesh *me)
   }
 }
 
-bool BKE_mesh_ensure_facemap_customdata(struct Mesh *me)
+bool KERNEL_mesh_ensure_facemap_customdata(struct Mesh *me)
 {
   BMesh *bm = me->edit_mesh ? me->edit_mesh->bm : nullptr;
   bool changed = false;
@@ -841,7 +841,7 @@ bool BKE_mesh_ensure_facemap_customdata(struct Mesh *me)
   return changed;
 }
 
-bool BKE_mesh_clear_facemap_customdata(struct Mesh *me)
+bool KERNEL_mesh_clear_facemap_customdata(struct Mesh *me)
 {
   BMesh *bm = me->edit_mesh ? me->edit_mesh->bm : nullptr;
   bool changed = false;
@@ -877,7 +877,7 @@ static void mesh_update_linked_customdata(Mesh *me, const bool do_ensure_tess_cd
   CustomData_bmesh_update_active_layers(&me->fdata, &me->ldata);
 }
 
-void BKE_mesh_update_customdata_pointers(Mesh *me, const bool do_ensure_tess_cd)
+void KERNEL_mesh_update_customdata_pointers(Mesh *me, const bool do_ensure_tess_cd)
 {
   mesh_update_linked_customdata(me, do_ensure_tess_cd);
 
@@ -897,7 +897,7 @@ void BKE_mesh_update_customdata_pointers(Mesh *me, const bool do_ensure_tess_cd)
   me->mloopuv = (MLoopUV *)CustomData_get_layer(&me->ldata, CD_MLOOPUV);
 }
 
-bool BKE_mesh_has_custom_loop_normals(Mesh *me)
+bool KERNEL_mesh_has_custom_loop_normals(Mesh *me)
 {
   if (me->edit_mesh) {
     return CustomData_has_layer(&me->edit_mesh->bm->ldata, CD_CUSTOMLOOPNORMAL);
@@ -906,13 +906,13 @@ bool BKE_mesh_has_custom_loop_normals(Mesh *me)
   return CustomData_has_layer(&me->ldata, CD_CUSTOMLOOPNORMAL);
 }
 
-void BKE_mesh_free_data_for_undo(Mesh *me)
+void KERNEL_mesh_free_data_for_undo(Mesh *me)
 {
   mesh_free_data(&me->id);
 }
 
 /**
- * \note on data that this function intentionally doesn't free:
+ * note on data that this function intentionally doesn't free:
  *
  * - Materials and shape keys are not freed here (#Mesh.mat & #Mesh.key).
  *   As freeing shape keys requires tagging the depsgraph for updated relations,
@@ -941,13 +941,13 @@ static void mesh_clear_geometry(Mesh *mesh)
   mesh->act_face = -1;
   mesh->totselect = 0;
 
-  BKE_mesh_update_customdata_pointers(mesh, false);
+  KERNEL_mesh_update_customdata_pointers(mesh, false);
 }
 
-void BKE_mesh_clear_geometry(Mesh *mesh)
+void KERNEL_mesh_clear_geometry(Mesh *mesh)
 {
-  BKE_animdata_free(&mesh->id, false);
-  BKE_mesh_runtime_clear_cache(mesh);
+  KERNEL_animdata_free(&mesh->id, false);
+  KERNEL_mesh_runtime_clear_cache(mesh);
   mesh_clear_geometry(mesh);
 }
 
@@ -966,9 +966,9 @@ static void mesh_tessface_clear_intern(Mesh *mesh, int free_customdata)
   mesh->totface = 0;
 }
 
-Mesh *BKE_mesh_add(Main *bmain, const char *name)
+Mesh *KERNEL_mesh_add(Main *bmain, const char *name)
 {
-  Mesh *me = (Mesh *)BKE_id_new(bmain, ID_ME, name);
+  Mesh *me = (Mesh *)KERNEL_id_new(bmain, ID_ME, name);
 
   return me;
 }
@@ -994,12 +994,12 @@ static void mesh_ensure_cdlayers_primary(Mesh *mesh, bool do_tessface)
   }
 }
 
-Mesh *BKE_mesh_new_nomain(
+Mesh *KERNEL_mesh_new_nomain(
     int verts_len, int edges_len, int tessface_len, int loops_len, int polys_len)
 {
-  Mesh *mesh = (Mesh *)BKE_libblock_alloc(
-      nullptr, ID_ME, BKE_idtype_idcode_to_name(ID_ME), LIB_ID_CREATE_LOCALIZE);
-  BKE_libblock_init_empty(&mesh->id);
+  Mesh *mesh = (Mesh *)KERNEL_libblock_alloc(
+      nullptr, ID_ME, KERNEL_idtype_idcode_to_name(ID_ME), LIB_ID_CREATE_LOCALIZE);
+  KERNEL_libblock_init_empty(&mesh->id);
 
   /* Don't use #CustomData_reset because we don't want to touch custom-data. */
   copy_vn_i(mesh->vdata.typemap, CD_NUMTYPES, -1);
@@ -1020,7 +1020,7 @@ Mesh *BKE_mesh_new_nomain(
   return mesh;
 }
 
-void BKE_mesh_copy_parameters(Mesh *me_dst, const Mesh *me_src)
+void KERNEL_mesh_copy_parameters(Mesh *me_dst, const Mesh *me_src)
 {
   /* Copy general settings. */
   me_dst->editflag = me_src->editflag;
@@ -1042,18 +1042,18 @@ void BKE_mesh_copy_parameters(Mesh *me_dst, const Mesh *me_src)
   me_dst->vertex_group_active_index = me_src->vertex_group_active_index;
 }
 
-void BKE_mesh_copy_parameters_for_eval(Mesh *me_dst, const Mesh *me_src)
+void KERNEL_mesh_copy_parameters_for_eval(Mesh *me_dst, const Mesh *me_src)
 {
   /* User counts aren't handled, don't copy into a mesh from #G_MAIN. */
-  BLI_assert(me_dst->id.tag & (LIB_TAG_NO_MAIN | LIB_TAG_COPIED_ON_WRITE));
+  LIB_assert(me_dst->id.tag & (LIB_TAG_NO_MAIN | LIB_TAG_COPIED_ON_WRITE));
 
-  BKE_mesh_copy_parameters(me_dst, me_src);
+  KERNEL_mesh_copy_parameters(me_dst, me_src);
 
-  BKE_mesh_assert_normals_dirty_or_calculated(me_dst);
+  KERNEL_mesh_assert_normals_dirty_or_calculated(me_dst);
 
   /* Copy vertex group names. */
-  BLI_assert(BLI_listbase_is_empty(&me_dst->vertex_group_names));
-  BKE_defgroup_copy_list(&me_dst->vertex_group_names, &me_src->vertex_group_names);
+  LIB_assert(LIB_listbase_is_empty(&me_dst->vertex_group_names));
+  KERNEL_defgroup_copy_list(&me_dst->vertex_group_names, &me_src->vertex_group_names);
 
   /* Copy materials. */
   if (me_dst->mat != nullptr) {
@@ -1063,7 +1063,7 @@ void BKE_mesh_copy_parameters_for_eval(Mesh *me_dst, const Mesh *me_src)
   me_dst->totcol = me_src->totcol;
 }
 
-Mesh *BKE_mesh_new_nomain_from_template_ex(const Mesh *me_src,
+Mesh *KERNEL_mesh_new_nomain_from_template_ex(const Mesh *me_src,
                                            int verts_len,
                                            int edges_len,
                                            int tessface_len,
@@ -1085,7 +1085,7 @@ Mesh *BKE_mesh_new_nomain_from_template_ex(const Mesh *me_src,
   me_dst->totpoly = polys_len;
 
   me_dst->cd_flag = me_src->cd_flag;
-  BKE_mesh_copy_parameters_for_eval(me_dst, me_src);
+  KERNEL_mesh_copy_parameters_for_eval(me_dst, me_src);
 
   CustomData_copy(&me_src->vdata, &me_dst->vdata, mask.vmask, CD_CALLOC, verts_len);
   CustomData_copy(&me_src->edata, &me_dst->edata, mask.emask, CD_CALLOC, edges_len);
@@ -1101,7 +1101,7 @@ Mesh *BKE_mesh_new_nomain_from_template_ex(const Mesh *me_src,
   /* The destination mesh should at least have valid primary CD layers,
    * even in cases where the source mesh does not. */
   mesh_ensure_cdlayers_primary(me_dst, do_tessface);
-  BKE_mesh_update_customdata_pointers(me_dst, false);
+  KERNEL_mesh_update_customdata_pointers(me_dst, false);
 
   return me_dst;
 }
