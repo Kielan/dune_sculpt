@@ -486,7 +486,7 @@ static void freepolygonize(PROCESS *process)
     MEM_freeN(process->bvh_queue);
   }
   if (process->pgn_elements) {
-    BLI_memarena_free(process->pgn_elements);
+    LIB_memarena_free(process->pgn_elements);
   }
 }
 
@@ -719,7 +719,7 @@ static int nextcwedge(int edge, int face)
 }
 
 /**
- * \return the face adjoining edge that is not the given face
+ * return the face adjoining edge that is not the given face
  */
 static int otherface(int edge, int face)
 {
@@ -809,7 +809,7 @@ static void makecubetable(void)
   }
 }
 
-void BKE_mball_cubeTable_free(void)
+void KERNEL_mball_cubeTable_free(void)
 {
   for (int i = 0; i < 256; i++) {
     INTLISTS *lists = cubetable[i];
@@ -849,7 +849,7 @@ static int setcenter(PROCESS *process, CENTERLIST *table[], const int i, const i
     }
   }
 
-  newc = BLI_memarena_alloc(process->pgn_elements, sizeof(CENTERLIST));
+  newc = LIB_memarena_alloc(process->pgn_elements, sizeof(CENTERLIST));
   newc->i = i;
   newc->j = j;
   newc->k = k;
@@ -879,7 +879,7 @@ static void setedge(PROCESS *process, int i1, int j1, int k1, int i2, int j2, in
     k2 = t;
   }
   index = HASH(i1, j1, k1) + HASH(i2, j2, k2);
-  newe = BLI_memarena_alloc(process->pgn_elements, sizeof(EDGELIST));
+  newe = LIB_memarena_alloc(process->pgn_elements, sizeof(EDGELIST));
 
   newe->i1 = i1;
   newe->j1 = j1;
@@ -893,7 +893,7 @@ static void setedge(PROCESS *process, int i1, int j1, int k1, int i2, int j2, in
 }
 
 /**
- * \return vertex id for edge; return -1 if not set
+ * return vertex id for edge; return -1 if not set
  */
 static int getedge(EDGELIST *table[], int i1, int j1, int k1, int i2, int j2, int k2)
 {
@@ -940,7 +940,7 @@ static void addtovertices(PROCESS *process, const float v[3], const float no[3])
 /**
  * Computes normal from density field at given point.
  *
- * \note Doesn't do normalization!
+ * note Doesn't do normalization!
  */
 static void vnormal(PROCESS *process, const float point[3], float r_no[3])
 {
@@ -954,7 +954,7 @@ static void vnormal(PROCESS *process, const float point[3], float r_no[3])
 #endif /* USE_ACCUM_NORMAL */
 
 /**
- * \return the id of vertex between two corners.
+ * return the id of vertex between two corners.
  *
  * If it wasn't previously computed, does #converge() and adds vertex to process.
  */
@@ -1033,7 +1033,7 @@ static void add_cube(PROCESS *process, int i, int j, int k)
   /* test if cube has been found before */
   if (setcenter(process, process->centers, i, j, k) == 0) {
     /* push cube on stack: */
-    ncube = BLI_memarena_alloc(process->pgn_elements, sizeof(CUBES));
+    ncube = LIB_memarena_alloc(process->pgn_elements, sizeof(CUBES));
     ncube->next = process->cubes;
     process->cubes = ncube;
 
@@ -1170,11 +1170,11 @@ static void init_meta(Depsgraph *depsgraph, PROCESS *process, Scene *scene, Obje
   copy_m4_m4(obmat, ob->obmat); /* to cope with duplicators from BKE_scene_base_iter_next */
   invert_m4_m4(obinv, ob->obmat);
 
-  BLI_split_name_num(obname, &obnr, ob->id.name + 2, '.');
+  LIB_split_name_num(obname, &obnr, ob->id.name + 2, '.');
 
   /* make main array */
-  BKE_scene_base_iter_next(depsgraph, &iter, &sce_iter, 0, NULL, NULL);
-  while (BKE_scene_base_iter_next(depsgraph, &iter, &sce_iter, 1, &base, &bob)) {
+  KERNEL_scene_base_iter_next(depsgraph, &iter, &sce_iter, 0, NULL, NULL);
+  while (KERNEL_scene_base_iter_next(depsgraph, &iter, &sce_iter, 1, &base, &bob)) {
     if (bob->type == OB_MBALL) {
       zero_size = 0;
       ml = NULL;
@@ -1183,7 +1183,7 @@ static void init_meta(Depsgraph *depsgraph, PROCESS *process, Scene *scene, Obje
        * the instancer is visible too. */
       if ((base->flag_legacy & OB_FROMDUPLI) == 0 && ob->parent != NULL &&
           (ob->parent->transflag & parenting_dupli_transflag) != 0 &&
-          (BKE_object_visibility(ob->parent, deg_eval_mode) & OB_VISIBLE_SELF) == 0) {
+          (KERNEL_object_visibility(ob->parent, deg_eval_mode) & OB_VISIBLE_SELF) == 0) {
         continue;
       }
 
@@ -1201,7 +1201,7 @@ static void init_meta(Depsgraph *depsgraph, PROCESS *process, Scene *scene, Obje
         char name[MAX_ID_NAME];
         int nr;
 
-        BLI_split_name_num(name, &nr, bob->id.name + 2, '.');
+        LIB_split_name_num(name, &nr, bob->id.name + 2, '.');
         if (STREQ(obname, name)) {
           mb = bob->data;
 
@@ -1245,11 +1245,11 @@ static void init_meta(Depsgraph *depsgraph, PROCESS *process, Scene *scene, Obje
             MetaElem *new_ml;
 
             /* make a copy because of duplicates */
-            new_ml = BLI_memarena_alloc(process->pgn_elements, sizeof(MetaElem));
+            new_ml = LIB_memarena_alloc(process->pgn_elements, sizeof(MetaElem));
             *(new_ml) = *ml;
-            new_ml->bb = BLI_memarena_alloc(process->pgn_elements, sizeof(BoundBox));
-            new_ml->mat = BLI_memarena_alloc(process->pgn_elements, sizeof(float[4][4]));
-            new_ml->imat = BLI_memarena_alloc(process->pgn_elements, sizeof(float[4][4]));
+            new_ml->bb = LIB_memarena_alloc(process->pgn_elements, sizeof(BoundBox));
+            new_ml->mat = LIB_memarena_alloc(process->pgn_elements, sizeof(float[4][4]));
+            new_ml->imat = LIB_memarena_alloc(process->pgn_elements, sizeof(float[4][4]));
 
             /* too big stiffness seems only ugly due to linear interpolation
              * no need to have possibility for too big stiffness */
@@ -1363,7 +1363,7 @@ static void init_meta(Depsgraph *depsgraph, PROCESS *process, Scene *scene, Obje
   }
 }
 
-void BKE_mball_polygonize(Depsgraph *depsgraph, Scene *scene, Object *ob, ListBase *dispbase)
+void KERNEL_mball_polygonize(Depsgraph *depsgraph, Scene *scene, Object *ob, ListBase *dispbase)
 {
   MetaBall *mb;
   DispList *dl;
@@ -1407,7 +1407,7 @@ void BKE_mball_polygonize(Depsgraph *depsgraph, Scene *scene, Object *ob, ListBa
 
   process.delta = process.size * 0.001f;
 
-  process.pgn_elements = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, "Metaball memarena");
+  process.pgn_elements = LIB_memarena_new(LIB_MEMARENA_STD_BUFSIZE, "Metaball memarena");
 
   /* initialize all mainb (MetaElems) */
   init_meta(depsgraph, &process, scene, ob);
@@ -1436,7 +1436,7 @@ void BKE_mball_polygonize(Depsgraph *depsgraph, Scene *scene, Object *ob, ListBa
         }
 
         dl = MEM_callocN(sizeof(DispList), "mballdisp");
-        BLI_addtail(dispbase, dl);
+        LIB_addtail(dispbase, dl);
         dl->type = DL_INDEX4;
         dl->nr = (int)process.curvertex;
         dl->parts = (int)process.curindex;
