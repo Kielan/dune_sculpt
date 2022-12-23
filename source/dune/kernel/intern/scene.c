@@ -32,56 +32,56 @@
 #include "STRUCTS_world_types.h"
 
 #include "KERNEL_callbacks.h"
-#include "LI_blenlib.h"
-#include "LI_math.h"
-#include "LI_string.h"
-#include "LI_string_utils.h"
-#include "LI_task.h"
-#include "LI_threads.h"
-#include "LI_utildefines.h"
+#include "LIB_blenlib.h"
+#include "LIB_math.h"
+#include "LIB_string.h"
+#include "LIB_string_utils.h"
+#include "LIB_task.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
 #include "LOADER_readfile.h"
 
 #include "TRANSLATION_translation.h"
 
-#include "KE_action.h"
-#include "KE_anim_data.h"
-#include "KE_animsys.h"
-#include "KE_armature.h"
-#include "BKE_bpath.h"
-#include "BKE_cachefile.h"
-#include "BKE_collection.h"
-#include "BKE_colortools.h"
-#include "BKE_curveprofile.h"
-#include "BKE_duplilist.h"
-#include "BKE_editmesh.h"
-#include "BKE_effect.h"
-#include "BKE_fcurve.h"
-#include "BKE_freestyle.h"
-#include "BKE_gpencil.h"
-#include "BKE_icons.h"
-#include "BKE_idprop.h"
-#include "BKE_idtype.h"
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_linestyle.h"
-#include "BKE_main.h"
-#include "BKE_mask.h"
-#include "BKE_node.h"
-#include "BKE_object.h"
-#include "BKE_paint.h"
-#include "BKE_pointcache.h"
-#include "BKE_rigidbody.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_sound.h"
-#include "BKE_unit.h"
-#include "BKE_workspace.h"
-#include "BKE_world.h"
+#include "KERNEL_action.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_animsys.h"
+#include "KERNEL_armature.h"
+#include "KE_bpath.h"
+#include "KE_cachefile.h"
+#include "KE_collection.h"
+#include "KE_colortools.h"
+#include "KE_curveprofile.h"
+#include "KE_duplilist.h"
+#include "KE_editmesh.h"
+#include "KE_effect.h"
+#include "KE_fcurve.h"
+#include "KE_freestyle.h"
+#include "KE_gpencil.h"
+#include "KE_icons.h"
+#include "KE_idprop.h"
+#include "KE_idtype.h"
+#include "KE_image.h"
+#include "KE_image_format.h"
+#include "KE_layer.h"
+#include "KE_lib_id.h"
+#include "KE_lib_query.h"
+#include "KE_lib_remap.h"
+#include "KE_linestyle.h"
+#include "KE_main.h"
+#include "KE_mask.h"
+#include "KE_node.h"
+#include "KE_object.h"
+#include "KE_paint.h"
+#include "KE_pointcache.h"
+#include "KE_rigidbody.h"
+#include "KE_scene.h"
+#include "KE_screen.h"
+#include "KE_sound.h"
+#include "KE_unit.h"
+#include "KE_workspace.h"
+#include "KE_world.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
@@ -96,7 +96,7 @@
 #include "SEQ_iterator.h"
 #include "SEQ_sequencer.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #include "engines/eevee/eevee_lightcache.h"
 
@@ -114,16 +114,16 @@ static void scene_init_data(ID *id)
   SceneRenderView *srv;
   CurveMapping *mblur_shutter_curve;
 
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(scene, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(scene, id));
 
   MEMCPY_STRUCT_AFTER(scene, DNA_struct_default_get(Scene), id);
 
-  BLI_strncpy(scene->r.bake.filepath, U.renderdir, sizeof(scene->r.bake.filepath));
+  LIB_strncpy(scene->r.bake.filepath, U.renderdir, sizeof(scene->r.bake.filepath));
 
   mblur_shutter_curve = &scene->r.mblur_shutter_curve;
-  BKE_curvemapping_set_defaults(mblur_shutter_curve, 1, 0.0f, 0.0f, 1.0f, 1.0f);
-  BKE_curvemapping_init(mblur_shutter_curve);
-  BKE_curvemap_reset(mblur_shutter_curve->cm,
+  KERNEL_curvemapping_set_defaults(mblur_shutter_curve, 1, 0.0f, 0.0f, 1.0f, 1.0f);
+  KERNEL_curvemapping_init(mblur_shutter_curve);
+  KERNEL_curvemap_reset(mblur_shutter_curve->cm,
                      &mblur_shutter_curve->clipr,
                      CURVE_PRESET_MAX,
                      CURVEMAP_SLOPE_POS_NEG);
@@ -135,14 +135,14 @@ static void scene_init_data(ID *id)
   /* grease pencil multiframe falloff curve */
   scene->toolsettings->gp_sculpt.cur_falloff = BKE_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
   CurveMapping *gp_falloff_curve = scene->toolsettings->gp_sculpt.cur_falloff;
-  BKE_curvemapping_init(gp_falloff_curve);
-  BKE_curvemap_reset(
+  KERNEL_curvemapping_init(gp_falloff_curve);
+  KERNEL_curvemap_reset(
       gp_falloff_curve->cm, &gp_falloff_curve->clipr, CURVE_PRESET_GAUSS, CURVEMAP_SLOPE_POSITIVE);
 
   scene->toolsettings->gp_sculpt.cur_primitive = BKE_curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
   CurveMapping *gp_primitive_curve = scene->toolsettings->gp_sculpt.cur_primitive;
-  BKE_curvemapping_init(gp_primitive_curve);
-  BKE_curvemap_reset(gp_primitive_curve->cm,
+  KERNEL_curvemapping_init(gp_primitive_curve);
+  KERNEL_curvemap_reset(gp_primitive_curve->cm,
                      &gp_primitive_curve->clipr,
                      CURVE_PRESET_BELL,
                      CURVEMAP_SLOPE_POSITIVE);
@@ -167,15 +167,15 @@ static void scene_init_data(ID *id)
     pset->brush[PE_BRUSH_CUT].strength = 1.0f;
   }
 
-  BLI_strncpy(scene->r.engine, RE_engine_id_BLENDER_EEVEE, sizeof(scene->r.engine));
+  LIB_strncpy(scene->r.engine, RE_engine_id_BLENDER_EEVEE, sizeof(scene->r.engine));
 
-  BLI_strncpy(scene->r.pic, U.renderdir, sizeof(scene->r.pic));
+  LIB_strncpy(scene->r.pic, U.renderdir, sizeof(scene->r.pic));
 
   /* NOTE: in header_info.c the scene copy happens...,
    * if you add more to renderdata it has to be checked there. */
 
   /* multiview - stereo */
-  BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
+  KERNEL_scene_add_render_view(scene, STEREO_LEFT_NAME);
   srv = scene->r.views.first;
   BLI_strncpy(srv->suffix, STEREO_LEFT_SUFFIX, sizeof(srv->suffix));
 
@@ -1065,25 +1065,25 @@ static void scene_blend_write(BlendWriter *writer, ID *id, const void *id_addres
   BLI_assert(sce->layer_properties == NULL);
 }
 
-static void direct_link_paint_helper(BlendDataReader *reader, const Scene *scene, Paint **paint)
+static void direct_link_paint_helper(DuneDataReader *reader, const Scene *scene, Paint **paint)
 {
   /* TODO: is this needed. */
-  BLO_read_data_address(reader, paint);
+  LOADER_read_data_address(reader, paint);
 
   if (*paint) {
-    BKE_paint_blend_read_data(reader, scene, *paint);
+    KERNEL_paint_dune_read_data(reader, scene, *paint);
   }
 }
 
-static void link_recurs_seq(BlendDataReader *reader, ListBase *lb)
+static void link_recurs_seq(DuneDataReader *reader, ListBase *lb)
 {
-  BLO_read_list(reader, lb);
+  LOADER_read_list(reader, lb);
 
   LISTBASE_FOREACH_MUTABLE (Sequence *, seq, lb) {
     /* Sanity check. */
     if (!SEQ_valid_strip_channel(seq)) {
-      BLI_freelinkN(lb, seq);
-      BLO_read_data_reports(reader)->count.sequence_strips_skipped++;
+      LIB_freelinkN(lb, seq);
+      LOADER_read_data_reports(reader)->count.sequence_strips_skipped++;
     }
     else if (seq->seqbase.first) {
       link_recurs_seq(reader, &seq->seqbase);
@@ -1101,22 +1101,22 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
   memset(&sce->customdata_mask, 0, sizeof(sce->customdata_mask));
   memset(&sce->customdata_mask_modal, 0, sizeof(sce->customdata_mask_modal));
 
-  BKE_sound_reset_scene_runtime(sce);
+  KERNEL_sound_reset_scene_runtime(sce);
 
   /* set users to one by default, not in lib-link, this will increase it for compo nodes */
   id_us_ensure_real(&sce->id);
 
-  BLO_read_list(reader, &(sce->base));
+  LOADER_read_list(reader, &(sce->base));
 
-  BLO_read_data_address(reader, &sce->adt);
-  BKE_animdata_blend_read_data(reader, sce->adt);
+  LOADER_read_data_address(reader, &sce->adt);
+  KERNEL_animdata_dune_read_data(reader, sce->adt);
 
-  BLO_read_list(reader, &sce->keyingsets);
-  BKE_keyingsets_blend_read_data(reader, &sce->keyingsets);
+  LOADER_read_list(reader, &sce->keyingsets);
+  KERNEL_keyingsets_dune_read_data(reader, &sce->keyingsets);
 
-  BLO_read_data_address(reader, &sce->basact);
+  LOADER_read_data_address(reader, &sce->basact);
 
-  BLO_read_data_address(reader, &sce->toolsettings);
+  LOADER_read_data_address(reader, &sce->toolsettings);
   if (sce->toolsettings) {
 
     /* Reset last_location and last_hit, so they are not remembered across sessions. In some files
@@ -1135,7 +1135,7 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
     direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->gp_weightpaint);
     direct_link_paint_helper(reader, sce, (Paint **)&sce->toolsettings->curves_sculpt);
 
-    BKE_paint_blend_read_data(reader, sce, &sce->toolsettings->imapaint.paint);
+    KERNEL_paint_dune_read_data(reader, sce, &sce->toolsettings->imapaint.paint);
 
     sce->toolsettings->particle.paintcursor = NULL;
     sce->toolsettings->particle.scene = NULL;
