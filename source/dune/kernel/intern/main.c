@@ -329,7 +329,7 @@ void KERNEL_main_relations_tag_set(struct Main *bmain,
 GSet *KERNEL_main_gset_create(Main *bmain, GSet *gset)
 {
   if (gset == NULL) {
-    gset = LIB_gset_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, __func__);
+    gset = LIB_gset_new(LIB_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, __func__);
   }
 
   ID *id;
@@ -425,30 +425,30 @@ void KERNEL_main_library_weak_reference_add_item(GHash *library_weak_reference_m
                                               const char *library_id_name,
                                               ID *new_id)
 {
-  BLI_assert(GS(library_id_name) == GS(new_id->name));
-  BLI_assert(new_id->library_weak_reference == NULL);
-  BLI_assert(BKE_idtype_idcode_append_is_reusable(GS(new_id->name)));
+  LIB_assert(GS(library_id_name) == GS(new_id->name));
+  LIB_assert(new_id->library_weak_reference == NULL);
+  LIB_assert(KERNEL_idtype_idcode_append_is_reusable(GS(new_id->name)));
 
   new_id->library_weak_reference = MEM_mallocN(sizeof(*(new_id->library_weak_reference)),
                                                __func__);
 
   LibWeakRefKey *key = lib_weak_key_create(NULL, library_filepath, library_id_name);
   void **id_p;
-  const bool already_exist_in_mapping = BLI_ghash_ensure_p(
+  const bool already_exist_in_mapping = LIB_ghash_ensure_p(
       library_weak_reference_mapping, key, &id_p);
-  BLI_assert(!already_exist_in_mapping);
+  LIB_assert(!already_exist_in_mapping);
   UNUSED_VARS_NDEBUG(already_exist_in_mapping);
 
-  BLI_strncpy(new_id->library_weak_reference->library_filepath,
+  LIB_strncpy(new_id->library_weak_reference->library_filepath,
               library_filepath,
               sizeof(new_id->library_weak_reference->library_filepath));
-  BLI_strncpy(new_id->library_weak_reference->library_id_name,
+  LIB_strncpy(new_id->library_weak_reference->library_id_name,
               library_id_name,
               sizeof(new_id->library_weak_reference->library_id_name));
   *id_p = new_id;
 }
 
-void BKE_main_library_weak_reference_update_item(GHash *library_weak_reference_mapping,
+void KERNEL_main_library_weak_reference_update_item(GHash *library_weak_reference_mapping,
                                                  const char *library_filepath,
                                                  const char *library_id_name,
                                                  ID *old_id,
