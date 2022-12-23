@@ -7,27 +7,27 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_meta_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "STRUCTS_meta_types.h"
+#include "STRUCTS_object_types.h"
+#include "STRUCTS_scene_types.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_memarena.h"
+#include "LIB_string_utils.h"
+#include "LIB_utildefines.h"
 
 #include "BKE_global.h"
 
-#include "BKE_displist.h"
-#include "BKE_mball_tessellate.h" /* own include */
-#include "BKE_object.h"
-#include "BKE_scene.h"
+#include "KERNEL_displist.h"
+#include "KERNEL_mball_tessellate.h" /* own include */
+#include "KERNEL_object.h"
+#include "KERNEL_scene.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-#include "BLI_strict_flags.h"
+#include "LIB_strict_flags.h"
 
 /* experimental (faster) normal calculation */
 // #define USE_ACCUM_NORMAL
@@ -667,7 +667,7 @@ static CORNER *setcorner(PROCESS *process, int i, int j, int k)
     }
   }
 
-  c = BLI_memarena_alloc(process->pgn_elements, sizeof(CORNER));
+  c = LIB_memarena_alloc(process->pgn_elements, sizeof(CORNER));
 
   c->i = i;
   c->co[0] = ((float)i - 0.5f) * process->size;
