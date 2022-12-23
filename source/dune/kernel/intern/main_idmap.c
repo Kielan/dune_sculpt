@@ -8,7 +8,7 @@
 #include "LIB_mempool.h"
 #include "LIB_utildefines.h"
 
-#include "DNA_ID.h"
+#include "STRUCTS_ID.h"
 
 #include "KERNEL_idtype.h"
 #include "KERNEL_lib_id.h"
@@ -123,7 +123,7 @@ struct IDNameLib_Map *BKE_main_idmap_create(struct Main *bmain,
   return id_map;
 }
 
-void BKE_main_idmap_insert_id(struct IDNameLib_Map *id_map, ID *id)
+void KERNEL_main_idmap_insert_id(struct IDNameLib_Map *id_map, ID *id)
 {
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_NAME) {
     const short id_type = GS(id->name);
@@ -131,29 +131,29 @@ void BKE_main_idmap_insert_id(struct IDNameLib_Map *id_map, ID *id)
 
     /* No need to do anything if map has not been lazily created yet. */
     if (LIKELY(type_map != NULL) && type_map->map != NULL) {
-      BLI_assert(id_map->type_maps_keys_pool != NULL);
+      LIB_assert(id_map->type_maps_keys_pool != NULL);
 
-      struct IDNameLib_Key *key = BLI_mempool_alloc(id_map->type_maps_keys_pool);
+      struct IDNameLib_Key *key = LIB_mempool_alloc(id_map->type_maps_keys_pool);
       key->name = id->name + 2;
       key->lib = id->lib;
-      BLI_ghash_insert(type_map->map, key, id);
+      LIB_ghash_insert(type_map->map, key, id);
     }
   }
 
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_UUID) {
-    BLI_assert(id_map->uuid_map != NULL);
-    BLI_assert(id->session_uuid != MAIN_ID_SESSION_UUID_UNSET);
+    LIB_assert(id_map->uuid_map != NULL);
+    LIB_assert(id->session_uuid != MAIN_ID_SESSION_UUID_UNSET);
     void **id_ptr_v;
-    const bool existing_key = BLI_ghash_ensure_p(
+    const bool existing_key = LIB_ghash_ensure_p(
         id_map->uuid_map, POINTER_FROM_UINT(id->session_uuid), &id_ptr_v);
-    BLI_assert(existing_key == false);
+    LIB_assert(existing_key == false);
     UNUSED_VARS_NDEBUG(existing_key);
 
     *id_ptr_v = id;
   }
 }
 
-void BKE_main_idmap_remove_id(struct IDNameLib_Map *id_map, ID *id)
+void KERNEL_main_idmap_remove_id(struct IDNameLib_Map *id_map, ID *id)
 {
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_NAME) {
     const short id_type = GS(id->name);
@@ -161,23 +161,23 @@ void BKE_main_idmap_remove_id(struct IDNameLib_Map *id_map, ID *id)
 
     /* No need to do anything if map has not been lazily created yet. */
     if (LIKELY(type_map != NULL) && type_map->map != NULL) {
-      BLI_assert(id_map->type_maps_keys_pool != NULL);
+      LIB_assert(id_map->type_maps_keys_pool != NULL);
 
       /* NOTE: We cannot free the key from the MemPool here, would need new API from GHash to also
        * retrieve key pointer. Not a big deal for now */
-      BLI_ghash_remove(type_map->map, &(struct IDNameLib_Key){id->name + 2, id->lib}, NULL, NULL);
+      LIB_ghash_remove(type_map->map, &(struct IDNameLib_Key){id->name + 2, id->lib}, NULL, NULL);
     }
   }
 
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_UUID) {
-    BLI_assert(id_map->uuid_map != NULL);
-    BLI_assert(id->session_uuid != MAIN_ID_SESSION_UUID_UNSET);
+    LIB_assert(id_map->uuid_map != NULL);
+    LIB_assert(id->session_uuid != MAIN_ID_SESSION_UUID_UNSET);
 
-    BLI_ghash_remove(id_map->uuid_map, POINTER_FROM_UINT(id->session_uuid), NULL, NULL);
+    LIB_ghash_remove(id_map->uuid_map, POINTER_FROM_UINT(id->session_uuid), NULL, NULL);
   }
 }
 
-struct Main *BKE_main_idmap_main_get(struct IDNameLib_Map *id_map)
+struct Main *KERNEL_main_idmap_main_get(struct IDNameLib_Map *id_map)
 {
   return id_map->bmain;
 }
@@ -185,9 +185,9 @@ struct Main *BKE_main_idmap_main_get(struct IDNameLib_Map *id_map)
 static unsigned int idkey_hash(const void *ptr)
 {
   const struct IDNameLib_Key *idkey = ptr;
-  unsigned int key = BLI_ghashutil_strhash(idkey->name);
+  unsigned int key = LIB_ghashutil_strhash(idkey->name);
   if (idkey->lib) {
-    key ^= BLI_ghashutil_ptrhash(idkey->lib);
+    key ^= LIB_ghashutil_ptrhash(idkey->lib);
   }
   return key;
 }
@@ -199,7 +199,7 @@ static bool idkey_cmp(const void *a, const void *b)
   return !STREQ(idkey_a->name, idkey_b->name) || (idkey_a->lib != idkey_b->lib);
 }
 
-ID *BKE_main_idmap_lookup_name(struct IDNameLib_Map *id_map,
+ID *KERNEL_main_idmap_lookup_name(struct IDNameLib_Map *id_map,
                                short id_type,
                                const char *name,
                                const Library *lib)
@@ -213,25 +213,25 @@ ID *BKE_main_idmap_lookup_name(struct IDNameLib_Map *id_map,
   /* Lazy init. */
   if (type_map->map == NULL) {
     if (id_map->type_maps_keys_pool == NULL) {
-      id_map->type_maps_keys_pool = BLI_mempool_create(
-          sizeof(struct IDNameLib_Key), 1024, 1024, BLI_MEMPOOL_NOP);
+      id_map->type_maps_keys_pool = LIB_mempool_create(
+          sizeof(struct IDNameLib_Key), 1024, 1024, LIB_MEMPOOL_NOP);
     }
 
-    GHash *map = type_map->map = BLI_ghash_new(idkey_hash, idkey_cmp, __func__);
+    GHash *map = type_map->map = LIB_ghash_new(idkey_hash, idkey_cmp, __func__);
     ListBase *lb = which_libbase(id_map->bmain, id_type);
     for (ID *id = lb->first; id; id = id->next) {
       struct IDNameLib_Key *key = BLI_mempool_alloc(id_map->type_maps_keys_pool);
       key->name = id->name + 2;
       key->lib = id->lib;
-      BLI_ghash_insert(map, key, id);
+      LIB_ghash_insert(map, key, id);
     }
   }
 
   const struct IDNameLib_Key key_lookup = {name, lib};
-  return BLI_ghash_lookup(type_map->map, &key_lookup);
+  return LIB_ghash_lookup(type_map->map, &key_lookup);
 }
 
-ID *BKE_main_idmap_lookup_id(struct IDNameLib_Map *id_map, const ID *id)
+ID *KERNEL_main_idmap_lookup_id(struct IDNameLib_Map *id_map, const ID *id)
 {
   /* When used during undo/redo, this function cannot assume that given id points to valid memory
    * (i.e. has not been freed),
@@ -240,42 +240,42 @@ ID *BKE_main_idmap_lookup_id(struct IDNameLib_Map *id_map, const ID *id)
    * when trying to get ID name).
    */
   if (id_map->valid_id_pointers == NULL || BLI_gset_haskey(id_map->valid_id_pointers, id)) {
-    return BKE_main_idmap_lookup_name(id_map, GS(id->name), id->name + 2, id->lib);
+    return KERNEL_main_idmap_lookup_name(id_map, GS(id->name), id->name + 2, id->lib);
   }
   return NULL;
 }
 
-ID *BKE_main_idmap_lookup_uuid(struct IDNameLib_Map *id_map, const uint session_uuid)
+ID KERNEL_main_idmap_lookup_uuid(struct IDNameLib_Map *id_map, const uint session_uuid)
 {
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_UUID) {
-    return BLI_ghash_lookup(id_map->uuid_map, POINTER_FROM_UINT(session_uuid));
+    return LIB_ghash_lookup(id_map->uuid_map, POINTER_FROM_UINT(session_uuid));
   }
   return NULL;
 }
 
-void BKE_main_idmap_destroy(struct IDNameLib_Map *id_map)
+void KERNEL_main_idmap_destroy(struct IDNameLib_Map *id_map)
 {
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_NAME) {
     struct IDNameLib_TypeMap *type_map = id_map->type_maps;
     for (int i = 0; i < INDEX_ID_MAX; i++, type_map++) {
       if (type_map->map) {
-        BLI_ghash_free(type_map->map, NULL, NULL);
+        LIB_ghash_free(type_map->map, NULL, NULL);
         type_map->map = NULL;
       }
     }
     if (id_map->type_maps_keys_pool != NULL) {
-      BLI_mempool_destroy(id_map->type_maps_keys_pool);
+      LIB_mempool_destroy(id_map->type_maps_keys_pool);
       id_map->type_maps_keys_pool = NULL;
     }
   }
   if (id_map->idmap_types & MAIN_IDMAP_TYPE_UUID) {
-    BLI_ghash_free(id_map->uuid_map, NULL, NULL);
+    LIB_ghash_free(id_map->uuid_map, NULL, NULL);
   }
 
-  BLI_assert(id_map->type_maps_keys_pool == NULL);
+  LIB_assert(id_map->type_maps_keys_pool == NULL);
 
   if (id_map->valid_id_pointers != NULL) {
-    BLI_gset_free(id_map->valid_id_pointers, NULL);
+    LIB_gset_free(id_map->valid_id_pointers, NULL);
   }
 
   MEM_freeN(id_map);
