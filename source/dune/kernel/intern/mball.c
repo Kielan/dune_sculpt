@@ -124,17 +124,17 @@ static void metaball_dune_write(DuneWriter *writer, ID *id, const void *id_addre
   }
 }
 
-static void metaball_blend_read_data(BlendDataReader *reader, ID *id)
+static void metaball_dune_read_data(DuneDataReader *reader, ID *id)
 {
   MetaBall *mb = (MetaBall *)id;
-  BLO_read_data_address(reader, &mb->adt);
-  BKE_animdata_blend_read_data(reader, mb->adt);
+  LOADER_read_data_address(reader, &mb->adt);
+  KERNEL_animdata_dune_read_data(reader, mb->adt);
 
-  BLO_read_pointer_array(reader, (void **)&mb->mat);
+  LOADER_read_pointer_array(reader, (void **)&mb->mat);
 
-  BLO_read_list(reader, &(mb->elems));
+  LOADER_read_list(reader, &(mb->elems));
 
-  BLI_listbase_clear(&mb->disp);
+  LIB_listbase_clear(&mb->disp);
   mb->editelems = NULL;
   /* Must always be cleared (meta's don't have their own edit-data). */
   mb->needs_flush_to_id = 0;
@@ -143,21 +143,21 @@ static void metaball_blend_read_data(BlendDataReader *reader, ID *id)
   mb->batch_cache = NULL;
 }
 
-static void metaball_blend_read_lib(BlendLibReader *reader, ID *id)
+static void metaball_dune_read_lib(BlendLibReader *reader, ID *id)
 {
   MetaBall *mb = (MetaBall *)id;
   for (int a = 0; a < mb->totcol; a++) {
-    BLO_read_id_address(reader, mb->id.lib, &mb->mat[a]);
+    LOADER_read_id_address(reader, mb->id.lib, &mb->mat[a]);
   }
 
-  BLO_read_id_address(reader, mb->id.lib, &mb->ipo);  // XXX deprecated - old animation system
+  LOADER_read_id_address(reader, mb->id.lib, &mb->ipo);  // XXX deprecated - old animation system
 }
 
-static void metaball_blend_read_expand(BlendExpander *expander, ID *id)
+static void metaball_dune_read_expand(DuneExpander *expander, ID *id)
 {
   MetaBall *mb = (MetaBall *)id;
   for (int a = 0; a < mb->totcol; a++) {
-    BLO_expand(expander, mb->mat[a]);
+    LOADER_expand(expander, mb->mat[a]);
   }
 }
 
@@ -181,28 +181,28 @@ IDTypeInfo IDType_ID_MB = {
     .foreach_path = NULL,
     .owner_get = NULL,
 
-    .blend_write = metaball_blend_write,
-    .blend_read_data = metaball_blend_read_data,
-    .blend_read_lib = metaball_blend_read_lib,
-    .blend_read_expand = metaball_blend_read_expand,
+    .dune_write = metaball_dune_write,
+    .dune_read_data = metaball_dune_read_data,
+    .dune_read_lib = metaball_dune_read_lib,
+    .dune_read_expand = metaball_dune_read_expand,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
 /* Functions */
 
-MetaBall *BKE_mball_add(Main *bmain, const char *name)
+MetaBall *KERNEL_mball_add(Main *bmain, const char *name)
 {
   MetaBall *mb;
 
-  mb = BKE_id_new(bmain, ID_MB, name);
+  mb = KERNEL_id_new(bmain, ID_MB, name);
 
   return mb;
 }
 
-MetaElem *BKE_mball_element_add(MetaBall *mb, const int type)
+MetaElem *KERNEL_mball_element_add(MetaBall *mb, const int type)
 {
   MetaElem *ml = MEM_callocN(sizeof(MetaElem), "metaelem");
 
@@ -244,11 +244,11 @@ MetaElem *BKE_mball_element_add(MetaBall *mb, const int type)
       break;
   }
 
-  BLI_addtail(&mb->elems, ml);
+  LIB_addtail(&mb->elems, ml);
 
   return ml;
 }
-void BKE_mball_texspace_calc(Object *ob)
+void KERNEL_mball_texspace_calc(Object *ob)
 {
   DispList *dl;
   BoundBox *bb;
@@ -286,14 +286,14 @@ void BKE_mball_texspace_calc(Object *ob)
     max[0] = max[1] = max[2] = 1.0f;
   }
 
-  BKE_boundbox_init_from_minmax(bb, min, max);
+  KERNEL_boundbox_init_from_minmax(bb, min, max);
 
   bb->flag &= ~BOUNDBOX_DIRTY;
 }
 
-BoundBox *BKE_mball_boundbox_get(Object *ob)
+BoundBox *KERNEL_mball_boundbox_get(Object *ob)
 {
-  BLI_assert(ob->type == OB_MBALL);
+  LIB_assert(ob->type == OB_MBALL);
 
   if (ob->runtime.bb != NULL && (ob->runtime.bb->flag & BOUNDBOX_DIRTY) == 0) {
     return ob->runtime.bb;
@@ -302,13 +302,13 @@ BoundBox *BKE_mball_boundbox_get(Object *ob)
   /* This should always only be called with evaluated objects,
    * but currently RNA is a problem here... */
   if (ob->runtime.curve_cache != NULL) {
-    BKE_mball_texspace_calc(ob);
+    KERNEL_mball_texspace_calc(ob);
   }
 
   return ob->runtime.bb;
 }
 
-float *BKE_mball_make_orco(Object *ob, ListBase *dispbase)
+float *KERNEL_mball_make_orco(Object *ob, ListBase *dispbase)
 {
   BoundBox *bb;
   DispList *dl;
@@ -343,7 +343,7 @@ float *BKE_mball_make_orco(Object *ob, ListBase *dispbase)
   return orcodata;
 }
 
-bool BKE_mball_is_basis(Object *ob)
+bool KERNEL_mball_is_basis(Object *ob)
 {
   /* Meta-Ball Basis Notes from Blender-2.5x
    * =======================================
@@ -366,7 +366,7 @@ bool BKE_mball_is_basis(Object *ob)
   return (!isdigit(ob->id.name[len - 1]));
 }
 
-bool BKE_mball_is_basis_for(Object *ob1, Object *ob2)
+bool KERNEL_mball_is_basis_for(Object *ob1, Object *ob2)
 {
   int basis1nr, basis2nr;
   char basis1name[MAX_ID_NAME], basis2name[MAX_ID_NAME];
@@ -376,17 +376,17 @@ bool BKE_mball_is_basis_for(Object *ob1, Object *ob2)
     return false;
   }
 
-  BLI_split_name_num(basis1name, &basis1nr, ob1->id.name + 2, '.');
-  BLI_split_name_num(basis2name, &basis2nr, ob2->id.name + 2, '.');
+  LIB_split_name_num(basis1name, &basis1nr, ob1->id.name + 2, '.');
+  LIB_split_name_num(basis2name, &basis2nr, ob2->id.name + 2, '.');
 
   if (STREQ(basis1name, basis2name)) {
-    return BKE_mball_is_basis(ob1);
+    return KERNEL_mball_is_basis(ob1);
   }
 
   return false;
 }
 
-bool BKE_mball_is_any_selected(const MetaBall *mb)
+bool KERNEL_mball_is_any_selected(const MetaBall *mb)
 {
   for (const MetaElem *ml = mb->editelems->first; ml != NULL; ml = ml->next) {
     if (ml->flag & SELECT) {
@@ -396,19 +396,19 @@ bool BKE_mball_is_any_selected(const MetaBall *mb)
   return false;
 }
 
-bool BKE_mball_is_any_selected_multi(Base **bases, int bases_len)
+bool KERNEL_mball_is_any_selected_multi(Base **bases, int bases_len)
 {
   for (uint base_index = 0; base_index < bases_len; base_index++) {
     Object *obedit = bases[base_index]->object;
     MetaBall *mb = (MetaBall *)obedit->data;
-    if (BKE_mball_is_any_selected(mb)) {
+    if (KERNEL_mball_is_any_selected(mb)) {
       return true;
     }
   }
   return false;
 }
 
-bool BKE_mball_is_any_unselected(const MetaBall *mb)
+bool KERNEL_mball_is_any_unselected(const MetaBall *mb)
 {
   for (const MetaElem *ml = mb->editelems->first; ml != NULL; ml = ml->next) {
     if ((ml->flag & SELECT) == 0) {
@@ -418,7 +418,7 @@ bool BKE_mball_is_any_unselected(const MetaBall *mb)
   return false;
 }
 
-void BKE_mball_properties_copy(Scene *scene, Object *active_object)
+void KERNEL_mball_properties_copy(Scene *scene, Object *active_object)
 {
   Scene *sce_iter = scene;
   Base *base;
@@ -428,16 +428,16 @@ void BKE_mball_properties_copy(Scene *scene, Object *active_object)
   char basisname[MAX_ID_NAME], obname[MAX_ID_NAME];
   SceneBaseIter iter;
 
-  BLI_split_name_num(basisname, &basisnr, active_object->id.name + 2, '.');
+  LIB_split_name_num(basisname, &basisnr, active_object->id.name + 2, '.');
 
   /* Pass depsgraph as NULL, which means we will not expand into
    * duplis unlike when we generate the meta-ball. Expanding duplis
    * would not be compatible when editing multiple view layers. */
-  BKE_scene_base_iter_next(NULL, &iter, &sce_iter, 0, NULL, NULL);
-  while (BKE_scene_base_iter_next(NULL, &iter, &sce_iter, 1, &base, &ob)) {
+  KERNEL_scene_base_iter_next(NULL, &iter, &sce_iter, 0, NULL, NULL);
+  while (KERNEL_scene_base_iter_next(NULL, &iter, &sce_iter, 1, &base, &ob)) {
     if (ob->type == OB_MBALL) {
       if (ob != active_object) {
-        BLI_split_name_num(obname, &obnr, ob->id.name + 2, '.');
+        LIB_split_name_num(obname, &obnr, ob->id.name + 2, '.');
 
         /* Object ob has to be in same "group" ... it means, that it has to have
          * same base of its name */
@@ -456,20 +456,20 @@ void BKE_mball_properties_copy(Scene *scene, Object *active_object)
   }
 }
 
-Object *BKE_mball_basis_find(Scene *scene, Object *object)
+Object *KERNEL_mball_basis_find(Scene *scene, Object *object)
 {
   Object *bob = object;
   int basisnr, obnr;
   char basisname[MAX_ID_NAME], obname[MAX_ID_NAME];
 
-  BLI_split_name_num(basisname, &basisnr, object->id.name + 2, '.');
+  LIB_split_name_num(basisname, &basisnr, object->id.name + 2, '.');
 
   LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
     LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
       Object *ob = base->object;
       if ((ob->type == OB_MBALL) && !(base->flag & BASE_FROM_DUPLI)) {
         if (ob != bob) {
-          BLI_split_name_num(obname, &obnr, ob->id.name + 2, '.');
+          LIB_split_name_num(obname, &obnr, ob->id.name + 2, '.');
 
           /* Object ob has to be in same "group" ... it means,
            * that it has to have same base of its name. */
@@ -487,7 +487,7 @@ Object *BKE_mball_basis_find(Scene *scene, Object *object)
   return object;
 }
 
-bool BKE_mball_minmax_ex(
+bool KERNEL_mball_minmax_ex(
     const MetaBall *mb, float min[3], float max[3], const float obmat[4][4], const short flag)
 {
   const float scale = obmat ? mat4_to_scale(obmat) : 1.0f;
@@ -520,7 +520,7 @@ bool BKE_mball_minmax_ex(
   return changed;
 }
 
-bool BKE_mball_minmax(const MetaBall *mb, float min[3], float max[3])
+bool KERNEL_mball_minmax(const MetaBall *mb, float min[3], float max[3])
 {
   INIT_MINMAX(min, max);
 
@@ -528,10 +528,10 @@ bool BKE_mball_minmax(const MetaBall *mb, float min[3], float max[3])
     minmax_v3v3_v3(min, max, &ml->x);
   }
 
-  return (BLI_listbase_is_empty(&mb->elems) == false);
+  return (LIB_listbase_is_empty(&mb->elems) == false);
 }
 
-bool BKE_mball_center_median(const MetaBall *mb, float r_cent[3])
+bool KERNEL_mball_center_median(const MetaBall *mb, float r_cent[3])
 {
   int total = 0;
 
@@ -549,11 +549,11 @@ bool BKE_mball_center_median(const MetaBall *mb, float r_cent[3])
   return (total != 0);
 }
 
-bool BKE_mball_center_bounds(const MetaBall *mb, float r_cent[3])
+bool KERNEL_mball_center_bounds(const MetaBall *mb, float r_cent[3])
 {
   float min[3], max[3];
 
-  if (BKE_mball_minmax(mb, min, max)) {
+  if (KERNEL_mball_minmax(mb, min, max)) {
     mid_v3_v3v3(r_cent, min, max);
     return true;
   }
@@ -561,7 +561,7 @@ bool BKE_mball_center_bounds(const MetaBall *mb, float r_cent[3])
   return false;
 }
 
-void BKE_mball_transform(MetaBall *mb, const float mat[4][4], const bool do_props)
+void KERNEL_mball_transform(MetaBall *mb, const float mat[4][4], const bool do_props)
 {
   float quat[4];
   const float scale = mat4_to_scale(mat);
@@ -587,14 +587,14 @@ void BKE_mball_transform(MetaBall *mb, const float mat[4][4], const bool do_prop
   }
 }
 
-void BKE_mball_translate(MetaBall *mb, const float offset[3])
+void KERNEL_mball_translate(MetaBall *mb, const float offset[3])
 {
   LISTBASE_FOREACH (MetaElem *, ml, &mb->elems) {
     add_v3_v3(&ml->x, offset);
   }
 }
 
-int BKE_mball_select_count(const MetaBall *mb)
+int KERNEL_mball_select_count(const MetaBall *mb)
 {
   int sel = 0;
   LISTBASE_FOREACH (const MetaElem *, ml, mb->editelems) {
@@ -605,18 +605,18 @@ int BKE_mball_select_count(const MetaBall *mb)
   return sel;
 }
 
-int BKE_mball_select_count_multi(Base **bases, int bases_len)
+int KERNEL_mball_select_count_multi(Base **bases, int bases_len)
 {
   int sel = 0;
   for (uint ob_index = 0; ob_index < bases_len; ob_index++) {
     const Object *obedit = bases[ob_index]->object;
     const MetaBall *mb = (MetaBall *)obedit->data;
-    sel += BKE_mball_select_count(mb);
+    sel += KERNEL_mball_select_count(mb);
   }
   return sel;
 }
 
-bool BKE_mball_select_all(MetaBall *mb)
+bool KERNEL_mball_select_all(MetaBall *mb)
 {
   bool changed = false;
   LISTBASE_FOREACH (MetaElem *, ml, mb->editelems) {
