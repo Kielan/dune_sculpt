@@ -1168,14 +1168,14 @@ Mesh *KERNEL_mesh_from_bmesh_nomain(BMesh *bm,
                                  const struct BMeshToMeshParams *params,
                                  const Mesh *me_settings)
 {
-  BLI_assert(params->calc_object_remap == false);
-  Mesh *mesh = (Mesh *)BKE_id_new_nomain(ID_ME, nullptr);
+  LIB_assert(params->calc_object_remap == false);
+  Mesh *mesh = (Mesh *)KERNEL_id_new_nomain(ID_ME, nullptr);
   BM_mesh_bm_to_me(nullptr, bm, mesh, params);
-  BKE_mesh_copy_parameters_for_eval(mesh, me_settings);
+  KERNEL_mesh_copy_parameters_for_eval(mesh, me_settings);
   return mesh;
 }
 
-Mesh *BKE_mesh_from_bmesh_for_eval_nomain(BMesh *bm,
+Mesh *KERNEL_mesh_from_bmesh_for_eval_nomain(BMesh *bm,
                                           const CustomData_MeshMasks *cd_mask_extra,
                                           const Mesh *me_settings)
 {
