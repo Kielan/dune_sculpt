@@ -3,35 +3,35 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_mempool.h"
-#include "BLI_utildefines.h"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_mempool.h"
+#include "LIB_utildefines.h"
 
 #include "DNA_ID.h"
 
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_main_idmap.h" /* own include */
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_main.h"
+#include "KERNEL_main_idmap.h" /* own include */
 
-/** \file
- * \ingroup bke
+/**
+ * kernel
  *
  * Utility functions for faster ID lookups.
  */
 
 /* -------------------------------------------------------------------- */
-/** \name BKE_main_idmap API
+/** KERNEL_main_idmap API
  *
  * Cache ID (name, library lookups).
  * This doesn't account for adding/removing data-blocks,
  * and should only be used when performing many lookups.
  *
- * \note GHash's are initialized on demand,
+ * GHash's are initialized on demand,
  * since its likely some types will never have lookups run on them,
  * so its a waste to create and never use.
- * \{ */
+ **/
 
 struct IDNameLib_Key {
   /** `ID.name + 2`: without the ID type prefix, since each id type gets its own 'map'. */
@@ -56,7 +56,7 @@ struct IDNameLib_Map {
   int idmap_types;
 
   /* For storage of keys for the TypeMap ghash, avoids many single allocs. */
-  BLI_mempool *type_maps_keys_pool;
+  LIB_mempool *type_maps_keys_pool;
 };
 
 static struct IDNameLib_TypeMap *main_idmap_from_idcode(struct IDNameLib_Map *id_map,
@@ -85,8 +85,8 @@ struct IDNameLib_Map *BKE_main_idmap_create(struct Main *bmain,
   while (index < INDEX_ID_MAX) {
     struct IDNameLib_TypeMap *type_map = &id_map->type_maps[index];
     type_map->map = NULL;
-    type_map->id_type = BKE_idtype_idcode_iter_step(&index);
-    BLI_assert(type_map->id_type != 0);
+    type_map->id_type = KERNEL_idtype_idcode_iter_step(&index);
+    LIB_assert(type_map->id_type != 0);
   }
   BLI_assert(index == INDEX_ID_MAX);
   id_map->type_maps_keys_pool = NULL;
