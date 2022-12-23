@@ -454,50 +454,50 @@ void KERNEL_main_library_weak_reference_update_item(GHash *library_weak_referenc
                                                  ID *old_id,
                                                  ID *new_id)
 {
-  BLI_assert(GS(library_id_name) == GS(old_id->name));
-  BLI_assert(GS(library_id_name) == GS(new_id->name));
-  BLI_assert(old_id->library_weak_reference != NULL);
-  BLI_assert(new_id->library_weak_reference == NULL);
-  BLI_assert(STREQ(old_id->library_weak_reference->library_filepath, library_filepath));
-  BLI_assert(STREQ(old_id->library_weak_reference->library_id_name, library_id_name));
+  LIB_assert(GS(library_id_name) == GS(old_id->name));
+  LIB_assert(GS(library_id_name) == GS(new_id->name));
+  LIB_assert(old_id->library_weak_reference != NULL);
+  LIB_assert(new_id->library_weak_reference == NULL);
+  LIB_assert(STREQ(old_id->library_weak_reference->library_filepath, library_filepath));
+  LIB_assert(STREQ(old_id->library_weak_reference->library_id_name, library_id_name));
 
   LibWeakRefKey key;
   lib_weak_key_create(&key, library_filepath, library_id_name);
-  void **id_p = BLI_ghash_lookup_p(library_weak_reference_mapping, &key);
-  BLI_assert(id_p != NULL && *id_p == old_id);
+  void **id_p = LIB_ghash_lookup_p(library_weak_reference_mapping, &key);
+  LIB_assert(id_p != NULL && *id_p == old_id);
 
   new_id->library_weak_reference = old_id->library_weak_reference;
   old_id->library_weak_reference = NULL;
   *id_p = new_id;
 }
 
-void BKE_main_library_weak_reference_remove_item(GHash *library_weak_reference_mapping,
+void KERNEL_main_library_weak_reference_remove_item(GHash *library_weak_reference_mapping,
                                                  const char *library_filepath,
                                                  const char *library_id_name,
                                                  ID *old_id)
 {
-  BLI_assert(GS(library_id_name) == GS(old_id->name));
-  BLI_assert(old_id->library_weak_reference != NULL);
+  LIB_assert(GS(library_id_name) == GS(old_id->name));
+  LIB_assert(old_id->library_weak_reference != NULL);
 
   LibWeakRefKey key;
   lib_weak_key_create(&key, library_filepath, library_id_name);
 
-  BLI_assert(BLI_ghash_lookup(library_weak_reference_mapping, &key) == old_id);
+  LI_assert(BLI_ghash_lookup(library_weak_reference_mapping, &key) == old_id);
   BLI_ghash_remove(library_weak_reference_mapping, &key, MEM_freeN, NULL);
 
   MEM_SAFE_FREE(old_id->library_weak_reference);
 }
 
-BlendThumbnail *BKE_main_thumbnail_from_imbuf(Main *bmain, ImBuf *img)
+DuneThumbnail *KERNEL_main_thumbnail_from_imbuf(Main *bmain, ImBuf *img)
 {
-  BlendThumbnail *data = NULL;
+  DuneThumbnail *data = NULL;
 
   if (bmain) {
     MEM_SAFE_FREE(bmain->blen_thumb);
   }
 
   if (img) {
-    const size_t sz = BLEN_THUMB_MEMSIZE(img->x, img->y);
+    const size_t sz = DUNE_THUMB_MEMSIZE(img->x, img->y);
     data = MEM_mallocN(sz, __func__);
 
     IMB_rect_from_float(img); /* Just in case... */
@@ -512,12 +512,12 @@ BlendThumbnail *BKE_main_thumbnail_from_imbuf(Main *bmain, ImBuf *img)
   return data;
 }
 
-ImBuf *BKE_main_thumbnail_to_imbuf(Main *bmain, BlendThumbnail *data)
+ImBuf *KERNEL_main_thumbnail_to_imbuf(Main *bmain, DuneThumbnail *data)
 {
   ImBuf *img = NULL;
 
   if (!data && bmain) {
-    data = bmain->blen_thumb;
+    data = bmain->dune_thumb;
   }
 
   if (data) {
@@ -528,23 +528,23 @@ ImBuf *BKE_main_thumbnail_to_imbuf(Main *bmain, BlendThumbnail *data)
   return img;
 }
 
-void BKE_main_thumbnail_create(struct Main *bmain)
+void KERNEL_main_thumbnail_create(struct Main *bmain)
 {
-  MEM_SAFE_FREE(bmain->blen_thumb);
+  MEM_SAFE_FREE(bmain->dune_thumb);
 
-  bmain->blen_thumb = MEM_callocN(BLEN_THUMB_MEMSIZE(BLEN_THUMB_SIZE, BLEN_THUMB_SIZE), __func__);
-  bmain->blen_thumb->width = BLEN_THUMB_SIZE;
-  bmain->blen_thumb->height = BLEN_THUMB_SIZE;
+  bmain->dune_thumb = MEM_callocN(DUNE_THUMB_MEMSIZE(DUNE_THUMB_SIZE, DUNE_THUMB_SIZE), __func__);
+  bmain->dune_thumb->width = DUNE_THUMB_SIZE;
+  bmain->dune_thumb->height = DUNE_THUMB_SIZE;
 }
 
-const char *BKE_main_blendfile_path(const Main *bmain)
+const char *KERNEL_main_dunefile_path(const Main *bmain)
 {
   return bmain->filepath;
 }
 
-const char *BKE_main_blendfile_path_from_global(void)
+const char *KERNEL_main_dunefile_path_from_global(void)
 {
-  return BKE_main_blendfile_path(G_MAIN);
+  return KERNEL_main_blendfile_path(G_MAIN);
 }
 
 ListBase *which_libbase(Main *bmain, short type)
