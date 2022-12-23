@@ -628,18 +628,18 @@ bool KERNEL_mball_select_all(MetaBall *mb)
   return changed;
 }
 
-bool BKE_mball_select_all_multi_ex(Base **bases, int bases_len)
+bool KERNEL_mball_select_all_multi_ex(Base **bases, int bases_len)
 {
   bool changed_multi = false;
   for (uint ob_index = 0; ob_index < bases_len; ob_index++) {
     Object *obedit = bases[ob_index]->object;
     MetaBall *mb = obedit->data;
-    changed_multi |= BKE_mball_select_all(mb);
+    changed_multi |= KERNEL_mball_select_all(mb);
   }
   return changed_multi;
 }
 
-bool BKE_mball_deselect_all(MetaBall *mb)
+bool KERNEL_mball_deselect_all(MetaBall *mb)
 {
   bool changed = false;
   LISTBASE_FOREACH (MetaElem *, ml, mb->editelems) {
@@ -651,19 +651,19 @@ bool BKE_mball_deselect_all(MetaBall *mb)
   return changed;
 }
 
-bool BKE_mball_deselect_all_multi_ex(Base **bases, int bases_len)
+bool KERNEL_mball_deselect_all_multi_ex(Base **bases, int bases_len)
 {
   bool changed_multi = false;
   for (uint ob_index = 0; ob_index < bases_len; ob_index++) {
     Object *obedit = bases[ob_index]->object;
     MetaBall *mb = obedit->data;
-    changed_multi |= BKE_mball_deselect_all(mb);
+    changed_multi |= KERNEL_mball_deselect_all(mb);
     DEG_id_tag_update(&mb->id, ID_RECALC_SELECT);
   }
   return changed_multi;
 }
 
-bool BKE_mball_select_swap(MetaBall *mb)
+bool KERNEL_mball_select_swap(MetaBall *mb)
 {
   bool changed = false;
   LISTBASE_FOREACH (MetaElem *, ml, mb->editelems) {
@@ -673,13 +673,13 @@ bool BKE_mball_select_swap(MetaBall *mb)
   return changed;
 }
 
-bool BKE_mball_select_swap_multi_ex(Base **bases, int bases_len)
+bool KERNEL_mball_select_swap_multi_ex(Base **bases, int bases_len)
 {
   bool changed_multi = false;
   for (uint ob_index = 0; ob_index < bases_len; ob_index++) {
     Object *obedit = bases[ob_index]->object;
     MetaBall *mb = (MetaBall *)obedit->data;
-    changed_multi |= BKE_mball_select_swap(mb);
+    changed_multi |= KERNEL_mball_select_swap(mb);
   }
   return changed_multi;
 }
@@ -688,8 +688,8 @@ bool BKE_mball_select_swap_multi_ex(Base **bases, int bases_len)
 
 /* Draw Engine */
 
-void (*BKE_mball_batch_cache_dirty_tag_cb)(MetaBall *mb, int mode) = NULL;
-void (*BKE_mball_batch_cache_free_cb)(MetaBall *mb) = NULL;
+void (*KERNEL_mball_batch_cache_dirty_tag_cb)(MetaBall *mb, int mode) = NULL;
+void (*KERNEL_mball_batch_cache_free_cb)(MetaBall *mb) = NULL;
 
 void KERNEL_mball_batch_cache_dirty_tag(MetaBall *mb, int mode)
 {
