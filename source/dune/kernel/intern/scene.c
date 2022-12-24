@@ -48,40 +48,40 @@
 #include "KERNEL_anim_data.h"
 #include "KERNEL_animsys.h"
 #include "KERNEL_armature.h"
-#include "KE_bpath.h"
-#include "KE_cachefile.h"
-#include "KE_collection.h"
-#include "KE_colortools.h"
-#include "KE_curveprofile.h"
-#include "KE_duplilist.h"
-#include "KE_editmesh.h"
-#include "KE_effect.h"
-#include "KE_fcurve.h"
-#include "KE_freestyle.h"
-#include "KE_gpencil.h"
-#include "KE_icons.h"
-#include "KE_idprop.h"
-#include "KE_idtype.h"
-#include "KE_image.h"
-#include "KE_image_format.h"
-#include "KE_layer.h"
-#include "KE_lib_id.h"
-#include "KE_lib_query.h"
-#include "KE_lib_remap.h"
-#include "KE_linestyle.h"
-#include "KE_main.h"
-#include "KE_mask.h"
-#include "KE_node.h"
-#include "KE_object.h"
-#include "KE_paint.h"
-#include "KE_pointcache.h"
-#include "KE_rigidbody.h"
-#include "KE_scene.h"
-#include "KE_screen.h"
-#include "KE_sound.h"
-#include "KE_unit.h"
-#include "KE_workspace.h"
-#include "KE_world.h"
+#include "KERNEL_bpath.h"
+#include "KERNEL_cachefile.h"
+#include "KERNEL_collection.h"
+#include "KERNEL_colortools.h"
+#include "KERNEL_curveprofile.h"
+#include "KERNEL_duplilist.h"
+#include "KERNEL_editmesh.h"
+#include "KERNEL_effect.h"
+#include "KERNEL_fcurve.h"
+#include "KERNEL_freestyle.h"
+#include "KERNEL_gpencil.h"
+#include "KERNEL_icons.h"
+#include "KERNEL_idprop.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_image.h"
+#include "KERNEL_image_format.h"
+#include "KERNEL_layer.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_lib_remap.h"
+#include "KERNEL_linestyle.h"
+#include "KERNEL_main.h"
+#include "KERNEL_mask.h"
+#include "KERNEL_node.h"
+#include "KERNEL_object.h"
+#include "KERNEL_paint.h"
+#include "KERNEL_pointcache.h"
+#include "KERNEL_rigidbody.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_screen.h"
+#include "KERNEL_sound.h"
+#include "KERNEL_unit.h"
+#include "KERNEL_workspace.h"
+#include "KERNEL_world.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
@@ -209,14 +209,14 @@ static void scene_init_data(ID *id)
   }
 
   /* Master Collection */
-  scene->master_collection = BKE_collection_master_add();
+  scene->master_collection = KERNEL_collection_master_add();
 
-  BKE_view_layer_add(scene, "ViewLayer", NULL, VIEWLAYER_ADD_NEW);
+  KERNEL_view_layer_add(scene, "ViewLayer", NULL, VIEWLAYER_ADD_NEW);
 }
 
 static void scene_copy_markers(Scene *scene_dst, const Scene *scene_src, const int flag)
 {
-  BLI_duplicatelist(&scene_dst->markers, &scene_src->markers);
+  LIB_duplicatelist(&scene_dst->markers, &scene_src->markers);
   LISTBASE_FOREACH (TimeMarker *, marker, &scene_dst->markers) {
     if (marker->prop != NULL) {
       marker->prop = IDP_CopyProperty_ex(marker->prop, flag);
@@ -239,31 +239,31 @@ static void scene_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int
 
   /* Master Collection */
   if (scene_src->master_collection) {
-    BKE_id_copy_ex(bmain,
+    KERNEL_id_copy_ex(bmain,
                    (ID *)scene_src->master_collection,
                    (ID **)&scene_dst->master_collection,
                    flag_private_id_data);
   }
 
   /* View Layers */
-  BLI_duplicatelist(&scene_dst->view_layers, &scene_src->view_layers);
+  LIB_duplicatelist(&scene_dst->view_layers, &scene_src->view_layers);
   for (ViewLayer *view_layer_src = scene_src->view_layers.first,
                  *view_layer_dst = scene_dst->view_layers.first;
        view_layer_src;
        view_layer_src = view_layer_src->next, view_layer_dst = view_layer_dst->next) {
-    BKE_view_layer_copy_data(scene_dst, scene_src, view_layer_dst, view_layer_src, flag_subdata);
+    KERNEL_view_layer_copy_data(scene_dst, scene_src, view_layer_dst, view_layer_src, flag_subdata);
   }
 
   scene_copy_markers(scene_dst, scene_src, flag);
 
-  BLI_duplicatelist(&(scene_dst->transform_spaces), &(scene_src->transform_spaces));
-  BLI_duplicatelist(&(scene_dst->r.views), &(scene_src->r.views));
-  BKE_keyingsets_copy(&(scene_dst->keyingsets), &(scene_src->keyingsets));
+  LIB_duplicatelist(&(scene_dst->transform_spaces), &(scene_src->transform_spaces));
+  LIB_duplicatelist(&(scene_dst->r.views), &(scene_src->r.views));
+  KERNEL_keyingsets_copy(&(scene_dst->keyingsets), &(scene_src->keyingsets));
 
   if (scene_src->nodetree) {
-    BKE_id_copy_ex(
+    KERNEL_id_copy_ex(
         bmain, (ID *)scene_src->nodetree, (ID **)&scene_dst->nodetree, flag_private_id_data);
-    BKE_libblock_relink_ex(bmain,
+    KERNEL_libblock_relink_ex(bmain,
                            scene_dst->nodetree,
                            (void *)(&scene_src->id),
                            &scene_dst->id,
@@ -271,24 +271,24 @@ static void scene_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int
   }
 
   if (scene_src->rigidbody_world) {
-    scene_dst->rigidbody_world = BKE_rigidbody_world_copy(scene_src->rigidbody_world,
+    scene_dst->rigidbody_world = KERNEL_rigidbody_world_copy(scene_src->rigidbody_world,
                                                           flag_subdata);
   }
 
   /* copy color management settings */
-  BKE_color_managed_display_settings_copy(&scene_dst->display_settings,
+  KERNEL_color_managed_display_settings_copy(&scene_dst->display_settings,
                                           &scene_src->display_settings);
-  BKE_color_managed_view_settings_copy(&scene_dst->view_settings, &scene_src->view_settings);
-  BKE_color_managed_colorspace_settings_copy(&scene_dst->sequencer_colorspace_settings,
+  KERNEL_color_managed_view_settings_copy(&scene_dst->view_settings, &scene_src->view_settings);
+  KERNEL_color_managed_colorspace_settings_copy(&scene_dst->sequencer_colorspace_settings,
                                              &scene_src->sequencer_colorspace_settings);
 
-  BKE_image_format_copy(&scene_dst->r.im_format, &scene_src->r.im_format);
-  BKE_image_format_copy(&scene_dst->r.bake.im_format, &scene_src->r.bake.im_format);
+  KERNEL_image_format_copy(&scene_dst->r.im_format, &scene_src->r.im_format);
+  KERNEL_image_format_copy(&scene_dst->r.bake.im_format, &scene_src->r.bake.im_format);
 
-  BKE_curvemapping_copy_data(&scene_dst->r.mblur_shutter_curve, &scene_src->r.mblur_shutter_curve);
+  KERNEL_curvemapping_copy_data(&scene_dst->r.mblur_shutter_curve, &scene_src->r.mblur_shutter_curve);
 
   /* tool settings */
-  scene_dst->toolsettings = BKE_toolsettings_copy(scene_dst->toolsettings, flag_subdata);
+  scene_dst->toolsettings = KERNEL_toolsettings_copy(scene_dst->toolsettings, flag_subdata);
 
   /* make a private copy of the avicodecdata */
   if (scene_src->r.avicodecdata) {
@@ -301,7 +301,7 @@ static void scene_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int
     scene_dst->display.shading.prop = IDP_CopyProperty(scene_src->display.shading.prop);
   }
 
-  BKE_sound_reset_scene_runtime(scene_dst);
+  KERNEL_sound_reset_scene_runtime(scene_dst);
 
   /* Copy sequencer, this is local data! */
   if (scene_src->ed) {
@@ -316,13 +316,13 @@ static void scene_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int
   }
 
   if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0) {
-    BKE_previewimg_id_copy(&scene_dst->id, &scene_src->id);
+    KERNEL_previewimg_id_copy(&scene_dst->id, &scene_src->id);
   }
   else {
     scene_dst->preview = NULL;
   }
 
-  BKE_scene_copy_data_eevee(scene_dst, scene_src);
+  KERNEL_scene_copy_data_eevee(scene_dst, scene_src);
 }
 
 static void scene_free_markers(Scene *scene, bool do_id_user)
@@ -344,7 +344,7 @@ static void scene_free_data(ID *id)
 
   SEQ_editing_free(scene, do_id_user);
 
-  BKE_keyingsets_free(&scene->keyingsets);
+  KERNEL_keyingsets_free(&scene->keyingsets);
 
   /* is no lib link block, but scene extension */
   if (scene->nodetree) {
@@ -359,7 +359,7 @@ static void scene_free_data(ID *id)
      * worse, pointing to data actually belonging to new BMain! */
     scene->rigidbody_world->constraints = NULL;
     scene->rigidbody_world->group = NULL;
-    BKE_rigidbody_free_world(scene);
+    KERNEL_rigidbody_free_world(scene);
   }
 
   if (scene->r.avicodecdata) {
@@ -369,31 +369,31 @@ static void scene_free_data(ID *id)
   }
 
   scene_free_markers(scene, do_id_user);
-  BLI_freelistN(&scene->transform_spaces);
-  BLI_freelistN(&scene->r.views);
+  LIB_freelistN(&scene->transform_spaces);
+  LIB_freelistN(&scene->r.views);
 
-  BKE_toolsettings_free(scene->toolsettings);
+  KERNEL_toolsettings_free(scene->toolsettings);
   scene->toolsettings = NULL;
 
-  BKE_scene_free_depsgraph_hash(scene);
+  KERNEL_scene_free_depsgraph_hash(scene);
 
   MEM_SAFE_FREE(scene->fps_info);
 
-  BKE_sound_destroy_scene(scene);
+  KERNEL_sound_destroy_scene(scene);
 
-  BKE_color_managed_view_settings_free(&scene->view_settings);
-  BKE_image_format_free(&scene->r.im_format);
-  BKE_image_format_free(&scene->r.bake.im_format);
+  KERNEL_color_managed_view_settings_free(&scene->view_settings);
+  KERNEL_image_format_free(&scene->r.im_format);
+  KERNEL_image_format_free(&scene->r.bake.im_format);
 
-  BKE_previewimg_free(&scene->preview);
-  BKE_curvemapping_free_data(&scene->r.mblur_shutter_curve);
+  KERNEL_previewimg_free(&scene->preview);
+  KERNEL_curvemapping_free_data(&scene->r.mblur_shutter_curve);
 
   for (ViewLayer *view_layer = scene->view_layers.first, *view_layer_next; view_layer;
        view_layer = view_layer_next) {
     view_layer_next = view_layer->next;
 
-    BLI_remlink(&scene->view_layers, view_layer);
-    BKE_view_layer_free_ex(view_layer, do_id_user);
+    LIB_remlink(&scene->view_layers, view_layer);
+    KERNEL_view_layer_free_ex(view_layer, do_id_user);
   }
 
   /* Master Collection */
@@ -402,8 +402,8 @@ static void scene_free_data(ID *id)
    * for objects directly in the master collection? then other
    * collections in the scene need to do it too? */
   if (scene->master_collection) {
-    BKE_collection_free_data(scene->master_collection);
-    BKE_libblock_free_data_py(&scene->master_collection->id);
+    KERNEL_collection_free_data(scene->master_collection);
+    KERNEL_libblock_free_data_py(&scene->master_collection->id);
     MEM_freeN(scene->master_collection);
     scene->master_collection = NULL;
   }
@@ -419,7 +419,7 @@ static void scene_free_data(ID *id)
   }
 
   /* These are freed on doversion. */
-  BLI_assert(scene->layer_properties == NULL);
+  LIB_assert(scene->layer_properties == NULL);
 }
 
 static void scene_foreach_rigidbodyworldSceneLooper(struct RigidBodyWorld *UNUSED(rbw),
@@ -428,8 +428,8 @@ static void scene_foreach_rigidbodyworldSceneLooper(struct RigidBodyWorld *UNUSE
                                                     int cb_flag)
 {
   LibraryForeachIDData *data = (LibraryForeachIDData *)user_data;
-  BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-      data, BKE_lib_query_foreachid_process(data, id_pointer, cb_flag));
+  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+      data, KERNEL_lib_query_foreachid_process(data, id_pointer, cb_flag));
 }
 
 /**
@@ -448,7 +448,7 @@ typedef enum eSceneForeachUndoPreserveProcess {
 static void scene_foreach_toolsettings_id_pointer_process(
     ID **id_p,
     const eSceneForeachUndoPreserveProcess action,
-    BlendLibReader *reader,
+    DuneLibReader *reader,
     ID **id_old_p,
     const uint cb_flag)
 {
@@ -460,7 +460,7 @@ static void scene_foreach_toolsettings_id_pointer_process(
       ID *id_old_new = id_old != NULL ? BLO_read_get_new_id_address(reader, id_old->lib, id_old) :
                                         NULL;
       if (id_old_new != NULL) {
-        BLI_assert(ELEM(id_old, id_old_new, id_old_new->orig_id));
+        LIB_assert(ELEM(id_old, id_old_new, id_old_new->orig_id));
         *id_old_p = id_old_new;
         if (cb_flag & IDWALK_CB_USER) {
           id_us_plus_no_lib(id_old_new);
@@ -483,7 +483,7 @@ static void scene_foreach_toolsettings_id_pointer_process(
 /* Special handling is needed here, as `scene_foreach_toolsettings` (and its dependency
  * `scene_foreach_paint`) are also used by `scene_undo_preserve`, where `LibraryForeachIDData
  * *data` is NULL. */
-#define BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER( \
+#define KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER( \
     __data, __id, __do_undo_restore, __action, __reader, __id_old, __cb_flag) \
   { \
     if (__do_undo_restore) { \
@@ -491,13 +491,13 @@ static void scene_foreach_toolsettings_id_pointer_process(
           (ID **)&(__id), __action, __reader, (ID **)&(__id_old), __cb_flag); \
     } \
     else { \
-      BLI_assert((__data) != NULL); \
-      BKE_LIB_FOREACHID_PROCESS_IDSUPER(__data, __id, __cb_flag); \
+      LIB_assert((__data) != NULL); \
+      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(__data, __id, __cb_flag); \
     } \
   } \
   (void)0
 
-#define BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL( \
+#define KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL( \
     __data, __do_undo_restore, __func_call) \
   { \
     if (__do_undo_restore) { \
