@@ -177,26 +177,26 @@ static void scene_init_data(ID *id)
   /* multiview - stereo */
   KERNEL_scene_add_render_view(scene, STEREO_LEFT_NAME);
   srv = scene->r.views.first;
-  BLI_strncpy(srv->suffix, STEREO_LEFT_SUFFIX, sizeof(srv->suffix));
+  LIB_strncpy(srv->suffix, STEREO_LEFT_SUFFIX, sizeof(srv->suffix));
 
-  BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
+  KERNEL_scene_add_render_view(scene, STEREO_RIGHT_NAME);
   srv = scene->r.views.last;
-  BLI_strncpy(srv->suffix, STEREO_RIGHT_SUFFIX, sizeof(srv->suffix));
+  LIB_strncpy(srv->suffix, STEREO_RIGHT_SUFFIX, sizeof(srv->suffix));
 
-  BKE_sound_reset_scene_runtime(scene);
+  KERNEL_sound_reset_scene_runtime(scene);
 
   /* color management */
   colorspace_name = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_SEQUENCER);
 
-  BKE_color_managed_display_settings_init(&scene->display_settings);
-  BKE_color_managed_view_settings_init_render(
+  KERNEL_color_managed_display_settings_init(&scene->display_settings);
+  KERNEL_color_managed_view_settings_init_render(
       &scene->view_settings, &scene->display_settings, "Filmic");
-  BLI_strncpy(scene->sequencer_colorspace_settings.name,
+  LIB_strncpy(scene->sequencer_colorspace_settings.name,
               colorspace_name,
               sizeof(scene->sequencer_colorspace_settings.name));
 
-  BKE_image_format_init(&scene->r.im_format, true);
-  BKE_image_format_init(&scene->r.bake.im_format, true);
+  KERNEL_image_format_init(&scene->r.im_format, true);
+  KERNEL_image_format_init(&scene->r.bake.im_format, true);
 
   /* Curve Profile */
   scene->toolsettings->custom_bevel_profile_preset = BKE_curveprofile_add(PROF_PRESET_LINE);
@@ -960,109 +960,109 @@ static void scene_blend_write(DuneWriter *writer, ID *id, const void *id_address
   }
   /* write grease-pencil custom ipo curve to file */
   if (tos->gp_interpolate.custom_ipo) {
-    BKE_curvemapping_blend_write(writer, tos->gp_interpolate.custom_ipo);
+    KERNEL_curvemapping_dune_write(writer, tos->gp_interpolate.custom_ipo);
   }
   /* write grease-pencil multiframe falloff curve to file */
   if (tos->gp_sculpt.cur_falloff) {
-    BKE_curvemapping_blend_write(writer, tos->gp_sculpt.cur_falloff);
+    KERNEL_curvemapping_dune_write(writer, tos->gp_sculpt.cur_falloff);
   }
   /* write grease-pencil primitive curve to file */
   if (tos->gp_sculpt.cur_primitive) {
-    BKE_curvemapping_blend_write(writer, tos->gp_sculpt.cur_primitive);
+    KERNEL_curvemapping_dune_write(writer, tos->gp_sculpt.cur_primitive);
   }
   /* Write the curve profile to the file. */
   if (tos->custom_bevel_profile_preset) {
-    BKE_curveprofile_blend_write(writer, tos->custom_bevel_profile_preset);
+    KERNEL_curveprofile_dune_write(writer, tos->custom_bevel_profile_preset);
   }
   if (tos->sequencer_tool_settings) {
-    BLO_write_struct(writer, SequencerToolSettings, tos->sequencer_tool_settings);
+    LOADER_write_struct(writer, SequencerToolSettings, tos->sequencer_tool_settings);
   }
 
-  BKE_paint_blend_write(writer, &tos->imapaint.paint);
+  KERNEL_paint_dune_write(writer, &tos->imapaint.paint);
 
   Editing *ed = sce->ed;
   if (ed) {
-    BLO_write_struct(writer, Editing, ed);
+    LOADER_write_struct(writer, Editing, ed);
 
     SEQ_blend_write(writer, &ed->seqbase);
     /* new; meta stack too, even when its nasty restore code */
     LISTBASE_FOREACH (MetaStack *, ms, &ed->metastack) {
-      BLO_write_struct(writer, MetaStack, ms);
+      LOADER_write_struct(writer, MetaStack, ms);
     }
   }
 
   if (sce->r.avicodecdata) {
-    BLO_write_struct(writer, AviCodecData, sce->r.avicodecdata);
+    LOADER_write_struct(writer, AviCodecData, sce->r.avicodecdata);
     if (sce->r.avicodecdata->lpFormat) {
-      BLO_write_raw(writer, (size_t)sce->r.avicodecdata->cbFormat, sce->r.avicodecdata->lpFormat);
+      LOADER_write_raw(writer, (size_t)sce->r.avicodecdata->cbFormat, sce->r.avicodecdata->lpFormat);
     }
     if (sce->r.avicodecdata->lpParms) {
-      BLO_write_raw(writer, (size_t)sce->r.avicodecdata->cbParms, sce->r.avicodecdata->lpParms);
+      LOADER_write_raw(writer, (size_t)sce->r.avicodecdata->cbParms, sce->r.avicodecdata->lpParms);
     }
   }
 
   /* writing dynamic list of TimeMarkers to the blend file */
   LISTBASE_FOREACH (TimeMarker *, marker, &sce->markers) {
-    BLO_write_struct(writer, TimeMarker, marker);
+    LOADER_write_struct(writer, TimeMarker, marker);
 
     if (marker->prop != NULL) {
-      IDP_BlendWrite(writer, marker->prop);
+      IDP_DuneWrite(writer, marker->prop);
     }
   }
 
   /* writing dynamic list of TransformOrientations to the blend file */
   LISTBASE_FOREACH (TransformOrientation *, ts, &sce->transform_spaces) {
-    BLO_write_struct(writer, TransformOrientation, ts);
+    LOADER_write_struct(writer, TransformOrientation, ts);
   }
 
   /* writing MultiView to the blend file */
   LISTBASE_FOREACH (SceneRenderView *, srv, &sce->r.views) {
-    BLO_write_struct(writer, SceneRenderView, srv);
+    LOADER_write_struct(writer, SceneRenderView, srv);
   }
 
   if (sce->nodetree) {
-    BLO_write_struct(writer, bNodeTree, sce->nodetree);
-    ntreeBlendWrite(writer, sce->nodetree);
+    LOADER_write_struct(writer, bNodeTree, sce->nodetree);
+    ntreeDuneWrite(writer, sce->nodetree);
   }
 
-  BKE_color_managed_view_settings_blend_write(writer, &sce->view_settings);
-  BKE_image_format_blend_write(writer, &sce->r.im_format);
-  BKE_image_format_blend_write(writer, &sce->r.bake.im_format);
+  KERNEL_color_managed_view_settings_blend_write(writer, &sce->view_settings);
+  KERNEL_image_format_dune_write(writer, &sce->r.im_format);
+  KERNEL_image_format_dune_write(writer, &sce->r.bake.im_format);
 
   /* writing RigidBodyWorld data to the blend file */
   if (sce->rigidbody_world) {
     /* Set deprecated pointers to prevent crashes of older Blenders */
     sce->rigidbody_world->pointcache = sce->rigidbody_world->shared->pointcache;
     sce->rigidbody_world->ptcaches = sce->rigidbody_world->shared->ptcaches;
-    BLO_write_struct(writer, RigidBodyWorld, sce->rigidbody_world);
+    LOADER_write_struct(writer, RigidBodyWorld, sce->rigidbody_world);
 
-    BLO_write_struct(writer, RigidBodyWorld_Shared, sce->rigidbody_world->shared);
-    BLO_write_struct(writer, EffectorWeights, sce->rigidbody_world->effector_weights);
-    BKE_ptcache_blend_write(writer, &(sce->rigidbody_world->shared->ptcaches));
+    LOADER_write_struct(writer, RigidBodyWorld_Shared, sce->rigidbody_world->shared);
+    LOADER_write_struct(writer, EffectorWeights, sce->rigidbody_world->effector_weights);
+    KERNEL_ptcache_dune_write(writer, &(sce->rigidbody_world->shared->ptcaches));
   }
 
-  BKE_previewimg_blend_write(writer, sce->preview);
-  BKE_curvemapping_curves_blend_write(writer, &sce->r.mblur_shutter_curve);
+  KERNEL_previewimg_dune_write(writer, sce->preview);
+  KERNEL_curvemapping_curves_dune_write(writer, &sce->r.mblur_shutter_curve);
 
   LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    BKE_view_layer_blend_write(writer, view_layer);
+    KERNEL_view_layer_blend_write(writer, view_layer);
   }
 
   if (sce->master_collection) {
-    BLO_write_struct(writer, Collection, sce->master_collection);
-    BKE_collection_blend_write_nolib(writer, sce->master_collection);
+    LOADER_write_struct(writer, Collection, sce->master_collection);
+    KERNEL_collection_dune_write_nolib(writer, sce->master_collection);
   }
 
   /* Eevee Lightcache */
-  if (sce->eevee.light_cache_data && !BLO_write_is_undo(writer)) {
-    BLO_write_struct(writer, LightCache, sce->eevee.light_cache_data);
-    EEVEE_lightcache_blend_write(writer, sce->eevee.light_cache_data);
+  if (sce->eevee.light_cache_data && !LOADER_write_is_undo(writer)) {
+    LOADER_write_struct(writer, LightCache, sce->eevee.light_cache_data);
+    EEVEE_lightcache_dune_write(writer, sce->eevee.light_cache_data);
   }
 
-  BKE_screen_view3d_shading_blend_write(writer, &sce->display.shading);
+  KERNEL_screen_view3d_shading_dune_write(writer, &sce->display.shading);
 
   /* Freed on doversion. */
-  BLI_assert(sce->layer_properties == NULL);
+  LIB_assert(sce->layer_properties == NULL);
 }
 
 static void direct_link_paint_helper(DuneDataReader *reader, const Scene *scene, Paint **paint)
