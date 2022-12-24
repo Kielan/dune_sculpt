@@ -1143,37 +1143,37 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
     sce->toolsettings->gp_sculpt.paintcursor = NULL;
 
     /* relink grease pencil interpolation curves */
-    BLO_read_data_address(reader, &sce->toolsettings->gp_interpolate.custom_ipo);
+    LOADER_read_data_address(reader, &sce->toolsettings->gp_interpolate.custom_ipo);
     if (sce->toolsettings->gp_interpolate.custom_ipo) {
-      BKE_curvemapping_blend_read(reader, sce->toolsettings->gp_interpolate.custom_ipo);
+      KERNEL_curvemapping_dune_read(reader, sce->toolsettings->gp_interpolate.custom_ipo);
     }
     /* relink grease pencil multiframe falloff curve */
-    BLO_read_data_address(reader, &sce->toolsettings->gp_sculpt.cur_falloff);
+    LOADER_read_data_address(reader, &sce->toolsettings->gp_sculpt.cur_falloff);
     if (sce->toolsettings->gp_sculpt.cur_falloff) {
-      BKE_curvemapping_blend_read(reader, sce->toolsettings->gp_sculpt.cur_falloff);
+      KERNEL_curvemapping_dune_read(reader, sce->toolsettings->gp_sculpt.cur_falloff);
     }
     /* relink grease pencil primitive curve */
-    BLO_read_data_address(reader, &sce->toolsettings->gp_sculpt.cur_primitive);
+    LOADER_read_data_address(reader, &sce->toolsettings->gp_sculpt.cur_primitive);
     if (sce->toolsettings->gp_sculpt.cur_primitive) {
-      BKE_curvemapping_blend_read(reader, sce->toolsettings->gp_sculpt.cur_primitive);
+      KERNEL_curvemapping_dune_read(reader, sce->toolsettings->gp_sculpt.cur_primitive);
     }
 
     /* Relink toolsettings curve profile */
-    BLO_read_data_address(reader, &sce->toolsettings->custom_bevel_profile_preset);
+    LOADER_read_data_address(reader, &sce->toolsettings->custom_bevel_profile_preset);
     if (sce->toolsettings->custom_bevel_profile_preset) {
-      BKE_curveprofile_blend_read(reader, sce->toolsettings->custom_bevel_profile_preset);
+      KERNEL_curveprofile_dune_read(reader, sce->toolsettings->custom_bevel_profile_preset);
     }
 
-    BLO_read_data_address(reader, &sce->toolsettings->sequencer_tool_settings);
+    LOADER_read_data_address(reader, &sce->toolsettings->sequencer_tool_settings);
   }
 
   if (sce->ed) {
     ListBase *old_seqbasep = &sce->ed->seqbase;
 
-    BLO_read_data_address(reader, &sce->ed);
+    LOADER_read_data_address(reader, &sce->ed);
     Editing *ed = sce->ed;
 
-    BLO_read_data_address(reader, &ed->act_seq);
+    LOADER_read_data_address(reader, &ed->act_seq);
     ed->cache = NULL;
     ed->prefetch_job = NULL;
     ed->runtime.sequence_lookup = NULL;
@@ -1182,7 +1182,7 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
     link_recurs_seq(reader, &ed->seqbase);
 
     /* Read in sequence member data. */
-    SEQ_blend_read(reader, &ed->seqbase);
+    SEQ_dune_read(reader, &ed->seqbase);
 
     /* link metastack, slight abuse of structs here,
      * have to restore pointer to internal part in struct */
@@ -1200,7 +1200,7 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
       else {
         poin = POINTER_OFFSET(ed->seqbasep, -offset);
 
-        poin = BLO_read_get_new_data_address(reader, poin);
+        poin = LOADER_read_get_new_data_address(reader, poin);
 
         if (poin) {
           ed->seqbasep = (ListBase *)POINTER_OFFSET(poin, offset);
@@ -1210,17 +1210,17 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
         }
       }
       /* stack */
-      BLO_read_list(reader, &(ed->metastack));
+      LOADER_read_list(reader, &(ed->metastack));
 
       LISTBASE_FOREACH (MetaStack *, ms, &ed->metastack) {
-        BLO_read_data_address(reader, &ms->parseq);
+        LOADER_read_data_address(reader, &ms->parseq);
 
         if (ms->oldbasep == old_seqbasep) {
           ms->oldbasep = &ed->seqbase;
         }
         else {
           poin = POINTER_OFFSET(ms->oldbasep, -offset);
-          poin = BLO_read_get_new_data_address(reader, poin);
+          poin = LOADER_read_get_new_data_address(reader, poin);
           if (poin) {
             ms->oldbasep = (ListBase *)POINTER_OFFSET(poin, offset);
           }
@@ -1237,43 +1237,43 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
   sce->r.mode &= ~R_NO_CAMERA_SWITCH;
 #endif
 
-  BLO_read_data_address(reader, &sce->r.avicodecdata);
+  LOADER_read_data_address(reader, &sce->r.avicodecdata);
   if (sce->r.avicodecdata) {
-    BLO_read_data_address(reader, &sce->r.avicodecdata->lpFormat);
-    BLO_read_data_address(reader, &sce->r.avicodecdata->lpParms);
+    LOADER_read_data_address(reader, &sce->r.avicodecdata->lpFormat);
+    LOADER_read_data_address(reader, &sce->r.avicodecdata->lpParms);
   }
-  BLO_read_list(reader, &(sce->markers));
+  LOADER_read_list(reader, &(sce->markers));
   LISTBASE_FOREACH (TimeMarker *, marker, &sce->markers) {
-    BLO_read_data_address(reader, &marker->prop);
-    IDP_BlendDataRead(reader, &marker->prop);
+    LOADER_read_data_address(reader, &marker->prop);
+    IDP_DuneDataRead(reader, &marker->prop);
   }
 
-  BLO_read_list(reader, &(sce->transform_spaces));
-  BLO_read_list(reader, &(sce->r.layers));
-  BLO_read_list(reader, &(sce->r.views));
+  LOADER_read_list(reader, &(sce->transform_spaces));
+  LOADER_read_list(reader, &(sce->r.layers));
+  LOADER_read_list(reader, &(sce->r.views));
 
   LISTBASE_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
-    BLO_read_data_address(reader, &srl->prop);
-    IDP_BlendDataRead(reader, &srl->prop);
-    BLO_read_list(reader, &(srl->freestyleConfig.modules));
-    BLO_read_list(reader, &(srl->freestyleConfig.linesets));
+    LOADER_read_data_address(reader, &srl->prop);
+    IDP_DuneDataRead(reader, &srl->prop);
+    LOADER_read_list(reader, &(srl->freestyleConfig.modules));
+    LOADER_read_list(reader, &(srl->freestyleConfig.linesets));
   }
 
-  BKE_color_managed_view_settings_blend_read_data(reader, &sce->view_settings);
-  BKE_image_format_blend_read_data(reader, &sce->r.im_format);
-  BKE_image_format_blend_read_data(reader, &sce->r.bake.im_format);
+  KERNEL_color_managed_view_settings_dune_read_data(reader, &sce->view_settings);
+  KERNEL_image_format_dune_read_data(reader, &sce->r.im_format);
+  KERNEL_image_format_dune_read_data(reader, &sce->r.bake.im_format);
 
-  BLO_read_data_address(reader, &sce->rigidbody_world);
+  LOADER_read_data_address(reader, &sce->rigidbody_world);
   RigidBodyWorld *rbw = sce->rigidbody_world;
   if (rbw) {
-    BLO_read_data_address(reader, &rbw->shared);
+    LOADER_read_data_address(reader, &rbw->shared);
 
     if (rbw->shared == NULL) {
       /* Link deprecated caches if they exist, so we can use them for versioning.
        * We should only do this when rbw->shared == NULL, because those pointers
        * are always set (for compatibility with older Blenders). We mustn't link
        * the same pointcache twice. */
-      BKE_ptcache_blend_read_data(reader, &rbw->ptcaches, &rbw->pointcache, false);
+      KERNEL_ptcache_blend_read_data(reader, &rbw->ptcaches, &rbw->pointcache, false);
 
       /* make sure simulation starts from the beginning after loading file */
       if (rbw->pointcache) {
@@ -1287,7 +1287,7 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
       rbw->shared->physics_world = NULL;
 
       /* link caches */
-      BKE_ptcache_blend_read_data(reader, &rbw->shared->ptcaches, &rbw->shared->pointcache, false);
+      KERNEL_ptcache_dune_read_data(reader, &rbw->shared->ptcaches, &rbw->shared->pointcache, false);
 
       /* make sure simulation starts from the beginning after loading file */
       if (rbw->shared->pointcache) {
@@ -1298,47 +1298,47 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
     rbw->numbodies = 0;
 
     /* set effector weights */
-    BLO_read_data_address(reader, &rbw->effector_weights);
+    LOADER_read_data_address(reader, &rbw->effector_weights);
     if (!rbw->effector_weights) {
-      rbw->effector_weights = BKE_effector_add_weights(NULL);
+      rbw->effector_weights = KERNEL_effector_add_weights(NULL);
     }
   }
 
-  BLO_read_data_address(reader, &sce->preview);
-  BKE_previewimg_blend_read(reader, sce->preview);
+  LOADER_read_data_address(reader, &sce->preview);
+  KERNEL_previewimg_dune_read(reader, sce->preview);
 
-  BKE_curvemapping_blend_read(reader, &sce->r.mblur_shutter_curve);
+  KERNEL_curvemapping_dune_read(reader, &sce->r.mblur_shutter_curve);
 
 #ifdef USE_COLLECTION_COMPAT_28
   /* this runs before the very first doversion */
   if (sce->collection) {
-    BLO_read_data_address(reader, &sce->collection);
-    BKE_collection_compat_blend_read_data(reader, sce->collection);
+    LOADER_read_data_address(reader, &sce->collection);
+    KERNEL_collection_compat_dune_read_data(reader, sce->collection);
   }
 #endif
 
   /* insert into global old-new map for reading without UI (link_global accesses it again) */
-  BLO_read_glob_list(reader, &sce->view_layers);
+  LOADER_read_glob_list(reader, &sce->view_layers);
   LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    BKE_view_layer_blend_read_data(reader, view_layer);
+    KERNEL_view_layer_dune_read_data(reader, view_layer);
   }
 
-  if (BLO_read_data_is_undo(reader)) {
+  if (LOADER_read_data_is_undo(reader)) {
     /* If it's undo do nothing here, caches are handled by higher-level generic calling code. */
   }
   else {
     /* else try to read the cache from file. */
-    BLO_read_data_address(reader, &sce->eevee.light_cache_data);
+    LOADER_read_data_address(reader, &sce->eevee.light_cache_data);
     if (sce->eevee.light_cache_data) {
       EEVEE_lightcache_blend_read_data(reader, sce->eevee.light_cache_data);
     }
   }
   EEVEE_lightcache_info_update(&sce->eevee);
 
-  BKE_screen_view3d_shading_blend_read_data(reader, &sce->display.shading);
+  KERNEL_screen_view3d_shading_dune_read_data(reader, &sce->display.shading);
 
-  BLO_read_data_address(reader, &sce->layer_properties);
-  IDP_BlendDataRead(reader, &sce->layer_properties);
+  LOADER_read_data_address(reader, &sce->layer_properties);
+  IDP_DuneDataRead(reader, &sce->layer_properties);
 }
 
 /* patch for missing scene IDs, can't be in do-versions */
@@ -1353,75 +1353,75 @@ static void composite_patch(bNodeTree *ntree, Scene *scene)
   }
 }
 
-static void scene_blend_read_lib(BlendLibReader *reader, ID *id)
+static void scene_dune_read_lib(DuneLibReader *reader, ID *id)
 {
   Scene *sce = (Scene *)id;
 
-  BKE_keyingsets_blend_read_lib(reader, &sce->id, &sce->keyingsets);
+  KERNEL_keyingsets_dune_read_lib(reader, &sce->id, &sce->keyingsets);
 
-  BLO_read_id_address(reader, sce->id.lib, &sce->camera);
-  BLO_read_id_address(reader, sce->id.lib, &sce->world);
-  BLO_read_id_address(reader, sce->id.lib, &sce->set);
-  BLO_read_id_address(reader, sce->id.lib, &sce->gpd);
+  LOADER_read_id_address(reader, sce->id.lib, &sce->camera);
+  LOADER_read_id_address(reader, sce->id.lib, &sce->world);
+  LOADER_read_id_address(reader, sce->id.lib, &sce->set);
+  LOADER_read_id_address(reader, sce->id.lib, &sce->gpd);
 
-  BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->imapaint.paint);
+  KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->imapaint.paint);
   if (sce->toolsettings->sculpt) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->sculpt->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->sculpt->paint);
   }
   if (sce->toolsettings->vpaint) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->vpaint->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->vpaint->paint);
   }
   if (sce->toolsettings->wpaint) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->wpaint->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->wpaint->paint);
   }
   if (sce->toolsettings->uvsculpt) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->uvsculpt->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->uvsculpt->paint);
   }
   if (sce->toolsettings->gp_paint) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->gp_paint->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_paint->paint);
   }
   if (sce->toolsettings->gp_vertexpaint) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->gp_vertexpaint->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_vertexpaint->paint);
   }
   if (sce->toolsettings->gp_sculptpaint) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->gp_sculptpaint->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_sculptpaint->paint);
   }
   if (sce->toolsettings->gp_weightpaint) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->gp_weightpaint->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->gp_weightpaint->paint);
   }
   if (sce->toolsettings->curves_sculpt) {
-    BKE_paint_blend_read_lib(reader, sce, &sce->toolsettings->curves_sculpt->paint);
+    KERNEL_paint_dune_read_lib(reader, sce, &sce->toolsettings->curves_sculpt->paint);
   }
 
   if (sce->toolsettings->sculpt) {
-    BLO_read_id_address(reader, sce->id.lib, &sce->toolsettings->sculpt->gravity_object);
+    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->sculpt->gravity_object);
   }
 
   if (sce->toolsettings->imapaint.stencil) {
-    BLO_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.stencil);
+    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.stencil);
   }
 
   if (sce->toolsettings->imapaint.clone) {
-    BLO_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.clone);
+    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.clone);
   }
 
   if (sce->toolsettings->imapaint.canvas) {
-    BLO_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.canvas);
+    LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->imapaint.canvas);
   }
 
-  BLO_read_id_address(reader, sce->id.lib, &sce->toolsettings->particle.shape_object);
+  LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->particle.shape_object);
 
-  BLO_read_id_address(reader, sce->id.lib, &sce->toolsettings->gp_sculpt.guide.reference_object);
+  LOADER_read_id_address(reader, sce->id.lib, &sce->toolsettings->gp_sculpt.guide.reference_object);
 
   LISTBASE_FOREACH_MUTABLE (Base *, base_legacy, &sce->base) {
-    BLO_read_id_address(reader, sce->id.lib, &base_legacy->object);
+    LOADER_read_id_address(reader, sce->id.lib, &base_legacy->object);
 
     if (base_legacy->object == NULL) {
-      BLO_reportf_wrap(BLO_read_lib_reports(reader),
+      LOADER_reportf_wrap(LOADER_read_lib_reports(reader),
                        RPT_WARNING,
                        TIP_("LIB: object lost from scene: '%s'"),
                        sce->id.name + 2);
-      BLI_remlink(&sce->base, base_legacy);
+      LIB_remlink(&sce->base, base_legacy);
       if (base_legacy == sce->basact) {
         sce->basact = NULL;
       }
@@ -1430,14 +1430,14 @@ static void scene_blend_read_lib(BlendLibReader *reader, ID *id)
   }
 
   if (sce->ed) {
-    SEQ_blend_read_lib(reader, sce, &sce->ed->seqbase);
+    SEQ_dune_read_lib(reader, sce, &sce->ed->seqbase);
   }
 
   LISTBASE_FOREACH (TimeMarker *, marker, &sce->markers) {
-    IDP_BlendReadLib(reader, marker->prop);
+    IDP_DuneReadLib(reader, marker->prop);
 
     if (marker->camera) {
-      BLO_read_id_address(reader, sce->id.lib, &marker->camera);
+      LOADER_read_id_address(reader, sce->id.lib, &marker->camera);
     }
   }
 
