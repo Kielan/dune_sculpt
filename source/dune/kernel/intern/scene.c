@@ -504,8 +504,8 @@ static void scene_foreach_toolsettings_id_pointer_process(
       __func_call; \
     } \
     else { \
-      BLI_assert((__data) != NULL); \
-      BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(__data, __func_call); \
+      LIB_assert((__data) != NULL); \
+      KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(__data, __func_call); \
     } \
   } \
   (void)0
@@ -513,10 +513,10 @@ static void scene_foreach_toolsettings_id_pointer_process(
 static void scene_foreach_paint(LibraryForeachIDData *data,
                                 Paint *paint,
                                 const bool do_undo_restore,
-                                BlendLibReader *reader,
+                                DuneLibReader *reader,
                                 Paint *paint_old)
 {
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   paint->brush,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
@@ -534,7 +534,7 @@ static void scene_foreach_paint(LibraryForeachIDData *data,
      */
     Brush *brush_tmp = NULL;
     Brush **brush_p = i < paint->tool_slots_len ? &paint->tool_slots[i].brush : &brush_tmp;
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                     *brush_p,
                                                     do_undo_restore,
                                                     SCENE_FOREACH_UNDO_RESTORE,
@@ -542,7 +542,7 @@ static void scene_foreach_paint(LibraryForeachIDData *data,
                                                     paint_old->brush,
                                                     IDWALK_CB_USER);
   }
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   paint->palette,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
@@ -554,24 +554,24 @@ static void scene_foreach_paint(LibraryForeachIDData *data,
 static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                                        ToolSettings *toolsett,
                                        const bool do_undo_restore,
-                                       BlendLibReader *reader,
+                                       DuneLibReader *reader,
                                        ToolSettings *toolsett_old)
 {
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->particle.scene,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
                                                   reader,
                                                   toolsett_old->particle.scene,
                                                   IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->particle.object,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
                                                   reader,
                                                   toolsett_old->particle.object,
                                                   IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->particle.shape_object,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
@@ -581,21 +581,21 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
 
   scene_foreach_paint(
       data, &toolsett->imapaint.paint, do_undo_restore, reader, &toolsett_old->imapaint.paint);
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->imapaint.stencil,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
                                                   reader,
                                                   toolsett_old->imapaint.stencil,
                                                   IDWALK_CB_USER);
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->imapaint.clone,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
                                                   reader,
                                                   toolsett_old->imapaint.clone,
                                                   IDWALK_CB_USER);
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->imapaint.canvas,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_RESTORE,
@@ -604,7 +604,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                                                   IDWALK_CB_USER);
 
   if (toolsett->vpaint) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -614,7 +614,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->vpaint->paint));
   }
   if (toolsett->wpaint) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -624,7 +624,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->wpaint->paint));
   }
   if (toolsett->sculpt) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -632,7 +632,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             do_undo_restore,
                             reader,
                             &toolsett_old->sculpt->paint));
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                     toolsett->sculpt->gravity_object,
                                                     do_undo_restore,
                                                     SCENE_FOREACH_UNDO_NO_RESTORE,
@@ -641,7 +641,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                                                     IDWALK_CB_NOP);
   }
   if (toolsett->uvsculpt) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -651,7 +651,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->uvsculpt->paint));
   }
   if (toolsett->gp_paint) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -661,7 +661,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->gp_paint->paint));
   }
   if (toolsett->gp_vertexpaint) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -671,7 +671,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->gp_vertexpaint->paint));
   }
   if (toolsett->gp_sculptpaint) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -681,7 +681,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->gp_sculptpaint->paint));
   }
   if (toolsett->gp_weightpaint) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -691,7 +691,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->gp_weightpaint->paint));
   }
   if (toolsett->curves_sculpt) {
-    BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL(
         data,
         do_undo_restore,
         scene_foreach_paint(data,
@@ -701,7 +701,7 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                             &toolsett_old->curves_sculpt->paint));
   }
 
-  BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
+  KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER(data,
                                                   toolsett->gp_sculpt.guide.reference_object,
                                                   do_undo_restore,
                                                   SCENE_FOREACH_UNDO_NO_RESTORE,
@@ -710,8 +710,8 @@ static void scene_foreach_toolsettings(LibraryForeachIDData *data,
                                                   IDWALK_CB_NOP);
 }
 
-#undef BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER
-#undef BKE_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL
+#undef KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_IDSUPER
+#undef KERNEL_LIB_FOREACHID_UNDO_PRESERVE_PROCESS_FUNCTION_CALL
 
 static void scene_foreach_layer_collection(LibraryForeachIDData *data, ListBase *lb)
 {
@@ -722,7 +722,7 @@ static void scene_foreach_layer_collection(LibraryForeachIDData *data, ListBase 
                          (lc->collection->id.flag & LIB_EMBEDDED_DATA) != 0) ?
                             IDWALK_CB_EMBEDDED :
                             IDWALK_CB_NOP;
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, lc->collection, cb_flag);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, lc->collection, cb_flag);
     scene_foreach_layer_collection(data, &lc->layer_collections);
   }
 }
@@ -734,8 +734,8 @@ static bool seq_foreach_member_id_cb(Sequence *seq, void *user_data)
 #define FOREACHID_PROCESS_IDSUPER(_data, _id_super, _cb_flag) \
   { \
     CHECK_TYPE(&((_id_super)->id), ID *); \
-    BKE_lib_query_foreachid_process((_data), (ID **)&(_id_super), (_cb_flag)); \
-    if (BKE_lib_query_foreachid_iter_stop((_data))) { \
+    KERNEL_lib_query_foreachid_process((_data), (ID **)&(_id_super), (_cb_flag)); \
+    if (KERNEL_lib_query_foreachid_iter_stop((_data))) { \
       return false; \
     } \
   } \
@@ -766,79 +766,79 @@ static void scene_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   Scene *scene = (Scene *)id;
 
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->camera, IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->world, IDWALK_CB_USER);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->set, IDWALK_CB_NEVER_SELF);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->clip, IDWALK_CB_USER);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->gpd, IDWALK_CB_USER);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->r.bake.cage_object, IDWALK_CB_NOP);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->camera, IDWALK_CB_NOP);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->world, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->set, IDWALK_CB_NEVER_SELF);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->clip, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->gpd, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scene->r.bake.cage_object, IDWALK_CB_NOP);
   if (scene->nodetree) {
     /* nodetree **are owned by IDs**, treat them as mere sub-data and not real ID! */
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, BKE_library_foreach_ID_embedded(data, (ID **)&scene->nodetree));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+        data, KERNEL_library_foreach_ID_embedded(data, (ID **)&scene->nodetree));
   }
   if (scene->ed) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
         data, SEQ_for_each_callback(&scene->ed->seqbase, seq_foreach_member_id_cb, data));
   }
 
-  BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
+  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
                                           BKE_keyingsets_foreach_id(data, &scene->keyingsets));
 
   /* This pointer can be NULL during old files reading, better be safe than sorry. */
   if (scene->master_collection != NULL) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, BKE_library_foreach_ID_embedded(data, (ID **)&scene->master_collection));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+        data, KERNEL_library_foreach_ID_embedded(data, (ID **)&scene->master_collection));
   }
 
   LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, view_layer->mat_override, IDWALK_CB_USER);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, view_layer->mat_override, IDWALK_CB_USER);
 
     LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
-      BKE_LIB_FOREACHID_PROCESS_IDSUPER(
+      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(
           data, base->object, IDWALK_CB_NOP | IDWALK_CB_OVERRIDE_LIBRARY_NOT_OVERRIDABLE);
     }
 
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
         data, scene_foreach_layer_collection(data, &view_layer->layer_collections));
 
     LISTBASE_FOREACH (FreestyleModuleConfig *, fmc, &view_layer->freestyle_config.modules) {
       if (fmc->script) {
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, fmc->script, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, fmc->script, IDWALK_CB_NOP);
       }
     }
 
     LISTBASE_FOREACH (FreestyleLineSet *, fls, &view_layer->freestyle_config.linesets) {
       if (fls->group) {
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->group, IDWALK_CB_USER);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->group, IDWALK_CB_USER);
       }
 
       if (fls->linestyle) {
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->linestyle, IDWALK_CB_USER);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, fls->linestyle, IDWALK_CB_USER);
       }
     }
   }
 
   LISTBASE_FOREACH (TimeMarker *, marker, &scene->markers) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, marker->camera, IDWALK_CB_NOP);
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, marker->camera, IDWALK_CB_NOP);
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
         data,
         IDP_foreach_property(marker->prop,
                              IDP_TYPE_FILTER_ID,
-                             BKE_lib_query_idpropertiesForeachIDLink_callback,
+                             KERNEL_lib_query_idpropertiesForeachIDLink_callback,
                              data));
   }
 
   ToolSettings *toolsett = scene->toolsettings;
   if (toolsett) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
         data, scene_foreach_toolsettings(data, toolsett, false, NULL, toolsett));
   }
 
   if (scene->rigidbody_world) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
         data,
-        BKE_rigidbody_world_id_loop(
+        KERNEL_rigidbody_world_id_loop(
             scene->rigidbody_world, scene_foreach_rigidbodyworldSceneLooper, data));
   }
 }
@@ -868,25 +868,25 @@ static bool seq_foreach_path_callback(Sequence *seq, void *user_data)
     BPathForeachPathData *bpath_data = (BPathForeachPathData *)user_data;
 
     if (ELEM(seq->type, SEQ_TYPE_MOVIE, SEQ_TYPE_SOUND_RAM) && se) {
-      BKE_bpath_foreach_path_dirfile_fixed_process(bpath_data, seq->strip->dir, se->name);
+      KERNEL_bpath_foreach_path_dirfile_fixed_process(bpath_data, seq->strip->dir, se->name);
     }
     else if ((seq->type == SEQ_TYPE_IMAGE) && se) {
       /* NOTE: An option not to loop over all strips could be useful? */
       unsigned int len = (unsigned int)MEM_allocN_len(se) / (unsigned int)sizeof(*se);
       unsigned int i;
 
-      if (bpath_data->flag & BKE_BPATH_FOREACH_PATH_SKIP_MULTIFILE) {
+      if (bpath_data->flag & KERNEL_BPATH_FOREACH_PATH_SKIP_MULTIFILE) {
         /* only operate on one path */
         len = MIN2(1u, len);
       }
 
       for (i = 0; i < len; i++, se++) {
-        BKE_bpath_foreach_path_dirfile_fixed_process(bpath_data, seq->strip->dir, se->name);
+        KERNEL_bpath_foreach_path_dirfile_fixed_process(bpath_data, seq->strip->dir, se->name);
       }
     }
     else {
       /* simple case */
-      BKE_bpath_foreach_path_fixed_process(bpath_data, seq->strip->dir);
+      KERNEL_bpath_foreach_path_fixed_process(bpath_data, seq->strip->dir);
     }
   }
   return true;
@@ -900,63 +900,63 @@ static void scene_foreach_path(ID *id, BPathForeachPathData *bpath_data)
   }
 }
 
-static void scene_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void scene_blend_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Scene *sce = (Scene *)id;
 
-  if (BLO_write_is_undo(writer)) {
+  if (LOADER_write_is_undo(writer)) {
     /* Clean up, important in undo case to reduce false detection of changed data-blocks. */
     /* XXX This UI data should not be stored in Scene at all... */
     memset(&sce->cursor, 0, sizeof(sce->cursor));
   }
 
   /* write LibData */
-  BLO_write_id_struct(writer, Scene, id_address, &sce->id);
-  BKE_id_blend_write(writer, &sce->id);
+  LOADER_write_id_struct(writer, Scene, id_address, &sce->id);
+  KERNEL_id_dune_write(writer, &sce->id);
 
   if (sce->adt) {
-    BKE_animdata_blend_write(writer, sce->adt);
+    KERNEL_animdata_dune_write(writer, sce->adt);
   }
-  BKE_keyingsets_blend_write(writer, &sce->keyingsets);
+  KERNEL_keyingsets_dune_write(writer, &sce->keyingsets);
 
   /* direct data */
   ToolSettings *tos = sce->toolsettings;
-  BLO_write_struct(writer, ToolSettings, tos);
+  LOADER_write_struct(writer, ToolSettings, tos);
   if (tos->vpaint) {
-    BLO_write_struct(writer, VPaint, tos->vpaint);
-    BKE_paint_blend_write(writer, &tos->vpaint->paint);
+    LOADER_write_struct(writer, VPaint, tos->vpaint);
+    KERNEL_paint_dune_write(writer, &tos->vpaint->paint);
   }
   if (tos->wpaint) {
-    BLO_write_struct(writer, VPaint, tos->wpaint);
-    BKE_paint_blend_write(writer, &tos->wpaint->paint);
+    LOADER_write_struct(writer, VPaint, tos->wpaint);
+    KERNEL_paint_dune_write(writer, &tos->wpaint->paint);
   }
   if (tos->sculpt) {
-    BLO_write_struct(writer, Sculpt, tos->sculpt);
-    BKE_paint_blend_write(writer, &tos->sculpt->paint);
+    LOADER_write_struct(writer, Sculpt, tos->sculpt);
+    KERNEL_paint_dune_write(writer, &tos->sculpt->paint);
   }
   if (tos->uvsculpt) {
-    BLO_write_struct(writer, UvSculpt, tos->uvsculpt);
-    BKE_paint_blend_write(writer, &tos->uvsculpt->paint);
+    LOADER_write_struct(writer, UvSculpt, tos->uvsculpt);
+    KERNEL_paint_dune_write(writer, &tos->uvsculpt->paint);
   }
   if (tos->gp_paint) {
-    BLO_write_struct(writer, GpPaint, tos->gp_paint);
-    BKE_paint_blend_write(writer, &tos->gp_paint->paint);
+    LOADER_write_struct(writer, GpPaint, tos->gp_paint);
+    KERNEL_paint_dune_write(writer, &tos->gp_paint->paint);
   }
   if (tos->gp_vertexpaint) {
-    BLO_write_struct(writer, GpVertexPaint, tos->gp_vertexpaint);
-    BKE_paint_blend_write(writer, &tos->gp_vertexpaint->paint);
+    LOADER_write_struct(writer, GpVertexPaint, tos->gp_vertexpaint);
+    KERNEL_paint_dune_write(writer, &tos->gp_vertexpaint->paint);
   }
   if (tos->gp_sculptpaint) {
-    BLO_write_struct(writer, GpSculptPaint, tos->gp_sculptpaint);
-    BKE_paint_blend_write(writer, &tos->gp_sculptpaint->paint);
+    LOADER_write_struct(writer, GpSculptPaint, tos->gp_sculptpaint);
+    KERNEL_paint_dune_write(writer, &tos->gp_sculptpaint->paint);
   }
   if (tos->gp_weightpaint) {
-    BLO_write_struct(writer, GpWeightPaint, tos->gp_weightpaint);
-    BKE_paint_blend_write(writer, &tos->gp_weightpaint->paint);
+    LOADER_write_struct(writer, GpWeightPaint, tos->gp_weightpaint);
+    KERNEL_paint_blend_write(writer, &tos->gp_weightpaint->paint);
   }
   if (tos->curves_sculpt) {
-    BLO_write_struct(writer, CurvesSculpt, tos->curves_sculpt);
-    BKE_paint_blend_write(writer, &tos->curves_sculpt->paint);
+    LOADER_write_struct(writer, CurvesSculpt, tos->curves_sculpt);
+    KERNEL_paint_dune_write(writer, &tos->curves_sculpt->paint);
   }
   /* write grease-pencil custom ipo curve to file */
   if (tos->gp_interpolate.custom_ipo) {
