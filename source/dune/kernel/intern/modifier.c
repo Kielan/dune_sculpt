@@ -223,30 +223,30 @@ bool KERNEL_modifier_unique_name(ListBase *modifiers, ModifierData *md)
   if (modifiers && md) {
     const ModifierTypeInfo *mti = KERNEL_modifier_get_info(md->type);
 
-    return BLI_uniquename(
+    return LIB_uniquename(
         modifiers, md, DATA_(mti->name), '.', offsetof(ModifierData, name), sizeof(md->name));
   }
   return false;
 }
 
-bool BKE_modifier_depends_ontime(Scene *scene, ModifierData *md, const int dag_eval_mode)
+bool KERNEL_modifier_depends_ontime(Scene *scene, ModifierData *md, const int dag_eval_mode)
 {
-  const ModifierTypeInfo *mti = BKE_modifier_get_info(md->type);
+  const ModifierTypeInfo *mti = KERNEL_modifier_get_info(md->type);
 
   return mti->dependsOnTime && mti->dependsOnTime(scene, md, dag_eval_mode);
 }
 
-bool BKE_modifier_supports_mapping(ModifierData *md)
+bool KERNEL_modifier_supports_mapping(ModifierData *md)
 {
-  const ModifierTypeInfo *mti = BKE_modifier_get_info(md->type);
+  const ModifierTypeInfo *mti = KERNEL_modifier_get_info(md->type);
 
   return (mti->type == eModifierTypeType_OnlyDeform ||
           (mti->flags & eModifierTypeFlag_SupportsMapping));
 }
 
-bool BKE_modifier_is_preview(ModifierData *md)
+bool KERNEL_modifier_is_preview(ModifierData *md)
 {
-  const ModifierTypeInfo *mti = BKE_modifier_get_info(md->type);
+  const ModifierTypeInfo *mti = KERNEL_modifier_get_info(md->type);
 
   /* Constructive modifiers are highly likely to also modify data like vgroups or vcol! */
   if (!((mti->flags & eModifierTypeFlag_UsesPreview) ||
@@ -261,7 +261,7 @@ bool BKE_modifier_is_preview(ModifierData *md)
   return false;
 }
 
-ModifierData *BKE_modifiers_findby_type(const Object *ob, ModifierType type)
+ModifierData *KERNEL_modifiers_findby_type(const Object *ob, ModifierType type)
 {
   LISTBASE_FOREACH (ModifierData *, md, &ob->modifiers) {
     if (md->type == type) {
@@ -271,7 +271,7 @@ ModifierData *BKE_modifiers_findby_type(const Object *ob, ModifierType type)
   return NULL;
 }
 
-ModifierData *BKE_modifiers_findby_name(const Object *ob, const char *name)
+ModifierData *KERNEL_modifiers_findby_name(const Object *ob, const char *name)
 {
-  return BLI_findstring(&(ob->modifiers), name, offsetof(ModifierData, name));
+  return LIB_findstring(&(ob->modifiers), name, offsetof(ModifierData, name));
 }
