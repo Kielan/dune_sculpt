@@ -1,5 +1,4 @@
 /**
- *
  * The primary purpose of this API is to avoid unnecessary mesh conversion for the final
  * output of a modified mesh.
  *
@@ -22,23 +21,23 @@
 #include "STRUCTS_modifier_types.h"
 #include "STRUCTS_object_types.h"
 
-#include "LI_ghash.h"
-#include "LI_math.h"
-#include "LI_task.h"
-#include "LI_threads.h"
-#include "LI_utildefines.h"
+#include "LIB_ghash.h"
+#include "LIB_math.h"
+#include "LIB_task.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
-#include "KE_editmesh.h"
-#include "KE_editmesh_cache.h"
-#include "KE_lib_id.h"
-#include "KE_mesh.h"
-#include "KE_mesh_runtime.h"
-#include "KE_mesh_wrapper.h"
-#include "KE_modifier.h"
-#include "KE_object.h"
-#include "KE_subdiv.h"
-#include "KE_subdiv_mesh.h"
-#include "KE_subdiv_modifier.h"
+#include "KERNEL_editmesh.h"
+#include "KERNEL_editmesh_cache.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_mesh.h"
+#include "KERNEL_mesh_runtime.h"
+#include "KERNEL_mesh_wrapper.h"
+#include "KERNEL_modifier.h"
+#include "KERNEL_object.h"
+#include "KERNEL_subdiv.h"
+#include "KERNEL_subdiv_mesh.h"
+#include "KERNEL_subdiv_modifier.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
@@ -175,7 +174,7 @@ void KERNEL_mesh_wrapper_vert_coords_copy(const Mesh *me,
   switch ((eMeshWrapperType)me->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_BMESH: {
       BMesh *bm = me->edit_mesh->bm;
-      BLI_assert(vert_coords_len <= bm->totvert);
+      LIB_assert(vert_coords_len <= bm->totvert);
       EditMeshData *edit_data = me->runtime.edit_data;
       if (edit_data->vertexCos != NULL) {
         for (int i = 0; i < vert_coords_len; i++) {
@@ -194,7 +193,7 @@ void KERNEL_mesh_wrapper_vert_coords_copy(const Mesh *me,
     }
     case ME_WRAPPER_TYPE_MDATA:
     case ME_WRAPPER_TYPE_SUBD: {
-      BLI_assert(vert_coords_len <= me->totvert);
+      LIB_assert(vert_coords_len <= me->totvert);
       const MVert *mvert = me->mvert;
       for (int i = 0; i < vert_coords_len; i++) {
         copy_v3_v3(vert_coords[i], mvert[i].co);
@@ -202,10 +201,10 @@ void KERNEL_mesh_wrapper_vert_coords_copy(const Mesh *me,
       return;
     }
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
 }
 
-void BKE_mesh_wrapper_vert_coords_copy_with_mat4(const Mesh *me,
+void KERNEL_mesh_wrapper_vert_coords_copy_with_mat4(const Mesh *me,
                                                  float (*vert_coords)[3],
                                                  int vert_coords_len,
                                                  const float mat[4][4])
@@ -213,7 +212,7 @@ void BKE_mesh_wrapper_vert_coords_copy_with_mat4(const Mesh *me,
   switch ((eMeshWrapperType)me->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_BMESH: {
       BMesh *bm = me->edit_mesh->bm;
-      BLI_assert(vert_coords_len == bm->totvert);
+      LIB_assert(vert_coords_len == bm->totvert);
       EditMeshData *edit_data = me->runtime.edit_data;
       if (edit_data->vertexCos != NULL) {
         for (int i = 0; i < vert_coords_len; i++) {
@@ -232,7 +231,7 @@ void BKE_mesh_wrapper_vert_coords_copy_with_mat4(const Mesh *me,
     }
     case ME_WRAPPER_TYPE_MDATA:
     case ME_WRAPPER_TYPE_SUBD: {
-      BLI_assert(vert_coords_len == me->totvert);
+      LIB_assert(vert_coords_len == me->totvert);
       const MVert *mvert = me->mvert;
       for (int i = 0; i < vert_coords_len; i++) {
         mul_v3_m4v3(vert_coords[i], mat, mvert[i].co);
@@ -240,16 +239,13 @@ void BKE_mesh_wrapper_vert_coords_copy_with_mat4(const Mesh *me,
       return;
     }
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Mesh Array Length Access
- * \{ */
+/** Mesh Array Length Access */
 
-int BKE_mesh_wrapper_vert_len(const Mesh *me)
+int KERNEL_mesh_wrapper_vert_len(const Mesh *me)
 {
   switch ((eMeshWrapperType)me->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_BMESH:
@@ -258,11 +254,11 @@ int BKE_mesh_wrapper_vert_len(const Mesh *me)
     case ME_WRAPPER_TYPE_SUBD:
       return me->totvert;
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
   return -1;
 }
 
-int BKE_mesh_wrapper_edge_len(const Mesh *me)
+int KERNEL_mesh_wrapper_edge_len(const Mesh *me)
 {
   switch ((eMeshWrapperType)me->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_BMESH:
@@ -271,11 +267,11 @@ int BKE_mesh_wrapper_edge_len(const Mesh *me)
     case ME_WRAPPER_TYPE_SUBD:
       return me->totedge;
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
   return -1;
 }
 
-int BKE_mesh_wrapper_loop_len(const Mesh *me)
+int KERNEL_mesh_wrapper_loop_len(const Mesh *me)
 {
   switch ((eMeshWrapperType)me->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_BMESH:
@@ -284,11 +280,11 @@ int BKE_mesh_wrapper_loop_len(const Mesh *me)
     case ME_WRAPPER_TYPE_SUBD:
       return me->totloop;
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
   return -1;
 }
 
-int BKE_mesh_wrapper_poly_len(const Mesh *me)
+int KERNEL_mesh_wrapper_poly_len(const Mesh *me)
 {
   switch ((eMeshWrapperType)me->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_BMESH:
@@ -297,19 +293,16 @@ int BKE_mesh_wrapper_poly_len(const Mesh *me)
     case ME_WRAPPER_TYPE_SUBD:
       return me->totpoly;
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
   return -1;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name CPU Subdivision Evaluation
- * \{ */
+/** CPU Subdivision Evaluation */
 
 static Mesh *mesh_wrapper_ensure_subdivision(const Object *ob, Mesh *me)
 {
-  SubsurfModifierData *smd = BKE_object_get_last_subsurf_modifier(ob);
+  SubsurfModifierData *smd = KERNEL_object_get_last_subsurf_modifier(ob);
   if (!smd) {
     return me;
   }
@@ -328,28 +321,28 @@ static Mesh *mesh_wrapper_ensure_subdivision(const Object *ob, Mesh *me)
   const bool apply_render = me->runtime.subsurf_apply_render;
 
   SubdivSettings subdiv_settings;
-  BKE_subsurf_modifier_subdiv_settings_init(&subdiv_settings, smd, apply_render);
+  KERNEL_subsurf_modifier_subdiv_settings_init(&subdiv_settings, smd, apply_render);
   if (subdiv_settings.level == 0) {
     return me;
   }
 
-  SubsurfRuntimeData *runtime_data = BKE_subsurf_modifier_ensure_runtime(smd);
+  SubsurfRuntimeData *runtime_data = KERNEL_subsurf_modifier_ensure_runtime(smd);
 
-  Subdiv *subdiv = BKE_subsurf_modifier_subdiv_descriptor_ensure(smd, &subdiv_settings, me, false);
+  Subdiv *subdiv = KERNEL_subsurf_modifier_subdiv_descriptor_ensure(smd, &subdiv_settings, me, false);
   if (subdiv == NULL) {
     /* Happens on bad topology, but also on empty input mesh. */
     return me;
   }
 
-  Mesh *subdiv_mesh = BKE_subdiv_to_mesh(subdiv, &mesh_settings, me);
+  Mesh *subdiv_mesh = KERNEL_subdiv_to_mesh(subdiv, &mesh_settings, me);
 
   if (subdiv != runtime_data->subdiv) {
-    BKE_subdiv_free(subdiv);
+    KERNEL_subdiv_free(subdiv);
   }
 
   if (subdiv_mesh != me) {
     if (me->runtime.mesh_eval != NULL) {
-      BKE_id_free(NULL, me->runtime.mesh_eval);
+      KERNEL_id_free(NULL, me->runtime.mesh_eval);
     }
     me->runtime.mesh_eval = subdiv_mesh;
     me->runtime.wrapper_type = ME_WRAPPER_TYPE_SUBD;
@@ -372,13 +365,13 @@ static void mesh_wrapper_ensure_subdivision_isolated(void *userdata)
   task_data->result = mesh_wrapper_ensure_subdivision(ob, me);
 }
 
-Mesh *BKE_mesh_wrapper_ensure_subdivision(const Object *ob, Mesh *me)
+Mesh *KERNEL_mesh_wrapper_ensure_subdivision(const Object *ob, Mesh *me)
 {
   ThreadMutex *mesh_eval_mutex = (ThreadMutex *)me->runtime.eval_mutex;
-  BLI_mutex_lock(mesh_eval_mutex);
+  LIB_mutex_lock(mesh_eval_mutex);
 
   if (me->runtime.wrapper_type == ME_WRAPPER_TYPE_SUBD) {
-    BLI_mutex_unlock(mesh_eval_mutex);
+    LIB_mutex_unlock(mesh_eval_mutex);
     return me->runtime.mesh_eval;
   }
 
@@ -387,8 +380,8 @@ Mesh *BKE_mesh_wrapper_ensure_subdivision(const Object *ob, Mesh *me)
   task_data.me = me;
 
   /* Must isolate multithreaded tasks while holding a mutex lock. */
-  BLI_task_isolate(mesh_wrapper_ensure_subdivision_isolated, &task_data);
+  LIB_task_isolate(mesh_wrapper_ensure_subdivision_isolated, &task_data);
 
-  BLI_mutex_unlock(mesh_eval_mutex);
+  LIB_mutex_unlock(mesh_eval_mutex);
   return task_data.result;
 }
