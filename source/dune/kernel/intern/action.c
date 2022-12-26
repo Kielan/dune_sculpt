@@ -700,7 +700,7 @@ bPoseChannel *KERNEL_pose_channel_active(Object *ob, const bool check_arm_layer)
   /* find active */
   for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {
     if ((pchan->bone) && (pchan->bone == arm->act_bone)) {
-      if (!check_arm_layer || BKE_pose_is_layer_visible(arm, pchan)) {
+      if (!check_arm_layer || KERNEL_pose_is_layer_visible(arm, pchan)) {
         return pchan;
       }
     }
@@ -1497,24 +1497,24 @@ bool KERNEL_action_is_cyclic(const struct bAction *act)
 
 short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, ListBase *curves)
 {
-  PointerRNA ptr;
+  PointerAPI ptr;
   FCurve *fcu;
   char *basePath = NULL;
   short flags = 0;
 
   /* build PointerAPI from provided data to obtain the paths to use */
   if (pchan) {
-    RNA_pointer_create((ID *)ob, &RNA_PoseBone, pchan, &ptr);
+    API_pointer_create((ID *)ob, &RNA_PoseBone, pchan, &ptr);
   }
   else if (ob) {
-    RNA_id_pointer_create((ID *)ob, &ptr);
+    API_id_pointer_create((ID *)ob, &ptr);
   }
   else {
     return 0;
   }
 
   /* get the basic path to the properties of interest */
-  basePath = RNA_path_from_ID_to_struct(&ptr);
+  basePath = API_path_from_ID_to_struct(&ptr);
   if (basePath == NULL) {
     return 0;
   }
@@ -1548,7 +1548,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
       /* step 2: check for some property with transforms
        * - to speed things up, only check for the ones not yet found
        *   unless we're getting the curves too
-       * - if we're getting the curves, the BLI_genericNodeN() creates a LinkData
+       * - if we're getting the curves, the LIB_genericNodeN() creates a LinkData
        *   node wrapping the F-Curve, which then gets added to the list
        * - once a match has been found, the curve cannot possibly be any other one
        */
@@ -1558,7 +1558,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
           flags |= ACT_TRANS_LOC;
 
           if (curves) {
-            BLI_addtail(curves, BLI_genericNodeN(fcu));
+            LIB_addtail(curves, LIB_genericNodeN(fcu));
           }
           continue;
         }
@@ -1570,7 +1570,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
           flags |= ACT_TRANS_SCALE;
 
           if (curves) {
-            BLI_addtail(curves, BLI_genericNodeN(fcu));
+            LIB_addtail(curves, LIB_genericNodeN(fcu));
           }
           continue;
         }
@@ -1595,7 +1595,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
           flags |= ACT_TRANS_BBONE;
 
           if (curves) {
-            BLI_addtail(curves, LIB_genericNodeN(fcu));
+            LIB_addtail(curves, LIB_genericNodeN(fcu));
           }
           continue;
         }
@@ -1805,35 +1805,35 @@ void KERNEL_pose_check_uuids_unique_and_report(const bPose *pose)
     return;
   }
 
-  struct GSet *used_uuids = BLI_gset_new(
-      BLI_session_uuid_ghash_hash, BLI_session_uuid_ghash_compare, "sequencer used uuids");
+  struct GSet *used_uuids = LIB_gset_new(
+      LIB_session_uuid_ghash_hash, LIB_session_uuid_ghash_compare, "sequencer used uuids");
 
   LISTBASE_FOREACH (bPoseChannel *, pchan, &pose->chanbase) {
     const SessionUUID *session_uuid = &pchan->runtime.session_uuid;
-    if (!BLI_session_uuid_is_generated(session_uuid)) {
+    if (!LIB_session_uuid_is_generated(session_uuid)) {
       printf("Pose channel %s does not have UUID generated.\n", pchan->name);
       continue;
     }
 
-    if (BLI_gset_lookup(used_uuids, session_uuid) != NULL) {
+    if (LIB_gset_lookup(used_uuids, session_uuid) != NULL) {
       printf("Pose channel %s has duplicate UUID generated.\n", pchan->name);
       continue;
     }
 
-    BLI_gset_insert(used_uuids, (void *)session_uuid);
+    LIB_gset_insert(used_uuids, (void *)session_uuid);
   }
 
-  BLI_gset_free(used_uuids, NULL);
+  LIB_gset_free(used_uuids, NULL);
 }
 
-void BKE_pose_blend_write(BlendWriter *writer, bPose *pose, bArmature *arm)
+void KERNEL_pose_dune_write(DuneWriter *writer, bPose *pose, bArmature *arm)
 {
   /* Write each channel */
   if (pose == NULL) {
     return;
   }
 
-  BLI_assert(arm != NULL);
+  LIB_assert(arm != NULL);
 
   /* Write channels */
   LISTBASE_FOREACH (bPoseChannel *, chan, &pose->chanbase) {
@@ -1843,9 +1843,9 @@ void BKE_pose_blend_write(BlendWriter *writer, bPose *pose, bArmature *arm)
       IDP_BlendWrite(writer, chan->prop);
     }
 
-    BKE_constraint_blend_write(writer, &chan->constraints);
+    KERNEL_constraint_dune_write(writer, &chan->constraints);
 
-    animviz_motionpath_blend_write(writer, chan->mpath);
+    animviz_motionpath_dune_write(writer, chan->mpath);
 
     /* Prevent crashes with autosave,
      * when a bone duplicated in edit-mode has not yet been assigned to its pose-channel.
@@ -1858,12 +1858,12 @@ void BKE_pose_blend_write(BlendWriter *writer, bPose *pose, bArmature *arm)
       chan->selectflag = bone->flag & BONE_SELECTED;
     }
 
-    BLO_write_struct(writer, bPoseChannel, chan);
+    LOADER_write_struct(writer, bPoseChannel, chan);
   }
 
   /* Write groups */
   LISTBASE_FOREACH (bActionGroup *, grp, &pose->agroups) {
-    BLO_write_struct(writer, bActionGroup, grp);
+    LOADER_write_struct(writer, bActionGroup, grp);
   }
 
   /* write IK param */
