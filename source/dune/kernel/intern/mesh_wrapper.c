@@ -1,5 +1,4 @@
-/** \file
- * \ingroup bke
+/**
  *
  * The primary purpose of this API is to avoid unnecessary mesh conversion for the final
  * output of a modified mesh.
@@ -18,40 +17,40 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
+#include "STRUCTS_mesh_types.h"
+#include "STRUCTS_meshdata_types.h"
+#include "STRUCTS_modifier_types.h"
+#include "STRUCTS_object_types.h"
 
-#include "BLI_ghash.h"
-#include "BLI_math.h"
-#include "BLI_task.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LI_ghash.h"
+#include "LI_math.h"
+#include "LI_task.h"
+#include "LI_threads.h"
+#include "LI_utildefines.h"
 
-#include "BKE_editmesh.h"
-#include "BKE_editmesh_cache.h"
-#include "BKE_lib_id.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_runtime.h"
-#include "BKE_mesh_wrapper.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_subdiv.h"
-#include "BKE_subdiv_mesh.h"
-#include "BKE_subdiv_modifier.h"
+#include "KE_editmesh.h"
+#include "KE_editmesh_cache.h"
+#include "KE_lib_id.h"
+#include "KE_mesh.h"
+#include "KE_mesh_runtime.h"
+#include "KE_mesh_wrapper.h"
+#include "KE_modifier.h"
+#include "KE_object.h"
+#include "KE_subdiv.h"
+#include "KE_subdiv_mesh.h"
+#include "KE_subdiv_modifier.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-Mesh *BKE_mesh_wrapper_from_editmesh_with_coords(BMEditMesh *em,
+Mesh *KERNEL_mesh_wrapper_from_editmesh_with_coords(BMEditMesh *em,
                                                  const CustomData_MeshMasks *cd_mask_extra,
                                                  const float (*vert_coords)[3],
                                                  const Mesh *me_settings)
 {
-  Mesh *me = BKE_id_new_nomain(ID_ME, NULL);
-  BKE_mesh_copy_parameters_for_eval(me, me_settings);
-  BKE_mesh_runtime_ensure_edit_data(me);
+  Mesh *me = KERNEL_id_new_nomain(ID_ME, NULL);
+  KERNEL_mesh_copy_parameters_for_eval(me, me_settings);
+  KERNEL_mesh_runtime_ensure_edit_data(me);
 
   me->runtime.wrapper_type = ME_WRAPPER_TYPE_BMESH;
   if (cd_mask_extra) {
@@ -82,11 +81,11 @@ Mesh *BKE_mesh_wrapper_from_editmesh_with_coords(BMEditMesh *em,
   return me;
 }
 
-Mesh *BKE_mesh_wrapper_from_editmesh(BMEditMesh *em,
+Mesh *KERNEL_mesh_wrapper_from_editmesh(BMEditMesh *em,
                                      const CustomData_MeshMasks *cd_mask_extra,
                                      const Mesh *me_settings)
 {
-  return BKE_mesh_wrapper_from_editmesh_with_coords(em, cd_mask_extra, NULL, me_settings);
+  return KERNEL_mesh_wrapper_from_editmesh_with_coords(em, cd_mask_extra, NULL, me_settings);
 }
 
 static void mesh_wrapper_ensure_mdata_isolated(void *userdata)
@@ -107,8 +106,8 @@ static void mesh_wrapper_ensure_mdata_isolated(void *userdata)
       me->totpoly = 0;
       me->totloop = 0;
 
-      BLI_assert(me->edit_mesh != NULL);
-      BLI_assert(me->runtime.edit_data != NULL);
+      LIB_assert(me->edit_mesh != NULL);
+      LIB_assert(me->runtime.edit_data != NULL);
 
       BMEditMesh *em = me->edit_mesh;
       BM_mesh_bm_to_me_for_eval(em->bm, me, &me->runtime.cd_mask_extra);
@@ -121,11 +120,11 @@ static void mesh_wrapper_ensure_mdata_isolated(void *userdata)
        * There is also a performance aspect, where this also assumes that original indices are
        * always needed when converting an edit mesh to a mesh. That might be wrong, but it's not
        * harmful. */
-      BKE_mesh_ensure_default_orig_index_customdata(me);
+      KERNEL_mesh_ensure_default_orig_index_customdata(me);
 
       EditMeshData *edit_data = me->runtime.edit_data;
       if (edit_data->vertexCos) {
-        BKE_mesh_vert_coords_apply(me, edit_data->vertexCos);
+        KERNEL_mesh_vert_coords_apply(me, edit_data->vertexCos);
         me->runtime.is_original = false;
       }
       break;
@@ -133,44 +132,43 @@ static void mesh_wrapper_ensure_mdata_isolated(void *userdata)
   }
 
   if (me->runtime.wrapper_type_finalize) {
-    BKE_mesh_wrapper_deferred_finalize(me, &me->runtime.cd_mask_extra);
+    KERNEL_mesh_wrapper_deferred_finalize(me, &me->runtime.cd_mask_extra);
   }
 }
 
-void BKE_mesh_wrapper_ensure_mdata(Mesh *me)
+void KERNEL_mesh_wrapper_ensure_mdata(Mesh *me)
 {
   ThreadMutex *mesh_eval_mutex = (ThreadMutex *)me->runtime.eval_mutex;
-  BLI_mutex_lock(mesh_eval_mutex);
+  LIB_mutex_lock(mesh_eval_mutex);
 
   if (me->runtime.wrapper_type == ME_WRAPPER_TYPE_MDATA) {
-    BLI_mutex_unlock(mesh_eval_mutex);
+    LIB_mutex_unlock(mesh_eval_mutex);
     return;
   }
 
   /* Must isolate multithreaded tasks while holding a mutex lock. */
-  BLI_task_isolate(mesh_wrapper_ensure_mdata_isolated, me);
+  LIB_task_isolate(mesh_wrapper_ensure_mdata_isolated, me);
 
-  BLI_mutex_unlock(mesh_eval_mutex);
+  LIB_mutex_unlock(mesh_eval_mutex);
 }
 
-bool BKE_mesh_wrapper_minmax(const Mesh *me, float min[3], float max[3])
+bool KERNEL_mesh_wrapper_minmax(const Mesh *me, float min[3], float max[3])
 {
   switch ((eMeshWrapperType)me->runtime.wrapper_type) {
     case ME_WRAPPER_TYPE_BMESH:
-      return BKE_editmesh_cache_calc_minmax(me->edit_mesh, me->runtime.edit_data, min, max);
+      return KERNEL_editmesh_cache_calc_minmax(me->edit_mesh, me->runtime.edit_data, min, max);
     case ME_WRAPPER_TYPE_MDATA:
     case ME_WRAPPER_TYPE_SUBD:
-      return BKE_mesh_minmax(me, min, max);
+      return KERNEL_mesh_minmax(me, min, max);
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
   return false;
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Mesh Coordinate Access
- * \{ */
+/** Mesh Coordinate Access */
 
-void BKE_mesh_wrapper_vert_coords_copy(const Mesh *me,
+void KERNEL_mesh_wrapper_vert_coords_copy(const Mesh *me,
                                        float (*vert_coords)[3],
                                        int vert_coords_len)
 {
