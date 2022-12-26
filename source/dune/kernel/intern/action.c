@@ -162,14 +162,14 @@ static void action_foreach_id(ID *id, LibraryForeachIDData *data)
   }
 }
 
-static void action_blend_write(DuneWriter *writer, ID *id, const void *id_address)
+static void action_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   bAction *act = (bAction *)id;
 
   LOADER_write_id_struct(writer, bAction, id_address, &act->id);
-  KERNEL_id_blend_write(writer, &act->id);
+  KERNEL_id_dune_write(writer, &act->id);
 
-  KERNEL_fcurve_blend_write(writer, &act->curves);
+  KERNEL_fcurve_dune_write(writer, &act->curves);
 
   LISTBASE_FOREACH (bActionGroup *, grp, &act->groups) {
     LOADER_write_struct(writer, bActionGroup, grp);
@@ -179,7 +179,7 @@ static void action_blend_write(DuneWriter *writer, ID *id, const void *id_addres
     LOADER_write_struct(writer, TimeMarker, marker);
   }
 
-  KERNEL_previewimg_blend_write(writer, act->preview);
+  KERNEL_previewimg_dune_write(writer, act->preview);
 }
 
 static void action_dune_read_data(DuneDataReader *reader, ID *id)
@@ -232,7 +232,7 @@ static void action_dune_read_lib(DuneLibReader *reader, ID *id)
 
   LISTBASE_FOREACH (TimeMarker *, marker, &act->markers) {
     if (marker->camera) {
-      LO_read_id_address(reader, act->id.lib, &marker->camera);
+      LOADER_read_id_address(reader, act->id.lib, &marker->camera);
     }
   }
 }
@@ -240,7 +240,7 @@ static void action_dune_read_lib(DuneLibReader *reader, ID *id)
 static void dune_read_expand_constraint_channels(DuneExpander *expander, ListBase *chanbase)
 {
   LISTBASE_FOREACH (bConstraintChannel *, chan, chanbase) {
-    LO_expand(expander, chan->ipo);
+    LOADER_expand(expander, chan->ipo);
   }
 }
 
@@ -601,7 +601,7 @@ void action_groups_clear_tempflags(bAction *act)
 
 void KERNEL_pose_channel_session_uuid_generate(bPoseChannel *pchan)
 {
-  pchan->runtime.session_uuid = BLI_session_uuid_generate();
+  pchan->runtime.session_uuid = LIB_session_uuid_generate();
 }
 
 bPoseChannel *KERNEL_pose_channel_find_name(const bPose *pose, const char *name)
@@ -1504,7 +1504,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
 
   /* build PointerAPI from provided data to obtain the paths to use */
   if (pchan) {
-    API_pointer_create((ID *)ob, &RNA_PoseBone, pchan, &ptr);
+    API_pointer_create((ID *)ob, &API_PoseBone, pchan, &ptr);
   }
   else if (ob) {
     API_id_pointer_create((ID *)ob, &ptr);
@@ -1868,35 +1868,35 @@ void KERNEL_pose_dune_write(DuneWriter *writer, bPose *pose, bArmature *arm)
 
   /* write IK param */
   if (pose->ikparam) {
-    const char *structname = BKE_pose_ikparam_get_name(pose);
+    const char *structname = KERNEL_pose_ikparam_get_name(pose);
     if (structname) {
-      BLO_write_struct_by_name(writer, structname, pose->ikparam);
+      LOADER_write_struct_by_name(writer, structname, pose->ikparam);
     }
   }
 
   /* Write this pose */
-  BLO_write_struct(writer, bPose, pose);
+  LOADER_write_struct(writer, bPose, pose);
 }
 
-void BKE_pose_blend_read_data(BlendDataReader *reader, bPose *pose)
+void KERNEL_pose_dune_read_data(DuneDataReader *reader, bPose *pose)
 {
   if (!pose) {
     return;
   }
 
-  BLO_read_list(reader, &pose->chanbase);
-  BLO_read_list(reader, &pose->agroups);
+  LOADER_read_list(reader, &pose->chanbase);
+  LOADER_read_list(reader, &pose->agroups);
 
   pose->chanhash = NULL;
   pose->chan_array = NULL;
 
   LISTBASE_FOREACH (bPoseChannel *, pchan, &pose->chanbase) {
-    BKE_pose_channel_runtime_reset(&pchan->runtime);
-    BKE_pose_channel_session_uuid_generate(pchan);
+    KERNEL_pose_channel_runtime_reset(&pchan->runtime);
+    KERNEL_pose_channel_session_uuid_generate(pchan);
 
     pchan->bone = NULL;
-    BLO_read_data_address(reader, &pchan->parent);
-    BLO_read_data_address(reader, &pchan->child);
+    LOADER_read_data_address(reader, &pchan->parent);
+    LOADER_read_data_address(reader, &pchan->child);
     LOADER_read_data_address(reader, &pchan->custom_tx);
 
     LOADER_read_data_address(reader, &pchan->bbone_prev);
@@ -1926,7 +1926,7 @@ void BKE_pose_blend_read_data(BlendDataReader *reader, bPose *pose)
   }
 }
 
-void KERNEL_pose_blend_read_lib(BlendLibReader *reader, Object *ob, bPose *pose)
+void KERNEL_pose_dune_read_lib(DuneLibReader *reader, Object *ob, bPose *pose)
 {
   bArmature *arm = ob->data;
 
