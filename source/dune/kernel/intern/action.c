@@ -244,23 +244,23 @@ static void dune_read_expand_constraint_channels(DuneExpander *expander, ListBas
   }
 }
 
-static void action_blend_read_expand(DuneExpander *expander, ID *id)
+static void action_dune_read_expand(DuneExpander *expander, ID *id)
 {
   bAction *act = (bAction *)id;
 
   /* XXX deprecated - old animation system -------------- */
   LISTBASE_FOREACH (bActionChannel *, chan, &act->chanbase) {
-    LO_expand(expander, chan->ipo);
+    LOADER_expand(expander, chan->ipo);
     dune_read_expand_constraint_channels(expander, &chan->constraintChannels);
   }
   /* --------------------------------------------------- */
 
   /* F-Curves in Action */
-  KE_fcurve_blend_read_expand(expander, &act->curves);
+  KERNEL_fcurve_blend_read_expand(expander, &act->curves);
 
   LISTBASE_FOREACH (TimeMarker *, marker, &act->markers) {
     if (marker->camera) {
-      LO_expand(expander, marker->camera);
+      LOADER_expand(expander, marker->camera);
     }
   }
 }
@@ -279,10 +279,10 @@ static IDProperty *action_asset_type_property(const bAction *action)
 static void action_asset_pre_save(void *asset_ptr, struct AssetMetaData *asset_data)
 {
   bAction *action = (bAction *)asset_ptr;
-  LI_assert(GS(action->id.name) == ID_AC);
+  LIB_assert(GS(action->id.name) == ID_AC);
 
   IDProperty *action_type = action_asset_type_property(action);
-  KE_asset_metadata_idprop_ensure(asset_data, action_type);
+  KERNEL_asset_metadata_idprop_ensure(asset_data, action_type);
 }
 
 static AssetTypeInfo AssetType_AC = {
@@ -296,7 +296,7 @@ IDTypeInfo IDType_ID_AC = {
     .struct_size = sizeof(bAction),
     .name = "Action",
     .name_plural = "actions",
-    .translation_context = BLT_I18NCONTEXT_ID_ACTION,
+    .translation_context = TRANSLATION_I18NCONTEXT_ID_ACTION,
     .flags = IDTYPE_FLAGS_NO_ANIMDATA,
     .asset_type_info = &AssetType_AC,
 
@@ -321,11 +321,11 @@ IDTypeInfo IDType_ID_AC = {
 
 /* ***************** Library data level operations on action ************** */
 
-bAction *KE_action_add(Main *bmain, const char name[])
+bAction *KERNEL_action_add(Main *bmain, const char name[])
 {
   bAction *act;
 
-  act = KE_id_new(bmain, ID_AC, name);
+  act = KERNEL_id_new(bmain, ID_AC, name);
 
   return act;
 }
@@ -636,7 +636,7 @@ bPoseChannel *KERNEL_pose_channel_ensure(bPose *pose, const char *name)
 
   KERNEL_pose_channel_session_uuid_generate(chan);
 
-  BLI_strncpy(chan->name, name, sizeof(chan->name));
+  LIB_strncpy(chan->name, name, sizeof(chan->name));
 
   copy_v3_fl(chan->custom_scale_xyz, 1.0f);
   zero_v3(chan->custom_translation);
@@ -688,7 +688,7 @@ bool KERNEL_pose_is_layer_visible(const bArmature *arm, const bPoseChannel *pcha
   return (pchan->bone->layer & arm->layer);
 }
 
-bPoseChannel *BKE_pose_channel_active(Object *ob, const bool check_arm_layer)
+bPoseChannel *KERNEL_pose_channel_active(Object *ob, const bool check_arm_layer)
 {
   bArmature *arm = (ob) ? ob->data : NULL;
   bPoseChannel *pchan;
@@ -866,13 +866,13 @@ void BKE_pose_itasc_init(bItasc *itasc)
     itasc->dampeps = 0.15;
   }
 }
-void BKE_pose_ikparam_init(bPose *pose)
+void KERNEL_pose_ikparam_init(bPose *pose)
 {
   bItasc *itasc;
   switch (pose->iksolver) {
     case IKSOLVER_ITASC:
       itasc = MEM_callocN(sizeof(bItasc), "itasc");
-      BKE_pose_itasc_init(itasc);
+      KERNEL_pose_itasc_init(itasc);
       pose->ikparam = itasc;
       break;
     case IKSOLVER_STANDARD:
@@ -901,7 +901,7 @@ static bool pose_channel_in_IK_chain(Object *ob, bPoseChannel *pchan, int level)
     }
   }
   for (bone = pchan->bone->childbase.first; bone; bone = bone->next) {
-    pchan = BKE_pose_channel_find_name(ob->pose, bone->name);
+    pchan = KERNEL_pose_channel_find_name(ob->pose, bone->name);
     if (pchan && pose_channel_in_IK_chain(ob, pchan, level + 1)) {
       return true;
     }
@@ -909,27 +909,27 @@ static bool pose_channel_in_IK_chain(Object *ob, bPoseChannel *pchan, int level)
   return false;
 }
 
-bool BKE_pose_channel_in_IK_chain(Object *ob, bPoseChannel *pchan)
+bool KERNEL_pose_channel_in_IK_chain(Object *ob, bPoseChannel *pchan)
 {
   return pose_channel_in_IK_chain(ob, pchan, 0);
 }
 
-void BKE_pose_channels_hash_ensure(bPose *pose)
+void KERNEL_pose_channels_hash_ensure(bPose *pose)
 {
   if (!pose->chanhash) {
     bPoseChannel *pchan;
 
-    pose->chanhash = BLI_ghash_str_new("make_pose_chan gh");
+    pose->chanhash = LIB_ghash_str_new("make_pose_chan gh");
     for (pchan = pose->chanbase.first; pchan; pchan = pchan->next) {
-      BLI_ghash_insert(pose->chanhash, pchan->name, pchan);
+      LIB_ghash_insert(pose->chanhash, pchan->name, pchan);
     }
   }
 }
 
-void BKE_pose_channels_hash_free(bPose *pose)
+void KERNEL_pose_channels_hash_free(bPose *pose)
 {
   if (pose->chanhash) {
-    BLI_ghash_free(pose->chanhash, NULL, NULL);
+    LIB_ghash_free(pose->chanhash, NULL, NULL);
     pose->chanhash = NULL;
   }
 }
@@ -949,7 +949,7 @@ static void pose_channels_remove_internal_links(Object *ob, bPoseChannel *unlink
   }
 }
 
-void BKE_pose_channels_remove(Object *ob,
+void KERNEL_pose_channels_remove(Object *ob,
                               bool (*filter_fn)(const char *bone_name, void *user_data),
                               void *user_data)
 {
@@ -963,12 +963,12 @@ void BKE_pose_channels_remove(Object *ob,
 
       if (filter_fn(pchan->name, user_data)) {
         /* Bone itself is being removed */
-        BKE_pose_channel_free(pchan);
+        KERNEL_pose_channel_free(pchan);
         pose_channels_remove_internal_links(ob, pchan);
         if (ob->pose->chanhash) {
-          BLI_ghash_remove(ob->pose->chanhash, pchan->name, NULL, NULL);
+          LIB_ghash_remove(ob->pose->chanhash, pchan->name, NULL, NULL);
         }
-        BLI_freelinkN(&ob->pose->chanbase, pchan);
+        LIB_freelinkN(&ob->pose->chanbase, pchan);
       }
       else {
         /* Maybe something the bone references is being removed instead? */
@@ -1018,7 +1018,7 @@ void BKE_pose_channels_remove(Object *ob,
   }
 }
 
-void BKE_pose_channel_free_ex(bPoseChannel *pchan, bool do_id_user)
+void KERNEL_pose_channel_free_ex(bPoseChannel *pchan, bool do_id_user)
 {
   if (pchan->custom) {
     if (do_id_user) {
@@ -1032,7 +1032,7 @@ void BKE_pose_channel_free_ex(bPoseChannel *pchan, bool do_id_user)
     pchan->mpath = NULL;
   }
 
-  BKE_constraints_free_ex(&pchan->constraints, do_id_user);
+  KERNEL_constraints_free_ex(&pchan->constraints, do_id_user);
 
   if (pchan->prop) {
     IDP_FreeProperty_ex(pchan->prop, do_id_user);
@@ -1043,27 +1043,27 @@ void BKE_pose_channel_free_ex(bPoseChannel *pchan, bool do_id_user)
   MEM_SAFE_FREE(pchan->draw_data);
 
   /* Cached B-Bone shape and other data. */
-  BKE_pose_channel_runtime_free(&pchan->runtime);
+  KERNEL_pose_channel_runtime_free(&pchan->runtime);
 }
 
-void BKE_pose_channel_runtime_reset(bPoseChannel_Runtime *runtime)
+void KERNEL_pose_channel_runtime_reset(bPoseChannel_Runtime *runtime)
 {
   memset(runtime, 0, sizeof(*runtime));
 }
 
-void BKE_pose_channel_runtime_reset_on_copy(bPoseChannel_Runtime *runtime)
+void KERNEL_pose_channel_runtime_reset_on_copy(bPoseChannel_Runtime *runtime)
 {
   const SessionUUID uuid = runtime->session_uuid;
   memset(runtime, 0, sizeof(*runtime));
   runtime->session_uuid = uuid;
 }
 
-void BKE_pose_channel_runtime_free(bPoseChannel_Runtime *runtime)
+void KERNEL_pose_channel_runtime_free(bPoseChannel_Runtime *runtime)
 {
-  BKE_pose_channel_free_bbone_cache(runtime);
+  KERNEL_pose_channel_free_bbone_cache(runtime);
 }
 
-void BKE_pose_channel_free_bbone_cache(bPoseChannel_Runtime *runtime)
+void KERNEL_pose_channel_free_bbone_cache(bPoseChannel_Runtime *runtime)
 {
   runtime->bbone_segments = 0;
   MEM_SAFE_FREE(runtime->bbone_rest_mats);
@@ -1072,12 +1072,12 @@ void BKE_pose_channel_free_bbone_cache(bPoseChannel_Runtime *runtime)
   MEM_SAFE_FREE(runtime->bbone_dual_quats);
 }
 
-void BKE_pose_channel_free(bPoseChannel *pchan)
+void KERNEL_pose_channel_free(bPoseChannel *pchan)
 {
-  BKE_pose_channel_free_ex(pchan, true);
+  KERNEL_pose_channel_free_ex(pchan, true);
 }
 
-void BKE_pose_channels_free_ex(bPose *pose, bool do_id_user)
+void KERNEL_pose_channels_free_ex(bPose *pose, bool do_id_user)
 {
   bPoseChannel *pchan;
 
