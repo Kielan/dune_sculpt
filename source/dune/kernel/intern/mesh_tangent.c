@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * Functions to evaluate mesh tangents.
  */
 
@@ -8,27 +6,27 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "STRUCTS_mesh_types.h"
+#include "STRUCTS_meshdata_types.h"
 
-#include "BLI_math.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "LIB_math.h"
+#include "LIB_task.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_runtime.h"
-#include "BKE_mesh_tangent.h"
-#include "BKE_report.h"
+#include "KERNEL_customdata.h"
+#include "KERNEL_mesh.h"
+#include "KERNEL_mesh_runtime.h"
+#include "KERNEL_mesh_tangent.h"
+#include "KERNEL_report.h"
 
-#include "BLI_strict_flags.h"
+#include "LIB_strict_flags.h"
 
 #include "atomic_ops.h"
 #include "mikktspace.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Mesh Tangent Calculations (Single Layer)
- * \{ */
+/** Mesh Tangent Calculations (Single Layer)
+ */
 
 /* Tangent space utils. */
 
@@ -41,12 +39,12 @@ typedef struct {
   float (*lnors)[3];    /* loops' normals */
   float (*tangents)[4]; /* output tangents */
   int num_polys;        /* number of polygons */
-} BKEMeshToTangent;
+} KERNELMeshToTangent;
 
 /* Mikktspace's API */
 static int get_num_faces(const SMikkTSpaceContext *pContext)
 {
-  BKEMeshToTangent *p_mesh = (BKEMeshToTangent *)pContext->m_pUserData;
+  KERNELMeshToTangent *p_mesh = (KERNELMeshToTangent *)pContext->m_pUserData;
   return p_mesh->num_polys;
 }
 
