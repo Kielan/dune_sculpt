@@ -8,11 +8,11 @@
 /* Allow using deprecated functionality for .blend file I/O. */
 #define DNA_DEPRECATED_ALLOW
 
-#include "_anim_types.h"
-#include "_armature_types.h"
-#include "_constraint_types.h"
-#include "_object_types.h"
-#include "_scene_types.h"
+#include "STRUCTS_anim_types.h"
+#include "STRUCTS_armature_types.h"
+#include "STRUCTS_constraint_types.h"
+#include "STRUCTS_object_types.h"
+#include "STRUCTS_scene_types.h"
 
 #include "LIB_blenlib.h"
 #include "LIB_ghash.h"
@@ -849,7 +849,7 @@ void KERNEL_pose_copy_data(bPose **dst, const bPose *src, const bool copy_constr
   KERNEL_pose_copy_data_ex(dst, src, 0, copy_constraints);
 }
 
-void BKE_pose_itasc_init(bItasc *itasc)
+void KERNEL_pose_itasc_init(bItasc *itasc)
 {
   if (itasc) {
     itasc->iksolver = IKSOLVER_ITASC;
@@ -1083,30 +1083,30 @@ void KERNEL_pose_channels_free_ex(bPose *pose, bool do_id_user)
 
   if (pose->chanbase.first) {
     for (pchan = pose->chanbase.first; pchan; pchan = pchan->next) {
-      BKE_pose_channel_free_ex(pchan, do_id_user);
+      KERNEL_pose_channel_free_ex(pchan, do_id_user);
     }
 
-    BLI_freelistN(&pose->chanbase);
+    LIB_freelistN(&pose->chanbase);
   }
 
-  BKE_pose_channels_hash_free(pose);
+  KERNEL_pose_channels_hash_free(pose);
 
   MEM_SAFE_FREE(pose->chan_array);
 }
 
-void BKE_pose_channels_free(bPose *pose)
+void KERNEL_pose_channels_free(bPose *pose)
 {
-  BKE_pose_channels_free_ex(pose, true);
+  KERNEL_pose_channels_free_ex(pose, true);
 }
 
-void BKE_pose_free_data_ex(bPose *pose, bool do_id_user)
+void KERNEL_pose_free_data_ex(bPose *pose, bool do_id_user)
 {
   /* free pose-channels */
-  BKE_pose_channels_free_ex(pose, do_id_user);
+  KERNEL_pose_channels_free_ex(pose, do_id_user);
 
   /* free pose-groups */
   if (pose->agroups.first) {
-    BLI_freelistN(&pose->agroups);
+    LIB_freelistN(&pose->agroups);
   }
 
   /* free IK solver state */
@@ -1118,26 +1118,26 @@ void BKE_pose_free_data_ex(bPose *pose, bool do_id_user)
   }
 }
 
-void BKE_pose_free_data(bPose *pose)
+void KERNEL_pose_free_data(bPose *pose)
 {
-  BKE_pose_free_data_ex(pose, true);
+  KERNEL_pose_free_data_ex(pose, true);
 }
 
-void BKE_pose_free_ex(bPose *pose, bool do_id_user)
+void KERNEL_pose_free_ex(bPose *pose, bool do_id_user)
 {
   if (pose) {
-    BKE_pose_free_data_ex(pose, do_id_user);
+    KERNEL_pose_free_data_ex(pose, do_id_user);
     /* free pose */
     MEM_freeN(pose);
   }
 }
 
-void BKE_pose_free(bPose *pose)
+void KERNEL_pose_free(bPose *pose)
 {
-  BKE_pose_free_ex(pose, true);
+  KERNEL_pose_free_ex(pose, true);
 }
 
-void BKE_pose_channel_copy_data(bPoseChannel *pchan, const bPoseChannel *pchan_from)
+void KERNEL_pose_channel_copy_data(bPoseChannel *pchan, const bPoseChannel *pchan_from)
 {
   /* copy transform locks */
   pchan->protectflag = pchan_from->protectflag;
@@ -1162,7 +1162,7 @@ void BKE_pose_channel_copy_data(bPoseChannel *pchan, const bPoseChannel *pchan_f
   pchan->bbone_prev = pchan_from->bbone_prev;
 
   /* constraints */
-  BKE_constraints_copy(&pchan->constraints, &pchan_from->constraints, true);
+  KERNEL_constraints_copy(&pchan->constraints, &pchan_from->constraints, true);
 
   /* id-properties */
   if (pchan->prop) {
@@ -1186,7 +1186,7 @@ void BKE_pose_channel_copy_data(bPoseChannel *pchan, const bPoseChannel *pchan_f
   pchan->drawflag = pchan_from->drawflag;
 }
 
-void BKE_pose_update_constraint_flags(bPose *pose)
+void KERNEL_pose_update_constraint_flags(bPose *pose)
 {
   bPoseChannel *pchan, *parchan;
   bConstraint *con;
@@ -1253,14 +1253,14 @@ void BKE_pose_update_constraint_flags(bPose *pose)
   pose->flag &= ~POSE_CONSTRAINTS_NEED_UPDATE_FLAGS;
 }
 
-void BKE_pose_tag_update_constraint_flags(bPose *pose)
+void KERNEL_pose_tag_update_constraint_flags(bPose *pose)
 {
   pose->flag |= POSE_CONSTRAINTS_NEED_UPDATE_FLAGS;
 }
 
 /* ************************** Bone Groups ************************** */
 
-bActionGroup *BKE_pose_add_group(bPose *pose, const char *name)
+bActionGroup *KERNEL_pose_add_group(bPose *pose, const char *name)
 {
   bActionGroup *grp;
 
@@ -1269,25 +1269,25 @@ bActionGroup *BKE_pose_add_group(bPose *pose, const char *name)
   }
 
   grp = MEM_callocN(sizeof(bActionGroup), "PoseGroup");
-  BLI_strncpy(grp->name, name, sizeof(grp->name));
-  BLI_addtail(&pose->agroups, grp);
-  BLI_uniquename(&pose->agroups, grp, name, '.', offsetof(bActionGroup, name), sizeof(grp->name));
+  LIB_strncpy(grp->name, name, sizeof(grp->name));
+  LIB_addtail(&pose->agroups, grp);
+  LIB_uniquename(&pose->agroups, grp, name, '.', offsetof(bActionGroup, name), sizeof(grp->name));
 
-  pose->active_group = BLI_listbase_count(&pose->agroups);
+  pose->active_group = LIB_listbase_count(&pose->agroups);
 
   return grp;
 }
 
-void BKE_pose_remove_group(bPose *pose, bActionGroup *grp, const int index)
+void KERNEL_pose_remove_group(bPose *pose, bActionGroup *grp, const int index)
 {
   bPoseChannel *pchan;
   int idx = index;
 
   if (idx < 1) {
-    idx = BLI_findindex(&pose->agroups, grp) + 1;
+    idx = LIB_findindex(&pose->agroups, grp) + 1;
   }
 
-  BLI_assert(idx > 0);
+  LIB_assert(idx > 0);
 
   /* adjust group references (the trouble of using indices!):
    * - firstly, make sure nothing references it
@@ -1303,9 +1303,9 @@ void BKE_pose_remove_group(bPose *pose, bActionGroup *grp, const int index)
   }
 
   /* now, remove it from the pose */
-  BLI_freelinkN(&pose->agroups, grp);
+  LIB_freelinkN(&pose->agroups, grp);
   if (pose->active_group >= idx) {
-    const bool has_groups = !BLI_listbase_is_empty(&pose->agroups);
+    const bool has_groups = !LIB_listbase_is_empty(&pose->agroups);
     pose->active_group--;
     if (pose->active_group == 0 && has_groups) {
       pose->active_group = 1;
@@ -1316,14 +1316,14 @@ void BKE_pose_remove_group(bPose *pose, bActionGroup *grp, const int index)
   }
 }
 
-void BKE_pose_remove_group_index(bPose *pose, const int index)
+void KERNEL_pose_remove_group_index(bPose *pose, const int index)
 {
   bActionGroup *grp = NULL;
 
   /* get group to remove */
-  grp = BLI_findlink(&pose->agroups, index - 1);
+  grp = LIB_findlink(&pose->agroups, index - 1);
   if (grp) {
-    BKE_pose_remove_group(pose, grp, index);
+    KERNEL_pose_remove_group(pose, grp, index);
   }
 }
 
@@ -1346,9 +1346,9 @@ bool action_has_motion(const bAction *act)
   return false;
 }
 
-bool BKE_action_has_single_frame(const struct bAction *act)
+bool KERNEL_action_has_single_frame(const struct bAction *act)
 {
-  if (act == NULL || BLI_listbase_is_empty(&act->curves)) {
+  if (act == NULL || LIB_listbase_is_empty(&act->curves)) {
     return false;
   }
 
@@ -1405,7 +1405,7 @@ void calc_action_range(const bAction *act, float *start, float *end, short incl_
          *   single-keyframe curves will increase the overall length by
          *   a phantom frame (T50354)
          */
-        BKE_fcurve_calc_range(fcu, &nmin, &nmax, false, false);
+        KERNEL_fcurve_calc_range(fcu, &nmin, &nmax, false, false);
 
         /* compare to the running tally */
         min = min_ff(min, nmin);
@@ -1474,7 +1474,7 @@ void calc_action_range(const bAction *act, float *start, float *end, short incl_
   }
 }
 
-void BKE_action_get_frame_range(const struct bAction *act, float *r_start, float *r_end)
+void KERNEL_action_get_frame_range(const struct bAction *act, float *r_start, float *r_end)
 {
   if (act && (act->flag & ACT_FRAME_RANGE)) {
     *r_start = act->frame_start;
@@ -1490,7 +1490,7 @@ void BKE_action_get_frame_range(const struct bAction *act, float *r_start, float
   }
 }
 
-bool BKE_action_is_cyclic(const struct bAction *act)
+bool KERNEL_action_is_cyclic(const struct bAction *act)
 {
   return act && (act->flag & ACT_FRAME_RANGE) && (act->flag & ACT_CYCLIC);
 }
@@ -1502,7 +1502,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
   char *basePath = NULL;
   short flags = 0;
 
-  /* build PointerRNA from provided data to obtain the paths to use */
+  /* build PointerAPI from provided data to obtain the paths to use */
   if (pchan) {
     RNA_pointer_create((ID *)ob, &RNA_PoseBone, pchan, &ptr);
   }
@@ -1582,7 +1582,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
           flags |= ACT_TRANS_ROT;
 
           if (curves) {
-            BLI_addtail(curves, BLI_genericNodeN(fcu));
+            LIB_addtail(curves, LIB_genericNodeN(fcu));
           }
           continue;
         }
@@ -1595,7 +1595,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
           flags |= ACT_TRANS_BBONE;
 
           if (curves) {
-            BLI_addtail(curves, BLI_genericNodeN(fcu));
+            BLI_addtail(curves, LIB_genericNodeN(fcu));
           }
           continue;
         }
@@ -1608,7 +1608,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
           flags |= ACT_TRANS_PROP;
 
           if (curves) {
-            BLI_addtail(curves, BLI_genericNodeN(fcu));
+            LIB_addtail(curves, LIB_genericNodeN(fcu));
           }
           continue;
         }
@@ -1625,7 +1625,7 @@ short action_get_item_transforms(bAction *act, Object *ob, bPoseChannel *pchan, 
 
 /* ************** Pose Management Tools ****************** */
 
-void BKE_pose_rest(bPose *pose, bool selected_bones_only)
+void KERNEL_pose_rest(bPose *pose, bool selected_bones_only)
 {
   bPoseChannel *pchan;
 
@@ -1658,7 +1658,7 @@ void BKE_pose_rest(bPose *pose, bool selected_bones_only)
   }
 }
 
-void BKE_pose_copy_pchan_result(bPoseChannel *pchanto, const bPoseChannel *pchanfrom)
+void KERNEL_pose_copy_pchan_result(bPoseChannel *pchanto, const bPoseChannel *pchanfrom)
 {
   copy_m4_m4(pchanto->pose_mat, pchanfrom->pose_mat);
   copy_m4_m4(pchanto->chan_mat, pchanfrom->chan_mat);
@@ -1689,7 +1689,7 @@ void BKE_pose_copy_pchan_result(bPoseChannel *pchanto, const bPoseChannel *pchan
   pchanto->protectflag = pchanfrom->protectflag;
 }
 
-bool BKE_pose_copy_result(bPose *to, bPose *from)
+bool KERNEL_pose_copy_result(bPose *to, bPose *from)
 {
   bPoseChannel *pchanto, *pchanfrom;
 
@@ -1705,15 +1705,15 @@ bool BKE_pose_copy_result(bPose *to, bPose *from)
   }
 
   for (pchanfrom = from->chanbase.first; pchanfrom; pchanfrom = pchanfrom->next) {
-    pchanto = BKE_pose_channel_find_name(to, pchanfrom->name);
+    pchanto = KERNEL_pose_channel_find_name(to, pchanfrom->name);
     if (pchanto != NULL) {
-      BKE_pose_copy_pchan_result(pchanto, pchanfrom);
+      KERNEL_pose_copy_pchan_result(pchanto, pchanfrom);
     }
   }
   return true;
 }
 
-void BKE_pose_tag_recalc(Main *bmain, bPose *pose)
+void KERNEL_pose_tag_recalc(Main *bmain, bPose *pose)
 {
   pose->flag |= POSE_RECALC;
   /* Depsgraph components depends on actual pose state,
@@ -1729,10 +1729,10 @@ void what_does_obaction(Object *ob,
                         char groupname[],
                         const AnimationEvalContext *anim_eval_context)
 {
-  bActionGroup *agrp = BKE_action_group_find_name(act, groupname);
+  bActionGroup *agrp = KERNEL_action_group_find_name(act, groupname);
 
   /* clear workob */
-  BKE_object_workob_clear(workob);
+  KERNEL_object_workob_clear(workob);
 
   /* init workob */
   copy_m4_m4(workob->obmat, ob->obmat);
@@ -1761,26 +1761,26 @@ void what_does_obaction(Object *ob,
      * allocation and also will make lookup slower.
      */
     if (pose->chanbase.first != pose->chanbase.last) {
-      BKE_pose_channels_hash_ensure(pose);
+      KERNEL_pose_channels_hash_ensure(pose);
     }
     if (pose->flag & POSE_CONSTRAINTS_NEED_UPDATE_FLAGS) {
-      BKE_pose_update_constraint_flags(pose);
+      KERNEL_pose_update_constraint_flags(pose);
     }
   }
 
-  BLI_strncpy(workob->parsubstr, ob->parsubstr, sizeof(workob->parsubstr));
+  LIB_strncpy(workob->parsubstr, ob->parsubstr, sizeof(workob->parsubstr));
 
   /* we don't use real object name, otherwise RNA screws with the real thing */
-  BLI_strncpy(workob->id.name, "OB<ConstrWorkOb>", sizeof(workob->id.name));
+  LIB_strncpy(workob->id.name, "OB<ConstrWorkOb>", sizeof(workob->id.name));
 
   /* If we're given a group to use, it's likely to be more efficient
    * (though a bit more dangerous). */
   if (agrp) {
     /* specifically evaluate this group only */
-    PointerRNA id_ptr;
+    PointerAPI id_ptr;
 
     /* get RNA-pointer for the workob's ID */
-    RNA_id_pointer_create(&workob->id, &id_ptr);
+    API_id_pointer_create(&workob->id, &id_ptr);
 
     /* execute action for this group only */
     animsys_evaluate_action_group(&id_ptr, act, agrp, anim_eval_context);
@@ -1792,14 +1792,14 @@ void what_does_obaction(Object *ob,
     workob->adt = &adt;
 
     adt.action = act;
-    BKE_animdata_action_ensure_idroot(&workob->id, act);
+    KERNEL_animdata_action_ensure_idroot(&workob->id, act);
 
     /* execute effects of Action on to workob (or its PoseChannels) */
-    BKE_animsys_evaluate_animdata(&workob->id, &adt, anim_eval_context, ADT_RECALC_ANIM, false);
+    KERNEL_animsys_evaluate_animdata(&workob->id, &adt, anim_eval_context, ADT_RECALC_ANIM, false);
   }
 }
 
-void BKE_pose_check_uuids_unique_and_report(const bPose *pose)
+void KERNEL_pose_check_uuids_unique_and_report(const bPose *pose)
 {
   if (pose == NULL) {
     return;
@@ -1897,23 +1897,23 @@ void BKE_pose_blend_read_data(BlendDataReader *reader, bPose *pose)
     pchan->bone = NULL;
     BLO_read_data_address(reader, &pchan->parent);
     BLO_read_data_address(reader, &pchan->child);
-    BLO_read_data_address(reader, &pchan->custom_tx);
+    LOADER_read_data_address(reader, &pchan->custom_tx);
 
-    BLO_read_data_address(reader, &pchan->bbone_prev);
-    BLO_read_data_address(reader, &pchan->bbone_next);
+    LOADER_read_data_address(reader, &pchan->bbone_prev);
+    LOADER_read_data_address(reader, &pchan->bbone_next);
 
-    BKE_constraint_blend_read_data(reader, &pchan->constraints);
+    KERNEL_constraint_dune_read_data(reader, &pchan->constraints);
 
-    BLO_read_data_address(reader, &pchan->prop);
-    IDP_BlendDataRead(reader, &pchan->prop);
+    LOADER_read_data_address(reader, &pchan->prop);
+    IDP_DuneDataRead(reader, &pchan->prop);
 
-    BLO_read_data_address(reader, &pchan->mpath);
+    LOADER_read_data_address(reader, &pchan->mpath);
     if (pchan->mpath) {
       animviz_motionpath_blend_read_data(reader, pchan->mpath);
     }
 
-    BLI_listbase_clear(&pchan->iktree);
-    BLI_listbase_clear(&pchan->siktree);
+    LIB_listbase_clear(&pchan->iktree);
+    LIB_listbase_clear(&pchan->siktree);
 
     /* in case this value changes in future, clamp else we get undefined behavior */
     CLAMP(pchan->rotmode, ROT_MODE_MIN, ROT_MODE_MAX);
@@ -1922,11 +1922,11 @@ void BKE_pose_blend_read_data(BlendDataReader *reader, bPose *pose)
   }
   pose->ikdata = NULL;
   if (pose->ikparam != NULL) {
-    BLO_read_data_address(reader, &pose->ikparam);
+    LOADER_read_data_address(reader, &pose->ikparam);
   }
 }
 
-void BKE_pose_blend_read_lib(BlendLibReader *reader, Object *ob, bPose *pose)
+void KERNEL_pose_blend_read_lib(BlendLibReader *reader, Object *ob, bPose *pose)
 {
   bArmature *arm = ob->data;
 
@@ -1937,20 +1937,20 @@ void BKE_pose_blend_read_lib(BlendLibReader *reader, Object *ob, bPose *pose)
   /* Always rebuild to match library changes, except on Undo. */
   bool rebuild = false;
 
-  if (!BLO_read_lib_is_undo(reader)) {
+  if (!LOADER_read_lib_is_undo(reader)) {
     if (ob->id.lib != arm->id.lib) {
       rebuild = true;
     }
   }
 
   LISTBASE_FOREACH (bPoseChannel *, pchan, &pose->chanbase) {
-    BKE_constraint_blend_read_lib(reader, (ID *)ob, &pchan->constraints);
+    KERNEL_constraint_dune_read_lib(reader, (ID *)ob, &pchan->constraints);
 
-    pchan->bone = BKE_armature_find_bone_name(arm, pchan->name);
+    pchan->bone = KERNEL_armature_find_bone_name(arm, pchan->name);
 
-    IDP_BlendReadLib(reader, pchan->prop);
+    IDP_DuneReadLib(reader, pchan->prop);
 
-    BLO_read_id_address(reader, ob->id.lib, &pchan->custom);
+    LOADER_read_id_address(reader, ob->id.lib, &pchan->custom);
     if (UNLIKELY(pchan->bone == NULL)) {
       rebuild = true;
     }
@@ -1962,22 +1962,22 @@ void BKE_pose_blend_read_lib(BlendLibReader *reader, Object *ob, bPose *pose)
   }
 
   if (rebuild) {
-    Main *bmain = BLO_read_lib_get_main(reader);
+    Main *bmain = LOADER_read_lib_get_main(reader);
     DEG_id_tag_update_ex(
         bmain, &ob->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY | ID_RECALC_ANIMATION);
-    BKE_pose_tag_recalc(bmain, pose);
+    KERNEL_pose_tag_recalc(bmain, pose);
   }
 }
 
-void BKE_pose_blend_read_expand(BlendExpander *expander, bPose *pose)
+void KERNEL_pose_dune_read_expand(DuneExpander *expander, bPose *pose)
 {
   if (!pose) {
     return;
   }
 
   LISTBASE_FOREACH (bPoseChannel *, chan, &pose->chanbase) {
-    BKE_constraint_blend_read_expand(expander, &chan->constraints);
-    IDP_BlendReadExpand(expander, chan->prop);
-    BLO_expand(expander, chan->custom);
+    KERNEL_constraint_dune_read_expand(expander, &chan->constraints);
+    IDP_DuneReadExpand(expander, chan->prop);
+    LOADER_expand(expander, chan->custom);
   }
 }
