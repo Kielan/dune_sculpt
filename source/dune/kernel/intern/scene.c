@@ -1694,103 +1694,103 @@ ToolSettings *KERNEL_toolsettings_copy(ToolSettings *toolsettings, const int fla
   }
   if (ts->uvsculpt) {
     ts->uvsculpt = MEM_dupallocN(ts->uvsculpt);
-    BKE_paint_copy(&ts->uvsculpt->paint, &ts->uvsculpt->paint, flag);
+    KERNEL_paint_copy(&ts->uvsculpt->paint, &ts->uvsculpt->paint, flag);
   }
   if (ts->gp_paint) {
     ts->gp_paint = MEM_dupallocN(ts->gp_paint);
-    BKE_paint_copy(&ts->gp_paint->paint, &ts->gp_paint->paint, flag);
+    KERNEL_paint_copy(&ts->gp_paint->paint, &ts->gp_paint->paint, flag);
   }
   if (ts->gp_vertexpaint) {
     ts->gp_vertexpaint = MEM_dupallocN(ts->gp_vertexpaint);
-    BKE_paint_copy(&ts->gp_vertexpaint->paint, &ts->gp_vertexpaint->paint, flag);
+    KERNEL_paint_copy(&ts->gp_vertexpaint->paint, &ts->gp_vertexpaint->paint, flag);
   }
   if (ts->gp_sculptpaint) {
     ts->gp_sculptpaint = MEM_dupallocN(ts->gp_sculptpaint);
-    BKE_paint_copy(&ts->gp_sculptpaint->paint, &ts->gp_sculptpaint->paint, flag);
+    KERNEL_paint_copy(&ts->gp_sculptpaint->paint, &ts->gp_sculptpaint->paint, flag);
   }
   if (ts->gp_weightpaint) {
     ts->gp_weightpaint = MEM_dupallocN(ts->gp_weightpaint);
-    BKE_paint_copy(&ts->gp_weightpaint->paint, &ts->gp_weightpaint->paint, flag);
+    KERNEL_paint_copy(&ts->gp_weightpaint->paint, &ts->gp_weightpaint->paint, flag);
   }
   if (ts->curves_sculpt) {
     ts->curves_sculpt = MEM_dupallocN(ts->curves_sculpt);
-    BKE_paint_copy(&ts->curves_sculpt->paint, &ts->curves_sculpt->paint, flag);
+    KERNEL_paint_copy(&ts->curves_sculpt->paint, &ts->curves_sculpt->paint, flag);
   }
 
-  BKE_paint_copy(&ts->imapaint.paint, &ts->imapaint.paint, flag);
+  KERNEL_paint_copy(&ts->imapaint.paint, &ts->imapaint.paint, flag);
   ts->particle.paintcursor = NULL;
   ts->particle.scene = NULL;
   ts->particle.object = NULL;
 
   /* duplicate Grease Pencil interpolation curve */
-  ts->gp_interpolate.custom_ipo = BKE_curvemapping_copy(ts->gp_interpolate.custom_ipo);
+  ts->gp_interpolate.custom_ipo = KERNEL_curvemapping_copy(ts->gp_interpolate.custom_ipo);
   /* Duplicate Grease Pencil multiframe falloff. */
-  ts->gp_sculpt.cur_falloff = BKE_curvemapping_copy(ts->gp_sculpt.cur_falloff);
-  ts->gp_sculpt.cur_primitive = BKE_curvemapping_copy(ts->gp_sculpt.cur_primitive);
+  ts->gp_sculpt.cur_falloff = KERNEL_curvemapping_copy(ts->gp_sculpt.cur_falloff);
+  ts->gp_sculpt.cur_primitive = KERNEL_curvemapping_copy(ts->gp_sculpt.cur_primitive);
 
-  ts->custom_bevel_profile_preset = BKE_curveprofile_copy(ts->custom_bevel_profile_preset);
+  ts->custom_bevel_profile_preset = KERNEL_curveprofile_copy(ts->custom_bevel_profile_preset);
 
   ts->sequencer_tool_settings = SEQ_tool_settings_copy(ts->sequencer_tool_settings);
   return ts;
 }
 
-void BKE_toolsettings_free(ToolSettings *toolsettings)
+void KERNEL_toolsettings_free(ToolSettings *toolsettings)
 {
   if (toolsettings == NULL) {
     return;
   }
   if (toolsettings->vpaint) {
-    BKE_paint_free(&toolsettings->vpaint->paint);
+    KERNEL_paint_free(&toolsettings->vpaint->paint);
     MEM_freeN(toolsettings->vpaint);
   }
   if (toolsettings->wpaint) {
-    BKE_paint_free(&toolsettings->wpaint->paint);
+    KERNEL_paint_free(&toolsettings->wpaint->paint);
     MEM_freeN(toolsettings->wpaint);
   }
   if (toolsettings->sculpt) {
-    BKE_paint_free(&toolsettings->sculpt->paint);
+    KERNEL_paint_free(&toolsettings->sculpt->paint);
     MEM_freeN(toolsettings->sculpt);
   }
   if (toolsettings->uvsculpt) {
-    BKE_paint_free(&toolsettings->uvsculpt->paint);
+    KERNEL_paint_free(&toolsettings->uvsculpt->paint);
     MEM_freeN(toolsettings->uvsculpt);
   }
   if (toolsettings->gp_paint) {
-    BKE_paint_free(&toolsettings->gp_paint->paint);
+    KERNEL_paint_free(&toolsettings->gp_paint->paint);
     MEM_freeN(toolsettings->gp_paint);
   }
   if (toolsettings->gp_vertexpaint) {
-    BKE_paint_free(&toolsettings->gp_vertexpaint->paint);
+    KERNEL_paint_free(&toolsettings->gp_vertexpaint->paint);
     MEM_freeN(toolsettings->gp_vertexpaint);
   }
   if (toolsettings->gp_sculptpaint) {
-    BKE_paint_free(&toolsettings->gp_sculptpaint->paint);
+    KERNEL_paint_free(&toolsettings->gp_sculptpaint->paint);
     MEM_freeN(toolsettings->gp_sculptpaint);
   }
   if (toolsettings->gp_weightpaint) {
-    BKE_paint_free(&toolsettings->gp_weightpaint->paint);
+    KERNEL_paint_free(&toolsettings->gp_weightpaint->paint);
     MEM_freeN(toolsettings->gp_weightpaint);
   }
   if (toolsettings->curves_sculpt) {
-    BKE_paint_free(&toolsettings->curves_sculpt->paint);
+    KERNEL_paint_free(&toolsettings->curves_sculpt->paint);
     MEM_freeN(toolsettings->curves_sculpt);
   }
-  BKE_paint_free(&toolsettings->imapaint.paint);
+  KERNEL_paint_free(&toolsettings->imapaint.paint);
 
   /* free Grease Pencil interpolation curve */
   if (toolsettings->gp_interpolate.custom_ipo) {
-    BKE_curvemapping_free(toolsettings->gp_interpolate.custom_ipo);
+    KERNEL_curvemapping_free(toolsettings->gp_interpolate.custom_ipo);
   }
   /* free Grease Pencil multiframe falloff curve */
   if (toolsettings->gp_sculpt.cur_falloff) {
-    BKE_curvemapping_free(toolsettings->gp_sculpt.cur_falloff);
+    KERNEL_curvemapping_free(toolsettings->gp_sculpt.cur_falloff);
   }
   if (toolsettings->gp_sculpt.cur_primitive) {
-    BKE_curvemapping_free(toolsettings->gp_sculpt.cur_primitive);
+    KERNEL_curvemapping_free(toolsettings->gp_sculpt.cur_primitive);
   }
 
   if (toolsettings->custom_bevel_profile_preset) {
-    BKE_curveprofile_free(toolsettings->custom_bevel_profile_preset);
+    KERNEL_curveprofile_free(toolsettings->custom_bevel_profile_preset);
   }
 
   if (toolsettings->sequencer_tool_settings) {
@@ -1800,7 +1800,7 @@ void BKE_toolsettings_free(ToolSettings *toolsettings)
   MEM_freeN(toolsettings);
 }
 
-void BKE_scene_copy_data_eevee(Scene *sce_dst, const Scene *sce_src)
+void KERNEL_scene_copy_data_eevee(Scene *sce_dst, const Scene *sce_src)
 {
   /* Copy eevee data between scenes. */
   sce_dst->eevee = sce_src->eevee;
@@ -1809,7 +1809,7 @@ void BKE_scene_copy_data_eevee(Scene *sce_dst, const Scene *sce_src)
   /* TODO: Copy the cache. */
 }
 
-Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
+Scene *KERNEL_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
 {
   Scene *sce_copy;
 
@@ -1818,40 +1818,40 @@ Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
   if (type == SCE_COPY_EMPTY) {
     ListBase rv;
 
-    sce_copy = BKE_scene_add(bmain, sce->id.name + 2);
+    sce_copy = KERNEL_scene_add(bmain, sce->id.name + 2);
 
     rv = sce_copy->r.views;
-    BKE_curvemapping_free_data(&sce_copy->r.mblur_shutter_curve);
+    KERNEL_curvemapping_free_data(&sce_copy->r.mblur_shutter_curve);
     sce_copy->r = sce->r;
     sce_copy->r.views = rv;
     sce_copy->unit = sce->unit;
     sce_copy->physics_settings = sce->physics_settings;
     sce_copy->audio = sce->audio;
-    BKE_scene_copy_data_eevee(sce_copy, sce);
+    KERNEL_scene_copy_data_eevee(sce_copy, sce);
 
     if (sce->id.properties) {
       sce_copy->id.properties = IDP_CopyProperty(sce->id.properties);
     }
 
-    BKE_sound_destroy_scene(sce_copy);
+    KERNEL_sound_destroy_scene(sce_copy);
 
     /* copy color management settings */
-    BKE_color_managed_display_settings_copy(&sce_copy->display_settings, &sce->display_settings);
-    BKE_color_managed_view_settings_copy(&sce_copy->view_settings, &sce->view_settings);
-    BKE_color_managed_colorspace_settings_copy(&sce_copy->sequencer_colorspace_settings,
+    KERNEL_color_managed_display_settings_copy(&sce_copy->display_settings, &sce->display_settings);
+    KERNEL_color_managed_view_settings_copy(&sce_copy->view_settings, &sce->view_settings);
+    KERNEL_color_managed_colorspace_settings_copy(&sce_copy->sequencer_colorspace_settings,
                                                &sce->sequencer_colorspace_settings);
 
-    BKE_image_format_copy(&sce_copy->r.im_format, &sce->r.im_format);
-    BKE_image_format_copy(&sce_copy->r.bake.im_format, &sce->r.bake.im_format);
+    KERNEL_image_format_copy(&sce_copy->r.im_format, &sce->r.im_format);
+    KERNEL_image_format_copy(&sce_copy->r.bake.im_format, &sce->r.bake.im_format);
 
-    BKE_curvemapping_copy_data(&sce_copy->r.mblur_shutter_curve, &sce->r.mblur_shutter_curve);
+    KERNEL_curvemapping_copy_data(&sce_copy->r.mblur_shutter_curve, &sce->r.mblur_shutter_curve);
 
     /* viewport display settings */
     sce_copy->display = sce->display;
 
     /* tool settings */
-    BKE_toolsettings_free(sce_copy->toolsettings);
-    sce_copy->toolsettings = BKE_toolsettings_copy(sce->toolsettings, 0);
+    KERNEL_toolsettings_free(sce_copy->toolsettings);
+    sce_copy->toolsettings = KERNEL_toolsettings_copy(sce->toolsettings, 0);
 
     /* make a private copy of the avicodecdata */
     if (sce->r.avicodecdata) {
@@ -1860,7 +1860,7 @@ Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
       sce_copy->r.avicodecdata->lpParms = MEM_dupallocN(sce_copy->r.avicodecdata->lpParms);
     }
 
-    BKE_sound_reset_scene_runtime(sce_copy);
+    KERNEL_sound_reset_scene_runtime(sce_copy);
 
     /* grease pencil */
     sce_copy->gpd = NULL;
@@ -1872,11 +1872,11 @@ Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
 
   eDupli_ID_Flags duplicate_flags = U.dupflag | USER_DUP_OBJECT;
 
-  sce_copy = (Scene *)BKE_id_copy(bmain, (ID *)sce);
+  sce_copy = (Scene *)KERNEL_id_copy(bmain, (ID *)sce);
   id_us_min(&sce_copy->id);
   id_us_ensure_real(&sce_copy->id);
 
-  BKE_animdata_duplicate_id_action(bmain, &sce_copy->id, duplicate_flags);
+  KERNEL_animdata_duplicate_id_action(bmain, &sce_copy->id, duplicate_flags);
 
   /* Extra actions, most notably SCE_FULL_COPY also duplicates several 'children' datablocks. */
 
@@ -1887,7 +1887,7 @@ Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
     const int copy_flags = LIB_ID_COPY_DEFAULT;
 
     if (!is_subprocess) {
-      BKE_main_id_newptr_and_tag_clear(bmain);
+      KERNEL_main_id_newptr_and_tag_clear(bmain);
     }
     if (is_root_id) {
       /* In case root duplicated ID is linked, assume we want to get a local copy of it and
@@ -1900,33 +1900,33 @@ Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
     /* Copy Freestyle LineStyle datablocks. */
     LISTBASE_FOREACH (ViewLayer *, view_layer_dst, &sce_copy->view_layers) {
       LISTBASE_FOREACH (FreestyleLineSet *, lineset, &view_layer_dst->freestyle_config.linesets) {
-        BKE_id_copy_for_duplicate(bmain, (ID *)lineset->linestyle, duplicate_flags, copy_flags);
+        KERNEL_id_copy_for_duplicate(bmain, (ID *)lineset->linestyle, duplicate_flags, copy_flags);
       }
     }
 
     /* Full copy of world (included animations) */
-    BKE_id_copy_for_duplicate(bmain, (ID *)sce->world, duplicate_flags, copy_flags);
+    KERNEL_id_copy_for_duplicate(bmain, (ID *)sce->world, duplicate_flags, copy_flags);
 
     /* Full copy of GreasePencil. */
-    BKE_id_copy_for_duplicate(bmain, (ID *)sce->gpd, duplicate_flags, copy_flags);
+    KERNEL_id_copy_for_duplicate(bmain, (ID *)sce->gpd, duplicate_flags, copy_flags);
 
     /* Deep-duplicate collections and objects (using preferences' settings for which sub-data to
      * duplicate along the object itself). */
-    BKE_collection_duplicate(
+    KERNEL_collection_duplicate(
         bmain, NULL, sce_copy->master_collection, duplicate_flags, LIB_ID_DUPLICATE_IS_SUBPROCESS);
 
     /* Rigid body world collections may not be instantiated as scene's collections, ensure they
      * also get properly duplicated. */
     if (sce_copy->rigidbody_world != NULL) {
       if (sce_copy->rigidbody_world->group != NULL) {
-        BKE_collection_duplicate(bmain,
+        KERNEL_collection_duplicate(bmain,
                                  NULL,
                                  sce_copy->rigidbody_world->group,
                                  duplicate_flags,
                                  LIB_ID_DUPLICATE_IS_SUBPROCESS);
       }
       if (sce_copy->rigidbody_world->constraints != NULL) {
-        BKE_collection_duplicate(bmain,
+        KERNEL_collection_duplicate(bmain,
                                  NULL,
                                  sce_copy->rigidbody_world->constraints,
                                  duplicate_flags,
@@ -1936,22 +1936,22 @@ Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
 
     if (!is_subprocess) {
       /* This code will follow into all ID links using an ID tagged with LIB_TAG_NEW. */
-      BKE_libblock_relink_to_newid(bmain, &sce_copy->id, 0);
+      KERNEL_libblock_relink_to_newid(bmain, &sce_copy->id, 0);
 
 #ifndef NDEBUG
-      /* Call to `BKE_libblock_relink_to_newid` above is supposed to have cleared all those
+      /* Call to `KERNEL_libblock_relink_to_newid` above is supposed to have cleared all those
        * flags. */
       ID *id_iter;
       FOREACH_MAIN_ID_BEGIN (bmain, id_iter) {
-        BLI_assert((id_iter->tag & LIB_TAG_NEW) == 0);
+        LIB_assert((id_iter->tag & LIB_TAG_NEW) == 0);
       }
       FOREACH_MAIN_ID_END;
 #endif
 
       /* Cleanup. */
-      BKE_main_id_newptr_and_tag_clear(bmain);
+      KERNEL_main_id_newptr_and_tag_clear(bmain);
 
-      BKE_main_collection_sync(bmain);
+      KERNEL_main_collection_sync(bmain);
     }
   }
   else {
@@ -1964,14 +1964,14 @@ Scene *BKE_scene_duplicate(Main *bmain, Scene *sce, eSceneCopyMethod type)
   return sce_copy;
 }
 
-void BKE_scene_groups_relink(Scene *sce)
+void KERNEL_scene_groups_relink(Scene *sce)
 {
   if (sce->rigidbody_world) {
-    BKE_rigidbody_world_groups_relink(sce->rigidbody_world);
+    KERNEL_rigidbody_world_groups_relink(sce->rigidbody_world);
   }
 }
 
-bool BKE_scene_can_be_removed(const Main *bmain, const Scene *scene)
+bool KERNEL_scene_can_be_removed(const Main *bmain, const Scene *scene)
 {
   /* Linked scenes can always be removed. */
   if (ID_IS_LINKED(scene)) {
@@ -1986,28 +1986,28 @@ bool BKE_scene_can_be_removed(const Main *bmain, const Scene *scene)
   return false;
 }
 
-Scene *BKE_scene_add(Main *bmain, const char *name)
+Scene *KERNEL_scene_add(Main *bmain, const char *name)
 {
   Scene *sce;
 
-  sce = BKE_id_new(bmain, ID_SCE, name);
+  sce = KERNEL_id_new(bmain, ID_SCE, name);
   id_us_min(&sce->id);
   id_us_ensure_real(&sce->id);
 
   return sce;
 }
 
-bool BKE_scene_object_find(Scene *scene, Object *ob)
+bool KERNEL_scene_object_find(Scene *scene, Object *ob)
 {
   LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
-    if (BLI_findptr(&view_layer->object_bases, ob, offsetof(Base, object))) {
+    if (LIB_findptr(&view_layer->object_bases, ob, offsetof(Base, object))) {
       return true;
     }
   }
   return false;
 }
 
-Object *BKE_scene_object_find_by_name(const Scene *scene, const char *name)
+Object *KERNEL_scene_object_find_by_name(const Scene *scene, const char *name)
 {
   LISTBASE_FOREACH (ViewLayer *, view_layer, &scene->view_layers) {
     LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
@@ -2019,12 +2019,12 @@ Object *BKE_scene_object_find_by_name(const Scene *scene, const char *name)
   return NULL;
 }
 
-void BKE_scene_set_background(Main *bmain, Scene *scene)
+void KERNEL_scene_set_background(Main *bmain, Scene *scene)
 {
   Object *ob;
 
   /* check for cyclic sets, for reading old files but also for definite security (py?) */
-  BKE_scene_validate_setscene(bmain, scene);
+  KERNEL_scene_validate_setscene(bmain, scene);
 
   /* deselect objects (for dataselect) */
   for (ob = bmain->objects.first; ob; ob = ob->id.next) {
@@ -2036,27 +2036,27 @@ void BKE_scene_set_background(Main *bmain, Scene *scene)
     LISTBASE_FOREACH (Base *, base, &view_layer->object_bases) {
       ob = base->object;
       /* collection patch... */
-      BKE_scene_object_base_flag_sync_from_base(base);
+      KERNEL_scene_object_base_flag_sync_from_base(base);
     }
   }
   /* No full animation update, this to enable render code to work
    * (render code calls own animation updates). */
 }
 
-Scene *BKE_scene_set_name(Main *bmain, const char *name)
+Scene *KERNEL_scene_set_name(Main *bmain, const char *name)
 {
-  Scene *sce = (Scene *)BKE_libblock_find_name(bmain, ID_SCE, name);
+  Scene *sce = (Scene *)KERNEL_libblock_find_name(bmain, ID_SCE, name);
   if (sce) {
-    BKE_scene_set_background(bmain, sce);
-    printf("Scene switch for render: '%s' in file: '%s'\n", name, BKE_main_blendfile_path(bmain));
+    KERNEL_scene_set_background(bmain, sce);
+    printf("Scene switch for render: '%s' in file: '%s'\n", name, KERNEL_main_blendfile_path(bmain));
     return sce;
   }
 
-  printf("Can't find scene: '%s' in file: '%s'\n", name, BKE_main_blendfile_path(bmain));
+  printf("Can't find scene: '%s' in file: '%s'\n", name, KERNEL_main_dunefile_path(bmain));
   return NULL;
 }
 
-int BKE_scene_base_iter_next(
+int KERNEL_scene_base_iter_next(
     Depsgraph *depsgraph, SceneBaseIter *iter, Scene **scene, int val, Base **base, Object **ob)
 {
   bool run_again = true;
@@ -2181,16 +2181,16 @@ int BKE_scene_base_iter_next(
   return iter->phase;
 }
 
-bool BKE_scene_has_view_layer(const Scene *scene, const ViewLayer *layer)
+bool KERNEL_scene_has_view_layer(const Scene *scene, const ViewLayer *layer)
 {
-  return BLI_findindex(&scene->view_layers, layer) != -1;
+  return LIB_findindex(&scene->view_layers, layer) != -1;
 }
 
-Scene *BKE_scene_find_from_collection(const Main *bmain, const Collection *collection)
+Scene *KERNEL_scene_find_from_collection(const Main *bmain, const Collection *collection)
 {
   for (Scene *scene = bmain->scenes.first; scene; scene = scene->id.next) {
     LISTBASE_FOREACH (ViewLayer *, layer, &scene->view_layers) {
-      if (BKE_view_layer_has_collection(layer, collection)) {
+      if (KERNEL_view_layer_has_collection(layer, collection)) {
         return scene;
       }
     }
@@ -2200,13 +2200,13 @@ Scene *BKE_scene_find_from_collection(const Main *bmain, const Collection *colle
 }
 
 #ifdef DURIAN_CAMERA_SWITCH
-Object *BKE_scene_camera_switch_find(Scene *scene)
+Object *KERNEL_scene_camera_switch_find(Scene *scene)
 {
   if (scene->r.mode & R_NO_CAMERA_SWITCH) {
     return NULL;
   }
 
-  const int ctime = (int)BKE_scene_ctime_get(scene);
+  const int ctime = (int)KERNEL_scene_ctime_get(scene);
   int frame = -(MAXFRAME + 1);
   int min_frame = MAXFRAME + 1;
   Object *camera = NULL;
@@ -2242,7 +2242,7 @@ Object *BKE_scene_camera_switch_find(Scene *scene)
 }
 #endif
 
-bool BKE_scene_camera_switch_update(Scene *scene)
+bool KERNEL_scene_camera_switch_update(Scene *scene)
 {
 #ifdef DURIAN_CAMERA_SWITCH
   Object *camera = BKE_scene_camera_switch_find(scene);
@@ -2257,7 +2257,7 @@ bool BKE_scene_camera_switch_update(Scene *scene)
   return false;
 }
 
-const char *BKE_scene_find_marker_name(const Scene *scene, int frame)
+const char *KERNEL_scene_find_marker_name(const Scene *scene, int frame)
 {
   const ListBase *markers = &scene->markers;
   const TimeMarker *m1, *m2;
@@ -2280,7 +2280,7 @@ const char *BKE_scene_find_marker_name(const Scene *scene, int frame)
   return NULL;
 }
 
-const char *BKE_scene_find_last_marker_name(const Scene *scene, int frame)
+const char *KERNEL_scene_find_last_marker_name(const Scene *scene, int frame)
 {
   const TimeMarker *marker, *best_marker = NULL;
   int best_frame = -MAXFRAME * 2;
@@ -2298,7 +2298,7 @@ const char *BKE_scene_find_last_marker_name(const Scene *scene, int frame)
   return best_marker ? best_marker->name : NULL;
 }
 
-int BKE_scene_frame_snap_by_seconds(Scene *scene, double interval_in_seconds, int frame)
+int KERNEL_scene_frame_snap_by_seconds(Scene *scene, double interval_in_seconds, int frame)
 {
   const int fps = round_db_to_int(FPS * interval_in_seconds);
   const int second_prev = frame - mod_i(frame, fps);
@@ -2308,18 +2308,18 @@ int BKE_scene_frame_snap_by_seconds(Scene *scene, double interval_in_seconds, in
   return (delta_prev < delta_next) ? second_prev : second_next;
 }
 
-void BKE_scene_remove_rigidbody_object(struct Main *bmain,
+void KERNEL_scene_remove_rigidbody_object(struct Main *bmain,
                                        Scene *scene,
                                        Object *ob,
                                        const bool free_us)
 {
   /* remove rigid body constraint from world before removing object */
   if (ob->rigidbody_constraint) {
-    BKE_rigidbody_remove_constraint(bmain, scene, ob, free_us);
+    KERNEL_rigidbody_remove_constraint(bmain, scene, ob, free_us);
   }
   /* remove rigid body object from world before removing object */
   if (ob->rigidbody_object) {
-    BKE_rigidbody_remove_object(bmain, scene, ob, free_us);
+    KERNEL_rigidbody_remove_object(bmain, scene, ob, free_us);
   }
 }
 
