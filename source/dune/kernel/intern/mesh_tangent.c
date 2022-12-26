@@ -50,7 +50,7 @@ static int get_num_faces(const SMikkTSpaceContext *pContext)
 
 static int get_num_verts_of_face(const SMikkTSpaceContext *pContext, const int face_idx)
 {
-  BKEMeshToTangent *p_mesh = (BKEMeshToTangent *)pContext->m_pUserData;
+  KERNELMeshToTangent *p_mesh = (KERNELMeshToTangent *)pContext->m_pUserData;
   return p_mesh->mpolys[face_idx].totloop;
 }
 
@@ -59,7 +59,7 @@ static void get_position(const SMikkTSpaceContext *pContext,
                          const int face_idx,
                          const int vert_idx)
 {
-  BKEMeshToTangent *p_mesh = (BKEMeshToTangent *)pContext->m_pUserData;
+  KERNELMeshToTangent *p_mesh = (KERNELMeshToTangent *)pContext->m_pUserData;
   const int loop_idx = p_mesh->mpolys[face_idx].loopstart + vert_idx;
   copy_v3_v3(r_co, p_mesh->mverts[p_mesh->mloops[loop_idx].v].co);
 }
@@ -69,7 +69,7 @@ static void get_texture_coordinate(const SMikkTSpaceContext *pContext,
                                    const int face_idx,
                                    const int vert_idx)
 {
-  BKEMeshToTangent *p_mesh = (BKEMeshToTangent *)pContext->m_pUserData;
+  KERNELMeshToTangent *p_mesh = (KERNELMeshToTangent *)pContext->m_pUserData;
   copy_v2_v2(r_uv, p_mesh->luvs[p_mesh->mpolys[face_idx].loopstart + vert_idx].uv);
 }
 
@@ -78,7 +78,7 @@ static void get_normal(const SMikkTSpaceContext *pContext,
                        const int face_idx,
                        const int vert_idx)
 {
-  BKEMeshToTangent *p_mesh = (BKEMeshToTangent *)pContext->m_pUserData;
+  KERNELMeshToTangent *p_mesh = (KERNELMeshToTangent *)pContext->m_pUserData;
   copy_v3_v3(r_no, p_mesh->lnors[p_mesh->mpolys[face_idx].loopstart + vert_idx]);
 }
 
@@ -88,13 +88,13 @@ static void set_tspace(const SMikkTSpaceContext *pContext,
                        const int face_idx,
                        const int vert_idx)
 {
-  BKEMeshToTangent *p_mesh = (BKEMeshToTangent *)pContext->m_pUserData;
+  KERNELMeshToTangent *p_mesh = (KERNELMeshToTangent *)pContext->m_pUserData;
   float *p_res = p_mesh->tangents[p_mesh->mpolys[face_idx].loopstart + vert_idx];
   copy_v3_v3(p_res, fv_tangent);
   p_res[3] = face_sign;
 }
 
-void BKE_mesh_calc_loop_tangent_single_ex(const MVert *mverts,
+void KERNEL_mesh_calc_loop_tangent_single_ex(const MVert *mverts,
                                           const int UNUSED(numVerts),
                                           const MLoop *mloops,
                                           float (*r_looptangent)[4],
@@ -105,7 +105,7 @@ void BKE_mesh_calc_loop_tangent_single_ex(const MVert *mverts,
                                           const int numPolys,
                                           ReportList *reports)
 {
-  BKEMeshToTangent mesh_to_tangent = {NULL};
+  KERNELMeshToTangent mesh_to_tangent = {NULL};
   SMikkTSpaceContext s_context = {NULL};
   SMikkTSpaceInterface s_interface = {NULL};
 
@@ -115,7 +115,7 @@ void BKE_mesh_calc_loop_tangent_single_ex(const MVert *mverts,
   /* First check we do have a tris/quads only mesh. */
   for (mp = mpolys, mp_index = 0; mp_index < numPolys; mp++, mp_index++) {
     if (mp->totloop > 4) {
-      BKE_report(
+      KERNEL_report(
           reports, RPT_ERROR, "Tangent space can only be computed for tris/quads, aborting");
       return;
     }
@@ -141,11 +141,11 @@ void BKE_mesh_calc_loop_tangent_single_ex(const MVert *mverts,
 
   /* 0 if failed */
   if (genTangSpaceDefault(&s_context) == false) {
-    BKE_report(reports, RPT_ERROR, "Mikktspace failed to generate tangents for this mesh!");
+    KERNEL_report(reports, RPT_ERROR, "Mikktspace failed to generate tangents for this mesh!");
   }
 }
 
-void BKE_mesh_calc_loop_tangent_single(Mesh *mesh,
+void KERNEL_mesh_calc_loop_tangent_single(Mesh *mesh,
                                        const char *uvmap,
                                        float (*r_looptangents)[4],
                                        ReportList *reports)
@@ -161,7 +161,7 @@ void BKE_mesh_calc_loop_tangent_single(Mesh *mesh,
     loopuvs = CustomData_get_layer(&mesh->ldata, CD_MLOOPUV);
   }
   if (!loopuvs) {
-    BKE_reportf(reports,
+    KERNEL_reportf(reports,
                 RPT_ERROR,
                 "Tangent space computation needs an UVMap, \"%s\" not found, aborting",
                 uvmap);
@@ -170,12 +170,12 @@ void BKE_mesh_calc_loop_tangent_single(Mesh *mesh,
 
   loopnors = CustomData_get_layer(&mesh->ldata, CD_NORMAL);
   if (!loopnors) {
-    BKE_report(
+    KERNEL_report(
         reports, RPT_ERROR, "Tangent space computation needs loop normals, none found, aborting");
     return;
   }
 
-  BKE_mesh_calc_loop_tangent_single_ex(mesh->mvert,
+  KERNEL_mesh_calc_loop_tangent_single_ex(mesh->mvert,
                                        mesh->totvert,
                                        mesh->mloop,
                                        r_looptangents,
@@ -187,11 +187,9 @@ void BKE_mesh_calc_loop_tangent_single(Mesh *mesh,
                                        reports);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Mesh Tangent Calculations (All Layers)
- * \{ */
+/** Mesh Tangent Calculations (All Layers)
+ */
 
 /* Necessary complexity to handle looptri's as quads for correct tangents */
 #define USE_LOOPTRI_DETECT_QUADS
@@ -441,7 +439,7 @@ static void DM_calc_loop_tangents_thread(TaskPool *__restrict UNUSED(pool), void
   }
 }
 
-void BKE_mesh_add_loop_tangent_named_layer_for_uv(CustomData *uv_data,
+void KERNEL_mesh_add_loop_tangent_named_layer_for_uv(CustomData *uv_data,
                                                   CustomData *tan_data,
                                                   int numLoopData,
                                                   const char *layer_name)
@@ -452,7 +450,7 @@ void BKE_mesh_add_loop_tangent_named_layer_for_uv(CustomData *uv_data,
   }
 }
 
-void BKE_mesh_calc_loop_tangent_step_0(const CustomData *loopData,
+void KERNEL_mesh_calc_loop_tangent_step_0(const CustomData *loopData,
                                        bool calc_active_tangent,
                                        const char (*tangent_names)[MAX_NAME],
                                        int tangent_names_count,
@@ -525,7 +523,7 @@ void BKE_mesh_calc_loop_tangent_step_0(const CustomData *loopData,
   }
 }
 
-void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
+void KERNEL_mesh_calc_loop_tangent_ex(const MVert *mvert,
                                    const MPoly *mpoly,
                                    const uint mpoly_len,
                                    const MLoop *mloop,
@@ -554,7 +552,7 @@ void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
   short tangent_mask = 0;
   short tangent_mask_curr = *tangent_mask_curr_p;
 
-  BKE_mesh_calc_loop_tangent_step_0(loopdata,
+  KERNEL_mesh_calc_loop_tangent_step_0(loopdata,
                                     calc_active_tangent,
                                     tangent_names,
                                     tangent_names_len,
@@ -570,7 +568,7 @@ void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
     /* Allocate needed tangent layers */
     for (int i = 0; i < tangent_names_len; i++) {
       if (tangent_names[i][0]) {
-        BKE_mesh_add_loop_tangent_named_layer_for_uv(
+        KERNEL_mesh_add_loop_tangent_named_layer_for_uv(
             loopdata, loopdata_out, (int)loopdata_out_len, tangent_names[i]);
       }
     }
@@ -580,11 +578,11 @@ void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
           loopdata_out, CD_TANGENT, CD_CALLOC, NULL, (int)loopdata_out_len, "");
     }
     if (calc_act && act_uv_name[0]) {
-      BKE_mesh_add_loop_tangent_named_layer_for_uv(
+      KERNEL_mesh_add_loop_tangent_named_layer_for_uv(
           loopdata, loopdata_out, (int)loopdata_out_len, act_uv_name);
     }
     if (calc_ren && ren_uv_name[0]) {
-      BKE_mesh_add_loop_tangent_named_layer_for_uv(
+      KERNEL_mesh_add_loop_tangent_named_layer_for_uv(
           loopdata, loopdata_out, (int)loopdata_out_len, ren_uv_name);
     }
 
@@ -615,7 +613,7 @@ void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
 
     /* Calculation */
     if (looptri_len != 0) {
-      TaskPool *task_pool = BLI_task_pool_create(NULL, TASK_PRIORITY_LOW);
+      TaskPool *task_pool = LIB_task_pool_create(NULL, TASK_PRIORITY_LOW);
 
       tangent_mask_curr = 0;
       /* Calculate tangent layers */
@@ -623,7 +621,7 @@ void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
       const int tangent_layer_num = CustomData_number_of_layers(loopdata_out, CD_TANGENT);
       for (int n = 0; n < tangent_layer_num; n++) {
         int index = CustomData_get_layer_index_n(loopdata_out, CD_TANGENT, n);
-        BLI_assert(n < MAX_MTFACE);
+        LIB_assert(n < MAX_MTFACE);
         SGLSLMeshToTangent *mesh2tangent = &data_array[n];
         mesh2tangent->numTessFaces = (int)looptri_len;
 #ifdef USE_LOOPTRI_DETECT_QUADS
@@ -657,18 +655,18 @@ void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
           int uv_ind = CustomData_get_named_layer_index(
               loopdata, CD_MLOOPUV, loopdata_out->layers[index].name);
           int uv_start = CustomData_get_layer_index(loopdata, CD_MLOOPUV);
-          BLI_assert(uv_ind != -1 && uv_start != -1);
-          BLI_assert(uv_ind - uv_start < MAX_MTFACE);
+          LIB_assert(uv_ind != -1 && uv_start != -1);
+          LIB_assert(uv_ind - uv_start < MAX_MTFACE);
           tangent_mask_curr |= (short)(1 << (uv_ind - uv_start));
         }
 
         mesh2tangent->tangent = loopdata_out->layers[index].data;
-        BLI_task_pool_push(task_pool, DM_calc_loop_tangents_thread, mesh2tangent, false, NULL);
+        LIB_task_pool_push(task_pool, DM_calc_loop_tangents_thread, mesh2tangent, false, NULL);
       }
 
-      BLI_assert(tangent_mask_curr == tangent_mask);
-      BLI_task_pool_work_and_wait(task_pool);
-      BLI_task_pool_free(task_pool);
+      LIB_assert(tangent_mask_curr == tangent_mask);
+      LIB_task_pool_work_and_wait(task_pool);
+      LIB_task_pool_free(task_pool);
     }
     else {
       tangent_mask_curr = tangent_mask;
@@ -705,16 +703,16 @@ void BKE_mesh_calc_loop_tangent_ex(const MVert *mvert,
   }
 }
 
-void BKE_mesh_calc_loop_tangents(Mesh *me_eval,
+void KERNEL_mesh_calc_loop_tangents(Mesh *me_eval,
                                  bool calc_active_tangent,
                                  const char (*tangent_names)[MAX_NAME],
                                  int tangent_names_len)
 {
-  BKE_mesh_runtime_looptri_ensure(me_eval);
+  KERNEL_mesh_runtime_looptri_ensure(me_eval);
 
   /* TODO(campbell): store in Mesh.runtime to avoid recalculation. */
   short tangent_mask = 0;
-  BKE_mesh_calc_loop_tangent_ex(me_eval->mvert,
+  KERNEL_mesh_calc_loop_tangent_ex(me_eval->mvert,
                                 me_eval->mpoly,
                                 (uint)me_eval->totpoly,
                                 me_eval->mloop,
@@ -724,8 +722,8 @@ void BKE_mesh_calc_loop_tangents(Mesh *me_eval,
                                 calc_active_tangent,
                                 tangent_names,
                                 tangent_names_len,
-                                BKE_mesh_vertex_normals_ensure(me_eval),
-                                BKE_mesh_poly_normals_ensure(me_eval),
+                                KERNEL_mesh_vertex_normals_ensure(me_eval),
+                                KERNEL_mesh_poly_normals_ensure(me_eval),
                                 CustomData_get_layer(&me_eval->ldata, CD_NORMAL),
                                 CustomData_get_layer(&me_eval->vdata, CD_ORCO), /* may be NULL */
                                 /* result */
