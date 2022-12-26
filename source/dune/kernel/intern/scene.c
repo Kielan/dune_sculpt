@@ -900,7 +900,7 @@ static void scene_foreach_path(ID *id, BPathForeachPathData *bpath_data)
   }
 }
 
-static void scene_blend_write(DuneWriter *writer, ID *id, const void *id_address)
+static void scene_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Scene *sce = (Scene *)id;
 
@@ -952,7 +952,7 @@ static void scene_blend_write(DuneWriter *writer, ID *id, const void *id_address
   }
   if (tos->gp_weightpaint) {
     LOADER_write_struct(writer, GpWeightPaint, tos->gp_weightpaint);
-    KERNEL_paint_blend_write(writer, &tos->gp_weightpaint->paint);
+    KERNEL_paint_dune_write(writer, &tos->gp_weightpaint->paint);
   }
   if (tos->curves_sculpt) {
     LOADER_write_struct(writer, CurvesSculpt, tos->curves_sculpt);
@@ -984,7 +984,7 @@ static void scene_blend_write(DuneWriter *writer, ID *id, const void *id_address
   if (ed) {
     LOADER_write_struct(writer, Editing, ed);
 
-    SEQ_blend_write(writer, &ed->seqbase);
+    SEQ_dune_write(writer, &ed->seqbase);
     /* new; meta stack too, even when its nasty restore code */
     LISTBASE_FOREACH (MetaStack *, ms, &ed->metastack) {
       LOADER_write_struct(writer, MetaStack, ms);
@@ -1025,7 +1025,7 @@ static void scene_blend_write(DuneWriter *writer, ID *id, const void *id_address
     ntreeDuneWrite(writer, sce->nodetree);
   }
 
-  KERNEL_color_managed_view_settings_blend_write(writer, &sce->view_settings);
+  KERNEL_color_managed_view_settings_dune_write(writer, &sce->view_settings);
   KERNEL_image_format_dune_write(writer, &sce->r.im_format);
   KERNEL_image_format_dune_write(writer, &sce->r.bake.im_format);
 
@@ -1045,7 +1045,7 @@ static void scene_blend_write(DuneWriter *writer, ID *id, const void *id_address
   KERNEL_curvemapping_curves_dune_write(writer, &sce->r.mblur_shutter_curve);
 
   LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    KERNEL_view_layer_blend_write(writer, view_layer);
+    KERNEL_view_layer_dune_write(writer, view_layer);
   }
 
   if (sce->master_collection) {
@@ -1091,7 +1091,7 @@ static void link_recurs_seq(DuneDataReader *reader, ListBase *lb)
   }
 }
 
-static void scene_blend_read_data(BlendDataReader *reader, ID *id)
+static void scene_dune_read_data(DuneDataReader *reader, ID *id)
 {
   Scene *sce = (Scene *)id;
 
@@ -1273,7 +1273,7 @@ static void scene_blend_read_data(BlendDataReader *reader, ID *id)
        * We should only do this when rbw->shared == NULL, because those pointers
        * are always set (for compatibility with older Blenders). We mustn't link
        * the same pointcache twice. */
-      KERNEL_ptcache_blend_read_data(reader, &rbw->ptcaches, &rbw->pointcache, false);
+      KERNEL_ptcache_dune_read_data(reader, &rbw->ptcaches, &rbw->pointcache, false);
 
       /* make sure simulation starts from the beginning after loading file */
       if (rbw->pointcache) {
@@ -1445,13 +1445,13 @@ static void scene_dune_read_lib(DuneLibReader *reader, ID *id)
   if (sce->rigidbody_world) {
     RigidBodyWorld *rbw = sce->rigidbody_world;
     if (rbw->group) {
-      BLO_read_id_address(reader, sce->id.lib, &rbw->group);
+      LOADER_read_id_address(reader, sce->id.lib, &rbw->group);
     }
     if (rbw->constraints) {
-      BLO_read_id_address(reader, sce->id.lib, &rbw->constraints);
+      LOADER_read_id_address(reader, sce->id.lib, &rbw->constraints);
     }
     if (rbw->effector_weights) {
-      BLO_read_id_address(reader, sce->id.lib, &rbw->effector_weights->group);
+      LOADER_read_id_address(reader, sce->id.lib, &rbw->effector_weights->group);
     }
   }
 
@@ -1460,30 +1460,30 @@ static void scene_dune_read_lib(DuneLibReader *reader, ID *id)
   }
 
   LISTBASE_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
-    BLO_read_id_address(reader, sce->id.lib, &srl->mat_override);
+    LOADER_read_id_address(reader, sce->id.lib, &srl->mat_override);
     LISTBASE_FOREACH (FreestyleModuleConfig *, fmc, &srl->freestyleConfig.modules) {
-      BLO_read_id_address(reader, sce->id.lib, &fmc->script);
+      LOADER_read_id_address(reader, sce->id.lib, &fmc->script);
     }
     LISTBASE_FOREACH (FreestyleLineSet *, fls, &srl->freestyleConfig.linesets) {
-      BLO_read_id_address(reader, sce->id.lib, &fls->linestyle);
-      BLO_read_id_address(reader, sce->id.lib, &fls->group);
+      LOADER_read_id_address(reader, sce->id.lib, &fls->linestyle);
+      LOADER_read_id_address(reader, sce->id.lib, &fls->group);
     }
   }
   /* Motion Tracking */
-  BLO_read_id_address(reader, sce->id.lib, &sce->clip);
+  LOADER_read_id_address(reader, sce->id.lib, &sce->clip);
 
 #ifdef USE_COLLECTION_COMPAT_28
   if (sce->collection) {
-    BKE_collection_compat_blend_read_lib(reader, sce->id.lib, sce->collection);
+    KERNEL_collection_compat_dune_read_lib(reader, sce->id.lib, sce->collection);
   }
 #endif
 
   LISTBASE_FOREACH (ViewLayer *, view_layer, &sce->view_layers) {
-    BKE_view_layer_blend_read_lib(reader, sce->id.lib, view_layer);
+    KERNEL_view_layer_dune_read_lib(reader, sce->id.lib, view_layer);
   }
 
   if (sce->r.bake.cage_object) {
-    BLO_read_id_address(reader, sce->id.lib, &sce->r.bake.cage_object);
+    LOADER_read_id_address(reader, sce->id.lib, &sce->r.bake.cage_object);
   }
 
 #ifdef USE_SETSCENE_CHECK
@@ -1493,34 +1493,34 @@ static void scene_dune_read_lib(DuneLibReader *reader, ID *id)
 #endif
 }
 
-static void scene_blend_read_expand(BlendExpander *expander, ID *id)
+static void scene_dune_read_expand(DuneExpander *expander, ID *id)
 {
   Scene *sce = (Scene *)id;
 
   LISTBASE_FOREACH (Base *, base_legacy, &sce->base) {
-    BLO_expand(expander, base_legacy->object);
+    LOADER_expand(expander, base_legacy->object);
   }
-  BLO_expand(expander, sce->camera);
-  BLO_expand(expander, sce->world);
+  LOADER_expand(expander, sce->camera);
+  LOADER_expand(expander, sce->world);
 
-  BKE_keyingsets_blend_read_expand(expander, &sce->keyingsets);
+  KERNEL_keyingsets_dune_read_expand(expander, &sce->keyingsets);
 
   if (sce->set) {
-    BLO_expand(expander, sce->set);
+    LOADER_expand(expander, sce->set);
   }
 
   LISTBASE_FOREACH (SceneRenderLayer *, srl, &sce->r.layers) {
-    BLO_expand(expander, srl->mat_override);
+    LOADER_expand(expander, srl->mat_override);
     LISTBASE_FOREACH (FreestyleModuleConfig *, module, &srl->freestyleConfig.modules) {
       if (module->script) {
-        BLO_expand(expander, module->script);
+        LOADER_expand(expander, module->script);
       }
     }
     LISTBASE_FOREACH (FreestyleLineSet *, lineset, &srl->freestyleConfig.linesets) {
       if (lineset->group) {
-        BLO_expand(expander, lineset->group);
+        LOADER_expand(expander, lineset->group);
       }
-      BLO_expand(expander, lineset->linestyle);
+      LOADER_expand(expander, lineset->linestyle);
     }
   }
 
@@ -2345,7 +2345,7 @@ bool BKE_scene_validate_setscene(Main *bmain, Scene *sce)
   return true;
 }
 
-float BKE_scene_ctime_get(const Scene *scene)
+float KERNEL_scene_ctime_get(const Scene *scene)
 {
-  return BKE_scene_frame_to_ctime(scene, scene->r.cfra);
+  return KERNEL_scene_frame_to_ctime(scene, scene->r.cfra);
 }
