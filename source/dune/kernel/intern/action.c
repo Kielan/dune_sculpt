@@ -21,7 +21,7 @@
 #include "LIB_string_utils.h"
 #include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
 #include "KERNEL_action.h"
 #include "KERNEL_anim_data.h"
@@ -193,42 +193,42 @@ static void action_dune_read_data(DuneDataReader *reader, ID *id)
 
   /* XXX deprecated - old animation system <<< */
   LISTBASE_FOREACH (bActionChannel *, achan, &act->chanbase) {
-    LO_read_data_address(reader, &achan->grp);
+    LOADER_read_data_address(reader, &achan->grp);
 
-    LO_read_list(reader, &achan->constraintChannels);
+    LOADER_read_list(reader, &achan->constraintChannels);
   }
   /* >>> XXX deprecated - old animation system */
 
-  KE_fcurve_blend_read_data(reader, &act->curves);
+  KERNEL_fcurve_dune_read_data(reader, &act->curves);
 
   LISTBASE_FOREACH (bActionGroup *, agrp, &act->groups) {
-    LO_read_data_address(reader, &agrp->channels.first);
-    LO_read_data_address(reader, &agrp->channels.last);
+    LOADER_read_data_address(reader, &agrp->channels.first);
+    LOADER_read_data_address(reader, &agrp->channels.last);
   }
 
-  LO_read_data_address(reader, &act->preview);
-  KE_previewimg_blend_read(reader, act->preview);
+  LOADER_read_data_address(reader, &act->preview);
+  KERNEL_previewimg_dune_read(reader, act->preview);
 }
 
-static void blend_read_lib_constraint_channels(BlendLibReader *reader, ID *id, ListBase *chanbase)
+static void dune_read_lib_constraint_channels(DuneLibReader *reader, ID *id, ListBase *chanbase)
 {
   LISTBASE_FOREACH (bConstraintChannel *, chan, chanbase) {
-    LO_read_id_address(reader, id->lib, &chan->ipo);
+    LOADER_read_id_address(reader, id->lib, &chan->ipo);
   }
 }
 
-static void action_blend_read_lib(DuneLibReader *reader, ID *id)
+static void action_dune_read_lib(DuneLibReader *reader, ID *id)
 {
   bAction *act = (bAction *)id;
 
   /* XXX deprecated - old animation system <<< */
   LISTBASE_FOREACH (bActionChannel *, chan, &act->chanbase) {
-    LO_read_id_address(reader, act->id.lib, &chan->ipo);
+    LOADER_read_id_address(reader, act->id.lib, &chan->ipo);
     dune_read_lib_constraint_channels(reader, &act->id, &chan->constraintChannels);
   }
   /* >>> XXX deprecated - old animation system */
 
-  KE_fcurve_blend_read_lib(reader, &act->id, &act->curves);
+  KERNEL_fcurve_dune_read_lib(reader, &act->id, &act->curves);
 
   LISTBASE_FOREACH (TimeMarker *, marker, &act->markers) {
     if (marker->camera) {
