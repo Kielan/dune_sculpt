@@ -1,46 +1,44 @@
-/** \file
- * \ingroup bke
- *
+/**
  * This file contains code for polygon tessellation
  * (creating triangles from polygons).
  *
- * \see bmesh_mesh_tessellate.c for the #BMesh equivalent of this file.
+ * see bmesh_mesh_tessellate.c for the #BMesh equivalent of this file.
  */
 
 #include <limits.h>
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "STRUCTS_mesh_types.h"
+#include "STRUCTS_meshdata_types.h"
 
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_polyfill_2d.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "LIB_math.h"
+#include "LIB_memarena.h"
+#include "LIB_polyfill_2d.h"
+#include "LIB_task.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_mesh.h" /* Own include. */
+#include "KERNEL_customdata.h"
+#include "KERNEL_mesh.h" /* Own include. */
 
-#include "BLI_strict_flags.h"
+#include "LIB_strict_flags.h"
 
 /** Compared against total loops. */
 #define MESH_FACE_TESSELLATE_THREADED_LIMIT 4096
 
 /* -------------------------------------------------------------------- */
-/** \name MFace Tessellation
+/** MFace Tessellation
  *
  * #MFace is a legacy data-structure that should be avoided, use #MLoopTri instead.
- * \{ */
+ */
 
 /**
  * Convert all CD layers from loop/poly to tessface data.
  *
- * \param loopindices: is an array of an int[4] per tessface,
+ * param loopindices: is an array of an int[4] per tessface,
  * mapping tessface's verts to loops indices.
  *
- * \note when mface is not NULL, mface[face_index].v4
+ * note when mface is not NULL, mface[face_index].v4
  * is used to test quads, else, loopindices[face_index][3] is used.
  */
 static void mesh_loops_to_tessdata(CustomData *fdata,
@@ -135,7 +133,7 @@ static void mesh_loops_to_tessdata(CustomData *fdata,
   }
 }
 
-int BKE_mesh_tessface_calc_ex(CustomData *fdata,
+int KERNEL_mesh_tessface_calc_ex(CustomData *fdata,
                               CustomData *ldata,
                               CustomData *pdata,
                               MVert *mvert,
@@ -255,11 +253,11 @@ int BKE_mesh_tessface_calc_ex(CustomData *fdata,
       const uint totfilltri = mp_totloop - 2;
 
       if (UNLIKELY(arena == NULL)) {
-        arena = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
+        arena = LIB_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
       }
 
-      tris = BLI_memarena_alloc(arena, sizeof(*tris) * (size_t)totfilltri);
-      projverts = BLI_memarena_alloc(arena, sizeof(*projverts) * (size_t)mp_totloop);
+      tris = LIB_memarena_alloc(arena, sizeof(*tris) * (size_t)totfilltri);
+      projverts = LIB_memarena_alloc(arena, sizeof(*projverts) * (size_t)mp_totloop);
 
       zero_v3(normal);
 
@@ -283,7 +281,7 @@ int BKE_mesh_tessface_calc_ex(CustomData *fdata,
         mul_v2_m3v3(projverts[j], axis_mat, mvert[ml->v].co);
       }
 
-      BLI_polyfill_calc_arena(projverts, mp_totloop, 1, tris, arena);
+      LIB_polyfill_calc_arena(projverts, mp_totloop, 1, tris, arena);
 
       /* Apply fill. */
       for (j = 0; j < totfilltri; j++) {
@@ -320,14 +318,14 @@ int BKE_mesh_tessface_calc_ex(CustomData *fdata,
   }
 
   if (arena) {
-    BLI_memarena_free(arena);
+    LIB_memarena_free(arena);
     arena = NULL;
   }
 
   CustomData_free(fdata, totface);
   totface = mface_index;
 
-  BLI_assert(totface <= looptri_num);
+  LIB_assert(totface <= looptri_num);
 
   /* Not essential but without this we store over-allocated memory in the #CustomData layers. */
   if (LIKELY(looptri_num != totface)) {
@@ -354,13 +352,13 @@ int BKE_mesh_tessface_calc_ex(CustomData *fdata,
 
   /* NOTE: quad detection issue - fourth vertidx vs fourth loopidx:
    * ...However, most TFace code uses 'MFace->v4 == 0' test to check whether it is a tri or quad.
-   * BKE_mesh_mface_index_validate() will check this and rotate the tessellated face if needed.
+   * KERNEL_mesh_mface_index_validate() will check this and rotate the tessellated face if needed.
    */
 #ifdef USE_TESSFACE_QUADS
   mf = mface;
   for (mface_index = 0; mface_index < totface; mface_index++, mf++) {
     if (mf->edcode == TESSFACE_IS_QUAD) {
-      BKE_mesh_mface_index_validate(mf, fdata, mface_index, 4);
+      KERNEL_mesh_mface_index_validate(mf, fdata, mface_index, 4);
       mf->edcode = 0;
     }
   }
@@ -377,9 +375,9 @@ int BKE_mesh_tessface_calc_ex(CustomData *fdata,
 #undef ML_TO_MF_QUAD
 }
 
-void BKE_mesh_tessface_calc(Mesh *mesh)
+void KERNEL_mesh_tessface_calc(Mesh *mesh)
 {
-  mesh->totface = BKE_mesh_tessface_calc_ex(&mesh->fdata,
+  mesh->totface = KERNEL_mesh_tessface_calc_ex(&mesh->fdata,
                                             &mesh->ldata,
                                             &mesh->pdata,
                                             mesh->mvert,
@@ -387,21 +385,19 @@ void BKE_mesh_tessface_calc(Mesh *mesh)
                                             mesh->totloop,
                                             mesh->totpoly);
 
-  BKE_mesh_update_customdata_pointers(mesh, true);
+  KERNEL_mesh_update_customdata_pointers(mesh, true);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Loop Tessellation
+/** Loop Tessellation
  *
  * Fill in #MLoopTri data-structure.
- * \{ */
+ */
 
 /**
- * \param face_normal: This will be optimized out as a constant.
+ * param face_normal: This will be optimized out as a constant.
  */
-BLI_INLINE void mesh_calc_tessellation_for_face_impl(const MLoop *mloop,
+LIB_INLINE void mesh_calc_tessellation_for_face_impl(const MLoop *mloop,
                                                      const MPoly *mpoly,
                                                      const MVert *mvert,
                                                      uint poly_index,
@@ -494,7 +490,7 @@ BLI_INLINE void mesh_calc_tessellation_for_face_impl(const MLoop *mloop,
         mul_v2_m3v3(projverts[j], axis_mat, mvert[ml->v].co);
       }
 
-      BLI_polyfill_calc_arena(projverts, mp_totloop, 1, tris, pf_arena);
+      LIB_polyfill_calc_arena(projverts, mp_totloop, 1, tris, pf_arena);
 
       /* Apply fill. */
       for (uint j = 0; j < totfilltri; j++, mlt++) {
@@ -502,7 +498,7 @@ BLI_INLINE void mesh_calc_tessellation_for_face_impl(const MLoop *mloop,
         ML_TO_MLT(tri[0], tri[1], tri[2]);
       }
 
-      BLI_memarena_clear(pf_arena);
+      LIB_memarena_clear(pf_arena);
 
       break;
     }
@@ -566,10 +562,10 @@ static void mesh_recalc_looptri__single_threaded(const MLoop *mloop,
   }
 
   if (pf_arena) {
-    BLI_memarena_free(pf_arena);
+    LIB_memarena_free(pf_arena);
     pf_arena = NULL;
   }
-  BLI_assert(tri_index == (uint)poly_to_tri_count(totpoly, totloop));
+  LIB_assert(tri_index == (uint)poly_to_tri_count(totpoly, totloop));
   UNUSED_VARS_NDEBUG(totloop);
 }
 
@@ -628,7 +624,7 @@ static void mesh_calc_tessellation_for_face_free_fn(const void *__restrict UNUSE
 {
   struct TessellationUserTLS *tls_data = tls_v;
   if (tls_data->pf_arena) {
-    BLI_memarena_free(tls_data->pf_arena);
+    LIB_memarena_free(tls_data->pf_arena);
   }
 }
 
@@ -651,14 +647,14 @@ static void mesh_recalc_looptri__multi_threaded(const MLoop *mloop,
   };
 
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  LIB_parallel_range_settings_defaults(&settings);
 
   settings.userdata_chunk = &tls_data_dummy;
   settings.userdata_chunk_size = sizeof(tls_data_dummy);
 
   settings.func_free = mesh_calc_tessellation_for_face_free_fn;
 
-  BLI_task_parallel_range(0,
+  LIB_task_parallel_range(0,
                           totpoly,
                           &data,
                           poly_normals ? mesh_calc_tessellation_for_face_with_normal_fn :
@@ -666,7 +662,7 @@ static void mesh_recalc_looptri__multi_threaded(const MLoop *mloop,
                           &settings);
 }
 
-void BKE_mesh_recalc_looptri(const MLoop *mloop,
+void KERNEL_mesh_recalc_looptri(const MLoop *mloop,
                              const MPoly *mpoly,
                              const MVert *mvert,
                              int totloop,
@@ -681,7 +677,7 @@ void BKE_mesh_recalc_looptri(const MLoop *mloop,
   }
 }
 
-void BKE_mesh_recalc_looptri_with_normals(const MLoop *mloop,
+void KERNEL_mesh_recalc_looptri_with_normals(const MLoop *mloop,
                                           const MPoly *mpoly,
                                           const MVert *mvert,
                                           int totloop,
@@ -689,7 +685,7 @@ void BKE_mesh_recalc_looptri_with_normals(const MLoop *mloop,
                                           MLoopTri *mlooptri,
                                           const float (*poly_normals)[3])
 {
-  BLI_assert(poly_normals != NULL);
+  LIB_assert(poly_normals != NULL);
   if (totloop < MESH_FACE_TESSELLATE_THREADED_LIMIT) {
     mesh_recalc_looptri__single_threaded(
         mloop, mpoly, mvert, totloop, totpoly, mlooptri, poly_normals);
