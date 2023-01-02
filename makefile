@@ -27,6 +27,7 @@ ifndef DEPS_BUILD_DIR
 	DEPS_BUILD_DIR:=$(BUILD_DIR)/deps
 endif
 
+# path for Dune binary
 ifeq ($(OS), Darwin)
 	DUNE_BIN?="$(BUILD_DIR)/bin/Dune.app/Contents/MacOS/Dune"
 else
