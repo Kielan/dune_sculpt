@@ -26,3 +26,9 @@ DEPS_SOURCE_DIR:=$(DUNE_DIR)/build_files/build_environment
 ifndef DEPS_BUILD_DIR
 	DEPS_BUILD_DIR:=$(BUILD_DIR)/deps
 endif
+
+ifeq ($(OS), Darwin)
+	DUNE_BIN?="$(BUILD_DIR)/bin/Dune.app/Contents/MacOS/Dune"
+else
+	DUNE_BIN?="$(BUILD_DIR)/bin/dune"
+endif
