@@ -34,6 +34,8 @@ else
 	DUNE_BIN?="$(BUILD_DIR)/bin/dune"
 endif
 
+BUILD_COMMAND:=make -s
+
 # Build Dune
 all: .FORCE
 	@echo
