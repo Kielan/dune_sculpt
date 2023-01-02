@@ -33,3 +33,24 @@ ifeq ($(OS), Darwin)
 else
 	DUNE_BIN?="$(BUILD_DIR)/bin/dune"
 endif
+
+# Build Dune
+all: .FORCE
+	@echo
+	@echo Configuring Dune in \"$(BUILD_DIR)\" ...
+
+#	# if test ! -f $(BUILD_DIR)/CMakeCache.txt ; then \
+#	# 	$(CMAKE_CONFIG); \
+#	# fi
+
+#	# do this always incase of failed initial build
+	@$(CMAKE_CONFIG)
+
+	@echo
+	@echo Building Dune ...
+	$(BUILD_COMMAND) -C "$(BUILD_DIR)" -j $(NPROCS) install
+	@echo
+	@echo edit build configuration with: "$(BUILD_DIR)/CMakeCache.txt" run make again to rebuild.
+	@echo Dune successfully built, run from: $(DUNE_BIN)
+	@echo
+
