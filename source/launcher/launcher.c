@@ -151,13 +151,6 @@ static void callback_clg_fatal(void *fp)
 }
 
 /* -------------------------------------------------------------------- */
-/** Dune as a Stand-Alone Python Module (bpy)
- *
- * While not officially supported, this can be useful for Python developers.
- * See: https://wiki.blender.org/wiki/Building_Blender/Other/BlenderAsPyModule
- * \{ */
-
-/* -------------------------------------------------------------------- */
 /** GMP Allocator Workaround */
 
 void *gmp_alloc(size_t size)
@@ -179,7 +172,7 @@ void gmp_free(void *ptr, size_t size)
  * however, GMP is built with MINGW since it doesn't build with MSVC,
  * which TBB has issues hooking into automatically.
  */
-void gmp_blender_init_allocator()
+void gmp_dune_init_allocator()
 {
   mp_set_memory_functions(gmp_alloc, gmp_realloc, gmp_free);
 }
@@ -298,15 +291,6 @@ int main(int argc,
 
   C = CTX_create();
 
-#ifdef WITH_PYTHON_MODULE
-#  ifdef __APPLE__
-  environ = *_NSGetEnviron();
-#  endif
-
-#  undef main
-  evil_C = C;
-#endif
-
 #ifdef WITH_BINRELOC
   br_init(NULL);
 #endif
@@ -343,30 +327,30 @@ int main(int argc,
 #endif
 
   /* Initialize path to executable. */
-  BKE_appdir_program_path_init(argv[0]);
+  KERNEL_appdir_program_path_init(argv[0]);
 
-  BLI_threadapi_init();
+  LIB_threadapi_init();
 
-  DNA_sdna_current_init();
+  STRUCTS_sdna_current_init();
 
-  BKE_blender_globals_init(); /* blender.c */
+  KERNEL_dune_globals_init(); /* dune.c */
 
-  BKE_idtype_init();
-  BKE_cachefiles_init();
-  BKE_modifier_init();
-  BKE_gpencil_modifier_init();
-  BKE_shaderfx_init();
-  BKE_volumes_init();
+  KERNEL_idtype_init();
+  KERNEL_cachefiles_init();
+  KERNEL_modifier_init();
+  KERNEL_gpencil_modifier_init();
+  KERNEL_shaderfx_init();
+  KERNEL_volumes_init();
   DEG_register_node_types();
 
-  BKE_brush_system_init();
+  KERNEL_brush_system_init();
   RE_texture_rng_init();
 
-  BKE_callback_global_init();
+  KERNEL_callback_global_init();
 
   /* First test for background-mode (#Global.background) */
 #ifndef WITH_PYTHON_MODULE
-  ba = BLI_args_create(argc, (const char **)argv); /* skip binary path */
+  ba = LIB_args_create(argc, (const char **)argv); /* skip binary path */
 
   /* Ensure we free on early exit. */
   app_init_data.ba = ba;
@@ -378,7 +362,7 @@ int main(int argc,
   MEM_use_memleak_detection(false);
 
   /* Parse environment handling arguments. */
-  BLI_args_parse(ba, ARG_PASS_ENVIRONMENT, NULL, NULL);
+  LIB_args_parse(ba, ARG_PASS_ENVIRONMENT, NULL, NULL);
 
 #else
   /* Using preferences or user startup makes no sense for #WITH_PYTHON_MODULE. */
@@ -386,18 +370,18 @@ int main(int argc,
 #endif
 
   /* After parsing #ARG_PASS_ENVIRONMENT such as `--env-*`,
-   * since they impact `BKE_appdir` behavior. */
-  BKE_appdir_init();
+   * since they impact `KERNEL_appdir` behavior. */
+  KERNEL_appdir_init();
 
   /* After parsing number of threads argument. */
-  BLI_task_scheduler_init();
+  LIB_task_scheduler_init();
 
-  /* Initialize sub-systems that use `BKE_appdir.h`. */
+  /* Initialize sub-systems that use `KERNEL_appdir.h`. */
   IMB_init();
 
 #ifndef WITH_PYTHON_MODULE
   /* First test for background-mode (#Global.background) */
-  BLI_args_parse(ba, ARG_PASS_SETTINGS, NULL, NULL);
+  LIB_args_parse(ba, ARG_PASS_SETTINGS, NULL, NULL);
 
   main_signal_setup();
 #endif
@@ -408,36 +392,27 @@ int main(int argc,
 #endif
 
   /* After #ARG_PASS_SETTINGS arguments, this is so #WM_main_playanim skips #RNA_init. */
-  RNA_init();
+  API_init();
 
   RE_engines_init();
-  BKE_node_system_init();
-  BKE_particle_init_rng();
+  KERNEL_node_system_init();
+  KERNEL_particle_init_rng();
   /* End second initialization. */
 
-#if defined(WITH_PYTHON_MODULE) || defined(WITH_HEADLESS)
-  /* Python module mode ALWAYS runs in background-mode (for now). */
-  G.background = true;
-#else
-  if (G.background) {
-    main_signal_setup_background();
-  }
-#endif
-
   /* Background render uses this font too. */
-  BKE_vfont_builtin_register(datatoc_bfont_pfb, datatoc_bfont_pfb_size);
+  KERNEL_vfont_builtin_register(datatoc_bfont_pfb, datatoc_bfont_pfb_size);
 
   /* Initialize FFMPEG if built in, also needed for background-mode if videos are
    * rendered via FFMPEG. */
-  BKE_sound_init_once();
+  KERNEL_sound_init_once();
 
-  BKE_materials_init();
+  KERNEL_materials_init();
 
 #ifndef WITH_PYTHON_MODULE
   if (G.background == 0) {
-    BLI_args_parse(ba, ARG_PASS_SETTINGS_GUI, NULL, NULL);
+    LIB_args_parse(ba, ARG_PASS_SETTINGS_GUI, NULL, NULL);
   }
-  BLI_args_parse(ba, ARG_PASS_SETTINGS_FORCE, NULL, NULL);
+  LIB_args_parse(ba, ARG_PASS_SETTINGS_FORCE, NULL, NULL);
 #endif
 
   WM_init(C, argc, (const char **)argv);
@@ -471,7 +446,7 @@ int main(int argc,
    * - 'argv' on WIN32.
    */
   callback_main_atexit(&app_init_data);
-  BKE_blender_atexit_unregister(callback_main_atexit, &app_init_data);
+  KERNEL_blender_atexit_unregister(callback_main_atexit, &app_init_data);
 
   /* End argument parsing, allow memory leaks to be printed. */
   MEM_use_memleak_detection(true);
@@ -494,8 +469,8 @@ int main(int argc,
   }
   else {
     /* When no file is loaded, show the splash screen. */
-    const char *blendfile_path = BKE_main_blendfile_path_from_global();
-    if (blendfile_path[0] == '\0') {
+    const char *dunefile_path = KERNEL_main_blendfile_path_from_global();
+    if (dunefile_path[0] == '\0') {
       WM_init_splash(C);
     }
     WM_main(C);
