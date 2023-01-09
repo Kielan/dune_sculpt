@@ -4,51 +4,45 @@
 
 #include "LIB_sys_types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /** For tables, button in UI, etc. */
-#define BLENDER_MAX_THREADS 1024
+#define DUNE_MAX_THREADS 1024
 
 struct ListBase;
 
 /* Threading API */
 
-/**
- * This is run once at startup.
- */
-void BLI_threadapi_init(void);
-void BLI_threadapi_exit(void);
+/* This is run once at startup. */
+void LIB_threadapi_init(void);
+void LIB_threadapi_exit(void);
 
 /**
- * \param tot: When 0 only initializes malloc mutex in a safe way (see sequence.c)
+ * param tot: When 0 only initializes malloc mutex in a safe way (see sequence.c)
  * problem otherwise: scene render will kill of the mutex!
  */
-void BLI_threadpool_init(struct ListBase *threadbase, void *(*do_thread)(void *), int tot);
+void LIB_threadpool_init(struct ListBase *threadbase, void *(*do_thread)(void *), int tot);
 /**
  * Amount of available threads.
  */
-int BLI_available_threads(struct ListBase *threadbase);
+int LIB_available_threads(struct ListBase *threadbase);
 /**
  * Returns thread number, for sample patterns or threadsafe tables.
  */
-int BLI_threadpool_available_thread_index(struct ListBase *threadbase);
-void BLI_threadpool_insert(struct ListBase *threadbase, void *callerdata);
-void BLI_threadpool_remove(struct ListBase *threadbase, void *callerdata);
-void BLI_threadpool_remove_index(struct ListBase *threadbase, int index);
-void BLI_threadpool_clear(struct ListBase *threadbase);
-void BLI_threadpool_end(struct ListBase *threadbase);
-int BLI_thread_is_main(void);
+int LIB_threadpool_available_thread_index(struct ListBase *threadbase);
+void LIB_threadpool_insert(struct ListBase *threadbase, void *callerdata);
+void LIB_threadpool_remove(struct ListBase *threadbase, void *callerdata);
+void LIB_threadpool_remove_index(struct ListBase *threadbase, int index);
+void LIB_threadpool_clear(struct ListBase *threadbase);
+void LIB_threadpool_end(struct ListBase *threadbase);
+int LIB_thread_is_main(void);
 
 /* System Information */
 
 /**
- * \return the number of threads the system can make use of.
+ * return the number of threads the system can make use of.
  */
-int BLI_system_thread_count(void);
-void BLI_system_num_threads_override_set(int num);
-int BLI_system_num_threads_override_get(void);
+int LIB_system_thread_count(void);
+void LIB_system_num_threads_override_set(int num);
+int LIB_system_num_threads_override_get(void);
 
 /**
  * Global Mutex Locks
@@ -67,64 +61,49 @@ enum {
   LOCK_VIEW3D,
 };
 
-void BLI_thread_lock(int type);
-void BLI_thread_unlock(int type);
+void LIB_thread_lock(int type);
+void LIB_thread_unlock(int type);
 
 /* Mutex Lock */
 
 typedef pthread_mutex_t ThreadMutex;
-#define BLI_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
+#define LIB_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 
-void BLI_mutex_init(ThreadMutex *mutex);
-void BLI_mutex_end(ThreadMutex *mutex);
+void LIB_mutex_init(ThreadMutex *mutex);
+void LIB_mutex_end(ThreadMutex *mutex);
 
-ThreadMutex *BLI_mutex_alloc(void);
-void BLI_mutex_free(ThreadMutex *mutex);
+ThreadMutex *LIB_mutex_alloc(void);
+void LIB_mutex_free(ThreadMutex *mutex);
 
-void BLI_mutex_lock(ThreadMutex *mutex);
-bool BLI_mutex_trylock(ThreadMutex *mutex);
-void BLI_mutex_unlock(ThreadMutex *mutex);
+void LIB_mutex_lock(ThreadMutex *mutex);
+bool LIB_mutex_trylock(ThreadMutex *mutex);
+void LIB_mutex_unlock(ThreadMutex *mutex);
 
 /* Spin Lock */
-
-/* By default we use TBB for spin lock on all platforms. When building without
- * TBB fall-back to spin lock implementation which is native to the platform.
- *
- * On macOS we use mutex lock instead of spin since the spin lock has been
- * deprecated in SDK 10.12 and is discouraged from use. */
-
-#ifdef WITH_TBB
-typedef uint32_t SpinLock;
-#elif defined(__APPLE__)
-typedef ThreadMutex SpinLock;
-#elif defined(_MSC_VER)
-typedef volatile unsigned int SpinLock;
-#else
 typedef pthread_spinlock_t SpinLock;
-#endif
 
-void BLI_spin_init(SpinLock *spin);
-void BLI_spin_lock(SpinLock *spin);
-void BLI_spin_unlock(SpinLock *spin);
-void BLI_spin_end(SpinLock *spin);
+void LIB_spin_init(SpinLock *spin);
+void LIB_spin_lock(SpinLock *spin);
+void LIB_spin_unlock(SpinLock *spin);
+void LIB_spin_end(SpinLock *spin);
 
 /* Read/Write Mutex Lock */
 
 #define THREAD_LOCK_READ 1
 #define THREAD_LOCK_WRITE 2
 
-#define BLI_RWLOCK_INITIALIZER PTHREAD_RWLOCK_INITIALIZER
+#define LIB_RWLOCK_INITIALIZER PTHREAD_RWLOCK_INITIALIZER
 
 typedef pthread_rwlock_t ThreadRWMutex;
 
-void BLI_rw_mutex_init(ThreadRWMutex *mutex);
-void BLI_rw_mutex_end(ThreadRWMutex *mutex);
+void LIB_rw_mutex_init(ThreadRWMutex *mutex);
+void LIB_rw_mutex_end(ThreadRWMutex *mutex);
 
-ThreadRWMutex *BLI_rw_mutex_alloc(void);
-void BLI_rw_mutex_free(ThreadRWMutex *mutex);
+ThreadRWMutex *LIB_rw_mutex_alloc(void);
+void LIB_rw_mutex_free(ThreadRWMutex *mutex);
 
-void BLI_rw_mutex_lock(ThreadRWMutex *mutex, int mode);
-void BLI_rw_mutex_unlock(ThreadRWMutex *mutex);
+void LIB_rw_mutex_lock(ThreadRWMutex *mutex, int mode);
+void LIB_rw_mutex_unlock(ThreadRWMutex *mutex);
 
 /* Ticket Mutex Lock
  *
