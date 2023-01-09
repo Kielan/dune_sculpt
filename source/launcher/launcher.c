@@ -6,44 +6,39 @@
 #  include <windows.h>
 #endif
 
-#if defined(WITH_TBB_MALLOC) && defined(_MSC_VER) && defined(NDEBUG)
-#  pragma comment(lib, "tbbmalloc_proxy.lib")
-#  pragma comment(linker, "/include:__TBB_malloc_proxy")
-#endif
-
 #include "MEM_guardedalloc.h"
 
 #include "CLG_log.h"
 
-#include "DNA_genfile.h"
+#include "STRUCTS_genfile.h"
 
-#include "BLI_args.h"
-#include "BLI_string.h"
-#include "BLI_system.h"
-#include "BLI_task.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LIB_args.h"
+#include "LIB_string.h"
+#include "LIB_system.h"
+#include "LIB_task.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
 /* Mostly initialization functions. */
-#include "BKE_appdir.h"
-#include "BKE_blender.h"
-#include "BKE_brush.h"
-#include "BKE_cachefile.h"
-#include "BKE_callbacks.h"
-#include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_gpencil_modifier.h"
-#include "BKE_idtype.h"
-#include "BKE_image.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_modifier.h"
-#include "BKE_node.h"
-#include "BKE_particle.h"
-#include "BKE_shader_fx.h"
-#include "BKE_sound.h"
-#include "BKE_vfont.h"
-#include "BKE_volume.h"
+#include "KERNEL_appdir.h"
+#include "KERNEL_blender.h"
+#include "KERNEL_brush.h"
+#include "KERNEL_cachefile.h"
+#include "KERNEL_callbacks.h"
+#include "KERNEL_context.h"
+#include "KERNEL_global.h"
+#include "KERNEL_gpencil_modifier.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_image.h"
+#include "KERNEL_main.h"
+#include "KERNEL_material.h"
+#include "KERNEL_modifier.h"
+#include "KERNEL_node.h"
+#include "KERNEL_particle.h"
+#include "KERNEL_shader_fx.h"
+#include "KERNEL_sound.h"
+#include "KERNEL_vfont.h"
+#include "KERNEL_volume.h"
 
 #include "DEG_depsgraph.h"
 
@@ -57,7 +52,7 @@
 #include "WM_api.h"
 #include "WM_toolsystem.h"
 
-#include "RNA_define.h"
+#include "API_define.h"
 
 #ifdef WITH_FREESTYLE
 #  include "FRS_freestyle.h"
@@ -88,10 +83,9 @@
 #include "creator_intern.h" /* Own include. */
 
 /* -------------------------------------------------------------------- */
-/** \name Local Application State
- * \{ */
+/** Local Application State **/
 
-/* written to by 'creator_args.c' */
+/* written to by 'launcher_args.c' */
 struct ApplicationState app_state = {
     .signal =
         {
@@ -104,13 +98,11 @@ struct ApplicationState app_state = {
         },
 };
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Application Level Callbacks
+/** Application Level Callbacks
  *
  * Initialize callbacks for the modules that need them.
- * \{ */
+ */
 
 static void callback_mem_error(const char *errorStr)
 {
@@ -138,7 +130,7 @@ static void callback_main_atexit(void *user_data)
   struct CreatorAtExitData *app_init_data = user_data;
 
   if (app_init_data->ba) {
-    BLI_args_destroy(app_init_data->ba);
+    LIB_args_destroy(app_init_data->ba);
     app_init_data->ba = NULL;
   }
 
@@ -155,46 +147,18 @@ static void callback_main_atexit(void *user_data)
 
 static void callback_clg_fatal(void *fp)
 {
-  BLI_system_backtrace(fp);
+  LIB_system_backtrace(fp);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Blender as a Stand-Alone Python Module (bpy)
+/** Dune as a Stand-Alone Python Module (bpy)
  *
  * While not officially supported, this can be useful for Python developers.
  * See: https://wiki.blender.org/wiki/Building_Blender/Other/BlenderAsPyModule
  * \{ */
 
-#ifdef WITH_PYTHON_MODULE
-
-/* Called in `bpy_interface.c` when building as a Python module. */
-int main_python_enter(int argc, const char **argv);
-void main_python_exit(void);
-
-/* Rename the 'main' function, allowing Python initialization to call it. */
-#  define main main_python_enter
-static void *evil_C = NULL;
-
-#  ifdef __APPLE__
-/* Environment is not available in macOS shared libraries. */
-#    include <crt_externs.h>
-char **environ = NULL;
-#  endif /* __APPLE__ */
-
-#endif /* WITH_PYTHON_MODULE */
-
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name GMP Allocator Workaround
- * \{ */
-
-#if (defined(WITH_TBB_MALLOC) && defined(_MSC_VER) && defined(NDEBUG) && defined(WITH_GMP)) || \
-    defined(DOXYGEN)
-#  include "gmp.h"
-#  include "tbb/scalable_allocator.h"
+/** GMP Allocator Workaround */
 
 void *gmp_alloc(size_t size)
 {
@@ -221,14 +185,11 @@ void gmp_blender_init_allocator()
 }
 #endif
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Main Function
- * \{ */
+/** Main Function */
 
 /**
- * Blender's main function responsibilities are:
+ * Dune's main function responsibilities are:
  * - setup subsystems.
  * - handle arguments.
  * - run #WM_main() event loop,
@@ -257,7 +218,7 @@ int main(int argc,
 
   /* Ensure we free data on early-exit. */
   struct CreatorAtExitData app_init_data = {NULL};
-  BKE_blender_atexit_register(callback_main_atexit, &app_init_data);
+  KERNEL_dune_atexit_register(callback_main_atexit, &app_init_data);
 
   /* Un-buffered `stdout` makes `stdout` and `stderr` better synchronized, and helps
    * when stepping through code in a debugger (prints are immediately
@@ -321,8 +282,8 @@ int main(int argc,
     }
     else {
       const char *unknown = "date-unknown";
-      BLI_strncpy(build_commit_date, unknown, sizeof(build_commit_date));
-      BLI_strncpy(build_commit_time, unknown, sizeof(build_commit_time));
+      LIB_strncpy(build_commit_date, unknown, sizeof(build_commit_date));
+      LIB_strncpy(build_commit_time, unknown, sizeof(build_commit_time));
     }
   }
 #endif
