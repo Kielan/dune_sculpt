@@ -12,7 +12,7 @@
 
 #include "PIL_time.h"
 
-/* for checking system threads - BLI_system_thread_count */
+/* for checking system threads - LIB_system_thread_count */
 #ifdef WIN32
 #  include <sys/timeb.h>
 #  include <windows.h>
@@ -62,7 +62,7 @@ static void *thread_tls_data;
  *   LIB_threadpool_init(&lb, do_something_func, max_threads);
  *
  *   while (cont) {
- *     if (BLI_available_threads(&lb) && !(escape loop event)) {
+ *     if (LIB_available_threads(&lb) && !(escape loop event)) {
  *       // get new job (data pointer)
  *       // tag job 'processed
  *       LIB_threadpool_insert(&lb, job);
@@ -428,7 +428,7 @@ void LIB_spin_lock(SpinLock *spin)
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
   spin_mutex->lock();
 #elif defined(__APPLE__)
-  BLI_mutex_lock(spin);
+  LIB_mutex_lock(spin);
 #elif defined(_MSC_VER)
   while (InterlockedExchangeAcquire(spin, 1)) {
     while (*spin) {
@@ -441,13 +441,13 @@ void LIB_spin_lock(SpinLock *spin)
 #endif
 }
 
-void BLI_spin_unlock(SpinLock *spin)
+void LIB_spin_unlock(SpinLock *spin)
 {
 #ifdef WITH_TBB
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
   spin_mutex->unlock();
 #elif defined(__APPLE__)
-  BLI_mutex_unlock(spin);
+  LIB_mutex_unlock(spin);
 #elif defined(_MSC_VER)
   _ReadWriteBarrier();
   *spin = 0;
@@ -456,13 +456,13 @@ void BLI_spin_unlock(SpinLock *spin)
 #endif
 }
 
-void BLI_spin_end(SpinLock *spin)
+void LIB_spin_end(SpinLock *spin)
 {
 #ifdef WITH_TBB
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
   spin_mutex->~spin_mutex();
 #elif defined(__APPLE__)
-  BLI_mutex_end(spin);
+  LIB_mutex_end(spin);
 #elif defined(_MSC_VER)
   /* Nothing to do, spin is a simple integer type. */
 #else
@@ -472,12 +472,12 @@ void BLI_spin_end(SpinLock *spin)
 
 /* Read/Write Mutex Lock */
 
-void BLI_rw_mutex_init(ThreadRWMutex *mutex)
+void LIB_rw_mutex_init(ThreadRWMutex *mutex)
 {
   pthread_rwlock_init(mutex, nullptr);
 }
 
-void BLI_rw_mutex_lock(ThreadRWMutex *mutex, int mode)
+void LIB_rw_mutex_lock(ThreadRWMutex *mutex, int mode)
 {
   if (mode == THREAD_LOCK_READ) {
     pthread_rwlock_rdlock(mutex);
@@ -487,27 +487,27 @@ void BLI_rw_mutex_lock(ThreadRWMutex *mutex, int mode)
   }
 }
 
-void BLI_rw_mutex_unlock(ThreadRWMutex *mutex)
+void LIB_rw_mutex_unlock(ThreadRWMutex *mutex)
 {
   pthread_rwlock_unlock(mutex);
 }
 
-void BLI_rw_mutex_end(ThreadRWMutex *mutex)
+void LIB_rw_mutex_end(ThreadRWMutex *mutex)
 {
   pthread_rwlock_destroy(mutex);
 }
 
-ThreadRWMutex *BLI_rw_mutex_alloc()
+ThreadRWMutex *LIB_rw_mutex_alloc()
 {
   ThreadRWMutex *mutex = static_cast<ThreadRWMutex *>(
       MEM_callocN(sizeof(ThreadRWMutex), "ThreadRWMutex"));
-  BLI_rw_mutex_init(mutex);
+  LIB_rw_mutex_init(mutex);
   return mutex;
 }
 
-void BLI_rw_mutex_free(ThreadRWMutex *mutex)
+void LIB_rw_mutex_free(ThreadRWMutex *mutex)
 {
-  BLI_rw_mutex_end(mutex);
+  LIB_rw_mutex_end(mutex);
   MEM_freeN(mutex);
 }
 
@@ -519,7 +519,7 @@ struct TicketMutex {
   unsigned int queue_head, queue_tail;
 };
 
-TicketMutex *BLI_ticket_mutex_alloc()
+TicketMutex *LIB_ticket_mutex_alloc()
 {
   TicketMutex *ticket = static_cast<TicketMutex *>(
       MEM_callocN(sizeof(TicketMutex), "TicketMutex"));
@@ -530,14 +530,14 @@ TicketMutex *BLI_ticket_mutex_alloc()
   return ticket;
 }
 
-void BLI_ticket_mutex_free(TicketMutex *ticket)
+void LIB_ticket_mutex_free(TicketMutex *ticket)
 {
   pthread_mutex_destroy(&ticket->mutex);
   pthread_cond_destroy(&ticket->cond);
   MEM_freeN(ticket);
 }
 
-void BLI_ticket_mutex_lock(TicketMutex *ticket)
+void LIB_ticket_mutex_lock(TicketMutex *ticket)
 {
   unsigned int queue_me;
 
@@ -551,7 +551,7 @@ void BLI_ticket_mutex_lock(TicketMutex *ticket)
   pthread_mutex_unlock(&ticket->mutex);
 }
 
-void BLI_ticket_mutex_unlock(TicketMutex *ticket)
+void LIB_ticket_mutex_unlock(TicketMutex *ticket)
 {
   pthread_mutex_lock(&ticket->mutex);
   ticket->queue_head++;
@@ -563,32 +563,32 @@ void BLI_ticket_mutex_unlock(TicketMutex *ticket)
 
 /* Condition */
 
-void BLI_condition_init(ThreadCondition *cond)
+void LIB_condition_init(ThreadCondition *cond)
 {
   pthread_cond_init(cond, nullptr);
 }
 
-void BLI_condition_wait(ThreadCondition *cond, ThreadMutex *mutex)
+void LIB_condition_wait(ThreadCondition *cond, ThreadMutex *mutex)
 {
   pthread_cond_wait(cond, mutex);
 }
 
-void BLI_condition_wait_global_mutex(ThreadCondition *cond, const int type)
+void LIB_condition_wait_global_mutex(ThreadCondition *cond, const int type)
 {
   pthread_cond_wait(cond, global_mutex_from_type(type));
 }
 
-void BLI_condition_notify_one(ThreadCondition *cond)
+void LIB_condition_notify_one(ThreadCondition *cond)
 {
   pthread_cond_signal(cond);
 }
 
-void BLI_condition_notify_all(ThreadCondition *cond)
+void LIB_condition_notify_all(ThreadCondition *cond)
 {
   pthread_cond_broadcast(cond);
 }
 
-void BLI_condition_end(ThreadCondition *cond)
+void LIB_condition_end(ThreadCondition *cond)
 {
   pthread_cond_destroy(cond);
 }
@@ -604,12 +604,12 @@ struct ThreadQueue {
   volatile int canceled;
 };
 
-ThreadQueue *BLI_thread_queue_init()
+ThreadQueue *LIB_thread_queue_init()
 {
   ThreadQueue *queue;
 
   queue = static_cast<ThreadQueue *>(MEM_callocN(sizeof(ThreadQueue), "ThreadQueue"));
-  queue->queue = BLI_gsqueue_new(sizeof(void *));
+  queue->queue = LIB_gsqueue_new(sizeof(void *));
 
   pthread_mutex_init(&queue->mutex, nullptr);
   pthread_cond_init(&queue->push_cond, nullptr);
@@ -618,44 +618,44 @@ ThreadQueue *BLI_thread_queue_init()
   return queue;
 }
 
-void BLI_thread_queue_free(ThreadQueue *queue)
+void LIB_thread_queue_free(ThreadQueue *queue)
 {
   /* destroy everything, assumes no one is using queue anymore */
   pthread_cond_destroy(&queue->finish_cond);
   pthread_cond_destroy(&queue->push_cond);
   pthread_mutex_destroy(&queue->mutex);
 
-  BLI_gsqueue_free(queue->queue);
+  LIB_gsqueue_free(queue->queue);
 
   MEM_freeN(queue);
 }
 
-void BLI_thread_queue_push(ThreadQueue *queue, void *work)
+void LIB_thread_queue_push(ThreadQueue *queue, void *work)
 {
   pthread_mutex_lock(&queue->mutex);
 
-  BLI_gsqueue_push(queue->queue, &work);
+  LIB_gsqueue_push(queue->queue, &work);
 
   /* signal threads waiting to pop */
   pthread_cond_signal(&queue->push_cond);
   pthread_mutex_unlock(&queue->mutex);
 }
 
-void *BLI_thread_queue_pop(ThreadQueue *queue)
+void *LIB_thread_queue_pop(ThreadQueue *queue)
 {
   void *work = nullptr;
 
   /* wait until there is work */
   pthread_mutex_lock(&queue->mutex);
-  while (BLI_gsqueue_is_empty(queue->queue) && !queue->nowait) {
+  while (LIB_gsqueue_is_empty(queue->queue) && !queue->nowait) {
     pthread_cond_wait(&queue->push_cond, &queue->mutex);
   }
 
   /* if we have something, pop it */
-  if (!BLI_gsqueue_is_empty(queue->queue)) {
-    BLI_gsqueue_pop(queue->queue, &work);
+  if (!LIB_gsqueue_is_empty(queue->queue)) {
+    LIB_gsqueue_pop(queue->queue, &work);
 
-    if (BLI_gsqueue_is_empty(queue->queue)) {
+    if (LIB_gsqueue_is_empty(queue->queue)) {
       pthread_cond_broadcast(&queue->finish_cond);
     }
   }
@@ -700,7 +700,7 @@ static void wait_timeout(struct timespec *timeout, int ms)
   timeout->tv_nsec = x * 1000;
 }
 
-void *BLI_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
+void *LIB_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
 {
   double t;
   void *work = nullptr;
@@ -711,7 +711,7 @@ void *BLI_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
 
   /* wait until there is work */
   pthread_mutex_lock(&queue->mutex);
-  while (BLI_gsqueue_is_empty(queue->queue) && !queue->nowait) {
+  while (LIB_gsqueue_is_empty(queue->queue) && !queue->nowait) {
     if (pthread_cond_timedwait(&queue->push_cond, &queue->mutex, &timeout) == ETIMEDOUT) {
       break;
     }
@@ -721,10 +721,10 @@ void *BLI_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
   }
 
   /* if we have something, pop it */
-  if (!BLI_gsqueue_is_empty(queue->queue)) {
-    BLI_gsqueue_pop(queue->queue, &work);
+  if (!LIB_gsqueue_is_empty(queue->queue)) {
+    LIB_gsqueue_pop(queue->queue, &work);
 
-    if (BLI_gsqueue_is_empty(queue->queue)) {
+    if (LIB_gsqueue_is_empty(queue->queue)) {
       pthread_cond_broadcast(&queue->finish_cond);
     }
   }
@@ -734,29 +734,29 @@ void *BLI_thread_queue_pop_timeout(ThreadQueue *queue, int ms)
   return work;
 }
 
-int BLI_thread_queue_len(ThreadQueue *queue)
+int LIB_thread_queue_len(ThreadQueue *queue)
 {
   int size;
 
   pthread_mutex_lock(&queue->mutex);
-  size = BLI_gsqueue_len(queue->queue);
+  size = LIB_gsqueue_len(queue->queue);
   pthread_mutex_unlock(&queue->mutex);
 
   return size;
 }
 
-bool BLI_thread_queue_is_empty(ThreadQueue *queue)
+bool LIB_thread_queue_is_empty(ThreadQueue *queue)
 {
   bool is_empty;
 
   pthread_mutex_lock(&queue->mutex);
-  is_empty = BLI_gsqueue_is_empty(queue->queue);
+  is_empty = LIB_gsqueue_is_empty(queue->queue);
   pthread_mutex_unlock(&queue->mutex);
 
   return is_empty;
 }
 
-void BLI_thread_queue_nowait(ThreadQueue *queue)
+void LIB_thread_queue_nowait(ThreadQueue *queue)
 {
   pthread_mutex_lock(&queue->mutex);
 
@@ -767,12 +767,12 @@ void BLI_thread_queue_nowait(ThreadQueue *queue)
   pthread_mutex_unlock(&queue->mutex);
 }
 
-void BLI_thread_queue_wait_finish(ThreadQueue *queue)
+void LIB_thread_queue_wait_finish(ThreadQueue *queue)
 {
   /* wait for finish condition */
   pthread_mutex_lock(&queue->mutex);
 
-  while (!BLI_gsqueue_is_empty(queue->queue)) {
+  while (!LIB_gsqueue_is_empty(queue->queue)) {
     pthread_cond_wait(&queue->finish_cond, &queue->mutex);
   }
 
