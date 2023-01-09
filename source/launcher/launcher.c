@@ -72,10 +72,6 @@
 #  include "libmv-capi.h"
 #endif
 
-#ifdef WITH_CYCLES_LOGGING
-#  include "CCL_api.h"
-#endif
-
 #ifdef WITH_SDL_DYNLOAD
 #  include "sdlew.h"
 #endif
@@ -100,7 +96,6 @@ struct ApplicationState app_state = {
 
 /* -------------------------------------------------------------------- */
 /** Application Level Callbacks
- *
  * Initialize callbacks for the modules that need them.
  */
 
@@ -198,9 +193,7 @@ int main(int argc,
 {
   bContext *C;
 
-#ifndef WITH_PYTHON_MODULE
   bArgs *ba;
-#endif
 
 #ifdef WIN32
   char **argv;
@@ -299,10 +292,6 @@ int main(int argc,
   libmv_initLogging(argv[0]);
 #elif defined(WITH_CYCLES_LOGGING)
   CCL_init_logging(argv[0]);
-#endif
-
-#if defined(WITH_TBB_MALLOC) && defined(_MSC_VER) && defined(NDEBUG) && defined(WITH_GMP)
-  gmp_blender_init_allocator();
 #endif
 
   main_callback_setup();
@@ -408,23 +397,15 @@ int main(int argc,
 
   KERNEL_materials_init();
 
-#ifndef WITH_PYTHON_MODULE
   if (G.background == 0) {
     LIB_args_parse(ba, ARG_PASS_SETTINGS_GUI, NULL, NULL);
   }
   LIB_args_parse(ba, ARG_PASS_SETTINGS_FORCE, NULL, NULL);
-#endif
 
   WM_init(C, argc, (const char **)argv);
 
   /* Need to be after WM init so that userpref are loaded. */
   RE_engines_init_experimental();
-
-#ifndef WITH_PYTHON
-  printf(
-      "\n* WARNING * - Blender compiled without Python!\n"
-      "this is not intended for typical usage\n\n");
-#endif
 
   CTX_py_init_set(C, true);
   WM_keyconfig_init(C);
@@ -435,34 +416,28 @@ int main(int argc,
   FRS_set_context(C);
 #endif
 
-  /* OK we are ready for it */
-#ifndef WITH_PYTHON_MODULE
   /* Handles #ARG_PASS_FINAL. */
   main_args_setup_post(C, ba);
-#endif
 
   /* Explicitly free data allocated for argument parsing:
    * - 'ba'
    * - 'argv' on WIN32.
    */
   callback_main_atexit(&app_init_data);
-  KERNEL_blender_atexit_unregister(callback_main_atexit, &app_init_data);
+  KERNEL_dune_atexit_unregister(callback_main_atexit, &app_init_data);
 
   /* End argument parsing, allow memory leaks to be printed. */
   MEM_use_memleak_detection(true);
 
   /* Paranoid, avoid accidental re-use. */
-#ifndef WITH_PYTHON_MODULE
   ba = NULL;
   (void)ba;
-#endif
 
 #ifdef WIN32
   argv = NULL;
   (void)argv;
 #endif
 
-#ifndef WITH_PYTHON_MODULE
   if (G.background) {
     /* Using window-manager API in background-mode is a bit odd, but works fine. */
     WM_exit(C);
@@ -475,7 +450,6 @@ int main(int argc,
     }
     WM_main(C);
   }
-#endif /* WITH_PYTHON_MODULE */
 
   return 0;
 } /* End of `int main(...)` function. */
