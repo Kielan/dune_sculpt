@@ -112,21 +112,21 @@ void LIB_rw_mutex_unlock(ThreadRWMutex *mutex);
 
 typedef struct TicketMutex TicketMutex;
 
-TicketMutex *BLI_ticket_mutex_alloc(void);
-void BLI_ticket_mutex_free(TicketMutex *ticket);
-void BLI_ticket_mutex_lock(TicketMutex *ticket);
-void BLI_ticket_mutex_unlock(TicketMutex *ticket);
+TicketMutex *LIB_ticket_mutex_alloc(void);
+void LIB_ticket_mutex_free(TicketMutex *ticket);
+void LIB_ticket_mutex_lock(TicketMutex *ticket);
+void LIB_ticket_mutex_unlock(TicketMutex *ticket);
 
 /* Condition */
 
 typedef pthread_cond_t ThreadCondition;
 
-void BLI_condition_init(ThreadCondition *cond);
-void BLI_condition_wait(ThreadCondition *cond, ThreadMutex *mutex);
-void BLI_condition_wait_global_mutex(ThreadCondition *cond, int type);
-void BLI_condition_notify_one(ThreadCondition *cond);
-void BLI_condition_notify_all(ThreadCondition *cond);
-void BLI_condition_end(ThreadCondition *cond);
+void LIB_condition_init(ThreadCondition *cond);
+void LIB_condition_wait(ThreadCondition *cond, ThreadMutex *mutex);
+void LIB_condition_wait_global_mutex(ThreadCondition *cond, int type);
+void LIB_condition_notify_one(ThreadCondition *cond);
+void LIB_condition_notify_all(ThreadCondition *cond);
+void LIB_condition_end(ThreadCondition *cond);
 
 /* ThreadWorkQueue
  *
@@ -134,38 +134,34 @@ void BLI_condition_end(ThreadCondition *cond);
 
 typedef struct ThreadQueue ThreadQueue;
 
-ThreadQueue *BLI_thread_queue_init(void);
-void BLI_thread_queue_free(ThreadQueue *queue);
+ThreadQueue *LIB_thread_queue_init(void);
+void LIB_thread_queue_free(ThreadQueue *queue);
 
-void BLI_thread_queue_push(ThreadQueue *queue, void *work);
-void *BLI_thread_queue_pop(ThreadQueue *queue);
-void *BLI_thread_queue_pop_timeout(ThreadQueue *queue, int ms);
-int BLI_thread_queue_len(ThreadQueue *queue);
-bool BLI_thread_queue_is_empty(ThreadQueue *queue);
+void LIB_thread_queue_push(ThreadQueue *queue, void *work);
+void *LIB_thread_queue_pop(ThreadQueue *queue);
+void *LIB_thread_queue_pop_timeout(ThreadQueue *queue, int ms);
+int LIB_thread_queue_len(ThreadQueue *queue);
+bool LIB_thread_queue_is_empty(ThreadQueue *queue);
 
-void BLI_thread_queue_wait_finish(ThreadQueue *queue);
-void BLI_thread_queue_nowait(ThreadQueue *queue);
+void LIB_thread_queue_wait_finish(ThreadQueue *queue);
+void LIB_thread_queue_nowait(ThreadQueue *queue);
 
 /* Thread local storage */
 
 #if defined(__APPLE__)
 #  define ThreadLocal(type) pthread_key_t
-#  define BLI_thread_local_create(name) pthread_key_create(&name, NULL)
-#  define BLI_thread_local_delete(name) pthread_key_delete(name)
-#  define BLI_thread_local_get(name) pthread_getspecific(name)
-#  define BLI_thread_local_set(name, value) pthread_setspecific(name, value)
+#  define LIB_thread_local_create(name) pthread_key_create(&name, NULL)
+#  define LIB_thread_local_delete(name) pthread_key_delete(name)
+#  define LIB_thread_local_get(name) pthread_getspecific(name)
+#  define LIB_thread_local_set(name, value) pthread_setspecific(name, value)
 #else /* defined(__APPLE__) */
 #  ifdef _MSC_VER
 #    define ThreadLocal(type) __declspec(thread) type
 #  else
 #    define ThreadLocal(type) __thread type
 #  endif
-#  define BLI_thread_local_create(name)
-#  define BLI_thread_local_delete(name)
-#  define BLI_thread_local_get(name) name
-#  define BLI_thread_local_set(name, value) name = value
+#  define LIB_thread_local_create(name)
+#  define LIB_thread_local_delete(name)
+#  define LIB_thread_local_get(name) name
+#  define LIB_thread_local_set(name, value) name = value
 #endif /* defined(__APPLE__) */
-
-#ifdef __cplusplus
-}
-#endif
