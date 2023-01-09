@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bli
- *
+/**
  * A platform-independent definition of [u]intXX_t
  * Plus the accompanying header include for htonl/ntohl
  *
