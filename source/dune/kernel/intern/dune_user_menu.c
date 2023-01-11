@@ -17,7 +17,7 @@
 
 bUserMenu *KERNEL_dune_user_menu_find(ListBase *lb, char space_type, const char *context)
 {
-  LISTBASE_FOREACH (bUserMenu *, um, lb) {
+  LISTBASE_FOREACH (duneUserMenu *, um, lb) {
     if ((space_type == um->space_type) && (STREQ(context, um->context))) {
       return um;
     }
@@ -29,7 +29,7 @@ bUserMenu *KERNEL_dune_user_menu_ensure(ListBase *lb, char space_type, const cha
 {
   bUserMenu *um = KERNEL_dune_user_menu_find(lb, space_type, context);
   if (um == NULL) {
-    um = MEM_callocN(sizeof(bUserMenu), __func__);
+    um = MEM_callocN(sizeof(duneUserMenu), __func__);
     um->space_type = space_type;
     STRNCPY(um->context, context);
     LIB_addhead(lb, um);
@@ -38,40 +38,39 @@ bUserMenu *KERNEL_dune_user_menu_ensure(ListBase *lb, char space_type, const cha
 }
 
 /* -------------------------------------------------------------------- */
-/** Menu Item
- */
+/** Menu Item **/
 
 bUserMenuItem *KERNEL_dune_user_menu_item_add(ListBase *lb, int type)
 {
   uint size;
 
   if (type == USER_MENU_TYPE_SEP) {
-    size = sizeof(bUserMenuItem);
+    size = sizeof(duneUserMenuItem);
   }
   else if (type == USER_MENU_TYPE_OPERATOR) {
-    size = sizeof(bUserMenuItem_Op);
+    size = sizeof(duneUserMenuItem_Op);
   }
   else if (type == USER_MENU_TYPE_MENU) {
-    size = sizeof(bUserMenuItem_Menu);
+    size = sizeof(duneUserMenuItem_Menu);
   }
   else if (type == USER_MENU_TYPE_PROP) {
-    size = sizeof(bUserMenuItem_Prop);
+    size = sizeof(duneUserMenuItem_Prop);
   }
   else {
-    size = sizeof(bUserMenuItem);
+    size = sizeof(duneUserMenuItem);
     LIB_assert(0);
   }
 
-  bUserMenuItem *umi = MEM_callocN(size, __func__);
+  duneUserMenuItem *umi = MEM_callocN(size, __func__);
   umi->type = type;
   LIB_addtail(lb, umi);
   return umi;
 }
 
-void KERNEL_dune_user_menu_item_free(bUserMenuItem *umi)
+void KERNEL_dune_user_menu_item_free(duneUserMenuItem *umi)
 {
   if (umi->type == USER_MENU_TYPE_OPERATOR) {
-    bUserMenuItem_Op *umi_op = (bUserMenuItem_Op *)umi;
+    duneUserMenuItem_Op *umi_op = (duneUserMenuItem_Op *)umi;
     if (umi_op->prop) {
       IDP_FreeProperty(umi_op->prop);
     }
@@ -81,7 +80,7 @@ void KERNEL_dune_user_menu_item_free(bUserMenuItem *umi)
 
 void KERNEL_dune_user_menu_item_free_list(ListBase *lb)
 {
-  for (bUserMenuItem *umi = lb->first, *umi_next; umi; umi = umi_next) {
+  for (duneUserMenuItem *umi = lb->first, *umi_next; umi; umi = umi_next) {
     umi_next = umi->next;
     KERNEL_dune_user_menu_item_free(umi);
   }
