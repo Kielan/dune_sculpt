@@ -76,7 +76,7 @@
 #  include "sdlew.h"
 #endif
 
-#include "creator_intern.h" /* Own include. */
+#include "launcher_intern.h" /* Own include. */
 
 /* -------------------------------------------------------------------- */
 /** Local Application State **/
