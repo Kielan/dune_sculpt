@@ -2,19 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_fileops.h"
-#include "BLI_fileops_types.h"
-#include "BLI_listbase.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "LIB_fileops.h"
+#include "LIB_fileops_types.h"
+#include "LI_listbase.h"
+#include "LI_path_util.h"
+#include "LI_string.h"
+#include "LI_string_utf8.h"
+#include "LI_string_utils.h"
+#include "LI_utildefines.h"
 
-#include "BKE_appdir.h" /* own include */
-#include "BKE_blender_version.h"
+#include "KE_appdir.h" /* own include */
+#include "KE_dune_version.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
 #include "GHOST_Path-api.h"
 
@@ -30,7 +30,7 @@
 #    undef _WIN32_IE
 #  endif
 #  define _WIN32_IE 0x0501
-#  include "BLI_winstuff.h"
+#  include "LIB_winstuff.h"
 #  include <shlobj.h>
 #  include <windows.h>
 #else /* non windows */
@@ -45,8 +45,7 @@ static const char _str_null[] = "(null)";
 #define STR_OR_FALLBACK(a) ((a) ? (a) : _str_null)
 
 /* -------------------------------------------------------------------- */
-/** \name Local Variables
- * \{ */
+/** Local Variables **/
 
 /* local */
 static CLG_LogRef LOG = {"bke.appdir"};
@@ -64,66 +63,57 @@ static struct {
     .temp_dirname_session = "",
 };
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Initialization
- * \{ */
+/** Initialization **/
 
 #ifndef NDEBUG
 static bool is_appdir_init = false;
-#  define ASSERT_IS_INIT() BLI_assert(is_appdir_init)
+#  define ASSERT_IS_INIT() LIB_assert(is_appdir_init)
 #else
 #  define ASSERT_IS_INIT() ((void)0)
 #endif
 
-void BKE_appdir_init(void)
+void KERNEL_appdir_init(void)
 {
 #ifndef NDEBUG
-  BLI_assert(is_appdir_init == false);
+  LIB_assert(is_appdir_init == false);
   is_appdir_init = true;
 #endif
 }
 
-void BKE_appdir_exit(void)
+void KERNEL_appdir_exit(void)
 {
 #ifndef NDEBUG
-  BLI_assert(is_appdir_init == true);
+  LIB_assert(is_appdir_init == true);
   is_appdir_init = false;
 #endif
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Internal Utilities
- * \{ */
+/** Internal Utilities **/
 
 /**
- * \returns a formatted representation of the specified version number. Non-re-entrant!
+ * returns a formatted representation of the specified version number. Non-re-entrant!
  */
-static char *blender_version_decimal(const int version)
+static char *dune_version_decimal(const int version)
 {
   static char version_str[5];
-  BLI_assert(version < 1000);
-  BLI_snprintf(version_str, sizeof(version_str), "%d.%d", version / 100, version % 100);
+  LIB_assert(version < 1000);
+  LIB_snprintf(version_str, sizeof(version_str), "%d.%d", version / 100, version % 100);
   return version_str;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Default Directories
- * \{ */
+/** Default Directories **/
 
-const char *BKE_appdir_folder_default(void)
+const char *KERNEL_appdir_folder_default(void)
 {
 #ifndef WIN32
-  return BLI_getenv("HOME");
+  return LIB_getenv("HOME");
 #else  /* Windows */
   static char documentfolder[MAXPATHLEN];
 
-  if (BKE_appdir_folder_documents(documentfolder)) {
+  if (KERNEL_appdir_folder_documents(documentfolder)) {
     return documentfolder;
   }
 
@@ -131,92 +121,92 @@ const char *BKE_appdir_folder_default(void)
 #endif /* WIN32 */
 }
 
-const char *BKE_appdir_folder_root(void)
+const char *KERNEL_appdir_folder_root(void)
 {
 #ifndef WIN32
   return "/";
 #else
   static char root[4];
-  BLI_windows_get_default_root_dir(root);
+  LIB_windows_get_default_root_dir(root);
   return root;
 #endif
 }
 
-const char *BKE_appdir_folder_default_or_root(void)
+const char *KERNEL_appdir_folder_default_or_root(void)
 {
-  const char *path = BKE_appdir_folder_default();
+  const char *path = KERNEL_appdir_folder_default();
   if (path == NULL) {
-    path = BKE_appdir_folder_root();
+    path = KERNEL_appdir_folder_root();
   }
   return path;
 }
 
-const char *BKE_appdir_folder_home(void)
+const char *KERNEL_appdir_folder_home(void)
 {
 #ifdef WIN32
-  return BLI_getenv("userprofile");
+  return LIB_getenv("userprofile");
 #elif defined(__APPLE__)
-  return BLI_expand_tilde("~/");
+  return LIB_expand_tilde("~/");
 #else
-  return BLI_getenv("HOME");
+  return LIB_getenv("HOME");
 #endif
 }
 
-bool BKE_appdir_folder_documents(char *dir)
+bool KERNEL_appdir_folder_documents(char *dir)
 {
   dir[0] = '\0';
 
   const char *documents_path = GHOST_getUserSpecialDir(GHOST_kUserSpecialDirDocuments);
 
   /* Usual case: Ghost gave us the documents path. We're done here. */
-  if (documents_path && BLI_is_dir(documents_path)) {
-    BLI_strncpy(dir, documents_path, FILE_MAXDIR);
+  if (documents_path && LIB_is_dir(documents_path)) {
+    LIB_strncpy(dir, documents_path, FILE_MAXDIR);
     return true;
   }
 
   /* Ghost couldn't give us a documents path, let's try if we can find it ourselves. */
 
-  const char *home_path = BKE_appdir_folder_home();
-  if (!home_path || !BLI_is_dir(home_path)) {
+  const char *home_path = KERNEL_appdir_folder_home();
+  if (!home_path || !LIB_is_dir(home_path)) {
     return false;
   }
 
   char try_documents_path[FILE_MAXDIR];
   /* Own attempt at getting a valid Documents path. */
-  BLI_path_join(try_documents_path, sizeof(try_documents_path), home_path, N_("Documents"), NULL);
-  if (!BLI_is_dir(try_documents_path)) {
+  LIB_path_join(try_documents_path, sizeof(try_documents_path), home_path, N_("Documents"), NULL);
+  if (!LIB_is_dir(try_documents_path)) {
     return false;
   }
 
-  BLI_strncpy(dir, try_documents_path, FILE_MAXDIR);
+  LIB_strncpy(dir, try_documents_path, FILE_MAXDIR);
   return true;
 }
 
-bool BKE_appdir_folder_caches(char *r_path, const size_t path_len)
+bool KERNEL_appdir_folder_caches(char *r_path, const size_t path_len)
 {
   r_path[0] = '\0';
 
   const char *caches_root_path = GHOST_getUserSpecialDir(GHOST_kUserSpecialDirCaches);
   if (caches_root_path == NULL || !BLI_is_dir(caches_root_path)) {
-    caches_root_path = BKE_tempdir_base();
+    caches_root_path = KERNEL_tempdir_base();
   }
   if (caches_root_path == NULL || !BLI_is_dir(caches_root_path)) {
     return false;
   }
 
 #ifdef WIN32
-  BLI_path_join(
-      r_path, path_len, caches_root_path, "Blender Foundation", "Blender", "Cache", SEP_STR, NULL);
+  LIB_path_join(
+      r_path, path_len, caches_root_path, "Dune Foundation", "Dune", "Cache", SEP_STR, NULL);
 #elif defined(__APPLE__)
-  BLI_path_join(r_path, path_len, caches_root_path, "Blender", SEP_STR, NULL);
+  LIB_path_join(r_path, path_len, caches_root_path, "Dune", SEP_STR, NULL);
 #else /* __linux__ */
-  BLI_path_join(r_path, path_len, caches_root_path, "blender", SEP_STR, NULL);
+  LIB_path_join(r_path, path_len, caches_root_path, "dune", SEP_STR, NULL);
 #endif
 
   return true;
 }
 
-bool BKE_appdir_font_folder_default(char *dir)
+bool KERNEL_appdir_font_folder_default(char *dir)
 {
   char test_dir[FILE_MAXDIR];
   test_dir[0] = '\0';
@@ -225,41 +215,38 @@ bool BKE_appdir_font_folder_default(char *dir)
   wchar_t wpath[FILE_MAXDIR];
   if (SHGetSpecialFolderPathW(0, wpath, CSIDL_FONTS, 0)) {
     wcscat(wpath, L"\\");
-    BLI_strncpy_wchar_as_utf8(test_dir, wpath, sizeof(test_dir));
+    LIB_strncpy_wchar_as_utf8(test_dir, wpath, sizeof(test_dir));
   }
 #elif defined(__APPLE__)
-  STRNCPY(test_dir, BLI_expand_tilde("~/Library/Fonts/"));
-  BLI_path_slash_ensure(test_dir);
+  STRNCPY(test_dir, LIB_expand_tilde("~/Library/Fonts/"));
+  LIB_path_slash_ensure(test_dir);
 #else
   STRNCPY(test_dir, "/usr/share/fonts");
 #endif
 
-  if (test_dir[0] && BLI_exists(test_dir)) {
-    BLI_strncpy(dir, test_dir, FILE_MAXDIR);
+  if (test_dir[0] && LIB_exists(test_dir)) {
+    LIB_strncpy(dir, test_dir, FILE_MAXDIR);
     return true;
   }
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Path Presets (Internal Helpers)
- * \{ */
+/** Path Presets (Internal Helpers) **/
 
 /**
- * Concatenates paths into \a targetpath,
+ * Concatenates paths into targetpath,
  * returning true if result points to a directory.
  *
- * \param path_base: Path base, never NULL.
- * \param folder_name: First sub-directory (optional).
- * \param subfolder_name: Second sub-directory (optional).
- * \param check_is_dir: When false, return true even if the path doesn't exist.
+ * param path_base: Path base, never NULL.
+ * param folder_name: First sub-directory (optional).
+ * param subfolder_name: Second sub-directory (optional).
+ * param check_is_dir: When false, return true even if the path doesn't exist.
  *
- * \note The names for optional paths only follow other usage in this file,
+ * note The names for optional paths only follow other usage in this file,
  * the names don't matter for this function.
  *
- * \note If it's useful we could take an arbitrary number of paths.
+ * note If it's useful we could take an arbitrary number of paths.
  * For now usage is limited and we don't need this.
  */
 static bool test_path(char *targetpath,
@@ -272,14 +259,14 @@ static bool test_path(char *targetpath,
   ASSERT_IS_INIT();
 
   /* Only the last argument should be NULL. */
-  BLI_assert(!(folder_name == NULL && (subfolder_name != NULL)));
-  BLI_path_join(targetpath, targetpath_len, path_base, folder_name, subfolder_name, NULL);
+  LIB_assert(!(folder_name == NULL && (subfolder_name != NULL)));
+  LIB_path_join(targetpath, targetpath_len, path_base, folder_name, subfolder_name, NULL);
   if (check_is_dir == false) {
     CLOG_INFO(&LOG, 3, "using without test: '%s'", targetpath);
     return true;
   }
 
-  if (BLI_is_dir(targetpath)) {
+  if (LIB_is_dir(targetpath)) {
     CLOG_INFO(&LOG, 3, "found '%s'", targetpath);
     return true;
   }
@@ -295,28 +282,28 @@ static bool test_path(char *targetpath,
 /**
  * Puts the value of the specified environment variable into \a path if it exists.
  *
- * \param check_is_dir: When true, checks if it points at a directory.
+ * param check_is_dir: When true, checks if it points at a directory.
  *
- * \returns true when the value of the environment variable is stored
- * at the address \a path points to.
+ * returns true when the value of the environment variable is stored
+ * at the address path points to.
  */
 static bool test_env_path(char *path, const char *envvar, const bool check_is_dir)
 {
   ASSERT_IS_INIT();
 
-  const char *env_path = envvar ? BLI_getenv(envvar) : NULL;
+  const char *env_path = envvar ? LIB_getenv(envvar) : NULL;
   if (!env_path) {
     return false;
   }
 
-  BLI_strncpy(path, env_path, FILE_MAX);
+  LIB_strncpy(path, env_path, FILE_MAX);
 
   if (check_is_dir == false) {
     CLOG_INFO(&LOG, 3, "using env '%s' without test: '%s'", envvar, env_path);
     return true;
   }
 
-  if (BLI_is_dir(env_path)) {
+  if (LIB_is_dir(env_path)) {
     CLOG_INFO(&LOG, 3, "env '%s' found: %s", envvar, env_path);
     return true;
   }
@@ -330,16 +317,16 @@ static bool test_env_path(char *path, const char *envvar, const bool check_is_di
 }
 
 /**
- * Constructs in \a targetpath the name of a directory relative to a version-specific
- * sub-directory in the parent directory of the Blender executable.
+ * Constructs in a targetpath the name of a directory relative to a version-specific
+ * sub-directory in the parent directory of the Dune executable.
  *
- * \param targetpath: String to return path.
- * \param folder_name: Optional folder name within version-specific directory.
- * \param subfolder_name: Optional sub-folder name within folder_name.
+ * param targetpath: String to return path.
+ * param folder_name: Optional folder name within version-specific directory.
+ * param subfolder_name: Optional sub-folder name within folder_name.
  *
- * \param version: To construct name of version-specific directory within #g_app.program_dirname.
- * \param check_is_dir: When false, return true even if the path doesn't exist.
- * \return true if such a directory exists.
+ * param version: To construct name of version-specific directory within #g_app.program_dirname.
+ * param check_is_dir: When false, return true even if the path doesn't exist.
+ * return true if such a directory exists.
  */
 static bool get_path_local_ex(char *targetpath,
                               size_t targetpath_len,
@@ -357,7 +344,7 @@ static bool get_path_local_ex(char *targetpath,
             STR_OR_FALLBACK(subfolder_name));
 
   if (folder_name) { /* `subfolder_name` may be NULL. */
-    BLI_path_join(relfolder, sizeof(relfolder), folder_name, subfolder_name, NULL);
+    LIB_path_join(relfolder, sizeof(relfolder), folder_name, subfolder_name, NULL);
   }
   else {
     relfolder[0] = '\0';
@@ -368,18 +355,18 @@ static bool get_path_local_ex(char *targetpath,
   const char *path_base = g_app.program_dirname;
 #ifdef __APPLE__
   /* Due new code-sign situation in OSX > 10.9.5
-   * we must move the blender_version dir with contents to Resources. */
+   * we must move the dune_version dir with contents to Resources. */
   char osx_resourses[FILE_MAX];
-  BLI_snprintf(osx_resourses, sizeof(osx_resourses), "%s../Resources", g_app.program_dirname);
+  LIB_snprintf(osx_resourses, sizeof(osx_resourses), "%s../Resources", g_app.program_dirname);
   /* Remove the '/../' added above. */
-  BLI_path_normalize(NULL, osx_resourses);
+  LIB_path_normalize(NULL, osx_resourses);
   path_base = osx_resourses;
 #endif
   return test_path(targetpath,
                    targetpath_len,
                    check_is_dir,
                    path_base,
-                   blender_version_decimal(version),
+                   dune_version_decimal(version),
                    relfolder);
 }
 static bool get_path_local(char *targetpath,
@@ -387,13 +374,13 @@ static bool get_path_local(char *targetpath,
                            const char *folder_name,
                            const char *subfolder_name)
 {
-  const int version = BLENDER_VERSION;
+  const int version = DUNE_VERSION;
   const bool check_is_dir = true;
   return get_path_local_ex(
       targetpath, targetpath_len, folder_name, subfolder_name, version, check_is_dir);
 }
 
-bool BKE_appdir_app_is_portable_install(void)
+bool KERNEL_appdir_app_is_portable_install(void)
 {
   /* Detect portable install by the existence of `config` folder. */
   char path[FILE_MAX];
@@ -403,11 +390,11 @@ bool BKE_appdir_app_is_portable_install(void)
 /**
  * Returns the path of a folder from environment variables.
  *
- * \param targetpath: String to return path.
- * \param subfolder_name: optional name of sub-folder within folder.
- * \param envvar: name of environment variable to check folder_name.
- * \param check_is_dir: When false, return true even if the path doesn't exist.
- * \return true if it was able to construct such a path and the path exists.
+ * param targetpath: String to return path.
+ * param subfolder_name: optional name of sub-folder within folder.
+ * param envvar: name of environment variable to check folder_name.
+ * param check_is_dir: When false, return true even if the path doesn't exist.
+ * return true if it was able to construct such a path and the path exists.
  */
 static bool get_path_environment_ex(char *targetpath,
                                     size_t targetpath_len,
@@ -435,12 +422,12 @@ static bool get_path_environment(char *targetpath,
 /**
  * Returns the path of a folder within the user-files area.
  *
- * \param targetpath: String to return path.
- * \param folder_name: default name of folder within user area.
- * \param subfolder_name: optional name of sub-folder within folder.
- * \param version: Dune version, used to construct a sub-directory name.
- * \param check_is_dir: When false, return true even if the path doesn't exist.
- * \return true if it was able to construct such a path.
+ * param targetpath: String to return path.
+ * param folder_name: default name of folder within user area.
+ * param subfolder_name: optional name of sub-folder within folder.
+ * param version: Dune version, used to construct a sub-directory name.
+ * param check_is_dir: When false, return true even if the path doesn't exist.
+ * return true if it was able to construct such a path.
  */
 static bool get_path_user_ex(char *targetpath,
                              size_t targetpath_len,
@@ -453,13 +440,13 @@ static bool get_path_user_ex(char *targetpath,
   const char *user_base_path;
 
   /* for portable install, user path is always local */
-  if (BKE_appdir_app_is_portable_install()) {
+  if (KERNEL_appdir_app_is_portable_install()) {
     return get_path_local_ex(
         targetpath, targetpath_len, folder_name, subfolder_name, version, check_is_dir);
   }
   user_path[0] = '\0';
 
-  user_base_path = GHOST_getUserDir(version, blender_version_decimal(version));
+  user_base_path = GHOST_getUserDir(version, dune_version_decimal(version));
   if (user_base_path) {
     LIB_strncpy(user_path, user_base_path, FILE_MAX);
   }
@@ -674,7 +661,7 @@ const char *KERNEL_appdir_folder_id_user_notest(const int folder_id, const char 
   const bool check_is_dir = false;
 
   switch (folder_id) {
-    case DUNR_USER_DATAFILES:
+    case DUNE_USER_DATAFILES:
       if (get_path_environment_ex(
               path, sizeof(path), subfolder, "BLENDER_USER_DATAFILES", check_is_dir)) {
         break;
