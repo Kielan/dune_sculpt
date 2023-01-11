@@ -10,29 +10,29 @@
 #    include "LI_winstuff.h"
 #  endif
 
-#  include "LI_args.h"
-#  include "LI_fileops.h"
-#  include "LI_listbase.h"
-#  include "LI_mempool.h"
-#  include "LI_path_util.h"
-#  include "LI_string.h"
-#  include "LI_string_utf8.h"
-#  include "LI_system.h"
-#  include "LI_threads.h"
-#  include "LI_utildefines.h"
+#  include "LIB_args.h"
+#  include "LIB_fileops.h"
+#  include "LIB_listbase.h"
+#  include "LIB_mempool.h"
+#  include "LIB_path_util.h"
+#  include "LIB_string.h"
+#  include "LIB_string_utf8.h"
+#  include "LIB_system.h"
+#  include "LIB_threads.h"
+#  include "LIB_utildefines.h"
 
-#  include "BLO_readfile.h" /* only for BLO_has_bfile_extension */
+#  include "LOADER_readfile.h" /* only for BLO_has_bfile_extension */
 
-#  include "KE_blender_version.h"
-#  include "KE_context.h"
+#  include "KERNEL_blender_version.h"
+#  include "KERNEL_context.h"
 
-#  include "KE_global.h"
-#  include "KE_image_format.h"
-#  include "KE_lib_id.h"
-#  include "KE_main.h"
-#  include "KE_report.h"
-#  include "KE_scene.h"
-#  include "KE_sound.h"
+#  include "KERNEL_global.h"
+#  include "KERNEL_image_format.h"
+#  include "KERNEL_lib_id.h"
+#  include "KERNEL_main.h"
+#  include "KERNEL_report.h"
+#  include "KERNEL_scene.h"
+#  include "KERNEL_sound.h"
 
 #  ifdef WITH_FFMPEG
 #    include "IMB_imbuf.h"
@@ -475,117 +475,117 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
 {
   bArgs *ba = (bArgs *)data;
 
-  printf("Blender %s\n", BKE_blender_version_string());
-  printf("Usage: blender [args ...] [file] [args ...]\n\n");
+  printf("Dune %s\n", KERNEL_dune_version_string());
+  printf("Usage: dune [args ...] [file] [args ...]\n\n");
 
   printf("Render Options:\n");
-  LI_args_print_arg_doc(ba, "--background");
-  LI_args_print_arg_doc(ba, "--render-anim");
-  LI_args_print_arg_doc(ba, "--scene");
-  LI_args_print_arg_doc(ba, "--render-frame");
-  LI_args_print_arg_doc(ba, "--frame-start");
-  LI_args_print_arg_doc(ba, "--frame-end");
-  LI_args_print_arg_doc(ba, "--frame-jump");
-  LI_args_print_arg_doc(ba, "--render-output");
-  LI_args_print_arg_doc(ba, "--engine");
-  LI_args_print_arg_doc(ba, "--threads");
+  LIB_args_print_arg_doc(ba, "--background");
+  LIB_args_print_arg_doc(ba, "--render-anim");
+  LIB_args_print_arg_doc(ba, "--scene");
+  LIB_args_print_arg_doc(ba, "--render-frame");
+  LIB_args_print_arg_doc(ba, "--frame-start");
+  LIB_args_print_arg_doc(ba, "--frame-end");
+  LIB_args_print_arg_doc(ba, "--frame-jump");
+  LIB_args_print_arg_doc(ba, "--render-output");
+  LIB_args_print_arg_doc(ba, "--engine");
+  LIB_args_print_arg_doc(ba, "--threads");
 
   printf("\n");
   printf("Format Options:\n");
-  LI_args_print_arg_doc(ba, "--render-format");
-  LI_args_print_arg_doc(ba, "--use-extension");
+  LIB_args_print_arg_doc(ba, "--render-format");
+  LIB_args_print_arg_doc(ba, "--use-extension");
 
   printf("\n");
   printf("Animation Playback Options:\n");
-  BLI_args_print_arg_doc(ba, "-a");
+  LIB_args_print_arg_doc(ba, "-a");
 
   printf("\n");
   printf("Window Options:\n");
-  BLI_args_print_arg_doc(ba, "--window-border");
-  BLI_args_print_arg_doc(ba, "--window-fullscreen");
-  BLI_args_print_arg_doc(ba, "--window-geometry");
-  BLI_args_print_arg_doc(ba, "--window-maximized");
-  BLI_args_print_arg_doc(ba, "--start-console");
-  BLI_args_print_arg_doc(ba, "--no-native-pixels");
-  BLI_args_print_arg_doc(ba, "--no-window-focus");
+  LIB_args_print_arg_doc(ba, "--window-border");
+  LIB_args_print_arg_doc(ba, "--window-fullscreen");
+  LIB_args_print_arg_doc(ba, "--window-geometry");
+  LI_args_print_arg_doc(ba, "--window-maximized");
+  LI_args_print_arg_doc(ba, "--start-console");
+  LI_args_print_arg_doc(ba, "--no-native-pixels");
+  LI_args_print_arg_doc(ba, "--no-window-focus");
 
   printf("\n");
   printf("Python Options:\n");
-  BLI_args_print_arg_doc(ba, "--enable-autoexec");
-  BLI_args_print_arg_doc(ba, "--disable-autoexec");
+  LI_args_print_arg_doc(ba, "--enable-autoexec");
+  LI_args_print_arg_doc(ba, "--disable-autoexec");
 
   printf("\n");
 
-  BLI_args_print_arg_doc(ba, "--python");
-  BLI_args_print_arg_doc(ba, "--python-text");
-  BLI_args_print_arg_doc(ba, "--python-expr");
-  BLI_args_print_arg_doc(ba, "--python-console");
-  BLI_args_print_arg_doc(ba, "--python-exit-code");
-  BLI_args_print_arg_doc(ba, "--python-use-system-env");
-  BLI_args_print_arg_doc(ba, "--addons");
+  LI_args_print_arg_doc(ba, "--python");
+  LI_args_print_arg_doc(ba, "--python-text");
+  LI_args_print_arg_doc(ba, "--python-expr");
+  LI_args_print_arg_doc(ba, "--python-console");
+  LI_args_print_arg_doc(ba, "--python-exit-code");
+  LI_args_print_arg_doc(ba, "--python-use-system-env");
+  LI_args_print_arg_doc(ba, "--addons");
 
   printf("\n");
   printf("Logging Options:\n");
-  BLI_args_print_arg_doc(ba, "--log");
-  BLI_args_print_arg_doc(ba, "--log-level");
-  BLI_args_print_arg_doc(ba, "--log-show-basename");
-  BLI_args_print_arg_doc(ba, "--log-show-backtrace");
-  BLI_args_print_arg_doc(ba, "--log-show-timestamp");
-  BLI_args_print_arg_doc(ba, "--log-file");
+  LI_args_print_arg_doc(ba, "--log");
+  LI_args_print_arg_doc(ba, "--log-level");
+  LI_args_print_arg_doc(ba, "--log-show-basename");
+  LI_args_print_arg_doc(ba, "--log-show-backtrace");
+  LI_args_print_arg_doc(ba, "--log-show-timestamp");
+  LI_args_print_arg_doc(ba, "--log-file");
 
   printf("\n");
   printf("Debug Options:\n");
-  BLI_args_print_arg_doc(ba, "--debug");
-  BLI_args_print_arg_doc(ba, "--debug-value");
+  LI_args_print_arg_doc(ba, "--debug");
+  LI_args_print_arg_doc(ba, "--debug-value");
 
   printf("\n");
-  BLI_args_print_arg_doc(ba, "--debug-events");
+  LI_args_print_arg_doc(ba, "--debug-events");
 #  ifdef WITH_FFMPEG
-  BLI_args_print_arg_doc(ba, "--debug-ffmpeg");
+  LI_args_print_arg_doc(ba, "--debug-ffmpeg");
 #  endif
-  BLI_args_print_arg_doc(ba, "--debug-handlers");
+  LI_args_print_arg_doc(ba, "--debug-handlers");
 #  ifdef WITH_LIBMV
-  BLI_args_print_arg_doc(ba, "--debug-libmv");
+  LI_args_print_arg_doc(ba, "--debug-libmv");
 #  endif
 #  ifdef WITH_CYCLES_LOGGING
-  BLI_args_print_arg_doc(ba, "--debug-cycles");
+  LI_args_print_arg_doc(ba, "--debug-cycles");
 #  endif
-  BLI_args_print_arg_doc(ba, "--debug-memory");
-  BLI_args_print_arg_doc(ba, "--debug-jobs");
-  BLI_args_print_arg_doc(ba, "--debug-python");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph-eval");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph-build");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph-tag");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph-no-threads");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph-time");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph-pretty");
-  BLI_args_print_arg_doc(ba, "--debug-depsgraph-uuid");
-  BLI_args_print_arg_doc(ba, "--debug-ghost");
-  BLI_args_print_arg_doc(ba, "--debug-gpu");
-  BLI_args_print_arg_doc(ba, "--debug-gpu-force-workarounds");
-  BLI_args_print_arg_doc(ba, "--debug-wm");
+  LI_args_print_arg_doc(ba, "--debug-memory");
+  LI_args_print_arg_doc(ba, "--debug-jobs");
+  LI_args_print_arg_doc(ba, "--debug-python");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph-eval");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph-build");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph-tag");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph-no-threads");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph-time");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph-pretty");
+  LI_args_print_arg_doc(ba, "--debug-depsgraph-uuid");
+  LI_args_print_arg_doc(ba, "--debug-ghost");
+  LI_args_print_arg_doc(ba, "--debug-gpu");
+  LI_args_print_arg_doc(ba, "--debug-gpu-force-workarounds");
+  LI_args_print_arg_doc(ba, "--debug-wm");
 #  ifdef WITH_XR_OPENXR
-  BLI_args_print_arg_doc(ba, "--debug-xr");
-  BLI_args_print_arg_doc(ba, "--debug-xr-time");
+  LI_args_print_arg_doc(ba, "--debug-xr");
+  LI_args_print_arg_doc(ba, "--debug-xr-time");
 #  endif
-  BLI_args_print_arg_doc(ba, "--debug-all");
-  BLI_args_print_arg_doc(ba, "--debug-io");
+  LI_args_print_arg_doc(ba, "--debug-all");
+  LI_args_print_arg_doc(ba, "--debug-io");
 
   printf("\n");
-  BLI_args_print_arg_doc(ba, "--debug-fpe");
-  BLI_args_print_arg_doc(ba, "--debug-exit-on-error");
-  BLI_args_print_arg_doc(ba, "--disable-crash-handler");
-  BLI_args_print_arg_doc(ba, "--disable-abort-handler");
+  LI_args_print_arg_doc(ba, "--debug-fpe");
+  LI_args_print_arg_doc(ba, "--debug-exit-on-error");
+  LI_args_print_arg_doc(ba, "--disable-crash-handler");
+  LI_args_print_arg_doc(ba, "--disable-abort-handler");
 
-  BLI_args_print_arg_doc(ba, "--verbose");
+  LI_args_print_arg_doc(ba, "--verbose");
 
   printf("\n");
   printf("Misc Options:\n");
-  BLI_args_print_arg_doc(ba, "--open-last");
-  BLI_args_print_arg_doc(ba, "--app-template");
-  BLI_args_print_arg_doc(ba, "--factory-startup");
-  BLI_args_print_arg_doc(ba, "--enable-event-simulate");
+  LI_args_print_arg_doc(ba, "--open-last");
+  LI_args_print_arg_doc(ba, "--app-template");
+  LI_args_print_arg_doc(ba, "--factory-startup");
+  LI_args_print_arg_doc(ba, "--enable-event-simulate");
   printf("\n");
   BLI_args_print_arg_doc(ba, "--env-system-datafiles");
   BLI_args_print_arg_doc(ba, "--env-system-scripts");
