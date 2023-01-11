@@ -4,15 +4,15 @@
 
 #include "LIB_fileops.h"
 #include "LIB_fileops_types.h"
-#include "LI_listbase.h"
-#include "LI_path_util.h"
-#include "LI_string.h"
-#include "LI_string_utf8.h"
-#include "LI_string_utils.h"
-#include "LI_utildefines.h"
+#include "LIB_listbase.h"
+#include "LIB_path_util.h"
+#include "LIB_string.h"
+#include "LIB_string_utf8.h"
+#include "LIB_string_utils.h"
+#include "LIB_utildefines.h"
 
-#include "KE_appdir.h" /* own include */
-#include "KE_dune_version.h"
+#include "KERNEL_appdir.h" /* own include */
+#include "KERNEL_dune_version.h"
 
 #include "TRANSLATION_translation.h"
 
