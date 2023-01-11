@@ -6,14 +6,14 @@
  * Functionality for main() initialization.
  */
 
-struct bArgs;
-struct bContext;
+struct duneArgs;
+struct duneContext;
 
-/* creator_args.c */
+/* launcher_args.c */
 void main_args_setup(struct bContext *C, struct bArgs *ba);
 void main_args_setup_post(struct bContext *C, struct bArgs *ba);
 
-/* creator_signals.c */
+/* launcher_signals.c */
 void main_signal_setup(void);
 void main_signal_setup_background(void);
 void main_signal_setup_fpe(void);
