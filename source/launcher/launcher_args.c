@@ -7,7 +7,7 @@
 #  include "CLG_log.h"
 
 #  ifdef WIN32
-#    include "LI_winstuff.h"
+#    include "LIB_winstuff.h"
 #  endif
 
 #  include "LIB_args.h"
@@ -350,7 +350,7 @@ fail:
 
 #  ifdef WITH_PYTHON
 
-struct BlendePyContextStore {
+struct DunePyContextStore {
   wmWindowManager *wm;
   Scene *scene;
   wmWindow *win;
@@ -377,12 +377,12 @@ static void arg_py_context_backup(bContext *C,
   }
 }
 
-static void arg_py_context_restore(bContext *C, struct BlendePyContextStore *c_py)
+static void arg_py_context_restore(bContext *C, struct DunePyContextStore *c_py)
 {
   /* script may load a file, check old data is valid before using */
   if (c_py->has_win) {
-    if ((c_py->win == NULL) || ((BLI_findindex(&G_MAIN->wm, c_py->wm) != -1) &&
-                                (BLI_findindex(&c_py->wm->windows, c_py->win) != -1))) {
+    if ((c_py->win == NULL) || ((LIB_findindex(&G_MAIN->wm, c_py->wm) != -1) &&
+                                (LIB_findindex(&c_py->wm->windows, c_py->win) != -1))) {
       CTX_wm_window_set(C, c_py->win);
     }
   }
@@ -395,7 +395,7 @@ static void arg_py_context_restore(bContext *C, struct BlendePyContextStore *c_p
 /* macro for context setup/reset */
 #    define BPY_CTX_SETUP(_cmd) \
       { \
-        struct BlendePyContextStore py_c; \
+        struct DunePyContextStore py_c; \
         arg_py_context_backup(C, &py_c, argv[1]); \
         { \
           _cmd; \
@@ -413,10 +413,10 @@ static void arg_py_context_restore(bContext *C, struct BlendePyContextStore *c_p
  *
  * - The `--help` message.
  * - The man page (for Unix systems),
- *   see: `doc/manpage/blender.1.py`
+ *   see: `doc/manpage/dune.1.py`
  * - Parsed and extracted for the manual,
  *   which converts our ad-hoc formatting to reStructuredText.
- *   see: https://docs.blender.org/manual/en/dev/advanced/command_line.html
+ *   see: https://docs.dune_sculpt.org/manual/en/dev/advanced/command_line.html
  *
  **/
 
@@ -504,108 +504,108 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   LIB_args_print_arg_doc(ba, "--window-border");
   LIB_args_print_arg_doc(ba, "--window-fullscreen");
   LIB_args_print_arg_doc(ba, "--window-geometry");
-  LI_args_print_arg_doc(ba, "--window-maximized");
-  LI_args_print_arg_doc(ba, "--start-console");
-  LI_args_print_arg_doc(ba, "--no-native-pixels");
-  LI_args_print_arg_doc(ba, "--no-window-focus");
+  LIB_args_print_arg_doc(ba, "--window-maximized");
+  LIB_args_print_arg_doc(ba, "--start-console");
+  LIB_args_print_arg_doc(ba, "--no-native-pixels");
+  LIB_args_print_arg_doc(ba, "--no-window-focus");
 
   printf("\n");
   printf("Python Options:\n");
-  LI_args_print_arg_doc(ba, "--enable-autoexec");
-  LI_args_print_arg_doc(ba, "--disable-autoexec");
+  LIB_args_print_arg_doc(ba, "--enable-autoexec");
+  LIB_args_print_arg_doc(ba, "--disable-autoexec");
 
   printf("\n");
 
-  LI_args_print_arg_doc(ba, "--python");
-  LI_args_print_arg_doc(ba, "--python-text");
-  LI_args_print_arg_doc(ba, "--python-expr");
-  LI_args_print_arg_doc(ba, "--python-console");
-  LI_args_print_arg_doc(ba, "--python-exit-code");
-  LI_args_print_arg_doc(ba, "--python-use-system-env");
-  LI_args_print_arg_doc(ba, "--addons");
+  LIB_args_print_arg_doc(ba, "--python");
+  LIB_args_print_arg_doc(ba, "--python-text");
+  LIB_args_print_arg_doc(ba, "--python-expr");
+  LIB_args_print_arg_doc(ba, "--python-console");
+  LIB_args_print_arg_doc(ba, "--python-exit-code");
+  LIB_args_print_arg_doc(ba, "--python-use-system-env");
+  LIB_args_print_arg_doc(ba, "--addons");
 
   printf("\n");
   printf("Logging Options:\n");
-  LI_args_print_arg_doc(ba, "--log");
-  LI_args_print_arg_doc(ba, "--log-level");
-  LI_args_print_arg_doc(ba, "--log-show-basename");
-  LI_args_print_arg_doc(ba, "--log-show-backtrace");
-  LI_args_print_arg_doc(ba, "--log-show-timestamp");
-  LI_args_print_arg_doc(ba, "--log-file");
+  LIB_args_print_arg_doc(ba, "--log");
+  LIB_args_print_arg_doc(ba, "--log-level");
+  LIB_args_print_arg_doc(ba, "--log-show-basename");
+  LIB_args_print_arg_doc(ba, "--log-show-backtrace");
+  LIB_args_print_arg_doc(ba, "--log-show-timestamp");
+  LIB_args_print_arg_doc(ba, "--log-file");
 
   printf("\n");
   printf("Debug Options:\n");
-  LI_args_print_arg_doc(ba, "--debug");
-  LI_args_print_arg_doc(ba, "--debug-value");
+  LIB_args_print_arg_doc(ba, "--debug");
+  LIB_args_print_arg_doc(ba, "--debug-value");
 
   printf("\n");
-  LI_args_print_arg_doc(ba, "--debug-events");
+  LIB_args_print_arg_doc(ba, "--debug-events");
 #  ifdef WITH_FFMPEG
-  LI_args_print_arg_doc(ba, "--debug-ffmpeg");
+  LIB_args_print_arg_doc(ba, "--debug-ffmpeg");
 #  endif
-  LI_args_print_arg_doc(ba, "--debug-handlers");
+  LIB_args_print_arg_doc(ba, "--debug-handlers");
 #  ifdef WITH_LIBMV
-  LI_args_print_arg_doc(ba, "--debug-libmv");
+  LIB_args_print_arg_doc(ba, "--debug-libmv");
 #  endif
 #  ifdef WITH_CYCLES_LOGGING
-  LI_args_print_arg_doc(ba, "--debug-cycles");
+  LIB_args_print_arg_doc(ba, "--debug-cycles");
 #  endif
-  LI_args_print_arg_doc(ba, "--debug-memory");
-  LI_args_print_arg_doc(ba, "--debug-jobs");
-  LI_args_print_arg_doc(ba, "--debug-python");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph-eval");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph-build");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph-tag");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph-no-threads");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph-time");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph-pretty");
-  LI_args_print_arg_doc(ba, "--debug-depsgraph-uuid");
-  LI_args_print_arg_doc(ba, "--debug-ghost");
-  LI_args_print_arg_doc(ba, "--debug-gpu");
-  LI_args_print_arg_doc(ba, "--debug-gpu-force-workarounds");
-  LI_args_print_arg_doc(ba, "--debug-wm");
+  LIB_args_print_arg_doc(ba, "--debug-memory");
+  LIB_args_print_arg_doc(ba, "--debug-jobs");
+  LIB_args_print_arg_doc(ba, "--debug-python");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph-eval");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph-build");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph-tag");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph-no-threads");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph-time");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph-pretty");
+  LIB_args_print_arg_doc(ba, "--debug-depsgraph-uuid");
+  LIB_args_print_arg_doc(ba, "--debug-ghost");
+  LIB_args_print_arg_doc(ba, "--debug-gpu");
+  LIB_args_print_arg_doc(ba, "--debug-gpu-force-workarounds");
+  LIB_args_print_arg_doc(ba, "--debug-wm");
 #  ifdef WITH_XR_OPENXR
-  LI_args_print_arg_doc(ba, "--debug-xr");
-  LI_args_print_arg_doc(ba, "--debug-xr-time");
+  LIB_args_print_arg_doc(ba, "--debug-xr");
+  LIB_args_print_arg_doc(ba, "--debug-xr-time");
 #  endif
-  LI_args_print_arg_doc(ba, "--debug-all");
-  LI_args_print_arg_doc(ba, "--debug-io");
+  LIB_args_print_arg_doc(ba, "--debug-all");
+  LIB_args_print_arg_doc(ba, "--debug-io");
 
   printf("\n");
-  LI_args_print_arg_doc(ba, "--debug-fpe");
-  LI_args_print_arg_doc(ba, "--debug-exit-on-error");
-  LI_args_print_arg_doc(ba, "--disable-crash-handler");
-  LI_args_print_arg_doc(ba, "--disable-abort-handler");
+  LIB_args_print_arg_doc(ba, "--debug-fpe");
+  LIB_args_print_arg_doc(ba, "--debug-exit-on-error");
+  LIB_args_print_arg_doc(ba, "--disable-crash-handler");
+  LIB_args_print_arg_doc(ba, "--disable-abort-handler");
 
-  LI_args_print_arg_doc(ba, "--verbose");
+  LIB_args_print_arg_doc(ba, "--verbose");
 
   printf("\n");
   printf("Misc Options:\n");
-  LI_args_print_arg_doc(ba, "--open-last");
-  LI_args_print_arg_doc(ba, "--app-template");
-  LI_args_print_arg_doc(ba, "--factory-startup");
-  LI_args_print_arg_doc(ba, "--enable-event-simulate");
+  LIB_args_print_arg_doc(ba, "--open-last");
+  LIB_args_print_arg_doc(ba, "--app-template");
+  LIB_args_print_arg_doc(ba, "--factory-startup");
+  LIB_args_print_arg_doc(ba, "--enable-event-simulate");
   printf("\n");
-  BLI_args_print_arg_doc(ba, "--env-system-datafiles");
-  BLI_args_print_arg_doc(ba, "--env-system-scripts");
-  BLI_args_print_arg_doc(ba, "--env-system-python");
+  LI_args_print_arg_doc(ba, "--env-system-datafiles");
+  LI_args_print_arg_doc(ba, "--env-system-scripts");
+  LI_args_print_arg_doc(ba, "--env-system-python");
   printf("\n");
-  BLI_args_print_arg_doc(ba, "-noaudio");
-  BLI_args_print_arg_doc(ba, "-setaudio");
+  LI_args_print_arg_doc(ba, "-noaudio");
+  LI_args_print_arg_doc(ba, "-setaudio");
 
   printf("\n");
 
-  BLI_args_print_arg_doc(ba, "--help");
-  BLI_args_print_arg_doc(ba, "/?");
+  LI_args_print_arg_doc(ba, "--help");
+  LI_args_print_arg_doc(ba, "/?");
 
   /* WIN32 only (ignored for non-win32) */
-  BLI_args_print_arg_doc(ba, "-R");
-  BLI_args_print_arg_doc(ba, "-r");
+  LI_args_print_arg_doc(ba, "-R");
+  LI_args_print_arg_doc(ba, "-r");
 
-  BLI_args_print_arg_doc(ba, "--version");
+  LI_args_print_arg_doc(ba, "--version");
 
-  BLI_args_print_arg_doc(ba, "--");
+  LI_args_print_arg_doc(ba, "--");
 
   // printf("\n");
   // printf("Experimental Features:\n");
@@ -614,38 +614,38 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
    *
    * Note that it's good practice for this to remain empty,
    * nevertheless print if any exist. */
-  if (BLI_args_has_other_doc(ba)) {
+  if (LI_args_has_other_doc(ba)) {
     printf("\n");
     printf("Other Options:\n");
-    BLI_args_print_other_doc(ba);
+    LI_args_print_other_doc(ba);
   }
 
   printf("\n");
   printf("Argument Parsing:\n");
   printf("\tArguments must be separated by white space, eg:\n");
-  printf("\t# blender -ba test.blend\n");
+  printf("\t# dune -ba test.dune\n");
   printf("\t...will exit since '-ba' is an unknown argument.\n");
 
   printf("Argument Order:\n");
   printf("\tArguments are executed in the order they are given. eg:\n");
-  printf("\t# blender --background test.blend --render-frame 1 --render-output '/tmp'\n");
+  printf("\t# dune --background test.dune --render-frame 1 --render-output '/tmp'\n");
   printf(
       "\t...will not render to '/tmp' because '--render-frame 1' renders before the output path "
       "is set.\n");
-  printf("\t# blender --background --render-output /tmp test.blend --render-frame 1\n");
+  printf("\t# dune --background --render-output /tmp test.blend --render-frame 1\n");
   printf(
       "\t...will not render to '/tmp' because loading the blend-file overwrites the render output "
       "that was set.\n");
-  printf("\t# blender --background test.blend --render-output /tmp --render-frame 1\n");
+  printf("\t# dune --background test.dune --render-output /tmp --render-frame 1\n");
   printf("\t...works as expected.\n\n");
 
   printf("Environment Variables:\n");
-  printf("  $BLENDER_USER_CONFIG      Directory for user configuration files.\n");
-  printf("  $BLENDER_USER_SCRIPTS     Directory for user scripts.\n");
-  printf("  $BLENDER_SYSTEM_SCRIPTS   Directory for system wide scripts.\n");
-  printf("  $BLENDER_USER_DATAFILES   Directory for user data files (icons, translations, ..).\n");
-  printf("  $BLENDER_SYSTEM_DATAFILES Directory for system wide data files.\n");
-  printf("  $BLENDER_SYSTEM_PYTHON    Directory for system Python libraries.\n");
+  printf("  $DUNE_USER_CONFIG      Directory for user configuration files.\n");
+  printf("  $DUNE_USER_SCRIPTS     Directory for user scripts.\n");
+  printf("  $DUNE_SYSTEM_SCRIPTS   Directory for system wide scripts.\n");
+  printf("  $DUNE_USER_DATAFILES   Directory for user data files (icons, translations, ..).\n");
+  printf("  $DUNE_SYSTEM_DATAFILES Directory for system wide data files.\n");
+  printf("  $DUNE_SYSTEM_PYTHON    Directory for system Python libraries.\n");
 #  ifdef WITH_OCIO
   printf("  $OCIO                     Path to override the OpenColorIO config file.\n");
 #  endif
@@ -725,7 +725,7 @@ static int arg_handle_abort_handler_disable(int UNUSED(argc),
 
 static void clog_abort_on_error_callback(void *fp)
 {
-  BLI_system_backtrace(fp);
+  LIB_system_backtrace(fp);
   fflush(fp);
   abort();
 }
@@ -797,7 +797,7 @@ static int arg_handle_log_show_backtrace_set(int UNUSED(argc),
                                              void *UNUSED(data))
 {
   /* Ensure types don't become incompatible. */
-  void (*fn)(FILE * fp) = BLI_system_backtrace;
+  void (*fn)(FILE * fp) = LIB_system_backtrace;
   CLG_backtrace_fn_set((void (*)(void *))fn);
   return 0;
 }
@@ -821,7 +821,7 @@ static int arg_handle_log_file_set(int argc, const char **argv, void *UNUSED(dat
   const char *arg_id = "--log-file";
   if (argc > 1) {
     errno = 0;
-    FILE *fp = BLI_fopen(argv[1], "w");
+    FILE *fp = LIB_fopen(argv[1], "w");
     if (fp == NULL) {
       const char *err_msg = errno ? strerror(errno) : "unknown";
       printf("\nError: %s '%s %s'.\n", err_msg, arg_id, argv[1]);
@@ -892,17 +892,17 @@ static const char arg_handle_debug_mode_set_doc[] =
 static int arg_handle_debug_mode_set(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
   G.debug |= G_DEBUG; /* std output printf's */
-  printf("Blender %s\n", BKE_blender_version_string());
+  printf("Dune %s\n", BKE_blender_version_string());
   MEM_set_memory_debug();
 #  ifndef NDEBUG
-  BLI_mempool_set_memory_debug();
+  LIB_mempool_set_memory_debug();
 #  endif
 
 #  ifdef WITH_BUILDINFO
   printf("Build: %s %s %s %s\n", build_date, build_time, build_platform, build_type);
 #  endif
 
-  BLI_args_print(data);
+  LIB_args_print(data);
   return 0;
 }
 
@@ -1142,7 +1142,7 @@ static int arg_handle_env_system_set(int argc, const char **argv, void *UNUSED(d
 {
   /* `--env-system-scripts` -> `BLENDER_SYSTEM_SCRIPTS` */
 
-  char env[64] = "BLENDER";
+  char env[64] = "SCULPT";
   char *ch_dst = env + 7;           /* skip BLENDER */
   const char *ch_src = argv[0] + 5; /* skip --env */
 
@@ -1156,14 +1156,14 @@ static int arg_handle_env_system_set(int argc, const char **argv, void *UNUSED(d
   }
 
   *ch_dst = '\0';
-  BLI_setenv(env, argv[1]);
+  LIB_setenv(env, argv[1]);
   return 1;
 }
 
 static const char arg_handle_playback_mode_doc[] =
     "<options> <file(s)>\n"
-    "\tInstead of showing Blender's user interface, this runs Blender as an animation player,\n"
-    "\tto view movies and image sequences rendered in Blender (ignored if '-b' is set).\n"
+    "\tInstead of showing Dune's user interface, this runs Dune as an animation player,\n"
+    "\tto view movies and image sequences rendered in Dune (ignored if '-b' is set).\n"
     "\n"
     "\tPlayback Arguments:\n"
     "\n"
@@ -1302,7 +1302,7 @@ static int arg_handle_register_extension(int UNUSED(argc), const char **UNUSED(a
   if (data) {
     G.background = 1;
   }
-  BLI_windows_register_blend_extension(G.background);
+  LIB_windows_register_dune_extension(G.background);
   TerminateProcess(GetCurrentProcess(), 0);
 #  else
   (void)data; /* unused */
@@ -1317,7 +1317,7 @@ static int arg_handle_audio_disable(int UNUSED(argc),
                                     const char **UNUSED(argv),
                                     void *UNUSED(data))
 {
-  BKE_sound_force_device("None");
+  KERNEL_sound_force_device("None");
   return 0;
 }
 
@@ -1333,14 +1333,14 @@ static int arg_handle_audio_set(int argc, const char **argv, void *UNUSED(data))
     exit(1);
   }
 
-  BKE_sound_force_device(argv[1]);
+  KERNEL_sound_force_device(argv[1]);
   return 1;
 }
 
 static const char arg_handle_output_set_doc[] =
     "<path>\n"
     "\tSet the render path and file name.\n"
-    "\tUse '//' at the start of the path to render relative to the blend-file.\n"
+    "\tUse '//' at the start of the path to render relative to the dune-file.\n"
     "\n"
     "\tThe '#' characters are replaced by the frame number, and used to define zero padding.\n"
     "\n"
@@ -1350,7 +1350,7 @@ static const char arg_handle_output_set_doc[] =
     "\tWhen the filename does not contain '#', The suffix '####' is added to the filename.\n"
     "\n"
     "\tThe frame number will be added at the end of the filename, eg:\n"
-    "\t# blender -b animation.blend -o //render_ -F PNG -x 1 -a\n"
+    "\t# dune -b animation.blend -o //render_ -F PNG -x 1 -a\n"
     "\t'//render_' becomes '//render_####', writing frames as '//render_0001.png'";
 static int arg_handle_output_set(int argc, const char **argv, void *data)
 {
@@ -1358,7 +1358,7 @@ static int arg_handle_output_set(int argc, const char **argv, void *data)
   if (argc > 1) {
     Scene *scene = CTX_data_scene(C);
     if (scene) {
-      BLI_strncpy(scene->r.pic, argv[1], sizeof(scene->r.pic));
+      LIB_strncpy(scene->r.pic, argv[1], sizeof(scene->r.pic));
       DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
     }
     else {
@@ -1380,7 +1380,7 @@ static int arg_handle_engine_set(int argc, const char **argv, void *data)
   if (argc >= 2) {
     if (STREQ(argv[1], "help")) {
       RenderEngineType *type = NULL;
-      printf("Blender Engine Listing:\n");
+      printf("Dune Engine Listing:\n");
       for (type = R_engines.first; type; type = type->next) {
         printf("\t%s\n", type->idname);
       }
@@ -1389,8 +1389,8 @@ static int arg_handle_engine_set(int argc, const char **argv, void *data)
     else {
       Scene *scene = CTX_data_scene(C);
       if (scene) {
-        if (BLI_findstring(&R_engines, argv[1], offsetof(RenderEngineType, idname))) {
-          BLI_strncpy_utf8(scene->r.engine, argv[1], sizeof(scene->r.engine));
+        if (LIB_findstring(&R_engines, argv[1], offsetof(RenderEngineType, idname))) {
+          LIB_strncpy_utf8(scene->r.engine, argv[1], sizeof(scene->r.engine));
           DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
         }
         else {
@@ -1400,7 +1400,7 @@ static int arg_handle_engine_set(int argc, const char **argv, void *data)
       }
       else {
         printf(
-            "\nError: no blend loaded. "
+            "\nError: no dune loaded. "
             "order the arguments so '-E / --engine' is after a blend is loaded.\n");
       }
     }
@@ -1426,7 +1426,7 @@ static int arg_handle_image_type_set(int argc, const char **argv, void *data)
     const char *imtype = argv[1];
     Scene *scene = CTX_data_scene(C);
     if (scene) {
-      const char imtype_new = BKE_imtype_from_arg(imtype);
+      const char imtype_new = KERNEL_imtype_from_arg(imtype);
 
       if (imtype_new == R_IMF_IMTYPE_INVALID) {
         printf(
@@ -1452,11 +1452,11 @@ static int arg_handle_image_type_set(int argc, const char **argv, void *data)
 static const char arg_handle_threads_set_doc[] =
     "<threads>\n"
     "\tUse amount of <threads> for rendering and other operations\n"
-    "\t[1-" STRINGIFY(BLENDER_MAX_THREADS) "], 0 for systems processor count.";
+    "\t[1-" STRINGIFY(DUNE_MAX_THREADS) "], 0 for systems processor count.";
 static int arg_handle_threads_set(int argc, const char **argv, void *UNUSED(data))
 {
   const char *arg_id = "-t / --threads";
-  const int min = 0, max = BLENDER_MAX_THREADS;
+  const int min = 0, max = DUNE_MAX_THREADS;
   if (argc > 1) {
     const char *err_msg = NULL;
     int threads;
@@ -1470,7 +1470,7 @@ static int arg_handle_threads_set(int argc, const char **argv, void *UNUSED(data
       return 1;
     }
 
-    BLI_system_num_threads_override_set(threads);
+    LIB_system_num_threads_override_set(threads);
     return 1;
   }
   printf("\nError: you must specify a number of threads in [%d..%d] '%s'.\n", min, max, arg_id);
@@ -1547,7 +1547,7 @@ static const char arg_handle_render_frame_doc[] =
 static int arg_handle_render_frame(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-f / --render-frame";
-  bContext *C = data;
+  duneContext *C = data;
   Scene *scene = CTX_data_scene(C);
   if (scene) {
     Main *bmain = CTX_data_main(C);
@@ -1570,7 +1570,7 @@ static int arg_handle_render_frame(int argc, const char **argv, void *data)
       }
 
       re = RE_NewSceneRender(scene);
-      BKE_reports_init(&reports, RPT_STORE);
+      KERNEL_reports_init(&reports, RPT_STORE);
       RE_SetReports(re, &reports);
       for (int i = 0; i < frames_range_len; i++) {
         /* We could pass in frame ranges,
@@ -1584,14 +1584,14 @@ static int arg_handle_render_frame(int argc, const char **argv, void *data)
         }
       }
       RE_SetReports(re, NULL);
-      BKE_reports_clear(&reports);
+      KERNEL_reports_clear(&reports);
       MEM_freeN(frame_range_arr);
       return 1;
     }
     printf("\nError: frame number must follow '%s'.\n", arg_id);
     return 0;
   }
-  printf("\nError: no blend loaded. cannot use '%s'.\n", arg_id);
+  printf("\nError: no dune loaded. cannot use '%s'.\n", arg_id);
   return 0;
 }
 
@@ -1600,20 +1600,20 @@ static const char arg_handle_render_animation_doc[] =
     "Render frames from start to end (inclusive).";
 static int arg_handle_render_animation(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
-  bContext *C = data;
+  duneContext *C = data;
   Scene *scene = CTX_data_scene(C);
   if (scene) {
-    Main *bmain = CTX_data_main(C);
+    Main *dune_main = CTX_data_main(C);
     Render *re = RE_NewSceneRender(scene);
     ReportList reports;
-    BKE_reports_init(&reports, RPT_STORE);
+    KERNEL_reports_init(&reports, RPT_STORE);
     RE_SetReports(re, &reports);
-    RE_RenderAnim(re, bmain, scene, NULL, NULL, scene->r.sfra, scene->r.efra, scene->r.frame_step);
+    RE_RenderAnim(re, dune_main, scene, NULL, NULL, scene->r.sfra, scene->r.efra, scene->r.frame_step);
     RE_SetReports(re, NULL);
-    BKE_reports_clear(&reports);
+    KERNEL_reports_clear(&reports);
   }
   else {
-    printf("\nError: no blend loaded. cannot use '-a'.\n");
+    printf("\nError: no dune loaded. cannot use '-a'.\n");
   }
   return 0;
 }
@@ -1624,8 +1624,8 @@ static const char arg_handle_scene_set_doc[] =
 static int arg_handle_scene_set(int argc, const char **argv, void *data)
 {
   if (argc > 1) {
-    bContext *C = data;
-    Scene *scene = BKE_scene_set_name(CTX_data_main(C), argv[1]);
+    duneContext *C = data;
+    Scene *scene = KERNEL_scene_set_name(CTX_data_main(C), argv[1]);
     if (scene) {
       CTX_data_scene_set(C, scene);
 
@@ -1651,7 +1651,7 @@ static const char arg_handle_frame_start_set_doc[] =
 static int arg_handle_frame_start_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-s / --frame-start";
-  bContext *C = data;
+  duneContext *C = data;
   Scene *scene = CTX_data_scene(C);
   if (scene) {
     if (argc > 1) {
@@ -1674,7 +1674,7 @@ static int arg_handle_frame_start_set(int argc, const char **argv, void *data)
     printf("\nError: frame number must follow '%s'.\n", arg_id);
     return 0;
   }
-  printf("\nError: no blend loaded. cannot use '%s'.\n", arg_id);
+  printf("\nError: no dune loaded. cannot use '%s'.\n", arg_id);
   return 0;
 }
 
@@ -1684,7 +1684,7 @@ static const char arg_handle_frame_end_set_doc[] =
 static int arg_handle_frame_end_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-e / --frame-end";
-  bContext *C = data;
+  duneContext *C = data;
   Scene *scene = CTX_data_scene(C);
   if (scene) {
     if (argc > 1) {
@@ -1707,7 +1707,7 @@ static int arg_handle_frame_end_set(int argc, const char **argv, void *data)
     printf("\nError: frame number must follow '%s'.\n", arg_id);
     return 0;
   }
-  printf("\nError: no blend loaded. cannot use '%s'.\n", arg_id);
+  printf("\nError: no dune loaded. cannot use '%s'.\n", arg_id);
   return 0;
 }
 
@@ -1717,7 +1717,7 @@ static const char arg_handle_frame_skip_set_doc[] =
 static int arg_handle_frame_skip_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-j / --frame-jump";
-  bContext *C = data;
+  duneContext *C = data;
   Scene *scene = CTX_data_scene(C);
   if (scene) {
     if (argc > 1) {
@@ -1733,7 +1733,7 @@ static int arg_handle_frame_skip_set(int argc, const char **argv, void *data)
     printf("\nError: number of frames to step must follow '%s'.\n", arg_id);
     return 0;
   }
-  printf("\nError: no blend loaded. cannot use '%s'.\n", arg_id);
+  printf("\nError: no dune loaded. cannot use '%s'.\n", arg_id);
   return 0;
 }
 
@@ -1743,14 +1743,14 @@ static const char arg_handle_python_file_run_doc[] =
 static int arg_handle_python_file_run(int argc, const char **argv, void *data)
 {
 #  ifdef WITH_PYTHON
-  bContext *C = data;
+  duneContext *C = data;
 
   /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
   if (argc > 1) {
     /* Make the path absolute because its needed for relative linked blends to be found */
     char filename[FILE_MAX];
-    BLI_strncpy(filename, argv[1], sizeof(filename));
-    BLI_path_abs_from_cwd(filename, sizeof(filename));
+    LIB_strncpy(filename, argv[1], sizeof(filename));
+    LIB_path_abs_from_cwd(filename, sizeof(filename));
 
     bool ok;
     BPY_CTX_SETUP(ok = BPY_run_filepath(C, filename, NULL));
@@ -1766,7 +1766,7 @@ static int arg_handle_python_file_run(int argc, const char **argv, void *data)
 
 #  else
   UNUSED_VARS(argc, argv, data);
-  printf("This Blender was built without Python support\n");
+  printf("This Dune was built without Python support\n");
   return 0;
 #  endif /* WITH_PYTHON */
 }
@@ -1777,13 +1777,13 @@ static const char arg_handle_python_text_run_doc[] =
 static int arg_handle_python_text_run(int argc, const char **argv, void *data)
 {
 #  ifdef WITH_PYTHON
-  bContext *C = data;
+  duneContext *C = data;
 
   /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
   if (argc > 1) {
     Main *bmain = CTX_data_main(C);
     /* Make the path absolute because its needed for relative linked blends to be found */
-    struct Text *text = (struct Text *)BKE_libblock_find_name(bmain, ID_TXT, argv[1]);
+    struct Text *text = (struct Text *)KERNEL_libblock_find_name(bmain, ID_TXT, argv[1]);
     bool ok;
 
     if (text) {
@@ -1807,7 +1807,7 @@ static int arg_handle_python_text_run(int argc, const char **argv, void *data)
 
 #  else
   UNUSED_VARS(argc, argv, data);
-  printf("This Blender was built without Python support\n");
+  printf("This Dune was built without Python support\n");
   return 0;
 #  endif /* WITH_PYTHON */
 }
@@ -1836,18 +1836,18 @@ static int arg_handle_python_expr_run(int argc, const char **argv, void *data)
 
 #  else
   UNUSED_VARS(argc, argv, data);
-  printf("This Blender was built without Python support\n");
+  printf("This Dune was built without Python support\n");
   return 0;
 #  endif /* WITH_PYTHON */
 }
 
 static const char arg_handle_python_console_run_doc[] =
     "\n\t"
-    "Run Blender with an interactive console.";
+    "Run Dune with an interactive console.";
 static int arg_handle_python_console_run(int UNUSED(argc), const char **argv, void *data)
 {
 #  ifdef WITH_PYTHON
-  bContext *C = data;
+  duneContext *C = data;
 
   BPY_CTX_SETUP(BPY_run_string_eval(C, (const char *[]){"code", NULL}, "code.interact()"));
 
@@ -1916,10 +1916,10 @@ static int arg_handle_addons_set(int argc, const char **argv, void *data)
         "        enable(m, persistent=True)";
     const int slen = strlen(argv[1]) + (sizeof(script_str) - 2);
     char *str = malloc(slen);
-    bContext *C = data;
-    BLI_snprintf(str, slen, script_str, argv[1]);
+    duneContext *C = data;
+    LIB_snprintf(str, slen, script_str, argv[1]);
 
-    BLI_assert(strlen(str) + 1 == slen);
+    LIB_assert(strlen(str) + 1 == slen);
     BPY_CTX_SETUP(BPY_run_string_exec(C, NULL, str));
     free(str);
 #  else
@@ -1933,7 +1933,7 @@ static int arg_handle_addons_set(int argc, const char **argv, void *data)
 
 static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
 {
-  bContext *C = data;
+  duneContext *C = data;
   ReportList reports;
   bool success;
 
@@ -1945,16 +1945,16 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
     fprintf(stderr, "unknown argument, loading as file: %s\n", argv[0]);
   }
 
-  BLI_strncpy(filename, argv[0], sizeof(filename));
-  BLI_path_slash_native(filename);
-  BLI_path_abs_from_cwd(filename, sizeof(filename));
-  BLI_path_normalize(NULL, filename);
+  LIB_strncpy(filename, argv[0], sizeof(filename));
+  LIB_path_slash_native(filename);
+  LIB_path_abs_from_cwd(filename, sizeof(filename));
+  LIB_path_normalize(NULL, filename);
 
   /* load the file */
-  BKE_reports_init(&reports, RPT_PRINT);
+  KERNEL_reports_init(&reports, RPT_PRINT);
   WM_file_autoexec_init(filename);
   success = WM_file_read(C, filename, &reports);
-  BKE_reports_clear(&reports);
+  KERNEL_reports_clear(&reports);
 
   if (success) {
     if (G.background) {
@@ -1966,7 +1966,7 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
     /* failed to load file, stop processing arguments if running in background mode */
     if (G.background) {
       /* Set is_break if running in the background mode so
-       * blender will return non-zero exit code which then
+       * dune will return non-zero exit code which then
        * could be used in automated script to control how
        * good or bad things are.
        */
@@ -1974,7 +1974,7 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
       return -1;
     }
 
-    if (BLO_has_bfile_extension(filename)) {
+    if (LOADER_has_bfile_extension(filename)) {
       /* Just pretend a file was loaded, so the user can press Save and it'll
        * save at the filename from the CLI. */
       STRNCPY(G_MAIN->filepath, filename);
@@ -1994,10 +1994,10 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
 
 static const char arg_handle_load_last_file_doc[] =
     "\n\t"
-    "Open the most recently opened blend file, instead of the default startup file.";
+    "Open the most recently opened dune file, instead of the default startup file.";
 static int arg_handle_load_last_file(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
-  if (BLI_listbase_is_empty(&G.recent_files)) {
+  if (LIB_listbase_is_empty(&G.recent_files)) {
     printf("Warning: no recent files known, opening default startup file instead.\n");
     return -1;
   }
@@ -2007,67 +2007,67 @@ static int arg_handle_load_last_file(int UNUSED(argc), const char **UNUSED(argv)
   return arg_handle_load_file(ARRAY_SIZE(fake_argv), fake_argv, data);
 }
 
-void main_args_setup(bContext *C, bArgs *ba)
+void main_args_setup(duneContext *C, bArgs *ba)
 {
 
 #  define CB(a) a##_doc, a
 #  define CB_EX(a, b) a##_doc_##b, a
 
   /* end argument processing after -- */
-  BLI_args_pass_set(ba, -1);
-  BLI_args_add(ba, "--", NULL, CB(arg_handle_arguments_end), NULL);
+  LIB_args_pass_set(ba, -1);
+  LIB_args_add(ba, "--", NULL, CB(arg_handle_arguments_end), NULL);
 
   /* Pass: Environment Setup
    *
    * It's important these run before any initialization is done, since they set up
    * the environment used to access data-files, which are be used when initializing
    * sub-systems such as color management. */
-  BLI_args_pass_set(ba, ARG_PASS_ENVIRONMENT);
-  BLI_args_add(
+  LIB_args_pass_set(ba, ARG_PASS_ENVIRONMENT);
+  LIB_args_add(
       ba, NULL, "--python-use-system-env", CB(arg_handle_python_use_system_env_set), NULL);
 
   /* Note that we could add used environment variables too. */
-  BLI_args_add(
+  LIB_args_add(
       ba, NULL, "--env-system-datafiles", CB_EX(arg_handle_env_system_set, datafiles), NULL);
-  BLI_args_add(ba, NULL, "--env-system-scripts", CB_EX(arg_handle_env_system_set, scripts), NULL);
-  BLI_args_add(ba, NULL, "--env-system-python", CB_EX(arg_handle_env_system_set, python), NULL);
+  LIB_args_add(ba, NULL, "--env-system-scripts", CB_EX(arg_handle_env_system_set, scripts), NULL);
+  LIB_args_add(ba, NULL, "--env-system-python", CB_EX(arg_handle_env_system_set, python), NULL);
 
-  BLI_args_add(ba, "-t", "--threads", CB(arg_handle_threads_set), NULL);
+  LIB_args_add(ba, "-t", "--threads", CB(arg_handle_threads_set), NULL);
 
   /* Include in the environment pass so it's possible display errors initializing subsystems,
    * especially `bpy.appdir` since it's useful to show errors finding paths on startup. */
-  BLI_args_add(ba, NULL, "--log", CB(arg_handle_log_set), ba);
-  BLI_args_add(ba, NULL, "--log-level", CB(arg_handle_log_level_set), ba);
-  BLI_args_add(ba, NULL, "--log-show-basename", CB(arg_handle_log_show_basename_set), ba);
-  BLI_args_add(ba, NULL, "--log-show-backtrace", CB(arg_handle_log_show_backtrace_set), ba);
-  BLI_args_add(ba, NULL, "--log-show-timestamp", CB(arg_handle_log_show_timestamp_set), ba);
-  BLI_args_add(ba, NULL, "--log-file", CB(arg_handle_log_file_set), ba);
+  LIB_args_add(ba, NULL, "--log", CB(arg_handle_log_set), ba);
+  LIB_args_add(ba, NULL, "--log-level", CB(arg_handle_log_level_set), ba);
+  LIB_args_add(ba, NULL, "--log-show-basename", CB(arg_handle_log_show_basename_set), ba);
+  LIB_args_add(ba, NULL, "--log-show-backtrace", CB(arg_handle_log_show_backtrace_set), ba);
+  LIB_args_add(ba, NULL, "--log-show-timestamp", CB(arg_handle_log_show_timestamp_set), ba);
+  LIB_args_add(ba, NULL, "--log-file", CB(arg_handle_log_file_set), ba);
 
   /* Pass: Background Mode & Settings
    *
    * Also and commands that exit after usage. */
-  BLI_args_pass_set(ba, ARG_PASS_SETTINGS);
-  BLI_args_add(ba, "-h", "--help", CB(arg_handle_print_help), ba);
+  LIB_args_pass_set(ba, ARG_PASS_SETTINGS);
+  LIB_args_add(ba, "-h", "--help", CB(arg_handle_print_help), ba);
   /* Windows only */
-  BLI_args_add(ba, "/?", NULL, CB_EX(arg_handle_print_help, win32), ba);
+  LIB_args_add(ba, "/?", NULL, CB_EX(arg_handle_print_help, win32), ba);
 
-  BLI_args_add(ba, "-v", "--version", CB(arg_handle_print_version), NULL);
+  LIB_args_add(ba, "-v", "--version", CB(arg_handle_print_version), NULL);
 
-  BLI_args_add(ba, "-y", "--enable-autoexec", CB_EX(arg_handle_python_set, enable), (void *)true);
-  BLI_args_add(
+  LIB_args_add(ba, "-y", "--enable-autoexec", CB_EX(arg_handle_python_set, enable), (void *)true);
+  LIB_args_add(
       ba, "-Y", "--disable-autoexec", CB_EX(arg_handle_python_set, disable), (void *)false);
 
-  BLI_args_add(ba, NULL, "--disable-crash-handler", CB(arg_handle_crash_handler_disable), NULL);
-  BLI_args_add(ba, NULL, "--disable-abort-handler", CB(arg_handle_abort_handler_disable), NULL);
+  LIB_args_add(ba, NULL, "--disable-crash-handler", CB(arg_handle_crash_handler_disable), NULL);
+  LIB_args_add(ba, NULL, "--disable-abort-handler", CB(arg_handle_abort_handler_disable), NULL);
 
-  BLI_args_add(ba, "-b", "--background", CB(arg_handle_background_mode_set), NULL);
+  LIB_args_add(ba, "-b", "--background", CB(arg_handle_background_mode_set), NULL);
 
-  BLI_args_add(ba, "-a", NULL, CB(arg_handle_playback_mode), NULL);
+  LIB_args_add(ba, "-a", NULL, CB(arg_handle_playback_mode), NULL);
 
-  BLI_args_add(ba, "-d", "--debug", CB(arg_handle_debug_mode_set), ba);
+  LIB_args_add(ba, "-d", "--debug", CB(arg_handle_debug_mode_set), ba);
 
 #  ifdef WITH_FFMPEG
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-ffmpeg",
                CB_EX(arg_handle_debug_mode_generic_set, ffmpeg),
@@ -2075,7 +2075,7 @@ void main_args_setup(bContext *C, bArgs *ba)
 #  endif
 
 #  ifdef WITH_FREESTYLE
-  BLI_args_add(ba,
+  LIB_args_add(ba,
 
                NULL,
                "--debug-freestyle",
@@ -2083,154 +2083,154 @@ void main_args_setup(bContext *C, bArgs *ba)
                (void *)G_DEBUG_FREESTYLE);
 #  endif
 
-  BLI_args_add(ba,
+  LIB_args_add(ba,
 
                NULL,
                "--debug-python",
                CB_EX(arg_handle_debug_mode_generic_set, python),
                (void *)G_DEBUG_PYTHON);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
 
                NULL,
                "--debug-events",
                CB_EX(arg_handle_debug_mode_generic_set, events),
                (void *)G_DEBUG_EVENTS);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
 
                NULL,
                "--debug-handlers",
                CB_EX(arg_handle_debug_mode_generic_set, handlers),
                (void *)G_DEBUG_HANDLERS);
-  BLI_args_add(
+  LIB_args_add(
       ba, NULL, "--debug-wm", CB_EX(arg_handle_debug_mode_generic_set, wm), (void *)G_DEBUG_WM);
 #  ifdef WITH_XR_OPENXR
-  BLI_args_add(
+  LIB_args_add(
       ba, NULL, "--debug-xr", CB_EX(arg_handle_debug_mode_generic_set, xr), (void *)G_DEBUG_XR);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
 
                NULL,
                "--debug-xr-time",
                CB_EX(arg_handle_debug_mode_generic_set, xr_time),
                (void *)G_DEBUG_XR_TIME);
 #  endif
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-ghost",
                CB_EX(arg_handle_debug_mode_generic_set, handlers),
                (void *)G_DEBUG_GHOST);
-  BLI_args_add(ba, NULL, "--debug-all", CB(arg_handle_debug_mode_all), NULL);
+  LIB_args_add(ba, NULL, "--debug-all", CB(arg_handle_debug_mode_all), NULL);
 
-  BLI_args_add(ba, NULL, "--debug-io", CB(arg_handle_debug_mode_io), NULL);
+  LIB_args_add(ba, NULL, "--debug-io", CB(arg_handle_debug_mode_io), NULL);
 
-  BLI_args_add(ba, NULL, "--debug-fpe", CB(arg_handle_debug_fpe_set), NULL);
+  LIB_args_add(ba, NULL, "--debug-fpe", CB(arg_handle_debug_fpe_set), NULL);
 
 #  ifdef WITH_LIBMV
-  BLI_args_add(ba, NULL, "--debug-libmv", CB(arg_handle_debug_mode_libmv), NULL);
+  LIB_args_add(ba, NULL, "--debug-libmv", CB(arg_handle_debug_mode_libmv), NULL);
 #  endif
 #  ifdef WITH_CYCLES_LOGGING
-  BLI_args_add(ba, NULL, "--debug-cycles", CB(arg_handle_debug_mode_cycles), NULL);
+  LIB_args_add(ba, NULL, "--debug-cycles", CB(arg_handle_debug_mode_cycles), NULL);
 #  endif
-  BLI_args_add(ba, NULL, "--debug-memory", CB(arg_handle_debug_mode_memory_set), NULL);
+  LIB_args_add(ba, NULL, "--debug-memory", CB(arg_handle_debug_mode_memory_set), NULL);
 
-  BLI_args_add(ba, NULL, "--debug-value", CB(arg_handle_debug_value_set), NULL);
-  BLI_args_add(ba,
+  LIB_args_add(ba, NULL, "--debug-value", CB(arg_handle_debug_value_set), NULL);
+  LIB_args_add(ba,
                NULL,
                "--debug-jobs",
                CB_EX(arg_handle_debug_mode_generic_set, jobs),
                (void *)G_DEBUG_JOBS);
-  BLI_args_add(ba, NULL, "--debug-gpu", CB(arg_handle_debug_gpu_set), NULL);
+  LIB_args_add(ba, NULL, "--debug-gpu", CB(arg_handle_debug_gpu_set), NULL);
 
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-depsgraph",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph),
                (void *)G_DEBUG_DEPSGRAPH);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-depsgraph-build",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_build),
                (void *)G_DEBUG_DEPSGRAPH_BUILD);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-depsgraph-eval",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_eval),
                (void *)G_DEBUG_DEPSGRAPH_EVAL);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-depsgraph-tag",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_tag),
                (void *)G_DEBUG_DEPSGRAPH_TAG);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-depsgraph-time",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_time),
                (void *)G_DEBUG_DEPSGRAPH_TIME);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
 
                NULL,
                "--debug-depsgraph-no-threads",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_no_threads),
                (void *)G_DEBUG_DEPSGRAPH_NO_THREADS);
-  BLI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-depsgraph-pretty",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_pretty),
                (void *)G_DEBUG_DEPSGRAPH_PRETTY);
-  LI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-depsgraph-uuid",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_uuid),
                (void *)G_DEBUG_DEPSGRAPH_UUID);
-  LI_args_add(ba,
+  LIB_args_add(ba,
                NULL,
                "--debug-gpu-force-workarounds",
                CB_EX(arg_handle_debug_mode_generic_set, gpu_force_workarounds),
                (void *)G_DEBUG_GPU_FORCE_WORKAROUNDS);
-  LI_args_add(ba, NULL, "--debug-exit-on-error", CB(arg_handle_debug_exit_on_error), NULL);
+  LIB_args_add(ba, NULL, "--debug-exit-on-error", CB(arg_handle_debug_exit_on_error), NULL);
 
-  LI_args_add(ba, NULL, "--verbose", CB(arg_handle_verbosity_set), NULL);
+  LIB_args_add(ba, NULL, "--verbose", CB(arg_handle_verbosity_set), NULL);
 
-  LI_args_add(ba, NULL, "--app-template", CB(arg_handle_app_template), NULL);
-  LI_args_add(ba, NULL, "--factory-startup", CB(arg_handle_factory_startup_set), NULL);
-  LI_args_add(ba, NULL, "--enable-event-simulate", CB(arg_handle_enable_event_simulate), NULL);
+  LIB_args_add(ba, NULL, "--app-template", CB(arg_handle_app_template), NULL);
+  LIB_args_add(ba, NULL, "--factory-startup", CB(arg_handle_factory_startup_set), NULL);
+  LIB_args_add(ba, NULL, "--enable-event-simulate", CB(arg_handle_enable_event_simulate), NULL);
 
   /* Pass: Custom Window Stuff. */
-  LI_args_pass_set(ba, ARG_PASS_SETTINGS_GUI);
-  LI_args_add(ba, "-p", "--window-geometry", CB(arg_handle_window_geometry), NULL);
-  LI_args_add(ba, "-w", "--window-border", CB(arg_handle_with_borders), NULL);
-  LI_args_add(ba, "-W", "--window-fullscreen", CB(arg_handle_without_borders), NULL);
-  LI_args_add(ba, "-M", "--window-maximized", CB(arg_handle_window_maximized), NULL);
-  LI_args_add(ba, NULL, "--no-window-focus", CB(arg_handle_no_window_focus), NULL);
-  LI_args_add(ba, "-con", "--start-console", CB(arg_handle_start_with_console), NULL);
-  LI_args_add(ba, "-R", NULL, CB(arg_handle_register_extension), NULL);
-  LI_args_add(ba, "-r", NULL, CB_EX(arg_handle_register_extension, silent), ba);
-  LI_args_add(ba, NULL, "--no-native-pixels", CB(arg_handle_native_pixels_set), ba);
+  LIB_args_pass_set(ba, ARG_PASS_SETTINGS_GUI);
+  LIB_args_add(ba, "-p", "--window-geometry", CB(arg_handle_window_geometry), NULL);
+  LIB_args_add(ba, "-w", "--window-border", CB(arg_handle_with_borders), NULL);
+  LIB_args_add(ba, "-W", "--window-fullscreen", CB(arg_handle_without_borders), NULL);
+  LIB_args_add(ba, "-M", "--window-maximized", CB(arg_handle_window_maximized), NULL);
+  LIB_args_add(ba, NULL, "--no-window-focus", CB(arg_handle_no_window_focus), NULL);
+  LIB_args_add(ba, "-con", "--start-console", CB(arg_handle_start_with_console), NULL);
+  LIB_args_add(ba, "-R", NULL, CB(arg_handle_register_extension), NULL);
+  LIB_args_add(ba, "-r", NULL, CB_EX(arg_handle_register_extension, silent), ba);
+  LIB_args_add(ba, NULL, "--no-native-pixels", CB(arg_handle_native_pixels_set), ba);
 
   /* Pass: Disabling Things & Forcing Settings. */
-  LI_args_pass_set(ba, ARG_PASS_SETTINGS_FORCE);
-  LI_args_add_case(ba, "-noaudio", 1, NULL, 0, CB(arg_handle_audio_disable), NULL);
-  LI_args_add_case(ba, "-setaudio", 1, NULL, 0, CB(arg_handle_audio_set), NULL);
+  LIB_args_pass_set(ba, ARG_PASS_SETTINGS_FORCE);
+  LIB_args_add_case(ba, "-noaudio", 1, NULL, 0, CB(arg_handle_audio_disable), NULL);
+  LIB_args_add_case(ba, "-setaudio", 1, NULL, 0, CB(arg_handle_audio_set), NULL);
 
   /* Pass: Processing Arguments. */
-  LI_args_pass_set(ba, ARG_PASS_FINAL);
-  LI_args_add(ba, "-f", "--render-frame", CB(arg_handle_render_frame), C);
-  LI_args_add(ba, "-a", "--render-anim", CB(arg_handle_render_animation), C);
-  LI_args_add(ba, "-S", "--scene", CB(arg_handle_scene_set), C);
-  LI_args_add(ba, "-s", "--frame-start", CB(arg_handle_frame_start_set), C);
-  LI_args_add(ba, "-e", "--frame-end", CB(arg_handle_frame_end_set), C);
-  LI_args_add(ba, "-j", "--frame-jump", CB(arg_handle_frame_skip_set), C);
-  LI_args_add(ba, "-P", "--python", CB(arg_handle_python_file_run), C);
-  LI_args_add(ba, NULL, "--python-text", CB(arg_handle_python_text_run), C);
-  LI_args_add(ba, NULL, "--python-expr", CB(arg_handle_python_expr_run), C);
-  LI_args_add(ba, NULL, "--python-console", CB(arg_handle_python_console_run), C);
-  LI_args_add(ba, NULL, "--python-exit-code", CB(arg_handle_python_exit_code_set), NULL);
-  LI_args_add(ba, NULL, "--addons", CB(arg_handle_addons_set), C);
+  LIB_args_pass_set(ba, ARG_PASS_FINAL);
+  LIB_args_add(ba, "-f", "--render-frame", CB(arg_handle_render_frame), C);
+  LIB_args_add(ba, "-a", "--render-anim", CB(arg_handle_render_animation), C);
+  LIB_args_add(ba, "-S", "--scene", CB(arg_handle_scene_set), C);
+  LIB_args_add(ba, "-s", "--frame-start", CB(arg_handle_frame_start_set), C);
+  LIB_args_add(ba, "-e", "--frame-end", CB(arg_handle_frame_end_set), C);
+  LIB_args_add(ba, "-j", "--frame-jump", CB(arg_handle_frame_skip_set), C);
+  LIB_args_add(ba, "-P", "--python", CB(arg_handle_python_file_run), C);
+  LIB_args_add(ba, NULL, "--python-text", CB(arg_handle_python_text_run), C);
+  LIB_args_add(ba, NULL, "--python-expr", CB(arg_handle_python_expr_run), C);
+  LIB_args_add(ba, NULL, "--python-console", CB(arg_handle_python_console_run), C);
+  LIB_args_add(ba, NULL, "--python-exit-code", CB(arg_handle_python_exit_code_set), NULL);
+  LIB_args_add(ba, NULL, "--addons", CB(arg_handle_addons_set), C);
 
-  LI_args_add(ba, "-o", "--render-output", CB(arg_handle_output_set), C);
-  LI_args_add(ba, "-E", "--engine", CB(arg_handle_engine_set), C);
+  LIB_args_add(ba, "-o", "--render-output", CB(arg_handle_output_set), C);
+  LIB_args_add(ba, "-E", "--engine", CB(arg_handle_engine_set), C);
 
-  LI_args_add(ba, "-F", "--render-format", CB(arg_handle_image_type_set), C);
-  LI_args_add(ba, "-x", "--use-extension", CB(arg_handle_extension_set), C);
+  LIB_args_add(ba, "-F", "--render-format", CB(arg_handle_image_type_set), C);
+  LIB_args_add(ba, "-x", "--use-extension", CB(arg_handle_extension_set), C);
 
   LIB_args_add(ba, NULL, "--open-last", CB(arg_handle_load_last_file), C);
 
@@ -2239,7 +2239,7 @@ void main_args_setup(bContext *C, bArgs *ba)
 }
 
 /** Needs to be added separately. **/
-void main_args_setup_post(bContext *C, bArgs *ba)
+void main_args_setup_post(duneContext *C, duneArgs *dune_args)
 {
-  LIB_args_parse(ba, ARG_PASS_FINAL, arg_handle_load_file, C);
+  LIB_args_parse(dune_args, ARG_PASS_FINAL, arg_handle_load_file, C);
 }
