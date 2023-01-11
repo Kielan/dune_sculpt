@@ -1,19 +1,13 @@
 #pragma once
 
-/** \file
- * \ingroup bke
- *
- * \note on naming: typical _get() suffix is omitted here,
+/**
+ * note on naming: typical _get() suffix is omitted here,
  * since its the main purpose of the API.
  */
 
 #include <stddef.h>
 
-#include "BLI_compiler_attrs.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "LIB_compiler_attrs.h"
 
 struct ListBase;
 
@@ -26,26 +20,26 @@ struct ListBase;
  * Without this any callers to this module that run early on,
  * will miss out on changes from parsing arguments.
  */
-void BKE_appdir_init(void);
-void BKE_appdir_exit(void);
+void KERNEL_appdir_init(void);
+void KERNEL_appdir_exit(void);
 
 /**
  * Get the folder that's the "natural" starting point for browsing files on an OS.
  * - Unix: `$HOME`
  * - Windows: `%userprofile%/Documents`
  *
- * \note On Windows `Users/{MyUserName}/Documents` is used as it's the default location to save
+ * note On Windows `Users/{MyUserName}/Documents` is used as it's the default location to save
  * documents.
  */
-const char *BKE_appdir_folder_default(void) ATTR_WARN_UNUSED_RESULT;
-const char *BKE_appdir_folder_root(void) ATTR_WARN_UNUSED_RESULT ATTR_RETURNS_NONNULL;
-const char *BKE_appdir_folder_default_or_root(void) ATTR_WARN_UNUSED_RESULT ATTR_RETURNS_NONNULL;
+const char *KERNEL_appdir_folder_default(void) ATTR_WARN_UNUSED_RESULT;
+const char *KERNEL_appdir_folder_root(void) ATTR_WARN_UNUSED_RESULT ATTR_RETURNS_NONNULL;
+const char *KERNEL_appdir_folder_default_or_root(void) ATTR_WARN_UNUSED_RESULT ATTR_RETURNS_NONNULL;
 /**
  * Get the user's home directory, i.e.
  * - Unix: `$HOME`
  * - Windows: `%userprofile%`
  */
-const char *BKE_appdir_folder_home(void);
+const char *KERNEL_appdir_folder_home(void);
 /**
  * Get the user's document directory, i.e.
  * - Linux: `$HOME/Documents`
@@ -53,17 +47,17 @@ const char *BKE_appdir_folder_home(void);
  *
  * If this can't be found using OS queries (via Ghost), try manually finding it.
  *
- * \returns True if the path is valid and points to an existing directory.
+ * returns True if the path is valid and points to an existing directory.
  */
-bool BKE_appdir_folder_documents(char *dir);
+bool KERNEL_appdir_folder_documents(char *dir);
 /**
  * Get the user's cache directory, i.e.
  * - Linux: `$HOME/.cache/blender/`
- * - Windows: `%USERPROFILE%\AppData\Local\Blender Foundation\Blender\`
- * - MacOS: `/Library/Caches/Blender`
+ * - Windows: `%USERPROFILE%\AppData\Local\Dune Foundation\Dune\`
+ * - MacOS: `/Library/Caches/Dune`
  *
- * \returns True if the path is valid. It doesn't create or checks format
- * if the `blender` folder exists. It does check if the parent of the path exists.
+ * returns True if the path is valid. It doesn't create or checks format
+ * if the `dune` folder exists. It does check if the parent of the path exists.
  */
 bool BKE_appdir_folder_caches(char *r_path, size_t path_len);
 /**
