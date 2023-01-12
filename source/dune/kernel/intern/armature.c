@@ -925,7 +925,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
     }
   }
 
-  KERNEL_pchan_bbone_handles_get(pchan, &prev, &next);
+  KERNEL_pchan_dunebone_handles_get(pchan, &prev, &next);
 
   /* Find the handle points, since this is inside bone space, the
    * first point = (0, 0, 0)
@@ -954,7 +954,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
     param->use_prev = true;
 
     /* Transform previous point inside this bone space. */
-    if (bone->bbone_prev_type == BBONE_HANDLE_RELATIVE) {
+    if (bone->dunebone_prev_type == DUNEBONE_HANDLE_RELATIVE) {
       /* Use delta movement (from restpose), and apply this relative to the current bone's head. */
       if (rest) {
         /* In restpose, arm_head == pose_head */
@@ -966,7 +966,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
         sub_v3_v3v3(h1, pchan->pose_head, delta);
       }
     }
-    else if (bone->bbone_prev_type == BBONE_HANDLE_TANGENT) {
+    else if (bone->dunebone_prev_type == DUNEBONE_HANDLE_TANGENT) {
       /* Use bone direction by offsetting so that its tail meets current bone's head */
       if (rest) {
         sub_v3_v3v3(delta, prev->bone->arm_tail, prev->bone->arm_head);
@@ -978,8 +978,8 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
       }
     }
     else {
-      /* Apply special handling for smoothly joining B-Bone chains */
-      param->prev_bbone = (prev->bone->segments > 1);
+      /* Apply special handling for smoothly joining Dune-Bone chains */
+      param->prev_dunebone = (prev->bone->segments > 1);
 
       /* Use bone head as absolute position. */
       copy_v3_v3(h1, rest ? prev->bone->arm_head : prev->pose_head);
@@ -989,12 +989,12 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
       mul_v3_m4v3(param->prev_h, imat, h1);
     }
 
-    if (!param->prev_bbone) {
+    if (!param->prev_dunebone) {
       /* Find the previous roll to interpolate. */
       mul_m4_m4m4(param->prev_mat, imat, rest ? prev->bone->arm_mat : prev->pose_mat);
 
       /* Retrieve the local scale of the bone if necessary. */
-      if ((bone->bbone_prev_flag & BBONE_HANDLE_SCALE_ANY) && !rest) {
+      if ((bone->bbone_prev_flag & DUNEBONE_HANDLE_SCALE_ANY) && !rest) {
         KERNEL_armature_mat_pose_to_bone(prev, prev->pose_mat, tmpmat);
         mat4_to_size(prev_scale, tmpmat);
       }
@@ -1008,7 +1008,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
     param->use_next = true;
 
     /* Transform next point inside this bone space. */
-    if (bone->bbone_next_type == BBONE_HANDLE_RELATIVE) {
+    if (bone->dunebone_next_type == DUNEBONE_HANDLE_RELATIVE) {
       /* Use delta movement (from restpose), and apply this relative to the current bone's tail. */
       if (rest) {
         /* In restpose, arm_head == pose_head */
@@ -1020,7 +1020,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
         add_v3_v3v3(h2, pchan->pose_tail, delta);
       }
     }
-    else if (bone->bbone_next_type == BBONE_HANDLE_TANGENT) {
+    else if (bone->dunebone_next_type == DUNEBONE_HANDLE_TANGENT) {
       /* Use bone direction by offsetting so that its head meets current bone's tail */
       if (rest) {
         sub_v3_v3v3(delta, next->bone->arm_tail, next->bone->arm_head);
@@ -1032,8 +1032,8 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
       }
     }
     else {
-      /* Apply special handling for smoothly joining B-Bone chains */
-      param->next_bbone = (next->bone->segments > 1);
+      /* Apply special handling for smoothly joining Dune-Bone chains */
+      param->next_dunebone = (next->bone->segments > 1);
 
       /* Use bone tail as absolute position. */
       copy_v3_v3(h2, rest ? next->bone->arm_tail : next->pose_tail);
@@ -1047,13 +1047,13 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
     mul_m4_m4m4(param->next_mat, imat, rest ? next->bone->arm_mat : next->pose_mat);
 
     /* Retrieve the local scale of the bone if necessary. */
-    if ((bone->bbone_next_flag & BBONE_HANDLE_SCALE_ANY) && !rest) {
-      BKE_armature_mat_pose_to_bone(next, next->pose_mat, tmpmat);
+    if ((bone->dunebone_next_flag & DUNEBONE_HANDLE_SCALE_ANY) && !rest) {
+      KERNEL_armature_mat_pose_to_bone(next, next->pose_mat, tmpmat);
       mat4_to_size(next_scale, tmpmat);
     }
   }
 
-  /* Add effects from bbone properties over the top
+  /* Add effects from dunebone properties over the top
    * - These properties allow users to hand-animate the
    *   bone curve/shape, without having to resort to using
    *   extra bones
@@ -1074,7 +1074,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
     param->roll1 = bone->roll1 + (!rest ? pchan->roll1 : 0.0f);
     param->roll2 = bone->roll2 + (!rest ? pchan->roll2 : 0.0f);
 
-    if (bone->bbone_flag & BBONE_ADD_PARENT_END_ROLL) {
+    if (bone->dunebone_flag & DUNEBONE_ADD_PARENT_END_ROLL) {
       if (prev) {
         if (prev->bone) {
           param->roll1 += prev->bone->roll2;
@@ -1101,7 +1101,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
     param->curve_out_x = bone->curve_out_x + (!rest ? pchan->curve_out_x : 0.0f);
     param->curve_out_z = bone->curve_out_z + (!rest ? pchan->curve_out_z : 0.0f);
 
-    if (bone->bbone_flag & BBONE_SCALE_EASING) {
+    if (bone->dunebone_flag & DUNEBONE_SCALE_EASING) {
       param->ease1 *= param->scale_in[1];
       param->curve_in_x *= param->scale_in[1];
       param->curve_in_z *= param->scale_in[1];
@@ -1112,31 +1112,31 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
     }
 
     /* Custom handle scale. */
-    if (bone->bbone_prev_flag & BBONE_HANDLE_SCALE_X) {
+    if (bone->dunebone_prev_flag & DUNEBONE_HANDLE_SCALE_X) {
       param->scale_in[0] *= prev_scale[0];
     }
-    if (bone->bbone_prev_flag & BBONE_HANDLE_SCALE_Y) {
+    if (bone->dunebone_prev_flag & DUNEBONE_HANDLE_SCALE_Y) {
       param->scale_in[1] *= prev_scale[1];
     }
-    if (bone->bbone_prev_flag & BBONE_HANDLE_SCALE_Z) {
+    if (bone->dunebone_prev_flag & DUNEBONE_HANDLE_SCALE_Z) {
       param->scale_in[2] *= prev_scale[2];
     }
-    if (bone->bbone_prev_flag & BBONE_HANDLE_SCALE_EASE) {
+    if (bone->dunebone_prev_flag & DUNEBONE_HANDLE_SCALE_EASE) {
       param->ease1 *= prev_scale[1];
       param->curve_in_x *= prev_scale[1];
       param->curve_in_z *= prev_scale[1];
     }
 
-    if (bone->bbone_next_flag & BBONE_HANDLE_SCALE_X) {
+    if (bone->duneone_next_flag & DUNEBONE_HANDLE_SCALE_X) {
       param->scale_out[0] *= next_scale[0];
     }
-    if (bone->bbone_next_flag & BBONE_HANDLE_SCALE_Y) {
+    if (bone->dunebone_next_flag & DUNEBONE_HANDLE_SCALE_Y) {
       param->scale_out[1] *= next_scale[1];
     }
-    if (bone->bbone_next_flag & BBONE_HANDLE_SCALE_Z) {
+    if (bone->dunebone_next_flag & DUNEBONE_HANDLE_SCALE_Z) {
       param->scale_out[2] *= next_scale[2];
     }
-    if (bone->bbone_next_flag & BBONE_HANDLE_SCALE_EASE) {
+    if (bone->dunebone_next_flag & DUNEBONE_HANDLE_SCALE_EASE) {
       param->ease2 *= next_scale[1];
       param->curve_out_x *= next_scale[1];
       param->curve_out_z *= next_scale[1];
@@ -1144,19 +1144,19 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
   }
 }
 
-void KERNEL_pchan_bbone_spline_setup(dunePoseChannel *pchan,
+void KERNEL_pchan_dunebone_spline_setup(dunePoseChannel *pchan,
                                   const bool rest,
                                   const bool for_deform,
                                   Mat4 *result_array)
 {
-  BBoneSplineParameters param;
+  DuneBoneSplineParameters param;
 
-  KERNEL_pchan_bbone_spline_params_get(pchan, rest, &param);
+  KERNEL_pchan_dunebone_spline_params_get(pchan, rest, &param);
 
-  pchan->bone->segments = KERNEL_pchan_bbone_spline_compute(&param, for_deform, result_array);
+  pchan->bone->segments = KERNEL_pchan_dunebone_spline_compute(&param, for_deform, result_array);
 }
 
-void KERNEL_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
+void KERNEL_pchan_dunebone_handles_compute(const DuneBoneSplineParameters *param,
                                      float h1[3],
                                      float *r_roll1,
                                      float h2[3],
@@ -1177,7 +1177,7 @@ void KERNEL_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
   if (param->use_prev) {
     copy_v3_v3(h1, param->prev_h);
 
-    if (param->prev_bbone) {
+    if (param->prev_dunebone) {
       /* If previous bone is B-bone too, use average handle direction. */
       h1[1] -= length;
     }
@@ -1188,7 +1188,7 @@ void KERNEL_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
 
     negate_v3(h1);
 
-    if (!param->prev_bbone) {
+    if (!param->prev_dunebone) {
       /* Find the previous roll to interpolate. */
       copy_m3_m4(mat3, param->prev_mat);
       mat3_vec_to_roll(mat3, h1, r_roll1);
@@ -1203,8 +1203,8 @@ void KERNEL_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
   if (param->use_next) {
     copy_v3_v3(h2, param->next_h);
 
-    /* If next bone is B-bone too, use average handle direction. */
-    if (param->next_bbone) {
+    /* If next bone is Dune-bone too, use average handle direction. */
+    if (param->next_dunebone) {
       /* pass */
     }
     else {
@@ -1236,7 +1236,7 @@ void KERNEL_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
     mul_v3_fl(h2, -hlength2);
   }
 
-  /* Add effects from bbone properties over the top
+  /* Add effects from dunebone properties over the top
    * - These properties allow users to hand-animate the
    *   bone curve/shape, without having to resort to using
    *   extra bones
@@ -1272,7 +1272,7 @@ void KERNEL_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
   }
 }
 
-static void make_bbone_spline_matrix(BBoneSplineParameters *param,
+static void make_dunebone_spline_matrix(DuneBoneSplineParameters *param,
                                      const float scalemats[2][4][4],
                                      const float pos[3],
                                      const float axis[3],
@@ -1293,7 +1293,7 @@ static void make_bbone_spline_matrix(BBoneSplineParameters *param,
     mul_m4_series(result, scalemats[0], result, scalemats[1]);
   }
 
-  /* BBone scale... */
+  /* DuneBone scale... */
   mul_v3_fl(result[0], scalex);
   mul_v3_fl(result[2], scalez);
 }
@@ -1316,7 +1316,7 @@ static void ease_handle_axis(const float deriv1[3], const float deriv2[3], float
   }
 }
 
-int KERNEL_pchan_bbone_spline_compute(BBoneSplineParameters *param,
+int KERNEL_pchan_dunebone_spline_compute(DuneBoneSplineParameters *param,
                                    const bool for_deform,
                                    Mat4 *result_array)
 {
@@ -1332,10 +1332,10 @@ int KERNEL_pchan_bbone_spline_compute(BBoneSplineParameters *param,
     length *= param->scale[1];
   }
 
-  KERNEL_pchan_bbone_handles_compute(param, h1, &roll1, h2, &roll2, true, true);
+  KERNEL_pchan_dunebone_handles_compute(param, h1, &roll1, h2, &roll2, true, true);
 
   /* Make curve. */
-  CLAMP_MAX(param->segments, MAX_BBONE_SUBDIV);
+  CLAMP_MAX(param->segments, MAX_DUNEBONE_SUBDIV);
 
   copy_v3_fl3(bezt_controls[3], 0.0f, length, 0.0f);
   add_v3_v3v3(bezt_controls[2], bezt_controls[3], h2);
@@ -1343,7 +1343,7 @@ int KERNEL_pchan_bbone_spline_compute(BBoneSplineParameters *param,
   zero_v3(bezt_controls[0]);
 
   /* Compute lengthwise segment scale. */
-  float segment_scales[MAX_BBONE_SUBDIV];
+  float segment_scales[MAX_DUNEBONE_SUBDIV];
 
   CLAMP_MIN(param->scale_in[1], 0.0001f);
   CLAMP_MIN(param->scale_out[1], 0.0001f);
@@ -1360,7 +1360,7 @@ int KERNEL_pchan_bbone_spline_compute(BBoneSplineParameters *param,
   float bezt_points[MAX_BBONE_SUBDIV + 1];
 
   equalize_cubic_bezier(
-      bezt_controls, MAX_BBONE_SUBDIV, param->segments, segment_scales, bezt_points);
+      bezt_controls, MAX_DUNEBONE_SUBDIV, param->segments, segment_scales, bezt_points);
 
   /* Deformation uses N+1 matrices computed at points between the segments. */
   if (for_deform) {
@@ -1376,7 +1376,7 @@ int KERNEL_pchan_bbone_spline_compute(BBoneSplineParameters *param,
 
     /* End points require special handling to fix zero length handles. */
     ease_handle_axis(bezt_deriv1[0], bezt_deriv2[0], axis);
-    make_bbone_spline_matrix(param,
+    make_dunebone_spline_matrix(param,
                              scalemats,
                              bezt_controls[0],
                              axis,
