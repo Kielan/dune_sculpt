@@ -7,12 +7,12 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "LI_alloca.h"
-#include "LI_ghash.h"
-#include "LI_listbase.h"
-#include "LI_math.h"
-#include "LI_string.h"
-#include "LI_utildefines.h"
+#include "LIB_alloca.h"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_string.h"
+#include "LIB_utildefines.h"
 #include "TRANSLATION_translation.h"
 
 #include "structs_defaults.h"
@@ -23,19 +23,19 @@
 #include "structs_object_types.h"
 #include "structs_scene_types.h"
 
-#include "KE_action.h"
-#include "KE_anim_data.h"
-#include "KE_anim_visualization.h"
-#include "KE_armature.h"
-#include "KE_constraint.h"
-#include "KE_curve.h"
-#include "KE_idprop.h"
-#include "KE_idtype.h"
-#include "KE_lib_id.h"
-#include "KE_lib_query.h"
-#include "KE_main.h"
-#include "KE_object.h"
-#include "KE_scene.h"
+#include "KERNEL_action.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_anim_visualization.h"
+#include "KERNEL_armature.h"
+#include "KERNEL_constraint.h"
+#include "KERNEL_curve.h"
+#include "KERNEL_idprop.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_object.h"
+#include "KERNEL_scene.h"
 
 #include "DEG_depsgraph_build.h"
 #include "DEG_depsgraph_query.h"
@@ -55,7 +55,7 @@ static void copy_bonechildren(Bone *bone_dst,
                               Bone **r_bone_dst_act,
                               const int flag);
 
-static void copy_bonechildren_custom_handles(Bone *bone_dst, bArmature *arm_dst);
+static void copy_bonechildren_custom_handles(Bone *bone_dst, duneArmature *arm_dst);
 
 /* -------------------------------------------------------------------- */
 /** Armature Data-block **/
@@ -81,7 +81,7 @@ static void armature_init_data(ID *id)
 static void armature_copy_data(Main *UNUSED(dunemain), ID *id_dst, const ID *id_src, const int flag)
 {
   duneArmature *armature_dst = (duneArmature *)id_dst;
-  const duneArmature *armature_src = (const bArmature *)id_src;
+  const duneArmature *armature_src = (const duneArmature *)id_src;
 
   Bone *bone_src, *bone_dst;
   Bone *bone_dst_act = NULL;
@@ -119,12 +119,12 @@ static void armature_free_data(struct ID *id)
 {
   duneArmature *armature = (duneArmature *)id;
 
-  BKE_armature_bone_hash_free(armature);
-  BKE_armature_bonelist_free(&armature->bonebase, false);
+  KERNEL_armature_bone_hash_free(armature);
+  KERNEL_armature_bonelist_free(&armature->bonebase, false);
 
   /* free editmode data */
   if (armature->edbo) {
-    BKE_armature_editbonelist_free(armature->edbo, false);
+    KERNE_armature_editbonelist_free(armature->edbo, false);
     MEM_freeN(armature->edbo);
     armature->edbo = NULL;
   }
