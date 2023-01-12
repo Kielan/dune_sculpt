@@ -787,7 +787,7 @@ bool bone_autoside_name(
       strncpy(name, basename, len - strlen(extension));
     }
 
-    BLI_snprintf(name, MAXBONENAME, "%s.%s", basename, extension);
+    LIB_snprintf(name, MAXBONENAME, "%s.%s", basename, extension);
 
     return true;
   }
@@ -795,7 +795,7 @@ bool bone_autoside_name(
 }
 
 /* -------------------------------------------------------------------- */
-/** Armature B-Bone Support **/
+/** Armature Dune-Bone Support **/
 
 /* Compute a set of bezier parameter values that produce approximately equally spaced points. */
 static void equalize_cubic_bezier(const float control[4][3],
@@ -873,9 +873,9 @@ static void evaluate_cubic_bezier(const float control[4][3],
   madd_v3_v3v3fl(r_pos, layer2[0], r_tangent, t);
 }
 
-void KERNEL_pchan_bbone_handles_get(dunePoseChannel *pchan, dunePoseChannel **r_prev, dunePoseChannel **r_next)
+void KERNEL_pchan_dunebone_handles_get(dunePoseChannel *pchan, dunePoseChannel **r_prev, dunePoseChannel **r_next)
 {
-  if (pchan->bone->bbone_prev_type == BBONE_HANDLE_AUTO) {
+  if (pchan->bone->dunebone_prev_type == DUNEBONE_HANDLE_AUTO) {
     /* Use connected parent. */
     if (pchan->bone->flag & BONE_CONNECTED) {
       *r_prev = pchan->parent;
@@ -886,22 +886,22 @@ void KERNEL_pchan_bbone_handles_get(dunePoseChannel *pchan, dunePoseChannel **r_
   }
   else {
     /* Use the provided bone as prev - leave blank to eliminate this effect altogether. */
-    *r_prev = pchan->bbone_prev;
+    *r_prev = pchan->dunebone_prev;
   }
 
-  if (pchan->bone->bbone_next_type == BBONE_HANDLE_AUTO) {
+  if (pchan->bone->dunebone_next_type == DUNEBONE_HANDLE_AUTO) {
     /* Use connected child. */
     *r_next = pchan->child;
   }
   else {
     /* Use the provided bone as next - leave blank to eliminate this effect altogether. */
-    *r_next = pchan->bbone_next;
+    *r_next = pchan->dunebone_next;
   }
 }
 
-void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
+void KERNEL_pchan_dunebone_spline_params_get(struct dunePoseChannel *pchan,
                                        const bool rest,
-                                       struct BBoneSplineParameters *param)
+                                       struct DuneBoneSplineParameters *param)
 {
   dunePoseChannel *next, *prev;
   Bone *bone = pchan->bone;
@@ -994,7 +994,7 @@ void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
       mul_m4_m4m4(param->prev_mat, imat, rest ? prev->bone->arm_mat : prev->pose_mat);
 
       /* Retrieve the local scale of the bone if necessary. */
-      if ((bone->bbone_prev_flag & DUNEBONE_HANDLE_SCALE_ANY) && !rest) {
+      if ((bone->dunebone_prev_flag & DUNEBONE_HANDLE_SCALE_ANY) && !rest) {
         KERNEL_armature_mat_pose_to_bone(prev, prev->pose_mat, tmpmat);
         mat4_to_size(prev_scale, tmpmat);
       }
@@ -1422,7 +1422,7 @@ int KERNEL_pchan_dunebone_spline_compute(DuneBoneSplineParameters *param,
       float scalex = interpf(param->scale_out[0], param->scale_in[0], fac);
       float scalez = interpf(param->scale_out[2], param->scale_in[2], fac);
 
-      make_bbone_spline_matrix(
+      make_dunebone_spline_matrix(
           param, scalemats, prev, axis, roll, scalex, scalez, result_array[a].mat);
       copy_v3_v3(prev, cur);
     }
@@ -1431,22 +1431,22 @@ int KERNEL_pchan_dunebone_spline_compute(DuneBoneSplineParameters *param,
   return param->segments;
 }
 
-static void allocate_bbone_cache(dunePoseChannel *pchan, int segments)
+static void allocate_dunebone_cache(dunePoseChannel *pchan, int segments)
 {
   dunePoseChannel_Runtime *runtime = &pchan->runtime;
 
   if (runtime->bbone_segments != segments) {
     KERNEL_pose_channel_free_bbone_cache(runtime);
 
-    runtime->bbone_segments = segments;
-    runtime->bbone_rest_mats = MEM_malloc_arrayN(
-        1 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::bbone_rest_mats");
+    runtime->dunebone_segments = segments;
+    runtime->dunebone_rest_mats = MEM_malloc_arrayN(
+        1 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::dunebone_rest_mats");
     runtime->bbone_pose_mats = MEM_malloc_arrayN(
-        1 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::bbone_pose_mats");
+        1 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::dunebone_pose_mats");
     runtime->bbone_deform_mats = MEM_malloc_arrayN(
-        2 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::bbone_deform_mats");
+        2 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::dunebone_deform_mats");
     runtime->bbone_dual_quats = MEM_malloc_arrayN(
-        1 + (uint)segments, sizeof(DualQuat), "dunePoseChannel_Runtime::bbone_dual_quats");
+        1 + (uint)segments, sizeof(DualQuat), "dunePoseChannel_Runtime::dunebone_dual_quats");
   }
 }
 
@@ -1485,49 +1485,49 @@ void KERNEL_pchan_dunebone_segments_cache_compute(dunePoseChannel *pchan)
   for (a = 0; a <= bone->segments; a++) {
     float tmat[4][4];
 
-    invert_m4_m4(tmat, b_bone_rest[a].mat);
-    mul_m4_series(b_bone_mats[a + 1].mat,
+    invert_m4_m4(tmat, dune_bone_rest[a].mat);
+    mul_m4_series(dune_bone_mats[a + 1].mat,
                   pchan->chan_mat,
                   bone->arm_mat,
-                  b_bone[a].mat,
+                  dune_bone[a].mat,
                   tmat,
-                  b_bone_mats[0].mat);
+                  dune_bone_mats[0].mat);
 
     /* Compute the orthonormal object space rest matrix of the segment. */
-    mul_m4_m4m4(tmat, bone->arm_mat, b_bone_rest[a].mat);
+    mul_m4_m4m4(tmat, bone->arm_mat, dune_bone_rest[a].mat);
     normalize_m4(tmat);
 
-    mat4_to_dquat(&b_bone_dual_quats[a], tmat, b_bone_mats[a + 1].mat);
+    mat4_to_dquat(&dune_bone_dual_quats[a], tmat, dune_bone_mats[a + 1].mat);
   }
 }
 
-void BKE_pchan_bbone_segments_cache_copy(bPoseChannel *pchan, bPoseChannel *pchan_from)
+void KERNEL_pchan_dunebone_segments_cache_copy(bPoseChannel *pchan, bPoseChannel *pchan_from)
 {
-  bPoseChannel_Runtime *runtime = &pchan->runtime;
-  bPoseChannel_Runtime *runtime_from = &pchan_from->runtime;
-  int segments = runtime_from->bbone_segments;
+  dunePoseChannel_Runtime *runtime = &pchan->runtime;
+  dunePoseChannel_Runtime *runtime_from = &pchan_from->runtime;
+  int segments = runtime_from->dunebone_segments;
 
   if (segments <= 1) {
-    BKE_pose_channel_free_bbone_cache(&pchan->runtime);
+    KERNEL_pose_channel_free_dunebone_cache(&pchan->runtime);
   }
   else {
-    allocate_bbone_cache(pchan, segments);
+    allocate_dunebone_cache(pchan, segments);
 
-    memcpy(runtime->bbone_rest_mats, runtime_from->bbone_rest_mats, sizeof(Mat4) * (1 + segments));
-    memcpy(runtime->bbone_pose_mats, runtime_from->bbone_pose_mats, sizeof(Mat4) * (1 + segments));
-    memcpy(runtime->bbone_deform_mats,
-           runtime_from->bbone_deform_mats,
+    memcpy(runtime->dunebone_rest_mats, runtime_from->dunebone_rest_mats, sizeof(Mat4) * (1 + segments));
+    memcpy(runtime->dunebone_pose_mats, runtime_from->dunebone_pose_mats, sizeof(Mat4) * (1 + segments));
+    memcpy(runtime->dunebone_deform_mats,
+           runtime_from->dunebone_deform_mats,
            sizeof(Mat4) * (2 + segments));
-    memcpy(runtime->bbone_dual_quats,
-           runtime_from->bbone_dual_quats,
+    memcpy(runtime->dunebone_dual_quats,
+           runtime_from->dunebone_dual_quats,
            sizeof(DualQuat) * (1 + segments));
   }
 }
 
-void BKE_pchan_bbone_deform_segment_index(const bPoseChannel *pchan,
+void KERNEL_pchan_dunebone_deform_segment_index(const dunePoseChannel *pchan,
                                           float pos,
                                           int *r_index,
-                                          float *r_blend_next)
+                                          float *r_dune_next)
 {
   int segments = pchan->bone->segments;
 
@@ -1537,25 +1537,22 @@ void BKE_pchan_bbone_deform_segment_index(const bPoseChannel *pchan,
    * Integer part is the first segment's index.
    * Integer part plus 1 is the second segment's index.
    * Fractional part is the blend factor. */
-  float pre_blend = pos * (float)segments;
+  float pre_dune = pos * (float)segments;
 
-  int index = (int)floorf(pre_blend);
+  int index = (int)floorf(pre_dune);
   CLAMP(index, 0, segments - 1);
 
-  float blend = pre_blend - index;
-  CLAMP(blend, 0.0f, 1.0f);
+  float blend = pre_dune - index;
+  CLAMP(dune, 0.0f, 1.0f);
 
   *r_index = index;
-  *r_blend_next = blend;
+  *r_dune_next = dune;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Bone Space to Space Conversion API
- * \{ */
+/** Bone Space to Space Conversion API **/
 
-void BKE_armature_mat_world_to_pose(Object *ob, const float inmat[4][4], float outmat[4][4])
+void KERNEL_armature_mat_world_to_pose(Object *ob, const float inmat[4][4], float outmat[4][4])
 {
   float obmat[4][4];
 
@@ -1571,7 +1568,7 @@ void BKE_armature_mat_world_to_pose(Object *ob, const float inmat[4][4], float o
   mul_m4_m4m4(outmat, inmat, obmat);
 }
 
-void BKE_armature_loc_world_to_pose(Object *ob, const float inloc[3], float outloc[3])
+void KERNEL_armature_loc_world_to_pose(Object *ob, const float inloc[3], float outloc[3])
 {
   float xLocMat[4][4];
   float nLocMat[4][4];
@@ -1581,15 +1578,12 @@ void BKE_armature_loc_world_to_pose(Object *ob, const float inloc[3], float outl
   copy_v3_v3(xLocMat[3], inloc);
 
   /* get bone-space cursor matrix and extract location */
-  BKE_armature_mat_world_to_pose(ob, xLocMat, nLocMat);
+  KERNEL_armature_mat_world_to_pose(ob, xLocMat, nLocMat);
   copy_v3_v3(outloc, nLocMat[3]);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Bone Matrix Calculation API
- * \{ */
+/** Bone Matrix Calculation API **/
 
 void BKE_bone_offset_matrix_get(const Bone *bone, float offs_bone[4][4])
 {
