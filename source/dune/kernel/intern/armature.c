@@ -1,10 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later
- * Copyright 2001-2002 NaN Holding BV. All rights reserved. */
-
-/** \file
- * \ingroup bke
- */
-
 #include <ctype.h>
 #include <float.h>
 #include <math.h>
@@ -14,48 +7,47 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
-#include "BLT_translation.h"
+#include "LI_alloca.h"
+#include "LI_ghash.h"
+#include "LI_listbase.h"
+#include "LI_math.h"
+#include "LI_string.h"
+#include "LI_utildefines.h"
+#include "TRANSLATION_translation.h"
 
-#include "DNA_defaults.h"
+#include "structs_defaults.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_listBase.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "structs_armature_types.h"
+#include "structs_constraint_types.h"
+#include "structs_listBase.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_anim_visualization.h"
-#include "BKE_armature.h"
-#include "BKE_constraint.h"
-#include "BKE_curve.h"
-#include "BKE_idprop.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_object.h"
-#include "BKE_scene.h"
+#include "KE_action.h"
+#include "KE_anim_data.h"
+#include "KE_anim_visualization.h"
+#include "KE_armature.h"
+#include "KE_constraint.h"
+#include "KE_curve.h"
+#include "KE_idprop.h"
+#include "KE_idtype.h"
+#include "KE_lib_id.h"
+#include "KE_lib_query.h"
+#include "KE_main.h"
+#include "KE_object.h"
+#include "KE_scene.h"
 
 #include "DEG_depsgraph_build.h"
 #include "DEG_depsgraph_query.h"
 
 #include "BIK_api.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #include "CLG_log.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Prototypes
- * \{ */
+/** Prototypes **/
 
 static void copy_bonechildren(Bone *bone_dst,
                               const Bone *bone_src,
@@ -65,34 +57,31 @@ static void copy_bonechildren(Bone *bone_dst,
 
 static void copy_bonechildren_custom_handles(Bone *bone_dst, bArmature *arm_dst);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature Data-block
- * \{ */
+/** Armature Data-block **/
 
 static void armature_init_data(ID *id)
 {
-  bArmature *armature = (bArmature *)id;
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(armature, id));
+  duneArmature *armature = (duneArmature *)id;
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(armature, id));
 
-  MEMCPY_STRUCT_AFTER(armature, DNA_struct_default_get(bArmature), id);
+  MEMCPY_STRUCT_AFTER(armature, structs_struct_default_get(duneArmature), id);
 }
 
 /**
  * Only copy internal data of Armature ID from source
  * to already allocated/initialized destination.
  * You probably never want to use that directly,
- * use #BKE_id_copy or #BKE_id_copy_ex for typical needs.
+ * use #KERNEL_id_copy or #KERNEL_id_copy_ex for typical needs.
  *
  * WARNING! This function will not handle ID user count!
  *
- * \param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
+ * param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
  */
-static void armature_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, const int flag)
+static void armature_copy_data(Main *UNUSED(dunemain), ID *id_dst, const ID *id_src, const int flag)
 {
-  bArmature *armature_dst = (bArmature *)id_dst;
-  const bArmature *armature_src = (const bArmature *)id_src;
+  duneArmature *armature_dst = (duneArmature *)id_dst;
+  const duneArmature *armature_src = (const bArmature *)id_src;
 
   Bone *bone_src, *bone_dst;
   Bone *bone_dst_act = NULL;
@@ -102,7 +91,7 @@ static void armature_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src
 
   armature_dst->bonehash = NULL;
 
-  BLI_duplicatelist(&armature_dst->bonebase, &armature_src->bonebase);
+  LIB_duplicatelist(&armature_dst->bonebase, &armature_src->bonebase);
 
   /* Duplicate the childrens' lists */
   bone_dst = armature_dst->bonebase.first;
@@ -114,7 +103,7 @@ static void armature_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src
 
   armature_dst->act_bone = bone_dst_act;
 
-  BKE_armature_bone_hash_make(armature_dst);
+  KERNEL_armature_bone_hash_make(armature_dst);
 
   /* Fix custom handle references. */
   for (bone_dst = armature_dst->bonebase.first; bone_dst; bone_dst = bone_dst->next) {
@@ -128,7 +117,7 @@ static void armature_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src
 /** Free (or release) any data used by this armature (does not free the armature itself). */
 static void armature_free_data(struct ID *id)
 {
-  bArmature *armature = (bArmature *)id;
+  duneArmature *armature = (duneArmature *)id;
 
   BKE_armature_bone_hash_free(armature);
   BKE_armature_bonelist_free(&armature->bonebase, false);
