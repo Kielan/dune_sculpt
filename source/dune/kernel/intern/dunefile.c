@@ -285,10 +285,10 @@ static void setup_app_data(duneContext *C,
   //  CTX_wm_manager_set(C, NULL);
   KERNEL_dune_globals_clear();
 
-  dunemain = G_MAIN = bfd->main;
+  dunemain = G_MAIN = dune_file_data->main;
   dune_file_data->main = NULL;
 
-  CTX_data_main_set(C, bmain);
+  CTX_data_main_set(C, dunemain);
 
   /* case G_FILE_NO_UI or no screens in file */
   if (mode != LOAD_UI) {
@@ -296,13 +296,13 @@ static void setup_app_data(duneContext *C,
     CTX_data_scene_set(C, curscene);
   }
   else {
-    CTX_wm_manager_set(C, bmain->wm.first);
-    CTX_wm_screen_set(C, bfd->curscreen);
-    CTX_data_scene_set(C, bfd->curscene);
+    CTX_wm_manager_set(C, dunemain->wm.first);
+    CTX_wm_screen_set(C, dune_file_data->curscreen);
+    CTX_data_scene_set(C, dune_file_data->curscene);
     CTX_wm_area_set(C, NULL);
     CTX_wm_region_set(C, NULL);
     CTX_wm_menu_set(C, NULL);
-    curscene = bfd->curscene;
+    curscene = dune_file_data->curscene;
   }
 
   /* Keep state from preferences. */
@@ -363,12 +363,12 @@ static void setup_app_data(duneContext *C,
 
   /* startup.dune or recovered startup */
   if (is_startup) {
-    bmain->filepath[0] = '\0';
+    dunemain->filepath[0] = '\0';
   }
   else if (recover) {
-    /* In case of autosave or quit.blend, use original filepath instead. */
+    /* In case of autosave or quit.dune, use original filepath instead. */
     dunemain->recovered = 1;
-    STRNCPY(bmain->filepath, bfd->filepath);
+    STRNCPY(dunemain->filepath, dune_file_data->filepath);
   }
 
   /* baseflags, groups, make depsgraph, etc */
@@ -486,117 +486,117 @@ struct DuneFileData *KERNEL_dunefile_read(const char *filepath,
 {
   /* Don't print startup file loading. */
   if (params->is_startup == false) {
-    printf("Read blend: %s\n", filepath);
+    printf("Read dune: %s\n", filepath);
   }
 
-  BlendFileData *bfd = BLO_read_from_file(filepath, params->skip_flags, reports);
+  DuneFileData *bfd = LOADER_read_from_file(filepath, params->skip_flags, reports);
   if (bfd) {
-    handle_subversion_warning(bfd->main, reports);
+    handle_subversion_warning(dune_file_data->main, reports);
   }
   else {
-    BKE_reports_prependf(reports->reports, "Loading '%s' failed: ", filepath);
+    KERNEL_reports_prependf(reports->reports, "Loading '%s' failed: ", filepath);
   }
-  return bfd;
+  return dune_file_data;
 }
 
-struct BlendFileData *BKE_blendfile_read_from_memory(const void *filebuf,
+struct DuneFileData *KERNEL_dunefile_read_from_memory(const void *filebuf,
                                                      int filelength,
-                                                     const struct BlendFileReadParams *params,
+                                                     const struct DuneFileReadParams *params,
                                                      ReportList *reports)
 {
-  BlendFileData *bfd = BLO_read_from_memory(filebuf, filelength, params->skip_flags, reports);
+  DuneFileData *dune_file_data = LOADER_read_from_memory(filebuf, filelength, params->skip_flags, reports);
   if (bfd) {
     /* Pass. */
   }
   else {
-    BKE_reports_prepend(reports, "Loading failed: ");
+    KERNEL_reports_prepend(reports, "Loading failed: ");
   }
-  return bfd;
+  return dune_file_data;
 }
 
-struct BlendFileData *BKE_blendfile_read_from_memfile(Main *bmain,
+struct DuneFileData *KERNEL_dunefile_read_from_memfile(Main *dunemain,
                                                       struct MemFile *memfile,
-                                                      const struct BlendFileReadParams *params,
+                                                      const struct DuneFileReadParams *params,
                                                       ReportList *reports)
 {
-  BlendFileData *bfd = BLO_read_from_memfile(
-      bmain, BKE_main_blendfile_path(bmain), memfile, params, reports);
-  if (bfd) {
+  DuneFileData *dune_file_data = LOADER_read_from_memfile(
+      dunemain, KERNEL_main_dunefile_path(dunemain), memfile, params, reports);
+  if (dune_file_data) {
     /* Removing the unused workspaces, screens and wm is useless here, setup_app_data will switch
-     * those lists with the ones from old bmain, which freeing is much more efficient than
-     * individual calls to `BKE_id_free()`.
+     * those lists with the ones from old dunemain, which freeing is much more efficient than
+     * individual calls to `KERNEL_id_free()`.
      * Further more, those are expected to be empty anyway with new memfile reading code. */
-    BLI_assert(BLI_listbase_is_empty(&bfd->main->wm));
-    BLI_assert(BLI_listbase_is_empty(&bfd->main->workspaces));
-    BLI_assert(BLI_listbase_is_empty(&bfd->main->screens));
+    LIB_assert(LIB_listbase_is_empty(&dune_file_data->main->wm));
+    LIB_assert(LIB_listbase_is_empty(&dune_file_data->main->workspaces));
+    LIB_assert(LIB_listbase_is_empty(&dune_file_data->main->screens));
   }
   else {
-    BKE_reports_prepend(reports, "Loading failed: ");
+    KERNEL_reports_prepend(reports, "Loading failed: ");
   }
-  return bfd;
+  return dune_file_data;
 }
 
-void BKE_blendfile_read_make_empty(bContext *C)
+void KERNEL_dunefile_read_make_empty(duneContext *C)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *dunemain = CTX_data_main(C);
   ListBase *lb;
   ID *id;
 
-  FOREACH_MAIN_LISTBASE_BEGIN (bmain, lb) {
+  FOREACH_MAIN_LISTBASE_BEGIN (dunemain, lb) {
     FOREACH_MAIN_LISTBASE_ID_BEGIN (lb, id) {
       if (ELEM(GS(id->name), ID_SCE, ID_SCR, ID_WM, ID_WS)) {
         break;
       }
-      BKE_id_delete(bmain, id);
+      KERNEL_id_delete(dunemain, id);
     }
     FOREACH_MAIN_LISTBASE_ID_END;
   }
   FOREACH_MAIN_LISTBASE_END;
 }
 
-UserDef *BKE_blendfile_userdef_read(const char *filepath, ReportList *reports)
+UserDef *KERNEL_dunefile_userdef_read(const char *filepath, ReportList *reports)
 {
-  BlendFileData *bfd;
+  DuneFileData *bfd;
   UserDef *userdef = NULL;
 
-  bfd = BLO_read_from_file(filepath,
-                           BLO_READ_SKIP_ALL & ~BLO_READ_SKIP_USERDEF,
-                           &(struct BlendFileReadReport){.reports = reports});
-  if (bfd) {
-    if (bfd->user) {
-      userdef = bfd->user;
+  dune_file_data = LOADER_read_from_file(filepath,
+                           LOADER_READ_SKIP_ALL & ~LOADER_READ_SKIP_USERDEF,
+                           &(struct DuneFileReadReport){.reports = reports});
+  if (dune_file_data) {
+    if (dune_file_data->user) {
+      userdef = dune_file_data->user;
     }
-    BKE_main_free(bfd->main);
-    MEM_freeN(bfd);
+    KERNEL_main_free(dune_file_data->main);
+    MEM_freeN(dune_file_data);
   }
 
   return userdef;
 }
 
-UserDef *BKE_blendfile_userdef_read_from_memory(const void *filebuf,
+UserDef *KERNEL_dunefile_userdef_read_from_memory(const void *filebuf,
                                                 int filelength,
                                                 ReportList *reports)
 {
-  BlendFileData *bfd;
+  DuneFileData *bfd;
   UserDef *userdef = NULL;
 
-  bfd = BLO_read_from_memory(
-      filebuf, filelength, BLO_READ_SKIP_ALL & ~BLO_READ_SKIP_USERDEF, reports);
-  if (bfd) {
-    if (bfd->user) {
-      userdef = bfd->user;
+  dune_data_file = LOADER_read_from_memory(
+      filebuf, filelength, LOADER_READ_SKIP_ALL & ~LOADER_READ_SKIP_USERDEF, reports);
+  if (dune_data_file) {
+    if (dune_data_file->user) {
+      userdef = dune_data_file->user;
     }
-    BKE_main_free(bfd->main);
-    MEM_freeN(bfd);
+    KERNEL_main_free(dune_data_fild->main);
+    MEM_freeN(dune_data_file);
   }
   else {
-    BKE_reports_prepend(reports, "Loading failed: ");
+    KERNEL_reports_prepend(reports, "Loading failed: ");
   }
 
   return userdef;
 }
 
-UserDef *BKE_blendfile_userdef_from_defaults(void)
+UserDef *KERNEL_dunefile_userdef_from_defaults(void)
 {
   UserDef *userdef = MEM_mallocN(sizeof(*userdef), __func__);
   memcpy(userdef, &U_default, sizeof(*userdef));
@@ -617,18 +617,18 @@ UserDef *BKE_blendfile_userdef_from_defaults(void)
         "pose_library",
     };
     for (int i = 0; i < ARRAY_SIZE(addons); i++) {
-      bAddon *addon = BKE_addon_new();
+      duneAddon *addon = KERNEL_addon_new();
       STRNCPY(addon->module, addons[i]);
-      BLI_addtail(&userdef->addons, addon);
+      LIB_addtail(&userdef->addons, addon);
     }
   }
 
   /* Theme. */
   {
-    bTheme *btheme = MEM_mallocN(sizeof(*btheme), __func__);
-    memcpy(btheme, &U_theme_default, sizeof(*btheme));
+    duneTheme *dunetheme = MEM_mallocN(sizeof(*dunetheme), __func__);
+    memcpy(dunetheme, &U_theme_default, sizeof(*dunetheme));
 
-    BLI_addtail(&userdef->themes, btheme);
+    LIB_addtail(&userdef->themes, dunetheme);
   }
 
 #ifdef WITH_PYTHON_SECURITY
@@ -640,98 +640,98 @@ UserDef *BKE_blendfile_userdef_from_defaults(void)
 #endif
 
   /* System-specific fonts directory. */
-  BKE_appdir_font_folder_default(userdef->fontdir);
+  KERNEL_appdir_font_folder_default(userdef->fontdir);
 
-  userdef->memcachelimit = min_ii(BLI_system_memory_max_in_megabytes_int() / 2,
+  userdef->memcachelimit = min_ii(LIB_system_memory_max_in_megabytes_int() / 2,
                                   userdef->memcachelimit);
 
   /* Init weight paint range. */
-  BKE_colorband_init(&userdef->coba_weight, true);
+  KERNEL_colorband_init(&userdef->coba_weight, true);
 
   /* Default studio light. */
-  BKE_studiolight_default(userdef->light_param, userdef->light_ambient);
+  KERNEL_studiolight_default(userdef->light_param, userdef->light_ambient);
 
-  BKE_preferences_asset_library_default_add(userdef);
+  KERNEL_preferences_asset_library_default_add(userdef);
 
   return userdef;
 }
 
-bool BKE_blendfile_userdef_write(const char *filepath, ReportList *reports)
+bool KERNEL_dunefile_userdef_write(const char *filepath, ReportList *reports)
 {
-  Main *mainb = MEM_callocN(sizeof(Main), "empty main");
+  Main *main = MEM_callocN(sizeof(Main), "empty main");
   bool ok = false;
 
-  if (BLO_write_file(mainb,
+  if (LOADER_write_file(main,
                      filepath,
                      0,
-                     &(const struct BlendFileWriteParams){
+                     &(const struct DuneFileWriteParams){
                          .use_userdef = true,
                      },
                      reports)) {
     ok = true;
   }
 
-  MEM_freeN(mainb);
+  MEM_freeN(main);
 
   return ok;
 }
 
-bool BKE_blendfile_userdef_write_app_template(const char *filepath, ReportList *reports)
+bool KERNEL_dunefile_userdef_write_app_template(const char *filepath, ReportList *reports)
 {
   /* if it fails, overwrite is OK. */
-  UserDef *userdef_default = BKE_blendfile_userdef_read(filepath, NULL);
+  UserDef *userdef_default = KERNEL_dunefile_userdef_read(filepath, NULL);
   if (userdef_default == NULL) {
-    return BKE_blendfile_userdef_write(filepath, reports);
+    return KERNEL_dunefile_userdef_write(filepath, reports);
   }
 
-  BKE_blender_userdef_app_template_data_swap(&U, userdef_default);
-  bool ok = BKE_blendfile_userdef_write(filepath, reports);
-  BKE_blender_userdef_app_template_data_swap(&U, userdef_default);
-  BKE_blender_userdef_data_free(userdef_default, false);
+  KERNEL_dune_userdef_app_template_data_swap(&U, userdef_default);
+  bool ok = KERNEL_dunefile_userdef_write(filepath, reports);
+  KERNEL_dune_userdef_app_template_data_swap(&U, userdef_default);
+  KERNEL_dune_userdef_data_free(userdef_default, false);
   MEM_freeN(userdef_default);
   return ok;
 }
 
-bool BKE_blendfile_userdef_write_all(ReportList *reports)
+bool KERNEL_dunefile_userdef_write_all(ReportList *reports)
 {
   char filepath[FILE_MAX];
   const char *cfgdir;
   bool ok = true;
   const bool use_template_userpref = BKE_appdir_app_template_has_userpref(U.app_template);
 
-  if ((cfgdir = BKE_appdir_folder_id_create(BLENDER_USER_CONFIG, NULL))) {
+  if ((cfgdir = KERNEL_appdir_folder_id_create(DUNE_USER_CONFIG, NULL))) {
     bool ok_write;
-    BLI_path_join(filepath, sizeof(filepath), cfgdir, BLENDER_USERPREF_FILE, NULL);
+    LIB_path_join(filepath, sizeof(filepath), cfgdir, DUNE_USERPREF_FILE, NULL);
 
     printf("Writing userprefs: '%s' ", filepath);
     if (use_template_userpref) {
-      ok_write = BKE_blendfile_userdef_write_app_template(filepath, reports);
+      ok_write = KERNEL_dunefile_userdef_write_app_template(filepath, reports);
     }
     else {
-      ok_write = BKE_blendfile_userdef_write(filepath, reports);
+      ok_write = KERNEL_dunefile_userdef_write(filepath, reports);
     }
 
     if (ok_write) {
       printf("ok\n");
-      BKE_report(reports, RPT_INFO, "Preferences saved");
+      KERNEL_report(reports, RPT_INFO, "Preferences saved");
     }
     else {
       printf("fail\n");
       ok = false;
-      BKE_report(reports, RPT_ERROR, "Saving preferences failed");
+      KERNEL_report(reports, RPT_ERROR, "Saving preferences failed");
     }
   }
   else {
-    BKE_report(reports, RPT_ERROR, "Unable to create userpref path");
+    KERNEL_report(reports, RPT_ERROR, "Unable to create userpref path");
   }
 
   if (use_template_userpref) {
-    if ((cfgdir = BKE_appdir_folder_id_create(BLENDER_USER_CONFIG, U.app_template))) {
+    if ((cfgdir = KERNEL_appdir_folder_id_create(DUNE_USER_CONFIG, U.app_template))) {
       /* Also save app-template prefs */
-      BLI_path_join(filepath, sizeof(filepath), cfgdir, BLENDER_USERPREF_FILE, NULL);
+      LIB_path_join(filepath, sizeof(filepath), cfgdir, DUNE_USERPREF_FILE, NULL);
 
       printf("Writing userprefs app-template: '%s' ", filepath);
-      if (BKE_blendfile_userdef_write(filepath, reports) != 0) {
+      if (KERNEL_dunefile_userdef_write(filepath, reports) != 0) {
         printf("ok\n");
       }
       else {
@@ -740,7 +740,7 @@ bool BKE_blendfile_userdef_write_all(ReportList *reports)
       }
     }
     else {
-      BKE_report(reports, RPT_ERROR, "Unable to create app-template userpref path");
+      KERNEL_report(reports, RPT_ERROR, "Unable to create app-template userpref path");
       ok = false;
     }
   }
@@ -751,33 +751,33 @@ bool BKE_blendfile_userdef_write_all(ReportList *reports)
   return ok;
 }
 
-WorkspaceConfigFileData *BKE_blendfile_workspace_config_read(const char *filepath,
+WorkspaceConfigFileData *KERNEL_dunefile_workspace_config_read(const char *filepath,
                                                              const void *filebuf,
                                                              int filelength,
                                                              ReportList *reports)
 {
-  BlendFileData *bfd;
+  DuneFileData *dune_file_data;
   WorkspaceConfigFileData *workspace_config = NULL;
 
   if (filepath) {
-    bfd = BLO_read_from_file(
-        filepath, BLO_READ_SKIP_USERDEF, &(struct BlendFileReadReport){.reports = reports});
+    dune_file_data = LOADER_read_from_file(
+        filepath, LOADER_READ_SKIP_USERDEF, &(struct DuneFileReadReport){.reports = reports});
   }
   else {
-    bfd = BLO_read_from_memory(filebuf, filelength, BLO_READ_SKIP_USERDEF, reports);
+    dune_file_data = LOADER_read_from_memory(filebuf, filelength, LOADER_READ_SKIP_USERDEF, reports);
   }
 
-  if (bfd) {
+  if (dune_file_data) {
     workspace_config = MEM_callocN(sizeof(*workspace_config), __func__);
-    workspace_config->main = bfd->main;
+    workspace_config->main = dune_file_data->main;
 
     /* Only 2.80+ files have actual workspaces, don't try to use screens
      * from older versions. */
-    if (bfd->main->versionfile >= 280) {
-      workspace_config->workspaces = bfd->main->workspaces;
+    if (dune_file_data->main->versionfile >= 280) {
+      workspace_config->workspaces = dune_file_data->main->workspaces;
     }
 
-    MEM_freeN(bfd);
+    MEM_freeN(dune_file_data);
   }
 
   return workspace_config;
@@ -920,12 +920,12 @@ bool KERNEL_dunefile_write_partial(Main *dunemain_src,
     }
   }
 
-  MEM_freeN(bmain_dst);
+  MEM_freeN(dunemain_dst);
 
   return retval;
 }
 
-void KERNEL_dunrfile_write_partial_end(Main *dunemain_src)
+void KERNEL_dunefile_write_partial_end(Main *dunemain_src)
 {
   KERNEL_main_id_tag_all(dunemain_src, LIB_TAG_NEED_EXPAND | LIB_TAG_DOIT, false);
 }
