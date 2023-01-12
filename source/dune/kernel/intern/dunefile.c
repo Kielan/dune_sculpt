@@ -198,7 +198,7 @@ static void setup_app_data(duneContext *C,
      * see: T43424
      */
     wmWindow *win;
-    bScreen *curscreen = NULL;
+    duneScreen *curscreen = NULL;
     ViewLayer *cur_view_layer;
     bool track_undo_scene;
 
@@ -326,13 +326,13 @@ static void setup_app_data(duneContext *C,
   LIB_assert(curscene == CTX_data_scene(C));
 
   /* special cases, override loaded flags: */
-  if (G.f != bfd->globalf) {
+  if (G.f != dune_file_data->globalf) {
     const int flags_keep = G_FLAG_ALL_RUNTIME;
-    bfd->globalf &= G_FLAG_ALL_READFILE;
-    bfd->globalf = (bfd->globalf & ~flags_keep) | (G.f & flags_keep);
+    dune_file_data->globalf &= G_FLAG_ALL_READFILE;
+    dune_file_data->globalf = (dune_file_data->globalf & ~flags_keep) | (G.f & flags_keep);
   }
 
-  G.f = bfd->globalf;
+  G.f = dune_file_data->globalf;
 
 #ifdef WITH_PYTHON
   /* let python know about new main */
@@ -343,23 +343,23 @@ static void setup_app_data(duneContext *C,
 
   /* FIXME: this version patching should really be part of the file-reading code,
    * but we still get too many unrelated data-corruption crashes otherwise... */
-  if (bmain->versionfile < 250) {
+  if (dunemain->versionfile < 250) {
     do_versions_ipos_to_animato(bmain);
   }
 
   /* NOTE: readfile's `do_version` does not allow to create new IDs, and only operates on a single
    * library at a time. This code needs to operate on the whole Main at once. */
-  /* NOTE: Check dunemain version (i.e. current blend file version), AND the versions of all the
+  /* NOTE: Check dunemain version (i.e. current dune file version), AND the versions of all the
    * linked libraries. */
-  if (mode != LOAD_UNDO && !dunefile_or_libraries_versions_atleast(bmain, 302, 1)) {
-    KERNEL_lib_override_library_main_proxy_convert(bmain, reports);
+  if (mode != LOAD_UNDO && !dunefile_or_libraries_versions_atleast(dunemain, 302, 1)) {
+    KERNEL_lib_override_library_main_proxy_convert(dunemain, reports);
   }
 
-  if (mode != LOAD_UNDO && !dunefile_or_libraries_versions_atleast(bmain, 302, 3)) {
-    KERNEL_lib_override_library_main_hierarchy_root_ensure(bmain);
+  if (mode != LOAD_UNDO && !dunefile_or_libraries_versions_atleast(dunemain, 302, 3)) {
+    KERNEL_lib_override_library_main_hierarchy_root_ensure(dunemain);
   }
 
-  bmain->recovered = 0;
+  dunemain->recovered = 0;
 
   /* startup.dune or recovered startup */
   if (is_startup) {
@@ -374,7 +374,7 @@ static void setup_app_data(duneContext *C,
   /* baseflags, groups, make depsgraph, etc */
   /* first handle case if other windows have different scenes visible */
   if (mode == LOAD_UI) {
-    wmWindowManager *wm = bmain->wm.first;
+    wmWindowManager *wm = dunemain->wm.first;
 
     if (wm) {
       LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
@@ -418,7 +418,7 @@ static void setup_app_data(duneContext *C,
     KERNEL_lib_override_library_main_resync(
         dunemain,
         curscene,
-        bfd->cur_view_layer ? bfd->cur_view_layer : KERNEL_view_layer_default_view(curscene),
+        dune_file_data->cur_view_layer ? dune_file_data->cur_view_layer : KERNEL_view_layer_default_view(curscene),
         reports);
 
     reports->duration.lib_overrides_resync = PIL_check_seconds_timer() -
@@ -430,15 +430,15 @@ static void setup_app_data(duneContext *C,
 }
 
 static void setup_app_dune_file_data(duneContext *C,
-                                      DuneFileData *bfd,
+                                      DuneFileData *dune_file_data,
                                       const struct DuneFileReadParams *params,
                                       DuneFileReadReport *reports)
 {
   if ((params->skip_flags & LOADER_READ_SKIP_USERDEF) == 0) {
-    setup_app_userdef(bfd);
+    setup_app_userdef(dune_file_data);
   }
   if ((params->skip_flags & LOADER_READ_SKIP_DATA) == 0) {
-    setup_app_data(C, bfd, params, reports);
+    setup_app_data(C, dune_file_data, params, reports);
   }
 }
 
