@@ -1,5 +1,5 @@
 /**
- * High level `.blend` file read/write,
+ * High level `.dune` file read/write,
  * and functions for writing *partial* files (only selected data-blocks).
  */
 
@@ -59,7 +59,7 @@
 /* -------------------------------------------------------------------- */
 /** High Level `.dune` file read/write. **/
 
-static bool dunefile_or_libraries_versions_atleast(Main *bmain,
+static bool dunefile_or_libraries_versions_atleast(Main *dunemain,
                                                     const short versionfile,
                                                     const short subversionfile)
 {
@@ -76,7 +76,7 @@ static bool dunefile_or_libraries_versions_atleast(Main *bmain,
   return true;
 }
 
-static bool foreach_path_clean_cb(DunePathForeachPathData *UNUSED(bpath_data),
+static bool foreach_path_clean_cb(DunePathForeachPathData *UNUSED(dunepath_data),
                                   char *path_dst,
                                   const char *path_src)
 {
@@ -111,16 +111,16 @@ static bool wm_scene_is_visible(wmWindowManager *wm, Scene *scene)
   return false;
 }
 
-static void setup_app_userdef(BlendFileData *bfd)
+static void setup_app_userdef(DuneFileData *dune_file_data)
 {
-  if (bfd->user) {
+  if (dune_file_data->user) {
     /* only here free userdef themes... */
-    KERNEL_dune_userdef_data_set_and_free(bfd->user);
-    bfd->user = NULL;
+    KERNEL_dune_userdef_data_set_and_free(dune_file_data->user);
+    dune_file_data->user = NULL;
 
-    /* Security issue: any blend file could include a USER block.
+    /* Security issue: any dune file could include a USER block.
      *
-     * Currently we load prefs from BLENDER_STARTUP_FILE and later on load BLENDER_USERPREF_FILE,
+     * Currently we load prefs from DUNE_STARTUP_FILE and later on load BLENDER_USERPREF_FILE,
      * to load the preferences defined in the users home dir.
      *
      * This means we will never accidentally (or maliciously)
@@ -136,10 +136,10 @@ static void setup_app_userdef(BlendFileData *bfd)
  * note this is called on Undo so any slow conversion functions here
  * should be avoided or check (mode != LOAD_UNDO).
  *
- * param bfd: Blend file data, freed by this function on exit.
+ * param dune_file_data: Dune file data, freed by this function on exit.
  */
 static void setup_app_data(duneContext *C,
-                           DuneFileData *bfd,
+                           DuneFileData *dune_file_data,
                            const struct DuneFileReadParams *params,
                            DuneFileReadReport *reports)
 {
@@ -159,7 +159,7 @@ static void setup_app_data(duneContext *C,
   }
   /* may happen with library files - UNDO file should never have NULL curscene (but may have a
    * NULL curscreen)... */
-  else if (ELEM(NULL, bfd->curscreen, bfd->curscene)) {
+  else if (ELEM(NULL, dune_file_data->curscreen, dune_file_data->curscene)) {
     KERNEL_report(reports->reports, RPT_WARNING, "Library file, loading empty scene");
     mode = LOAD_UI_OFF;
   }
@@ -189,7 +189,7 @@ static void setup_app_data(duneContext *C,
      * in one of the open windows.
      *
      * - 'curscreen->scene' - scene the user is currently looking at.
-     * - 'bfd->curscene' - scene undo-step was created in.
+     * - 'dune_file_data->curscene' - scene undo-step was created in.
      *
      * This means users can have 2+ windows open and undo in both without screens switching.
      * But if they close one of the screens,
@@ -203,26 +203,26 @@ static void setup_app_data(duneContext *C,
     bool track_undo_scene;
 
     /* comes from readfile.c */
-    SWAP(ListBase, dunemain->wm, bfd->main->wm);
-    SWAP(ListBase, dunemain->workspaces, bfd->main->workspaces);
-    SWAP(ListBase, dunemain->screens, bfd->main->screens);
+    SWAP(ListBase, dunemain->wm, dune_file_data->main->wm);
+    SWAP(ListBase, dunemain->workspaces, dune_file_data->main->workspaces);
+    SWAP(ListBase, dunemain->screens, dune_file_data->main->screens);
 
     /* In case of actual new file reading without loading UI, we need to regenerate the session
      * uuid of the UI-related datablocks we are keeping from previous session, otherwise their uuid
      * will collide with some generated for newly read data. */
     if (mode != LOAD_UNDO) {
       ID *id;
-      FOREACH_MAIN_LISTBASE_ID_BEGIN (&bfd->main->wm, id) {
+      FOREACH_MAIN_LISTBASE_ID_BEGIN (&dune_file_data->main->wm, id) {
         KERNEL_lib_libblock_session_uuid_renew(id);
       }
       FOREACH_MAIN_LISTBASE_ID_END;
 
-      FOREACH_MAIN_LISTBASE_ID_BEGIN (&bfd->main->workspaces, id) {
+      FOREACH_MAIN_LISTBASE_ID_BEGIN (&dune_file_data->main->workspaces, id) {
         KERNEL_lib_libblock_session_uuid_renew(id);
       }
       FOREACH_MAIN_LISTBASE_ID_END;
 
-      FOREACH_MAIN_LISTBASE_ID_BEGIN (&bfd->main->screens, id) {
+      FOREACH_MAIN_LISTBASE_ID_BEGIN (&dune_file_data->main->screens, id) {
         KERNEL_lib_libblock_session_uuid_renew(id);
       }
       FOREACH_MAIN_LISTBASE_ID_END;
@@ -232,17 +232,17 @@ static void setup_app_data(duneContext *C,
     win = CTX_wm_window(C);
     curscreen = CTX_wm_screen(C);
     /* but use Scene pointer from new file */
-    curscene = bfd->curscene;
-    cur_view_layer = bfd->cur_view_layer;
+    curscene = dune_file_data->curscene;
+    cur_view_layer = dune_file_data->cur_view_layer;
 
-    track_undo_scene = (mode == LOAD_UNDO && curscreen && curscene && bfd->main->wm.first);
+    track_undo_scene = (mode == LOAD_UNDO && curscreen && curscene && dune_file_data->main->wm.first);
 
     if (curscene == NULL) {
-      curscene = bfd->main->scenes.first;
+      curscene = dune_file_data->main->scenes.first;
     }
-    /* empty file, we add a scene to make Blender work */
+    /* empty file, we add a scene to make Dune work */
     if (curscene == NULL) {
-      curscene = BKE_scene_add(bfd->main, "Empty");
+      curscene = KERNEL_scene_add(dune_file_data->main, "Empty");
     }
     if (cur_view_layer == NULL) {
       /* fallback to scene layer */
@@ -259,15 +259,15 @@ static void setup_app_data(duneContext *C,
     }
 
     /* KERNEL_dune_globals_clear will free G_MAIN, here we can still restore pointers */
-    loader_lib_link_restore(bmain, bfd->main, CTX_wm_manager(C), curscene, cur_view_layer);
+    loader_lib_link_restore(dunemain, dune_file_data->main, CTX_wm_manager(C), curscene, cur_view_layer);
     if (win) {
       curscene = win->scene;
     }
 
     if (track_undo_scene) {
-      wmWindowManager *wm = bfd->main->wm.first;
-      if (wm_scene_is_visible(wm, bfd->curscene) == false) {
-        curscene = bfd->curscene;
+      wmWindowManager *wm = dune_file_data->main->wm.first;
+      if (wm_scene_is_visible(wm, dune_file_data->curscene) == false) {
+        curscene = dune_file_data->curscene;
         win->scene = curscene;
         KERNEL_screen_view3d_scene_sync(curscreen, curscene);
       }
@@ -286,7 +286,7 @@ static void setup_app_data(duneContext *C,
   KERNEL_dune_globals_clear();
 
   dunemain = G_MAIN = bfd->main;
-  bfd->main = NULL;
+  dune_file_data->main = NULL;
 
   CTX_data_main_set(C, bmain);
 
@@ -314,7 +314,7 @@ static void setup_app_data(duneContext *C,
     wmWindow *win = CTX_wm_window(C);
 
     /* in case we don't even have a local scene, add one */
-    if (!bmain->scenes.first) {
+    if (!dunemain->scenes.first) {
       KERNEL_scene_add(dunemain, "Empty");
     }
 
