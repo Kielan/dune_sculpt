@@ -783,45 +783,42 @@ WorkspaceConfigFileData *BKE_blendfile_workspace_config_read(const char *filepat
   return workspace_config;
 }
 
-bool BKE_blendfile_workspace_config_write(Main *bmain, const char *filepath, ReportList *reports)
+bool KERNEL_dunefile_workspace_config_write(Main *dunemain, const char *filepath, ReportList *reports)
 {
   const int fileflags = G.fileflags & ~G_FILE_NO_UI;
   bool retval = false;
 
-  BKE_blendfile_write_partial_begin(bmain);
+  KERNEL_dunefile_write_partial_begin(dunemain);
 
-  for (WorkSpace *workspace = bmain->workspaces.first; workspace; workspace = workspace->id.next) {
-    BKE_blendfile_write_partial_tag_ID(&workspace->id, true);
+  for (WorkSpace *workspace = dunemain->workspaces.first; workspace; workspace = workspace->id.next) {
+    KERNEL_dunefile_write_partial_tag_ID(&workspace->id, true);
   }
 
-  if (BKE_blendfile_write_partial(
-          bmain, filepath, fileflags, BLO_WRITE_PATH_REMAP_NONE, reports)) {
+  if (KERNEL_dunefile_write_partial(
+          dunemain, filepath, fileflags, LOADER_WRITE_PATH_REMAP_NONE, reports)) {
     retval = true;
   }
 
-  BKE_blendfile_write_partial_end(bmain);
+  KERNEL_dunefile_write_partial_end(bmain);
 
   return retval;
 }
 
-void BKE_blendfile_workspace_config_data_free(WorkspaceConfigFileData *workspace_config)
+void KERNEL_dunefile_workspace_config_data_free(WorkspaceConfigFileData *workspace_config)
 {
-  BKE_main_free(workspace_config->main);
+  KERNEL_main_free(workspace_config->main);
   MEM_freeN(workspace_config);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Partial `.blend` file save.
- * \{ */
+/** Partial `.dune` file save. **/
 
-void BKE_blendfile_write_partial_begin(Main *bmain_src)
+void KERNEL_dunefile_write_partial_begin(Main *dunemain_src)
 {
-  BKE_main_id_tag_all(bmain_src, LIB_TAG_NEED_EXPAND | LIB_TAG_DOIT, false);
+  KERNEL_main_id_tag_all(dunemain_src, LIB_TAG_NEED_EXPAND | LIB_TAG_DOIT, false);
 }
 
-void BKE_blendfile_write_partial_tag_ID(ID *id, bool set)
+void KERNEL_dunefile_write_partial_tag_ID(ID *id, bool set)
 {
   if (set) {
     id->tag |= LIB_TAG_NEED_EXPAND | LIB_TAG_DOIT;
@@ -831,7 +828,7 @@ void BKE_blendfile_write_partial_tag_ID(ID *id, bool set)
   }
 }
 
-static void blendfile_write_partial_cb(void *UNUSED(handle), Main *UNUSED(bmain), void *vid)
+static void dunefile_write_partial_cb(void *UNUSED(handle), Main *UNUSED(bmain), void *vid)
 {
   if (vid) {
     ID *id = vid;
@@ -846,26 +843,26 @@ static void blendfile_write_partial_cb(void *UNUSED(handle), Main *UNUSED(bmain)
   }
 }
 
-bool BKE_blendfile_write_partial(Main *bmain_src,
+bool KERNEL_dunefile_write_partial(Main *dunemain_src,
                                  const char *filepath,
                                  const int write_flags,
                                  const int remap_mode,
                                  ReportList *reports)
 {
-  Main *bmain_dst = MEM_callocN(sizeof(Main), "copybuffer");
+  Main *dunemain_dst = MEM_callocN(sizeof(Main), "copybuffer");
   ListBase *lbarray_dst[INDEX_ID_MAX], *lbarray_src[INDEX_ID_MAX];
   int a, retval;
 
   void *path_list_backup = NULL;
-  const eBPathForeachFlag path_list_flag = (BKE_BPATH_FOREACH_PATH_SKIP_LINKED |
-                                            BKE_BPATH_FOREACH_PATH_SKIP_MULTIFILE);
+  const eBPathForeachFlag path_list_flag = (KERNEL_DUNEPATH_FOREACH_PATH_SKIP_LINKED |
+                                            KERNEL_DUNEPATH_FOREACH_PATH_SKIP_MULTIFILE);
 
   /* This is needed to be able to load that file as a real one later
    * (otherwise `main->filepath` will not be set at read time). */
-  STRNCPY(bmain_dst->filepath, bmain_src->filepath);
+  STRNCPY(dunemain_dst->filepath, dunemain_src->filepath);
 
-  BLO_main_expander(blendfile_write_partial_cb);
-  BLO_expand_main(NULL, bmain_src);
+  LOADER_main_expander(dunefile_write_partial_cb);
+  LOADER_expand_main(NULL, bmain_src);
 
   /* move over all tagged blocks */
   set_listbasepointers(bmain_src, lbarray_src);
@@ -877,8 +874,8 @@ bool BKE_blendfile_write_partial(Main *bmain_src,
     for (id = lb_src->first; id; id = nextid) {
       nextid = id->next;
       if (id->tag & LIB_TAG_DOIT) {
-        BLI_remlink(lb_src, id);
-        BLI_addtail(lb_dst, id);
+        LIB_remlink(lb_src, id);
+        LIB_addtail(lb_dst, id);
       }
     }
   }
@@ -887,38 +884,38 @@ bool BKE_blendfile_write_partial(Main *bmain_src,
    *
    * NOTE: we do this only on the list of data-blocks that we are writing
    * because the restored full list is not guaranteed to be in the same
-   * order as before, as expected by BKE_bpath_list_restore.
+   * order as before, as expected by KERNEL_bpath_list_restore.
    *
    * This happens because id_sort_by_name does not take into account
    * string case or the library name, so the order is not strictly
    * defined for two linked data-blocks with the same name! */
-  if (remap_mode != BLO_WRITE_PATH_REMAP_NONE) {
-    path_list_backup = BKE_bpath_list_backup(bmain_dst, path_list_flag);
+  if (remap_mode != LOADER_WRITE_PATH_REMAP_NONE) {
+    path_list_backup = KERNEL_bpath_list_backup(dunemain_dst, path_list_flag);
   }
 
   /* save the buffer */
-  retval = BLO_write_file(bmain_dst,
+  retval = LOADER_write_file(dunemain_dst,
                           filepath,
                           write_flags,
-                          &(const struct BlendFileWriteParams){
+                          &(const struct DuneFileWriteParams){
                               .remap_mode = remap_mode,
                           },
                           reports);
 
   if (path_list_backup) {
-    BKE_bpath_list_restore(bmain_dst, path_list_flag, path_list_backup);
-    BKE_bpath_list_free(path_list_backup);
+    KERNEL_dunepath_list_restore(dunemain_dst, path_list_flag, path_list_backup);
+    KERNEL_dunepath_list_free(path_list_backup);
   }
 
   /* move back the main, now sorted again */
-  set_listbasepointers(bmain_src, lbarray_dst);
-  a = set_listbasepointers(bmain_dst, lbarray_src);
+  set_listbasepointers(dunemain_src, lbarray_dst);
+  a = set_listbasepointers(dunemain_dst, lbarray_src);
   while (a--) {
     ID *id;
     ListBase *lb_dst = lbarray_dst[a], *lb_src = lbarray_src[a];
 
-    while ((id = BLI_pophead(lb_src))) {
-      BLI_addtail(lb_dst, id);
+    while ((id = LIB_pophead(lb_src))) {
+      LIB_addtail(lb_dst, id);
       id_sort_by_name(lb_dst, id, NULL);
     }
   }
@@ -928,7 +925,7 @@ bool BKE_blendfile_write_partial(Main *bmain_src,
   return retval;
 }
 
-void BKE_blendfile_write_partial_end(Main *bmain_src)
+void KERNEL_dunrfile_write_partial_end(Main *dunemain_src)
 {
-  BKE_main_id_tag_all(bmain_src, LIB_TAG_NEED_EXPAND | LIB_TAG_DOIT, false);
+  KERNEL_main_id_tag_all(dunemain_src, LIB_TAG_NEED_EXPAND | LIB_TAG_DOIT, false);
 }
