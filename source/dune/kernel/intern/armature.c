@@ -873,7 +873,7 @@ static void evaluate_cubic_bezier(const float control[4][3],
   madd_v3_v3v3fl(r_pos, layer2[0], r_tangent, t);
 }
 
-void BKE_pchan_bbone_handles_get(bPoseChannel *pchan, bPoseChannel **r_prev, bPoseChannel **r_next)
+void KERNEL_pchan_bbone_handles_get(dunePoseChannel *pchan, dunePoseChannel **r_prev, dunePoseChannel **r_next)
 {
   if (pchan->bone->bbone_prev_type == BBONE_HANDLE_AUTO) {
     /* Use connected parent. */
@@ -899,11 +899,11 @@ void BKE_pchan_bbone_handles_get(bPoseChannel *pchan, bPoseChannel **r_prev, bPo
   }
 }
 
-void BKE_pchan_bbone_spline_params_get(struct bPoseChannel *pchan,
+void KERNEL_pchan_bbone_spline_params_get(struct dunePoseChannel *pchan,
                                        const bool rest,
                                        struct BBoneSplineParameters *param)
 {
-  bPoseChannel *next, *prev;
+  dunePoseChannel *next, *prev;
   Bone *bone = pchan->bone;
   float imat[4][4], posemat[4][4], tmpmat[4][4];
   float delta[3];
@@ -925,7 +925,7 @@ void BKE_pchan_bbone_spline_params_get(struct bPoseChannel *pchan,
     }
   }
 
-  BKE_pchan_bbone_handles_get(pchan, &prev, &next);
+  KERNEL_pchan_bbone_handles_get(pchan, &prev, &next);
 
   /* Find the handle points, since this is inside bone space, the
    * first point = (0, 0, 0)
@@ -995,7 +995,7 @@ void BKE_pchan_bbone_spline_params_get(struct bPoseChannel *pchan,
 
       /* Retrieve the local scale of the bone if necessary. */
       if ((bone->bbone_prev_flag & BBONE_HANDLE_SCALE_ANY) && !rest) {
-        BKE_armature_mat_pose_to_bone(prev, prev->pose_mat, tmpmat);
+        KERNEL_armature_mat_pose_to_bone(prev, prev->pose_mat, tmpmat);
         mat4_to_size(prev_scale, tmpmat);
       }
     }
@@ -1144,19 +1144,19 @@ void BKE_pchan_bbone_spline_params_get(struct bPoseChannel *pchan,
   }
 }
 
-void BKE_pchan_bbone_spline_setup(bPoseChannel *pchan,
+void KERNEL_pchan_bbone_spline_setup(dunePoseChannel *pchan,
                                   const bool rest,
                                   const bool for_deform,
                                   Mat4 *result_array)
 {
   BBoneSplineParameters param;
 
-  BKE_pchan_bbone_spline_params_get(pchan, rest, &param);
+  KERNEL_pchan_bbone_spline_params_get(pchan, rest, &param);
 
-  pchan->bone->segments = BKE_pchan_bbone_spline_compute(&param, for_deform, result_array);
+  pchan->bone->segments = KERNEL_pchan_bbone_spline_compute(&param, for_deform, result_array);
 }
 
-void BKE_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
+void KERNEL_pchan_bbone_handles_compute(const BBoneSplineParameters *param,
                                      float h1[3],
                                      float *r_roll1,
                                      float h2[3],
@@ -1316,7 +1316,7 @@ static void ease_handle_axis(const float deriv1[3], const float deriv2[3], float
   }
 }
 
-int BKE_pchan_bbone_spline_compute(BBoneSplineParameters *param,
+int KERNEL_pchan_bbone_spline_compute(BBoneSplineParameters *param,
                                    const bool for_deform,
                                    Mat4 *result_array)
 {
@@ -1332,7 +1332,7 @@ int BKE_pchan_bbone_spline_compute(BBoneSplineParameters *param,
     length *= param->scale[1];
   }
 
-  BKE_pchan_bbone_handles_compute(param, h1, &roll1, h2, &roll2, true, true);
+  KERNEL_pchan_bbone_handles_compute(param, h1, &roll1, h2, &roll2, true, true);
 
   /* Make curve. */
   CLAMP_MAX(param->segments, MAX_BBONE_SUBDIV);
@@ -1431,52 +1431,52 @@ int BKE_pchan_bbone_spline_compute(BBoneSplineParameters *param,
   return param->segments;
 }
 
-static void allocate_bbone_cache(bPoseChannel *pchan, int segments)
+static void allocate_bbone_cache(dunePoseChannel *pchan, int segments)
 {
-  bPoseChannel_Runtime *runtime = &pchan->runtime;
+  dunePoseChannel_Runtime *runtime = &pchan->runtime;
 
   if (runtime->bbone_segments != segments) {
-    BKE_pose_channel_free_bbone_cache(runtime);
+    KERNEL_pose_channel_free_bbone_cache(runtime);
 
     runtime->bbone_segments = segments;
     runtime->bbone_rest_mats = MEM_malloc_arrayN(
-        1 + (uint)segments, sizeof(Mat4), "bPoseChannel_Runtime::bbone_rest_mats");
+        1 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::bbone_rest_mats");
     runtime->bbone_pose_mats = MEM_malloc_arrayN(
-        1 + (uint)segments, sizeof(Mat4), "bPoseChannel_Runtime::bbone_pose_mats");
+        1 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::bbone_pose_mats");
     runtime->bbone_deform_mats = MEM_malloc_arrayN(
-        2 + (uint)segments, sizeof(Mat4), "bPoseChannel_Runtime::bbone_deform_mats");
+        2 + (uint)segments, sizeof(Mat4), "dunePoseChannel_Runtime::bbone_deform_mats");
     runtime->bbone_dual_quats = MEM_malloc_arrayN(
-        1 + (uint)segments, sizeof(DualQuat), "bPoseChannel_Runtime::bbone_dual_quats");
+        1 + (uint)segments, sizeof(DualQuat), "dunePoseChannel_Runtime::bbone_dual_quats");
   }
 }
 
-void BKE_pchan_bbone_segments_cache_compute(bPoseChannel *pchan)
+void KERNEL_pchan_dunebone_segments_cache_compute(dunePoseChannel *pchan)
 {
-  bPoseChannel_Runtime *runtime = &pchan->runtime;
+  dunePoseChannel_Runtime *runtime = &pchan->runtime;
   Bone *bone = pchan->bone;
   int segments = bone->segments;
 
-  BLI_assert(segments > 1);
+  LIB_assert(segments > 1);
 
   /* Allocate the cache if needed. */
-  allocate_bbone_cache(pchan, segments);
+  allocate_dunebone_cache(pchan, segments);
 
   /* Compute the shape. */
-  Mat4 *b_bone = runtime->bbone_pose_mats;
-  Mat4 *b_bone_rest = runtime->bbone_rest_mats;
-  Mat4 *b_bone_mats = runtime->bbone_deform_mats;
-  DualQuat *b_bone_dual_quats = runtime->bbone_dual_quats;
+  Mat4 *dune_bone = runtime->bbone_pose_mats;
+  Mat4 *dune_bone_rest = runtime->dunebone_rest_mats;
+  Mat4 *dune_bone_mats = runtime->dundbone_deform_mats;
+  DualQuat *dune_bone_dual_quats = runtime->dunebone_dual_quats;
   int a;
 
-  BKE_pchan_bbone_spline_setup(pchan, false, true, b_bone);
-  BKE_pchan_bbone_spline_setup(pchan, true, true, b_bone_rest);
+  KERNEL_pchan_dunebone_spline_setup(pchan, false, true, b_bone);
+  KERNEL_pchan_dunebone_spline_setup(pchan, true, true, b_bone_rest);
 
   /* Compute deform matrices. */
   /* first matrix is the inverse arm_mat, to bring points in local bone space
    * for finding out which segment it belongs to */
-  invert_m4_m4(b_bone_mats[0].mat, bone->arm_mat);
+  invert_m4_m4(dune_bone_mats[0].mat, bone->arm_mat);
 
-  /* then we make the b_bone_mats:
+  /* then we make the dune_bone_mats:
    * - first transform to local bone space
    * - translate over the curve to the bbone mat space
    * - transform with b_bone matrix
