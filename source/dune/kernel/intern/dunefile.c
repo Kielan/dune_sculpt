@@ -26,24 +26,24 @@
 #include "KERNEL_appdir.h"
 #include "KERNEL_dune.h"
 #include "KERNEL_dune_version.h"
-#include "BKE_dunefile.h"
-#include "KE_dunepath.h"
-#include "KE_colorband.h"
-#include "KE_context.h"
-#include "KE_global.h"
-#include "KE_ipo.h"
-#include "KE_keyconfig.h"
-#include "KE_layer.h"
-#include "KE_lib_id.h"
-#include "KE_lib_override.h"
-#include "KE_main.h"
-#include "KE_preferences.h"
-#include "KE_report.h"
-#include "KE_scene.h"
-#include "KE_screen.h"
-#include "KE_studiolight.h"
-#include "KE_undo_system.h"
-#include "KE_workspace.h"
+#include "KERNEL_dunefile.h"
+#include "KERNEL_dunepath.h"
+#include "KERNEL_colorband.h"
+#include "KERNEL_context.h"
+#include "KERNEL_global.h"
+#include "KERNEL_ipo.h"
+#include "KERNEL_keyconfig.h"
+#include "KERNEL_layer.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_override.h"
+#include "KERNEL_main.h"
+#include "KERNEL_preferences.h"
+#include "KERNEL_report.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_screen.h"
+#include "KERNEL_studiolight.h"
+#include "KERNEL_undo_system.h"
+#include "KERNEL_workspace.h"
 
 #include "LOADER_readfile.h"
 #include "LOADER_writefile.h"
@@ -76,7 +76,7 @@ static bool dunefile_or_libraries_versions_atleast(Main *bmain,
   return true;
 }
 
-static bool foreach_path_clean_cb(BPathForeachPathData *UNUSED(bpath_data),
+static bool foreach_path_clean_cb(DunePathForeachPathData *UNUSED(bpath_data),
                                   char *path_dst,
                                   const char *path_src)
 {
