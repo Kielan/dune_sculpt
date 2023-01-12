@@ -63,11 +63,11 @@ static bool dunefile_or_libraries_versions_atleast(Main *dunemain,
                                                     const short versionfile,
                                                     const short subversionfile)
 {
-  if (!MAIN_VERSION_ATLEAST(bmain, versionfile, subversionfile)) {
+  if (!MAIN_VERSION_ATLEAST(dunemain, versionfile, subversionfile)) {
     return false;
   }
 
-  LISTBASE_FOREACH (Library *, library, &bmain->libraries) {
+  LISTBASE_FOREACH (Library *, library, &dunemain->libraries) {
     if (!MAIN_VERSION_ATLEAST(library, versionfile, subversionfile)) {
       return false;
     }
@@ -120,11 +120,11 @@ static void setup_app_userdef(DuneFileData *dune_file_data)
 
     /* Security issue: any dune file could include a USER block.
      *
-     * Currently we load prefs from DUNE_STARTUP_FILE and later on load BLENDER_USERPREF_FILE,
+     * Currently we load prefs from DUNE_STARTUP_FILE and later on load DUNE_USERPREF_FILE,
      * to load the preferences defined in the users home dir.
      *
      * This means we will never accidentally (or maliciously)
-     * enable scripts auto-execution by loading a '.blend' file.
+     * enable scripts auto-execution by loading a '.dune' file.
      */
     U.flag |= USER_SCRIPT_AUTOEXEC_DISABLE;
   }
@@ -154,7 +154,7 @@ static void setup_app_data(duneContext *C,
   } mode;
 
   if (params->undo_direction != STEP_INVALID) {
-    LIB_assert(bfd->curscene != NULL);
+    LIB_assert(dune_file_data->curscene != NULL);
     mode = LOAD_UNDO;
   }
   /* may happen with library files - UNDO file should never have NULL curscene (but may have a
@@ -177,7 +177,7 @@ static void setup_app_data(duneContext *C,
 
   /* Only make filepaths compatible when loading for real (not undo) */
   if (mode != LOAD_UNDO) {
-    clean_paths(bfd->main);
+    clean_paths(dune_file_data->main);
   }
 
   /* XXX here the complex windowmanager matching */
@@ -482,14 +482,14 @@ void KERNEL_dunefile_read_setup(duneContext *C,
 
 struct DuneFileData *KERNEL_dunefile_read(const char *filepath,
                                          const struct DuneFileReadParams *params,
-                                         BlendFileReadReport *reports)
+                                         DuneFileReadReport *reports)
 {
   /* Don't print startup file loading. */
   if (params->is_startup == false) {
     printf("Read dune: %s\n", filepath);
   }
 
-  DuneFileData *bfd = LOADER_read_from_file(filepath, params->skip_flags, reports);
+  DuneFileData *dune_file_data = LOADER_read_from_file(filepath, params->skip_flags, reports);
   if (bfd) {
     handle_subversion_warning(dune_file_data->main, reports);
   }
@@ -505,7 +505,7 @@ struct DuneFileData *KERNEL_dunefile_read_from_memory(const void *filebuf,
                                                      ReportList *reports)
 {
   DuneFileData *dune_file_data = LOADER_read_from_memory(filebuf, filelength, params->skip_flags, reports);
-  if (bfd) {
+  if (dune_file_data) {
     /* Pass. */
   }
   else {
@@ -556,7 +556,7 @@ void KERNEL_dunefile_read_make_empty(duneContext *C)
 
 UserDef *KERNEL_dunefile_userdef_read(const char *filepath, ReportList *reports)
 {
-  DuneFileData *bfd;
+  DuneFileData *dune_file_data;
   UserDef *userdef = NULL;
 
   dune_file_data = LOADER_read_from_file(filepath,
@@ -577,7 +577,7 @@ UserDef *KERNEL_dunefile_userdef_read_from_memory(const void *filebuf,
                                                 int filelength,
                                                 ReportList *reports)
 {
-  DuneFileData *bfd;
+  DuneFileData *dune_data_file;
   UserDef *userdef = NULL;
 
   dune_data_file = LOADER_read_from_memory(
@@ -586,7 +586,7 @@ UserDef *KERNEL_dunefile_userdef_read_from_memory(const void *filebuf,
     if (dune_data_file->user) {
       userdef = dune_data_file->user;
     }
-    KERNEL_main_free(dune_data_fild->main);
+    KERNEL_main_free(dune_data_file->main);
     MEM_freeN(dune_data_file);
   }
   else {
@@ -862,11 +862,11 @@ bool KERNEL_dunefile_write_partial(Main *dunemain_src,
   STRNCPY(dunemain_dst->filepath, dunemain_src->filepath);
 
   LOADER_main_expander(dunefile_write_partial_cb);
-  LOADER_expand_main(NULL, bmain_src);
+  LOADER_expand_main(NULL, dunemain_src);
 
   /* move over all tagged blocks */
-  set_listbasepointers(bmain_src, lbarray_src);
-  a = set_listbasepointers(bmain_dst, lbarray_dst);
+  set_listbasepointers(dunemain_src, lbarray_src);
+  a = set_listbasepointers(dunemain_dst, lbarray_dst);
   while (a--) {
     ID *id, *nextid;
     ListBase *lb_dst = lbarray_dst[a], *lb_src = lbarray_src[a];
@@ -884,7 +884,7 @@ bool KERNEL_dunefile_write_partial(Main *dunemain_src,
    *
    * NOTE: we do this only on the list of data-blocks that we are writing
    * because the restored full list is not guaranteed to be in the same
-   * order as before, as expected by KERNEL_bpath_list_restore.
+   * order as before, as expected by KERNEL_dunepath_list_restore.
    *
    * This happens because id_sort_by_name does not take into account
    * string case or the library name, so the order is not strictly
