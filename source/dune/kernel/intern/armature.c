@@ -124,7 +124,7 @@ static void armature_free_data(struct ID *id)
 
   /* free editmode data */
   if (armature->edbo) {
-    KERNE_armature_editbonelist_free(armature->edbo, false);
+    KERNEL_armature_editbonelist_free(armature->edbo, false);
     MEM_freeN(armature->edbo);
     armature->edbo = NULL;
   }
@@ -132,52 +132,52 @@ static void armature_free_data(struct ID *id)
 
 static void armature_foreach_id_bone(Bone *bone, LibraryForeachIDData *data)
 {
-  BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
       data,
       IDP_foreach_property(
-          bone->prop, IDP_TYPE_FILTER_ID, BKE_lib_query_idpropertiesForeachIDLink_callback, data));
+          bone->prop, IDP_TYPE_FILTER_ID, KERNEL_lib_query_idpropertiesForeachIDLink_callback, data));
 
   LISTBASE_FOREACH (Bone *, curbone, &bone->childbase) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, armature_foreach_id_bone(curbone, data));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, armature_foreach_id_bone(curbone, data));
   }
 }
 
 static void armature_foreach_id_editbone(EditBone *edit_bone, LibraryForeachIDData *data)
 {
-  BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+  KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
       data,
       IDP_foreach_property(edit_bone->prop,
                            IDP_TYPE_FILTER_ID,
-                           BKE_lib_query_idpropertiesForeachIDLink_callback,
+                           KERNEL_lib_query_idpropertiesForeachIDLink_callback,
                            data));
 }
 
 static void armature_foreach_id(ID *id, LibraryForeachIDData *data)
 {
-  bArmature *arm = (bArmature *)id;
+  duneArmature *arm = (duneArmature *)id;
   LISTBASE_FOREACH (Bone *, bone, &arm->bonebase) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, armature_foreach_id_bone(bone, data));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, armature_foreach_id_bone(bone, data));
   }
 
   if (arm->edbo != NULL) {
     LISTBASE_FOREACH (EditBone *, edit_bone, arm->edbo) {
-      BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, armature_foreach_id_editbone(edit_bone, data));
+      KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, armature_foreach_id_editbone(edit_bone, data));
     }
   }
 }
 
-static void write_bone(BlendWriter *writer, Bone *bone)
+static void write_bone(DuneWriter *writer, Bone *bone)
 {
   /* PATCH for upward compatibility after 2.37+ armature recode */
   bone->size[0] = bone->size[1] = bone->size[2] = 1.0f;
 
   /* Write this bone */
-  BLO_write_struct(writer, Bone, bone);
+  LOADER_write_struct(writer, Bone, bone);
 
   /* Write ID Properties -- and copy this comment EXACTLY for easy finding
    * of library blocks that implement this. */
   if (bone->prop) {
-    IDP_BlendWrite(writer, bone->prop);
+    IDP_DuneWrite(writer, bone->prop);
   }
 
   /* Write Children */
@@ -186,9 +186,9 @@ static void write_bone(BlendWriter *writer, Bone *bone)
   }
 }
 
-static void armature_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void armature_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
-  bArmature *arm = (bArmature *)id;
+  duneArmature *arm = (duneArmature *)id;
 
   /* Clean up, important in undo case to reduce false detection of changed datablocks. */
   arm->bonehash = NULL;
@@ -197,11 +197,11 @@ static void armature_blend_write(BlendWriter *writer, ID *id, const void *id_add
   arm->needs_flush_to_id = 0;
   arm->act_edbone = NULL;
 
-  BLO_write_id_struct(writer, bArmature, id_address, &arm->id);
-  BKE_id_blend_write(writer, &arm->id);
+  LOADER_write_id_struct(writer, duneArmature, id_address, &arm->id);
+  KERNEL_id_dune_write(writer, &arm->id);
 
   if (arm->adt) {
-    BKE_animdata_blend_write(writer, arm->adt);
+    KERNEL_animdata_dune_write(writer, arm->adt);
   }
 
   /* Direct data */
@@ -210,66 +210,66 @@ static void armature_blend_write(BlendWriter *writer, ID *id, const void *id_add
   }
 }
 
-static void direct_link_bones(BlendDataReader *reader, Bone *bone)
+static void direct_link_bones(DuneDataReader *reader, Bone *bone)
 {
-  BLO_read_data_address(reader, &bone->parent);
-  BLO_read_data_address(reader, &bone->prop);
-  IDP_BlendDataRead(reader, &bone->prop);
+  LOADER_read_data_address(reader, &bone->parent);
+  LOADER_read_data_address(reader, &bone->prop);
+  IDP_DuneDataRead(reader, &bone->prop);
 
-  BLO_read_data_address(reader, &bone->bbone_next);
-  BLO_read_data_address(reader, &bone->bbone_prev);
+  LOADER_read_data_address(reader, &bone->bbone_next);
+  LOADER_read_data_address(reader, &bone->bbone_prev);
 
   bone->flag &= ~(BONE_DRAW_ACTIVE | BONE_DRAW_LOCKED_WEIGHT);
 
-  BLO_read_list(reader, &bone->childbase);
+  LOADER_read_list(reader, &bone->childbase);
 
   LISTBASE_FOREACH (Bone *, child, &bone->childbase) {
     direct_link_bones(reader, child);
   }
 }
 
-static void armature_blend_read_data(BlendDataReader *reader, ID *id)
+static void armature_dune_read_data(DuneDataReader *reader, ID *id)
 {
-  bArmature *arm = (bArmature *)id;
-  BLO_read_list(reader, &arm->bonebase);
+  duneArmature *arm = (duneArmature *)id;
+  LOADER_read_list(reader, &arm->bonebase);
   arm->bonehash = NULL;
   arm->edbo = NULL;
   /* Must always be cleared (armatures don't have their own edit-data). */
   arm->needs_flush_to_id = 0;
 
-  BLO_read_data_address(reader, &arm->adt);
-  BKE_animdata_blend_read_data(reader, arm->adt);
+  LOADER_read_data_address(reader, &arm->adt);
+  KERNEL_animdata_dune_read_data(reader, arm->adt);
 
   LISTBASE_FOREACH (Bone *, bone, &arm->bonebase) {
     direct_link_bones(reader, bone);
   }
 
-  BLO_read_data_address(reader, &arm->act_bone);
+  LOADER_read_data_address(reader, &arm->act_bone);
   arm->act_edbone = NULL;
 
-  BKE_armature_bone_hash_make(arm);
+  KERNEL_armature_bone_hash_make(arm);
 }
 
-static void lib_link_bones(BlendLibReader *reader, Bone *bone)
+static void lib_link_bones(DuneLibReader *reader, Bone *bone)
 {
-  IDP_BlendReadLib(reader, bone->prop);
+  IDP_DuneReadLib(reader, bone->prop);
 
   LISTBASE_FOREACH (Bone *, curbone, &bone->childbase) {
     lib_link_bones(reader, curbone);
   }
 }
 
-static void armature_blend_read_lib(BlendLibReader *reader, ID *id)
+static void armature_dune_read_lib(DuneLibReader *reader, ID *id)
 {
-  bArmature *arm = (bArmature *)id;
+  duneArmature *arm = (duneArmature *)id;
   LISTBASE_FOREACH (Bone *, curbone, &arm->bonebase) {
     lib_link_bones(reader, curbone);
   }
 }
 
-static void expand_bones(BlendExpander *expander, Bone *bone)
+static void expand_bones(DuneExpander *expander, Bone *bone)
 {
-  IDP_BlendReadExpand(expander, bone->prop);
+  IDP_DuneReadExpand(expander, bone->prop);
 
   LISTBASE_FOREACH (Bone *, curBone, &bone->childbase) {
     expand_bones(expander, curBone);
