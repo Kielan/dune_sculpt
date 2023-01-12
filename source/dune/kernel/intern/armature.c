@@ -276,9 +276,9 @@ static void expand_bones(DuneExpander *expander, Bone *bone)
   }
 }
 
-static void armature_blend_read_expand(BlendExpander *expander, ID *id)
+static void armature_dune_read_expand(DuneExpander *expander, ID *id)
 {
-  bArmature *arm = (bArmature *)id;
+  duneArmature *arm = (duneArmature *)id;
   LISTBASE_FOREACH (Bone *, curBone, &arm->bonebase) {
     expand_bones(expander, curBone);
   }
@@ -288,10 +288,10 @@ IDTypeInfo IDType_ID_AR = {
     .id_code = ID_AR,
     .id_filter = FILTER_ID_AR,
     .main_listbase_index = INDEX_ID_AR,
-    .struct_size = sizeof(bArmature),
+    .struct_size = sizeof(duneArmature),
     .name = "Armature",
     .name_plural = "armatures",
-    .translation_context = BLT_I18NCONTEXT_ID_ARMATURE,
+    .translation_context = TRANSLATION_I18NCONTEXT_ID_ARMATURE,
     .flags = IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
@@ -304,49 +304,46 @@ IDTypeInfo IDType_ID_AR = {
     .foreach_path = NULL,
     .owner_get = NULL,
 
-    .blend_write = armature_blend_write,
-    .blend_read_data = armature_blend_read_data,
-    .blend_read_lib = armature_blend_read_lib,
-    .blend_read_expand = armature_blend_read_expand,
+    .dune_write = armature_dune_write,
+    .dune_read_data = armature_dune_read_data,
+    .dune_read_lib = armature_dune_read_lib,
+    .dune_read_expand = armature_dune_read_expand,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Generic Data-Level Functions
- * \{ */
+/** Generic Data-Level Functions **/
 
-bArmature *BKE_armature_add(Main *bmain, const char *name)
+duneArmature *KERNEL_armature_add(Main *dunemain, const char *name)
 {
-  bArmature *arm;
+  duneArmature *arm;
 
-  arm = BKE_id_new(bmain, ID_AR, name);
+  arm = KERNEL_id_new(dunemain, ID_AR, name);
   return arm;
 }
 
-bArmature *BKE_armature_from_object(Object *ob)
+duneArmature *KERNEL_armature_from_object(Object *ob)
 {
   if (ob->type == OB_ARMATURE) {
-    return (bArmature *)ob->data;
+    return (duneArmature *)ob->data;
   }
   return NULL;
 }
 
-int BKE_armature_bonelist_count(const ListBase *lb)
+int KERNEL_armature_bonelist_count(const ListBase *lb)
 {
   int i = 0;
   LISTBASE_FOREACH (Bone *, bone, lb) {
-    i += 1 + BKE_armature_bonelist_count(&bone->childbase);
+    i += 1 + KERNEL_armature_bonelist_count(&bone->childbase);
   }
 
   return i;
 }
 
-void BKE_armature_bonelist_free(ListBase *lb, const bool do_id_user)
+void KERNEL_armature_bonelist_free(ListBase *lb, const bool do_id_user)
 {
   Bone *bone;
 
@@ -354,19 +351,19 @@ void BKE_armature_bonelist_free(ListBase *lb, const bool do_id_user)
     if (bone->prop) {
       IDP_FreeProperty_ex(bone->prop, do_id_user);
     }
-    BKE_armature_bonelist_free(&bone->childbase, do_id_user);
+    KERNEL_armature_bonelist_free(&bone->childbase, do_id_user);
   }
 
-  BLI_freelistN(lb);
+  LIB_freelistN(lb);
 }
 
-void BKE_armature_editbonelist_free(ListBase *lb, const bool do_id_user)
+void KERNEL_armature_editbonelist_free(ListBase *lb, const bool do_id_user)
 {
   LISTBASE_FOREACH_MUTABLE (EditBone *, edit_bone, lb) {
     if (edit_bone->prop) {
       IDP_FreeProperty_ex(edit_bone->prop, do_id_user);
     }
-    BLI_remlink_safe(lb, edit_bone);
+    LIB_remlink_safe(lb, edit_bone);
     MEM_freeN(edit_bone);
   }
 }
@@ -388,7 +385,7 @@ static void copy_bonechildren(Bone *bone_dst,
   }
 
   /* Copy this bone's list */
-  BLI_duplicatelist(&bone_dst->childbase, &bone_src->childbase);
+  LIB_duplicatelist(&bone_dst->childbase, &bone_src->childbase);
 
   /* For each child in the list, update its children */
   for (bone_src_child = bone_src->childbase.first, bone_dst_child = bone_dst->childbase.first;
@@ -399,15 +396,15 @@ static void copy_bonechildren(Bone *bone_dst,
   }
 }
 
-static void copy_bonechildren_custom_handles(Bone *bone_dst, bArmature *arm_dst)
+static void copy_bonechildren_custom_handles(Bone *bone_dst, duneArmature *arm_dst)
 {
   Bone *bone_dst_child;
 
   if (bone_dst->bbone_prev) {
-    bone_dst->bbone_prev = BKE_armature_find_bone_name(arm_dst, bone_dst->bbone_prev->name);
+    bone_dst->bbone_prev = KERNEL_armature_find_bone_name(arm_dst, bone_dst->bbone_prev->name);
   }
   if (bone_dst->bbone_next) {
-    bone_dst->bbone_next = BKE_armature_find_bone_name(arm_dst, bone_dst->bbone_next->name);
+    bone_dst->bbone_next = KERNEL_armature_find_bone_name(arm_dst, bone_dst->bbone_next->name);
   }
 
   for (bone_dst_child = bone_dst->childbase.first; bone_dst_child;
@@ -416,11 +413,8 @@ static void copy_bonechildren_custom_handles(Bone *bone_dst, bArmature *arm_dst)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature Transform Copy
- * \{ */
+/* Armature Transform Copy **/
 
 static void copy_bone_transform(Bone *bone_dst, const Bone *bone_src)
 {
@@ -439,25 +433,23 @@ static void copy_bone_transform(Bone *bone_dst, const Bone *bone_src)
   bone_dst->arm_roll = bone_src->arm_roll;
 }
 
-void BKE_armature_copy_bone_transforms(bArmature *armature_dst, const bArmature *armature_src)
+void KERNEL_armature_copy_bone_transforms(duneArmature *armature_dst, const duneArmature *armature_src)
 {
   Bone *bone_dst = armature_dst->bonebase.first;
   const Bone *bone_src = armature_src->bonebase.first;
   while (bone_dst != NULL) {
-    BLI_assert(bone_src != NULL);
+    LIB_assert(bone_src != NULL);
     copy_bone_transform(bone_dst, bone_src);
     bone_dst = bone_dst->next;
     bone_src = bone_src->next;
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature Transform by 4x4 Matrix
+/** Armature Transform by 4x4 Matrix
  *
- * \see #ED_armature_edit_transform for the edit-mode version of this function.
- * \{ */
+ * #ED_armature_edit_transform for the edit-mode version of this function.
+ **/
 
 /** Helper for #ED_armature_transform */
 static void armature_transform_recurse(ListBase *bonebase,
@@ -516,7 +508,7 @@ static void armature_transform_recurse(ListBase *bonebase,
       bone->roll = atan2f(delta_mat3[2][0], delta_mat3[2][2]);
     }
 
-    BKE_armature_where_is_bone(bone, bone_parent, false);
+    KERNEL_armature_where_is_bone(bone, bone_parent, false);
 
     {
       float arm_mat3[3][3];
@@ -534,7 +526,7 @@ static void armature_transform_recurse(ListBase *bonebase,
       bone->zwidth *= scale;
     }
 
-    if (!BLI_listbase_is_empty(&bone->childbase)) {
+    if (!LIB_listbase_is_empty(&bone->childbase)) {
       float arm_mat_inv[4][4];
       invert_m4_m4(arm_mat_inv, bone->arm_mat);
       armature_transform_recurse(&bone->childbase, mat, do_props, mat3, scale, bone, arm_mat_inv);
@@ -542,7 +534,7 @@ static void armature_transform_recurse(ListBase *bonebase,
   }
 }
 
-void BKE_armature_transform(bArmature *arm, const float mat[4][4], const bool do_props)
+void KERNEL_armature_transform(duneArmature *arm, const float mat[4][4], const bool do_props)
 {
   /* Store the scale of the matrix here to use on envelopes. */
   float scale = mat4_to_scale(mat);
@@ -554,13 +546,11 @@ void BKE_armature_transform(bArmature *arm, const float mat[4][4], const bool do
   armature_transform_recurse(&arm->bonebase, mat, do_props, mat3, scale, NULL, NULL);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature Bone Find by Name
+/** Armature Bone Find by Name
  *
  * Using fast #GHash lookups when available.
- * \{ */
+ **/
 
 static Bone *get_named_bone_bonechildren(ListBase *lb, const char *name)
 {
@@ -580,14 +570,14 @@ static Bone *get_named_bone_bonechildren(ListBase *lb, const char *name)
   return NULL;
 }
 
-Bone *BKE_armature_find_bone_name(bArmature *arm, const char *name)
+Bone *KERNEL_armature_find_bone_name(duneArmature *arm, const char *name)
 {
   if (!arm) {
     return NULL;
   }
 
   if (arm->bonehash) {
-    return BLI_ghash_lookup(arm->bonehash, name);
+    return LIB_ghash_lookup(arm->bonehash, name);
   }
 
   return get_named_bone_bonechildren(&arm->bonebase, name);
@@ -596,7 +586,7 @@ Bone *BKE_armature_find_bone_name(bArmature *arm, const char *name)
 static void armature_bone_from_name_insert_recursive(GHash *bone_hash, ListBase *lb)
 {
   LISTBASE_FOREACH (Bone *, bone, lb) {
-    BLI_ghash_insert(bone_hash, bone->name, bone);
+    LIB_ghash_insert(bone_hash, bone->name, bone);
     armature_bone_from_name_insert_recursive(bone_hash, &bone->childbase);
   }
 }
@@ -604,56 +594,50 @@ static void armature_bone_from_name_insert_recursive(GHash *bone_hash, ListBase 
 /**
  * Create a (name -> bone) map.
  *
- * \note typically #bPose.chanhash us used via #BKE_pose_channel_find_name
+ * typically dunePose.chanhash us used via KERNEL_pose_channel_find_name
  * this is for the cases we can't use pose channels.
  */
-static GHash *armature_bone_from_name_map(bArmature *arm)
+static GHash *armature_bone_from_name_map(duneArmature *arm)
 {
-  const int bones_count = BKE_armature_bonelist_count(&arm->bonebase);
-  GHash *bone_hash = BLI_ghash_str_new_ex(__func__, bones_count);
+  const int bones_count = KERNEL_armature_bonelist_count(&arm->bonebase);
+  GHash *bone_hash = LIB_ghash_str_new_ex(__func__, bones_count);
   armature_bone_from_name_insert_recursive(bone_hash, &arm->bonebase);
   return bone_hash;
 }
 
-void BKE_armature_bone_hash_make(bArmature *arm)
+void KERNEL_armature_bone_hash_make(duneArmature *arm)
 {
   if (!arm->bonehash) {
     arm->bonehash = armature_bone_from_name_map(arm);
   }
 }
 
-void BKE_armature_bone_hash_free(bArmature *arm)
+void KERNEL_armature_bone_hash_free(duneArmature *arm)
 {
   if (arm->bonehash) {
-    BLI_ghash_free(arm->bonehash, NULL, NULL);
+    LIB_ghash_free(arm->bonehash, NULL, NULL);
     arm->bonehash = NULL;
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature Bone Flags
- * \{ */
+/** Armature Bone Flags **/
 
-bool BKE_armature_bone_flag_test_recursive(const Bone *bone, int flag)
+bool KERNEL_armature_bone_flag_test_recursive(const Bone *bone, int flag)
 {
   if (bone->flag & flag) {
     return true;
   }
   if (bone->parent) {
-    return BKE_armature_bone_flag_test_recursive(bone->parent, flag);
+    return KERNEL_armature_bone_flag_test_recursive(bone->parent, flag);
   }
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature Layer Refresh Used
- * \{ */
+/** Armature Layer Refresh Used **/
 
-static void armature_refresh_layer_used_recursive(bArmature *arm, ListBase *bones)
+static void armature_refresh_layer_used_recursive(duneArmature *arm, ListBase *bones)
 {
   LISTBASE_FOREACH (Bone *, bone, bones) {
     arm->layer_used |= bone->layer;
@@ -661,7 +645,7 @@ static void armature_refresh_layer_used_recursive(bArmature *arm, ListBase *bone
   }
 }
 
-void BKE_armature_refresh_layer_used(struct Depsgraph *depsgraph, struct bArmature *arm)
+void KERNEL_armature_refresh_layer_used(struct Depsgraph *depsgraph, struct duneArmature *arm)
 {
   if (arm->edbo != NULL) {
     /* Don't perform this update when the armature is in edit mode. In that case it should be
@@ -673,16 +657,13 @@ void BKE_armature_refresh_layer_used(struct Depsgraph *depsgraph, struct bArmatu
   armature_refresh_layer_used_recursive(arm, &arm->bonebase);
 
   if (depsgraph == NULL || DEG_is_active(depsgraph)) {
-    bArmature *arm_orig = (bArmature *)DEG_get_original_id(&arm->id);
+    duneArmature *arm_orig = (duneArmature *)DEG_get_original_id(&arm->id);
     arm_orig->layer_used = arm->layer_used;
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature Layer Refresh Used
- * \{ */
+/** Armature Layer Refresh Use **/
 
 bool bone_autoside_name(
     char name[MAXBONENAME], int UNUSED(strip_number), short axis, float head, float tail)
@@ -695,7 +676,7 @@ bool bone_autoside_name(
   if (len == 0) {
     return false;
   }
-  BLI_strncpy(basename, name, sizeof(basename));
+  LIB_strncpy(basename, name, sizeof(basename));
 
   /* Figure out extension to append:
    * - The extension to append is based upon the axis that we are working on.
@@ -813,11 +794,8 @@ bool bone_autoside_name(
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Armature B-Bone Support
- * \{ */
+/** Armature B-Bone Support **/
 
 /* Compute a set of bezier parameter values that produce approximately equally spaced points. */
 static void equalize_cubic_bezier(const float control[4][3],
@@ -826,12 +804,12 @@ static void equalize_cubic_bezier(const float control[4][3],
                                   const float *segment_scales,
                                   float *r_t_points)
 {
-  float(*coords)[3] = BLI_array_alloca(coords, temp_segments + 1);
-  float *pdist = BLI_array_alloca(pdist, temp_segments + 1);
+  float(*coords)[3] = LIB_array_alloca(coords, temp_segments + 1);
+  float *pdist = LIB_array_alloca(pdist, temp_segments + 1);
 
   /* Compute the first pass of bezier point coordinates. */
   for (int i = 0; i < 3; i++) {
-    BKE_curve_forward_diff_bezier(control[0][i],
+    KERNEL_curve_forward_diff_bezier(control[0][i],
                                   control[1][i],
                                   control[2][i],
                                   control[3][i],
