@@ -444,44 +444,44 @@ static void setup_app_dune_file_data(duneContext *C,
 
 static void handle_subversion_warning(Main *main, DuneFileReadReport *reports)
 {
-  if (main->minversionfile > BLENDER_FILE_VERSION ||
-      (main->minversionfile == BLENDER_FILE_VERSION &&
-       main->minsubversionfile > BLENDER_FILE_SUBVERSION)) {
-    BKE_reportf(reports->reports,
+  if (main->minversionfile > DUNE_FILE_VERSION ||
+      (main->minversionfile == DUNE_FILE_VERSION &&
+       main->minsubversionfile > DUNE_FILE_SUBVERSION)) {
+    KERNEL_reportf(reports->reports,
                 RPT_ERROR,
-                "File written by newer Blender binary (%d.%d), expect loss of data!",
+                "File written by newer Dune binary (%d.%d), expect loss of data!",
                 main->minversionfile,
                 main->minsubversionfile);
   }
 }
 
-void BKE_blendfile_read_setup_ex(bContext *C,
-                                 BlendFileData *bfd,
-                                 const struct BlendFileReadParams *params,
-                                 BlendFileReadReport *reports,
+void KERNEL_dunefile_read_setup_ex(duneContext *C,
+                                 DuneFileData *dune_file_data,
+                                 const struct DuneFileReadParams *params,
+                                 DuneFileReadReport *reports,
                                  /* Extra args. */
                                  const bool startup_update_defaults,
                                  const char *startup_app_template)
 {
   if (startup_update_defaults) {
-    if ((params->skip_flags & BLO_READ_SKIP_DATA) == 0) {
-      BLO_update_defaults_startup_blend(bfd->main, startup_app_template);
+    if ((params->skip_flags & LOADER_READ_SKIP_DATA) == 0) {
+      LOADER_update_defaults_startup_dune(dune_file_data->main, startup_app_template);
     }
   }
-  setup_app_blend_file_data(C, bfd, params, reports);
-  BLO_blendfiledata_free(bfd);
+  setup_app_dune_file_data(C, dune_file_data, params, reports);
+  LOADER_dunefiledata_free(dune_file_data);
 }
 
-void BKE_blendfile_read_setup(bContext *C,
-                              BlendFileData *bfd,
-                              const struct BlendFileReadParams *params,
-                              BlendFileReadReport *reports)
+void KERNEL_dunefile_read_setup(duneContext *C,
+                              DuneFileData *dune_file_data,
+                              const struct DuneFileReadParams *params,
+                              DuneFileReadReport *reports)
 {
-  BKE_blendfile_read_setup_ex(C, bfd, params, reports, false, NULL);
+  KERNEL_dunefile_read_setup_ex(C, dune_file_data, params, reports, false, NULL);
 }
 
-struct BlendFileData *BKE_blendfile_read(const char *filepath,
-                                         const struct BlendFileReadParams *params,
+struct DuneFileData *KERNEL_dunefile_read(const char *filepath,
+                                         const struct DuneFileReadParams *params,
                                          BlendFileReadReport *reports)
 {
   /* Don't print startup file loading. */
