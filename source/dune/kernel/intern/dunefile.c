@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * High level `.blend` file read/write,
  * and functions for writing *partial* files (only selected data-blocks).
  */
@@ -10,47 +8,47 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_workspace_types.h"
+#include "structs_scene_types.h"
+#include "structs_screen_types.h"
+#include "structs_workspace_types.h"
 
-#include "BLI_listbase.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_system.h"
-#include "BLI_utildefines.h"
+#include "LIB_listbase.h"
+#include "LIB_path_util.h"
+#include "LIB_string.h"
+#include "LIB_system.h"
+#include "LIB_utildefines.h"
 
 #include "PIL_time.h"
 
 #include "IMB_colormanagement.h"
 
-#include "BKE_addon.h"
-#include "BKE_appdir.h"
-#include "BKE_blender.h"
-#include "BKE_blender_version.h"
-#include "BKE_blendfile.h"
-#include "BKE_bpath.h"
-#include "BKE_colorband.h"
-#include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_ipo.h"
-#include "BKE_keyconfig.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_override.h"
-#include "BKE_main.h"
-#include "BKE_preferences.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_studiolight.h"
-#include "BKE_undo_system.h"
-#include "BKE_workspace.h"
+#include "KERNEL_addon.h"
+#include "KERNEL_appdir.h"
+#include "KERNEL_dune.h"
+#include "KERNEL_dune_version.h"
+#include "BKE_dunefile.h"
+#include "KE_dunepath.h"
+#include "KE_colorband.h"
+#include "KE_context.h"
+#include "KE_global.h"
+#include "KE_ipo.h"
+#include "KE_keyconfig.h"
+#include "KE_layer.h"
+#include "KE_lib_id.h"
+#include "KE_lib_override.h"
+#include "KE_main.h"
+#include "KE_preferences.h"
+#include "KE_report.h"
+#include "KE_scene.h"
+#include "KE_screen.h"
+#include "KE_studiolight.h"
+#include "KE_undo_system.h"
+#include "KE_workspace.h"
 
-#include "BLO_readfile.h"
-#include "BLO_writefile.h"
+#include "LOADER_readfile.h"
+#include "LOADER_writefile.h"
 
-#include "RNA_access.h"
+#include "API_access.h"
 
 #include "RE_pipeline.h"
 
@@ -59,10 +57,9 @@
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name High Level `.blend` file read/write.
- * \{ */
+/** High Level `.dune` file read/write. **/
 
-static bool blendfile_or_libraries_versions_atleast(Main *bmain,
+static bool dunefile_or_libraries_versions_atleast(Main *bmain,
                                                     const short versionfile,
                                                     const short subversionfile)
 {
@@ -84,22 +81,22 @@ static bool foreach_path_clean_cb(BPathForeachPathData *UNUSED(bpath_data),
                                   const char *path_src)
 {
   strcpy(path_dst, path_src);
-  BLI_path_slash_native(path_dst);
+  LIB_path_slash_native(path_dst);
   return !STREQ(path_dst, path_src);
 }
 
 /* make sure path names are correct for OS */
 static void clean_paths(Main *bmain)
 {
-  BKE_bpath_foreach_path_main(&(BPathForeachPathData){
-      .bmain = bmain,
+  KERNEL_dunepath_foreach_path_main(&(DunePathForeachPathData){
+      .dunemain = dunemain,
       .callback_function = foreach_path_clean_cb,
-      .flag = BKE_BPATH_FOREACH_PATH_SKIP_MULTIFILE,
+      .flag = KERNEL_DUNEPATH_FOREACH_PATH_SKIP_MULTIFILE,
       .user_data = NULL,
   });
 
-  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
-    BLI_path_slash_native(scene->r.pic);
+  LISTBASE_FOREACH (Scene *, scene, &dunemain->scenes) {
+    LIB_path_slash_native(scene->r.pic);
   }
 }
 
@@ -118,7 +115,7 @@ static void setup_app_userdef(BlendFileData *bfd)
 {
   if (bfd->user) {
     /* only here free userdef themes... */
-    BKE_blender_userdef_data_set_and_free(bfd->user);
+    KERNEL_dune_userdef_data_set_and_free(bfd->user);
     bfd->user = NULL;
 
     /* Security issue: any blend file could include a USER block.
@@ -136,17 +133,17 @@ static void setup_app_userdef(BlendFileData *bfd)
 /**
  * Context matching, handle no-UI case.
  *
- * \note this is called on Undo so any slow conversion functions here
+ * note this is called on Undo so any slow conversion functions here
  * should be avoided or check (mode != LOAD_UNDO).
  *
- * \param bfd: Blend file data, freed by this function on exit.
+ * param bfd: Blend file data, freed by this function on exit.
  */
-static void setup_app_data(bContext *C,
-                           BlendFileData *bfd,
-                           const struct BlendFileReadParams *params,
-                           BlendFileReadReport *reports)
+static void setup_app_data(duneContext *C,
+                           DuneFileData *bfd,
+                           const struct DuneFileReadParams *params,
+                           DuneFileReadReport *reports)
 {
-  Main *bmain = G_MAIN;
+  Main *dunemain = G_MAIN;
   Scene *curscene = NULL;
   const bool recover = (G.fileflags & G_FILE_RECOVER_READ) != 0;
   const bool is_startup = params->is_startup;
@@ -157,13 +154,13 @@ static void setup_app_data(bContext *C,
   } mode;
 
   if (params->undo_direction != STEP_INVALID) {
-    BLI_assert(bfd->curscene != NULL);
+    LIB_assert(bfd->curscene != NULL);
     mode = LOAD_UNDO;
   }
   /* may happen with library files - UNDO file should never have NULL curscene (but may have a
    * NULL curscreen)... */
   else if (ELEM(NULL, bfd->curscreen, bfd->curscene)) {
-    BKE_report(reports->reports, RPT_WARNING, "Library file, loading empty scene");
+    KERNEL_report(reports->reports, RPT_WARNING, "Library file, loading empty scene");
     mode = LOAD_UI_OFF;
   }
   else if (G.fileflags & G_FILE_NO_UI) {
@@ -206,9 +203,9 @@ static void setup_app_data(bContext *C,
     bool track_undo_scene;
 
     /* comes from readfile.c */
-    SWAP(ListBase, bmain->wm, bfd->main->wm);
-    SWAP(ListBase, bmain->workspaces, bfd->main->workspaces);
-    SWAP(ListBase, bmain->screens, bfd->main->screens);
+    SWAP(ListBase, dunemain->wm, bfd->main->wm);
+    SWAP(ListBase, dunemain->workspaces, bfd->main->workspaces);
+    SWAP(ListBase, dunemain->screens, bfd->main->screens);
 
     /* In case of actual new file reading without loading UI, we need to regenerate the session
      * uuid of the UI-related datablocks we are keeping from previous session, otherwise their uuid
@@ -216,17 +213,17 @@ static void setup_app_data(bContext *C,
     if (mode != LOAD_UNDO) {
       ID *id;
       FOREACH_MAIN_LISTBASE_ID_BEGIN (&bfd->main->wm, id) {
-        BKE_lib_libblock_session_uuid_renew(id);
+        KERNEL_lib_libblock_session_uuid_renew(id);
       }
       FOREACH_MAIN_LISTBASE_ID_END;
 
       FOREACH_MAIN_LISTBASE_ID_BEGIN (&bfd->main->workspaces, id) {
-        BKE_lib_libblock_session_uuid_renew(id);
+        KERNEL_lib_libblock_session_uuid_renew(id);
       }
       FOREACH_MAIN_LISTBASE_ID_END;
 
       FOREACH_MAIN_LISTBASE_ID_BEGIN (&bfd->main->screens, id) {
-        BKE_lib_libblock_session_uuid_renew(id);
+        KERNEL_lib_libblock_session_uuid_renew(id);
       }
       FOREACH_MAIN_LISTBASE_ID_END;
     }
@@ -249,7 +246,7 @@ static void setup_app_data(bContext *C,
     }
     if (cur_view_layer == NULL) {
       /* fallback to scene layer */
-      cur_view_layer = BKE_view_layer_default_view(curscene);
+      cur_view_layer = KERNEL_view_layer_default_view(curscene);
     }
 
     if (track_undo_scene) {
@@ -261,8 +258,8 @@ static void setup_app_data(bContext *C,
       win->scene = curscene;
     }
 
-    /* BKE_blender_globals_clear will free G_MAIN, here we can still restore pointers */
-    blo_lib_link_restore(bmain, bfd->main, CTX_wm_manager(C), curscene, cur_view_layer);
+    /* KERNEL_dune_globals_clear will free G_MAIN, here we can still restore pointers */
+    loader_lib_link_restore(bmain, bfd->main, CTX_wm_manager(C), curscene, cur_view_layer);
     if (win) {
       curscene = win->scene;
     }
@@ -272,7 +269,7 @@ static void setup_app_data(bContext *C,
       if (wm_scene_is_visible(wm, bfd->curscene) == false) {
         curscene = bfd->curscene;
         win->scene = curscene;
-        BKE_screen_view3d_scene_sync(curscreen, curscene);
+        KERNEL_screen_view3d_scene_sync(curscreen, curscene);
       }
     }
 
@@ -280,15 +277,15 @@ static void setup_app_data(bContext *C,
      * only the current screen is important because we won't have to handle
      * events from multiple screens at once. */
     if (curscreen) {
-      BKE_screen_gizmo_tag_refresh(curscreen);
+      KERNEL_screen_gizmo_tag_refresh(curscreen);
     }
   }
 
   /* free G_MAIN Main database */
   //  CTX_wm_manager_set(C, NULL);
-  BKE_blender_globals_clear();
+  KERNEL_dune_globals_clear();
 
-  bmain = G_MAIN = bfd->main;
+  dunemain = G_MAIN = bfd->main;
   bfd->main = NULL;
 
   CTX_data_main_set(C, bmain);
@@ -318,15 +315,15 @@ static void setup_app_data(bContext *C,
 
     /* in case we don't even have a local scene, add one */
     if (!bmain->scenes.first) {
-      BKE_scene_add(bmain, "Empty");
+      KERNEL_scene_add(dunemain, "Empty");
     }
 
-    CTX_data_scene_set(C, bmain->scenes.first);
+    CTX_data_scene_set(C, dunemain->scenes.first);
     win->scene = CTX_data_scene(C);
     curscene = CTX_data_scene(C);
   }
 
-  BLI_assert(curscene == CTX_data_scene(C));
+  LIB_assert(curscene == CTX_data_scene(C));
 
   /* special cases, override loaded flags: */
   if (G.f != bfd->globalf) {
@@ -352,25 +349,25 @@ static void setup_app_data(bContext *C,
 
   /* NOTE: readfile's `do_version` does not allow to create new IDs, and only operates on a single
    * library at a time. This code needs to operate on the whole Main at once. */
-  /* NOTE: Check bmain version (i.e. current blend file version), AND the versions of all the
+  /* NOTE: Check dunemain version (i.e. current blend file version), AND the versions of all the
    * linked libraries. */
-  if (mode != LOAD_UNDO && !blendfile_or_libraries_versions_atleast(bmain, 302, 1)) {
-    BKE_lib_override_library_main_proxy_convert(bmain, reports);
+  if (mode != LOAD_UNDO && !dunefile_or_libraries_versions_atleast(bmain, 302, 1)) {
+    KERNEL_lib_override_library_main_proxy_convert(bmain, reports);
   }
 
-  if (mode != LOAD_UNDO && !blendfile_or_libraries_versions_atleast(bmain, 302, 3)) {
-    BKE_lib_override_library_main_hierarchy_root_ensure(bmain);
+  if (mode != LOAD_UNDO && !dunefile_or_libraries_versions_atleast(bmain, 302, 3)) {
+    KERNEL_lib_override_library_main_hierarchy_root_ensure(bmain);
   }
 
   bmain->recovered = 0;
 
-  /* startup.blend or recovered startup */
+  /* startup.dune or recovered startup */
   if (is_startup) {
     bmain->filepath[0] = '\0';
   }
   else if (recover) {
     /* In case of autosave or quit.blend, use original filepath instead. */
-    bmain->recovered = 1;
+    dunemain->recovered = 1;
     STRNCPY(bmain->filepath, bfd->filepath);
   }
 
@@ -382,7 +379,7 @@ static void setup_app_data(bContext *C,
     if (wm) {
       LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
         if (win->scene && win->scene != curscene) {
-          BKE_scene_set_background(bmain, win->scene);
+          KERNEL_scene_set_background(dunemain, win->scene);
         }
       }
     }
@@ -393,10 +390,10 @@ static void setup_app_data(bContext *C,
    * constructing dependency graph.
    */
   if (mode != LOAD_UNDO) {
-    IMB_colormanagement_check_file_config(bmain);
+    IMB_colormanagement_check_file_config(dunemain);
   }
 
-  BKE_scene_set_background(bmain, curscene);
+  KERNEL_scene_set_background(dunemain, curscene);
 
   if (mode != LOAD_UNDO) {
     /* TODO(sergey): Can this be also move above? */
@@ -412,40 +409,40 @@ static void setup_app_data(bContext *C,
      * refcounting.
      * Now that we re-use (and do not liblink in readfile.c) most local datablocks as well, we have
      * to recompute refcount for all local IDs too. */
-    BKE_main_id_refcount_recompute(bmain, false);
+    KERNEL_main_id_refcount_recompute(dunemain, false);
   }
 
   if (mode != LOAD_UNDO && !USER_EXPERIMENTAL_TEST(&U, no_override_auto_resync)) {
     reports->duration.lib_overrides_resync = PIL_check_seconds_timer();
 
-    BKE_lib_override_library_main_resync(
-        bmain,
+    KERNEL_lib_override_library_main_resync(
+        dunemain,
         curscene,
-        bfd->cur_view_layer ? bfd->cur_view_layer : BKE_view_layer_default_view(curscene),
+        bfd->cur_view_layer ? bfd->cur_view_layer : KERNEL_view_layer_default_view(curscene),
         reports);
 
     reports->duration.lib_overrides_resync = PIL_check_seconds_timer() -
                                              reports->duration.lib_overrides_resync;
 
     /* We need to rebuild some of the deleted override rules (for UI feedback purpose). */
-    BKE_lib_override_library_main_operations_create(bmain, true);
+    KERNEL_lib_override_library_main_operations_create(dunemain, true);
   }
 }
 
-static void setup_app_blend_file_data(bContext *C,
-                                      BlendFileData *bfd,
-                                      const struct BlendFileReadParams *params,
-                                      BlendFileReadReport *reports)
+static void setup_app_dune_file_data(duneContext *C,
+                                      DuneFileData *bfd,
+                                      const struct DuneFileReadParams *params,
+                                      DuneFileReadReport *reports)
 {
-  if ((params->skip_flags & BLO_READ_SKIP_USERDEF) == 0) {
+  if ((params->skip_flags & LOADER_READ_SKIP_USERDEF) == 0) {
     setup_app_userdef(bfd);
   }
-  if ((params->skip_flags & BLO_READ_SKIP_DATA) == 0) {
+  if ((params->skip_flags & LOADER_READ_SKIP_DATA) == 0) {
     setup_app_data(C, bfd, params, reports);
   }
 }
 
-static void handle_subversion_warning(Main *main, BlendFileReadReport *reports)
+static void handle_subversion_warning(Main *main, DuneFileReadReport *reports)
 {
   if (main->minversionfile > BLENDER_FILE_VERSION ||
       (main->minversionfile == BLENDER_FILE_VERSION &&
