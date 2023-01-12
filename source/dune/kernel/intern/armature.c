@@ -76,7 +76,7 @@ static void armature_init_data(ID *id)
  *
  * WARNING! This function will not handle ID user count!
  *
- * param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
+ * param flag: Copying options (see KERNEL_lib_id.h's LIB_ID_COPY_... flags for more).
  */
 static void armature_copy_data(Main *UNUSED(dunemain), ID *id_dst, const ID *id_src, const int flag)
 {
@@ -400,11 +400,11 @@ static void copy_bonechildren_custom_handles(Bone *bone_dst, duneArmature *arm_d
 {
   Bone *bone_dst_child;
 
-  if (bone_dst->bbone_prev) {
-    bone_dst->bbone_prev = KERNEL_armature_find_bone_name(arm_dst, bone_dst->bbone_prev->name);
+  if (bone_dst->dunebone_prev) {
+    bone_dst->dunebone_prev = KERNEL_armature_find_bone_name(arm_dst, bone_dst->dunebone_prev->name);
   }
-  if (bone_dst->bbone_next) {
-    bone_dst->bbone_next = KERNEL_armature_find_bone_name(arm_dst, bone_dst->bbone_next->name);
+  if (bone_dst->dunebone_next) {
+    bone_dst->dunebone_next = KERNEL_armature_find_bone_name(arm_dst, bone_dst->dunebone_next->name);
   }
 
   for (bone_dst_child = bone_dst->childbase.first; bone_dst_child;
