@@ -1,22 +1,22 @@
 #include "MEM_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_utildefines.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "structs_armature_types.h"
+#include "structs_constraint_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_path.h"
-#include "BKE_armature.h"
-#include "BKE_curve.h"
-#include "BKE_displist.h"
-#include "BKE_fcurve.h"
-#include "BKE_object.h"
-#include "BKE_scene.h"
+#include "KERNEL_action.h"
+#include "KERNEL_anim_path.h"
+#include "KERNEL_armature.h"
+#include "KERNEL_curve.h"
+#include "KERNEL_displist.h"
+#include "KERNEL_fcurve.h"
+#include "KERNEL_object.h"
+#include "KERNEL_scene.h"
 
 #include "BIK_api.h"
 
@@ -34,12 +34,12 @@ typedef struct tSplineIK_Tree {
   float totlength; /* total length of bones in the chain */
 
   const float *points;  /* parametric positions for the joints along the curve */
-  bPoseChannel **chain; /* chain of bones to affect using Spline IK (ordered from the tip) */
+  dunePoseChannel **chain; /* chain of bones to affect using Spline IK (ordered from the tip) */
 
-  bPoseChannel *root; /* bone that is the root node of the chain */
+  dunePoseChannel *root; /* bone that is the root node of the chain */
 
-  bConstraint *con;             /* constraint for this chain */
-  bSplineIKConstraint *ik_data; /* constraint settings for this chain */
+  duneConstraint *con;             /* constraint for this chain */
+  DuneSplineIKConstraint *ik_data; /* constraint settings for this chain */
 } tSplineIK_Tree;
 
 /* ----------- */
@@ -49,10 +49,10 @@ static void splineik_init_tree_from_pchan(Scene *UNUSED(scene),
                                           Object *UNUSED(ob),
                                           bPoseChannel *pchan_tip)
 {
-  bPoseChannel *pchan, *pchan_root = NULL;
-  bPoseChannel *pchan_chain[255];
-  bConstraint *con = NULL;
-  bSplineIKConstraint *ik_data = NULL;
+  dunePoseChannel *pchan, *pchan_root = NULL;
+  dunePoseChannel *pchan_chain[255];
+  duneConstraint *con = NULL;
+  duneSplineIKConstraint *ik_data = NULL;
   float bone_lengths[255];
   float totlength = 0.0f;
   int segcount = 0;
@@ -161,7 +161,7 @@ static void splineik_init_tree_from_pchan(Scene *UNUSED(scene),
     tree->ik_data = ik_data;
 
     /* AND! Link the tree to the root. */
-    BLI_addtail(&pchan_root->siktree, tree);
+    LIB_addtail(&pchan_root->siktree, tree);
   }
 
   /* Mark root channel having an IK tree. */
@@ -171,7 +171,7 @@ static void splineik_init_tree_from_pchan(Scene *UNUSED(scene),
 /* Tag which bones are members of Spline IK chains. */
 static void splineik_init_tree(Scene *scene, Object *ob, float UNUSED(ctime))
 {
-  bPoseChannel *pchan;
+  dunePoseChannel *pchan;
 
   /* Find the tips of Spline IK chains,
    * which are simply the bones which have been tagged as such. */
@@ -223,7 +223,7 @@ static bool splineik_evaluate_init(tSplineIK_Tree *tree, tSplineIk_EvalState *st
   if ((ik_data->yScaleMode != CONSTRAINT_SPLINEIK_YS_FIT_CURVE) && (tree->totlength != 0.0f)) {
     /* Get the current length of the curve. */
     /* NOTE: This is assumed to be correct even after the curve was resized. */
-    const float spline_len = BKE_anim_path_get_length(cache);
+    const float spline_len = KERNEL_anim_path_get_length(cache);
 
     /* Calculate the scale factor to multiply all the path values by so that the
      * bone chain retains its current length, such that:
@@ -236,7 +236,7 @@ static bool splineik_evaluate_init(tSplineIK_Tree *tree, tSplineIk_EvalState *st
 }
 
 static void apply_curve_transform(
-    bSplineIKConstraint *ik_data, Object *ob, float radius, float r_vec[3], float *r_radius)
+    duneSplineIKConstraint *ik_data, Object *ob, float radius, float r_vec[3], float *r_radius)
 {
   /* Apply the curve's object-mode transforms to the position
    * unless the option to allow curve to be positioned elsewhere is activated (i.e. no root).
@@ -264,7 +264,7 @@ static float dist_to_sphere_shell(const float sphere_origin[3],
 /* This function positions the tail of the bone so that it preserves the length of it.
  * The length of the bone can be seen as a sphere radius.
  */
-static int position_tail_on_spline(bSplineIKConstraint *ik_data,
+static int position_tail_on_spline(duneSplineIKConstraint *ik_data,
                                    const float head_pos[3],
                                    const float sphere_radius,
                                    int prev_seg_idx,
@@ -274,18 +274,18 @@ static int position_tail_on_spline(bSplineIKConstraint *ik_data,
 {
   /* This is using the tessellated curve data.
    * So we are working with piece-wise linear curve segments.
-   * The same method is used in #BKE_where_on_path to get curve location data. */
+   * The same method is used in KERNEL_where_on_path to get curve location data. */
   const CurveCache *cache = ik_data->tar->runtime.curve_cache;
   const float *seg_accum_len = cache->anim_path_accum_length;
 
-  int max_seg_idx = BKE_anim_path_get_array_size(cache) - 1;
+  int max_seg_idx = KERNEL_anim_path_get_array_size(cache) - 1;
 
   /* Make an initial guess of where our intersection point will be.
    * If the curve was a straight line, then the faction passed in r_new_curve_pos
    * would be the correct location.
    * So make it our first initial guess.
    */
-  const float spline_len = BKE_anim_path_get_length(cache);
+  const float spline_len = KERNEL_anim_path_get_length(cache);
   const float guessed_len = *r_new_curve_pos * spline_len;
 
   BLI_assert(prev_seg_idx >= 0);
