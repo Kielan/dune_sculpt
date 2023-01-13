@@ -597,3 +597,431 @@ WriteAttributeLookup NamedLegacyCustomDataProvider::try_get_for_write(
   }
   return {};
 }
+
+bool NamedLegacyCustomDataProvider::try_delete(GeometryComponent &component,
+                                               const AttributeIDRef &attribute_id) const
+{
+  CustomData *custom_data = custom_data_access_.get_custom_data(component);
+  if (custom_data == nullptr) {
+    return false;
+  }
+  for (const int i : IndexRange(custom_data->totlayer)) {
+    const CustomDataLayer &layer = custom_data->layers[i];
+    if (layer.type == stored_type_) {
+      if (custom_data_layer_matches_attribute_id(layer, attribute_id)) {
+        const int domain_size = component.attribute_domain_size(domain_);
+        CustomData_free_layer(custom_data, stored_type_, domain_size, i);
+        if (custom_data_access_.update_custom_data_pointers) {
+          custom_data_access_.update_custom_data_pointers(component);
+        }
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool NamedLegacyCustomDataProvider::foreach_attribute(
+    const GeometryComponent &component, const AttributeForeachCallback callback) const
+{
+  const CustomData *custom_data = custom_data_access_.get_const_custom_data(component);
+  if (custom_data == nullptr) {
+    return true;
+  }
+  for (const CustomDataLayer &layer : Span(custom_data->layers, custom_data->totlayer)) {
+    if (layer.type == stored_type_) {
+      AttributeMetaData meta_data{domain_, attribute_type_};
+      if (!callback(layer.name, meta_data)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+void NamedLegacyCustomDataProvider::foreach_domain(
+    const FunctionRef<void(AttributeDomain)> callback) const
+{
+  callback(domain_);
+}
+
+CustomDataAttributes::CustomDataAttributes()
+{
+  CustomData_reset(&data);
+  size_ = 0;
+}
+
+CustomDataAttributes::~CustomDataAttributes()
+{
+  CustomData_free(&data, size_);
+}
+
+CustomDataAttributes::CustomDataAttributes(const CustomDataAttributes &other)
+{
+  size_ = other.size_;
+  CustomData_copy(&other.data, &data, CD_MASK_ALL, CD_DUPLICATE, size_);
+}
+
+CustomDataAttributes::CustomDataAttributes(CustomDataAttributes &&other)
+{
+  size_ = other.size_;
+  data = other.data;
+  CustomData_reset(&other.data);
+}
+
+CustomDataAttributes &CustomDataAttributes::operator=(const CustomDataAttributes &other)
+{
+  if (this != &other) {
+    CustomData_copy(&other.data, &data, CD_MASK_ALL, CD_DUPLICATE, other.size_);
+    size_ = other.size_;
+  }
+
+  return *this;
+}
+
+std::optional<GSpan> CustomDataAttributes::get_for_read(const AttributeIDRef &attribute_id) const
+{
+  for (const CustomDataLayer &layer : Span(data.layers, data.totlayer)) {
+    if (custom_data_layer_matches_attribute_id(layer, attribute_id)) {
+      const CPPType *cpp_type = custom_data_type_to_cpp_type((CustomDataType)layer.type);
+      BLI_assert(cpp_type != nullptr);
+      return GSpan(*cpp_type, layer.data, size_);
+    }
+  }
+  return {};
+}
+
+GVArray CustomDataAttributes::get_for_read(const AttributeIDRef &attribute_id,
+                                           const CustomDataType data_type,
+                                           const void *default_value) const
+{
+  const CPPType *type = blender::bke::custom_data_type_to_cpp_type(data_type);
+
+  std::optional<GSpan> attribute = this->get_for_read(attribute_id);
+  if (!attribute) {
+    const int domain_size = this->size_;
+    return GVArray::ForSingle(
+        *type, domain_size, (default_value == nullptr) ? type->default_value() : default_value);
+  }
+
+  if (attribute->type() == *type) {
+    return GVArray::ForSpan(*attribute);
+  }
+  const blender::bke::DataTypeConversions &conversions =
+      blender::bke::get_implicit_type_conversions();
+  return conversions.try_convert(GVArray::ForSpan(*attribute), *type);
+}
+
+std::optional<GMutableSpan> CustomDataAttributes::get_for_write(const AttributeIDRef &attribute_id)
+{
+  for (CustomDataLayer &layer : MutableSpan(data.layers, data.totlayer)) {
+    if (custom_data_layer_matches_attribute_id(layer, attribute_id)) {
+      const CPPType *cpp_type = custom_data_type_to_cpp_type((CustomDataType)layer.type);
+      BLI_assert(cpp_type != nullptr);
+      return GMutableSpan(*cpp_type, layer.data, size_);
+    }
+  }
+  return {};
+}
+
+bool CustomDataAttributes::create(const AttributeIDRef &attribute_id,
+                                  const CustomDataType data_type)
+{
+  void *result = add_generic_custom_data_layer(
+      data, data_type, CD_DEFAULT, nullptr, size_, attribute_id);
+  return result != nullptr;
+}
+
+bool CustomDataAttributes::create_by_move(const AttributeIDRef &attribute_id,
+                                          const CustomDataType data_type,
+                                          void *buffer)
+{
+  void *result = add_generic_custom_data_layer(
+      data, data_type, CD_ASSIGN, buffer, size_, attribute_id);
+  return result != nullptr;
+}
+
+bool CustomDataAttributes::remove(const AttributeIDRef &attribute_id)
+{
+  bool result = false;
+  for (const int i : IndexRange(data.totlayer)) {
+    const CustomDataLayer &layer = data.layers[i];
+    if (custom_data_layer_matches_attribute_id(layer, attribute_id)) {
+      CustomData_free_layer(&data, layer.type, size_, i);
+      result = true;
+    }
+  }
+  return result;
+}
+
+void CustomDataAttributes::reallocate(const int size)
+{
+  size_ = size;
+  CustomData_realloc(&data, size);
+}
+
+void CustomDataAttributes::clear()
+{
+  CustomData_free(&data, size_);
+  size_ = 0;
+}
+
+bool CustomDataAttributes::foreach_attribute(const AttributeForeachCallback callback,
+                                             const AttributeDomain domain) const
+{
+  for (const CustomDataLayer &layer : Span(data.layers, data.totlayer)) {
+    AttributeMetaData meta_data{domain, (CustomDataType)layer.type};
+    const AttributeIDRef attribute_id = attribute_id_from_custom_data_layer(layer);
+    if (!callback(attribute_id, meta_data)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void CustomDataAttributes::reorder(Span<AttributeIDRef> new_order)
+{
+  BLI_assert(new_order.size() == data.totlayer);
+
+  Map<AttributeIDRef, int> old_order;
+  old_order.reserve(data.totlayer);
+  Array<CustomDataLayer> old_layers(Span(data.layers, data.totlayer));
+  for (const int i : old_layers.index_range()) {
+    old_order.add_new(attribute_id_from_custom_data_layer(old_layers[i]), i);
+  }
+
+  MutableSpan layers(data.layers, data.totlayer);
+  for (const int i : layers.index_range()) {
+    const int old_index = old_order.lookup(new_order[i]);
+    layers[i] = old_layers[old_index];
+  }
+
+  CustomData_update_typemap(&data);
+}
+
+}  // namespace blender::bke
+
+/* -------------------------------------------------------------------- */
+/** \name Geometry Component
+ * \{ */
+
+const blender::bke::ComponentAttributeProviders *GeometryComponent::get_attribute_providers() const
+{
+  return nullptr;
+}
+
+bool GeometryComponent::attribute_domain_supported(const AttributeDomain domain) const
+{
+  using namespace blender::bke;
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return false;
+  }
+  return providers->supported_domains().contains(domain);
+}
+
+int GeometryComponent::attribute_domain_size(const AttributeDomain UNUSED(domain)) const
+{
+  return 0;
+}
+
+bool GeometryComponent::attribute_is_builtin(const blender::StringRef attribute_name) const
+{
+  using namespace blender::bke;
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return false;
+  }
+  return providers->builtin_attribute_providers().contains_as(attribute_name);
+}
+
+bool GeometryComponent::attribute_is_builtin(const AttributeIDRef &attribute_id) const
+{
+  /* Anonymous attributes cannot be built-in. */
+  return attribute_id.is_named() && this->attribute_is_builtin(attribute_id.name());
+}
+
+blender::bke::ReadAttributeLookup GeometryComponent::attribute_try_get_for_read(
+    const AttributeIDRef &attribute_id) const
+{
+  using namespace blender::bke;
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return {};
+  }
+  if (attribute_id.is_named()) {
+    const BuiltinAttributeProvider *builtin_provider =
+        providers->builtin_attribute_providers().lookup_default_as(attribute_id.name(), nullptr);
+    if (builtin_provider != nullptr) {
+      return {builtin_provider->try_get_for_read(*this), builtin_provider->domain()};
+    }
+  }
+  for (const DynamicAttributesProvider *dynamic_provider :
+       providers->dynamic_attribute_providers()) {
+    ReadAttributeLookup attribute = dynamic_provider->try_get_for_read(*this, attribute_id);
+    if (attribute) {
+      return attribute;
+    }
+  }
+  return {};
+}
+
+blender::GVArray GeometryComponent::attribute_try_adapt_domain_impl(
+    const blender::GVArray &varray,
+    const AttributeDomain from_domain,
+    const AttributeDomain to_domain) const
+{
+  if (from_domain == to_domain) {
+    return varray;
+  }
+  return {};
+}
+
+blender::bke::WriteAttributeLookup GeometryComponent::attribute_try_get_for_write(
+    const AttributeIDRef &attribute_id)
+{
+  using namespace blender::bke;
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return {};
+  }
+  if (attribute_id.is_named()) {
+    const BuiltinAttributeProvider *builtin_provider =
+        providers->builtin_attribute_providers().lookup_default_as(attribute_id.name(), nullptr);
+    if (builtin_provider != nullptr) {
+      return builtin_provider->try_get_for_write(*this);
+    }
+  }
+  for (const DynamicAttributesProvider *dynamic_provider :
+       providers->dynamic_attribute_providers()) {
+    WriteAttributeLookup attribute = dynamic_provider->try_get_for_write(*this, attribute_id);
+    if (attribute) {
+      return attribute;
+    }
+  }
+  return {};
+}
+
+bool GeometryComponent::attribute_try_delete(const AttributeIDRef &attribute_id)
+{
+  using namespace blender::bke;
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return {};
+  }
+  if (attribute_id.is_named()) {
+    const BuiltinAttributeProvider *builtin_provider =
+        providers->builtin_attribute_providers().lookup_default_as(attribute_id.name(), nullptr);
+    if (builtin_provider != nullptr) {
+      return builtin_provider->try_delete(*this);
+    }
+  }
+  bool success = false;
+  for (const DynamicAttributesProvider *dynamic_provider :
+       providers->dynamic_attribute_providers()) {
+    success = dynamic_provider->try_delete(*this, attribute_id) || success;
+  }
+  return success;
+}
+
+bool GeometryComponent::attribute_try_create(const AttributeIDRef &attribute_id,
+                                             const AttributeDomain domain,
+                                             const CustomDataType data_type,
+                                             const AttributeInit &initializer)
+{
+  using namespace blender::bke;
+  if (!attribute_id) {
+    return false;
+  }
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return false;
+  }
+  if (attribute_id.is_named()) {
+    const BuiltinAttributeProvider *builtin_provider =
+        providers->builtin_attribute_providers().lookup_default_as(attribute_id.name(), nullptr);
+    if (builtin_provider != nullptr) {
+      if (builtin_provider->domain() != domain) {
+        return false;
+      }
+      if (builtin_provider->data_type() != data_type) {
+        return false;
+      }
+      return builtin_provider->try_create(*this, initializer);
+    }
+  }
+  for (const DynamicAttributesProvider *dynamic_provider :
+       providers->dynamic_attribute_providers()) {
+    if (dynamic_provider->try_create(*this, attribute_id, domain, data_type, initializer)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool GeometryComponent::attribute_try_create_builtin(const blender::StringRef attribute_name,
+                                                     const AttributeInit &initializer)
+{
+  using namespace blender::bke;
+  if (attribute_name.is_empty()) {
+    return false;
+  }
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return false;
+  }
+  const BuiltinAttributeProvider *builtin_provider =
+      providers->builtin_attribute_providers().lookup_default_as(attribute_name, nullptr);
+  if (builtin_provider == nullptr) {
+    return false;
+  }
+  return builtin_provider->try_create(*this, initializer);
+}
+
+Set<AttributeIDRef> GeometryComponent::attribute_ids() const
+{
+  Set<AttributeIDRef> attributes;
+  this->attribute_foreach(
+      [&](const AttributeIDRef &attribute_id, const AttributeMetaData &UNUSED(meta_data)) {
+        attributes.add(attribute_id);
+        return true;
+      });
+  return attributes;
+}
+
+bool GeometryComponent::attribute_foreach(const AttributeForeachCallback callback) const
+{
+  using namespace blender::bke;
+  const ComponentAttributeProviders *providers = this->get_attribute_providers();
+  if (providers == nullptr) {
+    return true;
+  }
+
+  /* Keep track handled attribute names to make sure that we do not return the same name twice. */
+  Set<std::string> handled_attribute_names;
+
+  for (const BuiltinAttributeProvider *provider :
+       providers->builtin_attribute_providers().values()) {
+    if (provider->exists(*this)) {
+      AttributeMetaData meta_data{provider->domain(), provider->data_type()};
+      if (!callback(provider->name(), meta_data)) {
+        return false;
+      }
+      handled_attribute_names.add_new(provider->name());
+    }
+  }
+  for (const DynamicAttributesProvider *provider : providers->dynamic_attribute_providers()) {
+    const bool continue_loop = provider->foreach_attribute(
+        *this, [&](const AttributeIDRef &attribute_id, const AttributeMetaData &meta_data) {
+          if (attribute_id.is_anonymous() || handled_attribute_names.add(attribute_id.name())) {
+            return callback(attribute_id, meta_data);
+          }
+          return true;
+        });
+    if (!continue_loop) {
+      return false;
+    }
+  }
+
+  return true;
+}
