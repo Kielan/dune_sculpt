@@ -423,3 +423,177 @@ void AssetCatalogService::purge_catalogs_not_listed(const Set<CatalogID> &catalo
     delete_catalog_by_id_hard(cat_id);
   }
 }
+
+bool AssetCatalogService::is_catalog_known_with_unsaved_changes(const CatalogID catalog_id) const
+{
+  if (catalog_collection_->deleted_catalogs_.contains(catalog_id)) {
+    /* Deleted catalogs are always considered modified, by definition. */
+    return true;
+  }
+
+  const std::unique_ptr<AssetCatalog> *catalog_uptr_ptr =
+      catalog_collection_->catalogs_.lookup_ptr(catalog_id);
+  if (!catalog_uptr_ptr) {
+    /* Catalog is unknown. */
+    return false;
+  }
+
+  const bool has_unsaved_changes = (*catalog_uptr_ptr)->flags.has_unsaved_changes;
+  return has_unsaved_changes;
+}
+
+bool AssetCatalogService::write_to_disk(const CatalogFilePath &blend_file_path)
+{
+  if (!write_to_disk_ex(blend_file_path)) {
+    return false;
+  }
+
+  untag_has_unsaved_changes();
+  rebuild_tree();
+  return true;
+}
+
+bool AssetCatalogService::write_to_disk_ex(const CatalogFilePath &blend_file_path)
+{
+  /* TODO(Sybren): expand to support multiple CDFs. */
+
+  /* - Already loaded a CDF from disk? -> Always write to that file. */
+  if (catalog_collection_->catalog_definition_file_) {
+    reload_catalogs();
+    return catalog_collection_->catalog_definition_file_->write_to_disk();
+  }
+
+  if (catalog_collection_->catalogs_.is_empty() &&
+      catalog_collection_->deleted_catalogs_.is_empty()) {
+    /* Avoid saving anything, when there is nothing to save. */
+    return true; /* Writing nothing when there is nothing to write is still a success. */
+  }
+
+  const CatalogFilePath cdf_path_to_write = find_suitable_cdf_path_for_writing(blend_file_path);
+  catalog_collection_->catalog_definition_file_ = construct_cdf_in_memory(cdf_path_to_write);
+  reload_catalogs();
+  return catalog_collection_->catalog_definition_file_->write_to_disk();
+}
+
+void AssetCatalogService::prepare_to_merge_on_write()
+{
+  /* TODO(Sybren): expand to support multiple CDFs. */
+
+  if (!catalog_collection_->catalog_definition_file_) {
+    /* There is no CDF connected, so it's a no-op. */
+    return;
+  }
+
+  /* Remove any association with the CDF, so that a new location will be chosen
+   * when the blend file is saved. */
+  catalog_collection_->catalog_definition_file_.reset();
+
+  /* Mark all in-memory catalogs as "dirty", to force them to be kept around on
+   * the next "load-merge-write" cycle. */
+  tag_all_catalogs_as_unsaved_changes();
+}
+
+CatalogFilePath AssetCatalogService::find_suitable_cdf_path_for_writing(
+    const CatalogFilePath &blend_file_path)
+{
+  BLI_assert_msg(!blend_file_path.empty(),
+                 "A non-empty .blend file path is required to be able to determine where the "
+                 "catalog definition file should be put");
+
+  /* Ask the asset library API for an appropriate location. */
+  char suitable_root_path[PATH_MAX];
+  const bool asset_lib_root_found = BKE_asset_library_find_suitable_root_path_from_path(
+      blend_file_path.c_str(), suitable_root_path);
+  if (asset_lib_root_found) {
+    char asset_lib_cdf_path[PATH_MAX];
+    BLI_path_join(asset_lib_cdf_path,
+                  sizeof(asset_lib_cdf_path),
+                  suitable_root_path,
+                  DEFAULT_CATALOG_FILENAME.c_str(),
+                  NULL);
+    return asset_lib_cdf_path;
+  }
+
+  /* Determine the default CDF path in the same directory of the blend file. */
+  char blend_dir_path[PATH_MAX];
+  BLI_split_dir_part(blend_file_path.c_str(), blend_dir_path, sizeof(blend_dir_path));
+  const CatalogFilePath cdf_path_next_to_blend = asset_definition_default_file_path_from_dir(
+      blend_dir_path);
+  return cdf_path_next_to_blend;
+}
+
+std::unique_ptr<AssetCatalogDefinitionFile> AssetCatalogService::construct_cdf_in_memory(
+    const CatalogFilePath &file_path)
+{
+  auto cdf = std::make_unique<AssetCatalogDefinitionFile>();
+  cdf->file_path = file_path;
+
+  for (auto &catalog : catalog_collection_->catalogs_.values()) {
+    cdf->add_new(catalog.get());
+  }
+
+  return cdf;
+}
+
+AssetCatalogTree *AssetCatalogService::get_catalog_tree()
+{
+  return catalog_tree_.get();
+}
+
+std::unique_ptr<AssetCatalogTree> AssetCatalogService::read_into_tree()
+{
+  auto tree = std::make_unique<AssetCatalogTree>();
+
+  /* Go through the catalogs, insert each path component into the tree where needed. */
+  for (auto &catalog : catalog_collection_->catalogs_.values()) {
+    tree->insert_item(*catalog);
+  }
+
+  return tree;
+}
+
+void AssetCatalogService::rebuild_tree()
+{
+  create_missing_catalogs();
+  this->catalog_tree_ = read_into_tree();
+}
+
+void AssetCatalogService::create_missing_catalogs()
+{
+  /* Construct an ordered set of paths to check, so that parents are ordered before children. */
+  std::set<AssetCatalogPath> paths_to_check;
+  for (auto &catalog : catalog_collection_->catalogs_.values()) {
+    paths_to_check.insert(catalog->path);
+  }
+
+  std::set<AssetCatalogPath> seen_paths;
+  /* The empty parent should never be created, so always be considered "seen". */
+  seen_paths.insert(AssetCatalogPath(""));
+
+  /* Find and create missing direct parents (so ignoring parents-of-parents). */
+  while (!paths_to_check.empty()) {
+    /* Pop the first path of the queue. */
+    const AssetCatalogPath path = *paths_to_check.begin();
+    paths_to_check.erase(paths_to_check.begin());
+
+    if (seen_paths.find(path) != seen_paths.end()) {
+      /* This path has been seen already, so it can be ignored. */
+      continue;
+    }
+    seen_paths.insert(path);
+
+    const AssetCatalogPath parent_path = path.parent();
+    if (seen_paths.find(parent_path) != seen_paths.end()) {
+      /* The parent exists, continue to the next path. */
+      continue;
+    }
+
+    /* The parent doesn't exist, so create it and queue it up for checking its parent. */
+    AssetCatalog *parent_catalog = create_catalog(parent_path);
+    parent_catalog->flags.has_unsaved_changes = true;
+
+    paths_to_check.insert(parent_path);
+  }
+
+  /* TODO(Sybren): bind the newly created catalogs to a CDF, if we know about it. */
+}
