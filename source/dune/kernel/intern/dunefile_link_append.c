@@ -948,9 +948,9 @@ static int foreach_libblock_link_append_callback(LibraryIDLinkCallbackData *cb_d
     return IDWALK_RET_NOP;
   }
 
-  BlendfileLinkAppendContextItem *item = BLI_ghash_lookup(data->lapp_context->new_id_to_item, id);
+  DunefileLinkAppendContextItem *item = LIB_ghash_lookup(data->lapp_context->new_id_to_item, id);
   if (item == NULL) {
-    item = BKE_blendfile_link_append_context_item_add(
+    item = KERNEL_dunefile_link_append_context_item_add(
         data->lapp_context, id->name, GS(id->name), NULL);
     item->new_id = id;
     item->source_library = id->lib;
@@ -973,20 +973,20 @@ static int foreach_libblock_link_append_callback(LibraryIDLinkCallbackData *cb_d
 /** Library link/append code. */
 
 
-static void blendfile_link_append_proxies_convert(Main *bmain, ReportList *reports)
+static void dunefile_link_append_proxies_convert(Main *dunemain, ReportList *reports)
 {
   /* NOTE: Do not bother checking file versions here, if there are no proxies to convert this code
    * is quite fast anyway. */
 
-  BlendFileReadReport bf_reports = {.reports = reports};
-  BKE_lib_override_library_main_proxy_convert(bmain, &bf_reports);
+  DuneFileReadReport bf_reports = {.reports = reports};
+  KERNEL_lib_override_library_main_proxy_convert(dunemain, &bf_reports);
 
   if (bf_reports.count.proxies_to_lib_overrides_success != 0 ||
       bf_reports.count.proxies_to_lib_overrides_failures != 0) {
-    BKE_reportf(
+    KERNEL_reportf(
         bf_reports.reports,
         RPT_WARNING,
-        "Proxies have been removed from Blender (%d proxies were automatically converted "
+        "Proxies have been removed from Dune (%d proxies were automatically converted "
         "to library overrides, %d proxies could not be converted and were cleared). "
         "Please consider re-saving any library .blend file with the newest Blender version.",
         bf_reports.count.proxies_to_lib_overrides_success,
@@ -994,45 +994,45 @@ static void blendfile_link_append_proxies_convert(Main *bmain, ReportList *repor
   }
 }
 
-void BKE_blendfile_append(BlendfileLinkAppendContext *lapp_context, ReportList *reports)
+void KERNEL_dunefile_append(DunefileLinkAppendContext *lapp_context, ReportList *reports)
 {
   if (lapp_context->num_items == 0) {
     /* Nothing to append. */
     return;
   }
 
-  Main *bmain = lapp_context->params->bmain;
+  Main *dunemain = lapp_context->params->dunemain;
 
-  BLI_assert((lapp_context->params->flag & FILE_LINK) == 0);
+  LIB_assert((lapp_context->params->flag & FILE_LINK) == 0);
 
-  const bool set_fakeuser = (lapp_context->params->flag & BLO_LIBLINK_APPEND_SET_FAKEUSER) != 0;
+  const bool set_fakeuser = (lapp_context->params->flag & LOADER_LIBLINK_APPEND_SET_FAKEUSER) != 0;
   const bool do_reuse_local_id = (lapp_context->params->flag &
-                                  BLO_LIBLINK_APPEND_LOCAL_ID_REUSE) != 0;
+                                  LOADER_LIBLINK_APPEND_LOCAL_ID_REUSE) != 0;
 
   const int make_local_common_flags = LIB_ID_MAKELOCAL_FULL_LIBRARY |
                                       ((lapp_context->params->flag &
-                                        BLO_LIBLINK_APPEND_ASSET_DATA_CLEAR) != 0 ?
+                                        LOADER_LIBLINK_APPEND_ASSET_DATA_CLEAR) != 0 ?
                                            LIB_ID_MAKELOCAL_ASSET_DATA_CLEAR :
                                            0);
 
   LinkNode *itemlink;
 
   new_id_to_item_mapping_create(lapp_context);
-  lapp_context->library_weak_reference_mapping = BKE_main_library_weak_reference_create(bmain);
+  lapp_context->library_weak_reference_mapping = KERNEL_main_library_weak_reference_create(dunemain);
 
   /* NOTE: Since we append items for IDs not already listed (i.e. implicitly linked indirect
    * dependencies), this list will grow and we will process those IDs later, leading to a flatten
    * recursive processing of all the linked dependencies. */
   for (itemlink = lapp_context->items.list; itemlink; itemlink = itemlink->next) {
-    BlendfileLinkAppendContextItem *item = itemlink->link;
+    DunefileLinkAppendContextItem *item = itemlink->link;
     ID *id = item->new_id;
     if (id == NULL) {
       continue;
     }
-    BLI_assert(item->userdata == NULL);
+    LIB_assert(item->userdata == NULL);
 
-    ID *existing_local_id = BKE_idtype_idcode_append_is_reusable(GS(id->name)) ?
-                                BKE_main_library_weak_reference_search_item(
+    ID *existing_local_id = KERNEL_idtype_idcode_append_is_reusable(GS(id->name)) ?
+                                KERNEL_main_library_weak_reference_search_item(
                                     lapp_context->library_weak_reference_mapping,
                                     id->lib->filepath,
                                     id->name) :
@@ -1058,17 +1058,17 @@ void BKE_blendfile_append(BlendfileLinkAppendContext *lapp_context, ReportList *
     /* Only check dependencies if we are not keeping linked data, nor re-using existing local data.
      */
     if (!ELEM(item->action, LINK_APPEND_ACT_KEEP_LINKED, LINK_APPEND_ACT_REUSE_LOCAL)) {
-      BlendfileLinkAppendContextCallBack cb_data = {
+      DunefileLinkAppendContextCallBack cb_data = {
           .lapp_context = lapp_context, .item = item, .reports = reports};
-      BKE_library_foreach_ID_link(
-          bmain, id, foreach_libblock_link_append_callback, &cb_data, IDWALK_NOP);
+      KERNEL_library_foreach_ID_link(
+          dunemain, id, foreach_libblock_link_append_callback, &cb_data, IDWALK_NOP);
     }
 
     /* If we found a matching existing local id but are not re-using it, we need to properly clear
      * its weak reference to linked data. */
     if (existing_local_id != NULL &&
         !ELEM(item->action, LINK_APPEND_ACT_KEEP_LINKED, LINK_APPEND_ACT_REUSE_LOCAL)) {
-      BKE_main_library_weak_reference_remove_item(lapp_context->library_weak_reference_mapping,
+      KERNEL_main_library_weak_reference_remove_item(lapp_context->library_weak_reference_mapping,
                                                   id->lib->filepath,
                                                   id->name,
                                                   existing_local_id);
@@ -1077,7 +1077,7 @@ void BKE_blendfile_append(BlendfileLinkAppendContext *lapp_context, ReportList *
 
   /* Effectively perform required operation on every linked ID. */
   for (itemlink = lapp_context->items.list; itemlink; itemlink = itemlink->next) {
-    BlendfileLinkAppendContextItem *item = itemlink->link;
+    DunefileLinkAppendContextItem *item = itemlink->link;
     ID *id = item->new_id;
     if (id == NULL) {
       continue;
@@ -1085,18 +1085,18 @@ void BKE_blendfile_append(BlendfileLinkAppendContext *lapp_context, ReportList *
 
     ID *local_appended_new_id = NULL;
     char lib_filepath[FILE_MAX];
-    BLI_strncpy(lib_filepath, id->lib->filepath, sizeof(lib_filepath));
+    LIB_strncpy(lib_filepath, id->lib->filepath, sizeof(lib_filepath));
     char lib_id_name[MAX_ID_NAME];
-    BLI_strncpy(lib_id_name, id->name, sizeof(lib_id_name));
+    LIB_strncpy(lib_id_name, id->name, sizeof(lib_id_name));
 
     switch (item->action) {
       case LINK_APPEND_ACT_COPY_LOCAL:
-        BKE_lib_id_make_local(bmain, id, make_local_common_flags | LIB_ID_MAKELOCAL_FORCE_COPY);
+        KERNEL_lib_id_make_local(dunemain, id, make_local_common_flags | LIB_ID_MAKELOCAL_FORCE_COPY);
         local_appended_new_id = id->newid;
         break;
       case LINK_APPEND_ACT_MAKE_LOCAL:
-        BKE_lib_id_make_local(bmain, id, make_local_common_flags | LIB_ID_MAKELOCAL_FORCE_LOCAL);
-        BLI_assert(id->newid == NULL);
+        KERNEL_lib_id_make_local(dunemain, id, make_local_common_flags | LIB_ID_MAKELOCAL_FORCE_LOCAL);
+        LIB_assert(id->newid == NULL);
         local_appended_new_id = id;
         break;
       case LINK_APPEND_ACT_KEEP_LINKED:
@@ -1112,7 +1112,7 @@ void BKE_blendfile_append(BlendfileLinkAppendContext *lapp_context, ReportList *
             &LOG, "Unexpected unset append action for '%s' ID, assuming 'keep link'", id->name);
         break;
       default:
-        BLI_assert(0);
+        LIB_assert(0);
     }
 
     if (local_appended_new_id != NULL) {
