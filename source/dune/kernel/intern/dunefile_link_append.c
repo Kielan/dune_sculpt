@@ -1179,7 +1179,7 @@ void KERNEL_dunefile_append(DunefileLinkAppendContext *lapp_context, ReportList 
     id->tag |= LIB_TAG_DOIT;
     item->new_id = id->newid;
   }
-  BKE_id_multi_tagged_delete(bmain);
+  KERNEL_id_multi_tagged_delete(bmain);
 
   /* Instantiate newly created (duplicated) IDs as needed. */
   LooseDataInstantiateContext instantiate_context = {.lapp_context = lapp_context,
@@ -1190,10 +1190,10 @@ void KERNEL_dunefile_append(DunefileLinkAppendContext *lapp_context, ReportList 
    *
    * NOTE: Copied from `BKE_library_make_local`, but this is not really working (as in, not
    * producing any useful result in any known use case), neither here nor in
-   * `BKE_library_make_local` currently.
+   * `KERNEL_library_make_local` currently.
    * Proxies are end of life anyway, so not worth spending time on this. */
   for (itemlink = lapp_context->items.list; itemlink; itemlink = itemlink->next) {
-    BlendfileLinkAppendContextItem *item = itemlink->link;
+    DunefileLinkAppendContextItem *item = itemlink->link;
 
     if (item->action != LINK_APPEND_ACT_COPY_LOCAL) {
       continue;
@@ -1203,22 +1203,22 @@ void KERNEL_dunefile_append(DunefileLinkAppendContext *lapp_context, ReportList 
     if (id == NULL) {
       continue;
     }
-    BLI_assert(ID_IS_LINKED(id));
+    LIB_assert(ID_IS_LINKED(id));
   }
 
-  BKE_main_id_newptr_and_tag_clear(bmain);
+  KERNEL_main_id_newptr_and_tag_clear(dunemain);
 
-  blendfile_link_append_proxies_convert(bmain, reports);
+  dunefile_link_append_proxies_convert(dunemain, reports);
 }
 
-void BKE_blendfile_link(BlendfileLinkAppendContext *lapp_context, ReportList *reports)
+void KERNEL_dunefile_link(DunefileLinkAppendContext *lapp_context, ReportList *reports)
 {
   if (lapp_context->num_items == 0) {
     /* Nothing to be linked. */
     return;
   }
 
-  BLI_assert(lapp_context->num_libraries != 0);
+  LIB_assert(lapp_context->num_libraries != 0);
 
   Main *mainl;
   Library *lib;
@@ -1228,9 +1228,9 @@ void BKE_blendfile_link(BlendfileLinkAppendContext *lapp_context, ReportList *re
 
   for (lib_idx = 0, liblink = lapp_context->libraries.list; liblink;
        lib_idx++, liblink = liblink->next) {
-    BlendfileLinkAppendContextLibrary *lib_context = liblink->link;
+    DunefileLinkAppendContextLibrary *lib_context = liblink->link;
     char *libname = lib_context->path;
-    BlendHandle *blo_handle = link_append_context_library_blohandle_ensure(
+    DuneHandle *duneloader_handle = link_append_context_library_duneloaderhandle_ensure(
         lapp_context, lib_context, reports);
 
     if (blo_handle == NULL) {
@@ -1241,17 +1241,17 @@ void BKE_blendfile_link(BlendfileLinkAppendContext *lapp_context, ReportList *re
 
     /* here appending/linking starts */
 
-    mainl = BLO_library_link_begin(&blo_handle, libname, lapp_context->params);
+    mainl = DUNELOADER_library_link_begin(&duneloader_handle, libname, lapp_context->params);
     lib = mainl->curlib;
-    BLI_assert(lib);
+    LIB_assert(lib);
     UNUSED_VARS_NDEBUG(lib);
 
     if (mainl->versionfile < 250) {
-      BKE_reportf(reports,
+      KERNEL_reportf(reports,
                   RPT_WARNING,
                   "Linking or appending from a very old .blend file format (%d.%d), no animation "
                   "conversion will "
-                  "be done! You may want to re-save your lib file with current Blender",
+                  "be done! You may want to re-save your lib file with current Dune",
                   mainl->versionfile,
                   mainl->subversionfile);
     }
@@ -1260,27 +1260,27 @@ void BKE_blendfile_link(BlendfileLinkAppendContext *lapp_context, ReportList *re
      * and tag those successful to not try to load them again with the other libs. */
     for (item_idx = 0, itemlink = lapp_context->items.list; itemlink;
          item_idx++, itemlink = itemlink->next) {
-      BlendfileLinkAppendContextItem *item = itemlink->link;
+      DunefileLinkAppendContextItem *item = itemlink->link;
       ID *new_id;
 
-      if (!BLI_BITMAP_TEST(item->libraries, lib_idx)) {
+      if (!LIB_BITMAP_TEST(item->libraries, lib_idx)) {
         continue;
       }
 
-      new_id = BLO_library_link_named_part(
-          mainl, &blo_handle, item->idcode, item->name, lapp_context->params);
+      new_id = LOADER_library_link_named_part(
+          mainl, &duneloader_handle, item->idcode, item->name, lapp_context->params);
 
       if (new_id) {
         /* If the link is successful, clear item's libs 'todo' flags.
          * This avoids trying to link same item with other libraries to come. */
-        BLI_bitmap_set_all(item->libraries, false, lapp_context->num_libraries);
+        LIB_bitmap_set_all(item->libraries, false, lapp_context->num_libraries);
         item->new_id = new_id;
         item->source_library = new_id->lib;
       }
     }
 
-    BLO_library_link_end(mainl, &blo_handle, lapp_context->params);
-    link_append_context_library_blohandle_release(lapp_context, lib_context);
+    LOADER_library_link_end(mainl, &duneloader_handle, lapp_context->params);
+    link_append_context_library_duneloaderhandle_release(lapp_context, lib_context);
   }
 
   /* Instantiate newly linked IDs as needed, if no append is scheduled. */
@@ -1291,16 +1291,16 @@ void BKE_blendfile_link(BlendfileLinkAppendContext *lapp_context, ReportList *re
      * dependencies), this list will grow and we will process those IDs later, leading to a flatten
      * recursive processing of all the linked dependencies. */
     for (itemlink = lapp_context->items.list; itemlink; itemlink = itemlink->next) {
-      BlendfileLinkAppendContextItem *item = itemlink->link;
+      DunefileLinkAppendContextItem *item = itemlink->link;
       ID *id = item->new_id;
       if (id == NULL) {
         continue;
       }
-      BLI_assert(item->userdata == NULL);
+      LIB_assert(item->userdata == NULL);
 
-      BlendfileLinkAppendContextCallBack cb_data = {
+      DunefileLinkAppendContextCallBack cb_data = {
           .lapp_context = lapp_context, .item = item, .reports = reports};
-      BKE_library_foreach_ID_link(lapp_context->params->bmain,
+      KERNEL_library_foreach_ID_link(lapp_context->params->dunemain,
                                   id,
                                   foreach_libblock_link_append_callback,
                                   &cb_data,
@@ -1313,27 +1313,24 @@ void BKE_blendfile_link(BlendfileLinkAppendContext *lapp_context, ReportList *re
   }
 
   if ((lapp_context->params->flag & FILE_LINK) != 0) {
-    blendfile_link_append_proxies_convert(lapp_context->params->bmain, reports);
+    dunefile_link_append_proxies_convert(lapp_context->params->dunemain, reports);
   }
 }
 
-/** \} */
+/** Library relocating code. **/
 
-/** \name Library relocating code.
- * \{ */
-
-static void blendfile_library_relocate_remap(Main *bmain,
+static void dunefile_library_relocate_remap(Main *dunemain,
                                              ID *old_id,
                                              ID *new_id,
                                              ReportList *reports,
                                              const bool do_reload,
                                              const short remap_flags)
 {
-  BLI_assert(old_id);
+  LIB_assert(old_id);
   if (do_reload) {
     /* Since we asked for placeholders in case of missing IDs,
      * we expect to always get a valid one. */
-    BLI_assert(new_id);
+    LIB_assert(new_id);
   }
   if (new_id) {
     CLOG_INFO(&LOG,
@@ -1342,7 +1339,7 @@ static void blendfile_library_relocate_remap(Main *bmain,
               old_id->name,
               old_id->us,
               new_id->us);
-    BKE_libblock_remap_locked(bmain, old_id, new_id, remap_flags);
+    KERNEL_libblock_remap_locked(bmain, old_id, new_id, remap_flags);
 
     if (old_id->flag & LIB_FAKEUSER) {
       id_fake_user_clear(old_id);
@@ -1359,7 +1356,7 @@ static void blendfile_library_relocate_remap(Main *bmain,
     /* In some cases, new_id might become direct link, remove parent of library in this case. */
     if (new_id->lib->parent && (new_id->tag & LIB_TAG_INDIRECT) == 0) {
       if (do_reload) {
-        BLI_assert_unreachable(); /* Should not happen in 'pure' reload case... */
+        LIB_assert_unreachable(); /* Should not happen in 'pure' reload case... */
       }
       new_id->lib->parent = NULL;
     }
@@ -1392,12 +1389,12 @@ static void blendfile_library_relocate_remap(Main *bmain,
     }
     else {
       len = MIN2(len, MAX_ID_NAME - 7);
-      BLI_strncpy(&old_id->name[len], "~000", 7);
+      LIB_strncpy(&old_id->name[len], "~000", 7);
     }
 
-    id_sort_by_name(which_libbase(bmain, GS(old_id->name)), old_id, NULL);
+    id_sort_by_name(which_libbase(dunemain, GS(old_id->name)), old_id, NULL);
 
-    BKE_reportf(
+    KERNEL_reportf(
         reports,
         RPT_WARNING,
         "Lib Reload: Replacing all references to old data-block '%s' by reloaded one failed, "
@@ -1408,7 +1405,7 @@ static void blendfile_library_relocate_remap(Main *bmain,
   }
 }
 
-void BKE_blendfile_library_relocate(BlendfileLinkAppendContext *lapp_context,
+void KERNEL_dunefile_library_relocate(DunefileLinkAppendContext *lapp_context,
                                     ReportList *reports,
                                     Library *library,
                                     const bool do_reload)
@@ -1419,20 +1416,20 @@ void BKE_blendfile_library_relocate(BlendfileLinkAppendContext *lapp_context,
   LinkNode *itemlink;
   int item_idx;
 
-  Main *bmain = lapp_context->params->bmain;
+  Main *dunemain = lapp_context->params->dunemain;
 
   /* All override rules need to be up to date, since there will be no do_version here, otherwise
    * older, now-invalid rules might be applied and likely fail, or some changes might be missing,
    * etc. See T93353. */
-  BKE_lib_override_library_main_operations_create(bmain, true);
+  KERNEL_lib_override_library_main_operations_create(dunemain, true);
 
   /* Remove all IDs to be reloaded from Main. */
-  lba_idx = set_listbasepointers(bmain, lbarray);
+  lba_idx = set_listbasepointers(dunemain, lbarray);
   while (lba_idx--) {
     ID *id = lbarray[lba_idx]->first;
     const short idcode = id ? GS(id->name) : 0;
 
-    if (!id || !BKE_idtype_idcode_is_linkable(idcode)) {
+    if (!id || !KERNEL_idtype_idcode_is_linkable(idcode)) {
       /* No need to reload non-linkable datatypes,
        * those will get relinked with their 'users ID'. */
       continue;
@@ -1440,19 +1437,19 @@ void BKE_blendfile_library_relocate(BlendfileLinkAppendContext *lapp_context,
 
     for (; id; id = id->next) {
       if (id->lib == library) {
-        BlendfileLinkAppendContextItem *item;
+        DunefileLinkAppendContextItem *item;
 
         /* We remove it from current Main, and add it to items to link... */
         /* Note that non-linkable IDs (like e.g. shape-keys) are also explicitly linked here... */
-        BLI_remlink(lbarray[lba_idx], id);
+        LIB_remlink(lbarray[lba_idx], id);
         /* Usual special code for ShapeKeys snowflakes... */
-        Key *old_key = BKE_key_from_id(id);
+        Key *old_key = KERNEL_key_from_id(id);
         if (old_key != NULL) {
-          BLI_remlink(which_libbase(bmain, GS(old_key->id.name)), &old_key->id);
+          LIB_remlink(which_libbase(dunemain, GS(old_key->id.name)), &old_key->id);
         }
 
-        item = BKE_blendfile_link_append_context_item_add(lapp_context, id->name + 2, idcode, id);
-        BLI_bitmap_set_all(item->libraries, true, (size_t)lapp_context->num_libraries);
+        item = KERNEL_dunefile_link_append_context_item_add(lapp_context, id->name + 2, idcode, id);
+        LIB_bitmap_set_all(item->libraries, true, (size_t)lapp_context->num_libraries);
 
         CLOG_INFO(&LOG, 4, "Datablock to seek for: %s", id->name);
       }
@@ -1464,93 +1461,93 @@ void BKE_blendfile_library_relocate(BlendfileLinkAppendContext *lapp_context,
     return;
   }
 
-  BKE_main_id_tag_all(bmain, LIB_TAG_PRE_EXISTING, true);
+  KERNEL_main_id_tag_all(dunemain, LIB_TAG_PRE_EXISTING, true);
 
   /* We do not want any instantiation here! */
-  BKE_blendfile_link(lapp_context, reports);
+  KERNEL_dunefile_link(lapp_context, reports);
 
-  BKE_main_lock(bmain);
+  KERNEL_main_lock(bmain);
 
   /* We add back old id to bmain.
    * We need to do this in a first, separated loop, otherwise some of those may not be handled by
    * ID remapping, which means they would still reference old data to be deleted... */
   for (item_idx = 0, itemlink = lapp_context->items.list; itemlink;
        item_idx++, itemlink = itemlink->next) {
-    BlendfileLinkAppendContextItem *item = itemlink->link;
+    DunefileLinkAppendContextItem *item = itemlink->link;
     ID *old_id = item->userdata;
 
-    BLI_assert(old_id);
-    BLI_addtail(which_libbase(bmain, GS(old_id->name)), old_id);
+    LIB_assert(old_id);
+    LIB_addtail(which_libbase(dunemain, GS(old_id->name)), old_id);
 
     /* Usual special code for ShapeKeys snowflakes... */
-    Key *old_key = BKE_key_from_id(old_id);
+    Key *old_key = KERNEL_key_from_id(old_id);
     if (old_key != NULL) {
-      BLI_addtail(which_libbase(bmain, GS(old_key->id.name)), &old_key->id);
+      LIB_addtail(which_libbase(dunemain, GS(old_key->id.name)), &old_key->id);
     }
   }
 
   /* Since our (old) reloaded IDs were removed from main, the user count done for them in linking
    * code is wrong, we need to redo it here after adding them back to main. */
-  BKE_main_id_refcount_recompute(bmain, false);
+  KERNEL_main_id_refcount_recompute(dunemain, false);
 
   /* Note that in reload case, we also want to replace indirect usages. */
   const short remap_flags = ID_REMAP_SKIP_NEVER_NULL_USAGE |
                             (do_reload ? 0 : ID_REMAP_SKIP_INDIRECT_USAGE);
   for (item_idx = 0, itemlink = lapp_context->items.list; itemlink;
        item_idx++, itemlink = itemlink->next) {
-    BlendfileLinkAppendContextItem *item = itemlink->link;
+    DunefileLinkAppendContextItem *item = itemlink->link;
     ID *old_id = item->userdata;
     ID *new_id = item->new_id;
 
-    blendfile_library_relocate_remap(bmain, old_id, new_id, reports, do_reload, remap_flags);
+    dunefile_library_relocate_remap(dunemain, old_id, new_id, reports, do_reload, remap_flags);
     if (new_id == NULL) {
       continue;
     }
     /* Usual special code for ShapeKeys snowflakes... */
-    Key **old_key_p = BKE_key_from_id_p(old_id);
+    Key **old_key_p = KERNEL_key_from_id_p(old_id);
     if (old_key_p == NULL) {
       continue;
     }
     Key *old_key = *old_key_p;
-    Key *new_key = BKE_key_from_id(new_id);
+    Key *new_key = KERNEL_key_from_id(new_id);
     if (old_key != NULL) {
       *old_key_p = NULL;
       id_us_min(&old_key->id);
-      blendfile_library_relocate_remap(
-          bmain, &old_key->id, &new_key->id, reports, do_reload, remap_flags);
+      dunefile_library_relocate_remap(
+          dunemain, &old_key->id, &new_key->id, reports, do_reload, remap_flags);
       *old_key_p = old_key;
       id_us_plus_no_lib(&old_key->id);
     }
   }
 
-  BKE_main_unlock(bmain);
+  KERNEL_main_unlock(bmain);
 
   for (item_idx = 0, itemlink = lapp_context->items.list; itemlink;
        item_idx++, itemlink = itemlink->next) {
-    BlendfileLinkAppendContextItem *item = itemlink->link;
+    DunefileLinkAppendContextItem *item = itemlink->link;
     ID *old_id = item->userdata;
 
     if (old_id->us == 0) {
-      BKE_id_free(bmain, old_id);
+      KERNEL_id_free(dunemain, old_id);
     }
   }
 
   /* Some datablocks can get reloaded/replaced 'silently' because they are not linkable
    * (shape keys e.g.), so we need another loop here to clear old ones if possible. */
-  lba_idx = set_listbasepointers(bmain, lbarray);
+  lba_idx = set_listbasepointers(dunemain, lbarray);
   while (lba_idx--) {
     ID *id, *id_next;
     for (id = lbarray[lba_idx]->first; id; id = id_next) {
       id_next = id->next;
       /* XXX That check may be a bit to generic/permissive? */
       if (id->lib && (id->flag & LIB_TAG_PRE_EXISTING) && id->us == 0) {
-        BKE_id_free(bmain, id);
+        KERNEL_id_free(dunemain, id);
       }
     }
   }
 
   /* Get rid of no more used libraries... */
-  BKE_main_id_tag_idcode(bmain, ID_LI, LIB_TAG_DOIT, true);
+  KERNEL_main_id_tag_idcode(bmain, ID_LI, LIB_TAG_DOIT, true);
   lba_idx = set_listbasepointers(bmain, lbarray);
   while (lba_idx--) {
     ID *id;
@@ -1561,12 +1558,12 @@ void BKE_blendfile_library_relocate(BlendfileLinkAppendContext *lapp_context,
     }
   }
   Library *lib, *lib_next;
-  for (lib = which_libbase(bmain, ID_LI)->first; lib; lib = lib_next) {
+  for (lib = which_libbase(dunemain, ID_LI)->first; lib; lib = lib_next) {
     lib_next = lib->id.next;
     if (lib->id.tag & LIB_TAG_DOIT) {
       id_us_clear_real(&lib->id);
       if (lib->id.us == 0) {
-        BKE_id_free(bmain, (ID *)lib);
+        KERNEL_id_free(dunemain, (ID *)lib);
       }
     }
   }
@@ -1579,22 +1576,22 @@ void BKE_blendfile_library_relocate(BlendfileLinkAppendContext *lapp_context,
       continue;
     }
     if ((id->override_library->reference->tag & LIB_TAG_PRE_EXISTING) == 0) {
-      BKE_lib_override_library_update(bmain, id);
+      KERNEL_lib_override_library_update(dunemain, id);
     }
   }
   FOREACH_MAIN_ID_END;
 
   /* Resync overrides if needed. */
   if (!USER_EXPERIMENTAL_TEST(&U, no_override_auto_resync)) {
-    BKE_lib_override_library_main_resync(bmain,
+    KERNEL_lib_override_library_main_resync(dunemain,
                                          lapp_context->params->context.scene,
                                          lapp_context->params->context.view_layer,
-                                         &(struct BlendFileReadReport){
+                                         &(struct DuneFileReadReport){
                                              .reports = reports,
                                          });
     /* We need to rebuild some of the deleted override rules (for UI feedback purpose). */
-    BKE_lib_override_library_main_operations_create(bmain, true);
+    KERNEL m_lib_override_library_main_operations_create(dunemain, true);
   }
 
-  BKE_main_collection_sync(bmain);
+  KERNEL_main_collection_sync(dunemain);
 }
