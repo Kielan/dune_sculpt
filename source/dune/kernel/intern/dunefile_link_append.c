@@ -19,36 +19,36 @@
 #include "structs_screen_types.h"
 #include "structs_space_types.h"
 
-#include "LI_bitmap.h"
-#include "LI_blenlib.h"
-#include "LI_ghash.h"
-#include "LI_linklist.h"
-#include "LI_math.h"
-#include "LI_memarena.h"
-#include "LI_utildefines.h"
+#include "LIB_bitmap.h"
+#include "LIB_dunelib.h"
+#include "LIB_ghash.h"
+#include "LIB_linklist.h"
+#include "LIB_math.h"
+#include "LIB_memarena.h"
+#include "LIB_utildefines.h"
 
 #include "TRANSLATION_translation.h"
 
-#include "KE_idtype.h"
-#include "KE_key.h"
-#include "KE_layer.h"
-#include "KE_lib_id.h"
-#include "KE_lib_override.h"
-#include "KE_lib_query.h"
-#include "KE_lib_remap.h"
-#include "KE_main.h"
-#include "KE_material.h"
-#include "KE_object.h"
-#include "KE_report.h"
-#include "KE_rigidbody.h"
-#include "KE_scene.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_key.h"
+#include "KERNEL_layer.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_override.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_lib_remap.h"
+#include "KERNEL_main.h"
+#include "KERNEL_material.h"
+#include "KERNEL_object.h"
+#include "KERNEL_report.h"
+#include "KERNEL_rigidbody.h"
+#include "KERNEL_scene.h"
 
-#include "KE_dunefile_link_append.h"
+#include "KERNEL_dunefile_link_append.h"
 
-#include "LO_readfile.h"
-#include "LO_writefile.h"
+#include "LOADER_readfile.h"
+#include "LOADER_writefile.h"
 
-static CLG_LogRef LOG = {"bke.blendfile_link_append"};
+static CLG_LogRef LOG = {"kernel.dunefile_link_append"};
 
 /* -------------------------------------------------------------------- */
 /** Link/append context implementation and public management API. **/
@@ -80,18 +80,18 @@ typedef struct DunefileLinkAppendContextLibrary {
   char *path;               /* Absolute .dune file path. */
   DuneHandle *duneloader_handle;  /* Dune file handle, if any. */
   bool duneloader_handle_is_owned; /* Whether the dune file handle is owned, or borrowed. */
-  /* The blendfile report associated with the `blo_handle`, if owned. */
-  BlendFileReadReport bf_reports;
-} BlendfileLinkAppendContextLibrary;
+  /* The dunefile report associated with the `blo_handle`, if owned. */
+  DuneFileReadReport bf_reports;
+} DunefileLinkAppendContextLibrary;
 
-typedef struct BlendfileLinkAppendContext {
+typedef struct DunefileLinkAppendContext {
   /** List of library paths to search IDs in. */
   LinkNodePair libraries;
   /** List of all ID to try to link from #libraries. */
   LinkNodePair items;
   int num_libraries;
   int num_items;
-  /** Linking/appending parameters. Including `bmain`, `scene`, `viewlayer` and `view3d`. */
+  /** Linking/appending parameters. Including `dunemain`, `scene`, `viewlayer` and `view3d`. */
   LibraryLink_Params *params;
 
   /** Allows to easily find an existing items from an ID pointer. */
@@ -100,20 +100,20 @@ typedef struct BlendfileLinkAppendContext {
   /** Runtime info used by append code to manage re-use of already appended matching IDs. */
   GHash *library_weak_reference_mapping;
 
-  /** Embedded blendfile and its size, if needed. */
-  const void *blendfile_mem;
-  size_t blendfile_memsize;
+  /** Embedded dunefile and its size, if needed. */
+  const void *dunefile_mem;
+  size_t dunefile_memsize;
 
   /** Internal 'private' data */
   MemArena *memarena;
-} BlendfileLinkAppendContext;
+} DunefileLinkAppendContext;
 
-typedef struct BlendfileLinkAppendContextCallBack {
-  BlendfileLinkAppendContext *lapp_context;
-  BlendfileLinkAppendContextItem *item;
+typedef struct DunefileLinkAppendContextCallBack {
+  DunefileLinkAppendContext *lapp_context;
+  DunefileLinkAppendContextItem *item;
   ReportList *reports;
 
-} BlendfileLinkAppendContextCallBack;
+} DunefileLinkAppendContextCallBack;
 
 /* Actions to apply to an item (i.e. linked ID). */
 enum {
@@ -130,9 +130,9 @@ enum {
   LINK_APPEND_TAG_INDIRECT = 1 << 0,
 };
 
-static BlendHandle *link_append_context_library_blohandle_ensure(
-    BlendfileLinkAppendContext *lapp_context,
-    BlendfileLinkAppendContextLibrary *lib_context,
+static DuneHandle *link_append_context_library_duneloaderhandle_ensure(
+    DunefileLinkAppendContext *lapp_context,
+    DunefileLinkAppendContextLibrary *lib_context,
     ReportList *reports)
 {
   if (reports != NULL) {
@@ -140,37 +140,37 @@ static BlendHandle *link_append_context_library_blohandle_ensure(
   }
 
   char *libname = lib_context->path;
-  BlendHandle *blo_handle = lib_context->blo_handle;
-  if (blo_handle == NULL) {
-    if (STREQ(libname, BLO_EMBEDDED_STARTUP_BLEND)) {
-      blo_handle = BLO_blendhandle_from_memory(lapp_context->blendfile_mem,
-                                               (int)lapp_context->blendfile_memsize,
+  DuneHandle *dune_loader_handle = lib_context->dune_loader_handle;
+  if (dune_loader_handle == NULL) {
+    if (STREQ(libname, LOADER_EMBEDDED_STARTUP_DUNE)) {
+      blo_handle = LOADER_dunehandle_from_memory(lapp_context->dunefile_mem,
+                                               (int)lapp_context->dunefile_memsize,
                                                &lib_context->bf_reports);
     }
     else {
-      blo_handle = BLO_blendhandle_from_file(libname, &lib_context->bf_reports);
+      dune_loader_handle = DUNELOADER_dunehandle_from_file(libname, &lib_context->bf_reports);
     }
-    lib_context->blo_handle = blo_handle;
-    lib_context->blo_handle_is_owned = true;
+    lib_context->duneloader_handle = duneloader_handle;
+    lib_context->duneloader_handle_is_owned = true;
   }
 
-  return blo_handle;
+  return duneloader_handle;
 }
 
-static void link_append_context_library_blohandle_release(
-    BlendfileLinkAppendContext *UNUSED(lapp_context),
-    BlendfileLinkAppendContextLibrary *lib_context)
+static void link_append_context_library_dune_loader_handle_release(
+    DunefileLinkAppendContext *UNUSED(lapp_context),
+    DunefileLinkAppendContextLibrary *lib_context)
 {
-  if (lib_context->blo_handle_is_owned && lib_context->blo_handle != NULL) {
-    BLO_blendhandle_close(lib_context->blo_handle);
-    lib_context->blo_handle = NULL;
+  if (lib_context->duneloader_handle_is_owned && lib_context->duneloader_handle != NULL) {
+    DUNELOADER_dunehandle_close(lib_context->duneloader_handle);
+    lib_context->duneloader_handle = NULL;
   }
 }
 
-BlendfileLinkAppendContext *BKE_blendfile_link_append_context_new(LibraryLink_Params *params)
+DunefileLinkAppendContext *KERNEL_dunefile_link_append_context_new(LibraryLink_Params *params)
 {
-  MemArena *ma = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
-  BlendfileLinkAppendContext *lapp_context = BLI_memarena_calloc(ma, sizeof(*lapp_context));
+  MemArena *ma = LIB_memarena_new(LIB_MEMARENA_STD_BUFSIZE, __func__);
+  DunefileLinkAppendContext *lapp_context = LIB_memarena_calloc(ma, sizeof(*lapp_context));
 
   lapp_context->params = params;
   lapp_context->memarena = ma;
@@ -178,24 +178,24 @@ BlendfileLinkAppendContext *BKE_blendfile_link_append_context_new(LibraryLink_Pa
   return lapp_context;
 }
 
-void BKE_blendfile_link_append_context_free(BlendfileLinkAppendContext *lapp_context)
+void KERNEL_dunefile_link_append_context_free(DunefileLinkAppendContext *lapp_context)
 {
   if (lapp_context->new_id_to_item != NULL) {
-    BLI_ghash_free(lapp_context->new_id_to_item, NULL, NULL);
+    LIB_ghash_free(lapp_context->new_id_to_item, NULL, NULL);
   }
 
   for (LinkNode *liblink = lapp_context->libraries.list; liblink != NULL;
        liblink = liblink->next) {
-    BlendfileLinkAppendContextLibrary *lib_context = liblink->link;
-    link_append_context_library_blohandle_release(lapp_context, lib_context);
+    DunefileLinkAppendContextLibrary *lib_context = liblink->link;
+    link_append_context_library_duneloader_handle_release(lapp_context, lib_context);
   }
 
-  BLI_assert(lapp_context->library_weak_reference_mapping == NULL);
+  LIB_assert(lapp_context->library_weak_reference_mapping == NULL);
 
-  BLI_memarena_free(lapp_context->memarena);
+  LIB_memarena_free(lapp_context->memarena);
 }
 
-void BKE_blendfile_link_append_context_flag_set(BlendfileLinkAppendContext *lapp_context,
+void KERNEL_dunefile_link_append_context_flag_set(DunefileLinkAppendContext *lapp_context,
                                                 const int flag,
                                                 const bool do_set)
 {
@@ -207,71 +207,71 @@ void BKE_blendfile_link_append_context_flag_set(BlendfileLinkAppendContext *lapp
   }
 }
 
-void BKE_blendfile_link_append_context_embedded_blendfile_set(
-    BlendfileLinkAppendContext *lapp_context, const void *blendfile_mem, int blendfile_memsize)
+void KERNEL_dunefile_link_append_context_embedded_dunefile_set(
+    DunefileLinkAppendContext *lapp_context, const void *dunefile_mem, int dunefile_memsize)
 {
-  BLI_assert_msg(lapp_context->blendfile_mem == NULL,
-                 "Please explicitly clear reference to an embedded blender memfile before "
+  LIB_assert_msg(lapp_context->dunefile_mem == NULL,
+                 "Please explicitly clear reference to an embedded dune memfile before "
                  "setting a new one");
-  lapp_context->blendfile_mem = blendfile_mem;
-  lapp_context->blendfile_memsize = (size_t)blendfile_memsize;
+  lapp_context->dunefile_mem = dunefile_mem;
+  lapp_context->dunefile_memsize = (size_t)dunefile_memsize;
 }
 
-void BKE_blendfile_link_append_context_embedded_blendfile_clear(
-    BlendfileLinkAppendContext *lapp_context)
+void KERNEL_dunefile_link_append_context_embedded_dunefile_clear(
+    DunefileLinkAppendContext *lapp_context)
 {
-  lapp_context->blendfile_mem = NULL;
-  lapp_context->blendfile_memsize = 0;
+  lapp_context->dunefile_mem = NULL;
+  lapp_context->dunefile_memsize = 0;
 }
 
-void BKE_blendfile_link_append_context_library_add(BlendfileLinkAppendContext *lapp_context,
+void KERNEL_dunefile_link_append_context_library_add(DunefileLinkAppendContext *lapp_context,
                                                    const char *libname,
-                                                   BlendHandle *blo_handle)
+                                                   DuneHandle *duneloader_handle)
 {
-  BLI_assert(lapp_context->items.list == NULL);
+  LIB_assert(lapp_context->items.list == NULL);
 
-  BlendfileLinkAppendContextLibrary *lib_context = BLI_memarena_calloc(lapp_context->memarena,
+  DunefileLinkAppendContextLibrary *lib_context = LIB_memarena_calloc(lapp_context->memarena,
                                                                        sizeof(*lib_context));
 
   size_t len = strlen(libname) + 1;
-  char *libpath = BLI_memarena_alloc(lapp_context->memarena, len);
-  BLI_strncpy(libpath, libname, len);
+  char *libpath = LIB_memarena_alloc(lapp_context->memarena, len);
+  LIB_strncpy(libpath, libname, len);
 
   lib_context->path = libpath;
-  lib_context->blo_handle = blo_handle;
-  lib_context->blo_handle_is_owned = (blo_handle == NULL);
+  lib_context->duneloader_handle = duneloader_handle;
+  lib_context->duneloader_handle_is_owned = (duneloader_handle == NULL);
 
-  BLI_linklist_append_arena(&lapp_context->libraries, lib_context, lapp_context->memarena);
+  LIB_linklist_append_arena(&lapp_context->libraries, lib_context, lapp_context->memarena);
   lapp_context->num_libraries++;
 }
 
-BlendfileLinkAppendContextItem *BKE_blendfile_link_append_context_item_add(
-    BlendfileLinkAppendContext *lapp_context,
+DunefileLinkAppendContextItem *KERNEL_dunefile_link_append_context_item_add(
+    DunefileLinkAppendContext *lapp_context,
     const char *idname,
     const short idcode,
     void *userdata)
 {
-  BlendfileLinkAppendContextItem *item = BLI_memarena_calloc(lapp_context->memarena,
+  DunefileLinkAppendContextItem *item = LIB_memarena_calloc(lapp_context->memarena,
                                                              sizeof(*item));
   size_t len = strlen(idname) + 1;
 
-  item->name = BLI_memarena_alloc(lapp_context->memarena, len);
-  BLI_strncpy(item->name, idname, len);
+  item->name = LIB_memarena_alloc(lapp_context->memarena, len);
+  LIB_strncpy(item->name, idname, len);
   item->idcode = idcode;
-  item->libraries = BLI_BITMAP_NEW_MEMARENA(lapp_context->memarena, lapp_context->num_libraries);
+  item->libraries = LIB_BITMAP_NEW_MEMARENA(lapp_context->memarena, lapp_context->num_libraries);
 
   item->new_id = NULL;
   item->action = LINK_APPEND_ACT_UNSET;
   item->userdata = userdata;
 
-  BLI_linklist_append_arena(&lapp_context->items, item, lapp_context->memarena);
+  LIB_linklist_append_arena(&lapp_context->items, item, lapp_context->memarena);
   lapp_context->num_items++;
 
   return item;
 }
 
-int BKE_blendfile_link_append_context_item_idtypes_from_library_add(
-    BlendfileLinkAppendContext *lapp_context,
+int KERNEL_dunefile_link_append_context_item_idtypes_from_library_add(
+    DunefileLinkAppendContext *lapp_context,
     ReportList *reports,
     const uint64_t id_types_filter,
     const int library_index)
@@ -280,27 +280,27 @@ int BKE_blendfile_link_append_context_item_idtypes_from_library_add(
   int id_code_iter = 0;
   short id_code;
 
-  LinkNode *lib_context_link = BLI_linklist_find(lapp_context->libraries.list, library_index);
-  BlendfileLinkAppendContextLibrary *lib_context = lib_context_link->link;
-  BlendHandle *blo_handle = link_append_context_library_blohandle_ensure(
+  LinkNode *lib_context_link = LIB_linklist_find(lapp_context->libraries.list, library_index);
+  DunefileLinkAppendContextLibrary *lib_context = lib_context_link->link;
+  DuneHandle *duneloader_handle = link_append_context_library_duneloader_handle_ensure(
       lapp_context, lib_context, reports);
 
-  if (blo_handle == NULL) {
-    return BLENDFILE_LINK_APPEND_INVALID;
+  if (duneloader_handle == NULL) {
+    return DUNEFILE_LINK_APPEND_INVALID;
   }
 
   const bool use_assets_only = (lapp_context->params->flag & FILE_ASSETS_ONLY) != 0;
 
-  while ((id_code = BKE_idtype_idcode_iter_step(&id_code_iter))) {
-    if (!BKE_idtype_idcode_is_linkable(id_code) ||
+  while ((id_code = KERNEL_idtype_idcode_iter_step(&id_code_iter))) {
+    if (!KERNEL_idtype_idcode_is_linkable(id_code) ||
         (id_types_filter != 0 &&
-         (BKE_idtype_idcode_to_idfilter(id_code) & id_types_filter) == 0)) {
+         (KERNEL_idtype_idcode_to_idfilter(id_code) & id_types_filter) == 0)) {
       continue;
     }
 
     int id_names_num;
-    LinkNode *id_names_list = BLO_blendhandle_get_datablock_names(
-        blo_handle, id_code, use_assets_only, &id_names_num);
+    LinkNode *id_names_list = DUNELOADER_dunehandle_get_datablock_names(
+        duneloader_handle, id_code, use_assets_only, &id_names_num);
 
     for (LinkNode *link_next = NULL; id_names_list != NULL; id_names_list = link_next) {
       link_next = id_names_list->next;
