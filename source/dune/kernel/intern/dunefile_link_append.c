@@ -1,7 +1,5 @@
-/** \file
- * \ingroup bke
- *
- * High level `.blend` file link/append code,
+/**
+ * High level `.dune` file link/append code,
  * including linking/appending several IDs from different libraries, handling instantiations of
  * collections/objects/object-data in current scene.
  */
@@ -13,54 +11,53 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_ID.h"
-#include "DNA_collection_types.h"
-#include "DNA_key_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
+#include "structs_ID.h"
+#include "structs_collection_types.h"
+#include "structs_key_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
+#include "structs_screen_types.h"
+#include "structs_space_types.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_utildefines.h"
+#include "LI_bitmap.h"
+#include "LI_blenlib.h"
+#include "LI_ghash.h"
+#include "LI_linklist.h"
+#include "LI_math.h"
+#include "LI_memarena.h"
+#include "LI_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
-#include "BKE_idtype.h"
-#include "BKE_key.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_override.h"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_object.h"
-#include "BKE_report.h"
-#include "BKE_rigidbody.h"
-#include "BKE_scene.h"
+#include "KE_idtype.h"
+#include "KE_key.h"
+#include "KE_layer.h"
+#include "KE_lib_id.h"
+#include "KE_lib_override.h"
+#include "KE_lib_query.h"
+#include "KE_lib_remap.h"
+#include "KE_main.h"
+#include "KE_material.h"
+#include "KE_object.h"
+#include "KE_report.h"
+#include "KE_rigidbody.h"
+#include "KE_scene.h"
 
-#include "BKE_blendfile_link_append.h"
+#include "KE_dunefile_link_append.h"
 
-#include "BLO_readfile.h"
-#include "BLO_writefile.h"
+#include "LO_readfile.h"
+#include "LO_writefile.h"
 
 static CLG_LogRef LOG = {"bke.blendfile_link_append"};
 
 /* -------------------------------------------------------------------- */
-/** \name Link/append context implementation and public management API.
- * \{ */
+/** Link/append context implementation and public management API. **/
 
-typedef struct BlendfileLinkAppendContextItem {
+typedef struct DunefileLinkAppendContextItem {
   /** Name of the ID (without the heading two-chars IDcode). */
   char *name;
-  /** All libs (from BlendfileLinkAppendContext.libraries) to try to load this ID from. */
-  BLI_bitmap *libraries;
+  /** All libs (from DunefileLinkAppendContext.libraries) to try to load this ID from. */
+  LIB_bitmap *libraries;
   /** ID type. */
   short idcode;
 
@@ -76,13 +73,13 @@ typedef struct BlendfileLinkAppendContextItem {
   Library *source_library;
   /** Opaque user data pointer. */
   void *userdata;
-} BlendfileLinkAppendContextItem;
+} DunefileLinkAppendContextItem;
 
-/* A blendfile library entry in the `libraries` list of #BlendfileLinkAppendContext. */
-typedef struct BlendfileLinkAppendContextLibrary {
-  char *path;               /* Absolute .blend file path. */
-  BlendHandle *blo_handle;  /* Blend file handle, if any. */
-  bool blo_handle_is_owned; /* Whether the blend file handle is owned, or borrowed. */
+/* A dunefile library entry in the `libraries` list of DunefileLinkAppendContext. */
+typedef struct DunefileLinkAppendContextLibrary {
+  char *path;               /* Absolute .dune file path. */
+  DuneHandle *duneloader_handle;  /* Dune file handle, if any. */
+  bool duneloader_handle_is_owned; /* Whether the dune file handle is owned, or borrowed. */
   /* The blendfile report associated with the `blo_handle`, if owned. */
   BlendFileReadReport bf_reports;
 } BlendfileLinkAppendContextLibrary;
