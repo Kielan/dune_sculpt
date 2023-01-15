@@ -6099,3 +6099,1898 @@ static void actcon_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
     flush_space_tar(con, list, no_copy);
   }
 }
+
+static void actcon_get_tarmat(struct Depsgraph *depsgraph,
+                              bConstraint *con,
+                              bConstraintOb *cob,
+                              bConstraintTarget *ct,
+                              float UNUSED(ctime))
+{
+  bActionConstraint *data = con->data;
+
+  if (VALID_CONS_TARGET(ct) || data->flag & ACTCON_USE_EVAL_TIME) {
+    float tempmat[4][4], vec[3];
+    float s, t;
+    short axis;
+
+    /* initialize return matrix */
+    unit_m4(ct->matrix);
+
+    /* Skip targets if we're using local float property to set action time */
+    if (data->flag & ACTCON_USE_EVAL_TIME) {
+      s = data->eval_time;
+    }
+    else {
+      /* get the transform matrix of the target */
+      constraint_target_to_mat4(ct->tar,
+                                ct->subtarget,
+                                cob,
+                                tempmat,
+                                CONSTRAINT_SPACE_WORLD,
+                                ct->space,
+                                con->flag,
+                                con->headtail);
+
+      /* determine where in transform range target is */
+      /* data->type is mapped as follows for backwards compatibility:
+       * 00,01,02 - rotation (it used to be like this)
+       * 10,11,12 - scaling
+       * 20,21,22 - location
+       */
+      if (data->type < 10) {
+        /* extract rotation (is in whatever space target should be in) */
+        mat4_to_eul(vec, tempmat);
+        mul_v3_fl(vec, RAD2DEGF(1.0f)); /* rad -> deg */
+        axis = data->type;
+      }
+      else if (data->type < 20) {
+        /* extract scaling (is in whatever space target should be in) */
+        mat4_to_size(vec, tempmat);
+        axis = data->type - 10;
+      }
+      else {
+        /* extract location */
+        copy_v3_v3(vec, tempmat[3]);
+        axis = data->type - 20;
+      }
+
+      BLI_assert((unsigned int)axis < 3);
+
+      /* Target defines the animation */
+      s = (vec[axis] - data->min) / (data->max - data->min);
+    }
+
+    CLAMP(s, 0, 1);
+    t = (s * (data->end - data->start)) + data->start;
+    const AnimationEvalContext anim_eval_context = BKE_animsys_eval_context_construct(depsgraph,
+                                                                                      t);
+
+    if (G.debug & G_DEBUG) {
+      printf("do Action Constraint %s - Ob %s Pchan %s\n",
+             con->name,
+             cob->ob->id.name + 2,
+             (cob->pchan) ? cob->pchan->name : NULL);
+    }
+
+    /* Get the appropriate information from the action */
+    if (cob->type == CONSTRAINT_OBTYPE_OBJECT || (data->flag & ACTCON_BONE_USE_OBJECT_ACTION)) {
+      Object workob;
+
+      /* evaluate using workob */
+      /* FIXME: we don't have any consistent standards on limiting effects on object... */
+      what_does_obaction(cob->ob, &workob, NULL, data->act, NULL, &anim_eval_context);
+      BKE_object_to_mat4(&workob, ct->matrix);
+    }
+    else if (cob->type == CONSTRAINT_OBTYPE_BONE) {
+      Object workob;
+      bPose pose = {{0}};
+      bPoseChannel *pchan, *tchan;
+
+      /* make a copy of the bone of interest in the temp pose before evaluating action,
+       * so that it can get set - we need to manually copy over a few settings,
+       * including rotation order, otherwise this fails. */
+      pchan = cob->pchan;
+
+      tchan = BKE_pose_channel_ensure(&pose, pchan->name);
+      tchan->rotmode = pchan->rotmode;
+
+      /* evaluate action using workob (it will only set the PoseChannel in question) */
+      what_does_obaction(cob->ob, &workob, &pose, data->act, pchan->name, &anim_eval_context);
+
+      /* convert animation to matrices for use here */
+      BKE_pchan_calc_mat(tchan);
+      copy_m4_m4(ct->matrix, tchan->chan_mat);
+
+      /* Clean up */
+      BKE_pose_free_data(&pose);
+    }
+    else {
+      /* behavior undefined... */
+      puts("Error: unknown owner type for Action Constraint");
+    }
+  }
+}
+
+static void actcon_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bActionConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  if (VALID_CONS_TARGET(ct) || data->flag & ACTCON_USE_EVAL_TIME) {
+    switch (data->mix_mode) {
+      /* Simple matrix multiplication. */
+      case ACTCON_MIX_BEFORE_FULL:
+        mul_m4_m4m4(cob->matrix, ct->matrix, cob->matrix);
+        break;
+
+      case ACTCON_MIX_AFTER_FULL:
+        mul_m4_m4m4(cob->matrix, cob->matrix, ct->matrix);
+        break;
+
+      /* Aligned Inherit Scale emulation. */
+      case ACTCON_MIX_BEFORE:
+        mul_m4_m4m4_aligned_scale(cob->matrix, ct->matrix, cob->matrix);
+        break;
+
+      case ACTCON_MIX_AFTER:
+        mul_m4_m4m4_aligned_scale(cob->matrix, cob->matrix, ct->matrix);
+        break;
+
+      /* Fully separate handling of channels. */
+      case ACTCON_MIX_BEFORE_SPLIT:
+        mul_m4_m4m4_split_channels(cob->matrix, ct->matrix, cob->matrix);
+        break;
+
+      case ACTCON_MIX_AFTER_SPLIT:
+        mul_m4_m4m4_split_channels(cob->matrix, cob->matrix, ct->matrix);
+        break;
+
+      default:
+        BLI_assert_msg(0, "Unknown Action mix mode");
+    }
+  }
+}
+
+static bConstraintTypeInfo CTI_ACTION = {
+    CONSTRAINT_TYPE_ACTION,    /* type */
+    sizeof(bActionConstraint), /* size */
+    "Action",                  /* name */
+    "bActionConstraint",       /* struct name */
+    NULL,                      /* free data */
+    actcon_id_looper,          /* id looper */
+    NULL,                      /* copy data */
+    actcon_new_data,           /* new data */
+    actcon_get_tars,           /* get constraint targets */
+    actcon_flush_tars,         /* flush constraint targets */
+    actcon_get_tarmat,         /* get target matrix */
+    actcon_evaluate,           /* evaluate */
+};
+
+/* --------- Locked Track ---------- */
+
+static void locktrack_new_data(void *cdata)
+{
+  bLockTrackConstraint *data = (bLockTrackConstraint *)cdata;
+
+  data->trackflag = TRACK_Y;
+  data->lockflag = LOCK_Z;
+}
+
+static void locktrack_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bLockTrackConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+}
+
+static int locktrack_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bLockTrackConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void locktrack_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bLockTrackConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+  }
+}
+
+static void locktrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bLockTrackConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  if (VALID_CONS_TARGET(ct)) {
+    float vec[3], vec2[3];
+    float totmat[3][3];
+    float tmpmat[3][3];
+    float invmat[3][3];
+    float mdet;
+
+    /* Vector object -> target */
+    sub_v3_v3v3(vec, ct->matrix[3], cob->matrix[3]);
+    switch (data->lockflag) {
+      case LOCK_X: /* LOCK X */
+      {
+        switch (data->trackflag) {
+          case TRACK_Y: /* LOCK X TRACK Y */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[0]);
+            sub_v3_v3v3(totmat[1], vec, vec2);
+            normalize_v3(totmat[1]);
+
+            /* the x axis is fixed */
+            normalize_v3_v3(totmat[0], cob->matrix[0]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[2], totmat[0], totmat[1]);
+            break;
+          }
+          case TRACK_Z: /* LOCK X TRACK Z */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[0]);
+            sub_v3_v3v3(totmat[2], vec, vec2);
+            normalize_v3(totmat[2]);
+
+            /* the x axis is fixed */
+            normalize_v3_v3(totmat[0], cob->matrix[0]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[1], totmat[2], totmat[0]);
+            break;
+          }
+          case TRACK_nY: /* LOCK X TRACK -Y */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[0]);
+            sub_v3_v3v3(totmat[1], vec, vec2);
+            normalize_v3(totmat[1]);
+            negate_v3(totmat[1]);
+
+            /* the x axis is fixed */
+            normalize_v3_v3(totmat[0], cob->matrix[0]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[2], totmat[0], totmat[1]);
+            break;
+          }
+          case TRACK_nZ: /* LOCK X TRACK -Z */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[0]);
+            sub_v3_v3v3(totmat[2], vec, vec2);
+            normalize_v3(totmat[2]);
+            negate_v3(totmat[2]);
+
+            /* the x axis is fixed */
+            normalize_v3_v3(totmat[0], cob->matrix[0]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[1], totmat[2], totmat[0]);
+            break;
+          }
+          default: {
+            unit_m3(totmat);
+            break;
+          }
+        }
+        break;
+      }
+      case LOCK_Y: /* LOCK Y */
+      {
+        switch (data->trackflag) {
+          case TRACK_X: /* LOCK Y TRACK X */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[1]);
+            sub_v3_v3v3(totmat[0], vec, vec2);
+            normalize_v3(totmat[0]);
+
+            /* the y axis is fixed */
+            normalize_v3_v3(totmat[1], cob->matrix[1]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[2], totmat[0], totmat[1]);
+            break;
+          }
+          case TRACK_Z: /* LOCK Y TRACK Z */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[1]);
+            sub_v3_v3v3(totmat[2], vec, vec2);
+            normalize_v3(totmat[2]);
+
+            /* the y axis is fixed */
+            normalize_v3_v3(totmat[1], cob->matrix[1]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[0], totmat[1], totmat[2]);
+            break;
+          }
+          case TRACK_nX: /* LOCK Y TRACK -X */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[1]);
+            sub_v3_v3v3(totmat[0], vec, vec2);
+            normalize_v3(totmat[0]);
+            negate_v3(totmat[0]);
+
+            /* the y axis is fixed */
+            normalize_v3_v3(totmat[1], cob->matrix[1]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[2], totmat[0], totmat[1]);
+            break;
+          }
+          case TRACK_nZ: /* LOCK Y TRACK -Z */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[1]);
+            sub_v3_v3v3(totmat[2], vec, vec2);
+            normalize_v3(totmat[2]);
+            negate_v3(totmat[2]);
+
+            /* the y axis is fixed */
+            normalize_v3_v3(totmat[1], cob->matrix[1]);
+
+            /* the z axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[0], totmat[1], totmat[2]);
+            break;
+          }
+          default: {
+            unit_m3(totmat);
+            break;
+          }
+        }
+        break;
+      }
+      case LOCK_Z: /* LOCK Z */
+      {
+        switch (data->trackflag) {
+          case TRACK_X: /* LOCK Z TRACK X */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[2]);
+            sub_v3_v3v3(totmat[0], vec, vec2);
+            normalize_v3(totmat[0]);
+
+            /* the z axis is fixed */
+            normalize_v3_v3(totmat[2], cob->matrix[2]);
+
+            /* the x axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[1], totmat[2], totmat[0]);
+            break;
+          }
+          case TRACK_Y: /* LOCK Z TRACK Y */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[2]);
+            sub_v3_v3v3(totmat[1], vec, vec2);
+            normalize_v3(totmat[1]);
+
+            /* the z axis is fixed */
+            normalize_v3_v3(totmat[2], cob->matrix[2]);
+
+            /* the x axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[0], totmat[1], totmat[2]);
+            break;
+          }
+          case TRACK_nX: /* LOCK Z TRACK -X */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[2]);
+            sub_v3_v3v3(totmat[0], vec, vec2);
+            normalize_v3(totmat[0]);
+            negate_v3(totmat[0]);
+
+            /* the z axis is fixed */
+            normalize_v3_v3(totmat[2], cob->matrix[2]);
+
+            /* the x axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[1], totmat[2], totmat[0]);
+            break;
+          }
+          case TRACK_nY: /* LOCK Z TRACK -Y */
+          {
+            /* Projection of Vector on the plane */
+            project_v3_v3v3(vec2, vec, cob->matrix[2]);
+            sub_v3_v3v3(totmat[1], vec, vec2);
+            normalize_v3(totmat[1]);
+            negate_v3(totmat[1]);
+
+            /* the z axis is fixed */
+            normalize_v3_v3(totmat[2], cob->matrix[2]);
+
+            /* the x axis gets mapped onto a third orthogonal vector */
+            cross_v3_v3v3(totmat[0], totmat[1], totmat[2]);
+            break;
+          }
+          default: {
+            unit_m3(totmat);
+            break;
+          }
+        }
+        break;
+      }
+      default: {
+        unit_m3(totmat);
+        break;
+      }
+    }
+    /* Block to keep matrix heading */
+    copy_m3_m4(tmpmat, cob->matrix);
+    normalize_m3(tmpmat);
+    invert_m3_m3(invmat, tmpmat);
+    mul_m3_m3m3(tmpmat, totmat, invmat);
+    totmat[0][0] = tmpmat[0][0];
+    totmat[0][1] = tmpmat[0][1];
+    totmat[0][2] = tmpmat[0][2];
+    totmat[1][0] = tmpmat[1][0];
+    totmat[1][1] = tmpmat[1][1];
+    totmat[1][2] = tmpmat[1][2];
+    totmat[2][0] = tmpmat[2][0];
+    totmat[2][1] = tmpmat[2][1];
+    totmat[2][2] = tmpmat[2][2];
+
+    mdet = determinant_m3(totmat[0][0],
+                          totmat[0][1],
+                          totmat[0][2],
+                          totmat[1][0],
+                          totmat[1][1],
+                          totmat[1][2],
+                          totmat[2][0],
+                          totmat[2][1],
+                          totmat[2][2]);
+    if (mdet == 0) {
+      unit_m3(totmat);
+    }
+
+    /* apply out transformation to the object */
+    mul_m4_m3m4(cob->matrix, totmat, cob->matrix);
+  }
+}
+
+static bConstraintTypeInfo CTI_LOCKTRACK = {
+    CONSTRAINT_TYPE_LOCKTRACK,    /* type */
+    sizeof(bLockTrackConstraint), /* size */
+    "Locked Track",               /* name */
+    "bLockTrackConstraint",       /* struct name */
+    NULL,                         /* free data */
+    locktrack_id_looper,          /* id looper */
+    NULL,                         /* copy data */
+    locktrack_new_data,           /* new data */
+    locktrack_get_tars,           /* get constraint targets */
+    locktrack_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,           /* get target matrix */
+    locktrack_evaluate,           /* evaluate */
+};
+
+/* ---------- Limit Distance Constraint ----------- */
+
+static void distlimit_new_data(void *cdata)
+{
+  bDistLimitConstraint *data = (bDistLimitConstraint *)cdata;
+
+  data->dist = 0.0f;
+}
+
+static void distlimit_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bDistLimitConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+
+  custom_space_id_looper(con, func, userdata);
+}
+
+static int distlimit_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bDistLimitConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1 + get_space_tar(con, list);
+  }
+
+  return 0;
+}
+
+static void distlimit_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bDistLimitConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+    flush_space_tar(con, list, no_copy);
+  }
+}
+
+static void distlimit_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bDistLimitConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  /* only evaluate if there is a target */
+  if (VALID_CONS_TARGET(ct)) {
+    float dvec[3], dist, sfac = 1.0f;
+    short clamp_surf = 0;
+
+    /* calculate our current distance from the target */
+    dist = len_v3v3(cob->matrix[3], ct->matrix[3]);
+
+    /* set distance (flag is only set when user demands it) */
+    if (data->dist == 0) {
+      data->dist = dist;
+
+      /* Write the computed distance back to the master copy if in COW evaluation. */
+      bConstraint *orig_con = constraint_find_original_for_update(cob, con);
+
+      if (orig_con != NULL) {
+        bDistLimitConstraint *orig_data = orig_con->data;
+
+        orig_data->dist = data->dist;
+      }
+    }
+
+    /* check if we're which way to clamp from, and calculate interpolation factor (if needed) */
+    if (data->mode == LIMITDIST_OUTSIDE) {
+      /* if inside, then move to surface */
+      if (dist <= data->dist) {
+        clamp_surf = 1;
+        if (dist != 0.0f) {
+          sfac = data->dist / dist;
+        }
+      }
+      /* if soft-distance is enabled, start fading once owner is dist+softdist from the target */
+      else if (data->flag & LIMITDIST_USESOFT) {
+        if (dist <= (data->dist + data->soft)) {
+          /* pass */
+        }
+      }
+    }
+    else if (data->mode == LIMITDIST_INSIDE) {
+      /* if outside, then move to surface */
+      if (dist >= data->dist) {
+        clamp_surf = 1;
+        if (dist != 0.0f) {
+          sfac = data->dist / dist;
+        }
+      }
+      /* if soft-distance is enabled, start fading once owner is dist-soft from the target */
+      else if (data->flag & LIMITDIST_USESOFT) {
+        /* FIXME: there's a problem with "jumping" when this kicks in */
+        if (dist >= (data->dist - data->soft)) {
+          sfac = (float)(data->soft * (1.0f - expf(-(dist - data->dist) / data->soft)) +
+                         data->dist);
+          if (dist != 0.0f) {
+            sfac /= dist;
+          }
+
+          clamp_surf = 1;
+        }
+      }
+    }
+    else {
+      if (IS_EQF(dist, data->dist) == 0) {
+        clamp_surf = 1;
+        if (dist != 0.0f) {
+          sfac = data->dist / dist;
+        }
+      }
+    }
+
+    /* clamp to 'surface' (i.e. move owner so that dist == data->dist) */
+    if (clamp_surf) {
+      /* simply interpolate along line formed by target -> owner */
+      interp_v3_v3v3(dvec, ct->matrix[3], cob->matrix[3], sfac);
+
+      /* copy new vector onto owner */
+      copy_v3_v3(cob->matrix[3], dvec);
+    }
+  }
+}
+
+static bConstraintTypeInfo CTI_DISTLIMIT = {
+    CONSTRAINT_TYPE_DISTLIMIT,    /* type */
+    sizeof(bDistLimitConstraint), /* size */
+    "Limit Distance",             /* name */
+    "bDistLimitConstraint",       /* struct name */
+    NULL,                         /* free data */
+    distlimit_id_looper,          /* id looper */
+    NULL,                         /* copy data */
+    distlimit_new_data,           /* new data */
+    distlimit_get_tars,           /* get constraint targets */
+    distlimit_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,           /* get a target matrix */
+    distlimit_evaluate,           /* evaluate */
+};
+
+/* ---------- Stretch To ------------ */
+
+static void stretchto_new_data(void *cdata)
+{
+  bStretchToConstraint *data = (bStretchToConstraint *)cdata;
+
+  data->volmode = 0;
+  data->plane = SWING_Y;
+  data->orglength = 0.0;
+  data->bulge = 1.0;
+  data->bulge_max = 1.0f;
+  data->bulge_min = 1.0f;
+}
+
+static void stretchto_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bStretchToConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+}
+
+static int stretchto_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bStretchToConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void stretchto_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bStretchToConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+  }
+}
+
+static void stretchto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bStretchToConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  /* only evaluate if there is a target */
+  if (VALID_CONS_TARGET(ct)) {
+    float size[3], scale[3], vec[3], xx[3], zz[3], orth[3];
+    float dist, bulge;
+
+    /* Remove shear if using the Damped Track mode; the other modes
+     * do it as a side effect, which is relied on by rigs. */
+    if (data->plane == SWING_Y) {
+      orthogonalize_m4_stable(cob->matrix, 1, false);
+    }
+
+    /* store scaling before destroying obmat */
+    normalize_m4_ex(cob->matrix, size);
+
+    /* store X orientation before destroying obmat */
+    copy_v3_v3(xx, cob->matrix[0]);
+
+    /* store Z orientation before destroying obmat */
+    copy_v3_v3(zz, cob->matrix[2]);
+
+    /* Compute distance and direction to target. */
+    sub_v3_v3v3(vec, ct->matrix[3], cob->matrix[3]);
+
+    dist = normalize_v3(vec);
+
+    /* Only Y constrained object axis scale should be used, to keep same length when scaling it. */
+    dist /= size[1];
+
+    /* data->orglength==0 occurs on first run, and after 'R' button is clicked */
+    if (data->orglength == 0) {
+      data->orglength = dist;
+
+      /* Write the computed length back to the master copy if in COW evaluation. */
+      bConstraint *orig_con = constraint_find_original_for_update(cob, con);
+
+      if (orig_con != NULL) {
+        bStretchToConstraint *orig_data = orig_con->data;
+
+        orig_data->orglength = data->orglength;
+      }
+    }
+
+    scale[1] = dist / data->orglength;
+
+    bulge = powf(data->orglength / dist, data->bulge);
+
+    if (bulge > 1.0f) {
+      if (data->flag & STRETCHTOCON_USE_BULGE_MAX) {
+        float bulge_max = max_ff(data->bulge_max, 1.0f);
+        float hard = min_ff(bulge, bulge_max);
+
+        float range = bulge_max - 1.0f;
+        float scale_fac = (range > 0.0f) ? 1.0f / range : 0.0f;
+        float soft = 1.0f + range * atanf((bulge - 1.0f) * scale_fac) / (float)M_PI_2;
+
+        bulge = interpf(soft, hard, data->bulge_smooth);
+      }
+    }
+    if (bulge < 1.0f) {
+      if (data->flag & STRETCHTOCON_USE_BULGE_MIN) {
+        float bulge_min = CLAMPIS(data->bulge_min, 0.0f, 1.0f);
+        float hard = max_ff(bulge, bulge_min);
+
+        float range = 1.0f - bulge_min;
+        float scale_fac = (range > 0.0f) ? 1.0f / range : 0.0f;
+        float soft = 1.0f - range * atanf((1.0f - bulge) * scale_fac) / (float)M_PI_2;
+
+        bulge = interpf(soft, hard, data->bulge_smooth);
+      }
+    }
+
+    switch (data->volmode) {
+      /* volume preserving scaling */
+      case VOLUME_XZ:
+        scale[0] = sqrtf(bulge);
+        scale[2] = scale[0];
+        break;
+      case VOLUME_X:
+        scale[0] = bulge;
+        scale[2] = 1.0;
+        break;
+      case VOLUME_Z:
+        scale[0] = 1.0;
+        scale[2] = bulge;
+        break;
+      /* don't care for volume */
+      case NO_VOLUME:
+        scale[0] = 1.0;
+        scale[2] = 1.0;
+        break;
+      default: /* Should not happen, but in case. */
+        return;
+    } /* switch (data->volmode) */
+
+    /* Compute final scale. */
+    mul_v3_v3(size, scale);
+
+    switch (data->plane) {
+      case SWING_Y:
+        /* Point the Y axis using Damped Track math. */
+        damptrack_do_transform(cob->matrix, vec, TRACK_Y);
+        break;
+      case PLANE_X:
+        /* New Y aligns  object target connection. */
+        copy_v3_v3(cob->matrix[1], vec);
+
+        /* Build new Z vector. */
+        /* Orthogonal to "new Y" "old X! plane. */
+        cross_v3_v3v3(orth, xx, vec);
+        normalize_v3(orth);
+
+        /* New Z. */
+        copy_v3_v3(cob->matrix[2], orth);
+
+        /* We decided to keep X plane. */
+        cross_v3_v3v3(xx, vec, orth);
+        normalize_v3_v3(cob->matrix[0], xx);
+        break;
+      case PLANE_Z:
+        /* New Y aligns  object target connection. */
+        copy_v3_v3(cob->matrix[1], vec);
+
+        /* Build new X vector. */
+        /* Orthogonal to "new Y" "old Z! plane. */
+        cross_v3_v3v3(orth, zz, vec);
+        normalize_v3(orth);
+
+        /* New X. */
+        negate_v3_v3(cob->matrix[0], orth);
+
+        /* We decided to keep Z. */
+        cross_v3_v3v3(zz, vec, orth);
+        normalize_v3_v3(cob->matrix[2], zz);
+        break;
+    } /* switch (data->plane) */
+
+    rescale_m4(cob->matrix, size);
+  }
+}
+
+static bConstraintTypeInfo CTI_STRETCHTO = {
+    CONSTRAINT_TYPE_STRETCHTO,    /* type */
+    sizeof(bStretchToConstraint), /* size */
+    "Stretch To",                 /* name */
+    "bStretchToConstraint",       /* struct name */
+    NULL,                         /* free data */
+    stretchto_id_looper,          /* id looper */
+    NULL,                         /* copy data */
+    stretchto_new_data,           /* new data */
+    stretchto_get_tars,           /* get constraint targets */
+    stretchto_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,           /* get target matrix */
+    stretchto_evaluate,           /* evaluate */
+};
+
+/* ---------- Floor ------------ */
+
+static void minmax_new_data(void *cdata)
+{
+  bMinMaxConstraint *data = (bMinMaxConstraint *)cdata;
+
+  data->minmaxflag = TRACK_Z;
+  data->offset = 0.0f;
+  data->flag = 0;
+}
+
+static void minmax_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bMinMaxConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+
+  custom_space_id_looper(con, func, userdata);
+}
+
+static int minmax_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bMinMaxConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1 + get_space_tar(con, list);
+  }
+
+  return 0;
+}
+
+static void minmax_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bMinMaxConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+    flush_space_tar(con, list, no_copy);
+  }
+}
+
+static void minmax_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bMinMaxConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  /* only evaluate if there is a target */
+  if (VALID_CONS_TARGET(ct)) {
+    float obmat[4][4], imat[4][4], tarmat[4][4], tmat[4][4];
+    float val1, val2;
+    int index;
+
+    copy_m4_m4(obmat, cob->matrix);
+    copy_m4_m4(tarmat, ct->matrix);
+
+    if (data->flag & MINMAX_USEROT) {
+      /* Take rotation of target into account by doing the transaction in target's local-space. */
+      invert_m4_m4(imat, tarmat);
+      mul_m4_m4m4(tmat, imat, obmat);
+      copy_m4_m4(obmat, tmat);
+      unit_m4(tarmat);
+    }
+
+    switch (data->minmaxflag) {
+      case TRACK_Z:
+        val1 = tarmat[3][2];
+        val2 = obmat[3][2] - data->offset;
+        index = 2;
+        break;
+      case TRACK_Y:
+        val1 = tarmat[3][1];
+        val2 = obmat[3][1] - data->offset;
+        index = 1;
+        break;
+      case TRACK_X:
+        val1 = tarmat[3][0];
+        val2 = obmat[3][0] - data->offset;
+        index = 0;
+        break;
+      case TRACK_nZ:
+        val2 = tarmat[3][2];
+        val1 = obmat[3][2] - data->offset;
+        index = 2;
+        break;
+      case TRACK_nY:
+        val2 = tarmat[3][1];
+        val1 = obmat[3][1] - data->offset;
+        index = 1;
+        break;
+      case TRACK_nX:
+        val2 = tarmat[3][0];
+        val1 = obmat[3][0] - data->offset;
+        index = 0;
+        break;
+      default:
+        return;
+    }
+
+    if (val1 > val2) {
+      obmat[3][index] = tarmat[3][index] + data->offset;
+      if (data->flag & MINMAX_USEROT) {
+        /* Get out of local-space. */
+        mul_m4_m4m4(tmat, ct->matrix, obmat);
+        copy_m4_m4(cob->matrix, tmat);
+      }
+      else {
+        copy_v3_v3(cob->matrix[3], obmat[3]);
+      }
+    }
+  }
+}
+
+static bConstraintTypeInfo CTI_MINMAX = {
+    CONSTRAINT_TYPE_MINMAX,    /* type */
+    sizeof(bMinMaxConstraint), /* size */
+    "Floor",                   /* name */
+    "bMinMaxConstraint",       /* struct name */
+    NULL,                      /* free data */
+    minmax_id_looper,          /* id looper */
+    NULL,                      /* copy data */
+    minmax_new_data,           /* new data */
+    minmax_get_tars,           /* get constraint targets */
+    minmax_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,        /* get target matrix */
+    minmax_evaluate,           /* evaluate */
+};
+
+/* -------- Clamp To ---------- */
+
+static void clampto_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bClampToConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+}
+
+static int clampto_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bClampToConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints without subtargets */
+    SINGLETARGETNS_GET_TARS(con, data->tar, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void clampto_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bClampToConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGETNS_FLUSH_TARS(con, data->tar, ct, list, no_copy);
+  }
+}
+
+static void clampto_get_tarmat(struct Depsgraph *UNUSED(depsgraph),
+                               bConstraint *UNUSED(con),
+                               bConstraintOb *UNUSED(cob),
+                               bConstraintTarget *ct,
+                               float UNUSED(ctime))
+{
+  /* technically, this isn't really needed for evaluation, but we don't know what else
+   * might end up calling this...
+   */
+  if (ct) {
+    unit_m4(ct->matrix);
+  }
+}
+
+static void clampto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bClampToConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  /* only evaluate if there is a target and it is a curve */
+  if (VALID_CONS_TARGET(ct) && (ct->tar->type == OB_CURVES_LEGACY)) {
+    float obmat[4][4], ownLoc[3];
+    float curveMin[3], curveMax[3];
+    float targetMatrix[4][4];
+
+    copy_m4_m4(obmat, cob->matrix);
+    copy_v3_v3(ownLoc, obmat[3]);
+
+    unit_m4(targetMatrix);
+    INIT_MINMAX(curveMin, curveMax);
+    /* XXX(@campbellbarton): don't think this is good calling this here because
+     * the other object's data is lazily initializing bounding-box information.
+     * This could cause issues when evaluating from a thread.
+     * If the depsgraph ensures the bound-box is always available, a code-path could
+     * be used that doesn't lazy initialize to avoid thread safety issues in the future. */
+    BKE_object_minmax(ct->tar, curveMin, curveMax, true);
+
+    /* get targetmatrix */
+    if (data->tar->runtime.curve_cache && data->tar->runtime.curve_cache->anim_path_accum_length) {
+      float vec[4], dir[3], totmat[4][4];
+      float curvetime;
+      short clamp_axis;
+
+      /* find best position on curve */
+      /* 1. determine which axis to sample on? */
+      if (data->flag == CLAMPTO_AUTO) {
+        float size[3];
+        sub_v3_v3v3(size, curveMax, curveMin);
+
+        /* find axis along which the bounding box has the greatest
+         * extent. Otherwise, default to the x-axis, as that is quite
+         * frequently used.
+         */
+        if ((size[2] > size[0]) && (size[2] > size[1])) {
+          clamp_axis = CLAMPTO_Z - 1;
+        }
+        else if ((size[1] > size[0]) && (size[1] > size[2])) {
+          clamp_axis = CLAMPTO_Y - 1;
+        }
+        else {
+          clamp_axis = CLAMPTO_X - 1;
+        }
+      }
+      else {
+        clamp_axis = data->flag - 1;
+      }
+
+      /* 2. determine position relative to curve on a 0-1 scale based on bounding box */
+      if (data->flag2 & CLAMPTO_CYCLIC) {
+        /* cyclic, so offset within relative bounding box is used */
+        float len = (curveMax[clamp_axis] - curveMin[clamp_axis]);
+        float offset;
+
+        /* check to make sure len is not so close to zero that it'll cause errors */
+        if (IS_EQF(len, 0.0f) == false) {
+          /* find bounding-box range where target is located */
+          if (ownLoc[clamp_axis] < curveMin[clamp_axis]) {
+            /* bounding-box range is before */
+            offset = curveMin[clamp_axis] -
+                     ceilf((curveMin[clamp_axis] - ownLoc[clamp_axis]) / len) * len;
+
+            /* Now, we calculate as per normal,
+             * except using offset instead of curveMin[clamp_axis]. */
+            curvetime = (ownLoc[clamp_axis] - offset) / (len);
+          }
+          else if (ownLoc[clamp_axis] > curveMax[clamp_axis]) {
+            /* bounding-box range is after */
+            offset = curveMax[clamp_axis] +
+                     (int)((ownLoc[clamp_axis] - curveMax[clamp_axis]) / len) * len;
+
+            /* Now, we calculate as per normal,
+             * except using offset instead of curveMax[clamp_axis]. */
+            curvetime = (ownLoc[clamp_axis] - offset) / (len);
+          }
+          else {
+            /* as the location falls within bounds, just calculate */
+            curvetime = (ownLoc[clamp_axis] - curveMin[clamp_axis]) / (len);
+          }
+        }
+        else {
+          /* as length is close to zero, curvetime by default should be 0 (i.e. the start) */
+          curvetime = 0.0f;
+        }
+      }
+      else {
+        /* no cyclic, so position is clamped to within the bounding box */
+        if (ownLoc[clamp_axis] <= curveMin[clamp_axis]) {
+          curvetime = 0.0f;
+        }
+        else if (ownLoc[clamp_axis] >= curveMax[clamp_axis]) {
+          curvetime = 1.0f;
+        }
+        else if (IS_EQF((curveMax[clamp_axis] - curveMin[clamp_axis]), 0.0f) == false) {
+          curvetime = (ownLoc[clamp_axis] - curveMin[clamp_axis]) /
+                      (curveMax[clamp_axis] - curveMin[clamp_axis]);
+        }
+        else {
+          curvetime = 0.0f;
+        }
+      }
+
+      /* 3. position on curve */
+      if (BKE_where_on_path(ct->tar, curvetime, vec, dir, NULL, NULL, NULL)) {
+        unit_m4(totmat);
+        copy_v3_v3(totmat[3], vec);
+
+        mul_m4_m4m4(targetMatrix, ct->tar->obmat, totmat);
+      }
+    }
+
+    /* obtain final object position */
+    copy_v3_v3(cob->matrix[3], targetMatrix[3]);
+  }
+}
+
+static bConstraintTypeInfo CTI_CLAMPTO = {
+    CONSTRAINT_TYPE_CLAMPTO,    /* type */
+    sizeof(bClampToConstraint), /* size */
+    "Clamp To",                 /* name */
+    "bClampToConstraint",       /* struct name */
+    NULL,                       /* free data */
+    clampto_id_looper,          /* id looper */
+    NULL,                       /* copy data */
+    NULL,                       /* new data */
+    clampto_get_tars,           /* get constraint targets */
+    clampto_flush_tars,         /* flush constraint targets */
+    clampto_get_tarmat,         /* get target matrix */
+    clampto_evaluate,           /* evaluate */
+};
+
+/* ---------- Transform Constraint ----------- */
+
+static void transform_new_data(void *cdata)
+{
+  bTransformConstraint *data = (bTransformConstraint *)cdata;
+
+  data->map[0] = 0;
+  data->map[1] = 1;
+  data->map[2] = 2;
+
+  for (int i = 0; i < 3; i++) {
+    data->from_min_scale[i] = data->from_max_scale[i] = 1.0f;
+    data->to_min_scale[i] = data->to_max_scale[i] = 1.0f;
+  }
+}
+
+static void transform_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bTransformConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+
+  custom_space_id_looper(con, func, userdata);
+}
+
+static int transform_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bTransformConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1 + get_space_tar(con, list);
+  }
+
+  return 0;
+}
+
+static void transform_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bTransformConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+    flush_space_tar(con, list, no_copy);
+  }
+}
+
+static void transform_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bTransformConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  /* only evaluate if there is a target */
+  if (VALID_CONS_TARGET(ct)) {
+    float *from_min, *from_max, *to_min, *to_max;
+    float loc[3], rot[3][3], oldeul[3], size[3];
+    float newloc[3], newrot[3][3], neweul[3], newsize[3];
+    float dbuf[4], sval[3];
+    float *const dvec = dbuf + 1;
+
+    /* obtain target effect */
+    switch (data->from) {
+      case TRANS_SCALE:
+        mat4_to_size(dvec, ct->matrix);
+
+        if (is_negative_m4(ct->matrix)) {
+          /* Bugfix T27886: (this is a limitation that riggers will have to live with for now).
+           * We can't be sure which axis/axes are negative,
+           * though we know that something is negative.
+           * Assume we don't care about negativity of separate axes. */
+          negate_v3(dvec);
+        }
+        from_min = data->from_min_scale;
+        from_max = data->from_max_scale;
+        break;
+      case TRANS_ROTATION:
+        BKE_driver_target_matrix_to_rot_channels(
+            ct->matrix, cob->rotOrder, data->from_rotation_mode, -1, true, dbuf);
+        from_min = data->from_min_rot;
+        from_max = data->from_max_rot;
+        break;
+      case TRANS_LOCATION:
+      default:
+        copy_v3_v3(dvec, ct->matrix[3]);
+        from_min = data->from_min;
+        from_max = data->from_max;
+        break;
+    }
+
+    /* Select the output Euler rotation order, defaulting to the owner. */
+    short rot_order = cob->rotOrder;
+
+    if (data->to == TRANS_ROTATION && data->to_euler_order != CONSTRAINT_EULER_AUTO) {
+      rot_order = data->to_euler_order;
+    }
+
+    /* extract components of owner's matrix */
+    mat4_to_loc_rot_size(loc, rot, size, cob->matrix);
+
+    /* determine where in range current transforms lie */
+    if (data->expo) {
+      for (int i = 0; i < 3; i++) {
+        if (from_max[i] - from_min[i]) {
+          sval[i] = (dvec[i] - from_min[i]) / (from_max[i] - from_min[i]);
+        }
+        else {
+          sval[i] = 0.0f;
+        }
+      }
+    }
+    else {
+      /* clamp transforms out of range */
+      for (int i = 0; i < 3; i++) {
+        CLAMP(dvec[i], from_min[i], from_max[i]);
+        if (from_max[i] - from_min[i]) {
+          sval[i] = (dvec[i] - from_min[i]) / (from_max[i] - from_min[i]);
+        }
+        else {
+          sval[i] = 0.0f;
+        }
+      }
+    }
+
+    /* apply transforms */
+    switch (data->to) {
+      case TRANS_SCALE:
+        to_min = data->to_min_scale;
+        to_max = data->to_max_scale;
+        for (int i = 0; i < 3; i++) {
+          newsize[i] = to_min[i] + (sval[(int)data->map[i]] * (to_max[i] - to_min[i]));
+        }
+        switch (data->mix_mode_scale) {
+          case TRANS_MIXSCALE_MULTIPLY:
+            mul_v3_v3(size, newsize);
+            break;
+          case TRANS_MIXSCALE_REPLACE:
+          default:
+            copy_v3_v3(size, newsize);
+            break;
+        }
+        break;
+      case TRANS_ROTATION:
+        to_min = data->to_min_rot;
+        to_max = data->to_max_rot;
+        for (int i = 0; i < 3; i++) {
+          neweul[i] = to_min[i] + (sval[(int)data->map[i]] * (to_max[i] - to_min[i]));
+        }
+        switch (data->mix_mode_rot) {
+          case TRANS_MIXROT_REPLACE:
+            eulO_to_mat3(rot, neweul, rot_order);
+            break;
+          case TRANS_MIXROT_BEFORE:
+            eulO_to_mat3(newrot, neweul, rot_order);
+            mul_m3_m3m3(rot, newrot, rot);
+            break;
+          case TRANS_MIXROT_AFTER:
+            eulO_to_mat3(newrot, neweul, rot_order);
+            mul_m3_m3m3(rot, rot, newrot);
+            break;
+          case TRANS_MIXROT_ADD:
+          default:
+            mat3_to_eulO(oldeul, rot_order, rot);
+            add_v3_v3(neweul, oldeul);
+            eulO_to_mat3(rot, neweul, rot_order);
+            break;
+        }
+        break;
+      case TRANS_LOCATION:
+      default:
+        to_min = data->to_min;
+        to_max = data->to_max;
+        for (int i = 0; i < 3; i++) {
+          newloc[i] = (to_min[i] + (sval[(int)data->map[i]] * (to_max[i] - to_min[i])));
+        }
+        switch (data->mix_mode_loc) {
+          case TRANS_MIXLOC_REPLACE:
+            copy_v3_v3(loc, newloc);
+            break;
+          case TRANS_MIXLOC_ADD:
+          default:
+            add_v3_v3(loc, newloc);
+            break;
+        }
+        break;
+    }
+
+    /* apply to matrix */
+    loc_rot_size_to_mat4(cob->matrix, loc, rot, size);
+  }
+}
+
+static bConstraintTypeInfo CTI_TRANSFORM = {
+    CONSTRAINT_TYPE_TRANSFORM,    /* type */
+    sizeof(bTransformConstraint), /* size */
+    "Transformation",             /* name */
+    "bTransformConstraint",       /* struct name */
+    NULL,                         /* free data */
+    transform_id_looper,          /* id looper */
+    NULL,                         /* copy data */
+    transform_new_data,           /* new data */
+    transform_get_tars,           /* get constraint targets */
+    transform_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,           /* get a target matrix */
+    transform_evaluate,           /* evaluate */
+};
+
+/* ---------- Shrinkwrap Constraint ----------- */
+
+static void shrinkwrap_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bShrinkwrapConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->target, false, userdata);
+}
+
+static void shrinkwrap_new_data(void *cdata)
+{
+  bShrinkwrapConstraint *data = (bShrinkwrapConstraint *)cdata;
+
+  data->projAxis = OB_POSZ;
+  data->projAxisSpace = CONSTRAINT_SPACE_LOCAL;
+}
+
+static int shrinkwrap_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bShrinkwrapConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    SINGLETARGETNS_GET_TARS(con, data->target, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void shrinkwrap_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bShrinkwrapConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    SINGLETARGETNS_FLUSH_TARS(con, data->target, ct, list, no_copy);
+  }
+}
+
+static void shrinkwrap_get_tarmat(struct Depsgraph *UNUSED(depsgraph),
+                                  bConstraint *con,
+                                  bConstraintOb *cob,
+                                  bConstraintTarget *ct,
+                                  float UNUSED(ctime))
+{
+  bShrinkwrapConstraint *scon = (bShrinkwrapConstraint *)con->data;
+
+  if (VALID_CONS_TARGET(ct) && (ct->tar->type == OB_MESH)) {
+
+    bool fail = false;
+    float co[3] = {0.0f, 0.0f, 0.0f};
+    bool track_normal = false;
+    float track_no[3] = {0.0f, 0.0f, 0.0f};
+
+    SpaceTransform transform;
+    Mesh *target_eval = BKE_object_get_evaluated_mesh(ct->tar);
+
+    copy_m4_m4(ct->matrix, cob->matrix);
+
+    bool do_track_normal = (scon->flag & CON_SHRINKWRAP_TRACK_NORMAL) != 0;
+    ShrinkwrapTreeData tree;
+
+    if (BKE_shrinkwrap_init_tree(
+            &tree, target_eval, scon->shrinkType, scon->shrinkMode, do_track_normal)) {
+      BLI_space_transform_from_matrices(&transform, cob->matrix, ct->tar->obmat);
+
+      switch (scon->shrinkType) {
+        case MOD_SHRINKWRAP_NEAREST_SURFACE:
+        case MOD_SHRINKWRAP_NEAREST_VERTEX:
+        case MOD_SHRINKWRAP_TARGET_PROJECT: {
+          BVHTreeNearest nearest;
+
+          nearest.index = -1;
+          nearest.dist_sq = FLT_MAX;
+
+          BLI_space_transform_apply(&transform, co);
+
+          BKE_shrinkwrap_find_nearest_surface(&tree, &nearest, co, scon->shrinkType);
+
+          if (nearest.index < 0) {
+            fail = true;
+            break;
+          }
+
+          if (scon->shrinkType != MOD_SHRINKWRAP_NEAREST_VERTEX) {
+            if (do_track_normal) {
+              track_normal = true;
+              BKE_shrinkwrap_compute_smooth_normal(
+                  &tree, NULL, nearest.index, nearest.co, nearest.no, track_no);
+              BLI_space_transform_invert_normal(&transform, track_no);
+            }
+
+            BKE_shrinkwrap_snap_point_to_surface(&tree,
+                                                 NULL,
+                                                 scon->shrinkMode,
+                                                 nearest.index,
+                                                 nearest.co,
+                                                 nearest.no,
+                                                 scon->dist,
+                                                 co,
+                                                 co);
+          }
+          else {
+            const float dist = len_v3v3(co, nearest.co);
+
+            if (dist != 0.0f) {
+              interp_v3_v3v3(
+                  co, co, nearest.co, (dist - scon->dist) / dist); /* linear interpolation */
+            }
+          }
+
+          BLI_space_transform_invert(&transform, co);
+          break;
+        }
+        case MOD_SHRINKWRAP_PROJECT: {
+          BVHTreeRayHit hit;
+
+          float mat[4][4];
+          float no[3] = {0.0f, 0.0f, 0.0f};
+
+          /* TODO: should use FLT_MAX.. but normal projection doesn't yet supports it. */
+          hit.index = -1;
+          hit.dist = (scon->projLimit == 0.0f) ? BVH_RAYCAST_DIST_MAX : scon->projLimit;
+
+          switch (scon->projAxis) {
+            case OB_POSX:
+            case OB_POSY:
+            case OB_POSZ:
+              no[scon->projAxis - OB_POSX] = 1.0f;
+              break;
+            case OB_NEGX:
+            case OB_NEGY:
+            case OB_NEGZ:
+              no[scon->projAxis - OB_NEGX] = -1.0f;
+              break;
+          }
+
+          /* Transform normal into requested space */
+          /* Note that in this specific case, we need to keep scaling in non-parented 'local2world'
+           * object case, because SpaceTransform also takes it into account when handling normals.
+           * See T42447. */
+          unit_m4(mat);
+          BKE_constraint_mat_convertspace(
+              cob->ob, cob->pchan, cob, mat, CONSTRAINT_SPACE_LOCAL, scon->projAxisSpace, true);
+          invert_m4(mat);
+          mul_mat3_m4_v3(mat, no);
+
+          if (normalize_v3(no) < FLT_EPSILON) {
+            fail = true;
+            break;
+          }
+
+          char cull_mode = scon->flag & CON_SHRINKWRAP_PROJECT_CULL_MASK;
+
+          BKE_shrinkwrap_project_normal(cull_mode, co, no, 0.0f, &transform, &tree, &hit);
+
+          if (scon->flag & CON_SHRINKWRAP_PROJECT_OPPOSITE) {
+            float inv_no[3];
+            negate_v3_v3(inv_no, no);
+
+            if ((scon->flag & CON_SHRINKWRAP_PROJECT_INVERT_CULL) && (cull_mode != 0)) {
+              cull_mode ^= CON_SHRINKWRAP_PROJECT_CULL_MASK;
+            }
+
+            BKE_shrinkwrap_project_normal(cull_mode, co, inv_no, 0.0f, &transform, &tree, &hit);
+          }
+
+          if (hit.index < 0) {
+            fail = true;
+            break;
+          }
+
+          if (do_track_normal) {
+            track_normal = true;
+            BKE_shrinkwrap_compute_smooth_normal(
+                &tree, &transform, hit.index, hit.co, hit.no, track_no);
+          }
+
+          BKE_shrinkwrap_snap_point_to_surface(
+              &tree, &transform, scon->shrinkMode, hit.index, hit.co, hit.no, scon->dist, co, co);
+          break;
+        }
+      }
+
+      BKE_shrinkwrap_free_tree(&tree);
+
+      if (fail == true) {
+        /* Don't move the point */
+        zero_v3(co);
+      }
+
+      /* co is in local object coordinates, change it to global and update target position */
+      mul_m4_v3(cob->matrix, co);
+      copy_v3_v3(ct->matrix[3], co);
+
+      if (track_normal) {
+        mul_mat3_m4_v3(cob->matrix, track_no);
+        damptrack_do_transform(ct->matrix, track_no, scon->trackAxis);
+      }
+    }
+  }
+}
+
+static void shrinkwrap_evaluate(bConstraint *UNUSED(con), bConstraintOb *cob, ListBase *targets)
+{
+  bConstraintTarget *ct = targets->first;
+
+  /* only evaluate if there is a target */
+  if (VALID_CONS_TARGET(ct)) {
+    copy_m4_m4(cob->matrix, ct->matrix);
+  }
+}
+
+static bConstraintTypeInfo CTI_SHRINKWRAP = {
+    CONSTRAINT_TYPE_SHRINKWRAP,    /* type */
+    sizeof(bShrinkwrapConstraint), /* size */
+    "Shrinkwrap",                  /* name */
+    "bShrinkwrapConstraint",       /* struct name */
+    NULL,                          /* free data */
+    shrinkwrap_id_looper,          /* id looper */
+    NULL,                          /* copy data */
+    shrinkwrap_new_data,           /* new data */
+    shrinkwrap_get_tars,           /* get constraint targets */
+    shrinkwrap_flush_tars,         /* flush constraint targets */
+    shrinkwrap_get_tarmat,         /* get a target matrix */
+    shrinkwrap_evaluate,           /* evaluate */
+};
+
+/* --------- Damped Track ---------- */
+
+static void damptrack_new_data(void *cdata)
+{
+  bDampTrackConstraint *data = (bDampTrackConstraint *)cdata;
+
+  data->trackflag = TRACK_Y;
+}
+
+static void damptrack_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bDampTrackConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+}
+
+static int damptrack_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bDampTrackConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void damptrack_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bDampTrackConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+  }
+}
+
+/* array of direction vectors for the tracking flags */
+static const float track_dir_vecs[6][3] = {
+    {+1, 0, 0},
+    {0, +1, 0},
+    {0, 0, +1}, /* TRACK_X,  TRACK_Y,  TRACK_Z */
+    {-1, 0, 0},
+    {0, -1, 0},
+    {0, 0, -1} /* TRACK_NX, TRACK_NY, TRACK_NZ */
+};
+
+static void damptrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bDampTrackConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  if (VALID_CONS_TARGET(ct)) {
+    float tarvec[3];
+
+    /* find the (unit) direction vector going from the owner to the target */
+    sub_v3_v3v3(tarvec, ct->matrix[3], cob->matrix[3]);
+
+    damptrack_do_transform(cob->matrix, tarvec, data->trackflag);
+  }
+}
+
+static void damptrack_do_transform(float matrix[4][4], const float tarvec_in[3], int track_axis)
+{
+  /* find the (unit) direction vector going from the owner to the target */
+  float tarvec[3];
+
+  if (normalize_v3_v3(tarvec, tarvec_in) != 0.0f) {
+    float obvec[3], obloc[3];
+    float raxis[3], rangle;
+    float rmat[3][3], tmat[4][4];
+
+    /* find the (unit) direction that the axis we're interested in currently points
+     * - mul_mat3_m4_v3() only takes the 3x3 (rotation+scaling) components of the 4x4 matrix
+     * - the normalization step at the end should take care of any unwanted scaling
+     *   left over in the 3x3 matrix we used
+     */
+    copy_v3_v3(obvec, track_dir_vecs[track_axis]);
+    mul_mat3_m4_v3(matrix, obvec);
+
+    if (normalize_v3(obvec) == 0.0f) {
+      /* exceptional case - just use the track vector as appropriate */
+      copy_v3_v3(obvec, track_dir_vecs[track_axis]);
+    }
+
+    copy_v3_v3(obloc, matrix[3]);
+
+    /* determine the axis-angle rotation, which represents the smallest possible rotation
+     * between the two rotation vectors (i.e. the 'damping' referred to in the name)
+     * - we take this to be the rotation around the normal axis/vector to the plane defined
+     *   by the current and destination vectors, which will 'map' the current axis to the
+     *   destination vector
+     * - the min/max wrappers around (obvec . tarvec) result (stored temporarily in rangle)
+     *   are used to ensure that the smallest angle is chosen
+     */
+    cross_v3_v3v3_hi_prec(raxis, obvec, tarvec);
+
+    rangle = dot_v3v3(obvec, tarvec);
+    rangle = acosf(max_ff(-1.0f, min_ff(1.0f, rangle)));
+
+    /* construct rotation matrix from the axis-angle rotation found above
+     * - this call takes care to make sure that the axis provided is a unit vector first
+     */
+    float norm = normalize_v3(raxis);
+
+    if (norm < FLT_EPSILON) {
+      /* if dot product is nonzero, while cross is zero, we have two opposite vectors!
+       * - this is an ambiguity in the math that needs to be resolved arbitrarily,
+       *   or there will be a case where damped track strangely does nothing
+       * - to do that, rotate around a different local axis
+       */
+      float tmpvec[3];
+
+      if (fabsf(rangle) < M_PI - 0.01f) {
+        return;
+      }
+
+      rangle = M_PI;
+      copy_v3_v3(tmpvec, track_dir_vecs[(track_axis + 1) % 6]);
+      mul_mat3_m4_v3(matrix, tmpvec);
+      cross_v3_v3v3(raxis, obvec, tmpvec);
+
+      if (normalize_v3(raxis) == 0.0f) {
+        return;
+      }
+    }
+    else if (norm < 0.1f) {
+      /* near 0 and Pi arcsin has way better precision than arccos */
+      rangle = (rangle > M_PI_2) ? M_PI - asinf(norm) : asinf(norm);
+    }
+
+    axis_angle_normalized_to_mat3(rmat, raxis, rangle);
+
+    /* rotate the owner in the way defined by this rotation matrix, then reapply the location since
+     * we may have destroyed that in the process of multiplying the matrix
+     */
+    unit_m4(tmat);
+    mul_m4_m3m4(tmat, rmat, matrix); /* m1, m3, m2 */
+
+    copy_m4_m4(matrix, tmat);
+    copy_v3_v3(matrix[3], obloc);
+  }
+}
+
+static bConstraintTypeInfo CTI_DAMPTRACK = {
+    CONSTRAINT_TYPE_DAMPTRACK,    /* type */
+    sizeof(bDampTrackConstraint), /* size */
+    "Damped Track",               /* name */
+    "bDampTrackConstraint",       /* struct name */
+    NULL,                         /* free data */
+    damptrack_id_looper,          /* id looper */
+    NULL,                         /* copy data */
+    damptrack_new_data,           /* new data */
+    damptrack_get_tars,           /* get constraint targets */
+    damptrack_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,           /* get target matrix */
+    damptrack_evaluate,           /* evaluate */
+};
+
+/* ----------- Spline IK ------------ */
+
+static void splineik_free(bConstraint *con)
+{
+  bSplineIKConstraint *data = con->data;
+
+  /* binding array */
+  MEM_SAFE_FREE(data->points);
+}
+
+static void splineik_copy(bConstraint *con, bConstraint *srccon)
+{
+  bSplineIKConstraint *src = srccon->data;
+  bSplineIKConstraint *dst = con->data;
+
+  /* copy the binding array */
+  dst->points = MEM_dupallocN(src->points);
+}
+
+static void splineik_new_data(void *cdata)
+{
+  bSplineIKConstraint *data = (bSplineIKConstraint *)cdata;
+
+  data->chainlen = 1;
+  data->bulge = 1.0;
+  data->bulge_max = 1.0f;
+  data->bulge_min = 1.0f;
+
+  data->yScaleMode = CONSTRAINT_SPLINEIK_YS_FIT_CURVE;
+  data->flag = CONSTRAINT_SPLINEIK_USE_ORIGINAL_SCALE;
+}
+
+static void splineik_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bSplineIKConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+}
+
+static int splineik_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bSplineIKConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints without subtargets */
+    SINGLETARGETNS_GET_TARS(con, data->tar, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void splineik_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bSplineIKConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGETNS_FLUSH_TARS(con, data->tar, ct, list, no_copy);
+  }
+}
+
+static void splineik_get_tarmat(struct Depsgraph *UNUSED(depsgraph),
+                                bConstraint *UNUSED(con),
+                                bConstraintOb *UNUSED(cob),
+                                bConstraintTarget *ct,
+                                float UNUSED(ctime))
+{
+  /* technically, this isn't really needed for evaluation, but we don't know what else
+   * might end up calling this...
+   */
+  if (ct) {
+    unit_m4(ct->matrix);
+  }
+}
+
+static bConstraintTypeInfo CTI_SPLINEIK = {
+    CONSTRAINT_TYPE_SPLINEIK,    /* type */
+    sizeof(bSplineIKConstraint), /* size */
+    "Spline IK",                 /* name */
+    "bSplineIKConstraint",       /* struct name */
+    splineik_free,               /* free data */
+    splineik_id_looper,          /* id looper */
+    splineik_copy,               /* copy data */
+    splineik_new_data,           /* new data */
+    splineik_get_tars,           /* get constraint targets */
+    splineik_flush_tars,         /* flush constraint targets */
+    splineik_get_tarmat,         /* get target matrix */
+    NULL,                        /* evaluate - solved as separate loop */
+};
+
+/* ----------- Pivot ------------- */
+
+static void pivotcon_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bPivotConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+}
+
+static int pivotcon_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bPivotConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void pivotcon_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bPivotConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+  }
+}
