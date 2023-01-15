@@ -957,3 +957,479 @@ static int get_space_tar(bConstraint *con, ListBase *list)
   SINGLETARGET_GET_TARS(con, con->space_object, con->space_subtarget, ct, list);
   return 1;
 }
+
+static void flush_space_tar(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (!con || !list ||
+      (con->ownspace != CONSTRAINT_SPACE_CUSTOM && con->tarspace != CONSTRAINT_SPACE_CUSTOM)) {
+    return;
+  }
+  bConstraintTarget *ct = (bConstraintTarget *)list->last;
+  SINGLETARGET_FLUSH_TARS(con, con->space_object, con->space_subtarget, ct, list, no_copy);
+}
+
+/* --------- ChildOf Constraint ------------ */
+
+static void childof_new_data(void *cdata)
+{
+  bChildOfConstraint *data = (bChildOfConstraint *)cdata;
+
+  data->flag = (CHILDOF_LOCX | CHILDOF_LOCY | CHILDOF_LOCZ | CHILDOF_ROTX | CHILDOF_ROTY |
+                CHILDOF_ROTZ | CHILDOF_SIZEX | CHILDOF_SIZEY | CHILDOF_SIZEZ |
+                CHILDOF_SET_INVERSE);
+  unit_m4(data->invmat);
+}
+
+static void childof_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bChildOfConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+}
+
+static int childof_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bChildOfConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1;
+  }
+
+  return 0;
+}
+
+static void childof_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bChildOfConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+  }
+}
+
+static void childof_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bChildOfConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  /* only evaluate if there is a target */
+  if (!VALID_CONS_TARGET(ct)) {
+    return;
+  }
+
+  float parmat[4][4];
+  float inverse_matrix[4][4];
+  /* Simple matrix parenting. */
+  if ((data->flag & CHILDOF_ALL) == CHILDOF_ALL) {
+    copy_m4_m4(parmat, ct->matrix);
+    copy_m4_m4(inverse_matrix, data->invmat);
+  }
+  /* Filter the parent matrix by channel. */
+  else {
+    float loc[3], eul[3], size[3];
+    float loco[3], eulo[3], sizeo[3];
+
+    /* extract components of both matrices */
+    copy_v3_v3(loc, ct->matrix[3]);
+    mat4_to_eulO(eul, ct->rotOrder, ct->matrix);
+    mat4_to_size(size, ct->matrix);
+
+    copy_v3_v3(loco, data->invmat[3]);
+    mat4_to_eulO(eulo, cob->rotOrder, data->invmat);
+    mat4_to_size(sizeo, data->invmat);
+
+    /* Reset the locked channels to their no-op values. */
+    if (!(data->flag & CHILDOF_LOCX)) {
+      loc[0] = loco[0] = 0.0f;
+    }
+    if (!(data->flag & CHILDOF_LOCY)) {
+      loc[1] = loco[1] = 0.0f;
+    }
+    if (!(data->flag & CHILDOF_LOCZ)) {
+      loc[2] = loco[2] = 0.0f;
+    }
+    if (!(data->flag & CHILDOF_ROTX)) {
+      eul[0] = eulo[0] = 0.0f;
+    }
+    if (!(data->flag & CHILDOF_ROTY)) {
+      eul[1] = eulo[1] = 0.0f;
+    }
+    if (!(data->flag & CHILDOF_ROTZ)) {
+      eul[2] = eulo[2] = 0.0f;
+    }
+    if (!(data->flag & CHILDOF_SIZEX)) {
+      size[0] = sizeo[0] = 1.0f;
+    }
+    if (!(data->flag & CHILDOF_SIZEY)) {
+      size[1] = sizeo[1] = 1.0f;
+    }
+    if (!(data->flag & CHILDOF_SIZEZ)) {
+      size[2] = sizeo[2] = 1.0f;
+    }
+
+    /* Construct the new matrices given the disabled channels. */
+    loc_eulO_size_to_mat4(parmat, loc, eul, size, ct->rotOrder);
+    loc_eulO_size_to_mat4(inverse_matrix, loco, eulo, sizeo, cob->rotOrder);
+  }
+
+  /* If requested, compute the inverse matrix from the computed parent matrix. */
+  if (data->flag & CHILDOF_SET_INVERSE) {
+    invert_m4_m4(data->invmat, parmat);
+    if (cob->pchan != NULL) {
+      mul_m4_series(data->invmat, data->invmat, cob->ob->obmat);
+    }
+
+    copy_m4_m4(inverse_matrix, data->invmat);
+
+    data->flag &= ~CHILDOF_SET_INVERSE;
+
+    /* Write the computed matrix back to the master copy if in COW evaluation. */
+    bConstraint *orig_con = constraint_find_original_for_update(cob, con);
+
+    if (orig_con != NULL) {
+      bChildOfConstraint *orig_data = orig_con->data;
+
+      copy_m4_m4(orig_data->invmat, data->invmat);
+      orig_data->flag &= ~CHILDOF_SET_INVERSE;
+    }
+  }
+
+  /* Multiply together the target (parent) matrix, parent inverse,
+   * and the owner transform matrix to get the effect of this constraint
+   * (i.e.  owner is 'parented' to parent). */
+  float orig_cob_matrix[4][4];
+  copy_m4_m4(orig_cob_matrix, cob->matrix);
+  mul_m4_series(cob->matrix, parmat, inverse_matrix, orig_cob_matrix);
+
+  /* Without this, changes to scale and rotation can change location
+   * of a parentless bone or a disconnected bone. Even though its set
+   * to zero above. */
+  if (!(data->flag & CHILDOF_LOCX)) {
+    cob->matrix[3][0] = orig_cob_matrix[3][0];
+  }
+  if (!(data->flag & CHILDOF_LOCY)) {
+    cob->matrix[3][1] = orig_cob_matrix[3][1];
+  }
+  if (!(data->flag & CHILDOF_LOCZ)) {
+    cob->matrix[3][2] = orig_cob_matrix[3][2];
+  }
+}
+
+/* XXX NOTE: con->flag should be CONSTRAINT_SPACEONCE for bone-childof, patched in `readfile.c`. */
+static bConstraintTypeInfo CTI_CHILDOF = {
+    CONSTRAINT_TYPE_CHILDOF,    /* type */
+    sizeof(bChildOfConstraint), /* size */
+    "Child Of",                 /* name */
+    "bChildOfConstraint",       /* struct name */
+    NULL,                       /* free data */
+    childof_id_looper,          /* id looper */
+    NULL,                       /* copy data */
+    childof_new_data,           /* new data */
+    childof_get_tars,           /* get constraint targets */
+    childof_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,         /* get a target matrix */
+    childof_evaluate,           /* evaluate */
+};
+
+/* -------- TrackTo Constraint ------- */
+
+static void trackto_new_data(void *cdata)
+{
+  bTrackToConstraint *data = (bTrackToConstraint *)cdata;
+
+  data->reserved1 = TRACK_nZ;
+  data->reserved2 = UP_Y;
+}
+
+static void trackto_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bTrackToConstraint *data = con->data;
+
+  /* target only */
+  func(con, (ID **)&data->tar, false, userdata);
+
+  custom_space_id_looper(con, func, userdata);
+}
+
+static int trackto_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bTrackToConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+
+    return 1 + get_space_tar(con, list);
+  }
+
+  return 0;
+}
+
+static void trackto_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bTrackToConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+    flush_space_tar(con, list, no_copy);
+  }
+}
+
+static int basis_cross(int n, int m)
+{
+  switch (n - m) {
+    case 1:
+    case -2:
+      return 1;
+
+    case -1:
+    case 2:
+      return -1;
+
+    default:
+      return 0;
+  }
+}
+
+static void vectomat(const float vec[3],
+                     const float target_up[3],
+                     short axis,
+                     short upflag,
+                     short flags,
+                     float m[3][3])
+{
+  float n[3];
+  float u[3]; /* vector specifying the up axis */
+  float proj[3];
+  float right[3];
+  float neg = -1;
+  int right_index;
+
+  if (normalize_v3_v3(n, vec) == 0.0f) {
+    n[0] = 0.0f;
+    n[1] = 0.0f;
+    n[2] = 1.0f;
+  }
+  if (axis > 2) {
+    axis -= 3;
+  }
+  else {
+    negate_v3(n);
+  }
+
+  /* n specifies the transformation of the track axis */
+  if (flags & TARGET_Z_UP) {
+    /* target Z axis is the global up axis */
+    copy_v3_v3(u, target_up);
+  }
+  else {
+    /* world Z axis is the global up axis */
+    u[0] = 0;
+    u[1] = 0;
+    u[2] = 1;
+  }
+
+  /* NOTE: even though 'n' is normalized, don't use 'project_v3_v3v3_normalized' below
+   * because precision issues cause a problem in near degenerate states, see: T53455. */
+
+  /* project the up vector onto the plane specified by n */
+  project_v3_v3v3(proj, u, n); /* first u onto n... */
+  sub_v3_v3v3(proj, u, proj);  /* then onto the plane */
+  /* proj specifies the transformation of the up axis */
+
+  if (normalize_v3(proj) == 0.0f) { /* degenerate projection */
+    proj[0] = 0.0f;
+    proj[1] = 1.0f;
+    proj[2] = 0.0f;
+  }
+
+  /* Normalized cross product of n and proj specifies transformation of the right axis */
+  cross_v3_v3v3(right, proj, n);
+  normalize_v3(right);
+
+  if (axis != upflag) {
+    right_index = 3 - axis - upflag;
+    neg = (float)basis_cross(axis, upflag);
+
+    /* account for up direction, track direction */
+    m[right_index][0] = neg * right[0];
+    m[right_index][1] = neg * right[1];
+    m[right_index][2] = neg * right[2];
+
+    copy_v3_v3(m[upflag], proj);
+
+    copy_v3_v3(m[axis], n);
+  }
+  /* identity matrix - don't do anything if the two axes are the same */
+  else {
+    unit_m3(m);
+  }
+}
+
+static void trackto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targets)
+{
+  bTrackToConstraint *data = con->data;
+  bConstraintTarget *ct = targets->first;
+
+  if (VALID_CONS_TARGET(ct)) {
+    float size[3], vec[3];
+    float totmat[3][3];
+
+    /* Get size property, since ob->scale is only the object's own relative size,
+     * not its global one. */
+    mat4_to_size(size, cob->matrix);
+
+    /* Clear the object's rotation */
+    cob->matrix[0][0] = size[0];
+    cob->matrix[0][1] = 0;
+    cob->matrix[0][2] = 0;
+    cob->matrix[1][0] = 0;
+    cob->matrix[1][1] = size[1];
+    cob->matrix[1][2] = 0;
+    cob->matrix[2][0] = 0;
+    cob->matrix[2][1] = 0;
+    cob->matrix[2][2] = size[2];
+
+    /* targetmat[2] instead of ownermat[2] is passed to vectomat
+     * for backwards compatibility it seems... (Aligorith)
+     */
+    sub_v3_v3v3(vec, cob->matrix[3], ct->matrix[3]);
+    vectomat(
+        vec, ct->matrix[2], (short)data->reserved1, (short)data->reserved2, data->flags, totmat);
+
+    mul_m4_m3m4(cob->matrix, totmat, cob->matrix);
+  }
+}
+
+static bConstraintTypeInfo CTI_TRACKTO = {
+    CONSTRAINT_TYPE_TRACKTO,    /* type */
+    sizeof(bTrackToConstraint), /* size */
+    "Track To",                 /* name */
+    "bTrackToConstraint",       /* struct name */
+    NULL,                       /* free data */
+    trackto_id_looper,          /* id looper */
+    NULL,                       /* copy data */
+    trackto_new_data,           /* new data */
+    trackto_get_tars,           /* get constraint targets */
+    trackto_flush_tars,         /* flush constraint targets */
+    default_get_tarmat,         /* get target matrix */
+    trackto_evaluate,           /* evaluate */
+};
+
+/* --------- Inverse-Kinematics --------- */
+
+static void kinematic_new_data(void *cdata)
+{
+  bKinematicConstraint *data = (bKinematicConstraint *)cdata;
+
+  data->weight = 1.0f;
+  data->orientweight = 1.0f;
+  data->iterations = 500;
+  data->dist = 1.0f;
+  data->flag = CONSTRAINT_IK_TIP | CONSTRAINT_IK_STRETCH | CONSTRAINT_IK_POS;
+}
+
+static void kinematic_id_looper(bConstraint *con, ConstraintIDFunc func, void *userdata)
+{
+  bKinematicConstraint *data = con->data;
+
+  /* chain target */
+  func(con, (ID **)&data->tar, false, userdata);
+
+  /* poletarget */
+  func(con, (ID **)&data->poletar, false, userdata);
+}
+
+static int kinematic_get_tars(bConstraint *con, ListBase *list)
+{
+  if (con && list) {
+    bKinematicConstraint *data = con->data;
+    bConstraintTarget *ct;
+
+    /* standard target-getting macro for single-target constraints is used twice here */
+    SINGLETARGET_GET_TARS(con, data->tar, data->subtarget, ct, list);
+    SINGLETARGET_GET_TARS(con, data->poletar, data->polesubtarget, ct, list);
+
+    return 2;
+  }
+
+  return 0;
+}
+
+static void kinematic_flush_tars(bConstraint *con, ListBase *list, bool no_copy)
+{
+  if (con && list) {
+    bKinematicConstraint *data = con->data;
+    bConstraintTarget *ct = list->first;
+
+    /* the following macro is used for all standard single-target constraints */
+    SINGLETARGET_FLUSH_TARS(con, data->tar, data->subtarget, ct, list, no_copy);
+    SINGLETARGET_FLUSH_TARS(con, data->poletar, data->polesubtarget, ct, list, no_copy);
+  }
+}
+
+static void kinematic_get_tarmat(struct Depsgraph *UNUSED(depsgraph),
+                                 bConstraint *con,
+                                 bConstraintOb *cob,
+                                 bConstraintTarget *ct,
+                                 float UNUSED(ctime))
+{
+  bKinematicConstraint *data = con->data;
+
+  if (VALID_CONS_TARGET(ct)) {
+    constraint_target_to_mat4(ct->tar,
+                              ct->subtarget,
+                              cob,
+                              ct->matrix,
+                              CONSTRAINT_SPACE_WORLD,
+                              ct->space,
+                              con->flag,
+                              con->headtail);
+  }
+  else if (ct) {
+    if (data->flag & CONSTRAINT_IK_AUTO) {
+      Object *ob = cob->ob;
+
+      if (ob == NULL) {
+        unit_m4(ct->matrix);
+      }
+      else {
+        float vec[3];
+        /* move grabtarget into world space */
+        mul_v3_m4v3(vec, ob->obmat, data->grabtarget);
+        copy_m4_m4(ct->matrix, ob->obmat);
+        copy_v3_v3(ct->matrix[3], vec);
+      }
+    }
+    else {
+      unit_m4(ct->matrix);
+    }
+  }
+}
+
+static bConstraintTypeInfo CTI_KINEMATIC = {
+    CONSTRAINT_TYPE_KINEMATIC,    /* type */
+    sizeof(bKinematicConstraint), /* size */
+    "IK",                         /* name */
+    "bKinematicConstraint",       /* struct name */
+    NULL,                         /* free data */
+    kinematic_id_looper,          /* id looper */
+    NULL,                         /* copy data */
+    kinematic_new_data,           /* new data */
+    kinematic_get_tars,           /* get constraint targets */
+    kinematic_flush_tars,         /* flush constraint targets */
+    kinematic_get_tarmat,         /* get target matrix */
+    NULL,                         /* evaluate - solved as separate loop */
+};
+
+/* -------- Follow-Path Constraint ---------- */
