@@ -1,35 +1,35 @@
 #include <string.h>
 
-#include "DNA_anim_types.h"
-#include "DNA_cachefile_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "structs_anim_types.h"
+#include "structs_cachefile_types.h"
+#include "structs_constraint_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
 
-#include "BLI_fileops.h"
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LIB_fileops.h"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_path_util.h"
+#include "LIB_string.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_bpath.h"
-#include "BKE_cachefile.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_modifier.h"
-#include "BKE_scene.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_bpath.h"
+#include "KERNEL_cachefile.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_main.h"
+#include "KERNEL_modifier.h"
+#include "KERNEL_scene.h"
 
 #include "DEG_depsgraph_query.h"
 
 #include "RE_engine.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -47,14 +47,14 @@ static void cache_file_init_data(ID *id)
 {
   CacheFile *cache_file = (CacheFile *)id;
 
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(cache_file, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(cache_file, id));
 
   cache_file->scale = 1.0f;
   cache_file->velocity_unit = CACHEFILE_VELOCITY_UNIT_SECOND;
-  BLI_strncpy(cache_file->velocity_name, ".velocities", sizeof(cache_file->velocity_name));
+  LIB_strncpy(cache_file->velocity_name, ".velocities", sizeof(cache_file->velocity_name));
 }
 
-static void cache_file_copy_data(Main *UNUSED(bmain),
+static void cache_file_copy_data(Main *UNUSED(dunemain),
                                  ID *id_dst,
                                  const ID *id_src,
                                  const int UNUSED(flag))
@@ -64,22 +64,22 @@ static void cache_file_copy_data(Main *UNUSED(bmain),
 
   cache_file_dst->handle = NULL;
   cache_file_dst->handle_readers = NULL;
-  BLI_duplicatelist(&cache_file_dst->object_paths, &cache_file_src->object_paths);
-  BLI_duplicatelist(&cache_file_dst->layers, &cache_file_src->layers);
+  LIB_duplicatelist(&cache_file_dst->object_paths, &cache_file_src->object_paths);
+  LIB_duplicatelist(&cache_file_dst->layers, &cache_file_src->layers);
 }
 
 static void cache_file_free_data(ID *id)
 {
   CacheFile *cache_file = (CacheFile *)id;
   cachefile_handle_free(cache_file);
-  BLI_freelistN(&cache_file->object_paths);
-  BLI_freelistN(&cache_file->layers);
+  LIB_freelistN(&cache_file->object_paths);
+  LIB_freelistN(&cache_file->layers);
 }
 
-static void cache_file_foreach_path(ID *id, BPathForeachPathData *bpath_data)
+static void cache_file_foreach_path(ID *id, BPathForeachPathData *dunepath_data)
 {
   CacheFile *cache_file = (CacheFile *)id;
-  BKE_bpath_foreach_path_fixed_process(bpath_data, cache_file->filepath);
+  KERNEL_dunepath_foreach_path_fixed_process(dunepath_data, cache_file->filepath);
 }
 
 static void cache_file_blend_write(BlendWriter *writer, ID *id, const void *id_address)
@@ -87,38 +87,38 @@ static void cache_file_blend_write(BlendWriter *writer, ID *id, const void *id_a
   CacheFile *cache_file = (CacheFile *)id;
 
   /* Clean up, important in undo case to reduce false detection of changed datablocks. */
-  BLI_listbase_clear(&cache_file->object_paths);
+  LIB_listbase_clear(&cache_file->object_paths);
   cache_file->handle = NULL;
   memset(cache_file->handle_filepath, 0, sizeof(cache_file->handle_filepath));
   cache_file->handle_readers = NULL;
 
-  BLO_write_id_struct(writer, CacheFile, id_address, &cache_file->id);
-  BKE_id_blend_write(writer, &cache_file->id);
+  LOADER_write_id_struct(writer, CacheFile, id_address, &cache_file->id);
+  KERNEL_id_dune_write(writer, &cache_file->id);
 
   if (cache_file->adt) {
-    BKE_animdata_blend_write(writer, cache_file->adt);
+    KERNEL_animdata_dune_write(writer, cache_file->adt);
   }
 
   /* write layers */
   LISTBASE_FOREACH (CacheFileLayer *, layer, &cache_file->layers) {
-    BLO_write_struct(writer, CacheFileLayer, layer);
+    LOADER_write_struct(writer, CacheFileLayer, layer);
   }
 }
 
-static void cache_file_blend_read_data(BlendDataReader *reader, ID *id)
+static void cache_file_dune_read_data(BlendDataReader *reader, ID *id)
 {
   CacheFile *cache_file = (CacheFile *)id;
-  BLI_listbase_clear(&cache_file->object_paths);
+  LIB_listbase_clear(&cache_file->object_paths);
   cache_file->handle = NULL;
   cache_file->handle_filepath[0] = '\0';
   cache_file->handle_readers = NULL;
 
   /* relink animdata */
-  BLO_read_data_address(reader, &cache_file->adt);
-  BKE_animdata_blend_read_data(reader, cache_file->adt);
+  LOADER_read_data_address(reader, &cache_file->adt);
+  KERNEL_animdata_dune_read_data(reader, cache_file->adt);
 
   /* relink layers */
-  BLO_read_list(reader, &cache_file->layers);
+  LOADER_read_list(reader, &cache_file->layers);
 }
 
 IDTypeInfo IDType_ID_CF = {
@@ -141,12 +141,12 @@ IDTypeInfo IDType_ID_CF = {
     .foreach_path = cache_file_foreach_path,
     .owner_get = NULL,
 
-    .blend_write = cache_file_blend_write,
-    .blend_read_data = cache_file_blend_read_data,
-    .blend_read_lib = NULL,
-    .blend_read_expand = NULL,
+    .dune_write = cache_file_dune_write,
+    .dune_read_data = cache_file_dune_read_data,
+    .dune_read_lib = NULL,
+    .dune_read_expand = NULL,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
