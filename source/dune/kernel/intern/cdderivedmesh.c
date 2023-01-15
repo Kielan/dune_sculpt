@@ -1,28 +1,27 @@
-/** \file
- * \ingroup bke
- * Implementation of #CDDerivedMesh.
- * BKE_cdderivedmesh.h contains the function prototypes for this file.
+/**
+ * Implementation of CDDerivedMesh.
+ * KERNEL_cdderivedmesh.h contains the function prototypes for this file.
  */
 
 #include "atomic_ops.h"
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "LIB_math.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_DerivedMesh.h"
-#include "BKE_cdderivedmesh.h"
-#include "BKE_curve.h"
-#include "BKE_editmesh.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_mapping.h"
-#include "BKE_object.h"
-#include "BKE_paint.h"
-#include "BKE_pbvh.h"
+#include "KE_DerivedMesh.h"
+#include "KE_cdderivedmesh.h"
+#include "KE_curve.h"
+#include "KE_editmesh.h"
+#include "KE_mesh.h"
+#include "KE_mesh_mapping.h"
+#include "KE_object.h"
+#include "KE_paint.h"
+#include "KE_pbvh.h"
 
-#include "DNA_curve_types.h" /* for Curve */
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
+#include "structs_curve_types.h" /* for Curve */
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
+#include "structs_object_types.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -128,12 +127,12 @@ static void cdDM_recalc_looptri(DerivedMesh *dm)
   const unsigned int totloop = dm->numLoopData;
 
   DM_ensure_looptri_data(dm);
-  BLI_assert(totpoly == 0 || cddm->dm.looptris.array_wip != NULL);
+  LIB_assert(totpoly == 0 || cddm->dm.looptris.array_wip != NULL);
 
-  BKE_mesh_recalc_looptri(
+  KERNEL_mesh_recalc_looptri(
       cddm->mloop, cddm->mpoly, cddm->mvert, totloop, totpoly, cddm->dm.looptris.array_wip);
 
-  BLI_assert(cddm->dm.looptris.array == NULL);
+  LIB_assert(cddm->dm.looptris.array == NULL);
   atomic_cas_ptr(
       (void **)&cddm->dm.looptris.array, cddm->dm.looptris.array, cddm->dm.looptris.array_wip);
   cddm->dm.looptris.array_wip = NULL;
@@ -244,7 +243,7 @@ static DerivedMesh *cdDM_from_mesh_ex(Mesh *mesh,
   /* commented since even when CD_ORIGINDEX was first added this line fails
    * on the default cube, (after editmode toggle too) - campbell */
 #if 0
-  BLI_assert(CustomData_has_layer(&cddm->dm.faceData, CD_ORIGINDEX));
+  LIB_assert(CustomData_has_layer(&cddm->dm.faceData, CD_ORIGINDEX));
 #endif
 
   return dm;
