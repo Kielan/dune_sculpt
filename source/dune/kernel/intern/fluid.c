@@ -1282,3 +1282,2383 @@ static void compute_obstaclesemission(Scene *scene,
     }
   }
 }
+
+static void update_obstacles(Depsgraph *depsgraph,
+                             Scene *scene,
+                             Object *ob,
+                             FluidDomainSettings *fds,
+                             float time_per_frame,
+                             float frame_length,
+                             int frame,
+                             float dt)
+{
+  FluidObjectBB *bb_maps = NULL;
+  Object **effecobjs = NULL;
+  uint numeffecobjs = 0;
+  bool is_resume = (fds->cache_frame_pause_data == frame);
+  bool is_first_frame = (frame == fds->cache_frame_start);
+
+  effecobjs = BKE_collision_objects_create(
+      depsgraph, ob, fds->effector_group, &numeffecobjs, eModifierType_Fluid);
+
+  /* Update all effector related flags and ensure that corresponding grids get initialized. */
+  update_obstacleflags(fds, effecobjs, numeffecobjs);
+  ensure_obstaclefields(fds);
+
+  /* Allocate effector map for each effector object. */
+  bb_maps = MEM_callocN(sizeof(struct FluidObjectBB) * numeffecobjs, "fluid_effector_bb_maps");
+
+  /* Initialize effector map for each effector object. */
+  compute_obstaclesemission(scene,
+                            bb_maps,
+                            depsgraph,
+                            dt,
+                            effecobjs,
+                            frame,
+                            frame_length,
+                            fds,
+                            numeffecobjs,
+                            time_per_frame);
+
+  float *vel_x = manta_get_ob_velocity_x(fds->fluid);
+  float *vel_y = manta_get_ob_velocity_y(fds->fluid);
+  float *vel_z = manta_get_ob_velocity_z(fds->fluid);
+  float *vel_x_guide = manta_get_guide_velocity_x(fds->fluid);
+  float *vel_y_guide = manta_get_guide_velocity_y(fds->fluid);
+  float *vel_z_guide = manta_get_guide_velocity_z(fds->fluid);
+  float *phi_obs_in = manta_get_phiobs_in(fds->fluid);
+  float *phi_obsstatic_in = manta_get_phiobsstatic_in(fds->fluid);
+  float *phi_guide_in = manta_get_phiguide_in(fds->fluid);
+  float *num_obstacles = manta_get_num_obstacle(fds->fluid);
+  float *num_guides = manta_get_num_guide(fds->fluid);
+  uint z;
+
+  bool use_adaptivedomain = (fds->flags & FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN);
+
+  /* Grid reset before writing again. */
+  for (z = 0; z < fds->res[0] * fds->res[1] * fds->res[2]; z++) {
+
+    /* Use big value that's not inf to initialize levelset grids. */
+    if (phi_obs_in) {
+      phi_obs_in[z] = PHI_MAX;
+    }
+    /* Only reset static effectors on first frame. Only use static effectors without adaptive
+     * domains. */
+    if (phi_obsstatic_in && (is_first_frame || use_adaptivedomain)) {
+      phi_obsstatic_in[z] = PHI_MAX;
+    }
+    if (phi_guide_in) {
+      phi_guide_in[z] = PHI_MAX;
+    }
+    if (num_obstacles) {
+      num_obstacles[z] = 0;
+    }
+    if (num_guides) {
+      num_guides[z] = 0;
+    }
+    if (vel_x && vel_y && vel_z) {
+      vel_x[z] = 0.0f;
+      vel_y[z] = 0.0f;
+      vel_z[z] = 0.0f;
+    }
+    if (vel_x_guide && vel_y_guide && vel_z_guide) {
+      vel_x_guide[z] = 0.0f;
+      vel_y_guide[z] = 0.0f;
+      vel_z_guide[z] = 0.0f;
+    }
+  }
+
+  /* Prepare grids from effector objects. */
+  for (int effec_index = 0; effec_index < numeffecobjs; effec_index++) {
+    Object *effecobj = effecobjs[effec_index];
+    FluidModifierData *fmd2 = (FluidModifierData *)BKE_modifiers_findby_type(effecobj,
+                                                                             eModifierType_Fluid);
+
+    /* Sanity check. */
+    if (!fmd2) {
+      continue;
+    }
+
+    /* Cannot use static mode with adaptive domain.
+     * The adaptive domain might expand and only later in the simulations discover the static
+     * object. */
+    bool is_static = is_static_object(effecobj) && !use_adaptivedomain;
+
+    /* Check for initialized effector object. */
+    if ((fmd2->type & MOD_FLUID_TYPE_EFFEC) && fmd2->effector) {
+      FluidEffectorSettings *fes = fmd2->effector;
+
+      /* Optimization: Skip effector objects with disabled effec flag. */
+      if ((fes->flags & FLUID_EFFECTOR_USE_EFFEC) == 0) {
+        continue;
+      }
+
+      FluidObjectBB *bb = &bb_maps[effec_index];
+      float *velocity_map = bb->velocity;
+      float *numobjs_map = bb->numobjs;
+      float *distance_map = bb->distances;
+
+      int gx, gy, gz, ex, ey, ez, dx, dy, dz;
+      size_t e_index, d_index;
+
+      /* Loop through every emission map cell. */
+      for (gx = bb->min[0]; gx < bb->max[0]; gx++) {
+        for (gy = bb->min[1]; gy < bb->max[1]; gy++) {
+          for (gz = bb->min[2]; gz < bb->max[2]; gz++) {
+            /* Compute emission map index. */
+            ex = gx - bb->min[0];
+            ey = gy - bb->min[1];
+            ez = gz - bb->min[2];
+            e_index = manta_get_index(ex, bb->res[0], ey, bb->res[1], ez);
+
+            /* Get domain index. */
+            dx = gx - fds->res_min[0];
+            dy = gy - fds->res_min[1];
+            dz = gz - fds->res_min[2];
+            d_index = manta_get_index(dx, fds->res[0], dy, fds->res[1], dz);
+            /* Make sure emission cell is inside the new domain boundary. */
+            if (dx < 0 || dy < 0 || dz < 0 || dx >= fds->res[0] || dy >= fds->res[1] ||
+                dz >= fds->res[2]) {
+              continue;
+            }
+
+            if (fes->type == FLUID_EFFECTOR_TYPE_COLLISION) {
+              float *levelset = ((is_first_frame || is_resume) && is_static) ? phi_obsstatic_in :
+                                                                               phi_obs_in;
+              apply_effector_fields(fes,
+                                    d_index,
+                                    distance_map[e_index],
+                                    levelset,
+                                    numobjs_map[e_index],
+                                    num_obstacles,
+                                    &velocity_map[e_index * 3],
+                                    vel_x,
+                                    vel_y,
+                                    vel_z);
+            }
+            if (fes->type == FLUID_EFFECTOR_TYPE_GUIDE) {
+              apply_effector_fields(fes,
+                                    d_index,
+                                    distance_map[e_index],
+                                    phi_guide_in,
+                                    numobjs_map[e_index],
+                                    num_guides,
+                                    &velocity_map[e_index * 3],
+                                    vel_x_guide,
+                                    vel_y_guide,
+                                    vel_z_guide);
+            }
+          }
+        }
+      } /* End of effector map loop. */
+      bb_freeData(bb);
+    } /* End of effector object loop. */
+  }
+
+  BKE_collision_objects_free(effecobjs);
+  if (bb_maps) {
+    MEM_freeN(bb_maps);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Flow
+ * \{ */
+
+typedef struct EmitFromParticlesData {
+  FluidFlowSettings *ffs;
+  KDTree_3d *tree;
+
+  FluidObjectBB *bb;
+  float *particle_vel;
+  int *min, *max, *res;
+
+  float solid;
+  float smooth;
+} EmitFromParticlesData;
+
+static void emit_from_particles_task_cb(void *__restrict userdata,
+                                        const int z,
+                                        const TaskParallelTLS *__restrict UNUSED(tls))
+{
+  EmitFromParticlesData *data = userdata;
+  FluidFlowSettings *ffs = data->ffs;
+  FluidObjectBB *bb = data->bb;
+
+  for (int x = data->min[0]; x < data->max[0]; x++) {
+    for (int y = data->min[1]; y < data->max[1]; y++) {
+      const int index = manta_get_index(
+          x - bb->min[0], bb->res[0], y - bb->min[1], bb->res[1], z - bb->min[2]);
+      const float ray_start[3] = {((float)x) + 0.5f, ((float)y) + 0.5f, ((float)z) + 0.5f};
+
+      /* Find particle distance from the kdtree. */
+      KDTreeNearest_3d nearest;
+      const float range = data->solid + data->smooth;
+      BLI_kdtree_3d_find_nearest(data->tree, ray_start, &nearest);
+
+      if (nearest.dist < range) {
+        bb->influence[index] = (nearest.dist < data->solid) ?
+                                   1.0f :
+                                   (1.0f - (nearest.dist - data->solid) / data->smooth);
+        /* Uses particle velocity as initial velocity for smoke. */
+        if (ffs->flags & FLUID_FLOW_INITVELOCITY && (ffs->psys->part->phystype != PART_PHYS_NO)) {
+          madd_v3_v3fl(
+              &bb->velocity[index * 3], &data->particle_vel[nearest.index * 3], ffs->vel_multi);
+        }
+      }
+    }
+  }
+}
+
+static void emit_from_particles(Object *flow_ob,
+                                FluidDomainSettings *fds,
+                                FluidFlowSettings *ffs,
+                                FluidObjectBB *bb,
+                                Depsgraph *depsgraph,
+                                Scene *scene,
+                                float dt)
+{
+  if (ffs && ffs->psys && ffs->psys->part &&
+      ELEM(ffs->psys->part->type, PART_EMITTER, PART_FLUID)) /* Is particle system selected. */
+  {
+    ParticleSimulationData sim;
+    ParticleSystem *psys = ffs->psys;
+    float *particle_pos;
+    float *particle_vel;
+    int totpart = psys->totpart, totchild;
+    int p = 0;
+    int valid_particles = 0;
+    int bounds_margin = 1;
+
+    /* radius based flow */
+    const float solid = ffs->particle_size * 0.5f;
+    const float smooth = 0.5f; /* add 0.5 cells of linear falloff to reduce aliasing */
+    KDTree_3d *tree = NULL;
+
+    sim.depsgraph = depsgraph;
+    sim.scene = scene;
+    sim.ob = flow_ob;
+    sim.psys = psys;
+    sim.psys->lattice_deform_data = psys_create_lattice_deform_data(&sim);
+
+    /* prepare curvemapping tables */
+    if ((psys->part->child_flag & PART_CHILD_USE_CLUMP_CURVE) && psys->part->clumpcurve) {
+      BKE_curvemapping_changed_all(psys->part->clumpcurve);
+    }
+    if ((psys->part->child_flag & PART_CHILD_USE_ROUGH_CURVE) && psys->part->roughcurve) {
+      BKE_curvemapping_changed_all(psys->part->roughcurve);
+    }
+    if ((psys->part->child_flag & PART_CHILD_USE_TWIST_CURVE) && psys->part->twistcurve) {
+      BKE_curvemapping_changed_all(psys->part->twistcurve);
+    }
+
+    /* initialize particle cache */
+    if (psys->part->type == PART_HAIR) {
+      /* TODO: PART_HAIR not supported whatsoever. */
+      totchild = 0;
+    }
+    else {
+      totchild = psys->totchild * psys->part->disp / 100;
+    }
+
+    particle_pos = MEM_callocN(sizeof(float[3]) * (totpart + totchild),
+                               "manta_flow_particles_pos");
+    particle_vel = MEM_callocN(sizeof(float[3]) * (totpart + totchild),
+                               "manta_flow_particles_vel");
+
+    /* setup particle radius emission if enabled */
+    if (ffs->flags & FLUID_FLOW_USE_PART_SIZE) {
+      tree = BLI_kdtree_3d_new(psys->totpart + psys->totchild);
+      bounds_margin = (int)ceil(solid + smooth);
+    }
+
+    /* calculate local position for each particle */
+    for (p = 0; p < totpart + totchild; p++) {
+      ParticleKey state;
+      float *pos, *vel;
+      if (p < totpart) {
+        if (psys->particles[p].flag & (PARS_NO_DISP | PARS_UNEXIST)) {
+          continue;
+        }
+      }
+      else {
+        /* handle child particle */
+        ChildParticle *cpa = &psys->child[p - totpart];
+        if (psys->particles[cpa->parent].flag & (PARS_NO_DISP | PARS_UNEXIST)) {
+          continue;
+        }
+      }
+
+      /* `DEG_get_ctime(depsgraph)` does not give sub-frame time. */
+      state.time = BKE_scene_ctime_get(scene);
+
+      if (psys_get_particle_state(&sim, p, &state, 0) == 0) {
+        continue;
+      }
+
+      /* location */
+      pos = &particle_pos[valid_particles * 3];
+      copy_v3_v3(pos, state.co);
+      manta_pos_to_cell(fds, pos);
+
+      /* velocity */
+      vel = &particle_vel[valid_particles * 3];
+      copy_v3_v3(vel, state.vel);
+      mul_mat3_m4_v3(fds->imat, &particle_vel[valid_particles * 3]);
+
+      if (ffs->flags & FLUID_FLOW_USE_PART_SIZE) {
+        BLI_kdtree_3d_insert(tree, valid_particles, pos);
+      }
+
+      /* calculate emission map bounds */
+      bb_boundInsert(bb, pos);
+      valid_particles++;
+    }
+
+    /* set emission map */
+    clamp_bounds_in_domain(fds, bb->min, bb->max, NULL, NULL, bounds_margin, dt);
+    bb_allocateData(bb, ffs->flags & FLUID_FLOW_INITVELOCITY, true);
+
+    if (!(ffs->flags & FLUID_FLOW_USE_PART_SIZE)) {
+      for (p = 0; p < valid_particles; p++) {
+        int cell[3];
+        size_t i = 0;
+        size_t index = 0;
+        int badcell = 0;
+
+        /* 1. get corresponding cell */
+        cell[0] = floor(particle_pos[p * 3]) - bb->min[0];
+        cell[1] = floor(particle_pos[p * 3 + 1]) - bb->min[1];
+        cell[2] = floor(particle_pos[p * 3 + 2]) - bb->min[2];
+        /* check if cell is valid (in the domain boundary) */
+        for (i = 0; i < 3; i++) {
+          if ((cell[i] > bb->res[i] - 1) || (cell[i] < 0)) {
+            badcell = 1;
+            break;
+          }
+        }
+        if (badcell) {
+          continue;
+        }
+        /* get cell index */
+        index = manta_get_index(cell[0], bb->res[0], cell[1], bb->res[1], cell[2]);
+        /* Add influence to emission map */
+        bb->influence[index] = 1.0f;
+        /* Uses particle velocity as initial velocity for smoke */
+        if (ffs->flags & FLUID_FLOW_INITVELOCITY && (psys->part->phystype != PART_PHYS_NO)) {
+          madd_v3_v3fl(&bb->velocity[index * 3], &particle_vel[p * 3], ffs->vel_multi);
+        }
+      } /* particles loop */
+    }
+    else if (valid_particles > 0) { /* #FLUID_FLOW_USE_PART_SIZE */
+      int min[3], max[3], res[3];
+
+      /* setup loop bounds */
+      for (int i = 0; i < 3; i++) {
+        min[i] = bb->min[i];
+        max[i] = bb->max[i];
+        res[i] = bb->res[i];
+      }
+
+      BLI_kdtree_3d_balance(tree);
+
+      EmitFromParticlesData data = {
+          .ffs = ffs,
+          .tree = tree,
+          .bb = bb,
+          .particle_vel = particle_vel,
+          .min = min,
+          .max = max,
+          .res = res,
+          .solid = solid,
+          .smooth = smooth,
+      };
+
+      TaskParallelSettings settings;
+      BLI_parallel_range_settings_defaults(&settings);
+      settings.min_iter_per_thread = 2;
+      BLI_task_parallel_range(min[2], max[2], &data, emit_from_particles_task_cb, &settings);
+    }
+
+    if (ffs->flags & FLUID_FLOW_USE_PART_SIZE) {
+      BLI_kdtree_3d_free(tree);
+    }
+
+    /* free data */
+    if (particle_pos) {
+      MEM_freeN(particle_pos);
+    }
+    if (particle_vel) {
+      MEM_freeN(particle_vel);
+    }
+  }
+}
+
+/* Calculate map of (minimum) distances to flow/obstacle surface. Distances outside mesh are
+ * positive, inside negative. */
+static void update_distances(int index,
+                             float *distance_map,
+                             BVHTreeFromMesh *tree_data,
+                             const float ray_start[3],
+                             float surface_thickness,
+                             bool use_plane_init)
+{
+  float min_dist = PHI_MAX;
+
+  /* Planar initialization: Find nearest cells around mesh. */
+  if (use_plane_init) {
+    BVHTreeNearest nearest = {0};
+    nearest.index = -1;
+    /* Distance between two opposing vertices in a unit cube.
+     * I.e. the unit cube diagonal or sqrt(3).
+     * This value is our nearest neighbor search distance. */
+    const float surface_distance = 1.732;
+    nearest.dist_sq = surface_distance *
+                      surface_distance; /* find_nearest uses squared distance. */
+
+    /* Subtract optional surface thickness value and virtually increase the object size. */
+    if (surface_thickness) {
+      nearest.dist_sq += surface_thickness;
+    }
+
+    if (BLI_bvhtree_find_nearest(
+            tree_data->tree, ray_start, &nearest, tree_data->nearest_callback, tree_data) != -1) {
+      float ray[3] = {0};
+      sub_v3_v3v3(ray, ray_start, nearest.co);
+      min_dist = len_v3(ray);
+      min_dist = (-1.0f) * fabsf(min_dist);
+    }
+  }
+  /* Volumetric initialization: Ray-casts around mesh object. */
+  else {
+    /* Ray-casts in 26 directions.
+     * (6 main axis + 12 quadrant diagonals (2D) + 8 octant diagonals (3D)). */
+    float ray_dirs[26][3] = {
+        {1.0f, 0.0f, 0.0f},   {0.0f, 1.0f, 0.0f},   {0.0f, 0.0f, 1.0f},  {-1.0f, 0.0f, 0.0f},
+        {0.0f, -1.0f, 0.0f},  {0.0f, 0.0f, -1.0f},  {1.0f, 1.0f, 0.0f},  {1.0f, -1.0f, 0.0f},
+        {-1.0f, 1.0f, 0.0f},  {-1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 1.0f},  {1.0f, 0.0f, -1.0f},
+        {-1.0f, 0.0f, 1.0f},  {-1.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 1.0f},  {0.0f, 1.0f, -1.0f},
+        {0.0f, -1.0f, 1.0f},  {0.0f, -1.0f, -1.0f}, {1.0f, 1.0f, 1.0f},  {1.0f, -1.0f, 1.0f},
+        {-1.0f, 1.0f, 1.0f},  {-1.0f, -1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}, {1.0f, -1.0f, -1.0f},
+        {-1.0f, 1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f}};
+
+    /* Count ray mesh misses (i.e. no face hit) and cases where the ray direction matches the face
+     * normal direction. From this information it can be derived whether a cell is inside or
+     * outside the mesh. */
+    int miss_count = 0, dir_count = 0;
+
+    for (int i = 0; i < ARRAY_SIZE(ray_dirs); i++) {
+      BVHTreeRayHit hit_tree = {0};
+      hit_tree.index = -1;
+      hit_tree.dist = PHI_MAX;
+
+      normalize_v3(ray_dirs[i]);
+      BLI_bvhtree_ray_cast(tree_data->tree,
+                           ray_start,
+                           ray_dirs[i],
+                           0.0f,
+                           &hit_tree,
+                           tree_data->raycast_callback,
+                           tree_data);
+
+      /* Ray did not hit mesh.
+       * Current point definitely not inside mesh. Inside mesh as all rays have to hit. */
+      if (hit_tree.index == -1) {
+        miss_count++;
+        /* Skip this ray since nothing was hit. */
+        continue;
+      }
+
+      /* Ray and normal are pointing in opposite directions. */
+      if (dot_v3v3(ray_dirs[i], hit_tree.no) <= 0) {
+        dir_count++;
+      }
+
+      if (hit_tree.dist < min_dist) {
+        min_dist = hit_tree.dist;
+      }
+    }
+
+    /* Point lies inside mesh. Use negative sign for distance value.
+     * This "if statement" has 2 conditions that can be true for points outside mesh. */
+    if (!(miss_count > 0 || dir_count == ARRAY_SIZE(ray_dirs))) {
+      min_dist = (-1.0f) * fabsf(min_dist);
+    }
+
+    /* Subtract optional surface thickness value and virtually increase the object size. */
+    if (surface_thickness) {
+      min_dist -= surface_thickness;
+    }
+  }
+
+  /* Update global distance array but ensure that older entries are not overridden. */
+  distance_map[index] = MIN2(distance_map[index], min_dist);
+
+  /* Sanity check: Ensure that distances don't explode. */
+  CLAMP(distance_map[index], -PHI_MAX, PHI_MAX);
+}
+
+static void sample_mesh(FluidFlowSettings *ffs,
+                        const MVert *mvert,
+                        const float (*vert_normals)[3],
+                        const MLoop *mloop,
+                        const MLoopTri *mlooptri,
+                        const MLoopUV *mloopuv,
+                        float *influence_map,
+                        float *velocity_map,
+                        int index,
+                        const int base_res[3],
+                        const float global_size[3],
+                        const float flow_center[3],
+                        BVHTreeFromMesh *tree_data,
+                        const float ray_start[3],
+                        const float *vert_vel,
+                        bool has_velocity,
+                        int defgrp_index,
+                        MDeformVert *dvert,
+                        float x,
+                        float y,
+                        float z)
+{
+  float ray_dir[3] = {1.0f, 0.0f, 0.0f};
+  BVHTreeRayHit hit = {0};
+  BVHTreeNearest nearest = {0};
+
+  float volume_factor = 0.0f;
+
+  hit.index = -1;
+  hit.dist = PHI_MAX;
+  nearest.index = -1;
+
+  /* Distance between two opposing vertices in a unit cube.
+   * I.e. the unit cube diagonal or sqrt(3).
+   * This value is our nearest neighbor search distance. */
+  const float surface_distance = 1.732;
+  nearest.dist_sq = surface_distance * surface_distance; /* find_nearest uses squared distance. */
+
+  bool is_gas_flow = ELEM(
+      ffs->type, FLUID_FLOW_TYPE_SMOKE, FLUID_FLOW_TYPE_FIRE, FLUID_FLOW_TYPE_SMOKEFIRE);
+
+  /* Emission strength for gases will be computed below.
+   * For liquids it's not needed. Just set to non zero value
+   * to allow initial velocity computation. */
+  float emission_strength = (is_gas_flow) ? 0.0f : 1.0f;
+
+  /* Emission inside the flow object. */
+  if (is_gas_flow && ffs->volume_density) {
+    if (BLI_bvhtree_ray_cast(tree_data->tree,
+                             ray_start,
+                             ray_dir,
+                             0.0f,
+                             &hit,
+                             tree_data->raycast_callback,
+                             tree_data) != -1) {
+      float dot = ray_dir[0] * hit.no[0] + ray_dir[1] * hit.no[1] + ray_dir[2] * hit.no[2];
+      /* If ray and hit face normal are facing same direction hit point is inside a closed mesh. */
+      if (dot >= 0) {
+        /* Also cast a ray in opposite direction to make sure point is at least surrounded by two
+         * faces. */
+        negate_v3(ray_dir);
+        hit.index = -1;
+        hit.dist = PHI_MAX;
+
+        BLI_bvhtree_ray_cast(tree_data->tree,
+                             ray_start,
+                             ray_dir,
+                             0.0f,
+                             &hit,
+                             tree_data->raycast_callback,
+                             tree_data);
+        if (hit.index != -1) {
+          volume_factor = ffs->volume_density;
+        }
+      }
+    }
+  }
+
+  /* Find the nearest point on the mesh. */
+  if (BLI_bvhtree_find_nearest(
+          tree_data->tree, ray_start, &nearest, tree_data->nearest_callback, tree_data) != -1) {
+    float weights[3];
+    int v1, v2, v3, f_index = nearest.index;
+    float hit_normal[3];
+
+    /* Calculate barycentric weights for nearest point. */
+    v1 = mloop[mlooptri[f_index].tri[0]].v;
+    v2 = mloop[mlooptri[f_index].tri[1]].v;
+    v3 = mloop[mlooptri[f_index].tri[2]].v;
+    interp_weights_tri_v3(weights, mvert[v1].co, mvert[v2].co, mvert[v3].co, nearest.co);
+
+    /* Compute emission strength for smoke flow. */
+    if (is_gas_flow) {
+      /* Emission from surface is based on UI configurable distance value. */
+      if (ffs->surface_distance) {
+        emission_strength = sqrtf(nearest.dist_sq) / ffs->surface_distance;
+        CLAMP(emission_strength, 0.0f, 1.0f);
+        emission_strength = pow(1.0f - emission_strength, 0.5f);
+      }
+      else {
+        emission_strength = 0.0f;
+      }
+
+      /* Apply vertex group influence if it is being used. */
+      if (defgrp_index != -1 && dvert) {
+        float weight_mask = BKE_defvert_find_weight(&dvert[v1], defgrp_index) * weights[0] +
+                            BKE_defvert_find_weight(&dvert[v2], defgrp_index) * weights[1] +
+                            BKE_defvert_find_weight(&dvert[v3], defgrp_index) * weights[2];
+        emission_strength *= weight_mask;
+      }
+
+      /* Apply emission texture. */
+      if ((ffs->flags & FLUID_FLOW_TEXTUREEMIT) && ffs->noise_texture) {
+        float tex_co[3] = {0};
+        TexResult texres;
+
+        if (ffs->texture_type == FLUID_FLOW_TEXTURE_MAP_AUTO) {
+          tex_co[0] = ((x - flow_center[0]) / base_res[0]) / ffs->texture_size;
+          tex_co[1] = ((y - flow_center[1]) / base_res[1]) / ffs->texture_size;
+          tex_co[2] = ((z - flow_center[2]) / base_res[2] - ffs->texture_offset) /
+                      ffs->texture_size;
+        }
+        else if (mloopuv) {
+          const float *uv[3];
+          uv[0] = mloopuv[mlooptri[f_index].tri[0]].uv;
+          uv[1] = mloopuv[mlooptri[f_index].tri[1]].uv;
+          uv[2] = mloopuv[mlooptri[f_index].tri[2]].uv;
+
+          interp_v2_v2v2v2(tex_co, UNPACK3(uv), weights);
+
+          /* Map texture coord between -1.0f and 1.0f. */
+          tex_co[0] = tex_co[0] * 2.0f - 1.0f;
+          tex_co[1] = tex_co[1] * 2.0f - 1.0f;
+          tex_co[2] = ffs->texture_offset;
+        }
+        texres.nor = NULL;
+        BKE_texture_get_value(NULL, ffs->noise_texture, tex_co, &texres, false);
+        emission_strength *= texres.tin;
+      }
+    }
+
+    /* Initial velocity of flow object. Only compute velocity if emission is present. */
+    if (ffs->flags & FLUID_FLOW_INITVELOCITY && velocity_map && emission_strength != 0.0) {
+      /* Apply normal directional velocity. */
+      if (ffs->vel_normal) {
+        /* Interpolate vertex normal vectors to get nearest point normal. */
+        interp_v3_v3v3v3(
+            hit_normal, vert_normals[v1], vert_normals[v2], vert_normals[v3], weights);
+        normalize_v3(hit_normal);
+
+        /* Apply normal directional velocity. */
+        velocity_map[index * 3] += hit_normal[0] * ffs->vel_normal;
+        velocity_map[index * 3 + 1] += hit_normal[1] * ffs->vel_normal;
+        velocity_map[index * 3 + 2] += hit_normal[2] * ffs->vel_normal;
+      }
+      /* Apply object velocity. */
+      if (has_velocity && ffs->vel_multi) {
+        float hit_vel[3];
+        interp_v3_v3v3v3(
+            hit_vel, &vert_vel[v1 * 3], &vert_vel[v2 * 3], &vert_vel[v3 * 3], weights);
+        velocity_map[index * 3] += hit_vel[0] * ffs->vel_multi;
+        velocity_map[index * 3 + 1] += hit_vel[1] * ffs->vel_multi;
+        velocity_map[index * 3 + 2] += hit_vel[2] * ffs->vel_multi;
+#  ifdef DEBUG_PRINT
+        /* Debugging: Print flow object velocities. */
+        printf("adding flow object vel: [%f, %f, %f]\n", hit_vel[0], hit_vel[1], hit_vel[2]);
+#  endif
+      }
+      /* Convert xyz velocities flow settings from world to grid space. */
+      float convert_vel[3];
+      copy_v3_v3(convert_vel, ffs->vel_coord);
+      float time_mult = 1.0 / (25.0f * DT_DEFAULT);
+      float size_mult = MAX3(base_res[0], base_res[1], base_res[2]) /
+                        MAX3(global_size[0], global_size[1], global_size[2]);
+      mul_v3_v3fl(convert_vel, ffs->vel_coord, size_mult * time_mult);
+
+      velocity_map[index * 3] += convert_vel[0];
+      velocity_map[index * 3 + 1] += convert_vel[1];
+      velocity_map[index * 3 + 2] += convert_vel[2];
+#  ifdef DEBUG_PRINT
+      printf("initial vel: [%f, %f, %f]\n",
+             velocity_map[index * 3],
+             velocity_map[index * 3 + 1],
+             velocity_map[index * 3 + 2]);
+#  endif
+    }
+  }
+
+  /* Apply final influence value but also consider volume initialization factor. */
+  influence_map[index] = MAX2(volume_factor, emission_strength);
+}
+
+typedef struct EmitFromDMData {
+  FluidDomainSettings *fds;
+  FluidFlowSettings *ffs;
+
+  const MVert *mvert;
+  const float (*vert_normals)[3];
+  const MLoop *mloop;
+  const MLoopTri *mlooptri;
+  const MLoopUV *mloopuv;
+  MDeformVert *dvert;
+  int defgrp_index;
+
+  BVHTreeFromMesh *tree;
+  FluidObjectBB *bb;
+
+  bool has_velocity;
+  float *vert_vel;
+  float *flow_center;
+  int *min, *max, *res;
+} EmitFromDMData;
+
+static void emit_from_mesh_task_cb(void *__restrict userdata,
+                                   const int z,
+                                   const TaskParallelTLS *__restrict UNUSED(tls))
+{
+  EmitFromDMData *data = userdata;
+  FluidObjectBB *bb = data->bb;
+
+  for (int x = data->min[0]; x < data->max[0]; x++) {
+    for (int y = data->min[1]; y < data->max[1]; y++) {
+      const int index = manta_get_index(
+          x - bb->min[0], bb->res[0], y - bb->min[1], bb->res[1], z - bb->min[2]);
+      const float ray_start[3] = {((float)x) + 0.5f, ((float)y) + 0.5f, ((float)z) + 0.5f};
+
+      /* Compute emission only for flow objects that produce fluid (i.e. skip outflow objects).
+       * Result in bb->influence. Also computes initial velocities. Result in bb->velocity. */
+      if (ELEM(data->ffs->behavior, FLUID_FLOW_BEHAVIOR_GEOMETRY, FLUID_FLOW_BEHAVIOR_INFLOW)) {
+        sample_mesh(data->ffs,
+                    data->mvert,
+                    data->vert_normals,
+                    data->mloop,
+                    data->mlooptri,
+                    data->mloopuv,
+                    bb->influence,
+                    bb->velocity,
+                    index,
+                    data->fds->base_res,
+                    data->fds->global_size,
+                    data->flow_center,
+                    data->tree,
+                    ray_start,
+                    data->vert_vel,
+                    data->has_velocity,
+                    data->defgrp_index,
+                    data->dvert,
+                    (float)x,
+                    (float)y,
+                    (float)z);
+      }
+
+      /* Calculate levelset values from meshes. Result in bb->distances. */
+      update_distances(index,
+                       bb->distances,
+                       data->tree,
+                       ray_start,
+                       data->ffs->surface_distance,
+                       data->ffs->flags & FLUID_FLOW_USE_PLANE_INIT);
+    }
+  }
+}
+
+static void emit_from_mesh(
+    Object *flow_ob, FluidDomainSettings *fds, FluidFlowSettings *ffs, FluidObjectBB *bb, float dt)
+{
+  if (ffs->mesh) {
+    Mesh *me = NULL;
+    MVert *mvert = NULL;
+    const MLoopTri *mlooptri = NULL;
+    const MLoop *mloop = NULL;
+    const MLoopUV *mloopuv = NULL;
+    MDeformVert *dvert = NULL;
+    BVHTreeFromMesh tree_data = {NULL};
+    int numverts, i;
+
+    float *vert_vel = NULL;
+    bool has_velocity = false;
+
+    int defgrp_index = ffs->vgroup_density - 1;
+    float flow_center[3] = {0};
+    int min[3], max[3], res[3];
+
+    /* Copy mesh for thread safety as we modify it.
+     * Main issue is its VertArray being modified, then replaced and freed. */
+    me = BKE_mesh_copy_for_eval(ffs->mesh, true);
+
+    /* Duplicate vertices to modify. */
+    if (me->mvert) {
+      me->mvert = MEM_dupallocN(me->mvert);
+      CustomData_set_layer(&me->vdata, CD_MVERT, me->mvert);
+    }
+
+    mvert = me->mvert;
+    mloop = me->mloop;
+    mlooptri = BKE_mesh_runtime_looptri_ensure(me);
+    numverts = me->totvert;
+    dvert = CustomData_get_layer(&me->vdata, CD_MDEFORMVERT);
+    mloopuv = CustomData_get_layer_named(&me->ldata, CD_MLOOPUV, ffs->uvlayer_name);
+
+    if (ffs->flags & FLUID_FLOW_INITVELOCITY) {
+      vert_vel = MEM_callocN(sizeof(float[3]) * numverts, "manta_flow_velocity");
+
+      if (ffs->numverts != numverts || !ffs->verts_old) {
+        if (ffs->verts_old) {
+          MEM_freeN(ffs->verts_old);
+        }
+        ffs->verts_old = MEM_callocN(sizeof(float[3]) * numverts, "manta_flow_verts_old");
+        ffs->numverts = numverts;
+      }
+      else {
+        has_velocity = true;
+      }
+    }
+
+    /* Transform mesh vertices to domain grid space for fast lookups.
+     * This is valid because the mesh is copied above. */
+    BKE_mesh_vertex_normals_ensure(me);
+    float(*vert_normals)[3] = BKE_mesh_vertex_normals_for_write(me);
+    for (i = 0; i < numverts; i++) {
+      /* Vertex position. */
+      mul_m4_v3(flow_ob->obmat, mvert[i].co);
+      manta_pos_to_cell(fds, mvert[i].co);
+
+      /* Vertex normal. */
+      mul_mat3_m4_v3(flow_ob->obmat, vert_normals[i]);
+      mul_mat3_m4_v3(fds->imat, vert_normals[i]);
+      normalize_v3(vert_normals[i]);
+
+      /* Vertex velocity. */
+      if (ffs->flags & FLUID_FLOW_INITVELOCITY) {
+        float co[3];
+        add_v3fl_v3fl_v3i(co, mvert[i].co, fds->shift);
+        if (has_velocity) {
+          sub_v3_v3v3(&vert_vel[i * 3], co, &ffs->verts_old[i * 3]);
+          mul_v3_fl(&vert_vel[i * 3], 1.0 / dt);
+        }
+        copy_v3_v3(&ffs->verts_old[i * 3], co);
+      }
+
+      /* Calculate emission map bounds. */
+      bb_boundInsert(bb, mvert[i].co);
+    }
+    mul_m4_v3(flow_ob->obmat, flow_center);
+    manta_pos_to_cell(fds, flow_center);
+
+    /* Set emission map.
+     * Use 3 cell diagonals as margin (3 * 1.732 = 5.196). */
+    int bounds_margin = (int)ceil(5.196);
+    clamp_bounds_in_domain(fds, bb->min, bb->max, NULL, NULL, bounds_margin, dt);
+    bb_allocateData(bb, ffs->flags & FLUID_FLOW_INITVELOCITY, true);
+
+    /* Setup loop bounds. */
+    for (i = 0; i < 3; i++) {
+      min[i] = bb->min[i];
+      max[i] = bb->max[i];
+      res[i] = bb->res[i];
+    }
+
+    /* Skip flow sampling loop if object has disabled flow. */
+    bool use_flow = ffs->flags & FLUID_FLOW_USE_INFLOW;
+    if (use_flow && BKE_bvhtree_from_mesh_get(&tree_data, me, BVHTREE_FROM_LOOPTRI, 4)) {
+
+      EmitFromDMData data = {
+          .fds = fds,
+          .ffs = ffs,
+          .mvert = mvert,
+          .vert_normals = vert_normals,
+          .mloop = mloop,
+          .mlooptri = mlooptri,
+          .mloopuv = mloopuv,
+          .dvert = dvert,
+          .defgrp_index = defgrp_index,
+          .tree = &tree_data,
+          .bb = bb,
+          .has_velocity = has_velocity,
+          .vert_vel = vert_vel,
+          .flow_center = flow_center,
+          .min = min,
+          .max = max,
+          .res = res,
+      };
+
+      TaskParallelSettings settings;
+      BLI_parallel_range_settings_defaults(&settings);
+      settings.min_iter_per_thread = 2;
+      BLI_task_parallel_range(min[2], max[2], &data, emit_from_mesh_task_cb, &settings);
+    }
+    /* Free bvh tree. */
+    free_bvhtree_from_mesh(&tree_data);
+
+    if (vert_vel) {
+      MEM_freeN(vert_vel);
+    }
+    if (me->mvert) {
+      MEM_freeN(me->mvert);
+    }
+    BKE_id_free(NULL, me);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Fluid Step
+ * \{ */
+
+static void adaptive_domain_adjust(
+    FluidDomainSettings *fds, Object *ob, FluidObjectBB *bb_maps, uint numflowobj, float dt)
+{
+  /* calculate domain shift for current frame */
+  int new_shift[3] = {0};
+  int total_shift[3];
+  float frame_shift_f[3];
+  float ob_loc[3] = {0};
+
+  mul_m4_v3(ob->obmat, ob_loc);
+
+  sub_v3_v3v3(frame_shift_f, ob_loc, fds->prev_loc);
+  copy_v3_v3(fds->prev_loc, ob_loc);
+  /* convert global space shift to local "cell" space */
+  mul_mat3_m4_v3(fds->imat, frame_shift_f);
+  frame_shift_f[0] = frame_shift_f[0] / fds->cell_size[0];
+  frame_shift_f[1] = frame_shift_f[1] / fds->cell_size[1];
+  frame_shift_f[2] = frame_shift_f[2] / fds->cell_size[2];
+  /* add to total shift */
+  add_v3_v3(fds->shift_f, frame_shift_f);
+  /* convert to integer */
+  total_shift[0] = (int)(floorf(fds->shift_f[0]));
+  total_shift[1] = (int)(floorf(fds->shift_f[1]));
+  total_shift[2] = (int)(floorf(fds->shift_f[2]));
+  int temp_shift[3];
+  copy_v3_v3_int(temp_shift, fds->shift);
+  sub_v3_v3v3_int(new_shift, total_shift, fds->shift);
+  copy_v3_v3_int(fds->shift, total_shift);
+
+  /* calculate new domain boundary points so that smoke doesn't slide on sub-cell movement */
+  fds->p0[0] = fds->dp0[0] - fds->cell_size[0] * (fds->shift_f[0] - total_shift[0] - 0.5f);
+  fds->p0[1] = fds->dp0[1] - fds->cell_size[1] * (fds->shift_f[1] - total_shift[1] - 0.5f);
+  fds->p0[2] = fds->dp0[2] - fds->cell_size[2] * (fds->shift_f[2] - total_shift[2] - 0.5f);
+  fds->p1[0] = fds->p0[0] + fds->cell_size[0] * fds->base_res[0];
+  fds->p1[1] = fds->p0[1] + fds->cell_size[1] * fds->base_res[1];
+  fds->p1[2] = fds->p0[2] + fds->cell_size[2] * fds->base_res[2];
+
+  /* adjust domain resolution */
+  const int block_size = fds->noise_scale;
+  int min[3] = {32767, 32767, 32767}, max[3] = {-32767, -32767, -32767}, res[3];
+  int total_cells = 1, res_changed = 0, shift_changed = 0;
+  float min_vel[3], max_vel[3];
+  int x, y, z;
+  float *density = manta_smoke_get_density(fds->fluid);
+  float *fuel = manta_smoke_get_fuel(fds->fluid);
+  float *bigdensity = manta_noise_get_density(fds->fluid);
+  float *bigfuel = manta_noise_get_fuel(fds->fluid);
+  float *vx = manta_get_velocity_x(fds->fluid);
+  float *vy = manta_get_velocity_y(fds->fluid);
+  float *vz = manta_get_velocity_z(fds->fluid);
+  int wt_res[3];
+
+  if (fds->flags & FLUID_DOMAIN_USE_NOISE && fds->fluid) {
+    manta_noise_get_res(fds->fluid, wt_res);
+  }
+
+  INIT_MINMAX(min_vel, max_vel);
+
+  /* Calculate bounds for current domain content */
+  for (x = fds->res_min[0]; x < fds->res_max[0]; x++) {
+    for (y = fds->res_min[1]; y < fds->res_max[1]; y++) {
+      for (z = fds->res_min[2]; z < fds->res_max[2]; z++) {
+        int xn = x - new_shift[0];
+        int yn = y - new_shift[1];
+        int zn = z - new_shift[2];
+        int index;
+        float max_den;
+
+        /* skip if cell already belongs to new area */
+        if (xn >= min[0] && xn <= max[0] && yn >= min[1] && yn <= max[1] && zn >= min[2] &&
+            zn <= max[2]) {
+          continue;
+        }
+
+        index = manta_get_index(x - fds->res_min[0],
+                                fds->res[0],
+                                y - fds->res_min[1],
+                                fds->res[1],
+                                z - fds->res_min[2]);
+        max_den = (fuel) ? MAX2(density[index], fuel[index]) : density[index];
+
+        /* Check high resolution bounds if max density isn't already high enough. */
+        if (max_den < fds->adapt_threshold && fds->flags & FLUID_DOMAIN_USE_NOISE && fds->fluid) {
+          int i, j, k;
+          /* high res grid index */
+          int xx = (x - fds->res_min[0]) * block_size;
+          int yy = (y - fds->res_min[1]) * block_size;
+          int zz = (z - fds->res_min[2]) * block_size;
+
+          for (i = 0; i < block_size; i++) {
+            for (j = 0; j < block_size; j++) {
+              for (k = 0; k < block_size; k++) {
+                int big_index = manta_get_index(xx + i, wt_res[0], yy + j, wt_res[1], zz + k);
+                float den = (bigfuel) ? MAX2(bigdensity[big_index], bigfuel[big_index]) :
+                                        bigdensity[big_index];
+                if (den > max_den) {
+                  max_den = den;
+                }
+              }
+            }
+          }
+        }
+
+        /* content bounds (use shifted coordinates) */
+        if (max_den >= fds->adapt_threshold) {
+          if (min[0] > xn) {
+            min[0] = xn;
+          }
+          if (min[1] > yn) {
+            min[1] = yn;
+          }
+          if (min[2] > zn) {
+            min[2] = zn;
+          }
+          if (max[0] < xn) {
+            max[0] = xn;
+          }
+          if (max[1] < yn) {
+            max[1] = yn;
+          }
+          if (max[2] < zn) {
+            max[2] = zn;
+          }
+        }
+
+        /* velocity bounds */
+        if (min_vel[0] > vx[index]) {
+          min_vel[0] = vx[index];
+        }
+        if (min_vel[1] > vy[index]) {
+          min_vel[1] = vy[index];
+        }
+        if (min_vel[2] > vz[index]) {
+          min_vel[2] = vz[index];
+        }
+        if (max_vel[0] < vx[index]) {
+          max_vel[0] = vx[index];
+        }
+        if (max_vel[1] < vy[index]) {
+          max_vel[1] = vy[index];
+        }
+        if (max_vel[2] < vz[index]) {
+          max_vel[2] = vz[index];
+        }
+      }
+    }
+  }
+
+  /* also apply emission maps */
+  for (int i = 0; i < numflowobj; i++) {
+    FluidObjectBB *bb = &bb_maps[i];
+
+    for (x = bb->min[0]; x < bb->max[0]; x++) {
+      for (y = bb->min[1]; y < bb->max[1]; y++) {
+        for (z = bb->min[2]; z < bb->max[2]; z++) {
+          int index = manta_get_index(
+              x - bb->min[0], bb->res[0], y - bb->min[1], bb->res[1], z - bb->min[2]);
+          float max_den = bb->influence[index];
+
+          /* density bounds */
+          if (max_den >= fds->adapt_threshold) {
+            if (min[0] > x) {
+              min[0] = x;
+            }
+            if (min[1] > y) {
+              min[1] = y;
+            }
+            if (min[2] > z) {
+              min[2] = z;
+            }
+            if (max[0] < x) {
+              max[0] = x;
+            }
+            if (max[1] < y) {
+              max[1] = y;
+            }
+            if (max[2] < z) {
+              max[2] = z;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* calculate new bounds based on these values */
+  clamp_bounds_in_domain(fds, min, max, min_vel, max_vel, fds->adapt_margin + 1, dt);
+
+  for (int i = 0; i < 3; i++) {
+    /* calculate new resolution */
+    res[i] = max[i] - min[i];
+    total_cells *= res[i];
+
+    if (new_shift[i]) {
+      shift_changed = 1;
+    }
+
+    /* if no content set minimum dimensions */
+    if (res[i] <= 0) {
+      int j;
+      for (j = 0; j < 3; j++) {
+        min[j] = 0;
+        max[j] = 1;
+        res[j] = 1;
+      }
+      res_changed = 1;
+      total_cells = 1;
+      break;
+    }
+    if (min[i] != fds->res_min[i] || max[i] != fds->res_max[i]) {
+      res_changed = 1;
+    }
+  }
+
+  if (res_changed || shift_changed) {
+    BKE_fluid_reallocate_copy_fluid(
+        fds, fds->res, res, fds->res_min, min, fds->res_max, temp_shift, total_shift);
+
+    /* set new domain dimensions */
+    copy_v3_v3_int(fds->res_min, min);
+    copy_v3_v3_int(fds->res_max, max);
+    copy_v3_v3_int(fds->res, res);
+    fds->total_cells = total_cells;
+
+    /* Redo adapt time step in manta to refresh solver state (ie time variables) */
+    manta_adapt_timestep(fds->fluid);
+  }
+}
+
+BLI_INLINE void apply_outflow_fields(int index,
+                                     float distance_value,
+                                     float *density,
+                                     float *heat,
+                                     float *fuel,
+                                     float *react,
+                                     float *color_r,
+                                     float *color_g,
+                                     float *color_b,
+                                     float *phiout)
+{
+  /* Set levelset value for liquid inflow.
+   * Ensure that distance value is "joined" into the levelset. */
+  if (phiout) {
+    phiout[index] = MIN2(distance_value, phiout[index]);
+  }
+
+  /* Set smoke outflow, i.e. reset cell to zero. */
+  if (density) {
+    density[index] = 0.0f;
+  }
+  if (heat) {
+    heat[index] = 0.0f;
+  }
+  if (fuel) {
+    fuel[index] = 0.0f;
+    react[index] = 0.0f;
+  }
+  if (color_r) {
+    color_r[index] = 0.0f;
+    color_g[index] = 0.0f;
+    color_b[index] = 0.0f;
+  }
+}
+
+BLI_INLINE void apply_inflow_fields(FluidFlowSettings *ffs,
+                                    float emission_value,
+                                    float distance_value,
+                                    int index,
+                                    float *density_in,
+                                    const float *density,
+                                    float *heat_in,
+                                    const float *heat,
+                                    float *fuel_in,
+                                    const float *fuel,
+                                    float *react_in,
+                                    const float *react,
+                                    float *color_r_in,
+                                    const float *color_r,
+                                    float *color_g_in,
+                                    const float *color_g,
+                                    float *color_b_in,
+                                    const float *color_b,
+                                    float *phi_in,
+                                    float *emission_in)
+{
+  /* Set levelset value for liquid inflow.
+   * Ensure that distance value is "joined" into the levelset. */
+  if (phi_in) {
+    phi_in[index] = MIN2(distance_value, phi_in[index]);
+  }
+
+  /* Set emission value for smoke inflow.
+   * Ensure that emission value is "maximized". */
+  if (emission_in) {
+    emission_in[index] = MAX2(emission_value, emission_in[index]);
+  }
+
+  /* Set inflow for smoke from here on. */
+  int absolute_flow = (ffs->flags & FLUID_FLOW_ABSOLUTE);
+  float dens_old = (density) ? density[index] : 0.0;
+  // float fuel_old = (fuel) ? fuel[index] : 0.0f;  /* UNUSED */
+  float dens_flow = (ffs->type == FLUID_FLOW_TYPE_FIRE) ? 0.0f : emission_value * ffs->density;
+  float fuel_flow = (fuel) ? emission_value * ffs->fuel_amount : 0.0f;
+  /* Set heat inflow. */
+  if (heat && heat_in) {
+    if (emission_value > 0.0f) {
+      heat_in[index] = ADD_IF_LOWER(heat[index], ffs->temperature);
+    }
+  }
+
+  /* Set density and fuel - absolute mode. */
+  if (absolute_flow) {
+    if (density && density_in) {
+      if (ffs->type != FLUID_FLOW_TYPE_FIRE && dens_flow > density[index]) {
+        /* Use MAX2 to preserve values from other emitters at this cell. */
+        density_in[index] = MAX2(dens_flow, density_in[index]);
+      }
+    }
+    if (fuel && fuel_in) {
+      if (ffs->type != FLUID_FLOW_TYPE_SMOKE && fuel_flow && fuel_flow > fuel[index]) {
+        /* Use MAX2 to preserve values from other emitters at this cell. */
+        fuel_in[index] = MAX2(fuel_flow, fuel_in[index]);
+      }
+    }
+  }
+  /* Set density and fuel - additive mode. */
+  else {
+    if (density && density_in) {
+      if (ffs->type != FLUID_FLOW_TYPE_FIRE) {
+        density_in[index] += dens_flow;
+        CLAMP(density_in[index], 0.0f, 1.0f);
+      }
+    }
+    if (fuel && fuel_in) {
+      if (ffs->type != FLUID_FLOW_TYPE_SMOKE && ffs->fuel_amount) {
+        fuel_in[index] += fuel_flow;
+        CLAMP(fuel_in[index], 0.0f, 10.0f);
+      }
+    }
+  }
+
+  /* Set color. */
+  if (color_r && color_r_in) {
+    if (dens_flow) {
+      float total_dens = density[index] / (dens_old + dens_flow);
+      color_r_in[index] = (color_r[index] + ffs->color[0] * dens_flow) * total_dens;
+      color_g_in[index] = (color_g[index] + ffs->color[1] * dens_flow) * total_dens;
+      color_b_in[index] = (color_b[index] + ffs->color[2] * dens_flow) * total_dens;
+    }
+  }
+
+  /* Set fire reaction coordinate. */
+  if (fuel && fuel_in) {
+    /* Instead of using 1.0 for all new fuel add slight falloff to reduce flow blocky-ness. */
+    float value = 1.0f - pow2f(1.0f - emission_value);
+
+    if (fuel_in[index] > FLT_EPSILON && value > react[index]) {
+      float f = fuel_flow / fuel_in[index];
+      react_in[index] = value * f + (1.0f - f) * react[index];
+      CLAMP(react_in[index], 0.0f, value);
+    }
+  }
+}
+
+static void ensure_flowsfields(FluidDomainSettings *fds)
+{
+  if (fds->active_fields & FLUID_DOMAIN_ACTIVE_INVEL) {
+    manta_ensure_invelocity(fds->fluid, fds->fmd);
+  }
+  if (fds->active_fields & FLUID_DOMAIN_ACTIVE_OUTFLOW) {
+    manta_ensure_outflow(fds->fluid, fds->fmd);
+  }
+  if (fds->active_fields & FLUID_DOMAIN_ACTIVE_HEAT) {
+    manta_smoke_ensure_heat(fds->fluid, fds->fmd);
+  }
+  if (fds->active_fields & FLUID_DOMAIN_ACTIVE_FIRE) {
+    manta_smoke_ensure_fire(fds->fluid, fds->fmd);
+  }
+  if (fds->active_fields & FLUID_DOMAIN_ACTIVE_COLORS) {
+    /* Initialize all smoke with "active_color". */
+    manta_smoke_ensure_colors(fds->fluid, fds->fmd);
+  }
+  if (fds->type == FLUID_DOMAIN_TYPE_LIQUID &&
+      (fds->particle_type & FLUID_DOMAIN_PARTICLE_SPRAY ||
+       fds->particle_type & FLUID_DOMAIN_PARTICLE_FOAM ||
+       fds->particle_type & FLUID_DOMAIN_PARTICLE_TRACER)) {
+    manta_liquid_ensure_sndparts(fds->fluid, fds->fmd);
+  }
+  manta_update_pointers(fds->fluid, fds->fmd, false);
+}
+
+static void update_flowsflags(FluidDomainSettings *fds, Object **flowobjs, int numflowobj)
+{
+  int active_fields = fds->active_fields;
+  uint flow_index;
+
+  /* First, remove all flags that we want to update. */
+  int prev_flags = (FLUID_DOMAIN_ACTIVE_INVEL | FLUID_DOMAIN_ACTIVE_OUTFLOW |
+                    FLUID_DOMAIN_ACTIVE_HEAT | FLUID_DOMAIN_ACTIVE_FIRE);
+  active_fields &= ~prev_flags;
+
+  /* Monitor active fields based on flow settings. */
+  for (flow_index = 0; flow_index < numflowobj; flow_index++) {
+    Object *flow_ob = flowobjs[flow_index];
+    FluidModifierData *fmd2 = (FluidModifierData *)BKE_modifiers_findby_type(flow_ob,
+                                                                             eModifierType_Fluid);
+
+    /* Sanity check. */
+    if (!fmd2) {
+      continue;
+    }
+
+    /* Activate specific grids if at least one flow object requires this grid. */
+    if ((fmd2->type & MOD_FLUID_TYPE_FLOW) && fmd2->flow) {
+      FluidFlowSettings *ffs = fmd2->flow;
+      if (!ffs) {
+        break;
+      }
+      if (ffs->flags & FLUID_FLOW_NEEDS_UPDATE) {
+        ffs->flags &= ~FLUID_FLOW_NEEDS_UPDATE;
+        fds->cache_flag |= FLUID_DOMAIN_OUTDATED_DATA;
+      }
+      if (ffs->flags & FLUID_FLOW_INITVELOCITY) {
+        active_fields |= FLUID_DOMAIN_ACTIVE_INVEL;
+      }
+      if (ffs->behavior == FLUID_FLOW_BEHAVIOR_OUTFLOW) {
+        active_fields |= FLUID_DOMAIN_ACTIVE_OUTFLOW;
+      }
+      /* liquids done from here */
+      if (fds->type == FLUID_DOMAIN_TYPE_LIQUID) {
+        continue;
+      }
+
+      /* Activate heat field if a flow object produces any heat. */
+      if (ffs->temperature != 0.0) {
+        active_fields |= FLUID_DOMAIN_ACTIVE_HEAT;
+      }
+      /* Activate fuel field if a flow object is of fire type. */
+      if (ffs->fuel_amount != 0.0 || ffs->type == FLUID_FLOW_TYPE_FIRE ||
+          ffs->type == FLUID_FLOW_TYPE_SMOKEFIRE) {
+        active_fields |= FLUID_DOMAIN_ACTIVE_FIRE;
+      }
+      /* Activate color field if flows add smoke with varying colors. */
+      if (ffs->density != 0.0 &&
+          ELEM(ffs->type, FLUID_FLOW_TYPE_SMOKE, FLUID_FLOW_TYPE_SMOKEFIRE)) {
+        if (!(active_fields & FLUID_DOMAIN_ACTIVE_COLOR_SET)) {
+          copy_v3_v3(fds->active_color, ffs->color);
+          active_fields |= FLUID_DOMAIN_ACTIVE_COLOR_SET;
+        }
+        else if (!equals_v3v3(fds->active_color, ffs->color)) {
+          copy_v3_v3(fds->active_color, ffs->color);
+          active_fields |= FLUID_DOMAIN_ACTIVE_COLORS;
+        }
+      }
+    }
+  }
+  /* Monitor active fields based on domain settings. */
+  if (fds->type == FLUID_DOMAIN_TYPE_GAS && active_fields & FLUID_DOMAIN_ACTIVE_FIRE) {
+    /* Heat is always needed for fire. */
+    active_fields |= FLUID_DOMAIN_ACTIVE_HEAT;
+    /* Also activate colors if domain smoke color differs from active color. */
+    if (!(active_fields & FLUID_DOMAIN_ACTIVE_COLOR_SET)) {
+      copy_v3_v3(fds->active_color, fds->flame_smoke_color);
+      active_fields |= FLUID_DOMAIN_ACTIVE_COLOR_SET;
+    }
+    else if (!equals_v3v3(fds->active_color, fds->flame_smoke_color)) {
+      copy_v3_v3(fds->active_color, fds->flame_smoke_color);
+      active_fields |= FLUID_DOMAIN_ACTIVE_COLORS;
+    }
+  }
+  fds->active_fields = active_fields;
+}
+
+static bool escape_flowsobject(Object *flowobj,
+                               FluidDomainSettings *fds,
+                               FluidFlowSettings *ffs,
+                               int frame)
+{
+  bool use_velocity = (ffs->flags & FLUID_FLOW_INITVELOCITY);
+  bool is_static = is_static_object(flowobj);
+
+  bool liquid_flow = ffs->type == FLUID_FLOW_TYPE_LIQUID;
+  bool gas_flow = ELEM(
+      ffs->type, FLUID_FLOW_TYPE_SMOKE, FLUID_FLOW_TYPE_FIRE, FLUID_FLOW_TYPE_SMOKEFIRE);
+  bool is_geometry = (ffs->behavior == FLUID_FLOW_BEHAVIOR_GEOMETRY);
+
+  bool liquid_domain = fds->type == FLUID_DOMAIN_TYPE_LIQUID;
+  bool gas_domain = fds->type == FLUID_DOMAIN_TYPE_GAS;
+  bool is_adaptive = (fds->flags & FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN);
+  bool is_resume = (fds->cache_frame_pause_data == frame);
+  bool is_first_frame = (fds->cache_frame_start == frame);
+
+  /* Cannot use static mode with adaptive domain.
+   * The adaptive domain might expand and only later discover the static object. */
+  if (is_adaptive) {
+    is_static = false;
+  }
+  /* No need to compute emission value if it won't be applied. */
+  if (liquid_flow && is_geometry && !is_first_frame) {
+    return true;
+  }
+  /* Skip flow object if it does not "belong" to this domain type. */
+  if ((liquid_flow && gas_domain) || (gas_flow && liquid_domain)) {
+    return true;
+  }
+  /* Optimization: Static liquid flow objects don't need emission after first frame.
+   * TODO(sebbas): Also do not use static mode if initial velocities are enabled. */
+  if (liquid_flow && is_static && !is_first_frame && !is_resume && !use_velocity) {
+    return true;
+  }
+  return false;
+}
+
+static void compute_flowsemission(Scene *scene,
+                                  FluidObjectBB *bb_maps,
+                                  struct Depsgraph *depsgraph,
+                                  float dt,
+                                  Object **flowobjs,
+                                  int frame,
+                                  float frame_length,
+                                  FluidDomainSettings *fds,
+                                  uint numflowobjs,
+                                  float time_per_frame)
+{
+  bool is_first_frame = (frame == fds->cache_frame_start);
+
+  /* Prepare flow emission maps. */
+  for (int flow_index = 0; flow_index < numflowobjs; flow_index++) {
+    Object *flowobj = flowobjs[flow_index];
+    FluidModifierData *fmd2 = (FluidModifierData *)BKE_modifiers_findby_type(flowobj,
+                                                                             eModifierType_Fluid);
+
+    /* Sanity check. */
+    if (!fmd2) {
+      continue;
+    }
+
+    /* Check for initialized flow object. */
+    if ((fmd2->type & MOD_FLUID_TYPE_FLOW) && fmd2->flow) {
+      FluidFlowSettings *ffs = fmd2->flow;
+      int subframes = ffs->subframes;
+      FluidObjectBB *bb = &bb_maps[flow_index];
+
+      /* Optimization: Skip this object under certain conditions. */
+      if (escape_flowsobject(flowobj, fds, ffs, frame)) {
+        continue;
+      }
+
+      /* First frame cannot have any subframes because there is (obviously) no previous frame from
+       * where subframes could come from. */
+      if (is_first_frame) {
+        subframes = 0;
+      }
+
+      /* More splitting because of emission subframe: If no subframes present, sample_size is 1. */
+      float sample_size = 1.0f / (float)(subframes + 1);
+      float subframe_dt = dt * sample_size;
+
+      /* Emission loop. When not using subframes this will loop only once. */
+      for (int subframe = 0; subframe <= subframes; subframe++) {
+        /* Temporary emission map used when subframes are enabled, i.e. at least one subframe. */
+        FluidObjectBB bb_temp = {NULL};
+
+        /* Set scene time */
+        if ((subframe < subframes || time_per_frame + dt + FLT_EPSILON < frame_length) &&
+            !is_first_frame) {
+          scene->r.subframe = (time_per_frame + (subframe + 1.0f) * subframe_dt) / frame_length;
+          scene->r.cfra = frame - 1;
+        }
+        else {
+          scene->r.subframe = 0.0f;
+          scene->r.cfra = frame;
+        }
+
+        /* Sanity check: subframe portion must be between 0 and 1. */
+        CLAMP(scene->r.subframe, 0.0f, 1.0f);
+#  ifdef DEBUG_PRINT
+        /* Debugging: Print subframe information. */
+        printf(
+            "flow: frame (is first: %d): %d // scene current frame: %d // scene current subframe: "
+            "%f\n",
+            is_first_frame,
+            frame,
+            scene->r.cfra,
+            scene->r.subframe);
+#  endif
+        /* Update frame time, this is considering current subframe fraction
+         * BLI_mutex_lock() called in manta_step(), so safe to update subframe here
+         * TODO(sebbas): Using BKE_scene_ctime_get(scene) instead of new DEG_get_ctime(depsgraph)
+         * as subframes don't work with the latter yet. */
+        BKE_object_modifier_update_subframe(
+            depsgraph, scene, flowobj, true, 5, BKE_scene_ctime_get(scene), eModifierType_Fluid);
+
+        /* Emission from particles. */
+        if (ffs->source == FLUID_FLOW_SOURCE_PARTICLES) {
+          if (subframes) {
+            emit_from_particles(flowobj, fds, ffs, &bb_temp, depsgraph, scene, subframe_dt);
+          }
+          else {
+            emit_from_particles(flowobj, fds, ffs, bb, depsgraph, scene, subframe_dt);
+          }
+        }
+        /* Emission from mesh. */
+        else if (ffs->source == FLUID_FLOW_SOURCE_MESH) {
+          if (subframes) {
+            emit_from_mesh(flowobj, fds, ffs, &bb_temp, subframe_dt);
+          }
+          else {
+            emit_from_mesh(flowobj, fds, ffs, bb, subframe_dt);
+          }
+        }
+        else {
+          printf("Error: unknown flow emission source\n");
+        }
+
+        /* If this we emitted with temp emission map in this loop (subframe emission), we combine
+         * the temp map with the original emission map. */
+        if (subframes) {
+          /* Combine emission maps. */
+          bb_combineMaps(bb, &bb_temp, !(ffs->flags & FLUID_FLOW_ABSOLUTE), sample_size);
+          bb_freeData(&bb_temp);
+        }
+      }
+    }
+  }
+#  ifdef DEBUG_PRINT
+  /* Debugging: Print time information. */
+  printf("flow: frame: %d // time per frame: %f // frame length: %f // dt: %f\n",
+         frame,
+         time_per_frame,
+         frame_length,
+         dt);
+#  endif
+}
+
+static void update_flowsfluids(struct Depsgraph *depsgraph,
+                               Scene *scene,
+                               Object *ob,
+                               FluidDomainSettings *fds,
+                               float time_per_frame,
+                               float frame_length,
+                               int frame,
+                               float dt)
+{
+  FluidObjectBB *bb_maps = NULL;
+  Object **flowobjs = NULL;
+  uint numflowobjs = 0;
+  bool is_resume = (fds->cache_frame_pause_data == frame);
+  bool is_first_frame = (fds->cache_frame_start == frame);
+
+  flowobjs = BKE_collision_objects_create(
+      depsgraph, ob, fds->fluid_group, &numflowobjs, eModifierType_Fluid);
+
+  /* Update all flow related flags and ensure that corresponding grids get initialized. */
+  update_flowsflags(fds, flowobjs, numflowobjs);
+  ensure_flowsfields(fds);
+
+  /* Allocate emission map for each flow object. */
+  bb_maps = MEM_callocN(sizeof(struct FluidObjectBB) * numflowobjs, "fluid_flow_bb_maps");
+
+  /* Initialize emission map for each flow object. */
+  compute_flowsemission(scene,
+                        bb_maps,
+                        depsgraph,
+                        dt,
+                        flowobjs,
+                        frame,
+                        frame_length,
+                        fds,
+                        numflowobjs,
+                        time_per_frame);
+
+  /* Adjust domain size if needed. Only do this once for every frame. */
+  if (fds->type == FLUID_DOMAIN_TYPE_GAS && fds->flags & FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN) {
+    adaptive_domain_adjust(fds, ob, bb_maps, numflowobjs, dt);
+  }
+
+  float *phi_in = manta_get_phi_in(fds->fluid);
+  float *phistatic_in = manta_get_phistatic_in(fds->fluid);
+  float *phiout_in = manta_get_phiout_in(fds->fluid);
+  float *phioutstatic_in = manta_get_phioutstatic_in(fds->fluid);
+
+  float *density = manta_smoke_get_density(fds->fluid);
+  float *color_r = manta_smoke_get_color_r(fds->fluid);
+  float *color_g = manta_smoke_get_color_g(fds->fluid);
+  float *color_b = manta_smoke_get_color_b(fds->fluid);
+  float *fuel = manta_smoke_get_fuel(fds->fluid);
+  float *heat = manta_smoke_get_heat(fds->fluid);
+  float *react = manta_smoke_get_react(fds->fluid);
+
+  float *density_in = manta_smoke_get_density_in(fds->fluid);
+  float *heat_in = manta_smoke_get_heat_in(fds->fluid);
+  float *color_r_in = manta_smoke_get_color_r_in(fds->fluid);
+  float *color_g_in = manta_smoke_get_color_g_in(fds->fluid);
+  float *color_b_in = manta_smoke_get_color_b_in(fds->fluid);
+  float *fuel_in = manta_smoke_get_fuel_in(fds->fluid);
+  float *react_in = manta_smoke_get_react_in(fds->fluid);
+  float *emission_in = manta_smoke_get_emission_in(fds->fluid);
+
+  float *velx_initial = manta_get_in_velocity_x(fds->fluid);
+  float *vely_initial = manta_get_in_velocity_y(fds->fluid);
+  float *velz_initial = manta_get_in_velocity_z(fds->fluid);
+
+  float *forcex = manta_get_force_x(fds->fluid);
+  float *forcey = manta_get_force_y(fds->fluid);
+  float *forcez = manta_get_force_z(fds->fluid);
+
+  BLI_assert(forcex && forcey && forcez);
+
+  /* Either all or no components have to exist. */
+  BLI_assert((color_r && color_g && color_b) || (!color_r && !color_g && !color_b));
+  BLI_assert((color_r_in && color_g_in && color_b_in) ||
+             (!color_r_in && !color_g_in && !color_b_in));
+  BLI_assert((velx_initial && vely_initial && velz_initial) ||
+             (!velx_initial && !vely_initial && !velz_initial));
+
+  uint z;
+  /* Grid reset before writing again. */
+  for (z = 0; z < fds->res[0] * fds->res[1] * fds->res[2]; z++) {
+    /* Only reset static phi on first frame, dynamic phi gets reset every time. */
+    if (phistatic_in && is_first_frame) {
+      phistatic_in[z] = PHI_MAX;
+    }
+    if (phi_in) {
+      phi_in[z] = PHI_MAX;
+    }
+    /* Only reset static phi on first frame, dynamic phi gets reset every time. */
+    if (phioutstatic_in && is_first_frame) {
+      phioutstatic_in[z] = PHI_MAX;
+    }
+    if (phiout_in) {
+      phiout_in[z] = PHI_MAX;
+    }
+    /* Sync smoke inflow grids with their counterparts (simulation grids). */
+    if (density_in) {
+      density_in[z] = density[z];
+    }
+    if (heat_in) {
+      heat_in[z] = heat[z];
+    }
+    if (color_r_in && color_g_in && color_b_in) {
+      color_r_in[z] = color_r[z];
+      color_g_in[z] = color_b[z];
+      color_b_in[z] = color_g[z];
+    }
+    if (fuel_in) {
+      fuel_in[z] = fuel[z];
+      react_in[z] = react[z];
+    }
+    if (emission_in) {
+      emission_in[z] = 0.0f;
+    }
+    if (velx_initial && vely_initial && velz_initial) {
+      velx_initial[z] = 0.0f;
+      vely_initial[z] = 0.0f;
+      velz_initial[z] = 0.0f;
+    }
+    /* Reset forces here as update_effectors() is skipped when no external forces are present. */
+    forcex[z] = 0.0f;
+    forcey[z] = 0.0f;
+    forcez[z] = 0.0f;
+  }
+
+  /* Apply emission data for every flow object. */
+  for (int flow_index = 0; flow_index < numflowobjs; flow_index++) {
+    Object *flowobj = flowobjs[flow_index];
+    FluidModifierData *fmd2 = (FluidModifierData *)BKE_modifiers_findby_type(flowobj,
+                                                                             eModifierType_Fluid);
+
+    /* Sanity check. */
+    if (!fmd2) {
+      continue;
+    }
+
+    /* Check for initialized flow object. */
+    if ((fmd2->type & MOD_FLUID_TYPE_FLOW) && fmd2->flow) {
+      FluidFlowSettings *ffs = fmd2->flow;
+
+      bool is_inflow = (ffs->behavior == FLUID_FLOW_BEHAVIOR_INFLOW);
+      bool is_geometry = (ffs->behavior == FLUID_FLOW_BEHAVIOR_GEOMETRY);
+      bool is_outflow = (ffs->behavior == FLUID_FLOW_BEHAVIOR_OUTFLOW);
+      bool is_static = is_static_object(flowobj) &&
+                       ((fds->flags & FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN) == 0);
+
+      FluidObjectBB *bb = &bb_maps[flow_index];
+      float *velocity_map = bb->velocity;
+      float *emission_map = bb->influence;
+      float *distance_map = bb->distances;
+
+      int gx, gy, gz, ex, ey, ez, dx, dy, dz;
+      size_t e_index, d_index;
+
+      /* Loop through every emission map cell. */
+      for (gx = bb->min[0]; gx < bb->max[0]; gx++) {
+        for (gy = bb->min[1]; gy < bb->max[1]; gy++) {
+          for (gz = bb->min[2]; gz < bb->max[2]; gz++) {
+            /* Compute emission map index. */
+            ex = gx - bb->min[0];
+            ey = gy - bb->min[1];
+            ez = gz - bb->min[2];
+            e_index = manta_get_index(ex, bb->res[0], ey, bb->res[1], ez);
+
+            /* Get domain index. */
+            dx = gx - fds->res_min[0];
+            dy = gy - fds->res_min[1];
+            dz = gz - fds->res_min[2];
+            d_index = manta_get_index(dx, fds->res[0], dy, fds->res[1], dz);
+            /* Make sure emission cell is inside the new domain boundary. */
+            if (dx < 0 || dy < 0 || dz < 0 || dx >= fds->res[0] || dy >= fds->res[1] ||
+                dz >= fds->res[2]) {
+              continue;
+            }
+
+            /* Delete fluid in outflow regions. */
+            if (is_outflow) {
+              float *levelset = ((is_first_frame || is_resume) && is_static) ? phioutstatic_in :
+                                                                               phiout_in;
+              apply_outflow_fields(d_index,
+                                   distance_map[e_index],
+                                   density_in,
+                                   heat_in,
+                                   fuel_in,
+                                   react_in,
+                                   color_r_in,
+                                   color_g_in,
+                                   color_b_in,
+                                   levelset);
+            }
+            /* Do not apply inflow after the first frame when in geometry mode. */
+            else if (is_geometry && !is_first_frame) {
+              apply_inflow_fields(ffs,
+                                  0.0f,
+                                  PHI_MAX,
+                                  d_index,
+                                  density_in,
+                                  density,
+                                  heat_in,
+                                  heat,
+                                  fuel_in,
+                                  fuel,
+                                  react_in,
+                                  react,
+                                  color_r_in,
+                                  color_r,
+                                  color_g_in,
+                                  color_g,
+                                  color_b_in,
+                                  color_b,
+                                  phi_in,
+                                  emission_in);
+            }
+            /* Main inflow application. */
+            else if (is_geometry || is_inflow) {
+              float *levelset = ((is_first_frame || is_resume) && is_static && !is_geometry) ?
+                                    phistatic_in :
+                                    phi_in;
+              apply_inflow_fields(ffs,
+                                  emission_map[e_index],
+                                  distance_map[e_index],
+                                  d_index,
+                                  density_in,
+                                  density,
+                                  heat_in,
+                                  heat,
+                                  fuel_in,
+                                  fuel,
+                                  react_in,
+                                  react,
+                                  color_r_in,
+                                  color_r,
+                                  color_g_in,
+                                  color_g,
+                                  color_b_in,
+                                  color_b,
+                                  levelset,
+                                  emission_in);
+              if (ffs->flags & FLUID_FLOW_INITVELOCITY) {
+                /* Use the initial velocity from the inflow object with the highest velocity for
+                 * now. */
+                float vel_initial[3];
+                vel_initial[0] = velx_initial[d_index];
+                vel_initial[1] = vely_initial[d_index];
+                vel_initial[2] = velz_initial[d_index];
+                float vel_initial_strength = len_squared_v3(vel_initial);
+                float vel_map_strength = len_squared_v3(velocity_map + 3 * e_index);
+                if (vel_map_strength > vel_initial_strength) {
+                  velx_initial[d_index] = velocity_map[e_index * 3];
+                  vely_initial[d_index] = velocity_map[e_index * 3 + 1];
+                  velz_initial[d_index] = velocity_map[e_index * 3 + 2];
+                }
+              }
+            }
+          }
+        }
+      } /* End of flow emission map loop. */
+      bb_freeData(bb);
+    } /* End of flow object loop. */
+  }
+
+  BKE_collision_objects_free(flowobjs);
+  if (bb_maps) {
+    MEM_freeN(bb_maps);
+  }
+}
+
+typedef struct UpdateEffectorsData {
+  Scene *scene;
+  FluidDomainSettings *fds;
+  ListBase *effectors;
+
+  float *density;
+  float *fuel;
+  float *force_x;
+  float *force_y;
+  float *force_z;
+  float *velocity_x;
+  float *velocity_y;
+  float *velocity_z;
+  int *flags;
+  float *phi_obs_in;
+} UpdateEffectorsData;
+
+static void update_effectors_task_cb(void *__restrict userdata,
+                                     const int x,
+                                     const TaskParallelTLS *__restrict UNUSED(tls))
+{
+  UpdateEffectorsData *data = userdata;
+  FluidDomainSettings *fds = data->fds;
+
+  for (int y = 0; y < fds->res[1]; y++) {
+    for (int z = 0; z < fds->res[2]; z++) {
+      EffectedPoint epoint;
+      float mag;
+      float voxel_center[3] = {0, 0, 0}, vel[3] = {0, 0, 0}, retvel[3] = {0, 0, 0};
+      const uint index = manta_get_index(x, fds->res[0], y, fds->res[1], z);
+
+      if ((data->fuel && MAX2(data->density[index], data->fuel[index]) < FLT_EPSILON) ||
+          (data->density && data->density[index] < FLT_EPSILON) ||
+          (data->phi_obs_in && data->phi_obs_in[index] < 0.0f) ||
+          data->flags[index] & 2) /* Manta-flow convention: `2 == FlagObstacle`. */
+      {
+        continue;
+      }
+
+      /* Get velocities from manta grid space and convert to blender units. */
+      vel[0] = data->velocity_x[index];
+      vel[1] = data->velocity_y[index];
+      vel[2] = data->velocity_z[index];
+      mul_v3_fl(vel, fds->dx);
+
+      /* Convert vel to global space. */
+      mag = len_v3(vel);
+      mul_mat3_m4_v3(fds->obmat, vel);
+      normalize_v3(vel);
+      mul_v3_fl(vel, mag);
+
+      voxel_center[0] = fds->p0[0] + fds->cell_size[0] * ((float)(x + fds->res_min[0]) + 0.5f);
+      voxel_center[1] = fds->p0[1] + fds->cell_size[1] * ((float)(y + fds->res_min[1]) + 0.5f);
+      voxel_center[2] = fds->p0[2] + fds->cell_size[2] * ((float)(z + fds->res_min[2]) + 0.5f);
+      mul_m4_v3(fds->obmat, voxel_center);
+
+      /* Do effectors. */
+      pd_point_from_loc(data->scene, voxel_center, vel, index, &epoint);
+      BKE_effectors_apply(
+          data->effectors, NULL, fds->effector_weights, &epoint, retvel, NULL, NULL);
+
+      /* Convert retvel to local space. */
+      mag = len_v3(retvel);
+      mul_mat3_m4_v3(fds->imat, retvel);
+      normalize_v3(retvel);
+      mul_v3_fl(retvel, mag);
+
+      /* Copy computed force to fluid solver forces. */
+      mul_v3_fl(retvel, 0.2f);     /* Factor from 0e6820cc5d62. */
+      CLAMP3(retvel, -1.0f, 1.0f); /* Restrict forces to +-1 interval. */
+      data->force_x[index] = retvel[0];
+      data->force_y[index] = retvel[1];
+      data->force_z[index] = retvel[2];
+
+#  ifdef DEBUG_PRINT
+      /* Debugging: Print forces. */
+      printf("setting force: [%f, %f, %f]\n",
+             data->force_x[index],
+             data->force_y[index],
+             data->force_z[index]);
+#  endif
+    }
+  }
+}
+
+static void update_effectors(
+    Depsgraph *depsgraph, Scene *scene, Object *ob, FluidDomainSettings *fds, float UNUSED(dt))
+{
+  ListBase *effectors;
+  /* make sure smoke flow influence is 0.0f */
+  fds->effector_weights->weight[PFIELD_FLUIDFLOW] = 0.0f;
+  effectors = BKE_effectors_create(depsgraph, ob, NULL, fds->effector_weights, false);
+
+  if (effectors) {
+    /* Precalculate wind forces. */
+    UpdateEffectorsData data;
+    data.scene = scene;
+    data.fds = fds;
+    data.effectors = effectors;
+    data.density = manta_smoke_get_density(fds->fluid);
+    data.fuel = manta_smoke_get_fuel(fds->fluid);
+    data.force_x = manta_get_force_x(fds->fluid);
+    data.force_y = manta_get_force_y(fds->fluid);
+    data.force_z = manta_get_force_z(fds->fluid);
+    data.velocity_x = manta_get_velocity_x(fds->fluid);
+    data.velocity_y = manta_get_velocity_y(fds->fluid);
+    data.velocity_z = manta_get_velocity_z(fds->fluid);
+    data.flags = manta_smoke_get_flags(fds->fluid);
+    data.phi_obs_in = manta_get_phiobs_in(fds->fluid);
+
+    TaskParallelSettings settings;
+    BLI_parallel_range_settings_defaults(&settings);
+    settings.min_iter_per_thread = 2;
+    BLI_task_parallel_range(0, fds->res[0], &data, update_effectors_task_cb, &settings);
+  }
+
+  BKE_effectors_free(effectors);
+}
+
+static Mesh *create_liquid_geometry(FluidDomainSettings *fds,
+                                    Scene *scene,
+                                    Mesh *orgmesh,
+                                    Object *ob)
+{
+  Mesh *me;
+  MVert *mverts;
+  MPoly *mpolys;
+  MLoop *mloops;
+  float min[3];
+  float max[3];
+  float size[3];
+  float cell_size_scaled[3];
+
+  /* Assign material + flags to new mesh.
+   * If there are no faces in original mesh, keep materials and flags unchanged. */
+  MPoly *mpoly;
+  MPoly mp_example = {0};
+  mpoly = orgmesh->mpoly;
+  if (mpoly) {
+    mp_example = *mpoly;
+  }
+
+  const short mp_mat_nr = mp_example.mat_nr;
+  const char mp_flag = mp_example.flag;
+
+  int i;
+  int num_verts, num_faces;
+
+  if (!fds->fluid) {
+    return NULL;
+  }
+
+  num_verts = manta_liquid_get_num_verts(fds->fluid);
+  num_faces = manta_liquid_get_num_triangles(fds->fluid);
+
+#  ifdef DEBUG_PRINT
+  /* Debugging: Print number of vertices, normals, and faces. */
+  printf("num_verts: %d, num_faces: %d\n", num_verts, num_faces);
+#  endif
+
+  if (!num_verts || !num_faces) {
+    return NULL;
+  }
+
+  me = BKE_mesh_new_nomain(num_verts, 0, 0, num_faces * 3, num_faces);
+  if (!me) {
+    return NULL;
+  }
+  mverts = me->mvert;
+  mpolys = me->mpoly;
+  mloops = me->mloop;
+
+  /* Get size (dimension) but considering scaling. */
+  copy_v3_v3(cell_size_scaled, fds->cell_size);
+  mul_v3_v3(cell_size_scaled, ob->scale);
+  madd_v3fl_v3fl_v3fl_v3i(min, fds->p0, cell_size_scaled, fds->res_min);
+  madd_v3fl_v3fl_v3fl_v3i(max, fds->p0, cell_size_scaled, fds->res_max);
+  sub_v3_v3v3(size, max, min);
+
+  /* Biggest dimension will be used for upscaling. */
+  float max_size = MAX3(size[0], size[1], size[2]);
+
+  float co_scale[3];
+  co_scale[0] = max_size / ob->scale[0];
+  co_scale[1] = max_size / ob->scale[1];
+  co_scale[2] = max_size / ob->scale[2];
+
+  float co_offset[3];
+  co_offset[0] = (fds->p0[0] + fds->p1[0]) / 2.0f;
+  co_offset[1] = (fds->p0[1] + fds->p1[1]) / 2.0f;
+  co_offset[2] = (fds->p0[2] + fds->p1[2]) / 2.0f;
+
+  /* Velocities. */
+  /* If needed, vertex velocities will be read too. */
+  bool use_speedvectors = fds->flags & FLUID_DOMAIN_USE_SPEED_VECTORS;
+  float(*velarray)[3] = NULL;
+  float time_mult = fds->dx / (DT_DEFAULT * (25.0f / FPS));
+
+  if (use_speedvectors) {
+    CustomDataLayer *velocity_layer = BKE_id_attribute_new(
+        &me->id, "velocity", CD_PROP_FLOAT3, ATTR_DOMAIN_POINT, NULL);
+    velarray = velocity_layer->data;
+  }
+
+  /* Loop for vertices and normals. */
+  for (i = 0; i < num_verts; i++, mverts++) {
+
+    /* Vertices (data is normalized cube around domain origin). */
+    mverts->co[0] = manta_liquid_get_vertex_x_at(fds->fluid, i);
+    mverts->co[1] = manta_liquid_get_vertex_y_at(fds->fluid, i);
+    mverts->co[2] = manta_liquid_get_vertex_z_at(fds->fluid, i);
+
+    /* Adjust coordinates from Mantaflow to match viewport scaling. */
+    float tmp[3] = {(float)fds->res[0], (float)fds->res[1], (float)fds->res[2]};
+    /* Scale to unit cube around 0. */
+    mul_v3_fl(tmp, fds->mesh_scale * 0.5f);
+    sub_v3_v3(mverts->co, tmp);
+    /* Apply scaling of domain object. */
+    mul_v3_fl(mverts->co, fds->dx / fds->mesh_scale);
+
+    mul_v3_v3(mverts->co, co_scale);
+    add_v3_v3(mverts->co, co_offset);
+
+#  ifdef DEBUG_PRINT
+    /* Debugging: Print coordinates of vertices. */
+    printf("mverts->co[0]: %f, mverts->co[1]: %f, mverts->co[2]: %f\n",
+           mverts->co[0],
+           mverts->co[1],
+           mverts->co[2]);
+#  endif
+
+#  ifdef DEBUG_PRINT
+    /* Debugging: Print coordinates of normals. */
+    printf("no_s[0]: %d, no_s[1]: %d, no_s[2]: %d\n", no_s[0], no_s[1], no_s[2]);
+#  endif
+
+    if (use_speedvectors) {
+      velarray[i][0] = manta_liquid_get_vertvel_x_at(fds->fluid, i) * time_mult;
+      velarray[i][1] = manta_liquid_get_vertvel_y_at(fds->fluid, i) * time_mult;
+      velarray[i][2] = manta_liquid_get_vertvel_z_at(fds->fluid, i) * time_mult;
+#  ifdef DEBUG_PRINT
+      /* Debugging: Print velocities of vertices. */
+      printf("velarray[%d][0]: %f, velarray[%d][1]: %f, velarray[%d][2]: %f\n",
+             i,
+             velarray[i][0],
+             i,
+             velarray[i][1],
+             i,
+             velarray[i][2]);
+#  endif
+    }
+  }
+
+  /* Loop for triangles. */
+  for (i = 0; i < num_faces; i++, mpolys++, mloops += 3) {
+    /* Initialize from existing face. */
+    mpolys->mat_nr = mp_mat_nr;
+    mpolys->flag = mp_flag;
+
+    mpolys->loopstart = i * 3;
+    mpolys->totloop = 3;
+
+    mloops[0].v = manta_liquid_get_triangle_x_at(fds->fluid, i);
+    mloops[1].v = manta_liquid_get_triangle_y_at(fds->fluid, i);
+    mloops[2].v = manta_liquid_get_triangle_z_at(fds->fluid, i);
+#  ifdef DEBUG_PRINT
+    /* Debugging: Print mesh faces. */
+    printf("mloops[0].v: %d, mloops[1].v: %d, mloops[2].v: %d\n",
+           mloops[0].v,
+           mloops[1].v,
+           mloops[2].v);
+#  endif
+  }
+
+  BKE_mesh_calc_edges(me, false, false);
+
+  return me;
+}
+
+static Mesh *create_smoke_geometry(FluidDomainSettings *fds, Mesh *orgmesh, Object *ob)
+{
+  Mesh *result;
+  MVert *mverts;
+  MPoly *mpolys;
+  MLoop *mloops;
+  float min[3];
+  float max[3];
+  float *co;
+  MPoly *mp;
+  MLoop *ml;
+
+  int num_verts = 8;
+  int num_faces = 6;
+  float ob_loc[3] = {0};
+  float ob_cache_loc[3] = {0};
+
+  /* Just copy existing mesh if there is no content or if the adaptive domain is not being used. */
+  if (fds->total_cells <= 1 || (fds->flags & FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN) == 0) {
+    return BKE_mesh_copy_for_eval(orgmesh, false);
+  }
+
+  result = BKE_mesh_new_nomain(num_verts, 0, 0, num_faces * 4, num_faces);
+  mverts = result->mvert;
+  mpolys = result->mpoly;
+  mloops = result->mloop;
+
+  if (num_verts) {
+    /* Volume bounds. */
+    madd_v3fl_v3fl_v3fl_v3i(min, fds->p0, fds->cell_size, fds->res_min);
+    madd_v3fl_v3fl_v3fl_v3i(max, fds->p0, fds->cell_size, fds->res_max);
+
+    /* Set vertices of smoke BB. Especially important, when BB changes (adaptive domain). */
+    /* Top slab */
+    co = mverts[0].co;
+    co[0] = min[0];
+    co[1] = min[1];
+    co[2] = max[2];
+    co = mverts[1].co;
+    co[0] = max[0];
+    co[1] = min[1];
+    co[2] = max[2];
+    co = mverts[2].co;
+    co[0] = max[0];
+    co[1] = max[1];
+    co[2] = max[2];
+    co = mverts[3].co;
+    co[0] = min[0];
+    co[1] = max[1];
+    co[2] = max[2];
+    /* Bottom slab. */
+    co = mverts[4].co;
+    co[0] = min[0];
+    co[1] = min[1];
+    co[2] = min[2];
+    co = mverts[5].co;
+    co[0] = max[0];
+    co[1] = min[1];
+    co[2] = min[2];
+    co = mverts[6].co;
+    co[0] = max[0];
+    co[1] = max[1];
+    co[2] = min[2];
+    co = mverts[7].co;
+    co[0] = min[0];
+    co[1] = max[1];
+    co[2] = min[2];
+
+    /* Create faces. */
+    /* Top side. */
+    mp = &mpolys[0];
+    ml = &mloops[0 * 4];
+    mp->loopstart = 0 * 4;
+    mp->totloop = 4;
+    ml[0].v = 0;
+    ml[1].v = 1;
+    ml[2].v = 2;
+    ml[3].v = 3;
+    /* Right side. */
+    mp = &mpolys[1];
+    ml = &mloops[1 * 4];
+    mp->loopstart = 1 * 4;
+    mp->totloop = 4;
+    ml[0].v = 2;
+    ml[1].v = 1;
+    ml[2].v = 5;
+    ml[3].v = 6;
+    /* Bottom side. */
+    mp = &mpolys[2];
+    ml = &mloops[2 * 4];
+    mp->loopstart = 2 * 4;
+    mp->totloop = 4;
+    ml[0].v = 7;
+    ml[1].v = 6;
+    ml[2].v = 5;
+    ml[3].v = 4;
+    /* Left side. */
+    mp = &mpolys[3];
+    ml = &mloops[3 * 4];
+    mp->loopstart = 3 * 4;
+    mp->totloop = 4;
+    ml[0].v = 0;
+    ml[1].v = 3;
+    ml[2].v = 7;
+    ml[3].v = 4;
+    /* Front side. */
+    mp = &mpolys[4];
+    ml = &mloops[4 * 4];
+    mp->loopstart = 4 * 4;
+    mp->totloop = 4;
+    ml[0].v = 3;
+    ml[1].v = 2;
+    ml[2].v = 6;
+    ml[3].v = 7;
+    /* Back side. */
+    mp = &mpolys[5];
+    ml = &mloops[5 * 4];
+    mp->loopstart = 5 * 4;
+    mp->totloop = 4;
+    ml[0].v = 1;
+    ml[1].v = 0;
+    ml[2].v = 4;
+    ml[3].v = 5;
+
+    /* Calculate required shift to match domain's global position
+     * it was originally simulated at (if object moves without manta step). */
+    invert_m4_m4(ob->imat, ob->obmat);
+    mul_m4_v3(ob->obmat, ob_loc);
+    mul_m4_v3(fds->obmat, ob_cache_loc);
+    sub_v3_v3v3(fds->obj_shift_f, ob_cache_loc, ob_loc);
+    /* Convert shift to local space and apply to vertices. */
+    mul_mat3_m4_v3(ob->imat, fds->obj_shift_f);
+    /* Apply shift to vertices. */
+    for (int i = 0; i < num_verts; i++) {
+      add_v3_v3(mverts[i].co, fds->obj_shift_f);
+    }
+  }
+
+  BKE_mesh_calc_edges(result, false, false);
+  BKE_mesh_normals_tag_dirty(result);
+  return result;
+}
+
+static int manta_step(
+    Depsgraph *depsgraph, Scene *scene, Object *ob, Mesh *me, FluidModifierData *fmd, int frame)
+{
+  FluidDomainSettings *fds = fmd->domain;
+  float dt, frame_length, time_total, time_total_old;
+  float time_per_frame;
+  bool init_resolution = true;
+
+  /* Store baking success - bake might be aborted anytime by user. */
+  int result = 1;
+  int mode = fds->cache_type;
+  bool mode_replay = (mode == FLUID_DOMAIN_CACHE_REPLAY);
+
+  /* Update object state. */
+  invert_m4_m4(fds->imat, ob->obmat);
+  copy_m4_m4(fds->obmat, ob->obmat);
+
+  /* Gas domain might use adaptive domain. */
+  if (fds->type == FLUID_DOMAIN_TYPE_GAS) {
+    init_resolution = (fds->flags & FLUID_DOMAIN_USE_ADAPTIVE_DOMAIN) != 0;
+  }
+  manta_set_domain_from_mesh(fds, ob, me, init_resolution);
+
+  /* Use local variables for adaptive loop, dt can change. */
+  frame_length = fds->frame_length;
+  dt = fds->dt;
+  time_per_frame = 0;
+  time_total = fds->time_total;
+  /* Keep track of original total time to correct small errors at end of step. */
+  time_total_old = fds->time_total;
+
+  BLI_mutex_lock(&object_update_lock);
+
+  /* Loop as long as time_per_frame (sum of sub dt's) does not exceed actual framelength. */
+  while (time_per_frame + FLT_EPSILON < frame_length) {
+    manta_adapt_timestep(fds->fluid);
+    dt = manta_get_timestep(fds->fluid);
+
+    /* Save adapted dt so that MANTA object can access it (important when adaptive domain creates
+     * new MANTA object). */
+    fds->dt = dt;
+
+    /* Calculate inflow geometry. */
+    update_flowsfluids(depsgraph, scene, ob, fds, time_per_frame, frame_length, frame, dt);
+
+    /* If user requested stop, quit baking */
+    if (G.is_break && !mode_replay) {
+      result = 0;
+      break;
+    }
+
+    manta_update_variables(fds->fluid, fmd);
+
+    /* Calculate obstacle geometry. */
+    update_obstacles(depsgraph, scene, ob, fds, time_per_frame, frame_length, frame, dt);
+
+    /* If user requested stop, quit baking */
+    if (G.is_break && !mode_replay) {
+      result = 0;
+      break;
+    }
+
+    /* Only bake if the domain is bigger than one cell (important for adaptive domain). */
+    if (fds->total_cells > 1) {
+      update_effectors(depsgraph, scene, ob, fds, dt);
+      manta_bake_data(fds->fluid, fmd, frame);
+    }
+
+    /* Count for how long this while loop is running. */
+    time_per_frame += dt;
+    time_total += dt;
+
+    fds->time_per_frame = time_per_frame;
+    fds->time_total = time_total;
+  }
+
+  /* Total time must not exceed framecount times framelength. Correct tiny errors here. */
+  CLAMP_MAX(fds->time_total, time_total_old + fds->frame_length);
+
+  /* Compute shadow grid for gas simulations. Make sure to skip if bake job was canceled early. */
+  if (fds->type == FLUID_DOMAIN_TYPE_GAS && result) {
+    manta_smoke_calc_transparency(fds, DEG_get_evaluated_view_layer(depsgraph));
+  }
+
+  BLI_mutex_unlock(&object_update_lock);
+  return result;
+}
+
+static void manta_guiding(
+    Depsgraph *depsgraph, Scene *scene, Object *ob, FluidModifierData *fmd, int frame)
+{
+  FluidDomainSettings *fds = fmd->domain;
+  float dt = DT_DEFAULT * (25.0f / FPS) * fds->time_scale;
+
+  BLI_mutex_lock(&object_update_lock);
+
+  update_obstacles(depsgraph, scene, ob, fds, dt, dt, frame, dt);
+  manta_bake_guiding(fds->fluid, fmd, frame);
+
+  BLI_mutex_unlock(&object_update_lock);
+}
+
+static void BKE_fluid_modifier_processFlow(FluidModifierData *fmd,
+                                           Depsgraph *depsgraph,
+                                           Scene *scene,
+                                           Object *ob,
+                                           Mesh *me,
+                                           const int scene_framenr)
+{
+  if (scene_framenr >= fmd->time) {
+    BKE_fluid_modifier_init(fmd, depsgraph, ob, scene, me);
+  }
+
+  if (fmd->flow) {
+    if (fmd->flow->mesh) {
+      BKE_id_free(NULL, fmd->flow->mesh);
+    }
+    fmd->flow->mesh = BKE_mesh_copy_for_eval(me, false);
+  }
+
+  if (scene_framenr > fmd->time) {
+    fmd->time = scene_framenr;
+  }
+  else if (scene_framenr < fmd->time) {
+    fmd->time = scene_framenr;
+    BKE_fluid_modifier_reset_ex(fmd, false);
+  }
+}
