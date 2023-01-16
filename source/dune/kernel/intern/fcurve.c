@@ -955,3 +955,1069 @@ bool BKE_fcurve_are_keyframes_usable(FCurve *fcu)
   /* Keyframes are usable. */
   return true;
 }
+
+bool BKE_fcurve_is_protected(FCurve *fcu)
+{
+  return ((fcu->flag & FCURVE_PROTECTED) || ((fcu->grp) && (fcu->grp->flag & AGRP_PROTECTED)));
+}
+
+bool BKE_fcurve_is_keyframable(FCurve *fcu)
+{
+  /* F-Curve's keyframes must be "usable" (i.e. visible + have an effect on final result) */
+  if (BKE_fcurve_are_keyframes_usable(fcu) == 0) {
+    return false;
+  }
+
+  /* F-Curve must currently be editable too. */
+  if (BKE_fcurve_is_protected(fcu)) {
+    return false;
+  }
+
+  /* F-Curve is keyframable. */
+  return true;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Keyframe Column Tools
+ * \{ */
+
+static void UNUSED_FUNCTION(bezt_add_to_cfra_elem)(ListBase *lb, BezTriple *bezt)
+{
+  CfraElem *ce, *cen;
+
+  for (ce = lb->first; ce; ce = ce->next) {
+    /* Double key? */
+    if (IS_EQT(ce->cfra, bezt->vec[1][0], BEZT_BINARYSEARCH_THRESH)) {
+      if (bezt->f2 & SELECT) {
+        ce->sel = bezt->f2;
+      }
+      return;
+    }
+    /* Should key be inserted before this column? */
+    if (ce->cfra > bezt->vec[1][0]) {
+      break;
+    }
+  }
+
+  /* Create a new column */
+  cen = MEM_callocN(sizeof(CfraElem), "add_to_cfra_elem");
+  if (ce) {
+    BLI_insertlinkbefore(lb, ce, cen);
+  }
+  else {
+    BLI_addtail(lb, cen);
+  }
+
+  cen->cfra = bezt->vec[1][0];
+  cen->sel = bezt->f2;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Samples Utilities
+ * \{ */
+
+/* Some utilities for working with FPoints (i.e. 'sampled' animation curve data, such as
+ * data imported from BVH/Mocap files), which are specialized for use with high density datasets,
+ * which BezTriples/Keyframe data are ill equipped to do.
+ */
+
+float fcurve_samplingcb_evalcurve(FCurve *fcu, void *UNUSED(data), float evaltime)
+{
+  /* Assume any interference from drivers on the curve is intended... */
+  return evaluate_fcurve(fcu, evaltime);
+}
+
+void fcurve_store_samples(FCurve *fcu, void *data, int start, int end, FcuSampleFunc sample_cb)
+{
+  FPoint *fpt, *new_fpt;
+  int cfra;
+
+  /* Sanity checks. */
+  /* TODO: make these tests report errors using reports not CLOG's (Joshua Leung 2009) */
+  if (ELEM(NULL, fcu, sample_cb)) {
+    CLOG_ERROR(&LOG, "No F-Curve with F-Curve Modifiers to Bake");
+    return;
+  }
+  if (start > end) {
+    CLOG_ERROR(&LOG, "Error: Frame range for Sampled F-Curve creation is inappropriate");
+    return;
+  }
+
+  /* Set up sample data. */
+  fpt = new_fpt = MEM_callocN(sizeof(FPoint) * (end - start + 1), "FPoint Samples");
+
+  /* Use the sampling callback at 1-frame intervals from start to end frames. */
+  for (cfra = start; cfra <= end; cfra++, fpt++) {
+    fpt->vec[0] = (float)cfra;
+    fpt->vec[1] = sample_cb(fcu, data, (float)cfra);
+  }
+
+  /* Free any existing sample/keyframe data on curve. */
+  if (fcu->bezt) {
+    MEM_freeN(fcu->bezt);
+  }
+  if (fcu->fpt) {
+    MEM_freeN(fcu->fpt);
+  }
+
+  /* Store the samples. */
+  fcu->bezt = NULL;
+  fcu->fpt = new_fpt;
+  fcu->totvert = end - start + 1;
+}
+
+static void init_unbaked_bezt_data(BezTriple *bezt)
+{
+  bezt->f1 = bezt->f2 = bezt->f3 = SELECT;
+  /* Baked FCurve points always use linear interpolation. */
+  bezt->ipo = BEZT_IPO_LIN;
+  bezt->h1 = bezt->h2 = HD_AUTO_ANIM;
+}
+
+void fcurve_samples_to_keyframes(FCurve *fcu, const int start, const int end)
+{
+
+  /* Sanity checks. */
+  /* TODO: make these tests report errors using reports not CLOG's (Joshua Leung 2009). */
+  if (fcu == NULL) {
+    CLOG_ERROR(&LOG, "No F-Curve with F-Curve Modifiers to Un-Bake");
+    return;
+  }
+
+  if (start > end) {
+    CLOG_ERROR(&LOG, "Error: Frame range to unbake F-Curve is inappropriate");
+    return;
+  }
+
+  if (fcu->fpt == NULL) {
+    /* No data to unbake. */
+    CLOG_ERROR(&LOG, "Error: Curve contains no baked keyframes");
+    return;
+  }
+
+  /* Free any existing sample/keyframe data on the curve. */
+  if (fcu->bezt) {
+    MEM_freeN(fcu->bezt);
+  }
+
+  BezTriple *bezt;
+  FPoint *fpt = fcu->fpt;
+  int keyframes_to_insert = end - start;
+  int sample_points = fcu->totvert;
+
+  bezt = fcu->bezt = MEM_callocN(sizeof(*fcu->bezt) * (size_t)keyframes_to_insert, __func__);
+  fcu->totvert = keyframes_to_insert;
+
+  /* Get first sample point to 'copy' as keyframe. */
+  for (; sample_points && (fpt->vec[0] < start); fpt++, sample_points--) {
+    /* pass */
+  }
+
+  /* Current position in the timeline. */
+  int cur_pos = start;
+
+  /* Add leading dummy flat points if needed. */
+  for (; keyframes_to_insert && (fpt->vec[0] > start); cur_pos++, bezt++, keyframes_to_insert--) {
+    init_unbaked_bezt_data(bezt);
+    bezt->vec[1][0] = (float)cur_pos;
+    bezt->vec[1][1] = fpt->vec[1];
+  }
+
+  /* Copy actual sample points. */
+  for (; keyframes_to_insert && sample_points;
+       cur_pos++, bezt++, keyframes_to_insert--, fpt++, sample_points--) {
+    init_unbaked_bezt_data(bezt);
+    copy_v2_v2(bezt->vec[1], fpt->vec);
+  }
+
+  /* Add trailing dummy flat points if needed. */
+  for (fpt--; keyframes_to_insert; cur_pos++, bezt++, keyframes_to_insert--) {
+    init_unbaked_bezt_data(bezt);
+    bezt->vec[1][0] = (float)cur_pos;
+    bezt->vec[1][1] = fpt->vec[1];
+  }
+
+  MEM_SAFE_FREE(fcu->fpt);
+
+  /* Not strictly needed since we use linear interpolation, but better be consistent here. */
+  calchandles_fcurve(fcu);
+}
+
+/* ***************************** F-Curve Sanity ********************************* */
+/* The functions here are used in various parts of Blender, usually after some editing
+ * of keyframe data has occurred. They ensure that keyframe data is properly ordered and
+ * that the handles are correct.
+ */
+
+eFCU_Cycle_Type BKE_fcurve_get_cycle_type(FCurve *fcu)
+{
+  FModifier *fcm = fcu->modifiers.first;
+
+  if (!fcm || fcm->type != FMODIFIER_TYPE_CYCLES) {
+    return FCU_CYCLE_NONE;
+  }
+
+  if (fcm->flag & (FMODIFIER_FLAG_DISABLED | FMODIFIER_FLAG_MUTED)) {
+    return FCU_CYCLE_NONE;
+  }
+
+  if (fcm->flag & (FMODIFIER_FLAG_RANGERESTRICT | FMODIFIER_FLAG_USEINFLUENCE)) {
+    return FCU_CYCLE_NONE;
+  }
+
+  FMod_Cycles *data = (FMod_Cycles *)fcm->data;
+
+  if (data && data->after_cycles == 0 && data->before_cycles == 0) {
+    if (data->before_mode == FCM_EXTRAPOLATE_CYCLIC &&
+        data->after_mode == FCM_EXTRAPOLATE_CYCLIC) {
+      return FCU_CYCLE_PERFECT;
+    }
+
+    if (ELEM(data->before_mode, FCM_EXTRAPOLATE_CYCLIC, FCM_EXTRAPOLATE_CYCLIC_OFFSET) &&
+        ELEM(data->after_mode, FCM_EXTRAPOLATE_CYCLIC, FCM_EXTRAPOLATE_CYCLIC_OFFSET)) {
+      return FCU_CYCLE_OFFSET;
+    }
+  }
+
+  return FCU_CYCLE_NONE;
+}
+
+bool BKE_fcurve_is_cyclic(FCurve *fcu)
+{
+  return BKE_fcurve_get_cycle_type(fcu) != FCU_CYCLE_NONE;
+}
+
+/* Shifts 'in' by the difference in coordinates between 'to' and 'from',
+ * using 'out' as the output buffer.
+ * When 'to' and 'from' are end points of the loop, this moves the 'in' point one loop cycle.
+ */
+static BezTriple *cycle_offset_triple(
+    bool cycle, BezTriple *out, const BezTriple *in, const BezTriple *from, const BezTriple *to)
+{
+  if (!cycle) {
+    return NULL;
+  }
+
+  memcpy(out, in, sizeof(BezTriple));
+
+  float delta[3];
+  sub_v3_v3v3(delta, to->vec[1], from->vec[1]);
+
+  for (int i = 0; i < 3; i++) {
+    add_v3_v3(out->vec[i], delta);
+  }
+
+  return out;
+}
+
+void calchandles_fcurve_ex(FCurve *fcu, eBezTriple_Flag handle_sel_flag)
+{
+  BezTriple *bezt, *prev, *next;
+  int a = fcu->totvert;
+
+  /* Error checking:
+   * - Need at least two points.
+   * - Need bezier keys.
+   * - Only bezier-interpolation has handles (for now).
+   */
+  if (ELEM(NULL, fcu, fcu->bezt) || (a < 2) /*|| ELEM(fcu->ipo, BEZT_IPO_CONST, BEZT_IPO_LIN) */) {
+    return;
+  }
+
+  /* If the first modifier is Cycles, smooth the curve through the cycle. */
+  BezTriple *first = &fcu->bezt[0], *last = &fcu->bezt[fcu->totvert - 1];
+  BezTriple tmp;
+
+  bool cycle = BKE_fcurve_is_cyclic(fcu) && BEZT_IS_AUTOH(first) && BEZT_IS_AUTOH(last);
+
+  /* Get initial pointers. */
+  bezt = fcu->bezt;
+  prev = cycle_offset_triple(cycle, &tmp, &fcu->bezt[fcu->totvert - 2], last, first);
+  next = (bezt + 1);
+
+  /* Loop over all beztriples, adjusting handles. */
+  while (a--) {
+    /* Clamp timing of handles to be on either side of beztriple. */
+    if (bezt->vec[0][0] > bezt->vec[1][0]) {
+      bezt->vec[0][0] = bezt->vec[1][0];
+    }
+    if (bezt->vec[2][0] < bezt->vec[1][0]) {
+      bezt->vec[2][0] = bezt->vec[1][0];
+    }
+
+    /* Calculate auto-handles. */
+    BKE_nurb_handle_calc_ex(bezt, prev, next, handle_sel_flag, true, fcu->auto_smoothing);
+
+    /* For automatic ease in and out. */
+    if (BEZT_IS_AUTOH(bezt) && !cycle) {
+      /* Only do this on first or last beztriple. */
+      if (ELEM(a, 0, fcu->totvert - 1)) {
+        /* Set both handles to have same horizontal value as keyframe. */
+        if (fcu->extend == FCURVE_EXTRAPOLATE_CONSTANT) {
+          bezt->vec[0][1] = bezt->vec[2][1] = bezt->vec[1][1];
+          /* Remember that these keyframes are special, they don't need to be adjusted. */
+          bezt->auto_handle_type = HD_AUTOTYPE_LOCKED_FINAL;
+        }
+      }
+    }
+
+    /* Avoid total smoothing failure on duplicate keyframes (can happen during grab). */
+    if (prev && prev->vec[1][0] >= bezt->vec[1][0]) {
+      prev->auto_handle_type = bezt->auto_handle_type = HD_AUTOTYPE_LOCKED_FINAL;
+    }
+
+    /* Advance pointers for next iteration. */
+    prev = bezt;
+
+    if (a == 1) {
+      next = cycle_offset_triple(cycle, &tmp, &fcu->bezt[1], first, last);
+    }
+    else {
+      next++;
+    }
+
+    bezt++;
+  }
+
+  /* If cyclic extrapolation and Auto Clamp has triggered, ensure it is symmetric. */
+  if (cycle && (first->auto_handle_type != HD_AUTOTYPE_NORMAL ||
+                last->auto_handle_type != HD_AUTOTYPE_NORMAL)) {
+    first->vec[0][1] = first->vec[2][1] = first->vec[1][1];
+    last->vec[0][1] = last->vec[2][1] = last->vec[1][1];
+    first->auto_handle_type = last->auto_handle_type = HD_AUTOTYPE_LOCKED_FINAL;
+  }
+
+  /* Do a second pass for auto handle: compute the handle to have 0 acceleration step. */
+  if (fcu->auto_smoothing != FCURVE_SMOOTH_NONE) {
+    BKE_nurb_handle_smooth_fcurve(fcu->bezt, fcu->totvert, cycle);
+  }
+}
+
+void calchandles_fcurve(FCurve *fcu)
+{
+  calchandles_fcurve_ex(fcu, SELECT);
+}
+
+void testhandles_fcurve(FCurve *fcu, eBezTriple_Flag sel_flag, const bool use_handle)
+{
+  BezTriple *bezt;
+  unsigned int a;
+
+  /* Only beztriples have handles (bpoints don't though). */
+  if (ELEM(NULL, fcu, fcu->bezt)) {
+    return;
+  }
+
+  /* Loop over beztriples. */
+  for (a = 0, bezt = fcu->bezt; a < fcu->totvert; a++, bezt++) {
+    BKE_nurb_bezt_handle_test(bezt, sel_flag, use_handle, false);
+  }
+
+  /* Recalculate handles. */
+  calchandles_fcurve_ex(fcu, sel_flag);
+}
+
+void sort_time_fcurve(FCurve *fcu)
+{
+  if (fcu->bezt == NULL) {
+    return;
+  }
+
+  /* Keep adjusting order of beztriples until nothing moves (bubble-sort). */
+  BezTriple *bezt;
+  uint a;
+
+  bool ok = true;
+  while (ok) {
+    ok = 0;
+    /* Currently, will only be needed when there are beztriples. */
+
+    /* Loop over ALL points to adjust position in array and recalculate handles. */
+    for (a = 0, bezt = fcu->bezt; a < fcu->totvert; a++, bezt++) {
+      /* Check if thee's a next beztriple which we could try to swap with current. */
+      if (a < (fcu->totvert - 1)) {
+        /* Swap if one is after the other (and indicate that order has changed). */
+        if (bezt->vec[1][0] > (bezt + 1)->vec[1][0]) {
+          SWAP(BezTriple, *bezt, *(bezt + 1));
+          ok = 1;
+        }
+      }
+    }
+  }
+
+  for (a = 0, bezt = fcu->bezt; a < fcu->totvert; a++, bezt++) {
+    /* If either one of both of the points exceeds crosses over the keyframe time... */
+    if ((bezt->vec[0][0] > bezt->vec[1][0]) && (bezt->vec[2][0] < bezt->vec[1][0])) {
+      /* Swap handles if they have switched sides for some reason. */
+      swap_v2_v2(bezt->vec[0], bezt->vec[2]);
+    }
+    else {
+      /* Clamp handles. */
+      CLAMP_MAX(bezt->vec[0][0], bezt->vec[1][0]);
+      CLAMP_MIN(bezt->vec[2][0], bezt->vec[1][0]);
+    }
+  }
+}
+
+bool test_time_fcurve(FCurve *fcu)
+{
+  unsigned int a;
+
+  /* Sanity checks. */
+  if (fcu == NULL) {
+    return false;
+  }
+
+  /* Currently, only need to test beztriples. */
+  if (fcu->bezt) {
+    BezTriple *bezt;
+
+    /* Loop through all BezTriples, stopping when one exceeds the one after it. */
+    for (a = 0, bezt = fcu->bezt; a < (fcu->totvert - 1); a++, bezt++) {
+      if (bezt->vec[1][0] > (bezt + 1)->vec[1][0]) {
+        return true;
+      }
+    }
+  }
+  else if (fcu->fpt) {
+    FPoint *fpt;
+
+    /* Loop through all FPoints, stopping when one exceeds the one after it. */
+    for (a = 0, fpt = fcu->fpt; a < (fcu->totvert - 1); a++, fpt++) {
+      if (fpt->vec[0] > (fpt + 1)->vec[0]) {
+        return true;
+      }
+    }
+  }
+
+  /* None need any swapping. */
+  return false;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name F-Curve Calculations
+ * \{ */
+
+void BKE_fcurve_correct_bezpart(const float v1[2], float v2[2], float v3[2], const float v4[2])
+{
+  float h1[2], h2[2], len1, len2, len, fac;
+
+  /* Calculate handle deltas. */
+  h1[0] = v1[0] - v2[0];
+  h1[1] = v1[1] - v2[1];
+
+  h2[0] = v4[0] - v3[0];
+  h2[1] = v4[1] - v3[1];
+
+  /* Calculate distances:
+   * - len  = Span of time between keyframes.
+   * - len1 = Length of handle of start key.
+   * - len2 = Length of handle of end key.
+   */
+  len = v4[0] - v1[0];
+  len1 = fabsf(h1[0]);
+  len2 = fabsf(h2[0]);
+
+  /* If the handles have no length, no need to do any corrections. */
+  if ((len1 + len2) == 0.0f) {
+    return;
+  }
+
+  /* To prevent looping or rewinding, handles cannot
+   * exceed the adjacent key-frames time position. */
+  if (len1 > len) {
+    fac = len / len1;
+    v2[0] = (v1[0] - fac * h1[0]);
+    v2[1] = (v1[1] - fac * h1[1]);
+  }
+
+  if (len2 > len) {
+    fac = len / len2;
+    v3[0] = (v4[0] - fac * h2[0]);
+    v3[1] = (v4[1] - fac * h2[1]);
+  }
+}
+
+/**
+ * Find roots of cubic equation (c0 x^3 + c1 x^2 + c2 x + c3)
+ * \return number of roots in `o`.
+ *
+ * \note it is up to the caller to allocate enough memory for `o`.
+ */
+static int solve_cubic(double c0, double c1, double c2, double c3, float *o)
+{
+  double a, b, c, p, q, d, t, phi;
+  int nr = 0;
+
+  if (c3 != 0.0) {
+    a = c2 / c3;
+    b = c1 / c3;
+    c = c0 / c3;
+    a = a / 3;
+
+    p = b / 3 - a * a;
+    q = (2 * a * a * a - a * b + c) / 2;
+    d = q * q + p * p * p;
+
+    if (d > 0.0) {
+      t = sqrt(d);
+      o[0] = (float)(sqrt3d(-q + t) + sqrt3d(-q - t) - a);
+
+      if ((o[0] >= (float)SMALL) && (o[0] <= 1.000001f)) {
+        return 1;
+      }
+      return 0;
+    }
+
+    if (d == 0.0) {
+      t = sqrt3d(-q);
+      o[0] = (float)(2 * t - a);
+
+      if ((o[0] >= (float)SMALL) && (o[0] <= 1.000001f)) {
+        nr++;
+      }
+      o[nr] = (float)(-t - a);
+
+      if ((o[nr] >= (float)SMALL) && (o[nr] <= 1.000001f)) {
+        return nr + 1;
+      }
+      return nr;
+    }
+
+    phi = acos(-q / sqrt(-(p * p * p)));
+    t = sqrt(-p);
+    p = cos(phi / 3);
+    q = sqrt(3 - 3 * p * p);
+    o[0] = (float)(2 * t * p - a);
+
+    if ((o[0] >= (float)SMALL) && (o[0] <= 1.000001f)) {
+      nr++;
+    }
+    o[nr] = (float)(-t * (p + q) - a);
+
+    if ((o[nr] >= (float)SMALL) && (o[nr] <= 1.000001f)) {
+      nr++;
+    }
+    o[nr] = (float)(-t * (p - q) - a);
+
+    if ((o[nr] >= (float)SMALL) && (o[nr] <= 1.000001f)) {
+      return nr + 1;
+    }
+    return nr;
+  }
+  a = c2;
+  b = c1;
+  c = c0;
+
+  if (a != 0.0) {
+    /* Discriminant */
+    p = b * b - 4 * a * c;
+
+    if (p > 0) {
+      p = sqrt(p);
+      o[0] = (float)((-b - p) / (2 * a));
+
+      if ((o[0] >= (float)SMALL) && (o[0] <= 1.000001f)) {
+        nr++;
+      }
+      o[nr] = (float)((-b + p) / (2 * a));
+
+      if ((o[nr] >= (float)SMALL) && (o[nr] <= 1.000001f)) {
+        return nr + 1;
+      }
+      return nr;
+    }
+
+    if (p == 0) {
+      o[0] = (float)(-b / (2 * a));
+      if ((o[0] >= (float)SMALL) && (o[0] <= 1.000001f)) {
+        return 1;
+      }
+    }
+
+    return 0;
+  }
+
+  if (b != 0.0) {
+    o[0] = (float)(-c / b);
+
+    if ((o[0] >= (float)SMALL) && (o[0] <= 1.000001f)) {
+      return 1;
+    }
+    return 0;
+  }
+
+  if (c == 0.0) {
+    o[0] = 0.0;
+    return 1;
+  }
+
+  return 0;
+}
+
+/* Find root(s) ('zero') of a Bezier curve. */
+static int findzero(float x, float q0, float q1, float q2, float q3, float *o)
+{
+  const double c0 = q0 - x;
+  const double c1 = 3.0f * (q1 - q0);
+  const double c2 = 3.0f * (q0 - 2.0f * q1 + q2);
+  const double c3 = q3 - q0 + 3.0f * (q1 - q2);
+
+  return solve_cubic(c0, c1, c2, c3, o);
+}
+
+static void berekeny(float f1, float f2, float f3, float f4, float *o, int b)
+{
+  float t, c0, c1, c2, c3;
+  int a;
+
+  c0 = f1;
+  c1 = 3.0f * (f2 - f1);
+  c2 = 3.0f * (f1 - 2.0f * f2 + f3);
+  c3 = f4 - f1 + 3.0f * (f2 - f3);
+
+  for (a = 0; a < b; a++) {
+    t = o[a];
+    o[a] = c0 + t * c1 + t * t * c2 + t * t * t * c3;
+  }
+}
+
+bool BKE_fcurve_bezt_subdivide_handles(struct BezTriple *bezt,
+                                       struct BezTriple *prev,
+                                       struct BezTriple *next,
+                                       float *r_pdelta)
+{
+  /* The four points that make up this section of the Bezier curve. */
+  const float *prev_coords = prev->vec[1];
+  float *prev_handle_right = prev->vec[2];
+  float *next_handle_left = next->vec[0];
+  const float *next_coords = next->vec[1];
+
+  float *new_handle_left = bezt->vec[0];
+  const float *new_coords = bezt->vec[1];
+  float *new_handle_right = bezt->vec[2];
+
+  if (new_coords[0] <= prev_coords[0] || new_coords[0] >= next_coords[0]) {
+    /* The new keyframe is outside the (prev_coords, next_coords) range. */
+    return false;
+  }
+
+  /* Apply evaluation-time limits and compute the effective curve. */
+  BKE_fcurve_correct_bezpart(prev_coords, prev_handle_right, next_handle_left, next_coords);
+  float roots[4];
+  if (!findzero(new_coords[0],
+                prev_coords[0],
+                prev_handle_right[0],
+                next_handle_left[0],
+                next_coords[0],
+                roots)) {
+    return false;
+  }
+
+  const float t = roots[0]; /* Percentage of the curve at which the split should occur. */
+  if (t <= 0.0f || t >= 1.0f) {
+    /* The split would occur outside the curve, which isn't possible. */
+    return false;
+  }
+
+  /* De Casteljau split, requires three iterations of splitting.
+   * See https://pomax.github.io/bezierinfo/#decasteljau */
+  float split1[3][2], split2[2][2], split3[2];
+  interp_v2_v2v2(split1[0], prev_coords, prev_handle_right, t);
+  interp_v2_v2v2(split1[1], prev_handle_right, next_handle_left, t);
+  interp_v2_v2v2(split1[2], next_handle_left, next_coords, t);
+  interp_v2_v2v2(split2[0], split1[0], split1[1], t);
+  interp_v2_v2v2(split2[1], split1[1], split1[2], t);
+  interp_v2_v2v2(split3, split2[0], split2[1], t);
+
+  /* Update the existing handles. */
+  copy_v2_v2(prev_handle_right, split1[0]);
+  copy_v2_v2(next_handle_left, split1[2]);
+
+  float diff_coords[2];
+  sub_v2_v2v2(diff_coords, new_coords, split3);
+  add_v2_v2v2(new_handle_left, split2[0], diff_coords);
+  add_v2_v2v2(new_handle_right, split2[1], diff_coords);
+
+  *r_pdelta = diff_coords[1];
+  return true;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name F-Curve Evaluation
+ * \{ */
+
+static float fcurve_eval_keyframes_extrapolate(
+    FCurve *fcu, BezTriple *bezts, float evaltime, int endpoint_offset, int direction_to_neighbor)
+{
+  BezTriple *endpoint_bezt = bezts + endpoint_offset; /* The first/last keyframe. */
+  BezTriple *neighbor_bezt = endpoint_bezt +
+                             direction_to_neighbor; /* The second (to last) keyframe. */
+
+  if (endpoint_bezt->ipo == BEZT_IPO_CONST || fcu->extend == FCURVE_EXTRAPOLATE_CONSTANT ||
+      (fcu->flag & FCURVE_DISCRETE_VALUES) != 0) {
+    /* Constant (BEZT_IPO_HORIZ) extrapolation or constant interpolation, so just extend the
+     * endpoint's value. */
+    return endpoint_bezt->vec[1][1];
+  }
+
+  if (endpoint_bezt->ipo == BEZT_IPO_LIN) {
+    /* Use the next center point instead of our own handle for linear interpolated extrapolate. */
+    if (fcu->totvert == 1) {
+      return endpoint_bezt->vec[1][1];
+    }
+
+    float dx = endpoint_bezt->vec[1][0] - evaltime;
+    float fac = neighbor_bezt->vec[1][0] - endpoint_bezt->vec[1][0];
+
+    /* Prevent division by zero. */
+    if (fac == 0.0f) {
+      return endpoint_bezt->vec[1][1];
+    }
+
+    fac = (neighbor_bezt->vec[1][1] - endpoint_bezt->vec[1][1]) / fac;
+    return endpoint_bezt->vec[1][1] - (fac * dx);
+  }
+
+  /* Use the gradient of the second handle (later) of neighbor to calculate the gradient and thus
+   * the value of the curve at evaluation time. */
+  int handle = direction_to_neighbor > 0 ? 0 : 2;
+  float dx = endpoint_bezt->vec[1][0] - evaltime;
+  float fac = endpoint_bezt->vec[1][0] - endpoint_bezt->vec[handle][0];
+
+  /* Prevent division by zero. */
+  if (fac == 0.0f) {
+    return endpoint_bezt->vec[1][1];
+  }
+
+  fac = (endpoint_bezt->vec[1][1] - endpoint_bezt->vec[handle][1]) / fac;
+  return endpoint_bezt->vec[1][1] - (fac * dx);
+}
+
+static float fcurve_eval_keyframes_interpolate(FCurve *fcu, BezTriple *bezts, float evaltime)
+{
+  const float eps = 1.e-8f;
+  BezTriple *bezt, *prevbezt;
+  unsigned int a;
+
+  /* Evaltime occurs somewhere in the middle of the curve. */
+  bool exact = false;
+
+  /* Use binary search to find appropriate keyframes...
+   *
+   * The threshold here has the following constraints:
+   * - 0.001 is too coarse:
+   *   We get artifacts with 2cm driver movements at 1BU = 1m (see T40332).
+   *
+   * - 0.00001 is too fine:
+   *   Weird errors, like selecting the wrong keyframe range (see T39207), occur.
+   *   This lower bound was established in b888a32eee8147b028464336ad2404d8155c64dd.
+   */
+  a = BKE_fcurve_bezt_binarysearch_index_ex(bezts, evaltime, fcu->totvert, 0.0001, &exact);
+  bezt = bezts + a;
+
+  if (exact) {
+    /* Index returned must be interpreted differently when it sits on top of an existing keyframe
+     * - That keyframe is the start of the segment we need (see action_bug_2.blend in T39207).
+     */
+    return bezt->vec[1][1];
+  }
+
+  /* Index returned refers to the keyframe that the eval-time occurs *before*
+   * - hence, that keyframe marks the start of the segment we're dealing with.
+   */
+  prevbezt = (a > 0) ? (bezt - 1) : bezt;
+
+  /* Use if the key is directly on the frame, in rare cases this is needed else we get 0.0 instead.
+   * XXX: consult T39207 for examples of files where failure of these checks can cause issues. */
+  if (fabsf(bezt->vec[1][0] - evaltime) < eps) {
+    return bezt->vec[1][1];
+  }
+
+  if (evaltime < prevbezt->vec[1][0] || bezt->vec[1][0] < evaltime) {
+    if (G.debug & G_DEBUG) {
+      printf("   ERROR: failed eval - p=%f b=%f, t=%f (%f)\n",
+             prevbezt->vec[1][0],
+             bezt->vec[1][0],
+             evaltime,
+             fabsf(bezt->vec[1][0] - evaltime));
+    }
+    return 0.0f;
+  }
+
+  /* Evaltime occurs within the interval defined by these two keyframes. */
+  const float begin = prevbezt->vec[1][1];
+  const float change = bezt->vec[1][1] - prevbezt->vec[1][1];
+  const float duration = bezt->vec[1][0] - prevbezt->vec[1][0];
+  const float time = evaltime - prevbezt->vec[1][0];
+  const float amplitude = prevbezt->amplitude;
+  const float period = prevbezt->period;
+
+  /* Value depends on interpolation mode. */
+  if ((prevbezt->ipo == BEZT_IPO_CONST) || (fcu->flag & FCURVE_DISCRETE_VALUES) ||
+      (duration == 0)) {
+    /* Constant (evaltime not relevant, so no interpolation needed). */
+    return prevbezt->vec[1][1];
+  }
+
+  switch (prevbezt->ipo) {
+    /* Interpolation ...................................... */
+    case BEZT_IPO_BEZ: {
+      float v1[2], v2[2], v3[2], v4[2], opl[32];
+
+      /* Bezier interpolation. */
+      /* (v1, v2) are the first keyframe and its 2nd handle. */
+      v1[0] = prevbezt->vec[1][0];
+      v1[1] = prevbezt->vec[1][1];
+      v2[0] = prevbezt->vec[2][0];
+      v2[1] = prevbezt->vec[2][1];
+      /* (v3, v4) are the last keyframe's 1st handle + the last keyframe. */
+      v3[0] = bezt->vec[0][0];
+      v3[1] = bezt->vec[0][1];
+      v4[0] = bezt->vec[1][0];
+      v4[1] = bezt->vec[1][1];
+
+      if (fabsf(v1[1] - v4[1]) < FLT_EPSILON && fabsf(v2[1] - v3[1]) < FLT_EPSILON &&
+          fabsf(v3[1] - v4[1]) < FLT_EPSILON) {
+        /* Optimization: If all the handles are flat/at the same values,
+         * the value is simply the shared value (see T40372 -> F91346).
+         */
+        return v1[1];
+      }
+      /* Adjust handles so that they don't overlap (forming a loop). */
+      BKE_fcurve_correct_bezpart(v1, v2, v3, v4);
+
+      /* Try to get a value for this position - if failure, try another set of points. */
+      if (!findzero(evaltime, v1[0], v2[0], v3[0], v4[0], opl)) {
+        if (G.debug & G_DEBUG) {
+          printf("    ERROR: findzero() failed at %f with %f %f %f %f\n",
+                 evaltime,
+                 v1[0],
+                 v2[0],
+                 v3[0],
+                 v4[0]);
+        }
+        return 0.0;
+      }
+
+      berekeny(v1[1], v2[1], v3[1], v4[1], opl, 1);
+      return opl[0];
+    }
+    case BEZT_IPO_LIN:
+      /* Linear - simply linearly interpolate between values of the two keyframes. */
+      return BLI_easing_linear_ease(time, begin, change, duration);
+
+    /* Easing ............................................ */
+    case BEZT_IPO_BACK:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_back_ease_in(time, begin, change, duration, prevbezt->back);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_back_ease_out(time, begin, change, duration, prevbezt->back);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_back_ease_in_out(time, begin, change, duration, prevbezt->back);
+
+        default: /* Default/Auto: same as ease out. */
+          return BLI_easing_back_ease_out(time, begin, change, duration, prevbezt->back);
+      }
+      break;
+
+    case BEZT_IPO_BOUNCE:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_bounce_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_bounce_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_bounce_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease out. */
+          return BLI_easing_bounce_ease_out(time, begin, change, duration);
+      }
+      break;
+
+    case BEZT_IPO_CIRC:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_circ_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_circ_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_circ_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease in. */
+          return BLI_easing_circ_ease_in(time, begin, change, duration);
+      }
+      break;
+
+    case BEZT_IPO_CUBIC:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_cubic_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_cubic_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_cubic_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease in. */
+          return BLI_easing_cubic_ease_in(time, begin, change, duration);
+      }
+      break;
+
+    case BEZT_IPO_ELASTIC:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_elastic_ease_in(time, begin, change, duration, amplitude, period);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_elastic_ease_out(time, begin, change, duration, amplitude, period);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_elastic_ease_in_out(time, begin, change, duration, amplitude, period);
+
+        default: /* Default/Auto: same as ease out. */
+          return BLI_easing_elastic_ease_out(time, begin, change, duration, amplitude, period);
+      }
+      break;
+
+    case BEZT_IPO_EXPO:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_expo_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_expo_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_expo_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease in. */
+          return BLI_easing_expo_ease_in(time, begin, change, duration);
+      }
+      break;
+
+    case BEZT_IPO_QUAD:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_quad_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_quad_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_quad_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease in. */
+          return BLI_easing_quad_ease_in(time, begin, change, duration);
+      }
+      break;
+
+    case BEZT_IPO_QUART:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_quart_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_quart_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_quart_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease in. */
+          return BLI_easing_quart_ease_in(time, begin, change, duration);
+      }
+      break;
+
+    case BEZT_IPO_QUINT:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_quint_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_quint_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_quint_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease in. */
+          return BLI_easing_quint_ease_in(time, begin, change, duration);
+      }
+      break;
+
+    case BEZT_IPO_SINE:
+      switch (prevbezt->easing) {
+        case BEZT_IPO_EASE_IN:
+          return BLI_easing_sine_ease_in(time, begin, change, duration);
+        case BEZT_IPO_EASE_OUT:
+          return BLI_easing_sine_ease_out(time, begin, change, duration);
+        case BEZT_IPO_EASE_IN_OUT:
+          return BLI_easing_sine_ease_in_out(time, begin, change, duration);
+
+        default: /* Default/Auto: same as ease in. */
+          return BLI_easing_sine_ease_in(time, begin, change, duration);
+      }
+      break;
+
+    default:
+      return prevbezt->vec[1][1];
+  }
+
+  return 0.0f;
+}
+
+/* Calculate F-Curve value for 'evaltime' using #BezTriple keyframes. */
+static float fcurve_eval_keyframes(FCurve *fcu, BezTriple *bezts, float evaltime)
+{
+  if (evaltime <= bezts->vec[1][0]) {
+    return fcurve_eval_keyframes_extrapolate(fcu, bezts, evaltime, 0, +1);
+  }
+
+  BezTriple *lastbezt = bezts + fcu->totvert - 1;
+  if (lastbezt->vec[1][0] <= evaltime) {
+    return fcurve_eval_keyframes_extrapolate(fcu, bezts, evaltime, fcu->totvert - 1, -1);
+  }
+
+  return fcurve_eval_keyframes_interpolate(fcu, bezts, evaltime);
+}
+
+/* Calculate F-Curve value for 'evaltime' using #FPoint samples. */
+static float fcurve_eval_samples(FCurve *fcu, FPoint *fpts, float evaltime)
+{
+  FPoint *prevfpt, *lastfpt, *fpt;
+  float cvalue = 0.0f;
+
+  /* Get pointers. */
+  prevfpt = fpts;
+  lastfpt = prevfpt + fcu->totvert - 1;
+
+  /* Evaluation time at or past endpoints? */
+  if (prevfpt->vec[0] >= evaltime) {
+    /* Before or on first sample, so just extend value. */
+    cvalue = prevfpt->vec[1];
+  }
+  else if (lastfpt->vec[0] <= evaltime) {
+    /* After or on last sample, so just extend value. */
+    cvalue = lastfpt->vec[1];
+  }
+  else {
+    float t = fabsf(evaltime - floorf(evaltime));
+
+    /* Find the one on the right frame (assume that these are spaced on 1-frame intervals). */
+    fpt = prevfpt + ((int)evaltime - (int)prevfpt->vec[0]);
+
+    /* If not exactly on the frame, perform linear interpolation with the next one. */
+    if ((t != 0.0f) && (t < 1.0f)) {
+      cvalue = interpf(fpt->vec[1], (fpt + 1)->vec[1], 1.0f - t);
+    }
+    else {
+      cvalue = fpt->vec[1];
+    }
+  }
+
+  return cvalue;
+}
+
+/* -------------------------------------------------------------------- */
+/** F-Curve - Evaluation */
+
+/* Evaluate and return the value of the given F-Curve at the specified frame ("evaltime")
+ * NOTE: this is also used for drivers.
+ */
