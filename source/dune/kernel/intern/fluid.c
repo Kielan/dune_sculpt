@@ -1,28 +1,28 @@
 #include "MEM_guardedalloc.h"
 
-#include "BLI_listbase.h"
+#include "LIB_listbase.h"
 
-#include "BLI_fileops.h"
-#include "BLI_hash.h"
-#include "BLI_math.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "LIB_fileops.h"
+#include "LIB_hash.h"
+#include "LIB_math.h"
+#include "LIB_path_util.h"
+#include "LIB_string.h"
+#include "LIB_task.h"
+#include "LIB_utildefines.h"
 
-#include "DNA_defaults.h"
-#include "DNA_fluid_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
-#include "DNA_rigidbody_types.h"
+#include "structs_defaults.h"
+#include "structs_fluid_types.h"
+#include "structs_modifier_types.h"
+#include "structs_object_types.h"
+#include "structs_rigidbody_types.h"
 
-#include "BKE_attribute.h"
-#include "BKE_effect.h"
-#include "BKE_fluid.h"
-#include "BKE_global.h"
-#include "BKE_lib_id.h"
-#include "BKE_modifier.h"
-#include "BKE_pointcache.h"
+#include "KERNEL_attribute.h"
+#include "KERNEL_effect.h"
+#include "KERNEL_fluid.h"
+#include "KERNEL_global.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_modifier.h"
+#include "KERNEL_pointcache.h"
 
 #ifdef WITH_FLUID
 
@@ -31,29 +31,29 @@
 #  include <stdio.h>
 #  include <string.h> /* memset */
 
-#  include "DNA_customdata_types.h"
-#  include "DNA_light_types.h"
-#  include "DNA_mesh_types.h"
-#  include "DNA_meshdata_types.h"
-#  include "DNA_particle_types.h"
-#  include "DNA_scene_types.h"
+#  include "structs_customdata_types.h"
+#  include "structs_light_types.h"
+#  include "structs_mesh_types.h"
+#  include "structs_meshdata_types.h"
+#  include "structs_particle_types.h"
+#  include "structs_scene_types.h"
 
-#  include "BLI_kdopbvh.h"
-#  include "BLI_kdtree.h"
-#  include "BLI_threads.h"
-#  include "BLI_voxel.h"
+#  include "LIB_kdopbvh.h"
+#  include "LIB_kdtree.h"
+#  include "LIB_threads.h"
+#  include "LIB_voxel.h"
 
-#  include "BKE_bvhutils.h"
-#  include "BKE_collision.h"
-#  include "BKE_colortools.h"
-#  include "BKE_customdata.h"
-#  include "BKE_deform.h"
-#  include "BKE_mesh.h"
-#  include "BKE_mesh_runtime.h"
-#  include "BKE_object.h"
-#  include "BKE_particle.h"
-#  include "BKE_scene.h"
-#  include "BKE_texture.h"
+#  include "KE_bvhutils.h"
+#  include "KE_collision.h"
+#  include "KE_colortools.h"
+#  include "KE_customdata.h"
+#  include "KE_deform.h"
+#  include "KE_mesh.h"
+#  include "KE_mesh_runtime.h"
+#  include "KE_object.h"
+#  include "KE_particle.h"
+#  include "KE_scene.h"
+#  include "KE_texture.h"
 
 #  include "DEG_depsgraph.h"
 #  include "DEG_depsgraph_query.h"
@@ -72,18 +72,17 @@
 /** Max value for phi initialization */
 #define PHI_MAX 9999.0f
 
-static void BKE_fluid_modifier_reset_ex(struct FluidModifierData *fmd, bool need_lock);
+static void KERNEL_fluid_modifier_reset_ex(struct FluidModifierData *fmd, bool need_lock);
 
 #ifdef WITH_FLUID
 // #define DEBUG_PRINT
 
-static CLG_LogRef LOG = {"bke.fluid"};
+static CLG_LogRef LOG = {"kernel.fluid"};
 
 /* -------------------------------------------------------------------- */
-/** \name Fluid API
- * \{ */
+/** Fluid API **/
 
-static ThreadMutex object_update_lock = BLI_MUTEX_INITIALIZER;
+static ThreadMutex object_update_lock = LIB_MUTEX_INITIALIZER;
 
 struct FluidModifierData;
 struct Mesh;
@@ -94,7 +93,7 @@ struct Scene;
 #  define ADD_IF_LOWER_NEG(a, b) (max_ff((a) + (b), min_ff((a), (b))))
 #  define ADD_IF_LOWER(a, b) (((b) > 0) ? ADD_IF_LOWER_POS((a), (b)) : ADD_IF_LOWER_NEG((a), (b)))
 
-bool BKE_fluid_reallocate_fluid(FluidDomainSettings *fds, int res[3], int free_old)
+bool KERNEL_fluid_reallocate_fluid(FluidDomainSettings *fds, int res[3], int free_old)
 {
   if (free_old && fds->fluid) {
     manta_free(fds->fluid);
@@ -113,7 +112,7 @@ bool BKE_fluid_reallocate_fluid(FluidDomainSettings *fds, int res[3], int free_o
   return (fds->fluid != NULL);
 }
 
-void BKE_fluid_reallocate_copy_fluid(FluidDomainSettings *fds,
+void KERNEL_fluid_reallocate_copy_fluid(FluidDomainSettings *fds,
                                      int o_res[3],
                                      int n_res[3],
                                      const int o_min[3],
@@ -128,7 +127,7 @@ void BKE_fluid_reallocate_copy_fluid(FluidDomainSettings *fds,
   sub_v3_v3v3_int(new_shift, n_shift, o_shift);
 
   /* Allocate new fluid data. */
-  BKE_fluid_reallocate_fluid(fds, n_res, 0);
+  KERNEL_fluid_reallocate_fluid(fds, n_res, 0);
 
   int o_total_cells = o_res[0] * o_res[1] * o_res[2];
   int n_total_cells = n_res[0] * n_res[1] * n_res[2];
@@ -303,7 +302,7 @@ void BKE_fluid_reallocate_copy_fluid(FluidDomainSettings *fds,
   manta_free(fluid_old);
 }
 
-void BKE_fluid_cache_free_all(FluidDomainSettings *fds, Object *ob)
+void KERNEL_fluid_cache_free_all(FluidDomainSettings *fds, Object *ob)
 {
   int cache_map = (FLUID_DOMAIN_OUTDATED_DATA | FLUID_DOMAIN_OUTDATED_NOISE |
                    FLUID_DOMAIN_OUTDATED_MESH | FLUID_DOMAIN_OUTDATED_PARTICLES |
@@ -311,7 +310,7 @@ void BKE_fluid_cache_free_all(FluidDomainSettings *fds, Object *ob)
   BKE_fluid_cache_free(fds, ob, cache_map);
 }
 
-void BKE_fluid_cache_free(FluidDomainSettings *fds, Object *ob, int cache_map)
+void KERNEL_fluid_cache_free(FluidDomainSettings *fds, Object *ob, int cache_map)
 {
   char temp_dir[FILE_MAX];
   int flags = fds->cache_flag;
@@ -319,58 +318,58 @@ void BKE_fluid_cache_free(FluidDomainSettings *fds, Object *ob, int cache_map)
 
   if (cache_map & FLUID_DOMAIN_OUTDATED_DATA) {
     flags &= ~(FLUID_DOMAIN_BAKING_DATA | FLUID_DOMAIN_BAKED_DATA | FLUID_DOMAIN_OUTDATED_DATA);
-    BLI_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_CONFIG, NULL);
-    BLI_path_abs(temp_dir, relbase);
-    if (BLI_exists(temp_dir)) {
-      BLI_delete(temp_dir, true, true);
+    LIB_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_CONFIG, NULL);
+    LIB_path_abs(temp_dir, relbase);
+    if (LIB_exists(temp_dir)) {
+      LIB_delete(temp_dir, true, true);
     }
-    BLI_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_DATA, NULL);
-    BLI_path_abs(temp_dir, relbase);
-    if (BLI_exists(temp_dir)) {
-      BLI_delete(temp_dir, true, true);
+    LIB_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_DATA, NULL);
+    LIB_path_abs(temp_dir, relbase);
+    if (LIB_exists(temp_dir)) {
+      LIB_delete(temp_dir, true, true);
     }
-    BLI_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_SCRIPT, NULL);
-    BLI_path_abs(temp_dir, relbase);
-    if (BLI_exists(temp_dir)) {
-      BLI_delete(temp_dir, true, true);
+    LIB_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_SCRIPT, NULL);
+    LIB_path_abs(temp_dir, relbase);
+    if (LIB_exists(temp_dir)) {
+      LIB_delete(temp_dir, true, true);
     }
     fds->cache_frame_pause_data = 0;
   }
   if (cache_map & FLUID_DOMAIN_OUTDATED_NOISE) {
     flags &= ~(FLUID_DOMAIN_BAKING_NOISE | FLUID_DOMAIN_BAKED_NOISE | FLUID_DOMAIN_OUTDATED_NOISE);
-    BLI_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_NOISE, NULL);
-    BLI_path_abs(temp_dir, relbase);
-    if (BLI_exists(temp_dir)) {
-      BLI_delete(temp_dir, true, true);
+    LIB_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_NOISE, NULL);
+    LIB_path_abs(temp_dir, relbase);
+    if (LIB_exists(temp_dir)) {
+      LIB_delete(temp_dir, true, true);
     }
     fds->cache_frame_pause_noise = 0;
   }
   if (cache_map & FLUID_DOMAIN_OUTDATED_MESH) {
     flags &= ~(FLUID_DOMAIN_BAKING_MESH | FLUID_DOMAIN_BAKED_MESH | FLUID_DOMAIN_OUTDATED_MESH);
-    BLI_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_MESH, NULL);
-    BLI_path_abs(temp_dir, relbase);
-    if (BLI_exists(temp_dir)) {
-      BLI_delete(temp_dir, true, true);
+    LIB_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_MESH, NULL);
+    LIB_path_abs(temp_dir, relbase);
+    if (LIB_exists(temp_dir)) {
+      LIB_delete(temp_dir, true, true);
     }
     fds->cache_frame_pause_mesh = 0;
   }
   if (cache_map & FLUID_DOMAIN_OUTDATED_PARTICLES) {
     flags &= ~(FLUID_DOMAIN_BAKING_PARTICLES | FLUID_DOMAIN_BAKED_PARTICLES |
                FLUID_DOMAIN_OUTDATED_PARTICLES);
-    BLI_path_join(
+    LIB_path_join(
         temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_PARTICLES, NULL);
-    BLI_path_abs(temp_dir, relbase);
-    if (BLI_exists(temp_dir)) {
-      BLI_delete(temp_dir, true, true);
+    LIB_path_abs(temp_dir, relbase);
+    if (LIB_exists(temp_dir)) {
+      LIB_delete(temp_dir, true, true);
     }
     fds->cache_frame_pause_particles = 0;
   }
   if (cache_map & FLUID_DOMAIN_OUTDATED_GUIDE) {
     flags &= ~(FLUID_DOMAIN_BAKING_GUIDE | FLUID_DOMAIN_BAKED_GUIDE | FLUID_DOMAIN_OUTDATED_GUIDE);
-    BLI_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_GUIDE, NULL);
-    BLI_path_abs(temp_dir, relbase);
-    if (BLI_exists(temp_dir)) {
-      BLI_delete(temp_dir, true, true);
+    LIB_path_join(temp_dir, sizeof(temp_dir), fds->cache_directory, FLUID_DOMAIN_DIR_GUIDE, NULL);
+    LIB_path_abs(temp_dir, relbase);
+    if (LIB_exists(temp_dir)) {
+      LIB_delete(temp_dir, true, true);
     }
     fds->cache_frame_pause_guide = 0;
   }
@@ -473,7 +472,7 @@ static void update_final_gravity(FluidDomainSettings *fds, Scene *scene)
   mul_v3_fl(fds->gravity_final, fds->effector_weights->global_gravity);
 }
 
-static bool BKE_fluid_modifier_init(
+static bool KERNEL_fluid_modifier_init(
     FluidModifierData *fmd, Depsgraph *depsgraph, Object *ob, Scene *scene, Mesh *me)
 {
   int scene_framenr = (int)DEG_get_ctime(depsgraph);
@@ -515,18 +514,18 @@ static bool BKE_fluid_modifier_init(
     fmd->time = scene_framenr;
 
     /* Allocate fluid. */
-    return BKE_fluid_reallocate_fluid(fds, fds->res, 0);
+    return KERNEL_fluid_reallocate_fluid(fds, fds->res, 0);
   }
   if (fmd->type & MOD_FLUID_TYPE_FLOW) {
     if (!fmd->flow) {
-      BKE_fluid_modifier_create_type_data(fmd);
+      KERNEL_fluid_modifier_create_type_data(fmd);
     }
     fmd->time = scene_framenr;
     return true;
   }
   if (fmd->type & MOD_FLUID_TYPE_EFFEC) {
     if (!fmd->effector) {
-      BKE_fluid_modifier_create_type_data(fmd);
+      KERNEL_fluid_modifier_create_type_data(fmd);
     }
     fmd->time = scene_framenr;
     return true;
@@ -601,7 +600,7 @@ static bool is_static_object(Object *ob)
 {
   /* Check if the object has modifiers that might make the object "dynamic". */
   VirtualModifierData virtualModifierData;
-  ModifierData *md = BKE_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
+  ModifierData *md = KERNEL_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
   for (; md; md = md->next) {
     if (ELEM(md->type,
              eModifierType_Cloth,
@@ -621,14 +620,11 @@ static bool is_static_object(Object *ob)
   }
 
   /* Finally, check if the object has animation data. If so, it is considered dynamic. */
-  return !BKE_object_moves_in_time(ob, true);
+  return !KERNEL_object_moves_in_time(ob, true);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Bounding Box
- * \{ */
+/** Bounding Box **/
 
 typedef struct FluidObjectBB {
   float *influence;
@@ -794,13 +790,10 @@ static void bb_combineMaps(FluidObjectBB *output,
   bb_freeData(&bb1);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Effectors
- * \{ */
+/** Effectors **/
 
-BLI_INLINE void apply_effector_fields(FluidEffectorSettings *UNUSED(fes),
+LIB_INLINE void apply_effector_fields(FluidEffectorSettings *UNUSED(fes),
                                       int index,
                                       float src_distance_value,
                                       float *dest_phi_in,
@@ -851,7 +844,7 @@ static void update_velocities(FluidEffectorSettings *fes,
 
   /* Find the nearest point on the mesh. */
   if (has_velocity &&
-      BLI_bvhtree_find_nearest(
+      LIB_bvhtree_find_nearest(
           tree_data->tree, ray_start, &nearest, tree_data->nearest_callback, tree_data) != -1) {
     float weights[3];
     int v1, v2, v3, f_index = nearest.index;
@@ -915,7 +908,7 @@ static void update_velocities(FluidEffectorSettings *fes,
     }
     else {
       /* Should never reach this block. */
-      BLI_assert_unreachable();
+      LIB_assert_unreachable();
     }
   }
   else {
@@ -997,7 +990,7 @@ static void obstacles_from_mesh(Object *coll_ob,
     float *vert_vel = NULL;
     bool has_velocity = false;
 
-    me = BKE_mesh_copy_for_eval(fes->mesh, true);
+    me = KERNEL_mesh_copy_for_eval(fes->mesh, true);
 
     int min[3], max[3], res[3];
 
@@ -1009,7 +1002,7 @@ static void obstacles_from_mesh(Object *coll_ob,
 
     mvert = me->mvert;
     mloop = me->mloop;
-    looptri = BKE_mesh_runtime_looptri_ensure(me);
+    looptri = KERNEL_mesh_runtime_looptri_ensure(me);
     numverts = me->totvert;
 
     /* TODO(sebbas): Make initialization of vertex velocities optional? */
@@ -1031,8 +1024,8 @@ static void obstacles_from_mesh(Object *coll_ob,
 
     /* Transform mesh vertices to domain grid space for fast lookups.
      * This is valid because the mesh is copied above. */
-    BKE_mesh_vertex_normals_ensure(me);
-    float(*vert_normals)[3] = BKE_mesh_vertex_normals_for_write(me);
+    KERNEL_mesh_vertex_normals_ensure(me);
+    float(*vert_normals)[3] = KERNEL_mesh_vertex_normals_for_write(me);
     for (i = 0; i < numverts; i++) {
       float co[3];
 
@@ -1072,7 +1065,7 @@ static void obstacles_from_mesh(Object *coll_ob,
 
     /* Skip effector sampling loop if object has disabled effector. */
     bool use_effector = fes->flags & FLUID_EFFECTOR_USE_EFFEC;
-    if (use_effector && BKE_bvhtree_from_mesh_get(&tree_data, me, BVHTREE_FROM_LOOPTRI, 4)) {
+    if (use_effector && KERNEL_bvhtree_from_mesh_get(&tree_data, me, BVHTREE_FROM_LOOPTRI, 4)) {
 
       ObstaclesFromDMData data = {
           .fes = fes,
@@ -1089,9 +1082,9 @@ static void obstacles_from_mesh(Object *coll_ob,
       };
 
       TaskParallelSettings settings;
-      BLI_parallel_range_settings_defaults(&settings);
+      LIB_parallel_range_settings_defaults(&settings);
       settings.min_iter_per_thread = 2;
-      BLI_task_parallel_range(min[2], max[2], &data, obstacles_from_mesh_task_cb, &settings);
+      LIB_task_parallel_range(min[2], max[2], &data, obstacles_from_mesh_task_cb, &settings);
     }
     /* Free bvh tree. */
     free_bvhtree_from_mesh(&tree_data);
@@ -1102,7 +1095,7 @@ static void obstacles_from_mesh(Object *coll_ob,
     if (me->mvert) {
       MEM_freeN(me->mvert);
     }
-    BKE_id_free(NULL, me);
+    KERNEL_id_free(NULL, me);
   }
 }
 
@@ -1258,11 +1251,11 @@ static void compute_obstaclesemission(Scene *scene,
             scene->r.subframe);
 #  endif
         /* Update frame time, this is considering current subframe fraction
-         * BLI_mutex_lock() called in manta_step(), so safe to update subframe here
-         * TODO(sebbas): Using BKE_scene_ctime_get(scene) instead of new DEG_get_ctime(depsgraph)
+         * LIB_mutex_lock() called in manta_step(), so safe to update subframe here
+         * TODO(sebbas): Using KERNEL_scene_ctime_get(scene) instead of new DEG_get_ctime(depsgraph)
          * as subframes don't work with the latter yet. */
-        BKE_object_modifier_update_subframe(
-            depsgraph, scene, effecobj, true, 5, BKE_scene_ctime_get(scene), eModifierType_Fluid);
+        KERNEL_object_modifier_update_subframe(
+            depsgraph, scene, effecobj, true, 5, KERNEL_scene_ctime_get(scene), eModifierType_Fluid);
 
         if (subframes) {
           obstacles_from_mesh(effecobj, fds, fes, &bb_temp, subframe_dt);
@@ -1298,7 +1291,7 @@ static void update_obstacles(Depsgraph *depsgraph,
   bool is_resume = (fds->cache_frame_pause_data == frame);
   bool is_first_frame = (frame == fds->cache_frame_start);
 
-  effecobjs = BKE_collision_objects_create(
+  effecobjs = KERNEL_collision_objects_create(
       depsgraph, ob, fds->effector_group, &numeffecobjs, eModifierType_Fluid);
 
   /* Update all effector related flags and ensure that corresponding grids get initialized. */
@@ -1455,17 +1448,14 @@ static void update_obstacles(Depsgraph *depsgraph,
     } /* End of effector object loop. */
   }
 
-  BKE_collision_objects_free(effecobjs);
+  KERNEL_collision_objects_free(effecobjs);
   if (bb_maps) {
     MEM_freeN(bb_maps);
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Flow
- * \{ */
+/* Flow **/
 
 typedef struct EmitFromParticlesData {
   FluidFlowSettings *ffs;
@@ -1496,7 +1486,7 @@ static void emit_from_particles_task_cb(void *__restrict userdata,
       /* Find particle distance from the kdtree. */
       KDTreeNearest_3d nearest;
       const float range = data->solid + data->smooth;
-      BLI_kdtree_3d_find_nearest(data->tree, ray_start, &nearest);
+      LIB_kdtree_3d_find_nearest(data->tree, ray_start, &nearest);
 
       if (nearest.dist < range) {
         bb->influence[index] = (nearest.dist < data->solid) ?
@@ -1545,13 +1535,13 @@ static void emit_from_particles(Object *flow_ob,
 
     /* prepare curvemapping tables */
     if ((psys->part->child_flag & PART_CHILD_USE_CLUMP_CURVE) && psys->part->clumpcurve) {
-      BKE_curvemapping_changed_all(psys->part->clumpcurve);
+      KERNEL_curvemapping_changed_all(psys->part->clumpcurve);
     }
     if ((psys->part->child_flag & PART_CHILD_USE_ROUGH_CURVE) && psys->part->roughcurve) {
-      BKE_curvemapping_changed_all(psys->part->roughcurve);
+      KERNEL_curvemapping_changed_all(psys->part->roughcurve);
     }
     if ((psys->part->child_flag & PART_CHILD_USE_TWIST_CURVE) && psys->part->twistcurve) {
-      BKE_curvemapping_changed_all(psys->part->twistcurve);
+      KERNEL_curvemapping_changed_all(psys->part->twistcurve);
     }
 
     /* initialize particle cache */
@@ -1570,7 +1560,7 @@ static void emit_from_particles(Object *flow_ob,
 
     /* setup particle radius emission if enabled */
     if (ffs->flags & FLUID_FLOW_USE_PART_SIZE) {
-      tree = BLI_kdtree_3d_new(psys->totpart + psys->totchild);
+      tree = LIB_kdtree_3d_new(psys->totpart + psys->totchild);
       bounds_margin = (int)ceil(solid + smooth);
     }
 
@@ -1592,7 +1582,7 @@ static void emit_from_particles(Object *flow_ob,
       }
 
       /* `DEG_get_ctime(depsgraph)` does not give sub-frame time. */
-      state.time = BKE_scene_ctime_get(scene);
+      state.time = KERNEL_scene_ctime_get(scene);
 
       if (psys_get_particle_state(&sim, p, &state, 0) == 0) {
         continue;
@@ -1609,7 +1599,7 @@ static void emit_from_particles(Object *flow_ob,
       mul_mat3_m4_v3(fds->imat, &particle_vel[valid_particles * 3]);
 
       if (ffs->flags & FLUID_FLOW_USE_PART_SIZE) {
-        BLI_kdtree_3d_insert(tree, valid_particles, pos);
+        LIB_kdtree_3d_insert(tree, valid_particles, pos);
       }
 
       /* calculate emission map bounds */
@@ -1662,7 +1652,7 @@ static void emit_from_particles(Object *flow_ob,
         res[i] = bb->res[i];
       }
 
-      BLI_kdtree_3d_balance(tree);
+      LIB_kdtree_3d_balance(tree);
 
       EmitFromParticlesData data = {
           .ffs = ffs,
@@ -1677,13 +1667,13 @@ static void emit_from_particles(Object *flow_ob,
       };
 
       TaskParallelSettings settings;
-      BLI_parallel_range_settings_defaults(&settings);
+      LIB_parallel_range_settings_defaults(&settings);
       settings.min_iter_per_thread = 2;
       BLI_task_parallel_range(min[2], max[2], &data, emit_from_particles_task_cb, &settings);
     }
 
     if (ffs->flags & FLUID_FLOW_USE_PART_SIZE) {
-      BLI_kdtree_3d_free(tree);
+      LIB_kdtree_3d_free(tree);
     }
 
     /* free data */
@@ -1723,7 +1713,7 @@ static void update_distances(int index,
       nearest.dist_sq += surface_thickness;
     }
 
-    if (BLI_bvhtree_find_nearest(
+    if (LIB_bvhtree_find_nearest(
             tree_data->tree, ray_start, &nearest, tree_data->nearest_callback, tree_data) != -1) {
       float ray[3] = {0};
       sub_v3_v3v3(ray, ray_start, nearest.co);
@@ -1755,7 +1745,7 @@ static void update_distances(int index,
       hit_tree.dist = PHI_MAX;
 
       normalize_v3(ray_dirs[i]);
-      BLI_bvhtree_ray_cast(tree_data->tree,
+      LIB_bvhtree_ray_cast(tree_data->tree,
                            ray_start,
                            ray_dirs[i],
                            0.0f,
@@ -1848,7 +1838,7 @@ static void sample_mesh(FluidFlowSettings *ffs,
 
   /* Emission inside the flow object. */
   if (is_gas_flow && ffs->volume_density) {
-    if (BLI_bvhtree_ray_cast(tree_data->tree,
+    if (LIB_bvhtree_ray_cast(tree_data->tree,
                              ray_start,
                              ray_dir,
                              0.0f,
@@ -1864,7 +1854,7 @@ static void sample_mesh(FluidFlowSettings *ffs,
         hit.index = -1;
         hit.dist = PHI_MAX;
 
-        BLI_bvhtree_ray_cast(tree_data->tree,
+        LIB_bvhtree_ray_cast(tree_data->tree,
                              ray_start,
                              ray_dir,
                              0.0f,
@@ -1879,7 +1869,7 @@ static void sample_mesh(FluidFlowSettings *ffs,
   }
 
   /* Find the nearest point on the mesh. */
-  if (BLI_bvhtree_find_nearest(
+  if (LI_bvhtree_find_nearest(
           tree_data->tree, ray_start, &nearest, tree_data->nearest_callback, tree_data) != -1) {
     float weights[3];
     int v1, v2, v3, f_index = nearest.index;
