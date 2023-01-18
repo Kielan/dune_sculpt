@@ -2791,3 +2791,1752 @@ static void image_tag_frame_recalc(Image *ima, ID *iuser_id, ImageUser *iuser, v
     }
   }
 }
+
+static void image_tag_reload(Image *ima, ID *iuser_id, ImageUser *iuser, void *customdata)
+{
+  Image *changed_image = static_cast<Image *>(customdata);
+
+  if (ima == changed_image) {
+    if (iuser->scene) {
+      image_update_views_format(ima, iuser);
+    }
+    if (iuser_id) {
+      /* Must copy image user changes to CoW data-block. */
+      DEG_id_tag_update(iuser_id, ID_RECALC_COPY_ON_WRITE);
+    }
+    BKE_image_partial_update_mark_full_update(ima);
+  }
+}
+
+void BKE_imageuser_default(ImageUser *iuser)
+{
+  memset(iuser, 0, sizeof(ImageUser));
+  iuser->frames = 100;
+  iuser->sfra = 1;
+}
+
+void BKE_image_init_imageuser(Image *ima, ImageUser *iuser)
+{
+  RenderResult *rr = ima->rr;
+
+  iuser->multi_index = 0;
+  iuser->layer = iuser->pass = iuser->view = 0;
+
+  if (rr) {
+    BKE_image_multilayer_index(rr, iuser);
+  }
+}
+
+static void image_free_tile(Image *ima, ImageTile *tile)
+{
+  for (int i = 0; i < TEXTARGET_COUNT; i++) {
+    /* Only two textures depends on all tiles, so if this is a secondary tile we can keep the other
+     * two. */
+    if (tile != ima->tiles.first && !(ELEM(i, TEXTARGET_2D_ARRAY, TEXTARGET_TILE_MAPPING))) {
+      continue;
+    }
+
+    for (int eye = 0; eye < 2; eye++) {
+      for (int resolution = 0; resolution < IMA_TEXTURE_RESOLUTION_LEN; resolution++) {
+        if (ima->gputexture[i][eye][resolution] != nullptr) {
+          GPU_texture_free(ima->gputexture[i][eye][resolution]);
+          ima->gputexture[i][eye][resolution] = nullptr;
+        }
+      }
+    }
+  }
+  BKE_image_partial_update_mark_full_update(ima);
+
+  if (BKE_image_is_multiview(ima)) {
+    const int totviews = BLI_listbase_count(&ima->views);
+    for (int i = 0; i < totviews; i++) {
+      image_remove_ibuf(ima, i, tile->tile_number);
+    }
+  }
+  else {
+    image_remove_ibuf(ima, 0, tile->tile_number);
+  }
+}
+
+void BKE_image_signal(Main *bmain, Image *ima, ImageUser *iuser, int signal)
+{
+  if (ima == nullptr) {
+    return;
+  }
+
+  BLI_mutex_lock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+
+  switch (signal) {
+    case IMA_SIGNAL_FREE:
+      BKE_image_free_buffers(ima);
+
+      if (iuser) {
+        if (iuser->scene) {
+          image_update_views_format(ima, iuser);
+        }
+      }
+      break;
+    case IMA_SIGNAL_SRC_CHANGE:
+      if (ima->type == IMA_TYPE_UV_TEST) {
+        if (ima->source != IMA_SRC_GENERATED) {
+          ima->type = IMA_TYPE_IMAGE;
+        }
+      }
+
+      if (ima->source == IMA_SRC_GENERATED) {
+        if (ima->gen_x == 0 || ima->gen_y == 0) {
+          ImBuf *ibuf = image_get_cached_ibuf_for_index_entry(ima, IMA_NO_INDEX, 0, nullptr);
+          if (ibuf) {
+            ima->gen_x = ibuf->x;
+            ima->gen_y = ibuf->y;
+            IMB_freeImBuf(ibuf);
+          }
+        }
+
+        /* Changing source type to generated will likely change file format
+         * used by generated image buffer. Saving different file format to
+         * the old name might confuse other applications.
+         *
+         * Here we ensure original image path wouldn't be used when saving
+         * generated image.
+         */
+        ima->filepath[0] = '\0';
+      }
+
+      if (ima->source != IMA_SRC_TILED) {
+        /* Free all but the first tile. */
+        ImageTile *base_tile = BKE_image_get_tile(ima, 0);
+        BLI_assert(base_tile == ima->tiles.first);
+        for (ImageTile *tile = base_tile->next, *tile_next; tile; tile = tile_next) {
+          tile_next = tile->next;
+          image_free_tile(ima, tile);
+          MEM_freeN(tile);
+        }
+        base_tile->next = nullptr;
+        ima->tiles.last = base_tile;
+      }
+
+      /* image buffers for non-sequence multilayer will share buffers with RenderResult,
+       * however sequence multilayer will own buffers. Such logic makes switching from
+       * single multilayer file to sequence completely unstable
+       * since changes in nodes seems this workaround isn't needed anymore, all sockets
+       * are nicely detecting anyway, but freeing buffers always here makes multilayer
+       * sequences behave stable
+       */
+      BKE_image_free_buffers(ima);
+
+      if (iuser) {
+        image_tag_frame_recalc(ima, nullptr, iuser, ima);
+      }
+      BKE_image_walk_all_users(bmain, ima, image_tag_frame_recalc);
+
+      break;
+
+    case IMA_SIGNAL_RELOAD:
+      /* try to repack file */
+      if (BKE_image_has_packedfile(ima)) {
+        const int totfiles = image_num_files(ima);
+
+        if (totfiles != BLI_listbase_count_at_most(&ima->packedfiles, totfiles + 1)) {
+          /* in case there are new available files to be loaded */
+          image_free_packedfiles(ima);
+          BKE_image_packfiles(nullptr, ima, ID_BLEND_PATH(bmain, &ima->id));
+        }
+        else {
+          ImagePackedFile *imapf;
+          for (imapf = static_cast<ImagePackedFile *>(ima->packedfiles.first); imapf;
+               imapf = imapf->next) {
+            PackedFile *pf;
+            pf = BKE_packedfile_new(nullptr, imapf->filepath, ID_BLEND_PATH(bmain, &ima->id));
+            if (pf) {
+              BKE_packedfile_free(imapf->packedfile);
+              imapf->packedfile = pf;
+            }
+            else {
+              printf("ERROR: Image \"%s\" not available. Keeping packed image\n", imapf->filepath);
+            }
+          }
+        }
+
+        if (BKE_image_has_packedfile(ima)) {
+          BKE_image_free_buffers(ima);
+        }
+      }
+      else {
+        BKE_image_free_buffers(ima);
+      }
+
+      if (ima->source == IMA_SRC_TILED) {
+        ListBase new_tiles = {nullptr, nullptr};
+        int new_start, new_range;
+
+        char filepath[FILE_MAX];
+        BLI_strncpy(filepath, ima->filepath, sizeof(filepath));
+        BLI_path_abs(filepath, ID_BLEND_PATH_FROM_GLOBAL(&ima->id));
+        bool result = BKE_image_get_tile_info(filepath, &new_tiles, &new_start, &new_range);
+        if (result) {
+          /* Because the prior and new list of tiles are both sparse sequences, we need to be sure
+           * to account for how the two sets might or might not overlap. To be complete, we start
+           * the refresh process by clearing all existing tiles, stopping when there's only 1 tile
+           * left. */
+          while (BKE_image_remove_tile(ima, static_cast<ImageTile *>(ima->tiles.last))) {
+            ;
+          }
+
+          int remaining_tile_number = ((ImageTile *)ima->tiles.first)->tile_number;
+          bool needs_final_cleanup = true;
+
+          /* Add in all the new tiles. */
+          LISTBASE_FOREACH (LinkData *, new_tile, &new_tiles) {
+            int new_tile_number = POINTER_AS_INT(new_tile->data);
+            BKE_image_add_tile(ima, new_tile_number, nullptr);
+            if (new_tile_number == remaining_tile_number) {
+              needs_final_cleanup = false;
+            }
+          }
+
+          /* Final cleanup if the prior remaining tile was never encountered in the new list. */
+          if (needs_final_cleanup) {
+            BKE_image_remove_tile(ima, BKE_image_get_tile(ima, remaining_tile_number));
+          }
+        }
+        BLI_freelistN(&new_tiles);
+      }
+
+      if (iuser) {
+        image_tag_reload(ima, nullptr, iuser, ima);
+      }
+      BKE_image_walk_all_users(bmain, ima, image_tag_reload);
+      break;
+    case IMA_SIGNAL_USER_NEW_IMAGE:
+      if (iuser) {
+        if (ELEM(ima->source, IMA_SRC_FILE, IMA_SRC_SEQUENCE, IMA_SRC_TILED)) {
+          if (ima->type == IMA_TYPE_MULTILAYER) {
+            BKE_image_init_imageuser(ima, iuser);
+          }
+        }
+      }
+      break;
+    case IMA_SIGNAL_COLORMANAGE:
+      BKE_image_free_buffers(ima);
+      break;
+  }
+
+  BLI_mutex_unlock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+
+  BKE_ntree_update_tag_id_changed(bmain, &ima->id);
+  BKE_ntree_update_main(bmain, nullptr);
+}
+
+/**
+ * \return render-pass for a given pass index and active view.
+ * fallback to available if there are missing passes for active view.
+ */
+static RenderPass *image_render_pass_get(RenderLayer *rl,
+                                         const int pass,
+                                         const int view,
+                                         int *r_passindex)
+{
+  RenderPass *rpass_ret = nullptr;
+  RenderPass *rpass;
+
+  int rp_index = 0;
+  const char *rp_name = "";
+
+  for (rpass = static_cast<RenderPass *>(rl->passes.first); rpass;
+       rpass = rpass->next, rp_index++) {
+    if (rp_index == pass) {
+      rpass_ret = rpass;
+      if (view == 0) {
+        /* no multiview or left eye */
+        break;
+      }
+
+      rp_name = rpass->name;
+    }
+    /* multiview */
+    else if (rp_name[0] && STREQ(rpass->name, rp_name) && (rpass->view_id == view)) {
+      rpass_ret = rpass;
+      break;
+    }
+  }
+
+  /* fallback to the first pass in the layer */
+  if (rpass_ret == nullptr) {
+    rp_index = 0;
+    rpass_ret = static_cast<RenderPass *>(rl->passes.first);
+  }
+
+  if (r_passindex) {
+    *r_passindex = (rpass == rpass_ret ? rp_index : pass);
+  }
+
+  return rpass_ret;
+}
+
+void BKE_image_get_tile_label(Image *ima, ImageTile *tile, char *label, int len_label)
+{
+  label[0] = '\0';
+  if (ima == nullptr || tile == nullptr) {
+    return;
+  }
+
+  if (tile->label[0]) {
+    BLI_strncpy(label, tile->label, len_label);
+  }
+  else {
+    BLI_snprintf(label, len_label, "%d", tile->tile_number);
+  }
+}
+
+bool BKE_image_get_tile_info(char *filepath, ListBase *tiles, int *tile_start, int *tile_range)
+{
+  char filename[FILE_MAXFILE], dirname[FILE_MAXDIR];
+  BLI_split_dirfile(filepath, dirname, filename, sizeof(dirname), sizeof(filename));
+
+  BKE_image_ensure_tile_token(filename);
+
+  eUDIM_TILE_FORMAT tile_format;
+  char *udim_pattern = BKE_image_get_tile_strformat(filename, &tile_format);
+
+  bool is_udim = true;
+  int min_udim = IMA_UDIM_MAX + 1;
+  int max_udim = 0;
+  int id;
+
+  struct direntry *dir;
+  uint totfile = BLI_filelist_dir_contents(dirname, &dir);
+  for (int i = 0; i < totfile; i++) {
+    if (!(dir[i].type & S_IFREG)) {
+      continue;
+    }
+
+    if (!BKE_image_get_tile_number_from_filepath(dir[i].relname, udim_pattern, tile_format, &id)) {
+      continue;
+    }
+
+    if (id < 1001 || id > IMA_UDIM_MAX) {
+      is_udim = false;
+      break;
+    }
+
+    BLI_addtail(tiles, BLI_genericNodeN(POINTER_FROM_INT(id)));
+    min_udim = min_ii(min_udim, id);
+    max_udim = max_ii(max_udim, id);
+  }
+  BLI_filelist_free(dir, totfile);
+  MEM_SAFE_FREE(udim_pattern);
+
+  if (is_udim && min_udim <= IMA_UDIM_MAX) {
+    BLI_join_dirfile(filepath, FILE_MAX, dirname, filename);
+
+    *tile_start = min_udim;
+    *tile_range = max_udim - min_udim + 1;
+    return true;
+  }
+  return false;
+}
+
+ImageTile *BKE_image_add_tile(struct Image *ima, int tile_number, const char *label)
+{
+  if (ima->source != IMA_SRC_TILED) {
+    return nullptr;
+  }
+
+  if (tile_number < 1001 || tile_number > IMA_UDIM_MAX) {
+    return nullptr;
+  }
+
+  /* Search the first tile that has a higher number.
+   * We then insert before that to keep the list sorted. */
+  ImageTile *next_tile;
+  for (next_tile = static_cast<ImageTile *>(ima->tiles.first); next_tile;
+       next_tile = next_tile->next) {
+    if (next_tile->tile_number == tile_number) {
+      /* Tile already exists. */
+      return nullptr;
+    }
+    if (next_tile->tile_number > tile_number) {
+      break;
+    }
+  }
+
+  ImageTile *tile = MEM_cnew<ImageTile>("image new tile");
+  tile->tile_number = tile_number;
+
+  if (next_tile) {
+    BLI_insertlinkbefore(&ima->tiles, next_tile, tile);
+  }
+  else {
+    BLI_addtail(&ima->tiles, tile);
+  }
+
+  if (label) {
+    BLI_strncpy(tile->label, label, sizeof(tile->label));
+  }
+
+  for (int eye = 0; eye < 2; eye++) {
+    for (int resolution = 0; resolution < IMA_TEXTURE_RESOLUTION_LEN; resolution++) {
+      /* Reallocate GPU tile array. */
+      if (ima->gputexture[TEXTARGET_2D_ARRAY][eye][resolution] != nullptr) {
+        GPU_texture_free(ima->gputexture[TEXTARGET_2D_ARRAY][eye][resolution]);
+        ima->gputexture[TEXTARGET_2D_ARRAY][eye][resolution] = nullptr;
+      }
+      if (ima->gputexture[TEXTARGET_TILE_MAPPING][eye][resolution] != nullptr) {
+        GPU_texture_free(ima->gputexture[TEXTARGET_TILE_MAPPING][eye][resolution]);
+        ima->gputexture[TEXTARGET_TILE_MAPPING][eye][resolution] = nullptr;
+      }
+    }
+  }
+  BKE_image_partial_update_mark_full_update(ima);
+
+  return tile;
+}
+
+bool BKE_image_remove_tile(struct Image *ima, ImageTile *tile)
+{
+  if (ima == nullptr || tile == nullptr || ima->source != IMA_SRC_TILED) {
+    return false;
+  }
+
+  if (BLI_listbase_is_single(&ima->tiles)) {
+    /* Can't remove the last remaining tile. */
+    return false;
+  }
+
+  image_free_tile(ima, tile);
+  BLI_remlink(&ima->tiles, tile);
+  MEM_freeN(tile);
+
+  return true;
+}
+
+void BKE_image_reassign_tile(struct Image *ima, ImageTile *tile, int new_tile_number)
+{
+  if (ima == nullptr || tile == nullptr || ima->source != IMA_SRC_TILED) {
+    return;
+  }
+
+  if (new_tile_number < 1001 || new_tile_number > IMA_UDIM_MAX) {
+    return;
+  }
+
+  const int old_tile_number = tile->tile_number;
+  tile->tile_number = new_tile_number;
+
+  if (BKE_image_is_multiview(ima)) {
+    const int totviews = BLI_listbase_count(&ima->views);
+    for (int i = 0; i < totviews; i++) {
+      ImBuf *ibuf = image_get_cached_ibuf_for_index_entry(ima, i, old_tile_number, nullptr);
+      image_remove_ibuf(ima, i, old_tile_number);
+      image_assign_ibuf(ima, ibuf, i, new_tile_number);
+      IMB_freeImBuf(ibuf);
+    }
+  }
+  else {
+    ImBuf *ibuf = image_get_cached_ibuf_for_index_entry(ima, 0, old_tile_number, nullptr);
+    image_remove_ibuf(ima, 0, old_tile_number);
+    image_assign_ibuf(ima, ibuf, 0, new_tile_number);
+    IMB_freeImBuf(ibuf);
+  }
+
+  for (int eye = 0; eye < 2; eye++) {
+    for (int resolution = 0; resolution < IMA_TEXTURE_RESOLUTION_LEN; resolution++) {
+
+      /* Reallocate GPU tile array. */
+      if (ima->gputexture[TEXTARGET_2D_ARRAY][eye][resolution] != nullptr) {
+        GPU_texture_free(ima->gputexture[TEXTARGET_2D_ARRAY][eye][resolution]);
+        ima->gputexture[TEXTARGET_2D_ARRAY][eye][resolution] = nullptr;
+      }
+      if (ima->gputexture[TEXTARGET_TILE_MAPPING][eye][resolution] != nullptr) {
+        GPU_texture_free(ima->gputexture[TEXTARGET_TILE_MAPPING][eye][resolution]);
+        ima->gputexture[TEXTARGET_TILE_MAPPING][eye][resolution] = nullptr;
+      }
+    }
+  }
+  BKE_image_partial_update_mark_full_update(ima);
+}
+
+static int tile_sort_cb(const void *a, const void *b)
+{
+  const ImageTile *tile_a = static_cast<const ImageTile *>(a);
+  const ImageTile *tile_b = static_cast<const ImageTile *>(b);
+  return (tile_a->tile_number > tile_b->tile_number) ? 1 : 0;
+}
+
+void BKE_image_sort_tiles(struct Image *ima)
+{
+  if (ima == nullptr || ima->source != IMA_SRC_TILED) {
+    return;
+  }
+
+  BLI_listbase_sort(&ima->tiles, tile_sort_cb);
+}
+
+bool BKE_image_fill_tile(struct Image *ima,
+                         ImageTile *tile,
+                         int width,
+                         int height,
+                         const float color[4],
+                         int gen_type,
+                         int planes,
+                         bool is_float)
+{
+  if (ima == nullptr || tile == nullptr || ima->source != IMA_SRC_TILED) {
+    return false;
+  }
+
+  image_free_tile(ima, tile);
+
+  ImBuf *tile_ibuf = add_ibuf_size(
+      width, height, ima->filepath, planes, is_float, gen_type, color, &ima->colorspace_settings);
+
+  if (tile_ibuf != nullptr) {
+    image_assign_ibuf(ima, tile_ibuf, 0, tile->tile_number);
+    BKE_image_release_ibuf(ima, tile_ibuf, nullptr);
+    return true;
+  }
+  return false;
+}
+
+void BKE_image_ensure_tile_token(char *filename)
+{
+  BLI_assert_msg(BLI_path_slash_find(filename) == nullptr,
+                 "Only the file-name component should be used!");
+
+  /* Is there a '<' character in the filename? Assume tokens already present. */
+  if (strstr(filename, "<") != nullptr) {
+    return;
+  }
+
+  /* Is there a sequence of digits in the filename? */
+  ushort digits;
+  char head[FILE_MAX], tail[FILE_MAX];
+  BLI_path_sequence_decode(filename, head, tail, &digits);
+  if (digits == 4) {
+    sprintf(filename, "%s<UDIM>%s", head, tail);
+    return;
+  }
+
+  /* Is there a sequence like u##_v#### in the filename? */
+  uint cur = 0;
+  uint name_end = strlen(filename);
+  uint u_digits = 0;
+  uint v_digits = 0;
+  uint u_start = (uint)-1;
+  bool u_found = false;
+  bool v_found = false;
+  bool sep_found = false;
+  while (cur < name_end) {
+    if (filename[cur] == 'u') {
+      u_found = true;
+      u_digits = 0;
+      u_start = cur;
+    }
+    else if (filename[cur] == 'v') {
+      v_found = true;
+      v_digits = 0;
+    }
+    else if (u_found && !v_found) {
+      if (isdigit(filename[cur]) && u_digits < 2) {
+        u_digits++;
+      }
+      else if (filename[cur] == '_') {
+        sep_found = true;
+      }
+      else {
+        u_found = false;
+      }
+    }
+    else if (u_found && u_digits > 0 && v_found) {
+      if (isdigit(filename[cur])) {
+        if (v_digits < 4) {
+          v_digits++;
+        }
+        else {
+          u_found = false;
+          v_found = false;
+        }
+      }
+      else if (v_digits > 0) {
+        break;
+      }
+    }
+
+    cur++;
+  }
+
+  if (u_found && sep_found && v_found && (u_digits + v_digits > 1)) {
+    const char *token = "<UVTILE>";
+    const size_t token_length = strlen(token);
+    memmove(filename + u_start + token_length, filename + cur, name_end - cur);
+    memcpy(filename + u_start, token, token_length);
+    filename[u_start + token_length + (name_end - cur)] = '\0';
+  }
+}
+
+bool BKE_image_tile_filepath_exists(const char *filepath)
+{
+  BLI_assert(!BLI_path_is_rel(filepath));
+
+  char dirname[FILE_MAXDIR];
+  BLI_split_dir_part(filepath, dirname, sizeof(dirname));
+
+  eUDIM_TILE_FORMAT tile_format;
+  char *udim_pattern = BKE_image_get_tile_strformat(filepath, &tile_format);
+
+  bool found = false;
+  struct direntry *dir;
+  uint totfile = BLI_filelist_dir_contents(dirname, &dir);
+  for (int i = 0; i < totfile; i++) {
+    if (!(dir[i].type & S_IFREG)) {
+      continue;
+    }
+
+    int id;
+    if (!BKE_image_get_tile_number_from_filepath(dir[i].path, udim_pattern, tile_format, &id)) {
+      continue;
+    }
+
+    if (id < 1001 || id > IMA_UDIM_MAX) {
+      continue;
+    }
+
+    found = true;
+    break;
+  }
+  BLI_filelist_free(dir, totfile);
+  MEM_SAFE_FREE(udim_pattern);
+
+  return found;
+}
+
+char *BKE_image_get_tile_strformat(const char *filepath, eUDIM_TILE_FORMAT *r_tile_format)
+{
+  if (filepath == nullptr || r_tile_format == nullptr) {
+    return nullptr;
+  }
+
+  if (strstr(filepath, "<UDIM>") != nullptr) {
+    *r_tile_format = UDIM_TILE_FORMAT_UDIM;
+    return BLI_str_replaceN(filepath, "<UDIM>", "%d");
+  }
+  if (strstr(filepath, "<UVTILE>") != nullptr) {
+    *r_tile_format = UDIM_TILE_FORMAT_UVTILE;
+    return BLI_str_replaceN(filepath, "<UVTILE>", "u%d_v%d");
+  }
+
+  *r_tile_format = UDIM_TILE_FORMAT_NONE;
+  return nullptr;
+}
+
+bool BKE_image_get_tile_number_from_filepath(const char *filepath,
+                                             const char *pattern,
+                                             eUDIM_TILE_FORMAT tile_format,
+                                             int *r_tile_number)
+{
+  if (filepath == nullptr || pattern == nullptr || r_tile_number == nullptr) {
+    return false;
+  }
+
+  int u, v;
+  bool result = false;
+
+  if (tile_format == UDIM_TILE_FORMAT_UDIM) {
+    if (sscanf(filepath, pattern, &u) == 1) {
+      *r_tile_number = u;
+      result = true;
+    }
+  }
+  else if (tile_format == UDIM_TILE_FORMAT_UVTILE) {
+    if (sscanf(filepath, pattern, &u, &v) == 2) {
+      *r_tile_number = 1001 + (u - 1) + ((v - 1) * 10);
+      result = true;
+    }
+  }
+
+  return result;
+}
+
+void BKE_image_set_filepath_from_tile_number(char *filepath,
+                                             const char *pattern,
+                                             eUDIM_TILE_FORMAT tile_format,
+                                             int tile_number)
+{
+  if (filepath == nullptr || pattern == nullptr) {
+    return;
+  }
+
+  if (tile_format == UDIM_TILE_FORMAT_UDIM) {
+    sprintf(filepath, pattern, tile_number);
+  }
+  else if (tile_format == UDIM_TILE_FORMAT_UVTILE) {
+    int u = ((tile_number - 1001) % 10);
+    int v = ((tile_number - 1001) / 10);
+    sprintf(filepath, pattern, u + 1, v + 1);
+  }
+}
+
+/* if layer or pass changes, we need an index for the imbufs list */
+/* note it is called for rendered results, but it doesn't use the index! */
+RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
+{
+  RenderLayer *rl;
+  RenderPass *rpass = nullptr;
+
+  if (rr == nullptr) {
+    return nullptr;
+  }
+
+  if (iuser) {
+    short index = 0, rv_index, rl_index = 0;
+    bool is_stereo = (iuser->flag & IMA_SHOW_STEREO) && RE_RenderResult_is_stereo(rr);
+
+    rv_index = is_stereo ? iuser->multiview_eye : iuser->view;
+    if (RE_HasCombinedLayer(rr)) {
+      rl_index += 1;
+    }
+
+    for (rl = static_cast<RenderLayer *>(rr->layers.first); rl; rl = rl->next, rl_index++) {
+      if (iuser->layer == rl_index) {
+        int rp_index;
+        rpass = image_render_pass_get(rl, iuser->pass, rv_index, &rp_index);
+        iuser->multi_index = index + rp_index;
+        break;
+      }
+
+      index += BLI_listbase_count(&rl->passes);
+    }
+  }
+
+  return rpass;
+}
+
+void BKE_image_multiview_index(Image *ima, ImageUser *iuser)
+{
+  if (iuser) {
+    bool is_stereo = BKE_image_is_stereo(ima) && (iuser->flag & IMA_SHOW_STEREO);
+    if (is_stereo) {
+      iuser->multi_index = iuser->multiview_eye;
+    }
+    else {
+      if ((iuser->view < 0) ||
+          (iuser->view >= BLI_listbase_count_at_most(&ima->views, iuser->view + 1))) {
+        iuser->multi_index = iuser->view = 0;
+      }
+      else {
+        iuser->multi_index = iuser->view;
+      }
+    }
+  }
+}
+
+/* if layer or pass changes, we need an index for the imbufs list */
+/* note it is called for rendered results, but it doesn't use the index! */
+bool BKE_image_is_multilayer(Image *ima)
+{
+  if (ELEM(ima->source, IMA_SRC_FILE, IMA_SRC_SEQUENCE, IMA_SRC_TILED)) {
+    if (ima->type == IMA_TYPE_MULTILAYER) {
+      return true;
+    }
+  }
+  else if (ima->source == IMA_SRC_VIEWER) {
+    if (ima->type == IMA_TYPE_R_RESULT) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool BKE_image_is_multiview(Image *ima)
+{
+  ImageView *view = static_cast<ImageView *>(ima->views.first);
+  return (view && (view->next || view->name[0]));
+}
+
+bool BKE_image_is_stereo(Image *ima)
+{
+  return BKE_image_is_multiview(ima) &&
+         (BLI_findstring(&ima->views, STEREO_LEFT_NAME, offsetof(ImageView, name)) &&
+          BLI_findstring(&ima->views, STEREO_RIGHT_NAME, offsetof(ImageView, name)));
+}
+
+static void image_init_multilayer_multiview(Image *ima, RenderResult *rr)
+{
+  /* update image views from render views, but only if they actually changed,
+   * to avoid invalid memory access during render. ideally these should always
+   * be acquired with a mutex along with the render result, but there are still
+   * some places with just an image pointer that need to access views */
+  if (rr && BLI_listbase_count(&ima->views) == BLI_listbase_count(&rr->views)) {
+    ImageView *iv = static_cast<ImageView *>(ima->views.first);
+    RenderView *rv = static_cast<RenderView *>(rr->views.first);
+    bool modified = false;
+    for (; rv; rv = rv->next, iv = iv->next) {
+      modified |= !STREQ(rv->name, iv->name);
+    }
+    if (!modified) {
+      return;
+    }
+  }
+
+  BKE_image_free_views(ima);
+
+  if (rr) {
+    LISTBASE_FOREACH (RenderView *, rv, &rr->views) {
+      ImageView *iv = MEM_cnew<ImageView>("Viewer Image View");
+      STRNCPY(iv->name, rv->name);
+      BLI_addtail(&ima->views, iv);
+    }
+  }
+}
+
+RenderResult *BKE_image_acquire_renderresult(Scene *scene, Image *ima)
+{
+  RenderResult *rr = nullptr;
+  if (ima->rr) {
+    rr = ima->rr;
+  }
+  else if (ima->type == IMA_TYPE_R_RESULT) {
+    if (ima->render_slot == ima->last_render_slot) {
+      rr = RE_AcquireResultRead(RE_GetSceneRender(scene));
+    }
+    else {
+      rr = BKE_image_get_renderslot(ima, ima->render_slot)->render;
+      BKE_image_partial_update_mark_full_update(ima);
+    }
+
+    /* set proper views */
+    image_init_multilayer_multiview(ima, rr);
+  }
+
+  return rr;
+}
+
+void BKE_image_release_renderresult(Scene *scene, Image *ima)
+{
+  if (ima->rr) {
+    /* pass */
+  }
+  else if (ima->type == IMA_TYPE_R_RESULT) {
+    if (ima->render_slot == ima->last_render_slot) {
+      RE_ReleaseResult(RE_GetSceneRender(scene));
+    }
+  }
+}
+
+bool BKE_image_is_openexr(struct Image *ima)
+{
+#ifdef WITH_OPENEXR
+  if (ELEM(ima->source, IMA_SRC_FILE, IMA_SRC_SEQUENCE, IMA_SRC_TILED)) {
+    return BLI_path_extension_check(ima->filepath, ".exr");
+  }
+#else
+  UNUSED_VARS(ima);
+#endif
+  return false;
+}
+
+void BKE_image_backup_render(Scene *scene, Image *ima, bool free_current_slot)
+{
+  /* called right before rendering, ima->renderslots contains render
+   * result pointers for everything but the current render */
+  Render *re = RE_GetSceneRender(scene);
+
+  /* Ensure we always have a valid render slot. */
+  if (!ima->renderslots.first) {
+    BKE_image_add_renderslot(ima, nullptr);
+    ima->render_slot = 0;
+    ima->last_render_slot = 0;
+  }
+  else if (ima->render_slot >= BLI_listbase_count(&ima->renderslots)) {
+    ima->render_slot = 0;
+    ima->last_render_slot = 0;
+  }
+
+  RenderSlot *last_slot = BKE_image_get_renderslot(ima, ima->last_render_slot);
+  RenderSlot *cur_slot = BKE_image_get_renderslot(ima, ima->render_slot);
+
+  if (last_slot && ima->render_slot != ima->last_render_slot) {
+    last_slot->render = nullptr;
+    RE_SwapResult(re, &last_slot->render);
+
+    if (cur_slot->render) {
+      if (free_current_slot) {
+        BKE_image_clear_renderslot(ima, nullptr, ima->render_slot);
+      }
+      else {
+        RE_SwapResult(re, &cur_slot->render);
+      }
+    }
+  }
+
+  ima->last_render_slot = ima->render_slot;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Multiview Load OpenEXR
+ * \{ */
+
+static void image_add_view(Image *ima, const char *viewname, const char *filepath)
+{
+  ImageView *iv;
+
+  iv = static_cast<ImageView *>(MEM_mallocN(sizeof(ImageView), "Viewer Image View"));
+  STRNCPY(iv->name, viewname);
+  STRNCPY(iv->filepath, filepath);
+
+  /* For stereo drawing we need to ensure:
+   * STEREO_LEFT_NAME  == STEREO_LEFT_ID and
+   * STEREO_RIGHT_NAME == STEREO_RIGHT_ID */
+
+  if (STREQ(viewname, STEREO_LEFT_NAME)) {
+    BLI_addhead(&ima->views, iv);
+  }
+  else if (STREQ(viewname, STEREO_RIGHT_NAME)) {
+    ImageView *left_iv = static_cast<ImageView *>(
+        BLI_findstring(&ima->views, STEREO_LEFT_NAME, offsetof(ImageView, name)));
+
+    if (left_iv == nullptr) {
+      BLI_addhead(&ima->views, iv);
+    }
+    else {
+      BLI_insertlinkafter(&ima->views, left_iv, iv);
+    }
+  }
+  else {
+    BLI_addtail(&ima->views, iv);
+  }
+}
+
+/* After imbuf load, OpenEXR type can return with a EXR-handle open
+ * in that case we have to build a render-result. */
+#ifdef WITH_OPENEXR
+static void image_create_multilayer(Image *ima, ImBuf *ibuf, int framenr)
+{
+  const char *colorspace = ima->colorspace_settings.name;
+  bool predivide = (ima->alpha_mode == IMA_ALPHA_PREMUL);
+
+  /* only load rr once for multiview */
+  if (!ima->rr) {
+    ima->rr = RE_MultilayerConvert(ibuf->userdata, colorspace, predivide, ibuf->x, ibuf->y);
+  }
+
+  IMB_exr_close(ibuf->userdata);
+
+  ibuf->userdata = nullptr;
+  if (ima->rr != nullptr) {
+    ima->rr->framenr = framenr;
+    BKE_stamp_info_from_imbuf(ima->rr, ibuf);
+  }
+
+  /* set proper views */
+  image_init_multilayer_multiview(ima, ima->rr);
+}
+#endif /* WITH_OPENEXR */
+
+/** Common stuff to do with images after loading. */
+static void image_init_after_load(Image *ima, ImageUser *iuser, ImBuf *UNUSED(ibuf))
+{
+  /* Preview is null when it has never been used as an icon before.
+   * Never handle previews/icons outside of main thread. */
+  if (G.background == 0 && ima->preview == nullptr && BLI_thread_is_main()) {
+    BKE_icon_changed(BKE_icon_id_ensure(&ima->id));
+  }
+
+  /* timer */
+  BKE_image_tag_time(ima);
+
+  ImageTile *tile = BKE_image_get_tile_from_iuser(ima, iuser);
+  /* Images should never get loaded if the corresponding tile does not exist,
+   * but we should at least not crash if it happens due to a bug elsewhere. */
+  BLI_assert(tile != nullptr);
+  UNUSED_VARS_NDEBUG(tile);
+}
+
+static int imbuf_alpha_flags_for_image(Image *ima)
+{
+  switch (ima->alpha_mode) {
+    case IMA_ALPHA_STRAIGHT:
+      return 0;
+    case IMA_ALPHA_PREMUL:
+      return IB_alphamode_premul;
+    case IMA_ALPHA_CHANNEL_PACKED:
+      return IB_alphamode_channel_packed;
+    case IMA_ALPHA_IGNORE:
+      return IB_alphamode_ignore;
+  }
+
+  return 0;
+}
+
+/**
+ * \return the number of files will vary according to the stereo format.
+ */
+static int image_num_files(Image *ima)
+{
+  const bool is_multiview = BKE_image_is_multiview(ima);
+
+  if (!is_multiview) {
+    return 1;
+  }
+  if (ima->views_format == R_IMF_VIEWS_STEREO_3D) {
+    return 1;
+  }
+  /* R_IMF_VIEWS_INDIVIDUAL */
+
+  return BLI_listbase_count(&ima->views);
+}
+
+static ImBuf *load_sequence_single(
+    Image *ima, ImageUser *iuser, int frame, const int view_id, bool *r_cache_ibuf)
+{
+  struct ImBuf *ibuf;
+  char name[FILE_MAX];
+  int flag;
+  ImageUser iuser_t{};
+
+  *r_cache_ibuf = true;
+
+  ima->lastframe = frame;
+
+  if (iuser) {
+    iuser_t = *iuser;
+  }
+  else {
+    /* BKE_image_user_file_path() uses this value for file name for sequences. */
+    iuser_t.framenr = frame;
+    /* TODO(sergey): Do we need to initialize something else here? */
+  }
+
+  iuser_t.view = view_id;
+  BKE_image_user_file_path(&iuser_t, ima, name);
+
+  flag = IB_rect | IB_multilayer | IB_metadata;
+  flag |= imbuf_alpha_flags_for_image(ima);
+
+  /* read ibuf */
+  ibuf = IMB_loadiffname(name, flag, ima->colorspace_settings.name);
+
+#if 0
+  if (ibuf) {
+    printf(AT " loaded %s\n", name);
+  }
+  else {
+    printf(AT " missed %s\n", name);
+  }
+#endif
+
+  if (ibuf) {
+#ifdef WITH_OPENEXR
+    if (ibuf->ftype == IMB_FTYPE_OPENEXR && ibuf->userdata) {
+      /* Handle multilayer and multiview cases, don't assign ibuf here.
+       * will be set layer in BKE_image_acquire_ibuf from ima->rr. */
+      if (IMB_exr_has_multilayer(ibuf->userdata)) {
+        image_create_multilayer(ima, ibuf, frame);
+        ima->type = IMA_TYPE_MULTILAYER;
+        IMB_freeImBuf(ibuf);
+        ibuf = nullptr;
+        /* Null ibuf in the cache means the image failed to load. However for multilayer we load
+         * pixels into RenderResult instead and intentionally leave ibuf null. */
+        *r_cache_ibuf = false;
+      }
+    }
+    else {
+      image_init_after_load(ima, iuser, ibuf);
+    }
+#else
+    image_init_after_load(ima, iuser, ibuf);
+#endif
+  }
+
+  return ibuf;
+}
+
+static ImBuf *image_load_sequence_file(Image *ima, ImageUser *iuser, int entry, int frame)
+{
+  struct ImBuf *ibuf = nullptr;
+  const bool is_multiview = BKE_image_is_multiview(ima);
+  const int totfiles = image_num_files(ima);
+
+  if (!is_multiview) {
+    bool put_in_cache;
+    ibuf = load_sequence_single(ima, iuser, frame, 0, &put_in_cache);
+    if (put_in_cache) {
+      image_assign_ibuf(ima, ibuf, 0, entry);
+    }
+  }
+  else {
+    const int totviews = BLI_listbase_count(&ima->views);
+    Array<ImBuf *> ibuf_arr(totviews);
+    Array<bool> cache_ibuf_arr(totviews);
+
+    for (int i = 0; i < totfiles; i++) {
+      ibuf_arr[i] = load_sequence_single(ima, iuser, frame, i, &cache_ibuf_arr[i]);
+    }
+
+    if (BKE_image_is_stereo(ima) && ima->views_format == R_IMF_VIEWS_STEREO_3D) {
+      IMB_ImBufFromStereo3d(ima->stereo3d_format, ibuf_arr[0], &ibuf_arr[0], &ibuf_arr[1]);
+    }
+
+    /* return the original requested ImBuf */
+    ibuf = ibuf_arr[(iuser ? iuser->multi_index : 0)];
+
+    for (int i = 0; i < totviews; i++) {
+      if (cache_ibuf_arr[i]) {
+        image_assign_ibuf(ima, ibuf_arr[i], i, entry);
+      }
+    }
+
+    /* "remove" the others (decrease their refcount) */
+    for (int i = 0; i < totviews; i++) {
+      if (ibuf_arr[i] != ibuf) {
+        IMB_freeImBuf(ibuf_arr[i]);
+      }
+    }
+  }
+
+  return ibuf;
+}
+
+static ImBuf *image_load_sequence_multilayer(Image *ima, ImageUser *iuser, int entry, int frame)
+{
+  struct ImBuf *ibuf = nullptr;
+
+  /* either we load from RenderResult, or we have to load a new one */
+
+  /* check for new RenderResult */
+  if (ima->rr == nullptr || frame != ima->rr->framenr) {
+    if (ima->rr) {
+      /* Cached image buffers shares pointers with render result,
+       * need to ensure there's no image buffers are hanging around
+       * with dead links after freeing the render result.
+       */
+      image_free_cached_frames(ima);
+      RE_FreeRenderResult(ima->rr);
+      ima->rr = nullptr;
+    }
+
+    ibuf = image_load_sequence_file(ima, iuser, entry, frame);
+
+    if (ibuf) { /* actually an error */
+      ima->type = IMA_TYPE_IMAGE;
+      printf("error, multi is normal image\n");
+    }
+  }
+  if (ima->rr) {
+    RenderPass *rpass = BKE_image_multilayer_index(ima->rr, iuser);
+
+    if (rpass) {
+      // printf("load from pass %s\n", rpass->name);
+      /* since we free  render results, we copy the rect */
+      ibuf = IMB_allocImBuf(ima->rr->rectx, ima->rr->recty, 32, 0);
+      ibuf->rect_float = static_cast<float *>(MEM_dupallocN(rpass->rect));
+      ibuf->flags |= IB_rectfloat;
+      ibuf->mall = IB_rectfloat;
+      ibuf->channels = rpass->channels;
+
+      BKE_imbuf_stamp_info(ima->rr, ibuf);
+
+      image_init_after_load(ima, iuser, ibuf);
+      image_assign_ibuf(ima, ibuf, iuser ? iuser->multi_index : 0, entry);
+    }
+    // else printf("pass not found\n");
+  }
+
+  return ibuf;
+}
+
+static ImBuf *load_movie_single(Image *ima, ImageUser *iuser, int frame, const int view_id)
+{
+  struct ImBuf *ibuf = nullptr;
+  ImageAnim *ia;
+
+  ia = static_cast<ImageAnim *>(BLI_findlink(&ima->anims, view_id));
+
+  if (ia->anim == nullptr) {
+    char str[FILE_MAX];
+    int flags = IB_rect;
+    ImageUser iuser_t{};
+
+    if (ima->flag & IMA_DEINTERLACE) {
+      flags |= IB_animdeinterlace;
+    }
+
+    if (iuser) {
+      iuser_t = *iuser;
+    }
+
+    iuser_t.view = view_id;
+
+    BKE_image_user_file_path(&iuser_t, ima, str);
+
+    /* FIXME: make several stream accessible in image editor, too. */
+    ia->anim = openanim(str, flags, 0, ima->colorspace_settings.name);
+
+    /* let's initialize this user */
+    if (ia->anim && iuser && iuser->frames == 0) {
+      iuser->frames = IMB_anim_get_duration(ia->anim, IMB_TC_RECORD_RUN);
+    }
+  }
+
+  if (ia->anim) {
+    int dur = IMB_anim_get_duration(ia->anim, IMB_TC_RECORD_RUN);
+    int fra = frame - 1;
+
+    if (fra < 0) {
+      fra = 0;
+    }
+    if (fra > (dur - 1)) {
+      fra = dur - 1;
+    }
+    ibuf = IMB_makeSingleUser(IMB_anim_absolute(ia->anim, fra, IMB_TC_RECORD_RUN, IMB_PROXY_NONE));
+
+    if (ibuf) {
+      image_init_after_load(ima, iuser, ibuf);
+    }
+  }
+
+  return ibuf;
+}
+
+static ImBuf *image_load_movie_file(Image *ima, ImageUser *iuser, int frame)
+{
+  struct ImBuf *ibuf = nullptr;
+  const bool is_multiview = BKE_image_is_multiview(ima);
+  const int totfiles = image_num_files(ima);
+
+  if (totfiles != BLI_listbase_count_at_most(&ima->anims, totfiles + 1)) {
+    image_free_anims(ima);
+
+    for (int i = 0; i < totfiles; i++) {
+      /* allocate the ImageAnim */
+      ImageAnim *ia = MEM_cnew<ImageAnim>("Image Anim");
+      BLI_addtail(&ima->anims, ia);
+    }
+  }
+
+  if (!is_multiview) {
+    ibuf = load_movie_single(ima, iuser, frame, 0);
+    image_assign_ibuf(ima, ibuf, 0, frame);
+  }
+  else {
+    const int totviews = BLI_listbase_count(&ima->views);
+    Array<ImBuf *> ibuf_arr(totviews);
+
+    for (int i = 0; i < totfiles; i++) {
+      ibuf_arr[i] = load_movie_single(ima, iuser, frame, i);
+    }
+
+    if (BKE_image_is_stereo(ima) && ima->views_format == R_IMF_VIEWS_STEREO_3D) {
+      IMB_ImBufFromStereo3d(ima->stereo3d_format, ibuf_arr[0], &ibuf_arr[0], &ibuf_arr[1]);
+    }
+
+    for (int i = 0; i < totviews; i++) {
+      image_assign_ibuf(ima, ibuf_arr[i], i, frame);
+    }
+
+    /* return the original requested ImBuf */
+    ibuf = ibuf_arr[(iuser ? iuser->multi_index : 0)];
+
+    /* "remove" the others (decrease their refcount) */
+    for (int i = 0; i < totviews; i++) {
+      if (ibuf_arr[i] != ibuf) {
+        IMB_freeImBuf(ibuf_arr[i]);
+      }
+    }
+  }
+
+  return ibuf;
+}
+
+static ImBuf *load_image_single(Image *ima,
+                                ImageUser *iuser,
+                                int cfra,
+                                const int view_id,
+                                const bool has_packed,
+                                bool *r_cache_ibuf)
+{
+  char filepath[FILE_MAX];
+  struct ImBuf *ibuf = nullptr;
+  int flag;
+
+  *r_cache_ibuf = true;
+
+  /* is there a PackedFile with this image ? */
+  if (has_packed) {
+    ImagePackedFile *imapf;
+
+    flag = IB_rect | IB_multilayer;
+    flag |= imbuf_alpha_flags_for_image(ima);
+
+    imapf = static_cast<ImagePackedFile *>(BLI_findlink(&ima->packedfiles, view_id));
+    if (imapf->packedfile) {
+      ibuf = IMB_ibImageFromMemory((unsigned char *)imapf->packedfile->data,
+                                   imapf->packedfile->size,
+                                   flag,
+                                   ima->colorspace_settings.name,
+                                   "<packed data>");
+    }
+  }
+  else {
+    ImageUser iuser_t{};
+
+    flag = IB_rect | IB_multilayer | IB_metadata;
+    flag |= imbuf_alpha_flags_for_image(ima);
+
+    /* get the correct filepath */
+    BKE_image_user_frame_calc(ima, iuser, cfra);
+
+    if (iuser) {
+      iuser_t = *iuser;
+    }
+    else {
+      iuser_t.framenr = ima->lastframe;
+    }
+
+    iuser_t.view = view_id;
+
+    BKE_image_user_file_path(&iuser_t, ima, filepath);
+
+    /* read ibuf */
+    ibuf = IMB_loadiffname(filepath, flag, ima->colorspace_settings.name);
+  }
+
+  if (ibuf) {
+#ifdef WITH_OPENEXR
+    if (ibuf->ftype == IMB_FTYPE_OPENEXR && ibuf->userdata) {
+      /* Handle multilayer and multiview cases, don't assign ibuf here.
+       * will be set layer in BKE_image_acquire_ibuf from ima->rr. */
+      if (IMB_exr_has_multilayer(ibuf->userdata)) {
+        image_create_multilayer(ima, ibuf, cfra);
+        ima->type = IMA_TYPE_MULTILAYER;
+        IMB_freeImBuf(ibuf);
+        ibuf = nullptr;
+        /* Null ibuf in the cache means the image failed to load. However for multilayer we load
+         * pixels into RenderResult instead and intentionally leave ibuf null. */
+        *r_cache_ibuf = false;
+      }
+    }
+    else
+#endif
+    {
+      image_init_after_load(ima, iuser, ibuf);
+
+      /* Make packed file for auto-pack. */
+      if ((has_packed == false) && (G.fileflags & G_FILE_AUTOPACK)) {
+        ImagePackedFile *imapf = static_cast<ImagePackedFile *>(
+            MEM_mallocN(sizeof(ImagePackedFile), "Image Pack-file"));
+        BLI_addtail(&ima->packedfiles, imapf);
+
+        STRNCPY(imapf->filepath, filepath);
+        imapf->packedfile = BKE_packedfile_new(
+            nullptr, filepath, ID_BLEND_PATH_FROM_GLOBAL(&ima->id));
+      }
+    }
+  }
+
+  return ibuf;
+}
+
+/* warning, 'iuser' can be null
+ * NOTE: Image->views was already populated (in image_update_views_format)
+ */
+static ImBuf *image_load_image_file(Image *ima, ImageUser *iuser, int cfra)
+{
+  struct ImBuf *ibuf = nullptr;
+  const bool is_multiview = BKE_image_is_multiview(ima);
+  const int totfiles = image_num_files(ima);
+  bool has_packed = BKE_image_has_packedfile(ima);
+
+  /* always ensure clean ima */
+  BKE_image_free_buffers(ima);
+
+  /* this should never happen, but just playing safe */
+  if (has_packed) {
+    if (totfiles != BLI_listbase_count_at_most(&ima->packedfiles, totfiles + 1)) {
+      image_free_packedfiles(ima);
+      has_packed = false;
+    }
+  }
+
+  if (!is_multiview) {
+    bool put_in_cache;
+    ibuf = load_image_single(ima, iuser, cfra, 0, has_packed, &put_in_cache);
+    if (put_in_cache) {
+      image_assign_ibuf(ima, ibuf, IMA_NO_INDEX, 0);
+    }
+  }
+  else {
+    const int totviews = BLI_listbase_count(&ima->views);
+    BLI_assert(totviews > 0);
+
+    Array<ImBuf *> ibuf_arr(totviews);
+    Array<bool> cache_ibuf_arr(totviews);
+
+    for (int i = 0; i < totfiles; i++) {
+      ibuf_arr[i] = load_image_single(ima, iuser, cfra, i, has_packed, &cache_ibuf_arr[i]);
+    }
+
+    /* multi-views/multi-layers OpenEXR files directly populate ima, and return null ibuf... */
+    if (BKE_image_is_stereo(ima) && ima->views_format == R_IMF_VIEWS_STEREO_3D && ibuf_arr[0] &&
+        totfiles == 1 && totviews >= 2) {
+      IMB_ImBufFromStereo3d(ima->stereo3d_format, ibuf_arr[0], &ibuf_arr[0], &ibuf_arr[1]);
+    }
+
+    /* return the original requested ImBuf */
+    int i = (iuser && iuser->multi_index < totviews) ? iuser->multi_index : 0;
+    ibuf = ibuf_arr[i];
+
+    for (i = 0; i < totviews; i++) {
+      if (cache_ibuf_arr[i]) {
+        image_assign_ibuf(ima, ibuf_arr[i], i, 0);
+      }
+    }
+
+    /* "remove" the others (decrease their refcount) */
+    for (i = 0; i < totviews; i++) {
+      if (ibuf_arr[i] != ibuf) {
+        IMB_freeImBuf(ibuf_arr[i]);
+      }
+    }
+  }
+
+  return ibuf;
+}
+
+static ImBuf *image_get_ibuf_multilayer(Image *ima, ImageUser *iuser)
+{
+  ImBuf *ibuf = nullptr;
+
+  if (ima->rr == nullptr) {
+    ibuf = image_load_image_file(ima, iuser, 0);
+    if (ibuf) { /* actually an error */
+      ima->type = IMA_TYPE_IMAGE;
+      return ibuf;
+    }
+  }
+  if (ima->rr) {
+    RenderPass *rpass = BKE_image_multilayer_index(ima->rr, iuser);
+
+    if (rpass) {
+      ibuf = IMB_allocImBuf(ima->rr->rectx, ima->rr->recty, 32, 0);
+
+      image_init_after_load(ima, iuser, ibuf);
+
+      ibuf->rect_float = rpass->rect;
+      ibuf->flags |= IB_rectfloat;
+      ibuf->channels = rpass->channels;
+
+      BKE_imbuf_stamp_info(ima->rr, ibuf);
+
+      image_assign_ibuf(ima, ibuf, iuser ? iuser->multi_index : IMA_NO_INDEX, 0);
+    }
+  }
+
+  return ibuf;
+}
+
+/* showing RGBA result itself (from compo/sequence) or
+ * like exr, using layers etc */
+/* always returns a single ibuf, also during render progress */
+static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **r_lock)
+{
+  Render *re;
+  RenderView *rv;
+  float *rectf, *rectz;
+  unsigned int *rect;
+  float dither;
+  int channels, layer, pass;
+  ImBuf *ibuf;
+  int from_render = (ima->render_slot == ima->last_render_slot);
+  int actview;
+
+  if (!(iuser && iuser->scene)) {
+    return nullptr;
+  }
+
+  /* if we the caller is not going to release the lock, don't give the image */
+  if (!r_lock) {
+    return nullptr;
+  }
+
+  re = RE_GetSceneRender(iuser->scene);
+
+  channels = 4;
+  layer = iuser->layer;
+  pass = iuser->pass;
+  actview = iuser->view;
+
+  if (BKE_image_is_stereo(ima) && (iuser->flag & IMA_SHOW_STEREO)) {
+    actview = iuser->multiview_eye;
+  }
+
+  RenderResult rres{};
+  RenderSlot *slot;
+  if (from_render) {
+    RE_AcquireResultImage(re, &rres, actview);
+  }
+  else if ((slot = BKE_image_get_renderslot(ima, ima->render_slot))->render) {
+    rres = *(slot->render);
+    rres.have_combined = ((RenderView *)rres.views.first)->rectf != nullptr;
+  }
+
+  if (!(rres.rectx > 0 && rres.recty > 0)) {
+    if (from_render) {
+      RE_ReleaseResultImage(re);
+    }
+    return nullptr;
+  }
+
+  /* release is done in BKE_image_release_ibuf using r_lock */
+  if (from_render) {
+    BLI_thread_lock(LOCK_VIEWER);
+    *r_lock = re;
+    rv = nullptr;
+  }
+  else {
+    rv = static_cast<RenderView *>(BLI_findlink(&rres.views, actview));
+    if (rv == nullptr) {
+      rv = static_cast<RenderView *>(rres.views.first);
+    }
+  }
+
+  /* this gives active layer, composite or sequence result */
+  if (rv == nullptr) {
+    rect = (unsigned int *)rres.rect32;
+    rectf = rres.rectf;
+    rectz = rres.rectz;
+  }
+  else {
+    rect = (unsigned int *)rv->rect32;
+    rectf = rv->rectf;
+    rectz = rv->rectz;
+  }
+
+  dither = iuser->scene->r.dither_intensity;
+
+  /* combined layer gets added as first layer */
+  if (rres.have_combined && layer == 0) {
+    /* pass */
+  }
+  else if (rect && layer == 0) {
+    /* rect32 is set when there's a Sequence pass, this pass seems
+     * to have layer=0 (this is from image_buttons.c)
+     * in this case we ignore float buffer, because it could have
+     * hung from previous pass which was float
+     */
+    rectf = nullptr;
+  }
+  else if (rres.layers.first) {
+    RenderLayer *rl = static_cast<RenderLayer *>(
+        BLI_findlink(&rres.layers, layer - (rres.have_combined ? 1 : 0)));
+    if (rl) {
+      RenderPass *rpass = image_render_pass_get(rl, pass, actview, nullptr);
+      if (rpass) {
+        rectf = rpass->rect;
+        if (pass != 0) {
+          channels = rpass->channels;
+          dither = 0.0f; /* don't dither passes */
+        }
+      }
+
+      for (rpass = static_cast<RenderPass *>(rl->passes.first); rpass; rpass = rpass->next) {
+        if (STREQ(rpass->name, RE_PASSNAME_Z) && rpass->view_id == actview) {
+          rectz = rpass->rect;
+        }
+      }
+    }
+  }
+
+  ibuf = image_get_cached_ibuf_for_index_entry(ima, IMA_NO_INDEX, 0, nullptr);
+
+  /* make ibuf if needed, and initialize it */
+  if (ibuf == nullptr) {
+    ibuf = IMB_allocImBuf(rres.rectx, rres.recty, 32, 0);
+    image_assign_ibuf(ima, ibuf, IMA_NO_INDEX, 0);
+  }
+
+  /* Set color space settings for a byte buffer.
+   *
+   * This is mainly to make it so color management treats byte buffer
+   * from render result with Save Buffers enabled as final display buffer
+   * and doesn't apply any color management on it.
+   *
+   * For other cases we need to be sure it stays to default byte buffer space.
+   */
+  if (ibuf->rect != rect) {
+    const char *colorspace = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_BYTE);
+    IMB_colormanagement_assign_rect_colorspace(ibuf, colorspace);
+  }
+
+  /* invalidate color managed buffers if render result changed */
+  BLI_thread_lock(LOCK_COLORMANAGE);
+  if (ibuf->x != rres.rectx || ibuf->y != rres.recty || ibuf->rect_float != rectf) {
+    ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
+  }
+
+  ibuf->x = rres.rectx;
+  ibuf->y = rres.recty;
+
+  if (rect) {
+    imb_freerectImBuf(ibuf);
+    ibuf->rect = rect;
+  }
+  else {
+    /* byte buffer of render result has been freed, make sure image buffers
+     * does not reference to this buffer anymore
+     * need check for whether byte buffer was allocated and owned by image itself
+     * or if it's reusing buffer from render result
+     */
+    if ((ibuf->mall & IB_rect) == 0) {
+      ibuf->rect = nullptr;
+    }
+  }
+
+  if (rectf) {
+    ibuf->rect_float = rectf;
+    ibuf->flags |= IB_rectfloat;
+    ibuf->channels = channels;
+  }
+  else {
+    ibuf->rect_float = nullptr;
+    ibuf->flags &= ~IB_rectfloat;
+  }
+
+  if (rectz) {
+    ibuf->zbuf_float = rectz;
+    ibuf->flags |= IB_zbuffloat;
+  }
+  else {
+    ibuf->zbuf_float = nullptr;
+    ibuf->flags &= ~IB_zbuffloat;
+  }
+
+  /* TODO(sergey): Make this faster by either simply referencing the stamp
+   * or by changing both ImBug and RenderResult to use same data type to
+   * store metadata. */
+  if (ibuf->metadata != nullptr) {
+    IMB_metadata_free(ibuf->metadata);
+    ibuf->metadata = nullptr;
+  }
+  BKE_imbuf_stamp_info(&rres, ibuf);
+
+  BLI_thread_unlock(LOCK_COLORMANAGE);
+
+  ibuf->dither = dither;
+
+  return ibuf;
+}
+
+static int image_get_multiview_index(Image *ima, ImageUser *iuser)
+{
+  const bool is_multilayer = BKE_image_is_multilayer(ima);
+  const bool is_backdrop = (ima->source == IMA_SRC_VIEWER) && (ima->type == IMA_TYPE_COMPOSITE) &&
+                           (iuser == nullptr);
+  int index = BKE_image_has_multiple_ibufs(ima) ? 0 : IMA_NO_INDEX;
+
+  if (is_multilayer) {
+    return iuser ? iuser->multi_index : index;
+  }
+  if (is_backdrop) {
+    if (BKE_image_is_stereo(ima)) {
+      /* Backdrop hack / workaround (since there is no `iuser`). */
+      return ima->eye;
+    }
+  }
+  else if (BKE_image_is_multiview(ima)) {
+    return iuser ? iuser->multi_index : index;
+  }
+
+  return index;
+}
+
+static void image_get_entry_and_index(Image *ima, ImageUser *iuser, int *r_entry, int *r_index)
+{
+  int frame = 0, index = image_get_multiview_index(ima, iuser);
+
+  /* see if we already have an appropriate ibuf, with image source and type */
+  if (ima->source == IMA_SRC_MOVIE) {
+    frame = iuser ? iuser->framenr : ima->lastframe;
+  }
+  else if (ima->source == IMA_SRC_SEQUENCE) {
+    if (ima->type == IMA_TYPE_IMAGE) {
+      frame = iuser ? iuser->framenr : ima->lastframe;
+    }
+    else if (ima->type == IMA_TYPE_MULTILAYER) {
+      frame = iuser ? iuser->framenr : ima->lastframe;
+    }
+  }
+  else if (ima->source == IMA_SRC_TILED) {
+    frame = image_get_tile_number_from_iuser(ima, iuser);
+  }
+
+  *r_entry = frame;
+  *r_index = index;
+}
+
+/* Get the ibuf from an image cache for a given image user.
+ *
+ * Returns referenced image buffer if it exists, callee is to
+ * call IMB_freeImBuf to de-reference the image buffer after
+ * it's done handling it.
+ */
+static ImBuf *image_get_cached_ibuf(
+    Image *ima, ImageUser *iuser, int *r_entry, int *r_index, bool *r_is_cached_empty)
+{
+  ImBuf *ibuf = nullptr;
+  int entry = 0, index = image_get_multiview_index(ima, iuser);
+
+  /* see if we already have an appropriate ibuf, with image source and type */
+  if (ima->source == IMA_SRC_MOVIE) {
+    entry = iuser ? iuser->framenr : ima->lastframe;
+    ibuf = image_get_cached_ibuf_for_index_entry(ima, index, entry, r_is_cached_empty);
+    ima->lastframe = entry;
+  }
+  else if (ima->source == IMA_SRC_SEQUENCE) {
+    if (ima->type == IMA_TYPE_IMAGE) {
+      entry = iuser ? iuser->framenr : ima->lastframe;
+      ibuf = image_get_cached_ibuf_for_index_entry(ima, index, entry, r_is_cached_empty);
+      ima->lastframe = entry;
+    }
+    else if (ima->type == IMA_TYPE_MULTILAYER) {
+      entry = iuser ? iuser->framenr : ima->lastframe;
+      ibuf = image_get_cached_ibuf_for_index_entry(ima, index, entry, r_is_cached_empty);
+    }
+  }
+  else if (ima->source == IMA_SRC_FILE) {
+    if (ima->type == IMA_TYPE_IMAGE) {
+      ibuf = image_get_cached_ibuf_for_index_entry(ima, index, 0, r_is_cached_empty);
+    }
+    else if (ima->type == IMA_TYPE_MULTILAYER) {
+      ibuf = image_get_cached_ibuf_for_index_entry(ima, index, 0, r_is_cached_empty);
+    }
+  }
+  else if (ima->source == IMA_SRC_GENERATED) {
+    ibuf = image_get_cached_ibuf_for_index_entry(ima, index, 0, r_is_cached_empty);
+  }
+  else if (ima->source == IMA_SRC_VIEWER) {
+    /* always verify entirely, not that this shouldn't happen
+     * as part of texture sampling in rendering anyway, so not
+     * a big bottleneck */
+  }
+  else if (ima->source == IMA_SRC_TILED) {
+    if (ELEM(ima->type, IMA_TYPE_IMAGE, IMA_TYPE_MULTILAYER)) {
+      entry = image_get_tile_number_from_iuser(ima, iuser);
+      ibuf = image_get_cached_ibuf_for_index_entry(ima, index, entry, r_is_cached_empty);
+    }
+  }
+
+  if (r_entry) {
+    *r_entry = entry;
+  }
+
+  if (r_index) {
+    *r_index = index;
+  }
+
+  return ibuf;
+}
+
