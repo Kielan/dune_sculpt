@@ -4540,3 +4540,1038 @@ static ImBuf *image_get_cached_ibuf(
   return ibuf;
 }
 
+BLI_INLINE bool image_quick_test(Image *ima, const ImageUser *iuser)
+{
+  if (ima == nullptr) {
+    return false;
+  }
+
+  ImageTile *tile = BKE_image_get_tile_from_iuser(ima, iuser);
+  if (tile == nullptr) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Checks optional #ImageUser and verifies/creates #ImBuf.
+ *
+ * \warning Not thread-safe, so callee should worry about thread locks.
+ */
+static ImBuf *image_acquire_ibuf(Image *ima, ImageUser *iuser, void **r_lock)
+{
+  ImBuf *ibuf = nullptr;
+  int entry = 0, index = 0;
+
+  if (r_lock) {
+    *r_lock = nullptr;
+  }
+
+  /* quick reject tests */
+  if (!image_quick_test(ima, iuser)) {
+    return nullptr;
+  }
+
+  bool is_cached_empty = false;
+  ibuf = image_get_cached_ibuf(ima, iuser, &entry, &index, &is_cached_empty);
+  if (is_cached_empty) {
+    return nullptr;
+  }
+
+  if (ibuf == nullptr) {
+    /* We are sure we have to load the ibuf, using source and type. */
+    if (ima->source == IMA_SRC_MOVIE) {
+      /* Source is from single file, use flip-book to store ibuf. */
+      ibuf = image_load_movie_file(ima, iuser, entry);
+    }
+    else if (ima->source == IMA_SRC_SEQUENCE) {
+      if (ima->type == IMA_TYPE_IMAGE) {
+        /* Regular files, ibufs in flip-book, allows saving. */
+        ibuf = image_load_sequence_file(ima, iuser, entry, entry);
+      }
+      /* no else; on load the ima type can change */
+      if (ima->type == IMA_TYPE_MULTILAYER) {
+        /* Only 1 layer/pass stored in imbufs, no EXR-handle anim storage, no saving. */
+        ibuf = image_load_sequence_multilayer(ima, iuser, entry, entry);
+      }
+    }
+    else if (ima->source == IMA_SRC_TILED) {
+      if (ima->type == IMA_TYPE_IMAGE) {
+        /* Regular files, ibufs in flip-book, allows saving */
+        ibuf = image_load_sequence_file(ima, iuser, entry, 0);
+      }
+      /* no else; on load the ima type can change */
+      if (ima->type == IMA_TYPE_MULTILAYER) {
+        /* Only 1 layer/pass stored in imbufs, no EXR-handle anim storage, no saving. */
+        ibuf = image_load_sequence_multilayer(ima, iuser, entry, 0);
+      }
+    }
+    else if (ima->source == IMA_SRC_FILE) {
+
+      if (ima->type == IMA_TYPE_IMAGE) {
+        ibuf = image_load_image_file(ima, iuser, entry); /* cfra only for '#', this global is OK */
+      }
+      /* no else; on load the ima type can change */
+      if (ima->type == IMA_TYPE_MULTILAYER) {
+        /* keeps render result, stores ibufs in listbase, allows saving */
+        ibuf = image_get_ibuf_multilayer(ima, iuser);
+      }
+    }
+    else if (ima->source == IMA_SRC_GENERATED) {
+      /* Generated is: `ibuf` is allocated dynamically. */
+      /* UV test-grid or black or solid etc. */
+      if (ima->gen_x == 0) {
+        ima->gen_x = 1024;
+      }
+      if (ima->gen_y == 0) {
+        ima->gen_y = 1024;
+      }
+      if (ima->gen_depth == 0) {
+        ima->gen_depth = 24;
+      }
+      ibuf = add_ibuf_size(ima->gen_x,
+                           ima->gen_y,
+                           ima->filepath,
+                           ima->gen_depth,
+                           (ima->gen_flag & IMA_GEN_FLOAT) != 0,
+                           ima->gen_type,
+                           ima->gen_color,
+                           &ima->colorspace_settings);
+      image_assign_ibuf(ima, ibuf, index, 0);
+    }
+    else if (ima->source == IMA_SRC_VIEWER) {
+      if (ima->type == IMA_TYPE_R_RESULT) {
+        /* always verify entirely, and potentially
+         * returns pointer to release later */
+        ibuf = image_get_render_result(ima, iuser, r_lock);
+      }
+      else if (ima->type == IMA_TYPE_COMPOSITE) {
+        /* requires lock/unlock, otherwise don't return image */
+        if (r_lock) {
+          /* unlock in BKE_image_release_ibuf */
+          BLI_thread_lock(LOCK_VIEWER);
+          *r_lock = ima;
+
+          /* XXX anim play for viewer nodes not yet supported */
+          entry = 0;  // XXX iuser ? iuser->framenr : 0;
+          ibuf = image_get_cached_ibuf_for_index_entry(ima, index, entry, nullptr);
+
+          if (!ibuf) {
+            /* Composite Viewer, all handled in compositor */
+            /* fake ibuf, will be filled in compositor */
+            ibuf = IMB_allocImBuf(256, 256, 32, IB_rect | IB_rectfloat);
+            image_assign_ibuf(ima, ibuf, index, entry);
+          }
+        }
+      }
+    }
+
+    /* We only want movies and sequences to be memory limited. */
+    if (ibuf != nullptr && !ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
+      ibuf->userflags |= IB_PERSISTENT;
+    }
+  }
+
+  BKE_image_tag_time(ima);
+
+  return ibuf;
+}
+
+ImBuf *BKE_image_acquire_ibuf(Image *ima, ImageUser *iuser, void **r_lock)
+{
+  /* NOTE: same as #image_acquire_ibuf, but can be used to retrieve images being rendered in
+   * a thread safe way, always call both acquire and release. */
+
+  if (ima == nullptr) {
+    return nullptr;
+  }
+
+  ImBuf *ibuf;
+
+  BLI_mutex_lock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+
+  ibuf = image_acquire_ibuf(ima, iuser, r_lock);
+
+  BLI_mutex_unlock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+
+  return ibuf;
+}
+
+void BKE_image_release_ibuf(Image *ima, ImBuf *ibuf, void *lock)
+{
+  if (lock != nullptr) {
+    /* for getting image during threaded render / compositing, need to release */
+    if (lock == ima) {
+      BLI_thread_unlock(LOCK_VIEWER); /* viewer image */
+    }
+    else {
+      RE_ReleaseResultImage(static_cast<Render *>(lock)); /* render result */
+      BLI_thread_unlock(LOCK_VIEWER);                     /* view image imbuf */
+    }
+  }
+
+  if (ibuf) {
+    BLI_mutex_lock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+    IMB_freeImBuf(ibuf);
+    BLI_mutex_unlock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+  }
+}
+
+bool BKE_image_has_ibuf(Image *ima, ImageUser *iuser)
+{
+  ImBuf *ibuf;
+
+  /* quick reject tests */
+  if (!image_quick_test(ima, iuser)) {
+    return false;
+  }
+
+  BLI_mutex_lock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+
+  ibuf = image_get_cached_ibuf(ima, iuser, nullptr, nullptr, nullptr);
+
+  if (!ibuf) {
+    ibuf = image_acquire_ibuf(ima, iuser, nullptr);
+  }
+
+  BLI_mutex_unlock(static_cast<ThreadMutex *>(ima->runtime.cache_mutex));
+
+  IMB_freeImBuf(ibuf);
+
+  return ibuf != nullptr;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Pool for Image Buffers
+ * \{ */
+
+struct ImagePoolItem {
+  struct ImagePoolItem *next, *prev;
+  Image *image;
+  ImBuf *ibuf;
+  int index;
+  int entry;
+};
+
+struct ImagePool {
+  ListBase image_buffers;
+  BLI_mempool *memory_pool;
+  ThreadMutex mutex;
+};
+
+ImagePool *BKE_image_pool_new(void)
+{
+  ImagePool *pool = MEM_cnew<ImagePool>("Image Pool");
+  pool->memory_pool = BLI_mempool_create(sizeof(ImagePoolItem), 0, 128, BLI_MEMPOOL_NOP);
+
+  BLI_mutex_init(&pool->mutex);
+
+  return pool;
+}
+
+void BKE_image_pool_free(ImagePool *pool)
+{
+  /* Use single lock to dereference all the image buffers. */
+  BLI_mutex_lock(&pool->mutex);
+  for (ImagePoolItem *item = static_cast<ImagePoolItem *>(pool->image_buffers.first);
+       item != nullptr;
+       item = item->next) {
+    if (item->ibuf != nullptr) {
+      BLI_mutex_lock(static_cast<ThreadMutex *>(item->image->runtime.cache_mutex));
+      IMB_freeImBuf(item->ibuf);
+      BLI_mutex_unlock(static_cast<ThreadMutex *>(item->image->runtime.cache_mutex));
+    }
+  }
+  BLI_mutex_unlock(&pool->mutex);
+
+  BLI_mempool_destroy(pool->memory_pool);
+
+  BLI_mutex_end(&pool->mutex);
+
+  MEM_freeN(pool);
+}
+
+BLI_INLINE ImBuf *image_pool_find_item(
+    ImagePool *pool, Image *image, int entry, int index, bool *found)
+{
+  ImagePoolItem *item;
+
+  *found = false;
+
+  for (item = static_cast<ImagePoolItem *>(pool->image_buffers.first); item; item = item->next) {
+    if (item->image == image && item->entry == entry && item->index == index) {
+      *found = true;
+      return item->ibuf;
+    }
+  }
+
+  return nullptr;
+}
+
+ImBuf *BKE_image_pool_acquire_ibuf(Image *ima, ImageUser *iuser, ImagePool *pool)
+{
+  ImBuf *ibuf;
+  int index, entry;
+  bool found;
+
+  if (!image_quick_test(ima, iuser)) {
+    return nullptr;
+  }
+
+  if (pool == nullptr) {
+    /* Pool could be null, in this case use general acquire function. */
+    return BKE_image_acquire_ibuf(ima, iuser, nullptr);
+  }
+
+  image_get_entry_and_index(ima, iuser, &entry, &index);
+
+  /* Use double-checked locking, to avoid locking when the requested image buffer is already in the
+   * pool. */
+
+  ibuf = image_pool_find_item(pool, ima, entry, index, &found);
+  if (found) {
+    return ibuf;
+  }
+
+  /* Lock the pool, to allow thread-safe modification of the content of the pool. */
+  BLI_mutex_lock(&pool->mutex);
+
+  ibuf = image_pool_find_item(pool, ima, entry, index, &found);
+
+  /* Will also create item even in cases image buffer failed to load,
+   * prevents trying to load the same buggy file multiple times. */
+  if (!found) {
+    ImagePoolItem *item;
+
+    /* Thread-safe acquisition of an image buffer from the image.
+     * The acquisition does not use image pools, so there is no risk of recursive or out-of-order
+     * mutex locking. */
+    ibuf = BKE_image_acquire_ibuf(ima, iuser, nullptr);
+
+    item = static_cast<ImagePoolItem *>(BLI_mempool_alloc(pool->memory_pool));
+    item->image = ima;
+    item->entry = entry;
+    item->index = index;
+    item->ibuf = ibuf;
+
+    BLI_addtail(&pool->image_buffers, item);
+  }
+
+  BLI_mutex_unlock(&pool->mutex);
+
+  return ibuf;
+}
+
+void BKE_image_pool_release_ibuf(Image *ima, ImBuf *ibuf, ImagePool *pool)
+{
+  /* if pool wasn't actually used, use general release stuff,
+   * for pools image buffers will be dereferenced on pool free
+   */
+  if (pool == nullptr) {
+    BKE_image_release_ibuf(ima, ibuf, nullptr);
+  }
+}
+
+int BKE_image_user_frame_get(const ImageUser *iuser, int cfra, bool *r_is_in_range)
+{
+  const int len = iuser->frames;
+
+  if (r_is_in_range) {
+    *r_is_in_range = false;
+  }
+
+  if (len == 0) {
+    return 0;
+  }
+
+  int framenr;
+  cfra = cfra - iuser->sfra + 1;
+
+  /* cyclic */
+  if (iuser->cycl) {
+    cfra = ((cfra) % len);
+    if (cfra < 0) {
+      cfra += len;
+    }
+    if (cfra == 0) {
+      cfra = len;
+    }
+
+    if (r_is_in_range) {
+      *r_is_in_range = true;
+    }
+  }
+
+  if (cfra < 0) {
+    cfra = 0;
+  }
+  else if (cfra > len) {
+    cfra = len;
+  }
+  else {
+    if (r_is_in_range) {
+      *r_is_in_range = true;
+    }
+  }
+
+  /* transform to images space */
+  framenr = cfra;
+  if (framenr > iuser->frames) {
+    framenr = iuser->frames;
+  }
+
+  if (iuser->cycl) {
+    framenr = ((framenr) % len);
+    while (framenr < 0) {
+      framenr += len;
+    }
+    if (framenr == 0) {
+      framenr = len;
+    }
+  }
+
+  /* important to apply after else we can't loop on frames 100 - 110 for eg. */
+  framenr += iuser->offset;
+
+  return framenr;
+}
+
+void BKE_image_user_frame_calc(Image *ima, ImageUser *iuser, int cfra)
+{
+  if (iuser) {
+    if (ima && BKE_image_is_animated(ima)) {
+      /* Compute current frame for animated image. */
+      bool is_in_range;
+      const int framenr = BKE_image_user_frame_get(iuser, cfra, &is_in_range);
+
+      if (is_in_range) {
+        iuser->flag |= IMA_USER_FRAME_IN_RANGE;
+      }
+      else {
+        iuser->flag &= ~IMA_USER_FRAME_IN_RANGE;
+      }
+
+      iuser->framenr = framenr;
+    }
+    else {
+      /* Set fixed frame number for still image. */
+      iuser->framenr = 0;
+      iuser->flag |= IMA_USER_FRAME_IN_RANGE;
+    }
+
+    if (ima && ima->gpuframenr != iuser->framenr) {
+      /* NOTE: a single texture and refresh doesn't really work when
+       * multiple image users may use different frames, this is to
+       * be improved with perhaps a GPU texture cache. */
+      BKE_image_partial_update_mark_full_update(ima);
+      ima->gpuframenr = iuser->framenr;
+    }
+
+    iuser->flag &= ~IMA_NEED_FRAME_RECALC;
+  }
+}
+
+/* goes over all ImageUsers, and sets frame numbers if auto-refresh is set */
+static void image_editors_update_frame(Image *ima,
+                                       ID *UNUSED(iuser_id),
+                                       ImageUser *iuser,
+                                       void *customdata)
+{
+  int cfra = *(int *)customdata;
+
+  if ((iuser->flag & IMA_ANIM_ALWAYS) || (iuser->flag & IMA_NEED_FRAME_RECALC)) {
+    BKE_image_user_frame_calc(ima, iuser, cfra);
+  }
+}
+
+void BKE_image_editors_update_frame(const Main *bmain, int cfra)
+{
+  /* This only updates images used by the user interface. For others the
+   * dependency graph will call BKE_image_user_id_eval_animation. */
+  wmWindowManager *wm = static_cast<wmWindowManager *>(bmain->wm.first);
+  image_walk_id_all_users(&wm->id, false, &cfra, image_editors_update_frame);
+}
+
+static void image_user_id_has_animation(Image *ima,
+                                        ID *UNUSED(iuser_id),
+                                        ImageUser *UNUSED(iuser),
+                                        void *customdata)
+{
+  if (ima && BKE_image_is_animated(ima)) {
+    *(bool *)customdata = true;
+  }
+}
+
+bool BKE_image_user_id_has_animation(ID *id)
+{
+  /* For the dependency graph, this does not consider nested node
+   * trees as these are handled as their own data-block. */
+  bool has_animation = false;
+  bool skip_nested_nodes = true;
+  image_walk_id_all_users(id, skip_nested_nodes, &has_animation, image_user_id_has_animation);
+  return has_animation;
+}
+
+static void image_user_id_eval_animation(Image *ima,
+                                         ID *UNUSED(iduser_id),
+                                         ImageUser *iuser,
+                                         void *customdata)
+{
+  if (ima && BKE_image_is_animated(ima)) {
+    Depsgraph *depsgraph = (Depsgraph *)customdata;
+
+    if ((iuser->flag & IMA_ANIM_ALWAYS) || (iuser->flag & IMA_NEED_FRAME_RECALC) ||
+        (DEG_get_mode(depsgraph) == DAG_EVAL_RENDER)) {
+      float cfra = DEG_get_ctime(depsgraph);
+
+      BKE_image_user_frame_calc(ima, iuser, cfra);
+    }
+  }
+}
+
+void KERNEL_image_user_id_eval_animation(Depsgraph *depsgraph, ID *id)
+{
+  /* This is called from the dependency graph to update the image
+   * users in data-blocks. It computes the current frame number
+   * and tags the image to be refreshed.
+   * This does not consider nested node trees as these are handled
+   * as their own data-block. */
+  bool skip_nested_nodes = true;
+  image_walk_id_all_users(id, skip_nested_nodes, depsgraph, image_user_id_eval_animation);
+}
+
+void KERNEL_image_user_file_path(ImageUser *iuser, Image *ima, char *filepath)
+{
+  KERNEL_image_user_file_path_ex(iuser, ima, filepath, true);
+}
+
+void KERNEL_image_user_file_path_ex(ImageUser *iuser, Image *ima, char *filepath, bool resolve_udim)
+{
+  if (KERNEL_image_is_multiview(ima)) {
+    ImageView *iv = static_cast<ImageView *>(BLI_findlink(&ima->views, iuser->view));
+    if (iv->filepath[0]) {
+      LIB_strncpy(filepath, iv->filepath, FILE_MAX);
+    }
+    else {
+      LIB_strncpy(filepath, ima->filepath, FILE_MAX);
+    }
+  }
+  else {
+    LIB_strncpy(filepath, ima->filepath, FILE_MAX);
+  }
+
+  if (ELEM(ima->source, IMA_SRC_SEQUENCE, IMA_SRC_TILED)) {
+    char head[FILE_MAX], tail[FILE_MAX];
+    unsigned short numlen;
+
+    int index;
+    if (ima->source == IMA_SRC_SEQUENCE) {
+      index = iuser ? iuser->framenr : ima->lastframe;
+      LIB_path_sequence_decode(filepath, head, tail, &numlen);
+      LIB_path_sequence_encode(filepath, head, tail, numlen, index);
+    }
+    else if (resolve_udim) {
+      index = image_get_tile_number_from_iuser(ima, iuser);
+
+      eUDIM_TILE_FORMAT tile_format;
+      char *udim_pattern = KERNEL_image_get_tile_strformat(filepath, &tile_format);
+      KERNEL_image_set_filepath_from_tile_number(filepath, udim_pattern, tile_format, index);
+      MEM_SAFE_FREE(udim_pattern);
+    }
+  }
+
+  LIB_path_abs(filepath, ID_DUNE_PATH_FROM_GLOBAL(&ima->id));
+}
+
+bool KERNEL_image_has_alpha(Image *image)
+{
+  void *lock;
+  ImBuf *ibuf = KERNEL_image_acquire_ibuf(image, NULL, &lock);
+  const int planes = (ibuf ? ibuf->planes : 0);
+  KERNEL_image_release_ibuf(image, ibuf, lock);
+
+  if (planes == 32 || planes == 16) {
+    return true;
+  }
+
+  return false;
+}
+
+void KERNEL_image_get_size(Image *image, ImageUser *iuser, int *r_width, int *r_height)
+{
+  ImBuf *ibuf = nullptr;
+  void *lock;
+
+  if (image != nullptr) {
+    ibuf = KERNEL_image_acquire_ibuf(image, iuser, &lock);
+  }
+
+  if (ibuf && ibuf->x > 0 && ibuf->y > 0) {
+    *r_width = ibuf->x;
+    *r_height = ibuf->y;
+  }
+  else if (image != nullptr && image->type == IMA_TYPE_R_RESULT && iuser != nullptr &&
+           iuser->scene != nullptr) {
+    Scene *scene = iuser->scene;
+    *r_width = (scene->r.xsch * scene->r.size) / 100;
+    *r_height = (scene->r.ysch * scene->r.size) / 100;
+    if ((scene->r.mode & R_BORDER) && (scene->r.mode & R_CROP)) {
+      *r_width *= LIB_rctf_size_x(&scene->r.border);
+      *r_height *= LIB_rctf_size_y(&scene->r.border);
+    }
+  }
+  else {
+    *r_width = IMG_SIZE_FALLBACK;
+    *r_height = IMG_SIZE_FALLBACK;
+  }
+
+  if (image != nullptr) {
+    KERNEL_image_release_ibuf(image, ibuf, lock);
+  }
+}
+
+void KERNEL_image_get_size_fl(Image *image, ImageUser *iuser, float r_size[2])
+{
+  int width, height;
+  KERNEL_image_get_size(image, iuser, &width, &height);
+
+  r_size[0] = (float)width;
+  r_size[1] = (float)height;
+}
+
+void KERNEL_image_get_aspect(Image *image, float *r_aspx, float *r_aspy)
+{
+  *r_aspx = 1.0;
+
+  /* x is always 1 */
+  if (image) {
+    *r_aspy = image->aspy / image->aspx;
+  }
+  else {
+    *r_aspy = 1.0f;
+  }
+}
+
+unsigned char *KERNEL_image_get_pixels_for_frame(struct Image *image, int frame, int tile)
+{
+  ImageUser iuser;
+  BKE_imageuser_default(&iuser);
+  void *lock;
+  ImBuf *ibuf;
+  unsigned char *pixels = nullptr;
+
+  iuser.framenr = frame;
+  iuser.tile = tile;
+
+  ibuf = KERNEL_image_acquire_ibuf(image, &iuser, &lock);
+
+  if (ibuf) {
+    pixels = (unsigned char *)ibuf->rect;
+
+    if (pixels) {
+      pixels = static_cast<unsigned char *>(MEM_dupallocN(pixels));
+    }
+
+    KERNEL_image_release_ibuf(image, ibuf, lock);
+  }
+
+  if (!pixels) {
+    return nullptr;
+  }
+
+  return pixels;
+}
+
+float *KERNEL_image_get_float_pixels_for_frame(struct Image *image, int frame, int tile)
+{
+  ImageUser iuser;
+  KERNEL_imageuser_default(&iuser);
+  void *lock;
+  ImBuf *ibuf;
+  float *pixels = nullptr;
+
+  iuser.framenr = frame;
+  iuser.tile = tile;
+
+  ibuf = KERNEL_image_acquire_ibuf(image, &iuser, &lock);
+
+  if (ibuf) {
+    pixels = ibuf->rect_float;
+
+    if (pixels) {
+      pixels = static_cast<float *>(MEM_dupallocN(pixels));
+    }
+
+    KERNEL_image_release_ibuf(image, ibuf, lock);
+  }
+
+  if (!pixels) {
+    return nullptr;
+  }
+
+  return pixels;
+}
+
+int KERNEL_image_sequence_guess_offset(Image *image)
+{
+  return LIB_path_sequence_decode(image->filepath, nullptr, nullptr, nullptr);
+}
+
+bool KERNEL_image_has_anim(Image *ima)
+{
+  return (LIB_listbase_is_empty(&ima->anims) == false);
+}
+
+bool KERNEL_image_has_packedfile(const Image *ima)
+{
+  return (LIB_listbase_is_empty(&ima->packedfiles) == false);
+}
+
+bool KERNEL_image_has_filepath(Image *ima)
+{
+  /* This could be improved to detect cases like //../../, currently path
+   * remapping empty file paths empty. */
+  return ima->filepath[0] != '\0';
+}
+
+bool KERNEL_image_is_animated(Image *image)
+{
+  return ELEM(image->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE);
+}
+
+bool KERNEL_image_has_multiple_ibufs(Image *image)
+{
+  return ELEM(image->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE, IMA_SRC_TILED);
+}
+
+bool KERNEL_image_is_dirty_writable(Image *image, bool *r_is_writable)
+{
+  bool is_dirty = false;
+  bool is_writable = false;
+
+  LIB_mutex_lock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+  if (image->cache != nullptr) {
+    struct MovieCacheIter *iter = IMB_moviecacheIter_new(image->cache);
+
+    while (!IMB_moviecacheIter_done(iter)) {
+      ImBuf *ibuf = IMB_moviecacheIter_getImBuf(iter);
+      if (ibuf != nullptr && ibuf->userflags & IB_BITMAPDIRTY) {
+        is_writable = KERNEL_image_buffer_format_writable(ibuf);
+        is_dirty = true;
+        break;
+      }
+      IMB_moviecacheIter_step(iter);
+    }
+    IMB_moviecacheIter_free(iter);
+  }
+  LIB_mutex_unlock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+
+  if (r_is_writable) {
+    *r_is_writable = is_writable;
+  }
+
+  return is_dirty;
+}
+
+bool KERNEL_image_is_dirty(Image *image)
+{
+  return KERNEL_image_is_dirty_writable(image, nullptr);
+}
+
+void KERNEL_image_mark_dirty(Image *UNUSED(image), ImBuf *ibuf)
+{
+  ibuf->userflags |= IB_BITMAPDIRTY;
+}
+
+bool KERNEL_image_buffer_format_writable(ImBuf *ibuf)
+{
+  ImageFormatData im_format;
+  ImbFormatOptions options_dummy;
+  KERNEL_image_format_from_imbuf(&im_format, ibuf);
+  return (KERNEL_imtype_to_ftype(im_format.imtype, &options_dummy) == ibuf->ftype);
+}
+
+void KERNEL_image_file_format_set(Image *image, int ftype, const ImbFormatOptions *options)
+{
+  LIB_mutex_lock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+  if (image->cache != nullptr) {
+    struct MovieCacheIter *iter = IMB_moviecacheIter_new(image->cache);
+
+    while (!IMB_moviecacheIter_done(iter)) {
+      ImBuf *ibuf = IMB_moviecacheIter_getImBuf(iter);
+      if (ibuf != nullptr) {
+        ibuf->ftype = static_cast<eImbFileType>(ftype);
+        ibuf->foptions = *options;
+      }
+      IMB_moviecacheIter_step(iter);
+    }
+    IMB_moviecacheIter_free(iter);
+  }
+  LIB_mutex_unlock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+}
+
+bool KERNEL_image_has_loaded_ibuf(Image *image)
+{
+  bool has_loaded_ibuf = false;
+
+  LIB_mutex_lock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+  if (image->cache != nullptr) {
+    struct MovieCacheIter *iter = IMB_moviecacheIter_new(image->cache);
+
+    while (!IMB_moviecacheIter_done(iter)) {
+      ImBuf *ibuf = IMB_moviecacheIter_getImBuf(iter);
+      if (ibuf != nullptr) {
+        has_loaded_ibuf = true;
+        break;
+      }
+      IMB_moviecacheIter_step(iter);
+    }
+    IMB_moviecacheIter_free(iter);
+  }
+  LIB_mutex_unlock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+
+  return has_loaded_ibuf;
+}
+
+ImBuf *KERNEL_image_get_ibuf_with_name(Image *image, const char *name)
+{
+  ImBuf *ibuf = nullptr;
+
+  LIB_mutex_lock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+  if (image->cache != nullptr) {
+    struct MovieCacheIter *iter = IMB_moviecacheIter_new(image->cache);
+
+    while (!IMB_moviecacheIter_done(iter)) {
+      ImBuf *current_ibuf = IMB_moviecacheIter_getImBuf(iter);
+      if (current_ibuf != nullptr && STREQ(current_ibuf->name, name)) {
+        ibuf = current_ibuf;
+        IMB_refImBuf(ibuf);
+        break;
+      }
+      IMB_moviecacheIter_step(iter);
+    }
+    IMB_moviecacheIter_free(iter);
+  }
+  LIB_mutex_unlock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+
+  return ibuf;
+}
+
+ImBuf *KERNEL_image_get_first_ibuf(Image *image)
+{
+  ImBuf *ibuf = nullptr;
+
+  LIB_mutex_lock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+  if (image->cache != nullptr) {
+    struct MovieCacheIter *iter = IMB_moviecacheIter_new(image->cache);
+
+    while (!IMB_moviecacheIter_done(iter)) {
+      ibuf = IMB_moviecacheIter_getImBuf(iter);
+      if (ibuf != nullptr) {
+        IMB_refImBuf(ibuf);
+      }
+      break;
+    }
+    IMB_moviecacheIter_free(iter);
+  }
+  LIB_mutex_unlock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
+
+  return ibuf;
+}
+
+static void image_update_views_format(Image *ima, ImageUser *iuser)
+{
+  SceneRenderView *srv;
+  ImageView *iv;
+  Scene *scene = iuser->scene;
+  const bool is_multiview = ((scene->r.scemode & R_MULTIVIEW) != 0) &&
+                            ((ima->flag & IMA_USE_VIEWS) != 0);
+
+  /* reset the image views */
+  KERNEL_image_free_views(ima);
+
+  if (!is_multiview) {
+    /* nothing to do */
+  }
+  else if (ima->views_format == R_IMF_VIEWS_STEREO_3D) {
+    const char *names[2] = {STEREO_LEFT_NAME, STEREO_RIGHT_NAME};
+
+    for (int i = 0; i < 2; i++) {
+      image_add_view(ima, names[i], ima->filepath);
+    }
+    return;
+  }
+  else {
+    /* R_IMF_VIEWS_INDIVIDUAL */
+    char prefix[FILE_MAX] = {'\0'};
+    char *name = ima->filepath;
+    const char *ext = nullptr;
+
+    KERNEL_scene_multiview_view_prefix_get(scene, name, prefix, &ext);
+
+    if (prefix[0] == '\0') {
+      KERNEL_image_free_views(ima);
+      return;
+    }
+
+    /* create all the image views */
+    for (srv = static_cast<SceneRenderView *>(scene->r.views.first); srv; srv = srv->next) {
+      if (KERNEL_scene_multiview_is_render_view_active(&scene->r, srv)) {
+        char filepath[FILE_MAX];
+        SNPRINTF(filepath, "%s%s%s", prefix, srv->suffix, ext);
+        image_add_view(ima, srv->name, filepath);
+      }
+    }
+
+    /* check if the files are all available */
+    iv = static_cast<ImageView *>(ima->views.last);
+    while (iv) {
+      int file;
+      char str[FILE_MAX];
+
+      STRNCPY(str, iv->filepath);
+      LIB_path_abs(str, ID_DUNE_PATH_FROM_GLOBAL(&ima->id));
+
+      /* exists? */
+      file = LIB_open(str, O_BINARY | O_RDONLY, 0);
+      if (file == -1) {
+        ImageView *iv_del = iv;
+        iv = iv->prev;
+        LIB_remlink(&ima->views, iv_del);
+        MEM_freeN(iv_del);
+      }
+      else {
+        iv = iv->prev;
+        close(file);
+      }
+    }
+
+    /* all good */
+    if (!KERNEL_image_is_multiview(ima)) {
+      KERNEL_image_free_views(ima);
+    }
+  }
+
+
+/* -------------------------------------------------------------------- */
+/** Render Slots **/
+
+RenderSlot *KERNEL_image_add_renderslot(Image *ima, const char *name)
+{
+  RenderSlot *slot = MEM_cnew<RenderSlot>("Image new Render Slot");
+  if (name && name[0]) {
+    LIB_strncpy(slot->name, name, sizeof(slot->name));
+  }
+  else {
+    int n = LIB_listbase_count(&ima->renderslots) + 1;
+    LIB_snprintf(slot->name, sizeof(slot->name), "Slot %d", n);
+  }
+  LIB_addtail(&ima->renderslots, slot);
+  return slot;
+}
+
+bool KERNEL_image_remove_renderslot(Image *ima, ImageUser *iuser, int slot)
+{
+  if (slot == ima->last_render_slot) {
+    /* Don't remove render slot while rendering to it. */
+    if (G.is_rendering) {
+      return false;
+    }
+  }
+
+  int num_slots = LIB_listbase_count(&ima->renderslots);
+  if (slot >= num_slots || num_slots == 1) {
+    return false;
+  }
+
+  RenderSlot *remove_slot = static_cast<RenderSlot *>(LIB_findlink(&ima->renderslots, slot));
+  RenderSlot *current_slot = static_cast<RenderSlot *>(
+      LIB_findlink(&ima->renderslots, ima->render_slot));
+  RenderSlot *current_last_slot = static_cast<RenderSlot *>(
+      LIB_findlink(&ima->renderslots, ima->last_render_slot));
+
+  RenderSlot *next_slot;
+  if (current_slot == remove_slot) {
+    next_slot = static_cast<RenderSlot *>(
+        LIB_findlink(&ima->renderslots, (slot == num_slots - 1) ? slot - 1 : slot + 1));
+  }
+  else {
+    next_slot = current_slot;
+  }
+
+  /* If the slot to be removed is the slot with the last render,
+   * make another slot the last render slot. */
+  if (remove_slot == current_last_slot) {
+    /* Choose the currently selected slot unless that one is being removed,
+     * in that case take the next one. */
+    RenderSlot *next_last_slot;
+    if (current_slot == remove_slot) {
+      next_last_slot = next_slot;
+    }
+    else {
+      next_last_slot = current_slot;
+    }
+
+    if (!iuser) {
+      return false;
+    }
+    Render *re = RE_GetSceneRender(iuser->scene);
+    if (!re) {
+      return false;
+    }
+    RE_SwapResult(re, &current_last_slot->render);
+    RE_SwapResult(re, &next_last_slot->render);
+    current_last_slot = next_last_slot;
+  }
+
+  current_slot = next_slot;
+
+  LIB_remlink(&ima->renderslots, remove_slot);
+
+  ima->render_slot = LIB_findindex(&ima->renderslots, current_slot);
+  ima->last_render_slot = LIB_findindex(&ima->renderslots, current_last_slot);
+
+  if (remove_slot->render) {
+    RE_FreeRenderResult(remove_slot->render);
+  }
+  MEM_freeN(remove_slot);
+
+  return true;
+}
+
+bool KERNEL_image_clear_renderslot(Image *ima, ImageUser *iuser, int slot)
+{
+  if (slot == ima->last_render_slot) {
+    if (!iuser) {
+      return false;
+    }
+    if (G.is_rendering) {
+      return false;
+    }
+    Render *re = RE_GetSceneRender(iuser->scene);
+    if (!re) {
+      return false;
+    }
+    RE_ClearResult(re);
+    return true;
+  }
+
+  RenderSlot *render_slot = static_cast<RenderSlot *>(BLI_findlink(&ima->renderslots, slot));
+  if (!slot) {
+    return false;
+  }
+  if (render_slot->render) {
+    RE_FreeRenderResult(render_slot->render);
+    render_slot->render = nullptr;
+  }
+  return true;
+}
+
+RenderSlot *KERNEL_image_get_renderslot(Image *ima, int index)
+{
+  /* Can be null for images without render slots. */
+  return static_cast<RenderSlot *>(LIB_findlink(&ima->renderslots, index));
+}
