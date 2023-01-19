@@ -14,13 +14,13 @@
 #include "IMB_imbuf_types.h"
 #include "IMB_openexr.h"
 
-#include "KE_colortools.h"
-#include "KE_image.h"
-#include "KE_image_format.h"
-#include "KE_image_save.h"
-#include "KE_main.h"
-#include "KE_report.h"
-#include "KE_scene.h"
+#include "KERNEL_colortools.h"
+#include "KERNEL_image.h"
+#include "KERNEL_image_format.h"
+#include "KERNEL_image_save.h"
+#include "KERNEL_main.h"
+#include "KERNEL_report.h"
+#include "KERNEL_scene.h"
 
 #include "RE_pipeline.h"
 
@@ -359,14 +359,14 @@ static bool image_save_single(ReportList *reports,
 
         imbuf_save_post(ibuf, colormanaged_ibuf);
 
-        BKE_image_release_ibuf(ima, ibuf, lock);
+        KERNEL_image_release_ibuf(ima, ibuf, lock);
       }
 
       if (stereo_ok) {
         ibuf = IMB_stereo3d_ImBuf(imf, ibuf_stereo[0], ibuf_stereo[1]);
 
         /* save via traditional path */
-        ok = BKE_imbuf_write_as(ibuf, opts->filepath, imf, save_copy);
+        ok = KERNEL_imbuf_write_as(ibuf, opts->filepath, imf, save_copy);
 
         IMB_freeImBuf(ibuf);
       }
@@ -380,11 +380,11 @@ static bool image_save_single(ReportList *reports,
   return ok;
 }
 
-bool BKE_image_save(
+bool KERNEL_image_save(
     ReportList *reports, Main *bmain, Image *ima, ImageUser *iuser, ImageSaveOptions *opts)
 {
   ImageUser save_iuser;
-  BKE_imageuser_default(&save_iuser);
+  KERNEL_imageuser_default(&save_iuser);
 
   bool colorspace_changed = false;
 
@@ -393,9 +393,9 @@ bool BKE_image_save(
 
   if (ima->source == IMA_SRC_TILED) {
     /* Verify filepath for tiled images contains a valid UDIM marker. */
-    udim_pattern = BKE_image_get_tile_strformat(opts->filepath, &tile_format);
+    udim_pattern = KERNEL_image_get_tile_strformat(opts->filepath, &tile_format);
     if (tile_format == UDIM_TILE_FORMAT_NONE) {
-      BKE_reportf(reports,
+      KERNEL_reportf(reports,
                   RPT_ERROR,
                   "When saving a tiled image, the path '%s' must contain a valid UDIM marker",
                   opts->filepath);
@@ -416,11 +416,11 @@ bool BKE_image_save(
   }
   else {
     char filepath[FILE_MAX];
-    BLI_strncpy(filepath, opts->filepath, sizeof(filepath));
+    LIB_strncpy(filepath, opts->filepath, sizeof(filepath));
 
     /* Save all the tiles. */
     LISTBASE_FOREACH (ImageTile *, tile, &ima->tiles) {
-      BKE_image_set_filepath_from_tile_number(
+      KERNEL_image_set_filepath_from_tile_number(
           opts->filepath, udim_pattern, tile_format, tile->tile_number);
 
       iuser->tile = tile->tile_number;
@@ -429,13 +429,13 @@ bool BKE_image_save(
         break;
       }
     }
-    BLI_strncpy(ima->filepath, filepath, sizeof(ima->filepath));
-    BLI_strncpy(opts->filepath, filepath, sizeof(opts->filepath));
+    LIB_strncpy(ima->filepath, filepath, sizeof(ima->filepath));
+    LIB_strncpy(opts->filepath, filepath, sizeof(opts->filepath));
     MEM_freeN(udim_pattern);
   }
 
   if (colorspace_changed) {
-    BKE_image_signal(bmain, ima, nullptr, IMA_SIGNAL_COLORMANAGE);
+    KERNEL_image_signal(dunemain, ima, nullptr, IMA_SIGNAL_COLORMANAGE);
   }
 
   return ok;
@@ -443,7 +443,7 @@ bool BKE_image_save(
 
 /* OpenEXR saving, single and multilayer. */
 
-bool BKE_image_render_write_exr(ReportList *reports,
+bool KERNEL_image_render_write_exr(ReportList *reports,
                                 const RenderResult *rr,
                                 const char *filename,
                                 const ImageFormatData *imf,
@@ -500,7 +500,7 @@ bool BKE_image_render_write_exr(ReportList *reports,
 
         if (multi_layer) {
           RE_render_result_full_channel_name(passname, nullptr, "Combined", nullptr, chan_id, a);
-          BLI_strncpy(layname, "Composite", sizeof(layname));
+          LIB_strncpy(layname, "Composite", sizeof(layname));
         }
         else {
           passname[0] = chan_id[a];
@@ -757,7 +757,7 @@ bool KERNEL_image_render_write(ReportList *reports,
     }
   }
 
-  BKE_image_format_free(&image_format);
+  KERNEL_image_format_free(&image_format);
 
   return ok;
 }
