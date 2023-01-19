@@ -49,7 +49,7 @@ static void image_save_post(ReportList *reports,
                             bool *r_colorspace_changed)
 {
   if (!ok) {
-    BKE_reportf(reports, RPT_ERROR, "Could not write image: %s", strerror(errno));
+    KERNEL_reportf(reports, RPT_ERROR, "Could not write image: %s", strerror(errno));
     return;
   }
 
@@ -58,8 +58,8 @@ static void image_save_post(ReportList *reports,
   }
 
   if (opts->do_newpath) {
-    BLI_strncpy(ibuf->name, filepath, sizeof(ibuf->name));
-    BLI_strncpy(ima->filepath, filepath, sizeof(ima->filepath));
+    LIB_strncpy(ibuf->name, filepath, sizeof(ibuf->name));
+    LIB_strncpy(ima->filepath, filepath, sizeof(ima->filepath));
   }
 
   ibuf->userflags &= ~IB_BITMAPDIRTY;
@@ -91,14 +91,14 @@ static void image_save_post(ReportList *reports,
 
   /* only image path, never ibuf */
   if (opts->relative) {
-    const char *relbase = ID_BLEND_PATH(opts->bmain, &ima->id);
-    BLI_path_rel(ima->filepath, relbase); /* only after saving */
+    const char *relbase = ID_DUNE_PATH(opts->dunemain, &ima->id);
+    LIB_path_rel(ima->filepath, relbase); /* only after saving */
   }
 
   ColorManagedColorspaceSettings old_colorspace_settings;
-  BKE_color_managed_colorspace_settings_copy(&old_colorspace_settings, &ima->colorspace_settings);
+  KERNEL m_color_managed_colorspace_settings_copy(&old_colorspace_settings, &ima->colorspace_settings);
   IMB_colormanagement_colorspace_from_ibuf_ftype(&ima->colorspace_settings, ibuf);
-  if (!BKE_color_managed_colorspace_settings_equals(&old_colorspace_settings,
+  if (!KERNEL_color_managed_colorspace_settings_equals(&old_colorspace_settings,
                                                     &ima->colorspace_settings)) {
     *r_colorspace_changed = true;
   }
@@ -120,9 +120,9 @@ static void imbuf_save_post(ImBuf *ibuf, ImBuf *colormanaged_ibuf)
 }
 
 /**
- * \return success.
- * \note `ima->filepath` and `ibuf->name` should end up the same.
- * \note for multi-view the first `ibuf` is important to get the settings.
+ * return success.
+ * note `ima->filepath` and `ibuf->name` should end up the same.
+ * note for multi-view the first `ibuf` is important to get the settings.
  */
 static bool image_save_single(ReportList *reports,
                               Image *ima,
@@ -131,12 +131,12 @@ static bool image_save_single(ReportList *reports,
                               bool *r_colorspace_changed)
 {
   void *lock;
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, iuser, &lock);
+  ImBuf *ibuf = KERNEL_image_acquire_ibuf(ima, iuser, &lock);
   RenderResult *rr = nullptr;
   bool ok = false;
 
   if (ibuf == nullptr || (ibuf->rect == nullptr && ibuf->rect_float == nullptr)) {
-    BKE_image_release_ibuf(ima, ibuf, lock);
+    KERNEL_image_release_ibuf(ima, ibuf, lock);
     return ok;
   }
 
@@ -160,14 +160,14 @@ static bool image_save_single(ReportList *reports,
         /* it has been painted onto */
         (ibuf->userflags & IB_BITMAPDIRTY)) {
       /* checks each pixel, not ideal */
-      ibuf->planes = BKE_imbuf_alpha_test(ibuf) ? R_IMF_PLANES_RGBA : R_IMF_PLANES_RGB;
+      ibuf->planes = KERNEL_imbuf_alpha_test(ibuf) ? R_IMF_PLANES_RGBA : R_IMF_PLANES_RGB;
     }
   }
 
   /* we need renderresult for exr and rendered multiview */
-  rr = BKE_image_acquire_renderresult(opts->scene, ima);
-  bool is_mono = rr ? BLI_listbase_count_at_most(&rr->views, 2) < 2 :
-                      BLI_listbase_count_at_most(&ima->views, 2) < 2;
+  rr = KERNEL_image_acquire_renderresult(opts->scene, ima);
+  bool is_mono = rr ? LIB_listbase_count_at_most(&rr->views, 2) < 2 :
+                      LIB_listbase_count_at_most(&ima->views, 2) < 2;
   bool is_exr_rr = rr && ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER) &&
                    RE_HasFloatPixels(rr);
   bool is_multilayer = is_exr_rr && (imf->imtype == R_IMF_IMTYPE_MULTILAYER);
@@ -176,55 +176,55 @@ static bool image_save_single(ReportList *reports,
   /* error handling */
   if (rr == nullptr) {
     if (imf->imtype == R_IMF_IMTYPE_MULTILAYER) {
-      BKE_report(reports, RPT_ERROR, "Did not write, no Multilayer Image");
-      BKE_image_release_ibuf(ima, ibuf, lock);
+      KERNEL_report(reports, RPT_ERROR, "Did not write, no Multilayer Image");
+      KERNEL_image_release_ibuf(ima, ibuf, lock);
       return ok;
     }
   }
   else {
     if (imf->views_format == R_IMF_VIEWS_STEREO_3D) {
-      if (!BKE_image_is_stereo(ima)) {
-        BKE_reportf(reports,
+      if (!KERNEL_image_is_stereo(ima)) {
+        KERNEL_reportf(reports,
                     RPT_ERROR,
                     R"(Did not write, the image doesn't have a "%s" and "%s" views)",
                     STEREO_LEFT_NAME,
                     STEREO_RIGHT_NAME);
-        BKE_image_release_ibuf(ima, ibuf, lock);
-        BKE_image_release_renderresult(opts->scene, ima);
+        KERNEL_image_release_ibuf(ima, ibuf, lock);
+        KERNEL_image_release_renderresult(opts->scene, ima);
         return ok;
       }
 
       /* It shouldn't ever happen. */
-      if ((BLI_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name)) == nullptr) ||
-          (BLI_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RenderView, name)) == nullptr)) {
-        BKE_reportf(reports,
+      if ((LIB_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name)) == nullptr) ||
+          (LIB_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RenderView, name)) == nullptr)) {
+        KERNEL_reportf(reports,
                     RPT_ERROR,
                     R"(Did not write, the image doesn't have a "%s" and "%s" views)",
                     STEREO_LEFT_NAME,
                     STEREO_RIGHT_NAME);
-        BKE_image_release_ibuf(ima, ibuf, lock);
-        BKE_image_release_renderresult(opts->scene, ima);
+        KERNEL_image_release_ibuf(ima, ibuf, lock);
+        KERNEL_image_release_renderresult(opts->scene, ima);
         return ok;
       }
     }
-    BKE_imbuf_stamp_info(rr, ibuf);
+    KERNEL_imbuf_stamp_info(rr, ibuf);
   }
 
   /* fancy multiview OpenEXR */
   if (imf->views_format == R_IMF_VIEWS_MULTIVIEW && is_exr_rr) {
     /* save render result */
-    ok = BKE_image_render_write_exr(reports, rr, opts->filepath, imf, nullptr, layer);
+    ok = KERNEL_image_render_write_exr(reports, rr, opts->filepath, imf, nullptr, layer);
     image_save_post(reports, ima, ibuf, ok, opts, true, opts->filepath, r_colorspace_changed);
-    BKE_image_release_ibuf(ima, ibuf, lock);
+    KERNEL_image_release_ibuf(ima, ibuf, lock);
   }
   /* regular mono pipeline */
   else if (is_mono) {
     if (is_exr_rr) {
-      ok = BKE_image_render_write_exr(reports, rr, opts->filepath, imf, nullptr, layer);
+      ok = KERNEL_image_render_write_exr(reports, rr, opts->filepath, imf, nullptr, layer);
     }
     else {
       colormanaged_ibuf = IMB_colormanagement_imbuf_for_write(ibuf, save_as_render, true, imf);
-      ok = BKE_imbuf_write_as(colormanaged_ibuf, opts->filepath, imf, save_copy);
+      ok = KERNEL_imbuf_write_as(colormanaged_ibuf, opts->filepath, imf, save_copy);
       imbuf_save_post(ibuf, colormanaged_ibuf);
     }
     image_save_post(reports,
@@ -235,26 +235,26 @@ static bool image_save_single(ReportList *reports,
                     (is_exr_rr ? true : save_copy),
                     opts->filepath,
                     r_colorspace_changed);
-    BKE_image_release_ibuf(ima, ibuf, lock);
+    KERNEL_image_release_ibuf(ima, ibuf, lock);
   }
   /* individual multiview images */
   else if (imf->views_format == R_IMF_VIEWS_INDIVIDUAL) {
     unsigned char planes = ibuf->planes;
-    const int totviews = (rr ? BLI_listbase_count(&rr->views) : BLI_listbase_count(&ima->views));
+    const int totviews = (rr ? LIB_listbase_count(&rr->views) : BLI_listbase_count(&ima->views));
 
     if (!is_exr_rr) {
-      BKE_image_release_ibuf(ima, ibuf, lock);
+      KERNEL_image_release_ibuf(ima, ibuf, lock);
     }
 
     for (int i = 0; i < totviews; i++) {
       char filepath[FILE_MAX];
       bool ok_view = false;
-      const char *view = rr ? ((RenderView *)BLI_findlink(&rr->views, i))->name :
-                              ((ImageView *)BLI_findlink(&ima->views, i))->name;
+      const char *view = rr ? ((RenderView *)LIB_findlink(&rr->views, i))->name :
+                              ((ImageView *)LIB_findlink(&ima->views, i))->name;
 
       if (is_exr_rr) {
-        BKE_scene_multiview_view_filepath_get(&opts->scene->r, opts->filepath, view, filepath);
-        ok_view = BKE_image_render_write_exr(reports, rr, filepath, imf, view, layer);
+        KERNEL_scene_multiview_view_filepath_get(&opts->scene->r, opts->filepath, view, filepath);
+        ok_view = KERNEL_image_render_write_exr(reports, rr, filepath, imf, view, layer);
         image_save_post(reports, ima, ibuf, ok_view, opts, true, filepath, r_colorspace_changed);
       }
       else {
@@ -266,43 +266,43 @@ static bool image_save_single(ReportList *reports,
           view_iuser = *iuser;
         }
         else {
-          BKE_imageuser_default(&view_iuser);
+          KERNEL_imageuser_default(&view_iuser);
         }
 
         view_iuser.view = i;
         view_iuser.flag &= ~IMA_SHOW_STEREO;
 
         if (rr) {
-          BKE_image_multilayer_index(rr, &view_iuser);
+          KERNEL_image_multilayer_index(rr, &view_iuser);
         }
         else {
-          BKE_image_multiview_index(ima, &view_iuser);
+          KERNEL_image_multiview_index(ima, &view_iuser);
         }
 
-        ibuf = BKE_image_acquire_ibuf(ima, &view_iuser, &lock);
+        ibuf = KERNEL_image_acquire_ibuf(ima, &view_iuser, &lock);
         ibuf->planes = planes;
 
-        BKE_scene_multiview_view_filepath_get(&opts->scene->r, opts->filepath, view, filepath);
+        KERNEL_scene_multiview_view_filepath_get(&opts->scene->r, opts->filepath, view, filepath);
 
         colormanaged_ibuf = IMB_colormanagement_imbuf_for_write(ibuf, save_as_render, true, imf);
-        ok_view = BKE_imbuf_write_as(colormanaged_ibuf, filepath, &opts->im_format, save_copy);
+        ok_view = KERNEL_imbuf_write_as(colormanaged_ibuf, filepath, &opts->im_format, save_copy);
         imbuf_save_post(ibuf, colormanaged_ibuf);
         image_save_post(reports, ima, ibuf, ok_view, opts, true, filepath, r_colorspace_changed);
-        BKE_image_release_ibuf(ima, ibuf, lock);
+        KERNEL_image_release_ibuf(ima, ibuf, lock);
       }
       ok &= ok_view;
     }
 
     if (is_exr_rr) {
-      BKE_image_release_ibuf(ima, ibuf, lock);
+      KERNEL_image_release_ibuf(ima, ibuf, lock);
     }
   }
   /* stereo (multiview) images */
   else if (opts->im_format.views_format == R_IMF_VIEWS_STEREO_3D) {
     if (imf->imtype == R_IMF_IMTYPE_MULTILAYER) {
-      ok = BKE_image_render_write_exr(reports, rr, opts->filepath, imf, nullptr, layer);
+      ok = KERNEL_image_render_write_exr(reports, rr, opts->filepath, imf, nullptr, layer);
       image_save_post(reports, ima, ibuf, ok, opts, true, opts->filepath, r_colorspace_changed);
-      BKE_image_release_ibuf(ima, ibuf, lock);
+      KERNEL_image_release_ibuf(ima, ibuf, lock);
     }
     else {
       ImBuf *ibuf_stereo[2] = {nullptr};
@@ -311,7 +311,7 @@ static bool image_save_single(ReportList *reports,
       const char *names[2] = {STEREO_LEFT_NAME, STEREO_RIGHT_NAME};
 
       /* we need to get the specific per-view buffers */
-      BKE_image_release_ibuf(ima, ibuf, lock);
+      KERNEL_image_release_ibuf(ima, ibuf, lock);
       bool stereo_ok = true;
 
       for (int i = 0; i < 2; i++) {
@@ -321,27 +321,27 @@ static bool image_save_single(ReportList *reports,
           view_iuser = *iuser;
         }
         else {
-          BKE_imageuser_default(&view_iuser);
+          KERNEL_imageuser_default(&view_iuser);
         }
 
         view_iuser.flag &= ~IMA_SHOW_STEREO;
 
         if (rr) {
-          int id = BLI_findstringindex(&rr->views, names[i], offsetof(RenderView, name));
+          int id = LIB_findstringindex(&rr->views, names[i], offsetof(RenderView, name));
           view_iuser.view = id;
-          BKE_image_multilayer_index(rr, &view_iuser);
+          KERNEL_image_multilayer_index(rr, &view_iuser);
         }
         else {
           view_iuser.view = i;
-          BKE_image_multiview_index(ima, &view_iuser);
+          KERNEL_image_multiview_index(ima, &view_iuser);
         }
 
-        ibuf = BKE_image_acquire_ibuf(ima, &view_iuser, &lock);
+        ibuf = KERNEL_image_acquire_ibuf(ima, &view_iuser, &lock);
 
         if (ibuf == nullptr) {
-          BKE_report(
+          KERNEL_report(
               reports, RPT_ERROR, "Did not write, unexpected error when saving stereo image");
-          BKE_image_release_ibuf(ima, ibuf, lock);
+          KERNEL_image_release_ibuf(ima, ibuf, lock);
           stereo_ok = false;
           break;
         }
@@ -351,7 +351,7 @@ static bool image_save_single(ReportList *reports,
         /* color manage the ImBuf leaving it ready for saving */
         colormanaged_ibuf = IMB_colormanagement_imbuf_for_write(ibuf, save_as_render, true, imf);
 
-        BKE_image_format_to_imbuf(colormanaged_ibuf, imf);
+        KERNEL_image_format_to_imbuf(colormanaged_ibuf, imf);
         IMB_prepare_write_ImBuf(IMB_isfloat(colormanaged_ibuf), colormanaged_ibuf);
 
         /* duplicate buffer to prevent locker issue when using render result */
