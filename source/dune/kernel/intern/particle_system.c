@@ -4729,3 +4729,317 @@ static int hair_needs_recalc(ParticleSystem *psys)
 
   return 0;
 }
+
+static ParticleSettings *particle_settings_localize(ParticleSettings *particle_settings)
+{
+  ParticleSettings *particle_settings_local = (ParticleSettings *)BKE_id_copy_ex(
+      NULL, (ID *)&particle_settings->id, NULL, LIB_ID_COPY_LOCALIZE);
+  return particle_settings_local;
+}
+
+static void particle_settings_free_local(ParticleSettings *particle_settings)
+{
+  BKE_libblock_free_datablock(&particle_settings->id, 0);
+  BKE_libblock_free_data(&particle_settings->id, false);
+  BLI_assert(!particle_settings->id.py_instance); /* Or call #BKE_libblock_free_data_py. */
+  MEM_freeN(particle_settings);
+}
+
+void particle_system_update(struct Depsgraph *depsgraph,
+                            Scene *scene,
+                            Object *ob,
+                            ParticleSystem *psys,
+                            const bool use_render_params)
+{
+  ParticleSimulationData sim = {0};
+  ParticleSettings *part = psys->part;
+  ParticleSystem *psys_orig = psys_orig_get(psys);
+  float cfra;
+  ParticleSystemModifierData *psmd = psys_get_modifier(ob, psys);
+
+  /* drawdata is outdated after ANY change */
+  if (psys->pdd) {
+    psys->pdd->flag &= ~PARTICLE_DRAW_DATA_UPDATED;
+  }
+
+  if (!psys_check_enabled(ob, psys, use_render_params)) {
+    return;
+  }
+
+  cfra = DEG_get_ctime(depsgraph);
+
+  sim.depsgraph = depsgraph;
+  sim.scene = scene;
+  sim.ob = ob;
+  sim.psys = psys;
+  sim.psmd = psmd;
+
+  /* system was already updated from modifier stack */
+  if (sim.psmd->flag & eParticleSystemFlag_psys_updated) {
+    sim.psmd->flag &= ~eParticleSystemFlag_psys_updated;
+    /* make sure it really was updated to cfra */
+    if (psys->cfra == cfra) {
+      return;
+    }
+  }
+
+  if (!sim.psmd->mesh_final) {
+    return;
+  }
+
+  if (part->from != PART_FROM_VERT) {
+    BKE_mesh_tessface_ensure(sim.psmd->mesh_final);
+  }
+
+  /* to verify if we need to restore object afterwards */
+  psys->flag &= ~PSYS_OB_ANIM_RESTORE;
+
+  if (psys->recalc & ID_RECALC_PSYS_RESET) {
+    psys->totunexist = 0;
+  }
+
+  /* setup necessary physics type dependent additional data if it doesn't yet exist */
+  psys_prepare_physics(&sim);
+
+  if (part->type == PART_HAIR) {
+    /* nothing to do so bail out early */
+    if (psys->totpart == 0 && part->totpart == 0) {
+      psys_free_path_cache(psys, NULL);
+      free_hair(ob, psys, 0);
+      psys->flag |= PSYS_HAIR_DONE;
+    }
+    /* (re-)create hair */
+    else if (hair_needs_recalc(psys)) {
+      float hcfra = 0.0f;
+      int i, recalc = psys->recalc;
+
+      free_hair(ob, psys, 0);
+
+      if (psys_orig->edit && psys_orig->free_edit) {
+        psys_orig->free_edit(psys_orig->edit);
+        psys_orig->edit = NULL;
+        psys_orig->free_edit = NULL;
+      }
+
+      /* first step is negative so particles get killed and reset */
+      psys->cfra = 1.0f;
+
+      ParticleSettings *part_local = part;
+      if ((part->flag & PART_HAIR_REGROW) == 0) {
+        part_local = particle_settings_localize(part);
+        psys->part = part_local;
+      }
+
+      for (i = 0; i <= part->hair_step; i++) {
+        hcfra = 100.0f * (float)i / (float)psys->part->hair_step;
+        if ((part->flag & PART_HAIR_REGROW) == 0) {
+          const AnimationEvalContext anim_eval_context = BKE_animsys_eval_context_construct(
+              depsgraph, hcfra);
+          BKE_animsys_evaluate_animdata(
+              &part_local->id, part_local->adt, &anim_eval_context, ADT_RECALC_ANIM, false);
+        }
+        system_step(&sim, hcfra, use_render_params);
+        psys->cfra = hcfra;
+        psys->recalc = 0;
+        save_hair(&sim, hcfra);
+      }
+
+      if (part_local != part) {
+        particle_settings_free_local(part_local);
+        psys->part = part;
+      }
+
+      psys->flag |= PSYS_HAIR_DONE;
+      psys->recalc = recalc;
+    }
+    else if (psys->flag & PSYS_EDITED) {
+      psys->flag |= PSYS_HAIR_DONE;
+    }
+
+    if (psys->flag & PSYS_HAIR_DONE) {
+      hair_step(&sim, cfra, use_render_params);
+    }
+  }
+  else if (particles_has_flip(part->type) || particles_has_spray(part->type) ||
+           particles_has_bubble(part->type) || particles_has_foam(part->type) ||
+           particles_has_tracer(part->type)) {
+    particles_fluid_step(&sim, (int)cfra, use_render_params);
+  }
+  else {
+    switch (part->phystype) {
+      case PART_PHYS_NO:
+      case PART_PHYS_KEYED: {
+        PARTICLE_P;
+        float disp = psys_get_current_display_percentage(psys, use_render_params);
+        bool free_unexisting = false;
+
+        /* Particles without dynamics haven't been reset yet because they don't use pointcache */
+        if (psys->recalc & ID_RECALC_PSYS_RESET) {
+          psys_reset(psys, PSYS_RESET_ALL);
+        }
+
+        if (emit_particles(&sim, NULL, cfra) || (psys->recalc & ID_RECALC_PSYS_RESET)) {
+          free_keyed_keys(psys);
+          distribute_particles(&sim, part->from);
+          initialize_all_particles(&sim);
+          free_unexisting = true;
+
+          /* flag for possible explode modifiers after this system */
+          sim.psmd->flag |= eParticleSystemFlag_Pars;
+        }
+
+        ParticleTexture ptex;
+
+        LOOP_EXISTING_PARTICLES
+        {
+          psys_get_texture(&sim, pa, &ptex, PAMAP_SIZE, cfra);
+          pa->size = part->size * ptex.size;
+          if (part->randsize > 0.0f) {
+            pa->size *= 1.0f - part->randsize * psys_frand(psys, p + 1);
+          }
+
+          reset_particle(&sim, pa, 0.0, cfra);
+
+          if (psys_frand(psys, p) > disp) {
+            pa->flag |= PARS_NO_DISP;
+          }
+          else {
+            pa->flag &= ~PARS_NO_DISP;
+          }
+        }
+
+        /* free unexisting after resetting particles */
+        if (free_unexisting) {
+          free_unexisting_particles(&sim);
+        }
+
+        if (part->phystype == PART_PHYS_KEYED) {
+          psys_count_keyed_targets(&sim);
+          set_keyed_keys(&sim);
+          psys_update_path_cache(&sim, (int)cfra, use_render_params);
+        }
+        break;
+      }
+      default: {
+        /* the main dynamic particle system step */
+        system_step(&sim, cfra, use_render_params);
+        break;
+      }
+    }
+  }
+
+  /* make sure emitter is left at correct time (particle emission can change this) */
+  if (psys->flag & PSYS_OB_ANIM_RESTORE) {
+    evaluate_emitter_anim(depsgraph, scene, ob, cfra);
+    psys->flag &= ~PSYS_OB_ANIM_RESTORE;
+  }
+
+  if (psys_orig->edit) {
+    psys_orig->edit->flags |= PT_CACHE_EDIT_UPDATE_PARTICLE_FROM_EVAL;
+  }
+
+  psys->cfra = cfra;
+  psys->recalc = 0;
+
+  if (DEG_is_active(depsgraph)) {
+    if (psys_orig != psys) {
+      if (psys_orig->edit != NULL && psys_orig->edit->psys == psys_orig) {
+        psys_orig->edit->psys_eval = psys;
+        psys_orig->edit->psmd_eval = psmd;
+      }
+      psys_orig->flag = (psys->flag & ~PSYS_SHARED_CACHES);
+      psys_orig->cfra = psys->cfra;
+      psys_orig->recalc = psys->recalc;
+      psys_orig->part->totpart = part->totpart;
+    }
+  }
+
+  /* Save matrix for duplicators,
+   * at rendertime the actual dupliobject's matrix is used so don't update! */
+  invert_m4_m4(psys->imat, ob->obmat);
+
+  BKE_particle_batch_cache_dirty_tag(psys, BKE_PARTICLE_BATCH_DIRTY_ALL);
+}
+
+/* ID looper */
+
+/* unfortunately PSys and modifier ID loopers are not directly compatible, so we need this struct
+ * and the callback below to map the former to the latter (thanks to psys embedding a Cloth
+ * modifier data struct now, for Hair physics simulations). */
+typedef struct ParticleSystemIDLoopForModifier {
+  ParticleSystem *psys;
+  ParticleSystemIDFunc func;
+  void *userdata;
+} ParticleSystemIDLoopForModifier;
+
+static void particlesystem_modifiersForeachIDLink(void *user_data,
+                                                  Object *UNUSED(object),
+                                                  ID **id_pointer,
+                                                  int cb_flag)
+{
+  ParticleSystemIDLoopForModifier *data = (ParticleSystemIDLoopForModifier *)user_data;
+  data->func(data->psys, id_pointer, data->userdata, cb_flag);
+}
+
+void BKE_particlesystem_id_loop(ParticleSystem *psys, ParticleSystemIDFunc func, void *userdata)
+{
+  ParticleTarget *pt;
+
+  func(psys, (ID **)&psys->part, userdata, IDWALK_CB_USER | IDWALK_CB_NEVER_NULL);
+  func(psys, (ID **)&psys->target_ob, userdata, IDWALK_CB_NOP);
+  func(psys, (ID **)&psys->parent, userdata, IDWALK_CB_NOP);
+
+  if (psys->clmd != NULL) {
+    const ModifierTypeInfo *mti = BKE_modifier_get_info(psys->clmd->modifier.type);
+
+    if (mti->foreachIDLink != NULL) {
+      ParticleSystemIDLoopForModifier data = {.psys = psys, .func = func, .userdata = userdata};
+      mti->foreachIDLink(
+          &psys->clmd->modifier, NULL, particlesystem_modifiersForeachIDLink, &data);
+    }
+  }
+
+  for (pt = psys->targets.first; pt; pt = pt->next) {
+    func(psys, (ID **)&pt->ob, userdata, IDWALK_CB_NOP);
+  }
+
+  /* Even though psys->part should never be NULL, this can happen as an exception during deletion.
+   * See ID_REMAP_SKIP/FORCE/FLAG_NEVER_NULL_USAGE in BKE_library_remap. */
+  if (psys->part && psys->part->phystype == PART_PHYS_BOIDS) {
+    ParticleData *pa;
+    int p;
+
+    for (p = 0, pa = psys->particles; p < psys->totpart; p++, pa++) {
+      func(psys, (ID **)&pa->boid->ground, userdata, IDWALK_CB_NOP);
+    }
+  }
+}
+
+void BKE_particlesystem_reset_all(struct Object *object)
+{
+  for (ModifierData *md = object->modifiers.first; md != NULL; md = md->next) {
+    if (md->type != eModifierType_ParticleSystem) {
+      continue;
+    }
+    ParticleSystemModifierData *psmd = (ParticleSystemModifierData *)md;
+    ParticleSystem *psys = psmd->psys;
+    psys->recalc |= ID_RECALC_PSYS_RESET;
+  }
+}
+
+/* **** Depsgraph evaluation **** */
+
+void BKE_particle_settings_eval_reset(struct Depsgraph *depsgraph,
+                                      ParticleSettings *particle_settings)
+{
+  DEG_debug_print_eval(depsgraph, __func__, particle_settings->id.name, particle_settings);
+  particle_settings->id.recalc |= ID_RECALC_PSYS_RESET;
+}
+
+void BKE_particle_system_eval_init(struct Depsgraph *depsgraph, Object *object)
+{
+  DEG_debug_print_eval(depsgraph, __func__, object->id.name, object);
+  for (ParticleSystem *psys = object->particlesystem.first; psys != NULL; psys = psys->next) {
+    psys->recalc |= (psys->part->id.recalc & ID_RECALC_PSYS_ALL);
+  }
+}
