@@ -1687,3 +1687,705 @@ void txt_split_curline(Text *text)
 
   txt_pop_sel(text);
 }
+
+
+static void txt_delete_line(Text *text, TextLine *line)
+{
+  if (!text->curl) {
+    return;
+  }
+
+  BLI_remlink(&text->lines, line);
+
+  if (line->line) {
+    MEM_freeN(line->line);
+  }
+  if (line->format) {
+    MEM_freeN(line->format);
+  }
+
+  MEM_freeN(line);
+
+  txt_make_dirty(text);
+  txt_clean_text(text);
+}
+
+static void txt_combine_lines(Text *text, TextLine *linea, TextLine *lineb)
+{
+  char *tmp, *s;
+
+  if (!linea || !lineb) {
+    return;
+  }
+
+  tmp = MEM_mallocN(linea->len + lineb->len + 1, "textline_string");
+
+  s = tmp;
+  s += BLI_strcpy_rlen(s, linea->line);
+  s += BLI_strcpy_rlen(s, lineb->line);
+  (void)s;
+
+  make_new_line(linea, tmp);
+
+  txt_delete_line(text, lineb);
+
+  txt_make_dirty(text);
+  txt_clean_text(text);
+}
+
+void txt_duplicate_line(Text *text)
+{
+  TextLine *textline;
+
+  if (!text->curl) {
+    return;
+  }
+
+  if (text->curl == text->sell) {
+    textline = txt_new_line(text->curl->line);
+    BLI_insertlinkafter(&text->lines, text->curl, textline);
+
+    txt_make_dirty(text);
+    txt_clean_text(text);
+  }
+}
+
+void txt_delete_char(Text *text)
+{
+  unsigned int c = '\n';
+
+  if (!text->curl) {
+    return;
+  }
+
+  if (txt_has_sel(text)) { /* deleting a selection */
+    txt_delete_sel(text);
+    txt_make_dirty(text);
+    return;
+  }
+  if (text->curc == text->curl->len) { /* Appending two lines */
+    if (text->curl->next) {
+      txt_combine_lines(text, text->curl, text->curl->next);
+      txt_pop_sel(text);
+    }
+    else {
+      return;
+    }
+  }
+  else { /* Just deleting a char */
+    size_t c_len = text->curc;
+    c = BLI_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
+    c_len -= text->curc;
+    UNUSED_VARS(c);
+
+    memmove(text->curl->line + text->curc,
+            text->curl->line + text->curc + c_len,
+            text->curl->len - text->curc - c_len + 1);
+
+    text->curl->len -= c_len;
+
+    txt_pop_sel(text);
+  }
+
+  txt_make_dirty(text);
+  txt_clean_text(text);
+}
+
+void txt_delete_word(Text *text)
+{
+  txt_jump_right(text, true, true);
+  txt_delete_sel(text);
+  txt_make_dirty(text);
+}
+
+void txt_backspace_char(Text *text)
+{
+  unsigned int c = '\n';
+
+  if (!text->curl) {
+    return;
+  }
+
+  if (txt_has_sel(text)) { /* deleting a selection */
+    txt_delete_sel(text);
+    txt_make_dirty(text);
+    return;
+  }
+  if (text->curc == 0) { /* Appending two lines */
+    if (!text->curl->prev) {
+      return;
+    }
+
+    text->curl = text->curl->prev;
+    text->curc = text->curl->len;
+
+    txt_combine_lines(text, text->curl, text->curl->next);
+    txt_pop_sel(text);
+  }
+  else { /* Just backspacing a char */
+    const char *prev = BLI_str_find_prev_char_utf8(text->curl->line + text->curc,
+                                                   text->curl->line);
+    size_t c_len = prev - text->curl->line;
+    c = BLI_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
+    c_len -= prev - text->curl->line;
+
+    UNUSED_VARS(c);
+
+    /* source and destination overlap, don't use memcpy() */
+    memmove(text->curl->line + text->curc - c_len,
+            text->curl->line + text->curc,
+            text->curl->len - text->curc + 1);
+
+    text->curl->len -= c_len;
+    text->curc -= c_len;
+
+    txt_pop_sel(text);
+  }
+
+  txt_make_dirty(text);
+  txt_clean_text(text);
+}
+
+void txt_backspace_word(Text *text)
+{
+  txt_jump_left(text, true, true);
+  txt_delete_sel(text);
+  txt_make_dirty(text);
+}
+
+/* Max spaces to replace a tab with, currently hardcoded to TXT_TABSIZE = 4.
+ * Used by txt_convert_tab_to_spaces, indent and unindent.
+ * Remember to change this string according to max tab size */
+static char tab_to_spaces[] = "    ";
+
+static void txt_convert_tab_to_spaces(Text *text)
+{
+  /* sb aims to pad adjust the tab-width needed so that the right number of spaces
+   * is added so that the indentation of the line is the right width (i.e. aligned
+   * to multiples of TXT_TABSIZE)
+   */
+  const char *sb = &tab_to_spaces[text->curc % TXT_TABSIZE];
+  txt_insert_buf(text, sb);
+}
+
+static bool txt_add_char_intern(Text *text, unsigned int add, bool replace_tabs)
+{
+  char *tmp, ch[BLI_UTF8_MAX];
+  size_t add_len;
+
+  if (!text->curl) {
+    return 0;
+  }
+
+  if (add == '\n') {
+    txt_split_curline(text);
+    return true;
+  }
+
+  /* insert spaces rather than tabs */
+  if (add == '\t' && replace_tabs) {
+    txt_convert_tab_to_spaces(text);
+    return true;
+  }
+
+  txt_delete_sel(text);
+
+  add_len = BLI_str_utf8_from_unicode(add, ch, sizeof(ch));
+
+  tmp = MEM_mallocN(text->curl->len + add_len + 1, "textline_string");
+
+  memcpy(tmp, text->curl->line, text->curc);
+  memcpy(tmp + text->curc, ch, add_len);
+  memcpy(
+      tmp + text->curc + add_len, text->curl->line + text->curc, text->curl->len - text->curc + 1);
+
+  make_new_line(text->curl, tmp);
+
+  text->curc += add_len;
+
+  txt_pop_sel(text);
+
+  txt_make_dirty(text);
+  txt_clean_text(text);
+
+  return 1;
+}
+
+bool txt_add_char(Text *text, unsigned int add)
+{
+  return txt_add_char_intern(text, add, (text->flags & TXT_TABSTOSPACES) != 0);
+}
+
+bool txt_add_raw_char(Text *text, unsigned int add)
+{
+  return txt_add_char_intern(text, add, 0);
+}
+
+void txt_delete_selected(Text *text)
+{
+  txt_delete_sel(text);
+  txt_make_dirty(text);
+}
+
+bool txt_replace_char(Text *text, unsigned int add)
+{
+  unsigned int del;
+  size_t del_size = 0, add_size;
+  char ch[BLI_UTF8_MAX];
+
+  if (!text->curl) {
+    return false;
+  }
+
+  /* If text is selected or we're at the end of the line just use txt_add_char */
+  if (text->curc == text->curl->len || txt_has_sel(text) || add == '\n') {
+    return txt_add_char(text, add);
+  }
+
+  del_size = text->curc;
+  del = BLI_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &del_size);
+  del_size -= text->curc;
+  UNUSED_VARS(del);
+  add_size = BLI_str_utf8_from_unicode(add, ch, sizeof(ch));
+
+  if (add_size > del_size) {
+    char *tmp = MEM_mallocN(text->curl->len + add_size - del_size + 1, "textline_string");
+    memcpy(tmp, text->curl->line, text->curc);
+    memcpy(tmp + text->curc + add_size,
+           text->curl->line + text->curc + del_size,
+           text->curl->len - text->curc - del_size + 1);
+    MEM_freeN(text->curl->line);
+    text->curl->line = tmp;
+  }
+  else if (add_size < del_size) {
+    char *tmp = text->curl->line;
+    memmove(tmp + text->curc + add_size,
+            tmp + text->curc + del_size,
+            text->curl->len - text->curc - del_size + 1);
+  }
+
+  memcpy(text->curl->line + text->curc, ch, add_size);
+  text->curc += add_size;
+  text->curl->len += add_size - del_size;
+
+  txt_pop_sel(text);
+  txt_make_dirty(text);
+  txt_clean_text(text);
+  return true;
+}
+
+/**
+ * Generic prefix operation, use for comment & indent.
+ *
+ * \note caller must handle undo.
+ */
+static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines)
+{
+  int len, num, curc_old, selc_old;
+  char *tmp;
+
+  const int indentlen = strlen(add);
+
+  BLI_assert(!ELEM(NULL, text->curl, text->sell));
+
+  curc_old = text->curc;
+  selc_old = text->selc;
+
+  num = 0;
+  while (true) {
+
+    /* don't indent blank lines */
+    if ((text->curl->len != 0) || (skip_blank_lines == 0)) {
+      tmp = MEM_mallocN(text->curl->len + indentlen + 1, "textline_string");
+
+      text->curc = 0;
+      if (text->curc) {
+        memcpy(tmp, text->curl->line, text->curc); /* XXX never true, check prev line */
+      }
+      memcpy(tmp + text->curc, add, indentlen);
+
+      len = text->curl->len - text->curc;
+      if (len > 0) {
+        memcpy(tmp + text->curc + indentlen, text->curl->line + text->curc, len);
+      }
+      tmp[text->curl->len + indentlen] = 0;
+
+      make_new_line(text->curl, tmp);
+
+      text->curc += indentlen;
+
+      txt_make_dirty(text);
+      txt_clean_text(text);
+    }
+
+    if (text->curl == text->sell) {
+      if (text->curl->len != 0) {
+        text->selc += indentlen;
+      }
+      break;
+    }
+
+    text->curl = text->curl->next;
+    num++;
+  }
+
+  while (num > 0) {
+    text->curl = text->curl->prev;
+    num--;
+  }
+
+  /* Keep the cursor left aligned if we don't have a selection. */
+  if (curc_old == 0 && !(text->curl == text->sell && curc_old == selc_old)) {
+    if (text->curl == text->sell) {
+      if (text->curc == text->selc) {
+        text->selc = 0;
+      }
+    }
+    text->curc = 0;
+  }
+  else {
+    if (text->curl->len != 0) {
+      text->curc = curc_old + indentlen;
+    }
+  }
+}
+
+/**
+ * Generic un-prefix operation, use for comment & indent.
+ *
+ * \param require_all: When true, all non-empty lines must have this prefix.
+ * Needed for comments where we might want to un-comment a block which contains some comments.
+ *
+ * \note caller must handle undo.
+ */
+static bool txt_select_unprefix(Text *text, const char *remove, const bool require_all)
+{
+  int num = 0;
+  const int indentlen = strlen(remove);
+  bool unindented_first = false;
+  bool changed_any = false;
+
+  BLI_assert(!ELEM(NULL, text->curl, text->sell));
+
+  if (require_all) {
+    /* Check all non-empty lines use this 'remove',
+     * so the operation is applied equally or not at all. */
+    TextLine *l = text->curl;
+    while (true) {
+      if (STREQLEN(l->line, remove, indentlen)) {
+        /* pass */
+      }
+      else {
+        /* Blank lines or whitespace can be skipped. */
+        for (int i = 0; i < l->len; i++) {
+          if (!ELEM(l->line[i], '\t', ' ')) {
+            return false;
+          }
+        }
+      }
+      if (l == text->sell) {
+        break;
+      }
+      l = l->next;
+    }
+  }
+
+  while (true) {
+    bool changed = false;
+    if (STREQLEN(text->curl->line, remove, indentlen)) {
+      if (num == 0) {
+        unindented_first = true;
+      }
+      text->curl->len -= indentlen;
+      memmove(text->curl->line, text->curl->line + indentlen, text->curl->len + 1);
+      changed = true;
+      changed_any = true;
+    }
+
+    txt_make_dirty(text);
+    txt_clean_text(text);
+
+    if (text->curl == text->sell) {
+      if (changed) {
+        text->selc = MAX2(text->selc - indentlen, 0);
+      }
+      break;
+    }
+
+    text->curl = text->curl->next;
+    num++;
+  }
+
+  if (unindented_first) {
+    text->curc = MAX2(text->curc - indentlen, 0);
+  }
+
+  while (num > 0) {
+    text->curl = text->curl->prev;
+    num--;
+  }
+
+  /* caller must handle undo */
+  return changed_any;
+}
+
+void txt_comment(Text *text)
+{
+  const char *prefix = "#";
+
+  if (ELEM(NULL, text->curl, text->sell)) {
+    return;
+  }
+
+  const bool skip_blank_lines = txt_has_sel(text);
+  txt_select_prefix(text, prefix, skip_blank_lines);
+}
+
+bool txt_uncomment(Text *text)
+{
+  const char *prefix = "#";
+
+  if (ELEM(NULL, text->curl, text->sell)) {
+    return false;
+  }
+
+  return txt_select_unprefix(text, prefix, true);
+}
+
+void txt_indent(Text *text)
+{
+  const char *prefix = (text->flags & TXT_TABSTOSPACES) ? tab_to_spaces : "\t";
+
+  if (ELEM(NULL, text->curl, text->sell)) {
+    return;
+  }
+
+  txt_select_prefix(text, prefix, true);
+}
+
+bool txt_unindent(Text *text)
+{
+  const char *prefix = (text->flags & TXT_TABSTOSPACES) ? tab_to_spaces : "\t";
+
+  if (ELEM(NULL, text->curl, text->sell)) {
+    return false;
+  }
+
+  return txt_select_unprefix(text, prefix, false);
+}
+
+void txt_move_lines(struct Text *text, const int direction)
+{
+  TextLine *line_other;
+
+  BLI_assert(ELEM(direction, TXT_MOVE_LINE_UP, TXT_MOVE_LINE_DOWN));
+
+  if (!text->curl || !text->sell) {
+    return;
+  }
+
+  txt_order_cursors(text, false);
+
+  line_other = (direction == TXT_MOVE_LINE_DOWN) ? text->sell->next : text->curl->prev;
+
+  if (!line_other) {
+    return;
+  }
+
+  BLI_remlink(&text->lines, line_other);
+
+  if (direction == TXT_MOVE_LINE_DOWN) {
+    BLI_insertlinkbefore(&text->lines, text->curl, line_other);
+  }
+  else {
+    BLI_insertlinkafter(&text->lines, text->sell, line_other);
+  }
+
+  txt_make_dirty(text);
+  txt_clean_text(text);
+}
+
+int txt_setcurr_tab_spaces(Text *text, int space)
+{
+  int i = 0;
+  int test = 0;
+  const char *word = ":";
+  const char *comm = "#";
+  const char indent = (text->flags & TXT_TABSTOSPACES) ? ' ' : '\t';
+  static const char *back_words[] = {"return", "break", "continue", "pass", "yield", NULL};
+
+  if (!text->curl) {
+    return 0;
+  }
+
+  while (text->curl->line[i] == indent) {
+    /* We only count those tabs/spaces that are before any text or before the curs; */
+    if (i == text->curc) {
+      return i;
+    }
+
+    i++;
+  }
+  if (strstr(text->curl->line, word)) {
+    /* if we find a ':' on this line, then add a tab but not if it is:
+     * 1) in a comment
+     * 2) within an identifier
+     * 3) after the cursor (text->curc), i.e. when creating space before a function def T25414.
+     */
+    int a;
+    bool is_indent = false;
+    for (a = 0; (a < text->curc) && (text->curl->line[a] != '\0'); a++) {
+      char ch = text->curl->line[a];
+      if (ch == '#') {
+        break;
+      }
+      if (ch == ':') {
+        is_indent = 1;
+      }
+      else if (!ELEM(ch, ' ', '\t')) {
+        is_indent = 0;
+      }
+    }
+    if (is_indent) {
+      i += space;
+    }
+  }
+
+  for (test = 0; back_words[test]; test++) {
+    /* if there are these key words then remove a tab because we are done with the block */
+    if (strstr(text->curl->line, back_words[test]) && i > 0) {
+      if (strcspn(text->curl->line, back_words[test]) < strcspn(text->curl->line, comm)) {
+        i -= space;
+      }
+    }
+  }
+  return i;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Character Queries
+ * \{ */
+
+int text_check_bracket(const char ch)
+{
+  int a;
+  char opens[] = "([{";
+  char close[] = ")]}";
+
+  for (a = 0; a < (sizeof(opens) - 1); a++) {
+    if (ch == opens[a]) {
+      return a + 1;
+    }
+    if (ch == close[a]) {
+      return -(a + 1);
+    }
+  }
+  return 0;
+}
+
+bool text_check_delim(const char ch)
+{
+  /* TODO: have a function for operators:
+   * http://docs.python.org/py3k/reference/lexical_analysis.html#operators */
+
+  int a;
+  char delims[] = "():\"\' ~!%^&*-+=[]{};/<>|.#\t,@";
+
+  for (a = 0; a < (sizeof(delims) - 1); a++) {
+    if (ch == delims[a]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool text_check_digit(const char ch)
+{
+  if (ch < '0') {
+    return false;
+  }
+  if (ch <= '9') {
+    return true;
+  }
+  return false;
+}
+
+bool text_check_identifier(const char ch)
+{
+  if (ch < '0') {
+    return false;
+  }
+  if (ch <= '9') {
+    return true;
+  }
+  if (ch < 'A') {
+    return false;
+  }
+  if (ch <= 'Z' || ch == '_') {
+    return true;
+  }
+  if (ch < 'a') {
+    return false;
+  }
+  if (ch <= 'z') {
+    return true;
+  }
+  return false;
+}
+
+bool text_check_identifier_nodigit(const char ch)
+{
+  if (ch <= '9') {
+    return false;
+  }
+  if (ch < 'A') {
+    return false;
+  }
+  if (ch <= 'Z' || ch == '_') {
+    return true;
+  }
+  if (ch < 'a') {
+    return false;
+  }
+  if (ch <= 'z') {
+    return true;
+  }
+  return false;
+}
+
+#ifndef WITH_PYTHON
+int text_check_identifier_unicode(const unsigned int ch)
+{
+  return (ch < 255 && text_check_identifier((unsigned int)ch));
+}
+
+int text_check_identifier_nodigit_unicode(const unsigned int ch)
+{
+  return (ch < 255 && text_check_identifier_nodigit((char)ch));
+}
+#endif /* WITH_PYTHON */
+
+bool text_check_whitespace(const char ch)
+{
+  if (ELEM(ch, ' ', '\t', '\r', '\n')) {
+    return true;
+  }
+  return false;
+}
+
+int text_find_identifier_start(const char *str, int i)
+{
+  if (UNLIKELY(i <= 0)) {
+    return 0;
+  }
+
+  while (i--) {
+    if (!text_check_identifier(str[i])) {
+      break;
+    }
+  }
+  i++;
+  return i;
+}
