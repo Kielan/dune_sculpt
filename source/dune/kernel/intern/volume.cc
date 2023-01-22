@@ -1,46 +1,46 @@
 #include "MEM_guardedalloc.h"
 
-#include "DNA_defaults.h"
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_volume_types.h"
+#include "structs_defaults.h"
+#include "structs_material_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
+#include "structs_volume_types.h"
 
-#include "BLI_compiler_compat.h"
-#include "BLI_fileops.h"
-#include "BLI_float4x4.hh"
-#include "BLI_ghash.h"
-#include "BLI_index_range.hh"
-#include "BLI_map.hh"
-#include "BLI_math.h"
-#include "BLI_math_vec_types.hh"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_ref.hh"
-#include "BLI_task.hh"
-#include "BLI_utildefines.h"
+#include "LI_compiler_compat.h"
+#include "LI_fileops.h"
+#include "LI_float4x4.hh"
+#include "LI_ghash.h"
+#include "LI_index_range.hh"
+#include "LI_map.hh"
+#include "LI_math.h"
+#include "LI_math_vec_types.hh"
+#include "LI_path_util.h"
+#include "LI_string.h"
+#include "LI_string_ref.hh"
+#include "LI_task.hh"
+#include "LI_utildefines.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_bpath.h"
-#include "BKE_geometry_set.hh"
-#include "BKE_global.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_main.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_packedFile.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_volume.h"
+#include "KE_anim_data.h"
+#include "KE_bpath.h"
+#include "KE_geometry_set.hh"
+#include "KE_global.h"
+#include "KE_idtype.h"
+#include "KE_lib_id.h"
+#include "KE_lib_query.h"
+#include "KE_lib_remap.h"
+#include "KE_main.h"
+#include "KE_modifier.h"
+#include "KE_object.h"
+#include "KE_packedFile.h"
+#include "KE_report.h"
+#include "KE_scene.h"
+#include "KE_volume.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
 #include "DEG_depsgraph_query.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #include "CLG_log.h"
 
@@ -50,10 +50,10 @@ static CLG_LogRef LOG = {"bke.volume"};
 
 #define VOLUME_FRAME_NONE INT_MAX
 
-using blender::float3;
-using blender::float4x4;
-using blender::IndexRange;
-using blender::StringRef;
+using dune::float3;
+using dune::float4x4;
+using dune::IndexRange;
+using dune::StringRef;
 
 #ifdef WITH_OPENVDB
 #  include <atomic>
@@ -112,7 +112,7 @@ static struct VolumeFileCache {
     /* Returns the original grid or a simplified version depending on the given #simplify_level. */
     openvdb::GridBase::Ptr simplified_grid(const int simplify_level)
     {
-      BLI_assert(simplify_level >= 0);
+      LIB_assert(simplify_level >= 0);
       if (simplify_level == 0 || !is_loaded) {
         return grid;
       }
@@ -122,11 +122,11 @@ static struct VolumeFileCache {
 
       /* Isolate creating grid since that's multithreaded and we are
        * holding a mutex lock. */
-      blender::threading::isolate_task([&] {
+      dune::threading::isolate_task([&] {
         simple_grid = simplified_grids.lookup_or_add_cb(simplify_level, [&]() {
           const float resolution_factor = 1.0f / (1 << simplify_level);
-          const VolumeGridType grid_type = BKE_volume_grid_type_openvdb(*grid);
-          return BKE_volume_grid_create_with_changed_resolution(
+          const VolumeGridType grid_type = KERNEL_volume_grid_type_openvdb(*grid);
+          return KERNEL_volume_grid_create_with_changed_resolution(
               grid_type, *grid, resolution_factor);
         });
       });
@@ -141,7 +141,7 @@ static struct VolumeFileCache {
     openvdb::GridBase::Ptr grid;
 
     /* Simplified versions of #grid. The integer key is the simplification level. */
-    blender::Map<int, openvdb::GridBase::Ptr> simplified_grids;
+    dune::Map<int, openvdb::GridBase::Ptr> simplified_grids;
 
     /* Has the grid tree been loaded? */
     mutable bool is_loaded;
@@ -158,7 +158,7 @@ static struct VolumeFileCache {
     std::size_t operator()(const Entry &entry) const
     {
       std::hash<std::string> string_hasher;
-      return BLI_ghashutil_combine_hash(string_hasher(entry.filepath),
+      return LIB_ghashutil_combine_hash(string_hasher(entry.filepath),
                                         string_hasher(entry.grid_name));
     }
   };
@@ -173,7 +173,7 @@ static struct VolumeFileCache {
   /* Cache */
   ~VolumeFileCache()
   {
-    BLI_assert(cache.empty());
+    LIB_assert(cache.empty());
   }
 
   Entry *add_metadata_user(const Entry &template_entry)
@@ -237,7 +237,7 @@ static struct VolumeFileCache {
   {
     /* Isolate file unloading since that's multithreaded and we are
      * holding a mutex lock. */
-    blender::threading::isolate_task([&] {
+    dune::threading::isolate_task([&] {
       if (entry.num_metadata_users + entry.num_tree_users == 0) {
         cache.erase(entry);
       }
@@ -322,7 +322,7 @@ struct VolumeGrid {
 
     /* Isolate file loading since that's potentially multithreaded and we are
      * holding a mutex lock. */
-    blender::threading::isolate_task([&] {
+    dune::threading::isolate_task([&] {
       try {
         file.setCopyMaxBytes(0);
         file.open();
@@ -421,7 +421,7 @@ struct VolumeGrid {
 
   void set_simplify_level(const int simplify_level)
   {
-    BLI_assert(simplify_level >= 0);
+    LIB_assert(simplify_level >= 0);
     this->simplify_level = simplify_level;
   }
 
