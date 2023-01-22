@@ -1,27 +1,26 @@
-/** \file
+/**
  * Functions for writing AVI-format files.
  * Added interface for generic movie support (ton)
- * \ingroup bke
  */
 
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_scene_types.h"
+#include "structs_scene_types.h"
 
-#include "BLI_utildefines.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_report.h"
+#include "KERNEL_report.h"
 #ifdef WITH_AVI
-#  include "BLI_blenlib.h"
+#  include "LIB_dunelib.h"
 
-#  include "BKE_main.h"
+#  include "KERNEL_main.h"
 #endif
 
-#include "BKE_writeavi.h"
+#include "KERNEL_writeavi.h"
 
-/* ********************** general blender movie support ***************************** */
+/* ********************** general dune movie support ***************************** */
 
 static int start_stub(void *UNUSED(context_v),
                       const Scene *UNUSED(scene),
@@ -89,12 +88,12 @@ static void context_free_avi(void *context_v);
 #endif /* WITH_AVI */
 
 #ifdef WITH_FFMPEG
-#  include "BKE_writeffmpeg.h"
+#  include "KERNEL_writeffmpeg.h"
 #endif
 
-bMovieHandle *BKE_movie_handle_get(const char imtype)
+bMovieHandle *KERNEL_movie_handle_get(const char imtype)
 {
-  static bMovieHandle mh = {NULL};
+  static duneMovieHandle mh = {NULL};
   /* stub callbacks in case none of the movie formats is supported */
   mh.start_movie = start_stub;
   mh.append_movie = append_stub;
@@ -120,12 +119,12 @@ bMovieHandle *BKE_movie_handle_get(const char imtype)
            R_IMF_IMTYPE_H264,
            R_IMF_IMTYPE_XVID,
            R_IMF_IMTYPE_THEORA)) {
-    mh.start_movie = BKE_ffmpeg_start;
-    mh.append_movie = BKE_ffmpeg_append;
-    mh.end_movie = BKE_ffmpeg_end;
-    mh.get_movie_path = BKE_ffmpeg_filepath_get;
-    mh.context_create = BKE_ffmpeg_context_create;
-    mh.context_free = BKE_ffmpeg_context_free;
+    mh.start_movie = KERNEL_ffmpeg_start;
+    mh.append_movie = KERNEL_ffmpeg_append;
+    mh.end_movie = KERNEL_ffmpeg_end;
+    mh.get_movie_path = KERNEL_ffmpeg_filepath_get;
+    mh.context_create = KERNEL_ffmpeg_context_create;
+    mh.context_free = KERNEL_ffmpeg_context_free;
   }
 #endif
 
@@ -157,23 +156,23 @@ static void filepath_avi(char *string, const RenderData *rd, bool preview, const
   }
 
   strcpy(string, rd->pic);
-  BLI_path_abs(string, BKE_main_blendfile_path_from_global());
+  LIB_path_abs(string, KERNEL_main_dunefile_path_from_global());
 
-  BLI_make_existing_file(string);
+  LIB_make_existing_file(string);
 
   if (rd->scemode & R_EXTENSION) {
-    if (!BLI_path_extension_check(string, ".avi")) {
-      BLI_path_frame_range(string, sfra, efra, 4);
+    if (!LIB_path_extension_check(string, ".avi")) {
+      LIB_path_frame_range(string, sfra, efra, 4);
       strcat(string, ".avi");
     }
   }
   else {
-    if (BLI_path_frame_check_chars(string)) {
-      BLI_path_frame_range(string, sfra, efra, 4);
+    if (LIB_path_frame_check_chars(string)) {
+      LIB_path_frame_range(string, sfra, efra, 4);
     }
   }
 
-  BLI_path_suffix(string, FILE_MAX, suffix, "");
+  LIB_path_suffix(string, FILE_MAX, suffix, "");
 }
 
 static int start_avi(void *context_v,
@@ -208,7 +207,7 @@ static int start_avi(void *context_v,
   }
 
   if (AVI_open_compress(name, avi, 1, format) != AVI_ERROR_NONE) {
-    BKE_report(reports, RPT_ERROR, "Cannot open or start AVI movie file");
+    KERNEL_report(reports, RPT_ERROR, "Cannot open or start AVI movie file");
     return 0;
   }
 
@@ -296,9 +295,9 @@ static void context_free_avi(void *context_v)
 
 #endif /* WITH_AVI */
 
-void BKE_movie_filepath_get(char *string, const RenderData *rd, bool preview, const char *suffix)
+void KERNEL_movie_filepath_get(char *string, const RenderData *rd, bool preview, const char *suffix)
 {
-  bMovieHandle *mh = BKE_movie_handle_get(rd->im_format.imtype);
+  duneMovieHandle *mh = KERNEL_movie_handle_get(rd->im_format.imtype);
   if (mh && mh->get_movie_path) {
     mh->get_movie_path(string, rd, preview, suffix);
   }
