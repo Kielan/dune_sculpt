@@ -15,16 +15,16 @@
 #include "LIB_listbase.h"
 #include "LIB_utildefines.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_icons.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_node.h"
-#include "BKE_world.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_icons.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_node.h"
+#include "KERNEL_world.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
 #include "DRW_engine.h"
 
@@ -32,7 +32,7 @@
 
 #include "GPU_material.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 /** Free (or release) any data used by this world (does not free the world itself). */
 static void world_free_data(ID *id)
@@ -50,8 +50,8 @@ static void world_free_data(ID *id)
 
   GPU_material_free(&wrld->gpumaterial);
 
-  BKE_icon_id_delete((struct ID *)wrld);
-  BKE_previewimg_free(&wrld->preview);
+  KERNEL_icon_id_delete((struct ID *)wrld);
+  KERNEL_previewimg_free(&wrld->preview);
 }
 
 static void world_init_data(ID *id)
