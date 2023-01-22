@@ -2,23 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "LI_listbase.h"
-#include "LI_string.h"
-#include "LI_string_utils.h"
-#include "LI_utildefines.h"
+#include "LIB_listbase.h"
+#include "LIB_string.h"
+#include "LIB_string_utils.h"
+#include "LIB_utildefines.h"
 
-#include "T_translation.h"
+#include "TRANSLATION_translation.h"
 
-#include "KE_asset.h"
-#include "KE_global.h"
-#include "KE_idprop.h"
-#include "KE_idtype.h"
-#include "KE_lib_id.h"
-#include "KE_lib_query.h"
-#include "KE_main.h"
-#include "KE_object.h"
-#include "KE_scene.h"
-#include "KE_workspace.h"
+#include "KERNEL_asset.h"
+#include "KERNEL_global.h"
+#include "KERNEL_idprop.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_main.h"
+#include "KERNEL_object.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_workspace.h"
 
 #include "structs_object_types.h"
 #include "structs_scene_types.h"
@@ -349,7 +349,7 @@ WorkSpaceLayout *KERNEL_workspace_layout_add(Main *dunemain,
 
   LIB_assert(!workspaces_is_screen_used(bmain, screen));
 #ifndef DEBUG
-  UNUSED_VARS(bmain);
+  UNUSED_VARS(dunemain);
 #endif
   layout->screen = screen;
   id_us_plus(&layout->screen->id);
@@ -515,7 +515,7 @@ WorkSpaceLayout *KERNEL_workspace_active_layout_get(const WorkSpaceInstanceHook 
   return hook->act_layout;
 }
 
-WorkSpaceLayout *BKE_workspace_active_layout_for_workspace_get(const WorkSpaceInstanceHook *hook,
+WorkSpaceLayout *KERNEL_workspace_active_layout_for_workspace_get(const WorkSpaceInstanceHook *hook,
                                                                const WorkSpace *workspace)
 {
   /* If the workspace is active, the active layout can be returned, no need for a lookup. */
