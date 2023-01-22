@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * Used by ED_undo.h, internal implementation.
  */
 
@@ -9,21 +7,21 @@
 
 #include "CLG_log.h"
 
-#include "BLI_listbase.h"
-#include "BLI_string.h"
-#include "BLI_sys_types.h"
-#include "BLI_utildefines.h"
+#include "LIB_listbase.h"
+#include "LIB_string.h"
+#include "LIB_sys_types.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
-#include "DNA_listBase.h"
-#include "DNA_windowmanager_types.h"
+#include "structs_listBase.h"
+#include "structs_windowmanager_types.h"
 
-#include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_lib_override.h"
-#include "BKE_main.h"
-#include "BKE_undo_system.h"
+#include "KERNEL_context.h"
+#include "KERNEL_global.h"
+#include "KERNEL_lib_override.h"
+#include "KERNEL_main.h"
+#include "KERNEL_undo_system.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -37,27 +35,26 @@
 
 /**
  * Make sure we don't apply edits on top of a newer memfile state, see: T56163.
- * \note Keep an eye on this, could solve differently.
+ * Keep an eye on this, could solve differently.
  */
 #define WITH_GLOBAL_UNDO_CORRECT_ORDER
 
 /** We only need this locally. */
-static CLG_LogRef LOG = {"bke.undosys"};
+static CLG_LogRef LOG = {"kernel.undosys"};
 
 /* -------------------------------------------------------------------- */
-/** \name Undo Types
- * \{ */
+/** Undo Types */
 
-const UndoType *BKE_UNDOSYS_TYPE_IMAGE = NULL;
-const UndoType *BKE_UNDOSYS_TYPE_MEMFILE = NULL;
-const UndoType *BKE_UNDOSYS_TYPE_PAINTCURVE = NULL;
-const UndoType *BKE_UNDOSYS_TYPE_PARTICLE = NULL;
-const UndoType *BKE_UNDOSYS_TYPE_SCULPT = NULL;
-const UndoType *BKE_UNDOSYS_TYPE_TEXT = NULL;
+const UndoType *KERNEL_UNDOSYS_TYPE_IMAGE = NULL;
+const UndoType *KERNEL_UNDOSYS_TYPE_MEMFILE = NULL;
+const UndoType *KERNEL_UNDOSYS_TYPE_PAINTCURVE = NULL;
+const UndoType *KERNEL_UNDOSYS_TYPE_PARTICLE = NULL;
+const UndoType *KERNEL_UNDOSYS_TYPE_SCULPT = NULL;
+const UndoType *KERNEL_UNDOSYS_TYPE_TEXT = NULL;
 
 static ListBase g_undo_types = {NULL, NULL};
 
-static const UndoType *BKE_undosys_type_from_context(bContext *C)
+static const UndoType *KERNEL_undosys_type_from_context(duneContext *C)
 {
   LISTBASE_FOREACH (const UndoType *, ut, &g_undo_types) {
     /* No poll means we don't check context. */
@@ -68,15 +65,13 @@ static const UndoType *BKE_undosys_type_from_context(bContext *C)
   return NULL;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Internal Nested Undo Checks
+/** Internal Nested Undo Checks
  *
  * Make sure we're not running undo operations from 'step_encode', 'step_decode' callbacks.
  * bugs caused by this situation aren't _that_ hard to spot but aren't always so obvious.
  * Best we have a check which shows the problem immediately.
- * \{ */
+ **/
 
 #define WITH_NESTED_UNDO_CHECK
 
@@ -101,21 +96,18 @@ static bool g_undo_callback_running = false;
 #  define UNDO_NESTED_CHECK_END ((void)0)
 #endif
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Internal Callback Wrappers
+/** Internal Callback Wrappers
  *
  * #UndoRefID is simply a way to avoid in-lining name copy and lookups,
  * since it's easy to forget a single case when done inline (crashing in some cases).
- *
- * \{ */
+ **/
 
 static void undosys_id_ref_store(void *UNUSED(user_data), UndoRefID *id_ref)
 {
-  BLI_assert(id_ref->name[0] == '\0');
+  LIB_assert(id_ref->name[0] == '\0');
   if (id_ref->ptr) {
-    BLI_strncpy(id_ref->name, id_ref->ptr->name, sizeof(id_ref->name));
+    LIB_strncpy(id_ref->name, id_ref->ptr->name, sizeof(id_ref->name));
     /* Not needed, just prevents stale data access. */
     id_ref->ptr = NULL;
   }
@@ -125,8 +117,8 @@ static void undosys_id_ref_resolve(void *user_data, UndoRefID *id_ref)
 {
   /* NOTE: we could optimize this,
    * for now it's not too bad since it only runs when we access undo! */
-  Main *bmain = user_data;
-  ListBase *lb = which_libbase(bmain, GS(id_ref->name));
+  Main *dunemain = user_data;
+  ListBase *lb = which_libbase(dunemain, GS(id_ref->name));
   LISTBASE_FOREACH (ID *, id, lb) {
     if (STREQ(id_ref->name, id->name) && !ID_IS_LINKED(id)) {
       id_ref->ptr = id;
@@ -171,7 +163,7 @@ static void undosys_step_decode(bContext *C,
 
   if (us->type->step_foreach_ID_ref) {
 #ifdef WITH_GLOBAL_UNDO_CORRECT_ORDER
-    if (us->type != BKE_UNDOSYS_TYPE_MEMFILE) {
+    if (us->type != KERNEL_UNDOSYS_TYPE_MEMFILE) {
       for (UndoStep *us_iter = us->prev; us_iter; us_iter = us_iter->prev) {
         if (us_iter->type == BKE_UNDOSYS_TYPE_MEMFILE) {
           if (us_iter == ustack->step_active_memfile) {
@@ -182,7 +174,7 @@ static void undosys_step_decode(bContext *C,
              * undo step will be correctly resolved, see: T56163. */
             undosys_step_decode(C, bmain, ustack, us_iter, dir, false);
             /* May have been freed on memfile read. */
-            bmain = G_MAIN;
+            dunemain = G_MAIN;
           }
           break;
         }
@@ -195,7 +187,7 @@ static void undosys_step_decode(bContext *C,
   }
 
   UNDO_NESTED_CHECK_BEGIN;
-  us->type->step_decode(C, bmain, us, dir, is_final);
+  us->type->step_decode(C, dunemain, us, dir, is_final);
   UNDO_NESTED_CHECK_END;
 
 #ifdef WITH_GLOBAL_UNDO_CORRECT_ORDER
@@ -212,7 +204,7 @@ static void undosys_step_free_and_unlink(UndoStack *ustack, UndoStep *us)
   us->type->step_free(us);
   UNDO_NESTED_CHECK_END;
 
-  BLI_remlink(&ustack->steps, us);
+  LIB_remlink(&ustack->steps, us);
   MEM_freeN(us);
 
 #ifdef WITH_GLOBAL_UNDO_CORRECT_ORDER
@@ -222,21 +214,18 @@ static void undosys_step_free_and_unlink(UndoStack *ustack, UndoStep *us)
 #endif
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Undo Stack
- * \{ */
+/** Undo Stack **/
 
 #ifndef NDEBUG
 static void undosys_stack_validate(UndoStack *ustack, bool expect_non_empty)
 {
   if (ustack->step_active != NULL) {
-    BLI_assert(!BLI_listbase_is_empty(&ustack->steps));
-    BLI_assert(BLI_findindex(&ustack->steps, ustack->step_active) != -1);
+    LIB_assert(!LIB_listbase_is_empty(&ustack->steps));
+    LIB_assert(LIB_findindex(&ustack->steps, ustack->step_active) != -1);
   }
   if (expect_non_empty) {
-    BLI_assert(!BLI_listbase_is_empty(&ustack->steps));
+    LIB_assert(!LIB_listbase_is_empty(&ustack->steps));
   }
 }
 #else
@@ -245,31 +234,31 @@ static void undosys_stack_validate(UndoStack *UNUSED(ustack), bool UNUSED(expect
 }
 #endif
 
-UndoStack *BKE_undosys_stack_create(void)
+UndoStack *KERNEL_undosys_stack_create(void)
 {
   UndoStack *ustack = MEM_callocN(sizeof(UndoStack), __func__);
   return ustack;
 }
 
-void BKE_undosys_stack_destroy(UndoStack *ustack)
+void KERNEL_undosys_stack_destroy(UndoStack *ustack)
 {
-  BKE_undosys_stack_clear(ustack);
+  KERNEL_undosys_stack_clear(ustack);
   MEM_freeN(ustack);
 }
 
-void BKE_undosys_stack_clear(UndoStack *ustack)
+void KERNEL_undosys_stack_clear(UndoStack *ustack)
 {
   UNDO_NESTED_ASSERT(false);
-  CLOG_INFO(&LOG, 1, "steps=%d", BLI_listbase_count(&ustack->steps));
+  CLOG_INFO(&LOG, 1, "steps=%d", LIB_listbase_count(&ustack->steps));
   for (UndoStep *us = ustack->steps.last, *us_prev; us; us = us_prev) {
     us_prev = us->prev;
     undosys_step_free_and_unlink(ustack, us);
   }
-  BLI_listbase_clear(&ustack->steps);
+  LIB_listbase_clear(&ustack->steps);
   ustack->step_active = NULL;
 }
 
-void BKE_undosys_stack_clear_active(UndoStack *ustack)
+void KERNEL_undosys_stack_clear_active(UndoStack *ustack)
 {
   /* Remove active and all following undo-steps. */
   UndoStep *us = ustack->step_active;
