@@ -149,7 +149,7 @@ kernel::OpenVDBMeshData volume_to_mesh_data(const openvdb::GridBase &grid,
                                          const float threshold,
                                          const float adaptivity)
 {
-  const VolumeGridType grid_type = BKE_volume_grid_type_openvdb(grid);
+  const VolumeGridType grid_type = KERNEL_volume_grid_type_openvdb(grid);
 
   VolumeToMeshOp to_mesh_op{grid, resolution, threshold, adaptivity};
   if (!KERNEL_volume_grid_type_operation(grid_type, to_mesh_op)) {
