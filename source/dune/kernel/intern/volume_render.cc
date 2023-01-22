@@ -1,15 +1,15 @@
 #include "MEM_guardedalloc.h"
 
-#include "BLI_array.hh"
-#include "BLI_math_matrix.h"
-#include "BLI_math_vec_types.hh"
-#include "BLI_math_vector.h"
-#include "BLI_vector.hh"
+#include "LI_array.hh"
+#include "LIB_math_matrix.h"
+#include "LIB_math_vec_types.hh"
+#include "LIB_math_vector.h"
+#include "LIB_vector.hh"
 
-#include "DNA_volume_types.h"
+#include "structs_volume_types.h"
 
-#include "BKE_volume.h"
-#include "BKE_volume_render.h"
+#include "KERNEL_volume.h"
+#include "KERNEL_volume_render.h"
 
 #ifdef WITH_OPENVDB
 #  include <openvdb/openvdb.h>
@@ -25,7 +25,7 @@ static void extract_dense_voxels(const openvdb::GridBase &grid,
                                  const openvdb::CoordBBox bbox,
                                  VoxelType *r_voxels)
 {
-  BLI_assert(grid.isType<GridType>());
+  LIB_assert(grid.isType<GridType>());
   openvdb::tools::Dense<VoxelType, openvdb::tools::LayoutXYZ> dense(bbox, r_voxels);
   openvdb::tools::copyToDense(static_cast<const GridType &>(grid), dense);
 }
@@ -82,13 +82,13 @@ static void create_texture_to_object_matrix(const openvdb::Mat4d &grid_transform
 
 #endif
 
-bool BKE_volume_grid_dense_floats(const Volume *volume,
+bool KERNEL_volume_grid_dense_floats(const Volume *volume,
                                   const VolumeGrid *volume_grid,
                                   DenseFloatVolumeGrid *r_dense_grid)
 {
 #ifdef WITH_OPENVDB
-  const VolumeGridType grid_type = BKE_volume_grid_type(volume_grid);
-  openvdb::GridBase::ConstPtr grid = BKE_volume_grid_openvdb_for_read(volume, volume_grid);
+  const VolumeGridType grid_type = KERNEL_volume_grid_type(volume_grid);
+  openvdb::GridBase::ConstPtr grid = KERNEL_volume_grid_openvdb_for_read(volume, volume_grid);
 
   const openvdb::CoordBBox bbox = grid->evalActiveVoxelBoundingBox();
   if (bbox.empty()) {
@@ -120,7 +120,7 @@ bool BKE_volume_grid_dense_floats(const Volume *volume,
   return false;
 }
 
-void BKE_volume_dense_float_grid_clear(DenseFloatVolumeGrid *dense_grid)
+void KERNEL_volume_dense_float_grid_clear(DenseFloatVolumeGrid *dense_grid)
 {
   if (dense_grid->voxels != nullptr) {
     MEM_freeN(dense_grid->voxels);
@@ -183,36 +183,36 @@ struct GetBoundingBoxesOp {
   const openvdb::GridBase &grid;
   const bool coarse;
 
-  template<typename GridType> blender::Vector<openvdb::CoordBBox> operator()()
+  template<typename GridType> dune::Vector<openvdb::CoordBBox> operator()()
   {
     return get_bounding_boxes(static_cast<const GridType &>(grid), coarse);
   }
 };
 
-static blender::Vector<openvdb::CoordBBox> get_bounding_boxes(VolumeGridType grid_type,
+static dune::Vector<openvdb::CoordBBox> get_bounding_boxes(VolumeGridType grid_type,
                                                               const openvdb::GridBase &grid,
                                                               const bool coarse)
 {
   GetBoundingBoxesOp op{grid, coarse};
-  return BKE_volume_grid_type_operation(grid_type, op);
+  return KERNEL_volume_grid_type_operation(grid_type, op);
 }
 
-static void boxes_to_center_points(blender::Span<openvdb::CoordBBox> boxes,
+static void boxes_to_center_points(dune::Span<openvdb::CoordBBox> boxes,
                                    const openvdb::math::Transform &transform,
-                                   blender::MutableSpan<blender::float3> r_verts)
+                                   dune::MutableSpan<blender::float3> r_verts)
 {
-  BLI_assert(boxes.size() == r_verts.size());
+  LIB_assert(boxes.size() == r_verts.size());
   for (const int i : boxes.index_range()) {
     openvdb::Vec3d center = transform.indexToWorld(boxes[i].getCenter());
-    r_verts[i] = blender::float3(center[0], center[1], center[2]);
+    r_verts[i] = dune::float3(center[0], center[1], center[2]);
   }
 }
 
-static void boxes_to_corner_points(blender::Span<openvdb::CoordBBox> boxes,
+static void boxes_to_corner_points(dune::Span<openvdb::CoordBBox> boxes,
                                    const openvdb::math::Transform &transform,
-                                   blender::MutableSpan<blender::float3> r_verts)
+                                   dune::MutableSpan<dune::float3> r_verts)
 {
-  BLI_assert(boxes.size() * 8 == r_verts.size());
+  LIB_assert(boxes.size() * 8 == r_verts.size());
   for (const int i : boxes.index_range()) {
     const openvdb::CoordBBox &box = boxes[i];
 
@@ -223,15 +223,15 @@ static void boxes_to_corner_points(blender::Span<openvdb::CoordBBox> boxes,
     for (int j = 0; j < 8; j++) {
       openvdb::Coord corner_i = corners[j];
       openvdb::Vec3d corner_d = transform.indexToWorld(corner_i);
-      r_verts[8 * i + j] = blender::float3(corner_d[0], corner_d[1], corner_d[2]);
+      r_verts[8 * i + j] = dune::float3(corner_d[0], corner_d[1], corner_d[2]);
     }
   }
 }
 
-static void boxes_to_edge_mesh(blender::Span<openvdb::CoordBBox> boxes,
+static void boxes_to_edge_mesh(dune::Span<openvdb::CoordBBox> boxes,
                                const openvdb::math::Transform &transform,
-                               blender::Vector<blender::float3> &r_verts,
-                               blender::Vector<std::array<int, 2>> &r_edges)
+                               dune::Vector<dune::float3> &r_verts,
+                               dune::Vector<std::array<int, 2>> &r_edges)
 {
   /* TODO: Deduplicate edges, hide flat edges? */
 
@@ -269,10 +269,10 @@ static void boxes_to_edge_mesh(blender::Span<openvdb::CoordBBox> boxes,
   }
 }
 
-static void boxes_to_cube_mesh(blender::Span<openvdb::CoordBBox> boxes,
+static void boxes_to_cube_mesh(dune::Span<openvdb::CoordBBox> boxes,
                                const openvdb::math::Transform &transform,
-                               blender::Vector<blender::float3> &r_verts,
-                               blender::Vector<std::array<int, 3>> &r_tris)
+                               dune::Vector<dune::float3> &r_verts,
+                               dune::Vector<std::array<int, 3>> &r_tris)
 {
   const int box_tris[12][3] = {
       {0, 1, 4},
@@ -312,9 +312,9 @@ static void boxes_to_cube_mesh(blender::Span<openvdb::CoordBBox> boxes,
 
 #endif
 
-void BKE_volume_grid_wireframe(const Volume *volume,
+void KERNEL_volume_grid_wireframe(const Volume *volume,
                                const VolumeGrid *volume_grid,
-                               BKE_volume_wireframe_cb cb,
+                               KERNEL_volume_wireframe_cb cb,
                                void *cb_userdata)
 {
   if (volume->display.wireframe_type == VOLUME_WIREFRAME_NONE) {
@@ -323,13 +323,13 @@ void BKE_volume_grid_wireframe(const Volume *volume,
   }
 
 #ifdef WITH_OPENVDB
-  openvdb::GridBase::ConstPtr grid = BKE_volume_grid_openvdb_for_read(volume, volume_grid);
+  openvdb::GridBase::ConstPtr grid = KERNEL_volume_grid_openvdb_for_read(volume, volume_grid);
 
   if (volume->display.wireframe_type == VOLUME_WIREFRAME_BOUNDS) {
     /* Bounding box. */
     openvdb::CoordBBox box;
-    blender::Vector<blender::float3> verts;
-    blender::Vector<std::array<int, 2>> edges;
+    dune::Vector<dune::float3> verts;
+    dune::Vector<std::array<int, 2>> edges;
     if (grid->baseTree().evalLeafBoundingBox(box)) {
       boxes_to_edge_mesh({box}, grid->transform(), verts, edges);
     }
@@ -340,13 +340,13 @@ void BKE_volume_grid_wireframe(const Volume *volume,
        edges.size());
   }
   else {
-    blender::Vector<openvdb::CoordBBox> boxes = get_bounding_boxes(
-        BKE_volume_grid_type(volume_grid),
+    dune::Vector<openvdb::CoordBBox> boxes = get_bounding_boxes(
+        KERNEL_volume_grid_type(volume_grid),
         *grid,
         volume->display.wireframe_detail == VOLUME_WIREFRAME_COARSE);
 
-    blender::Vector<blender::float3> verts;
-    blender::Vector<std::array<int, 2>> edges;
+    dune::Vector<dune::float3> verts;
+    dune::Vector<std::array<int, 2>> edges;
 
     if (volume->display.wireframe_type == VOLUME_WIREFRAME_POINTS) {
       verts.resize(boxes.size());
@@ -370,13 +370,13 @@ void BKE_volume_grid_wireframe(const Volume *volume,
 }
 
 #ifdef WITH_OPENVDB
-static void grow_triangles(blender::MutableSpan<blender::float3> verts,
-                           blender::Span<std::array<int, 3>> tris,
+static void grow_triangles(dune::MutableSpan<dune::float3> verts,
+                           dune::Span<std::array<int, 3>> tris,
                            const float factor)
 {
   /* Compute the offset for every vertex based on the connected edges.
    * This formula simply tries increases the length of all edges. */
-  blender::Array<blender::float3> offsets(verts.size(), {0, 0, 0});
+  dune::Array<dune::float3> offsets(verts.size(), {0, 0, 0});
   for (const std::array<int, 3> &tri : tris) {
     offsets[tri[0]] += factor * (2 * verts[tri[0]] - verts[tri[1]] - verts[tri[2]]);
     offsets[tri[1]] += factor * (2 * verts[tri[1]] - verts[tri[0]] - verts[tri[2]]);
@@ -389,18 +389,18 @@ static void grow_triangles(blender::MutableSpan<blender::float3> verts,
 }
 #endif /* WITH_OPENVDB */
 
-void BKE_volume_grid_selection_surface(const Volume *volume,
+void KERNEL_volume_grid_selection_surface(const Volume *volume,
                                        const VolumeGrid *volume_grid,
-                                       BKE_volume_selection_surface_cb cb,
+                                       KERNEL_volume_selection_surface_cb cb,
                                        void *cb_userdata)
 {
 #ifdef WITH_OPENVDB
-  openvdb::GridBase::ConstPtr grid = BKE_volume_grid_openvdb_for_read(volume, volume_grid);
-  blender::Vector<openvdb::CoordBBox> boxes = get_bounding_boxes(
-      BKE_volume_grid_type(volume_grid), *grid, true);
+  openvdb::GridBase::ConstPtr grid = KERNEL_volume_grid_openvdb_for_read(volume, volume_grid);
+  dune::Vector<openvdb::CoordBBox> boxes = get_bounding_boxes(
+      KERNEL_volume_grid_type(volume_grid), *grid, true);
 
-  blender::Vector<blender::float3> verts;
-  blender::Vector<std::array<int, 3>> tris;
+  dune::Vector<dune::float3> verts;
+  dune::Vector<std::array<int, 3>> tris;
   boxes_to_cube_mesh(boxes, grid->transform(), verts, tris);
 
   /* By slightly scaling the individual boxes up, we can avoid some artifacts when drawing the
@@ -417,7 +417,7 @@ void BKE_volume_grid_selection_surface(const Volume *volume,
 
 /* Render */
 
-float BKE_volume_density_scale(const Volume *volume, const float matrix[4][4])
+float KERNEL_volume_density_scale(const Volume *volume, const float matrix[4][4])
 {
   if (volume->render.space == VOLUME_SPACE_OBJECT) {
     float unit[3] = {1.0f, 1.0f, 1.0f};
