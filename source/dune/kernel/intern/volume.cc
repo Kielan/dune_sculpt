@@ -6,35 +6,35 @@
 #include "structs_scene_types.h"
 #include "structs_volume_types.h"
 
-#include "LI_compiler_compat.h"
-#include "LI_fileops.h"
-#include "LI_float4x4.hh"
-#include "LI_ghash.h"
-#include "LI_index_range.hh"
-#include "LI_map.hh"
-#include "LI_math.h"
-#include "LI_math_vec_types.hh"
-#include "LI_path_util.h"
-#include "LI_string.h"
-#include "LI_string_ref.hh"
-#include "LI_task.hh"
-#include "LI_utildefines.h"
+#include "LIB_compiler_compat.h"
+#include "LIB_fileops.h"
+#include "LIB_float4x4.hh"
+#include "LIB_ghash.h"
+#include "LIB_index_range.hh"
+#include "LIB_map.hh"
+#include "LIB_math.h"
+#include "LIB_math_vec_types.hh"
+#include "LIB_path_util.h"
+#include "LIB_string.h"
+#include "LIB_string_ref.hh"
+#include "LIB_task.hh"
+#include "LIB_utildefines.h"
 
-#include "KE_anim_data.h"
-#include "KE_bpath.h"
-#include "KE_geometry_set.hh"
-#include "KE_global.h"
-#include "KE_idtype.h"
-#include "KE_lib_id.h"
-#include "KE_lib_query.h"
-#include "KE_lib_remap.h"
-#include "KE_main.h"
-#include "KE_modifier.h"
-#include "KE_object.h"
-#include "KE_packedFile.h"
-#include "KE_report.h"
-#include "KE_scene.h"
-#include "KE_volume.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_bpath.h"
+#include "KERNEL_geometry_set.hh"
+#include "KERNEL_global.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_lib_remap.h"
+#include "KERNEL_main.h"
+#include "KERNEL_modifier.h"
+#include "KERNEL_object.h"
+#include "KERNEL_packedFile.h"
+#include "KERNEL_report.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_volume.h"
 
 #include "TRANSLATION_translation.h"
 
@@ -494,7 +494,7 @@ struct VolumeGridVector : public std::list<VolumeGrid> {
 
 /* Module */
 
-void BKE_volumes_init()
+void KERNEL_volumes_init()
 {
 #ifdef WITH_OPENVDB
   openvdb::initialize();
@@ -506,14 +506,14 @@ void BKE_volumes_init()
 static void volume_init_data(ID *id)
 {
   Volume *volume = (Volume *)id;
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(volume, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(volume, id));
 
-  MEMCPY_STRUCT_AFTER(volume, DNA_struct_default_get(Volume), id);
+  MEMCPY_STRUCT_AFTER(volume, structs_struct_default_get(Volume), id);
 
-  BKE_volume_init_grids(volume);
+  KERNEL_volume_init_grids(volume);
 }
 
-static void volume_copy_data(Main *UNUSED(bmain),
+static void volume_copy_data(Main *UNUSED(dunemain),
                              ID *id_dst,
                              const ID *id_src,
                              const int UNUSED(flag))
@@ -522,7 +522,7 @@ static void volume_copy_data(Main *UNUSED(bmain),
   const Volume *volume_src = (const Volume *)id_src;
 
   if (volume_src->packedfile) {
-    volume_dst->packedfile = BKE_packedfile_duplicate(volume_src->packedfile);
+    volume_dst->packedfile = KERNEL_packedfile_duplicate(volume_src->packedfile);
   }
 
   volume_dst->mat = (Material **)MEM_dupallocN(volume_src->mat);
@@ -539,8 +539,8 @@ static void volume_copy_data(Main *UNUSED(bmain),
 static void volume_free_data(ID *id)
 {
   Volume *volume = (Volume *)id;
-  BKE_animdata_free(&volume->id, false);
-  BKE_volume_batch_cache_free(volume);
+  KERNEL_animdata_free(&volume->id, false);
+  KERNEL_volume_batch_cache_free(volume);
   MEM_SAFE_FREE(volume->mat);
 #ifdef WITH_OPENVDB
   MEM_delete(volume->runtime.grids);
@@ -552,7 +552,7 @@ static void volume_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   Volume *volume = (Volume *)id;
   for (int i = 0; i < volume->totcol; i++) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, volume->mat[i], IDWALK_CB_USER);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, volume->mat[i], IDWALK_CB_USER);
   }
 }
 
@@ -570,22 +570,22 @@ static void volume_foreach_cache(ID *id,
   function_callback(id, &key, (void **)&volume->runtime.grids, 0, user_data);
 }
 
-static void volume_foreach_path(ID *id, BPathForeachPathData *bpath_data)
+static void volume_foreach_path(ID *id, DunePathForeachPathData *dunepath_data)
 {
   Volume *volume = reinterpret_cast<Volume *>(id);
 
   if (volume->packedfile != nullptr &&
-      (bpath_data->flag & BKE_BPATH_FOREACH_PATH_SKIP_PACKED) != 0) {
+      (bpath_data->flag & KERNEL_DUNEPATH_FOREACH_PATH_SKIP_PACKED) != 0) {
     return;
   }
 
-  BKE_bpath_foreach_path_fixed_process(bpath_data, volume->filepath);
+  KERNEL_dunepath_foreach_path_fixed_process(bpath_data, volume->filepath);
 }
 
-static void volume_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void volume_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Volume *volume = (Volume *)id;
-  const bool is_undo = BLO_write_is_undo(writer);
+  const bool is_undo = LOADER_write_is_undo(writer);
 
   /* Clean up, important in undo case to reduce false detection of changed datablocks. */
   volume->runtime.grids = nullptr;
@@ -596,49 +596,49 @@ static void volume_blend_write(BlendWriter *writer, ID *id, const void *id_addre
   }
 
   /* write LibData */
-  BLO_write_id_struct(writer, Volume, id_address, &volume->id);
-  BKE_id_blend_write(writer, &volume->id);
+  LOADER_write_id_struct(writer, Volume, id_address, &volume->id);
+  KERNEL_id_dune_write(writer, &volume->id);
 
   /* direct data */
-  BLO_write_pointer_array(writer, volume->totcol, volume->mat);
+  LOADER_write_pointer_array(writer, volume->totcol, volume->mat);
   if (volume->adt) {
-    BKE_animdata_blend_write(writer, volume->adt);
+    KERNEL_animdata_dune_write(writer, volume->adt);
   }
 
-  BKE_packedfile_blend_write(writer, volume->packedfile);
+  KERNEL_packedfile_dune_write(writer, volume->packedfile);
 }
 
-static void volume_blend_read_data(BlendDataReader *reader, ID *id)
+static void volume_dune_read_data(DuneDataReader *reader, ID *id)
 {
   Volume *volume = (Volume *)id;
-  BLO_read_data_address(reader, &volume->adt);
-  BKE_animdata_blend_read_data(reader, volume->adt);
+  LOADER_read_data_address(reader, &volume->adt);
+  KERNEL_animdata_dune_read_data(reader, volume->adt);
 
-  BKE_packedfile_blend_read(reader, &volume->packedfile);
+  KERNEL_packedfile_dune_read(reader, &volume->packedfile);
   volume->runtime.frame = 0;
 
   /* materials */
-  BLO_read_pointer_array(reader, (void **)&volume->mat);
+  LOADER_read_pointer_array(reader, (void **)&volume->mat);
 }
 
-static void volume_blend_read_lib(BlendLibReader *reader, ID *id)
+static void volume_dune_read_lib(DuneLibReader *reader, ID *id)
 {
   Volume *volume = (Volume *)id;
   /* Needs to be done *after* cache pointers are restored (call to
-   * `foreach_cache`/`blo_cache_storage_entry_restore_in_new`), easier for now to do it in
+   * `foreach_cache`/`loader_cache_storage_entry_restore_in_new`), easier for now to do it in
    * lib_link... */
-  BKE_volume_init_grids(volume);
+  KERNEL_volume_init_grids(volume);
 
   for (int a = 0; a < volume->totcol; a++) {
-    BLO_read_id_address(reader, volume->id.lib, &volume->mat[a]);
+    LOADER_read_id_address(reader, volume->id.lib, &volume->mat[a]);
   }
 }
 
-static void volume_blend_read_expand(BlendExpander *expander, ID *id)
+static void volume_dune_read_expand(DuneExpander *expander, ID *id)
 {
   Volume *volume = (Volume *)id;
   for (int a = 0; a < volume->totcol; a++) {
-    BLO_expand(expander, volume->mat[a]);
+    LOADER_expand(expander, volume->mat[a]);
   }
 }
 
@@ -649,7 +649,7 @@ IDTypeInfo IDType_ID_VO = {
     /* struct_size */ sizeof(Volume),
     /* name */ "Volume",
     /* name_plural */ "volumes",
-    /* translation_context */ BLT_I18NCONTEXT_ID_VOLUME,
+    /* translation_context */ TRANSLATION_I18NCONTEXT_ID_VOLUME,
     /* flags */ IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     /* asset_type_info */ nullptr,
 
@@ -662,17 +662,17 @@ IDTypeInfo IDType_ID_VO = {
     /* foreach_path */ volume_foreach_path,
     /* owner_get */ nullptr,
 
-    /* blend_write */ volume_blend_write,
-    /* blend_read_data */ volume_blend_read_data,
-    /* blend_read_lib */ volume_blend_read_lib,
-    /* blend_read_expand */ volume_blend_read_expand,
+    /* dune_write */ volume_dune_write,
+    /* dune_read_data */ volume_dune_read_data,
+    /* dune_read_lib */ volume_dune_read_lib,
+    /* dune_read_expand */ volume_dune_read_expand,
 
-    /* blend_read_undo_preserve */ nullptr,
+    /* dune_read_undo_preserve */ nullptr,
 
     /* lib_override_apply_post */ nullptr,
 };
 
-void BKE_volume_init_grids(Volume *volume)
+void KERNEL_volume_init_grids(Volume *volume)
 {
 #ifdef WITH_OPENVDB
   if (volume->runtime.grids == nullptr) {
@@ -683,9 +683,9 @@ void BKE_volume_init_grids(Volume *volume)
 #endif
 }
 
-void *BKE_volume_add(Main *bmain, const char *name)
+void *KERNEL_volume_add(Main *dunemain, const char *name)
 {
-  Volume *volume = (Volume *)BKE_id_new(bmain, ID_VO, name);
+  Volume *volume = (Volume *)KERNEL_id_new(dunemain, ID_VO, name);
 
   return volume;
 }
@@ -701,7 +701,7 @@ static int volume_sequence_frame(const Depsgraph *depsgraph, const Volume *volum
   char filepath[FILE_MAX];
   STRNCPY(filepath, volume->filepath);
   int path_frame, path_digits;
-  if (!(volume->is_sequence && BLI_path_frame_get(filepath, &path_frame, &path_digits))) {
+  if (!(volume->is_sequence && LIB_path_frame_get(filepath, &path_frame, &path_digits))) {
     return 0;
   }
 
@@ -761,15 +761,15 @@ static int volume_sequence_frame(const Depsgraph *depsgraph, const Volume *volum
 }
 
 #ifdef WITH_OPENVDB
-static void volume_filepath_get(const Main *bmain, const Volume *volume, char r_filepath[FILE_MAX])
+static void volume_filepath_get(const Main *dunemain, const Volume *volume, char r_filepath[FILE_MAX])
 {
-  BLI_strncpy(r_filepath, volume->filepath, FILE_MAX);
-  BLI_path_abs(r_filepath, ID_BLEND_PATH(bmain, &volume->id));
+  LIB_strncpy(r_filepath, volume->filepath, FILE_MAX);
+  LIB_path_abs(r_filepath, ID_DUNE_PATH(dunemain, &volume->id));
 
   int path_frame, path_digits;
-  if (volume->is_sequence && BLI_path_frame_get(r_filepath, &path_frame, &path_digits)) {
+  if (volume->is_sequence && LIB_path_frame_get(r_filepath, &path_frame, &path_digits)) {
     char ext[32];
-    BLI_path_frame_strip(r_filepath, ext);
+    LI_path_frame_strip(r_filepath, ext);
     BLI_path_frame(r_filepath, volume->runtime.frame, path_digits);
     BLI_path_extension_ensure(r_filepath, FILE_MAX, ext);
   }
