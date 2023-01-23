@@ -1,5 +1,5 @@
 /**
- * This code parses the Freetype font outline data to chains of Blender's bezier-triples.
+ * This code parses the Freetype font outline data to chains of Dune's bezier-triples.
  * Additional information can be found at the bottom of this file.
  *
  * Code that uses exotic character maps is present but commented out.
@@ -15,19 +15,19 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_utildefines.h"
+#include "LI_ghash.h"
+#include "LI_listbase.h"
+#include "LI_math.h"
+#include "LI_string.h"
+#include "LI_string_utf8.h"
+#include "LI_utildefines.h"
 
-#include "BKE_curve.h"
-#include "BKE_vfontdata.h"
+#include "KE_curve.h"
+#include "KE_vfontdata.h"
 
-#include "DNA_curve_types.h"
-#include "DNA_packedFile_types.h"
-#include "DNA_vfont_types.h"
+#include "structs_curve_types.h"
+#include "structs_packedFile_types.h"
+#include "structs_vfont_types.h"
 
 /* local variables */
 static FT_Library library;
@@ -38,7 +38,7 @@ static VChar *freetypechar_to_vchar(FT_Face face, FT_ULong charcode, VFontData *
   const float scale = vfd->scale;
   const float eps = 0.0001f;
   const float eps_sq = eps * eps;
-  /* Blender */
+  /* Dune */
   struct Nurb *nu;
   struct VChar *che;
   struct BezTriple *bezt;
@@ -74,7 +74,7 @@ static VChar *freetypechar_to_vchar(FT_Face face, FT_ULong charcode, VFontData *
     che->index = charcode;
     che->width = glyph->advance.x * scale;
 
-    BLI_ghash_insert(vfd->characters, POINTER_FROM_UINT(che->index), che);
+    LIB_ghash_insert(vfd->characters, POINTER_FROM_UINT(che->index), che);
 
     /* Start converting the FT data */
     onpoints = (int *)MEM_callocN((ftoutline.n_contours) * sizeof(int), "onpoints");
@@ -112,7 +112,7 @@ static VChar *freetypechar_to_vchar(FT_Face face, FT_ULong charcode, VFontData *
       /* add new curve */
       nu = (Nurb *)MEM_callocN(sizeof(struct Nurb), "objfnt_nurb");
       bezt = (BezTriple *)MEM_callocN((onpoints[j]) * sizeof(BezTriple), "objfnt_bezt");
-      BLI_addtail(&che->nurbsbase, nu);
+      LIB_addtail(&che->nurbsbase, nu);
 
       nu->type = CU_BEZIER;
       nu->pntsu = onpoints[j];
@@ -277,13 +277,13 @@ static VFontData *objfnt_to_ftvfontdata(PackedFile *pf)
     return NULL;
   }
 
-  /* allocate blender font */
+  /* allocate dune font */
   vfd = MEM_callocN(sizeof(*vfd), "FTVFontData");
 
   /* Get the name. */
   if (face->family_name) {
-    BLI_snprintf(vfd->name, sizeof(vfd->name), "%s %s", face->family_name, face->style_name);
-    BLI_str_utf8_invalid_strip(vfd->name, strlen(vfd->name));
+    LIB_snprintf(vfd->name, sizeof(vfd->name), "%s %s", face->family_name, face->style_name);
+    LIB_str_utf8_invalid_strip(vfd->name, strlen(vfd->name));
   }
 
   /* Select a character map. */
@@ -303,7 +303,7 @@ static VFontData *objfnt_to_ftvfontdata(PackedFile *pf)
   /* Extract the first 256 character from TTF */
   lcode = charcode = FT_Get_First_Char(face, &glyph_index);
 
-  /* Blender default BFont is not "complete". */
+  /* Dune default BFont is not "complete". */
   const bool complete_font = (face->ascender != 0) && (face->descender != 0) &&
                              (face->ascender != face->descender);
 
@@ -331,7 +331,7 @@ static VFontData *objfnt_to_ftvfontdata(PackedFile *pf)
   }
 
   /* Load characters */
-  vfd->characters = BLI_ghash_int_new_ex(__func__, charcode_reserve);
+  vfd->characters = LIB_ghash_int_new_ex(__func__, charcode_reserve);
 
   while (charcode < charcode_reserve) {
     /* Generate the font data */
@@ -375,7 +375,7 @@ static bool check_freetypefont(PackedFile *pf)
   return success;
 }
 
-VFontData *BKE_vfontdata_from_freetypefont(PackedFile *pf)
+VFontData *KERNEL_vfontdata_from_freetypefont(PackedFile *pf)
 {
   VFontData *vfd = NULL;
 
@@ -398,22 +398,22 @@ VFontData *BKE_vfontdata_from_freetypefont(PackedFile *pf)
 
 static void *vfontdata_copy_characters_value_cb(const void *src)
 {
-  return BKE_vfontdata_char_copy(src);
+  return KERNEL_vfontdata_char_copy(src);
 }
 
-VFontData *BKE_vfontdata_copy(const VFontData *vfont_src, const int UNUSED(flag))
+VFontData *KERNEL_vfontdata_copy(const VFontData *vfont_src, const int UNUSED(flag))
 {
   VFontData *vfont_dst = MEM_dupallocN(vfont_src);
 
   if (vfont_src->characters != NULL) {
-    vfont_dst->characters = BLI_ghash_copy(
+    vfont_dst->characters = LIB_ghash_copy(
         vfont_src->characters, NULL, vfontdata_copy_characters_value_cb);
   }
 
   return vfont_dst;
 }
 
-VChar *BKE_vfontdata_char_from_freetypefont(VFont *vfont, unsigned long character)
+VChar *KERNEL_vfontdata_char_from_freetypefont(VFont *vfont, unsigned long character)
 {
   VChar *che = NULL;
 
@@ -437,12 +437,12 @@ VChar *BKE_vfontdata_char_from_freetypefont(VFont *vfont, unsigned long characte
   return che;
 }
 
-VChar *BKE_vfontdata_char_copy(const VChar *vchar_src)
+VChar *KERNEL_vfontdata_char_copy(const VChar *vchar_src)
 {
   VChar *vchar_dst = MEM_dupallocN(vchar_src);
 
-  BLI_listbase_clear(&vchar_dst->nurbsbase);
-  BKE_nurbList_duplicate(&vchar_dst->nurbsbase, &vchar_src->nurbsbase);
+  LIB_listbase_clear(&vchar_dst->nurbsbase);
+  KERNEL_nurbList_duplicate(&vchar_dst->nurbsbase, &vchar_src->nurbsbase);
 
   return vchar_dst;
 }
