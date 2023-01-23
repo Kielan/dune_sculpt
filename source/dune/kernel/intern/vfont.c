@@ -8,22 +8,22 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_math_base_safe.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LI_ghash.h"
+#include "LI_listbase.h"
+#include "LI_math.h"
+#include "LI_math_base_safe.h"
+#include "LI_path_util.h"
+#include "LI_string.h"
+#include "LI_string_utf8.h"
+#include "LI_threads.h"
+#include "LI_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
-#include "DNA_curve_types.h"
-#include "DNA_object_types.h"
-#include "DNA_packedFile_types.h"
-#include "DNA_vfont_types.h"
+#include "structs_curve_types.h"
+#include "structs_object_types.h"
+#include "structs_packedFile_types.h"
+#include "structs_vfont_types.h"
 
 #include "BKE_anim_path.h"
 #include "BKE_bpath.h"
@@ -38,8 +38,8 @@
 
 #include "BLO_read_write.h"
 
-static CLG_LogRef LOG = {"bke.data_transfer"};
-static ThreadRWMutex vfont_rwlock = BLI_RWLOCK_INITIALIZER;
+static CLG_LogRef LOG = {"kernel.data_transfer"};
+static ThreadRWMutex vfont_rwlock = LIB_RWLOCK_INITIALIZER;
 
 /**************************** Prototypes **************************/
 
@@ -55,7 +55,7 @@ static void vfont_init_data(ID *id)
   if (pf) {
     VFontData *vfd;
 
-    vfd = BKE_vfontdata_from_freetypefont(pf);
+    vfd = KERNEL_vfontdata_from_freetypefont(pf);
     if (vfd) {
       vfont->data = vfd;
 
@@ -143,7 +143,7 @@ static void vfont_blend_read_data(BlendDataReader *reader, ID *id)
   VFont *vf = (VFont *)id;
   vf->data = NULL;
   vf->temp_pf = NULL;
-  BKE_packedfile_blend_read(reader, &vf->packedfile);
+  KERNEL_packedfile_dune_read(reader, &vf->packedfile);
 }
 
 IDTypeInfo IDType_ID_VF = {
@@ -153,7 +153,7 @@ IDTypeInfo IDType_ID_VF = {
     .struct_size = sizeof(VFont),
     .name = "Font",
     .name_plural = "fonts",
-    .translation_context = BLT_I18NCONTEXT_ID_VFONT,
+    .translation_context = TRANSLATION_I18NCONTEXT_ID_VFONT,
     .flags = IDTYPE_FLAGS_NO_ANIMDATA | IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
@@ -166,25 +166,25 @@ IDTypeInfo IDType_ID_VF = {
     .foreach_path = vfont_foreach_path,
     .owner_get = NULL,
 
-    .blend_write = vfont_blend_write,
-    .blend_read_data = vfont_blend_read_data,
-    .blend_read_lib = NULL,
-    .blend_read_expand = NULL,
+    .dune_write = vfont_dune_write,
+    .dune_read_data = vfont_dune_read_data,
+    .dune_read_lib = NULL,
+    .dune_read_expand = NULL,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
 /***************************** VFont *******************************/
 
-void BKE_vfont_free_data(struct VFont *vfont)
+void KERNEL_vfont_free_data(struct VFont *vfont)
 {
   if (vfont->data) {
     if (vfont->data->characters) {
       GHashIterator gh_iter;
       GHASH_ITER (gh_iter, vfont->data->characters) {
-        VChar *che = BLI_ghashIterator_getValue(&gh_iter);
+        VChar *che = LIB_ghashIterator_getValue(&gh_iter);
 
         while (che->nurbsbase.first) {
           Nurb *nu = che->nurbsbase.first;
