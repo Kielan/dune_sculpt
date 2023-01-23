@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * This code parses the Freetype font outline data to chains of Blender's bezier-triples.
  * Additional information can be found at the bottom of this file.
  *
