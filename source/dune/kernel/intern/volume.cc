@@ -21,7 +21,7 @@
 #include "LIB_utildefines.h"
 
 #include "KERNEL_anim_data.h"
-#include "KERNEL_bpath.h"
+#include "KERNEL_dunepath.h"
 #include "KERNEL_geometry_set.hh"
 #include "KERNEL_global.h"
 #include "KERNEL_idtype.h"
@@ -769,16 +769,16 @@ static void volume_filepath_get(const Main *dunemain, const Volume *volume, char
   int path_frame, path_digits;
   if (volume->is_sequence && LIB_path_frame_get(r_filepath, &path_frame, &path_digits)) {
     char ext[32];
-    LI_path_frame_strip(r_filepath, ext);
-    BLI_path_frame(r_filepath, volume->runtime.frame, path_digits);
-    BLI_path_extension_ensure(r_filepath, FILE_MAX, ext);
+    LIB_path_frame_strip(r_filepath, ext);
+    LIB_path_frame(r_filepath, volume->runtime.frame, path_digits);
+    LIB_path_extension_ensure(r_filepath, FILE_MAX, ext);
   }
 }
 #endif
 
 /* File Load */
 
-bool BKE_volume_is_loaded(const Volume *volume)
+bool KERNEL_volume_is_loaded(const Volume *volume)
 {
 #ifdef WITH_OPENVDB
   /* Test if there is a file to load, or if already loaded. */
@@ -789,7 +789,7 @@ bool BKE_volume_is_loaded(const Volume *volume)
 #endif
 }
 
-bool BKE_volume_load(const Volume *volume, const Main *bmain)
+bool KERNEL_volume_load(const Volume *volume, const Main *dunemain)
 {
 #ifdef WITH_OPENVDB
   const VolumeGridVector &const_grids = *volume->runtime.grids;
@@ -799,13 +799,13 @@ bool BKE_volume_load(const Volume *volume, const Main *bmain)
     return true;
   }
 
-  if (BKE_volume_is_loaded(volume)) {
+  if (KERNEL_volume_is_loaded(volume)) {
     return const_grids.error_msg.empty();
   }
 
   /* Double-checked lock. */
   std::lock_guard<std::mutex> lock(const_grids.mutex);
-  if (BKE_volume_is_loaded(volume)) {
+  if (KERNEL_volume_is_loaded(volume)) {
     return const_grids.error_msg.empty();
   }
 
@@ -816,14 +816,14 @@ bool BKE_volume_load(const Volume *volume, const Main *bmain)
   /* Get absolute file path at current frame. */
   const char *volume_name = volume->id.name + 2;
   char filepath[FILE_MAX];
-  volume_filepath_get(bmain, volume, filepath);
+  volume_filepath_get(dunemain, volume, filepath);
 
   CLOG_INFO(&LOG, 1, "Volume %s: load %s", volume_name, filepath);
 
   /* Test if file exists. */
-  if (!BLI_exists(filepath)) {
+  if (!LIB_exists(filepath)) {
     char filename[FILE_MAX];
-    BLI_split_file_part(filepath, filename, sizeof(filename));
+    LIB_split_file_part(filepath, filename, sizeof(filename));
     grids.error_msg = filename + std::string(" not found");
     CLOG_INFO(&LOG, 1, "Volume %s: %s", volume_name, grids.error_msg.c_str());
     return false;
@@ -852,7 +852,7 @@ bool BKE_volume_load(const Volume *volume, const Main *bmain)
     }
   }
 
-  BLI_strncpy(grids.filepath, filepath, FILE_MAX);
+  LIB_strncpy(grids.filepath, filepath, FILE_MAX);
 
   return grids.error_msg.empty();
 #else
@@ -861,7 +861,7 @@ bool BKE_volume_load(const Volume *volume, const Main *bmain)
 #endif
 }
 
-void BKE_volume_unload(Volume *volume)
+void KERNEL_volume_unload(Volume *volume)
 {
 #ifdef WITH_OPENVDB
   VolumeGridVector &grids = *volume->runtime.grids;
@@ -877,14 +877,14 @@ void BKE_volume_unload(Volume *volume)
 
 /* File Save */
 
-bool BKE_volume_save(const Volume *volume,
-                     const Main *bmain,
+bool KERNEL_volume_save(const Volume *volume,
+                     const Main *dunemain,
                      ReportList *reports,
                      const char *filepath)
 {
 #ifdef WITH_OPENVDB
-  if (!BKE_volume_load(volume, bmain)) {
-    BKE_reportf(reports, RPT_ERROR, "Could not load volume for writing");
+  if (!KERNEL_volume_load(volume, bmain)) {
+    KERNEL_reportf(reports, RPT_ERROR, "Could not load volume for writing");
     return false;
   }
 
@@ -892,7 +892,7 @@ bool BKE_volume_save(const Volume *volume,
   openvdb::GridCPtrVec vdb_grids;
 
   for (VolumeGrid &grid : grids) {
-    vdb_grids.push_back(BKE_volume_grid_openvdb_for_read(volume, &grid));
+    vdb_grids.push_back(KERNEL_volume_grid_openvdb_for_read(volume, &grid));
   }
 
   try {
@@ -901,13 +901,13 @@ bool BKE_volume_save(const Volume *volume,
     file.close();
   }
   catch (const openvdb::IoError &e) {
-    BKE_reportf(reports, RPT_ERROR, "Could not write volume: %s", e.what());
+    KERNEL_reportf(reports, RPT_ERROR, "Could not write volume: %s", e.what());
     return false;
   }
 
   return true;
 #else
-  UNUSED_VARS(volume, bmain, reports, filepath);
+  UNUSED_VARS(volume, dunemain, reports, filepath);
   return false;
 #endif
 }
@@ -1547,14 +1547,14 @@ openvdb::GridBase::ConstPtr BKE_volume_grid_openvdb_for_metadata(const VolumeGri
   return grid->grid();
 }
 
-openvdb::GridBase::ConstPtr BKE_volume_grid_openvdb_for_read(const Volume *volume,
+openvdb::GridBase::ConstPtr KERNEL_volume_grid_openvdb_for_read(const Volume *volume,
                                                              const VolumeGrid *grid)
 {
-  BKE_volume_grid_load(volume, grid);
+  KERNEL_volume_grid_load(volume, grid);
   return grid->grid();
 }
 
-openvdb::GridBase::Ptr BKE_volume_grid_openvdb_for_write(const Volume *volume,
+openvdb::GridBase::Ptr KERNEL_volume_grid_openvdb_for_write(const Volume *volume,
                                                          VolumeGrid *grid,
                                                          const bool clear)
 {
@@ -1580,7 +1580,7 @@ template<typename GridType>
 static typename GridType::Ptr create_grid_with_changed_resolution(const GridType &old_grid,
                                                                   const float resolution_factor)
 {
-  BLI_assert(resolution_factor > 0.0f);
+  LIB_assert(resolution_factor > 0.0f);
 
   openvdb::Mat4R xform;
   xform.setToScale(openvdb::Vec3d(resolution_factor));
@@ -1605,13 +1605,13 @@ struct CreateGridWithChangedResolutionOp {
   }
 };
 
-openvdb::GridBase::Ptr BKE_volume_grid_create_with_changed_resolution(
+openvdb::GridBase::Ptr KERNEL_volume_grid_create_with_changed_resolution(
     const VolumeGridType grid_type,
     const openvdb::GridBase &old_grid,
     const float resolution_factor)
 {
   CreateGridWithChangedResolutionOp op{old_grid, resolution_factor};
-  return BKE_volume_grid_type_operation(grid_type, op);
+  return KERNEL_volume_grid_type_operation(grid_type, op);
 }
 
 #endif
