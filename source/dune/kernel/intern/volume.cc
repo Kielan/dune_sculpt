@@ -856,7 +856,7 @@ bool KERNEL_volume_load(const Volume *volume, const Main *dunemain)
 
   return grids.error_msg.empty();
 #else
-  UNUSED_VARS(bmain, volume);
+  UNUSED_VARS(dunemain, volume);
   return true;
 #endif
 }
@@ -912,20 +912,20 @@ bool KERNEL_volume_save(const Volume *volume,
 #endif
 }
 
-bool BKE_volume_min_max(const Volume *volume, float3 &r_min, float3 &r_max)
+bool KERNEL_volume_min_max(const Volume *volume, float3 &r_min, float3 &r_max)
 {
   bool have_minmax = false;
 #ifdef WITH_OPENVDB
   /* TODO: if we know the volume is going to be displayed, it may be good to
    * load it as part of dependency graph evaluation for better threading. We
    * could also share the bounding box computation in the global volume cache. */
-  if (BKE_volume_load(const_cast<Volume *>(volume), G.main)) {
-    for (const int i : IndexRange(BKE_volume_num_grids(volume))) {
-      const VolumeGrid *volume_grid = BKE_volume_grid_get_for_read(volume, i);
-      openvdb::GridBase::ConstPtr grid = BKE_volume_grid_openvdb_for_read(volume, volume_grid);
+  if (KERNEL_volume_load(const_cast<Volume *>(volume), G.main)) {
+    for (const int i : IndexRange(KERNEL_volume_num_grids(volume))) {
+      const VolumeGrid *volume_grid = KERNEL_volume_grid_get_for_read(volume, i);
+      openvdb::GridBase::ConstPtr grid = KERNEL_volume_grid_openvdb_for_read(volume, volume_grid);
       float3 grid_min;
       float3 grid_max;
-      if (BKE_volume_grid_bounds(grid, grid_min, grid_max)) {
+      if (KERNEL_volume_grid_bounds(grid, grid_min, grid_max)) {
         DO_MIN(grid_min, r_min);
         DO_MAX(grid_max, r_max);
         have_minmax = true;
@@ -938,9 +938,9 @@ bool BKE_volume_min_max(const Volume *volume, float3 &r_min, float3 &r_max)
   return have_minmax;
 }
 
-BoundBox *BKE_volume_boundbox_get(Object *ob)
+BoundBox *KERNEL_volume_boundbox_get(Object *ob)
 {
-  BLI_assert(ob->type == OB_VOLUME);
+  LIB_assert(ob->type == OB_VOLUME);
 
   if (ob->runtime.bb != nullptr && (ob->runtime.bb->flag & BOUNDBOX_DIRTY) == 0) {
     return ob->runtime.bb;
@@ -954,17 +954,17 @@ BoundBox *BKE_volume_boundbox_get(Object *ob)
 
   float3 min, max;
   INIT_MINMAX(min, max);
-  if (!BKE_volume_min_max(volume, min, max)) {
+  if (!KERNEL_volume_min_max(volume, min, max)) {
     min = float3(-1);
     max = float3(1);
   }
 
-  BKE_boundbox_init_from_minmax(ob->runtime.bb, min, max);
+  KERNEL_boundbox_init_from_minmax(ob->runtime.bb, min, max);
 
   return ob->runtime.bb;
 }
 
-bool BKE_volume_is_y_up(const Volume *volume)
+bool KERNEL_volume_is_y_up(const Volume *volume)
 {
   /* Simple heuristic for common files to open the right way up. */
 #ifdef WITH_OPENVDB
@@ -984,16 +984,16 @@ bool BKE_volume_is_y_up(const Volume *volume)
   return false;
 }
 
-bool BKE_volume_is_points_only(const Volume *volume)
+bool KERNEL_volume_is_points_only(const Volume *volume)
 {
-  int num_grids = BKE_volume_num_grids(volume);
+  int num_grids = KERNEL_volume_num_grids(volume);
   if (num_grids == 0) {
     return false;
   }
 
   for (int i = 0; i < num_grids; i++) {
-    const VolumeGrid *grid = BKE_volume_grid_get_for_read(volume, i);
-    if (BKE_volume_grid_type(grid) != VOLUME_GRID_POINTS) {
+    const VolumeGrid *grid = KERNEL_volume_grid_get_for_read(volume, i);
+    if (KERNEL_volume_grid_type(grid) != VOLUME_GRID_POINTS) {
       return false;
     }
   }
@@ -1006,7 +1006,7 @@ bool BKE_volume_is_points_only(const Volume *volume)
 static void volume_update_simplify_level(Volume *volume, const Depsgraph *depsgraph)
 {
 #ifdef WITH_OPENVDB
-  const int simplify_level = BKE_volume_simplify_level(depsgraph);
+  const int simplify_level = KERNEL_volume_simplify_level(depsgraph);
   if (volume->runtime.grids) {
     for (VolumeGrid &grid : *volume->runtime.grids) {
       grid.set_simplify_level(simplify_level);
@@ -1032,14 +1032,14 @@ static void volume_evaluate_modifiers(struct Depsgraph *depsgraph,
   /* Get effective list of modifiers to execute. Some effects like shape keys
    * are added as virtual modifiers before the user created modifiers. */
   VirtualModifierData virtualModifierData;
-  ModifierData *md = BKE_modifiers_get_virtual_modifierlist(object, &virtualModifierData);
+  ModifierData *md = KERNEL_modifiers_get_virtual_modifierlist(object, &virtualModifierData);
 
   /* Evaluate modifiers. */
   for (; md; md = md->next) {
-    const ModifierTypeInfo *mti = (const ModifierTypeInfo *)BKE_modifier_get_info(
+    const ModifierTypeInfo *mti = (const ModifierTypeInfo *)KERNEL_modifier_get_info(
         (ModifierType)md->type);
 
-    if (!BKE_modifier_is_enabled(scene, md, required_mode)) {
+    if (!KERNEL_modifier_is_enabled(scene, md, required_mode)) {
       continue;
     }
 
@@ -1049,14 +1049,14 @@ static void volume_evaluate_modifiers(struct Depsgraph *depsgraph,
   }
 }
 
-void BKE_volume_eval_geometry(struct Depsgraph *depsgraph, Volume *volume)
+void KERNEL_volume_eval_geometry(struct Depsgraph *depsgraph, Volume *volume)
 {
   volume_update_simplify_level(volume, depsgraph);
 
   /* TODO: can we avoid modifier re-evaluation when frame did not change? */
   int frame = volume_sequence_frame(depsgraph, volume);
   if (frame != volume->runtime.frame) {
-    BKE_volume_unload(volume);
+    KERNEL_volume_unload(volume);
     volume->runtime.frame = frame;
   }
 
@@ -1064,7 +1064,7 @@ void BKE_volume_eval_geometry(struct Depsgraph *depsgraph, Volume *volume)
   if (DEG_is_active(depsgraph)) {
     Volume *volume_orig = (Volume *)DEG_get_original_id(&volume->id);
     if (volume_orig->runtime.frame != volume->runtime.frame) {
-      BKE_volume_unload(volume_orig);
+      KERNEL_volume_unload(volume_orig);
       volume_orig->runtime.frame = volume->runtime.frame;
     }
   }
@@ -1088,10 +1088,10 @@ static Volume *take_volume_ownership_from_geometry_set(GeometrySet &geometry_set
   return volume;
 }
 
-void BKE_volume_data_update(struct Depsgraph *depsgraph, struct Scene *scene, Object *object)
+void KERNEL_volume_data_update(struct Depsgraph *depsgraph, struct Scene *scene, Object *object)
 {
   /* Free any evaluated data and restore original data. */
-  BKE_object_free_derived_caches(object);
+  KERNEL_object_free_derived_caches(object);
 
   /* Evaluate modifiers. */
   Volume *volume = (Volume *)object->data;
@@ -1103,22 +1103,22 @@ void BKE_volume_data_update(struct Depsgraph *depsgraph, struct Scene *scene, Ob
 
   /* If the geometry set did not contain a volume, we still create an empty one. */
   if (volume_eval == nullptr) {
-    volume_eval = BKE_volume_new_for_eval(volume);
+    volume_eval = KERNEL_volume_new_for_eval(volume);
   }
 
   /* Assign evaluated object. */
   const bool eval_is_owned = (volume != volume_eval);
-  BKE_object_eval_assign_data(object, &volume_eval->id, eval_is_owned);
+  KERNEL_object_eval_assign_data(object, &volume_eval->id, eval_is_owned);
   object->runtime.geometry_set_eval = new GeometrySet(std::move(geometry_set));
 }
 
-void BKE_volume_grids_backup_restore(Volume *volume, VolumeGridVector *grids, const char *filepath)
+void KERNEL_volume_grids_backup_restore(Volume *volume, VolumeGridVector *grids, const char *filepath)
 {
 #ifdef WITH_OPENVDB
   /* Restore grids after datablock was re-copied from original by depsgraph,
    * we don't want to load them again if possible. */
-  BLI_assert(volume->id.tag & LIB_TAG_COPIED_ON_WRITE);
-  BLI_assert(volume->runtime.grids != nullptr && grids != nullptr);
+  LIB_assert(volume->id.tag & LIB_TAG_COPIED_ON_WRITE);
+  LIB_assert(volume->runtime.grids != nullptr && grids != nullptr);
 
   if (!grids->is_loaded()) {
     /* No grids loaded in CoW datablock, nothing lost by discarding. */
@@ -1130,7 +1130,7 @@ void BKE_volume_grids_backup_restore(Volume *volume, VolumeGridVector *grids, co
   }
   else {
     /* Keep grids from CoW datablock. We might still unload them a little
-     * later in BKE_volume_eval_geometry if the frame changes. */
+     * later in KERNEL_volume_eval_geometry if the frame changes. */
     MEM_delete(volume->runtime.grids);
     volume->runtime.grids = grids;
   }
@@ -1141,26 +1141,26 @@ void BKE_volume_grids_backup_restore(Volume *volume, VolumeGridVector *grids, co
 
 /* Draw Cache */
 
-void (*BKE_volume_batch_cache_dirty_tag_cb)(Volume *volume, int mode) = nullptr;
-void (*BKE_volume_batch_cache_free_cb)(Volume *volume) = nullptr;
+void (*KERNEL_volume_batch_cache_dirty_tag_cb)(Volume *volume, int mode) = nullptr;
+void (*KERNEL_volume_batch_cache_free_cb)(Volume *volume) = nullptr;
 
-void BKE_volume_batch_cache_dirty_tag(Volume *volume, int mode)
+void KERNEL_volume_batch_cache_dirty_tag(Volume *volume, int mode)
 {
   if (volume->batch_cache) {
-    BKE_volume_batch_cache_dirty_tag_cb(volume, mode);
+    KERNEL_volume_batch_cache_dirty_tag_cb(volume, mode);
   }
 }
 
-void BKE_volume_batch_cache_free(Volume *volume)
+void KERNEL_volume_batch_cache_free(Volume *volume)
 {
   if (volume->batch_cache) {
-    BKE_volume_batch_cache_free_cb(volume);
+    KERNEL_volume_batch_cache_free_cb(volume);
   }
 }
 
 /* Grids */
 
-int BKE_volume_num_grids(const Volume *volume)
+int KERNEL_volume_num_grids(const Volume *volume)
 {
 #ifdef WITH_OPENVDB
   return volume->runtime.grids->size();
@@ -1170,7 +1170,7 @@ int BKE_volume_num_grids(const Volume *volume)
 #endif
 }
 
-const char *BKE_volume_grids_error_msg(const Volume *volume)
+const char *KERNEL_volume_grids_error_msg(const Volume *volume)
 {
 #ifdef WITH_OPENVDB
   return volume->runtime.grids->error_msg.c_str();
@@ -1180,7 +1180,7 @@ const char *BKE_volume_grids_error_msg(const Volume *volume)
 #endif
 }
 
-const char *BKE_volume_grids_frame_filepath(const Volume *volume)
+const char *KERNEL_volume_grids_frame_filepath(const Volume *volume)
 {
 #ifdef WITH_OPENVDB
   return volume->runtime.grids->filepath;
@@ -1190,7 +1190,7 @@ const char *BKE_volume_grids_frame_filepath(const Volume *volume)
 #endif
 }
 
-const VolumeGrid *BKE_volume_grid_get_for_read(const Volume *volume, int grid_index)
+const VolumeGrid *KERNEL_volume_grid_get_for_read(const Volume *volume, int grid_index)
 {
 #ifdef WITH_OPENVDB
   const VolumeGridVector &grids = *volume->runtime.grids;
@@ -1206,7 +1206,7 @@ const VolumeGrid *BKE_volume_grid_get_for_read(const Volume *volume, int grid_in
 #endif
 }
 
-VolumeGrid *BKE_volume_grid_get_for_write(Volume *volume, int grid_index)
+VolumeGrid *KERNEL_volume_grid_get_for_write(Volume *volume, int grid_index)
 {
 #ifdef WITH_OPENVDB
   VolumeGridVector &grids = *volume->runtime.grids;
@@ -1222,23 +1222,23 @@ VolumeGrid *BKE_volume_grid_get_for_write(Volume *volume, int grid_index)
 #endif
 }
 
-const VolumeGrid *BKE_volume_grid_active_get_for_read(const Volume *volume)
+const VolumeGrid *KERNEL_volume_grid_active_get_for_read(const Volume *volume)
 {
-  const int num_grids = BKE_volume_num_grids(volume);
+  const int num_grids = KERNEL_volume_num_grids(volume);
   if (num_grids == 0) {
     return nullptr;
   }
 
   const int index = clamp_i(volume->active_grid, 0, num_grids - 1);
-  return BKE_volume_grid_get_for_read(volume, index);
+  return KERNEL_volume_grid_get_for_read(volume, index);
 }
 
-const VolumeGrid *BKE_volume_grid_find_for_read(const Volume *volume, const char *name)
+const VolumeGrid *KERNEL_volume_grid_find_for_read(const Volume *volume, const char *name)
 {
-  int num_grids = BKE_volume_num_grids(volume);
+  int num_grids = KERNEL_volume_num_grids(volume);
   for (int i = 0; i < num_grids; i++) {
-    const VolumeGrid *grid = BKE_volume_grid_get_for_read(volume, i);
-    if (STREQ(BKE_volume_grid_name(grid), name)) {
+    const VolumeGrid *grid = KERNEL_volume_grid_get_for_read(volume, i);
+    if (STREQ(KERNEL_volume_grid_name(grid), name)) {
       return grid;
     }
   }
@@ -1248,7 +1248,7 @@ const VolumeGrid *BKE_volume_grid_find_for_read(const Volume *volume, const char
 
 /* Grid Loading */
 
-bool BKE_volume_grid_load(const Volume *volume, const VolumeGrid *grid)
+bool KERNEL_volume_grid_load(const Volume *volume, const VolumeGrid *grid)
 {
 #ifdef WITH_OPENVDB
   VolumeGridVector &grids = *volume->runtime.grids;
@@ -1266,7 +1266,7 @@ bool BKE_volume_grid_load(const Volume *volume, const VolumeGrid *grid)
 #endif
 }
 
-void BKE_volume_grid_unload(const Volume *volume, const VolumeGrid *grid)
+void KERNEL_volume_grid_unload(const Volume *volume, const VolumeGrid *grid)
 {
 #ifdef WITH_OPENVDB
   const char *volume_name = volume->id.name + 2;
@@ -1276,7 +1276,7 @@ void BKE_volume_grid_unload(const Volume *volume, const VolumeGrid *grid)
 #endif
 }
 
-bool BKE_volume_grid_is_loaded(const VolumeGrid *grid)
+bool KERNEL_volume_grid_is_loaded(const VolumeGrid *grid)
 {
 #ifdef WITH_OPENVDB
   return grid->grid_is_loaded();
@@ -1288,7 +1288,7 @@ bool BKE_volume_grid_is_loaded(const VolumeGrid *grid)
 
 /* Grid Metadata */
 
-const char *BKE_volume_grid_name(const VolumeGrid *volume_grid)
+const char *KERNEL_volume_grid_name(const VolumeGrid *volume_grid)
 {
 #ifdef WITH_OPENVDB
   return volume_grid->name();
@@ -1299,7 +1299,7 @@ const char *BKE_volume_grid_name(const VolumeGrid *volume_grid)
 }
 
 #ifdef WITH_OPENVDB
-VolumeGridType BKE_volume_grid_type_openvdb(const openvdb::GridBase &grid)
+VolumeGridType KERNEL_volume_grid_type_openvdb(const openvdb::GridBase &grid)
 {
   if (grid.isType<openvdb::FloatGrid>()) {
     return VOLUME_GRID_FLOAT;
@@ -1335,20 +1335,20 @@ VolumeGridType BKE_volume_grid_type_openvdb(const openvdb::GridBase &grid)
 }
 #endif
 
-VolumeGridType BKE_volume_grid_type(const VolumeGrid *volume_grid)
+VolumeGridType KERNEL_volume_grid_type(const VolumeGrid *volume_grid)
 {
 #ifdef WITH_OPENVDB
   const openvdb::GridBase::Ptr grid = volume_grid->grid();
-  return BKE_volume_grid_type_openvdb(*grid);
+  return KERNEL_volume_grid_type_openvdb(*grid);
 #else
   UNUSED_VARS(volume_grid);
 #endif
   return VOLUME_GRID_UNKNOWN;
 }
 
-int BKE_volume_grid_channels(const VolumeGrid *grid)
+int KERNEL_volume_grid_channels(const VolumeGrid *grid)
 {
-  switch (BKE_volume_grid_type(grid)) {
+  switch (KERNEL_volume_grid_type(grid)) {
     case VOLUME_GRID_BOOLEAN:
     case VOLUME_GRID_FLOAT:
     case VOLUME_GRID_DOUBLE:
@@ -1368,7 +1368,7 @@ int BKE_volume_grid_channels(const VolumeGrid *grid)
   return 0;
 }
 
-void BKE_volume_grid_transform_matrix(const VolumeGrid *volume_grid, float mat[4][4])
+void KERNEL_volume_grid_transform_matrix(const VolumeGrid *volume_grid, float mat[4][4])
 {
 #ifdef WITH_OPENVDB
   const openvdb::GridBase::Ptr grid = volume_grid->grid();
@@ -1377,7 +1377,7 @@ void BKE_volume_grid_transform_matrix(const VolumeGrid *volume_grid, float mat[4
   /* Perspective not supported for now, getAffineMap() will leave out the
    * perspective part of the transform. */
   openvdb::math::Mat4f matrix = transform.baseMap()->getAffineMap()->getMat4();
-  /* Blender column-major and OpenVDB right-multiplication conventions match. */
+  /* Dune column-major and OpenVDB right-multiplication conventions match. */
   for (int col = 0; col < 4; col++) {
     for (int row = 0; row < 4; row++) {
       mat[col][row] = matrix(col, row);
@@ -1393,21 +1393,21 @@ void BKE_volume_grid_transform_matrix(const VolumeGrid *volume_grid, float mat[4
 
 /* Volume Editing */
 
-Volume *BKE_volume_new_for_eval(const Volume *volume_src)
+Volume *KERNEL_volume_new_for_eval(const Volume *volume_src)
 {
-  Volume *volume_dst = (Volume *)BKE_id_new_nomain(ID_VO, nullptr);
+  Volume *volume_dst = (Volume *)KERNEL_id_new_nomain(ID_VO, nullptr);
 
   STRNCPY(volume_dst->id.name, volume_src->id.name);
   volume_dst->mat = (Material **)MEM_dupallocN(volume_src->mat);
   volume_dst->totcol = volume_src->totcol;
   volume_dst->render = volume_src->render;
   volume_dst->display = volume_src->display;
-  BKE_volume_init_grids(volume_dst);
+  KERNEL_volume_init_grids(volume_dst);
 
   return volume_dst;
 }
 
-Volume *BKE_volume_copy_for_eval(Volume *volume_src, bool reference)
+Volume *KERNEL_volume_copy_for_eval(Volume *volume_src, bool reference)
 {
   int flags = LIB_ID_COPY_LOCALIZE;
 
@@ -1415,7 +1415,7 @@ Volume *BKE_volume_copy_for_eval(Volume *volume_src, bool reference)
     flags |= LIB_ID_COPY_CD_REFERENCE;
   }
 
-  Volume *result = (Volume *)BKE_id_copy_ex(nullptr, &volume_src->id, nullptr, flags);
+  Volume *result = (Volume *)KERNEL_id_copy_ex(nullptr, &volume_src->id, nullptr, flags);
 
   return result;
 }
@@ -1434,12 +1434,12 @@ struct CreateGridOp {
 };
 #endif
 
-VolumeGrid *BKE_volume_grid_add(Volume *volume, const char *name, VolumeGridType type)
+VolumeGrid *KERNEL_volume_grid_add(Volume *volume, const char *name, VolumeGridType type)
 {
 #ifdef WITH_OPENVDB
   VolumeGridVector &grids = *volume->runtime.grids;
-  BLI_assert(BKE_volume_grid_find_for_read(volume, name) == nullptr);
-  BLI_assert(type != VOLUME_GRID_UNKNOWN);
+  LIB_assert(KERNEL_volume_grid_find_for_read(volume, name) == nullptr);
+  LIB_assert(type != VOLUME_GRID_UNKNOWN);
 
   openvdb::GridBase::Ptr vdb_grid = BKE_volume_grid_type_operation(type, CreateGridOp{});
   if (!vdb_grid) {
@@ -1456,13 +1456,13 @@ VolumeGrid *BKE_volume_grid_add(Volume *volume, const char *name, VolumeGridType
 }
 
 #ifdef WITH_OPENVDB
-VolumeGrid *BKE_volume_grid_add_vdb(Volume &volume,
+VolumeGrid *KERNEL_volume_grid_add_vdb(Volume &volume,
                                     const StringRef name,
                                     openvdb::GridBase::Ptr vdb_grid)
 {
   VolumeGridVector &grids = *volume.runtime.grids;
-  BLI_assert(BKE_volume_grid_find_for_read(&volume, name.data()) == nullptr);
-  BLI_assert(BKE_volume_grid_type_openvdb(*vdb_grid) != VOLUME_GRID_UNKNOWN);
+  LIB_assert(KERNEL_volume_grid_find_for_read(&volume, name.data()) == nullptr);
+  LIB_assert(KERNEL_volume_grid_type_openvdb(*vdb_grid) != VOLUME_GRID_UNKNOWN);
 
   vdb_grid->setName(name);
   grids.emplace_back(vdb_grid);
@@ -1470,7 +1470,7 @@ VolumeGrid *BKE_volume_grid_add_vdb(Volume &volume,
 }
 #endif
 
-void BKE_volume_grid_remove(Volume *volume, VolumeGrid *grid)
+void KERNEL_volume_grid_remove(Volume *volume, VolumeGrid *grid)
 {
 #ifdef WITH_OPENVDB
   VolumeGridVector &grids = *volume->runtime.grids;
@@ -1485,7 +1485,7 @@ void BKE_volume_grid_remove(Volume *volume, VolumeGrid *grid)
 #endif
 }
 
-int BKE_volume_simplify_level(const Depsgraph *depsgraph)
+int KERNEL_volume_simplify_level(const Depsgraph *depsgraph)
 {
   if (DEG_get_mode(depsgraph) != DAG_EVAL_RENDER) {
     const Scene *scene = DEG_get_input_scene(depsgraph);
@@ -1501,7 +1501,7 @@ int BKE_volume_simplify_level(const Depsgraph *depsgraph)
   return 0;
 }
 
-float BKE_volume_simplify_factor(const Depsgraph *depsgraph)
+float KERNEL_volume_simplify_factor(const Depsgraph *depsgraph)
 {
   if (DEG_get_mode(depsgraph) != DAG_EVAL_RENDER) {
     const Scene *scene = DEG_get_input_scene(depsgraph);
@@ -1516,7 +1516,7 @@ float BKE_volume_simplify_factor(const Depsgraph *depsgraph)
 
 #ifdef WITH_OPENVDB
 
-bool BKE_volume_grid_bounds(openvdb::GridBase::ConstPtr grid, float3 &r_min, float3 &r_max)
+bool KERNEL_volume_grid_bounds(openvdb::GridBase::ConstPtr grid, float3 &r_min, float3 &r_max)
 {
   /* TODO: we can get this from grid metadata in some cases? */
   openvdb::CoordBBox coordbbox;
@@ -1532,7 +1532,7 @@ bool BKE_volume_grid_bounds(openvdb::GridBase::ConstPtr grid, float3 &r_min, flo
   return true;
 }
 
-openvdb::GridBase::ConstPtr BKE_volume_grid_shallow_transform(openvdb::GridBase::ConstPtr grid,
+openvdb::GridBase::ConstPtr KERNEL_volume_grid_shallow_transform(openvdb::GridBase::ConstPtr grid,
                                                               const blender::float4x4 &transform)
 {
   openvdb::math::Transform::Ptr grid_transform = grid->transform().copy();
@@ -1542,7 +1542,7 @@ openvdb::GridBase::ConstPtr BKE_volume_grid_shallow_transform(openvdb::GridBase:
   return grid->copyGridReplacingTransform(grid_transform);
 }
 
-openvdb::GridBase::ConstPtr BKE_volume_grid_openvdb_for_metadata(const VolumeGrid *grid)
+openvdb::GridBase::ConstPtr KERNEL_volume_grid_openvdb_for_metadata(const VolumeGrid *grid)
 {
   return grid->grid();
 }
