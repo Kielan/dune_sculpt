@@ -28,8 +28,8 @@ static int point_markers_correspondences_on_both_image(
     MovieTrackingTrack *point_track = plane_track->point_tracks[i];
     MovieTrackingMarker *point_marker1, *point_marker2;
 
-    point_marker1 = BKE_tracking_marker_get_exact(point_track, frame1);
-    point_marker2 = BKE_tracking_marker_get_exact(point_track, frame2);
+    point_marker1 = KERNEL_tracking_marker_get_exact(point_track, frame1);
+    point_marker2 = KERNEL_tracking_marker_get_exact(point_track, frame2);
 
     if (point_marker1 != NULL && point_marker2 != NULL) {
       /* Here conversion from float to double happens. */
@@ -139,14 +139,14 @@ static void track_plane_from_existing_motion(MovieTrackingPlaneTrack *plane_trac
       }
     }
 
-    BKE_tracking_plane_marker_insert(plane_track, &new_plane_marker);
+    KERNEL_tracking_plane_marker_insert(plane_track, &new_plane_marker);
 
     MEM_freeN(x1);
     MEM_freeN(x2);
   }
 }
 
-void BKE_tracking_track_plane_from_existing_motion(MovieTrackingPlaneTrack *plane_track,
+void KERNEL_tracking_track_plane_from_existing_motion(MovieTrackingPlaneTrack *plane_track,
                                                    int start_frame)
 {
   track_plane_from_existing_motion(plane_track, start_frame, 1, false);
@@ -157,7 +157,7 @@ static MovieTrackingPlaneMarker *find_plane_keyframe(MovieTrackingPlaneTrack *pl
                                                      int start_frame,
                                                      int direction)
 {
-  MovieTrackingPlaneMarker *plane_marker = BKE_tracking_plane_marker_get(plane_track, start_frame);
+  MovieTrackingPlaneMarker *plane_marker = KERNEL_tracking_plane_marker_get(plane_track, start_frame);
   int index = plane_marker - plane_track->markers;
   int frame_delta = direction > 0 ? 1 : -1;
 
@@ -171,7 +171,7 @@ static MovieTrackingPlaneMarker *find_plane_keyframe(MovieTrackingPlaneTrack *pl
   return NULL;
 }
 
-void BKE_tracking_retrack_plane_from_existing_motion_at_segment(
+void KERNEL_tracking_retrack_plane_from_existing_motion_at_segment(
     MovieTrackingPlaneTrack *plane_track, int start_frame)
 {
   MovieTrackingPlaneMarker *prev_plane_keyframe, *next_plane_keyframe;
@@ -194,7 +194,7 @@ void BKE_tracking_retrack_plane_from_existing_motion_at_segment(
   }
 }
 
-BLI_INLINE void float_corners_to_double(/*const*/ float corners[4][2], double double_corners[4][2])
+LIB_INLINE void float_corners_to_double(/*const*/ float corners[4][2], double double_corners[4][2])
 {
   copy_v2db_v2fl(double_corners[0], corners[0]);
   copy_v2db_v2fl(double_corners[1], corners[1]);
