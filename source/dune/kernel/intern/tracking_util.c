@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bke
- *
+/**
  * This file contains implementation of function which are used
  * by multiple tracking files but which should not be public.
  */
@@ -9,20 +7,20 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_movieclip_types.h"
+#include "structs_movieclip_types.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_string_utils.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_string.h"
+#include "LIB_string_utils.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
-#include "BKE_movieclip.h"
-#include "BKE_tracking.h"
+#include "KERNEL_movieclip.h"
+#include "KERNEL_tracking.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -42,8 +40,7 @@
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name Tracks Map
- * \{ */
+/** Tracks Map **/
 
 TracksMap *tracks_map_new(const char *object_name,
                           bool is_camera,
@@ -52,7 +49,7 @@ TracksMap *tracks_map_new(const char *object_name,
 {
   TracksMap *map = MEM_callocN(sizeof(TracksMap), "TrackingsMap");
 
-  BLI_strncpy(map->object_name, object_name, sizeof(map->object_name));
+  LIB_strncpy(map->object_name, object_name, sizeof(map->object_name));
   map->is_camera = is_camera;
 
   map->num_tracks = num_tracks;
@@ -64,9 +61,9 @@ TracksMap *tracks_map_new(const char *object_name,
     map->customdata = MEM_callocN(customdata_size * num_tracks, "TracksMap customdata");
   }
 
-  map->hash = BLI_ghash_ptr_new("TracksMap hash");
+  map->hash = LIB_ghash_ptr_new("TracksMap hash");
 
-  BLI_spin_init(&map->spin_lock);
+  LIB_spin_init(&map->spin_lock);
 
   return map;
 }
@@ -100,7 +97,7 @@ void tracks_map_insert(TracksMap *map, MovieTrackingTrack *track, void *customda
     memcpy(&map->customdata[map->ptr * map->customdata_size], customdata, map->customdata_size);
   }
 
-  BLI_ghash_insert(map->hash, &map->tracks[map->ptr], track);
+  LIB_ghash_insert(map->hash, &map->tracks[map->ptr], track);
 
   map->ptr++;
 }
@@ -119,7 +116,7 @@ void tracks_map_merge(TracksMap *map, MovieTracking *tracking)
 
     if (!object) {
       /* object was deleted by user, create new one */
-      object = BKE_tracking_object_add(tracking, map->object_name);
+      object = KERNEL_tracking_object_add(tracking, map->object_name);
     }
 
     old_tracks = &object->tracks;
@@ -136,12 +133,12 @@ void tracks_map_merge(TracksMap *map, MovieTracking *tracking)
     track = &map->tracks[a];
 
     /* find original of operating track in list of previously displayed tracks */
-    old_track = BLI_ghash_lookup(map->hash, track);
+    old_track = LIB_ghash_lookup(map->hash, track);
     if (old_track) {
-      if (BLI_findindex(old_tracks, old_track) != -1) {
-        BLI_remlink(old_tracks, old_track);
+      if (LIB_findindex(old_tracks, old_track) != -1) {
+        LIB_remlink(old_tracks, old_track);
 
-        BLI_spin_lock(&map->spin_lock);
+        LIB_spin_lock(&map->spin_lock);
 
         /* Copy flags like selection back to the track map. */
         track->flag = old_track->flag;
@@ -153,9 +150,9 @@ void tracks_map_merge(TracksMap *map, MovieTracking *tracking)
         *old_track = *track;
         old_track->markers = MEM_dupallocN(old_track->markers);
 
-        BLI_spin_unlock(&map->spin_lock);
+        LIB_spin_unlock(&map->spin_lock);
 
-        BLI_addtail(&tracks, old_track);
+        LIB_addtail(&tracks, old_track);
 
         mapped_to_old = true;
       }
@@ -165,9 +162,9 @@ void tracks_map_merge(TracksMap *map, MovieTracking *tracking)
       MovieTrackingTrack *new_track = BKE_tracking_track_duplicate(track);
 
       /* Update old-new track mapping */
-      BLI_ghash_reinsert(map->hash, track, new_track, NULL, NULL);
+      LIB_ghash_reinsert(map->hash, track, new_track, NULL, NULL);
 
-      BLI_addtail(&tracks, new_track);
+      LIB_addtail(&tracks, new_track);
     }
   }
 
@@ -175,7 +172,7 @@ void tracks_map_merge(TracksMap *map, MovieTracking *tracking)
   track = old_tracks->first;
   while (track) {
     MovieTrackingTrack *next = track->next;
-    BLI_addtail(&new_tracks, track);
+    LIB_addtail(&new_tracks, track);
     track = next;
   }
 
@@ -184,14 +181,14 @@ void tracks_map_merge(TracksMap *map, MovieTracking *tracking)
   while (track) {
     MovieTrackingTrack *next = track->next;
 
-    BLI_remlink(&tracks, track);
+    LIB_remlink(&tracks, track);
 
     track->next = track->prev = NULL;
-    BLI_addtail(&new_tracks, track);
+    LIB_addtail(&new_tracks, track);
 
-    BLI_uniquename(&new_tracks,
+    LIB_uniquename(&new_tracks,
                    track,
-                   CTX_DATA_(BLT_I18NCONTEXT_ID_MOVIECLIP, "Track"),
+                   CTX_DATA_(TRANSLATION_I18NCONTEXT_ID_MOVIECLIP, "Track"),
                    '.',
                    offsetof(MovieTrackingTrack, name),
                    sizeof(track->name));
@@ -204,14 +201,14 @@ void tracks_map_merge(TracksMap *map, MovieTracking *tracking)
 
 void tracks_map_free(TracksMap *map, void (*customdata_free)(void *customdata))
 {
-  BLI_ghash_free(map->hash, NULL, NULL);
+  LIB_ghash_free(map->hash, NULL, NULL);
 
   for (int i = 0; i < map->num_tracks; i++) {
     if (map->customdata && customdata_free) {
       customdata_free(&map->customdata[i * map->customdata_size]);
     }
 
-    BKE_tracking_track_free(&map->tracks[i]);
+    KERNEL_tracking_track_free(&map->tracks[i]);
   }
 
   if (map->customdata) {
@@ -220,16 +217,13 @@ void tracks_map_free(TracksMap *map, void (*customdata_free)(void *customdata))
 
   MEM_freeN(map->tracks);
 
-  BLI_spin_end(&map->spin_lock);
+  LIB_spin_end(&map->spin_lock);
 
   MEM_freeN(map);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Space Transformation Functions
- * \{ */
+/** Space Transformation Functions */
 
 /* Three coordinate frames: Frame, Search, and Marker
  * Two units: Pixels, Unified
@@ -380,11 +374,8 @@ void tracking_set_marker_coords_from_tracking(int frame_width,
   marker->pos[1] += marker_unified[1];
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name General Purpose Utility Functions
- * \{ */
+/** General Purpose Utility Functions **/
 
 void tracking_marker_insert_disabled(MovieTrackingTrack *track,
                                      const MovieTrackingMarker *ref_marker,
@@ -404,8 +395,8 @@ void tracking_marker_insert_disabled(MovieTrackingTrack *track,
     marker_new.framenr++;
   }
 
-  if (overwrite || !BKE_tracking_track_has_marker_at_frame(track, marker_new.framenr)) {
-    BKE_tracking_marker_insert(track, &marker_new);
+  if (overwrite || !KERNEL_tracking_track_has_marker_at_frame(track, marker_new.framenr)) {
+    KERNEL_tracking_marker_insert(track, &marker_new);
   }
 }
 
@@ -488,8 +479,8 @@ static void distortion_model_parameters_from_options(
   }
 
   /* Libmv returned distortion model which is not known to Blender. This is a logical error in code
-   * and Blender side is to be updated to match Libmv. */
-  BLI_assert_msg(0, "Unknown distortion model");
+   * and Dune side is to be updated to match Libmv. */
+  LIB_assert_msg(0, "Unknown distortion model");
 }
 
 void tracking_cameraIntrinscisOptionsFromTracking(
@@ -587,11 +578,8 @@ MovieTrackingMarker *tracking_get_keyframed_marker(MovieTrackingTrack *track,
   return marker_keyed;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Frame Accessor
- * \{ */
+/** Frame Accessor **/
 
 static ImBuf *accessor_get_preprocessed_ibuf(TrackingImageAccessor *accessor,
                                              int clip_index,
@@ -602,14 +590,14 @@ static ImBuf *accessor_get_preprocessed_ibuf(TrackingImageAccessor *accessor,
   ImBuf *ibuf;
   int scene_frame;
 
-  BLI_assert(clip_index < accessor->num_clips);
+  LIB_assert(clip_index < accessor->num_clips);
 
   clip = accessor->clips[clip_index];
-  scene_frame = BKE_movieclip_remap_clip_to_scene_frame(clip, frame);
-  BKE_movieclip_user_set_frame(&user, scene_frame);
+  scene_frame = KERNEL_movieclip_remap_clip_to_scene_frame(clip, frame);
+  KERNEL_movieclip_user_set_frame(&user, scene_frame);
   user.render_size = MCLIP_PROXY_RENDER_SIZE_FULL;
   user.render_flag = 0;
-  ibuf = BKE_movieclip_get_ibuf(clip, &user);
+  ibuf = KERNEL_movieclip_get_ibuf(clip, &user);
 
   return ibuf;
 }
@@ -618,7 +606,7 @@ static ImBuf *make_grayscale_ibuf_copy(ImBuf *ibuf)
 {
   ImBuf *grayscale = IMB_allocImBuf(ibuf->x, ibuf->y, 32, 0);
 
-  BLI_assert(ELEM(ibuf->channels, 3, 4));
+  LIB_assert(ELEM(ibuf->channels, 3, 4));
 
   /* TODO(sergey): Bummer, currently IMB API only allows to create 4 channels
    * float buffer, so we do it manually here.
@@ -732,9 +720,9 @@ static ImBuf *accessor_get_ibuf(TrackingImageAccessor *accessor,
      * in the cache which is nice on the one hand (faster re-use of the
      * frames) but on the other hand it bumps the memory usage up.
      */
-    BLI_thread_lock(LOCK_MOVIECLIP);
+    LIB_thread_lock(LOCK_MOVIECLIP);
     IMB_float_from_rect(orig_ibuf);
-    BLI_thread_unlock(LOCK_MOVIECLIP);
+    LIB_thread_unlock(LOCK_MOVIECLIP);
     final_ibuf = orig_ibuf;
   }
   /* Downscale if needed. */
@@ -757,11 +745,11 @@ static ImBuf *accessor_get_ibuf(TrackingImageAccessor *accessor,
   }
   /* Transform number of channels. */
   if (input_mode == LIBMV_IMAGE_MODE_RGBA) {
-    BLI_assert(ELEM(orig_ibuf->channels, 3, 4));
+    LIB_assert(ELEM(orig_ibuf->channels, 3, 4));
     /* pass */
   }
   else /* if (input_mode == LIBMV_IMAGE_MODE_MONO) */ {
-    BLI_assert(input_mode == LIBMV_IMAGE_MODE_MONO);
+    LIB_assert(input_mode == LIBMV_IMAGE_MODE_MONO);
     if (final_ibuf->channels != 1) {
       ImBuf *grayscale_ibuf = make_grayscale_ibuf_copy(final_ibuf);
       if (final_ibuf != orig_ibuf) {
@@ -797,7 +785,7 @@ static libmv_CacheKey accessor_get_image_callback(struct libmv_FrameAccessorUser
   TrackingImageAccessor *accessor = (TrackingImageAccessor *)user_data;
   ImBuf *ibuf;
 
-  BLI_assert(clip_index >= 0 && clip_index < accessor->num_clips);
+  LIB_assert(clip_index >= 0 && clip_index < accessor->num_clips);
 
   ibuf = accessor_get_ibuf(accessor, clip_index, frame, input_mode, downscale, region, transform);
 
@@ -834,8 +822,8 @@ static libmv_CacheKey accessor_get_mask_for_track_callback(libmv_FrameAccessorUs
 {
   /* Perform sanity checks first. */
   TrackingImageAccessor *accessor = (TrackingImageAccessor *)user_data;
-  BLI_assert(clip_index < accessor->num_clips);
-  BLI_assert(track_index < accessor->num_tracks);
+  LIB_assert(clip_index < accessor->num_clips);
+  LIB_assert(track_index < accessor->num_tracks);
   MovieTrackingTrack *track = accessor->tracks[track_index];
   /* Early output, track does not use mask. */
   if ((track->algorithm_flag & TRACK_ALGORITHM_FLAG_USE_MASK) == 0) {
@@ -844,17 +832,17 @@ static libmv_CacheKey accessor_get_mask_for_track_callback(libmv_FrameAccessorUs
   MovieClip *clip = accessor->clips[clip_index];
   /* Construct fake user so we can access movie clip. */
   MovieClipUser user;
-  int scene_frame = BKE_movieclip_remap_clip_to_scene_frame(clip, frame);
-  BKE_movieclip_user_set_frame(&user, scene_frame);
+  int scene_frame = KERNEL_movieclip_remap_clip_to_scene_frame(clip, frame);
+  KERNEL_movieclip_user_set_frame(&user, scene_frame);
   user.render_size = MCLIP_PROXY_RENDER_SIZE_FULL;
   user.render_flag = 0;
   /* Get frame width and height so we can convert stroke coordinates
    * and other things from normalized to pixel space.
    */
   int frame_width, frame_height;
-  BKE_movieclip_get_size(clip, &user, &frame_width, &frame_height);
+  KERNEL_movieclip_get_size(clip, &user, &frame_width, &frame_height);
   /* Actual mask sampling. */
-  MovieTrackingMarker *marker = BKE_tracking_marker_get_exact(track, frame);
+  MovieTrackingMarker *marker = KERNEL_tracking_marker_get_exact(track, frame);
   const float region_min[2] = {
       region->min[0] - marker->pos[0] * frame_width,
       region->min[1] - marker->pos[1] * frame_height,
