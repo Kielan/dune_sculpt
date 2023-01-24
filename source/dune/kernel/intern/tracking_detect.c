@@ -1,16 +1,14 @@
-/** \file
- * \ingroup bke
- *
- * This file contains blender-side implementation of feature detection.
+/**
+ * This file contains dune-side implementation of feature detection.
  */
 
-#include "DNA_gpencil_types.h"
-#include "DNA_movieclip_types.h"
-#include "DNA_object_types.h" /* SELECT */
+#include "structs_gpencil_types.h"
+#include "structs_movieclip_types.h"
+#include "structs_object_types.h" /* SELECT */
 
-#include "BLI_utildefines.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_tracking.h"
+#include "KERNEL_tracking.h"
 
 #include "IMB_imbuf_types.h"
 
@@ -96,7 +94,7 @@ static void detect_retrieve_libmv_features(MovieTracking *tracking,
     }
 
     if (ok) {
-      track = BKE_tracking_track_add(tracking, tracksbase, xu, yu, framenr, width, height);
+      track = KERNEL_tracking_track_add(tracking, tracksbase, xu, yu, framenr, width, height);
       track->flag |= SELECT;
       track->pat_flag |= SELECT;
       track->search_flag |= SELECT;
@@ -129,7 +127,7 @@ static void run_configured_detector(MovieTracking *tracking,
   }
 }
 
-void BKE_tracking_detect_fast(MovieTracking *tracking,
+void KERNEL_tracking_detect_fast(MovieTracking *tracking,
                               ListBase *tracksbase,
                               ImBuf *ibuf,
                               int framenr,
@@ -150,7 +148,7 @@ void BKE_tracking_detect_fast(MovieTracking *tracking,
       tracking, tracksbase, ibuf, framenr, layer, place_outside_layer, &options);
 }
 
-void BKE_tracking_detect_harris(MovieTracking *tracking,
+void KERNEL_tracking_detect_harris(MovieTracking *tracking,
                                 ListBase *tracksbase,
                                 ImBuf *ibuf,
                                 int framenr,
