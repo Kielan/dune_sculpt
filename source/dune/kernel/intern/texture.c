@@ -5,11 +5,11 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "LI_kdopbvh.h"
-#include "LI_listbase.h"
-#include "LI_math.h"
-#include "LI_math_color.h"
-#include "LI_utildefines.h"
+#include "LIB_kdopbvh.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_math_color.h"
+#include "LIB_utildefines.h"
 
 #include "TRANSLATION_translation.h"
 
@@ -170,15 +170,15 @@ static void texture_dune_read_data(DuneDataReader *reader, ID *id)
 static void texture_dune_read_lib(DuneLibReader *reader, ID *id)
 {
   Tex *tex = (Tex *)id;
-  BLO_read_id_address(reader, tex->id.lib, &tex->ima);
-  BLO_read_id_address(reader, tex->id.lib, &tex->ipo); /* XXX deprecated - old animation system */
+  LOADER_read_id_address(reader, tex->id.lib, &tex->ima);
+  LOADER_read_id_address(reader, tex->id.lib, &tex->ipo); /* XXX deprecated - old animation system */
 }
 
-static void texture_blend_read_expand(BlendExpander *expander, ID *id)
+static void texture_dune_read_expand(DuneExpander *expander, ID *id)
 {
   Tex *tex = (Tex *)id;
-  BLO_expand(expander, tex->ima);
-  BLO_expand(expander, tex->ipo); /* XXX deprecated - old animation system */
+  LOADER_expand(expander, tex->ima);
+  LOADER_expand(expander, tex->ipo); /* XXX deprecated - old animation system */
 }
 
 IDTypeInfo IDType_ID_TE = {
@@ -201,34 +201,34 @@ IDTypeInfo IDType_ID_TE = {
     .foreach_path = NULL,
     .owner_get = NULL,
 
-    .blend_write = texture_blend_write,
-    .blend_read_data = texture_blend_read_data,
-    .blend_read_lib = texture_blend_read_lib,
-    .blend_read_expand = texture_blend_read_expand,
+    .dune_write = texture_dune_write,
+    .dune_read_data = texture_dune_read_data,
+    .dune_read_lib = texture_dune_read_lib,
+    .dune_read_expand = texture_dune_read_expand,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
-void BKE_texture_mtex_foreach_id(LibraryForeachIDData *data, MTex *mtex)
+void KERNEL_texture_mtex_foreach_id(LibraryForeachIDData *data, MTex *mtex)
 {
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, mtex->object, IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, mtex->tex, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mtex->object, IDWALK_CB_NOP);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mtex->tex, IDWALK_CB_USER);
 }
 
 /* ****************** Mapping ******************* */
 
-TexMapping *BKE_texture_mapping_add(int type)
+TexMapping *KERNEL_texture_mapping_add(int type)
 {
   TexMapping *texmap = MEM_callocN(sizeof(TexMapping), "TexMapping");
 
-  BKE_texture_mapping_default(texmap, type);
+  KERNEL_texture_mapping_default(texmap, type);
 
   return texmap;
 }
 
-void BKE_texture_mapping_default(TexMapping *texmap, int type)
+void KERNEL_texture_mapping_default(TexMapping *texmap, int type)
 {
   memset(texmap, 0, sizeof(TexMapping));
 
@@ -243,7 +243,7 @@ void BKE_texture_mapping_default(TexMapping *texmap, int type)
   texmap->type = type;
 }
 
-void BKE_texture_mapping_init(TexMapping *texmap)
+void KERNEL_texture_mapping_init(TexMapping *texmap)
 {
   float smat[4][4], rmat[4][4], tmat[4][4], proj[4][4], size[3];
 
@@ -321,78 +321,78 @@ void BKE_texture_mapping_init(TexMapping *texmap)
   }
 }
 
-ColorMapping *BKE_texture_colormapping_add(void)
+ColorMapping *KERNEL_texture_colormapping_add(void)
 {
   ColorMapping *colormap = MEM_callocN(sizeof(ColorMapping), "ColorMapping");
 
-  BKE_texture_colormapping_default(colormap);
+  KERNEL_texture_colormapping_default(colormap);
 
   return colormap;
 }
 
-void BKE_texture_colormapping_default(ColorMapping *colormap)
+void KERNEL_texture_colormapping_default(ColorMapping *colormap)
 {
   memset(colormap, 0, sizeof(ColorMapping));
 
-  BKE_colorband_init(&colormap->coba, true);
+  KERNEL_colorband_init(&colormap->coba, true);
 
   colormap->bright = 1.0;
   colormap->contrast = 1.0;
   colormap->saturation = 1.0;
 
-  colormap->blend_color[0] = 0.8f;
-  colormap->blend_color[1] = 0.8f;
-  colormap->blend_color[2] = 0.8f;
-  colormap->blend_type = MA_RAMP_BLEND;
-  colormap->blend_factor = 0.0f;
+  colormap->dune_color[0] = 0.8f;
+  colormap->dune_color[1] = 0.8f;
+  colormap->dune_color[2] = 0.8f;
+  colormap->dune_type = MA_RAMP_BLEND;
+  colormap->dune_factor = 0.0f;
 }
 
 /* ******************* TEX ************************ */
 
 /* ------------------------------------------------------------------------- */
 
-void BKE_texture_default(Tex *tex)
+void KERNEL_texture_default(Tex *tex)
 {
   texture_init_data(&tex->id);
 }
 
-void BKE_texture_type_set(Tex *tex, int type)
+void KERNEL_texture_type_set(Tex *tex, int type)
 {
   tex->type = type;
 }
 
 /* ------------------------------------------------------------------------- */
 
-Tex *BKE_texture_add(Main *bmain, const char *name)
+Tex *KERNEL_texture_add(Main *dunemain, const char *name)
 {
   Tex *tex;
 
-  tex = BKE_id_new(bmain, ID_TE, name);
+  tex = KERNEL_id_new(dunemain, ID_TE, name);
 
   return tex;
 }
 
 /* ------------------------------------------------------------------------- */
 
-void BKE_texture_mtex_default(MTex *mtex)
+void KERNEL_texture_mtex_default(MTex *mtex)
 {
-  memcpy(mtex, DNA_struct_default_get(MTex), sizeof(*mtex));
+  memcpy(mtex, structs_struct_default_get(MTex), sizeof(*mtex));
 }
 
 /* ------------------------------------------------------------------------- */
 
-MTex *BKE_texture_mtex_add(void)
+MTex *KERNEL_texture_mtex_add(void)
 {
   MTex *mtex;
 
-  mtex = MEM_callocN(sizeof(MTex), "BKE_texture_mtex_add");
+  mtex = MEM_callocN(sizeof(MTex), "KERNEL_texture_mtex_add");
 
-  BKE_texture_mtex_default(mtex);
+  KERNEL_texture_mtex_default(mtex);
 
   return mtex;
 }
 
-MTex *BKE_texture_mtex_add_id(ID *id, int slot)
+MTex *KERNEL_texture_mtex_add_id(ID *id, int slot)
 {
   MTex **mtex_ar;
   short act;
@@ -429,7 +429,7 @@ MTex *BKE_texture_mtex_add_id(ID *id, int slot)
     mtex_ar[slot] = NULL;
   }
 
-  mtex_ar[slot] = BKE_texture_mtex_add();
+  mtex_ar[slot] = KERNEL_texture_mtex_add();
 
   return mtex_ar[slot];
 }
@@ -461,7 +461,7 @@ void set_current_linestyle_texture(FreestyleLineStyle *linestyle, Tex *newtex)
 
   if (newtex) {
     if (!linestyle->mtex[act]) {
-      linestyle->mtex[act] = BKE_texture_mtex_add();
+      linestyle->mtex[act] = KERNEL_texture_mtex_add();
       linestyle->mtex[act]->texco = TEXCO_STROKE;
     }
 
@@ -579,7 +579,7 @@ void set_current_particle_texture(ParticleSettings *part, Tex *newtex)
 
 /* ------------------------------------------------------------------------- */
 
-void BKE_texture_pointdensity_init_data(PointDensity *pd)
+void KERNEL_texture_pointdensity_init_data(PointDensity *pd)
 {
   pd->flag = 0;
   pd->radius = 0.3f;
@@ -598,25 +598,25 @@ void BKE_texture_pointdensity_init_data(PointDensity *pd)
   pd->object = NULL;
   pd->psys = 0;
   pd->psys_cache_space = TEX_PD_WORLDSPACE;
-  pd->falloff_curve = BKE_curvemapping_add(1, 0, 0, 1, 1);
+  pd->falloff_curve = KERNEL_curvemapping_add(1, 0, 0, 1, 1);
 
   pd->falloff_curve->preset = CURVE_PRESET_LINE;
   pd->falloff_curve->flag &= ~CUMA_EXTEND_EXTRAPOLATE;
-  BKE_curvemap_reset(pd->falloff_curve->cm,
+  KERNEL_curvemap_reset(pd->falloff_curve->cm,
                      &pd->falloff_curve->clipr,
                      pd->falloff_curve->preset,
                      CURVEMAP_SLOPE_POSITIVE);
-  BKE_curvemapping_changed(pd->falloff_curve, false);
+  KERNEL_curvemapping_changed(pd->falloff_curve, false);
 }
 
-PointDensity *BKE_texture_pointdensity_add(void)
+PointDensity *KERNEL_texture_pointdensity_add(void)
 {
   PointDensity *pd = MEM_callocN(sizeof(PointDensity), "pointdensity");
-  BKE_texture_pointdensity_init_data(pd);
+  KERNEL_texture_pointdensity_init_data(pd);
   return pd;
 }
 
-PointDensity *BKE_texture_pointdensity_copy(const PointDensity *pd, const int UNUSED(flag))
+PointDensity *KERNEL_texture_pointdensity_copy(const PointDensity *pd, const int UNUSED(flag))
 {
   PointDensity *pdn;
 
@@ -626,30 +626,30 @@ PointDensity *BKE_texture_pointdensity_copy(const PointDensity *pd, const int UN
   if (pdn->coba) {
     pdn->coba = MEM_dupallocN(pdn->coba);
   }
-  pdn->falloff_curve = BKE_curvemapping_copy(pdn->falloff_curve); /* can be NULL */
+  pdn->falloff_curve = KERNEL_curvemapping_copy(pdn->falloff_curve); /* can be NULL */
   return pdn;
 }
 
-void BKE_texture_pointdensity_free_data(PointDensity *pd)
+void KERNEL_texture_pointdensity_free_data(PointDensity *pd)
 {
   if (pd->point_tree) {
-    BLI_bvhtree_free(pd->point_tree);
+    LIB_bvhtree_free(pd->point_tree);
     pd->point_tree = NULL;
   }
   MEM_SAFE_FREE(pd->point_data);
   MEM_SAFE_FREE(pd->coba);
 
-  BKE_curvemapping_free(pd->falloff_curve); /* can be NULL */
+  KERNEL_curvemapping_free(pd->falloff_curve); /* can be NULL */
 }
 
-void BKE_texture_pointdensity_free(PointDensity *pd)
+void KERNEL_texture_pointdensity_free(PointDensity *pd)
 {
-  BKE_texture_pointdensity_free_data(pd);
+  KERNEL_texture_pointdensity_free_data(pd);
   MEM_freeN(pd);
 }
 /* ------------------------------------------------------------------------- */
 
-bool BKE_texture_is_image_user(const struct Tex *tex)
+bool KERNEL_texture_is_image_user(const struct Tex *tex)
 {
   switch (tex->type) {
     case TEX_IMAGE: {
@@ -660,9 +660,9 @@ bool BKE_texture_is_image_user(const struct Tex *tex)
   return false;
 }
 
-bool BKE_texture_dependsOnTime(const struct Tex *texture)
+bool KERNEL_texture_dependsOnTime(const struct Tex *texture)
 {
-  if (texture->ima && BKE_image_is_animated(texture->ima)) {
+  if (texture->ima && KERNEL_image_is_animated(texture->ima)) {
     return true;
   }
   if (texture->adt) {
@@ -678,7 +678,7 @@ bool BKE_texture_dependsOnTime(const struct Tex *texture)
 
 /* ------------------------------------------------------------------------- */
 
-void BKE_texture_get_value_ex(const Scene *scene,
+void KERNEL_texture_get_value_ex(const Scene *scene,
                               Tex *texture,
                               const float *tex_co,
                               TexResult *texres,
@@ -689,7 +689,7 @@ void BKE_texture_get_value_ex(const Scene *scene,
   bool do_color_manage = false;
 
   if (scene && use_color_management) {
-    do_color_manage = BKE_scene_check_color_management_enabled(scene);
+    do_color_manage = KERNEL_scene_check_color_management_enabled(scene);
   }
 
   /* no node textures for now */
@@ -707,13 +707,13 @@ void BKE_texture_get_value_ex(const Scene *scene,
   }
 }
 
-void BKE_texture_get_value(const Scene *scene,
+void KERNEL_texture_get_value(const Scene *scene,
                            Tex *texture,
                            const float *tex_co,
                            TexResult *texres,
                            bool use_color_management)
 {
-  BKE_texture_get_value_ex(scene, texture, tex_co, texres, NULL, use_color_management);
+  KERNEL_texture_get_value_ex(scene, texture, tex_co, texres, NULL, use_color_management);
 }
 
 static void texture_nodes_fetch_images_for_pool(Tex *texture,
@@ -723,7 +723,7 @@ static void texture_nodes_fetch_images_for_pool(Tex *texture,
   LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
     if (node->type == SH_NODE_TEX_IMAGE && node->id != NULL) {
       Image *image = (Image *)node->id;
-      BKE_image_pool_acquire_ibuf(image, &texture->iuser, pool);
+      KERNEL_image_pool_acquire_ibuf(image, &texture->iuser, pool);
     }
     else if (node->type == NODE_GROUP && node->id != NULL) {
       /* TODO(sergey): Do we need to control recursion here? */
@@ -733,7 +733,7 @@ static void texture_nodes_fetch_images_for_pool(Tex *texture,
   }
 }
 
-void BKE_texture_fetch_images_for_pool(Tex *texture, struct ImagePool *pool)
+void KERNEL_texture_fetch_images_for_pool(Tex *texture, struct ImagePool *pool)
 {
   if (texture->nodetree != NULL) {
     texture_nodes_fetch_images_for_pool(texture, texture->nodetree, pool);
@@ -741,7 +741,7 @@ void BKE_texture_fetch_images_for_pool(Tex *texture, struct ImagePool *pool)
   else {
     if (texture->type == TEX_IMAGE) {
       if (texture->ima != NULL) {
-        BKE_image_pool_acquire_ibuf(texture->ima, &texture->iuser, pool);
+        KERNEL_image_pool_acquire_ibuf(texture->ima, &texture->iuser, pool);
       }
     }
   }
