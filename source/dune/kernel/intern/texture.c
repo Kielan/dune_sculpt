@@ -5,63 +5,63 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_kdopbvh.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_math_color.h"
-#include "BLI_utildefines.h"
+#include "LI_kdopbvh.h"
+#include "LI_listbase.h"
+#include "LI_math.h"
+#include "LI_math_color.h"
+#include "LI_utildefines.h"
 
-#include "BLT_translation.h"
+#include "TRANSLATION_translation.h"
 
 /* Allow using deprecated functionality for .blend file I/O. */
 #define DNA_DEPRECATED_ALLOW
 
-#include "DNA_brush_types.h"
-#include "DNA_color_types.h"
-#include "DNA_defaults.h"
-#include "DNA_key_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_material_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
+#include "structs_brush_types.h"
+#include "structs_color_types.h"
+#include "structs_defaults.h"
+#include "structs_key_types.h"
+#include "structs_linestyle_types.h"
+#include "structs_material_types.h"
+#include "structs_node_types.h"
+#include "structs_object_types.h"
+#include "structs_particle_types.h"
 
 #include "IMB_imbuf.h"
 
-#include "BKE_main.h"
+#include "KERNEL_main.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_colorband.h"
-#include "BKE_colortools.h"
-#include "BKE_icons.h"
-#include "BKE_idtype.h"
-#include "BKE_image.h"
-#include "BKE_key.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_material.h"
-#include "BKE_node.h"
-#include "BKE_scene.h"
-#include "BKE_texture.h"
+#include "KERNEL_anim_data.h"
+#include "KERNEL_colorband.h"
+#include "KERNEL_colortools.h"
+#include "KERNEL_icons.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_image.h"
+#include "KERNEL_key.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_material.h"
+#include "KERNEL_node.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_texture.h"
 
 #include "NOD_texture.h"
 
 #include "RE_texture.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 static void texture_init_data(ID *id)
 {
   Tex *texture = (Tex *)id;
 
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(texture, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(texture, id));
 
-  MEMCPY_STRUCT_AFTER(texture, DNA_struct_default_get(Tex), id);
+  MEMCPY_STRUCT_AFTER(texture, structs_struct_default_get(Tex), id);
 
-  BKE_imageuser_default(&texture->iuser);
+  KERNEL_imageuser_default(&texture->iuser);
 }
 
-static void texture_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int flag)
+static void texture_copy_data(Main *dunemain, ID *id_dst, const ID *id_src, const int flag)
 {
   Tex *texture_dst = (Tex *)id_dst;
   const Tex *texture_src = (const Tex *)id_src;
@@ -70,7 +70,7 @@ static void texture_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const i
   /* We always need allocation of our private ID data. */
   const int flag_private_id_data = flag & ~LIB_ID_CREATE_NO_ALLOCATE;
 
-  if (!BKE_texture_is_image_user(texture_src)) {
+  if (!KERNEL_texture_is_image_user(texture_src)) {
     texture_dst->ima = NULL;
   }
 
@@ -86,13 +86,13 @@ static void texture_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const i
       texture_dst->nodetree = ntreeLocalize(texture_src->nodetree);
     }
     else {
-      BKE_id_copy_ex(
-          bmain, (ID *)texture_src->nodetree, (ID **)&texture_dst->nodetree, flag_private_id_data);
+      KERNEL_id_copy_ex(
+          dunemain, (ID *)texture_src->nodetree, (ID **)&texture_dst->nodetree, flag_private_id_data);
     }
   }
 
   if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0) {
-    BKE_previewimg_id_copy(&texture_dst->id, &texture_src->id);
+    KERNEL_previewimg_id_copy(&texture_dst->id, &texture_src->id);
   }
   else {
     texture_dst->preview = NULL;
@@ -112,8 +112,8 @@ static void texture_free_data(ID *id)
 
   MEM_SAFE_FREE(texture->coba);
 
-  BKE_icon_id_delete((ID *)texture);
-  BKE_previewimg_free(&texture->preview);
+  KERNEL_icon_id_delete((ID *)texture);
+  KERNEL_previewimg_free(&texture->preview);
 }
 
 static void texture_foreach_id(ID *id, LibraryForeachIDData *data)
@@ -121,53 +121,53 @@ static void texture_foreach_id(ID *id, LibraryForeachIDData *data)
   Tex *texture = (Tex *)id;
   if (texture->nodetree) {
     /* nodetree **are owned by IDs**, treat them as mere sub-data and not real ID! */
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
-        data, BKE_library_foreach_ID_embedded(data, (ID **)&texture->nodetree));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(
+        data, KERNEL_library_foreach_ID_embedded(data, (ID **)&texture->nodetree));
   }
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, texture->ima, IDWALK_CB_USER);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, texture->ima, IDWALK_CB_USER);
 }
 
-static void texture_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void texture_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Tex *tex = (Tex *)id;
 
   /* write LibData */
-  BLO_write_id_struct(writer, Tex, id_address, &tex->id);
-  BKE_id_blend_write(writer, &tex->id);
+  LOADER_write_id_struct(writer, Tex, id_address, &tex->id);
+  KERNEL_id_dune_write(writer, &tex->id);
 
   if (tex->adt) {
-    BKE_animdata_blend_write(writer, tex->adt);
+    KERNEL_animdata_dune_write(writer, tex->adt);
   }
 
   /* direct data */
   if (tex->coba) {
-    BLO_write_struct(writer, ColorBand, tex->coba);
+    LOADER_write_struct(writer, ColorBand, tex->coba);
   }
 
   /* nodetree is integral part of texture, no libdata */
   if (tex->nodetree) {
-    BLO_write_struct(writer, bNodeTree, tex->nodetree);
-    ntreeBlendWrite(writer, tex->nodetree);
+    LOADER_write_struct(writer, bNodeTree, tex->nodetree);
+    ntreeDuneWrite(writer, tex->nodetree);
   }
 
-  BKE_previewimg_blend_write(writer, tex->preview);
+  KERNEL_previewimg_dune_write(writer, tex->preview);
 }
 
-static void texture_blend_read_data(BlendDataReader *reader, ID *id)
+static void texture_dune_read_data(DuneDataReader *reader, ID *id)
 {
   Tex *tex = (Tex *)id;
-  BLO_read_data_address(reader, &tex->adt);
-  BKE_animdata_blend_read_data(reader, tex->adt);
+  LOADER_read_data_address(reader, &tex->adt);
+  KERNEL_animdata_dune_read_data(reader, tex->adt);
 
-  BLO_read_data_address(reader, &tex->coba);
+  LOADER_read_data_address(reader, &tex->coba);
 
-  BLO_read_data_address(reader, &tex->preview);
-  BKE_previewimg_blend_read(reader, tex->preview);
+  LOADER_read_data_address(reader, &tex->preview);
+  KERNEL_previewimg_dune_read(reader, tex->preview);
 
   tex->iuser.scene = NULL;
 }
 
-static void texture_blend_read_lib(BlendLibReader *reader, ID *id)
+static void texture_dune_read_lib(DuneLibReader *reader, ID *id)
 {
   Tex *tex = (Tex *)id;
   BLO_read_id_address(reader, tex->id.lib, &tex->ima);
