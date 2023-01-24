@@ -340,7 +340,7 @@ void KERNEL_tracking_refine_marker(MovieClip *clip,
 
   /* If needed, compute track's mask. */
   if ((track->algorithm_flag & TRACK_ALGORITHM_FLAG_USE_MASK) != 0) {
-    mask = BKE_tracking_track_get_mask(frame_width, frame_height, track, marker);
+    mask = KERNEL_tracking_track_get_mask(frame_width, frame_height, track, marker);
   }
 
   /* Run the tracker from reference frame to current one. */
