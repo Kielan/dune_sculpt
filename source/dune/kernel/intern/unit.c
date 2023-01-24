@@ -3,20 +3,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_sys_types.h"
+#include "LI_math.h"
+#include "LI_string.h"
+#include "LI_string_utf8.h"
+#include "LI_sys_types.h"
 
-#include "DNA_scene_types.h"
+#include "structs_scene_types.h"
 
-#include "BKE_unit.h" /* own include */
+#include "KERNEL_unit.h" /* own include */
 
 #ifdef WIN32
-#  include "BLI_winstuff.h"
+#  include "LIB_winstuff.h"
 #endif
 
-/* No BKE or DNA includes! */
+/* No KERNEL or structs includes! */
 
 /* Keep alignment. */
 /* clang-format off */
@@ -645,7 +645,7 @@ static size_t unit_as_string_main(char *str,
   return unit_as_string(str, len_max, value, prec, usys, main_unit, pad ? ' ' : '\0');
 }
 
-size_t BKE_unit_value_as_string_adaptive(
+size_t KERNEL_unit_value_as_string_adaptive(
     char *str, int len_max, double value, int prec, int system, int type, bool split, bool pad)
 {
   PreferredUnits units;
@@ -658,7 +658,7 @@ size_t BKE_unit_value_as_string_adaptive(
   return unit_as_string_main(str, len_max, value, prec, type, split, pad, units);
 }
 
-size_t BKE_unit_value_as_string(char *str,
+size_t KERNEL_unit_value_as_string(char *str,
                                 int len_max,
                                 double value,
                                 int prec,
@@ -671,7 +671,7 @@ size_t BKE_unit_value_as_string(char *str,
   return unit_as_string_main(str, len_max, value, prec, type, do_split, pad, units);
 }
 
-BLI_INLINE bool isalpha_or_utf8(const int ch)
+LIB_INLINE bool isalpha_or_utf8(const int ch)
 {
   return (ch >= 128 || isalpha(ch));
 }
@@ -753,7 +753,7 @@ static bool ch_is_op(char op)
 /**
  * Helper function for #unit_distribute_negatives to find the next negative to distribute.
  *
- * \note This unnecessarily skips the next space if it comes right after the "-"
+ * This unnecessarily skips the next space if it comes right after the "-"
  * just to make a more predictable output.
  */
 static char *find_next_negative(const char *str, const char *remaining_str)
@@ -779,7 +779,7 @@ static char *find_next_negative(const char *str, const char *remaining_str)
 /**
  * Helper function for #unit_distribute_negatives to find the next operation, including "-".
  *
- * \note This unnecessarily skips the space before the operation character
+ * This unnecessarily skips the space before the operation character
  * just to make a more predictable output.
  */
 static char *find_next_op(const char *str, char *remaining_str, int len_max)
@@ -813,7 +813,7 @@ static char *find_next_op(const char *str, char *remaining_str, int len_max)
       return remaining_str + i;
     }
   }
-  BLI_assert_msg(0, "String should be NULL terminated");
+  LIB_assert_msg(0, "String should be NULL terminated");
   return remaining_str + i;
 }
 
@@ -940,7 +940,7 @@ static int unit_scale_str(char *str,
   int len_move = (len - (found_ofs + len_name)) + 1; /* 1+ to copy the string terminator. */
 
   /* "#" Removed later */
-  int len_num = BLI_snprintf_rlen(
+  int len_num = LIB_snprintf_rlen(
       str_tmp, TEMP_STR_SIZE, "*%.9g" SEP_STR, unit->scalar / scale_pref);
 
   if (len_num > len_max) {
@@ -1011,7 +1011,7 @@ static bool unit_find(const char *str, const bUnitDef *unit)
 /**
  * Try to find a default unit from current or previous string.
  * This allows us to handle cases like 2 + 2mm, people would expect to get 4mm, not 2.002m!
- * \note This does not handle corner cases like 2 + 2cm + 1 + 2.5mm... We can't support
+ * This does not handle corner cases like 2 + 2cm + 1 + 2.5mm... We can't support
  * everything.
  */
 static const bUnitDef *unit_detect_from_str(const bUnitCollection *usys,
@@ -1043,7 +1043,7 @@ static const bUnitDef *unit_detect_from_str(const bUnitCollection *usys,
   return unit;
 }
 
-bool BKE_unit_string_contains_unit(const char *str, int type)
+bool KERNEL_unit_string_contains_unit(const char *str, int type)
 {
   for (int system = 0; system < UNIT_SYSTEM_TOT; system++) {
     const bUnitCollection *usys = unit_get_system(system, type);
@@ -1060,7 +1060,7 @@ bool BKE_unit_string_contains_unit(const char *str, int type)
   return false;
 }
 
-double BKE_unit_apply_preferred_unit(const struct UnitSettings *settings, int type, double value)
+double KERNEL_unit_apply_preferred_unit(const struct UnitSettings *settings, int type, double value)
 {
   PreferredUnits units = preferred_units_from_UnitSettings(settings);
   const bUnitDef *unit = get_preferred_display_unit_if_used(type, units);
@@ -1071,7 +1071,7 @@ double BKE_unit_apply_preferred_unit(const struct UnitSettings *settings, int ty
   return value * scalar + bias;
 }
 
-bool BKE_unit_replace_string(
+bool KERNEL_unit_replace_string(
     char *str, int len_max, const char *str_prev, double scale_pref, int system, int type)
 {
   const bUnitCollection *usys = unit_get_system(system, type);
@@ -1095,12 +1095,12 @@ bool BKE_unit_replace_string(
 
   /* Apply the default unit on the whole expression, this allows to handle nasty cases like
    * '2+2in'. */
-  if (BLI_snprintf(str_tmp, sizeof(str_tmp), "(%s)*%.9g", str, default_unit->scalar) <
+  if (LIB_snprintf(str_tmp, sizeof(str_tmp), "(%s)*%.9g", str, default_unit->scalar) <
       sizeof(str_tmp)) {
     strncpy(str, str_tmp, len_max);
   }
   else {
-    /* BLI_snprintf would not fit into str_tmp, can't do much in this case.
+    /* LIB_snprintf would not fit into str_tmp, can't do much in this case.
      * Check for this because otherwise BKE_unit_replace_string could call itself forever. */
     return changed;
   }
@@ -1200,7 +1200,7 @@ void BKE_unit_name_to_alt(char *str, int len_max, const char *orig_str, int syst
   strncpy(str, orig_str, len_max);
 }
 
-double BKE_unit_closest_scalar(double value, int system, int type)
+double KERNEL_unit_closest_scalar(double value, int system, int type)
 {
   const bUnitCollection *usys = unit_get_system(system, type);
 
@@ -1216,7 +1216,7 @@ double BKE_unit_closest_scalar(double value, int system, int type)
   return unit->scalar;
 }
 
-double BKE_unit_base_scalar(int system, int type)
+double KERNEL_unit_base_scalar(int system, int type)
 {
   const bUnitCollection *usys = unit_get_system(system, type);
   if (usys) {
@@ -1226,12 +1226,12 @@ double BKE_unit_base_scalar(int system, int type)
   return 1.0;
 }
 
-bool BKE_unit_is_valid(int system, int type)
+bool KERNEL_unit_is_valid(int system, int type)
 {
   return !(system < 0 || system > UNIT_SYSTEM_TOT || type < 0 || type > B_UNIT_TYPE_TOT);
 }
 
-void BKE_unit_system_get(int system, int type, void const **r_usys_pt, int *r_len)
+void KERNEL_unit_system_get(int system, int type, void const **r_usys_pt, int *r_len)
 {
   const bUnitCollection *usys = unit_get_system(system, type);
   *r_usys_pt = usys;
@@ -1244,39 +1244,39 @@ void BKE_unit_system_get(int system, int type, void const **r_usys_pt, int *r_le
   *r_len = usys->length;
 }
 
-int BKE_unit_base_get(const void *usys_pt)
+int KERNEL_unit_base_get(const void *usys_pt)
 {
   return ((bUnitCollection *)usys_pt)->base_unit;
 }
 
-int BKE_unit_base_of_type_get(int system, int type)
+int KERNEL_unit_base_of_type_get(int system, int type)
 {
   return unit_get_system(system, type)->base_unit;
 }
 
-const char *BKE_unit_name_get(const void *usys_pt, int index)
+const char *KERNEL_unit_name_get(const void *usys_pt, int index)
 {
   return ((bUnitCollection *)usys_pt)->units[index].name;
 }
-const char *BKE_unit_display_name_get(const void *usys_pt, int index)
+const char *KERNEL_unit_display_name_get(const void *usys_pt, int index)
 {
   return ((bUnitCollection *)usys_pt)->units[index].name_display;
 }
-const char *BKE_unit_identifier_get(const void *usys_pt, int index)
+const char *KERNEL_unit_identifier_get(const void *usys_pt, int index)
 {
   const bUnitDef *unit = ((const bUnitCollection *)usys_pt)->units + index;
   if (unit->identifier == NULL) {
-    BLI_assert_msg(0, "identifier for this unit is not specified yet");
+    LIB_assert_msg(0, "identifier for this unit is not specified yet");
   }
   return unit->identifier;
 }
 
-double BKE_unit_scalar_get(const void *usys_pt, int index)
+double KERNEL_unit_scalar_get(const void *usys_pt, int index)
 {
   return ((bUnitCollection *)usys_pt)->units[index].scalar;
 }
 
-bool BKE_unit_is_suppressed(const void *usys_pt, int index)
+bool KERNEL_unit_is_suppressed(const void *usys_pt, int index)
 {
   return (((bUnitCollection *)usys_pt)->units[index].flag & B_UNIT_DEF_SUPPRESS) != 0;
 }
