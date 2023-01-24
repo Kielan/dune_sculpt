@@ -1,12 +1,12 @@
 #include "testing/testing.h"
 
-#include "DNA_tracking_types.h"
+#include "structs_tracking_types.h"
 
-#include "BKE_tracking.h"
-#include "BLI_math_vec_types.hh"
-#include "BLI_math_vector.h"
+#include "KERNEL_tracking.h"
+#include "LIB_math_vec_types.hh"
+#include "LIB_math_vector.h"
 
-namespace blender {
+namespace dune {
 
 namespace {
 
@@ -21,24 +21,24 @@ class TrackingTest : public ::testing::Test {
     copy_v2_v2(marker.pos, position);
     marker.framenr = frame_number;
     marker.flag = flag;
-    return BKE_tracking_marker_insert(track, &marker);
+    return KERNEL_tracking_marker_insert(track, &marker);
   }
 };
 
 }  // namespace
 
-TEST_F(TrackingTest, BKE_tracking_marker_get)
+TEST_F(TrackingTest, KERNEL_tracking_marker_get)
 {
   {
     MovieTrackingTrack track = {nullptr};
 
     addMarkerToTrack(&track, 10);
 
-    EXPECT_EQ(BKE_tracking_marker_get(&track, 0), &track.markers[0]);
-    EXPECT_EQ(BKE_tracking_marker_get(&track, 10), &track.markers[0]);
-    EXPECT_EQ(BKE_tracking_marker_get(&track, 20), &track.markers[0]);
+    EXPECT_EQ(KE_tracking_marker_get(&track, 0), &track.markers[0]);
+    EXPECT_EQ(KE_tracking_marker_get(&track, 10), &track.markers[0]);
+    EXPECT_EQ(KE_tracking_marker_get(&track, 20), &track.markers[0]);
 
-    BKE_tracking_track_free(&track);
+    KERNEL_tracking_track_free(&track);
   }
 
   {
@@ -59,7 +59,7 @@ TEST_F(TrackingTest, BKE_tracking_marker_get)
       EXPECT_EQ(marker->framenr, 1);
     }
 
-    BKE_tracking_track_free(&track);
+    KERNEL_tracking_track_free(&track);
   }
 
   {
@@ -70,20 +70,20 @@ TEST_F(TrackingTest, BKE_tracking_marker_get)
       addMarkerToTrack(&track, 2);
       addMarkerToTrack(&track, 10);
 
-      EXPECT_EQ(BKE_tracking_marker_get(&track, 0), &track.markers[0]);
-      EXPECT_EQ(BKE_tracking_marker_get(&track, 1), &track.markers[0]);
-      EXPECT_EQ(BKE_tracking_marker_get(&track, 2), &track.markers[1]);
-      EXPECT_EQ(BKE_tracking_marker_get(&track, 3), &track.markers[1]);
-      EXPECT_EQ(BKE_tracking_marker_get(&track, 9), &track.markers[1]);
-      EXPECT_EQ(BKE_tracking_marker_get(&track, 10), &track.markers[2]);
-      EXPECT_EQ(BKE_tracking_marker_get(&track, 11), &track.markers[2]);
+      EXPECT_EQ(KE_tracking_marker_get(&track, 0), &track.markers[0]);
+      EXPECT_EQ(KE_tracking_marker_get(&track, 1), &track.markers[0]);
+      EXPECT_EQ(KE_tracking_marker_get(&track, 2), &track.markers[1]);
+      EXPECT_EQ(KE_tracking_marker_get(&track, 3), &track.markers[1]);
+      EXPECT_EQ(KE_tracking_marker_get(&track, 9), &track.markers[1]);
+      EXPECT_EQ(KE_tracking_marker_get(&track, 10), &track.markers[2]);
+      EXPECT_EQ(KE_tracking_marker_get(&track, 11), &track.markers[2]);
 
-      BKE_tracking_track_free(&track);
+      KERNEL_tracking_track_free(&track);
     }
   }
 }
 
-TEST_F(TrackingTest, BKE_tracking_marker_get_exact)
+TEST_F(TrackingTest, KERNEL_tracking_marker_get_exact)
 {
   MovieTrackingTrack track = {nullptr};
 
