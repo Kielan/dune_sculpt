@@ -1,20 +1,18 @@
-/** \file
- * \ingroup bke
- *
+/**
  * This file contains implementation of blender-side region tracker
  * which is used for 2D feature tracking.
  */
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_defaults.h"
-#include "DNA_movieclip_types.h"
+#include "structs_defaults.h"
+#include "structs_movieclip_types.h"
 
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_movieclip.h"
-#include "BKE_tracking.h"
+#include "KERNEL_movieclip.h"
+#include "KERNEL_tracking.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -64,7 +62,7 @@ static float *track_get_search_floatbuf(ImBuf *ibuf,
   float *gray_pixels;
   int width, height;
 
-  searchibuf = BKE_tracking_get_search_imbuf(ibuf, track, marker, false, true);
+  searchibuf = KERNEL_tracking_get_search_imbuf(ibuf, track, marker, false, true);
 
   if (!searchibuf) {
     *r_width = 0;
@@ -106,9 +104,9 @@ static ImBuf *tracking_context_get_frame_ibuf(MovieClip *clip,
   ImBuf *ibuf;
   MovieClipUser new_user = *user;
 
-  new_user.framenr = BKE_movieclip_remap_clip_to_scene_frame(clip, framenr);
+  new_user.framenr = KERNEL_movieclip_remap_clip_to_scene_frame(clip, framenr);
 
-  ibuf = BKE_movieclip_get_ibuf_flag(clip, &new_user, clip_flag, MOVIECLIP_CACHE_SKIP);
+  ibuf = KERNEL_movieclip_get_ibuf_flag(clip, &new_user, clip_flag, MOVIECLIP_CACHE_SKIP);
 
   return ibuf;
 }
@@ -292,7 +290,7 @@ static bool refine_marker_reference_frame_get(MovieTrackingTrack *track,
   return (reference->flag & MARKER_DISABLED) == 0;
 }
 
-void BKE_tracking_refine_marker(MovieClip *clip,
+void KERNEL_tracking_refine_marker(MovieClip *clip,
                                 MovieTrackingTrack *track,
                                 MovieTrackingMarker *marker,
                                 bool backwards)
@@ -309,9 +307,9 @@ void BKE_tracking_refine_marker(MovieClip *clip,
   bool tracked;
 
   /* Construct a temporary clip used, used to acquire image buffers. */
-  user.framenr = BKE_movieclip_remap_clip_to_scene_frame(clip, marker->framenr);
+  user.framenr = KERNEL_movieclip_remap_clip_to_scene_frame(clip, marker->framenr);
 
-  BKE_movieclip_get_size(clip, &user, &frame_width, &frame_height);
+  KERNEL_movieclip_get_size(clip, &user, &frame_width, &frame_height);
 
   /* Get an image buffer for reference frame, also gets reference marker. */
   if (!refine_marker_reference_frame_get(track, marker, backwards, &reference_framenr)) {
