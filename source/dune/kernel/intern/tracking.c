@@ -7,7 +7,7 @@
   return &object->plane_tracks;
 }
 
-MovieTrackingReconstruction *BKE_tracking_object_get_reconstruction(MovieTracking *tracking,
+MovieTrackingReconstruction *KERNEL_tracking_object_get_reconstruction(MovieTracking *tracking,
                                                                     MovieTrackingObject *object)
 {
   if (object->flag & TRACKING_OBJECT_CAMERA) {
@@ -99,16 +99,16 @@ static void reconstructed_camera_scale_set(MovieTrackingObject *object, float ma
   }
 }
 
-void BKE_tracking_camera_shift_get(
+void KERNEL_tracking_camera_shift_get(
     MovieTracking *tracking, int winx, int winy, float *shiftx, float *shifty)
 {
   /* Indeed in both of cases it should be winx -
-   * it's just how camera shift works for blender's camera. */
+   * it's just how camera shift works for dune's camera. */
   *shiftx = (0.5f * winx - tracking->camera.principal[0]) / winx;
   *shifty = (0.5f * winy - tracking->camera.principal[1]) / winx;
 }
 
-void BKE_tracking_camera_to_blender(
+void KERNEL_tracking_camera_to_dune(
     MovieTracking *tracking, Scene *scene, Camera *camera, int width, int height)
 {
   float focal = tracking->camera.focal;
@@ -123,17 +123,17 @@ void BKE_tracking_camera_to_blender(
   scene->r.xasp = tracking->camera.pixel_aspect;
   scene->r.yasp = 1.0f;
 
-  BKE_tracking_camera_shift_get(tracking, width, height, &camera->shiftx, &camera->shifty);
+  KERNEL_tracking_camera_shift_get(tracking, width, height, &camera->shiftx, &camera->shifty);
 }
 
-MovieReconstructedCamera *BKE_tracking_camera_get_reconstructed(MovieTracking *tracking,
+MovieReconstructedCamera *KERNEL_tracking_camera_get_reconstructed(MovieTracking *tracking,
                                                                 MovieTrackingObject *object,
                                                                 int framenr)
 {
   MovieTrackingReconstruction *reconstruction;
   int a;
 
-  reconstruction = BKE_tracking_object_get_reconstruction(tracking, object);
+  reconstruction = KERNEL_tracking_object_get_reconstruction(tracking, object);
   a = reconstructed_camera_index_get(reconstruction, framenr, false);
 
   if (a == -1) {
@@ -143,7 +143,7 @@ MovieReconstructedCamera *BKE_tracking_camera_get_reconstructed(MovieTracking *t
   return &reconstruction->cameras[a];
 }
 
-void BKE_tracking_camera_get_reconstructed_interpolate(MovieTracking *tracking,
+void KERNEL_tracking_camera_get_reconstructed_interpolate(MovieTracking *tracking,
                                                        MovieTrackingObject *object,
                                                        float framenr,
                                                        float mat[4][4])
@@ -152,7 +152,7 @@ void BKE_tracking_camera_get_reconstructed_interpolate(MovieTracking *tracking,
   MovieReconstructedCamera *cameras;
   int a;
 
-  reconstruction = BKE_tracking_object_get_reconstruction(tracking, object);
+  reconstruction = KERNEL_tracking_object_get_reconstruction(tracking, object);
   cameras = reconstruction->cameras;
   a = reconstructed_camera_index_get(reconstruction, (int)framenr, true);
 
@@ -164,7 +164,7 @@ void BKE_tracking_camera_get_reconstructed_interpolate(MovieTracking *tracking,
   if (cameras[a].framenr != framenr && a < reconstruction->camnr - 1) {
     float t = ((float)framenr - cameras[a].framenr) /
               (cameras[a + 1].framenr - cameras[a].framenr);
-    blend_m4_m4m4(mat, cameras[a].mat, cameras[a + 1].mat, t);
+    dune_m4_m4m4(mat, cameras[a].mat, cameras[a + 1].mat, t);
   }
   else {
     copy_m4_m4(mat, cameras[a].mat);
@@ -175,7 +175,7 @@ void BKE_tracking_camera_get_reconstructed_interpolate(MovieTracking *tracking,
 
 /*********************** Distortion/Undistortion *************************/
 
-MovieDistortion *BKE_tracking_distortion_new(MovieTracking *tracking,
+MovieDistortion *KERNEL_tracking_distortion_new(MovieTracking *tracking,
                                              int calibration_width,
                                              int calibration_height)
 {
@@ -185,7 +185,7 @@ MovieDistortion *BKE_tracking_distortion_new(MovieTracking *tracking,
   tracking_cameraIntrinscisOptionsFromTracking(
       tracking, calibration_width, calibration_height, &camera_intrinsics_options);
 
-  distortion = MEM_callocN(sizeof(MovieDistortion), "BKE_tracking_distortion_create");
+  distortion = MEM_callocN(sizeof(MovieDistortion), "KERNEL_tracking_distortion_create");
   distortion->intrinsics = libmv_cameraIntrinsicsNew(&camera_intrinsics_options);
 
   const MovieTrackingCamera *camera = &tracking->camera;
@@ -196,7 +196,7 @@ MovieDistortion *BKE_tracking_distortion_new(MovieTracking *tracking,
   return distortion;
 }
 
-void BKE_tracking_distortion_update(MovieDistortion *distortion,
+void KERNEL_tracking_distortion_update(MovieDistortion *distortion,
                                     MovieTracking *tracking,
                                     int calibration_width,
                                     int calibration_height)
@@ -214,12 +214,12 @@ void BKE_tracking_distortion_update(MovieDistortion *distortion,
   libmv_cameraIntrinsicsUpdate(&camera_intrinsics_options, distortion->intrinsics);
 }
 
-void BKE_tracking_distortion_set_threads(MovieDistortion *distortion, int threads)
+void KERNEL_tracking_distortion_set_threads(MovieDistortion *distortion, int threads)
 {
   libmv_cameraIntrinsicsSetThreads(distortion->intrinsics, threads);
 }
 
-MovieDistortion *BKE_tracking_distortion_copy(MovieDistortion *distortion)
+MovieDistortion *KERNEL_tracking_distortion_copy(MovieDistortion *distortion)
 {
   MovieDistortion *new_distortion;
 
@@ -230,7 +230,7 @@ MovieDistortion *BKE_tracking_distortion_copy(MovieDistortion *distortion)
   return new_distortion;
 }
 
-ImBuf *BKE_tracking_distortion_exec(MovieDistortion *distortion,
+ImBuf *KERNEL_tracking_distortion_exec(MovieDistortion *distortion,
                                     MovieTracking *tracking,
                                     ImBuf *ibuf,
                                     int calibration_width,
@@ -240,7 +240,7 @@ ImBuf *BKE_tracking_distortion_exec(MovieDistortion *distortion,
 {
   ImBuf *resibuf;
 
-  BKE_tracking_distortion_update(distortion, tracking, calibration_width, calibration_height);
+  KERNEL_tracking_distortion_update(distortion, tracking, calibration_width, calibration_height);
 
   resibuf = IMB_dupImBuf(ibuf);
 
@@ -292,7 +292,7 @@ ImBuf *BKE_tracking_distortion_exec(MovieDistortion *distortion,
   return resibuf;
 }
 
-void BKE_tracking_distortion_distort_v2(MovieDistortion *distortion,
+void KERNEL_tracking_distortion_distort_v2(MovieDistortion *distortion,
                                         const float co[2],
                                         float r_co[2])
 {
@@ -310,7 +310,7 @@ void BKE_tracking_distortion_distort_v2(MovieDistortion *distortion,
   r_co[1] = y;
 }
 
-void BKE_tracking_distortion_undistort_v2(MovieDistortion *distortion,
+void KERNEL_tracking_distortion_undistort_v2(MovieDistortion *distortion,
                                           const float co[2],
                                           float r_co[2])
 {
@@ -322,14 +322,14 @@ void BKE_tracking_distortion_undistort_v2(MovieDistortion *distortion,
   r_co[1] = (float)y * distortion->focal + distortion->principal[1] * aspy;
 }
 
-void BKE_tracking_distortion_free(MovieDistortion *distortion)
+void KERNEL_tracking_distortion_free(MovieDistortion *distortion)
 {
   libmv_cameraIntrinsicsDestroy(distortion->intrinsics);
 
   MEM_freeN(distortion);
 }
 
-void BKE_tracking_distort_v2(
+void KERNEL_tracking_distort_v2(
     MovieTracking *tracking, int image_width, int image_height, const float co[2], float r_co[2])
 {
   const MovieTrackingCamera *camera = &tracking->camera;
@@ -352,7 +352,7 @@ void BKE_tracking_distort_v2(
   r_co[1] = y;
 }
 
-void BKE_tracking_undistort_v2(
+void KERNEL_tracking_undistort_v2(
     MovieTracking *tracking, int image_width, int image_height, const float co[2], float r_co[2])
 {
   const MovieTrackingCamera *camera = &tracking->camera;
@@ -371,7 +371,7 @@ void BKE_tracking_undistort_v2(
   r_co[1] = (float)y * camera->focal + camera->principal[1] * aspy;
 }
 
-ImBuf *BKE_tracking_undistort_frame(MovieTracking *tracking,
+ImBuf *KERNEL_tracking_undistort_frame(MovieTracking *tracking,
                                     ImBuf *ibuf,
                                     int calibration_width,
                                     int calibration_height,
@@ -548,7 +548,7 @@ ImBuf *BKE_tracking_sample_pattern(int frame_width,
   }
 
   if (use_mask) {
-    mask = BKE_tracking_track_get_mask(frame_width, frame_height, track, marker);
+    mask = KERNEL_tracking_track_get_mask(frame_width, frame_height, track, marker);
   }
 
   if (search_ibuf->rect_float) {
@@ -592,7 +592,7 @@ ImBuf *BKE_tracking_sample_pattern(int frame_width,
   return pattern_ibuf;
 }
 
-ImBuf *BKE_tracking_get_pattern_imbuf(ImBuf *ibuf,
+ImBuf *KERNEL_tracking_get_pattern_imbuf(ImBuf *ibuf,
                                       MovieTrackingTrack *track,
                                       MovieTrackingMarker *marker,
                                       bool anchored,
@@ -602,15 +602,15 @@ ImBuf *BKE_tracking_get_pattern_imbuf(ImBuf *ibuf,
   float pat_min[2], pat_max[2];
   int num_samples_x, num_samples_y;
 
-  BKE_tracking_marker_pattern_minmax(marker, pat_min, pat_max);
+  KERNEL_tracking_marker_pattern_minmax(marker, pat_min, pat_max);
 
   num_samples_x = (pat_max[0] - pat_min[0]) * ibuf->x;
   num_samples_y = (pat_max[1] - pat_min[1]) * ibuf->y;
 
-  search_ibuf = BKE_tracking_get_search_imbuf(ibuf, track, marker, anchored, disable_channels);
+  search_ibuf = KERNEL_tracking_get_search_imbuf(ibuf, track, marker, anchored, disable_channels);
 
   if (search_ibuf) {
-    pattern_ibuf = BKE_tracking_sample_pattern(ibuf->x,
+    pattern_ibuf = KERNEL_tracking_sample_pattern(ibuf->x,
                                                ibuf->y,
                                                search_ibuf,
                                                track,
