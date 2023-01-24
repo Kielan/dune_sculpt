@@ -1,11 +1,11 @@
-#include "BKE_type_conversions.hh"
+#include "KERNEL_type_conversions.hh"
 
 #include "FN_multi_function_builder.hh"
 
-#include "BLI_color.hh"
-#include "BLI_math_vector.hh"
+#include "LIB_color.hh"
+#include "LIB_math_vector.hh"
 
-namespace blender::bke {
+namespace dune::kernel {
 
 using fn::MFDataType;
 
@@ -281,7 +281,7 @@ void DataTypeConversions::convert_to_uninitialized(const CPPType &from_type,
 
   const ConversionFunctions *functions = this->get_conversion_functions(
       MFDataType::ForSingle(from_type), MFDataType::ForSingle(to_type));
-  BLI_assert(functions != nullptr);
+  LIB_assert(functions != nullptr);
 
   functions->convert_single_to_uninitialized(from_value, to_value);
 }
@@ -290,8 +290,8 @@ void DataTypeConversions::convert_to_initialized_n(GSpan from_span, GMutableSpan
 {
   const CPPType &from_type = from_span.type();
   const CPPType &to_type = to_span.type();
-  BLI_assert(from_span.size() == to_span.size());
-  BLI_assert(this->is_convertible(from_type, to_type));
+  LIB_assert(from_span.size() == to_span.size());
+  LIB_assert(this->is_convertible(from_type, to_type));
   const fn::MultiFunction *fn = this->get_conversion_multi_function(
       MFDataType::ForSingle(from_type), MFDataType::ForSingle(to_type));
   fn::MFParamsBuilder params{*fn, from_span.size()};
