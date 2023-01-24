@@ -1062,30 +1062,30 @@ static void tracking_dopesheet_channels_sort(MovieTracking *tracking,
       LIB_listbase_sort(&dopesheet->channels, channels_average_error_inverse_sort);
     }
     else if (sort_method == TRACKING_DOPE_SORT_START) {
-      BLI_listbase_sort(&dopesheet->channels, channels_start_inverse_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_start_inverse_sort);
     }
     else if (sort_method == TRACKING_DOPE_SORT_END) {
-      BLI_listbase_sort(&dopesheet->channels, channels_end_inverse_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_end_inverse_sort);
     }
   }
   else {
     if (sort_method == TRACKING_DOPE_SORT_NAME) {
-      BLI_listbase_sort(&dopesheet->channels, channels_alpha_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_alpha_sort);
     }
     else if (sort_method == TRACKING_DOPE_SORT_LONGEST) {
-      BLI_listbase_sort(&dopesheet->channels, channels_longest_segment_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_longest_segment_sort);
     }
     else if (sort_method == TRACKING_DOPE_SORT_TOTAL) {
-      BLI_listbase_sort(&dopesheet->channels, channels_total_track_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_total_track_sort);
     }
     else if (sort_method == TRACKING_DOPE_SORT_AVERAGE_ERROR) {
-      BLI_listbase_sort(&dopesheet->channels, channels_average_error_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_average_error_sort);
     }
     else if (sort_method == TRACKING_DOPE_SORT_START) {
-      BLI_listbase_sort(&dopesheet->channels, channels_start_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_start_sort);
     }
     else if (sort_method == TRACKING_DOPE_SORT_END) {
-      BLI_listbase_sort(&dopesheet->channels, channels_end_sort);
+      LIB_listbase_sort(&dopesheet->channels, channels_end_sort);
     }
   }
 }
@@ -1109,8 +1109,8 @@ static int coverage_from_count(int count)
 static void tracking_dopesheet_calc_coverage(MovieTracking *tracking)
 {
   MovieTrackingDopesheet *dopesheet = &tracking->dopesheet;
-  MovieTrackingObject *object = BKE_tracking_object_get_active(tracking);
-  ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, object);
+  MovieTrackingObject *object = KERNEL_tracking_object_get_active(tracking);
+  ListBase *tracksbase = KERNEL_tracking_object_get_tracks(tracking, object);
   int frames, start_frame = INT_MAX, end_frame = -INT_MAX;
   int *per_frame_counter;
   int prev_coverage, last_segment_frame;
@@ -1174,7 +1174,7 @@ static void tracking_dopesheet_calc_coverage(MovieTracking *tracking)
       coverage_segment->start_frame = last_segment_frame;
       coverage_segment->end_frame = end_segment_frame;
 
-      BLI_addtail(&dopesheet->coverage_segments, coverage_segment);
+      LIB_addtail(&dopesheet->coverage_segments, coverage_segment);
 
       last_segment_frame = end_segment_frame;
     }
@@ -1185,14 +1185,14 @@ static void tracking_dopesheet_calc_coverage(MovieTracking *tracking)
   MEM_freeN(per_frame_counter);
 }
 
-void BKE_tracking_dopesheet_tag_update(MovieTracking *tracking)
+void KERNEL_tracking_dopesheet_tag_update(MovieTracking *tracking)
 {
   MovieTrackingDopesheet *dopesheet = &tracking->dopesheet;
 
   dopesheet->ok = false;
 }
 
-void BKE_tracking_dopesheet_update(MovieTracking *tracking)
+void KERNEL_tracking_dopesheet_update(MovieTracking *tracking)
 {
   MovieTrackingDopesheet *dopesheet = &tracking->dopesheet;
 
@@ -1215,16 +1215,16 @@ void BKE_tracking_dopesheet_update(MovieTracking *tracking)
   dopesheet->ok = true;
 }
 
-MovieTrackingObject *BKE_tracking_find_object_for_track(const MovieTracking *tracking,
+MovieTrackingObject *KERNEL_tracking_find_object_for_track(const MovieTracking *tracking,
                                                         const MovieTrackingTrack *track)
 {
   const ListBase *tracksbase = &tracking->tracks;
-  if (BLI_findindex(tracksbase, track) != -1) {
+  if (LIB_findindex(tracksbase, track) != -1) {
     return NULL;
   }
   MovieTrackingObject *object = tracking->objects.first;
   while (object != NULL) {
-    if (BLI_findindex(&object->tracks, track) != -1) {
+    if (LIB_findindex(&object->tracks, track) != -1) {
       return object;
     }
     object = object->next;
@@ -1232,26 +1232,26 @@ MovieTrackingObject *BKE_tracking_find_object_for_track(const MovieTracking *tra
   return NULL;
 }
 
-ListBase *BKE_tracking_find_tracks_list_for_track(MovieTracking *tracking,
+ListBase *KERNEL_tracking_find_tracks_list_for_track(MovieTracking *tracking,
                                                   const MovieTrackingTrack *track)
 {
-  MovieTrackingObject *object = BKE_tracking_find_object_for_track(tracking, track);
+  MovieTrackingObject *object = KERNEL_tracking_find_object_for_track(tracking, track);
   if (object != NULL) {
     return &object->tracks;
   }
   return &tracking->tracks;
 }
 
-MovieTrackingObject *BKE_tracking_find_object_for_plane_track(
+MovieTrackingObject *KERNEL_tracking_find_object_for_plane_track(
     const MovieTracking *tracking, const MovieTrackingPlaneTrack *plane_track)
 {
   const ListBase *plane_tracks_base = &tracking->plane_tracks;
-  if (BLI_findindex(plane_tracks_base, plane_track) != -1) {
+  if (LIB_findindex(plane_tracks_base, plane_track) != -1) {
     return NULL;
   }
   MovieTrackingObject *object = tracking->objects.first;
   while (object != NULL) {
-    if (BLI_findindex(&object->plane_tracks, plane_track) != -1) {
+    if (LIB_findindex(&object->plane_tracks, plane_track) != -1) {
       return object;
     }
     object = object->next;
@@ -1259,89 +1259,89 @@ MovieTrackingObject *BKE_tracking_find_object_for_plane_track(
   return NULL;
 }
 
-ListBase *BKE_tracking_find_tracks_list_for_plane_track(MovieTracking *tracking,
+ListBase *KERNEL_tracking_find_tracks_list_for_plane_track(MovieTracking *tracking,
                                                         const MovieTrackingPlaneTrack *plane_track)
 {
-  MovieTrackingObject *object = BKE_tracking_find_object_for_plane_track(tracking, plane_track);
+  MovieTrackingObject *object = KERNEL_tracking_find_object_for_plane_track(tracking, plane_track);
   if (object != NULL) {
     return &object->plane_tracks;
   }
   return &tracking->plane_tracks;
 }
 
-void BKE_tracking_get_rna_path_for_track(const struct MovieTracking *tracking,
+void KERNEL_tracking_get_api_path_for_track(const struct MovieTracking *tracking,
                                          const struct MovieTrackingTrack *track,
-                                         char *rna_path,
-                                         size_t rna_path_len)
+                                         char *api_path,
+                                         size_t api_path_len)
 {
-  MovieTrackingObject *object = BKE_tracking_find_object_for_track(tracking, track);
+  MovieTrackingObject *object = KERNEL_tracking_find_object_for_track(tracking, track);
   char track_name_esc[MAX_NAME * 2];
-  BLI_str_escape(track_name_esc, track->name, sizeof(track_name_esc));
+  LIB_str_escape(track_name_esc, track->name, sizeof(track_name_esc));
   if (object == NULL) {
-    BLI_snprintf(rna_path, rna_path_len, "tracking.tracks[\"%s\"]", track_name_esc);
+    LIB_snprintf(api_path, api_path_len, "tracking.tracks[\"%s\"]", track_name_esc);
   }
   else {
     char object_name_esc[MAX_NAME * 2];
-    BLI_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
-    BLI_snprintf(rna_path,
-                 rna_path_len,
+    LIB_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
+    LIB_snprintf(api_path,
+                 api_path_len,
                  "tracking.objects[\"%s\"].tracks[\"%s\"]",
                  object_name_esc,
                  track_name_esc);
   }
 }
 
-void BKE_tracking_get_rna_path_prefix_for_track(const struct MovieTracking *tracking,
+void KERNEL_tracking_get_api_path_prefix_for_track(const struct MovieTracking *tracking,
                                                 const struct MovieTrackingTrack *track,
-                                                char *rna_path,
-                                                size_t rna_path_len)
+                                                char *api_path,
+                                                size_t api_path_len)
 {
-  MovieTrackingObject *object = BKE_tracking_find_object_for_track(tracking, track);
+  MovieTrackingObject *object = KERNEL_tracking_find_object_for_track(tracking, track);
   if (object == NULL) {
-    BLI_strncpy(rna_path, "tracking.tracks", rna_path_len);
+    LIB_strncpy(rna_path, "tracking.tracks", api_path_len);
   }
   else {
     char object_name_esc[MAX_NAME * 2];
-    BLI_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
-    BLI_snprintf(rna_path, rna_path_len, "tracking.objects[\"%s\"]", object_name_esc);
+    LIB_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
+    LIB_snprintf(api_path, api_path_len, "tracking.objects[\"%s\"]", object_name_esc);
   }
 }
 
-void BKE_tracking_get_rna_path_for_plane_track(const struct MovieTracking *tracking,
+void KERNEL_tracking_get_api_path_for_plane_track(const struct MovieTracking *tracking,
                                                const struct MovieTrackingPlaneTrack *plane_track,
-                                               char *rna_path,
-                                               size_t rna_path_len)
+                                               char *api_path,
+                                               size_t api_path_len)
 {
-  MovieTrackingObject *object = BKE_tracking_find_object_for_plane_track(tracking, plane_track);
+  MovieTrackingObject *object = KERNEL_tracking_find_object_for_plane_track(tracking, plane_track);
   char track_name_esc[MAX_NAME * 2];
-  BLI_str_escape(track_name_esc, plane_track->name, sizeof(track_name_esc));
+  LIB_str_escape(track_name_esc, plane_track->name, sizeof(track_name_esc));
   if (object == NULL) {
-    BLI_snprintf(rna_path, rna_path_len, "tracking.plane_tracks[\"%s\"]", track_name_esc);
+    LIB_snprintf(api_path, api_path_len, "tracking.plane_tracks[\"%s\"]", track_name_esc);
   }
   else {
     char object_name_esc[MAX_NAME * 2];
-    BLI_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
-    BLI_snprintf(rna_path,
-                 rna_path_len,
+    LIB_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
+    LIB_snprintf(api_path,
+                 api_path_len,
                  "tracking.objects[\"%s\"].plane_tracks[\"%s\"]",
                  object_name_esc,
                  track_name_esc);
   }
 }
 
-void BKE_tracking_get_rna_path_prefix_for_plane_track(
+void KERNEL_tracking_get_api_path_prefix_for_plane_track(
     const struct MovieTracking *tracking,
     const struct MovieTrackingPlaneTrack *plane_track,
-    char *rna_path,
-    size_t rna_path_len)
+    char *api_path,
+    size_t api_path_len)
 {
-  MovieTrackingObject *object = BKE_tracking_find_object_for_plane_track(tracking, plane_track);
+  MovieTrackingObject *object = KERNEL_tracking_find_object_for_plane_track(tracking, plane_track);
   if (object == NULL) {
-    BLI_strncpy(rna_path, "tracking.plane_tracks", rna_path_len);
+    LIB_strncpy(api_path, "tracking.plane_tracks", api_path_len);
   }
   else {
     char object_name_esc[MAX_NAME * 2];
-    BLI_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
-    BLI_snprintf(rna_path, rna_path_len, "tracking.objects[\"%s\"].plane_tracks", object_name_esc);
+    LIB_str_escape(object_name_esc, object->name, sizeof(object_name_esc));
+    LIB_snprintf(api_path, api_path_len, "tracking.objects[\"%s\"].plane_tracks", object_name_esc);
   }
 }
