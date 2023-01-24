@@ -1,17 +1,15 @@
-/** \file
- * \ingroup bke
- *
+/**
  * This file contains implementation of plane tracker.
  */
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_movieclip_types.h"
+#include "structs_movieclip_types.h"
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "LIB_math.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_tracking.h"
+#include "KERNEL_tracking.h"
 
 #include "libmv-capi.h"
 
@@ -204,7 +202,7 @@ BLI_INLINE void float_corners_to_double(/*const*/ float corners[4][2], double do
   copy_v2db_v2fl(double_corners[3], corners[3]);
 }
 
-void BKE_tracking_homography_between_two_quads(/*const*/ float reference_corners[4][2],
+void KERNEL_tracking_homography_between_two_quads(/*const*/ float reference_corners[4][2],
                                                /*const*/ float corners[4][2],
                                                float H[3][3])
 {
