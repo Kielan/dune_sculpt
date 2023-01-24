@@ -9,17 +9,17 @@
 #include "API_access.h"
 #include "API_prototypes.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_math_vector.h"
-#include "BLI_sort_utils.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_math_vector.h"
+#include "LIB_sort_utils.h"
+#include "LIB_task.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_fcurve.h"
-#include "BKE_movieclip.h"
-#include "BKE_tracking.h"
+#include "KERNEL_fcurve.h"
+#include "KERNEL_movieclip.h"
+#include "KERNEL_tracking.h"
 
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf.h"
@@ -96,14 +96,14 @@ typedef struct StabContext {
 static TrackStabilizationBase *access_stabilization_baseline_data(StabContext *ctx,
                                                                   MovieTrackingTrack *track)
 {
-  return BLI_ghash_lookup(ctx->private_track_data, track);
+  return LIB_ghash_lookup(ctx->private_track_data, track);
 }
 
 static void attach_stabilization_baseline_data(StabContext *ctx,
                                                MovieTrackingTrack *track,
                                                TrackStabilizationBase *private_data)
 {
-  BLI_ghash_insert(ctx->private_track_data, track, private_data);
+  LIB_ghash_insert(ctx->private_track_data, track, private_data);
 }
 
 static void discard_stabilization_baseline_data(void *val)
@@ -119,7 +119,7 @@ static FCurve *retrieve_stab_animation(MovieClip *clip, const char *data_path, i
 {
   return id_data_find_fcurve(&clip->id,
                              &clip->tracking.stabilization,
-                             &RNA_MovieTrackingStabilization,
+                             &API_MovieTrackingStabilization,
                              data_path,
                              idx,
                              NULL);
@@ -127,7 +127,7 @@ static FCurve *retrieve_stab_animation(MovieClip *clip, const char *data_path, i
 
 static FCurve *retrieve_track_weight_animation(MovieClip *clip, MovieTrackingTrack *track)
 {
-  return id_data_find_fcurve(&clip->id, track, &RNA_MovieTrackingTrack, "weight_stab", 0, NULL);
+  return id_data_find_fcurve(&clip->id, track, &API_MovieTrackingTrack, "weight_stab", 0, NULL);
 }
 
 static float fetch_from_fcurve(FCurve *animationCurve,
@@ -177,7 +177,7 @@ static float get_animated_weight(StabContext *ctx, MovieTrackingTrack *track, in
 {
   TrackStabilizationBase *working_data = access_stabilization_baseline_data(ctx, track);
   if (working_data && working_data->track_weight_curve) {
-    int scene_framenr = BKE_movieclip_remap_clip_to_scene_frame(ctx->clip, framenr);
+    int scene_framenr = KERNEL_movieclip_remap_clip_to_scene_frame(ctx->clip, framenr);
     return evaluate_fcurve(working_data->track_weight_curve, scene_framenr);
   }
   /* Use weight at global 'current frame' as fallback default. */
@@ -200,7 +200,7 @@ static StabContext *init_stabilization_working_context(MovieClip *clip)
   ctx->clip = clip;
   ctx->tracking = &clip->tracking;
   ctx->stab = &clip->tracking.stabilization;
-  ctx->private_track_data = BLI_ghash_ptr_new("2D stabilization per track private working data");
+  ctx->private_track_data = LIB_ghash_ptr_new("2D stabilization per track private working data");
   ctx->locinf = retrieve_stab_animation(clip, "influence_location", 0);
   ctx->rotinf = retrieve_stab_animation(clip, "influence_rotation", 0);
   ctx->scaleinf = retrieve_stab_animation(clip, "influence_scale", 0);
@@ -215,15 +215,15 @@ static StabContext *init_stabilization_working_context(MovieClip *clip)
 /**
  * Discard all private working data attached to this call context.
  *
- * \note We allocate the record for the per track baseline contribution
- * locally for each call context (i.e. call to #BKE_tracking_stabilization_data_get)
+ * We allocate the record for the per track baseline contribution
+ * locally for each call context (i.e. call to KERNEL_tracking_stabilization_data_get)
  * Thus it is correct to discard all allocations found within the
  * corresponding _local_ GHash.
  */
 static void discard_stabilization_working_context(StabContext *ctx)
 {
   if (ctx != NULL) {
-    BLI_ghash_free(ctx->private_track_data, NULL, discard_stabilization_baseline_data);
+    LIB_ghash_free(ctx->private_track_data, NULL, discard_stabilization_baseline_data);
     MEM_freeN(ctx);
   }
 }
@@ -249,7 +249,7 @@ static bool is_effectively_disabled(StabContext *ctx,
 
 static int search_closest_marker_index(MovieTrackingTrack *track, int ref_frame)
 {
-  const MovieTrackingMarker *marker = BKE_tracking_marker_get(track, ref_frame);
+  const MovieTrackingMarker *marker = KERNEL_tracking_marker_get(track, ref_frame);
   return marker - track->markers;
 }
 
@@ -265,7 +265,7 @@ static void retrieve_next_higher_usable_frame(
     i++;
   }
   if (i < end && markers[i].framenr < *next_higher) {
-    BLI_assert(markers[i].framenr >= ref_frame);
+    LIB_assert(markers[i].framenr >= ref_frame);
     *next_higher = markers[i].framenr;
   }
 }
@@ -274,13 +274,13 @@ static void retrieve_next_lower_usable_frame(
     StabContext *ctx, MovieTrackingTrack *track, int i, int ref_frame, int *next_lower)
 {
   MovieTrackingMarker *markers = track->markers;
-  BLI_assert(0 <= i && i < track->markersnr);
+  LIB_assert(0 <= i && i < track->markersnr);
   while (i >= 0 &&
          (markers[i].framenr > ref_frame || is_effectively_disabled(ctx, track, &markers[i]))) {
     i--;
   }
   if (0 <= i && markers[i].framenr > *next_lower) {
-    BLI_assert(markers[i].framenr <= ref_frame);
+    LIB_assert(markers[i].framenr <= ref_frame);
     *next_lower = markers[i].framenr;
   }
 }
@@ -333,7 +333,7 @@ static MovieTrackingMarker *get_tracking_data_point(StabContext *ctx,
                                                     int framenr,
                                                     float *r_weight)
 {
-  MovieTrackingMarker *marker = BKE_tracking_marker_get_exact(track, framenr);
+  MovieTrackingMarker *marker = KERNEL_tracking_marker_get_exact(track, framenr);
   if (marker != NULL && !(marker->flag & MARKER_DISABLED)) {
     *r_weight = get_animated_weight(ctx, track, framenr);
     return marker;
@@ -448,7 +448,7 @@ static float rotation_contribution(TrackStabilizationBase *track_ref,
   len += SCALE_ERROR_LIMIT_BIAS;
 
   *result_scale = len * track_ref->stabilization_scale_base;
-  BLI_assert(0.0 < *result_scale);
+  LIB_assert(0.0 < *result_scale);
 
   return quality;
 }
@@ -529,7 +529,7 @@ static bool average_track_contributions(StabContext *ctx,
       if (marker) {
         TrackStabilizationBase *stabilization_base = access_stabilization_baseline_data(ctx,
                                                                                         track);
-        BLI_assert(stabilization_base != NULL);
+        LIB_assert(stabilization_base != NULL);
         float offset[2];
         weight_sum += weight;
         translation_contribution(stabilization_base, marker, offset);
@@ -567,7 +567,7 @@ static bool average_track_contributions(StabContext *ctx,
       if (marker) {
         TrackStabilizationBase *stabilization_base = access_stabilization_baseline_data(ctx,
                                                                                         track);
-        BLI_assert(stabilization_base != NULL);
+        LIB_assert(stabilization_base != NULL);
         float rotation, scale, quality;
         quality = rotation_contribution(
             stabilization_base, marker, aspect, r_pivot, &rotation, &scale);
@@ -687,9 +687,9 @@ static bool interpolate_averaged_track_contributions(StabContext *ctx,
   float pivot_a[2], pivot_b[2];
   bool success = false;
 
-  BLI_assert(frame_a <= frame_b);
-  BLI_assert(frame_a <= framenr);
-  BLI_assert(framenr <= frame_b);
+  LIB_assert(frame_a <= frame_b);
+  LIB_assert(frame_a <= framenr);
+  LIB_assert(framenr <= frame_b);
 
   t = ((float)framenr - frame_a) / (frame_b - frame_a);
   s = 1.0f - t;
@@ -812,12 +812,12 @@ static void init_track_for_stabilization(StabContext *ctx,
 {
   float pos[2], angle, len;
   TrackStabilizationBase *local_data = access_stabilization_baseline_data(ctx, track);
-  MovieTrackingMarker *marker = BKE_tracking_marker_get_exact(track, reference_frame);
+  MovieTrackingMarker *marker = KERNEL_tracking_marker_get_exact(track, reference_frame);
   /* Logic for initialization order ensures there *is* a marker on that
    * very frame.
    */
-  BLI_assert(marker != NULL);
-  BLI_assert(local_data != NULL);
+  LIB_assert(marker != NULL);
+  LIB_assert(local_data != NULL);
 
   /* Per track baseline value for translation. */
   sub_v2_v2v2(local_data->stabilization_offset_base, average_translation, marker->pos);
@@ -860,7 +860,7 @@ static void init_all_tracks(StabContext *ctx, float aspect)
                                "2D stabilization per track baseline data");
       attach_stabilization_baseline_data(ctx, track, local_data);
     }
-    BLI_assert(local_data != NULL);
+    LIB_assert(local_data != NULL);
     local_data->track_weight_curve = retrieve_track_weight_animation(clip, track);
     local_data->is_init_for_stabilization = false;
 
