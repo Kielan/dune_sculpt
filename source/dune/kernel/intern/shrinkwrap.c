@@ -5,37 +5,37 @@
 #include <string.h>
 #include <time.h>
 
-#include "DNA_gpencil_modifier_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
+#include "structs_gpencil_modifier_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
+#include "structs_modifier_types.h"
+#include "structs_object_types.h"
 
-#include "BLI_math.h"
-#include "BLI_math_solvers.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "LIB_math.h"
+#include "LIB_math_solvers.h"
+#include "LIB_task.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_DerivedMesh.h"
-#include "BKE_cdderivedmesh.h"
-#include "BKE_context.h"
-#include "BKE_lattice.h"
-#include "BKE_lib_id.h"
-#include "BKE_modifier.h"
-#include "BKE_shrinkwrap.h"
+#include "KE_DerivedMesh.h"
+#include "KE_cdderivedmesh.h"
+#include "KE_context.h"
+#include "KE_lattice.h"
+#include "KE_lib_id.h"
+#include "KE_modifier.h"
+#include "KE_shrinkwrap.h"
 
-#include "BKE_deform.h"
-#include "BKE_editmesh.h"
-#include "BKE_mesh.h" /* for OMP limits. */
-#include "BKE_mesh_runtime.h"
-#include "BKE_mesh_wrapper.h"
-#include "BKE_subsurf.h"
+#include "KE_deform.h"
+#include "KE_editmesh.h"
+#include "KE_mesh.h" /* for OMP limits. */
+#include "KE_mesh_runtime.h"
+#include "KE_mesh_wrapper.h"
+#include "KE_subsurf.h"
 
 #include "DEG_depsgraph_query.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_strict_flags.h"
+#include "LIB_strict_flags.h"
 
 /* for timing... */
 #if 0
@@ -80,14 +80,14 @@ typedef struct ShrinkwrapCalcCBData {
   SpaceTransform *local2aux;
 } ShrinkwrapCalcCBData;
 
-bool BKE_shrinkwrap_needs_normals(int shrinkType, int shrinkMode)
+bool KERNEL_shrinkwrap_needs_normals(int shrinkType, int shrinkMode)
 {
   return (shrinkType == MOD_SHRINKWRAP_TARGET_PROJECT) ||
          (shrinkType != MOD_SHRINKWRAP_NEAREST_VERTEX &&
           shrinkMode == MOD_SHRINKWRAP_ABOVE_SURFACE);
 }
 
-bool BKE_shrinkwrap_init_tree(
+bool KERNEL_shrinkwrap_init_tree(
     ShrinkwrapTreeData *data, Mesh *mesh, int shrinkType, int shrinkMode, bool force_normals)
 {
   memset(data, 0, sizeof(*data));
@@ -99,7 +99,7 @@ bool BKE_shrinkwrap_init_tree(
   /* We could create a BVH tree from the edit mesh,
    * however accessing normals from the face/loop normals gets more involved.
    * Convert mesh data since this isn't typically used in edit-mode. */
-  BKE_mesh_wrapper_ensure_mdata(mesh);
+  KERNEL_mesh_wrapper_ensure_mdata(mesh);
 
   if (mesh->totvert <= 0) {
     return false;
@@ -108,7 +108,7 @@ bool BKE_shrinkwrap_init_tree(
   data->mesh = mesh;
 
   if (shrinkType == MOD_SHRINKWRAP_NEAREST_VERTEX) {
-    data->bvh = BKE_bvhtree_from_mesh_get(&data->treeData, mesh, BVHTREE_FROM_VERTS, 2);
+    data->bvh = KERNEL_bvhtree_from_mesh_get(&data->treeData, mesh, BVHTREE_FROM_VERTS, 2);
 
     return data->bvh != NULL;
   }
@@ -117,14 +117,14 @@ bool BKE_shrinkwrap_init_tree(
     return false;
   }
 
-  data->bvh = BKE_bvhtree_from_mesh_get(&data->treeData, mesh, BVHTREE_FROM_LOOPTRI, 4);
+  data->bvh = KERNEL_bvhtree_from_mesh_get(&data->treeData, mesh, BVHTREE_FROM_LOOPTRI, 4);
 
   if (data->bvh == NULL) {
     return false;
   }
 
-  if (force_normals || BKE_shrinkwrap_needs_normals(shrinkType, shrinkMode)) {
-    data->pnors = BKE_mesh_poly_normals_ensure(mesh);
+  if (force_normals || KERNEL_shrinkwrap_needs_normals(shrinkType, shrinkMode)) {
+    data->pnors = KERNEL_mesh_poly_normals_ensure(mesh);
     if ((mesh->flag & ME_AUTOSMOOTH) != 0) {
       data->clnors = CustomData_get_layer(&mesh->ldata, CD_NORMAL);
     }
@@ -137,12 +137,12 @@ bool BKE_shrinkwrap_init_tree(
   return true;
 }
 
-void BKE_shrinkwrap_free_tree(ShrinkwrapTreeData *data)
+void KERNEL_shrinkwrap_free_tree(ShrinkwrapTreeData *data)
 {
   free_bvhtree_from_mesh(&data->treeData);
 }
 
-void BKE_shrinkwrap_discard_boundary_data(struct Mesh *mesh)
+void KERNEL_shrinkwrap_discard_boundary_data(struct Mesh *mesh)
 {
   struct ShrinkwrapBoundaryData *data = mesh->runtime.shrinkwrap_data;
 
@@ -165,7 +165,7 @@ static void merge_vert_dir(ShrinkwrapBoundaryVertData *vdata,
                            const float edge_dir[3],
                            signed char side)
 {
-  BLI_assert(index >= 0);
+  LIB_assert(index >= 0);
   float *direction = vdata[index].direction;
 
   /* Invert the direction vector if either:
@@ -200,7 +200,7 @@ static ShrinkwrapBoundaryData *shrinkwrap_build_boundary_data(struct Mesh *mesh)
   }
 
   /* Build the boundary edge bitmask. */
-  BLI_bitmap *edge_is_boundary = BLI_BITMAP_NEW(mesh->totedge,
+  LIB_bitmap *edge_is_boundary = LIB_BITMAP_NEW(mesh->totedge,
                                                 "ShrinkwrapBoundaryData::edge_is_boundary");
   unsigned int num_boundary_edges = 0;
 
@@ -208,7 +208,7 @@ static ShrinkwrapBoundaryData *shrinkwrap_build_boundary_data(struct Mesh *mesh)
     edge_mode[i] = (edge_mode[i] == 1);
 
     if (edge_mode[i]) {
-      BLI_BITMAP_ENABLE(edge_is_boundary, i);
+      LIB_BITMAP_ENABLE(edge_is_boundary, i);
       num_boundary_edges++;
     }
   }
@@ -227,15 +227,15 @@ static ShrinkwrapBoundaryData *shrinkwrap_build_boundary_data(struct Mesh *mesh)
   data->edge_is_boundary = edge_is_boundary;
 
   /* Build the boundary looptri bitmask. */
-  const MLoopTri *mlooptri = BKE_mesh_runtime_looptri_ensure(mesh);
-  int totlooptri = BKE_mesh_runtime_looptri_len(mesh);
+  const MLoopTri *mlooptri = KERNEL_mesh_runtime_looptri_ensure(mesh);
+  int totlooptri = KERNEL_mesh_runtime_looptri_len(mesh);
 
-  BLI_bitmap *looptri_has_boundary = BLI_BITMAP_NEW(totlooptri,
+  LIB_bitmap *looptri_has_boundary = BLI_BITMAP_NEW(totlooptri,
                                                     "ShrinkwrapBoundaryData::looptri_is_boundary");
 
   for (int i = 0; i < totlooptri; i++) {
     int edges[3];
-    BKE_mesh_looptri_get_real_edges(mesh, &mlooptri[i], edges);
+    KE_mesh_looptri_get_real_edges(mesh, &mlooptri[i], edges);
 
     for (int j = 0; j < 3; j++) {
       if (edges[j] >= 0 && edge_mode[edges[j]]) {
