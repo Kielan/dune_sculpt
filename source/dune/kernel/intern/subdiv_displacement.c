@@ -1,10 +1,10 @@
-#include "BKE_subdiv.h"
+#include "KERNEL_subdiv.h"
 
-#include "BLI_utildefines.h"
+#include "LIB_utildefines.h"
 
 #include "MEM_guardedalloc.h"
 
-void BKE_subdiv_displacement_detach(Subdiv *subdiv)
+void KERNEL_subdiv_displacement_detach(Subdiv *subdiv)
 {
   if (subdiv->displacement_evaluator == NULL) {
     return;
