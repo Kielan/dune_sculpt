@@ -1,24 +1,23 @@
-#include "BKE_subdiv_deform.h"
+#include "KERNEL_subdiv_deform.h"
 
 #include <string.h>
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
 
-#include "BLI_math_vector.h"
-#include "BLI_utildefines.h"
+#include "LIB_math_vector.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_subdiv.h"
-#include "BKE_subdiv_eval.h"
-#include "BKE_subdiv_foreach.h"
-#include "BKE_subdiv_mesh.h"
+#include "KE_customdata.h"
+#include "KE_subdiv.h"
+#include "KE_subdiv_eval.h"
+#include "KE_subdiv_foreach.h"
+#include "KE_subdiv_mesh.h"
 
 #include "MEM_guardedalloc.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Subdivision context
- * \{ */
+/** Subdivision context */
 
 typedef struct SubdivDeformContext {
   const Mesh *coarse_mesh;
@@ -54,11 +53,8 @@ static void subdiv_mesh_context_free(SubdivDeformContext *ctx)
   MEM_SAFE_FREE(ctx->accumulated_counters);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Accumulation helpers
- * \{ */
+/** Accumulation helpers **/
 
 static void subdiv_accumulate_vertex_displacement(SubdivDeformContext *ctx,
                                                   const int ptex_face_index,
@@ -68,10 +64,10 @@ static void subdiv_accumulate_vertex_displacement(SubdivDeformContext *ctx,
 {
   Subdiv *subdiv = ctx->subdiv;
   float dummy_P[3], dPdu[3], dPdv[3], D[3];
-  BKE_subdiv_eval_limit_point_and_derivatives(subdiv, ptex_face_index, u, v, dummy_P, dPdu, dPdv);
+  KERNEL_subdiv_eval_limit_point_and_derivatives(subdiv, ptex_face_index, u, v, dummy_P, dPdu, dPdv);
   /* Accumulate displacement if needed. */
   if (ctx->have_displacement) {
-    BKE_subdiv_eval_displacement(subdiv, ptex_face_index, u, v, dPdu, dPdv, D);
+    KERNEL_subdiv_eval_displacement(subdiv, ptex_face_index, u, v, dPdu, dPdv, D);
     /* NOTE: The storage for vertex coordinates is coming from an external world, not necessarily
      * initialized to zeroes. */
     if (ctx->accumulated_counters[vertex_index] == 0) {
@@ -84,11 +80,8 @@ static void subdiv_accumulate_vertex_displacement(SubdivDeformContext *ctx,
   ++ctx->accumulated_counters[vertex_index];
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Subdivision callbacks
- * \{ */
+/** Subdivision callbacks **/
 
 static bool subdiv_mesh_topology_info(const SubdivForeachContext *foreach_context,
                                       const int UNUSED(num_vertices),
@@ -127,8 +120,8 @@ static void subdiv_mesh_vertex_corner(const SubdivForeachContext *foreach_contex
                                       const int UNUSED(subdiv_vertex_index))
 {
   SubdivDeformContext *ctx = foreach_context->user_data;
-  BLI_assert(coarse_vertex_index != ORIGINDEX_NONE);
-  BLI_assert(coarse_vertex_index < ctx->num_verts);
+  LIB_assert(coarse_vertex_index != ORIGINDEX_NONE);
+  LIB_assert(coarse_vertex_index < ctx->num_verts);
   float inv_num_accumulated = 1.0f;
   if (ctx->accumulated_counters != NULL) {
     inv_num_accumulated = 1.0f / ctx->accumulated_counters[coarse_vertex_index];
@@ -147,11 +140,8 @@ static void subdiv_mesh_vertex_corner(const SubdivForeachContext *foreach_contex
   add_v3_v3(vertex_co, D);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Initialization
- * \{ */
+/** Initialization **/
 
 static void setup_foreach_callbacks(const SubdivDeformContext *subdiv_context,
                                     SubdivForeachContext *foreach_context)
@@ -166,21 +156,18 @@ static void setup_foreach_callbacks(const SubdivDeformContext *subdiv_context,
   foreach_context->vertex_corner = subdiv_mesh_vertex_corner;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Public entry point
- * \{ */
+/** Public entry point **/
 
-void BKE_subdiv_deform_coarse_vertices(struct Subdiv *subdiv,
+void KERNEL_subdiv_deform_coarse_vertices(struct Subdiv *subdiv,
                                        const struct Mesh *coarse_mesh,
                                        float (*vertex_cos)[3],
                                        int num_verts)
 {
-  BKE_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH);
+  KERNEL_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH);
   /* Make sure evaluator is up to date with possible new topology, and that
    * is refined for the new positions of coarse vertices. */
-  if (!BKE_subdiv_eval_begin_from_mesh(
+  if (!KERNEL_subdiv_eval_begin_from_mesh(
           subdiv, coarse_mesh, vertex_cos, SUBDIV_EVALUATOR_TYPE_CPU, NULL)) {
     /* This could happen in two situations:
      * - OpenSubdiv is disabled.
@@ -188,7 +175,7 @@ void BKE_subdiv_deform_coarse_vertices(struct Subdiv *subdiv,
      *   topology.
      * In either way, we can't safely continue. */
     if (coarse_mesh->totpoly) {
-      BKE_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH);
+      KERNEL_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH);
       return;
     }
   }
@@ -211,12 +198,12 @@ void BKE_subdiv_deform_coarse_vertices(struct Subdiv *subdiv,
   mesh_settings.use_optimal_display = false;
 
   /* Multi-threaded traversal/evaluation. */
-  BKE_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH_GEOMETRY);
-  BKE_subdiv_foreach_subdiv_geometry(subdiv, &foreach_context, &mesh_settings, coarse_mesh);
-  BKE_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH_GEOMETRY);
+  KERNEL_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH_GEOMETRY);
+  KERNEL_subdiv_foreach_subdiv_geometry(subdiv, &foreach_context, &mesh_settings, coarse_mesh);
+  KERNEL_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH_GEOMETRY);
 
-  // BKE_mesh_validate(result, true, true);
-  BKE_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH);
+  // KERNEL_mesh_validate(result, true, true);
+  KERNEL_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_MESH);
 
   /* Free used memory. */
   subdiv_mesh_context_free(&subdiv_context);
