@@ -10,12 +10,12 @@
 #include "LIB_math_vector.h"
 #include "LIB_task.h"
 
-#include "KE_DerivedMesh.h"
-#include "KE_ccg.h"
-#include "KE_global.h"
-#include "KE_mesh.h"
-#include "KE_subdiv.h"
-#include "KE_subdiv_eval.h"
+#include "KERNEL_DerivedMesh.h"
+#include "KERNEL_ccg.h"
+#include "KERNEL_global.h"
+#include "KERNEL_mesh.h"
+#include "KERNEL_subdiv.h"
+#include "KERNEL_subdiv_eval.h"
 
 #include "opensubdiv_topology_refiner_capi.h"
 
@@ -535,53 +535,50 @@ static void subdiv_ccg_init_faces_neighborhood(SubdivCCG *subdiv_ccg)
   subdiv_ccg_init_faces_vertex_neighborhood(subdiv_ccg);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Creation / evaluation
- * \{ */
+/** Creation / evaluation **/
 
-SubdivCCG *BKE_subdiv_to_ccg(Subdiv *subdiv,
+SubdivCCG *KERNEL_subdiv_to_ccg(Subdiv *subdiv,
                              const SubdivToCCGSettings *settings,
                              SubdivCCGMaskEvaluator *mask_evaluator,
                              SubdivCCGMaterialFlagsEvaluator *material_flags_evaluator)
 {
-  BKE_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
+  KERNEL_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
   SubdivCCG *subdiv_ccg = MEM_callocN(sizeof(SubdivCCG), "subdiv ccg");
   subdiv_ccg->subdiv = subdiv;
   subdiv_ccg->level = bitscan_forward_i(settings->resolution - 1);
-  subdiv_ccg->grid_size = BKE_subdiv_grid_size_from_level(subdiv_ccg->level);
+  subdiv_ccg->grid_size = KERNEL_subdiv_grid_size_from_level(subdiv_ccg->level);
   subdiv_ccg_init_layers(subdiv_ccg, settings);
   subdiv_ccg_alloc_elements(subdiv_ccg, subdiv);
   subdiv_ccg_init_faces(subdiv_ccg);
   subdiv_ccg_init_faces_neighborhood(subdiv_ccg);
   if (!subdiv_ccg_evaluate_grids(subdiv_ccg, subdiv, mask_evaluator, material_flags_evaluator)) {
-    BKE_subdiv_ccg_destroy(subdiv_ccg);
-    BKE_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
+    KERNEL_subdiv_ccg_destroy(subdiv_ccg);
+    KERNEL_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
     return NULL;
   }
-  BKE_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
+  KERNEL_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
   return subdiv_ccg;
 }
 
-Mesh *BKE_subdiv_to_ccg_mesh(Subdiv *subdiv,
+Mesh *KERNEL_subdiv_to_ccg_mesh(Subdiv *subdiv,
                              const SubdivToCCGSettings *settings,
                              const Mesh *coarse_mesh)
 {
   /* Make sure evaluator is ready. */
-  BKE_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
-  if (!BKE_subdiv_eval_begin_from_mesh(
+  KERNEL_subdiv_stats_begin(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
+  if (!KERNEL_subdiv_eval_begin_from_mesh(
           subdiv, coarse_mesh, NULL, SUBDIV_EVALUATOR_TYPE_CPU, NULL)) {
     if (coarse_mesh->totpoly) {
       return NULL;
     }
   }
-  BKE_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
+  KERNEL_subdiv_stats_end(&subdiv->stats, SUBDIV_STATS_SUBDIV_TO_CCG);
   SubdivCCGMaskEvaluator mask_evaluator;
-  bool has_mask = BKE_subdiv_ccg_mask_init_from_paint(&mask_evaluator, coarse_mesh);
+  bool has_mask = KERNEL_subdiv_ccg_mask_init_from_paint(&mask_evaluator, coarse_mesh);
   SubdivCCGMaterialFlagsEvaluator material_flags_evaluator;
-  BKE_subdiv_ccg_material_flags_init_from_mesh(&material_flags_evaluator, coarse_mesh);
-  SubdivCCG *subdiv_ccg = BKE_subdiv_to_ccg(
+  KERNEL_subdiv_ccg_material_flags_init_from_mesh(&material_flags_evaluator, coarse_mesh);
+  SubdivCCG *subdiv_ccg = KERNEL_subdiv_to_ccg(
       subdiv, settings, has_mask ? &mask_evaluator : NULL, &material_flags_evaluator);
   if (has_mask) {
     mask_evaluator.free(&mask_evaluator);
@@ -590,12 +587,12 @@ Mesh *BKE_subdiv_to_ccg_mesh(Subdiv *subdiv,
   if (subdiv_ccg == NULL) {
     return NULL;
   }
-  Mesh *result = BKE_mesh_new_nomain_from_template(coarse_mesh, 0, 0, 0, 0, 0);
+  Mesh *result = KERNEL_mesh_new_nomain_from_template(coarse_mesh, 0, 0, 0, 0, 0);
   result->runtime.subdiv_ccg = subdiv_ccg;
   return result;
 }
 
-void BKE_subdiv_ccg_destroy(SubdivCCG *subdiv_ccg)
+void KERNEL_subdiv_ccg_destroy(SubdivCCG *subdiv_ccg)
 {
   const int num_grids = subdiv_ccg->num_grids;
   MEM_SAFE_FREE(subdiv_ccg->grids);
@@ -610,7 +607,7 @@ void BKE_subdiv_ccg_destroy(SubdivCCG *subdiv_ccg)
     MEM_SAFE_FREE(subdiv_ccg->grid_hidden);
   }
   if (subdiv_ccg->subdiv != NULL) {
-    BKE_subdiv_free(subdiv_ccg->subdiv);
+    KERNEL_subdiv_free(subdiv_ccg->subdiv);
   }
   MEM_SAFE_FREE(subdiv_ccg->faces);
   MEM_SAFE_FREE(subdiv_ccg->grid_faces);
@@ -633,11 +630,11 @@ void BKE_subdiv_ccg_destroy(SubdivCCG *subdiv_ccg)
   MEM_freeN(subdiv_ccg);
 }
 
-void BKE_subdiv_ccg_key(CCGKey *key, const SubdivCCG *subdiv_ccg, int level)
+void KERNEL_subdiv_ccg_key(CCGKey *key, const SubdivCCG *subdiv_ccg, int level)
 {
   key->level = level;
   key->elem_size = element_size_bytes_get(subdiv_ccg);
-  key->grid_size = BKE_subdiv_grid_size_from_level(level);
+  key->grid_size = KERNEL_subdiv_grid_size_from_level(level);
   key->grid_area = key->grid_size * key->grid_size;
   key->grid_bytes = key->elem_size * key->grid_area;
 
@@ -648,16 +645,13 @@ void BKE_subdiv_ccg_key(CCGKey *key, const SubdivCCG *subdiv_ccg, int level)
   key->has_mask = subdiv_ccg->has_mask;
 }
 
-void BKE_subdiv_ccg_key_top_level(CCGKey *key, const SubdivCCG *subdiv_ccg)
+void KERNEL_subdiv_ccg_key_top_level(CCGKey *key, const SubdivCCG *subdiv_ccg)
 {
-  BKE_subdiv_ccg_key(key, subdiv_ccg, subdiv_ccg->level);
+  KERNEL_subdiv_ccg_key(key, subdiv_ccg, subdiv_ccg->level);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Normals
- * \{ */
+/** Normals **/
 
 typedef struct RecalcInnerNormalsData {
   SubdivCCG *subdiv_ccg;
@@ -766,32 +760,32 @@ static void subdiv_ccg_recalc_inner_normal_free(const void *__restrict UNUSED(us
 static void subdiv_ccg_recalc_inner_grid_normals(SubdivCCG *subdiv_ccg)
 {
   CCGKey key;
-  BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
+  KERNEL_subdiv_ccg_key_top_level(&key, subdiv_ccg);
   RecalcInnerNormalsData data = {
       .subdiv_ccg = subdiv_ccg,
       .key = &key,
   };
   RecalcInnerNormalsTLSData tls_data = {NULL};
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
   parallel_range_settings.userdata_chunk = &tls_data;
   parallel_range_settings.userdata_chunk_size = sizeof(tls_data);
   parallel_range_settings.func_free = subdiv_ccg_recalc_inner_normal_free;
-  BLI_task_parallel_range(0,
+  LIB_task_parallel_range(0,
                           subdiv_ccg->num_grids,
                           &data,
                           subdiv_ccg_recalc_inner_normal_task,
                           &parallel_range_settings);
 }
 
-void BKE_subdiv_ccg_recalc_normals(SubdivCCG *subdiv_ccg)
+void KERNEL_subdiv_ccg_recalc_normals(SubdivCCG *subdiv_ccg)
 {
   if (!subdiv_ccg->has_normal) {
     /* Grids don't have normals, can do early output. */
     return;
   }
   subdiv_ccg_recalc_inner_grid_normals(subdiv_ccg);
-  BKE_subdiv_ccg_average_grids(subdiv_ccg);
+  KERNEL_subdiv_ccg_average_grids(subdiv_ccg);
 }
 
 typedef struct RecalcModifiedInnerNormalsData {
@@ -831,7 +825,7 @@ static void subdiv_ccg_recalc_modified_inner_grid_normals(SubdivCCG *subdiv_ccg,
                                                           int num_effected_faces)
 {
   CCGKey key;
-  BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
+  KERNEL_subdiv_ccg_key_top_level(&key, subdiv_ccg);
   RecalcModifiedInnerNormalsData data = {
       .subdiv_ccg = subdiv_ccg,
       .key = &key,
@@ -839,18 +833,18 @@ static void subdiv_ccg_recalc_modified_inner_grid_normals(SubdivCCG *subdiv_ccg,
   };
   RecalcInnerNormalsTLSData tls_data = {NULL};
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
   parallel_range_settings.userdata_chunk = &tls_data;
   parallel_range_settings.userdata_chunk_size = sizeof(tls_data);
   parallel_range_settings.func_free = subdiv_ccg_recalc_modified_inner_normal_free;
-  BLI_task_parallel_range(0,
+  LIB_task_parallel_range(0,
                           num_effected_faces,
                           &data,
                           subdiv_ccg_recalc_modified_inner_normal_task,
                           &parallel_range_settings);
 }
 
-void BKE_subdiv_ccg_update_normals(SubdivCCG *subdiv_ccg,
+void KERNEL_subdiv_ccg_update_normals(SubdivCCG *subdiv_ccg,
                                    struct CCGFace **effected_faces,
                                    int num_effected_faces)
 {
@@ -865,17 +859,14 @@ void BKE_subdiv_ccg_update_normals(SubdivCCG *subdiv_ccg,
   subdiv_ccg_recalc_modified_inner_grid_normals(subdiv_ccg, effected_faces, num_effected_faces);
 
   CCGKey key;
-  BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
+  KERNEL_subdiv_ccg_key_top_level(&key, subdiv_ccg);
 
   subdiv_ccg_average_faces_boundaries_and_corners(
       subdiv_ccg, &key, effected_faces, num_effected_faces);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Boundary averaging/stitching
- * \{ */
+/** Boundary averaging/stitching **/
 
 typedef struct AverageInnerGridsData {
   SubdivCCG *subdiv_ccg;
@@ -1132,14 +1123,14 @@ static void subdiv_ccg_average_boundaries(SubdivCCG *subdiv_ccg,
                                           int num_adjacent_edges)
 {
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
   AverageGridsBoundariesData boundaries_data = {
       .subdiv_ccg = subdiv_ccg, .key = key, .adjacent_edge_index_map = adjacent_edge_index_map};
   AverageGridsBoundariesTLSData tls_data = {NULL};
   parallel_range_settings.userdata_chunk = &tls_data;
   parallel_range_settings.userdata_chunk_size = sizeof(tls_data);
   parallel_range_settings.func_free = subdiv_ccg_average_grids_boundaries_free;
-  BLI_task_parallel_range(0,
+  LIB_task_parallel_range(0,
                           num_adjacent_edges,
                           &boundaries_data,
                           subdiv_ccg_average_grids_boundaries_task,
