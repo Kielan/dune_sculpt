@@ -322,8 +322,8 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
 #ifdef USE_DYNSIZE
     CCGVertHDL fverts[nverts];
 #else
-    BLI_array_clear(fverts);
-    BLI_array_grow_items(fverts, nverts);
+    LIB_array_clear(fverts);
+    LIB_array_grow_items(fverts, nverts);
 #endif
 
     get_face_uv_map_vert(vmap, mpoly, ml, i, fverts);
@@ -342,7 +342,7 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
     }
   }
 
-  BLI_edgeset_free(eset);
+  LIB_edgeset_free(eset);
 
   /* create faces */
   for (i = 0; i < totface; i++) {
@@ -354,8 +354,8 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
 #ifdef USE_DYNSIZE
     CCGVertHDL fverts[nverts];
 #else
-    BLI_array_clear(fverts);
-    BLI_array_grow_items(fverts, nverts);
+    LIB_array_clear(fverts);
+    LIB_array_grow_items(fverts, nverts);
 #endif
 
     get_face_uv_map_vert(vmap, mpoly, ml, i, fverts);
@@ -363,10 +363,10 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
   }
 
 #ifndef USE_DYNSIZE
-  BLI_array_free(fverts);
+  LIB_array_free(fverts);
 #endif
 
-  BKE_mesh_uv_vert_map_free(vmap);
+  KERNEL_mesh_uv_vert_map_free(vmap);
   ccgSubSurf_processSync(ss);
 
   return 1;
@@ -553,7 +553,7 @@ static void ss_sync_ccg_from_derivedmesh(CCGSubSurf *ss,
   float creaseFactor = (float)ccgSubSurf_getSubdivisionLevels(ss);
 #ifndef USE_DYNSIZE
   CCGVertHDL *fVerts = NULL;
-  BLI_array_declare(fVerts);
+  LIB_array_declare(fVerts);
 #endif
   MVert *mvert = dm->getVertArray(dm);
   MEdge *medge = dm->getEdgeArray(dm);
@@ -608,8 +608,8 @@ static void ss_sync_ccg_from_derivedmesh(CCGSubSurf *ss,
 #ifdef USE_DYNSIZE
     CCGVertHDL fVerts[mp->totloop];
 #else
-    BLI_array_clear(fVerts);
-    BLI_array_grow_items(fVerts, mp->totloop);
+    LIB_array_clear(fVerts);
+    LIB_array_grow_items(fVerts, mp->totloop);
 #endif
 
     ml = mloop + mp->loopstart;
@@ -653,8 +653,6 @@ static void ss_sync_from_derivedmesh(CCGSubSurf *ss,
 {
   ss_sync_ccg_from_derivedmesh(ss, dm, vertexCos, use_flat_subdiv);
 }
-
-/***/
 
 static int ccgDM_getVertMapIndex(CCGSubSurf *ss, CCGVert *v)
 {
@@ -908,7 +906,7 @@ void subsurf_copy_grid_hidden(DerivedMesh *dm,
 
           vndx = getFaceIndex(ss, f, j, x, y, edgeSize, gridSize);
           offset = (y * factor) * hidden_gridsize + (x * factor);
-          if (BLI_BITMAP_TEST(hidden, offset)) {
+          if (LIB_BITMAP_TEST(hidden, offset)) {
             mvert[vndx].flag |= ME_HIDE;
           }
         }
@@ -940,8 +938,8 @@ void subsurf_copy_grid_paint_mask(DerivedMesh *dm,
         continue;
       }
 
-      factor = BKE_ccg_factor(level, gpm->level);
-      gpm_gridsize = BKE_ccg_gridsize(gpm->level);
+      factor = KERNEL_ccg_factor(level, gpm->level);
+      gpm_gridsize = KERNEL_ccg_gridsize(gpm->level);
 
       for (y = 0; y < gridSize; y++) {
         for (x = 0; x < gridSize; x++) {
@@ -957,7 +955,7 @@ void subsurf_copy_grid_paint_mask(DerivedMesh *dm,
 }
 
 /* utility function */
-BLI_INLINE void ccgDM_to_MVert(MVert *mv, const CCGKey *key, CCGElem *elem)
+LIB_INLINE void ccgDM_to_MVert(MVert *mv, const CCGKey *key, CCGElem *elem)
 {
   copy_v3_v3(mv->co, CCG_elem_co(key, elem));
   mv->flag = mv->bweight = 0;
@@ -1028,7 +1026,7 @@ static void ccgDM_copyFinalVertArray(DerivedMesh *dm, MVert *mvert)
 }
 
 /* utility function */
-BLI_INLINE void ccgDM_to_MEdge(MEdge *med, const int v1, const int v2, const short flag)
+LIB_INLINE void ccgDM_to_MEdge(MEdge *med, const int v1, const int v2, const short flag)
 {
   med->v1 = v1;
   med->v2 = v2;
@@ -1163,21 +1161,21 @@ static void ccgDM_copyFinalLoopArray(DerivedMesh *dm, MLoop *mloop)
   CCGSubSurf *ss = ccgdm->ss;
 
   if (!ccgdm->ehash) {
-    BLI_mutex_lock(&ccgdm->loops_cache_lock);
+    LIB_mutex_lock(&ccgdm->loops_cache_lock);
     if (!ccgdm->ehash) {
       MEdge *medge;
       EdgeHash *ehash;
 
-      ehash = BLI_edgehash_new_ex(__func__, ccgdm->dm.numEdgeData);
+      ehash = LIB_edgehash_new_ex(__func__, ccgdm->dm.numEdgeData);
       medge = ccgdm->dm.getEdgeArray((DerivedMesh *)ccgdm);
 
       for (int i = 0; i < ccgdm->dm.numEdgeData; i++) {
-        BLI_edgehash_insert(ehash, medge[i].v1, medge[i].v2, POINTER_FROM_INT(i));
+        LIB_edgehash_insert(ehash, medge[i].v1, medge[i].v2, POINTER_FROM_INT(i));
       }
 
       atomic_cas_ptr((void **)&ccgdm->ehash, ccgdm->ehash, ehash);
     }
-    BLI_mutex_unlock(&ccgdm->loops_cache_lock);
+    LIB_mutex_unlock(&ccgdm->loops_cache_lock);
   }
 
   CopyFinalLoopArrayData data;
@@ -1194,10 +1192,10 @@ static void ccgDM_copyFinalLoopArray(DerivedMesh *dm, MLoop *mloop)
   data.mloop_index = data.grid_size >= 5 ? 1 : 8;
 
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  LIB_parallel_range_settings_defaults(&settings);
   settings.min_iter_per_thread = 1;
 
-  BLI_task_parallel_range(
+  LIB_task_parallel_range(
       0, ccgSubSurf_getNumFaces(ss), &data, copyFinalLoopArray_task_cb, &settings);
 }
 
@@ -1246,7 +1244,7 @@ static void ccgDM_release(DerivedMesh *dm)
     if (ccgdm->multires.modified_flags) {
       /* Check that mmd still exists */
       if (!ccgdm->multires.local_mmd &&
-          BLI_findindex(&ccgdm->multires.ob->modifiers, ccgdm->multires.mmd) < 0) {
+          LIB_findindex(&ccgdm->multires.ob->modifiers, ccgdm->multires.mmd) < 0) {
         ccgdm->multires.mmd = NULL;
       }
 
@@ -1261,7 +1259,7 @@ static void ccgDM_release(DerivedMesh *dm)
     }
 
     if (ccgdm->ehash) {
-      BLI_edgehash_free(ccgdm->ehash, NULL);
+      LIB_edgehash_free(ccgdm->ehash, NULL);
     }
 
     if (ccgdm->reverseFaceMap) {
