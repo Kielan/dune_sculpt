@@ -1,12 +1,12 @@
-#include "BLI_span.hh"
-#include "BLI_virtual_array.hh"
+#include "LIB_span.hh"
+#include "LIB_virtual_array.hh"
 
-#include "BKE_spline.hh"
+#include "KERNEL_spline.hh"
 
-using blender::float3;
-using blender::GVArray;
-using blender::MutableSpan;
-using blender::Span;
+using dune::float3;
+using dune::GVArray;
+using dune::MutableSpan;
+using dune::Span;
 
 void PolySpline::copy_settings(Spline &UNUSED(dst)) const
 {
@@ -24,8 +24,8 @@ void PolySpline::copy_data(Spline &dst) const
 int PolySpline::size() const
 {
   const int size = positions_.size();
-  BLI_assert(size == radii_.size());
-  BLI_assert(size == tilts_.size());
+  LIB_assert(size == radii_.size());
+  LIB_assert(size == tilts_.size());
   return size;
 }
 
