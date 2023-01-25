@@ -37,18 +37,18 @@
 #include "LIB_threads.h"
 #include "LIB_utildefines.h"
 
-#include "KE_collection.h"
-#include "KE_collision.h"
-#include "KE_curve.h"
-#include "KE_deform.h"
-#include "KE_effect.h"
-#include "KE_global.h"
-#include "KE_layer.h"
-#include "KE_mesh.h"
-#include "KE_modifier.h"
-#include "KE_pointcache.h"
-#include "KE_scene.h"
-#include "KE_softbody.h"
+#include "KERNEL_collection.h"
+#include "KERNEL_collision.h"
+#include "KERNEL_curve.h"
+#include "KERNEL_deform.h"
+#include "KERNEL_effect.h"
+#include "KERNEL_global.h"
+#include "KERNEL_layer.h"
+#include "KERNEL_mesh.h"
+#include "KERNEL_modifier.h"
+#include "KERNEL_pointcache.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_softbody.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
@@ -1399,10 +1399,10 @@ static int sb_detect_edge_collisionCached(const float edge_v1[3],
           vt++;
         } /* while a */
       }   /* if (ob->pd && ob->pd->deflect) */
-      BLI_ghashIterator_step(ihash);
+      LIB_ghashIterator_step(ihash);
     }
   } /* while () */
-  BLI_ghashIterator_free(ihash);
+  LIB_ghashIterator_free(ihash);
   return deflected;
 }
 
@@ -1552,7 +1552,7 @@ static void sb_sfesf_threads_run(struct Depsgraph *depsgraph,
   /* clean up */
   MEM_freeN(sb_threads);
 
-  BKE_effectors_free(effectors);
+  KERNEL_effectors_free(effectors);
 }
 
 /* --- the spring external section. */
@@ -1650,7 +1650,7 @@ static int sb_detect_vertex_collisionCached(float opco[3],
         else {
           /* Aye that should be cached. */
           CLOG_ERROR(&LOG, "missing cache error");
-          BLI_ghashIterator_step(ihash);
+          LIB_ghashIterator_step(ihash);
           continue;
         }
 
@@ -1742,7 +1742,7 @@ static int sb_detect_vertex_collisionCached(float opco[3],
           vt++;
         } /* while a */
       }   /* if (ob->pd && ob->pd->deflect) */
-      BLI_ghashIterator_step(ihash);
+      LIB_ghashIterator_step(ihash);
     }
   } /* while () */
 
@@ -1765,7 +1765,7 @@ static int sb_detect_vertex_collisionCached(float opco[3],
     add_v3_v3(force, outerforceaccu);
   }
 
-  BLI_ghashIterator_free(ihash);
+  LIB_ghashIterator_free(ihash);
   if (cavel) {
     mul_v3_fl(avel, 1.0f / (float)cavel);
   }
@@ -2289,7 +2289,7 @@ static void softbody_calc_forces(
   }
 
   /* finish matrix and solve */
-  BKE_effectors_free(effectors);
+  KERNEL_effectors_free(effectors);
 }
 
 static void softbody_apply_forces(Object *ob, float forcetime, int mode, float *err, int mid_flags)
@@ -2338,7 +2338,6 @@ static void softbody_apply_forces(Object *ob, float forcetime, int mode, float *
 
       /**
        * So here is:
-       * <pre>
        * (v)' = a(cceleration) =
        *     sum(F_springs)/m + gravitation + some friction forces + more forces.
        * </pre>
@@ -2348,7 +2347,6 @@ static void softbody_apply_forces(Object *ob, float forcetime, int mode, float *
        * The euler step for velocity then becomes:
        * <pre>
        * v(t + dt) = v(t) + a(t) * dt
-       * </pre>
        */
       mul_v3_fl(bp->force, timeovermass); /* individual mass of node here */
       /* some nasty if's to have heun in here too */
@@ -2681,10 +2679,10 @@ static void mesh_to_softbody(Object *ob)
      */
 
     if (ob->softflag & OB_SB_GOAL) {
-      BLI_assert(bp->goal == sb->defgoal);
+      LIB_assert(bp->goal == sb->defgoal);
     }
     if ((ob->softflag & OB_SB_GOAL) && (defgroup_index != -1)) {
-      bp->goal *= BKE_defvert_find_weight(&me->dvert[a], defgroup_index);
+      bp->goal *= KERNEL_defvert_find_weight(&me->dvert[a], defgroup_index);
     }
 
     /* to proof the concept
@@ -2692,11 +2690,11 @@ static void mesh_to_softbody(Object *ob)
      */
 
     if (defgroup_index_mass != -1) {
-      bp->mass *= BKE_defvert_find_weight(&me->dvert[a], defgroup_index_mass);
+      bp->mass *= KERNEL_defvert_find_weight(&me->dvert[a], defgroup_index_mass);
     }
 
     if (defgroup_index_spring != -1) {
-      bp->springweight *= BKE_defvert_find_weight(&me->dvert[a], defgroup_index_spring);
+      bp->springweight *= KERNEL_defvert_find_weight(&me->dvert[a], defgroup_index_spring);
     }
   }
 
@@ -2742,7 +2740,7 @@ static void mesh_faces_to_scratch(Object *ob)
 
   sb->scratch->totface = poly_to_tri_count(me->totpoly, me->totloop);
   looptri = lt = MEM_mallocN(sizeof(*looptri) * sb->scratch->totface, __func__);
-  BKE_mesh_recalc_looptri(me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri);
+  KERNEL_mesh_recalc_looptri(me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri);
 
   bodyface = sb->scratch->bodyface = MEM_mallocN(sizeof(BodyFace) * sb->scratch->totface,
                                                  "SB_body_Faces");
@@ -2907,22 +2905,22 @@ static void lattice_to_softbody(Object *ob)
   for (a = 0; a < totvert; a++, bp++, bpnt++) {
 
     if (ob->softflag & OB_SB_GOAL) {
-      BLI_assert(bp->goal == sb->defgoal);
+      LIB_assert(bp->goal == sb->defgoal);
     }
 
     if ((ob->softflag & OB_SB_GOAL) && (defgroup_index != -1)) {
-      bp->goal *= BKE_defvert_find_weight(&lt->dvert[a], defgroup_index);
+      bp->goal *= KERNEL_defvert_find_weight(&lt->dvert[a], defgroup_index);
     }
     else {
       bp->goal *= bpnt->weight;
     }
 
     if (defgroup_index_mass != -1) {
-      bp->mass *= BKE_defvert_find_weight(&lt->dvert[a], defgroup_index_mass);
+      bp->mass *= KERNEL_defvert_find_weight(&lt->dvert[a], defgroup_index_mass);
     }
 
     if (defgroup_index_spring != -1) {
-      bp->springweight *= BKE_defvert_find_weight(&lt->dvert[a], defgroup_index_spring);
+      bp->springweight *= KERNEL_defvert_find_weight(&lt->dvert[a], defgroup_index_spring);
     }
   }
 
@@ -2949,7 +2947,7 @@ static void curve_surf_to_softbody(Object *ob)
   int a, curindex = 0;
   int totvert, totspring = 0, setgoal = 0;
 
-  totvert = BKE_nurbList_verts_count(&cu->nurb);
+  totvert = KERNEL_nurbList_verts_count(&cu->nurb);
 
   if (ob->softflag & OB_SB_EDGES) {
     if (ob->type == OB_CURVES_LEGACY) {
@@ -3119,10 +3117,10 @@ SoftBody *sbNew(void)
   sb->solverflags |= SBSO_OLDERR;
 
   sb->shared = MEM_callocN(sizeof(*sb->shared), "SoftBody_Shared");
-  sb->shared->pointcache = BKE_ptcache_add(&sb->shared->ptcaches);
+  sb->shared->pointcache = KERNEL_ptcache_add(&sb->shared->ptcaches);
 
   if (!sb->effector_weights) {
-    sb->effector_weights = BKE_effector_add_weights(NULL);
+    sb->effector_weights = KERNEL_effector_add_weights(NULL);
   }
 
   sb->last_frame = MINFRAME - 1;
@@ -3143,7 +3141,7 @@ void sbFree(Object *ob)
 
   if (is_orig) {
     /* Only free shared data on non-CoW copies */
-    BKE_ptcache_free_list(&sb->shared->ptcaches);
+    KERNEL_ptcache_free_list(&sb->shared->ptcaches);
     sb->shared->pointcache = NULL;
     MEM_freeN(sb->shared);
   }
@@ -3492,19 +3490,19 @@ void sbObjectStep(struct Depsgraph *depsgraph,
   framenr = (int)cfra;
   framedelta = framenr - cache->simframe;
 
-  BKE_ptcache_id_from_softbody(&pid, ob, sb);
-  BKE_ptcache_id_time(&pid, scene, framenr, &startframe, &endframe, &timescale);
+  KERNEL_ptcache_id_from_softbody(&pid, ob, sb);
+  KERNEL_ptcache_id_time(&pid, scene, framenr, &startframe, &endframe, &timescale);
 
   /* check for changes in mesh, should only happen in case the mesh
    * structure changes during an animation */
   if (sb->bpoint && numVerts != sb->totpoint) {
-    BKE_ptcache_invalidate(cache);
+    KERNEL_ptcache_invalidate(cache);
     return;
   }
 
   /* clamp frame ranges */
   if (framenr < startframe) {
-    BKE_ptcache_invalidate(cache);
+    KERNEL_ptcache_invalidate(cache);
     return;
   }
   if (framenr > endframe) {
@@ -3540,12 +3538,12 @@ void sbObjectStep(struct Depsgraph *depsgraph,
     return;
   }
   if (framenr == startframe) {
-    BKE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
+    KERNEL_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
 
     /* first frame, no simulation to do, just set the positions */
     softbody_update_positions(ob, sb, vertexCos, numVerts);
 
-    BKE_ptcache_validate(cache, framenr);
+    KERNEL_ptcache_validate(cache, framenr);
     cache->flag &= ~PTCACHE_REDO_NEEDED;
 
     sbStoreLastFrame(depsgraph, ob, framenr);
@@ -3558,7 +3556,7 @@ void sbObjectStep(struct Depsgraph *depsgraph,
   bool can_simulate = (framenr == sb->last_frame + 1) && !(cache->flag & PTCACHE_BAKED) &&
                       can_write_cache;
 
-  cache_result = BKE_ptcache_read(&pid, (float)framenr + scene->r.subframe, can_simulate);
+  cache_result = KERNEL_ptcache_read(&pid, (float)framenr + scene->r.subframe, can_simulate);
 
   if (cache_result == PTCACHE_READ_EXACT || cache_result == PTCACHE_READ_INTERPOLATED ||
       (!can_simulate && cache_result == PTCACHE_READ_OLD)) {
@@ -3583,7 +3581,7 @@ void sbObjectStep(struct Depsgraph *depsgraph,
            (cache->flag & PTCACHE_BAKED)) {
     /* if baked and nothing in cache, do nothing */
     if (can_write_cache) {
-      BKE_ptcache_invalidate(cache);
+      KERNEL_ptcache_invalidate(cache);
     }
     return;
   }
@@ -3608,8 +3606,8 @@ void sbObjectStep(struct Depsgraph *depsgraph,
 
   softbody_to_object(ob, vertexCos, numVerts, 0);
 
-  BKE_ptcache_validate(cache, framenr);
-  BKE_ptcache_write(&pid, framenr);
+  KERNEL_ptcache_validate(cache, framenr);
+  KERNEL_ptcache_write(&pid, framenr);
 
   sbStoreLastFrame(depsgraph, ob, framenr);
 }
