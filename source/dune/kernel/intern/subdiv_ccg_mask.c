@@ -1,16 +1,16 @@
 #include <math.h>
 
-#include "BKE_subdiv_ccg.h"
+#include "KERNEL_subdiv_ccg.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
+#include "structs_modifier_types.h"
+#include "structs_object_types.h"
 
-#include "BLI_utildefines.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_subdiv.h"
+#include "KERNEL_customdata.h"
+#include "KERNEL_subdiv.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -47,25 +47,25 @@ static int mask_get_grid_and_coord(SubdivCCGMaskEvaluator *mask_evaluator,
   int corner = 0;
   if (poly->totloop == 4) {
     float corner_u, corner_v;
-    corner = BKE_subdiv_rotate_quad_to_corner(u, v, &corner_u, &corner_v);
+    corner = KERNEL_subdiv_rotate_quad_to_corner(u, v, &corner_u, &corner_v);
     *r_mask_grid = &data->grid_paint_mask[start_grid_index + corner];
-    BKE_subdiv_ptex_face_uv_to_grid_uv(corner_u, corner_v, grid_u, grid_v);
+    KERNEL_subdiv_ptex_face_uv_to_grid_uv(corner_u, corner_v, grid_u, grid_v);
   }
   else {
     *r_mask_grid = &data->grid_paint_mask[start_grid_index];
-    BKE_subdiv_ptex_face_uv_to_grid_uv(u, v, grid_u, grid_v);
+    KERNEL_subdiv_ptex_face_uv_to_grid_uv(u, v, grid_u, grid_v);
   }
   return corner;
 }
 
-BLI_INLINE float read_mask_grid(const GridPaintMask *mask_grid,
+LIB_INLINE float read_mask_grid(const GridPaintMask *mask_grid,
                                 const float grid_u,
                                 const float grid_v)
 {
   if (mask_grid->data == NULL) {
     return 0;
   }
-  const int grid_size = BKE_subdiv_grid_size_from_level(mask_grid->level);
+  const int grid_size = KERNEL_subdiv_grid_size_from_level(mask_grid->level);
   const int x = roundf(grid_u * (grid_size - 1));
   const int y = roundf(grid_v * (grid_size - 1));
   return mask_grid->data[y * grid_size + x];
@@ -89,7 +89,7 @@ static void free_mask_data(SubdivCCGMaskEvaluator *mask_evaluator)
   MEM_freeN(data);
 }
 
-/* TODO(sergey): This seems to be generally used information, which almost
+/* TODO: This seems to be generally used information, which almost
  * worth adding to a subdiv itself, with possible cache of the value.
  */
 static int count_num_ptex_faces(const Mesh *mesh)
@@ -145,7 +145,7 @@ static void mask_init_functions(SubdivCCGMaskEvaluator *mask_evaluator)
   mask_evaluator->free = free_mask_data;
 }
 
-bool BKE_subdiv_ccg_mask_init_from_paint(SubdivCCGMaskEvaluator *mask_evaluator,
+bool KERNEL_subdiv_ccg_mask_init_from_paint(SubdivCCGMaskEvaluator *mask_evaluator,
                                          const struct Mesh *mesh)
 {
   GridPaintMask *grid_paint_mask = CustomData_get_layer(&mesh->ldata, CD_GRID_PAINT_MASK);
