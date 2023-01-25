@@ -1,10 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later
- * Copyright 2005 Blender Foundation. All rights reserved. */
-
-/** \file
- * \ingroup bke
- */
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 #  ifdef __GNUC__
 #    pragma GCC diagnostic ignored "-Wvla"
@@ -22,35 +15,35 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
+#include "structs_modifier_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_blenlib.h"
-#include "BLI_edgehash.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_task.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LI_bitmap.h"
+#include "LI_dunelib.h"
+#include "LI_edgehash.h"
+#include "LI_math.h"
+#include "LI_memarena.h"
+#include "LI_task.h"
+#include "LI_threads.h"
+#include "LI_utildefines.h"
 
-#include "BKE_ccg.h"
-#include "BKE_cdderivedmesh.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_mapping.h"
-#include "BKE_modifier.h"
-#include "BKE_multires.h"
-#include "BKE_object.h"
-#include "BKE_paint.h"
-#include "BKE_pbvh.h"
-#include "BKE_scene.h"
-#include "BKE_subsurf.h"
+#include "KE_ccg.h"
+#include "KE_cdderivedmesh.h"
+#include "KE_mesh.h"
+#include "KE_mesh_mapping.h"
+#include "KE_modifier.h"
+#include "KE_multires.h"
+#include "KE_object.h"
+#include "KE_paint.h"
+#include "KE_pbvh.h"
+#include "KE_scene.h"
+#include "KE_subsurf.h"
 
 #ifndef USE_DYNSIZE
-#  include "BLI_array.h"
+#  include "LIB_array.h"
 #endif
 
 #include "CCGSubSurf.h"
@@ -61,17 +54,17 @@
 static CCGDerivedMesh *getCCGDerivedMesh(CCGSubSurf *ss,
                                          int drawInteriorEdges,
                                          int useSubsurfUv,
-                                         DerivedMesh *dm);
+                                         DerivedMesh *dm)
 ///
 
 static void *arena_alloc(CCGAllocatorHDL a, int numBytes)
 {
-  return BLI_memarena_alloc(a, numBytes);
+  return LIB_memarena_alloc(a, numBytes);
 }
 
 static void *arena_realloc(CCGAllocatorHDL a, void *ptr, int newSize, int oldSize)
 {
-  void *p2 = BLI_memarena_alloc(a, newSize);
+  void *p2 = LIB_memarena_alloc(a, newSize);
   if (ptr) {
     memcpy(p2, ptr, oldSize);
   }
@@ -85,7 +78,7 @@ static void arena_free(CCGAllocatorHDL UNUSED(a), void *UNUSED(ptr))
 
 static void arena_release(CCGAllocatorHDL a)
 {
-  BLI_memarena_free(a);
+  LIB_memarena_free(a);
 }
 
 typedef enum {
@@ -246,7 +239,7 @@ static void get_face_uv_map_vert(
   int j, nverts = mpoly[fi].totloop;
 
   for (j = 0; j < nverts; j++) {
-    for (nv = v = BKE_mesh_uv_vert_map_get_vert(vmap, ml[j].v); v; v = v->next) {
+    for (nv = v = KERNEL_mesh_uv_vert_map_get_vert(vmap, ml[j].v); v; v = v->next) {
       if (v->separate) {
         nv = v;
       }
@@ -271,7 +264,7 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
   float limit[2];
 #ifndef USE_DYNSIZE
   CCGVertHDL *fverts = NULL;
-  BLI_array_declare(fverts);
+  LIB_array_declare(fverts);
 #endif
   EdgeSet *eset;
   float uv[3] = {0.0f, 0.0f, 0.0f}; /* only first 2 values are written into */
@@ -281,7 +274,7 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
    * UV map in really simple cases with mirror + subsurf, see second part of T44530.
    * Also, initially intention is to treat merged vertices from mirror modifier as seams.
    * This fixes a very old regression (2.49 was correct here) */
-  vmap = BKE_mesh_uv_vert_map_create(mpoly, mloop, mloopuv, totface, totvert, limit, false, true);
+  vmap = KERNEL_mesh_uv_vert_map_create(mpoly, mloop, mloopuv, totface, totvert, limit, false, true);
   if (!vmap) {
     return 0;
   }
@@ -290,7 +283,7 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
 
   /* create vertices */
   for (i = 0; i < totvert; i++) {
-    if (!BKE_mesh_uv_vert_map_get_vert(vmap, i)) {
+    if (!KERNEL_mesh_uv_vert_map_get_vert(vmap, i)) {
       continue;
     }
 
