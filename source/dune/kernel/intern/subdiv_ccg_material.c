@@ -1,8 +1,8 @@
-#include "BKE_subdiv_ccg.h"
+#include "KERNEL_subdiv_ccg.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
+#include "structs_mesh_types.h"
 
 typedef struct CCGMaterialFromMeshData {
   const Mesh *mesh;
@@ -13,7 +13,7 @@ static DMFlagMat subdiv_ccg_material_flags_eval(
 {
   CCGMaterialFromMeshData *data = (CCGMaterialFromMeshData *)material_flags_evaluator->user_data;
   const Mesh *mesh = data->mesh;
-  BLI_assert(coarse_face_index < mesh->totpoly);
+  LIB_assert(coarse_face_index < mesh->totpoly);
   const MPoly *mpoly = mesh->mpoly;
   const MPoly *poly = &mpoly[coarse_face_index];
   DMFlagMat material_flags;
@@ -28,7 +28,7 @@ static void subdiv_ccg_material_flags_free(
   MEM_freeN(material_flags_evaluator->user_data);
 }
 
-void BKE_subdiv_ccg_material_flags_init_from_mesh(
+void KERNEL_subdiv_ccg_material_flags_init_from_mesh(
     SubdivCCGMaterialFlagsEvaluator *material_flags_evaluator, const Mesh *mesh)
 {
   CCGMaterialFromMeshData *data = MEM_mallocN(sizeof(CCGMaterialFromMeshData),
