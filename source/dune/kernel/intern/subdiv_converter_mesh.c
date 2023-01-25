@@ -5,12 +5,12 @@
 #include "structs_mesh_types.h"
 #include "structs_meshdata_types.h"
 
-#include "LI_bitmap.h"
-#include "LI_utildefines.h"
+#include "LIB_bitmap.h"
+#include "LIB_utildefines.h"
 
-#include "KE_customdata.h"
-#include "KE_mesh_mapping.h"
-#include "KE_subdiv.h"
+#include "KERNEL_customdata.h"
+#include "KERNEL_mesh_mapping.h"
+#include "KERNEL_subdiv.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -149,7 +149,7 @@ static float get_edge_sharpness(const OpenSubdiv_Converter *converter, int manif
   }
   const int edge_index = storage->manifold_edge_index_reverse[manifold_edge_index];
   const MEdge *medge = storage->mesh->medge;
-  return BKE_subdiv_crease_to_sharpness_char(medge[edge_index].crease);
+  return KERNEL_subdiv_crease_to_sharpness_char(medge[edge_index].crease);
 }
 
 static bool is_infinite_sharp_vertex(const OpenSubdiv_Converter *converter,
@@ -162,7 +162,7 @@ static bool is_infinite_sharp_vertex(const OpenSubdiv_Converter *converter,
   }
 #endif
   const int vertex_index = storage->manifold_vertex_index_reverse[manifold_vertex_index];
-  return BLI_BITMAP_TEST_BOOL(storage->infinite_sharp_vertices_map, vertex_index);
+  return LIB_BITMAP_TEST_BOOL(storage->infinite_sharp_vertices_map, vertex_index);
 }
 
 static float get_vertex_sharpness(const OpenSubdiv_Converter *converter, int manifold_vertex_index)
@@ -172,7 +172,7 @@ static float get_vertex_sharpness(const OpenSubdiv_Converter *converter, int man
     return 0.0f;
   }
   const int vertex_index = storage->manifold_vertex_index_reverse[manifold_vertex_index];
-  return BKE_subdiv_crease_to_sharpness_f(storage->cd_vertex_crease[vertex_index]);
+  return KERNEL_subdiv_crease_to_sharpness_f(storage->cd_vertex_crease[vertex_index]);
 }
 
 static int get_num_uv_layers(const OpenSubdiv_Converter *converter)
@@ -197,12 +197,12 @@ static void precalc_uv_layer(const OpenSubdiv_Converter *converter, const int la
     storage->loop_uv_indices = MEM_malloc_arrayN(
         mesh->totloop, sizeof(int), "loop uv vertex index");
   }
-  UvVertMap *uv_vert_map = BKE_mesh_uv_vert_map_create(
+  UvVertMap *uv_vert_map = KERNEL_mesh_uv_vert_map_create(
       mpoly, mloop, mloopuv, num_poly, num_vert, limit, false, true);
   /* NOTE: First UV vertex is supposed to be always marked as separate. */
   storage->num_uv_coordinates = -1;
   for (int vertex_index = 0; vertex_index < num_vert; vertex_index++) {
-    const UvMapVert *uv_vert = BKE_mesh_uv_vert_map_get_vert(uv_vert_map, vertex_index);
+    const UvMapVert *uv_vert = KERNEL_mesh_uv_vert_map_get_vert(uv_vert_map, vertex_index);
     while (uv_vert != NULL) {
       if (uv_vert->separate) {
         storage->num_uv_coordinates++;
@@ -302,7 +302,7 @@ static void initialize_manifold_index_array(const BLI_bitmap *used_map,
   }
   int offset = 0;
   for (int i = 0; i < num_elements; i++) {
-    if (BLI_BITMAP_TEST_BOOL(used_map, i)) {
+    if (LIB_BITMAP_TEST_BOOL(used_map, i)) {
       if (indices != NULL) {
         indices[i] = i - offset;
       }
