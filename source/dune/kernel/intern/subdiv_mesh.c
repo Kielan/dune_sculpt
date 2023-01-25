@@ -1,26 +1,26 @@
-#include "BKE_mesh.h"
-#include "BKE_subdiv_mesh.h"
+#include "KE_mesh.h"
+#include "KE_subdiv_mesh.h"
 
 #include "atomic_ops.h"
 
-#include "DNA_key_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "structs_key_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
 
-#include "BLI_alloca.h"
-#include "BLI_math_vector.h"
+#include "LIB_alloca.h"
+#include "LIB_math_vector.h"
 
-#include "BKE_customdata.h"
-#include "BKE_key.h"
-#include "BKE_mesh.h"
-#include "BKE_subdiv.h"
-#include "BKE_subdiv_eval.h"
-#include "BKE_subdiv_foreach.h"
+#include "KE_customdata.h"
+#include "KE_key.h"
+#include "KE_mesh.h"
+#include "KE_subdiv.h"
+#include "KE_subdiv_eval.h"
+#include "KE_subdiv_foreach.h"
 
 #include "MEM_guardedalloc.h"
 
 /* -------------------------------------------------------------------- */
-/** Subdivision Context  */
+/** Subdivision Context  **/
 
 typedef struct SubdivMeshContext {
   const SubdivToMeshSettings *settings;
@@ -76,11 +76,8 @@ static void subdiv_mesh_context_free(SubdivMeshContext *ctx)
   MEM_SAFE_FREE(ctx->accumulated_counters);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Loop custom data copy helpers
- * \{ */
+/** Loop custom data copy helpers **/
 
 typedef struct LoopsOfPtex {
   /* First loop of the ptex, starts at ptex (0, 0) and goes in u direction. */
@@ -118,13 +115,10 @@ static void loops_of_ptex_get(const SubdivMeshContext *ctx,
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Vertex custom data interpolation helpers
- * \{ */
+/** Vertex custom data interpolation helpers **/
 
-/* TODO(sergey): Somehow de-duplicate with loops storage, without too much
+/* TODO: Somehow de-duplicate with loops storage, without too much
  * exception cases all over the code. */
 
 typedef struct VerticesForInterpolation {
@@ -179,8 +173,8 @@ static void vertex_interpolation_init(const SubdivMeshContext *ctx,
     /* Interpolate center of poly right away, it stays unchanged for all
      * ptex faces. */
     const float weight = 1.0f / (float)coarse_poly->totloop;
-    float *weights = BLI_array_alloca(weights, coarse_poly->totloop);
-    int *indices = BLI_array_alloca(indices, coarse_poly->totloop);
+    float *weights = LIB_array_alloca(weights, coarse_poly->totloop);
+    int *indices = LIB_array_alloca(indices, coarse_poly->totloop);
     for (int i = 0; i < coarse_poly->totloop; i++) {
       weights[i] = weight;
       indices[i] = coarse_mloop[coarse_poly->loopstart + i].v;
@@ -218,7 +212,7 @@ static void vertex_interpolation_from_corner(const SubdivMeshContext *ctx,
     /* Interpolate remaining ptex face corners, which hits loops
      * middle points.
      *
-     * TODO(sergey): Re-use one of interpolation results from previous
+     * TODO: Re-use one of interpolation results from previous
      * iteration. */
     const float weights[2] = {0.5f, 0.5f};
     const int first_loop_index = loops_of_ptex.first_loop - coarse_mloop;
@@ -256,11 +250,8 @@ static void vertex_interpolation_end(VerticesForInterpolation *vertex_interpolat
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Loop custom data interpolation helpers
- * \{ */
+/** Loop custom data interpolation helpers **/
 
 typedef struct LoopsForInterpolation {
   /* This field points to a loop data which is to be used for interpolation.
@@ -350,7 +341,7 @@ static void loop_interpolation_from_corner(const SubdivMeshContext *ctx,
     /* Interpolate remaining ptex face corners, which hits loops
      * middle points.
      *
-     * TODO(sergey): Re-use one of interpolation results from previous
+     * TODO: Re-use one of interpolation results from previous
      * iteration. */
     const float weights[2] = {0.5f, 0.5f};
     const int base_loop_index = coarse_poly->loopstart;
@@ -377,7 +368,7 @@ static void loop_interpolation_end(LoopsForInterpolation *loop_interpolation)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name TLS **/
+/** TLS **/
 
 typedef struct SubdivMeshTLS {
   bool vertex_interpolation_initialized;
@@ -415,11 +406,11 @@ static void subdiv_accumulate_vertex_displacement(SubdivMeshContext *ctx,
   Subdiv *subdiv = ctx->subdiv;
   const int subdiv_vertex_index = subdiv_vert - ctx->subdiv_mesh->mvert;
   float dummy_P[3], dPdu[3], dPdv[3], D[3];
-  BKE_subdiv_eval_limit_point_and_derivatives(subdiv, ptex_face_index, u, v, dummy_P, dPdu, dPdv);
+  KERNEL_subdiv_eval_limit_point_and_derivatives(subdiv, ptex_face_index, u, v, dummy_P, dPdu, dPdv);
 
   /* NOTE: The subdivided mesh is allocated in this module, and its vertices are kept at zero
    * locations as a default calloc(). */
-  BKE_subdiv_eval_displacement(subdiv, ptex_face_index, u, v, dPdu, dPdv, D);
+  KERNEL_subdiv_eval_displacement(subdiv, ptex_face_index, u, v, dPdu, dPdv, D);
   add_v3_v3(subdiv_vert->co, D);
 
   if (ctx->accumulated_counters) {
@@ -696,7 +687,7 @@ static void subdiv_mesh_vertex_inner(const SubdivForeachContext *foreach_context
   MVert *subdiv_vert = &subdiv_mvert[subdiv_vertex_index];
   subdiv_mesh_ensure_vertex_interpolation(ctx, tls, coarse_poly, coarse_corner);
   subdiv_vertex_data_interpolate(ctx, subdiv_vert, &tls->vertex_interpolation, u, v);
-  BKE_subdiv_eval_final_point(subdiv, ptex_face_index, u, v, subdiv_vert->co);
+  KERNEL_subdiv_eval_final_point(subdiv, ptex_face_index, u, v, subdiv_vert->co);
   subdiv_mesh_tag_center_vertex(coarse_poly, subdiv_vert, u, v);
 }
 
@@ -750,7 +741,7 @@ static void subdiv_mesh_edge(const SubdivForeachContext *foreach_context,
 }
 
 /* -------------------------------------------------------------------- */
-/** Loops creation/interpolation */
+/** Loops creation/interpolation **/
 
 static void subdiv_interpolate_loop_data(const SubdivMeshContext *ctx,
                                          MLoop *subdiv_loop,
@@ -767,7 +758,7 @@ static void subdiv_interpolate_loop_data(const SubdivMeshContext *ctx,
                     NULL,
                     4,
                     subdiv_loop_index);
-  /* TODO(sergey): Set ORIGINDEX. */
+  /* TODO: Set ORIGINDEX. */
 }
 
 static void subdiv_eval_uv_layer(SubdivMeshContext *ctx,
@@ -783,7 +774,7 @@ static void subdiv_eval_uv_layer(SubdivMeshContext *ctx,
   const int mloop_index = subdiv_loop - ctx->subdiv_mesh->mloop;
   for (int layer_index = 0; layer_index < ctx->num_uv_layers; layer_index++) {
     MLoopUV *subdiv_loopuv = &ctx->uv_layers[layer_index][mloop_index];
-    BKE_subdiv_eval_face_varying(subdiv, layer_index, ptex_face_index, u, v, subdiv_loopuv->uv);
+    KERNEL_subdiv_eval_face_varying(subdiv, layer_index, ptex_face_index, u, v, subdiv_loopuv->uv);
   }
 }
 
@@ -843,8 +834,7 @@ static void subdiv_mesh_loop(const SubdivForeachContext *foreach_context,
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Polygons subdivision process
- * \{ */
+/** Polygons subdivision process */
 
 static void subdiv_copy_poly_data(const SubdivMeshContext *ctx,
                                   MPoly *subdiv_poly,
@@ -863,7 +853,7 @@ static void subdiv_mesh_poly(const SubdivForeachContext *foreach_context,
                              const int start_loop_index,
                              const int num_loops)
 {
-  BLI_assert(coarse_poly_index != ORIGINDEX_NONE);
+  LIB_assert(coarse_poly_index != ORIGINDEX_NONE);
   SubdivMeshContext *ctx = foreach_context->user_data;
   const Mesh *coarse_mesh = ctx->coarse_mesh;
   const MPoly *coarse_mpoly = coarse_mesh->mpoly;
