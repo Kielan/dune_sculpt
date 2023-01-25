@@ -1,12 +1,12 @@
-#include "LI_array.hh"
-#include "LI_generic_virtual_array.hh"
-#include "LI_span.hh"
-#include "LI_task.hh"
-#include "LI_timeit.hh"
+#include "LIB_array.hh"
+#include "LIB_generic_virtual_array.hh"
+#include "LIB_span.hh"
+#include "LIB_task.hh"
+#include "LIB_timeit.hh"
 
-#include "KE_attribute_access.hh"
-#include "KE_attribute_math.hh"
-#include "KE_spline.hh"
+#include "KERNEL_attribute_access.hh"
+#include "KERNEL_attribute_math.hh"
+#include "KERNEL_spline.hh"
 
 using dune::Array;
 using dune::float3;
@@ -41,10 +41,10 @@ static SplinePtr create_spline(const CurveType type)
     case CURVE_TYPE_NURBS:
       return std::make_unique<NURBSpline>();
     case CURVE_TYPE_CATMULL_ROM:
-      BLI_assert_unreachable();
+      LIB_assert_unreachable();
       return {};
   }
-  BLI_assert_unreachable();
+  LIB_assert_unreachable();
   return {};
 }
 
@@ -99,7 +99,7 @@ void Spline::reverse()
       [&](const AttributeIDRef &id, const AttributeMetaData &meta_data) {
         std::optional<blender::GMutableSpan> attribute = this->attributes.get_for_write(id);
         if (!attribute) {
-          BLI_assert_unreachable();
+          LIB_assert_unreachable();
           return false;
         }
         convert_to_static_type(meta_data.data_type, [&](auto dummy) {
@@ -152,7 +152,7 @@ static void accumulate_lengths(Span<float3> positions,
                                const bool is_cyclic,
                                MutableSpan<float> lengths)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
   float length = 0.0f;
   for (const int i : IndexRange(positions.size() - 1)) {
@@ -188,7 +188,7 @@ Span<float> Spline::evaluated_lengths() const
 
 static float3 direction_bisect(const float3 &prev, const float3 &middle, const float3 &next)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
   const float3 dir_prev = normalize(middle - prev);
   const float3 dir_next = normalize(next - middle);
@@ -204,7 +204,7 @@ static void calculate_tangents(Span<float3> positions,
                                const bool is_cyclic,
                                MutableSpan<float3> tangents)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
   if (positions.size() == 1) {
     tangents.first() = float3(0.0f, 0.0f, 1.0f);
@@ -256,10 +256,10 @@ static float3 rotate_direction_around_axis(const float3 &direction,
                                            const float3 &axis,
                                            const float angle)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
-  BLI_ASSERT_UNIT_V3(direction);
-  BLI_ASSERT_UNIT_V3(axis);
+  LIB_ASSERT_UNIT_V3(direction);
+  LIB_ASSERT_UNIT_V3(axis);
 
   const float3 axis_scaled = axis * dot(direction, axis);
   const float3 diff = direction - axis_scaled;
@@ -270,9 +270,9 @@ static float3 rotate_direction_around_axis(const float3 &direction,
 
 static void calculate_normals_z_up(Span<float3> tangents, MutableSpan<float3> r_normals)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
-  BLI_assert(r_normals.size() == tangents.size());
+  LIB_assert(r_normals.size() == tangents.size());
 
   /* Same as in `vec_to_quat`. */
   const float epsilon = 1e-4f;
@@ -287,14 +287,12 @@ static void calculate_normals_z_up(Span<float3> tangents, MutableSpan<float3> r_
   }
 }
 
-/**
- * Rotate the last normal in the same way the tangent has been rotated.
- */
+/** Rotate the last normal in the same way the tangent has been rotated. */
 static float3 calculate_next_normal(const float3 &last_normal,
                                     const float3 &last_tangent,
                                     const float3 &current_tangent)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
   if (is_zero(last_tangent) || is_zero(current_tangent)) {
     return last_normal;
@@ -312,7 +310,7 @@ static void calculate_normals_minimum(Span<float3> tangents,
                                       MutableSpan<float3> r_normals)
 {
   using namespace blender::math;
-  BLI_assert(r_normals.size() == tangents.size());
+  LIB_assert(r_normals.size() == tangents.size());
 
   if (r_normals.is_empty()) {
     return;
@@ -407,7 +405,7 @@ Spline::LookupResult Spline::lookup_evaluated_factor(const float factor) const
 
 Spline::LookupResult Spline::lookup_evaluated_length(const float length) const
 {
-  BLI_assert(length >= 0.0f && length <= this->length());
+  LIB_assert(length >= 0.0f && length <= this->length());
 
   Span<float> lengths = this->evaluated_lengths();
 
@@ -427,7 +425,7 @@ Array<float> Spline::sample_uniform_index_factors(const int samples_size) const
 {
   const Span<float> lengths = this->evaluated_lengths();
 
-  BLI_assert(samples_size > 0);
+  LIB_assert(samples_size > 0);
   Array<float> samples(samples_size);
 
   samples[0] = 0.0f;
@@ -507,9 +505,9 @@ void Spline::sample_with_index_factors(const GVArray &src,
                                        Span<float> index_factors,
                                        GMutableSpan dst) const
 {
-  BLI_assert(src.size() == this->evaluated_points_size());
+  LIB_assert(src.size() == this->evaluated_points_size());
 
-  blender::attribute_math::convert_to_static_type(src.type(), [&](auto dummy) {
+  dune::attribute_math::convert_to_static_type(src.type(), [&](auto dummy) {
     using T = decltype(dummy);
     const VArray<T> src_typed = src.typed<T>();
     MutableSpan<T> dst_typed = dst.typed<T>();
@@ -517,7 +515,7 @@ void Spline::sample_with_index_factors(const GVArray &src,
       dst_typed.fill(src_typed[0]);
       return;
     }
-    blender::threading::parallel_for(dst_typed.index_range(), 1024, [&](IndexRange range) {
+    dune::threading::parallel_for(dst_typed.index_range(), 1024, [&](IndexRange range) {
       for (const int i : range) {
         const LookupResult interp = this->lookup_data_from_index_factor(index_factors[i]);
         dst_typed[i] = blender::attribute_math::mix2(interp.factor,
