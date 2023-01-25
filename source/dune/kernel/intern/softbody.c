@@ -1,6 +1,5 @@
 /**
  * variables on the UI for now
- * <pre>
  * float mediafrict;  friction to env
  * float nodemass;    softbody mass of *vertex*
  * float grav;        softbody amount of gravitation to apply
@@ -12,7 +11,6 @@
  *
  * float inspring;    softbody inner springs
  * float infrict;     softbody inner springs friction
- * </pre>
  */
 
 #include <math.h>
@@ -24,33 +22,33 @@
 #include "MEM_guardedalloc.h"
 
 /* types */
-#include "DNA_collection_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_lattice_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "structs_collection_types.h"
+#include "structs_curve_types.h"
+#include "structs_lattice_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
+#include "structs_object_force_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_collection.h"
-#include "BKE_collision.h"
-#include "BKE_curve.h"
-#include "BKE_deform.h"
-#include "BKE_effect.h"
-#include "BKE_global.h"
-#include "BKE_layer.h"
-#include "BKE_mesh.h"
-#include "BKE_modifier.h"
-#include "BKE_pointcache.h"
-#include "BKE_scene.h"
-#include "BKE_softbody.h"
+#include "KE_collection.h"
+#include "KE_collision.h"
+#include "KE_curve.h"
+#include "KE_deform.h"
+#include "KE_effect.h"
+#include "KE_global.h"
+#include "KE_layer.h"
+#include "KE_mesh.h"
+#include "KE_modifier.h"
+#include "KE_pointcache.h"
+#include "KE_scene.h"
+#include "KE_softbody.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
@@ -161,9 +159,7 @@ static float sb_fric_force_scale(Object *UNUSED(ob))
   return (0.01f);
 }
 
-/**
- * Defining the frames to *real* time relation.
- */
+/** Defining the frames to *real* time relation. **/
 static float sb_time_scale(Object *ob)
 {
   SoftBody *sb = ob->soft; /* is supposed to be there */
@@ -484,16 +480,14 @@ static void ccd_build_deflector_hash_single(GHash *hash, Object *ob)
   /* only with deflecting set */
   if (ob->pd && ob->pd->deflect) {
     void **val_p;
-    if (!BLI_ghash_ensure_p(hash, ob, &val_p)) {
+    if (!LIB_ghash_ensure_p(hash, ob, &val_p)) {
       ccd_Mesh *ccdmesh = ccd_mesh_make(ob);
       *val_p = ccdmesh;
     }
   }
 }
 
-/**
- * \note collection overrides scene when not NULL.
- */
+/** collection overrides scene when not NULL. **/
 static void ccd_build_deflector_hash(Depsgraph *depsgraph,
                                      Collection *collection,
                                      Object *vertexowner,
@@ -504,7 +498,7 @@ static void ccd_build_deflector_hash(Depsgraph *depsgraph,
   }
 
   unsigned int numobjects;
-  Object **objects = BKE_collision_objects_create(
+  Object **objects = KERNEL_collision_objects_create(
       depsgraph, vertexowner, collection, &numobjects, eModifierType_Collision);
 
   for (int i = 0; i < numobjects; i++) {
@@ -515,13 +509,13 @@ static void ccd_build_deflector_hash(Depsgraph *depsgraph,
     }
   }
 
-  BKE_collision_objects_free(objects);
+  KERNEL_collision_objects_free(objects);
 }
 
 static void ccd_update_deflector_hash_single(GHash *hash, Object *ob)
 {
   if (ob->pd && ob->pd->deflect) {
-    ccd_Mesh *ccdmesh = BLI_ghash_lookup(hash, ob);
+    ccd_Mesh *ccdmesh = LIB_ghash_lookup(hash, ob);
     if (ccdmesh) {
       ccd_mesh_update(ob, ccdmesh);
     }
@@ -529,7 +523,7 @@ static void ccd_update_deflector_hash_single(GHash *hash, Object *ob)
 }
 
 /**
- * \note collection overrides scene when not NULL.
+ * collection overrides scene when not NULL.
  */
 static void ccd_update_deflector_hash(Depsgraph *depsgraph,
                                       Collection *collection,
@@ -541,7 +535,7 @@ static void ccd_update_deflector_hash(Depsgraph *depsgraph,
   }
 
   unsigned int numobjects;
-  Object **objects = BKE_collision_objects_create(
+  Object **objects = KERNEL_collision_objects_create(
       depsgraph, vertexowner, collection, &numobjects, eModifierType_Collision);
 
   for (int i = 0; i < numobjects; i++) {
@@ -552,7 +546,7 @@ static void ccd_update_deflector_hash(Depsgraph *depsgraph,
     }
   }
 
-  BKE_collision_objects_free(objects);
+  KERNEL_collision_objects_free(objects);
 }
 
 /*--- collider caching and dicing ---*/
@@ -876,7 +870,7 @@ static void free_scratch(SoftBody *sb)
   if (sb->scratch) {
     /* TODO: make sure everything is cleaned up nicely. */
     if (sb->scratch->colliderhash) {
-      BLI_ghash_free(sb->scratch->colliderhash,
+      LIB_ghash_free(sb->scratch->colliderhash,
                      NULL,
                      (GHashValFreeFP)ccd_mesh_free); /* This hopefully will free all caches. */
       sb->scratch->colliderhash = NULL;
@@ -951,15 +945,13 @@ static void free_softbody_intern(SoftBody *sb)
 
 /* +++ dependency information functions. */
 
-/**
- * \note collection overrides scene when not NULL.
- */
+/** collection overrides scene when not NULL **/
 static int query_external_colliders(Depsgraph *depsgraph, Collection *collection)
 {
   unsigned int numobjects;
-  Object **objects = BKE_collision_objects_create(
+  Object **objects = KERNEL_collision_objects_create(
       depsgraph, NULL, collection, &numobjects, eModifierType_Collision);
-  BKE_collision_objects_free(objects);
+  KERNEL_collision_objects_free(objects);
 
   return (numobjects != 0);
 }
@@ -987,11 +979,11 @@ static int sb_detect_aabb_collisionCached(float UNUSED(force[3]),
   copy_v3_v3(aabbmax, sb->scratch->aabbmax);
 
   hash = vertexowner->soft->scratch->colliderhash;
-  ihash = BLI_ghashIterator_new(hash);
-  while (!BLI_ghashIterator_done(ihash)) {
+  ihash = LIB_ghashIterator_new(hash);
+  while (!LIB_ghashIterator_done(ihash)) {
 
-    ccd_Mesh *ccdm = BLI_ghashIterator_getValue(ihash);
-    ob = BLI_ghashIterator_getKey(ihash);
+    ccd_Mesh *ccdm = LIB_ghashIterator_getValue(ihash);
+    ob = LIB_ghashIterator_getKey(ihash);
     {
       /* only with deflecting set */
       if (ob->pd && ob->pd->deflect) {
@@ -1000,7 +992,7 @@ static int sb_detect_aabb_collisionCached(float UNUSED(force[3]),
               (aabbmax[2] < ccdm->bbmin[2]) || (aabbmin[0] > ccdm->bbmax[0]) ||
               (aabbmin[1] > ccdm->bbmax[1]) || (aabbmin[2] > ccdm->bbmax[2])) {
             /* boxes don't intersect */
-            BLI_ghashIterator_step(ihash);
+            LIB_ghashIterator_step(ihash);
             continue;
           }
 
@@ -1011,14 +1003,14 @@ static int sb_detect_aabb_collisionCached(float UNUSED(force[3]),
         else {
           /* Aye that should be cached. */
           CLOG_ERROR(&LOG, "missing cache error");
-          BLI_ghashIterator_step(ihash);
+          LIB_ghashIterator_step(ihash);
           continue;
         }
       } /* if (ob->pd && ob->pd->deflect) */
-      BLI_ghashIterator_step(ihash);
+      LIB_ghashIterator_step(ihash);
     }
   } /* while () */
-  BLI_ghashIterator_free(ihash);
+  LIB_ghashIterator_free(ihash);
   return deflected;
 }
 /* --- the aabb section. */
@@ -1053,11 +1045,11 @@ static int sb_detect_face_pointCached(const float face_v1[3],
   normalize_v3(d_nvect);
 
   hash = vertexowner->soft->scratch->colliderhash;
-  ihash = BLI_ghashIterator_new(hash);
-  while (!BLI_ghashIterator_done(ihash)) {
+  ihash = LIB_ghashIterator_new(hash);
+  while (!LIB_ghashIterator_done(ihash)) {
 
-    ccd_Mesh *ccdm = BLI_ghashIterator_getValue(ihash);
-    ob = BLI_ghashIterator_getKey(ihash);
+    ccd_Mesh *ccdm = LIB_ghashIterator_getValue(ihash);
+    ob = LIB_ghashIterator_getKey(ihash);
     {
       /* only with deflecting set */
       if (ob->pd && ob->pd->deflect) {
@@ -1072,14 +1064,14 @@ static int sb_detect_face_pointCached(const float face_v1[3],
               (aabbmax[2] < ccdm->bbmin[2]) || (aabbmin[0] > ccdm->bbmax[0]) ||
               (aabbmin[1] > ccdm->bbmax[1]) || (aabbmin[2] > ccdm->bbmax[2])) {
             /* boxes don't intersect */
-            BLI_ghashIterator_step(ihash);
+            LIB_ghashIterator_step(ihash);
             continue;
           }
         }
         else {
           /* Aye that should be cached. */
           CLOG_ERROR(&LOG, "missing cache error");
-          BLI_ghashIterator_step(ihash);
+          LIB_ghashIterator_step(ihash);
           continue;
         }
 
@@ -1115,10 +1107,10 @@ static int sb_detect_face_pointCached(const float face_v1[3],
           } /* while (a) */
         }   /* if (mvert) */
       }     /* if (ob->pd && ob->pd->deflect) */
-      BLI_ghashIterator_step(ihash);
+      LIB_ghashIterator_step(ihash);
     }
   } /* while () */
-  BLI_ghashIterator_free(ihash);
+  LIB_ghashIterator_free(ihash);
   return deflected;
 }
 
@@ -1145,11 +1137,11 @@ static int sb_detect_face_collisionCached(const float face_v1[3],
   aabbmax[2] = max_fff(face_v1[2], face_v2[2], face_v3[2]);
 
   hash = vertexowner->soft->scratch->colliderhash;
-  ihash = BLI_ghashIterator_new(hash);
-  while (!BLI_ghashIterator_done(ihash)) {
+  ihash = LIB_ghashIterator_new(hash);
+  while (!LIB_ghashIterator_done(ihash)) {
 
-    ccd_Mesh *ccdm = BLI_ghashIterator_getValue(ihash);
-    ob = BLI_ghashIterator_getKey(ihash);
+    ccd_Mesh *ccdm = LIB_ghashIterator_getValue(ihash);
+    ob = LIB_ghashIterator_getKey(ihash);
     {
       /* only with deflecting set */
       if (ob->pd && ob->pd->deflect) {
@@ -1169,14 +1161,14 @@ static int sb_detect_face_collisionCached(const float face_v1[3],
               (aabbmax[2] < ccdm->bbmin[2]) || (aabbmin[0] > ccdm->bbmax[0]) ||
               (aabbmin[1] > ccdm->bbmax[1]) || (aabbmin[2] > ccdm->bbmax[2])) {
             /* boxes don't intersect */
-            BLI_ghashIterator_step(ihash);
+            LIB_ghashIterator_step(ihash);
             continue;
           }
         }
         else {
           /* Aye that should be cached. */
           CLOG_ERROR(&LOG, "missing cache error");
-          BLI_ghashIterator_step(ihash);
+          LIB_ghashIterator_step(ihash);
           continue;
         }
 
@@ -1224,10 +1216,10 @@ static int sb_detect_face_collisionCached(const float face_v1[3],
           vt++;
         } /* while a */
       }   /* if (ob->pd && ob->pd->deflect) */
-      BLI_ghashIterator_step(ihash);
+      LIB_ghashIterator_step(ihash);
     }
   } /* while () */
-  BLI_ghashIterator_free(ihash);
+  LIB_ghashIterator_free(ihash);
   return deflected;
 }
 
@@ -1321,11 +1313,11 @@ static int sb_detect_edge_collisionCached(const float edge_v1[3],
   el = len_v3v3(edge_v1, edge_v2);
 
   hash = vertexowner->soft->scratch->colliderhash;
-  ihash = BLI_ghashIterator_new(hash);
-  while (!BLI_ghashIterator_done(ihash)) {
+  ihash = LIB_ghashIterator_new(hash);
+  while (!LIB_ghashIterator_done(ihash)) {
 
-    ccd_Mesh *ccdm = BLI_ghashIterator_getValue(ihash);
-    ob = BLI_ghashIterator_getKey(ihash);
+    ccd_Mesh *ccdm = LIB_ghashIterator_getValue(ihash);
+    ob = LIB_ghashIterator_getKey(ihash);
     {
       /* only with deflecting set */
       if (ob->pd && ob->pd->deflect) {
@@ -1345,14 +1337,14 @@ static int sb_detect_edge_collisionCached(const float edge_v1[3],
               (aabbmax[2] < ccdm->bbmin[2]) || (aabbmin[0] > ccdm->bbmax[0]) ||
               (aabbmin[1] > ccdm->bbmax[1]) || (aabbmin[2] > ccdm->bbmax[2])) {
             /* boxes don't intersect */
-            BLI_ghashIterator_step(ihash);
+            LIB_ghashIterator_step(ihash);
             continue;
           }
         }
         else {
           /* Aye that should be cached. */
           CLOG_ERROR(&LOG, "missing cache error");
-          BLI_ghashIterator_step(ihash);
+          LIB_ghashIterator_step(ihash);
           continue;
         }
 
@@ -1455,7 +1447,7 @@ static void _scan_for_ext_spring_forces(
             mid_v3_v3v3(pos, sb->bpoint[bs->v1].pos, sb->bpoint[bs->v2].pos);
             mid_v3_v3v3(vel, sb->bpoint[bs->v1].vec, sb->bpoint[bs->v2].vec);
             pd_point_from_soft(scene, pos, vel, -1, &epoint);
-            BKE_effectors_apply(
+            KERNEL_effectors_apply(
                 effectors, NULL, sb->effector_weights, &epoint, force, NULL, speed);
 
             mul_v3_fl(speed, windfactor);
@@ -1511,11 +1503,11 @@ static void sb_sfesf_threads_run(struct Depsgraph *depsgraph,
    * or even be UI option sb->spawn_cf_threads_nopts */
   int lowsprings = 100;
 
-  ListBase *effectors = BKE_effectors_create(
+  ListBase *effectors = KERNEL_effectors_create(
       depsgraph, ob, NULL, ob->soft->effector_weights, false);
 
   /* figure the number of threads while preventing pretty pointless threading overhead */
-  totthread = BKE_scene_num_threads(scene);
+  totthread = KERNEL_scene_num_threads(scene);
   /* What if we got zillions of CPUs running but less to spread. */
   while ((totsprings / totthread < lowsprings) && (totthread > 1)) {
     totthread--;
@@ -1546,13 +1538,13 @@ static void sb_sfesf_threads_run(struct Depsgraph *depsgraph,
     sb_threads[i].tot = totthread;
   }
   if (totthread > 1) {
-    BLI_threadpool_init(&threads, exec_scan_for_ext_spring_forces, totthread);
+    LIB_threadpool_init(&threads, exec_scan_for_ext_spring_forces, totthread);
 
     for (i = 0; i < totthread; i++) {
-      BLI_threadpool_insert(&threads, &sb_threads[i]);
+      LIB_threadpool_insert(&threads, &sb_threads[i]);
     }
 
-    BLI_threadpool_end(&threads);
+    LIB_threadpool_end(&threads);
   }
   else {
     exec_scan_for_ext_spring_forces(&sb_threads[0]);
@@ -1617,14 +1609,14 @@ static int sb_detect_vertex_collisionCached(float opco[3],
   /* init */
   *intrusion = 0.0f;
   hash = vertexowner->soft->scratch->colliderhash;
-  ihash = BLI_ghashIterator_new(hash);
+  ihash = LIB_ghashIterator_new(hash);
   outerforceaccu[0] = outerforceaccu[1] = outerforceaccu[2] = 0.0f;
   innerforceaccu[0] = innerforceaccu[1] = innerforceaccu[2] = 0.0f;
   /* go */
-  while (!BLI_ghashIterator_done(ihash)) {
+  while (!LIB_ghashIterator_done(ihash)) {
 
-    ccd_Mesh *ccdm = BLI_ghashIterator_getValue(ihash);
-    ob = BLI_ghashIterator_getKey(ihash);
+    ccd_Mesh *ccdm = LIB_ghashIterator_getValue(ihash);
+    ob = LIB_ghashIterator_getKey(ihash);
     {
       /* only with deflecting set */
       if (ob->pd && ob->pd->deflect) {
@@ -1651,7 +1643,7 @@ static int sb_detect_vertex_collisionCached(float opco[3],
           if ((opco[0] < minx) || (opco[1] < miny) || (opco[2] < minz) || (opco[0] > maxx) ||
               (opco[1] > maxy) || (opco[2] > maxz)) {
             /* Outside the padded bound-box -> collision object is too far away. */
-            BLI_ghashIterator_step(ihash);
+            LIB_ghashIterator_step(ihash);
             continue;
           }
         }
@@ -2084,7 +2076,7 @@ static int _softbody_calc_forces_slice_in_a_thread(Scene *scene,
         float eval_sb_fric_force_scale = sb_fric_force_scale(ob);
 
         pd_point_from_soft(scene, bp->pos, bp->vec, sb->bpoint - bp, &epoint);
-        BKE_effectors_apply(effectors, NULL, sb->effector_weights, &epoint, force, NULL, speed);
+        KERNEL_effectors_apply(effectors, NULL, sb->effector_weights, &epoint, force, NULL, speed);
 
         /* Apply force-field. */
         mul_v3_fl(force, fieldfactor * eval_sb_fric_force_scale);
@@ -2192,7 +2184,7 @@ static void sb_cf_threads_run(Scene *scene,
   int lowpoints = 100;
 
   /* figure the number of threads while preventing pretty pointless threading overhead */
-  totthread = BKE_scene_num_threads(scene);
+  totthread = KERNEL_scene_num_threads(scene);
   /* What if we got zillions of CPUs running but less to spread. */
   while ((totpoint / totthread < lowpoints) && (totthread > 1)) {
     totthread--;
@@ -2226,13 +2218,13 @@ static void sb_cf_threads_run(Scene *scene,
   }
 
   if (totthread > 1) {
-    BLI_threadpool_init(&threads, exec_softbody_calc_forces, totthread);
+    LIB_threadpool_init(&threads, exec_softbody_calc_forces, totthread);
 
     for (i = 0; i < totthread; i++) {
-      BLI_threadpool_insert(&threads, &sb_threads[i]);
+      LIB_threadpool_insert(&threads, &sb_threads[i]);
     }
 
-    BLI_threadpool_end(&threads);
+    LIB_threadpool_end(&threads);
   }
   else {
     exec_softbody_calc_forces(&sb_threads[0]);
