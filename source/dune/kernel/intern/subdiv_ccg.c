@@ -159,10 +159,10 @@ static void subdiv_ccg_eval_grid_element_limit(CCGEvalGridsData *data,
   Subdiv *subdiv = data->subdiv;
   SubdivCCG *subdiv_ccg = data->subdiv_ccg;
   if (subdiv->displacement_evaluator != NULL) {
-    BKE_subdiv_eval_final_point(subdiv, ptex_face_index, u, v, (float *)element);
+    KERNEL_subdiv_eval_final_point(subdiv, ptex_face_index, u, v, (float *)element);
   }
   else if (subdiv_ccg->has_normal) {
-    BKE_subdiv_eval_limit_point_and_normal(subdiv,
+    KERNEL_subdiv_eval_limit_point_and_normal(subdiv,
                                            ptex_face_index,
                                            u,
                                            v,
@@ -170,7 +170,7 @@ static void subdiv_ccg_eval_grid_element_limit(CCGEvalGridsData *data,
                                            (float *)(element + subdiv_ccg->normal_offset));
   }
   else {
-    BKE_subdiv_eval_limit_point(subdiv, ptex_face_index, u, v, (float *)element);
+    KERNEL_subdiv_eval_limit_point(subdiv, ptex_face_index, u, v, (float *)element);
   }
 }
 
@@ -221,7 +221,7 @@ static void subdiv_ccg_eval_regular_grid(CCGEvalGridsData *data, const int face_
       for (int x = 0; x < grid_size; x++) {
         const float grid_u = x * grid_size_1_inv;
         float u, v;
-        BKE_subdiv_rotate_grid_to_quad(corner, grid_u, grid_v, &u, &v);
+        KERNEL_subdiv_rotate_grid_to_quad(corner, grid_u, grid_v, &u, &v);
         const size_t grid_element_index = (size_t)y * grid_size + x;
         const size_t grid_element_offset = grid_element_index * element_size;
         subdiv_ccg_eval_grid_element(data, ptex_face_index, u, v, &grid[grid_element_offset]);
@@ -296,13 +296,13 @@ static bool subdiv_ccg_evaluate_grids(SubdivCCG *subdiv_ccg,
   data.material_flags_evaluator = material_flags_evaluator;
   /* Threaded grids evaluation. */
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
-  BLI_task_parallel_range(
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_task_parallel_range(
       0, num_faces, &data, subdiv_ccg_eval_grids_task, &parallel_range_settings);
   /* If displacement is used, need to calculate normals after all final
    * coordinates are known. */
   if (subdiv->displacement_evaluator != NULL) {
-    BKE_subdiv_ccg_recalc_normals(subdiv_ccg);
+    KERNEL_subdiv_ccg_recalc_normals(subdiv_ccg);
   }
   return true;
 }
@@ -506,7 +506,7 @@ static void subdiv_ccg_init_faces_vertex_neighborhood(SubdivCCG *subdiv_ccg)
   static_or_heap_storage_init(&face_vertices_storage);
   /* Key to access elements. */
   CCGKey key;
-  BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
+  KERNEL_subdiv_ccg_key_top_level(&key, subdiv_ccg);
   /* Store adjacency for all faces. */
   const int num_faces = subdiv_ccg->num_faces;
   for (int face_index = 0; face_index < num_faces; face_index++) {
@@ -1148,10 +1148,10 @@ static void subdiv_ccg_average_corners(SubdivCCG *subdiv_ccg,
                                        int num_adjacent_vertices)
 {
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
   AverageGridsCornerData corner_data = {
       .subdiv_ccg = subdiv_ccg, .key = key, .adjacent_vert_index_map = adjacent_vert_index_map};
-  BLI_task_parallel_range(0,
+  LIB_task_parallel_range(0,
                           num_adjacent_vertices,
                           &corner_data,
                           subdiv_ccg_average_grids_corners_task,
@@ -1168,7 +1168,7 @@ static void subdiv_ccg_average_all_boundaries_and_corners(SubdivCCG *subdiv_ccg,
   subdiv_ccg_average_all_corners(subdiv_ccg, key);
 }
 
-void BKE_subdiv_ccg_average_grids(SubdivCCG *subdiv_ccg)
+void KERNEL_subdiv_ccg_average_grids(SubdivCCG *subdiv_ccg)
 {
   CCGKey key;
   BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
