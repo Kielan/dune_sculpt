@@ -8,11 +8,11 @@
 #include "LIB_math_vector.h"
 #include "LIB_utildefines.h"
 
-#include "KE_customdata.h"
-#include "KE_subdiv.h"
-#include "KE_subdiv_eval.h"
-#include "KE_subdiv_foreach.h"
-#include "KE_subdiv_mesh.h"
+#include "KERNEL_customdata.h"
+#include "KERNEL_subdiv.h"
+#include "KERNEL_subdiv_eval.h"
+#include "KERNEL_subdiv_foreach.h"
+#include "KERNEL_subdiv_mesh.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -135,7 +135,7 @@ static void subdiv_mesh_vertex_corner(const SubdivForeachContext *foreach_contex
     mul_v3_fl(D, inv_num_accumulated);
   }
   /* Copy custom data and evaluate position. */
-  BKE_subdiv_eval_limit_point(ctx->subdiv, ptex_face_index, u, v, vertex_co);
+  KERNEL_subdiv_eval_limit_point(ctx->subdiv, ptex_face_index, u, v, vertex_co);
   /* Apply displacement. */
   add_v3_v3(vertex_co, D);
 }
