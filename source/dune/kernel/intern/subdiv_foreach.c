@@ -1,38 +1,37 @@
-#include "BKE_subdiv_foreach.h"
+#include "KERNEL_subdiv_foreach.h"
 
 #include "atomic_ops.h"
 
-#include "DNA_key_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "structs_key_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_task.h"
+#include "LIB_bitmap.h"
+#include "LIB_task.h"
 
-#include "BKE_customdata.h"
-#include "BKE_key.h"
-#include "BKE_mesh.h"
-#include "BKE_subdiv.h"
-#include "BKE_subdiv_mesh.h"
+#include "KERNEL_customdata.h"
+#include "KERNEL_key.h"
+#include "KERNEL_mesh.h"
+#include "KERNEL_subdiv.h"
+#include "KERNEL_subdiv_mesh.h"
 
 #include "MEM_guardedalloc.h"
 
 /* -------------------------------------------------------------------- */
-/** \name General helpers
- * \{ */
+/** General helpers **/
 
 /* Number of ptex faces for a given polygon. */
-BLI_INLINE int num_ptex_faces_per_poly_get(const MPoly *poly)
+LIB_INLINE int num_ptex_faces_per_poly_get(const MPoly *poly)
 {
   return (poly->totloop == 4) ? 1 : poly->totloop;
 }
 
-BLI_INLINE int num_edges_per_ptex_face_get(const int resolution)
+LIB_INLINE int num_edges_per_ptex_face_get(const int resolution)
 {
   return 2 * (resolution - 1) * resolution;
 }
 
-BLI_INLINE int num_inner_edges_per_ptex_face_get(const int resolution)
+LIB_INLINE int num_inner_edges_per_ptex_face_get(const int resolution)
 {
   if (resolution < 2) {
     return 0;
@@ -41,22 +40,19 @@ BLI_INLINE int num_inner_edges_per_ptex_face_get(const int resolution)
 }
 
 /* Number of subdivision polygons per ptex face. */
-BLI_INLINE int num_polys_per_ptex_get(const int resolution)
+LIB_INLINE int num_polys_per_ptex_get(const int resolution)
 {
   return (resolution - 1) * (resolution - 1);
 }
 
 /* Subdivision resolution per given polygon's ptex faces. */
-BLI_INLINE int ptex_face_resolution_get(const MPoly *poly, int resolution)
+LIB_INLINE int ptex_face_resolution_get(const MPoly *poly, int resolution)
 {
   return (poly->totloop == 4) ? (resolution) : ((resolution >> 1) + 1);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Context which is passed to all threaded tasks
- * \{ */
+/** Context which is passed to all threaded tasks */
 
 typedef struct SubdivForeachTaskContext {
   const Mesh *coarse_mesh;
@@ -91,21 +87,18 @@ typedef struct SubdivForeachTaskContext {
    * - During patch evaluation indicates whether coarse vertex was already
    *   evaluated and its position on limit is already known.
    */
-  BLI_bitmap *coarse_vertices_used_map;
+  LIB_bitmap *coarse_vertices_used_map;
   /* Bitmap indicating whether edge was used already or not. This includes:
    * - During context initialization it indicates whether subdivided vertices
    *   for corresponding edge were already calculated or not.
    * - During patch evaluation it indicates whether vertices along this edge
    *   were already evaluated.
    */
-  BLI_bitmap *coarse_edges_used_map;
+  LIB_bitmap *coarse_edges_used_map;
 } SubdivForeachTaskContext;
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Threading helpers
- * \{ */
+/** Threading helpers */
 
 static void *subdiv_foreach_tls_alloc(SubdivForeachTaskContext *ctx)
 {
@@ -129,11 +122,8 @@ static void subdiv_foreach_tls_free(SubdivForeachTaskContext *ctx, void *tls)
   MEM_freeN(tls);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Initialization
- * \{ */
+/** Initialization **/
 
 /* NOTE: Expects edge map to be zeroed. */
 static void subdiv_foreach_ctx_count(SubdivForeachTaskContext *ctx)
