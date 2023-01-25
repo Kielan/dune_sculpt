@@ -1,7 +1,7 @@
-#include "BKE_subdiv_ccg.h"
+#include "KERNEL_subdiv_ccg.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
 
 #include "MEM_guardedalloc.h"
 
