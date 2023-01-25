@@ -556,13 +556,13 @@ void KERNEL_text_file_modified_ignore(Text *text)
   }
 
   LIB_strncpy(file, text->filepath, FILE_MAX);
-  BLI_path_abs(file, ID_BLEND_PATH_FROM_GLOBAL(&text->id));
+  LIB_path_abs(file, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
 
-  if (!BLI_exists(file)) {
+  if (!LIB_exists(file)) {
     return;
   }
 
-  result = BLI_stat(file, &st);
+  result = LIB_stat(file, &st);
 
   if (result == -1 || (st.st_mode & S_IFMT) != S_IFREG) {
     return;
@@ -615,7 +615,7 @@ static TextLine *txt_new_linen(const char *str, int n)
   tmp->line = MEM_mallocN(n + 1, "textline_string");
   tmp->format = NULL;
 
-  BLI_strncpy(tmp->line, (str) ? str : "", n + 1);
+  LIB_strncpy(tmp->line, (str) ? str : "", n + 1);
 
   tmp->len = strlen(tmp->line);
   tmp->next = tmp->prev = NULL;
@@ -716,11 +716,8 @@ static void txt_make_dirty(Text *text)
 #endif
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Cursor Utility Functions
- * \{ */
+/** Cursor Utility Functions **/
 
 static void txt_curs_cur(Text *text, TextLine ***linep, int **charp)
 {
@@ -744,15 +741,13 @@ bool txt_cursor_is_line_end(const Text *text)
   return (text->selc == text->sell->len);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Cursor Movement Functions
+/* Cursor Movement Functions
  *
- * \note If the user moves the cursor the space containing that cursor should be popped
- * See #txt_pop_first, #txt_pop_last
+ * note If the user moves the cursor the space containing that cursor should be popped
+ * See txt_pop_first, txt_pop_last
  * Other space-types retain their own top location.
- * \{ */
+ **/
 
 void txt_move_up(Text *text, const bool sel)
 {
@@ -771,9 +766,9 @@ void txt_move_up(Text *text, const bool sel)
   }
 
   if ((*linep)->prev) {
-    int column = BLI_str_utf8_offset_to_column((*linep)->line, *charp);
+    int column = LIB_str_utf8_offset_to_column((*linep)->line, *charp);
     *linep = (*linep)->prev;
-    *charp = BLI_str_utf8_offset_from_column((*linep)->line, column);
+    *charp = LIB_str_utf8_offset_from_column((*linep)->line, column);
   }
   else {
     txt_move_bol(text, sel);
@@ -801,9 +796,9 @@ void txt_move_down(Text *text, const bool sel)
   }
 
   if ((*linep)->next) {
-    int column = BLI_str_utf8_offset_to_column((*linep)->line, *charp);
+    int column = LIB_str_utf8_offset_to_column((*linep)->line, *charp);
     *linep = (*linep)->next;
-    *charp = BLI_str_utf8_offset_from_column((*linep)->line, column);
+    *charp = LIB_str_utf8_offset_from_column((*linep)->line, column);
   }
   else {
     txt_move_eol(text, sel);
@@ -880,7 +875,7 @@ void txt_move_left(Text *text, const bool sel)
   }
   else {
     /* do nice left only if there are only spaces */
-    /* #TXT_TABSIZE hard-coded in DNA_text_types.h */
+    /* TXT_TABSIZE hard-coded in structs_text_types.h */
     if (text->flags & TXT_TABSTOSPACES) {
       tabsize = txt_calc_tab_left(*linep, *charp);
     }
@@ -889,7 +884,7 @@ void txt_move_left(Text *text, const bool sel)
       (*charp) -= tabsize;
     }
     else {
-      const char *prev = BLI_str_find_prev_char_utf8((*linep)->line + *charp, (*linep)->line);
+      const char *prev = LIB_str_find_prev_char_utf8((*linep)->line + *charp, (*linep)->line);
       *charp = prev - (*linep)->line;
     }
   }
@@ -934,7 +929,7 @@ void txt_move_right(Text *text, const bool sel)
       (*charp) += tabsize;
     }
     else {
-      (*charp) += BLI_str_utf8_size((*linep)->line + *charp);
+      (*charp) += LIB_str_utf8_size((*linep)->line + *charp);
     }
   }
 
@@ -959,7 +954,7 @@ void txt_jump_left(Text *text, const bool sel, const bool use_init_step)
     return;
   }
 
-  BLI_str_cursor_step_utf8(
+  LIB_str_cursor_step_utf8(
       (*linep)->line, (*linep)->len, charp, STRCUR_DIR_PREV, STRCUR_JUMP_DELIM, use_init_step);
 
   if (!sel) {
@@ -983,7 +978,7 @@ void txt_jump_right(Text *text, const bool sel, const bool use_init_step)
     return;
   }
 
-  BLI_str_cursor_step_utf8(
+  LIB_str_cursor_step_utf8(
       (*linep)->line, (*linep)->len, charp, STRCUR_DIR_NEXT, STRCUR_JUMP_DELIM, use_init_step);
 
   if (!sel) {
@@ -1121,11 +1116,8 @@ void txt_move_to(Text *text, unsigned int line, unsigned int ch, const bool sel)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Text Selection Functions
- * \{ */
+/** Text Selection Functions **/
 
 static void txt_curs_swap(Text *text)
 {
@@ -1271,7 +1263,7 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
 
   /* Support negative indices. */
   if (startl < 0 || endl < 0) {
-    int end = BLI_listbase_count(&text->lines) - 1;
+    int end = LIB_listbase_count(&text->lines) - 1;
     if (startl < 0) {
       startl = end + startl + 1;
     }
@@ -1282,7 +1274,7 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
   CLAMP_MIN(startl, 0);
   CLAMP_MIN(endl, 0);
 
-  froml = BLI_findlink(&text->lines, startl);
+  froml = LIB_findlink(&text->lines, startl);
   if (froml == NULL) {
     froml = text->lines.last;
   }
@@ -1290,14 +1282,14 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
     tol = froml;
   }
   else {
-    tol = BLI_findlink(&text->lines, endl);
+    tol = LIB_findlink(&text->lines, endl);
     if (tol == NULL) {
       tol = text->lines.last;
     }
   }
 
-  fromllen = BLI_strlen_utf8(froml->line);
-  tollen = BLI_strlen_utf8(tol->line);
+  fromllen = LIB_strlen_utf8(froml->line);
+  tollen = LIB_strlen_utf8(tol->line);
 
   /* Support negative indices. */
   if (startc < 0) {
@@ -1311,15 +1303,13 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
   CLAMP(endc, 0, tollen);
 
   text->curl = froml;
-  text->curc = BLI_str_utf8_offset_from_index(froml->line, startc);
+  text->curc = LIB_str_utf8_offset_from_index(froml->line, startc);
   text->sell = tol;
-  text->selc = BLI_str_utf8_offset_from_index(tol->line, endc);
+  text->selc = LIB_str_utf8_offset_from_index(tol->line, endc);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Buffer Conversion for Undo/Redo
+/** Buffer Conversion for Undo/Redo
  *
  * Buffer conversion functions that rely on the buffer already being validated.
  *
@@ -1329,7 +1319,7 @@ void txt_sel_set(Text *text, int startl, int startc, int endl, int endc)
  * Currently buffers:
  * - Always ends with a new-line.
  * - Are not null terminated.
- * \{ */
+ **/
 
 char *txt_to_buf_for_undo(Text *text, size_t *r_buf_len)
 {
@@ -1357,9 +1347,9 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
    * Good for undo since it means in practice many operations re-use all
    * except for the modified line. */
   TextLine *l_src = text->lines.first;
-  BLI_listbase_clear(&text->lines);
+  LIB_listbase_clear(&text->lines);
   while (buf_step != buf_end && l_src) {
-    /* New lines are ensured by #txt_to_buf_for_undo. */
+    /* New lines are ensured by txt_to_buf_for_undo. */
     const char *buf_step_next = strchr(buf_step, '\n');
     const int len = buf_step_next - buf_step;
 
@@ -1373,7 +1363,7 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
 
     memcpy(l->line, buf_step, len);
     l->line[len] = '\0';
-    BLI_addtail(&text->lines, l);
+    LIB_addtail(&text->lines, l);
     buf_step = buf_step_next + 1;
   }
 
@@ -1400,7 +1390,7 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
 
     memcpy(l->line, buf_step, len);
     l->line[len] = '\0';
-    BLI_addtail(&text->lines, l);
+    LIB_addtail(&text->lines, l);
     buf_step = buf_step_next + 1;
   }
 
@@ -1410,11 +1400,8 @@ void txt_from_buf_for_undo(Text *text, const char *buf, size_t buf_len)
   txt_make_dirty(text);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Cut and Paste Functions
- * \{ */
+/** Cut and Paste Functions **/
 
 char *txt_to_buf(Text *text, size_t *r_buf_strlen)
 {
@@ -1532,12 +1519,12 @@ void txt_insert_buf(Text *text, const char *in_buffer)
   txt_delete_sel(text);
 
   len = strlen(in_buffer);
-  buffer = BLI_strdupn(in_buffer, len);
+  buffer = LIB_strdupn(in_buffer, len);
   len += txt_extended_ascii_as_utf8(&buffer);
 
   /* Read the first line (or as close as possible */
   while (buffer[i] && buffer[i] != '\n') {
-    txt_add_raw_char(text, BLI_str_utf8_as_unicode_step(buffer, len, &i));
+    txt_add_raw_char(text, LIB_str_utf8_as_unicode_step(buffer, len, &i));
   }
 
   if (buffer[i] == '\n') {
@@ -1554,12 +1541,12 @@ void txt_insert_buf(Text *text, const char *in_buffer)
 
       if (buffer[i] == '\n') {
         add = txt_new_linen(buffer + (i - l), l);
-        BLI_insertlinkbefore(&text->lines, text->curl, add);
+        LIB_insertlinkbefore(&text->lines, text->curl, add);
         i++;
       }
       else {
         for (j = i - l; j < i && j < len;) {
-          txt_add_raw_char(text, BLI_str_utf8_as_unicode_step(buffer, len, &j));
+          txt_add_raw_char(text, LIB_str_utf8_as_unicode_step(buffer, len, &j));
         }
         break;
       }
@@ -1569,11 +1556,8 @@ void txt_insert_buf(Text *text, const char *in_buffer)
   MEM_freeN(buffer);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Find String in Text
- * \{ */
+/** Find String in Text **/
 
 int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
 {
@@ -1592,7 +1576,7 @@ int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
     s = strstr(&tl->line[text->selc], findstr);
   }
   else {
-    s = BLI_strcasestr(&tl->line[text->selc], findstr);
+    s = LIB_strcasestr(&tl->line[text->selc], findstr);
   }
   while (!s) {
     tl = tl->next;
@@ -1609,7 +1593,7 @@ int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
       s = strstr(tl->line, findstr);
     }
     else {
-      s = BLI_strcasestr(tl->line, findstr);
+      s = LIB_strcasestr(tl->line, findstr);
     }
     if (tl == startl) {
       break;
@@ -1627,11 +1611,8 @@ int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
   return 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Line Editing Functions
- * \{ */
+/** Line Editing Functions **/
 
 void txt_split_curline(Text *text)
 {
@@ -1688,7 +1669,7 @@ static void txt_delete_line(Text *text, TextLine *line)
     return;
   }
 
-  BLI_remlink(&text->lines, line);
+  LIB_remlink(&text->lines, line);
 
   if (line->line) {
     MEM_freeN(line->line);
@@ -1714,8 +1695,8 @@ static void txt_combine_lines(Text *text, TextLine *linea, TextLine *lineb)
   tmp = MEM_mallocN(linea->len + lineb->len + 1, "textline_string");
 
   s = tmp;
-  s += BLI_strcpy_rlen(s, linea->line);
-  s += BLI_strcpy_rlen(s, lineb->line);
+  s += LIB_strcpy_rlen(s, linea->line);
+  s += LIB_strcpy_rlen(s, lineb->line);
   (void)s;
 
   make_new_line(linea, tmp);
@@ -1736,7 +1717,7 @@ void txt_duplicate_line(Text *text)
 
   if (text->curl == text->sell) {
     textline = txt_new_line(text->curl->line);
-    BLI_insertlinkafter(&text->lines, text->curl, textline);
+    LIB_insertlinkafter(&text->lines, text->curl, textline);
 
     txt_make_dirty(text);
     txt_clean_text(text);
@@ -1767,7 +1748,7 @@ void txt_delete_char(Text *text)
   }
   else { /* Just deleting a char */
     size_t c_len = text->curc;
-    c = BLI_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
+    c = LIB_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
     c_len -= text->curc;
     UNUSED_VARS(c);
 
@@ -1816,10 +1797,10 @@ void txt_backspace_char(Text *text)
     txt_pop_sel(text);
   }
   else { /* Just backspacing a char */
-    const char *prev = BLI_str_find_prev_char_utf8(text->curl->line + text->curc,
+    const char *prev = LIB_str_find_prev_char_utf8(text->curl->line + text->curc,
                                                    text->curl->line);
     size_t c_len = prev - text->curl->line;
-    c = BLI_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
+    c = LIB_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &c_len);
     c_len -= prev - text->curl->line;
 
     UNUSED_VARS(c);
@@ -1863,7 +1844,7 @@ static void txt_convert_tab_to_spaces(Text *text)
 
 static bool txt_add_char_intern(Text *text, unsigned int add, bool replace_tabs)
 {
-  char *tmp, ch[BLI_UTF8_MAX];
+  char *tmp, ch[LIB_UTF8_MAX];
   size_t add_len;
 
   if (!text->curl) {
@@ -1883,7 +1864,7 @@ static bool txt_add_char_intern(Text *text, unsigned int add, bool replace_tabs)
 
   txt_delete_sel(text);
 
-  add_len = BLI_str_utf8_from_unicode(add, ch, sizeof(ch));
+  add_len = LIB_str_utf8_from_unicode(add, ch, sizeof(ch));
 
   tmp = MEM_mallocN(text->curl->len + add_len + 1, "textline_string");
 
@@ -1924,7 +1905,7 @@ bool txt_replace_char(Text *text, unsigned int add)
 {
   unsigned int del;
   size_t del_size = 0, add_size;
-  char ch[BLI_UTF8_MAX];
+  char ch[LIB_UTF8_MAX];
 
   if (!text->curl) {
     return false;
@@ -1936,10 +1917,10 @@ bool txt_replace_char(Text *text, unsigned int add)
   }
 
   del_size = text->curc;
-  del = BLI_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &del_size);
+  del = LIB_str_utf8_as_unicode_step(text->curl->line, text->curl->len, &del_size);
   del_size -= text->curc;
   UNUSED_VARS(del);
-  add_size = BLI_str_utf8_from_unicode(add, ch, sizeof(ch));
+  add_size = LIB_str_utf8_from_unicode(add, ch, sizeof(ch));
 
   if (add_size > del_size) {
     char *tmp = MEM_mallocN(text->curl->len + add_size - del_size + 1, "textline_string");
@@ -1970,7 +1951,7 @@ bool txt_replace_char(Text *text, unsigned int add)
 /**
  * Generic prefix operation, use for comment & indent.
  *
- * \note caller must handle undo.
+ * caller must handle undo.
  */
 static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines)
 {
@@ -1979,7 +1960,7 @@ static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines
 
   const int indentlen = strlen(add);
 
-  BLI_assert(!ELEM(NULL, text->curl, text->sell));
+  LIB_assert(!ELEM(NULL, text->curl, text->sell));
 
   curc_old = text->curc;
   selc_old = text->selc;
@@ -2046,10 +2027,10 @@ static void txt_select_prefix(Text *text, const char *add, bool skip_blank_lines
 /**
  * Generic un-prefix operation, use for comment & indent.
  *
- * \param require_all: When true, all non-empty lines must have this prefix.
+ * param require_all: When true, all non-empty lines must have this prefix.
  * Needed for comments where we might want to un-comment a block which contains some comments.
  *
- * \note caller must handle undo.
+ * note caller must handle undo.
  */
 static bool txt_select_unprefix(Text *text, const char *remove, const bool require_all)
 {
@@ -2058,7 +2039,7 @@ static bool txt_select_unprefix(Text *text, const char *remove, const bool requi
   bool unindented_first = false;
   bool changed_any = false;
 
-  BLI_assert(!ELEM(NULL, text->curl, text->sell));
+  LIB_assert(!ELEM(NULL, text->curl, text->sell));
 
   if (require_all) {
     /* Check all non-empty lines use this 'remove',
@@ -2171,7 +2152,7 @@ void txt_move_lines(struct Text *text, const int direction)
 {
   TextLine *line_other;
 
-  BLI_assert(ELEM(direction, TXT_MOVE_LINE_UP, TXT_MOVE_LINE_DOWN));
+  LIB_assert(ELEM(direction, TXT_MOVE_LINE_UP, TXT_MOVE_LINE_DOWN));
 
   if (!text->curl || !text->sell) {
     return;
@@ -2185,13 +2166,13 @@ void txt_move_lines(struct Text *text, const int direction)
     return;
   }
 
-  BLI_remlink(&text->lines, line_other);
+  LIB_remlink(&text->lines, line_other);
 
   if (direction == TXT_MOVE_LINE_DOWN) {
-    BLI_insertlinkbefore(&text->lines, text->curl, line_other);
+    LIB_insertlinkbefore(&text->lines, text->curl, line_other);
   }
   else {
-    BLI_insertlinkafter(&text->lines, text->sell, line_other);
+    LIB_insertlinkafter(&text->lines, text->sell, line_other);
   }
 
   txt_make_dirty(text);
@@ -2255,11 +2236,8 @@ int txt_setcurr_tab_spaces(Text *text, int space)
   return i;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Character Queries
- * \{ */
+/* Character Queries **/
 
 int text_check_bracket(const char ch)
 {
