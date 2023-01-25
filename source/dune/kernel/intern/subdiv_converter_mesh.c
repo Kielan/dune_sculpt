@@ -2,15 +2,15 @@
 
 #include <string.h>
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "structs_mesh_types.h"
+#include "structs_meshdata_types.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_utildefines.h"
+#include "LI_bitmap.h"
+#include "LI_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_mesh_mapping.h"
-#include "BKE_subdiv.h"
+#include "KE_customdata.h"
+#include "KE_mesh_mapping.h"
+#include "KE_subdiv.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -44,7 +44,7 @@ typedef struct ConverterStorage {
   /* Indexed by vertex index from mesh, corresponds to whether this vertex has
    * infinite sharpness due to non-manifold topology.
    */
-  BLI_bitmap *infinite_sharp_vertices_map;
+  LIB_bitmap *infinite_sharp_vertices_map;
   /* Reverse mapping to above. */
   int *manifold_vertex_index_reverse;
   int *manifold_edge_index_reverse;
@@ -73,14 +73,14 @@ static OpenSubdiv_VtxBoundaryInterpolation get_vtx_boundary_interpolation(
     const struct OpenSubdiv_Converter *converter)
 {
   ConverterStorage *storage = converter->user_data;
-  return BKE_subdiv_converter_vtx_boundary_interpolation_from_settings(&storage->settings);
+  return KERNEL_subdiv_converter_vtx_boundary_interpolation_from_settings(&storage->settings);
 }
 
 static OpenSubdiv_FVarLinearInterpolation get_fvar_linear_interpolation(
     const OpenSubdiv_Converter *converter)
 {
   ConverterStorage *storage = converter->user_data;
-  return BKE_subdiv_converter_fvar_linear_from_settings(&storage->settings);
+  return KERNEL_subdiv_converter_fvar_linear_from_settings(&storage->settings);
 }
 
 static bool specifies_full_topology(const OpenSubdiv_Converter *UNUSED(converter))
@@ -217,7 +217,7 @@ static void precalc_uv_layer(const OpenSubdiv_Converter *converter, const int la
    * vertices is 1 more.
    */
   storage->num_uv_coordinates += 1;
-  BKE_mesh_uv_vert_map_free(uv_vert_map);
+  KERNEL_mesh_uv_vert_map_free(uv_vert_map);
 }
 
 static void finish_uv_layer(const OpenSubdiv_Converter *UNUSED(converter))
@@ -333,14 +333,14 @@ static void initialize_manifold_indices(ConverterStorage *storage)
   const MLoop *mloop = mesh->mloop;
   const MPoly *mpoly = mesh->mpoly;
   /* Set bits of elements which are not loose. */
-  BLI_bitmap *vert_used_map = BLI_BITMAP_NEW(mesh->totvert, "vert used map");
-  BLI_bitmap *edge_used_map = BLI_BITMAP_NEW(mesh->totedge, "edge used map");
+  LIB_bitmap *vert_used_map = LIB_BITMAP_NEW(mesh->totvert, "vert used map");
+  LIB_bitmap *edge_used_map = LIB_BITMAP_NEW(mesh->totedge, "edge used map");
   for (int poly_index = 0; poly_index < mesh->totpoly; poly_index++) {
     const MPoly *poly = &mpoly[poly_index];
     for (int corner = 0; corner < poly->totloop; corner++) {
       const MLoop *loop = &mloop[poly->loopstart + corner];
-      BLI_BITMAP_ENABLE(vert_used_map, loop->v);
-      BLI_BITMAP_ENABLE(edge_used_map, loop->e);
+      LIB_BITMAP_ENABLE(vert_used_map, loop->v);
+      LIB_BITMAP_ENABLE(edge_used_map, loop->e);
     }
   }
   initialize_manifold_index_array(vert_used_map,
@@ -356,10 +356,10 @@ static void initialize_manifold_indices(ConverterStorage *storage)
   /* Initialize infinite sharp mapping. */
   storage->infinite_sharp_vertices_map = BLI_BITMAP_NEW(mesh->totvert, "vert used map");
   for (int edge_index = 0; edge_index < mesh->totedge; edge_index++) {
-    if (!BLI_BITMAP_TEST_BOOL(edge_used_map, edge_index)) {
+    if (!LIB_BITMAP_TEST_BOOL(edge_used_map, edge_index)) {
       const MEdge *edge = &medge[edge_index];
-      BLI_BITMAP_ENABLE(storage->infinite_sharp_vertices_map, edge->v1);
-      BLI_BITMAP_ENABLE(storage->infinite_sharp_vertices_map, edge->v2);
+      LIB_BITMAP_ENABLE(storage->infinite_sharp_vertices_map, edge->v1);
+      LIB_BITMAP_ENABLE(storage->infinite_sharp_vertices_map, edge->v2);
     }
   }
   /* Free working variables. */
@@ -380,7 +380,7 @@ static void init_user_data(OpenSubdiv_Converter *converter,
   converter->user_data = user_data;
 }
 
-void BKE_subdiv_converter_init_for_mesh(struct OpenSubdiv_Converter *converter,
+void KERNEL_subdiv_converter_init_for_mesh(struct OpenSubdiv_Converter *converter,
                                         const SubdivSettings *settings,
                                         const Mesh *mesh)
 {
