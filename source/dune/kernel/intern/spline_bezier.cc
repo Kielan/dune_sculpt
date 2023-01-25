@@ -1,16 +1,16 @@
-#include "BLI_array.hh"
-#include "BLI_span.hh"
-#include "BLI_task.hh"
+#include "LI_array.hh"
+#include "LI_span.hh"
+#include "LI_task.hh"
 
-#include "BKE_spline.hh"
+#include "KE_spline.hh"
 
-using blender::Array;
-using blender::float3;
-using blender::GVArray;
-using blender::IndexRange;
-using blender::MutableSpan;
-using blender::Span;
-using blender::VArray;
+using dune::Array;
+using dune::float3;
+using dune::GVArray;
+using dune::IndexRange;
+using dune::MutableSpan;
+using dune::Span;
+using dune::VArray;
 
 void BezierSpline::copy_settings(Spline &dst) const
 {
@@ -33,12 +33,12 @@ void BezierSpline::copy_data(Spline &dst) const
 int BezierSpline::size() const
 {
   const int size = positions_.size();
-  BLI_assert(size == handle_types_left_.size());
-  BLI_assert(size == handle_positions_left_.size());
-  BLI_assert(size == handle_types_right_.size());
-  BLI_assert(size == handle_positions_right_.size());
-  BLI_assert(size == radii_.size());
-  BLI_assert(size == tilts_.size());
+  LI_assert(size == handle_types_left_.size());
+  LI_assert(size == handle_positions_left_.size());
+  LI_assert(size == handle_types_right_.size());
+  LI_assert(size == handle_positions_right_.size());
+  LI_assert(size == radii_.size());
+  LI_assert(size == tilts_.size());
   return size;
 }
 
@@ -49,7 +49,7 @@ int BezierSpline::resolution() const
 
 void BezierSpline::set_resolution(const int value)
 {
-  BLI_assert(value > 0);
+  LIB_assert(value > 0);
   resolution_ = value;
   this->mark_cache_invalid();
 }
@@ -183,7 +183,7 @@ void BezierSpline::ensure_auto_handles() const
   }
 
   for (const int i : IndexRange(this->size())) {
-    using namespace blender;
+    using namespace dune;
 
     if (ELEM(BEZIER_HANDLE_AUTO, handle_types_left_[i], handle_types_right_[i])) {
       const float3 prev_diff = positions_[i] - previous_position(positions_, is_cyclic_, i);
@@ -261,7 +261,7 @@ static void set_handle_position(const float3 &position,
                                 float3 &handle,
                                 float3 &handle_other)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
   /* Don't bother when the handle positions are calculated automatically anyway. */
   if (ELEM(type, BEZIER_HANDLE_AUTO, BEZIER_HANDLE_VECTOR)) {
@@ -307,12 +307,12 @@ bool BezierSpline::point_is_sharp(const int index) const
 bool BezierSpline::segment_is_vector(const int index) const
 {
   /* Two control points are necessary to form a segment, that should be checked by the caller. */
-  BLI_assert(this->size() > 1);
+  LIB_assert(this->size() > 1);
 
   if (index == this->size() - 1) {
     if (is_cyclic_) {
       return handle_types_right_.last() == BEZIER_HANDLE_VECTOR &&
-             handle_types_left_.first() == BEZIER_HANDLE_VECTOR;
+      handle_types_left_.first() == BEZIER_HANDLE_VECTOR;
     }
     /* There is actually no segment in this case, but it's nice to avoid
      * having a special case for the last segment in calling code. */
@@ -335,7 +335,7 @@ void BezierSpline::mark_cache_invalid()
 
 int BezierSpline::evaluated_points_size() const
 {
-  BLI_assert(this->size() > 0);
+  LIB_assert(this->size() > 0);
   return this->control_point_offsets().last();
 }
 
@@ -360,10 +360,10 @@ BezierSpline::InsertResult BezierSpline::calculate_segment_insertion(const int i
                                                                      const int next_index,
                                                                      const float parameter)
 {
-  using namespace blender::math;
+  using namespace dune::math;
 
-  BLI_assert(parameter <= 1.0f && parameter >= 0.0f);
-  BLI_assert(ELEM(next_index, 0, index + 1));
+  LIB_assert(parameter <= 1.0f && parameter >= 0.0f);
+  LIB_assert(ELEM(next_index, 0, index + 1));
   const float3 &point_prev = positions_[index];
   const float3 &handle_prev = handle_positions_right_[index];
   const float3 &handle_next = handle_positions_left_[next_index];
@@ -385,7 +385,7 @@ static void bezier_forward_difference_3d(const float3 &point_0,
                                          const float3 &point_3,
                                          MutableSpan<float3> result)
 {
-  BLI_assert(result.size() > 0);
+  LIB_assert(result.size() > 0);
   const float inv_len = 1.0f / static_cast<float>(result.size());
   const float inv_len_squared = inv_len * inv_len;
   const float inv_len_cubed = inv_len_squared * inv_len;
@@ -411,7 +411,7 @@ void BezierSpline::evaluate_segment(const int index,
                                     MutableSpan<float3> positions) const
 {
   if (this->segment_is_vector(index)) {
-    BLI_assert(positions.size() == 1);
+    LIB_assert(positions.size() == 1);
     positions.first() = positions_[index];
   }
   else {
@@ -467,7 +467,7 @@ static void calculate_mappings_linear_resolution(Span<int> offsets,
   }
 
   const int grain_size = std::max(2048 / resolution, 1);
-  blender::threading::parallel_for(IndexRange(1, size - 2), grain_size, [&](IndexRange range) {
+  dune::threading::parallel_for(IndexRange(1, size - 2), grain_size, [&](IndexRange range) {
     for (const int i_control_point : range) {
       const int segment_len = offsets[i_control_point + 1] - offsets[i_control_point];
       const float segment_len_inv = 1.0f / segment_len;
@@ -513,7 +513,7 @@ Span<float> BezierSpline::evaluated_mappings() const
 
   Span<int> offsets = this->control_point_offsets();
 
-  blender::threading::isolate_task([&]() {
+  dune::threading::isolate_task([&]() {
     /* Isolate the task, since this is function is multi-threaded and holds a lock. */
     calculate_mappings_linear_resolution(offsets, size, resolution_, is_cyclic_, mappings);
   });
@@ -541,7 +541,7 @@ Span<float3> BezierSpline::evaluated_positions() const
 
   if (size == 1) {
     /* Use a special case for single point splines to avoid checking in #evaluate_segment. */
-    BLI_assert(eval_size == 1);
+    LIB_assert(eval_size == 1);
     positions.first() = positions_.first();
     position_cache_dirty_ = false;
     return positions;
@@ -552,9 +552,9 @@ Span<float3> BezierSpline::evaluated_positions() const
   Span<int> offsets = this->control_point_offsets();
 
   const int grain_size = std::max(512 / resolution_, 1);
-  blender::threading::isolate_task([&]() {
+  dune::threading::isolate_task([&]() {
     /* Isolate the task, since this is function is multi-threaded and holds a lock. */
-    blender::threading::parallel_for(IndexRange(size - 1), grain_size, [&](IndexRange range) {
+    dune::threading::parallel_for(IndexRange(size - 1), grain_size, [&](IndexRange range) {
       for (const int i : range) {
         this->evaluate_segment(i, i + 1, positions.slice(offsets[i], offsets[i + 1] - offsets[i]));
       }
@@ -602,8 +602,8 @@ static void interpolate_to_evaluated_impl(const BezierSpline &spline,
                                           const blender::VArray<T> &src,
                                           MutableSpan<T> dst)
 {
-  BLI_assert(src.size() == spline.size());
-  BLI_assert(dst.size() == spline.evaluated_points_size());
+  LIB_assert(src.size() == spline.size());
+  LIB_assert(dst.size() == spline.evaluated_points_size());
   Span<float> mappings = spline.evaluated_mappings();
 
   for (const int i : dst.index_range()) {
@@ -619,7 +619,7 @@ static void interpolate_to_evaluated_impl(const BezierSpline &spline,
 
 GVArray BezierSpline::interpolate_to_evaluated(const GVArray &src) const
 {
-  BLI_assert(src.size() == this->size());
+  LIB_assert(src.size() == this->size());
 
   if (src.is_single()) {
     return src;
@@ -631,7 +631,7 @@ GVArray BezierSpline::interpolate_to_evaluated(const GVArray &src) const
   }
 
   GVArray new_varray;
-  blender::attribute_math::convert_to_static_type(src.type(), [&](auto dummy) {
+  dune::attribute_math::convert_to_static_type(src.type(), [&](auto dummy) {
     using T = decltype(dummy);
     if constexpr (!std::is_void_v<blender::attribute_math::DefaultMixer<T>>) {
       Array<T> values(eval_size);
