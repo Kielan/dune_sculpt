@@ -1,9 +1,9 @@
-#include "LI_array.hh"
-#include "LI_span.hh"
-#include "LI_virtual_array.hh"
+#include "LIB_array.hh"
+#include "LIB_span.hh"
+#include "LIB_virtual_array.hh"
 
-#include "KE_attribute_math.hh"
-#include "KE_spline.hh"
+#include "KERNEL_attribute_math.hh"
+#include "KERNEL_spline.hh"
 
 using dune::Array;
 using dune::float3;
@@ -35,9 +35,9 @@ void NURBSpline::copy_data(Spline &dst) const
 int NURBSpline::size() const
 {
   const int size = positions_.size();
-  BLI_assert(size == radii_.size());
-  BLI_assert(size == tilts_.size());
-  BLI_assert(size == weights_.size());
+  LIB_assert(size == radii_.size());
+  LIB_assert(size == tilts_.size());
+  LIB_assert(size == weights_.size());
   return size;
 }
 
@@ -48,7 +48,7 @@ int NURBSpline::resolution() const
 
 void NURBSpline::set_resolution(const int value)
 {
-  BLI_assert(value > 0);
+  LIB_assert(value > 0);
   resolution_ = value;
   this->mark_cache_invalid();
 }
@@ -60,7 +60,7 @@ uint8_t NURBSpline::order() const
 
 void NURBSpline::set_order(const uint8_t value)
 {
-  BLI_assert(value >= 2 && value <= 6);
+  LIB_assert(value >= 2 && value <= 6);
   order_ = value;
   this->mark_cache_invalid();
 }
@@ -201,13 +201,13 @@ void NURBSpline::calculate_knots() const
 Span<float> NURBSpline::knots() const
 {
   if (!knots_dirty_) {
-    BLI_assert(knots_.size() == this->knots_size());
+    LIB_assert(knots_.size() == this->knots_size());
     return knots_;
   }
 
   std::lock_guard lock{knots_mutex_};
   if (!knots_dirty_) {
-    BLI_assert(knots_.size() == this->knots_size());
+    LIB_assert(knots_.size() == this->knots_size());
     return knots_;
   }
 
@@ -349,7 +349,7 @@ void interpolate_to_evaluated_impl(const NURBSpline::BasisCache &basis_cache,
 
 GVArray NURBSpline::interpolate_to_evaluated(const GVArray &src) const
 {
-  BLI_assert(src.size() == this->size());
+  LIB_assert(src.size() == this->size());
 
   if (src.is_single()) {
     return src;
@@ -358,7 +358,7 @@ GVArray NURBSpline::interpolate_to_evaluated(const GVArray &src) const
   const BasisCache &basis_cache = this->calculate_basis_cache();
 
   GVArray new_varray;
-  blender::attribute_math::convert_to_static_type(src.type(), [&](auto dummy) {
+  dune::attribute_math::convert_to_static_type(src.type(), [&](auto dummy) {
     using T = decltype(dummy);
     if constexpr (!std::is_void_v<blender::attribute_math::DefaultMixer<T>>) {
       Array<T> values(this->evaluated_points_size());
