@@ -1,17 +1,17 @@
-#include "BLI_array.hh"
-#include "BLI_span.hh"
-#include "BLI_virtual_array.hh"
+#include "LI_array.hh"
+#include "LI_span.hh"
+#include "LI_virtual_array.hh"
 
-#include "BKE_attribute_math.hh"
-#include "BKE_spline.hh"
+#include "KE_attribute_math.hh"
+#include "KE_spline.hh"
 
-using blender::Array;
-using blender::float3;
-using blender::GVArray;
-using blender::IndexRange;
-using blender::MutableSpan;
-using blender::Span;
-using blender::VArray;
+using dune::Array;
+using dune::float3;
+using dune::GVArray;
+using dune::IndexRange;
+using dune::MutableSpan;
+using dune::Span;
+using dune::VArray;
 
 void NURBSpline::copy_settings(Spline &dst) const
 {
