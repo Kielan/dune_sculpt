@@ -5,23 +5,22 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_math_bits.h"
-#include "BLI_math_vector.h"
-#include "BLI_task.h"
+#include "LIB_ghash.h"
+#include "LIB_math_bits.h"
+#include "LIB_math_vector.h"
+#include "LIB_task.h"
 
-#include "BKE_DerivedMesh.h"
-#include "BKE_ccg.h"
-#include "BKE_global.h"
-#include "BKE_mesh.h"
-#include "BKE_subdiv.h"
-#include "BKE_subdiv_eval.h"
+#include "KE_DerivedMesh.h"
+#include "KE_ccg.h"
+#include "KE_global.h"
+#include "KE_mesh.h"
+#include "KE_subdiv.h"
+#include "KE_subdiv_eval.h"
 
 #include "opensubdiv_topology_refiner_capi.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Various forward declarations
- * \{ */
+/** Various forward declarations **/
 
 static void subdiv_ccg_average_all_boundaries_and_corners(SubdivCCG *subdiv_ccg, CCGKey *key);
 
@@ -34,11 +33,8 @@ void subdiv_ccg_average_faces_boundaries_and_corners(SubdivCCG *subdiv_ccg,
                                                      struct CCGFace **effected_faces,
                                                      int num_effected_faces);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Generally useful internal helpers
- * \{ */
+/** Generally useful internal helpers **/
 
 /* Number of floats in per-vertex elements. */
 static int num_element_float_get(const SubdivCCG *subdiv_ccg)
@@ -60,11 +56,8 @@ static int element_size_bytes_get(const SubdivCCG *subdiv_ccg)
   return sizeof(float) * num_element_float_get(subdiv_ccg);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Internal helpers for CCG creation
- * \{ */
+/** Internal helpers for CCG creation **/
 
 static void subdiv_ccg_init_layers(SubdivCCG *subdiv_ccg, const SubdivToCCGSettings *settings)
 {
@@ -95,7 +88,7 @@ static void subdiv_ccg_init_layers(SubdivCCG *subdiv_ccg, const SubdivToCCGSetti
   }
 }
 
-/* TODO(sergey): Make it more accessible function. */
+/* TODO: Make it more accessible function. */
 static int topology_refiner_count_face_corners(OpenSubdiv_TopologyRefiner *topology_refiner)
 {
   const int num_faces = topology_refiner->getNumFaces(topology_refiner);
@@ -115,7 +108,7 @@ static void subdiv_ccg_alloc_elements(SubdivCCG *subdiv_ccg, Subdiv *subdiv)
   /* Allocate memory for surface grids. */
   const int num_faces = topology_refiner->getNumFaces(topology_refiner);
   const int num_grids = topology_refiner_count_face_corners(topology_refiner);
-  const int grid_size = BKE_subdiv_grid_size_from_level(subdiv_ccg->level);
+  const int grid_size = KERNEL_subdiv_grid_size_from_level(subdiv_ccg->level);
   const int grid_area = grid_size * grid_size;
   subdiv_ccg->grid_element_size = element_size;
   subdiv_ccg->num_grids = num_grids;
@@ -132,11 +125,11 @@ static void subdiv_ccg_alloc_elements(SubdivCCG *subdiv_ccg, Subdiv *subdiv)
       num_grids, sizeof(DMFlagMat), "ccg grid material flags");
   /* Grid hidden flags. */
   subdiv_ccg->grid_hidden = MEM_calloc_arrayN(
-      num_grids, sizeof(BLI_bitmap *), "ccg grid material flags");
+      num_grids, sizeof(LIB_bitmap *), "ccg grid material flags");
   for (int grid_index = 0; grid_index < num_grids; grid_index++) {
-    subdiv_ccg->grid_hidden[grid_index] = BLI_BITMAP_NEW(grid_area, "ccg grid hidden");
+    subdiv_ccg->grid_hidden[grid_index] = LIB_BITMAP_NEW(grid_area, "ccg grid hidden");
   }
-  /* TODO(sergey): Allocate memory for loose elements. */
+  /* TODO: Allocate memory for loose elements. */
   /* Allocate memory for faces. */
   subdiv_ccg->num_faces = num_faces;
   if (num_faces) {
@@ -146,11 +139,8 @@ static void subdiv_ccg_alloc_elements(SubdivCCG *subdiv_ccg, Subdiv *subdiv)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Grids evaluation
- * \{ */
+/** Grids evaluation **/
 
 typedef struct CCGEvalGridsData {
   SubdivCCG *subdiv_ccg;
