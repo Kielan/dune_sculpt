@@ -1171,16 +1171,16 @@ static void subdiv_ccg_average_all_boundaries_and_corners(SubdivCCG *subdiv_ccg,
 void KERNEL_subdiv_ccg_average_grids(SubdivCCG *subdiv_ccg)
 {
   CCGKey key;
-  BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
+  KERNEL_subdiv_ccg_key_top_level(&key, subdiv_ccg);
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
   /* Average inner boundaries of grids (within one face), across faces
    * from different face-corners. */
   AverageInnerGridsData inner_data = {
       .subdiv_ccg = subdiv_ccg,
       .key = &key,
   };
-  BLI_task_parallel_range(0,
+  LIB_task_parallel_range(0,
                           subdiv_ccg->num_faces,
                           &inner_data,
                           subdiv_ccg_average_inner_grids_task,
@@ -1223,10 +1223,10 @@ static void subdiv_ccg_affected_face_adjacency(SubdivCCG *subdiv_ccg,
       topology_refiner->getEdgeVertices(topology_refiner, edge_index, edge_vertices);
 
       SubdivCCGAdjacentEdge *adjacent_edge = &subdiv_ccg->adjacent_edges[edge_index];
-      BLI_gset_add(r_adjacent_edges, adjacent_edge);
+      LIB_gset_add(r_adjacent_edges, adjacent_edge);
 
       SubdivCCGAdjacentVertex *adjacent_vertex = &subdiv_ccg->adjacent_vertices[vertex_index];
-      BLI_gset_add(r_adjacent_vertices, adjacent_vertex);
+      LIB_gset_add(r_adjacent_vertices, adjacent_vertex);
     }
   }
 
@@ -1239,8 +1239,8 @@ void subdiv_ccg_average_faces_boundaries_and_corners(SubdivCCG *subdiv_ccg,
                                                      struct CCGFace **effected_faces,
                                                      int num_effected_faces)
 {
-  GSet *adjacent_vertices = BLI_gset_ptr_new(__func__);
-  GSet *adjacent_edges = BLI_gset_ptr_new(__func__);
+  GSet *adjacent_vertices = LIB_gset_ptr_new(__func__);
+  GSet *adjacent_edges = LIB_gset_ptr_new(__func__);
   GSetIterator gi;
 
   subdiv_ccg_affected_face_adjacency(
@@ -1275,8 +1275,8 @@ void subdiv_ccg_average_faces_boundaries_and_corners(SubdivCCG *subdiv_ccg,
   subdiv_ccg_average_corners(
       subdiv_ccg, key, adjacent_vertex_index_map, BLI_gset_len(adjacent_vertices));
 
-  BLI_gset_free(adjacent_vertices, NULL);
-  BLI_gset_free(adjacent_edges, NULL);
+  LIB_gset_free(adjacent_vertices, NULL);
+  LIB_gset_free(adjacent_edges, NULL);
   static_or_heap_storage_free(&index_heap);
 }
 
@@ -1300,20 +1300,20 @@ static void subdiv_ccg_stitch_face_inner_grids_task(
   subdiv_ccg_average_inner_face_grids(subdiv_ccg, key, face);
 }
 
-void BKE_subdiv_ccg_average_stitch_faces(SubdivCCG *subdiv_ccg,
+void KERNEL_subdiv_ccg_average_stitch_faces(SubdivCCG *subdiv_ccg,
                                          struct CCGFace **effected_faces,
                                          int num_effected_faces)
 {
   CCGKey key;
-  BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
+  KERNEL_subdiv_ccg_key_top_level(&key, subdiv_ccg);
   StitchFacesInnerGridsData data = {
       .subdiv_ccg = subdiv_ccg,
       .key = &key,
       .effected_ccg_faces = effected_faces,
   };
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
-  BLI_task_parallel_range(0,
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_task_parallel_range(0,
                           num_effected_faces,
                           &data,
                           subdiv_ccg_stitch_face_inner_grids_task,
@@ -1323,7 +1323,7 @@ void BKE_subdiv_ccg_average_stitch_faces(SubdivCCG *subdiv_ccg,
   subdiv_ccg_average_all_boundaries_and_corners(subdiv_ccg, &key);
 }
 
-void BKE_subdiv_ccg_topology_counters(const SubdivCCG *subdiv_ccg,
+void KERNEL_subdiv_ccg_topology_counters(const SubdivCCG *subdiv_ccg,
                                       int *r_num_vertices,
                                       int *r_num_edges,
                                       int *r_num_faces,
@@ -1339,18 +1339,15 @@ void BKE_subdiv_ccg_topology_counters(const SubdivCCG *subdiv_ccg,
   *r_num_loops = *r_num_faces * 4;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Neighbors
- * \{ */
+/** Neighbors **/
 
-void BKE_subdiv_ccg_print_coord(const char *message, const SubdivCCGCoord *coord)
+void KERNEL_subdiv_ccg_print_coord(const char *message, const SubdivCCGCoord *coord)
 {
   printf("%s: grid index: %d, coord: (%d, %d)\n", message, coord->grid_index, coord->x, coord->y);
 }
 
-bool BKE_subdiv_ccg_check_coord_valid(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
+bool KERNEL_subdiv_ccg_check_coord_valid(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
 {
   if (coord->grid_index < 0 || coord->grid_index >= subdiv_ccg->num_grids) {
     return false;
@@ -1365,7 +1362,7 @@ bool BKE_subdiv_ccg_check_coord_valid(const SubdivCCG *subdiv_ccg, const SubdivC
   return true;
 }
 
-BLI_INLINE void subdiv_ccg_neighbors_init(SubdivCCGNeighbors *neighbors,
+LIB_INLINE void subdiv_ccg_neighbors_init(SubdivCCGNeighbors *neighbors,
                                           const int num_unique,
                                           const int num_duplicates)
 {
@@ -1382,7 +1379,7 @@ BLI_INLINE void subdiv_ccg_neighbors_init(SubdivCCGNeighbors *neighbors,
 }
 
 /* Check whether given coordinate belongs to a grid corner. */
-BLI_INLINE bool is_corner_grid_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
+LIB_INLINE bool is_corner_grid_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
 {
   const int grid_size_1 = subdiv_ccg->grid_size - 1;
   return (coord->x == 0 && coord->y == 0) || (coord->x == 0 && coord->y == grid_size_1) ||
@@ -1391,14 +1388,14 @@ BLI_INLINE bool is_corner_grid_coord(const SubdivCCG *subdiv_ccg, const SubdivCC
 }
 
 /* Check whether given coordinate belongs to a grid boundary. */
-BLI_INLINE bool is_boundary_grid_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
+LIB_INLINE bool is_boundary_grid_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
 {
   const int grid_size_1 = subdiv_ccg->grid_size - 1;
   return coord->x == 0 || coord->y == 0 || coord->x == grid_size_1 || coord->y == grid_size_1;
 }
 
 /* Check whether coordinate is at the boundary between two grids of the same face. */
-BLI_INLINE bool is_inner_edge_grid_coordinate(const SubdivCCG *subdiv_ccg,
+LIB_INLINE bool is_inner_edge_grid_coordinate(const SubdivCCG *subdiv_ccg,
                                               const SubdivCCGCoord *coord)
 {
   const int grid_size_1 = subdiv_ccg->grid_size - 1;
@@ -1411,37 +1408,37 @@ BLI_INLINE bool is_inner_edge_grid_coordinate(const SubdivCCG *subdiv_ccg,
   return false;
 }
 
-BLI_INLINE SubdivCCGCoord coord_at_prev_row(const SubdivCCG *UNUSED(subdiv_ccg),
+LIB_INLINE SubdivCCGCoord coord_at_prev_row(const SubdivCCG *UNUSED(subdiv_ccg),
                                             const SubdivCCGCoord *coord)
 {
-  BLI_assert(coord->y > 0);
+  LIB_assert(coord->y > 0);
   SubdivCCGCoord result = *coord;
   result.y -= 1;
   return result;
 }
-BLI_INLINE SubdivCCGCoord coord_at_next_row(const SubdivCCG *subdiv_ccg,
+LIB_INLINE SubdivCCGCoord coord_at_next_row(const SubdivCCG *subdiv_ccg,
                                             const SubdivCCGCoord *coord)
 {
   UNUSED_VARS_NDEBUG(subdiv_ccg);
-  BLI_assert(coord->y < subdiv_ccg->grid_size - 1);
+  LIB_assert(coord->y < subdiv_ccg->grid_size - 1);
   SubdivCCGCoord result = *coord;
   result.y += 1;
   return result;
 }
 
-BLI_INLINE SubdivCCGCoord coord_at_prev_col(const SubdivCCG *UNUSED(subdiv_ccg),
+LIB_INLINE SubdivCCGCoord coord_at_prev_col(const SubdivCCG *UNUSED(subdiv_ccg),
                                             const SubdivCCGCoord *coord)
 {
-  BLI_assert(coord->x > 0);
+  LIB_assert(coord->x > 0);
   SubdivCCGCoord result = *coord;
   result.x -= 1;
   return result;
 }
-BLI_INLINE SubdivCCGCoord coord_at_next_col(const SubdivCCG *subdiv_ccg,
+LIB_INLINE SubdivCCGCoord coord_at_next_col(const SubdivCCG *subdiv_ccg,
                                             const SubdivCCGCoord *coord)
 {
   UNUSED_VARS_NDEBUG(subdiv_ccg);
-  BLI_assert(coord->x < subdiv_ccg->grid_size - 1);
+  LIB_assert(coord->x < subdiv_ccg->grid_size - 1);
   SubdivCCGCoord result = *coord;
   result.x += 1;
   return result;
@@ -1472,7 +1469,7 @@ static SubdivCCGCoord coord_step_inside_from_boundary(const SubdivCCG *subdiv_cc
   return result;
 }
 
-BLI_INLINE
+LIB_INLINE
 int next_grid_index_from_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
 {
   SubdivCCGFace *face = subdiv_ccg->grid_faces[coord->grid_index];
@@ -1483,7 +1480,7 @@ int next_grid_index_from_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord
   }
   return face->start_grid_index + next_face_grid_index;
 }
-BLI_INLINE int prev_grid_index_from_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
+LIB_INLINE int prev_grid_index_from_coord(const SubdivCCG *subdiv_ccg, const SubdivCCGCoord *coord)
 {
   SubdivCCGFace *face = subdiv_ccg->grid_faces[coord->grid_index];
   const int face_grid_index = coord->grid_index;
@@ -1556,8 +1553,8 @@ static void neighbor_coords_corner_vertex_get(const SubdivCCG *subdiv_ccg,
   OpenSubdiv_TopologyRefiner *topology_refiner = subdiv->topology_refiner;
 
   const int adjacent_vertex_index = adjacent_vertex_index_from_coord(subdiv_ccg, coord);
-  BLI_assert(adjacent_vertex_index >= 0);
-  BLI_assert(adjacent_vertex_index < subdiv_ccg->num_adjacent_vertices);
+  LIB_assert(adjacent_vertex_index >= 0);
+  LIB_assert(adjacent_vertex_index < subdiv_ccg->num_adjacent_vertices);
   const int num_vertex_edges = topology_refiner->getNumVertexEdges(topology_refiner,
                                                                    adjacent_vertex_index);
 
@@ -1633,7 +1630,7 @@ static int adjacent_edge_index_from_coord(const SubdivCCG *subdiv_ccg, const Sub
     adjacent_edge_index = face_edges_indices[face_grid_index];
   }
   else {
-    BLI_assert(coord->y == grid_size_1);
+    LIB_assert(coord->y == grid_size_1);
     adjacent_edge_index =
         face_edges_indices[face_grid_index == 0 ? face->num_grids - 1 : face_grid_index - 1];
   }
@@ -1667,7 +1664,7 @@ static int adjacent_edge_point_index_from_coord(const SubdivCCG *subdiv_ccg,
     directional_edge_vertex_index = edge_vertices_indices[0];
   }
   else {
-    BLI_assert(coord->y == grid_size_1);
+    LIB_assert(coord->y == grid_size_1);
     adjacent_edge_point_index = subdiv_ccg->grid_size + coord->x;
     directional_edge_vertex_index = edge_vertices_indices[1];
   }
@@ -1722,8 +1719,8 @@ static void neighbor_coords_edge_get(const SubdivCCG *subdiv_ccg,
 {
   const bool is_corner = is_corner_grid_coord(subdiv_ccg, coord);
   const int adjacent_edge_index = adjacent_edge_index_from_coord(subdiv_ccg, coord);
-  BLI_assert(adjacent_edge_index >= 0);
-  BLI_assert(adjacent_edge_index < subdiv_ccg->num_adjacent_edges);
+  LIB_assert(adjacent_edge_index >= 0);
+  LIB_assert(adjacent_edge_index < subdiv_ccg->num_adjacent_edges);
   const SubdivCCGAdjacentEdge *adjacent_edge = &subdiv_ccg->adjacent_edges[adjacent_edge_index];
 
   /* 2 neighbor points along the edge, plus one inner point per every adjacent grid. */
@@ -1772,7 +1769,7 @@ static void neighbor_coords_edge_get(const SubdivCCG *subdiv_ccg,
       duplicate_i++;
     }
   }
-  BLI_assert(duplicate_i - num_adjacent_faces == num_duplicates);
+  LIB_assert(duplicate_i - num_adjacent_faces == num_duplicates);
 }
 
 /* The corner is at the middle of edge between faces. */
@@ -1882,17 +1879,17 @@ static void neighbor_coords_inner_get(const SubdivCCG *subdiv_ccg,
   r_neighbors->coords[3] = coord_at_next_col(subdiv_ccg, coord);
 }
 
-void BKE_subdiv_ccg_neighbor_coords_get(const SubdivCCG *subdiv_ccg,
+void KERNEL_subdiv_ccg_neighbor_coords_get(const SubdivCCG *subdiv_ccg,
                                         const SubdivCCGCoord *coord,
                                         const bool include_duplicates,
                                         SubdivCCGNeighbors *r_neighbors)
 {
-  BLI_assert(coord->grid_index >= 0);
-  BLI_assert(coord->grid_index < subdiv_ccg->num_grids);
-  BLI_assert(coord->x >= 0);
-  BLI_assert(coord->x < subdiv_ccg->grid_size);
-  BLI_assert(coord->y >= 0);
-  BLI_assert(coord->y < subdiv_ccg->grid_size);
+  LIB_assert(coord->grid_index >= 0);
+  LIB_assert(coord->grid_index < subdiv_ccg->num_grids);
+  LIB_assert(coord->x >= 0);
+  LIB_assert(coord->x < subdiv_ccg->grid_size);
+  LIB_assert(coord->y >= 0);
+  LIB_assert(coord->y < subdiv_ccg->grid_size);
 
   if (is_corner_grid_coord(subdiv_ccg, coord)) {
     neighbor_coords_corner_get(subdiv_ccg, coord, include_duplicates, r_neighbors);
@@ -1906,19 +1903,19 @@ void BKE_subdiv_ccg_neighbor_coords_get(const SubdivCCG *subdiv_ccg,
 
 #ifndef NDEBUG
   for (int i = 0; i < r_neighbors->size; i++) {
-    BLI_assert(BKE_subdiv_ccg_check_coord_valid(subdiv_ccg, &r_neighbors->coords[i]));
+    LIB_assert(KERNEL_subdiv_ccg_check_coord_valid(subdiv_ccg, &r_neighbors->coords[i]));
   }
 #endif
 }
 
-int BKE_subdiv_ccg_grid_to_face_index(const SubdivCCG *subdiv_ccg, const int grid_index)
+int KERNEL_subdiv_ccg_grid_to_face_index(const SubdivCCG *subdiv_ccg, const int grid_index)
 {
   const SubdivCCGFace *face = subdiv_ccg->grid_faces[grid_index];
   const int face_index = face - subdiv_ccg->faces;
   return face_index;
 }
 
-const int *BKE_subdiv_ccg_start_face_grid_index_ensure(SubdivCCG *subdiv_ccg)
+const int *KERNEL_subdiv_ccg_start_face_grid_index_ensure(SubdivCCG *subdiv_ccg)
 {
   if (subdiv_ccg->cache_.start_face_grid_index == NULL) {
     const Subdiv *subdiv = subdiv_ccg->subdiv;
@@ -1944,7 +1941,7 @@ const int *BKE_subdiv_ccg_start_face_grid_index_ensure(SubdivCCG *subdiv_ccg)
   return subdiv_ccg->cache_.start_face_grid_index;
 }
 
-const int *BKE_subdiv_ccg_start_face_grid_index_get(const SubdivCCG *subdiv_ccg)
+const int *KERNEL_subdiv_ccg_start_face_grid_index_get(const SubdivCCG *subdiv_ccg)
 {
   return subdiv_ccg->cache_.start_face_grid_index;
 }
@@ -1957,7 +1954,7 @@ static void adjacet_vertices_index_from_adjacent_edge(const SubdivCCG *subdiv_cc
                                                       int *r_v2)
 {
   const int grid_size_1 = subdiv_ccg->grid_size - 1;
-  const int poly_index = BKE_subdiv_ccg_grid_to_face_index(subdiv_ccg, coord->grid_index);
+  const int poly_index = KERNEL_subdiv_ccg_grid_to_face_index(subdiv_ccg, coord->grid_index);
   const MPoly *p = &mpoly[poly_index];
   *r_v1 = mloop[coord->grid_index].v;
 
@@ -1972,7 +1969,7 @@ static void adjacet_vertices_index_from_adjacent_edge(const SubdivCCG *subdiv_cc
   }
 }
 
-SubdivCCGAdjacencyType BKE_subdiv_ccg_coarse_mesh_adjacency_info_get(const SubdivCCG *subdiv_ccg,
+SubdivCCGAdjacencyType KERNEL_subdiv_ccg_coarse_mesh_adjacency_info_get(const SubdivCCG *subdiv_ccg,
                                                                      const SubdivCCGCoord *coord,
                                                                      const MLoop *mloop,
                                                                      const MPoly *mpoly,
@@ -2006,15 +2003,15 @@ SubdivCCGAdjacencyType BKE_subdiv_ccg_coarse_mesh_adjacency_info_get(const Subdi
   return SUBDIV_CCG_ADJACENT_NONE;
 }
 
-void BKE_subdiv_ccg_grid_hidden_ensure(SubdivCCG *subdiv_ccg, int grid_index)
+void KERNEL_subdiv_ccg_grid_hidden_ensure(SubdivCCG *subdiv_ccg, int grid_index)
 {
   if (subdiv_ccg->grid_hidden[grid_index] != NULL) {
     return;
   }
 
   CCGKey key;
-  BKE_subdiv_ccg_key_top_level(&key, subdiv_ccg);
-  subdiv_ccg->grid_hidden[grid_index] = BLI_BITMAP_NEW(key.grid_area, __func__);
+  KERNEL_subdiv_ccg_key_top_level(&key, subdiv_ccg);
+  subdiv_ccg->grid_hidden[grid_index] = LIB_BITMAP_NEW(key.grid_area, __func__);
 }
 
 static void subdiv_ccg_coord_to_ptex_coord(const SubdivCCG *subdiv_ccg,
@@ -2031,16 +2028,16 @@ static void subdiv_ccg_coord_to_ptex_coord(const SubdivCCG *subdiv_ccg,
   const float grid_u = coord->x * grid_size_1_inv;
   const float grid_v = coord->y * grid_size_1_inv;
 
-  const int face_index = BKE_subdiv_ccg_grid_to_face_index(subdiv_ccg, coord->grid_index);
+  const int face_index = KERNEL_subdiv_ccg_grid_to_face_index(subdiv_ccg, coord->grid_index);
   const SubdivCCGFace *faces = subdiv_ccg->faces;
   const SubdivCCGFace *face = &faces[face_index];
-  const int *face_ptex_offset = BKE_subdiv_face_ptex_offset_get(subdiv);
+  const int *face_ptex_offset = KERNEL_subdiv_face_ptex_offset_get(subdiv);
   *r_ptex_face_index = face_ptex_offset[face_index];
 
   const float corner = coord->grid_index - face->start_grid_index;
 
   if (face->num_grids == 4) {
-    BKE_subdiv_rotate_grid_to_quad(corner, grid_u, grid_v, r_u, r_v);
+    KERNEL_subdiv_rotate_grid_to_quad(corner, grid_u, grid_v, r_u, r_v);
   }
   else {
     *r_ptex_face_index += corner;
@@ -2049,7 +2046,7 @@ static void subdiv_ccg_coord_to_ptex_coord(const SubdivCCG *subdiv_ccg,
   }
 }
 
-void BKE_subdiv_ccg_eval_limit_point(const SubdivCCG *subdiv_ccg,
+void KERNEL_subdiv_ccg_eval_limit_point(const SubdivCCG *subdiv_ccg,
                                      const SubdivCCGCoord *coord,
                                      float r_point[3])
 {
@@ -2057,5 +2054,5 @@ void BKE_subdiv_ccg_eval_limit_point(const SubdivCCG *subdiv_ccg,
   int ptex_face_index;
   float u, v;
   subdiv_ccg_coord_to_ptex_coord(subdiv_ccg, coord, &ptex_face_index, &u, &v);
-  BKE_subdiv_eval_limit_point(subdiv, ptex_face_index, u, v, r_point);
+  KERNEL_subdiv_eval_limit_point(subdiv, ptex_face_index, u, v, r_point);
 }
