@@ -1,20 +1,20 @@
-#include "BKE_studiolight.h"
+#include "KERNEL_studiolight.h"
 
-#include "BKE_appdir.h"
-#include "BKE_icons.h"
+#include "KERNEL_appdir.h"
+#include "KERNEL_icons.h"
 
-#include "BLI_dynstr.h"
-#include "BLI_fileops.h"
-#include "BLI_fileops_types.h"
-#include "BLI_linklist.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_math_color.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_utils.h"
+#include "LI_dynstr.h"
+#include "LI_fileops.h"
+#include "LI_fileops_types.h"
+#include "LI_linklist.h"
+#include "LI_listbase.h"
+#include "LI_math.h"
+#include "LI_math_color.h"
+#include "LI_path_util.h"
+#include "LI_string.h"
+#include "LI_string_utils.h"
 
-#include "DNA_listBase.h"
+#include "structs_listBase.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -194,7 +194,7 @@ static struct StudioLight *studiolight_create(int flag)
 
 static void studiolight_load_solid_light(StudioLight *sl)
 {
-  LinkNode *lines = BLI_file_read_as_lines(sl->path);
+  LinkNode *lines = LIB_file_read_as_lines(sl->path);
   if (lines) {
     READ_VEC3("light_ambient", sl->light_ambient, lines);
     READ_SOLIDLIGHT(sl->light, 0, lines);
@@ -202,7 +202,7 @@ static void studiolight_load_solid_light(StudioLight *sl)
     READ_SOLIDLIGHT(sl->light, 2, lines);
     READ_SOLIDLIGHT(sl->light, 3, lines);
   }
-  BLI_file_free_lines(lines);
+  LIB_file_free_lines(lines);
 }
 
 #undef READ_SOLIDLIGHT
@@ -231,9 +231,9 @@ static void studiolight_load_solid_light(StudioLight *sl)
 
 static void studiolight_write_solid_light(StudioLight *sl)
 {
-  FILE *fp = BLI_fopen(sl->path, "wb");
+  FILE *fp = LIB_fopen(sl->path, "wb");
   if (fp) {
-    DynStr *str = BLI_dynstr_new();
+    DynStr *str = LIB_dynstr_new();
 
     /* Very dumb ascii format. One value per line separated by a space. */
     WRITE_IVAL(str, "version", STUDIOLIGHT_FILE_VERSION);
@@ -243,13 +243,13 @@ static void studiolight_write_solid_light(StudioLight *sl)
     WRITE_SOLIDLIGHT(str, sl->light, 2);
     WRITE_SOLIDLIGHT(str, sl->light, 3);
 
-    char *cstr = BLI_dynstr_get_cstring(str);
+    char *cstr = LIB_dynstr_get_cstring(str);
 
-    fwrite(cstr, BLI_dynstr_get_len(str), 1, fp);
+    fwrite(cstr, LIB_dynstr_get_len(str), 1, fp);
     fclose(fp);
 
     MEM_freeN(cstr);
-    BLI_dynstr_free(str);
+    LIB_dynstr_free(str);
   }
 }
 
@@ -470,7 +470,7 @@ static void studiolight_load_equirect_image(StudioLight *sl)
 static void studiolight_create_equirect_radiance_gputexture(StudioLight *sl)
 {
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
-    BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
+    KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
     ImBuf *ibuf = sl->equirect_radiance_buffer;
 
     sl->equirect_radiance_gputexture = GPU_texture_create_2d(
@@ -484,7 +484,7 @@ static void studiolight_create_equirect_radiance_gputexture(StudioLight *sl)
 
 static void studiolight_create_matcap_gputexture(StudioLightImage *sli)
 {
-  BLI_assert(sli->ibuf);
+  LIB_assert(sli->ibuf);
   ImBuf *ibuf = sli->ibuf;
   float *gpu_matcap_3components = MEM_callocN(sizeof(float[3]) * ibuf->x * ibuf->y, __func__);
 
@@ -504,7 +504,7 @@ static void studiolight_create_matcap_diffuse_gputexture(StudioLight *sl)
 {
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
     if (sl->flag & STUDIOLIGHT_TYPE_MATCAP) {
-      BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
+      KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
       studiolight_create_matcap_gputexture(&sl->matcap_diffuse);
     }
   }
@@ -514,7 +514,7 @@ static void studiolight_create_matcap_specular_gputexture(StudioLight *sl)
 {
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
     if (sl->flag & STUDIOLIGHT_TYPE_MATCAP) {
-      BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
+      KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
       if (sl->matcap_specular.ibuf) {
         studiolight_create_matcap_gputexture(&sl->matcap_specular);
       }
@@ -526,7 +526,7 @@ static void studiolight_create_matcap_specular_gputexture(StudioLight *sl)
 static void studiolight_create_equirect_irradiance_gputexture(StudioLight *sl)
 {
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
-    BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_EQUIRECT_IRRADIANCE_IMAGE_CALCULATED);
+    KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_EQUIRECT_IRRADIANCE_IMAGE_CALCULATED);
     ImBuf *ibuf = sl->equirect_irradiance_buffer;
     sl->equirect_irradiance_gputexture = GPU_texture_create_2d(
         "studiolight_irradiance", ibuf->x, ibuf->y, 1, GPU_RGBA16F, ibuf->rect_float);
@@ -568,7 +568,7 @@ static void studiolight_calculate_radiance_buffer(ImBuf *ibuf,
 static void studiolight_calculate_radiance_cubemap_buffers(StudioLight *sl)
 {
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
-    BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
+    KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
     ImBuf *ibuf = sl->equirect_radiance_buffer;
     if (ibuf) {
       float *colbuf = MEM_malloc_arrayN(
@@ -630,15 +630,13 @@ static void studiolight_calculate_radiance_cubemap_buffers(StudioLight *sl)
   sl->flag |= STUDIOLIGHT_RADIANCE_BUFFERS_CALCULATED;
 }
 
-/*
- * Spherical Harmonics
- */
-BLI_INLINE float area_element(float x, float y)
+/*+ Spherical Harmonics **/
+LIB_INLINE float area_element(float x, float y)
 {
   return atan2(x * y, sqrtf(x * x + y * y + 1));
 }
 
-BLI_INLINE float texel_solid_angle(float x, float y, float halfpix)
+LIB_INLINE float texel_solid_angle(float x, float y, float halfpix)
 {
   float v1x = (x - halfpix) * 2.0f - 1.0f;
   float v1y = (y - halfpix) * 2.0f - 1.0f;
@@ -723,8 +721,7 @@ static void studiolight_spherical_harmonics_calculate_coefficients(StudioLight *
 /* Take monochrome SH as input */
 static float studiolight_spherical_harmonics_lambda_get(float *sh, float max_laplacian)
 {
-  /* From Peter-Pike Sloan's Stupid SH Tricks http://www.ppsloan.org/publications/StupidSH36.pdf
-   */
+  /* From Peter-Pike Sloan's Stupid SH Tricks http://www.ppsloan.org/publications/StupidSH36.pdf */
   float table_l[STUDIOLIGHT_SH_BANDS];
   float table_b[STUDIOLIGHT_SH_BANDS];
 
@@ -815,8 +812,7 @@ static float studiolight_spherical_harmonics_geomerics_eval(
     const float normal[3], float sh0, float sh1, float sh2, float sh3)
 {
   /* Use Geomerics non-linear SH. */
-  /* http://www.geomerics.com/wp-content/uploads/2015/08/CEDEC_Geomerics_ReconstructingDiffuseLighting1.pdf
-   */
+  /* http://www.geomerics.com/wp-content/uploads/2015/08/CEDEC_Geomerics_ReconstructingDiffuseLighting1.pdf */
   float R0 = sh0 * M_1_PI;
 
   float R1[3] = {-sh3, sh2, -sh1};
@@ -831,7 +827,7 @@ static float studiolight_spherical_harmonics_geomerics_eval(
   return R0 * (a + (1.0f - a) * (p + 1.0f) * powf(q, p));
 }
 
-BLI_INLINE void studiolight_spherical_harmonics_eval(StudioLight *sl,
+LIB_INLINE void studiolight_spherical_harmonics_eval(StudioLight *sl,
                                                      float color[3],
                                                      const float normal[3])
 {
@@ -925,7 +921,7 @@ static void studiolight_calculate_diffuse_light(StudioLight *sl)
 {
   /* init light to black */
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
-    BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_RADIANCE_BUFFERS_CALCULATED);
+    KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_RADIANCE_BUFFERS_CALCULATED);
 
     float sh_coefs[STUDIOLIGHT_SH_COEFS_LEN][3];
     studiolight_spherical_harmonics_calculate_coefficients(sl, sh_coefs);
@@ -933,7 +929,7 @@ static void studiolight_calculate_diffuse_light(StudioLight *sl)
     studiolight_spherical_harmonics_apply_band_factors(sl, sh_coefs);
 
     if (sl->flag & STUDIOLIGHT_USER_DEFINED) {
-      FILE *fp = BLI_fopen(sl->path_sh_cache, "wb");
+      FILE *fp = LIB_fopen(sl->path_sh_cache, "wb");
       if (fp) {
         fwrite(sl->spherical_harmonics_coefs, sizeof(sl->spherical_harmonics_coefs), 1, fp);
         fclose(fp);
@@ -943,7 +939,7 @@ static void studiolight_calculate_diffuse_light(StudioLight *sl)
   sl->flag |= STUDIOLIGHT_SPHERICAL_HARMONICS_COEFFICIENTS_CALCULATED;
 }
 
-BLI_INLINE void studiolight_evaluate_specular_radiance_buffer(ImBuf *radiance_buffer,
+LIB_INLINE void studiolight_evaluate_specular_radiance_buffer(ImBuf *radiance_buffer,
                                                               const float normal[3],
                                                               float color[3],
                                                               int xoffset,
@@ -1082,7 +1078,7 @@ static bool studiolight_load_spherical_harmonics_coefficients(StudioLight *sl)
 {
 #ifdef STUDIOLIGHT_LOAD_CACHED_FILES
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
-    FILE *fp = BLI_fopen(sl->path_sh_cache, "rb");
+    FILE *fp = LIB_fopen(sl->path_sh_cache, "rb");
     if (fp) {
       if (fread((void *)(sl->spherical_harmonics_coefs),
                 sizeof(sl->spherical_harmonics_coefs),
@@ -1104,7 +1100,7 @@ static bool studiolight_load_spherical_harmonics_coefficients(StudioLight *sl)
 static void studiolight_calculate_irradiance_equirect_image(StudioLight *sl)
 {
   if (sl->flag & STUDIOLIGHT_EXTERNAL_FILE) {
-    BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_SPHERICAL_HARMONICS_COEFFICIENTS_CALCULATED);
+    KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_SPHERICAL_HARMONICS_COEFFICIENTS_CALCULATED);
 
     float *colbuf = MEM_mallocN(STUDIOLIGHT_IRRADIANCE_EQUIRECT_WIDTH *
                                     STUDIOLIGHT_IRRADIANCE_EQUIRECT_HEIGHT * sizeof(float[4]),
@@ -1134,22 +1130,22 @@ static void studiolight_calculate_irradiance_equirect_image(StudioLight *sl)
 static StudioLight *studiolight_add_file(const char *path, int flag)
 {
   char filename[FILE_MAXFILE];
-  BLI_split_file_part(path, filename, FILE_MAXFILE);
+  LIB_split_file_part(path, filename, FILE_MAXFILE);
 
-  if ((((flag & STUDIOLIGHT_TYPE_STUDIO) != 0) && BLI_path_extension_check(filename, ".sl")) ||
-      BLI_path_extension_check_array(filename, imb_ext_image)) {
+  if ((((flag & STUDIOLIGHT_TYPE_STUDIO) != 0) && LIB_path_extension_check(filename, ".sl")) ||
+      LIB_path_extension_check_array(filename, imb_ext_image)) {
     StudioLight *sl = studiolight_create(STUDIOLIGHT_EXTERNAL_FILE | flag);
-    BLI_strncpy(sl->name, filename, FILE_MAXFILE);
-    BLI_strncpy(sl->path, path, FILE_MAXFILE);
+    LIB_strncpy(sl->name, filename, FILE_MAXFILE);
+    LIB_strncpy(sl->path, path, FILE_MAXFILE);
 
     if ((flag & STUDIOLIGHT_TYPE_STUDIO) != 0) {
       studiolight_load_solid_light(sl);
     }
     else {
-      sl->path_irr_cache = BLI_string_joinN(path, ".irr");
-      sl->path_sh_cache = BLI_string_joinN(path, ".sh2");
+      sl->path_irr_cache = LIB_string_joinN(path, ".irr");
+      sl->path_sh_cache = LIB_string_joinN(path, ".sh2");
     }
-    BLI_addtail(&studiolights, sl);
+    LIB_addtail(&studiolights, sl);
     return sl;
   }
   return NULL;
@@ -1160,16 +1156,16 @@ static void studiolight_add_files_from_datafolder(const int folder_id,
                                                   int flag)
 {
   struct direntry *dir;
-  const char *folder = BKE_appdir_folder_id(folder_id, subfolder);
+  const char *folder = KERNEL_appdir_folder_id(folder_id, subfolder);
   if (folder) {
-    uint totfile = BLI_filelist_dir_contents(folder, &dir);
+    uint totfile = LIB_filelist_dir_contents(folder, &dir);
     int i;
     for (i = 0; i < totfile; i++) {
       if (dir[i].type & S_IFREG) {
         studiolight_add_file(dir[i].path, flag);
       }
     }
-    BLI_filelist_free(dir, totfile);
+    LIB_filelist_free(dir, totfile);
     dir = NULL;
   }
 }
@@ -1232,7 +1228,7 @@ static void sphere_normal_from_uv(float normal[3], float u, float v)
 
 static void studiolight_radiance_preview(uint *icon_buffer, StudioLight *sl)
 {
-  BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
+  KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
 
   ITER_PIXELS (uint, icon_buffer, 1, STUDIOLIGHT_ICON_SIZE, STUDIOLIGHT_ICON_SIZE) {
     float dy = RESCALE_COORD(y);
@@ -1264,7 +1260,7 @@ static void studiolight_radiance_preview(uint *icon_buffer, StudioLight *sl)
 
 static void studiolight_matcap_preview(uint *icon_buffer, StudioLight *sl, bool flipped)
 {
-  BKE_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
+  KERNEL_studiolight_ensure_flag(sl, STUDIOLIGHT_EXTERNAL_IMAGE_LOADED);
 
   ImBuf *diffuse_buffer = sl->matcap_diffuse.ibuf;
   ImBuf *specular_buffer = sl->matcap_specular.ibuf;
@@ -1325,7 +1321,7 @@ static void studiolight_irradiance_preview(uint *icon_buffer, StudioLight *sl)
   ITER_PIXELS_END;
 }
 
-void BKE_studiolight_default(SolidLight lights[4], float light_ambient[3])
+void KERNEL_studiolight_default(SolidLight lights[4], float light_ambient[3])
 {
   copy_v3_fl3(light_ambient, 0.0, 0.0, 0.0);
 
@@ -1378,21 +1374,21 @@ void BKE_studiolight_default(SolidLight lights[4], float light_ambient[3])
   lights[3].vec[2] = -0.542269f;
 }
 
-void BKE_studiolight_init(void)
+void KERNEL_studiolight_init(void)
 {
   /* Add default studio light */
   StudioLight *sl = studiolight_create(
       STUDIOLIGHT_INTERNAL | STUDIOLIGHT_SPHERICAL_HARMONICS_COEFFICIENTS_CALCULATED |
       STUDIOLIGHT_TYPE_STUDIO | STUDIOLIGHT_SPECULAR_HIGHLIGHT_PASS);
-  BLI_strncpy(sl->name, "Default", FILE_MAXFILE);
+  LIB_strncpy(sl->name, "Default", FILE_MAXFILE);
 
-  BLI_addtail(&studiolights, sl);
+  LIB_addtail(&studiolights, sl);
 
   /* Go over the preset folder and add a studio-light for every image with its path. */
   /* For portable installs (where USER and SYSTEM paths are the same),
    * only go over LOCAL data-files once. */
   /* Also reserve icon space for it. */
-  if (!BKE_appdir_app_is_portable_install()) {
+  if (!KERNEL_appdir_app_is_portable_install()) {
     studiolight_add_files_from_datafolder(BLENDER_USER_DATAFILES,
                                           STUDIOLIGHT_LIGHTS_FOLDER,
                                           STUDIOLIGHT_TYPE_STUDIO | STUDIOLIGHT_USER_DEFINED |
@@ -1409,17 +1405,17 @@ void BKE_studiolight_init(void)
                                         STUDIOLIGHT_TYPE_STUDIO |
                                             STUDIOLIGHT_SPECULAR_HIGHLIGHT_PASS);
   studiolight_add_files_from_datafolder(
-      BLENDER_SYSTEM_DATAFILES, STUDIOLIGHT_WORLD_FOLDER, STUDIOLIGHT_TYPE_WORLD);
+      DUNE_SYSTEM_DATAFILES, STUDIOLIGHT_WORLD_FOLDER, STUDIOLIGHT_TYPE_WORLD);
   studiolight_add_files_from_datafolder(
-      BLENDER_SYSTEM_DATAFILES, STUDIOLIGHT_MATCAP_FOLDER, STUDIOLIGHT_TYPE_MATCAP);
+      DUNE_SYSTEM_DATAFILES, STUDIOLIGHT_MATCAP_FOLDER, STUDIOLIGHT_TYPE_MATCAP);
 
   /* sort studio lights on filename. */
-  BLI_listbase_sort(&studiolights, studiolight_cmp);
+  LIB_listbase_sort(&studiolights, studiolight_cmp);
 
-  BKE_studiolight_default(sl->light, sl->light_ambient);
+  KERNEL_studiolight_default(sl->light, sl->light_ambient);
 }
 
-void BKE_studiolight_free(void)
+void KERNEL_studiolight_free(void)
 {
   struct StudioLight *sl;
   while ((sl = BLI_pophead(&studiolights))) {
@@ -1427,7 +1423,7 @@ void BKE_studiolight_free(void)
   }
 }
 
-struct StudioLight *BKE_studiolight_find_default(int flag)
+struct StudioLight *KERNEL_studiolight_find_default(int flag)
 {
   const char *default_name = "";
 
@@ -1452,7 +1448,7 @@ struct StudioLight *BKE_studiolight_find_default(int flag)
   return NULL;
 }
 
-struct StudioLight *BKE_studiolight_find(const char *name, int flag)
+struct StudioLight *KERNEL_studiolight_find(const char *name, int flag)
 {
   LISTBASE_FOREACH (StudioLight *, sl, &studiolights) {
     if (STREQLEN(sl->name, name, FILE_MAXFILE)) {
@@ -1461,14 +1457,14 @@ struct StudioLight *BKE_studiolight_find(const char *name, int flag)
       }
 
       /* flags do not match, so use default */
-      return BKE_studiolight_find_default(flag);
+      return KERNEL_studiolight_find_default(flag);
     }
   }
   /* When not found, use the default studio light */
-  return BKE_studiolight_find_default(flag);
+  return KERNEL_studiolight_find_default(flag);
 }
 
-struct StudioLight *BKE_studiolight_findindex(int index, int flag)
+struct StudioLight *KERNEL_studiolight_findindex(int index, int flag)
 {
   LISTBASE_FOREACH (StudioLight *, sl, &studiolights) {
     if (sl->index == index) {
@@ -1476,15 +1472,15 @@ struct StudioLight *BKE_studiolight_findindex(int index, int flag)
     }
   }
   /* When not found, use the default studio light */
-  return BKE_studiolight_find_default(flag);
+  return KERNEL_studiolight_find_default(flag);
 }
 
-struct ListBase *BKE_studiolight_listbase(void)
+struct ListBase *KERNEL_studiolight_listbase(void)
 {
   return &studiolights;
 }
 
-void BKE_studiolight_preview(uint *icon_buffer, StudioLight *sl, int icon_id_type)
+void KERNEL_studiolight_preview(uint *icon_buffer, StudioLight *sl, int icon_id_type)
 {
   switch (icon_id_type) {
     case STUDIOLIGHT_ICON_ID_TYPE_RADIANCE:
@@ -1507,7 +1503,7 @@ void BKE_studiolight_preview(uint *icon_buffer, StudioLight *sl, int icon_id_typ
   }
 }
 
-void BKE_studiolight_ensure_flag(StudioLight *sl, int flag)
+void KERNEL_studiolight_ensure_flag(StudioLight *sl, int flag)
 {
   if ((sl->flag & flag) == flag) {
     return;
@@ -1543,25 +1539,23 @@ void BKE_studiolight_ensure_flag(StudioLight *sl, int flag)
   }
 }
 
-/*
- * Python API Functions.
- */
+/* Python API Functions. */
 
-void BKE_studiolight_remove(StudioLight *sl)
+void KERNEL_studiolight_remove(StudioLight *sl)
 {
   if (sl->flag & STUDIOLIGHT_USER_DEFINED) {
-    BLI_remlink(&studiolights, sl);
+    LIB_remlink(&studiolights, sl);
     studiolight_free(sl);
   }
 }
 
-StudioLight *BKE_studiolight_load(const char *path, int type)
+StudioLight *KERNEL_studiolight_load(const char *path, int type)
 {
   StudioLight *sl = studiolight_add_file(path, type | STUDIOLIGHT_USER_DEFINED);
   return sl;
 }
 
-StudioLight *BKE_studiolight_create(const char *path,
+StudioLight *KERNEL_studiolight_create(const char *path,
                                     const SolidLight light[4],
                                     const float light_ambient[3])
 {
@@ -1570,7 +1564,7 @@ StudioLight *BKE_studiolight_create(const char *path,
                                        STUDIOLIGHT_SPECULAR_HIGHLIGHT_PASS);
 
   char filename[FILE_MAXFILE];
-  BLI_split_file_part(path, filename, FILE_MAXFILE);
+  LIB_split_file_part(path, filename, FILE_MAXFILE);
   STRNCPY(sl->path, path);
   STRNCPY(sl->name, filename);
 
@@ -1579,11 +1573,11 @@ StudioLight *BKE_studiolight_create(const char *path,
 
   studiolight_write_solid_light(sl);
 
-  BLI_addtail(&studiolights, sl);
+  LIB_addtail(&studiolights, sl);
   return sl;
 }
 
-StudioLight *BKE_studiolight_studio_edit_get(void)
+StudioLight *KERNEL_studiolight_studio_edit_get(void)
 {
   static StudioLight sl = {0};
   sl.flag = STUDIOLIGHT_TYPE_STUDIO | STUDIOLIGHT_SPECULAR_HIGHLIGHT_PASS;
@@ -1594,13 +1588,13 @@ StudioLight *BKE_studiolight_studio_edit_get(void)
   return &sl;
 }
 
-void BKE_studiolight_refresh(void)
+void KERNEL_studiolight_refresh(void)
 {
-  BKE_studiolight_free();
-  BKE_studiolight_init();
+  KERNEL_studiolight_free();
+  KERNEL_studiolight_init();
 }
 
-void BKE_studiolight_set_free_function(StudioLight *sl,
+void KERNEL_studiolight_set_free_function(StudioLight *sl,
                                        StudioLightFreeFunction *free_function,
                                        void *data)
 {
@@ -1608,9 +1602,9 @@ void BKE_studiolight_set_free_function(StudioLight *sl,
   sl->free_function_data = data;
 }
 
-void BKE_studiolight_unset_icon_id(StudioLight *sl, int icon_id)
+void KERNEL_studiolight_unset_icon_id(StudioLight *sl, int icon_id)
 {
-  BLI_assert(sl != NULL);
+  LIB_assert(sl != NULL);
   if (sl->icon_id_radiance == icon_id) {
     sl->icon_id_radiance = 0;
   }
