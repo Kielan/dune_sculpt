@@ -6,42 +6,41 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_fileops.h"
-#include "BLI_listbase.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_cursor_utf8.h"
-#include "BLI_string_utf8.h"
-#include "BLI_utildefines.h"
+#include "LI_fileops.h"
+#include "LI_listbase.h"
+#include "LI_path_util.h"
+#include "LI_string.h"
+#include "LI_string_cursor_utf8.h"
+#include "LI_string_utf8.h"
+#include "LI_utildefines.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "DNA_constraint_types.h"
-#include "DNA_material_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
-#include "DNA_userdef_types.h"
+#include "structs_constraint_types.h"
+#include "structs_material_types.h"
+#include "structs_node_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
+#include "structs_screen_types.h"
+#include "structs_space_types.h"
+#include "structs_text_types.h"
+#include "structs_userdef_types.h"
 
-#include "BKE_bpath.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_node.h"
-#include "BKE_text.h"
+#include "KERNEL_bpath.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_main.h"
+#include "KERNEL_node.h"
+#include "KERNEL_text.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name Prototypes
- * \{ */
+/** Prototypes **/
 
 static void txt_pop_first(Text *text);
 static void txt_pop_last(Text *text);
@@ -49,18 +48,15 @@ static void txt_delete_line(Text *text, TextLine *line);
 static void txt_delete_sel(Text *text);
 static void txt_make_dirty(Text *text);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Text Data-Block
- * \{ */
+/** Text Data-Block **/
 
 static void text_init_data(ID *id)
 {
   Text *text = (Text *)id;
   TextLine *tmp;
 
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(text, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(text, id));
 
   text->filepath = NULL;
 
@@ -69,7 +65,7 @@ static void text_init_data(ID *id)
     text->flags |= TXT_TABSTOSPACES;
   }
 
-  BLI_listbase_clear(&text->lines);
+  LIB_listbase_clear(&text->lines);
 
   tmp = (TextLine *)MEM_mallocN(sizeof(TextLine), "textline");
   tmp->line = (char *)MEM_mallocN(1, "textline_string");
@@ -81,7 +77,7 @@ static void text_init_data(ID *id)
   tmp->next = NULL;
   tmp->prev = NULL;
 
-  BLI_addhead(&text->lines, tmp);
+  LIB_addhead(&text->lines, tmp);
 
   text->curl = text->lines.first;
   text->curc = 0;
@@ -93,13 +89,13 @@ static void text_init_data(ID *id)
  * Only copy internal data of Text ID from source
  * to already allocated/initialized destination.
  * You probably never want to use that directly,
- * use #BKE_id_copy or #BKE_id_copy_ex for typical needs.
+ * use KERNEL_id_copy or KERNEL_id_copy_ex for typical needs.
  *
  * WARNING! This function will not handle ID user count!
  *
- * \param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
+ * param flag: Copying options (see KERNEL_lib_id.h's LIB_ID_COPY_... flags for more).
  */
-static void text_copy_data(Main *UNUSED(bmain),
+static void text_copy_data(Main *UNUSED(dunemain),
                            ID *id_dst,
                            const ID *id_src,
                            const int UNUSED(flag))
@@ -109,12 +105,12 @@ static void text_copy_data(Main *UNUSED(bmain),
 
   /* File name can be NULL. */
   if (text_src->filepath) {
-    text_dst->filepath = BLI_strdup(text_src->filepath);
+    text_dst->filepath = LIB_strdup(text_src->filepath);
   }
 
   text_dst->flags |= TXT_ISDIRTY;
 
-  BLI_listbase_clear(&text_dst->lines);
+  LIB_listbase_clear(&text_dst->lines);
   text_dst->curl = text_dst->sell = NULL;
   text_dst->compiled = NULL;
 
@@ -122,11 +118,11 @@ static void text_copy_data(Main *UNUSED(bmain),
   LISTBASE_FOREACH (TextLine *, line_src, &text_src->lines) {
     TextLine *line_dst = MEM_mallocN(sizeof(*line_dst), __func__);
 
-    line_dst->line = BLI_strdup(line_src->line);
+    line_dst->line = LIB_strdup(line_src->line);
     line_dst->format = NULL;
     line_dst->len = line_src->len;
 
-    BLI_addtail(&text_dst->lines, line_dst);
+    LIB_addtail(&text_dst->lines, line_dst);
   }
 
   text_dst->curl = text_dst->sell = text_dst->lines.first;
@@ -139,7 +135,7 @@ static void text_free_data(ID *id)
   /* No animation-data here. */
   Text *text = (Text *)id;
 
-  BKE_text_free_lines(text);
+  KERNEL_text_free_lines(text);
 
   MEM_SAFE_FREE(text->filepath);
 #ifdef WITH_PYTHON
@@ -152,11 +148,11 @@ static void text_foreach_path(ID *id, BPathForeachPathData *bpath_data)
   Text *text = (Text *)id;
 
   if (text->filepath != NULL) {
-    BKE_bpath_foreach_path_allocated_process(bpath_data, &text->filepath);
+    KERNEL_bpath_foreach_path_allocated_process(bpath_data, &text->filepath);
   }
 }
 
-static void text_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void text_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Text *text = (Text *)id;
 
@@ -169,46 +165,46 @@ static void text_blend_write(BlendWriter *writer, ID *id, const void *id_address
   text->compiled = NULL;
 
   /* write LibData */
-  BLO_write_id_struct(writer, Text, id_address, &text->id);
-  BKE_id_blend_write(writer, &text->id);
+  LOADER_write_id_struct(writer, Text, id_address, &text->id);
+  KERNEL_id_dune_write(writer, &text->id);
 
   if (text->filepath) {
-    BLO_write_string(writer, text->filepath);
+    LOADER_write_string(writer, text->filepath);
   }
 
   if (!(text->flags & TXT_ISEXT)) {
     /* now write the text data, in two steps for optimization in the readfunction */
     LISTBASE_FOREACH (TextLine *, tmp, &text->lines) {
-      BLO_write_struct(writer, TextLine, tmp);
+      LOADER_write_struct(writer, TextLine, tmp);
     }
 
     LISTBASE_FOREACH (TextLine *, tmp, &text->lines) {
-      BLO_write_raw(writer, tmp->len + 1, tmp->line);
+      LOADER_write_raw(writer, tmp->len + 1, tmp->line);
     }
   }
 }
 
-static void text_blend_read_data(BlendDataReader *reader, ID *id)
+static void text_dune_read_data(DuneDataReader *reader, ID *id)
 {
   Text *text = (Text *)id;
-  BLO_read_data_address(reader, &text->filepath);
+  LOADER_read_data_address(reader, &text->filepath);
 
   text->compiled = NULL;
 
 #if 0
   if (text->flags & TXT_ISEXT) {
-    BKE_text_reload(text);
+    KERNEL_text_reload(text);
   }
   /* else { */
 #endif
 
-  BLO_read_list(reader, &text->lines);
+  LOADER_read_list(reader, &text->lines);
 
-  BLO_read_data_address(reader, &text->curl);
-  BLO_read_data_address(reader, &text->sell);
+  LOADER_read_data_address(reader, &text->curl);
+  LOADER_read_data_address(reader, &text->sell);
 
   LISTBASE_FOREACH (TextLine *, ln, &text->lines) {
-    BLO_read_data_address(reader, &ln->line);
+    LOADER_read_data_address(reader, &ln->line);
     ln->format = NULL;
 
     if (ln->len != (int)strlen(ln->line)) {
@@ -240,23 +236,20 @@ IDTypeInfo IDType_ID_TXT = {
     .foreach_path = text_foreach_path,
     .owner_get = NULL,
 
-    .blend_write = text_blend_write,
-    .blend_read_data = text_blend_read_data,
-    .blend_read_lib = NULL,
-    .blend_read_expand = NULL,
+    .dune_write = text_dune_write,
+    .dune_read_data = text_dune_read_data,
+    .dune_read_lib = NULL,
+    .dune_read_expand = NULL,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Text Add, Free, Validation
- * \{ */
+/** Text Add, Free, Validation **/
 
-void BKE_text_free_lines(Text *text)
+void KERNEL_text_free_lines(Text *text)
 {
   for (TextLine *tmp = text->lines.first, *tmp_next; tmp; tmp = tmp_next) {
     tmp_next = tmp->next;
@@ -267,16 +260,16 @@ void BKE_text_free_lines(Text *text)
     MEM_freeN(tmp);
   }
 
-  BLI_listbase_clear(&text->lines);
+  LIB_listbase_clear(&text->lines);
 
   text->curl = text->sell = NULL;
 }
 
-Text *BKE_text_add(Main *bmain, const char *name)
+Text *KERNEL_text_add(Main *dunemain, const char *name)
 {
   Text *ta;
 
-  ta = BKE_id_new(bmain, ID_TXT, name);
+  ta = KERNEL_id_new(dunemain, ID_TXT, name);
   /* Texts have no users by default... Set the fake user flag to ensure that this text block
    * doesn't get deleted by default when cleaning up data blocks. */
   id_us_min(&ta->id);
@@ -306,7 +299,7 @@ int txt_extended_ascii_as_utf8(char **str)
     i = 0;
 
     while ((*str)[i]) {
-      if ((bad_char = BLI_str_utf8_invalid_byte((*str) + i, length - i)) == -1) {
+      if ((bad_char = LIB_str_utf8_invalid_byte((*str) + i, length - i)) == -1) {
         memcpy(newstr + mi, (*str) + i, length - i + 1);
         break;
       }
@@ -314,7 +307,7 @@ int txt_extended_ascii_as_utf8(char **str)
       memcpy(newstr + mi, (*str) + i, bad_char);
 
       const int mofs = mi + bad_char;
-      BLI_str_utf8_from_unicode((*str)[i + bad_char], newstr + mofs, (length + added) - mofs);
+      LIB_str_utf8_from_unicode((*str)[i + bad_char], newstr + mofs, (length + added) - mofs);
       i += bad_char + 1;
       mi += bad_char + 2;
     }
@@ -351,7 +344,7 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
 {
   int i, llen, lines_count;
 
-  BLI_assert(BLI_listbase_is_empty(&text->lines));
+  LIB_assert(LIB_listbase_is_empty(&text->lines));
 
   llen = 0;
   lines_count = 0;
@@ -371,7 +364,7 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
 
       cleanup_textline(tmp);
 
-      BLI_addtail(&text->lines, tmp);
+      LIB_addtail(&text->lines, tmp);
       lines_count += 1;
 
       llen = 0;
@@ -402,7 +395,7 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
 
     cleanup_textline(tmp);
 
-    BLI_addtail(&text->lines, tmp);
+    LIB_addtail(&text->lines, tmp);
     /* lines_count += 1; */ /* UNUSED */
   }
 
@@ -410,31 +403,31 @@ static void text_from_buf(Text *text, const unsigned char *buffer, const int len
   text->curc = text->selc = 0;
 }
 
-bool BKE_text_reload(Text *text)
+bool KERNEL_text_reload(Text *text)
 {
   unsigned char *buffer;
   size_t buffer_len;
   char filepath_abs[FILE_MAX];
-  BLI_stat_t st;
+  LIB_stat_t st;
 
   if (!text->filepath) {
     return false;
   }
 
-  BLI_strncpy(filepath_abs, text->filepath, FILE_MAX);
-  BLI_path_abs(filepath_abs, ID_BLEND_PATH_FROM_GLOBAL(&text->id));
+  LIB_strncpy(filepath_abs, text->filepath, FILE_MAX);
+  LIB_path_abs(filepath_abs, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
 
-  buffer = BLI_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
+  buffer = LIB_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
   if (buffer == NULL) {
     return false;
   }
 
   /* free memory: */
-  BKE_text_free_lines(text);
+  KERNEL_text_free_lines(text);
   txt_make_dirty(text);
 
   /* clear undo buffer */
-  if (BLI_stat(filepath_abs, &st) != -1) {
+  if (LIB_stat(filepath_abs, &st) != -1) {
     text->mtime = st.st_mtime;
   }
   else {
@@ -447,29 +440,29 @@ bool BKE_text_reload(Text *text)
   return true;
 }
 
-Text *BKE_text_load_ex(Main *bmain, const char *file, const char *relpath, const bool is_internal)
+Text *KERNEL_text_load_ex(Main *dunemain, const char *file, const char *relpath, const bool is_internal)
 {
   unsigned char *buffer;
   size_t buffer_len;
   Text *ta;
   char filepath_abs[FILE_MAX];
-  BLI_stat_t st;
+  LIB_stat_t st;
 
-  BLI_strncpy(filepath_abs, file, FILE_MAX);
+  LIB_strncpy(filepath_abs, file, FILE_MAX);
   if (relpath) { /* Can be NULL (background mode). */
-    BLI_path_abs(filepath_abs, relpath);
+    LIB_path_abs(filepath_abs, relpath);
   }
 
-  buffer = BLI_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
+  buffer = LIB_file_read_text_as_mem(filepath_abs, 0, &buffer_len);
   if (buffer == NULL) {
     return NULL;
   }
 
-  ta = BKE_libblock_alloc(bmain, ID_TXT, BLI_path_basename(filepath_abs), 0);
+  ta = KERNEL_libblock_alloc(dunemain, ID_TXT, LIB_path_basename(filepath_abs), 0);
   id_us_min(&ta->id);
   id_fake_user_set(&ta->id);
 
-  BLI_listbase_clear(&ta->lines);
+  LIB_listbase_clear(&ta->lines);
   ta->curl = ta->sell = NULL;
 
   if ((U.flag & USER_TXT_TABSTOSPACES_DISABLE) == 0) {
@@ -485,7 +478,7 @@ Text *BKE_text_load_ex(Main *bmain, const char *file, const char *relpath, const
   }
 
   /* clear undo buffer */
-  if (BLI_stat(filepath_abs, &st) != -1) {
+  if (LIB_stat(filepath_abs, &st) != -1) {
     ta->mtime = st.st_mtime;
   }
   else {
@@ -499,28 +492,28 @@ Text *BKE_text_load_ex(Main *bmain, const char *file, const char *relpath, const
   return ta;
 }
 
-Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
+Text *KERNEL_text_load(Main *dunemain, const char *file, const char *relpath)
 {
-  return BKE_text_load_ex(bmain, file, relpath, false);
+  return KERNEL_text_load_ex(dunemain, file, relpath, false);
 }
 
-void BKE_text_clear(Text *text) /* called directly from rna */
+void KERNEL_text_clear(Text *text) /* called directly from api */
 {
   txt_sel_all(text);
   txt_delete_sel(text);
   txt_make_dirty(text);
 }
 
-void BKE_text_write(Text *text, const char *str) /* called directly from rna */
+void KERNEL_text_write(Text *text, const char *str) /* called directly from api */
 {
   txt_insert_buf(text, str);
   txt_move_eof(text, 0);
   txt_make_dirty(text);
 }
 
-int BKE_text_file_modified_check(Text *text)
+int KERNEL_text_file_modified_check(Text *text)
 {
-  BLI_stat_t st;
+  LIB_stat_t st;
   int result;
   char file[FILE_MAX];
 
@@ -528,14 +521,14 @@ int BKE_text_file_modified_check(Text *text)
     return 0;
   }
 
-  BLI_strncpy(file, text->filepath, FILE_MAX);
-  BLI_path_abs(file, ID_BLEND_PATH_FROM_GLOBAL(&text->id));
+  LIB_strncpy(file, text->filepath, FILE_MAX);
+  LIB_path_abs(file, ID_DUNE_PATH_FROM_GLOBAL(&text->id));
 
-  if (!BLI_exists(file)) {
+  if (!LIB_exists(file)) {
     return 2;
   }
 
-  result = BLI_stat(file, &st);
+  result = LIB_stat(file, &st);
 
   if (result == -1) {
     return -1;
@@ -552,9 +545,9 @@ int BKE_text_file_modified_check(Text *text)
   return 0;
 }
 
-void BKE_text_file_modified_ignore(Text *text)
+void KERNEL_text_file_modified_ignore(Text *text)
 {
-  BLI_stat_t st;
+  LIB_stat_t st;
   int result;
   char file[FILE_MAX];
 
@@ -562,7 +555,7 @@ void BKE_text_file_modified_ignore(Text *text)
     return;
   }
 
-  BLI_strncpy(file, text->filepath, FILE_MAX);
+  LIB_strncpy(file, text->filepath, FILE_MAX);
   BLI_path_abs(file, ID_BLEND_PATH_FROM_GLOBAL(&text->id));
 
   if (!BLI_exists(file)) {
