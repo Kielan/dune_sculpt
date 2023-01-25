@@ -1,24 +1,24 @@
-#include "BLI_array.hh"
-#include "BLI_generic_virtual_array.hh"
-#include "BLI_span.hh"
-#include "BLI_task.hh"
-#include "BLI_timeit.hh"
+#include "LI_array.hh"
+#include "LI_generic_virtual_array.hh"
+#include "LI_span.hh"
+#include "LI_task.hh"
+#include "LI_timeit.hh"
 
-#include "BKE_attribute_access.hh"
-#include "BKE_attribute_math.hh"
-#include "BKE_spline.hh"
+#include "KE_attribute_access.hh"
+#include "KE_attribute_math.hh"
+#include "KE_spline.hh"
 
-using blender::Array;
-using blender::float3;
-using blender::GMutableSpan;
-using blender::GSpan;
-using blender::GVArray;
-using blender::IndexRange;
-using blender::MutableSpan;
-using blender::Span;
-using blender::VArray;
-using blender::attribute_math::convert_to_static_type;
-using blender::bke::AttributeIDRef;
+using dune::Array;
+using dune::float3;
+using dune::GMutableSpan;
+using dune::GSpan;
+using dune::GVArray;
+using dune::IndexRange;
+using dune::MutableSpan;
+using dune::Span;
+using dune::VArray;
+using dune::attribute_math::convert_to_static_type;
+using dune::kernel::AttributeIDRef;
 
 CurveType Spline::type() const
 {
