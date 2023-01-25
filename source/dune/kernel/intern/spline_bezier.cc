@@ -1,8 +1,8 @@
-#include "LI_array.hh"
-#include "LI_span.hh"
-#include "LI_task.hh"
+#include "LIB_array.hh"
+#include "LIB_span.hh"
+#include "LIB_task.hh"
 
-#include "KE_spline.hh"
+#include "KERNEL_spline.hh"
 
 using dune::Array;
 using dune::float3;
@@ -33,12 +33,12 @@ void BezierSpline::copy_data(Spline &dst) const
 int BezierSpline::size() const
 {
   const int size = positions_.size();
-  LI_assert(size == handle_types_left_.size());
-  LI_assert(size == handle_positions_left_.size());
-  LI_assert(size == handle_types_right_.size());
-  LI_assert(size == handle_positions_right_.size());
-  LI_assert(size == radii_.size());
-  LI_assert(size == tilts_.size());
+  LIB_assert(size == handle_types_left_.size());
+  LIB_assert(size == handle_positions_left_.size());
+  LIB_assert(size == handle_types_right_.size());
+  LIB_assert(size == handle_positions_right_.size());
+  LIB_assert(size == radii_.size());
+  LIB_assert(size == tilts_.size());
   return size;
 }
 
