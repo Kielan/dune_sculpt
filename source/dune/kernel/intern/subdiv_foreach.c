@@ -154,7 +154,7 @@ static void subdiv_foreach_ctx_count(SubdivForeachTaskContext *ctx)
       const bool is_edge_used = BLI_BITMAP_TEST_BOOL(ctx->coarse_edges_used_map, loop->e);
       /* Edges which aren't counted yet. */
       if (!is_edge_used) {
-        BLI_BITMAP_ENABLE(ctx->coarse_edges_used_map, loop->e);
+        LIB_BITMAP_ENABLE(ctx->coarse_edges_used_map, loop->e);
         ctx->num_subdiv_vertices += num_subdiv_vertices_per_coarse_edge;
       }
     }
@@ -267,11 +267,8 @@ static void subdiv_foreach_ctx_free(SubdivForeachTaskContext *ctx)
   MEM_freeN(ctx->subdiv_polygon_offset);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Vertex traversal process
- * \{ */
+/** Vertex traversal process */
 
 /* Traversal of corner vertices. They are coming from coarse vertices. */
 
@@ -290,7 +287,7 @@ static void subdiv_foreach_corner_vertices_regular_do(
   for (int corner = 0; corner < coarse_poly->totloop; corner++) {
     const MLoop *coarse_loop = &coarse_mloop[coarse_poly->loopstart + corner];
     if (check_usage &&
-        BLI_BITMAP_TEST_AND_SET_ATOMIC(ctx->coarse_vertices_used_map, coarse_loop->v)) {
+        LIB_BITMAP_TEST_AND_SET_ATOMIC(ctx->coarse_vertices_used_map, coarse_loop->v)) {
       continue;
     }
     const int coarse_vertex_index = coarse_loop->v;
@@ -331,7 +328,7 @@ static void subdiv_foreach_corner_vertices_special_do(
   for (int corner = 0; corner < coarse_poly->totloop; corner++, ptex_face_index++) {
     const MLoop *coarse_loop = &coarse_mloop[coarse_poly->loopstart + corner];
     if (check_usage &&
-        BLI_BITMAP_TEST_AND_SET_ATOMIC(ctx->coarse_vertices_used_map, coarse_loop->v)) {
+        LIB_BITMAP_TEST_AND_SET_ATOMIC(ctx->coarse_vertices_used_map, coarse_loop->v)) {
       continue;
     }
     const int coarse_vertex_index = coarse_loop->v;
@@ -493,7 +490,7 @@ static void subdiv_foreach_edge_vertices_special_do(SubdivForeachTaskContext *ct
     const MLoop *coarse_loop = &coarse_mloop[coarse_poly->loopstart + corner];
     const int coarse_edge_index = coarse_loop->e;
     if (check_usage &&
-        BLI_BITMAP_TEST_AND_SET_ATOMIC(ctx->coarse_edges_used_map, coarse_edge_index)) {
+        LIB_BITMAP_TEST_AND_SET_ATOMIC(ctx->coarse_edges_used_map, coarse_edge_index)) {
       continue;
     }
     const MEdge *coarse_edge = &coarse_medge[coarse_edge_index];
@@ -681,13 +678,10 @@ static void subdiv_foreach_vertices(SubdivForeachTaskContext *ctx, void *tls, co
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Edge traversal process
- * \{ */
+/** Edge traversal process **/
 
-/* TODO(sergey): Coarse edge are always NONE, consider getting rid of it. */
+/* TODO: Coarse edge are always NONE, consider getting rid of it. */
 static int subdiv_foreach_edges_row(SubdivForeachTaskContext *ctx,
                                     void *tls,
                                     const int coarse_edge_index,
@@ -1001,11 +995,8 @@ static void subdiv_foreach_boundary_edges(SubdivForeachTaskContext *ctx,
       ctx->foreach_context, tls, coarse_edge_index, subdiv_edge_index, is_loose, v1, v2);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Loops traversal
- * \{ */
+/** Loops traversal **/
 
 static void rotate_indices(const int rot, int *a, int *b, int *c, int *d)
 {
@@ -1647,11 +1638,8 @@ static void subdiv_foreach_loops(SubdivForeachTaskContext *ctx, void *tls, int p
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Polygons traverse process
- * \{ */
+/** Polygons traverse process **/
 
 static void subdiv_foreach_polys(SubdivForeachTaskContext *ctx, void *tls, int poly_index)
 {
@@ -1680,18 +1668,15 @@ static void subdiv_foreach_polys(SubdivForeachTaskContext *ctx, void *tls, int p
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Loose elements traverse process
- * \{ */
+/* Loose elements traverse process **/
 
 static void subdiv_foreach_loose_vertices_task(void *__restrict userdata,
                                                const int coarse_vertex_index,
                                                const TaskParallelTLS *__restrict tls)
 {
   SubdivForeachTaskContext *ctx = userdata;
-  if (BLI_BITMAP_TEST_BOOL(ctx->coarse_vertices_used_map, coarse_vertex_index)) {
+  if (LIB_BITMAP_TEST_BOOL(ctx->coarse_vertices_used_map, coarse_vertex_index)) {
     /* Vertex is not loose, was handled when handling polygons. */
     return;
   }
@@ -1705,7 +1690,7 @@ static void subdiv_foreach_vertices_of_loose_edges_task(void *__restrict userdat
                                                         const TaskParallelTLS *__restrict tls)
 {
   SubdivForeachTaskContext *ctx = userdata;
-  if (BLI_BITMAP_TEST_BOOL(ctx->coarse_edges_used_map, coarse_edge_index)) {
+  if (LIB_BITMAP_TEST_BOOL(ctx->coarse_edges_used_map, coarse_edge_index)) {
     /* Vertex is not loose, was handled when handling polygons. */
     return;
   }
@@ -1739,11 +1724,8 @@ static void subdiv_foreach_vertices_of_loose_edges_task(void *__restrict userdat
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Subdivision process entry points
- * \{ */
+/** Subdivision process entry points **/
 
 static void subdiv_foreach_single_geometry_vertices(SubdivForeachTaskContext *ctx, void *tls)
 {
@@ -1831,7 +1813,7 @@ static void subdiv_foreach_free(const void *__restrict userdata, void *__restric
   ctx->foreach_context->user_data_tls_free(userdata_chunk);
 }
 
-bool BKE_subdiv_foreach_subdiv_geometry(Subdiv *subdiv,
+bool KERNEL_subdiv_foreach_subdiv_geometry(Subdiv *subdiv,
                                         const SubdivForeachContext *context,
                                         const SubdivToMeshSettings *mesh_settings,
                                         const Mesh *coarse_mesh)
@@ -1856,7 +1838,7 @@ bool BKE_subdiv_foreach_subdiv_geometry(Subdiv *subdiv,
   subdiv_foreach_single_thread_tasks(&ctx);
   /* Threaded traversal of the rest of topology. */
   TaskParallelSettings parallel_range_settings;
-  BLI_parallel_range_settings_defaults(&parallel_range_settings);
+  LIB_parallel_range_settings_defaults(&parallel_range_settings);
   parallel_range_settings.userdata_chunk = context->user_data_tls;
   parallel_range_settings.userdata_chunk_size = context->user_data_tls_size;
   parallel_range_settings.min_iter_per_thread = 1;
@@ -1870,24 +1852,24 @@ bool BKE_subdiv_foreach_subdiv_geometry(Subdiv *subdiv,
    * currently are relying on the fact that face/grid callbacks will tag non-
    * loose geometry. */
 
-  BLI_task_parallel_range(
+  LIB_task_parallel_range(
       0, coarse_mesh->totpoly, &ctx, subdiv_foreach_task, &parallel_range_settings);
   if (context->vertex_loose != NULL) {
-    BLI_task_parallel_range(0,
+    LIB_task_parallel_range(0,
                             coarse_mesh->totvert,
                             &ctx,
                             subdiv_foreach_loose_vertices_task,
                             &parallel_range_settings);
   }
   if (context->vertex_of_loose_edge != NULL) {
-    BLI_task_parallel_range(0,
+    LIB_task_parallel_range(0,
                             coarse_mesh->totedge,
                             &ctx,
                             subdiv_foreach_vertices_of_loose_edges_task,
                             &parallel_range_settings);
   }
   if (context->edge != NULL) {
-    BLI_task_parallel_range(0,
+    LIB_task_parallel_range(0,
                             coarse_mesh->totedge,
                             &ctx,
                             subdiv_foreach_boundary_edges_task,
