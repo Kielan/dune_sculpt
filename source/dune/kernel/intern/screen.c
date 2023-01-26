@@ -289,7 +289,7 @@ IDTypeInfo IDType_ID_SCR = {
     .owner_get = NULL,
 
     .dune_write = screen_dune_write,
-    /* Cannot be used yet, because #direct_link_screen has a return value. */
+    /* Cannot be used yet, because direct_link_screen has a return value. */
     .dune_read_data = NULL,
     .dune_read_lib = screen_dune_read_lib,
     .dune_read_expand = NULL,
@@ -443,11 +443,11 @@ ARegion *KERNEL_area_region_copy(const SpaceType *st, const ARegion *region)
   memset(&newar->runtime, 0x0, sizeof(newar->runtime));
 
   newar->prev = newar->next = NULL;
-  LI_listbase_clear(&newar->handlers);
-  LI_listbase_clear(&newar->uiblocks);
-  LI_listbase_clear(&newar->panels_category);
-  LI_listbase_clear(&newar->panels_category_active);
-  LI_listbase_clear(&newar->ui_lists);
+  LIB_listbase_clear(&newar->handlers);
+  LIB_listbase_clear(&newar->uiblocks);
+  LIB_listbase_clear(&newar->panels_category);
+  LIB_listbase_clear(&newar->panels_category_active);
+  LIB_listbase_clear(&newar->ui_lists);
   newar->visible = 0;
   newar->gizmo_map = NULL;
   newar->regiontimer = NULL;
@@ -969,7 +969,7 @@ void KERNEL_screen_view3d_sync(View3D *v3d, struct Scene *scene)
   }
 }
 
-void KERNEL_screen_view3d_scene_sync(bScreen *screen, Scene *scene)
+void KERNEL_screen_view3d_scene_sync(duneScreen *screen, Scene *scene)
 {
   /* are there cameras in the views that are not in the scene? */
   LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
@@ -1012,7 +1012,7 @@ float KERNEL_screen_view3d_zoom_from_fac(float zoomfac)
   return ((sqrtf(4.0f * zoomfac) - (float)M_SQRT2) * 50.0f);
 }
 
-bool KERNEL_screen_is_fullscreen_area(const bScreen *screen)
+bool KERNEL_screen_is_fullscreen_area(const duneScreen *screen)
 {
   return ELEM(screen->state, SCREENMAXIMIZED, SCREENFULL);
 }
@@ -1022,7 +1022,7 @@ bool KERNEL_screen_is_used(const duneScreen *screen)
   return (screen->winid != 0);
 }
 
-void KERNEL_screen_header_alignment_reset(bScreen *screen)
+void KERNEL_screen_header_alignment_reset(duneScreen *screen)
 {
   int alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
   LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
@@ -1053,7 +1053,7 @@ void KERNEL_screen_view3d_shading_dune_write(BlendWriter *writer, View3DShading 
   }
 }
 
-void KERNEL_screen_view3d_shading_blend_read_data(BlendDataReader *reader, View3DShading *shading)
+void KERNEL_screen_view3d_shading_dune_read_data(DuneDataReader *reader, View3DShading *shading)
 {
   if (shading->prop) {
     LOADER_read_data_address(reader, &shading->prop);
@@ -1270,49 +1270,49 @@ static void write_area(BlendWriter *writer, ScrArea *area)
       LOADER_write_struct(writer, SpaceStatusBar, sl);
     }
     else if (sl->spacetype == SPACE_USERPREF) {
-      BLO_write_struct(writer, SpaceUserPref, sl);
+      LOADER_write_struct(writer, SpaceUserPref, sl);
     }
     else if (sl->spacetype == SPACE_CLIP) {
-      BLO_write_struct(writer, SpaceClip, sl);
+      LOADER_write_struct(writer, SpaceClip, sl);
     }
     else if (sl->spacetype == SPACE_INFO) {
-      BLO_write_struct(writer, SpaceInfo, sl);
+      LOADER_write_struct(writer, SpaceInfo, sl);
     }
     else if (sl->spacetype == SPACE_SPREADSHEET) {
-      BLO_write_struct(writer, SpaceSpreadsheet, sl);
+      LOADER_write_struct(writer, SpaceSpreadsheet, sl);
       SpaceSpreadsheet *sspreadsheet = (SpaceSpreadsheet *)sl;
 
       LISTBASE_FOREACH (SpreadsheetRowFilter *, row_filter, &sspreadsheet->row_filters) {
-        BLO_write_struct(writer, SpreadsheetRowFilter, row_filter);
-        BLO_write_string(writer, row_filter->value_string);
+        LOADER_write_struct(writer, SpreadsheetRowFilter, row_filter);
+        LOADER_write_string(writer, row_filter->value_string);
       }
 
       LISTBASE_FOREACH (SpreadsheetColumn *, column, &sspreadsheet->columns) {
-        BLO_write_struct(writer, SpreadsheetColumn, column);
-        BLO_write_struct(writer, SpreadsheetColumnID, column->id);
-        BLO_write_string(writer, column->id->name);
+        LOADER_write_struct(writer, SpreadsheetColumn, column);
+        LOADER_write_struct(writer, SpreadsheetColumnID, column->id);
+        LOADER_write_string(writer, column->id->name);
         /* While the display name is technically runtime data, we write it here, otherwise the row
          * filters might not now their type if their region draws before the main region.
          * This would ideally be cleared here. */
-        BLO_write_string(writer, column->display_name);
+        LOADER_write_string(writer, column->display_name);
       }
       LISTBASE_FOREACH (SpreadsheetContext *, context, &sspreadsheet->context_path) {
         switch (context->type) {
           case SPREADSHEET_CONTEXT_OBJECT: {
             SpreadsheetContextObject *object_context = (SpreadsheetContextObject *)context;
-            BLO_write_struct(writer, SpreadsheetContextObject, object_context);
+            LOADER_write_struct(writer, SpreadsheetContextObject, object_context);
             break;
           }
           case SPREADSHEET_CONTEXT_MODIFIER: {
             SpreadsheetContextModifier *modifier_context = (SpreadsheetContextModifier *)context;
-            BLO_write_struct(writer, SpreadsheetContextModifier, modifier_context);
-            BLO_write_string(writer, modifier_context->modifier_name);
+            LOADER_write_struct(writer, SpreadsheetContextModifier, modifier_context);
+            LOADER_write_string(writer, modifier_context->modifier_name);
             break;
           }
           case SPREADSHEET_CONTEXT_NODE: {
             SpreadsheetContextNode *node_context = (SpreadsheetContextNode *)context;
-            BLO_write_struct(writer, SpreadsheetContextNode, node_context);
-            BLO_write_string(writer, node_context->node_name);
+            LOADER_write_struct(writer, SpreadsheetContextNode, node_context);
+            LOADER_write_string(writer, node_context->node_name);
             break;
           }
         }
@@ -1321,16 +1321,16 @@ static void write_area(BlendWriter *writer, ScrArea *area)
   }
 }
 
-void BKE_screen_area_map_blend_write(BlendWriter *writer, ScrAreaMap *area_map)
+void KERNEL_screen_area_map_dune_write(DuneWriter *writer, ScrAreaMap *area_map)
 {
-  BLO_write_struct_list(writer, ScrVert, &area_map->vertbase);
-  BLO_write_struct_list(writer, ScrEdge, &area_map->edgebase);
+  LOADER_write_struct_list(writer, ScrVert, &area_map->vertbase);
+  LOADER_write_struct_list(writer, ScrEdge, &area_map->edgebase);
   LISTBASE_FOREACH (ScrArea *, area, &area_map->areabase) {
     area->butspacetype = area->spacetype; /* Just for compatibility, will be reset below. */
 
-    BLO_write_struct(writer, ScrArea, area);
+    LOADER_write_struct(writer, ScrArea, area);
 
-    BLO_write_struct(writer, ScrGlobalAreaData, area->global);
+    LOADER_write_struct(writer, ScrGlobalAreaData, area->global);
 
     write_area(writer, area);
 
@@ -1351,7 +1351,7 @@ static void direct_link_panel_list(DuneDataReader *reader, ListBase *lb)
   }
 }
 
-static void direct_link_region(BlendDataReader *reader, ARegion *region, int spacetype)
+static void direct_link_region(DuneDataReader *reader, ARegion *region, int spacetype)
 {
   memset(&region->runtime, 0x0, sizeof(region->runtime));
 
@@ -1382,13 +1382,13 @@ static void direct_link_region(BlendDataReader *reader, ARegion *region, int spa
     region->regiondata = NULL;
   }
   else {
-    BLO_read_data_address(reader, &region->regiondata);
+    LOADER_read_data_address(reader, &region->regiondata);
     if (region->regiondata) {
       if (spacetype == SPACE_VIEW3D) {
         RegionView3D *rv3d = region->regiondata;
 
-        BLO_read_data_address(reader, &rv3d->localvd);
-        BLO_read_data_address(reader, &rv3d->clipbb);
+        LOADER_read_data_address(reader, &rv3d->localvd);
+        LOADER_read_data_address(reader, &rv3d->clipbb);
 
         rv3d->render_engine = NULL;
         rv3d->sms = NULL;
@@ -1402,9 +1402,9 @@ static void direct_link_region(BlendDataReader *reader, ARegion *region, int spa
 
   region->v2d.sms = NULL;
   region->v2d.alpha_hor = region->v2d.alpha_vert = 255; /* visible by default */
-  BLI_listbase_clear(&region->panels_category);
-  BLI_listbase_clear(&region->handlers);
-  BLI_listbase_clear(&region->uiblocks);
+  LIB_listbase_clear(&region->panels_category);
+  LIB_listbase_clear(&region->handlers);
+  LIB_listbase_clear(&region->uiblocks);
   region->headerstr = NULL;
   region->visible = 0;
   region->type = NULL;
@@ -1416,7 +1416,7 @@ static void direct_link_region(BlendDataReader *reader, ARegion *region, int spa
 }
 
 /* for the saved 2.50 files without regiondata */
-void BKE_screen_view3d_do_versions_250(View3D *v3d, ListBase *regions)
+void KERNEL_screen_view3d_do_versions_250(View3D *v3d, ListBase *regions)
 {
   LISTBASE_FOREACH (ARegion *, region, regions) {
     if (region->regiontype == RGN_TYPE_WINDOW && region->regiondata == NULL) {
@@ -1437,12 +1437,12 @@ void BKE_screen_view3d_do_versions_250(View3D *v3d, ListBase *regions)
   }
 }
 
-static void direct_link_area(BlendDataReader *reader, ScrArea *area)
+static void direct_link_area(DuneDataReader *reader, ScrArea *area)
 {
-  BLO_read_list(reader, &(area->spacedata));
-  BLO_read_list(reader, &(area->regionbase));
+  LOADER_read_list(reader, &(area->spacedata));
+  LOADER_read_list(reader, &(area->regionbase));
 
-  BLI_listbase_clear(&area->handlers);
+  LIB_listbase_clear(&area->handlers);
   area->type = NULL; /* spacetype callbacks */
 
   /* Should always be unset so that rna_Area_type_get works correctly. */
@@ -1452,11 +1452,11 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
 
   area->flag &= ~AREA_FLAG_ACTIVE_TOOL_UPDATE;
 
-  BLO_read_data_address(reader, &area->global);
+  LOADER_read_data_address(reader, &area->global);
 
   /* if we do not have the spacetype registered we cannot
    * free it, so don't allocate any new memory for such spacetypes. */
-  if (!BKE_spacetype_exists(area->spacetype)) {
+  if (!KERNEL_spacetype_exists(area->spacetype)) {
     /* Hint for versioning code to replace deprecated space types. */
     area->butspacetype = area->spacetype;
 
@@ -1472,11 +1472,11 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
   if (area->spacedata.first == NULL) {
     SpaceInfo *sinfo = MEM_callocN(sizeof(SpaceInfo), "spaceinfo");
     area->spacetype = sinfo->spacetype = SPACE_INFO;
-    BLI_addtail(&area->spacedata, sinfo);
+    LIB_addtail(&area->spacedata, sinfo);
   }
   /* add local view3d too */
   else if (area->spacetype == SPACE_VIEW3D) {
-    BKE_screen_view3d_do_versions_250(area->spacedata.first, &area->regionbase);
+    KERNEL_screen_view3d_do_versions_250(area->spacedata.first, &area->regionbase);
   }
 
   LISTBASE_FOREACH (SpaceLink *, sl, &area->spacedata) {
@@ -1509,7 +1509,7 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
       }
       v3d->shading.prev_type = OB_SOLID;
 
-      KERNEL_screen_view3d_shading_blend_read_data(reader, &v3d->shading);
+      KERNEL_screen_view3d_shading_dune_read_data(reader, &v3d->shading);
 
       KERNEL_screen_view3d_do_versions_250(v3d, &sl->regionbase);
     }
@@ -1527,17 +1527,17 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
     else if (sl->spacetype == SPACE_OUTLINER) {
       SpaceOutliner *space_outliner = (SpaceOutliner *)sl;
 
-      /* use BLO_read_get_new_data_address_no_us and do not free old memory avoiding double
+      /* use LOADER_read_get_new_data_address_no_us and do not free old memory avoiding double
        * frees and use of freed memory. this could happen because of a
        * bug fixed in revision 58959 where the treestore memory address
        * was not unique */
-      TreeStore *ts = BLO_read_get_new_data_address_no_us(reader, space_outliner->treestore);
+      TreeStore *ts = LOADER_read_get_new_data_address_no_us(reader, space_outliner->treestore);
       space_outliner->treestore = NULL;
       if (ts) {
         TreeStoreElem *elems = BLO_read_get_new_data_address_no_us(reader, ts->data);
 
         space_outliner->treestore = BLI_mempool_create(
-            sizeof(TreeStoreElem), ts->usedelem, 512, BLI_MEMPOOL_ALLOW_ITER);
+            sizeof(TreeStoreElem), ts->usedelem, 512, LIB_MEMPOOL_ALLOW_ITER);
         if (ts->usedelem && elems) {
           for (int i = 0; i < ts->usedelem; i++) {
             TreeStoreElem *new_elem = BLI_mempool_alloc(space_outliner->treestore);
@@ -1574,11 +1574,11 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
       SpaceNode *snode = (SpaceNode *)sl;
 
       if (snode->gpd) {
-        BLO_read_data_address(reader, &snode->gpd);
-        BKE_gpencil_blend_read_data(reader, snode->gpd);
+        LOADER_read_data_address(reader, &snode->gpd);
+        KERNEL_gpencil_dune_read_data(reader, snode->gpd);
       }
 
-      BLO_read_list(reader, &snode->treepath);
+      LOADER_read_list(reader, &snode->treepath);
       snode->edittree = NULL;
       snode->runtime = NULL;
     }
@@ -1599,7 +1599,7 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
 #if 0
       if (sseq->gpd) {
         sseq->gpd = newdataadr(fd, sseq->gpd);
-        BKE_gpencil_blend_read_data(fd, sseq->gpd);
+        KERNEL_gpencil_dune_read_data(fd, sseq->gpd);
       }
 #endif
       sseq->scopes.reference_ibuf = NULL;
@@ -1622,20 +1622,20 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
     else if (sl->spacetype == SPACE_CONSOLE) {
       SpaceConsole *sconsole = (SpaceConsole *)sl;
 
-      BLO_read_list(reader, &sconsole->scrollback);
-      BLO_read_list(reader, &sconsole->history);
+      LOADER_read_list(reader, &sconsole->scrollback);
+      LOADER_read_list(reader, &sconsole->history);
 
       /* Comma expressions, (e.g. expr1, expr2, expr3) evaluate each expression,
        * from left to right.  the right-most expression sets the result of the comma
        * expression as a whole. */
       LISTBASE_FOREACH_MUTABLE (ConsoleLine *, cl, &sconsole->history) {
-        BLO_read_data_address(reader, &cl->line);
+        LOADER_read_data_address(reader, &cl->line);
         if (cl->line) {
           /* the allocted length is not written, so reset here */
           cl->len_alloc = cl->len + 1;
         }
         else {
-          BLI_remlink(&sconsole->history, cl);
+          LIB_remlink(&sconsole->history, cl);
           MEM_freeN(cl);
         }
       }
@@ -1647,15 +1647,15 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
        * plus, it isn't saved to files yet!
        */
       sfile->folders_prev = sfile->folders_next = NULL;
-      BLI_listbase_clear(&sfile->folder_histories);
+      LIB_listbase_clear(&sfile->folder_histories);
       sfile->files = NULL;
       sfile->layout = NULL;
       sfile->op = NULL;
       sfile->previews_timer = NULL;
       sfile->tags = 0;
       sfile->runtime = NULL;
-      BLO_read_data_address(reader, &sfile->params);
-      BLO_read_data_address(reader, &sfile->asset_params);
+      LOADER_read_data_address(reader, &sfile->params);
+      LOADER_read_data_address(reader, &sfile->asset_params);
       if (sfile->params) {
         sfile->params->rename_id = NULL;
       }
@@ -1722,23 +1722,23 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
   BLO_read_data_address(reader, &area->v4);
 }
 
-bool BKE_screen_area_map_blend_read_data(BlendDataReader *reader, ScrAreaMap *area_map)
+bool KERNEL_screen_area_map_dune_read_data(DuneDataReader *reader, ScrAreaMap *area_map)
 {
-  BLO_read_list(reader, &area_map->vertbase);
-  BLO_read_list(reader, &area_map->edgebase);
-  BLO_read_list(reader, &area_map->areabase);
+  LOADER_read_list(reader, &area_map->vertbase);
+  LOADER_read_list(reader, &area_map->edgebase);
+  LOADER_read_list(reader, &area_map->areabase);
   LISTBASE_FOREACH (ScrArea *, area, &area_map->areabase) {
     direct_link_area(reader, area);
   }
 
   /* edges */
   LISTBASE_FOREACH (ScrEdge *, se, &area_map->edgebase) {
-    BLO_read_data_address(reader, &se->v1);
-    BLO_read_data_address(reader, &se->v2);
-    BKE_screen_sort_scrvert(&se->v1, &se->v2);
+    LOADER_read_data_address(reader, &se->v1);
+    LOADER_read_data_address(reader, &se->v2);
+    KERNEL_screen_sort_scrvert(&se->v1, &se->v2);
 
     if (se->v1 == NULL) {
-      BLI_remlink(&area_map->edgebase, se);
+      LIB_remlink(&area_map->edgebase, se);
 
       return false;
     }
@@ -1747,9 +1747,9 @@ bool BKE_screen_area_map_blend_read_data(BlendDataReader *reader, ScrAreaMap *ar
   return true;
 }
 
-void BKE_screen_area_blend_read_lib(BlendLibReader *reader, ID *parent_id, ScrArea *area)
+void KERNEL_screen_area_dune_read_lib(DuneLibReader *reader, ID *parent_id, ScrArea *area)
 {
-  BLO_read_id_address(reader, parent_id->lib, &area->full);
+  LOADER_read_id_address(reader, parent_id->lib, &area->full);
 
   memset(&area->runtime, 0x0, sizeof(area->runtime));
 
@@ -1758,11 +1758,11 @@ void BKE_screen_area_blend_read_lib(BlendLibReader *reader, ID *parent_id, ScrAr
       case SPACE_VIEW3D: {
         View3D *v3d = (View3D *)sl;
 
-        BLO_read_id_address(reader, parent_id->lib, &v3d->camera);
-        BLO_read_id_address(reader, parent_id->lib, &v3d->ob_center);
+        LOADER_read_id_address(reader, parent_id->lib, &v3d->camera);
+        LOADER_read_id_address(reader, parent_id->lib, &v3d->ob_center);
 
         if (v3d->localvd) {
-          BLO_read_id_address(reader, parent_id->lib, &v3d->localvd->camera);
+          LOADER_read_id_address(reader, parent_id->lib, &v3d->localvd->camera);
         }
         break;
       }
@@ -1771,14 +1771,14 @@ void BKE_screen_area_blend_read_lib(BlendLibReader *reader, ID *parent_id, ScrAr
         bDopeSheet *ads = sipo->ads;
 
         if (ads) {
-          BLO_read_id_address(reader, parent_id->lib, &ads->source);
-          BLO_read_id_address(reader, parent_id->lib, &ads->filter_grp);
+          LOADER_read_id_address(reader, parent_id->lib, &ads->source);
+          LOADER_read_id_address(reader, parent_id->lib, &ads->filter_grp);
         }
         break;
       }
       case SPACE_PROPERTIES: {
         SpaceProperties *sbuts = (SpaceProperties *)sl;
-        BLO_read_id_address(reader, parent_id->lib, &sbuts->pinid);
+        LOADER_read_id_address(reader, parent_id->lib, &sbuts->pinid);
         if (sbuts->pinid == NULL) {
           sbuts->flag &= ~SB_PIN_CONTEXT;
         }
@@ -1794,23 +1794,23 @@ void BKE_screen_area_blend_read_lib(BlendLibReader *reader, ID *parent_id, ScrAr
         bDopeSheet *ads = &saction->ads;
 
         if (ads) {
-          BLO_read_id_address(reader, parent_id->lib, &ads->source);
-          BLO_read_id_address(reader, parent_id->lib, &ads->filter_grp);
+          LOADER_read_id_address(reader, parent_id->lib, &ads->source);
+          LOADER_read_id_address(reader, parent_id->lib, &ads->filter_grp);
         }
 
-        BLO_read_id_address(reader, parent_id->lib, &saction->action);
+        LOADER_read_id_address(reader, parent_id->lib, &saction->action);
         break;
       }
       case SPACE_IMAGE: {
         SpaceImage *sima = (SpaceImage *)sl;
 
-        BLO_read_id_address(reader, parent_id->lib, &sima->image);
-        BLO_read_id_address(reader, parent_id->lib, &sima->mask_info.mask);
+        LOADER_read_id_address(reader, parent_id->lib, &sima->image);
+        LOADER_read_id_address(reader, parent_id->lib, &sima->mask_info.mask);
 
         /* NOTE: pre-2.5, this was local data not lib data, but now we need this as lib data
          * so fingers crossed this works fine!
          */
-        BLO_read_id_address(reader, parent_id->lib, &sima->gpd);
+        LOADER_read_id_address(reader, parent_id->lib, &sima->gpd);
         break;
       }
       case SPACE_SEQ: {
@@ -1827,22 +1827,22 @@ void BKE_screen_area_blend_read_lib(BlendLibReader *reader, ID *parent_id, ScrAr
         bDopeSheet *ads = snla->ads;
 
         if (ads) {
-          BLO_read_id_address(reader, parent_id->lib, &ads->source);
-          BLO_read_id_address(reader, parent_id->lib, &ads->filter_grp);
+          LOADER_read_id_address(reader, parent_id->lib, &ads->source);
+          LOADER_read_id_address(reader, parent_id->lib, &ads->filter_grp);
         }
         break;
       }
       case SPACE_TEXT: {
         SpaceText *st = (SpaceText *)sl;
 
-        BLO_read_id_address(reader, parent_id->lib, &st->text);
+        LOADER_read_id_address(reader, parent_id->lib, &st->text);
         break;
       }
       case SPACE_SCRIPT: {
         SpaceScript *scpt = (SpaceScript *)sl;
         /*scpt->script = NULL; - 2.45 set to null, better re-run the script */
         if (scpt->script) {
-          BLO_read_id_address(reader, parent_id->lib, &scpt->script);
+          LOADER_read_id_address(reader, parent_id->lib, &scpt->script);
           if (scpt->script) {
             SCRIPT_SET_NULL(scpt->script);
           }
@@ -1851,15 +1851,15 @@ void BKE_screen_area_blend_read_lib(BlendLibReader *reader, ID *parent_id, ScrAr
       }
       case SPACE_OUTLINER: {
         SpaceOutliner *space_outliner = (SpaceOutliner *)sl;
-        BLO_read_id_address(reader, NULL, &space_outliner->search_tse.id);
+        LOADER_read_id_address(reader, NULL, &space_outliner->search_tse.id);
 
         if (space_outliner->treestore) {
           TreeStoreElem *tselem;
-          BLI_mempool_iter iter;
+          LIB_mempool_iter iter;
 
-          BLI_mempool_iternew(space_outliner->treestore, &iter);
-          while ((tselem = BLI_mempool_iterstep(&iter))) {
-            BLO_read_id_address(reader, NULL, &tselem->id);
+          LIB_mempool_iternew(space_outliner->treestore, &iter);
+          while ((tselem = LIB_mempool_iterstep(&iter))) {
+            LOADER_read_id_address(reader, NULL, &tselem->id);
           }
           /* rebuild hash table, because it depends on ids too */
           space_outliner->storeflag |= SO_TREESTORE_REBUILD;
@@ -1870,8 +1870,8 @@ void BKE_screen_area_blend_read_lib(BlendLibReader *reader, ID *parent_id, ScrAr
         SpaceNode *snode = (SpaceNode *)sl;
 
         /* node tree can be stored locally in id too, link this first */
-        BLO_read_id_address(reader, parent_id->lib, &snode->id);
-        BLO_read_id_address(reader, parent_id->lib, &snode->from);
+        LOADER_read_id_address(reader, parent_id->lib, &snode->id);
+        LOADER_read_id_address(reader, parent_id->lib, &snode->from);
 
         bNodeTree *ntree = snode->id ? ntreeFromID(snode->id) : NULL;
         if (ntree) {
