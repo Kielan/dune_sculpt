@@ -2,39 +2,39 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math_vector.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "LIB_dunelib.h"
+#include "LI_math_vector.h"
+#include "LI_string_utils.h"
+#include "LI_utildefines.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "DNA_gpencil_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_shader_fx_types.h"
+#include "structs_gpencil_types.h"
+#include "structs_meshdata_types.h"
+#include "structs_object_types.h"
+#include "structs_scene_types.h"
+#include "structs_screen_types.h"
+#include "structs_shader_fx_types.h"
 
-#include "BKE_gpencil.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_object.h"
-#include "BKE_shader_fx.h"
+#include "KERNEL_gpencil.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_object.h"
+#include "KERNEL_shader_fx.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
 #include "FX_shader_types.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 static ShaderFxTypeInfo *shader_fx_types[NUM_SHADER_FX_TYPES] = {NULL};
 
 /* *************************************************** */
 /* Methods - Evaluation Loops, etc. */
 
-bool BKE_shaderfx_has_gpencil(const Object *ob)
+bool KERNEL_shaderfx_has_gpencil(const Object *ob)
 {
   const ShaderFxData *fx;
   for (fx = ob->shader_fx.first; fx; fx = fx->next) {
@@ -46,19 +46,19 @@ bool BKE_shaderfx_has_gpencil(const Object *ob)
   return false;
 }
 
-void BKE_shaderfx_init(void)
+void KERNEL_shaderfx_init(void)
 {
   /* Initialize shaders */
   shaderfx_type_init(shader_fx_types); /* FX_shader_util.c */
 }
 
-ShaderFxData *BKE_shaderfx_new(int type)
+ShaderFxData *KERNEL_shaderfx_new(int type)
 {
-  const ShaderFxTypeInfo *fxi = BKE_shaderfx_get_info(type);
+  const ShaderFxTypeInfo *fxi = KERNEL_shaderfx_get_info(type);
   ShaderFxData *fx = MEM_callocN(fxi->struct_size, fxi->struct_name);
 
   /* NOTE: this name must be made unique later. */
-  BLI_strncpy(fx->name, DATA_(fxi->name), sizeof(fx->name));
+  LIB_strncpy(fx->name, DATA_(fxi->name), sizeof(fx->name));
 
   fx->type = type;
   fx->mode = eShaderFxMode_Realtime | eShaderFxMode_Render;
@@ -87,7 +87,7 @@ static void shaderfx_free_data_id_us_cb(void *UNUSED(userData),
   }
 }
 
-void BKE_shaderfx_free_ex(ShaderFxData *fx, const int flag)
+void KERNEL_shaderfx_free_ex(ShaderFxData *fx, const int flag)
 {
   const ShaderFxTypeInfo *fxi = BKE_shaderfx_get_info(fx->type);
 
@@ -107,29 +107,29 @@ void BKE_shaderfx_free_ex(ShaderFxData *fx, const int flag)
   MEM_freeN(fx);
 }
 
-void BKE_shaderfx_free(ShaderFxData *fx)
+void KERNEL_shaderfx_free(ShaderFxData *fx)
 {
-  BKE_shaderfx_free_ex(fx, 0);
+  KERNEL_shaderfx_free_ex(fx, 0);
 }
 
-bool BKE_shaderfx_unique_name(ListBase *shaders, ShaderFxData *fx)
+bool KERNEL_shaderfx_unique_name(ListBase *shaders, ShaderFxData *fx)
 {
   if (shaders && fx) {
     const ShaderFxTypeInfo *fxi = BKE_shaderfx_get_info(fx->type);
-    return BLI_uniquename(
+    return LIB_uniquename(
         shaders, fx, DATA_(fxi->name), '.', offsetof(ShaderFxData, name), sizeof(fx->name));
   }
   return false;
 }
 
-bool BKE_shaderfx_depends_ontime(ShaderFxData *fx)
+bool KERNEL_shaderfx_depends_ontime(ShaderFxData *fx)
 {
-  const ShaderFxTypeInfo *fxi = BKE_shaderfx_get_info(fx->type);
+  const ShaderFxTypeInfo *fxi = KERNEL_shaderfx_get_info(fx->type);
 
   return fxi->dependsOnTime && fxi->dependsOnTime(fx);
 }
 
-const ShaderFxTypeInfo *BKE_shaderfx_get_info(ShaderFxType type)
+const ShaderFxTypeInfo *KERNEL_shaderfx_get_info(ShaderFxType type)
 {
   /* type unsigned, no need to check < 0 */
   if (type < NUM_SHADER_FX_TYPES && type > 0 && shader_fx_types[type]->name[0] != '\0') {
@@ -139,26 +139,26 @@ const ShaderFxTypeInfo *BKE_shaderfx_get_info(ShaderFxType type)
   return NULL;
 }
 
-bool BKE_shaderfx_is_nonlocal_in_liboverride(const Object *ob, const ShaderFxData *shaderfx)
+bool KERNEL_shaderfx_is_nonlocal_in_liboverride(const Object *ob, const ShaderFxData *shaderfx)
 {
   return (ID_IS_OVERRIDE_LIBRARY(ob) &&
           ((shaderfx == NULL) || (shaderfx->flag & eShaderFxFlag_OverrideLibrary_Local) == 0));
 }
 
-void BKE_shaderfxType_panel_id(ShaderFxType type, char *r_idname)
+void KERNEL_shaderfxType_panel_id(ShaderFxType type, char *r_idname)
 {
-  const ShaderFxTypeInfo *fxi = BKE_shaderfx_get_info(type);
+  const ShaderFxTypeInfo *fxi = KERNEL_shaderfx_get_info(type);
 
   strcpy(r_idname, SHADERFX_TYPE_PANEL_PREFIX);
   strcat(r_idname, fxi->name);
 }
 
-void BKE_shaderfx_panel_expand(ShaderFxData *fx)
+void KERNEL_shaderfx_panel_expand(ShaderFxData *fx)
 {
   fx->ui_expand_flag |= UI_PANEL_DATA_EXPAND_ROOT;
 }
 
-void BKE_shaderfx_copydata_generic(const ShaderFxData *fx_src, ShaderFxData *fx_dst)
+void KERNEL_shaderfx_copydata_generic(const ShaderFxData *fx_src, ShaderFxData *fx_dst)
 {
   const ShaderFxTypeInfo *fxi = BKE_shaderfx_get_info(fx_src->type);
 
@@ -171,7 +171,7 @@ void BKE_shaderfx_copydata_generic(const ShaderFxData *fx_src, ShaderFxData *fx_
   const size_t data_size = sizeof(ShaderFxData);
   const char *fx_src_data = ((const char *)fx_src) + data_size;
   char *fx_dst_data = ((char *)fx_dst) + data_size;
-  BLI_assert(data_size <= (size_t)fxi->struct_size);
+  LIB_assert(data_size <= (size_t)fxi->struct_size);
   memcpy(fx_dst_data, fx_src_data, (size_t)fxi->struct_size - data_size);
 }
 
@@ -186,7 +186,7 @@ static void shaderfx_copy_data_id_us_cb(void *UNUSED(userData),
   }
 }
 
-void BKE_shaderfx_copydata_ex(ShaderFxData *fx, ShaderFxData *target, const int flag)
+void KERNEL_shaderfx_copydata_ex(ShaderFxData *fx, ShaderFxData *target, const int flag)
 {
   const ShaderFxTypeInfo *fxi = BKE_shaderfx_get_info(fx->type);
 
@@ -205,25 +205,25 @@ void BKE_shaderfx_copydata_ex(ShaderFxData *fx, ShaderFxData *target, const int 
   }
 }
 
-void BKE_shaderfx_copydata(ShaderFxData *fx, ShaderFxData *target)
+void KERNEL_shaderfx_copydata(ShaderFxData *fx, ShaderFxData *target)
 {
-  BKE_shaderfx_copydata_ex(fx, target, 0);
+  KERNEL_shaderfx_copydata_ex(fx, target, 0);
 }
 
-void BKE_shaderfx_copy(ListBase *dst, const ListBase *src)
+void KERNEL_shaderfx_copy(ListBase *dst, const ListBase *src)
 {
   ShaderFxData *fx;
   ShaderFxData *srcfx;
 
-  BLI_listbase_clear(dst);
-  BLI_duplicatelist(dst, src);
+  LIB_listbase_clear(dst);
+  LIB_duplicatelist(dst, src);
 
   for (srcfx = src->first, fx = dst->first; srcfx && fx; srcfx = srcfx->next, fx = fx->next) {
-    BKE_shaderfx_copydata(srcfx, fx);
+    KERNEL_shaderfx_copydata(srcfx, fx);
   }
 }
 
-ShaderFxData *BKE_shaderfx_findby_type(Object *ob, ShaderFxType type)
+ShaderFxData *KERNEL_shaderfx_findby_type(Object *ob, ShaderFxType type)
 {
   ShaderFxData *fx = ob->shader_fx.first;
 
@@ -236,7 +236,7 @@ ShaderFxData *BKE_shaderfx_findby_type(Object *ob, ShaderFxType type)
   return fx;
 }
 
-void BKE_shaderfx_foreach_ID_link(Object *ob, ShaderFxIDWalkFunc walk, void *userData)
+void KERNEL_shaderfx_foreach_ID_link(Object *ob, ShaderFxIDWalkFunc walk, void *userData)
 {
   ShaderFxData *fx = ob->shader_fx.first;
 
@@ -249,12 +249,12 @@ void BKE_shaderfx_foreach_ID_link(Object *ob, ShaderFxIDWalkFunc walk, void *use
   }
 }
 
-ShaderFxData *BKE_shaderfx_findby_name(Object *ob, const char *name)
+ShaderFxData *KERNEL_shaderfx_findby_name(Object *ob, const char *name)
 {
-  return BLI_findstring(&(ob->shader_fx), name, offsetof(ShaderFxData, name));
+  return LIB_findstring(&(ob->shader_fx), name, offsetof(ShaderFxData, name));
 }
 
-void BKE_shaderfx_blend_write(BlendWriter *writer, ListBase *fxbase)
+void KERNEL_shaderfx_dune_write(DuneWriter *writer, ListBase *fxbase)
 {
   if (fxbase == NULL) {
     return;
@@ -266,27 +266,27 @@ void BKE_shaderfx_blend_write(BlendWriter *writer, ListBase *fxbase)
       return;
     }
 
-    BLO_write_struct_by_name(writer, fxi->struct_name, fx);
+    LOADER_write_struct_by_name(writer, fxi->struct_name, fx);
   }
 }
 
-void BKE_shaderfx_blend_read_data(BlendDataReader *reader, ListBase *lb)
+void KERNEL_shaderfx_dune_read_data(DuneDataReader *reader, ListBase *lb)
 {
-  BLO_read_list(reader, lb);
+  LOADER_read_list(reader, lb);
 
   LISTBASE_FOREACH (ShaderFxData *, fx, lb) {
     fx->error = NULL;
 
     /* if shader disappear, or for upward compatibility */
-    if (NULL == BKE_shaderfx_get_info(fx->type)) {
+    if (NULL == KERNEL_shaderfx_get_info(fx->type)) {
       fx->type = eShaderFxType_None;
     }
   }
 }
 
-void KERNEL_shaderfx_dune_read_lib(BlendLibReader *reader, Object *ob)
+void KERNEL_shaderfx_dune_read_lib(DuneLibReader *reader, Object *ob)
 {
-  KERNEL_shaderfx_foreach_ID_link(ob, BKE_object_modifiers_lib_link_common, reader);
+  KERNEL_shaderfx_foreach_ID_link(ob, KERNEL_object_modifiers_lib_link_common, reader);
 
   /* If linking from a library, clear 'local' library override flag. */
   if (ID_IS_LINKED(ob)) {
