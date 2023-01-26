@@ -5,16 +5,16 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_dynstr.h"
-#include "BLI_utildefines.h"
+#include "LIB_dunelib.h"
+#include "LIB_dynstr.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "BKE_global.h" /* G.background only */
-#include "BKE_report.h"
+#include "DUNE_global.h" /* G.background only */
+#include "DUNE_report.h"
 
-const char *BKE_report_type_str(eReportType type)
+const char *DUNE_report_type_str(eReportType type)
 {
   switch (type) {
     case RPT_DEBUG:
@@ -40,7 +40,7 @@ const char *BKE_report_type_str(eReportType type)
   }
 }
 
-void BKE_reports_init(ReportList *reports, int flag)
+void DUNE_reports_init(ReportList *reports, int flag)
 {
   if (!reports) {
     return;
@@ -53,7 +53,7 @@ void BKE_reports_init(ReportList *reports, int flag)
   reports->flag = flag;
 }
 
-void BKE_reports_clear(ReportList *reports)
+void DUNE_reports_clear(ReportList *reports)
 {
   Report *report, *report_next;
 
@@ -70,10 +70,10 @@ void BKE_reports_clear(ReportList *reports)
     report = report_next;
   }
 
-  BLI_listbase_clear(&reports->list);
+  LIB_listbase_clear(&reports->list);
 }
 
-void BKE_report(ReportList *reports, eReportType type, const char *_message)
+void DUNE_report(ReportList *reports, eReportType type, const char *_message)
 {
   Report *report;
   int len;
@@ -97,11 +97,11 @@ void BKE_report(ReportList *reports, eReportType type, const char *_message)
     memcpy(message_alloc, message, sizeof(char) * (len + 1));
     report->message = message_alloc;
     report->len = len;
-    BLI_addtail(&reports->list, report);
+    LIB_addtail(&reports->list, report);
   }
 }
 
-void BKE_reportf(ReportList *reports, eReportType type, const char *_format, ...)
+void DUNE_reportf(ReportList *reports, eReportType type, const char *_format, ...)
 {
   DynStr *ds;
   Report *report;
@@ -120,23 +120,23 @@ void BKE_reportf(ReportList *reports, eReportType type, const char *_format, ...
   if (reports && (reports->flag & RPT_STORE) && (type >= reports->storelevel)) {
     report = MEM_callocN(sizeof(Report), "Report");
 
-    ds = BLI_dynstr_new();
+    ds = LIB_dynstr_new();
     va_start(args, _format);
-    BLI_dynstr_vappendf(ds, format, args);
+    LIB_dynstr_vappendf(ds, format, args);
     va_end(args);
 
-    report->message = BLI_dynstr_get_cstring(ds);
-    report->len = BLI_dynstr_get_len(ds);
-    BLI_dynstr_free(ds);
+    report->message = LIB_dynstr_get_cstring(ds);
+    report->len = LIB_dynstr_get_len(ds);
+    LIB_dynstr_free(ds);
 
     report->type = type;
-    report->typestr = BKE_report_type_str(type);
+    report->typestr = DUNE_report_type_str(type);
 
-    BLI_addtail(&reports->list, report);
+    LIB_addtail(&reports->list, report);
   }
 }
 
-void BKE_reports_prepend(ReportList *reports, const char *_prepend)
+void DUNE_reports_prepend(ReportList *reports, const char *_prepend)
 {
   Report *report;
   DynStr *ds;
@@ -147,20 +147,20 @@ void BKE_reports_prepend(ReportList *reports, const char *_prepend)
   }
 
   for (report = reports->list.first; report; report = report->next) {
-    ds = BLI_dynstr_new();
+    ds = LIB_dynstr_new();
 
-    BLI_dynstr_append(ds, prepend);
-    BLI_dynstr_append(ds, report->message);
+    LIB_dynstr_append(ds, prepend);
+    LIB_dynstr_append(ds, report->message);
     MEM_freeN((void *)report->message);
 
-    report->message = BLI_dynstr_get_cstring(ds);
-    report->len = BLI_dynstr_get_len(ds);
+    report->message = LIB_dynstr_get_cstring(ds);
+    report->len = LIB_dynstr_get_len(ds);
 
-    BLI_dynstr_free(ds);
+    LIB_dynstr_free(ds);
   }
 }
 
-void BKE_reports_prependf(ReportList *reports, const char *_prepend, ...)
+void DUNE_reports_prependf(ReportList *reports, const char *_prepend, ...)
 {
   Report *report;
   DynStr *ds;
@@ -172,22 +172,22 @@ void BKE_reports_prependf(ReportList *reports, const char *_prepend, ...)
   }
 
   for (report = reports->list.first; report; report = report->next) {
-    ds = BLI_dynstr_new();
+    ds = LIB_dynstr_new();
     va_start(args, _prepend);
-    BLI_dynstr_vappendf(ds, prepend, args);
+    LIB_dynstr_vappendf(ds, prepend, args);
     va_end(args);
 
-    BLI_dynstr_append(ds, report->message);
+    LIB_dynstr_append(ds, report->message);
     MEM_freeN((void *)report->message);
 
-    report->message = BLI_dynstr_get_cstring(ds);
-    report->len = BLI_dynstr_get_len(ds);
+    report->message = LIB_dynstr_get_cstring(ds);
+    report->len = LIB_dynstr_get_len(ds);
 
-    BLI_dynstr_free(ds);
+    LIB_dynstr_free(ds);
   }
 }
 
-eReportType BKE_report_print_level(ReportList *reports)
+eReportType DUNE_report_print_level(ReportList *reports)
 {
   if (!reports) {
     return RPT_ERROR;
@@ -196,7 +196,7 @@ eReportType BKE_report_print_level(ReportList *reports)
   return reports->printlevel;
 }
 
-void BKE_report_print_level_set(ReportList *reports, eReportType level)
+void DUNE_report_print_level_set(ReportList *reports, eReportType level)
 {
   if (!reports) {
     return;
@@ -205,7 +205,7 @@ void BKE_report_print_level_set(ReportList *reports, eReportType level)
   reports->printlevel = level;
 }
 
-eReportType BKE_report_store_level(ReportList *reports)
+eReportType DUNE_report_store_level(ReportList *reports)
 {
   if (!reports) {
     return RPT_ERROR;
@@ -214,7 +214,7 @@ eReportType BKE_report_store_level(ReportList *reports)
   return reports->storelevel;
 }
 
-void BKE_report_store_level_set(ReportList *reports, eReportType level)
+void DUNE_report_store_level_set(ReportList *reports, eReportType level)
 {
   if (!reports) {
     return;
@@ -223,7 +223,7 @@ void BKE_report_store_level_set(ReportList *reports, eReportType level)
   reports->storelevel = level;
 }
 
-char *BKE_reports_string(ReportList *reports, eReportType level)
+char *DUNE_reports_string(ReportList *reports, eReportType level)
 {
   Report *report;
   DynStr *ds;
@@ -233,10 +233,10 @@ char *BKE_reports_string(ReportList *reports, eReportType level)
     return NULL;
   }
 
-  ds = BLI_dynstr_new();
+  ds = LIB_dynstr_new();
   for (report = reports->list.first; report; report = report->next) {
     if (report->type >= level) {
-      BLI_dynstr_appendf(ds, "%s: %s\n", report->typestr, report->message);
+      LIB_dynstr_appendf(ds, "%s: %s\n", report->typestr, report->message);
     }
   }
 
@@ -251,9 +251,9 @@ char *BKE_reports_string(ReportList *reports, eReportType level)
   return cstring;
 }
 
-void BKE_reports_print(ReportList *reports, eReportType level)
+void DUNE_reports_print(ReportList *reports, eReportType level)
 {
-  char *cstring = BKE_reports_string(reports, level);
+  char *cstring = DUNE_reports_string(reports, level);
 
   if (cstring == NULL) {
     return;
@@ -264,7 +264,7 @@ void BKE_reports_print(ReportList *reports, eReportType level)
   MEM_freeN(cstring);
 }
 
-Report *BKE_reports_last_displayable(ReportList *reports)
+Report *DUNE_reports_last_displayable(ReportList *reports)
 {
   Report *report;
 
@@ -277,7 +277,7 @@ Report *BKE_reports_last_displayable(ReportList *reports)
   return NULL;
 }
 
-bool BKE_reports_contain(ReportList *reports, eReportType level)
+bool DUNE_reports_contain(ReportList *reports, eReportType level)
 {
   Report *report;
   if (reports != NULL) {
@@ -290,7 +290,7 @@ bool BKE_reports_contain(ReportList *reports, eReportType level)
   return false;
 }
 
-bool BKE_report_write_file_fp(FILE *fp, ReportList *reports, const char *header)
+bool DUNE_report_write_file_fp(FILE *fp, ReportList *reports, const char *header)
 {
   Report *report;
 
@@ -305,12 +305,12 @@ bool BKE_report_write_file_fp(FILE *fp, ReportList *reports, const char *header)
   return true;
 }
 
-bool BKE_report_write_file(const char *filepath, ReportList *reports, const char *header)
+bool DUNE_report_write_file(const char *filepath, ReportList *reports, const char *header)
 {
   FILE *fp;
 
   errno = 0;
-  fp = BLI_fopen(filepath, "wb");
+  fp = LIB_fopen(filepath, "wb");
   if (fp == NULL) {
     fprintf(stderr,
             "Unable to save '%s': %s\n",
@@ -319,7 +319,7 @@ bool BKE_report_write_file(const char *filepath, ReportList *reports, const char
     return false;
   }
 
-  BKE_report_write_file_fp(fp, reports, header);
+  DUNE_report_write_file_fp(fp, reports, header);
 
   fclose(fp);
 
