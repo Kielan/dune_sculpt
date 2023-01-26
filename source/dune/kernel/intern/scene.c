@@ -7,29 +7,29 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "STRUCTS_anim_types.h"
-#include "STRUCTS_collection_types.h"
-#include "STRUCTS_curveprofile_types.h"
-#include "STRUCTS_defaults.h"
-#include "STRUCTS_gpencil_types.h"
-#include "STRUCTS_linestyle_types.h"
-#include "STRUCTS_mask_types.h"
-#include "STRUCTS_material_types.h"
-#include "STRUCTS_mesh_types.h"
-#include "STRUCTS_node_types.h"
-#include "STRUCTS_object_types.h"
-#include "STRUCTS_rigidbody_types.h"
-#include "STRUCTS_scene_types.h"
-#include "STRUCTS_screen_types.h"
-#include "STRUCTS_sequence_types.h"
-#include "STRUCTS_sound_types.h"
-#include "STRUCTS_space_types.h"
-#include "STRUCTS_text_types.h"
-#include "STRUCTS_vfont_types.h"
-#include "STRUCTS_view3d_types.h"
-#include "STRUCTS_windowmanager_types.h"
-#include "STRUCTS_workspace_types.h"
-#include "STRUCTS_world_types.h"
+#include "TYPES_anim.h"
+#include "TYPES_collection.h"
+#include "TYPES_curveprofile.h"
+#include "TYPES_defaults.h"
+#include "TYPES_gpencil.h"
+#include "TYPES_linestyle.h"
+#include "TYPES_mask.h"
+#include "TYPES_material.h"
+#include "TYPES_mesh.h"
+#include "TYPES_node.h"
+#include "TYPES_object.h"
+#include "TYPEE_rigidbody.h"
+#include "TYPES_scene.h"
+#include "TYPES_screen.h"
+#include "TYPES_sequence.h"
+#include "TYPES_sound.h"
+#include "TYPES_space.h"
+#include "TYPES_text.h"
+#include "TYPES_vfont.h"
+#include "TYPES_view3d.h"
+#include "TYPES_windowmanager.h"
+#include "TYPES_workspace.h"
+#include "TYPES_world.h"
 
 #include "KERNEL_callbacks.h"
 #include "LIB_blenlib.h"
@@ -116,7 +116,7 @@ static void scene_init_data(ID *id)
 
   LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(scene, id));
 
-  MEMCPY_STRUCT_AFTER(scene, DNA_struct_default_get(Scene), id);
+  MEMCPY_STRUCT_AFTER(scene, TYPES_struct_default_get(Scene), id);
 
   LIB_strncpy(scene->r.bake.filepath, U.renderdir, sizeof(scene->r.bake.filepath));
 
@@ -1618,7 +1618,7 @@ IDTypeInfo IDType_ID_SCE = {
     .init_data = scene_init_data,
     .copy_data = scene_copy_data,
     .free_data = scene_free_data,
-    /* For now default `BKE_lib_id_make_local_generic()` should work, may need more work though to
+    /* For now default `DUNE_lib_id_make_local_generic()` should work, may need more work though to
      * support all possible corner cases. */
     .make_local = NULL,
     .foreach_id = scene_foreach_id,
