@@ -21,7 +21,7 @@ static Mesh *rigidbody_get_mesh(Object *ob)
 
   /* Just return something sensible so that at least Blender won't crash. */
   LIB_assert_msg(0, "Unknown mesh source");
-  return KERNEL_object_get_evaluated_mesh(ob);
+  return DUNE_object_get_evaluated_mesh(ob);
 }
 
 /* create collision shape of mesh - convex hull */
@@ -232,7 +232,7 @@ static rbCollisionShape *rigidbody_validate_sim_shape_helper(RigidBodyWorld *rbw
         if (childObject->parent == ob) {
           childShape = rigidbody_validate_sim_shape_helper(rbw, childObject);
           if (childShape) {
-            BKE_object_matrix_local_get(childObject, mat);
+            DUNE_object_matrix_local_get(childObject, mat);
             mat4_to_loc_quat(loc, rot, mat);
             RB_compound_add_child_shape(new_shape, childShape, loc, rot);
           }
@@ -290,7 +290,7 @@ static void rigidbody_validate_sim_shape(RigidBodyWorld *rbw, Object *ob, bool r
 
 /* --------------------- */
 
-void KERNEL_rigidbody_calc_volume(Object *ob, float *r_vol)
+void DUNE_rigidbody_calc_volume(Object *ob, float *r_vol)
 {
   RigidBodyOb *rbo = ob->rigidbody_object;
 
@@ -1029,7 +1029,7 @@ void DUNE_rigidbody_objects_collection_validate(Scene *scene, RigidBodyWorld *rb
       if (object->type != OB_MESH || object->rigidbody_object != NULL) {
         continue;
       }
-      object->rigidbody_object = BKE_rigidbody_create_object(scene, object, RBO_TYPE_ACTIVE);
+      object->rigidbody_object = DUNE_rigidbody_create_object(scene, object, RBO_TYPE_ACTIVE);
     }
     FOREACH_COLLECTION_OBJECT_RECURSIVE_END;
   }
@@ -1042,16 +1042,16 @@ void DUNE_rigidbody_constraints_collection_validate(Scene *scene, RigidBodyWorld
       if (object->rigidbody_constraint != NULL) {
         continue;
       }
-      object->rigidbody_constraint = BKE_rigidbody_create_constraint(
+      object->rigidbody_constraint = DUNE_rigidbody_create_constraint(
           scene, object, RBC_TYPE_FIXED);
     }
     FOREACH_COLLECTION_OBJECT_RECURSIVE_END;
   }
 }
 
-void DUNE_rigidbody_main_collection_object_add(Main *dunemain, Collection *collection, Object *object)
+void DUNE_rigidbody_main_collection_object_add(Main *duneMain, Collection *collection, Object *object)
 {
-  for (Scene *scene = bmain->scenes.first; scene; scene = scene->id.next) {
+  for (Scene *scene = duneMain->scenes.first; scene; scene = scene->id.next) {
     RigidBodyWorld *rbw = scene->rigidbody_world;
 
     if (rbw == NULL) {
@@ -1081,7 +1081,7 @@ RigidBodyWorld *DUNE_rigidbody_get_world(Scene *scene)
   return scene->rigidbody_world;
 }
 
-static bool rigidbody_add_object_to_scene(Main *bmain, Scene *scene, Object *ob)
+static bool rigidbody_add_object_to_scene(Main *duneMain, Scene *scene, Object *ob)
 {
   /* Add rigid body world and group if they don't exist for convenience */
   RigidBodyWorld *rbw = DUNE_rigidbody_get_world(scene);
@@ -1096,12 +1096,12 @@ static bool rigidbody_add_object_to_scene(Main *bmain, Scene *scene, Object *ob)
   }
 
   if (rbw->group == NULL) {
-    rbw->group = DUNE_collection_add(dunemain, NULL, "RigidBodyWorld");
+    rbw->group = DUNE_collection_add(duneMain, NULL, "RigidBodyWorld");
     id_fake_user_set(&rbw->group->id);
   }
 
   /* Add object to rigid body group. */
-  DUNE_collection_object_add(dunemain, rbw->group, ob);
+  DUNE_collection_object_add(duneMain, rbw->group, ob);
   DUNE_rigidbody_cache_reset(rbw);
 
   DEG_relations_tag_update(bmain);
@@ -1110,7 +1110,7 @@ static bool rigidbody_add_object_to_scene(Main *bmain, Scene *scene, Object *ob)
   return true;
 }
 
-static bool rigidbody_add_constraint_to_scene(Main *bmain, Scene *scene, Object *ob)
+static bool rigidbody_add_constraint_to_scene(Main *duneMain, Scene *scene, Object *ob)
 {
   /* Add rigid body world and group if they don't exist for convenience */
   RigidBodyWorld *rbw = DUNE_rigidbody_get_world(scene);
@@ -1125,7 +1125,7 @@ static bool rigidbody_add_constraint_to_scene(Main *bmain, Scene *scene, Object 
   }
 
   if (rbw->constraints == NULL) {
-    rbw->constraints = DUNE_collection_add(dunemain, NULL, "RigidBodyConstraints");
+    rbw->constraints = DUNE_collection_add(duneMain, NULL, "RigidBodyConstraints");
     id_fake_user_set(&rbw->constraints->id);
   }
 
@@ -1139,7 +1139,7 @@ static bool rigidbody_add_constraint_to_scene(Main *bmain, Scene *scene, Object 
   return true;
 }
 
-void DUNE_rigidbody_ensure_local_object(Main *bmain, Object *ob)
+void DUNE_rigidbody_ensure_local_object(Main *duneMain, Object *ob)
 {
   if (ob->rigidbody_object != NULL) {
     /* Add newly local object to scene. */
@@ -1153,13 +1153,13 @@ void DUNE_rigidbody_ensure_local_object(Main *bmain, Object *ob)
     /* Add newly local object to scene. */
     for (Scene *scene = dunemain->scenes.first; scene; scene = scene->id.next) {
       if (DUNE_scene_object_find(scene, ob)) {
-        rigidbody_add_constraint_to_scene(dunemain, scene, ob);
+        rigidbody_add_constraint_to_scene(duneMain, scene, ob);
       }
     }
   }
 }
 
-bool DUNE_rigidbody_add_object(Main *dunemain, Scene *scene, Object *ob, int type, ReportList *reports)
+bool DUNE_rigidbody_add_object(Main *duneMain, Scene *scene, Object *ob, int type, ReportList *reports)
 {
   if (ob->type != OB_MESH) {
     DUNE_report(reports, RPT_ERROR, "Can't add Rigid Body to non mesh object");
@@ -1185,7 +1185,7 @@ bool DUNE_rigidbody_add_object(Main *dunemain, Scene *scene, Object *ob, int typ
   return true;
 }
 
-void BKE_rigidbody_remove_object(Main *bmain, Scene *scene, Object *ob, const bool free_us)
+void DUNE_rigidbody_remove_object(Main *duneMain, Scene *scene, Object *ob, const bool free_us)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   RigidBodyCon *rbc;
@@ -1227,27 +1227,27 @@ void BKE_rigidbody_remove_object(Main *bmain, Scene *scene, Object *ob, const bo
       /* Some users seems to find it funny to use a view-layer instancing collection
        * as RBW collection... Despite this being a bad (ab)use of the system, avoid losing objects
        * when we remove them from RB simulation. */
-      BKE_collection_object_add(bmain, scene->master_collection, ob);
+      DUNE_collection_object_add(bmain, scene->master_collection, ob);
     }
-    BKE_collection_object_remove(bmain, rbw->group, ob, free_us);
+    DUNE_collection_object_remove(bmain, rbw->group, ob, free_us);
 
     /* flag cache as outdated */
-    BKE_rigidbody_cache_reset(rbw);
+    DUNE_rigidbody_cache_reset(rbw);
     /* Reset cache as the object order probably changed after freeing the object. */
     PTCacheID pid;
-    BKE_ptcache_id_from_rigidbody(&pid, NULL, rbw);
-    BKE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
+    DUNE_ptcache_id_from_rigidbody(&pid, NULL, rbw);
+    DUNE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
   }
 
   /* remove object's settings */
-  BKE_rigidbody_free_object(ob, rbw);
+  DUNE_rigidbody_free_object(ob, rbw);
 
   /* Dependency graph update */
   DEG_relations_tag_update(bmain);
   DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
 }
 
-void BKE_rigidbody_remove_constraint(Main *bmain, Scene *scene, Object *ob, const bool free_us)
+void DUNE_rigidbody_remove_constraint(Main *dunemain, Scene *scene, Object *ob, const bool free_us)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   RigidBodyCon *rbc = ob->rigidbody_constraint;
@@ -1255,7 +1255,7 @@ void BKE_rigidbody_remove_constraint(Main *bmain, Scene *scene, Object *ob, cons
   if (rbw != NULL) {
     /* Remove from RBW constraints collection. */
     if (rbw->constraints != NULL) {
-      BKE_collection_object_remove(bmain, rbw->constraints, ob, free_us);
+      DUNE_collection_object_remove(bmain, rbw->constraints, ob, free_us);
       DEG_id_tag_update(&rbw->constraints->id, ID_RECALC_COPY_ON_WRITE);
     }
 
@@ -1266,10 +1266,10 @@ void BKE_rigidbody_remove_constraint(Main *bmain, Scene *scene, Object *ob, cons
   }
 
   /* remove object's settings */
-  BKE_rigidbody_free_constraint(ob);
+  DUNE_rigidbody_free_constraint(ob);
 
   /* flag cache as outdated */
-  BKE_rigidbody_cache_reset(rbw);
+  DUNE_rigidbody_cache_reset(rbw);
 }
 
 /* ************************************** */
@@ -1342,7 +1342,7 @@ static void rigidbody_update_sim_ob(
   }
 
   ViewLayer *view_layer = DEG_get_input_view_layer(depsgraph);
-  Base *base = BKE_view_layer_base_find(view_layer, ob);
+  Base *base = DUNE_view_layer_base_find(view_layer, ob);
   const bool is_selected = base ? (base->flag & BASE_SELECTED) != 0 : false;
 
   if (rbo->shape == RB_SHAPE_TRIMESH && rbo->flag & RBO_FLAG_USE_DEFORM) {
@@ -1350,7 +1350,7 @@ static void rigidbody_update_sim_ob(
     if (mesh) {
       MVert *mvert = mesh->mvert;
       int totvert = mesh->totvert;
-      BoundBox *bb = BKE_object_boundbox_get(ob);
+      BoundBox *bb = DUNE_object_boundbox_get(ob);
 
       RB_shape_trimesh_update(rbo->shared->physics_shape,
                               (float *)mvert,
@@ -1410,7 +1410,7 @@ static void rigidbody_update_sim_ob(
       /* Calculate net force of effectors, and apply to sim object:
        * - we use 'central force' since apply force requires a "relative position"
        *   which we don't have... */
-      BKE_effectors_apply(effectors, NULL, effector_weights, &epoint, eff_force, NULL, NULL);
+      DUNE_effectors_apply(effectors, NULL, effector_weights, &epoint, eff_force, NULL, NULL);
       if (G.f & G_DEBUG) {
         printf("\tapplying force (%f,%f,%f) to '%s'\n",
                eff_force[0],
@@ -1429,19 +1429,19 @@ static void rigidbody_update_sim_ob(
     }
 
     /* cleanup */
-    BKE_effectors_free(effectors);
+    DUNE_effectors_free(effectors);
   }
   /* NOTE: passive objects don't need to be updated since they don't move */
 
   /* NOTE: no other settings need to be explicitly updated here,
-   * since RNA setters take care of the rest :)
+   * since API setters take care of the rest :)
    */
 }
 
 /**
  * Updates and validates world, bodies and shapes.
  *
- * \param rebuild: Rebuild entire simulation
+ * param rebuild: Rebuild entire simulation
  */
 static void rigidbody_update_simulation(Depsgraph *depsgraph,
                                         Scene *scene,
@@ -1452,7 +1452,7 @@ static void rigidbody_update_simulation(Depsgraph *depsgraph,
   /* Note physics_world can get NULL when undoing the deletion of the last object in it (see
    * T70667). */
   if (rebuild || rbw->shared->physics_world == NULL) {
-    BKE_rigidbody_validate_sim_world(scene, rbw, rebuild);
+    DUNE_rigidbody_validate_sim_world(scene, rbw, rebuild);
     /* We have rebuilt the world so we need to make sure the rest is rebuilt as well. */
     rebuild = true;
   }
@@ -1486,7 +1486,7 @@ static void rigidbody_update_simulation(Depsgraph *depsgraph,
       /* TODO: remove this whole block once we are sure we never get NULL rbo here anymore. */
       /* This cannot be done in CoW evaluation context anymore... */
       if (rbo == NULL) {
-        BLI_assert_msg(0,
+        LIB_assert_msg(0,
                        "CoW object part of RBW object collection without RB object data, "
                        "should not happen.\n");
         /* Since this object is included in the sim group but doesn't have
@@ -1503,7 +1503,7 @@ static void rigidbody_update_simulation(Depsgraph *depsgraph,
         /* refresh object... */
         if (rebuild) {
           /* World has been rebuilt so rebuild object */
-          /* TODO(Sybren): rigidbody_validate_sim_object() can call rigidbody_validate_sim_shape(),
+          /* TODO: rigidbody_validate_sim_object() can call rigidbody_validate_sim_shape(),
            * but neither resets the RBO_FLAG_NEEDS_RESHAPE flag nor
            * calls RB_body_set_collision_shape().
            * This results in the collision shape being created twice, which is unnecessary. */
@@ -1544,7 +1544,7 @@ static void rigidbody_update_simulation(Depsgraph *depsgraph,
     /* TODO: remove this whole block once we are sure we never get NULL rbo here anymore. */
     /* This cannot be done in CoW evaluation context anymore... */
     if (rbc == NULL) {
-      BLI_assert_msg(0,
+      LIB_assert_msg(0,
                      "CoW object part of RBW constraints collection without RB constraint data, "
                      "should not happen.\n");
       /* Since this object is included in the group but doesn't have
@@ -1617,8 +1617,8 @@ static ListBase rigidbody_create_substep_data(RigidBodyWorld *rbw)
 
       data->scale_changed = !compare_size_v3v3(data->old_scale, data->new_scale, 0.001f);
 
-      LinkData *ob_link = BLI_genericNodeN(data);
-      BLI_addtail(&substep_targets, ob_link);
+      LinkData *ob_link = LIB_genericNodeN(data);
+      LIB_addtail(&substep_targets, ob_link);
     }
   }
   FOREACH_COLLECTION_OBJECT_RECURSIVE_END;
@@ -1666,7 +1666,7 @@ static void rigidbody_free_substep_data(ListBase *substep_targets)
     MEM_freeN(data);
   }
 
-  BLI_freelistN(substep_targets);
+  LIB_freelistN(substep_targets);
 }
 static void rigidbody_update_simulation_post_step(Depsgraph *depsgraph, RigidBodyWorld *rbw)
 {
@@ -1690,14 +1690,14 @@ static void rigidbody_update_simulation_post_step(Depsgraph *depsgraph, RigidBod
   FOREACH_COLLECTION_OBJECT_RECURSIVE_END;
 }
 
-bool BKE_rigidbody_check_sim_running(RigidBodyWorld *rbw, float ctime)
+bool DUNE_rigidbody_check_sim_running(RigidBodyWorld *rbw, float ctime)
 {
   return (rbw && (rbw->flag & RBW_FLAG_MUTED) == 0 && ctime > rbw->shared->pointcache->startframe);
 }
 
-void BKE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
+void DUNE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
 {
-  if (!BKE_rigidbody_is_affected_by_simulation(ob)) {
+  if (!DUNE_rigidbody_is_affected_by_simulation(ob)) {
     /* Don't sync transforms for objects that are not affected/changed by the simulation. */
     return;
   }
@@ -1705,7 +1705,7 @@ void BKE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
   RigidBodyOb *rbo = ob->rigidbody_object;
 
   /* use rigid body transform after cache start frame if objects is not being transformed */
-  if (BKE_rigidbody_check_sim_running(rbw, ctime) &&
+  if (DUNE_rigidbody_check_sim_running(rbw, ctime) &&
       !(ob->base_flag & BASE_SELECTED && G.moving & G_TRANSFORM_OBJ)) {
     float mat[4][4], size_mat[4][4], size[3];
 
@@ -1725,10 +1725,10 @@ void BKE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
   }
 }
 
-void BKE_rigidbody_aftertrans_update(
+void DUNE_rigidbody_aftertrans_update(
     Object *ob, float loc[3], float rot[3], float quat[4], float rotAxis[3], float rotAngle)
 {
-  bool correct_delta = BKE_rigidbody_is_affected_by_simulation(ob);
+  bool correct_delta = DUNE_rigidbody_is_affected_by_simulation(ob);
   RigidBodyOb *rbo = ob->rigidbody_object;
 
   /* return rigid body and object to their initial states */
@@ -1794,7 +1794,7 @@ void BKE_rigidbody_aftertrans_update(
    * (needs to be done outside bullet's update loop). */
 }
 
-void BKE_rigidbody_cache_reset(RigidBodyWorld *rbw)
+void DUNE_rigidbody_cache_reset(RigidBodyWorld *rbw)
 {
   if (rbw) {
     rbw->shared->pointcache->flag |= PTCACHE_OUTDATED;
@@ -1803,15 +1803,15 @@ void BKE_rigidbody_cache_reset(RigidBodyWorld *rbw)
 
 /* ------------------ */
 
-void BKE_rigidbody_rebuild_world(Depsgraph *depsgraph, Scene *scene, float ctime)
+void DUNE_rigidbody_rebuild_world(Depsgraph *depsgraph, Scene *scene, float ctime)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   PointCache *cache;
   PTCacheID pid;
   int startframe, endframe;
 
-  BKE_ptcache_id_from_rigidbody(&pid, NULL, rbw);
-  BKE_ptcache_id_time(&pid, scene, ctime, &startframe, &endframe, NULL);
+  DUNE_ptcache_id_from_rigidbody(&pid, NULL, rbw);
+  DUNE_ptcache_id_time(&pid, scene, ctime, &startframe, &endframe, NULL);
   cache = rbw->shared->pointcache;
 
   /* Flag cache as outdated if we don't have a world or number of objects
@@ -1833,24 +1833,24 @@ void BKE_rigidbody_rebuild_world(Depsgraph *depsgraph, Scene *scene, float ctime
 
   if (ctime == startframe + 1 && rbw->ltime == startframe) {
     if (cache->flag & PTCACHE_OUTDATED) {
-      BKE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
+      DUNE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
       rigidbody_update_simulation(depsgraph, scene, rbw, true);
-      BKE_ptcache_validate(cache, (int)ctime);
+      DUNE_ptcache_validate(cache, (int)ctime);
       cache->last_exact = 0;
       cache->flag &= ~PTCACHE_REDO_NEEDED;
     }
   }
 }
 
-void BKE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime)
+void DUNE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   PointCache *cache;
   PTCacheID pid;
   int startframe, endframe;
 
-  BKE_ptcache_id_from_rigidbody(&pid, NULL, rbw);
-  BKE_ptcache_id_time(&pid, scene, ctime, &startframe, &endframe, NULL);
+  DUNE_ptcache_id_from_rigidbody(&pid, NULL, rbw);
+  DUNE_ptcache_id_time(&pid, scene, ctime, &startframe, &endframe, NULL);
   cache = rbw->shared->pointcache;
 
   if (ctime <= startframe) {
@@ -1874,8 +1874,8 @@ void BKE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime
   /* RB_TODO deal with interpolated, old and baked results */
   bool can_simulate = (ctime == rbw->ltime + 1) && !(cache->flag & PTCACHE_BAKED);
 
-  if (BKE_ptcache_read(&pid, ctime, can_simulate) == PTCACHE_READ_EXACT) {
-    BKE_ptcache_validate(cache, (int)ctime);
+  if (DUNE_ptcache_read(&pid, ctime, can_simulate) == PTCACHE_READ_EXACT) {
+    DUNE_ptcache_validate(cache, (int)ctime);
     rbw->ltime = ctime;
     return;
   }
@@ -1890,7 +1890,7 @@ void BKE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime
   if (compare_ff_relative(ctime, rbw->ltime + 1, FLT_EPSILON, 64)) {
     /* write cache for first frame when on second frame */
     if (rbw->ltime == startframe && (cache->flag & PTCACHE_OUTDATED || cache->last_exact == 0)) {
-      BKE_ptcache_write(&pid, startframe);
+      DUNE_ptcache_write(&pid, startframe);
     }
 
     /* update and validate simulation */
@@ -1917,8 +1917,8 @@ void BKE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime
     rigidbody_update_simulation_post_step(depsgraph, rbw);
 
     /* write cache for current frame */
-    BKE_ptcache_validate(cache, (int)ctime);
-    BKE_ptcache_write(&pid, (unsigned int)ctime);
+    DUNE_ptcache_validate(cache, (int)ctime);
+    DUNE_ptcache_write(&pid, (unsigned int)ctime);
 
     rbw->ltime = ctime;
   }
@@ -1933,95 +1933,95 @@ void BKE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime
 #    pragma GCC diagnostic ignored "-Wunused-parameter"
 #  endif
 
-void BKE_rigidbody_object_copy(Main *bmain, Object *ob_dst, const Object *ob_src, const int flag)
+void DUNE_rigidbody_object_copy(Main *duneMain, Object *ob_dst, const Object *ob_src, const int flag)
 {
 }
-void BKE_rigidbody_validate_sim_world(Scene *scene, RigidBodyWorld *rbw, bool rebuild)
+void DUNE_rigidbody_validate_sim_world(Scene *scene, RigidBodyWorld *rbw, bool rebuild)
 {
 }
 
-void BKE_rigidbody_calc_volume(Object *ob, float *r_vol)
+void DUNE_rigidbody_calc_volume(Object *ob, float *r_vol)
 {
   if (r_vol) {
     *r_vol = 0.0f;
   }
 }
-void BKE_rigidbody_calc_center_of_mass(Object *ob, float r_center[3])
+void DUNE_rigidbody_calc_center_of_mass(Object *ob, float r_center[3])
 {
   zero_v3(r_center);
 }
-struct RigidBodyWorld *BKE_rigidbody_create_world(Scene *scene)
+struct RigidBodyWorld *DUNE_rigidbody_create_world(Scene *scene)
 {
   return NULL;
 }
-struct RigidBodyWorld *BKE_rigidbody_world_copy(RigidBodyWorld *rbw, const int flag)
+struct RigidBodyWorld *DUNE_rigidbody_world_copy(RigidBodyWorld *rbw, const int flag)
 {
   return NULL;
 }
-void BKE_rigidbody_world_groups_relink(struct RigidBodyWorld *rbw)
+void DUNE_rigidbody_world_groups_relink(struct RigidBodyWorld *rbw)
 {
 }
-void BKE_rigidbody_world_id_loop(struct RigidBodyWorld *rbw,
+void DUNE_rigidbody_world_id_loop(struct RigidBodyWorld *rbw,
                                  RigidbodyWorldIDFunc func,
                                  void *userdata)
 {
 }
-struct RigidBodyOb *BKE_rigidbody_create_object(Scene *scene, Object *ob, short type)
+struct RigidBodyOb *DUNE_rigidbody_create_object(Scene *scene, Object *ob, short type)
 {
   return NULL;
 }
-struct RigidBodyCon *BKE_rigidbody_create_constraint(Scene *scene, Object *ob, short type)
+struct RigidBodyCon *DUNE_rigidbody_create_constraint(Scene *scene, Object *ob, short type)
 {
   return NULL;
 }
-struct RigidBodyWorld *BKE_rigidbody_get_world(Scene *scene)
+struct RigidBodyWorld *DUNE_rigidbody_get_world(Scene *scene)
 {
   return NULL;
 }
 
-void BKE_rigidbody_ensure_local_object(Main *bmain, Object *ob)
+void DUNE_rigidbody_ensure_local_object(Main *duneMain, Object *ob)
 {
 }
 
-bool BKE_rigidbody_add_object(Main *bmain, Scene *scene, Object *ob, int type, ReportList *reports)
+bool DUNE_rigidbody_add_object(Main *duneMain, Scene *scene, Object *ob, int type, ReportList *reports)
 {
-  BKE_report(reports, RPT_ERROR, "Compiled without Bullet physics engine");
+  DUNE_report(reports, RPT_ERROR, "Compiled without Bullet physics engine");
   return false;
 }
 
-void BKE_rigidbody_remove_object(struct Main *bmain, Scene *scene, Object *ob, const bool free_us)
+void DUNE_rigidbody_remove_object(struct Main *bmain, Scene *scene, Object *ob, const bool free_us)
 {
 }
-void BKE_rigidbody_remove_constraint(Main *bmain, Scene *scene, Object *ob, const bool free_us)
+void DUNE_rigidbody_remove_constraint(Main *bmain, Scene *scene, Object *ob, const bool free_us)
 {
 }
-void BKE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
+void DUNE_rigidbody_sync_transforms(RigidBodyWorld *rbw, Object *ob, float ctime)
 {
 }
-void BKE_rigidbody_aftertrans_update(
+void DUNE_rigidbody_aftertrans_update(
     Object *ob, float loc[3], float rot[3], float quat[4], float rotAxis[3], float rotAngle)
 {
 }
-bool BKE_rigidbody_check_sim_running(RigidBodyWorld *rbw, float ctime)
+bool DUNE_rigidbody_check_sim_running(RigidBodyWorld *rbw, float ctime)
 {
   return false;
 }
-void BKE_rigidbody_cache_reset(RigidBodyWorld *rbw)
+void DUNE_rigidbody_cache_reset(RigidBodyWorld *rbw)
 {
 }
-void BKE_rigidbody_rebuild_world(Depsgraph *depsgraph, Scene *scene, float ctime)
+void DUNE_rigidbody_rebuild_world(Depsgraph *depsgraph, Scene *scene, float ctime)
 {
 }
-void BKE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime)
+void DUNE_rigidbody_do_simulation(Depsgraph *depsgraph, Scene *scene, float ctime)
 {
 }
-void BKE_rigidbody_objects_collection_validate(Scene *scene, RigidBodyWorld *rbw)
+void DUNE_rigidbody_objects_collection_validate(Scene *scene, RigidBodyWorld *rbw)
 {
 }
-void BKE_rigidbody_constraints_collection_validate(Scene *scene, RigidBodyWorld *rbw)
+void DUNE_rigidbody_constraints_collection_validate(Scene *scene, RigidBodyWorld *rbw)
 {
 }
-void BKE_rigidbody_main_collection_object_add(Main *bmain, Collection *collection, Object *object)
+void DUNE_rigidbody_main_collection_object_add(Main *duneMain, Collection *collection, Object *object)
 {
 }
 
@@ -2034,33 +2034,33 @@ void BKE_rigidbody_main_collection_object_add(Main *bmain, Collection *collectio
 /* -------------------- */
 /* Depsgraph evaluation */
 
-void BKE_rigidbody_rebuild_sim(Depsgraph *depsgraph, Scene *scene)
+void DUNE_rigidbody_rebuild_sim(Depsgraph *depsgraph, Scene *scene)
 {
   float ctime = DEG_get_ctime(depsgraph);
   DEG_debug_print_eval_time(depsgraph, __func__, scene->id.name, scene, ctime);
   /* rebuild sim data (i.e. after resetting to start of timeline) */
-  if (BKE_scene_check_rigidbody_active(scene)) {
-    BKE_rigidbody_rebuild_world(depsgraph, scene, ctime);
+  if (DUNE_scene_check_rigidbody_active(scene)) {
+    DUNE_rigidbody_rebuild_world(depsgraph, scene, ctime);
   }
 }
 
-void BKE_rigidbody_eval_simulation(Depsgraph *depsgraph, Scene *scene)
+void DUNE_rigidbody_eval_simulation(Depsgraph *depsgraph, Scene *scene)
 {
   float ctime = DEG_get_ctime(depsgraph);
   DEG_debug_print_eval_time(depsgraph, __func__, scene->id.name, scene, ctime);
 
   /* evaluate rigidbody sim */
-  if (!BKE_scene_check_rigidbody_active(scene)) {
+  if (!DUNE_scene_check_rigidbody_active(scene)) {
     return;
   }
-  BKE_rigidbody_do_simulation(depsgraph, scene, ctime);
+  DUNE_rigidbody_do_simulation(depsgraph, scene, ctime);
 }
 
-void BKE_rigidbody_object_sync_transforms(Depsgraph *depsgraph, Scene *scene, Object *ob)
+void DUNE_rigidbody_object_sync_transforms(Depsgraph *depsgraph, Scene *scene, Object *ob)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   float ctime = DEG_get_ctime(depsgraph);
   DEG_debug_print_eval_time(depsgraph, __func__, ob->id.name, ob, ctime);
   /* read values pushed into RBO from sim/cache... */
-  BKE_rigidbody_sync_transforms(rbw, ob, ctime);
+  DUNE_rigidbody_sync_transforms(rbw, ob, ctime);
 }
