@@ -1482,11 +1482,11 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
   }
 
   LISTBASE_FOREACH (SpaceLink *, sl, &area->spacedata) {
-    BLO_read_list(reader, &(sl->regionbase));
+    LOADER_read_list(reader, &(sl->regionbase));
 
     /* if we do not have the spacetype registered we cannot
      * free it, so don't allocate any new memory for such spacetypes. */
-    if (!BKE_spacetype_exists(sl->spacetype)) {
+    if (!KERNEL_spacetype_exists(sl->spacetype)) {
       sl->spacetype = SPACE_EMPTY;
     }
 
@@ -1500,10 +1500,10 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
       memset(&v3d->runtime, 0x0, sizeof(v3d->runtime));
 
       if (v3d->gpd) {
-        BLO_read_data_address(reader, &v3d->gpd);
-        BKE_gpencil_blend_read_data(reader, v3d->gpd);
+        LOADER_read_data_address(reader, &v3d->gpd);
+        KERNEL_gpencil_dune_read_data(reader, v3d->gpd);
       }
-      BLO_read_data_address(reader, &v3d->localvd);
+      LOADER_read_data_address(reader, &v3d->localvd);
 
       /* render can be quite heavy, set to solid on load */
       if (v3d->shading.type == OB_RENDER) {
@@ -1511,25 +1511,25 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
       }
       v3d->shading.prev_type = OB_SOLID;
 
-      BKE_screen_view3d_shading_blend_read_data(reader, &v3d->shading);
+      KERNEL_screen_view3d_shading_blend_read_data(reader, &v3d->shading);
 
-      BKE_screen_view3d_do_versions_250(v3d, &sl->regionbase);
+      KERNEL_screen_view3d_do_versions_250(v3d, &sl->regionbase);
     }
     else if (sl->spacetype == SPACE_GRAPH) {
       SpaceGraph *sipo = (SpaceGraph *)sl;
 
-      BLO_read_data_address(reader, &sipo->ads);
+      LOADER_read_data_address(reader, &sipo->ads);
       memset(&sipo->runtime, 0x0, sizeof(sipo->runtime));
     }
     else if (sl->spacetype == SPACE_NLA) {
       SpaceNla *snla = (SpaceNla *)sl;
 
-      BLO_read_data_address(reader, &snla->ads);
+      LOADER_read_data_address(reader, &snla->ads);
     }
     else if (sl->spacetype == SPACE_OUTLINER) {
       SpaceOutliner *space_outliner = (SpaceOutliner *)sl;
 
-      /* use #BLO_read_get_new_data_address_no_us and do not free old memory avoiding double
+      /* use BLO_read_get_new_data_address_no_us and do not free old memory avoiding double
        * frees and use of freed memory. this could happen because of a
        * bug fixed in revision 58959 where the treestore memory address
        * was not unique */
@@ -1568,7 +1568,7 @@ static void direct_link_area(BlendDataReader *reader, ScrArea *area)
 #if 0
       sima->gpd = newdataadr(fd, sima->gpd);
       if (sima->gpd) {
-        BKE_gpencil_blend_read_data(fd, sima->gpd);
+        KERNEL_gpencil_dune_read_data(fd, sima->gpd);
       }
 #endif
     }
