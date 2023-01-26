@@ -8,44 +8,44 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_ID.h"
-#include "DNA_collection_types.h"
-#include "DNA_dynamicpaint_types.h"
-#include "DNA_fluid_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_rigidbody_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_simulation_types.h"
+#include "TYPES_ID.h"
+#include "TYPES_collection.h"
+#include "TYPE_dynamicpaint.h"
+#include "TYPES_fluid.h"
+#include "TYPES_modifier.h"
+#include "TYPES_object_force.h"
+#include "TYPES_object.h"
+#include "TYPES_particle.h"
+#include "TYPES_rigidbody.h"
+#include "TYPES_scene.h"
+#include "TYPES_simulation.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_endian_switch.h"
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "LIB_dunelib.h"
+#include "LIB_endian_switch.h"
+#include "LIB_math.h"
+#include "LIB_string.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
 #include "PIL_time.h"
 
-#include "BKE_appdir.h"
-#include "BKE_cloth.h"
-#include "BKE_collection.h"
-#include "BKE_dynamicpaint.h"
-#include "BKE_fluid.h"
-#include "BKE_global.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_particle.h"
-#include "BKE_pointcache.h"
-#include "BKE_scene.h"
-#include "BKE_softbody.h"
+#include "DUNE_appdir.h"
+#include "DUNE_cloth.h"
+#include "DUNE_collection.h"
+#include "DUNE_dynamicpaint.h"
+#include "DUNE_fluid.h"
+#include "DUNE_global.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_main.h"
+#include "DUNE_modifier.h"
+#include "DUNE_object.h"
+#include "DUNE_particle.h"
+#include "DUNE_pointcache.h"
+#include "DUNE_scene.h"
+#include "DUNE_softbody.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #include "BIK_api.h"
 
@@ -163,7 +163,7 @@ static void ptcache_add_extra_data(PTCacheMem *pm,
   extra->data = MEM_mallocN(size, "Point cache: extra data");
   memcpy(extra->data, data, size);
 
-  BLI_addtail(&pm->extradata, extra);
+  LIB_addtail(&pm->extradata, extra);
 }
 /* Softbody functions */
 static int ptcache_softbody_write(int index, void *soft_v, void **data, int UNUSED(cfra))
@@ -216,7 +216,7 @@ static void ptcache_softbody_interpolate(int index,
     memcpy(keys[2].vel, old_data + 3, sizeof(float[3]));
   }
   else {
-    BKE_ptcache_make_particle_key(keys + 2, 0, data, cfra2);
+    DUNE_ptcache_make_particle_key(keys + 2, 0, data, cfra2);
   }
 
   dfra = cfra2 - cfra1;
@@ -245,7 +245,7 @@ static void ptcache_softbody_error(const ID *UNUSED(owner_id),
 
 /* Particle functions. */
 
-void BKE_ptcache_make_particle_key(ParticleKey *key, int index, void **data, float time)
+void DUNE_ptcache_make_particle_key(ParticleKey *key, int index, void **data, float time)
 {
   PTCACHE_DATA_TO(data, BPHYS_DATA_LOCATION, index, key->co);
   PTCACHE_DATA_TO(data, BPHYS_DATA_VELOCITY, index, key->vel);
@@ -330,7 +330,7 @@ static void ptcache_particle_read(
     return;
   }
 
-  BKE_ptcache_make_particle_key(&pa->state, 0, data, cfra);
+  DUNE_ptcache_make_particle_key(&pa->state, 0, data, cfra);
 
   /* set frames cached before birth to birth time */
   if (cfra < pa->time) {
@@ -630,10 +630,10 @@ static int ptcache_cloth_totpoint(void *cloth_v, int UNUSED(cfra))
 static void ptcache_cloth_error(const ID *owner_id, void *cloth_v, const char *message)
 {
   ClothModifierData *clmd = cloth_v;
-  BLI_assert(GS(owner_id->name) == ID_OB);
+  LIB_assert(GS(owner_id->name) == ID_OB);
   if (clmd->hairdata == NULL) {
     /* If there is hair data, this modifier does not actually exist on the object. */
-    BKE_modifier_set_error((Object *)owner_id, &clmd->modifier, "%s", message);
+    DUNE_modifier_set_error((Object *)owner_id, &clmd->modifier, "%s", message);
   }
 }
 
@@ -843,7 +843,7 @@ static void ptcache_rigidbody_error(const struct ID *UNUSED(owner_id),
 
 /* Creating ID's */
 
-void BKE_ptcache_id_from_softbody(PTCacheID *pid, Object *ob, SoftBody *sb)
+void DUNE_ptcache_id_from_softbody(PTCacheID *pid, Object *ob, SoftBody *sb)
 {
   memset(pid, 0, sizeof(PTCacheID));
 
@@ -879,7 +879,7 @@ void BKE_ptcache_id_from_softbody(PTCacheID *pid, Object *ob, SoftBody *sb)
   pid->max_step = 20;
   pid->file_type = PTCACHE_FILE_PTCACHE;
 }
-void BKE_ptcache_id_from_particles(PTCacheID *pid, Object *ob, ParticleSystem *psys)
+void DUNE_ptcache_id_from_particles(PTCacheID *pid, Object *ob, ParticleSystem *psys)
 {
   memset(pid, 0, sizeof(PTCacheID));
 
@@ -978,7 +978,7 @@ void BKE_ptcache_id_from_cloth(PTCacheID *pid, Object *ob, ClothModifierData *cl
   pid->file_type = PTCACHE_FILE_PTCACHE;
 }
 
-void BKE_ptcache_id_from_smoke(PTCacheID *pid, struct Object *ob, struct FluidModifierData *fmd)
+void DUNE_ptcache_id_from_smoke(PTCacheID *pid, struct Object *ob, struct FluidModifierData *fmd)
 {
   FluidDomainSettings *fds = fmd->domain;
 
@@ -995,7 +995,7 @@ void BKE_ptcache_id_from_smoke(PTCacheID *pid, struct Object *ob, struct FluidMo
   pid->ptcaches = &(fds->ptcaches[0]);
 }
 
-void BKE_ptcache_id_from_dynamicpaint(PTCacheID *pid, Object *ob, DynamicPaintSurface *surface)
+void DUNE_ptcache_id_from_dynamicpaint(PTCacheID *pid, Object *ob, DynamicPaintSurface *surface)
 {
 
   memset(pid, 0, sizeof(PTCacheID));
@@ -1033,7 +1033,7 @@ void BKE_ptcache_id_from_dynamicpaint(PTCacheID *pid, Object *ob, DynamicPaintSu
   pid->file_type = PTCACHE_FILE_PTCACHE;
 }
 
-void BKE_ptcache_id_from_rigidbody(PTCacheID *pid, Object *ob, RigidBodyWorld *rbw)
+void DUNE_ptcache_id_from_rigidbody(PTCacheID *pid, Object *ob, RigidBodyWorld *rbw)
 {
 
   memset(pid, 0, sizeof(PTCacheID));
@@ -1071,12 +1071,12 @@ void BKE_ptcache_id_from_rigidbody(PTCacheID *pid, Object *ob, RigidBodyWorld *r
   pid->file_type = PTCACHE_FILE_PTCACHE;
 }
 
-PTCacheID BKE_ptcache_id_find(Object *ob, Scene *scene, PointCache *cache)
+PTCacheID DUNE_ptcache_id_find(Object *ob, Scene *scene, PointCache *cache)
 {
   PTCacheID result = {0};
 
   ListBase pidlist;
-  BKE_ptcache_ids_from_object(&pidlist, ob, scene, MAX_DUPLI_RECUR);
+  DUNE_ptcache_ids_from_object(&pidlist, ob, scene, MAX_DUPLI_RECUR);
 
   LISTBASE_FOREACH (PTCacheID *, pid, &pidlist) {
     if (pid->cache == cache) {
@@ -1085,7 +1085,7 @@ PTCacheID BKE_ptcache_id_find(Object *ob, Scene *scene, PointCache *cache)
     }
   }
 
-  BLI_freelistN(&pidlist);
+  LIB_freelistN(&pidlist);
 
   return result;
 }
@@ -1124,7 +1124,7 @@ static bool foreach_object_particle_ptcache(Object *object,
     if (psys->part->type == PART_FLUID) {
       continue;
     }
-    BKE_ptcache_id_from_particles(&pid, object, psys);
+    DUNE_ptcache_id_from_particles(&pid, object, psys);
     if (!callback(&pid, callback_user_data)) {
       return false;
     }
@@ -1139,7 +1139,7 @@ static bool foreach_object_modifier_ptcache(Object *object,
   PTCacheID pid;
   for (ModifierData *md = object->modifiers.first; md != NULL; md = md->next) {
     if (md->type == eModifierType_Cloth) {
-      BKE_ptcache_id_from_cloth(&pid, object, (ClothModifierData *)md);
+      DUNE_ptcache_id_from_cloth(&pid, object, (ClothModifierData *)md);
       if (!callback(&pid, callback_user_data)) {
         return false;
       }
@@ -1147,7 +1147,7 @@ static bool foreach_object_modifier_ptcache(Object *object,
     else if (md->type == eModifierType_Fluid) {
       FluidModifierData *fmd = (FluidModifierData *)md;
       if (fmd->type & MOD_FLUID_TYPE_DOMAIN) {
-        BKE_ptcache_id_from_smoke(&pid, object, (FluidModifierData *)md);
+        DUNE_ptcache_id_from_smoke(&pid, object, (FluidModifierData *)md);
         if (!callback(&pid, callback_user_data)) {
           return false;
         }
@@ -1158,7 +1158,7 @@ static bool foreach_object_modifier_ptcache(Object *object,
       if (pmd->canvas) {
         DynamicPaintSurface *surface = pmd->canvas->surfaces.first;
         for (; surface; surface = surface->next) {
-          BKE_ptcache_id_from_dynamicpaint(&pid, object, surface);
+          DUNE_ptcache_id_from_dynamicpaint(&pid, object, surface);
           if (!callback(&pid, callback_user_data)) {
             return false;
           }
@@ -1178,7 +1178,7 @@ static bool foreach_object_ptcache(
   if (object != NULL) {
     /* Soft body. */
     if (object->soft != NULL) {
-      BKE_ptcache_id_from_softbody(&pid, object, object->soft);
+      DUNE_ptcache_id_from_softbody(&pid, object, object->soft);
       if (!callback(&pid, callback_user_data)) {
         return false;
       }
@@ -1208,7 +1208,7 @@ static bool foreach_object_ptcache(
   /* Rigid body. */
   if (scene != NULL && (object == NULL || object->rigidbody_object != NULL) &&
       scene->rigidbody_world != NULL) {
-    BKE_ptcache_id_from_rigidbody(&pid, object, scene->rigidbody_world);
+    DUNE_ptcache_id_from_rigidbody(&pid, object, scene->rigidbody_world);
     if (!callback(&pid, callback_user_data)) {
       return false;
     }
@@ -1225,11 +1225,11 @@ static bool ptcache_ids_from_object_cb(PTCacheID *pid, void *userdata)
   PTCacheIDsFromObjectData *data = userdata;
   PTCacheID *own_pid = MEM_mallocN(sizeof(PTCacheID), "PTCacheID");
   *own_pid = *pid;
-  BLI_addtail(data->list_base, own_pid);
+  LIB_addtail(data->list_base, own_pid);
   return true;
 }
 
-void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int duplis)
+void DUNE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int duplis)
 {
   PTCacheIDsFromObjectData data;
   lb->first = lb->last = NULL;
@@ -1242,7 +1242,7 @@ static bool ptcache_object_has_cb(PTCacheID *UNUSED(pid), void *UNUSED(userdata)
   return false;
 }
 
-bool BKE_ptcache_object_has(struct Scene *scene, struct Object *ob, int duplis)
+bool DUNE_ptcache_object_has(struct Scene *scene, struct Object *ob, int duplis)
 {
   return !foreach_object_ptcache(scene, ob, duplis, ptcache_object_has_cb, NULL);
 }
@@ -1259,7 +1259,7 @@ static const char *ptcache_file_extension(const PTCacheID *pid)
 }
 
 /**
- * Similar to #BLI_path_frame_get, but takes into account the stack-index which is after the frame.
+ * Similar to LIB_path_frame_get, but takes into account the stack-index which is after the frame.
  */
 static int ptcache_frame_from_filename(const char *filename, const char *ext)
 {
@@ -1271,7 +1271,7 @@ static int ptcache_frame_from_filename(const char *filename, const char *ext)
   if (len > ext_len) {
     /* using frame_len here gives compile error (vla) */
     char num[/* frame_len */ 6 + 1];
-    BLI_strncpy(num, filename + len - ext_len, sizeof(num));
+    LIB_strncpy(num, filename + len - ext_len, sizeof(num));
 
     return atoi(num);
   }
@@ -1290,29 +1290,29 @@ static int ptcache_frame_from_filename(const char *filename, const char *ext)
 
 static int ptcache_path(PTCacheID *pid, char *filename)
 {
-  const char *blendfile_path = BKE_main_blendfile_path_from_global();
+  const char *dunefile_path = DUNE_main_dunefile_path_from_global();
   Library *lib = (pid->owner_id) ? pid->owner_id->lib : NULL;
-  const char *blendfilename = (lib && (pid->cache->flag & PTCACHE_IGNORE_LIBPATH) == 0) ?
+  const char *dunefilename = (lib && (pid->cache->flag & PTCACHE_IGNORE_LIBPATH) == 0) ?
                                   lib->filepath_abs :
-                                  blendfile_path;
+                                  dunefile_path;
   size_t i;
 
   if (pid->cache->flag & PTCACHE_EXTERNAL) {
     strcpy(filename, pid->cache->path);
 
-    if (BLI_path_is_rel(filename)) {
-      BLI_path_abs(filename, blendfilename);
+    if (LIB_path_is_rel(filename)) {
+      LIB_path_abs(filename, blendfilename);
     }
 
-    return BLI_path_slash_ensure(filename); /* new strlen() */
+    return LIB_path_slash_ensure(filename); /* new strlen() */
   }
-  if ((blendfile_path[0] != '\0') || lib) {
+  if ((dunefile_path[0] != '\0') || lib) {
     char file[MAX_PTCACHE_PATH]; /* we don't want the dir, only the file */
 
-    BLI_split_file_part(blendfilename, file, sizeof(file));
+    LIB_split_file_part(dunefilename, file, sizeof(file));
     i = strlen(file);
 
-    /* remove .blend */
+    /* remove .dune */
     if (i > 6) {
       file[i - 6] = '\0';
     }
@@ -1426,9 +1426,7 @@ static int ptcache_filename(PTCacheID *pid, char *filename, int cfra, short do_p
   return len; /* make sure the above string is always 16 chars */
 }
 
-/**
- * Caller must close after!
- */
+/** Caller must close after! */
 static PTCacheFile *ptcache_file_open(PTCacheID *pid, int mode, int cfra)
 {
   PTCacheFile *pf;
@@ -1442,26 +1440,26 @@ static PTCacheFile *ptcache_file_open(PTCacheID *pid, int mode, int cfra)
   }
 #endif
   if ((pid->cache->flag & PTCACHE_EXTERNAL) == 0) {
-    const char *blendfile_path = BKE_main_blendfile_path_from_global();
-    if (blendfile_path[0] == '\0') {
-      return NULL; /* save blend file before using disk pointcache */
+    const char *dunefile_path = DUNE_main_dunefile_path_from_global();
+    if (dunefile_path[0] == '\0') {
+      return NULL; /* save dune file before using disk pointcache */
     }
   }
 
   ptcache_filename(pid, filename, cfra, 1, 1);
 
   if (mode == PTCACHE_FILE_READ) {
-    fp = BLI_fopen(filename, "rb");
+    fp = LIB_fopen(filename, "rb");
   }
   else if (mode == PTCACHE_FILE_WRITE) {
     /* Will create the dir if needs be, same as "//textures" is created. */
-    BLI_make_existing_file(filename);
+    LIB_make_existing_file(filename);
 
-    fp = BLI_fopen(filename, "wb");
+    fp = LIB_fopen(filename, "wb");
   }
   else if (mode == PTCACHE_FILE_UPDATE) {
-    BLI_make_existing_file(filename);
-    fp = BLI_fopen(filename, "rb+");
+    LIB_make_existing_file(filename);
+    fp = LIB_fopen(filename, "rb+");
   }
 
   if (!fp) {
@@ -1685,7 +1683,7 @@ static int ptcache_file_header_begin_write(PTCacheFile *pf)
 
 /* Data pointer handling. */
 
-int BKE_ptcache_data_size(int data_type)
+int DUNE_ptcache_data_size(int data_type)
 {
   return ptcache_data_size[data_type];
 }
