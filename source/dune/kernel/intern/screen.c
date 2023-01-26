@@ -2,7 +2,7 @@
 #define DNA_DEPRECATED_ALLOW
 
 #ifdef WIN32
-#  include "BLI_winstuff.h"
+#  include "LIB_winstuff.h"
 #endif
 
 #include <math.h>
@@ -11,37 +11,37 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_collection_types.h"
-#include "DNA_defaults.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_mask_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_text_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_workspace_types.h"
+#include "TYPES_collection.h"
+#include "TYPES_defaults.h"
+#include "TYPES_gpencil.h"
+#include "TYPES_mask.h"
+#include "TYPES_scene.h"
+#include "TYPES_screen.h"
+#include "TYPES_space.h"
+#include "TYPES_text.h"
+#include "TYPES_view3d.h"
+#include "TYPES_workspace.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math_vector.h"
-#include "BLI_mempool.h"
-#include "BLI_rect.h"
-#include "BLI_utildefines.h"
+#include "LIB_ghash.h"
+#include "LIB_listbase.h"
+#include "LIB_math_vector.h"
+#include "LIB_mempool.h"
+#include "LIB_rect.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "BKE_gpencil.h"
-#include "BKE_icons.h"
-#include "BKE_idprop.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_node.h"
-#include "BKE_screen.h"
-#include "BKE_workspace.h"
+#include "KERNEL_gpencil.h"
+#include "KERNEL_icons.h"
+#include "KERNEL_idprop.h"
+#include "KERNEL_idtype.h"
+#include "KERNEL_lib_id.h"
+#include "KERNEL_lib_query.h"
+#include "KERNEL_node.h"
+#include "KERNEL_screen.h"
+#include "KERNEL_workspace.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
@@ -54,14 +54,14 @@ static void screen_free_data(ID *id)
   /* No animation-data here. */
 
   LISTBASE_FOREACH (ARegion *, region, &screen->regionbase) {
-    BKE_area_region_free(NULL, region);
+    KERNEL_area_region_free(NULL, region);
   }
 
-  BLI_freelistN(&screen->regionbase);
+  LIB_freelistN(&screen->regionbase);
 
-  BKE_screen_area_map_free(AREAMAP_FROM_SCREEN(screen));
+  KERNEL_screen_area_map_free(AREAMAP_FROM_SCREEN(screen));
 
-  BKE_previewimg_free(&screen->preview);
+  KERNEL_previewimg_free(&screen->preview);
 
   /* Region and timer are freed by the window manager. */
   MEM_SAFE_FREE(screen->tool_tip);
@@ -70,14 +70,14 @@ static void screen_free_data(ID *id)
 static void screen_foreach_id_dopesheet(LibraryForeachIDData *data, bDopeSheet *ads)
 {
   if (ads != NULL) {
-    BKE_LIB_FOREACHID_PROCESS_ID(data, ads->source, IDWALK_CB_NOP);
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, ads->filter_grp, IDWALK_CB_NOP);
+    KERNEL_LIB_FOREACHID_PROCESS_ID(data, ads->source, IDWALK_CB_NOP);
+    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, ads->filter_grp, IDWALK_CB_NOP);
   }
 }
 
-void BKE_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area)
+void KERNEL_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area)
 {
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, area->full, IDWALK_CB_NOP);
+  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, area->full, IDWALK_CB_NOP);
 
   /* TODO: this should be moved to a callback in `SpaceType`, defined in each editor's own code.
    * Will be for a later round of cleanup though... */
@@ -85,22 +85,22 @@ void BKE_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area
     switch (sl->spacetype) {
       case SPACE_VIEW3D: {
         View3D *v3d = (View3D *)sl;
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->camera, IDWALK_CB_NOP);
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->ob_center, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->camera, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->ob_center, IDWALK_CB_NOP);
         if (v3d->localvd) {
-          BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->localvd->camera, IDWALK_CB_NOP);
+          KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, v3d->localvd->camera, IDWALK_CB_NOP);
         }
         break;
       }
       case SPACE_GRAPH: {
         SpaceGraph *sipo = (SpaceGraph *)sl;
-        BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
+        KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
                                                 screen_foreach_id_dopesheet(data, sipo->ads));
         break;
       }
       case SPACE_PROPERTIES: {
         SpaceProperties *sbuts = (SpaceProperties *)sl;
-        BKE_LIB_FOREACHID_PROCESS_ID(data, sbuts->pinid, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_ID(data, sbuts->pinid, IDWALK_CB_NOP);
         break;
       }
       case SPACE_FILE:
@@ -108,47 +108,47 @@ void BKE_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area
       case SPACE_ACTION: {
         SpaceAction *saction = (SpaceAction *)sl;
         screen_foreach_id_dopesheet(data, &saction->ads);
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, saction->action, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, saction->action, IDWALK_CB_NOP);
         break;
       }
       case SPACE_IMAGE: {
         SpaceImage *sima = (SpaceImage *)sl;
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->image, IDWALK_CB_USER_ONE);
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->mask_info.mask, IDWALK_CB_USER_ONE);
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->gpd, IDWALK_CB_USER);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->image, IDWALK_CB_USER_ONE);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->mask_info.mask, IDWALK_CB_USER_ONE);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sima->gpd, IDWALK_CB_USER);
         break;
       }
       case SPACE_SEQ: {
         SpaceSeq *sseq = (SpaceSeq *)sl;
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, sseq->gpd, IDWALK_CB_USER);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sseq->gpd, IDWALK_CB_USER);
         break;
       }
       case SPACE_NLA: {
         SpaceNla *snla = (SpaceNla *)sl;
-        BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
+        KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
                                                 screen_foreach_id_dopesheet(data, snla->ads));
         break;
       }
       case SPACE_TEXT: {
         SpaceText *st = (SpaceText *)sl;
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, st->text, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, st->text, IDWALK_CB_NOP);
         break;
       }
       case SPACE_SCRIPT: {
         SpaceScript *scpt = (SpaceScript *)sl;
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, scpt->script, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, scpt->script, IDWALK_CB_NOP);
         break;
       }
       case SPACE_OUTLINER: {
         SpaceOutliner *space_outliner = (SpaceOutliner *)sl;
-        BKE_LIB_FOREACHID_PROCESS_ID(data, space_outliner->search_tse.id, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_ID(data, space_outliner->search_tse.id, IDWALK_CB_NOP);
         if (space_outliner->treestore != NULL) {
           TreeStoreElem *tselem;
-          BLI_mempool_iter iter;
+          LIB_mempool_iter iter;
 
-          BLI_mempool_iternew(space_outliner->treestore, &iter);
-          while ((tselem = BLI_mempool_iterstep(&iter))) {
-            BKE_LIB_FOREACHID_PROCESS_ID(data, tselem->id, IDWALK_CB_NOP);
+          LIB_mempool_iternew(space_outliner->treestore, &iter);
+          while ((tselem = LIB_mempool_iterstep(&iter))) {
+            KERNEL_LIB_FOREACHID_PROCESS_ID(data, tselem->id, IDWALK_CB_NOP);
           }
         }
         break;
@@ -158,21 +158,21 @@ void BKE_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area
         const bool is_private_nodetree = snode->id != NULL &&
                                          ntreeFromID(snode->id) == snode->nodetree;
 
-        BKE_LIB_FOREACHID_PROCESS_ID(data, snode->id, IDWALK_CB_NOP);
-        BKE_LIB_FOREACHID_PROCESS_ID(data, snode->from, IDWALK_CB_NOP);
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(
+        KERNEL_LIB_FOREACHID_PROCESS_ID(data, snode->id, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_ID(data, snode->from, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(
             data, snode->nodetree, is_private_nodetree ? IDWALK_CB_EMBEDDED : IDWALK_CB_USER_ONE);
 
         LISTBASE_FOREACH (bNodeTreePath *, path, &snode->treepath) {
           if (path == snode->treepath.first) {
             /* first nodetree in path is same as snode->nodetree */
-            BKE_LIB_FOREACHID_PROCESS_IDSUPER(data,
+            KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data,
                                               path->nodetree,
                                               is_private_nodetree ? IDWALK_CB_EMBEDDED :
                                                                     IDWALK_CB_USER_ONE);
           }
           else {
-            BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, path->nodetree, IDWALK_CB_USER_ONE);
+            KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, path->nodetree, IDWALK_CB_USER_ONE);
           }
 
           if (path->nodetree == NULL) {
@@ -180,20 +180,20 @@ void BKE_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area
           }
         }
 
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, snode->edittree, IDWALK_CB_NOP);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, snode->edittree, IDWALK_CB_NOP);
         break;
       }
       case SPACE_CLIP: {
         SpaceClip *sclip = (SpaceClip *)sl;
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->clip, IDWALK_CB_USER_ONE);
-        BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->mask_info.mask, IDWALK_CB_USER_ONE);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->clip, IDWALK_CB_USER_ONE);
+        KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, sclip->mask_info.mask, IDWALK_CB_USER_ONE);
         break;
       }
       case SPACE_SPREADSHEET: {
         SpaceSpreadsheet *sspreadsheet = (SpaceSpreadsheet *)sl;
         LISTBASE_FOREACH (SpreadsheetContext *, context, &sspreadsheet->context_path) {
           if (context->type == SPREADSHEET_CONTEXT_OBJECT) {
-            BKE_LIB_FOREACHID_PROCESS_IDSUPER(
+            KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(
                 data, ((SpreadsheetContextObject *)context)->object, IDWALK_CB_NOP);
           }
         }
@@ -207,24 +207,24 @@ void BKE_screen_foreach_id_screen_area(LibraryForeachIDData *data, ScrArea *area
 
 static void screen_foreach_id(ID *id, LibraryForeachIDData *data)
 {
-  if ((BKE_lib_query_foreachid_process_flags_get(data) & IDWALK_INCLUDE_UI) == 0) {
+  if ((KERNEL_lib_query_foreachid_process_flags_get(data) & IDWALK_INCLUDE_UI) == 0) {
     return;
   }
-  bScreen *screen = (bScreen *)id;
+  duneScreen *screen = (duneScreen *)id;
 
   LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
-    BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, BKE_screen_foreach_id_screen_area(data, area));
+    KERNEL_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data, BKE_screen_foreach_id_screen_area(data, area));
   }
 }
 
-static void screen_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void screen_dune_write(DuneWriter *writer, ID *id, const void *id_address)
 {
-  bScreen *screen = (bScreen *)id;
+  duneScreen *screen = (duneScreen *)id;
 
   /* write LibData */
   /* in 2.50+ files, the file identifier for screens is patched, forward compatibility */
-  BLO_write_struct_at_address_with_filecode(writer, ID_SCRN, bScreen, id_address, screen);
-  BKE_id_blend_write(writer, &screen->id);
+  LOADER_write_struct_at_address_with_filecode(writer, ID_SCRN, bScreen, id_address, screen);
+  KERNEL_id_dune_write(writer, &screen->id);
 
   BKE_previewimg_blend_write(writer, screen->preview);
 
@@ -311,14 +311,14 @@ static void spacetype_free(SpaceType *st)
 #ifdef WITH_PYTHON
     BPY_callback_screen_free(art);
 #endif
-    BLI_freelistN(&art->drawcalls);
+    LIB_freelistN(&art->drawcalls);
 
     LISTBASE_FOREACH (PanelType *, pt, &art->paneltypes) {
       if (pt->rna_ext.free) {
         pt->rna_ext.free(pt->rna_ext.data);
       }
 
-      BLI_freelistN(&pt->children);
+      LIB_freelistN(&pt->children);
     }
 
     LISTBASE_FOREACH (HeaderType *, ht, &art->headertypes) {
@@ -327,23 +327,23 @@ static void spacetype_free(SpaceType *st)
       }
     }
 
-    BLI_freelistN(&art->paneltypes);
-    BLI_freelistN(&art->headertypes);
+    LIB_freelistN(&art->paneltypes);
+    LIB_freelistN(&art->headertypes);
   }
 
-  BLI_freelistN(&st->regiontypes);
+  LIB_freelistN(&st->regiontypes);
 }
 
-void BKE_spacetypes_free(void)
+void KERNEL_spacetypes_free(void)
 {
   LISTBASE_FOREACH (SpaceType *, st, &spacetypes) {
     spacetype_free(st);
   }
 
-  BLI_freelistN(&spacetypes);
+  LIB_freelistN(&spacetypes);
 }
 
-SpaceType *BKE_spacetype_from_id(int spaceid)
+SpaceType *KERNEL_spacetype_from_id(int spaceid)
 {
   LISTBASE_FOREACH (SpaceType *, st, &spacetypes) {
     if (st->spaceid == spaceid) {
@@ -353,7 +353,7 @@ SpaceType *BKE_spacetype_from_id(int spaceid)
   return NULL;
 }
 
-ARegionType *BKE_regiontype_from_id_or_first(const SpaceType *st, int regionid)
+ARegionType *KERNEL_regiontype_from_id_or_first(const SpaceType *st, int regionid)
 {
   LISTBASE_FOREACH (ARegionType *, art, &st->regiontypes) {
     if (art->regionid == regionid) {
@@ -366,7 +366,7 @@ ARegionType *BKE_regiontype_from_id_or_first(const SpaceType *st, int regionid)
   return st->regiontypes.first;
 }
 
-ARegionType *BKE_regiontype_from_id(const SpaceType *st, int regionid)
+ARegionType *KERNEL_regiontype_from_id(const SpaceType *st, int regionid)
 {
   LISTBASE_FOREACH (ARegionType *, art, &st->regiontypes) {
     if (art->regionid == regionid) {
@@ -376,12 +376,12 @@ ARegionType *BKE_regiontype_from_id(const SpaceType *st, int regionid)
   return NULL;
 }
 
-const ListBase *BKE_spacetypes_list(void)
+const ListBase *KERNEL_spacetypes_list(void)
 {
   return &spacetypes;
 }
 
-void BKE_spacetype_register(SpaceType *st)
+void KERNEL_spacetype_register(SpaceType *st)
 {
   /* sanity check */
   SpaceType *stype = BKE_spacetype_from_id(st->spaceid);
@@ -391,17 +391,17 @@ void BKE_spacetype_register(SpaceType *st)
     MEM_freeN(stype);
   }
 
-  BLI_addtail(&spacetypes, st);
+  LIB_addtail(&spacetypes, st);
 }
 
-bool BKE_spacetype_exists(int spaceid)
+bool KERNEL_spacetype_exists(int spaceid)
 {
-  return BKE_spacetype_from_id(spaceid) != NULL;
+  return KERNEL_spacetype_from_id(spaceid) != NULL;
 }
 
 /* ***************** Space handling ********************** */
 
-void BKE_spacedata_freelist(ListBase *lb)
+void KERNEL_spacedata_freelist(ListBase *lb)
 {
   LISTBASE_FOREACH (SpaceLink *, sl, lb) {
     SpaceType *st = BKE_spacetype_from_id(sl->spacetype);
@@ -471,8 +471,8 @@ ARegion *BKE_area_region_copy(const SpaceType *st, const ARegion *region)
 
   panel_list_copy(&newar->panels, &region->panels);
 
-  BLI_listbase_clear(&newar->ui_previews);
-  BLI_duplicatelist(&newar->ui_previews, &region->ui_previews);
+  LIB_listbase_clear(&newar->ui_previews);
+  LIB_duplicatelist(&newar->ui_previews, &region->ui_previews);
 
   return newar;
 }
@@ -481,32 +481,32 @@ ARegion *BKE_area_region_copy(const SpaceType *st, const ARegion *region)
 static void region_copylist(SpaceType *st, ListBase *lb_dst, ListBase *lb_src)
 {
   /* to be sure */
-  BLI_listbase_clear(lb_dst);
+  LIB_listbase_clear(lb_dst);
 
   LISTBASE_FOREACH (ARegion *, region, lb_src) {
-    ARegion *region_new = BKE_area_region_copy(st, region);
-    BLI_addtail(lb_dst, region_new);
+    ARegion *region_new = KERNEL_area_region_copy(st, region);
+    LIB_addtail(lb_dst, region_new);
   }
 }
 
-void BKE_spacedata_copylist(ListBase *lb_dst, ListBase *lb_src)
+void KERNEL_spacedata_copylist(ListBase *lb_dst, ListBase *lb_src)
 {
-  BLI_listbase_clear(lb_dst); /* to be sure */
+  LIB_listbase_clear(lb_dst); /* to be sure */
 
   LISTBASE_FOREACH (SpaceLink *, sl, lb_src) {
-    SpaceType *st = BKE_spacetype_from_id(sl->spacetype);
+    SpaceType *st = KERNEL_spacetype_from_id(sl->spacetype);
 
     if (st && st->duplicate) {
       SpaceLink *slnew = st->duplicate(sl);
 
-      BLI_addtail(lb_dst, slnew);
+      LIB_addtail(lb_dst, slnew);
 
       region_copylist(st, &slnew->regionbase, &sl->regionbase);
     }
   }
 }
 
-void BKE_spacedata_draw_locks(bool set)
+void KERNEL_spacedata_draw_locks(bool set)
 {
   LISTBASE_FOREACH (SpaceType *, st, &spacetypes) {
     LISTBASE_FOREACH (ARegionType *, art, &st->regiontypes) {
@@ -520,7 +520,7 @@ void BKE_spacedata_draw_locks(bool set)
   }
 }
 
-ARegion *BKE_spacedata_find_region_type(const SpaceLink *slink,
+ARegion *KERNEL_spacedata_find_region_type(const SpaceLink *slink,
                                         const ScrArea *area,
                                         int region_type)
 {
@@ -528,7 +528,7 @@ ARegion *BKE_spacedata_find_region_type(const SpaceLink *slink,
   const ListBase *regionbase = (is_slink_active) ? &area->regionbase : &slink->regionbase;
   ARegion *region = NULL;
 
-  BLI_assert(BLI_findindex(&area->spacedata, slink) != -1);
+  LIB_assert(LIB_findindex(&area->spacedata, slink) != -1);
 
   LISTBASE_FOREACH (ARegion *, region_iter, regionbase) {
     if (region_iter->regiontype == region_type) {
@@ -538,7 +538,7 @@ ARegion *BKE_spacedata_find_region_type(const SpaceLink *slink,
   }
 
   /* Should really unit test this instead. */
-  BLI_assert(!is_slink_active || region == BKE_area_find_region_type(area, region_type));
+  LIB_assert(!is_slink_active || region == BKE_area_find_region_type(area, region_type));
 
   return region;
 }
@@ -548,12 +548,12 @@ static void (*spacedata_id_remap_cb)(struct ScrArea *area,
                                      ID *old_id,
                                      ID *new_id) = NULL;
 
-void BKE_spacedata_callback_id_remap_set(void (*func)(ScrArea *area, SpaceLink *sl, ID *, ID *))
+void KERNEL_spacedata_callback_id_remap_set(void (*func)(ScrArea *area, SpaceLink *sl, ID *, ID *))
 {
   spacedata_id_remap_cb = func;
 }
 
-void BKE_spacedata_id_unref(struct ScrArea *area, struct SpaceLink *sl, struct ID *id)
+void KERNEL_spacedata_id_unref(struct ScrArea *area, struct SpaceLink *sl, struct ID *id)
 {
   if (spacedata_id_remap_cb) {
     spacedata_id_remap_cb(area, sl, id, NULL);
@@ -565,12 +565,12 @@ void BKE_spacedata_id_unref(struct ScrArea *area, struct SpaceLink *sl, struct I
  */
 static void (*region_refresh_tag_gizmomap_callback)(struct wmGizmoMap *) = NULL;
 
-void BKE_region_callback_refresh_tag_gizmomap_set(void (*callback)(struct wmGizmoMap *))
+void KERNEL_region_callback_refresh_tag_gizmomap_set(void (*callback)(struct wmGizmoMap *))
 {
   region_refresh_tag_gizmomap_callback = callback;
 }
 
-void BKE_screen_gizmo_tag_refresh(struct bScreen *screen)
+void KERNEL_screen_gizmo_tag_refresh(struct bScreen *screen)
 {
   if (region_refresh_tag_gizmomap_callback == NULL) {
     return;
@@ -585,12 +585,10 @@ void BKE_screen_gizmo_tag_refresh(struct bScreen *screen)
   }
 }
 
-/**
- * Avoid bad-level calls to #WM_gizmomap_delete.
- */
+/** Avoid bad-level calls to WM_gizmomap_delete **/
 static void (*region_free_gizmomap_callback)(struct wmGizmoMap *) = NULL;
 
-void BKE_region_callback_free_gizmomap_set(void (*callback)(struct wmGizmoMap *))
+void KERNEL_region_callback_free_gizmomap_set(void (*callback)(struct wmGizmoMap *))
 {
   region_free_gizmomap_callback = callback;
 }
@@ -606,17 +604,17 @@ static void area_region_panels_free_recursive(Panel *panel)
   MEM_freeN(panel);
 }
 
-void BKE_area_region_panels_free(ListBase *panels)
+void KERNEL_area_region_panels_free(ListBase *panels)
 {
   LISTBASE_FOREACH_MUTABLE (Panel *, panel, panels) {
     /* Free custom data just for parent panels to avoid a double free. */
     MEM_SAFE_FREE(panel->runtime.custom_data_ptr);
     area_region_panels_free_recursive(panel);
   }
-  BLI_listbase_clear(panels);
+  LIB_listbase_clear(panels);
 }
 
-void BKE_area_region_free(SpaceType *st, ARegion *region)
+void KERNEL_area_region_free(SpaceType *st, ARegion *region)
 {
   if (st) {
     ARegionType *art = BKE_regiontype_from_id(st, region->regiontype);
@@ -633,7 +631,7 @@ void BKE_area_region_free(SpaceType *st, ARegion *region)
     region->type->free(region);
   }
 
-  BKE_area_region_panels_free(&region->panels);
+  KERNEL_area_region_panels_free(&region->panels);
 
   LISTBASE_FOREACH (uiList *, uilst, &region->ui_lists) {
     if (uilst->dyn_data && uilst->dyn_data->free_runtime_data_fn) {
@@ -650,53 +648,53 @@ void BKE_area_region_free(SpaceType *st, ARegion *region)
   }
 
   if (region->runtime.block_name_map != NULL) {
-    BLI_ghash_free(region->runtime.block_name_map, NULL, NULL);
+    LIB_ghash_free(region->runtime.block_name_map, NULL, NULL);
     region->runtime.block_name_map = NULL;
   }
 
-  BLI_freelistN(&region->ui_lists);
-  BLI_freelistN(&region->ui_previews);
-  BLI_freelistN(&region->panels_category);
-  BLI_freelistN(&region->panels_category_active);
+  LIB_freelistN(&region->ui_lists);
+  LIB_freelistN(&region->ui_previews);
+  LIB_freelistN(&region->panels_category);
+  LIB_freelistN(&region->panels_category_active);
 }
 
-void BKE_screen_area_free(ScrArea *area)
+void KERNEL_screen_area_free(ScrArea *area)
 {
-  SpaceType *st = BKE_spacetype_from_id(area->spacetype);
+  SpaceType *st = KERNEL_spacetype_from_id(area->spacetype);
 
   LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
-    BKE_area_region_free(st, region);
+    KERNEL_area_region_free(st, region);
   }
 
   MEM_SAFE_FREE(area->global);
-  BLI_freelistN(&area->regionbase);
+  LIB_freelistN(&area->regionbase);
 
-  BKE_spacedata_freelist(&area->spacedata);
+  KERNEL_spacedata_freelist(&area->spacedata);
 
-  BLI_freelistN(&area->actionzones);
+  LIB_freelistN(&area->actionzones);
 }
 
-void BKE_screen_area_map_free(ScrAreaMap *area_map)
+void KERNEL_screen_area_map_free(ScrAreaMap *area_map)
 {
   LISTBASE_FOREACH_MUTABLE (ScrArea *, area, &area_map->areabase) {
-    BKE_screen_area_free(area);
+    KERNEL_screen_area_free(area);
   }
 
-  BLI_freelistN(&area_map->vertbase);
-  BLI_freelistN(&area_map->edgebase);
-  BLI_freelistN(&area_map->areabase);
+  LIB_freelistN(&area_map->vertbase);
+  LIB_freelistN(&area_map->edgebase);
+  LIB_freelistN(&area_map->areabase);
 }
 
-void BKE_screen_free_data(bScreen *screen)
+void KERNEL_screen_free_data(bScreen *screen)
 {
   screen_free_data(&screen->id);
 }
 
 /* ***************** Screen edges & verts ***************** */
 
-ScrEdge *BKE_screen_find_edge(const bScreen *screen, ScrVert *v1, ScrVert *v2)
+ScrEdge *KERNEL_screen_find_edge(const duneScreen *screen, ScrVert *v1, ScrVert *v2)
 {
-  BKE_screen_sort_scrvert(&v1, &v2);
+  KERNEL_screen_sort_scrvert(&v1, &v2);
   LISTBASE_FOREACH (ScrEdge *, se, &screen->edgebase) {
     if (se->v1 == v1 && se->v2 == v2) {
       return se;
@@ -706,7 +704,7 @@ ScrEdge *BKE_screen_find_edge(const bScreen *screen, ScrVert *v1, ScrVert *v2)
   return NULL;
 }
 
-void BKE_screen_sort_scrvert(ScrVert **v1, ScrVert **v2)
+void KERNEL_screen_sort_scrvert(ScrVert **v1, ScrVert **v2)
 {
   if (*v1 > *v2) {
     ScrVert *tmp = *v1;
@@ -715,7 +713,7 @@ void BKE_screen_sort_scrvert(ScrVert **v1, ScrVert **v2)
   }
 }
 
-void BKE_screen_remove_double_scrverts(bScreen *screen)
+void KERNEL_screen_remove_double_scrverts(bScreen *screen)
 {
   LISTBASE_FOREACH (ScrVert *, verg, &screen->vertbase) {
     if (verg->newv == NULL) { /* !!! */
@@ -741,7 +739,7 @@ void BKE_screen_remove_double_scrverts(bScreen *screen)
       se->v2 = se->v2->newv;
     }
     /* edges changed: so.... */
-    BKE_screen_sort_scrvert(&(se->v1), &(se->v2));
+    KERNEL_screen_sort_scrvert(&(se->v1), &(se->v2));
   }
   LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
     if (area->v1->newv) {
@@ -761,13 +759,13 @@ void BKE_screen_remove_double_scrverts(bScreen *screen)
   /* remove */
   LISTBASE_FOREACH_MUTABLE (ScrVert *, verg, &screen->vertbase) {
     if (verg->newv) {
-      BLI_remlink(&screen->vertbase, verg);
+      LIB_remlink(&screen->vertbase, verg);
       MEM_freeN(verg);
     }
   }
 }
 
-void BKE_screen_remove_double_scredges(bScreen *screen)
+void KERNEL_screen_remove_double_scredges(bScreen *screen)
 {
   /* compare */
   LISTBASE_FOREACH (ScrEdge *, verg, &screen->edgebase) {
@@ -775,7 +773,7 @@ void BKE_screen_remove_double_scredges(bScreen *screen)
     while (se) {
       ScrEdge *sn = se->next;
       if (verg->v1 == se->v1 && verg->v2 == se->v2) {
-        BLI_remlink(&screen->edgebase, se);
+        LIB_remlink(&screen->edgebase, se);
         MEM_freeN(se);
       }
       se = sn;
@@ -783,33 +781,33 @@ void BKE_screen_remove_double_scredges(bScreen *screen)
   }
 }
 
-void BKE_screen_remove_unused_scredges(bScreen *screen)
+void KERNEL_screen_remove_unused_scredges(bScreen *screen)
 {
   /* sets flags when edge is used in area */
   int a = 0;
   LISTBASE_FOREACH_INDEX (ScrArea *, area, &screen->areabase, a) {
-    ScrEdge *se = BKE_screen_find_edge(screen, area->v1, area->v2);
+    ScrEdge *se = KERNEL_screen_find_edge(screen, area->v1, area->v2);
     if (se == NULL) {
       printf("error: area %d edge 1 doesn't exist\n", a);
     }
     else {
       se->flag = 1;
     }
-    se = BKE_screen_find_edge(screen, area->v2, area->v3);
+    se = KERNEL_screen_find_edge(screen, area->v2, area->v3);
     if (se == NULL) {
       printf("error: area %d edge 2 doesn't exist\n", a);
     }
     else {
       se->flag = 1;
     }
-    se = BKE_screen_find_edge(screen, area->v3, area->v4);
+    se = KERNEL_screen_find_edge(screen, area->v3, area->v4);
     if (se == NULL) {
       printf("error: area %d edge 3 doesn't exist\n", a);
     }
     else {
       se->flag = 1;
     }
-    se = BKE_screen_find_edge(screen, area->v4, area->v1);
+    se = KERNEL_screen_find_edge(screen, area->v4, area->v1);
     if (se == NULL) {
       printf("error: area %d edge 4 doesn't exist\n", a);
     }
@@ -819,7 +817,7 @@ void BKE_screen_remove_unused_scredges(bScreen *screen)
   }
   LISTBASE_FOREACH_MUTABLE (ScrEdge *, se, &screen->edgebase) {
     if (se->flag == 0) {
-      BLI_remlink(&screen->edgebase, se);
+      LIB_remlink(&screen->edgebase, se);
       MEM_freeN(se);
     }
     else {
@@ -828,7 +826,7 @@ void BKE_screen_remove_unused_scredges(bScreen *screen)
   }
 }
 
-void BKE_screen_remove_unused_scrverts(bScreen *screen)
+void KERNEL_screen_remove_unused_scrverts(duneScreen *screen)
 {
   /* we assume edges are ok */
   LISTBASE_FOREACH (ScrEdge *, se, &screen->edgebase) {
@@ -838,7 +836,7 @@ void BKE_screen_remove_unused_scrverts(bScreen *screen)
 
   LISTBASE_FOREACH_MUTABLE (ScrVert *, sv, &screen->vertbase) {
     if (sv->flag == 0) {
-      BLI_remlink(&screen->vertbase, sv);
+      LIB_remlink(&screen->vertbase, sv);
       MEM_freeN(sv);
     }
     else {
@@ -849,7 +847,7 @@ void BKE_screen_remove_unused_scrverts(bScreen *screen)
 
 /* ***************** Utilities ********************** */
 
-ARegion *BKE_area_find_region_type(const ScrArea *area, int region_type)
+ARegion *KERNEL_area_find_region_type(const ScrArea *area, int region_type)
 {
   if (area) {
     LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
@@ -862,22 +860,22 @@ ARegion *BKE_area_find_region_type(const ScrArea *area, int region_type)
   return NULL;
 }
 
-ARegion *BKE_area_find_region_active_win(ScrArea *area)
+ARegion *KERNEL_area_find_region_active_win(ScrArea *area)
 {
   if (area == NULL) {
     return NULL;
   }
 
-  ARegion *region = BLI_findlink(&area->regionbase, area->region_active_win);
+  ARegion *region = LIB_findlink(&area->regionbase, area->region_active_win);
   if (region && (region->regiontype == RGN_TYPE_WINDOW)) {
     return region;
   }
 
   /* fallback to any */
-  return BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
+  return KERNEL_area_find_region_type(area, RGN_TYPE_WINDOW);
 }
 
-ARegion *BKE_area_find_region_xy(ScrArea *area, const int regiontype, const int xy[2])
+ARegion *KERNEL_area_find_region_xy(ScrArea *area, const int regiontype, const int xy[2])
 {
   if (area == NULL) {
     return NULL;
