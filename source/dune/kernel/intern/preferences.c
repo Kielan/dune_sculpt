@@ -4,110 +4,110 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_fileops.h"
-#include "BLI_listbase.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_utf8.h"
-#include "BLI_string_utils.h"
+#include "LIB_fileops.h"
+#include "LIB_listbase.h"
+#include "LIB_path_util.h"
+#include "LIB_string.h"
+#include "LIB_string_utf8.h"
+#include "LIB_string_utils.h"
 
-#include "BKE_appdir.h"
-#include "BKE_preferences.h"
+#include "DUNE_appdir.h"
+#include "DUNE_preferences.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "DNA_userdef_types.h"
+#include "TYPES_userdef.h"
 
-#define U BLI_STATIC_ASSERT(false, "Global 'U' not allowed, only use arguments passed in!")
+#define U LIB_STATIC_ASSERT(false, "Global 'U' not allowed, only use arguments passed in!")
 
 /* -------------------------------------------------------------------- */
 /** Asset Libraries */
 
-bUserAssetLibrary *BKE_preferences_asset_library_add(UserDef *userdef,
+duneUserAssetLib *DUNE_prefs_asset_lib_add(UserDef *userdef,
                                                      const char *name,
                                                      const char *path)
 {
-  bUserAssetLibrary *library = MEM_callocN(sizeof(*library), "bUserAssetLibrary");
+  duneUserAssetLib *lib = MEM_callocN(sizeof(*lib), "duneUserAssetLib");
 
-  BLI_addtail(&userdef->asset_libraries, library);
+  LIB_addtail(&userdef->asset_libraries, lib);
 
   if (name) {
-    BKE_preferences_asset_library_name_set(userdef, library, name);
+    DUNE_prefs_asset_lib_name_set(userdef, lib, name);
   }
   if (path) {
-    BLI_strncpy(library->path, path, sizeof(library->path));
+    LIB_strncpy(lib->path, path, sizeof(lib->path));
   }
 
-  return library;
+  return lib;
 }
 
-void BKE_preferences_asset_library_remove(UserDef *userdef, bUserAssetLibrary *library)
+void DUNE_prefs_asset_lib_remove(UserDef *userdef, duneUserAssetLib *lib)
 {
-  BLI_freelinkN(&userdef->asset_libraries, library);
+  LIB_freelinkN(&userdef->asset_libraries, library);
 }
 
-void BKE_preferences_asset_library_name_set(UserDef *userdef,
-                                            bUserAssetLibrary *library,
+void DUNE_prefs_asset_lib_name_set(UserDef *userdef,
+                                            duneUserAssetLib *lib,
                                             const char *name)
 {
-  BLI_strncpy_utf8(library->name, name, sizeof(library->name));
-  BLI_uniquename(&userdef->asset_libraries,
-                 library,
+  LIB_strncpy_utf8(lib->name, name, sizeof(lib->name));
+  LIB_uniquename(&userdef->asset_libraries,
+                 lib,
                  name,
                  '.',
-                 offsetof(bUserAssetLibrary, name),
-                 sizeof(library->name));
+                 offsetof(duneUserAssetLib, name),
+                 sizeof(lib->name));
 }
 
-void BKE_preferences_asset_library_path_set(bUserAssetLibrary *library, const char *path)
+void DUNE_prefs_asset_lib_path_set(duneUserAssetLib *lib, const char *path)
 {
-  BLI_strncpy(library->path, path, sizeof(library->path));
-  if (BLI_is_file(library->path)) {
-    BLI_path_parent_dir(library->path);
+  LIB_strncpy(lib->path, path, sizeof(lib->path));
+  if (LIB_is_file(lib->path)) {
+    LIB_path_parent_dir(lib->path);
   }
 }
 
-bUserAssetLibrary *BKE_preferences_asset_library_find_from_index(const UserDef *userdef, int index)
+duneUserAssetLib *DUNE_prefs_asset_lib_find_from_index(const UserDef *userdef, int index)
 {
-  return BLI_findlink(&userdef->asset_libraries, index);
+  return LIB_findlink(&userdef->asset_libraries, index);
 }
 
-bUserAssetLibrary *BKE_preferences_asset_library_find_from_name(const UserDef *userdef,
+duneUserAssetLib *DUNE_prefs_asset_lib_find_from_name(const UserDef *userdef,
                                                                 const char *name)
 {
-  return BLI_findstring(&userdef->asset_libraries, name, offsetof(bUserAssetLibrary, name));
+  return LIB_findstring(&userdef->asset_lib, name, offsetof(duneUserAssetLib, name));
 }
 
-bUserAssetLibrary *BKE_preferences_asset_library_containing_path(const UserDef *userdef,
+duneUserAssetLib *DUNE_prefs_asset_lib_containing_path(const UserDef *userdef,
                                                                  const char *path)
 {
-  LISTBASE_FOREACH (bUserAssetLibrary *, asset_lib_pref, &userdef->asset_libraries) {
-    if (BLI_path_contains(asset_lib_pref->path, path)) {
+  LISTBASE_FOREACH (duneUserAssetLib *, asset_lib_pref, &userdef->asset_lib) {
+    if (LIB_path_contains(asset_lib_pref->path, path)) {
       return asset_lib_pref;
     }
   }
   return NULL;
 }
 
-int BKE_preferences_asset_library_get_index(const UserDef *userdef,
-                                            const bUserAssetLibrary *library)
+int DUNE_prefs_asset_lib_get_index(const UserDef *userdef,
+                                            const duneUserAssetLib *lib)
 {
-  return BLI_findindex(&userdef->asset_libraries, library);
+  return LIB_findindex(&userdef->asset_libraries, library);
 }
 
-void BKE_preferences_asset_library_default_add(UserDef *userdef)
+void DUNE_prefs_asset_lib_default_add(UserDef *userdef)
 {
   char documents_path[FILE_MAXDIR];
 
   /* No home or documents path found, not much we can do. */
-  if (!BKE_appdir_folder_documents(documents_path) || !documents_path[0]) {
+  if (!DUNE_appdir_folder_documents(documents_path) || !documents_path[0]) {
     return;
   }
 
-  bUserAssetLibrary *library = BKE_preferences_asset_library_add(
-      userdef, DATA_(BKE_PREFS_ASSET_LIBRARY_DEFAULT_NAME), NULL);
+  duneUserAssetLib *lib = DUNE_prefs_asset_lib_add(
+      userdef, DATA_(DUNE_PREFS_ASSET_LIB_DEFAULT_NAME), NULL);
 
-  /* Add new "Default" library under '[doc_path]/Blender/Assets'. */
-  BLI_path_join(
-      library->path, sizeof(library->path), documents_path, N_("Blender"), N_("Assets"), NULL);
+  /* Add new "Default" lib under '[doc_path]/Dune/Assets'. */
+  LIB_path_join(
+      lib->path, sizeof(lib->path), documents_path, N_("Dune"), N_("Assets"), NULL);
 }
