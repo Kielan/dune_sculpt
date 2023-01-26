@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bke
- *
- * User defined asset library API.
- */
+/** User defined asset library API. **/
 
 #include <string.h>
 
@@ -25,8 +21,7 @@
 #define U BLI_STATIC_ASSERT(false, "Global 'U' not allowed, only use arguments passed in!")
 
 /* -------------------------------------------------------------------- */
-/** \name Asset Libraries
- * \{ */
+/** Asset Libraries */
 
 bUserAssetLibrary *BKE_preferences_asset_library_add(UserDef *userdef,
                                                      const char *name,
