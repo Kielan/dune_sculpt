@@ -15,29 +15,29 @@
 #include "LIB_task.hh"
 #include "LIB_utildefines.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_customdata.h"
-#include "BKE_geometry_set.hh"
-#include "BKE_global.h"
-#include "BKE_idtype.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_lib_remap.h"
-#include "BKE_main.h"
-#include "BKE_mesh_wrapper.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_pointcloud.h"
+#include "DUNE_anim_data.h"
+#include "DUNE_customdata.h"
+#include "DUNE_geometry_set.hh"
+#include "DUNE_global.h"
+#include "DUNE_idtype.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_lib_query.h"
+#include "DUNE_lib_remap.h"
+#include "DUNE_main.h"
+#include "DUNE_mesh_wrapper.h"
+#include "DUNE_modifier.h"
+#include "DUNE_object.h"
+#include "DUNE_pointcloud.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
 #include "DEG_depsgraph_query.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
-using blender::float3;
-using blender::IndexRange;
-using blender::Span;
+using dune::float3;
+using dune::IndexRange;
+using dune::Span;
 
 /* PointCloud datablock */
 
@@ -49,9 +49,9 @@ const char *POINTCLOUD_ATTR_RADIUS = "radius";
 static void pointcloud_init_data(ID *id)
 {
   PointCloud *pointcloud = (PointCloud *)id;
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(pointcloud, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(pointcloud, id));
 
-  MEMCPY_STRUCT_AFTER(pointcloud, DNA_struct_default_get(PointCloud), id);
+  MEMCPY_STRUCT_AFTER(pointcloud, TYPES_struct_default_get(PointCloud), id);
 
   CustomData_reset(&pointcloud->pdata);
   CustomData_add_layer_named(&pointcloud->pdata,
@@ -60,10 +60,10 @@ static void pointcloud_init_data(ID *id)
                              nullptr,
                              pointcloud->totpoint,
                              POINTCLOUD_ATTR_POSITION);
-  BKE_pointcloud_update_customdata_pointers(pointcloud);
+  DUNE_pointcloud_update_customdata_pointers(pointcloud);
 }
 
-static void pointcloud_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, const int flag)
+static void pointcloud_copy_data(Main *UNUSED(duneMain), ID *id_dst, const ID *id_src, const int flag)
 {
   PointCloud *pointcloud_dst = (PointCloud *)id_dst;
   const PointCloud *pointcloud_src = (const PointCloud *)id_src;
@@ -75,7 +75,7 @@ static void pointcloud_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_s
                   CD_MASK_ALL,
                   alloc_type,
                   pointcloud_dst->totpoint);
-  BKE_pointcloud_update_customdata_pointers(pointcloud_dst);
+  DUNE_pointcloud_update_customdata_pointers(pointcloud_dst);
 
   pointcloud_dst->batch_cache = nullptr;
 }
@@ -83,8 +83,8 @@ static void pointcloud_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_s
 static void pointcloud_free_data(ID *id)
 {
   PointCloud *pointcloud = (PointCloud *)id;
-  BKE_animdata_free(&pointcloud->id, false);
-  BKE_pointcloud_batch_cache_free(pointcloud);
+  DUNE_animdata_free(&pointcloud->id, false);
+  DUNE_pointcloud_batch_cache_free(pointcloud);
   CustomData_free(&pointcloud->pdata, pointcloud->totpoint);
   MEM_SAFE_FREE(pointcloud->mat);
 }
@@ -93,29 +93,29 @@ static void pointcloud_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   PointCloud *pointcloud = (PointCloud *)id;
   for (int i = 0; i < pointcloud->totcol; i++) {
-    BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, pointcloud->mat[i], IDWALK_CB_USER);
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, pointcloud->mat[i], IDWALK_CB_USER);
   }
 }
 
-static void pointcloud_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void dune_pointcloud_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   PointCloud *pointcloud = (PointCloud *)id;
 
   CustomDataLayer *players = nullptr, players_buff[CD_TEMP_CHUNK_SIZE];
-  CustomData_blend_write_prepare(
+  CustomData_write_prepare(
       &pointcloud->pdata, &players, players_buff, ARRAY_SIZE(players_buff));
 
   /* Write LibData */
-  BLO_write_id_struct(writer, PointCloud, id_address, &pointcloud->id);
-  BKE_id_blend_write(writer, &pointcloud->id);
+  LOADER_write_id_struct(writer, PointCloud, id_address, &pointcloud->id);
+  DUNE_id_write(writer, &pointcloud->id);
 
   /* Direct data */
-  CustomData_blend_write(
+  CustomData_write(
       writer, &pointcloud->pdata, players, pointcloud->totpoint, CD_MASK_ALL, &pointcloud->id);
 
-  BLO_write_pointer_array(writer, pointcloud->totcol, pointcloud->mat);
+  LOADER_write_pointer_array(writer, pointcloud->totcol, pointcloud->mat);
   if (pointcloud->adt) {
-    BKE_animdata_blend_write(writer, pointcloud->adt);
+    DUNE_animdata_write(writer, pointcloud->adt);
   }
 
   /* Remove temporary data. */
@@ -124,33 +124,33 @@ static void pointcloud_blend_write(BlendWriter *writer, ID *id, const void *id_a
   }
 }
 
-static void pointcloud_blend_read_data(BlendDataReader *reader, ID *id)
+static void pointcloud_read_data(DuneDataReader *reader, ID *id)
 {
   PointCloud *pointcloud = (PointCloud *)id;
-  BLO_read_data_address(reader, &pointcloud->adt);
-  BKE_animdata_blend_read_data(reader, pointcloud->adt);
+  LOADER_read_data_address(reader, &pointcloud->adt);
+  DUNE_animdata_read_data(reader, pointcloud->adt);
 
   /* Geometry */
-  CustomData_blend_read(reader, &pointcloud->pdata, pointcloud->totpoint);
-  BKE_pointcloud_update_customdata_pointers(pointcloud);
+  CustomData_read(reader, &pointcloud->pdata, pointcloud->totpoint);
+  DUNE_pointcloud_update_customdata_pointers(pointcloud);
 
   /* Materials */
-  BLO_read_pointer_array(reader, (void **)&pointcloud->mat);
+  LOADER_read_pointer_array(reader, (void **)&pointcloud->mat);
 }
 
-static void pointcloud_blend_read_lib(BlendLibReader *reader, ID *id)
+static void pointcloud_read_lib(DuneLibReader *reader, ID *id)
 {
   PointCloud *pointcloud = (PointCloud *)id;
   for (int a = 0; a < pointcloud->totcol; a++) {
-    BLO_read_id_address(reader, pointcloud->id.lib, &pointcloud->mat[a]);
+    LOADER_read_id_address(reader, pointcloud->id.lib, &pointcloud->mat[a]);
   }
 }
 
-static void pointcloud_blend_read_expand(BlendExpander *expander, ID *id)
+static void pointcloud_read_expand(DuneExpander *expander, ID *id)
 {
   PointCloud *pointcloud = (PointCloud *)id;
   for (int a = 0; a < pointcloud->totcol; a++) {
-    BLO_expand(expander, pointcloud->mat[a]);
+    LOADER_expand(expander, pointcloud->mat[a]);
   }
 }
 
@@ -161,7 +161,7 @@ IDTypeInfo IDType_ID_PT = {
     /* struct_size */ sizeof(PointCloud),
     /* name */ "PointCloud",
     /* name_plural */ "pointclouds",
-    /* translation_context */ BLT_I18NCONTEXT_ID_POINTCLOUD,
+    /* translation_context */ LANG_I18NCONTEXT_ID_POINTCLOUD,
     /* flags */ IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     /* asset_type_info */ nullptr,
 
@@ -174,12 +174,12 @@ IDTypeInfo IDType_ID_PT = {
     /* foreach_path */ nullptr,
     /* owner_get */ nullptr,
 
-    /* blend_write */ pointcloud_blend_write,
-    /* blend_read_data */ pointcloud_blend_read_data,
-    /* blend_read_lib */ pointcloud_blend_read_lib,
-    /* blend_read_expand */ pointcloud_blend_read_expand,
+    /* dune_write */ pointcloud_write,
+    /* dune_read_data */ pointcloud_read_data,
+    /* dune_read_lib */ pointcloud_read_lib,
+    /* dune_read_expand */ pointcloud_read_expand,
 
-    /* blend_read_undo_preserve */ nullptr,
+    /* dune_read_undo_preserve */ nullptr,
 
     /* lib_override_apply_post */ nullptr,
 };
@@ -188,30 +188,30 @@ static void pointcloud_random(PointCloud *pointcloud)
 {
   pointcloud->totpoint = 400;
   CustomData_realloc(&pointcloud->pdata, pointcloud->totpoint);
-  BKE_pointcloud_update_customdata_pointers(pointcloud);
+  DUNE_pointcloud_update_customdata_pointers(pointcloud);
 
-  RNG *rng = BLI_rng_new(0);
+  RNG *rng = LIB_rng_new(0);
 
   for (int i = 0; i < pointcloud->totpoint; i++) {
-    pointcloud->co[i][0] = 2.0f * BLI_rng_get_float(rng) - 1.0f;
-    pointcloud->co[i][1] = 2.0f * BLI_rng_get_float(rng) - 1.0f;
-    pointcloud->co[i][2] = 2.0f * BLI_rng_get_float(rng) - 1.0f;
-    pointcloud->radius[i] = 0.05f * BLI_rng_get_float(rng);
+    pointcloud->co[i][0] = 2.0f * LIB_rng_get_float(rng) - 1.0f;
+    pointcloud->co[i][1] = 2.0f * LIB_rng_get_float(rng) - 1.0f;
+    pointcloud->co[i][2] = 2.0f * LIB_rng_get_float(rng) - 1.0f;
+    pointcloud->radius[i] = 0.05f * LIB_rng_get_float(rng);
   }
 
-  BLI_rng_free(rng);
+  LIB_rng_free(rng);
 }
 
-void *BKE_pointcloud_add(Main *bmain, const char *name)
+void *DUNE_pointcloud_add(Main *duneMain, const char *name)
 {
-  PointCloud *pointcloud = static_cast<PointCloud *>(BKE_id_new(bmain, ID_PT, name));
+  PointCloud *pointcloud = static_cast<PointCloud *>(DUNE_id_new(duneMain, ID_PT, name));
 
   return pointcloud;
 }
 
-void *BKE_pointcloud_add_default(Main *bmain, const char *name)
+void *DUNE_pointcloud_add_default(Main *duneMain, const char *name)
 {
-  PointCloud *pointcloud = static_cast<PointCloud *>(BKE_libblock_alloc(bmain, ID_PT, name, 0));
+  PointCloud *pointcloud = static_cast<PointCloud *>(DUNE_libblock_alloc(duneMain, ID_PT, name, 0));
 
   pointcloud_init_data(&pointcloud->id);
 
@@ -226,10 +226,10 @@ void *BKE_pointcloud_add_default(Main *bmain, const char *name)
   return pointcloud;
 }
 
-PointCloud *BKE_pointcloud_new_nomain(const int totpoint)
+PointCloud *DUNE_pointcloud_new_nomain(const int totpoint)
 {
-  PointCloud *pointcloud = static_cast<PointCloud *>(BKE_libblock_alloc(
-      nullptr, ID_PT, BKE_idtype_idcode_to_name(ID_PT), LIB_ID_CREATE_LOCALIZE));
+  PointCloud *pointcloud = static_cast<PointCloud *>(DUNE_libblock_alloc(
+      nullptr, ID_PT, DUNE_idtype_idcode_to_name(ID_PT), LIB_ID_CREATE_LOCALIZE));
 
   pointcloud_init_data(&pointcloud->id);
 
@@ -244,25 +244,25 @@ PointCloud *BKE_pointcloud_new_nomain(const int totpoint)
 
   pointcloud->totpoint = totpoint;
   CustomData_realloc(&pointcloud->pdata, pointcloud->totpoint);
-  BKE_pointcloud_update_customdata_pointers(pointcloud);
+  DUNE_pointcloud_update_customdata_pointers(pointcloud);
 
   return pointcloud;
 }
 
-static std::optional<blender::bounds::MinMaxResult<float3>> point_cloud_bounds(
+static std::optional<dune::bounds::MinMaxResult<float3>> point_cloud_bounds(
     const PointCloud &pointcloud)
 {
   Span<float3> positions{reinterpret_cast<float3 *>(pointcloud.co), pointcloud.totpoint};
   if (pointcloud.radius) {
     Span<float> radii{pointcloud.radius, pointcloud.totpoint};
-    return blender::bounds::min_max_with_radii(positions, radii);
+    return dune::bounds::min_max_with_radii(positions, radii);
   }
-  return blender::bounds::min_max(positions);
+  return dune::bounds::min_max(positions);
 }
 
-bool BKE_pointcloud_minmax(const PointCloud *pointcloud, float r_min[3], float r_max[3])
+bool DUNE_pointcloud_minmax(const PointCloud *pointcloud, float r_min[3], float r_max[3])
 {
-  using namespace blender;
+  using namespace dune;
 
   const std::optional<bounds::MinMaxResult<float3>> min_max = point_cloud_bounds(*pointcloud);
   if (!min_max) {
@@ -275,9 +275,9 @@ bool BKE_pointcloud_minmax(const PointCloud *pointcloud, float r_min[3], float r
   return true;
 }
 
-BoundBox *BKE_pointcloud_boundbox_get(Object *ob)
+BoundBox *DUNE_pointcloud_boundbox_get(Object *ob)
 {
-  BLI_assert(ob->type == OB_POINTCLOUD);
+  LIB_assert(ob->type == OB_POINTCLOUD);
 
   if (ob->runtime.bb != nullptr && (ob->runtime.bb->flag & BOUNDBOX_DIRTY) == 0) {
     return ob->runtime.bb;
@@ -294,14 +294,14 @@ BoundBox *BKE_pointcloud_boundbox_get(Object *ob)
   }
   else {
     const PointCloud *pointcloud = static_cast<PointCloud *>(ob->data);
-    BKE_pointcloud_minmax(pointcloud, min, max);
+    DUNE_pointcloud_minmax(pointcloud, min, max);
   }
-  BKE_boundbox_init_from_minmax(ob->runtime.bb, min, max);
+  DUNE_boundbox_init_from_minmax(ob->runtime.bb, min, max);
 
   return ob->runtime.bb;
 }
 
-void BKE_pointcloud_update_customdata_pointers(PointCloud *pointcloud)
+void DUNE_pointcloud_update_customdata_pointers(PointCloud *pointcloud)
 {
   pointcloud->co = static_cast<float(*)[3]>(
       CustomData_get_layer_named(&pointcloud->pdata, CD_PROP_FLOAT3, POINTCLOUD_ATTR_POSITION));
@@ -309,16 +309,16 @@ void BKE_pointcloud_update_customdata_pointers(PointCloud *pointcloud)
       CustomData_get_layer_named(&pointcloud->pdata, CD_PROP_FLOAT, POINTCLOUD_ATTR_RADIUS));
 }
 
-bool BKE_pointcloud_customdata_required(PointCloud *UNUSED(pointcloud), CustomDataLayer *layer)
+bool DUNE_pointcloud_customdata_required(PointCloud *UNUSED(pointcloud), CustomDataLayer *layer)
 {
   return layer->type == CD_PROP_FLOAT3 && STREQ(layer->name, POINTCLOUD_ATTR_POSITION);
 }
 
 /* Dependency Graph */
 
-PointCloud *BKE_pointcloud_new_for_eval(const PointCloud *pointcloud_src, int totpoint)
+PointCloud *DUNE_pointcloud_new_for_eval(const PointCloud *pointcloud_src, int totpoint)
 {
-  PointCloud *pointcloud_dst = static_cast<PointCloud *>(BKE_id_new_nomain(ID_PT, nullptr));
+  PointCloud *pointcloud_dst = static_cast<PointCloud *>(DUNE_id_new_nomain(ID_PT, nullptr));
   CustomData_free(&pointcloud_dst->pdata, pointcloud_dst->totpoint);
 
   STRNCPY(pointcloud_dst->id.name, pointcloud_src->id.name);
@@ -328,12 +328,12 @@ PointCloud *BKE_pointcloud_new_for_eval(const PointCloud *pointcloud_src, int to
   pointcloud_dst->totpoint = totpoint;
   CustomData_copy(
       &pointcloud_src->pdata, &pointcloud_dst->pdata, CD_MASK_ALL, CD_CALLOC, totpoint);
-  BKE_pointcloud_update_customdata_pointers(pointcloud_dst);
+  DUNE_pointcloud_update_customdata_pointers(pointcloud_dst);
 
   return pointcloud_dst;
 }
 
-PointCloud *BKE_pointcloud_copy_for_eval(struct PointCloud *pointcloud_src, bool reference)
+PointCloud *DUNE_pointcloud_copy_for_eval(struct PointCloud *pointcloud_src, bool reference)
 {
   int flags = LIB_ID_COPY_LOCALIZE;
 
@@ -341,7 +341,7 @@ PointCloud *BKE_pointcloud_copy_for_eval(struct PointCloud *pointcloud_src, bool
     flags |= LIB_ID_COPY_CD_REFERENCE;
   }
 
-  PointCloud *result = (PointCloud *)BKE_id_copy_ex(nullptr, &pointcloud_src->id, nullptr, flags);
+  PointCloud *result = (PointCloud *)DUNE_id_copy_ex(nullptr, &pointcloud_src->id, nullptr, flags);
   return result;
 }
 
@@ -359,13 +359,13 @@ static void pointcloud_evaluate_modifiers(struct Depsgraph *depsgraph,
   /* Get effective list of modifiers to execute. Some effects like shape keys
    * are added as virtual modifiers before the user created modifiers. */
   VirtualModifierData virtualModifierData;
-  ModifierData *md = BKE_modifiers_get_virtual_modifierlist(object, &virtualModifierData);
+  ModifierData *md = DUNE_modifiers_get_virtual_modifierlist(object, &virtualModifierData);
 
   /* Evaluate modifiers. */
   for (; md; md = md->next) {
-    const ModifierTypeInfo *mti = BKE_modifier_get_info((ModifierType)md->type);
+    const ModifierTypeInfo *mti = DUNE_modifier_get_info((ModifierType)md->type);
 
-    if (!BKE_modifier_is_enabled(scene, md, required_mode)) {
+    if (!DUNE_modifier_is_enabled(scene, md, required_mode)) {
       continue;
     }
 
@@ -394,10 +394,10 @@ static PointCloud *take_pointcloud_ownership_from_geometry_set(GeometrySet &geom
   return pointcloud;
 }
 
-void BKE_pointcloud_data_update(struct Depsgraph *depsgraph, struct Scene *scene, Object *object)
+void DUNE_pointcloud_data_update(struct Depsgraph *depsgraph, struct Scene *scene, Object *object)
 {
   /* Free any evaluated data and restore original data. */
-  BKE_object_free_derived_caches(object);
+  DUNE_object_free_derived_caches(object);
 
   /* Evaluate modifiers. */
   PointCloud *pointcloud = static_cast<PointCloud *>(object->data);
@@ -409,30 +409,30 @@ void BKE_pointcloud_data_update(struct Depsgraph *depsgraph, struct Scene *scene
 
   /* If the geometry set did not contain a point cloud, we still create an empty one. */
   if (pointcloud_eval == nullptr) {
-    pointcloud_eval = BKE_pointcloud_new_nomain(0);
+    pointcloud_eval = DUNE_pointcloud_new_nomain(0);
   }
 
   /* Assign evaluated object. */
   const bool eval_is_owned = pointcloud_eval != pointcloud;
-  BKE_object_eval_assign_data(object, &pointcloud_eval->id, eval_is_owned);
+  DUNE_object_eval_assign_data(object, &pointcloud_eval->id, eval_is_owned);
   object->runtime.geometry_set_eval = new GeometrySet(std::move(geometry_set));
 }
 
 /* Draw Cache */
 
-void (*BKE_pointcloud_batch_cache_dirty_tag_cb)(PointCloud *pointcloud, int mode) = nullptr;
-void (*BKE_pointcloud_batch_cache_free_cb)(PointCloud *pointcloud) = nullptr;
+void (*DUNE_pointcloud_batch_cache_dirty_tag_cb)(PointCloud *pointcloud, int mode) = nullptr;
+void (*DUNE_pointcloud_batch_cache_free_cb)(PointCloud *pointcloud) = nullptr;
 
-void BKE_pointcloud_batch_cache_dirty_tag(PointCloud *pointcloud, int mode)
+void DUNE_pointcloud_batch_cache_dirty_tag(PointCloud *pointcloud, int mode)
 {
   if (pointcloud->batch_cache) {
-    BKE_pointcloud_batch_cache_dirty_tag_cb(pointcloud, mode);
+    DUNE_pointcloud_batch_cache_dirty_tag_cb(pointcloud, mode);
   }
 }
 
-void BKE_pointcloud_batch_cache_free(PointCloud *pointcloud)
+void DUNE_pointcloud_batch_cache_free(PointCloud *pointcloud)
 {
   if (pointcloud->batch_cache) {
-    BKE_pointcloud_batch_cache_free_cb(pointcloud);
+    DUNE_pointcloud_batch_cache_free_cb(pointcloud);
   }
 }
