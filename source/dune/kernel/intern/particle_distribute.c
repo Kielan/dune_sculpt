@@ -363,12 +363,12 @@ static void init_mv_jit(float *jit, int num, int seed2, float amount)
   jit2 = MEM_mallocN(12 + sizeof(float[2]) * num, "initjit");
 
   for (i = 0; i < 4; i++) {
-    BLI_jitterate1((float(*)[2])jit, (float(*)[2])jit2, num, rad1);
-    BLI_jitterate1((float(*)[2])jit, (float(*)[2])jit2, num, rad1);
-    BLI_jitterate2((float(*)[2])jit, (float(*)[2])jit2, num, rad2);
+    LIB_jitterate1((float(*)[2])jit, (float(*)[2])jit2, num, rad1);
+    LIB_jitterate1((float(*)[2])jit, (float(*)[2])jit2, num, rad1);
+    LIB_jitterate2((float(*)[2])jit, (float(*)[2])jit2, num, rad2);
   }
   MEM_freeN(jit2);
-  BLI_rng_free(rng);
+  LIB_rng_free(rng);
 }
 
 static void psys_uv_to_w(float u, float v, int quad, float *w)
@@ -493,8 +493,8 @@ static void distribute_from_verts_exec(ParticleTask *thread, ParticleData *pa, i
 
     psys_particle_on_dm(
         ctx->mesh, from, pa->num, pa->num_dmcache, pa->fuv, pa->foffset, co1, 0, 0, 0, orco1, 0);
-    BKE_mesh_orco_verts_transform(ob->data, &orco1, 1, 1);
-    maxw = BLI_kdtree_3d_find_nearest_n(ctx->tree, orco1, ptn, 3);
+    DUNE_mesh_orco_verts_transform(ob->data, &orco1, 1, 1);
+    maxw = LIB_kdtree_3d_find_nearest_n(ctx->tree, orco1, ptn, 3);
 
     for (w = 0; w < maxw; w++) {
       pa->verts[w] = ptn->num;
@@ -502,9 +502,9 @@ static void distribute_from_verts_exec(ParticleTask *thread, ParticleData *pa, i
   }
 #endif
 
-  BLI_assert(rng_skip_tot >= 0); /* should never be below zero */
+  LIB_assert(rng_skip_tot >= 0); /* should never be below zero */
   if (rng_skip_tot > 0) {
-    BLI_rng_skip(thread->rng, rng_skip_tot);
+    LIB_rng_skip(thread->rng, rng_skip_tot);
   }
 }
 
@@ -541,8 +541,8 @@ static void distribute_from_faces_exec(ParticleTask *thread, ParticleData *pa, i
       }
       break;
     case PART_DISTR_RAND:
-      randu = BLI_rng_get_float(thread->rng);
-      randv = BLI_rng_get_float(thread->rng);
+      randu = LIB_rng_get_float(thread->rng);
+      randv = LIB_rng_get_float(thread->rng);
       rng_skip_tot -= 2;
 
       psys_uv_to_w(randu, randv, mface->v4, pa->fuv);
