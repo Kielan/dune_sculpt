@@ -1,9 +1,5 @@
 #pragma once
 
-/** \file
- * \ingroup bke
- */
-
 /* Axis-aligned bounding box */
 typedef struct {
   float bmin[3], bmax[3];
@@ -135,11 +131,11 @@ struct PBVH {
   void **gridfaces;
   const DMFlagMat *grid_flag_mats;
   int totgrid;
-  BLI_bitmap **grid_hidden;
+  LIB_bitmap **grid_hidden;
 
   /* Used during BVH build and later to mark that a vertex needs to update
    * (its normal must be recalculated). */
-  BLI_bitmap *vert_bitmap;
+  LIB_bitmap *vert_bitmap;
 
 #ifdef PERFCNTRS
   int perf_modified;
@@ -167,18 +163,12 @@ struct PBVH {
 
 /* pbvh.c */
 void BB_reset(BB *bb);
-/**
- * Expand the bounding box to include a new coordinate.
- */
+/** Expand the bounding box to include a new coordinate. */
 void BB_expand(BB *bb, const float co[3]);
-/**
- * Expand the bounding box to include another bounding box.
- */
+/** Expand the bounding box to include another bounding box. */
 void BB_expand_with_bb(BB *bb, BB *bb2);
 void BBC_update_centroid(BBC *bbc);
-/**
- * Return 0, 1, or 2 to indicate the widest axis of the bounding box.
- */
+/** Return 0, 1, or 2 to indicate the widest axis of the bounding box. */
 int BB_widest_axis(const BB *bb);
 void pbvh_grow_nodes(PBVH *bvh, int totnode);
 bool ray_face_intersection_quad(const float ray_start[3],
