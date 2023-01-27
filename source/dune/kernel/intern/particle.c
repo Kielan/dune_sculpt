@@ -7,56 +7,56 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_defaults.h"
+#include "TYPES_defaults.h"
 
-#include "DNA_cloth_types.h"
-#include "DNA_collection_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_dynamicpaint_types.h"
-#include "DNA_fluid_types.h"
-#include "DNA_key_types.h"
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_cloth.h"
+#include "TYPES_collection.h"
+#include "TYPES_curve.h"
+#include "TYPES_dynamicpaint.h"
+#include "TYPES_fluid.h"
+#include "TYPES_key.h"
+#include "TYPES_material.h"
+#include "TYPES_mesh.h"
+#include "TYPES_meshdata.h"
+#include "TYPES_object_force.h"
+#include "TYPES_particle.h"
+#include "TYPES_scene.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_kdopbvh.h"
-#include "BLI_kdtree.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
-#include "BLI_rand.h"
-#include "BLI_task.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "LIB_dunelib.h"
+#include "LIB_kdopbvh.h"
+#include "LIB_kdtree.h"
+#include "LIB_linklist.h"
+#include "LIB_math.h"
+#include "LIB_rand.h"
+#include "LIB_task.h"
+#include "LIB_threads.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_anim_path.h"
-#include "BKE_boids.h"
-#include "BKE_cloth.h"
-#include "BKE_collection.h"
-#include "BKE_colortools.h"
-#include "BKE_deform.h"
-#include "BKE_displist.h"
-#include "BKE_effect.h"
-#include "BKE_idtype.h"
-#include "BKE_key.h"
-#include "BKE_lattice.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_mesh.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_particle.h"
-#include "BKE_pointcache.h"
-#include "BKE_scene.h"
-#include "BKE_texture.h"
+#include "DUNE_anim_data.h"
+#include "DUNE_anim_path.h"
+#include "DUNE_boids.h"
+#include "DUNE_cloth.h"
+#include "DUNE_collection.h"
+#include "DUNE_colortools.h"
+#include "DUNE_deform.h"
+#include "DUNE_displist.h"
+#include "DUNE_effect.h"
+#include "DUNE_idtype.h"
+#include "DUNE_key.h"
+#include "DUNE_lattice.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_lib_query.h"
+#include "DUNE_main.h"
+#include "DUNE_material.h"
+#include "DUNE_mesh.h"
+#include "DUNE_modifier.h"
+#include "DUNE_object.h"
+#include "DUNE_particle.h"
+#include "DUNE_pointcache.h"
+#include "DUNE_scene.h"
+#include "DUNE_texture.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
@@ -64,7 +64,7 @@
 
 #include "RE_texture.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
 #include "particle_private.h"
 
@@ -73,13 +73,13 @@ static void fluid_free_settings(SPHFluidSettings *fluid);
 static void particle_settings_init(ID *id)
 {
   ParticleSettings *particle_settings = (ParticleSettings *)id;
-  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(particle_settings, id));
+  LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(particle_settings, id));
 
   MEMCPY_STRUCT_AFTER(particle_settings, DNA_struct_default_get(ParticleSettings), id);
 
-  particle_settings->effector_weights = BKE_effector_add_weights(NULL);
-  particle_settings->pd = BKE_partdeflect_new(PFIELD_NULL);
-  particle_settings->pd2 = BKE_partdeflect_new(PFIELD_NULL);
+  particle_settings->effector_weights = DUNE_effector_add_weights(NULL);
+  particle_settings->pd = DUNE_partdeflect_new(PFIELD_NULL);
+  particle_settings->pd2 = DUNE_partdeflect_new(PFIELD_NULL);
 }
 
 static void particle_settings_copy_data(Main *UNUSED(bmain),
@@ -90,20 +90,20 @@ static void particle_settings_copy_data(Main *UNUSED(bmain),
   ParticleSettings *particle_settings_dst = (ParticleSettings *)id_dst;
   const ParticleSettings *partticle_settings_src = (const ParticleSettings *)id_src;
 
-  particle_settings_dst->pd = BKE_partdeflect_copy(partticle_settings_src->pd);
-  particle_settings_dst->pd2 = BKE_partdeflect_copy(partticle_settings_src->pd2);
+  particle_settings_dst->pd = DUNE_partdeflect_copy(partticle_settings_src->pd);
+  particle_settings_dst->pd2 = DUNE_partdeflect_copy(partticle_settings_src->pd2);
   particle_settings_dst->effector_weights = MEM_dupallocN(
       partticle_settings_src->effector_weights);
   particle_settings_dst->fluid = MEM_dupallocN(partticle_settings_src->fluid);
 
   if (partticle_settings_src->clumpcurve) {
-    particle_settings_dst->clumpcurve = BKE_curvemapping_copy(partticle_settings_src->clumpcurve);
+    particle_settings_dst->clumpcurve = DUNE_curvemapping_copy(partticle_settings_src->clumpcurve);
   }
   if (partticle_settings_src->roughcurve) {
-    particle_settings_dst->roughcurve = BKE_curvemapping_copy(partticle_settings_src->roughcurve);
+    particle_settings_dst->roughcurve = DUNE_curvemapping_copy(partticle_settings_src->roughcurve);
   }
   if (partticle_settings_src->twistcurve) {
-    particle_settings_dst->twistcurve = BKE_curvemapping_copy(partticle_settings_src->twistcurve);
+    particle_settings_dst->twistcurve = DUNE_curvemapping_copy(partticle_settings_src->twistcurve);
   }
 
   particle_settings_dst->boids = boid_copy_settings(partticle_settings_src->boids);
@@ -114,7 +114,7 @@ static void particle_settings_copy_data(Main *UNUSED(bmain),
     }
   }
 
-  BLI_duplicatelist(&particle_settings_dst->instance_weights,
+  LIB_duplicatelist(&particle_settings_dst->instance_weights,
                     &partticle_settings_src->instance_weights);
 }
 
@@ -127,21 +127,21 @@ static void particle_settings_free_data(ID *id)
   }
 
   if (particle_settings->clumpcurve) {
-    BKE_curvemapping_free(particle_settings->clumpcurve);
+    DUNE_curvemapping_free(particle_settings->clumpcurve);
   }
   if (particle_settings->roughcurve) {
-    BKE_curvemapping_free(particle_settings->roughcurve);
+    DUNE_curvemapping_free(particle_settings->roughcurve);
   }
   if (particle_settings->twistcurve) {
-    BKE_curvemapping_free(particle_settings->twistcurve);
+    DUNE_curvemapping_free(particle_settings->twistcurve);
   }
 
-  BKE_partdeflect_free(particle_settings->pd);
-  BKE_partdeflect_free(particle_settings->pd2);
+  DUNE_partdeflect_free(particle_settings->pd);
+  DUNE_partdeflect_free(particle_settings->pd2);
 
   MEM_SAFE_FREE(particle_settings->effector_weights);
 
-  BLI_freelistN(&particle_settings->instance_weights);
+  LIB_freelistN(&particle_settings->instance_weights);
 
   boid_free_settings(particle_settings->boids);
   fluid_free_settings(particle_settings->fluid);
@@ -150,15 +150,15 @@ static void particle_settings_free_data(ID *id)
 static void particle_settings_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   ParticleSettings *psett = (ParticleSettings *)id;
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->instance_collection, IDWALK_CB_USER);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->instance_object, IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->bb_ob, IDWALK_CB_NOP);
-  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->collision_group, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->instance_collection, IDWALK_CB_USER);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->instance_object, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->bb_ob, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, psett->collision_group, IDWALK_CB_NOP);
 
   for (int i = 0; i < MAX_MTEX; i++) {
     if (psett->mtex[i]) {
-      BKE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
-                                              BKE_texture_mtex_foreach_id(data, psett->mtex[i]));
+      DUNE_LIB_FOREACHID_PROCESS_FUNCTION_CALL(data,
+                                              DUNE_texture_mtex_foreach_id(data, psett->mtex[i]));
     }
   }
 
