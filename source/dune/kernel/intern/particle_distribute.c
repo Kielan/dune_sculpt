@@ -2,27 +2,27 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_jitter_2d.h"
-#include "BLI_kdtree.h"
-#include "BLI_math.h"
-#include "BLI_math_geom.h"
-#include "BLI_rand.h"
-#include "BLI_sort.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "LIB_jitter_2d.h"
+#include "LIB_kdtree.h"
+#include "LIB_math.h"
+#include "LIB_math_geom.h"
+#include "LIB_rand.h"
+#include "LIB_sort.h"
+#include "LIB_task.h"
+#include "LIB_utildefines.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_mesh.h"
+#include "TYPES_meshdata.h"
+#include "TYPES_modifier.h"
+#include "TYPES_particle.h"
+#include "TYPES_scene.h"
 
-#include "BKE_customdata.h"
-#include "BKE_global.h"
-#include "BKE_lib_id.h"
-#include "BKE_mesh.h"
-#include "BKE_object.h"
-#include "BKE_particle.h"
+#include "DUNE_customdata.h"
+#include "DUNE_global.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_mesh.h"
+#include "DUNE_object.h"
+#include "DUNE_particle.h"
 
 #include "DEG_depsgraph_query.h"
 
@@ -59,7 +59,7 @@ static void distribute_simple_children(Scene *scene,
   int i, p;
   int child_nbr = psys_get_child_number(scene, psys, use_render_params);
   int totpart = psys_get_tot_child(scene, psys, use_render_params);
-  RNG *rng = BLI_rng_new_srandom(31415926 + psys->seed + psys->child_seed);
+  RNG *rng = LIB_rng_new_srandom(31415926 + psys->seed + psys->child_seed);
 
   alloc_child_particles(psys, totpart);
 
@@ -83,7 +83,7 @@ static void distribute_simple_children(Scene *scene,
   /* dmcache must be updated for parent particles if children from faces is used */
   psys_calc_dmcache(ob, final_mesh, deform_mesh, psys);
 
-  BLI_rng_free(rng);
+  LIB_rng_free(rng);
 }
 static void distribute_grid(Mesh *mesh, ParticleSystem *psys)
 {
@@ -317,20 +317,20 @@ static void hammersley_create(float *out, int n, int seed, float amount)
 
   double ofs[2], t;
 
-  rng = BLI_rng_new(31415926 + n + seed);
-  ofs[0] = BLI_rng_get_double(rng) + (double)amount;
-  ofs[1] = BLI_rng_get_double(rng) + (double)amount;
-  BLI_rng_free(rng);
+  rng = LIB_rng_new(31415926 + n + seed);
+  ofs[0] = LIB_rng_get_double(rng) + (double)amount;
+  ofs[1] = LIB_rng_get_double(rng) + (double)amount;
+  LIB_rng_free(rng);
 
   for (int k = 0; k < n; k++) {
-    BLI_hammersley_1d(k, &t);
+    LIB_hammersley_1d(k, &t);
 
     out[2 * k + 0] = fmod((double)k / (double)n + ofs[0], 1.0);
     out[2 * k + 1] = fmod(t + ofs[1], 1.0);
   }
 }
 
-/* almost exact copy of BLI_jitter_init */
+/* almost exact copy of LIB_jitter_init */
 static void init_mv_jit(float *jit, int num, int seed2, float amount)
 {
   RNG *rng;
@@ -345,7 +345,7 @@ static void init_mv_jit(float *jit, int num, int seed2, float amount)
   rad2 = (float)(1.0f / ((float)num));
   rad3 = (float)sqrtf((float)num) / ((float)num);
 
-  rng = BLI_rng_new(31415926 + num + seed2);
+  rng = LIB_rng_new(31415926 + num + seed2);
   x = 0;
   num2 = 2 * num;
   for (i = 0; i < num2; i += 2) {
