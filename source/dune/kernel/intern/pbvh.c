@@ -1,21 +1,21 @@
 #include "MEM_guardedalloc.h"
 
-#include "BLI_utildefines.h"
+#include "LIB_utildefines.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_ghash.h"
-#include "BLI_math.h"
-#include "BLI_rand.h"
-#include "BLI_task.h"
+#include "LIB_bitmap.h"
+#include "LIB_ghash.h"
+#include "LIB_math.h"
+#include "LIB_rand.h"
+#include "LIB_task.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "TYPES_mesh.h"
+#include "TYPES_meshdata.h"
 
-#include "BKE_ccg.h"
-#include "BKE_mesh.h"
-#include "BKE_paint.h"
-#include "BKE_pbvh.h"
-#include "BKE_subdiv_ccg.h"
+#include "DUNE_ccg.h"
+#include "DUNE_mesh.h"
+#include "DUNE_paint.h"
+#include "DUNE_pbvh.h"
+#include "DUNE_subdiv_ccg.h"
 
 #include "PIL_time.h"
 
