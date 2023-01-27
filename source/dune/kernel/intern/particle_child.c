@@ -1,11 +1,11 @@
-#include "BLI_math.h"
-#include "BLI_noise.h"
+#include "LIB_math.h"
+#include "LIB_noise.h"
 
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
+#include "TYPES_material.h"
+#include "TYPES_object.h"
 
-#include "BKE_colortools.h"
-#include "BKE_particle.h"
+#include "DUNE_colortools.h"
+#include "DUNE_particle.h"
 
 #include "particle_private.h"
 
@@ -26,7 +26,7 @@ static void psys_path_iter_get(ParticlePathIterator *iter,
                                ParticleCacheKey *parent,
                                int index)
 {
-  BLI_assert(index >= 0 && index < totkeys);
+  LIB_assert(index >= 0 && index < totkeys);
 
   iter->key = keys + index;
   iter->index = index;
@@ -686,13 +686,13 @@ static void do_rough_curve(const float loc[3],
     return;
   }
 
-  fac *= clamp_f(BKE_curvemapping_evaluateF(roughcurve, 0, time), 0.0f, 1.0f);
+  fac *= clamp_f(DUNE_curvemapping_evaluateF(roughcurve, 0, time), 0.0f, 1.0f);
 
   copy_v3_v3(rco, loc);
   mul_v3_fl(rco, time);
-  rough[0] = -1.0f + 2.0f * BLI_noise_generic_turbulence(size, rco[0], rco[1], rco[2], 2, 0, 2);
-  rough[1] = -1.0f + 2.0f * BLI_noise_generic_turbulence(size, rco[1], rco[2], rco[0], 2, 0, 2);
-  rough[2] = -1.0f + 2.0f * BLI_noise_generic_turbulence(size, rco[2], rco[0], rco[1], 2, 0, 2);
+  rough[0] = -1.0f + 2.0f * LIB_noise_generic_turbulence(size, rco[0], rco[1], rco[2], 2, 0, 2);
+  rough[1] = -1.0f + 2.0f * LIB_noise_generic_turbulence(size, rco[1], rco[2], rco[0], 2, 0, 2);
+  rough[2] = -1.0f + 2.0f * LIB_noise_generic_turbulence(size, rco[2], rco[0], rco[1], 2, 0, 2);
 
   madd_v3_v3fl(state->co, mat[0], fac * rough[0]);
   madd_v3_v3fl(state->co, mat[1], fac * rough[1]);
@@ -721,7 +721,7 @@ static void twist_get_axis(const ParticleChildModifierContext *modifier_ctx,
   }
 }
 
-static float BKE_curvemapping_integrate_clamped(CurveMapping *curve,
+static float DUNE_curvemapping_integrate_clamped(CurveMapping *curve,
                                                 float start,
                                                 float end,
                                                 float step)
@@ -776,7 +776,7 @@ static void do_twist(const ParticleChildModifierContext *modifier_ctx,
   }
   if (twist_curve != NULL) {
     const int num_segments = twist_num_segments(modifier_ctx);
-    angle *= BKE_curvemapping_integrate_clamped(twist_curve, 0.0f, time, 1.0f / num_segments);
+    angle *= DUNE_curvemapping_integrate_clamped(twist_curve, 0.0f, time, 1.0f / num_segments);
   }
   else {
     angle *= time;
