@@ -1,11 +1,11 @@
 #include "MEM_guardedalloc.h"
 
-#include "LI_buffer.h"
-#include "LI_ghash.h"
-#include "LI_heap_simple.h"
-#include "LI_math.h"
-#include "LI_memarena.h"
-#include "LI_utildefines.h"
+#include "LIB_buffer.h"
+#include "LIB_ghash.h"
+#include "LIB_heap_simple.h"
+#include "LIB_math.h"
+#include "LIB_memarena.h"
+#include "LIB_utildefines.h"
 
 #include "DUNE_DerivedMesh.h"
 #include "DUNE_ccg.h"
@@ -1191,8 +1191,8 @@ static void pbvh_bmesh_split_edge(EdgeQueueContext *eq_ctx,
     BM_face_kill(pbvh->bm, f_adj);
 
     /* Ensure new vertex is in the node */
-    if (!BLI_gset_haskey(pbvh->nodes[ni].bm_unique_verts, v_new)) {
-      BLI_gset_add(pbvh->nodes[ni].bm_other_verts, v_new);
+    if (!LIB_gset_haskey(pbvh->nodes[ni].bm_unique_verts, v_new)) {
+      LIB_gset_add(pbvh->nodes[ni].bm_other_verts, v_new);
     }
 
     if (BM_vert_edge_count_is_over(v_opp, 8)) {
@@ -1214,12 +1214,12 @@ static bool pbvh_bmesh_subdivide_long_edges(EdgeQueueContext *eq_ctx,
 {
   bool any_subdivided = false;
 
-  while (!BLI_heapsimple_is_empty(eq_ctx->q->heap)) {
-    BMVert **pair = BLI_heapsimple_pop_min(eq_ctx->q->heap);
+  while (!LIB_heapsimple_is_empty(eq_ctx->q->heap)) {
+    BMVert **pair = LIB_heapsimple_pop_min(eq_ctx->q->heap);
     BMVert *v1 = pair[0], *v2 = pair[1];
     BMEdge *e;
 
-    BLI_mempool_free(eq_ctx->pool, pair);
+    LIB_mempool_free(eq_ctx->pool, pair);
     pair = NULL;
 
     /* Check that the edge still exists */
@@ -1237,7 +1237,7 @@ static bool pbvh_bmesh_subdivide_long_edges(EdgeQueueContext *eq_ctx,
       continue;
     }
 #else
-    BLI_assert(len_squared_v3v3(v1->co, v2->co) > eq_ctx->q->limit_len_squared);
+    LIB_assert(len_squared_v3v3(v1->co, v2->co) > eq_ctx->q->limit_len_squared);
 #endif
 
     /* Check that the edge's vertices are still in the PBVH. It's
@@ -1295,7 +1295,7 @@ static void pbvh_bmesh_collapse_edge(PBVH *pbvh,
   }
 
   /* Kill the edge */
-  BLI_assert(BM_edge_is_wire(e));
+  LIB_assert(BM_edge_is_wire(e));
   BM_edge_kill(pbvh->bm, e);
 
   /* For all remaining faces of v_del, create a new face that is the
@@ -1303,7 +1303,7 @@ static void pbvh_bmesh_collapse_edge(PBVH *pbvh,
   /* NOTE: this could be done with BM_vert_splice(), but that
    * requires handling other issues like duplicate edges, so doesn't
    * really buy anything. */
-  BLI_buffer_clear(deleted_faces);
+  LIB_buffer_clear(deleted_faces);
 
   BMLoop *l;
 
@@ -1333,13 +1333,13 @@ static void pbvh_bmesh_collapse_edge(PBVH *pbvh,
     if (UNLIKELY(existing_face = bm_face_exists_tri_from_loop_vert(l->next, v_conn)))
 #endif
     {
-      BLI_buffer_append(deleted_faces, BMFace *, existing_face);
+      LIB_buffer_append(deleted_faces, BMFace *, existing_face);
     }
     else
     {
       BMVert *v_tri[3] = {v_conn, l->next->v, l->prev->v};
 
-      BLI_assert(!BM_face_exists(v_tri, 3));
+      LIB_assert(!BM_face_exists(v_tri, 3));
       BMEdge *e_tri[3];
       PBVHNode *n = pbvh_bmesh_node_from_face(pbvh, f);
       int ni = n - pbvh->nodes;
@@ -1347,12 +1347,12 @@ static void pbvh_bmesh_collapse_edge(PBVH *pbvh,
       pbvh_bmesh_face_create(pbvh, ni, v_tri, e_tri, f);
 
       /* Ensure that v_conn is in the new face's node */
-      if (!BLI_gset_haskey(n->bm_unique_verts, v_conn)) {
-        BLI_gset_add(n->bm_other_verts, v_conn);
+      if (!LIB_gset_haskey(n->bm_unique_verts, v_conn)) {
+        LIB_gset_add(n->bm_other_verts, v_conn);
       }
     }
 
-    BLI_buffer_append(deleted_faces, BMFace *, f);
+    LIB_buffer_append(deleted_faces, BMFace *, f);
   }
   BM_LOOPS_OF_VERT_ITER_END;
 
@@ -1361,7 +1361,7 @@ static void pbvh_bmesh_collapse_edge(PBVH *pbvh,
     BMFace *f_del = BLI_buffer_at(deleted_faces, BMFace *, i);
 
     /* Get vertices and edges of face */
-    BLI_assert(f_del->len == 3);
+    LIB_assert(f_del->len == 3);
     BMLoop *l_iter = BM_FACE_FIRST_LOOP(f_del);
     BMVert *v_tri[3];
     BMEdge *e_tri[3];
@@ -1397,7 +1397,7 @@ static void pbvh_bmesh_collapse_edge(PBVH *pbvh,
         if (v_tri[j] == v_conn) {
           v_conn = NULL;
         }
-        BLI_ghash_insert(deleted_verts, v_tri[j], NULL);
+        LIB_ghash_insert(deleted_verts, v_tri[j], NULL);
         BM_vert_kill(pbvh->bm, v_tri[j]);
       }
     }
@@ -1421,26 +1421,26 @@ static void pbvh_bmesh_collapse_edge(PBVH *pbvh,
   }
 
   /* Delete v_del */
-  BLI_assert(!BM_vert_face_check(v_del));
+  LIB_assert(!BM_vert_face_check(v_del));
   BM_log_vert_removed(pbvh->bm_log, v_del, eq_ctx->cd_vert_mask_offset);
   /* v_conn == NULL is OK */
-  BLI_ghash_insert(deleted_verts, v_del, v_conn);
+  LIB_ghash_insert(deleted_verts, v_del, v_conn);
   BM_vert_kill(pbvh->bm, v_del);
 }
 
 static bool pbvh_bmesh_collapse_short_edges(EdgeQueueContext *eq_ctx,
                                             PBVH *pbvh,
-                                            BLI_Buffer *deleted_faces)
+                                            LIB_Buffer *deleted_faces)
 {
   const float min_len_squared = pbvh->bm_min_edge_len * pbvh->bm_min_edge_len;
   bool any_collapsed = false;
   /* deleted verts point to vertices they were merged into, or NULL when removed. */
-  GHash *deleted_verts = BLI_ghash_ptr_new("deleted_verts");
+  GHash *deleted_verts = LIB_ghash_ptr_new("deleted_verts");
 
-  while (!BLI_heapsimple_is_empty(eq_ctx->q->heap)) {
-    BMVert **pair = BLI_heapsimple_pop_min(eq_ctx->q->heap);
+  while (!LIB_heapsimple_is_empty(eq_ctx->q->heap)) {
+    BMVert **pair = LIB_heapsimple_pop_min(eq_ctx->q->heap);
     BMVert *v1 = pair[0], *v2 = pair[1];
-    BLI_mempool_free(eq_ctx->pool, pair);
+    LIB_mempool_free(eq_ctx->pool, pair);
     pair = NULL;
 
     /* Check the verts still exist */
@@ -1476,7 +1476,7 @@ static bool pbvh_bmesh_collapse_short_edges(EdgeQueueContext *eq_ctx,
     pbvh_bmesh_collapse_edge(pbvh, e, v1, v2, deleted_verts, deleted_faces, eq_ctx);
   }
 
-  BLI_ghash_free(deleted_verts, NULL, NULL);
+  LIB_ghash_free(deleted_verts, NULL, NULL);
 
   return any_collapsed;
 }
@@ -1510,9 +1510,9 @@ bool pbvh_bmesh_node_raycast(PBVHNode *node,
     GSetIterator gs_iter;
 
     GSET_ITER (gs_iter, node->bm_faces) {
-      BMFace *f = BLI_gsetIterator_getKey(&gs_iter);
+      BMFace *f = LIB_gsetIterator_getKey(&gs_iter);
 
-      BLI_assert(f->len == 3);
+      LIB_assert(f->len == 3);
       if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
         BMVert *v_tri[3];
 
@@ -1545,7 +1545,7 @@ bool pbvh_bmesh_node_raycast(PBVHNode *node,
   return hit;
 }
 
-bool BKE_pbvh_bmesh_node_raycast_detail(PBVHNode *node,
+bool DUNE_pbvh_bmesh_node_raycast_detail(PBVHNode *node,
                                         const float ray_start[3],
                                         struct IsectRayPrecalc *isect_precalc,
                                         float *depth,
@@ -1562,7 +1562,7 @@ bool BKE_pbvh_bmesh_node_raycast_detail(PBVHNode *node,
   GSET_ITER (gs_iter, node->bm_faces) {
     BMFace *f = BLI_gsetIterator_getKey(&gs_iter);
 
-    BLI_assert(f->len == 3);
+    LIB_assert(f->len == 3);
     if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
       BMVert *v_tri[3];
       bool hit_local;
@@ -1618,7 +1618,7 @@ bool pbvh_bmesh_node_nearest_to_ray(PBVHNode *node,
     GSET_ITER (gs_iter, node->bm_faces) {
       BMFace *f = BLI_gsetIterator_getKey(&gs_iter);
 
-      BLI_assert(f->len == 3);
+      LIB_assert(f->len == 3);
       if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
         BMVert *v_tri[3];
 
@@ -1747,7 +1747,7 @@ static void pbvh_bmesh_node_limit_ensure_fast(
 
   /* at this point, faces should have been split along the array range sequentially,
    * each sequential part belonging to one node only */
-  BLI_assert((num_child1 + num_child2) == node->totface);
+  LIB_assert((num_child1 + num_child2) == node->totface);
 
   node->child1 = child1 = BLI_memarena_alloc(arena, sizeof(struct FastNodeBuildInfo));
   node->child2 = child2 = BLI_memarena_alloc(arena, sizeof(struct FastNodeBuildInfo));
@@ -1794,7 +1794,7 @@ static void pbvh_bmesh_create_nodes_fast_recursive(
     bool has_visible = false;
 
     n->flag = PBVH_Leaf;
-    n->bm_faces = BLI_gset_ptr_new_ex("bm_faces", node->totface);
+    n->bm_faces = LIB_gset_ptr_new_ex("bm_faces", node->totface);
 
     /* Create vert hash sets */
     n->bm_unique_verts = BLI_gset_ptr_new("bm_unique_verts");
@@ -1817,12 +1817,12 @@ static void pbvh_bmesh_create_nodes_fast_recursive(
       BMLoop *l_iter = l_first;
       do {
         BMVert *v = l_iter->v;
-        if (!BLI_gset_haskey(n->bm_unique_verts, v)) {
+        if (!LIB_gset_haskey(n->bm_unique_verts, v)) {
           if (BM_ELEM_CD_GET_INT(v, cd_vert_node_offset) != DYNTOPO_NODE_NONE) {
-            BLI_gset_add(n->bm_other_verts, v);
+            LIB_gset_add(n->bm_other_verts, v);
           }
           else {
-            BLI_gset_insert(n->bm_unique_verts, v);
+            LIB_gset_insert(n->bm_unique_verts, v);
             BM_ELEM_CD_SET_INT(v, cd_vert_node_offset, node_index);
           }
         }
@@ -1836,22 +1836,22 @@ static void pbvh_bmesh_create_nodes_fast_recursive(
       BB_expand_with_bb(&n->vb, (BB *)bbc);
     }
 
-    BLI_assert(n->vb.bmin[0] <= n->vb.bmax[0] && n->vb.bmin[1] <= n->vb.bmax[1] &&
+    LIB_assert(n->vb.bmin[0] <= n->vb.bmax[0] && n->vb.bmin[1] <= n->vb.bmax[1] &&
                n->vb.bmin[2] <= n->vb.bmax[2]);
 
     n->orig_vb = n->vb;
 
     /* Build GPU buffers for new node and update vertex normals */
-    BKE_pbvh_node_mark_rebuild_draw(n);
+    DUNE_pbvh_node_mark_rebuild_draw(n);
 
-    BKE_pbvh_node_fully_hidden_set(n, !has_visible);
+    DUNE_pbvh_node_fully_hidden_set(n, !has_visible);
     n->flag |= PBVH_UpdateNormals;
   }
 }
 
 /***************************** Public API *****************************/
 
-void BKE_pbvh_build_bmesh(PBVH *pbvh,
+void DUNE_pbvh_build_bmesh(PBVH *pbvh,
                           BMesh *bm,
                           bool smooth_shading,
                           BMLog *log,
@@ -1862,7 +1862,7 @@ void BKE_pbvh_build_bmesh(PBVH *pbvh,
   pbvh->cd_face_node_offset = cd_face_node_offset;
   pbvh->bm = bm;
 
-  BKE_pbvh_bmesh_detail_size_set(pbvh, 0.75);
+  DUNE_pbvh_bmesh_detail_size_set(pbvh, 0.75);
 
   pbvh->type = PBVH_BMESH;
   pbvh->bm_log = log;
@@ -1877,7 +1877,7 @@ void BKE_pbvh_build_bmesh(PBVH *pbvh,
   /* bounding box array of all faces, no need to recalculate every time */
   BBC *bbc_array = MEM_mallocN(sizeof(BBC) * bm->totface, "BBC");
   BMFace **nodeinfo = MEM_mallocN(sizeof(*nodeinfo) * bm->totface, "nodeinfo");
-  MemArena *arena = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, "fast PBVH node storage");
+  MemArena *arena = LIB_memarena_new(LIB_MEMARENA_STD_BUFSIZE, "fast PBVH node storage");
 
   BMIter iter;
   BMFace *f;
@@ -1923,12 +1923,12 @@ void BKE_pbvh_build_bmesh(PBVH *pbvh,
   /* take root node and visit and populate children recursively */
   pbvh_bmesh_create_nodes_fast_recursive(pbvh, nodeinfo, bbc_array, &rootnode, 0);
 
-  BLI_memarena_free(arena);
+  LIB_memarena_free(arena);
   MEM_freeN(bbc_array);
   MEM_freeN(nodeinfo);
 }
 
-bool BKE_pbvh_bmesh_update_topology(PBVH *pbvh,
+bool DUNE_pbvh_bmesh_update_topology(PBVH *pbvh,
                                     PBVHTopologyUpdateMode mode,
                                     const float center[3],
                                     const float view_normal[3],
@@ -1937,8 +1937,8 @@ bool BKE_pbvh_bmesh_update_topology(PBVH *pbvh,
                                     const bool use_projected)
 {
   /* 2 is enough for edge faces - manifold edge */
-  BLI_buffer_declare_static(BMLoop *, edge_loops, BLI_BUFFER_NOP, 2);
-  BLI_buffer_declare_static(BMFace *, deleted_faces, BLI_BUFFER_NOP, 32);
+  LIB_buffer_declare_static(BMLoop *, edge_loops, BLI_BUFFER_NOP, 2);
+  LIB_buffer_declare_static(BMFace *, deleted_faces, BLI_BUFFER_NOP, 32);
   const int cd_vert_mask_offset = CustomData_get_offset(&pbvh->bm->vdata, CD_PAINT_MASK);
   const int cd_vert_node_offset = pbvh->cd_vert_node_offset;
   const int cd_face_node_offset = pbvh->cd_face_node_offset;
@@ -1946,12 +1946,12 @@ bool BKE_pbvh_bmesh_update_topology(PBVH *pbvh,
   bool modified = false;
 
   if (view_normal) {
-    BLI_assert(len_squared_v3(view_normal) != 0.0f);
+    LIB_assert(len_squared_v3(view_normal) != 0.0f);
   }
 
   if (mode & PBVH_Collapse) {
     EdgeQueue q;
-    BLI_mempool *queue_pool = BLI_mempool_create(sizeof(BMVert *) * 2, 0, 128, BLI_MEMPOOL_NOP);
+    LIB_mempool *queue_pool = LIB_mempool_create(sizeof(BMVert *) * 2, 0, 128, LIB_MEMPOOL_NOP);
     EdgeQueueContext eq_ctx = {
         &q,
         queue_pool,
@@ -1964,13 +1964,13 @@ bool BKE_pbvh_bmesh_update_topology(PBVH *pbvh,
     short_edge_queue_create(
         &eq_ctx, pbvh, center, view_normal, radius, use_frontface, use_projected);
     modified |= pbvh_bmesh_collapse_short_edges(&eq_ctx, pbvh, &deleted_faces);
-    BLI_heapsimple_free(q.heap, NULL);
-    BLI_mempool_destroy(queue_pool);
+    LIB_heapsimple_free(q.heap, NULL);
+    LIB_mempool_destroy(queue_pool);
   }
 
   if (mode & PBVH_Subdivide) {
     EdgeQueue q;
-    BLI_mempool *queue_pool = BLI_mempool_create(sizeof(BMVert *) * 2, 0, 128, BLI_MEMPOOL_NOP);
+    LIB_mempool *queue_pool = LIB_mempool_create(sizeof(BMVert *) * 2, 0, 128, BLI_MEMPOOL_NOP);
     EdgeQueueContext eq_ctx = {
         &q,
         queue_pool,
@@ -1983,8 +1983,8 @@ bool BKE_pbvh_bmesh_update_topology(PBVH *pbvh,
     long_edge_queue_create(
         &eq_ctx, pbvh, center, view_normal, radius, use_frontface, use_projected);
     modified |= pbvh_bmesh_subdivide_long_edges(&eq_ctx, pbvh, &edge_loops);
-    BLI_heapsimple_free(q.heap, NULL);
-    BLI_mempool_destroy(queue_pool);
+    LIB_heapsimple_free(q.heap, NULL);
+    LIB_mempool_destroy(queue_pool);
   }
 
   /* Unmark nodes */
@@ -1995,8 +1995,8 @@ bool BKE_pbvh_bmesh_update_topology(PBVH *pbvh,
       node->flag &= ~PBVH_UpdateTopology;
     }
   }
-  BLI_buffer_free(&edge_loops);
-  BLI_buffer_free(&deleted_faces);
+  LIB_buffer_free(&edge_loops);
+  LIB_buffer_free(&deleted_faces);
 
 #ifdef USE_VERIFY
   pbvh_bmesh_verify(pbvh);
@@ -2005,16 +2005,16 @@ bool BKE_pbvh_bmesh_update_topology(PBVH *pbvh,
   return modified;
 }
 
-void BKE_pbvh_bmesh_node_save_orig(BMesh *bm, PBVHNode *node)
+void DUNE_pbvh_bmesh_node_save_orig(BMesh *bm, PBVHNode *node)
 {
   /* Skip if original coords/triangles are already saved */
   if (node->bm_orco) {
     return;
   }
 
-  const int totvert = BLI_gset_len(node->bm_unique_verts) + BLI_gset_len(node->bm_other_verts);
+  const int totvert = LIB_gset_len(node->bm_unique_verts) + BLI_gset_len(node->bm_other_verts);
 
-  const int tottri = BLI_gset_len(node->bm_faces);
+  const int tottri = LIB_gset_len(node->bm_faces);
 
   node->bm_orco = MEM_mallocN(sizeof(*node->bm_orco) * totvert, __func__);
   node->bm_ortri = MEM_mallocN(sizeof(*node->bm_ortri) * tottri, __func__);
@@ -2023,13 +2023,13 @@ void BKE_pbvh_bmesh_node_save_orig(BMesh *bm, PBVHNode *node)
   int i = 0;
   GSetIterator gs_iter;
   GSET_ITER (gs_iter, node->bm_unique_verts) {
-    BMVert *v = BLI_gsetIterator_getKey(&gs_iter);
+    BMVert *v = LIB_gsetIterator_getKey(&gs_iter);
     copy_v3_v3(node->bm_orco[i], v->co);
     BM_elem_index_set(v, i); /* set_dirty! */
     i++;
   }
   GSET_ITER (gs_iter, node->bm_other_verts) {
-    BMVert *v = BLI_gsetIterator_getKey(&gs_iter);
+    BMVert *v = LIB_gsetIterator_getKey(&gs_iter);
     copy_v3_v3(node->bm_orco[i], v->co);
     BM_elem_index_set(v, i); /* set_dirty! */
     i++;
@@ -2062,7 +2062,7 @@ void BKE_pbvh_bmesh_node_save_orig(BMesh *bm, PBVHNode *node)
   node->bm_tot_ortri = i;
 }
 
-void BKE_pbvh_bmesh_after_stroke(PBVH *pbvh)
+void DUNE_pbvh_bmesh_after_stroke(PBVH *pbvh)
 {
   for (int i = 0; i < pbvh->totnode; i++) {
     PBVHNode *n = &pbvh->nodes[i];
@@ -2077,28 +2077,28 @@ void BKE_pbvh_bmesh_after_stroke(PBVH *pbvh)
   }
 }
 
-void BKE_pbvh_bmesh_detail_size_set(PBVH *pbvh, float detail_size)
+void DUNE_pbvh_bmesh_detail_size_set(PBVH *pbvh, float detail_size)
 {
   pbvh->bm_max_edge_len = detail_size;
   pbvh->bm_min_edge_len = pbvh->bm_max_edge_len * 0.4f;
 }
 
-void BKE_pbvh_node_mark_topology_update(PBVHNode *node)
+void DUNE_pbvh_node_mark_topology_update(PBVHNode *node)
 {
   node->flag |= PBVH_UpdateTopology;
 }
 
-GSet *BKE_pbvh_bmesh_node_unique_verts(PBVHNode *node)
+GSet *DUNE_pbvh_bmesh_node_unique_verts(PBVHNode *node)
 {
   return node->bm_unique_verts;
 }
 
-GSet *BKE_pbvh_bmesh_node_other_verts(PBVHNode *node)
+GSet *DUNE_pbvh_bmesh_node_other_verts(PBVHNode *node)
 {
   return node->bm_other_verts;
 }
 
-struct GSet *BKE_pbvh_bmesh_node_faces(PBVHNode *node)
+struct GSet *DUNE_pbvh_bmesh_node_faces(PBVHNode *node)
 {
   return node->bm_faces;
 }
@@ -2159,23 +2159,23 @@ static void print_flag_factors(int flag)
 static void pbvh_bmesh_verify(PBVH *pbvh)
 {
   /* build list of faces & verts to lookup */
-  GSet *faces_all = BLI_gset_ptr_new_ex(__func__, pbvh->bm->totface);
+  GSet *faces_all = LIB_gset_ptr_new_ex(__func__, pbvh->bm->totface);
   BMIter iter;
 
   {
     BMFace *f;
     BM_ITER_MESH (f, &iter, pbvh->bm, BM_FACES_OF_MESH) {
-      BLI_assert(BM_ELEM_CD_GET_INT(f, pbvh->cd_face_node_offset) != DYNTOPO_NODE_NONE);
-      BLI_gset_insert(faces_all, f);
+      LIB_assert(BM_ELEM_CD_GET_INT(f, pbvh->cd_face_node_offset) != DYNTOPO_NODE_NONE);
+      LIB_gset_insert(faces_all, f);
     }
   }
 
-  GSet *verts_all = BLI_gset_ptr_new_ex(__func__, pbvh->bm->totvert);
+  GSet *verts_all = LIB_gset_ptr_new_ex(__func__, pbvh->bm->totvert);
   {
     BMVert *v;
     BM_ITER_MESH (v, &iter, pbvh->bm, BM_VERTS_OF_MESH) {
       if (BM_ELEM_CD_GET_INT(v, pbvh->cd_vert_node_offset) != DYNTOPO_NODE_NONE) {
-        BLI_gset_insert(verts_all, v);
+        LIB_gset_insert(verts_all, v);
       }
     }
   }
@@ -2189,8 +2189,8 @@ static void pbvh_bmesh_verify(PBVH *pbvh)
       totvert += n->bm_unique_verts ? BLI_gset_len(n->bm_unique_verts) : 0;
     }
 
-    BLI_assert(totface == BLI_gset_len(faces_all));
-    BLI_assert(totvert == BLI_gset_len(verts_all));
+    LIB_assert(totface == LIB_gset_len(faces_all));
+    LIB_assert(totvert == LIB_gset_len(verts_all));
   }
 
   {
@@ -2201,26 +2201,26 @@ static void pbvh_bmesh_verify(PBVH *pbvh)
       PBVHNode *n = pbvh_bmesh_node_lookup(pbvh, f);
 
       /* Check that the face's node is a leaf */
-      BLI_assert(n->flag & PBVH_Leaf);
+      LIB_assert(n->flag & PBVH_Leaf);
 
       /* Check that the face's node knows it owns the face */
-      BLI_assert(BLI_gset_haskey(n->bm_faces, f));
+      LIB_assert(LIB_gset_haskey(n->bm_faces, f));
 
       /* Check the face's vertices... */
       BM_ITER_ELEM (v, &bm_iter, f, BM_VERTS_OF_FACE) {
         PBVHNode *nv;
 
         /* Check that the vertex is in the node */
-        BLI_assert(BLI_gset_haskey(n->bm_unique_verts, v) ^ BLI_gset_haskey(n->bm_other_verts, v));
+        LIB_assert(LIB_gset_haskey(n->bm_unique_verts, v) ^ BLI_gset_haskey(n->bm_other_verts, v));
 
         /* Check that the vertex has a node owner */
         nv = pbvh_bmesh_node_lookup(pbvh, v);
 
         /* Check that the vertex's node knows it owns the vert */
-        BLI_assert(BLI_gset_haskey(nv->bm_unique_verts, v));
+        LIB_assert(LIB_gset_haskey(nv->bm_unique_verts, v));
 
         /* Check that the vertex isn't duplicated as an 'other' vert */
-        BLI_assert(!BLI_gset_haskey(nv->bm_other_verts, v));
+        LIB_assert(!LIB_gset_haskey(nv->bm_other_verts, v));
       }
     }
   }
@@ -2237,7 +2237,7 @@ static void pbvh_bmesh_verify(PBVH *pbvh)
       PBVHNode *n = pbvh_bmesh_node_lookup(pbvh, v);
 
       /* Check that the vert's node is a leaf */
-      BLI_assert(n->flag & PBVH_Leaf);
+      LIB_assert(n->flag & PBVH_Leaf);
 
       /* Check that the vert's node knows it owns the vert */
       BLI_assert(BLI_gset_haskey(n->bm_unique_verts, v));
