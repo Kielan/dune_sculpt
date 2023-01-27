@@ -2,45 +2,45 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_brush_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_brush.h"
+#include "TYPES_modifier.h"
+#include "TYPES_scene.h"
 
-#include "BLI_utildefines.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_brush.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_paint.h"
+#include "DUNE_brush.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_main.h"
+#include "DUNE_paint.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Tool Slot Initialization / Versioning
+/** Tool Slot Initialization / Versioning
  *
  * These functions run to update old files (while versioning),
  * take care only to perform low-level functions here.
- * \{ */
+ **/
 
-void BKE_paint_toolslots_len_ensure(Paint *paint, int len)
+void DUNE_paint_toolslots_len_ensure(Paint *paint, int len)
 {
   /* Tool slots are 'uchar'. */
-  BLI_assert(len <= UCHAR_MAX);
+  LIB_assert(len <= UCHAR_MAX);
   if (paint->tool_slots_len < len) {
     paint->tool_slots = MEM_recallocN(paint->tool_slots, sizeof(*paint->tool_slots) * len);
     paint->tool_slots_len = len;
   }
 }
 
-static void paint_toolslots_init(Main *bmain, Paint *paint)
+static void paint_toolslots_init(Main *duneMain, Paint *paint)
 {
   if (paint == NULL) {
     return;
   }
   const eObjectMode ob_mode = paint->runtime.ob_mode;
-  BLI_assert(paint->runtime.tool_offset && ob_mode);
-  for (Brush *brush = bmain->brushes.first; brush; brush = brush->id.next) {
+  LIB_assert(paint->runtime.tool_offset && ob_mode);
+  for (Brush *brush = duneMain->brushes.first; brush; brush = brush->id.next) {
     if (brush->ob_mode & ob_mode) {
-      const int slot_index = BKE_brush_tool_get(brush, paint);
-      BKE_paint_toolslots_len_ensure(paint, slot_index + 1);
+      const int slot_index = DUNE_brush_tool_get(brush, paint);
+      DUNE_paint_toolslots_len_ensure(paint, slot_index + 1);
       if (paint->tool_slots[slot_index].brush == NULL) {
         paint->tool_slots[slot_index].brush = brush;
         id_us_plus(&brush->id);
@@ -49,27 +49,25 @@ static void paint_toolslots_init(Main *bmain, Paint *paint)
   }
 }
 
-/**
- * Initialize runtime since this is called from versioning code.
- */
-static void paint_toolslots_init_with_runtime(Main *bmain, ToolSettings *ts, Paint *paint)
+/** Initialize runtime since this is called from versioning code. **/
+static void paint_toolslots_init_with_runtime(Main *duneMain, ToolSettings *ts, Paint *paint)
 {
   if (paint == NULL) {
     return;
   }
 
-  /* Needed so #Paint_Runtime is updated when versioning. */
-  BKE_paint_runtime_init(ts, paint);
+  /* Needed so Paint_Runtime is updated when versioning. */
+  DUNE_paint_runtime_init(ts, paint);
   paint_toolslots_init(bmain, paint);
 }
 
-void BKE_paint_toolslots_init_from_main(struct Main *bmain)
+void DUNE_paint_toolslots_init_from_main(struct Main *duneMain)
 {
-  for (Scene *scene = bmain->scenes.first; scene; scene = scene->id.next) {
+  for (Scene *scene = duneMain->scenes.first; scene; scene = scene->id.next) {
     ToolSettings *ts = scene->toolsettings;
-    paint_toolslots_init_with_runtime(bmain, ts, &ts->imapaint.paint);
+    paint_toolslots_init_with_runtime(duneMain, ts, &ts->imapaint.paint);
     if (ts->sculpt) {
-      paint_toolslots_init_with_runtime(bmain, ts, &ts->sculpt->paint);
+      paint_toolslots_init_with_runtime(duneMain, ts, &ts->sculpt->paint);
     }
     if (ts->vpaint) {
       paint_toolslots_init_with_runtime(bmain, ts, &ts->vpaint->paint);
