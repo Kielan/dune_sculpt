@@ -3449,13 +3449,13 @@ void BKE_ptcache_toggle_disk_cache(PTCacheID *pid)
 
   if ((cache->flag & PTCACHE_DISK_CACHE) == 0) {
     if (cache->index) {
-      BKE_object_delete_ptcache((Object *)pid->owner_id, cache->index);
+      DUNE_object_delete_ptcache((Object *)pid->owner_id, cache->index);
       cache->index = -1;
     }
   }
 }
 
-void BKE_ptcache_disk_cache_rename(PTCacheID *pid, const char *name_src, const char *name_dst)
+void DUNE_ptcache_disk_cache_rename(PTCacheID *pid, const char *name_src, const char *name_dst)
 {
   char old_name[80];
   int len; /* store the length of the string */
@@ -3500,19 +3500,19 @@ void BKE_ptcache_disk_cache_rename(PTCacheID *pid, const char *name_src, const c
         const int frame = ptcache_frame_from_filename(de->d_name, ext);
 
         if (frame != -1) {
-          BLI_join_dirfile(old_path_full, sizeof(old_path_full), path, de->d_name);
+          LIB_join_dirfile(old_path_full, sizeof(old_path_full), path, de->d_name);
           ptcache_filename(pid, new_path_full, frame, 1, 1);
-          BLI_rename(old_path_full, new_path_full);
+          LIB_rename(old_path_full, new_path_full);
         }
       }
     }
   }
   closedir(dir);
 
-  BLI_strncpy(pid->cache->name, old_name, sizeof(pid->cache->name));
+  LIB_strncpy(pid->cache->name, old_name, sizeof(pid->cache->name));
 }
 
-void BKE_ptcache_load_external(PTCacheID *pid)
+void DUNE_ptcache_load_external(PTCacheID *pid)
 {
   /* TODO: */
   PointCache *cache = pid->cache;
@@ -3625,7 +3625,7 @@ void BKE_ptcache_load_external(PTCacheID *pid)
   cache->flag |= PTCACHE_FLAG_INFO_DIRTY;
 }
 
-void BKE_ptcache_update_info(PTCacheID *pid)
+void DUNE_ptcache_update_info(PTCacheID *pid)
 {
   PointCache *cache = pid->cache;
   PTCacheExtra *extra = NULL;
@@ -3638,20 +3638,20 @@ void BKE_ptcache_update_info(PTCacheID *pid)
     int cfra = cache->startframe;
 
     for (; cfra <= cache->endframe; cfra++) {
-      if (BKE_ptcache_id_exist(pid, cfra)) {
+      if (DUNE_ptcache_id_exist(pid, cfra)) {
         totframes++;
       }
     }
 
     /* smoke doesn't use frame 0 as info frame so can't check based on totpoint */
     if (pid->type == PTCACHE_TYPE_SMOKE_DOMAIN && totframes) {
-      BLI_snprintf(cache->info, sizeof(cache->info), TIP_("%i frames found!"), totframes);
+      LIB_snprintf(cache->info, sizeof(cache->info), TIP_("%i frames found!"), totframes);
     }
     else if (totframes && cache->totpoint) {
-      BLI_snprintf(cache->info, sizeof(cache->info), TIP_("%i points found!"), cache->totpoint);
+      LIB_snprintf(cache->info, sizeof(cache->info), TIP_("%i points found!"), cache->totpoint);
     }
     else {
-      BLI_strncpy(cache->info, TIP_("No valid data to read!"), sizeof(cache->info));
+      LIB_strncpy(cache->info, TIP_("No valid data to read!"), sizeof(cache->info));
     }
     return;
   }
@@ -3661,23 +3661,23 @@ void BKE_ptcache_update_info(PTCacheID *pid)
       int totpoint = pid->totpoint(pid->calldata, 0);
 
       if (cache->totpoint > totpoint) {
-        BLI_snprintf(
+        LIB_snprintf(
             mem_info, sizeof(mem_info), TIP_("%i cells + High Resolution cached"), totpoint);
       }
       else {
-        BLI_snprintf(mem_info, sizeof(mem_info), TIP_("%i cells cached"), totpoint);
+        LIB_snprintf(mem_info, sizeof(mem_info), TIP_("%i cells cached"), totpoint);
       }
     }
     else {
       int cfra = cache->startframe;
 
       for (; cfra <= cache->endframe; cfra++) {
-        if (BKE_ptcache_id_exist(pid, cfra)) {
+        if (DUNE_ptcache_id_exist(pid, cfra)) {
           totframes++;
         }
       }
 
-      BLI_snprintf(mem_info, sizeof(mem_info), TIP_("%i frames on disk"), totframes);
+      LIB_snprintf(mem_info, sizeof(mem_info), TIP_("%i frames on disk"), totframes);
     }
   }
   else {
@@ -3702,10 +3702,10 @@ void BKE_ptcache_update_info(PTCacheID *pid)
       totframes++;
     }
 
-    BLI_str_format_int_grouped(formatted_tot, totframes);
-    BLI_str_format_byte_unit(formatted_mem, bytes, false);
+    LIB_str_format_int_grouped(formatted_tot, totframes);
+    LIB_str_format_byte_unit(formatted_mem, bytes, false);
 
-    BLI_snprintf(mem_info,
+    LIB_snprintf(mem_info,
                  sizeof(mem_info),
                  TIP_("%s frames in memory (%s)"),
                  formatted_tot,
@@ -3713,28 +3713,28 @@ void BKE_ptcache_update_info(PTCacheID *pid)
   }
 
   if (cache->flag & PTCACHE_OUTDATED) {
-    BLI_snprintf(cache->info, sizeof(cache->info), TIP_("%s, cache is outdated!"), mem_info);
+    LIB_snprintf(cache->info, sizeof(cache->info), TIP_("%s, cache is outdated!"), mem_info);
   }
   else if (cache->flag & PTCACHE_FRAMES_SKIPPED) {
-    BLI_snprintf(cache->info,
+    LIB_snprintf(cache->info,
                  sizeof(cache->info),
                  TIP_("%s, not exact since frame %i"),
                  mem_info,
                  cache->last_exact);
   }
   else {
-    BLI_snprintf(cache->info, sizeof(cache->info), "%s.", mem_info);
+    LIB_snprintf(cache->info, sizeof(cache->info), "%s.", mem_info);
   }
 }
 
-void BKE_ptcache_validate(PointCache *cache, int framenr)
+void DUNE_ptcache_validate(PointCache *cache, int framenr)
 {
   if (cache) {
     cache->flag |= PTCACHE_SIMULATION_VALID;
     cache->simframe = framenr;
   }
 }
-void BKE_ptcache_invalidate(PointCache *cache)
+void DUNE_ptcache_invalidate(PointCache *cache)
 {
   if (cache) {
     cache->flag &= ~PTCACHE_SIMULATION_VALID;
@@ -3758,22 +3758,22 @@ static const char *ptcache_extra_struct[] = {
     "ParticleSpring",
     "vec3f",
 };
-void BKE_ptcache_blend_write(BlendWriter *writer, ListBase *ptcaches)
+void DUNE_ptcache_write(DuneWriter *writer, ListBase *ptcaches)
 {
   LISTBASE_FOREACH (PointCache *, cache, ptcaches) {
-    BLO_write_struct(writer, PointCache, cache);
+    LOADER_write_struct(writer, PointCache, cache);
 
     if ((cache->flag & PTCACHE_DISK_CACHE) == 0) {
       LISTBASE_FOREACH (PTCacheMem *, pm, &cache->mem_cache) {
-        BLO_write_struct(writer, PTCacheMem, pm);
+        LOADER_write_struct(writer, PTCacheMem, pm);
 
         for (int i = 0; i < BPHYS_TOT_DATA; i++) {
           if (pm->data[i] && pm->data_types & (1 << i)) {
             if (ptcache_data_struct[i][0] == '\0') {
-              BLO_write_raw(writer, MEM_allocN_len(pm->data[i]), pm->data[i]);
+              LOADER_write_raw(writer, MEM_allocN_len(pm->data[i]), pm->data[i]);
             }
             else {
-              BLO_write_struct_array_by_name(
+              LOADER_write_struct_array_by_name(
                   writer, ptcache_data_struct[i], pm->totpoint, pm->data[i]);
             }
           }
@@ -3783,8 +3783,8 @@ void BKE_ptcache_blend_write(BlendWriter *writer, ListBase *ptcaches)
           if (ptcache_extra_struct[extra->type][0] == '\0') {
             continue;
           }
-          BLO_write_struct(writer, PTCacheExtra, extra);
-          BLO_write_struct_array_by_name(
+          LOADER_write_struct(writer, PTCacheExtra, extra);
+          LOADER_write_struct_array_by_name(
               writer, ptcache_extra_struct[extra->type], extra->totdata, extra->data);
         }
       }
@@ -3792,38 +3792,38 @@ void BKE_ptcache_blend_write(BlendWriter *writer, ListBase *ptcaches)
   }
 }
 
-static void direct_link_pointcache_cb(BlendDataReader *reader, void *data)
+static void direct_link_pointcache_cb(DuneDataReader *reader, void *data)
 {
   PTCacheMem *pm = data;
   for (int i = 0; i < BPHYS_TOT_DATA; i++) {
-    BLO_read_data_address(reader, &pm->data[i]);
+    LOADER_read_data_address(reader, &pm->data[i]);
 
     /* the cache saves non-struct data without DNA */
     if (pm->data[i] && ptcache_data_struct[i][0] == '\0' &&
-        BLO_read_requires_endian_switch(reader)) {
+        LOADER_read_requires_endian_switch(reader)) {
       /* data_size returns bytes. */
-      int tot = (BKE_ptcache_data_size(i) * pm->totpoint) / sizeof(int);
+      int tot = (DUNE_ptcache_data_size(i) * pm->totpoint) / sizeof(int);
 
       int *poin = pm->data[i];
 
-      BLI_endian_switch_int32_array(poin, tot);
+      LIB_endian_switch_int32_array(poin, tot);
     }
   }
 
-  BLO_read_list(reader, &pm->extradata);
+  LOADER_read_list(reader, &pm->extradata);
 
   LISTBASE_FOREACH (PTCacheExtra *, extra, &pm->extradata) {
-    BLO_read_data_address(reader, &extra->data);
+    LOADER_read_data_address(reader, &extra->data);
   }
 }
 
-static void direct_link_pointcache(BlendDataReader *reader, PointCache *cache)
+static void direct_link_pointcache(DuneDataReader *reader, PointCache *cache)
 {
   if ((cache->flag & PTCACHE_DISK_CACHE) == 0) {
-    BLO_read_list_cb(reader, &cache->mem_cache, direct_link_pointcache_cb);
+    LOADER_read_list_cb(reader, &cache->mem_cache, direct_link_pointcache_cb);
   }
   else {
-    BLI_listbase_clear(&cache->mem_cache);
+    LIB_listbase_clear(&cache->mem_cache);
   }
 
   cache->flag &= ~PTCACHE_SIMULATION_VALID;
@@ -3834,13 +3834,13 @@ static void direct_link_pointcache(BlendDataReader *reader, PointCache *cache)
   cache->cached_frames_len = 0;
 }
 
-void BKE_ptcache_blend_read_data(BlendDataReader *reader,
+void DUNE_ptcache_read_data(DuneDataReader *reader,
                                  ListBase *ptcaches,
                                  PointCache **ocache,
                                  int force_disk)
 {
   if (ptcaches->first) {
-    BLO_read_list(reader, ptcaches);
+    LOADER_read_list(reader, ptcaches);
     LISTBASE_FOREACH (PointCache *, cache, ptcaches) {
       direct_link_pointcache(reader, cache);
       if (force_disk) {
@@ -3849,11 +3849,11 @@ void BKE_ptcache_blend_read_data(BlendDataReader *reader,
       }
     }
 
-    BLO_read_data_address(reader, ocache);
+    LOADER_read_data_address(reader, ocache);
   }
   else if (*ocache) {
     /* old "single" caches need to be linked too */
-    BLO_read_data_address(reader, ocache);
+    LOADER_read_data_address(reader, ocache);
     direct_link_pointcache(reader, *ocache);
     if (force_disk) {
       (*ocache)->flag |= PTCACHE_DISK_CACHE;
