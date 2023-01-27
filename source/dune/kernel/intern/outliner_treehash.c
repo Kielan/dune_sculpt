@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bke
- *
- * Tree hash for the outliner space.
- */
+/** Tree hash for the outliner space. **/
 
 #include <stdlib.h>
 #include <string.h>
