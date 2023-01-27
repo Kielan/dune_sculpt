@@ -1,11 +1,3 @@
-
-/* SPDX-License-Identifier: GPL-2.0-or-later
- * Copyright 2001-2002 NaN Holding BV. All rights reserved. */
-
-/** \file
- * \ingroup bke
- */
-
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -18,31 +10,31 @@
 #include "MEM_guardedalloc.h"
 #include <string.h>
 
-#include "DNA_ID.h"
-#include "DNA_image_types.h"
-#include "DNA_packedFile_types.h"
-#include "DNA_sound_types.h"
-#include "DNA_vfont_types.h"
-#include "DNA_volume_types.h"
+#include "TYPES_ID.h"
+#include "TYPES_image.h"
+#include "TYPES_packedFile.h"
+#include "TYPES_sound.h"
+#include "TYPES_vfont.h"
+#include "TYPES_volume.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "LIB_dunelib.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_main.h"
-#include "BKE_packedFile.h"
-#include "BKE_report.h"
-#include "BKE_sound.h"
-#include "BKE_vfont.h"
-#include "BKE_volume.h"
+#include "DUNE_image.h"
+#include "DUNE_image_format.h"
+#include "DUNE_main.h"
+#include "DUNE_packedFile.h"
+#include "DUNE_report.h"
+#include "DUNE_sound.h"
+#include "DUNE_vfont.h"
+#include "DUNE_volume.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
-int BKE_packedfile_seek(PackedFile *pf, int offset, int whence)
+int DUNE_packedfile_seek(PackedFile *pf, int offset, int whence)
 {
   int oldseek = -1, seek = 0;
 
