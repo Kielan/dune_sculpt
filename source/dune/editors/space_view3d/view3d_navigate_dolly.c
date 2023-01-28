@@ -1,13 +1,13 @@
-#include "BLI_math.h"
+#include "LIB_math.h"
 
-#include "BKE_context.h"
-#include "BKE_report.h"
+#include "DUNE_context.h"
+#include "DUNE_report.h"
 
 #include "DEG_depsgraph.h"
 
 #include "WM_api.h"
 
-#include "RNA_access.h"
+#include "API_access.h"
 
 #include "ED_screen.h"
 
@@ -15,13 +15,13 @@
 #include "view3d_navigate.h" /* own include */
 
 /* -------------------------------------------------------------------- */
-/** \name View Dolly Operator
+/** View Dolly Operator
  *
  * Like zoom but translates the view offset along the view direction
- * which avoids #RegionView3D.dist approaching zero.
- * \{ */
+ * which avoids RegionView3D.dist approaching zero.
+ **/
 
-/* This is an exact copy of #viewzoom_modal_keymap. */
+/* This is an exact copy of viewzoom_modal_keymap. */
 void viewdolly_modal_keymap(wmKeyConfig *keyconf)
 {
   static const EnumPropertyItem modal_items[] = {
