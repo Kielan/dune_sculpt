@@ -3,13 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_ghash.h"
-#include "BLI_mempool.h"
-#include "BLI_utildefines.h"
+#include "LIB_ghash.h"
+#include "LIB_mempool.h"
+#include "LIB_utildefines.h"
 
-#include "DNA_outliner_types.h"
+#include "TYPES_outliner.h"
 
-#include "BKE_outliner_treehash.h"
+#include "DUNE_outliner_treehash.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -47,7 +47,7 @@ static void tse_group_add_element(TseGroup *tse_group, TreeStoreElem *elem)
 static void tse_group_remove_element(TseGroup *tse_group, TreeStoreElem *elem)
 {
   int min_allocated = MAX2(1, tse_group->allocated / 2);
-  BLI_assert(tse_group->allocated == 1 || (tse_group->allocated % 2) == 0);
+  LIB_assert(tse_group->allocated == 1 || (tse_group->allocated % 2) == 0);
 
   tse_group->size--;
   BLI_assert(tse_group->size >= 0);
@@ -81,12 +81,12 @@ static unsigned int tse_hash(const void *ptr)
     unsigned int u_int;
   } hash;
 
-  BLI_assert((tse->type != TSE_SOME_ID) || !tse->nr);
+  LIB_assert((tse->type != TSE_SOME_ID) || !tse->nr);
 
   hash.h_pair[0] = tse->type;
   hash.h_pair[1] = tse->nr;
 
-  hash.u_int ^= BLI_ghashutil_ptrhash(tse->id);
+  hash.u_int ^= LIB_ghashutil_ptrhash(tse->id);
 
   return hash.u_int;
 }
@@ -101,19 +101,19 @@ static bool tse_cmp(const void *a, const void *b)
 static void fill_treehash(void *treehash, BLI_mempool *treestore)
 {
   TreeStoreElem *tselem;
-  BLI_mempool_iter iter;
-  BLI_mempool_iternew(treestore, &iter);
+  LIB_mempool_iter iter;
+  LIB_mempool_iternew(treestore, &iter);
 
-  BLI_assert(treehash);
+  LIB_assert(treehash);
 
-  while ((tselem = BLI_mempool_iterstep(&iter))) {
-    BKE_outliner_treehash_add_element(treehash, tselem);
+  while ((tselem = LIB_mempool_iterstep(&iter))) {
+    DUNE_outliner_treehash_add_element(treehash, tselem);
   }
 }
 
-void *BKE_outliner_treehash_create_from_treestore(BLI_mempool *treestore)
+void *DUNE_outliner_treehash_create_from_treestore(LIB_mempool *treestore)
 {
-  GHash *treehash = BLI_ghash_new_ex(tse_hash, tse_cmp, "treehash", BLI_mempool_len(treestore));
+  GHash *treehash = LIB_ghash_new_ex(tse_hash, tse_cmp, "treehash", LIB_mempool_len(treestore));
   fill_treehash(treehash, treestore);
   return treehash;
 }
@@ -123,31 +123,31 @@ static void free_treehash_group(void *key)
   tse_group_free(key);
 }
 
-void BKE_outliner_treehash_clear_used(void *treehash)
+void DUNE_outliner_treehash_clear_used(void *treehash)
 {
   GHashIterator gh_iter;
 
   GHASH_ITER (gh_iter, treehash) {
-    TseGroup *group = BLI_ghashIterator_getValue(&gh_iter);
+    TseGroup *group = LIB_ghashIterator_getValue(&gh_iter);
     group->lastused = 0;
   }
 }
 
-void *BKE_outliner_treehash_rebuild_from_treestore(void *treehash, BLI_mempool *treestore)
+void *DUNE_outliner_treehash_rebuild_from_treestore(void *treehash, LIB_mempool *treestore)
 {
-  BLI_assert(treehash);
+  LIB_assert(treehash);
 
-  BLI_ghash_clear_ex(treehash, NULL, free_treehash_group, BLI_mempool_len(treestore));
+  LIB_ghash_clear_ex(treehash, NULL, free_treehash_group, LIB_mempool_len(treestore));
   fill_treehash(treehash, treestore);
   return treehash;
 }
 
-void BKE_outliner_treehash_add_element(void *treehash, TreeStoreElem *elem)
+void DUNE_outliner_treehash_add_element(void *treehash, TreeStoreElem *elem)
 {
   TseGroup *group;
   void **val_p;
 
-  if (!BLI_ghash_ensure_p(treehash, elem, &val_p)) {
+  if (!LIB_ghash_ensure_p(treehash, elem, &val_p)) {
     *val_p = tse_group_create();
   }
   group = *val_p;
@@ -155,42 +155,42 @@ void BKE_outliner_treehash_add_element(void *treehash, TreeStoreElem *elem)
   tse_group_add_element(group, elem);
 }
 
-void BKE_outliner_treehash_remove_element(void *treehash, TreeStoreElem *elem)
+void DUNE_outliner_treehash_remove_element(void *treehash, TreeStoreElem *elem)
 {
-  TseGroup *group = BLI_ghash_lookup(treehash, elem);
+  TseGroup *group = LIB_ghash_lookup(treehash, elem);
 
-  BLI_assert(group != NULL);
+  LIB_assert(group != NULL);
   if (group->size <= 1) {
     /* one element -> remove group completely */
-    BLI_ghash_remove(treehash, elem, NULL, free_treehash_group);
+    LIB_ghash_remove(treehash, elem, NULL, free_treehash_group);
   }
   else {
     tse_group_remove_element(group, elem);
   }
 }
 
-static TseGroup *BKE_outliner_treehash_lookup_group(GHash *th, short type, short nr, struct ID *id)
+static TseGroup *DUNE_outliner_treehash_lookup_group(GHash *th, short type, short nr, struct ID *id)
 {
   TreeStoreElem tse_template;
   tse_template.type = type;
   tse_template.nr = (type == TSE_SOME_ID) ? 0 : nr; /* we're picky! :) */
   tse_template.id = id;
 
-  BLI_assert(th);
+  LIB_assert(th);
 
-  return BLI_ghash_lookup(th, &tse_template);
+  return LIB_ghash_lookup(th, &tse_template);
 }
 
-TreeStoreElem *BKE_outliner_treehash_lookup_unused(void *treehash,
+TreeStoreElem *DUNE_outliner_treehash_lookup_unused(void *treehash,
                                                    short type,
                                                    short nr,
                                                    struct ID *id)
 {
   TseGroup *group;
 
-  BLI_assert(treehash);
+  LIB_assert(treehash);
 
-  group = BKE_outliner_treehash_lookup_group(treehash, type, nr, id);
+  group = DUNE_outliner_treehash_lookup_group(treehash, type, nr, id);
   if (group) {
     /* Find unused element, with optimization to start from previously
      * found element assuming we do repeated lookups. */
@@ -211,22 +211,22 @@ TreeStoreElem *BKE_outliner_treehash_lookup_unused(void *treehash,
   return NULL;
 }
 
-TreeStoreElem *BKE_outliner_treehash_lookup_any(void *treehash,
+TreeStoreElem *DUNE_outliner_treehash_lookup_any(void *treehash,
                                                 short type,
                                                 short nr,
                                                 struct ID *id)
 {
   TseGroup *group;
 
-  BLI_assert(treehash);
+  LIB_assert(treehash);
 
-  group = BKE_outliner_treehash_lookup_group(treehash, type, nr, id);
+  group = DUNE_outliner_treehash_lookup_group(treehash, type, nr, id);
   return group ? group->elems[0] : NULL;
 }
 
-void BKE_outliner_treehash_free(void *treehash)
+void DUNE_outliner_treehash_free(void *treehash)
 {
-  BLI_assert(treehash);
+  LIB_assert(treehash);
 
-  BLI_ghash_free(treehash, NULL, free_treehash_group);
+  LIB_ghash_free(treehash, NULL, free_treehash_group);
 }
