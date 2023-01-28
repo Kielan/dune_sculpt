@@ -66,43 +66,39 @@ bool view3d_zoom_or_dolly_poll(dContext *C)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Generic View Operator Properties
- * \{ */
+/** Generic View Operator Properties **/
 
 void view3d_operator_properties_common(wmOperatorType *ot, const enum eV3D_OpPropFlag flag)
 {
   if (flag & V3D_OP_PROP_MOUSE_CO) {
     PropertyRNA *prop;
-    prop = RNA_def_int(ot->srna, "mx", 0, 0, INT_MAX, "Region Position X", "", 0, INT_MAX);
-    RNA_def_property_flag(prop, PROP_HIDDEN);
-    prop = RNA_def_int(ot->srna, "my", 0, 0, INT_MAX, "Region Position Y", "", 0, INT_MAX);
-    RNA_def_property_flag(prop, PROP_HIDDEN);
+    prop = API_def_int(ot->srna, "mx", 0, 0, INT_MAX, "Region Position X", "", 0, INT_MAX);
+    API_def_property_flag(prop, PROP_HIDDEN);
+    prop = API_def_int(ot->srna, "my", 0, 0, INT_MAX, "Region Position Y", "", 0, INT_MAX);
+    API_def_property_flag(prop, PROP_HIDDEN);
   }
   if (flag & V3D_OP_PROP_DELTA) {
-    RNA_def_int(ot->srna, "delta", 0, INT_MIN, INT_MAX, "Delta", "", INT_MIN, INT_MAX);
+    API_def_int(ot->srna, "delta", 0, INT_MIN, INT_MAX, "Delta", "", INT_MIN, INT_MAX);
   }
   if (flag & V3D_OP_PROP_USE_ALL_REGIONS) {
-    PropertyRNA *prop;
-    prop = RNA_def_boolean(
+    PropertyAPI *prop;
+    prop = API_def_boolean(
         ot->srna, "use_all_regions", 0, "All Regions", "View selected for all regions");
-    RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+    API_def_property_flag(prop, PROP_SKIP_SAVE);
   }
   if (flag & V3D_OP_PROP_USE_MOUSE_INIT) {
     WM_operator_properties_use_cursor_init(ot);
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Generic View Operator Custom-Data
- * \{ */
+/** Generic View Operator Custom-Data **/
 
 void calctrackballvec(const rcti *rect, const int event_xy[2], float r_dir[3])
 {
   const float radius = V3D_OP_TRACKBALLSIZE;
   const float t = radius / (float)M_SQRT2;
-  const float size[2] = {BLI_rcti_size_x(rect), BLI_rcti_size_y(rect)};
+  const float size[2] = {LIB_rcti_size_x(rect), LIB_rcti_size_y(rect)};
   /* Aspect correct so dragging in a non-square view doesn't squash the direction.
    * So diagonal motion rotates the same direction the cursor is moving. */
   const float size_min = min_ff(size[0], size[1]);
@@ -148,7 +144,7 @@ void viewrotate_apply_dyn_ofs(ViewOpsData *vod, const float viewquat_new[4])
   }
 }
 
-bool view3d_orbit_calc_center(bContext *C, float r_dyn_ofs[3])
+bool view3d_orbit_calc_center(duneContext *C, float r_dyn_ofs[3])
 {
   static float lastofs[3] = {0, 0, 0};
   bool is_set = false;
@@ -170,7 +166,7 @@ bool view3d_orbit_calc_center(bContext *C, float r_dyn_ofs[3])
     if (ob_act->mode &
         (OB_MODE_SCULPT | OB_MODE_TEXTURE_PAINT | OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT)) {
       float stroke[3];
-      BKE_paint_stroke_get_average(scene, ob_act_eval, stroke);
+      DUNE_paint_stroke_get_average(scene, ob_act_eval, stroke);
       copy_v3_v3(lastofs, stroke);
     }
     else {
@@ -207,7 +203,7 @@ bool view3d_orbit_calc_center(bContext *C, float r_dyn_ofs[3])
         if (ob_eval->runtime.bb && !(ob_eval->runtime.bb->flag & BOUNDBOX_DIRTY)) {
           float cent[3];
 
-          BKE_boundbox_calc_center_aabb(ob_eval->runtime.bb, cent);
+          DUNE_boundbox_calc_center_aabb(ob_eval->runtime.bb, cent);
 
           mul_m4_v3(ob_eval->obmat, cent);
           add_v3_v3(select_center, cent);
@@ -253,12 +249,12 @@ enum eViewOpsFlag viewops_flag_from_prefs(void)
                                 (U.uiflag & USER_DEPTH_NAVIGATE) != 0);
 }
 
-ViewOpsData *viewops_data_create(bContext *C, const wmEvent *event, enum eViewOpsFlag viewops_flag)
+ViewOpsData *viewops_data_create(duneContext *C, const wmEvent *event, enum eViewOpsFlag viewops_flag)
 {
   ViewOpsData *vod = MEM_callocN(sizeof(ViewOpsData), __func__);
 
   /* Store data. */
-  vod->bmain = CTX_data_main(C);
+  vod->duneMain = CTX_data_main(C);
   vod->depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
   vod->scene = CTX_data_scene(C);
   vod->area = CTX_wm_area(C);
@@ -313,8 +309,8 @@ ViewOpsData *viewops_data_create(bContext *C, const wmEvent *event, enum eViewOp
   }
   else {
     /* Simulate the event starting in the middle of the region. */
-    vod->init.event_xy_offset[0] = BLI_rcti_cent_x(&vod->region->winrct) - event->xy[0];
-    vod->init.event_xy_offset[1] = BLI_rcti_cent_y(&vod->region->winrct) - event->xy[1];
+    vod->init.event_xy_offset[0] = LIB_rcti_cent_x(&vod->region->winrct) - event->xy[0];
+    vod->init.event_xy_offset[1] = LIB_rcti_cent_y(&vod->region->winrct) - event->xy[1];
   }
 
   vod->init.event_type = event->type;
@@ -402,7 +398,7 @@ ViewOpsData *viewops_data_create(bContext *C, const wmEvent *event, enum eViewOp
   return vod;
 }
 
-void viewops_data_free(bContext *C, ViewOpsData *vod)
+void viewops_data_free(duneContext *C, ViewOpsData *vod)
 {
   ARegion *region;
   if (vod) {
@@ -428,16 +424,13 @@ void viewops_data_free(bContext *C, ViewOpsData *vod)
   ED_region_tag_redraw(region);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Generic View Operator Utilities
- * \{ */
+/** Generic View Operator Utilities **/
 
 /**
- * \param align_to_quat: When not NULL, set the axis relative to this rotation.
+ * param align_to_quat: When not NULL, set the axis relative to this rotation.
  */
-static void axis_set_view(bContext *C,
+static void axis_set_view(duneContext *C,
                           View3D *v3d,
                           ARegion *region,
                           const float quat_[4],
@@ -569,13 +562,10 @@ void viewmove_apply(ViewOpsData *vod, int x, int y)
   ED_region_tag_redraw(vod->region);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name View All Operator
- *
+/** View All Operator
  * Move & Zoom the view to fit all of its contents.
- * \{ */
+ **/
 
 static bool view3d_object_skip_minmax(const View3D *v3d,
                                       const RegionView3D *rv3d,
@@ -583,7 +573,7 @@ static bool view3d_object_skip_minmax(const View3D *v3d,
                                       const bool skip_camera,
                                       bool *r_only_center)
 {
-  BLI_assert(ob->id.orig_id == NULL);
+  LIB_assert(ob->id.orig_id == NULL);
   *r_only_center = false;
 
   if (skip_camera && (ob == v3d->camera)) {
@@ -591,7 +581,7 @@ static bool view3d_object_skip_minmax(const View3D *v3d,
   }
 
   if ((ob->type == OB_EMPTY) && (ob->empty_drawtype == OB_EMPTY_IMAGE) &&
-      !BKE_object_empty_image_frame_is_visible_in_view3d(ob, rv3d)) {
+      !DUNE_object_empty_image_frame_is_visible_in_view3d(ob, rv3d)) {
     *r_only_center = true;
     return false;
   }
@@ -607,18 +597,18 @@ static void view3d_object_calc_minmax(Depsgraph *depsgraph,
                                       float max[3])
 {
   /* Account for duplis. */
-  if (BKE_object_minmax_dupli(depsgraph, scene, ob_eval, min, max, false) == 0) {
+  if (DUNE_object_minmax_dupli(depsgraph, scene, ob_eval, min, max, false) == 0) {
     /* Use if duplis aren't found. */
     if (only_center) {
       minmax_v3v3_v3(min, max, ob_eval->obmat[3]);
     }
     else {
-      BKE_object_minmax(ob_eval, min, max, false);
+      DUNE_object_minmax(ob_eval, min, max, false);
     }
   }
 }
 
-static void view3d_from_minmax(bContext *C,
+static void view3d_from_minmax(duneContext *C,
                                View3D *v3d,
                                ARegion *region,
                                const float min[3],
@@ -698,13 +688,11 @@ static void view3d_from_minmax(bContext *C,
                           });
   }
 
-  /* Smooth-view does view-lock #RV3D_BOXVIEW copy. */
+  /* Smooth-view does view-lock RV3D_BOXVIEW copy. */
 }
 
-/**
- * Same as #view3d_from_minmax but for all regions (except cameras).
- */
-static void view3d_from_minmax_multi(bContext *C,
+/** Same as view3d_from_minmax but for all regions except cameras **/
+static void view3d_from_minmax_multi(duneContext *C,
                                      View3D *v3d,
                                      const float min[3],
                                      const float max[3],
@@ -734,11 +722,11 @@ static int view3d_all_exec(bContext *C, wmOperator *op)
   Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
   ViewLayer *view_layer_eval = DEG_get_evaluated_view_layer(depsgraph);
   Base *base_eval;
-  const bool use_all_regions = RNA_boolean_get(op->ptr, "use_all_regions");
+  const bool use_all_regions = API_boolean_get(op->ptr, "use_all_regions");
   const bool skip_camera = (ED_view3d_camera_lock_check(v3d, region->regiondata) ||
                             /* any one of the regions may be locked */
                             (use_all_regions && v3d->flag2 & V3D_LOCK_CAMERA));
-  const bool center = RNA_boolean_get(op->ptr, "center");
+  const bool center = API_boolean_get(op->ptr, "center");
   const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
 
   float min[3], max[3];
@@ -752,7 +740,7 @@ static int view3d_all_exec(bContext *C, wmOperator *op)
     zero_v3(cursor->location);
     float mat3[3][3];
     unit_m3(mat3);
-    BKE_scene_cursor_mat3_to_rot(cursor, mat3, false);
+    DUNE_scene_cursor_mat3_to_rot(cursor, mat3, false);
   }
   else {
     INIT_MINMAX(min, max);
@@ -820,16 +808,15 @@ void VIEW3D_OT_view_all(wmOperatorType *ot)
 
   /* properties */
   view3d_operator_properties_common(ot, V3D_OP_PROP_USE_ALL_REGIONS);
-  RNA_def_boolean(ot->srna, "center", 0, "Center", "");
+  API_def_boolean(ot->srna, "center", 0, "Center", "");
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Frame Selected Operator
- *
- * Move & Zoom the view to fit selected contents.
- * \{ */
+/** Frame Selected Operator
+ *  Move & Zoom the view to fit selected contents.
+ **/
 
-static int viewselected_exec(bContext *C, wmOperator *op)
+static int viewselected_exec(duneContext *C, wmOperator *op)
 {
   ARegion *region = CTX_wm_region(C);
   View3D *v3d = CTX_wm_view3d(C);
@@ -845,7 +832,7 @@ static int viewselected_exec(bContext *C, wmOperator *op)
                             WM_gizmomap_is_any_selected(region->gizmo_map));
   float min[3], max[3];
   bool ok = false, ok_dist = true;
-  const bool use_all_regions = RNA_boolean_get(op->ptr, "use_all_regions");
+  const bool use_all_regions = API_boolean_get(op->ptr, "use_all_regions");
   const bool skip_camera = (ED_view3d_camera_lock_check(v3d, region->regiondata) ||
                             /* any one of the regions may be locked */
                             (use_all_regions && v3d->flag2 & V3D_LOCK_CAMERA));
@@ -879,7 +866,7 @@ static int viewselected_exec(bContext *C, wmOperator *op)
     CTX_DATA_BEGIN (C, bGPDstroke *, gps, editable_gpencil_strokes) {
       /* we're only interested in selected points here... */
       if ((gps->flag & GP_STROKE_SELECT) && (gps->flag & GP_STROKE_3DSPACE)) {
-        ok |= BKE_gpencil_stroke_minmax(gps, true, min, max);
+        ok |= DUNE_gpencil_stroke_minmax(gps, true, min, max);
       }
       if (gps->editcurve != NULL) {
         for (int i = 0; i < gps->editcurve->tot_curve_points; i++) {
@@ -919,11 +906,11 @@ static int viewselected_exec(bContext *C, wmOperator *op)
   else if (ob_eval && (ob_eval->mode & OB_MODE_POSE)) {
     FOREACH_OBJECT_IN_MODE_BEGIN (
         view_layer_eval, v3d, ob_eval->type, ob_eval->mode, ob_eval_iter) {
-      ok |= BKE_pose_minmax(ob_eval_iter, min, max, true, true);
+      ok |= DUNE_pose_minmax(ob_eval_iter, min, max, true, true);
     }
     FOREACH_OBJECT_IN_MODE_END;
   }
-  else if (BKE_paint_select_face_test(ob_eval)) {
+  else if (DUNE_paint_select_face_test(ob_eval)) {
     ok = paintface_minmax(ob_eval, min, max);
   }
   else if (ob_eval && (ob_eval->mode & OB_MODE_PARTICLE_EDIT)) {
@@ -931,7 +918,7 @@ static int viewselected_exec(bContext *C, wmOperator *op)
   }
   else if (ob_eval && (ob_eval->mode & (OB_MODE_SCULPT | OB_MODE_VERTEX_PAINT |
                                         OB_MODE_WEIGHT_PAINT | OB_MODE_TEXTURE_PAINT))) {
-    BKE_paint_stroke_get_average(scene, ob_eval, min);
+    DUNE_paint_stroke_get_average(scene, ob_eval, min);
     copy_v3_v3(max, min);
     ok = true;
     ok_dist = 0; /* don't zoom */
@@ -988,11 +975,8 @@ void VIEW3D_OT_view_selected(wmOperatorType *ot)
   view3d_operator_properties_common(ot, V3D_OP_PROP_USE_ALL_REGIONS);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name View Center Cursor Operator
- * \{ */
+/** View Center Cursor Operator **/
 
 static int viewcenter_cursor_exec(bContext *C, wmOperator *op)
 {
@@ -1033,11 +1017,8 @@ void VIEW3D_OT_view_center_cursor(wmOperatorType *ot)
   ot->flag = 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name View Center Pick Operator
- * \{ */
+/** View Center Pick Operator **/
 
 static int viewcenter_pick_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
@@ -1085,11 +1066,8 @@ void VIEW3D_OT_view_center_pick(wmOperatorType *ot)
   ot->flag = 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name View Axis Operator
- * \{ */
+/** View Axis Operator **/
 
 static const EnumPropertyItem prop_view_items[] = {
     {RV3D_VIEW_LEFT, "LEFT", ICON_TRIA_LEFT, "Left", "View from the left"},
@@ -1101,7 +1079,7 @@ static const EnumPropertyItem prop_view_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static int view_axis_exec(bContext *C, wmOperator *op)
+static int view_axis_exec(duneContext *C, wmOperator *op)
 {
   View3D *v3d;
   ARegion *region;
@@ -1117,12 +1095,12 @@ static int view_axis_exec(bContext *C, wmOperator *op)
 
   ED_view3d_smooth_view_force_finish(C, v3d, region);
 
-  viewnum = RNA_enum_get(op->ptr, "type");
+  viewnum = API_enum_get(op->ptr, "type");
 
   float align_quat_buf[4];
   float *align_quat = NULL;
 
-  if (RNA_boolean_get(op->ptr, "align_active")) {
+  if (API_boolean_get(op->ptr, "align_active")) {
     /* align to active object */
     Object *obact = CTX_data_active_object(C);
     if (obact != NULL) {
@@ -1137,7 +1115,7 @@ static int view_axis_exec(bContext *C, wmOperator *op)
     }
   }
 
-  if (RNA_boolean_get(op->ptr, "relative")) {
+  if (API_boolean_get(op->ptr, "relative")) {
     float quat_rotate[4];
     float quat_test[4];
 
@@ -1160,7 +1138,7 @@ static int view_axis_exec(bContext *C, wmOperator *op)
       axis_angle_to_quat(quat_rotate, rv3d->viewinv[0], M_PI);
     }
     else {
-      BLI_assert(0);
+      LIB_assert(0);
     }
 
     mul_qt_qtqt(quat_test, rv3d->viewquat, quat_rotate);
