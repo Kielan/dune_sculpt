@@ -4,25 +4,25 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_endian_switch.h"
-#include "BLI_math_vector.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "LIB_dunelib.h"
+#include "LIB_endian_switch.h"
+#include "LIB_math_vector.h"
+#include "LIB_string_utils.h"
+#include "LIB_utildefines.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
 /* Allow using deprecated functionality for .blend file I/O. */
-#define DNA_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
-#include "DNA_ID.h"
-#include "DNA_anim_types.h"
-#include "DNA_key_types.h"
-#include "DNA_lattice_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_ID.h"
+#include "DNA_anim.h"
+#include "DNA_key.h"
+#include "DNA_lattice.h"
+#include "DNA_mesh.h"
+#include "DNA_meshdata.h"
+#include "DNA_object.h"
+#include "DNA_scene.h"
 
 #include "BKE_anim_data.h"
 #include "BKE_curve.h"
