@@ -1,18 +1,12 @@
-/** \file
- * \ingroup edscr
- *
- * Helper functions for area/region API.
- */
+#include "TYPES_userdef.h"
 
-#include "DNA_userdef_types.h"
+#include "DUNE_screen.h"
 
-#include "BKE_screen.h"
+#include "LIB_dunelib.h"
+#include "LIB_utildefines.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
-
-#include "RNA_access.h"
-#include "RNA_types.h"
+#include "API_access.h"
+#include "API_types.h"
 
 #include "WM_message.h"
 
@@ -21,8 +15,7 @@
 #include "UI_interface_icons.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Generic Tool System Region Callbacks
- * \{ */
+/** Generic Tool System Region Callbacks **/
 
 void ED_region_generic_tools_region_message_subscribe(const wmRegionMessageSubscribeParams *params)
 {
@@ -41,8 +34,8 @@ int ED_region_generic_tools_region_snap_size(const ARegion *region, int size, in
 {
   if (axis == 0) {
     /* Using Y axis avoids slight feedback loop when adjusting X. */
-    const float aspect = BLI_rctf_size_y(&region->v2d.cur) /
-                         (BLI_rcti_size_y(&region->v2d.mask) + 1);
+    const float aspect = LIB_rctf_size_y(&region->v2d.cur) /
+                         (LIB_rcti_size_y(&region->v2d.mask) + 1);
     const float icon_size = ICON_DEFAULT_HEIGHT_TOOLBAR / aspect;
     const float column = 1.25f * icon_size;
     const float margin = 0.5f * icon_size;
