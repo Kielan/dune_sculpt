@@ -1175,7 +1175,7 @@ static void do_key(const int start,
           if (freek4) {
             MEM_freeN(freek4);
           }
-          BLI_assert_msg(0, "invalid 'cp[1]'");
+          LIB_assert_msg(0, "invalid 'cp[1]'");
           return;
       }
 
@@ -1282,7 +1282,7 @@ static float *get_weights_array(Object *ob, char *vgroup, WeightsArrayCache *cac
   }
 
   /* find the group (weak loop-in-loop) */
-  defgrp_index = BKE_object_defgroup_name_index(ob, vgroup);
+  defgrp_index = DUNE_object_defgroup_name_index(ob, vgroup);
   if (defgrp_index != -1) {
     float *weights;
 
@@ -1306,12 +1306,12 @@ static float *get_weights_array(Object *ob, char *vgroup, WeightsArrayCache *cac
       const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
       BM_ITER_MESH_INDEX (eve, &iter, em->bm, BM_VERTS_OF_MESH, i) {
         dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
-        weights[i] = BKE_defvert_find_weight(dvert, defgrp_index);
+        weights[i] = DUNE_defvert_find_weight(dvert, defgrp_index);
       }
     }
     else {
       for (int i = 0; i < totvert; i++, dvert++) {
-        weights[i] = BKE_defvert_find_weight(dvert, defgrp_index);
+        weights[i] = DUNE_defvert_find_weight(dvert, defgrp_index);
       }
     }
 
@@ -1820,7 +1820,7 @@ KeyBlock *DUNE_keyblock_add(Key *key, const char *name)
 
 KeyBlock *DUNE_keyblock_add_ctime(Key *key, const char *name, const bool do_force)
 {
-  KeyBlock *kb = BKE_keyblock_add(key, name);
+  KeyBlock *kb = DUNE_keyblock_add(key, name);
   const float cpos = key->ctime / 100.0f;
 
   /* In case of absolute keys, there is no point in adding more than one key with the same pos.
@@ -1840,27 +1840,27 @@ KeyBlock *DUNE_keyblock_add_ctime(Key *key, const char *name, const bool do_forc
   }
   if (do_force || (key->type != KEY_RELATIVE)) {
     kb->pos = cpos;
-    BKE_key_sort(key);
+    DUNE_key_sort(key);
   }
 
   return kb;
 }
 
-KeyBlock *BKE_keyblock_from_object(Object *ob)
+KeyBlock *DUNE_keyblock_from_object(Object *ob)
 {
-  Key *key = BKE_key_from_object(ob);
+  Key *key = DUNE_key_from_object(ob);
 
   if (key) {
-    KeyBlock *kb = BLI_findlink(&key->block, ob->shapenr - 1);
+    KeyBlock *kb = LIB_findlink(&key->block, ob->shapenr - 1);
     return kb;
   }
 
   return NULL;
 }
 
-KeyBlock *BKE_keyblock_from_object_reference(Object *ob)
+KeyBlock *DUNE_keyblock_from_object_reference(Object *ob)
 {
-  Key *key = BKE_key_from_object(ob);
+  Key *key = DUNE_key_from_object(ob);
 
   if (key) {
     return key->refkey;
@@ -1869,7 +1869,7 @@ KeyBlock *BKE_keyblock_from_object_reference(Object *ob)
   return NULL;
 }
 
-KeyBlock *BKE_keyblock_from_key(Key *key, int index)
+KeyBlock *DUNE_keyblock_from_key(Key *key, int index)
 {
   if (key) {
     KeyBlock *kb = key->block.first;
@@ -1886,23 +1886,23 @@ KeyBlock *BKE_keyblock_from_key(Key *key, int index)
   return NULL;
 }
 
-KeyBlock *BKE_keyblock_find_name(Key *key, const char name[])
+KeyBlock *DUNE_keyblock_find_name(Key *key, const char name[])
 {
-  return BLI_findstring(&key->block, name, offsetof(KeyBlock, name));
+  return LIB_findstring(&key->block, name, offsetof(KeyBlock, name));
 }
 
-void BKE_keyblock_copy_settings(KeyBlock *kb_dst, const KeyBlock *kb_src)
+void DUNE_keyblock_copy_settings(KeyBlock *kb_dst, const KeyBlock *kb_src)
 {
   kb_dst->pos = kb_src->pos;
   kb_dst->curval = kb_src->curval;
   kb_dst->type = kb_src->type;
   kb_dst->relative = kb_src->relative;
-  BLI_strncpy(kb_dst->vgroup, kb_src->vgroup, sizeof(kb_dst->vgroup));
+  LIB_strncpy(kb_dst->vgroup, kb_src->vgroup, sizeof(kb_dst->vgroup));
   kb_dst->slidermin = kb_src->slidermin;
   kb_dst->slidermax = kb_src->slidermax;
 }
 
-char *BKE_keyblock_curval_rnapath_get(Key *key, KeyBlock *kb)
+char *DUNE_keyblock_curval_rnapath_get(Key *key, KeyBlock *kb)
 {
   PointerRNA ptr;
   PropertyRNA *prop;
@@ -1912,26 +1912,26 @@ char *BKE_keyblock_curval_rnapath_get(Key *key, KeyBlock *kb)
     return NULL;
   }
 
-  /* create the RNA pointer */
-  RNA_pointer_create(&key->id, &RNA_ShapeKey, kb, &ptr);
+  /* create the API pointer */
+  API_pointer_create(&key->id, &API_ShapeKey, kb, &ptr);
   /* get pointer to the property too */
-  prop = RNA_struct_find_property(&ptr, "value");
+  prop = API_struct_find_property(&ptr, "value");
 
   /* return the path */
-  return RNA_path_from_ID_to_property(&ptr, prop);
+  return API_path_from_ID_to_property(&ptr, prop);
 }
 
 /* conversion functions */
 
 /************************* Lattice ************************/
 
-void BKE_keyblock_update_from_lattice(Lattice *lt, KeyBlock *kb)
+void DUNE_keyblock_update_from_lattice(Lattice *lt, KeyBlock *kb)
 {
   BPoint *bp;
   float(*fp)[3];
   int a, tot;
 
-  BLI_assert(kb->totelem == lt->pntsu * lt->pntsv * lt->pntsw);
+  LIB_assert(kb->totelem == lt->pntsu * lt->pntsv * lt->pntsw);
 
   tot = kb->totelem;
   if (tot == 0) {
@@ -1945,7 +1945,7 @@ void BKE_keyblock_update_from_lattice(Lattice *lt, KeyBlock *kb)
   }
 }
 
-void BKE_keyblock_convert_from_lattice(Lattice *lt, KeyBlock *kb)
+void DUNE_keyblock_convert_from_lattice(Lattice *lt, KeyBlock *kb)
 {
   int tot;
 
@@ -1959,10 +1959,10 @@ void BKE_keyblock_convert_from_lattice(Lattice *lt, KeyBlock *kb)
   kb->data = MEM_mallocN(lt->key->elemsize * tot, __func__);
   kb->totelem = tot;
 
-  BKE_keyblock_update_from_lattice(lt, kb);
+  DUNE_keyblock_update_from_lattice(lt, kb);
 }
 
-void BKE_keyblock_convert_to_lattice(KeyBlock *kb, Lattice *lt)
+void DUNE_keyblock_convert_to_lattice(KeyBlock *kb, Lattice *lt)
 {
   BPoint *bp;
   const float(*fp)[3];
@@ -1981,7 +1981,7 @@ void BKE_keyblock_convert_to_lattice(KeyBlock *kb, Lattice *lt)
 
 /************************* Curve ************************/
 
-int BKE_keyblock_curve_element_count(const ListBase *nurb)
+int DUNE_keyblock_curve_element_count(const ListBase *nurb)
 {
   const Nurb *nu;
   int tot = 0;
@@ -2000,7 +2000,7 @@ int BKE_keyblock_curve_element_count(const ListBase *nurb)
   return tot;
 }
 
-void BKE_keyblock_update_from_curve(Curve *UNUSED(cu), KeyBlock *kb, ListBase *nurb)
+void DUNE_keyblock_update_from_curve(Curve *UNUSED(cu), KeyBlock *kb, ListBase *nurb)
 {
   Nurb *nu;
   BezTriple *bezt;
@@ -2009,7 +2009,7 @@ void BKE_keyblock_update_from_curve(Curve *UNUSED(cu), KeyBlock *kb, ListBase *n
   int a, tot;
 
   /* count */
-  BLI_assert(BKE_keyblock_curve_element_count(nurb) == kb->totelem);
+  LIB_assert(DUNE_keyblock_curve_element_count(nurb) == kb->totelem);
 
   tot = kb->totelem;
   if (tot == 0) {
@@ -2039,7 +2039,7 @@ void BKE_keyblock_update_from_curve(Curve *UNUSED(cu), KeyBlock *kb, ListBase *n
   }
 }
 
-void BKE_keyblock_curve_data_transform(const ListBase *nurb,
+void DUNE_keyblock_curve_data_transform(const ListBase *nurb,
                                        const float mat[4][4],
                                        const void *src_data,
                                        void *dst_data)
@@ -2070,12 +2070,12 @@ void BKE_keyblock_curve_data_transform(const ListBase *nurb,
   }
 }
 
-void BKE_keyblock_convert_from_curve(Curve *cu, KeyBlock *kb, ListBase *nurb)
+void DUNE_keyblock_convert_from_curve(Curve *cu, KeyBlock *kb, ListBase *nurb)
 {
   int tot;
 
   /* count */
-  tot = BKE_keyblock_curve_element_count(nurb);
+  tot = DUNE_keyblock_curve_element_count(nurb);
   if (tot == 0) {
     return;
   }
@@ -2085,10 +2085,10 @@ void BKE_keyblock_convert_from_curve(Curve *cu, KeyBlock *kb, ListBase *nurb)
   kb->data = MEM_mallocN(cu->key->elemsize * tot, __func__);
   kb->totelem = tot;
 
-  BKE_keyblock_update_from_curve(cu, kb, nurb);
+  DUNE_keyblock_update_from_curve(cu, kb, nurb);
 }
 
-void BKE_keyblock_convert_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *nurb)
+void DUNE_keyblock_convert_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *nurb)
 {
   Nurb *nu;
   BezTriple *bezt;
@@ -2096,7 +2096,7 @@ void BKE_keyblock_convert_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *nu
   const float *fp;
   int a, tot;
 
-  tot = BKE_keyblock_curve_element_count(nurb);
+  tot = DUNE_keyblock_curve_element_count(nurb);
   tot = min_ii(kb->totelem, tot);
 
   fp = kb->data;
@@ -2126,13 +2126,13 @@ void BKE_keyblock_convert_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *nu
 
 /************************* Mesh ************************/
 
-void BKE_keyblock_update_from_mesh(Mesh *me, KeyBlock *kb)
+void DUNE_keyblock_update_from_mesh(Mesh *me, KeyBlock *kb)
 {
   MVert *mvert;
   float(*fp)[3];
   int a, tot;
 
-  BLI_assert(me->totvert == kb->totelem);
+  LIB_assert(me->totvert == kb->totelem);
 
   tot = me->totvert;
   if (tot == 0) {
@@ -2146,7 +2146,7 @@ void BKE_keyblock_update_from_mesh(Mesh *me, KeyBlock *kb)
   }
 }
 
-void BKE_keyblock_convert_from_mesh(Mesh *me, Key *key, KeyBlock *kb)
+void DUNE_keyblock_convert_from_mesh(Mesh *me, Key *key, KeyBlock *kb)
 {
   const int len = me->totvert;
 
@@ -2159,10 +2159,10 @@ void BKE_keyblock_convert_from_mesh(Mesh *me, Key *key, KeyBlock *kb)
   kb->data = MEM_malloc_arrayN((size_t)len, (size_t)key->elemsize, __func__);
   kb->totelem = len;
 
-  BKE_keyblock_update_from_mesh(me, kb);
+  DUNE_keyblock_update_from_mesh(me, kb);
 }
 
-void BKE_keyblock_convert_to_mesh(KeyBlock *kb, struct MVert *mvert, int totvert)
+void DUNE_keyblock_convert_to_mesh(KeyBlock *kb, struct MVert *mvert, int totvert)
 {
   const float(*fp)[3];
   int a, tot;
@@ -2176,7 +2176,7 @@ void BKE_keyblock_convert_to_mesh(KeyBlock *kb, struct MVert *mvert, int totvert
   }
 }
 
-void BKE_keyblock_mesh_calc_normals(struct KeyBlock *kb,
+void DUNE_keyblock_mesh_calc_normals(struct KeyBlock *kb,
                                     struct Mesh *mesh,
                                     float (*r_vertnors)[3],
                                     float (*r_polynors)[3],
@@ -2187,7 +2187,7 @@ void BKE_keyblock_mesh_calc_normals(struct KeyBlock *kb,
   }
 
   MVert *mvert = MEM_dupallocN(mesh->mvert);
-  BKE_keyblock_convert_to_mesh(kb, mesh->mvert, mesh->totvert);
+  DUNE_keyblock_convert_to_mesh(kb, mesh->mvert, mesh->totvert);
 
   const bool loop_normals_needed = r_loopnors != NULL;
   const bool vert_normals_needed = r_vertnors != NULL || loop_normals_needed;
@@ -2208,7 +2208,7 @@ void BKE_keyblock_mesh_calc_normals(struct KeyBlock *kb,
   }
 
   if (poly_normals_needed) {
-    BKE_mesh_calc_normals_poly(mvert,
+    DUNE_mesh_calc_normals_poly(mvert,
                                mesh->totvert,
                                mesh->mloop,
                                mesh->totloop,
@@ -2217,7 +2217,7 @@ void BKE_keyblock_mesh_calc_normals(struct KeyBlock *kb,
                                poly_normals);
   }
   if (vert_normals_needed) {
-    BKE_mesh_calc_normals_poly_and_vertex(mvert,
+    DUNE_mesh_calc_normals_poly_and_vertex(mvert,
                                           mesh->totvert,
                                           mesh->mloop,
                                           mesh->totloop,
@@ -2228,7 +2228,7 @@ void BKE_keyblock_mesh_calc_normals(struct KeyBlock *kb,
   }
   if (loop_normals_needed) {
     short(*clnors)[2] = CustomData_get_layer(&mesh->ldata, CD_CUSTOMLOOPNORMAL); /* May be NULL. */
-    BKE_mesh_normals_loop_split(mesh->mvert,
+    DUNE_mesh_normals_loop_split(mesh->mvert,
                                 vert_normals,
                                 mesh->totvert,
                                 mesh->medge,
@@ -2257,7 +2257,7 @@ void BKE_keyblock_mesh_calc_normals(struct KeyBlock *kb,
 
 /************************* raw coords ************************/
 
-void BKE_keyblock_update_from_vertcos(Object *ob, KeyBlock *kb, const float (*vertCos)[3])
+void DUNE_keyblock_update_from_vertcos(Object *ob, KeyBlock *kb, const float (*vertCos)[3])
 {
   const float(*co)[3] = vertCos;
   float *fp = kb->data;
