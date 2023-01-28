@@ -2,15 +2,15 @@
 #include <stdlib.h>
 
 /* Allow using deprecated functionality for .blend file I/O. */
-#define STRUCTS_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
-#include "structs_ID.h"
-#include "structs_camera_types.h"
-#include "structs_defaults.h"
-#include "structs_light_types.h"
-#include "structs_object_types.h"
-#include "structs_scene_types.h"
-#include "structs_view3d_types.h"
+#include "TYPES_ID.h"
+#include "TYPES_camera.h"
+#include "TYPES_defaults.h"
+#include "TYPES_light.h"
+#include "TYPES_object.h"
+#include "TYPES_scene.h"
+#include "TYPES_view3d.h"
 
 #include "LIB_listbase.h"
 #include "LIB_math.h"
@@ -18,16 +18,16 @@
 #include "LIB_string.h"
 #include "LIB_utildefines.h"
 
-#include "KERNEL_anim_data.h"
-#include "KERNEL_camera.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_layer.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_lib_query.h"
-#include "KERNEL_main.h"
-#include "KERNEL_object.h"
-#include "KERNEL_scene.h"
-#include "KERNEL_screen.h"
+#include "DUNE_anim_data.h"
+#include "DUNE_camera.h"
+#include "DUNE_idtype.h"
+#include "DUNE_layer.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_lib_query.h"
+#include "DUNE_main.h"
+#include "DUNE_object.h"
+#include "DUNE_scene.h"
+#include "DUNE_screen.h"
 
 #include "TRANSLATION_translation.h"
 
@@ -52,11 +52,11 @@ static void camera_init_data(ID *id)
  * Only copy internal data of Camera ID from source
  * to already allocated/initialized destination.
  * You probably never want to use that directly,
- * use KERNEL_id_copy or KERNEL_id_copy_ex for typical needs.
+ * use DUNE_id_copy or DUNE_id_copy_ex for typical needs.
  *
  * WARNING! This function will not handle ID user count!
  *
- * param flag: Copying options (see KERNEL_lib_id.h's LIB_ID_COPY_... flags for more).
+ * param flag: Copying options (see DUNE_lib_id.h's LIB_ID_COPY_... flags for more).
  */
 static void camera_copy_data(Main *UNUSED(dunemain),
                              ID *id_dst,
@@ -79,27 +79,27 @@ static void camera_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   Camera *camera = (Camera *)id;
 
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, camera->dof.focus_object, IDWALK_CB_NOP);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, camera->dof.focus_object, IDWALK_CB_NOP);
   LISTBASE_FOREACH (CameraBGImage *, bgpic, &camera->bg_images) {
     if (bgpic->source == CAM_BGIMG_SOURCE_IMAGE) {
-      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, bgpic->ima, IDWALK_CB_USER);
+      DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, bgpic->ima, IDWALK_CB_USER);
     }
     else if (bgpic->source == CAM_BGIMG_SOURCE_MOVIE) {
-      KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, bgpic->clip, IDWALK_CB_USER);
+      DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, bgpic->clip, IDWALK_CB_USER);
     }
   }
 }
 
-static void camera_dune_write(DuneWriter *writer, ID *id, const void *id_address)
+static void camera_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Camera *cam = (Camera *)id;
 
   /* write LibData */
   LOADER_write_id_struct(writer, Camera, id_address, &cam->id);
-  KERNEL_id_dune_write(writer, &cam->id);
+  DUNE_id_write(writer, &cam->id);
 
   if (cam->adt) {
-    KERNEL_animdata_dune_write(writer, cam->adt);
+    DUNE_animdata_write(writer, cam->adt);
   }
 
   LISTBASE_FOREACH (CameraBGImage *, bgpic, &cam->bg_images) {
@@ -107,11 +107,11 @@ static void camera_dune_write(DuneWriter *writer, ID *id, const void *id_address
   }
 }
 
-static void camera_dune_read_data(DuneDataReader *reader, ID *id)
+static void camera_read_data(DuneDataReader *reader, ID *id)
 {
   Camera *ca = (Camera *)id;
   LOADER_read_data_address(reader, &ca->adt);
-  KERNEL_animdata_dune_read_data(reader, ca->adt);
+  DUNE_animdata_read_data(reader, ca->adt);
 
   LOADER_read_list(reader, &ca->bg_images);
 
@@ -120,7 +120,7 @@ static void camera_dune_read_data(DuneDataReader *reader, ID *id)
   }
 }
 
-static void camera_dune_read_lib(DuneLibReader *reader, ID *id)
+static void camera_read_lib(DuneLibReader *reader, ID *id)
 {
   Camera *ca = (Camera *)id;
   LOADER_read_id_address(reader, ca->id.lib, &ca->ipo); /* deprecated, for versioning */
@@ -134,7 +134,7 @@ static void camera_dune_read_lib(DuneLibReader *reader, ID *id)
   }
 }
 
-static void camera_dune_read_expand(DuneExpander *expander, ID *id)
+static void camera_read_expand(DuneExpander *expander, ID *id)
 {
   Camera *ca = (Camera *)id;
   LOADER_expand(expander, ca->ipo);  // XXX deprecated - old animation system
@@ -156,7 +156,7 @@ IDTypeInfo IDType_ID_CA = {
     .struct_size = sizeof(Camera),
     .name = "Camera",
     .name_plural = "cameras",
-    .translation_context = BLT_I18NCONTEXT_ID_CAMERA,
+    .translation_context = LANG_I18NCONTEXT_ID_CAMERA,
     .flags = IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
@@ -182,16 +182,16 @@ IDTypeInfo IDType_ID_CA = {
 /* -------------------------------------------------------------------- */
 /** Camera Usage **/
 
-void *KERNEL_camera_add(Main *dunemain, const char *name)
+void *DUNE_camera_add(Main *duneMain, const char *name)
 {
   Camera *cam;
 
-  cam = KERNEL_id_new(bmain, ID_CA, name);
+  cam = DUNE_id_new(duneMain, ID_CA, name);
 
   return cam;
 }
 
-float KERNEL_camera_object_dof_distance(const Object *ob)
+float DUNE_camera_object_dof_distance(const Object *ob)
 {
   Camera *cam = (Camera *)ob->data;
   if (ob->type != OB_CAMERA) {
@@ -206,7 +206,7 @@ float KERNEL_camera_object_dof_distance(const Object *ob)
   return cam->dof.focus_distance;
 }
 
-float KERNEL_camera_sensor_size(int sensor_fit, float sensor_x, float sensor_y)
+float DUNE_camera_sensor_size(int sensor_fit, float sensor_x, float sensor_y)
 {
   /* sensor size used to fit to. for auto, sensor_x is both x and y. */
   if (sensor_fit == CAMERA_SENSOR_FIT_VERT) {
@@ -216,7 +216,7 @@ float KERNEL_camera_sensor_size(int sensor_fit, float sensor_x, float sensor_y)
   return sensor_x;
 }
 
-int KERNEL_camera_sensor_fit(int sensor_fit, float sizex, float sizey)
+int DUNE_camera_sensor_fit(int sensor_fit, float sizex, float sizey)
 {
   if (sensor_fit == CAMERA_SENSOR_FIT_AUTO) {
     if (sizex >= sizey) {
@@ -232,7 +232,7 @@ int KERNEL_camera_sensor_fit(int sensor_fit, float sizex, float sizey)
 /* -------------------------------------------------------------------- */
 /** Camera Parameter Access **/
 
-void KERNEL_camera_params_init(CameraParams *params)
+void DUNE_camera_params_init(CameraParams *params)
 {
   memset(params, 0, sizeof(CameraParams));
 
@@ -248,7 +248,7 @@ void KERNEL_camera_params_init(CameraParams *params)
   params->clip_end = 100.0f;
 }
 
-void KERNEL_camera_params_from_object(CameraParams *params, const Object *cam_ob)
+void DUNE_camera_params_from_object(CameraParams *params, const Object *cam_ob)
 {
   if (!cam_ob) {
     return;
@@ -287,7 +287,7 @@ void KERNEL_camera_params_from_object(CameraParams *params, const Object *cam_ob
   }
 }
 
-void KERNEL_camera_params_from_view3d(CameraParams *params,
+void DUNE_camera_params_from_view3d(CameraParams *params,
                                    Depsgraph *depsgraph,
                                    const View3D *v3d,
                                    const RegionView3D *rv3d)
@@ -300,9 +300,9 @@ void KERNEL_camera_params_from_view3d(CameraParams *params,
   if (rv3d->persp == RV3D_CAMOB) {
     /* camera view */
     const Object *ob_camera_eval = DEG_get_evaluated_object(depsgraph, v3d->camera);
-    KERNEL_camera_params_from_object(params, ob_camera_eval);
+    DUNE_camera_params_from_object(params, ob_camera_eval);
 
-    params->zoom = KERNEL_screen_view3d_zoom_to_fac(rv3d->camzoom);
+    params->zoom = DUNE_screen_view3d_zoom_to_fac(rv3d->camzoom);
 
     params->offsetx = 2.0f * rv3d->camdx * params->zoom;
     params->offsety = 2.0f * rv3d->camdy * params->zoom;
@@ -314,7 +314,7 @@ void KERNEL_camera_params_from_view3d(CameraParams *params,
   }
   else if (rv3d->persp == RV3D_ORTHO) {
     /* orthographic view */
-    float sensor_size = BKE_camera_sensor_size(
+    float sensor_size = DUNE_camera_sensor_size(
         params->sensor_fit, params->sensor_x, params->sensor_y);
     /* Halve, otherwise too extreme low zbuffer quality. */
     params->clip_end *= 0.5f;
@@ -331,7 +331,7 @@ void KERNEL_camera_params_from_view3d(CameraParams *params,
   }
 }
 
-void KERNEL_camera_params_compute_viewplane(
+void DUNE_camera_params_compute_viewplane(
     CameraParams *params, int winx, int winy, float aspx, float aspy)
 {
   rctf viewplane;
@@ -347,12 +347,12 @@ void KERNEL_camera_params_compute_viewplane(
   }
   else {
     /* perspective camera */
-    sensor_size = KERNEL_camera_sensor_size(params->sensor_fit, params->sensor_x, params->sensor_y);
+    sensor_size = DUNE_camera_sensor_size(params->sensor_fit, params->sensor_x, params->sensor_y);
     pixsize = (sensor_size * params->clip_start) / params->lens;
   }
 
   /* determine sensor fit */
-  sensor_fit = KERNEL_camera_sensor_fit(params->sensor_fit, aspx * winx, aspy * winy);
+  sensor_fit = DUNE_camera_sensor_fit(params->sensor_fit, aspx * winx, aspy * winy);
 
   if (sensor_fit == CAMERA_SENSOR_FIT_HOR) {
     viewfac = winx;
@@ -396,7 +396,7 @@ void KERNEL_camera_params_compute_viewplane(
   params->viewplane = viewplane;
 }
 
-void KERNEL_camera_params_compute_matrix(CameraParams *params)
+void DUNE_camera_params_compute_matrix(CameraParams *params)
 {
   rctf viewplane = params->viewplane;
 
@@ -424,7 +424,7 @@ void KERNEL_camera_params_compute_matrix(CameraParams *params)
 /* -------------------------------------------------------------------- */
 /** Camera View Frame **/
 
-void KERNEL_camera_view_frame_ex(const Scene *scene,
+void DUNE_camera_view_frame_ex(const Scene *scene,
                               const Camera *camera,
                               const float drawsize,
                               const bool do_clip,
@@ -441,7 +441,7 @@ void KERNEL_camera_view_frame_ex(const Scene *scene,
   if (scene) {
     float aspx = (float)scene->r.xsch * scene->r.xasp;
     float aspy = (float)scene->r.ysch * scene->r.yasp;
-    int sensor_fit = KERNEL_camera_sensor_fit(camera->sensor_fit, aspx, aspy);
+    int sensor_fit = DUNE_camera_sensor_fit(camera->sensor_fit, aspx, aspy);
 
     if (sensor_fit == CAMERA_SENSOR_FIT_HOR) {
       r_asp[0] = 1.0;
@@ -513,14 +513,14 @@ void KERNEL_camera_view_frame_ex(const Scene *scene,
   }
 }
 
-void KERNEL_camera_view_frame(const Scene *scene, const Camera *camera, float r_vec[4][3])
+void DUNE_camera_view_frame(const Scene *scene, const Camera *camera, float r_vec[4][3])
 {
   float dummy_asp[2];
   float dummy_shift[2];
   float dummy_drawsize;
   const float dummy_scale[3] = {1.0f, 1.0f, 1.0f};
 
-  KERNEL_camera_view_frame_ex(
+  DUNE_camera_view_frame_ex(
       scene, camera, 1.0, false, dummy_scale, dummy_asp, dummy_shift, &dummy_drawsize, r_vec);
 }
 
@@ -568,18 +568,18 @@ static void camera_frame_fit_data_init(const Scene *scene,
   float camera_rotmat_transposed_inversed[4][4];
 
   /* setup parameters */
-  KERNEL_camera_params_init(params);
-  KERNEL_camera_params_from_object(params, ob);
+  DUNE_camera_params_init(params);
+  DUNE_camera_params_from_object(params, ob);
 
   /* Compute matrix, view-plane, etc. */
   if (scene) {
-    KERNEL_camera_params_compute_viewplane(
+    DUNE_camera_params_compute_viewplane(
         params, scene->r.xsch, scene->r.ysch, scene->r.xasp, scene->r.yasp);
   }
   else {
-    KERNEL_camera_params_compute_viewplane(params, 1, 1, 1.0f, 1.0f);
+    DUNE_camera_params_compute_viewplane(params, 1, 1, 1.0f, 1.0f);
   }
-  KERNEL_camera_params_compute_matrix(params);
+  DUNE_camera_params_compute_matrix(params);
 
   /* initialize callback data */
   copy_m3_m4(data->camera_rotmat, (float(*)[4])ob->obmat);
@@ -642,7 +642,7 @@ static bool camera_frame_fit_calc_from_data(CameraParams *params,
     }
     else {
       scale_diff = (dists[0] + dists[2]) *
-                   (BLI_rctf_size_y(&params->viewplane) / BLI_rctf_size_x(&params->viewplane));
+                   (LIB_rctf_size_y(&params->viewplane) / BLI_rctf_size_x(&params->viewplane));
     }
     *r_scale = params->ortho_scale - scale_diff;
 
@@ -684,7 +684,7 @@ static bool camera_frame_fit_calc_from_data(CameraParams *params,
     float plane_isect_delta[3];
     float plane_isect_delta_len;
 
-    float shift_fac = KERNEL_camera_sensor_size(
+    float shift_fac = DUNE_camera_sensor_size(
                           params->sensor_fit, params->sensor_x, params->sensor_y) /
                       params->lens;
 
@@ -715,7 +715,7 @@ static bool camera_frame_fit_calc_from_data(CameraParams *params,
   return false;
 }
 
-bool KERNEL_camera_view_frame_fit_to_scene(
+bool DUNE_camera_view_frame_fit_to_scene(
     Depsgraph *depsgraph, const Scene *scene, Object *camera_ob, float r_co[3], float *r_scale)
 {
   CameraParams params;
@@ -727,12 +727,12 @@ bool KERNEL_camera_view_frame_fit_to_scene(
   camera_frame_fit_data_init(scene, camera_ob, &params, &data_cb);
 
   /* run callback on all visible points */
-  KERNEL_scene_foreach_display_point(depsgraph, camera_to_frame_view_cb, &data_cb);
+  DUNE_scene_foreach_display_point(depsgraph, camera_to_frame_view_cb, &data_cb);
 
   return camera_frame_fit_calc_from_data(&params, &data_cb, r_co, r_scale);
 }
 
-bool KERNEL_camera_view_frame_fit_to_coords(const Depsgraph *depsgraph,
+bool DUNE_camera_view_frame_fit_to_coords(const Depsgraph *depsgraph,
                                          const float (*cos)[3],
                                          int num_cos,
                                          Object *camera_ob,
@@ -862,12 +862,12 @@ static void camera_stereo3d_model_matrix(const Object *camera,
   }
 }
 
-void KERNEL_camera_multiview_view_matrix(const RenderData *rd,
+void DUNE_camera_multiview_view_matrix(const RenderData *rd,
                                       const Object *camera,
                                       const bool is_left,
                                       float r_viewmat[4][4])
 {
-  KERNEL_camera_multiview_model_matrix(
+  DUNE_camera_multiview_model_matrix(
       rd, camera, is_left ? STEREO_LEFT_NAME : STEREO_RIGHT_NAME, r_viewmat);
   invert_m4(r_viewmat);
 }
@@ -881,16 +881,16 @@ static bool camera_is_left(const char *viewname)
   return true;
 }
 
-void KERNEL_camera_multiview_model_matrix(const RenderData *rd,
+void DUNE_camera_multiview_model_matrix(const RenderData *rd,
                                        const Object *camera,
                                        const char *viewname,
                                        float r_modelmat[4][4])
 {
-  KERNEL_camera_multiview_model_matrix_scaled(rd, camera, viewname, r_modelmat);
+  DUNE_camera_multiview_model_matrix_scaled(rd, camera, viewname, r_modelmat);
   normalize_m4(r_modelmat);
 }
 
-void KERNEL_camera_multiview_model_matrix_scaled(const RenderData *rd,
+void DUNE_camera_multiview_model_matrix_scaled(const RenderData *rd,
                                               const Object *camera,
                                               const char *viewname,
                                               float r_modelmat[4][4])
@@ -909,7 +909,7 @@ void KERNEL_camera_multiview_model_matrix_scaled(const RenderData *rd,
   }
 }
 
-void KERNEL_camera_multiview_window_matrix(const RenderData *rd,
+void DUNE_camera_multiview_window_matrix(const RenderData *rd,
                                         const Object *camera,
                                         const char *viewname,
                                         float r_winmat[4][4])
@@ -922,13 +922,13 @@ void KERNEL_camera_multiview_window_matrix(const RenderData *rd,
   KERNEL_camera_multiview_params(rd, &params, camera, viewname);
 
   /* Compute matrix, view-plane, etc. */
-  KERNEL m_camera_params_compute_viewplane(&params, rd->xsch, rd->ysch, rd->xasp, rd->yasp);
-  KERNEL_camera_params_compute_matrix(&params);
+  DUNE_camera_params_compute_viewplane(&params, rd->xsch, rd->ysch, rd->xasp, rd->yasp);
+  DUNE_camera_params_compute_matrix(&params);
 
   copy_m4_m4(r_winmat, params.winmat);
 }
 
-bool KERNEL_camera_multiview_spherical_stereo(const RenderData *rd, const Object *camera)
+bool DUNE_camera_multiview_spherical_stereo(const RenderData *rd, const Object *camera)
 {
   Camera *cam;
   const bool is_multiview = (rd && rd->scemode & R_MULTIVIEW) != 0;
@@ -975,7 +975,7 @@ static Object *camera_multiview_advanced(const Scene *scene, Object *camera, con
   }
 
   if (name[0] != '\0') {
-    Object *ob = KERNEL_scene_object_find_by_name(scene, name);
+    Object *ob = DUNE_scene_object_find_by_name(scene, name);
     if (ob != NULL) {
       return ob;
     }
@@ -984,7 +984,7 @@ static Object *camera_multiview_advanced(const Scene *scene, Object *camera, con
   return camera;
 }
 
-Object *KERNEL_camera_multiview_render(const Scene *scene, Object *camera, const char *viewname)
+Object *DUNE_camera_multiview_render(const Scene *scene, Object *camera, const char *viewname)
 {
   const bool is_multiview = (camera != NULL) && (scene->r.scemode & R_MULTIVIEW) != 0;
 
@@ -995,7 +995,7 @@ Object *KERNEL_camera_multiview_render(const Scene *scene, Object *camera, const
     return camera;
   }
   /* SCE_VIEWS_FORMAT_MULTIVIEW */
-  const char *suffix = KERNEL_scene_multiview_view_suffix_get(&scene->r, viewname);
+  const char *suffix = DUNE_scene_multiview_view_suffix_get(&scene->r, viewname);
   return camera_multiview_advanced(scene, camera, suffix);
 }
 
@@ -1038,7 +1038,7 @@ static float camera_stereo3d_shift_x(const Object *camera, const char *viewname)
   return shift;
 }
 
-float KERNEL_camera_multiview_shift_x(const RenderData *rd,
+float DUNE_camera_multiview_shift_x(const RenderData *rd,
                                    const Object *camera,
                                    const char *viewname)
 {
@@ -1057,20 +1057,20 @@ float KERNEL_camera_multiview_shift_x(const RenderData *rd,
   return camera_stereo3d_shift_x(camera, viewname);
 }
 
-void KERNEL_camera_multiview_params(const RenderData *rd,
+void DUNE_camera_multiview_params(const RenderData *rd,
                                  CameraParams *params,
                                  const Object *camera,
                                  const char *viewname)
 {
   if (camera->type == OB_CAMERA) {
-    params->shiftx = KERNEL_camera_multiview_shift_x(rd, camera, viewname);
+    params->shiftx = DUNE_camera_multiview_shift_x(rd, camera, viewname);
   }
 }
 
 /* -------------------------------------------------------------------- */
 /* Camera Background Image **/
 
-CameraBGImage *KERNEL_camera_background_image_new(Camera *cam)
+CameraBGImage *DUNE_camera_background_image_new(Camera *cam)
 {
   CameraBGImage *bgpic = MEM_callocN(sizeof(CameraBGImage), "Background Image");
 
@@ -1084,21 +1084,21 @@ CameraBGImage *KERNEL_camera_background_image_new(Camera *cam)
   return bgpic;
 }
 
-void KERNEL_camera_background_image_remove(Camera *cam, CameraBGImage *bgpic)
+void DUNE_camera_background_image_remove(Camera *cam, CameraBGImage *bgpic)
 {
   LIB_remlink(&cam->bg_images, bgpic);
 
   MEM_freeN(bgpic);
 }
 
-void KERNEL_camera_background_image_clear(Camera *cam)
+void DUNE_camera_background_image_clear(Camera *cam)
 {
   CameraBGImage *bgpic = cam->bg_images.first;
 
   while (bgpic) {
     CameraBGImage *next_bgpic = bgpic->next;
 
-    KERNEL_camera_background_image_remove(cam, bgpic);
+    DUNE_camera_background_image_remove(cam, bgpic);
 
     bgpic = next_bgpic;
   }
