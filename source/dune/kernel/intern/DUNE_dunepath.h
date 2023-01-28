@@ -23,13 +23,13 @@ typedef enum eBPathForeachFlag {
   /** Ensures the `absolute_base_path` member of DunePathForeachPathData is initialized properly with
    * the path of the current .dune file. This can be used by the callbacks to convert relative
    * paths to absolute ones. */
-  KERNEL_DUNEPATH_FOREACH_PATH_ABSOLUTE = (1 << 0),
+  DUNE_DUNEPATH_FOREACH_PATH_ABSOLUTE = (1 << 0),
   /** Skip paths of linked IDs. */
-  KERNEL_DUNEPATH_FOREACH_PATH_SKIP_LINKED = (1 << 1),
+  DUNE_DUNEPATH_FOREACH_PATH_SKIP_LINKED = (1 << 1),
   /** Skip paths when their matching data is packed. */
-  KERNEL_DUNEPATH_FOREACH_PATH_SKIP_PACKED = (1 << 2),
+  DUNE_DUNEPATH_FOREACH_PATH_SKIP_PACKED = (1 << 2),
   /** Resolve tokens within a virtual filepath to a single, concrete, filepath. */
-  KERNEL_DUNEPATH_FOREACH_PATH_RESOLVE_TOKEN = (1 << 3),
+  DUNE_DUNEPATH_FOREACH_PATH_RESOLVE_TOKEN = (1 << 3),
   /* Skip weak reference paths. Those paths are typically 'nice to have' extra information, but are
    * not used as actual source of data by the current .blend file.
    *
@@ -91,10 +91,10 @@ typedef struct DunePathForeachPathData {
 } DunePathForeachPathData;
 
 /** Run `dunepath_data.callback_function` on all paths contained in `id`. */
-void KERNEL_dunepath_foreach_path_id(DunePathForeachPathData *dunepath_data, struct ID *id);
+void DUNE_dunepath_foreach_path_id(DunePathForeachPathData *dunepath_data, struct ID *id);
 
 /** Run `dunepath_data.callback_function` on all paths of all IDs in `dunemain`. */
-void KERNEL_dunepath_foreach_path_main(DunePathForeachPathData *dunepath_data);
+void DUNE_dunepath_foreach_path_main(DunePathForeachPathData *dunepath_data);
 
 /** Helpers to handle common cases from `IDTypeInfo`'s `foreach_path` functions. **/
 
@@ -108,7 +108,7 @@ void KERNEL_dunepath_foreach_path_main(DunePathForeachPathData *dunepath_data);
  *
  * return true is path was modified, false otherwise.
  */
-bool KERNEL_dunepath_foreach_path_fixed_process(struct DunePathForeachPathData *dunepath_data, char *path);
+bool DUNE_dunepath_foreach_path_fixed_process(struct DunePathForeachPathData *dunepath_data, char *path);
 
 /**
  * Run the callback on a (directory + file) path, replacing the content of the two strings as
@@ -119,7 +119,7 @@ bool KERNEL_dunepath_foreach_path_fixed_process(struct DunePathForeachPathData *
  *
  * return true is path_dir and/or path_file were modified, false otherwise.
  */
-bool KERNEL_dunepath_foreach_path_dirfile_fixed_process(struct DunePathForeachPathData *dunepath_data,
+bool DUNE_dunepath_foreach_path_dirfile_fixed_process(struct DunePathForeachPathData *dunepath_data,
                                                   char *path_dir,
                                                   char *path_file);
 
@@ -132,13 +132,13 @@ bool KERNEL_dunepath_foreach_path_dirfile_fixed_process(struct DunePathForeachPa
  *
  * return true is path was modified and re-allocated, false otherwise.
  */
-bool KERNEL_bpath_foreach_path_allocated_process(struct DunePathForeachPathData *dunepath_data,
+bool DUNE_dunepath_foreach_path_allocated_process(struct DunePathForeachPathData *dunepath_data,
                                               char **path);
 
 /** High level features. **/
 
 /** Check for missing files. */
-void KERNEL_dunepath_missing_files_check(struct Main *dunemain, struct ReportList *reports);
+void DUNE_dunepath_missing_files_check(struct Main *dunemain, struct ReportList *reports);
 
 /**
  * Recursively search into given search directory, for all file paths of all IDs in given
@@ -153,47 +153,47 @@ void KERNEL_dunepath_missing_files_check(struct Main *dunemain, struct ReportLis
  * param find_all: If `true`, also search for files which current path is still valid, if `false`
  *                  skip those still valid paths.
  */
-void KERNEL_bpath_missing_files_find(struct Main *dunemain,
+void DUNE_dunepath_missing_files_find(struct Main *dunemain,
                                   const char *searchpath,
                                   struct ReportList *reports,
                                   bool find_all);
 
 /** Rebase all relative file paths in given dunemain from basedir_src to basedir_dst. */
-void KERNEL_dunepath_relative_rebase(struct Main *dunemain,
+void DUNE_dunepath_relative_rebase(struct Main *dunemain,
                                const char *basedir_src,
                                const char *basedir_dst,
                                struct ReportList *reports);
 
 /** Make all absolute file paths in given dunemain relative to given basedir. */
-void KERNEL_dunepath_relative_convert(struct Main *dunemain,
+void DUNE_dunepath_relative_convert(struct Main *dunemain,
                                 const char *basedir,
                                 struct ReportList *reports);
 
 /** Make all relative file paths in given dunemain absolute, using given basedir as root. */
-void KERNEL_dunepath_absolute_convert(struct Main *dunemain,
+void DUNE_dunepath_absolute_convert(struct Main *dunemain,
                                 const char *basedir,
                                 struct ReportList *reports);
 
 /**
  * Temp backup of paths from all IDs in given dunemain.
  *
- * return An opaque handle to pass to KERNEL_dunepath_list_restore and KERNEL_dunepath_list_free.
+ * return An opaque handle to pass to DUNE_dunepath_list_restore and KERNEL_dunepath_list_free.
  */
-void *KERNEL_dunepath_list_backup(struct Main *dunemain, eBPathForeachFlag flag);
+void *DUNE_dunepath_list_backup(struct Main *dunemain, eBPathForeachFlag flag);
 
 /**
  * Restore the temp backup of paths from path_list_handle into all IDs in given dunemain.
  *
  * note This function assumes that the data in given Main did not change (no
  * addition/deletion/re-ordering of IDs, or their file paths) since the call to
- * KERNEL_bpath_list_backup that generated the given path_list_handle.
+ * DUNE_dunepath_list_backup that generated the given path_list_handle.
  */
-void KERNEL_dunepath_list_restore(struct Main *dunemain, eBPathForeachFlag flag, void *path_list_handle);
+void DUNE_dunepath_list_restore(struct Main *dunemain, eBPathForeachFlag flag, void *path_list_handle);
 
 /**
  * Free the temp backup of paths in path_list_handle.
  *
  * note This function assumes that the path list has already been restored with a call to
- * #KERNEL_dunepath_list_restore, and is therefore empty.
+ * DUNE_dunepath_list_restore, and is therefore empty.
  */
-void KERNEL_dunepath_list_free(void *path_list_handle);
+void DUNE_dunepath_list_free(void *path_list_handle);
