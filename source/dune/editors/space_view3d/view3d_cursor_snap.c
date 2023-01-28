@@ -1,18 +1,18 @@
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_object.h"
+#include "TYPES_scene.h"
 
-#include "BLI_listbase.h"
-#include "BLI_rect.h"
-#include "DNA_scene_types.h"
+#include "LIB_listbase.h"
+#include "LIB_rect.h"
+#include "TYPES_scene.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_context.h"
-#include "BKE_global.h"
-#include "BKE_main.h"
-#include "BKE_object.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
+#include "DUNE_context.h"
+#include "DUNE_global.h"
+#include "DUNE_main.h"
+#include "DUNE_object.h"
+#include "DUNE_scene.h"
+#include "DUNE_screen.h"
 
 #include "GPU_immediate.h"
 #include "GPU_matrix.h"
@@ -24,7 +24,7 @@
 
 #include "UI_resources.h"
 
-#include "RNA_access.h"
+#include "API_access.h"
 
 #include "DEG_depsgraph_query.h"
 
@@ -84,9 +84,7 @@ static SnapCursorDataIntern g_data_intern = {
  */
 static const float eps_view_align = 1e-2f;
 
-/**
- * Calculate a 3x3 orientation matrix from the surface under the cursor.
- */
+/** Calculate a 3x3 orientation matrix from the surface under the cursor. **/
 static void v3d_cursor_poject_surface_normal(const float normal[3],
                                              const float obmat[4][4],
                                              float r_mat[3][3])
@@ -120,7 +118,7 @@ static void v3d_cursor_poject_surface_normal(const float normal[3],
 /**
  * Calculate 3D view incremental (grid) snapping.
  *
- * \note This could be moved to a public function.
+ * This could be moved to a public function.
  */
 static bool v3d_cursor_snap_calc_incremental(
     Scene *scene, View3D *v3d, ARegion *region, const float co_relative[3], float co[3])
@@ -149,9 +147,7 @@ static bool v3d_cursor_snap_calc_incremental(
   return true;
 }
 
-/**
- * Re-order \a mat so \a axis_align uses its own axis which is closest to \a v.
- */
+/** Re-order a mat so a axis_align uses its own axis which is closest to a v **/
 static bool mat3_align_axis_to_v3(float mat[3][3], const int axis_align, const float v[3])
 {
   float dot_best = -1.0f;
@@ -177,8 +173,7 @@ static bool mat3_align_axis_to_v3(float mat[3][3], const int axis_align, const f
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Drawings
- * \{ */
+/** Drawings **/
 
 static void v3d_cursor_plane_draw_grid(const int resolution,
                                        const float scale,
@@ -187,7 +182,7 @@ static void v3d_cursor_plane_draw_grid(const int resolution,
                                        const int plane_axis,
                                        const float color[4])
 {
-  BLI_assert(scale_fade <= scale);
+  LIB_assert(scale_fade <= scale);
   const int resolution_min = resolution - 1;
   float color_fade[4] = {UNPACK4(color)};
   const float *center = matrix[3];
@@ -223,7 +218,7 @@ static void v3d_cursor_plane_draw_grid(const int resolution,
       i += 1;
     }
   }
-  BLI_assert(i == (int)coords_len);
+  LIB_assert(i == (int)coords_len);
   immBeginAtMost(GPU_PRIM_LINES, coords_len * 4);
   i = 0;
   for (int x = 0; x < resolution_min; x++) {
