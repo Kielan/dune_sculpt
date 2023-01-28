@@ -1,5 +1,5 @@
 
-/** brief ID and Library types, which are fundamental for sdna. **\
+/** brief ID and Library types, which are fundamental for api. **/
 #pragma once
 
 #include "TYPES_ID_enums.h"
