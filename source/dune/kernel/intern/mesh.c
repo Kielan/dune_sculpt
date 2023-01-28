@@ -3,12 +3,12 @@
 /* Allow using deprecated functionality for .blend file I/O. */
 #define STRUCTS_DEPRECATED_ALLOW
 
-#include "STRUCTS_defaults.h"
-#include "STRUCTS_key_types.h"
-#include "STRUCTS_material_types.h"
-#include "STRUCTS_mesh_types.h"
-#include "STRUCTS_meshdata_types.h"
-#include "STRUCTS_object_types.h"
+#include "TYPES_defaults.h"
+#include "TYPES_key.h"
+#include "TYPES_material.h"
+#include "TYPES_mesh.h"
+#include "TYPES_meshdata.h"
+#include "TYPES_object.h"
 
 #include "LIB_bitmap.h"
 #include "LIB_edgehash.h"
@@ -27,23 +27,23 @@
 
 #include "TRANSLATION_translation.h"
 
-#include "KERNEL_anim_data.h"
-#include "KERNEL_bpath.h"
-#include "KERNEL_deform.h"
-#include "KERNEL_editmesh.h"
-#include "KERNEL_global.h"
-#include "KERNEL_idtype.h"
-#include "KERNEL_key.h"
-#include "KERNEL_lib_id.h"
-#include "KERNEL_lib_query.h"
-#include "KERNEL_main.h"
-#include "KERNEL_material.h"
-#include "KERNEL_mesh.h"
-#include "KERNEL_mesh_runtime.h"
-#include "KERNEL_mesh_wrapper.h"
-#include "KERNEL_modifier.h"
-#include "KERNEL_multires.h"
-#include "KERNEL_object.h"
+#include "DUNE_anim_data.h"
+#include "DUNE_dunepath.h"
+#include "DUNE_deform.h"
+#include "DUNE_editmesh.h"
+#include "DUNE_global.h"
+#include "DUNE_idtype.h"
+#include "DUNE_key.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_lib_query.h"
+#include "DUNE_main.h"
+#include "DUNE_material.h"
+#include "DUNE_mesh.h"
+#include "DUNE_mesh_runtime.h"
+#include "DUNE_mesh_wrapper.h"
+#include "DUNE_modifier.h"
+#include "DUNE_multires.h"
+#include "DUNE_object.h"
 
 #include "PIL_time.h"
 
@@ -61,7 +61,7 @@ static void mesh_init_data(ID *id)
 
   LIB_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(mesh, id));
 
-  MEMCPY_STRUCT_AFTER(mesh, DNA_struct_default_get(Mesh), id);
+  MEMCPY_STRUCT_AFTER(mesh, TYPES_struct_default_get(Mesh), id);
 
   CustomData_reset(&mesh->vdata);
   CustomData_reset(&mesh->edata);
@@ -69,21 +69,21 @@ static void mesh_init_data(ID *id)
   CustomData_reset(&mesh->pdata);
   CustomData_reset(&mesh->ldata);
 
-  KERNEL_mesh_runtime_init_data(mesh);
+  DUNE_mesh_runtime_init_data(mesh);
 
   /* A newly created mesh does not have normals, so tag them dirty. This will be cleared
-   * by #KERNEL_mesh_vertex_normals_clear_dirty or #KERNEL_mesh_poly_normals_ensure. */
-  KERNEL_mesh_normals_tag_dirty(mesh);
+   * by DUNE_mesh_vertex_normals_clear_dirty or DUNE_mesh_poly_normals_ensure. */
+  DUNE_mesh_normals_tag_dirty(mesh);
 
   mesh->face_sets_color_seed = LIB_hash_int(PIL_check_seconds_timer_i() & UINT_MAX);
 }
 
-static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int flag)
+static void mesh_copy_data(Main *duneMain, ID *id_dst, const ID *id_src, const int flag)
 {
   Mesh *mesh_dst = (Mesh *)id_dst;
   const Mesh *mesh_src = (const Mesh *)id_src;
 
-  KERNEL_mesh_runtime_reset_on_copy(mesh_dst, flag);
+  DUNE_mesh_runtime_reset_on_copy(mesh_dst, flag);
   if ((mesh_src->id.tag & LIB_TAG_NO_MAIN) == 0) {
     /* This is a direct copy of a main mesh, so for now it has the same topology. */
     mesh_dst->runtime.deformed_only = true;
@@ -111,7 +111,7 @@ static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int 
 
   mesh_dst->mat = (Material **)MEM_dupallocN(mesh_src->mat);
 
-  KERNEL_defgroup_copy_list(&mesh_dst->vertex_group_names, &mesh_src->vertex_group_names);
+  DUNE_defgroup_copy_list(&mesh_dst->vertex_group_names, &mesh_src->vertex_group_names);
 
   const eCDAllocType alloc_type = (flag & LIB_ID_COPY_CD_REFERENCE) ? CD_REFERENCE : CD_DUPLICATE;
   CustomData_copy(&mesh_src->vdata, &mesh_dst->vdata, mask.vmask, alloc_type, mesh_dst->totvert);
@@ -138,26 +138,26 @@ static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int 
    * avoiding recomputation in some cases. However, a copied mesh is often changed anyway, so that
    * idea is not clearly better. With proper reference counting, all custom data layers could be
    * copied as the cost would be much lower. */
-  KERNEL_mesh_normals_tag_dirty(mesh_dst);
+  DUNE_mesh_normals_tag_dirty(mesh_dst);
 
   /* TODO: Do we want to add flag to prevent this? */
   if (mesh_src->key && (flag & LIB_ID_COPY_SHAPEKEY)) {
-    KERNEL_id_copy_ex(bmain, &mesh_src->key->id, (ID **)&mesh_dst->key, flag);
-    /* XXX This is not nice, we need to make BKE_id_copy_ex fully re-entrant... */
+    DUNE_id_copy_ex(dunemain, &mesh_src->key->id, (ID **)&mesh_dst->key, flag);
+    /* XXX This is not nice, we need to make DUNE_id_copy_ex fully re-entrant... */
     mesh_dst->key->from = &mesh_dst->id;
   }
 
-  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh_dst);
+  DUNE_mesh_assert_normals_dirty_or_calculated(mesh_dst);
 }
 
-void KERNEL_mesh_free_editmesh(struct Mesh *mesh)
+void DUNE_mesh_free_editmesh(struct Mesh *mesh)
 {
   if (mesh->edit_mesh == nullptr) {
     return;
   }
 
   if (mesh->edit_mesh->is_shallow_copy == false) {
-    KERNEL_editmesh_free_data(mesh->edit_mesh);
+    DUNE_editmesh_free_data(mesh->edit_mesh);
   }
   MEM_freeN(mesh->edit_mesh);
   mesh->edit_mesh = nullptr;
@@ -169,9 +169,9 @@ static void mesh_free_data(ID *id)
 
   LIB_freelistN(&mesh->vertex_group_names);
 
-  KERNEL_mesh_free_editmesh(mesh);
+  DUNE_mesh_free_editmesh(mesh);
 
-  KERNEL_mesh_runtime_free_data(mesh);
+  DUNE_mesh_runtime_free_data(mesh);
   mesh_clear_geometry(mesh);
   MEM_SAFE_FREE(mesh->mat);
 }
@@ -179,10 +179,10 @@ static void mesh_free_data(ID *id)
 static void mesh_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   Mesh *mesh = (Mesh *)id;
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->texcomesh, IDWALK_CB_NEVER_SELF);
-  KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->key, IDWALK_CB_USER);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->texcomesh, IDWALK_CB_NEVER_SELF);
+  DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->key, IDWALK_CB_USER);
   for (int i = 0; i < mesh->totcol; i++) {
-    KERNEL_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->mat[i], IDWALK_CB_USER);
+    DUNE_LIB_FOREACHID_PROCESS_IDSUPER(data, mesh->mat[i], IDWALK_CB_USER);
   }
 }
 
@@ -190,11 +190,11 @@ static void mesh_foreach_path(ID *id, BPathForeachPathData *bpath_data)
 {
   Mesh *me = (Mesh *)id;
   if (me->ldata.external) {
-    KERNEL_bpath_foreach_path_fixed_process(bpath_data, me->ldata.external->filename);
+    DUNE_dunepath_foreach_path_fixed_process(bpath_data, me->ldata.external->filename);
   }
 }
 
-static void mesh_blend_write(DuneWriter *writer, ID *id, const void *id_address)
+static void mesh_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Mesh *mesh = (Mesh *)id;
   const bool is_undo = LOADER_write_is_undo(writer);
@@ -235,35 +235,35 @@ static void mesh_blend_write(DuneWriter *writer, ID *id, const void *id_address)
     players = players_buff;
   }
   else {
-    CustomData_blend_write_prepare(&mesh->vdata, &vlayers, vlayers_buff, ARRAY_SIZE(vlayers_buff));
-    CustomData_blend_write_prepare(&mesh->edata, &elayers, elayers_buff, ARRAY_SIZE(elayers_buff));
-    CustomData_blend_write_prepare(&mesh->ldata, &llayers, llayers_buff, ARRAY_SIZE(llayers_buff));
-    CustomData_blend_write_prepare(&mesh->pdata, &players, players_buff, ARRAY_SIZE(players_buff));
+    CustomData_write_prepare(&mesh->vdata, &vlayers, vlayers_buff, ARRAY_SIZE(vlayers_buff));
+    CustomData_write_prepare(&mesh->edata, &elayers, elayers_buff, ARRAY_SIZE(elayers_buff));
+    CustomData_write_prepare(&mesh->ldata, &llayers, llayers_buff, ARRAY_SIZE(llayers_buff));
+    CustomData_write_prepare(&mesh->pdata, &players, players_buff, ARRAY_SIZE(players_buff));
   }
 
   LOADER_write_id_struct(writer, Mesh, id_address, &mesh->id);
-  KERNEL_id_dune_write(writer, &mesh->id);
+  DUNE_id_write(writer, &mesh->id);
 
   /* direct data */
   if (mesh->adt) {
-    KERNEL_animdata_dune_write(writer, mesh->adt);
+    DUNE_animdata_write(writer, mesh->adt);
   }
 
-  BKE_defbase_blend_write(writer, &mesh->vertex_group_names);
+  DUNE_defbase_write(writer, &mesh->vertex_group_names);
 
-  BLO_write_pointer_array(writer, mesh->totcol, mesh->mat);
-  BLO_write_raw(writer, sizeof(MSelect) * mesh->totselect, mesh->mselect);
+  LOADER_write_pointer_array(writer, mesh->totcol, mesh->mat);
+  LOADER_write_raw(writer, sizeof(MSelect) * mesh->totselect, mesh->mselect);
 
-  CustomData_blend_write(
+  CustomData_write(
       writer, &mesh->vdata, vlayers, mesh->totvert, CD_MASK_MESH.vmask, &mesh->id);
-  CustomData_blend_write(
+  CustomData_write(
       writer, &mesh->edata, elayers, mesh->totedge, CD_MASK_MESH.emask, &mesh->id);
   /* fdata is really a dummy - written so slots align */
-  CustomData_blend_write(
+  CustomData_write(
       writer, &mesh->fdata, flayers, mesh->totface, CD_MASK_MESH.fmask, &mesh->id);
-  CustomData_blend_write(
+  CustomData_write(
       writer, &mesh->ldata, llayers, mesh->totloop, CD_MASK_MESH.lmask, &mesh->id);
-  CustomData_blend_write(
+  CustomData_write(
       writer, &mesh->pdata, players, mesh->totpoly, CD_MASK_MESH.pmask, &mesh->id);
 
   /* Free temporary data */
@@ -284,7 +284,7 @@ static void mesh_blend_write(DuneWriter *writer, ID *id, const void *id_address)
 #undef CD_LAYERS_FREE
 }
 
-static void mesh_blend_read_data(BlendDataReader *reader, ID *id)
+static void mesh_read_data(DuneDataReader *reader, ID *id)
 {
   Mesh *mesh = (Mesh *)id;
   LOADER_read_pointer_array(reader, (void **)&mesh->mat);
@@ -304,24 +304,24 @@ static void mesh_blend_read_data(BlendDataReader *reader, ID *id)
 
   /* animdata */
   LOADER_read_data_address(reader, &mesh->adt);
-  KERNEL_animdata_dune_read_data(reader, mesh->adt);
+  DUNE_animdata_read_data(reader, mesh->adt);
 
-  /* Normally KERNEL_defvert_blend_read should be called in CustomData_blend_read,
+  /* Normally DUNE_defvert_read should be called in CustomData_read,
    * but for backwards compatibility in do_versions to work we do it here. */
-  KERNEL_defvert_blend_read(reader, mesh->totvert, mesh->dvert);
+  DUNE_defvert_read(reader, mesh->totvert, mesh->dvert);
   LOADER_read_list(reader, &mesh->vertex_group_names);
 
-  CustomData_dune_read(reader, &mesh->vdata, mesh->totvert);
-  CustomData_dune_read(reader, &mesh->edata, mesh->totedge);
-  CustomData_dune_read(reader, &mesh->fdata, mesh->totface);
-  CustomData_dune_read(reader, &mesh->ldata, mesh->totloop);
-  CustomData_dune_read(reader, &mesh->pdata, mesh->totpoly);
+  CustomData_read(reader, &mesh->vdata, mesh->totvert);
+  CustomData_read(reader, &mesh->edata, mesh->totedge);
+  CustomData_read(reader, &mesh->fdata, mesh->totface);
+  CustomData_read(reader, &mesh->ldata, mesh->totloop);
+  CustomData_read(reader, &mesh->pdata, mesh->totpoly);
 
   mesh->texflag &= ~ME_AUTOSPACE_EVALUATED;
   mesh->edit_mesh = nullptr;
 
   memset(&mesh->runtime, 0, sizeof(mesh->runtime));
-  KERNEL_mesh_runtime_init_data(mesh);
+  DUNE_mesh_runtime_init_data(mesh);
 
   /* happens with old files */
   if (mesh->mselect == nullptr) {
@@ -336,11 +336,11 @@ static void mesh_blend_read_data(BlendDataReader *reader, ID *id)
   }
 
   /* We don't expect to load normals from files, since they are derived data. */
-  KERNEL_mesh_normals_tag_dirty(mesh);
-  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh);
+  DUNE_mesh_normals_tag_dirty(mesh);
+  DUNE_mesh_assert_normals_dirty_or_calculated(mesh);
 }
 
-static void mesh_dune_read_lib(DuneLibReader *reader, ID *id)
+static void mesh_read_lib(DuneLibReader *reader, ID *id)
 {
   Mesh *me = (Mesh *)id;
   /* this check added for python created meshes */
@@ -376,7 +376,7 @@ IDTypeInfo IDType_ID_ME = {
     /* struct_size */ sizeof(Mesh),
     /* name */ "Mesh",
     /* name_plural */ "meshes",
-    /* translation_context */ BLT_I18NCONTEXT_ID_MESH,
+    /* translation_context */ LANG_I18NCONTEXT_ID_MESH,
     /* flags */ IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     /* asset_type_info */ nullptr,
 
@@ -389,9 +389,9 @@ IDTypeInfo IDType_ID_ME = {
     /* foreach_path */ mesh_foreach_path,
     /* owner_get */ nullptr,
 
-    /* dune_write */ mesh_blend_write,
-    /* dune_read_data */ mesh_blend_read_data,
-    /* dune_read_lib */ mesh_blend_read_lib,
+    /* dune_write */ mesh_dune_write,
+    /* dune_read_data */ mesh_dune_read_data,
+    /* dune_read_lib */ mesh_dune_read_lib,
     /* dune_read_expand */ mesh_read_expand,
 
     /* dune_read_undo_preserve */ nullptr,
@@ -706,7 +706,7 @@ static int customdata_compare(
   return 0;
 }
 
-const char *KERNEL_mesh_cmp(Mesh *me1, Mesh *me2, float thresh)
+const char *DUNE_mesh_cmp(Mesh *me1, Mesh *me2, float thresh)
 {
   int c;
 
@@ -765,14 +765,14 @@ static void mesh_ensure_tessellation_customdata(Mesh *me)
     const int totcol_tessface = CustomData_number_of_layers(&me->fdata, CD_MCOL);
 
     if (tottex_tessface != tottex_original || totcol_tessface != totcol_original) {
-      KERNEL_mesh_tessface_clear(me);
+      DUNE_mesh_tessface_clear(me);
 
       CustomData_from_bmeshpoly(&me->fdata, &me->ldata, me->totface);
 
       /* TODO: add some `--debug-mesh` option. */
       if (G.debug & G_DEBUG) {
-        /* NOTE(campbell): this warning may be un-called for if we are initializing the mesh for
-         * the first time from #BMesh, rather than giving a warning about this we could be smarter
+        /* NOTE: this warning may be un-called for if we are initializing the mesh for
+         * the first time from BMesh, rather than giving a warning about this we could be smarter
          * and check if there was any data to begin with, for now just print the warning with
          * some info to help troubleshoot what's going on. */
         printf(
@@ -789,20 +789,20 @@ static void mesh_ensure_tessellation_customdata(Mesh *me)
   }
 }
 
-void KERNEL_mesh_ensure_skin_customdata(Mesh *me)
+void DUNE_mesh_ensure_skin_customdata(Mesh *me)
 {
-  BMesh *bm = me->edit_mesh ? me->edit_mesh->bm : nullptr;
+  DuneMesh *dm = me->edit_mesh ? me->edit_mesh->dm : nullptr;
   MVertSkin *vs;
 
-  if (bm) {
-    if (!CustomData_has_layer(&bm->vdata, CD_MVERT_SKIN)) {
-      BMVert *v;
-      BMIter iter;
+  if (dm) {
+    if (!CustomData_has_layer(&dm->vdata, CD_MVERT_SKIN)) {
+      DuneMeshVert *v;
+      DuneMeshIter iter;
 
-      BM_data_layer_add(bm, &bm->vdata, CD_MVERT_SKIN);
+      DUNEMESH_data_layer_add(dm, &dm->vdata, CD_MVERT_SKIN);
 
       /* Mark an arbitrary vertex as root */
-      BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+      DUNEMESH_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
         vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, v->head.data, CD_MVERT_SKIN);
         vs->flag |= MVERT_SKIN_ROOT;
         break;
@@ -822,13 +822,13 @@ void KERNEL_mesh_ensure_skin_customdata(Mesh *me)
   }
 }
 
-bool KERNEL_mesh_ensure_facemap_customdata(struct Mesh *me)
+bool DUNE_mesh_ensure_facemap_customdata(struct Mesh *me)
 {
-  BMesh *bm = me->edit_mesh ? me->edit_mesh->bm : nullptr;
+  DuneMesh *dm = me->edit_mesh ? me->edit_mesh->dm : nullptr;
   bool changed = false;
   if (bm) {
-    if (!CustomData_has_layer(&bm->pdata, CD_FACEMAP)) {
-      BM_data_layer_add(bm, &bm->pdata, CD_FACEMAP);
+    if (!CustomData_has_layer(&dm->pdata, CD_FACEMAP)) {
+      DUNEMESH_data_layer_add(dm, &dm->pdata, CD_FACEMAP);
       changed = true;
     }
   }
@@ -841,13 +841,13 @@ bool KERNEL_mesh_ensure_facemap_customdata(struct Mesh *me)
   return changed;
 }
 
-bool KERNEL_mesh_clear_facemap_customdata(struct Mesh *me)
+bool DUNE_mesh_clear_facemap_customdata(struct Mesh *me)
 {
-  BMesh *bm = me->edit_mesh ? me->edit_mesh->bm : nullptr;
+  DuneMesh *dm = me->edit_mesh ? me->edit_mesh->bm : nullptr;
   bool changed = false;
-  if (bm) {
-    if (CustomData_has_layer(&bm->pdata, CD_FACEMAP)) {
-      BM_data_layer_free(bm, &bm->pdata, CD_FACEMAP);
+  if (dm) {
+    if (CustomData_has_layer(&dm->pdata, CD_FACEMAP)) {
+      DUNEMESH_data_layer_free(dm, &dm->pdata, CD_FACEMAP);
       changed = true;
     }
   }
@@ -861,10 +861,10 @@ bool KERNEL_mesh_clear_facemap_customdata(struct Mesh *me)
 }
 
 /**
- * This ensures grouped custom-data (e.g. #CD_MLOOPUV and #CD_MTFACE, or
- * #CD_MLOOPCOL and #CD_MCOL) have the same relative active/render/clone/mask indices.
+ * This ensures grouped custom-data (e.g. CD_MLOOPUV and CD_MTFACE, or
+ * CD_MLOOPCOL and CD_MCOL) have the same relative active/render/clone/mask indices.
  *
- * NOTE(@campbellbarton): that for undo mesh data we want to skip 'ensure_tess_cd' call since
+ * NOTE: that for undo mesh data we want to skip 'ensure_tess_cd' call since
  * we don't want to store memory for #MFace data when its only used for older
  * versions of the mesh.
  */
@@ -877,7 +877,7 @@ static void mesh_update_linked_customdata(Mesh *me, const bool do_ensure_tess_cd
   CustomData_bmesh_update_active_layers(&me->fdata, &me->ldata);
 }
 
-void KERNEL_mesh_update_customdata_pointers(Mesh *me, const bool do_ensure_tess_cd)
+void DUNE_mesh_update_customdata_pointers(Mesh *me, const bool do_ensure_tess_cd)
 {
   mesh_update_linked_customdata(me, do_ensure_tess_cd);
 
@@ -897,7 +897,7 @@ void KERNEL_mesh_update_customdata_pointers(Mesh *me, const bool do_ensure_tess_
   me->mloopuv = (MLoopUV *)CustomData_get_layer(&me->ldata, CD_MLOOPUV);
 }
 
-bool KERNEL_mesh_has_custom_loop_normals(Mesh *me)
+bool DUNE_mesh_has_custom_loop_normals(Mesh *me)
 {
   if (me->edit_mesh) {
     return CustomData_has_layer(&me->edit_mesh->bm->ldata, CD_CUSTOMLOOPNORMAL);
@@ -906,7 +906,7 @@ bool KERNEL_mesh_has_custom_loop_normals(Mesh *me)
   return CustomData_has_layer(&me->ldata, CD_CUSTOMLOOPNORMAL);
 }
 
-void KERNEL_mesh_free_data_for_undo(Mesh *me)
+void DUNE_mesh_free_data_for_undo(Mesh *me)
 {
   mesh_free_data(&me->id);
 }
@@ -919,7 +919,7 @@ void KERNEL_mesh_free_data_for_undo(Mesh *me)
  *   which is expensive.
  *   Material slots should be kept in sync with the object.
  *
- * - Edit-Mesh (#Mesh.edit_mesh)
+ * - Edit-Mesh (Mesh.edit_mesh)
  *   Since edit-mesh is tied to the objects mode,
  *   which crashes when called in edit-mode, see: T90972.
  */
@@ -941,13 +941,13 @@ static void mesh_clear_geometry(Mesh *mesh)
   mesh->act_face = -1;
   mesh->totselect = 0;
 
-  KERNEL_mesh_update_customdata_pointers(mesh, false);
+  DUNE_mesh_update_customdata_pointers(mesh, false);
 }
 
-void KERNEL_mesh_clear_geometry(Mesh *mesh)
+void DUNE_mesh_clear_geometry(Mesh *mesh)
 {
-  KERNEL_animdata_free(&mesh->id, false);
-  KERNEL_mesh_runtime_clear_cache(mesh);
+  DUNE_animdata_free(&mesh->id, false);
+  DUNE_mesh_runtime_clear_cache(mesh);
   mesh_clear_geometry(mesh);
 }
 
@@ -966,9 +966,9 @@ static void mesh_tessface_clear_intern(Mesh *mesh, int free_customdata)
   mesh->totface = 0;
 }
 
-Mesh *KERNEL_mesh_add(Main *bmain, const char *name)
+Mesh *DUNE_mesh_add(Main *dunemain, const char *name)
 {
-  Mesh *me = (Mesh *)KERNEL_id_new(bmain, ID_ME, name);
+  Mesh *me = (Mesh *)DUNE_id_new(dunemain, ID_ME, name);
 
   return me;
 }
@@ -994,14 +994,14 @@ static void mesh_ensure_cdlayers_primary(Mesh *mesh, bool do_tessface)
   }
 }
 
-Mesh *KERNEL_mesh_new_nomain(
+Mesh *DUNE_mesh_new_nomain(
     int verts_len, int edges_len, int tessface_len, int loops_len, int polys_len)
 {
-  Mesh *mesh = (Mesh *)KERNEL_libblock_alloc(
-      nullptr, ID_ME, KERNEL_idtype_idcode_to_name(ID_ME), LIB_ID_CREATE_LOCALIZE);
-  KERNEL_libblock_init_empty(&mesh->id);
+  Mesh *mesh = (Mesh *)DUNE_libblock_alloc(
+      nullptr, ID_ME, DUNE_idtype_idcode_to_name(ID_ME), LIB_ID_CREATE_LOCALIZE);
+  DUNE_libblock_init_empty(&mesh->id);
 
-  /* Don't use #CustomData_reset because we don't want to touch custom-data. */
+  /* Don't use CustomData_reset because we don't want to touch custom-data. */
   copy_vn_i(mesh->vdata.typemap, CD_NUMTYPES, -1);
   copy_vn_i(mesh->edata.typemap, CD_NUMTYPES, -1);
   copy_vn_i(mesh->fdata.typemap, CD_NUMTYPES, -1);
@@ -1015,12 +1015,12 @@ Mesh *KERNEL_mesh_new_nomain(
   mesh->totpoly = polys_len;
 
   mesh_ensure_cdlayers_primary(mesh, true);
-  KERNEL_mesh_update_customdata_pointers(mesh, false);
+  DUNE_mesh_update_customdata_pointers(mesh, false);
 
   return mesh;
 }
 
-void KERNEL_mesh_copy_parameters(Mesh *me_dst, const Mesh *me_src)
+void DUNE_mesh_copy_parameters(Mesh *me_dst, const Mesh *me_src)
 {
   /* Copy general settings. */
   me_dst->editflag = me_src->editflag;
@@ -1042,18 +1042,18 @@ void KERNEL_mesh_copy_parameters(Mesh *me_dst, const Mesh *me_src)
   me_dst->vertex_group_active_index = me_src->vertex_group_active_index;
 }
 
-void KERNEL_mesh_copy_parameters_for_eval(Mesh *me_dst, const Mesh *me_src)
+void DUNE_mesh_copy_parameters_for_eval(Mesh *me_dst, const Mesh *me_src)
 {
   /* User counts aren't handled, don't copy into a mesh from #G_MAIN. */
   LIB_assert(me_dst->id.tag & (LIB_TAG_NO_MAIN | LIB_TAG_COPIED_ON_WRITE));
 
-  KERNEL_mesh_copy_parameters(me_dst, me_src);
+  DUNE_mesh_copy_parameters(me_dst, me_src);
 
-  KERNEL_mesh_assert_normals_dirty_or_calculated(me_dst);
+  DUNE_mesh_assert_normals_dirty_or_calculated(me_dst);
 
   /* Copy vertex group names. */
   LIB_assert(LIB_listbase_is_empty(&me_dst->vertex_group_names));
-  KERNEL_defgroup_copy_list(&me_dst->vertex_group_names, &me_src->vertex_group_names);
+  DUNE_defgroup_copy_list(&me_dst->vertex_group_names, &me_src->vertex_group_names);
 
   /* Copy materials. */
   if (me_dst->mat != nullptr) {
@@ -1063,7 +1063,7 @@ void KERNEL_mesh_copy_parameters_for_eval(Mesh *me_dst, const Mesh *me_src)
   me_dst->totcol = me_src->totcol;
 }
 
-Mesh *KERNEL_mesh_new_nomain_from_template_ex(const Mesh *me_src,
+Mesh *DUNE_mesh_new_nomain_from_template_ex(const Mesh *me_src,
                                            int verts_len,
                                            int edges_len,
                                            int tessface_len,
@@ -1074,7 +1074,7 @@ Mesh *KERNEL_mesh_new_nomain_from_template_ex(const Mesh *me_src,
   /* Only do tessface if we are creating tessfaces or copying from mesh with only tessfaces. */
   const bool do_tessface = (tessface_len || ((me_src->totface != 0) && (me_src->totpoly == 0)));
 
-  Mesh *me_dst = (Mesh *)BKE_id_new_nomain(ID_ME, nullptr);
+  Mesh *me_dst = (Mesh *)DUNE_id_new_nomain(ID_ME, nullptr);
 
   me_dst->mselect = (MSelect *)MEM_dupallocN(me_src->mselect);
 
@@ -1085,7 +1085,7 @@ Mesh *KERNEL_mesh_new_nomain_from_template_ex(const Mesh *me_src,
   me_dst->totpoly = polys_len;
 
   me_dst->cd_flag = me_src->cd_flag;
-  KERNEL_mesh_copy_parameters_for_eval(me_dst, me_src);
+  DUNE_mesh_copy_parameters_for_eval(me_dst, me_src);
 
   CustomData_copy(&me_src->vdata, &me_dst->vdata, mask.vmask, CD_CALLOC, verts_len);
   CustomData_copy(&me_src->edata, &me_dst->edata, mask.emask, CD_CALLOC, edges_len);
@@ -1101,32 +1101,32 @@ Mesh *KERNEL_mesh_new_nomain_from_template_ex(const Mesh *me_src,
   /* The destination mesh should at least have valid primary CD layers,
    * even in cases where the source mesh does not. */
   mesh_ensure_cdlayers_primary(me_dst, do_tessface);
-  KERNEL_mesh_update_customdata_pointers(me_dst, false);
+  DUNE_mesh_update_customdata_pointers(me_dst, false);
 
   return me_dst;
 }
 
-Mesh *KERNEL_mesh_new_nomain_from_template(const Mesh *me_src,
+Mesh *DUNE_mesh_new_nomain_from_template(const Mesh *me_src,
                                         int verts_len,
                                         int edges_len,
                                         int tessface_len,
                                         int loops_len,
                                         int polys_len)
 {
-  return KERNEL_mesh_new_nomain_from_template_ex(
+  return DUNE_mesh_new_nomain_from_template_ex(
       me_src, verts_len, edges_len, tessface_len, loops_len, polys_len, CD_MASK_EVERYTHING);
 }
 
-void KERNEL_mesh_eval_delete(struct Mesh *mesh_eval)
+void DUNE_mesh_eval_delete(struct Mesh *mesh_eval)
 {
   /* Evaluated mesh may point to edit mesh, but never owns it. */
   mesh_eval->edit_mesh = nullptr;
   mesh_free_data(&mesh_eval->id);
-  KERNEL_libblock_free_data(&mesh_eval->id, false);
+  DUNE_libblock_free_data(&mesh_eval->id, false);
   MEM_freeN(mesh_eval);
 }
 
-Mesh *BKE_mesh_copy_for_eval(const Mesh *source, bool reference)
+Mesh *DUNE_mesh_copy_for_eval(const Mesh *source, bool reference)
 {
   int flags = LIB_ID_COPY_LOCALIZE;
 
@@ -1134,54 +1134,54 @@ Mesh *BKE_mesh_copy_for_eval(const Mesh *source, bool reference)
     flags |= LIB_ID_COPY_CD_REFERENCE;
   }
 
-  Mesh *result = (Mesh *)KERNEL_id_copy_ex(nullptr, &source->id, nullptr, flags);
+  Mesh *result = (Mesh *)DUNE_id_copy_ex(nullptr, &source->id, nullptr, flags);
   return result;
 }
 
-BMesh *KERNEL_mesh_to_bmesh_ex(const Mesh *me,
-                            const struct BMeshCreateParams *create_params,
-                            const struct BMeshFromMeshParams *convert_params)
+DMesh *DUNE_mesh_to_bmesh_ex(const Mesh *me,
+                            const struct DuneMeshCreateParams *create_params,
+                            const struct DuneMeshFromMeshParams *convert_params)
 {
-  const BMAllocTemplate allocsize = BMALLOC_TEMPLATE_FROM_ME(me);
+  const BMAllocTemplate allocsize = DUNEMESHALLOC_TEMPLATE_FROM_ME(me);
 
-  BMesh *bm = BM_mesh_create(&allocsize, create_params);
-  BM_mesh_bm_from_me(bm, me, convert_params);
+  DMesh *duneMesh = DM_mesh_create(&allocsize, create_params);
+  DUNEMESH_mesh_dm_from_me(duneMesh, me, convert_params);
 
-  return bm;
+  return dm;
 }
 
-BMesh *BKE_mesh_to_bmesh(Mesh *me,
+DMesh *DUNE_mesh_to_dmesh(Mesh *me,
                          Object *ob,
                          const bool add_key_index,
-                         const struct BMeshCreateParams *params)
+                         const struct DMeshCreateParams *params)
 {
-  BMeshFromMeshParams bmesh_from_mesh_params{};
-  bmesh_from_mesh_params.calc_face_normal = false;
-  bmesh_from_mesh_params.calc_vert_normal = false;
-  bmesh_from_mesh_params.add_key_index = add_key_index;
-  bmesh_from_mesh_params.use_shapekey = true;
-  bmesh_from_mesh_params.active_shapekey = ob->shapenr;
-  return KERNEL_mesh_to_bmesh_ex(me, params, &bmesh_from_mesh_params);
+  DMeshFromMeshParams dmesh_from_mesh_params{};
+  Dmesh_from_mesh_params.calc_face_normal = false;
+  mesh_from_mesh_params.calc_vert_normal = false;
+  dmesh_from_mesh_params.add_key_index = add_key_index;
+  dmesh_from_mesh_params.use_shapekey = true;
+  dmesh_from_mesh_params.active_shapekey = ob->shapenr;
+  return DUNE_mesh_to_dmesh_ex(me, params, &dmesh_from_mesh_params);
 }
 
-Mesh *KERNEL_mesh_from_bmesh_nomain(BMesh *bm,
+Mesh *DUNE_mesh_from_bmesh_nomain(DMesh *dm,
                                  const struct BMeshToMeshParams *params,
                                  const Mesh *me_settings)
 {
   LIB_assert(params->calc_object_remap == false);
-  Mesh *mesh = (Mesh *)KERNEL_id_new_nomain(ID_ME, nullptr);
-  BM_mesh_bm_to_me(nullptr, bm, mesh, params);
-  KERNEL_mesh_copy_parameters_for_eval(mesh, me_settings);
+  Mesh *mesh = (Mesh *)DUNE_id_new_nomain(ID_ME, nullptr);
+  DM_mesh_bm_to_me(nullptr, bm, mesh, params);
+  DUNE_mesh_copy_parameters_for_eval(mesh, me_settings);
   return mesh;
 }
 
-Mesh *KERNEL_mesh_from_bmesh_for_eval_nomain(BMesh *bm,
+Mesh *DUNE_mesh_from_bmesh_for_eval_nomain(BMesh *bm,
                                           const CustomData_MeshMasks *cd_mask_extra,
                                           const Mesh *me_settings)
 {
-  Mesh *mesh = (Mesh *)KERNEL_id_new_nomain(ID_ME, nullptr);
+  Mesh *mesh = (Mesh *)DUNE_id_new_nomain(ID_ME, nullptr);
   BM_mesh_bm_to_me_for_eval(bm, mesh, cd_mask_extra);
-  KERNEL_mesh_copy_parameters_for_eval(mesh, me_settings);
+  DUNE_mesh_copy_parameters_for_eval(mesh, me_settings);
   return mesh;
 }
 
@@ -1194,7 +1194,7 @@ static void ensure_orig_index_layer(CustomData &data, const int size)
   range_vn_i(indices, size, 0);
 }
 
-void KERNEL_mesh_ensure_default_orig_index_customdata(Mesh *mesh)
+void DUNE_mesh_ensure_default_orig_index_customdata(Mesh *mesh)
 {
   LIB_assert(mesh->runtime.wrapper_type == ME_WRAPPER_TYPE_MDATA);
   ensure_orig_index_layer(mesh->vdata, mesh->totvert);
@@ -1202,7 +1202,7 @@ void KERNEL_mesh_ensure_default_orig_index_customdata(Mesh *mesh)
   ensure_orig_index_layer(mesh->pdata, mesh->totpoly);
 }
 
-BoundBox *KERNEL_mesh_boundbox_get(Object *ob)
+BoundBox *DUNE_mesh_boundbox_get(Object *ob)
 {
   /* This is Object-level data access,
    * DO NOT touch to Mesh's bb, would be totally thread-unsafe. */
@@ -1211,7 +1211,7 @@ BoundBox *KERNEL_mesh_boundbox_get(Object *ob)
     float min[3], max[3];
 
     INIT_MINMAX(min, max);
-    if (!KERNEL_mesh_wrapper_minmax(me, min, max)) {
+    if (!DUNE_mesh_wrapper_minmax(me, min, max)) {
       min[0] = min[1] = min[2] = -1.0f;
       max[0] = max[1] = max[2] = 1.0f;
     }
@@ -1219,20 +1219,20 @@ BoundBox *KERNEL_mesh_boundbox_get(Object *ob)
     if (ob->runtime.bb == nullptr) {
       ob->runtime.bb = (BoundBox *)MEM_mallocN(sizeof(*ob->runtime.bb), __func__);
     }
-    KERNEL_boundbox_init_from_minmax(ob->runtime.bb, min, max);
+    DUNE_boundbox_init_from_minmax(ob->runtime.bb, min, max);
     ob->runtime.bb->flag &= ~BOUNDBOX_DIRTY;
   }
 
   return ob->runtime.bb;
 }
 
-void KERNEL_mesh_texspace_calc(Mesh *me)
+void DUNE_mesh_texspace_calc(Mesh *me)
 {
   if (me->texflag & ME_AUTOSPACE) {
     float min[3], max[3];
 
     INIT_MINMAX(min, max);
-    if (!KERNEL_mesh_wrapper_minmax(me, min, max)) {
+    if (!DUNE_mesh_wrapper_minmax(me, min, max)) {
       min[0] = min[1] = min[2] = -1.0f;
       max[0] = max[1] = max[2] = 1.0f;
     }
@@ -1263,16 +1263,16 @@ void KERNEL_mesh_texspace_calc(Mesh *me)
   }
 }
 
-void KERNEL_mesh_texspace_ensure(Mesh *me)
+void DUNE_mesh_texspace_ensure(Mesh *me)
 {
   if ((me->texflag & ME_AUTOSPACE) && !(me->texflag & ME_AUTOSPACE_EVALUATED)) {
-    KERNEL_mesh_texspace_calc(me);
+    DUNE_mesh_texspace_calc(me);
   }
 }
 
-void KERNEL_mesh_texspace_get(Mesh *me, float r_loc[3], float r_size[3])
+void DUNE_mesh_texspace_get(Mesh *me, float r_loc[3], float r_size[3])
 {
-  KERNEL_mesh_texspace_ensure(me);
+  DUNE_mesh_texspace_ensure(me);
 
   if (r_loc) {
     copy_v3_v3(r_loc, me->loc);
@@ -1282,9 +1282,9 @@ void KERNEL_mesh_texspace_get(Mesh *me, float r_loc[3], float r_size[3])
   }
 }
 
-void KERNEL_mesh_texspace_get_reference(Mesh *me, char **r_texflag, float **r_loc, float **r_size)
+void DUNE_mesh_texspace_get_reference(Mesh *me, char **r_texflag, float **r_loc, float **r_size)
 {
-  KERNEL_mesh_texspace_ensure(me);
+  DUNE_mesh_texspace_ensure(me);
 
   if (r_texflag != nullptr) {
     *r_texflag = &me->texflag;
@@ -1297,19 +1297,19 @@ void KERNEL_mesh_texspace_get_reference(Mesh *me, char **r_texflag, float **r_lo
   }
 }
 
-void KERNEL_mesh_texspace_copy_from_object(Mesh *me, Object *ob)
+void DUNE_mesh_texspace_copy_from_object(Mesh *me, Object *ob)
 {
   float *texloc, *texsize;
   char *texflag;
 
-  if (KERNEL_object_obdata_texspace_get(ob, &texflag, &texloc, &texsize)) {
+  if (DUNE_object_obdata_texspace_get(ob, &texflag, &texloc, &texsize)) {
     me->texflag = *texflag;
     copy_v3_v3(me->loc, texloc);
     copy_v3_v3(me->size, texsize);
   }
 }
 
-float (*KERNEL_mesh_orco_verts_get(Object *ob))[3]
+float (*DUNE_mesh_orco_verts_get(Object *ob))[3]
 {
   Mesh *me = (Mesh *)ob->data;
   Mesh *tme = me->texcomesh ? me->texcomesh : me;
@@ -1326,11 +1326,11 @@ float (*KERNEL_mesh_orco_verts_get(Object *ob))[3]
   return vcos;
 }
 
-void KERNEL_mesh_orco_verts_transform(Mesh *me, float (*orco)[3], int totvert, int invert)
+void DUNE_mesh_orco_verts_transform(Mesh *me, float (*orco)[3], int totvert, int invert)
 {
   float loc[3], size[3];
 
-  KERNEL_mesh_texspace_get(me->texcomesh ? me->texcomesh : me, loc, size);
+  DUNE_mesh_texspace_get(me->texcomesh ? me->texcomesh : me, loc, size);
 
   if (invert) {
     for (int a = 0; a < totvert; a++) {
@@ -1348,19 +1348,19 @@ void KERNEL_mesh_orco_verts_transform(Mesh *me, float (*orco)[3], int totvert, i
   }
 }
 
-void KERNEL_mesh_orco_ensure(Object *ob, Mesh *mesh)
+void DUNE_mesh_orco_ensure(Object *ob, Mesh *mesh)
 {
   if (CustomData_has_layer(&mesh->vdata, CD_ORCO)) {
     return;
   }
 
   /* Orcos are stored in normalized 0..1 range by convention. */
-  float(*orcodata)[3] = BKE_mesh_orco_verts_get(ob);
-  KERNEL_mesh_orco_verts_transform(mesh, orcodata, mesh->totvert, false);
+  float(*orcodata)[3] = DUNE_mesh_orco_verts_get(ob);
+  DUNE_mesh_orco_verts_transform(mesh, orcodata, mesh->totvert, false);
   CustomData_add_layer(&mesh->vdata, CD_ORCO, CD_ASSIGN, orcodata, mesh->totvert);
 }
 
-int KERNEL_mesh_mface_index_validate(MFace *mface, CustomData *fdata, int mfindex, int nr)
+int DUNE_mesh_mface_index_validate(MFace *mface, CustomData *fdata, int mfindex, int nr)
 {
   /* first test if the face is legal */
   if ((mface->v3 || nr == 4) && mface->v3 == mface->v4) {
@@ -1428,7 +1428,7 @@ int KERNEL_mesh_mface_index_validate(MFace *mface, CustomData *fdata, int mfinde
   return nr;
 }
 
-Mesh *KERNEL_mesh_from_object(Object *ob)
+Mesh *DUNE_mesh_from_object(Object *ob)
 {
   if (ob == nullptr) {
     return nullptr;
@@ -1440,7 +1440,7 @@ Mesh *KERNEL_mesh_from_object(Object *ob)
   return nullptr;
 }
 
-void KERNEL_mesh_assign_object(Main *bmain, Object *ob, Mesh *me)
+void KERNEL_mesh_assign_object(Main *duneMain, Object *ob, Mesh *me)
 {
   Mesh *old = nullptr;
 
@@ -1459,12 +1459,12 @@ void KERNEL_mesh_assign_object(Main *bmain, Object *ob, Mesh *me)
     id_us_plus((ID *)me);
   }
 
-  KERNEL_object_materials_test(bmain, ob, (ID *)me);
+  DUNE_object_materials_test(duneMain, ob, (ID *)me);
 
-  KERNEL_modifiers_test_object(ob);
+  DUNE_modifiers_test_object(ob);
 }
 
-void KERNEL_mesh_material_index_remove(Mesh *me, short index)
+void DUNE_mesh_material_index_remove(Mesh *me, short index)
 {
   MPoly *mp;
   MFace *mf;
@@ -1483,7 +1483,7 @@ void KERNEL_mesh_material_index_remove(Mesh *me, short index)
   }
 }
 
-bool KERNEL_mesh_material_index_used(Mesh *me, short index)
+bool DUNE_mesh_material_index_used(Mesh *me, short index)
 {
   MPoly *mp;
   MFace *mf;
@@ -1504,7 +1504,7 @@ bool KERNEL_mesh_material_index_used(Mesh *me, short index)
   return false;
 }
 
-void KERNEL_mesh_material_index_clear(Mesh *me)
+void DUNE_mesh_material_index_clear(Mesh *me)
 {
   MPoly *mp;
   MFace *mf;
@@ -1519,7 +1519,7 @@ void KERNEL_mesh_material_index_clear(Mesh *me)
   }
 }
 
-void KERNEL_mesh_material_remap(Mesh *me, const uint *remap, uint remap_len)
+void DUNE_mesh_material_remap(Mesh *me, const uint *remap, uint remap_len)
 {
   const short remap_len_short = (short)remap_len;
 
@@ -1549,7 +1549,7 @@ void KERNEL_mesh_material_remap(Mesh *me, const uint *remap, uint remap_len)
 #undef MAT_NR_REMAP
 }
 
-void KERNEL_mesh_smooth_flag_set(Mesh *me, const bool use_smooth)
+void DUNE_mesh_smooth_flag_set(Mesh *me, const bool use_smooth)
 {
   if (use_smooth) {
     for (int i = 0; i < me->totpoly; i++) {
@@ -1587,7 +1587,7 @@ int poly_get_adj_loops_from_vert(const MPoly *poly, const MLoop *mloop, uint ver
   return corner;
 }
 
-int KERNEL_mesh_edge_other_vert(const MEdge *e, int v)
+int DUNE_mesh_edge_other_vert(const MEdge *e, int v)
 {
   if (e->v1 == v) {
     return e->v2;
@@ -1599,7 +1599,7 @@ int KERNEL_mesh_edge_other_vert(const MEdge *e, int v)
   return -1;
 }
 
-void KERNEL_mesh_looptri_get_real_edges(const Mesh *mesh, const MLoopTri *looptri, int r_edges[3])
+void DUNE_mesh_looptri_get_real_edges(const Mesh *mesh, const MLoopTri *looptri, int r_edges[3])
 {
   for (int i = 2, i_next = 0; i_next < 3; i = i_next++) {
     const MLoop *l1 = &mesh->mloop[looptri->tri[i]], *l2 = &mesh->mloop[looptri->tri[i_next]];
@@ -1611,7 +1611,7 @@ void KERNEL_mesh_looptri_get_real_edges(const Mesh *mesh, const MLoopTri *looptr
   }
 }
 
-bool KERNEL_mesh_minmax(const Mesh *me, float r_min[3], float r_max[3])
+bool DUNE_mesh_minmax(const Mesh *me, float r_min[3], float r_max[3])
 {
   using namespace blender;
   if (me->totvert == 0) {
@@ -1644,7 +1644,7 @@ bool KERNEL_mesh_minmax(const Mesh *me, float r_min[3], float r_max[3])
   return true;
 }
 
-void KERNEL_mesh_transform(Mesh *me, const float mat[4][4], bool do_keys)
+void DUNE_mesh_transform(Mesh *me, const float mat[4][4], bool do_keys)
 {
   int i;
   MVert *mvert = (MVert *)CustomData_duplicate_referenced_layer(&me->vdata, CD_MVERT, me->totvert);
@@ -1652,7 +1652,7 @@ void KERNEL_mesh_transform(Mesh *me, const float mat[4][4], bool do_keys)
       &me->ldata, CD_NORMAL, me->totloop);
 
   /* If the referenced layer has been re-allocated need to update pointers stored in the mesh. */
-  KERNEL_mesh_update_customdata_pointers(me, false);
+  DUNE_mesh_update_customdata_pointers(me, false);
 
   for (i = 0; i < me->totvert; i++, mvert++) {
     mul_m4_v3(mat, mvert->co);
@@ -1681,11 +1681,11 @@ void KERNEL_mesh_transform(Mesh *me, const float mat[4][4], bool do_keys)
   }
 }
 
-void KERNEL_mesh_translate(Mesh *me, const float offset[3], const bool do_keys)
+void DUNE_mesh_translate(Mesh *me, const float offset[3], const bool do_keys)
 {
   CustomData_duplicate_referenced_layer(&me->vdata, CD_MVERT, me->totvert);
   /* If the referenced layer has been re-allocated need to update pointers stored in the mesh. */
-  KERNEL_mesh_update_customdata_pointers(me, false);
+  DUNE_mesh_update_customdata_pointers(me, false);
 
   int i = me->totvert;
   for (MVert *mvert = me->mvert; i--; mvert++) {
@@ -1702,19 +1702,18 @@ void KERNEL_mesh_translate(Mesh *me, const float offset[3], const bool do_keys)
   }
 }
 
-void KERNEL_mesh_tessface_ensure(Mesh *mesh)
+void DUNE_mesh_tessface_ensure(Mesh *mesh)
 {
   if (mesh->totpoly && mesh->totface == 0) {
-    KERNEL_mesh_tessface_calc(mesh);
-  }
+    DUNE_mesh_tessface_calc(mesh);
 }
 
-void KERNEL_mesh_tessface_clear(Mesh *mesh)
+void DUNE_mesh_tessface_clear(Mesh *mesh)
 {
   mesh_tessface_clear_intern(mesh, true);
 }
 
-void KERNEL_mesh_do_versions_cd_flag_init(Mesh *mesh)
+void DUNE_mesh_do_versions_cd_flag_init(Mesh *mesh)
 {
   if (UNLIKELY(mesh->cd_flag)) {
     return;
@@ -1750,13 +1749,13 @@ void KERNEL_mesh_do_versions_cd_flag_init(Mesh *mesh)
 /* -------------------------------------------------------------------- */
 /* MSelect functions (currently used in weight paint mode) */
 
-void KERNEL_mesh_mselect_clear(Mesh *me)
+void DUNE_mesh_mselect_clear(Mesh *me)
 {
   MEM_SAFE_FREE(me->mselect);
   me->totselect = 0;
 }
 
-void KERNEL_mesh_mselect_validate(Mesh *me)
+void DUNE_mesh_mselect_validate(Mesh *me)
 {
   MSelect *mselect_src, *mselect_dst;
   int i_src, i_dst;
@@ -1814,7 +1813,7 @@ void KERNEL_mesh_mselect_validate(Mesh *me)
   me->mselect = mselect_dst;
 }
 
-int KERNEL_mesh_mselect_find(Mesh *me, int index, int type)
+int DUNE_mesh_mselect_find(Mesh *me, int index, int type)
 {
   LIB_assert(ELEM(type, ME_VSEL, ME_ESEL, ME_FSEL));
 
@@ -1827,7 +1826,7 @@ int KERNEL_mesh_mselect_find(Mesh *me, int index, int type)
   return -1;
 }
 
-int KERNEL_mesh_mselect_active_get(Mesh *me, int type)
+int DUNE_mesh_mselect_active_get(Mesh *me, int type)
 {
   LIB_assert(ELEM(type, ME_VSEL, ME_ESEL, ME_FSEL));
 
@@ -1839,9 +1838,9 @@ int KERNEL_mesh_mselect_active_get(Mesh *me, int type)
   return -1;
 }
 
-void KERNEL_mesh_mselect_active_set(Mesh *me, int index, int type)
+void DUNE_mesh_mselect_active_set(Mesh *me, int index, int type)
 {
-  const int msel_index = KERNEL_mesh_mselect_find(me, index, type);
+  const int msel_index = DUNE_mesh_mselect_find(me, index, type);
 
   if (msel_index == -1) {
     /* add to the end */
@@ -1859,7 +1858,7 @@ void KERNEL_mesh_mselect_active_set(Mesh *me, int index, int type)
              (me->mselect[me->totselect - 1].type == type));
 }
 
-void KERNEL_mesh_count_selected_items(const Mesh *mesh, int r_count[3])
+void DUNE_mesh_count_selected_items(const Mesh *mesh, int r_count[3])
 {
   r_count[0] = r_count[1] = r_count[2] = 0;
   if (mesh->edit_mesh) {
@@ -1871,7 +1870,7 @@ void KERNEL_mesh_count_selected_items(const Mesh *mesh, int r_count[3])
   /* We could support faces in paint modes. */
 }
 
-void KERNEL_mesh_vert_coords_get(const Mesh *mesh, float (*vert_coords)[3])
+void DUNE_mesh_vert_coords_get(const Mesh *mesh, float (*vert_coords)[3])
 {
   const MVert *mv = mesh->mvert;
   for (int i = 0; i < mesh->totvert; i++, mv++) {
@@ -1879,17 +1878,17 @@ void KERNEL_mesh_vert_coords_get(const Mesh *mesh, float (*vert_coords)[3])
   }
 }
 
-float (*KERNEL_mesh_vert_coords_alloc(const Mesh *mesh, int *r_vert_len))[3]
+float (*DUNE_mesh_vert_coords_alloc(const Mesh *mesh, int *r_vert_len))[3]
 {
   float(*vert_coords)[3] = (float(*)[3])MEM_mallocN(sizeof(float[3]) * mesh->totvert, __func__);
-  KERNEL_mesh_vert_coords_get(mesh, vert_coords);
+  DUNE_mesh_vert_coords_get(mesh, vert_coords);
   if (r_vert_len) {
     *r_vert_len = mesh->totvert;
   }
   return vert_coords;
 }
 
-void KERNEL_mesh_vert_coords_apply(Mesh *mesh, const float (*vert_coords)[3])
+void DUNE_mesh_vert_coords_apply(Mesh *mesh, const float (*vert_coords)[3])
 {
   /* This will just return the pointer if it wasn't a referenced layer. */
   MVert *mv = (MVert *)CustomData_duplicate_referenced_layer(
@@ -1898,10 +1897,10 @@ void KERNEL_mesh_vert_coords_apply(Mesh *mesh, const float (*vert_coords)[3])
   for (int i = 0; i < mesh->totvert; i++, mv++) {
     copy_v3_v3(mv->co, vert_coords[i]);
   }
-  KERNEL_mesh_normals_tag_dirty(mesh);
+  DUNE_mesh_normals_tag_dirty(mesh);
 }
 
-void KERNEL_mesh_vert_coords_apply_with_mat4(Mesh *mesh,
+void DUNE_mesh_vert_coords_apply_with_mat4(Mesh *mesh,
                                           const float (*vert_coords)[3],
                                           const float mat[4][4])
 {
@@ -1912,10 +1911,10 @@ void KERNEL_mesh_vert_coords_apply_with_mat4(Mesh *mesh,
   for (int i = 0; i < mesh->totvert; i++, mv++) {
     mul_v3_m4v3(mv->co, mat, vert_coords[i]);
   }
-  KERNEL_mesh_normals_tag_dirty(mesh);
+  DUNE_mesh_normals_tag_dirty(mesh);
 }
 
-void KERNEL_mesh_anonymous_attributes_remove(Mesh *mesh)
+void DUNE_mesh_anonymous_attributes_remove(Mesh *mesh)
 {
   CustomData_free_layers_anonymous(&mesh->vdata, mesh->totvert);
   CustomData_free_layers_anonymous(&mesh->edata, mesh->totedge);
@@ -1923,7 +1922,7 @@ void KERNEL_mesh_anonymous_attributes_remove(Mesh *mesh)
   CustomData_free_layers_anonymous(&mesh->ldata, mesh->totloop);
 }
 
-void KERNEL_mesh_calc_normals_split_ex(Mesh *mesh, MLoopNorSpaceArray *r_lnors_spacearr)
+void DUNE_mesh_calc_normals_split_ex(Mesh *mesh, MLoopNorSpaceArray *r_lnors_spacearr)
 {
   float(*r_loopnors)[3];
   short(*clnors)[2] = nullptr;
@@ -1948,8 +1947,8 @@ void KERNEL_mesh_calc_normals_split_ex(Mesh *mesh, MLoopNorSpaceArray *r_lnors_s
   /* may be nullptr */
   clnors = (short(*)[2])CustomData_get_layer(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
 
-  KERNEL_mesh_normals_loop_split(mesh->mvert,
-                              KERNEL_mesh_vertex_normals_ensure(mesh),
+  DUNE_mesh_normals_loop_split(mesh->mvert,
+                              DUNE_mesh_vertex_normals_ensure(mesh),
                               mesh->totvert,
                               mesh->medge,
                               mesh->totedge,
@@ -1957,7 +1956,7 @@ void KERNEL_mesh_calc_normals_split_ex(Mesh *mesh, MLoopNorSpaceArray *r_lnors_s
                               r_loopnors,
                               mesh->totloop,
                               mesh->mpoly,
-                              KERNEL_mesh_poly_normals_ensure(mesh),
+                              DUNE_mesh_poly_normals_ensure(mesh),
                               mesh->totpoly,
                               use_split_normals,
                               split_angle,
@@ -1965,12 +1964,12 @@ void KERNEL_mesh_calc_normals_split_ex(Mesh *mesh, MLoopNorSpaceArray *r_lnors_s
                               clnors,
                               nullptr);
 
-  KERNEL_mesh_assert_normals_dirty_or_calculated(mesh);
+  DUNE_mesh_assert_normals_dirty_or_calculated(mesh);
 }
 
-void KERNEL_mesh_calc_normals_split(Mesh *mesh)
+void DUNE_mesh_calc_normals_split(Mesh *mesh)
 {
-  KERNEL_mesh_calc_normals_split_ex(mesh, nullptr);
+  DUNE_mesh_calc_normals_split_ex(mesh, nullptr);
 }
 
 /* Split faces helper functions. */
@@ -2005,8 +2004,8 @@ static int split_faces_prepare_new_verts(Mesh *mesh,
   const int loops_len = mesh->totloop;
   int verts_len = mesh->totvert;
   MLoop *mloop = mesh->mloop;
-  KERNEL_mesh_vertex_normals_ensure(mesh);
-  float(*vert_normals)[3] = KERNEL_mesh_vertex_normals_for_write(mesh);
+  DUNE_mesh_vertex_normals_ensure(mesh);
+  float(*vert_normals)[3] = DUNE_mesh_vertex_normals_for_write(mesh);
 
   LIB_bitmap *verts_used = LIB_BITMAP_NEW(verts_len, __func__);
   LIB_bitmap *done_loops = LIB_BITMAP_NEW(loops_len, __func__);
@@ -2092,11 +2091,11 @@ static int split_faces_prepare_new_edges(const Mesh *mesh,
     MLoop *ml = &mloop[mp->loopstart];
     for (int loop_idx = 0; loop_idx < mp->totloop; loop_idx++, ml++) {
       void **eval;
-      if (!BLI_edgehash_ensure_p(edges_hash, ml_prev->v, ml->v, &eval)) {
+      if (LIB_edgehash_ensure_p(edges_hash, ml_prev->v, ml->v, &eval)) {
         const int edge_idx = ml_prev->e;
 
         /* That edge has not been encountered yet, define it. */
-        if (BLI_BITMAP_TEST(edges_used, edge_idx)) {
+        if (LIB_BITMAP_TEST(edges_used, edge_idx)) {
           /* Original edge has already been used, we need to define a new one. */
           const int new_edge_idx = num_edges++;
           *eval = POINTER_FROM_INT(new_edge_idx);
@@ -2116,7 +2115,7 @@ static int split_faces_prepare_new_edges(const Mesh *mesh,
           medge[edge_idx].v1 = ml_prev->v;
           medge[edge_idx].v2 = ml->v;
           *eval = POINTER_FROM_INT(edge_idx);
-          BLI_BITMAP_ENABLE(edges_used, edge_idx);
+          LIB_BITMAP_ENABLE(edges_used, edge_idx);
         }
       }
       else {
@@ -2129,7 +2128,7 @@ static int split_faces_prepare_new_edges(const Mesh *mesh,
   }
 
   MEM_freeN(edges_used);
-  BLI_edgehash_free(edges_hash, nullptr);
+  LIB_edgehash_free(edges_hash, nullptr);
 
   return num_edges - mesh->totedge;
 }
@@ -2141,17 +2140,17 @@ static void split_faces_split_new_verts(Mesh *mesh,
 {
   const int verts_len = mesh->totvert - num_new_verts;
   MVert *mvert = mesh->mvert;
-  float(*vert_normals)[3] = BKE_mesh_vertex_normals_for_write(mesh);
+  float(*vert_normals)[3] = DUNE_mesh_vertex_normals_for_write(mesh);
 
   /* Normals were already calculated at the beginning of this operation, we rely on that to update
    * them partially here. */
-  BLI_assert(!BKE_mesh_vertex_normals_are_dirty(mesh));
+  LIB_assert(!DUNE_mesh_vertex_normals_are_dirty(mesh));
 
   /* Remember new_verts is a single linklist, so its items are in reversed order... */
   MVert *new_mv = &mvert[mesh->totvert - 1];
   for (int i = mesh->totvert - 1; i >= verts_len; i--, new_mv--, new_verts = new_verts->next) {
-    BLI_assert(new_verts->new_index == i);
-    BLI_assert(new_verts->new_index != new_verts->orig_index);
+    LIB_assert(new_verts->new_index == i);
+    LIB_assert(new_verts->new_index != new_verts->orig_index);
     CustomData_copy_data(&mesh->vdata, &mesh->vdata, new_verts->orig_index, i, 1);
     if (new_verts->vnor) {
       copy_v3_v3(vert_normals[i], new_verts->vnor);
@@ -2170,26 +2169,26 @@ static void split_faces_split_new_edges(Mesh *mesh,
   /* Remember new_edges is a single linklist, so its items are in reversed order... */
   MEdge *new_med = &medge[mesh->totedge - 1];
   for (int i = mesh->totedge - 1; i >= num_edges; i--, new_med--, new_edges = new_edges->next) {
-    BLI_assert(new_edges->new_index == i);
-    BLI_assert(new_edges->new_index != new_edges->orig_index);
+    LIB_assert(new_edges->new_index == i);
+    LIB_assert(new_edges->new_index != new_edges->orig_index);
     CustomData_copy_data(&mesh->edata, &mesh->edata, new_edges->orig_index, i, 1);
     new_med->v1 = new_edges->v1;
     new_med->v2 = new_edges->v2;
   }
 }
 
-void BKE_mesh_split_faces(Mesh *mesh, bool free_loop_normals)
+void DUNE_mesh_split_faces(Mesh *mesh, bool free_loop_normals)
 {
   const int num_polys = mesh->totpoly;
 
   if (num_polys == 0) {
     return;
   }
-  BKE_mesh_tessface_clear(mesh);
+  DUNE_mesh_tessface_clear(mesh);
 
   MLoopNorSpaceArray lnors_spacearr = {nullptr};
   /* Compute loop normals and loop normal spaces (a.k.a. smooth fans of faces around vertices). */
-  BKE_mesh_calc_normals_split_ex(mesh, &lnors_spacearr);
+  DUNE_mesh_calc_normals_split_ex(mesh, &lnors_spacearr);
   /* Stealing memarena from loop normals space array. */
   MemArena *memarena = lnors_spacearr.mem;
 
@@ -2202,7 +2201,7 @@ void BKE_mesh_split_faces(Mesh *mesh, bool free_loop_normals)
   CustomData_duplicate_referenced_layers(&mesh->edata, mesh->totedge);
   CustomData_duplicate_referenced_layers(&mesh->ldata, mesh->totloop);
   /* Update pointers in case we duplicated referenced layers. */
-  BKE_mesh_update_customdata_pointers(mesh, false);
+  DUNE_mesh_update_customdata_pointers(mesh, false);
 
   /* Detect loop normal spaces (a.k.a. smooth fans) that will need a new vert. */
   const int num_new_verts = split_faces_prepare_new_verts(
@@ -2225,7 +2224,7 @@ void BKE_mesh_split_faces(Mesh *mesh, bool free_loop_normals)
       CustomData_realloc(&mesh->edata, mesh->totedge);
     }
     /* Update pointers to a newly allocated memory. */
-    BKE_mesh_update_customdata_pointers(mesh, false);
+    DUNE_mesh_update_customdata_pointers(mesh, false);
 
     /* Update normals manually to avoid recalculation after this operation. */
     mesh->runtime.vert_normals = (float(*)[3])MEM_reallocN(mesh->runtime.vert_normals,
@@ -2246,26 +2245,26 @@ void BKE_mesh_split_faces(Mesh *mesh, bool free_loop_normals)
   }
 
   /* Also frees new_verts/edges temp data, since we used its memarena to allocate them. */
-  BKE_lnor_spacearr_free(&lnors_spacearr);
+  DUNE_lnor_spacearr_free(&lnors_spacearr);
 
-  BKE_mesh_assert_normals_dirty_or_calculated(mesh);
+  DUNE_mesh_assert_normals_dirty_or_calculated(mesh);
 #ifdef VALIDATE_MESH
-  BKE_mesh_validate(mesh, true, true);
+  DUNE_mesh_validate(mesh, true, true);
 #endif
 }
 
 /* **** Depsgraph evaluation **** */
 
-void BKE_mesh_eval_geometry(Depsgraph *depsgraph, Mesh *mesh)
+void DUNE_mesh_eval_geometry(Depsgraph *depsgraph, Mesh *mesh)
 {
   DEG_debug_print_eval(depsgraph, __func__, mesh->id.name, mesh);
-  BKE_mesh_texspace_calc(mesh);
+  DUNE_mesh_texspace_calc(mesh);
   /* We are here because something did change in the mesh. This means we can not trust the existing
    * evaluated mesh, and we don't know what parts of the mesh did change. So we simply delete the
    * evaluated mesh and let objects to re-create it with updated settings. */
   if (mesh->runtime.mesh_eval != nullptr) {
     mesh->runtime.mesh_eval->edit_mesh = nullptr;
-    BKE_id_free(nullptr, mesh->runtime.mesh_eval);
+    DUNE_id_free(nullptr, mesh->runtime.mesh_eval);
     mesh->runtime.mesh_eval = nullptr;
   }
   if (DEG_is_active(depsgraph)) {
