@@ -1251,9 +1251,9 @@ static void do_key(const int start,
 static float *get_weights_array(Object *ob, char *vgroup, WeightsArrayCache *cache)
 {
   MDeformVert *dvert = NULL;
-  BMEditMesh *em = NULL;
-  BMIter iter;
-  BMVert *eve;
+  DuneMeshEditMesh *em = NULL;
+  DuneMeshIter iter;
+  DuneMeshVert *eve;
   int totvert = 0, defgrp_index = 0;
 
   /* no vgroup string set? */
@@ -1288,7 +1288,7 @@ static float *get_weights_array(Object *ob, char *vgroup, WeightsArrayCache *cac
 
     if (cache) {
       if (cache->defgroup_weights == NULL) {
-        int num_defgroup = BKE_object_defgroup_count(ob);
+        int num_defgroup = DUNE_object_defgroup_count(ob);
         cache->defgroup_weights = MEM_callocN(sizeof(*cache->defgroup_weights) * num_defgroup,
                                               "cached defgroup weights");
         cache->num_defgroup_weights = num_defgroup;
@@ -1441,7 +1441,7 @@ static void do_rel_cu_key(Curve *cu, Key *key, KeyBlock *actkb, char *out, const
 static void do_curve_key(Object *ob, Key *key, char *out, const int tot)
 {
   Curve *cu = ob->data;
-  KeyBlock *k[4], *actkb = BKE_keyblock_from_object(ob);
+  KeyBlock *k[4], *actkb = DUNE_keyblock_from_object(ob);
   float t[4];
   int flag = 0;
 
@@ -1465,7 +1465,7 @@ static void do_curve_key(Object *ob, Key *key, char *out, const int tot)
 static void do_latt_key(Object *ob, Key *key, char *out, const int tot)
 {
   Lattice *lt = ob->data;
-  KeyBlock *k[4], *actkb = BKE_keyblock_from_object(ob);
+  KeyBlock *k[4], *actkb = DUNE_keyblock_from_object(ob);
   float t[4];
   int flag;
 
@@ -2004,7 +2004,7 @@ void DUNE_keyblock_update_from_curve(Curve *UNUSED(cu), KeyBlock *kb, ListBase *
 {
   Nurb *nu;
   BezTriple *bezt;
-  BPoint *bp;
+  DunePoint *dp;
   float *fp;
   int a, tot;
 
@@ -2092,7 +2092,7 @@ void DUNE_keyblock_convert_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *n
 {
   Nurb *nu;
   BezTriple *bezt;
-  BPoint *bp;
+  DunePoint *dp;
   const float *fp;
   int a, tot;
 
@@ -2113,11 +2113,11 @@ void DUNE_keyblock_convert_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *n
       }
     }
     else {
-      for (a = nu->pntsu * nu->pntsv, bp = nu->bp; a && (tot -= KEYELEM_ELEM_LEN_BPOINT) >= 0;
-           a--, bp++) {
-        copy_v3_v3(bp->vec, fp);
-        bp->tilt = fp[3];
-        bp->radius = fp[4];
+      for (a = nu->pntsu * nu->pntsv, bp = nu->dp; a && (tot -= KEYELEM_ELEM_LEN_BPOINT) >= 0;
+           a--, dp++) {
+        copy_v3_v3(dp->vec, fp);
+        dp->tilt = fp[3];
+        dp->radius = fp[4];
         fp += KEYELEM_FLOAT_LEN_BPOINT;
       }
     }
@@ -2266,18 +2266,18 @@ void DUNE_keyblock_update_from_vertcos(Object *ob, KeyBlock *kb, const float (*v
 #ifndef NDEBUG
   if (ob->type == OB_LATTICE) {
     Lattice *lt = ob->data;
-    BLI_assert((lt->pntsu * lt->pntsv * lt->pntsw) == kb->totelem);
+    LIB_assert((lt->pntsu * lt->pntsv * lt->pntsw) == kb->totelem);
   }
   else if (ELEM(ob->type, OB_CURVES_LEGACY, OB_SURF)) {
     Curve *cu = ob->data;
-    BLI_assert(BKE_keyblock_curve_element_count(&cu->nurb) == kb->totelem);
+    LIB_assert(DUNE_keyblock_curve_element_count(&cu->nurb) == kb->totelem);
   }
   else if (ob->type == OB_MESH) {
     Mesh *me = ob->data;
-    BLI_assert(me->totvert == kb->totelem);
+    LIB_assert(me->totvert == kb->totelem);
   }
   else {
-    BLI_assert(0 == kb->totelem);
+    LIB_assert(0 == kb->totelem);
   }
 #endif
 
@@ -2296,7 +2296,7 @@ void DUNE_keyblock_update_from_vertcos(Object *ob, KeyBlock *kb, const float (*v
     Curve *cu = (Curve *)ob->data;
     Nurb *nu;
     BezTriple *bezt;
-    BPoint *bp;
+    DunePoint *dp;
 
     for (nu = cu->nurb.first; nu; nu = nu->next) {
       if (nu->bezt) {
@@ -2308,7 +2308,7 @@ void DUNE_keyblock_update_from_vertcos(Object *ob, KeyBlock *kb, const float (*v
         }
       }
       else {
-        for (a = nu->pntsu * nu->pntsv, bp = nu->bp; a; a--, bp++, co++) {
+        for (a = nu->pntsu * nu->pntsv, dp = nu->dp; a; a--, dp++, co++) {
           copy_v3_v3(fp, *co);
           fp += KEYELEM_FLOAT_LEN_BPOINT;
         }
@@ -2317,7 +2317,7 @@ void DUNE_keyblock_update_from_vertcos(Object *ob, KeyBlock *kb, const float (*v
   }
 }
 
-void BKE_keyblock_convert_from_vertcos(Object *ob, KeyBlock *kb, const float (*vertCos)[3])
+void DUNE_keyblock_convert_from_vertcos(Object *ob, KeyBlock *kb, const float (*vertCos)[3])
 {
   int tot = 0, elemsize;
 
@@ -2337,7 +2337,7 @@ void BKE_keyblock_convert_from_vertcos(Object *ob, KeyBlock *kb, const float (*v
   else if (ELEM(ob->type, OB_CURVES_LEGACY, OB_SURF)) {
     Curve *cu = (Curve *)ob->data;
     elemsize = cu->key->elemsize;
-    tot = BKE_keyblock_curve_element_count(&cu->nurb);
+    tot = DUNE_keyblock_curve_element_count(&cu->nurb);
   }
 
   if (tot == 0) {
@@ -2347,10 +2347,10 @@ void BKE_keyblock_convert_from_vertcos(Object *ob, KeyBlock *kb, const float (*v
   kb->data = MEM_mallocN(tot * elemsize, __func__);
 
   /* Copy coords to key-block. */
-  BKE_keyblock_update_from_vertcos(ob, kb, vertCos);
+  DUNE_keyblock_update_from_vertcos(ob, kb, vertCos);
 }
 
-float (*BKE_keyblock_convert_to_vertcos(Object *ob, KeyBlock *kb))[3]
+float (*DUNE_keyblock_convert_to_vertcos(Object *ob, KeyBlock *kb))[3]
 {
   float(*vertCos)[3], (*co)[3];
   const float *fp = kb->data;
@@ -2367,7 +2367,7 @@ float (*BKE_keyblock_convert_to_vertcos(Object *ob, KeyBlock *kb))[3]
   }
   else if (ELEM(ob->type, OB_CURVES_LEGACY, OB_SURF)) {
     Curve *cu = (Curve *)ob->data;
-    tot = BKE_nurbList_verts_count(&cu->nurb);
+    tot = DUNE_nurbList_verts_count(&cu->nurb);
   }
 
   if (tot == 0) {
@@ -2411,7 +2411,7 @@ float (*BKE_keyblock_convert_to_vertcos(Object *ob, KeyBlock *kb))[3]
 
 /************************* raw coord offsets ************************/
 
-void BKE_keyblock_update_from_offset(Object *ob, KeyBlock *kb, const float (*ofs)[3])
+void DUNE_keyblock_update_from_offset(Object *ob, KeyBlock *kb, const float (*ofs)[3])
 {
   int a;
   float *fp = kb->data;
@@ -2425,7 +2425,7 @@ void BKE_keyblock_update_from_offset(Object *ob, KeyBlock *kb, const float (*ofs
     Curve *cu = (Curve *)ob->data;
     Nurb *nu;
     BezTriple *bezt;
-    BPoint *bp;
+    DunePoint *dp;
 
     for (nu = cu->nurb.first; nu; nu = nu->next) {
       if (nu->bezt) {
@@ -2437,7 +2437,7 @@ void BKE_keyblock_update_from_offset(Object *ob, KeyBlock *kb, const float (*ofs
         }
       }
       else {
-        for (a = nu->pntsu * nu->pntsv, bp = nu->bp; a; a--, bp++, ofs++) {
+        for (a = nu->pntsu * nu->pntsv, dp = nu->dp; a; a--, dp++, ofs++) {
           add_v3_v3(fp, *ofs);
           fp += KEYELEM_FLOAT_LEN_BPOINT;
         }
@@ -2448,9 +2448,9 @@ void BKE_keyblock_update_from_offset(Object *ob, KeyBlock *kb, const float (*ofs
 
 /* ==========================================================*/
 
-bool BKE_keyblock_move(Object *ob, int org_index, int new_index)
+bool DUNE_keyblock_move(Object *ob, int org_index, int new_index)
 {
-  Key *key = BKE_key_from_object(ob);
+  Key *key = DUNE_key_from_object(ob);
   KeyBlock *kb;
   const int act_index = ob->shapenr - 1;
   const int totkey = key->totkey;
@@ -2486,7 +2486,7 @@ bool BKE_keyblock_move(Object *ob, int org_index, int new_index)
       KeyBlock *other_kb = rev ? kb->prev : kb->next;
 
       /* Swap with previous/next list item. */
-      BLI_listbase_swaplinks(&key->block, kb, other_kb);
+      LIB_listbase_swaplinks(&key->block, kb, other_kb);
 
       /* Swap absolute positions. */
       SWAP(float, kb->pos, other_kb->pos);
@@ -2526,7 +2526,7 @@ bool BKE_keyblock_move(Object *ob, int org_index, int new_index)
   return true;
 }
 
-bool BKE_keyblock_is_basis(Key *key, const int index)
+bool DUNE_keyblock_is_basis(Key *key, const int index)
 {
   KeyBlock *kb;
   int i;
