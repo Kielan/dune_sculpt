@@ -16,41 +16,41 @@
 #define TYPES_DEPRECATED_ALLOW
 
 #include "TYPES_ID.h"
-#include "DNA_anim.h"
-#include "DNA_key.h"
-#include "DNA_lattice.h"
-#include "DNA_mesh.h"
-#include "DNA_meshdata.h"
-#include "DNA_object.h"
-#include "DNA_scene.h"
+#include "TYPES_anim.h"
+#include "TYPES_key.h"
+#include "TYPES_lattice.h"
+#include "TYPES_mesh.h"
+#include "TYPES_meshdata.h"
+#include "TYPES_object.h"
+#include "TYPES_scene.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_curve.h"
-#include "BKE_customdata.h"
-#include "BKE_deform.h"
-#include "BKE_editmesh.h"
-#include "BKE_idtype.h"
-#include "BKE_key.h"
-#include "BKE_lattice.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_query.h"
-#include "BKE_main.h"
-#include "BKE_mesh.h"
-#include "BKE_scene.h"
+#include "DUNE_anim_data.h"
+#include "DUNE_curve.h"
+#include "DUNE_customdata.h"
+#include "DUNE_deform.h"
+#include "DUNE_editmesh.h"
+#include "DUNE_idtype.h"
+#include "DUNE_key.h"
+#include "DUNE_lattice.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_lib_query.h"
+#include "DUNE_main.h"
+#include "DUNE_mesh.h"
+#include "DUNE_scene.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "API_access.h"
+#include "API_prototypes.h"
 
-#include "BLO_read_write.h"
+#include "LOADER_read_write.h"
 
-static void shapekey_copy_data(Main *UNUSED(bmain),
+static void shapekey_copy_data(Main *UNUSED(duneMain),
                                ID *id_dst,
                                const ID *id_src,
                                const int UNUSED(flag))
 {
   Key *key_dst = (Key *)id_dst;
   const Key *key_src = (const Key *)id_src;
-  BLI_duplicatelist(&key_dst->block, &key_src->block);
+  LIB_duplicatelist(&key_dst->block, &key_src->block);
 
   KeyBlock *kb_dst, *kb_src;
   for (kb_src = key_src->block.first, kb_dst = key_dst->block.first; kb_dst;
@@ -69,7 +69,7 @@ static void shapekey_free_data(ID *id)
   Key *key = (Key *)id;
   KeyBlock *kb;
 
-  while ((kb = BLI_pophead(&key->block))) {
+  while ((kb = LIB_pophead(&key->block))) {
     if (kb->data) {
       MEM_freeN(kb->data);
     }
@@ -80,25 +80,25 @@ static void shapekey_free_data(ID *id)
 static void shapekey_foreach_id(ID *id, LibraryForeachIDData *data)
 {
   Key *key = (Key *)id;
-  BKE_LIB_FOREACHID_PROCESS_ID(data, key->from, IDWALK_CB_LOOPBACK);
+  DUNE_LIB_FOREACHID_PROCESS_ID(data, key->from, IDWALK_CB_LOOPBACK);
 }
 
-static ID *shapekey_owner_get(Main *UNUSED(bmain), ID *id)
+static ID *shapekey_owner_get(Main *UNUSED(duneMain), ID *id)
 {
   return ((Key *)id)->from;
 }
 
-static void shapekey_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+static void dune_shapekey_write(DuneWriter *writer, ID *id, const void *id_address)
 {
   Key *key = (Key *)id;
-  const bool is_undo = BLO_write_is_undo(writer);
+  const bool is_undo = LOADER_write_is_undo(writer);
 
   /* write LibData */
-  BLO_write_id_struct(writer, Key, id_address, &key->id);
-  BKE_id_blend_write(writer, &key->id);
+  LOADER_write_id_struct(writer, Key, id_address, &key->id);
+  DUNE_id_write(writer, &key->id);
 
   if (key->adt) {
-    BKE_animdata_blend_write(writer, key->adt);
+    DUNE_animdata_write(writer, key->adt);
   }
 
   /* direct data */
@@ -109,14 +109,14 @@ static void shapekey_blend_write(BlendWriter *writer, ID *id, const void *id_add
       tmp_kb.totelem = 0;
       tmp_kb.data = NULL;
     }
-    BLO_write_struct_at_address(writer, KeyBlock, kb, &tmp_kb);
+    LOADER_write_struct_at_address(writer, KeyBlock, kb, &tmp_kb);
     if (tmp_kb.data != NULL) {
-      BLO_write_raw(writer, tmp_kb.totelem * key->elemsize, tmp_kb.data);
+      LOADER_write_raw(writer, tmp_kb.totelem * key->elemsize, tmp_kb.data);
     }
   }
 }
 
-/* old defines from DNA_ipo_types.h for data-type, stored in DNA - don't modify! */
+/* old defines from TYPES_ipo.h for data-type, stored in DNA - don't modify! */
 #define IPO_FLOAT 4
 #define IPO_BEZTRIPLE 100
 #define IPO_BPOINT 101
@@ -136,7 +136,7 @@ static void switch_endian_keyblock(Key *key, KeyBlock *kb)
         case IPO_BPOINT:
         case IPO_BEZTRIPLE: {
           int b = cp[0];
-          BLI_endian_switch_float_array((float *)poin, b);
+          LIB_endian_switch_float_array((float *)poin, b);
           poin += sizeof(float) * b;
           break;
         }
@@ -148,38 +148,38 @@ static void switch_endian_keyblock(Key *key, KeyBlock *kb)
   }
 }
 
-static void shapekey_blend_read_data(BlendDataReader *reader, ID *id)
+static void shapekey_read_data(DuneDataReader *reader, ID *id)
 {
   Key *key = (Key *)id;
-  BLO_read_list(reader, &(key->block));
+  LOADER_read_list(reader, &(key->block));
 
-  BLO_read_data_address(reader, &key->adt);
-  BKE_animdata_blend_read_data(reader, key->adt);
+  LOADER_read_data_address(reader, &key->adt);
+  DUNE_animdata_read_data(reader, key->adt);
 
-  BLO_read_data_address(reader, &key->refkey);
+  LOADER_read_data_address(reader, &key->refkey);
 
   LISTBASE_FOREACH (KeyBlock *, kb, &key->block) {
-    BLO_read_data_address(reader, &kb->data);
+    LOADER_read_data_address(reader, &kb->data);
 
-    if (BLO_read_requires_endian_switch(reader)) {
+    if (LOADER_read_requires_endian_switch(reader)) {
       switch_endian_keyblock(key, kb);
     }
   }
 }
 
-static void shapekey_blend_read_lib(BlendLibReader *reader, ID *id)
+static void shapekey_read_lib(DuneLibReader *reader, ID *id)
 {
   Key *key = (Key *)id;
-  BLI_assert((key->id.tag & LIB_TAG_EXTERN) == 0);
+  LIB_assert((key->id.tag & LIB_TAG_EXTERN) == 0);
 
-  BLO_read_id_address(reader, key->id.lib, &key->ipo); /* XXX deprecated - old animation system */
-  BLO_read_id_address(reader, key->id.lib, &key->from);
+  LOADER_read_id_address(reader, key->id.lib, &key->ipo); /* XXX deprecated - old animation system */
+  LOADER_read_id_address(reader, key->id.lib, &key->from);
 }
 
-static void shapekey_blend_read_expand(BlendExpander *expander, ID *id)
+static void shapekey_read_expand(DuneExpander *expander, ID *id)
 {
   Key *key = (Key *)id;
-  BLO_expand(expander, key->ipo); /* XXX deprecated - old animation system */
+  LOADER_expand(expander, key->ipo); /* XXX deprecated - old animation system */
 }
 
 IDTypeInfo IDType_ID_KE = {
@@ -189,7 +189,7 @@ IDTypeInfo IDType_ID_KE = {
     .struct_size = sizeof(Key),
     .name = "Key",
     .name_plural = "shape_keys",
-    .translation_context = BLT_I18NCONTEXT_ID_SHAPEKEY,
+    .translation_context = LANG_I18NCONTEXT_ID_SHAPEKEY,
     .flags = IDTYPE_FLAGS_NO_LIBLINKING,
     .asset_type_info = NULL,
 
@@ -204,12 +204,12 @@ IDTypeInfo IDType_ID_KE = {
      * share a lot with those (non linkable, only ever used by one owner ID, etc.). */
     .owner_get = shapekey_owner_get,
 
-    .blend_write = shapekey_blend_write,
-    .blend_read_data = shapekey_blend_read_data,
-    .blend_read_lib = shapekey_blend_read_lib,
-    .blend_read_expand = shapekey_blend_read_expand,
+    .dune_write = shapekey_write,
+    .dune_read_data = shapekey_read_data,
+    .dune_read_lib = shapekey_read_lib,
+    .dune_read_expand = shapekey_read_expand,
 
-    .blend_read_undo_preserve = NULL,
+    .dune_read_undo_preserve = NULL,
 
     .lib_override_apply_post = NULL,
 };
@@ -224,16 +224,16 @@ typedef struct WeightsArrayCache {
   float **defgroup_weights;
 } WeightsArrayCache;
 
-void BKE_key_free_data(Key *key)
+void DUNE_key_free_data(Key *key)
 {
   shapekey_free_data(&key->id);
 }
 
-void BKE_key_free_nolib(Key *key)
+void DUNE_key_free_nolib(Key *key)
 {
   KeyBlock *kb;
 
-  while ((kb = BLI_pophead(&key->block))) {
+  while ((kb = LIB_pophead(&key->block))) {
     if (kb->data) {
       MEM_freeN(kb->data);
     }
@@ -241,12 +241,12 @@ void BKE_key_free_nolib(Key *key)
   }
 }
 
-Key *BKE_key_add(Main *bmain, ID *id) /* common function */
+Key *DUNE_key_add(Main *duneMain, ID *id) /* common function */
 {
   Key *key;
   char *el;
 
-  key = BKE_id_new(bmain, ID_KE, "Key");
+  key = DUNE_id_new(duneMain, ID_KE, "Key");
 
   key->type = KEY_NORMAL;
   key->from = id;
@@ -293,7 +293,7 @@ Key *BKE_key_add(Main *bmain, ID *id) /* common function */
   return key;
 }
 
-void BKE_key_sort(Key *key)
+void DUNE_key_sort(Key *key)
 {
   KeyBlock *kb;
   KeyBlock *kb2;
@@ -308,12 +308,12 @@ void BKE_key_sort(Key *key)
   /* if we find a key, move it */
   if (kb) {
     kb = kb->next; /* next key is the out-of-order one */
-    BLI_remlink(&key->block, kb);
+    LIB_remlink(&key->block, kb);
 
     /* find the right location and insert before */
     for (kb2 = key->block.first; kb2; kb2 = kb2->next) {
       if (kb2->pos > kb->pos) {
-        BLI_insertlinkafter(&key->block, kb2->prev, kb);
+        LIB_insertlinkafter(&key->block, kb2->prev, kb);
         break;
       }
     }
@@ -609,8 +609,8 @@ static char *key_block_get_data(Key *key, KeyBlock *actkb, KeyBlock *kb, char **
      * edit mode with shape keys blending applied */
     if (GS(key->from->name) == ID_ME) {
       Mesh *me;
-      BMVert *eve;
-      BMIter iter;
+      DuneMeshVert *eve;
+      DuneMeshIter iter;
       float(*co)[3];
       int a;
 
@@ -620,7 +620,7 @@ static char *key_block_get_data(Key *key, KeyBlock *actkb, KeyBlock *kb, char **
         a = 0;
         co = MEM_mallocN(sizeof(float[3]) * me->edit_mesh->bm->totvert, "key_block_get_data");
 
-        BM_ITER_MESH (eve, &iter, me->edit_mesh->bm, BM_VERTS_OF_MESH) {
+        DUNEMESH_ITER_MESH (eve, &iter, me->edit_mesh->bm, BM_VERTS_OF_MESH) {
           copy_v3_v3(co[a], eve->co);
           a++;
         }
@@ -665,7 +665,7 @@ static bool key_pointer_size(const Key *key, const int mode, int *poinsize, int 
       *poinsize = sizeof(float[KEYELEM_ELEM_SIZE_CURVE]);
       break;
     default:
-      BLI_assert_msg(0, "invalid 'key->from' ID type");
+      LIB_assert_msg(0, "invalid 'key->from' ID type");
       return false;
   }
 
@@ -777,7 +777,7 @@ static void cp_key(const int start,
           if (freekref) {
             MEM_freeN(freekref);
           }
-          BLI_assert_msg(0, "invalid 'cp[1]'");
+          LIB_assert_msg(0, "invalid 'cp[1]'");
           return;
       }
 
@@ -899,7 +899,7 @@ static void key_evaluate_relative(const int start,
         char *freefrom = NULL;
 
         /* reference now can be any block */
-        refb = BLI_findlink(&key->block, kb->relative);
+        refb = LIB_findlink(&key->block, kb->relative);
         if (refb == NULL) {
           continue;
         }
@@ -955,7 +955,7 @@ static void key_evaluate_relative(const int start,
                 if (freefrom) {
                   MEM_freeN(freefrom);
                 }
-                BLI_assert_msg(0, "invalid 'cp[1]'");
+                LIB_assert_msg(0, "invalid 'cp[1]'");
                 return;
             }
 
@@ -1371,7 +1371,7 @@ static void keyblock_free_per_block_weights(Key *key,
 
 static void do_mesh_key(Object *ob, Key *key, char *out, const int tot)
 {
-  KeyBlock *k[4], *actkb = BKE_keyblock_from_object(ob);
+  KeyBlock *k[4], *actkb = DUNE_keyblock_from_object(ob);
   float t[4];
   int flag = 0;
 
@@ -1494,14 +1494,14 @@ static void do_latt_key(Object *ob, Key *key, char *out, const int tot)
   }
 }
 
-float *BKE_key_evaluate_object_ex(Object *ob, int *r_totelem, float *arr, size_t arr_size)
+float *DUNE_key_evaluate_object_ex(Object *ob, int *r_totelem, float *arr, size_t arr_size)
 {
-  Key *key = BKE_key_from_object(ob);
-  KeyBlock *actkb = BKE_keyblock_from_object(ob);
+  Key *key = DUNE_key_from_object(ob);
+  KeyBlock *actkb = DUNE_keyblock_from_object(ob);
   char *out;
   int tot = 0, size = 0;
 
-  if (key == NULL || BLI_listbase_is_empty(&key->block)) {
+  if (key == NULL || LIB_listbase_is_empty(&key->block)) {
     return NULL;
   }
 
@@ -1521,7 +1521,7 @@ float *BKE_key_evaluate_object_ex(Object *ob, int *r_totelem, float *arr, size_t
   else if (ELEM(ob->type, OB_CURVES_LEGACY, OB_SURF)) {
     Curve *cu = ob->data;
 
-    tot = BKE_keyblock_curve_element_count(&cu->nurb);
+    tot = DUNE_keyblock_curve_element_count(&cu->nurb);
     size = tot * sizeof(float[KEYELEM_ELEM_SIZE_CURVE]);
   }
 
@@ -1532,7 +1532,7 @@ float *BKE_key_evaluate_object_ex(Object *ob, int *r_totelem, float *arr, size_t
 
   /* allocate array */
   if (arr == NULL) {
-    out = MEM_callocN(size, "BKE_key_evaluate_object out");
+    out = MEM_callocN(size, "DUNE_key_evaluate_object out");
   }
   else {
     if (arr_size != size) {
@@ -1544,7 +1544,7 @@ float *BKE_key_evaluate_object_ex(Object *ob, int *r_totelem, float *arr, size_t
 
   if (ob->shapeflag & OB_SHAPE_LOCK) {
     /* shape locked, copy the locked shape instead of blending */
-    KeyBlock *kb = BLI_findlink(&key->block, ob->shapenr - 1);
+    KeyBlock *kb = LIB_findlink(&key->block, ob->shapenr - 1);
 
     if (kb && (kb->flag & KEYBLOCK_MUTE)) {
       kb = key->refkey;
@@ -1590,12 +1590,12 @@ float *BKE_key_evaluate_object_ex(Object *ob, int *r_totelem, float *arr, size_t
   return (float *)out;
 }
 
-float *BKE_key_evaluate_object(Object *ob, int *r_totelem)
+float *DUNE_key_evaluate_object(Object *ob, int *r_totelem)
 {
-  return BKE_key_evaluate_object_ex(ob, r_totelem, NULL, 0);
+  return DUNE_key_evaluate_object_ex(ob, r_totelem, NULL, 0);
 }
 
-int BKE_keyblock_element_count_from_shape(const Key *key, const int shape_index)
+int DUNE_keyblock_element_count_from_shape(const Key *key, const int shape_index)
 {
   int result = 0;
   int index = 0;
@@ -1607,29 +1607,29 @@ int BKE_keyblock_element_count_from_shape(const Key *key, const int shape_index)
   return result;
 }
 
-int BKE_keyblock_element_count(const Key *key)
+int DUNE_keyblock_element_count(const Key *key)
 {
-  return BKE_keyblock_element_count_from_shape(key, -1);
+  return DUNE_keyblock_element_count_from_shape(key, -1);
 }
 
-size_t BKE_keyblock_element_calc_size_from_shape(const Key *key, const int shape_index)
+size_t DUNE_keyblock_element_calc_size_from_shape(const Key *key, const int shape_index)
 {
-  return (size_t)BKE_keyblock_element_count_from_shape(key, shape_index) * key->elemsize;
+  return (size_t)DUNE_keyblock_element_count_from_shape(key, shape_index) * key->elemsize;
 }
 
-size_t BKE_keyblock_element_calc_size(const Key *key)
+size_t DUNE_keyblock_element_calc_size(const Key *key)
 {
-  return BKE_keyblock_element_calc_size_from_shape(key, -1);
+  return DUNE_keyblock_element_calc_size_from_shape(key, -1);
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Key-Block Data Access
+/** Key-Block Data Access
  *
  * Utilities for getting/setting key data as a single array,
- * use #BKE_keyblock_element_calc_size to allocate the size of the data needed.
- * \{ */
+ * use DUNE_keyblock_element_calc_size to allocate the size of the data needed.
+ **/
 
-void BKE_keyblock_data_get_from_shape(const Key *key, float (*arr)[3], const int shape_index)
+void DUNE_keyblock_data_get_from_shape(const Key *key, float (*arr)[3], const int shape_index)
 {
   uint8_t *elements = (uint8_t *)arr;
   int index = 0;
@@ -1642,18 +1642,18 @@ void BKE_keyblock_data_get_from_shape(const Key *key, float (*arr)[3], const int
   }
 }
 
-void BKE_keyblock_data_get(const Key *key, float (*arr)[3])
+void DUNE_keyblock_data_get(const Key *key, float (*arr)[3])
 {
-  BKE_keyblock_data_get_from_shape(key, arr, -1);
+  DUNE_keyblock_data_get_from_shape(key, arr, -1);
 }
 
-void BKE_keyblock_data_set_with_mat4(Key *key,
+void DUNE_keyblock_data_set_with_mat4(Key *key,
                                      const int shape_index,
                                      const float (*coords)[3],
                                      const float mat[4][4])
 {
   if (key->elemsize != sizeof(float[3])) {
-    BLI_assert_msg(0, "Invalid elemsize");
+    LIB_assert_msg(0, "Invalid elemsize");
     return;
   }
 
@@ -1674,7 +1674,7 @@ void BKE_keyblock_data_set_with_mat4(Key *key,
   }
 }
 
-void BKE_keyblock_curve_data_set_with_mat4(
+void DUNE_keyblock_curve_data_set_with_mat4(
     Key *key, const ListBase *nurb, const int shape_index, const void *data, const float mat[4][4])
 {
   const uint8_t *elements = data;
@@ -1683,13 +1683,13 @@ void BKE_keyblock_curve_data_set_with_mat4(
   for (KeyBlock *kb = key->block.first; kb; kb = kb->next, index++) {
     if (ELEM(shape_index, -1, index)) {
       const int block_elem_size = kb->totelem * key->elemsize;
-      BKE_keyblock_curve_data_transform(nurb, mat, elements, kb->data);
+      DUNE_keyblock_curve_data_transform(nurb, mat, elements, kb->data);
       elements += block_elem_size;
     }
   }
 }
 
-void BKE_keyblock_data_set(Key *key, const int shape_index, const void *data)
+void DUNE_keyblock_data_set(Key *key, const int shape_index, const void *data)
 {
   const uint8_t *elements = data;
   int index = 0;
@@ -1702,9 +1702,7 @@ void BKE_keyblock_data_set(Key *key, const int shape_index, const void *data)
   }
 }
 
-/** \} */
-
-bool BKE_key_idtype_support(const short id_type)
+bool DUNE_key_idtype_support(const short id_type)
 {
   switch (id_type) {
     case ID_ME:
@@ -1716,7 +1714,7 @@ bool BKE_key_idtype_support(const short id_type)
   }
 }
 
-Key **BKE_key_from_id_p(ID *id)
+Key **DUNE_key_from_id_p(ID *id)
 {
   switch (GS(id->name)) {
     case ID_ME: {
@@ -1741,10 +1739,10 @@ Key **BKE_key_from_id_p(ID *id)
   return NULL;
 }
 
-Key *BKE_key_from_id(ID *id)
+Key *DUNE_key_from_id(ID *id)
 {
   Key **key_p;
-  key_p = BKE_key_from_id_p(id);
+  key_p = DUNE_key_from_id_p(id);
   if (key_p) {
     return *key_p;
   }
@@ -1752,19 +1750,19 @@ Key *BKE_key_from_id(ID *id)
   return NULL;
 }
 
-Key **BKE_key_from_object_p(const Object *ob)
+Key **DUNE_key_from_object_p(const Object *ob)
 {
   if (ob == NULL || ob->data == NULL) {
     return NULL;
   }
 
-  return BKE_key_from_id_p(ob->data);
+  return DUNE_key_from_id_p(ob->data);
 }
 
-Key *BKE_key_from_object(const Object *ob)
+Key *DUNE_key_from_object(const Object *ob)
 {
   Key **key_p;
-  key_p = BKE_key_from_object_p(ob);
+  key_p = DUNE_key_from_object_p(ob);
   if (key_p) {
     return *key_p;
   }
@@ -1772,7 +1770,7 @@ Key *BKE_key_from_object(const Object *ob)
   return NULL;
 }
 
-KeyBlock *BKE_keyblock_add(Key *key, const char *name)
+KeyBlock *DUNE_keyblock_add(Key *key, const char *name)
 {
   KeyBlock *kb;
   float curpos = -0.1;
@@ -1784,23 +1782,23 @@ KeyBlock *BKE_keyblock_add(Key *key, const char *name)
   }
 
   kb = MEM_callocN(sizeof(KeyBlock), "Keyblock");
-  BLI_addtail(&key->block, kb);
+  LIB_addtail(&key->block, kb);
   kb->type = KEY_LINEAR;
 
-  tot = BLI_listbase_count(&key->block);
+  tot = LIB_listbase_count(&key->block);
   if (name) {
-    BLI_strncpy(kb->name, name, sizeof(kb->name));
+    LIB_strncpy(kb->name, name, sizeof(kb->name));
   }
   else {
     if (tot == 1) {
-      BLI_strncpy(kb->name, DATA_("Basis"), sizeof(kb->name));
+      LIB_strncpy(kb->name, DATA_("Basis"), sizeof(kb->name));
     }
     else {
-      BLI_snprintf(kb->name, sizeof(kb->name), DATA_("Key %d"), tot - 1);
+      LIB_snprintf(kb->name, sizeof(kb->name), DATA_("Key %d"), tot - 1);
     }
   }
 
-  BLI_uniquename(&key->block, kb, DATA_("Key"), '.', offsetof(KeyBlock, name), sizeof(kb->name));
+  LIB_uniquename(&key->block, kb, DATA_("Key"), '.', offsetof(KeyBlock, name), sizeof(kb->name));
 
   kb->uid = key->uidgen++;
 
@@ -1813,14 +1811,14 @@ KeyBlock *BKE_keyblock_add(Key *key, const char *name)
   kb->slidermax = 1.0f;
 
   /**
-   * \note caller may want to set this to current time, but don't do it here since we need to sort
-   * which could cause problems in some cases, see #BKE_keyblock_add_ctime */
+   * caller may want to set this to current time, but don't do it here since we need to sort
+   * which could cause problems in some cases, see DUNE_keyblock_add_ctime */
   kb->pos = curpos + 0.1f; /* only used for absolute shape keys */
 
   return kb;
 }
 
-KeyBlock *BKE_keyblock_add_ctime(Key *key, const char *name, const bool do_force)
+KeyBlock *DUNE_keyblock_add_ctime(Key *key, const char *name, const bool do_force)
 {
   KeyBlock *kb = BKE_keyblock_add(key, name);
   const float cpos = key->ctime / 100.0f;
