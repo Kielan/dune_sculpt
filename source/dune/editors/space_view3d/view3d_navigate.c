@@ -1,5 +1,5 @@
-#include "DNA_curve_types.h"
-#include "DNA_gpencil_types.h"
+#include "TYPES_curve.h"
+#include "TYPES_gpencil.h"
 
 #include "MEM_guardedalloc.h"
 
