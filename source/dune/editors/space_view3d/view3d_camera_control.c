@@ -1,8 +1,6 @@
-/** \file
- * \ingroup spview3d
- *
- * The purpose of View3DCameraControl is to allow editing \a rv3d manipulation
- * (mainly \a ofs and \a viewquat) for the purpose of view navigation
+/**
+ * The purpose of View3DCameraControl is to allow editing a rv3d manipulation
+ * (mainly a ofs and a viewquat) for the purpose of view navigation
  * without having to worry about positioning the camera, its parent...
  * or other details.
  * Typical view-control usage:
@@ -11,7 +9,7 @@
  * - Modify `rv3d->ofs`, `rv3d->viewquat`.
  * - Update the view data (#ED_view3d_cameracontrol_acquire) -
  *   within a loop which draws the viewport.
- * - Finish and release the view-control (#ED_view3d_cameracontrol_release),
+ * - Finish and release the view-control (ED_view3d_cameracontrol_release),
  *   either keeping the current view or restoring the initial view.
  *
  * Notes:
@@ -21,16 +19,16 @@
  * - updating can optionally keyframe the camera object.
  */
 
-#include "DNA_camera_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_camera.h"
+#include "TYPES_object.h"
+#include "TYPES_scene.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "LIB_math.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_object.h"
+#include "DUNE_object.h"
 
 #include "DEG_depsgraph.h"
 
@@ -81,7 +79,7 @@ typedef struct View3DCameraControl {
   void *obtfm;
 } View3DCameraControl;
 
-BLI_INLINE Object *view3d_cameracontrol_object(const View3DCameraControl *vctrl)
+LIB_INLINE Object *view3d_cameracontrol_object(const View3DCameraControl *vctrl)
 {
   return vctrl->root_parent ? vctrl->root_parent : vctrl->ctx_v3d->camera;
 }
@@ -139,7 +137,7 @@ struct View3DCameraControl *ED_view3d_cameracontrol_acquire(Depsgraph *depsgraph
     /* store the original camera loc and rot */
     vctrl->obtfm = BKE_object_tfm_backup(ob_back);
 
-    BKE_object_where_is_calc(depsgraph, scene, v3d->camera);
+    DUNE_object_where_is_calc(depsgraph, scene, v3d->camera);
     negate_v3_v3(rv3d->ofs, v3d->camera->obmat[3]);
 
     rv3d->dist = 0.0;
@@ -171,12 +169,12 @@ struct View3DCameraControl *ED_view3d_cameracontrol_acquire(Depsgraph *depsgraph
 }
 
 /**
- * A version of #BKE_object_apply_mat4 that respects #Object.protectflag,
+ * A version of DUNE_object_apply_mat4 that respects Object.protectflag,
  * applying the locking back to the view to avoid the view.
  * This is needed so the view doesn't get out of sync with the object,
  * causing visible jittering when in fly/walk mode for e.g.
  *
- * \note This could be exposed as an API option, as we might not want the view
+ * note This could be exposed as an API option, as we might not want the view
  * to be constrained by the thing it's controlling.
  */
 static bool object_apply_mat4_with_protect(Object *ob,
@@ -191,17 +189,17 @@ static bool object_apply_mat4_with_protect(Object *ob,
 
   ObjectTfmProtectedChannels obtfm;
   if (use_protect) {
-    BKE_object_tfm_protected_backup(ob, &obtfm);
+    DUNE_object_tfm_protected_backup(ob, &obtfm);
   }
 
-  BKE_object_apply_mat4(ob, obmat, true, use_parent);
+  DUNE_object_apply_mat4(ob, obmat, true, use_parent);
 
   if (use_protect) {
     float obmat_noprotect[4][4], obmat_protect[4][4];
 
     DUNE_object_to_mat4(ob, obmat_noprotect);
-    BKE_object_tfm_protected_restore(ob, &obtfm, ob->protectflag);
-    BKE_object_to_mat4(ob, obmat_protect);
+    DUNE_object_tfm_protected_restore(ob, &obtfm, ob->protectflag);
+    DUNE_object_to_mat4(ob, obmat_protect);
 
     if (!equals_m4m4(obmat_noprotect, obmat_protect)) {
       /* Apply the lock protection back to the view, without this the view
