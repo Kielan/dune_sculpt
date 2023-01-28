@@ -1,18 +1,10 @@
 
-/** \file
- * \ingroup DNA
- * \brief ID and Library types, which are fundamental for sdna.
- */
-
+/** brief ID and Library types, which are fundamental for sdna. **\
 #pragma once
 
-#include "DNA_ID_enums.h"
-#include "DNA_defs.h"
-#include "DNA_listBase.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "TYPES_ID_enums.h"
+#include "TYPES_defs.h"
+#include "TYPES_listBase.h"
 
 struct FileData;
 struct GHash;
@@ -26,8 +18,6 @@ struct DrawData;
 typedef void (*DrawDataInitCb)(struct DrawData *engine_data);
 typedef void (*DrawDataFreeCb)(struct DrawData *engine_data);
 
-#
-#
 typedef struct DrawData {
   struct DrawData *next, *prev;
   struct DrawEngineType *engine_type;
@@ -44,7 +34,7 @@ typedef struct DrawDataList {
 typedef struct IDPropertyUIData {
   /** Tooltip / property description pointer. Owned by the IDProperty. */
   char *description;
-  /** RNA subtype, used for every type except string properties (PropertySubType). */
+  /** API subtype, used for every type except string properties (PropertySubType). */
   int rna_subtype;
 
   char _pad[4];
@@ -196,7 +186,7 @@ typedef struct IDOverrideLibraryPropertyOperation {
   /* Sub-item references, if needed (for arrays or collections only).
    * We need both reference and local values to allow e.g. insertion into RNA collections
    * (constraints, modifiers...).
-   * In RNA collection case, if names are defined, they are used in priority.
+   * In API collection case, if names are defined, they are used in priority.
    * Names are pointers (instead of char[64]) to save some space, NULL or empty string when unset.
    * Indices are -1 when unset.
    *
@@ -272,8 +262,6 @@ enum {
   IDOVERRIDE_LIBRARY_TAG_UNUSED = 1 << 0,
 };
 
-#
-#
 typedef struct IDOverrideLibraryRuntime {
   struct GHash *rna_path_to_override_properties;
   uint tag;
@@ -409,17 +397,17 @@ typedef struct ID {
   struct ID *orig_id;
 
   /**
-   * Holds the #PyObject reference to the ID (initialized on demand).
+   * Holds the PyObject reference to the ID (initialized on demand).
    *
    * This isn't essential, it could be removed however it gives some advantages:
    *
-   * - Every time the #ID is accessed a #BPy_StructRNA doesn't have to be created & destroyed
+   * - Every time the ID is accessed a BPy_StructAPI doesn't have to be created & destroyed
    *   (consider all the polling and drawing functions that access ID's).
    *
-   * - When this #ID is deleted, the #BPy_StructRNA can be invalidated
+   * - When this ID is deleted, the BPy_StructAPI can be invalidated
    *   so accessing it from Python raises an exception instead of crashing.
    *
-   *   This is of limited benefit though, as it doesn't apply to non #ID data
+   *   This is of limited benefit though, as it doesn't apply to non ID data
    *   that references this ID (the bones of an armature or the modifiers of an object for e.g.).
    */
   void *py_instance;
@@ -450,8 +438,8 @@ typedef struct Library {
    * This is only for convenience, `filepath` is the real path
    * used on file read but in some cases its useful to access the absolute one.
    *
-   * Use #BKE_library_filepath_set() rather than setting `filepath`
-   * directly and it will be kept in sync - campbell
+   * Use DUNE_library_filepath_set() rather than setting `filepath`
+   * directly and it will be kept in sync
    */
   char filepath_abs[1024];
 
@@ -465,7 +453,7 @@ typedef struct Library {
 
   /* Temp data needed by read/write code, and liboverride recursive resync. */
   int temp_index;
-  /** See BLENDER_FILE_VERSION, BLENDER_FILE_SUBVERSION, needed for do_versions. */
+  /** See DUNE_FILE_VERSION, DUNE_FILE_SUBVERSION, needed for do_versions. */
   short versionfile, subversionfile;
 } Library;
 
@@ -479,10 +467,10 @@ enum eLibrary_Tag {
  * A weak library/ID reference for local data that has been appended, to allow re-using that local
  * data instead of creating a new copy of it in future appends.
  *
- * NOTE: This is by design a week reference, in other words code should be totally fine and perform
+ * This is by design a weak reference, in other words code should be totally fine and perform
  * a regular append if it cannot find a valid matching local ID.
  *
- * NOTE: There should always be only one single ID in current Main matching a given linked
+ * There should always be only one single ID in current Main matching a given linked
  * reference.
  */
 typedef struct LibraryWeakReference {
@@ -529,7 +517,7 @@ typedef struct PreviewImage {
 
 #define PRV_DEFERRED_DATA(prv) \
   (CHECK_TYPE_INLINE(prv, PreviewImage *), \
-   BLI_assert((prv)->tag & PRV_TAG_DEFFERED), \
+   LIB_assert((prv)->tag & PRV_TAG_DEFFERED), \
    (void *)((prv) + 1))
 
 #define ID_FAKE_USERS(id) ((((const ID *)id)->flag & LIB_FAKEUSER) ? 1 : 0)
@@ -539,25 +527,25 @@ typedef struct PreviewImage {
 #define ID_CHECK_UNDO(id) \
   ((GS((id)->name) != ID_SCR) && (GS((id)->name) != ID_WM) && (GS((id)->name) != ID_WS))
 
-#define ID_BLEND_PATH(_bmain, _id) \
-  ((_id)->lib ? (_id)->lib->filepath_abs : BKE_main_blendfile_path((_bmain)))
-#define ID_BLEND_PATH_FROM_GLOBAL(_id) \
-  ((_id)->lib ? (_id)->lib->filepath_abs : BKE_main_blendfile_path_from_global())
+#define ID_DUNE_PATH(_dmain, _id) \
+  ((_id)->lib ? (_id)->lib->filepath_abs : DUNE_main_dunefile_path((_dmain)))
+#define ID_DUNE_PATH_FROM_GLOBAL(_id) \
+  ((_id)->lib ? (_id)->lib->filepath_abs : DUNE_main_dunefile_path_from_global())
 
 #define ID_MISSING(_id) ((((const ID *)(_id))->tag & LIB_TAG_MISSING) != 0)
 
 #define ID_IS_LINKED(_id) (((const ID *)(_id))->lib != NULL)
 
 /* Note that these are fairly high-level checks, should be used at user interaction level, not in
- * BKE_library_override typically (especially due to the check on LIB_TAG_EXTERN). */
+ * DUNE_library_override typically (especially due to the check on LIB_TAG_EXTERN). */
 #define ID_IS_OVERRIDABLE_LIBRARY_HIERARCHY(_id) \
   (ID_IS_LINKED(_id) && !ID_MISSING(_id) && \
-   (BKE_idtype_get_info_from_id((const ID *)(_id))->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0 && \
+   (DUNE_idtype_get_info_from_id((const ID *)(_id))->flags & IDTYPE_FLAGS_NO_LIBLINKING) == 0 && \
    !ELEM(GS(((ID *)(_id))->name), ID_SCE))
 #define ID_IS_OVERRIDABLE_LIBRARY(_id) \
   (ID_IS_OVERRIDABLE_LIBRARY_HIERARCHY((_id)) && (((const ID *)(_id))->tag & LIB_TAG_EXTERN) != 0)
 
-/* NOTE: The three checks below do not take into account whether given ID is linked or not (when
+/* The three checks below do not take into account whether given ID is linked or not (when
  * chaining overrides over several libraries). User must ensure the ID is not linked itself
  * currently. */
 /* TODO: add `_EDITABLE` versions of those macros (that would check if ID is linked or not)? */
@@ -584,8 +572,8 @@ typedef struct PreviewImage {
 #define ID_TYPE_IS_COW(_id_type) \
   (!ELEM(_id_type, ID_LI, ID_IP, ID_SCR, ID_VF, ID_BR, ID_WM, ID_PAL, ID_PC, ID_WS, ID_IM))
 
-/* Check whether data-block type requires copy-on-write from #ID_RECALC_PARAMETERS.
- * Keep in sync with #BKE_id_eval_properties_copy. */
+/* Check whether data-block type requires copy-on-write from ID_RECALC_PARAMETERS.
+ * Keep in sync with DUNE_id_eval_properties_copy. */
 #define ID_TYPE_SUPPORTS_PARAMS_WITHOUT_COW(id_type) ELEM(id_type, ID_ME)
 
 #ifdef GS
@@ -694,7 +682,7 @@ enum {
    *
    * RESET_NEVER
    *
-   * \warning This should not be cleared on existing data.
+   * warning This should not be cleared on existing data.
    * If support for this is needed, see T88026 as this flag controls memory ownership
    * of physics *shared* pointers.
    */
@@ -790,7 +778,7 @@ typedef enum IDRecalcFlag {
    * changed, and the shader is to be recompiled.
    * For objects it means that the draw batch cache is to be redone. */
   ID_RECALC_SHADING = (1 << 7),
-  /* TODO(sergey): Consider adding an explicit ID_RECALC_SHADING_PARAMATERS
+  /* TODO: Consider adding an explicit ID_RECALC_SHADING_PARAMATERS
    * which can be used for cases when only socket value changed, to speed up
    * redraw update in that case. */
 
@@ -934,10 +922,10 @@ typedef enum IDRecalcFlag {
  * types).
  *
  * So e.g. it ensures that this dependency chain is respected:
- *   #Material <- #Mesh <- #Object <- #Collection <- #Scene
+ *   Material <- Mesh <- Object <- Collection <- Scene
  *
  * Default order of processing of IDs in 'foreach' macros (#FOREACH_MAIN_ID_BEGIN and the like),
- * built on top of #set_listbasepointers, is actually reversed compared to the order defined here,
+ * built on top of set_listbasepointers, is actually reversed compared to the order defined here,
  * since processing usually needs to happen on users before it happens on used IDs (when freeing
  * e.g.).
  *
@@ -949,7 +937,7 @@ typedef enum IDRecalcFlag {
  * relationships in a non-recursive pattern: in typical cases, a vast majority of those
  * relationships can be processed fine in the first pass, and only few additional passes are
  * required to address all remaining relationship cases.
- * See e.g. how #BKE_library_unused_linked_data_set_tag is doing this.
+ * See e.g. how DUNE_library_unused_linked_data_set_tag is doing this.
  */
 enum {
   /* Special case: Library, should never ever depend on any other type. */
