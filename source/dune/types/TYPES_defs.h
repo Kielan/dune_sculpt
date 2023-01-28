@@ -1,5 +1,5 @@
 /**
- * STRUCTS
+ * TYPES
  *
  * Group generic defines for all structs headers may use in this file.
  */
@@ -7,35 +7,35 @@
 #pragma once
 
 /* structs ignores */
-#ifdef STRUCTS_DEPRECATED_ALLOW
+#ifdef TYPES_DEPRECATED_ALLOW
 /* allow use of deprecated items */
-#  define STRUCTS_DEPRECATED
+#  define TYPES_DEPRECATED
 #else
-#  ifndef STRUCTS_DEPRECATED
+#  ifndef TYPES_DEPRECATED
 #    ifdef __GNUC__
-#      define STRUCTS_DEPRECATED __attribute__((deprecated))
+#      define TYPES_DEPRECATED __attribute__((deprecated))
 #    else
 /* TODO: MSVC & others. */
-#      define STRUCTS_DEPRECATED
+#      define TYPES_DEPRECATED
 #    endif
 #  endif
 #endif
 
 #ifdef __GNUC__
-#  define STRUCTS_PRIVATE_ATTR __attribute__((deprecated))
+#  define TYPES_PRIVATE_ATTR __attribute__((deprecated))
 #else
-#  define STRUCTS_PRIVATE_ATTR
+#  define TYPES_PRIVATE_ATTR
 #endif
 
 /* poison pragma */
-#ifdef STRUCTS_DEPRECATED_ALLOW
-#  define STRUCTS_DEPRECATED_GCC_POISON 0
+#ifdef TYPES_DEPRECATED_ALLOW
+#  define TYPES_DEPRECATED_GCC_POISON 0
 #else
 /* enable the pragma if we can */
 #  ifdef __GNUC__
-#    define STRUCTS_DEPRECATED_GCC_POISON 1
+#    define TYPES_DEPRECATED_GCC_POISON 1
 #  else
-#    define STRUCTS_DEPRECATED_GCC_POISON 0
+#    define TYPES_DEPRECATED_GCC_POISON 0
 #  endif
 #endif
 
