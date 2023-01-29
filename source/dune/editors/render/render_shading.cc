@@ -3,7 +3,7 @@
 
 #include "MEM_guardedalloc.h"
 
-#include TYPES_curve.h"
+#include "TYPES_curve.h"
 #include "TYPES_light.h"
 #include "TYPES_lightprobe.h"
 #include "TYPES_material.h"
@@ -48,9 +48,9 @@
 #include "DEG_depsgraph_build.h"
 
 #ifdef WITH_FREESTYLE
-#  include "BKE_freestyle.h"
+#  include "DUNE_freestyle.h"
 #  include "FRS_freestyle.h"
-#  include "RNA_enum_types.h"
+#  include "API_enum_types.h"
 #endif
 
 #include "API_access.h"
@@ -346,7 +346,7 @@ void OBJECT_OT_material_slot_assign(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Material Slot (De)Select Operator */
 
-static int material_slot_de_select(duneContext *C, bool select)
+static int material_slot_de_select(DuneContext *C, bool select)
 {
   bool changed_multi = false;
   Object *obact = CTX_data_active_object(C);
@@ -552,7 +552,7 @@ void OBJECT_OT_material_slot_copy(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Material Slot Move Operator **/
 
-static int material_slot_move_exec(duneContext *C, wmOperator *op)
+static int material_slot_move_exec(DuneContext *C, wmOperator *op)
 {
   Object *ob = ED_object_context(C);
 
@@ -702,7 +702,7 @@ void OBJECT_OT_material_slot_remove_unused(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** New Material Operator **/
 
-static int new_material_exec(duneContext *C, wmOperator *UNUSED(op))
+static int new_material_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Material *ma = static_cast<Material *>(
       CTX_data_pointer_get_type(C, "material", &API_Material).data);
@@ -775,7 +775,7 @@ void MATERIAL_OT_new(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** New Texture Operator **/
 
-static int new_texture_exec(duneContext *C, wmOperator *UNUSED(op))
+static int new_texture_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Tex *tex = static_cast<Tex *>(CTX_data_pointer_get_type(C, "texture", &API_Texture).data);
   Main *duneMain = CTX_data_main(C);
@@ -879,7 +879,7 @@ void WORLD_OT_new(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Render Layer Add Operator **/
 
-static int view_layer_add_exec(duneContext *C, wmOperator *op)
+static int view_layer_add_exec(DuneContext *C, wmOperator *op)
 {
   wmWindow *win = CTX_wm_window(C);
   Scene *scene = CTX_data_scene(C);
@@ -969,7 +969,7 @@ void SCENE_OT_view_layer_remove(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** View Layer Add AOV Operator **/
 
-static int view_layer_add_aov_exec(duneContext *C, wmOperator *UNUSED(op))
+static int view_layer_add_aov_execDduneContext *C, wmOperator *UNUSED(op))
 {
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -1014,7 +1014,7 @@ void SCENE_OT_view_layer_add_aov(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** View Layer Remove AOV Operator **/
 
-static int view_layer_remove_aov_exec(duneContext *C, wmOperator *UNUSED(op))
+static int view_layer_remove_aov_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -1088,7 +1088,7 @@ static void light_cache_bake_tag_cache(Scene *scene, wmOperator *op)
 }
 
 /** Catch escape key to cancel. */
-static int light_cache_bake_modal(duneContext *C, wmOperator *op, const wmEvent *event)
+static int light_cache_bake_modal(DuneContext *C, wmOperator *op, const wmEvent *event)
 {
   Scene *scene = (Scene *)op->customdata;
 
@@ -1276,7 +1276,7 @@ void SCENE_OT_light_cache_free(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Render View Remove Operator **/
 
-static bool render_view_remove_poll(duneContext *C)
+static bool render_view_remove_poll(DuneContext *C)
 {
   Scene *scene = CTX_data_scene(C);
 
@@ -1284,7 +1284,7 @@ static bool render_view_remove_poll(duneContext *C)
   return scene->r.actview > 1;
 }
 
-static int render_view_add_exec(duneContext *C, wmOperator *UNUSED(op))
+static int render_view_add_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Scene *scene = CTX_data_scene(C);
 
@@ -1313,7 +1313,7 @@ void SCENE_OT_render_view_add(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Render View Add Operator **/
 
-static int render_view_remove_exec(duneContext *C, wmOperator *UNUSED(op))
+static int render_view_remove_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Scene *scene = CTX_data_scene(C);
   SceneRenderView *rv = static_cast<SceneRenderView *>(
@@ -1403,11 +1403,11 @@ void SCENE_OT_freestyle_module_add(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Module Remove Operator **/
 
-static int freestyle_module_remove_exec(bContext *C, wmOperator *UNUSED(op))
+static int freestyle_module_remove_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
-  PointerRNA ptr = CTX_data_pointer_get_type(C, "freestyle_module", &API_FreestyleModuleSettings);
+  PointerAPI ptr = CTX_data_pointer_get_type(C, "freestyle_module", &API_FreestyleModuleSettings);
   FreestyleModuleConfig *module = static_cast<FreestyleModuleConfig *>(ptr.data);
 
   DUNE_freestyle_module_delete(&view_layer->freestyle_config, module);
@@ -1433,7 +1433,7 @@ void SCENE_OT_freestyle_module_remove(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-static int freestyle_module_move_exec(bContext *C, wmOperator *op)
+static int freestyle_module_move_exec(DuneContext *C, wmOperator *op)
 {
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -1484,7 +1484,7 @@ void SCENE_OT_freestyle_module_move(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Line Set Add Operator **/
 
-static int freestyle_lineset_add_exec(duneContext *C, wmOperator *UNUSED(op))
+static int freestyle_lineset_add_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Main *duneMain = CTX_data_main(C);
   Scene *scene = CTX_data_scene(C);
@@ -1515,7 +1515,7 @@ void SCENE_OT_freestyle_lineset_add(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Line Set Copy Operator **/
 
-static bool freestyle_active_lineset_poll(duneContext *C)
+static bool freestyle_active_lineset_poll(DuneContext *C)
 {
   ViewLayer *view_layer = CTX_data_view_layer(C);
 
@@ -1526,7 +1526,7 @@ static bool freestyle_active_lineset_poll(duneContext *C)
   return DUNE_freestyle_lineset_get_active(&view_layer->freestyle_config) != nullptr;
 }
 
-static int freestyle_lineset_copy_exec(duneContext *C, wmOperator *UNUSED(op))
+static int freestyle_lineset_copy_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   ViewLayer *view_layer = CTX_data_view_layer(C);
 
@@ -1553,7 +1553,7 @@ void SCENE_OT_freestyle_lineset_copy(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Line Set Paste Operator **/
 
-static int freestyle_lineset_paste_exec(duneContext *C, wmOperator *UNUSED(op))
+static int freestyle_lineset_paste_exec(DuneContext *C, wmOperator *UNUSED(op))
 {
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -1615,7 +1615,7 @@ void SCENE_OT_freestyle_lineset_remove(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Line Set Move Operator **/
 
-static int freestyle_lineset_move_exec(duneContext *C, wmOperator *op)
+static int freestyle_lineset_move_exec(DuneContext *C, wmOperator *op)
 {
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -1702,7 +1702,7 @@ void SCENE_OT_freestyle_linestyle_new(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Modifier Add "Color" Operator **/
 
-static int freestyle_color_modifier_add_exec(duneContext *C, wmOperator *op)
+static int freestyle_color_modifier_add_exec(DuneContext *C, wmOperator *op)
 {
   ViewLayer *view_layer = CTX_data_view_layer(C);
   FreestyleLineSet *lineset = DUNE_freestyle_lineset_get_active(&view_layer->freestyle_config);
@@ -1834,7 +1834,7 @@ void SCENE_OT_freestyle_thickness_modifier_add(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Modifier Add "Geometry" Operator **/
 
-static int freestyle_geometry_modifier_add_exec(duneContext *C, wmOperator *op)
+static int freestyle_geometry_modifier_add_exec(DuneContext *C, wmOperator *op)
 {
   ViewLayer *view_layer = CTX_data_view_layer(C);
   FreestyleLineSet *lineset = DUNE_freestyle_lineset_get_active(&view_layer->freestyle_config);
@@ -1948,7 +1948,7 @@ void SCENE_OT_freestyle_modifier_remove(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Modifier Copy Operator */
 
-static int freestyle_modifier_copy_exec(duneContext *C, wmOperator *op)
+static int freestyle_modifier_copy_exec(DuneContext *C, wmOperator *op)
 {
   ViewLayer *view_layer = CTX_data_view_layer(C);
   FreestyleLineSet *lineset = DUNE_freestyle_lineset_get_active(&view_layer->freestyle_config);
@@ -2001,7 +2001,7 @@ void SCENE_OT_freestyle_modifier_copy(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Free Style Modifier Move Operator **/
 
-static int freestyle_modifier_move_exec(duneContext *C, wmOperator *op)
+static int freestyle_modifier_move_exec(DuneContext *C, wmOperator *op)
 {
   ViewLayer *view_layer = CTX_data_view_layer(C);
   FreestyleLineSet *lineset = DUNE_freestyle_lineset_get_active(&view_layer->freestyle_config);
