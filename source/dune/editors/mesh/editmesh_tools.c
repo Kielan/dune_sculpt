@@ -724,3 +724,294 @@ void MESH_OT_edge_collapse(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Create Edge/Face Operator
+ * \{ */
+
+static bool edbm_add_edge_face__smooth_get(BMesh *bm)
+{
+  BMEdge *e;
+  BMIter iter;
+
+  uint vote_on_smooth[2] = {0, 0};
+
+  BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+    if (BM_elem_flag_test(e, BM_ELEM_SELECT) && e->l) {
+      vote_on_smooth[BM_elem_flag_test_bool(e->l->f, BM_ELEM_SMOOTH)]++;
+    }
+  }
+
+  return (vote_on_smooth[0] < vote_on_smooth[1]);
+}
+
+#ifdef USE_FACE_CREATE_SEL_EXTEND
+/**
+ * Function used to get a fixed number of edges linked to a vertex that passes a test function.
+ * This is used so we can request all boundary edges connected to a vertex for eg.
+ */
+static int edbm_add_edge_face_exec__vert_edge_lookup(
+    BMVert *v, BMEdge *e_used, BMEdge **e_arr, const int e_arr_len, bool (*func)(const BMEdge *))
+{
+  BMIter iter;
+  BMEdge *e_iter;
+  int i = 0;
+  BM_ITER_ELEM (e_iter, &iter, v, BM_EDGES_OF_VERT) {
+    if (BM_elem_flag_test(e_iter, BM_ELEM_HIDDEN) == false) {
+      if ((e_used == NULL) || (e_used != e_iter)) {
+        if (func(e_iter)) {
+          e_arr[i++] = e_iter;
+          if (i >= e_arr_len) {
+            break;
+          }
+        }
+      }
+    }
+  }
+  return i;
+}
+
+static BMElem *edbm_add_edge_face_exec__tricky_extend_sel(BMesh *bm)
+{
+  BMIter iter;
+  bool found = false;
+
+  if (bm->totvertsel == 1 && bm->totedgesel == 0 && bm->totfacesel == 0) {
+    /* first look for 2 boundary edges */
+    BMVert *v;
+
+    BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+      if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
+        found = true;
+        break;
+      }
+    }
+
+    if (found) {
+      BMEdge *ed_pair[3];
+      if (((edbm_add_edge_face_exec__vert_edge_lookup(v, NULL, ed_pair, 3, BM_edge_is_wire) ==
+            2) &&
+           (BM_edge_share_face_check(ed_pair[0], ed_pair[1]) == false)) ||
+
+          ((edbm_add_edge_face_exec__vert_edge_lookup(v, NULL, ed_pair, 3, BM_edge_is_boundary) ==
+            2) &&
+           (BM_edge_share_face_check(ed_pair[0], ed_pair[1]) == false))) {
+        BMEdge *e_other = BM_edge_exists(BM_edge_other_vert(ed_pair[0], v),
+                                         BM_edge_other_vert(ed_pair[1], v));
+        BM_edge_select_set(bm, ed_pair[0], true);
+        BM_edge_select_set(bm, ed_pair[1], true);
+        if (e_other) {
+          BM_edge_select_set(bm, e_other, true);
+        }
+        return (BMElem *)v;
+      }
+    }
+  }
+  else if (bm->totvertsel == 2 && bm->totedgesel == 1 && bm->totfacesel == 0) {
+    /* first look for 2 boundary edges */
+    BMEdge *e;
+
+    BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+      if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      BMEdge *ed_pair_v1[2];
+      BMEdge *ed_pair_v2[2];
+      if (((edbm_add_edge_face_exec__vert_edge_lookup(e->v1, e, ed_pair_v1, 2, BM_edge_is_wire) ==
+            1) &&
+           (edbm_add_edge_face_exec__vert_edge_lookup(e->v2, e, ed_pair_v2, 2, BM_edge_is_wire) ==
+            1) &&
+           (BM_edge_share_face_check(e, ed_pair_v1[0]) == false) &&
+           (BM_edge_share_face_check(e, ed_pair_v2[0]) == false)) ||
+
+#  if 1 /* better support mixed cases T37203. */
+          ((edbm_add_edge_face_exec__vert_edge_lookup(e->v1, e, ed_pair_v1, 2, BM_edge_is_wire) ==
+            1) &&
+           (edbm_add_edge_face_exec__vert_edge_lookup(
+                e->v2, e, ed_pair_v2, 2, BM_edge_is_boundary) == 1) &&
+           (BM_edge_share_face_check(e, ed_pair_v1[0]) == false) &&
+           (BM_edge_share_face_check(e, ed_pair_v2[0]) == false)) ||
+
+          ((edbm_add_edge_face_exec__vert_edge_lookup(
+                e->v1, e, ed_pair_v1, 2, BM_edge_is_boundary) == 1) &&
+           (edbm_add_edge_face_exec__vert_edge_lookup(e->v2, e, ed_pair_v2, 2, BM_edge_is_wire) ==
+            1) &&
+           (BM_edge_share_face_check(e, ed_pair_v1[0]) == false) &&
+           (BM_edge_share_face_check(e, ed_pair_v2[0]) == false)) ||
+#  endif
+
+          ((edbm_add_edge_face_exec__vert_edge_lookup(
+                e->v1, e, ed_pair_v1, 2, BM_edge_is_boundary) == 1) &&
+           (edbm_add_edge_face_exec__vert_edge_lookup(
+                e->v2, e, ed_pair_v2, 2, BM_edge_is_boundary) == 1) &&
+           (BM_edge_share_face_check(e, ed_pair_v1[0]) == false) &&
+           (BM_edge_share_face_check(e, ed_pair_v2[0]) == false))) {
+        BMVert *v1_other = BM_edge_other_vert(ed_pair_v1[0], e->v1);
+        BMVert *v2_other = BM_edge_other_vert(ed_pair_v2[0], e->v2);
+        BMEdge *e_other = (v1_other != v2_other) ? BM_edge_exists(v1_other, v2_other) : NULL;
+        BM_edge_select_set(bm, ed_pair_v1[0], true);
+        BM_edge_select_set(bm, ed_pair_v2[0], true);
+        if (e_other) {
+          BM_edge_select_set(bm, e_other, true);
+        }
+        return (BMElem *)e;
+      }
+    }
+  }
+
+  return NULL;
+}
+static void edbm_add_edge_face_exec__tricky_finalize_sel(BMesh *bm, BMElem *ele_desel, BMFace *f)
+{
+  /* Now we need to find the edge that isn't connected to this element. */
+  BM_select_history_clear(bm);
+
+  /* Notes on hidden geometry:
+   * - Un-hide the face since its possible hidden was copied when copying
+   *   surrounding face attributes.
+   * - Un-hide before adding to select history
+   *   since we may extend into an existing, hidden vert/edge.
+   */
+
+  BM_elem_flag_disable(f, BM_ELEM_HIDDEN);
+  BM_face_select_set(bm, f, false);
+
+  if (ele_desel->head.htype == BM_VERT) {
+    BMLoop *l = BM_face_vert_share_loop(f, (BMVert *)ele_desel);
+    BLI_assert(f->len == 3);
+    BM_vert_select_set(bm, (BMVert *)ele_desel, false);
+    BM_edge_select_set(bm, l->next->e, true);
+    BM_select_history_store(bm, l->next->e);
+  }
+  else {
+    BMLoop *l = BM_face_edge_share_loop(f, (BMEdge *)ele_desel);
+    BLI_assert(ELEM(f->len, 4, 3));
+
+    BM_edge_select_set(bm, (BMEdge *)ele_desel, false);
+    if (f->len == 4) {
+      BMEdge *e_active = l->next->next->e;
+      BM_elem_flag_disable(e_active, BM_ELEM_HIDDEN);
+      BM_edge_select_set(bm, e_active, true);
+      BM_select_history_store(bm, e_active);
+    }
+    else {
+      BMVert *v_active = l->next->next->v;
+      BM_elem_flag_disable(v_active, BM_ELEM_HIDDEN);
+      BM_vert_select_set(bm, v_active, true);
+      BM_select_history_store(bm, v_active);
+    }
+  }
+}
+#endif /* USE_FACE_CREATE_SEL_EXTEND */
+
+static int edbm_add_edge_face_exec(bContext *C, wmOperator *op)
+{
+  /* When this is used to dissolve we could avoid this, but checking isn't too slow. */
+  bool changed_multi = false;
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if ((em->bm->totvertsel == 0) && (em->bm->totedgesel == 0) && (em->bm->totvertsel == 0)) {
+      continue;
+    }
+
+    bool use_smooth = edbm_add_edge_face__smooth_get(em->bm);
+    int totedge_orig = em->bm->totedge;
+    int totface_orig = em->bm->totface;
+
+    BMOperator bmop;
+#ifdef USE_FACE_CREATE_SEL_EXTEND
+    BMElem *ele_desel;
+    BMFace *ele_desel_face;
+
+    /* be extra clever, figure out if a partial selection should be extended so we can create
+     * geometry with single vert or single edge selection. */
+    ele_desel = edbm_add_edge_face_exec__tricky_extend_sel(em->bm);
+#endif
+    if (!EDBM_op_init(em,
+                      &bmop,
+                      op,
+                      "contextual_create geom=%hfev mat_nr=%i use_smooth=%b",
+                      BM_ELEM_SELECT,
+                      em->mat_nr,
+                      use_smooth)) {
+      continue;
+    }
+
+    BMO_op_exec(em->bm, &bmop);
+
+    /* cancel if nothing was done */
+    if ((totedge_orig == em->bm->totedge) && (totface_orig == em->bm->totface)) {
+      EDBM_op_finish(em, &bmop, op, true);
+      continue;
+    }
+#ifdef USE_FACE_CREATE_SEL_EXTEND
+    /* normally we would want to leave the new geometry selected,
+     * but being able to press F many times to add geometry is too useful! */
+    if (ele_desel && (BMO_slot_buffer_len(bmop.slots_out, "faces.out") == 1) &&
+        (ele_desel_face = BMO_slot_buffer_get_first(bmop.slots_out, "faces.out"))) {
+      edbm_add_edge_face_exec__tricky_finalize_sel(em->bm, ele_desel, ele_desel_face);
+    }
+    else
+#endif
+    {
+      /* Newly created faces may include existing hidden edges,
+       * copying face data from surrounding, may have copied hidden face flag too.
+       *
+       * Important that faces use flushing since 'edges.out'
+       * won't include hidden edges that already existed.
+       */
+      BMO_slot_buffer_hflag_disable(
+          em->bm, bmop.slots_out, "faces.out", BM_FACE, BM_ELEM_HIDDEN, true);
+      BMO_slot_buffer_hflag_disable(
+          em->bm, bmop.slots_out, "edges.out", BM_EDGE, BM_ELEM_HIDDEN, false);
+
+      BMO_slot_buffer_hflag_enable(
+          em->bm, bmop.slots_out, "faces.out", BM_FACE, BM_ELEM_SELECT, true);
+      BMO_slot_buffer_hflag_enable(
+          em->bm, bmop.slots_out, "edges.out", BM_EDGE, BM_ELEM_SELECT, true);
+    }
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+    changed_multi = true;
+  }
+  MEM_freeN(objects);
+
+  if (!changed_multi) {
+    return OPERATOR_CANCELLED;
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_edge_face_add(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Make Edge/Face";
+  ot->description = "Add an edge or face to selected";
+  ot->idname = "MESH_OT_edge_face_add";
+
+  /* api callbacks */
+  ot->exec = edbm_add_edge_face_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
