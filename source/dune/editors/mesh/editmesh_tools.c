@@ -553,3 +553,174 @@ void MESH_OT_delete(wmOperatorType *ot)
                           "Method used for deleting mesh data");
   RNA_def_property_flag(ot->prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Delete Loose Operator
+ * \{ */
+
+static bool bm_face_is_loose(BMFace *f)
+{
+  BMLoop *l_iter, *l_first;
+
+  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  do {
+    if (!BM_edge_is_boundary(l_iter->e)) {
+      return false;
+    }
+  } while ((l_iter = l_iter->next) != l_first);
+
+  return true;
+}
+
+static int edbm_delete_loose_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  int totelem_old_sel[3];
+  int totelem_old[3];
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  EDBM_mesh_stats_multi(objects, objects_len, totelem_old, totelem_old_sel);
+
+  const bool use_verts = (RNA_boolean_get(op->ptr, "use_verts") && totelem_old_sel[0]);
+  const bool use_edges = (RNA_boolean_get(op->ptr, "use_edges") && totelem_old_sel[1]);
+  const bool use_faces = (RNA_boolean_get(op->ptr, "use_faces") && totelem_old_sel[2]);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+    BMIter iter;
+
+    BM_mesh_elem_hflag_disable_all(bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_TAG, false);
+
+    if (use_faces) {
+      BMFace *f;
+
+      BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+        if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
+          BM_elem_flag_set(f, BM_ELEM_TAG, bm_face_is_loose(f));
+        }
+      }
+
+      BM_mesh_delete_hflag_context(bm, BM_ELEM_TAG, DEL_FACES);
+    }
+
+    if (use_edges) {
+      BMEdge *e;
+
+      BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+        if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
+          BM_elem_flag_set(e, BM_ELEM_TAG, BM_edge_is_wire(e));
+        }
+      }
+
+      BM_mesh_delete_hflag_context(bm, BM_ELEM_TAG, DEL_EDGES);
+    }
+
+    if (use_verts) {
+      BMVert *v;
+
+      BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+        if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
+          BM_elem_flag_set(v, BM_ELEM_TAG, (v->e == NULL));
+        }
+      }
+
+      BM_mesh_delete_hflag_context(bm, BM_ELEM_TAG, DEL_VERTS);
+    }
+
+    EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+
+  int totelem_new[3];
+  EDBM_mesh_stats_multi(objects, objects_len, totelem_new, NULL);
+
+  edbm_report_delete_info(op->reports, totelem_old, totelem_new);
+
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_delete_loose(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Delete Loose";
+  ot->description = "Delete loose vertices, edges or faces";
+  ot->idname = "MESH_OT_delete_loose";
+
+  /* api callbacks */
+  ot->exec = edbm_delete_loose_exec;
+
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(ot->srna, "use_verts", true, "Vertices", "Remove loose vertices");
+  RNA_def_boolean(ot->srna, "use_edges", true, "Edges", "Remove loose edges");
+  RNA_def_boolean(ot->srna, "use_faces", false, "Faces", "Remove loose faces");
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Collapse Edge Operator
+ * \{ */
+
+static int edbm_collapse_edge_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totedgesel == 0) {
+      continue;
+    }
+
+    if (!EDBM_op_callf(em, op, "collapse edges=%he uvs=%b", BM_ELEM_SELECT, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_edge_collapse(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Collapse Edges & Faces";
+  ot->description =
+      "Collapse isolated edge and face regions, merging data such as UV's and vertex colors. "
+      "This can collapse edge-rings as well as regions of connected faces into vertices";
+  ot->idname = "MESH_OT_edge_collapse";
+
+  /* api callbacks */
+  ot->exec = edbm_collapse_edge_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
