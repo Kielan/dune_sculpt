@@ -1015,3 +1015,85 @@ void MESH_OT_edge_face_add(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Mark Edge (Seam) Operator
+ * \{ */
+
+static int edbm_mark_seam_exec(bContext *C, wmOperator *op)
+{
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  BMEdge *eed;
+  BMIter iter;
+  const bool clear = RNA_boolean_get(op->ptr, "clear");
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+
+    if (bm->totedgesel == 0) {
+      continue;
+    }
+
+    if (clear) {
+      BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
+        if (!BM_elem_flag_test(eed, BM_ELEM_SELECT) || BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
+          continue;
+        }
+
+        BM_elem_flag_disable(eed, BM_ELEM_SEAM);
+      }
+    }
+    else {
+      BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
+        if (!BM_elem_flag_test(eed, BM_ELEM_SELECT) || BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
+          continue;
+        }
+        BM_elem_flag_enable(eed, BM_ELEM_SEAM);
+      }
+    }
+  }
+
+  ED_uvedit_live_unwrap(scene, objects, objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_mark_seam(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Mark Seam";
+  ot->idname = "MESH_OT_mark_seam";
+  ot->description = "(Un)mark selected edges as a seam";
+
+  /* api callbacks */
+  ot->exec = edbm_mark_seam_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  prop = RNA_def_boolean(ot->srna, "clear", 0, "Clear", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+
+  WM_operatortype_props_advanced_begin(ot);
+}
