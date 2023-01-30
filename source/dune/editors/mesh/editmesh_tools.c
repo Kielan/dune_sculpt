@@ -13,35 +13,35 @@
 #include "LIB_bitmap.h"
 #include "LIB_heap_simple.h"
 #include "LIB_linklist.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_rand.h"
-#include "BLI_sort_utils.h"
-#include "BLI_string.h"
+#include "LI_linklist_stack.h"
+#include "LI_listbase.h"
+#include "LI_math.h"
+#include "LI_rand.h"
+#include "LI_sort_utils.h"
+#include "LI_string.h"
 
-#include "BKE_context.h"
-#include "BKE_customdata.h"
-#include "BKE_deform.h"
-#include "BKE_editmesh.h"
-#include "BKE_key.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_mesh.h"
-#include "BKE_report.h"
-#include "BKE_texture.h"
+#include "DUNE_context.h"
+#include "DUNE_customdata.h"
+#include "DUNE_deform.h"
+#include "DUNE_editmesh.h"
+#include "DUNE_key.h"
+#include "DUNE_layer.h"
+#include "DUNE_lib_id.h"
+#include "DUNE_main.h"
+#include "DUNE_material.h"
+#include "DUNE_mesh.h"
+#include "DUNE_report.h"
+#include "DUNE_texture.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-#include "RNA_prototypes.h"
+#include "API_access.h"
+#include "API_define.h"
+#include "API_enum_types.h"
+#include "API_prototypes.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -67,8 +67,7 @@
 #define USE_FACE_CREATE_SEL_EXTEND
 
 /* -------------------------------------------------------------------- */
-/** \name Subdivide Operator
- * \{ */
+/** Subdivide Operator */
 
 static int edbm_subdivide_exec(bContext *C, wmOperator *op)
 {
