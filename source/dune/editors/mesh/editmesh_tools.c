@@ -338,3 +338,218 @@ void MESH_OT_subdivide_edgering(wmOperatorType *ot)
   /* properties */
   mesh_operator_edgering_props(ot, 1, 10);
 }
+
+
+/* -------------------------------------------------------------------- */
+/** \name Un-Subdivide Operator
+ * \{ */
+
+static int edbm_unsubdivide_exec(bContext *C, wmOperator *op)
+{
+  const int iterations = RNA_int_get(op->ptr, "iterations");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if ((em->bm->totvertsel == 0) && (em->bm->totedgesel == 0) && (em->bm->totfacesel == 0)) {
+      continue;
+    }
+
+    BMOperator bmop;
+    EDBM_op_init(em, &bmop, op, "unsubdivide verts=%hv iterations=%i", BM_ELEM_SELECT, iterations);
+
+    BMO_op_exec(em->bm, &bmop);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    if ((em->selectmode & SCE_SELECT_VERTEX) == 0) {
+      EDBM_selectmode_flush_ex(em, SCE_SELECT_VERTEX); /* need to flush vert->face first */
+    }
+    EDBM_selectmode_flush(em);
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_unsubdivide(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Un-Subdivide";
+  ot->description = "Un-subdivide selected edges and faces";
+  ot->idname = "MESH_OT_unsubdivide";
+
+  /* api callbacks */
+  ot->exec = edbm_unsubdivide_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_int(
+      ot->srna, "iterations", 2, 1, 1000, "Iterations", "Number of times to un-subdivide", 1, 100);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Delete Operator
+ * \{ */
+
+/* NOTE: these values must match delete_mesh() event values. */
+enum {
+  MESH_DELETE_VERT = 0,
+  MESH_DELETE_EDGE = 1,
+  MESH_DELETE_FACE = 2,
+  MESH_DELETE_EDGE_FACE = 3,
+  MESH_DELETE_ONLY_FACE = 4,
+};
+
+static void edbm_report_delete_info(ReportList *reports,
+                                    const int totelem_old[3],
+                                    const int totelem_new[3])
+{
+  BKE_reportf(reports,
+              RPT_INFO,
+              "Removed: %d vertices, %d edges, %d faces",
+              totelem_old[0] - totelem_new[0],
+              totelem_old[1] - totelem_new[1],
+              totelem_old[2] - totelem_new[2]);
+}
+
+static int edbm_delete_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  bool changed_multi = false;
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    const int type = RNA_enum_get(op->ptr, "type");
+
+    switch (type) {
+      case MESH_DELETE_VERT: /* Erase Vertices */
+        if (em->bm->totvertsel == 0) {
+          continue;
+        }
+        BM_custom_loop_normals_to_vector_layer(em->bm);
+        if (!EDBM_op_callf(em, op, "delete geom=%hv context=%i", BM_ELEM_SELECT, DEL_VERTS)) {
+          continue;
+        }
+        break;
+      case MESH_DELETE_EDGE: /* Erase Edges */
+        if (em->bm->totedgesel == 0) {
+          continue;
+        }
+        BM_custom_loop_normals_to_vector_layer(em->bm);
+        if (!EDBM_op_callf(em, op, "delete geom=%he context=%i", BM_ELEM_SELECT, DEL_EDGES)) {
+          continue;
+        }
+        break;
+      case MESH_DELETE_FACE: /* Erase Faces */
+        if (em->bm->totfacesel == 0) {
+          continue;
+        }
+        BM_custom_loop_normals_to_vector_layer(em->bm);
+        if (!EDBM_op_callf(em, op, "delete geom=%hf context=%i", BM_ELEM_SELECT, DEL_FACES)) {
+          continue;
+        }
+        break;
+      case MESH_DELETE_EDGE_FACE: /* Edges and Faces */
+        if ((em->bm->totedgesel == 0) && (em->bm->totfacesel == 0)) {
+          continue;
+        }
+        BM_custom_loop_normals_to_vector_layer(em->bm);
+        if (!EDBM_op_callf(
+                em, op, "delete geom=%hef context=%i", BM_ELEM_SELECT, DEL_EDGESFACES)) {
+          continue;
+        }
+        break;
+      case MESH_DELETE_ONLY_FACE: /* Only faces. */
+        if (em->bm->totfacesel == 0) {
+          continue;
+        }
+        BM_custom_loop_normals_to_vector_layer(em->bm);
+        if (!EDBM_op_callf(em, op, "delete geom=%hf context=%i", BM_ELEM_SELECT, DEL_ONLYFACES)) {
+          continue;
+        }
+        break;
+      default:
+        BLI_assert(0);
+        break;
+    }
+
+    changed_multi = true;
+
+    EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+
+    BM_custom_loop_normals_from_vector_layer(em->bm, false);
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+
+    DEG_id_tag_update(obedit->data, ID_RECALC_SELECT);
+    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+  }
+
+  MEM_freeN(objects);
+
+  return changed_multi ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
+}
+
+void MESH_OT_delete(wmOperatorType *ot)
+{
+  static const EnumPropertyItem prop_mesh_delete_types[] = {
+      {MESH_DELETE_VERT, "VERT", 0, "Vertices", ""},
+      {MESH_DELETE_EDGE, "EDGE", 0, "Edges", ""},
+      {MESH_DELETE_FACE, "FACE", 0, "Faces", ""},
+      {MESH_DELETE_EDGE_FACE, "EDGE_FACE", 0, "Only Edges & Faces", ""},
+      {MESH_DELETE_ONLY_FACE, "ONLY_FACE", 0, "Only Faces", ""},
+      {0, NULL, 0, NULL, NULL},
+  };
+
+  /* identifiers */
+  ot->name = "Delete";
+  ot->description = "Delete selected vertices, edges or faces";
+  ot->idname = "MESH_OT_delete";
+
+  /* api callbacks */
+  ot->invoke = WM_menu_invoke;
+  ot->exec = edbm_delete_exec;
+
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  ot->prop = RNA_def_enum(ot->srna,
+                          "type",
+                          prop_mesh_delete_types,
+                          MESH_DELETE_VERT,
+                          "Type",
+                          "Method used for deleting mesh data");
+  RNA_def_property_flag(ot->prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+}
