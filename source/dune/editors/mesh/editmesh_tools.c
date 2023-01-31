@@ -2141,3 +2141,116 @@ static bool flip_custom_normals(BMesh *bm, BMLoopNorEditDataArray *lnors_ed_arr)
   BM_loop_normal_editdata_array_free(lnors_ed_arr_new_full);
   return true;
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Flip Normals Operator
+ * \{ */
+
+static void edbm_flip_normals_custom_loop_normals(Object *obedit, BMEditMesh *em)
+{
+  if (!CustomData_has_layer(&em->bm->ldata, CD_CUSTOMLOOPNORMAL)) {
+    return;
+  }
+
+  /* The mesh has custom normal data, flip them. */
+  BMesh *bm = em->bm;
+
+  BM_lnorspace_update(bm);
+  BMLoopNorEditDataArray *lnors_ed_arr = BM_loop_normal_editdata_array_init(bm, false);
+  BMLoopNorEditData *lnor_ed = lnors_ed_arr->lnor_editdata;
+
+  for (int i = 0; i < lnors_ed_arr->totloop; i++, lnor_ed++) {
+    negate_v3(lnor_ed->nloc);
+
+    BKE_lnor_space_custom_normal_to_data(
+        bm->lnor_spacearr->lspacearr[lnor_ed->loop_index], lnor_ed->nloc, lnor_ed->clnors_data);
+  }
+  BM_loop_normal_editdata_array_free(lnors_ed_arr);
+  EDBM_update(obedit->data,
+              &(const struct EDBMUpdate_Params){
+                  .calc_looptri = true,
+                  .calc_normals = false,
+                  .is_destructive = false,
+              });
+}
+
+static void edbm_flip_normals_face_winding(wmOperator *op, Object *obedit, BMEditMesh *em)
+{
+
+  bool has_flipped_faces = false;
+
+  /* See if we have any custom normals to flip. */
+  BMLoopNorEditDataArray *lnors_ed_arr = flip_custom_normals_init_data(em->bm);
+
+  if (EDBM_op_callf(em, op, "reverse_faces faces=%hf flip_multires=%b", BM_ELEM_SELECT, true)) {
+    has_flipped_faces = true;
+  }
+
+  if (flip_custom_normals(em->bm, lnors_ed_arr) || has_flipped_faces) {
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+
+  if (lnors_ed_arr != NULL) {
+    BM_loop_normal_editdata_array_free(lnors_ed_arr);
+  }
+}
+
+static int edbm_flip_normals_exec(bContext *C, wmOperator *op)
+{
+  const bool only_clnors = RNA_boolean_get(op->ptr, "only_clnors");
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (only_clnors) {
+      if ((em->bm->totvertsel == 0) && (em->bm->totedgesel == 0) && (em->bm->totfacesel == 0)) {
+        continue;
+      }
+      edbm_flip_normals_custom_loop_normals(obedit, em);
+    }
+    else {
+      if (em->bm->totfacesel == 0) {
+        continue;
+      }
+      edbm_flip_normals_face_winding(op, obedit, em);
+    }
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_flip_normals(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Flip Normals";
+  ot->description = "Flip the direction of selected faces' normals (and of their vertices)";
+  ot->idname = "MESH_OT_flip_normals";
+
+  /* api callbacks */
+  ot->exec = edbm_flip_normals_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_boolean(ot->srna,
+                  "only_clnors",
+                  false,
+                  "Custom Normals Only",
+                  "Only flip the custom loop normals of the selected elements");
+}
+
+
+
