@@ -1622,3 +1622,184 @@ void MESH_OT_vert_connect_path(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
+/* -------------------------------------------------------------------- */
+/** \name Connect Concave Operator
+ * \{ */
+
+static int edbm_vert_connect_concave_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    if (!EDBM_op_call_and_selectf(
+            em, op, "faces.out", true, "connect_verts_concave faces=%hf", BM_ELEM_SELECT)) {
+      continue;
+    }
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_vert_connect_concave(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Split Concave Faces";
+  ot->idname = "MESH_OT_vert_connect_concave";
+  ot->description = "Make all faces convex";
+
+  /* api callbacks */
+  ot->exec = edbm_vert_connect_concave_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Split Non-Planar Faces Operator
+ * \{ */
+
+static int edbm_vert_connect_nonplaner_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const float angle_limit = RNA_float_get(op->ptr, "angle_limit");
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    if (!EDBM_op_call_and_selectf(em,
+                                  op,
+                                  "faces.out",
+                                  true,
+                                  "connect_verts_nonplanar faces=%hf angle_limit=%f",
+                                  BM_ELEM_SELECT,
+                                  angle_limit)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_vert_connect_nonplanar(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Split Non-Planar Faces";
+  ot->idname = "MESH_OT_vert_connect_nonplanar";
+  ot->description = "Split non-planar faces that exceed the angle threshold";
+
+  /* api callbacks */
+  ot->exec = edbm_vert_connect_nonplaner_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  prop = RNA_def_float_rotation(ot->srna,
+                                "angle_limit",
+                                0,
+                                NULL,
+                                0.0f,
+                                DEG2RADF(180.0f),
+                                "Max Angle",
+                                "Angle limit",
+                                0.0f,
+                                DEG2RADF(180.0f));
+  RNA_def_property_float_default(prop, DEG2RADF(5.0f));
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Make Planar Faces Operator
+ * \{ */
+
+static int edbm_face_make_planar_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  const int repeat = RNA_int_get(op->ptr, "repeat");
+  const float fac = RNA_float_get(op->ptr, "factor");
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    if (!EDBM_op_callf(em,
+                       op,
+                       "planar_faces faces=%hf iterations=%i factor=%f",
+                       BM_ELEM_SELECT,
+                       repeat,
+                       fac)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = true,
+                    .is_destructive = true,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_face_make_planar(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Make Planar Faces";
+  ot->idname = "MESH_OT_face_make_planar";
+  ot->description = "Flatten selected faces";
+
+  /* api callbacks */
+  ot->exec = edbm_face_make_planar_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_float(ot->srna, "factor", 1.0f, -10.0f, 10.0f, "Factor", "", 0.0f, 1.0f);
+  RNA_def_int(ot->srna, "repeat", 1, 1, 10000, "Iterations", "", 1, 200);
+}
