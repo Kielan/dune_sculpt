@@ -1321,3 +1321,304 @@ void MESH_OT_vert_connect(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Connect Vertex Path Operator
+ * \{ */
+
+/**
+ * check that endpoints are verts and only have a single selected edge connected.
+ */
+static bool bm_vert_is_select_history_open(BMesh *bm)
+{
+  BMEditSelection *ele_a = bm->selected.first;
+  BMEditSelection *ele_b = bm->selected.last;
+  if ((ele_a->htype == BM_VERT) && (ele_b->htype == BM_VERT)) {
+    if ((BM_iter_elem_count_flag(BM_EDGES_OF_VERT, (BMVert *)ele_a->ele, BM_ELEM_SELECT, true) ==
+         1) &&
+        (BM_iter_elem_count_flag(BM_EDGES_OF_VERT, (BMVert *)ele_b->ele, BM_ELEM_SELECT, true) ==
+         1)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static bool bm_vert_connect_pair(BMesh *bm, BMVert *v_a, BMVert *v_b)
+{
+  BMOperator bmop;
+  BMVert **verts;
+  const int totedge_orig = bm->totedge;
+
+  BMO_op_init(bm, &bmop, BMO_FLAG_DEFAULTS, "connect_vert_pair");
+
+  verts = BMO_slot_buffer_alloc(&bmop, bmop.slots_in, "verts", 2);
+  verts[0] = v_a;
+  verts[1] = v_b;
+
+  BM_vert_normal_update(verts[0]);
+  BM_vert_normal_update(verts[1]);
+
+  BMO_op_exec(bm, &bmop);
+  BMO_slot_buffer_hflag_enable(bm, bmop.slots_out, "edges.out", BM_EDGE, BM_ELEM_SELECT, true);
+  BMO_op_finish(bm, &bmop);
+  return (bm->totedge != totedge_orig);
+}
+
+static bool bm_vert_connect_select_history(BMesh *bm)
+{
+  /* Logic is as follows:
+   *
+   * - If there are any isolated/wire verts - connect as edges.
+   * - Otherwise connect faces.
+   * - If all edges have been created already, closed the loop.
+   */
+  if (BLI_listbase_count_at_most(&bm->selected, 2) == 2 && (bm->totvertsel > 2)) {
+    BMEditSelection *ese;
+    int tot = 0;
+    bool changed = false;
+    bool has_wire = false;
+    // bool all_verts;
+
+    /* ensure all verts have history */
+    for (ese = bm->selected.first; ese; ese = ese->next, tot++) {
+      BMVert *v;
+      if (ese->htype != BM_VERT) {
+        break;
+      }
+      v = (BMVert *)ese->ele;
+      if ((has_wire == false) && ((v->e == NULL) || BM_vert_is_wire(v))) {
+        has_wire = true;
+      }
+    }
+    // all_verts = (ese == NULL);
+
+    if (has_wire == false) {
+      /* all verts have faces , connect verts via faces! */
+      if (tot == bm->totvertsel) {
+        BMEditSelection *ese_last;
+        ese_last = bm->selected.first;
+        ese = ese_last->next;
+
+        do {
+
+          if (BM_edge_exists((BMVert *)ese_last->ele, (BMVert *)ese->ele)) {
+            /* pass, edge exists (and will be selected) */
+          }
+          else {
+            changed |= bm_vert_connect_pair(bm, (BMVert *)ese_last->ele, (BMVert *)ese->ele);
+          }
+        } while ((void)(ese_last = ese), (ese = ese->next));
+
+        if (changed) {
+          return true;
+        }
+      }
+
+      if (changed == false) {
+        /* existing loops: close the selection */
+        if (bm_vert_is_select_history_open(bm)) {
+          changed |= bm_vert_connect_pair(bm,
+                                          (BMVert *)((BMEditSelection *)bm->selected.first)->ele,
+                                          (BMVert *)((BMEditSelection *)bm->selected.last)->ele);
+
+          if (changed) {
+            return true;
+          }
+        }
+      }
+    }
+
+    else {
+      /* no faces, simply connect the verts by edges */
+      BMEditSelection *ese_prev;
+      ese_prev = bm->selected.first;
+      ese = ese_prev->next;
+
+      do {
+        if (BM_edge_exists((BMVert *)ese_prev->ele, (BMVert *)ese->ele)) {
+          /* pass, edge exists (and will be selected) */
+        }
+        else {
+          BMEdge *e;
+          e = BM_edge_create(bm, (BMVert *)ese_prev->ele, (BMVert *)ese->ele, NULL, 0);
+          BM_edge_select_set(bm, e, true);
+          changed = true;
+        }
+      } while ((void)(ese_prev = ese), (ese = ese->next));
+
+      if (changed == false) {
+        /* existing loops: close the selection */
+        if (bm_vert_is_select_history_open(bm)) {
+          BMEdge *e;
+          ese_prev = bm->selected.first;
+          ese = bm->selected.last;
+          e = BM_edge_create(bm, (BMVert *)ese_prev->ele, (BMVert *)ese->ele, NULL, 0);
+          BM_edge_select_set(bm, e, true);
+        }
+      }
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Convert an edge selection to a temp vertex selection
+ * (which must be cleared after use as a path to connect).
+ */
+static bool bm_vert_connect_select_history_edge_to_vert_path(BMesh *bm, ListBase *r_selected)
+{
+  ListBase selected_orig = {NULL, NULL};
+  BMEditSelection *ese;
+  int edges_len = 0;
+  bool side = false;
+
+  /* first check all edges are OK */
+  for (ese = bm->selected.first; ese; ese = ese->next) {
+    if (ese->htype == BM_EDGE) {
+      edges_len += 1;
+    }
+    else {
+      return false;
+    }
+  }
+  /* if this is a mixed selection, bail out! */
+  if (bm->totedgesel != edges_len) {
+    return false;
+  }
+
+  SWAP(ListBase, bm->selected, selected_orig);
+
+  /* convert edge selection into 2 ordered loops (where the first edge ends up in the middle) */
+  for (ese = selected_orig.first; ese; ese = ese->next) {
+    BMEdge *e_curr = (BMEdge *)ese->ele;
+    BMEdge *e_prev = ese->prev ? (BMEdge *)ese->prev->ele : NULL;
+    BMLoop *l_curr;
+    BMLoop *l_prev;
+    BMVert *v;
+
+    if (e_prev) {
+      BMFace *f = BM_edge_pair_share_face_by_len(e_curr, e_prev, &l_curr, &l_prev, true);
+      if (f) {
+        if ((e_curr->v1 != l_curr->v) == (e_prev->v1 != l_prev->v)) {
+          side = !side;
+        }
+      }
+      else if (is_quad_flip_v3(e_curr->v1->co, e_curr->v2->co, e_prev->v2->co, e_prev->v1->co)) {
+        side = !side;
+      }
+    }
+
+    v = (&e_curr->v1)[side];
+    if (!bm->selected.last || (BMVert *)((BMEditSelection *)bm->selected.last)->ele != v) {
+      BM_select_history_store_notest(bm, v);
+    }
+
+    v = (&e_curr->v1)[!side];
+    if (!bm->selected.first || (BMVert *)((BMEditSelection *)bm->selected.first)->ele != v) {
+      BM_select_history_store_head_notest(bm, v);
+    }
+
+    e_prev = e_curr;
+  }
+
+  *r_selected = bm->selected;
+  bm->selected = selected_orig;
+
+  return true;
+}
+
+static int edbm_vert_connect_path_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  uint failed_selection_order_len = 0;
+  uint failed_connect_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+    const bool is_pair = (em->bm->totvertsel == 2);
+    ListBase selected_orig = {NULL, NULL};
+
+    if (bm->totvertsel == 0) {
+      continue;
+    }
+
+    /* when there is only 2 vertices, we can ignore selection order */
+    if (is_pair) {
+      if (!edbm_connect_vert_pair(em, obedit->data, op)) {
+        failed_connect_len++;
+      }
+      continue;
+    }
+
+    if (bm->selected.first) {
+      BMEditSelection *ese = bm->selected.first;
+      if (ese->htype == BM_EDGE) {
+        if (bm_vert_connect_select_history_edge_to_vert_path(bm, &selected_orig)) {
+          SWAP(ListBase, bm->selected, selected_orig);
+        }
+      }
+    }
+
+    BM_custom_loop_normals_to_vector_layer(bm);
+
+    if (bm_vert_connect_select_history(bm)) {
+      EDBM_selectmode_flush(em);
+
+      BM_custom_loop_normals_from_vector_layer(bm, false);
+
+      EDBM_update(obedit->data,
+                  &(const struct EDBMUpdate_Params){
+                      .calc_looptri = true,
+                      .calc_normals = false,
+                      .is_destructive = true,
+                  });
+    }
+    else {
+      failed_selection_order_len++;
+    }
+
+    if (!BLI_listbase_is_empty(&selected_orig)) {
+      BM_select_history_clear(bm);
+      bm->selected = selected_orig;
+    }
+  }
+
+  MEM_freeN(objects);
+
+  if (failed_selection_order_len == objects_len) {
+    BKE_report(op->reports, RPT_ERROR, "Invalid selection order");
+    return OPERATOR_CANCELLED;
+  }
+  if (failed_connect_len == objects_len) {
+    BKE_report(op->reports, RPT_ERROR, "Could not connect vertices");
+    return OPERATOR_CANCELLED;
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_vert_connect_path(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Vertex Connect Path";
+  ot->idname = "MESH_OT_vert_connect_path";
+  ot->description = "Connect vertices by their selection order, creating edges, splitting faces";
+
+  /* api callbacks */
+  ot->exec = edbm_vert_connect_path_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
