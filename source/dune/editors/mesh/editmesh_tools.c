@@ -1097,3 +1097,227 @@ void MESH_OT_mark_seam(wmOperatorType *ot)
 
   WM_operatortype_props_advanced_begin(ot);
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Mark Edge (Sharp) Operator
+ * \{ */
+
+static int edbm_mark_sharp_exec(bContext *C, wmOperator *op)
+{
+  BMEdge *eed;
+  BMIter iter;
+  const bool clear = RNA_boolean_get(op->ptr, "clear");
+  const bool use_verts = RNA_boolean_get(op->ptr, "use_verts");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+
+    if ((use_verts && bm->totvertsel == 0) || (!use_verts && bm->totedgesel == 0)) {
+      continue;
+    }
+
+    BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
+      if (use_verts) {
+        if (!(BM_elem_flag_test(eed->v1, BM_ELEM_SELECT) ||
+              BM_elem_flag_test(eed->v2, BM_ELEM_SELECT))) {
+          continue;
+        }
+      }
+      else if (!BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+        continue;
+      }
+
+      BM_elem_flag_set(eed, BM_ELEM_SMOOTH, clear);
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_mark_sharp(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Mark Sharp";
+  ot->idname = "MESH_OT_mark_sharp";
+  ot->description = "(Un)mark selected edges as sharp";
+
+  /* api callbacks */
+  ot->exec = edbm_mark_sharp_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  prop = RNA_def_boolean(ot->srna, "clear", false, "Clear", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+  prop = RNA_def_boolean(
+      ot->srna,
+      "use_verts",
+      false,
+      "Vertices",
+      "Consider vertices instead of edges to select which edges to (un)tag as sharp");
+  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Connect Vertex Path Operator
+ * \{ */
+
+static bool edbm_connect_vert_pair(BMEditMesh *em, struct Mesh *me, wmOperator *op)
+{
+  BMesh *bm = em->bm;
+  BMOperator bmop;
+  const int verts_len = bm->totvertsel;
+  bool is_pair = (verts_len == 2);
+  int len = 0;
+  bool check_degenerate = true;
+
+  bool checks_succeded = true;
+
+  /* sanity check */
+  if (verts_len < 2) {
+    return false;
+  }
+
+  BMVert **verts = MEM_mallocN(sizeof(*verts) * verts_len, __func__);
+  {
+    BMIter iter;
+    BMVert *v;
+    int i = 0;
+
+    BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+      if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
+        verts[i++] = v;
+      }
+    }
+
+    if (BM_vert_pair_share_face_check_cb(
+            verts[0],
+            verts[1],
+            BM_elem_cb_check_hflag_disabled_simple(BMFace *, BM_ELEM_HIDDEN))) {
+      check_degenerate = false;
+      is_pair = false;
+    }
+  }
+
+  if (is_pair) {
+    if (!EDBM_op_init(em,
+                      &bmop,
+                      op,
+                      "connect_vert_pair verts=%eb verts_exclude=%hv faces_exclude=%hf",
+                      verts,
+                      verts_len,
+                      BM_ELEM_HIDDEN,
+                      BM_ELEM_HIDDEN)) {
+      checks_succeded = false;
+    }
+  }
+  else {
+    if (!EDBM_op_init(em,
+                      &bmop,
+                      op,
+                      "connect_verts verts=%eb faces_exclude=%hf check_degenerate=%b",
+                      verts,
+                      verts_len,
+                      BM_ELEM_HIDDEN,
+                      check_degenerate)) {
+      checks_succeded = false;
+    }
+  }
+  if (checks_succeded) {
+    BMBackup em_backup = EDBM_redo_state_store(em);
+
+    BM_custom_loop_normals_to_vector_layer(bm);
+
+    BMO_op_exec(bm, &bmop);
+    const bool failure = BMO_error_occurred_at_level(bm, BMO_ERROR_FATAL);
+    len = BMO_slot_get(bmop.slots_out, "edges.out")->len;
+
+    if (len && is_pair) {
+      /* new verts have been added, we have to select the edges, not just flush */
+      BMO_slot_buffer_hflag_enable(
+          em->bm, bmop.slots_out, "edges.out", BM_EDGE, BM_ELEM_SELECT, true);
+    }
+
+    bool em_backup_free = true;
+    if (!EDBM_op_finish(em, &bmop, op, false)) {
+      len = 0;
+    }
+    else if (failure) {
+      len = 0;
+      EDBM_redo_state_restore_and_free(&em_backup, em, true);
+      em_backup_free = false;
+    }
+    else {
+      /* so newly created edges get the selection state from the vertex */
+      EDBM_selectmode_flush(em);
+
+      BM_custom_loop_normals_from_vector_layer(bm, false);
+
+      EDBM_update(me,
+                  &(const struct EDBMUpdate_Params){
+                      .calc_looptri = true,
+                      .calc_normals = false,
+                      .is_destructive = true,
+                  });
+    }
+
+    if (em_backup_free) {
+      EDBM_redo_state_free(&em_backup);
+    }
+  }
+  MEM_freeN(verts);
+
+  return len;
+}
+
+static int edbm_vert_connect_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  uint failed_objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (!edbm_connect_vert_pair(em, obedit->data, op)) {
+      failed_objects_len++;
+    }
+  }
+  MEM_freeN(objects);
+  return failed_objects_len == objects_len ? OPERATOR_CANCELLED : OPERATOR_FINISHED;
+}
+
+void MESH_OT_vert_connect(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Vertex Connect";
+  ot->idname = "MESH_OT_vert_connect";
+  ot->description = "Connect selected vertices of faces, splitting the face";
+
+  /* api callbacks */
+  ot->exec = edbm_vert_connect_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
