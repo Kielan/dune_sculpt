@@ -6036,4 +6036,1057 @@ void MESH_OT_dissolve_faces(wmOperatorType *ot)
   edbm_dissolve_prop__use_verts(ot, false, 0);
 }
 
+/* -------------------------------------------------------------------- */
+/** \name Dissolve (Context Sensitive) Operator
+ * \{ */
 
+static int edbm_dissolve_mode_exec(bContext *C, wmOperator *op)
+{
+  Object *obedit = CTX_data_edit_object(C);
+  BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  PropertyRNA *prop;
+
+  prop = RNA_struct_find_property(op->ptr, "use_verts");
+  if (!RNA_property_is_set(op->ptr, prop)) {
+    /* always enable in edge-mode */
+    if ((em->selectmode & SCE_SELECT_FACE) == 0) {
+      RNA_property_boolean_set(op->ptr, prop, true);
+    }
+  }
+
+  if (em->selectmode & SCE_SELECT_VERTEX) {
+    return edbm_dissolve_verts_exec(C, op);
+  }
+  if (em->selectmode & SCE_SELECT_EDGE) {
+    return edbm_dissolve_edges_exec(C, op);
+  }
+  return edbm_dissolve_faces_exec(C, op);
+}
+
+void MESH_OT_dissolve_mode(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Dissolve Selection";
+  ot->description = "Dissolve geometry based on the selection mode";
+  ot->idname = "MESH_OT_dissolve_mode";
+
+  /* api callbacks */
+  ot->exec = edbm_dissolve_mode_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  edbm_dissolve_prop__use_verts(ot, false, PROP_SKIP_SAVE);
+  edbm_dissolve_prop__use_face_split(ot);
+  edbm_dissolve_prop__use_boundary_tear(ot);
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Limited Dissolve Operator
+ * \{ */
+
+static int edbm_dissolve_limited_exec(bContext *C, wmOperator *op)
+{
+  const float angle_limit = RNA_float_get(op->ptr, "angle_limit");
+  const bool use_dissolve_boundaries = RNA_boolean_get(op->ptr, "use_dissolve_boundaries");
+  const int delimit = RNA_enum_get(op->ptr, "delimit");
+  char dissolve_flag;
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+
+    if ((bm->totvertsel == 0) && (bm->totedgesel == 0) && (bm->totfacesel == 0)) {
+      continue;
+    }
+
+    BM_custom_loop_normals_to_vector_layer(em->bm);
+
+    if (em->selectmode == SCE_SELECT_FACE) {
+      /* flush selection to tags and untag edges/verts with partially selected faces */
+      BMIter iter;
+      BMIter liter;
+
+      BMElem *ele;
+      BMFace *f;
+      BMLoop *l;
+
+      BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
+        BM_elem_flag_set(ele, BM_ELEM_TAG, BM_elem_flag_test(ele, BM_ELEM_SELECT));
+      }
+      BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
+        BM_elem_flag_set(ele, BM_ELEM_TAG, BM_elem_flag_test(ele, BM_ELEM_SELECT));
+      }
+
+      BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+        if (!BM_elem_flag_test(f, BM_ELEM_SELECT)) {
+          BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+            BM_elem_flag_disable(l->v, BM_ELEM_TAG);
+            BM_elem_flag_disable(l->e, BM_ELEM_TAG);
+          }
+        }
+      }
+
+      dissolve_flag = BM_ELEM_TAG;
+    }
+    else {
+      dissolve_flag = BM_ELEM_SELECT;
+    }
+
+    EDBM_op_call_and_selectf(
+        em,
+        op,
+        "region.out",
+        true,
+        "dissolve_limit edges=%he verts=%hv angle_limit=%f use_dissolve_boundaries=%b delimit=%i",
+        dissolve_flag,
+        dissolve_flag,
+        angle_limit,
+        use_dissolve_boundaries,
+        delimit);
+
+    BM_custom_loop_normals_from_vector_layer(em->bm, false);
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_dissolve_limited(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Limited Dissolve";
+  ot->idname = "MESH_OT_dissolve_limited";
+  ot->description =
+      "Dissolve selected edges and vertices, limited by the angle of surrounding geometry";
+
+  /* api callbacks */
+  ot->exec = edbm_dissolve_limited_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  prop = RNA_def_float_rotation(ot->srna,
+                                "angle_limit",
+                                0,
+                                NULL,
+                                0.0f,
+                                DEG2RADF(180.0f),
+                                "Max Angle",
+                                "Angle limit",
+                                0.0f,
+                                DEG2RADF(180.0f));
+  RNA_def_property_float_default(prop, DEG2RADF(5.0f));
+  RNA_def_boolean(ot->srna,
+                  "use_dissolve_boundaries",
+                  false,
+                  "All Boundaries",
+                  "Dissolve all vertices in between face boundaries");
+  RNA_def_enum_flag(ot->srna,
+                    "delimit",
+                    rna_enum_mesh_delimit_mode_items,
+                    BMO_DELIM_NORMAL,
+                    "Delimit",
+                    "Delimit dissolve operation");
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Degenerate Dissolve Operator
+ * \{ */
+
+static int edbm_dissolve_degenerate_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  int totelem_old[3] = {0, 0, 0};
+  int totelem_new[3] = {0, 0, 0};
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+    totelem_old[0] += bm->totvert;
+    totelem_old[1] += bm->totedge;
+    totelem_old[2] += bm->totface;
+  } /* objects */
+
+  const float thresh = RNA_float_get(op->ptr, "threshold");
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+
+    if (!EDBM_op_callf(em, op, "dissolve_degenerate edges=%he dist=%f", BM_ELEM_SELECT, thresh)) {
+      continue;
+    }
+
+    /* tricky to maintain correct selection here, so just flush up from verts */
+    EDBM_select_flush(em);
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+
+    totelem_new[0] += bm->totvert;
+    totelem_new[1] += bm->totedge;
+    totelem_new[2] += bm->totface;
+  }
+  MEM_freeN(objects);
+
+  edbm_report_delete_info(op->reports, totelem_old, totelem_new);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_dissolve_degenerate(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Degenerate Dissolve";
+  ot->idname = "MESH_OT_dissolve_degenerate";
+  ot->description = "Dissolve zero area faces and zero length edges";
+
+  /* api callbacks */
+  ot->exec = edbm_dissolve_degenerate_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_float_distance(ot->srna,
+                         "threshold",
+                         1e-4f,
+                         1e-6f,
+                         50.0f,
+                         "Merge Distance",
+                         "Maximum distance between elements to merge",
+                         1e-5f,
+                         10.0f);
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Delete Edge-Loop Operator
+ * \{ */
+
+/* internally uses dissolve */
+static int edbm_delete_edgeloop_exec(bContext *C, wmOperator *op)
+{
+  const bool use_face_split = RNA_boolean_get(op->ptr, "use_face_split");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totedgesel == 0) {
+      continue;
+    }
+
+    /* deal with selection */
+    {
+      BMEdge *e;
+      BMIter iter;
+
+      BM_mesh_elem_hflag_disable_all(em->bm, BM_FACE, BM_ELEM_TAG, false);
+
+      BM_ITER_MESH (e, &iter, em->bm, BM_EDGES_OF_MESH) {
+        if (BM_elem_flag_test(e, BM_ELEM_SELECT) && e->l) {
+          BMLoop *l_iter = e->l;
+          do {
+            BM_elem_flag_enable(l_iter->f, BM_ELEM_TAG);
+          } while ((l_iter = l_iter->radial_next) != e->l);
+        }
+      }
+    }
+
+    if (!EDBM_op_callf(em,
+                       op,
+                       "dissolve_edges edges=%he use_verts=%b use_face_split=%b",
+                       BM_ELEM_SELECT,
+                       true,
+                       use_face_split)) {
+      continue;
+    }
+
+    BM_mesh_elem_hflag_enable_test(em->bm, BM_FACE, BM_ELEM_SELECT, true, false, BM_ELEM_TAG);
+
+    EDBM_selectmode_flush_ex(em, SCE_SELECT_VERTEX);
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_delete_edgeloop(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Delete Edge Loop";
+  ot->description = "Delete an edge loop by merging the faces on each side";
+  ot->idname = "MESH_OT_delete_edgeloop";
+
+  /* api callbacks */
+  ot->exec = edbm_delete_edgeloop_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_boolean(ot->srna,
+                  "use_face_split",
+                  true,
+                  "Face Split",
+                  "Split off face corners to maintain surrounding geometry");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Split Geometry Operator
+ * \{ */
+
+static int edbm_split_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    if ((em->bm->totvertsel == 0) && (em->bm->totedgesel == 0) && (em->bm->totfacesel == 0)) {
+      continue;
+    }
+    BM_custom_loop_normals_to_vector_layer(em->bm);
+
+    BMOperator bmop;
+    EDBM_op_init(em, &bmop, op, "split geom=%hvef use_only_faces=%b", BM_ELEM_SELECT, false);
+    BMO_op_exec(em->bm, &bmop);
+    BM_mesh_elem_hflag_disable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, false);
+    BMO_slot_buffer_hflag_enable(
+        em->bm, bmop.slots_out, "geom.out", BM_ALL_NOLOOP, BM_ELEM_SELECT, true);
+
+    BM_custom_loop_normals_from_vector_layer(em->bm, false);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    /* Geometry has changed, need to recalculate normals and tessellation. */
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = true,
+                    .is_destructive = true,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_split(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Split";
+  ot->idname = "MESH_OT_split";
+  ot->description = "Split off selected geometry from connected unselected geometry";
+
+  /* api callbacks */
+  ot->exec = edbm_split_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Sort Geometry Elements Operator
+ *
+ * Unified for vertices/edges/faces.
+ *
+ * \{ */
+
+enum {
+  /** Use view Z (deep) axis. */
+  SRT_VIEW_ZAXIS = 1,
+  /** Use view X (left to right) axis. */
+  SRT_VIEW_XAXIS,
+  /** Use distance from element to 3D cursor. */
+  SRT_CURSOR_DISTANCE,
+  /** Face only: use mat number. */
+  SRT_MATERIAL,
+  /** Move selected elements in first, without modifying
+   * relative order of selected and unselected elements. */
+  SRT_SELECTED,
+  /** Randomize selected elements. */
+  SRT_RANDOMIZE,
+  /** Reverse current order of selected elements. */
+  SRT_REVERSE,
+};
+
+typedef struct BMElemSort {
+  /** Sort factor */
+  float srt;
+  /** Original index of this element (in its #BLI_mempool). */
+  int org_idx;
+} BMElemSort;
+
+static int bmelemsort_comp(const void *v1, const void *v2)
+{
+  const BMElemSort *x1 = v1, *x2 = v2;
+
+  return (x1->srt > x2->srt) - (x1->srt < x2->srt);
+}
+
+/* Reorders vertices/edges/faces using a given methods. Loops are not supported. */
+static void sort_bmelem_flag(bContext *C,
+                             Scene *scene,
+                             Object *ob,
+                             RegionView3D *rv3d,
+                             const int types,
+                             const int flag,
+                             const int action,
+                             const int reverse,
+                             const uint seed)
+{
+  BMEditMesh *em = BKE_editmesh_from_object(ob);
+
+  BMVert *ve;
+  BMEdge *ed;
+  BMFace *fa;
+  BMIter iter;
+
+  /* In all five elements below, 0 = vertices, 1 = edges, 2 = faces. */
+  /* Just to mark protected elements. */
+  char *pblock[3] = {NULL, NULL, NULL}, *pb;
+  BMElemSort *sblock[3] = {NULL, NULL, NULL}, *sb;
+  uint *map[3] = {NULL, NULL, NULL}, *mp;
+  int totelem[3] = {0, 0, 0};
+  int affected[3] = {0, 0, 0};
+  int i, j;
+
+  if (!(types && flag && action)) {
+    return;
+  }
+
+  if (types & BM_VERT) {
+    totelem[0] = em->bm->totvert;
+  }
+  if (types & BM_EDGE) {
+    totelem[1] = em->bm->totedge;
+  }
+  if (types & BM_FACE) {
+    totelem[2] = em->bm->totface;
+  }
+
+  if (ELEM(action, SRT_VIEW_ZAXIS, SRT_VIEW_XAXIS)) {
+    float mat[4][4];
+    float fact = reverse ? -1.0 : 1.0;
+    int coidx = (action == SRT_VIEW_ZAXIS) ? 2 : 0;
+
+    /* Apply the view matrix to the object matrix. */
+    mul_m4_m4m4(mat, rv3d->viewmat, ob->obmat);
+
+    if (totelem[0]) {
+      pb = pblock[0] = MEM_callocN(sizeof(char) * totelem[0], "sort_bmelem vert pblock");
+      sb = sblock[0] = MEM_callocN(sizeof(BMElemSort) * totelem[0], "sort_bmelem vert sblock");
+
+      BM_ITER_MESH_INDEX (ve, &iter, em->bm, BM_VERTS_OF_MESH, i) {
+        if (BM_elem_flag_test(ve, flag)) {
+          float co[3];
+          mul_v3_m4v3(co, mat, ve->co);
+
+          pb[i] = false;
+          sb[affected[0]].org_idx = i;
+          sb[affected[0]++].srt = co[coidx] * fact;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+
+    if (totelem[1]) {
+      pb = pblock[1] = MEM_callocN(sizeof(char) * totelem[1], "sort_bmelem edge pblock");
+      sb = sblock[1] = MEM_callocN(sizeof(BMElemSort) * totelem[1], "sort_bmelem edge sblock");
+
+      BM_ITER_MESH_INDEX (ed, &iter, em->bm, BM_EDGES_OF_MESH, i) {
+        if (BM_elem_flag_test(ed, flag)) {
+          float co[3];
+          mid_v3_v3v3(co, ed->v1->co, ed->v2->co);
+          mul_m4_v3(mat, co);
+
+          pb[i] = false;
+          sb[affected[1]].org_idx = i;
+          sb[affected[1]++].srt = co[coidx] * fact;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+
+    if (totelem[2]) {
+      pb = pblock[2] = MEM_callocN(sizeof(char) * totelem[2], "sort_bmelem face pblock");
+      sb = sblock[2] = MEM_callocN(sizeof(BMElemSort) * totelem[2], "sort_bmelem face sblock");
+
+      BM_ITER_MESH_INDEX (fa, &iter, em->bm, BM_FACES_OF_MESH, i) {
+        if (BM_elem_flag_test(fa, flag)) {
+          float co[3];
+          BM_face_calc_center_median(fa, co);
+          mul_m4_v3(mat, co);
+
+          pb[i] = false;
+          sb[affected[2]].org_idx = i;
+          sb[affected[2]++].srt = co[coidx] * fact;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+  }
+
+  else if (action == SRT_CURSOR_DISTANCE) {
+    float cur[3];
+    float mat[4][4];
+    float fact = reverse ? -1.0 : 1.0;
+
+    copy_v3_v3(cur, scene->cursor.location);
+
+    invert_m4_m4(mat, ob->obmat);
+    mul_m4_v3(mat, cur);
+
+    if (totelem[0]) {
+      pb = pblock[0] = MEM_callocN(sizeof(char) * totelem[0], "sort_bmelem vert pblock");
+      sb = sblock[0] = MEM_callocN(sizeof(BMElemSort) * totelem[0], "sort_bmelem vert sblock");
+
+      BM_ITER_MESH_INDEX (ve, &iter, em->bm, BM_VERTS_OF_MESH, i) {
+        if (BM_elem_flag_test(ve, flag)) {
+          pb[i] = false;
+          sb[affected[0]].org_idx = i;
+          sb[affected[0]++].srt = len_squared_v3v3(cur, ve->co) * fact;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+
+    if (totelem[1]) {
+      pb = pblock[1] = MEM_callocN(sizeof(char) * totelem[1], "sort_bmelem edge pblock");
+      sb = sblock[1] = MEM_callocN(sizeof(BMElemSort) * totelem[1], "sort_bmelem edge sblock");
+
+      BM_ITER_MESH_INDEX (ed, &iter, em->bm, BM_EDGES_OF_MESH, i) {
+        if (BM_elem_flag_test(ed, flag)) {
+          float co[3];
+          mid_v3_v3v3(co, ed->v1->co, ed->v2->co);
+
+          pb[i] = false;
+          sb[affected[1]].org_idx = i;
+          sb[affected[1]++].srt = len_squared_v3v3(cur, co) * fact;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+
+    if (totelem[2]) {
+      pb = pblock[2] = MEM_callocN(sizeof(char) * totelem[2], "sort_bmelem face pblock");
+      sb = sblock[2] = MEM_callocN(sizeof(BMElemSort) * totelem[2], "sort_bmelem face sblock");
+
+      BM_ITER_MESH_INDEX (fa, &iter, em->bm, BM_FACES_OF_MESH, i) {
+        if (BM_elem_flag_test(fa, flag)) {
+          float co[3];
+          BM_face_calc_center_median(fa, co);
+
+          pb[i] = false;
+          sb[affected[2]].org_idx = i;
+          sb[affected[2]++].srt = len_squared_v3v3(cur, co) * fact;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+  }
+
+  /* Faces only! */
+  else if (action == SRT_MATERIAL && totelem[2]) {
+    pb = pblock[2] = MEM_callocN(sizeof(char) * totelem[2], "sort_bmelem face pblock");
+    sb = sblock[2] = MEM_callocN(sizeof(BMElemSort) * totelem[2], "sort_bmelem face sblock");
+
+    BM_ITER_MESH_INDEX (fa, &iter, em->bm, BM_FACES_OF_MESH, i) {
+      if (BM_elem_flag_test(fa, flag)) {
+        /* Reverse materials' order, not order of faces inside each mat! */
+        /* NOTE: cannot use totcol, as mat_nr may sometimes be greater... */
+        float srt = reverse ? (float)(MAXMAT - fa->mat_nr) : (float)fa->mat_nr;
+        pb[i] = false;
+        sb[affected[2]].org_idx = i;
+        /* Multiplying with totface and adding i ensures us
+         * we keep current order for all faces of same mat. */
+        sb[affected[2]++].srt = srt * ((float)totelem[2]) + ((float)i);
+        // printf("e: %d; srt: %f; final: %f\n",
+        //        i, srt, srt * ((float)totface) + ((float)i));
+      }
+      else {
+        pb[i] = true;
+      }
+    }
+  }
+
+  else if (action == SRT_SELECTED) {
+    uint *tbuf[3] = {NULL, NULL, NULL}, *tb;
+
+    if (totelem[0]) {
+      tb = tbuf[0] = MEM_callocN(sizeof(int) * totelem[0], "sort_bmelem vert tbuf");
+      mp = map[0] = MEM_callocN(sizeof(int) * totelem[0], "sort_bmelem vert map");
+
+      BM_ITER_MESH_INDEX (ve, &iter, em->bm, BM_VERTS_OF_MESH, i) {
+        if (BM_elem_flag_test(ve, flag)) {
+          mp[affected[0]++] = i;
+        }
+        else {
+          *tb = i;
+          tb++;
+        }
+      }
+    }
+
+    if (totelem[1]) {
+      tb = tbuf[1] = MEM_callocN(sizeof(int) * totelem[1], "sort_bmelem edge tbuf");
+      mp = map[1] = MEM_callocN(sizeof(int) * totelem[1], "sort_bmelem edge map");
+
+      BM_ITER_MESH_INDEX (ed, &iter, em->bm, BM_EDGES_OF_MESH, i) {
+        if (BM_elem_flag_test(ed, flag)) {
+          mp[affected[1]++] = i;
+        }
+        else {
+          *tb = i;
+          tb++;
+        }
+      }
+    }
+
+    if (totelem[2]) {
+      tb = tbuf[2] = MEM_callocN(sizeof(int) * totelem[2], "sort_bmelem face tbuf");
+      mp = map[2] = MEM_callocN(sizeof(int) * totelem[2], "sort_bmelem face map");
+
+      BM_ITER_MESH_INDEX (fa, &iter, em->bm, BM_FACES_OF_MESH, i) {
+        if (BM_elem_flag_test(fa, flag)) {
+          mp[affected[2]++] = i;
+        }
+        else {
+          *tb = i;
+          tb++;
+        }
+      }
+    }
+
+    for (j = 3; j--;) {
+      int tot = totelem[j];
+      int aff = affected[j];
+      tb = tbuf[j];
+      mp = map[j];
+      if (!(tb && mp)) {
+        continue;
+      }
+      if (ELEM(aff, 0, tot)) {
+        MEM_freeN(tb);
+        MEM_freeN(mp);
+        map[j] = NULL;
+        continue;
+      }
+      if (reverse) {
+        memcpy(tb + (tot - aff), mp, aff * sizeof(int));
+      }
+      else {
+        memcpy(mp + aff, tb, (tot - aff) * sizeof(int));
+        tb = mp;
+        mp = map[j] = tbuf[j];
+        tbuf[j] = tb;
+      }
+
+      /* Reverse mapping, we want an org2new one! */
+      for (i = tot, tb = tbuf[j] + tot - 1; i--; tb--) {
+        mp[*tb] = i;
+      }
+      MEM_freeN(tbuf[j]);
+    }
+  }
+
+  else if (action == SRT_RANDOMIZE) {
+    if (totelem[0]) {
+      /* Re-init random generator for each element type, to get consistent random when
+       * enabling/disabling an element type. */
+      RNG *rng = BLI_rng_new_srandom(seed);
+      pb = pblock[0] = MEM_callocN(sizeof(char) * totelem[0], "sort_bmelem vert pblock");
+      sb = sblock[0] = MEM_callocN(sizeof(BMElemSort) * totelem[0], "sort_bmelem vert sblock");
+
+      BM_ITER_MESH_INDEX (ve, &iter, em->bm, BM_VERTS_OF_MESH, i) {
+        if (BM_elem_flag_test(ve, flag)) {
+          pb[i] = false;
+          sb[affected[0]].org_idx = i;
+          sb[affected[0]++].srt = BLI_rng_get_float(rng);
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+
+      BLI_rng_free(rng);
+    }
+
+    if (totelem[1]) {
+      RNG *rng = BLI_rng_new_srandom(seed);
+      pb = pblock[1] = MEM_callocN(sizeof(char) * totelem[1], "sort_bmelem edge pblock");
+      sb = sblock[1] = MEM_callocN(sizeof(BMElemSort) * totelem[1], "sort_bmelem edge sblock");
+
+      BM_ITER_MESH_INDEX (ed, &iter, em->bm, BM_EDGES_OF_MESH, i) {
+        if (BM_elem_flag_test(ed, flag)) {
+          pb[i] = false;
+          sb[affected[1]].org_idx = i;
+          sb[affected[1]++].srt = BLI_rng_get_float(rng);
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+
+      BLI_rng_free(rng);
+    }
+
+    if (totelem[2]) {
+      RNG *rng = BLI_rng_new_srandom(seed);
+      pb = pblock[2] = MEM_callocN(sizeof(char) * totelem[2], "sort_bmelem face pblock");
+      sb = sblock[2] = MEM_callocN(sizeof(BMElemSort) * totelem[2], "sort_bmelem face sblock");
+
+      BM_ITER_MESH_INDEX (fa, &iter, em->bm, BM_FACES_OF_MESH, i) {
+        if (BM_elem_flag_test(fa, flag)) {
+          pb[i] = false;
+          sb[affected[2]].org_idx = i;
+          sb[affected[2]++].srt = BLI_rng_get_float(rng);
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+
+      BLI_rng_free(rng);
+    }
+  }
+
+  else if (action == SRT_REVERSE) {
+    if (totelem[0]) {
+      pb = pblock[0] = MEM_callocN(sizeof(char) * totelem[0], "sort_bmelem vert pblock");
+      sb = sblock[0] = MEM_callocN(sizeof(BMElemSort) * totelem[0], "sort_bmelem vert sblock");
+
+      BM_ITER_MESH_INDEX (ve, &iter, em->bm, BM_VERTS_OF_MESH, i) {
+        if (BM_elem_flag_test(ve, flag)) {
+          pb[i] = false;
+          sb[affected[0]].org_idx = i;
+          sb[affected[0]++].srt = (float)-i;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+
+    if (totelem[1]) {
+      pb = pblock[1] = MEM_callocN(sizeof(char) * totelem[1], "sort_bmelem edge pblock");
+      sb = sblock[1] = MEM_callocN(sizeof(BMElemSort) * totelem[1], "sort_bmelem edge sblock");
+
+      BM_ITER_MESH_INDEX (ed, &iter, em->bm, BM_EDGES_OF_MESH, i) {
+        if (BM_elem_flag_test(ed, flag)) {
+          pb[i] = false;
+          sb[affected[1]].org_idx = i;
+          sb[affected[1]++].srt = (float)-i;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+
+    if (totelem[2]) {
+      pb = pblock[2] = MEM_callocN(sizeof(char) * totelem[2], "sort_bmelem face pblock");
+      sb = sblock[2] = MEM_callocN(sizeof(BMElemSort) * totelem[2], "sort_bmelem face sblock");
+
+      BM_ITER_MESH_INDEX (fa, &iter, em->bm, BM_FACES_OF_MESH, i) {
+        if (BM_elem_flag_test(fa, flag)) {
+          pb[i] = false;
+          sb[affected[2]].org_idx = i;
+          sb[affected[2]++].srt = (float)-i;
+        }
+        else {
+          pb[i] = true;
+        }
+      }
+    }
+  }
+
+  // printf("%d vertices: %d to be affected...\n", totelem[0], affected[0]);
+  // printf("%d edges: %d to be affected...\n", totelem[1], affected[1]);
+  // printf("%d faces: %d to be affected...\n", totelem[2], affected[2]);
+  if (affected[0] == 0 && affected[1] == 0 && affected[2] == 0) {
+    for (j = 3; j--;) {
+      if (pblock[j]) {
+        MEM_freeN(pblock[j]);
+      }
+      if (sblock[j]) {
+        MEM_freeN(sblock[j]);
+      }
+      if (map[j]) {
+        MEM_freeN(map[j]);
+      }
+    }
+    return;
+  }
+
+  /* Sort affected elements, and populate mapping arrays, if needed. */
+  for (j = 3; j--;) {
+    pb = pblock[j];
+    sb = sblock[j];
+    if (pb && sb && !map[j]) {
+      const char *p_blk;
+      BMElemSort *s_blk;
+      int tot = totelem[j];
+      int aff = affected[j];
+
+      qsort(sb, aff, sizeof(BMElemSort), bmelemsort_comp);
+
+      mp = map[j] = MEM_mallocN(sizeof(int) * tot, "sort_bmelem map");
+      p_blk = pb + tot - 1;
+      s_blk = sb + aff - 1;
+      for (i = tot; i--; p_blk--) {
+        if (*p_blk) { /* Protected! */
+          mp[i] = i;
+        }
+        else {
+          mp[s_blk->org_idx] = i;
+          s_blk--;
+        }
+      }
+    }
+    if (pb) {
+      MEM_freeN(pb);
+    }
+    if (sb) {
+      MEM_freeN(sb);
+    }
+  }
+
+  BM_mesh_remap(em->bm, map[0], map[1], map[2]);
+  DEG_id_tag_update(ob->data, ID_RECALC_GEOMETRY);
+  WM_event_add_notifier(C, NC_GEOM | ND_DATA, ob->data);
+
+  for (j = 3; j--;) {
+    if (map[j]) {
+      MEM_freeN(map[j]);
+    }
+  }
+}
+
+static int edbm_sort_elements_exec(bContext *C, wmOperator *op)
+{
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Object *ob_active = CTX_data_edit_object(C);
+
+  /* may be NULL */
+  RegionView3D *rv3d = ED_view3d_context_rv3d(C);
+
+  const int action = RNA_enum_get(op->ptr, "type");
+  PropertyRNA *prop_elem_types = RNA_struct_find_property(op->ptr, "elements");
+  const bool use_reverse = RNA_boolean_get(op->ptr, "reverse");
+  uint seed = RNA_int_get(op->ptr, "seed");
+  int elem_types = 0;
+
+  if (ELEM(action, SRT_VIEW_ZAXIS, SRT_VIEW_XAXIS)) {
+    if (rv3d == NULL) {
+      BKE_report(op->reports, RPT_ERROR, "View not found, cannot sort by view axis");
+      return OPERATOR_CANCELLED;
+    }
+  }
+
+  /* If no elem_types set, use current selection mode to set it! */
+  if (RNA_property_is_set(op->ptr, prop_elem_types)) {
+    elem_types = RNA_property_enum_get(op->ptr, prop_elem_types);
+  }
+  else {
+    BMEditMesh *em = BKE_editmesh_from_object(ob_active);
+    if (em->selectmode & SCE_SELECT_VERTEX) {
+      elem_types |= BM_VERT;
+    }
+    if (em->selectmode & SCE_SELECT_EDGE) {
+      elem_types |= BM_EDGE;
+    }
+    if (em->selectmode & SCE_SELECT_FACE) {
+      elem_types |= BM_FACE;
+    }
+    RNA_enum_set(op->ptr, "elements", elem_types);
+  }
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *ob = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(ob);
+    BMesh *bm = em->bm;
+
+    if (!((elem_types & BM_VERT && bm->totvertsel > 0) ||
+          (elem_types & BM_EDGE && bm->totedgesel > 0) ||
+          (elem_types & BM_FACE && bm->totfacesel > 0))) {
+      continue;
+    }
+
+    int seed_iter = seed;
+
+    /* This gives a consistent result regardless of object order */
+    if (ob_index) {
+      seed_iter += BLI_ghashutil_strhash_p(ob->id.name);
+    }
+
+    sort_bmelem_flag(
+        C, scene, ob, rv3d, elem_types, BM_ELEM_SELECT, action, use_reverse, seed_iter);
+  }
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+static bool edbm_sort_elements_poll_property(const bContext *UNUSED(C),
+                                             wmOperator *op,
+                                             const PropertyRNA *prop)
+{
+  const char *prop_id = RNA_property_identifier(prop);
+  const int action = RNA_enum_get(op->ptr, "type");
+
+  /* Only show seed for randomize action! */
+  if (STREQ(prop_id, "seed")) {
+    if (action == SRT_RANDOMIZE) {
+      return true;
+    }
+    return false;
+  }
+
+  /* Hide seed for reverse and randomize actions! */
+  if (STREQ(prop_id, "reverse")) {
+    if (ELEM(action, SRT_RANDOMIZE, SRT_REVERSE)) {
+      return false;
+    }
+    return true;
+  }
+
+  return true;
+}
+
+void MESH_OT_sort_elements(wmOperatorType *ot)
+{
+  static const EnumPropertyItem type_items[] = {
+      {SRT_VIEW_ZAXIS,
+       "VIEW_ZAXIS",
+       0,
+       "View Z Axis",
+       "Sort selected elements from farthest to nearest one in current view"},
+      {SRT_VIEW_XAXIS,
+       "VIEW_XAXIS",
+       0,
+       "View X Axis",
+       "Sort selected elements from left to right one in current view"},
+      {SRT_CURSOR_DISTANCE,
+       "CURSOR_DISTANCE",
+       0,
+       "Cursor Distance",
+       "Sort selected elements from nearest to farthest from 3D cursor"},
+      {SRT_MATERIAL,
+       "MATERIAL",
+       0,
+       "Material",
+       "Sort selected faces from smallest to greatest material index"},
+      {SRT_SELECTED,
+       "SELECTED",
+       0,
+       "Selected",
+       "Move all selected elements in first places, preserving their relative order.\n"
+       "Warning: This will affect unselected elements' indices as well"},
+      {SRT_RANDOMIZE, "RANDOMIZE", 0, "Randomize", "Randomize order of selected elements"},
+      {SRT_REVERSE, "REVERSE", 0, "Reverse", "Reverse current order of selected elements"},
+      {0, NULL, 0, NULL, NULL},
+  };
+
+  static const EnumPropertyItem elem_items[] = {
+      {BM_VERT, "VERT", 0, "Vertices", ""},
+      {BM_EDGE, "EDGE", 0, "Edges", ""},
+      {BM_FACE, "FACE", 0, "Faces", ""},
+      {0, NULL, 0, NULL, NULL},
+  };
+
+  /* identifiers */
+  ot->name = "Sort Mesh Elements";
+  ot->description =
+      "The order of selected vertices/edges/faces is modified, based on a given method";
+  ot->idname = "MESH_OT_sort_elements";
+
+  /* api callbacks */
+  ot->invoke = WM_menu_invoke;
+  ot->exec = edbm_sort_elements_exec;
+  ot->poll = ED_operator_editmesh;
+  ot->poll_property = edbm_sort_elements_poll_property;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  ot->prop = RNA_def_enum(ot->srna,
+                          "type",
+                          type_items,
+                          SRT_VIEW_ZAXIS,
+                          "Type",
+                          "Type of reordering operation to apply");
+  RNA_def_enum_flag(ot->srna,
+                    "elements",
+                    elem_items,
+                    BM_VERT,
+                    "Elements",
+                    "Which elements to affect (vertices, edges and/or faces)");
+  RNA_def_boolean(ot->srna, "reverse", false, "Reverse", "Reverse the sorting effect");
+  RNA_def_int(ot->srna, "seed", 0, 0, INT_MAX, "Seed", "Seed for random-based operations", 0, 255);
+}
