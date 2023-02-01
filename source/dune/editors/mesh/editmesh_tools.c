@@ -3656,3 +3656,1078 @@ void MESH_OT_shape_propagate_to_all(wmOperatorType *ot)
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
+
+
+/* -------------------------------------------------------------------- */
+/** \name Blend from Shape Operator
+ * \{ */
+
+/* BMESH_TODO this should be properly encapsulated in a bmop.  but later. */
+static int edbm_blend_from_shape_exec(bContext *C, wmOperator *op)
+{
+  Object *obedit_ref = CTX_data_edit_object(C);
+  Mesh *me_ref = obedit_ref->data;
+  Key *key_ref = me_ref->key;
+  KeyBlock *kb_ref = NULL;
+  BMEditMesh *em_ref = me_ref->edit_mesh;
+  BMVert *eve;
+  BMIter iter;
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  float co[3], *sco;
+  int totshape_ref = 0;
+
+  const float blend = RNA_float_get(op->ptr, "blend");
+  int shape_ref = RNA_enum_get(op->ptr, "shape");
+  const bool use_add = RNA_boolean_get(op->ptr, "add");
+
+  /* Sanity check. */
+  totshape_ref = CustomData_number_of_layers(&em_ref->bm->vdata, CD_SHAPEKEY);
+
+  if (totshape_ref == 0 || shape_ref < 0) {
+    BKE_report(op->reports, RPT_ERROR, "Active mesh does not have shape keys");
+    return OPERATOR_CANCELLED;
+  }
+  if (shape_ref >= totshape_ref) {
+    /* This case occurs if operator was used before on object with more keys than current one. */
+    shape_ref = 0; /* default to basis */
+  }
+
+  /* Get shape key - needed for finding reference shape (for add mode only). */
+  if (key_ref) {
+    kb_ref = BLI_findlink(&key_ref->block, shape_ref);
+  }
+
+  int tot_selected_verts_objects = 0;
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    Mesh *me = obedit->data;
+    Key *key = me->key;
+    KeyBlock *kb = NULL;
+    BMEditMesh *em = me->edit_mesh;
+    int shape;
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+    tot_selected_verts_objects++;
+
+    if (!key) {
+      continue;
+    }
+    kb = BKE_keyblock_find_name(key, kb_ref->name);
+    shape = BLI_findindex(&key->block, kb);
+
+    if (kb) {
+      /* Perform blending on selected vertices. */
+      BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
+        if (!BM_elem_flag_test(eve, BM_ELEM_SELECT) || BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+          continue;
+        }
+
+        /* Get coordinates of shapekey we're blending from. */
+        sco = CustomData_bmesh_get_n(&em->bm->vdata, eve->head.data, CD_SHAPEKEY, shape);
+        copy_v3_v3(co, sco);
+
+        if (use_add) {
+          /* In add mode, we add relative shape key offset. */
+          const float *rco = CustomData_bmesh_get_n(
+              &em->bm->vdata, eve->head.data, CD_SHAPEKEY, kb->relative);
+          sub_v3_v3v3(co, co, rco);
+
+          madd_v3_v3fl(eve->co, co, blend);
+        }
+        else {
+          /* In blend mode, we interpolate to the shape key. */
+          interp_v3_v3v3(eve->co, eve->co, co, blend);
+        }
+      }
+      EDBM_update(me,
+                  &(const struct EDBMUpdate_Params){
+                      .calc_looptri = true,
+                      .calc_normals = true,
+                      .is_destructive = false,
+                  });
+    }
+  }
+  MEM_freeN(objects);
+
+  if (tot_selected_verts_objects == 0) {
+    BKE_report(op->reports, RPT_ERROR, "No selected vertex");
+    return OPERATOR_CANCELLED;
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+static const EnumPropertyItem *shape_itemf(bContext *C,
+                                           PointerRNA *UNUSED(ptr),
+                                           PropertyRNA *UNUSED(prop),
+                                           bool *r_free)
+{
+  Object *obedit = CTX_data_edit_object(C);
+  BMEditMesh *em;
+  EnumPropertyItem *item = NULL;
+  int totitem = 0;
+
+  if ((obedit && obedit->type == OB_MESH) && (em = BKE_editmesh_from_object(obedit)) &&
+      CustomData_has_layer(&em->bm->vdata, CD_SHAPEKEY)) {
+    EnumPropertyItem tmp = {0, "", 0, "", ""};
+    int a;
+
+    for (a = 0; a < em->bm->vdata.totlayer; a++) {
+      if (em->bm->vdata.layers[a].type != CD_SHAPEKEY) {
+        continue;
+      }
+
+      tmp.value = totitem;
+      tmp.identifier = em->bm->vdata.layers[a].name;
+      tmp.name = em->bm->vdata.layers[a].name;
+      /* RNA_enum_item_add sets totitem itself! */
+      RNA_enum_item_add(&item, &totitem, &tmp);
+    }
+  }
+
+  RNA_enum_item_end(&item, &totitem);
+  *r_free = true;
+
+  return item;
+}
+
+static void edbm_blend_from_shape_ui(bContext *C, wmOperator *op)
+{
+  uiLayout *layout = op->layout;
+  Object *obedit = CTX_data_edit_object(C);
+  Mesh *me = obedit->data;
+  PointerRNA ptr_key;
+
+  RNA_id_pointer_create((ID *)me->key, &ptr_key);
+
+  uiLayoutSetPropSep(layout, true);
+  uiLayoutSetPropDecorate(layout, false);
+
+  uiItemPointerR(layout, op->ptr, "shape", &ptr_key, "key_blocks", NULL, ICON_SHAPEKEY_DATA);
+  uiItemR(layout, op->ptr, "blend", 0, NULL, ICON_NONE);
+  uiItemR(layout, op->ptr, "add", 0, NULL, ICON_NONE);
+}
+
+void MESH_OT_blend_from_shape(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Blend from Shape";
+  ot->description = "Blend in shape from a shape key";
+  ot->idname = "MESH_OT_blend_from_shape";
+
+  /* api callbacks */
+  ot->exec = edbm_blend_from_shape_exec;
+  /* disable because search popup closes too easily */
+  //  ot->invoke = WM_operator_props_popup_call;
+  ot->ui = edbm_blend_from_shape_ui;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  prop = RNA_def_enum(
+      ot->srna, "shape", DummyRNA_NULL_items, 0, "Shape", "Shape key to use for blending");
+  RNA_def_enum_funcs(prop, shape_itemf);
+  RNA_def_property_flag(prop, PROP_ENUM_NO_TRANSLATE | PROP_NEVER_UNLINK);
+  RNA_def_float(ot->srna, "blend", 1.0f, -1e3f, 1e3f, "Blend", "Blending factor", -2.0f, 2.0f);
+  RNA_def_boolean(ot->srna, "add", true, "Add", "Add rather than blend between shapes");
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Solidify Mesh Operator
+ * \{ */
+
+static int edbm_solidify_exec(bContext *C, wmOperator *op)
+{
+  const float thickness = RNA_float_get(op->ptr, "thickness");
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+
+    if (!EDBM_op_init(
+            em, &bmop, op, "solidify geom=%hf thickness=%f", BM_ELEM_SELECT, thickness)) {
+      continue;
+    }
+
+    /* deselect only the faces in the region to be solidified (leave wire
+     * edges and loose verts selected, as there will be no corresponding
+     * geometry selected below) */
+    BMO_slot_buffer_hflag_disable(bm, bmop.slots_in, "geom", BM_FACE, BM_ELEM_SELECT, true);
+
+    /* run the solidify operator */
+    BMO_op_exec(bm, &bmop);
+
+    /* select the newly generated faces */
+    BMO_slot_buffer_hflag_enable(bm, bmop.slots_out, "geom.out", BM_FACE, BM_ELEM_SELECT, true);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_solidify(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+  /* identifiers */
+  ot->name = "Solidify";
+  ot->description = "Create a solid skin by extruding, compensating for sharp angles";
+  ot->idname = "MESH_OT_solidify";
+
+  /* api callbacks */
+  ot->exec = edbm_solidify_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  prop = RNA_def_float_distance(
+      ot->srna, "thickness", 0.01f, -1e4f, 1e4f, "Thickness", "", -10.0f, 10.0f);
+  RNA_def_property_ui_range(prop, -10.0, 10.0, 0.1, 4);
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Knife Subdivide Operator
+ * \{ */
+
+#define KNIFE_EXACT 1
+#define KNIFE_MIDPOINT 2
+#define KNIFE_MULTICUT 3
+
+static const EnumPropertyItem knife_items[] = {
+    {KNIFE_EXACT, "EXACT", 0, "Exact", ""},
+    {KNIFE_MIDPOINT, "MIDPOINTS", 0, "Midpoints", ""},
+    {KNIFE_MULTICUT, "MULTICUT", 0, "Multicut", ""},
+    {0, NULL, 0, NULL, NULL},
+};
+
+/* bm_edge_seg_isect() Determines if and where a mouse trail intersects an BMEdge */
+
+static float bm_edge_seg_isect(const float sco_a[2],
+                               const float sco_b[2],
+                               float (*mouse_path)[2],
+                               int len,
+                               char mode,
+                               int *isected)
+{
+#define MAXSLOPE 100000
+  float x11, y11, x12 = 0, y12 = 0, x2max, x2min, y2max;
+  float y2min, dist, lastdist = 0, xdiff2, xdiff1;
+  float m1, b1, m2, b2, x21, x22, y21, y22, xi;
+  float yi, x1min, x1max, y1max, y1min, perc = 0;
+  float threshold = 0.0;
+  int i;
+
+  // threshold = 0.000001; /* tolerance for vertex intersection */
+  // XXX threshold = scene->toolsettings->select_thresh / 100;
+
+  /* Get screen coords of verts */
+  x21 = sco_a[0];
+  y21 = sco_a[1];
+
+  x22 = sco_b[0];
+  y22 = sco_b[1];
+
+  xdiff2 = (x22 - x21);
+  if (xdiff2) {
+    m2 = (y22 - y21) / xdiff2;
+    b2 = ((x22 * y21) - (x21 * y22)) / xdiff2;
+  }
+  else {
+    m2 = MAXSLOPE; /* Vertical slope. */
+    b2 = x22;
+  }
+
+  *isected = 0;
+
+  /* check for _exact_ vertex intersection first */
+  if (mode != KNIFE_MULTICUT) {
+    for (i = 0; i < len; i++) {
+      if (i > 0) {
+        x11 = x12;
+        y11 = y12;
+      }
+      else {
+        x11 = mouse_path[i][0];
+        y11 = mouse_path[i][1];
+      }
+      x12 = mouse_path[i][0];
+      y12 = mouse_path[i][1];
+
+      /* test e->v1 */
+      if ((x11 == x21 && y11 == y21) || (x12 == x21 && y12 == y21)) {
+        perc = 0;
+        *isected = 1;
+        return perc;
+      }
+      /* test e->v2 */
+      if ((x11 == x22 && y11 == y22) || (x12 == x22 && y12 == y22)) {
+        perc = 0;
+        *isected = 2;
+        return perc;
+      }
+    }
+  }
+
+  /* now check for edge intersect (may produce vertex intersection as well) */
+  for (i = 0; i < len; i++) {
+    if (i > 0) {
+      x11 = x12;
+      y11 = y12;
+    }
+    else {
+      x11 = mouse_path[i][0];
+      y11 = mouse_path[i][1];
+    }
+    x12 = mouse_path[i][0];
+    y12 = mouse_path[i][1];
+
+    /* Calculate the distance from point to line. */
+    if (m2 != MAXSLOPE) {
+      /* `sqrt(m2 * m2 + 1);` Only looking for change in sign.  Skip extra math. */
+      dist = (y12 - m2 * x12 - b2);
+    }
+    else {
+      dist = x22 - x12;
+    }
+
+    if (i == 0) {
+      lastdist = dist;
+    }
+
+    /* if dist changes sign, and intersect point in edge's Bound Box */
+    if ((lastdist * dist) <= 0) {
+      xdiff1 = (x12 - x11); /* Equation of line between last 2 points */
+      if (xdiff1) {
+        m1 = (y12 - y11) / xdiff1;
+        b1 = ((x12 * y11) - (x11 * y12)) / xdiff1;
+      }
+      else {
+        m1 = MAXSLOPE;
+        b1 = x12;
+      }
+      x2max = max_ff(x21, x22) + 0.001f; /* Prevent missed edges. */
+      x2min = min_ff(x21, x22) - 0.001f; /* Due to round off error. */
+      y2max = max_ff(y21, y22) + 0.001f;
+      y2min = min_ff(y21, y22) - 0.001f;
+
+      /* Found an intersect,  calc intersect point */
+      if (m1 == m2) { /* co-incident lines */
+        /* cut at 50% of overlap area */
+        x1max = max_ff(x11, x12);
+        x1min = min_ff(x11, x12);
+        xi = (min_ff(x2max, x1max) + max_ff(x2min, x1min)) / 2.0f;
+
+        y1max = max_ff(y11, y12);
+        y1min = min_ff(y11, y12);
+        yi = (min_ff(y2max, y1max) + max_ff(y2min, y1min)) / 2.0f;
+      }
+      else if (m2 == MAXSLOPE) {
+        xi = x22;
+        yi = m1 * x22 + b1;
+      }
+      else if (m1 == MAXSLOPE) {
+        xi = x12;
+        yi = m2 * x12 + b2;
+      }
+      else {
+        xi = (b1 - b2) / (m2 - m1);
+        yi = (b1 * m2 - m1 * b2) / (m2 - m1);
+      }
+
+      /* Intersect inside bounding box of edge? */
+      if ((xi >= x2min) && (xi <= x2max) && (yi <= y2max) && (yi >= y2min)) {
+        /* Test for vertex intersect that may be 'close enough'. */
+        if (mode != KNIFE_MULTICUT) {
+          if (xi <= (x21 + threshold) && xi >= (x21 - threshold)) {
+            if (yi <= (y21 + threshold) && yi >= (y21 - threshold)) {
+              *isected = 1;
+              perc = 0;
+              break;
+            }
+          }
+          if (xi <= (x22 + threshold) && xi >= (x22 - threshold)) {
+            if (yi <= (y22 + threshold) && yi >= (y22 - threshold)) {
+              *isected = 2;
+              perc = 0;
+              break;
+            }
+          }
+        }
+        if ((m2 <= 1.0f) && (m2 >= -1.0f)) {
+          perc = (xi - x21) / (x22 - x21);
+        }
+        else {
+          perc = (yi - y21) / (y22 - y21); /* lower slope more accurate */
+        }
+        // isect = 32768.0 * (perc + 0.0000153); /* Percentage in 1 / 32768ths */
+
+        break;
+      }
+    }
+    lastdist = dist;
+  }
+  return perc;
+}
+
+#define ELE_EDGE_CUT 1
+
+static int edbm_knife_cut_exec(bContext *C, wmOperator *op)
+{
+  Object *obedit = CTX_data_edit_object(C);
+  BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  BMesh *bm = em->bm;
+  ARegion *region = CTX_wm_region(C);
+  BMVert *bv;
+  BMIter iter;
+  BMEdge *be;
+  BMOperator bmop;
+  float isect = 0.0f;
+  int isected, i;
+  short numcuts = 1;
+  const short mode = RNA_int_get(op->ptr, "type");
+
+  /* Allocated variables. */
+  float(*screen_vert_coords)[2], (*sco)[2], (*mouse_path)[2];
+
+  /* edit-object needed for matrix, and region->regiondata for projections to work */
+  if (ELEM(NULL, obedit, region, region->regiondata)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  if (bm->totvertsel < 2) {
+    BKE_report(op->reports, RPT_ERROR, "No edges are selected to operate on");
+    return OPERATOR_CANCELLED;
+  }
+
+  const int len = RNA_collection_length(op->ptr, "path");
+
+  if (len < 2) {
+    BKE_report(op->reports, RPT_ERROR, "Mouse path too short");
+    return OPERATOR_CANCELLED;
+  }
+
+  mouse_path = MEM_mallocN(len * sizeof(*mouse_path), __func__);
+
+  /* get the cut curve */
+  RNA_BEGIN (op->ptr, itemptr, "path") {
+    RNA_float_get_array(&itemptr, "loc", (float *)&mouse_path[len]);
+  }
+  RNA_END;
+
+  /* for ED_view3d_project_float_object */
+  ED_view3d_init_mats_rv3d(obedit, region->regiondata);
+
+  /* TODO: investigate using index lookup for #screen_vert_coords() rather than a hash table. */
+
+  /* the floating point coordinates of verts in screen space will be
+   * stored in a hash table according to the vertices pointer */
+  screen_vert_coords = sco = MEM_mallocN(sizeof(float[2]) * bm->totvert, __func__);
+
+  BM_ITER_MESH_INDEX (bv, &iter, bm, BM_VERTS_OF_MESH, i) {
+    if (ED_view3d_project_float_object(region, bv->co, *sco, V3D_PROJ_TEST_CLIP_NEAR) !=
+        V3D_PROJ_RET_OK) {
+      copy_v2_fl(*sco, FLT_MAX); /* set error value */
+    }
+    BM_elem_index_set(bv, i); /* set_inline */
+    sco++;
+  }
+  bm->elem_index_dirty &= ~BM_VERT; /* clear dirty flag */
+
+  if (!EDBM_op_init(em, &bmop, op, "subdivide_edges")) {
+    MEM_freeN(mouse_path);
+    MEM_freeN(screen_vert_coords);
+    return OPERATOR_CANCELLED;
+  }
+
+  /* Store percentage of edge cut for KNIFE_EXACT here. */
+  BMOpSlot *slot_edge_percents = BMO_slot_get(bmop.slots_in, "edge_percents");
+  BM_ITER_MESH (be, &iter, bm, BM_EDGES_OF_MESH) {
+    bool is_cut = false;
+    if (BM_elem_flag_test(be, BM_ELEM_SELECT)) {
+      const float *sco_a = screen_vert_coords[BM_elem_index_get(be->v1)];
+      const float *sco_b = screen_vert_coords[BM_elem_index_get(be->v2)];
+
+      /* check for error value (vert can't be projected) */
+      if ((sco_a[0] != FLT_MAX) && (sco_b[0] != FLT_MAX)) {
+        isect = bm_edge_seg_isect(sco_a, sco_b, mouse_path, len, mode, &isected);
+
+        if (isect != 0.0f) {
+          if (!ELEM(mode, KNIFE_MULTICUT, KNIFE_MIDPOINT)) {
+            BMO_slot_map_float_insert(&bmop, slot_edge_percents, be, isect);
+          }
+        }
+      }
+    }
+
+    BMO_edge_flag_set(bm, be, ELE_EDGE_CUT, is_cut);
+  }
+
+  /* free all allocs */
+  MEM_freeN(screen_vert_coords);
+  MEM_freeN(mouse_path);
+
+  BM_custom_loop_normals_to_vector_layer(bm);
+
+  BMO_slot_buffer_from_enabled_flag(bm, &bmop, bmop.slots_in, "edges", BM_EDGE, ELE_EDGE_CUT);
+
+  if (mode == KNIFE_MIDPOINT) {
+    numcuts = 1;
+  }
+  BMO_slot_int_set(bmop.slots_in, "cuts", numcuts);
+
+  BMO_slot_int_set(bmop.slots_in, "quad_corner_type", SUBD_CORNER_STRAIGHT_CUT);
+  BMO_slot_bool_set(bmop.slots_in, "use_single_edge", false);
+  BMO_slot_bool_set(bmop.slots_in, "use_grid_fill", false);
+
+  BMO_slot_float_set(bmop.slots_in, "radius", 0);
+
+  BMO_op_exec(bm, &bmop);
+  if (!EDBM_op_finish(em, &bmop, op, true)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  BM_custom_loop_normals_from_vector_layer(bm, false);
+
+  EDBM_update(obedit->data,
+              &(const struct EDBMUpdate_Params){
+                  .calc_looptri = true,
+                  .calc_normals = false,
+                  .is_destructive = true,
+              });
+
+  return OPERATOR_FINISHED;
+}
+
+#undef ELE_EDGE_CUT
+
+void MESH_OT_knife_cut(wmOperatorType *ot)
+{
+  ot->name = "Knife Cut";
+  ot->description = "Cut selected edges and faces into parts";
+  ot->idname = "MESH_OT_knife_cut";
+
+  ot->invoke = WM_gesture_lines_invoke;
+  ot->modal = WM_gesture_lines_modal;
+  ot->exec = edbm_knife_cut_exec;
+
+  ot->poll = EDBM_view3d_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_DEPENDS_ON_CURSOR;
+
+  /* properties */
+  PropertyRNA *prop;
+  prop = RNA_def_collection_runtime(ot->srna, "path", &RNA_OperatorMousePath, "Path", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+
+  RNA_def_enum(ot->srna, "type", knife_items, KNIFE_EXACT, "Type", "");
+
+  /* internal */
+  RNA_def_int(
+      ot->srna, "cursor", WM_CURSOR_KNIFE, 0, WM_CURSOR_NUM, "Cursor", "", 0, WM_CURSOR_NUM);
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Separate Parts Operator
+ * \{ */
+
+enum {
+  MESH_SEPARATE_SELECTED = 0,
+  MESH_SEPARATE_MATERIAL = 1,
+  MESH_SEPARATE_LOOSE = 2,
+};
+
+/** TODO: Use #mesh_separate_arrays since it's more efficient. */
+static Base *mesh_separate_tagged(
+    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base_old, BMesh *bm_old)
+{
+  Object *obedit = base_old->object;
+  BMesh *bm_new = BM_mesh_create(&bm_mesh_allocsize_default,
+                                 &((struct BMeshCreateParams){
+                                     .use_toolflags = true,
+                                 }));
+  BM_mesh_elem_toolflags_ensure(bm_new); /* needed for 'duplicate' bmo */
+
+  BM_mesh_copy_init_customdata(bm_new, bm_old, &bm_mesh_allocsize_default);
+
+  /* Take into account user preferences for duplicating actions. */
+  const eDupli_ID_Flags dupflag = USER_DUP_MESH | (U.dupflag & USER_DUP_ACT);
+  Base *base_new = ED_object_add_duplicate(bmain, scene, view_layer, base_old, dupflag);
+
+  /* normally would call directly after but in this case delay recalc */
+  // DAG_relations_tag_update(bmain);
+
+  /* new in 2.5 */
+  BKE_object_material_array_assign(bmain,
+                                   base_new->object,
+                                   BKE_object_material_array_p(obedit),
+                                   *BKE_object_material_len_p(obedit),
+                                   false);
+
+  ED_object_base_select(base_new, BA_SELECT);
+
+  BMO_op_callf(bm_old,
+               (BMO_FLAG_DEFAULTS & ~BMO_FLAG_RESPECT_HIDE),
+               "duplicate geom=%hvef dest=%p",
+               BM_ELEM_TAG,
+               bm_new);
+  BMO_op_callf(bm_old,
+               (BMO_FLAG_DEFAULTS & ~BMO_FLAG_RESPECT_HIDE),
+               "delete geom=%hvef context=%i",
+               BM_ELEM_TAG,
+               DEL_FACES);
+
+  /* deselect loose data - this used to get deleted,
+   * we could de-select edges and verts only, but this turns out to be less complicated
+   * since de-selecting all skips selection flushing logic */
+  BM_mesh_elem_hflag_disable_all(bm_old, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, false);
+
+  BM_mesh_normals_update(bm_new);
+
+  BM_mesh_bm_to_me(bmain, bm_new, base_new->object->data, (&(struct BMeshToMeshParams){0}));
+
+  BM_mesh_free(bm_new);
+  ((Mesh *)base_new->object->data)->edit_mesh = NULL;
+
+  return base_new;
+}
+
+static Base *mesh_separate_arrays(Main *bmain,
+                                  Scene *scene,
+                                  ViewLayer *view_layer,
+                                  Base *base_old,
+                                  BMesh *bm_old,
+                                  BMVert **verts,
+                                  uint verts_len,
+                                  BMEdge **edges,
+                                  uint edges_len,
+                                  BMFace **faces,
+                                  uint faces_len)
+{
+  const BMAllocTemplate bm_new_allocsize = {
+      .totvert = verts_len,
+      .totedge = edges_len,
+      .totloop = faces_len * 3,
+      .totface = faces_len,
+  };
+  const bool use_custom_normals = (bm_old->lnor_spacearr != NULL);
+
+  Object *obedit = base_old->object;
+
+  BMesh *bm_new = BM_mesh_create(&bm_new_allocsize, &((struct BMeshCreateParams){0}));
+
+  if (use_custom_normals) {
+    /* Needed so the temporary normal layer is copied too. */
+    BM_mesh_copy_init_customdata_all_layers(bm_new, bm_old, BM_ALL, &bm_new_allocsize);
+  }
+  else {
+    BM_mesh_copy_init_customdata(bm_new, bm_old, &bm_new_allocsize);
+  }
+
+  /* Take into account user preferences for duplicating actions. */
+  const eDupli_ID_Flags dupflag = USER_DUP_MESH | (U.dupflag & USER_DUP_ACT);
+  Base *base_new = ED_object_add_duplicate(bmain, scene, view_layer, base_old, dupflag);
+
+  /* normally would call directly after but in this case delay recalc */
+  // DAG_relations_tag_update(bmain);
+
+  /* new in 2.5 */
+  BKE_object_material_array_assign(bmain,
+                                   base_new->object,
+                                   BKE_object_material_array_p(obedit),
+                                   *BKE_object_material_len_p(obedit),
+                                   false);
+
+  ED_object_base_select(base_new, BA_SELECT);
+
+  BM_mesh_copy_arrays(bm_old, bm_new, verts, verts_len, edges, edges_len, faces, faces_len);
+
+  if (use_custom_normals) {
+    BM_custom_loop_normals_from_vector_layer(bm_new, false);
+  }
+
+  for (uint i = 0; i < verts_len; i++) {
+    BM_vert_kill(bm_old, verts[i]);
+  }
+
+  BM_mesh_bm_to_me(bmain, bm_new, base_new->object->data, (&(struct BMeshToMeshParams){0}));
+
+  BM_mesh_free(bm_new);
+  ((Mesh *)base_new->object->data)->edit_mesh = NULL;
+
+  return base_new;
+}
+
+static bool mesh_separate_selected(
+    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base_old, BMesh *bm_old)
+{
+  /* we may have tags from previous operators */
+  BM_mesh_elem_hflag_disable_all(bm_old, BM_FACE | BM_EDGE | BM_VERT, BM_ELEM_TAG, false);
+
+  /* sel -> tag */
+  BM_mesh_elem_hflag_enable_test(
+      bm_old, BM_FACE | BM_EDGE | BM_VERT, BM_ELEM_TAG, true, false, BM_ELEM_SELECT);
+
+  return (mesh_separate_tagged(bmain, scene, view_layer, base_old, bm_old) != NULL);
+}
+
+/**
+ * Sets an object to a single material. from one of its slots.
+ *
+ * \note This could be used for split-by-material for non mesh types.
+ * \note This could take material data from another object or args.
+ */
+static void mesh_separate_material_assign_mat_nr(Main *bmain, Object *ob, const short mat_nr)
+{
+  ID *obdata = ob->data;
+
+  const short *totcolp = BKE_id_material_len_p(obdata);
+  Material ***matarar = BKE_id_material_array_p(obdata);
+
+  if ((totcolp && matarar) == 0) {
+    BLI_assert(0);
+    return;
+  }
+
+  if (*totcolp) {
+    Material *ma_ob;
+    Material *ma_obdata;
+    char matbit;
+
+    if (mat_nr < ob->totcol) {
+      ma_ob = ob->mat[mat_nr];
+      matbit = ob->matbits[mat_nr];
+    }
+    else {
+      ma_ob = NULL;
+      matbit = 0;
+    }
+
+    if (mat_nr < *totcolp) {
+      ma_obdata = (*matarar)[mat_nr];
+    }
+    else {
+      ma_obdata = NULL;
+    }
+
+    BKE_id_material_clear(bmain, obdata);
+    BKE_object_material_resize(bmain, ob, 1, true);
+    BKE_id_material_resize(bmain, obdata, 1, true);
+
+    ob->mat[0] = ma_ob;
+    id_us_plus((ID *)ma_ob);
+    ob->matbits[0] = matbit;
+    (*matarar)[0] = ma_obdata;
+    id_us_plus((ID *)ma_obdata);
+  }
+  else {
+    BKE_id_material_clear(bmain, obdata);
+    BKE_object_material_resize(bmain, ob, 0, true);
+    BKE_id_material_resize(bmain, obdata, 0, true);
+  }
+}
+
+static bool mesh_separate_material(
+    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base_old, BMesh *bm_old)
+{
+  BMFace *f_cmp, *f;
+  BMIter iter;
+  bool result = false;
+
+  while ((f_cmp = BM_iter_at_index(bm_old, BM_FACES_OF_MESH, NULL, 0))) {
+    Base *base_new;
+    const short mat_nr = f_cmp->mat_nr;
+    int tot = 0;
+
+    BM_mesh_elem_hflag_disable_all(bm_old, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_TAG, false);
+
+    BM_ITER_MESH (f, &iter, bm_old, BM_FACES_OF_MESH) {
+      if (f->mat_nr == mat_nr) {
+        BMLoop *l_iter;
+        BMLoop *l_first;
+
+        BM_elem_flag_enable(f, BM_ELEM_TAG);
+        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        do {
+          BM_elem_flag_enable(l_iter->v, BM_ELEM_TAG);
+          BM_elem_flag_enable(l_iter->e, BM_ELEM_TAG);
+        } while ((l_iter = l_iter->next) != l_first);
+
+        tot++;
+      }
+    }
+
+    /* leave the current object with some materials */
+    if (tot == bm_old->totface) {
+      mesh_separate_material_assign_mat_nr(bmain, base_old->object, mat_nr);
+
+      /* since we're in editmode, must set faces here */
+      BM_ITER_MESH (f, &iter, bm_old, BM_FACES_OF_MESH) {
+        f->mat_nr = 0;
+      }
+      break;
+    }
+
+    /* Move selection into a separate object */
+    base_new = mesh_separate_tagged(bmain, scene, view_layer, base_old, bm_old);
+    if (base_new) {
+      mesh_separate_material_assign_mat_nr(bmain, base_new->object, mat_nr);
+    }
+
+    result |= (base_new != NULL);
+  }
+
+  return result;
+}
+
+static bool mesh_separate_loose(
+    Main *bmain, Scene *scene, ViewLayer *view_layer, Base *base_old, BMesh *bm_old)
+{
+  /* Without this, we duplicate the object mode mesh for each loose part.
+   * This can get very slow especially for large meshes with many parts
+   * which would duplicate the mesh on entering edit-mode. */
+  const bool clear_object_data = true;
+
+  bool result = false;
+
+  BMVert **vert_groups = MEM_mallocN(sizeof(*vert_groups) * bm_old->totvert, __func__);
+  BMEdge **edge_groups = MEM_mallocN(sizeof(*edge_groups) * bm_old->totedge, __func__);
+  BMFace **face_groups = MEM_mallocN(sizeof(*face_groups) * bm_old->totface, __func__);
+
+  int(*groups)[3] = NULL;
+  int groups_len = BM_mesh_calc_edge_groups_as_arrays(
+      bm_old, vert_groups, edge_groups, face_groups, &groups);
+  if (groups_len <= 1) {
+    goto finally;
+  }
+
+  if (clear_object_data) {
+    ED_mesh_geometry_clear(base_old->object->data);
+  }
+
+  BM_custom_loop_normals_to_vector_layer(bm_old);
+
+  /* Separate out all groups except the first. */
+  uint group_ofs[3] = {UNPACK3(groups[0])};
+  for (int i = 1; i < groups_len; i++) {
+    Base *base_new = mesh_separate_arrays(bmain,
+                                          scene,
+                                          view_layer,
+                                          base_old,
+                                          bm_old,
+                                          vert_groups + group_ofs[0],
+                                          groups[i][0],
+                                          edge_groups + group_ofs[1],
+                                          groups[i][1],
+                                          face_groups + group_ofs[2],
+                                          groups[i][2]);
+    result |= (base_new != NULL);
+
+    group_ofs[0] += groups[i][0];
+    group_ofs[1] += groups[i][1];
+    group_ofs[2] += groups[i][2];
+  }
+
+  Mesh *me_old = base_old->object->data;
+  BM_mesh_elem_hflag_disable_all(bm_old, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, false);
+
+  if (clear_object_data) {
+    BM_mesh_bm_to_me(NULL,
+                     bm_old,
+                     me_old,
+                     (&(struct BMeshToMeshParams){
+                         .update_shapekey_indices = true,
+                     }));
+  }
+
+finally:
+  MEM_freeN(vert_groups);
+  MEM_freeN(edge_groups);
+  MEM_freeN(face_groups);
+
+  MEM_freeN(groups);
+
+  return result;
+}
+
+static int edbm_separate_exec(bContext *C, wmOperator *op)
+{
+  Main *bmain = CTX_data_main(C);
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const int type = RNA_enum_get(op->ptr, "type");
+  bool changed_multi = false;
+
+  if (ED_operator_editmesh(C)) {
+    uint bases_len = 0;
+    uint empty_selection_len = 0;
+    Base **bases = BKE_view_layer_array_from_bases_in_edit_mode_unique_data(
+        view_layer, CTX_wm_view3d(C), &bases_len);
+    for (uint bs_index = 0; bs_index < bases_len; bs_index++) {
+      Base *base = bases[bs_index];
+      BMEditMesh *em = BKE_editmesh_from_object(base->object);
+      bool changed = false;
+
+      if (type == 0) {
+        if ((em->bm->totvertsel == 0) && (em->bm->totedgesel == 0) && (em->bm->totfacesel == 0)) {
+          /* when all objects has no selection */
+          if (++empty_selection_len == bases_len) {
+            BKE_report(op->reports, RPT_ERROR, "Nothing selected");
+          }
+          continue;
+        }
+      }
+
+      /* editmode separate */
+      switch (type) {
+        case MESH_SEPARATE_SELECTED:
+          changed = mesh_separate_selected(bmain, scene, view_layer, base, em->bm);
+          break;
+        case MESH_SEPARATE_MATERIAL:
+          changed = mesh_separate_material(bmain, scene, view_layer, base, em->bm);
+          break;
+        case MESH_SEPARATE_LOOSE:
+          changed = mesh_separate_loose(bmain, scene, view_layer, base, em->bm);
+          break;
+        default:
+          BLI_assert(0);
+          break;
+      }
+
+      if (changed) {
+        EDBM_update(base->object->data,
+                    &(const struct EDBMUpdate_Params){
+                        .calc_looptri = true,
+                        .calc_normals = false,
+                        .is_destructive = true,
+                    });
+      }
+      changed_multi |= changed;
+    }
+    MEM_freeN(bases);
+  }
+  else {
+    if (type == MESH_SEPARATE_SELECTED) {
+      BKE_report(op->reports, RPT_ERROR, "Selection not supported in object mode");
+      return OPERATOR_CANCELLED;
+    }
+
+    /* object mode separate */
+    CTX_DATA_BEGIN (C, Base *, base_iter, selected_editable_bases) {
+      Object *ob = base_iter->object;
+      if (ob->type == OB_MESH) {
+        Mesh *me = ob->data;
+        if (!ID_IS_LINKED(me)) {
+          BMesh *bm_old = NULL;
+          bool changed = false;
+
+          bm_old = BM_mesh_create(&bm_mesh_allocsize_default,
+                                  &((struct BMeshCreateParams){
+                                      .use_toolflags = true,
+                                  }));
+
+          BM_mesh_bm_from_me(bm_old, me, (&(struct BMeshFromMeshParams){0}));
+
+          switch (type) {
+            case MESH_SEPARATE_MATERIAL:
+              changed = mesh_separate_material(bmain, scene, view_layer, base_iter, bm_old);
+              break;
+            case MESH_SEPARATE_LOOSE:
+              changed = mesh_separate_loose(bmain, scene, view_layer, base_iter, bm_old);
+              break;
+            default:
+              BLI_assert(0);
+              break;
+          }
+
+          if (changed) {
+            BM_mesh_bm_to_me(bmain,
+                             bm_old,
+                             me,
+                             (&(struct BMeshToMeshParams){
+                                 .calc_object_remap = true,
+                             }));
+
+            DEG_id_tag_update(&me->id, ID_RECALC_GEOMETRY_ALL_MODES);
+            WM_event_add_notifier(C, NC_GEOM | ND_DATA, me);
+          }
+
+          BM_mesh_free(bm_old);
+
+          changed_multi |= changed;
+        }
+      }
+    }
+    CTX_DATA_END;
+  }
+
+  if (changed_multi) {
+    /* delay depsgraph recalc until all objects are duplicated */
+    DEG_relations_tag_update(bmain);
+    WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, NULL);
+    ED_outliner_select_sync_from_object_tag(C);
+
+    return OPERATOR_FINISHED;
+  }
+
+  return OPERATOR_CANCELLED;
+}
+
+void MESH_OT_separate(wmOperatorType *ot)
+{
+  static const EnumPropertyItem prop_separate_types[] = {
+      {MESH_SEPARATE_SELECTED, "SELECTED", 0, "Selection", ""},
+      {MESH_SEPARATE_MATERIAL, "MATERIAL", 0, "By Material", ""},
+      {MESH_SEPARATE_LOOSE, "LOOSE", 0, "By Loose Parts", ""},
+      {0, NULL, 0, NULL, NULL},
+  };
+
+  /* identifiers */
+  ot->name = "Separate";
+  ot->description = "Separate selected geometry into a new mesh";
+  ot->idname = "MESH_OT_separate";
+
+  /* api callbacks */
+  ot->invoke = WM_menu_invoke;
+  ot->exec = edbm_separate_exec;
+  ot->poll = ED_operator_scene_editable; /* object and editmode */
+
+  /* flags */
+  ot->flag = OPTYPE_UNDO;
+
+  ot->prop = RNA_def_enum(
+      ot->srna, "type", prop_separate_types, MESH_SEPARATE_SELECTED, "Type", "");
+}
+
+
