@@ -2252,5 +2252,137 @@ void MESH_OT_flip_normals(wmOperatorType *ot)
                   "Only flip the custom loop normals of the selected elements");
 }
 
+/* -------------------------------------------------------------------- */
+/** \name Rotate Edge Operator
+ * \{ */
+
+/**
+ * Rotate the edges between selected faces, otherwise rotate the selected edges.
+ */
+static int edbm_edge_rotate_selected_exec(bContext *C, wmOperator *op)
+{
+  BMEdge *eed;
+  BMIter iter;
+  const bool use_ccw = RNA_boolean_get(op->ptr, "use_ccw");
+
+  int tot_failed_all = 0;
+  bool no_selected_edges = true, invalid_selected_edges = true;
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    int tot = 0;
+
+    if (em->bm->totedgesel == 0) {
+      continue;
+    }
+    no_selected_edges = false;
+
+    /* first see if we have two adjacent faces */
+    BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
+      BM_elem_flag_disable(eed, BM_ELEM_TAG);
+      if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+        BMFace *fa, *fb;
+        if (BM_edge_face_pair(eed, &fa, &fb)) {
+          /* if both faces are selected we rotate between them,
+           * otherwise - rotate between 2 unselected - but not mixed */
+          if (BM_elem_flag_test(fa, BM_ELEM_SELECT) == BM_elem_flag_test(fb, BM_ELEM_SELECT)) {
+            BM_elem_flag_enable(eed, BM_ELEM_TAG);
+            tot++;
+          }
+        }
+      }
+    }
+
+    /* OK, we don't have two adjacent faces, but we do have two selected ones.
+     * that's an error condition. */
+    if (tot == 0) {
+      continue;
+    }
+    invalid_selected_edges = false;
+
+    BMOperator bmop;
+    EDBM_op_init(em, &bmop, op, "rotate_edges edges=%he use_ccw=%b", BM_ELEM_TAG, use_ccw);
+
+    /* avoids leaving old verts selected which can be a problem running multiple times,
+     * since this means the edges become selected around the face
+     * which then attempt to rotate */
+    BMO_slot_buffer_hflag_disable(em->bm, bmop.slots_in, "edges", BM_EDGE, BM_ELEM_SELECT, true);
+
+    BMO_op_exec(em->bm, &bmop);
+    /* edges may rotate into hidden vertices, if this does _not_ run we get an illogical state */
+    BMO_slot_buffer_hflag_disable(
+        em->bm, bmop.slots_out, "edges.out", BM_EDGE, BM_ELEM_HIDDEN, true);
+    BMO_slot_buffer_hflag_enable(
+        em->bm, bmop.slots_out, "edges.out", BM_EDGE, BM_ELEM_SELECT, true);
+
+    const int tot_rotate = BMO_slot_buffer_len(bmop.slots_out, "edges.out");
+    const int tot_failed = tot - tot_rotate;
+
+    tot_failed_all += tot_failed;
+
+    if (tot_failed != 0) {
+      /* If some edges fail to rotate, we need to re-select them,
+       * otherwise we can end up with invalid selection
+       * (unselected edge between 2 selected faces). */
+      BM_mesh_elem_hflag_enable_test(em->bm, BM_EDGE, BM_ELEM_SELECT, true, false, BM_ELEM_TAG);
+    }
+
+    EDBM_selectmode_flush(em);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+  MEM_freeN(objects);
+
+  if (no_selected_edges) {
+    BKE_report(
+        op->reports, RPT_ERROR, "Select edges or face pairs for edge loops to rotate about");
+    return OPERATOR_CANCELLED;
+  }
+
+  /* Ok, we don't have two adjacent faces, but we do have two selected ones.
+   * that's an error condition. */
+  if (invalid_selected_edges) {
+    BKE_report(op->reports, RPT_ERROR, "Could not find any selected edges that can be rotated");
+    return OPERATOR_CANCELLED;
+  }
+
+  if (tot_failed_all != 0) {
+    BKE_reportf(op->reports, RPT_WARNING, "Unable to rotate %d edge(s)", tot_failed_all);
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_edge_rotate(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Rotate Selected Edge";
+  ot->description = "Rotate selected edge or adjoining faces";
+  ot->idname = "MESH_OT_edge_rotate";
+
+  /* api callbacks */
+  ot->exec = edbm_edge_rotate_selected_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(ot->srna, "use_ccw", false, "Counter Clockwise", "");
+}
 
 
