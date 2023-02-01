@@ -7090,3 +7090,927 @@ void MESH_OT_sort_elements(wmOperatorType *ot)
   RNA_def_boolean(ot->srna, "reverse", false, "Reverse", "Reverse the sorting effect");
   RNA_def_int(ot->srna, "seed", 0, 0, INT_MAX, "Seed", "Seed for random-based operations", 0, 255);
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Bridge Operator
+ * \{ */
+
+enum {
+  MESH_BRIDGELOOP_SINGLE = 0,
+  MESH_BRIDGELOOP_CLOSED = 1,
+  MESH_BRIDGELOOP_PAIRS = 2,
+};
+
+static int edbm_bridge_tag_boundary_edges(BMesh *bm)
+{
+  /* tags boundary edges from a face selection */
+  BMIter iter;
+  BMFace *f;
+  BMEdge *e;
+  int totface_del = 0;
+
+  BM_mesh_elem_hflag_disable_all(bm, BM_EDGE | BM_FACE, BM_ELEM_TAG, false);
+
+  BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+    if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
+      if (BM_edge_is_wire(e) || BM_edge_is_boundary(e)) {
+        BM_elem_flag_enable(e, BM_ELEM_TAG);
+      }
+      else {
+        BMIter fiter;
+        bool is_all_sel = true;
+        /* check if its only used by selected faces */
+        BM_ITER_ELEM (f, &fiter, e, BM_FACES_OF_EDGE) {
+          if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
+            /* Tag face for removal. */
+            if (!BM_elem_flag_test(f, BM_ELEM_TAG)) {
+              BM_elem_flag_enable(f, BM_ELEM_TAG);
+              totface_del++;
+            }
+          }
+          else {
+            is_all_sel = false;
+          }
+        }
+
+        if (is_all_sel == false) {
+          BM_elem_flag_enable(e, BM_ELEM_TAG);
+        }
+      }
+    }
+  }
+
+  return totface_del;
+}
+
+static int edbm_bridge_edge_loops_for_single_editmesh(wmOperator *op,
+                                                      BMEditMesh *em,
+                                                      struct Mesh *me,
+                                                      const bool use_pairs,
+                                                      const bool use_cyclic,
+                                                      const bool use_merge,
+                                                      const float merge_factor,
+                                                      const int twist_offset)
+{
+  BMOperator bmop;
+  char edge_hflag;
+  int totface_del = 0;
+  BMFace **totface_del_arr = NULL;
+  const bool use_faces = (em->bm->totfacesel != 0);
+
+  if (use_faces) {
+    BMIter iter;
+    BMFace *f;
+    int i;
+
+    totface_del = edbm_bridge_tag_boundary_edges(em->bm);
+    totface_del_arr = MEM_mallocN(sizeof(*totface_del_arr) * totface_del, __func__);
+
+    i = 0;
+    BM_ITER_MESH (f, &iter, em->bm, BM_FACES_OF_MESH) {
+      if (BM_elem_flag_test(f, BM_ELEM_TAG)) {
+        totface_del_arr[i++] = f;
+      }
+    }
+    edge_hflag = BM_ELEM_TAG;
+  }
+  else {
+    edge_hflag = BM_ELEM_SELECT;
+  }
+
+  EDBM_op_init(em,
+               &bmop,
+               op,
+               "bridge_loops edges=%he use_pairs=%b use_cyclic=%b use_merge=%b merge_factor=%f "
+               "twist_offset=%i",
+               edge_hflag,
+               use_pairs,
+               use_cyclic,
+               use_merge,
+               merge_factor,
+               twist_offset);
+
+  if (use_faces && totface_del) {
+    int i;
+    BM_mesh_elem_hflag_disable_all(em->bm, BM_FACE, BM_ELEM_TAG, false);
+    for (i = 0; i < totface_del; i++) {
+      BM_elem_flag_enable(totface_del_arr[i], BM_ELEM_TAG);
+    }
+    BMO_op_callf(em->bm,
+                 BMO_FLAG_DEFAULTS,
+                 "delete geom=%hf context=%i",
+                 BM_ELEM_TAG,
+                 DEL_FACES_KEEP_BOUNDARY);
+  }
+
+  BMO_op_exec(em->bm, &bmop);
+
+  if (!BMO_error_occurred_at_level(em->bm, BMO_ERROR_CANCEL)) {
+    /* when merge is used the edges are joined and remain selected */
+    if (use_merge == false) {
+      EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+      BMO_slot_buffer_hflag_enable(
+          em->bm, bmop.slots_out, "faces.out", BM_FACE, BM_ELEM_SELECT, true);
+    }
+
+    if (use_merge == false) {
+      struct EdgeRingOpSubdProps op_props;
+      mesh_operator_edgering_props_get(op, &op_props);
+
+      if (op_props.cuts) {
+        BMOperator bmop_subd;
+        /* we only need face normals updated */
+        EDBM_mesh_normals_update(em);
+
+        BMO_op_initf(em->bm,
+                     &bmop_subd,
+                     0,
+                     "subdivide_edgering edges=%S interp_mode=%i cuts=%i smooth=%f "
+                     "profile_shape=%i profile_shape_factor=%f",
+                     &bmop,
+                     "edges.out",
+                     op_props.interp_mode,
+                     op_props.cuts,
+                     op_props.smooth,
+                     op_props.profile_shape,
+                     op_props.profile_shape_factor);
+        BMO_op_exec(em->bm, &bmop_subd);
+        BMO_slot_buffer_hflag_enable(
+            em->bm, bmop_subd.slots_out, "faces.out", BM_FACE, BM_ELEM_SELECT, true);
+        BMO_op_finish(em->bm, &bmop_subd);
+      }
+    }
+  }
+
+  if (totface_del_arr) {
+    MEM_freeN(totface_del_arr);
+  }
+
+  if (EDBM_op_finish(em, &bmop, op, true)) {
+    EDBM_update(me,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+
+  /* Always return finished so the user can select different options. */
+  return OPERATOR_FINISHED;
+}
+
+static int edbm_bridge_edge_loops_exec(bContext *C, wmOperator *op)
+{
+  const int type = RNA_enum_get(op->ptr, "type");
+  const bool use_pairs = (type == MESH_BRIDGELOOP_PAIRS);
+  const bool use_cyclic = (type == MESH_BRIDGELOOP_CLOSED);
+  const bool use_merge = RNA_boolean_get(op->ptr, "use_merge");
+  const float merge_factor = RNA_float_get(op->ptr, "merge_factor");
+  const int twist_offset = RNA_int_get(op->ptr, "twist_offset");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+
+    edbm_bridge_edge_loops_for_single_editmesh(
+        op, em, obedit->data, use_pairs, use_cyclic, use_merge, merge_factor, twist_offset);
+  }
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_bridge_edge_loops(wmOperatorType *ot)
+{
+  static const EnumPropertyItem type_items[] = {
+      {MESH_BRIDGELOOP_SINGLE, "SINGLE", 0, "Open Loop", ""},
+      {MESH_BRIDGELOOP_CLOSED, "CLOSED", 0, "Closed Loop", ""},
+      {MESH_BRIDGELOOP_PAIRS, "PAIRS", 0, "Loop Pairs", ""},
+      {0, NULL, 0, NULL, NULL},
+  };
+
+  /* identifiers */
+  ot->name = "Bridge Edge Loops";
+  ot->description = "Create a bridge of faces between two or more selected edge loops";
+  ot->idname = "MESH_OT_bridge_edge_loops";
+
+  /* api callbacks */
+  ot->exec = edbm_bridge_edge_loops_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  ot->prop = RNA_def_enum(ot->srna,
+                          "type",
+                          type_items,
+                          MESH_BRIDGELOOP_SINGLE,
+                          "Connect Loops",
+                          "Method of bridging multiple loops");
+
+  RNA_def_boolean(ot->srna, "use_merge", false, "Merge", "Merge rather than creating faces");
+  RNA_def_float(ot->srna, "merge_factor", 0.5f, 0.0f, 1.0f, "Merge Factor", "", 0.0f, 1.0f);
+  RNA_def_int(ot->srna,
+              "twist_offset",
+              0,
+              -1000,
+              1000,
+              "Twist",
+              "Twist offset for closed loops",
+              -1000,
+              1000);
+
+  mesh_operator_edgering_props(ot, 0, 0);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Wire-Frame Operator
+ * \{ */
+
+static int edbm_wireframe_exec(bContext *C, wmOperator *op)
+{
+  const bool use_boundary = RNA_boolean_get(op->ptr, "use_boundary");
+  const bool use_even_offset = RNA_boolean_get(op->ptr, "use_even_offset");
+  const bool use_replace = RNA_boolean_get(op->ptr, "use_replace");
+  const bool use_relative_offset = RNA_boolean_get(op->ptr, "use_relative_offset");
+  const bool use_crease = RNA_boolean_get(op->ptr, "use_crease");
+  const float crease_weight = RNA_float_get(op->ptr, "crease_weight");
+  const float thickness = RNA_float_get(op->ptr, "thickness");
+  const float offset = RNA_float_get(op->ptr, "offset");
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+
+    EDBM_op_init(em,
+                 &bmop,
+                 op,
+                 "wireframe faces=%hf use_replace=%b use_boundary=%b use_even_offset=%b "
+                 "use_relative_offset=%b "
+                 "use_crease=%b crease_weight=%f thickness=%f offset=%f",
+                 BM_ELEM_SELECT,
+                 use_replace,
+                 use_boundary,
+                 use_even_offset,
+                 use_relative_offset,
+                 use_crease,
+                 crease_weight,
+                 thickness,
+                 offset);
+
+    BMO_op_exec(em->bm, &bmop);
+
+    BM_mesh_elem_hflag_disable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, false);
+    BMO_slot_buffer_hflag_enable(
+        em->bm, bmop.slots_out, "faces.out", BM_FACE, BM_ELEM_SELECT, true);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+  }
+
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_wireframe(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Wireframe";
+  ot->idname = "MESH_OT_wireframe";
+  ot->description = "Create a solid wireframe from faces";
+
+  /* api callbacks */
+  ot->exec = edbm_wireframe_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  RNA_def_boolean(ot->srna, "use_boundary", true, "Boundary", "Inset face boundaries");
+  RNA_def_boolean(ot->srna,
+                  "use_even_offset",
+                  true,
+                  "Offset Even",
+                  "Scale the offset to give more even thickness");
+  RNA_def_boolean(ot->srna,
+                  "use_relative_offset",
+                  false,
+                  "Offset Relative",
+                  "Scale the offset by surrounding geometry");
+  RNA_def_boolean(ot->srna, "use_replace", true, "Replace", "Remove original faces");
+  prop = RNA_def_float_distance(
+      ot->srna, "thickness", 0.01f, 0.0f, 1e4f, "Thickness", "", 0.0f, 10.0f);
+  /* use 1 rather than 10 for max else dragging the button moves too far */
+  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.01, 4);
+  RNA_def_float_distance(ot->srna, "offset", 0.01f, 0.0f, 1e4f, "Offset", "", 0.0f, 10.0f);
+  RNA_def_boolean(ot->srna,
+                  "use_crease",
+                  false,
+                  "Crease",
+                  "Crease hub edges for an improved subdivision surface");
+  prop = RNA_def_float(
+      ot->srna, "crease_weight", 0.01f, 0.0f, 1e3f, "Crease Weight", "", 0.0f, 1.0f);
+  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 2);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Offset Edge-Loop Operator
+ * \{ */
+
+static int edbm_offset_edgeloop_exec(bContext *C, wmOperator *op)
+{
+  const bool use_cap_endpoint = RNA_boolean_get(op->ptr, "use_cap_endpoint");
+  bool changed_multi = false;
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint bases_len = 0;
+  Base **bases = BKE_view_layer_array_from_bases_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &bases_len);
+  for (uint base_index = 0; base_index < bases_len; base_index++) {
+    Object *obedit = bases[base_index]->object;
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totedgesel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+    EDBM_op_init(em,
+                 &bmop,
+                 op,
+                 "offset_edgeloops edges=%he use_cap_endpoint=%b",
+                 BM_ELEM_SELECT,
+                 use_cap_endpoint);
+
+    BMO_op_exec(em->bm, &bmop);
+
+    BM_mesh_elem_hflag_disable_all(em->bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, false);
+
+    BMO_slot_buffer_hflag_enable(
+        em->bm, bmop.slots_out, "edges.out", BM_EDGE, BM_ELEM_SELECT, true);
+
+    if (EDBM_op_finish(em, &bmop, op, true)) {
+      EDBM_update(obedit->data,
+                  &(const struct EDBMUpdate_Params){
+                      .calc_looptri = true,
+                      .calc_normals = false,
+                      .is_destructive = true,
+                  });
+      changed_multi = true;
+    }
+  }
+
+  if (changed_multi) {
+    /** If in face-only select mode, switch to edge select mode so that
+     * an edge-only selection is not inconsistent state.
+     *
+     * We need to run this for all objects, even when nothing is selected.
+     * This way we keep them in sync. */
+    if (scene->toolsettings->selectmode == SCE_SELECT_FACE) {
+      EDBM_selectmode_disable_multi_ex(scene, bases, bases_len, SCE_SELECT_FACE, SCE_SELECT_EDGE);
+    }
+  }
+
+  MEM_freeN(bases);
+
+  return changed_multi ? OPERATOR_FINISHED : OPERATOR_CANCELLED;
+}
+
+void MESH_OT_offset_edge_loops(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Offset Edge Loop";
+  ot->idname = "MESH_OT_offset_edge_loops";
+  ot->description = "Create offset edge loop from the current selection";
+
+  /* api callbacks */
+  ot->exec = edbm_offset_edgeloop_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* Keep internal, since this is only meant to be accessed via
+   * 'MESH_OT_offset_edge_loops_slide'. */
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
+
+  RNA_def_boolean(
+      ot->srna, "use_cap_endpoint", false, "Cap Endpoint", "Extend loop around end-points");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Convex Hull Operator
+ * \{ */
+
+#ifdef WITH_BULLET
+static int edbm_convex_hull_exec(bContext *C, wmOperator *op)
+{
+  const bool use_existing_faces = RNA_boolean_get(op->ptr, "use_existing_faces");
+  const bool delete_unused = RNA_boolean_get(op->ptr, "delete_unused");
+  const bool make_holes = RNA_boolean_get(op->ptr, "make_holes");
+  const bool join_triangles = RNA_boolean_get(op->ptr, "join_triangles");
+
+  float angle_face_threshold = RNA_float_get(op->ptr, "face_threshold");
+  float angle_shape_threshold = RNA_float_get(op->ptr, "shape_threshold");
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+
+    EDBM_op_init(em,
+                 &bmop,
+                 op,
+                 "convex_hull input=%hvef "
+                 "use_existing_faces=%b",
+                 BM_ELEM_SELECT,
+                 use_existing_faces);
+    BMO_op_exec(em->bm, &bmop);
+
+    /* Hull fails if input is coplanar */
+    if (BMO_error_occurred_at_level(em->bm, BMO_ERROR_CANCEL)) {
+      EDBM_op_finish(em, &bmop, op, true);
+      continue;
+    }
+
+    BMO_slot_buffer_hflag_enable(
+        em->bm, bmop.slots_out, "geom.out", BM_FACE, BM_ELEM_SELECT, true);
+
+    /* Delete unused vertices, edges, and faces */
+    if (delete_unused) {
+      if (!EDBM_op_callf(
+              em, op, "delete geom=%S context=%i", &bmop, "geom_unused.out", DEL_ONLYTAGGED)) {
+        EDBM_op_finish(em, &bmop, op, true);
+        continue;
+      }
+    }
+
+    /* Delete hole edges/faces */
+    if (make_holes) {
+      if (!EDBM_op_callf(
+              em, op, "delete geom=%S context=%i", &bmop, "geom_holes.out", DEL_ONLYTAGGED)) {
+        EDBM_op_finish(em, &bmop, op, true);
+        continue;
+      }
+    }
+
+    /* Merge adjacent triangles */
+    if (join_triangles) {
+      if (!EDBM_op_call_and_selectf(em,
+                                    op,
+                                    "faces.out",
+                                    true,
+                                    "join_triangles faces=%S "
+                                    "angle_face_threshold=%f angle_shape_threshold=%f",
+                                    &bmop,
+                                    "geom.out",
+                                    angle_face_threshold,
+                                    angle_shape_threshold)) {
+        EDBM_op_finish(em, &bmop, op, true);
+        continue;
+      }
+    }
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+    EDBM_selectmode_flush(em);
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_convex_hull(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Convex Hull";
+  ot->description = "Enclose selected vertices in a convex polyhedron";
+  ot->idname = "MESH_OT_convex_hull";
+
+  /* api callbacks */
+  ot->exec = edbm_convex_hull_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(ot->srna,
+                  "delete_unused",
+                  true,
+                  "Delete Unused",
+                  "Delete selected elements that are not used by the hull");
+
+  RNA_def_boolean(ot->srna,
+                  "use_existing_faces",
+                  true,
+                  "Use Existing Faces",
+                  "Skip hull triangles that are covered by a pre-existing face");
+
+  RNA_def_boolean(ot->srna,
+                  "make_holes",
+                  false,
+                  "Make Holes",
+                  "Delete selected faces that are used by the hull");
+
+  RNA_def_boolean(
+      ot->srna, "join_triangles", true, "Join Triangles", "Merge adjacent triangles into quads");
+
+  join_triangle_props(ot);
+}
+#endif /* WITH_BULLET */
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Symmetrize Operator
+ * \{ */
+
+static int mesh_symmetrize_exec(bContext *C, wmOperator *op)
+{
+  const float thresh = RNA_float_get(op->ptr, "threshold");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+    EDBM_op_init(em,
+                 &bmop,
+                 op,
+                 "symmetrize input=%hvef direction=%i dist=%f",
+                 BM_ELEM_SELECT,
+                 RNA_enum_get(op->ptr, "direction"),
+                 thresh);
+    BMO_op_exec(em->bm, &bmop);
+
+    EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+
+    BMO_slot_buffer_hflag_enable(
+        em->bm, bmop.slots_out, "geom.out", BM_ALL_NOLOOP, BM_ELEM_SELECT, true);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+    EDBM_selectmode_flush(em);
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_symmetrize(struct wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Symmetrize";
+  ot->description = "Enforce symmetry (both form and topological) across an axis";
+  ot->idname = "MESH_OT_symmetrize";
+
+  /* api callbacks */
+  ot->exec = mesh_symmetrize_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  ot->prop = RNA_def_enum(ot->srna,
+                          "direction",
+                          rna_enum_symmetrize_direction_items,
+                          BMO_SYMMETRIZE_NEGATIVE_X,
+                          "Direction",
+                          "Which sides to copy from and to");
+  RNA_def_float(ot->srna,
+                "threshold",
+                1e-4f,
+                0.0f,
+                10.0f,
+                "Threshold",
+                "Limit for snap middle vertices to the axis center",
+                1e-5f,
+                0.1f);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Snap to Symmetry Operator
+ * \{ */
+
+static int mesh_symmetry_snap_exec(bContext *C, wmOperator *op)
+{
+  const float eps = 0.00001f;
+  const float eps_sq = eps * eps;
+  const bool use_topology = false;
+
+  const float thresh = RNA_float_get(op->ptr, "threshold");
+  const float fac = RNA_float_get(op->ptr, "factor");
+  const bool use_center = RNA_boolean_get(op->ptr, "use_center");
+  const int axis_dir = RNA_enum_get(op->ptr, "direction");
+
+  /* Vertices stats (total over all selected objects). */
+  int totvertfound = 0, totvertmirr = 0, totvertfail = 0;
+
+  /* Axis. */
+  int axis = axis_dir % 3;
+  bool axis_sign = axis != axis_dir;
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+
+    /* Only allocate memory after checking whether to skip object. */
+    int *index = MEM_mallocN(bm->totvert * sizeof(*index), __func__);
+
+    /* Vertex iter. */
+    BMIter iter;
+    BMVert *v;
+    int i;
+
+    EDBM_verts_mirror_cache_begin_ex(em, axis, true, true, false, use_topology, thresh, index);
+
+    BM_mesh_elem_table_ensure(bm, BM_VERT);
+
+    BM_mesh_elem_hflag_disable_all(bm, BM_VERT, BM_ELEM_TAG, false);
+
+    BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
+      if ((BM_elem_flag_test(v, BM_ELEM_SELECT) != false) &&
+          (BM_elem_flag_test(v, BM_ELEM_TAG) == false)) {
+        int i_mirr = index[i];
+        if (i_mirr != -1) {
+
+          BMVert *v_mirr = BM_vert_at_index(bm, index[i]);
+
+          if (v != v_mirr) {
+            float co[3], co_mirr[3];
+
+            if ((v->co[axis] > v_mirr->co[axis]) == axis_sign) {
+              SWAP(BMVert *, v, v_mirr);
+            }
+
+            copy_v3_v3(co_mirr, v_mirr->co);
+            co_mirr[axis] *= -1.0f;
+
+            if (len_squared_v3v3(v->co, co_mirr) > eps_sq) {
+              totvertmirr++;
+            }
+
+            interp_v3_v3v3(co, v->co, co_mirr, fac);
+
+            copy_v3_v3(v->co, co);
+
+            co[axis] *= -1.0f;
+            copy_v3_v3(v_mirr->co, co);
+
+            BM_elem_flag_enable(v, BM_ELEM_TAG);
+            BM_elem_flag_enable(v_mirr, BM_ELEM_TAG);
+            totvertfound++;
+          }
+          else {
+            if (use_center) {
+
+              if (fabsf(v->co[axis]) > eps) {
+                totvertmirr++;
+              }
+
+              v->co[axis] = 0.0f;
+            }
+            BM_elem_flag_enable(v, BM_ELEM_TAG);
+            totvertfound++;
+          }
+        }
+        else {
+          totvertfail++;
+        }
+      }
+    }
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+
+    /* No need to end cache, just free the array. */
+    MEM_freeN(index);
+  }
+  MEM_freeN(objects);
+
+  if (totvertfail) {
+    BKE_reportf(op->reports,
+                RPT_WARNING,
+                "%d already symmetrical, %d pairs mirrored, %d failed",
+                totvertfound - totvertmirr,
+                totvertmirr,
+                totvertfail);
+  }
+  else {
+    BKE_reportf(op->reports,
+                RPT_INFO,
+                "%d already symmetrical, %d pairs mirrored",
+                totvertfound - totvertmirr,
+                totvertmirr);
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_symmetry_snap(struct wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Snap to Symmetry";
+  ot->description = "Snap vertex pairs to their mirrored locations";
+  ot->idname = "MESH_OT_symmetry_snap";
+
+  /* api callbacks */
+  ot->exec = mesh_symmetry_snap_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  ot->prop = RNA_def_enum(ot->srna,
+                          "direction",
+                          rna_enum_symmetrize_direction_items,
+                          BMO_SYMMETRIZE_NEGATIVE_X,
+                          "Direction",
+                          "Which sides to copy from and to");
+  RNA_def_float_distance(ot->srna,
+                         "threshold",
+                         0.05f,
+                         0.0f,
+                         10.0f,
+                         "Threshold",
+                         "Distance within which matching vertices are searched",
+                         1e-4f,
+                         1.0f);
+  RNA_def_float(ot->srna,
+                "factor",
+                0.5f,
+                0.0f,
+                1.0f,
+                "Factor",
+                "Mix factor of the locations of the vertices",
+                0.0f,
+                1.0f);
+  RNA_def_boolean(
+      ot->srna, "use_center", true, "Center", "Snap middle vertices to the axis center");
+}
+
+/** \} */
+
+#if defined(WITH_FREESTYLE)
+
+/* -------------------------------------------------------------------- */
+/** \name Mark Edge (Freestyle) Operator
+ * \{ */
+
+static int edbm_mark_freestyle_edge_exec(bContext *C, wmOperator *op)
+{
+  BMEdge *eed;
+  BMIter iter;
+  FreestyleEdge *fed;
+  const bool clear = RNA_boolean_get(op->ptr, "clear");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em == NULL) {
+      continue;
+    }
+
+    BMesh *bm = em->bm;
+
+    if (bm->totedgesel == 0) {
+      continue;
+    }
+
+    if (!CustomData_has_layer(&em->bm->edata, CD_FREESTYLE_EDGE)) {
+      BM_data_layer_add(em->bm, &em->bm->edata, CD_FREESTYLE_EDGE);
+    }
+
+    if (clear) {
+      BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
+        if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
+          fed = CustomData_bmesh_get(&em->bm->edata, eed->head.data, CD_FREESTYLE_EDGE);
+          fed->flag &= ~FREESTYLE_EDGE_MARK;
+        }
+      }
+    }
+    else {
+      BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
+        if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
+          fed = CustomData_bmesh_get(&em->bm->edata, eed->head.data, CD_FREESTYLE_EDGE);
+          fed->flag |= FREESTYLE_EDGE_MARK;
+        }
+      }
+    }
+
+    DEG_id_tag_update(obedit->data, ID_RECALC_GEOMETRY);
+    WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_mark_freestyle_edge(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Mark Freestyle Edge";
+  ot->description = "(Un)mark selected edges as Freestyle feature edges";
+  ot->idname = "MESH_OT_mark_freestyle_edge";
+
+  /* api callbacks */
+  ot->exec = edbm_mark_freestyle_edge_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  prop = RNA_def_boolean(ot->srna, "clear", false, "Clear", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+}
+
+
