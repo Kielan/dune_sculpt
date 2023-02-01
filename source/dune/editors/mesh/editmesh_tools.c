@@ -3443,3 +3443,216 @@ void MESH_OT_merge(wmOperatorType *ot)
 
   RNA_def_boolean(ot->srna, "uvs", false, "UVs", "Move UVs according to merge");
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Merge By Distance Operator
+ * \{ */
+
+static int edbm_remove_doubles_exec(bContext *C, wmOperator *op)
+{
+  const float threshold = RNA_float_get(op->ptr, "threshold");
+  const bool use_unselected = RNA_boolean_get(op->ptr, "use_unselected");
+  const bool use_sharp_edge_from_normals = RNA_boolean_get(op->ptr, "use_sharp_edge_from_normals");
+
+  int count_multi = 0;
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    /* Selection used as target with 'use_unselected'. */
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+    const int totvert_orig = em->bm->totvert;
+
+    /* avoid losing selection state (select -> tags) */
+    char htype_select;
+    if (em->selectmode & SCE_SELECT_VERTEX) {
+      htype_select = BM_VERT;
+    }
+    else if (em->selectmode & SCE_SELECT_EDGE) {
+      htype_select = BM_EDGE;
+    }
+    else {
+      htype_select = BM_FACE;
+    }
+
+    BM_custom_loop_normals_to_vector_layer(em->bm);
+
+    /* store selection as tags */
+    BM_mesh_elem_hflag_enable_test(em->bm, htype_select, BM_ELEM_TAG, true, true, BM_ELEM_SELECT);
+
+    if (use_unselected) {
+      EDBM_automerge(obedit, false, BM_ELEM_SELECT, threshold);
+    }
+    else {
+      EDBM_op_init(em, &bmop, op, "find_doubles verts=%hv dist=%f", BM_ELEM_SELECT, threshold);
+
+      BMO_op_exec(em->bm, &bmop);
+
+      if (!EDBM_op_callf(em, op, "weld_verts targetmap=%S", &bmop, "targetmap.out")) {
+        BMO_op_finish(em->bm, &bmop);
+        continue;
+      }
+
+      if (!EDBM_op_finish(em, &bmop, op, true)) {
+        continue;
+      }
+    }
+
+    const int count = (totvert_orig - em->bm->totvert);
+
+    /* restore selection from tags */
+    BM_mesh_elem_hflag_enable_test(em->bm, htype_select, BM_ELEM_SELECT, true, true, BM_ELEM_TAG);
+    EDBM_selectmode_flush(em);
+
+    BM_custom_loop_normals_from_vector_layer(em->bm, use_sharp_edge_from_normals);
+
+    if (count) {
+      count_multi += count;
+      EDBM_update(obedit->data,
+                  &(const struct EDBMUpdate_Params){
+                      .calc_looptri = true,
+                      .calc_normals = false,
+                      .is_destructive = true,
+                  });
+    }
+  }
+  MEM_freeN(objects);
+
+  BKE_reportf(op->reports, RPT_INFO, "Removed %d vertice(s)", count_multi);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_remove_doubles(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Merge by Distance";
+  ot->description = "Merge vertices based on their proximity";
+  ot->idname = "MESH_OT_remove_doubles";
+
+  /* api callbacks */
+  ot->exec = edbm_remove_doubles_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_float_distance(ot->srna,
+                         "threshold",
+                         1e-4f,
+                         1e-6f,
+                         50.0f,
+                         "Merge Distance",
+                         "Maximum distance between elements to merge",
+                         1e-5f,
+                         10.0f);
+  RNA_def_boolean(ot->srna,
+                  "use_unselected",
+                  false,
+                  "Unselected",
+                  "Merge selected to other unselected vertices");
+
+  RNA_def_boolean(ot->srna,
+                  "use_sharp_edge_from_normals",
+                  false,
+                  "Sharp Edges",
+                  "Calculate sharp edges using custom normal data (when available)");
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Shape Key Propagate Operator
+ * \{ */
+
+/* BMESH_TODO this should be properly encapsulated in a bmop.  but later. */
+static bool shape_propagate(BMEditMesh *em)
+{
+  BMIter iter;
+  BMVert *eve = NULL;
+  float *co;
+  int totshape = CustomData_number_of_layers(&em->bm->vdata, CD_SHAPEKEY);
+
+  if (!CustomData_has_layer(&em->bm->vdata, CD_SHAPEKEY)) {
+    return false;
+  }
+
+  BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
+    if (!BM_elem_flag_test(eve, BM_ELEM_SELECT) || BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+      continue;
+    }
+
+    for (int i = 0; i < totshape; i++) {
+      co = CustomData_bmesh_get_n(&em->bm->vdata, eve->head.data, CD_SHAPEKEY, i);
+      copy_v3_v3(co, eve->co);
+    }
+  }
+  return true;
+}
+
+static int edbm_shape_propagate_to_all_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  int tot_shapekeys = 0;
+  int tot_selected_verts_objects = 0;
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    Mesh *me = obedit->data;
+    BMEditMesh *em = me->edit_mesh;
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+    tot_selected_verts_objects++;
+
+    if (shape_propagate(em)) {
+      tot_shapekeys++;
+    }
+
+    EDBM_update(me,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  if (tot_selected_verts_objects == 0) {
+    BKE_report(op->reports, RPT_ERROR, "No selected vertex");
+    return OPERATOR_CANCELLED;
+  }
+  if (tot_shapekeys == 0) {
+    BKE_report(op->reports, RPT_ERROR, "Mesh(es) do not have shape keys");
+    return OPERATOR_CANCELLED;
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_shape_propagate_to_all(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Shape Propagate";
+  ot->description = "Apply selected vertex locations to all other shape keys";
+  ot->idname = "MESH_OT_shape_propagate_to_all";
+
+  /* api callbacks */
+  ot->exec = edbm_shape_propagate_to_all_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
