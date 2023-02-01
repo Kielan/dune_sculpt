@@ -2385,4 +2385,1061 @@ void MESH_OT_edge_rotate(wmOperatorType *ot)
   RNA_def_boolean(ot->srna, "use_ccw", false, "Counter Clockwise", "");
 }
 
+/* -------------------------------------------------------------------- */
+/** \name Hide Operator
+ * \{ */
 
+static int edbm_hide_exec(bContext *C, wmOperator *op)
+{
+  const bool unselected = RNA_boolean_get(op->ptr, "unselected");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  bool changed = false;
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMesh *bm = em->bm;
+
+    if (unselected) {
+      if (em->selectmode & SCE_SELECT_VERTEX) {
+        if (bm->totvertsel == bm->totvert) {
+          continue;
+        }
+      }
+      else if (em->selectmode & SCE_SELECT_EDGE) {
+        if (bm->totedgesel == bm->totedge) {
+          continue;
+        }
+      }
+      else if (em->selectmode & SCE_SELECT_FACE) {
+        if (bm->totfacesel == bm->totface) {
+          continue;
+        }
+      }
+    }
+    else {
+      if (bm->totvertsel == 0) {
+        continue;
+      }
+    }
+
+    if (EDBM_mesh_hide(em, unselected)) {
+      EDBM_update(obedit->data,
+                  &(const struct EDBMUpdate_Params){
+                      .calc_looptri = true,
+                      .calc_normals = false,
+                      .is_destructive = false,
+                  });
+      changed = true;
+    }
+  }
+  MEM_freeN(objects);
+
+  if (!changed) {
+    return OPERATOR_CANCELLED;
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_hide(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Hide Selected";
+  ot->idname = "MESH_OT_hide";
+  ot->description = "Hide (un)selected vertices, edges or faces";
+
+  /* api callbacks */
+  ot->exec = edbm_hide_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(
+      ot->srna, "unselected", false, "Unselected", "Hide unselected rather than selected");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Reveal Operator
+ * \{ */
+
+static int edbm_reveal_exec(bContext *C, wmOperator *op)
+{
+  const bool select = RNA_boolean_get(op->ptr, "select");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (EDBM_mesh_reveal(em, select)) {
+      EDBM_update(obedit->data,
+                  &(const struct EDBMUpdate_Params){
+                      .calc_looptri = true,
+                      .calc_normals = false,
+                      .is_destructive = false,
+                  });
+    }
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_reveal(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Reveal Hidden";
+  ot->idname = "MESH_OT_reveal";
+  ot->description = "Reveal all hidden vertices, edges and faces";
+
+  /* api callbacks */
+  ot->exec = edbm_reveal_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_boolean(ot->srna, "select", true, "Select", "");
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Recalculate Normals Operator
+ * \{ */
+
+static int edbm_normals_make_consistent_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  const bool inside = RNA_boolean_get(op->ptr, "inside");
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    BMLoopNorEditDataArray *lnors_ed_arr = NULL;
+
+    if (inside) {
+      /* Save custom normal data for later so we can flip them correctly. */
+      lnors_ed_arr = flip_custom_normals_init_data(em->bm);
+    }
+
+    if (!EDBM_op_callf(em, op, "recalc_face_normals faces=%hf", BM_ELEM_SELECT)) {
+      continue;
+    }
+
+    if (inside) {
+      EDBM_op_callf(em, op, "reverse_faces faces=%hf flip_multires=%b", BM_ELEM_SELECT, true);
+      flip_custom_normals(em->bm, lnors_ed_arr);
+      if (lnors_ed_arr != NULL) {
+        BM_loop_normal_editdata_array_free(lnors_ed_arr);
+      }
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_normals_make_consistent(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Recalculate Normals";
+  ot->description = "Make face and vertex normals point either outside or inside the mesh";
+  ot->idname = "MESH_OT_normals_make_consistent";
+
+  /* api callbacks */
+  ot->exec = edbm_normals_make_consistent_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_boolean(ot->srna, "inside", false, "Inside", "");
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Smooth Vertices Operator
+ * \{ */
+
+static int edbm_do_smooth_vertex_exec(bContext *C, wmOperator *op)
+{
+  const float fac = RNA_float_get(op->ptr, "factor");
+
+  const bool xaxis = RNA_boolean_get(op->ptr, "xaxis");
+  const bool yaxis = RNA_boolean_get(op->ptr, "yaxis");
+  const bool zaxis = RNA_boolean_get(op->ptr, "zaxis");
+  int repeat = RNA_int_get(op->ptr, "repeat");
+
+  if (!repeat) {
+    repeat = 1;
+  }
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    Mesh *me = obedit->data;
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    bool mirrx = false, mirry = false, mirrz = false;
+    float clip_dist = 0.0f;
+    const bool use_topology = (me->editflag & ME_EDIT_MIRROR_TOPO) != 0;
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+
+    /* mirror before smooth */
+    if (((Mesh *)obedit->data)->symmetry & ME_SYMMETRY_X) {
+      EDBM_verts_mirror_cache_begin(em, 0, false, true, false, use_topology);
+    }
+
+    /* if there is a mirror modifier with clipping, flag the verts that
+     * are within tolerance of the plane(s) of reflection
+     */
+    LISTBASE_FOREACH (ModifierData *, md, &obedit->modifiers) {
+      if (md->type == eModifierType_Mirror && (md->mode & eModifierMode_Realtime)) {
+        MirrorModifierData *mmd = (MirrorModifierData *)md;
+
+        if (mmd->flag & MOD_MIR_CLIPPING) {
+          if (mmd->flag & MOD_MIR_AXIS_X) {
+            mirrx = true;
+          }
+          if (mmd->flag & MOD_MIR_AXIS_Y) {
+            mirry = true;
+          }
+          if (mmd->flag & MOD_MIR_AXIS_Z) {
+            mirrz = true;
+          }
+
+          clip_dist = mmd->tolerance;
+        }
+      }
+    }
+
+    for (int i = 0; i < repeat; i++) {
+      if (!EDBM_op_callf(
+              em,
+              op,
+              "smooth_vert verts=%hv factor=%f mirror_clip_x=%b mirror_clip_y=%b mirror_clip_z=%b "
+              "clip_dist=%f use_axis_x=%b use_axis_y=%b use_axis_z=%b",
+              BM_ELEM_SELECT,
+              fac,
+              mirrx,
+              mirry,
+              mirrz,
+              clip_dist,
+              xaxis,
+              yaxis,
+              zaxis)) {
+        continue;
+      }
+    }
+
+    /* apply mirror */
+    if (((Mesh *)obedit->data)->symmetry & ME_SYMMETRY_X) {
+      EDBM_verts_mirror_apply(em, BM_ELEM_SELECT, 0);
+      EDBM_verts_mirror_cache_end(em);
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_vertices_smooth(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Smooth Vertices";
+  ot->description = "Flatten angles of selected vertices";
+  ot->idname = "MESH_OT_vertices_smooth";
+
+  /* api callbacks */
+  ot->exec = edbm_do_smooth_vertex_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  ot->prop = RNA_def_float_factor(
+      ot->srna, "factor", 0.0f, -10.0f, 10.0f, "Smoothing", "Smoothing factor", 0.0f, 1.0f);
+  RNA_def_int(
+      ot->srna, "repeat", 1, 1, 1000, "Repeat", "Number of times to smooth the mesh", 1, 100);
+
+  WM_operatortype_props_advanced_begin(ot);
+
+  RNA_def_boolean(ot->srna, "xaxis", true, "X-Axis", "Smooth along the X axis");
+  RNA_def_boolean(ot->srna, "yaxis", true, "Y-Axis", "Smooth along the Y axis");
+  RNA_def_boolean(ot->srna, "zaxis", true, "Z-Axis", "Smooth along the Z axis");
+
+  /* Set generic modal callbacks. */
+  WM_operator_type_modal_from_exec_for_object_edit_coords(ot);
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Laplacian Smooth Vertices Operator
+ * \{ */
+
+static int edbm_do_smooth_laplacian_vertex_exec(bContext *C, wmOperator *op)
+{
+  int tot_unselected = 0;
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  const float lambda_factor = RNA_float_get(op->ptr, "lambda_factor");
+  const float lambda_border = RNA_float_get(op->ptr, "lambda_border");
+  const bool usex = RNA_boolean_get(op->ptr, "use_x");
+  const bool usey = RNA_boolean_get(op->ptr, "use_y");
+  const bool usez = RNA_boolean_get(op->ptr, "use_z");
+  const bool preserve_volume = RNA_boolean_get(op->ptr, "preserve_volume");
+  int repeat = RNA_int_get(op->ptr, "repeat");
+
+  if (!repeat) {
+    repeat = 1;
+  }
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    Mesh *me = obedit->data;
+    bool use_topology = (me->editflag & ME_EDIT_MIRROR_TOPO) != 0;
+
+    if (em->bm->totvertsel == 0) {
+      tot_unselected++;
+      continue;
+    }
+
+    /* Mirror before smooth. */
+    if (((Mesh *)obedit->data)->symmetry & ME_SYMMETRY_X) {
+      EDBM_verts_mirror_cache_begin(em, 0, false, true, false, use_topology);
+    }
+
+    bool failed_repeat_loop = false;
+    for (int i = 0; i < repeat; i++) {
+      if (!EDBM_op_callf(em,
+                         op,
+                         "smooth_laplacian_vert verts=%hv lambda_factor=%f lambda_border=%f "
+                         "use_x=%b use_y=%b use_z=%b preserve_volume=%b",
+                         BM_ELEM_SELECT,
+                         lambda_factor,
+                         lambda_border,
+                         usex,
+                         usey,
+                         usez,
+                         preserve_volume)) {
+        failed_repeat_loop = true;
+        break;
+      }
+    }
+    if (failed_repeat_loop) {
+      continue;
+    }
+
+    /* Apply mirror. */
+    if (((Mesh *)obedit->data)->symmetry & ME_SYMMETRY_X) {
+      EDBM_verts_mirror_apply(em, BM_ELEM_SELECT, 0);
+      EDBM_verts_mirror_cache_end(em);
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  if (tot_unselected == objects_len) {
+    BKE_report(op->reports, RPT_WARNING, "No selected vertex");
+    return OPERATOR_CANCELLED;
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_vertices_smooth_laplacian(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Laplacian Smooth Vertices";
+  ot->description = "Laplacian smooth of selected vertices";
+  ot->idname = "MESH_OT_vertices_smooth_laplacian";
+
+  /* api callbacks */
+  ot->exec = edbm_do_smooth_laplacian_vertex_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_int(
+      ot->srna, "repeat", 1, 1, 1000, "Number of iterations to smooth the mesh", "", 1, 200);
+  RNA_def_float(
+      ot->srna, "lambda_factor", 1.0f, 1e-7f, 1000.0f, "Lambda factor", "", 1e-7f, 1000.0f);
+  RNA_def_float(ot->srna,
+                "lambda_border",
+                5e-5f,
+                1e-7f,
+                1000.0f,
+                "Lambda factor in border",
+                "",
+                1e-7f,
+                1000.0f);
+
+  WM_operatortype_props_advanced_begin(ot);
+
+  RNA_def_boolean(ot->srna, "use_x", true, "Smooth X Axis", "Smooth object along X axis");
+  RNA_def_boolean(ot->srna, "use_y", true, "Smooth Y Axis", "Smooth object along Y axis");
+  RNA_def_boolean(ot->srna, "use_z", true, "Smooth Z Axis", "Smooth object along Z axis");
+  RNA_def_boolean(ot->srna,
+                  "preserve_volume",
+                  true,
+                  "Preserve Volume",
+                  "Apply volume preservation after smooth");
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Set Faces Smooth Shading Operator
+ * \{ */
+
+static void mesh_set_smooth_faces(BMEditMesh *em, short smooth)
+{
+  BMIter iter;
+  BMFace *efa;
+
+  if (em == NULL) {
+    return;
+  }
+
+  BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
+    if (BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+      BM_elem_flag_set(efa, BM_ELEM_SMOOTH, smooth);
+    }
+  }
+}
+
+static int edbm_faces_shade_smooth_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    mesh_set_smooth_faces(em, 1);
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_faces_shade_smooth(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Shade Smooth";
+  ot->description = "Display faces smooth (using vertex normals)";
+  ot->idname = "MESH_OT_faces_shade_smooth";
+
+  /* api callbacks */
+  ot->exec = edbm_faces_shade_smooth_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Set Faces Flat Shading Operator
+ * \{ */
+
+static int edbm_faces_shade_flat_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    mesh_set_smooth_faces(em, 0);
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_faces_shade_flat(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Shade Flat";
+  ot->description = "Display faces flat";
+  ot->idname = "MESH_OT_faces_shade_flat";
+
+  /* api callbacks */
+  ot->exec = edbm_faces_shade_flat_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/* -------------------------------------------------------------------- */
+/** \name UV/Color Rotate/Reverse Operator
+ * \{ */
+
+static int edbm_rotate_uvs_exec(bContext *C, wmOperator *op)
+{
+  /* get the direction from RNA */
+  const bool use_ccw = RNA_boolean_get(op->ptr, "use_ccw");
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+
+    EDBM_op_init(em, &bmop, op, "rotate_uvs faces=%hf use_ccw=%b", BM_ELEM_SELECT, use_ccw);
+
+    BMO_op_exec(em->bm, &bmop);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+static int edbm_reverse_uvs_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+
+    EDBM_op_init(em, &bmop, op, "reverse_uvs faces=%hf", BM_ELEM_SELECT);
+
+    BMO_op_exec(em->bm, &bmop);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+static int edbm_rotate_colors_exec(bContext *C, wmOperator *op)
+{
+  /* get the direction from RNA */
+  const bool use_ccw = RNA_boolean_get(op->ptr, "use_ccw");
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *ob = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(ob);
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+
+    EDBM_op_init(em, &bmop, op, "rotate_colors faces=%hf use_ccw=%b", BM_ELEM_SELECT, use_ccw);
+
+    BMO_op_exec(em->bm, &bmop);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    /* dependencies graph and notification stuff */
+    EDBM_update(ob->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+static int edbm_reverse_colors_exec(bContext *C, wmOperator *op)
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+
+    BMOperator bmop;
+
+    EDBM_op_init(em, &bmop, op, "reverse_colors faces=%hf", BM_ELEM_SELECT);
+
+    BMO_op_exec(em->bm, &bmop);
+
+    if (!EDBM_op_finish(em, &bmop, op, true)) {
+      continue;
+    }
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = false,
+                    .calc_normals = false,
+                    .is_destructive = false,
+                });
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_uvs_rotate(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Rotate UVs";
+  ot->idname = "MESH_OT_uvs_rotate";
+  ot->description = "Rotate UV coordinates inside faces";
+
+  /* api callbacks */
+  ot->exec = edbm_rotate_uvs_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(ot->srna, "use_ccw", false, "Counter Clockwise", "");
+}
+
+void MESH_OT_uvs_reverse(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Reverse UVs";
+  ot->idname = "MESH_OT_uvs_reverse";
+  ot->description = "Flip direction of UV coordinates inside faces";
+
+  /* api callbacks */
+  ot->exec = edbm_reverse_uvs_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  // RNA_def_enum(ot->srna, "axis", axis_items, DIRECTION_CW, "Axis", "Axis to mirror UVs around");
+}
+
+void MESH_OT_colors_rotate(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Rotate Colors";
+  ot->idname = "MESH_OT_colors_rotate";
+  ot->description = "Rotate vertex colors inside faces";
+
+  /* api callbacks */
+  ot->exec = edbm_rotate_colors_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(ot->srna, "use_ccw", false, "Counter Clockwise", "");
+}
+
+void MESH_OT_colors_reverse(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Reverse Colors";
+  ot->idname = "MESH_OT_colors_reverse";
+  ot->description = "Flip direction of vertex colors inside faces";
+
+  /* api callbacks */
+  ot->exec = edbm_reverse_colors_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+#if 0
+  RNA_def_enum(ot->srna, "axis", axis_items, DIRECTION_CW, "Axis", "Axis to mirror colors around");
+#endif
+}
+
+/* -------------------------------------------------------------------- */
+/** \name Merge Vertices Operator
+ * \{ */
+
+enum {
+  MESH_MERGE_LAST = 1,
+  MESH_MERGE_CENTER = 3,
+  MESH_MERGE_CURSOR = 4,
+  MESH_MERGE_COLLAPSE = 5,
+  MESH_MERGE_FIRST = 6,
+};
+
+static bool merge_firstlast(BMEditMesh *em,
+                            const bool use_first,
+                            const bool use_uvmerge,
+                            wmOperator *wmop)
+{
+  BMVert *mergevert;
+  BMEditSelection *ese;
+
+  /* operator could be called directly from shortcut or python,
+   * so do extra check for data here
+   */
+
+  /* While #merge_type_itemf does a sanity check, this operation runs on all edit-mode objects.
+   * Some of them may not have the expected selection state. */
+  if (use_first == false) {
+    if (!em->bm->selected.last || ((BMEditSelection *)em->bm->selected.last)->htype != BM_VERT) {
+      return false;
+    }
+
+    ese = em->bm->selected.last;
+    mergevert = (BMVert *)ese->ele;
+  }
+  else {
+    if (!em->bm->selected.first || ((BMEditSelection *)em->bm->selected.first)->htype != BM_VERT) {
+      return false;
+    }
+
+    ese = em->bm->selected.first;
+    mergevert = (BMVert *)ese->ele;
+  }
+
+  if (!BM_elem_flag_test(mergevert, BM_ELEM_SELECT)) {
+    return false;
+  }
+
+  if (use_uvmerge) {
+    if (!EDBM_op_callf(
+            em, wmop, "pointmerge_facedata verts=%hv vert_snap=%e", BM_ELEM_SELECT, mergevert)) {
+      return false;
+    }
+  }
+
+  if (!EDBM_op_callf(
+          em, wmop, "pointmerge verts=%hv merge_co=%v", BM_ELEM_SELECT, mergevert->co)) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool merge_target(BMEditMesh *em,
+                         Scene *scene,
+                         Object *ob,
+                         const bool use_cursor,
+                         const bool use_uvmerge,
+                         wmOperator *wmop)
+{
+  BMIter iter;
+  BMVert *v;
+  float co[3], cent[3] = {0.0f, 0.0f, 0.0f};
+  const float *vco = NULL;
+
+  if (use_cursor) {
+    vco = scene->cursor.location;
+    copy_v3_v3(co, vco);
+    invert_m4_m4(ob->imat, ob->obmat);
+    mul_m4_v3(ob->imat, co);
+  }
+  else {
+    float fac;
+    int i = 0;
+    BM_ITER_MESH (v, &iter, em->bm, BM_VERTS_OF_MESH) {
+      if (!BM_elem_flag_test(v, BM_ELEM_SELECT)) {
+        continue;
+      }
+      add_v3_v3(cent, v->co);
+      i++;
+    }
+
+    if (!i) {
+      return false;
+    }
+
+    fac = 1.0f / (float)i;
+    mul_v3_fl(cent, fac);
+    copy_v3_v3(co, cent);
+    vco = co;
+  }
+
+  if (!vco) {
+    return false;
+  }
+
+  if (use_uvmerge) {
+    if (!EDBM_op_callf(em, wmop, "average_vert_facedata verts=%hv", BM_ELEM_SELECT)) {
+      return false;
+    }
+  }
+
+  if (!EDBM_op_callf(em, wmop, "pointmerge verts=%hv merge_co=%v", BM_ELEM_SELECT, co)) {
+    return false;
+  }
+
+  return true;
+}
+
+static int edbm_merge_exec(bContext *C, wmOperator *op)
+{
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  const int type = RNA_enum_get(op->ptr, "type");
+  const bool uvs = RNA_boolean_get(op->ptr, "uvs");
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totvertsel == 0) {
+      continue;
+    }
+
+    BM_custom_loop_normals_to_vector_layer(em->bm);
+
+    bool ok = false;
+    switch (type) {
+      case MESH_MERGE_CENTER:
+        ok = merge_target(em, scene, obedit, false, uvs, op);
+        break;
+      case MESH_MERGE_CURSOR:
+        ok = merge_target(em, scene, obedit, true, uvs, op);
+        break;
+      case MESH_MERGE_LAST:
+        ok = merge_firstlast(em, false, uvs, op);
+        break;
+      case MESH_MERGE_FIRST:
+        ok = merge_firstlast(em, true, uvs, op);
+        break;
+      case MESH_MERGE_COLLAPSE:
+        ok = EDBM_op_callf(em, op, "collapse edges=%he uvs=%b", BM_ELEM_SELECT, uvs);
+        break;
+      default:
+        BLI_assert(0);
+        break;
+    }
+
+    if (!ok) {
+      continue;
+    }
+
+    BM_custom_loop_normals_from_vector_layer(em->bm, false);
+
+    EDBM_update(obedit->data,
+                &(const struct EDBMUpdate_Params){
+                    .calc_looptri = true,
+                    .calc_normals = false,
+                    .is_destructive = true,
+                });
+
+    /* once collapsed, we can't have edge/face selection */
+    if ((em->selectmode & SCE_SELECT_VERTEX) == 0) {
+      EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+    }
+    /* Only active object supported, see comment below. */
+    if (ELEM(type, MESH_MERGE_FIRST, MESH_MERGE_LAST)) {
+      break;
+    }
+  }
+
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+static const EnumPropertyItem merge_type_items[] = {
+    {MESH_MERGE_CENTER, "CENTER", 0, "At Center", ""},
+    {MESH_MERGE_CURSOR, "CURSOR", 0, "At Cursor", ""},
+    {MESH_MERGE_COLLAPSE, "COLLAPSE", 0, "Collapse", ""},
+    {MESH_MERGE_FIRST, "FIRST", 0, "At First", ""},
+    {MESH_MERGE_LAST, "LAST", 0, "At Last", ""},
+    {0, NULL, 0, NULL, NULL},
+};
+
+static const EnumPropertyItem *merge_type_itemf(bContext *C,
+                                                PointerRNA *UNUSED(ptr),
+                                                PropertyRNA *UNUSED(prop),
+                                                bool *r_free)
+{
+  if (!C) { /* needed for docs */
+    return merge_type_items;
+  }
+
+  Object *obedit = CTX_data_edit_object(C);
+  if (obedit && obedit->type == OB_MESH) {
+    EnumPropertyItem *item = NULL;
+    int totitem = 0;
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    /* Keep these first so that their automatic shortcuts don't change. */
+    RNA_enum_items_add_value(&item, &totitem, merge_type_items, MESH_MERGE_CENTER);
+    RNA_enum_items_add_value(&item, &totitem, merge_type_items, MESH_MERGE_CURSOR);
+    RNA_enum_items_add_value(&item, &totitem, merge_type_items, MESH_MERGE_COLLAPSE);
+
+    /* Only active object supported:
+     * In practice it doesn't make sense to run this operation on non-active meshes
+     * since selecting will activate - we could have own code-path for these but it's a hassle
+     * for now just apply to the active (first) object. */
+    if (em->selectmode & SCE_SELECT_VERTEX) {
+      if (em->bm->selected.first && em->bm->selected.last &&
+          ((BMEditSelection *)em->bm->selected.first)->htype == BM_VERT &&
+          ((BMEditSelection *)em->bm->selected.last)->htype == BM_VERT) {
+        RNA_enum_items_add_value(&item, &totitem, merge_type_items, MESH_MERGE_FIRST);
+        RNA_enum_items_add_value(&item, &totitem, merge_type_items, MESH_MERGE_LAST);
+      }
+      else if (em->bm->selected.first &&
+               ((BMEditSelection *)em->bm->selected.first)->htype == BM_VERT) {
+        RNA_enum_items_add_value(&item, &totitem, merge_type_items, MESH_MERGE_FIRST);
+      }
+      else if (em->bm->selected.last &&
+               ((BMEditSelection *)em->bm->selected.last)->htype == BM_VERT) {
+        RNA_enum_items_add_value(&item, &totitem, merge_type_items, MESH_MERGE_LAST);
+      }
+    }
+
+    RNA_enum_item_end(&item, &totitem);
+
+    *r_free = true;
+
+    return item;
+  }
+
+  /* Get all items e.g. when creating keymap item. */
+  return merge_type_items;
+}
+
+void MESH_OT_merge(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Merge";
+  ot->description = "Merge selected vertices";
+  ot->idname = "MESH_OT_merge";
+
+  /* api callbacks */
+  ot->exec = edbm_merge_exec;
+  ot->invoke = WM_menu_invoke;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  ot->prop = RNA_def_enum(
+      ot->srna, "type", merge_type_items, MESH_MERGE_CENTER, "Type", "Merge method to use");
+  RNA_def_enum_funcs(ot->prop, merge_type_itemf);
+
+  WM_operatortype_props_advanced_begin(ot);
+
+  RNA_def_boolean(ot->srna, "uvs", false, "UVs", "Move UVs according to merge");
+}
