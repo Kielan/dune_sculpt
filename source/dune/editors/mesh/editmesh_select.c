@@ -4638,3 +4638,663 @@ void MESH_OT_select_non_manifold(wmOperatorType *ot)
       ot->srna, "use_verts", true, "Vertices", "Vertices connecting multiple face regions");
 }
 
+/* -------------------------------------------------------------------- */
+/** \name Select Random Operator
+ * \{ */
+
+static int edbm_select_random_exec(bContext *C, wmOperator *op)
+{
+  const bool select = (RNA_enum_get(op->ptr, "action") == SEL_SELECT);
+  const float randfac = RNA_float_get(op->ptr, "ratio");
+  const int seed = WM_operator_properties_select_random_seed_increment_get(op);
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    BMIter iter;
+    int seed_iter = seed;
+
+    /* This gives a consistent result regardless of object order. */
+    if (ob_index) {
+      seed_iter += BLI_ghashutil_strhash_p(obedit->id.name);
+    }
+
+    if (em->selectmode & SCE_SELECT_VERTEX) {
+      int elem_map_len = 0;
+      BMVert **elem_map = MEM_mallocN(sizeof(*elem_map) * em->bm->totvert, __func__);
+      BMVert *eve;
+      BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
+        if (!BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+          elem_map[elem_map_len++] = eve;
+        }
+      }
+
+      BLI_array_randomize(elem_map, sizeof(*elem_map), elem_map_len, seed_iter);
+      const int count_select = elem_map_len * randfac;
+      for (int i = 0; i < count_select; i++) {
+        BM_vert_select_set(em->bm, elem_map[i], select);
+      }
+      MEM_freeN(elem_map);
+    }
+    else if (em->selectmode & SCE_SELECT_EDGE) {
+      int elem_map_len = 0;
+      BMEdge **elem_map = MEM_mallocN(sizeof(*elem_map) * em->bm->totedge, __func__);
+      BMEdge *eed;
+      BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
+        if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
+          elem_map[elem_map_len++] = eed;
+        }
+      }
+      BLI_array_randomize(elem_map, sizeof(*elem_map), elem_map_len, seed_iter);
+      const int count_select = elem_map_len * randfac;
+      for (int i = 0; i < count_select; i++) {
+        BM_edge_select_set(em->bm, elem_map[i], select);
+      }
+      MEM_freeN(elem_map);
+    }
+    else {
+      int elem_map_len = 0;
+      BMFace **elem_map = MEM_mallocN(sizeof(*elem_map) * em->bm->totface, __func__);
+      BMFace *efa;
+      BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
+        if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+          elem_map[elem_map_len++] = efa;
+        }
+      }
+      BLI_array_randomize(elem_map, sizeof(*elem_map), elem_map_len, seed_iter);
+      const int count_select = elem_map_len * randfac;
+      for (int i = 0; i < count_select; i++) {
+        BM_face_select_set(em->bm, elem_map[i], select);
+      }
+      MEM_freeN(elem_map);
+    }
+
+    if (select) {
+      /* was EDBM_select_flush, but it over select in edge/face mode */
+      EDBM_selectmode_flush(em);
+    }
+    else {
+      EDBM_deselect_flush(em);
+    }
+
+    DEG_id_tag_update(obedit->data, ID_RECALC_SELECT);
+    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+  }
+
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_select_random(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Random";
+  ot->description = "Randomly select vertices";
+  ot->idname = "MESH_OT_select_random";
+
+  /* api callbacks */
+  ot->exec = edbm_select_random_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  WM_operator_properties_select_random(ot);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Select Ungrouped Operator
+ * \{ */
+
+static bool edbm_select_ungrouped_poll(bContext *C)
+{
+  if (ED_operator_editmesh(C)) {
+    Object *obedit = CTX_data_edit_object(C);
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+    const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
+
+    const ListBase *defbase = BKE_object_defgroup_list(obedit);
+    if ((em->selectmode & SCE_SELECT_VERTEX) == 0) {
+      CTX_wm_operator_poll_msg_set(C, "Must be in vertex selection mode");
+    }
+    else if (BLI_listbase_is_empty(defbase) || cd_dvert_offset == -1) {
+      CTX_wm_operator_poll_msg_set(C, "No weights/vertex groups on object");
+    }
+    else {
+      return true;
+    }
+  }
+  return false;
+}
+
+static int edbm_select_ungrouped_exec(bContext *C, wmOperator *op)
+{
+  const bool extend = RNA_boolean_get(op->ptr, "extend");
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
+
+    if (cd_dvert_offset == -1) {
+      continue;
+    }
+
+    BMVert *eve;
+    BMIter iter;
+
+    bool changed = false;
+
+    if (!extend) {
+      if (em->bm->totvertsel) {
+        EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+        changed = true;
+      }
+    }
+
+    BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
+      if (!BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+        MDeformVert *dv = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
+        /* no dv or dv set with no weight */
+        if (ELEM(NULL, dv, dv->dw)) {
+          BM_vert_select_set(em->bm, eve, true);
+          changed = true;
+        }
+      }
+    }
+
+    if (changed) {
+      EDBM_selectmode_flush(em);
+      DEG_id_tag_update(obedit->data, ID_RECALC_SELECT);
+      WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+    }
+  }
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_select_ungrouped(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Ungrouped";
+  ot->idname = "MESH_OT_select_ungrouped";
+  ot->description = "Select vertices without a group";
+
+  /* api callbacks */
+  ot->exec = edbm_select_ungrouped_exec;
+  ot->poll = edbm_select_ungrouped_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend the selection");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Select Axis Operator
+ * \{ */
+
+enum {
+  SELECT_AXIS_POS = 0,
+  SELECT_AXIS_NEG = 1,
+  SELECT_AXIS_ALIGN = 2,
+};
+
+static int edbm_select_axis_exec(bContext *C, wmOperator *op)
+{
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Object *obedit = CTX_data_edit_object(C);
+  BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  BMVert *v_act = BM_mesh_active_vert_get(em->bm);
+  const int orientation = RNA_enum_get(op->ptr, "orientation");
+  const int axis = RNA_enum_get(op->ptr, "axis");
+  const int sign = RNA_enum_get(op->ptr, "sign");
+
+  if (v_act == NULL) {
+    BKE_report(
+        op->reports, RPT_WARNING, "This operator requires an active vertex (last selected)");
+    return OPERATOR_CANCELLED;
+  }
+
+  const float limit = RNA_float_get(op->ptr, "threshold");
+
+  float value;
+  float axis_mat[3][3];
+
+  /* 3D view variables may be NULL, (no need to check in poll function). */
+  ED_transform_calc_orientation_from_type_ex(scene,
+                                             view_layer,
+                                             CTX_wm_view3d(C),
+                                             CTX_wm_region_view3d(C),
+                                             obedit,
+                                             obedit,
+                                             orientation,
+                                             V3D_AROUND_ACTIVE,
+                                             axis_mat);
+
+  const float *axis_vector = axis_mat[axis];
+
+  {
+    float vertex_world[3];
+    mul_v3_m4v3(vertex_world, obedit->obmat, v_act->co);
+    value = dot_v3v3(axis_vector, vertex_world);
+  }
+
+  if (sign == SELECT_AXIS_NEG) {
+    value += limit;
+  }
+  else if (sign == SELECT_AXIS_POS) {
+    value -= limit;
+  }
+
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit_iter = objects[ob_index];
+    BMEditMesh *em_iter = BKE_editmesh_from_object(obedit_iter);
+    BMesh *bm = em_iter->bm;
+
+    if (bm->totvert == bm->totvertsel) {
+      continue;
+    }
+
+    BMIter iter;
+    BMVert *v;
+    bool changed = false;
+
+    BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+      if (!BM_elem_flag_test(v, BM_ELEM_HIDDEN | BM_ELEM_SELECT)) {
+        float v_iter_world[3];
+        mul_v3_m4v3(v_iter_world, obedit_iter->obmat, v->co);
+        const float value_iter = dot_v3v3(axis_vector, v_iter_world);
+        switch (sign) {
+          case SELECT_AXIS_ALIGN:
+            if (fabsf(value_iter - value) < limit) {
+              BM_vert_select_set(bm, v, true);
+              changed = true;
+            }
+            break;
+          case SELECT_AXIS_NEG:
+            if (value_iter < value) {
+              BM_vert_select_set(bm, v, true);
+              changed = true;
+            }
+            break;
+          case SELECT_AXIS_POS:
+            if (value_iter > value) {
+              BM_vert_select_set(bm, v, true);
+              changed = true;
+            }
+            break;
+        }
+      }
+    }
+    if (changed) {
+      EDBM_selectmode_flush(em_iter);
+      WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit_iter->data);
+      DEG_id_tag_update(obedit_iter->data, ID_RECALC_SELECT);
+    }
+  }
+  MEM_freeN(objects);
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_select_axis(wmOperatorType *ot)
+{
+  static const EnumPropertyItem axis_sign_items[] = {
+      {SELECT_AXIS_POS, "POS", 0, "Positive Axis", ""},
+      {SELECT_AXIS_NEG, "NEG", 0, "Negative Axis", ""},
+      {SELECT_AXIS_ALIGN, "ALIGN", 0, "Aligned Axis", ""},
+      {0, NULL, 0, NULL, NULL},
+  };
+
+  /* identifiers */
+  ot->name = "Select Axis";
+  ot->description = "Select all data in the mesh on a single axis";
+  ot->idname = "MESH_OT_select_axis";
+
+  /* api callbacks */
+  ot->exec = edbm_select_axis_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  RNA_def_enum(ot->srna,
+               "orientation",
+               rna_enum_transform_orientation_items,
+               V3D_ORIENT_LOCAL,
+               "Axis Mode",
+               "Axis orientation");
+  RNA_def_enum(ot->srna, "sign", axis_sign_items, SELECT_AXIS_POS, "Axis Sign", "Side to select");
+  RNA_def_enum(ot->srna,
+               "axis",
+               rna_enum_axis_xyz_items,
+               0,
+               "Axis",
+               "Select the axis to compare each vertex on");
+  RNA_def_float(
+      ot->srna, "threshold", 0.0001f, 0.000001f, 50.0f, "Threshold", "", 0.00001f, 10.0f);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Select Region to Loop Operator
+ * \{ */
+
+static int edbm_region_to_loop_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totfacesel == 0) {
+      continue;
+    }
+    BMFace *f;
+    BMEdge *e;
+    BMIter iter;
+
+    BM_mesh_elem_hflag_disable_all(em->bm, BM_EDGE, BM_ELEM_TAG, false);
+
+    BM_ITER_MESH (f, &iter, em->bm, BM_FACES_OF_MESH) {
+      BMLoop *l1, *l2;
+      BMIter liter1, liter2;
+
+      BM_ITER_ELEM (l1, &liter1, f, BM_LOOPS_OF_FACE) {
+        int tot = 0, totsel = 0;
+
+        BM_ITER_ELEM (l2, &liter2, l1->e, BM_LOOPS_OF_EDGE) {
+          tot++;
+          totsel += BM_elem_flag_test(l2->f, BM_ELEM_SELECT) != 0;
+        }
+
+        if ((tot != totsel && totsel > 0) || (totsel == 1 && tot == 1)) {
+          BM_elem_flag_enable(l1->e, BM_ELEM_TAG);
+        }
+      }
+    }
+
+    EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+
+    BM_ITER_MESH (e, &iter, em->bm, BM_EDGES_OF_MESH) {
+      if (BM_elem_flag_test(e, BM_ELEM_TAG)) {
+        BM_edge_select_set(em->bm, e, true);
+      }
+    }
+
+    /* If in face-only select mode, switch to edge select mode so that
+     * an edge-only selection is not inconsistent state */
+    if (em->selectmode == SCE_SELECT_FACE) {
+      em->selectmode = SCE_SELECT_EDGE;
+      EDBM_selectmode_set(em);
+      EDBM_selectmode_to_scene(C);
+    }
+
+    DEG_id_tag_update(&obedit->id, ID_RECALC_GEOMETRY);
+    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_region_to_loop(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Boundary Loop";
+  ot->idname = "MESH_OT_region_to_loop";
+  ot->description = "Select boundary edges around the selected faces";
+
+  /* api callbacks */
+  ot->exec = edbm_region_to_loop_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Select Loop to Region Operator
+ * \{ */
+
+static int loop_find_region(BMLoop *l, int flag, GSet *visit_face_set, BMFace ***region_out)
+{
+  BMFace **region = NULL;
+  BMFace **stack = NULL;
+  BLI_array_declare(region);
+  BLI_array_declare(stack);
+  BMFace *f;
+
+  BLI_array_append(stack, l->f);
+  BLI_gset_insert(visit_face_set, l->f);
+
+  while (BLI_array_len(stack) > 0) {
+    BMIter liter1, liter2;
+    BMLoop *l1, *l2;
+
+    f = BLI_array_pop(stack);
+    BLI_array_append(region, f);
+
+    BM_ITER_ELEM (l1, &liter1, f, BM_LOOPS_OF_FACE) {
+      if (BM_elem_flag_test(l1->e, flag)) {
+        continue;
+      }
+
+      BM_ITER_ELEM (l2, &liter2, l1->e, BM_LOOPS_OF_EDGE) {
+        /* avoids finding same region twice
+         * (otherwise) the logic works fine without */
+        if (BM_elem_flag_test(l2->f, BM_ELEM_TAG)) {
+          continue;
+        }
+
+        if (BLI_gset_add(visit_face_set, l2->f)) {
+          BLI_array_append(stack, l2->f);
+        }
+      }
+    }
+  }
+
+  BLI_array_free(stack);
+
+  *region_out = region;
+  return BLI_array_len(region);
+}
+
+static int verg_radial(const void *va, const void *vb)
+{
+  const BMEdge *e_a = *((const BMEdge **)va);
+  const BMEdge *e_b = *((const BMEdge **)vb);
+
+  const int a = BM_edge_face_count(e_a);
+  const int b = BM_edge_face_count(e_b);
+
+  if (a > b) {
+    return -1;
+  }
+  if (a < b) {
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * This function leaves faces tagged which are a part of the new region.
+ *
+ * \note faces already tagged are ignored, to avoid finding the same regions twice:
+ * important when we have regions with equal face counts, see: T40309
+ */
+static int loop_find_regions(BMEditMesh *em, const bool selbigger)
+{
+  GSet *visit_face_set;
+  BMIter iter;
+  const int edges_len = em->bm->totedgesel;
+  BMEdge *e, **edges;
+  int count = 0, i;
+
+  visit_face_set = BLI_gset_ptr_new_ex(__func__, edges_len);
+  edges = MEM_mallocN(sizeof(*edges) * edges_len, __func__);
+
+  i = 0;
+  BM_ITER_MESH (e, &iter, em->bm, BM_EDGES_OF_MESH) {
+    if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
+      edges[i++] = e;
+      BM_elem_flag_enable(e, BM_ELEM_TAG);
+    }
+    else {
+      BM_elem_flag_disable(e, BM_ELEM_TAG);
+    }
+  }
+
+  /* sort edges by radial cycle length */
+  qsort(edges, edges_len, sizeof(*edges), verg_radial);
+
+  for (i = 0; i < edges_len; i++) {
+    BMIter liter;
+    BMLoop *l;
+    BMFace **region = NULL, **region_out;
+    int c, tot = 0;
+
+    e = edges[i];
+
+    if (!BM_elem_flag_test(e, BM_ELEM_TAG)) {
+      continue;
+    }
+
+    BM_ITER_ELEM (l, &liter, e, BM_LOOPS_OF_EDGE) {
+      if (BLI_gset_haskey(visit_face_set, l->f)) {
+        continue;
+      }
+
+      c = loop_find_region(l, BM_ELEM_SELECT, visit_face_set, &region_out);
+
+      if (!region || (selbigger ? c >= tot : c < tot)) {
+        /* this region is the best seen so far */
+        tot = c;
+        if (region) {
+          /* free the previous best */
+          MEM_freeN(region);
+        }
+        /* track the current region as the new best */
+        region = region_out;
+      }
+      else {
+        /* this region is not as good as best so far, just free it */
+        MEM_freeN(region_out);
+      }
+    }
+
+    if (region) {
+      int j;
+
+      for (j = 0; j < tot; j++) {
+        BM_elem_flag_enable(region[j], BM_ELEM_TAG);
+        BM_ITER_ELEM (l, &liter, region[j], BM_LOOPS_OF_FACE) {
+          BM_elem_flag_disable(l->e, BM_ELEM_TAG);
+        }
+      }
+
+      count += tot;
+
+      MEM_freeN(region);
+    }
+  }
+
+  MEM_freeN(edges);
+  BLI_gset_free(visit_face_set, NULL);
+
+  return count;
+}
+
+static int edbm_loop_to_region_exec(bContext *C, wmOperator *op)
+{
+  const bool select_bigger = RNA_boolean_get(op->ptr, "select_bigger");
+
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  uint objects_len = 0;
+  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, CTX_wm_view3d(C), &objects_len);
+  for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
+    Object *obedit = objects[ob_index];
+    BMEditMesh *em = BKE_editmesh_from_object(obedit);
+
+    if (em->bm->totedgesel == 0) {
+      continue;
+    }
+
+    BMIter iter;
+    BMFace *f;
+
+    /* find the set of regions with smallest number of total faces */
+    BM_mesh_elem_hflag_disable_all(em->bm, BM_FACE, BM_ELEM_TAG, false);
+    const int a = loop_find_regions(em, select_bigger);
+    const int b = loop_find_regions(em, !select_bigger);
+
+    BM_mesh_elem_hflag_disable_all(em->bm, BM_FACE, BM_ELEM_TAG, false);
+    loop_find_regions(em, ((a <= b) != select_bigger) ? select_bigger : !select_bigger);
+
+    EDBM_flag_disable_all(em, BM_ELEM_SELECT);
+
+    BM_ITER_MESH (f, &iter, em->bm, BM_FACES_OF_MESH) {
+      if (BM_elem_flag_test(f, BM_ELEM_TAG) && !BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+        BM_face_select_set(em->bm, f, true);
+      }
+    }
+
+    EDBM_selectmode_flush(em);
+
+    DEG_id_tag_update(obedit->data, ID_RECALC_SELECT);
+    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, obedit->data);
+  }
+  MEM_freeN(objects);
+
+  return OPERATOR_FINISHED;
+}
+
+void MESH_OT_loop_to_region(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Loop Inner-Region";
+  ot->idname = "MESH_OT_loop_to_region";
+  ot->description = "Select region of faces inside of a selected loop of edges";
+
+  /* api callbacks */
+  ot->exec = edbm_loop_to_region_exec;
+  ot->poll = ED_operator_editmesh;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_boolean(ot->srna,
+                  "select_bigger",
+                  0,
+                  "Select Bigger",
+                  "Select bigger regions instead of smaller ones");
+}
+
