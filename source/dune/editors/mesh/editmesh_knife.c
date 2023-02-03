@@ -1498,3 +1498,596 @@ static void knife_recalc_ortho(KnifeTool_OpData *kcd)
   kcd->is_ortho = ED_view3d_clip_range_get(
       kcd->vc.depsgraph, kcd->vc.v3d, kcd->vc.rv3d, &kcd->clipsta, &kcd->clipend, true);
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Knife Element Utils
+ *
+ * Currently only used in #knife_find_line_hits.
+ * \{ */
+
+static BMElem *bm_elem_from_knife_vert(KnifeVert *kfv, KnifeEdge **r_kfe)
+{
+  BMElem *ele_test;
+  KnifeEdge *kfe = NULL;
+
+  /* vert? */
+  ele_test = (BMElem *)kfv->v;
+
+  if (r_kfe || ele_test == NULL) {
+    if (kfv->v == NULL) {
+      Ref *ref;
+      for (ref = kfv->edges.first; ref; ref = ref->next) {
+        kfe = ref->ref;
+        if (kfe->e) {
+          if (r_kfe) {
+            *r_kfe = kfe;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  /* edge? */
+  if (ele_test == NULL) {
+    if (kfe) {
+      ele_test = (BMElem *)kfe->e;
+    }
+  }
+
+  /* face? */
+  if (ele_test == NULL) {
+    if (BLI_listbase_is_single(&kfe->faces)) {
+      ele_test = ((Ref *)kfe->faces.first)->ref;
+    }
+  }
+
+  return ele_test;
+}
+
+static BMElem *bm_elem_from_knife_edge(KnifeEdge *kfe)
+{
+  BMElem *ele_test;
+
+  ele_test = (BMElem *)kfe->e;
+
+  if (ele_test == NULL) {
+    ele_test = (BMElem *)kfe->basef;
+  }
+
+  return ele_test;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Knife Element List Utils
+ * \{ */
+
+static ListBase *knife_empty_list(KnifeTool_OpData *kcd)
+{
+  ListBase *list;
+
+  list = BLI_memarena_alloc(kcd->arena, sizeof(ListBase));
+  BLI_listbase_clear(list);
+  return list;
+}
+
+static void knife_append_list(KnifeTool_OpData *kcd, ListBase *lst, void *elem)
+{
+  Ref *ref;
+
+  ref = BLI_mempool_calloc(kcd->refs);
+  ref->ref = elem;
+  BLI_addtail(lst, ref);
+}
+
+static Ref *find_ref(ListBase *lb, void *ref)
+{
+  Ref *ref1;
+
+  for (ref1 = lb->first; ref1; ref1 = ref1->next) {
+    if (ref1->ref == ref) {
+      return ref1;
+    }
+  }
+
+  return NULL;
+}
+
+static void knife_append_list_no_dup(KnifeTool_OpData *kcd, ListBase *lst, void *elem)
+{
+  if (!find_ref(lst, elem)) {
+    knife_append_list(kcd, lst, elem);
+  }
+}
+
+static void knife_add_to_vert_edges(KnifeTool_OpData *kcd, KnifeEdge *kfe)
+{
+  knife_append_list(kcd, &kfe->v1->edges, kfe);
+  knife_append_list(kcd, &kfe->v2->edges, kfe);
+}
+
+/* Add faces of an edge to a KnifeVert's faces list.  No checks for dups. */
+static void knife_add_edge_faces_to_vert(KnifeTool_OpData *kcd, KnifeVert *kfv, BMEdge *e)
+{
+  BMIter bmiter;
+  BMFace *f;
+
+  BM_ITER_ELEM (f, &bmiter, e, BM_FACES_OF_EDGE) {
+    knife_append_list(kcd, &kfv->faces, f);
+  }
+}
+
+/* Find a face in common in the two faces lists.
+ * If more than one, return the first; if none, return NULL. */
+static BMFace *knife_find_common_face(ListBase *faces1, ListBase *faces2)
+{
+  Ref *ref1, *ref2;
+
+  for (ref1 = faces1->first; ref1; ref1 = ref1->next) {
+    for (ref2 = faces2->first; ref2; ref2 = ref2->next) {
+      if (ref1->ref == ref2->ref) {
+        return (BMFace *)(ref1->ref);
+      }
+    }
+  }
+  return NULL;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Knife Element Creation
+ * \{ */
+
+static KnifeVert *new_knife_vert(KnifeTool_OpData *kcd, const float co[3], const float cageco[3])
+{
+  KnifeVert *kfv = BLI_mempool_calloc(kcd->kverts);
+
+  kcd->totkvert++;
+
+  copy_v3_v3(kfv->co, co);
+  copy_v3_v3(kfv->cageco, cageco);
+
+  return kfv;
+}
+
+static KnifeEdge *new_knife_edge(KnifeTool_OpData *kcd)
+{
+  KnifeEdge *kfe = BLI_mempool_calloc(kcd->kedges);
+  kcd->totkedge++;
+  return kfe;
+}
+
+/* Get a KnifeVert wrapper for an existing BMVert. */
+static KnifeVert *get_bm_knife_vert(KnifeTool_OpData *kcd, BMVert *v, Object *ob, uint base_index)
+{
+  KnifeVert *kfv = BLI_ghash_lookup(kcd->origvertmap, v);
+  const float *cageco;
+
+  if (!kfv) {
+    BMIter bmiter;
+    BMFace *f;
+
+    if (BM_elem_index_get(v) >= 0) {
+      cageco = kcd->cagecos[base_index][BM_elem_index_get(v)];
+    }
+    else {
+      cageco = v->co;
+    }
+
+    float cageco_ws[3];
+    mul_v3_m4v3(cageco_ws, ob->obmat, cageco);
+
+    kfv = new_knife_vert(kcd, v->co, cageco_ws);
+    kfv->v = v;
+    kfv->ob = ob;
+    kfv->base_index = base_index;
+
+    BLI_ghash_insert(kcd->origvertmap, v, kfv);
+    BM_ITER_ELEM (f, &bmiter, v, BM_FACES_OF_VERT) {
+      knife_append_list(kcd, &kfv->faces, f);
+    }
+  }
+
+  return kfv;
+}
+
+/* Get a KnifeEdge wrapper for an existing BMEdge. */
+static KnifeEdge *get_bm_knife_edge(KnifeTool_OpData *kcd, BMEdge *e, Object *ob, uint base_index)
+{
+  KnifeEdge *kfe = BLI_ghash_lookup(kcd->origedgemap, e);
+  if (!kfe) {
+    BMIter bmiter;
+    BMFace *f;
+
+    kfe = new_knife_edge(kcd);
+    kfe->e = e;
+    kfe->v1 = get_bm_knife_vert(kcd, e->v1, ob, base_index);
+    kfe->v2 = get_bm_knife_vert(kcd, e->v2, ob, base_index);
+
+    knife_add_to_vert_edges(kcd, kfe);
+
+    BLI_ghash_insert(kcd->origedgemap, e, kfe);
+
+    BM_ITER_ELEM (f, &bmiter, e, BM_FACES_OF_EDGE) {
+      knife_append_list(kcd, &kfe->faces, f);
+    }
+  }
+
+  return kfe;
+}
+
+static ListBase *knife_get_face_kedges(KnifeTool_OpData *kcd,
+                                       Object *ob,
+                                       uint base_index,
+                                       BMFace *f)
+{
+  ListBase *list = BLI_ghash_lookup(kcd->kedgefacemap, f);
+
+  if (!list) {
+    BMIter bmiter;
+    BMEdge *e;
+
+    list = knife_empty_list(kcd);
+
+    BM_ITER_ELEM (e, &bmiter, f, BM_EDGES_OF_FACE) {
+      knife_append_list(kcd, list, get_bm_knife_edge(kcd, e, ob, base_index));
+    }
+
+    BLI_ghash_insert(kcd->kedgefacemap, f, list);
+  }
+
+  return list;
+}
+
+static void knife_edge_append_face(KnifeTool_OpData *kcd, KnifeEdge *kfe, BMFace *f)
+{
+  knife_append_list(kcd, knife_get_face_kedges(kcd, kfe->v1->ob, kfe->v1->base_index, f), kfe);
+  knife_append_list(kcd, &kfe->faces, f);
+}
+
+static KnifeVert *knife_split_edge(KnifeTool_OpData *kcd,
+                                   KnifeEdge *kfe,
+                                   const float co[3],
+                                   const float cageco[3],
+                                   KnifeEdge **r_kfe)
+{
+  KnifeEdge *newkfe = new_knife_edge(kcd);
+  Ref *ref;
+  BMFace *f;
+
+  newkfe->v1 = kfe->v1;
+  newkfe->v2 = new_knife_vert(kcd, co, cageco);
+  newkfe->v2->ob = kfe->v1->ob;
+  newkfe->v2->base_index = kfe->v1->base_index;
+  newkfe->v2->is_cut = true;
+  if (kfe->e) {
+    knife_add_edge_faces_to_vert(kcd, newkfe->v2, kfe->e);
+  }
+  else {
+    /* kfe cuts across an existing face.
+     * If v1 and v2 are in multiple faces together (e.g., if they
+     * are in doubled polys) then this arbitrarily chooses one of them. */
+    f = knife_find_common_face(&kfe->v1->faces, &kfe->v2->faces);
+    if (f) {
+      knife_append_list(kcd, &newkfe->v2->faces, f);
+    }
+  }
+  newkfe->basef = kfe->basef;
+
+  ref = find_ref(&kfe->v1->edges, kfe);
+  BLI_remlink(&kfe->v1->edges, ref);
+
+  kfe->v1 = newkfe->v2;
+  kfe->v1->is_splitting = true;
+  BLI_addtail(&kfe->v1->edges, ref);
+
+  for (ref = kfe->faces.first; ref; ref = ref->next) {
+    knife_edge_append_face(kcd, newkfe, ref->ref);
+  }
+
+  knife_add_to_vert_edges(kcd, newkfe);
+
+  newkfe->is_cut = kfe->is_cut;
+  newkfe->e = kfe->e;
+
+  newkfe->splits++;
+  kfe->splits++;
+
+  kcd->undo->splits++;
+
+  BLI_stack_push(kcd->splitstack, (void *)&kfe);
+  BLI_stack_push(kcd->splitstack, (void *)&newkfe);
+
+  *r_kfe = newkfe;
+
+  return newkfe->v2;
+}
+
+/* Rejoin two edges split by #knife_split_edge. */
+static void knife_join_edge(KnifeEdge *newkfe, KnifeEdge *kfe)
+{
+  newkfe->is_invalid = true;
+  newkfe->v2->is_invalid = true;
+
+  kfe->v1 = newkfe->v1;
+
+  kfe->splits--;
+  kfe->v1->is_splitting = false;
+  kfe->v2->is_splitting = false;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Cut/Hit Utils
+ * \{ */
+
+/* User has just clicked for first time or first time after a restart (E key).
+ * Copy the current position data into prev. */
+static void knife_start_cut(KnifeTool_OpData *kcd)
+{
+  kcd->prev = kcd->curr;
+  kcd->curr.is_space = 0; /* TODO: Why do we do this? */
+  kcd->mdata.is_stored = false;
+
+  if (kcd->prev.vert == NULL && kcd->prev.edge == NULL) {
+    float origin[3], origin_ofs[3];
+    float ofs_local[3];
+
+    negate_v3_v3(ofs_local, kcd->vc.rv3d->ofs);
+
+    knife_input_ray_segment(kcd, kcd->curr.mval, 1.0f, origin, origin_ofs);
+
+    if (!isect_line_plane_v3(
+            kcd->prev.cage, origin, origin_ofs, ofs_local, kcd->vc.rv3d->viewinv[2])) {
+      zero_v3(kcd->prev.cage);
+    }
+
+    copy_v3_v3(kcd->prev.co, kcd->prev.cage); /* TODO: do we need this? */
+    copy_v3_v3(kcd->curr.cage, kcd->prev.cage);
+    copy_v3_v3(kcd->curr.co, kcd->prev.co);
+  }
+}
+
+static void linehit_to_knifepos(KnifePosData *kpos, KnifeLineHit *lh)
+{
+  kpos->bmface = lh->f;
+  kpos->vert = lh->v;
+  kpos->edge = lh->kfe;
+  copy_v3_v3(kpos->cage, lh->cagehit);
+  copy_v3_v3(kpos->co, lh->hit);
+  copy_v2_v2(kpos->mval, lh->schit);
+}
+
+/* Primary key: lambda along cut
+ * Secondary key: lambda along depth
+ * Tertiary key: pointer comparisons of verts if both snapped to verts
+ */
+static int linehit_compare(const void *vlh1, const void *vlh2)
+{
+  const KnifeLineHit *lh1 = vlh1;
+  const KnifeLineHit *lh2 = vlh2;
+
+  if (lh1->l < lh2->l) {
+    return -1;
+  }
+  if (lh1->l > lh2->l) {
+    return 1;
+  }
+  if (lh1->m < lh2->m) {
+    return -1;
+  }
+  if (lh1->m > lh2->m) {
+    return 1;
+  }
+  if (lh1->v < lh2->v) {
+    return -1;
+  }
+  if (lh1->v > lh2->v) {
+    return 1;
+  }
+  return 0;
+}
+
+/*
+ * Sort linehits by distance along cut line, and secondarily from
+ * front to back (from eye), and tertiarily by snap vertex,
+ * and remove any duplicates.
+ */
+static void prepare_linehits_for_cut(KnifeTool_OpData *kcd)
+{
+  bool is_double = false;
+
+  int n = kcd->totlinehit;
+  KnifeLineHit *linehits = kcd->linehits;
+  if (n == 0) {
+    return;
+  }
+
+  qsort(linehits, n, sizeof(KnifeLineHit), linehit_compare);
+
+  /* Remove any edge hits that are preceded or followed
+   * by a vertex hit that is very near. Mark such edge hits using
+   * l == -1 and then do another pass to actually remove.
+   * Also remove all but one of a series of vertex hits for the same vertex. */
+  for (int i = 0; i < n; i++) {
+    KnifeLineHit *lhi = &linehits[i];
+    if (lhi->v) {
+      for (int j = i - 1; j >= 0; j--) {
+        KnifeLineHit *lhj = &linehits[j];
+        if (!lhj->kfe || fabsf(lhi->l - lhj->l) > KNIFE_FLT_EPSBIG ||
+            fabsf(lhi->m - lhj->m) > KNIFE_FLT_EPSBIG) {
+          break;
+        }
+
+        if (lhi->kfe == lhj->kfe) {
+          lhj->l = -1.0f;
+          is_double = true;
+        }
+      }
+      for (int j = i + 1; j < n; j++) {
+        KnifeLineHit *lhj = &linehits[j];
+        if (fabsf(lhi->l - lhj->l) > KNIFE_FLT_EPSBIG ||
+            fabsf(lhi->m - lhj->m) > KNIFE_FLT_EPSBIG) {
+          break;
+        }
+        if ((lhj->kfe && (lhi->kfe == lhj->kfe)) || (lhi->v == lhj->v)) {
+          lhj->l = -1.0f;
+          is_double = true;
+        }
+      }
+    }
+  }
+
+  if (is_double) {
+    /* Delete-in-place loop: copying from pos j to pos i+1. */
+    int i = 0;
+    int j = 1;
+    while (j < n) {
+      KnifeLineHit *lhi = &linehits[i];
+      KnifeLineHit *lhj = &linehits[j];
+      if (lhj->l == -1.0f) {
+        j++; /* Skip copying this one. */
+      }
+      else {
+        /* Copy unless a no-op. */
+        if (lhi->l == -1.0f) {
+          /* Could happen if linehits[0] is being deleted. */
+          memcpy(&linehits[i], &linehits[j], sizeof(KnifeLineHit));
+        }
+        else {
+          if (i + 1 != j) {
+            memcpy(&linehits[i + 1], &linehits[j], sizeof(KnifeLineHit));
+          }
+          i++;
+        }
+        j++;
+      }
+    }
+    kcd->totlinehit = i + 1;
+  }
+}
+
+/* Add hit to list of hits in facehits[f], where facehits is a map, if not already there. */
+static void add_hit_to_facehits(KnifeTool_OpData *kcd,
+                                GHash *facehits,
+                                BMFace *f,
+                                KnifeLineHit *hit)
+{
+  ListBase *list = BLI_ghash_lookup(facehits, f);
+
+  if (!list) {
+    list = knife_empty_list(kcd);
+    BLI_ghash_insert(facehits, f, list);
+  }
+  knife_append_list_no_dup(kcd, list, hit);
+}
+
+/**
+ * Special purpose function, if the linehit is connected to a real edge/vert.
+ * Return true if \a co is outside the face.
+ */
+static bool knife_add_single_cut__is_linehit_outside_face(BMFace *f,
+                                                          const KnifeLineHit *lh,
+                                                          const float co[3])
+{
+
+  if (lh->v && lh->v->v) {
+    BMLoop *l; /* side-of-loop */
+    if ((l = BM_face_vert_share_loop(f, lh->v->v)) &&
+        (BM_loop_point_side_of_loop_test(l, co) < 0.0f)) {
+      return true;
+    }
+  }
+  else if ((lh->kfe && lh->kfe->e)) {
+    BMLoop *l; /* side-of-edge */
+    if ((l = BM_face_edge_share_loop(f, lh->kfe->e)) &&
+        (BM_loop_point_side_of_edge_test(l, co) < 0.0f)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static void knife_add_single_cut(KnifeTool_OpData *kcd,
+                                 KnifeLineHit *lh1,
+                                 KnifeLineHit *lh2,
+                                 BMFace *f)
+{
+  KnifeEdge *kfe, *kfe2;
+  BMEdge *e_base;
+
+  if ((lh1->v && lh1->v == lh2->v) || (lh1->kfe && lh1->kfe == lh2->kfe)) {
+    return;
+  }
+
+  /* If the cut is on an edge. */
+  if ((lh1->v && lh2->v) && (lh1->v->v && lh2->v && lh2->v->v) &&
+      (e_base = BM_edge_exists(lh1->v->v, lh2->v->v))) {
+    return;
+  }
+  if (knife_add_single_cut__is_linehit_outside_face(f, lh1, lh2->hit) ||
+      knife_add_single_cut__is_linehit_outside_face(f, lh2, lh1->hit)) {
+    return;
+  }
+
+  /* Check if edge actually lies within face (might not, if this face is concave). */
+  if ((lh1->v && !lh1->kfe) && (lh2->v && !lh2->kfe)) {
+    if (!knife_verts_edge_in_face(lh1->v, lh2->v, f)) {
+      return;
+    }
+  }
+
+  kfe = new_knife_edge(kcd);
+  kfe->is_cut = true;
+  kfe->basef = f;
+
+  if (lh1->v) {
+    kfe->v1 = lh1->v;
+  }
+  else if (lh1->kfe) {
+    kfe->v1 = knife_split_edge(kcd, lh1->kfe, lh1->hit, lh1->cagehit, &kfe2);
+    lh1->v = kfe->v1; /* Record the #KnifeVert for this hit. */
+  }
+  else {
+    BLI_assert(lh1->f);
+    kfe->v1 = new_knife_vert(kcd, lh1->hit, lh1->cagehit);
+    kfe->v1->ob = lh1->ob;
+    kfe->v1->base_index = lh1->base_index;
+    kfe->v1->is_cut = true;
+    kfe->v1->is_face = true;
+    knife_append_list(kcd, &kfe->v1->faces, lh1->f);
+    lh1->v = kfe->v1; /* Record the #KnifeVert for this hit. */
+  }
+
+  if (lh2->v) {
+    kfe->v2 = lh2->v;
+  }
+  else if (lh2->kfe) {
+    kfe->v2 = knife_split_edge(kcd, lh2->kfe, lh2->hit, lh2->cagehit, &kfe2);
+    lh2->v = kfe->v2; /* Future uses of lh2 won't split again. */
+  }
+  else {
+    BLI_assert(lh2->f);
+    kfe->v2 = new_knife_vert(kcd, lh2->hit, lh2->cagehit);
+    kfe->v2->ob = lh2->ob;
+    kfe->v2->base_index = lh2->base_index;
+    kfe->v2->is_cut = true;
+    kfe->v2->is_face = true;
+    knife_append_list(kcd, &kfe->v2->faces, lh2->f);
+    lh2->v = kfe->v2; /* Record the KnifeVert for this hit. */
+  }
+
+  knife_add_to_vert_edges(kcd, kfe);
+
+  if (kfe->basef && !find_ref(&kfe->faces, kfe->basef)) {
+    knife_edge_append_face(kcd, kfe, kfe->basef);
+  }
+
+  /* Update current undo frame cut count. */
+  kcd->undo->cuts++;
+}
