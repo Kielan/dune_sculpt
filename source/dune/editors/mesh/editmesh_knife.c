@@ -6,26 +6,26 @@
 
 #include "BLF_api.h"
 
-#include "LI_alloca.h"
-#include "LI_array.h"
-#include "LI_linklist.h"
-#include "LI_listbase.h"
-#include "LI_math.h"
-#include "LI_memarena.h"
-#include "LI_smallhash.h"
-#include "LI_stack.h"
-#include "LI_string.h"
+#include "LIB_alloca.h"
+#include "LIB_array.h"
+#include "LIB_linklist.h"
+#include "LIB_listbase.h"
+#include "LIB_math.h"
+#include "LIB_memarena.h"
+#include "LIB_smallhash.h"
+#include "LIB_stack.h"
+#include "LIB_string.h"
 
 #include "LANG_translation.h"
 
-#include "KE_bvhutils.h"
-#include "KE_context.h"
-#include "KE_editmesh.h"
-#include "KE_editmesh_bvh.h"
-#include "KE_layer.h"
-#include "KE_report.h"
-#include "KE_scene.h"
-#include "KE_unit.h"
+#include "KERNEL_bvhutils.h"
+#include "KERNEL_context.h"
+#include "KERNEL_editmesh.h"
+#include "KERNEL_editmesh_bvh.h"
+#include "KERNEL_layer.h"
+#include "KERNEL_report.h"
+#include "KERNEL_scene.h"
+#include "KERNEL_unit.h"
 
 #include "GPU_immediate.h"
 #include "GPU_matrix.h"
@@ -185,7 +185,7 @@ typedef struct KnifeBVH {
 typedef struct KnifeTool_OpData {
   ARegion *region;   /* Region that knifetool was activated in. */
   void *draw_handle; /* For drawing preview loop. */
-  ViewContext vc;    /* NOTE: _don't_ use 'mval', instead use the one we define below. */
+  ViewContext vc;    /* DONOT use 'mval', instead use the one we define below. */
   float mval[2];     /* Mouse value with snapping applied. */
 
   Scene *scene;
@@ -213,12 +213,12 @@ typedef struct KnifeTool_OpData {
   KnifeBVH bvh;
   const float (**cagecos)[3];
 
-  BLI_mempool *kverts;
-  BLI_mempool *kedges;
+  LIB_mempool *kverts;
+  LIB_mempool *kedges;
   bool no_cuts; /* A cut has not been made yet. */
 
-  BLI_Stack *undostack;
-  BLI_Stack *splitstack; /* Store edge splits by #knife_split_edge. */
+  LIB_Stack *undostack;
+  LIB_Stack *splitstack; /* Store edge splits by #knife_split_edge. */
 
   float vthresh;
   float ethresh;
@@ -237,7 +237,7 @@ typedef struct KnifeTool_OpData {
   /* Number of knife vertices, `kverts`. */
   int totkvert;
 
-  BLI_mempool *refs;
+  LIB_mempool *refs;
 
   KnifeColors colors;
 
