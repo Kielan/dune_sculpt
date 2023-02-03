@@ -6,26 +6,26 @@
 
 #include "BLF_api.h"
 
-#include "BLI_alloca.h"
-#include "BLI_array.h"
-#include "BLI_linklist.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_smallhash.h"
-#include "BLI_stack.h"
-#include "BLI_string.h"
+#include "LI_alloca.h"
+#include "LI_array.h"
+#include "LI_linklist.h"
+#include "LI_listbase.h"
+#include "LI_math.h"
+#include "LI_memarena.h"
+#include "LI_smallhash.h"
+#include "LI_stack.h"
+#include "LI_string.h"
 
-#include "BLT_translation.h"
+#include "LANG_translation.h"
 
-#include "BKE_bvhutils.h"
-#include "BKE_context.h"
-#include "BKE_editmesh.h"
-#include "BKE_editmesh_bvh.h"
-#include "BKE_layer.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_unit.h"
+#include "KE_bvhutils.h"
+#include "KE_context.h"
+#include "KE_editmesh.h"
+#include "KE_editmesh_bvh.h"
+#include "KE_layer.h"
+#include "KE_report.h"
+#include "KE_scene.h"
+#include "KE_unit.h"
 
 #include "GPU_immediate.h"
 #include "GPU_matrix.h"
@@ -41,13 +41,13 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
-#include "DNA_object_types.h"
+#include "TYPES_object.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "API_access.h"
+#include "API_define.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
@@ -92,7 +92,7 @@ typedef struct KnifeColors {
 typedef struct KnifeVert {
   Object *ob;
   uint base_index;
-  BMVert *v; /* Non-NULL if this is an original vert. */
+  DuneMeshVert *v; /* Non-NULL if this is an original vert. */
   ListBase edges;
   ListBase faces;
 
