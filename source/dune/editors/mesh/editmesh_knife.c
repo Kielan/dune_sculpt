@@ -340,8 +340,7 @@ enum {
 };
 
 /* -------------------------------------------------------------------- */
-/** \name Drawing
- * \{ */
+/** Drawing **/
 
 static void knifetool_raycast_planes(const KnifeTool_OpData *kcd, float r_v1[3], float r_v2[3])
 {
@@ -474,10 +473,10 @@ static void knifetool_draw_visible_distances(const KnifeTool_OpData *kcd)
 
   UnitSettings *unit = &kcd->scene->unit;
   if (unit->system == USER_UNIT_NONE) {
-    BLI_snprintf(numstr, sizeof(numstr), "%.*f", distance_precision, cut_len);
+    LIB_snprintf(numstr, sizeof(numstr), "%.*f", distance_precision, cut_len);
   }
   else {
-    BKE_unit_value_as_string(numstr,
+    KERNEL_unit_value_as_string(numstr,
                              sizeof(numstr),
                              (double)(cut_len * unit->scale_length),
                              distance_precision,
@@ -925,7 +924,7 @@ static void knifetool_draw(const bContext *UNUSED(C), ARegion *UNUSED(region), v
   }
 
   if (kcd->totkedge > 0) {
-    BLI_mempool_iter iter;
+    LIB_mempool_iter iter;
     KnifeEdge *kfe;
 
     immUniformColor3ubv(kcd->colors.line);
@@ -933,8 +932,8 @@ static void knifetool_draw(const bContext *UNUSED(C), ARegion *UNUSED(region), v
 
     GPUBatch *batch = immBeginBatchAtMost(GPU_PRIM_LINES, BLI_mempool_len(kcd->kedges) * 2);
 
-    BLI_mempool_iternew(kcd->kedges, &iter);
-    for (kfe = BLI_mempool_iterstep(&iter); kfe; kfe = BLI_mempool_iterstep(&iter)) {
+    LIB_mempool_iternew(kcd->kedges, &iter);
+    for (kfe = LIB_mempool_iterstep(&iter); kfe; kfe = BLI_mempool_iterstep(&iter)) {
       if (!kfe->is_cut || kfe->is_invalid) {
         continue;
       }
@@ -950,7 +949,7 @@ static void knifetool_draw(const bContext *UNUSED(C), ARegion *UNUSED(region), v
   }
 
   if (kcd->totkvert > 0) {
-    BLI_mempool_iter iter;
+    LIB_mempool_iter iter;
     KnifeVert *kfv;
 
     immUniformColor3ubv(kcd->colors.point);
@@ -958,8 +957,8 @@ static void knifetool_draw(const bContext *UNUSED(C), ARegion *UNUSED(region), v
 
     GPUBatch *batch = immBeginBatchAtMost(GPU_PRIM_POINTS, BLI_mempool_len(kcd->kverts));
 
-    BLI_mempool_iternew(kcd->kverts, &iter);
-    for (kfv = BLI_mempool_iterstep(&iter); kfv; kfv = BLI_mempool_iterstep(&iter)) {
+    LIB_mempool_iternew(kcd->kverts, &iter);
+    for (kfv = LIB_mempool_iterstep(&iter); kfv; kfv = BLI_mempool_iterstep(&iter)) {
       if (!kfv->is_cut || kfv->is_invalid) {
         continue;
       }
@@ -1052,10 +1051,9 @@ static void knifetool_draw(const bContext *UNUSED(C), ARegion *UNUSED(region), v
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Header
- * \{ */
+/* Header **/
 
-static void knife_update_header(bContext *C, wmOperator *op, KnifeTool_OpData *kcd)
+static void knife_update_header(DuneContext *C, wmOperator *op, KnifeTool_OpData *kcd)
 {
   char header[UI_MAX_DRAW_STR];
   char buf[UI_MAX_DRAW_STR];
@@ -1067,7 +1065,7 @@ static void knife_update_header(bContext *C, wmOperator *op, KnifeTool_OpData *k
   WM_modalkeymap_operator_items_to_string_buf( \
       op->type, (_id), true, UI_MAX_SHORTCUT_STR, &available_len, &p)
 
-  BLI_snprintf(
+  LIB_snprintf(
       header,
       sizeof(header),
       TIP_("%s: confirm, %s: cancel, %s: undo, "
@@ -1120,11 +1118,8 @@ static void knife_update_header(bContext *C, wmOperator *op, KnifeTool_OpData *k
   ED_workspace_status_text(C, header);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Knife BVH Utils
- * \{ */
+/** Knife BVH Utils **/
 
 static bool knife_bm_face_is_select(BMFace *f)
 {
@@ -1155,15 +1150,15 @@ static void knife_bvh_init(KnifeTool_OpData *kcd)
   const float epsilon = FLT_EPSILON * 2.0f;
   int tottri = 0;
   int ob_tottri = 0;
-  BMLoop *(*looptris)[3];
-  BMFace *f_test = NULL, *f_test_prev = NULL;
+  DuneMeshLoop *(*looptris)[3];
+  DuneMeshFace *f_test = NULL, *f_test_prev = NULL;
   bool test_fn_ret = false;
 
   /* Calculate tottri. */
   for (uint b = 0; b < kcd->objects_len; b++) {
     ob_tottri = 0;
     ob = kcd->objects[b];
-    em = BKE_editmesh_from_object(ob);
+    em = KERNEL_editmesh_from_object(ob);
 
     for (int i = 0; i < em->tottri; i++) {
       f_test = em->looptris[i][0]->f;
@@ -1180,7 +1175,7 @@ static void knife_bvh_init(KnifeTool_OpData *kcd)
     tottri += ob_tottri;
   }
 
-  kcd->bvh.tree = BLI_bvhtree_new(tottri, epsilon, 8, 8);
+  kcd->bvh.tree = LIB_bvhtree_new(tottri, epsilon, 8, 8);
 
   f_test_prev = NULL;
   test_fn_ret = false;
@@ -1194,7 +1189,7 @@ static void knife_bvh_init(KnifeTool_OpData *kcd)
   tottri = 0;
   for (uint b = 0; b < kcd->objects_len; b++) {
     ob = kcd->objects[b];
-    em = BKE_editmesh_from_object(ob);
+    em = KERNEL_editmesh_from_object(ob);
     looptris = em->looptris;
 
     for (int i = 0; i < em->tottri; i++) {
@@ -1218,20 +1213,20 @@ static void knife_bvh_init(KnifeTool_OpData *kcd)
       mul_m4_v3(ob->obmat, cos[1]);
       mul_m4_v3(ob->obmat, cos[2]);
 
-      BLI_bvhtree_insert(kcd->bvh.tree, i + tottri, (float *)cos, 3);
+      LIB_bvhtree_insert(kcd->bvh.tree, i + tottri, (float *)cos, 3);
     }
 
     tottri += em->tottri;
   }
 
-  BLI_bvhtree_balance(kcd->bvh.tree);
+  LIB_bvhtree_balance(kcd->bvh.tree);
 }
 
-/* Wrapper for #BLI_bvhtree_free. */
+/* Wrapper for #LIB_bvhtree_free. */
 static void knife_bvh_free(KnifeTool_OpData *kcd)
 {
   if (kcd->bvh.tree) {
-    BLI_bvhtree_free(kcd->bvh.tree);
+    LIB_bvhtree_free(kcd->bvh.tree);
     kcd->bvh.tree = NULL;
   }
 }
@@ -1242,9 +1237,9 @@ static void knife_bvh_raycast_cb(void *userdata,
                                  BVHTreeRayHit *hit)
 {
   KnifeTool_OpData *kcd = userdata;
-  BMLoop **ltri;
+  DuneMeshLoop **ltri;
   Object *ob;
-  BMEditMesh *em;
+  DuneMeshEdit *dme;
 
   float dist, uv[2];
   bool isect;
@@ -1257,7 +1252,7 @@ static void knife_bvh_raycast_cb(void *userdata,
     for (; b < kcd->objects_len; b++) {
       index -= tottri;
       ob = kcd->objects[b];
-      em = BKE_editmesh_from_object(ob);
+      em = KERNEL_editmesh_from_object(ob);
       tottri = em->tottri;
       if (index < tottri) {
         ltri = em->looptris[index];
@@ -1312,7 +1307,7 @@ static void knife_bvh_raycast_cb(void *userdata,
 }
 
 /* `co` is expected to be in world space. */
-static BMFace *knife_bvh_raycast(KnifeTool_OpData *kcd,
+static DuneMeshFace *knife_bvh_raycast(KnifeTool_OpData *kcd,
                                  const float co[3],
                                  const float dir[3],
                                  const float radius,
@@ -1328,7 +1323,7 @@ static BMFace *knife_bvh_raycast(KnifeTool_OpData *kcd,
   hit.dist = dist;
   hit.index = -1;
 
-  BLI_bvhtree_ray_cast(kcd->bvh.tree, co, dir, radius, &hit, knife_bvh_raycast_cb, kcd);
+  LIB_bvhtree_ray_cast(kcd->bvh.tree, co, dir, radius, &hit, knife_bvh_raycast_cb, kcd);
 
   /* Handle Hit */
   if (hit.index != -1 && hit.dist != dist) {
@@ -1358,7 +1353,7 @@ static BMFace *knife_bvh_raycast(KnifeTool_OpData *kcd,
 }
 
 /* `co` is expected to be in world space. */
-static BMFace *knife_bvh_raycast_filter(KnifeTool_OpData *kcd,
+static DuneMeshFace *knife_bvh_raycast_filter(KnifeTool_OpData *kcd,
                                         const float co[3],
                                         const float dir[3],
                                         const float radius,
@@ -1372,14 +1367,14 @@ static BMFace *knife_bvh_raycast_filter(KnifeTool_OpData *kcd,
   kcd->bvh.filter_cb = filter_cb;
   kcd->bvh.filter_data = filter_userdata;
 
-  BMFace *face;
-  BMLoop **ltri;
+  DuneMeshFace *face;
+  DuneMeshLoop **ltri;
   BVHTreeRayHit hit;
   const float dist = r_dist ? *r_dist : FLT_MAX;
   hit.dist = dist;
   hit.index = -1;
 
-  BLI_bvhtree_ray_cast(kcd->bvh.tree, co, dir, radius, &hit, knife_bvh_raycast_cb, kcd);
+  LIB_bvhtree_ray_cast(kcd->bvh.tree, co, dir, radius, &hit, knife_bvh_raycast_cb, kcd);
 
   kcd->bvh.filter_cb = NULL;
   kcd->bvh.filter_data = NULL;
@@ -1411,11 +1406,8 @@ static BMFace *knife_bvh_raycast_filter(KnifeTool_OpData *kcd,
   return NULL;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Geometry Utils
- * \{ */
+/** Geometry Utils **/
 
 static void knife_project_v2(const KnifeTool_OpData *kcd, const float co[3], float sco[2])
 {
@@ -1462,10 +1454,10 @@ static bool knife_verts_edge_in_face(KnifeVert *v1, KnifeVert *v2, BMFace *f)
     return false;
   }
 
-  l1 = v1->v ? BM_face_vert_share_loop(f, v1->v) : NULL;
-  l2 = v2->v ? BM_face_vert_share_loop(f, v2->v) : NULL;
+  l1 = v1->v ? DuneMesh_face_vert_share_loop(f, v1->v) : NULL;
+  l2 = v2->v ? DuneMesh_face_vert_share_loop(f, v2->v) : NULL;
 
-  if ((l1 && l2) && BM_loop_is_adjacent(l1, l2)) {
+  if ((l1 && l2) && DuneMesh_loop_is_adjacent(l1, l2)) {
     /* Boundary-case, always false to avoid edge-in-face checks below. */
     return false;
   }
@@ -1474,7 +1466,7 @@ static bool knife_verts_edge_in_face(KnifeVert *v1, KnifeVert *v2, BMFace *f)
   v1_inface = (l1 != NULL);
   v2_inface = (l2 != NULL);
 
-  /* BM_face_point_inside_test uses best-axis projection so this isn't most accurate test... */
+  /* DuneMesh_face_point_inside_test uses best-axis projection so this isn't most accurate test... */
   v1_inside = v1_inface ? false : BM_face_point_inside_test(f, v1->co);
   v2_inside = v2_inface ? false : BM_face_point_inside_test(f, v2->co);
   if ((v1_inface && v2_inside) || (v2_inface && v1_inside) || (v1_inside && v2_inside)) {
@@ -1500,18 +1492,18 @@ static void knife_recalc_ortho(KnifeTool_OpData *kcd)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Knife Element Utils
+/** Knife Element Utils
  *
  * Currently only used in #knife_find_line_hits.
- * \{ */
+ **/
 
-static BMElem *bm_elem_from_knife_vert(KnifeVert *kfv, KnifeEdge **r_kfe)
+static DuneMeshElem *bm_elem_from_knife_vert(KnifeVert *kfv, KnifeEdge **r_kfe)
 {
-  BMElem *ele_test;
+  DuneMeshElem *ele_test;
   KnifeEdge *kfe = NULL;
 
   /* vert? */
-  ele_test = (BMElem *)kfv->v;
+  ele_test = (DuneMeshElem *)kfv->v;
 
   if (r_kfe || ele_test == NULL) {
     if (kfv->v == NULL) {
@@ -1531,13 +1523,13 @@ static BMElem *bm_elem_from_knife_vert(KnifeVert *kfv, KnifeEdge **r_kfe)
   /* edge? */
   if (ele_test == NULL) {
     if (kfe) {
-      ele_test = (BMElem *)kfe->e;
+      ele_test = (DuneMeshElem *)kfe->e;
     }
   }
 
   /* face? */
   if (ele_test == NULL) {
-    if (BLI_listbase_is_single(&kfe->faces)) {
+    if (LIB_listbase_is_single(&kfe->faces)) {
       ele_test = ((Ref *)kfe->faces.first)->ref;
     }
   }
@@ -1545,7 +1537,7 @@ static BMElem *bm_elem_from_knife_vert(KnifeVert *kfv, KnifeEdge **r_kfe)
   return ele_test;
 }
 
-static BMElem *bm_elem_from_knife_edge(KnifeEdge *kfe)
+static DuneMeshElem *dm_elem_from_knife_edge(KnifeEdge *kfe)
 {
   BMElem *ele_test;
 
@@ -1558,18 +1550,15 @@ static BMElem *bm_elem_from_knife_edge(KnifeEdge *kfe)
   return ele_test;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Knife Element List Utils
- * \{ */
+/** Knife Element List Utils **/
 
 static ListBase *knife_empty_list(KnifeTool_OpData *kcd)
 {
   ListBase *list;
 
-  list = BLI_memarena_alloc(kcd->arena, sizeof(ListBase));
-  BLI_listbase_clear(list);
+  list = LIB_memarena_alloc(kcd->arena, sizeof(ListBase));
+  LIB_listbase_clear(list);
   return list;
 }
 
@@ -1577,9 +1566,9 @@ static void knife_append_list(KnifeTool_OpData *kcd, ListBase *lst, void *elem)
 {
   Ref *ref;
 
-  ref = BLI_mempool_calloc(kcd->refs);
+  ref = LIB_mempool_calloc(kcd->refs);
   ref->ref = elem;
-  BLI_addtail(lst, ref);
+  LIB_addtail(lst, ref);
 }
 
 static Ref *find_ref(ListBase *lb, void *ref)
@@ -1611,10 +1600,10 @@ static void knife_add_to_vert_edges(KnifeTool_OpData *kcd, KnifeEdge *kfe)
 /* Add faces of an edge to a KnifeVert's faces list.  No checks for dups. */
 static void knife_add_edge_faces_to_vert(KnifeTool_OpData *kcd, KnifeVert *kfv, BMEdge *e)
 {
-  BMIter bmiter;
-  BMFace *f;
+  DuneMeshIter bmiter;
+  DuneMeshFace *f;
 
-  BM_ITER_ELEM (f, &bmiter, e, BM_FACES_OF_EDGE) {
+  DUNEMESH_ITER_ELEM (f, &bmiter, e, BM_FACES_OF_EDGE) {
     knife_append_list(kcd, &kfv->faces, f);
   }
 }
@@ -1635,15 +1624,12 @@ static BMFace *knife_find_common_face(ListBase *faces1, ListBase *faces2)
   return NULL;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Knife Element Creation
- * \{ */
+/** Knife Element Creation **/
 
 static KnifeVert *new_knife_vert(KnifeTool_OpData *kcd, const float co[3], const float cageco[3])
 {
-  KnifeVert *kfv = BLI_mempool_calloc(kcd->kverts);
+  KnifeVert *kfv = LIB_mempool_calloc(kcd->kverts);
 
   kcd->totkvert++;
 
@@ -1655,7 +1641,7 @@ static KnifeVert *new_knife_vert(KnifeTool_OpData *kcd, const float co[3], const
 
 static KnifeEdge *new_knife_edge(KnifeTool_OpData *kcd)
 {
-  KnifeEdge *kfe = BLI_mempool_calloc(kcd->kedges);
+  KnifeEdge *kfe = LIB_mempool_calloc(kcd->kedges);
   kcd->totkedge++;
   return kfe;
 }
@@ -1663,7 +1649,7 @@ static KnifeEdge *new_knife_edge(KnifeTool_OpData *kcd)
 /* Get a KnifeVert wrapper for an existing BMVert. */
 static KnifeVert *get_bm_knife_vert(KnifeTool_OpData *kcd, BMVert *v, Object *ob, uint base_index)
 {
-  KnifeVert *kfv = BLI_ghash_lookup(kcd->origvertmap, v);
+  KnifeVert *kfv = LIB_ghash_lookup(kcd->origvertmap, v);
   const float *cageco;
 
   if (!kfv) {
@@ -1819,11 +1805,8 @@ static void knife_join_edge(KnifeEdge *newkfe, KnifeEdge *kfe)
   kfe->v2->is_splitting = false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Cut/Hit Utils
- * \{ */
+/** Cut/Hit Utils **/
 
 /* User has just clicked for first time or first time after a restart (E key).
  * Copy the current position data into prev. */
@@ -1977,18 +1960,18 @@ static void add_hit_to_facehits(KnifeTool_OpData *kcd,
                                 BMFace *f,
                                 KnifeLineHit *hit)
 {
-  ListBase *list = BLI_ghash_lookup(facehits, f);
+  ListBase *list = LIB_ghash_lookup(facehits, f);
 
   if (!list) {
     list = knife_empty_list(kcd);
-    BLI_ghash_insert(facehits, f, list);
+    LIB_ghash_insert(facehits, f, list);
   }
   knife_append_list_no_dup(kcd, list, hit);
 }
 
 /**
  * Special purpose function, if the linehit is connected to a real edge/vert.
- * Return true if \a co is outside the face.
+ * Return true if a co is outside the face.
  */
 static bool knife_add_single_cut__is_linehit_outside_face(BMFace *f,
                                                           const KnifeLineHit *lh,
