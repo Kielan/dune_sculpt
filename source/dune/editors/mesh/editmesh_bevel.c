@@ -1,24 +1,24 @@
 #include "MEM_guardedalloc.h"
 
-#include "DNA_object_types.h"
+#include "TYPES_object.h"
 
-#include "BLI_math.h"
-#include "BLI_string.h"
+#include "LIB_math.h"
+#include "LIB_string.h"
 
-#include "BLT_translation.h"
+#include "I18N_translation.h"
 
-#include "BKE_context.h"
-#include "BKE_editmesh.h"
-#include "BKE_global.h"
-#include "BKE_layer.h"
-#include "BKE_unit.h"
+#include "DUNE_context.h"
+#include "DUNE_editmesh.h"
+#include "DUNE_global.h"
+#include "DUNE_layer.h"
+#include "DUNE_unit.h"
 
-#include "DNA_curveprofile_types.h"
-#include "DNA_mesh_types.h"
+#include "TYPES_curveprofile.h"
+#include "TYPES_mesh.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_prototypes.h"
+#include "API_access.h"
+#include "API_define.h"
+#include "API_prototypes.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -106,7 +106,7 @@ enum {
 
 static float get_bevel_offset(wmOperator *op)
 {
-  if (RNA_enum_get(op->ptr, "offset_type") == BEVEL_AMT_PERCENT) {
+  if (API_enum_get(op->ptr, "offset_type") == BEVEL_AMT_PERCENT) {
     return RNA_float_get(op->ptr, "offset_pct");
   }
   return RNA_float_get(op->ptr, "offset");
