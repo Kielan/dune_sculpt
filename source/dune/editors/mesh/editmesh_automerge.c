@@ -1,13 +1,11 @@
 /**
- * edmesh
- *
  * Utility functions for merging geometry once transform has finished:
  *
  * - #EDBM_automerge
  * - #EDBM_automerge_and_split
  */
 
-#include "KERNEL_editmesh.h"
+#include "DUNE_editmesh.h"
 
 #include "TYPES_object.h"
 
@@ -29,9 +27,9 @@
  * Used after transform operations.
  **/
 
-void EDBM_automerge(Object *obedit, bool update, const char hflag, const float dist)
+void DMESH_automerge(Object *obedit, bool update, const char hflag, const float dist)
 {
-  BMEditMesh *em = KERNEL_editmesh_from_object(obedit);
+  DuneMeshEdit *dme = DUNE_meshedit_from_object(obedit);
   BMesh *dm = em->dm;
   int totvert_prev = dm->totvert;
 
@@ -72,7 +70,7 @@ void EDBM_automerge(Object *obedit, bool update, const char hflag, const float d
  * Used after transform operations.
  **/
 
-void EDBM_automerge_and_split(Object *obedit,
+void DMESH_automerge_and_split(Object *obedit,
                               const bool UNUSED(split_edges),
                               const bool split_faces,
                               const bool update,
@@ -81,7 +79,7 @@ void EDBM_automerge_and_split(Object *obedit,
 {
   bool ok = false;
 
-  DuneMeshEdit *dme = KERNEL_editmesh_from_object(obedit);
+  DuneMeshEdit *dme = DUNE_meshedit_from_object(obedit);
   DuneMesh *dm = em->dm;
 
 #ifdef DEBUG_TIME
