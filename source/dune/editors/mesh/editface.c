@@ -1,21 +1,21 @@
 #include "MEM_guardedalloc.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
+#include "LIB_bitmap.h"
+#include "LIB_dunelib.h"
+#include "LIB_math.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
+#include "TYPES_mesh.h"
+#include "TYPES_meshdata.h"
+#include "TYPES_object.h"
 
-#include "BKE_context.h"
-#include "BKE_customdata.h"
-#include "BKE_global.h"
-#include "BKE_mesh.h"
-#include "BKE_object.h"
+#include "KERNEL_context.h"
+#include "KERNEL_customdata.h"
+#include "KERNEL_global.h"
+#include "KERNEL_mesh.h"
+#include "KERNEL_object.h"
 
 #include "ED_mesh.h"
 #include "ED_screen.h"
@@ -30,25 +30,25 @@
 
 /* own include */
 
-void paintface_flush_flags(struct bContext *C, Object *ob, short flag)
+void paintface_flush_flags(struct DuneContext *C, Object *ob, short flag)
 {
-  Mesh *me = BKE_mesh_from_object(ob);
+  Mesh *me = KERNEL_mesh_from_object(ob);
   MPoly *polys, *mp_orig;
   const int *index_array = NULL;
   int totpoly;
 
-  BLI_assert((flag & ~(SELECT | ME_HIDE)) == 0);
+  LIB_assert((flag & ~(SELECT | ME_HIDE)) == 0);
 
   if (me == NULL) {
     return;
   }
 
-  /* NOTE: call #BKE_mesh_flush_hidden_from_verts_ex first when changing hidden flags. */
+  /* NOTE: call #KERNEL_mesh_flush_hidden_from_verts_ex first when changing hidden flags. */
 
   /* we could call this directly in all areas that change selection,
    * since this could become slow for realtime updates (circle-select for eg) */
   if (flag & SELECT) {
-    BKE_mesh_flush_select_from_polys(me);
+    KERNEL_mesh_flush_select_from_polys(me);
   }
 
   Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
@@ -92,10 +92,10 @@ void paintface_flush_flags(struct bContext *C, Object *ob, short flag)
 
   if (updated) {
     if (flag & ME_HIDE) {
-      BKE_mesh_batch_cache_dirty_tag(me_eval, BKE_MESH_BATCH_DIRTY_ALL);
+      DUNE_mesh_batch_cache_dirty_tag(me_eval, DUNE_MESH_BATCH_DIRTY_ALL);
     }
     else {
-      BKE_mesh_batch_cache_dirty_tag(me_eval, BKE_MESH_BATCH_DIRTY_SELECT_PAINT);
+      DUNE_mesh_batch_cache_dirty_tag(me_eval, DUNE_MESH_BATCH_DIRTY_SELECT_PAINT);
     }
 
     DEG_id_tag_update(ob->data, ID_RECALC_SELECT);
@@ -107,13 +107,13 @@ void paintface_flush_flags(struct bContext *C, Object *ob, short flag)
   WM_event_add_notifier(C, NC_GEOM | ND_SELECT, ob->data);
 }
 
-void paintface_hide(bContext *C, Object *ob, const bool unselected)
+void paintface_hide(DuneContext *C, Object *ob, const bool unselected)
 {
   Mesh *me;
   MPoly *mpoly;
   int a;
 
-  me = BKE_mesh_from_object(ob);
+  me = DUNE_mesh_from_object(ob);
   if (me == NULL || me->totpoly == 0) {
     return;
   }
@@ -134,18 +134,18 @@ void paintface_hide(bContext *C, Object *ob, const bool unselected)
     mpoly++;
   }
 
-  BKE_mesh_flush_hidden_from_polys(me);
+  DUNE_mesh_flush_hidden_from_polys(me);
 
   paintface_flush_flags(C, ob, SELECT | ME_HIDE);
 }
 
-void paintface_reveal(bContext *C, Object *ob, const bool select)
+void paintface_reveal(DuneContext *C, Object *ob, const bool select)
 {
   Mesh *me;
   MPoly *mpoly;
   int a;
 
-  me = BKE_mesh_from_object(ob);
+  me = DUNE_mesh_from_object(ob);
   if (me == NULL || me->totpoly == 0) {
     return;
   }
@@ -175,14 +175,14 @@ static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bo
   bool do_it = true;
   bool mark = false;
 
-  BLI_bitmap *edge_tag = BLI_BITMAP_NEW(me->totedge, __func__);
-  BLI_bitmap *poly_tag = BLI_BITMAP_NEW(me->totpoly, __func__);
+  LIB_bitmap *edge_tag = LIB_BITMAP_NEW(me->totedge, __func__);
+  LIB_bitmap *poly_tag = LIB_BITMAP_NEW(me->totpoly, __func__);
 
   if (index != (uint)-1) {
     /* only put face under cursor in array */
     mp = &me->mpoly[index];
-    BKE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
-    BLI_BITMAP_ENABLE(poly_tag, index);
+    DUNE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
+    LIB_BITMAP_ENABLE(poly_tag, index);
   }
   else {
     /* fill array by selection */
@@ -192,8 +192,8 @@ static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bo
         /* pass */
       }
       else if (mp->flag & ME_FACE_SEL) {
-        BKE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
-        BLI_BITMAP_ENABLE(poly_tag, a);
+        DUNE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
+        LIB_BITMAP_ENABLE(poly_tag, a);
       }
     }
   }
@@ -208,13 +208,13 @@ static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bo
         continue;
       }
 
-      if (!BLI_BITMAP_TEST(poly_tag, a)) {
+      if (!LIB_BITMAP_TEST(poly_tag, a)) {
         mark = false;
 
         ml = me->mloop + mp->loopstart;
         for (b = 0; b < mp->totloop; b++, ml++) {
           if ((me->medge[ml->e].flag & ME_SEAM) == 0) {
-            if (BLI_BITMAP_TEST(edge_tag, ml->e)) {
+            if (LIB_BITMAP_TEST(edge_tag, ml->e)) {
               mark = true;
               break;
             }
@@ -222,8 +222,8 @@ static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bo
         }
 
         if (mark) {
-          BLI_BITMAP_ENABLE(poly_tag, a);
-          BKE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
+          LIB_BITMAP_ENABLE(poly_tag, a);
+          DUNE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
           do_it = true;
         }
       }
@@ -241,12 +241,12 @@ static void select_linked_tfaces_with_seams(Mesh *me, const uint index, const bo
   MEM_freeN(poly_tag);
 }
 
-void paintface_select_linked(bContext *C, Object *ob, const int mval[2], const bool select)
+void paintface_select_linked(DuneContext *C, Object *ob, const int mval[2], const bool select)
 {
   Mesh *me;
   uint index = (uint)-1;
 
-  me = BKE_mesh_from_object(ob);
+  me = DUNE_mesh_from_object(ob);
   if (me == NULL || me->totpoly == 0) {
     return;
   }
@@ -262,13 +262,13 @@ void paintface_select_linked(bContext *C, Object *ob, const int mval[2], const b
   paintface_flush_flags(C, ob, SELECT);
 }
 
-bool paintface_deselect_all_visible(bContext *C, Object *ob, int action, bool flush_flags)
+bool paintface_deselect_all_visible(DuneContext *C, Object *ob, int action, bool flush_flags)
 {
   Mesh *me;
   MPoly *mpoly;
   int a;
 
-  me = BKE_mesh_from_object(ob);
+  me = DUNE_mesh_from_object(ob);
   if (me == NULL) {
     return false;
   }
@@ -333,7 +333,7 @@ bool paintface_minmax(Object *ob, float r_min[3], float r_max[3])
   bool ok = false;
   float vec[3], bmat[3][3];
 
-  me = BKE_mesh_from_object(ob);
+  me = DUNE_mesh_from_object(ob);
   if (!me || !me->mloopuv) {
     return ok;
   }
@@ -360,7 +360,7 @@ bool paintface_minmax(Object *ob, float r_min[3], float r_max[3])
   return ok;
 }
 
-bool paintface_mouse_select(struct bContext *C,
+bool paintface_mouse_select(struct DuneContext *C,
                             const int mval[2],
                             const struct SelectPick_Params *params,
                             Object *ob)
@@ -372,7 +372,7 @@ bool paintface_mouse_select(struct bContext *C,
   bool found = false;
 
   /* Get the face under the cursor */
-  me = BKE_mesh_from_object(ob);
+  me = DUNE_mesh_from_object(ob);
 
   if (ED_mesh_pick_face(C, ob, mval, ED_MESH_PICK_DEFAULT_FACE_DIST, &index)) {
     if (index < me->totpoly) {
@@ -419,7 +419,7 @@ bool paintface_mouse_select(struct bContext *C,
         break;
       }
       case SEL_OP_AND: {
-        BLI_assert_unreachable(); /* Doesn't make sense for picking. */
+        LIB_assert_unreachable(); /* Doesn't make sense for picking. */
         break;
       }
     }
@@ -435,8 +435,8 @@ bool paintface_mouse_select(struct bContext *C,
 
 void paintvert_flush_flags(Object *ob)
 {
-  Mesh *me = BKE_mesh_from_object(ob);
-  Mesh *me_eval = BKE_object_get_evaluated_mesh(ob);
+  Mesh *me = DUNE_mesh_from_object(ob);
+  Mesh *me_eval = DUNE_object_get_evaluated_mesh(ob);
   MVert *mvert_eval, *mv;
   const int *index_array = NULL;
   int totvert;
@@ -448,7 +448,7 @@ void paintvert_flush_flags(Object *ob)
 
   /* we could call this directly in all areas that change selection,
    * since this could become slow for realtime updates (circle-select for eg) */
-  BKE_mesh_flush_select_from_verts(me);
+  DUNE_mesh_flush_select_from_verts(me);
 
   if (me_eval == NULL) {
     return;
@@ -476,10 +476,10 @@ void paintvert_flush_flags(Object *ob)
     }
   }
 
-  BKE_mesh_batch_cache_dirty_tag(me, BKE_MESH_BATCH_DIRTY_ALL);
+  DUNE_mesh_batch_cache_dirty_tag(me, DUNE_MESH_BATCH_DIRTY_ALL);
 }
 
-void paintvert_tag_select_update(struct bContext *C, struct Object *ob)
+void paintvert_tag_select_update(struct DuneContext *C, struct Object *ob)
 {
   DEG_id_tag_update(ob->data, ID_RECALC_COPY_ON_WRITE | ID_RECALC_SELECT);
   WM_event_add_notifier(C, NC_GEOM | ND_SELECT, ob->data);
@@ -491,7 +491,7 @@ bool paintvert_deselect_all_visible(Object *ob, int action, bool flush_flags)
   MVert *mvert;
   int a;
 
-  me = BKE_mesh_from_object(ob);
+  me = DUNE_mesh_from_object(ob);
   if (me == NULL) {
     return false;
   }
@@ -543,10 +543,10 @@ bool paintvert_deselect_all_visible(Object *ob, int action, bool flush_flags)
       /* pass */
     }
     else if (ELEM(action, SEL_DESELECT, SEL_INVERT)) {
-      BKE_mesh_mselect_clear(me);
+      DUNE_mesh_mselect_clear(me);
     }
     else {
-      BKE_mesh_mselect_validate(me);
+      DUNE_mesh_mselect_validate(me);
     }
 
     if (flush_flags) {
@@ -558,7 +558,7 @@ bool paintvert_deselect_all_visible(Object *ob, int action, bool flush_flags)
 
 void paintvert_select_ungrouped(Object *ob, bool extend, bool flush_flags)
 {
-  Mesh *me = BKE_mesh_from_object(ob);
+  Mesh *me = DUNE_mesh_from_object(ob);
   MVert *mv;
   MDeformVert *dv;
   int a, tot;
