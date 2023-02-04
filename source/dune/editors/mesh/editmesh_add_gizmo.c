@@ -1,19 +1,15 @@
-/** \file
- * \ingroup edmesh
- *
- * Creation gizmos.
- */
+/** Creation gizmos. **/
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_math.h"
+#include "LIB_math.h"
 
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_object.h"
+#include "TYPES_scene.h"
 
-#include "BKE_context.h"
-#include "BKE_editmesh.h"
-#include "BKE_scene.h"
+#include "DUNE_context.h"
+#include "DUNE_editmesh.h"
+#include "DUNE_scene.h"
 
 #include "ED_gizmo_library.h"
 #include "ED_gizmo_utils.h"
@@ -23,21 +19,20 @@
 #include "ED_undo.h"
 #include "ED_view3d.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "API_access.h"
+#include "API_define.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
 
 #include "UI_resources.h"
 
-#include "BLT_translation.h"
+#include "I18N_translation.h"
 
 #include "mesh_intern.h" /* own include */
 
 /* -------------------------------------------------------------------- */
-/** \name Helper Functions
- * \{ */
+/** Helper Functions **/
 
 /**
  * When we place a shape, pick a plane.
@@ -46,7 +41,7 @@
  * for now pick the "ground" based on the 3D cursor's dominant plane
  * pointing down relative to the view.
  */
-static void calc_initial_placement_point_from_view(bContext *C,
+static void calc_initial_placement_point_from_view(DuneContext *C,
                                                    const float mval[2],
                                                    float r_location[3],
                                                    float r_rotation[3][3])
@@ -60,7 +55,7 @@ static void calc_initial_placement_point_from_view(bContext *C,
 
   float cursor_matrix[4][4];
   float orient_matrix[3][3];
-  BKE_scene_cursor_to_mat4(&scene->cursor, cursor_matrix);
+  DUNE_scene_cursor_to_mat4(&scene->cursor, cursor_matrix);
 
   const float dots[3] = {
       dot_v3v3(rv3d->viewinv[2], cursor_matrix[0]),
@@ -94,31 +89,28 @@ static void calc_initial_placement_point_from_view(bContext *C,
   copy_m3_m3(r_rotation, orient_matrix);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Placement Gizmo
- * \{ */
+/** Placement Gizmo **/
 
 typedef struct GizmoPlacementGroup {
   struct wmGizmo *cage;
   struct {
-    bContext *context;
+    DuneContext *context;
     wmOperator *op;
-    PropertyRNA *prop_matrix;
+    PropAPI *prop_matrix;
   } data;
 } GizmoPlacementGroup;
 
 /**
- * \warning Calling redo from property updates is not great.
- * This is needed because changing the RNA doesn't cause a redo
+ * warning Calling redo from property updates is not great.
+ * This is needed because changing the API doesn't cause a redo
  * and we're not using operator UI which does just this.
  */
 static void gizmo_placement_exec(GizmoPlacementGroup *ggd)
 {
   wmOperator *op = ggd->data.op;
-  if (op == WM_operator_last_redo((bContext *)ggd->data.context)) {
-    ED_undo_operator_repeat((bContext *)ggd->data.context, op);
+  if (op == WM_operator_last_redo((DuneContext *)ggd->data.context)) {
+    ED_undo_op_repeat((DuneContext *)ggd->data.context, op);
   }
 }
 
@@ -128,35 +120,35 @@ static void gizmo_mesh_placement_update_from_op(GizmoPlacementGroup *ggd)
   UNUSED_VARS(op);
   /* For now don't read back from the operator. */
 #if 0
-  RNA_property_float_get_array(op->ptr, ggd->data.prop_matrix, &ggd->cage->matrix_offset[0][0]);
+  API_prop_float_get_array(op->ptr, ggd->data.prop_matrix, &ggd->cage->matrix_offset[0][0]);
 #endif
 }
 
 /* translate callbacks */
 static void gizmo_placement_prop_matrix_get(const wmGizmo *gz,
-                                            wmGizmoProperty *gz_prop,
+                                            wmGizmoProp *gz_prop,
                                             void *value_p)
 {
   GizmoPlacementGroup *ggd = gz->parent_gzgroup->customdata;
   wmOperator *op = ggd->data.op;
   float *value = value_p;
-  BLI_assert(gz_prop->type->array_length == 16);
+  LI!_assert(gz_prop->type->array_length == 16);
   UNUSED_VARS_NDEBUG(gz_prop);
 
   if (value_p != ggd->cage->matrix_offset) {
     mul_m4_m4m4(value_p, ggd->cage->matrix_basis, ggd->cage->matrix_offset);
-    RNA_property_float_get_array(op->ptr, ggd->data.prop_matrix, value);
+    API_prop_float_get_array(op->ptr, ggd->data.prop_matrix, value);
   }
 }
 
 static void gizmo_placement_prop_matrix_set(const wmGizmo *gz,
-                                            wmGizmoProperty *gz_prop,
+                                            wmGizmoProp *gz_prop,
                                             const void *value)
 {
   GizmoPlacementGroup *ggd = gz->parent_gzgroup->customdata;
   wmOperator *op = ggd->data.op;
 
-  BLI_assert(gz_prop->type->array_length == 16);
+  LIB_assert(gz_prop->type->array_length == 16);
   UNUSED_VARS_NDEBUG(gz_prop);
 
   float mat[4][4];
@@ -166,18 +158,18 @@ static void gizmo_placement_prop_matrix_set(const wmGizmo *gz,
     negate_mat3_m4(mat);
   }
 
-  RNA_property_float_set_array(op->ptr, ggd->data.prop_matrix, &mat[0][0]);
+  API_property_float_set_array(op->ptr, ggd->data.prop_matrix, &mat[0][0]);
 
   gizmo_placement_exec(ggd);
 }
 
-static bool gizmo_mesh_placement_poll(const bContext *C, wmGizmoGroupType *gzgt)
+static bool gizmo_mesh_placement_poll(const DuneContext *C, wmGizmoGroupType *gzgt)
 {
   return ED_gizmo_poll_or_unlink_delayed_from_operator(
       C, gzgt, "MESH_OT_primitive_cube_add_gizmo");
 }
 
-static void gizmo_mesh_placement_modal_from_setup(const bContext *C, wmGizmoGroup *gzgroup)
+static void gizmo_mesh_placement_modal_from_setup(const DuneContext *C, wmGizmoGroup *gzgroup)
 {
   GizmoPlacementGroup *ggd = gzgroup->customdata;
 
@@ -202,7 +194,7 @@ static void gizmo_mesh_placement_modal_from_setup(const bContext *C, wmGizmoGrou
     {
       float mat3[3][3];
       float location[3];
-      calc_initial_placement_point_from_view((bContext *)C,
+      calc_initial_placement_point_from_view((DuneContext *)C,
                                              (float[2]){
                                                  win->eventstate->xy[0] - region->winrct.xmin,
                                                  win->eventstate->xy[1] - region->winrct.ymin,
@@ -216,7 +208,7 @@ static void gizmo_mesh_placement_modal_from_setup(const bContext *C, wmGizmoGrou
     if (1) {
       wmGizmoMap *gzmap = gzgroup->parent_gzmap;
       WM_gizmo_modal_set_from_setup(gzmap,
-                                    (bContext *)C,
+                                    (DuneContext *)C,
                                     ggd->cage,
                                     ED_GIZMO_CAGE3D_PART_SCALE_MAX_X_MAX_Y_MAX_Z,
                                     win->eventstate);
@@ -224,7 +216,7 @@ static void gizmo_mesh_placement_modal_from_setup(const bContext *C, wmGizmoGrou
   }
 }
 
-static void gizmo_mesh_placement_setup(const bContext *C, wmGizmoGroup *gzgroup)
+static void gizmo_mesh_placement_setup(const DuneContext *C, wmGizmoGroup *gzgroup)
 {
   wmOperator *op = WM_operator_last_redo(C);
 
@@ -241,24 +233,24 @@ static void gizmo_mesh_placement_setup(const bContext *C, wmGizmoGroup *gzgroup)
 
   UI_GetThemeColor3fv(TH_GIZMO_PRIMARY, ggd->cage->color);
 
-  RNA_enum_set(ggd->cage->ptr,
+  API_enum_set(ggd->cage->ptr,
                "transform",
                ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE | ED_GIZMO_CAGE2D_XFORM_FLAG_TRANSLATE |
                    ED_GIZMO_CAGE2D_XFORM_FLAG_SCALE_SIGNED);
 
   WM_gizmo_set_flag(ggd->cage, WM_GIZMO_DRAW_VALUE, true);
 
-  ggd->data.context = (bContext *)C;
+  ggd->data.context = (DuneContext *)C;
   ggd->data.op = op;
-  ggd->data.prop_matrix = RNA_struct_find_property(op->ptr, "matrix");
+  ggd->data.prop_matrix = API_struct_find_prop(op->ptr, "matrix");
 
   gizmo_mesh_placement_update_from_op(ggd);
 
   /* Setup property callbacks */
   {
-    WM_gizmo_target_property_def_func(ggd->cage,
+    WM_gizmo_target_prop_def_func(ggd->cage,
                                       "matrix",
-                                      &(const struct wmGizmoPropertyFnParams){
+                                      &(const struct wmGizmoPropFnParams){
                                           .value_get_fn = gizmo_placement_prop_matrix_get,
                                           .value_set_fn = gizmo_placement_prop_matrix_set,
                                           .range_get_fn = NULL,
@@ -269,11 +261,11 @@ static void gizmo_mesh_placement_setup(const bContext *C, wmGizmoGroup *gzgroup)
   gizmo_mesh_placement_modal_from_setup(C, gzgroup);
 }
 
-static void gizmo_mesh_placement_draw_prepare(const bContext *UNUSED(C), wmGizmoGroup *gzgroup)
+static void gizmo_mesh_placement_draw_prepare(const DuneContext *UNUSED(C), wmGizmoGroup *gzgroup)
 {
   GizmoPlacementGroup *ggd = gzgroup->customdata;
   if (ggd->data.op->next) {
-    ggd->data.op = WM_operator_last_redo((bContext *)ggd->data.context);
+    ggd->data.op = WM_operator_last_redo((DuneContext *)ggd->data.context);
   }
   gizmo_mesh_placement_update_from_op(ggd);
 }
@@ -293,27 +285,25 @@ static void MESH_GGT_add_bounds(struct wmGizmoGroupType *gzgt)
   gzgt->draw_prepare = gizmo_mesh_placement_draw_prepare;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Add Cube Gizmo-Operator
+/** Add Cube Gizmo-Operator
  *
  * For now we use a separate operator to add a cube,
  * we can try to merge then however they are invoked differently
- * and share the same BMesh creation code.
- * \{ */
+ * and share the same DuneMesh creation code.
+ **/
 
-static int add_primitive_cube_gizmo_exec(bContext *C, wmOperator *op)
+static int add_primitive_cube_gizmo_exec(DuneContext *C, wmOperator *op)
 {
   Object *obedit = CTX_data_edit_object(C);
-  BMEditMesh *em = BKE_editmesh_from_object(obedit);
+  DuneMeshEdit *dme = DUNE_editmesh_from_object(obedit);
   float matrix[4][4];
 
   /* Get the matrix that defines the cube bounds (as set by the gizmo cage). */
   {
-    PropertyRNA *prop_matrix = RNA_struct_find_property(op->ptr, "matrix");
-    if (RNA_property_is_set(op->ptr, prop_matrix)) {
-      RNA_property_float_get_array(op->ptr, prop_matrix, &matrix[0][0]);
+    PropAPI *prop_matrix = API_struct_find_prop(op->ptr, "matrix");
+    if (API_prop_is_set(op->ptr, prop_matrix)) {
+      API_prop_float_get_array(op->ptr, prop_matrix, &matrix[0][0]);
       invert_m4_m4(obedit->imat, obedit->obmat);
       mul_m4_m4m4(matrix, obedit->imat, matrix);
     }
@@ -323,13 +313,13 @@ static int add_primitive_cube_gizmo_exec(bContext *C, wmOperator *op)
     }
   }
 
-  const bool calc_uvs = RNA_boolean_get(op->ptr, "calc_uvs");
+  const bool calc_uvs = API_boolean_get(op->ptr, "calc_uvs");
 
   if (calc_uvs) {
     ED_mesh_uv_texture_ensure(obedit->data, NULL);
   }
 
-  if (!EDBM_op_call_and_selectf(em,
+  if (!DMESH_op_call_and_selectf(em,
                                 op,
                                 "verts.out",
                                 false,
@@ -340,8 +330,8 @@ static int add_primitive_cube_gizmo_exec(bContext *C, wmOperator *op)
     return OPERATOR_CANCELLED;
   }
 
-  EDBM_selectmode_flush_ex(em, SCE_SELECT_VERTEX);
-  EDBM_update(obedit->data,
+  DMESH_selectmode_flush_ex(em, SCE_SELECT_VERTEX);
+  DMESH_update(obedit->data,
               &(const struct EDBMUpdate_Params){
                   .calc_looptri = true,
                   .calc_normals = false,
@@ -351,7 +341,7 @@ static int add_primitive_cube_gizmo_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-static int add_primitive_cube_gizmo_invoke(bContext *C,
+static int add_primitive_cube_gizmo_invoke(DuneContext *C,
                                            wmOperator *op,
                                            const wmEvent *UNUSED(event))
 {
@@ -363,8 +353,8 @@ static int add_primitive_cube_gizmo_invoke(bContext *C,
     if (v3d && ((v3d->gizmo_flag & V3D_GIZMO_HIDE) == 0)) {
       wmGizmoGroupType *gzgt = WM_gizmogrouptype_find("MESH_GGT_add_bounds", false);
       if (!WM_gizmo_group_type_ensure_ptr(gzgt)) {
-        struct Main *bmain = CTX_data_main(C);
-        WM_gizmo_group_type_reinit_ptr(bmain, gzgt);
+        struct Main *duneMain = CTX_data_main(C);
+        WM_gizmo_group_type_reinit_ptr(duneMain, gzgt);
       }
     }
   }
@@ -391,9 +381,9 @@ void MESH_OT_primitive_cube_add_gizmo(wmOperatorType *ot)
   ED_object_add_generic_props(ot, true);
 
   /* hidden props */
-  PropertyRNA *prop = RNA_def_float_matrix(
-      ot->srna, "matrix", 4, 4, NULL, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
-  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+  PropAPI *prop = API_def_float_matrix(
+      ot->api, "matrix", 4, 4, NULL, 0.0f, 0.0f, "Matrix", "", 0.0f, 0.0f);
+  API_def_prop_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 
   WM_gizmogrouptype_append(MESH_GGT_add_bounds);
 }
