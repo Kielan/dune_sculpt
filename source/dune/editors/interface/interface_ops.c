@@ -337,27 +337,27 @@ static EnumPropertyItem override_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static bool override_type_set_button_poll(bContext *C)
+static bool override_type_set_btn_poll(DuneContext *C)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiPtr *prop;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
-  const uint override_status = RNA_property_override_library_status(
+  const uint override_status = ApiProp_override_library_status(
       CTX_data_main(C), &ptr, prop, index);
 
   return (ptr.data && prop && (override_status & RNA_OVERRIDE_STATUS_OVERRIDABLE));
 }
 
-static int override_type_set_button_exec(bContext *C, wmOperator *op)
+static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiProp ptr;
+  ApiProp *prop;
   int index;
   bool created;
-  const bool all = RNA_boolean_get(op->ptr, "all");
+  const bool all = api_bool_get(op->ptr, "all");
   const int op_type = RNA_enum_get(op->ptr, "type");
 
   short operation;
@@ -385,7 +385,7 @@ static int override_type_set_button_exec(bContext *C, wmOperator *op)
   /* try to reset the nominated setting to its default value */
   UI_context_active_but_prop_get(C, &ptr, &prop, &index);
 
-  BLI_assert(ptr.owner_id != NULL);
+  LIB_assert(ptr.owner_id != NULL);
 
   if (all) {
     index = -1;
