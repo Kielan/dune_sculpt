@@ -210,7 +210,7 @@ static void UI_OT_reset_default_btn(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Assign Value as Default Button Operator **/
 
-static bool assign_default_button_poll(bContext *C)
+static bool assign_default_btn_poll(DuneContext *C)
 {
   ApiProp ptr;
   ApiProp *prop;
@@ -267,41 +267,41 @@ static void UI_OT_assign_default_btn(wmOperatorType *ot)
 
 static int unset_prop_btn_ex(DuneContext *C, wmOperator *UNUSED(op))
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiProp ptr;
+  ApiProp *prop;
   int index;
 
   /* try to unset the nominated property */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
-  if (ptr.data && prop && RNA_property_editable(&ptr, prop) &&
-      /* RNA_property_is_idprop(prop) && */
-      RNA_property_is_set(&ptr, prop)) {
-    RNA_property_unset(&ptr, prop);
-    return operator_button_property_finish(C, &ptr, prop);
+  if (ptr.data && prop && ApiProp_editable(&ptr, prop) &&
+      /* ApiProp_is_idprop(prop) && */
+      ApiProp_is_set(&ptr, prop)) {
+    ApiProp_unset(&ptr, prop);
+    return op_btn_prop_finish(C, &ptr, prop);
   }
 
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_unset_property_button(wmOperatorType *ot)
+static void UI_OT_unset_prop_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Unset Property";
-  ot->idname = "UI_OT_unset_property_button";
+  ot->idname = "UI_OT_unset_prop_btn";
   ot->description = "Clear the property and use default or generated value in operators";
 
   /* callbacks */
-  ot->poll = ED_operator_regionactive;
-  ot->exec = unset_property_button_exec;
+  ot->poll = ED_op_regionactive;
+  ot->exec = unset_prop_btnEx;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Define Override Type Operator */
+/** Define Override Type Operator */
 
 /* Note that we use different values for UI/UX than 'real' override operations, user does not care
  * whether it's added or removed for the differential operation e.g. */
@@ -358,7 +358,7 @@ static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
   int index;
   bool created;
   const bool all = api_bool_get(op->ptr, "all");
-  const int op_type = RNA_enum_get(op->ptr, "type");
+  const int op_type = api_enum_get(op->ptr, "type");
 
   short operation;
 
@@ -378,12 +378,12 @@ static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
       break;
     default:
       operation = IDOVERRIDE_LIBRARY_OP_REPLACE;
-      BLI_assert(0);
+      LIB_assert(0);
       break;
   }
 
   /* try to reset the nominated setting to its default value */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
   LIB_assert(ptr.owner_id != NULL);
 
@@ -391,12 +391,12 @@ static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
     index = -1;
   }
 
-  IDOverrideLibraryPropertyOperation *opop = RNA_property_override_property_operation_get(
+  IDOverrideLibPropOp *opop = ApiProp_override_prop_op_get(
       CTX_data_main(C), &ptr, prop, operation, index, true, NULL, &created);
 
   if (opop == NULL) {
-    /* Sometimes e.g. RNA cannot generate a path to the given property. */
-    BKE_reportf(op->reports, RPT_WARNING, "Failed to create the override operation");
+    /* Sometimes e.g. API cannot generate a path to the given property. */
+    DUNE_reportf(op->reports, RPT_WARNING, "Failed to create the override operation");
     return OPERATOR_CANCELLED;
   }
 
