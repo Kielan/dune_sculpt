@@ -438,8 +438,8 @@ static void UI_OT_override_type_set_btn(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  RNA_def_boolean(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
-  ot->prop = RNA_def_enum(ot->srna,
+  api_def_bool(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
+  ot->prop = api_def_enum(ot->srna,
                           "type",
                           override_type_items,
                           UIOverride_Type_Replace,
@@ -448,35 +448,35 @@ static void UI_OT_override_type_set_btn(wmOperatorType *ot)
   /* TODO: add itemf callback, not all options are available for all data types... */
 }
 
-static bool override_remove_button_poll(bContext *C)
+static bool override_remove_btn_poll(DuneContext *C)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
-  const uint override_status = RNA_property_override_library_status(
+  const uint override_status = ApiProp_override_lib_status(
       CTX_data_main(C), &ptr, prop, index);
 
-  return (ptr.data && ptr.owner_id && prop && (override_status & RNA_OVERRIDE_STATUS_OVERRIDDEN));
+  return (ptr.data && ptr.owner_id && prop && (override_status & API_OVERRIDE_STATUS_OVERRIDDEN));
 }
 
-static int override_remove_button_exec(bContext *C, wmOperator *op)
+static int override_remove_btnEx(DuneContext *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
-  PointerRNA ptr, id_refptr, src;
-  PropertyRNA *prop;
+  Main *duneMain = CTX_data_main(C);
+  ApiPtr ptr, id_refptr, src;
+  ApiPtr *prop;
   int index;
-  const bool all = RNA_boolean_get(op->ptr, "all");
+  const bool all = API_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_but_prop_get(C, &ptr, &prop, &index);
 
   ID *id = ptr.owner_id;
-  IDOverrideLibraryProperty *oprop = Api_prop_override_prop_find(duneMain, &ptr, prop, &id);
-  BLI_assert(oprop != NULL);
-  LI_assert(id != NULL && id->override_library != NULL);
+  IDOverrideLibProp *oprop = Api_prop_override_prop_find(duneMain, &ptr, prop, &id);
+  LIB_assert(oprop != NULL);
+  LIB_assert(id != NULL && id->override_library != NULL);
 
   const bool is_template = ID_IS_OVERRIDE_LIBRARY_TEMPLATE(id);
 
@@ -538,8 +538,8 @@ static void UI_OT_override_remove_btn(wmOperatorType *ot)
   ot->description = "Remove an override operation";
 
   /* callbacks */
-  ot->poll = override_remove_button_poll;
-  ot->exec = override_remove_button_exec;
+  ot->poll = override_remove_btn_poll;
+  ot->exec = override_remove_btn_exec;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
@@ -552,26 +552,26 @@ static void UI_OT_override_remove_btn(wmOperatorType *ot)
 /** Copy To Selected Operator **/
 
 #define NOT_NULL(assignment) ((assignment) != NULL)
-#define NOT_RNA_NULL(assignment) ((assignment).data != NULL)
+#define NOT_API_NULL(assignment) ((assignment).data != NULL)
 
-static void ui_context_selected_bones_via_pose(bContext *C, ListBase *r_lb)
+static void ui_ctx_selected_bones_via_pose(DuneContext *C, ListBase *r_lb)
 {
   ListBase lb;
   lb = CTX_data_collection_get(C, "selected_pose_bones");
 
-  if (!BLI_listbase_is_empty(&lb)) {
+  if (!LIB_listbase_is_empty(&lb)) {
     LISTBASE_FOREACH (CollectionPointerLink *, link, &lb) {
-      bPoseChannel *pchan = link->ptr.data;
-      RNA_pointer_create(link->ptr.owner_id, &RNA_Bone, pchan->bone, &link->ptr);
+      DunePoseChannel *pchan = link->ptr.data;
+      API_ptr_create(link->ptr.owner_id, &API_Bone, pchan->bone, &link->ptr);
     }
   }
 
   *r_lb = lb;
 }
 
-bool UI_context_copy_to_selected_list(bContext *C,
-                                      PointerRNA *ptr,
-                                      PropertyRNA *prop,
+bool UI_ctx_copy_to_selected_list(DuneContext *C,
+                                      ApiPtr *ptr,
+                                      ApiProp *prop,
                                       ListBase *r_lb,
                                       bool *r_use_path_from_id,
                                       char **r_path)
@@ -583,29 +583,29 @@ bool UI_context_copy_to_selected_list(bContext *C,
   /* Remove links from the collection list which don't contain 'prop'. */
   bool ensure_list_items_contain_prop = false;
 
-  /* PropertyGroup objects don't have a reference to the struct that actually owns
+  /* PropGroup objects don't have a reference to the struct that actually owns
    * them, so it is normally necessary to do a brute force search to find it. This
    * handles the search for non-ID owners by using the 'active' reference as a hint
-   * to preserve efficiency. Only properties defined through RNA are handled, as
+   * to preserve efficiency. Only properties defined through API are handled, as
    * custom properties cannot be assumed to be valid for all instances.
    *
    * Properties owned by the ID are handled by the 'if (ptr->owner_id)' case below.
    */
-  if (!RNA_property_is_idprop(prop) && RNA_struct_is_a(ptr->type, &RNA_PropertyGroup)) {
-    PointerRNA owner_ptr;
+  if (!ApiProp_is_IdProp(prop) && api_struct_is_a(ptr->type, &api_PropGroup)) {
+    ApiPtr owner_ptr;
     char *idpath = NULL;
 
     /* First, check the active PoseBone and PoseBone->Bone. */
-    if (NOT_RNA_NULL(
-            owner_ptr = CTX_data_pointer_get_type(C, "active_pose_bone", &RNA_PoseBone))) {
-      if (NOT_NULL(idpath = RNA_path_from_struct_to_idproperty(&owner_ptr, ptr->data))) {
+    if (NOT_API_NULL(
+            owner_ptr = CTX_data_ptr_get_type(C, "active_pose_bone", &api_PoseBone))) {
+      if (NOT_NULL(idpath = api_path_from_struct_to_idprop(&owner_ptr, ptr->data))) {
         *r_lb = CTX_data_collection_get(C, "selected_pose_bones");
       }
       else {
-        bPoseChannel *pchan = owner_ptr.data;
-        RNA_pointer_create(owner_ptr.owner_id, &RNA_Bone, pchan->bone, &owner_ptr);
+        DunePoseChannel *pchan = owner_ptr.data;
+        api_ptr_create(owner_ptr.owner_id, &api_Bone, pchan->bone, &owner_ptr);
 
-        if (NOT_NULL(idpath = RNA_path_from_struct_to_idproperty(&owner_ptr, ptr->data))) {
+        if (NOT_NULL(idpath = api_path_from_struct_to_idproperty(&owner_ptr, ptr->data))) {
           ui_context_selected_bones_via_pose(C, r_lb);
         }
       }
