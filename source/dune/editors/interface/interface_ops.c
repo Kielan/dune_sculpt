@@ -73,29 +73,29 @@
 /* -------------------------------------------------------------------- */
 /** Copy Python Command Operator */
 
-static bool copy_python_command_button_poll(bContext *C)
+static bool copy_py_cmd_btn_poll(DuneContext *C)
 {
-  uiBut *but = UI_context_active_but_get(C);
+  uiBtn *btn = UI_ctx_active_btn_get(C);
 
-  if (but && (but->optype != NULL)) {
+  if (btn && (btn->optype != NULL)) {
     return 1;
   }
 
   return 0;
 }
 
-static int copy_python_command_button_exec(bContext *C, wmOperator *UNUSED(op))
+static int copy_py_cmd_btn_ex(DuneContext *C, wmOperator *UNUSED(op))
 {
-  uiBut *but = UI_context_active_but_get(C);
+  uiBtn *btn = ui_ctx_active_btn_get(C);
 
-  if (but && (but->optype != NULL)) {
-    PointerRNA *opptr;
+  if (btn && (btn->optype != NULL)) {
+    ApiPtr *opptr;
     char *str;
-    opptr = UI_but_operator_ptr_get(but); /* allocated when needed, the button owns it */
+    opptr = ui_btn_op_ptr_get(btn); /* allocated when needed, the button owns it */
 
-    str = WM_operator_pystring_ex(C, NULL, false, true, but->optype, opptr);
+    str = wm_op_pystring_ex(C, NULL, false, true, btn->optype, opptr);
 
-    WM_clipboard_text_set(str, 0);
+    wm_clipboard_txt_set(str, 0);
 
     MEM_freeN(str);
 
@@ -105,7 +105,7 @@ static int copy_python_command_button_exec(bContext *C, wmOperator *UNUSED(op))
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_copy_python_command_button(wmOperatorType *ot)
+static void UI_OT_copy_py_cmd_btn(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Copy Python Command";
@@ -113,28 +113,25 @@ static void UI_OT_copy_python_command_button(wmOperatorType *ot)
   ot->description = "Copy the Python command matching this button";
 
   /* callbacks */
-  ot->exec = copy_python_command_button_exec;
-  ot->poll = copy_python_command_button_poll;
+  ot->exec = copy_py_cmd_btn_ex;
+  ot->poll = copy_py_cmd_btn_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Reset to Default Values Button Operator
- * \{ */
+/** Reset to Default Values Button Operator **/
 
-static int operator_button_property_finish(bContext *C, PointerRNA *ptr, PropertyRNA *prop)
+static int op_btn_prop_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
 {
   ID *id = ptr->owner_id;
 
   /* perform updates required for this property */
-  RNA_property_update(C, ptr, prop);
+  api_prop_update(C, ptr, prop);
 
   /* as if we pressed the button */
-  UI_context_active_but_prop_handle(C, false);
+  ui_ctx_active_btn_prop_handle(C, false);
 
   /* Since we don't want to undo _all_ edits to settings, eg window
    * edits on the screen or on operator settings.
@@ -146,51 +143,51 @@ static int operator_button_property_finish(bContext *C, PointerRNA *ptr, Propert
   return OPERATOR_CANCELLED;
 }
 
-static int operator_button_property_finish_with_undo(bContext *C,
-                                                     PointerRNA *ptr,
-                                                     PropertyRNA *prop)
+static int op_btn_prop_finish_with_undo(DuneContext *C,
+                                                     ApiPtr *ptr,
+                                                     ApiProp *prop)
 {
   /* Perform updates required for this property. */
-  RNA_property_update(C, ptr, prop);
+  apiProp_update(C, ptr, prop);
 
   /* As if we pressed the button. */
-  UI_context_active_but_prop_handle(C, true);
+  ui_ctx_active_btnProp_handle(C, true);
 
   return OPERATOR_FINISHED;
 }
 
-static bool reset_default_button_poll(bContext *C)
+static bool reset_default_btn_poll(DuneContext *C)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiProp ptr;
+  ApiProp *prop;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
-  return (ptr.data && prop && RNA_property_editable(&ptr, prop));
+  return (ptr.data && prop && apiProp_editable(&ptr, prop));
 }
 
-static int reset_default_button_exec(bContext *C, wmOperator *op)
+static int reset_default_btn_ex(DuneContext *C, wmOperator *op)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   int index;
-  const bool all = RNA_boolean_get(op->ptr, "all");
+  const bool all = API_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
-  if (ptr.data && prop && RNA_property_editable(&ptr, prop)) {
-    if (RNA_property_reset(&ptr, prop, (all) ? -1 : index)) {
-      return operator_button_property_finish_with_undo(C, &ptr, prop);
+  if (ptr.data && prop && apiProp_editable(&ptr, prop)) {
+    if (ApiProp_reset(&ptr, prop, (all) ? -1 : index)) {
+      return op_btnProp_finish_with_undo(C, &ptr, prop);
     }
   }
 
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_reset_default_button(wmOperatorType *ot)
+static void UI_OT_reset_default_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Reset to Default Value";
@@ -198,62 +195,59 @@ static void UI_OT_reset_default_button(wmOperatorType *ot)
   ot->description = "Reset this property's value to its default value";
 
   /* callbacks */
-  ot->poll = reset_default_button_poll;
-  ot->exec = reset_default_button_exec;
+  ot->poll = reset_default_btn_poll;
+  ot->exec = reset_default_btn_exec;
 
   /* flags */
-  /* Don't set #OPTYPE_UNDO because #operator_button_property_finish_with_undo
+  /* Don't set #OPTYPE_UNDO because #op_btnProp_finish_with_undo
    * is responsible for the undo push. */
   ot->flag = 0;
 
   /* properties */
-  RNA_def_boolean(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
+  api_def_bool(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Assign Value as Default Button Operator
- * \{ */
+/** Assign Value as Default Button Operator **/
 
 static bool assign_default_button_poll(bContext *C)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiProp ptr;
+  ApiProp *prop;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
-  if (ptr.data && prop && RNA_property_editable(&ptr, prop)) {
-    const PropertyType type = RNA_property_type(prop);
+  if (ptr.data && prop && ApiProp_editable(&ptr, prop)) {
+    const PropType type = ApiProp_type(prop);
 
-    return RNA_property_is_idprop(prop) && !RNA_property_array_check(prop) &&
+    return apiprop_is_idprop(prop) && !apiprop_array_check(prop) &&
            ELEM(type, PROP_INT, PROP_FLOAT);
   }
 
   return false;
 }
 
-static int assign_default_button_exec(bContext *C, wmOperator *UNUSED(op))
+static int assign_default_btnEx(DuneContext *C, wmOperator *UNUSED(op))
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   int index;
 
   /* try to reset the nominated setting to its default value */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
-  if (ptr.data && prop && RNA_property_editable(&ptr, prop)) {
-    if (RNA_property_assign_default(&ptr, prop)) {
-      return operator_button_property_finish(C, &ptr, prop);
+  if (ptr.data && prop && apiProp_editable(&ptr, prop)) {
+    if (apiProp_assign_default(&ptr, prop)) {
+      return op_btnProp_finish(C, &ptr, prop);
     }
   }
 
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_assign_default_button(wmOperatorType *ot)
+static void UI_OT_assign_default_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Assign Value as Default";
@@ -261,20 +255,17 @@ static void UI_OT_assign_default_button(wmOperatorType *ot)
   ot->description = "Set this property's current value as the new default";
 
   /* callbacks */
-  ot->poll = assign_default_button_poll;
-  ot->exec = assign_default_button_exec;
+  ot->poll = assign_default_btn_poll;
+  ot->exec = assign_default_btn_exec;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Unset Property Button Operator
- * \{ */
+/** Unset Property Button Operator **/
 
-static int unset_property_button_exec(bContext *C, wmOperator *UNUSED(op))
+static int unset_prop_btn_ex(DuneContext *C, wmOperator *UNUSED(op))
 {
   PointerRNA ptr;
   PropertyRNA *prop;
@@ -309,11 +300,8 @@ static void UI_OT_unset_property_button(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Define Override Type Operator
- * \{ */
+/** \name Define Override Type Operator */
 
 /* Note that we use different values for UI/UX than 'real' override operations, user does not care
  * whether it's added or removed for the differential operation e.g. */
