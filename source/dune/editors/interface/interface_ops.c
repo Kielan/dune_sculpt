@@ -84,7 +84,7 @@ static bool copy_py_cmd_btn_poll(DuneContext *C)
   return 0;
 }
 
-static int copy_py_cmd_btn_ex(DuneContext *C, wmOperator *UNUSED(op))
+static int copy_py_cmd_btnEx(DuneContext *C, wmOperator *UNUSED(op))
 {
   uiBtn *btn = ui_ctx_active_btn_get(C);
 
@@ -131,7 +131,7 @@ static int op_btn_prop_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
   api_prop_update(C, ptr, prop);
 
   /* as if we pressed the button */
-  ui_ctx_active_btn_prop_handle(C, false);
+  ui_ctx_active_btnProp_handle(C, false);
 
   /* Since we don't want to undo _all_ edits to settings, eg window
    * edits on the screen or on operator settings.
@@ -143,7 +143,7 @@ static int op_btn_prop_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
   return OPERATOR_CANCELLED;
 }
 
-static int op_btn_prop_finish_with_undo(DuneContext *C,
+static int op_btn0rop_finish_with_undo(DuneContext *C,
                                                      ApiPtr *ptr,
                                                      ApiProp *prop)
 {
@@ -167,12 +167,12 @@ static bool reset_default_btn_poll(DuneContext *C)
   return (ptr.data && prop && apiProp_editable(&ptr, prop));
 }
 
-static int reset_default_btn_ex(DuneContext *C, wmOperator *op)
+static int reset_default_btnEx(DuneContext *C, wmOperator *op)
 {
   ApiPtr ptr;
   ApiProp *prop;
   int index;
-  const bool all = API_bool_get(op->ptr, "all");
+  const bool all = api_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
   UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
@@ -285,16 +285,16 @@ static int unset_prop_btn_ex(DuneContext *C, wmOperator *UNUSED(op))
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_unset_prop_btn(wmOperatorType *ot)
+static void UI_OT_unset_btnProp(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Unset Property";
-  ot->idname = "UI_OT_unset_prop_btn";
+  ot->idname = "UI_OT_unset_btnProp";
   ot->description = "Clear the property and use default or generated value in operators";
 
   /* callbacks */
   ot->poll = ED_op_regionactive;
-  ot->exec = unset_prop_btnEx;
+  ot->exec = unset_btnProp_ex;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
@@ -407,22 +407,22 @@ static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
   /* Outliner e.g. has to be aware of this change. */
   WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
-  return operator_button_property_finish(C, &ptr, prop);
+  return op_btnProp_finish(C, &ptr, prop);
 }
 
-static int override_type_set_button_invoke(bContext *C,
+static int override_type_set_btn_invoke(DuneContext *C,
                                            wmOperator *op,
                                            const wmEvent *UNUSED(event))
 {
 #if 0 /* Disabled for now */
   return WM_menu_invoke_ex(C, op, WM_OP_INVOKE_DEFAULT);
 #else
-  RNA_enum_set(op->ptr, "type", IDOVERRIDE_LIBRARY_OP_REPLACE);
-  return override_type_set_button_exec(C, op);
+  api_enum_set(op->ptr, "type", IDOVERRIDE_LIBRARY_OP_REPLACE);
+  return override_type_set_btn_ex(C, op);
 #endif
 }
 
-static void UI_OT_override_type_set_button(wmOperatorType *ot)
+static void UI_OT_override_type_set_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Define Override Type";
