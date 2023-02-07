@@ -474,19 +474,19 @@ static int override_remove_button_exec(bContext *C, wmOperator *op)
   UI_context_active_but_prop_get(C, &ptr, &prop, &index);
 
   ID *id = ptr.owner_id;
-  IDOverrideLibraryProperty *oprop = RNA_property_override_property_find(bmain, &ptr, prop, &id);
+  IDOverrideLibraryProperty *oprop = Api_prop_override_prop_find(duneMain, &ptr, prop, &id);
   BLI_assert(oprop != NULL);
-  BLI_assert(id != NULL && id->override_library != NULL);
+  LI_assert(id != NULL && id->override_library != NULL);
 
   const bool is_template = ID_IS_OVERRIDE_LIBRARY_TEMPLATE(id);
 
   /* We need source (i.e. linked data) to restore values of deleted overrides...
    * If this is an override template, we obviously do not need to restore anything. */
   if (!is_template) {
-    PropertyRNA *src_prop;
-    RNA_id_pointer_create(id->override_library->reference, &id_refptr);
-    if (!RNA_path_resolve_property(&id_refptr, oprop->rna_path, &src, &src_prop)) {
-      BLI_assert_msg(0, "Failed to create matching source (linked data) RNA pointer");
+    ApiProp *src_prop;
+    Api_id_ptr_create(id->override_lib->reference, &id_refptr);
+    if (!Api_path_resolve_prop(&id_refptr, oprop->api_path, &src, &src_prop)) {
+      LIB_assert_msg(0, "Failed to create matching source (linked data) API pointer");
     }
   }
 
@@ -494,43 +494,43 @@ static int override_remove_button_exec(bContext *C, wmOperator *op)
     bool is_strict_find;
     /* Remove override operation for given item,
      * add singular operations for the other items as needed. */
-    IDOverrideLibraryPropertyOperation *opop = BKE_lib_override_library_property_operation_find(
+    IDOverrideLibraryPropertyOperation *opop = DUNE_lib_override_lib_prop_operation_find(
         oprop, NULL, NULL, index, index, false, &is_strict_find);
-    BLI_assert(opop != NULL);
+    LIB_assert(opop != NULL);
     if (!is_strict_find) {
       /* No specific override operation, we have to get generic one,
        * and create item-specific override operations for all but given index,
        * before removing generic one. */
-      for (int idx = RNA_property_array_length(&ptr, prop); idx--;) {
+      for (int idx = ApiProp_array_length(&ptr, prop); idx--;) {
         if (idx != index) {
-          BKE_lib_override_library_property_operation_get(
+          DUNE_lib_override_lib_prop_op_get(
               oprop, opop->operation, NULL, NULL, idx, idx, true, NULL, NULL);
         }
       }
     }
-    BKE_lib_override_library_property_operation_delete(oprop, opop);
+    DUNE_lib_override_lib_prop_op_delete(oprop, opop);
     if (!is_template) {
-      RNA_property_copy(bmain, &ptr, &src, prop, index);
+      apiProp_copy(duneMain, &ptr, &src, prop, index);
     }
-    if (BLI_listbase_is_empty(&oprop->operations)) {
-      BKE_lib_override_library_property_delete(id->override_library, oprop);
+    if (LIB_listbase_is_empty(&oprop->operations)) {
+      DUNE_lib_override_lib_prop_delete(id->override_library, oprop);
     }
   }
   else {
     /* Just remove whole generic override operation of this property. */
-    BKE_lib_override_library_property_delete(id->override_library, oprop);
+    DUNE_lib_override_lib_prop_delete(id->override_library, oprop);
     if (!is_template) {
-      RNA_property_copy(bmain, &ptr, &src, prop, -1);
+      apiProp_copy(duneMain, &ptr, &src, prop, -1);
     }
   }
 
   /* Outliner e.g. has to be aware of this change. */
   WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
-  return operator_button_property_finish(C, &ptr, prop);
+  return op_btnProp_finish(C, &ptr, prop);
 }
 
-static void UI_OT_override_remove_button(wmOperatorType *ot)
+static void UI_OT_override_remove_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Remove Override";
@@ -545,14 +545,11 @@ static void UI_OT_override_remove_button(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO;
 
   /* properties */
-  RNA_def_boolean(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
+  api_def_bool(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Copy To Selected Operator
- * \{ */
+/** Copy To Selected Operator **/
 
 #define NOT_NULL(assignment) ((assignment) != NULL)
 #define NOT_RNA_NULL(assignment) ((assignment).data != NULL)
