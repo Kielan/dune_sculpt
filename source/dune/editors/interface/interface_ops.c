@@ -73,9 +73,9 @@
 /* -------------------------------------------------------------------- */
 /** Copy Python Command Operator */
 
-static bool copy_py_cmd_btn_poll(DuneContext *C)
+static bool copy_pycmd_btnpoll(DuneContext *C)
 {
-  uiBtn *btn = UI_ctx_active_btn_get(C);
+  uiBtn *btn = ui_ctx_active_btn_get(C);
 
   if (btn && (btn->optype != NULL)) {
     return 1;
@@ -84,7 +84,7 @@ static bool copy_py_cmd_btn_poll(DuneContext *C)
   return 0;
 }
 
-static int copy_py_cmd_btnEx(DuneContext *C, wmOperator *UNUSED(op))
+static int copy_py_cmd_btnex(DuneContext *C, wmOperator *UNUSED(op))
 {
   uiBtn *btn = ui_ctx_active_btn_get(C);
 
@@ -105,11 +105,11 @@ static int copy_py_cmd_btnEx(DuneContext *C, wmOperator *UNUSED(op))
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_copy_py_cmd_btn(wmOpType *ot)
+static void UI_OT_copy_pycmd_btn(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Copy Python Command";
-  ot->idname = "UI_OT_copy_python_command_button";
+  ot->idname = "UI_OT_copy_pycmd_btnn";
   ot->description = "Copy the Python command matching this button";
 
   /* callbacks */
@@ -123,15 +123,15 @@ static void UI_OT_copy_py_cmd_btn(wmOpType *ot)
 /* -------------------------------------------------------------------- */
 /** Reset to Default Values Button Operator **/
 
-static int op_btnProp_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
+static int op_btnprop_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
 {
   ID *id = ptr->owner_id;
 
   /* perform updates required for this property */
-  apiProp_update(C, ptr, prop);
+  apiprop_update(C, ptr, prop);
 
   /* as if we pressed the button */
-  ui_ctx_active_btnProp_handle(C, false);
+  ui_ctx_active_btnprop_handle(C, false);
 
   /* Since we don't want to undo _all_ edits to settings, eg window
    * edits on the screen or on operator settings.
@@ -143,28 +143,28 @@ static int op_btnProp_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
   return OPERATOR_CANCELLED;
 }
 
-static int op_btnProp_finish_with_undo(DuneContext *C,
+static int op_btnprop_finish_with_undo(DuneContext *C,
                                                      ApiPtr *ptr,
                                                      ApiProp *prop)
 {
   /* Perform updates required for this property. */
-  apiProp_update(C, ptr, prop);
+  apiprop_update(C, ptr, prop);
 
   /* As if we pressed the button. */
-  ui_ctx_active_btnProp_handle(C, true);
+  ui_ctx_active_btnprop_handle(C, true);
 
   return OPERATOR_FINISHED;
 }
 
-static bool reset_default_btn_poll(DuneContext *C)
+static bool reset_default_btnpoll(DuneContext *C)
 {
   ApiProp ptr;
   ApiProp *prop;
   int index;
 
-  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
-  return (ptr.data && prop && apiProp_editable(&ptr, prop));
+  return (ptr.data && prop && apiprop_editable(&ptr, prop));
 }
 
 static int reset_default_btnEx(DuneContext *C, wmOperator *op)
@@ -175,12 +175,12 @@ static int reset_default_btnEx(DuneContext *C, wmOperator *op)
   const bool all = api_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
-  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
   if (ptr.data && prop && apiProp_editable(&ptr, prop)) {
     if (ApiProp_reset(&ptr, prop, (all) ? -1 : index)) {
-      return op_btnProp_finish_with_undo(C, &ptr, prop);
+      return op_btnprop_finish_with_undo(C, &ptr, prop);
     }
   }
 
@@ -191,15 +191,15 @@ static void UI_OT_reset_default_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Reset to Default Value";
-  ot->idname = "UI_OT_reset_default_button";
+  ot->idname = "UI_OT_reset_default_btn";
   ot->description = "Reset this property's value to its default value";
 
   /* callbacks */
-  ot->poll = reset_default_btn_poll;
+  ot->poll = reset_default_btnpoll;
   ot->exec = reset_default_btnEx;
 
   /* flags */
-  /* Don't set #OPTYPE_UNDO because #op_btnProp_finish_with_undo
+  /* Don't set #OPTYPE_UNDO because #op_btnprop_finish_with_undo
    * is responsible for the undo push. */
   ot->flag = 0;
 
@@ -216,7 +216,7 @@ static bool assign_default_btn_poll(DuneContext *C)
   ApiProp *prop;
   int index;
 
-  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   if (ptr.data && prop && ApiProp_editable(&ptr, prop)) {
     const PropType type = ApiProp_type(prop);
@@ -265,36 +265,36 @@ static void UI_OT_assign_default_btn(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Unset Property Button Operator **/
 
-static int unset_prop_btn_ex(DuneContext *C, wmOperator *UNUSED(op))
+static int unset_btnprop_ex(DuneContext *C, wmOperator *UNUSED(op))
 {
   ApiProp ptr;
   ApiProp *prop;
   int index;
 
   /* try to unset the nominated property */
-  ui_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   /* if there is a valid property that is editable... */
-  if (ptr.data && prop && ApiProp_editable(&ptr, prop) &&
-      /* ApiProp_is_idprop(prop) && */
-      ApiProp_is_set(&ptr, prop)) {
-    ApiProp_unset(&ptr, prop);
-    return op_btn_prop_finish(C, &ptr, prop);
+  if (ptr.data && prop && apiprop_editable(&ptr, prop) &&
+      /* apiprop_is_idprop(prop) && */
+      apiprop_is_set(&ptr, prop)) {
+    apiprop_unset(&ptr, prop);
+    return op_btnprop_finish(C, &ptr, prop);
   }
 
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_unset_btnProp(wmOperatorType *ot)
+static void UI_OT_unset_btnprop(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Unset Property";
-  ot->idname = "UI_OT_unset_btnProp";
+  ot->idname = "UI_OT_unset_btnprop";
   ot->description = "Clear the property and use default or generated value in operators";
 
   /* callbacks */
   ot->poll = ED_op_regionactive;
-  ot->exec = unset_btnProp_ex;
+  ot->exec = unset_btnprop_ex;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
@@ -337,21 +337,21 @@ static EnumPropertyItem override_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static bool override_type_set_btn_poll(DuneContext *C)
+static bool override_type_set_btnpoll(DuneContext *C)
 {
   ApiPtr ptr;
   ApiPtr *prop;
   int index;
 
-  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
-  const uint override_status = ApiProp_override_library_status(
+  const uint override_status = apiprop_override_lib_status(
       CTX_data_main(C), &ptr, prop, index);
 
   return (ptr.data && prop && (override_status & RNA_OVERRIDE_STATUS_OVERRIDABLE));
 }
 
-static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
+static int override_type_set_btnex(DuneContext *C, wmOperator *op)
 {
   ApiProp ptr;
   ApiProp *prop;
@@ -383,7 +383,7 @@ static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
   }
 
   /* try to reset the nominated setting to its default value */
-  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   LIB_assert(ptr.owner_id != NULL);
 
@@ -391,7 +391,7 @@ static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
     index = -1;
   }
 
-  IDOverrideLibPropOp *opop = ApiProp_override_prop_op_get(
+  IDOverrideLibPropOp *opop = apiprop_override_prop_op_get(
       CTX_data_main(C), &ptr, prop, operation, index, true, NULL, &created);
 
   if (opop == NULL) {
@@ -407,7 +407,7 @@ static int override_type_set_btn_ex(DuneContext *C, wmOperator *op)
   /* Outliner e.g. has to be aware of this change. */
   WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
-  return op_btnProp_finish(C, &ptr, prop);
+  return op_btnprop_finish(C, &ptr, prop);
 }
 
 static int override_type_set_btn_invoke(DuneContext *C,
@@ -418,7 +418,7 @@ static int override_type_set_btn_invoke(DuneContext *C,
   return WM_menu_invoke_ex(C, op, WM_OP_INVOKE_DEFAULT);
 #else
   api_enum_set(op->ptr, "type", IDOVERRIDE_LIBRARY_OP_REPLACE);
-  return override_type_set_btn_ex(C, op);
+  return override_type_set_btnex(C, op);
 #endif
 }
 
@@ -426,13 +426,13 @@ static void UI_OT_override_type_set_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Define Override Type";
-  ot->idname = "UI_OT_override_type_set_button";
+  ot->idname = "UI_OT_override_type_set_btn";
   ot->description = "Create an override operation, or set the type of an existing one";
 
   /* callbacks */
-  ot->poll = override_type_set_button_poll;
-  ot->exec = override_type_set_button_exec;
-  ot->invoke = override_type_set_button_invoke;
+  ot->poll = override_type_set_btnpoll;
+  ot->exec = override_type_set_btnex;
+  ot->invoke = override_type_set_btninvoke;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
@@ -448,13 +448,13 @@ static void UI_OT_override_type_set_btn(wmOperatorType *ot)
   /* TODO: add itemf callback, not all options are available for all data types... */
 }
 
-static bool override_remove_btn_poll(DuneContext *C)
+static bool override_remove_btnpoll(DuneContext *C)
 {
   ApiPtr ptr;
   ApiProp *prop;
   int index;
 
-  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   const uint override_status = ApiProp_override_lib_status(
       CTX_data_main(C), &ptr, prop, index);
@@ -462,19 +462,19 @@ static bool override_remove_btn_poll(DuneContext *C)
   return (ptr.data && ptr.owner_id && prop && (override_status & API_OVERRIDE_STATUS_OVERRIDDEN));
 }
 
-static int override_remove_btnEx(DuneContext *C, wmOperator *op)
+static int override_remove_btnex(DuneContext *C, wmOperator *op)
 {
   Main *duneMain = CTX_data_main(C);
   ApiPtr ptr, id_refptr, src;
   ApiPtr *prop;
   int index;
-  const bool all = API_bool_get(op->ptr, "all");
+  const bool all = api_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
-  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   ID *id = ptr.owner_id;
-  IDOverrideLibProp *oprop = Api_prop_override_prop_find(duneMain, &ptr, prop, &id);
+  IDOverrideLibProp *oprop = apiprop_override_prop_find(duneMain, &ptr, prop, &id);
   LIB_assert(oprop != NULL);
   LIB_assert(id != NULL && id->override_library != NULL);
 
@@ -484,8 +484,8 @@ static int override_remove_btnEx(DuneContext *C, wmOperator *op)
    * If this is an override template, we obviously do not need to restore anything. */
   if (!is_template) {
     ApiProp *src_prop;
-    Api_id_ptr_create(id->override_lib->reference, &id_refptr);
-    if (!Api_path_resolve_prop(&id_refptr, oprop->api_path, &src, &src_prop)) {
+    apiid_ptr_create(id->override_lib->reference, &id_refptr);
+    if (!apipath_resolve_prop(&id_refptr, oprop->api_path, &src, &src_prop)) {
       LIB_assert_msg(0, "Failed to create matching source (linked data) API pointer");
     }
   }
@@ -494,31 +494,31 @@ static int override_remove_btnEx(DuneContext *C, wmOperator *op)
     bool is_strict_find;
     /* Remove override operation for given item,
      * add singular operations for the other items as needed. */
-    IDOverrideLibraryPropertyOperation *opop = DUNE_lib_override_lib_prop_operation_find(
+    IDOverrideLibraryPropertyOperation *opop = DUNE_lib_override_libprop_op_find(
         oprop, NULL, NULL, index, index, false, &is_strict_find);
     LIB_assert(opop != NULL);
     if (!is_strict_find) {
       /* No specific override operation, we have to get generic one,
        * and create item-specific override operations for all but given index,
        * before removing generic one. */
-      for (int idx = ApiProp_array_length(&ptr, prop); idx--;) {
+      for (int idx = apiprop_array_length(&ptr, prop); idx--;) {
         if (idx != index) {
-          DUNE_lib_override_lib_prop_op_get(
+          DUNE_lib_override_libprop_op_get(
               oprop, opop->operation, NULL, NULL, idx, idx, true, NULL, NULL);
         }
       }
     }
-    DUNE_lib_override_lib_prop_op_delete(oprop, opop);
+    DUNE_lib_override_libprop_op_delete(oprop, opop);
     if (!is_template) {
-      apiProp_copy(duneMain, &ptr, &src, prop, index);
+      apiprop_copy(duneMain, &ptr, &src, prop, index);
     }
     if (LIB_listbase_is_empty(&oprop->operations)) {
-      DUNE_lib_override_lib_prop_delete(id->override_library, oprop);
+      DUNE_lib_override_libprop_delete(id->override_library, oprop);
     }
   }
   else {
     /* Just remove whole generic override operation of this property. */
-    DUNE_lib_override_lib_prop_delete(id->override_library, oprop);
+    DUNE_lib_override_libprop_delete(id->override_library, oprop);
     if (!is_template) {
       apiProp_copy(duneMain, &ptr, &src, prop, -1);
     }
@@ -527,19 +527,19 @@ static int override_remove_btnEx(DuneContext *C, wmOperator *op)
   /* Outliner e.g. has to be aware of this change. */
   WM_main_add_notifier(NC_WM | ND_LIB_OVERRIDE_CHANGED, NULL);
 
-  return op_btnProp_finish(C, &ptr, prop);
+  return op_btnprop_finish(C, &ptr, prop);
 }
 
 static void UI_OT_override_remove_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Remove Override";
-  ot->idname = "UI_OT_override_remove_button";
+  ot->idname = "UI_OT_override_remove_btn";
   ot->description = "Remove an override operation";
 
   /* callbacks */
-  ot->poll = override_remove_btn_poll;
-  ot->exec = override_remove_btn_exec;
+  ot->poll = override_remove_btnpoll;
+  ot->exec = override_remove_btnexec;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
@@ -562,7 +562,7 @@ static void ui_ctx_selected_bones_via_pose(DuneContext *C, ListBase *r_lb)
   if (!LIB_listbase_is_empty(&lb)) {
     LISTBASE_FOREACH (CollectionPointerLink *, link, &lb) {
       DunePoseChannel *pchan = link->ptr.data;
-      apiPtr_create(link->ptr.owner_id, &API_Bone, pchan->bone, &link->ptr);
+      apiptr_create(link->ptr.owner_id, &API_Bone, pchan->bone, &link->ptr);
     }
   }
 
@@ -591,19 +591,19 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
    *
    * Properties owned by the ID are handled by the 'if (ptr->owner_id)' case below.
    */
-  if (!ApiProp_is_IdProp(prop) && api_struct_is_a(ptr->type, &api_PropGroup)) {
+  if (!apiprop_is_idprop(prop) && api_struct_is_a(ptr->type, &api_PropGroup)) {
     ApiPtr owner_ptr;
     char *idpath = NULL;
 
     /* First, check the active PoseBone and PoseBone->Bone. */
     if (NOT_API_NULL(
             owner_ptr = CTX_data_ptr_get_type(C, "active_pose_bone", &api_PoseBone))) {
-      if (NOT_NULL(idpath = api_path_from_struct_to_idprop(&owner_ptr, ptr->data))) {
+      if (NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
         *r_lb = CTX_data_collection_get(C, "selected_pose_bones");
       }
       else {
         DunePoseChannel *pchan = owner_ptr.data;
-        apiPtr_create(owner_ptr.owner_id, &api_Bone, pchan->bone, &owner_ptr);
+        apiptr_create(owner_ptr.owner_id, &api_Bone, pchan->bone, &owner_ptr);
 
         if (NOT_NULL(idpath = api_path_from_struct_to_idprop(&owner_ptr, ptr->data))) {
           ui_ctx_selected_bones_via_pose(C, r_lb);
@@ -614,8 +614,8 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     if (idpath == NULL) {
       /* Check the active EditBone if in edit mode. */
       if (NOT_API_NULL(
-              owner_ptr = CTX_data_pointer_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
-          NOT_NULL(idpath = apipath_from_struct_to_idproperty(&owner_ptr, ptr->data))) {
+              owner_ptr = CTX_data_ptr_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
+          NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
         *r_lb = ctx_data_collection_get(C, "selected_editable_bones");
       }
 
@@ -623,41 +623,41 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     }
 
     if (idpath) {
-      *r_path = LIB_sprintfN("%s.%s", idpath, RNA_property_identifier(prop));
+      *r_path = LIB_sprintfN("%s.%s", idpath, apiprop_id(prop));
       MEM_freeN(idpath);
       return true;
     }
   }
 
-  if (RNA_struct_is_a(ptr->type, &RNA_EditBone)) {
-    *r_lb = CTX_data_collection_get(C, "selected_editable_bones");
+  if (api_struct_is_a(ptr->type, &api_EditBone)) {
+    *r_lb = ctx_data_collection_get(C, "selected_editable_bones");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_PoseBone)) {
-    *r_lb = CTX_data_collection_get(C, "selected_pose_bones");
+  else if (api_struct_is_a(ptr->type, &api_PoseBone)) {
+    *r_lb = ctx_data_collection_get(C, "selected_pose_bones");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Bone)) {
-    ui_context_selected_bones_via_pose(C, r_lb);
+  else if (api_struct_is_a(ptr->type, &api_Bone)) {
+    ui_ctx_selected_bones_via_pose(C, r_lb);
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Sequence)) {
+  else if (api_struct_is_a(ptr->type, &api_Sequence)) {
     /* Special case when we do this for 'Sequence.lock'.
      * (if the sequence is locked, it won't be in "selected_editable_sequences"). */
-    const char *prop_id = RNA_property_identifier(prop);
+    const char *prop_id = api_prop_id(prop);
     if (STREQ(prop_id, "lock")) {
-      *r_lb = CTX_data_collection_get(C, "selected_sequences");
+      *r_lb = ctx_data_collection_get(C, "selected_sequences");
     }
     else {
-      *r_lb = CTX_data_collection_get(C, "selected_editable_sequences");
+      *r_lb = ctx_data_collection_get(C, "selected_editable_sequences");
     }
     /* Account for properties only being available for some sequence types. */
     ensure_list_items_contain_prop = true;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_FCurve)) {
+  else if (api_struct_is_a(ptr->type, &api_FCurve)) {
     *r_lb = CTX_data_collection_get(C, "selected_editable_fcurves");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Keyframe)) {
+  else if (RNA_struct_is_a(ptr->type, &api_Keyframe)) {
     *r_lb = CTX_data_collection_get(C, "selected_editable_keyframes");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Action)) {
+  else if (RNA_struct_is_a(ptr->type, &api_Action)) {
     *r_lb = CTX_data_collection_get(C, "selected_editable_actions");
   }
   else if (RNA_struct_is_a(ptr->type, &RNA_NlaStrip)) {
