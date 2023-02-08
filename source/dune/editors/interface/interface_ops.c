@@ -597,9 +597,9 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
 
     /* First, check the active PoseBone and PoseBone->Bone. */
     if (NOT_API_NULL(
-            owner_ptr = CTX_data_ptr_get_type(C, "active_pose_bone", &api_PoseBone))) {
+            owner_ptr = ctx_data_ptr_get_type(C, "active_pose_bone", &api_PoseBone))) {
       if (NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
-        *r_lb = CTX_data_collection_get(C, "selected_pose_bones");
+        *r_lb = ctx_data_collection_get(C, "selected_pose_bones");
       }
       else {
         DunePoseChannel *pchan = owner_ptr.data;
@@ -614,7 +614,7 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     if (idpath == NULL) {
       /* Check the active EditBone if in edit mode. */
       if (NOT_API_NULL(
-              owner_ptr = CTX_data_ptr_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
+              owner_ptr = ctx_data_ptr_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
           NOT_NULL(idpath = apipath_from_struct_to_idprop(&owner_ptr, ptr->data))) {
         *r_lb = ctx_data_collection_get(C, "selected_editable_bones");
       }
@@ -652,37 +652,37 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     ensure_list_items_contain_prop = true;
   }
   else if (api_struct_is_a(ptr->type, &api_FCurve)) {
-    *r_lb = CTX_data_collection_get(C, "selected_editable_fcurves");
+    *r_lb = ctx_data_collection_get(C, "selected_editable_fcurves");
   }
-  else if (RNA_struct_is_a(ptr->type, &api_Keyframe)) {
-    *r_lb = CTX_data_collection_get(C, "selected_editable_keyframes");
+  else if (api_struct_is_a(ptr->type, &api_Keyframe)) {
+    *r_lb = ctx_data_collection_get(C, "selected_editable_keyframes");
   }
-  else if (RNA_struct_is_a(ptr->type, &api_Action)) {
-    *r_lb = CTX_data_collection_get(C, "selected_editable_actions");
+  else if (api_struct_is_a(ptr->type, &api_Action)) {
+    *r_lb = ctx_data_collection_get(C, "selected_editable_actions");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_NlaStrip)) {
-    *r_lb = CTX_data_collection_get(C, "selected_nla_strips");
+  else if (api_struct_is_a(ptr->type, &api_NlaStrip)) {
+    *r_lb = ctx_data_collection_get(C, "selected_nla_strips");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_MovieTrackingTrack)) {
-    *r_lb = CTX_data_collection_get(C, "selected_movieclip_tracks");
+  else if (api_struct_is_a(ptr->type, &api_MovieTrackingTrack)) {
+    *r_lb = ctx_data_collection_get(C, "selected_movieclip_tracks");
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Constraint) &&
-           (path_from_bone = RNA_path_resolve_from_type_to_property(ptr, prop, &RNA_PoseBone)) !=
+  else if (api_struct_is_a(ptr->type, &api_Constraint) &&
+           (path_from_bone = apipath_resolve_from_type_to_prop(ptr, prop, &api_PoseBone)) !=
                NULL) {
     *r_lb = CTX_data_collection_get(C, "selected_pose_bones");
     *r_path = path_from_bone;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Node) || RNA_struct_is_a(ptr->type, &RNA_NodeSocket)) {
+  else if (api_struct_is_a(ptr->type, &api_Node) || api_struct_is_a(ptr->type, &api_NodeSocket)) {
     ListBase lb = {NULL, NULL};
     char *path = NULL;
     bNode *node = NULL;
 
     /* Get the node we're editing */
-    if (RNA_struct_is_a(ptr->type, &RNA_NodeSocket)) {
+    if (api_struct_is_a(ptr->type, &api_NodeSocket)) {
       bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
       bNodeSocket *sock = ptr->data;
       if (nodeFindNode(ntree, sock, &node, NULL)) {
-        if ((path = RNA_path_resolve_from_type_to_property(ptr, prop, &RNA_Node)) != NULL) {
+        if ((path = api_path_resolve_from_type_to_property(ptr, prop, &RNA_Node)) != NULL) {
           /* we're good! */
         }
         else {
@@ -696,13 +696,13 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
 
     /* Now filter by type */
     if (node) {
-      lb = CTX_data_collection_get(C, "selected_nodes");
+      lb = ctx_data_collection_get(C, "selected_nodes");
 
       LISTBASE_FOREACH_MUTABLE (CollectionPointerLink *, link, &lb) {
         bNode *node_data = link->ptr.data;
 
         if (node_data->type != node->type) {
-          BLI_remlink(&lb, link);
+          LIB_remlink(&lb, link);
           MEM_freeN(link);
         }
       }
@@ -722,8 +722,8 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
     else if (OB_DATA_SUPPORT_ID(GS(id->name))) {
       /* check we're using the active object */
       const short id_code = GS(id->name);
-      ListBase lb = CTX_data_collection_get(C, "selected_editable_objects");
-      char *path = RNA_path_from_ID_to_property(ptr, prop);
+      ListBase lb = ctx_data_collection_get(C, "selected_editable_objects");
+      char *path = api_path_from_ID_to_property(ptr, prop);
 
       /* de-duplicate obdata */
       if (!BLI_listbase_is_empty(&lb)) {
