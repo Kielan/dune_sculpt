@@ -10,19 +10,19 @@
 
 #include "PIL_time.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_blenlib.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "DNA_screen_types.h"
-#include "DNA_userdef_types.h"
+#include "types_screen.h"
+#include "types_userdef.h"
 
-#include "BKE_context.h"
-#include "BKE_screen.h"
+#include "dune_context.h"
+#include "dune_screen.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
 #include "BLF_api.h"
 
@@ -44,8 +44,7 @@
 #include "interface_intern.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Defines & Structs
- * \{ */
+/** Defines & Structs **/
 
 #define ANIMATION_TIME 0.30
 #define ANIMATION_INTERVAL 0.02
@@ -113,11 +112,8 @@ static bool panel_type_context_poll(ARegion *region,
                                     const PanelType *panel_type,
                                     const char *context);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Local Functions
- * \{ */
+/** Local Functions **/
 
 static bool panel_active_animation_changed(ListBase *lb,
                                            Panel **r_panel_animation,
@@ -166,9 +162,9 @@ static bool panel_active_animation_changed(ListBase *lb,
 }
 
 /**
- * \return True if the properties editor switch tabs since the last layout pass.
- */
-static bool properties_space_needs_realign(const ScrArea *area, const ARegion *region)
+ * return: true if the properties editor switch tabs since the last layout pass.
+ **/
+static bool props_space_needs_realign(const ScrArea *area, const ARegion *region)
 {
   if (area->spacetype == SPACE_PROPERTIES && region->regiontype == RGN_TYPE_WINDOW) {
     SpaceProperties *sbuts = area->spacedata.first;
@@ -185,7 +181,7 @@ static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_
 {
   *r_panel_animation = NULL;
 
-  if (properties_space_needs_realign(area, region)) {
+  if (props_space_needs_realign(area, region)) {
     return true;
   }
 
@@ -207,20 +203,17 @@ static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Functions for Instanced Panels
- * \{ */
+/** Functions for Instanced Panels **/
 
 static Panel *panel_add_instanced(ARegion *region,
                                   ListBase *panels,
                                   PanelType *panel_type,
-                                  PointerRNA *custom_data)
+                                  ApiPtr *custom_data)
 {
   Panel *panel = MEM_callocN(sizeof(Panel), __func__);
   panel->type = panel_type;
-  BLI_strncpy(panel->panelname, panel_type->idname, sizeof(panel->panelname));
+  LIB_strncpy(panel->panelname, panel_type->idname, sizeof(panel->panelname));
 
   panel->runtime.custom_data_ptr = custom_data;
   panel->runtime_flag |= PANEL_NEW_ADDED;
@@ -229,7 +222,7 @@ static Panel *panel_add_instanced(ARegion *region,
    * function to create them, as UI_panel_begin does other things we don't need to do. */
   LISTBASE_FOREACH (LinkData *, child, &panel_type->children) {
     PanelType *child_type = child->data;
-    panel_add_instanced(region, &panel->children, child_type, custom_data);
+    panellistinstanced_add(region, &panel->children, child_type, custom_data);
   }
 
   /* Make sure the panel is added to the end of the display-order as well. This is needed for
@@ -245,20 +238,20 @@ static Panel *panel_add_instanced(ARegion *region,
   }
   panel->sortorder = max_sortorder + 1;
 
-  BLI_addtail(panels, panel);
+  LIB_addtail(panels, panel);
 
   return panel;
 }
 
-Panel *UI_panel_add_instanced(const bContext *C,
+Panel *ui_panellistinstanced_add(const duneContext *C,
                               ARegion *region,
                               ListBase *panels,
                               const char *panel_idname,
-                              PointerRNA *custom_data)
+                              ApiPtr *custom_data)
 {
   ARegionType *region_type = region->type;
 
-  PanelType *panel_type = BLI_findstring(
+  PanelType *panel_type = LIB_findstring(
       &region_type->paneltypes, panel_idname, offsetof(PanelType, idname));
 
   if (panel_type == NULL) {
@@ -266,15 +259,15 @@ Panel *UI_panel_add_instanced(const bContext *C,
     return NULL;
   }
 
-  Panel *new_panel = panel_add_instanced(region, panels, panel_type, custom_data);
+  Panel *new_panel = panellistinstanced_add(region, panels, panel_type, custom_data);
 
-  /* Do this after #panel_add_instatnced so all sub-panels are added. */
+  /* Do this after #panellistinstanced_add so all sub-panels are added. */
   panel_set_expansion_from_list_data(C, new_panel);
 
   return new_panel;
 }
 
-void UI_list_panel_unique_str(Panel *panel, char *r_name)
+void ui_panellist_unique_str(Panel *panel, char *r_name)
 {
   /* The panel sort-order will be unique for a specific panel type because the instanced
    * panel list is regenerated for every change in the data order / length. */
@@ -283,27 +276,27 @@ void UI_list_panel_unique_str(Panel *panel, char *r_name)
 
 /**
  * Free a panel and its children. Custom data is shared by the panel and its children
- * and is freed by #UI_panels_free_instanced.
+ * and is freed by #ui_panellistinstanced_free.
  *
- * \note The only panels that should need to be deleted at runtime are panels with the
+ * note: The only panels that should need to be deleted at runtime are panels with the
  * #PANEL_TYPE_INSTANCED flag set.
  */
-static void panel_delete(const bContext *C, ARegion *region, ListBase *panels, Panel *panel)
+static void panel_delete(const duneContext *C, ARegion *region, ListBase *panels, Panel *panel)
 {
   /* Recursively delete children. */
   LISTBASE_FOREACH_MUTABLE (Panel *, child, &panel->children) {
     panel_delete(C, region, &panel->children, child);
   }
-  BLI_freelistN(&panel->children);
+  LIB_freelistN(&panel->children);
 
-  BLI_remlink(panels, panel);
+  LIB_remlink(panels, panel);
   if (panel->activedata) {
     MEM_freeN(panel->activedata);
   }
   MEM_freeN(panel);
 }
 
-void UI_panels_free_instanced(const bContext *C, ARegion *region)
+void UI_panellistinstanced_free(const duneContext *C, ARegion *region)
 {
   /* Delete panels with the instanced flag. */
   LISTBASE_FOREACH_MUTABLE (Panel *, panel, &region->panels) {
@@ -324,9 +317,9 @@ void UI_panels_free_instanced(const bContext *C, ARegion *region)
   }
 }
 
-bool UI_panel_list_matches_data(ARegion *region,
+bool ui_panellist_matches_data(ARegion *region,
                                 ListBase *data,
-                                uiListPanelIDFromDataFunc panel_idname_func)
+                                uiListPanelIDFromDataFunc panel_idname_fn)
 {
   /* Check for NULL data. */
   int data_len = 0;
@@ -336,7 +329,7 @@ bool UI_panel_list_matches_data(ARegion *region,
     data_link = NULL;
   }
   else {
-    data_len = BLI_listbase_count(data);
+    data_len = lib_listbase_count(data);
     data_link = data->first;
   }
 
@@ -355,7 +348,7 @@ bool UI_panel_list_matches_data(ARegion *region,
 
       /* Check if the panel type matches the panel type from the data item. */
       char panel_idname[MAX_NAME];
-      panel_idname_func(data_link, panel_idname);
+      panel_idname_fn(data_link, panel_idname);
       if (!STREQ(panel_idname, panel->type->idname)) {
         return false;
       }
@@ -373,7 +366,7 @@ bool UI_panel_list_matches_data(ARegion *region,
   return true;
 }
 
-static void reorder_instanced_panel_list(bContext *C, ARegion *region, Panel *drag_panel)
+static void panellistinstanced_reorder(duneContext *C, ARegion *region, Panel *drag_panel)
 {
   /* Without a type we cannot access the reorder callback. */
   if (drag_panel->type == NULL) {
@@ -385,7 +378,7 @@ static void reorder_instanced_panel_list(bContext *C, ARegion *region, Panel *dr
   }
 
   char *context = NULL;
-  if (!UI_panel_category_is_visible(region)) {
+  if (!ui_panel_category_is_visible(region)) {
     context = drag_panel->type->context;
   }
 
@@ -395,9 +388,9 @@ static void reorder_instanced_panel_list(bContext *C, ARegion *region, Panel *dr
   LISTBASE_FOREACH (const Panel *, panel, &region->panels) {
     if (panel->type) {
       if (panel->type->flag & PANEL_TYPE_INSTANCED) {
-        if (panel_type_context_poll(region, panel->type, context)) {
+        if (panel_type_ctx_poll(region, panel->type, context)) {
           if (panel == drag_panel) {
-            BLI_assert(start_index == -1); /* This panel should only appear once. */
+            LIB_assert(start_index == -1); /* This panel should only appear once. */
             start_index = list_panels_len;
           }
           list_panels_len++;
@@ -405,7 +398,7 @@ static void reorder_instanced_panel_list(bContext *C, ARegion *region, Panel *dr
       }
     }
   }
-  BLI_assert(start_index != -1); /* The drag panel should definitely be in the list. */
+  LIB_assert(start_index != -1); /* The drag panel should definitely be in the list. */
 
   /* Sort the matching instanced panels by their display order. */
   PanelSort *panel_sort = MEM_callocN(list_panels_len * sizeof(*panel_sort), __func__);
@@ -449,11 +442,11 @@ static void reorder_instanced_panel_list(bContext *C, ARegion *region, Panel *dr
 }
 
 /**
- * Recursive implementation for #panel_set_expansion_from_list_data.
+ * Recursive implementation for #panellistdata_expansion.
  *
- * \return Whether the closed flag for the panel or any sub-panels changed.
+ * return: Whether the closed flag for the panel or any sub-panels changed.
  */
-static bool panel_set_expand_from_list_data_recursive(Panel *panel, short flag, short *flag_index)
+static bool panellistdata_expand_recursive(Panel *panel, short flag, short *flag_index)
 {
   const bool open = (flag & (1 << *flag_index));
   bool changed = (open == UI_panel_is_closed(panel));
@@ -462,7 +455,7 @@ static bool panel_set_expand_from_list_data_recursive(Panel *panel, short flag, 
 
   LISTBASE_FOREACH (Panel *, child, &panel->children) {
     *flag_index = *flag_index + 1;
-    changed |= panel_set_expand_from_list_data_recursive(child, flag, flag_index);
+    changed |= panellistdata_expand_recursive(child, flag, flag_index);
   }
   return changed;
 }
@@ -471,10 +464,10 @@ static bool panel_set_expand_from_list_data_recursive(Panel *panel, short flag, 
  * Set the expansion of the panel and its sub-panels from the flag stored in the
  * corresponding list data. The flag has expansion stored in each bit in depth first order.
  */
-static void panel_set_expansion_from_list_data(const bContext *C, Panel *panel)
+static void panellistdata_set_expansion_from(const duneContext *C, Panel *panel)
 {
-  BLI_assert(panel->type != NULL);
-  BLI_assert(panel->type->flag & PANEL_TYPE_INSTANCED);
+  LIB_assert(panel->type != NULL);
+  LIB_assert(panel->type->flag & PANEL_TYPE_INSTANCED);
   if (panel->type->get_list_data_expand_flag == NULL) {
     /* Instanced panel doesn't support loading expansion. */
     return;
@@ -484,7 +477,7 @@ static void panel_set_expansion_from_list_data(const bContext *C, Panel *panel)
   short flag_index = 0;
 
   /* Start panel animation if the open state was changed. */
-  if (panel_set_expand_from_list_data_recursive(panel, expand_flag, &flag_index)) {
+  if (panellistdata_expand_recursive(panel, expand_flag, &flag_index)) {
     panel_activate_state(C, panel, PANEL_STATE_ANIMATION);
   }
 }
@@ -492,20 +485,20 @@ static void panel_set_expansion_from_list_data(const bContext *C, Panel *panel)
 /**
  * Set expansion based on the data for instanced panels.
  */
-static void region_panels_set_expansion_from_list_data(const bContext *C, ARegion *region)
+static void region_panellistdata_expand(const duneContext *C, ARegion *region)
 {
   LISTBASE_FOREACH (Panel *, panel, &region->panels) {
     if (panel->runtime_flag & PANEL_ACTIVE) {
       PanelType *panel_type = panel->type;
       if (panel_type != NULL && panel->type->flag & PANEL_TYPE_INSTANCED) {
-        panel_set_expansion_from_list_data(C, panel);
+        panellistdata_expand(C, panel);
       }
     }
   }
 }
 
 /**
- * Recursive implementation for #set_panels_list_data_expand_flag.
+ * Recursive implementation for #panellistdata_expand_flag_set.
  */
 static void get_panel_expand_flag(const Panel *panel, short *flag, short *flag_index)
 {
