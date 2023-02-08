@@ -1688,39 +1688,36 @@ static int ui_button_press_invoke(bContext *C, wmOperator *op, const wmEvent *ev
   return OPERATOR_FINISHED;
 }
 
-static void UI_OT_button_execute(wmOperatorType *ot)
+static void UI_OT_btn_ex(wmOperatorType *ot)
 {
   ot->name = "Press Button";
-  ot->idname = "UI_OT_button_execute";
+  ot->idname = "UI_OT_btn_ex";
   ot->description = "Presses active button";
 
-  ot->invoke = ui_button_press_invoke;
+  ot->invoke = ui_btn_press_invoke;
   ot->flag = OPTYPE_INTERNAL;
 
-  RNA_def_boolean(ot->srna, "skip_depressed", 0, "Skip Depressed", "");
+  api_def_bool(ot->srna, "skip_depressed", 0, "Skip Depressed", "");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Text Button Clear Operator
- * \{ */
+/** Text Button Clear Operator **/
 
-static int button_string_clear_exec(bContext *C, wmOperator *UNUSED(op))
+static int btn_string_clear_ex(duneContext *C, wmOperator *UNUSED(op))
 {
-  uiBut *but = UI_context_active_but_get_respect_menu(C);
+  uiBut *btn = UI_ctx_active_btn_get_respect_menu(C);
 
   if (but) {
-    ui_but_active_string_clear_and_exit(C, but);
+    ui_btn_active_string_clear_and_exit(C, btn);
   }
 
   return OPERATOR_FINISHED;
 }
 
-static void UI_OT_button_string_clear(wmOperatorType *ot)
+static void UI_OT_btn_string_clear(wmOperatorType *ot)
 {
   ot->name = "Clear Button String";
-  ot->idname = "UI_OT_button_string_clear";
+  ot->idname = "UI_OT_btn_string_clear";
   ot->description = "Unsets the text of the active button";
 
   ot->poll = ED_operator_regionactive;
@@ -1728,11 +1725,8 @@ static void UI_OT_button_string_clear(wmOperatorType *ot)
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Drop Color Operator
- * \{ */
+/** Drop Color Operator **/
 
 bool UI_drop_color_poll(struct bContext *C, wmDrag *drag, const wmEvent *UNUSED(event))
 {
@@ -1778,27 +1772,27 @@ static int drop_color_invoke(bContext *C, wmOperator *op, const wmEvent *event)
   but = ui_region_find_active_but(region);
 
   if (but && but->type == UI_BTYPE_COLOR && but->rnaprop) {
-    const int color_len = RNA_property_array_length(&but->rnapoin, but->rnaprop);
-    BLI_assert(color_len <= 4);
+    const int color_len = api_prop_array_length(&but->rnapoin, but->rnaprop);
+    LIB_assert(color_len <= 4);
 
     /* keep alpha channel as-is */
     if (color_len == 4) {
-      color[3] = RNA_property_float_get_index(&but->rnapoin, but->rnaprop, 3);
+      color[3] = api_prop_float_get_index(&btn->apipoin, btn->apiprop, 3);
     }
 
-    if (RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
+    if (api_prop_subtype(btn->apiprop) == PROP_COLOR_GAMMA) {
       if (!gamma) {
         IMB_colormanagement_scene_linear_to_srgb_v3(color);
       }
-      RNA_property_float_set_array(&but->rnapoin, but->rnaprop, color);
-      RNA_property_update(C, &but->rnapoin, but->rnaprop);
+      api_prop_float_set_array(&btn->apipoin, btn->apiprop, color);
+      api_prop_update(C, &btn->apipoin, but->apiprop);
     }
-    else if (RNA_property_subtype(but->rnaprop) == PROP_COLOR) {
+    else if (api_prop_subtype(but->rnaprop) == PROP_COLOR) {
       if (gamma) {
         IMB_colormanagement_srgb_to_scene_linear_v3(color);
       }
-      RNA_property_float_set_array(&but->rnapoin, but->rnaprop, color);
-      RNA_property_update(C, &but->rnapoin, but->rnaprop);
+      api_prop_float_set_array(&btn->apipoin, btn->apiprop, color);
+      api_prop_update(C, &btn->apipoin, btn->apiprop);
     }
   }
   else {
@@ -1823,15 +1817,12 @@ static void UI_OT_drop_color(wmOperatorType *ot)
   ot->invoke = drop_color_invoke;
   ot->flag = OPTYPE_INTERNAL;
 
-  RNA_def_float_color(ot->srna, "color", 3, NULL, 0.0, FLT_MAX, "Color", "Source color", 0.0, 1.0);
-  RNA_def_boolean(ot->srna, "gamma", 0, "Gamma Corrected", "The source color is gamma corrected");
+  api_def_float_color(ot->srna, "color", 3, NULL, 0.0, FLT_MAX, "Color", "Source color", 0.0, 1.0);
+  api_def_bool(ot->srna, "gamma", 0, "Gamma Corrected", "The source color is gamma corrected");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Drop Name Operator
- * \{ */
+/** Drop Name Operator **/
 
 static int drop_name_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
@@ -1856,28 +1847,25 @@ static void UI_OT_drop_name(wmOperatorType *ot)
   ot->invoke = drop_name_invoke;
   ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 
-  RNA_def_string(
+  api_def_string(
       ot->srna, "string", NULL, 0, "String", "The string value to drop into the button");
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name UI List Search Operator
- * \{ */
+/** UI List Search Operator **/
 
-static bool ui_list_focused_poll(bContext *C)
+static bool ui_list_focused_poll(duneContext *C)
 {
-  const ARegion *region = CTX_wm_region(C);
-  const wmWindow *win = CTX_wm_window(C);
-  const uiList *list = UI_list_find_mouse_over(region, win->eventstate);
+  const ARegion *region = ctx_wm_region(C);
+  const wmWindow *win = ctx_wm_window(C);
+  const uiList *list = ui_list_find_mouse_over(region, win->eventstate);
 
   return list != NULL;
 }
 
 /**
  * Ensure the filter options are set to be visible in the UI list.
- * \return if the visibility changed, requiring a redraw.
+ * return if the visibility changed, requiring a redraw.
  */
 static bool ui_list_unhide_filter_options(uiList *list)
 {
@@ -1890,18 +1878,18 @@ static bool ui_list_unhide_filter_options(uiList *list)
   return true;
 }
 
-static int ui_list_start_filter_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
+static int ui_list_start_filter_invoke(duneContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
-  ARegion *region = CTX_wm_region(C);
-  uiList *list = UI_list_find_mouse_over(region, event);
+  ARegion *region = ctx_wm_region(C);
+  uiList *list = ui_list_find_mouse_over(region, event);
   /* Poll should check. */
-  BLI_assert(list != NULL);
+  LIB_assert(list != NULL);
 
   if (ui_list_unhide_filter_options(list)) {
     ui_region_redraw_immediately(C, region);
   }
 
-  if (!UI_textbutton_activate_rna(C, region, list, "filter_name")) {
+  if (!ui_textbtn_activate_api(C, region, list, "filter_name")) {
     return OPERATOR_CANCELLED;
   }
 
@@ -1918,29 +1906,26 @@ static void UI_OT_list_start_filter(wmOperatorType *ot)
   ot->poll = ui_list_focused_poll;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name UI Tree-View Drop Operator
- * \{ */
+/** UI Tree-View Drop Operator **/
 
-static bool ui_tree_view_drop_poll(bContext *C)
+static bool ui_tree_view_drop_poll(duneContext *C)
 {
-  const wmWindow *win = CTX_wm_window(C);
-  const ARegion *region = CTX_wm_region(C);
+  const wmWindow *win = ctx_wm_window(C);
+  const ARegion *region = ctx_wm_region(C);
   const uiTreeViewItemHandle *hovered_tree_item = UI_block_tree_view_find_item_at(
       region, win->eventstate->xy);
 
   return hovered_tree_item != NULL;
 }
 
-static int ui_tree_view_drop_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
+static int ui_tree_view_drop_invoke(duneContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
   if (event->custom != EVT_DATA_DRAGDROP) {
     return OPERATOR_CANCELLED | OPERATOR_PASS_THROUGH;
   }
 
-  const ARegion *region = CTX_wm_region(C);
+  const ARegion *region = ctx_wm_region(C);
   uiTreeViewItemHandle *hovered_tree_item = UI_block_tree_view_find_item_at(region, event->xy);
 
   if (!UI_tree_view_item_drop_handle(C, hovered_tree_item, event->customdata)) {
@@ -1962,26 +1947,24 @@ static void UI_OT_tree_view_drop(wmOperatorType *ot)
   ot->flag = OPTYPE_INTERNAL;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name UI Tree-View Item Rename Operator
+/** UI Tree-View Item Rename Operator
  *
  * General purpose renaming operator for tree-views. Thanks to this, to add a rename button to
  * context menus for example, tree-view API users don't have to implement their own renaming
  * operators with the same logic as they already have for their #ui::AbstractTreeViewItem::rename()
  * override.
  *
- * \{ */
+ **/
 
-static bool ui_tree_view_item_rename_poll(bContext *C)
+static bool ui_tree_view_item_rename_poll(duneContext *C)
 {
   const ARegion *region = CTX_wm_region(C);
   const uiTreeViewItemHandle *active_item = UI_block_tree_view_find_active_item(region);
   return active_item != NULL && UI_tree_view_item_can_rename(active_item);
 }
 
-static int ui_tree_view_item_rename_exec(bContext *C, wmOperator *UNUSED(op))
+static int ui_tree_view_item_rename_ex(duneContext *C, wmOperator *UNUSED(op))
 {
   ARegion *region = CTX_wm_region(C);
   uiTreeViewItemHandle *active_item = UI_block_tree_view_find_active_item(region);
@@ -2005,56 +1988,53 @@ static void UI_OT_tree_view_item_rename(wmOperatorType *ot)
 
   ot->flag = OPTYPE_INTERNAL;
 }
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Material Drag/Drop Operator
- *
- * \{ */
+/** Material Drag/Drop Operator **/
 
-static bool ui_drop_material_poll(bContext *C)
+static bool ui_drop_material_poll(duneContext *C)
 {
-  PointerRNA ptr = CTX_data_pointer_get_type(C, "object", &RNA_Object);
+  ApiPtr ptr = ctx_data_ptr_get_type(C, "object", &RNA_Object);
   Object *ob = ptr.data;
   if (ob == NULL) {
     return false;
   }
 
-  PointerRNA mat_slot = CTX_data_pointer_get_type(C, "material_slot", &RNA_MaterialSlot);
-  if (RNA_pointer_is_null(&mat_slot)) {
+  ApiPtr mat_slot = CTX_data_ptr_get_type(C, "material_slot", &api_MaterialSlot);
+  if (api_ptr_is_null(&mat_slot)) {
     return false;
   }
 
   return true;
 }
 
-static int ui_drop_material_exec(bContext *C, wmOperator *op)
+static int ui_drop_material_ex(duneContext *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *duneMain = ctx_data_main(C);
 
-  if (!RNA_struct_property_is_set(op->ptr, "session_uuid")) {
+  if (!api_struct_prop_is_set(op->ptr, "session_uuid")) {
     return OPERATOR_CANCELLED;
   }
-  const uint32_t session_uuid = (uint32_t)RNA_int_get(op->ptr, "session_uuid");
-  Material *ma = (Material *)BKE_libblock_find_session_uuid(bmain, ID_MA, session_uuid);
+  const uint32_t session_uuid = (uint32_t)api_int_get(op->ptr, "session_uuid");
+  Material *ma = (Material *)DUNE_libblock_find_session_uuid(duneMain, ID_MA, session_uuid);
   if (ma == NULL) {
     return OPERATOR_CANCELLED;
   }
 
-  PointerRNA ptr = CTX_data_pointer_get_type(C, "object", &RNA_Object);
+  ApiPtr ptr = ctx_data_ptr_get_type(C, "object", &api_Object);
   Object *ob = ptr.data;
-  BLI_assert(ob);
+  LIB_assert(ob);
 
-  PointerRNA mat_slot = CTX_data_pointer_get_type(C, "material_slot", &RNA_MaterialSlot);
-  BLI_assert(mat_slot.data);
-  const int target_slot = RNA_int_get(&mat_slot, "slot_index") + 1;
+  ApiPtr mat_slot = ctx_data_ptr_get_type(C, "material_slot", &api_MaterialSlot);
+  LIB_assert(mat_slot.data);
+  const int target_slot = api_int_get(&mat_slot, "slot_index") + 1;
 
   /* only drop grease pencil material on grease pencil objects */
   if ((ma->gp_style != NULL) && (ob->type != OB_GPENCIL)) {
     return OPERATOR_CANCELLED;
   }
 
-  BKE_object_material_assign(bmain, ob, ma, target_slot, BKE_MAT_ASSIGN_USERPREF);
+  DUNE_object_material_assign(duneMain, ob, ma, target_slot, DUNE_MAT_ASSIGN_USERPREF);
 
   WM_event_add_notifier(C, NC_OBJECT | ND_OB_SHADING, ob);
   WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, NULL);
@@ -2064,3 +2044,73 @@ static int ui_drop_material_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
+static void UI_OT_drop_material(wmOperatorType *ot)
+{
+  ot->name = "Drop Material in Material slots";
+  ot->description = "Drag material to Material slots in Properties";
+  ot->idname = "UI_OT_drop_material";
+
+  ot->poll = ui_drop_materialpoll;
+  ot->exec = ui_drop_materialex;
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
+
+  ApiProp *prop = api_def_int(ot->srna,
+                                  "session_uuid",
+                                  0,
+                                  INT32_MIN,
+                                  INT32_MAX,
+                                  "Session UUID",
+                                  "Session UUID of the data-block to assign",
+                                  INT32_MIN,
+                                  INT32_MAX);
+  api_def_prop_flag(prop, PROP_SKIP_SAVE | PROP_HIDDEN);
+}
+
+/* -------------------------------------------------------------------- */
+/** Operator & Keymap Registration */
+
+void ED_operatortypes_ui(void)
+{
+  WM_operatortype_append(UI_OT_copy_data_path_button);
+  WM_operatortype_append(UI_OT_copy_as_driver_button);
+  WM_operatortype_append(UI_OT_copy_python_command_button);
+  WM_operatortype_append(UI_OT_reset_default_button);
+  WM_operatortype_append(UI_OT_assign_default_button);
+  WM_operatortype_append(UI_OT_unset_property_button);
+  WM_operatortype_append(UI_OT_override_type_set_button);
+  WM_operatortype_append(UI_OT_override_remove_button);
+  WM_operatortype_append(UI_OT_copy_to_selected_button);
+  WM_operatortype_append(UI_OT_jump_to_target_button);
+  WM_operatortype_append(UI_OT_drop_color);
+  WM_operatortype_append(UI_OT_drop_name);
+  WM_operatortype_append(UI_OT_drop_material);
+#ifdef WITH_PYTHON
+  WM_operatortype_append(UI_OT_editsource);
+  WM_operatortype_append(UI_OT_edittranslation_init);
+#endif
+  WM_operatortype_append(UI_OT_reloadtranslation);
+  WM_operatortype_append(UI_OT_button_execute);
+  WM_operatortype_append(UI_OT_button_string_clear);
+
+  WM_operatortype_append(UI_OT_list_start_filter);
+
+  WM_operatortype_append(UI_OT_tree_view_drop);
+  WM_operatortype_append(UI_OT_tree_view_item_rename);
+
+  /* external */
+  WM_operatortype_append(UI_OT_eyedropper_color);
+  WM_operatortype_append(UI_OT_eyedropper_colorramp);
+  WM_operatortype_append(UI_OT_eyedropper_colorramp_point);
+  WM_operatortype_append(UI_OT_eyedropper_id);
+  WM_operatortype_append(UI_OT_eyedropper_depth);
+  WM_operatortype_append(UI_OT_eyedropper_driver);
+  WM_operatortype_append(UI_OT_eyedropper_gpencil_color);
+}
+
+void ED_keymap_ui(wmKeyConfig *keyconf)
+{
+  WM_keymap_ensure(keyconf, "User Interface", 0, 0);
+
+  eyedropper_modal_keymap(keyconf);
+  eyedropper_colorband_modal_keymap(keyconf);
+}
