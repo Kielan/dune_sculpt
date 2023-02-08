@@ -123,12 +123,12 @@ static void UI_OT_copy_py_cmd_btn(wmOpType *ot)
 /* -------------------------------------------------------------------- */
 /** Reset to Default Values Button Operator **/
 
-static int op_btn_prop_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
+static int op_btnProp_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
 {
   ID *id = ptr->owner_id;
 
   /* perform updates required for this property */
-  api_prop_update(C, ptr, prop);
+  apiProp_update(C, ptr, prop);
 
   /* as if we pressed the button */
   ui_ctx_active_btnProp_handle(C, false);
@@ -143,7 +143,7 @@ static int op_btn_prop_finish(DuneContext *C, ApiPtr *ptr, ApiProp *prop)
   return OPERATOR_CANCELLED;
 }
 
-static int op_btn0rop_finish_with_undo(DuneContext *C,
+static int op_btnProp_finish_with_undo(DuneContext *C,
                                                      ApiPtr *ptr,
                                                      ApiProp *prop)
 {
@@ -196,7 +196,7 @@ static void UI_OT_reset_default_btn(wmOperatorType *ot)
 
   /* callbacks */
   ot->poll = reset_default_btn_poll;
-  ot->exec = reset_default_btn_exec;
+  ot->exec = reset_default_btnEx;
 
   /* flags */
   /* Don't set #OPTYPE_UNDO because #op_btnProp_finish_with_undo
@@ -256,7 +256,7 @@ static void UI_OT_assign_default_btn(wmOperatorType *ot)
 
   /* callbacks */
   ot->poll = assign_default_btn_poll;
-  ot->exec = assign_default_btn_exec;
+  ot->exec = assign_default_btn_ex;
 
   /* flags */
   ot->flag = OPTYPE_UNDO;
@@ -471,7 +471,7 @@ static int override_remove_btnEx(DuneContext *C, wmOperator *op)
   const bool all = API_bool_get(op->ptr, "all");
 
   /* try to reset the nominated setting to its default value */
-  UI_ctx_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
   ID *id = ptr.owner_id;
   IDOverrideLibProp *oprop = Api_prop_override_prop_find(duneMain, &ptr, prop, &id);
@@ -562,7 +562,7 @@ static void ui_ctx_selected_bones_via_pose(DuneContext *C, ListBase *r_lb)
   if (!LIB_listbase_is_empty(&lb)) {
     LISTBASE_FOREACH (CollectionPointerLink *, link, &lb) {
       DunePoseChannel *pchan = link->ptr.data;
-      API_ptr_create(link->ptr.owner_id, &API_Bone, pchan->bone, &link->ptr);
+      apiPtr_create(link->ptr.owner_id, &API_Bone, pchan->bone, &link->ptr);
     }
   }
 
@@ -603,27 +603,27 @@ bool UI_ctx_copy_to_selected_list(DuneContext *C,
       }
       else {
         DunePoseChannel *pchan = owner_ptr.data;
-        api_ptr_create(owner_ptr.owner_id, &api_Bone, pchan->bone, &owner_ptr);
+        apiPtr_create(owner_ptr.owner_id, &api_Bone, pchan->bone, &owner_ptr);
 
-        if (NOT_NULL(idpath = api_path_from_struct_to_idproperty(&owner_ptr, ptr->data))) {
-          ui_context_selected_bones_via_pose(C, r_lb);
+        if (NOT_NULL(idpath = api_path_from_struct_to_idprop(&owner_ptr, ptr->data))) {
+          ui_ctx_selected_bones_via_pose(C, r_lb);
         }
       }
     }
 
     if (idpath == NULL) {
       /* Check the active EditBone if in edit mode. */
-      if (NOT_RNA_NULL(
+      if (NOT_API_NULL(
               owner_ptr = CTX_data_pointer_get_type_silent(C, "active_bone", &RNA_EditBone)) &&
-          NOT_NULL(idpath = RNA_path_from_struct_to_idproperty(&owner_ptr, ptr->data))) {
-        *r_lb = CTX_data_collection_get(C, "selected_editable_bones");
+          NOT_NULL(idpath = apipath_from_struct_to_idproperty(&owner_ptr, ptr->data))) {
+        *r_lb = ctx_data_collection_get(C, "selected_editable_bones");
       }
 
       /* Add other simple cases here (Node, NodeSocket, Sequence, ViewLayer etc). */
     }
 
     if (idpath) {
-      *r_path = BLI_sprintfN("%s.%s", idpath, RNA_property_identifier(prop));
+      *r_path = LIB_sprintfN("%s.%s", idpath, RNA_property_identifier(prop));
       MEM_freeN(idpath);
       return true;
     }
