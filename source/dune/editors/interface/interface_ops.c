@@ -992,7 +992,7 @@ static bool copy_data_path_button_poll(bContext *C)
   UI_context_active_but_prop_get(C, &ptr, &prop, &index);
 
   if (ptr.owner_id && ptr.data && prop) {
-    path = RNA_path_from_ID_to_property(&ptr, prop);
+    path = apiPath_from_ID_to_prop(&ptr, prop);
 
     if (path) {
       MEM_freeN(path);
@@ -1003,34 +1003,34 @@ static bool copy_data_path_button_poll(bContext *C)
   return false;
 }
 
-static int copy_data_path_button_exec(bContext *C, wmOperator *op)
+static int copy_data_path_btn_ex(DuneContext *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  Main *duneMain = CTX_data_main(C);
+  ApiPtr ptr;
+  ApiProp *prop;
   char *path;
   int index;
   ID *id;
 
-  const bool full_path = RNA_boolean_get(op->ptr, "full_path");
+  const bool full_path = api_bool_get(op->ptr, "full_path");
 
   /* try to create driver using property retrieved from UI */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  ui_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   if (ptr.owner_id != NULL) {
     if (full_path) {
       if (prop) {
-        path = RNA_path_full_property_py_ex(bmain, &ptr, prop, index, true);
+        path = api_path_full_prop_py_ex(duneMain, &ptr, prop, index, true);
       }
       else {
-        path = RNA_path_full_struct_py(bmain, &ptr);
+        path = api_path_full_struct_py(duneMain, &ptr);
       }
     }
     else {
-      path = RNA_path_from_real_ID_to_property_index(bmain, &ptr, prop, 0, -1, &id);
+      path = api_path_from_realID_to_propid(duneMain, &ptr, prop, 0, -1, &id);
 
       if (!path) {
-        path = RNA_path_from_ID_to_property(&ptr, prop);
+        path = api_path_from_ID_to_prop(&ptr, prop);
       }
     }
 
@@ -1046,44 +1046,41 @@ static int copy_data_path_button_exec(bContext *C, wmOperator *op)
 
 static void UI_OT_copy_data_path_button(wmOperatorType *ot)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   /* identifiers */
   ot->name = "Copy Data Path";
   ot->idname = "UI_OT_copy_data_path_button";
-  ot->description = "Copy the RNA data path for this property to the clipboard";
+  ot->description = "Copy the API data path for this property to the clipboard";
 
   /* callbacks */
-  ot->exec = copy_data_path_button_exec;
-  ot->poll = copy_data_path_button_poll;
+  ot->exec = copy_data_path_btn_ex;
+  ot->poll = copy_data_path_btn_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 
   /* properties */
-  prop = RNA_def_boolean(ot->srna, "full_path", false, "full_path", "Copy full data path");
-  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+  prop = api_def_bool(ot->srna, "full_path", false, "full_path", "Copy full data path");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Copy As Driver Operator
- * \{ */
+/** Copy As Driver Operator **/
 
-static bool copy_as_driver_button_poll(bContext *C)
+static bool copy_as_driver_btn_poll(duneContext *C)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   char *path;
   int index;
 
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnProp_get(C, &ptr, &prop, &index);
 
   if (ptr.owner_id && ptr.data && prop &&
-      ELEM(RNA_property_type(prop), PROP_BOOLEAN, PROP_INT, PROP_FLOAT, PROP_ENUM) &&
+      ELEM(api_proptype(prop), PROP_BOOLEAN, PROP_INT, PROP_FLOAT, PROP_ENUM) &&
       (index >= 0 || !RNA_property_array_check(prop))) {
-    path = RNA_path_from_ID_to_property(&ptr, prop);
+    path = api_path_from_ID_to_prop(&ptr, prop);
 
     if (path) {
       MEM_freeN(path);
@@ -1094,61 +1091,58 @@ static bool copy_as_driver_button_poll(bContext *C)
   return false;
 }
 
-static int copy_as_driver_button_exec(bContext *C, wmOperator *op)
+static int copy_as_driver_btn_ex(duneContext *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  Main *duneMain = CTX_data_main(C);
+  ApiPtr ptr;
+  ApiProp *prop;
   int index;
 
   /* try to create driver using property retrieved from UI */
-  UI_context_active_but_prop_get(C, &ptr, &prop, &index);
+  UI_ctx_active_btnprop_get(C, &ptr, &prop, &index);
 
   if (ptr.owner_id && ptr.data && prop) {
     ID *id;
-    const int dim = RNA_property_array_dimension(&ptr, prop, NULL);
-    char *path = RNA_path_from_real_ID_to_property_index(bmain, &ptr, prop, dim, index, &id);
+    const int dim = apiprop_array_dimension(&ptr, prop, NULL);
+    char *path = apipath_from_real_ID_to_propid(duneMain, &ptr, prop, dim, index, &id);
 
     if (path) {
-      ANIM_copy_as_driver(id, path, RNA_property_identifier(prop));
+      ANIM_copy_as_driver(id, path, apiprop_id(prop));
       MEM_freeN(path);
       return OPERATOR_FINISHED;
     }
 
-    BKE_reportf(op->reports, RPT_ERROR, "Could not compute a valid data path");
+    DUNE_reportf(op->reports, RPT_ERROR, "Could not compute a valid data path");
     return OPERATOR_CANCELLED;
   }
 
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_copy_as_driver_button(wmOperatorType *ot)
+static void UI_OT_copy_as_driver_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Copy as New Driver";
-  ot->idname = "UI_OT_copy_as_driver_button";
+  ot->idname = "UI_OT_copy_as_driver_btn";
   ot->description =
       "Create a new driver with this property as input, and copy it to the "
       "clipboard. Use Paste Driver to add it to the target property, or Paste "
       "Driver Variables to extend an existing driver";
 
   /* callbacks */
-  ot->exec = copy_as_driver_button_exec;
-  ot->poll = copy_as_driver_button_poll;
+  ot->exec = copy_as_driver_btn_ex;
+  ot->poll = copy_as_driver_btn_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Copy Python Command Operator
- * \{ */
+/** Copy Python Command Operator **/
 
-static bool copy_python_command_button_poll(bContext *C)
+static bool copy_pycmd_btnpoll(duneContext *C)
 {
-  uiBut *but = UI_context_active_but_get(C);
+  uiBtn *btn = UI_ctx_active_btn_get(C);
 
   if (but && (but->optype != NULL)) {
     return 1;
@@ -1157,16 +1151,16 @@ static bool copy_python_command_button_poll(bContext *C)
   return 0;
 }
 
-static int copy_python_command_button_exec(bContext *C, wmOperator *UNUSED(op))
+static int copy_pycmd_btnex(duneContext *C, wmOperator *UNUSED(op))
 {
-  uiBut *but = UI_context_active_but_get(C);
+  uiBtn *btn = UI_ctx_active_btnget(C);
 
   if (but && (but->optype != NULL)) {
-    PointerRNA *opptr;
+    ApiPtr *opptr;
     char *str;
-    opptr = UI_but_operator_ptr_get(but); /* allocated when needed, the button owns it */
+    opptr = UI_btn_op_ptr_get(btn); /* allocated when needed, the button owns it */
 
-    str = WM_operator_pystring_ex(C, NULL, false, true, but->optype, opptr);
+    str = WM_op_pystring_ex(C, NULL, false, true, btn->optype, opptr);
 
     WM_clipboard_text_set(str, 0);
 
@@ -1178,36 +1172,33 @@ static int copy_python_command_button_exec(bContext *C, wmOperator *UNUSED(op))
   return OPERATOR_CANCELLED;
 }
 
-static void UI_OT_copy_python_command_button(wmOperatorType *ot)
+static void UI_OT_copy_pycmd_btn(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Copy Python Command";
-  ot->idname = "UI_OT_copy_python_command_button";
+  ot->idname = "UI_OT_copy_pycmd_btn";
   ot->description = "Copy the Python command matching this button";
 
   /* callbacks */
-  ot->exec = copy_python_command_button_exec;
-  ot->poll = copy_python_command_button_poll;
+  ot->exec = copy_pycmd_btnex;
+  ot->poll = copy_pycmd_btnpoll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Reset to Default Values Button Operator
- * \{ */
+/** Reset to Default Values Button Operator **/
 
-static int operator_button_property_finish(bContext *C, PointerRNA *ptr, PropertyRNA *prop)
+static int op_btnprop_finish(duneContext *C, PointerRNA *ptr, PropertyRNA *prop)
 {
   ID *id = ptr->owner_id;
 
   /* perform updates required for this property */
-  RNA_property_update(C, ptr, prop);
+  apiprop_update(C, ptr, prop);
 
   /* as if we pressed the button */
-  UI_context_active_but_prop_handle(C, false);
+  UI_ctx_active_btnprop_handle(C, false);
 
   /* Since we don't want to undo _all_ edits to settings, eg window
    * edits on the screen or on operator settings.
@@ -1219,20 +1210,20 @@ static int operator_button_property_finish(bContext *C, PointerRNA *ptr, Propert
   return OPERATOR_CANCELLED;
 }
 
-static int operator_button_property_finish_with_undo(bContext *C,
+static int op_btnprop_finish_with_undo(duneContext *C,
                                                      PointerRNA *ptr,
                                                      PropertyRNA *prop)
 {
   /* Perform updates required for this property. */
-  RNA_property_update(C, ptr, prop);
+  apiprop_update(C, ptr, prop);
 
   /* As if we pressed the button. */
-  UI_context_active_but_prop_handle(C, true);
+  UI_ctx_active_btnprop_handle(C, true);
 
   return OPERATOR_FINISHED;
 }
 
-static bool reset_default_button_poll(bContext *C)
+static bool reset_default_btnpoll(duneContext *C)
 {
   PointerRNA ptr;
   PropertyRNA *prop;
