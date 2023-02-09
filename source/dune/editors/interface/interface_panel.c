@@ -519,7 +519,7 @@ static void panellist_expand_flag_get(const Panel *panel, short *flag, short *fl
  * expansion might have been the sub-panel of an instanced panel, meaning it might not know
  * which list item it corresponds to.
  */
-static void panelslistdata_expand_flag_set(const bContext *C, const ARegion *region)
+static void panellistdata_expand_flag_set(const duneContext *C, const ARegion *region)
 {
   LISTBASE_FOREACH (Panel *, panel, &region->panels) {
     PanelType *panel_type = panel->type;
@@ -542,16 +542,16 @@ static void panelslistdata_expand_flag_set(const bContext *C, const ARegion *reg
 /* -------------------------------------------------------------------- */
 /** Panels **/
 
-static bool panel_custom_data_active_get(const Panel *panel)
+static bool panellistdata_custom_active_get(const Panel *panel)
 {
   /* The caller should make sure the panel is active and has a type. */
-  LIB_assert(UI_panel_is_active(panel));
+  LIB_assert(ui_panel_is_active(panel));
   LIB_assert(panel->type != NULL);
 
-  if (panel->type->active_property[0] != '\0') {
-    PointerRNA *ptr = UI_panel_custom_data_get(panel);
-    if (ptr != NULL && !RNA_pointer_is_null(ptr)) {
-      return RNA_boolean_get(ptr, panel->type->active_property);
+  if (panel->type->active_prop[0] != '\0') {
+    ApiPtr *ptr = ui_panel_custom_data_get(panel);
+    if (ptr != NULL && !api_ptr_is_null(ptr)) {
+      return api_bool_get(ptr, panel->type->active_prop);
     }
   }
 
@@ -561,11 +561,11 @@ static bool panel_custom_data_active_get(const Panel *panel)
 static void panel_custom_data_active_set(Panel *panel)
 {
   /* Since the panel is interacted with, it should be active and have a type. */
-  BLI_assert(UI_panel_is_active(panel));
-  BLI_assert(panel->type != NULL);
+  LIB_assert(ui_panel_is_active(panel));
+  LIB_assert(panel->type != NULL);
 
   if (panel->type->active_property[0] != '\0') {
-    PointerRNA *ptr = UI_panel_custom_data_get(panel);
+    ApiPtr *ptr = ui_panellistdata_custom__get(panel);
     BLI_assert(RNA_struct_find_property(ptr, panel->type->active_property) != NULL);
     if (ptr != NULL && !RNA_pointer_is_null(ptr)) {
       RNA_boolean_set(ptr, panel->type->active_property, true);
@@ -573,10 +573,8 @@ static void panel_custom_data_active_set(Panel *panel)
   }
 }
 
-/**
- * Set flag state for a panel and its sub-panels.
- */
-static void panel_set_flag_recursive(Panel *panel, short flag, bool value)
+/** Set flag state for a panel and its sub-panels. **/
+static void panellist_flag_set_recursive(Panel *panel, short flag, bool value)
 {
   SET_FLAG_FROM_TEST(panel->flag, value, flag);
 
@@ -588,7 +586,7 @@ static void panel_set_flag_recursive(Panel *panel, short flag, bool value)
 /**
  * Set runtime flag state for a panel and its sub-panels.
  */
-static void panel_set_runtime_flag_recursive(Panel *panel, short flag, bool value)
+static void panellist_runtimeflag_set_recursive(Panel *panel, short flag, bool value)
 {
   SET_FLAG_FROM_TEST(panel->runtime_flag, value, flag);
 
@@ -597,7 +595,7 @@ static void panel_set_runtime_flag_recursive(Panel *panel, short flag, bool valu
   }
 }
 
-static void panels_collapse_all(ARegion *region, const Panel *from_panel)
+static void panellist_collapse_all(ARegion *region, const Panel *from_panel)
 {
   const bool has_category_tabs = UI_panel_category_is_visible(region);
   const char *category = has_category_tabs ? UI_panel_category_active_get(region, false) : NULL;
