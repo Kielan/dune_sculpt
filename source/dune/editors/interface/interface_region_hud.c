@@ -2,44 +2,43 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_screen_types.h"
-#include "DNA_userdef_types.h"
+#include "types_screen.h"
+#include "types_userdef.h"
 
-#include "BLI_listbase.h"
-#include "BLI_rect.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "LIB_listbase.h"
+#include "LIB_rect.h"
+#include "LIB_string.h"
+#include "LIB_utildefines.h"
 
-#include "BKE_context.h"
-#include "BKE_screen.h"
+#include "DUNE_context.h"
+#include "DUNE_screen.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
-#include "UI_interface.h"
-#include "UI_view2d.h"
+#include "ui.h"
+#include "view2d.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
 #include "ED_screen.h"
 #include "ED_undo.h"
 
 #include "GPU_framebuffer.h"
-#include "interface_intern.h"
+#include "ui_intern.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Utilities
- * \{ */
+/** Utilities **/
 
 struct HudRegionData {
   short regionid;
 };
 
-static bool last_redo_poll(const bContext *C, short region_type)
+static bool last_redo_poll(const duneContext *C, short region_type)
 {
-  wmOperator *op = WM_operator_last_redo(C);
+  wmOperator *op = wn_operator_last_redo(C);
   if (op == NULL) {
     return false;
   }
@@ -50,15 +49,15 @@ static bool last_redo_poll(const bContext *C, short region_type)
      * operator call. Otherwise we would be polling the operator with the
      * wrong context.
      */
-    ScrArea *area = CTX_wm_area(C);
-    ARegion *region_op = (region_type != -1) ? BKE_area_find_region_type(area, region_type) : NULL;
-    ARegion *region_prev = CTX_wm_region(C);
-    CTX_wm_region_set((bContext *)C, region_op);
+    ScrArea *area = ctx_wm_area(C);
+    ARegion *region_op = (region_type != -1) ? dune_area_find_region_type(area, region_type) : NULL;
+    ARegion *region_prev = ctx_wm_region(C);
+    ctx_wm_region_set((duneContext *)C, region_op);
 
-    if (WM_operator_repeat_check(C, op) && WM_operator_check_ui_empty(op->type) == false) {
-      success = WM_operator_poll((bContext *)C, op->type);
+    if (WM_operator_repeat_check(C, op) && wm_op_check_ui_empty(op->type) == false) {
+      success = wm_op_poll((duneContext *)C, op->type);
     }
-    CTX_wm_region_set((bContext *)C, region_prev);
+    ctx_wm_region_set((duneContext *)C, region_prev);
   }
   return success;
 }
@@ -68,19 +67,16 @@ static void hud_region_hide(ARegion *region)
   region->flag |= RGN_FLAG_HIDDEN;
   /* Avoids setting 'AREA_FLAG_REGION_SIZE_UPDATE'
    * since other regions don't depend on this. */
-  BLI_rcti_init(&region->winrct, 0, 0, 0, 0);
+  LIB_rcti_init(&region->winrct, 0, 0, 0, 0);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Redo Panel
- * \{ */
+/** Redo Panel **/
 
-static bool hud_panel_operator_redo_poll(const bContext *C, PanelType *UNUSED(pt))
+static bool hud_panel_op_redo_poll(const duneContext *C, PanelType *UNUSED(pt))
 {
-  ScrArea *area = CTX_wm_area(C);
-  ARegion *region = BKE_area_find_region_type(area, RGN_TYPE_HUD);
+  ScrArea *area = ctx_wm_area(C);
+  ARegion *region = dune_area_find_region_type(area, RGN_TYPE_HUD);
   if (region != NULL) {
     struct HudRegionData *hrd = region->regiondata;
     if (hrd != NULL) {
@@ -90,23 +86,23 @@ static bool hud_panel_operator_redo_poll(const bContext *C, PanelType *UNUSED(pt
   return false;
 }
 
-static void hud_panel_operator_redo_draw_header(const bContext *C, Panel *panel)
+static void hud_panellist_op_redo_draw_header(const duneContext *C, PanelList *panellist)
 {
-  wmOperator *op = WM_operator_last_redo(C);
-  BLI_strncpy(panel->drawname, WM_operatortype_name(op->type, op->ptr), sizeof(panel->drawname));
+  wmOperator *op = wm_op_last_redo(C);
+  LIB_strncpy(panellist->drawname, wm_op_name(op->type, op->ptr), sizeof(panellist->drawname));
 }
 
-static void hud_panel_operator_redo_draw(const bContext *C, Panel *panel)
+static void hud_panellist_op_redo_draw(const duneContext *C, Panel *panel)
 {
-  wmOperator *op = WM_operator_last_redo(C);
+  wmOperator *op = wm_op_last_redo(C);
   if (op == NULL) {
     return;
   }
-  if (!WM_operator_check_ui_enabled(C, op->type->name)) {
+  if (!wm_op_check_ui_enabled(C, op->type->name)) {
     uiLayoutSetEnabled(panel->layout, false);
   }
-  uiLayout *col = uiLayoutColumn(panel->layout, false);
-  uiTemplateOperatorRedoProperties(col, C);
+  uiLayout *col = uiLayoutColumn(panellist->layout, false);
+  uiTemplateOpRedoProps(col, C);
 }
 
 static void hud_panels_register(ARegionType *art, int space_type, int region_type)
@@ -116,25 +112,22 @@ static void hud_panels_register(ARegionType *art, int space_type, int region_typ
   pt = MEM_callocN(sizeof(PanelType), __func__);
   strcpy(pt->idname, "OPERATOR_PT_redo");
   strcpy(pt->label, N_("Redo"));
-  strcpy(pt->translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
-  pt->draw_header = hud_panel_operator_redo_draw_header;
-  pt->draw = hud_panel_operator_redo_draw;
-  pt->poll = hud_panel_operator_redo_poll;
+  strcpy(pt->translation_ctx, I18N_CONTEXT_DEFAULT);
+  pt->draw_header = hud_panel_op_redo_draw_header;
+  pt->draw = hud_panellist_op_redo_draw;
+  pt->poll = hud_panellist_op_redo_poll;
   pt->space_type = space_type;
   pt->region_type = region_type;
   pt->flag |= PANEL_TYPE_DEFAULT_CLOSED;
-  BLI_addtail(&art->paneltypes, pt);
+  LIB_addtail(&art->paneltypes, pt);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Callbacks for Floating Region
- * \{ */
+/** Callbacks for Floating Region **/
 
 static void hud_region_init(wmWindowManager *wm, ARegion *region)
 {
-  ED_region_panels_init(wm, region);
+  ED_region_paneist_init(wm, region);
   UI_region_handlers_add(&region->handlers);
   region->flag |= RGN_FLAG_TEMP_REGIONDATA;
 }
