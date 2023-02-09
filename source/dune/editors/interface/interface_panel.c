@@ -204,14 +204,14 @@ static bool panels_need_realign(const ScrArea *area, ARegion *region, Panel **r_
 }
 
 /* -------------------------------------------------------------------- */
-/** Functions for Instanced Panels **/
+/** Functions for Instanced PanelList **/
 
-static Panel *panel_add_instanced(ARegion *region,
+static PanelList *panellist_add_instanced(ARegion *region,
                                   ListBase *panels,
                                   PanelType *panel_type,
                                   ApiPtr *custom_data)
 {
-  Panel *panel = MEM_callocN(sizeof(Panel), __func__);
+  PanelList *panellist = MEM_callocN(sizeof(Panel), __func__);
   panel->type = panel_type;
   LIB_strncpy(panel->panelname, panel_type->idname, sizeof(panel->panelname));
 
@@ -243,7 +243,7 @@ static Panel *panel_add_instanced(ARegion *region,
   return panel;
 }
 
-Panel *ui_panellistinstanced_add(const duneContext *C,
+Panel *panellistinstanced_add(const duneContext *C,
                               ARegion *region,
                               ListBase *panels,
                               const char *panel_idname,
@@ -267,7 +267,7 @@ Panel *ui_panellistinstanced_add(const duneContext *C,
   return new_panel;
 }
 
-void ui_panellist_unique_str(Panel *panel, char *r_name)
+void panellist_unique_str(Panel *panel, char *r_name)
 {
   /* The panel sort-order will be unique for a specific panel type because the instanced
    * panel list is regenerated for every change in the data order / length. */
@@ -296,7 +296,7 @@ static void panel_delete(const duneContext *C, ARegion *region, ListBase *panels
   MEM_freeN(panel);
 }
 
-void UI_panellistinstanced_free(const duneContext *C, ARegion *region)
+void panellistinstanced_free(const duneContext *C, ARegion *region)
 {
   /* Delete panels with the instanced flag. */
   LISTBASE_FOREACH_MUTABLE (Panel *, panel, &region->panels) {
@@ -366,7 +366,7 @@ bool ui_panellist_matches_data(ARegion *region,
   return true;
 }
 
-static void panellistinstanced_reorder(duneContext *C, ARegion *region, Panel *drag_panel)
+static void panellistinstanced_reorder(duneContext *C, ARegion *region, PanelList *panellist_drag)
 {
   /* Without a type we cannot access the reorder callback. */
   if (drag_panel->type == NULL) {
@@ -377,23 +377,23 @@ static void panellistinstanced_reorder(duneContext *C, ARegion *region, Panel *d
     return;
   }
 
-  char *context = NULL;
-  if (!ui_panel_category_is_visible(region)) {
+  char *ctx = NULL;
+  if (!panellist_category_is_visible(region)) {
     context = drag_panel->type->context;
   }
 
   /* Find how many instanced panels with this context string. */
-  int list_panels_len = 0;
+  int panellist_len = 0;
   int start_index = -1;
-  LISTBASE_FOREACH (const Panel *, panel, &region->panels) {
+  LISTBASE_FOREACH (const Panel *, panel, &region->panellist) {
     if (panel->type) {
       if (panel->type->flag & PANEL_TYPE_INSTANCED) {
-        if (panel_type_ctx_poll(region, panel->type, context)) {
+        if (panel_type_ctx_poll(region, panel->type, ctx)) {
           if (panel == drag_panel) {
             LIB_assert(start_index == -1); /* This panel should only appear once. */
             start_index = list_panels_len;
           }
-          list_panels_len++;
+          panellist_len++;
         }
       }
     }
@@ -433,12 +433,12 @@ static void panellistinstanced_reorder(duneContext *C, ARegion *region, Panel *d
   /* Set the bit to tell the interface to instanced the list. */
   drag_panel->flag |= PNL_INSTANCED_LIST_ORDER_CHANGED;
 
-  CTX_store_set(C, drag_panel->runtime.context);
+  ctx_store_set(C, drag_panel->runtime.ctx);
 
   /* Finally, move this panel's list item to the new index in its list. */
   drag_panel->type->reorder(C, drag_panel, move_to_index);
 
-  CTX_store_set(C, NULL);
+  ctx_store_set(C, NULL);
 }
 
 /**
@@ -498,11 +498,11 @@ static void region_panellistdata_expand(const duneContext *C, ARegion *region)
 }
 
 /**
- * Recursive implementation for #panellistdata_expand_flag_set.
+ * Recursive implementation for #panellistdata_flag_expand_set.
  */
 static void panellist_expand_flag_get(const Panel *panel, short *flag, short *flag_index)
 {
-  const bool open = !(panel->flag & PNL_CLOSED);
+  const bool open = !(panellist->flag & PNL_CLOSED);
   SET_FLAG_FROM_TEST(*flag, open, (1 << *flag_index));
 
   LISTBASE_FOREACH (const Panel *, child, &panel->children) {
@@ -528,12 +528,12 @@ static void panellistdata_expand_flag_set(const duneContext *C, const ARegion *r
     }
 
     /* Check for #PANEL_ACTIVE so we only set the expand flag for active panels. */
-    if (panel_type->flag & PANEL_TYPE_INSTANCED && panel->runtime_flag & PANEL_ACTIVE) {
+    if (panellist_type->flag & PANEL_TYPE_INSTANCED && panel->runtime_flag & PANEL_ACTIVE) {
       short expand_flag;
       short flag_index = 0;
-      panellist_expand_flag_get(panel, &expand_flag, &flag_index);
+      panellist_expand_flag_get(panellist, &expand_flag, &flag_index);
       if (panel->type->set_list_data_expand_flag) {
-        panel->type->set_list_data_expand_flag(C, panel, expand_flag);
+        panellist->type->set_list_data_expand_flag(C, panellist, expand_flag);
       }
     }
   }
@@ -542,14 +542,14 @@ static void panellistdata_expand_flag_set(const duneContext *C, const ARegion *r
 /* -------------------------------------------------------------------- */
 /** Panels **/
 
-static bool panellistdata_custom_active_get(const Panel *panel)
+static bool panellistdata_custom_active_get(const PanelList *panellist)
 {
   /* The caller should make sure the panel is active and has a type. */
-  LIB_assert(ui_panel_is_active(panel));
-  LIB_assert(panel->type != NULL);
+  LIB_assert(panellist_is_active(panel));
+  LIB_assert(panellist->type != NULL);
 
-  if (panel->type->active_prop[0] != '\0') {
-    ApiPtr *ptr = ui_panel_custom_data_get(panel);
+  if (panellist->type->active_prop[0] != '\0') {
+    ApiPtr *ptr = panellist_custom_data_get(panel);
     if (ptr != NULL && !api_ptr_is_null(ptr)) {
       return api_bool_get(ptr, panel->type->active_prop);
     }
@@ -558,17 +558,17 @@ static bool panellistdata_custom_active_get(const Panel *panel)
   return false;
 }
 
-static void panel_custom_data_active_set(Panel *panel)
+static void panellist_custom_data_active_set(Panel *panel)
 {
   /* Since the panel is interacted with, it should be active and have a type. */
-  LIB_assert(ui_panel_is_active(panel));
-  LIB_assert(panel->type != NULL);
+  LIB_assert(panellist_is_active(panel));
+  LIB_assert(panellist->type != NULL);
 
-  if (panel->type->active_property[0] != '\0') {
-    ApiPtr *ptr = ui_panellistdata_custom__get(panel);
-    BLI_assert(RNA_struct_find_property(ptr, panel->type->active_property) != NULL);
-    if (ptr != NULL && !RNA_pointer_is_null(ptr)) {
-      RNA_boolean_set(ptr, panel->type->active_property, true);
+  if (panellist->type->active_prop[0] != '\0') {
+    ApiPtr *ptr =panellistdata_custom__get(panel);
+    LIB_assert(api_struct_find_prop(ptr, panellist->type->active_property) != NULL);
+    if (ptr != NULL && !api_pointer_is_null(ptr)) {
+      api_bool_set(ptr, panellist->type->active_prop, true);
     }
   }
 }
@@ -579,13 +579,11 @@ static void panellist_flag_set_recursive(Panel *panel, short flag, bool value)
   SET_FLAG_FROM_TEST(panel->flag, value, flag);
 
   LISTBASE_FOREACH (Panel *, child, &panel->children) {
-    panel_set_flag_recursive(child, flag, value);
+    panellist_flag_set_recursive(child, flag, value);
   }
 }
 
-/**
- * Set runtime flag state for a panel and its sub-panels.
- */
+/** Set runtime flag state for a panel and its sub-panels. **/
 static void panellist_runtimeflag_set_recursive(Panel *panel, short flag, bool value)
 {
   SET_FLAG_FROM_TEST(panel->runtime_flag, value, flag);
@@ -595,10 +593,10 @@ static void panellist_runtimeflag_set_recursive(Panel *panel, short flag, bool v
   }
 }
 
-static void panellist_collapse_all(ARegion *region, const Panel *from_panel)
+static void panellist_collapse_all(ARegion *region, const PanelList *from_panellist)
 {
-  const bool has_category_tabs = UI_panel_category_is_visible(region);
-  const char *category = has_category_tabs ? UI_panel_category_active_get(region, false) : NULL;
+  const bool has_category_tabs = panellist_category_is_visible(region);
+  const char *category = has_category_tabs ? panellist_category_active_get(region, false) : NULL;
   const PanelType *from_pt = from_panel->type;
 
   LISTBASE_FOREACH (Panel *, panel, &region->panels) {
@@ -606,7 +604,7 @@ static void panellist_collapse_all(ARegion *region, const Panel *from_panel)
 
     /* Close panels with headers in the same context. */
     if (pt && from_pt && !(pt->flag & PANEL_TYPE_NO_HEADER)) {
-      if (!pt->context[0] || !from_pt->context[0] || STREQ(pt->context, from_pt->context)) {
+      if (!pt->ctx[0] || !from_pt->ctx[0] || STREQ(pt->ctx, from_pt->ctx)) {
         if ((panel->flag & PNL_PIN) || !category || !pt->category[0] ||
             STREQ(pt->category, category)) {
           panel->flag |= PNL_CLOSED;
@@ -616,22 +614,22 @@ static void panellist_collapse_all(ARegion *region, const Panel *from_panel)
   }
 }
 
-static bool panel_type_context_poll(ARegion *region,
+static bool panellist_type_ctx_poll(ARegion *region,
                                     const PanelType *panel_type,
-                                    const char *context)
+                                    const char *ctx)
 {
-  if (!BLI_listbase_is_empty(&region->panels_category)) {
-    return STREQ(panel_type->category, UI_panel_category_active_get(region, false));
+  if (!LIB_listbase_is_empty(&region->panellist_category)) {
+    return STREQ(panel_type->category, panellist_category_active_get(region, false));
   }
 
-  if (panel_type->context[0] && STREQ(panel_type->context, context)) {
+  if (panel_type->context[0] && STREQ(panel_type->ctx, ctx)) {
     return true;
   }
 
   return false;
 }
 
-Panel *UI_panel_find_by_type(ListBase *lb, const PanelType *pt)
+PanelList *panellist_find_by_type(ListBase *lb, const PanelType *pt)
 {
   const char *idname = pt->idname;
 
@@ -643,18 +641,18 @@ Panel *UI_panel_find_by_type(ListBase *lb, const PanelType *pt)
   return NULL;
 }
 
-Panel *UI_panel_begin(
-    ARegion *region, ListBase *lb, uiBlock *block, PanelType *pt, Panel *panel, bool *r_open)
+PanelList *panellist_begin(
+    ARegion *region, ListBase *lb, uiBlock *block, PanelType *pt, PanelList *panellist, bool *r_open)
 {
-  Panel *panel_last;
-  const char *drawname = CTX_IFACE_(pt->translation_context, pt->label);
+  PanelList *panellist_last;
+  const char *drawname = CTX_IFACE_(pt->translation_ctx, pt->label);
   const char *idname = pt->idname;
   const bool newpanel = (panel == NULL);
 
   if (newpanel) {
     panel = MEM_callocN(sizeof(Panel), __func__);
     panel->type = pt;
-    BLI_strncpy(panel->panelname, idname, sizeof(panel->panelname));
+    LIB_strncpy(panel->panelname, idname, sizeof(panel->panelname));
 
     if (pt->flag & PANEL_TYPE_DEFAULT_CLOSED) {
       panel->flag |= PNL_CLOSED;
@@ -708,12 +706,12 @@ Panel *UI_panel_begin(
   block->panel = panel;
   panel->runtime_flag |= PANEL_ACTIVE | PANEL_LAST_ADDED;
   if (region->alignment == RGN_ALIGN_FLOAT) {
-    UI_block_theme_style_set(block, UI_BLOCK_THEME_STYLE_POPUP);
+    uiblock_theme_style_set(block, UI_BLOCK_THEME_STYLE_POPUP);
   }
 
   *r_open = false;
 
-  if (UI_panel_is_closed(panel)) {
+  if (ui_panel_is_closed(panel)) {
     return panel;
   }
 
@@ -722,42 +720,42 @@ Panel *UI_panel_begin(
   return panel;
 }
 
-void UI_panel_header_buttons_begin(Panel *panel)
+void ui_panel_headerbtns_begin(Panel *panel)
 {
   uiBlock *block = panel->runtime.block;
 
-  ui_block_new_button_group(block, UI_BUTTON_GROUP_LOCK | UI_BUTTON_GROUP_PANEL_HEADER);
+  ui_block_new_btn_group(block, UI_BUTTON_GROUP_LOCK | UI_BUTTON_GROUP_PANEL_HEADER);
 }
 
-void UI_panel_header_buttons_end(Panel *panel)
+void ui_panellist_headerbtns_end(Panel *panel)
 {
   uiBlock *block = panel->runtime.block;
 
-  /* A button group should always be created in #UI_panel_header_buttons_begin. */
-  BLI_assert(!BLI_listbase_is_empty(&block->button_groups));
+  /* A button group should always be created in #ui_panellist_headerbuttons_begin. */
+  LIB_assert(!LIB_listbase_is_empty(&block->btn_groups));
 
-  uiButtonGroup *button_group = block->button_groups.last;
+  uiBtnGroup *btn_group = block->btn_groups.last;
 
-  button_group->flag &= ~UI_BUTTON_GROUP_LOCK;
+  btn_group->flag &= ~UI_BUTTON_GROUP_LOCK;
 
   /* Repurpose the first header button group if it is empty, in case the first button added to
    * the panel doesn't add a new group (if the button is created directly rather than through an
    * interface layout call). */
-  if (BLI_listbase_is_single(&block->button_groups) &&
-      BLI_listbase_is_empty(&button_group->buttons)) {
-    button_group->flag &= ~UI_BUTTON_GROUP_PANEL_HEADER;
+  if (LIB_listbase_is_single(&block->btn_groups) &&
+      LIB_listbase_is_empty(&btn_group->btns)) {
+    btn_group->flag &= ~UI_BUTTON_GROUP_PANEL_HEADER;
   }
   else {
     /* Always add a new button group. Although this may result in many empty groups, without it,
-     * new buttons in the panel body not protected with a #ui_block_new_button_group call would
+     * new buttons in the panel body not protected with a #ui_block_new_btn_group call would
      * end up in the panel header group. */
-    ui_block_new_button_group(block, 0);
+    ui_block_btn_group_new(block, 0);
   }
 }
 
-static float panel_region_offset_x_get(const ARegion *region)
+static float panellist_region_offset_x_get(const ARegion *region)
 {
-  if (UI_panel_category_is_visible(region)) {
+  if (ui_panellist_category_visible(region)) {
     if (RGN_ALIGN_ENUM_FROM_MASK(region->alignment) != RGN_ALIGN_RIGHT) {
       return UI_PANEL_CATEGORY_MARGIN_WIDTH;
     }
