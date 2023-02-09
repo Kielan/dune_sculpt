@@ -500,7 +500,7 @@ static void region_panellistdata_expand(const duneContext *C, ARegion *region)
 /**
  * Recursive implementation for #panellistdata_expand_flag_set.
  */
-static void get_panel_expand_flag(const Panel *panel, short *flag, short *flag_index)
+static void panellist_expand_flag_get(const Panel *panel, short *flag, short *flag_index)
 {
   const bool open = !(panel->flag & PNL_CLOSED);
   SET_FLAG_FROM_TEST(*flag, open, (1 << *flag_index));
@@ -515,11 +515,11 @@ static void get_panel_expand_flag(const Panel *panel, short *flag, short *flag_i
  * Call the callback to store the panel and sub-panel expansion settings in the list item that
  * corresponds to each instanced panel.
  *
- * \note This needs to iterate through all of the region's panels because the panel with changed
+ * note: This needs to iterate through all of the region's panels because the panel with changed
  * expansion might have been the sub-panel of an instanced panel, meaning it might not know
  * which list item it corresponds to.
  */
-static void set_panels_list_data_expand_flag(const bContext *C, const ARegion *region)
+static void panelslistdata_expand_flag_set(const bContext *C, const ARegion *region)
 {
   LISTBASE_FOREACH (Panel *, panel, &region->panels) {
     PanelType *panel_type = panel->type;
@@ -531,7 +531,7 @@ static void set_panels_list_data_expand_flag(const bContext *C, const ARegion *r
     if (panel_type->flag & PANEL_TYPE_INSTANCED && panel->runtime_flag & PANEL_ACTIVE) {
       short expand_flag;
       short flag_index = 0;
-      get_panel_expand_flag(panel, &expand_flag, &flag_index);
+      panellist_expand_flag_get(panel, &expand_flag, &flag_index);
       if (panel->type->set_list_data_expand_flag) {
         panel->type->set_list_data_expand_flag(C, panel, expand_flag);
       }
@@ -539,17 +539,14 @@ static void set_panels_list_data_expand_flag(const bContext *C, const ARegion *r
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Panels
- * \{ */
+/** Panels **/
 
 static bool panel_custom_data_active_get(const Panel *panel)
 {
   /* The caller should make sure the panel is active and has a type. */
-  BLI_assert(UI_panel_is_active(panel));
-  BLI_assert(panel->type != NULL);
+  LIB_assert(UI_panel_is_active(panel));
+  LIB_assert(panel->type != NULL);
 
   if (panel->type->active_property[0] != '\0') {
     PointerRNA *ptr = UI_panel_custom_data_get(panel);
