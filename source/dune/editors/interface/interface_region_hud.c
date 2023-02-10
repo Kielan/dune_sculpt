@@ -1,20 +1,20 @@
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "types_screen.h"
 #include "types_userdef.h"
 
-#include "LIB_listbase.h"
-#include "LIB_rect.h"
-#include "LIB_string.h"
-#include "LIB_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_rect.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "DUNE_context.h"
-#include "DUNE_screen.h"
+#include "dune_context.h"
+#include "dune_screen.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
 #include "api_access.h"
 
@@ -23,10 +23,10 @@
 
 #include "i18n_translation.h"
 
-#include "ED_screen.h"
-#include "ED_undo.h"
+#include "entity_screen.h"
+#include "entity_undo.h"
 
-#include "GPU_framebuffer.h"
+#include "gpu_framebuffer.h"
 #include "ui_intern.h"
 
 /* -------------------------------------------------------------------- */
@@ -67,7 +67,7 @@ static void hud_region_hide(ARegion *region)
   region->flag |= RGN_FLAG_HIDDEN;
   /* Avoids setting 'AREA_FLAG_REGION_SIZE_UPDATE'
    * since other regions don't depend on this. */
-  LIB_rcti_init(&region->winrct, 0, 0, 0, 0);
+  lib_rcti_init(&region->winrct, 0, 0, 0, 0);
 }
 
 /* -------------------------------------------------------------------- */
@@ -89,7 +89,7 @@ static bool hud_panel_op_redo_poll(const duneContext *C, PanelType *UNUSED(pt))
 static void hud_panellist_op_redo_draw_header(const duneContext *C, PanelList *panellist)
 {
   wmOperator *op = wm_op_last_redo(C);
-  LIB_strncpy(panellist->drawname, wm_op_name(op->type, op->ptr), sizeof(panellist->drawname));
+  lib_strncpy(panellist->drawname, wm_op_name(op->type, op->ptr), sizeof(panellist->drawname));
 }
 
 static void hud_panellist_op_redo_draw(const duneContext *C, Panel *panel)
@@ -105,21 +105,21 @@ static void hud_panellist_op_redo_draw(const duneContext *C, Panel *panel)
   uiTemplateOpRedoProps(col, C);
 }
 
-static void hud_panels_register(ARegionType *art, int space_type, int region_type)
+static void hud_panellist_register(ARegionType *art, int space_type, int region_type)
 {
   PanelType *pt;
 
   pt = MEM_callocN(sizeof(PanelType), __func__);
-  strcpy(pt->idname, "OPERATOR_PT_redo");
+  strcpy(pt->idname, "OP_PT_redo");
   strcpy(pt->label, N_("Redo"));
-  strcpy(pt->translation_ctx, I18N_CONTEXT_DEFAULT);
-  pt->draw_header = hud_panel_op_redo_draw_header;
+  strcpy(pt->translation_ctx, I18N_CTX_DEFAULT);
+  pt->draw_header = hud_panellist_op_redo_draw_header;
   pt->draw = hud_panellist_op_redo_draw;
   pt->poll = hud_panellist_op_redo_poll;
   pt->space_type = space_type;
   pt->region_type = region_type;
   pt->flag |= PANEL_TYPE_DEFAULT_CLOSED;
-  LIB_addtail(&art->paneltypes, pt);
+  lib_addtail(&art->paneltypes, pt);
 }
 
 /* -------------------------------------------------------------------- */
@@ -127,8 +127,8 @@ static void hud_panels_register(ARegionType *art, int space_type, int region_typ
 
 static void hud_region_init(wmWindowManager *wm, ARegion *region)
 {
-  ED_region_paneist_init(wm, region);
-  UI_region_handlers_add(&region->handlers);
+  entity_region_panellist_init(wm, region);
+  ui_region_handlers_add(&region->handlers);
   region->flag |= RGN_FLAG_TEMP_REGIONDATA;
 }
 
@@ -137,19 +137,19 @@ static void hud_region_free(ARegion *region)
   MEM_SAFE_FREE(region->regiondata);
 }
 
-static void hud_region_layout(const bContext *C, ARegion *region)
+static void hud_region_layout(const duneContext *C, ARegion *region)
 {
   struct HudRegionData *hrd = region->regiondata;
   if (hrd == NULL || !last_redo_poll(C, hrd->regionid)) {
-    ED_region_tag_redraw(region);
+    entity_region_tag_redraw(region);
     hud_region_hide(region);
     return;
   }
 
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = ctx_wm_area(C);
   const int size_y = region->sizey;
 
-  ED_region_panels_layout(C, region);
+  entity_region_panellist_layout(C, region);
 
   if (region->panels.first &&
       ((area->flag & AREA_FLAG_REGION_SIZE_UPDATE) || (region->sizey != size_y))) {
@@ -170,23 +170,23 @@ static void hud_region_layout(const bContext *C, ARegion *region)
     region->winrct.xmax = (region->winrct.xmin + region->winx) - 1;
     region->winrct.ymax = (region->winrct.ymin + region->winy) - 1;
 
-    UI_view2d_region_reinit(v2d, V2D_COMMONVIEW_LIST, region->winx, region->winy);
+    view2d_region_reinit(v2d, V2D_COMMONVIEW_LIST, region->winx, region->winy);
 
     /* Weak, but needed to avoid glitches, especially with hi-dpi
      * (where resizing the view glitches often).
      * Fortunately this only happens occasionally. */
-    ED_region_panels_layout(C, region);
+    entity_region_panellist_layout(C, region);
   }
 
   /* restore view matrix */
-  UI_view2d_view_restore(C);
+  view2d_view_restore(C);
 }
 
 static void hud_region_draw(const bContext *C, ARegion *region)
 {
-  UI_view2d_view_ortho(&region->v2d);
+  view2d_view_ortho(&region->v2d);
   wmOrtho2_region_pixelspace(region);
-  GPU_clear_color(0.0f, 0.0f, 0.0f, 0.0f);
+  gpu_clear_color(0.0f, 0.0f, 0.0f, 0.0f);
 
   if ((region->flag & RGN_FLAG_HIDDEN) == 0) {
     ui_draw_menu_back(NULL,
@@ -195,11 +195,11 @@ static void hud_region_draw(const bContext *C, ARegion *region)
                           .xmax = region->winx,
                           .ymax = region->winy,
                       });
-    ED_region_panels_draw(C, region);
+    entity_region_panellist_draw(C, region);
   }
 }
 
-ARegionType *ED_area_type_hud(int space_type)
+ARegionType *entity_area_type_hud(int space_type)
 {
   ARegionType *art = MEM_callocN(sizeof(ARegionType), __func__);
   art->regionid = RGN_TYPE_HUD;
@@ -214,7 +214,7 @@ ARegionType *ED_area_type_hud(int space_type)
   art->prefsizex = AREAMINX;
   art->prefsizey = HEADERY;
 
-  hud_panels_register(art, space_type, art->regionid);
+  hud_panellist_register(art, space_type, art->regionid);
 
   art->lock = 1; /* can become flag, see BKE_spacedata_draw_locks */
   return art;
@@ -223,12 +223,12 @@ ARegionType *ED_area_type_hud(int space_type)
 static ARegion *hud_region_add(ScrArea *area)
 {
   ARegion *region = MEM_callocN(sizeof(ARegion), "area region");
-  ARegion *region_win = BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
+  ARegion *region_win = dune_area_find_region_type(area, RGN_TYPE_WINDOW);
   if (region_win) {
-    BLI_insertlinkbefore(&area->regionbase, region_win, region);
+    lib_insertlinkbefore(&area->regionbase, region_win, region);
   }
   else {
-    BLI_addtail(&area->regionbase, region);
+    lib_addtail(&area->regionbase, region);
   }
   region->regiontype = RGN_TYPE_HUD;
   region->alignment = RGN_ALIGN_FLOAT;
@@ -238,7 +238,7 @@ static ARegion *hud_region_add(ScrArea *area)
   if (region_win) {
     float x, y;
 
-    UI_view2d_scroller_size_get(&region_win->v2d, &x, &y);
+    view2d_scroller_size_get(&region_win->v2d, &x, &y);
     region->runtime.offset_x = x;
     region->runtime.offset_y = y;
   }
@@ -246,18 +246,18 @@ static ARegion *hud_region_add(ScrArea *area)
   return region;
 }
 
-void ED_area_type_hud_clear(wmWindowManager *wm, ScrArea *area_keep)
+void entity_area_type_hud_clear(wmWindowManager *wm, ScrArea *area_keep)
 {
   LISTBASE_FOREACH (wmWindow *, win, &wm->windows) {
-    bScreen *screen = WM_window_get_active_screen(win);
+    duneScreen *screen = wm_window_get_active_screen(win);
     LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
       if (area != area_keep) {
         LISTBASE_FOREACH (ARegion *, region, &area->regionbase) {
           if (region->regiontype == RGN_TYPE_HUD) {
             if ((region->flag & RGN_FLAG_HIDDEN) == 0) {
               hud_region_hide(region);
-              ED_region_tag_redraw(region);
-              ED_area_tag_redraw(area);
+              entity_region_tag_redraw(region);
+              entity_area_tag_redraw(area);
             }
           }
         }
@@ -266,17 +266,17 @@ void ED_area_type_hud_clear(wmWindowManager *wm, ScrArea *area_keep)
   }
 }
 
-void ED_area_type_hud_ensure(bContext *C, ScrArea *area)
+void entity_area_type_hud_ensure(duneContext *C, ScrArea *area)
 {
-  wmWindowManager *wm = CTX_wm_manager(C);
-  ED_area_type_hud_clear(wm, area);
+  wmWindowManager *wm = ctx_wm_manager(C);
+  entity_area_type_hud_clear(wm, area);
 
-  ARegionType *art = BKE_regiontype_from_id(area->type, RGN_TYPE_HUD);
+  ARegionType *art = dune_regiontype_from_id(area->type, RGN_TYPE_HUD);
   if (art == NULL) {
     return;
   }
 
-  ARegion *region = BKE_area_find_region_type(area, RGN_TYPE_HUD);
+  ARegion *region = dune_area_find_region_type(area, RGN_TYPE_HUD);
 
   if (region && (region->flag & RGN_FLAG_HIDDEN_BY_USER)) {
     /* The region is intentionally hidden by the user, don't show it. */
@@ -286,11 +286,11 @@ void ED_area_type_hud_ensure(bContext *C, ScrArea *area)
 
   bool init = false;
   const bool was_hidden = region == NULL || region->visible == false;
-  ARegion *region_op = CTX_wm_region(C);
-  BLI_assert((region_op == NULL) || (region_op->regiontype != RGN_TYPE_HUD));
+  ARegion *region_op = ctx_wm_region(C);
+  lib_assert((region_op == NULL) || (region_op->regiontype != RGN_TYPE_HUD));
   if (!last_redo_poll(C, region_op ? region_op->regiontype : -1)) {
     if (region) {
-      ED_region_tag_redraw(region);
+      entity_region_tag_redraw(region);
       hud_region_hide(region);
     }
     return;
@@ -331,12 +331,12 @@ void ED_area_type_hud_ensure(bContext *C, ScrArea *area)
 
   if (init) {
     /* This is needed or 'winrct' will be invalid. */
-    wmWindow *win = CTX_wm_window(C);
-    ED_area_update_region_sizes(wm, win, area);
+    wmWindow *win = ctx_wm_window(C);
+    entity_area_update_region_sizes(wm, win, area);
   }
 
-  ED_region_floating_init(region);
-  ED_region_tag_redraw(region);
+  entity_region_floating_init(region);
+  entity_region_tag_redraw(region);
 
   /* Reset zoom level (not well supported). */
   region->v2d.cur = region->v2d.tot = (rctf){
@@ -351,8 +351,8 @@ void ED_area_type_hud_ensure(bContext *C, ScrArea *area)
   /* We shouldn't need to do this every time :S */
   /* XXX, this is evil! - it also makes the menu show on first draw. :( */
   if (region->visible) {
-    ARegion *region_prev = CTX_wm_region(C);
-    CTX_wm_region_set((bContext *)C, region);
+    ARegion *region_prev = ctx_wm_region(C);
+    ctx_wm_region_set((duneContext *)C, region);
     hud_region_layout(C, region);
     if (was_hidden) {
       region->winx = region->v2d.winx;
@@ -362,7 +362,7 @@ void ED_area_type_hud_ensure(bContext *C, ScrArea *area)
           .ymax = region->winy,
       };
     }
-    CTX_wm_region_set((bContext *)C, region_prev);
+    ctx_wm_region_set((duneContext *)C, region_prev);
   }
 
   region->visible = !((region->flag & RGN_FLAG_HIDDEN) || (region->flag & RGN_FLAG_TOO_SMALL));
