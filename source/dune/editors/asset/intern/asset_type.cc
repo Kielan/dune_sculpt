@@ -1,8 +1,8 @@
-#include "BLI_utildefines.h"
+#include "LIB_utildefines.h"
 
-#include "DNA_userdef_types.h"
+#include "types_userdef.h"
 
-#include "BKE_lib_id.h"
+#include "dube_lib_id.h"
 
 #include "ED_asset_type.h"
 
@@ -15,7 +15,7 @@ bool ED_asset_type_id_is_non_experimental(const ID *id)
 
 bool ED_asset_type_is_supported(const ID *id)
 {
-  if (!BKE_id_can_be_asset(id)) {
+  if (!dune_id_can_be_asset(id)) {
     return false;
   }
 
