@@ -10,28 +10,28 @@
 #include "LIB_ghash.h"
 #include "LIB_math.h"
 
-#include "BLT_translation.h"
+#include "I18N_translation.h"
 
-#include "BKE_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_context.h"
-#include "BKE_curve.h"
-#include "BKE_displist.h"
-#include "BKE_fcurve.h"
-#include "BKE_global.h"
-#include "BKE_key.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_modifier.h"
-#include "BKE_report.h"
+#include "dune_action.h"
+#include "dune_anim_data.h"
+#include "dune_context.h"
+#include "dune_curve.h"
+#include "dune_displist.h"
+#include "dune_fcurve.h"
+#include "dune_global.h"
+#include "dune_key.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_main.h"
+#include "dune_modifier.h"
+#include "dune_report.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
 #include "DEG_depsgraph_query.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
 #include "ED_curve.h"
 #include "ED_object.h"
@@ -50,9 +50,9 @@
 #include "UI_interface.h"
 #include "UI_resources.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
 void selectend_nurb(Object *obedit, enum eEndPoint_Types selfirst, bool doswap, bool selstatus);
 static void adduplicateflagNurb(
@@ -61,8 +61,7 @@ static bool curve_delete_segments(Object *obedit, View3D *v3d, const bool split)
 static bool curve_delete_vertices(Object *obedit, View3D *v3d);
 
 /* -------------------------------------------------------------------- */
-/** \name Utility Functions
- * \{ */
+/** Utility Functions **/
 
 ListBase *object_editcurve_get(Object *ob)
 {
@@ -73,11 +72,8 @@ ListBase *object_editcurve_get(Object *ob)
   return NULL;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Debug Printing
- * \{ */
+/** Debug Printing **/
 
 #if 0
 void printknots(Object *obedit)
@@ -105,11 +101,8 @@ void printknots(Object *obedit)
 }
 #endif
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Shape keys
- * \{ */
+/** Shape keys **/
 
 static CVKeyIndex *init_cvKeyIndex(
     void *cv, int key_index, int nu_index, int pt_index, int vertex_index)
@@ -132,7 +125,7 @@ static void init_editNurb_keyIndex(EditNurb *editnurb, ListBase *origBase)
   Nurb *orignu = origBase->first;
   GHash *gh;
   BezTriple *bezt, *origbezt;
-  BPoint *bp, *origbp;
+  DPoint *bp, *origbp;
   CVKeyIndex *keyIndex;
   int a, key_index = 0, nu_index = 0, pt_index = 0, vertex_index = 0;
 
@@ -140,7 +133,7 @@ static void init_editNurb_keyIndex(EditNurb *editnurb, ListBase *origBase)
     return;
   }
 
-  gh = BLI_ghash_ptr_new("editNurb keyIndex");
+  gh = lib_ghash_ptr_new("editNurb keyIndex");
 
   while (orignu) {
     if (orignu->bezt) {
@@ -156,7 +149,7 @@ static void init_editNurb_keyIndex(EditNurb *editnurb, ListBase *origBase)
         BezTriple *origbezt_cpy = MEM_mallocN(sizeof(*origbezt), __func__);
         *origbezt_cpy = *origbezt;
         keyIndex = init_cvKeyIndex(origbezt_cpy, key_index, nu_index, pt_index, vertex_index);
-        BLI_ghash_insert(gh, bezt, keyIndex);
+        lib_ghash_insert(gh, bezt, keyIndex);
         key_index += KEYELEM_FLOAT_LEN_BEZTRIPLE;
         vertex_index += 3;
         bezt++;
@@ -166,18 +159,18 @@ static void init_editNurb_keyIndex(EditNurb *editnurb, ListBase *origBase)
     }
     else {
       a = orignu->pntsu * orignu->pntsv;
-      bp = nu->bp;
-      origbp = orignu->bp;
+      dp = nu->dp;
+      origdp = orignu->dp;
       pt_index = 0;
       while (a--) {
         /* We cannot keep *any* reference to curve obdata,
          * it might be replaced and freed while editcurve remain in use
          * (in viewport render case e.g.). Note that we could use a pool to avoid
          * lots of malloc's here, but... not really a problem for now. */
-        BPoint *origbp_cpy = MEM_mallocN(sizeof(*origbp_cpy), __func__);
+        DPoint *origbp_cpy = MEM_mallocN(sizeof(*origbp_cpy), __func__);
         *origbp_cpy = *origbp;
         keyIndex = init_cvKeyIndex(origbp_cpy, key_index, nu_index, pt_index, vertex_index);
-        BLI_ghash_insert(gh, bp, keyIndex);
+        lib_ghash_insert(gh, bp, keyIndex);
         key_index += KEYELEM_FLOAT_LEN_BPOINT;
         bp++;
         origbp++;
@@ -196,12 +189,12 @@ static void init_editNurb_keyIndex(EditNurb *editnurb, ListBase *origBase)
 
 static CVKeyIndex *getCVKeyIndex(EditNurb *editnurb, const void *cv)
 {
-  return BLI_ghash_lookup(editnurb->keyindex, cv);
+  return lib_ghash_lookup(editnurb->keyindex, cv);
 }
 
 static CVKeyIndex *popCVKeyIndex(EditNurb *editnurb, const void *cv)
 {
-  return BLI_ghash_popkey(editnurb->keyindex, cv, NULL);
+  return lib_ghash_popkey(editnurb->keyindex, cv, NULL);
 }
 
 static BezTriple *getKeyIndexOrig_bezt(EditNurb *editnurb, const BezTriple *bezt)
@@ -215,15 +208,15 @@ static BezTriple *getKeyIndexOrig_bezt(EditNurb *editnurb, const BezTriple *bezt
   return (BezTriple *)index->orig_cv;
 }
 
-static BPoint *getKeyIndexOrig_bp(EditNurb *editnurb, BPoint *bp)
+static DPoint *getKeyIndexOrig_dp(EditNurb *editnurb, DPoint *dp)
 {
-  CVKeyIndex *index = getCVKeyIndex(editnurb, bp);
+  CVKeyIndex *index = getCVKeyIndex(editnurb, dp);
 
   if (!index) {
     return NULL;
   }
 
-  return (BPoint *)index->orig_cv;
+  return (DPoint *)index->orig_cv;
 }
 
 static int getKeyIndexOrig_keyIndex(EditNurb *editnurb, void *cv)
@@ -243,16 +236,16 @@ static void keyIndex_delBezt(EditNurb *editnurb, BezTriple *bezt)
     return;
   }
 
-  BKE_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bezt);
+  dune_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bezt);
 }
 
-static void keyIndex_delBP(EditNurb *editnurb, BPoint *bp)
+static void keyIndex_delBP(EditNurb *editnurb, DPoint *bp)
 {
   if (!editnurb->keyindex) {
     return;
   }
 
-  BKE_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bp);
+  dune_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bp);
 }
 
 static void keyIndex_delNurb(EditNurb *editnurb, Nurb *nu)
@@ -268,16 +261,16 @@ static void keyIndex_delNurb(EditNurb *editnurb, Nurb *nu)
     a = nu->pntsu;
 
     while (a--) {
-      BKE_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bezt);
+      dune_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bezt);
       bezt++;
     }
   }
   else {
-    const BPoint *bp = nu->bp;
+    const DPoint *bp = nu->bp;
     a = nu->pntsu * nu->pntsv;
 
     while (a--) {
-      BKE_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bp);
+      dune_curve_editNurb_keyIndex_delCV(editnurb->keyindex, bp);
       bp++;
     }
   }
@@ -304,7 +297,7 @@ static void keyIndex_updateCV(EditNurb *editnurb, char *cv, char *newcv, int cou
     index = popCVKeyIndex(editnurb, cv);
 
     if (index) {
-      BLI_ghash_insert(editnurb->keyindex, newcv, index);
+      lib_ghash_insert(editnurb->keyindex, newcv, index);
     }
 
     newcv += size;
@@ -317,9 +310,9 @@ static void keyIndex_updateBezt(EditNurb *editnurb, BezTriple *bezt, BezTriple *
   keyIndex_updateCV(editnurb, (char *)bezt, (char *)newbezt, count, sizeof(BezTriple));
 }
 
-static void keyIndex_updateBP(EditNurb *editnurb, BPoint *bp, BPoint *newbp, int count)
+static void keyIndex_updateDP(EditNurb *editnurb, DPoint *dp, DPoint *newdp, int count)
 {
-  keyIndex_updateCV(editnurb, (char *)bp, (char *)newbp, count, sizeof(BPoint));
+  keyIndex_updateCV(editnurb, (char *)dp, (char *)newdp, count, sizeof(DPoint));
 }
 
 void ED_curve_keyindex_update_nurb(EditNurb *editnurb, Nurb *nu, Nurb *newnu)
@@ -328,7 +321,7 @@ void ED_curve_keyindex_update_nurb(EditNurb *editnurb, Nurb *nu, Nurb *newnu)
     keyIndex_updateBezt(editnurb, nu->bezt, newnu->bezt, newnu->pntsu);
   }
   else {
-    keyIndex_updateBP(editnurb, nu->bp, newnu->bp, newnu->pntsu * newnu->pntsv);
+    keyIndex_updateBP(editnurb, nu->dp, newnu->dp, newnu->pntsu * newnu->pntsv);
   }
 }
 
@@ -338,10 +331,10 @@ static void keyIndex_swap(EditNurb *editnurb, void *a, void *b)
   CVKeyIndex *index2 = popCVKeyIndex(editnurb, b);
 
   if (index2) {
-    BLI_ghash_insert(editnurb->keyindex, a, index2);
+    lib_ghash_insert(editnurb->keyindex, a, index2);
   }
   if (index1) {
-    BLI_ghash_insert(editnurb->keyindex, b, index1);
+    lib_ghash_insert(editnurb->keyindex, b, index1);
   }
 }
 
@@ -385,7 +378,7 @@ static void keyIndex_switchDirection(EditNurb *editnurb, Nurb *nu)
     }
   }
   else {
-    BPoint *bp1, *bp2;
+    DPoint *dp1, *dp2;
 
     if (nu->pntsv == 1) {
       a = nu->pntsu;
@@ -393,24 +386,24 @@ static void keyIndex_switchDirection(EditNurb *editnurb, Nurb *nu)
       bp2 = bp1 + (a - 1);
       a /= 2;
       while (bp1 != bp2 && a > 0) {
-        index1 = getCVKeyIndex(editnurb, bp1);
-        index2 = getCVKeyIndex(editnurb, bp2);
+        index1 = getCVKeyIndex(editnurb, dp1);
+        index2 = getCVKeyIndex(editnurb, dp2);
 
         if (index1) {
           index1->switched = !index1->switched;
         }
 
-        if (bp1 != bp2) {
+        if (dp1 != dp2) {
           if (index2) {
             index2->switched = !index2->switched;
           }
 
-          keyIndex_swap(editnurb, bp1, bp2);
+          keyIndex_swap(editnurb, dp1, dp2);
         }
 
         a--;
-        bp1++;
-        bp2--;
+        dp1++;
+        dp2--;
       }
     }
     else {
@@ -418,30 +411,30 @@ static void keyIndex_switchDirection(EditNurb *editnurb, Nurb *nu)
 
       for (b = 0; b < nu->pntsv; b++) {
 
-        bp1 = &nu->bp[b * nu->pntsu];
+        dp1 = &nu->dp[b * nu->pntsu];
         a = nu->pntsu;
-        bp2 = bp1 + (a - 1);
+        dp2 = dp1 + (a - 1);
         a /= 2;
 
-        while (bp1 != bp2 && a > 0) {
-          index1 = getCVKeyIndex(editnurb, bp1);
-          index2 = getCVKeyIndex(editnurb, bp2);
+        while (dp1 != dp2 && a > 0) {
+          index1 = getCVKeyIndex(editnurb, dp1);
+          index2 = getCVKeyIndex(editnurb, dp2);
 
           if (index1) {
             index1->switched = !index1->switched;
           }
 
-          if (bp1 != bp2) {
+          if (dp1 != dp2) {
             if (index2) {
               index2->switched = !index2->switched;
             }
 
-            keyIndex_swap(editnurb, bp1, bp2);
+            keyIndex_swap(editnurb, dp1, dp2);
           }
 
           a--;
-          bp1++;
-          bp2--;
+          dp1++;
+          dp2--;
         }
       }
     }
@@ -477,11 +470,11 @@ static void switch_keys_direction(Curve *cu, Nurb *actnu)
         }
       }
       else {
-        BPoint *bp = nu->bp;
+        DPoint *dp = nu->dp;
         a = nu->pntsu * nu->pntsv;
         if (nu == actnu) {
           while (a--) {
-            if (getKeyIndexOrig_bp(editnurb, bp)) {
+            if (getKeyIndexOrig_bp(editnurb, dp)) {
               *(fp + 3) = -*(fp + 3);
               fp += KEYELEM_FLOAT_LEN_BPOINT;
             }
@@ -516,17 +509,17 @@ GHash *ED_curve_keyindex_hash_duplicate(GHash *keyindex)
   GHash *gh;
   GHashIterator gh_iter;
 
-  gh = BLI_ghash_ptr_new_ex("dupli_keyIndex gh", BLI_ghash_len(keyindex));
+  gh = lib_ghash_ptr_new_ex("dupli_keyIndex gh", lib_ghash_len(keyindex));
 
   GHASH_ITER (gh_iter, keyindex) {
-    void *cv = BLI_ghashIterator_getKey(&gh_iter);
-    CVKeyIndex *index = BLI_ghashIterator_getValue(&gh_iter);
+    void *cv = lib_ghashIterator_getKey(&gh_iter);
+    CVKeyIndex *index = lib_ghashIterator_getValue(&gh_iter);
     CVKeyIndex *newIndex = MEM_mallocN(sizeof(CVKeyIndex), "dupli_keyIndexHash index");
 
     memcpy(newIndex, index, sizeof(CVKeyIndex));
     newIndex->orig_cv = MEM_dupallocN(index->orig_cv);
 
-    BLI_ghash_insert(gh, cv, newIndex);
+    lib_ghash_insert(gh, cv, newIndex);
   }
 
   return gh;
@@ -585,7 +578,7 @@ static void calc_keyHandles(ListBase *nurb, float *key)
           key_to_bezt(prevfp, prevp, &prev);
         }
 
-        BKE_nurb_handle_calc(&cur, prevp ? &prev : NULL, nextp ? &next : NULL, 0, 0);
+        dune_nurb_handle_calc(&cur, prevp ? &prev : NULL, nextp ? &next : NULL, 0, 0);
         bezt_to_key(&cur, fp);
 
         prevp = bezt;
@@ -625,18 +618,18 @@ static void calc_shapeKeys(Object *obedit, ListBase *newnurbs)
 
   int a, i;
   EditNurb *editnurb = cu->editnurb;
-  KeyBlock *actkey = BLI_findlink(&cu->key->block, editnurb->shapenr - 1);
+  KeyBlock *actkey = lib_findlink(&cu->key->block, editnurb->shapenr - 1);
   BezTriple *bezt, *oldbezt;
-  BPoint *bp, *oldbp;
+  DPoint *dp, *olddp;
   Nurb *newnu;
-  int totvert = BKE_keyblock_curve_element_count(&editnurb->nurbs);
+  int totvert = dune_keyblock_curve_element_count(&editnurb->nurbs);
 
   float(*ofs)[3] = NULL;
   float *oldkey, *newkey, *ofp;
 
   /* editing the base key should update others */
   if (cu->key->type == KEY_RELATIVE) {
-    if (BKE_keyblock_is_basis(cu->key, editnurb->shapenr - 1)) { /* active key is a base */
+    if (dune_keyblock_is_basis(cu->key, editnurb->shapenr - 1)) { /* active key is a base */
       int totvec = 0;
 
       /* Calculate needed memory to store offset */
@@ -677,17 +670,17 @@ static void calc_shapeKeys(Object *obedit, ListBase *newnurbs)
           }
         }
         else {
-          bp = nu->bp;
+          dp = nu->dp;
           a = nu->pntsu * nu->pntsv;
           while (a--) {
-            oldbp = getKeyIndexOrig_bp(editnurb, bp);
+            oldbp = getKeyIndexOrig_dp(editnurb, dp);
             if (oldbp) {
-              sub_v3_v3v3(ofs[i], bp->vec, oldbp->vec);
-              ofs[i + 1][0] = bp->tilt - oldbp->tilt;
-              ofs[i + 1][1] = bp->radius - oldbp->radius;
+              sub_v3_v3v3(ofs[i], dp->vec, olddp->vec);
+              ofs[i + 1][0] = dp->tilt - olddp->tilt;
+              ofs[i + 1][1] = dp->radius - olddp->radius;
             }
             i += 2;
-            bp++;
+            dp++;
           }
         }
       }
@@ -741,26 +734,26 @@ static void calc_shapeKeys(Object *obedit, ListBase *newnurbs)
           }
         }
         else {
-          bp = nu->bp;
+          dp = nu->dp;
           a = nu->pntsu * nu->pntsv;
-          BPoint *newbp = newnu->bp;
+          DPoint *newdp = newnu->dp;
           while (a--) {
-            oldbp = getKeyIndexOrig_bp(editnurb, bp);
+            oldbp = getKeyIndexOrig_bp(editnurb, dp);
 
-            copy_v3_v3(fp, bp->vec);
+            copy_v3_v3(fp, dp->vec);
 
-            fp[3] = bp->tilt;
-            fp[4] = bp->radius;
+            fp[3] = dp->tilt;
+            fp[4] = dp->radius;
 
-            if (restore && oldbp) {
-              copy_v3_v3(newbp->vec, oldbp->vec);
-              newbp->tilt = oldbp->tilt;
-              newbp->radius = oldbp->radius;
+            if (restore && olddp) {
+              copy_v3_v3(newdp->vec, olddp->vec);
+              newbp->tilt = olddp->tilt;
+              newbp->radius = olddp->radius;
             }
 
             fp += KEYELEM_FLOAT_LEN_BPOINT;
-            bp++;
-            newbp++;
+            dp++;
+            newdp++;
             i += 2;
           }
         }
@@ -812,7 +805,7 @@ static void calc_shapeKeys(Object *obedit, ListBase *newnurbs)
             }
           }
           else {
-            bp = nu->bp;
+            dp = nu->dp;
             a = nu->pntsu * nu->pntsv;
             while (a--) {
               index = getKeyIndexOrig_keyIndex(editnurb, bp);
@@ -835,7 +828,7 @@ static void calc_shapeKeys(Object *obedit, ListBase *newnurbs)
               }
 
               fp += KEYELEM_FLOAT_LEN_BPOINT;
-              bp++;
+              dp++;
               i += 2;
             }
           }
@@ -863,52 +856,49 @@ static void calc_shapeKeys(Object *obedit, ListBase *newnurbs)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Animation Data
- * \{ */
+/** Animation Data **/
 
 static bool curve_is_animated(Curve *cu)
 {
-  AnimData *ad = BKE_animdata_from_id(&cu->id);
+  AnimData *ad = dune_animdata_from_id(&cu->id);
 
   return ad && (ad->action || ad->drivers.first);
 }
 
 static void fcurve_path_rename(AnimData *adt,
-                               const char *orig_rna_path,
-                               const char *rna_path,
+                               const char *orig_api_path,
+                               const char *api_path,
                                ListBase *orig_curves,
                                ListBase *curves)
 {
   FCurve *nfcu;
-  int len = strlen(orig_rna_path);
+  int len = strlen(orig_api_path);
 
   LISTBASE_FOREACH_MUTABLE (FCurve *, fcu, orig_curves) {
-    if (STREQLEN(fcu->rna_path, orig_rna_path, len)) {
-      char *spath, *suffix = fcu->rna_path + len;
-      nfcu = BKE_fcurve_copy(fcu);
+    if (STREQLEN(fcu->api_path, orig_api_path, len)) {
+      char *spath, *suffix = fcu->api_path + len;
+      nfcu = dune_fcurve_copy(fcu);
       spath = nfcu->rna_path;
-      nfcu->rna_path = BLI_sprintfN("%s%s", rna_path, suffix);
+      nfcu->rna_path = lib_sprintfN("%s%s", rna_path, suffix);
 
-      /* BKE_fcurve_copy() sets nfcu->grp to NULL. To maintain the groups, we need to keep the
+      /* dune_fcurve_copy() sets nfcu->grp to NULL. To maintain the groups, we need to keep the
        * pointer. As a result, the group's 'channels' pointers will be wrong, which is fixed by
        * calling `action_groups_reconstruct(action)` later, after all fcurves have been renamed. */
       nfcu->grp = fcu->grp;
-      BLI_addtail(curves, nfcu);
+      lib_addtail(curves, nfcu);
 
       if (fcu->grp) {
         action_groups_remove_channel(adt->action, fcu);
       }
       else if ((adt->action) && (&adt->action->curves == orig_curves)) {
-        BLI_remlink(&adt->action->curves, fcu);
+        lib_remlink(&adt->action->curves, fcu);
       }
       else {
-        BLI_remlink(&adt->drivers, fcu);
+        lib_remlink(&adt->drivers, fcu);
       }
 
-      BKE_fcurve_free(fcu);
+      dune_fcurve_free(fcu);
 
       MEM_freeN(spath);
     }
@@ -918,13 +908,13 @@ static void fcurve_path_rename(AnimData *adt,
 static void fcurve_remove(AnimData *adt, ListBase *orig_curves, FCurve *fcu)
 {
   if (orig_curves == &adt->drivers) {
-    BLI_remlink(&adt->drivers, fcu);
+    lib_remlink(&adt->drivers, fcu);
   }
   else {
     action_groups_remove_channel(adt->action, fcu);
   }
 
-  BKE_fcurve_free(fcu);
+  dune_fcurve_free(fcu);
 }
 
 static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
@@ -932,8 +922,8 @@ static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
   int a, pt_index;
   EditNurb *editnurb = cu->editnurb;
   CVKeyIndex *keyIndex;
-  char rna_path[64], orig_rna_path[64];
-  AnimData *adt = BKE_animdata_from_id(&cu->id);
+  char rna_path[64], orig_api_path[64];
+  AnimData *adt = dune_animdata_from_id(&cu->id);
   ListBase curves = {NULL, NULL};
 
   int nu_index = 0;
@@ -946,23 +936,23 @@ static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
       while (a--) {
         keyIndex = getCVKeyIndex(editnurb, bezt);
         if (keyIndex) {
-          BLI_snprintf(
-              rna_path, sizeof(rna_path), "splines[%d].bezier_points[%d]", nu_index, pt_index);
-          BLI_snprintf(orig_rna_path,
-                       sizeof(orig_rna_path),
+          lib_snprintf(
+              api_path, sizeof(api_path), "splines[%d].bezier_points[%d]", nu_index, pt_index);
+          lib_snprintf(orig_api_path,
+                       sizeof(orig_api_path),
                        "splines[%d].bezier_points[%d]",
                        keyIndex->nu_index,
                        keyIndex->pt_index);
 
           if (keyIndex->switched) {
             char handle_path[64], orig_handle_path[64];
-            BLI_snprintf(orig_handle_path, sizeof(orig_rna_path), "%s.handle_left", orig_rna_path);
-            BLI_snprintf(handle_path, sizeof(rna_path), "%s.handle_right", rna_path);
+            lib_snprintf(orig_handle_path, sizeof(orig_api_path), "%s.handle_left", orig_rna_path);
+            lib_snprintf(handle_path, sizeof(api_path), "%s.handle_right", rna_path);
             fcurve_path_rename(adt, orig_handle_path, handle_path, orig_curves, &curves);
 
-            BLI_snprintf(
-                orig_handle_path, sizeof(orig_rna_path), "%s.handle_right", orig_rna_path);
-            BLI_snprintf(handle_path, sizeof(rna_path), "%s.handle_left", rna_path);
+            lib_snprintf(
+                orig_handle_path, sizeof(orig_api_path), "%s.handle_right", orig_api_path);
+            lib_snprintf(handle_path, sizeof(api_path), "%s.handle_left", api_path);
             fcurve_path_rename(adt, orig_handle_path, handle_path, orig_curves, &curves);
           }
 
@@ -977,20 +967,20 @@ static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
       }
     }
     else {
-      BPoint *bp = nu->bp;
+      DPoint *dp = nu->dp;
       a = nu->pntsu * nu->pntsv;
       pt_index = 0;
 
       while (a--) {
         keyIndex = getCVKeyIndex(editnurb, bp);
         if (keyIndex) {
-          BLI_snprintf(rna_path, sizeof(rna_path), "splines[%d].points[%d]", nu_index, pt_index);
-          BLI_snprintf(orig_rna_path,
-                       sizeof(orig_rna_path),
+          lib_snprintf(api_path, sizeof(api_path), "splines[%d].points[%d]", nu_index, pt_index);
+          lib_snprintf(orig_api_path,
+                       sizeof(orig_api_path),
                        "splines[%d].points[%d]",
                        keyIndex->nu_index,
                        keyIndex->pt_index);
-          fcurve_path_rename(adt, orig_rna_path, rna_path, orig_curves, &curves);
+          fcurve_path_rename(adt, orig_api_path, api_path, orig_curves, &curves);
 
           keyIndex->nu_index = nu_index;
           keyIndex->pt_index = pt_index;
@@ -1006,8 +996,8 @@ static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
    * need this to make further step with copying non-cv related curves copying
    * not touching cv's f-curves */
   LISTBASE_FOREACH_MUTABLE (FCurve *, fcu, orig_curves) {
-    if (STRPREFIX(fcu->rna_path, "splines")) {
-      const char *ch = strchr(fcu->rna_path, '.');
+    if (STRPREFIX(fcu->api_path, "splines")) {
+      const char *ch = strchr(fcu->api_path, '.');
 
       if (ch && (STRPREFIX(ch, ".bezier_points") || STRPREFIX(ch, ".points"))) {
         fcurve_remove(adt, orig_curves, fcu);
@@ -1028,32 +1018,32 @@ static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
     }
 
     if (keyIndex) {
-      BLI_snprintf(rna_path, sizeof(rna_path), "splines[%d]", nu_index);
-      BLI_snprintf(orig_rna_path, sizeof(orig_rna_path), "splines[%d]", keyIndex->nu_index);
-      fcurve_path_rename(adt, orig_rna_path, rna_path, orig_curves, &curves);
+      lib_snprintf(api_path, sizeof(api_path), "splines[%d]", nu_index);
+      lib_snprintf(orig_api_path, sizeof(orig_rna_path), "splines[%d]", keyIndex->nu_index);
+      fcurve_path_rename(adt, orig_api_path, api_path, orig_curves, &curves);
     }
   }
 
   /* the remainders in orig_curves can be copied back (like follow path) */
   /* (if it's not path to spline) */
   LISTBASE_FOREACH_MUTABLE (FCurve *, fcu, orig_curves) {
-    if (STRPREFIX(fcu->rna_path, "splines")) {
+    if (STRPREFIX(fcu->api_path, "splines")) {
       fcurve_remove(adt, orig_curves, fcu);
     }
     else {
-      BLI_addtail(&curves, fcu);
+      lib_addtail(&curves, fcu);
     }
   }
 
   *orig_curves = curves;
   if (adt != NULL) {
-    BKE_action_groups_reconstruct(adt->action);
+    dune_action_groups_reconstruct(adt->action);
   }
 }
 
-int ED_curve_updateAnimPaths(Main *bmain, Curve *cu)
+int ED_curve_updateAnimPaths(Main *duneMain, Curve *cu)
 {
-  AnimData *adt = BKE_animdata_from_id(&cu->id);
+  AnimData *adt = dune_animdata_from_id(&cu->id);
   EditNurb *editnurb = cu->editnurb;
 
   if (!editnurb->keyindex) {
@@ -1078,11 +1068,8 @@ int ED_curve_updateAnimPaths(Main *bmain, Curve *cu)
   return 1;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Edit Mode Conversion (Make & Load)
- * \{ */
+/** Edit Mode Conversion (Make & Load) **/
 
 static int *init_index_map(Object *obedit, int *r_old_totvert)
 {
@@ -1131,7 +1118,7 @@ static int *init_index_map(Object *obedit, int *r_old_totvert)
       }
     }
     else {
-      BPoint *bp = nu->bp;
+      DPoint *dp = nu->dp;
       int a = nu->pntsu * nu->pntsv;
 
       while (a--) {
@@ -1149,7 +1136,7 @@ static int *init_index_map(Object *obedit, int *r_old_totvert)
   return old_to_new_map;
 }
 
-static void remap_hooks_and_vertex_parents(Main *bmain, Object *obedit)
+static void remap_hooks_and_vertex_parents(Main *duneMain, Object *obedit)
 {
   Curve *curve = (Curve *)obedit->data;
   EditNurb *editnurb = curve->editnurb;
@@ -1157,14 +1144,14 @@ static void remap_hooks_and_vertex_parents(Main *bmain, Object *obedit)
   int old_totvert;
 
   if (editnurb->keyindex == NULL) {
-    /* TODO(sergey): Happens when separating curves, this would lead to
+    /* TODO: Happens when separating curves, this would lead to
      * the wrong indices in the hook modifier, address this together with
      * other indices issues.
      */
     return;
   }
 
-  LISTBASE_FOREACH (Object *, object, &bmain->objects) {
+  LISTBASE_FOREACH (Object *, object, &dmain->objects) {
     int index;
     if ((object->parent) && (object->parent->data == curve) &&
         ELEM(object->partype, PARVERT1, PARVERT3)) {
@@ -1223,7 +1210,7 @@ static void remap_hooks_and_vertex_parents(Main *bmain, Object *obedit)
   }
 }
 
-void ED_curve_editnurb_load(Main *bmain, Object *obedit)
+void ED_curve_editnurb_load(Main *dmain, Object *obedit)
 {
   ListBase *editnurb = object_editcurve_get(obedit);
 
@@ -1235,14 +1222,14 @@ void ED_curve_editnurb_load(Main *bmain, Object *obedit)
     Curve *cu = obedit->data;
     ListBase newnurb = {NULL, NULL}, oldnurb = cu->nurb;
 
-    remap_hooks_and_vertex_parents(bmain, obedit);
+    remap_hooks_and_vertex_parents(dmain, obedit);
 
     LISTBASE_FOREACH (Nurb *, nu, editnurb) {
-      Nurb *newnu = BKE_nurb_duplicate(nu);
-      BLI_addtail(&newnurb, newnu);
+      Nurb *newnu = dune_nurb_duplicate(nu);
+      lib_addtail(&newnurb, newnu);
 
       if (nu->type == CU_NURBS) {
-        BKE_nurb_order_clamp_u(nu);
+        dune_nurb_order_clamp_u(nu);
       }
     }
 
@@ -1254,9 +1241,9 @@ void ED_curve_editnurb_load(Main *bmain, Object *obedit)
 
     cu->nurb = newnurb;
 
-    ED_curve_updateAnimPaths(bmain, obedit->data);
+    ED_curve_updateAnimPaths(dmain, obedit->data);
 
-    BKE_nurbList_free(&oldnurb);
+    dune_nurbList_free(&oldnurb);
   }
 }
 
@@ -1267,19 +1254,19 @@ void ED_curve_editnurb_make(Object *obedit)
   KeyBlock *actkey;
 
   if (ELEM(obedit->type, OB_CURVES_LEGACY, OB_SURF)) {
-    actkey = BKE_keyblock_from_object(obedit);
+    actkey = dune_keyblock_from_object(obedit);
 
     if (actkey) {
       // XXX strcpy(G.editModeTitleExtra, "(Key) ");
-      /* TODO(campbell): undo_system: investigate why this was needed. */
+      /* TODO: undo_system: investigate why this was needed. */
 #if 0
       undo_editmode_clear();
 #endif
     }
 
     if (editnurb) {
-      BKE_nurbList_free(&editnurb->nurbs);
-      BKE_curve_editNurb_keyIndex_free(&editnurb->keyindex);
+      dune_nurbList_free(&editnurb->nurbs);
+      dune_curve_editNurb_keyIndex_free(&editnurb->keyindex);
     }
     else {
       editnurb = MEM_callocN(sizeof(EditNurb), "editnurb");
@@ -1287,8 +1274,8 @@ void ED_curve_editnurb_make(Object *obedit)
     }
 
     LISTBASE_FOREACH (Nurb *, nu, &cu->nurb) {
-      Nurb *newnu = BKE_nurb_duplicate(nu);
-      BLI_addtail(&editnurb->nurbs, newnu);
+      Nurb *newnu = dune_nurb_duplicate(nu);
+      lib_addtail(&editnurb->nurbs, newnu);
     }
 
     /* animation could be added in editmode even if there was no animdata in
@@ -1300,7 +1287,7 @@ void ED_curve_editnurb_make(Object *obedit)
       /* Apply shapekey to new nurbs of editnurb, not those of original curve
        * (and *after* we generated keyIndex), else we do not have valid 'original' data
        * to properly restore curve when leaving editmode. */
-      BKE_keyblock_convert_to_curve(actkey, cu, &editnurb->nurbs);
+      dune_keyblock_convert_to_curve(actkey, cu, &editnurb->nurbs);
     }
   }
 }
@@ -1309,21 +1296,18 @@ void ED_curve_editnurb_free(Object *obedit)
 {
   Curve *cu = obedit->data;
 
-  BKE_curve_editNurb_free(cu);
+  dune_curve_editNurb_free(cu);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Separate Operator
- * \{ */
+/** Separate Operator **/
 
-static int separate_exec(bContext *C, wmOperator *op)
+static int separate_exec(dContext *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Main *dmain = ctx_data_main(C);
+  Scene *scene = ctx_data_scene(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  View3D *v3d = ctx_wm_view3d(C);
 
   struct {
     int changed;
@@ -1335,8 +1319,8 @@ static int separate_exec(bContext *C, wmOperator *op)
   WM_cursor_wait(true);
 
   uint bases_len = 0;
-  Base **bases = BKE_view_layer_array_from_bases_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &bases_len);
+  Base **bases = dune_view_layer_array_from_bases_in_edit_mode_unique_data(
+      view_layer, ctx_wm_view3d(C), &bases_len);
   for (uint b_index = 0; b_index < bases_len; b_index++) {
     Base *oldbase = bases[b_index];
     Base *newbase;
@@ -1361,7 +1345,7 @@ static int separate_exec(bContext *C, wmOperator *op)
     /* 1. Duplicate geometry and check for valid selection for separate. */
     adduplicateflagNurb(oldob, v3d, &newnurb, SELECT, true);
 
-    if (BLI_listbase_is_empty(&newnurb)) {
+    if (lib_listbase_is_empty(&newnurb)) {
       status.error_generic++;
       continue;
     }
@@ -1371,23 +1355,23 @@ static int separate_exec(bContext *C, wmOperator *op)
     /* Take into account user preferences for duplicating actions. */
     const eDupli_ID_Flags dupflag = (U.dupflag & USER_DUP_ACT);
 
-    newbase = ED_object_add_duplicate(bmain, scene, view_layer, oldbase, dupflag);
-    DEG_relations_tag_update(bmain);
+    newbase = ED_object_add_duplicate(dmain, scene, view_layer, oldbase, dupflag);
+    DEG_relations_tag_update(dmain);
 
     newob = newbase->object;
-    newcu = newob->data = BKE_id_copy(bmain, &oldcu->id);
+    newcu = newob->data = dune_id_copy(dmain, &oldcu->id);
     newcu->editnurb = NULL;
     id_us_min(&oldcu->id); /* Because new curve is a copy: reduce user count. */
 
     /* 3. Put new object in editmode, clear it and set separated nurbs. */
     ED_curve_editnurb_make(newob);
     newedit = newcu->editnurb;
-    BKE_nurbList_free(&newedit->nurbs);
-    BKE_curve_editNurb_keyIndex_free(&newedit->keyindex);
-    BLI_movelisttolist(&newedit->nurbs, &newnurb);
+    dune_nurbList_free(&newedit->nurbs);
+    dune_curve_editNurb_keyIndex_free(&newedit->keyindex);
+    lib_movelisttolist(&newedit->nurbs, &newnurb);
 
     /* 4. Put old object out of editmode and delete separated geometry. */
-    ED_curve_editnurb_load(bmain, newob);
+    ED_curve_editnurb_load(dmain, newob);
     ED_curve_editnurb_free(newob);
     curve_delete_segments(oldob, v3d, true);
 
@@ -1402,7 +1386,7 @@ static int separate_exec(bContext *C, wmOperator *op)
   WM_cursor_wait(false);
 
   if (status.unselected == bases_len) {
-    BKE_report(op->reports, RPT_ERROR, "No point was selected");
+    dune_report(op->reports, RPT_ERROR, "No point was selected");
     return OPERATOR_CANCELLED;
   }
 
@@ -1411,22 +1395,22 @@ static int separate_exec(bContext *C, wmOperator *op)
 
     /* Some curves changed, but some curves failed: don't explain why it failed. */
     if (status.changed) {
-      BKE_reportf(op->reports, RPT_INFO, "%d curve(s) could not be separated", tot_errors);
+      dune_reportf(op->reports, RPT_INFO, "%d curve(s) could not be separated", tot_errors);
       return OPERATOR_FINISHED;
     }
 
     /* All curves failed: If there is more than one error give a generic error report. */
     if (((status.error_vertex_keys ? 1 : 0) + (status.error_generic ? 1 : 0)) > 1) {
-      BKE_report(op->reports, RPT_ERROR, "Could not separate selected curve(s)");
+      dune_report(op->reports, RPT_ERROR, "Could not separate selected curve(s)");
     }
 
     /* All curves failed due to the same error. */
     if (status.error_vertex_keys) {
-      BKE_report(op->reports, RPT_ERROR, "Cannot separate curves with vertex keys");
+      dune_report(op->reports, RPT_ERROR, "Cannot separate curves with vertex keys");
     }
     else {
-      BLI_assert(status.error_generic);
-      BKE_report(op->reports, RPT_ERROR, "Cannot separate current selection");
+      lib_assert(status.error_generic);
+      dune_report(op->reports, RPT_ERROR, "Cannot separate current selection");
     }
     return OPERATOR_CANCELLED;
   }
@@ -1452,22 +1436,19 @@ void CURVE_OT_separate(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Split Operator
- * \{ */
+/** Split Operator **/
 
-static int curve_split_exec(bContext *C, wmOperator *op)
+static int curve_split_exec(dContext *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  View3D *v3d = CTX_wm_view3d(C);
+  Main *dmain = ctx_data_main(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  View3D *v3d = ctx_wm_view3d(C);
   int ok = -1;
 
   uint objects_len;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &objects_len);
+  Object **objects = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, ctx_wm_view3d(C), &objects_len);
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
     Curve *cu = obedit->data;
@@ -1480,19 +1461,19 @@ static int curve_split_exec(bContext *C, wmOperator *op)
 
     adduplicateflagNurb(obedit, v3d, &newnurb, SELECT, true);
 
-    if (BLI_listbase_is_empty(&newnurb)) {
+    if (lib_listbase_is_empty(&newnurb)) {
       ok = MAX2(ok, 0);
       continue;
     }
 
     ListBase *editnurb = object_editcurve_get(obedit);
-    const int len_orig = BLI_listbase_count(editnurb);
+    const int len_orig = lib_listbase_count(editnurb);
 
     curve_delete_segments(obedit, v3d, true);
-    cu->actnu -= len_orig - BLI_listbase_count(editnurb);
-    BLI_movelisttolist(editnurb, &newnurb);
+    cu->actnu -= len_orig - lib_listbase_count(editnurb);
+    lib_movelisttolist(editnurb, &newnurb);
 
-    if (ED_curve_updateAnimPaths(bmain, obedit->data)) {
+    if (ED_curve_updateAnimPaths(dmain, obedit->data)) {
       WM_event_add_notifier(C, NC_OBJECT | ND_KEYS, obedit);
     }
 
@@ -1503,7 +1484,7 @@ static int curve_split_exec(bContext *C, wmOperator *op)
   MEM_freeN(objects);
 
   if (ok == 0) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot split current selection");
+    dune_report(op->reports, RPT_ERROR, "Cannot split current selection");
     return OPERATOR_CANCELLED;
   }
   return OPERATOR_FINISHED;
@@ -1524,27 +1505,24 @@ void CURVE_OT_split(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Flag Utility Functions
- * \{ */
+/** Flag Utility Functions **/
 
 static bool isNurbselUV(const Nurb *nu, uint8_t flag, int *r_u, int *r_v)
 {
   /* return (u != -1): 1 row in u-direction selected. U has value between 0-pntsv
    * return (v != -1): 1 column in v-direction selected. V has value between 0-pntsu
    */
-  BPoint *bp;
+  DPoint *dp;
   int a, b, sel;
 
   *r_u = *r_v = -1;
 
-  bp = nu->bp;
+  dp = nu->dp;
   for (b = 0; b < nu->pntsv; b++) {
     sel = 0;
     for (a = 0; a < nu->pntsu; a++, bp++) {
-      if (bp->f1 & flag) {
+      if (dp->f1 & flag) {
         sel++;
       }
     }
@@ -1563,9 +1541,9 @@ static bool isNurbselUV(const Nurb *nu, uint8_t flag, int *r_u, int *r_v)
 
   for (a = 0; a < nu->pntsu; a++) {
     sel = 0;
-    bp = &nu->bp[a];
+    dp = &nu->bp[a];
     for (b = 0; b < nu->pntsv; b++, bp += nu->pntsu) {
-      if (bp->f1 & flag) {
+      if (dp->f1 & flag) {
         sel++;
       }
     }
@@ -1594,7 +1572,7 @@ static bool isNurbselUV(const Nurb *nu, uint8_t flag, int *r_u, int *r_v)
 /* return true if U direction is selected and number of selected columns v */
 static bool isNurbselU(Nurb *nu, int *v, int flag)
 {
-  BPoint *bp;
+  DPoint *dp;
   int a, b, sel;
 
   *v = 0;
@@ -1621,16 +1599,16 @@ static bool isNurbselU(Nurb *nu, int *v, int flag)
 /* return true if V direction is selected and number of selected rows u */
 static bool isNurbselV(Nurb *nu, int *u, int flag)
 {
-  BPoint *bp;
+  DPoint *dp;
   int a, b, sel;
 
   *u = 0;
 
   for (a = 0; a < nu->pntsu; a++) {
-    bp = &nu->bp[a];
+    bp = &nu->dp[a];
     sel = 0;
     for (b = 0; b < nu->pntsv; b++, bp += nu->pntsu) {
-      if (bp->f1 & flag) {
+      if (dp->f1 & flag) {
         sel++;
       }
     }
@@ -1652,12 +1630,12 @@ static void rotateflagNurb(ListBase *editnurb,
                            const float rotmat[3][3])
 {
   /* all verts with (flag & 'flag') rotate */
-  BPoint *bp;
+  DPoint *dp;
   int a;
 
   LISTBASE_FOREACH (Nurb *, nu, editnurb) {
     if (nu->type == CU_NURBS) {
-      bp = nu->bp;
+      dp = nu->dp;
       a = nu->pntsu * nu->pntsv;
 
       while (a--) {
@@ -1666,7 +1644,7 @@ static void rotateflagNurb(ListBase *editnurb,
           mul_m3_v3(rotmat, bp->vec);
           add_v3_v3(bp->vec, cent);
         }
-        bp++;
+        dp++;
       }
     }
   }
@@ -1676,7 +1654,7 @@ void ed_editnurb_translate_flag(ListBase *editnurb, uint8_t flag, const float ve
 {
   /* all verts with ('flag' & flag) translate */
   BezTriple *bezt;
-  BPoint *bp;
+  DPoint *dp;
   int a;
 
   LISTBASE_FOREACH (Nurb *, nu, editnurb) {
@@ -1698,35 +1676,35 @@ void ed_editnurb_translate_flag(ListBase *editnurb, uint8_t flag, const float ve
     }
     else {
       a = nu->pntsu * nu->pntsv;
-      bp = nu->bp;
+      dp = nu->dp;
       while (a--) {
-        if (bp->f1 & flag) {
-          add_v3_v3(bp->vec, vec);
+        if (dp->f1 & flag) {
+          add_v3_v3(dp->vec, vec);
         }
-        bp++;
+        dp++;
       }
     }
 
     if (is_2d) {
-      BKE_nurb_project_2d(nu);
+      dune_nurb_project_2d(nu);
     }
   }
 }
 static void weightflagNurb(ListBase *editnurb, short flag, float w)
 {
-  BPoint *bp;
+  DPoint *dp;
   int a;
 
   LISTBASE_FOREACH (Nurb *, nu, editnurb) {
     if (nu->type == CU_NURBS) {
       a = nu->pntsu * nu->pntsv;
-      bp = nu->bp;
+      dp = nu->dp;
       while (a--) {
-        if (bp->f1 & flag) {
+        if (dp->f1 & flag) {
           /* a mode used to exist for replace/multiple but is was unused */
-          bp->vec[3] *= w;
+          dp->vec[3] *= w;
         }
-        bp++;
+        dp++;
       }
     }
   }
@@ -1736,29 +1714,29 @@ static void ed_surf_delete_selected(Object *obedit)
 {
   Curve *cu = obedit->data;
   ListBase *editnurb = object_editcurve_get(obedit);
-  BPoint *bp, *bpn, *newbp;
+  DPoint *dp, *dpn, *newdp;
   int a, b, newu, newv;
 
-  BLI_assert(obedit->type == OB_SURF);
+  lib_assert(obedit->type == OB_SURF);
 
   LISTBASE_FOREACH_MUTABLE (Nurb *, nu, editnurb) {
     /* is entire nurb selected */
-    bp = nu->bp;
+    dp = nu->dp;
     a = nu->pntsu * nu->pntsv;
     while (a) {
       a--;
-      if (bp->f1 & SELECT) {
+      if (dp->f1 & SELECT) {
         /* pass */
       }
       else {
         break;
       }
-      bp++;
+      dp++;
     }
     if (a == 0) {
-      BLI_remlink(editnurb, nu);
+      lib_remlink(editnurb, nu);
       keyIndex_delNurb(cu->editnurb, nu);
-      BKE_nurb_free(nu);
+      dune_nurb_free(nu);
       nu = NULL;
     }
     else {
@@ -1767,25 +1745,25 @@ static void ed_surf_delete_selected(Object *obedit)
         newv = nu->pntsv - newv;
         if (newv != nu->pntsv) {
           /* delete */
-          bp = nu->bp;
-          bpn = newbp = (BPoint *)MEM_mallocN(newv * nu->pntsu * sizeof(BPoint), "deleteNurb");
+          dp = nu->dp;
+          dpn = newdp = (DPoint *)MEM_mallocN(newv * nu->pntsu * sizeof(DPoint), "deleteNurb");
           for (b = 0; b < nu->pntsv; b++) {
-            if ((bp->f1 & SELECT) == 0) {
-              memcpy(bpn, bp, nu->pntsu * sizeof(BPoint));
-              keyIndex_updateBP(cu->editnurb, bp, bpn, nu->pntsu);
-              bpn += nu->pntsu;
+            if ((dp->f1 & SELECT) == 0) {
+              memcpy(dpn, dp, nu->pntsu * sizeof(DPoint));
+              keyIndex_updateDP(cu->editnurb, dp, dpn, nu->pntsu);
+              dpn += nu->pntsu;
             }
             else {
-              keyIndex_delBP(cu->editnurb, bp);
+              keyIndex_delDP(cu->editnurb, bp);
             }
-            bp += nu->pntsu;
+            dp += nu->pntsu;
           }
           nu->pntsv = newv;
-          MEM_freeN(nu->bp);
+          MEM_freeN(nu->dp);
           nu->bp = newbp;
-          BKE_nurb_order_clamp_v(nu);
+          dune_nurb_order_clamp_v(nu);
 
-          BKE_nurb_knot_calc_v(nu);
+          dune_nurb_knot_calc_v(nu);
         }
       }
       else if (isNurbselV(nu, &newu, SELECT)) {
@@ -1793,13 +1771,13 @@ static void ed_surf_delete_selected(Object *obedit)
         newu = nu->pntsu - newu;
         if (newu != nu->pntsu) {
           /* delete */
-          bp = nu->bp;
-          bpn = newbp = (BPoint *)MEM_mallocN(newu * nu->pntsv * sizeof(BPoint), "deleteNurb");
+          dp = nu->dp;
+          dpn = newdp = (DPoint *)MEM_mallocN(newu * nu->pntsv * sizeof(BPoint), "deleteNurb");
           for (b = 0; b < nu->pntsv; b++) {
             for (a = 0; a < nu->pntsu; a++, bp++) {
               if ((bp->f1 & SELECT) == 0) {
-                *bpn = *bp;
-                keyIndex_updateBP(cu->editnurb, bp, bpn, 1);
+                *dpn = *dp;
+                keyIndex_updateBP(cu->editnurb, dp, dpn, 1);
                 bpn++;
               }
               else {
@@ -1807,20 +1785,20 @@ static void ed_surf_delete_selected(Object *obedit)
               }
             }
           }
-          MEM_freeN(nu->bp);
-          nu->bp = newbp;
+          MEM_freeN(nu->dp);
+          nu->dp = newdp;
           if (newu == 1 && nu->pntsv > 1) { /* make a U spline */
             nu->pntsu = nu->pntsv;
             nu->pntsv = 1;
             SWAP(short, nu->orderu, nu->orderv);
-            BKE_nurb_order_clamp_u(nu);
+            dune_nurb_order_clamp_u(nu);
             MEM_SAFE_FREE(nu->knotsv);
           }
           else {
             nu->pntsu = newu;
-            BKE_nurb_order_clamp_u(nu);
+            dune_nurb_order_clamp_u(nu);
           }
-          BKE_nurb_knot_calc_u(nu);
+          dune_nurb_knot_calc_u(nu);
         }
       }
     }
@@ -1833,7 +1811,7 @@ static void ed_curve_delete_selected(Object *obedit, View3D *v3d)
   EditNurb *editnurb = cu->editnurb;
   ListBase *nubase = &editnurb->nurbs;
   BezTriple *bezt, *bezt1;
-  BPoint *bp, *bp1;
+  DPoint *bp, *bp1;
   int a, type, nuindex = 0;
 
   /* first loop, can we remove entire pieces? */
@@ -1857,35 +1835,35 @@ static void ed_curve_delete_selected(Object *obedit, View3D *v3d)
             cu->actnu = CU_ACT_NONE;
           }
 
-          BLI_remlink(nubase, nu);
+          lib_remlink(nubase, nu);
           keyIndex_delNurb(editnurb, nu);
-          BKE_nurb_free(nu);
+          lib_nurb_free(nu);
           nu = NULL;
         }
       }
     }
     else {
-      bp = nu->bp;
+      bp = nu->dp;
       a = nu->pntsu * nu->pntsv;
       if (a) {
         while (a) {
-          if (bp->f1 & SELECT) {
+          if (dp->f1 & SELECT) {
             /* pass */
           }
           else {
             break;
           }
           a--;
-          bp++;
+          dp++;
         }
         if (a == 0) {
           if (cu->actnu == nuindex) {
             cu->actnu = CU_ACT_NONE;
           }
 
-          BLI_remlink(nubase, nu);
+          lib_remlink(nubase, nu);
           keyIndex_delNurb(editnurb, nu);
-          BKE_nurb_free(nu);
+          dune_nurb_free(nu);
           nu = NULL;
         }
       }
@@ -1924,29 +1902,29 @@ static void ed_curve_delete_selected(Object *obedit, View3D *v3d)
         keyIndex_updateBezt(editnurb, nu->bezt, bezt1, nu->pntsu);
         MEM_freeN(nu->bezt);
         nu->bezt = bezt1;
-        BKE_nurb_handles_calc(nu);
+        dune_nurb_handles_calc(nu);
       }
     }
     else if (nu->pntsv == 1) {
-      bp = nu->bp;
+      dp = nu->dp;
 
       for (a = 0; a < nu->pntsu; a++) {
-        if (bp->f1 & SELECT) {
-          memmove(bp, bp + 1, (nu->pntsu - a - 1) * sizeof(BPoint));
-          keyIndex_delBP(editnurb, bp);
-          keyIndex_updateBP(editnurb, bp + 1, bp, nu->pntsu - a - 1);
+        if (dp->f1 & SELECT) {
+          memmove(dp, dp + 1, (nu->pntsu - a - 1) * sizeof(DPoint));
+          keyIndex_delBP(editnurb, dp);
+          keyIndex_updateBP(editnurb, dp + 1, dp, nu->pntsu - a - 1);
           nu->pntsu--;
           a--;
           type = 1;
         }
         else {
-          bp++;
+          dp++;
         }
       }
       if (type) {
-        bp1 = (BPoint *)MEM_mallocN(nu->pntsu * sizeof(BPoint), "delNurb2");
-        memcpy(bp1, nu->bp, (nu->pntsu) * sizeof(BPoint));
-        keyIndex_updateBP(editnurb, nu->bp, bp1, nu->pntsu);
+        dp1 = (DPoint *)MEM_mallocN(nu->pntsu * sizeof(DPoint), "delNurb2");
+        memcpy(dp1, nu->dp, (nu->pntsu) * sizeof(DPoint));
+        keyIndex_updateDP(editnurb, nu->dp, dp1, nu->pntsu);
         MEM_freeN(nu->bp);
         nu->bp = bp1;
 
@@ -1958,51 +1936,51 @@ static void ed_curve_delete_selected(Object *obedit, View3D *v3d)
         }
 #endif
       }
-      BKE_nurb_order_clamp_u(nu);
-      BKE_nurb_knot_calc_u(nu);
+      dune_nurb_order_clamp_u(nu);
+      dune_nurb_knot_calc_u(nu);
     }
   }
 }
 
 bool ed_editnurb_extrude_flag(EditNurb *editnurb, const uint8_t flag)
 {
-  BPoint *bp, *bpn, *newbp;
+  DPoint *dp, *dpn, *newdp;
   int a, u, v, len;
   bool ok = false;
 
   LISTBASE_FOREACH (Nurb *, nu, &editnurb->nurbs) {
     if (nu->pntsv == 1) {
-      bp = nu->bp;
+      bp = nu->dp;
       a = nu->pntsu;
       while (a) {
-        if (bp->f1 & flag) {
+        if (dp->f1 & flag) {
           /* pass */
         }
         else {
           break;
         }
-        bp++;
+        dp++;
         a--;
       }
       if (a == 0) {
         ok = true;
-        newbp = (BPoint *)MEM_mallocN(2 * nu->pntsu * sizeof(BPoint), "extrudeNurb1");
-        ED_curve_bpcpy(editnurb, newbp, nu->bp, nu->pntsu);
-        bp = newbp + nu->pntsu;
-        ED_curve_bpcpy(editnurb, bp, nu->bp, nu->pntsu);
-        MEM_freeN(nu->bp);
-        nu->bp = newbp;
+        newdp = (DPoint *)MEM_mallocN(2 * nu->pntsu * sizeof(DPoint), "extrudeNurb1");
+        ED_curve_dpcpy(editnurb, newdp, nu->dp, nu->pntsu);
+        dp = newdp + nu->pntsu;
+        ED_curve_dpcpy(editnurb, dp, nu->dp, nu->pntsu);
+        MEM_freeN(nu->dp);
+        nu->dp = newdp;
         a = nu->pntsu;
         while (a--) {
-          select_bpoint(bp, SELECT, flag, HIDDEN);
-          select_bpoint(newbp, DESELECT, flag, HIDDEN);
-          bp++;
-          newbp++;
+          select_dpoint(dp, SELECT, flag, HIDDEN);
+          select_dpoint(newdp, DESELECT, flag, HIDDEN);
+          dp++;
+          newdp++;
         }
 
         nu->pntsv = 2;
         nu->orderv = 2;
-        BKE_nurb_knot_calc_v(nu);
+        dune_nurb_knot_calc_v(nu);
       }
     }
     else {
@@ -2011,67 +1989,67 @@ bool ed_editnurb_extrude_flag(EditNurb *editnurb, const uint8_t flag)
       if (isNurbselUV(nu, flag, &u, &v)) {
 
         /* deselect all */
-        bp = nu->bp;
+        dp = nu->dp;
         a = nu->pntsu * nu->pntsv;
         while (a--) {
-          select_bpoint(bp, DESELECT, flag, HIDDEN);
+          select_dpoint(dp, DESELECT, flag, HIDDEN);
           bp++;
         }
 
         if (ELEM(u, 0, nu->pntsv - 1)) { /* row in u-direction selected */
           ok = true;
-          newbp = (BPoint *)MEM_mallocN(nu->pntsu * (nu->pntsv + 1) * sizeof(BPoint),
+          newbp = (DPoint *)MEM_mallocN(nu->pntsu * (nu->pntsv + 1) * sizeof(DPoint),
                                         "extrudeNurb1");
           if (u == 0) {
             len = nu->pntsv * nu->pntsu;
-            ED_curve_bpcpy(editnurb, newbp + nu->pntsu, nu->bp, len);
-            ED_curve_bpcpy(editnurb, newbp, nu->bp, nu->pntsu);
-            bp = newbp;
+            ED_curve_dpcpy(editnurb, newdp + nu->pntsu, nu->dp, len);
+            ED_curve_dpcpy(editnurb, newdp, nu->dp, nu->pntsu);
+            dp = newdp;
           }
           else {
             len = nu->pntsv * nu->pntsu;
-            ED_curve_bpcpy(editnurb, newbp, nu->bp, len);
-            ED_curve_bpcpy(editnurb, newbp + len, &nu->bp[len - nu->pntsu], nu->pntsu);
-            bp = newbp + len;
+            ED_curve_dpcpy(editnurb, newdp, nu->dp, len);
+            ED_curve_dpcpy(editnurb, newdp + len, &nu->dp[len - nu->pntsu], nu->pntsu);
+            dp = newdp + len;
           }
 
           a = nu->pntsu;
           while (a--) {
-            select_bpoint(bp, SELECT, flag, HIDDEN);
-            bp++;
+            select_dpoint(dp, SELECT, flag, HIDDEN);
+            dp++;
           }
 
           MEM_freeN(nu->bp);
           nu->bp = newbp;
           nu->pntsv++;
-          BKE_nurb_knot_calc_v(nu);
+          dune_nurb_knot_calc_v(nu);
         }
         else if (ELEM(v, 0, nu->pntsu - 1)) { /* column in v-direction selected */
           ok = true;
-          bpn = newbp = (BPoint *)MEM_mallocN((nu->pntsu + 1) * nu->pntsv * sizeof(BPoint),
+          dpn = newbp = (DPoint *)MEM_mallocN((nu->pntsu + 1) * nu->pntsv * sizeof(DPoint),
                                               "extrudeNurb1");
-          bp = nu->bp;
+          dp = nu->dp;
 
           for (a = 0; a < nu->pntsv; a++) {
             if (v == 0) {
-              *bpn = *bp;
-              bpn->f1 |= flag;
-              bpn++;
+              *dpn = *dp;
+              dpn->f1 |= flag;
+              dpn++;
             }
-            ED_curve_bpcpy(editnurb, bpn, bp, nu->pntsu);
-            bp += nu->pntsu;
-            bpn += nu->pntsu;
+            ED_curve_bpcpy(editnurb, dpn, dp, nu->pntsu);
+            dp += nu->pntsu;
+            dpn += nu->pntsu;
             if (v == nu->pntsu - 1) {
-              *bpn = *(bp - 1);
-              bpn->f1 |= flag;
-              bpn++;
+              *dpn = *(dp - 1);
+              dpn->f1 |= flag;
+              dpn++;
             }
           }
 
-          MEM_freeN(nu->bp);
-          nu->bp = newbp;
+          MEM_freeN(nu->dp);
+          nu->dp = newdp;
           nu->pntsu++;
-          BKE_nurb_knot_calc_u(nu);
+          dune_nurb_knot_calc_u(nu);
         }
       }
     }
@@ -2082,7 +2060,7 @@ bool ed_editnurb_extrude_flag(EditNurb *editnurb, const uint8_t flag)
 
 static void calc_duplicate_actnurb(const ListBase *editnurb, const ListBase *newnurb, Curve *cu)
 {
-  cu->actnu = BLI_listbase_count(editnurb) + BLI_listbase_count(newnurb);
+  cu->actnu = lib_listbase_count(editnurb) + lib_listbase_count(newnurb);
 }
 
 static bool calc_duplicate_actvert(
@@ -2107,7 +2085,7 @@ static void adduplicateflagNurb(
   ListBase *editnurb = object_editcurve_get(obedit);
   Nurb *newnu;
   BezTriple *bezt, *bezt1;
-  BPoint *bp, *bp1, *bp2, *bp3;
+  DPoint *dp, *dp1, *dp2, *dp3;
   Curve *cu = (Curve *)obedit->data;
   int a, b, c, starta, enda, diffa, cyclicu, cyclicv, newu, newv;
   char *usel;
@@ -2145,7 +2123,7 @@ static void adduplicateflagNurb(
                   editnurb, newnurb, cu, starta, starta + diffa, cu->actvert - starta);
             }
 
-            newnu = BKE_nurb_copy(nu, newu, 1);
+            newnu = dune_nurb_copy(nu, newu, 1);
             memcpy(newnu->bezt, &nu->bezt[starta], diffa * sizeof(BezTriple));
             if (newu != diffa) {
               memcpy(&newnu->bezt[diffa], nu->bezt, cyclicu * sizeof(BezTriple));
@@ -2164,7 +2142,7 @@ static void adduplicateflagNurb(
               select_beztriple(bezt1, SELECT, flag, HIDDEN);
             }
 
-            BLI_addtail(newnurb, newnu);
+            lib_addtail(newnurb, newnu);
           }
         }
       }
@@ -2174,7 +2152,7 @@ static void adduplicateflagNurb(
           calc_duplicate_actvert(editnurb, newnurb, cu, 0, cyclicu, cu->actvert);
         }
 
-        newnu = BKE_nurb_copy(nu, cyclicu, 1);
+        newnu = dune_nurb_copy(nu, cyclicu, 1);
         memcpy(newnu->bezt, nu->bezt, cyclicu * sizeof(BezTriple));
         newnu->flagu &= ~CU_NURB_CYCLIC;
 
@@ -2182,23 +2160,23 @@ static void adduplicateflagNurb(
           select_beztriple(bezt1, SELECT, flag, HIDDEN);
         }
 
-        BLI_addtail(newnurb, newnu);
+        lib_addtail(newnurb, newnu);
       }
     }
     else if (nu->pntsv == 1) { /* because UV Nurb has a different method for dupli */
-      for (a = 0, bp = nu->bp; a < nu->pntsu; a++, bp++) {
+      for (a = 0, dp = nu->dp; a < nu->pntsu; a++, dp++) {
         enda = -1;
         starta = a;
-        while (bp->f1 & flag) {
+        while (dp->f1 & flag) {
           if (!split) {
-            select_bpoint(bp, DESELECT, flag, HIDDEN);
+            select_dpoint(dp, DESELECT, flag, HIDDEN);
           }
           enda = a;
           if (a >= nu->pntsu - 1) {
             break;
           }
           a++;
-          bp++;
+          dp++;
         }
         if (enda >= starta) {
           newu = diffa = enda - starta + 1; /* set newu and diffa, may use both */
@@ -2215,10 +2193,10 @@ static void adduplicateflagNurb(
                   editnurb, newnurb, cu, starta, starta + diffa, cu->actvert - starta);
             }
 
-            newnu = BKE_nurb_copy(nu, newu, 1);
-            memcpy(newnu->bp, &nu->bp[starta], diffa * sizeof(BPoint));
+            newnu = dune_nurb_copy(nu, newu, 1);
+            memcpy(newnu->dp, &nu->bp[starta], diffa * sizeof(DPoint));
             if (newu != diffa) {
-              memcpy(&newnu->bp[diffa], nu->bp, cyclicu * sizeof(BPoint));
+              memcpy(&newnu->dp[diffa], nu->dp, cyclicu * sizeof(DPoint));
               if (i == cu->actnu) {
                 calc_duplicate_actvert(
                     editnurb, newnurb, cu, 0, cyclicu, newu - cyclicu + cu->actvert);
@@ -2230,11 +2208,11 @@ static void adduplicateflagNurb(
               newnu->flagu &= ~CU_NURB_CYCLIC;
             }
 
-            for (b = 0, bp1 = newnu->bp; b < newnu->pntsu; b++, bp1++) {
-              select_bpoint(bp1, SELECT, flag, HIDDEN);
+            for (b = 0, dp1 = newnu->dp; b < newnu->pntsu; b++, dp1++) {
+              select_dpoint(dp1, SELECT, flag, HIDDEN);
             }
 
-            BLI_addtail(newnurb, newnu);
+            lib_addtail(newnurb, newnu);
           }
         }
       }
@@ -2244,15 +2222,15 @@ static void adduplicateflagNurb(
           calc_duplicate_actvert(editnurb, newnurb, cu, 0, cyclicu, cu->actvert);
         }
 
-        newnu = BKE_nurb_copy(nu, cyclicu, 1);
-        memcpy(newnu->bp, nu->bp, cyclicu * sizeof(BPoint));
+        newnu = dune_nurb_copy(nu, cyclicu, 1);
+        memcpy(newnu->bp, nu->dp, cyclicu * sizeof(DPoint));
         newnu->flagu &= ~CU_NURB_CYCLIC;
 
-        for (b = 0, bp1 = newnu->bp; b < newnu->pntsu; b++, bp1++) {
-          select_bpoint(bp1, SELECT, flag, HIDDEN);
+        for (b = 0, bp1 = newnu->dp; b < newnu->pntsu; b++, dp1++) {
+          select_dpoint(dp1, SELECT, flag, HIDDEN);
         }
 
-        BLI_addtail(newnurb, newnu);
+        lib_addtail(newnurb, newnu);
       }
     }
     else {
@@ -2260,10 +2238,10 @@ static void adduplicateflagNurb(
         /* A rectangular area in nurb has to be selected and if splitting
          * must be in U or V direction. */
         usel = MEM_callocN(nu->pntsu, "adduplicateN3");
-        bp = nu->bp;
+        dp = nu->dp;
         for (a = 0; a < nu->pntsv; a++) {
-          for (b = 0; b < nu->pntsu; b++, bp++) {
-            if (bp->f1 & flag) {
+          for (b = 0; b < nu->pntsu; b++, dp++) {
+            if (dp->f1 & flag) {
               usel[b]++;
             }
           }
@@ -2294,15 +2272,15 @@ static void adduplicateflagNurb(
           for (a = 0, bp1 = nu->bp; a < nu->pntsu * nu->pntsv; a++, bp1++) {
             newv = newu = 0;
 
-            if ((bp1->f1 & flag) && !(bp1->f1 & SURF_SEEN)) {
+            if ((dp1->f1 & flag) && !(dp1->f1 & SURF_SEEN)) {
               /* point selected, now loop over points in U and V directions */
-              for (b = a % nu->pntsu, bp2 = bp1; b < nu->pntsu; b++, bp2++) {
-                if (bp2->f1 & flag) {
+              for (b = a % nu->pntsu, dp2 = dp1; b < nu->pntsu; b++, dp2++) {
+                if (dp2->f1 & flag) {
                   newu++;
-                  for (c = a / nu->pntsu, bp3 = bp2; c < nu->pntsv; c++, bp3 += nu->pntsu) {
-                    if (bp3->f1 & flag) {
+                  for (c = a / nu->pntsu, dp3 = dp2; c < nu->pntsv; c++, dp3 += nu->pntsu) {
+                    if (dp3->f1 & flag) {
                       /* flag as seen so skipped on future iterations */
-                      bp3->f1 |= SURF_SEEN;
+                      dp3->f1 |= SURF_SEEN;
                       if (newu == 1) {
                         newv++;
                       }
@@ -2335,14 +2313,14 @@ static void adduplicateflagNurb(
 
               if (a + newu == nu->pntsu && cyclicu != 0) {
                 /* cyclic in U direction */
-                newnu = BKE_nurb_copy(nu, newu + cyclicu, newv);
+                newnu = dune_nurb_copy(nu, newu + cyclicu, newv);
                 for (b = 0; b < newv; b++) {
-                  memcpy(&newnu->bp[b * newnu->pntsu],
-                         &nu->bp[b * nu->pntsu + a],
-                         newu * sizeof(BPoint));
-                  memcpy(&newnu->bp[b * newnu->pntsu + newu],
-                         &nu->bp[b * nu->pntsu],
-                         cyclicu * sizeof(BPoint));
+                  memcpy(&newnu->dp[b * newnu->pntsu],
+                         &nu->dp[b * nu->pntsu + a],
+                         newu * sizeof(DPoint));
+                  memcpy(&newnu->dp[b * newnu->pntsu + newu],
+                         &nu->dp[b * nu->pntsu],
+                         cyclicu * sizeof(DPoint));
                 }
 
                 if (cu->actnu == i) {
@@ -2378,9 +2356,9 @@ static void adduplicateflagNurb(
               }
               else if ((a / nu->pntsu) + newv == nu->pntsv && cyclicv != 0) {
                 /* cyclic in V direction */
-                newnu = BKE_nurb_copy(nu, newu, newv + cyclicv);
-                memcpy(newnu->bp, &nu->bp[a], newu * newv * sizeof(BPoint));
-                memcpy(&newnu->bp[newu * newv], nu->bp, newu * cyclicv * sizeof(BPoint));
+                newnu = dune_nurb_copy(nu, newu, newv + cyclicv);
+                memcpy(newnu->dp, &nu->dp[a], newu * newv * sizeof(DPoint));
+                memcpy(&newnu->dp[newu * newv], nu->bp, newu * cyclicv * sizeof(DPoint));
 
                 /* check for actvert in cyclicv selection */
                 if (cu->actnu == i) {
@@ -2390,9 +2368,9 @@ static void adduplicateflagNurb(
                 cyclicu = cyclicv = 0;
               }
               else {
-                newnu = BKE_nurb_copy(nu, newu, newv);
+                newnu = dune_nurb_copy(nu, newu, newv);
                 for (b = 0; b < newv; b++) {
-                  memcpy(&newnu->bp[b * newu], &nu->bp[b * nu->pntsu + a], newu * sizeof(BPoint));
+                  memcpy(&newnu->fp[b * newu], &nu->dp[b * nu->pntsu + a], newu * sizeof(DPoint));
                 }
               }
 
@@ -2416,7 +2394,7 @@ static void adduplicateflagNurb(
                   }
                 }
               }
-              BLI_addtail(newnurb, newnu);
+              lib_addtail(newnurb, newnu);
 
               if (newu != nu->pntsu) {
                 newnu->flagu &= ~CU_NURB_CYCLIC;
@@ -2432,9 +2410,9 @@ static void adduplicateflagNurb(
             newu = cyclicu == 0 ? nu->pntsu : cyclicu;
             newv = cyclicv == 0 ? nu->pntsv : cyclicv;
 
-            newnu = BKE_nurb_copy(nu, newu, newv);
+            newnu = dune_nurb_copy(nu, newu, newv);
             for (b = 0; b < newv; b++) {
-              memcpy(&newnu->bp[b * newu], &nu->bp[b * nu->pntsu], newu * sizeof(BPoint));
+              memcpy(&newnu->dp[b * newu], &nu->dp[b * nu->pntsu], newu * sizeof(DPoint));
             }
 
             /* Check for `actvert` in the unused cyclic-UV selection. */
