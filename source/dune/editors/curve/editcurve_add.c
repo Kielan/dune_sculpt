@@ -1,21 +1,21 @@
 
-#include "DNA_anim_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_object_types.h"
+#include "types_scene_types.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
+#include "lib_funelib.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "I18N_translation.h"
 
-#include "BKE_context.h"
-#include "BKE_curve.h"
+#include "dune_context.h"
+#include "dune_curve.h"
 
 #include "DEG_depsgraph.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -91,14 +91,14 @@ static const char *get_surf_defname(int type)
 }
 
 Nurb *ED_curve_add_nurbs_primitive(
-    bContext *C, Object *obedit, float mat[4][4], int type, int newob)
+    dContext *C, Object *obedit, float mat[4][4], int type, int newob)
 {
   static int xzproj = 0; /* this function calls itself... */
   ListBase *editnurb = object_editcurve_get(obedit);
   RegionView3D *rv3d = ED_view3d_context_rv3d(C);
   Nurb *nu = NULL;
   BezTriple *bezt;
-  BPoint *bp;
+  DPoint *dp;
   Curve *cu = (Curve *)obedit->data;
   float vec[3], zvec[3] = {0.0f, 0.0f, 1.0f};
   float umat[4][4], viewmat[4][4];
@@ -116,7 +116,7 @@ Nurb *ED_curve_add_nurbs_primitive(
     copy_v3_v3(zvec, rv3d->viewinv[2]);
   }
 
-  BKE_nurbList_flag_set(editnurb, SELECT, false);
+  dune_nurbList_flag_set(editnurb, SELECT, false);
 
   /* these types call this function to return a Nurb */
   if (!ELEM(stype, CU_PRIM_TUBE, CU_PRIM_DONUT)) {
@@ -161,41 +161,41 @@ Nurb *ED_curve_add_nurbs_primitive(
           mul_m4_v3(mat, bezt->vec[a]);
         }
 
-        BKE_nurb_handles_calc(nu);
+        dune_nurb_handles_calc(nu);
       }
       else {
 
         nu->pntsu = 4;
         nu->pntsv = 1;
         nu->orderu = 4;
-        nu->bp = (BPoint *)MEM_callocN(sizeof(BPoint) * nu->pntsu, "addNurbprim3");
+        nu->dp = (DPoint *)MEM_callocN(sizeof(DPoint) * nu->pntsu, "addNurbprim3");
 
-        bp = nu->bp;
+        dp = nu->dp;
         for (a = 0; a < 4; a++, bp++) {
-          bp->vec[3] = 1.0;
-          bp->f1 = SELECT;
-          bp->radius = bp->weight = 1.0;
+          dp->vec[3] = 1.0;
+          dp->f1 = SELECT;
+          dp->radius = dp->weight = 1.0;
         }
 
-        bp = nu->bp;
-        bp->vec[0] += -1.5f * grid;
-        bp++;
-        bp->vec[0] += -grid;
-        bp->vec[1] += grid;
-        bp++;
-        bp->vec[0] += grid;
-        bp->vec[1] += grid;
-        bp++;
-        bp->vec[0] += 1.5f * grid;
+        dp = nu->dp;
+        dp->vec[0] += -1.5f * grid;
+        dp++;
+        dp->vec[0] += -grid;
+        dp->vec[1] += grid;
+        dp++;
+        dp->vec[0] += grid;
+        dp->vec[1] += grid;
+        dp++;
+        dp->vec[0] += 1.5f * grid;
 
-        bp = nu->bp;
-        for (a = 0; a < 4; a++, bp++) {
-          mul_m4_v3(mat, bp->vec);
+        dp = nu->dp;
+        for (a = 0; a < 4; a++, dp++) {
+          mul_m4_v3(mat, dp->vec);
         }
 
         if (cutype == CU_NURBS) {
           nu->knotsu = NULL; /* nurbs_knot_calc_u allocates */
-          BKE_nurb_knot_calc_u(nu);
+          dune_nurb_knot_calc_u(nu);
         }
       }
       break;
@@ -205,26 +205,26 @@ Nurb *ED_curve_add_nurbs_primitive(
       nu->orderu = 5;
       nu->flagu = CU_NURB_ENDPOINT; /* endpoint */
       nu->resolu = cu->resolu;
-      nu->bp = (BPoint *)MEM_callocN(sizeof(BPoint) * nu->pntsu, "addNurbprim3");
+      nu->bp = (DPoint *)MEM_callocN(sizeof(BPoint) * nu->pntsu, "addNurbprim3");
 
-      bp = nu->bp;
-      for (a = 0; a < 5; a++, bp++) {
-        bp->vec[3] = 1.0;
-        bp->f1 = SELECT;
-        bp->radius = bp->weight = 1.0;
+      p = nu->dp;
+      for (a = 0; a < 5; a++, dp++) {
+        dp->vec[3] = 1.0;
+        dp->f1 = SELECT;
+        dp->radius = bp->weight = 1.0;
       }
 
-      bp = nu->bp;
-      bp->vec[0] += -2.0f * grid;
-      bp++;
-      bp->vec[0] += -grid;
-      bp++;
-      bp++;
-      bp->vec[0] += grid;
-      bp++;
-      bp->vec[0] += 2.0f * grid;
+      dp = nu->dp;
+      dp->vec[0] += -2.0f * grid;
+      dp++;
+      dp->vec[0] += -grid;
+      dp++;
+      p++;
+      dp->vec[0] += grid;
+      dp++;
+      dp->vec[0] += 2.0f * grid;
 
-      bp = nu->bp;
+      dp = nu->dp;
       for (a = 0; a < 5; a++, bp++) {
         mul_m4_v3(mat, bp->vec);
       }
