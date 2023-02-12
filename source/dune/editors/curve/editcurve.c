@@ -2600,20 +2600,20 @@ void CURVE_OT_spline_weight_set(wmOperatorType *ot)
 
   /* api callbacks */
   ot->exec = set_goal_weight_exec;
-  ot->invoke = WM_operator_props_popup;
+  ot->invoke = wm_op_props_popup;
   ot->poll = ED_operator_editsurfcurve;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  RNA_def_float_factor(ot->srna, "weight", 1.0f, 0.0f, 1.0f, "Weight", "", 0.0f, 1.0f);
+  api_def_float_factor(ot->srna, "weight", 1.0f, 0.0f, 1.0f, "Weight", "", 0.0f, 1.0f);
 }
 
 /* -------------------------------------------------------------------- */
 /** Set Radius Operator */
 
-static int set_radius_exec(bContext *C, wmOperator *op)
+static int set_radius_ex(duneContext *C, wmOperator *op)
 {
   ViewLayer *view_layer = ctx_data_view_layer(C);
   uint objects_len;
@@ -2682,7 +2682,7 @@ static void smooth_single_bezt(BezTriple *bezt,
                                const BezTriple *bezt_orig_next,
                                float factor)
 {
-  BLI_assert(IN_RANGE_INCL(factor, 0.0f, 1.0f));
+  lib_assert(IN_RANGE_INCL(factor, 0.0f, 1.0f));
 
   for (int i = 0; i < 3; i++) {
     /* get single dimension pos of the mid handle */
@@ -2702,31 +2702,31 @@ static void smooth_single_bezt(BezTriple *bezt,
 /**
  * Same as #smooth_single_bezt(), keep in sync.
  */
-static void smooth_single_bp(BPoint *bp,
-                             const BPoint *bp_orig_prev,
-                             const BPoint *bp_orig_next,
+static void smooth_single_dp(DPoint *dp,
+                             const DPoint *dp_orig_prev,
+                             const DPoint *dp_orig_next,
                              float factor)
 {
-  BLI_assert(IN_RANGE_INCL(factor, 0.0f, 1.0f));
+  lib_assert(IN_RANGE_INCL(factor, 0.0f, 1.0f));
 
   for (int i = 0; i < 3; i++) {
     float val_old, val_new, offset;
 
-    val_old = bp->vec[i];
-    val_new = (bp_orig_prev->vec[i] * 0.5f) + (bp_orig_next->vec[i] * 0.5f);
+    val_old = dp->vec[i];
+    val_new = (dp_orig_prev->vec[i] * 0.5f) + (dp_orig_next->vec[i] * 0.5f);
     offset = (val_old * (1.0f - factor)) + (val_new * factor) - val_old;
 
-    bp->vec[i] += offset;
+    dp->vec[i] += offset;
   }
 }
 
-static int smooth_exec(bContext *C, wmOperator *UNUSED(op))
+static int smooth_exec(dContext *C, wmOperator *UNUSED(op))
 {
   const float factor = 1.0f / 6.0f;
   ViewLayer *view_layer = CTX_data_view_layer(C);
   uint objects_len;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &objects_len);
+  Object **objects = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, ctx_wm_view3d(C), &objects_len);
 
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
@@ -2769,13 +2769,13 @@ static int smooth_exec(bContext *C, wmOperator *UNUSED(op))
         }
         MEM_freeN((void *)bezt_orig);
         if (changed) {
-          BKE_nurb_handles_calc(nu);
+          dune_nurb_handles_calc(nu);
         }
       }
       else if (nu->bp) {
         /* Same as above, keep these the same! */
-        const BPoint *bp_orig = MEM_dupallocN(nu->bp);
-        BPoint *bp;
+        const DPoint *bp_orig = MEM_dupallocN(nu->dp);
+        DPoint *bp;
 
         if (nu->flagu & CU_NURB_CYCLIC) {
           a = 0;
@@ -2787,14 +2787,14 @@ static int smooth_exec(bContext *C, wmOperator *UNUSED(op))
         }
 
         for (; a < a_end; a++) {
-          bp = &nu->bp[a];
-          if (bp->f1 & SELECT) {
-            const BPoint *bp_orig_prev, *bp_orig_next;
+          dp = &nu->dp[a];
+          if (dp->f1 & SELECT) {
+            const DPoint *dp_orig_prev, *dp_orig_next;
 
-            bp_orig_prev = &bp_orig[mod_i(a - 1, nu->pntsu)];
-            bp_orig_next = &bp_orig[mod_i(a + 1, nu->pntsu)];
+            dp_orig_prev = &dp_orig[mod_i(a - 1, nu->pntsu)];
+            dp_orig_next = &dp_orig[mod_i(a + 1, nu->pntsu)];
 
-            smooth_single_bp(bp, bp_orig_prev, bp_orig_next, factor);
+            smooth_single_dp(dp, dp_orig_prev, dp_orig_next, factor);
           }
         }
         MEM_freeN((void *)bp_orig);
@@ -2833,10 +2833,10 @@ void CURVE_OT_smooth(wmOperatorType *ot)
  * - Support cyclic curves.
  **/
 
-static void curve_smooth_value(ListBase *editnurb, const int bezt_offsetof, const int bp_offset)
+static void curve_smooth_value(ListBase *editnurb, const int bezt_offsetof, const int dp_offset)
 {
   BezTriple *bezt;
-  BPoint *bp;
+  DPoint *dp;
   int a;
 
   /* use for smoothing */
@@ -2925,7 +2925,7 @@ static void curve_smooth_value(ListBase *editnurb, const int bezt_offsetof, cons
       }
 #undef BEZT_VALUE
     }
-    else if (nu->bp) {
+    else if (nu->dp) {
 #define BP_VALUE(bp) (*((float *)((char *)(bp) + bp_offset)))
 
       /* Same as above, keep these the same! */
@@ -2935,16 +2935,16 @@ static void curve_smooth_value(ListBase *editnurb, const int bezt_offsetof, cons
         /* Start BezTriple code,
          * this is duplicated below for points, make sure these functions stay in sync */
         start_sel = -1;
-        for (bp = &nu->bp[last_sel], a = last_sel; a < nu->pntsu; a++, bp++) {
-          if (bp->f1 & SELECT) {
+        for (dp = &nu->dp[last_sel], a = last_sel; a < nu->pntsu; a++, bp++) {
+          if (dp->f1 & SELECT) {
             start_sel = a;
             break;
           }
         }
         /* in case there are no other selected verts */
         end_sel = start_sel;
-        for (bp = &nu->bp[start_sel + 1], a = start_sel + 1; a < nu->pntsu; a++, bp++) {
-          if ((bp->f1 & SELECT) == 0) {
+        for (dp = &nu->dp[start_sel + 1], a = start_sel + 1; a < nu->pntsu; a++, dp++) {
+          if ((dp->f1 & SELECT) == 0) {
             break;
           }
           end_sel = a;
@@ -2962,44 +2962,44 @@ static void curve_smooth_value(ListBase *editnurb, const int bezt_offsetof, cons
           if (start_sel == end_sel) {
             /* simple, only 1 point selected */
             if (start_sel > 0) {
-              start_rad = BP_VALUE(&nu->bp[start_sel - 1]);
+              start_rad = DP_VALUE(&nu->bp[start_sel - 1]);
             }
             if (end_sel != -1 && end_sel < nu->pntsu) {
-              end_rad = BP_VALUE(&nu->bp[start_sel + 1]);
+              end_rad = DP_VALUE(&nu->bp[start_sel + 1]);
             }
 
             if (start_rad != FLT_MAX && end_rad != FLT_MAX) {
-              BP_VALUE(&nu->bp[start_sel]) = (start_rad + end_rad) / 2;
+              DP_VALUE(&nu->bp[start_sel]) = (start_rad + end_rad) / 2;
             }
             else if (start_rad != FLT_MAX) {
-              BP_VALUE(&nu->bp[start_sel]) = start_rad;
+              DP_VALUE(&nu->bp[start_sel]) = start_rad;
             }
             else if (end_rad != FLT_MAX) {
-              BP_VALUE(&nu->bp[start_sel]) = end_rad;
+              DP_VALUE(&nu->bp[start_sel]) = end_rad;
             }
           }
           else {
             /* if endpoints selected, then use them */
             if (start_sel == 0) {
-              start_rad = BP_VALUE(&nu->bp[start_sel]);
+              start_rad = DP_VALUE(&nu->dp[start_sel]);
               start_sel++; /* we don't want to edit the selected endpoint */
             }
             else {
-              start_rad = BP_VALUE(&nu->bp[start_sel - 1]);
+              start_rad = DP_VALUE(&nu->dp[start_sel - 1]);
             }
             if (end_sel == nu->pntsu - 1) {
-              end_rad = BP_VALUE(&nu->bp[end_sel]);
+              end_rad = DP_VALUE(&nu->dp[end_sel]);
               end_sel--; /* we don't want to edit the selected endpoint */
             }
             else {
-              end_rad = BP_VALUE(&nu->bp[end_sel + 1]);
+              end_rad = DP_VALUE(&nu->dp[end_sel + 1]);
             }
 
             /* Now Blend between the points */
             range = (float)(end_sel - start_sel) + 2.0f;
-            for (bp = &nu->bp[start_sel], a = start_sel; a <= end_sel; a++, bp++) {
+            for (dp = &nu->dp[start_sel], a = start_sel; a <= end_sel; a++, dp++) {
               fac = (float)(1 + a - start_sel) / range;
-              BP_VALUE(bp) = start_rad * (1.0f - fac) + end_rad * fac;
+              DP_VALUE(dp) = start_rad * (1.0f - fac) + end_rad * fac;
             }
           }
         }
@@ -3054,10 +3054,10 @@ void CURVE_OT_smooth_weight(wmOperatorType *ot)
 
 static int curve_smooth_radius_exec(bContext *C, wmOperator *UNUSED(op))
 {
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
   uint objects_len;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &objects_len);
+  Object **objects = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, ctx_wm_view3d(C), &objects_len);
 
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
@@ -3065,7 +3065,7 @@ static int curve_smooth_radius_exec(bContext *C, wmOperator *UNUSED(op))
 
     curve_smooth_value(editnurb, offsetof(BezTriple, radius), offsetof(BPoint, radius));
 
-    WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
+    wm_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
     DEG_id_tag_update(obedit->data, 0);
   }
 
@@ -3092,20 +3092,20 @@ void CURVE_OT_smooth_radius(wmOperatorType *ot)
 /* -------------------------------------------------------------------- */
 /** Smooth Tilt Operator */
 
-static int curve_smooth_tilt_exec(bContext *C, wmOperator *UNUSED(op))
+static int curve_smooth_tilt_exec(dContext *C, wmOperator *UNUSED(op))
 {
-  ViewLayer *view_layer = CTX_data_view_layer(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
   uint objects_len;
-  Object **objects = BKE_view_layer_array_from_objects_in_edit_mode_unique_data(
-      view_layer, CTX_wm_view3d(C), &objects_len);
+  Object **objects = dune_view_layer_array_from_objects_in_edit_mode_unique_data(
+      view_layer, ctx_wm_view3d(C), &objects_len);
 
   for (uint ob_index = 0; ob_index < objects_len; ob_index++) {
     Object *obedit = objects[ob_index];
     ListBase *editnurb = object_editcurve_get(obedit);
 
-    curve_smooth_value(editnurb, offsetof(BezTriple, tilt), offsetof(BPoint, tilt));
+    curve_smooth_value(editnurb, offsetof(BezTriple, tilt), offsetof(DPoint, tilt));
 
-    WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
+    wm_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);
     DEG_id_tag_update(obedit->data, 0);
   }
 
@@ -3262,15 +3262,15 @@ static int reveal_exec(dContext *C, wmOperator *op)
         }
       }
       else {
-        bp = nu->bp;
+        dp = nu->dp;
         a = nu->pntsu * nu->pntsv;
         while (a--) {
-          if (bp->hide) {
-            select_bpoint(bp, select, SELECT, HIDDEN);
-            bp->hide = 0;
+          if (dp->hide) {
+            select_dpoint(dp, select, SELECT, HIDDEN);
+            dp->hide = 0;
             changed = true;
           }
-          bp++;
+          dp++;
         }
       }
     }
@@ -3427,54 +3427,54 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
        */
       /* count */
       a = nu->pntsu;
-      bp = nu->bp;
+      dp = nu->dp;
       while (a--) {
-        nextbp = dune_nurb_bpoint_get_next(nu, bp);
-        if (nextbp == NULL) {
+        nextdp = dune_nurb_dpoint_get_next(nu, dp);
+        if (nextdp == NULL) {
           break;
         }
 
-        if ((bp->f1 & SELECT) && (nextbp->f1 & SELECT)) {
+        if ((dp->f1 & SELECT) && (nextdp->f1 & SELECT)) {
           amount += number_cuts;
         }
-        bp++;
+        dp++;
       }
 
       if (amount) {
         /* insert */
-        bpnew = (DPoint *)MEM_mallocN((amount + nu->pntsu) * sizeof(BPoint), "subdivNurb2");
-        bpn = bpnew;
+        dpnew = (DPoint *)MEM_mallocN((amount + nu->pntsu) * sizeof(DPoint), "subdivNurb2");
+        dpn = dpnew;
 
         a = nu->pntsu;
-        bp = nu->bp;
+        dp = nu->dp;
 
         while (a--) {
           /* Copy "old" point. */
-          memcpy(bpn, bp, sizeof(DPoint));
-          keyIndex_updateBP(editnurb, bp, bpn, 1);
+          memcpy(dpn, dp, sizeof(DPoint));
+          keyIndex_updateDP(editnurb, dp, dpn, 1);
           bpn++;
 
-          nextbp = dune_nurb_bpoint_get_next(nu, bp);
-          if (nextbp == NULL) {
+          nextdp = dune_nurb_bpoint_get_next(nu, dp);
+          if (nextdp == NULL) {
             break;
           }
 
-          if ((bp->f1 & SELECT) && (nextbp->f1 & SELECT)) {
+          if ((dp->f1 & SELECT) && (nextdp->f1 & SELECT)) {
             // printf("*** subdivideNurb: insert 'linear' point\n");
             for (int i = 0; i < number_cuts; i++) {
               factor = (float)(i + 1) / (number_cuts + 1);
 
-              memcpy(bpn, nextbp, sizeof(BPoint));
-              interp_v4_v4v4(bpn->vec, bp->vec, nextbp->vec, factor);
-              bpn->radius = interpf(bp->radius, nextbp->radius, factor);
-              bpn++;
+              memcpy(dpn, nextdp, sizeof(DPoint));
+              interp_v4_v4v4(dpn->vec, dp->vec, nextdp->vec, factor);
+              dpn->radius = interpf(dp->radius, nextdp->radius, factor);
+              dpn++;
             }
           }
-          bp++;
+          dp++;
         }
 
-        MEM_freeN(nu->bp);
-        nu->bp = bpnew;
+        MEM_freeN(nu->dp);
+        nu->dp = dpnew;
         nu->pntsu += amount;
 
         if (nu->type & CU_NURBS) {
@@ -3493,7 +3493,7 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
        * expression
        *
        *     `degree = knots - controlpoints + 1` (J Walter piece)
-       *     `degree = knots - controlpoints` (Blender implementation)
+       *     `degree = knots - controlpoints` (Dune implementation)
        *       ( this is confusing.... what is true? Another concern
        *       is that the JW piece allows the curve to become
        *       explicitly 1st order derivative discontinuous, while
@@ -3530,7 +3530,7 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
       sel = 0;
 
       /* Count the number of selected points. */
-      bp = nu->bp;
+      dp = nu->dp;
       for (a = 0; a < nu->pntsv; a++) {
         for (b = 0; b < nu->pntsu; b++) {
           if (bp->f1 & SELECT) {
@@ -3538,7 +3538,7 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
             vsel[a]++;
             sel++;
           }
-          bp++;
+          dp++;
         }
       }
       if (sel == (nu->pntsu * nu->pntsv)) { /* subdivide entire nurb */
@@ -3552,31 +3552,31 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
         int tot = ((number_cuts + 1) * nu->pntsu - number_cuts) *
                   ((number_cuts + 1) * nu->pntsv - number_cuts);
 
-        bpn = bpnew = MEM_mallocN(tot * sizeof(BPoint), "subdivideNurb4");
-        bp = nu->bp;
+        dpn = dpnew = MEM_mallocN(tot * sizeof(BPoint), "subdivideNurb4");
+        dp = nu->dp;
         /* first subdivide rows */
         for (a = 0; a < nu->pntsv; a++) {
           for (b = 0; b < nu->pntsu; b++) {
-            *bpn = *bp;
-            keyIndex_updateBP(editnurb, bp, bpn, 1);
-            bpn++;
-            bp++;
+            *dpn = *dp;
+            keyIndex_updateDP(editnurb, dp, dpn, 1);
+            dpn++;
+            dp++;
             if (b < nu->pntsu - 1) {
-              prevbp = bp - 1;
+              prevdp = dp - 1;
               for (int i = 0; i < number_cuts; i++) {
                 factor = (float)(i + 1) / (number_cuts + 1);
-                *bpn = *bp;
-                interp_v4_v4v4(bpn->vec, prevbp->vec, bp->vec, factor);
-                bpn++;
+                *dpn = *dp;
+                interp_v4_v4v4(dpn->vec, prevdp->vec, dp->vec, factor);
+                dpn++;
               }
             }
           }
-          bpn += number_cuts * countu;
-        }
+          dpn += number_cuts * countu;
+        
         /* now insert new */
-        bpn = bpnew + ((number_cuts + 1) * nu->pntsu - number_cuts);
-        bp = bpnew + (number_cuts + 1) * ((number_cuts + 1) * nu->pntsu - number_cuts);
-        prevbp = bpnew;
+        dpn = dpnew + ((number_cuts + 1) * nu->pntsu - number_cuts);
+        dp = bdnew + (number_cuts + 1) * ((number_cuts + 1) * nu->pntsu - number_cuts);
+        prevdp = dpnew;
         for (a = 1; a < nu->pntsv; a++) {
 
           for (b = 0; b < (number_cuts + 1) * nu->pntsu - number_cuts; b++) {
@@ -3587,16 +3587,16 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
               interp_v4_v4v4(tmp->vec, prevbp->vec, bp->vec, factor);
               tmp += countu;
             }
-            bp++;
-            prevbp++;
-            bpn++;
+            dp++;
+            prevbdp++;
+            dpn++;
           }
-          bp += number_cuts * countu;
-          bpn += number_cuts * countu;
-          prevbp += number_cuts * countu;
+          dp += number_cuts * countu;
+          dpn += number_cuts * countu;
+          prevdp += number_cuts * countu;
         }
-        MEM_freeN(nu->bp);
-        nu->bp = bpnew;
+        MEM_freeN(nu->dp);
+        nu->dp = dpnew;
         nu->pntsu = (number_cuts + 1) * nu->pntsu - number_cuts;
         nu->pntsv = (number_cuts + 1) * nu->pntsv - number_cuts;
         dune_nurb_knot_calc_u(nu);
@@ -3612,20 +3612,20 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
         }
 
         if (sel) { /* V ! */
-          bpn = bpnew = MEM_mallocN((sel + nu->pntsv) * nu->pntsu * sizeof(BPoint),
+          dpn = dpnew = MEM_mallocN((sel + nu->pntsv) * nu->pntsu * sizeof(DPoint),
                                     "subdivideNurb4");
-          bp = nu->bp;
+          dp = nu->dp;
           for (a = 0; a < nu->pntsv; a++) {
             for (b = 0; b < nu->pntsu; b++) {
-              *bpn = *bp;
-              keyIndex_updateBP(editnurb, bp, bpn, 1);
-              bpn++;
-              bp++;
+              *dpn = *dp;
+              keyIndex_updateDP(editnurb, dp, dpn, 1);
+              dpn++;
+              dp++;
             }
             if ((a < nu->pntsv - 1) && vsel[a] == nu->pntsu && vsel[a + 1] == nu->pntsu) {
               for (int i = 0; i < number_cuts; i++) {
                 factor = (float)(i + 1) / (number_cuts + 1);
-                prevbp = bp - nu->pntsu;
+                prevdp = dp - nu->pntsu;
                 for (b = 0; b < nu->pntsu; b++) {
                   /*
                    * This simple bisection must be replaces by a
@@ -3634,8 +3634,8 @@ static void subdividenurb(Object *obedit, View3D *v3d, int number_cuts)
                    * point in our curve is a separate data
                    * node. (is it?)
                    */
-                  *bpn = *prevbp;
-                  interp_v4_v4v4(bpn->vec, prevbp->vec, bp->vec, factor);
+                  *dpn = *prevdp;
+                  interp_v4_v4v4(dpn->vec, prevdp->vec, dp->vec, factor);
                   bpn++;
 
                   prevbp++;
