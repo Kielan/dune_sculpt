@@ -1,14 +1,14 @@
-#include "DNA_anim_types.h"
-#include "DNA_key_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "TYPES_anim_types.h"
+#include "TYPES_key_types.h"
+#include "TYPES_object_types.h"
+#include "TYPES_scene_types.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_array_utils.h"
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_math.h"
+#include "LIB_array_utils.h"
+#include "LIB_blenlib.h"
+#include "LIB_ghash.h"
+#include "LIB_math.h"
 
 #include "BLT_translation.h"
 
