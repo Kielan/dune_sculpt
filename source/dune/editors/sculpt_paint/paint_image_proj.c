@@ -866,3 +866,686 @@ static int project_paint_occlude_ptv_clip(const float pt[3],
 
   return -1;
 }
+
+/* Check if a screen-space location is occluded by any other faces
+ * check, pixelScreenCo must be in screen-space, its Z-Depth only needs to be used for comparison
+ * and doesn't need to be correct in relation to X and Y coords
+ * (this is the case in perspective view) */
+static bool project_bucket_point_occluded(const ProjPaintState *ps,
+                                          LinkNode *bucketFace,
+                                          const int orig_face,
+                                          const float pixelScreenCo[4])
+{
+  int isect_ret;
+  const bool do_clip = RV3D_CLIPPING_ENABLED(ps->v3d, ps->rv3d);
+
+  /* we could return false for 1 face buckets, as long as this function assumes
+   * that the point its testing is only every originated from an existing face */
+
+  for (; bucketFace; bucketFace = bucketFace->next) {
+    const int tri_index = POINTER_AS_INT(bucketFace->link);
+
+    if (orig_face != tri_index) {
+      const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+      const float *vtri_ss[3] = {
+          ps->screenCoords[ps->mloop_eval[lt->tri[0]].v],
+          ps->screenCoords[ps->mloop_eval[lt->tri[1]].v],
+          ps->screenCoords[ps->mloop_eval[lt->tri[2]].v],
+      };
+      float w[3];
+
+      if (do_clip) {
+        const float *vtri_co[3] = {
+            ps->mvert_eval[ps->mloop_eval[lt->tri[0]].v].co,
+            ps->mvert_eval[ps->mloop_eval[lt->tri[1]].v].co,
+            ps->mvert_eval[ps->mloop_eval[lt->tri[2]].v].co,
+        };
+        isect_ret = project_paint_occlude_ptv_clip(
+            pixelScreenCo, UNPACK3(vtri_ss), UNPACK3(vtri_co), w, ps->is_ortho, ps->rv3d);
+      }
+      else {
+        isect_ret = project_paint_occlude_ptv(pixelScreenCo, UNPACK3(vtri_ss), w, ps->is_ortho);
+      }
+
+      if (isect_ret >= 1) {
+        /* TODO: we may want to cache the first hit,
+         * it is not possible to swap the face order in the list anymore */
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/* Basic line intersection, could move to math_geom.c, 2 points with a horizontal line
+ * 1 for an intersection, 2 if the first point is aligned, 3 if the second point is aligned. */
+#define ISECT_TRUE 1
+#define ISECT_TRUE_P1 2
+#define ISECT_TRUE_P2 3
+static int line_isect_y(const float p1[2], const float p2[2], const float y_level, float *x_isect)
+{
+  float y_diff;
+
+  /* are we touching the first point? - no interpolation needed */
+  if (y_level == p1[1]) {
+    *x_isect = p1[0];
+    return ISECT_TRUE_P1;
+  }
+  /* are we touching the second point? - no interpolation needed */
+  if (y_level == p2[1]) {
+    *x_isect = p2[0];
+    return ISECT_TRUE_P2;
+  }
+
+  /** yuck, horizontal line, we can't do much here. */
+  y_diff = fabsf(p1[1] - p2[1]);
+
+  if (y_diff < 0.000001f) {
+    *x_isect = (p1[0] + p2[0]) * 0.5f;
+    return ISECT_TRUE;
+  }
+
+  if (p1[1] > y_level && p2[1] < y_level) {
+    /* (p1[1] - p2[1]); */
+    *x_isect = (p2[0] * (p1[1] - y_level) + p1[0] * (y_level - p2[1])) / y_diff;
+    return ISECT_TRUE;
+  }
+  if (p1[1] < y_level && p2[1] > y_level) {
+    /* (p2[1] - p1[1]); */
+    *x_isect = (p2[0] * (y_level - p1[1]) + p1[0] * (p2[1] - y_level)) / y_diff;
+    return ISECT_TRUE;
+  }
+  return 0;
+}
+
+static int line_isect_x(const float p1[2], const float p2[2], const float x_level, float *y_isect)
+{
+  float x_diff;
+
+  if (x_level == p1[0]) { /* are we touching the first point? - no interpolation needed */
+    *y_isect = p1[1];
+    return ISECT_TRUE_P1;
+  }
+  if (x_level == p2[0]) { /* are we touching the second point? - no interpolation needed */
+    *y_isect = p2[1];
+    return ISECT_TRUE_P2;
+  }
+
+  /* yuck, horizontal line, we can't do much here */
+  x_diff = fabsf(p1[0] - p2[0]);
+
+  /* yuck, vertical line, we can't do much here */
+  if (x_diff < 0.000001f) {
+    *y_isect = (p1[0] + p2[0]) * 0.5f;
+    return ISECT_TRUE;
+  }
+
+  if (p1[0] > x_level && p2[0] < x_level) {
+    /* (p1[0] - p2[0]); */
+    *y_isect = (p2[1] * (p1[0] - x_level) + p1[1] * (x_level - p2[0])) / x_diff;
+    return ISECT_TRUE;
+  }
+  if (p1[0] < x_level && p2[0] > x_level) {
+    /* (p2[0] - p1[0]); */
+    *y_isect = (p2[1] * (x_level - p1[0]) + p1[1] * (p2[0] - x_level)) / x_diff;
+    return ISECT_TRUE;
+  }
+  return 0;
+}
+
+/* simple func use for comparing UV locations to check if there are seams.
+ * Its possible this gives incorrect results, when the UVs for 1 face go into the next
+ * tile, but do not do this for the adjacent face, it could return a false positive.
+ * This is so unlikely that Id not worry about it. */
+#ifndef PROJ_DEBUG_NOSEAMBLEED
+static bool cmp_uv(const float vec2a[2], const float vec2b[2])
+{
+  /* if the UV's are not between 0.0 and 1.0 */
+  float xa = fmodf(vec2a[0], 1.0f);
+  float ya = fmodf(vec2a[1], 1.0f);
+
+  float xb = fmodf(vec2b[0], 1.0f);
+  float yb = fmodf(vec2b[1], 1.0f);
+
+  if (xa < 0.0f) {
+    xa += 1.0f;
+  }
+  if (ya < 0.0f) {
+    ya += 1.0f;
+  }
+
+  if (xb < 0.0f) {
+    xb += 1.0f;
+  }
+  if (yb < 0.0f) {
+    yb += 1.0f;
+  }
+
+  return ((fabsf(xa - xb) < PROJ_GEOM_TOLERANCE) && (fabsf(ya - yb) < PROJ_GEOM_TOLERANCE)) ?
+             true :
+             false;
+}
+#endif
+
+/* set min_px and max_px to the image space bounds of the UV coords
+ * return zero if there is no area in the returned rectangle */
+#ifndef PROJ_DEBUG_NOSEAMBLEED
+static bool pixel_bounds_uv(const float uv_quad[4][2],
+                            rcti *bounds_px,
+                            const int ibuf_x,
+                            const int ibuf_y)
+{
+  /* UV bounds */
+  float min_uv[2], max_uv[2];
+
+  INIT_MINMAX2(min_uv, max_uv);
+
+  minmax_v2v2_v2(min_uv, max_uv, uv_quad[0]);
+  minmax_v2v2_v2(min_uv, max_uv, uv_quad[1]);
+  minmax_v2v2_v2(min_uv, max_uv, uv_quad[2]);
+  minmax_v2v2_v2(min_uv, max_uv, uv_quad[3]);
+
+  bounds_px->xmin = (int)(ibuf_x * min_uv[0]);
+  bounds_px->ymin = (int)(ibuf_y * min_uv[1]);
+
+  bounds_px->xmax = (int)(ibuf_x * max_uv[0]) + 1;
+  bounds_px->ymax = (int)(ibuf_y * max_uv[1]) + 1;
+
+  // printf("%d %d %d %d\n", min_px[0], min_px[1], max_px[0], max_px[1]);
+
+  /* face uses no UV area when quantized to pixels? */
+  return (bounds_px->xmin == bounds_px->xmax || bounds_px->ymin == bounds_px->ymax) ? false : true;
+}
+#endif
+
+static bool pixel_bounds_array(
+    float (*uv)[2], rcti *bounds_px, const int ibuf_x, const int ibuf_y, int tot)
+{
+  /* UV bounds */
+  float min_uv[2], max_uv[2];
+
+  if (tot == 0) {
+    return false;
+  }
+
+  INIT_MINMAX2(min_uv, max_uv);
+
+  while (tot--) {
+    minmax_v2v2_v2(min_uv, max_uv, (*uv));
+    uv++;
+  }
+
+  bounds_px->xmin = (int)(ibuf_x * min_uv[0]);
+  bounds_px->ymin = (int)(ibuf_y * min_uv[1]);
+
+  bounds_px->xmax = (int)(ibuf_x * max_uv[0]) + 1;
+  bounds_px->ymax = (int)(ibuf_y * max_uv[1]) + 1;
+
+  // printf("%d %d %d %d\n", min_px[0], min_px[1], max_px[0], max_px[1]);
+
+  /* face uses no UV area when quantized to pixels? */
+  return (bounds_px->xmin == bounds_px->xmax || bounds_px->ymin == bounds_px->ymax) ? false : true;
+}
+
+#ifndef PROJ_DEBUG_NOSEAMBLEED
+
+static void project_face_winding_init(const ProjPaintState *ps, const int tri_index)
+{
+  /* detect the winding of faces in uv space */
+  const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+  const float *lt_tri_uv[3] = {PS_LOOPTRI_AS_UV_3(ps->poly_to_loop_uv, lt)};
+  float winding = cross_tri_v2(lt_tri_uv[0], lt_tri_uv[1], lt_tri_uv[2]);
+
+  if (winding > 0) {
+    ps->faceWindingFlags[tri_index] |= PROJ_FACE_WINDING_CW;
+  }
+
+  ps->faceWindingFlags[tri_index] |= PROJ_FACE_WINDING_INIT;
+}
+
+/* This function returns 1 if this face has a seam along the 2 face-vert indices
+ * 'orig_i1_fidx' and 'orig_i2_fidx' */
+static bool check_seam(const ProjPaintState *ps,
+                       const int orig_face,
+                       const int orig_i1_fidx,
+                       const int orig_i2_fidx,
+                       int *other_face,
+                       int *orig_fidx)
+{
+  const MLoopTri *orig_lt = &ps->mlooptri_eval[orig_face];
+  const float *orig_lt_tri_uv[3] = {PS_LOOPTRI_AS_UV_3(ps->poly_to_loop_uv, orig_lt)};
+  /* vert indices from face vert order indices */
+  const uint i1 = ps->mloop_eval[orig_lt->tri[orig_i1_fidx]].v;
+  const uint i2 = ps->mloop_eval[orig_lt->tri[orig_i2_fidx]].v;
+  LinkNode *node;
+  /* index in face */
+  int i1_fidx = -1, i2_fidx = -1;
+
+  for (node = ps->vertFaces[i1]; node; node = node->next) {
+    const int tri_index = POINTER_AS_INT(node->link);
+
+    if (tri_index != orig_face) {
+      const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+      const int lt_vtri[3] = {PS_LOOPTRI_AS_VERT_INDEX_3(ps, lt)};
+      /* could check if the 2 faces images match here,
+       * but then there wouldn't be a way to return the opposite face's info */
+
+      /* We need to know the order of the verts in the adjacent face
+       * set the i1_fidx and i2_fidx to (0,1,2,3) */
+      i1_fidx = BKE_MESH_TESSTRI_VINDEX_ORDER(lt_vtri, i1);
+      i2_fidx = BKE_MESH_TESSTRI_VINDEX_ORDER(lt_vtri, i2);
+
+      /* Only need to check if 'i2_fidx' is valid because
+       * we know i1_fidx is the same vert on both faces. */
+      if (i2_fidx != -1) {
+        const float *lt_tri_uv[3] = {PS_LOOPTRI_AS_UV_3(ps->poly_to_loop_uv, lt)};
+        Image *tpage = project_paint_face_paint_image(ps, tri_index);
+        Image *orig_tpage = project_paint_face_paint_image(ps, orig_face);
+        int tile = project_paint_face_paint_tile(tpage, lt_tri_uv[0]);
+        int orig_tile = project_paint_face_paint_tile(orig_tpage, orig_lt_tri_uv[0]);
+
+        BLI_assert(i1_fidx != -1);
+
+        /* This IS an adjacent face!, now lets check if the UVs are ok */
+
+        /* set up the other face */
+        *other_face = tri_index;
+
+        /* we check if difference is 1 here, else we might have a case of edge 2-0 for a tri */
+        *orig_fidx = (i1_fidx < i2_fidx && (i2_fidx - i1_fidx == 1)) ? i1_fidx : i2_fidx;
+
+        /* initialize face winding if needed */
+        if ((ps->faceWindingFlags[tri_index] & PROJ_FACE_WINDING_INIT) == 0) {
+          project_face_winding_init(ps, tri_index);
+        }
+
+        /* first test if they have the same image */
+        if ((orig_tpage == tpage) && (orig_tile == tile) &&
+            cmp_uv(orig_lt_tri_uv[orig_i1_fidx], lt_tri_uv[i1_fidx]) &&
+            cmp_uv(orig_lt_tri_uv[orig_i2_fidx], lt_tri_uv[i2_fidx])) {
+          /* if faces don't have the same winding in uv space,
+           * they are on the same side so edge is boundary */
+          if ((ps->faceWindingFlags[tri_index] & PROJ_FACE_WINDING_CW) !=
+              (ps->faceWindingFlags[orig_face] & PROJ_FACE_WINDING_CW)) {
+            return true;
+          }
+
+          // printf("SEAM (NONE)\n");
+          return false;
+        }
+        // printf("SEAM (UV GAP)\n");
+        return true;
+      }
+    }
+  }
+  // printf("SEAM (NO FACE)\n");
+  *other_face = -1;
+  return true;
+}
+
+static VertSeam *find_adjacent_seam(const ProjPaintState *ps,
+                                    uint loop_index,
+                                    uint vert_index,
+                                    VertSeam **r_seam)
+{
+  ListBase *vert_seams = &ps->vertSeams[vert_index];
+  VertSeam *seam = vert_seams->first;
+  VertSeam *adjacent = NULL;
+
+  while (seam->loop != loop_index) {
+    seam = seam->next;
+  }
+
+  if (r_seam) {
+    *r_seam = seam;
+  }
+
+  /* Circulate through the (sorted) vert seam array, in the direction of the seam normal,
+   * until we find the first opposing seam, matching in UV space. */
+  if (seam->normal_cw) {
+    LISTBASE_CIRCULAR_BACKWARD_BEGIN (vert_seams, adjacent, seam) {
+      if ((adjacent->normal_cw != seam->normal_cw) && cmp_uv(adjacent->uv, seam->uv)) {
+        break;
+      }
+    }
+    LISTBASE_CIRCULAR_BACKWARD_END(vert_seams, adjacent, seam);
+  }
+  else {
+    LISTBASE_CIRCULAR_FORWARD_BEGIN (vert_seams, adjacent, seam) {
+      if ((adjacent->normal_cw != seam->normal_cw) && cmp_uv(adjacent->uv, seam->uv)) {
+        break;
+      }
+    }
+    LISTBASE_CIRCULAR_FORWARD_END(vert_seams, adjacent, seam);
+  }
+
+  BLI_assert(adjacent);
+
+  return adjacent;
+}
+
+/* Computes the normal of two seams at their intersection,
+ * and returns the angle between the seam and its normal. */
+static float compute_seam_normal(VertSeam *seam, VertSeam *adj, float r_no[2])
+{
+  const float PI_2 = M_PI * 2.0f;
+  float angle[2];
+  float angle_rel, angle_no;
+
+  if (seam->normal_cw) {
+    angle[0] = adj->angle;
+    angle[1] = seam->angle;
+  }
+  else {
+    angle[0] = seam->angle;
+    angle[1] = adj->angle;
+  }
+
+  angle_rel = angle[1] - angle[0];
+
+  if (angle_rel < 0.0f) {
+    angle_rel += PI_2;
+  }
+
+  angle_rel *= 0.5f;
+
+  angle_no = angle_rel + angle[0];
+
+  if (angle_no > M_PI) {
+    angle_no -= PI_2;
+  }
+
+  r_no[0] = cosf(angle_no);
+  r_no[1] = sinf(angle_no);
+
+  return angle_rel;
+}
+/* Calculate outset UV's, this is not the same as simply scaling the UVs,
+ * since the outset coords are a margin that keep an even distance from the original UV's,
+ * note that the image aspect is taken into account */
+static void uv_image_outset(const ProjPaintState *ps,
+                            float (*orig_uv)[2],
+                            float (*puv)[2],
+                            uint tri_index,
+                            const int ibuf_x,
+                            const int ibuf_y)
+{
+  int fidx[2];
+  uint loop_index;
+  uint vert[2];
+  const MLoopTri *ltri = &ps->mlooptri_eval[tri_index];
+
+  float ibuf_inv[2];
+
+  ibuf_inv[0] = 1.0f / (float)ibuf_x;
+  ibuf_inv[1] = 1.0f / (float)ibuf_y;
+
+  for (fidx[0] = 0; fidx[0] < 3; fidx[0]++) {
+    LoopSeamData *seam_data;
+    float(*seam_uvs)[2];
+    float ang[2];
+
+    if ((ps->faceSeamFlags[tri_index] & (PROJ_FACE_SEAM0 << fidx[0])) == 0) {
+      continue;
+    }
+
+    loop_index = ltri->tri[fidx[0]];
+
+    seam_data = &ps->loopSeamData[loop_index];
+    seam_uvs = seam_data->seam_uvs;
+
+    if (seam_uvs[0][0] != FLT_MAX) {
+      continue;
+    }
+
+    fidx[1] = (fidx[0] == 2) ? 0 : fidx[0] + 1;
+
+    vert[0] = ps->mloop_eval[loop_index].v;
+    vert[1] = ps->mloop_eval[ltri->tri[fidx[1]]].v;
+
+    for (uint i = 0; i < 2; i++) {
+      VertSeam *seam;
+      VertSeam *adj = find_adjacent_seam(ps, loop_index, vert[i], &seam);
+      float no[2];
+      float len_fact;
+      float tri_ang;
+
+      ang[i] = compute_seam_normal(seam, adj, no);
+      tri_ang = ang[i] - M_PI_2;
+
+      if (tri_ang > 0.0f) {
+        const float dist = ps->seam_bleed_px * tanf(tri_ang);
+        seam_data->corner_dist_sq[i] = square_f(dist);
+      }
+      else {
+        seam_data->corner_dist_sq[i] = 0.0f;
+      }
+
+      len_fact = cosf(tri_ang);
+      len_fact = UNLIKELY(len_fact < FLT_EPSILON) ? FLT_MAX : (1.0f / len_fact);
+
+      /* Clamp the length factor, see: T62236. */
+      len_fact = MIN2(len_fact, 10.0f);
+
+      mul_v2_fl(no, ps->seam_bleed_px * len_fact);
+
+      add_v2_v2v2(seam_data->seam_puvs[i], puv[fidx[i]], no);
+
+      mul_v2_v2v2(seam_uvs[i], seam_data->seam_puvs[i], ibuf_inv);
+    }
+
+    /* Handle convergent normals (can self-intersect). */
+    if ((ang[0] + ang[1]) < M_PI) {
+      if (isect_seg_seg_v2_simple(orig_uv[fidx[0]], seam_uvs[0], orig_uv[fidx[1]], seam_uvs[1])) {
+        float isect_co[2];
+
+        isect_seg_seg_v2_point(
+            orig_uv[fidx[0]], seam_uvs[0], orig_uv[fidx[1]], seam_uvs[1], isect_co);
+
+        copy_v2_v2(seam_uvs[0], isect_co);
+        copy_v2_v2(seam_uvs[1], isect_co);
+      }
+    }
+  }
+}
+
+static void insert_seam_vert_array(const ProjPaintState *ps,
+                                   MemArena *arena,
+                                   const int tri_index,
+                                   const int fidx1,
+                                   const int ibuf_x,
+                                   const int ibuf_y)
+{
+  const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+  const float *lt_tri_uv[3] = {PS_LOOPTRI_AS_UV_3(ps->poly_to_loop_uv, lt)};
+  const int fidx[2] = {fidx1, ((fidx1 + 1) % 3)};
+  float vec[2];
+
+  VertSeam *vseam = BLI_memarena_alloc(arena, sizeof(VertSeam[2]));
+
+  vseam->prev = NULL;
+  vseam->next = NULL;
+
+  vseam->tri = tri_index;
+  vseam->loop = lt->tri[fidx[0]];
+
+  sub_v2_v2v2(vec, lt_tri_uv[fidx[1]], lt_tri_uv[fidx[0]]);
+  vec[0] *= ibuf_x;
+  vec[1] *= ibuf_y;
+  vseam->angle = atan2f(vec[1], vec[0]);
+
+  /* If face windings are not initialized, something must be wrong. */
+  BLI_assert((ps->faceWindingFlags[tri_index] & PROJ_FACE_WINDING_INIT) != 0);
+  vseam->normal_cw = (ps->faceWindingFlags[tri_index] & PROJ_FACE_WINDING_CW);
+
+  copy_v2_v2(vseam->uv, lt_tri_uv[fidx[0]]);
+
+  vseam[1] = vseam[0];
+  vseam[1].angle += vseam[1].angle > 0.0f ? -M_PI : M_PI;
+  vseam[1].normal_cw = !vseam[1].normal_cw;
+  copy_v2_v2(vseam[1].uv, lt_tri_uv[fidx[1]]);
+
+  for (uint i = 0; i < 2; i++) {
+    uint vert = ps->mloop_eval[lt->tri[fidx[i]]].v;
+    ListBase *list = &ps->vertSeams[vert];
+    VertSeam *item = list->first;
+
+    while (item && item->angle < vseam[i].angle) {
+      item = item->next;
+    }
+
+    BLI_insertlinkbefore(list, item, &vseam[i]);
+  }
+}
+
+/**
+ * Be tricky with flags, first 4 bits are #PROJ_FACE_SEAM0 to 4,
+ * last 4 bits are #PROJ_FACE_NOSEAM0 to 4. `1 << i` - where i is `(0..3)`.
+ *
+ * If we're multi-threading, make sure threads are locked when this is called.
+ */
+static void project_face_seams_init(const ProjPaintState *ps,
+                                    MemArena *arena,
+                                    const int tri_index,
+                                    const uint vert_index,
+                                    bool init_all,
+                                    const int ibuf_x,
+                                    const int ibuf_y)
+{
+  /* vars for the other face, we also set its flag */
+  int other_face, other_fidx;
+  /* next fidx in the face (0,1,2,3) -> (1,2,3,0) or (0,1,2) -> (1,2,0) for a tri */
+  int fidx[2] = {2, 0};
+  const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+  LinkNode *node;
+
+  /* initialize face winding if needed */
+  if ((ps->faceWindingFlags[tri_index] & PROJ_FACE_WINDING_INIT) == 0) {
+    project_face_winding_init(ps, tri_index);
+  }
+
+  do {
+    if (init_all || (ps->mloop_eval[lt->tri[fidx[0]]].v == vert_index) ||
+        (ps->mloop_eval[lt->tri[fidx[1]]].v == vert_index)) {
+      if ((ps->faceSeamFlags[tri_index] &
+           (PROJ_FACE_SEAM0 << fidx[0] | PROJ_FACE_NOSEAM0 << fidx[0])) == 0) {
+        if (check_seam(ps, tri_index, fidx[0], fidx[1], &other_face, &other_fidx)) {
+          ps->faceSeamFlags[tri_index] |= PROJ_FACE_SEAM0 << fidx[0];
+          insert_seam_vert_array(ps, arena, tri_index, fidx[0], ibuf_x, ibuf_y);
+
+          if (other_face != -1) {
+            /* Check if the other seam is already set.
+             * We don't want to insert it in the list twice. */
+            if ((ps->faceSeamFlags[other_face] & (PROJ_FACE_SEAM0 << other_fidx)) == 0) {
+              ps->faceSeamFlags[other_face] |= PROJ_FACE_SEAM0 << other_fidx;
+              insert_seam_vert_array(ps, arena, other_face, other_fidx, ibuf_x, ibuf_y);
+            }
+          }
+        }
+        else {
+          ps->faceSeamFlags[tri_index] |= PROJ_FACE_NOSEAM0 << fidx[0];
+          ps->faceSeamFlags[tri_index] |= PROJ_FACE_SEAM_INIT0 << fidx[0];
+
+          if (other_face != -1) {
+            /* second 4 bits for disabled */
+            ps->faceSeamFlags[other_face] |= PROJ_FACE_NOSEAM0 << other_fidx;
+            ps->faceSeamFlags[other_face] |= PROJ_FACE_SEAM_INIT0 << other_fidx;
+          }
+        }
+      }
+    }
+
+    fidx[1] = fidx[0];
+  } while (fidx[0]--);
+
+  if (init_all) {
+    char checked_verts = 0;
+
+    fidx[0] = 2;
+    fidx[1] = 0;
+
+    do {
+      if ((ps->faceSeamFlags[tri_index] & (PROJ_FACE_SEAM_INIT0 << fidx[0])) == 0) {
+        for (uint i = 0; i < 2; i++) {
+          uint vert;
+
+          if ((checked_verts & (1 << fidx[i])) != 0) {
+            continue;
+          }
+
+          vert = ps->mloop_eval[lt->tri[fidx[i]]].v;
+
+          for (node = ps->vertFaces[vert]; node; node = node->next) {
+            const int tri = POINTER_AS_INT(node->link);
+
+            project_face_seams_init(ps, arena, tri, vert, false, ibuf_x, ibuf_y);
+          }
+
+          checked_verts |= 1 << fidx[i];
+        }
+
+        ps->faceSeamFlags[tri_index] |= PROJ_FACE_SEAM_INIT0 << fidx[0];
+      }
+
+      fidx[1] = fidx[0];
+    } while (fidx[0]--);
+  }
+}
+#endif  // PROJ_DEBUG_NOSEAMBLEED
+
+/* Converts a UV location to a 3D screen-space location
+ * Takes a 'uv' and 3 UV coords, and sets the values of pixelScreenCo
+ *
+ * This is used for finding a pixels location in screen-space for painting */
+static void screen_px_from_ortho(const float uv[2],
+                                 const float v1co[3],
+                                 const float v2co[3],
+                                 const float v3co[3], /* Screenspace coords */
+                                 const float uv1co[2],
+                                 const float uv2co[2],
+                                 const float uv3co[2],
+                                 float pixelScreenCo[4],
+                                 float w[3])
+{
+  barycentric_weights_v2(uv1co, uv2co, uv3co, uv, w);
+  interp_v3_v3v3v3(pixelScreenCo, v1co, v2co, v3co, w);
+}
+
+/* same as screen_px_from_ortho except we
+ * do perspective correction on the pixel coordinate */
+static void screen_px_from_persp(const float uv[2],
+                                 const float v1co[4],
+                                 const float v2co[4],
+                                 const float v3co[4], /* screen-space coords */
+                                 const float uv1co[2],
+                                 const float uv2co[2],
+                                 const float uv3co[2],
+                                 float pixelScreenCo[4],
+                                 float w[3])
+{
+  float w_int[3];
+  float wtot_inv, wtot;
+  barycentric_weights_v2(uv1co, uv2co, uv3co, uv, w);
+
+  /* re-weight from the 4th coord of each screen vert */
+  w_int[0] = w[0] * v1co[3];
+  w_int[1] = w[1] * v2co[3];
+  w_int[2] = w[2] * v3co[3];
+
+  wtot = w_int[0] + w_int[1] + w_int[2];
+
+  if (wtot > 0.0f) {
+    wtot_inv = 1.0f / wtot;
+    w_int[0] *= wtot_inv;
+    w_int[1] *= wtot_inv;
+    w_int[2] *= wtot_inv;
+  }
+  else {
+    /* Dummy values for zero area face. */
+    w[0] = w[1] = w[2] = w_int[0] = w_int[1] = w_int[2] = 1.0f / 3.0f;
+  }
+  /* done re-weighting */
+
+  /* do interpolation based on projected weight */
+  interp_v3_v3v3v3(pixelScreenCo, v1co, v2co, v3co, w_int);
+}
