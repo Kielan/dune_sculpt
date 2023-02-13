@@ -1,7 +1,4 @@
-/** \file
- * \ingroup edsculpt
- * \brief Functions to paint images in 2D and 3D.
- */
+/** Functions to paint images in 2D and 3D. */
 
 #include <float.h>
 #include <math.h>
@@ -11,74 +8,74 @@
 #include "MEM_guardedalloc.h"
 
 #ifdef WIN32
-#  include "BLI_winstuff.h"
+#  include "lib_winstuff.h"
 #endif
 
-#include "BLI_blenlib.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
-#include "BLI_math_bits.h"
-#include "BLI_math_color_blend.h"
-#include "BLI_memarena.h"
-#include "BLI_task.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_blenlib.h"
+#include "lib_linklist.h"
+#include "lib_math.h"
+#include "lib_math_bits.h"
+#include "lib_math_color_blend.h"
+#include "lib_memarena.h"
+#include "lib_task.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
 #include "atomic_ops.h"
 
-#include "BLT_translation.h"
+#include "I18N_translation.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "DNA_brush_types.h"
-#include "DNA_material_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
+#include "types_brush.h"
+#include "types_material_types.h"
+#include "types_mesh_types.h"
+#include "types_meshdata_types.h"
+#include "types_node_types.h"
+#include "types_object_types.h"
 
-#include "BKE_brush.h"
-#include "BKE_camera.h"
-#include "BKE_colorband.h"
-#include "BKE_colortools.h"
-#include "BKE_context.h"
-#include "BKE_customdata.h"
-#include "BKE_global.h"
-#include "BKE_idprop.h"
-#include "BKE_image.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_mapping.h"
-#include "BKE_mesh_runtime.h"
-#include "BKE_node.h"
-#include "BKE_paint.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
+#include "dune_brush.h"
+#include "dune_camera.h"
+#include "dune_colorband.h"
+#include "dune_colortools.h"
+#include "dune_context.h"
+#include "dune_customdata.h"
+#include "dune_global.h"
+#include "dune_idprop.h"
+#include "dune_image.h"
+#include "dune_lib_id.h"
+#include "dune_main.h"
+#include "dune_material.h"
+#include "dune_mesh.h"
+#include "dune_mesh_mapping.h"
+#include "dune_mesh_runtime.h"
+#include "dune_node.h"
+#include "dune_paint.h"
+#include "dune_report.h"
+#include "dune_scene.h"
+#include "dune_screen.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-#include "ED_node.h"
-#include "ED_object.h"
-#include "ED_paint.h"
-#include "ED_screen.h"
-#include "ED_uvedit.h"
-#include "ED_view3d.h"
-#include "ED_view3d_offscreen.h"
+#include "ed_node.h"
+#include "ed_object.h"
+#include "ed_paint.h"
+#include "ed_screen.h"
+#include "ed_uvedit.h"
+#include "ed_view3d.h"
+#include "ed_view3d_offscreen.h"
 
-#include "GPU_capabilities.h"
-#include "GPU_init_exit.h"
+#include "gpu_capabilities.h"
+#include "gpu_init_exit.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
 #include "IMB_colormanagement.h"
 
@@ -90,7 +87,7 @@ static void partial_redraw_array_init(ImagePaintPartialRedraw *pr);
 
 /* Defines and Structs */
 /* unit_float_to_uchar_clamp as inline function */
-BLI_INLINE uchar f_to_char(const float val)
+LIB_INLINE uchar f_to_char(const float val)
 {
   return unit_float_to_uchar_clamp(val);
 }
@@ -251,7 +248,7 @@ typedef struct ProjPaintState {
 
   /* projection painting only */
   /** For multi-threading, the first item is sometimes used for non threaded cases too. */
-  MemArena *arena_mt[BLENDER_MAX_THREADS];
+  MemArena *arena_mt[DUNE_MAX_THREADS];
   /** screen sized 2D array, each pixel has a linked list of ProjPixel's */
   LinkNode **bucketRect;
   /** bucketRect aligned array linkList of faces overlapping each bucket. */
@@ -403,7 +400,7 @@ typedef struct ProjPaintState {
   const MLoopUV *mloopuv_stencil_eval;
 
   /**
-   * \note These UV layers are aligned to \a mpoly_eval
+   * note These UV layers are aligned to \a mpoly_eval
    * but each pointer references the start of the layer,
    * so a loop indirection is needed as well.
    */
@@ -473,3 +470,399 @@ typedef struct {
   ImBuf **tmpibuf;
   ProjPaintImage *pjima;
 } TileInfo;
+
+typedef struct VertSeam {
+  struct VertSeam *next, *prev;
+  int tri;
+  uint loop;
+  float angle;
+  bool normal_cw;
+  float uv[2];
+} VertSeam;
+
+/* -------------------------------------------------------------------- */
+/** \name MLoopTri accessor functions.
+ * \{ */
+
+BLI_INLINE const MPoly *ps_tri_index_to_mpoly(const ProjPaintState *ps, int tri_index)
+{
+  return &ps->mpoly_eval[ps->mlooptri_eval[tri_index].poly];
+}
+
+#define PS_LOOPTRI_AS_VERT_INDEX_3(ps, lt) \
+  ps->mloop_eval[lt->tri[0]].v, ps->mloop_eval[lt->tri[1]].v, ps->mloop_eval[lt->tri[2]].v,
+
+#define PS_LOOPTRI_AS_UV_3(uvlayer, lt) \
+  uvlayer[lt->poly][lt->tri[0]].uv, uvlayer[lt->poly][lt->tri[1]].uv, \
+      uvlayer[lt->poly][lt->tri[2]].uv,
+
+#define PS_LOOPTRI_ASSIGN_UV_3(uv_tri, uvlayer, lt) \
+  { \
+    (uv_tri)[0] = uvlayer[lt->poly][lt->tri[0]].uv; \
+    (uv_tri)[1] = uvlayer[lt->poly][lt->tri[1]].uv; \
+    (uv_tri)[2] = uvlayer[lt->poly][lt->tri[2]].uv; \
+  } \
+  ((void)0)
+
+/** \} */
+
+/* Finish projection painting structs */
+
+static int project_paint_face_paint_tile(Image *ima, const float *uv)
+{
+  if (ima == NULL || ima->source != IMA_SRC_TILED) {
+    return 0;
+  }
+
+  /* Currently, faces are assumed to belong to one tile, so checking the first loop is enough. */
+  int tx = (int)uv[0];
+  int ty = (int)uv[1];
+  return 1001 + 10 * ty + tx;
+}
+
+static TexPaintSlot *project_paint_face_paint_slot(const ProjPaintState *ps, int tri_index)
+{
+  const MPoly *mp = ps_tri_index_to_mpoly(ps, tri_index);
+  Material *ma = ps->mat_array[mp->mat_nr];
+  return ma ? ma->texpaintslot + ma->paint_active_slot : NULL;
+}
+
+static Image *project_paint_face_paint_image(const ProjPaintState *ps, int tri_index)
+{
+  if (ps->do_stencil_brush) {
+    return ps->stencil_ima;
+  }
+
+  const MPoly *mp = ps_tri_index_to_mpoly(ps, tri_index);
+  Material *ma = ps->mat_array[mp->mat_nr];
+  TexPaintSlot *slot = ma ? ma->texpaintslot + ma->paint_active_slot : NULL;
+  return slot ? slot->ima : ps->canvas_ima;
+}
+
+static TexPaintSlot *project_paint_face_clone_slot(const ProjPaintState *ps, int tri_index)
+{
+  const MPoly *mp = ps_tri_index_to_mpoly(ps, tri_index);
+  Material *ma = ps->mat_array[mp->mat_nr];
+  return ma ? ma->texpaintslot + ma->paint_clone_slot : NULL;
+}
+
+static Image *project_paint_face_clone_image(const ProjPaintState *ps, int tri_index)
+{
+  const MPoly *mp = ps_tri_index_to_mpoly(ps, tri_index);
+  Material *ma = ps->mat_array[mp->mat_nr];
+  TexPaintSlot *slot = ma ? ma->texpaintslot + ma->paint_clone_slot : NULL;
+  return slot ? slot->ima : ps->clone_ima;
+}
+
+/**
+ * Fast projection bucket array lookup, use the safe version for bound checking.
+ */
+static int project_bucket_offset(const ProjPaintState *ps, const float projCoSS[2])
+{
+  /* If we were not dealing with screen-space 2D coords we could simple do...
+   * ps->bucketRect[x + (y*ps->buckets_y)] */
+
+  /* please explain?
+   * projCoSS[0] - ps->screenMin[0]   : zero origin
+   * ... / ps->screen_width           : range from 0.0 to 1.0
+   * ... * ps->buckets_x              : use as a bucket index
+   *
+   * Second multiplication does similar but for vertical offset
+   */
+  return ((int)(((projCoSS[0] - ps->screenMin[0]) / ps->screen_width) * ps->buckets_x)) +
+         (((int)(((projCoSS[1] - ps->screenMin[1]) / ps->screen_height) * ps->buckets_y)) *
+          ps->buckets_x);
+}
+
+static int project_bucket_offset_safe(const ProjPaintState *ps, const float projCoSS[2])
+{
+  int bucket_index = project_bucket_offset(ps, projCoSS);
+
+  if (bucket_index < 0 || bucket_index >= ps->buckets_x * ps->buckets_y) {
+    return -1;
+  }
+  return bucket_index;
+}
+
+static float VecZDepthOrtho(
+    const float pt[2], const float v1[3], const float v2[3], const float v3[3], float w[3])
+{
+  barycentric_weights_v2(v1, v2, v3, pt, w);
+  return (v1[2] * w[0]) + (v2[2] * w[1]) + (v3[2] * w[2]);
+}
+
+static float VecZDepthPersp(
+    const float pt[2], const float v1[4], const float v2[4], const float v3[4], float w[3])
+{
+  float wtot_inv, wtot;
+  float w_tmp[3];
+
+  barycentric_weights_v2_persp(v1, v2, v3, pt, w);
+  /* for the depth we need the weights to match what
+   * barycentric_weights_v2 would return, in this case its easiest just to
+   * undo the 4th axis division and make it unit-sum
+   *
+   * don't call barycentric_weights_v2() because our callers expect 'w'
+   * to be weighted from the perspective */
+  w_tmp[0] = w[0] * v1[3];
+  w_tmp[1] = w[1] * v2[3];
+  w_tmp[2] = w[2] * v3[3];
+
+  wtot = w_tmp[0] + w_tmp[1] + w_tmp[2];
+
+  if (wtot != 0.0f) {
+    wtot_inv = 1.0f / wtot;
+
+    w_tmp[0] = w_tmp[0] * wtot_inv;
+    w_tmp[1] = w_tmp[1] * wtot_inv;
+    w_tmp[2] = w_tmp[2] * wtot_inv;
+  }
+  else { /* dummy values for zero area face */
+    w_tmp[0] = w_tmp[1] = w_tmp[2] = 1.0f / 3.0f;
+  }
+  /* done mimicking barycentric_weights_v2() */
+
+  return (v1[2] * w_tmp[0]) + (v2[2] * w_tmp[1]) + (v3[2] * w_tmp[2]);
+}
+
+/* Return the top-most face index that the screen space coord 'pt' touches (or -1) */
+static int project_paint_PickFace(const ProjPaintState *ps, const float pt[2], float w[3])
+{
+  LinkNode *node;
+  float w_tmp[3];
+  int bucket_index;
+  int best_tri_index = -1;
+  float z_depth_best = FLT_MAX, z_depth;
+
+  bucket_index = project_bucket_offset_safe(ps, pt);
+  if (bucket_index == -1) {
+    return -1;
+  }
+
+  /* we could return 0 for 1 face buckets, as long as this function assumes
+   * that the point its testing is only every originated from an existing face */
+
+  for (node = ps->bucketFaces[bucket_index]; node; node = node->next) {
+    const int tri_index = POINTER_AS_INT(node->link);
+    const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+    const float *vtri_ss[3] = {
+        ps->screenCoords[ps->mloop_eval[lt->tri[0]].v],
+        ps->screenCoords[ps->mloop_eval[lt->tri[1]].v],
+        ps->screenCoords[ps->mloop_eval[lt->tri[2]].v],
+    };
+
+    if (isect_point_tri_v2(pt, UNPACK3(vtri_ss))) {
+      if (ps->is_ortho) {
+        z_depth = VecZDepthOrtho(pt, UNPACK3(vtri_ss), w_tmp);
+      }
+      else {
+        z_depth = VecZDepthPersp(pt, UNPACK3(vtri_ss), w_tmp);
+      }
+
+      if (z_depth < z_depth_best) {
+        best_tri_index = tri_index;
+        z_depth_best = z_depth;
+        copy_v3_v3(w, w_tmp);
+      }
+    }
+  }
+
+  /** will be -1 or a valid face. */
+  return best_tri_index;
+}
+
+/* Converts a uv coord into a pixel location wrapping if the uv is outside 0-1 range */
+static void uvco_to_wrapped_pxco(const float uv[2], int ibuf_x, int ibuf_y, float *x, float *y)
+{
+  /* use */
+  *x = fmodf(uv[0], 1.0f);
+  *y = fmodf(uv[1], 1.0f);
+
+  if (*x < 0.0f) {
+    *x += 1.0f;
+  }
+  if (*y < 0.0f) {
+    *y += 1.0f;
+  }
+
+  *x = *x * ibuf_x - 0.5f;
+  *y = *y * ibuf_y - 0.5f;
+}
+
+/* Set the top-most face color that the screen space coord 'pt' touches
+ * (or return 0 if none touch) */
+static bool project_paint_PickColor(
+    const ProjPaintState *ps, const float pt[2], float *rgba_fp, uchar *rgba, const bool interp)
+{
+  const MLoopTri *lt;
+  const float *lt_tri_uv[3];
+  float w[3], uv[2];
+  int tri_index;
+  Image *ima;
+  ImBuf *ibuf;
+  int xi, yi;
+
+  tri_index = project_paint_PickFace(ps, pt, w);
+
+  if (tri_index == -1) {
+    return false;
+  }
+
+  lt = &ps->mlooptri_eval[tri_index];
+  PS_LOOPTRI_ASSIGN_UV_3(lt_tri_uv, ps->poly_to_loop_uv, lt);
+
+  interp_v2_v2v2v2(uv, UNPACK3(lt_tri_uv), w);
+
+  ima = project_paint_face_paint_image(ps, tri_index);
+  /** we must have got the imbuf before getting here. */
+  int tile_number = project_paint_face_paint_tile(ima, lt_tri_uv[0]);
+  /* XXX get appropriate ImageUser instead */
+  ImageUser iuser;
+  BKE_imageuser_default(&iuser);
+  iuser.tile = tile_number;
+  iuser.framenr = ima->lastframe;
+  ibuf = BKE_image_acquire_ibuf(ima, &iuser, NULL);
+  if (ibuf == NULL) {
+    return false;
+  }
+
+  if (interp) {
+    float x, y;
+    uvco_to_wrapped_pxco(uv, ibuf->x, ibuf->y, &x, &y);
+
+    if (ibuf->rect_float) {
+      if (rgba_fp) {
+        bilinear_interpolation_color_wrap(ibuf, NULL, rgba_fp, x, y);
+      }
+      else {
+        float rgba_tmp_f[4];
+        bilinear_interpolation_color_wrap(ibuf, NULL, rgba_tmp_f, x, y);
+        premul_float_to_straight_uchar(rgba, rgba_tmp_f);
+      }
+    }
+    else {
+      if (rgba) {
+        bilinear_interpolation_color_wrap(ibuf, rgba, NULL, x, y);
+      }
+      else {
+        uchar rgba_tmp[4];
+        bilinear_interpolation_color_wrap(ibuf, rgba_tmp, NULL, x, y);
+        straight_uchar_to_premul_float(rgba_fp, rgba_tmp);
+      }
+    }
+  }
+  else {
+    // xi = (int)((uv[0]*ibuf->x) + 0.5f);
+    // yi = (int)((uv[1]*ibuf->y) + 0.5f);
+    // if (xi < 0 || xi >= ibuf->x  ||  yi < 0 || yi >= ibuf->y) return false;
+
+    /* wrap */
+    xi = mod_i((int)(uv[0] * ibuf->x), ibuf->x);
+    yi = mod_i((int)(uv[1] * ibuf->y), ibuf->y);
+
+    if (rgba) {
+      if (ibuf->rect_float) {
+        const float *rgba_tmp_fp = ibuf->rect_float + (xi + yi * ibuf->x * 4);
+        premul_float_to_straight_uchar(rgba, rgba_tmp_fp);
+      }
+      else {
+        *((uint *)rgba) = *(uint *)(((char *)ibuf->rect) + ((xi + yi * ibuf->x) * 4));
+      }
+    }
+
+    if (rgba_fp) {
+      if (ibuf->rect_float) {
+        copy_v4_v4(rgba_fp, (ibuf->rect_float + ((xi + yi * ibuf->x) * 4)));
+      }
+      else {
+        uchar *tmp_ch = ((uchar *)ibuf->rect) + ((xi + yi * ibuf->x) * 4);
+        straight_uchar_to_premul_float(rgba_fp, tmp_ch);
+      }
+    }
+  }
+  BKE_image_release_ibuf(ima, ibuf, NULL);
+  return true;
+}
+
+/**
+ * Check if 'pt' is in front of the 3 verts on the Z axis (used for screen-space occlusion test)
+ * \return
+ * -  `0`:   no occlusion
+ * - `-1`: no occlusion but 2D intersection is true
+ * -  `1`: occluded
+ * -  `2`: occluded with `w[3]` weights set (need to know in some cases)
+ */
+static int project_paint_occlude_ptv(const float pt[3],
+                                     const float v1[4],
+                                     const float v2[4],
+                                     const float v3[4],
+                                     float w[3],
+                                     const bool is_ortho)
+{
+  /* if all are behind us, return false */
+  if (v1[2] > pt[2] && v2[2] > pt[2] && v3[2] > pt[2]) {
+    return 0;
+  }
+
+  /* do a 2D point in try intersection */
+  if (!isect_point_tri_v2(pt, v1, v2, v3)) {
+    return 0;
+  }
+
+  /* From here on we know there IS an intersection */
+  /* if ALL of the verts are in front of us then we know it intersects ? */
+  if (v1[2] < pt[2] && v2[2] < pt[2] && v3[2] < pt[2]) {
+    return 1;
+  }
+
+  /* we intersect? - find the exact depth at the point of intersection */
+  /* Is this point is occluded by another face? */
+  if (is_ortho) {
+    if (VecZDepthOrtho(pt, v1, v2, v3, w) < pt[2]) {
+      return 2;
+    }
+  }
+  else {
+    if (VecZDepthPersp(pt, v1, v2, v3, w) < pt[2]) {
+      return 2;
+    }
+  }
+  return -1;
+}
+
+static int project_paint_occlude_ptv_clip(const float pt[3],
+                                          const float v1[4],
+                                          const float v2[4],
+                                          const float v3[4],
+                                          const float v1_3d[3],
+                                          const float v2_3d[3],
+                                          const float v3_3d[3],
+                                          float w[3],
+                                          const bool is_ortho,
+                                          RegionView3D *rv3d)
+{
+  float wco[3];
+  int ret = project_paint_occlude_ptv(pt, v1, v2, v3, w, is_ortho);
+
+  if (ret <= 0) {
+    return ret;
+  }
+
+  if (ret == 1) { /* weights not calculated */
+    if (is_ortho) {
+      barycentric_weights_v2(v1, v2, v3, pt, w);
+    }
+    else {
+      barycentric_weights_v2_persp(v1, v2, v3, pt, w);
+    }
+  }
+
+  /* Test if we're in the clipped area, */
+  interp_v3_v3v3v3(wco, v1_3d, v2_3d, v3_3d, w);
+
+  if (!ED_view3d_clipping_test(rv3d, wco, true)) {
+    return 1;
+  }
+
+  return -1;
+}
