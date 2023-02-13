@@ -2288,3 +2288,359 @@ static bool project_bucket_isect_circle(const float cent[2],
  * for this reason its not reliable in this case so we'll use the Simple Barycentric'
  * functions that only account for points inside the triangle.
  * however switching back to this for ortho is always an option. */
+
+static void rect_to_uvspace_ortho(const rctf *bucket_bounds,
+                                  const float *v1coSS,
+                                  const float *v2coSS,
+                                  const float *v3coSS,
+                                  const float *uv1co,
+                                  const float *uv2co,
+                                  const float *uv3co,
+                                  float bucket_bounds_uv[4][2],
+                                  const int flip)
+{
+  float uv[2];
+  float w[3];
+
+  /* get the UV space bounding box */
+  uv[0] = bucket_bounds->xmax;
+  uv[1] = bucket_bounds->ymin;
+  barycentric_weights_v2(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 3 : 0], uv1co, uv2co, uv3co, w);
+
+  // uv[0] = bucket_bounds->xmax; // set above
+  uv[1] = bucket_bounds->ymax;
+  barycentric_weights_v2(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 2 : 1], uv1co, uv2co, uv3co, w);
+
+  uv[0] = bucket_bounds->xmin;
+  // uv[1] = bucket_bounds->ymax; // set above
+  barycentric_weights_v2(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 1 : 2], uv1co, uv2co, uv3co, w);
+
+  // uv[0] = bucket_bounds->xmin; // set above
+  uv[1] = bucket_bounds->ymin;
+  barycentric_weights_v2(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 0 : 3], uv1co, uv2co, uv3co, w);
+}
+
+/* same as above but use barycentric_weights_v2_persp */
+static void rect_to_uvspace_persp(const rctf *bucket_bounds,
+                                  const float *v1coSS,
+                                  const float *v2coSS,
+                                  const float *v3coSS,
+                                  const float *uv1co,
+                                  const float *uv2co,
+                                  const float *uv3co,
+                                  float bucket_bounds_uv[4][2],
+                                  const int flip)
+{
+  float uv[2];
+  float w[3];
+
+  /* get the UV space bounding box */
+  uv[0] = bucket_bounds->xmax;
+  uv[1] = bucket_bounds->ymin;
+  barycentric_weights_v2_persp(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 3 : 0], uv1co, uv2co, uv3co, w);
+
+  // uv[0] = bucket_bounds->xmax; // set above
+  uv[1] = bucket_bounds->ymax;
+  barycentric_weights_v2_persp(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 2 : 1], uv1co, uv2co, uv3co, w);
+
+  uv[0] = bucket_bounds->xmin;
+  // uv[1] = bucket_bounds->ymax; // set above
+  barycentric_weights_v2_persp(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 1 : 2], uv1co, uv2co, uv3co, w);
+
+  // uv[0] = bucket_bounds->xmin; // set above
+  uv[1] = bucket_bounds->ymin;
+  barycentric_weights_v2_persp(v1coSS, v2coSS, v3coSS, uv, w);
+  interp_v2_v2v2v2(bucket_bounds_uv[flip ? 0 : 3], uv1co, uv2co, uv3co, w);
+}
+
+/* This works as we need it to but we can save a few steps and not use it */
+
+#if 0
+static float angle_2d_clockwise(const float p1[2], const float p2[2], const float p3[2])
+{
+  float v1[2], v2[2];
+
+  v1[0] = p1[0] - p2[0];
+  v1[1] = p1[1] - p2[1];
+  v2[0] = p3[0] - p2[0];
+  v2[1] = p3[1] - p2[1];
+
+  return -atan2f(v1[0] * v2[1] - v1[1] * v2[0], v1[0] * v2[0] + v1[1] * v2[1]);
+}
+#endif
+
+#define ISECT_1 (1)
+#define ISECT_2 (1 << 1)
+#define ISECT_3 (1 << 2)
+#define ISECT_4 (1 << 3)
+#define ISECT_ALL3 ((1 << 3) - 1)
+#define ISECT_ALL4 ((1 << 4) - 1)
+
+/* limit must be a fraction over 1.0f */
+static bool IsectPT2Df_limit(
+    const float pt[2], const float v1[2], const float v2[2], const float v3[2], const float limit)
+{
+  return ((area_tri_v2(pt, v1, v2) + area_tri_v2(pt, v2, v3) + area_tri_v2(pt, v3, v1)) /
+          (area_tri_v2(v1, v2, v3))) < limit;
+}
+
+/**
+ * Clip the face by a bucket and set the uv-space bucket_bounds_uv
+ * so we have the clipped UV's to do pixel intersection tests with
+ */
+static int float_z_sort_flip(const void *p1, const void *p2)
+{
+  return (((float *)p1)[2] < ((float *)p2)[2] ? 1 : -1);
+}
+
+static int float_z_sort(const void *p1, const void *p2)
+{
+  return (((float *)p1)[2] < ((float *)p2)[2] ? -1 : 1);
+}
+
+/* assumes one point is within the rectangle */
+static bool line_rect_clip(const rctf *rect,
+                           const float l1[4],
+                           const float l2[4],
+                           const float uv1[2],
+                           const float uv2[2],
+                           float uv[2],
+                           bool is_ortho)
+{
+  float min = FLT_MAX, tmp;
+  float xlen = l2[0] - l1[0];
+  float ylen = l2[1] - l1[1];
+
+  /* 0.1 might seem too much, but remember, this is pixels! */
+  if (xlen > 0.1f) {
+    if ((l1[0] - rect->xmin) * (l2[0] - rect->xmin) <= 0) {
+      tmp = rect->xmin;
+      min = min_ff((tmp - l1[0]) / xlen, min);
+    }
+    else if ((l1[0] - rect->xmax) * (l2[0] - rect->xmax) < 0) {
+      tmp = rect->xmax;
+      min = min_ff((tmp - l1[0]) / xlen, min);
+    }
+  }
+
+  if (ylen > 0.1f) {
+    if ((l1[1] - rect->ymin) * (l2[1] - rect->ymin) <= 0) {
+      tmp = rect->ymin;
+      min = min_ff((tmp - l1[1]) / ylen, min);
+    }
+    else if ((l1[1] - rect->ymax) * (l2[1] - rect->ymax) < 0) {
+      tmp = rect->ymax;
+      min = min_ff((tmp - l1[1]) / ylen, min);
+    }
+  }
+
+  if (min == FLT_MAX) {
+    return false;
+  }
+
+  tmp = (is_ortho) ? 1.0f : (l1[3] + min * (l2[3] - l1[3]));
+
+  uv[0] = (uv1[0] + min / tmp * (uv2[0] - uv1[0]));
+  uv[1] = (uv1[1] + min / tmp * (uv2[1] - uv1[1]));
+
+  return true;
+}
+
+static void project_bucket_clip_face(const bool is_ortho,
+                                     const bool is_flip_object,
+                                     const rctf *cliprect,
+                                     const rctf *bucket_bounds,
+                                     const float *v1coSS,
+                                     const float *v2coSS,
+                                     const float *v3coSS,
+                                     const float *uv1co,
+                                     const float *uv2co,
+                                     const float *uv3co,
+                                     float bucket_bounds_uv[8][2],
+                                     int *tot,
+                                     bool cull)
+{
+  int inside_bucket_flag = 0;
+  int inside_face_flag = 0;
+  int flip;
+  bool collinear = false;
+
+  float bucket_bounds_ss[4][2];
+
+  /* detect pathological case where face the three vertices are almost collinear in screen space.
+   * mostly those will be culled but when flood filling or with
+   * smooth shading it's a possibility */
+  if (min_fff(dist_squared_to_line_v2(v1coSS, v2coSS, v3coSS),
+              dist_squared_to_line_v2(v2coSS, v3coSS, v1coSS),
+              dist_squared_to_line_v2(v3coSS, v1coSS, v2coSS)) < PROJ_PIXEL_TOLERANCE) {
+    collinear = true;
+  }
+
+  /* get the UV space bounding box */
+  inside_bucket_flag |= BLI_rctf_isect_pt_v(bucket_bounds, v1coSS);
+  inside_bucket_flag |= BLI_rctf_isect_pt_v(bucket_bounds, v2coSS) << 1;
+  inside_bucket_flag |= BLI_rctf_isect_pt_v(bucket_bounds, v3coSS) << 2;
+
+  if (inside_bucket_flag == ISECT_ALL3) {
+    /* is_flip_object is used here because we use the face winding */
+    flip = (((line_point_side_v2(v1coSS, v2coSS, v3coSS) > 0.0f) != is_flip_object) !=
+            (line_point_side_v2(uv1co, uv2co, uv3co) > 0.0f));
+
+    /* All screen-space points are inside the bucket bounding box,
+     * this means we don't need to clip and can simply return the UVs. */
+    if (flip) { /* facing the back? */
+      copy_v2_v2(bucket_bounds_uv[0], uv3co);
+      copy_v2_v2(bucket_bounds_uv[1], uv2co);
+      copy_v2_v2(bucket_bounds_uv[2], uv1co);
+    }
+    else {
+      copy_v2_v2(bucket_bounds_uv[0], uv1co);
+      copy_v2_v2(bucket_bounds_uv[1], uv2co);
+      copy_v2_v2(bucket_bounds_uv[2], uv3co);
+    }
+
+    *tot = 3;
+    return;
+  }
+  /* Handle pathological case here,
+   * no need for further intersections below since triangle area is almost zero. */
+  if (collinear) {
+    int flag;
+
+    (*tot) = 0;
+
+    if (cull) {
+      return;
+    }
+
+    if (inside_bucket_flag & ISECT_1) {
+      copy_v2_v2(bucket_bounds_uv[*tot], uv1co);
+      (*tot)++;
+    }
+
+    flag = inside_bucket_flag & (ISECT_1 | ISECT_2);
+    if (flag && flag != (ISECT_1 | ISECT_2)) {
+      if (line_rect_clip(
+              bucket_bounds, v1coSS, v2coSS, uv1co, uv2co, bucket_bounds_uv[*tot], is_ortho)) {
+        (*tot)++;
+      }
+    }
+
+    if (inside_bucket_flag & ISECT_2) {
+      copy_v2_v2(bucket_bounds_uv[*tot], uv2co);
+      (*tot)++;
+    }
+
+    flag = inside_bucket_flag & (ISECT_2 | ISECT_3);
+    if (flag && flag != (ISECT_2 | ISECT_3)) {
+      if (line_rect_clip(
+              bucket_bounds, v2coSS, v3coSS, uv2co, uv3co, bucket_bounds_uv[*tot], is_ortho)) {
+        (*tot)++;
+      }
+    }
+
+    if (inside_bucket_flag & ISECT_3) {
+      copy_v2_v2(bucket_bounds_uv[*tot], uv3co);
+      (*tot)++;
+    }
+
+    flag = inside_bucket_flag & (ISECT_3 | ISECT_1);
+    if (flag && flag != (ISECT_3 | ISECT_1)) {
+      if (line_rect_clip(
+              bucket_bounds, v3coSS, v1coSS, uv3co, uv1co, bucket_bounds_uv[*tot], is_ortho)) {
+        (*tot)++;
+      }
+    }
+
+    if ((*tot) < 3) {
+      /* no intersections to speak of, but more probable is that all face is just outside the
+       * rectangle and culled due to float precision issues. Since above tests have failed,
+       * just dump triangle as is for painting */
+      *tot = 0;
+      copy_v2_v2(bucket_bounds_uv[*tot], uv1co);
+      (*tot)++;
+      copy_v2_v2(bucket_bounds_uv[*tot], uv2co);
+      (*tot)++;
+      copy_v2_v2(bucket_bounds_uv[*tot], uv3co);
+      (*tot)++;
+      return;
+    }
+
+    return;
+  }
+
+  /* Get the UV space bounding box. */
+  /* Use #IsectPT2Df_limit here so we catch points are touching the triangles edge
+   * (or a small fraction over) */
+  bucket_bounds_ss[0][0] = bucket_bounds->xmax;
+  bucket_bounds_ss[0][1] = bucket_bounds->ymin;
+  inside_face_flag |= (IsectPT2Df_limit(
+                           bucket_bounds_ss[0], v1coSS, v2coSS, v3coSS, 1 + PROJ_GEOM_TOLERANCE) ?
+                           ISECT_1 :
+                           0);
+
+  bucket_bounds_ss[1][0] = bucket_bounds->xmax;
+  bucket_bounds_ss[1][1] = bucket_bounds->ymax;
+  inside_face_flag |= (IsectPT2Df_limit(
+                           bucket_bounds_ss[1], v1coSS, v2coSS, v3coSS, 1 + PROJ_GEOM_TOLERANCE) ?
+                           ISECT_2 :
+                           0);
+
+  bucket_bounds_ss[2][0] = bucket_bounds->xmin;
+  bucket_bounds_ss[2][1] = bucket_bounds->ymax;
+  inside_face_flag |= (IsectPT2Df_limit(
+                           bucket_bounds_ss[2], v1coSS, v2coSS, v3coSS, 1 + PROJ_GEOM_TOLERANCE) ?
+                           ISECT_3 :
+                           0);
+
+  bucket_bounds_ss[3][0] = bucket_bounds->xmin;
+  bucket_bounds_ss[3][1] = bucket_bounds->ymin;
+  inside_face_flag |= (IsectPT2Df_limit(
+                           bucket_bounds_ss[3], v1coSS, v2coSS, v3coSS, 1 + PROJ_GEOM_TOLERANCE) ?
+                           ISECT_4 :
+                           0);
+
+  flip = ((line_point_side_v2(v1coSS, v2coSS, v3coSS) > 0.0f) !=
+          (line_point_side_v2(uv1co, uv2co, uv3co) > 0.0f));
+
+  if (inside_face_flag == ISECT_ALL4) {
+    /* Bucket is totally inside the screen-space face, we can safely use weights. */
+
+    if (is_ortho) {
+      rect_to_uvspace_ortho(
+          bucket_bounds, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, bucket_bounds_uv, flip);
+    }
+    else {
+      rect_to_uvspace_persp(
+          bucket_bounds, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, bucket_bounds_uv, flip);
+    }
+
+    *tot = 4;
+    return;
+  }
+
+  {
+    /* The Complicated Case!
+     *
+     * The 2 cases above are where the face is inside the bucket
+     * or the bucket is inside the face.
+     *
+     * we need to make a convex poly-line from the intersection between the screen-space face
+     * and the bucket bounds.
+     *
+     * There are a number of ways this could be done, currently it just collects all
+     * intersecting verts, and line intersections, then sorts them clockwise, this is
+     * a lot easier than evaluating the geometry to do a correct clipping on both shapes.
+     */
+
+    /* Add a bunch of points, we know must make up the convex hull
+     * which is the clipped rect and triangle */
+
+    /* Maximum possible 
