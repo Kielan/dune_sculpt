@@ -1549,3 +1549,742 @@ static void screen_px_from_persp(const float uv[2],
   /* do interpolation based on projected weight */
   interp_v3_v3v3v3(pixelScreenCo, v1co, v2co, v3co, w_int);
 }
+
+/**
+ * Set a direction vector based on a screen location.
+ * (use for perspective view, else we can simply use `ps->viewDir`)
+ *
+ * Similar functionality to #ED_view3d_win_to_vector
+ *
+ * \param r_dir: Resulting direction (length is undefined).
+ */
+static void screen_px_to_vector_persp(int winx,
+                                      int winy,
+                                      const float projmat_inv[4][4],
+                                      const float view_pos[3],
+                                      const float co_px[2],
+                                      float r_dir[3])
+{
+  r_dir[0] = 2.0f * (co_px[0] / winx) - 1.0f;
+  r_dir[1] = 2.0f * (co_px[1] / winy) - 1.0f;
+  r_dir[2] = -0.5f;
+  mul_project_m4_v3((float(*)[4])projmat_inv, r_dir);
+  sub_v3_v3(r_dir, view_pos);
+}
+
+/**
+ * Special function to return the factor to a point along a line in pixel space.
+ *
+ * This is needed since we can't use #line_point_factor_v2 for perspective screen-space coords.
+ *
+ * \param p: 2D screen-space location.
+ * \param v1, v2: 3D object-space locations.
+ */
+static float screen_px_line_point_factor_v2_persp(const ProjPaintState *ps,
+                                                  const float p[2],
+                                                  const float v1[3],
+                                                  const float v2[3])
+{
+  const float zero[3] = {0};
+  float v1_proj[3], v2_proj[3];
+  float dir[3];
+
+  screen_px_to_vector_persp(ps->winx, ps->winy, ps->projectMatInv, ps->viewPos, p, dir);
+
+  sub_v3_v3v3(v1_proj, v1, ps->viewPos);
+  sub_v3_v3v3(v2_proj, v2, ps->viewPos);
+
+  project_plane_v3_v3v3(v1_proj, v1_proj, dir);
+  project_plane_v3_v3v3(v2_proj, v2_proj, dir);
+
+  return line_point_factor_v2(zero, v1_proj, v2_proj);
+}
+
+static void project_face_pixel(const float *lt_tri_uv[3],
+                               ImBuf *ibuf_other,
+                               const float w[3],
+                               uchar rgba_ub[4],
+                               float rgba_f[4])
+{
+  float uv_other[2], x, y;
+
+  interp_v2_v2v2v2(uv_other, UNPACK3(lt_tri_uv), w);
+
+  /* use */
+  uvco_to_wrapped_pxco(uv_other, ibuf_other->x, ibuf_other->y, &x, &y);
+
+  if (ibuf_other->rect_float) { /* from float to float */
+    bilinear_interpolation_color_wrap(ibuf_other, NULL, rgba_f, x, y);
+  }
+  else { /* from char to float */
+    bilinear_interpolation_color_wrap(ibuf_other, rgba_ub, NULL, x, y);
+  }
+}
+
+/* run this outside project_paint_uvpixel_init since pixels with mask 0 don't need init */
+static float project_paint_uvpixel_mask(const ProjPaintState *ps,
+                                        const int tri_index,
+                                        const float w[3])
+{
+  float mask;
+
+  /* Image Mask */
+  if (ps->do_layer_stencil) {
+    /* another UV maps image is masking this one's */
+    ImBuf *ibuf_other;
+    Image *other_tpage = ps->stencil_ima;
+
+    if (other_tpage && (ibuf_other = BKE_image_acquire_ibuf(other_tpage, NULL, NULL))) {
+      const MLoopTri *lt_other = &ps->mlooptri_eval[tri_index];
+      const float *lt_other_tri_uv[3] = {ps->mloopuv_stencil_eval[lt_other->tri[0]].uv,
+                                         ps->mloopuv_stencil_eval[lt_other->tri[1]].uv,
+                                         ps->mloopuv_stencil_eval[lt_other->tri[2]].uv};
+
+      /* #BKE_image_acquire_ibuf - TODO: this may be slow. */
+      uchar rgba_ub[4];
+      float rgba_f[4];
+
+      project_face_pixel(lt_other_tri_uv, ibuf_other, w, rgba_ub, rgba_f);
+
+      if (ibuf_other->rect_float) { /* from float to float */
+        mask = ((rgba_f[0] + rgba_f[1] + rgba_f[2]) * (1.0f / 3.0f)) * rgba_f[3];
+      }
+      else { /* from char to float */
+        mask = ((rgba_ub[0] + rgba_ub[1] + rgba_ub[2]) * (1.0f / (255.0f * 3.0f))) *
+               (rgba_ub[3] * (1.0f / 255.0f));
+      }
+
+      BKE_image_release_ibuf(other_tpage, ibuf_other, NULL);
+
+      if (!ps->do_layer_stencil_inv) {
+        /* matching the gimps layer mask black/white rules, white==full opacity */
+        mask = (1.0f - mask);
+      }
+
+      if (mask == 0.0f) {
+        return 0.0f;
+      }
+    }
+    else {
+      return 0.0f;
+    }
+  }
+  else {
+    mask = 1.0f;
+  }
+
+  if (ps->do_mask_cavity) {
+    const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+    const int lt_vtri[3] = {PS_LOOPTRI_AS_VERT_INDEX_3(ps, lt)};
+    float ca1, ca2, ca3, ca_mask;
+    ca1 = ps->cavities[lt_vtri[0]];
+    ca2 = ps->cavities[lt_vtri[1]];
+    ca3 = ps->cavities[lt_vtri[2]];
+
+    ca_mask = w[0] * ca1 + w[1] * ca2 + w[2] * ca3;
+    ca_mask = BKE_curvemapping_evaluateF(ps->cavity_curve, 0, ca_mask);
+    CLAMP(ca_mask, 0.0f, 1.0f);
+    mask *= ca_mask;
+  }
+
+  /* calculate mask */
+  if (ps->do_mask_normal) {
+    const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+    const int lt_vtri[3] = {PS_LOOPTRI_AS_VERT_INDEX_3(ps, lt)};
+    const MPoly *mp = &ps->mpoly_eval[lt->poly];
+    float no[3], angle_cos;
+
+    if (mp->flag & ME_SMOOTH) {
+      const float *no1, *no2, *no3;
+      no1 = ps->vert_normals[lt_vtri[0]];
+      no2 = ps->vert_normals[lt_vtri[1]];
+      no3 = ps->vert_normals[lt_vtri[2]];
+
+      no[0] = w[0] * no1[0] + w[1] * no2[0] + w[2] * no3[0];
+      no[1] = w[0] * no1[1] + w[1] * no2[1] + w[2] * no3[1];
+      no[2] = w[0] * no1[2] + w[1] * no2[2] + w[2] * no3[2];
+      normalize_v3(no);
+    }
+    else {
+      /* In case the normalizing per pixel isn't optimal,
+       * we could cache or access from evaluated mesh. */
+      normal_tri_v3(no,
+                    ps->mvert_eval[lt_vtri[0]].co,
+                    ps->mvert_eval[lt_vtri[1]].co,
+                    ps->mvert_eval[lt_vtri[2]].co);
+    }
+
+    if (UNLIKELY(ps->is_flip_object)) {
+      negate_v3(no);
+    }
+
+    /* now we can use the normal as a mask */
+    if (ps->is_ortho) {
+      angle_cos = dot_v3v3(ps->viewDir, no);
+    }
+    else {
+      /* Annoying but for the perspective view we need to get the pixels location in 3D space :/ */
+      float viewDirPersp[3];
+      const float *co1, *co2, *co3;
+      co1 = ps->mvert_eval[lt_vtri[0]].co;
+      co2 = ps->mvert_eval[lt_vtri[1]].co;
+      co3 = ps->mvert_eval[lt_vtri[2]].co;
+
+      /* Get the direction from the viewPoint to the pixel and normalize */
+      viewDirPersp[0] = (ps->viewPos[0] - (w[0] * co1[0] + w[1] * co2[0] + w[2] * co3[0]));
+      viewDirPersp[1] = (ps->viewPos[1] - (w[0] * co1[1] + w[1] * co2[1] + w[2] * co3[1]));
+      viewDirPersp[2] = (ps->viewPos[2] - (w[0] * co1[2] + w[1] * co2[2] + w[2] * co3[2]));
+      normalize_v3(viewDirPersp);
+      if (UNLIKELY(ps->is_flip_object)) {
+        negate_v3(viewDirPersp);
+      }
+
+      angle_cos = dot_v3v3(viewDirPersp, no);
+    }
+
+    /* If back-face culling is disabled, allow painting on back faces. */
+    if (!ps->do_backfacecull) {
+      angle_cos = fabsf(angle_cos);
+    }
+
+    if (angle_cos <= ps->normal_angle__cos) {
+      /* Outsize the normal limit. */
+      return 0.0f;
+    }
+    if (angle_cos < ps->normal_angle_inner__cos) {
+      mask *= (ps->normal_angle - acosf(angle_cos)) / ps->normal_angle_range;
+    } /* otherwise no mask normal is needed, we're within the limit */
+  }
+
+  /* This only works when the opacity doesn't change while painting, stylus pressure messes with
+   * this so don't use it. */
+  // if (ps->is_airbrush == 0) mask *= BKE_brush_alpha_get(ps->brush);
+
+  return mask;
+}
+
+static int project_paint_pixel_sizeof(const short tool)
+{
+  if (ELEM(tool, PAINT_TOOL_CLONE, PAINT_TOOL_SMEAR)) {
+    return sizeof(ProjPixelClone);
+  }
+  return sizeof(ProjPixel);
+}
+
+static int project_paint_undo_subtiles(const TileInfo *tinf, int tx, int ty)
+{
+  ProjPaintImage *pjIma = tinf->pjima;
+  int tile_index = tx + ty * tinf->tile_width;
+  bool generate_tile = false;
+
+  /* double check lock to avoid locking */
+  if (UNLIKELY(!pjIma->undoRect[tile_index])) {
+    if (tinf->lock) {
+      BLI_spin_lock(tinf->lock);
+    }
+    if (LIKELY(!pjIma->undoRect[tile_index])) {
+      pjIma->undoRect[tile_index] = TILE_PENDING;
+      generate_tile = true;
+    }
+    if (tinf->lock) {
+      BLI_spin_unlock(tinf->lock);
+    }
+  }
+
+  if (generate_tile) {
+    ListBase *undo_tiles = ED_image_paint_tile_list_get();
+    volatile void *undorect;
+    if (tinf->masked) {
+      undorect = ED_image_paint_tile_push(undo_tiles,
+                                          pjIma->ima,
+                                          pjIma->ibuf,
+                                          tinf->tmpibuf,
+                                          &pjIma->iuser,
+                                          tx,
+                                          ty,
+                                          &pjIma->maskRect[tile_index],
+                                          &pjIma->valid[tile_index],
+                                          true,
+                                          false);
+    }
+    else {
+      undorect = ED_image_paint_tile_push(undo_tiles,
+                                          pjIma->ima,
+                                          pjIma->ibuf,
+                                          tinf->tmpibuf,
+                                          &pjIma->iuser,
+                                          tx,
+                                          ty,
+                                          NULL,
+                                          &pjIma->valid[tile_index],
+                                          true,
+                                          false);
+    }
+
+    BKE_image_mark_dirty(pjIma->ima, pjIma->ibuf);
+    /* tile ready, publish */
+    if (tinf->lock) {
+      BLI_spin_lock(tinf->lock);
+    }
+    pjIma->undoRect[tile_index] = undorect;
+    if (tinf->lock) {
+      BLI_spin_unlock(tinf->lock);
+    }
+  }
+
+  return tile_index;
+}
+
+/* run this function when we know a bucket's, face's pixel can be initialized,
+ * return the ProjPixel which is added to 'ps->bucketRect[bucket_index]' */
+static ProjPixel *project_paint_uvpixel_init(const ProjPaintState *ps,
+                                             MemArena *arena,
+                                             const TileInfo *tinf,
+                                             int x_px,
+                                             int y_px,
+                                             const float mask,
+                                             const int tri_index,
+                                             const float pixelScreenCo[4],
+                                             const float world_spaceCo[3],
+                                             const float w[3])
+{
+  ProjPixel *projPixel;
+  int x_tile, y_tile;
+  int x_round, y_round;
+  int tile_offset;
+  /* Volatile is important here to ensure pending check is not optimized away by compiler. */
+  volatile int tile_index;
+
+  ProjPaintImage *projima = tinf->pjima;
+  ImBuf *ibuf = projima->ibuf;
+  /* wrap pixel location */
+
+  x_px = mod_i(x_px, ibuf->x);
+  y_px = mod_i(y_px, ibuf->y);
+
+  BLI_assert(ps->pixel_sizeof == project_paint_pixel_sizeof(ps->tool));
+  projPixel = BLI_memarena_alloc(arena, ps->pixel_sizeof);
+
+  /* calculate the undo tile offset of the pixel, used to store the original
+   * pixel color and accumulated mask if any */
+  x_tile = x_px >> ED_IMAGE_UNDO_TILE_BITS;
+  y_tile = y_px >> ED_IMAGE_UNDO_TILE_BITS;
+
+  x_round = x_tile * ED_IMAGE_UNDO_TILE_SIZE;
+  y_round = y_tile * ED_IMAGE_UNDO_TILE_SIZE;
+  // memset(projPixel, 0, size);
+
+  tile_offset = (x_px - x_round) + (y_px - y_round) * ED_IMAGE_UNDO_TILE_SIZE;
+  tile_index = project_paint_undo_subtiles(tinf, x_tile, y_tile);
+
+  /* other thread may be initializing the tile so wait here */
+  while (projima->undoRect[tile_index] == TILE_PENDING) {
+    /* pass */
+  }
+
+  BLI_assert(tile_index <
+             (ED_IMAGE_UNDO_TILE_NUMBER(ibuf->x) * ED_IMAGE_UNDO_TILE_NUMBER(ibuf->y)));
+  BLI_assert(tile_offset < (ED_IMAGE_UNDO_TILE_SIZE * ED_IMAGE_UNDO_TILE_SIZE));
+
+  projPixel->valid = projima->valid[tile_index];
+
+  if (ibuf->rect_float) {
+    projPixel->pixel.f_pt = ibuf->rect_float + ((x_px + y_px * ibuf->x) * 4);
+    projPixel->origColor.f_pt = (float *)projima->undoRect[tile_index] + 4 * tile_offset;
+    zero_v4(projPixel->newColor.f);
+  }
+  else {
+    projPixel->pixel.ch_pt = (uchar *)(ibuf->rect + (x_px + y_px * ibuf->x));
+    projPixel->origColor.uint_pt = (uint *)projima->undoRect[tile_index] + tile_offset;
+    projPixel->newColor.uint = 0;
+  }
+
+  /* Screen-space unclamped, we could keep its z and w values but don't need them at the moment. */
+  if (ps->brush->mtex.brush_map_mode == MTEX_MAP_MODE_3D) {
+    copy_v3_v3(projPixel->worldCoSS, world_spaceCo);
+  }
+
+  copy_v2_v2(projPixel->projCoSS, pixelScreenCo);
+
+  projPixel->x_px = x_px;
+  projPixel->y_px = y_px;
+
+  projPixel->mask = (ushort)(mask * 65535);
+  if (ps->do_masking) {
+    projPixel->mask_accum = projima->maskRect[tile_index] + tile_offset;
+  }
+  else {
+    projPixel->mask_accum = NULL;
+  }
+
+  /* which bounding box cell are we in?, needed for undo */
+  projPixel->bb_cell_index = ((int)(((float)x_px / (float)ibuf->x) * PROJ_BOUNDBOX_DIV)) +
+                             ((int)(((float)y_px / (float)ibuf->y) * PROJ_BOUNDBOX_DIV)) *
+                                 PROJ_BOUNDBOX_DIV;
+
+  /* done with view3d_project_float inline */
+  if (ps->tool == PAINT_TOOL_CLONE) {
+    if (ps->poly_to_loop_uv_clone) {
+      ImBuf *ibuf_other;
+      Image *other_tpage = project_paint_face_clone_image(ps, tri_index);
+
+      if (other_tpage && (ibuf_other = BKE_image_acquire_ibuf(other_tpage, NULL, NULL))) {
+        const MLoopTri *lt_other = &ps->mlooptri_eval[tri_index];
+        const float *lt_other_tri_uv[3] = {
+            PS_LOOPTRI_AS_UV_3(ps->poly_to_loop_uv_clone, lt_other)};
+
+        /* #BKE_image_acquire_ibuf - TODO: this may be slow. */
+
+        if (ibuf->rect_float) {
+          if (ibuf_other->rect_float) { /* from float to float */
+            project_face_pixel(
+                lt_other_tri_uv, ibuf_other, w, NULL, ((ProjPixelClone *)projPixel)->clonepx.f);
+          }
+          else { /* from char to float */
+            uchar rgba_ub[4];
+            float rgba[4];
+            project_face_pixel(lt_other_tri_uv, ibuf_other, w, rgba_ub, NULL);
+            if (ps->use_colormanagement) {
+              srgb_to_linearrgb_uchar4(rgba, rgba_ub);
+            }
+            else {
+              rgba_uchar_to_float(rgba, rgba_ub);
+            }
+            straight_to_premul_v4_v4(((ProjPixelClone *)projPixel)->clonepx.f, rgba);
+          }
+        }
+        else {
+          if (ibuf_other->rect_float) { /* float to char */
+            float rgba[4];
+            project_face_pixel(lt_other_tri_uv, ibuf_other, w, NULL, rgba);
+            premul_to_straight_v4(rgba);
+            if (ps->use_colormanagement) {
+              linearrgb_to_srgb_uchar3(((ProjPixelClone *)projPixel)->clonepx.ch, rgba);
+            }
+            else {
+              rgb_float_to_uchar(((ProjPixelClone *)projPixel)->clonepx.ch, rgba);
+            }
+            ((ProjPixelClone *)projPixel)->clonepx.ch[3] = rgba[3] * 255;
+          }
+          else { /* char to char */
+            project_face_pixel(
+                lt_other_tri_uv, ibuf_other, w, ((ProjPixelClone *)projPixel)->clonepx.ch, NULL);
+          }
+        }
+
+        BKE_image_release_ibuf(other_tpage, ibuf_other, NULL);
+      }
+      else {
+        if (ibuf->rect_float) {
+          ((ProjPixelClone *)projPixel)->clonepx.f[3] = 0;
+        }
+        else {
+          ((ProjPixelClone *)projPixel)->clonepx.ch[3] = 0;
+        }
+      }
+    }
+    else {
+      float co[2];
+      sub_v2_v2v2(co, projPixel->projCoSS, ps->cloneOffset);
+
+      /* no need to initialize the bucket, we're only checking buckets faces and for this
+       * the faces are already initialized in project_paint_delayed_face_init(...) */
+      if (ibuf->rect_float) {
+        if (!project_paint_PickColor(ps, co, ((ProjPixelClone *)projPixel)->clonepx.f, NULL, 1)) {
+          /* zero alpha - ignore */
+          ((ProjPixelClone *)projPixel)->clonepx.f[3] = 0;
+        }
+      }
+      else {
+        if (!project_paint_PickColor(ps, co, NULL, ((ProjPixelClone *)projPixel)->clonepx.ch, 1)) {
+          /* zero alpha - ignore */
+          ((ProjPixelClone *)projPixel)->clonepx.ch[3] = 0;
+        }
+      }
+    }
+  }
+
+#ifdef PROJ_DEBUG_PAINT
+  if (ibuf->rect_float) {
+    projPixel->pixel.f_pt[0] = 0;
+  }
+  else {
+    projPixel->pixel.ch_pt[0] = 0;
+  }
+#endif
+  /* pointer arithmetic */
+  projPixel->image_index = projima - ps->projImages;
+
+  return projPixel;
+}
+
+static bool line_clip_rect2f(const rctf *cliprect,
+                             const rctf *rect,
+                             const float l1[2],
+                             const float l2[2],
+                             float l1_clip[2],
+                             float l2_clip[2])
+{
+  /* first account for horizontal, then vertical lines */
+  /* Horizontal. */
+  if (fabsf(l1[1] - l2[1]) < PROJ_PIXEL_TOLERANCE) {
+    /* is the line out of range on its Y axis? */
+    if (l1[1] < rect->ymin || l1[1] > rect->ymax) {
+      return false;
+    }
+    /* line is out of range on its X axis */
+    if ((l1[0] < rect->xmin && l2[0] < rect->xmin) || (l1[0] > rect->xmax && l2[0] > rect->xmax)) {
+      return false;
+    }
+
+    /* This is a single point  (or close to). */
+    if (fabsf(l1[0] - l2[0]) < PROJ_PIXEL_TOLERANCE) {
+      if (BLI_rctf_isect_pt_v(rect, l1)) {
+        copy_v2_v2(l1_clip, l1);
+        copy_v2_v2(l2_clip, l2);
+        return true;
+      }
+      return false;
+    }
+
+    copy_v2_v2(l1_clip, l1);
+    copy_v2_v2(l2_clip, l2);
+    CLAMP(l1_clip[0], rect->xmin, rect->xmax);
+    CLAMP(l2_clip[0], rect->xmin, rect->xmax);
+    return true;
+  }
+  if (fabsf(l1[0] - l2[0]) < PROJ_PIXEL_TOLERANCE) {
+    /* is the line out of range on its X axis? */
+    if (l1[0] < rect->xmin || l1[0] > rect->xmax) {
+      return false;
+    }
+
+    /* line is out of range on its Y axis */
+    if ((l1[1] < rect->ymin && l2[1] < rect->ymin) || (l1[1] > rect->ymax && l2[1] > rect->ymax)) {
+      return false;
+    }
+
+    /* This is a single point  (or close to). */
+    if (fabsf(l1[1] - l2[1]) < PROJ_PIXEL_TOLERANCE) {
+      if (BLI_rctf_isect_pt_v(rect, l1)) {
+        copy_v2_v2(l1_clip, l1);
+        copy_v2_v2(l2_clip, l2);
+        return true;
+      }
+      return false;
+    }
+
+    copy_v2_v2(l1_clip, l1);
+    copy_v2_v2(l2_clip, l2);
+    CLAMP(l1_clip[1], rect->ymin, rect->ymax);
+    CLAMP(l2_clip[1], rect->ymin, rect->ymax);
+    return true;
+  }
+
+  float isect;
+  short ok1 = 0;
+  short ok2 = 0;
+
+  /* Done with vertical lines */
+
+  /* are either of the points inside the rectangle ? */
+  if (BLI_rctf_isect_pt_v(rect, l1)) {
+    copy_v2_v2(l1_clip, l1);
+    ok1 = 1;
+  }
+
+  if (BLI_rctf_isect_pt_v(rect, l2)) {
+    copy_v2_v2(l2_clip, l2);
+    ok2 = 1;
+  }
+
+  /* line inside rect */
+  if (ok1 && ok2) {
+    return true;
+  }
+
+  /* top/bottom */
+  if (line_isect_y(l1, l2, rect->ymin, &isect) && (isect >= cliprect->xmin) &&
+      (isect <= cliprect->xmax)) {
+    if (l1[1] < l2[1]) { /* line 1 is outside */
+      l1_clip[0] = isect;
+      l1_clip[1] = rect->ymin;
+      ok1 = 1;
+    }
+    else {
+      l2_clip[0] = isect;
+      l2_clip[1] = rect->ymin;
+      ok2 = 2;
+    }
+  }
+
+  if (ok1 && ok2) {
+    return true;
+  }
+
+  if (line_isect_y(l1, l2, rect->ymax, &isect) && (isect >= cliprect->xmin) &&
+      (isect <= cliprect->xmax)) {
+    if (l1[1] > l2[1]) { /* line 1 is outside */
+      l1_clip[0] = isect;
+      l1_clip[1] = rect->ymax;
+      ok1 = 1;
+    }
+    else {
+      l2_clip[0] = isect;
+      l2_clip[1] = rect->ymax;
+      ok2 = 2;
+    }
+  }
+
+  if (ok1 && ok2) {
+    return true;
+  }
+
+  /* left/right */
+  if (line_isect_x(l1, l2, rect->xmin, &isect) && (isect >= cliprect->ymin) &&
+      (isect <= cliprect->ymax)) {
+    if (l1[0] < l2[0]) { /* line 1 is outside */
+      l1_clip[0] = rect->xmin;
+      l1_clip[1] = isect;
+      ok1 = 1;
+    }
+    else {
+      l2_clip[0] = rect->xmin;
+      l2_clip[1] = isect;
+      ok2 = 2;
+    }
+  }
+
+  if (ok1 && ok2) {
+    return true;
+  }
+
+  if (line_isect_x(l1, l2, rect->xmax, &isect) && (isect >= cliprect->ymin) &&
+      (isect <= cliprect->ymax)) {
+    if (l1[0] > l2[0]) { /* line 1 is outside */
+      l1_clip[0] = rect->xmax;
+      l1_clip[1] = isect;
+      ok1 = 1;
+    }
+    else {
+      l2_clip[0] = rect->xmax;
+      l2_clip[1] = isect;
+      ok2 = 2;
+    }
+  }
+
+  if (ok1 && ok2) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Scale the tri about its center
+ * scaling by #PROJ_FACE_SCALE_SEAM (0.99x) is used for getting fake UV pixel coords that are on
+ * the edge of the face but slightly inside it occlusion tests don't return hits on adjacent faces.
+ */
+#ifndef PROJ_DEBUG_NOSEAMBLEED
+
+static void scale_tri(float insetCos[3][3], const float *origCos[3], const float inset)
+{
+  float cent[3];
+  cent[0] = (origCos[0][0] + origCos[1][0] + origCos[2][0]) * (1.0f / 3.0f);
+  cent[1] = (origCos[0][1] + origCos[1][1] + origCos[2][1]) * (1.0f / 3.0f);
+  cent[2] = (origCos[0][2] + origCos[1][2] + origCos[2][2]) * (1.0f / 3.0f);
+
+  sub_v3_v3v3(insetCos[0], origCos[0], cent);
+  sub_v3_v3v3(insetCos[1], origCos[1], cent);
+  sub_v3_v3v3(insetCos[2], origCos[2], cent);
+
+  mul_v3_fl(insetCos[0], inset);
+  mul_v3_fl(insetCos[1], inset);
+  mul_v3_fl(insetCos[2], inset);
+
+  add_v3_v3(insetCos[0], cent);
+  add_v3_v3(insetCos[1], cent);
+  add_v3_v3(insetCos[2], cent);
+}
+#endif  // PROJ_DEBUG_NOSEAMBLEED
+
+static float len_squared_v2v2_alt(const float v1[2], const float v2_1, const float v2_2)
+{
+  float x, y;
+
+  x = v1[0] - v2_1;
+  y = v1[1] - v2_2;
+  return x * x + y * y;
+}
+
+/**
+ * \note Use a squared value so we can use #len_squared_v2v2
+ * be sure that you have done a bounds check first or this may fail.
+ *
+ * Only give \a bucket_bounds as an arg because we need it elsewhere.
+ */
+static bool project_bucket_isect_circle(const float cent[2],
+                                        const float radius_squared,
+                                        const rctf *bucket_bounds)
+{
+
+  /* Would normally to a simple intersection test,
+   * however we know the bounds of these 2 already intersect so we only need to test
+   * if the center is inside the vertical or horizontal bounds on either axis,
+   * this is even less work than an intersection test.
+   */
+#if 0
+  if (BLI_rctf_isect_pt_v(bucket_bounds, cent)) {
+    return true;
+  }
+#endif
+
+  if ((bucket_bounds->xmin <= cent[0] && bucket_bounds->xmax >= cent[0]) ||
+      (bucket_bounds->ymin <= cent[1] && bucket_bounds->ymax >= cent[1])) {
+    return true;
+  }
+
+  /* out of bounds left */
+  if (cent[0] < bucket_bounds->xmin) {
+    /* lower left out of radius test */
+    if (cent[1] < bucket_bounds->ymin) {
+      return (len_squared_v2v2_alt(cent, bucket_bounds->xmin, bucket_bounds->ymin) <
+              radius_squared) ?
+                 true :
+                 false;
+    }
+    /* top left test */
+    if (cent[1] > bucket_bounds->ymax) {
+      return (len_squared_v2v2_alt(cent, bucket_bounds->xmin, bucket_bounds->ymax) <
+              radius_squared) ?
+                 true :
+                 false;
+    }
+  }
+  else if (cent[0] > bucket_bounds->xmax) {
+    /* lower right out of radius test */
+    if (cent[1] < bucket_bounds->ymin) {
+      return (len_squared_v2v2_alt(cent, bucket_bounds->xmax, bucket_bounds->ymin) <
+              radius_squared) ?
+                 true :
+                 false;
+    }
+    /* top right test */
+    if (cent[1] > bucket_bounds->ymax) {
+      return (len_squared_v2v2_alt(cent, bucket_bounds->xmax, bucket_bounds->ymax) <
+              radius_squared) ?
+                 true :
+                 false;
+    }
+  }
+
+  return false;
+}
+
+/* Note for #rect_to_uvspace_ortho() and #rect_to_uvspace_persp()
+ * in ortho view this function gives good results when bucket_bounds are outside the triangle
+ * however in some cases, perspective view will mess up with faces
+ * that have minimal screen-space area (viewed from the side).
+ *
+ * for this reason its not reliable in this case so we'll use the Simple Barycentric'
+ * functions that only account for points inside the triangle.
+ * however switching back to this for ortho is always an option. */
