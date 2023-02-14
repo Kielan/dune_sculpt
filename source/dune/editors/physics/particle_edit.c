@@ -2139,3 +2139,1569 @@ static int select_random_exec(bContext *C, wmOperator *op)
   }
   return OPERATOR_FINISHED;
 }
+
+void PARTICLE_OT_select_random(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Random";
+  ot->idname = "PARTICLE_OT_select_random";
+  ot->description = "Select a randomly distributed set of hair or points";
+
+  /* api callbacks */
+  ot->exec = select_random_exec;
+  ot->poll = PE_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  WM_operator_properties_select_random(ot);
+  ot->prop = RNA_def_enum(ot->srna,
+                          "type",
+                          select_random_type_items,
+                          RAN_HAIR,
+                          "Type",
+                          "Select either hair or points");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Select Linked operator
+ * \{ */
+
+static int select_linked_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  PEData data;
+  PE_set_data(C, &data);
+  data.select = true;
+
+  foreach_selected_key(&data, select_keys);
+
+  PE_update_selection(data.depsgraph, data.scene, data.ob, 1);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, data.ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_select_linked(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Linked All";
+  ot->idname = "PARTICLE_OT_select_linked";
+  ot->description = "Select all keys linked to already selected ones";
+
+  /* api callbacks */
+  ot->exec = select_linked_exec;
+  ot->poll = PE_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+}
+
+static int select_linked_pick_exec(bContext *C, wmOperator *op)
+{
+  PEData data;
+  int mval[2];
+  int location[2];
+
+  RNA_int_get_array(op->ptr, "location", location);
+  mval[0] = location[0];
+  mval[1] = location[1];
+
+  PE_set_view3d_data(C, &data);
+  data.mval = mval;
+  data.rad = 75.0f;
+  data.select = !RNA_boolean_get(op->ptr, "deselect");
+
+  for_mouse_hit_keys(&data, select_keys, PSEL_NEAREST);
+  PE_update_selection(data.depsgraph, data.scene, data.ob, 1);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, data.ob);
+  PE_data_free(&data);
+
+  return OPERATOR_FINISHED;
+}
+
+static int select_linked_pick_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  RNA_int_set_array(op->ptr, "location", event->mval);
+  return select_linked_pick_exec(C, op);
+}
+
+void PARTICLE_OT_select_linked_pick(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Linked";
+  ot->idname = "PARTICLE_OT_select_linked_pick";
+  ot->description = "Select nearest particle from mouse pointer";
+
+  /* api callbacks */
+  ot->exec = select_linked_pick_exec;
+  ot->invoke = select_linked_pick_invoke;
+  ot->poll = PE_poll_view3d;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  RNA_def_boolean(
+      ot->srna, "deselect", 0, "Deselect", "Deselect linked keys rather than selecting them");
+  RNA_def_int_vector(ot->srna, "location", 2, NULL, 0, INT_MAX, "Location", "", 0, 16384);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Box Select Operator
+ * \{ */
+
+bool PE_deselect_all_visible_ex(PTCacheEdit *edit)
+{
+  bool changed = false;
+  POINT_P;
+  KEY_K;
+
+  LOOP_VISIBLE_POINTS {
+    LOOP_SELECTED_KEYS {
+      if ((key->flag & PEK_SELECT) != 0) {
+        key->flag &= ~PEK_SELECT;
+        point->flag |= PEP_EDIT_RECALC;
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+bool PE_deselect_all_visible(bContext *C)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  if (!PE_start_edit(edit)) {
+    return false;
+  }
+  return PE_deselect_all_visible_ex(edit);
+}
+
+bool PE_box_select(bContext *C, const rcti *rect, const int sel_op)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  PEData data;
+
+  if (!PE_start_edit(edit)) {
+    return false;
+  }
+
+  PE_set_view3d_data(C, &data);
+  data.rect = rect;
+  data.sel_op = sel_op;
+
+  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
+    data.is_changed = PE_deselect_all_visible_ex(edit);
+  }
+
+  if (BLI_rcti_is_empty(rect)) {
+    /* pass */
+  }
+  else {
+    for_mouse_hit_keys(&data, select_key_op, PSEL_ALL_KEYS);
+  }
+
+  bool is_changed = data.is_changed;
+  PE_data_free(&data);
+
+  if (is_changed) {
+    PE_update_selection(depsgraph, scene, ob, 1);
+    WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, ob);
+  }
+  return is_changed;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Circle Select Operator
+ * \{ */
+
+static void pe_select_cache_free_generic_userdata(void *data)
+{
+  PE_data_free(data);
+  MEM_freeN(data);
+}
+
+static void pe_select_cache_init_with_generic_userdata(bContext *C, wmGenericUserData *wm_userdata)
+{
+  struct PEData *data = MEM_callocN(sizeof(*data), __func__);
+  wm_userdata->data = data;
+  wm_userdata->free_fn = pe_select_cache_free_generic_userdata;
+  wm_userdata->use_free = true;
+  PE_set_view3d_data(C, data);
+}
+
+bool PE_circle_select(
+    bContext *C, wmGenericUserData *wm_userdata, const int sel_op, const int mval[2], float rad)
+{
+  BLI_assert(ELEM(sel_op, SEL_OP_SET, SEL_OP_ADD, SEL_OP_SUB));
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+
+  if (!PE_start_edit(edit)) {
+    return false;
+  }
+
+  if (wm_userdata->data == NULL) {
+    pe_select_cache_init_with_generic_userdata(C, wm_userdata);
+  }
+
+  PEData *data = wm_userdata->data;
+  data->mval = mval;
+  data->rad = rad;
+  data->select = (sel_op != SEL_OP_SUB);
+
+  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
+    data->is_changed = PE_deselect_all_visible_ex(edit);
+  }
+  for_mouse_hit_keys(data, select_key, 0);
+
+  if (data->is_changed) {
+    PE_update_selection(depsgraph, scene, ob, 1);
+    WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, ob);
+  }
+  return data->is_changed;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Lasso Select Operator
+ * \{ */
+
+int PE_lasso_select(bContext *C, const int mcoords[][2], const int mcoords_len, const int sel_op)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  ARegion *region = CTX_wm_region(C);
+  ParticleEditSettings *pset = PE_settings(scene);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  POINT_P;
+  KEY_K;
+  float co[3], mat[4][4];
+  int screen_co[2];
+
+  PEData data;
+
+  unit_m4(mat);
+
+  if (!PE_start_edit(edit)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  /* only for depths */
+  PE_set_view3d_data(C, &data);
+
+  if (SEL_OP_USE_PRE_DESELECT(sel_op)) {
+    data.is_changed |= PE_deselect_all_visible_ex(edit);
+  }
+
+  ParticleSystem *psys = edit->psys;
+  ParticleSystemModifierData *psmd_eval = edit->psmd_eval;
+  LOOP_VISIBLE_POINTS {
+    if (edit->psys && !(psys->flag & PSYS_GLOBAL_HAIR)) {
+      psys_mat_hair_to_global(
+          ob, psmd_eval->mesh_final, psys->part->from, psys->particles + p, mat);
+    }
+
+    if (pset->selectmode == SCE_SELECT_POINT) {
+      LOOP_VISIBLE_KEYS {
+        copy_v3_v3(co, key->co);
+        mul_m4_v3(mat, co);
+        const bool is_select = key->flag & PEK_SELECT;
+        const bool is_inside =
+            ((ED_view3d_project_int_global(region, co, screen_co, V3D_PROJ_TEST_CLIP_WIN) ==
+              V3D_PROJ_RET_OK) &&
+             BLI_lasso_is_point_inside(
+                 mcoords, mcoords_len, screen_co[0], screen_co[1], IS_CLIPPED) &&
+             key_test_depth(&data, co, screen_co));
+        const int sel_op_result = ED_select_op_action_deselected(sel_op, is_select, is_inside);
+        if (sel_op_result != -1) {
+          SET_FLAG_FROM_TEST(key->flag, sel_op_result, PEK_SELECT);
+          point->flag |= PEP_EDIT_RECALC;
+          data.is_changed = true;
+        }
+      }
+    }
+    else if (pset->selectmode == SCE_SELECT_END) {
+      if (point->totkey) {
+        key = point->keys + point->totkey - 1;
+        copy_v3_v3(co, key->co);
+        mul_m4_v3(mat, co);
+        const bool is_select = key->flag & PEK_SELECT;
+        const bool is_inside =
+            ((ED_view3d_project_int_global(region, co, screen_co, V3D_PROJ_TEST_CLIP_WIN) ==
+              V3D_PROJ_RET_OK) &&
+             BLI_lasso_is_point_inside(
+                 mcoords, mcoords_len, screen_co[0], screen_co[1], IS_CLIPPED) &&
+             key_test_depth(&data, co, screen_co));
+        const int sel_op_result = ED_select_op_action_deselected(sel_op, is_select, is_inside);
+        if (sel_op_result != -1) {
+          SET_FLAG_FROM_TEST(key->flag, sel_op_result, PEK_SELECT);
+          point->flag |= PEP_EDIT_RECALC;
+          data.is_changed = true;
+        }
+      }
+    }
+  }
+
+  bool is_changed = data.is_changed;
+  PE_data_free(&data);
+
+  if (is_changed) {
+    PE_update_selection(depsgraph, scene, ob, 1);
+    WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, ob);
+    return OPERATOR_FINISHED;
+  }
+  return OPERATOR_CANCELLED;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Hide Operator
+ * \{ */
+
+static int hide_exec(bContext *C, wmOperator *op)
+{
+  Object *ob = CTX_data_active_object(C);
+  Scene *scene = CTX_data_scene(C);
+  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  POINT_P;
+  KEY_K;
+
+  if (RNA_boolean_get(op->ptr, "unselected")) {
+    LOOP_UNSELECTED_POINTS {
+      point->flag |= PEP_HIDE;
+      point->flag |= PEP_EDIT_RECALC;
+
+      LOOP_KEYS {
+        key->flag &= ~PEK_SELECT;
+      }
+    }
+  }
+  else {
+    LOOP_SELECTED_POINTS {
+      point->flag |= PEP_HIDE;
+      point->flag |= PEP_EDIT_RECALC;
+
+      LOOP_KEYS {
+        key->flag &= ~PEK_SELECT;
+      }
+    }
+  }
+
+  PE_update_selection(depsgraph, scene, ob, 1);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_hide(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Hide Selected";
+  ot->idname = "PARTICLE_OT_hide";
+  ot->description = "Hide selected particles";
+
+  /* api callbacks */
+  ot->exec = hide_exec;
+  ot->poll = PE_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Reveal Operator
+ * \{ */
+
+static int reveal_exec(bContext *C, wmOperator *op)
+{
+  Object *ob = CTX_data_active_object(C);
+  Scene *scene = CTX_data_scene(C);
+  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  const bool select = RNA_boolean_get(op->ptr, "select");
+  POINT_P;
+  KEY_K;
+
+  LOOP_POINTS {
+    if (point->flag & PEP_HIDE) {
+      point->flag &= ~PEP_HIDE;
+      point->flag |= PEP_EDIT_RECALC;
+
+      LOOP_KEYS {
+        SET_FLAG_FROM_TEST(key->flag, select, PEK_SELECT);
+      }
+    }
+  }
+
+  PE_update_selection(depsgraph, scene, ob, 1);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_reveal(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Reveal";
+  ot->idname = "PARTICLE_OT_reveal";
+  ot->description = "Show hidden particles";
+
+  /* api callbacks */
+  ot->exec = reveal_exec;
+  ot->poll = PE_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* props */
+  RNA_def_boolean(ot->srna, "select", true, "Select", "");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Select Less Operator
+ * \{ */
+
+static void select_less_keys(PEData *data, int point_index)
+{
+  PTCacheEdit *edit = data->edit;
+  PTCacheEditPoint *point = edit->points + point_index;
+  KEY_K;
+
+  LOOP_SELECTED_KEYS {
+    if (k == 0) {
+      if (((key + 1)->flag & PEK_SELECT) == 0) {
+        key->flag |= PEK_TAG;
+      }
+    }
+    else if (k == point->totkey - 1) {
+      if (((key - 1)->flag & PEK_SELECT) == 0) {
+        key->flag |= PEK_TAG;
+      }
+    }
+    else {
+      if ((((key - 1)->flag & (key + 1)->flag) & PEK_SELECT) == 0) {
+        key->flag |= PEK_TAG;
+      }
+    }
+  }
+
+  LOOP_KEYS {
+    if ((key->flag & PEK_TAG) && (key->flag & PEK_SELECT)) {
+      key->flag &= ~(PEK_TAG | PEK_SELECT);
+      point->flag |= PEP_EDIT_RECALC; /* redraw selection only */
+      data->is_changed = true;
+    }
+  }
+}
+
+static int select_less_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  PEData data;
+
+  PE_set_data(C, &data);
+  foreach_point(&data, select_less_keys);
+
+  PE_update_selection(data.depsgraph, data.scene, data.ob, 1);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, data.ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_select_less(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select Less";
+  ot->idname = "PARTICLE_OT_select_less";
+  ot->description = "Deselect boundary selected keys of each particle";
+
+  /* api callbacks */
+  ot->exec = select_less_exec;
+  ot->poll = PE_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Select More Operator
+ * \{ */
+
+static void select_more_keys(PEData *data, int point_index)
+{
+  PTCacheEdit *edit = data->edit;
+  PTCacheEditPoint *point = edit->points + point_index;
+  KEY_K;
+
+  LOOP_KEYS {
+    if (key->flag & PEK_SELECT) {
+      continue;
+    }
+
+    if (k == 0) {
+      if ((key + 1)->flag & PEK_SELECT) {
+        key->flag |= PEK_TAG;
+      }
+    }
+    else if (k == point->totkey - 1) {
+      if ((key - 1)->flag & PEK_SELECT) {
+        key->flag |= PEK_TAG;
+      }
+    }
+    else {
+      if (((key - 1)->flag | (key + 1)->flag) & PEK_SELECT) {
+        key->flag |= PEK_TAG;
+      }
+    }
+  }
+
+  LOOP_KEYS {
+    if ((key->flag & PEK_TAG) && (key->flag & PEK_SELECT) == 0) {
+      key->flag &= ~PEK_TAG;
+      key->flag |= PEK_SELECT;
+      point->flag |= PEP_EDIT_RECALC; /* redraw selection only */
+      data->is_changed = true;
+    }
+  }
+}
+
+static int select_more_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  PEData data;
+
+  PE_set_data(C, &data);
+  foreach_point(&data, select_more_keys);
+
+  PE_update_selection(data.depsgraph, data.scene, data.ob, 1);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_SELECTED, data.ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_select_more(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Select More";
+  ot->idname = "PARTICLE_OT_select_more";
+  ot->description = "Select keys linked to boundary selected keys of each particle";
+
+  /* api callbacks */
+  ot->exec = select_more_exec;
+  ot->poll = PE_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Re-Key Operator
+ * \{ */
+
+static void rekey_particle(PEData *data, int pa_index)
+{
+  PTCacheEdit *edit = data->edit;
+  ParticleSystem *psys = edit->psys;
+  ParticleSimulationData sim = {0};
+  ParticleData *pa = psys->particles + pa_index;
+  PTCacheEditPoint *point = edit->points + pa_index;
+  ParticleKey state;
+  HairKey *key, *new_keys, *okey;
+  PTCacheEditKey *ekey;
+  float dval, sta, end;
+  int k;
+
+  sim.depsgraph = data->depsgraph;
+  sim.scene = data->scene;
+  sim.ob = data->ob;
+  sim.psys = edit->psys;
+
+  pa->flag |= PARS_REKEY;
+
+  key = new_keys = MEM_callocN(data->totrekey * sizeof(HairKey), "Hair re-key keys");
+
+  okey = pa->hair;
+  /* root and tip stay the same */
+  copy_v3_v3(key->co, okey->co);
+  copy_v3_v3((key + data->totrekey - 1)->co, (okey + pa->totkey - 1)->co);
+
+  sta = key->time = okey->time;
+  end = (key + data->totrekey - 1)->time = (okey + pa->totkey - 1)->time;
+  dval = (end - sta) / (float)(data->totrekey - 1);
+
+  /* interpolate new keys from old ones */
+  for (k = 1, key++; k < data->totrekey - 1; k++, key++) {
+    state.time = (float)k / (float)(data->totrekey - 1);
+    psys_get_particle_on_path(&sim, pa_index, &state, 0);
+    copy_v3_v3(key->co, state.co);
+    key->time = sta + k * dval;
+  }
+
+  /* replace keys */
+  if (pa->hair) {
+    MEM_freeN(pa->hair);
+  }
+  pa->hair = new_keys;
+
+  point->totkey = pa->totkey = data->totrekey;
+
+  if (point->keys) {
+    MEM_freeN(point->keys);
+  }
+  ekey = point->keys = MEM_callocN(pa->totkey * sizeof(PTCacheEditKey), "Hair re-key edit keys");
+
+  for (k = 0, key = pa->hair; k < pa->totkey; k++, key++, ekey++) {
+    ekey->co = key->co;
+    ekey->time = &key->time;
+    ekey->flag |= PEK_SELECT;
+    if (!(psys->flag & PSYS_GLOBAL_HAIR)) {
+      ekey->flag |= PEK_USE_WCO;
+    }
+  }
+
+  pa->flag &= ~PARS_REKEY;
+  point->flag |= PEP_EDIT_RECALC;
+}
+
+static int rekey_exec(bContext *C, wmOperator *op)
+{
+  PEData data;
+
+  PE_set_data(C, &data);
+
+  data.dval = 1.0f / (float)(data.totrekey - 1);
+  data.totrekey = RNA_int_get(op->ptr, "keys_number");
+
+  foreach_selected_point(&data, rekey_particle);
+
+  recalc_lengths(data.edit);
+  PE_update_object(data.depsgraph, data.scene, data.ob, 1);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, data.ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_rekey(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Rekey";
+  ot->idname = "PARTICLE_OT_rekey";
+  ot->description = "Change the number of keys of selected particles (root and tip keys included)";
+
+  /* api callbacks */
+  ot->exec = rekey_exec;
+  ot->invoke = WM_operator_props_popup;
+  ot->poll = PE_hair_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  RNA_def_int(ot->srna, "keys_number", 2, 2, INT_MAX, "Number of Keys", "", 2, 100);
+}
+
+static void rekey_particle_to_time(
+    const bContext *C, Scene *scene, Object *ob, int pa_index, float path_time)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  ParticleSystem *psys;
+  ParticleSimulationData sim = {0};
+  ParticleData *pa;
+  ParticleKey state;
+  HairKey *new_keys, *key;
+  PTCacheEditKey *ekey;
+  int k;
+
+  if (!edit || !edit->psys) {
+    return;
+  }
+
+  psys = edit->psys;
+
+  sim.depsgraph = depsgraph;
+  sim.scene = scene;
+  sim.ob = ob;
+  sim.psys = psys;
+
+  pa = psys->particles + pa_index;
+
+  pa->flag |= PARS_REKEY;
+
+  key = new_keys = MEM_dupallocN(pa->hair);
+
+  /* interpolate new keys from old ones (roots stay the same) */
+  for (k = 1, key++; k < pa->totkey; k++, key++) {
+    state.time = path_time * (float)k / (float)(pa->totkey - 1);
+    psys_get_particle_on_path(&sim, pa_index, &state, 0);
+    copy_v3_v3(key->co, state.co);
+  }
+
+  /* replace hair keys */
+  if (pa->hair) {
+    MEM_freeN(pa->hair);
+  }
+  pa->hair = new_keys;
+
+  /* update edit pointers */
+  for (k = 0, key = pa->hair, ekey = edit->points[pa_index].keys; k < pa->totkey;
+       k++, key++, ekey++) {
+    ekey->co = key->co;
+    ekey->time = &key->time;
+  }
+
+  pa->flag &= ~PARS_REKEY;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Internal Utilities
+ * \{ */
+
+static int remove_tagged_particles(Object *ob, ParticleSystem *psys, int mirror)
+{
+  PTCacheEdit *edit = psys->edit;
+  ParticleData *pa, *npa = 0, *new_pars = 0;
+  POINT_P;
+  PTCacheEditPoint *npoint = 0, *new_points = 0;
+  ParticleSystemModifierData *psmd_eval;
+  int i, new_totpart = psys->totpart, removed = 0;
+
+  if (mirror) {
+    /* mirror tags */
+    psmd_eval = edit->psmd_eval;
+
+    LOOP_TAGGED_POINTS {
+      PE_mirror_particle(ob, psmd_eval->mesh_final, psys, psys->particles + p, NULL);
+    }
+  }
+
+  LOOP_TAGGED_POINTS {
+    new_totpart--;
+    removed++;
+  }
+
+  if (new_totpart != psys->totpart) {
+    if (new_totpart) {
+      npa = new_pars = MEM_callocN(new_totpart * sizeof(ParticleData), "ParticleData array");
+      npoint = new_points = MEM_callocN(new_totpart * sizeof(PTCacheEditPoint),
+                                        "PTCacheEditKey array");
+
+      if (ELEM(NULL, new_pars, new_points)) {
+        /* allocation error! */
+        if (new_pars) {
+          MEM_freeN(new_pars);
+        }
+        if (new_points) {
+          MEM_freeN(new_points);
+        }
+        return 0;
+      }
+    }
+
+    pa = psys->particles;
+    point = edit->points;
+    for (i = 0; i < psys->totpart; i++, pa++, point++) {
+      if (point->flag & PEP_TAG) {
+        if (point->keys) {
+          MEM_freeN(point->keys);
+        }
+        if (pa->hair) {
+          MEM_freeN(pa->hair);
+        }
+      }
+      else {
+        memcpy(npa, pa, sizeof(ParticleData));
+        memcpy(npoint, point, sizeof(PTCacheEditPoint));
+        npa++;
+        npoint++;
+      }
+    }
+
+    if (psys->particles) {
+      MEM_freeN(psys->particles);
+    }
+    psys->particles = new_pars;
+
+    if (edit->points) {
+      MEM_freeN(edit->points);
+    }
+    edit->points = new_points;
+
+    MEM_SAFE_FREE(edit->mirror_cache);
+
+    if (psys->child) {
+      MEM_freeN(psys->child);
+      psys->child = NULL;
+      psys->totchild = 0;
+    }
+
+    edit->totpoint = psys->totpart = new_totpart;
+  }
+
+  return removed;
+}
+
+static void remove_tagged_keys(Depsgraph *depsgraph, Object *ob, ParticleSystem *psys)
+{
+  PTCacheEdit *edit = psys->edit;
+  ParticleData *pa;
+  HairKey *hkey, *nhkey, *new_hkeys = 0;
+  POINT_P;
+  KEY_K;
+  PTCacheEditKey *nkey, *new_keys;
+  short new_totkey;
+
+  if (pe_x_mirror(ob)) {
+    /* mirror key tags */
+    ParticleSystemModifierData *psmd = psys_get_modifier(ob, psys);
+    ParticleSystemModifierData *psmd_eval = (ParticleSystemModifierData *)
+        BKE_modifier_get_evaluated(depsgraph, ob, &psmd->modifier);
+
+    LOOP_POINTS {
+      LOOP_TAGGED_KEYS {
+        PE_mirror_particle(ob, psmd_eval->mesh_final, psys, psys->particles + p, NULL);
+        break;
+      }
+    }
+  }
+
+  LOOP_POINTS {
+    new_totkey = point->totkey;
+    LOOP_TAGGED_KEYS {
+      new_totkey--;
+    }
+    /* We can't have elements with less than two keys. */
+    if (new_totkey < 2) {
+      point->flag |= PEP_TAG;
+    }
+  }
+  remove_tagged_particles(ob, psys, pe_x_mirror(ob));
+
+  LOOP_POINTS {
+    pa = psys->particles + p;
+    new_totkey = pa->totkey;
+
+    LOOP_TAGGED_KEYS {
+      new_totkey--;
+    }
+
+    if (new_totkey != pa->totkey) {
+      nhkey = new_hkeys = MEM_callocN(new_totkey * sizeof(HairKey), "HairKeys");
+      nkey = new_keys = MEM_callocN(new_totkey * sizeof(PTCacheEditKey), "particle edit keys");
+
+      hkey = pa->hair;
+      LOOP_KEYS {
+        while (key->flag & PEK_TAG && hkey < pa->hair + pa->totkey) {
+          key++;
+          hkey++;
+        }
+
+        if (hkey < pa->hair + pa->totkey) {
+          copy_v3_v3(nhkey->co, hkey->co);
+          nhkey->editflag = hkey->editflag;
+          nhkey->time = hkey->time;
+          nhkey->weight = hkey->weight;
+
+          nkey->co = nhkey->co;
+          nkey->time = &nhkey->time;
+          /* these can be copied from old edit keys */
+          nkey->flag = key->flag;
+          nkey->ftime = key->ftime;
+          nkey->length = key->length;
+          copy_v3_v3(nkey->world_co, key->world_co);
+        }
+        nkey++;
+        nhkey++;
+        hkey++;
+      }
+
+      if (pa->hair) {
+        MEM_freeN(pa->hair);
+      }
+
+      if (point->keys) {
+        MEM_freeN(point->keys);
+      }
+
+      pa->hair = new_hkeys;
+      point->keys = new_keys;
+
+      point->totkey = pa->totkey = new_totkey;
+
+      /* flag for recalculating length */
+      point->flag |= PEP_EDIT_RECALC;
+    }
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Subdivide Operator
+ * \{ */
+
+/* works like normal edit mode subdivide, inserts keys between neighboring selected keys */
+static void subdivide_particle(PEData *data, int pa_index)
+{
+  PTCacheEdit *edit = data->edit;
+  ParticleSystem *psys = edit->psys;
+  ParticleSimulationData sim = {0};
+  ParticleData *pa = psys->particles + pa_index;
+  PTCacheEditPoint *point = edit->points + pa_index;
+  ParticleKey state;
+  HairKey *key, *nkey, *new_keys;
+  PTCacheEditKey *ekey, *nekey, *new_ekeys;
+
+  int k;
+  short totnewkey = 0;
+  float endtime;
+
+  sim.depsgraph = data->depsgraph;
+  sim.scene = data->scene;
+  sim.ob = data->ob;
+  sim.psys = edit->psys;
+
+  for (k = 0, ekey = point->keys; k < pa->totkey - 1; k++, ekey++) {
+    if (ekey->flag & PEK_SELECT && (ekey + 1)->flag & PEK_SELECT) {
+      totnewkey++;
+    }
+  }
+
+  if (totnewkey == 0) {
+    return;
+  }
+
+  pa->flag |= PARS_REKEY;
+
+  nkey = new_keys = MEM_callocN((pa->totkey + totnewkey) * (sizeof(HairKey)),
+                                "Hair subdivide keys");
+  nekey = new_ekeys = MEM_callocN((pa->totkey + totnewkey) * (sizeof(PTCacheEditKey)),
+                                  "Hair subdivide edit keys");
+
+  key = pa->hair;
+  endtime = key[pa->totkey - 1].time;
+
+  for (k = 0, ekey = point->keys; k < pa->totkey - 1; k++, key++, ekey++) {
+
+    memcpy(nkey, key, sizeof(HairKey));
+    memcpy(nekey, ekey, sizeof(PTCacheEditKey));
+
+    nekey->co = nkey->co;
+    nekey->time = &nkey->time;
+
+    nkey++;
+    nekey++;
+
+    if (ekey->flag & PEK_SELECT && (ekey + 1)->flag & PEK_SELECT) {
+      nkey->time = (key->time + (key + 1)->time) * 0.5f;
+      state.time = (endtime != 0.0f) ? nkey->time / endtime : 0.0f;
+      psys_get_particle_on_path(&sim, pa_index, &state, 0);
+      copy_v3_v3(nkey->co, state.co);
+
+      nekey->co = nkey->co;
+      nekey->time = &nkey->time;
+      nekey->flag |= PEK_SELECT;
+      if (!(psys->flag & PSYS_GLOBAL_HAIR)) {
+        nekey->flag |= PEK_USE_WCO;
+      }
+
+      nekey++;
+      nkey++;
+    }
+  }
+  /* Tip still not copied. */
+  memcpy(nkey, key, sizeof(HairKey));
+  memcpy(nekey, ekey, sizeof(PTCacheEditKey));
+
+  nekey->co = nkey->co;
+  nekey->time = &nkey->time;
+
+  if (pa->hair) {
+    MEM_freeN(pa->hair);
+  }
+  pa->hair = new_keys;
+
+  if (point->keys) {
+    MEM_freeN(point->keys);
+  }
+  point->keys = new_ekeys;
+
+  point->totkey = pa->totkey = pa->totkey + totnewkey;
+  point->flag |= PEP_EDIT_RECALC;
+  pa->flag &= ~PARS_REKEY;
+}
+
+static int subdivide_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  PEData data;
+
+  PE_set_data(C, &data);
+  foreach_point(&data, subdivide_particle);
+
+  recalc_lengths(data.edit);
+  PE_update_selection(data.depsgraph, data.scene, data.ob, 1);
+  PE_update_object(data.depsgraph, data.scene, data.ob, 1);
+  DEG_id_tag_update(&data.ob->id, ID_RECALC_SELECT);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, data.ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_subdivide(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Subdivide";
+  ot->idname = "PARTICLE_OT_subdivide";
+  ot->description = "Subdivide selected particles segments (adds keys)";
+
+  /* api callbacks */
+  ot->exec = subdivide_exec;
+  ot->poll = PE_hair_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Remove Doubles Operator
+ * \{ */
+
+static int remove_doubles_exec(bContext *C, wmOperator *op)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  ParticleSystem *psys = edit->psys;
+  ParticleSystemModifierData *psmd_eval;
+  KDTree_3d *tree;
+  KDTreeNearest_3d nearest[10];
+  POINT_P;
+  float mat[4][4], co[3], threshold = RNA_float_get(op->ptr, "threshold");
+  int n, totn, removed, totremoved;
+
+  if (psys->flag & PSYS_GLOBAL_HAIR) {
+    return OPERATOR_CANCELLED;
+  }
+
+  edit = psys->edit;
+  psmd_eval = edit->psmd_eval;
+  totremoved = 0;
+
+  do {
+    removed = 0;
+
+    tree = BLI_kdtree_3d_new(psys->totpart);
+
+    /* insert particles into kd tree */
+    LOOP_SELECTED_POINTS {
+      psys_mat_hair_to_object(
+          ob, psmd_eval->mesh_final, psys->part->from, psys->particles + p, mat);
+      copy_v3_v3(co, point->keys->co);
+      mul_m4_v3(mat, co);
+      BLI_kdtree_3d_insert(tree, p, co);
+    }
+
+    BLI_kdtree_3d_balance(tree);
+
+    /* tag particles to be removed */
+    LOOP_SELECTED_POINTS {
+      psys_mat_hair_to_object(
+          ob, psmd_eval->mesh_final, psys->part->from, psys->particles + p, mat);
+      copy_v3_v3(co, point->keys->co);
+      mul_m4_v3(mat, co);
+
+      totn = BLI_kdtree_3d_find_nearest_n(tree, co, nearest, 10);
+
+      for (n = 0; n < totn; n++) {
+        /* this needs a custom threshold still */
+        if (nearest[n].index > p && nearest[n].dist < threshold) {
+          if (!(point->flag & PEP_TAG)) {
+            point->flag |= PEP_TAG;
+            removed++;
+          }
+        }
+      }
+    }
+
+    BLI_kdtree_3d_free(tree);
+
+    /* remove tagged particles - don't do mirror here! */
+    remove_tagged_particles(ob, psys, 0);
+    totremoved += removed;
+  } while (removed);
+
+  if (totremoved == 0) {
+    return OPERATOR_CANCELLED;
+  }
+
+  BKE_reportf(op->reports, RPT_INFO, "Removed %d double particle(s)", totremoved);
+
+  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_remove_doubles(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Remove Doubles";
+  ot->idname = "PARTICLE_OT_remove_doubles";
+  ot->description = "Remove selected particles close enough of others";
+
+  /* api callbacks */
+  ot->exec = remove_doubles_exec;
+  ot->poll = PE_hair_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  RNA_def_float(ot->srna,
+                "threshold",
+                0.0002f,
+                0.0f,
+                FLT_MAX,
+                "Merge Distance",
+                "Threshold distance within which particles are removed",
+                0.00001f,
+                0.1f);
+}
+
+static int weight_set_exec(bContext *C, wmOperator *op)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  ParticleEditSettings *pset = PE_settings(scene);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  ParticleSystem *psys = edit->psys;
+  POINT_P;
+  KEY_K;
+  HairKey *hkey;
+  float weight;
+  ParticleBrushData *brush = &pset->brush[pset->brushtype];
+  float factor = RNA_float_get(op->ptr, "factor");
+
+  weight = brush->strength;
+  edit = psys->edit;
+
+  LOOP_SELECTED_POINTS {
+    ParticleData *pa = psys->particles + p;
+
+    LOOP_SELECTED_KEYS {
+      hkey = pa->hair + k;
+      hkey->weight = interpf(weight, hkey->weight, factor);
+    }
+  }
+
+  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_weight_set(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Weight Set";
+  ot->idname = "PARTICLE_OT_weight_set";
+  ot->description = "Set the weight of selected keys";
+
+  /* api callbacks */
+  ot->exec = weight_set_exec;
+  ot->poll = PE_hair_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  RNA_def_float(ot->srna,
+                "factor",
+                1,
+                0,
+                1,
+                "Factor",
+                "Interpolation factor between current brush weight, and keys' weights",
+                0,
+                1);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Cursor Drawing
+ * \{ */
+
+static void brush_drawcursor(bContext *C, int x, int y, void *UNUSED(customdata))
+{
+  Scene *scene = CTX_data_scene(C);
+  ParticleEditSettings *pset = PE_settings(scene);
+  ParticleBrushData *brush;
+
+  if (!WM_toolsystem_active_tool_is_brush(C)) {
+    return;
+  }
+
+  brush = &pset->brush[pset->brushtype];
+
+  if (brush) {
+    uint pos = GPU_vertformat_attr_add(immVertexFormat(), "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+    immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
+
+    immUniformColor4ub(255, 255, 255, 128);
+
+    GPU_line_smooth(true);
+    GPU_blend(GPU_BLEND_ALPHA);
+
+    imm_draw_circle_wire_2d(pos, (float)x, (float)y, pe_brush_size_get(scene, brush), 40);
+
+    GPU_blend(GPU_BLEND_NONE);
+    GPU_line_smooth(false);
+
+    immUnbindProgram();
+  }
+}
+
+static void toggle_particle_cursor(Scene *scene, bool enable)
+{
+  ParticleEditSettings *pset = PE_settings(scene);
+
+  if (pset->paintcursor && !enable) {
+    WM_paint_cursor_end(pset->paintcursor);
+    pset->paintcursor = NULL;
+  }
+  else if (enable) {
+    pset->paintcursor = WM_paint_cursor_activate(
+        SPACE_VIEW3D, RGN_TYPE_WINDOW, PE_poll_view3d, brush_drawcursor, NULL);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Delete Operator
+ * \{ */
+
+enum { DEL_PARTICLE, DEL_KEY };
+
+static const EnumPropertyItem delete_type_items[] = {
+    {DEL_PARTICLE, "PARTICLE", 0, "Particle", ""},
+    {DEL_KEY, "KEY", 0, "Key", ""},
+    {0, NULL, 0, NULL, NULL},
+};
+
+static void set_delete_particle(PEData *data, int pa_index)
+{
+  PTCacheEdit *edit = data->edit;
+
+  edit->points[pa_index].flag |= PEP_TAG;
+}
+
+static void set_delete_particle_key(PEData *data,
+                                    int pa_index,
+                                    int key_index,
+                                    bool UNUSED(is_inside))
+{
+  PTCacheEdit *edit = data->edit;
+
+  edit->points[pa_index].keys[key_index].flag |= PEK_TAG;
+}
+
+static int delete_exec(bContext *C, wmOperator *op)
+{
+  PEData data;
+  int type = RNA_enum_get(op->ptr, "type");
+
+  PE_set_data(C, &data);
+
+  if (type == DEL_KEY) {
+    foreach_selected_key(&data, set_delete_particle_key);
+    remove_tagged_keys(data.depsgraph, data.ob, data.edit->psys);
+    recalc_lengths(data.edit);
+  }
+  else if (type == DEL_PARTICLE) {
+    foreach_selected_point(&data, set_delete_particle);
+    remove_tagged_particles(data.ob, data.edit->psys, pe_x_mirror(data.ob));
+    recalc_lengths(data.edit);
+  }
+
+  DEG_id_tag_update(&data.ob->id, ID_RECALC_GEOMETRY);
+  BKE_particle_batch_cache_dirty_tag(data.edit->psys, BKE_PARTICLE_BATCH_DIRTY_ALL);
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, data.ob);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_delete(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Delete";
+  ot->idname = "PARTICLE_OT_delete";
+  ot->description = "Delete selected particles or keys";
+
+  /* api callbacks */
+  ot->exec = delete_exec;
+  ot->invoke = WM_menu_invoke;
+  ot->poll = PE_hair_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  ot->prop = RNA_def_enum(ot->srna,
+                          "type",
+                          delete_type_items,
+                          DEL_PARTICLE,
+                          "Type",
+                          "Delete a full particle or only keys");
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Mirror Operator
+ * \{ */
+
+static void PE_mirror_x(Depsgraph *depsgraph, Scene *scene, Object *ob, int tagged)
+{
+  Mesh *me = (Mesh *)(ob->data);
+  ParticleSystemModifierData *psmd_eval;
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  ParticleSystem *psys = edit->psys;
+  ParticleData *pa, *newpa, *new_pars;
+  PTCacheEditPoint *newpoint, *new_points;
+  POINT_P;
+  KEY_K;
+  HairKey *hkey;
+  int *mirrorfaces = NULL;
+  int rotation, totpart, newtotpart;
+
+  if (psys->flag & PSYS_GLOBAL_HAIR) {
+    return;
+  }
+
+  psmd_eval = edit->psmd_eval;
+  if (!psmd_eval->mesh_final) {
+    return;
+  }
+
+  const bool use_dm_final_indices = (psys->part->use_modifier_stack &&
+                                     !psmd_eval->mesh_final->runtime.deformed_only);
+
+  /* NOTE: this is not nice to use tessfaces but hard to avoid since pa->num uses tessfaces */
+  BKE_mesh_tessface_ensure(me);
+
+  /* NOTE: In case psys uses Mesh tessface indices, we mirror final Mesh itself, not orig mesh.
+   * Avoids an (impossible) mesh -> orig -> mesh tessface indices conversion. */
+  mirrorfaces = mesh_get_x_mirror_faces(
+      ob, NULL, use_dm_final_indices ? psmd_eval->mesh_final : NULL);
+
+  if (!edit->mirror_cache) {
+    PE_update_mirror_cache(ob, psys);
+  }
+
+  totpart = psys->totpart;
+  newtotpart = psys->totpart;
+  LOOP_VISIBLE_POINTS {
+    pa = psys->particles + p;
+
+    if (!tagged) {
+      if (point_is_selected(point)) {
+        if (edit->mirror_cache[p] != -1) {
+          /* already has a mirror, don't need to duplicate */
+          PE_mirror_particle(ob, psmd_eval->mesh_final, psys, pa, NULL);
+          continue;
+        }
+        point->flag |= PEP_TAG;
+      }
+    }
+
+    if ((point->flag & PEP_TAG) && mirrorfaces[pa->num * 2] != -1) {
+      newtotpart++;
+    }
+  }
+
+  if (newtotpart != psys->totpart) {
+    MFace *mtessface = use_dm_final_indices ? psmd_eval->mesh_final->mface : me->mface;
+
+    /* allocate new arrays and copy existing */
+    new_pars = MEM_callocN(newtotpart * sizeof(ParticleData), "ParticleData new");
+    new_points = MEM_callocN(newtotpart * sizeof(PTCacheEditPoint), "PTCacheEditPoint new");
+
+    if (psys->particles) {
+      memcpy(new_pars, psys->particles, totpart * sizeof(ParticleData));
+      MEM_freeN(psys->particles);
+    }
+    psys->particles = new_pars;
+
+    if (edit->points) {
+      memcpy(new_points, edit->points, totpart * sizeof(PTCacheEditPoint));
+      MEM_freeN(edit->points);
+    }
+    edit->points = new_points;
+
+    MEM_SAFE_FREE(edit->mirror_cache);
+
+    edit->totpoint = psys->totpart = newtotpart;
+
+    /* create new elements */
+    newpa = psys->particles + totpart;
+    newpoint = edit->points + totpart;
+
+    for (p = 0, point = edit->points; p < totpart; p++, point++) {
+      pa = psys->particles + p;
+      const int pa_num = pa->num;
+
+      if (point->flag & PEP_HIDE) {
+        continue;
+      }
+
+      if (!(point->flag & PEP_TAG) || mirrorfaces[pa_num * 2] == -1) {
+        continue;
+      }
+
+      /* duplicate */
+      *newpa = *pa;
+      *newpoint = *point;
+      if (pa->hair) {
+        newpa->hair = MEM_dupallocN(pa->hair);
+      }
+      if (point->keys) {
+        newpoint->keys = MEM_dupallocN(point->keys);
+      }
+
+      /* rotate weights according to vertex index rotation */
+      rotation = mirrorfaces[pa_num * 2 + 1];
+      newpa->fuv[0] = pa->fuv[2];
+      newpa->fuv[1] = pa->fuv[1];
+      newpa->fuv[2] = pa->fuv[0];
+      newpa->fuv[3] = pa->fuv[3];
+      while (rotation--) {
+        if (mtessface[pa_num].v4) {
+          SHIFT4(float, newpa->fuv[0], newpa->fuv[1], newpa->fuv[2], newpa->fuv[3]);
+        }
+        else {
+          SHIFT3(float, newpa->fuv[0], newpa->fuv[1], newpa->fuv[2]);
+        }
+      }
+
+      /* assign face index */
+      /* NOTE: mesh_get_x_mirror_faces generates -1 for non-found mirror,
+       * same as DMCACHE_NOTFOUND. */
+      newpa->num = mirrorfaces[pa_num * 2];
+
+      if (use_dm_final_indices) {
+        newpa->num_dmcache = DMCACHE_ISCHILD;
+      }
+      else {
+        newpa->num_dmcache = psys_particle_dm_face_lookup(
+            psmd_eval->mesh_final, psmd_eval->mesh_original, newpa->num, newpa->fuv, NULL);
+      }
+
+      /* update edit key pointers */
+      key = newpoint->keys;
+      for (k = 0, hkey = newpa->hair; k < newpa->totkey; k++, hkey++, key++) {
+        key->co = hkey->co;
+        key->time = &hkey->time;
+      }
+
+      /* map key positions as mirror over x axis */
+      PE_mirror_particle(ob, psmd_eval->mesh_final, psys, pa, newpa);
+
+      newpa++;
+      newpoint++;
+    }
+  }
+
+  LOOP_POINTS {
+    point->flag &= ~PEP_TAG;
+  }
+
+  MEM_freeN(mirrorfaces);
+}
+
+static int mirror_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+
+  PE_mirror_x(depsgraph, scene, ob, 0);
+
+  update_world_cos(ob, edit);
+  psys_free_path_cache(NULL, edit);
+
+  WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+  BKE_particle_batch_cache_dirty_tag(edit->psys, BKE_PARTICLE_BATCH_DIRTY_ALL);
+  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+
+  return OPERATOR_FINISHED;
+}
+
+static bool mirror_poll(bContext *C)
+{
+  if (!PE_hair_poll(C)) {
+    return false;
+  }
+
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+
+  /* The operator only works for hairs emitted from faces. */
+  return edit->psys->part->from == PART_FROM_FACE;
+}
+
+void PARTICLE_OT_mirror(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Mirror";
+  ot->idname = "PARTICLE_OT_mirror";
+  ot->description = "Duplicate and mirror the selected particles along the local X axis";
+
+  /* api callbacks */
+  ot->exec = mirror_exec;
+  ot->poll = mirror_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
