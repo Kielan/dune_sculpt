@@ -3402,3 +3402,362 @@ static void project_paint_face_init(const ProjPaintState *ps,
  * Takes floating point screen-space min/max and
  * returns int min/max to be used as indices for ps->bucketRect, ps->bucketFlags
  */
+static void project_paint_bucket_bounds(const ProjPaintState *ps,
+                                        const float min[2],
+                                        const float max[2],
+                                        int bucketMin[2],
+                                        int bucketMax[2])
+{
+  /* divide by bucketWidth & bucketHeight so the bounds are offset in bucket grid units */
+
+  /* XXX(jwilkins ): the offset of 0.5 is always truncated to zero and the offset of 1.5f
+   * is always truncated to 1, is this really correct? */
+
+  /* these offsets of 0.5 and 1.5 seem odd but they are correct */
+  bucketMin[0] =
+      (int)((int)(((float)(min[0] - ps->screenMin[0]) / ps->screen_width) * ps->buckets_x) + 0.5f);
+  bucketMin[1] = (int)((int)(((float)(min[1] - ps->screenMin[1]) / ps->screen_height) *
+                             ps->buckets_y) +
+                       0.5f);
+
+  bucketMax[0] =
+      (int)((int)(((float)(max[0] - ps->screenMin[0]) / ps->screen_width) * ps->buckets_x) + 1.5f);
+  bucketMax[1] = (int)((int)(((float)(max[1] - ps->screenMin[1]) / ps->screen_height) *
+                             ps->buckets_y) +
+                       1.5f);
+
+  /* in case the rect is outside the mesh 2d bounds */
+  CLAMP(bucketMin[0], 0, ps->buckets_x);
+  CLAMP(bucketMin[1], 0, ps->buckets_y);
+
+  CLAMP(bucketMax[0], 0, ps->buckets_x);
+  CLAMP(bucketMax[1], 0, ps->buckets_y);
+}
+
+/* set bucket_bounds to a screen space-aligned floating point bound-box */
+static void project_bucket_bounds(const ProjPaintState *ps,
+                                  const int bucket_x,
+                                  const int bucket_y,
+                                  rctf *bucket_bounds)
+{
+  /* left */
+  bucket_bounds->xmin = (ps->screenMin[0] + ((bucket_x) * (ps->screen_width / ps->buckets_x)));
+  /* right */
+  bucket_bounds->xmax = (ps->screenMin[0] + ((bucket_x + 1) * (ps->screen_width / ps->buckets_x)));
+
+  /* bottom */
+  bucket_bounds->ymin = (ps->screenMin[1] + ((bucket_y) * (ps->screen_height / ps->buckets_y)));
+  /* top */
+  bucket_bounds->ymax = (ps->screenMin[1] +
+                         ((bucket_y + 1) * (ps->screen_height / ps->buckets_y)));
+}
+
+/* Fill this bucket with pixels from the faces that intersect it.
+ *
+ * have bucket_bounds as an argument so we don't need to give bucket_x/y the rect function needs */
+static void project_bucket_init(const ProjPaintState *ps,
+                                const int thread_index,
+                                const int bucket_index,
+                                const rctf *clip_rect,
+                                const rctf *bucket_bounds)
+{
+  LinkNode *node;
+  int tri_index, image_index = 0;
+  ImBuf *ibuf = NULL;
+  Image *tpage_last = NULL, *tpage;
+  ImBuf *tmpibuf = NULL;
+  int tile_last = 0;
+
+  if (ps->image_tot == 1) {
+    /* Simple loop, no context switching */
+    ibuf = ps->projImages[0].ibuf;
+
+    for (node = ps->bucketFaces[bucket_index]; node; node = node->next) {
+      project_paint_face_init(ps,
+                              thread_index,
+                              bucket_index,
+                              POINTER_AS_INT(node->link),
+                              0,
+                              clip_rect,
+                              bucket_bounds,
+                              ibuf,
+                              &tmpibuf);
+    }
+  }
+  else {
+
+    /* More complicated loop, switch between images */
+    for (node = ps->bucketFaces[bucket_index]; node; node = node->next) {
+      tri_index = POINTER_AS_INT(node->link);
+
+      const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+      const float *lt_tri_uv[3] = {PS_LOOPTRI_AS_UV_3(ps->poly_to_loop_uv, lt)};
+
+      /* Image context switching */
+      tpage = project_paint_face_paint_image(ps, tri_index);
+      int tile = project_paint_face_paint_tile(tpage, lt_tri_uv[0]);
+      if (tpage_last != tpage || tile_last != tile) {
+        tpage_last = tpage;
+        tile_last = tile;
+
+        ibuf = NULL;
+        for (image_index = 0; image_index < ps->image_tot; image_index++) {
+          ProjPaintImage *projIma = &ps->projImages[image_index];
+          if ((projIma->ima == tpage) && (projIma->iuser.tile == tile)) {
+            ibuf = projIma->ibuf;
+            break;
+          }
+        }
+        BLI_assert(ibuf != NULL);
+      }
+      /* context switching done */
+
+      project_paint_face_init(ps,
+                              thread_index,
+                              bucket_index,
+                              tri_index,
+                              image_index,
+                              clip_rect,
+                              bucket_bounds,
+                              ibuf,
+                              &tmpibuf);
+    }
+  }
+
+  if (tmpibuf) {
+    IMB_freeImBuf(tmpibuf);
+  }
+
+  ps->bucketFlags[bucket_index] |= PROJ_BUCKET_INIT;
+}
+
+/* We want to know if a bucket and a face overlap in screen-space.
+ *
+ * NOTE: if this ever returns false positives its not that bad, since a face in the bounding area
+ * will have its pixels calculated when it might not be needed later, (at the moment at least)
+ * obviously it shouldn't have bugs though. */
+
+static bool project_bucket_face_isect(ProjPaintState *ps,
+                                      int bucket_x,
+                                      int bucket_y,
+                                      const MLoopTri *lt)
+{
+  /* TODO: replace this with a trickier method that uses side-of-line for all
+   * #ProjPaintState.screenCoords edges against the closest bucket corner. */
+  const int lt_vtri[3] = {PS_LOOPTRI_AS_VERT_INDEX_3(ps, lt)};
+  rctf bucket_bounds;
+  float p1[2], p2[2], p3[2], p4[2];
+  const float *v, *v1, *v2, *v3;
+  int fidx;
+
+  project_bucket_bounds(ps, bucket_x, bucket_y, &bucket_bounds);
+
+  /* Is one of the faces verts in the bucket bounds? */
+
+  fidx = 2;
+  do {
+    v = ps->screenCoords[lt_vtri[fidx]];
+    if (BLI_rctf_isect_pt_v(&bucket_bounds, v)) {
+      return true;
+    }
+  } while (fidx--);
+
+  v1 = ps->screenCoords[lt_vtri[0]];
+  v2 = ps->screenCoords[lt_vtri[1]];
+  v3 = ps->screenCoords[lt_vtri[2]];
+
+  p1[0] = bucket_bounds.xmin;
+  p1[1] = bucket_bounds.ymin;
+  p2[0] = bucket_bounds.xmin;
+  p2[1] = bucket_bounds.ymax;
+  p3[0] = bucket_bounds.xmax;
+  p3[1] = bucket_bounds.ymax;
+  p4[0] = bucket_bounds.xmax;
+  p4[1] = bucket_bounds.ymin;
+
+  if (isect_point_tri_v2(p1, v1, v2, v3) || isect_point_tri_v2(p2, v1, v2, v3) ||
+      isect_point_tri_v2(p3, v1, v2, v3) || isect_point_tri_v2(p4, v1, v2, v3) ||
+      /* we can avoid testing v3,v1 because another intersection MUST exist if this intersects */
+      (isect_seg_seg_v2(p1, p2, v1, v2) || isect_seg_seg_v2(p1, p2, v2, v3)) ||
+      (isect_seg_seg_v2(p2, p3, v1, v2) || isect_seg_seg_v2(p2, p3, v2, v3)) ||
+      (isect_seg_seg_v2(p3, p4, v1, v2) || isect_seg_seg_v2(p3, p4, v2, v3)) ||
+      (isect_seg_seg_v2(p4, p1, v1, v2) || isect_seg_seg_v2(p4, p1, v2, v3))) {
+    return true;
+  }
+
+  return false;
+}
+
+/* Add faces to the bucket but don't initialize its pixels
+ * TODO: when painting occluded, sort the faces on their min-Z
+ * and only add faces that faces that are not occluded */
+static void project_paint_delayed_face_init(ProjPaintState *ps,
+                                            const MLoopTri *lt,
+                                            const int tri_index)
+{
+  const int lt_vtri[3] = {PS_LOOPTRI_AS_VERT_INDEX_3(ps, lt)};
+  float min[2], max[2], *vCoSS;
+  /* for ps->bucketRect indexing */
+  int bucketMin[2], bucketMax[2];
+  int fidx, bucket_x, bucket_y;
+  /* for early loop exit */
+  int has_x_isect = -1, has_isect = 0;
+  /* just use the first thread arena since threading has not started yet */
+  MemArena *arena = ps->arena_mt[0];
+
+  INIT_MINMAX2(min, max);
+
+  fidx = 2;
+  do {
+    vCoSS = ps->screenCoords[lt_vtri[fidx]];
+    minmax_v2v2_v2(min, max, vCoSS);
+  } while (fidx--);
+
+  project_paint_bucket_bounds(ps, min, max, bucketMin, bucketMax);
+
+  for (bucket_y = bucketMin[1]; bucket_y < bucketMax[1]; bucket_y++) {
+    has_x_isect = 0;
+    for (bucket_x = bucketMin[0]; bucket_x < bucketMax[0]; bucket_x++) {
+      if (project_bucket_face_isect(ps, bucket_x, bucket_y, lt)) {
+        int bucket_index = bucket_x + (bucket_y * ps->buckets_x);
+        BLI_linklist_prepend_arena(&ps->bucketFaces[bucket_index],
+                                   /* cast to a pointer to shut up the compiler */
+                                   POINTER_FROM_INT(tri_index),
+                                   arena);
+
+        has_x_isect = has_isect = 1;
+      }
+      else if (has_x_isect) {
+        /* assuming the face is not a bow-tie - we know we can't intersect again on the X */
+        break;
+      }
+    }
+
+    /* no intersection for this entire row,
+     * after some intersection above means we can quit now */
+    if (has_x_isect == 0 && has_isect) {
+      break;
+    }
+  }
+
+#ifndef PROJ_DEBUG_NOSEAMBLEED
+  if (ps->seam_bleed_px > 0.0f) {
+    /* set as uninitialized */
+    ps->loopSeamData[lt->tri[0]].seam_uvs[0][0] = FLT_MAX;
+    ps->loopSeamData[lt->tri[1]].seam_uvs[0][0] = FLT_MAX;
+    ps->loopSeamData[lt->tri[2]].seam_uvs[0][0] = FLT_MAX;
+  }
+#endif
+}
+
+static void proj_paint_state_viewport_init(ProjPaintState *ps, const char symmetry_flag)
+{
+  float mat[3][3];
+  float viewmat[4][4];
+  float viewinv[4][4];
+
+  ps->viewDir[0] = 0.0f;
+  ps->viewDir[1] = 0.0f;
+  ps->viewDir[2] = 1.0f;
+
+  copy_m4_m4(ps->obmat, ps->ob->obmat);
+
+  if (symmetry_flag) {
+    int i;
+    for (i = 0; i < 3; i++) {
+      if ((symmetry_flag >> i) & 1) {
+        negate_v3(ps->obmat[i]);
+        ps->is_flip_object = !ps->is_flip_object;
+      }
+    }
+  }
+
+  invert_m4_m4(ps->obmat_imat, ps->obmat);
+
+  if (ELEM(ps->source, PROJ_SRC_VIEW, PROJ_SRC_VIEW_FILL)) {
+    /* normal drawing */
+    ps->winx = ps->region->winx;
+    ps->winy = ps->region->winy;
+
+    copy_m4_m4(viewmat, ps->rv3d->viewmat);
+    copy_m4_m4(viewinv, ps->rv3d->viewinv);
+
+    ED_view3d_ob_project_mat_get_from_obmat(ps->rv3d, ps->obmat, ps->projectMat);
+
+    ps->is_ortho = ED_view3d_clip_range_get(
+        ps->depsgraph, ps->v3d, ps->rv3d, &ps->clip_start, &ps->clip_end, true);
+  }
+  else {
+    /* re-projection */
+    float winmat[4][4];
+    float vmat[4][4];
+
+    ps->winx = ps->reproject_ibuf->x;
+    ps->winy = ps->reproject_ibuf->y;
+
+    if (ps->source == PROJ_SRC_IMAGE_VIEW) {
+      /* image stores camera data, tricky */
+      IDProperty *idgroup = IDP_GetProperties(&ps->reproject_image->id, 0);
+      IDProperty *view_data = IDP_GetPropertyFromGroup(idgroup, PROJ_VIEW_DATA_ID);
+
+      const float *array = (float *)IDP_Array(view_data);
+
+      /* use image array, written when creating image */
+      memcpy(winmat, array, sizeof(winmat));
+      array += sizeof(winmat) / sizeof(float);
+      memcpy(viewmat, array, sizeof(viewmat));
+      array += sizeof(viewmat) / sizeof(float);
+      ps->clip_start = array[0];
+      ps->clip_end = array[1];
+      ps->is_ortho = array[2] ? 1 : 0;
+
+      invert_m4_m4(viewinv, viewmat);
+    }
+    else if (ps->source == PROJ_SRC_IMAGE_CAM) {
+      Object *cam_ob_eval = DEG_get_evaluated_object(ps->depsgraph, ps->scene->camera);
+      CameraParams params;
+
+      /* viewmat & viewinv */
+      copy_m4_m4(viewinv, cam_ob_eval->obmat);
+      normalize_m4(viewinv);
+      invert_m4_m4(viewmat, viewinv);
+
+      /* window matrix, clipping and ortho */
+      BKE_camera_params_init(&params);
+      BKE_camera_params_from_object(&params, cam_ob_eval);
+      BKE_camera_params_compute_viewplane(&params, ps->winx, ps->winy, 1.0f, 1.0f);
+      BKE_camera_params_compute_matrix(&params);
+
+      copy_m4_m4(winmat, params.winmat);
+      ps->clip_start = params.clip_start;
+      ps->clip_end = params.clip_end;
+      ps->is_ortho = params.is_ortho;
+    }
+    else {
+      BLI_assert(0);
+    }
+
+    /* same as #ED_view3d_ob_project_mat_get */
+    mul_m4_m4m4(vmat, viewmat, ps->obmat);
+    mul_m4_m4m4(ps->projectMat, winmat, vmat);
+  }
+
+  invert_m4_m4(ps->projectMatInv, ps->projectMat);
+
+  /* viewDir - object relative */
+  copy_m3_m4(mat, viewinv);
+  mul_m3_v3(mat, ps->viewDir);
+  copy_m3_m4(mat, ps->obmat_imat);
+  mul_m3_v3(mat, ps->viewDir);
+  normalize_v3(ps->viewDir);
+
+  if (UNLIKELY(ps->is_flip_object)) {
+    negate_v3(ps->viewDir);
+  }
+
+  /* viewPos - object relative */
+  copy_v3_v3(ps->viewPos, viewinv[3]);
+  copy_m3_m4(mat, ps->obmat_imat);
+  mul_m3_v3(mat, ps->viewPos);
+  add_v3_v3(ps->viewPos, ps->obmat_imat[3]);
+}
