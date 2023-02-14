@@ -4646,3 +4646,1041 @@ static int brush_add(const bContext *C, PEData *data, short number)
 
   return n;
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Brush Edit Operator
+ * \{ */
+
+typedef struct BrushEdit {
+  Scene *scene;
+  ViewLayer *view_layer;
+  Object *ob;
+  PTCacheEdit *edit;
+
+  int first;
+  int lastmouse[2];
+  float zfac;
+
+  /** Optional cached view settings to avoid setting on every mouse-move. */
+  PEData data;
+} BrushEdit;
+
+static int brush_edit_init(bContext *C, wmOperator *op)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+  Object *ob = CTX_data_active_object(C);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  ARegion *region = CTX_wm_region(C);
+  BrushEdit *bedit;
+  float min[3], max[3];
+
+  if (!WM_toolsystem_active_tool_is_brush(C)) {
+    return 0;
+  }
+
+  /* set the 'distance factor' for grabbing (used in comb etc) */
+  INIT_MINMAX(min, max);
+  PE_minmax(depsgraph, scene, view_layer, min, max);
+  mid_v3_v3v3(min, min, max);
+
+  bedit = MEM_callocN(sizeof(BrushEdit), "BrushEdit");
+  bedit->first = 1;
+  op->customdata = bedit;
+
+  bedit->scene = scene;
+  bedit->view_layer = view_layer;
+  bedit->ob = ob;
+  bedit->edit = edit;
+
+  bedit->zfac = ED_view3d_calc_zfac(region->regiondata, min);
+
+  /* cache view depths and settings for re-use */
+  PE_set_view3d_data(C, &bedit->data);
+  PE_create_random_generator(&bedit->data);
+
+  return 1;
+}
+
+static void brush_edit_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
+{
+  BrushEdit *bedit = op->customdata;
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = bedit->scene;
+  Object *ob = bedit->ob;
+  PTCacheEdit *edit = bedit->edit;
+  ParticleEditSettings *pset = PE_settings(scene);
+  ParticleSystemModifierData *psmd_eval = edit->psmd_eval;
+  ParticleBrushData *brush = &pset->brush[pset->brushtype];
+  ARegion *region = CTX_wm_region(C);
+  float vec[3], mousef[2];
+  int mval[2];
+  int flip, mouse[2], removed = 0, added = 0, selected = 0, tot_steps = 1, step = 1;
+  float dx, dy, dmax;
+  int lock_root = pset->flag & PE_LOCK_FIRST;
+
+  if (!PE_start_edit(edit)) {
+    return;
+  }
+
+  RNA_float_get_array(itemptr, "mouse", mousef);
+  mouse[0] = mousef[0];
+  mouse[1] = mousef[1];
+  flip = RNA_boolean_get(itemptr, "pen_flip");
+
+  if (bedit->first) {
+    bedit->lastmouse[0] = mouse[0];
+    bedit->lastmouse[1] = mouse[1];
+  }
+
+  dx = mouse[0] - bedit->lastmouse[0];
+  dy = mouse[1] - bedit->lastmouse[1];
+
+  mval[0] = mouse[0];
+  mval[1] = mouse[1];
+
+  /* Disable locking temporarily for disconnected hair. */
+  if (edit->psys && edit->psys->flag & PSYS_GLOBAL_HAIR) {
+    pset->flag &= ~PE_LOCK_FIRST;
+  }
+
+  if (((pset->brushtype == PE_BRUSH_ADD) ?
+           (sqrtf(dx * dx + dy * dy) > pset->brush[PE_BRUSH_ADD].step) :
+           (dx != 0 || dy != 0)) ||
+      bedit->first) {
+    PEData data = bedit->data;
+    data.context = C; /* TODO(mai): why isn't this set in bedit->data? */
+
+    view3d_operator_needs_opengl(C);
+    selected = (short)count_selected_keys(scene, edit);
+
+    dmax = max_ff(fabsf(dx), fabsf(dy));
+    tot_steps = dmax / (0.2f * pe_brush_size_get(scene, brush)) + 1;
+
+    dx /= (float)tot_steps;
+    dy /= (float)tot_steps;
+
+    for (step = 1; step <= tot_steps; step++) {
+      mval[0] = bedit->lastmouse[0] + step * dx;
+      mval[1] = bedit->lastmouse[1] + step * dy;
+
+      switch (pset->brushtype) {
+        case PE_BRUSH_COMB: {
+          const float xy_delta[2] = {dx, dy};
+          data.mval = mval;
+          data.rad = pe_brush_size_get(scene, brush);
+
+          data.combfac = (brush->strength - 0.5f) * 2.0f;
+          if (data.combfac < 0.0f) {
+            data.combfac = 1.0f - 9.0f * data.combfac;
+          }
+          else {
+            data.combfac = 1.0f - data.combfac;
+          }
+
+          invert_m4_m4(ob->imat, ob->obmat);
+
+          ED_view3d_win_to_delta(region, xy_delta, bedit->zfac, vec);
+          data.dvec = vec;
+
+          foreach_mouse_hit_key(&data, brush_comb, selected);
+          break;
+        }
+        case PE_BRUSH_CUT: {
+          if (edit->psys && edit->pathcache) {
+            data.mval = mval;
+            data.rad = pe_brush_size_get(scene, brush);
+            data.cutfac = brush->strength;
+
+            if (selected) {
+              foreach_selected_point(&data, brush_cut);
+            }
+            else {
+              foreach_point(&data, brush_cut);
+            }
+
+            removed = remove_tagged_particles(ob, edit->psys, pe_x_mirror(ob));
+            if (pset->flag & PE_KEEP_LENGTHS) {
+              recalc_lengths(edit);
+            }
+          }
+          else {
+            removed = 0;
+          }
+
+          break;
+        }
+        case PE_BRUSH_LENGTH: {
+          data.mval = mval;
+
+          data.rad = pe_brush_size_get(scene, brush);
+          data.growfac = brush->strength / 50.0f;
+
+          if (brush->invert ^ flip) {
+            data.growfac = 1.0f - data.growfac;
+          }
+          else {
+            data.growfac = 1.0f + data.growfac;
+          }
+
+          foreach_mouse_hit_point(&data, brush_length, selected);
+
+          if (pset->flag & PE_KEEP_LENGTHS) {
+            recalc_lengths(edit);
+          }
+          break;
+        }
+        case PE_BRUSH_PUFF: {
+          if (edit->psys) {
+            data.mesh = psmd_eval->mesh_final;
+            data.mval = mval;
+            data.rad = pe_brush_size_get(scene, brush);
+            data.select = selected;
+
+            data.pufffac = (brush->strength - 0.5f) * 2.0f;
+            if (data.pufffac < 0.0f) {
+              data.pufffac = 1.0f - 9.0f * data.pufffac;
+            }
+            else {
+              data.pufffac = 1.0f - data.pufffac;
+            }
+
+            data.invert = (brush->invert ^ flip);
+            invert_m4_m4(ob->imat, ob->obmat);
+
+            foreach_mouse_hit_point(&data, brush_puff, selected);
+          }
+          break;
+        }
+        case PE_BRUSH_ADD: {
+          if (edit->psys && edit->psys->part->from == PART_FROM_FACE) {
+            data.mval = mval;
+
+            added = brush_add(C, &data, brush->count);
+
+            if (pset->flag & PE_KEEP_LENGTHS) {
+              recalc_lengths(edit);
+            }
+          }
+          else {
+            added = 0;
+          }
+          break;
+        }
+        case PE_BRUSH_SMOOTH: {
+          data.mval = mval;
+          data.rad = pe_brush_size_get(scene, brush);
+
+          data.vec[0] = data.vec[1] = data.vec[2] = 0.0f;
+          data.tot = 0;
+
+          data.smoothfac = brush->strength;
+
+          invert_m4_m4(ob->imat, ob->obmat);
+
+          foreach_mouse_hit_key(&data, brush_smooth_get, selected);
+
+          if (data.tot) {
+            mul_v3_fl(data.vec, 1.0f / (float)data.tot);
+            foreach_mouse_hit_key(&data, brush_smooth_do, selected);
+          }
+
+          break;
+        }
+        case PE_BRUSH_WEIGHT: {
+          if (edit->psys) {
+            data.mesh = psmd_eval->mesh_final;
+            data.mval = mval;
+            data.rad = pe_brush_size_get(scene, brush);
+
+            data.weightfac = brush->strength; /* note that this will never be zero */
+
+            foreach_mouse_hit_key(&data, BKE_brush_weight_get, selected);
+          }
+
+          break;
+        }
+      }
+      if ((pset->flag & PE_KEEP_LENGTHS) == 0) {
+        recalc_lengths(edit);
+      }
+
+      if (ELEM(pset->brushtype, PE_BRUSH_ADD, PE_BRUSH_CUT) && (added || removed)) {
+        if (pset->brushtype == PE_BRUSH_ADD && pe_x_mirror(ob)) {
+          PE_mirror_x(depsgraph, scene, ob, 1);
+        }
+
+        update_world_cos(ob, edit);
+        psys_free_path_cache(NULL, edit);
+        DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      }
+      else {
+        PE_update_object(depsgraph, scene, ob, 1);
+      }
+    }
+
+    if (edit->psys) {
+      WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+      BKE_particle_batch_cache_dirty_tag(edit->psys, BKE_PARTICLE_BATCH_DIRTY_ALL);
+      DEG_id_tag_update(&ob->id, ID_RECALC_PSYS_REDO);
+    }
+    else {
+      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, ob);
+    }
+
+    bedit->lastmouse[0] = mouse[0];
+    bedit->lastmouse[1] = mouse[1];
+    bedit->first = 0;
+  }
+
+  pset->flag |= lock_root;
+}
+
+static void brush_edit_exit(wmOperator *op)
+{
+  BrushEdit *bedit = op->customdata;
+
+  PE_data_free(&bedit->data);
+  MEM_freeN(bedit);
+}
+
+static int brush_edit_exec(bContext *C, wmOperator *op)
+{
+  if (!brush_edit_init(C, op)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  RNA_BEGIN (op->ptr, itemptr, "stroke") {
+    brush_edit_apply(C, op, &itemptr);
+  }
+  RNA_END;
+
+  brush_edit_exit(op);
+
+  return OPERATOR_FINISHED;
+}
+
+static void brush_edit_apply_event(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  PointerRNA itemptr;
+  float mouse[2];
+
+  copy_v2fl_v2i(mouse, event->mval);
+
+  /* fill in stroke */
+  RNA_collection_add(op->ptr, "stroke", &itemptr);
+
+  RNA_float_set_array(&itemptr, "mouse", mouse);
+  RNA_boolean_set(&itemptr, "pen_flip", event->modifier & KM_SHIFT); /* XXX hardcoded */
+
+  /* apply */
+  brush_edit_apply(C, op, &itemptr);
+}
+
+static int brush_edit_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  if (!brush_edit_init(C, op)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  brush_edit_apply_event(C, op, event);
+
+  WM_event_add_modal_handler(C, op);
+
+  return OPERATOR_RUNNING_MODAL;
+}
+
+static int brush_edit_modal(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  switch (event->type) {
+    case LEFTMOUSE:
+    case MIDDLEMOUSE:
+    case RIGHTMOUSE: /* XXX hardcoded */
+      if (event->val == KM_RELEASE) {
+        brush_edit_exit(op);
+        return OPERATOR_FINISHED;
+      }
+      break;
+    case MOUSEMOVE:
+      brush_edit_apply_event(C, op, event);
+      break;
+  }
+
+  return OPERATOR_RUNNING_MODAL;
+}
+
+static void brush_edit_cancel(bContext *UNUSED(C), wmOperator *op)
+{
+  brush_edit_exit(op);
+}
+
+void PARTICLE_OT_brush_edit(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Brush Edit";
+  ot->idname = "PARTICLE_OT_brush_edit";
+  ot->description = "Apply a stroke of brush to the particles";
+
+  /* api callbacks */
+  ot->exec = brush_edit_exec;
+  ot->invoke = brush_edit_invoke;
+  ot->modal = brush_edit_modal;
+  ot->cancel = brush_edit_cancel;
+  ot->poll = PE_poll_view3d;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING;
+
+  /* properties */
+  PropertyRNA *prop;
+  prop = RNA_def_collection_runtime(ot->srna, "stroke", &RNA_OperatorStrokeElement, "Stroke", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Cut Shape
+ * \{ */
+
+static bool shape_cut_poll(bContext *C)
+{
+  if (PE_hair_poll(C)) {
+    Scene *scene = CTX_data_scene(C);
+    ParticleEditSettings *pset = PE_settings(scene);
+
+    if (pset->shape_object && (pset->shape_object->type == OB_MESH)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+typedef struct PointInsideBVH {
+  BVHTreeFromMesh bvhdata;
+  int num_hits;
+} PointInsideBVH;
+
+static void point_inside_bvh_cb(void *userdata,
+                                int index,
+                                const BVHTreeRay *ray,
+                                BVHTreeRayHit *hit)
+{
+  PointInsideBVH *data = userdata;
+
+  data->bvhdata.raycast_callback(&data->bvhdata, index, ray, hit);
+
+  if (hit->index != -1) {
+    ++data->num_hits;
+  }
+}
+
+/* true if the point is inside the shape mesh */
+static bool shape_cut_test_point(PEData *data, ParticleEditSettings *pset, ParticleCacheKey *key)
+{
+  BVHTreeFromMesh *shape_bvh = &data->shape_bvh;
+  const float dir[3] = {1.0f, 0.0f, 0.0f};
+  PointInsideBVH userdata;
+
+  userdata.bvhdata = data->shape_bvh;
+  userdata.num_hits = 0;
+
+  float co_shape[3];
+  mul_v3_m4v3(co_shape, pset->shape_object->imat, key->co);
+
+  BLI_bvhtree_ray_cast_all(
+      shape_bvh->tree, co_shape, dir, 0.0f, BVH_RAYCAST_DIST_MAX, point_inside_bvh_cb, &userdata);
+
+  /* for any point inside a watertight mesh the number of hits is uneven */
+  return (userdata.num_hits % 2) == 1;
+}
+
+static void shape_cut(PEData *data, int pa_index)
+{
+  PTCacheEdit *edit = data->edit;
+  Object *ob = data->ob;
+  ParticleEditSettings *pset = PE_settings(data->scene);
+  ParticleCacheKey *key;
+
+  bool cut;
+  float cut_time = 1.0;
+  int k, totkeys = 1 << pset->draw_step;
+
+  /* don't cut hidden */
+  if (edit->points[pa_index].flag & PEP_HIDE) {
+    return;
+  }
+
+  cut = false;
+
+  /* check if root is inside the cut shape */
+  key = edit->pathcache[pa_index];
+  if (!shape_cut_test_point(data, pset, key)) {
+    cut_time = -1.0f;
+    cut = true;
+  }
+  else {
+    for (k = 0; k < totkeys; k++, key++) {
+      BVHTreeRayHit hit;
+
+      float co_curr_shape[3], co_next_shape[3];
+      float dir_shape[3];
+      float len_shape;
+
+      mul_v3_m4v3(co_curr_shape, pset->shape_object->imat, key->co);
+      mul_v3_m4v3(co_next_shape, pset->shape_object->imat, (key + 1)->co);
+
+      sub_v3_v3v3(dir_shape, co_next_shape, co_curr_shape);
+      len_shape = normalize_v3(dir_shape);
+
+      memset(&hit, 0, sizeof(hit));
+      hit.index = -1;
+      hit.dist = len_shape;
+      BLI_bvhtree_ray_cast(data->shape_bvh.tree,
+                           co_curr_shape,
+                           dir_shape,
+                           0.0f,
+                           &hit,
+                           data->shape_bvh.raycast_callback,
+                           &data->shape_bvh);
+      if (hit.index >= 0) {
+        if (hit.dist < len_shape) {
+          cut_time = ((hit.dist / len_shape) + (float)k) / (float)totkeys;
+          cut = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (cut) {
+    if (cut_time < 0.0f) {
+      edit->points[pa_index].flag |= PEP_TAG;
+    }
+    else {
+      rekey_particle_to_time(data->context, data->scene, ob, pa_index, cut_time);
+      edit->points[pa_index].flag |= PEP_EDIT_RECALC;
+    }
+  }
+}
+
+static int shape_cut_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  ParticleEditSettings *pset = PE_settings(scene);
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  Object *shapeob = pset->shape_object;
+  int selected = count_selected_keys(scene, edit);
+  int lock_root = pset->flag & PE_LOCK_FIRST;
+
+  if (!PE_start_edit(edit)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  /* Disable locking temporarily for disconnected hair. */
+  if (edit->psys && edit->psys->flag & PSYS_GLOBAL_HAIR) {
+    pset->flag &= ~PE_LOCK_FIRST;
+  }
+
+  if (edit->psys && edit->pathcache) {
+    PEData data;
+    int removed;
+
+    PE_set_data(C, &data);
+    if (!PE_create_shape_tree(&data, shapeob)) {
+      /* shapeob may not have faces... */
+      return OPERATOR_CANCELLED;
+    }
+
+    if (selected) {
+      foreach_selected_point(&data, shape_cut);
+    }
+    else {
+      foreach_point(&data, shape_cut);
+    }
+
+    removed = remove_tagged_particles(ob, edit->psys, pe_x_mirror(ob));
+    recalc_lengths(edit);
+
+    if (removed) {
+      update_world_cos(ob, edit);
+      psys_free_path_cache(NULL, edit);
+      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    }
+    else {
+      PE_update_object(data.depsgraph, scene, ob, 1);
+    }
+
+    if (edit->psys) {
+      WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+      BKE_particle_batch_cache_dirty_tag(edit->psys, BKE_PARTICLE_BATCH_DIRTY_ALL);
+      DEG_id_tag_update(&ob->id, ID_RECALC_PSYS_REDO);
+    }
+    else {
+      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, ob);
+    }
+
+    PE_free_shape_tree(&data);
+  }
+
+  pset->flag |= lock_root;
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_shape_cut(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Shape Cut";
+  ot->idname = "PARTICLE_OT_shape_cut";
+  ot->description = "Cut hair to conform to the set shape object";
+
+  /* api callbacks */
+  ot->exec = shape_cut_exec;
+  ot->poll = shape_cut_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Particle Edit Toggle Operator
+ * \{ */
+
+void PE_create_particle_edit(
+    Depsgraph *depsgraph, Scene *scene, Object *ob, PointCache *cache, ParticleSystem *psys)
+{
+  Object *ob_eval = DEG_get_evaluated_object(depsgraph, ob);
+  PTCacheEdit *edit;
+  ParticleSystemModifierData *psmd = (psys) ? psys_get_modifier(ob, psys) : NULL;
+  ParticleSystemModifierData *psmd_eval = NULL;
+  POINT_P;
+  KEY_K;
+  ParticleData *pa = NULL;
+  HairKey *hkey;
+  int totpoint;
+
+  if (psmd != NULL) {
+    psmd_eval = (ParticleSystemModifierData *)BKE_modifiers_findby_name(ob_eval,
+                                                                        psmd->modifier.name);
+  }
+
+  /* no psmd->dm happens in case particle system modifier is not enabled */
+  if (!(psys && psmd && psmd_eval->mesh_final) && !cache) {
+    return;
+  }
+
+  if (cache && cache->flag & PTCACHE_DISK_CACHE) {
+    return;
+  }
+
+  if (psys == NULL && (cache && BLI_listbase_is_empty(&cache->mem_cache))) {
+    return;
+  }
+
+  edit = (psys) ? psys->edit : cache->edit;
+
+  if (!edit) {
+    ParticleSystem *psys_eval = NULL;
+    if (psys) {
+      psys_eval = psys_eval_get(depsgraph, ob, psys);
+      psys_copy_particles(psys, psys_eval);
+    }
+
+    totpoint = psys ? psys->totpart : (int)((PTCacheMem *)cache->mem_cache.first)->totpoint;
+
+    edit = MEM_callocN(sizeof(PTCacheEdit), "PE_create_particle_edit");
+    edit->points = MEM_callocN(totpoint * sizeof(PTCacheEditPoint), "PTCacheEditPoints");
+    edit->totpoint = totpoint;
+
+    if (psys && !cache) {
+      edit->psmd = psmd;
+      edit->psmd_eval = psmd_eval;
+      psys->edit = edit;
+      edit->psys = psys;
+      edit->psys_eval = psys_eval;
+
+      psys->free_edit = PE_free_ptcache_edit;
+
+      edit->pathcache = NULL;
+      BLI_listbase_clear(&edit->pathcachebufs);
+
+      pa = psys->particles;
+      LOOP_POINTS {
+        point->totkey = pa->totkey;
+        point->keys = MEM_callocN(point->totkey * sizeof(PTCacheEditKey), "ParticleEditKeys");
+        point->flag |= PEP_EDIT_RECALC;
+
+        hkey = pa->hair;
+        LOOP_KEYS {
+          key->co = hkey->co;
+          key->time = &hkey->time;
+          key->flag = hkey->editflag;
+          if (!(psys->flag & PSYS_GLOBAL_HAIR)) {
+            key->flag |= PEK_USE_WCO;
+            hkey->editflag |= PEK_USE_WCO;
+          }
+
+          hkey++;
+        }
+        pa++;
+      }
+      update_world_cos(ob, edit);
+    }
+    else {
+      PTCacheMem *pm;
+      int totframe = 0;
+
+      cache->edit = edit;
+      cache->free_edit = PE_free_ptcache_edit;
+      edit->psys = NULL;
+
+      for (pm = cache->mem_cache.first; pm; pm = pm->next) {
+        totframe++;
+      }
+
+      for (pm = cache->mem_cache.first; pm; pm = pm->next) {
+        LOOP_POINTS {
+          void *cur[BPHYS_TOT_DATA];
+          if (BKE_ptcache_mem_pointers_seek(p, pm, cur) == 0) {
+            continue;
+          }
+
+          if (!point->totkey) {
+            key = point->keys = MEM_callocN(totframe * sizeof(PTCacheEditKey), "ParticleEditKeys");
+            point->flag |= PEP_EDIT_RECALC;
+          }
+          else {
+            key = point->keys + point->totkey;
+          }
+
+          key->co = cur[BPHYS_DATA_LOCATION];
+          key->vel = cur[BPHYS_DATA_VELOCITY];
+          key->rot = cur[BPHYS_DATA_ROTATION];
+          key->ftime = (float)pm->frame;
+          key->time = &key->ftime;
+          BKE_ptcache_mem_pointers_incr(cur);
+
+          point->totkey++;
+        }
+      }
+      psys = NULL;
+    }
+
+    recalc_lengths(edit);
+    if (psys && !cache) {
+      recalc_emitter_field(depsgraph, ob, psys);
+    }
+
+    PE_update_object(depsgraph, scene, ob, 1);
+  }
+}
+
+static bool particle_edit_toggle_poll(bContext *C)
+{
+  Object *ob = CTX_data_active_object(C);
+
+  if (ob == NULL || ob->type != OB_MESH) {
+    return 0;
+  }
+  if (!ob->data || ID_IS_LINKED(ob->data)) {
+    return 0;
+  }
+
+  return ED_object_particle_edit_mode_supported(ob);
+}
+
+static void free_all_psys_edit(Object *object)
+{
+  for (ParticleSystem *psys = object->particlesystem.first; psys != NULL; psys = psys->next) {
+    if (psys->edit != NULL) {
+      BLI_assert(psys->free_edit != NULL);
+      psys->free_edit(psys->edit);
+      psys->free_edit = NULL;
+      psys->edit = NULL;
+    }
+  }
+}
+
+bool ED_object_particle_edit_mode_supported(const Object *ob)
+{
+  return (ob->particlesystem.first || BKE_modifiers_findby_type(ob, eModifierType_Cloth) ||
+          BKE_modifiers_findby_type(ob, eModifierType_Softbody));
+}
+
+void ED_object_particle_edit_mode_enter_ex(Depsgraph *depsgraph, Scene *scene, Object *ob)
+{
+  /* Needed so #ParticleSystemModifierData.mesh_final is set. */
+  BKE_scene_graph_evaluated_ensure(depsgraph, G_MAIN);
+
+  PTCacheEdit *edit;
+
+  ob->mode |= OB_MODE_PARTICLE_EDIT;
+
+  edit = PE_create_current(depsgraph, scene, ob);
+
+  /* Mesh may have changed since last entering editmode.
+   * NOTE: this may have run before if the edit data was just created,
+   * so could avoid this and speed up a little. */
+  if (edit && edit->psys) {
+    /* Make sure pointer to the evaluated modifier data is up to date,
+     * with possible changes applied when object was outside of the
+     * edit mode. */
+    Object *object_eval = DEG_get_evaluated_object(depsgraph, ob);
+    edit->psmd_eval = (ParticleSystemModifierData *)BKE_modifiers_findby_name(
+        object_eval, edit->psmd->modifier.name);
+    recalc_emitter_field(depsgraph, ob, edit->psys);
+  }
+
+  toggle_particle_cursor(scene, true);
+  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY | ID_RECALC_COPY_ON_WRITE);
+  WM_main_add_notifier(NC_SCENE | ND_MODE | NS_MODE_PARTICLE, NULL);
+}
+
+void ED_object_particle_edit_mode_enter(bContext *C)
+{
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  ED_object_particle_edit_mode_enter_ex(depsgraph, scene, ob);
+}
+
+void ED_object_particle_edit_mode_exit_ex(Scene *scene, Object *ob)
+{
+  ob->mode &= ~OB_MODE_PARTICLE_EDIT;
+  toggle_particle_cursor(scene, false);
+  free_all_psys_edit(ob);
+
+  DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY | ID_RECALC_COPY_ON_WRITE);
+  WM_main_add_notifier(NC_SCENE | ND_MODE | NS_MODE_OBJECT, NULL);
+}
+
+void ED_object_particle_edit_mode_exit(bContext *C)
+{
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  ED_object_particle_edit_mode_exit_ex(scene, ob);
+}
+
+static int particle_edit_toggle_exec(bContext *C, wmOperator *op)
+{
+  struct wmMsgBus *mbus = CTX_wm_message_bus(C);
+  Scene *scene = CTX_data_scene(C);
+  Object *ob = CTX_data_active_object(C);
+  const int mode_flag = OB_MODE_PARTICLE_EDIT;
+  const bool is_mode_set = (ob->mode & mode_flag) != 0;
+
+  if (!is_mode_set) {
+    if (!ED_object_mode_compat_set(C, ob, mode_flag, op->reports)) {
+      return OPERATOR_CANCELLED;
+    }
+  }
+
+  if (!is_mode_set) {
+    Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+    ED_object_particle_edit_mode_enter_ex(depsgraph, scene, ob);
+  }
+  else {
+    ED_object_particle_edit_mode_exit_ex(scene, ob);
+  }
+
+  WM_msg_publish_rna_prop(mbus, &ob->id, ob, Object, mode);
+
+  WM_toolsystem_update_from_context_view3d(C);
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_particle_edit_toggle(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Particle Edit Toggle";
+  ot->idname = "PARTICLE_OT_particle_edit_toggle";
+  ot->description = "Toggle particle edit mode";
+
+  /* api callbacks */
+  ot->exec = particle_edit_toggle_exec;
+  ot->poll = particle_edit_toggle_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Set Editable Operator
+ * \{ */
+
+static int clear_edited_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  Object *ob = CTX_data_active_object(C);
+  ParticleSystem *psys = psys_get_current(ob);
+
+  if (psys->edit) {
+    if (psys->edit->edited || 1) {
+      PE_free_ptcache_edit(psys->edit);
+
+      psys->edit = NULL;
+      psys->free_edit = NULL;
+
+      psys->recalc |= ID_RECALC_PSYS_RESET;
+      psys->flag &= ~PSYS_GLOBAL_HAIR;
+      psys->flag &= ~PSYS_EDITED;
+
+      psys_reset(psys, PSYS_RESET_DEPSGRAPH);
+      WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+      BKE_particle_batch_cache_dirty_tag(psys, BKE_PARTICLE_BATCH_DIRTY_ALL);
+      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    }
+  }
+  else { /* some operation might have protected hair from editing so let's clear the flag */
+    psys->recalc |= ID_RECALC_PSYS_RESET;
+    psys->flag &= ~PSYS_GLOBAL_HAIR;
+    psys->flag &= ~PSYS_EDITED;
+    WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_edited_clear(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Clear Edited";
+  ot->idname = "PARTICLE_OT_edited_clear";
+  ot->description = "Undo all edition performed on the particle system";
+
+  /* api callbacks */
+  ot->exec = clear_edited_exec;
+  ot->poll = particle_edit_toggle_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Unify length operator
+ * \{ */
+
+static float calculate_point_length(PTCacheEditPoint *point)
+{
+  float length = 0.0f;
+  KEY_K;
+  LOOP_KEYS {
+    if (k > 0) {
+      length += len_v3v3((key - 1)->co, key->co);
+    }
+  }
+  return length;
+}
+
+static float calculate_average_length(PTCacheEdit *edit)
+{
+  int num_selected = 0;
+  float total_length = 0;
+  POINT_P;
+  LOOP_SELECTED_POINTS {
+    total_length += calculate_point_length(point);
+    num_selected++;
+  }
+  if (num_selected == 0) {
+    return 0.0f;
+  }
+  return total_length / num_selected;
+}
+
+static void scale_point_factor(PTCacheEditPoint *point, float factor)
+{
+  float orig_prev_co[3], prev_co[3];
+  KEY_K;
+  LOOP_KEYS {
+    if (k == 0) {
+      copy_v3_v3(orig_prev_co, key->co);
+      copy_v3_v3(prev_co, key->co);
+    }
+    else {
+      float new_co[3];
+      float delta[3];
+
+      sub_v3_v3v3(delta, key->co, orig_prev_co);
+      mul_v3_fl(delta, factor);
+      add_v3_v3v3(new_co, prev_co, delta);
+
+      copy_v3_v3(orig_prev_co, key->co);
+      copy_v3_v3(key->co, new_co);
+      copy_v3_v3(prev_co, key->co);
+    }
+  }
+  point->flag |= PEP_EDIT_RECALC;
+}
+
+static void scale_point_to_length(PTCacheEditPoint *point, float length)
+{
+  const float point_length = calculate_point_length(point);
+  if (point_length != 0.0f) {
+    const float factor = length / point_length;
+    scale_point_factor(point, factor);
+  }
+}
+
+static void scale_points_to_length(PTCacheEdit *edit, float length)
+{
+  POINT_P;
+  LOOP_SELECTED_POINTS {
+    scale_point_to_length(point, length);
+  }
+  recalc_lengths(edit);
+}
+
+static int unify_length_exec(bContext *C, wmOperator *UNUSED(op))
+{
+  Object *ob = CTX_data_active_object(C);
+  Scene *scene = CTX_data_scene(C);
+  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
+
+  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  float average_length = calculate_average_length(edit);
+
+  if (average_length == 0.0f) {
+    return OPERATOR_CANCELLED;
+  }
+  scale_points_to_length(edit, average_length);
+
+  PE_update_object(depsgraph, scene, ob, 1);
+  if (edit->psys) {
+    WM_event_add_notifier(C, NC_OBJECT | ND_PARTICLE | NA_EDITED, ob);
+  }
+  else {
+    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, ob);
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void PARTICLE_OT_unify_length(struct wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Unify Length";
+  ot->idname = "PARTICLE_OT_unify_length";
+  ot->description = "Make selected hair the same length";
+
+  /* api callbacks */
+  ot->exec = unify_length_exec;
+  ot->poll = PE_poll_view3d;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
