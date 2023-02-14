@@ -2643,4 +2643,762 @@ static void project_bucket_clip_face(const bool is_ortho,
     /* Add a bunch of points, we know must make up the convex hull
      * which is the clipped rect and triangle */
 
-    /* Maximum possible 
+    /* Maximum possible 6 intersections when using a rectangle and triangle */
+
+    /* The 3rd float is used to store angle for qsort(), NOT as a Z location */
+    float isectVCosSS[8][3];
+    float v1_clipSS[2], v2_clipSS[2];
+    float w[3];
+
+    /* calc center */
+    float cent[2] = {0.0f, 0.0f};
+    // float up[2] = {0.0f, 1.0f};
+    bool doubles;
+
+    (*tot) = 0;
+
+    if (inside_face_flag & ISECT_1) {
+      copy_v2_v2(isectVCosSS[*tot], bucket_bounds_ss[0]);
+      (*tot)++;
+    }
+    if (inside_face_flag & ISECT_2) {
+      copy_v2_v2(isectVCosSS[*tot], bucket_bounds_ss[1]);
+      (*tot)++;
+    }
+    if (inside_face_flag & ISECT_3) {
+      copy_v2_v2(isectVCosSS[*tot], bucket_bounds_ss[2]);
+      (*tot)++;
+    }
+    if (inside_face_flag & ISECT_4) {
+      copy_v2_v2(isectVCosSS[*tot], bucket_bounds_ss[3]);
+      (*tot)++;
+    }
+
+    if (inside_bucket_flag & ISECT_1) {
+      copy_v2_v2(isectVCosSS[*tot], v1coSS);
+      (*tot)++;
+    }
+    if (inside_bucket_flag & ISECT_2) {
+      copy_v2_v2(isectVCosSS[*tot], v2coSS);
+      (*tot)++;
+    }
+    if (inside_bucket_flag & ISECT_3) {
+      copy_v2_v2(isectVCosSS[*tot], v3coSS);
+      (*tot)++;
+    }
+
+    if ((inside_bucket_flag & (ISECT_1 | ISECT_2)) != (ISECT_1 | ISECT_2)) {
+      if (line_clip_rect2f(cliprect, bucket_bounds, v1coSS, v2coSS, v1_clipSS, v2_clipSS)) {
+        if ((inside_bucket_flag & ISECT_1) == 0) {
+          copy_v2_v2(isectVCosSS[*tot], v1_clipSS);
+          (*tot)++;
+        }
+        if ((inside_bucket_flag & ISECT_2) == 0) {
+          copy_v2_v2(isectVCosSS[*tot], v2_clipSS);
+          (*tot)++;
+        }
+      }
+    }
+
+    if ((inside_bucket_flag & (ISECT_2 | ISECT_3)) != (ISECT_2 | ISECT_3)) {
+      if (line_clip_rect2f(cliprect, bucket_bounds, v2coSS, v3coSS, v1_clipSS, v2_clipSS)) {
+        if ((inside_bucket_flag & ISECT_2) == 0) {
+          copy_v2_v2(isectVCosSS[*tot], v1_clipSS);
+          (*tot)++;
+        }
+        if ((inside_bucket_flag & ISECT_3) == 0) {
+          copy_v2_v2(isectVCosSS[*tot], v2_clipSS);
+          (*tot)++;
+        }
+      }
+    }
+
+    if ((inside_bucket_flag & (ISECT_3 | ISECT_1)) != (ISECT_3 | ISECT_1)) {
+      if (line_clip_rect2f(cliprect, bucket_bounds, v3coSS, v1coSS, v1_clipSS, v2_clipSS)) {
+        if ((inside_bucket_flag & ISECT_3) == 0) {
+          copy_v2_v2(isectVCosSS[*tot], v1_clipSS);
+          (*tot)++;
+        }
+        if ((inside_bucket_flag & ISECT_1) == 0) {
+          copy_v2_v2(isectVCosSS[*tot], v2_clipSS);
+          (*tot)++;
+        }
+      }
+    }
+
+    if ((*tot) < 3) { /* no intersections to speak of */
+      *tot = 0;
+      return;
+    }
+
+    /* now we have all points we need, collect their angles and sort them clockwise */
+
+    for (int i = 0; i < (*tot); i++) {
+      cent[0] += isectVCosSS[i][0];
+      cent[1] += isectVCosSS[i][1];
+    }
+    cent[0] = cent[0] / (float)(*tot);
+    cent[1] = cent[1] / (float)(*tot);
+
+    /* Collect angles for every point around the center point */
+
+#if 0 /* uses a few more cycles than the above loop */
+    for (int i = 0; i < (*tot); i++) {
+      isectVCosSS[i][2] = angle_2d_clockwise(up, cent, isectVCosSS[i]);
+    }
+#endif
+
+    /* Abuse this var for the loop below */
+    v1_clipSS[0] = cent[0];
+    v1_clipSS[1] = cent[1] + 1.0f;
+
+    for (int i = 0; i < (*tot); i++) {
+      v2_clipSS[0] = isectVCosSS[i][0] - cent[0];
+      v2_clipSS[1] = isectVCosSS[i][1] - cent[1];
+      isectVCosSS[i][2] = atan2f(v1_clipSS[0] * v2_clipSS[1] - v1_clipSS[1] * v2_clipSS[0],
+                                 v1_clipSS[0] * v2_clipSS[0] + v1_clipSS[1] * v2_clipSS[1]);
+    }
+
+    if (flip) {
+      qsort(isectVCosSS, *tot, sizeof(float[3]), float_z_sort_flip);
+    }
+    else {
+      qsort(isectVCosSS, *tot, sizeof(float[3]), float_z_sort);
+    }
+
+    doubles = true;
+    while (doubles == true) {
+      doubles = false;
+
+      for (int i = 0; i < (*tot); i++) {
+        if (fabsf(isectVCosSS[(i + 1) % *tot][0] - isectVCosSS[i][0]) < PROJ_PIXEL_TOLERANCE &&
+            fabsf(isectVCosSS[(i + 1) % *tot][1] - isectVCosSS[i][1]) < PROJ_PIXEL_TOLERANCE) {
+          for (int j = i; j < (*tot) - 1; j++) {
+            isectVCosSS[j][0] = isectVCosSS[j + 1][0];
+            isectVCosSS[j][1] = isectVCosSS[j + 1][1];
+          }
+          /* keep looking for more doubles */
+          doubles = true;
+          (*tot)--;
+        }
+      }
+
+      /* its possible there is only a few left after remove doubles */
+      if ((*tot) < 3) {
+        // printf("removed too many doubles B\n");
+        *tot = 0;
+        return;
+      }
+    }
+
+    if (is_ortho) {
+      for (int i = 0; i < (*tot); i++) {
+        barycentric_weights_v2(v1coSS, v2coSS, v3coSS, isectVCosSS[i], w);
+        interp_v2_v2v2v2(bucket_bounds_uv[i], uv1co, uv2co, uv3co, w);
+      }
+    }
+    else {
+      for (int i = 0; i < (*tot); i++) {
+        barycentric_weights_v2_persp(v1coSS, v2coSS, v3coSS, isectVCosSS[i], w);
+        interp_v2_v2v2v2(bucket_bounds_uv[i], uv1co, uv2co, uv3co, w);
+      }
+    }
+  }
+
+#ifdef PROJ_DEBUG_PRINT_CLIP
+  /* include this at the bottom of the above function to debug the output */
+
+  {
+    /* If there are ever any problems, */
+    float test_uv[4][2];
+    int i;
+    if (is_ortho) {
+      rect_to_uvspace_ortho(
+          bucket_bounds, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, test_uv, flip);
+    }
+    else {
+      rect_to_uvspace_persp(
+          bucket_bounds, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, test_uv, flip);
+    }
+    printf("(  [(%f,%f), (%f,%f), (%f,%f), (%f,%f)], ",
+           test_uv[0][0],
+           test_uv[0][1],
+           test_uv[1][0],
+           test_uv[1][1],
+           test_uv[2][0],
+           test_uv[2][1],
+           test_uv[3][0],
+           test_uv[3][1]);
+
+    printf("  [(%f,%f), (%f,%f), (%f,%f)], ",
+           uv1co[0],
+           uv1co[1],
+           uv2co[0],
+           uv2co[1],
+           uv3co[0],
+           uv3co[1]);
+
+    printf("[");
+    for (int i = 0; i < (*tot); i++) {
+      printf("(%f, %f),", bucket_bounds_uv[i][0], bucket_bounds_uv[i][1]);
+    }
+    printf("]),\\\n");
+  }
+#endif
+}
+
+/*
+ * # This script creates faces in a blender scene from printed data above.
+ *
+ * project_ls = [
+ * ...(output from above block)...
+ * ]
+ *
+ * from Blender import Scene, Mesh, Window, sys, Mathutils
+ *
+ * import bpy
+ *
+ * V = Mathutils.Vector
+ *
+ * def main():
+ *     sce = bpy.data.scenes.active
+ *
+ *     for item in project_ls:
+ *         bb = item[0]
+ *         uv = item[1]
+ *         poly = item[2]
+ *
+ *         me = bpy.data.meshes.new()
+ *         ob = sce.objects.new(me)
+ *
+ *         me.verts.extend([V(bb[0]).xyz, V(bb[1]).xyz, V(bb[2]).xyz, V(bb[3]).xyz])
+ *         me.faces.extend([(0,1,2,3),])
+ *         me.verts.extend([V(uv[0]).xyz, V(uv[1]).xyz, V(uv[2]).xyz])
+ *         me.faces.extend([(4,5,6),])
+ *
+ *         vs = [V(p).xyz for p in poly]
+ *         print len(vs)
+ *         l = len(me.verts)
+ *         me.verts.extend(vs)
+ *
+ *         i = l
+ *         while i < len(me.verts):
+ *             ii = i + 1
+ *             if ii == len(me.verts):
+ *                 ii = l
+ *             me.edges.extend([i, ii])
+ *             i += 1
+ *
+ * if __name__ == '__main__':
+ *     main()
+ */
+
+#undef ISECT_1
+#undef ISECT_2
+#undef ISECT_3
+#undef ISECT_4
+#undef ISECT_ALL3
+#undef ISECT_ALL4
+
+/* checks if pt is inside a convex 2D polyline, the polyline must be ordered rotating clockwise
+ * otherwise it would have to test for mixed (line_point_side_v2 > 0.0f) cases */
+static bool IsectPoly2Df(const float pt[2], const float uv[][2], const int tot)
+{
+  int i;
+  if (line_point_side_v2(uv[tot - 1], uv[0], pt) < 0.0f) {
+    return false;
+  }
+
+  for (i = 1; i < tot; i++) {
+    if (line_point_side_v2(uv[i - 1], uv[i], pt) < 0.0f) {
+      return false;
+    }
+  }
+
+  return true;
+}
+static bool IsectPoly2Df_twoside(const float pt[2], const float uv[][2], const int tot)
+{
+  const bool side = (line_point_side_v2(uv[tot - 1], uv[0], pt) > 0.0f);
+
+  for (int i = 1; i < tot; i++) {
+    if ((line_point_side_v2(uv[i - 1], uv[i], pt) > 0.0f) != side) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/* One of the most important function for projection painting,
+ * since it selects the pixels to be added into each bucket.
+ *
+ * initialize pixels from this face where it intersects with the bucket_index,
+ * optionally initialize pixels for removing seams */
+static void project_paint_face_init(const ProjPaintState *ps,
+                                    const int thread_index,
+                                    const int bucket_index,
+                                    const int tri_index,
+                                    const int image_index,
+                                    const rctf *clip_rect,
+                                    const rctf *bucket_bounds,
+                                    ImBuf *ibuf,
+                                    ImBuf **tmpibuf)
+{
+  /* Projection vars, to get the 3D locations into screen space. */
+  MemArena *arena = ps->arena_mt[thread_index];
+  LinkNode **bucketPixelNodes = ps->bucketRect + bucket_index;
+  LinkNode *bucketFaceNodes = ps->bucketFaces[bucket_index];
+  bool threaded = (ps->thread_tot > 1);
+
+  TileInfo tinf = {
+      ps->tile_lock,
+      ps->do_masking,
+      ED_IMAGE_UNDO_TILE_NUMBER(ibuf->x),
+      tmpibuf,
+      ps->projImages + image_index,
+  };
+
+  const MLoopTri *lt = &ps->mlooptri_eval[tri_index];
+  const int lt_vtri[3] = {PS_LOOPTRI_AS_VERT_INDEX_3(ps, lt)};
+  const float *lt_tri_uv[3] = {PS_LOOPTRI_AS_UV_3(ps->poly_to_loop_uv, lt)};
+
+  /* UV/pixel seeking data */
+  /* Image X/Y-Pixel */
+  int x, y;
+  float mask;
+  /* Image floating point UV - same as x, y but from 0.0-1.0 */
+  float uv[2];
+
+  /* vert co screen-space, these will be assigned to lt_vtri[0-2] */
+  const float *v1coSS, *v2coSS, *v3coSS;
+
+  /* Vertex screen-space coords. */
+  const float *vCo[3];
+
+  float w[3], wco[3];
+
+  /* for convenience only, these will be assigned to lt_tri_uv[0],1,2 or lt_tri_uv[0],2,3 */
+  float *uv1co, *uv2co, *uv3co;
+  float pixelScreenCo[4];
+  bool do_3d_mapping = ps->brush->mtex.brush_map_mode == MTEX_MAP_MODE_3D;
+
+  /* Image-space bounds. */
+  rcti bounds_px;
+  /* Variables for getting UV-space bounds. */
+
+  /* Bucket bounds in UV space so we can init pixels only for this face. */
+  float lt_uv_pxoffset[3][2];
+  float xhalfpx, yhalfpx;
+  const float ibuf_xf = (float)ibuf->x, ibuf_yf = (float)ibuf->y;
+
+  /* for early loop exit */
+  int has_x_isect = 0, has_isect = 0;
+
+  float uv_clip[8][2];
+  int uv_clip_tot;
+  const bool is_ortho = ps->is_ortho;
+  const bool is_flip_object = ps->is_flip_object;
+  const bool do_backfacecull = ps->do_backfacecull;
+  const bool do_clip = RV3D_CLIPPING_ENABLED(ps->v3d, ps->rv3d);
+
+  vCo[0] = ps->mvert_eval[lt_vtri[0]].co;
+  vCo[1] = ps->mvert_eval[lt_vtri[1]].co;
+  vCo[2] = ps->mvert_eval[lt_vtri[2]].co;
+
+  /* Use lt_uv_pxoffset instead of lt_tri_uv so we can offset the UV half a pixel
+   * this is done so we can avoid offsetting all the pixels by 0.5 which causes
+   * problems when wrapping negative coords */
+  xhalfpx = (0.5f + (PROJ_PIXEL_TOLERANCE * (1.0f / 3.0f))) / ibuf_xf;
+  yhalfpx = (0.5f + (PROJ_PIXEL_TOLERANCE * (1.0f / 4.0f))) / ibuf_yf;
+
+  /* Note about (PROJ_GEOM_TOLERANCE/x) above...
+   * Needed to add this offset since UV coords are often quads aligned to pixels.
+   * In this case pixels can be exactly between 2 triangles causing nasty
+   * artifacts.
+   *
+   * This workaround can be removed and painting will still work on most cases
+   * but since the first thing most people try is painting onto a quad- better make it work.
+   */
+
+  lt_uv_pxoffset[0][0] = lt_tri_uv[0][0] - xhalfpx;
+  lt_uv_pxoffset[0][1] = lt_tri_uv[0][1] - yhalfpx;
+
+  lt_uv_pxoffset[1][0] = lt_tri_uv[1][0] - xhalfpx;
+  lt_uv_pxoffset[1][1] = lt_tri_uv[1][1] - yhalfpx;
+
+  lt_uv_pxoffset[2][0] = lt_tri_uv[2][0] - xhalfpx;
+  lt_uv_pxoffset[2][1] = lt_tri_uv[2][1] - yhalfpx;
+
+  {
+    uv1co = lt_uv_pxoffset[0]; /* was lt_tri_uv[i1]; */
+    uv2co = lt_uv_pxoffset[1]; /* was lt_tri_uv[i2]; */
+    uv3co = lt_uv_pxoffset[2]; /* was lt_tri_uv[i3]; */
+
+    v1coSS = ps->screenCoords[lt_vtri[0]];
+    v2coSS = ps->screenCoords[lt_vtri[1]];
+    v3coSS = ps->screenCoords[lt_vtri[2]];
+
+    /* This function gives is a concave polyline in UV space from the clipped tri. */
+    project_bucket_clip_face(is_ortho,
+                             is_flip_object,
+                             clip_rect,
+                             bucket_bounds,
+                             v1coSS,
+                             v2coSS,
+                             v3coSS,
+                             uv1co,
+                             uv2co,
+                             uv3co,
+                             uv_clip,
+                             &uv_clip_tot,
+                             do_backfacecull || ps->do_occlude);
+
+    /* Sometimes this happens, better just allow for 8 intersections
+     * even though there should be max 6 */
+#if 0
+    if (uv_clip_tot > 6) {
+      printf("this should never happen! %d\n", uv_clip_tot);
+    }
+#endif
+
+    if (pixel_bounds_array(uv_clip, &bounds_px, ibuf->x, ibuf->y, uv_clip_tot)) {
+#if 0
+      project_paint_undo_tiles_init(
+          &bounds_px, ps->projImages + image_index, tmpibuf, tile_width, threaded, ps->do_masking);
+#endif
+      /* clip face and */
+
+      has_isect = 0;
+      for (y = bounds_px.ymin; y < bounds_px.ymax; y++) {
+        // uv[1] = (((float)y) + 0.5f) / (float)ibuf->y;
+        /* use pixel offset UV coords instead */
+        uv[1] = (float)y / ibuf_yf;
+
+        has_x_isect = 0;
+        for (x = bounds_px.xmin; x < bounds_px.xmax; x++) {
+          // uv[0] = (((float)x) + 0.5f) / ibuf->x;
+          /* use pixel offset UV coords instead */
+          uv[0] = (float)x / ibuf_xf;
+
+          /* Note about IsectPoly2Df_twoside, checking the face or uv flipping doesn't work,
+           * could check the poly direction but better to do this */
+          if ((do_backfacecull == true && IsectPoly2Df(uv, uv_clip, uv_clip_tot)) ||
+              (do_backfacecull == false && IsectPoly2Df_twoside(uv, uv_clip, uv_clip_tot))) {
+
+            has_x_isect = has_isect = 1;
+
+            if (is_ortho) {
+              screen_px_from_ortho(
+                  uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+            }
+            else {
+              screen_px_from_persp(
+                  uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+            }
+
+            /* A pity we need to get the world-space pixel location here
+             * because it is a relatively expensive operation. */
+            if (do_clip || do_3d_mapping) {
+              interp_v3_v3v3v3(wco,
+                               ps->mvert_eval[lt_vtri[0]].co,
+                               ps->mvert_eval[lt_vtri[1]].co,
+                               ps->mvert_eval[lt_vtri[2]].co,
+                               w);
+              if (do_clip && ED_view3d_clipping_test(ps->rv3d, wco, true)) {
+                /* Watch out that no code below this needs to run */
+                continue;
+              }
+            }
+
+            /* Is this UV visible from the view? - raytrace */
+            /* project_paint_PickFace is less complex, use for testing */
+            // if (project_paint_PickFace(ps, pixelScreenCo, w, &side) == tri_index) {
+            if ((ps->do_occlude == false) ||
+                !project_bucket_point_occluded(ps, bucketFaceNodes, tri_index, pixelScreenCo)) {
+              mask = project_paint_uvpixel_mask(ps, tri_index, w);
+
+              if (mask > 0.0f) {
+                BLI_linklist_prepend_arena(
+                    bucketPixelNodes,
+                    project_paint_uvpixel_init(
+                        ps, arena, &tinf, x, y, mask, tri_index, pixelScreenCo, wco, w),
+                    arena);
+              }
+            }
+          }
+          //#if 0
+          else if (has_x_isect) {
+            /* assuming the face is not a bow-tie - we know we can't intersect again on the X */
+            break;
+          }
+          //#endif
+        }
+
+#if 0 /* TODO: investigate why this doesn't work sometimes! it should! */
+        /* no intersection for this entire row,
+         * after some intersection above means we can quit now */
+        if (has_x_isect == 0 && has_isect) {
+          break;
+        }
+#endif
+      }
+    }
+  }
+
+#ifndef PROJ_DEBUG_NOSEAMBLEED
+  if (ps->seam_bleed_px > 0.0f && !(ps->faceSeamFlags[tri_index] & PROJ_FACE_DEGENERATE)) {
+    int face_seam_flag;
+
+    if (threaded) {
+      /* Other threads could be modifying these vars. */
+      BLI_thread_lock(LOCK_CUSTOM1);
+    }
+
+    face_seam_flag = ps->faceSeamFlags[tri_index];
+
+    /* are any of our edges un-initialized? */
+    if ((face_seam_flag & PROJ_FACE_SEAM_INIT0) == 0 ||
+        (face_seam_flag & PROJ_FACE_SEAM_INIT1) == 0 ||
+        (face_seam_flag & PROJ_FACE_SEAM_INIT2) == 0) {
+      project_face_seams_init(ps, arena, tri_index, 0, true, ibuf->x, ibuf->y);
+      face_seam_flag = ps->faceSeamFlags[tri_index];
+#  if 0
+      printf("seams - %d %d %d %d\n",
+             flag & PROJ_FACE_SEAM0,
+             flag & PROJ_FACE_SEAM1,
+             flag & PROJ_FACE_SEAM2);
+#  endif
+    }
+
+    if ((face_seam_flag & (PROJ_FACE_SEAM0 | PROJ_FACE_SEAM1 | PROJ_FACE_SEAM2)) == 0) {
+
+      if (threaded) {
+        /* Other threads could be modifying these vars. */
+        BLI_thread_unlock(LOCK_CUSTOM1);
+      }
+    }
+    else {
+      /* we have a seam - deal with it! */
+
+      /* Inset face coords.
+       * - screen-space in orthographic view.
+       * - world-space in perspective view.
+       */
+      float insetCos[3][3];
+
+      /* Vertex screen-space coords. */
+      const float *vCoSS[3];
+
+      /* Store the screen-space coords of the face,
+       * clipped by the bucket's screen aligned rectangle. */
+      float bucket_clip_edges[2][2];
+      float edge_verts_inset_clip[2][3];
+      /* face edge pairs - loop through these:
+       * ((0,1), (1,2), (2,3), (3,0)) or ((0,1), (1,2), (2,0)) for a tri */
+      int fidx1, fidx2;
+
+      float seam_subsection[4][2];
+      float fac1, fac2;
+
+      /* Pixelspace UVs. */
+      float lt_puv[3][2];
+
+      lt_puv[0][0] = lt_uv_pxoffset[0][0] * ibuf->x;
+      lt_puv[0][1] = lt_uv_pxoffset[0][1] * ibuf->y;
+
+      lt_puv[1][0] = lt_uv_pxoffset[1][0] * ibuf->x;
+      lt_puv[1][1] = lt_uv_pxoffset[1][1] * ibuf->y;
+
+      lt_puv[2][0] = lt_uv_pxoffset[2][0] * ibuf->x;
+      lt_puv[2][1] = lt_uv_pxoffset[2][1] * ibuf->y;
+
+      if ((ps->faceSeamFlags[tri_index] & PROJ_FACE_SEAM0) ||
+          (ps->faceSeamFlags[tri_index] & PROJ_FACE_SEAM1) ||
+          (ps->faceSeamFlags[tri_index] & PROJ_FACE_SEAM2)) {
+        uv_image_outset(ps, lt_uv_pxoffset, lt_puv, tri_index, ibuf->x, ibuf->y);
+      }
+
+      /* ps->loopSeamUVs can't be modified when threading, now this is done we can unlock. */
+      if (threaded) {
+        /* Other threads could be modifying these vars */
+        BLI_thread_unlock(LOCK_CUSTOM1);
+      }
+
+      vCoSS[0] = ps->screenCoords[lt_vtri[0]];
+      vCoSS[1] = ps->screenCoords[lt_vtri[1]];
+      vCoSS[2] = ps->screenCoords[lt_vtri[2]];
+
+      /* PROJ_FACE_SCALE_SEAM must be slightly less than 1.0f */
+      if (is_ortho) {
+        scale_tri(insetCos, vCoSS, PROJ_FACE_SCALE_SEAM);
+      }
+      else {
+        scale_tri(insetCos, vCo, PROJ_FACE_SCALE_SEAM);
+      }
+
+      for (fidx1 = 0; fidx1 < 3; fidx1++) {
+        /* next fidx in the face (0,1,2) -> (1,2,0) */
+        fidx2 = (fidx1 == 2) ? 0 : fidx1 + 1;
+
+        if ((face_seam_flag & (1 << fidx1)) && /* 1<<fidx1 -> PROJ_FACE_SEAM# */
+            line_clip_rect2f(clip_rect,
+                             bucket_bounds,
+                             vCoSS[fidx1],
+                             vCoSS[fidx2],
+                             bucket_clip_edges[0],
+                             bucket_clip_edges[1])) {
+          /* Avoid div by zero. */
+          if (len_squared_v2v2(vCoSS[fidx1], vCoSS[fidx2]) > FLT_EPSILON) {
+            uint loop_idx = ps->mlooptri_eval[tri_index].tri[fidx1];
+            LoopSeamData *seam_data = &ps->loopSeamData[loop_idx];
+            float(*seam_uvs)[2] = seam_data->seam_uvs;
+
+            if (is_ortho) {
+              fac1 = line_point_factor_v2(bucket_clip_edges[0], vCoSS[fidx1], vCoSS[fidx2]);
+              fac2 = line_point_factor_v2(bucket_clip_edges[1], vCoSS[fidx1], vCoSS[fidx2]);
+            }
+            else {
+              fac1 = screen_px_line_point_factor_v2_persp(
+                  ps, bucket_clip_edges[0], vCo[fidx1], vCo[fidx2]);
+              fac2 = screen_px_line_point_factor_v2_persp(
+                  ps, bucket_clip_edges[1], vCo[fidx1], vCo[fidx2]);
+            }
+
+            interp_v2_v2v2(seam_subsection[0], lt_uv_pxoffset[fidx1], lt_uv_pxoffset[fidx2], fac1);
+            interp_v2_v2v2(seam_subsection[1], lt_uv_pxoffset[fidx1], lt_uv_pxoffset[fidx2], fac2);
+
+            interp_v2_v2v2(seam_subsection[2], seam_uvs[0], seam_uvs[1], fac2);
+            interp_v2_v2v2(seam_subsection[3], seam_uvs[0], seam_uvs[1], fac1);
+
+            /* if the bucket_clip_edges values Z values was kept we could avoid this
+             * Inset needs to be added so occlusion tests won't hit adjacent faces */
+            interp_v3_v3v3(edge_verts_inset_clip[0], insetCos[fidx1], insetCos[fidx2], fac1);
+            interp_v3_v3v3(edge_verts_inset_clip[1], insetCos[fidx1], insetCos[fidx2], fac2);
+
+            if (pixel_bounds_uv(seam_subsection, &bounds_px, ibuf->x, ibuf->y)) {
+              /* bounds between the seam rect and the uvspace bucket pixels */
+
+              has_isect = 0;
+              for (y = bounds_px.ymin; y < bounds_px.ymax; y++) {
+                // uv[1] = (((float)y) + 0.5f) / (float)ibuf->y;
+                /* use offset uvs instead */
+                uv[1] = (float)y / ibuf_yf;
+
+                has_x_isect = 0;
+                for (x = bounds_px.xmin; x < bounds_px.xmax; x++) {
+                  const float puv[2] = {(float)x, (float)y};
+                  bool in_bounds;
+                  // uv[0] = (((float)x) + 0.5f) / (float)ibuf->x;
+                  /* use offset uvs instead */
+                  uv[0] = (float)x / ibuf_xf;
+
+                  /* test we're inside uvspace bucket and triangle bounds */
+                  if (equals_v2v2(seam_uvs[0], seam_uvs[1])) {
+                    in_bounds = isect_point_tri_v2(uv, UNPACK3(seam_subsection));
+                  }
+                  else {
+                    in_bounds = isect_point_quad_v2(uv, UNPACK4(seam_subsection));
+                  }
+
+                  if (in_bounds) {
+                    if ((seam_data->corner_dist_sq[0] > 0.0f) &&
+                        (len_squared_v2v2(puv, seam_data->seam_puvs[0]) <
+                         seam_data->corner_dist_sq[0]) &&
+                        (len_squared_v2v2(puv, lt_puv[fidx1]) > ps->seam_bleed_px_sq)) {
+                      in_bounds = false;
+                    }
+                    else if ((seam_data->corner_dist_sq[1] > 0.0f) &&
+                             (len_squared_v2v2(puv, seam_data->seam_puvs[1]) <
+                              seam_data->corner_dist_sq[1]) &&
+                             (len_squared_v2v2(puv, lt_puv[fidx2]) > ps->seam_bleed_px_sq)) {
+                      in_bounds = false;
+                    }
+                  }
+
+                  if (in_bounds) {
+                    float pixel_on_edge[4];
+                    float fac;
+
+                    if (is_ortho) {
+                      screen_px_from_ortho(
+                          uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+                    }
+                    else {
+                      screen_px_from_persp(
+                          uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+                    }
+
+                    /* We need the coord of the pixel on the edge, for the occlusion query. */
+                    fac = resolve_quad_u_v2(uv, UNPACK4(seam_subsection));
+                    interp_v3_v3v3(
+                        pixel_on_edge, edge_verts_inset_clip[0], edge_verts_inset_clip[1], fac);
+
+                    if (!is_ortho) {
+                      pixel_on_edge[3] = 1.0f;
+                      /* cast because of const */
+                      mul_m4_v4((float(*)[4])ps->projectMat, pixel_on_edge);
+                      pixel_on_edge[0] = (float)(ps->winx * 0.5f) +
+                                         (ps->winx * 0.5f) * pixel_on_edge[0] / pixel_on_edge[3];
+                      pixel_on_edge[1] = (float)(ps->winy * 0.5f) +
+                                         (ps->winy * 0.5f) * pixel_on_edge[1] / pixel_on_edge[3];
+                      /* Use the depth for bucket point occlusion */
+                      pixel_on_edge[2] = pixel_on_edge[2] / pixel_on_edge[3];
+                    }
+
+                    if ((ps->do_occlude == false) ||
+                        !project_bucket_point_occluded(
+                            ps, bucketFaceNodes, tri_index, pixel_on_edge)) {
+                      /* A pity we need to get the world-space pixel location here
+                       * because it is a relatively expensive operation. */
+                      if (do_clip || do_3d_mapping) {
+                        interp_v3_v3v3v3(wco, vCo[0], vCo[1], vCo[2], w);
+
+                        if (do_clip && ED_view3d_clipping_test(ps->rv3d, wco, true)) {
+                          /* Watch out that no code below
+                           * this needs to run */
+                          continue;
+                        }
+                      }
+
+                      mask = project_paint_uvpixel_mask(ps, tri_index, w);
+
+                      if (mask > 0.0f) {
+                        BLI_linklist_prepend_arena(
+                            bucketPixelNodes,
+                            project_paint_uvpixel_init(
+                                ps, arena, &tinf, x, y, mask, tri_index, pixelScreenCo, wco, w),
+                            arena);
+                      }
+                    }
+                  }
+                  else if (has_x_isect) {
+                    /* assuming the face is not a bow-tie - we know
+                     * we can't intersect again on the X */
+                    break;
+                  }
+                }
+
+#  if 0 /* TODO: investigate why this doesn't work sometimes! it should! */
+                /* no intersection for this entire row,
+                 * after some intersection above means we can quit now */
+                if (has_x_isect == 0 && has_isect) {
+                  break;
+                }
+#  endif
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+#else
+  UNUSED_VARS(vCo, threaded);
+#endif /* PROJ_DEBUG_NOSEAMBLEED */
+}
+
+/**
+ * Takes floating point screen-space min/max and
+ * returns int min/max to be used as indices for ps->bucketRect, ps->bucketFlags
+ */
