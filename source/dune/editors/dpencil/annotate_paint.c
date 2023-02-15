@@ -2297,7 +2297,7 @@ static int annotation_draw_invoke(bContext *C, wmOperator *op, const wmEvent *ev
   else if (p->paintmode == GP_PAINTMODE_DRAW) {
     p->stabilizer_factor = RNA_float_get(op->ptr, "stabilizer_factor");
     p->stabilizer_radius = RNA_int_get(op->ptr, "stabilizer_radius");
-    if (RNA_boolean_get(op->ptr, "use_stabilizer")) {
+    if (api_bool_get(op->ptr, "use_stabilizer")) {
       p->flags |= GP_PAINTFLAG_USE_STABILIZER | GP_PAINTFLAG_USE_STABILIZER_TEMP;
       annotation_draw_toggle_stabilizer_cursor(p, true);
     }
@@ -2313,7 +2313,7 @@ static int annotation_draw_invoke(bContext *C, wmOperator *op, const wmEvent *ev
   annotation_draw_cursor_set(p);
 
   /* only start drawing immediately if we're allowed to do so... */
-  if (RNA_boolean_get(op->ptr, "wait_for_input") == false) {
+  if (api_bool_get(op->ptr, "wait_for_input") == false) {
     /* hotkey invoked - start drawing */
     p->status = GP_STATUS_PAINTING;
 
@@ -2326,17 +2326,17 @@ static int annotation_draw_invoke(bContext *C, wmOperator *op, const wmEvent *ev
     op->flag |= OP_IS_MODAL_CURSOR_REGION;
   }
 
-  WM_event_add_notifier(C, NC_GPENCIL | NA_EDITED, NULL);
+  wm_event_add_notifier(C, NC_GPENCIL | NA_EDITED, NULL);
   /* add a modal handler for this operator, so that we can then draw continuous strokes */
-  WM_event_add_modal_handler(C, op);
+  wm_event_add_modal_handler(C, op);
   return OPERATOR_RUNNING_MODAL;
 }
 
 /* gpencil modal operator stores area, which can be removed while using it (like fullscreen) */
-static bool annotation_area_exists(bContext *C, ScrArea *area_test)
+static bool annotation_area_exists(dContext *C, ScrArea *area_test)
 {
-  bScreen *screen = CTX_wm_screen(C);
-  return (BLI_findindex(&screen->areabase, area_test) != -1);
+  dScreen *screen = ctx_wm_screen(C);
+  return (lib_findindex(&screen->areabase, area_test) != -1);
 }
 
 static tGPsdata *annotation_stroke_begin(bContext *C, wmOperator *op)
@@ -2346,7 +2346,7 @@ static tGPsdata *annotation_stroke_begin(bContext *C, wmOperator *op)
   /* we must check that we're still within the area that we're set up to work from
    * otherwise we could crash (see bug T20586)
    */
-  if (CTX_wm_area(C) != p->area) {
+  if (ctx_wm_area(C) != p->area) {
     printf("\t\t\tGP - wrong area execution abort!\n");
     p->status = GP_STATUS_ERROR;
   }
@@ -2386,12 +2386,12 @@ static void annotation_stroke_end(wmOperator *op)
 }
 
 /* add events for missing mouse movements when the artist draw very fast */
-static void annotation_add_missing_events(bContext *C,
+static void annotation_add_missing_events(dContext *C,
                                           wmOperator *op,
                                           const wmEvent *event,
                                           tGPsdata *p)
 {
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  Depsgraph *depsgraph = ctx_data_ensure_evaluated_depsgraph(C);
   float pt[2], a[2], b[2];
   float factor = 10.0f;
 
@@ -2422,7 +2422,7 @@ static void annotation_add_missing_events(bContext *C,
 }
 
 /* events handling during interactive drawing part of operator */
-static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *event)
+static int annotation_draw_modal(dContext *C, wmOperator *op, const wmEvent *event)
 {
   tGPsdata *p = op->customdata;
   /* Default exit state - pass through to support MMB view navigation, etc. */
@@ -2439,7 +2439,7 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
 #endif
 
   if (p->status == GP_STATUS_IDLING) {
-    ARegion *region = CTX_wm_region(C);
+    ARegion *region = ctx_wm_region(C);
     p->region = region;
   }
 
@@ -2479,7 +2479,7 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
        * - Since this operator is non-modal, we can just call it here, and keep going...
        * - This operator is especially useful when animating
        */
-      WM_operator_name_call(C, "GPENCIL_OT_blank_frame_add", WM_OP_EXEC_DEFAULT, NULL, event);
+      wm_op_name_call(C, "GPENCIL_OT_blank_frame_add", WM_OP_EXEC_DEFAULT, NULL, event);
       estate = OPERATOR_RUNNING_MODAL;
     }
     else {
@@ -2524,7 +2524,7 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
          * NOTE: This just makes it nicer to work with drawing sessions
          */
         if (p->paintmode == GP_PAINTMODE_ERASER) {
-          p->paintmode = RNA_enum_get(op->ptr, "mode");
+          p->paintmode = api_enum_get(op->ptr, "mode");
 
           /* if the original mode was *still* eraser,
            * we'll let it say for now, since this gives
@@ -2545,7 +2545,7 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
         estate = OPERATOR_RUNNING_MODAL;
 
         /* stroke could be smoothed, send notifier to refresh screen */
-        WM_event_add_notifier(C, NC_GPENCIL | NA_EDITED, NULL);
+        wm_event_add_notifier(C, NC_GPENCIL | NA_EDITED, NULL);
       }
       else {
         p->status = GP_STATUS_DONE;
@@ -2597,7 +2597,7 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
         }
         else if (event->type == LEFTMOUSE) {
           /* restore drawmode to default */
-          p->paintmode = RNA_enum_get(op->ptr, "mode");
+          p->paintmode = api_enum_get(op->ptr, "mode");
         }
 
         annotation_draw_toggle_eraser_cursor(p, p->paintmode == GP_PAINTMODE_ERASER);
@@ -2670,7 +2670,7 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
 
       /* force refresh */
       /* just active area for now, since doing whole screen is too slow */
-      ED_region_tag_redraw(p->region);
+      ed_region_tag_redraw(p->region);
 
       /* event handled, so just tag as running modal */
       estate = OPERATOR_RUNNING_MODAL;
@@ -2700,7 +2700,7 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
     case OPERATOR_FINISHED:
       /* one last flush before we're done */
       annotation_draw_exit(C, op);
-      WM_event_add_notifier(C, NC_GPENCIL | NA_EDITED, NULL);
+      wm_event_add_notifier(C, NC_GPENCIL | NA_EDITED, NULL);
       break;
 
     case OPERATOR_CANCELLED:
@@ -2717,3 +2717,99 @@ static int annotation_draw_modal(bContext *C, wmOperator *op, const wmEvent *eve
 }
 
 /* ------------------------------- */
+
+static const EnumPropItem prop_gpencil_drawmodes[] = {
+    {GP_PAINTMODE_DRAW, "DRAW", 0, "Draw Freehand", "Draw freehand stroke(s)"},
+    {GP_PAINTMODE_DRAW_STRAIGHT,
+     "DRAW_STRAIGHT",
+     0,
+     "Draw Straight Lines",
+     "Draw straight line segment(s)"},
+    {GP_PAINTMODE_DRAW_POLY,
+     "DRAW_POLY",
+     0,
+     "Draw Poly Line",
+     "Click to place endpoints of straight line segments (connected)"},
+    {GP_PAINTMODE_ERASER, "ERASER", 0, "Eraser", "Erase Annotation strokes"},
+    {0, NULL, 0, NULL, NULL},
+};
+
+static const EnumPropItem arrow_types[] = {
+    {GP_STROKE_ARROWSTYLE_NONE, "NONE", 0, "None", "Don't use any arrow/style in corner"},
+    {GP_STROKE_ARROWSTYLE_CLOSED, "ARROW", 0, "Arrow", "Use closed arrow style"},
+    {GP_STROKE_ARROWSTYLE_OPEN, "ARROW_OPEN", 0, "Open Arrow", "Use open arrow style"},
+    {GP_STROKE_ARROWSTYLE_SEGMENT,
+     "ARROW_OPEN_INVERTED",
+     0,
+     "Segment",
+     "Use perpendicular segment style"},
+    {GP_STROKE_ARROWSTYLE_SQUARE, "DIAMOND", 0, "Square", "Use square style"},
+    {0, NULL, 0, NULL, NULL},
+};
+
+void GPENCIL_OT_annotate(wmOperatorType *ot)
+{
+  ApiProp *prop;
+
+  /* identifiers */
+  ot->name = "Annotation Draw";
+  ot->idname = "GPENCIL_OT_annotate";
+  ot->description = "Make annotations on the active data";
+
+  /* api callbacks */
+  ot->exec = annotation_draw_exec;
+  ot->invoke = annotation_draw_invoke;
+  ot->modal = annotation_draw_modal;
+  ot->cancel = annotation_draw_cancel;
+  ot->poll = annotation_draw_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_UNDO | OPTYPE_BLOCKING;
+
+  /* settings for drawing */
+  ot->prop = api_def_enum(
+      ot->srna, "mode", prop_gpencil_drawmodes, 0, "Mode", "Way to interpret mouse movements");
+
+  /* properties */
+  prop = api_def_enum(
+      ot->srna, "arrowstyle_start", arrow_types, 0, "Start Arrow Style", "Stroke start style");
+  prop = api_def_enum(
+      ot->srna, "arrowstyle_end", arrow_types, 0, "End Arrow Style", "Stroke end style");
+  prop = api_def_bool(ot->srna,
+                         "use_stabilizer",
+                         false,
+                         "Stabilize Stroke",
+                         "Helper to draw smooth and clean lines. Press Shift for an invert effect "
+                         "(even if this option is not active)");
+  prop = api_def_float(ot->srna,
+                       "stabilizer_factor",
+                       0.75f,
+                       0.0f,
+                       1.0f,
+                       "Stabilizer Stroke Factor",
+                       "Higher values gives a smoother stroke",
+                       0.0f,
+                       1.0f);
+  prop = api_def_int(ot->srna,
+                     "stabilizer_radius",
+                     35,
+                     0,
+                     200,
+                     "Stabilizer Stroke Radius",
+                     "Minimum distance from last point before stroke continues",
+                     1,
+                     100);
+  api_def_prop_subtype(prop, PROP_PIXEL);
+
+  prop = api_def_collection_runtime(ot->srna, "stroke", &api_OpStrokeElement, "Stroke", "");
+  api_def_prop_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+
+  /* NOTE: wait for input is enabled by default,
+   * so that all UI code can work properly without needing users to know about this */
+  prop = api_def_bool(ot->srna,
+                         "wait_for_input",
+                         true,
+                         "Wait for Input",
+                         "Wait for first click instead of painting immediately");
+  api_def_prop_flag(prop, PROP_SKIP_SAVE);
+}
