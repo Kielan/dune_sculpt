@@ -25,30 +25,30 @@
 #include "dune_main.h"
 #include "dune_report.h"
 #include "dune_screen.h"
-#include "duneMain I _tracking.h"
+#include "dune_tracking.h"
 
-#include "DNA_gpencil_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_gpencil.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_windowmanager.h"
 
 #include "UI_view2d.h"
 
-#include "ED_clip.h"
-#include "ED_gpencil.h"
-#include "ED_screen.h"
-#include "ED_view3d.h"
+#include "ed_clip.h"
+#include "ed_gpencil.h"
+#include "ed_screen.h"
+#include "ed_view3d.h"
 
-#include "GPU_immediate.h"
-#include "GPU_immediate_util.h"
-#include "GPU_state.h"
+#include "gpu_immediate.h"
+#include "gpu_immediate_util.h"
+#include "gpu_state.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_prototypes.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
 #include "DEG_depsgraph.h"
 
@@ -59,39 +59,39 @@
 
 #define DEPTH_INVALID 1.0f
 
-/* values for tGPsdata->status */
-typedef enum eGPencil_PaintStatus {
-  GP_STATUS_IDLING = 0, /* stroke isn't in progress yet */
-  GP_STATUS_PAINTING,   /* a stroke is in progress */
-  GP_STATUS_ERROR,      /* something wasn't correctly set up */
-  GP_STATUS_DONE,       /* painting done */
-  GP_STATUS_CAPTURE     /* capture event, but cancel */
-} eGPencil_PaintStatus;
+/* values for tDPsdata->status */
+typedef enum eDPen_PaintStatus {
+  DP_STATUS_IDLING = 0, /* stroke isn't in progress yet */
+  DP_STATUS_PAINTING,   /* a stroke is in progress */
+  DP_STATUS_ERROR,      /* something wasn't correctly set up */
+  DP_STATUS_DONE,       /* painting done */
+  DP_STATUS_CAPTURE     /* capture event, but cancel */
+} eDPen_PaintStatus;
 
 /* Return flags for adding points to stroke buffer */
-typedef enum eGP_StrokeAdd_Result {
-  GP_STROKEADD_INVALID = -2,  /* error occurred - insufficient info to do so */
-  GP_STROKEADD_OVERFLOW = -1, /* error occurred - cannot fit any more points */
-  GP_STROKEADD_NORMAL,        /* point was successfully added */
-  GP_STROKEADD_FULL,          /* cannot add any more points to buffer */
-} eGP_StrokeAdd_Result;
+typedef enum eDP_StrokeAdd_Result {
+  DP_STROKEADD_INVALID = -2,  /* error occurred - insufficient info to do so */
+  DP_STROKEADD_OVERFLOW = -1, /* error occurred - cannot fit any more points */
+  DP_STROKEADD_NORMAL,        /* point was successfully added */
+  DP_STROKEADD_FULL,          /* cannot add any more points to buffer */
+} eDP_StrokeAdd_Result;
 
 /* Runtime flags */
-typedef enum eGPencil_PaintFlags {
-  GP_PAINTFLAG_FIRSTRUN = (1 << 0), /* operator just started */
-  GP_PAINTFLAG_STROKEADDED = (1 << 1),
-  GP_PAINTFLAG_V3D_ERASER_DEPTH = (1 << 2),
-  GP_PAINTFLAG_SELECTMASK = (1 << 3),
+typedef enum eDPen_PaintFlags {
+  DP_PAINTFLAG_FIRSTRUN = (1 << 0), /* operator just started */
+  DP_PAINTFLAG_STROKEADDED = (1 << 1),
+  DP_PAINTFLAG_V3D_ERASER_DEPTH = (1 << 2),
+  DP_PAINTFLAG_SELECTMASK = (1 << 3),
   /* Flags used to indicate if stabilization is being used. */
-  GP_PAINTFLAG_USE_STABILIZER = (1 << 7),
-  GP_PAINTFLAG_USE_STABILIZER_TEMP = (1 << 8),
-} eGPencil_PaintFlags;
+  DP_PAINTFLAG_USE_STABILIZER = (1 << 7),
+  DP_PAINTFLAG_USE_STABILIZER_TEMP = (1 << 8),
+} eDPen_PaintFlags;
 
 /* Temporary 'Stroke' Operation data
  *   "p" = op->customdata
  */
-typedef struct tGPsdata {
-  Main *bmain;
+typedef struct tDPensData {
+  Main *dmain;
   /** current scene from context. */
   Scene *scene;
   struct Depsgraph *depsgraph;
@@ -102,7 +102,7 @@ typedef struct tGPsdata {
   ScrArea *area;
   /** region where painting originated. */
   ARegion *region;
-  /** needed for GP_STROKE_2DSPACE. */
+  /** needed for DP_STROKE_2DSPACE. */
   View2D *v2d;
   /** For operations that require occlusion testing. */
   ViewDepths *depths;
@@ -111,26 +111,26 @@ typedef struct tGPsdata {
   rctf subrect_data;
 
   /** settings to pass to gp_points_to_xy(). */
-  GP_SpaceConversion gsc;
+  DPen_SpaceConversion gsc;
 
   /** pointer to owner of gp-datablock. */
-  PointerRNA ownerPtr;
+  ApiPtr ownerPtr;
   /** gp-datablock layer comes from. */
-  bGPdata *gpd;
+  DPendata *dpd;
   /** layer we're working on. */
-  bGPDlayer *gpl;
+  DPenDataLayer *dpl;
   /** frame we're working on. */
-  bGPDframe *gpf;
+  DPenDataframe *dpf;
 
-  /** projection-mode flags (toolsettings - eGPencil_Placement_Flags) */
+  /** projection-mode flags (toolsettings - eDPen_Placement_Flags) */
   char *align_flag;
 
   /** current status of painting. */
-  eGPencil_PaintStatus status;
+  eDPen_PaintStatus status;
   /** mode for painting. */
-  eGPencil_PaintModes paintmode;
+  eDPen_PaintModes paintmode;
   /** flags that can get set during runtime (eGPencil_PaintFlags) */
-  eGPencil_PaintFlags flags;
+  eDPen_PaintFlags flags;
 
   /** radius of influence for eraser. */
   short radius;
@@ -178,53 +178,53 @@ typedef struct tGPsdata {
 
   /** key used for invoking the operator. */
   short keymodifier;
-} tGPsdata;
+} tDPensData;
 
 /* ------ */
 
 /* Macros for accessing sensitivity thresholds... */
 /* minimum number of pixels mouse should move before new point created */
-#define MIN_MANHATTAN_PX (U.gp_manhattandist)
+#define MIN_MANHATTAN_PX (U.dp_manhattandist)
 /* minimum length of new segment before new point can be added */
-#define MIN_EUCLIDEAN_PX (U.gp_euclideandist)
+#define MIN_EUCLIDEAN_PX (U.dp_euclideandist)
 
-static bool annotation_stroke_added_check(tGPsdata *p)
+static bool annotation_stroke_added_check(tDPensData *p)
 {
-  return (p->gpf && p->gpf->strokes.last && p->flags & GP_PAINTFLAG_STROKEADDED);
+  return (p->dpf && p->dpf->strokes.last && p->flags & DPEN_PAINTFLAG_STROKEADDED);
 }
 
 static void annotation_stroke_added_enable(tGPsdata *p)
 {
-  BLI_assert(p->gpf->strokes.last != NULL);
-  p->flags |= GP_PAINTFLAG_STROKEADDED;
+  lib_assert(p->dpf->strokes.last != NULL);
+  p->flags |= DP_PAINTFLAG_STROKEADDED;
 }
 
 /* ------ */
 /* Forward defines for some functions... */
 
-static void annotation_session_validatebuffer(tGPsdata *p);
+static void annotation_session_validatebuffer(tDPensData *p);
 
 /* ******************************************* */
 /* Context Wrangling... */
 
 /* check if context is suitable for drawing */
-static bool annotation_draw_poll(bContext *C)
+static bool annotation_draw_poll(dContext *C)
 {
-  if (ED_operator_regionactive(C)) {
+  if (ed_op_regionactive(C)) {
     /* check if current context can support GPencil data */
-    if (ED_annotation_data_get_pointers(C, NULL) != NULL) {
+    if (ed_annotation_data_get_ptrs(C, NULL) != NULL) {
       /* check if Grease Pencil isn't already running */
-      if (ED_gpencil_session_active() == 0) {
+      if (ed_dpen_session_active() == 0) {
         return true;
       }
-      CTX_wm_operator_poll_msg_set(C, "Annotation operator is already active");
+      ctx_wm_op_poll_msg_set(C, "Annotation operator is already active");
     }
     else {
-      CTX_wm_operator_poll_msg_set(C, "Failed to find Annotation data to draw into");
+      ctx_wm_op_poll_msg_set(C, "Failed to find Annotation data to draw into");
     }
   }
   else {
-    CTX_wm_operator_poll_msg_set(C, "Active region not set");
+    ctx_wm_op_poll_msg_set(C, "Active region not set");
   }
 
   return false;
@@ -233,9 +233,9 @@ static bool annotation_draw_poll(bContext *C)
 /* check if projecting strokes into 3d-geometry in the 3D-View */
 static bool annotation_project_check(tGPsdata *p)
 {
-  bGPdata *gpd = p->gpd;
-  return ((gpd->runtime.sbuffer_sflag & GP_STROKE_3DSPACE) &&
-          (*p->align_flag & (GP_PROJECT_DEPTH_VIEW | GP_PROJECT_DEPTH_STROKE)));
+  DPenData *dpd = p->dpd;
+  return ((dpd->runtime.sbuffer_sflag & DPEN_STROKE_3DSPACE) &&
+          (*p->align_flag & (DPEN_PROJECT_DEPTH_VIEW | DPEN_PROJECT_DEPTH_STROKE)));
 }
 
 /* ******************************************* */
@@ -244,7 +244,7 @@ static bool annotation_project_check(tGPsdata *p)
 /* Utilities --------------------------------- */
 
 /* get the reference point for stroke-point conversions */
-static void annotation_get_3d_reference(tGPsdata *p, float vec[3])
+static void annotation_get_3d_ref(tDPensdata *p, float vec[3])
 {
   const float *fp = p->scene->cursor.location;
 
@@ -255,7 +255,7 @@ static void annotation_get_3d_reference(tGPsdata *p, float vec[3])
 /* Stroke Editing ---------------------------- */
 
 /* check if the current mouse position is suitable for adding a new point */
-static bool annotation_stroke_filtermval(tGPsdata *p, const float mval[2], const float pmval[2])
+static bool annotation_stroke_filtermval(tDPensData *p, const float mval[2], const float pmval[2])
 {
   int dx = (int)fabsf(mval[0] - pmval[0]);
   int dy = (int)fabsf(mval[1] - pmval[1]);
@@ -299,22 +299,22 @@ static bool annotation_stroke_filtermval(tGPsdata *p, const float mval[2], const
 }
 
 /* convert screen-coordinates to buffer-coordinates */
-static void annotation_stroke_convertcoords(tGPsdata *p,
+static void annotation_stroke_convertcoords(tDPensData *p,
                                             const float mval[2],
                                             float out[3],
                                             float *depth)
 {
-  bGPdata *gpd = p->gpd;
+  DPenData *dpd = p->dpd;
   if (depth && (*depth == DEPTH_INVALID)) {
     depth = NULL;
   }
 
   /* in 3d-space - pt->x/y/z are 3 side-by-side floats */
-  if (gpd->runtime.sbuffer_sflag & GP_STROKE_3DSPACE) {
+  if (gpd->runtime.sbuffer_sflag & DPEN_STROKE_3DSPACE) {
     int mval_i[2];
     round_v2i_v2fl(mval_i, mval);
     if (annotation_project_check(p) &&
-        (ED_view3d_autodist_simple(p->region, mval_i, out, 0, depth))) {
+        (ed_view3d_autodist_simple(p->region, mval_i, out, 0, depth))) {
       /* projecting onto 3D-Geometry
        * - nothing more needs to be done here, since view_autodist_simple() has already done it
        */
@@ -333,9 +333,9 @@ static void annotation_stroke_convertcoords(tGPsdata *p,
        */
 
       annotation_get_3d_reference(p, rvec);
-      const float zfac = ED_view3d_calc_zfac(p->region->regiondata, rvec);
+      const float zfac = ed_view3d_calc_zfac(p->region->regiondata, rvec);
 
-      if (ED_view3d_project_float_global(p->region, rvec, mval_prj, V3D_PROJ_TEST_NOP) ==
+      if (ed_view3d_project_float_global(p->region, rvec, mval_prj, V3D_PROJ_TEST_NOP) ==
           V3D_PROJ_RET_OK) {
         float dvec[3];
         float xy_delta[2];
@@ -350,7 +350,7 @@ static void annotation_stroke_convertcoords(tGPsdata *p,
   }
 
   /* 2d - on 'canvas' (assume that p->v2d is set) */
-  else if ((gpd->runtime.sbuffer_sflag & GP_STROKE_2DSPACE) && (p->v2d)) {
+  else if ((dpd->runtime.sbuffer_sflag & GP_STROKE_2DSPACE) && (p->v2d)) {
     UI_view2d_region_to_view(p->v2d, mval[0], mval[1], &out[0], &out[1]);
     mul_v3_m4v3(out, p->imat, out);
   }
@@ -362,8 +362,8 @@ static void annotation_stroke_convertcoords(tGPsdata *p,
       out[1] = (float)(mval[1]) / (float)(p->region->winy) * 100;
     }
     else { /* camera view, use subrect */
-      out[0] = ((mval[0] - p->subrect->xmin) / BLI_rctf_size_x(p->subrect)) * 100;
-      out[1] = ((mval[1] - p->subrect->ymin) / BLI_rctf_size_y(p->subrect)) * 100;
+      out[0] = ((mval[0] - p->subrect->xmin) / lib_rctf_size_x(p->subrect)) * 100;
+      out[1] = ((mval[1] - p->subrect->ymin) / lib_rctf_size_y(p->subrect)) * 100;
     }
   }
 }
@@ -374,30 +374,30 @@ static void annotation_stroke_convertcoords(tGPsdata *p,
  *
  * `A----B-----C------D`
  *
- * \param p: Temp data
- * \param inf: Influence factor
- * \param idx: Index of the last point (need minimum 3 points in the array)
+ * param p: Temp data
+ * param inf: Influence factor
+ * param idx: Index of the last point (need minimum 3 points in the array)
  */
-static void annotation_smooth_buffer(tGPsdata *p, float inf, int idx)
+static void annotation_smooth_buffer(tDPensData *p, float inf, int idx)
 {
-  bGPdata *gpd = p->gpd;
-  short num_points = gpd->runtime.sbuffer_used;
+  DPenData *dpd = p->dpd;
+  short num_points = dpd->runtime.sbuffer_used;
 
   /* Do nothing if not enough points to smooth out */
   if ((num_points < 3) || (idx < 3) || (inf == 0.0f)) {
     return;
   }
 
-  tGPspoint *points = (tGPspoint *)gpd->runtime.sbuffer;
+  tDPensPoint *points = (tDPensPoint *)gpd->runtime.sbuffer;
   float steps = 4.0f;
   if (idx < 4) {
     steps--;
   }
 
-  tGPspoint *pta = idx >= 4 ? &points[idx - 4] : NULL;
-  tGPspoint *ptb = idx >= 3 ? &points[idx - 3] : NULL;
-  tGPspoint *ptc = idx >= 2 ? &points[idx - 2] : NULL;
-  tGPspoint *ptd = &points[idx - 1];
+  tDPensPoint *pta = idx >= 4 ? &points[idx - 4] : NULL;
+  tDPensPoint *ptb = idx >= 3 ? &points[idx - 3] : NULL;
+  tDPensPoint *ptc = idx >= 2 ? &points[idx - 2] : NULL;
+  tDPensPoint *ptd = &points[idx - 1];
 
   float sco[2] = {0.0f};
   float a[2], b[2], c[2], d[2];
