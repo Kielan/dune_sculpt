@@ -394,10 +394,10 @@ static void annotation_smooth_buffer(tDPensData *p, float inf, int idx)
     steps--;
   }
 
-  tDPensPoint *pta = idx >= 4 ? &points[idx - 4] : NULL;
-  tDPensPoint *ptb = idx >= 3 ? &points[idx - 3] : NULL;
-  tDPensPoint *ptc = idx >= 2 ? &points[idx - 2] : NULL;
-  tDPensPoint *ptd = &points[idx - 1];
+  tDPenPoint *pta = idx >= 4 ? &points[idx - 4] : NULL;
+  tDPenPoint *ptb = idx >= 3 ? &points[idx - 3] : NULL;
+  tDPenPoint *ptc = idx >= 2 ? &points[idx - 2] : NULL;
+  tDPenPoint *ptd = &points[idx - 1];
 
   float sco[2] = {0.0f};
   float a[2], b[2], c[2], d[2];
@@ -439,7 +439,7 @@ static void annotation_stroke_arrow_calc_points_segment(float stroke_points[8],
   stroke_points[3] = ref_point[1] + dir_ccw[1] * length * sign;
 }
 
-static void annotation_stroke_arrow_calc_points(tGPspoint *point,
+static void annotation_stroke_arrow_calc_points(tDPenPoint *point,
                                                 const float stroke_dir[2],
                                                 float corner[2],
                                                 float stroke_points[8],
@@ -506,21 +506,21 @@ static void annotation_stroke_arrow_calc_points(tGPspoint *point,
 }
 
 /* add current stroke-point to buffer (returns whether point was successfully added) */
-static short annotation_stroke_addpoint(tGPsdata *p,
+static short annotation_stroke_addpoint(DPenData *p,
                                         const float mval[2],
                                         float pressure,
                                         double curtime)
 {
-  bGPdata *gpd = p->gpd;
-  tGPspoint *pt;
+  DPenData *dpd = p->dpd;
+  DPenPoint *pt;
   ToolSettings *ts = p->scene->toolsettings;
 
   /* check painting mode */
-  if (p->paintmode == GP_PAINTMODE_DRAW_STRAIGHT) {
+  if (p->paintmode == DPEN_PAINTMODE_DRAW_STRAIGHT) {
     /* straight lines only - i.e. only store start and end point in buffer */
-    if (gpd->runtime.sbuffer_used == 0) {
+    if (dpd->runtime.sbuffer_used == 0) {
       /* first point in buffer (start point) */
-      pt = (tGPspoint *)(gpd->runtime.sbuffer);
+      pt = (DPenPoint *)(dpd->runtime.sbuffer);
 
       /* store settings */
       copy_v2_v2(pt->m_xy, mval);
@@ -530,13 +530,13 @@ static short annotation_stroke_addpoint(tGPsdata *p,
       pt->time = (float)(curtime - p->inittime);
 
       /* increment buffer size */
-      gpd->runtime.sbuffer_used++;
+      dpd->runtime.sbuffer_used++;
     }
     else {
       /* just reset the endpoint to the latest value
        * - assume that pointers for this are always valid...
        */
-      pt = ((tGPspoint *)(gpd->runtime.sbuffer) + 1);
+      pt = ((DPenPoint *)(dpd->runtime.sbuffer) + 1);
 
       /* store settings */
       copy_v2_v2(pt->m_xy, mval);
@@ -546,14 +546,14 @@ static short annotation_stroke_addpoint(tGPsdata *p,
       pt->time = (float)(curtime - p->inittime);
 
       /* now the buffer has 2 points (and shouldn't be allowed to get any larger) */
-      gpd->runtime.sbuffer_used = 2;
+      dpd->runtime.sbuffer_used = 2;
 
       /* Arrows. */
-      if (gpd->runtime.sbuffer_sflag & (GP_STROKE_USE_ARROW_START | GP_STROKE_USE_ARROW_END)) {
+      if (dpd->runtime.sbuffer_sflag & (GP_STROKE_USE_ARROW_START | GP_STROKE_USE_ARROW_END)) {
         /* Store start and end point coords for arrows. */
         float end[2];
         copy_v2_v2(end, pt->m_xy);
-        pt = ((tGPspoint *)(gpd->runtime.sbuffer));
+        pt = ((DPenPoint *)(dpd->runtime.sbuffer));
         float start[2];
         copy_v2_v2(start, pt->m_xy);
 
@@ -566,26 +566,26 @@ static short annotation_stroke_addpoint(tGPsdata *p,
               pt, e_heading, end, gpd->runtime.arrow_end, gpd->runtime.arrow_end_style);
         }
         /* Arrow start corner. */
-        if (gpd->runtime.sbuffer_sflag & GP_STROKE_USE_ARROW_START) {
+        if (gpd->runtime.sbuffer_sflag & DPEN_STROKE_USE_ARROW_START) {
           const float s_heading[2] = {end[0] - start[0], end[1] - start[1]};
           /* Calculate points for starting arrow. */
           annotation_stroke_arrow_calc_points(
-              NULL, s_heading, start, gpd->runtime.arrow_start, gpd->runtime.arrow_start_style);
+              NULL, s_heading, start, dpd->runtime.arrow_start, dpd->runtime.arrow_start_style);
         }
       }
     }
 
     /* can keep carrying on this way :) */
-    return GP_STROKEADD_NORMAL;
+    return DPEN_STROKEADD_NORMAL;
   }
 
-  if (p->paintmode == GP_PAINTMODE_DRAW) { /* normal drawing */
+  if (p->paintmode == DPEN_PAINTMODE_DRAW) { /* normal drawing */
     /* check if still room in buffer or add more */
-    gpd->runtime.sbuffer = ED_gpencil_sbuffer_ensure(
-        gpd->runtime.sbuffer, &gpd->runtime.sbuffer_size, &gpd->runtime.sbuffer_used, false);
+    dpd->runtime.sbuffer = ed_dpen_sbuffer_ensure(
+        dpd->runtime.sbuffer, &dpd->runtime.sbuffer_size, &dpd->runtime.sbuffer_used, false);
 
     /* get pointer to destination point */
-    pt = ((tGPspoint *)(gpd->runtime.sbuffer) + gpd->runtime.sbuffer_used);
+    pt = ((DPenPoint *)(dpd->runtime.sbuffer) + dpd->runtime.sbuffer_used);
 
     /* store settings */
     copy_v2_v2(pt->m_xy, mval);
@@ -597,22 +597,22 @@ static short annotation_stroke_addpoint(tGPsdata *p,
     pt->time = (float)(curtime - p->inittime);
 
     /* increment counters */
-    gpd->runtime.sbuffer_used++;
+    dpd->runtime.sbuffer_used++;
 
     /* Don't smooth if stabilizer is on. */
-    if ((p->flags & GP_PAINTFLAG_USE_STABILIZER_TEMP) == 0) {
+    if ((p->flags & DPEN_PAINTFLAG_USE_STABILIZER_TEMP) == 0) {
       /* smooth while drawing previous points with a reduction factor for previous */
       for (int s = 0; s < 3; s++) {
         annotation_smooth_buffer(p, 0.5f * ((3.0f - s) / 3.0f), gpd->runtime.sbuffer_used - s);
       }
     }
 
-    return GP_STROKEADD_NORMAL;
+    return DPEN_STROKEADD_NORMAL;
   }
 
-  if (p->paintmode == GP_PAINTMODE_DRAW_POLY) {
+  if (p->paintmode == DPEN_PAINTMODE_DRAW_POLY) {
     /* get pointer to destination point */
-    pt = (tGPspoint *)gpd->runtime.sbuffer;
+    pt = (DPenPoint *)dpd->runtime.sbuffer;
 
     /* store settings */
     copy_v2_v2(pt->m_xy, mval);
@@ -626,13 +626,13 @@ static short annotation_stroke_addpoint(tGPsdata *p,
      * during mouse slide, e.g.)
      */
     if (annotation_stroke_added_check(p)) {
-      bGPDstroke *gps = p->gpf->strokes.last;
-      bGPDspoint *pts;
+      DPenStroke *dps = p->dpf->strokes.last;
+      DPenPoint *pts;
 
       /* first time point is adding to temporary buffer -- need to allocate new point in stroke */
-      if (gpd->runtime.sbuffer_used == 0) {
-        gps->points = MEM_reallocN(gps->points, sizeof(bGPDspoint) * (gps->totpoints + 1));
-        gps->totpoints++;
+      if (dpd->runtime.sbuffer_used == 0) {
+        dps->points = MEM_reallocN(dps->points, sizeof(DPenPoint) * (dps->totpoints + 1));
+        dps->totpoints++;
       }
 
       pts = &gps->points[gps->totpoints - 1];
