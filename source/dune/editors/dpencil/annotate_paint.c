@@ -692,7 +692,7 @@ static void annotation_stroke_arrow_init_conv_point(bGPDspoint *pt, const float 
 }
 
 static void annotation_stroke_arrow_init_point(
-    tGPsdata *p, tGPspoint *ptc, bGPDspoint *pt, const float co[8], const int co_idx)
+    DPenData *p, DPenPoint *ptc, DPenDataPoint *pt, const float co[8], const int co_idx)
 {
   /* NOTE: provided co_idx should be always pair number as it's [x1, y1, x2, y2, x3, y3]. */
   const float real_co[2] = {co[co_idx], co[co_idx + 1]};
@@ -701,17 +701,17 @@ static void annotation_stroke_arrow_init_point(
   annotation_stroke_arrow_init_point_default(pt);
 }
 
-static void annotation_stroke_arrow_allocate(bGPDstroke *gps, const int totpoints)
+static void annotation_stroke_arrow_allocate(DPenStroke *dps, const int totpoints)
 {
   /* Copy appropriate settings for stroke. */
-  gps->totpoints = totpoints;
+  dps->totpoints = totpoints;
   /* Allocate enough memory for a continuous array for storage points. */
-  gps->points = MEM_callocN(sizeof(bGPDspoint) * gps->totpoints, "annotation_stroke_points");
+  dps->points = MEM_callocN(sizeof(DPenPoint) * dps->totpoints, "annotation_stroke_points");
 }
 
-static void annotation_arrow_create_open(tGPsdata *p,
-                                         tGPspoint *ptc,
-                                         bGPDspoint *pt,
+static void annotation_arrow_create_open(DPenData *p,
+                                         DPenPoint *ptc,
+                                         DPenPoint *pt,
                                          const float corner_point[3],
                                          const float arrow_points[8])
 {
@@ -722,9 +722,9 @@ static void annotation_arrow_create_open(tGPsdata *p,
   annotation_stroke_arrow_init_point(p, ptc, pt, arrow_points, 2);
 }
 
-static void annotation_arrow_create_segm(tGPsdata *p,
-                                         tGPspoint *ptc,
-                                         bGPDspoint *pt,
+static void annotation_arrow_create_segment(DPenPoint *p,
+                                         DPenPoint *ptc,
+                                         DPenPoint *pt,
                                          const float arrow_points[8])
 {
   annotation_stroke_arrow_init_point(p, ptc, pt, arrow_points, 0);
@@ -732,9 +732,9 @@ static void annotation_arrow_create_segm(tGPsdata *p,
   annotation_stroke_arrow_init_point(p, ptc, pt, arrow_points, 2);
 }
 
-static void annotation_arrow_create_closed(tGPsdata *p,
-                                           tGPspoint *ptc,
-                                           bGPDspoint *pt,
+static void annotation_arrow_create_closed(DPenData *p,
+                                           DPenPoint *ptc,
+                                           DPenPoint *pt,
                                            const float arrow_points[8])
 {
   annotation_stroke_arrow_init_point(p, ptc, pt, arrow_points, 0);
@@ -746,9 +746,9 @@ static void annotation_arrow_create_closed(tGPsdata *p,
   annotation_stroke_arrow_init_point(p, ptc, pt, arrow_points, 0);
 }
 
-static void annotation_arrow_create_square(tGPsdata *p,
-                                           tGPspoint *ptc,
-                                           bGPDspoint *pt,
+static void annotation_arrow_create_square(DPenData *p,
+                                           DPenPoint *ptc,
+                                           DPenPoint *pt,
                                            const float corner_point[3],
                                            const float arrow_points[8])
 {
@@ -765,10 +765,10 @@ static void annotation_arrow_create_square(tGPsdata *p,
   annotation_stroke_arrow_init_conv_point(pt, corner_point);
 }
 
-static void annotation_arrow_create(tGPsdata *p,
-                                    tGPspoint *ptc,
-                                    bGPDspoint *pt,
-                                    bGPDstroke *arrow_stroke,
+static void annotation_arrow_create(DPenData *p,
+                                    DPenPoint *ptc,
+                                    DPenPoint *pt,
+                                    DPenStroke *arrow_stroke,
                                     const float arrow_points[8],
                                     const int style)
 {
@@ -792,32 +792,32 @@ static void annotation_arrow_create(tGPsdata *p,
       break;
   }
   /* Link stroke to frame. */
-  BLI_addtail(&p->gpf->strokes, arrow_stroke);
+  lib_addtail(&p->dpf->strokes, arrow_stroke);
 }
 
 /* make a new stroke from the buffer data */
 static void annotation_stroke_newfrombuffer(tGPsdata *p)
 {
-  bGPdata *gpd = p->gpd;
-  bGPDlayer *gpl = p->gpl;
-  bGPDstroke *gps;
-  bGPDspoint *pt;
-  tGPspoint *ptc;
+  DPenData *dpd = p->dpd;
+  DPenDataLayer *dpl = p->dpl;
+  DPenStroke *dps;
+  DPenPoint *pt;
+  DPenPoint *ptc;
   ToolSettings *ts = p->scene->toolsettings;
 
   int i, totelem;
   /* Since strokes are so fine, when using their depth we need a margin
    * otherwise they might get missed. */
-  int depth_margin = (ts->annotate_v3d_align & GP_PROJECT_DEPTH_STROKE) ? 4 : 0;
+  int depth_margin = (ts->annotate_v3d_align & DPEN_PROJECT_DEPTH_STROKE) ? 4 : 0;
 
   /* get total number of points to allocate space for
    * - drawing straight-lines only requires the endpoints
    */
   if (p->paintmode == GP_PAINTMODE_DRAW_STRAIGHT) {
-    totelem = (gpd->runtime.sbuffer_used >= 2) ? 2 : gpd->runtime.sbuffer_used;
+    totelem = (dpd->runtime.sbuffer_used >= 2) ? 2 : dpd->runtime.sbuffer_used;
   }
   else {
-    totelem = gpd->runtime.sbuffer_used;
+    totelem = dpd->runtime.sbuffer_used;
   }
 
   /* exit with error if no valid points from this stroke */
@@ -829,22 +829,22 @@ static void annotation_stroke_newfrombuffer(tGPsdata *p)
    * coordinates are getting added to stroke immediately to allow more
    * interactive behavior
    */
-  if (p->paintmode == GP_PAINTMODE_DRAW_POLY) {
+  if (p->paintmode == DPEN_PAINTMODE_DRAW_POLY) {
     if (annotation_stroke_added_check(p)) {
       return;
     }
   }
 
   /* allocate memory for a new stroke */
-  gps = MEM_callocN(sizeof(bGPDstroke), "annotation_stroke");
+  dps = MEM_callocN(sizeof(DPenStroke), "annotation_stroke");
 
   /* copy appropriate settings for stroke */
-  gps->totpoints = totelem;
-  gps->thickness = gpl->thickness;
-  gps->fill_opacity_fac = 1.0f;
-  gps->hardeness = 1.0f;
+  dps->totpoints = totelem;
+  dps->thickness = gpl->thickness;
+  dps->fill_opacity_fac = 1.0f;
+  dps->hardeness = 1.0f;
   copy_v2_fl(gps->aspect_ratio, 1.0f);
-  gps->uv_scale = 1.0f;
+  dps->uv_scale = 1.0f;
   gps->flag = gpd->runtime.sbuffer_sflag;
   gps->inittime = p->inittime;
   gps->tot_triangles = 0;
