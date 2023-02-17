@@ -116,11 +116,11 @@ typedef struct tDPensData {
   /** pointer to owner of gp-datablock. */
   ApiPtr ownerPtr;
   /** gp-datablock layer comes from. */
-  DPendata *dpd;
+  DPenData *dpd;
   /** layer we're working on. */
   DPenDataLayer *dpl;
   /** frame we're working on. */
-  DPenDataframe *dpf;
+  DPenDataFrame *dpf;
 
   /** projection-mode flags (toolsettings - eDPen_Placement_Flags) */
   char *align_flag;
@@ -178,7 +178,7 @@ typedef struct tDPensData {
 
   /** key used for invoking the operator. */
   short keymodifier;
-} tDPensData;
+} DPenData;
 
 /* ------ */
 
@@ -188,12 +188,12 @@ typedef struct tDPensData {
 /* minimum length of new segment before new point can be added */
 #define MIN_EUCLIDEAN_PX (U.dp_euclideandist)
 
-static bool annotation_stroke_added_check(tDPensData *p)
+static bool annotation_stroke_added_check(DPenData *p)
 {
   return (p->dpf && p->dpf->strokes.last && p->flags & DPEN_PAINTFLAG_STROKEADDED);
 }
 
-static void annotation_stroke_added_enable(tGPsdata *p)
+static void annotation_stroke_added_enable(DPenData *p)
 {
   lib_assert(p->dpf->strokes.last != NULL);
   p->flags |= DP_PAINTFLAG_STROKEADDED;
@@ -202,7 +202,7 @@ static void annotation_stroke_added_enable(tGPsdata *p)
 /* ------ */
 /* Forward defines for some functions... */
 
-static void annotation_session_validatebuffer(tDPensData *p);
+static void annotation_session_validatebuffer(DPenData *p);
 
 /* ******************************************* */
 /* Context Wrangling... */
@@ -211,9 +211,9 @@ static void annotation_session_validatebuffer(tDPensData *p);
 static bool annotation_draw_poll(dContext *C)
 {
   if (ed_op_regionactive(C)) {
-    /* check if current context can support GPencil data */
+    /* check if current context can support DPen data */
     if (ed_annotation_data_get_ptrs(C, NULL) != NULL) {
-      /* check if Grease Pencil isn't already running */
+      /* check if Dune Pen isn't already running */
       if (ed_dpen_session_active() == 0) {
         return true;
       }
@@ -231,7 +231,7 @@ static bool annotation_draw_poll(dContext *C)
 }
 
 /* check if projecting strokes into 3d-geometry in the 3D-View */
-static bool annotation_project_check(tGPsdata *p)
+static bool annotation_project_check(DPenData *p)
 {
   DPenData *dpd = p->dpd;
   return ((dpd->runtime.sbuffer_sflag & DPEN_STROKE_3DSPACE) &&
@@ -244,7 +244,7 @@ static bool annotation_project_check(tGPsdata *p)
 /* Utilities --------------------------------- */
 
 /* get the reference point for stroke-point conversions */
-static void annotation_get_3d_ref(tDPensdata *p, float vec[3])
+static void annotation_get_3d_ref(DPenData *p, float vec[3])
 {
   const float *fp = p->scene->cursor.location;
 
@@ -255,7 +255,7 @@ static void annotation_get_3d_ref(tDPensdata *p, float vec[3])
 /* Stroke Editing ---------------------------- */
 
 /* check if the current mouse position is suitable for adding a new point */
-static bool annotation_stroke_filtermval(tDPensData *p, const float mval[2], const float pmval[2])
+static bool annotation_stroke_filtermval(DPenData *p, const float mval[2], const float pmval[2])
 {
   int dx = (int)fabsf(mval[0] - pmval[0]);
   int dy = (int)fabsf(mval[1] - pmval[1]);
@@ -299,7 +299,7 @@ static bool annotation_stroke_filtermval(tDPensData *p, const float mval[2], con
 }
 
 /* convert screen-coordinates to buffer-coordinates */
-static void annotation_stroke_convertcoords(tDPensData *p,
+static void annotation_stroke_convertcoords(DPenData *p,
                                             const float mval[2],
                                             float out[3],
                                             float *depth)
@@ -332,7 +332,7 @@ static void annotation_stroke_convertcoords(tDPensData *p,
        *   reference point instead or as offset, for easier stroke matching
        */
 
-      annotation_get_3d_reference(p, rvec);
+      annotation_get_3d_ref(p, rvec);
       const float zfac = ed_view3d_calc_zfac(p->region->regiondata, rvec);
 
       if (ed_view3d_project_float_global(p->region, rvec, mval_prj, V3D_PROJ_TEST_NOP) ==
@@ -340,7 +340,7 @@ static void annotation_stroke_convertcoords(tDPensData *p,
         float dvec[3];
         float xy_delta[2];
         sub_v2_v2v2(xy_delta, mval_prj, mval);
-        ED_view3d_win_to_delta(p->region, xy_delta, zfac, dvec);
+        ed_view3d_win_to_delta(p->region, xy_delta, zfac, dvec);
         sub_v3_v3v3(out, rvec, dvec);
       }
       else {
@@ -350,7 +350,7 @@ static void annotation_stroke_convertcoords(tDPensData *p,
   }
 
   /* 2d - on 'canvas' (assume that p->v2d is set) */
-  else if ((dpd->runtime.sbuffer_sflag & GP_STROKE_2DSPACE) && (p->v2d)) {
+  else if ((dpd->runtime.sbuffer_sflag & DPEN_STROKE_2DSPACE) && (p->v2d)) {
     UI_view2d_region_to_view(p->v2d, mval[0], mval[1], &out[0], &out[1]);
     mul_v3_m4v3(out, p->imat, out);
   }
@@ -378,7 +378,7 @@ static void annotation_stroke_convertcoords(tDPensData *p,
  * param inf: Influence factor
  * param idx: Index of the last point (need minimum 3 points in the array)
  */
-static void annotation_smooth_buffer(tDPensData *p, float inf, int idx)
+static void annotation_smooth_buffer(DPenData *p, float inf, int idx)
 {
   DPenData *dpd = p->dpd;
   short num_points = dpd->runtime.sbuffer_used;
@@ -388,16 +388,16 @@ static void annotation_smooth_buffer(tDPensData *p, float inf, int idx)
     return;
   }
 
-  tDPensPoint *points = (tDPensPoint *)gpd->runtime.sbuffer;
+  DPenPoint *points = (DPenPoint *)dpd->runtime.sbuffer;
   float steps = 4.0f;
   if (idx < 4) {
     steps--;
   }
 
-  tDPenPoint *pta = idx >= 4 ? &points[idx - 4] : NULL;
-  tDPenPoint *ptb = idx >= 3 ? &points[idx - 3] : NULL;
-  tDPenPoint *ptc = idx >= 2 ? &points[idx - 2] : NULL;
-  tDPenPoint *ptd = &points[idx - 1];
+  DPenPoint *pta = idx >= 4 ? &points[idx - 4] : NULL;
+  DPenPoint *ptb = idx >= 3 ? &points[idx - 3] : NULL;
+  DPenPoint *ptc = idx >= 2 ? &points[idx - 2] : NULL;
+  DPenPoint *ptd = &points[idx - 1];
 
   float sco[2] = {0.0f};
   float a[2], b[2], c[2], d[2];
@@ -453,14 +453,14 @@ static void annotation_stroke_arrow_calc_points(tDPenPoint *point,
   const float inv_norm_dir_counterclockwise[2] = {-norm_dir[1], norm_dir[0]};
 
   switch (arrow_style) {
-    case GP_STROKE_ARROWSTYLE_OPEN:
+    case DPEN_STROKE_ARROWSTYLE_OPEN:
       mul_v2_fl(norm_dir, arrow_length);
       stroke_points[0] = corner[0] + inv_norm_dir_clockwise[0] * arrow_length + norm_dir[0];
       stroke_points[1] = corner[1] + inv_norm_dir_clockwise[1] * arrow_length + norm_dir[1];
       stroke_points[2] = corner[0] + inv_norm_dir_counterclockwise[0] * arrow_length + norm_dir[0];
       stroke_points[3] = corner[1] + inv_norm_dir_counterclockwise[1] * arrow_length + norm_dir[1];
       break;
-    case GP_STROKE_ARROWSTYLE_SEGMENT:
+    case DPEN_STROKE_ARROWSTYLE_SEGMENT:
       annotation_stroke_arrow_calc_points_segment(stroke_points,
                                                   corner,
                                                   inv_norm_dir_clockwise,
@@ -468,7 +468,7 @@ static void annotation_stroke_arrow_calc_points(tDPenPoint *point,
                                                   arrow_length,
                                                   1.0f);
       break;
-    case GP_STROKE_ARROWSTYLE_CLOSED:
+    case DPEN_STROKE_ARROWSTYLE_CLOSED:
       mul_v2_fl(norm_dir, arrow_length);
       if (point != NULL) {
         add_v2_v2(point->m_xy, norm_dir);
@@ -483,7 +483,7 @@ static void annotation_stroke_arrow_calc_points(tDPenPoint *point,
       stroke_points[4] = corner[0] - norm_dir[0];
       stroke_points[5] = corner[1] - norm_dir[1];
       break;
-    case GP_STROKE_ARROWSTYLE_SQUARE:
+    case DPEN_STROKE_ARROWSTYLE_SQUARE:
       mul_v2_fl(norm_dir, arrow_length * 1.5f);
       if (point != NULL) {
         add_v2_v2(point->m_xy, norm_dir);
@@ -558,15 +558,15 @@ static short annotation_stroke_addpoint(DPenData *p,
         copy_v2_v2(start, pt->m_xy);
 
         /* Arrow end corner. */
-        if (gpd->runtime.sbuffer_sflag & GP_STROKE_USE_ARROW_END) {
+        if (dpd->runtime.sbuffer_sflag & DPEN_STROKE_USE_ARROW_END) {
           pt++;
           const float e_heading[2] = {start[0] - end[0], start[1] - end[1]};
           /* Calculate points for ending arrow. */
           annotation_stroke_arrow_calc_points(
-              pt, e_heading, end, gpd->runtime.arrow_end, gpd->runtime.arrow_end_style);
+              pt, e_heading, end, dpd->runtime.arrow_end, dpd->runtime.arrow_end_style);
         }
         /* Arrow start corner. */
-        if (gpd->runtime.sbuffer_sflag & DPEN_STROKE_USE_ARROW_START) {
+        if (dpd->runtime.sbuffer_sflag & DPEN_STROKE_USE_ARROW_START) {
           const float s_heading[2] = {end[0] - start[0], end[1] - start[1]};
           /* Calculate points for starting arrow. */
           annotation_stroke_arrow_calc_points(
@@ -1076,7 +1076,7 @@ static bool annotation_stroke_eraser_is_occluded(DPenData *p,
 
     float p_depth;
     if (ed_view3d_depth_read_cached(p->depths, mval_i, 0, &p_depth)) {
-      Ed_view3d_depth_unproject_v3(p->region, mval_i, (double)p_depth, mval_3d);
+      ed_view3d_depth_unproject_v3(p->region, mval_i, (double)p_depth, mval_3d);
 
       const float depth_mval = ed_view3d_calc_depth_for_comparison(rv3d, mval_3d);
       const float depth_pt = ed_view3d_calc_depth_for_comparison(rv3d, &pt->x);
@@ -1385,21 +1385,21 @@ static bool annotation_session_initdata(dContext *C, tGPsdata *p)
   }
   p->dpd = *dpd_ptr;
 
-  if (ed_gpencil_session_active() == 0) {
+  if (ed_dpen_session_active() == 0) {
     /* initialize undo stack,
      * also, existing undo stack would make buffer drawn
      */
-    gpencil_undo_init(p->gpd);
+    dpen_undo_init(p->gpd);
   }
 
-  /* clear out buffer (stored in gp-data), in case something contaminated it */
+  /* clear out buffer (stored in dp-data), in case something contaminated it */
   annotation_session_validatebuffer(p);
 
   return 1;
 }
 
 /* Enable the annotations in the current space. */
-static void annotation_visible_on_space(tGPsdata *p)
+static void annotation_visible_on_space(DPenData *p)
 {
   ScrArea *area = p->area;
   switch (area->spacetype) {
@@ -1434,9 +1434,9 @@ static void annotation_visible_on_space(tGPsdata *p)
 }
 
 /* init new painting session */
-static tGPsdata *annotation_session_initpaint(bContext *C)
+static DPenData *annotation_session_initpaint(dContext *C)
 {
-  tGPsdata *p = NULL;
+  DPenData *p = NULL;
 
   /* create new context data */
   p = MEM_callocN(sizeof(tGPsdata), "Annotation Drawing Data");
@@ -1467,25 +1467,25 @@ static tGPsdata *annotation_session_initpaint(bContext *C)
 }
 
 /* cleanup after a painting session */
-static void annotation_session_cleanup(tGPsdata *p)
+static void annotation_session_cleanup(DPenData *p)
 {
-  bGPdata *gpd = (p) ? p->gpd : NULL;
+  DPenData *dpd = (p) ? p->dpd : NULL;
 
   /* error checking */
-  if (gpd == NULL) {
+  if (dpd == NULL) {
     return;
   }
 
   /* free stroke buffer */
-  if (gpd->runtime.sbuffer) {
-    MEM_freeN(gpd->runtime.sbuffer);
-    gpd->runtime.sbuffer = NULL;
+  if (dpd->runtime.sbuffer) {
+    MEM_freeN(dpd->runtime.sbuffer);
+    dpd->runtime.sbuffer = NULL;
   }
 
   /* clear flags */
-  gpd->runtime.sbuffer_used = 0;
-  gpd->runtime.sbuffer_size = 0;
-  gpd->runtime.sbuffer_sflag = 0;
+  dpd->runtime.sbuffer_used = 0;
+  dpd->runtime.sbuffer_size = 0;
+  dpd->runtime.sbuffer_sflag = 0;
   p->inittime = 0.0;
 }
 
@@ -1498,108 +1498,108 @@ static void annotation_session_free(tGPsdata *p)
 }
 
 /* init new stroke */
-static void annotation_paint_initstroke(tGPsdata *p,
-                                        eGPencil_PaintModes paintmode,
+static void annotation_paint_initstroke(DPenData *p,
+                                        eDPen_PaintModes paintmode,
                                         Depsgraph *depsgraph)
 {
   Scene *scene = p->scene;
   ToolSettings *ts = scene->toolsettings;
 
   /* Call to the annotation pre handler to notify python the annotation starts. */
-  BKE_callback_exec_id_depsgraph(p->bmain, &p->gpd->id, p->depsgraph, BKE_CB_EVT_ANNOTATION_PRE);
+  dune_callback_ex_id_depsgraph(p->dmain, &p->dpd->id, p->depsgraph, DUNE_CB_EVT_ANNOTATION_PRE);
 
   /* get active layer (or add a new one if non-existent) */
-  p->gpl = BKE_gpencil_layer_active_get(p->gpd);
-  if (p->gpl == NULL) {
+  p->dpl = dune_dpen_layer_active_get(p->dpd);
+  if (p->dpl == NULL) {
     /* tag for annotations */
-    p->gpd->flag |= GP_DATA_ANNOTATIONS;
-    p->gpl = BKE_gpencil_layer_addnew(p->gpd, DATA_("Note"), true, false);
+    p->dpd->flag |= DPEN_DATA_ANNOTATIONS;
+    p->dpl = dune_dpen_layer_addnew(p->dpd, DATA_("Note"), true, false);
 
     if (p->custom_color[3]) {
-      copy_v3_v3(p->gpl->color, p->custom_color);
+      copy_v3_v3(p->dpl->color, p->custom_color);
     }
   }
-  if (p->gpl->flag & GP_LAYER_LOCKED) {
-    p->status = GP_STATUS_ERROR;
+  if (p->dpl->flag & DPEN_LAYER_LOCKED) {
+    p->status = DPEN_STATUS_ERROR;
     return;
   }
 
   /* get active frame (add a new one if not matching frame) */
-  if (paintmode == GP_PAINTMODE_ERASER) {
+  if (paintmode == DPEN_PAINTMODE_ERASER) {
     /* Eraser mode:
-     * 1) Only allow erasing on the active layer (unlike for 3d-art Grease Pencil),
+     * 1) Only allow erasing on the active layer (unlike for 3d-art Dune Pen),
      *    since we won't be exposing layer locking in the UI
-     * 2) Ensure that p->gpf refers to the frame used for the active layer
+     * 2) Ensure that p->dpf refers to the frame used for the active layer
      *    (to avoid problems with other tools which expect it to exist)
      */
     bool has_layer_to_erase = false;
 
-    if (BKE_gpencil_layer_is_editable(p->gpl)) {
+    if (dune_gpen_layer_is_editable(p->dpl)) {
       /* Ensure that there's stuff to erase here (not including selection mask below)... */
-      if (p->gpl->actframe && p->gpl->actframe->strokes.first) {
+      if (p->dpl->actframe && p->dpl->actframe->strokes.first) {
         has_layer_to_erase = true;
       }
     }
 
     /* Ensure active frame is set correctly... */
-    p->gpf = p->gpl->actframe;
+    p->dpf = p->dpl->actframe;
 
     if (has_layer_to_erase == false) {
-      p->status = GP_STATUS_CAPTURE;
-      printf("Error: Eraser will not be affecting anything (gpencil_paint_init)\n");
+      p->status = DPEN_STATUS_CAPTURE;
+      printf("Error: Eraser will not be affecting anything (dpen_paint_init)\n");
       return;
     }
   }
   else {
     /* Drawing Modes - Add a new frame if needed on the active layer */
-    short add_frame_mode = GP_GETFRAME_ADD_NEW;
+    short add_frame_mode = DPEN_GETFRAME_ADD_NEW;
 
-    if (ts->gpencil_flags & GP_TOOL_FLAG_RETAIN_LAST) {
-      add_frame_mode = GP_GETFRAME_ADD_COPY;
+    if (ts->dpen_flags & DPEN_TOOL_FLAG_RETAIN_LAST) {
+      add_frame_mode = DPEN_GETFRAME_ADD_COPY;
     }
     else {
-      add_frame_mode = GP_GETFRAME_ADD_NEW;
+      add_frame_mode = DPEN_GETFRAME_ADD_NEW;
     }
 
-    p->gpf = BKE_gpencil_layer_frame_get(p->gpl, CFRA, add_frame_mode);
+    p->dpf = dune_dpen_layer_frame_get(p->dpl, CFRA, add_frame_mode);
 
-    if (p->gpf == NULL) {
-      p->status = GP_STATUS_ERROR;
+    if (p->dpf == NULL) {
+      p->status = DPEN_STATUS_ERROR;
       return;
     }
 
-    p->gpf->flag |= GP_FRAME_PAINT;
+    p->dpf->flag |= DPEN_FRAME_PAINT;
   }
 
   /* set 'eraser' for this stroke if using eraser */
   p->paintmode = paintmode;
-  if (p->paintmode == GP_PAINTMODE_ERASER) {
-    p->gpd->runtime.sbuffer_sflag |= GP_STROKE_ERASER;
+  if (p->paintmode == DPEN_PAINTMODE_ERASER) {
+    p->dpd->runtime.sbuffer_sflag |= DPEN_STROKE_ERASER;
 
     /* check if we should respect depth while erasing */
     if (p->area->spacetype == SPACE_VIEW3D) {
-      if (p->gpl->flag & GP_LAYER_NO_XRAY) {
-        p->flags |= GP_PAINTFLAG_V3D_ERASER_DEPTH;
+      if (p->dpl->flag & DPEN_LAYER_NO_XRAY) {
+        p->flags |= DPEN_PAINTFLAG_V3D_ERASER_DEPTH;
       }
     }
   }
   else {
     /* disable eraser flags - so that we can switch modes during a session */
-    p->gpd->runtime.sbuffer_sflag &= ~GP_STROKE_ERASER;
+    p->dpd->runtime.sbuffer_sflag &= ~DPEN_STROKE_ERASER;
 
     if (p->area->spacetype == SPACE_VIEW3D) {
-      if (p->gpl->flag & GP_LAYER_NO_XRAY) {
-        p->flags &= ~GP_PAINTFLAG_V3D_ERASER_DEPTH;
+      if (p->dpl->flag & DPEN_LAYER_NO_XRAY) {
+        p->flags &= ~DPEN_PAINTFLAG_V3D_ERASER_DEPTH;
       }
     }
   }
 
   /* set 'initial run' flag, which is only used to denote when a new stroke is starting */
-  p->flags |= GP_PAINTFLAG_FIRSTRUN;
+  p->flags |= DPEN_PAINTFLAG_FIRSTRUN;
 
   /* when drawing in the camera view, in 2D space, set the subrect */
   p->subrect = NULL;
-  if ((*p->align_flag & GP_PROJECT_VIEWSPACE) == 0) {
+  if ((*p->align_flag & DPEN_PROJECT_VIEWSPACE) == 0) {
     if (p->area->spacetype == SPACE_VIEW3D) {
       View3D *v3d = p->area->spacedata.first;
       RegionView3D *rv3d = p->region->regiondata;
@@ -1607,7 +1607,7 @@ static void annotation_paint_initstroke(tGPsdata *p,
       /* for camera view set the subrect */
       if (rv3d->persp == RV3D_CAMOB) {
         /* no shift */
-        ED_view3d_calc_camera_border(
+        ed_view3d_calc_camera_border(
             p->scene, depsgraph, p->region, v3d, rv3d, &p->subrect_data, true);
         p->subrect = &p->subrect_data;
       }
@@ -1615,8 +1615,8 @@ static void annotation_paint_initstroke(tGPsdata *p,
   }
 
   /* init stroke point space-conversion settings... */
-  p->gsc.gpd = p->gpd;
-  p->gsc.gpl = p->gpl;
+  p->gsc.dpd = p->dpd;
+  p->gsc.dpl = p->dpl;
 
   p->gsc.area = p->area;
   p->gsc.region = p->region;
@@ -1628,17 +1628,17 @@ static void annotation_paint_initstroke(tGPsdata *p,
   copy_m4_m4(p->gsc.mat, p->mat);
 
   /* check if points will need to be made in view-aligned space */
-  if (*p->align_flag & GP_PROJECT_VIEWSPACE) {
+  if (*p->align_flag & DPEN_PROJECT_VIEWSPACE) {
     switch (p->area->spacetype) {
       case SPACE_VIEW3D: {
-        p->gpd->runtime.sbuffer_sflag |= GP_STROKE_3DSPACE;
+        p->dpd->runtime.sbuffer_sflag |= DPEN_STROKE_3DSPACE;
         break;
       }
       case SPACE_NODE:
       case SPACE_SEQ:
       case SPACE_IMAGE:
       case SPACE_CLIP: {
-        p->gpd->runtime.sbuffer_sflag |= GP_STROKE_2DSPACE;
+        p->gpd->runtime.sbuffer_sflag |= DPEN_STROKE_2DSPACE;
         break;
       }
     }
@@ -1646,10 +1646,10 @@ static void annotation_paint_initstroke(tGPsdata *p,
 }
 
 /* finish off a stroke (clears buffer, but doesn't finish the paint operation) */
-static void annotation_paint_strokeend(tGPsdata *p)
+static void annotation_paint_strokeend(DPenData *p)
 {
   ToolSettings *ts = p->scene->toolsettings;
-  const bool is_eraser = (p->gpd->runtime.sbuffer_sflag & GP_STROKE_ERASER) != 0;
+  const bool is_eraser = (p->dpd->runtime.sbuffer_sflag & DPEN_STROKE_ERASER) != 0;
   /* for surface sketching, need to set the right OpenGL context stuff so that
    * the conversions will project the values correctly...
    */
@@ -1657,14 +1657,14 @@ static void annotation_paint_strokeend(tGPsdata *p)
     View3D *v3d = p->area->spacedata.first;
 
     /* need to restore the original projection settings before packing up */
-    view3d_region_operator_needs_opengl(p->win, p->region);
-    ED_view3d_depth_override(p->depsgraph,
+    view3d_region_op_needs_opengl(p->win, p->region);
+    ed_view3d_depth_override(p->depsgraph,
                              p->region,
                              v3d,
                              NULL,
-                             (ts->annotate_v3d_align & GP_PROJECT_DEPTH_STROKE) ?
-                                 V3D_DEPTH_GPENCIL_ONLY :
-                                 V3D_DEPTH_NO_GPENCIL,
+                             (ts->annotate_v3d_align & DPEN_PROJECT_DEPTH_STROKE) ?
+                                 V3D_DEPTH_DPEN_ONLY :
+                                 V3D_DEPTH_NO_DPEN,
                              is_eraser ? NULL : &p->depths);
   }
 
@@ -1675,7 +1675,7 @@ static void annotation_paint_strokeend(tGPsdata *p)
   }
 
   /* Call to the annotation post handler to notify python the annotation is done. */
-  BKE_callback_exec_id_depsgraph(p->bmain, &p->gpd->id, p->depsgraph, BKE_CB_EVT_ANNOTATION_POST);
+  dune_callback_ex_id_depsgraph(p->dmain, &p->dpd->id, p->depsgraph, DUNE_CB_EVT_ANNOTATION_POST);
 
   /* clean up buffer now */
   annotation_session_validatebuffer(p);
@@ -1684,17 +1684,17 @@ static void annotation_paint_strokeend(tGPsdata *p)
 /* finish off stroke painting operation */
 static void annotation_paint_cleanup(tGPsdata *p)
 {
-  /* p->gpd==NULL happens when stroke failed to initialize,
-   * for example when GP is hidden in current space (sergey)
+  /* p->dpd==NULL happens when stroke failed to initialize,
+   * for example when DP is hidden in current space
    */
-  if (p->gpd) {
+  if (p->dpd) {
     /* finish off a stroke */
     annotation_paint_strokeend(p);
   }
 
   /* "unlock" frame */
-  if (p->gpf) {
-    p->gpf->flag &= ~GP_FRAME_PAINT;
+  if (p->dpf) {
+    p->dpf->flag &= ~DPEN_FRAME_PAINT;
   }
 }
 
