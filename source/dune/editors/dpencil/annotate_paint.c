@@ -1925,11 +1925,11 @@ static void annotation_draw_status_indicators(dContext *C, DPenData *p)
 {
   /* header prints */
   switch (p->status) {
-    case GP_STATUS_PAINTING:
+    case PEN_STATUS_PAINTING:
       switch (p->paintmode) {
-        case GP_PAINTMODE_DRAW_POLY:
+        case DPEN_PAINTMODE_DRAW_POLY:
           /* Provide usage tips, since this is modal, and unintuitive without hints */
-          ED_workspace_status_text(
+          ed_workspace_status_text(
               C,
               TIP_("Annotation Create Poly: LMB click to place next stroke vertex | "
                    "ESC/Enter to end  (or click outside this area)"));
@@ -1942,33 +1942,33 @@ static void annotation_draw_status_indicators(dContext *C, DPenData *p)
       }
       break;
 
-    case GP_STATUS_IDLING:
+    case DPEN_STATUS_IDLING:
       /* print status info */
       switch (p->paintmode) {
-        case GP_PAINTMODE_ERASER:
-          ED_workspace_status_text(C,
+        case DPEN_PAINTMODE_ERASER:
+          ed_workspace_status_text(C,
                                    TIP_("Annotation Eraser: Hold and drag LMB or RMB to erase | "
                                         "ESC/Enter to end  (or click outside this area)"));
           break;
-        case GP_PAINTMODE_DRAW_STRAIGHT:
-          ED_workspace_status_text(C,
+        case DPEN_PAINTMODE_DRAW_STRAIGHT:
+          ed_workspace_status_text(C,
                                    TIP_("Annotation Line Draw: Hold and drag LMB to draw | "
                                         "ESC/Enter to end  (or click outside this area)"));
           break;
-        case GP_PAINTMODE_DRAW:
-          ED_workspace_status_text(C,
+        case DPEN_PAINTMODE_DRAW:
+          ed_workspace_status_text(C,
                                    TIP_("Annotation Freehand Draw: Hold and drag LMB to draw | "
                                         "E/ESC/Enter to end  (or click outside this area)"));
           break;
-        case GP_PAINTMODE_DRAW_POLY:
-          ED_workspace_status_text(
+        case DPEN_PAINTMODE_DRAW_POLY:
+          ed_workspace_status_text(
               C,
               TIP_("Annotation Create Poly: LMB click to place next stroke vertex | "
                    "ESC/Enter to end  (or click outside this area)"));
           break;
 
         default: /* unhandled future cases */
-          ED_workspace_status_text(
+          ed_workspace_status_text(
               C, TIP_("Annotation Session: ESC/Enter to end   (or click outside this area)"));
           break;
       }
@@ -1978,7 +1978,7 @@ static void annotation_draw_status_indicators(dContext *C, DPenData *p)
     case GP_STATUS_DONE:
     case GP_STATUS_CAPTURE:
       /* clear status string */
-      ED_workspace_status_text(C, NULL);
+      ed_workspace_status_text(C, NULL);
       break;
   }
 }
@@ -1986,10 +1986,10 @@ static void annotation_draw_status_indicators(dContext *C, DPenData *p)
 /* ------------------------------- */
 
 /* create a new stroke point at the point indicated by the painting context */
-static void annotation_draw_apply(wmOperator *op, tGPsdata *p, Depsgraph *depsgraph)
+static void annotation_draw_apply(wmOperator *op, DPenData *p, Depsgraph *depsgraph)
 {
   /* handle drawing/erasing -> test for erasing first */
-  if (p->paintmode == GP_PAINTMODE_ERASER) {
+  if (p->paintmode == DPEN_PAINTMODE_ERASER) {
     /* do 'live' erasing now */
     annotation_stroke_doeraser(p);
 
@@ -2002,7 +2002,7 @@ static void annotation_draw_apply(wmOperator *op, tGPsdata *p, Depsgraph *depsgr
    * (even though we got an event, it might be just noise). */
   else if (annotation_stroke_filtermval(p, p->mval, p->mvalo)) {
     /* If lazy mouse, interpolate the last and current mouse positions. */
-    if (p->flags & GP_PAINTFLAG_USE_STABILIZER_TEMP) {
+    if (p->flags & DPEN_PAINTFLAG_USE_STABILIZER_TEMP) {
       float now_mouse[2];
       float last_mouse[2];
       copy_v2_v2(now_mouse, p->mval);
@@ -2015,14 +2015,14 @@ static void annotation_draw_apply(wmOperator *op, tGPsdata *p, Depsgraph *depsgr
     short ok = annotation_stroke_addpoint(p, p->mval, p->pressure, p->curtime);
 
     /* handle errors while adding point */
-    if (ELEM(ok, GP_STROKEADD_FULL, GP_STROKEADD_OVERFLOW)) {
+    if (ELEM(ok, DPEN_STROKEADD_FULL, DPEN_STROKEADD_OVERFLOW)) {
       /* finish off old stroke */
       annotation_paint_strokeend(p);
       /* And start a new one!!! Else, projection errors! */
       annotation_paint_initstroke(p, p->paintmode, depsgraph);
 
       /* start a new stroke, starting from previous point */
-      if (ok == GP_STROKEADD_OVERFLOW) {
+      if (ok == DPEN_STROKEADD_OVERFLOW) {
         p->inittime = p->ocurtime;
         annotation_stroke_addpoint(p, p->mvalo, p->opressure, p->ocurtime);
       }
@@ -2031,10 +2031,10 @@ static void annotation_draw_apply(wmOperator *op, tGPsdata *p, Depsgraph *depsgr
       }
       annotation_stroke_addpoint(p, p->mval, p->pressure, p->curtime);
     }
-    else if (ok == GP_STROKEADD_INVALID) {
+    else if (ok == DPEN_STROKEADD_INVALID) {
       /* the painting operation cannot continue... */
-      BKE_report(op->reports, RPT_ERROR, "Cannot paint stroke");
-      p->status = GP_STATUS_ERROR;
+      dune_report(op->reports, RPT_ERROR, "Cannot paint stroke");
+      p->status = DPEN_STATUS_ERROR;
 
       return;
     }
@@ -2051,8 +2051,8 @@ static void annotation_draw_apply(wmOperator *op, tGPsdata *p, Depsgraph *depsgr
 static void annotation_draw_apply_event(
     wmOperator *op, const wmEvent *event, Depsgraph *depsgraph, float x, float y)
 {
-  tGPsdata *p = op->customdata;
-  PointerRNA itemptr;
+  DPenData *p = op->customdata;
+  ApiPtr itemptr;
   float mousef[2];
 
   /* convert from window-space to area-space mouse coordinates
@@ -2062,17 +2062,17 @@ static void annotation_draw_apply_event(
   p->mval[1] = (float)event->mval[1] - y;
 
   /* Key to toggle stabilization. */
-  if ((event->modifier & KM_SHIFT) && (p->paintmode == GP_PAINTMODE_DRAW)) {
+  if ((event->modifier & KM_SHIFT) && (p->paintmode == DPEN_PAINTMODE_DRAW)) {
     /* Using permanent stabilization, shift will deactivate the flag. */
-    if (p->flags & GP_PAINTFLAG_USE_STABILIZER) {
-      if (p->flags & GP_PAINTFLAG_USE_STABILIZER_TEMP) {
+    if (p->flags & DPEN_PAINTFLAG_USE_STABILIZER) {
+      if (p->flags & DPEN_PAINTFLAG_USE_STABILIZER_TEMP) {
         annotation_draw_toggle_stabilizer_cursor(p, false);
-        p->flags &= ~GP_PAINTFLAG_USE_STABILIZER_TEMP;
+        p->flags &= ~DPEN_PAINTFLAG_USE_STABILIZER_TEMP;
       }
     }
     /* Not using any stabilization flag. Activate temporal one. */
-    else if ((p->flags & GP_PAINTFLAG_USE_STABILIZER_TEMP) == 0) {
-      p->flags |= GP_PAINTFLAG_USE_STABILIZER_TEMP;
+    else if ((p->flags & DPEN_PAINTFLAG_USE_STABILIZER_TEMP) == 0) {
+      p->flags |= DPEN_PAINTFLAG_USE_STABILIZER_TEMP;
       annotation_draw_toggle_stabilizer_cursor(p, true);
     }
   }
@@ -2100,18 +2100,18 @@ static void annotation_draw_apply_event(
     p->straight[0] = 0;
     /* We were using shift while having permanent stabilization active,
      * so activate the temp flag back again. */
-    if (p->flags & GP_PAINTFLAG_USE_STABILIZER) {
-      if ((p->flags & GP_PAINTFLAG_USE_STABILIZER_TEMP) == 0) {
+    if (p->flags & DPEN_PAINTFLAG_USE_STABILIZER) {
+      if ((p->flags & DPEN_PAINTFLAG_USE_STABILIZER_TEMP) == 0) {
         annotation_draw_toggle_stabilizer_cursor(p, true);
-        p->flags |= GP_PAINTFLAG_USE_STABILIZER_TEMP;
+        p->flags |= DPEN_PAINTFLAG_USE_STABILIZER_TEMP;
       }
     }
     /* We are using the temporal stabilizer flag at the moment,
      * but shift is not pressed as well as the permanent flag is not used,
      * so we don't need the cursor anymore. */
-    else if (p->flags & GP_PAINTFLAG_USE_STABILIZER_TEMP) {
+    else if (p->flags & DPEN_PAINTFLAG_USE_STABILIZER_TEMP) {
       /* Reset temporal stabilizer flag and remove cursor. */
-      p->flags &= ~GP_PAINTFLAG_USE_STABILIZER_TEMP;
+      p->flags &= ~DPEN_PAINTFLAG_USE_STABILIZER_TEMP;
       annotation_draw_toggle_stabilizer_cursor(p, false);
     }
   }
@@ -2127,15 +2127,15 @@ static void annotation_draw_apply_event(
    * (i.e. "effectively zero" pressure), and only when the "active"
    * end is the stylus (i.e. the default when not eraser)
    */
-  if (p->paintmode == GP_PAINTMODE_ERASER) {
+  if (p->paintmode == DPEN_PAINTMODE_ERASER) {
     if ((event->tablet.active != EVT_TABLET_ERASER) && (p->pressure < 0.001f)) {
       p->pressure = 1.0f;
     }
   }
 
   /* special exception for start of strokes (i.e. maybe for just a dot) */
-  if (p->flags & GP_PAINTFLAG_FIRSTRUN) {
-    p->flags &= ~GP_PAINTFLAG_FIRSTRUN;
+  if (p->flags & DPEN_PAINTFLAG_FIRSTRUN) {
+    p->flags &= ~DPEN_PAINTFLAG_FIRSTRUN;
 
     p->mvalo[0] = p->mval[0];
     p->mvalo[1] = p->mval[1];
@@ -2153,7 +2153,7 @@ static void annotation_draw_apply_event(
   }
 
   /* check if alt key is pressed and limit to straight lines */
-  if ((p->paintmode != GP_PAINTMODE_ERASER) && (p->straight[0] != 0)) {
+  if ((p->paintmode != DPEN_PAINTMODE_ERASER) && (p->straight[0] != 0)) {
     if (p->straight[0] == 1) {
       /* horizontal */
       p->mval[1] = p->straight[1]; /* replace y */
@@ -2165,31 +2165,31 @@ static void annotation_draw_apply_event(
   }
 
   /* fill in stroke data (not actually used directly by gpencil_draw_apply) */
-  RNA_collection_add(op->ptr, "stroke", &itemptr);
+  api_collection_add(op->ptr, "stroke", &itemptr);
 
   mousef[0] = p->mval[0];
   mousef[1] = p->mval[1];
-  RNA_float_set_array(&itemptr, "mouse", mousef);
-  RNA_float_set(&itemptr, "pressure", p->pressure);
-  RNA_boolean_set(&itemptr, "is_start", (p->flags & GP_PAINTFLAG_FIRSTRUN) != 0);
+  api_float_set_array(&itemptr, "mouse", mousef);
+  api_float_set(&itemptr, "pressure", p->pressure);
+  api_boolean_set(&itemptr, "is_start", (p->flags & DPEN_PAINTFLAG_FIRSTRUN) != 0);
 
-  RNA_float_set(&itemptr, "time", p->curtime - p->inittime);
+  api_float_set(&itemptr, "time", p->curtime - p->inittime);
 
   /* apply the current latest drawing point */
   annotation_draw_apply(op, p, depsgraph);
 
   /* force refresh */
   /* just active area for now, since doing whole screen is too slow */
-  ED_region_tag_redraw(p->region);
+  ed_region_tag_redraw(p->region);
 }
 
 /* ------------------------------- */
 
 /* operator 'redo' (i.e. after changing some properties, but also for repeat last) */
-static int annotation_draw_exec(bContext *C, wmOperator *op)
+static int annotation_draw_ex(dContext *C, wmOperator *op)
 {
-  tGPsdata *p = NULL;
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
+  DPenData *p = NULL;
+  Depsgraph *depsgraph = ctx_data_ensure_evaluated_depsgraph(C);
 
   /* try to initialize context data needed while drawing */
   if (!annotation_draw_init(C, op, NULL)) {
@@ -2201,24 +2201,24 @@ static int annotation_draw_exec(bContext *C, wmOperator *op)
 
   p = op->customdata;
 
-  /* loop over the stroke RNA elements recorded (i.e. progress of mouse movement),
+  /* loop over the stroke api elements recorded (i.e. progress of mouse movement),
    * setting the relevant values in context at each step, then applying
    */
   RNA_BEGIN (op->ptr, itemptr, "stroke") {
     float mousef[2];
 
     /* get relevant data for this point from stroke */
-    RNA_float_get_array(&itemptr, "mouse", mousef);
+    api_float_get_array(&itemptr, "mouse", mousef);
     p->mval[0] = (int)mousef[0];
     p->mval[1] = (int)mousef[1];
-    p->pressure = RNA_float_get(&itemptr, "pressure");
-    p->curtime = (double)RNA_float_get(&itemptr, "time") + p->inittime;
+    p->pressure = api_float_get(&itemptr, "pressure");
+    p->curtime = (double)api_float_get(&itemptr, "time") + p->inittime;
 
-    if (RNA_boolean_get(&itemptr, "is_start")) {
+    if (api_bool_get(&itemptr, "is_start")) {
       /* if first-run flag isn't set already (i.e. not true first stroke),
        * then we must terminate the previous one first before continuing
        */
-      if ((p->flags & GP_PAINTFLAG_FIRSTRUN) == 0) {
+      if ((p->flags & DPEN_PAINTFLAG_FIRSTRUN) == 0) {
         /* TODO: both of these ops can set error-status, but we probably don't need to worry */
         annotation_paint_strokeend(p);
         annotation_paint_initstroke(p, p->paintmode, depsgraph);
@@ -2226,8 +2226,8 @@ static int annotation_draw_exec(bContext *C, wmOperator *op)
     }
 
     /* if first run, set previous data too */
-    if (p->flags & GP_PAINTFLAG_FIRSTRUN) {
-      p->flags &= ~GP_PAINTFLAG_FIRSTRUN;
+    if (p->flags & DPEN_PAINTFLAG_FIRSTRUN) {
+      p->flags &= ~DPEN_PAINTFLAG_FIRSTRUN;
 
       p->mvalo[0] = p->mval[0];
       p->mvalo[1] = p->mval[1];
