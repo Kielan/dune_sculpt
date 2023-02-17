@@ -32,7 +32,7 @@
 #include "types_scene.h"
 #include "types_windowmanager.h"
 
-#include "UI_view2d.h"
+#include "ui_view2d.h"
 
 #include "ed_clip.h"
 #include "ed_gpencil.h"
@@ -52,7 +52,7 @@
 
 #include "DEG_depsgraph.h"
 
-#include "gpencil_intern.h"
+#include "dpen_intern.h"
 
 /* ******************************************* */
 /* 'Globals' and Defines */
@@ -90,7 +90,7 @@ typedef enum eDPen_PaintFlags {
 /* Temporary 'Stroke' Operation data
  *   "p" = op->customdata
  */
-typedef struct tDPensData {
+typedef struct DPenData {
   Main *dmain;
   /** current scene from context. */
   Scene *scene;
@@ -261,7 +261,7 @@ static bool annotation_stroke_filtermval(DPenData *p, const float mval[2], const
   int dy = (int)fabsf(mval[1] - pmval[1]);
 
   /* if buffer is empty, just let this go through (i.e. so that dots will work) */
-  if (p->gpd->runtime.sbuffer_used == 0) {
+  if (p->dpd->runtime.sbuffer_used == 0) {
     return true;
   }
 
@@ -310,7 +310,7 @@ static void annotation_stroke_convertcoords(DPenData *p,
   }
 
   /* in 3d-space - pt->x/y/z are 3 side-by-side floats */
-  if (gpd->runtime.sbuffer_sflag & DPEN_STROKE_3DSPACE) {
+  if (dpd->runtime.sbuffer_sflag & DPEN_STROKE_3DSPACE) {
     int mval_i[2];
     round_v2i_v2fl(mval_i, mval);
     if (annotation_project_check(p) &&
@@ -351,7 +351,7 @@ static void annotation_stroke_convertcoords(DPenData *p,
 
   /* 2d - on 'canvas' (assume that p->v2d is set) */
   else if ((dpd->runtime.sbuffer_sflag & DPEN_STROKE_2DSPACE) && (p->v2d)) {
-    UI_view2d_region_to_view(p->v2d, mval[0], mval[1], &out[0], &out[1]);
+    ui_view2d_region_to_view(p->v2d, mval[0], mval[1], &out[0], &out[1]);
     mul_v3_m4v3(out, p->imat, out);
   }
 
@@ -1765,20 +1765,20 @@ static void annotation_draw_stabilizer(dContext *C, int x, int y, void *p_ptr)
 {
   ARegion *region = ctx_wm_region(C);
   DPenData *p = (DPenData *)p_ptr;
-  bGPdata_Runtime runtime = p->gpd->runtime;
-  const tGPspoint *points = runtime.sbuffer;
+  DPenData_Runtime runtime = p->dpd->runtime;
+  const DPenPoint *points = runtime.sbuffer;
   int totpoints = runtime.sbuffer_used;
   if (totpoints < 2) {
     return;
   }
-  const tGPspoint *pt = &points[totpoints - 1];
+  const DPenPoint *pt = &points[totpoints - 1];
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
   immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
-  GPU_line_smooth(true);
-  GPU_blend(GPU_BLEND_ALPHA);
-  GPU_line_width(1.25f);
+  gpu_line_smooth(true);
+  gpu_blend(GPU_BLEND_ALPHA);
+  gpu_line_width(1.25f);
   const float color[3] = {1.0f, 0.39f, 0.39f};
 
   /* default radius and color */
@@ -1802,23 +1802,23 @@ static void annotation_draw_stabilizer(dContext *C, int x, int y, void *p_ptr)
   immEnd();
 
   /* Returns back all GPU settings */
-  GPU_blend(GPU_BLEND_NONE);
-  GPU_line_smooth(false);
+  gpu_blend(GPU_BLEND_NONE);
+  gpu_line_smooth(false);
 
   immUnbindProgram();
 }
 
 /* Turn *stabilizer* brush cursor in 3D view on/off */
-static void annotation_draw_toggle_stabilizer_cursor(tGPsdata *p, short enable)
+static void annotation_draw_toggle_stabilizer_cursor(DPenData *p, short enable)
 {
   if (p->stabilizer_cursor && !enable) {
     /* clear cursor */
-    WM_paint_cursor_end(p->stabilizer_cursor);
+    wm_paint_cursor_end(p->stabilizer_cursor);
     p->stabilizer_cursor = NULL;
   }
   else if (enable && !p->stabilizer_cursor) {
     /* enable cursor */
-    p->stabilizer_cursor = WM_paint_cursor_activate(
+    p->stabilizer_cursor = wm_paint_cursor_activate(
         SPACE_TYPE_ANY, RGN_TYPE_ANY, NULL, annotation_draw_stabilizer, p);
   }
 }
@@ -1833,19 +1833,19 @@ static bool annotation_is_tablet_eraser_active(const wmEvent *event)
 
 static void annotation_draw_exit(bContext *C, wmOperator *op)
 {
-  tGPsdata *p = op->customdata;
+  DPenData *p = op->customdata;
 
   /* restore cursor to indicate end of drawing */
-  WM_cursor_modal_restore(CTX_wm_window(C));
+  wm_cursor_modal_restore(ctx_wm_window(C));
 
   /* don't assume that operator data exists at all */
   if (p) {
     /* check size of buffer before cleanup, to determine if anything happened here */
-    if (p->paintmode == GP_PAINTMODE_ERASER) {
+    if (p->paintmode == DPEN_PAINTMODE_ERASER) {
       /* turn off radial brush cursor */
       annotation_draw_toggle_eraser_cursor(p, false);
     }
-    else if (p->paintmode == GP_PAINTMODE_DRAW) {
+    else if (p->paintmode == DPEN_PAINTMODE_DRAW) {
       annotation_draw_toggle_stabilizer_cursor(p, false);
     }
 
@@ -1856,7 +1856,7 @@ static void annotation_draw_exit(bContext *C, wmOperator *op)
     U.gp_eraser = p->radius;
 
     /* clear undo stack */
-    gpencil_undo_finish();
+    dpen_undo_finish();
 
     /* cleanup */
     annotation_paint_cleanup(p);
@@ -1868,7 +1868,7 @@ static void annotation_draw_exit(bContext *C, wmOperator *op)
   op->customdata = NULL;
 }
 
-static void annotation_draw_cancel(bContext *C, wmOperator *op)
+static void annotation_draw_cancel(dContext *C, wmOperator *op)
 {
   /* this is just a wrapper around exit() */
   annotation_draw_exit(C, op);
@@ -1878,20 +1878,20 @@ static void annotation_draw_cancel(bContext *C, wmOperator *op)
 
 static int annotation_draw_init(bContext *C, wmOperator *op, const wmEvent *event)
 {
-  tGPsdata *p;
-  eGPencil_PaintModes paintmode = RNA_enum_get(op->ptr, "mode");
+  DPenData *p;
+  DPen_PaintModes paintmode = api_enum_get(op->ptr, "mode");
 
   /* check context */
   p = op->customdata = annotation_session_initpaint(C);
-  if ((p == NULL) || (p->status == GP_STATUS_ERROR)) {
+  if ((p == NULL) || (p->status == DPEN_STATUS_ERROR)) {
     /* something wasn't set correctly in context */
     annotation_draw_exit(C, op);
     return 0;
   }
 
   /* init painting data */
-  annotation_paint_initstroke(p, paintmode, CTX_data_ensure_evaluated_depsgraph(C));
-  if (p->status == GP_STATUS_ERROR) {
+  annotation_paint_initstroke(p, paintmode, ctx_data_ensure_evaluated_depsgraph(C));
+  if (p->status == DPEN_STATUS_ERROR) {
     annotation_draw_exit(C, op);
     return 0;
   }
@@ -1910,18 +1910,18 @@ static int annotation_draw_init(bContext *C, wmOperator *op, const wmEvent *even
 /* ------------------------------- */
 
 /* ensure that the correct cursor icon is set */
-static void annotation_draw_cursor_set(tGPsdata *p)
+static void annotation_draw_cursor_set(DPenData *p)
 {
-  if (p->paintmode == GP_PAINTMODE_ERASER) {
-    WM_cursor_modal_set(p->win, WM_CURSOR_ERASER);
+  if (p->paintmode == DPEN_PAINTMODE_ERASER) {
+    wm_cursor_modal_set(p->win, WM_CURSOR_ERASER);
   }
   else {
-    WM_cursor_modal_set(p->win, WM_CURSOR_PAINT_BRUSH);
+    wm_cursor_modal_set(p->win, WM_CURSOR_PAINT_BRUSH);
   }
 }
 
 /* update UI indicators of status, including cursor and header prints */
-static void annotation_draw_status_indicators(bContext *C, tGPsdata *p)
+static void annotation_draw_status_indicators(dContext *C, DPenData *p)
 {
   /* header prints */
   switch (p->status) {
