@@ -1682,7 +1682,7 @@ static void annotation_paint_strokeend(DPenData *p)
 }
 
 /* finish off stroke painting operation */
-static void annotation_paint_cleanup(tGPsdata *p)
+static void annotation_paint_cleanup(DPenData *p)
 {
   /* p->dpd==NULL happens when stroke failed to initialize,
    * for example when DP is hidden in current space
@@ -1703,11 +1703,11 @@ static void annotation_paint_cleanup(tGPsdata *p)
 /* Helper callback for drawing the cursor itself */
 static void annotation_draw_eraser(bContext *UNUSED(C), int x, int y, void *p_ptr)
 {
-  tGPsdata *p = (tGPsdata *)p_ptr;
+  DPenData *p = (DPenData *)p_ptr;
 
-  if (p->paintmode == GP_PAINTMODE_ERASER) {
+  if (p->paintmode == DPEN_PAINTMODE_ERASER) {
     GPUVertFormat *format = immVertexFormat();
-    const uint shdr_pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+    const uint shdr_pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
     immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
 
     GPU_line_smooth(true);
@@ -1721,7 +1721,7 @@ static void annotation_draw_eraser(bContext *UNUSED(C), int x, int y, void *p_pt
     immBindBuiltinProgram(GPU_SHADER_2D_LINE_DASHED_UNIFORM_COLOR);
 
     float viewport_size[4];
-    GPU_viewport_size_get_f(viewport_size);
+    gpu_viewport_size_get_f(viewport_size);
     immUniform2f("viewport_size", viewport_size[2], viewport_size[3]);
 
     immUniformColor4f(1.0f, 0.39f, 0.39f, 0.78f);
@@ -1739,32 +1739,32 @@ static void annotation_draw_eraser(bContext *UNUSED(C), int x, int y, void *p_pt
 
     immUnbindProgram();
 
-    GPU_blend(GPU_BLEND_NONE);
-    GPU_line_smooth(false);
+    gpu_blend(GPU_BLEND_NONE);
+    gpu_line_smooth(false);
   }
 }
 
 /* Turn brush cursor in 3D view on/off */
-static void annotation_draw_toggle_eraser_cursor(tGPsdata *p, short enable)
+static void annotation_draw_toggle_eraser_cursor(DPenData *p, short enable)
 {
   if (p->erasercursor && !enable) {
     /* clear cursor */
-    WM_paint_cursor_end(p->erasercursor);
+    wm_paint_cursor_end(p->erasercursor);
     p->erasercursor = NULL;
   }
   else if (enable && !p->erasercursor) {
     /* enable cursor */
-    p->erasercursor = WM_paint_cursor_activate(SPACE_TYPE_ANY,
+    p->erasercursor = wm_paint_cursor_activate(SPACE_TYPE_ANY,
                                                RGN_TYPE_ANY,
                                                NULL, /* XXX */
                                                annotation_draw_eraser,
                                                p);
   }
 }
-static void annotation_draw_stabilizer(bContext *C, int x, int y, void *p_ptr)
+static void annotation_draw_stabilizer(dContext *C, int x, int y, void *p_ptr)
 {
-  ARegion *region = CTX_wm_region(C);
-  tGPsdata *p = (tGPsdata *)p_ptr;
+  ARegion *region = ctx_wm_region(C);
+  DPenData *p = (DPenData *)p_ptr;
   bGPdata_Runtime runtime = p->gpd->runtime;
   const tGPspoint *points = runtime.sbuffer;
   int totpoints = runtime.sbuffer_used;
