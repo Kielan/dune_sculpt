@@ -270,7 +270,7 @@ static bool annotation_stroke_filtermval(DPenData *p, const float mval[2], const
    */
 
   /* If lazy mouse, check minimum distance. */
-  if (p->flags & GP_PAINTFLAG_USE_STABILIZER_TEMP) {
+  if (p->flags & DPEN_PAINTFLAG_USE_STABILIZER_TEMP) {
     if ((dx * dx + dy * dy) > (p->stabilizer_radius * p->stabilizer_radius)) {
       return true;
     }
@@ -1240,7 +1240,7 @@ static void annotation_session_validatebuffer(DPenData *p)
 }
 
 /* (re)init new painting data */
-static bool annotation_session_initdata(dContext *C, tGPsdata *p)
+static bool annotation_session_initdata(dContext *C, DPenData *p)
 {
   Main *dmain = ctx_data_main(C);
   DPenData **dpd_ptr = NULL;
@@ -1316,7 +1316,7 @@ static bool annotation_session_initdata(dContext *C, tGPsdata *p)
       p->area = curarea;
       p->region = region;
       p->v2d = &region->v2d;
-      p->align_flag = &ts->gpencil_v2d_align;
+      p->align_flag = &ts->dpen_v2d_align;
       break;
     }
     case SPACE_CLIP: {
@@ -1324,7 +1324,7 @@ static bool annotation_session_initdata(dContext *C, tGPsdata *p)
       MovieClip *clip = ed_space_clip_get_clip(sc);
 
       if (clip == NULL) {
-        p->status = GP_STATUS_ERROR;
+        p->status = DPEN_STATUS_ERROR;
         return false;
       }
 
@@ -1389,7 +1389,7 @@ static bool annotation_session_initdata(dContext *C, tGPsdata *p)
     /* initialize undo stack,
      * also, existing undo stack would make buffer drawn
      */
-    dpen_undo_init(p->gpd);
+    dpen_undo_init(p->dpd);
   }
 
   /* clear out buffer (stored in dp-data), in case something contaminated it */
@@ -1492,7 +1492,7 @@ static void annotation_session_cleanup(DPenData *p)
 static void annotation_session_free(tGPsdata *p)
 {
   if (p->depths) {
-    ED_view3d_depths_free(p->depths);
+    ed_view3d_depths_free(p->depths);
   }
   MEM_freeN(p);
 }
@@ -1638,7 +1638,7 @@ static void annotation_paint_initstroke(DPenData *p,
       case SPACE_SEQ:
       case SPACE_IMAGE:
       case SPACE_CLIP: {
-        p->gpd->runtime.sbuffer_sflag |= DPEN_STROKE_2DSPACE;
+        p->dpd->runtime.sbuffer_sflag |= DPEN_STROKE_2DSPACE;
         break;
       }
     }
@@ -1701,7 +1701,7 @@ static void annotation_paint_cleanup(DPenData *p)
 /* ------------------------------- */
 
 /* Helper callback for drawing the cursor itself */
-static void annotation_draw_eraser(bContext *UNUSED(C), int x, int y, void *p_ptr)
+static void annotation_draw_eraser(dContext *UNUSED(C), int x, int y, void *p_ptr)
 {
   DPenData *p = (DPenData *)p_ptr;
 
@@ -1710,8 +1710,8 @@ static void annotation_draw_eraser(bContext *UNUSED(C), int x, int y, void *p_pt
     const uint shdr_pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
     immBindBuiltinProgram(GPU_SHADER_2D_UNIFORM_COLOR);
 
-    GPU_line_smooth(true);
-    GPU_blend(GPU_BLEND_ALPHA);
+    gpu_line_smooth(true);
+    gpu_blend(GPU_BLEND_ALPHA);
 
     immUniformColor4ub(255, 100, 100, 20);
     imm_draw_circle_fill_2d(shdr_pos, x, y, p->radius, 40);
