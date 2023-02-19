@@ -2,16 +2,16 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_math.h"
-#include "BLI_stack.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_math.h"
+#include "lib_stack.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "DNA_brush_types.h"
-#include "DNA_gpencil_types.h"
+#include "types_brush_types.h"
+#include "types_pen_types.h"
 #include "DNA_image_types.h"
 #include "DNA_material_types.h"
 #include "DNA_meshdata_types.h"
