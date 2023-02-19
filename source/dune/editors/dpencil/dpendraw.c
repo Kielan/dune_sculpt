@@ -136,19 +136,19 @@ static void dpen_draw_stroke_volumetric_3d(const DPenPoint *points,
 
   immEnd();
   immUnbindProgram();
-  GPU_program_point_size(false);
+  gpu_program_point_size(false);
 }
 
 /* ----- Existing Strokes Drawing (3D and Point) ------ */
 
 /* draw a given stroke in 3d (i.e. in 3d-space) */
-static void dpen_draw_stroke_3d(DPenDraw *tgpw,
+static void dpen_draw_stroke_3d(DPenDraw *tdpw,
                                    short thickness,
                                    const float ink[4],
                                    bool cyclic)
 {
-  bGPDspoint *points = tgpw->gps->points;
-  int totpoints = tgpw->gps->totpoints;
+  DPenPoint *points = tdpw->dps->points;
+  int totpoints = tdpw->dps->totpoints;
 
   const float viewport[2] = {(float)tgpw->winx, (float)tgpw->winy};
   const float min_thickness = 0.05f;
@@ -162,113 +162,113 @@ static void dpen_draw_stroke_3d(DPenDraw *tgpw,
   const struct {
     uint pos, color, thickness;
   } attr_id = {
-      .pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT),
-      .color = GPU_vertformat_attr_add(
+      .pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT),
+      .color = gpu_vertformat_attr_add(
           format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT),
-      .thickness = GPU_vertformat_attr_add(format, "thickness", GPU_COMP_F32, 1, GPU_FETCH_FLOAT),
+      .thickness = gpu_vertformat_attr_add(format, "thickness", GPU_COMP_F32, 1, GPU_FETCH_FLOAT),
   };
 
-  immBindBuiltinProgram(GPU_SHADER_GPENCIL_STROKE);
+  immBindBuiltinProgram(GPU_SHADER_DPEN_STROKE);
 
-  float obj_scale = tgpw->ob ?
-                        (tgpw->ob->scale[0] + tgpw->ob->scale[1] + tgpw->ob->scale[2]) / 3.0f :
+  float obj_scale = tdpw->ob ?
+                        (tdpw->ob->scale[0] + tdpw->ob->scale[1] + tdpw->ob->scale[2]) / 3.0f :
                         1.0f;
 
-  struct GPencilStrokeData gpencil_stroke_data;
+  struct DPenStrokeData dpen_stroke_data;
   copy_v2_v2(gpencil_stroke_data.viewport, viewport);
-  gpencil_stroke_data.pixsize = tgpw->rv3d->pixsize;
-  gpencil_stroke_data.objscale = obj_scale;
-  int keep_size = (int)((tgpw->gpd) && (tgpw->gpd->flag & GP_DATA_STROKE_KEEPTHICKNESS));
-  gpencil_stroke_data.keep_size = keep_size;
-  gpencil_stroke_data.pixfactor = tgpw->gpd->pixfactor;
+  dpen_stroke_data.pixsize = tdpw->rv3d->pixsize;
+  dpen_stroke_data.objscale = obj_scale;
+  int keep_size = (int)((tdpw->dpd) && (tdpw->dpd->flag & DPEN_DATA_STROKE_KEEPTHICKNESS));
+  dpen_stroke_data.keep_size = keep_size;
+  dpen_stroke_data.pixfactor = tdpw->dpd->pixfactor;
   /* xray mode always to 3D space to avoid wrong zdepth calculation (T60051) */
-  gpencil_stroke_data.xraymode = GP_XRAY_3DSPACE;
-  gpencil_stroke_data.caps_start = tgpw->gps->caps[0];
-  gpencil_stroke_data.caps_end = tgpw->gps->caps[1];
-  gpencil_stroke_data.fill_stroke = tgpw->is_fill_stroke;
+  dpen_stroke_data.xraymode = DPEN_XRAY_3DSPACE;
+  dpen_stroke_data.caps_start = tdpw->dps->caps[0];
+  dpen_stroke_data.caps_end = tdpw->dps->caps[1];
+  dpen_stroke_data.fill_stroke = tdpw->is_fill_stroke;
 
-  GPUUniformBuf *ubo = GPU_uniformbuf_create_ex(
-      sizeof(struct GPencilStrokeData), &gpencil_stroke_data, __func__);
-  immBindUniformBuf("gpencil_stroke_data", ubo);
+  GPUUniformBuf *ubo = gpu_uniformbuf_create_ex(
+      sizeof(struct DPenStrokeData), &dpen_stroke_data, __func__);
+  immBindUniformBuf("rpen_stroke_data", ubo);
 
   /* draw stroke curve */
   immBeginAtMost(GPU_PRIM_LINE_STRIP_ADJ, totpoints + cyclic_add + 2);
-  const bGPDspoint *pt = points;
+  const DPenPoint *pt = points;
 
   for (int i = 0; i < totpoints; i++, pt++) {
     /* first point for adjacency (not drawn) */
     if (i == 0) {
-      gpencil_set_point_varying_color(points, ink, attr_id.color, (bool)tgpw->is_fill_stroke);
+      dpen_set_point_varying_color(points, ink, attr_id.color, (bool)tgdpw->is_fill_stroke);
 
       if ((cyclic) && (totpoints > 2)) {
         immAttr1f(attr_id.thickness,
                   max_ff((points + totpoints - 1)->pressure * thickness, min_thickness));
-        mul_v3_m4v3(fpt, tgpw->diff_mat, &(points + totpoints - 1)->x);
+        mul_v3_m4v3(fpt, tdpw->diff_mat, &(points + totpoints - 1)->x);
       }
       else {
         immAttr1f(attr_id.thickness, max_ff((points + 1)->pressure * thickness, min_thickness));
-        mul_v3_m4v3(fpt, tgpw->diff_mat, &(points + 1)->x);
+        mul_v3_m4v3(fpt, tdpw->diff_mat, &(points + 1)->x);
       }
       immVertex3fv(attr_id.pos, fpt);
     }
     /* set point */
-    gpencil_set_point_varying_color(pt, ink, attr_id.color, (bool)tgpw->is_fill_stroke);
+    dpen_set_point_varying_color(pt, ink, attr_id.color, (bool)tdpw->is_fill_stroke);
     immAttr1f(attr_id.thickness, max_ff(pt->pressure * thickness, min_thickness));
-    mul_v3_m4v3(fpt, tgpw->diff_mat, &pt->x);
+    mul_v3_m4v3(fpt, tdpw->diff_mat, &pt->x);
     immVertex3fv(attr_id.pos, fpt);
   }
 
   if (cyclic && totpoints > 2) {
     /* draw line to first point to complete the cycle */
     immAttr1f(attr_id.thickness, max_ff(points->pressure * thickness, 1.0f));
-    mul_v3_m4v3(fpt, tgpw->diff_mat, &points->x);
+    mul_v3_m4v3(fpt, tdpw->diff_mat, &points->x);
     immVertex3fv(attr_id.pos, fpt);
 
     /* now add adjacency point (not drawn) */
     immAttr1f(attr_id.thickness, max_ff((points + 1)->pressure * thickness, 1.0f));
-    mul_v3_m4v3(fpt, tgpw->diff_mat, &(points + 1)->x);
+    mul_v3_m4v3(fpt, tdpw->diff_mat, &(points + 1)->x);
     immVertex3fv(attr_id.pos, fpt);
   }
   /* last adjacency point (not drawn) */
   else {
-    gpencil_set_point_varying_color(
-        points + totpoints - 2, ink, attr_id.color, (bool)tgpw->is_fill_stroke);
+    dpen_set_point_varying_color(
+        points + totpoints - 2, ink, attr_id.color, (bool)tdpw->is_fill_stroke);
 
     immAttr1f(attr_id.thickness, max_ff((points + totpoints - 2)->pressure * thickness, 1.0f));
-    mul_v3_m4v3(fpt, tgpw->diff_mat, &(points + totpoints - 2)->x);
+    mul_v3_m4v3(fpt, tdpw->diff_mat, &(points + totpoints - 2)->x);
     immVertex3fv(attr_id.pos, fpt);
   }
 
   immEnd();
   immUnbindProgram();
 
-  GPU_uniformbuf_free(ubo);
+  gpu_uniformbuf_free(ubo);
 }
 
 /* ----- Strokes Drawing ------ */
 
 /* Helper for doing all the checks on whether a stroke can be drawn */
-static bool gpencil_can_draw_stroke(const bGPDstroke *gps, const int dflag)
+static bool dpen_can_draw_stroke(const DPenStroke *dps, const int dflag)
 {
   /* skip stroke if it isn't in the right display space for this drawing context */
   /* 1) 3D Strokes */
-  if ((dflag & GP_DRAWDATA_ONLY3D) && !(gps->flag & GP_STROKE_3DSPACE)) {
+  if ((dflag & DPEN_DRAWDATA_ONLY3D) && !(dps->flag & DPEN_STROKE_3DSPACE)) {
     return false;
   }
-  if (!(dflag & GP_DRAWDATA_ONLY3D) && (gps->flag & GP_STROKE_3DSPACE)) {
+  if (!(dflag & DPEN_DRAWDATA_ONLY3D) && (dps->flag & DPEN_STROKE_3DSPACE)) {
     return false;
   }
 
   /* 2) Screen Space 2D Strokes */
-  if ((dflag & GP_DRAWDATA_ONLYV2D) && !(gps->flag & GP_STROKE_2DSPACE)) {
+  if ((dflag & DPEN_DRAWDATA_ONLYV2D) && !(dps->flag & DPEN_STROKE_2DSPACE)) {
     return false;
   }
-  if (!(dflag & GP_DRAWDATA_ONLYV2D) && (gps->flag & GP_STROKE_2DSPACE)) {
+  if (!(dflag & DPEN_DRAWDATA_ONLYV2D) && (dps->flag & DPEN_STROKE_2DSPACE)) {
     return false;
   }
 
   /* 3) Image Space (2D) */
-  if ((dflag & GP_DRAWDATA_ONLYI2D) && !(gps->flag & GP_STROKE_2DIMAGE)) {
+  if ((dflag & DPEN_DRAWDATA_ONLYI2D) && !(gps->flag & GP_STROKE_2DIMAGE)) {
     return false;
   }
   if (!(dflag & GP_DRAWDATA_ONLYI2D) && (gps->flag & GP_STROKE_2DIMAGE)) {
@@ -285,25 +285,25 @@ static bool gpencil_can_draw_stroke(const bGPDstroke *gps, const int dflag)
 }
 
 /* draw a set of strokes */
-static void gpencil_draw_strokes(tGPDdraw *tgpw)
+static void dpen_draw_strokes(DPenDraw *tdpw)
 {
   float tcolor[4];
   short sthickness;
   float ink[4];
-  const bool is_unique = (tgpw->gps != NULL);
-  const bool use_mat = (tgpw->gpd->mat != NULL);
+  const bool is_unique = (tdpw->dps != NULL);
+  const bool use_mat = (tdpw->dpd->mat != NULL);
 
-  GPU_program_point_size(true);
+  gpu_program_point_size(true);
 
   /* Do not write to depth (avoid self-occlusion). */
-  bool prev_depth_mask = GPU_depth_mask_get();
-  GPU_depth_mask(false);
+  bool prev_depth_mask = gpu_depth_mask_get();
+  gpu_depth_mask(false);
 
-  bGPDstroke *gps_init = (tgpw->gps) ? tgpw->gps : tgpw->t_gpf->strokes.first;
+  DPenStroke *dps_init = (tdpw->dps) ? tdpw->dps : tdpw->t_dpf->strokes.first;
 
-  for (bGPDstroke *gps = gps_init; gps; gps = gps->next) {
+  for (DPenDstroke *dps = dps_init; dps; dps = dps->next) {
     /* check if stroke can be drawn */
-    if (gpencil_can_draw_stroke(gps, tgpw->dflag) == false) {
+    if (dpen_can_draw_stroke(dps, tdpw->dflag) == false) {
       continue;
     }
     /* check if the color is visible */
@@ -400,7 +400,7 @@ static void gpencil_draw_strokes(tGPDdraw *tgpw)
 
 /* ----- General Drawing ------ */
 
-void ED_gpencil_draw_fill(tGPDdraw *tgpw)
+void ed_dpen_draw_fill(DPenDraw *tdpw)
 {
-  gpencil_draw_strokes(tgpw);
+  dpen_draw_strokes(tdpw);
 }
