@@ -6,22 +6,22 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "DNA_gpencil_types.h"
-#include "DNA_scene_types.h"
+#include "types_dpen.h"
+#include "types_scene.h"
 
-#include "BKE_fcurve.h"
-#include "BKE_gpencil.h"
-#include "BKE_report.h"
+#include "dune_fcurve.h"
+#include "dune_dpen.h"
+#include "dune_report.h"
 
-#include "ED_anim_api.h"
-#include "ED_gpencil.h"
-#include "ED_keyframes_edit.h"
-#include "ED_markers.h"
+#include "ed_anim_api.h"
+#include "ed_dpen.h"
+#include "ed_keyframes_edit.h"
+#include "ed_markers.h"
 
-#include "WM_api.h"
+#include "wm_api.h"
 
 #include "DEG_depsgraph.h"
 
@@ -34,19 +34,19 @@
 /* ***************************************** */
 /* Generics - Loopers */
 
-bool ED_gpencil_layer_frames_looper(bGPDlayer *gpl,
+bool ed_dpen_layer_frames_looper(DPenLayer *gpl,
                                     Scene *scene,
-                                    bool (*gpf_cb)(bGPDframe *, Scene *))
+                                    bool (*dpf_cb)(DPenFrame *, Scene *))
 {
   /* error checker */
-  if (gpl == NULL) {
+  if (dpl == NULL) {
     return false;
   }
 
   /* do loop */
-  LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
+  LISTBASE_FOREACH (DPenFrame *, dpf, &dpl->frames) {
     /* execute callback */
-    if (gpf_cb(gpf, scene)) {
+    if (dpf_cb(dpf, scene)) {
       return true;
     }
   }
@@ -58,24 +58,24 @@ bool ED_gpencil_layer_frames_looper(bGPDlayer *gpl,
 /* ****************************************** */
 /* Data Conversion Tools */
 
-void ED_gpencil_layer_make_cfra_list(bGPDlayer *gpl, ListBase *elems, bool onlysel)
+void ed_dpen_layer_make_cfra_list(DPenLayer *dpl, ListBase *elems, bool onlysel)
 {
   CfraElem *ce;
 
   /* error checking */
-  if (ELEM(NULL, gpl, elems)) {
+  if (ELEM(NULL, dpl, elems)) {
     return;
   }
 
-  /* loop through gp-frames, adding */
-  LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
+  /* loop through dp-frames, adding */
+  LISTBASE_FOREACH (DPenFrame *, dpf, &gpl->frames) {
     if ((onlysel == 0) || (gpf->flag & GP_FRAME_SELECT)) {
       ce = MEM_callocN(sizeof(CfraElem), "CfraElem");
 
       ce->cfra = (float)gpf->framenum;
       ce->sel = (gpf->flag & GP_FRAME_SELECT) ? 1 : 0;
 
-      BLI_addtail(elems, ce);
+      lib_addtail(elems, ce);
     }
   }
 }
@@ -83,7 +83,7 @@ void ED_gpencil_layer_make_cfra_list(bGPDlayer *gpl, ListBase *elems, bool onlys
 /* ***************************************** */
 /* Selection Tools */
 
-bool ED_gpencil_layer_frame_select_check(const bGPDlayer *gpl)
+bool ED_dpen_layer_frame_select_check(const bGPDlayer *gpl)
 {
   /* error checking */
   if (gpl == NULL) {
