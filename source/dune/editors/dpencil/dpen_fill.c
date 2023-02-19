@@ -12,51 +12,51 @@
 
 #include "types_brush_types.h"
 #include "types_pen_types.h"
-#include "DNA_image_types.h"
-#include "DNA_material_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_image_types.h"
+#include "types_material_types.h"
+#include "types_meshdata_types.h"
+#include "types_object_types.h"
+#include "types_windowmanager_types.h"
 
-#include "BKE_brush.h"
-#include "BKE_context.h"
-#include "BKE_deform.h"
-#include "BKE_gpencil.h"
-#include "BKE_gpencil_geom.h"
-#include "BKE_image.h"
-#include "BKE_lib_id.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_paint.h"
-#include "BKE_report.h"
-#include "BKE_screen.h"
+#include "dune_brush.h"
+#include "dune_context.h"
+#include "dune_deform.h"
+#include "dune_dpen.h"
+#include "dune_dpen_geom.h"
+#include "dune_image.h"
+#include "dune_lib_id.h"
+#include "dune_main.h"
+#include "dune_material.h"
+#include "dune_paint.h"
+#include "dune_report.h"
+#include "dune_screen.h"
 
-#include "ED_gpencil.h"
-#include "ED_keyframing.h"
-#include "ED_screen.h"
-#include "ED_space_api.h"
-#include "ED_view3d.h"
+#include "ed_dpen.h"
+#include "ed_keyframing.h"
+#include "ed_screen.h"
+#include "ed_space_api.h"
+#include "ed_view3d.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "GPU_framebuffer.h"
-#include "GPU_immediate.h"
-#include "GPU_matrix.h"
-#include "GPU_state.h"
+#include "gpu_framebuffer.h"
+#include "gpu_immediate.h"
+#include "gpu_matrix.h"
+#include "gpu_state.h"
 
-#include "UI_interface.h"
+#include "ui_interface.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-#include "gpencil_intern.h"
+#include "dpen_intern.h"
 
 #define LEAK_HORZ 0
 #define LEAK_VERT 1
@@ -67,14 +67,14 @@
 
 /* Duplicated: etempFlags */
 enum {
-  GP_DRAWFILLS_NOSTATUS = (1 << 0), /* don't draw status info */
-  GP_DRAWFILLS_ONLY3D = (1 << 1),   /* only draw 3d-strokes */
+  DPEN_DRAWFILLS_NOSTATUS = (1 << 0), /* don't draw status info */
+  DPEN_DRAWFILLS_ONLY3D = (1 << 1),   /* only draw 3d-strokes */
 };
 
 /* Temporary fill operation data `op->customdata`. */
-typedef struct tGPDfill {
-  bContext *C;
-  struct Main *bmain;
+typedef struct DPenFill {
+  dContext *C;
+  struct Main *dmain;
   struct Depsgraph *depsgraph;
   /** window where painting originated */
   struct wmWindow *win;
@@ -90,18 +90,18 @@ typedef struct tGPDfill {
   struct View3D *v3d;
   /** region where painting originated */
   struct ARegion *region;
-  /** Current GP data-block. */
-  struct bGPdata *gpd;
+  /** Current DPen data-block. */
+  struct DPenData *dpd;
   /** current material */
   struct Material *mat;
   /** current brush */
   struct Brush *brush;
   /** layer */
-  struct bGPDlayer *gpl;
+  struct DPenLayer *dpl;
   /** frame */
-  struct bGPDframe *gpf;
+  struct DPenFrame *dpf;
   /** Temp mouse position stroke. */
-  struct bGPDstroke *gps_mouse;
+  struct DPenStroke *dps_mouse;
   /** Pointer to report messages. */
   struct ReportList *reports;
   /** For operations that require occlusion testing. */
@@ -149,7 +149,7 @@ typedef struct tGPDfill {
   /** temp image */
   Image *ima;
   /** temp points data */
-  BLI_Stack *stack;
+  DLibStack *stack;
   /** handle for drawing strokes while operator is running 3d stuff */
   void *draw_handle_3d;
 
@@ -160,7 +160,7 @@ typedef struct tGPDfill {
   rcti brect;
 
   /* Space Conversion Data */
-  GP_SpaceConversion gsc;
+  DPenSpaceConversion dpsc;
 
   /** Zoom factor. */
   float zoom;
@@ -168,13 +168,13 @@ typedef struct tGPDfill {
   /** Factor of extension. */
   float fill_extend_fac;
 
-} tGPDfill;
+} DPenFill;
 
-bool skip_layer_check(short fill_layer_mode, int gpl_active_index, int gpl_index);
-static void gpencil_draw_boundary_lines(const struct bContext *UNUSED(C), struct tGPDfill *tgpf);
+bool skip_layer_check(short fill_layer_mode, int dpl_active_index, int dpl_index);
+static void dpen_draw_boundary_lines(const struct dContext *UNUSED(C), struct DPenFill *tdpf);
 
 /* Delete any temporary stroke. */
-static void gpencil_delete_temp_stroke_extension(tGPDfill *tgpf, const bool all_frames)
+static void dpen_delete_temp_stroke_extension(DPenFill *tgpf, const bool all_frames)
 {
   LISTBASE_FOREACH (bGPDlayer *, gpl, &tgpf->gpd->layers) {
     if (gpl->flag & GP_LAYER_HIDE) {
