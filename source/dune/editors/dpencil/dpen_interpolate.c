@@ -70,7 +70,7 @@ typedef struct DPenInterpolate_layer {
   struct GHash *used_strokes;
   struct GHash *pair_strokes;
 
-} tGPDinterpolate_layer;
+} DPenInterpolate_layer;
 
 typedef struct DPenInterpolate {
   /** Current depsgraph from context */
@@ -353,7 +353,7 @@ static void dpen_interpolate_free_tagged_strokes(DPenFrame *dpf)
 
   LISTBASE_FOREACH_MUTABLE (DPenStroke *, dps, &dpf->strokes) {
     if (dps->flag & DPEN_STROKE_TAG) {
-      lib_remlink(&gpf->strokes, dps);
+      lib_remlink(&dpf->strokes, dps);
       dune_dpen_free_stroke(dps);
     }
   }
@@ -389,25 +389,25 @@ static void dpen_interpolate_update_strokes(dContext *C, DPenInterpolate *tdpi)
     dpen_interpolate_free_tagged_strokes(dpf);
 
     /* Clear previous interpolations. */
-    gpencil_interpolate_free_tagged_strokes(tgpil->interFrame);
+    dpen_interpolate_free_tagged_strokes(tdpil->interFrame);
 
-    LISTBASE_FOREACH (LinkData *, link, &tgpil->selected_strokes) {
-      bGPDstroke *gps_from = link->data;
-      if (!BLI_ghash_haskey(tgpil->pair_strokes, gps_from)) {
+    LISTBASE_FOREACH (LinkData *, link, &tdpil->selected_strokes) {
+      DPenStroke *dps_from = link->data;
+      if (!lib_ghash_haskey(tdpil->pair_strokes, dps_from)) {
         continue;
       }
-      bGPDstroke *gps_to = (bGPDstroke *)BLI_ghash_lookup(tgpil->pair_strokes, gps_from);
+      DPenStroke *dps_to = (DPenStroke *)lib_ghash_lookup(tdpil->pair_strokes, dps_from);
 
       /* Create new stroke. */
-      bGPDstroke *new_stroke = BKE_gpencil_stroke_duplicate(gps_from, true, true);
-      new_stroke->flag |= GP_STROKE_TAG;
+      DPenStroke *new_stroke = dune_dpen_stroke_duplicate(dps_from, true, true);
+      new_stroke->flag |= DPEN_STROKE_TAG;
       new_stroke->select_index = 0;
 
       /* Update points position. */
-      gpencil_interpolate_update_points(gps_from, gps_to, new_stroke, factor);
+      dpen_interpolate_update_points(dps_from, dps_to, new_stroke, factor);
 
       /* Calc geometry data. */
-      BKE_gpencil_stroke_geometry_update(gpd, new_stroke);
+      dune_dpen_stroke_geometry_update(gpd, new_stroke);
       /* Add to strokes. */
       BLI_addtail(&tgpil->interFrame->strokes, new_stroke);
 
