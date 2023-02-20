@@ -446,26 +446,26 @@ static bGPDframe *gpencil_get_previous_keyframe(bGPDlayer *gpl, int cfra)
 }
 
 /* Helper: Get next keyframe (exclude breakdown type). */
-static bGPDframe *gpencil_get_next_keyframe(bGPDlayer *gpl, int cfra)
+static DPenFrame *dpen_get_next_keyframe(DPenLayer *dpl, int cfra)
 {
-  LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
-    if (gpf->key_type == BEZT_KEYTYPE_BREAKDOWN) {
+  LISTBASE_FOREACH (DPenFrame *, dpf, &dpl->frames) {
+    if (dpf->key_type == BEZT_KEYTYPE_BREAKDOWN) {
       continue;
     }
-    if (gpf->framenum <= cfra) {
+    if (dpf->framenum <= cfra) {
       continue;
     }
-    return gpf;
+    return dpf;
   }
 
   return NULL;
 }
 
 /* Helper: Create internal strokes interpolated */
-static void gpencil_interpolate_set_points(bContext *C, tGPDinterpolate *tgpi)
+static void dpen_interpolate_set_points(dContext *C, tGPDinterpolate *tgpi)
 {
-  Scene *scene = tgpi->scene;
-  bGPdata *gpd = tgpi->gpd;
+  Scene *scene = tdpi->scene;
+  DPenData *dpd = tdpi->dpd;
   bGPDlayer *active_gpl = CTX_data_active_gpencil_layer(C);
   bGPDframe *actframe = active_gpl->actframe;
 
