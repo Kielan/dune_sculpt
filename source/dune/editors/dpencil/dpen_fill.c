@@ -220,7 +220,7 @@ static void dpen_create_extensions(DPenFill *tdpf)
   Object *ob = tdpf->ob;
   DPenData *dpd = tdpf->dpd;
   Brush *brush = tdpf->brush;
-  BrushDPenSettings *brush_settings = brush->dpen_settings;
+  DPenBrushSettings *brush_settings = brush->dpen_settings;
 
   DPenLayer *dpl_active = dune_dpen_layer_active_get(dpd);
   lib_assert(dpl_active != NULL);
@@ -332,8 +332,8 @@ static bool gpencil_stroke_is_drawable(DPenFill *tdpf, DPenStroke *dps)
 }
 
 /* draw a given stroke using same thickness and color for all points */
-static void gpencil_draw_basic_stroke(tGPDfill *tgpf,
-                                      bGPDstroke *gps,
+static void dpen_draw_basic_stroke(DPenFill *tdpf,
+                                      DPenDtroke *dps,
                                       const float diff_mat[4][4],
                                       const bool cyclic,
                                       const float ink[4],
@@ -341,22 +341,22 @@ static void gpencil_draw_basic_stroke(tGPDfill *tgpf,
                                       const float thershold,
                                       const float thickness)
 {
-  bGPDspoint *points = gps->points;
+  DPenPoint *points = dps->points;
 
-  Material *ma = tgpf->mat;
-  MaterialGPencilStyle *gp_style = ma->gp_style;
+  Material *ma = tdpf->mat;
+  DPenMaterialStyle *dp_style = ma->dp_style;
 
-  int totpoints = gps->totpoints;
+  int totpoints = dps->totpoints;
   float fpt[3];
   float col[4];
   const float extend_col[4] = {0.0f, 1.0f, 1.0f, 1.0f};
-  const bool is_extend = (gps->flag & GP_STROKE_NOFILL) && (gps->flag & GP_STROKE_TAG);
+  const bool is_extend = (dps->flag & DPEN_STROKE_NOFILL) && (gps->flag & GP_STROKE_TAG);
 
-  if (!gpencil_stroke_is_drawable(tgpf, gps)) {
+  if (!dpen_stroke_is_drawable(tdpf, dps)) {
     return;
   }
 
-  if ((is_extend) && (!tgpf->is_render)) {
+  if ((is_extend) && (!tdpf->is_render)) {
     copy_v4_v4(col, extend_col);
   }
   else {
@@ -366,20 +366,20 @@ static void gpencil_draw_basic_stroke(tGPDfill *tgpf,
   int cyclic_add = (cyclic) ? 1 : 0;
 
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-  uint color = GPU_vertformat_attr_add(format, "color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint color = gpu_vertformat_attr_add(format, "color", GPU_COMP_F32, 4, GPU_FETCH_FLOAT);
 
   immBindBuiltinProgram(GPU_SHADER_3D_FLAT_COLOR);
 
   /* draw stroke curve */
-  GPU_line_width((!is_extend) ? thickness : thickness * 2.0f);
+  gpu_line_width((!is_extend) ? thickness : thickness * 2.0f);
   immBeginAtMost(GPU_PRIM_LINE_STRIP, totpoints + cyclic_add);
-  const bGPDspoint *pt = points;
+  const DPenPoint *pt = points;
 
   for (int i = 0; i < totpoints; i++, pt++) {
 
-    if (flag & GP_BRUSH_FILL_HIDE) {
-      float alpha = gp_style->stroke_rgba[3] * pt->strength;
+    if (flag & DPEN_BRUSH_FILL_HIDE) {
+      float alpha = dp_style->stroke_rgba[3] * pt->strength;
       CLAMP(alpha, 0.0f, 1.0f);
       col[3] = alpha <= thershold ? 0.0f : 1.0f;
     }
@@ -403,23 +403,23 @@ static void gpencil_draw_basic_stroke(tGPDfill *tgpf,
   immUnbindProgram();
 }
 
-static void draw_mouse_position(tGPDfill *tgpf)
+static void draw_mouse_position(DPenFill *tdpf)
 {
-  if (tgpf->gps_mouse == NULL) {
+  if (tdpf->dps_mouse == NULL) {
     return;
   }
   uchar mouse_color[4] = {0, 0, 255, 255};
 
-  bGPDspoint *pt = &tgpf->gps_mouse->points[0];
-  float point_size = (tgpf->zoom == 1.0f) ? 4.0f * tgpf->fill_factor :
-                                            (0.5f * tgpf->zoom) + tgpf->fill_factor;
+  DPenPoint *pt = &tdpf->dps_mouse->points[0];
+  float point_size = (tdpf->zoom == 1.0f) ? 4.0f * tdpf->fill_factor :
+                                            (0.5f * tdpf->zoom) + tdpf->fill_factor;
   GPUVertFormat *format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-  uint col = GPU_vertformat_attr_add(format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
+  uint pos = gpu_vertformat_attr_add(format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+  uint col = gpu_vertformat_attr_add(format, "color", GPU_COMP_U8, 4, GPU_FETCH_INT_TO_FLOAT_UNIT);
 
   /* Draw mouse click position in Blue. */
   immBindBuiltinProgram(GPU_SHADER_3D_POINT_FIXED_SIZE_VARYING_COLOR);
-  GPU_point_size(point_size);
+  gpu_point_size(point_size);
   immBegin(GPU_PRIM_POINTS, 1);
   immAttr4ubv(col, mouse_color);
   immVertex3fv(pos, &pt->x);
@@ -433,37 +433,37 @@ bool skip_layer_check(short fill_layer_mode, int gpl_active_index, int gpl_index
   bool skip = false;
 
   switch (fill_layer_mode) {
-    case GP_FILL_GPLMODE_ACTIVE: {
-      if (gpl_index != gpl_active_index) {
+    case DPEN_FILL_LAYER_MODE_ACTIVE: {
+      if (dpl_index != dpl_active_index) {
         skip = true;
       }
       break;
     }
-    case GP_FILL_GPLMODE_ABOVE: {
-      if (gpl_index != gpl_active_index + 1) {
+    case DPEN_FILL_LAYER_MODE_ABOVE: {
+      if (dpl_index !=dpl_active_index + 1) {
         skip = true;
       }
       break;
     }
-    case GP_FILL_GPLMODE_BELOW: {
-      if (gpl_index != gpl_active_index - 1) {
+    case DPEN_FILL_LAYER_MODE_BELOW: {
+      if (dpl_index != dpl_active_index - 1) {
         skip = true;
       }
       break;
     }
-    case GP_FILL_GPLMODE_ALL_ABOVE: {
+    case DPEN_FILL_GPLMODE_ALL_ABOVE: {
       if (gpl_index <= gpl_active_index) {
         skip = true;
       }
       break;
     }
-    case GP_FILL_GPLMODE_ALL_BELOW: {
+    case DPEN_FILL_GPLMODE_ALL_BELOW: {
       if (gpl_index >= gpl_active_index) {
         skip = true;
       }
       break;
     }
-    case GP_FILL_GPLMODE_VISIBLE:
+    case DPEN_FILL_GPLMODE_VISIBLE:
     default:
       break;
   }
