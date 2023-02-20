@@ -82,26 +82,26 @@ static int dpen_select_mode_from_vertex(eDPEN_Sculpt_SelectMaskFlag mode)
 
 static bool dpen_select_poll(dContext *C)
 {
-  DPenData *gpd = ed_dpen_data_get_active(C);
+  DPenData *dpd = ed_dpen_data_get_active(C);
   ToolSettings *ts = ctx_data_tool_settings(C);
 
-  if (GPENCIL_SCULPT_MODE(gpd)) {
-    if (!(GPENCIL_ANY_SCULPT_MASK(ts->gpencil_selectmode_sculpt))) {
+  if (DPEN_SCULPT_MODE(dpd)) {
+    if (!(DPEN_ANY_SCULPT_MASK(ts->dpen_selectmode_sculpt))) {
       return false;
     }
   }
 
-  if (GPENCIL_VERTEX_MODE(gpd)) {
-    if (!(GPENCIL_ANY_VERTEX_MASK(ts->gpencil_selectmode_vertex))) {
+  if (DPEN_VERTEX_MODE(dpd)) {
+    if (!(DPEN_ANY_VERTEX_MASK(ts->dpen_selectmode_vertex))) {
       return false;
     }
   }
 
   /* We just need some visible strokes,
    * and to be in edit-mode or other modes only to catch event. */
-  if (GPENCIL_ANY_MODE(gpd)) {
+  if (DPEN_ANY_MODE(dpd)) {
     /* TODO: include a check for visible strokes? */
-    if (gpd->layers.first) {
+    if (dpd->layers.first) {
       return true;
     }
   }
@@ -109,7 +109,7 @@ static bool dpen_select_poll(dContext *C)
   return false;
 }
 
-static bool gpencil_3d_point_to_screen_space(ARegion *region,
+static bool dpen_3d_point_to_screen_space(ARegion *region,
                                              const float diff_mat[4][4],
                                              const float co[3],
                                              int r_co[2])
@@ -117,7 +117,7 @@ static bool gpencil_3d_point_to_screen_space(ARegion *region,
   float parent_co[3];
   mul_v3_m4v3(parent_co, diff_mat, co);
   int screen_co[2];
-  if (ED_view3d_project_int_global(
+  if (ed_view3d_project_int_global(
           region, parent_co, screen_co, V3D_PROJ_RET_CLIP_BB | V3D_PROJ_RET_CLIP_WIN) ==
       V3D_PROJ_RET_OK) {
     if (!ELEM(V2D_IS_CLIPPED, screen_co[0], screen_co[1])) {
@@ -134,9 +134,9 @@ static bool gpencil_3d_point_to_screen_space(ARegion *region,
 static void deselect_all_selected(bContext *C)
 {
   /* Set selection index to 0. */
-  Object *ob = CTX_data_active_object(C);
-  bGPdata *gpd = ob->data;
-  gpd->select_last_index = 0;
+  Object *ob = ctx_data_active_object(C);
+  DPenData *dpd = ob->data;
+  dpd->select_last_index = 0;
 
   CTX_DATA_BEGIN (C, bGPDstroke *, gps, editable_gpencil_strokes) {
     /* deselect stroke and its points if selected */
