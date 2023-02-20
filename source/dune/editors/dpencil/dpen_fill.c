@@ -472,12 +472,12 @@ bool skip_layer_check(short fill_layer_mode, int gpl_active_index, int gpl_index
 }
 
 /* Loop all layers to draw strokes. */
-static void gpencil_draw_datablock(tGPDfill *tgpf, const float ink[4])
+static void dpen_draw_datablock(DPenFill *tdpf, const float ink[4])
 {
-  Object *ob = tgpf->ob;
-  bGPdata *gpd = tgpf->gpd;
-  Brush *brush = tgpf->brush;
-  BrushGpencilSettings *brush_settings = brush->gpencil_settings;
+  Object *ob = tdpf->ob;
+  DPenData *gpd = tdpf->dpd;
+  Brush *brush = tdpf->brush;
+  DPenBrushSettings *brush_settings = brush->gpencil_settings;
   ToolSettings *ts = tgpf->scene->toolsettings;
 
   tGPDdraw tgpw;
@@ -491,31 +491,31 @@ static void gpencil_draw_datablock(tGPDfill *tgpf, const float ink[4])
   tgpw.winy = tgpf->sizey;
   tgpw.dflag = 0;
   tgpw.disable_fill = 1;
-  tgpw.dflag |= (GP_DRAWFILLS_ONLY3D | GP_DRAWFILLS_NOSTATUS);
+  tgpw.dflag |= (DPEN_DRAWFILLS_ONLY3D | GP_DRAWFILLS_NOSTATUS);
 
-  GPU_blend(GPU_BLEND_ALPHA);
+  gou_blend(GPU_BLEND_ALPHA);
 
-  bGPDlayer *gpl_active = BKE_gpencil_layer_active_get(gpd);
-  BLI_assert(gpl_active != NULL);
+  DPenLayer *dpl_active = dune_dpen_layer_active_get(dpd);
+  lib_assert(dpl_active != NULL);
 
-  const int gpl_active_index = BLI_findindex(&gpd->layers, gpl_active);
-  BLI_assert(gpl_active_index >= 0);
+  const int dpl_active_index = lib_findindex(&dpd->layers, dpl_active);
+  lib_assert(dpl_active_index >= 0);
 
   /* Draw blue point where click with mouse. */
-  draw_mouse_position(tgpf);
+  draw_mouse_position(tdpf);
 
-  LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
+  LISTBASE_FOREACH (DPenLayer *, dpl, &dpd->layers) {
     /* do not draw layer if hidden */
-    if (gpl->flag & GP_LAYER_HIDE) {
+    if (dpl->flag & DPEN_LAYER_HIDE) {
       continue;
     }
 
     /* calculate parent position */
-    BKE_gpencil_layer_transform_matrix_get(tgpw.depsgraph, ob, gpl, tgpw.diff_mat);
+    dune_dpen_layer_transform_matrix_get(tdpw.depsgraph, ob, dpl, tdpw.diff_mat);
 
     /* Decide if the strokes of layers are included or not depending on the layer mode.
      * Cannot skip the layer because it can use boundary strokes and must be used. */
-    const int gpl_index = BLI_findindex(&gpd->layers, gpl);
+    const int dpl_index = lib_findindex(&gpd->layers, gpl);
     bool skip = skip_layer_check(brush_settings->fill_layer_mode, gpl_active_index, gpl_index);
 
     /* if active layer and no keyframe, create a new one */
@@ -556,94 +556,94 @@ static void gpencil_draw_datablock(tGPDfill *tgpf, const float ink[4])
       }
 
       /* If the layer must be skipped, but the stroke is not boundary, skip stroke. */
-      if ((skip) && ((gps->flag & GP_STROKE_NOFILL) == 0)) {
+      if ((skip) && ((dps->flag & DPEN_STROKE_NOFILL) == 0)) {
         continue;
       }
 
-      tgpw.gps = gps;
-      tgpw.gpl = gpl;
-      tgpw.gpf = gpf;
-      tgpw.t_gpf = gpf;
+      tdpw.dps = dps;
+      tdpw.dpl = dpl;
+      tdpw.dpf = dpf;
+      tdpw.t_dpf = dpf;
 
-      tgpw.is_fill_stroke = (tgpf->fill_draw_mode == GP_FILL_DMODE_CONTROL) ? false : true;
+      tdpw.is_fill_stroke = (tdpf->fill_draw_mode == DPEN_FILL_DMODE_CONTROL) ? false : true;
       /* Reduce thickness to avoid gaps. */
-      tgpw.lthick = gpl->line_change;
-      tgpw.opacity = 1.0;
-      copy_v4_v4(tgpw.tintcolor, ink);
-      tgpw.onion = true;
-      tgpw.custonion = true;
+      tdpw.lthick = dpl->line_change;
+      tdpw.opacity = 1.0;
+      copy_v4_v4(tdpw.tintcolor, ink);
+      tdpw.onion = true;
+      tdpw.custonion = true;
 
       /* Normal strokes. */
-      if (ELEM(tgpf->fill_draw_mode, GP_FILL_DMODE_STROKE, GP_FILL_DMODE_BOTH)) {
-        if (gpencil_stroke_is_drawable(tgpf, gps) && ((gps->flag & GP_STROKE_TAG) == 0)) {
-          ED_gpencil_draw_fill(&tgpw);
+      if (ELEM(tdpf->fill_draw_mode, DPEN_FILL_DMODE_STROKE, DPEN_FILL_DMODE_BOTH)) {
+        if (dpen_stroke_is_drawable(tdpf, dps) && ((dps->flag & DPEN_STROKE_TAG) == 0)) {
+          ed_dpen_draw_fill(&tdpw);
         }
       }
 
       /* 3D Lines with basic shapes and invisible lines */
-      if (ELEM(tgpf->fill_draw_mode, GP_FILL_DMODE_CONTROL, GP_FILL_DMODE_BOTH)) {
-        gpencil_draw_basic_stroke(tgpf,
-                                  gps,
-                                  tgpw.diff_mat,
-                                  gps->flag & GP_STROKE_CYCLIC,
+      if (ELEM(tdpf->fill_draw_mode, DPEN_FILL_DMODE_CONTROL, DPEN_FILL_DMODE_BOTH)) {
+        dpen_draw_basic_stroke(tdpf,
+                                  dps,
+                                  tdpw.diff_mat,
+                                  dps->flag & DPEN_STROKE_CYCLIC,
                                   ink,
-                                  tgpf->flag,
-                                  tgpf->fill_threshold,
+                                  tdpf->flag,
+                                  tdpf->fill_threshold,
                                   1.0f);
       }
     }
   }
 
-  GPU_blend(GPU_BLEND_NONE);
+  gpu_blend(GPU_BLEND_NONE);
 }
 
 /* Draw strokes in off-screen buffer. */
-static bool gpencil_render_offscreen(tGPDfill *tgpf)
+static bool pen_render_offscreen(DPenFill *tdpf)
 {
   bool is_ortho = false;
   float winmat[4][4];
 
-  if (!tgpf->gpd) {
+  if (!tdpf->dpd) {
     return false;
   }
 
   /* set temporary new size */
-  tgpf->bwinx = tgpf->region->winx;
-  tgpf->bwiny = tgpf->region->winy;
-  tgpf->brect = tgpf->region->winrct;
+  tdpf->bwinx = tdpf->region->winx;
+  tdpf->bwiny = tdpf->region->winy;
+  tdpf->brect = tdpf->region->winrct;
 
   /* resize region */
-  tgpf->region->winrct.xmin = 0;
-  tgpf->region->winrct.ymin = 0;
-  tgpf->region->winrct.xmax = max_ii((int)tgpf->region->winx * tgpf->fill_factor, MIN_WINDOW_SIZE);
-  tgpf->region->winrct.ymax = max_ii((int)tgpf->region->winy * tgpf->fill_factor, MIN_WINDOW_SIZE);
-  tgpf->region->winx = (short)abs(tgpf->region->winrct.xmax - tgpf->region->winrct.xmin);
-  tgpf->region->winy = (short)abs(tgpf->region->winrct.ymax - tgpf->region->winrct.ymin);
+  tdpf->region->winrct.xmin = 0;
+  tdpf->region->winrct.ymin = 0;
+  tdpf->region->winrct.xmax = max_ii((int)tdpf->region->winx * tdpf->fill_factor, MIN_WINDOW_SIZE);
+  tdpf->region->winrct.ymax = max_ii((int)tdpf->region->winy * tdpf->fill_factor, MIN_WINDOW_SIZE);
+  tdpf->region->winx = (short)abs(tdpf->region->winrct.xmax - tdpf->region->winrct.xmin);
+  tdpf->region->winy = (short)abs(tdpf->region->winrct.ymax - tdpf->region->winrct.ymin);
 
   /* save new size */
   tgpf->sizex = (int)tgpf->region->winx;
   tgpf->sizey = (int)tgpf->region->winy;
 
   char err_out[256] = "unknown";
-  GPUOffScreen *offscreen = GPU_offscreen_create(
-      tgpf->sizex, tgpf->sizey, true, GPU_RGBA8, err_out);
+  GPUOffScreen *offscreen = gpu_offscreen_create(
+      tdpf->sizex, tdpf->sizey, true, GPU_RGBA8, err_out);
   if (offscreen == NULL) {
-    printf("GPencil - Fill - Unable to create fill buffer\n");
+    printf("DPen - Fill - Unable to create fill buffer\n");
     return false;
   }
 
-  GPU_offscreen_bind(offscreen, true);
+  gpu_offscreen_bind(offscreen, true);
   uint flag = IB_rectfloat;
-  ImBuf *ibuf = IMB_allocImBuf(tgpf->sizex, tgpf->sizey, 32, flag);
+  ImBuf *ibuf = IMB_allocImBuf(tdpf->sizex, tgpf->sizey, 32, flag);
 
   rctf viewplane;
   float clip_start, clip_end;
 
-  is_ortho = ED_view3d_viewplane_get(tgpf->depsgraph,
-                                     tgpf->v3d,
-                                     tgpf->rv3d,
-                                     tgpf->sizex,
-                                     tgpf->sizey,
+  is_ortho = ed_view3d_viewplane_get(tdpf->depsgraph,
+                                     tdpf->v3d,
+                                     tdpf->rv3d,
+                                     tdpf->sizex,
+                                     tdpf->sizey,
                                      &viewplane,
                                      &clip_start,
                                      &clip_end,
@@ -653,8 +653,8 @@ static bool gpencil_render_offscreen(tGPDfill *tgpf)
   float width = viewplane.xmax - viewplane.xmin;
   float height = viewplane.ymax - viewplane.ymin;
 
-  float width_new = width * tgpf->zoom;
-  float height_new = height * tgpf->zoom;
+  float width_new = width * tdpf->zoom;
+  float height_new = height * tdpf->zoom;
   float scale_x = (width_new - width) / 2.0f;
   float scale_y = (height_new - height) / 2.0f;
 
@@ -682,14 +682,14 @@ static bool gpencil_render_offscreen(tGPDfill *tgpf)
                    clip_end);
   }
 
-  GPU_matrix_push_projection();
-  GPU_matrix_identity_projection_set();
-  GPU_matrix_push();
-  GPU_matrix_identity_set();
+  gpu_matrix_push_projection();
+  gpu_matrix_identity_projection_set();
+  gpu_matrix_push();
+  gpu_matrix_identity_set();
 
-  GPU_depth_mask(true);
-  GPU_clear_color(0.0f, 0.0f, 0.0f, 0.0f);
-  GPU_clear_depth(1.0f);
+  gpu_depth_mask(true);
+  gpu_clear_color(0.0f, 0.0f, 0.0f, 0.0f);
+  gpu_clear_depth(1.0f);
 
   ed_view3d_update_viewmat(
       tdpf->depsgraph, tdpf->scene, tdpf->v3d, tdpf->region, NULL, winmat, NULL, true);
