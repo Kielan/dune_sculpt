@@ -213,21 +213,18 @@ static void select_all_curve_points(DPenData *dpd, bGPDstroke *gps, bGPDcurve *g
     BKE_gpencil_stroke_select_index_set(gpd, gps);
   }
   else {
-    gpc->flag &= ~GP_CURVE_SELECT;
-    gps->flag &= ~GP_STROKE_SELECT;
-    BKE_gpencil_stroke_select_index_reset(gps);
+    dpc->flag &= ~DPEN_CURVE_SELECT;
+    dps->flag &= ~DPEN_STROKE_SELECT;
+    dune_dpen_stroke_select_index_reset(gps);
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Select All Operator
- * \{ */
+/** Select All Operator **/
 
-static bool gpencil_select_all_poll(bContext *C)
+static bool dpen_select_all_poll(bContext *C)
 {
-  bGPdata *gpd = ED_gpencil_data_get_active(C);
+  DPenData *dpd = ed_dpen_data_get_active(C);
 
   /* We just need some visible strokes,
    * and to be in edit-mode or other modes only to catch event. */
