@@ -218,7 +218,7 @@ static void extrapolate_points_by_length(DPenPoint *a,
 static void dpen_create_extensions(DPenFill *tdpf)
 {
   Object *ob = tdpf->ob;
-  DPenData *gpd = tdpf->dpd;
+  DPenData *dpd = tdpf->dpd;
   Brush *brush = tdpf->brush;
   BrushDPenSettings *brush_settings = brush->dpen_settings;
 
@@ -240,73 +240,73 @@ static void dpen_create_extensions(DPenFill *tdpf)
       continue;
     }
 
-    bGPDframe *gpf = BKE_gpencil_layer_frame_get(gpl, tgpf->active_cfra, GP_GETFRAME_USE_PREV);
-    if (gpf == NULL) {
+    DPenFrame *dpf = dune_pen_layer_frame_get(dpl, tdpf->active_cfra, DPEN_GETFRAME_USE_PREV);
+    if (dpf == NULL) {
       continue;
     }
 
-    LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+    LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
       /* Check if stroke can be drawn. */
-      if ((gps->points == NULL) || (gps->totpoints < 2)) {
+      if ((dps->points == NULL) || (dps->totpoints < 2)) {
         continue;
       }
-      if (gps->flag & (GP_STROKE_NOFILL | GP_STROKE_TAG)) {
+      if (dps->flag & (DPEN_STROKE_NOFILL | DPEN_STROKE_TAG)) {
         continue;
       }
       /* Check if the color is visible. */
-      MaterialGPencilStyle *gp_style = BKE_gpencil_material_settings(ob, gps->mat_nr + 1);
-      if ((gp_style == NULL) || (gp_style->flag & GP_MATERIAL_HIDE)) {
+      MaterialDPenStyle *dp_style = dune_dpen_material_settings(ob, dps->mat_nr + 1);
+      if ((dp_style == NULL) || (dp_style->flag & DPEN_MATERIAL_HIDE)) {
         continue;
       }
 
       /* Extend start. */
-      bGPDspoint *pt0 = &gps->points[1];
-      bGPDspoint *pt1 = &gps->points[0];
-      bGPDstroke *gps_new = BKE_gpencil_stroke_new(gps->mat_nr, 2, gps->thickness);
-      gps_new->flag |= GP_STROKE_NOFILL | GP_STROKE_TAG;
-      BLI_addtail(&gpf->strokes, gps_new);
+      DPenPoint *pt0 = &dps->points[1];
+      DPenPoint *pt1 = &dps->points[0];
+      DPenStroke *dps_new = dune_dpen_stroke_new(dps->mat_nr, 2, dps->thickness);
+      dps_new->flag |= DPEN_STROKE_NOFILL | DPEN_STROKE_TAG;
+      lib_addtail(&dpf->strokes, dps_new);
 
-      bGPDspoint *pt = &gps_new->points[0];
+      DPenPoint *pt = &dps_new->points[0];
       copy_v3_v3(&pt->x, &pt1->x);
       pt->strength = 1.0f;
       pt->pressure = 1.0f;
 
-      pt = &gps_new->points[1];
+      pt = &dps_new->points[1];
       pt->strength = 1.0f;
       pt->pressure = 1.0f;
-      extrapolate_points_by_length(pt0, pt1, tgpf->fill_extend_fac * 0.1f, &pt->x);
+      extrapolate_points_by_length(pt0, pt1, tdpf->fill_extend_fac * 0.1f, &pt->x);
 
       /* Extend end. */
-      pt0 = &gps->points[gps->totpoints - 2];
-      pt1 = &gps->points[gps->totpoints - 1];
-      gps_new = BKE_gpencil_stroke_new(gps->mat_nr, 2, gps->thickness);
-      gps_new->flag |= GP_STROKE_NOFILL | GP_STROKE_TAG;
-      BLI_addtail(&gpf->strokes, gps_new);
+      pt0 = &dps->points[dps->totpoints - 2];
+      pt1 = &dps->points[dps->totpoints - 1];
+      dps_new = dune_dpen_stroke_new(dps->mat_nr, 2, dps->thickness);
+      dps_new->flag |= DPEN_STROKE_NOFILL | DPEN_STROKE_TAG;
+      lib_addtail(&dpf->strokes, dps_new);
 
-      pt = &gps_new->points[0];
+      pt = &dps_new->points[0];
       copy_v3_v3(&pt->x, &pt1->x);
       pt->strength = 1.0f;
       pt->pressure = 1.0f;
 
-      pt = &gps_new->points[1];
+      pt = &dps_new->points[1];
       pt->strength = 1.0f;
       pt->pressure = 1.0f;
-      extrapolate_points_by_length(pt0, pt1, tgpf->fill_extend_fac * 0.1f, &pt->x);
+      extrapolate_points_by_length(pt0, pt1, tdpf->fill_extend_fac * 0.1f, &pt->x);
     }
   }
 }
 
-static void gpencil_update_extend(tGPDfill *tgpf)
+static void dpen_update_extend(DPenFill *tdpf)
 {
-  gpencil_delete_temp_stroke_extension(tgpf, false);
+  dpen_delete_temp_stroke_extension(tdpf, false);
 
-  if (tgpf->fill_extend_fac > 0.0f) {
-    gpencil_create_extensions(tgpf);
+  if (tdpf->fill_extend_fac > 0.0f) {
+    dpen_create_extensions(tdpf);
   }
-  WM_event_add_notifier(tgpf->C, NC_GPENCIL | NA_EDITED, NULL);
+  wm_event_add_notifier(tdpf->C, NC_DPEN | NA_EDITED, NULL);
 }
 
-static bool gpencil_stroke_is_drawable(tGPDfill *tgpf, bGPDstroke *gps)
+static bool gpencil_stroke_is_drawable(DPenFill *tdpf, DPenStroke *dps)
 {
   if (tgpf->is_render) {
     return true;
