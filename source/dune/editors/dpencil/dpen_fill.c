@@ -176,23 +176,23 @@ static void dpen_draw_boundary_lines(const struct dContext *UNUSED(C), struct DP
 /* Delete any temporary stroke. */
 static void dpen_delete_temp_stroke_extension(DPenFill *tgpf, const bool all_frames)
 {
-  LISTBASE_FOREACH (bGPDlayer *, gpl, &tgpf->gpd->layers) {
-    if (gpl->flag & GP_LAYER_HIDE) {
+  LISTBASE_FOREACH (DPenLayer *, dpl, &tdpf->dpd->layers) {
+    if (dpl->flag & GP_LAYER_HIDE) {
       continue;
     }
 
-    bGPDframe *init_gpf = (all_frames) ? gpl->frames.first :
-                                         BKE_gpencil_layer_frame_get(
-                                             gpl, tgpf->active_cfra, GP_GETFRAME_USE_PREV);
-    if (init_gpf == NULL) {
+    DPenFrame *init_dpf = (all_frames) ? dpl->frames.first :
+                                         dune_dpen_layer_frame_get(
+                                             dpl, tdpf->active_cfra, DPEN_GETFRAME_USE_PREV);
+    if (init_dpf == NULL) {
       continue;
     }
-    for (bGPDframe *gpf = init_gpf; gpf; gpf = gpf->next) {
-      LISTBASE_FOREACH_MUTABLE (bGPDstroke *, gps, &gpf->strokes) {
+    for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
+      LISTBASE_FOREACH_MUTABLE (DPenStroke *, dps, &dpf->strokes) {
         /* free stroke */
-        if ((gps->flag & GP_STROKE_NOFILL) && (gps->flag & GP_STROKE_TAG)) {
-          BLI_remlink(&gpf->strokes, gps);
-          BKE_gpencil_free_stroke(gps);
+        if ((dps->flag & DPEN_STROKE_NOFILL) && (dps->flag & DPEN_STROKE_TAG)) {
+          lib_remlink(&dpf->strokes, dps);
+          dune_dpen_free_stroke(dps);
         }
       }
       if (!all_frames) {
@@ -202,8 +202,8 @@ static void dpen_delete_temp_stroke_extension(DPenFill *tgpf, const bool all_fra
   }
 }
 
-static void extrapolate_points_by_length(bGPDspoint *a,
-                                         bGPDspoint *b,
+static void extrapolate_points_by_length(DPenPoint *a,
+                                         DPenPoint *b,
                                          float length,
                                          float r_point[3])
 {
@@ -215,21 +215,21 @@ static void extrapolate_points_by_length(bGPDspoint *a,
 }
 
 /* Loop all layers create stroke extensions. */
-static void gpencil_create_extensions(tGPDfill *tgpf)
+static void dpen_create_extensions(DPenFill *tdpf)
 {
-  Object *ob = tgpf->ob;
-  bGPdata *gpd = tgpf->gpd;
-  Brush *brush = tgpf->brush;
-  BrushGpencilSettings *brush_settings = brush->gpencil_settings;
+  Object *ob = tdpf->ob;
+  DPenData *gpd = tdpf->dpd;
+  Brush *brush = tdpf->brush;
+  BrushDPenSettings *brush_settings = brush->dpen_settings;
 
-  bGPDlayer *gpl_active = BKE_gpencil_layer_active_get(gpd);
-  BLI_assert(gpl_active != NULL);
+  DPenLayer *dpl_active = dune_dpen_layer_active_get(dpd);
+  lib_assert(dpl_active != NULL);
 
-  const int gpl_active_index = BLI_findindex(&gpd->layers, gpl_active);
-  BLI_assert(gpl_active_index >= 0);
+  const int dpl_active_index = lib_findindex(&dpd->layers, gpl_active);
+  lib_assert(dpl_active_index >= 0);
 
-  LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
-    if (gpl->flag & GP_LAYER_HIDE) {
+  LISTBASE_FOREACH (DPenLayer *, dpl, &dpd->layers) {
+    if (dpl->flag & DPEN_LAYER_HIDE) {
       continue;
     }
 
