@@ -407,39 +407,39 @@ static void dpen_interpolate_update_strokes(dContext *C, DPenInterpolate *tdpi)
       dpen_interpolate_update_points(dps_from, dps_to, new_stroke, factor);
 
       /* Calc geometry data. */
-      dune_dpen_stroke_geometry_update(gpd, new_stroke);
+      dune_dpen_stroke_geometry_update(dpd, new_stroke);
       /* Add to strokes. */
-      BLI_addtail(&tgpil->interFrame->strokes, new_stroke);
+      lib_addtail(&tdpil->interFrame->strokes, new_stroke);
 
       /* Add temp strokes to display. */
-      if (gpf) {
-        bGPDstroke *gps_eval = BKE_gpencil_stroke_duplicate(new_stroke, true, true);
-        gps_eval->flag |= GP_STROKE_TAG;
-        BLI_addtail(&gpf->strokes, gps_eval);
+      if (dpf) {
+        DPenSstroke *dps_eval = dune_dpen_stroke_duplicate(new_stroke, true, true);
+        dps_eval->flag |= DPEN_STROKE_TAG;
+        lib_addtail(&dpf->strokes, dps_eval);
       }
     }
   }
 
-  DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-  WM_event_add_notifier(C, NC_GPENCIL | NA_EDITED, NULL);
+  DEG_id_tag_update(&dpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+  wm_event_add_notifier(C, NC_DPEN | NA_EDITED, NULL);
 }
 
 /* Helper: Get previous keyframe (exclude breakdown type). */
-static bGPDframe *gpencil_get_previous_keyframe(bGPDlayer *gpl, int cfra)
+static DPenFrame *dpen_get_previous_keyframe(DPenLayer *dpl, int cfra)
 {
-  if (gpl->actframe != NULL && gpl->actframe->framenum < cfra &&
-      gpl->actframe->key_type != BEZT_KEYTYPE_BREAKDOWN) {
-    return gpl->actframe;
+  if (dpl->actframe != NULL && dpl->actframe->framenum < cfra &&
+      dpl->actframe->key_type != BEZT_KEYTYPE_BREAKDOWN) {
+    return dpl->actframe;
   }
 
-  LISTBASE_FOREACH_BACKWARD (bGPDframe *, gpf, &gpl->frames) {
-    if (gpf->key_type == BEZT_KEYTYPE_BREAKDOWN) {
+  LISTBASE_FOREACH_BACKWARD (DPenFrame *, dpf, &dpl->frames) {
+    if (dpf->key_type == BEZT_KEYTYPE_BREAKDOWN) {
       continue;
     }
-    if (gpf->framenum >= cfra) {
+    if (dpf->framenum >= cfra) {
       continue;
     }
-    return gpf;
+    return dpf;
   }
 
   return NULL;
