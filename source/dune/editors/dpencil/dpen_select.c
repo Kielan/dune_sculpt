@@ -426,22 +426,22 @@ static int gpencil_select_alternate_exec(bContext *C, wmOperator *op)
           gpc_pt->flag &= ~GP_SPOINT_SELECT;
           BEZT_DESEL_ALL(&gpc_pt->bezt);
 
-          gpc_pt = &gpc->curve_points[gpc->tot_curve_points - 1];
-          gpc_pt->flag &= ~GP_SPOINT_SELECT;
-          BEZT_DESEL_ALL(&gpc_pt->bezt);
+          dpc_pt = &dpc->curve_points[dpc->tot_curve_points - 1];
+          dpc_pt->flag &= ~DPEN_SPOINT_SELECT;
+          BEZT_DESEL_ALL(&dpc_pt->bezt);
         }
 
-        BKE_gpencil_curve_sync_selection(gpd, gps);
+        dune_dpen_curve_sync_selection(dpd, dps);
         changed = true;
       }
     }
-    GP_EDITABLE_CURVES_END(gps_iter);
+    DPEN_EDITABLE_CURVES_END(dps_iter);
   }
   else {
     /* select all points in selected strokes */
-    CTX_DATA_BEGIN (C, bGPDstroke *, gps, editable_gpencil_strokes) {
-      if ((gps->flag & GP_STROKE_SELECT) && (gps->totpoints > 1)) {
-        bGPDspoint *pt;
+    CTX_DATA_BEGIN (C, DPenStroke *, dps, editable_gpencil_strokes) {
+      if ((dps->flag & DPEN_STROKE_SELECT) && (gps->totpoints > 1)) {
+        DPenPoint *pt;
         int row = 0;
         int start = 0;
         if (unselect_ends) {
