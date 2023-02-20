@@ -466,40 +466,40 @@ static void dpen_interpolate_set_points(dContext *C, tGPDinterpolate *tgpi)
 {
   Scene *scene = tdpi->scene;
   DPenData *dpd = tdpi->dpd;
-  bGPDlayer *active_gpl = CTX_data_active_gpencil_layer(C);
-  bGPDframe *actframe = active_gpl->actframe;
+  DOenLayer *active_dpl = ctx_data_active_dpen_layer(C);
+  DOenFrame *actframe = active_dpl->actframe;
 
   /* save initial factor for active layer to define shift limits */
-  tgpi->init_factor = (float)(tgpi->cframe - actframe->framenum) /
+  tdpi->init_factor = (float)(tdpi->cframe - actframe->framenum) /
                       (actframe->next->framenum - actframe->framenum + 1);
 
   /* limits are 100% below 0 and 100% over the 100% */
-  tgpi->low_limit = -1.0f - tgpi->init_factor;
-  tgpi->high_limit = 2.0f - tgpi->init_factor;
+  tdpi->low_limit = -1.0f - tdpi->init_factor;
+  tdpi->high_limit = 2.0f - tdpi->init_factor;
 
   /* set layers */
-  LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
-    tGPDinterpolate_layer *tgpil;
+  LISTBASE_FOREACH (DPenLayer *, dpl, &dpd->layers) {
+    DPenInterpolate_layer *tdpil;
     /* all layers or only active */
-    if (!(tgpi->flag & GP_TOOLFLAG_INTERPOLATE_ALL_LAYERS) && (gpl != active_gpl)) {
+    if (!(tdpi->flag & DPEN_TOOLFLAG_INTERPOLATE_ALL_LAYERS) && (dpl != active_dpl)) {
       continue;
     }
     /* only editable and visible layers are considered */
-    if (!BKE_gpencil_layer_is_editable(gpl) || (gpl->actframe == NULL)) {
+    if (!dune_dpen_layer_is_editable(dpl) || (dpl->actframe == NULL)) {
       continue;
     }
-    if ((gpl->actframe == NULL) || (gpl->actframe->next == NULL)) {
+    if ((dpl->actframe == NULL) || (dpl->actframe->next == NULL)) {
       continue;
     }
 
     /* create temp data for each layer */
-    tgpil = MEM_callocN(sizeof(tGPDinterpolate_layer), "GPencil Interpolate Layer");
+    tdpil = MEM_callocN(sizeof(DPenInterpolate_layer), "DPen Interpolate Layer");
 
-    tgpil->gpl = gpl;
-    bGPDframe *gpf = gpencil_get_previous_keyframe(gpl, CFRA);
-    tgpil->prevFrame = BKE_gpencil_frame_duplicate(gpf, true);
+    tdpil->dpl = dpl;
+    DPenFrame *dpf = dpen_get_previous_keyframe(dpl, CFRA);
+    tdpil->prevFrame = dune_dpen_frame_duplicate(dpf, true);
 
-    gpf = gpencil_get_next_keyframe(gpl, CFRA);
+    dpf = dpen_get_next_keyframe(gpl, CFRA);
     tgpil->nextFrame = BKE_gpencil_frame_duplicate(gpf, true);
 
     BLI_addtail(&tgpi->ilayers, tgpil);
