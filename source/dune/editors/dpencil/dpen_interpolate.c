@@ -1,5 +1,5 @@
 /**
- * Operators for interpolating new Dune Pen frames from existing strokes.
+ * Operators for interpolating new Dune-Pen frames from existing strokes.
  */
 
 #include <math.h>
@@ -29,39 +29,39 @@
 
 #include "dune_colortools.h"
 #include "dune_context.h"
-#include "BKE_dpen.h"
-#include "BKE_dpen_geom.h"
-#include "BKE_report.h"
+#include "dune_dpen.h"
+#include "dune_dpen_geom.h"
+#include "dune_report.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui_interface.h"
+#include "ui_resources.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_prototypes.h"
 
-#include "ED_gpencil.h"
-#include "ED_screen.h"
+#include "ed_dpen.h"
+#include "ed_screen.h"
 
 #include "DEG_depsgraph.h"
 
-#include "gpencil_intern.h"
+#include "dpen_intern.h"
 
 /* Temporary interpolate operation data */
-typedef struct tGPDinterpolate_layer {
-  struct tGPDinterpolate_layer *next, *prev;
+typedef struct DPenInterpolate_layer {
+  struct DPenInterpolate_layer *next, *prev;
 
   /** layer */
   struct bGPDlayer *gpl;
   /** frame before current frame (interpolate-from) */
-  struct bGPDframe *prevFrame;
+  struct DPenFrame *prevFrame;
   /** frame after current frame (interpolate-to) */
-  struct bGPDframe *nextFrame;
+  struct DPenFrame *nextFrame;
   /** interpolated frame */
-  struct bGPDframe *interFrame;
+  struct DPenFrame *interFrame;
   /** interpolate factor */
   float factor;
 
@@ -72,7 +72,7 @@ typedef struct tGPDinterpolate_layer {
 
 } tGPDinterpolate_layer;
 
-typedef struct tGPDinterpolate {
+typedef struct DPenInterpolate {
   /** Current depsgraph from context */
   struct Depsgraph *depsgraph;
   /** current scene from context */
@@ -84,15 +84,15 @@ typedef struct tGPDinterpolate {
   /** current object */
   struct Object *ob;
   /** current GP datablock */
-  struct bGPdata *gpd;
+  struct DPenData *dpd;
   /** current material */
   struct Material *mat;
   /* Space Conversion Data */
-  struct GP_SpaceConversion gsc;
+  struct DPenSpaceConversion dpsc;
 
   /** current frame number */
   int cframe;
-  /** (tGPDinterpolate_layer) layers to be interpolated */
+  /** (DPenInterpolate_layer) layers to be interpolated */
   ListBase ilayers;
   /** value for determining the displacement influence */
   float shift;
@@ -112,34 +112,34 @@ typedef struct tGPDinterpolate {
   int smooth_steps;
 
   NumInput num; /* numeric input */
-} tGPDinterpolate;
+} DPenInterpolate;
 
-typedef enum eGP_InterpolateFlipMode {
+typedef enum eDPenInterpolateFlipMode {
   /* No flip. */
-  GP_INTERPOLATE_NOFLIP = 0,
+  DPEN_INTERPOLATE_NOFLIP = 0,
   /* Flip always. */
-  GP_INTERPOLATE_FLIP = 1,
+  DPEN_INTERPOLATE_FLIP = 1,
   /* Flip if needed. */
-  GP_INTERPOLATE_FLIPAUTO = 2,
-} eGP_InterpolateFlipMode;
+  DPEN_INTERPOLATE_FLIPAUTO = 2,
+} eDPenInterpolateFlipMode;
 
 /* ************************************************ */
 /* Core/Shared Utilities */
 
 /* Poll callback for interpolation operators */
-static bool gpencil_view3d_poll(bContext *C)
+static bool dpen_view3d_poll(dContext *C)
 {
-  bGPdata *gpd = CTX_data_gpencil_data(C);
-  bGPDlayer *gpl = CTX_data_active_gpencil_layer(C);
+  DPenData *dpd = ctx_data_dpen_data(C);
+  DPenLayer *dpl = ctx_data_active_dpen_layer(C);
 
   /* only 3D view */
-  ScrArea *area = CTX_wm_area(C);
+  ScrArea *area = ctx_wm_area(C);
   if (area && area->spacetype != SPACE_VIEW3D) {
     return false;
   }
 
   /* need data to interpolate */
-  if (ELEM(NULL, gpd, gpl)) {
+  if (ELEM(NULL, dpd, dpl)) {
     return false;
   }
 
@@ -148,36 +148,36 @@ static bool gpencil_view3d_poll(bContext *C)
 
 /* Return if the stroke must be flipped or not. The logic of the calculation
  * is to check if the lines from extremes crossed. All is done in 2D. */
-static bool gpencil_stroke_need_flip(Depsgraph *depsgraph,
+static bool dpen_stroke_need_flip(Depsgraph *depsgraph,
                                      Object *ob,
-                                     bGPDlayer *gpl,
-                                     GP_SpaceConversion *gsc,
-                                     bGPDstroke *gps_from,
-                                     bGPDstroke *gps_to)
+                                     DPenPayer *dpl,
+                                     DPenSpaceConversion *dsc,
+                                     DPenStroke *dps_from,
+                                     DPenStroke *dps_to)
 {
   float diff_mat[4][4];
   /* calculate parent matrix */
-  BKE_gpencil_layer_transform_matrix_get(depsgraph, ob, gpl, diff_mat);
-  bGPDspoint *pt, pt_dummy_ps;
+  dune_dpen_layer_transform_matrix_get(depsgraph, ob, dpl, diff_mat);
+  DPenPoint *pt, pt_dummy_ps;
   float v_from_start[2], v_to_start[2], v_from_end[2], v_to_end[2];
 
   /* Line from start of strokes. */
-  pt = &gps_from->points[0];
-  gpencil_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
-  gpencil_point_to_xy_fl(gsc, gps_from, &pt_dummy_ps, &v_from_start[0], &v_from_start[1]);
+  pt = &dps_from->points[0];
+  dpen_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
+  dpen_point_to_xy_fl(dsc, dps_from, &pt_dummy_ps, &v_from_start[0], &v_from_start[1]);
 
-  pt = &gps_to->points[0];
-  gpencil_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
-  gpencil_point_to_xy_fl(gsc, gps_from, &pt_dummy_ps, &v_to_start[0], &v_to_start[1]);
+  pt = &dps_to->points[0];
+  dpen_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
+  dpen_point_to_xy_fl(dsc, dps_from, &pt_dummy_ps, &v_to_start[0], &v_to_start[1]);
 
   /* Line from end of strokes. */
-  pt = &gps_from->points[gps_from->totpoints - 1];
-  gpencil_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
-  gpencil_point_to_xy_fl(gsc, gps_from, &pt_dummy_ps, &v_from_end[0], &v_from_end[1]);
+  pt = &dps_from->points[dps_from->totpoints - 1];
+  dpen_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
+  dpen_point_to_xy_fl(dsc, dps_from, &pt_dummy_ps, &v_from_end[0], &v_from_end[1]);
 
-  pt = &gps_to->points[gps_to->totpoints - 1];
-  gpencil_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
-  gpencil_point_to_xy_fl(gsc, gps_from, &pt_dummy_ps, &v_to_end[0], &v_to_end[1]);
+  pt = &dps_to->points[dps_to->totpoints - 1];
+  dpen_point_to_parent_space(pt, diff_mat, &pt_dummy_ps);
+  dpen_point_to_xy_fl(dsc, dps_from, &pt_dummy_ps, &v_to_end[0], &v_to_end[1]);
 
   const bool isect_lines = (isect_seg_seg_v2(v_from_start, v_to_start, v_from_end, v_to_end) ==
                             ISECT_LINE_LINE_CROSS);
@@ -228,85 +228,85 @@ static bool gpencil_stroke_need_flip(Depsgraph *depsgraph,
 
 /* Return the stroke related to the selection index, returning the stroke with
  * the smallest selection index greater than reference index. */
-static bGPDstroke *gpencil_stroke_get_related(GHash *used_strokes,
-                                              bGPDframe *gpf,
+static DPenStroke *dpen_stroke_get_related(GHash *used_strokes,
+                                              DPenFrame *dpf,
                                               const int reference_index)
 {
-  bGPDstroke *gps_found = NULL;
+  DPenStroke *dps_found = NULL;
   int lower_index = INT_MAX;
-  LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
-    if (gps->select_index > reference_index) {
-      if (!BLI_ghash_haskey(used_strokes, gps)) {
-        if (gps->select_index < lower_index) {
-          lower_index = gps->select_index;
-          gps_found = gps;
+  LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
+    if (dps->select_index > reference_index) {
+      if (!lib_ghash_haskey(used_strokes, dps)) {
+        if (dps->select_index < lower_index) {
+          lower_index = dps->select_index;
+          dps_found = fps;
         }
       }
     }
   }
 
   /* Set as used. */
-  if (gps_found) {
-    BLI_ghash_insert(used_strokes, gps_found, gps_found);
+  if (dps_found) {
+    lib_ghash_insert(used_strokes, dps_found, dps_found);
   }
 
-  return gps_found;
+  return dps_found;
 }
 
 /* Load a Hash with the relationship between strokes. */
-static void gpencil_stroke_pair_table(bContext *C,
-                                      tGPDinterpolate *tgpi,
-                                      tGPDinterpolate_layer *tgpil)
+static void dpen_stroke_pair_table(dContext *C,
+                                      DPenInterpolate *tdpi,
+                                      DPenInterpolate_layer *tdpil)
 {
-  bGPdata *gpd = tgpi->gpd;
-  const bool only_selected = (GPENCIL_EDIT_MODE(gpd) &&
-                              ((tgpi->flag & GP_TOOLFLAG_INTERPOLATE_ONLY_SELECTED) != 0));
-  const bool is_multiedit = (bool)GPENCIL_MULTIEDIT_SESSIONS_ON(gpd);
+  DPenData *dpd = tdpi->dpd;
+  const bool only_selected = (DPEN_EDIT_MODE(dpd) &&
+                              ((tdpi->flag & DPEN_TOOLFLAG_INTERPOLATE_ONLY_SELECTED) != 0));
+  const bool is_multiedit = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dpd);
 
   /* Create hash tablets with relationship between strokes. */
-  BLI_listbase_clear(&tgpil->selected_strokes);
-  tgpil->used_strokes = BLI_ghash_ptr_new(__func__);
-  tgpil->pair_strokes = BLI_ghash_ptr_new(__func__);
+  lib_listbase_clear(&tdpil->selected_strokes);
+  tdpil->used_strokes = lib_ghash_ptr_new(__func__);
+  tdpil->pair_strokes = lib_ghash_ptr_new(__func__);
 
   /* Create a table with source and target pair of strokes. */
-  LISTBASE_FOREACH (bGPDstroke *, gps_from, &tgpil->prevFrame->strokes) {
-    bGPDstroke *gps_to = NULL;
+  LISTBASE_FOREACH (DPenStroke *, dps_from, &tdpil->prevFrame->strokes) {
+    DPenStroke *dldps_to = NULL;
     /* only selected */
-    if (GPENCIL_EDIT_MODE(gpd) && (only_selected) && ((gps_from->flag & GP_STROKE_SELECT) == 0)) {
+    if (DPEN_EDIT_MODE(dpd) && (only_selected) && ((dps_from->flag & DPEN_STROKE_SELECT) == 0)) {
       continue;
     }
     /* skip strokes that are invalid for current view */
-    if (ED_gpencil_stroke_can_use(C, gps_from) == false) {
+    if (ed_dpen_stroke_can_use(C, dps_from) == false) {
       continue;
     }
     /* Check if the material is editable. */
-    if (ED_gpencil_stroke_material_editable(tgpi->ob, tgpil->gpl, gps_from) == false) {
+    if (ed_dpen_stroke_material_editable(tdpi->ob, tdpil->dpl, dps_from) == false) {
       continue;
     }
     /* Try to get the related stroke. */
-    if ((is_multiedit) && (gps_from->select_index > 0)) {
-      gps_to = gpencil_stroke_get_related(
-          tgpil->used_strokes, tgpil->nextFrame, gps_from->select_index);
+    if ((is_multiedit) && (dps_from->select_index > 0)) {
+      dps_to = dpen_stroke_get_related(
+          tdpil->used_strokes, tdpil->nextFrame, dps_from->select_index);
     }
     /* If not found, get final stroke to interpolate using position in the array. */
-    if (gps_to == NULL) {
-      int fFrame = BLI_findindex(&tgpil->prevFrame->strokes, gps_from);
-      gps_to = BLI_findlink(&tgpil->nextFrame->strokes, fFrame);
+    if (dps_to == NULL) {
+      int fFrame = lib_findindex(&tdpil->prevFrame->strokes, dps_from);
+      dps_to = lib_findlink(&tdpil->nextFrame->strokes, fFrame);
     }
 
-    if (ELEM(NULL, gps_from, gps_to)) {
+    if (ELEM(NULL, dps_from, dps_to)) {
       continue;
     }
-    if ((gps_from->totpoints == 0) || (gps_to->totpoints == 0)) {
+    if ((dps_from->totpoints == 0) || (gps_to->totpoints == 0)) {
       continue;
     }
     /* Insert the pair entry in the hash table and the list of strokes to keep order. */
-    BLI_addtail(&tgpil->selected_strokes, BLI_genericNodeN(gps_from));
-    BLI_ghash_insert(tgpil->pair_strokes, gps_from, gps_to);
+    lib_addtail(&tdpil->selected_strokes, lib_genericNodeN(dps_from));
+    lib_ghash_insert(tdpil->pair_strokes, dps_from, dps_to);
   }
 }
 
-static void gpencil_interpolate_smooth_stroke(bGPDstroke *gps,
+static void dpen_interpolate_smooth_stroke(DPenStroke *dps,
                                               float smooth_factor,
                                               int smooth_steps)
 {
@@ -316,23 +316,23 @@ static void gpencil_interpolate_smooth_stroke(bGPDstroke *gps,
 
   float reduce = 0.0f;
   for (int r = 0; r < smooth_steps; r++) {
-    for (int i = 0; i < gps->totpoints - 1; i++) {
-      BKE_gpencil_stroke_smooth_point(gps, i, smooth_factor - reduce, false);
-      BKE_gpencil_stroke_smooth_strength(gps, i, smooth_factor);
+    for (int i = 0; i < dps->totpoints - 1; i++) {
+      dune_dpen_stroke_smooth_point(dps, i, smooth_factor - reduce, false);
+      dune_dpen_stroke_smooth_strength(dps, i, smooth_factor);
     }
     reduce += 0.25f; /* reduce the factor */
   }
 }
 /* Perform interpolation */
-static void gpencil_interpolate_update_points(const bGPDstroke *gps_from,
-                                              const bGPDstroke *gps_to,
-                                              bGPDstroke *new_stroke,
+static void dpen_interpolate_update_points(const DPenStroke *dps_from,
+                                              const DPenStroke *dps_to,
+                                              DPenStroke *new_stroke,
                                               float factor)
 {
   /* update points */
   for (int i = 0; i < new_stroke->totpoints; i++) {
-    const bGPDspoint *prev = &gps_from->points[i];
-    const bGPDspoint *next = &gps_to->points[i];
+    const DPenPoint *prev = &gps_from->points[i];
+    const DPenPoint *next = &gps_to->points[i];
     bGPDspoint *pt = &new_stroke->points[i];
 
     /* Interpolate all values */
