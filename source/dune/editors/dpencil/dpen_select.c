@@ -6,85 +6,84 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_lasso_2d.h"
-#include "BLI_math_vector.h"
-#include "BLI_rand.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_ghash.h"
+#include "lib_lasso_2d.h"
+#include "lib_math_vector.h"
+#include "lib_rand.h"
+#include "lib_utildefines.h"
 
-#include "DNA_gpencil_types.h"
-#include "DNA_material_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
+#include "types_dpen.h"
+#include "types_material.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
 
-#include "BKE_context.h"
-#include "BKE_gpencil.h"
-#include "BKE_gpencil_curve.h"
-#include "BKE_gpencil_geom.h"
-#include "BKE_material.h"
-#include "BKE_report.h"
+#include "dune_context.h"
+#include "dune_dpen.h"
+#include "dune_dpen_curve.h"
+#include "dune_dpen_geom.h"
+#include "dune_material.h"
+#include "dune_report.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "UI_view2d.h"
+#include "ui_view2d.h"
 
-#include "ED_gpencil.h"
-#include "ED_select_utils.h"
-#include "ED_view3d.h"
+#include "ed_dpen.h"
+#include "ed_select_utils.h"
+#include "ed_view3d.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-#include "gpencil_intern.h"
+#include "dpen_intern.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Shared Utilities
- * \{ */
+/** Shared Utilities */
 
 /* Convert sculpt mask mode to Select mode */
-static int gpencil_select_mode_from_sculpt(eGP_Sculpt_SelectMaskFlag mode)
+static int dpen_select_mode_from_sculpt(eGP_Sculpt_SelectMaskFlag mode)
 {
-  if (mode & GP_SCULPT_MASK_SELECTMODE_POINT) {
-    return GP_SELECTMODE_POINT;
+  if (mode & DPEN_SCULPT_MASK_SELECTMODE_POINT) {
+    return DPEN_SELECTMODE_POINT;
   }
-  if (mode & GP_SCULPT_MASK_SELECTMODE_STROKE) {
-    return GP_SELECTMODE_STROKE;
+  if (mode & DPEN_SCULPT_MASK_SELECTMODE_STROKE) {
+    return DPEN_SELECTMODE_STROKE;
   }
-  if (mode & GP_SCULPT_MASK_SELECTMODE_SEGMENT) {
-    return GP_SELECTMODE_SEGMENT;
+  if (mode & DPEN_SCULPT_MASK_SELECTMODE_SEGMENT) {
+    return DPEN_SELECTMODE_SEGMENT;
   }
   return GP_SELECTMODE_POINT;
 }
 
 /* Convert vertex mask mode to Select mode */
-static int gpencil_select_mode_from_vertex(eGP_Sculpt_SelectMaskFlag mode)
+static int dpen_select_mode_from_vertex(eDPEN_Sculpt_SelectMaskFlag mode)
 {
-  if (mode & GP_VERTEX_MASK_SELECTMODE_POINT) {
-    return GP_SELECTMODE_POINT;
+  if (mode & DPEN_VERTEX_MASK_SELECTMODE_POINT) {
+    return DPEN_SELECTMODE_POINT;
   }
-  if (mode & GP_VERTEX_MASK_SELECTMODE_STROKE) {
-    return GP_SELECTMODE_STROKE;
+  if (mode & DPEN_VERTEX_MASK_SELECTMODE_STROKE) {
+    return DPEN_SELECTMODE_STROKE;
   }
-  if (mode & GP_VERTEX_MASK_SELECTMODE_SEGMENT) {
-    return GP_SELECTMODE_SEGMENT;
+  if (mode & DPEN_VERTEX_MASK_SELECTMODE_SEGMENT) {
+    return DPEN_SELECTMODE_SEGMENT;
   }
-  return GP_SELECTMODE_POINT;
+  return DPEN_SELECTMODE_POINT;
 }
 
-static bool gpencil_select_poll(bContext *C)
+static bool dpen_select_poll(dContext *C)
 {
-  bGPdata *gpd = ED_gpencil_data_get_active(C);
-  ToolSettings *ts = CTX_data_tool_settings(C);
+  DPenData *gpd = ed_dpen_data_get_active(C);
+  ToolSettings *ts = ctx_data_tool_settings(C);
 
   if (GPENCIL_SCULPT_MODE(gpd)) {
     if (!(GPENCIL_ANY_SCULPT_MASK(ts->gpencil_selectmode_sculpt))) {
