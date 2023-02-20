@@ -1356,3 +1356,808 @@ static void gpencil_sculpt_brush_init_stroke(bContext *C, tGP_BrushEditData *gso
  * For strokes with one point only this is impossible to calculate because there isn't a
  * valid reference point.
  */
+static float gpencil_sculpt_rotation_eval_get(tGP_BrushEditData *gso,
+                                              bGPDstroke *gps_eval,
+                                              bGPDspoint *pt_eval,
+                                              int idx_eval)
+{
+  /* If multiframe or no modifiers, return 0. */
+  if (GPENCIL_MULTIEDIT_SESSIONS_ON(gso->gpd) || (!gso->is_transformed)) {
+    return 0.0f;
+  }
+
+  const GP_SpaceConversion *gsc = &gso->gsc;
+  bGPDstroke *gps_orig = (gps_eval->runtime.gps_orig) ? gps_eval->runtime.gps_orig : gps_eval;
+  bGPDspoint *pt_orig = &gps_orig->points[pt_eval->runtime.idx_orig];
+  bGPDspoint *pt_prev_eval = NULL;
+  bGPDspoint *pt_orig_prev = NULL;
+  if (idx_eval != 0) {
+    pt_prev_eval = &gps_eval->points[idx_eval - 1];
+  }
+  else {
+    if (gps_eval->totpoints > 1) {
+      pt_prev_eval = &gps_eval->points[idx_eval + 1];
+    }
+    else {
+      return 0.0f;
+    }
+  }
+
+  if (pt_eval->runtime.idx_orig != 0) {
+    pt_orig_prev = &gps_orig->points[pt_eval->runtime.idx_orig - 1];
+  }
+  else {
+    if (gps_orig->totpoints > 1) {
+      pt_orig_prev = &gps_orig->points[pt_eval->runtime.idx_orig + 1];
+    }
+    else {
+      return 0.0f;
+    }
+  }
+
+  /* create 2D vectors of the stroke segments */
+  float v_orig_a[2], v_orig_b[2], v_eval_a[2], v_eval_b[2];
+
+  gpencil_point_3d_to_xy(gsc, GP_STROKE_3DSPACE, &pt_orig->x, v_orig_a);
+  gpencil_point_3d_to_xy(gsc, GP_STROKE_3DSPACE, &pt_orig_prev->x, v_orig_b);
+  sub_v2_v2(v_orig_a, v_orig_b);
+
+  gpencil_point_3d_to_xy(gsc, GP_STROKE_3DSPACE, &pt_eval->x, v_eval_a);
+  gpencil_point_3d_to_xy(gsc, GP_STROKE_3DSPACE, &pt_prev_eval->x, v_eval_b);
+  sub_v2_v2(v_eval_a, v_eval_b);
+
+  return angle_v2v2(v_orig_a, v_eval_a);
+}
+
+/* Apply brush operation to points in this stroke */
+static bool gpencil_sculpt_brush_do_stroke(tGP_BrushEditData *gso,
+                                           bGPDstroke *gps,
+                                           const float diff_mat[4][4],
+                                           GP_BrushApplyCb apply)
+{
+  GP_SpaceConversion *gsc = &gso->gsc;
+  rcti *rect = &gso->brush_rect;
+  Brush *brush = gso->brush;
+  char tool = gso->brush->gpencil_sculpt_tool;
+  const int radius = (brush->flag & GP_BRUSH_USE_PRESSURE) ? gso->brush->size * gso->pressure :
+                                                             gso->brush->size;
+
+  bGPDstroke *gps_active = (gps->runtime.gps_orig) ? gps->runtime.gps_orig : gps;
+  bGPDspoint *pt_active = NULL;
+
+  bGPDspoint *pt1, *pt2;
+  bGPDspoint *pt = NULL;
+  int pc1[2] = {0};
+  int pc2[2] = {0};
+  int i;
+  int index;
+  bool include_last = false;
+  bool changed = false;
+  float rot_eval = 0.0f;
+
+  if (gps->totpoints == 1) {
+    bGPDspoint pt_temp;
+    pt = &gps->points[0];
+    gpencil_point_to_parent_space(gps->points, diff_mat, &pt_temp);
+    gpencil_point_to_xy(gsc, gps, &pt_temp, &pc1[0], &pc1[1]);
+
+    pt_active = (pt->runtime.pt_orig) ? pt->runtime.pt_orig : pt;
+    /* Do bound-box check first. */
+    if ((!ELEM(V2D_IS_CLIPPED, pc1[0], pc1[1])) && BLI_rcti_isect_pt(rect, pc1[0], pc1[1])) {
+      /* only check if point is inside */
+      int mval_i[2];
+      round_v2i_v2fl(mval_i, gso->mval);
+      if (len_v2v2_int(mval_i, pc1) <= radius) {
+        /* apply operation to this point */
+        if (pt_active != NULL) {
+          rot_eval = gpencil_sculpt_rotation_eval_get(gso, gps, pt, 0);
+          changed = apply(gso, gps_active, rot_eval, 0, radius, pc1);
+        }
+      }
+    }
+  }
+  else {
+    /* Loop over the points in the stroke, checking for intersections
+     * - an intersection means that we touched the stroke
+     */
+    for (i = 0; (i + 1) < gps->totpoints; i++) {
+      /* Get points to work with */
+      pt1 = gps->points + i;
+      pt2 = gps->points + i + 1;
+
+      /* Skip if neither one is selected
+       * (and we are only allowed to edit/consider selected points) */
+      if (GPENCIL_ANY_SCULPT_MASK(gso->mask)) {
+        if (!(pt1->flag & GP_SPOINT_SELECT) && !(pt2->flag & GP_SPOINT_SELECT)) {
+          include_last = false;
+          continue;
+        }
+      }
+      bGPDspoint npt;
+      gpencil_point_to_parent_space(pt1, diff_mat, &npt);
+      gpencil_point_to_xy(gsc, gps, &npt, &pc1[0], &pc1[1]);
+
+      gpencil_point_to_parent_space(pt2, diff_mat, &npt);
+      gpencil_point_to_xy(gsc, gps, &npt, &pc2[0], &pc2[1]);
+
+      /* Check that point segment of the bound-box of the selection stroke. */
+      if (((!ELEM(V2D_IS_CLIPPED, pc1[0], pc1[1])) && BLI_rcti_isect_pt(rect, pc1[0], pc1[1])) ||
+          ((!ELEM(V2D_IS_CLIPPED, pc2[0], pc2[1])) && BLI_rcti_isect_pt(rect, pc2[0], pc2[1]))) {
+        /* Check if point segment of stroke had anything to do with
+         * brush region  (either within stroke painted, or on its lines)
+         * - this assumes that line-width is irrelevant.
+         */
+        if (gpencil_stroke_inside_circle(gso->mval, radius, pc1[0], pc1[1], pc2[0], pc2[1])) {
+          /* Apply operation to these points */
+          bool ok = false;
+
+          /* To each point individually... */
+          pt = &gps->points[i];
+          if ((pt->runtime.pt_orig == NULL) && (tool != GPSCULPT_TOOL_GRAB)) {
+            continue;
+          }
+          pt_active = (pt->runtime.pt_orig) ? pt->runtime.pt_orig : pt;
+          /* If masked and the point is not selected, skip it. */
+          if (GPENCIL_ANY_SCULPT_MASK(gso->mask) && ((pt_active->flag & GP_SPOINT_SELECT) == 0)) {
+            continue;
+          }
+          index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i;
+          if ((pt_active != NULL) && (index < gps_active->totpoints)) {
+            rot_eval = gpencil_sculpt_rotation_eval_get(gso, gps, pt, i);
+            ok = apply(gso, gps_active, rot_eval, index, radius, pc1);
+          }
+
+          /* Only do the second point if this is the last segment,
+           * and it is unlikely that the point will get handled
+           * otherwise.
+           *
+           * NOTE: There is a small risk here that the second point wasn't really
+           *       actually in-range. In that case, it only got in because
+           *       the line linking the points was!
+           */
+          if (i + 1 == gps->totpoints - 1) {
+            pt = &gps->points[i + 1];
+            pt_active = (pt->runtime.pt_orig) ? pt->runtime.pt_orig : pt;
+            index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i + 1;
+            if ((pt_active != NULL) && (index < gps_active->totpoints)) {
+              rot_eval = gpencil_sculpt_rotation_eval_get(gso, gps, pt, i + 1);
+              ok |= apply(gso, gps_active, rot_eval, index, radius, pc2);
+              include_last = false;
+            }
+          }
+          else {
+            include_last = true;
+          }
+
+          changed |= ok;
+        }
+        else if (include_last) {
+          /* This case is for cases where for whatever reason the second vert (1st here)
+           * doesn't get included because the whole edge isn't in bounds,
+           * but it would've qualified since it did with the previous step
+           * (but wasn't added then, to avoid double-ups).
+           */
+          pt = &gps->points[i];
+          pt_active = (pt->runtime.pt_orig) ? pt->runtime.pt_orig : pt;
+          index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i;
+          if ((pt_active != NULL) && (index < gps_active->totpoints)) {
+            rot_eval = gpencil_sculpt_rotation_eval_get(gso, gps, pt, i);
+            changed |= apply(gso, gps_active, rot_eval, index, radius, pc1);
+            include_last = false;
+          }
+        }
+      }
+    }
+  }
+
+  return changed;
+}
+
+/* Apply sculpt brushes to strokes in the given frame */
+static bool gpencil_sculpt_brush_do_frame(bContext *C,
+                                          tGP_BrushEditData *gso,
+                                          bGPDlayer *gpl,
+                                          bGPDframe *gpf,
+                                          const float diff_mat[4][4])
+{
+  bool changed = false;
+  bool redo_geom = false;
+  Object *ob = gso->object;
+  bGPdata *gpd = ob->data;
+  char tool = gso->brush->gpencil_sculpt_tool;
+  GP_SpaceConversion *gsc = &gso->gsc;
+  Brush *brush = gso->brush;
+  const int radius = (brush->flag & GP_BRUSH_USE_PRESSURE) ? gso->brush->size * gso->pressure :
+                                                             gso->brush->size;
+  /* Calc bound box matrix. */
+  float bound_mat[4][4];
+  BKE_gpencil_layer_transform_matrix_get(gso->depsgraph, gso->object, gpl, bound_mat);
+
+  LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+    /* skip strokes that are invalid for current view */
+    if (ED_gpencil_stroke_can_use(C, gps) == false) {
+      continue;
+    }
+    /* check if the color is editable */
+    if (ED_gpencil_stroke_material_editable(ob, gpl, gps) == false) {
+      continue;
+    }
+
+    /* Check if the stroke collide with brush. */
+    if (!ED_gpencil_stroke_check_collision(gsc, gps, gso->mval, radius, bound_mat)) {
+      continue;
+    }
+
+    switch (tool) {
+      case GPSCULPT_TOOL_SMOOTH: /* Smooth strokes */
+      {
+        changed |= gpencil_sculpt_brush_do_stroke(gso, gps, diff_mat, gpencil_brush_smooth_apply);
+        redo_geom |= changed;
+        break;
+      }
+
+      case GPSCULPT_TOOL_THICKNESS: /* Adjust stroke thickness */
+      {
+        changed |= gpencil_sculpt_brush_do_stroke(
+            gso, gps, diff_mat, gpencil_brush_thickness_apply);
+        break;
+      }
+
+      case GPSCULPT_TOOL_STRENGTH: /* Adjust stroke color strength */
+      {
+        changed |= gpencil_sculpt_brush_do_stroke(
+            gso, gps, diff_mat, gpencil_brush_strength_apply);
+        break;
+      }
+
+      case GPSCULPT_TOOL_GRAB: /* Grab points */
+      {
+        bGPDstroke *gps_active = (gps->runtime.gps_orig) ? gps->runtime.gps_orig : gps;
+        if (gps_active != NULL) {
+          if (gso->first) {
+            /* First time this brush stroke is being applied:
+             * 1) Prepare data buffers (init/clear) for this stroke
+             * 2) Use the points now under the cursor
+             */
+            gpencil_brush_grab_stroke_init(gso, gps_active);
+            changed |= gpencil_sculpt_brush_do_stroke(
+                gso, gps_active, diff_mat, gpencil_brush_grab_store_points);
+          }
+          else {
+            /* Apply effect to the stored points */
+            gpencil_brush_grab_apply_cached(gso, gps_active, diff_mat);
+            changed |= true;
+          }
+        }
+        redo_geom |= changed;
+        break;
+      }
+
+      case GPSCULPT_TOOL_PUSH: /* Push points */
+      {
+        changed |= gpencil_sculpt_brush_do_stroke(gso, gps, diff_mat, gpencil_brush_push_apply);
+        redo_geom |= changed;
+        break;
+      }
+
+      case GPSCULPT_TOOL_PINCH: /* Pinch points */
+      {
+        changed |= gpencil_sculpt_brush_do_stroke(gso, gps, diff_mat, gpencil_brush_pinch_apply);
+        redo_geom |= changed;
+        break;
+      }
+
+      case GPSCULPT_TOOL_TWIST: /* Twist points around midpoint */
+      {
+        changed |= gpencil_sculpt_brush_do_stroke(gso, gps, diff_mat, gpencil_brush_twist_apply);
+        redo_geom |= changed;
+        break;
+      }
+
+      case GPSCULPT_TOOL_RANDOMIZE: /* Apply jitter */
+      {
+        changed |= gpencil_sculpt_brush_do_stroke(
+            gso, gps, diff_mat, gpencil_brush_randomize_apply);
+        redo_geom |= changed;
+        break;
+      }
+
+      default:
+        printf("ERROR: Unknown type of GPencil Sculpt brush \n");
+        break;
+    }
+
+    /* Triangulation must be calculated. */
+    if (redo_geom) {
+      bGPDstroke *gps_active = (gps->runtime.gps_orig) ? gps->runtime.gps_orig : gps;
+      if (gpl->actframe == gpf) {
+        MaterialGPencilStyle *gp_style = BKE_gpencil_material_settings(ob, gps->mat_nr + 1);
+        /* Update active frame now, only if material has fill. */
+        if (gp_style->flag & GP_MATERIAL_FILL_SHOW) {
+          BKE_gpencil_stroke_geometry_update(gpd, gps_active);
+        }
+        else {
+          gpencil_recalc_geometry_tag(gps_active);
+        }
+      }
+      else {
+        /* Delay a full recalculation for other frames. */
+        gpencil_recalc_geometry_tag(gps_active);
+      }
+      bGPDlayer *gpl_active = (gpl->runtime.gpl_orig) ? gpl->runtime.gpl_orig : gpl;
+      bGPDframe *gpf_active = (gpf->runtime.gpf_orig) ? gpf->runtime.gpf_orig : gpf;
+      BKE_gpencil_tag_full_update(gpd, gpl_active, gpf_active, gps_active);
+    }
+  }
+
+  return changed;
+}
+
+/* Perform two-pass brushes which modify the existing strokes */
+static bool gpencil_sculpt_brush_apply_standard(bContext *C, tGP_BrushEditData *gso)
+{
+  ToolSettings *ts = gso->scene->toolsettings;
+  Depsgraph *depsgraph = gso->depsgraph;
+  Object *obact = gso->object;
+  bool changed = false;
+
+  Object *ob_eval = (Object *)DEG_get_evaluated_id(depsgraph, &obact->id);
+  bGPdata *gpd = (bGPdata *)ob_eval->data;
+
+  /* Calculate brush-specific data which applies equally to all points */
+  char tool = gso->brush->gpencil_sculpt_tool;
+  switch (tool) {
+    case GPSCULPT_TOOL_GRAB: /* Grab points */
+    case GPSCULPT_TOOL_PUSH: /* Push points */
+    {
+      /* calculate amount of displacement to apply */
+      gso->rot_eval = 0.0f;
+      gpencil_brush_grab_calc_dvec(gso);
+      break;
+    }
+
+    case GPSCULPT_TOOL_PINCH: /* Pinch points */
+    case GPSCULPT_TOOL_TWIST: /* Twist points around midpoint */
+    {
+      /* calculate midpoint of the brush (in data space) */
+      gpencil_brush_calc_midpoint(gso);
+      break;
+    }
+
+    case GPSCULPT_TOOL_RANDOMIZE: /* Random jitter */
+    {
+      /* compute the displacement vector for the cursor (in data space) */
+      gso->rot_eval = 0.0f;
+      gpencil_brush_grab_calc_dvec(gso);
+      break;
+    }
+
+    default:
+      break;
+  }
+
+  /* Find visible strokes, and perform operations on those if hit */
+  LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
+    /* If no active frame, don't do anything... */
+    if ((!BKE_gpencil_layer_is_editable(gpl)) || (gpl->actframe == NULL)) {
+      continue;
+    }
+
+    /* calculate difference matrix */
+    float diff_mat[4][4];
+    BKE_gpencil_layer_transform_matrix_get(depsgraph, obact, gpl, diff_mat);
+    mul_m4_m4m4(diff_mat, diff_mat, gpl->layer_invmat);
+
+    /* Active Frame or MultiFrame? */
+    if (gso->is_multiframe) {
+      /* init multiframe falloff options */
+      int f_init = 0;
+      int f_end = 0;
+
+      if (gso->use_multiframe_falloff) {
+        BKE_gpencil_frame_range_selected(gpl, &f_init, &f_end);
+      }
+
+      LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
+        /* Always do active frame; Otherwise, only include selected frames */
+        if ((gpf == gpl->actframe) || (gpf->flag & GP_FRAME_SELECT)) {
+          /* compute multiframe falloff factor */
+          if (gso->use_multiframe_falloff) {
+            /* Falloff depends on distance to active frame
+             * (relative to the overall frame range). */
+            gso->mf_falloff = BKE_gpencil_multiframe_falloff_calc(
+                gpf, gpl->actframe->framenum, f_init, f_end, ts->gp_sculpt.cur_falloff);
+          }
+          else {
+            /* No falloff */
+            gso->mf_falloff = 1.0f;
+          }
+
+          /* affect strokes in this frame */
+          changed |= gpencil_sculpt_brush_do_frame(C, gso, gpl, gpf, diff_mat);
+        }
+      }
+    }
+    else {
+      if (gpl->actframe != NULL) {
+        /* Apply to active frame's strokes */
+        gso->mf_falloff = 1.0f;
+        changed |= gpencil_sculpt_brush_do_frame(C, gso, gpl, gpl->actframe, diff_mat);
+      }
+    }
+  }
+
+  return changed;
+}
+
+/* Calculate settings for applying brush */
+static void gpencil_sculpt_brush_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
+{
+  tGP_BrushEditData *gso = op->customdata;
+  Brush *brush = gso->brush;
+  const int radius = (brush->flag & GP_BRUSH_USE_PRESSURE) ? gso->brush->size * gso->pressure :
+                                                             gso->brush->size;
+  float mousef[2];
+  int mouse[2];
+  bool changed = false;
+
+  /* Get latest mouse coordinates */
+  RNA_float_get_array(itemptr, "mouse", mousef);
+  gso->mval[0] = mouse[0] = (int)(mousef[0]);
+  gso->mval[1] = mouse[1] = (int)(mousef[1]);
+
+  /* If the mouse/pen has not moved, no reason to continue. This also avoid a small
+   * drift due precision accumulation errors. */
+  if ((gso->mval[0] == gso->mval_prev[0]) && (gso->mval[1] == gso->mval_prev[1])) {
+    return;
+  }
+
+  gso->pressure = RNA_float_get(itemptr, "pressure");
+
+  if (RNA_boolean_get(itemptr, "pen_flip")) {
+    gso->flag |= GP_SCULPT_FLAG_INVERT;
+  }
+  else {
+    gso->flag &= ~GP_SCULPT_FLAG_INVERT;
+  }
+
+  /* Store coordinates as reference, if operator just started running */
+  if (gso->first) {
+    gso->mval_prev[0] = gso->mval[0];
+    gso->mval_prev[1] = gso->mval[1];
+    gso->pressure_prev = gso->pressure;
+  }
+
+  /* Update brush_rect, so that it represents the bounding rectangle of brush */
+  gso->brush_rect.xmin = mouse[0] - radius;
+  gso->brush_rect.ymin = mouse[1] - radius;
+  gso->brush_rect.xmax = mouse[0] + radius;
+  gso->brush_rect.ymax = mouse[1] + radius;
+
+  /* Apply brush */
+  char tool = gso->brush->gpencil_sculpt_tool;
+  if (tool == GPSCULPT_TOOL_CLONE) {
+    changed = gpencil_sculpt_brush_apply_clone(C, gso);
+  }
+  else {
+    changed = gpencil_sculpt_brush_apply_standard(C, gso);
+  }
+
+  /* Updates */
+  if (changed) {
+    DEG_id_tag_update(&gso->gpd->id, ID_RECALC_GEOMETRY);
+    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+  }
+
+  /* Store values for next step */
+  gso->mval_prev[0] = gso->mval[0];
+  gso->mval_prev[1] = gso->mval[1];
+  gso->pressure_prev = gso->pressure;
+  gso->first = false;
+}
+
+/* Running --------------------------------------------- */
+static Brush *gpencil_sculpt_get_smooth_brush(tGP_BrushEditData *gso)
+{
+  Main *bmain = gso->bmain;
+  Brush *brush = BLI_findstring(&bmain->brushes, "Smooth Stroke", offsetof(ID, name) + 2);
+
+  return brush;
+}
+
+/* helper - a record stroke, and apply paint event */
+static void gpencil_sculpt_brush_apply_event(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  tGP_BrushEditData *gso = op->customdata;
+  PointerRNA itemptr;
+  float mouse[2];
+
+  mouse[0] = event->mval[0] + 1;
+  mouse[1] = event->mval[1] + 1;
+
+  /* fill in stroke */
+  RNA_collection_add(op->ptr, "stroke", &itemptr);
+
+  RNA_float_set_array(&itemptr, "mouse", mouse);
+  RNA_boolean_set(&itemptr, "pen_flip", (event->modifier & KM_CTRL) != 0);
+  RNA_boolean_set(&itemptr, "is_start", gso->first);
+
+  /* handle pressure sensitivity (which is supplied by tablets and otherwise 1.0) */
+  float pressure = event->tablet.pressure;
+  /* special exception here for too high pressure values on first touch in
+   * windows for some tablets: clamp the values to be sane */
+  if (pressure >= 0.99f) {
+    pressure = 1.0f;
+  }
+  RNA_float_set(&itemptr, "pressure", pressure);
+
+  if (event->modifier & KM_SHIFT) {
+    gso->brush_prev = gso->brush;
+
+    gso->brush = gpencil_sculpt_get_smooth_brush(gso);
+    if (gso->brush == NULL) {
+      gso->brush = gso->brush_prev;
+    }
+  }
+  else {
+    if (gso->brush_prev != NULL) {
+      gso->brush = gso->brush_prev;
+    }
+  }
+
+  /* apply */
+  gpencil_sculpt_brush_apply(C, op, &itemptr);
+}
+
+/* reapply */
+static int gpencil_sculpt_brush_exec(bContext *C, wmOperator *op)
+{
+  if (!gpencil_sculpt_brush_init(C, op)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  RNA_BEGIN (op->ptr, itemptr, "stroke") {
+    gpencil_sculpt_brush_apply(C, op, &itemptr);
+  }
+  RNA_END;
+
+  gpencil_sculpt_brush_exit(C, op);
+
+  return OPERATOR_FINISHED;
+}
+
+/* start modal painting */
+static int gpencil_sculpt_brush_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  tGP_BrushEditData *gso = NULL;
+  const bool is_modal = RNA_boolean_get(op->ptr, "wait_for_input");
+  const bool is_playing = ED_screen_animation_playing(CTX_wm_manager(C)) != NULL;
+  bool needs_timer = false;
+  float brush_rate = 0.0f;
+
+  /* the operator cannot work while play animation */
+  if (is_playing) {
+    BKE_report(op->reports, RPT_ERROR, "Cannot sculpt while animation is playing");
+
+    return OPERATOR_CANCELLED;
+  }
+
+  /* init painting data */
+  if (!gpencil_sculpt_brush_init(C, op)) {
+    return OPERATOR_CANCELLED;
+  }
+
+  gso = op->customdata;
+
+  /* Initialize type-specific data (used for the entire session). */
+  char tool = gso->brush->gpencil_sculpt_tool;
+  switch (tool) {
+    /* Brushes requiring timer... */
+    case GPSCULPT_TOOL_THICKNESS:
+      brush_rate = 0.01f;
+      needs_timer = true;
+      break;
+
+    case GPSCULPT_TOOL_STRENGTH:
+      brush_rate = 0.01f;
+      needs_timer = true;
+      break;
+
+    case GPSCULPT_TOOL_PINCH:
+      brush_rate = 0.001f;
+      needs_timer = true;
+      break;
+
+    case GPSCULPT_TOOL_TWIST:
+      brush_rate = 0.01f;
+      needs_timer = true;
+      break;
+
+    default:
+      break;
+  }
+
+  /* register timer for increasing influence by hovering over an area */
+  if (needs_timer) {
+    gso->timer = WM_event_add_timer(CTX_wm_manager(C), CTX_wm_window(C), TIMER, brush_rate);
+  }
+
+  /* register modal handler */
+  WM_event_add_modal_handler(C, op);
+
+  /* start drawing immediately? */
+  if (is_modal == false) {
+    ARegion *region = CTX_wm_region(C);
+
+    /* ensure that we'll have a new frame to draw on */
+    gpencil_sculpt_brush_init_stroke(C, gso);
+
+    /* apply first dab... */
+    gso->is_painting = true;
+    gpencil_sculpt_brush_apply_event(C, op, event);
+
+    /* redraw view with feedback */
+    ED_region_tag_redraw(region);
+  }
+
+  return OPERATOR_RUNNING_MODAL;
+}
+
+/* painting - handle events */
+static int gpencil_sculpt_brush_modal(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  tGP_BrushEditData *gso = op->customdata;
+  const bool is_modal = RNA_boolean_get(op->ptr, "wait_for_input");
+  bool redraw_region = false;
+  bool redraw_toolsettings = false;
+
+  /* The operator can be in 2 states: Painting and Idling */
+  if (gso->is_painting) {
+    /* Painting. */
+    switch (event->type) {
+      /* Mouse Move = Apply somewhere else */
+      case MOUSEMOVE:
+      case INBETWEEN_MOUSEMOVE:
+        /* apply brush effect at new position */
+        gpencil_sculpt_brush_apply_event(C, op, event);
+
+        /* force redraw, so that the cursor will at least be valid */
+        redraw_region = true;
+        break;
+
+      /* Timer Tick - Only if this was our own timer */
+      case TIMER:
+        if (event->customdata == gso->timer) {
+          gso->timerTick = true;
+          gpencil_sculpt_brush_apply_event(C, op, event);
+          gso->timerTick = false;
+        }
+        break;
+
+      /* Painting mbut release = Stop painting (back to idle) */
+      case LEFTMOUSE:
+        // BLI_assert(event->val == KM_RELEASE);
+        if (is_modal) {
+          /* go back to idling... */
+          gso->is_painting = false;
+        }
+        else {
+          /* end sculpt session, since we're not modal */
+          gso->is_painting = false;
+
+          gpencil_sculpt_brush_exit(C, op);
+          return OPERATOR_FINISHED;
+        }
+        break;
+
+      /* Abort painting if any of the usual things are tried */
+      case MIDDLEMOUSE:
+      case RIGHTMOUSE:
+      case EVT_ESCKEY:
+        gpencil_sculpt_brush_exit(C, op);
+        return OPERATOR_FINISHED;
+    }
+  }
+  else {
+    /* Idling */
+    BLI_assert(is_modal == true);
+
+    switch (event->type) {
+      /* Painting mbut press = Start painting (switch to painting state) */
+      case LEFTMOUSE:
+        /* do initial "click" apply */
+        gso->is_painting = true;
+        gso->first = true;
+
+        gpencil_sculpt_brush_init_stroke(C, gso);
+        gpencil_sculpt_brush_apply_event(C, op, event);
+        break;
+
+      /* Exit modal operator, based on the "standard" ops */
+      case RIGHTMOUSE:
+      case EVT_ESCKEY:
+        gpencil_sculpt_brush_exit(C, op);
+        return OPERATOR_FINISHED;
+
+      /* MMB is often used for view manipulations */
+      case MIDDLEMOUSE:
+        return OPERATOR_PASS_THROUGH;
+
+      /* Mouse movements should update the brush cursor - Just redraw the active region */
+      case MOUSEMOVE:
+      case INBETWEEN_MOUSEMOVE:
+        redraw_region = true;
+        break;
+
+        /* Change Frame - Allowed */
+      case EVT_LEFTARROWKEY:
+      case EVT_RIGHTARROWKEY:
+      case EVT_UPARROWKEY:
+      case EVT_DOWNARROWKEY:
+        return OPERATOR_PASS_THROUGH;
+
+      /* Camera/View Gizmo's - Allowed */
+      /* (See rationale in gpencil_paint.c -> gpencil_draw_modal()) */
+      case EVT_PAD0:
+      case EVT_PAD1:
+      case EVT_PAD2:
+      case EVT_PAD3:
+      case EVT_PAD4:
+      case EVT_PAD5:
+      case EVT_PAD6:
+      case EVT_PAD7:
+      case EVT_PAD8:
+      case EVT_PAD9:
+        return OPERATOR_PASS_THROUGH;
+
+      /* Unhandled event */
+      default:
+        break;
+    }
+  }
+
+  /* Redraw region? */
+  if (redraw_region) {
+    ARegion *region = CTX_wm_region(C);
+    ED_region_tag_redraw(region);
+  }
+
+  /* Redraw toolsettings (brush settings)? */
+  if (redraw_toolsettings) {
+    DEG_id_tag_update(&gso->gpd->id, ID_RECALC_GEOMETRY);
+    WM_event_add_notifier(C, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  }
+
+  return OPERATOR_RUNNING_MODAL;
+}
+
+void GPENCIL_OT_sculpt_paint(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Stroke Sculpt";
+  ot->idname = "GPENCIL_OT_sculpt_paint";
+  ot->description = "Apply tweaks to strokes by painting over the strokes"; /* XXX */
+
+  /* api callbacks */
+  ot->exec = gpencil_sculpt_brush_exec;
+  ot->invoke = gpencil_sculpt_brush_invoke;
+  ot->modal = gpencil_sculpt_brush_modal;
+  ot->cancel = gpencil_sculpt_brush_exit;
+  ot->poll = gpencil_sculpt_brush_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING;
+
+  /* properties */
+  PropertyRNA *prop;
+  prop = RNA_def_collection_runtime(ot->srna, "stroke", &RNA_OperatorStrokeElement, "Stroke", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+
+  prop = RNA_def_boolean(
+      ot->srna,
+      "wait_for_input",
+      true,
+      "Wait for Input",
+      "Enter a mini 'sculpt-mode' if enabled, otherwise, exit after drawing a single stroke");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+}
