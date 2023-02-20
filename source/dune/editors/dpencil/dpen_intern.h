@@ -25,7 +25,7 @@ struct wmOperatorType;
 
 struct Depsgraph;
 
-struct EnumPropertyItem;
+struct EnumPropItem;
 struct ApiPtr;
 struct ApiProp;
 
