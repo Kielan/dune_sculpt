@@ -155,12 +155,12 @@ static void deselect_all_selected(bContext *C)
     }
 
     /* deselect curve and curve points */
-    if (gps->editcurve != NULL) {
-      bGPDcurve *gpc = gps->editcurve;
-      for (int j = 0; j < gpc->tot_curve_points; j++) {
-        bGPDcurve_point *gpc_pt = &gpc->curve_points[j];
-        BezTriple *bezt = &gpc_pt->bezt;
-        gpc_pt->flag &= ~GP_CURVE_POINT_SELECT;
+    if (dps->editcurve != NULL) {
+      DPenCurve *dpc = dps->editcurve;
+      for (int j = 0; j < dpc->tot_curve_points; j++) {
+        DPenCurve_point *dpc_pt = &dpc->curve_points[j];
+        BezTriple *bezt = &dpc_pt->bezt;
+        dpc_pt->flag &= ~DPEN_CURVE_POINT_SELECT;
         BEZT_DESEL_ALL(bezt);
       }
 
@@ -172,10 +172,10 @@ static void deselect_all_selected(bContext *C)
 
 static void select_all_stroke_points(bGPdata *gpd, bGPDstroke *gps, bool select)
 {
-  for (int i = 0; i < gps->totpoints; i++) {
-    bGPDspoint *pt = &gps->points[i];
+  for (int i = 0; i < dps->totpoints; i++) {
+    DPenPoint *pt = &dps->points[i];
     if (select) {
-      pt->flag |= GP_SPOINT_SELECT;
+      pt->flag |= DPEN_SPOINT_SELECT;
     }
     else {
       pt->flag &= ~GP_SPOINT_SELECT;
@@ -183,22 +183,22 @@ static void select_all_stroke_points(bGPdata *gpd, bGPDstroke *gps, bool select)
   }
 
   if (select) {
-    gps->flag |= GP_STROKE_SELECT;
-    BKE_gpencil_stroke_select_index_set(gpd, gps);
+    dps->flag |= DPEN_STROKE_SELECT;
+    dune_dpen_stroke_select_index_set(dpd,dgps);
   }
   else {
-    gps->flag &= ~GP_STROKE_SELECT;
-    BKE_gpencil_stroke_select_index_reset(gps);
+    dps->flag &= ~DPEN_STROKE_SELECT;
+    dune_dpen_stroke_select_index_reset(dps);
   }
 }
 
-static void select_all_curve_points(bGPdata *gpd, bGPDstroke *gps, bGPDcurve *gpc, bool deselect)
+static void select_all_curve_points(DPenData *dpd, bGPDstroke *gps, bGPDcurve *gpc, bool deselect)
 {
-  for (int i = 0; i < gpc->tot_curve_points; i++) {
-    bGPDcurve_point *gpc_pt = &gpc->curve_points[i];
-    BezTriple *bezt = &gpc_pt->bezt;
+  for (int i = 0; i < dpc->tot_curve_points; i++) {
+    DPenCurve_point *dpc_pt = &dpc->curve_points[i];
+    BezTriple *bezt = &dpc_pt->bezt;
     if (deselect == false) {
-      gpc_pt->flag |= GP_CURVE_POINT_SELECT;
+      dpc_pt->flag |= DPEN_CURVE_POINT_SELECT;
       BEZT_SEL_ALL(bezt);
     }
     else {
