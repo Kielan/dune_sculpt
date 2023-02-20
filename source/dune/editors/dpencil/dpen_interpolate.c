@@ -331,62 +331,62 @@ static void dpen_interpolate_update_points(const DPenStroke *dps_from,
 {
   /* update points */
   for (int i = 0; i < new_stroke->totpoints; i++) {
-    const DPenPoint *prev = &gps_from->points[i];
-    const DPenPoint *next = &gps_to->points[i];
-    bGPDspoint *pt = &new_stroke->points[i];
+    const DPenPoint *prev = &dps_from->points[i];
+    const DPenPoint *next = &dps_to->points[i];
+    DPenPoint *pt = &new_stroke->points[i];
 
     /* Interpolate all values */
     interp_v3_v3v3(&pt->x, &prev->x, &next->x, factor);
     pt->pressure = interpf(prev->pressure, next->pressure, 1.0f - factor);
     pt->strength = interpf(prev->strength, next->strength, 1.0f - factor);
-    CLAMP(pt->strength, GPENCIL_STRENGTH_MIN, 1.0f);
+    CLAMP(pt->strength, DPEN_STRENGTH_MIN, 1.0f);
   }
 }
 
 /* ****************** Interpolate Interactive *********************** */
 /* Helper: free all temp strokes for display. */
-static void gpencil_interpolate_free_tagged_strokes(bGPDframe *gpf)
+static void dpen_interpolate_free_tagged_strokes(DPenFrame *dpf)
 {
-  if (gpf == NULL) {
+  if (dpf == NULL) {
     return;
   }
 
-  LISTBASE_FOREACH_MUTABLE (bGPDstroke *, gps, &gpf->strokes) {
-    if (gps->flag & GP_STROKE_TAG) {
-      BLI_remlink(&gpf->strokes, gps);
-      BKE_gpencil_free_stroke(gps);
+  LISTBASE_FOREACH_MUTABLE (DPenStroke *, dps, &dpf->strokes) {
+    if (dps->flag & DPEN_STROKE_TAG) {
+      lib_remlink(&gpf->strokes, dps);
+      dune_dpen_free_stroke(dps);
     }
   }
 }
 
 /* Helper: Untag all strokes. */
-static void gpencil_interpolate_untag_strokes(bGPDlayer *gpl)
+static void dpen_interpolate_untag_strokes(DPenLayer *dpl)
 {
-  if (gpl == NULL) {
+  if (dpl == NULL) {
     return;
   }
 
-  LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
-    LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
-      if (gps->flag & GP_STROKE_TAG) {
-        gps->flag &= ~GP_STROKE_TAG;
+  LISTBASE_FOREACH (DPenFrame *, dpf, &dpl->frames) {
+    LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
+      if (dps->flag & DPEN_STROKE_TAG) {
+        dps->flag &= ~DPEN_STROKE_TAG;
       }
     }
   }
 }
 
 /* Helper: Update all strokes interpolated */
-static void gpencil_interpolate_update_strokes(bContext *C, tGPDinterpolate *tgpi)
+static void dpen_interpolate_update_strokes(dContext *C, DPenInterpolate *tdpi)
 {
-  bGPdata *gpd = tgpi->gpd;
-  const float shift = tgpi->shift;
+  DPenData *dpd = tdpi->dpd;
+  const float shift = tdpi->shift;
 
-  LISTBASE_FOREACH (tGPDinterpolate_layer *, tgpil, &tgpi->ilayers) {
-    const float factor = tgpil->factor + shift;
+  LISTBASE_FOREACH (DPenInterpolate_layer *, tdpil, &tdpi->ilayers) {
+    const float factor = tdpil->factor + shift;
 
-    bGPDframe *gpf = tgpil->gpl->actframe;
+    DPenFrame *dpf = tdpil->dpl->actframe;
     /* Free temp strokes used for display. */
-    gpencil_interpolate_free_tagged_strokes(gpf);
+    dpen_interpolate_free_tagged_strokes(dpf);
 
     /* Clear previous interpolations. */
     gpencil_interpolate_free_tagged_strokes(tgpil->interFrame);
