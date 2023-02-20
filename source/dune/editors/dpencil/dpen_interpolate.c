@@ -1,6 +1,5 @@
-/** \file
- * \ingroup edgpencil
- * Operators for interpolating new Grease Pencil frames from existing strokes.
+/**
+ * Operators for interpolating new Dune Pen frames from existing strokes.
  */
 
 #include <math.h>
@@ -11,27 +10,27 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_easing.h"
-#include "BLI_ghash.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_easing.h"
+#include "lib_ghash.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "DNA_color_types.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_view3d_types.h"
+#include "types_color.h"
+#include "types_dpen.h"
+#include "types_meshdata.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_view3d.h"
 
-#include "BKE_colortools.h"
-#include "BKE_context.h"
-#include "BKE_gpencil.h"
-#include "BKE_gpencil_geom.h"
+#include "dune_colortools.h"
+#include "dune_context.h"
+#include "BKE_dpen.h"
+#include "BKE_dpen_geom.h"
 #include "BKE_report.h"
 
 #include "UI_interface.h"
