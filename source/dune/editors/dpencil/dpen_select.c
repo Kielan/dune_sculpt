@@ -2645,3 +2645,234 @@ static int gpencil_select_exec(bContext *C, wmOperator *op)
 
   return OP_FINISHED;
 }
+static int gpencil_select_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+{
+  RNA_int_set_array(op->ptr, "location", event->mval);
+
+  if (!RNA_struct_property_is_set(op->ptr, "use_shift_extend")) {
+    RNA_boolean_set(op->ptr, "use_shift_extend", event->modifier & KM_SHIFT);
+  }
+
+  return gpencil_select_exec(C, op);
+}
+
+void GPENCIL_OT_select(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Select";
+  ot->description = "Select Grease Pencil strokes and/or stroke points";
+  ot->idname = "GPENCIL_OT_select";
+
+  /* callbacks */
+  ot->invoke = gpencil_select_invoke;
+  ot->exec = gpencil_select_exec;
+  ot->poll = gpencil_select_poll;
+
+  /* flag */
+  ot->flag = OPTYPE_UNDO;
+
+  /* properties */
+  WM_operator_properties_mouse_select(ot);
+
+  prop = RNA_def_boolean(ot->srna,
+                         "entire_strokes",
+                         false,
+                         "Entire Strokes",
+                         "Select entire strokes instead of just the nearest stroke vertex");
+  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+
+  prop = RNA_def_int_vector(ot->srna,
+                            "location",
+                            2,
+                            NULL,
+                            INT_MIN,
+                            INT_MAX,
+                            "Location",
+                            "Mouse location",
+                            INT_MIN,
+                            INT_MAX);
+  RNA_def_property_flag(prop, PROP_HIDDEN);
+
+  prop = RNA_def_boolean(ot->srna, "use_shift_extend", false, "Extend", "");
+  RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+}
+
+/* Select by Vertex Color. */
+/* Helper to create a hash of colors. */
+static void gpencil_selected_hue_table(bContext *C,
+                                       Object *ob,
+                                       const int threshold,
+                                       GHash *hue_table)
+{
+  const float range = pow(10, 5 - threshold);
+  float hsv[3];
+
+  /* Extract all colors. */
+  CTX_DATA_BEGIN (C, bGPDlayer *, gpl, editable_gpencil_layers) {
+    LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
+      LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+        if (ED_gpencil_stroke_can_use(C, gps) == false) {
+          continue;
+        }
+        if (ED_gpencil_stroke_material_editable(ob, gpl, gps) == false) {
+          continue;
+        }
+        if ((gps->flag & GP_STROKE_SELECT) == 0) {
+          continue;
+        }
+
+        /* Read all points to get all colors selected. */
+        bGPDspoint *pt;
+        int i;
+        for (i = 0, pt = gps->points; i < gps->totpoints; i++, pt++) {
+          if (((pt->flag & GP_SPOINT_SELECT) == 0) || (pt->vert_color[3] == 0.0f)) {
+            continue;
+          }
+          /* Round Hue value. */
+          rgb_to_hsv_compat_v(pt->vert_color, hsv);
+          uint key = truncf(hsv[0] * range);
+          if (!BLI_ghash_haskey(hue_table, POINTER_FROM_INT(key))) {
+            BLI_ghash_insert(hue_table, POINTER_FROM_INT(key), POINTER_FROM_INT(key));
+          }
+        }
+      }
+    }
+  }
+  CTX_DATA_END;
+}
+
+static bool gpencil_select_vertex_color_poll(bContext *C)
+{
+  ToolSettings *ts = CTX_data_tool_settings(C);
+  Object *ob = CTX_data_active_object(C);
+  if ((ob == NULL) || (ob->type != OB_GPENCIL)) {
+    return false;
+  }
+  bGPdata *gpd = (bGPdata *)ob->data;
+
+  if (GPENCIL_VERTEX_MODE(gpd)) {
+    if (!(GPENCIL_ANY_VERTEX_MASK(ts->gpencil_selectmode_vertex))) {
+      return false;
+    }
+
+    /* Any data to use. */
+    if (gpd->layers.first) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+static int gpencil_select_vertex_color_exec(bContext *C, wmOperator *op)
+{
+  ToolSettings *ts = CTX_data_tool_settings(C);
+  Object *ob = CTX_data_active_object(C);
+  bGPdata *gpd = ED_gpencil_data_get_active(C);
+
+  const float threshold = RNA_int_get(op->ptr, "threshold");
+  const int selectmode = gpencil_select_mode_from_vertex(ts->gpencil_selectmode_vertex);
+  const float range = pow(10, 5 - threshold);
+
+  bool changed = false;
+
+  /* Create a hash table with all selected colors. */
+  GHash *hue_table = BLI_ghash_int_new(__func__);
+  gpencil_selected_hue_table(C, ob, threshold, hue_table);
+  if (BLI_ghash_len(hue_table) == 0) {
+    BKE_report(op->reports, RPT_ERROR, "Select before some Vertex to use as a filter color");
+    BLI_ghash_free(hue_table, NULL, NULL);
+
+    return OPERATOR_CANCELLED;
+  }
+
+  /* Select any visible stroke that uses any of these colors. */
+  CTX_DATA_BEGIN (C, bGPDstroke *, gps, editable_gpencil_strokes) {
+    bGPDspoint *pt;
+    int i;
+    bool gps_selected = false;
+    /* Check all stroke points. */
+    for (i = 0, pt = gps->points; i < gps->totpoints; i++, pt++) {
+      if (pt->vert_color[3] == 0.0f) {
+        continue;
+      }
+
+      /* Only check Hue to get value and saturation full ranges. */
+      float hsv[3];
+      /* Round Hue value. */
+      rgb_to_hsv_compat_v(pt->vert_color, hsv);
+      uint key = truncf(hsv[0] * range);
+
+      if (BLI_ghash_haskey(hue_table, POINTER_FROM_INT(key))) {
+        pt->flag |= GP_SPOINT_SELECT;
+        gps_selected = true;
+      }
+    }
+
+    if (gps_selected) {
+      gps->flag |= GP_STROKE_SELECT;
+      BKE_gpencil_stroke_select_index_set(gpd, gps);
+
+      /* Extend stroke selection. */
+      if (selectmode == GP_SELECTMODE_STROKE) {
+        bGPDspoint *pt1 = NULL;
+
+        for (i = 0, pt1 = gps->points; i < gps->totpoints; i++, pt1++) {
+          pt1->flag |= GP_SPOINT_SELECT;
+        }
+      }
+    }
+  }
+  CTX_DATA_END;
+
+  if (changed) {
+    /* updates */
+    DEG_id_tag_update(&gpd->id, ID_RECALC_GEOMETRY);
+
+    /* copy on write tag is needed, or else no refresh happens */
+    DEG_id_tag_update(&gpd->id, ID_RECALC_COPY_ON_WRITE);
+
+    WM_event_add_notifier(C, NC_GPENCIL | NA_SELECTED, NULL);
+    WM_event_add_notifier(C, NC_GEOM | ND_SELECT, NULL);
+  }
+
+  /* Free memory. */
+  if (hue_table != NULL) {
+    BLI_ghash_free(hue_table, NULL, NULL);
+  }
+
+  return OPERATOR_FINISHED;
+}
+
+void GPENCIL_OT_select_vertex_color(wmOperatorType *ot)
+{
+  PropertyRNA *prop;
+
+  /* identifiers */
+  ot->name = "Select Vertex Color";
+  ot->idname = "GPENCIL_OT_select_vertex_color";
+  ot->description = "Select all points with similar vertex color of current selected";
+
+  /* callbacks */
+  ot->exec = gpencil_select_vertex_color_exec;
+  ot->poll = gpencil_select_vertex_color_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  prop = RNA_def_int(
+      ot->srna,
+      "threshold",
+      0,
+      0,
+      5,
+      "Threshold",
+      "Tolerance of the selection. Higher values select a wider range of similar colors",
+      0,
+      5);
+  /* avoid re-using last var */
+  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+}
