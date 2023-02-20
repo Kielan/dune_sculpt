@@ -62,7 +62,7 @@ static int dpen_select_mode_from_sculpt(eGP_Sculpt_SelectMaskFlag mode)
   if (mode & DPEN_SCULPT_MASK_SELECTMODE_SEGMENT) {
     return DPEN_SELECTMODE_SEGMENT;
   }
-  return GP_SELECTMODE_POINT;
+  return DPEN_SELECTMODE_POINT;
 }
 
 /* Convert vertex mask mode to Select mode */
@@ -138,20 +138,20 @@ static void deselect_all_selected(bContext *C)
   DPenData *dpd = ob->data;
   dpd->select_last_index = 0;
 
-  CTX_DATA_BEGIN (C, bGPDstroke *, gps, editable_gpencil_strokes) {
+  CTX_DATA_BEGIN (C, DPenStroke *, dps, editable_dpen_strokes) {
     /* deselect stroke and its points if selected */
-    if (gps->flag & GP_STROKE_SELECT) {
-      bGPDspoint *pt;
+    if (dps->flag & DPEN_STROKE_SELECT) {
+      DPenPoint *pt;
       int i;
 
       /* deselect points */
-      for (i = 0, pt = gps->points; i < gps->totpoints; i++, pt++) {
-        pt->flag &= ~GP_SPOINT_SELECT;
+      for (i = 0, pt = dps->points; i < dps->totpoints; i++, pt++) {
+        pt->flag &= ~DPEN_SPOINT_SELECT;
       }
 
       /* deselect stroke itself too */
-      gps->flag &= ~GP_STROKE_SELECT;
-      BKE_gpencil_stroke_select_index_reset(gps);
+      dps->flag &= ~DPEN_STROKE_SELECT;
+      dune_dpen_stroke_select_index_reset(gps);
     }
 
     /* deselect curve and curve points */
