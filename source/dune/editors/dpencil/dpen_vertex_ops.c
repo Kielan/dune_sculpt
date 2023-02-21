@@ -22,56 +22,56 @@
 #include "api_access.h"
 #include "api_define.h"
 
-#include "ED_gpencil.h"
-#include "ED_screen.h"
+#include "ed_dpen.h"
+#include "ed_screen.h"
 
 #include "DEG_depsgraph.h"
 
 #include "dpen_intern.h"
 
 static const EnumPropItem dpen_modesEnumPropItem_mode[] = {
-    {GPPAINT_MODE_STROKE, "STROKE", 0, "Stroke", ""},
-    {GPPAINT_MODE_FILL, "FILL", 0, "Fill", ""},
-    {GPPAINT_MODE_BOTH, "BOTH", 0, "Stroke & Fill", ""},
+    {DPENPAINT_MODE_STROKE, "STROKE", 0, "Stroke", ""},
+    {DPENPAINT_MODE_FILL, "FILL", 0, "Fill", ""},
+    {DPENPAINT_MODE_BOTH, "BOTH", 0, "Stroke & Fill", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
 /* Helper: Check if any stroke is selected. */
-static bool is_any_stroke_selected(bContext *C, const bool is_multiedit, const bool is_curve_edit)
+static bool is_any_stroke_selected(dContext *C, const bool is_multiedit, const bool is_curve_edit)
 {
   bool is_selected = false;
 
   /* If not enabled any mask mode, the strokes are considered as not selected. */
-  ToolSettings *ts = CTX_data_tool_settings(C);
-  if (!GPENCIL_ANY_VERTEX_MASK(ts->gpencil_selectmode_vertex)) {
+  ToolSettings *ts = ctx_data_tool_settings(C);
+  if (!DPEN_ANY_VERTEX_MASK(ts->dpen_selectmode_vertex)) {
     return false;
   }
 
-  CTX_DATA_BEGIN (C, bGPDlayer *, gpl, editable_gpencil_layers) {
-    bGPDframe *init_gpf = (is_multiedit) ? gpl->frames.first : gpl->actframe;
-    for (bGPDframe *gpf = init_gpf; gpf; gpf = gpf->next) {
-      if ((gpf == gpl->actframe) || ((gpf->flag & GP_FRAME_SELECT) && (is_multiedit))) {
-        if (gpf == NULL) {
+  CTX_DATA_BEGIN (C, DPenLayer *, dpl, editable_dpen_layers) {
+    DPenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : gpl->actframe;
+    for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
+      if ((dpf == dpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
+        if (dpf == NULL) {
           continue;
         }
-        LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+        LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
           /* skip strokes that are invalid for current view */
-          if (ED_gpencil_stroke_can_use(C, gps) == false) {
+          if (ed_dpen_stroke_can_use(C, dps) == false) {
             continue;
           }
 
           if (is_curve_edit) {
-            if (gps->editcurve == NULL) {
+            if (dps->editcurve == NULL) {
               continue;
             }
-            bGPDcurve *gpc = gps->editcurve;
-            if (gpc->flag & GP_CURVE_SELECT) {
+            DPenCurve *dpc = dps->editcurve;
+            if (dpc->flag & DPEN_CURVE_SELECT) {
               is_selected = true;
               break;
             }
           }
           else {
-            if (gps->flag & GP_STROKE_SELECT) {
+            if (dps->flag & DPEN_STROKE_SELECT) {
               is_selected = true;
               break;
             }
@@ -90,17 +90,17 @@ static bool is_any_stroke_selected(bContext *C, const bool is_multiedit, const b
 }
 
 /* Poll callback for stroke vertex paint operator. */
-static bool gpencil_vertexpaint_mode_poll(bContext *C)
+static bool dpen_vertexpaint_mode_poll(dContext *C)
 {
-  Object *ob = CTX_data_active_object(C);
-  if ((ob == NULL) || (ob->type != OB_GPENCIL)) {
+  Object *ob = ctx_data_active_object(C);
+  if ((ob == NULL) || (ob->type != OB_DPEN)) {
     return false;
   }
 
-  bGPdata *gpd = (bGPdata *)ob->data;
-  if (GPENCIL_VERTEX_MODE(gpd)) {
+  DPenData *dpd = (DPenData *)ob->data;
+  if (DPEN_VERTEX_MODE(dpd)) {
     /* Any data to use. */
-    if (gpd->layers.first) {
+    if (dpd->layers.first) {
       return true;
     }
   }
@@ -108,18 +108,18 @@ static bool gpencil_vertexpaint_mode_poll(bContext *C)
   return false;
 }
 
-static int gpencil_vertexpaint_brightness_contrast_exec(bContext *C, wmOperator *op)
+static int dpen_vertexpaint_brightness_contrast_ex(dContext *C, wmOperator *op)
 {
-  Object *ob = CTX_data_active_object(C);
-  bGPdata *gpd = (bGPdata *)ob->data;
-  const bool is_multiedit = (bool)GPENCIL_MULTIEDIT_SESSIONS_ON(gpd);
-  const eGp_Vertex_Mode mode = RNA_enum_get(op->ptr, "mode");
+  Object *ob = ctx_data_active_object(C);
+  DPenData *dpd = (DPenData *)ob->data;
+  const bool is_multiedit = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dpd);
+  const eDp_Vertex_Mode mode = api_enum_get(op->ptr, "mode");
   const bool any_selected = is_any_stroke_selected(C, is_multiedit, false);
 
   float gain, offset;
   {
-    float brightness = RNA_float_get(op->ptr, "brightness");
-    float contrast = RNA_float_get(op->ptr, "contrast");
+    float brightness = api_float_get(op->ptr, "brightness");
+    float contrast = api_float_get(op->ptr, "contrast");
     brightness /= 100.0f;
     float delta = contrast / 200.0f;
     /*
@@ -141,8 +141,8 @@ static int gpencil_vertexpaint_brightness_contrast_exec(bContext *C, wmOperator 
 
   /* Loop all selected strokes. */
   bool changed = false;
-  CTX_DATA_BEGIN (C, bGPDlayer *, gpl, editable_gpencil_layers) {
-    bGPDframe *init_gpf = (is_multiedit) ? gpl->frames.first : gpl->actframe;
+  CTX_DATA_BEGIN (C, DPenLayer *, gpl, editable_gpencil_layers) {
+    DPenFrame *init_gpf = (is_multiedit) ? gpl->frames.first : gpl->actframe;
 
     for (bGPDframe *gpf = init_gpf; gpf; gpf = gpf->next) {
       if ((gpf == gpl->actframe) || ((gpf->flag & GP_FRAME_SELECT) && (is_multiedit))) {
