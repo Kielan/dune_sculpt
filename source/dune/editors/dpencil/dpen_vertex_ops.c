@@ -6,30 +6,30 @@
 #include "lib_ghash.h"
 #include "lib_math.h"
 
-#include "types_brush_types.h"
-#include "types_gpencil_types.h"
-#include "DNA_material_types.h"
+#include "types_brush.h"
+#include "types_dpen.h"
+#include "types_material.h"
 
-#include "BKE_context.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_paint.h"
-#include "BKE_report.h"
+#include "dune_context.h"
+#include "dune_main.h"
+#include "dune_material.h"
+#include "dune_paint.h"
+#include "dune_report.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
 #include "ED_gpencil.h"
 #include "ED_screen.h"
 
 #include "DEG_depsgraph.h"
 
-#include "gpencil_intern.h"
+#include "dpen_intern.h"
 
-static const EnumPropertyItem gpencil_modesEnumPropertyItem_mode[] = {
+static const EnumPropItem dpen_modesEnumPropItem_mode[] = {
     {GPPAINT_MODE_STROKE, "STROKE", 0, "Stroke", ""},
     {GPPAINT_MODE_FILL, "FILL", 0, "Fill", ""},
     {GPPAINT_MODE_BOTH, "BOTH", 0, "Stroke & Fill", ""},
