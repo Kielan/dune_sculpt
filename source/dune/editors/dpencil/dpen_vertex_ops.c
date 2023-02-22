@@ -141,8 +141,8 @@ static int dpen_vertexpaint_brightness_contrast_ex(dContext *C, wmOperator *op)
 
   /* Loop all selected strokes. */
   bool changed = false;
-  CTX_DATA_BEGIN (C, DPenLayer *, gpl, editable_gpencil_layers) {
-    DPenFrame *init_gpf = (is_multiedit) ? gpl->frames.first : gpl->actframe;
+  CTX_DATA_BEGIN (C, DPenLayer *, dpl, editable_dpen_layers) {
+    DPenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : dpl->actframe;
 
     for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
       if ((dpf == dpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
@@ -156,7 +156,7 @@ static int dpen_vertexpaint_brightness_contrast_ex(dContext *C, wmOperator *op)
             continue;
           }
 
-          if ((!any_selected) || (dps->flag & GP_STROKE_SELECT)) {
+          if ((!any_selected) || (dps->flag & DPEN_STROKE_SELECT)) {
             /* Fill color. */
             if (mode != DPENPAINT_MODE_STROKE) {
               if (dps->vert_color_fill[3] > 0.0f) {
@@ -242,18 +242,18 @@ static int dpen_vertexpaint_hsv_ex(dContext *C, wmOperator *op)
     DPenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : dpl->actframe;
 
     for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
-      if ((gpf == gpl->actframe) || ((gpf->flag & GP_FRAME_SELECT) && (is_multiedit))) {
-        if (gpf == NULL) {
+      if ((dpf == gpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
+        if (dpf == NULL) {
           continue;
         }
 
-        LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+        LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
           /* skip strokes that are invalid for current view */
-          if (ed_dpen_stroke_can_use(C, gps) == false) {
+          if (ed_dpen_stroke_can_use(C, dps) == false) {
             continue;
           }
 
-          if ((!any_selected) || (dps->flag & GP_STROKE_SELECT)) {
+          if ((!any_selected) || (dps->flag & DPEN_STROKE_SELECT)) {
             float hsv[3];
 
             /* Fill color. */
@@ -315,8 +315,8 @@ static int dpen_vertexpaint_hsv_ex(dContext *C, wmOperator *op)
 
   /* notifiers */
   if (changed) {
-    DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-    wm_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+    DEG_id_tag_update(&dpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+    wm_event_add_notifier(C, NC_DPEN | ND_DATA | NA_EDITED, NULL);
   }
 
   return OP_FINISHED;
@@ -337,57 +337,57 @@ void DPEN_OT_vertex_color_hsv(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* params */
-  ot->prop = RNA_def_enum(
-      ot->srna, "mode", gpencil_modesEnumPropertyItem_mode, GPPAINT_MODE_BOTH, "Mode", "");
-  RNA_def_float(ot->srna, "h", 0.5f, 0.0f, 1.0f, "Hue", "", 0.0f, 1.0f);
-  RNA_def_float(ot->srna, "s", 1.0f, 0.0f, 2.0f, "Saturation", "", 0.0f, 2.0f);
-  RNA_def_float(ot->srna, "v", 1.0f, 0.0f, 2.0f, "Value", "", 0.0f, 2.0f);
+  ot->prop = api_def_enum(
+      ot->srna, "mode", dpen_modesEnumPropItem_mode, DPENPAINT_MODE_BOTH, "Mode", "");
+  api_def_float(ot->srna, "h", 0.5f, 0.0f, 1.0f, "Hue", "", 0.0f, 1.0f);
+  api_def_float(ot->srna, "s", 1.0f, 0.0f, 2.0f, "Saturation", "", 0.0f, 2.0f);
+  api_def_float(ot->srna, "v", 1.0f, 0.0f, 2.0f, "Value", "", 0.0f, 2.0f);
 }
 
-static int gpencil_vertexpaint_invert_exec(bContext *C, wmOperator *op)
+static int dpen_vertexpaint_invert_ex(dContext *C, wmOperator *op)
 {
-  Object *ob = CTX_data_active_object(C);
-  bGPdata *gpd = (bGPdata *)ob->data;
+  Object *ob = ctx_data_active_object(C);
+  DPenData *dpd = (DPenData *)ob->data;
 
-  const bool is_multiedit = (bool)GPENCIL_MULTIEDIT_SESSIONS_ON(gpd);
-  const eGp_Vertex_Mode mode = RNA_enum_get(op->ptr, "mode");
+  const bool is_multiedit = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dpd);
+  const eDp_Vertex_Mode mode = api_enum_get(op->ptr, "mode");
   const bool any_selected = is_any_stroke_selected(C, is_multiedit, false);
 
   bool changed = false;
-  CTX_DATA_BEGIN (C, bGPDlayer *, gpl, editable_gpencil_layers) {
-    bGPDframe *init_gpf = (is_multiedit) ? gpl->frames.first : gpl->actframe;
+  CTX_DATA_BEGIN (C, DPenLayer *, dpl, editable_dpen_layers) {
+    DPenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : dpl->actframe;
 
-    for (bGPDframe *gpf = init_gpf; gpf; gpf = gpf->next) {
-      if ((gpf == gpl->actframe) || ((gpf->flag & GP_FRAME_SELECT) && (is_multiedit))) {
-        if (gpf == NULL) {
+    for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
+      if ((dpf == dpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
+        if (dpf == NULL) {
           continue;
         }
 
-        LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+        LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
           /* skip strokes that are invalid for current view */
-          if (ED_gpencil_stroke_can_use(C, gps) == false) {
+          if (ed_dpen_stroke_can_use(C, dps) == false) {
             continue;
           }
 
-          if ((!any_selected) || (gps->flag & GP_STROKE_SELECT)) {
+          if ((!any_selected) || (dps->flag & DPEN_STROKE_SELECT)) {
             /* Fill color. */
-            if (mode != GPPAINT_MODE_STROKE) {
-              if (gps->vert_color_fill[3] > 0.0f) {
+            if (mode != DPENPAINT_MODE_STROKE) {
+              if (dps->vert_color_fill[3] > 0.0f) {
                 changed = true;
                 for (int i2 = 0; i2 < 3; i2++) {
-                  gps->vert_color_fill[i2] = 1.0f - gps->vert_color_fill[i2];
+                  dps->vert_color_fill[i2] = 1.0f - dps->vert_color_fill[i2];
                 }
               }
             }
 
             /* Stroke points. */
-            if (mode != GPPAINT_MODE_FILL) {
+            if (mode != DPENPAINT_MODE_FILL) {
               changed = true;
               int i;
-              bGPDspoint *pt;
+              DPenPoint *pt;
 
-              for (i = 0, pt = gps->points; i < gps->totpoints; i++, pt++) {
-                if (((!any_selected) || (pt->flag & GP_SPOINT_SELECT)) &&
+              for (i = 0, pt = dps->points; i < dps->totpoints; i++, pt++) {
+                if (((!any_selected) || (pt->flag & DPEN_SPOINT_SELECT)) &&
                     (pt->vert_color[3] > 0.0f)) {
                   for (int i2 = 0; i2 < 3; i2++) {
                     pt->vert_color[i2] = 1.0f - pt->vert_color[i2];
@@ -408,8 +408,8 @@ static int gpencil_vertexpaint_invert_exec(bContext *C, wmOperator *op)
 
   /* notifiers */
   if (changed) {
-    DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+    DEG_id_tag_update(&dpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+    WM_event_add_notifier(C, NC_DPEN | ND_DATA | NA_EDITED, NULL);
   }
 
   return OPERATOR_FINISHED;
