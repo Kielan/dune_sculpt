@@ -72,25 +72,25 @@ typedef struct tDPen_Selected {
   int pc[2];
   /** Color */
   float color[4];
-} tGP_Selected;
+} tDPen_Selected;
 
 /* Context for brush operators */
-typedef struct tGP_BrushVertexpaintData {
+typedef struct tDPen_BrushVertexpaintData {
   Scene *scene;
   Object *object;
 
   ARegion *region;
 
-  /* Current GPencil datablock */
-  bGPdata *gpd;
+  /* Current DPen datablock */
+  DPenData *dpd;
 
   Brush *brush;
   float linear_color[3];
-  eGPDvertex_brush_Flag flag;
-  eGP_Vertex_SelectMaskFlag mask;
+  eDPenVertex_brush_Flag flag;
+  eDPen_Vertex_SelectMaskFlag mask;
 
   /* Space Conversion Data */
-  GP_SpaceConversion gsc;
+  DPen_SpaceConversion dsc;
 
   /* Is the brush currently painting? */
   bool is_painting;
@@ -120,14 +120,14 @@ typedef struct tGP_BrushVertexpaintData {
 
   /* Temp data to save selected points */
   /** Stroke buffer. */
-  tGP_Selected *pbuffer;
+  tDPen_Selected *pbuffer;
   /** Number of elements currently used in cache. */
   int pbuffer_used;
   /** Number of total elements available in cache. */
   int pbuffer_size;
 
   /** Grid of average colors */
-  tGP_Grid *grid;
+  tDPen_Grid *grid;
   /** Total number of rows/cols. */
   int grid_size;
   /** Total number of cells elements in the grid array. */
@@ -140,20 +140,20 @@ typedef struct tGP_BrushVertexpaintData {
 } tGP_BrushVertexpaintData;
 
 /* Ensure the buffer to hold temp selected point size is enough to save all points selected. */
-static tGP_Selected *gpencil_select_buffer_ensure(tGP_Selected *buffer_array,
+static tDPen_Selected *dpen_select_buffer_ensure(tDPen_Selected *buffer_array,
                                                   int *buffer_size,
                                                   int *buffer_used,
                                                   const bool clear)
 {
-  tGP_Selected *p = NULL;
+  tDPen_Selected *p = NULL;
 
   /* By default a buffer is created with one block with a predefined number of free slots,
    * if the size is not enough, the cache is reallocated adding a new block of free slots.
    * This is done in order to keep cache small and improve speed. */
   if (*buffer_used + 1 > *buffer_size) {
     if ((*buffer_size == 0) || (buffer_array == NULL)) {
-      p = MEM_callocN(sizeof(struct tGP_Selected) * GP_SELECT_BUFFER_CHUNK, __func__);
-      *buffer_size = GP_SELECT_BUFFER_CHUNK;
+      p = MEM_callocN(sizeof(struct tDPen_Selected) * DPEN_SELECT_BUFFER_CHUNK, __func__);
+      *buffer_size = DPEN_SELECT_BUFFER_CHUNK;
     }
     else {
       *buffer_size += GP_SELECT_BUFFER_CHUNK;
