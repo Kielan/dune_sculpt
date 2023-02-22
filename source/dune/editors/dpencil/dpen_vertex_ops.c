@@ -249,19 +249,19 @@ static int dpen_vertexpaint_hsv_ex(dContext *C, wmOperator *op)
 
         LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
           /* skip strokes that are invalid for current view */
-          if (ED_gpencil_stroke_can_use(C, gps) == false) {
+          if (ed_dpen_stroke_can_use(C, gps) == false) {
             continue;
           }
 
-          if ((!any_selected) || (gps->flag & GP_STROKE_SELECT)) {
+          if ((!any_selected) || (dps->flag & GP_STROKE_SELECT)) {
             float hsv[3];
 
             /* Fill color. */
-            if (mode != GPPAINT_MODE_STROKE) {
-              if (gps->vert_color_fill[3] > 0.0f) {
+            if (mode != DPENPAINT_MODE_STROKE) {
+              if (dps->vert_color_fill[3] > 0.0f) {
                 changed = true;
 
-                rgb_to_hsv_v(gps->vert_color_fill, hsv);
+                rgb_to_hsv_v(dps->vert_color_fill, hsv);
 
                 hsv[0] += (hue - 0.5f);
                 if (hsv[0] > 1.0f) {
@@ -273,17 +273,17 @@ static int dpen_vertexpaint_hsv_ex(dContext *C, wmOperator *op)
                 hsv[1] *= sat;
                 hsv[2] *= val;
 
-                hsv_to_rgb_v(hsv, gps->vert_color_fill);
+                hsv_to_rgb_v(hsv, dps->vert_color_fill);
               }
             }
 
             /* Stroke points. */
-            if (mode != GPPAINT_MODE_FILL) {
+            if (mode != DPENPAINT_MODE_FILL) {
               changed = true;
               int i;
-              bGPDspoint *pt;
-              for (i = 0, pt = gps->points; i < gps->totpoints; i++, pt++) {
-                if (((!any_selected) || (pt->flag & GP_SPOINT_SELECT)) &&
+              DPenPoint *pt;
+              for (i = 0, pt = dps->points; i < dps->totpoints; i++, pt++) {
+                if (((!any_selected) || (pt->flag & DPEN_SPOINT_SELECT)) &&
                     (pt->vert_color[3] > 0.0f)) {
                   rgb_to_hsv_v(pt->vert_color, hsv);
 
@@ -316,22 +316,22 @@ static int dpen_vertexpaint_hsv_ex(dContext *C, wmOperator *op)
   /* notifiers */
   if (changed) {
     DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+    wm_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GPENCIL_OT_vertex_color_hsv(wmOperatorType *ot)
+void DPEN_OT_vertex_color_hsv(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Vertex Paint Hue Saturation Value";
-  ot->idname = "GPENCIL_OT_vertex_color_hsv";
+  ot->idname = "DPEN_OT_vertex_color_hsv";
   ot->description = "Adjust vertex color HSV values";
 
   /* api callbacks */
-  ot->exec = gpencil_vertexpaint_hsv_exec;
-  ot->poll = gpencil_vertexpaint_mode_poll;
+  ot->ex = dpen_vertexpaint_hsv_exec;
+  ot->poll = dpen_vertexpaint_mode_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
