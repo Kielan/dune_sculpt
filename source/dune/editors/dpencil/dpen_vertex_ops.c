@@ -548,39 +548,39 @@ static int spen_vertexpaint_set_ex(dContext *C, wmOperator *op)
   CTX_DATA_BEGIN (C, DPenLayer *, dpl, editable_dpen_layers) {
     DPenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : dpl->actframe;
 
-    for (bGPDframe *gpf = init_gpf; gpf; gpf = gpf->next) {
-      if ((gpf == gpl->actframe) || ((gpf->flag & GP_FRAME_SELECT) && (is_multiedit))) {
-        if (gpf == NULL) {
+    for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
+      if ((dpf == dpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
+        if (dpf == NULL) {
           continue;
         }
 
-        LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+        LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
           /* skip strokes that are invalid for current view */
-          if (ED_gpencil_stroke_can_use(C, gps) == false) {
+          if (ed_dpen_stroke_can_use(C, dps) == false) {
             continue;
           }
 
-          if ((!any_selected) || (gps->flag & GP_STROKE_SELECT)) {
+          if ((!any_selected) || (dps->flag & DPEN_STROKE_SELECT)) {
             /* Fill color. */
-            if (mode != GPPAINT_MODE_STROKE) {
+            if (mode != DPENPAINT_MODE_STROKE) {
               changed = true;
-              copy_v3_v3(gps->vert_color_fill, brush->rgb);
-              gps->vert_color_fill[3] = factor;
-              srgb_to_linearrgb_v4(gps->vert_color_fill, gps->vert_color_fill);
+              copy_v3_v3(dps->vert_color_fill, brush->rgb);
+              dps->vert_color_fill[3] = factor;
+              srgb_to_linearrgb_v4(dps->vert_color_fill, dps->vert_color_fill);
             }
 
             /* Stroke points. */
-            if (mode != GPPAINT_MODE_FILL) {
+            if (mode != DPENPAINT_MODE_FILL) {
               changed = true;
               int i;
-              bGPDspoint *pt;
+              DPenPoint *pt;
 
               float color[4];
               copy_v3_v3(color, brush->rgb);
               color[3] = factor;
               srgb_to_linearrgb_v4(color, color);
-              for (i = 0, pt = gps->points; i < gps->totpoints; i++, pt++) {
-                if ((!any_selected) || (pt->flag & GP_SPOINT_SELECT)) {
+              for (i = 0, pt = dps->points; i < dps->totpoints; i++, pt++) {
+                if ((!any_selected) || (pt->flag & DPEN_SPOINT_SELECT)) {
                   copy_v3_v3(pt->vert_color, color);
                 }
               }
@@ -598,49 +598,49 @@ static int spen_vertexpaint_set_ex(dContext *C, wmOperator *op)
 
   /* notifiers */
   if (changed) {
-    DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+    DEG_id_tag_update(&dpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+    wm_event_add_notifier(C, NC_DPEN | ND_DATA | NA_EDITED, NULL);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GPENCIL_OT_vertex_color_set(wmOperatorType *ot)
+void DPEN_OT_vertex_color_set(wmOperatorType *ot)
 {
 
   /* identifiers */
   ot->name = "Vertex Paint Set Color";
-  ot->idname = "GPENCIL_OT_vertex_color_set";
+  ot->idname = "DPEN_OT_vertex_color_set";
   ot->description = "Set active color to all selected vertex";
 
   /* api callbacks */
-  ot->exec = gpencil_vertexpaint_set_exec;
-  ot->poll = gpencil_vertexpaint_mode_poll;
+  ot->ex   = dpen_vertexpaint_set_ex;
+  ot->poll = dpen_vertexpaint_mode_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* params */
-  ot->prop = RNA_def_enum(
-      ot->srna, "mode", gpencil_modesEnumPropertyItem_mode, GPPAINT_MODE_BOTH, "Mode", "");
-  RNA_def_float(ot->srna, "factor", 1.0f, 0.001f, 1.0f, "Factor", "Mix Factor", 0.001f, 1.0f);
+  ot->prop = api_def_enum(
+      ot->srna, "mode", dpen_modesEnumPropItem_mode, DPENPAINT_MODE_BOTH, "Mode", "");
+  api_def_float(ot->srna, "factor", 1.0f, 0.001f, 1.0f, "Factor", "Mix Factor", 0.001f, 1.0f);
 }
 
 /* Helper to extract color from vertex color to create a palette. */
-static bool gpencil_extract_palette_from_vertex(bContext *C,
+static bool dpen_extract_palette_from_vertex(dContext *C,
                                                 const bool selected,
                                                 const int threshold)
 {
-  Main *bmain = CTX_data_main(C);
-  Object *ob = CTX_data_active_object(C);
+  Main *dmain = ctx_data_main(C);
+  Object *ob = ctx_data_active_object(C);
   bool done = false;
   const float range = pow(10.0f, threshold);
   float col[3];
 
-  GHash *color_table = BLI_ghash_int_new(__func__);
+  GHash *color_table = lib_ghash_int_new(__func__);
 
   /* Extract all colors. */
-  CTX_DATA_BEGIN (C, bGPDlayer *, gpl, editable_gpencil_layers) {
+  CTX_DATA_BEGIN (C, DPenLayer *, dpl, editable_dpen_layers) {
     LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
       LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
         if (ED_gpencil_stroke_can_use(C, gps) == false) {
