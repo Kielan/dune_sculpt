@@ -230,7 +230,7 @@ static int dpen_vertexpaint_hsv_ex(dContext *C, wmOperator *op)
   Object *ob = ctx_data_active_object(C);
   DPenData *dpd = (DPenData *)ob->data;
 
-  const bool is_multiedit = (bool)DPEN_MULTIEDIT_SESSIONS_ON(gpd);
+  const bool is_multiedit = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dpd);
   const eDp_Vertex_Mode mode = api_enum_get(op->ptr, "mode");
   const bool any_selected = is_any_stroke_selected(C, is_multiedit, false);
   float hue = api_float_get(op->ptr, "h");
@@ -242,7 +242,7 @@ static int dpen_vertexpaint_hsv_ex(dContext *C, wmOperator *op)
     DPenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : dpl->actframe;
 
     for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
-      if ((dpf == gpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
+      if ((dpf == dpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
         if (dpf == NULL) {
           continue;
         }
@@ -409,49 +409,49 @@ static int dpen_vertexpaint_invert_ex(dContext *C, wmOperator *op)
   /* notifiers */
   if (changed) {
     DEG_id_tag_update(&dpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_DPEN | ND_DATA | NA_EDITED, NULL);
+    wm_event_add_notifier(C, NC_DPEN | ND_DATA | NA_EDITED, NULL);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GPENCIL_OT_vertex_color_invert(wmOperatorType *ot)
+void DPEN_OT_vertex_color_invert(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Vertex Paint Invert";
-  ot->idname = "GPENCIL_OT_vertex_color_invert";
+  ot->idname = "DPEN_OT_vertex_color_invert";
   ot->description = "Invert RGB values";
 
   /* api callbacks */
-  ot->exec = gpencil_vertexpaint_invert_exec;
-  ot->poll = gpencil_vertexpaint_mode_poll;
+  ot->ex = dpen_vertexpaint_invert_ex;
+  ot->poll = dpen_vertexpaint_mode_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* params */
-  ot->prop = RNA_def_enum(
-      ot->srna, "mode", gpencil_modesEnumPropertyItem_mode, GPPAINT_MODE_BOTH, "Mode", "");
+  ot->prop = api_def_enum(
+      ot->srna, "mode", dpen_modesEnumPropItem_mode, DPENPAINT_MODE_BOTH, "Mode", "");
 }
 
-static int gpencil_vertexpaint_levels_exec(bContext *C, wmOperator *op)
+static int dpen_vertexpaint_levels_ex(dContext *C, wmOperator *op)
 {
-  Object *ob = CTX_data_active_object(C);
-  bGPdata *gpd = (bGPdata *)ob->data;
+  Object *ob = ctx_data_active_object(C);
+  DPenData *dpd = (DPenData *)ob->data;
 
-  const bool is_multiedit = (bool)GPENCIL_MULTIEDIT_SESSIONS_ON(gpd);
-  const eGp_Vertex_Mode mode = RNA_enum_get(op->ptr, "mode");
+  const bool is_multiedit = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dpd);
+  const eDp_Vertex_Mode mode = api_enum_get(op->ptr, "mode");
   const bool any_selected = is_any_stroke_selected(C, is_multiedit, false);
-  float gain = RNA_float_get(op->ptr, "gain");
-  float offset = RNA_float_get(op->ptr, "offset");
+  float gain = api_float_get(op->ptr, "gain");
+  float offset = api_float_get(op->ptr, "offset");
 
   bool changed = false;
-  CTX_DATA_BEGIN (C, bGPDlayer *, gpl, editable_gpencil_layers) {
-    bGPDframe *init_gpf = (is_multiedit) ? gpl->frames.first : gpl->actframe;
+  CTX_DATA_BEGIN (C, DPenLayer *, dpl, editable_dpen_layers) {
+    DpenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : dpl->actframe;
 
-    for (bGPDframe *gpf = init_gpf; gpf; gpf = gpf->next) {
-      if ((gpf == gpl->actframe) || ((gpf->flag & GP_FRAME_SELECT) && (is_multiedit))) {
-        if (gpf == NULL) {
+    for (DPenFrame *dpf = init_dpf; dpf; dpf = dpf->next) {
+      if ((dpf == dpl->actframe) || ((dpf->flag & DPEN_FRAME_SELECT) && (is_multiedit))) {
+        if (dpf == NULL) {
           continue;
         }
 
@@ -535,18 +535,18 @@ static int spen_vertexpaint_set_ex(dContext *C, wmOperator *op)
 {
   ToolSettings *ts = ctx_data_tool_settings(C);
   Object *ob = ctx_data_active_object(C);
-  bGPdata *dpd = (DPenData *)ob->data;
-  Paint *paint = &ts->gp_vertexpaint->paint;
+  DPenData *dpd = (DPenData *)ob->data;
+  Paint *paint = &ts->dp_vertexpaint->paint;
   Brush *brush = paint->brush;
 
-  const bool is_multiedit = (bool)GPENCIL_MULTIEDIT_SESSIONS_ON(gpd);
-  const eGp_Vertex_Mode mode = RNA_enum_get(op->ptr, "mode");
+  const bool is_multiedit = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dpd);
+  const eDp_Vertex_Mode mode = api_enum_get(op->ptr, "mode");
   const bool any_selected = is_any_stroke_selected(C, is_multiedit, false);
-  float factor = RNA_float_get(op->ptr, "factor");
+  float factor = api_float_get(op->ptr, "factor");
 
   bool changed = false;
-  CTX_DATA_BEGIN (C, bGPDlayer *, gpl, editable_gpencil_layers) {
-    bGPDframe *init_gpf = (is_multiedit) ? gpl->frames.first : gpl->actframe;
+  CTX_DATA_BEGIN (C, DPenLayer *, dpl, editable_dpen_layers) {
+    DPenFrame *init_dpf = (is_multiedit) ? dpl->frames.first : dpl->actframe;
 
     for (bGPDframe *gpf = init_gpf; gpf; gpf = gpf->next) {
       if ((gpf == gpl->actframe) || ((gpf->flag & GP_FRAME_SELECT) && (is_multiedit))) {
