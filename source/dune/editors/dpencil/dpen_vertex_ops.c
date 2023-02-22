@@ -455,30 +455,30 @@ static int gpencil_vertexpaint_levels_exec(bContext *C, wmOperator *op)
           continue;
         }
 
-        LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+        LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
           /* skip strokes that are invalid for current view */
-          if (ED_gpencil_stroke_can_use(C, gps) == false) {
+          if (ed_dpen_stroke_can_use(C, dps) == false) {
             continue;
           }
 
-          if ((!any_selected) || (gps->flag & GP_STROKE_SELECT)) {
+          if ((!any_selected) || (dps->flag & DPEN_STROKE_SELECT)) {
             /* Fill color. */
-            if (mode != GPPAINT_MODE_STROKE) {
-              if (gps->vert_color_fill[3] > 0.0f) {
+            if (mode != DPENPAINT_MODE_STROKE) {
+              if (dps->vert_color_fill[3] > 0.0f) {
                 changed = true;
                 for (int i2 = 0; i2 < 3; i2++) {
-                  gps->vert_color_fill[i2] = gain * (gps->vert_color_fill[i2] + offset);
+                  dps->vert_color_fill[i2] = gain * (dps->vert_color_fill[i2] + offset);
                 }
               }
             }
             /* Stroke points. */
-            if (mode != GPPAINT_MODE_FILL) {
+            if (mode != DPENPAINT_MODE_FILL) {
               changed = true;
               int i;
-              bGPDspoint *pt;
+              DPenPoint *pt;
 
-              for (i = 0, pt = gps->points; i < gps->totpoints; i++, pt++) {
-                if (((!any_selected) || (pt->flag & GP_SPOINT_SELECT)) &&
+              for (i = 0, pt = dps->points; i < dps->totpoints; i++, pt++) {
+                if (((!any_selected) || (pt->flag & DPEN_SPOINT_SELECT)) &&
                     (pt->vert_color[3] > 0.0f)) {
                   for (int i2 = 0; i2 < 3; i2++) {
                     pt->vert_color[i2] = gain * (pt->vert_color[i2] + offset);
@@ -499,43 +499,43 @@ static int gpencil_vertexpaint_levels_exec(bContext *C, wmOperator *op)
 
   /* notifiers */
   if (changed) {
-    DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+    DEG_id_tag_update(&dpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+    wm_event_add_notifier(C, NC_DPEN | ND_DATA | NA_EDITED, NULL);
   }
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void GPENCIL_OT_vertex_color_levels(wmOperatorType *ot)
+void DPEN_OT_vertex_color_levels(wmOperatorType *ot)
 {
 
   /* identifiers */
   ot->name = "Vertex Paint Levels";
-  ot->idname = "GPENCIL_OT_vertex_color_levels";
+  ot->idname = "DPEN_OT_vertex_color_levels";
   ot->description = "Adjust levels of vertex colors";
 
   /* api callbacks */
-  ot->exec = gpencil_vertexpaint_levels_exec;
-  ot->poll = gpencil_vertexpaint_mode_poll;
+  ot->ex = dpen_vertexpaint_levels_ex;
+  ot->poll = dpen_vertexpaint_mode_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* params */
-  ot->prop = RNA_def_enum(
-      ot->srna, "mode", gpencil_modesEnumPropertyItem_mode, GPPAINT_MODE_BOTH, "Mode", "");
+  ot->prop = api_def_enum(
+      ot->srna, "mode", dpen_modesEnumPropItem_mode, DPENPAINT_MODE_BOTH, "Mode", "");
 
-  RNA_def_float(
+  api_def_float(
       ot->srna, "offset", 0.0f, -1.0f, 1.0f, "Offset", "Value to add to colors", -1.0f, 1.0f);
-  RNA_def_float(
+  api_def_float(
       ot->srna, "gain", 1.0f, 0.0f, FLT_MAX, "Gain", "Value to multiply colors by", 0.0f, 10.0f);
 }
 
-static int gpencil_vertexpaint_set_exec(bContext *C, wmOperator *op)
+static int spen_vertexpaint_set_ex(dContext *C, wmOperator *op)
 {
-  ToolSettings *ts = CTX_data_tool_settings(C);
-  Object *ob = CTX_data_active_object(C);
-  bGPdata *gpd = (bGPdata *)ob->data;
+  ToolSettings *ts = ctx_data_tool_settings(C);
+  Object *ob = ctx_data_active_object(C);
+  bGPdata *dpd = (DPenData *)ob->data;
   Paint *paint = &ts->gp_vertexpaint->paint;
   Brush *brush = paint->brush;
 
