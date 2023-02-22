@@ -1161,3 +1161,290 @@ static bool gpencil_vertexpaint_brush_apply_to_layers(bContext *C, tGP_BrushVert
 
   return changed;
 }
+
+/* Calculate settings for applying brush */
+static void gpencil_vertexpaint_brush_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
+{
+  tGP_BrushVertexpaintData *gso = op->customdata;
+  Brush *brush = gso->brush;
+  const int radius = ((brush->flag & GP_BRUSH_USE_PRESSURE) ? gso->brush->size * gso->pressure :
+                                                              gso->brush->size);
+  float mousef[2];
+  int mouse[2];
+  bool changed = false;
+
+  /* Get latest mouse coordinates */
+  RNA_float_get_array(itemptr, "mouse", mousef);
+  gso->mval[0] = mouse[0] = (int)(mousef[0]);
+  gso->mval[1] = mouse[1] = (int)(mousef[1]);
+
+  gso->pressure = RNA_float_get(itemptr, "pressure");
+
+  if (RNA_boolean_get(itemptr, "pen_flip")) {
+    gso->flag |= GP_VERTEX_FLAG_INVERT;
+  }
+  else {
+    gso->flag &= ~GP_VERTEX_FLAG_INVERT;
+  }
+
+  /* Store coordinates as reference, if operator just started running */
+  if (gso->first) {
+    gso->mval_prev[0] = gso->mval[0];
+    gso->mval_prev[1] = gso->mval[1];
+    gso->pressure_prev = gso->pressure;
+  }
+
+  /* Update brush_rect, so that it represents the bounding rectangle of brush. */
+  gso->brush_rect.xmin = mouse[0] - radius;
+  gso->brush_rect.ymin = mouse[1] - radius;
+  gso->brush_rect.xmax = mouse[0] + radius;
+  gso->brush_rect.ymax = mouse[1] + radius;
+
+  /* Calc 2D direction vector and relative angle. */
+  brush_calc_dvec_2d(gso);
+
+  /* Calc grid for smear tool. */
+  gpencil_grid_cells_init(gso);
+
+  changed = gpencil_vertexpaint_brush_apply_to_layers(C, gso);
+
+  /* Updates */
+  if (changed) {
+    DEG_id_tag_update(&gso->gpd->id, ID_RECALC_GEOMETRY);
+    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+  }
+
+  /* Store values for next step */
+  gso->mval_prev[0] = gso->mval[0];
+  gso->mval_prev[1] = gso->mval[1];
+  gso->pressure_prev = gso->pressure;
+  gso->first = false;
+}
+
+/* Running --------------------------------------------- */
+
+/* helper - a record stroke, and apply paint event */
+static void gpencil_vertexpaint_brush_apply_event(bContext *C,
+                                                  wmOperator *op,
+                                                  const wmEvent *event)
+{
+  tGP_BrushVertexpaintData *gso = op->customdata;
+  PointerRNA itemptr;
+  float mouse[2];
+
+  mouse[0] = event->mval[0] + 1;
+  mouse[1] = event->mval[1] + 1;
+
+  /* fill in stroke */
+  RNA_collection_add(op->ptr, "stroke", &itemptr);
+
+  RNA_float_set_array(&itemptr, "mouse", mouse);
+  RNA_bool_set(&itemptr, "pen_flip", event->modifier & KM_CTRL);
+  api_bool_set(&itemptr, "is_start", gso->first);
+
+  /* Handle pressure sensitivity (which is supplied by tablets). */
+  float pressure = event->tablet.pressure;
+  CLAMP(pressure, 0.0f, 1.0f);
+  api_float_set(&itemptr, "pressure", pressure);
+
+  /* apply */
+  dpen_vertexpaint_brush_apply(C, op, &itemptr);
+}
+
+/* reapply */
+static int dpen_vertexpaint_brush_exec(bContext *C, wmOperator *op)
+{
+  if (!dpen_vertexpaint_brush_init(C, op)) {
+    return OP_CANCELLED;
+  }
+
+  RNA_BEGIN (op->ptr, itemptr, "stroke") {
+    dpen_vertexpaint_brush_apply(C, op, &itemptr);
+  }
+  RNA_END;
+
+  dpen_vertexpaint_brush_exit(C, op);
+
+  return OP_FINISHED;
+}
+
+/* start modal painting */
+static int dpen_vertexpaint_brush_invoke(dContext *C, wmOperator *op, const wmEvent *event)
+{
+  tDPen_BrushVertexpaintData *gso = NULL;
+  const bool is_modal = api_bool_get(op->ptr, "wait_for_input");
+  const bool is_playing = ed_screen_animation_playing(ctx_wm_manager(C)) != NULL;
+
+  /* the operator cannot work while play animation */
+  if (is_playing) {
+    dune_report(op->reports, RPT_ERROR, "Cannot Paint while play animation");
+
+    return OP_CANCELLED;
+  }
+
+  /* init painting data */
+  if (!gdpen_vertexpaint_brush_init(C, op)) {
+    return OP_CANCELLED;
+  }
+
+  dso = op->customdata;
+
+  /* register modal handler */
+  wm_event_add_modal_handler(C, op);
+
+  /* start drawing immediately? */
+  if (is_modal == false) {
+    ARegion *region = ctx_wm_region(C);
+
+    /* apply first dab... */
+    dso->is_painting = true;
+    dpen_vertexpaint_brush_apply_event(C, op, event);
+
+    /* redraw view with feedback */
+    ED_region_tag_redraw(region);
+  }
+
+  return OP_RUNNING_MODAL;
+}
+
+/* painting - handle events */
+static int dpen_vertexpaint_brush_modal(dContext *C, wmOperator *op, const wmEvent *event)
+{
+  tDPen_BrushVertexpaintData *gso = op->customdata;
+  const bool is_modal = api_bool_get(op->ptr, "wait_for_input");
+  bool redraw_region = false;
+  bool redraw_toolsettings = false;
+
+  /* The operator can be in 2 states: Painting and Idling */
+  if (gso->is_painting) {
+    /* Painting. */
+    switch (event->type) {
+      /* Mouse Move = Apply somewhere else */
+      case MOUSEMOVE:
+      case INBETWEEN_MOUSEMOVE:
+        /* apply brush effect at new position */
+        dpen_vertexpaint_brush_apply_event(C, op, event);
+
+        /* force redraw, so that the cursor will at least be valid */
+        redraw_region = true;
+        break;
+
+      /* Painting mbut release = Stop painting (back to idle) */
+      case LEFTMOUSE:
+        if (is_modal) {
+          /* go back to idling... */
+          gso->is_painting = false;
+        }
+        else {
+          /* end painting, since we're not modal */
+          dso->is_painting = false;
+
+          dpen_vertexpaint_brush_exit(C, op);
+          return OP_FINISHED;
+        }
+        break;
+
+      /* Abort painting if any of the usual things are tried */
+      case MIDDLEMOUSE:
+      case RIGHTMOUSE:
+      case EVT_ESCKEY:
+        dpen_vertexpaint_brush_exit(C, op);
+        return OP_FINISHED;
+    }
+  }
+  else {
+    /* Idling */
+    lib_assert(is_modal == true);
+
+    switch (event->type) {
+      /* Painting mbut press = Start painting (switch to painting state) */
+      case LEFTMOUSE:
+        /* do initial "click" apply */
+        gso->is_painting = true;
+        gso->first = true;
+
+        dpen_vertexpaint_brush_apply_event(C, op, event);
+        break;
+
+      /* Exit modal operator, based on the "standard" ops */
+      case RIGHTMOUSE:
+      case EVT_ESCKEY:
+        gpencil_vertexpaint_brush_exit(C, op);
+        return OP_FINISHED;
+
+      /* MMB is often used for view manipulations */
+      case MIDDLEMOUSE:
+        return OP_PASS_THROUGH;
+
+      /* Mouse movements should update the brush cursor - Just redraw the active region */
+      case MOUSEMOVE:
+      case INBETWEEN_MOUSEMOVE:
+        redraw_region = true;
+        break;
+
+      /* Change Frame - Allowed */
+      case EVT_LEFTARROWKEY:
+      case EVT_RIGHTARROWKEY:
+      case EVT_UPARROWKEY:
+      case EVT_DOWNARROWKEY:
+        return OPERATOR_PASS_THROUGH;
+
+      /* Camera/View Gizmo's - Allowed */
+      /* (See rationale in dpen_paint.c -> gpencil_draw_modal()) */
+      case EVT_PAD0:
+      case EVT_PAD1:
+      case EVT_PAD2:
+      case EVT_PAD3:
+      case EVT_PAD4:
+      case EVT_PAD5:
+      case EVT_PAD6:
+      case EVT_PAD7:
+      case EVT_PAD8:
+      case EVT_PAD9:
+        return OP_PASS_THROUGH;
+
+      /* Unhandled event */
+      default:
+        break;
+    }
+  }
+
+  /* Redraw region? */
+  if (redraw_region) {
+    ED_region_tag_redraw(ctx_wm_region(C));
+  }
+
+  /* Redraw toolsettings (brush settings)? */
+  if (redraw_toolsettings) {
+    DEG_id_tag_update(&dso->dpd->id, ID_RECALC_GEOMETRY);
+    wm_event_add_notifier(C, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  }
+
+  return OP_RUNNING_MODAL;
+}
+
+void DPEN_OT_vertex_paint(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Stroke Vertex Paint";
+  ot->idname = "DPEN_OT_vertex_paint";
+  ot->description = "Paint stroke points with a color";
+
+  /* api callbacks */
+  ot->ex = dpen_vertexpaint_brush_ex;
+  ot->invoke = dpen_vertexpaint_brush_invoke;
+  ot->modal = dpen_vertexpaint_brush_modal;
+  ot->cancel = dpen_vertexpaint_brush_exit;
+  ot->poll = dpen_vertexpaint_brush_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING;
+
+  /* properties */
+  ApiProp *prop;
+  prop = api_def_collection_runtime(ot->srna, "stroke", &api_OperatorStrokeElement, "Stroke", "");
+  api_def_prop_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+
+  prop = api_def_bool(ot->srna, "wait_for_input", true, "Wait for Input", "");
+  api_def_prop_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
+}
