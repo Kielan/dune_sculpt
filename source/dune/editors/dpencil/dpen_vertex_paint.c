@@ -137,7 +137,7 @@ typedef struct tDPen_BrushVertexpaintData {
   /** Grid is ready to use */
   bool grid_ready;
 
-} tGP_BrushVertexpaintData;
+} tDPen_BrushVertexpaintData;
 
 /* Ensure the buffer to hold temp selected point size is enough to save all points selected. */
 static tDPen_Selected *dpen_select_buffer_ensure(tDPen_Selected *buffer_array,
@@ -156,7 +156,7 @@ static tDPen_Selected *dpen_select_buffer_ensure(tDPen_Selected *buffer_array,
       *buffer_size = DPEN_SELECT_BUFFER_CHUNK;
     }
     else {
-      *buffer_size += GP_SELECT_BUFFER_CHUNK;
+      *buffer_size += DPEN_SELECT_BUFFER_CHUNK;
       p = MEM_recallocN(buffer_array, sizeof(struct tGP_Selected) * *buffer_size);
     }
 
@@ -181,13 +181,13 @@ static tDPen_Selected *dpen_select_buffer_ensure(tDPen_Selected *buffer_array,
 /* Brush Operations ------------------------------- */
 
 /* Invert behavior of brush? */
-static bool brush_invert_check(tGP_BrushVertexpaintData *gso)
+static bool brush_invert_check(tDPen_BrushVertexpaintData *dso)
 {
   /* The basic setting is no inverted */
   bool invert = false;
 
   /* During runtime, the user can hold down the Ctrl key to invert the basic behavior */
-  if (gso->flag & GP_VERTEX_FLAG_INVERT) {
+  if (dso->flag & DPEN_VERTEX_FLAG_INVERT) {
     invert ^= true;
   }
 
@@ -195,39 +195,39 @@ static bool brush_invert_check(tGP_BrushVertexpaintData *gso)
 }
 
 /* Compute strength of effect. */
-static float brush_influence_calc(tGP_BrushVertexpaintData *gso, const int radius, const int co[2])
+static float brush_influence_calc(tDPen_BrushVertexpaintData *gso, const int radius, const int co[2])
 {
-  Brush *brush = gso->brush;
+  Brush *brush = dso->brush;
   float influence = brush->size;
 
   /* use pressure? */
-  if (brush->gpencil_settings->flag & GP_BRUSH_USE_PRESSURE) {
-    influence *= gso->pressure;
+  if (brush->dpen_settings->flag & DPEN_BRUSH_USE_PRESSURE) {
+    influence *= dso->pressure;
   }
 
   /* distance fading */
   int mval_i[2];
-  round_v2i_v2fl(mval_i, gso->mval);
+  round_v2i_v2fl(mval_i, dso->mval);
   float distance = (float)len_v2v2_int(mval_i, co);
 
   /* Apply Brush curve. */
-  float brush_falloff = BKE_brush_curve_strength(brush, distance, (float)radius);
+  float brush_falloff = dune_brush_curve_strength(brush, distance, (float)radius);
   influence *= brush_falloff;
 
   /* apply multiframe falloff */
-  influence *= gso->mf_falloff;
+  influence *= dso->mf_falloff;
 
   /* return influence */
   return influence;
 }
 
 /* Compute effect vector for directional brushes. */
-static void brush_calc_dvec_2d(tGP_BrushVertexpaintData *gso)
+static void brush_calc_dvec_2d(tDPen_BrushVertexpaintData *dso)
 {
-  gso->dvec[0] = (float)(gso->mval[0] - gso->mval_prev[0]);
-  gso->dvec[1] = (float)(gso->mval[1] - gso->mval_prev[1]);
+  dso->dvec[0] = (float)(dso->mval[0] - dso->mval_prev[0]);
+  dso->dvec[1] = (float)(dso->mval[1] - dso->mval_prev[1]);
 
-  normalize_v2(gso->dvec);
+  normalize_v2(dso->dvec);
 }
 
 /* Init a grid of cells around mouse position.
@@ -240,49 +240,49 @@ static void brush_calc_dvec_2d(tGP_BrushVertexpaintData *gso)
  *   Bottom *--------*
  *
  * The number of cells is calculated using the brush size and a predefined
- * number of pixels (see: GP_GRID_PIXEL_SIZE)
+ * number of pixels (see: DPEN_GRID_PIXEL_SIZE)
  */
 
-static void gpencil_grid_cells_init(tGP_BrushVertexpaintData *gso)
+static void dpen_grid_cells_init(tDPen_BrushVertexpaintData *gso)
 {
-  tGP_Grid *grid;
+  tDPen_Grid *grid;
   float bottom[2];
   float top[2];
   int grid_index = 0;
 
   /* The grid center is (0,0). */
-  bottom[0] = gso->brush_rect.xmin - gso->mval[0];
-  bottom[1] = gso->brush_rect.ymax - GP_GRID_PIXEL_SIZE - gso->mval[1];
+  bottom[0] = dso->brush_rect.xmin - dso->mval[0];
+  bottom[1] = dso->brush_rect.ymax - DPEN_GRID_PIXEL_SIZE - dso->mval[1];
 
   /* Calc all cell of the grid from top/left. */
-  for (int y = gso->grid_size - 1; y >= 0; y--) {
-    top[1] = bottom[1] + GP_GRID_PIXEL_SIZE;
+  for (int y = dso->grid_size - 1; y >= 0; y--) {
+    top[1] = bottom[1] + DPEN_GRID_PIXEL_SIZE;
 
-    for (int x = 0; x < gso->grid_size; x++) {
-      top[0] = bottom[0] + GP_GRID_PIXEL_SIZE;
+    for (int x = 0; x < dso->grid_size; x++) {
+      top[0] = bottom[0] + DPEN_GRID_PIXEL_SIZE;
 
-      grid = &gso->grid[grid_index];
+      grid = &dso->grid[grid_index];
 
       copy_v2_v2(grid->bottom, bottom);
       copy_v2_v2(grid->top, top);
 
-      bottom[0] += GP_GRID_PIXEL_SIZE;
+      bottom[0] += DPEN_GRID_PIXEL_SIZE;
 
       grid_index++;
     }
 
     /* Reset for new row. */
-    bottom[0] = gso->brush_rect.xmin - gso->mval[0];
-    bottom[1] -= GP_GRID_PIXEL_SIZE;
+    bottom[0] = dso->brush_rect.xmin - dso->mval[0];
+    bottom[1] -= DPEN_GRID_PIXEL_SIZE;
   }
 }
 
 /* Get the index used in the grid base on dvec. */
-static void gpencil_grid_cell_average_color_idx_get(tGP_BrushVertexpaintData *gso, int r_idx[2])
+static void dpen_grid_cell_average_color_idx_get(tDPen_BrushVertexpaintData *dso, int r_idx[2])
 {
   /* Lower direction. */
-  if (gso->dvec[1] < 0.0f) {
-    if ((gso->dvec[0] >= -1.0f) && (gso->dvec[0] < -0.8f)) {
+  if (dso->dvec[1] < 0.0f) {
+    if ((dso->dvec[0] >= -1.0f) && (gso->dvec[0] < -0.8f)) {
       r_idx[0] = 0;
       r_idx[1] = -1;
     }
