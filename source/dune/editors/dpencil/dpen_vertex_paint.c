@@ -11,25 +11,25 @@
 #include "types_dpen.h"
 #include "types_material.h"
 
-#include "BKE_brush.h"
-#include "BKE_colortools.h"
-#include "BKE_context.h"
-#include "BKE_gpencil.h"
-#include "BKE_material.h"
-#include "BKE_report.h"
+#include "dune_brush.h"
+#include "dune_colortools.h"
+#include "dune_context.h"
+#include "dune_dpen.h"
+#include "dune_material.h"
+#include "dune_report.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_prototypes.h"
 
 #include "UI_view2d.h"
 
-#include "ED_gpencil.h"
-#include "ED_screen.h"
-#include "ED_view3d.h"
+#include "ed_dpen.h"
+#include "ed_screen.h"
+#include "ed_view3d.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
@@ -38,19 +38,19 @@
 
 /* ************************************************ */
 /* General Brush Editing Context */
-#define GP_SELECT_BUFFER_CHUNK 256
-#define GP_GRID_PIXEL_SIZE 10.0f
+#define DPEN_SELECT_BUFFER_CHUNK 256
+#define DPEN_GRID_PIXEL_SIZE 10.0f
 
 /* Temp Flags while Painting. */
-typedef enum eGPDvertex_brush_Flag {
+typedef enum eDPDvertex_brush_Flag {
   /* invert the effect of the brush */
-  GP_VERTEX_FLAG_INVERT = (1 << 0),
+  DPEN_VERTEX_FLAG_INVERT = (1 << 0),
   /* temporary invert action */
-  GP_VERTEX_FLAG_TMP_INVERT = (1 << 1),
-} eGPDvertex_brush_Flag;
+  DPEN_VERTEX_FLAG_TMP_INVERT = (1 << 1),
+} eDPDvertex_brush_Flag;
 
 /* Grid of Colors for Smear. */
-typedef struct tGP_Grid {
+typedef struct tDPen_Grid {
   /** Lower right corner of rectangle of grid cell. */
   float bottom[2];
   /** Upper left corner of rectangle of grid cell. */
@@ -60,12 +60,12 @@ typedef struct tGP_Grid {
   /** Total points included. */
   int totcol;
 
-} tGP_Grid;
+} tDPen_Grid;
 
 /* List of points affected by brush. */
-typedef struct tGP_Selected {
+typedef struct tDPen_Selected {
   /** Referenced stroke. */
-  bGPDstroke *gps;
+  DPenStroke *dps;
   /** Point index in points array. */
   int pt_index;
   /** Position */
