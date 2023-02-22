@@ -1,18 +1,15 @@
-/** \file
- * \ingroup edgpencil
- * Brush based operators for editing Grease Pencil strokes.
- */
+/** Brush based operators for editing DPen strokes. **/
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
+#include "lib_dunelib.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "DNA_brush_types.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_material_types.h"
+#include "types_brush.h"
+#include "types_dpen.h"
+#include "types_material.h"
 
 #include "BKE_brush.h"
 #include "BKE_colortools.h"
@@ -37,7 +34,7 @@
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-#include "gpencil_intern.h"
+#include "dpen_intern.h"
 
 /* ************************************************ */
 /* General Brush Editing Context */
