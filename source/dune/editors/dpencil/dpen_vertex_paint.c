@@ -601,59 +601,59 @@ static bool brush_smear_apply(tDPen_BrushVertexpaintData *dso,
                               int pt_index,
                               tDPen_Selected *selected)
 {
-  Brush *brush = gso->brush;
-  tGP_Grid *grid = NULL;
+  Brush *brush = dso->brush;
+  tDPen_Grid *grid = NULL;
   int average_idx[2];
   ARRAY_SET_ITEMS(average_idx, 0, 0);
 
   bool changed = false;
 
   /* Need some movement, so first input is not done. */
-  if (gso->first) {
+  if (dso->first) {
     return false;
   }
 
-  bGPDspoint *pt = &gps->points[pt_index];
+  DPenPoint *pt = &dps->points[pt_index];
 
   /* Need get average colors in the grid. */
-  if ((!gso->grid_ready) && (gso->pbuffer_used > 0)) {
-    gpencil_grid_colors_calc(gso);
+  if ((!dso->grid_ready) && (dso->pbuffer_used > 0)) {
+    dpen_grid_colors_calc(gso);
   }
 
   /* The influence is equal to strength and no decay around brush radius. */
-  float inf = brush->gpencil_settings->draw_strength;
-  if (brush->flag & GP_BRUSH_USE_PRESSURE) {
+  float inf = brush->dpen_settings->draw_strength;
+  if (brush->flag & DPEN_BRUSH_USE_PRESSURE) {
     inf *= gso->pressure;
   }
 
   /* Calc distance from initial sample location and add a falloff effect. */
   int mval_i[2];
-  round_v2i_v2fl(mval_i, gso->mval);
-  float distance = (float)len_v2v2_int(mval_i, gso->grid_sample);
+  round_v2i_v2fl(mval_i, dso->mval);
+  float distance = (float)len_v2v2_int(mval_i, dso->grid_sample);
   float fac = 1.0f - (distance / (float)(brush->size * 2));
   CLAMP(fac, 0.0f, 1.0f);
   inf *= fac;
 
   /* Retry row and col for average color. */
-  gpencil_grid_cell_average_color_idx_get(gso, average_idx);
+  dpen_grid_cell_average_color_idx_get(dso, average_idx);
 
   /* Retry average color cell. */
-  int grid_index = gpencil_grid_cell_index_get(gso, selected->pc);
+  int grid_index = dpen_grid_cell_index_get(dso, selected->pc);
   if (grid_index > -1) {
-    int row = grid_index / gso->grid_size;
-    int col = grid_index - (gso->grid_size * row);
+    int row = grid_index / dso->grid_size;
+    int col = grid_index - (dso->grid_size * row);
     row += average_idx[0];
     col += average_idx[1];
-    CLAMP(row, 0, gso->grid_size);
-    CLAMP(col, 0, gso->grid_size);
+    CLAMP(row, 0, dso->grid_size);
+    CLAMP(col, 0, dso->grid_size);
 
-    int new_index = (row * gso->grid_size) + col;
-    CLAMP(new_index, 0, gso->grid_len - 1);
-    grid = &gso->grid[new_index];
+    int new_index = (row * dso->grid_size) + col;
+    CLAMP(new_index, 0, dso->grid_len - 1);
+    grid = &dso->grid[new_index];
   }
 
   /* Apply color to Stroke point. */
-  if (GPENCIL_TINT_VERTEX_COLOR_STROKE(brush)) {
+  if (DPEN_TINT_VERTEX_COLOR_STROKE(brush)) {
     if (grid_index > -1) {
       if (grid->color[3] > 0.0f) {
         // copy_v3_v3(pt->vert_color, grid->color);
@@ -664,10 +664,10 @@ static bool brush_smear_apply(tDPen_BrushVertexpaintData *dso,
   }
 
   /* Apply color to Fill area (all with same color and factor). */
-  if (GPENCIL_TINT_VERTEX_COLOR_FILL(brush)) {
+  if (DPEN_TINT_VERTEX_COLOR_FILL(brush)) {
     if (grid_index > -1) {
       if (grid->color[3] > 0.0f) {
-        interp_v3_v3v3(gps->vert_color_fill, gps->vert_color_fill, grid->color, inf);
+        interp_v3_v3v3(dps->vert_color_fill, dps->vert_color_fill, grid->color, inf);
         changed = true;
       }
     }
@@ -678,80 +678,80 @@ static bool brush_smear_apply(tDPen_BrushVertexpaintData *dso,
 
 /* ************************************************ */
 /* Header Info */
-static void gpencil_vertexpaint_brush_header_set(bContext *C)
+static void dpen_vertexpaint_brush_header_set(dContext *C)
 {
-  ED_workspace_status_text(C,
-                           TIP_("GPencil Vertex Paint: LMB to paint | RMB/Escape to Exit"
+  ed_workspace_status_text(C,
+                           TIP_("DPen Vertex Paint: LMB to paint | RMB/Escape to Exit"
                                 " | Ctrl to Invert Action"));
 }
 
 /* ************************************************ */
-/* Grease Pencil Vertex Paint Operator */
+/* DPen Vertex Paint Operator */
 
 /* Init/Exit ----------------------------------------------- */
 
-static bool gpencil_vertexpaint_brush_init(bContext *C, wmOperator *op)
+static bool dpen_vertexpaint_brush_init(dContext *C, wmOperator *op)
 {
-  Scene *scene = CTX_data_scene(C);
-  ToolSettings *ts = CTX_data_tool_settings(C);
-  Object *ob = CTX_data_active_object(C);
-  Paint *paint = ob->mode == OB_MODE_VERTEX_GPENCIL ? &ts->gp_vertexpaint->paint :
-                                                      &ts->gp_paint->paint;
+  Scene *scene = ctx_data_scene(C);
+  ToolSettings *ts = ctx_data_tool_settings(C);
+  Object *ob = ctx_data_active_object(C);
+  Paint *paint = ob->mode == OB_MODE_VERTEX_DPEN ? &ts->dpen_vertexpaint->paint :
+                                                      &ts->dpen_paint->paint;
 
   /* set the brush using the tool */
-  tGP_BrushVertexpaintData *gso;
+  tDPen_BrushVertexpaintData *dso;
 
   /* setup operator data */
-  gso = MEM_callocN(sizeof(tGP_BrushVertexpaintData), "tGP_BrushVertexpaintData");
-  op->customdata = gso;
+  dso = MEM_callocN(sizeof(tDPen_BrushVertexpaintData), "tDPen_BrushVertexpaintData");
+  op->customdata = dso;
 
-  gso->brush = paint->brush;
-  srgb_to_linearrgb_v3_v3(gso->linear_color, gso->brush->rgb);
-  BKE_curvemapping_init(gso->brush->curve);
+  dso->brush = paint->brush;
+  srgb_to_linearrgb_v3_v3(dso->linear_color, dso->brush->rgb);
+  dune_curvemapping_init(dso->brush->curve);
 
-  gso->is_painting = false;
-  gso->first = true;
+  dso->is_painting = false;
+  fso->first = true;
 
-  gso->pbuffer = NULL;
-  gso->pbuffer_size = 0;
-  gso->pbuffer_used = 0;
+  dso->pbuffer = NULL;
+  dso->pbuffer_size = 0;
+  dso->pbuffer_used = 0;
 
   /* Alloc grid array */
-  gso->grid_size = (int)(((gso->brush->size * 2.0f) / GP_GRID_PIXEL_SIZE) + 1.0);
+  dso->grid_size = (int)(((dso->brush->size * 2.0f) / DPEN_GRID_PIXEL_SIZE) + 1.0);
   /* Square value. */
-  gso->grid_len = gso->grid_size * gso->grid_size;
-  gso->grid = MEM_callocN(sizeof(tGP_Grid) * gso->grid_len, "tGP_Grid");
-  gso->grid_ready = false;
+  dso->grid_len = dso->grid_size * dso->grid_size;
+  dso->grid = MEM_callocN(sizeof(tDPen_Grid) * dso->grid_len, "tDPen_Grid");
+  dso->grid_ready = false;
 
-  gso->gpd = ED_gpencil_data_get_active(C);
-  gso->scene = scene;
-  gso->object = ob;
+  dso->dpd = ed_dpen_data_get_active(C);
+  dso->scene = scene;
+  dso->object = ob;
 
-  gso->region = CTX_wm_region(C);
+  dso->region = ctx_wm_region(C);
 
   /* Save mask. */
-  gso->mask = ts->gpencil_selectmode_vertex;
+  dso->mask = ts->dpen_selectmode_vertex;
 
   /* Multiframe settings. */
-  gso->is_multiframe = (bool)GPENCIL_MULTIEDIT_SESSIONS_ON(gso->gpd);
-  gso->use_multiframe_falloff = (ts->gp_sculpt.flag & GP_SCULPT_SETT_FLAG_FRAME_FALLOFF) != 0;
+  dso->is_multiframe = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dso->dpd);
+  dso->use_multiframe_falloff = (ts->dp_sculpt.flag & DPEN_SCULPT_SETT_FLAG_FRAME_FALLOFF) != 0;
 
   /* Init multi-edit falloff curve data before doing anything,
    * so we won't have to do it again later. */
-  if (gso->is_multiframe) {
-    BKE_curvemapping_init(ts->gp_sculpt.cur_falloff);
+  if (dso->is_multiframe) {
+    dune_curvemapping_init(ts->dp_sculpt.cur_falloff);
   }
 
   /* Setup space conversions. */
-  gpencil_point_conversion_init(C, &gso->gsc);
+  dpen_point_conversion_init(C, &dso->dsc);
 
   /* Update header. */
-  gpencil_vertexpaint_brush_header_set(C);
+  dpen_vertexpaint_brush_header_set(C);
 
   return true;
 }
 
-static void gpencil_vertexpaint_brush_exit(bContext *C, wmOperator *op)
+static void dpen_vertexpaint_brush_exit(dContext *C, wmOperator *op)
 {
   tGP_BrushVertexpaintData *gso = op->customdata;
 
