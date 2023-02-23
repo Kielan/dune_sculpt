@@ -974,10 +974,10 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
 }
 
 /* Apply vertex paint brushes to strokes in the given frame. */
-static bool dpen_vertexpaint_brush_do_frame(bContext *C,
-                                               tGP_BrushVertexpaintData *gso,
-                                               bGPDlayer *gpl,
-                                               bGPDframe *gpf,
+static bool dpen_vertexpaint_brush_do_frame(dContext *C,
+                                               tDPen_BrushVertexpaintData *dso,
+                                               DPenLayer *dpl,
+                                               DPenFrame *dpf,
                                                const float diff_mat[4][4],
                                                const float bound_mat[4][4])
 {
@@ -985,9 +985,9 @@ static bool dpen_vertexpaint_brush_do_frame(bContext *C,
   const char tool = ob->mode == OB_MODE_VERTEX_DPEN ? dso->brush->dpen_vertex_tool :
                                                          dso->brush->dpen_tool;
   const int radius = (dso->brush->flag & DPEN_BRUSH_USE_PRESSURE) ?
-                         gso->brush->size * gso->pressure :
-                         gso->brush->size;
-  tGP_Selected *selected = NULL;
+                         dso->brush->size * dso->pressure :
+                         dso->brush->size;
+  tDPen_Selected *selected = NULL;
   int i;
 
   /*---------------------------------------------------------------------
@@ -995,23 +995,23 @@ static bool dpen_vertexpaint_brush_do_frame(bContext *C,
    * all selected points before apply the effect, because it could be
    * required to average data.
    *--------------------------------------------------------------------- */
-  LISTBASE_FOREACH (bGPDstroke *, gps, &gpf->strokes) {
+  LISTBASE_FOREACH (DPenStroke *, dps, &dpf->strokes) {
     /* Skip strokes that are invalid for current view. */
-    if (ED_gpencil_stroke_can_use(C, gps) == false) {
+    if (ed_dpen_stroke_can_use(C, dps) == false) {
       continue;
     }
     /* Check if the color is editable. */
-    if (ED_gpencil_stroke_material_editable(ob, gpl, gps) == false) {
+    if (ed_dpen_stroke_material_editable(ob, dpl, dps) == false) {
       continue;
     }
 
     /* Check points below the brush. */
-    bool hit = gpencil_vertexpaint_select_stroke(gso, gps, tool, diff_mat, bound_mat);
+    bool hit = dpen_vertexpaint_select_stroke(dso, dps, tool, diff_mat, bound_mat);
 
     /* If stroke was hit and has an editcurve the curve needs an update. */
-    bGPDstroke *gps_active = (gps->runtime.gps_orig) ? gps->runtime.gps_orig : gps;
-    if (gps_active->editcurve != NULL && hit) {
-      gps_active->editcurve->flag |= GP_CURVE_NEEDS_STROKE_UPDATE;
+    DPenStroke *dps_active = (dps->runtime.dps_orig) ? dps->runtime.dps_orig : dps;
+    if (dps_active->editcurve != NULL && hit) {
+      dps_active->editcurve->flag |= DPEN_CURVE_NEEDS_STROKE_UPDATE;
     }
   }
 
@@ -1019,11 +1019,11 @@ static bool dpen_vertexpaint_brush_do_frame(bContext *C,
    * under the brush. */
   float average_color[3] = {0};
   int totcol = 0;
-  if ((tool == GPVERTEX_TOOL_AVERAGE) && (gso->pbuffer_used > 0)) {
+  if ((tool == DPENVERTEX_TOOL_AVERAGE) && (dso->pbuffer_used > 0)) {
     for (i = 0; i < gso->pbuffer_used; i++) {
-      selected = &gso->pbuffer[i];
-      bGPDstroke *gps = selected->gps;
-      bGPDspoint *pt = &gps->points[selected->pt_index];
+      selected = &dso->pbuffer[i];
+      DPenstroke *dps = selected->dps;
+      DPenPoint *pt = &dps->points[selected->pt_index];
 
       /* Add stroke mix color (only if used). */
       if (pt->vert_color[3] > 0.0f) {
@@ -1032,8 +1032,8 @@ static bool dpen_vertexpaint_brush_do_frame(bContext *C,
       }
 
       /* If Fill color mix, add to average. */
-      if (gps->vert_color_fill[3] > 0.0f) {
-        add_v3_v3(average_color, gps->vert_color_fill);
+      if (dps->vert_color_fill[3] > 0.0f) {
+        add_v3_v3(average_color, dps->vert_color_fill);
         totcol++;
       }
     }
@@ -1048,34 +1048,34 @@ static bool dpen_vertexpaint_brush_do_frame(bContext *C,
    * Second step: Apply effect.
    *--------------------------------------------------------------------- */
   bool changed = false;
-  for (i = 0; i < gso->pbuffer_used; i++) {
+  for (i = 0; i < dso->pbuffer_used; i++) {
     changed = true;
-    selected = &gso->pbuffer[i];
+    selected = &dso->pbuffer[i];
 
     switch (tool) {
-      case GPAINT_TOOL_TINT:
-      case GPVERTEX_TOOL_DRAW: {
-        brush_tint_apply(gso, selected->gps, selected->pt_index, radius, selected->pc);
+      case DPEN_PAINT_TOOL_TINT:
+      case DPEN_VERTEX_TOOL_DRAW: {
+        brush_tint_apply(dso, selected->dps, selected->pt_index, radius, selected->pc);
         changed |= true;
         break;
       }
-      case GPVERTEX_TOOL_BLUR: {
-        brush_blur_apply(gso, selected->gps, selected->pt_index, radius, selected->pc);
+      case DPEN_VERTEX_TOOL_BLUR: {
+        brush_blur_apply(dso, selected->dps, selected->pt_index, radius, selected->pc);
         changed |= true;
         break;
       }
-      case GPVERTEX_TOOL_AVERAGE: {
+      case DPEN_VERTEX_TOOL_AVERAGE: {
         brush_average_apply(
-            gso, selected->gps, selected->pt_index, radius, selected->pc, average_color);
+            dso, selected->dps, selected->pt_index, radius, selected->pc, average_color);
         changed |= true;
         break;
       }
-      case GPVERTEX_TOOL_SMEAR: {
+      case DPEN_VERTEX_TOOL_SMEAR: {
         brush_smear_apply(gso, selected->gps, selected->pt_index, selected);
         changed |= true;
         break;
       }
-      case GPVERTEX_TOOL_REPLACE: {
+      case DPEN_VERTEX_TOOL_REPLACE: {
         brush_replace_apply(gso, selected->gps, selected->pt_index);
         changed |= true;
         break;
