@@ -1123,26 +1123,26 @@ static bool gpencil_vertexpaint_brush_apply_to_layers(bContext *C, tGP_BrushVert
       int f_init = 0;
       int f_end = 0;
 
-      if (gso->use_multiframe_falloff) {
-        BKE_gpencil_frame_range_selected(gpl, &f_init, &f_end);
+      if (dso->use_multiframe_falloff) {
+        dune_dpen_frame_range_selected(dpl, &f_init, &f_end);
       }
 
-      LISTBASE_FOREACH (bGPDframe *, gpf, &gpl->frames) {
+      LISTBASE_FOREACH (DPenFrame *, dpf, &dpl->frames) {
         /* Always do active frame; Otherwise, only include selected frames */
-        if ((gpf == gpl->actframe) || (gpf->flag & GP_FRAME_SELECT)) {
+        if ((dpf == dpl->actframe) || (dpf->flag & DPEN_FRAME_SELECT)) {
           /* Compute multi-frame falloff factor. */
-          if (gso->use_multiframe_falloff) {
+          if (dso->use_multiframe_falloff) {
             /* Falloff depends on distance to active frame (relative to the overall frame range) */
-            gso->mf_falloff = BKE_gpencil_multiframe_falloff_calc(
-                gpf, gpl->actframe->framenum, f_init, f_end, ts->gp_sculpt.cur_falloff);
+            dso->mf_falloff = dune_dpen_multiframe_falloff_calc(
+                dpf, dpl->actframe->framenum, f_init, f_end, ts->dpen_sculpt.cur_falloff);
           }
           else {
             /* No falloff */
-            gso->mf_falloff = 1.0f;
+            dso->mf_falloff = 1.0f;
           }
 
           /* affect strokes in this frame */
-          changed |= gpencil_vertexpaint_brush_do_frame(C, gso, gpl, gpf, diff_mat, bound_mat);
+          changed |= gpen_vertexpaint_brush_do_frame(C, gso, gpl, gpf, diff_mat, bound_mat);
         }
       }
     }
