@@ -753,70 +753,70 @@ static bool dpen_vertexpaint_brush_init(dContext *C, wmOperator *op)
 
 static void dpen_vertexpaint_brush_exit(dContext *C, wmOperator *op)
 {
-  tGP_BrushVertexpaintData *gso = op->customdata;
+  tDPen_BrushVertexpaintData *dso = op->customdata;
 
   /* Disable headerprints. */
-  ED_workspace_status_text(C, NULL);
+  ed_workspace_status_text(C, NULL);
 
   /* Disable temp invert flag. */
-  gso->brush->flag &= ~GP_VERTEX_FLAG_TMP_INVERT;
+  dso->brush->flag &= ~DPEN_VERTEX_FLAG_TMP_INVERT;
 
   /* Free operator data */
-  MEM_SAFE_FREE(gso->pbuffer);
-  MEM_SAFE_FREE(gso->grid);
-  MEM_SAFE_FREE(gso);
+  MEM_SAFE_FREE(dso->pbuffer);
+  MEM_SAFE_FREE(dso->grid);
+  MEM_SAFE_FREE(dso);
   op->customdata = NULL;
 }
 
 /* Poll callback for stroke vertex paint operator. */
-static bool gpencil_vertexpaint_brush_poll(bContext *C)
+static bool dpen_vertexpaint_brush_poll(dContext *C)
 {
   /* NOTE: this is a bit slower, but is the most accurate... */
-  return CTX_DATA_COUNT(C, editable_gpencil_strokes) != 0;
+  return CTX_DATA_COUNT(C, editable_dpen_strokes) != 0;
 }
 
 /* Helper to save the points selected by the brush. */
-static void gpencil_save_selected_point(tGP_BrushVertexpaintData *gso,
-                                        bGPDstroke *gps,
+static void dpen_save_selected_point(tDPen_BrushVertexpaintData *dso,
+                                        DPenStroke *dps,
                                         int index,
                                         int pc[2])
 {
-  tGP_Selected *selected;
-  bGPDspoint *pt = &gps->points[index];
+  tDPen_Selected *selected;
+  DPenPoint *pt = &dps->points[index];
 
   /* Ensure the array to save the list of selected points is big enough. */
-  gso->pbuffer = gpencil_select_buffer_ensure(
-      gso->pbuffer, &gso->pbuffer_size, &gso->pbuffer_used, false);
+  dso->pbuffer = dpen_select_buffer_ensure(
+      dso->pbuffer, &dso->pbuffer_size, &dso->pbuffer_used, false);
 
-  selected = &gso->pbuffer[gso->pbuffer_used];
-  selected->gps = gps;
+  selected = &dso->pbuffer[dso->pbuffer_used];
+  selected->dps = dps;
   selected->pt_index = index;
   /* Check the index is not a special case for fill. */
   if (index > -1) {
     copy_v2_v2_int(selected->pc, pc);
     copy_v4_v4(selected->color, pt->vert_color);
   }
-  gso->pbuffer_used++;
+  dso->pbuffer_used++;
 }
 
 /* Select points in this stroke and add to an array to be used later.
  * Returns true if any point was hit and got saved */
-static bool gpencil_vertexpaint_select_stroke(tGP_BrushVertexpaintData *gso,
-                                              bGPDstroke *gps,
+static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
+                                              DPenStroke *dps,
                                               const char tool,
                                               const float diff_mat[4][4],
                                               const float bound_mat[4][4])
 {
-  GP_SpaceConversion *gsc = &gso->gsc;
-  rcti *rect = &gso->brush_rect;
-  Brush *brush = gso->brush;
-  const int radius = (brush->flag & GP_BRUSH_USE_PRESSURE) ? gso->brush->size * gso->pressure :
-                                                             gso->brush->size;
-  bGPDstroke *gps_active = (gps->runtime.gps_orig) ? gps->runtime.gps_orig : gps;
-  bGPDspoint *pt_active = NULL;
+  DPen_SpaceConversion *dsc = &dso->dsc;
+  rcti *rect = &dso->brush_rect;
+  Brush *brush = dso->brush;
+  const int radius = (brush->flag & DPEN_BRUSH_USE_PRESSURE) ? dso->brush->size * dso->pressure :
+                                                             dso->brush->size;
+  DPenStroke *dps_active = (dps->runtime.dps_orig) ? dps->runtime.dps_orig : dps;
+  DPenPoint *pt_active = NULL;
 
-  bGPDspoint *pt1, *pt2;
-  bGPDspoint *pt = NULL;
+  DPenPoint *pt1, *pt2;
+  DPenPoint *pt = NULL;
   int pc1[2] = {0};
   int pc2[2] = {0};
   int i;
@@ -826,33 +826,33 @@ static bool gpencil_vertexpaint_select_stroke(tGP_BrushVertexpaintData *gso,
   bool saved = false;
 
   /* Check stroke masking. */
-  if (GPENCIL_ANY_VERTEX_MASK(gso->mask)) {
-    if ((gps->flag & GP_STROKE_SELECT) == 0) {
+  if (DPEN_ANY_VERTEX_MASK(dso->mask)) {
+    if ((dps->flag & DPEN_STROKE_SELECT) == 0) {
       return false;
     }
   }
 
   /* Check if the stroke collide with brush. */
-  if (!ED_gpencil_stroke_check_collision(gsc, gps, gso->mval, radius, bound_mat)) {
+  if (!ed_dpen_stroke_check_collision(dsc, dps, dso->mval, radius, bound_mat)) {
     return false;
   }
 
-  if (gps->totpoints == 1) {
-    bGPDspoint pt_temp;
-    pt = &gps->points[0];
-    gpencil_point_to_parent_space(gps->points, diff_mat, &pt_temp);
-    gpencil_point_to_xy(gsc, gps, &pt_temp, &pc1[0], &pc1[1]);
+  if (dps->totpoints == 1) {
+    DPenPoint pt_temp;
+    pt = &dps->points[0];
+    dpen_point_to_parent_space(dps->points, diff_mat, &pt_temp);
+    dpen_point_to_xy(dsc, dps, &pt_temp, &pc1[0], &pc1[1]);
 
     pt_active = (pt->runtime.pt_orig) ? pt->runtime.pt_orig : pt;
     /* Do bound-box check first. */
-    if ((!ELEM(V2D_IS_CLIPPED, pc1[0], pc1[1])) && BLI_rcti_isect_pt(rect, pc1[0], pc1[1])) {
+    if ((!ELEM(V2D_IS_CLIPPED, pc1[0], pc1[1])) && lib_rcti_isect_pt(rect, pc1[0], pc1[1])) {
       /* only check if point is inside */
       int mval_i[2];
-      round_v2i_v2fl(mval_i, gso->mval);
+      round_v2i_v2fl(mval_i, dso->mval);
       if (len_v2v2_int(mval_i, pc1) <= radius) {
         /* apply operation to this point */
         if (pt_active != NULL) {
-          gpencil_save_selected_point(gso, gps_active, 0, pc1);
+          dpen_save_selected_point(dso, dps_active, 0, pc1);
           saved = true;
         }
       }
@@ -863,26 +863,26 @@ static bool gpencil_vertexpaint_select_stroke(tGP_BrushVertexpaintData *gso,
      * - an intersection means that we touched the stroke
      */
     bool hit = false;
-    for (i = 0; (i + 1) < gps->totpoints; i++) {
+    for (i = 0; (i + 1) < dps->totpoints; i++) {
       /* Get points to work with */
-      pt1 = gps->points + i;
-      pt2 = gps->points + i + 1;
+      pt1 = dps->points + i;
+      pt2 = dps->points + i + 1;
 
       /* Skip if neither one is selected
        * (and we are only allowed to edit/consider selected points) */
-      if (GPENCIL_ANY_VERTEX_MASK(gso->mask)) {
-        if (!(pt1->flag & GP_SPOINT_SELECT) && !(pt2->flag & GP_SPOINT_SELECT)) {
+      if (DPEN_ANY_VERTEX_MASK(dso->mask)) {
+        if (!(pt1->flag & DPEN_SPOINT_SELECT) && !(pt2->flag & GP_SPOINT_SELECT)) {
           include_last = false;
           continue;
         }
       }
 
       bGPDspoint npt;
-      gpencil_point_to_parent_space(pt1, diff_mat, &npt);
-      gpencil_point_to_xy(gsc, gps, &npt, &pc1[0], &pc1[1]);
+      gpen_point_to_parent_space(pt1, diff_mat, &npt);
+      gpen_point_to_xy(gsc, gps, &npt, &pc1[0], &pc1[1]);
 
-      gpencil_point_to_parent_space(pt2, diff_mat, &npt);
-      gpencil_point_to_xy(gsc, gps, &npt, &pc2[0], &pc2[1]);
+      gpen_point_to_parent_space(pt2, diff_mat, &npt);
+      gpen_point_to_xy(gsc, gps, &npt, &pc2[0], &pc2[1]);
 
       /* Check that point segment of the bound-box of the selection stroke. */
       if (((!ELEM(V2D_IS_CLIPPED, pc1[0], pc1[1])) && BLI_rcti_isect_pt(rect, pc1[0], pc1[1])) ||
@@ -891,20 +891,20 @@ static bool gpencil_vertexpaint_select_stroke(tGP_BrushVertexpaintData *gso,
          * brush region  (either within stroke painted, or on its lines)
          * - this assumes that line-width is irrelevant.
          */
-        if (gpencil_stroke_inside_circle(gso->mval, radius, pc1[0], pc1[1], pc2[0], pc2[1])) {
+        if (dpen_stroke_inside_circle(gso->mval, radius, pc1[0], pc1[1], pc2[0], pc2[1])) {
 
           /* To each point individually... */
-          pt = &gps->points[i];
+          pt = &dps->points[i];
           pt_active = pt->runtime.pt_orig;
           if (pt_active != NULL) {
             /* If masked and the point is not selected, skip it. */
-            if (GPENCIL_ANY_VERTEX_MASK(gso->mask) &&
-                ((pt_active->flag & GP_SPOINT_SELECT) == 0)) {
+            if (DPEN_ANY_VERTEX_MASK(gso->mask) &&
+                ((pt_active->flag & DPEN_SPOINT_SELECT) == 0)) {
               continue;
             }
             index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i;
             hit = true;
-            gpencil_save_selected_point(gso, gps_active, index, pc1);
+            gpen_save_selected_point(gso, gps_active, index, pc1);
             saved = true;
           }
 
@@ -922,7 +922,7 @@ static bool gpencil_vertexpaint_select_stroke(tGP_BrushVertexpaintData *gso,
             if (pt_active != NULL) {
               index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i + 1;
               hit = true;
-              gpencil_save_selected_point(gso, gps_active, index, pc2);
+              gpen_save_selected_point(gso, gps_active, index, pc2);
               include_last = false;
               saved = true;
             }
@@ -942,7 +942,7 @@ static bool gpencil_vertexpaint_select_stroke(tGP_BrushVertexpaintData *gso,
           if (pt_active != NULL) {
             index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i;
             hit = true;
-            gpencil_save_selected_point(gso, gps_active, index, pc1);
+            dpen_save_selected_point(gso, gps_active, index, pc1);
             include_last = false;
             saved = true;
           }
@@ -974,17 +974,17 @@ static bool gpencil_vertexpaint_select_stroke(tGP_BrushVertexpaintData *gso,
 }
 
 /* Apply vertex paint brushes to strokes in the given frame. */
-static bool gpencil_vertexpaint_brush_do_frame(bContext *C,
+static bool dpen_vertexpaint_brush_do_frame(bContext *C,
                                                tGP_BrushVertexpaintData *gso,
                                                bGPDlayer *gpl,
                                                bGPDframe *gpf,
                                                const float diff_mat[4][4],
                                                const float bound_mat[4][4])
 {
-  Object *ob = CTX_data_active_object(C);
-  const char tool = ob->mode == OB_MODE_VERTEX_GPENCIL ? gso->brush->gpencil_vertex_tool :
-                                                         gso->brush->gpencil_tool;
-  const int radius = (gso->brush->flag & GP_BRUSH_USE_PRESSURE) ?
+  Object *ob = ctx_data_active_object(C);
+  const char tool = ob->mode == OB_MODE_VERTEX_DPEN ? dso->brush->dpen_vertex_tool :
+                                                         dso->brush->dpen_tool;
+  const int radius = (dso->brush->flag & DPEN_BRUSH_USE_PRESSURE) ?
                          gso->brush->size * gso->pressure :
                          gso->brush->size;
   tGP_Selected *selected = NULL;
