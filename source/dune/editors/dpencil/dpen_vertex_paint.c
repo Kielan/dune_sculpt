@@ -951,13 +951,13 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
     }
 
     /* If nothing hit, check if the mouse is inside any filled stroke. */
-    if ((!hit) && (ELEM(tool, GPAINT_TOOL_TINT, GPVERTEX_TOOL_DRAW))) {
-      MaterialDPenStyle *dp_style = BKE_gpencil_material_settings(gso->object,
-                                                                     gps_active->mat_nr + 1);
-      if (gp_style->flag & GP_MATERIAL_FILL_SHOW) {
+    if ((!hit) && (ELEM(tool, DPENPAINT_TOOL_TINT, DPENVERTEX_TOOL_DRAW))) {
+      MaterialDPenStyle *dp_style = dune_dpen_material_settings(dso->object,
+                                                                     dps_active->mat_nr + 1);
+      if (gp_style->flag & DPEN_MATERIAL_FILL_SHOW) {
         int mval[2];
         round_v2i_v2fl(mval, gso->mval);
-        bool hit_fill = ED_gpencil_stroke_point_is_inside(gps_active, gsc, mval, diff_mat);
+        bool hit_fill = ed_dpen_stroke_point_is_inside(dps_active, dsc, mval, diff_mat);
         if (hit_fill) {
           /* Need repeat the effect because if we don't do that the tint process
            * is very slow. */
