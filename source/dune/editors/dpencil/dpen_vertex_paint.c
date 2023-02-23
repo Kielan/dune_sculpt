@@ -877,21 +877,21 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
         }
       }
 
-      bGPDspoint npt;
-      gpen_point_to_parent_space(pt1, diff_mat, &npt);
-      gpen_point_to_xy(gsc, gps, &npt, &pc1[0], &pc1[1]);
+      DPenPoint npt;
+      dpen_point_to_parent_space(pt1, diff_mat, &npt);
+      dpen_point_to_xy(dsc, dps, &npt, &pc1[0], &pc1[1]);
 
-      gpen_point_to_parent_space(pt2, diff_mat, &npt);
-      gpen_point_to_xy(gsc, gps, &npt, &pc2[0], &pc2[1]);
+      dpen_point_to_parent_space(pt2, diff_mat, &npt);
+      dpen_point_to_xy(dsc, dps, &npt, &pc2[0], &pc2[1]);
 
       /* Check that point segment of the bound-box of the selection stroke. */
-      if (((!ELEM(V2D_IS_CLIPPED, pc1[0], pc1[1])) && BLI_rcti_isect_pt(rect, pc1[0], pc1[1])) ||
-          ((!ELEM(V2D_IS_CLIPPED, pc2[0], pc2[1])) && BLI_rcti_isect_pt(rect, pc2[0], pc2[1]))) {
+      if (((!ELEM(V2D_IS_CLIPPED, pc1[0], pc1[1])) && lib_rcti_isect_pt(rect, pc1[0], pc1[1])) ||
+          ((!ELEM(V2D_IS_CLIPPED, pc2[0], pc2[1])) && lib_rcti_isect_pt(rect, pc2[0], pc2[1]))) {
         /* Check if point segment of stroke had anything to do with
          * brush region  (either within stroke painted, or on its lines)
          * - this assumes that line-width is irrelevant.
          */
-        if (dpen_stroke_inside_circle(gso->mval, radius, pc1[0], pc1[1], pc2[0], pc2[1])) {
+        if (dpen_stroke_inside_circle(dso->mval, radius, pc1[0], pc1[1], pc2[0], pc2[1])) {
 
           /* To each point individually... */
           pt = &dps->points[i];
@@ -904,7 +904,7 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
             }
             index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i;
             hit = true;
-            gpen_save_selected_point(gso, gps_active, index, pc1);
+            dpen_save_selected_point(dso, dps_active, index, pc1);
             saved = true;
           }
 
@@ -916,13 +916,13 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
            *       actually in-range. In that case, it only got in because
            *       the line linking the points was!
            */
-          if (i + 1 == gps->totpoints - 1) {
-            pt = &gps->points[i + 1];
+          if (i + 1 == dps->totpoints - 1) {
+            pt = &dps->points[i + 1];
             pt_active = pt->runtime.pt_orig;
             if (pt_active != NULL) {
               index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i + 1;
               hit = true;
-              gpen_save_selected_point(gso, gps_active, index, pc2);
+              dpen_save_selected_point(dso, dps_active, index, pc2);
               include_last = false;
               saved = true;
             }
@@ -937,7 +937,7 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
            * but it would've qualified since it did with the previous step
            * (but wasn't added then, to avoid double-ups).
            */
-          pt = &gps->points[i];
+          pt = &dps->points[i];
           pt_active = pt->runtime.pt_orig;
           if (pt_active != NULL) {
             index = (pt->runtime.pt_orig) ? pt->runtime.idx_orig : i;
@@ -952,7 +952,7 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
 
     /* If nothing hit, check if the mouse is inside any filled stroke. */
     if ((!hit) && (ELEM(tool, GPAINT_TOOL_TINT, GPVERTEX_TOOL_DRAW))) {
-      MaterialGPencilStyle *gp_style = BKE_gpencil_material_settings(gso->object,
+      MaterialDPenStyle *dp_style = BKE_gpencil_material_settings(gso->object,
                                                                      gps_active->mat_nr + 1);
       if (gp_style->flag & GP_MATERIAL_FILL_SHOW) {
         int mval[2];
