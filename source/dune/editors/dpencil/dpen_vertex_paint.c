@@ -623,7 +623,7 @@ static bool brush_smear_apply(tDPen_BrushVertexpaintData *dso,
   /* The influence is equal to strength and no decay around brush radius. */
   float inf = brush->dpen_settings->draw_strength;
   if (brush->flag & DPEN_BRUSH_USE_PRESSURE) {
-    inf *= gso->pressure;
+    inf *= dso->pressure;
   }
 
   /* Calc distance from initial sample location and add a falloff effect. */
@@ -954,15 +954,15 @@ static bool dpen_vertexpaint_select_stroke(tDPen_BrushVertexpaintData *dso,
     if ((!hit) && (ELEM(tool, DPENPAINT_TOOL_TINT, DPENVERTEX_TOOL_DRAW))) {
       MaterialDPenStyle *dp_style = dune_dpen_material_settings(dso->object,
                                                                      dps_active->mat_nr + 1);
-      if (gp_style->flag & DPEN_MATERIAL_FILL_SHOW) {
+      if (dpen_style->flag & DPEN_MATERIAL_FILL_SHOW) {
         int mval[2];
-        round_v2i_v2fl(mval, gso->mval);
+        round_v2i_v2fl(mval, dso->mval);
         bool hit_fill = ed_dpen_stroke_point_is_inside(dps_active, dsc, mval, diff_mat);
         if (hit_fill) {
           /* Need repeat the effect because if we don't do that the tint process
            * is very slow. */
           for (int repeat = 0; repeat < 50; repeat++) {
-            gpencil_save_selected_point(gso, gps_active, -1, NULL);
+            dpen_save_selected_point(dso, dps_active, -1, NULL);
           }
           saved = true;
         }
@@ -1020,7 +1020,7 @@ static bool dpen_vertexpaint_brush_do_frame(dContext *C,
   float average_color[3] = {0};
   int totcol = 0;
   if ((tool == DPENVERTEX_TOOL_AVERAGE) && (dso->pbuffer_used > 0)) {
-    for (i = 0; i < gso->pbuffer_used; i++) {
+    for (i = 0; i < dso->pbuffer_used; i++) {
       selected = &dso->pbuffer[i];
       DPenstroke *dps = selected->dps;
       DPenPoint *pt = &dps->points[selected->pt_index];
@@ -1071,12 +1071,12 @@ static bool dpen_vertexpaint_brush_do_frame(dContext *C,
         break;
       }
       case DPEN_VERTEX_TOOL_SMEAR: {
-        brush_smear_apply(gso, selected->gps, selected->pt_index, selected);
+        brush_smear_apply(dso, selected->dps, selected->pt_index, selected);
         changed |= true;
         break;
       }
       case DPEN_VERTEX_TOOL_REPLACE: {
-        brush_replace_apply(gso, selected->gps, selected->pt_index);
+        brush_replace_apply(dso, selected->dps, selected->pt_index);
         changed |= true;
         break;
       }
@@ -1087,8 +1087,8 @@ static bool dpen_vertexpaint_brush_do_frame(dContext *C,
     }
   }
   /* Clear the selected array, but keep the memory allocation. */
-  gso->pbuffer = gpencil_select_buffer_ensure(
-      gso->pbuffer, &gso->pbuffer_size, &gso->pbuffer_used, true);
+  dso->pbuffer = dpen_select_buffer_ensure(
+      dso->pbuffer, &dso->pbuffer_size, &dso->pbuffer_used, true);
 
   return changed;
 }
