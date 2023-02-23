@@ -282,42 +282,42 @@ static void dpen_grid_cell_average_color_idx_get(tDPen_BrushVertexpaintData *dso
 {
   /* Lower direction. */
   if (dso->dvec[1] < 0.0f) {
-    if ((dso->dvec[0] >= -1.0f) && (gso->dvec[0] < -0.8f)) {
+    if ((dso->dvec[0] >= -1.0f) && (dso->dvec[0] < -0.8f)) {
       r_idx[0] = 0;
       r_idx[1] = -1;
     }
-    else if ((gso->dvec[0] >= -0.8f) && (gso->dvec[0] < -0.6f)) {
+    else if ((dso->dvec[0] >= -0.8f) && (dso->dvec[0] < -0.6f)) {
       r_idx[0] = -1;
       r_idx[1] = -1;
     }
-    else if ((gso->dvec[0] >= -0.6f) && (gso->dvec[0] < 0.6f)) {
+    else if ((dso->dvec[0] >= -0.6f) && (dso->dvec[0] < 0.6f)) {
       r_idx[0] = -1;
       r_idx[1] = 0;
     }
-    else if ((gso->dvec[0] >= 0.6f) && (gso->dvec[0] < 0.8f)) {
+    else if ((dso->dvec[0] >= 0.6f) && (gso->dvec[0] < 0.8f)) {
       r_idx[0] = -1;
       r_idx[1] = 1;
     }
-    else if (gso->dvec[0] >= 0.8f) {
+    else if (dso->dvec[0] >= 0.8f) {
       r_idx[0] = 0;
       r_idx[1] = 1;
     }
   }
   /* Upper direction. */
   else {
-    if ((gso->dvec[0] >= -1.0f) && (gso->dvec[0] < -0.8f)) {
+    if ((dso->dvec[0] >= -1.0f) && (gso->dvec[0] < -0.8f)) {
       r_idx[0] = 0;
       r_idx[1] = -1;
     }
-    else if ((gso->dvec[0] >= -0.8f) && (gso->dvec[0] < -0.6f)) {
+    else if ((dso->dvec[0] >= -0.8f) && (gso->dvec[0] < -0.6f)) {
       r_idx[0] = 1;
       r_idx[1] = -1;
     }
-    else if ((gso->dvec[0] >= -0.6f) && (gso->dvec[0] < 0.6f)) {
+    else if ((dso->dvec[0] >= -0.6f) && (gso->dvec[0] < 0.6f)) {
       r_idx[0] = 1;
       r_idx[1] = 0;
     }
-    else if ((gso->dvec[0] >= 0.6f) && (gso->dvec[0] < 0.8f)) {
+    else if ((dso->dvec[0] >= 0.6f) && (gso->dvec[0] < 0.8f)) {
       r_idx[0] = 1;
       r_idx[1] = 1;
     }
@@ -334,7 +334,7 @@ static int dpen_grid_cell_index_get(tDPen_BrushVertexpaintData *dso, const int p
 
   for (int i = 0; i < dso->grid_len; i++) {
     tDPen_Grid *grid = &dso->grid[i];
-    add_v2_v2v2(bottom, grid->bottom, gso->mval);
+    add_v2_v2v2(bottom, grid->bottom, dso->mval);
     add_v2_v2v2(top, grid->top, dso->mval);
 
     if (pc[0] >= bottom[0] && pc[0] <= top[0] && pc[1] >= bottom[1] && pc[1] <= top[1]) {
@@ -436,7 +436,7 @@ static bool brush_tint_apply(tDPen_BrushVertexpaintData *dso,
   if (DPEN_TINT_VERTEX_COLOR_FILL(brush)) {
     if (brush_invert_check(gso)) {
       dps->vert_color_fill[3] -= inf_fill;
-      CLAMP_MIN(gps->vert_color_fill[3], 0.0f);
+      CLAMP_MIN(dps->vert_color_fill[3], 0.0f);
     }
     else {
       /* Pre-multiply. */
@@ -455,22 +455,22 @@ static bool brush_tint_apply(tDPen_BrushVertexpaintData *dso,
 }
 
 /* Replace Brush (Don't use pressure or invert). */
-static bool brush_replace_apply(tGP_BrushVertexpaintData *gso, bGPDstroke *gps, int pt_index)
+static bool brush_replace_apply(tDPen_BrushVertexpaintData *dso, DPenStroke *dps, int pt_index)
 {
-  Brush *brush = gso->brush;
-  bGPDspoint *pt = &gps->points[pt_index];
+  Brush *brush = dso->brush;
+  DPenPoint *pt = &dps->points[pt_index];
 
   /* Apply color to Stroke point. */
-  if (GPENCIL_TINT_VERTEX_COLOR_STROKE(brush)) {
+  if (DPEN_TINT_VERTEX_COLOR_STROKE(brush)) {
     if (pt->vert_color[3] > 0.0f) {
-      copy_v3_v3(pt->vert_color, gso->linear_color);
+      copy_v3_v3(pt->vert_color, dso->linear_color);
     }
   }
 
   /* Apply color to Fill area (all with same color and factor). */
-  if (GPENCIL_TINT_VERTEX_COLOR_FILL(brush)) {
-    if (gps->vert_color_fill[3] > 0.0f) {
-      copy_v3_v3(gps->vert_color_fill, gso->linear_color);
+  if (DPEN_TINT_VERTEX_COLOR_FILL(brush)) {
+    if (dps->vert_color_fill[3] > 0.0f) {
+      copy_v3_v3(dps->vert_color_fill, dso->linear_color);
     }
   }
 
@@ -478,28 +478,28 @@ static bool brush_replace_apply(tGP_BrushVertexpaintData *gso, bGPDstroke *gps, 
 }
 
 /* Get surrounding color. */
-static bool get_surrounding_color(tGP_BrushVertexpaintData *gso,
-                                  bGPDstroke *gps,
+static bool get_surrounding_color(tDPen_BrushVertexpaintData *dso,
+                                  DPenStroke *dps,
                                   int pt_index,
                                   float r_color[3])
 {
-  tGP_Selected *selected = NULL;
-  bGPDstroke *gps_selected = NULL;
-  bGPDspoint *pt = NULL;
+  tDPen_Selected *selected = NULL;
+  DPenStroke *dps_selected = NULL;
+  DpenPoint *pt = NULL;
 
   int totcol = 0;
   zero_v3(r_color);
 
   /* Average the surrounding points except current one. */
-  for (int i = 0; i < gso->pbuffer_used; i++) {
-    selected = &gso->pbuffer[i];
-    gps_selected = selected->gps;
+  for (int i = 0; i < dso->pbuffer_used; i++) {
+    selected = &dso->pbuffer[i];
+    dps_selected = selected->dps;
     /* current point is not evaluated. */
-    if ((gps_selected == gps) && (selected->pt_index == pt_index)) {
+    if ((dps_selected == dps) && (selected->pt_index == pt_index)) {
       continue;
     }
 
-    pt = &gps_selected->points[selected->pt_index];
+    pt = &dps_selected->points[selected->pt_index];
 
     /* Add stroke mix color (only if used). */
     if (pt->vert_color[3] > 0.0f) {
@@ -516,32 +516,32 @@ static bool get_surrounding_color(tGP_BrushVertexpaintData *gso,
 }
 
 /* Blur Brush */
-static bool brush_blur_apply(tGP_BrushVertexpaintData *gso,
-                             bGPDstroke *gps,
+static bool brush_blur_apply(tDPen_BrushVertexpaintData *gso,
+                             DPenDtroke *dps,
                              int pt_index,
                              const int radius,
                              const int co[2])
 {
-  Brush *brush = gso->brush;
+  Brush *brush = dso->brush;
 
   /* Attenuate factor to get a smoother tinting. */
-  float inf = (brush_influence_calc(gso, radius, co) * brush->gpencil_settings->draw_strength) /
+  float inf = (brush_influence_calc(dso, radius, co) * brush->dpen_settings->draw_strength) /
               100.0f;
-  float inf_fill = (gso->pressure * brush->gpencil_settings->draw_strength) / 1000.0f;
+  float inf_fill = (dso->pressure * brush->dpen_settings->draw_strength) / 1000.0f;
 
-  bGPDspoint *pt = &gps->points[pt_index];
+  DPenPoint *pt = &dps->points[pt_index];
 
   /* Get surrounding color. */
   float blur_color[3];
-  if (get_surrounding_color(gso, gps, pt_index, blur_color)) {
+  if (get_surrounding_color(dso, dps, pt_index, blur_color)) {
     /* Apply color to Stroke point. */
-    if (GPENCIL_TINT_VERTEX_COLOR_STROKE(brush)) {
+    if (DPEN_TINT_VERTEX_COLOR_STROKE(brush)) {
       interp_v3_v3v3(pt->vert_color, pt->vert_color, blur_color, inf);
     }
 
     /* Apply color to Fill area (all with same color and factor). */
-    if (GPENCIL_TINT_VERTEX_COLOR_FILL(brush)) {
-      interp_v3_v3v3(gps->vert_color_fill, gps->vert_color_fill, blur_color, inf_fill);
+    if (DPEN_TINT_VERTEX_COLOR_FILL(brush)) {
+      interp_v3_v3v3(dps->vert_color_fill, dps->vert_color_fill, blur_color, inf_fill);
     }
     return true;
   }
@@ -550,26 +550,26 @@ static bool brush_blur_apply(tGP_BrushVertexpaintData *gso,
 }
 
 /* Average Brush */
-static bool brush_average_apply(tGP_BrushVertexpaintData *gso,
-                                bGPDstroke *gps,
+static bool brush_average_apply(tDPen_BrushVertexpaintData *dso,
+                                DPenStroke *dps,
                                 int pt_index,
                                 const int radius,
                                 const int co[2],
                                 float average_color[3])
 {
-  Brush *brush = gso->brush;
+  Brush *brush = dso->brush;
 
   /* Attenuate factor to get a smoother tinting. */
-  float inf = (brush_influence_calc(gso, radius, co) * brush->gpencil_settings->draw_strength) /
+  float inf = (brush_influence_calc(dso, radius, co) * brush->gpencil_settings->draw_strength) /
               100.0f;
-  float inf_fill = (gso->pressure * brush->gpencil_settings->draw_strength) / 1000.0f;
+  float inf_fill = (dso->pressure * brush->dpen_settings->draw_strength) / 1000.0f;
 
-  bGPDspoint *pt = &gps->points[pt_index];
+  DPenPoint *pt = &dps->points[pt_index];
 
   float alpha = pt->vert_color[3];
-  float alpha_fill = gps->vert_color_fill[3];
+  float alpha_fill = dps->vert_color_fill[3];
 
-  if (brush_invert_check(gso)) {
+  if (brush_invert_check(dso)) {
     alpha -= inf;
     alpha_fill -= inf_fill;
   }
@@ -579,27 +579,27 @@ static bool brush_average_apply(tGP_BrushVertexpaintData *gso,
   }
 
   /* Apply color to Stroke point. */
-  if (GPENCIL_TINT_VERTEX_COLOR_STROKE(brush)) {
+  if (DPEN_TINT_VERTEX_COLOR_STROKE(brush)) {
     CLAMP(alpha, 0.0f, 1.0f);
     interp_v3_v3v3(pt->vert_color, pt->vert_color, average_color, inf);
     pt->vert_color[3] = alpha;
   }
 
   /* Apply color to Fill area (all with same color and factor). */
-  if (GPENCIL_TINT_VERTEX_COLOR_FILL(brush)) {
+  if (DPEN_TINT_VERTEX_COLOR_FILL(brush)) {
     CLAMP(alpha_fill, 0.0f, 1.0f);
-    copy_v3_v3(gps->vert_color_fill, average_color);
-    gps->vert_color_fill[3] = alpha_fill;
+    copy_v3_v3(dps->vert_color_fill, average_color);
+    dps->vert_color_fill[3] = alpha_fill;
   }
 
   return true;
 }
 
 /* Smear Brush */
-static bool brush_smear_apply(tGP_BrushVertexpaintData *gso,
-                              bGPDstroke *gps,
+static bool brush_smear_apply(tDPen_BrushVertexpaintData *dso,
+                              DPenStroke *dps,
                               int pt_index,
-                              tGP_Selected *selected)
+                              tDPen_Selected *selected)
 {
   Brush *brush = gso->brush;
   tGP_Grid *grid = NULL;
