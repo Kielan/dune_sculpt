@@ -1142,16 +1142,16 @@ static bool dpen_vertexpaint_brush_apply_to_layers(dContext *C, tDPen_BrushVerte
           }
 
           /* affect strokes in this frame */
-          changed |= gpen_vertexpaint_brush_do_frame(C, gso, gpl, gpf, diff_mat, bound_mat);
+          changed |= dpen_vertexpaint_brush_do_frame(C, dso, dpl, dpf, diff_mat, bound_mat);
         }
       }
     }
     else {
       /* Apply to active frame's strokes */
-      if (gpl->actframe != NULL) {
-        gso->mf_falloff = 1.0f;
-        changed |= gpencil_vertexpaint_brush_do_frame(
-            C, gso, gpl, gpl->actframe, diff_mat, bound_mat);
+      if (dpl->actframe != NULL) {
+        dso->mf_falloff = 1.0f;
+        changed |= dpen_vertexpaint_brush_do_frame(
+            C, dso, dpl, dpl->actframe, diff_mat, bound_mat);
       }
     }
   }
@@ -1160,25 +1160,25 @@ static bool dpen_vertexpaint_brush_apply_to_layers(dContext *C, tDPen_BrushVerte
 }
 
 /* Calculate settings for applying brush */
-static void gpencil_vertexpaint_brush_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
+static void dpen_vertexpaint_brush_apply(dContext *C, wmOperator *op, ApiPtr *itemptr)
 {
-  tGP_BrushVertexpaintData *gso = op->customdata;
-  Brush *brush = gso->brush;
-  const int radius = ((brush->flag & GP_BRUSH_USE_PRESSURE) ? gso->brush->size * gso->pressure :
-                                                              gso->brush->size);
+  tDPen_BrushVertexpaintData *dpbvd = op->customdata;
+  Brush *brush = dpbvd->brush;
+  const int radius = ((brush->flag & DPEN_BRUSH_USE_PRESSURE) ? dso->brush->size * dso->pressure :
+                                                              dso->brush->size);
   float mousef[2];
   int mouse[2];
   bool changed = false;
 
   /* Get latest mouse coordinates */
-  RNA_float_get_array(itemptr, "mouse", mousef);
-  gso->mval[0] = mouse[0] = (int)(mousef[0]);
-  gso->mval[1] = mouse[1] = (int)(mousef[1]);
+  api_float_get_array(itemptr, "mouse", mousef);
+  dpbvd->mval[0] = mouse[0] = (int)(mousef[0]);
+  dpbvd->mval[1] = mouse[1] = (int)(mousef[1]);
 
-  gso->pressure = RNA_float_get(itemptr, "pressure");
+  dpbvd->pressure = api_float_get(itemptr, "pressure");
 
-  if (RNA_boolean_get(itemptr, "pen_flip")) {
-    gso->flag |= GP_VERTEX_FLAG_INVERT;
+  if (api_bool_get(itemptr, "pen_flip")) {
+    dpbvd->flag |= DPEN_VERTEX_FLAG_INVERT;
   }
   else {
     gso->flag &= ~GP_VERTEX_FLAG_INVERT;
