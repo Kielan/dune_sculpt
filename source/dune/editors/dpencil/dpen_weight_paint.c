@@ -283,61 +283,61 @@ static bool dpen_weightpaint_brush_init(dContext *C, wmOperator *op)
   Paint *paint = &ts->dpen_weightpaint->paint;
 
   /* set the brush using the tool */
-  DPenBrushWeightpaintData *dpwd;
+  DPenBrushWeightpaintData *dpbwd;
 
   /* setup operator data */
-  dpwd = MEM_callocN(sizeof(DPenBrushWeightpaintData), "DPenBrushWeightpaintData");
-  op->customdata = gso;
+  dpbwd = MEM_callocN(sizeof(DPenBrushWeightpaintData), "DPenBrushWeightpaintData");
+  op->customdata = dpbwd;
 
-  gso->bmain = CTX_data_main(C);
+  dpbwd->dmain = ctx_data_main(C);
 
-  gso->brush = paint->brush;
-  BKE_curvemapping_init(gso->brush->curve);
+  dpbwd->brush = paint->brush;
+  dune_curvemapping_init(dpbwd->brush->curve);
 
-  gso->is_painting = false;
-  gso->first = true;
+  dpbwd->is_painting = false;
+  dpbwd->first = true;
 
-  gso->pbuffer = NULL;
-  gso->pbuffer_size = 0;
-  gso->pbuffer_used = 0;
+  dpbwd->pbuffer = NULL;
+  dpbwd->pbuffer_size = 0;
+  dpbwd->pbuffer_used = 0;
 
-  gso->gpd = ED_gpencil_data_get_active(C);
-  gso->scene = scene;
-  gso->object = ob;
+  dpbwd->dpd = ed_dpen_data_get_active(C);
+  dpbwd->scene = scene;
+  dpbwd->object = ob;
   if (ob) {
-    gso->vrgroup = gso->gpd->vertex_group_active_index - 1;
-    if (!BLI_findlink(&gso->gpd->vertex_group_names, gso->vrgroup)) {
-      gso->vrgroup = -1;
+    dpbwd->vrgroup = dpbwd->dpd->vertex_group_active_index - 1;
+    if (!lib_findlink(&dpbwd->dpd->vertex_group_names, dpbwd->vrgroup)) {
+      dpbwd->vrgroup = -1;
     }
   }
   else {
-    gso->vrgroup = -1;
+    dpbwd->vrgroup = -1;
   }
 
-  gso->region = CTX_wm_region(C);
+  dpbwd->region = ctx_wm_region(C);
 
   /* Multiframe settings. */
-  gso->is_multiframe = (bool)GPENCIL_MULTIEDIT_SESSIONS_ON(gso->gpd);
-  gso->use_multiframe_falloff = (ts->gp_sculpt.flag & GP_SCULPT_SETT_FLAG_FRAME_FALLOFF) != 0;
+  dpbwd->is_multiframe = (bool)DPEN_MULTIEDIT_SESSIONS_ON(dpbwd->dpd);
+  dpbwd->use_multiframe_falloff = (ts->dpen_sculpt.flag & DPEN_SCULPT_SETT_FLAG_FRAME_FALLOFF) != 0;
 
   /* Init multi-edit falloff curve data before doing anything,
    * so we won't have to do it again later. */
-  if (gso->is_multiframe) {
-    BKE_curvemapping_init(ts->gp_sculpt.cur_falloff);
+  if (dpbwd->is_multiframe) {
+    dune_curvemapping_init(ts->dpen_sculpt.cur_falloff);
   }
 
   /* Setup space conversions. */
-  gpencil_point_conversion_init(C, &gso->gsc);
+  dpen_point_conversion_init(C, &dpbwd->dsc);
 
   /* Update header. */
-  gpencil_weightpaint_brush_header_set(C);
+  dpen_weightpaint_brush_header_set(C);
 
   return true;
 }
 
-static void gpencil_weightpaint_brush_exit(bContext *C, wmOperator *op)
+static void dpen_weightpaint_brush_exit(dContext *C, wmOperator *op)
 {
-  tGP_BrushWeightpaintData *gso = op->customdata;
+  tGP_BrushWeightpaintData *dpbwd = op->customdata;
 
   /* Disable headerprints. */
   ED_workspace_status_text(C, NULL);
