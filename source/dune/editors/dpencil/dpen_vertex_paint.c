@@ -1094,26 +1094,26 @@ static bool dpen_vertexpaint_brush_do_frame(dContext *C,
 }
 
 /* Apply brush effect to all layers. */
-static bool gpencil_vertexpaint_brush_apply_to_layers(bContext *C, tGP_BrushVertexpaintData *gso)
+static bool dpen_vertexpaint_brush_apply_to_layers(dContext *C, tDPen_BrushVertexpaintData *dpbvd)
 {
-  ToolSettings *ts = CTX_data_tool_settings(C);
-  Depsgraph *depsgraph = CTX_data_ensure_evaluated_depsgraph(C);
-  Object *obact = gso->object;
+  ToolSettings *ts = ctx_data_tool_settings(C);
+  Depsgraph *depsgraph = ctx_data_ensure_evaluated_depsgraph(C);
+  Object *obact = dpbvd->object;
   bool changed = false;
 
   Object *ob_eval = (Object *)DEG_get_evaluated_id(depsgraph, &obact->id);
-  bGPdata *gpd = (bGPdata *)ob_eval->data;
+  DPenData *dpd = (DPenData *)ob_eval->data;
 
   /* Find visible strokes, and perform operations on those if hit */
-  LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
+  LISTBASE_FOREACH (DPenLayer *, dpl, &dpd->layers) {
     /* If locked or no active frame, don't do anything. */
-    if ((!BKE_gpencil_layer_is_editable(gpl)) || (gpl->actframe == NULL)) {
+    if ((!dune_dpen_layer_is_editable(dpl)) || (dpl->actframe == NULL)) {
       continue;
     }
 
     /* Calculate transform matrix. */
     float diff_mat[4][4], bound_mat[4][4];
-    BKE_gpencil_layer_transform_matrix_get(depsgraph, obact, gpl, diff_mat);
+    dune_dpen_layer_transform_matrix_get(depsgraph, obact, dpl, diff_mat);
     copy_m4_m4(bound_mat, diff_mat);
     mul_m4_m4m4(diff_mat, diff_mat, gpl->layer_invmat);
 
