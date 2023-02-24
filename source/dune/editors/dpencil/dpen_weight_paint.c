@@ -1,55 +1,52 @@
-/** \file
- * \ingroup edgpencil
- * Brush based operators for editing Grease Pencil strokes.
- */
+/** Brush based operators for editing Dune-Pen strokes. **/
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
+#include "lib_blenlib.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_brush_types.h"
-#include "DNA_gpencil_types.h"
+#include "types_armature_types.h"
+#include "types_brush_types.h"
+#include "types_gpencil_types.h"
 
-#include "BKE_action.h"
-#include "BKE_brush.h"
-#include "BKE_colortools.h"
-#include "BKE_context.h"
-#include "BKE_deform.h"
-#include "BKE_gpencil.h"
-#include "BKE_main.h"
-#include "BKE_modifier.h"
-#include "BKE_object_deform.h"
-#include "BKE_report.h"
-#include "DNA_meshdata_types.h"
+#include "dune_action.h"
+#include "dune_brush.h"
+#include "dune_colortools.h"
+#include "dune_context.h"
+#include "dune_deform.h"
+#include "dune_gpencil.h"
+#include "dune_main.h"
+#include "dune_modifier.h"
+#include "dune_object_deform.h"
+#include "dune_report.h"
+#include "types_meshdata_types.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_prototypes.h"
 
-#include "UI_view2d.h"
+#include "ui_view2d.h"
 
-#include "ED_gpencil.h"
-#include "ED_screen.h"
-#include "ED_view3d.h"
+#include "ed_dpen.h"
+#include "ed_screen.h"
+#include "ed_view3d.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_query.h"
 
-#include "gpencil_intern.h"
+#include "dpen_intern.h"
 
 /* ************************************************ */
 /* General Brush Editing Context */
-#define GP_SELECT_BUFFER_CHUNK 256
+#define DPEN_SELECT_BUFFER_CHUNK 256
 
 /* Grid of Colors for Smear. */
-typedef struct tGP_Grid {
+typedef struct DPenGrid {
   /** Lower right corner of rectangle of grid cell. */
   float bottom[2];
   /** Upper left corner of rectangle of grid cell. */
@@ -59,12 +56,12 @@ typedef struct tGP_Grid {
   /** Total points included. */
   int totcol;
 
-} tGP_Grid;
+} DPenGrid;
 
 /* List of points affected by brush. */
-typedef struct tGP_Selected {
+typedef struct DPenSelected {
   /** Referenced stroke. */
-  bGPDstroke *gps;
+  DPenStroke *dps;
   /** Point index in points array. */
   int pt_index;
   /** Position */
