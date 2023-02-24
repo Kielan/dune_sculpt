@@ -305,19 +305,19 @@ static void dpen_grid_cell_average_color_idx_get(tDPen_BrushVertexpaintData *dso
   }
   /* Upper direction. */
   else {
-    if ((dso->dvec[0] >= -1.0f) && (gso->dvec[0] < -0.8f)) {
+    if ((dso->dvec[0] >= -1.0f) && (dso->dvec[0] < -0.8f)) {
       r_idx[0] = 0;
       r_idx[1] = -1;
     }
-    else if ((dso->dvec[0] >= -0.8f) && (gso->dvec[0] < -0.6f)) {
+    else if ((dso->dvec[0] >= -0.8f) && (dso->dvec[0] < -0.6f)) {
       r_idx[0] = 1;
       r_idx[1] = -1;
     }
-    else if ((dso->dvec[0] >= -0.6f) && (gso->dvec[0] < 0.6f)) {
+    else if ((dso->dvec[0] >= -0.6f) && (dso->dvec[0] < 0.6f)) {
       r_idx[0] = 1;
       r_idx[1] = 0;
     }
-    else if ((dso->dvec[0] >= 0.6f) && (gso->dvec[0] < 0.8f)) {
+    else if ((dso->dvec[0] >= 0.6f) && (dso->dvec[0] < 0.8f)) {
       r_idx[0] = 1;
       r_idx[1] = 1;
     }
@@ -1181,63 +1181,63 @@ static void dpen_vertexpaint_brush_apply(dContext *C, wmOperator *op, ApiPtr *it
     dpbvd->flag |= DPEN_VERTEX_FLAG_INVERT;
   }
   else {
-    gso->flag &= ~GP_VERTEX_FLAG_INVERT;
+    dpbvd->flag &= ~DPEN_VERTEX_FLAG_INVERT;
   }
 
   /* Store coordinates as reference, if operator just started running */
   if (gso->first) {
-    gso->mval_prev[0] = gso->mval[0];
-    gso->mval_prev[1] = gso->mval[1];
-    gso->pressure_prev = gso->pressure;
+    dpbvd->mval_prev[0] = dpbvd->mval[0];
+    dpbvd->mval_prev[1] = dpbvd->mval[1];
+    dpbvd->pressure_prev = dpbvd->pressure;
   }
 
   /* Update brush_rect, so that it represents the bounding rectangle of brush. */
-  gso->brush_rect.xmin = mouse[0] - radius;
-  gso->brush_rect.ymin = mouse[1] - radius;
-  gso->brush_rect.xmax = mouse[0] + radius;
-  gso->brush_rect.ymax = mouse[1] + radius;
+  dpbvd->brush_rect.xmin = mouse[0] - radius;
+  dpbvd->brush_rect.ymin = mouse[1] - radius;
+  dpbvd->brush_rect.xmax = mouse[0] + radius;
+  dpbvd->brush_rect.ymax = mouse[1] + radius;
 
   /* Calc 2D direction vector and relative angle. */
-  brush_calc_dvec_2d(gso);
+  brush_calc_dvec_2d(dpbvd);
 
   /* Calc grid for smear tool. */
-  gpencil_grid_cells_init(gso);
+  dpen_grid_cells_init(dpbvd);
 
-  changed = gpencil_vertexpaint_brush_apply_to_layers(C, gso);
+  changed = dpen_vertexpaint_brush_apply_to_layers(C, dpbvd);
 
   /* Updates */
   if (changed) {
-    DEG_id_tag_update(&gso->gpd->id, ID_RECALC_GEOMETRY);
-    WM_event_add_notifier(C, NC_GPENCIL | ND_DATA | NA_EDITED, NULL);
+    DEG_id_tag_update(&dpbvd->dpd->id, ID_RECALC_GEOMETRY);
+    wm_event_add_notifier(C, NC_DPEN | ND_DATA | NA_EDITED, NULL);
   }
 
   /* Store values for next step */
-  gso->mval_prev[0] = gso->mval[0];
-  gso->mval_prev[1] = gso->mval[1];
-  gso->pressure_prev = gso->pressure;
-  gso->first = false;
+  dpbvd->mval_prev[0] = dpbvd->mval[0];
+  dpbvd->mval_prev[1] = dpbvd->mval[1];
+  dpbvd->pressure_prev = dpbvd->pressure;
+  dpbvd->first = false;
 }
 
 /* Running --------------------------------------------- */
 
 /* helper - a record stroke, and apply paint event */
-static void gpencil_vertexpaint_brush_apply_event(bContext *C,
+static void dpen_vertexpaint_brush_apply_event(dContext *C,
                                                   wmOperator *op,
                                                   const wmEvent *event)
 {
-  tGP_BrushVertexpaintData *gso = op->customdata;
-  PointerRNA itemptr;
+  tDPen_BrushVertexpaintData *dpbvd = op->customdata;
+  ApiPtr itemptr;
   float mouse[2];
 
   mouse[0] = event->mval[0] + 1;
   mouse[1] = event->mval[1] + 1;
 
   /* fill in stroke */
-  RNA_collection_add(op->ptr, "stroke", &itemptr);
+  api_collection_add(op->ptr, "stroke", &itemptr);
 
-  RNA_float_set_array(&itemptr, "mouse", mouse);
-  RNA_bool_set(&itemptr, "pen_flip", event->modifier & KM_CTRL);
-  api_bool_set(&itemptr, "is_start", gso->first);
+  api_float_set_array(&itemptr, "mouse", mouse);
+  api_bool_set(&itemptr, "pen_flip", event->modifier & KM_CTRL);
+  api_bool_set(&itemptr, "is_start", dpbvd->first);
 
   /* Handle pressure sensitivity (which is supplied by tablets). */
   float pressure = event->tablet.pressure;
@@ -1249,16 +1249,16 @@ static void gpencil_vertexpaint_brush_apply_event(bContext *C,
 }
 
 /* reapply */
-static int dpen_vertexpaint_brush_exec(bContext *C, wmOperator *op)
+static int dpen_vertexpaint_brush_ex(dContext *C, wmOperator *op)
 {
   if (!dpen_vertexpaint_brush_init(C, op)) {
     return OP_CANCELLED;
   }
 
-  RNA_BEGIN (op->ptr, itemptr, "stroke") {
+  API_BEGIN (op->ptr, itemptr, "stroke") {
     dpen_vertexpaint_brush_apply(C, op, &itemptr);
   }
-  RNA_END;
+  API_END;
 
   dpen_vertexpaint_brush_exit(C, op);
 
@@ -1268,7 +1268,7 @@ static int dpen_vertexpaint_brush_exec(bContext *C, wmOperator *op)
 /* start modal painting */
 static int dpen_vertexpaint_brush_invoke(dContext *C, wmOperator *op, const wmEvent *event)
 {
-  tDPen_BrushVertexpaintData *gso = NULL;
+  tDPen_BrushVertexpaintData *dpbvd = NULL;
   const bool is_modal = api_bool_get(op->ptr, "wait_for_input");
   const bool is_playing = ed_screen_animation_playing(ctx_wm_manager(C)) != NULL;
 
@@ -1280,11 +1280,11 @@ static int dpen_vertexpaint_brush_invoke(dContext *C, wmOperator *op, const wmEv
   }
 
   /* init painting data */
-  if (!gdpen_vertexpaint_brush_init(C, op)) {
+  if (!dpen_vertexpaint_brush_init(C, op)) {
     return OP_CANCELLED;
   }
 
-  dso = op->customdata;
+  dpbvd = op->customdata;
 
   /* register modal handler */
   wm_event_add_modal_handler(C, op);
@@ -1294,11 +1294,11 @@ static int dpen_vertexpaint_brush_invoke(dContext *C, wmOperator *op, const wmEv
     ARegion *region = ctx_wm_region(C);
 
     /* apply first dab... */
-    dso->is_painting = true;
+    dpbvd->is_painting = true;
     dpen_vertexpaint_brush_apply_event(C, op, event);
 
     /* redraw view with feedback */
-    ED_region_tag_redraw(region);
+    ed_region_tag_redraw(region);
   }
 
   return OP_RUNNING_MODAL;
@@ -1307,13 +1307,13 @@ static int dpen_vertexpaint_brush_invoke(dContext *C, wmOperator *op, const wmEv
 /* painting - handle events */
 static int dpen_vertexpaint_brush_modal(dContext *C, wmOperator *op, const wmEvent *event)
 {
-  tDPen_BrushVertexpaintData *gso = op->customdata;
+  tDPen_BrushVertexpaintData *dpbvd = op->customdata;
   const bool is_modal = api_bool_get(op->ptr, "wait_for_input");
   bool redraw_region = false;
   bool redraw_toolsettings = false;
 
   /* The operator can be in 2 states: Painting and Idling */
-  if (gso->is_painting) {
+  if (dpbvd->is_painting) {
     /* Painting. */
     switch (event->type) {
       /* Mouse Move = Apply somewhere else */
@@ -1330,11 +1330,11 @@ static int dpen_vertexpaint_brush_modal(dContext *C, wmOperator *op, const wmEve
       case LEFTMOUSE:
         if (is_modal) {
           /* go back to idling... */
-          gso->is_painting = false;
+          dpbvd->is_painting = false;
         }
         else {
           /* end painting, since we're not modal */
-          dso->is_painting = false;
+          dpbvd->is_painting = false;
 
           dpen_vertexpaint_brush_exit(C, op);
           return OP_FINISHED;
@@ -1357,8 +1357,8 @@ static int dpen_vertexpaint_brush_modal(dContext *C, wmOperator *op, const wmEve
       /* Painting mbut press = Start painting (switch to painting state) */
       case LEFTMOUSE:
         /* do initial "click" apply */
-        gso->is_painting = true;
-        gso->first = true;
+        dpbvd->is_painting = true;
+        dpbvd->first = true;
 
         dpen_vertexpaint_brush_apply_event(C, op, event);
         break;
@@ -1366,7 +1366,7 @@ static int dpen_vertexpaint_brush_modal(dContext *C, wmOperator *op, const wmEve
       /* Exit modal operator, based on the "standard" ops */
       case RIGHTMOUSE:
       case EVT_ESCKEY:
-        gpencil_vertexpaint_brush_exit(C, op);
+        dpen_vertexpaint_brush_exit(C, op);
         return OP_FINISHED;
 
       /* MMB is often used for view manipulations */
@@ -1384,10 +1384,10 @@ static int dpen_vertexpaint_brush_modal(dContext *C, wmOperator *op, const wmEve
       case EVT_RIGHTARROWKEY:
       case EVT_UPARROWKEY:
       case EVT_DOWNARROWKEY:
-        return OPERATOR_PASS_THROUGH;
+        return OP_PASS_THROUGH;
 
       /* Camera/View Gizmo's - Allowed */
-      /* (See rationale in dpen_paint.c -> gpencil_draw_modal()) */
+      /* (See rationale in dpen_paint.c -> dpen_draw_modal()) */
       case EVT_PAD0:
       case EVT_PAD1:
       case EVT_PAD2:
