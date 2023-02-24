@@ -68,23 +68,23 @@ typedef struct DPenSelected {
   int pc[2];
   /** Color */
   float color[4];
-} tGP_Selected;
+} DPenSelected;
 
 /* Context for brush operators */
-typedef struct tGP_BrushWeightpaintData {
-  struct Main *bmain;
+typedef struct DPenBrushWeightpaintData {
+  struct Main *dmain;
   Scene *scene;
   Object *object;
 
   ARegion *region;
 
-  /* Current GPencil datablock */
-  bGPdata *gpd;
+  /* Current DPen datablock */
+  DPenData *dpd;
 
   Brush *brush;
 
   /* Space Conversion Data */
-  GP_SpaceConversion gsc;
+  DPenSpaceConversion dsc;
 
   /* Is the brush currently painting? */
   bool is_painting;
@@ -117,32 +117,32 @@ typedef struct tGP_BrushWeightpaintData {
 
   /* Temp data to save selected points */
   /** Stroke buffer. */
-  tGP_Selected *pbuffer;
+  DPenSelected *pbuffer;
   /** Number of elements currently used in cache. */
   int pbuffer_used;
   /** Number of total elements available in cache. */
   int pbuffer_size;
-} tGP_BrushWeightpaintData;
+} DPenBrushWeightpaintData;
 
 /* Ensure the buffer to hold temp selected point size is enough to save all points selected. */
-static tGP_Selected *gpencil_select_buffer_ensure(tGP_Selected *buffer_array,
+static DPenSelected *dpen_select_buffer_ensure(DPenSelected *buffer_array,
                                                   int *buffer_size,
                                                   int *buffer_used,
                                                   const bool clear)
 {
-  tGP_Selected *p = NULL;
+  DPenSelected *p = NULL;
 
   /* By default a buffer is created with one block with a predefined number of free slots,
    * if the size is not enough, the cache is reallocated adding a new block of free slots.
    * This is done in order to keep cache small and improve speed. */
   if (*buffer_used + 1 > *buffer_size) {
     if ((*buffer_size == 0) || (buffer_array == NULL)) {
-      p = MEM_callocN(sizeof(struct tGP_Selected) * GP_SELECT_BUFFER_CHUNK, __func__);
-      *buffer_size = GP_SELECT_BUFFER_CHUNK;
+      p = MEM_callocN(sizeof(struct DPenSelected) * DPEN_SELECT_BUFFER_CHUNK, __func__);
+      *buffer_size = DPEN_SELECT_BUFFER_CHUNK;
     }
     else {
-      *buffer_size += GP_SELECT_BUFFER_CHUNK;
-      p = MEM_recallocN(buffer_array, sizeof(struct tGP_Selected) * *buffer_size);
+      *buffer_size += DPEN_SELECT_BUFFER_CHUNK;
+      p = MEM_recallocN(buffer_array, sizeof(struct DPenSelected) * *buffer_size);
     }
 
     if (p == NULL) {
@@ -156,7 +156,7 @@ static tGP_Selected *gpencil_select_buffer_ensure(tGP_Selected *buffer_array,
   if (clear) {
     *buffer_used = 0;
     if (buffer_array != NULL) {
-      memset(buffer_array, 0, sizeof(tGP_Selected) * *buffer_size);
+      memset(buffer_array, 0, sizeof(DPenSelected) * *buffer_size);
     }
   }
 
@@ -166,42 +166,42 @@ static tGP_Selected *gpencil_select_buffer_ensure(tGP_Selected *buffer_array,
 /* Brush Operations ------------------------------- */
 
 /* Compute strength of effect. */
-static float brush_influence_calc(tGP_BrushWeightpaintData *gso, const int radius, const int co[2])
+static float brush_influence_calc(DPenBrushWeightpaintData *dpbwd, const int radius, const int co[2])
 {
-  Brush *brush = gso->brush;
+  Brush *brush = dpbwd->brush;
 
   /* basic strength factor from brush settings */
   float influence = brush->alpha;
 
   /* use pressure? */
-  if (brush->gpencil_settings->flag & GP_BRUSH_USE_PRESSURE) {
-    influence *= gso->pressure;
+  if (brush->dpen_settings->flag & DPEN_BRUSH_USE_PRESSURE) {
+    influence *= dpbwd->pressure;
   }
 
   /* distance fading */
   int mval_i[2];
-  round_v2i_v2fl(mval_i, gso->mval);
+  round_v2i_v2fl(mval_i, dpbwd->mval);
   float distance = (float)len_v2v2_int(mval_i, co);
   influence *= 1.0f - (distance / max_ff(radius, 1e-8));
 
   /* Apply Brush curve. */
-  float brush_falloff = BKE_brush_curve_strength(brush, distance, (float)radius);
+  float brush_falloff = dune_brush_curve_strength(brush, distance, (float)radius);
   influence *= brush_falloff;
 
   /* apply multi-frame falloff */
-  influence *= gso->mf_falloff;
+  influence *= dpbwd->mf_falloff;
 
   /* return influence */
   return influence;
 }
 
 /* Compute effect vector for directional brushes. */
-static void brush_calc_dvec_2d(tGP_BrushWeightpaintData *gso)
+static void brush_calc_dvec_2d(DPenBrushWeightpaintData *dpbwd)
 {
-  gso->dvec[0] = (float)(gso->mval[0] - gso->mval_prev[0]);
-  gso->dvec[1] = (float)(gso->mval[1] - gso->mval_prev[1]);
+  dpbwd->dvec[0] = (float)(dpbwd->mval[0] - dpbwd->mval_prev[0]);
+  dpbwd->dvec[1] = (float)(dpbwd->mval[1] - dpbwd->mval_prev[1]);
 
-  normalize_v2(gso->dvec);
+  normalize_v2(dpbwd->dvec);
 }
 
 /* ************************************************ */
@@ -210,54 +210,54 @@ static void brush_calc_dvec_2d(tGP_BrushWeightpaintData *gso)
  * These are called on each point within the brush's radius. */
 
 /* Draw Brush */
-static bool brush_draw_apply(tGP_BrushWeightpaintData *gso,
-                             bGPDstroke *gps,
+static bool brush_draw_apply(DPenBrushWeightpaintData *dpbwd,
+                             DPenStroke *dps,
                              int pt_index,
                              const int radius,
                              const int co[2])
 {
   /* create dvert */
-  BKE_gpencil_dvert_ensure(gps);
+  dune_dpen_dvert_ensure(dps);
 
-  MDeformVert *dvert = gps->dvert + pt_index;
+  MDeformVert *dvert = dps->dvert + pt_index;
   float inf;
 
   /* Compute strength of effect */
-  inf = brush_influence_calc(gso, radius, co);
+  inf = brush_influence_calc(dpbwd, radius, co);
 
   /* need a vertex group */
-  if (gso->vrgroup == -1) {
-    if (gso->object) {
-      Object *ob_armature = BKE_modifiers_is_deformed_by_armature(gso->object);
+  if (dpbwd->vrgroup == -1) {
+    if (dpbwd->object) {
+      Object *ob_armature = dune_modifiers_is_deformed_by_armature(dpbwd->object);
       if ((ob_armature != NULL)) {
-        Bone *actbone = ((bArmature *)ob_armature->data)->act_bone;
+        Bone *actbone = ((dArmature *)ob_armature->data)->act_bone;
         if (actbone != NULL) {
-          bPoseChannel *pchan = BKE_pose_channel_find_name(ob_armature->pose, actbone->name);
+          DPoseChannel *pchan = dune_pose_channel_find_name(ob_armature->pose, actbone->name);
           if (pchan != NULL) {
-            bDeformGroup *dg = BKE_object_defgroup_find_name(gso->object, pchan->name);
+            DDeformGroup *dg = dune_object_defgroup_find_name(dpbwd->object, pchan->name);
             if (dg == NULL) {
-              dg = BKE_object_defgroup_add_name(gso->object, pchan->name);
+              dg = dune_object_defgroup_add_name(dpbwd->object, pchan->name);
             }
           }
         }
       }
       else {
-        BKE_object_defgroup_add(gso->object);
+        dune_object_defgroup_add(dpbwd->object);
       }
       DEG_relations_tag_update(gso->bmain);
-      gso->vrgroup = 0;
+      dpbwd->vrgroup = 0;
     }
   }
   else {
-    bDeformGroup *defgroup = BLI_findlink(&gso->gpd->vertex_group_names, gso->vrgroup);
+    DDeformGroup *defgroup = lib_findlink(&dbwd->dpd->vertex_group_names, dbwd->vrgroup);
     if (defgroup->flag & DG_LOCK_WEIGHT) {
       return false;
     }
   }
   /* Get current weight and blend. */
-  MDeformWeight *dw = BKE_defvert_ensure_index(dvert, gso->vrgroup);
+  MDeformWeight *dw = dune_defvert_ensure_index(dvert, dbwd->vrgroup);
   if (dw) {
-    dw->weight = interpf(gso->brush->weight, dw->weight, inf);
+    dw->weight = interpf(dbwd->brush->weight, dw->weight, inf);
     CLAMP(dw->weight, 0.0f, 1.0f);
   }
   return true;
@@ -265,28 +265,28 @@ static bool brush_draw_apply(tGP_BrushWeightpaintData *gso,
 
 /* ************************************************ */
 /* Header Info */
-static void gpencil_weightpaint_brush_header_set(bContext *C)
+static void dpen_weightpaint_brush_header_set(dContext *C)
 {
-  ED_workspace_status_text(C, TIP_("GPencil Weight Paint: LMB to paint | RMB/Escape to Exit"));
+  ed_workspace_status_text(C, TIP_("DPen Weight Paint: LMB to paint | RMB/Escape to Exit"));
 }
 
 /* ************************************************ */
-/* Grease Pencil Weight Paint Operator */
+/* Dune Pen Weight Paint Operator */
 
 /* Init/Exit ----------------------------------------------- */
 
-static bool gpencil_weightpaint_brush_init(bContext *C, wmOperator *op)
+static bool dpen_weightpaint_brush_init(dContext *C, wmOperator *op)
 {
-  Scene *scene = CTX_data_scene(C);
-  ToolSettings *ts = CTX_data_tool_settings(C);
-  Object *ob = CTX_data_active_object(C);
-  Paint *paint = &ts->gp_weightpaint->paint;
+  Scene *scene = ctx_data_scene(C);
+  ToolSettings *ts = ctx_data_tool_settings(C);
+  Object *ob = ctx_data_active_object(C);
+  Paint *paint = &ts->dpen_weightpaint->paint;
 
   /* set the brush using the tool */
-  tGP_BrushWeightpaintData *gso;
+  DPenBrushWeightpaintData *dpwd;
 
   /* setup operator data */
-  gso = MEM_callocN(sizeof(tGP_BrushWeightpaintData), "tGP_BrushWeightpaintData");
+  dpwd = MEM_callocN(sizeof(DPenBrushWeightpaintData), "DPenBrushWeightpaintData");
   op->customdata = gso;
 
   gso->bmain = CTX_data_main(C);
