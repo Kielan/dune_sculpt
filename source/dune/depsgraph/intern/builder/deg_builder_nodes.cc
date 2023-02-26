@@ -971,21 +971,21 @@ void DGraphNodeBuilder::build_object_transform(Object *object)
   OpNode *op_node;
   Object *ob_cow = get_cow_datablock(object);
   /* Transform entry operation. */
-  op_node = add_op_node(&object->id, NodeType::TRANSFORM, OperationCode::TRANSFORM_INIT);
+  op_node = add_op_node(&object->id, NodeType::TRANSFORM, OpCode::TRANSFORM_INIT);
   op_node->set_as_entry();
   /* Local transforms (from transform channels - loc/rot/scale + deltas). */
   add_op_node(
       &object->id,
       NodeType::TRANSFORM,
       OpCode::TRANSFORM_LOCAL,
-      [ob_cow](::Depsgraph *depsgraph) { BKE_object_eval_local_transform(depsgraph, ob_cow); });
+      [ob_cow](::DGraph *dgraph) { dune_object_eval_local_transform(dgraph, ob_cow); });
   /* Object parent. */
   if (object->parent != nullptr) {
     add_op_node(
         &object->id,
         NodeType::TRANSFORM,
         OpCode::TRANSFORM_PARENT,
-        [ob_cow](::Depsgraph *depsgraph) { dune_object_eval_parent(depsgraph, ob_cow); });
+        [ob_cow](::Depsgraph *depsgraph) { dune_object_eval_parent(dgraph, ob_cow); });
   }
   /* Object constraints. */
   if (object->constraints.first != nullptr) {
@@ -1005,14 +1005,14 @@ void DGraphNodeBuilder::build_object_transform(Object *object)
       &object->id,
       NodeType::TRANSFORM,
       OpCode::TRANSFORM_FINAL,
-      [ob_cow](::Depsgraph *depsgraph) { BKE_object_eval_transform_final(depsgraph, ob_cow); });
+      [ob_cow](::Depsgraph *depsgraph) { BKE_object_eval_transform_final(dgraph, ob_cow); });
   op_node->set_as_exit();
 }
 
 /**
  * Constraints Graph Notes
  *
- * For constraints, we currently only add a operation node to the Transform
+ * For constraints, we currently only add an op node to the Transform
  * or Bone components (depending on whichever type of owner we have).
  * This represents the entire constraints stack, which is for now just
  * executed as a single monolithic block. At least initially, this should
@@ -1077,7 +1077,7 @@ void DGraphNodeBuilder::build_animdata(Id *id)
     /* All the evaluation nodes. */
     add_op_node(
         id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL, [id_cow](::DGraph *dgraph) {
-          dune_animsys_eval_animdata(depsgraph, id_cow);
+          dune_animsys_eval_animdata(dgraph, id_cow);
         });
     /* Explicit exit operation. */
     op_node = add_op_node(id, NodeType::ANIMATION, OpCode::ANIMATION_EXIT);
@@ -1107,7 +1107,7 @@ void DGraphNodeBuilder::build_animdata_nlastrip_targets(ListBase *strips)
   }
 }
 
-void DepsgraphNodeBuilder::build_animation_images(ID *id)
+void DGraphNodeBuilder::build_animation_images(ID *id)
 {
   /* GPU materials might use an animated image. However, these materials have no been built yet so
    * we have to check if they might be created during evaluation. */
@@ -1120,26 +1120,26 @@ void DepsgraphNodeBuilder::build_animation_images(ID *id)
     }
   }
 
-  if (has_image_animation || BKE_image_user_id_has_animation(id)) {
-    ID *id_cow = get_cow_id(id);
+  if (has_image_animation || dune_image_user_id_has_animation(id)) {
+    Id *id_cow = get_cow_id(id);
     add_op_node(
         id,
         NodeType::IMAGE_ANIMATION,
-        OperationCode::IMAGE_ANIMATION,
-        [id_cow](::Depsgraph *depsgraph) { BKE_image_user_id_eval_animation(depsgraph, id_cow); });
+        OpCode::IMAGE_ANIMATION,
+        [id_cow](::DGraph *dgraph) { dune_image_user_id_eval_animation(dgraph, id_cow); });
   }
 }
 
-void DGraphNodeBuilder::build_action(bAction *action)
+void DGraphNodeBuilder::build_action(DAction *action)
 {
   if (built_map_.checkIsBuiltAndTag(action)) {
     return;
   }
-  build_idprops(action->id.properties);
-  add_op_node(&action->id, NodeType::ANIMATION, OperationCode::ANIMATION_EVAL);
+  build_idprops(action->id.props);
+  add_op_node(&action->id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL);
 }
 
-void DepsgraphNodeBuilder::build_driver(ID *id, FCurve *fcurve, int driver_index)
+void DGraphNodeBuilder::build_driver(ID *id, FCurve *fcurve, int driver_index)
 {
   /* Create data node for this driver */
   Id *id_cow = get_cow_id(id);
@@ -1148,34 +1148,34 @@ void DepsgraphNodeBuilder::build_driver(ID *id, FCurve *fcurve, int driver_index
    * has not yet been allocated at this point we can't. As a workaround
    * the animation systems allocates an array so we can do a fast lookup
    * with the driver index. */
-  ensure_operation_node(
+  ensure_op_node(
       id,
-      NodeType::PARAMETERS,
+      NodeType::PARAMS,
       OpCode::DRIVER,
-      [id_cow, driver_index, fcurve](::Depsgraph *depsgraph) {
-        dune_animsys_eval_driver(depsgraph, id_cow, driver_index, fcurve);
+      [id_cow, driver_index, fcurve](::DGraph *dgraph) {
+        dune_animsys_eval_driver(dgraph, id_cow, driver_index, fcurve);
       },
-      fcurve->api_path ? fcurve->rna_path : "",
+      fcurve->api_path ? fcurve->api_path : "",
       fcurve->array_index);
   build_driver_variables(id, fcurve);
 }
 
-void DepsgraphNodeBuilder::build_driver_variables(ID *id, FCurve *fcurve)
+void DGraphNodeBuilder::build_driver_variables(ID *id, FCurve *fcurve)
 {
-  build_driver_id_property(id, fcurve->rna_path);
+  build_driver_id_prop(id, fcurve->rna_path);
   LISTBASE_FOREACH (DriverVar *, dvar, &fcurve->driver->variables) {
     DRIVER_TARGETS_USED_LOOPER_BEGIN (dvar) {
       if (dtar->id == nullptr) {
         continue;
       }
       build_id(dtar->id);
-      build_driver_id_property(dtar->id, dtar->rna_path);
+      build_driver_id_prop(dtar->id, dtar->api_path);
     }
     DRIVER_TARGETS_LOOPER_END;
   }
 }
 
-void DepsgraphNodeBuilder::build_driver_id_property(ID *id, const char *rna_path)
+void DGraphNodeBuilder::build_driver_id_prop(Id *id, const char *api_path)
 {
   if (id == nullptr || rna_path == nullptr) {
     return;
@@ -1210,7 +1210,7 @@ void DepsgraphNodeBuilder::build_driver_id_property(ID *id, const char *rna_path
   }
 }
 
-void DepsgraphNodeBuilder::build_params(ID *id)
+void DGraphNodeBuilder::build_params(Id *id)
 {
   (void)add_id_node(id);
   OpNode *op_node;
@@ -1225,7 +1225,7 @@ void DepsgraphNodeBuilder::build_params(ID *id)
         id,
         NodeType::PARAMS,
         OpCode::PARAMS_EVAL,
-        [id_cow, id](::Depsgraph * /*depsgraph*/) { dune_id_eval_props_copy(id_cow, id); });
+        [id_cow, id](::DGraph * /*dgraph*/) { dune_id_eval_props_copy(id_cow, id); });
   }
   else {
     add_op_node(id, NodeType::PARAMS, OpCode::PARAMS_EVAL);
@@ -1236,14 +1236,14 @@ void DepsgraphNodeBuilder::build_params(ID *id)
   op_node->set_as_exit();
 }
 
-void DepsgraphNodeBuilder::build_dimensions(Object *object)
+void DGraphNodeBuilder::build_dimensions(Object *object)
 {
   /* Object dimensions (bounding box) node. Will depend on both geometry and transform. */
   add_op_node(&object->id, NodeType::PARAMS, OpCode::DIMENSIONS);
 }
 
 /* Recursively build graph for world */
-void DepsgraphNodeBuilder::build_world(World *world)
+void DGraphNodeBuilder::build_world(World *world)
 {
   if (built_map_.checkIsBuiltAndTag(world)) {
     return;
@@ -1256,17 +1256,17 @@ void DepsgraphNodeBuilder::build_world(World *world)
       &world->id,
       NodeType::SHADING,
       OpCode::WORLD_UPDATE,
-      [world_cow](::Depsgraph *depsgraph) { dune_world_eval(depsgraph, world_cow); });
-  build_idprops(world->id.properties);
+      [world_cow](::DGraph *dgraph) { dune_world_eval(dgraph, world_cow); });
+  build_idprops(world->id.props);
   /* Animation. */
   build_animdata(&world->id);
-  build_parameters(&world->id);
+  build_params(&world->id);
   /* World's nodetree. */
   build_nodetree(world->nodetree);
 }
 
 /* Rigidbody Simulation - Scene Level */
-void DepsgraphNodeBuilder::build_rigidbody(Scene *scene)
+void DGraphNodeBuilder::build_rigidbody(Scene *scene)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   Scene *scene_cow = get_cow_datablock(scene);
@@ -1296,13 +1296,13 @@ void DepsgraphNodeBuilder::build_rigidbody(Scene *scene)
       &scene->id,
       NodeType::TRANSFORM,
       OpCode::RIGIDBODY_REBUILD,
-      [scene_cow](::Depsgraph *depsgraph) { dune_rigidbody_rebuild_sim(depsgraph, scene_cow); });
+      [scene_cow](::DGraph *dgraph) { dune_rigidbody_rebuild_sim(dgraph, scene_cow); });
   /* Do-sim operation. */
   OpNode *sim_node = add_op_node(&scene->id,
                                                NodeType::TRANSFORM,
                                                OpCode::RIGIDBODY_SIM,
-                                               [scene_cow](::Depsgraph *depsgraph) {
-                                                 dune_rigidbody_eval_simulation(depsgraph,
+                                               [scene_cow](::DGraph *dgraph) {
+                                                 dune_rigidbody_eval_simulation(dgraph,
                                                                                scene_cow);
                                                });
   sim_node->set_as_entry();
@@ -1330,7 +1330,7 @@ void DepsgraphNodeBuilder::build_rigidbody(Scene *scene)
       add_op_node(&object->id,
                          NodeType::TRANSFORM,
                          OpCode::RIGIDBODY_TRANSFORM_COPY,
-                         [scene_cow, object_cow](::Depsgraph *depsgraph) {
+                         [scene_cow, object_cow](::DGraph *dgraph) {
                            dune_rigidbody_object_sync_transforms(depsgraph, scene_cow, object_cow);
                          });
     }
@@ -1353,7 +1353,7 @@ void DepsgraphNodeBuilder::build_rigidbody(Scene *scene)
   }
 }
 
-void DepsgraphNodeBuilder::build_particle_systems(Object *object, bool is_object_visible)
+void DGraphNodeBuilder::build_particle_systems(Object *object, bool is_object_visible)
 {
   /**
    * Particle Systems Nodes
@@ -1373,9 +1373,9 @@ void DepsgraphNodeBuilder::build_particle_systems(Object *object, bool is_object
 
   Object *ob_cow = get_cow_datablock(object);
   OpnNode *op_node;
-  op_node = add_operation_node(
-      psys_comp, OpCode::PARTICLE_SYSTEM_INIT, [ob_cow](::Depsgraph *depsgraph) {
-        dune_particle_system_eval_init(depsgraph, ob_cow);
+  op_node = add_op_node(
+      psys_comp, OpCode::PARTICLE_SYSTEM_INIT, [ob_cow](::DGraph *dgraph) {
+        dune_particle_system_eval_init(dgraph, ob_cow);
       });
   op_node->set_as_entry();
   /* Build all particle systems. */
@@ -1386,7 +1386,7 @@ void DepsgraphNodeBuilder::build_particle_systems(Object *object, bool is_object
      * NOTE: The call itself ensures settings are only build once. */
     build_particle_settings(part);
     /* Particle system evaluation. */
-    add_operation_node(psys_comp, OpCode::PARTICLE_SYSTEM_EVAL, nullptr, psys->name);
+    add_op_node(psys_comp, OpCode::PARTICLE_SYSTEM_EVAL, nullptr, psys->name);
     /* Keyed particle targets. */
     if (ELEM(part->phystype, PART_PHYS_KEYED, PART_PHYS_BOIDS)) {
       LISTBASE_FOREACH (ParticleTarget *, particle_target, &psys->targets) {
@@ -1414,12 +1414,12 @@ void DepsgraphNodeBuilder::build_particle_systems(Object *object, bool is_object
   op_node->set_as_exit();
 }
 
-void DepsgraphNodeBuilder::build_particle_settings(ParticleSettings *particle_settings)
+void DGraphNodeBuilder::build_particle_settings(ParticleSettings *particle_settings)
 {
   if (built_map_.checkIsBuiltAndTag(particle_settings)) {
     return;
   }
-  /* Make sure we've got proper copied ID pointer. */
+  /* Make sure we've got proper copied id pointer. */
   add_id_node(&particle_settings->id);
   ParticleSettings *particle_settings_cow = get_cow_datablock(particle_settings);
   /* Animation data. */
@@ -1449,12 +1449,12 @@ void DepsgraphNodeBuilder::build_particle_settings(ParticleSettings *particle_se
 }
 
 /* Shape-keys. */
-void DepsgraphNodeBuilder::build_shapekeys(Key *key)
+void DGraphNodeBuilder::build_shapekeys(Key *key)
 {
   if (built_map_.checkIsBuiltAndTag(key)) {
     return;
   }
-  build_idprops(key->id.properties);
+  build_idprops(key->id.props);
   build_animdata(&key->id);
   build_params(&key->id);
   /* This is an exit operation for the entire key datablock, is what is used
@@ -1470,7 +1470,7 @@ void DepsgraphNodeBuilder::build_shapekeys(Key *key)
 
 /* ObData Geometry Evaluation */
 /* XXX: what happens if the datablock is shared! */
-void DepsgraphNodeBuilder::build_object_data_geometry(Object *object)
+void DGraphNodeBuilder::build_object_data_geometry(Object *object)
 {
   OpNode *op_node;
   Scene *scene_cow = get_cow_datablock(scene_);
@@ -1483,8 +1483,8 @@ void DepsgraphNodeBuilder::build_object_data_geometry(Object *object)
   op_node = add_op_node(&object->id,
                                NodeType::GEOMETRY,
                                OpCode::GEOMETRY_EVAL,
-                               [scene_cow, object_cow](::Depsgraph *depsgraph) {
-                                 dune_object_eval_uber_data(depsgraph, scene_cow, object_cow);
+                               [scene_cow, object_cow](::DGraph *dgraph) {
+                                 dune_object_eval_uber_data(dgraph, scene_cow, object_cow);
                                });
   op_node->set_as_exit();
   /* Materials. */
@@ -1499,19 +1499,19 @@ void DepsgraphNodeBuilder::build_object_data_geometry(Object *object)
       &object->id,
       NodeType::BATCH_CACHE,
       OpCode::GEOMETRY_SELECT_UPDATE,
-      [object_cow](::Depsgraph *depsgraph) { dune_object_select_update(depsgraph, object_cow); });
+      [object_cow](::DGraph *dgraph) { dune_object_select_update(dgraph, object_cow); });
 }
 
-void DepsgraphNodeBuilder::build_object_data_geometry_datablock(ID *obdata)
+void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
 {
   if (built_map_.checkIsBuiltAndTag(obdata)) {
     return;
   }
-  OperationNode *op_node;
+  OpNode *op_node;
   /* Make sure we've got an ID node before requesting CoW pointer. */
   (void)add_id_node((Id *)obdata);
   Id *obdata_cow = get_cow_id(obdata);
-  build_idproperties(obdata->props);
+  build_idprops(obdata->props);
   /* Animation. */
   build_animdata(obdata);
   /* ShapeKeys */
@@ -1524,11 +1524,11 @@ void DepsgraphNodeBuilder::build_object_data_geometry_datablock(ID *obdata)
   const ID_Type id_type = GS(obdata->name);
   switch (id_type) {
     case ID_ME: {
-      op_node = add_operation_node(obdata,
+      op_node = add_op_node(obdata,
                                    NodeType::GEOMETRY,
                                    OpCode::GEOMETRY_EVAL,
-                                   [obdata_cow](::Depsgraph *depsgraph) {
-                                     dune_mesh_eval_geometry(depsgraph, (Mesh *)obdata_cow);
+                                   [obdata_cow](::DGraph *dgraph) {
+                                     dune_mesh_eval_geometry(dgraph, (Mesh *)obdata_cow);
                                    });
       op_node->set_as_entry();
       break;
@@ -1542,8 +1542,8 @@ void DepsgraphNodeBuilder::build_object_data_geometry_datablock(ID *obdata)
       op_node = add_op_node(obdata,
                                    NodeType::GEOMETRY,
                                    OpCode::GEOMETRY_EVAL,
-                                   [obdata_cow](::Depsgraph *depsgraph) {
-                                     dune_curve_eval_geometry(depsgraph, (Curve *)obdata_cow);
+                                   [obdata_cow](::DGraph *dgraph) {
+                                     dune_curve_eval_geometry(dgraph, (Curve *)obdata_cow);
                                    });
       op_node->set_as_entry();
       Curve *cu = (Curve *)obdata;
