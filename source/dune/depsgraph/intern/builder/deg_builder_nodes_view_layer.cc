@@ -7,15 +7,15 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "DNA_collection_types.h"
-#include "DNA_freestyle_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_node_types.h"
+#include "types_collection.h"
+#include "types_freestyle.h"
+#include "types_layer_types.h"
+#include "types_linestyle_types.h"
+#include "types_node_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
