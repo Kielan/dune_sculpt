@@ -7,19 +7,19 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "BKE_action.h"
-#include "BKE_armature.h"
-#include "BKE_constraint.h"
+#include "dune_action.h"
+#include "dune_armature.h"
+#include "dune_constraint.h"
 
 #include "DEG_depsgraph.h"
 #include "DEG_depsgraph_build.h"
@@ -31,37 +31,37 @@
 #include "intern/node/deg_node_component.h"
 #include "intern/node/deg_node_operation.h"
 
-namespace blender::deg {
+namespace dune::deg {
 
-void DepsgraphNodeBuilder::build_pose_constraints(Object *object,
-                                                  bPoseChannel *pchan,
+void DGraphNodeBuilder::build_pose_constraints(Object *object,
+                                                  DPoseChannel *pchan,
                                                   int pchan_index)
 {
   /* Pull indirect dependencies via constraints. */
   BuilderWalkUserData data;
   data.builder = this;
-  BKE_constraints_id_loop(&pchan->constraints, constraint_walk, &data);
+  dune_constraints_id_loop(&pchan->constraints, constraint_walk, &data);
 
   /* Create node for constraint stack. */
   Scene *scene_cow = get_cow_datablock(scene_);
   Object *object_cow = get_cow_datablock(object);
-  add_operation_node(&object->id,
+  add_op_node(&object->id,
                      NodeType::BONE,
                      pchan->name,
-                     OperationCode::BONE_CONSTRAINTS,
-                     [scene_cow, object_cow, pchan_index](::Depsgraph *depsgraph) {
-                       BKE_pose_constraints_evaluate(
+                     OpCode::BONE_CONSTRAINTS,
+                     [scene_cow, object_cow, pchan_index](::DGraph *dgraph) {
+                       dune_pose_constraints_evaluate(
                            depsgraph, scene_cow, object_cow, pchan_index);
                      });
 }
 
 /* IK Solver Eval Steps */
-void DepsgraphNodeBuilder::build_ik_pose(Object *object, bPoseChannel *pchan, bConstraint *con)
+void DGraphNodeBuilder::build_ik_pose(Object *object, DPoseChannel *pchan, DConstraint *con)
 {
-  bKinematicConstraint *data = (bKinematicConstraint *)con->data;
+  DKinematicConstraint *data = (DKinematicConstraint *)con->data;
 
   /* Find the chain's root. */
-  bPoseChannel *rootchan = BKE_armature_ik_solver_find_root(pchan, data);
+  DPoseChannel *rootchan = dune_armature_ik_solver_find_root(pchan, data);
   if (rootchan == nullptr) {
     return;
   }
@@ -71,58 +71,58 @@ void DepsgraphNodeBuilder::build_ik_pose(Object *object, bPoseChannel *pchan, bC
     return;
   }
 
-  int rootchan_index = BLI_findindex(&object->pose->chanbase, rootchan);
-  BLI_assert(rootchan_index != -1);
+  int rootchan_index = lib_findindex(&object->pose->chanbase, rootchan);
+  lib_assert(rootchan_index != -1);
 
   /* Operation node for evaluating/running IK Solver. */
   Scene *scene_cow = get_cow_datablock(scene_);
   Object *object_cow = get_cow_datablock(object);
-  add_operation_node(&object->id,
+  add_op_node(&object->id,
                      NodeType::EVAL_POSE,
                      rootchan->name,
-                     OperationCode::POSE_IK_SOLVER,
+                     OpCode::POSE_IK_SOLVER,
                      [scene_cow, object_cow, rootchan_index](::Depsgraph *depsgraph) {
-                       BKE_pose_iktree_evaluate(depsgraph, scene_cow, object_cow, rootchan_index);
+                       dune_pose_iktree_evaluate(depsgraph, scene_cow, object_cow, rootchan_index);
                      });
 }
 
 /* Spline IK Eval Steps */
-void DepsgraphNodeBuilder::build_splineik_pose(Object *object,
-                                               bPoseChannel *pchan,
-                                               bConstraint *con)
+void DGraphNodeBuilder::build_splineik_pose(Object *object,
+                                               DPoseChannel *pchan,
+                                               DConstraint *con)
 {
-  bSplineIKConstraint *data = (bSplineIKConstraint *)con->data;
+  DSplineIKConstraint *data = (DSplineIKConstraint *)con->data;
 
   /* Find the chain's root. */
-  bPoseChannel *rootchan = BKE_armature_splineik_solver_find_root(pchan, data);
+  DPoseChannel *rootchan = dune_armature_splineik_solver_find_root(pchan, data);
 
-  if (has_operation_node(&object->id,
-                         NodeType::EVAL_POSE,
-                         rootchan->name,
-                         OperationCode::POSE_SPLINE_IK_SOLVER)) {
+  if (has_op_node(&object->id,
+                  NodeType::EVAL_POSE,
+                  rootchan->name,
+                  OpCode::POSE_SPLINE_IK_SOLVER)) {
     return;
   }
 
   /* Operation node for evaluating/running Spline IK Solver.
    * Store the "root bone" of this chain in the solver, so it knows where to
    * start. */
-  int rootchan_index = BLI_findindex(&object->pose->chanbase, rootchan);
-  BLI_assert(rootchan_index != -1);
+  int rootchan_index = lib_findindex(&object->pose->chanbase, rootchan);
+  lib_assert(rootchan_index != -1);
 
   Scene *scene_cow = get_cow_datablock(scene_);
   Object *object_cow = get_cow_datablock(object);
-  add_operation_node(&object->id,
+  add_op_node(&object->id,
                      NodeType::EVAL_POSE,
                      rootchan->name,
-                     OperationCode::POSE_SPLINE_IK_SOLVER,
-                     [scene_cow, object_cow, rootchan_index](::Depsgraph *depsgraph) {
-                       BKE_pose_splineik_evaluate(
-                           depsgraph, scene_cow, object_cow, rootchan_index);
+                     OpCode::POSE_SPLINE_IK_SOLVER,
+                     [scene_cow, object_cow, rootchan_index](::DGraph *dgraph) {
+                       dune_pose_splineik_evaluate(
+                           dgraph, scene_cow, object_cow, rootchan_index);
                      });
 }
 
 /* Pose/Armature Bones Graph */
-void DepsgraphNodeBuilder::build_rig(Object *object)
+void DGraphNodeBuilder::build_rig(Object *object)
 {
   bArmature *armature = (bArmature *)object->data;
   Scene *scene_cow = get_cow_datablock(scene_);
