@@ -11,24 +11,24 @@
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
-#include "types_action_types.h"
-#include "types_anim_types.h"
-#include "types_armature_types.h"
-#include "types_cachefile_types.h"
-#include "types_camera_types.h"
-#include "types_collection_types.h"
-#include "types_constraint_types.h"
-#include "types_curve_types.h"
-#include "types_effect_types.h"
-#include "types_dpen_types.h"
-#include "types_key_types.h"
-#include "types_light_types.h"
-#include "types_lightprobe_types.h"
-#include "types_linestyle_types.h"
-#include "types_mask_types.h"
-#include "types_material_types.h"
-#include "types_mesh_types.h"
-#include "types_meta_types.h"
+#include "types_action.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_cachefile.h"
+#include "types_camera.h"
+#include "types_collection.h"
+#include "types_constraint.h"
+#include "types_curve.h"
+#include "types_effect.h"
+#include "types_dpen.h"
+#include "types_key.h"
+#include "types_light.h"
+#include "types_lightprobe.h"
+#include "types_linestyle.h"
+#include "types_mask.h"
+#include "types_material.h"
+#include "types_mesh.h"
+#include "types_meta.h"
 #include "types_movieclip.h"
 #include "types_node.h"
 #include "types_object.h"
@@ -111,10 +111,10 @@ namespace dune::deg {
 
 /* **** General purpose functions **** */
 
-DepsgraphNodeBuilder::DepsgraphNodeBuilder(Main *dmain,
-                                           Depsgraph *graph,
-                                           DepsgraphBuilderCache *cache)
-    : DepsgraphBuilder(dmain, graph, cache),
+DGraphNodeBuilder::DGraphNodeBuilder(Main *dmain,
+                                     DGraph *graph,
+                                     DGraphCacheBuilder *cache)
+    : DGraphBuilder(dmain, graph, cache),
       scene_(nullptr),
       view_layer_(nullptr),
       view_layer_index_(-1),
@@ -123,9 +123,9 @@ DepsgraphNodeBuilder::DepsgraphNodeBuilder(Main *dmain,
 {
 }
 
-DepsgraphNodeBuilder::~DepsgraphNodeBuilder()
+DGraphNodeBuilder::~DGraphNodeBuilder()
 {
-  for (IDInfo *id_info : id_info_hash_.values()) {
+  for (IdInfo *id_info : id_info_hash_.values()) {
     if (id_info->id_cow != nullptr) {
       deg_free_copy_on_write_datablock(id_info->id_cow);
       MEM_freeN(id_info->id_cow);
@@ -134,7 +134,7 @@ DepsgraphNodeBuilder::~DepsgraphNodeBuilder()
   }
 }
 
-IDNode *DepsgraphNodeBuilder::add_id_node(ID *id)
+IdNode *DGraphNodeBuilder::add_id_node(Id *id)
 {
   lib_assert(id->session_uuid != MAIN_ID_SESSION_UUID_UNSET);
 
@@ -165,7 +165,7 @@ IDNode *DepsgraphNodeBuilder::add_id_node(ID *id)
     if (deg_copy_on_write_is_needed(id_type)) {
       ComponentNode *comp_cow = id_node->add_component(NodeType::COPY_ON_WRITE);
       OpNode *op_cow = comp_cow->add_operation(
-          [id_node](::Depsgraph *depsgraph) { deg_evaluate_copy_on_write(depsgraph, id_node); },
+          [id_node](::DGraph *dgraph) { deg_evaluate_copy_on_write(dgraph, id_node); },
           OpCode::COPY_ON_WRITE,
           "",
           -1);
@@ -183,29 +183,29 @@ IDNode *DepsgraphNodeBuilder::add_id_node(ID *id)
   return id_node;
 }
 
-IDNode *DepsgraphNodeBuilder::find_id_node(ID *id)
+IDNode *DGraphNodeBuilder::find_id_node(ID *id)
 {
   return graph_->find_id_node(id);
 }
 
-TimeSourceNode *DepsgraphNodeBuilder::add_time_source()
+TimeSourceNode *DGraphNodeBuilder::add_time_source()
 {
   return graph_->add_time_source();
 }
 
-ComponentNode *DepsgraphNodeBuilder::add_component_node(ID *id,
+ComponentNode *DGraphNodeBuilder::add_component_node(ID *id,
                                                         NodeType comp_type,
                                                         const char *comp_name)
 {
-  IDNode *id_node = add_id_node(id);
+  IdNode *id_node = add_id_node(id);
   ComponentNode *comp_node = id_node->add_component(comp_type, comp_name);
   comp_node->owner = id_node;
   return comp_node;
 }
 
-OpNode *DepsgraphNodeBuilder::add_op_node(ComponentNode *comp_node,
+OpNode *DGraphNodeBuilder::add_op_node(ComponentNode *comp_node,
                                                         OpCode opcode,
-                                                        const DepsEvalOperationCb &op,
+                                                        const DepsEvalOpCb &op,
                                                         const char *name,
                                                         int name_tag)
 {
@@ -216,7 +216,7 @@ OpNode *DepsgraphNodeBuilder::add_op_node(ComponentNode *comp_node,
   }
   else {
     fprintf(stderr,
-            "add_operation: Operation already exists - %s has %s at %p\n",
+            "add_op: Operation already exists - %s has %s at %p\n",
             comp_node->identifier().c_str(),
             op_node->identifier().c_str(),
             op_node);
@@ -225,13 +225,13 @@ OpNode *DepsgraphNodeBuilder::add_op_node(ComponentNode *comp_node,
   return op_node;
 }
 
-OpNode *DepsgraphNodeBuilder::add_op_node(ID *id,
-                                                        NodeType comp_type,
-                                                        const char *comp_name,
-                                                        OpCode opcode,
-                                                        const DepsEvalOperationCb &op,
-                                                        const char *name,
-                                                        int name_tag)
+OpNode *DGraphNodeBuilder::add_op_node(Id *id,
+                                       NodeType comp_type,
+                                       const char *comp_name,
+                                       OpCode opcode,
+                                       const DepsEvalOpCb &op,
+                                       const char *name,
+                                       int name_tag)
 {
   ComponentNode *comp_node = add_component_node(id, comp_type, comp_name);
   return add_op_node(comp_node, opcode, op, name, name_tag);
@@ -247,7 +247,7 @@ OpNode *DepsgraphNodeBuilder::add_op_node(ID *id,
   return add_op_node(id, comp_type, "", opcode, op, name, name_tag);
 }
 
-OpNode *DepsgraphNodeBuilder::ensure_op_node(ID *id,
+OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
                                                            NodeType comp_type,
                                                            const char *comp_name,
                                                            OpCode opcode,
@@ -262,7 +262,7 @@ OpNode *DepsgraphNodeBuilder::ensure_op_node(ID *id,
   return add_op_node(id, comp_type, comp_name, opcode, op, name, name_tag);
 }
 
-OperationNode *DepsgraphNodeBuilder::ensure_op_node(ID *id,
+OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
                                                            NodeType comp_type,
                                                            OpCode opcode,
                                                            const DepsEvalOperationCb &op,
@@ -276,7 +276,7 @@ OperationNode *DepsgraphNodeBuilder::ensure_op_node(ID *id,
   return add_op_node(id, comp_type, opcode, op, name, name_tag);
 }
 
-bool DepsgraphNodeBuilder::has_op_node(ID *id,
+bool DGraphNodeBuilder::has_op_node(Id *id,
                                               NodeType comp_type,
                                               const char *comp_name,
                                               OpCode opcode,
@@ -286,7 +286,7 @@ bool DepsgraphNodeBuilder::has_op_node(ID *id,
   return find_op_node(id, comp_type, comp_name, opcode, name, name_tag) != nullptr;
 }
 
-OpNode *DepsgraphNodeBuilder::find_op_node(ID *id,
+OpNode *DGraphNodeBuilder::find_op_node(ID *id,
                                                          NodeType comp_type,
                                                          const char *comp_name,
                                                          OpCode opcode,
@@ -297,18 +297,18 @@ OpNode *DepsgraphNodeBuilder::find_op_node(ID *id,
   return comp_node->find_op(opcode, name, name_tag);
 }
 
-OpNode *DepsgraphNodeBuilder::find_op_node(
-    ID *id, NodeType comp_type, OperationCode opcode, const char *name, int name_tag)
+OpNode *DGraphNodeBuilder::find_op_node(
+    Id *id, NodeType comp_type, OpCode opcode, const char *name, int name_tag)
 {
   return find_op_node(id, comp_type, "", opcode, name, name_tag);
 }
 
-ID *DepsgraphNodeBuilder::get_cow_id(const ID *id_orig) const
+ID *DGraphNodeBuilder::get_cow_id(const ID *id_orig) const
 {
   return graph_->get_cow_id(id_orig);
 }
 
-ID *DepsgraphNodeBuilder::ensure_cow_id(ID *id_orig)
+ID *DGraphNodeBuilder::ensure_cow_id(ID *id_orig)
 {
   if (id_orig->tag & LIB_TAG_COPIED_ON_WRITE) {
     /* ID is already remapped to copy-on-write. */
