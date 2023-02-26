@@ -8,21 +8,21 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_utildefines.h"
 
-#include "DNA_collection_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_collection.h"
+#include "types_linestyle.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "BKE_layer.h"
-#include "BKE_main.h"
-#include "BKE_node.h"
+#include "dune_layer.h"
+#include "dune_main.h"
+#include "dune_node.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
+#include "deg_depsgraph.h"
+#include "deg_depsgraph_build.h"
 
 #include "intern/builder/deg_builder.h"
 #include "intern/builder/deg_builder_pchanmap.h"
@@ -34,7 +34,7 @@
 
 #include "intern/depsgraph_type.h"
 
-namespace blender::deg {
+namespace dune::deg {
 
 void DepsgraphRelationBuilder::build_layer_collections(ListBase *lb)
 {
@@ -68,12 +68,12 @@ void DepsgraphRelationBuilder::build_view_layer(Scene *scene,
 {
   /* Setup currently building context. */
   scene_ = scene;
-  BKE_view_layer_synced_ensure(scene, view_layer);
+  dune_view_layer_synced_ensure(scene, view_layer);
   /* Scene objects. */
   /* NOTE: Nodes builder requires us to pass CoW base because it's being
    * passed to the evaluation functions. During relations builder we only
    * do nullptr-pointer check of the base, so it's fine to pass original one. */
-  LISTBASE_FOREACH (Base *, base, BKE_view_layer_object_bases_get(view_layer)) {
+  LISTBASE_FOREACH (Base *, base, dune_view_layer_object_bases_get(view_layer)) {
     if (need_pull_base_into_graph(base)) {
       build_object_from_view_layer_base(base->object);
     }
