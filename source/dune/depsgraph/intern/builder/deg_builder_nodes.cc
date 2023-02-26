@@ -589,7 +589,7 @@ void DGraphNodeBuilder::build_id(Id *id)
       build_cachefile((CacheFile *)id);
       break;
     case ID_SCE:
-      build_scene_parameters((DScene *)id);
+      build_scene_params((DScene *)id);
       break;
     case ID_SIM:
       build_simulation((Simulation *)id);
@@ -636,7 +636,7 @@ void DGraphNodeBuilder::build_idprops(IdProp *id_prop)
   IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_callback, this);
 }
 
-void DeGraphNodeBuilder::build_collection(LayerCollection *from_layer_collection,
+void DGraphNodeBuilder::build_collection(LayerCollection *from_layer_collection,
                                             Collection *collection)
 {
   const int visibility_flag = (graph_->mode == DAG_EVAL_VIEWPORT) ? COLLECTION_HIDE_VIEWPORT :
@@ -749,7 +749,7 @@ void DGraphNodeBuilder::build_object(int base_index,
     data.builder = this;
     dune_modifiers_foreach_ID_link(object, modifier_walk, &data);
   }
-  /* Grease Pencil Modifiers. */
+  /* Dune Pen Modifiers. */
   if (object->dpen_modifiers.first != nullptr) {
     BuilderWalkUserData data;
     data.builder = this;
@@ -1039,7 +1039,7 @@ void DGraphNodeBuilder::build_object_constraints(Object *object)
                      });
 }
 
-void DepsgraphNodeBuilder::build_object_pointcache(Object *object)
+void DGraphNodeBuilder::build_object_pointcache(Object *object)
 {
   if (!dune_ptcache_object_has(scene_, object, 0)) {
     return;
@@ -1049,12 +1049,12 @@ void DepsgraphNodeBuilder::build_object_pointcache(Object *object)
   add_op_node(&object->id,
                      NodeType::POINT_CACHE,
                      OpCode::POINT_CACHE_RESET,
-                     [scene_cow, object_cow](::Depsgraph *depsgraph) {
-                       dune_object_eval_ptcache_reset(depsgraph, scene_cow, object_cow);
+                     [scene_cow, object_cow](::DGraph *dgraph) {
+                       dune_object_eval_ptcache_reset(dgraph, scene_cow, object_cow);
                      });
 }
 
-void DepsgraphNodeBuilder::build_animdata(ID *id)
+void DGraphNodeBuilder::build_animdata(Id *id)
 {
   /* Special handling for animated images/sequences. */
   build_animation_images(id);
@@ -1076,11 +1076,11 @@ void DepsgraphNodeBuilder::build_animdata(ID *id)
     op_node->set_as_entry();
     /* All the evaluation nodes. */
     add_op_node(
-        id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL, [id_cow](::Depsgraph *depsgraph) {
+        id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL, [id_cow](::DGraph *dgraph) {
           dune_animsys_eval_animdata(depsgraph, id_cow);
         });
     /* Explicit exit operation. */
-    op_node = add_op_node(id, NodeType::ANIMATION, OperationCode::ANIMATION_EXIT);
+    op_node = add_op_node(id, NodeType::ANIMATION, OpCode::ANIMATION_EXIT);
     op_node->set_as_exit();
   }
   /* NLA strips contain actions. */
@@ -1095,7 +1095,7 @@ void DepsgraphNodeBuilder::build_animdata(ID *id)
   }
 }
 
-void DepsgraphNodeBuilder::build_animdata_nlastrip_targets(ListBase *strips)
+void DGraphNodeBuilder::build_animdata_nlastrip_targets(ListBase *strips)
 {
   LISTBASE_FOREACH (NlaStrip *, strip, strips) {
     if (strip->act != nullptr) {
