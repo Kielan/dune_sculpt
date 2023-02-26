@@ -12,7 +12,7 @@
 #include "types_constraint.h"
 #include "types_key.h"
 #include "types_object.h"
-#include "DNA_sequence_types.h"
+#include "types_sequence.h"
 
 #include "dune_constraint.h"
 
@@ -41,7 +41,7 @@ class ApiNodeQueryIdData {
     delete constraint_to_pchan_map_;
   }
 
-  const dPoseChannel *get_pchan_for_constraint(const bConstraint *constraint)
+  const DPoseChannel *get_pchan_for_constraint(const bConstraint *constraint)
   {
     ensure_constraint_to_pchan_map();
     return constraint_to_pchan_map_->lookup_default(constraint, nullptr);
@@ -65,23 +65,23 @@ class ApiNodeQueryIdData {
   }
 
  protected:
-  /* ID this data corresponds to. */
-  const ID *id_;
+  /* Id this data corresponds to. */
+  const Id *id_;
 
-  /* indexed by bConstraint*, returns pose channel which contains that
+  /* indexed by DConstraint*, returns pose channel which contains that
    * constraint. */
   Map<const DConstraint *, const DPoseChannel *> *constraint_to_pchan_map_ = nullptr;
 };
 
 /* ***************************** Node Identifier **************************** */
 
-RNANodeIdentifier::RNANodeIdentifier()
+ApiNodeId::apiNodeId()
     : id(nullptr),
       type(NodeType::UNDEFINED),
       component_name(""),
-      operation_code(OperationCode::OPERATION),
-      operation_name(),
-      operation_name_tag(-1)
+      op_code(OpCode::OPERATION),
+      op_name(),
+      op_name_tag(-1)
 {
 }
 
@@ -92,225 +92,225 @@ bool apiNodeIdentifier::is_valid() const
 
 /* ********************************** Query ********************************* */
 
-apiNodeQuery::RNANodeQuery(Depsgraph *depsgraph, DepsgraphBuilder *builder)
-    : depsgraph_(depsgraph), builder_(builder)
+apiNodeQuery::ApiNodeQuery(DGraph *dgraph, DGraphBuilder *builder)
+    : dgraph_(dgraph), builder_(builder)
 {
 }
 
-RNANodeQuery::~RNANodeQuery() = default;
+ApiNodeQuery::~ApiNodeQuery() = default;
 
-Node *RNANodeQuery::find_node(const ApiPtr *ptr,
+Node *ApiNodeQuery::find_node(const ApiPtr *ptr,
                               const ApiProp *prop,
                               ApiPtrSource source)
 {
-  const apiNodeIdentifier node_identifier = construct_node_identifier(ptr, prop, source);
-  if (!node_identifier.is_valid()) {
+  const ApiNodeId node_id = construct_node_identifier(ptr, prop, source);
+  if (!node_id.is_valid()) {
     return nullptr;
   }
-  IDNode *id_node = depsgraph_->find_id_node(node_identifier.id);
+  IDNode *id_node = dgraph_->find_id_node(node_id.id);
   if (id_node == nullptr) {
     return nullptr;
   }
-  ComponentNode *comp_node = id_node->find_component(node_identifier.type,
-                                                     node_identifier.component_name);
+  ComponentNode *comp_node = id_node->find_component(node_id.type,
+                                                     node_id.component_name);
   if (comp_node == nullptr) {
     return nullptr;
   }
-  if (node_identifier.operation_code == OperationCode::OPERATION) {
+  if (node_id.op_code == OpCode::OPERATION) {
     return comp_node;
   }
-  return comp_node->find_operation(node_identifier.operation_code,
-                                   node_identifier.operation_name,
-                                   node_identifier.operation_name_tag);
+  return comp_node->find_operation(node_id.op_code,
+                                   node_id.op_name,
+                                   node_id.op_name_tag);
 }
 
-bool RNANodeQuery::contains(const char *prop_identifier, const char *rna_path_component)
+bool ApiNodeQuery::contains(const char *prop_id, const char *api_path_component)
 {
-  const char *substr = strstr(prop_identifier, rna_path_component);
+  const char *substr = strstr(prop_id, api_path_component);
   if (substr == nullptr) {
     return false;
   }
 
   /* If `substr != prop_identifier`, it means that the sub-string is found further in
    * `prop_identifier`, and that thus index -1 is a valid memory location. */
-  const bool start_ok = substr == prop_identifier || substr[-1] == '.';
+  const bool start_ok = substr == prop_id || substr[-1] == '.';
   if (!start_ok) {
     return false;
   }
 
-  const size_t component_len = strlen(rna_path_component);
+  const size_t component_len = strlen(api_path_component);
   const bool end_ok = ELEM(substr[component_len], '\0', '.', '[');
   return end_ok;
 }
 
-RNANodeIdentifier RNANodeQuery::construct_node_identifier(const PointerRNA *ptr,
-                                                          const PropertyRNA *prop,
-                                                          RNAPointerSource source)
+ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
+                                          const ApiProp *prop,
+                                          ApiPtrSource source)
 {
-  RNANodeIdentifier node_identifier;
+  ApiNodeId node_id;
   if (ptr->type == nullptr) {
-    return node_identifier;
+    return node_id;
   }
   /* Set default values for returns. */
-  node_identifier.id = ptr->owner_id;
-  node_identifier.component_name = "";
-  node_identifier.operation_code = OperationCode::OPERATION;
-  node_identifier.operation_name = "";
-  node_identifier.operation_name_tag = -1;
+  node_id.id = ptr->owner_id;
+  node_id.component_name = "";
+  node_id.op_code = OpCode::OPERATION;
+  node_id.op_name = "";
+  node_id.op_name_tag = -1;
   /* Handling of commonly known scenarios. */
-  if (rna_prop_affects_parameters_node(ptr, prop)) {
+  if (api_prop_affects_params_node(ptr, prop)) {
     /* Custom properties of bones are placed in their components to improve granularity. */
-    if (RNA_struct_is_a(ptr->type, &RNA_PoseBone)) {
-      const bPoseChannel *pchan = static_cast<const bPoseChannel *>(ptr->data);
-      node_identifier.type = NodeType::BONE;
-      node_identifier.component_name = pchan->name;
+    if (api_struct_is_a(ptr->type, &Api_PoseBone)) {
+      const DPoseChannel *pchan = static_cast<const DPoseChannel *>(ptr->data);
+      node_id.type = NodeType::BONE;
+      node_id.component_name = pchan->name;
     }
     else {
-      node_identifier.type = NodeType::PARAMETERS;
+      node_id.type = NodeType::PARAMETERS;
     }
-    node_identifier.operation_code = OperationCode::ID_PROPERTY;
-    node_identifier.operation_name = RNA_property_identifier(
-        reinterpret_cast<const PropertyRNA *>(prop));
-    return node_identifier;
+    node_id.op_code = OpCode::ID_PROPERTY;
+    node_id.op_name = api_prop_id(
+        reinterpret_cast<const PropAPI *>(prop));
+    return node_id;
   }
-  if (ptr->type == &RNA_PoseBone) {
-    const bPoseChannel *pchan = static_cast<const bPoseChannel *>(ptr->data);
+  if (ptr->type == &Api_PoseBone) {
+    const DPoseChannel *pchan = static_cast<const DPoseChannel *>(ptr->data);
     /* Bone - generally, we just want the bone component. */
-    node_identifier.type = NodeType::BONE;
-    node_identifier.component_name = pchan->name;
+    node_id.type = NodeType::BONE;
+    node_id.component_name = pchan->name;
     /* However check property name for special handling. */
     if (prop != nullptr) {
-      Object *object = reinterpret_cast<Object *>(node_identifier.id);
-      const char *prop_name = RNA_property_identifier(prop);
+      Object *object = reinterpret_cast<Object *>(node_id.id);
+      const char *prop_name = api_prop_id(prop);
       /* B-Bone properties should connect to the final operation. */
       if (STRPREFIX(prop_name, "bbone_")) {
         if (builder_->check_pchan_has_bbone_segments(object, pchan)) {
-          node_identifier.operation_code = OperationCode::BONE_SEGMENTS;
+          node_id.op_code = OpCode::BONE_SEGMENTS;
         }
         else {
-          node_identifier.operation_code = OperationCode::BONE_DONE;
+          node_id.op_code = OpCode::BONE_DONE;
         }
       }
       /* Final transform properties go to the Done node for the exit. */
       else if (STR_ELEM(prop_name, "head", "tail", "length") || STRPREFIX(prop_name, "matrix")) {
-        if (source == RNAPointerSource::EXIT) {
-          node_identifier.operation_code = OperationCode::BONE_DONE;
+        if (source == ApiPtrSource::EXIT) {
+          node_id.op_code = OpCode::BONE_DONE;
         }
       }
       /* And other properties can always go to the entry operation. */
       else {
-        node_identifier.operation_code = OperationCode::BONE_LOCAL;
+        node_id.op_code = OpCode::BONE_LOCAL;
       }
     }
-    return node_identifier;
+    return node_id;
   }
-  if (ptr->type == &RNA_Bone) {
+  if (ptr->type == &Api_Bone) {
     /* Armature-level bone mapped to Armature Eval, and thus Pose Init.
      * Drivers have special code elsewhere that links them to the pose
      * bone components, instead of using this generic code. */
-    node_identifier.type = NodeType::ARMATURE;
-    node_identifier.operation_code = OperationCode::ARMATURE_EVAL;
+    node_id.type = NodeType::ARMATURE;
+    node_id.op_code = OpCode::ARMATURE_EVAL;
     /* If trying to look up via an Object, e.g. due to lookup via
      * obj.pose.bones[].bone in a driver attached to the Object,
      * redirect to its data. */
-    if (GS(node_identifier.id->name) == ID_OB) {
-      node_identifier.id = (ID *)((Object *)node_identifier.id)->data;
+    if (GS(node_id.id->name) == ID_OB) {
+      node_id.id = (Id *)((Object *)node_identifier.id)->data;
     }
-    return node_identifier;
+    return node_id;
   }
 
-  const char *prop_identifier = prop != nullptr ? api_prop_identifier((ApiProp *)prop) :
+  const char *prop_id = prop != nullptr ? api_prop_id((ApiProp *)prop) :
                                                   "";
 
-  if (RNA_struct_is_a(ptr->type, &RNA_Constraint)) {
+  if (api_struct_is_a(ptr->type, &api_Constraint)) {
     const Object *object = reinterpret_cast<const Object *>(ptr->owner_id);
-    const bConstraint *constraint = static_cast<const bConstraint *>(ptr->data);
-    RNANodeQueryIDData *id_data = ensure_id_data(&object->id);
+    const DConstraint *constraint = static_cast<const DConstraint *>(ptr->data);
+    ApiNodeQueryIdData *id_data = ensure_id_data(&object->id);
     /* Check whether is object or bone constraint. */
     /* NOTE: Currently none of the area can address transform of an object
      * at a given constraint, but for rigging one might use constraint
      * influence to be used to drive some corrective shape keys or so. */
-    const bPoseChannel *pchan = id_data->get_pchan_for_constraint(constraint);
+    const DPoseChannel *pchan = id_data->get_pchan_for_constraint(constraint);
     if (pchan == nullptr) {
-      node_identifier.type = NodeType::TRANSFORM;
-      node_identifier.operation_code = OperationCode::TRANSFORM_LOCAL;
+      node_id.type = NodeType::TRANSFORM;
+      node_id.op_code = OpCode::TRANSFORM_LOCAL;
     }
     else {
-      node_identifier.type = NodeType::BONE;
-      node_identifier.operation_code = OperationCode::BONE_LOCAL;
-      node_identifier.component_name = pchan->name;
+      node_id.type = NodeType::BONE;
+      node_id.op_code = OpCode::BONE_LOCAL;
+      node_id.component_name = pchan->name;
     }
-    return node_identifier;
+    return node_id;
   }
-  if (ELEM(ptr->type, &RNA_ConstraintTarget, &RNA_ConstraintTargetBone)) {
+  if (ELEM(ptr->type, &Api_ConstraintTarget, &Api_ConstraintTargetBone)) {
     Object *object = reinterpret_cast<Object *>(ptr->owner_id);
-    bConstraintTarget *tgt = (bConstraintTarget *)ptr->data;
+    DConstraintTarget *tgt = (DConstraintTarget *)ptr->data;
     /* Check whether is object or bone constraint. */
-    bPoseChannel *pchan = nullptr;
-    bConstraint *con = BKE_constraint_find_from_target(object, tgt, &pchan);
+    DPoseChannel *pchan = nullptr;
+    DConstraint *con = dune_constraint_find_from_target(object, tgt, &pchan);
     if (con != nullptr) {
       if (pchan != nullptr) {
-        node_identifier.type = NodeType::BONE;
-        node_identifier.operation_code = OperationCode::BONE_LOCAL;
-        node_identifier.component_name = pchan->name;
+        node_id.type = NodeType::BONE;
+        node_id.op_code = OpCode::BONE_LOCAL;
+        node_id.component_name = pchan->name;
       }
       else {
-        node_identifier.type = NodeType::TRANSFORM;
-        node_identifier.operation_code = OperationCode::TRANSFORM_LOCAL;
+        node_id.type = NodeType::TRANSFORM;
+        node_id.op_code = OpCode::TRANSFORM_LOCAL;
       }
-      return node_identifier;
+      return node_id;
     }
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Modifier) &&
-           (contains(prop_identifier, "show_viewport") ||
-            contains(prop_identifier, "show_render"))) {
-    node_identifier.type = NodeType::GEOMETRY;
-    node_identifier.operation_code = OperationCode::VISIBILITY;
+  else if (api_struct_is_a(ptr->type, &api_Modifier) &&
+           (contains(prop_id, "show_viewport") ||
+            contains(prop_id, "show_render"))) {
+    node_id.type = NodeType::GEOMETRY;
+    node_id.op_code = OpCode::VISIBILITY;
     return node_identifier;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Mesh) || RNA_struct_is_a(ptr->type, &RNA_Modifier) ||
-           RNA_struct_is_a(ptr->type, &RNA_GpencilModifier) ||
-           RNA_struct_is_a(ptr->type, &RNA_Spline) || RNA_struct_is_a(ptr->type, &RNA_TextBox) ||
-           RNA_struct_is_a(ptr->type, &RNA_GPencilLayer) ||
-           RNA_struct_is_a(ptr->type, &RNA_LatticePoint) ||
-           RNA_struct_is_a(ptr->type, &RNA_MeshUVLoop) ||
-           RNA_struct_is_a(ptr->type, &RNA_MeshLoopColor) ||
-           RNA_struct_is_a(ptr->type, &RNA_VertexGroupElement) ||
-           RNA_struct_is_a(ptr->type, &RNA_ShaderFx)) {
+  else if (api_struct_is_a(ptr->type, &RNA_Mesh) || RNA_struct_is_a(ptr->type, &RNA_Modifier) ||
+           api_struct_is_a(ptr->type, &RNA_GpencilModifier) ||
+           api_struct_is_a(ptr->type, &RNA_Spline) || RNA_struct_is_a(ptr->type, &RNA_TextBox) ||
+           api_struct_is_a(ptr->type, &RNA_GPencilLayer) ||
+           api_struct_is_a(ptr->type, &RNA_LatticePoint) ||
+           api_struct_is_a(ptr->type, &RNA_MeshUVLoop) ||
+           api_struct_is_a(ptr->type, &RNA_MeshLoopColor) ||
+           api_struct_is_a(ptr->type, &RNA_VertexGroupElement) ||
+           api_struct_is_a(ptr->type, &RNA_ShaderFx)) {
     /* When modifier is used as FROM operation this is likely referencing to
      * the property (for example, modifier's influence).
      * But when it's used as TO operation, this is geometry component. */
     switch (source) {
-      case RNAPointerSource::ENTRY:
-        node_identifier.type = NodeType::GEOMETRY;
+      case ApiPointerSource::ENTRY:
+        node_id.type = NodeType::GEOMETRY;
         break;
-      case RNAPointerSource::EXIT:
-        node_identifier.type = NodeType::PARAMETERS;
-        node_identifier.operation_code = OperationCode::PARAMETERS_EVAL;
+      case ApiPointerSource::EXIT:
+        node_id.type = NodeType::PARAMS;
+        node_id.op_code = OpCode::PARAMS_EVAL;
         break;
     }
-    return node_identifier;
+    return node_id;
   }
-  else if (ptr->type == &RNA_Object) {
+  else if (ptr->type == &Api_Object) {
     /* Transforms props? */
     if (prop != nullptr) {
-      /* TODO(sergey): How to optimize this? */
-      if (contains(prop_identifier, "location") || contains(prop_identifier, "matrix_basis") ||
-          contains(prop_identifier, "matrix_channel") ||
-          contains(prop_identifier, "matrix_inverse") ||
-          contains(prop_identifier, "matrix_local") ||
-          contains(prop_identifier, "matrix_parent_inverse") ||
-          contains(prop_identifier, "matrix_world") ||
-          contains(prop_identifier, "rotation_axis_angle") ||
-          contains(prop_identifier, "rotation_euler") ||
-          contains(prop_identifier, "rotation_mode") ||
-          contains(prop_identifier, "rotation_quaternion") || contains(prop_identifier, "scale") ||
-          contains(prop_identifier, "delta_location") ||
-          contains(prop_identifier, "delta_rotation_euler") ||
-          contains(prop_identifier, "delta_rotation_quaternion") ||
-          contains(prop_identifier, "delta_scale")) {
-        node_identifier.type = NodeType::TRANSFORM;
-        return node_identifier;
+      /* TODO: How to optimize this? */
+      if (contains(prop_id, "location") || contains(prop_identifier, "matrix_basis") ||
+          contains(prop_id, "matrix_channel") ||
+          contains(prop_id, "matrix_inverse") ||
+          contains(prop_id, "matrix_local") ||
+          contains(prop_id, "matrix_parent_inverse") ||
+          contains(prop_id, "matrix_world") ||
+          contains(prop_id, "rotation_axis_angle") ||
+          contains(prop_id, "rotation_euler") ||
+          contains(prop_id, "rotation_mode") ||
+          contains(prop_id, "rotation_quaternion") || contains(prop_identifier, "scale") ||
+          contains(prop_id, "delta_location") ||
+          contains(prop_id, "delta_rotation_euler") ||
+          contains(prop_id, "delta_rotation_quaternion") ||
+          contains(prop_id, "delta_scale")) {
+        node_id.type = NodeType::TRANSFORM;
+        return node_id;
       }
       if (contains(prop_identifier, "data")) {
         /* We access object.data, most likely a geometry.
