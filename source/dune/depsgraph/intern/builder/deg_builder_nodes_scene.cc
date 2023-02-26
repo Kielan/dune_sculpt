@@ -1,20 +1,20 @@
 #include "intern/builder/deg_builder_nodes.h"
 
-#include "DNA_scene_types.h"
+#include "types_scene.h"
 
-namespace blender::deg {
+namespace dune::deg {
 
-void DepsgraphNodeBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
+void DGraphNodeBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
 {
   scene_ = scene;
   view_layer_ = view_layer;
   const bool build_compositor = (scene->r.scemode & R_DOCOMP);
   const bool build_sequencer = (scene->r.scemode & R_DOSEQ);
-  IDNode *id_node = add_id_node(&scene->id);
+  IdNode *id_node = add_id_node(&scene->id);
   id_node->linked_state = DEG_ID_LINKED_DIRECTLY;
   add_time_source();
   build_animdata(&scene->id);
-  build_scene_parameters(scene);
+  build_scene_params(scene);
   build_scene_audio(scene);
   if (build_compositor) {
     build_scene_compositor(scene);
@@ -28,14 +28,14 @@ void DepsgraphNodeBuilder::build_scene_render(Scene *scene, ViewLayer *view_laye
   }
 }
 
-void DepsgraphNodeBuilder::build_scene_parameters(Scene *scene)
+void DGraphNodeBuilder::build_scene_params(Scene *scene)
 {
-  if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_PARAMETERS)) {
+  if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_PARAMS)) {
     return;
   }
-  build_parameters(&scene->id);
-  build_idproperties(scene->id.properties);
-  add_operation_node(&scene->id, NodeType::PARAMETERS, OperationCode::SCENE_EVAL);
+  build_params(&scene->id);
+  build_idprops(scene->id.props);
+  add_op_node(&scene->id, NodeType::PARAMS, OpCode::SCENE_EVAL);
   /* NOTE: This is a bit overkill and can potentially pull a bit too much into the graph, but:
    *
    * - We definitely need an ID node for the scene's compositor, otherwise re-mapping will no
@@ -49,11 +49,11 @@ void DepsgraphNodeBuilder::build_scene_parameters(Scene *scene)
   build_scene_compositor(scene);
 
   LISTBASE_FOREACH (TimeMarker *, marker, &scene->markers) {
-    build_idproperties(marker->prop);
+    build_idprops(marker->prop);
   }
 }
 
-void DepsgraphNodeBuilder::build_scene_compositor(Scene *scene)
+void DGraphNodeBuilder::build_scene_compositor(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_SCENE_COMPOSITOR)) {
     return;
@@ -64,4 +64,4 @@ void DepsgraphNodeBuilder::build_scene_compositor(Scene *scene)
   build_nodetree(scene->nodetree);
 }
 
-}  // namespace blender::deg
+}  // namespace dune::deg
