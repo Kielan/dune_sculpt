@@ -1433,8 +1433,8 @@ void DGraphNodeBuilder::build_particle_settings(ParticleSettings *particle_setti
   add_op_node(&particle_settings->id,
                      NodeType::PARTICLE_SETTINGS,
                      OpCode::PARTICLE_SETTINGS_RESET,
-                     [particle_settings_cow](::Depsgraph *depsgraph) {
-                       dune_particle_settings_eval_reset(depsgraph, particle_settings_cow);
+                     [particle_settings_cow](::DGraph *dgraph) {
+                       dune_particle_settings_eval_reset(dgraph, particle_settings_cow);
                      });
   op_node = add_op_node(
       &particle_settings->id, NodeType::PARTICLE_SETTINGS, OpCode::PARTICLE_SETTINGS_EVAL);
@@ -1525,11 +1525,11 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
   switch (id_type) {
     case ID_ME: {
       op_node = add_op_node(obdata,
-                                   NodeType::GEOMETRY,
-                                   OpCode::GEOMETRY_EVAL,
-                                   [obdata_cow](::DGraph *dgraph) {
-                                     dune_mesh_eval_geometry(dgraph, (Mesh *)obdata_cow);
-                                   });
+                            NodeType::GEOMETRY,
+                            OpCode::GEOMETRY_EVAL,
+                            [obdata_cow](::DGraph *dgraph) {
+                             dune_mesh_eval_geometry(dgraph, (Mesh *)obdata_cow);
+                            });
       op_node->set_as_entry();
       break;
     }
@@ -1540,11 +1540,11 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
     }
     case ID_CU_LEGACY: {
       op_node = add_op_node(obdata,
-                                   NodeType::GEOMETRY,
-                                   OpCode::GEOMETRY_EVAL,
-                                   [obdata_cow](::DGraph *dgraph) {
-                                     dune_curve_eval_geometry(dgraph, (Curve *)obdata_cow);
-                                   });
+                            NodeType::GEOMETRY,
+                            OpCode::GEOMETRY_EVAL,
+                            [obdata_cow](::DGraph *dgraph) {
+                             dune_curve_eval_geometry(dgraph, (Curve *)obdata_cow);
+                            });
       op_node->set_as_entry();
       Curve *cu = (Curve *)obdata;
       if (cu->bevobj != nullptr) {
@@ -1560,11 +1560,11 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
     }
     case ID_LT: {
       op_node = add_op_node(obdata,
-                                   NodeType::GEOMETRY,
-                                   OpCode::GEOMETRY_EVAL,
-                                   [obdata_cow](::Depsgraph *depsgraph) {
-                                     dune_lattice_eval_geometry(depsgraph, (Lattice *)obdata_cow);
-                                   });
+                            NodeType::GEOMETRY,
+                            OpCode::GEOMETRY_EVAL,
+                            [obdata_cow](::DGraph *dgraph) {
+                             dune_lattice_eval_geometry(dgraph, (Lattice *)obdata_cow);
+                            });
       op_node->set_as_entry();
       break;
     }
@@ -1574,8 +1574,8 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node = add_op_node(obdata,
                                    NodeType::GEOMETRY,
                                    OpCode::GEOMETRY_EVAL,
-                                   [obdata_cow](::Depsgraph *depsgraph) {
-                                     dune_dpen_frame_active_set(depsgraph,
+                                   [obdata_cow](::Dgraph *dgraph) {
+                                     dune_dpen_frame_active_set(dgraph,
                                                                   (DPenData *)obdata_cow);
                                    });
       op_node->set_as_entry();
@@ -1600,11 +1600,11 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
     case ID_VO: {
       /* Volume frame update. */
       op_node = add_op_node(obdata,
-                                   NodeType::GEOMETRY,
-                                   OpCode::GEOMETRY_EVAL,
-                                   [obdata_cow](::Depsgraph *depsgraph) {
-                                     dune_volume_eval_geometry(depsgraph, (Volume *)obdata_cow);
-                                   });
+                            NodeType::GEOMETRY,
+                            OpCode::GEOMETRY_EVAL,
+                            [obdata_cow](::DGraph *dgraph) {
+                             dune_volume_eval_geometry(dgraph, (Volume *)obdata_cow);
+                            });
       op_node->set_as_entry();
       break;
     }
@@ -1618,93 +1618,93 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
   build_params(obdata);
   /* Batch cache. */
   add_op_node(obdata,
-                     NodeType::BATCH_CACHE,
-                     OpCode::GEOMETRY_SELECT_UPDATE,
-                     [obdata_cow](::Depsgraph *depsgraph) {
-                       dune_object_data_select_update(depsgraph, obdata_cow);
-                     });
+              NodeType::BATCH_CACHE,
+              OpCode::GEOMETRY_SELECT_UPDATE,
+              [obdata_cow](::DGraph *dgraph) {
+               dune_object_data_select_update(dgraph, obdata_cow);
+              });
 }
 
-void DepsgraphNodeBuilder::build_armature(DArmature *armature)
+void DGraphNodeBuilder::build_armature(DArmature *armature)
 {
   if (built_map_.checkIsBuiltAndTag(armature)) {
     return;
   }
-  build_idproperties(armature->id.props);
+  build_idprops(armature->id.props);
   build_animdata(&armature->id);
-  build_parameters(&armature->id);
+  build_params(&armature->id);
   /* Make sure pose is up-to-date with armature updates. */
   DArmature *armature_cow = (DArmature *)get_cow_id(&armature->id);
   add_op_node(&armature->id,
                      NodeType::ARMATURE,
                      OpCode::ARMATURE_EVAL,
-                     [armature_cow](::Depsgraph *depsgraph) {
-                       dune_armature_refresh_layer_used(depsgraph, armature_cow);
+                     [armature_cow](::DGraph *dgraph) {
+                       dune_armature_refresh_layer_used(dgraph, armature_cow);
                      });
   build_armature_bones(&armature->bonebase);
 }
 
-void DepsgraphNodeBuilder::build_armature_bones(ListBase *bones)
+void DGraphNodeBuilder::build_armature_bones(ListBase *bones)
 {
   LISTBASE_FOREACH (Bone *, bone, bones) {
-    build_idproperties(bone->prop);
+    build_idprops(bone->prop);
     build_armature_bones(&bone->childbase);
   }
 }
 
-void DepsgraphNodeBuilder::build_camera(Camera *camera)
+void DGraphNodeBuilder::build_camera(Camera *camera)
 {
   if (built_map_.checkIsBuiltAndTag(camera)) {
     return;
   }
-  build_idproperties(camera->id.properties);
+  build_idprops(camera->id.props);
   build_animdata(&camera->id);
-  build_parameters(&camera->id);
+  build_params(&camera->id);
   if (camera->dof.focus_object != nullptr) {
     build_object(-1, camera->dof.focus_object, DEG_ID_LINKED_INDIRECTLY, false);
   }
 }
 
-void DepsgraphNodeBuilder::build_light(Light *lamp)
+void DGraphNodeBuilder::build_light(Light *lamp)
 {
   if (built_map_.checkIsBuiltAndTag(lamp)) {
     return;
   }
-  build_idproperties(lamp->id.properties);
+  build_idprops(lamp->id.props);
   build_animdata(&lamp->id);
-  build_parameters(&lamp->id);
+  build_params(&lamp->id);
   /* light's nodetree */
   build_nodetree(lamp->nodetree);
 
   Light *lamp_cow = get_cow_datablock(lamp);
   add_op_node(&lamp->id,
-                     NodeType::SHADING,
-                     OpCode::LIGHT_UPDATE,
-                     [lamp_cow](::Depsgraph *depsgraph) { BKE_light_eval(depsgraph, lamp_cow); });
+              NodeType::SHADING,
+               OpCode::LIGHT_UPDATE,
+               [lamp_cow](::DGraph *dgraph) { dune_light_eval(dgraph, lamp_cow); });
 }
 
-void DepsgraphNodeBuilder::build_nodetree_socket(bNodeSocket *socket)
+void DGraphNodeBuilder::build_nodetree_socket(DNodeSocket *socket)
 {
   build_idprops(socket->prop);
 
   if (socket->type == SOCK_OBJECT) {
-    build_id((ID *)((DNodeSocketValueObject *)socket->default_value)->value);
+    build_id((Id *)((DNodeSocketValueObject *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_IMAGE) {
-    build_id((ID *)((DNodeSocketValueImage *)socket->default_value)->value);
+    build_id((Id *)((DNodeSocketValueImage *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_COLLECTION) {
-    build_id((ID *)((DNodeSocketValueCollection *)socket->default_value)->value);
+    build_id((Id *)((DNodeSocketValueCollection *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_TEXTURE) {
-    build_id((ID *)((DNodeSocketValueTexture *)socket->default_value)->value);
+    build_id((Id *)((DNodeSocketValueTexture *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_MATERIAL) {
-    build_id((ID *)((DNodeSocketValueMaterial *)socket->default_value)->value);
+    build_id((Id *)((DNodeSocketValueMaterial *)socket->default_value)->value);
   }
 }
 
-void DepsgraphNodeBuilder::build_nodetree(DNodeTree *ntree)
+void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
@@ -1726,7 +1726,7 @@ void DepsgraphNodeBuilder::build_nodetree(DNodeTree *ntree)
     add_op_node(&ntree->id,
                        NodeType::NTREE_GEOMETRY_PREPROCESS,
                        OpCode::NTREE_GEOMETRY_PREPROCESS,
-                       [id_cow](::Depsgraph * /*depsgraph*/) {
+                       [id_cow](::DGraph * /*dgraph*/) {
                          DNodeTree *ntree_cow = reinterpret_cast<DNodeTree *>(id_cow);
                          dune::node_tree_runtime::preprocess_geometry_node_tree_for_evaluation(
                              *ntree_cow);
@@ -1818,7 +1818,7 @@ void DepsgraphNodeBuilder::build_material(Material *material)
       &material->id,
       NodeType::SHADING,
       OpCode::MATERIAL_UPDATE,
-      [material_cow](::Depsgraph *depsgraph) { dune_material_eval(depsgraph, material_cow); });
+      [material_cow](::DGraph *dgraph) { dune_material_eval(dgraph, material_cow); });
   build_idprops(material->id.props);
   /* Material animation. */
   build_animdata(&material->id);
@@ -1827,7 +1827,7 @@ void DepsgraphNodeBuilder::build_material(Material *material)
   build_nodetree(material->nodetree);
 }
 
-void DepsgraphNodeBuilder::build_materials(Material **materials, int num_materials)
+void DGraphNodeBuilder::build_materials(Material **materials, int num_materials)
 {
   for (int i = 0; i < num_materials; i++) {
     if (materials[i] == nullptr) {
@@ -1838,7 +1838,7 @@ void DepsgraphNodeBuilder::build_materials(Material **materials, int num_materia
 }
 
 /* Recursively build graph for texture */
-void DepsgraphNodeBuilder::build_texture(Tex *texture)
+void DGraphNodeBuilder::build_texture(Tex *texture)
 {
   if (built_map_.checkIsBuiltAndTag(texture)) {
     return;
@@ -1860,7 +1860,7 @@ void DepsgraphNodeBuilder::build_texture(Tex *texture)
       &texture->id, NodeType::GENERIC_DATABLOCK, OpCode::GENERIC_DATABLOCK_UPDATE);
 }
 
-void DepsgraphNodeBuilder::build_image(Image *image)
+void DGraphNodeBuilder::build_image(Image *image)
 {
   if (built_map_.checkIsBuiltAndTag(image)) {
     return;
@@ -1871,7 +1871,7 @@ void DepsgraphNodeBuilder::build_image(Image *image)
       &image->id, NodeType::GENERIC_DATABLOCK, OpCode::GENERIC_DATABLOCK_UPDATE);
 }
 
-void DepsgraphNodeBuilder::build_cachefile(CacheFile *cache_file)
+void DGraphNodeBuilder::build_cachefile(CacheFile *cache_file)
 {
   if (built_map_.checkIsBuiltAndTag(cache_file)) {
     return;
@@ -1879,20 +1879,20 @@ void DepsgraphNodeBuilder::build_cachefile(CacheFile *cache_file)
   Id *cache_file_id = &cache_file->id;
   add_id_node(cache_file_id);
   CacheFile *cache_file_cow = get_cow_datablock(cache_file);
-  build_idproperties(cache_file_id->properties);
+  build_idprops(cache_file_id->props);
   /* Animation, */
   build_animdata(cache_file_id);
-  build_parameters(cache_file_id);
+  build_params(cache_file_id);
   /* Cache evaluation itself. */
   add_op_node(cache_file_id,
-                     NodeType::CACHE,
-                     OpCode::FILE_CACHE_UPDATE,
-                     [dmain = dmain_, cache_file_cow](::Depsgraph *depsgraph) {
-                       dune_cachefile_eval(dmain, depsgraph, cache_file_cow);
-                     });
+              NodeType::CACHE,
+              OpCode::FILE_CACHE_UPDATE,
+              [dmain = dmain_, cache_file_cow](::DGraph *dgraph) {
+               dune_cachefile_eval(dmain, depsgraph, cache_file_cow);
+              });
 }
 
-void DepsgraphNodeBuilder::build_mask(Mask *mask)
+void DGraphNodeBuilder::build_mask(Mask *mask)
 {
   if (built_map_.checkIsBuiltAndTag(mask)) {
     return;
@@ -1902,16 +1902,16 @@ void DepsgraphNodeBuilder::build_mask(Mask *mask)
   build_idprops(mask->id.props);
   /* F-Curve based animation. */
   build_animdata(mask_id);
-  build_parameters(mask_id);
+  build_params(mask_id);
   /* Animation based on mask's shapes. */
   add_op_node(
       mask_id,
       NodeType::ANIMATION,
       OpCode::MASK_ANIMATION,
-      [mask_cow](::Depsgraph *depsgraph) { dune_mask_eval_animation(depsgraph, mask_cow); });
+      [mask_cow](::DGraph *dgraph) { dune_mask_eval_animation(dgraph, mask_cow); });
   /* Final mask evaluation. */
   add_op_node(
-      mask_id, NodeType::PARAMS, OpnCode::MASK_EVAL, [mask_cow](::Depsgraph *depsgraph) {
+      mask_id, NodeType::PARAMS, OpnCode::MASK_EVAL, [mask_cow](::DGraph *dgraph) {
         dune_mask_eval_update(depsgraph, mask_cow);
       });
   /* Build parents. */
