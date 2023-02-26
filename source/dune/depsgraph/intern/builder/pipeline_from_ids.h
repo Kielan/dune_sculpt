@@ -26,7 +26,7 @@ class FromIDsBuilderPipeline : public AbstractBuilderPipeline {
   virtual void build_relations(DepsgraphRelationBuilder &relation_builder) override;
 
  private:
-  Span<ID *> ids_;
+  Span<Id *> ids_;
 };
 
 }  // namespace dune::deg
