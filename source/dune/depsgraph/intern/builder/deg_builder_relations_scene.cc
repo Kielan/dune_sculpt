@@ -1,8 +1,8 @@
 #include "intern/builder/deg_builder_relations.h"
 
-#include "DNA_scene_types.h"
+#include "types_scene.h"
 
-namespace blender::deg {
+namespace dune::deg {
 
 void DepsgraphRelationBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
 {
@@ -30,17 +30,17 @@ void DepsgraphRelationBuilder::build_scene_parameters(Scene *scene)
     return;
   }
 
-  /* TODO(sergey): Trace as a scene parameters. */
+  /* TODO: Trace as a scene parameters. */
 
   build_idproperties(scene->id.properties);
-  build_parameters(&scene->id);
-  OperationKey parameters_eval_key(
-      &scene->id, NodeType::PARAMETERS, OperationCode::PARAMETERS_EXIT);
-  OperationKey scene_eval_key(&scene->id, NodeType::PARAMETERS, OperationCode::SCENE_EVAL);
-  add_relation(parameters_eval_key, scene_eval_key, "Parameters -> Scene Eval");
+  build_params(&scene->id);
+  OpKey params_eval_key(
+      &scene->id, NodeType::PARAMS, OpCode::PARAMS_EXIT);
+  OpKey scene_eval_key(&scene->id, NodeType::PARAMS, OpCode::SCENE_EVAL);
+  add_relation(params_eval_key, scene_eval_key, "Parameters -> Scene Eval");
 
   LISTBASE_FOREACH (TimeMarker *, marker, &scene->markers) {
-    build_idproperties(marker->prop);
+    build_idprops(marker->prop);
   }
 }
 
@@ -53,9 +53,9 @@ void DepsgraphRelationBuilder::build_scene_compositor(Scene *scene)
     return;
   }
 
-  /* TODO(sergey): Trace as a scene compositor. */
+  /* TODO: Trace as a scene compositor. */
 
   build_nodetree(scene->nodetree);
 }
 
-}  // namespace blender::deg
+}  // namespace dune::deg
