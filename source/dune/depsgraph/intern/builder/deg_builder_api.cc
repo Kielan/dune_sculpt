@@ -4,39 +4,39 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_utildefines.h"
 
-#include "DNA_action_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_key_types.h"
-#include "DNA_object_types.h"
+#include "types_action.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_key.h"
+#include "types_object.h"
 #include "DNA_sequence_types.h"
 
-#include "BKE_constraint.h"
+#include "dune_constraint.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/depsgraph.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/builder/dgraphbuilder.h"
+#include "intern/dgraph.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
 
 namespace dune::deg {
 
 /* ********************************* ID Data ******************************** */
 
-class ApiNodeQueryIDData {
+class ApiNodeQueryIdData {
  public:
-  explicit apiNodeQueryIDData(const ID *id) : id_(id)
+  explicit apiNodeQueryIdData(const Id *id) : id_(id)
   {
   }
 
-  ~RNANodeQueryIDData()
+  ~ApiNodeQueryIdData()
   {
     delete constraint_to_pchan_map_;
   }
