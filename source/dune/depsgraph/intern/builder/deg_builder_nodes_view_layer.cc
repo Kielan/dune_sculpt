@@ -13,18 +13,18 @@
 
 #include "types_collection.h"
 #include "types_freestyle.h"
-#include "types_layer_types.h"
-#include "types_linestyle_types.h"
-#include "types_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_layer.h"
+#include "types_linestyle.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "BKE_layer.h"
-#include "BKE_main.h"
-#include "BKE_node.h"
+#include "dune_layer.h"
+#include "dune_main.h"
+#include "dune_node.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
+#include "deg_depsgraph.h"
+#include "deg_depsgraph_build.h"
 
 #include "intern/builder/deg_builder.h"
 #include "intern/depsgraph.h"
@@ -35,7 +35,7 @@
 
 namespace dune::deg {
 
-void DepsgraphNodeBuilder::build_layer_collections(ListBase *lb)
+void DGraphNodeBuilder::build_layer_collections(ListBase *lb)
 {
   const int visibility_flag = (graph_->mode == DAG_EVAL_VIEWPORT) ? COLLECTION_HIDE_VIEWPORT :
                                                                     COLLECTION_HIDE_RENDER;
@@ -51,7 +51,7 @@ void DepsgraphNodeBuilder::build_layer_collections(ListBase *lb)
   }
 }
 
-void DepsgraphNodeBuilder::build_freestyle_lineset(FreestyleLineSet *fls)
+void DGraphNodeBuilder::build_freestyle_lineset(FreestyleLineSet *fls)
 {
   if (fls->group != nullptr) {
     build_collection(nullptr, fls->group);
@@ -61,7 +61,7 @@ void DepsgraphNodeBuilder::build_freestyle_lineset(FreestyleLineSet *fls)
   }
 }
 
-void DepsgraphNodeBuilder::build_view_layer(Scene *scene,
+void DGraphNodeBuilder::build_view_layer(Scene *scene,
                                             ViewLayer *view_layer,
                                             eDepsNode_LinkedState_Type linked_state)
 {
@@ -69,7 +69,7 @@ void DepsgraphNodeBuilder::build_view_layer(Scene *scene,
    * only one view layer in there. */
   view_layer_index_ = 0;
   /* Scene ID block. */
-  IDNode *id_node = add_id_node(&scene->id);
+  IdNode *id_node = add_id_node(&scene->id);
   id_node->linked_state = linked_state;
   /* Time source. */
   add_time_source();
@@ -83,8 +83,8 @@ void DepsgraphNodeBuilder::build_view_layer(Scene *scene,
    * but object is expected to be an original one. Hence we go into some
    * tricks here iterating over the view layer. */
   int base_index = 0;
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  LISTBASE_FOREACH (Base *, base, BKE_view_layer_object_bases_get(view_layer)) {
+  dune_view_layer_synced_ensure(scene, view_layer);
+  LISTBASE_FOREACH (Base *, base, dune_view_layer_object_bases_get(view_layer)) {
     /* object itself */
     if (!need_pull_base_into_graph(base)) {
       continue;
@@ -94,7 +94,7 @@ void DepsgraphNodeBuilder::build_view_layer(Scene *scene,
      * restricted by the base/restriction flags. Otherwise its drivers
      * will never be evaluated.
      *
-     * TODO(sergey): Need to go more granular on visibility checks. */
+     * TODO: Need to go more granular on visibility checks. */
     build_object(base_index, base->object, linked_state, true);
     base_index++;
 
@@ -144,18 +144,18 @@ void DepsgraphNodeBuilder::build_view_layer(Scene *scene,
     build_scene_sequencer(scene);
   }
   /* Collections. */
-  add_operation_node(&scene->id,
+  add_op_node(&scene->id,
                      NodeType::LAYER_COLLECTIONS,
-                     OperationCode::VIEW_LAYER_EVAL,
-                     [view_layer_index = view_layer_index_, scene_cow](::Depsgraph *depsgraph) {
-                       BKE_layer_eval_view_layer_indexed(depsgraph, scene_cow, view_layer_index);
+                     OpCode::VIEW_LAYER_EVAL,
+                     [view_layer_index = view_layer_index_, scene_cow](::DGraph *dgraph) {
+                       dune_layer_eval_view_layer_indexed(dgraph, scene_cow, view_layer_index);
                      });
   /* Parameters evaluation for scene relations mainly. */
   build_scene_compositor(scene);
   build_scene_parameters(scene);
   /* Build all set scenes. */
   if (scene->set != nullptr) {
-    ViewLayer *set_view_layer = BKE_view_layer_default_render(scene->set);
+    ViewLayer *set_view_layer = dune_view_layer_default_render(scene->set);
     build_view_layer(scene->set, set_view_layer, DEG_ID_LINKED_VIA_SET);
   }
 }
