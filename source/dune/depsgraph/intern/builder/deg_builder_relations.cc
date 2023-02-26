@@ -225,7 +225,7 @@ bool object_have_geometry_component(const Object *object)
 
 /* **** General purpose functions **** */
 
-DepsgraphRelationBuilder::DepsgraphRelationBuilder(Main *dmain,
+DGraphRelationBuilder::DepsgraphRelationBuilder(Main *dmain,
                                                    Depsgraph *graph,
                                                    DepsgraphBuilderCache *cache)
     : DepsgraphBuilder(dmain, graph, cache), scene_(nullptr), rna_node_query_(graph, this)
@@ -251,7 +251,7 @@ ComponentNode *DepsgraphRelationBuilder::get_node(const ComponentKey &key) const
   return node;
 }
 
-OpNode *DepsgraphRelationBuilder::get_node(const OpKey &key) const
+OpNode *DGraphRelationBuilder::get_node(const OpKey &key) const
 {
   OpNode *op_node = find_node(key);
   if (op_node == nullptr) {
@@ -263,12 +263,12 @@ OpNode *DepsgraphRelationBuilder::get_node(const OpKey &key) const
   return op_node;
 }
 
-Node *DepsgraphRelationBuilder::get_node(const ApiPathKey &key)
+Node *DGraphRelationBuilder::get_node(const ApiPathKey &key)
 {
   return api_node_query_.find_node(&key.ptr, key.prop, key.source);
 }
 
-OpNode *DepsgraphRelationBuilder::find_node(const OpKey &key) const
+OpNode *DGraphRelationBuilder::find_node(const OpKey &key) const
 {
   IdNode *id_node = graph_->find_id_node(key.id);
   if (!id_node) {
@@ -281,12 +281,12 @@ OpNode *DepsgraphRelationBuilder::find_node(const OpKey &key) const
   return comp_node->find_operation(key.opcode, key.name, key.name_tag);
 }
 
-bool DepsgraphRelationBuilder::has_node(const OpKey &key) const
+bool DGraphRelationBuilder::has_node(const OpKey &key) const
 {
   return find_node(key) != nullptr;
 }
 
-void DepsgraphRelationBuilder::add_depends_on_transform_relation(const DepsNodeHandle *handle,
+void DGraphRelationBuilder::add_depends_on_transform_relation(const DepsNodeHandle *handle,
                                                                  const char *description)
 {
   IdNode *id_node = handle->node->owner->owner;
@@ -313,7 +313,7 @@ void DepsgraphRelationBuilder::add_customdata_mask(Object *object,
   }
 }
 
-void DepsgraphRelationBuilder::add_special_eval_flag(ID *id, uint32_t flag)
+void DGraphRelationBuilder::add_special_eval_flag(ID *id, uint32_t flag)
 {
   IdNode *id_node = graph_->find_id_node(id);
   if (id_node == nullptr) {
@@ -324,7 +324,7 @@ void DepsgraphRelationBuilder::add_special_eval_flag(ID *id, uint32_t flag)
   }
 }
 
-Relation *DepsgraphRelationBuilder::add_time_relation(TimeSourceNode *timesrc,
+Relation *DGraphRelationBuilder::add_time_relation(TimeSourceNode *timesrc,
                                                       Node *node_to,
                                                       const char *description,
                                                       int flags)
@@ -345,14 +345,14 @@ Relation *DepsgraphRelationBuilder::add_time_relation(TimeSourceNode *timesrc,
   return nullptr;
 }
 
-void DepsgraphRelationBuilder::add_visibility_relation(Id *id_from, Id *id_to)
+void DGraphRelationBuilder::add_visibility_relation(Id *id_from, Id *id_to)
 {
   ComponentKey from_key(id_from, NodeType::VISIBILITY);
   ComponentKey to_key(id_to, NodeType::VISIBILITY);
   add_relation(from_key, to_key, "visibility");
 }
 
-Relation *DepsgraphRelationBuilder::add_op_relation(OpNode *node_from,
+Relation *DGraphRelationBuilder::add_op_relation(OpNode *node_from,
                                                     OpNode *node_to,
                                                     const char *description,
                                                     int flags)
@@ -373,7 +373,7 @@ Relation *DepsgraphRelationBuilder::add_op_relation(OpNode *node_from,
   return nullptr;
 }
 
-void DepsgraphRelationBuilder::add_particle_collision_relations(const OpKey &key,
+void DGraphRelationBuilder::add_particle_collision_relations(const OpKey &key,
                                                                 Object *object,
                                                                 Collection *collection,
                                                                 const char *name)
@@ -391,7 +391,7 @@ void DepsgraphRelationBuilder::add_particle_collision_relations(const OpKey &key
   }
 }
 
-void DepsgraphRelationBuilder::add_particle_forcefield_relations(const OperationKey &key,
+void DGraphRelationBuilder::add_particle_forcefield_relations(const OperationKey &key,
                                                                  Object *object,
                                                                  ParticleSystem *psys,
                                                                  EffectorWeights *eff,
@@ -461,18 +461,18 @@ void DepsgraphRelationBuilder::add_particle_forcefield_relations(const Operation
   }
 }
 
-Depsgraph *DepsgraphRelationBuilder::getGraph()
+Depsgraph *DGraphRelationBuilder::getGraph()
 {
   return graph_;
 }
 
 /* **** Functions to build relations between entities  **** */
 
-void DepsgraphRelationBuilder::begin_build()
+void DGraphRelationBuilder::begin_build()
 {
 }
 
-void DepsgraphRelationBuilder::build_id(ID *id)
+void DGraphRelationBuilder::build_id(ID *id)
 {
   if (id == nullptr) {
     return;
@@ -575,7 +575,7 @@ void DepsgraphRelationBuilder::build_id(ID *id)
   }
 }
 
-void DepsgraphRelationBuilder::build_generic_id(ID *id)
+void DGraphRelationBuilder::build_generic_id(ID *id)
 {
   if (built_map_.checkIsBuiltAndTag(id)) {
     return;
@@ -590,12 +590,12 @@ void DepsgraphRelationBuilder::build_generic_id(ID *id)
 
 static void build_idprops_callback(IdProp *id_prop, void *user_data)
 {
-  DepsgraphRelationBuilder *builder = reinterpret_cast<DepsgraphRelationBuilder *>(user_data);
+  DGraphRelationBuilder *builder = reinterpret_cast<DepsgraphRelationBuilder *>(user_data);
   lib_assert(id_prop->type == IDP_ID);
   builder->build_id(reinterpret_cast<ID *>(id_prop->data.pointer));
 }
 
-void DepsgraphRelationBuilder::build_idprops(IdProp *id_prop)
+void DGraphRelationBuilder::build_idprops(IdProp *id_prop)
 {
   IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_callback, this);
 }
@@ -674,7 +674,7 @@ void DepsgraphRelationBuilder::build_collection(LayerCollection *from_layer_coll
   }
 }
 
-void DepsgraphRelationBuilder::build_object(Object *object)
+void DGraphRelationBuilder::build_object(Object *object)
 {
   if (built_map_.checkIsBuiltAndTag(object)) {
     return;
@@ -806,7 +806,7 @@ void DepsgraphRelationBuilder::build_object(Object *object)
 }
 
 /* NOTE: Implies that the object has base in the current view layer. */
-void DepsgraphRelationBuilder::build_object_from_view_layer_base(Object *object)
+void DGraphRelationBuilder::build_object_from_view_layer_base(Object *object)
 {
   /* It is possible to have situation when an object is pulled into the dependency graph in a
    * few different ways:
@@ -835,7 +835,7 @@ void DepsgraphRelationBuilder::build_object_from_view_layer_base(Object *object)
   build_object(object);
 }
 
-void DepsgraphRelationBuilder::build_object_layer_component_relations(Object *object)
+void DGraphRelationBuilder::build_object_layer_component_relations(Object *object)
 {
   OpKey object_from_layer_entry_key(
       &object->id, NodeType::OBJECT_FROM_LAYER, OperationCode::OBJECT_FROM_LAYER_ENTRY);
@@ -860,7 +860,7 @@ void DepsgraphRelationBuilder::build_object_layer_component_relations(Object *ob
   add_relation(object_from_layer_exit_key, synchronize_key, "Synchronize to Original");
 }
 
-void DepsgraphRelationBuilder::build_object_modifiers(Object *object)
+void DGraphRelationBuilder::build_object_modifiers(Object *object)
 {
   if (lib_listbase_is_empty(&object->modifiers)) {
     return;
@@ -917,7 +917,7 @@ void DepsgraphRelationBuilder::build_object_modifiers(Object *object)
   dune_modifiers_foreach_id_link(object, modifier_walk, &data);
 }
 
-void DepsgraphRelationBuilder::build_object_data(Object *object)
+void DGraphRelationBuilder::build_object_data(Object *object)
 {
   if (object->data == nullptr) {
     return;
@@ -984,25 +984,25 @@ void DepsgraphRelationBuilder::build_object_data(Object *object)
   }
 }
 
-void DepsgraphRelationBuilder::build_object_data_camera(Object *object)
+void DGraphRelationBuilder::build_object_data_camera(Object *object)
 {
   Camera *camera = (Camera *)object->data;
   build_camera(camera);
-  ComponentKey object_parameters_key(&object->id, NodeType::PARAMETERS);
-  ComponentKey camera_parameters_key(&camera->id, NodeType::PARAMETERS);
-  add_relation(camera_parameters_key, object_parameters_key, "Camera -> Object");
+  ComponentKey object_params_key(&object->id, NodeType::PARAMS);
+  ComponentKey camera_params_key(&camera->id, NodeType::PARAMS);
+  add_relation(camera_params_key, object_params_key, "Camera -> Object");
 }
 
-void DepsgraphRelationBuilder::build_object_data_light(Object *object)
+void DGraphRelationBuilder::build_object_data_light(Object *object)
 {
   Light *lamp = (Light *)object->data;
   build_light(lamp);
-  ComponentKey lamp_parameters_key(&lamp->id, NodeType::PARAMETERS);
-  ComponentKey object_parameters_key(&object->id, NodeType::PARAMETERS);
-  add_relation(lamp_parameters_key, object_parameters_key, "Light -> Object");
+  ComponentKey lamp_params_key(&lamp->id, NodeType::PARAMS);
+  ComponentKey object_params_key(&object->id, NodeType::PARAMS);
+  add_relation(lamp_params_key, object_params_key, "Light -> Object");
 }
 
-void DepsgraphRelationBuilder::build_object_data_lightprobe(Object *object)
+void DeGraphRelationBuilder::build_object_data_lightprobe(Object *object)
 {
   LightProbe *probe = (LightProbe *)object->data;
   build_lightprobe(probe);
@@ -1011,7 +1011,7 @@ void DepsgraphRelationBuilder::build_object_data_lightprobe(Object *object)
   add_relation(probe_key, object_key, "LightProbe Update");
 }
 
-void DepsgraphRelationBuilder::build_object_data_speaker(Object *object)
+void DGraphRelationBuilder::build_object_data_speaker(Object *object)
 {
   Speaker *speaker = (Speaker *)object->data;
   build_speaker(speaker);
@@ -1020,7 +1020,7 @@ void DepsgraphRelationBuilder::build_object_data_speaker(Object *object)
   add_relation(speaker_key, object_key, "Speaker Update");
 }
 
-void DepsgraphRelationBuilder::build_object_parent(Object *object)
+void DGraphRelationBuilder::build_object_parent(Object *object)
 {
   Object *parent = object->parent;
   Id *parent_id = &object->parent->id;
@@ -1250,13 +1250,13 @@ void DepsgraphRelationBuilder::build_constraints(Id *id,
        * dependency chain. */
       TimeSourceKey time_src_key;
       add_relation(time_src_key, constraint_op_key, "TimeSrc -> Animation");
-      bTransformCacheConstraint *data = (DTransformCacheConstraint *)con->data;
+      DTransformCacheConstraint *data = (DTransformCacheConstraint *)con->data;
       if (data->cache_file) {
         ComponentKey cache_key(&data->cache_file->id, NodeType::CACHE);
         add_relation(cache_key, constraint_op_key, cti->name);
       }
     }
-    else if (BKE_constraint_targets_get(con, &targets)) {
+    else if (dune_constraint_targets_get(con, &targets)) {
       LISTBASE_FOREACH (DConstraintTarget *, ct, &targets) {
         if (ct->tar == nullptr) {
           continue;
@@ -1684,7 +1684,7 @@ void DepsgraphRelationBuilder::build_driver_data(ID *id, FCurve *fcu)
   }
   else {
     /* If it's not a Bone, handle the generic single dependency case. */
-    Node *node_to = get_node(property_entry_key);
+    Node *node_to = get_node(prop_entry_key);
     if (node_to != nullptr) {
       add_relation(driver_key, prop_entry_key, "Driver -> Driven Prop");
     }
@@ -1826,7 +1826,7 @@ void DepsgraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
          *
          * See #96289 for more info. */
         if (object != nullptr && OB_TYPE_IS_GEOMETRY(object->type)) {
-          StringRef rna_path(dtar->api_path);
+          StringRef api_path(dtar->api_path);
           if api_path == "data" || api_path.startswith("data.")) {
             ComponentKey ob_key(target_id, NodeType::GEOMETRY);
             add_relation(ob_key, driver_key, "Id -> Driver");
@@ -2129,7 +2129,7 @@ void DGraphRelationBuilder::build_particle_systems(Object *object)
   add_depends_on_transform_relation(&object->id, obdata_ubereval_key, "Particle Eval");
 }
 
-void DepsgraphRelationBuilder::build_particle_settings(ParticleSettings *part)
+void DGraphRelationBuilder::build_particle_settings(ParticleSettings *part)
 {
   if (built_map_.checkIsBuiltAndTag(part)) {
     return;
@@ -2161,7 +2161,7 @@ void DepsgraphRelationBuilder::build_particle_settings(ParticleSettings *part)
                  "Particle Texture -> Particle Reset",
                  RELATION_FLAG_FLUSH_USER_EDIT_ONLY);
     add_relation(texture_key, particle_settings_eval_key, "Particle Texture -> Particle Eval");
-    /* TODO(sergey): Consider moving texture space handling to its own
+    /* TODO: Consider moving texture space handling to its own
      * function. */
     if (mtex->texco == TEXCO_OBJECT && mtex->object != nullptr) {
       ComponentKey object_key(&mtex->object->id, NodeType::TRANSFORM);
@@ -2484,7 +2484,7 @@ void DGraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
   }
 }
 
-void DepsgraphRelationBuilder::build_armature(bArmature *armature)
+void DGraphRelationBuilder::build_armature(bArmature *armature)
 {
   if (built_map_.checkIsBuiltAndTag(armature)) {
     return;
@@ -2498,10 +2498,10 @@ void DepsgraphRelationBuilder::build_armature(bArmature *armature)
   build_armature_bones(&armature->bonebase);
 }
 
-void DepsgraphRelationBuilder::build_armature_bones(ListBase *bones)
+void DGraphRelationBuilder::build_armature_bones(ListBase *bones)
 {
   LISTBASE_FOREACH (Bone *, bone, bones) {
-    build_idproperties(bone->prop);
+    build_idprops(bone->prop);
     build_armature_bones(&bone->childbase);
   }
 }
@@ -2514,26 +2514,26 @@ void DepsgraphRelationBuilder::build_camera(Camera *camera)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(camera->id);
 
-  build_idproperties(camera->id.properties);
+  build_idprops(camera->id.props);
   build_animdata(&camera->id);
-  build_parameters(&camera->id);
+  build_params(&camera->id);
   if (camera->dof.focus_object != nullptr) {
     build_object(camera->dof.focus_object);
-    ComponentKey camera_parameters_key(&camera->id, NodeType::PARAMETERS);
+    ComponentKey camera_params_key(&camera->id, NodeType::PARAMS);
     ComponentKey dof_ob_key(&camera->dof.focus_object->id, NodeType::TRANSFORM);
-    add_relation(dof_ob_key, camera_parameters_key, "Camera DOF");
+    add_relation(dof_ob_key, camera_params_key, "Camera DOF");
     if (camera->dof.focus_subtarget[0]) {
-      OperationKey target_key(&camera->dof.focus_object->id,
+      OpKey target_key(&camera->dof.focus_object->id,
                               NodeType::BONE,
                               camera->dof.focus_subtarget,
-                              OperationCode::BONE_DONE);
+                              OpCode::BONE_DONE);
       add_relation(target_key, camera_parameters_key, "Camera DOF subtarget");
     }
   }
 }
 
 /* Lights */
-void DepsgraphRelationBuilder::build_light(Light *lamp)
+void DGraphRelationBuilder::build_light(Light *lamp)
 {
   if (built_map_.checkIsBuiltAndTag(lamp)) {
     return;
@@ -2541,7 +2541,7 @@ void DepsgraphRelationBuilder::build_light(Light *lamp)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(lamp->id);
 
-  build_idproperties(lamp->id.properties);
+  build_idprops(lamp->id.properties);
   build_animdata(&lamp->id);
   build_parameters(&lamp->id);
 
@@ -2549,21 +2549,21 @@ void DepsgraphRelationBuilder::build_light(Light *lamp)
 
   /* For allowing drivers on lamp properties. */
   ComponentKey shading_key(&lamp->id, NodeType::SHADING);
-  add_relation(lamp_parameters_key, shading_key, "Light Shading Parameters");
+  add_relation(lamp_params_key, shading_key, "Light Shading Parameters");
 
   /* light's nodetree */
   if (lamp->nodetree != nullptr) {
     build_nodetree(lamp->nodetree);
-    OperationKey ntree_key(
-        &lamp->nodetree->id, NodeType::NTREE_OUTPUT, OperationCode::NTREE_OUTPUT);
+    OpKey ntree_key(
+        &lamp->nodetree->id, NodeType::NTREE_OUTPUT, OpCode::NTREE_OUTPUT);
     add_relation(ntree_key, shading_key, "NTree->Light Parameters");
     build_nested_nodetree(&lamp->id, lamp->nodetree);
   }
 }
 
-void DepsgraphRelationBuilder::build_nodetree_socket(bNodeSocket *socket)
+void DGraphRelationBuilder::build_nodetree_socket(DNodeSocket *socket)
 {
-  build_idproperties(socket->prop);
+  build_idprops(socket->prop);
 
   if (socket->type == SOCK_OBJECT) {
     Object *object = ((bNodeSocketValueObject *)socket->default_value)->value;
@@ -2578,26 +2578,26 @@ void DepsgraphRelationBuilder::build_nodetree_socket(bNodeSocket *socket)
     }
   }
   else if (socket->type == SOCK_COLLECTION) {
-    Collection *collection = ((bNodeSocketValueCollection *)socket->default_value)->value;
+    Collection *collection = ((DNodeSocketValueCollection *)socket->default_value)->value;
     if (collection != nullptr) {
       build_collection(nullptr, nullptr, collection);
     }
   }
   else if (socket->type == SOCK_TEXTURE) {
-    Tex *texture = ((bNodeSocketValueTexture *)socket->default_value)->value;
+    Tex *texture = ((DNodeSocketValueTexture *)socket->default_value)->value;
     if (texture != nullptr) {
       build_texture(texture);
     }
   }
   else if (socket->type == SOCK_MATERIAL) {
-    Material *material = ((bNodeSocketValueMaterial *)socket->default_value)->value;
+    Material *material = ((DNodeSocketValueMaterial *)socket->default_value)->value;
     if (material != nullptr) {
       build_material(material);
     }
   }
 }
 
-void DepsgraphRelationBuilder::build_nodetree(bNodeTree *ntree)
+void DGraphRelationBuilder::build_nodetree(bNodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
@@ -2608,14 +2608,14 @@ void DepsgraphRelationBuilder::build_nodetree(bNodeTree *ntree)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(ntree->id);
 
-  build_idproperties(ntree->id.properties);
+  build_idprops(ntree->id.props);
   build_animdata(&ntree->id);
-  build_parameters(&ntree->id);
-  OperationKey ntree_output_key(&ntree->id, NodeType::NTREE_OUTPUT, OperationCode::NTREE_OUTPUT);
-  OperationKey ntree_geo_preprocess_key(
+  build_params(&ntree->id);
+  OpKey ntree_output_key(&ntree->id, NodeType::NTREE_OUTPUT, OperationCode::NTREE_OUTPUT);
+  OpKey ntree_geo_preprocess_key(
       &ntree->id, NodeType::NTREE_GEOMETRY_PREPROCESS, OperationCode::NTREE_GEOMETRY_PREPROCESS);
   if (ntree->type == NTREE_GEOMETRY) {
-    OperationKey ntree_cow_key(&ntree->id, NodeType::COPY_ON_WRITE, OperationCode::COPY_ON_WRITE);
+    OpKey ntree_cow_key(&ntree->id, NodeType::COPY_ON_WRITE, OperationCode::COPY_ON_WRITE);
     add_relation(ntree_cow_key, ntree_geo_preprocess_key, "COW -> Preprocess");
     add_relation(ntree_geo_preprocess_key,
                  ntree_output_key,
@@ -2623,32 +2623,32 @@ void DepsgraphRelationBuilder::build_nodetree(bNodeTree *ntree)
                  RELATION_FLAG_NO_FLUSH);
   }
   /* nodetree's nodes... */
-  for (bNode *bnode : ntree->all_nodes()) {
-    build_idproperties(bnode->prop);
-    LISTBASE_FOREACH (bNodeSocket *, socket, &bnode->inputs) {
+  for (DNode *dnode : ntree->all_nodes()) {
+    build_idprops(dnode->prop);
+    LISTBASE_FOREACH (DNodeSocket *, socket, &dnode->inputs) {
       build_nodetree_socket(socket);
     }
-    LISTBASE_FOREACH (bNodeSocket *, socket, &bnode->outputs) {
+    LISTBASE_FOREACH (DNodeSocket *, socket, &dnode->outputs) {
       build_nodetree_socket(socket);
     }
 
-    ID *id = bnode->id;
+    Id *id = dnode->id;
     if (id == nullptr) {
       continue;
     }
     ID_Type id_type = GS(id->name);
     if (id_type == ID_MA) {
-      build_material((Material *)bnode->id);
+      build_material((Material *)dnode->id);
       ComponentKey material_key(id, NodeType::SHADING);
       add_relation(material_key, ntree_output_key, "Material -> Node");
     }
     else if (id_type == ID_TE) {
-      build_texture((Tex *)bnode->id);
+      build_texture((Tex *)dnode->id);
       ComponentKey texture_key(id, NodeType::GENERIC_DATABLOCK);
       add_relation(texture_key, ntree_output_key, "Texture -> Node");
     }
     else if (id_type == ID_IM) {
-      build_image((Image *)bnode->id);
+      build_image((Image *)dnode->id);
       ComponentKey image_key(id, NodeType::GENERIC_DATABLOCK);
       add_relation(image_key, ntree_output_key, "Image -> Node");
     }
@@ -2677,12 +2677,12 @@ void DepsgraphRelationBuilder::build_nodetree(bNodeTree *ntree)
     }
     else if (id_type == ID_MSK) {
       build_mask((Mask *)id);
-      OperationKey mask_key(id, NodeType::PARAMETERS, OperationCode::MASK_EVAL);
+      OpKey mask_key(id, NodeType::PARAMETERS, OperationCode::MASK_EVAL);
       add_relation(mask_key, ntree_output_key, "Mask -> Node");
     }
     else if (id_type == ID_MC) {
       build_movieclip((MovieClip *)id);
-      OperationKey clip_key(id, NodeType::PARAMETERS, OperationCode::MOVIECLIP_EVAL);
+      OpKey clip_key(id, NodeType::PARAMETERS, OperationCode::MOVIECLIP_EVAL);
       add_relation(clip_key, ntree_output_key, "Clip -> Node");
     }
     else if (id_type == ID_VF) {
@@ -2691,7 +2691,7 @@ void DepsgraphRelationBuilder::build_nodetree(bNodeTree *ntree)
       add_relation(vfont_key, ntree_output_key, "VFont -> Node");
     }
     else if (ELEM(bnode->type, NODE_GROUP, NODE_CUSTOM_GROUP)) {
-      bNodeTree *group_ntree = (bNodeTree *)id;
+      DNodeTree *group_ntree = (bNodeTree *)id;
       build_nodetree(group_ntree);
       ComponentKey group_output_key(&group_ntree->id, NodeType::NTREE_OUTPUT);
       /* This relation is not necessary in all cases (e.g. when the group node is not connected to
@@ -2699,7 +2699,7 @@ void DepsgraphRelationBuilder::build_nodetree(bNodeTree *ntree)
        * That can be added later. */
       add_relation(group_output_key, ntree_output_key, "Group Node");
       if (group_ntree->type == NTREE_GEOMETRY) {
-        OperationKey group_preprocess_key(&group_ntree->id,
+        OpKey group_preprocess_key(&group_ntree->id,
                                           NodeType::NTREE_GEOMETRY_PREPROCESS,
                                           OperationCode::NTREE_GEOMETRY_PREPROCESS);
         add_relation(group_preprocess_key, ntree_geo_preprocess_key, "Group Node Preprocess");
