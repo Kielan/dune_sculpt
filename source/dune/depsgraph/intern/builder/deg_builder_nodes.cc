@@ -1763,7 +1763,7 @@ void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
     }
     else if (id_type == ID_SCE) {
       Scene *node_scene = (Scene *)id;
-      build_scene_parameters(node_scene);
+      build_scene_params(node_scene);
       /* Camera is used by defocus node.
        *
        * On the one hand it's annoying to always pull it in, but on another hand it's also annoying
@@ -1805,7 +1805,7 @@ void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
 }
 
 /* Recursively build graph for material */
-void DepsgraphNodeBuilder::build_material(Material *material)
+void DGraphNodeBuilder::build_material(Material *material)
 {
   if (built_map_.checkIsBuiltAndTag(material)) {
     return;
@@ -1888,7 +1888,7 @@ void DGraphNodeBuilder::build_cachefile(CacheFile *cache_file)
               NodeType::CACHE,
               OpCode::FILE_CACHE_UPDATE,
               [dmain = dmain_, cache_file_cow](::DGraph *dgraph) {
-               dune_cachefile_eval(dmain, depsgraph, cache_file_cow);
+               dune_cachefile_eval(dmain, dgraph, cache_file_cow);
               });
 }
 
@@ -1929,27 +1929,27 @@ void DGraphNodeBuilder::build_mask(Mask *mask)
   }
 }
 
-void DepsgraphNodeBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
+void DGraphNodeBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
 {
   if (built_map_.checkIsBuiltAndTag(linestyle)) {
     return;
   }
 
-  ID *linestyle_id = &linestyle->id;
+  Id *linestyle_id = &linestyle->id;
   build_params(linestyle_id);
-  build_idprops(linestyle->id.properties);
+  build_idprops(linestyle->id.props);
   build_animdata(linestyle_id);
   build_nodetree(linestyle->nodetree);
 }
 
-void DepsgraphNodeBuilder::build_movieclip(MovieClip *clip)
+void DGraphNodeBuilder::build_movieclip(MovieClip *clip)
 {
   if (built_map_.checkIsBuiltAndTag(clip)) {
     return;
   }
   Id *clip_id = &clip->id;
   MovieClip *clip_cow = (MovieClip *)ensure_cow_id(clip_id);
-  build_idproperties(clip_id->props);
+  build_idprops(clip_id->props);
   /* Animation. */
   build_animdata(clip_id);
   build_parameters(clip_id);
@@ -1957,12 +1957,12 @@ void DepsgraphNodeBuilder::build_movieclip(MovieClip *clip)
   add_op_node(clip_id,
                      NodeType::PARAMS,
                      OpCode::MOVIECLIP_EVAL,
-                     [dmain = bmain_, clip_cow](::Depsgraph *depsgraph) {
-                       dune_movieclip_eval_update(depsgraph, bmain, clip_cow);
+                     [dmain = dmain_, clip_cow](::DGraph *dgraph) {
+                       dune_movieclip_eval_update(dgraph, dmain, clip_cow);
                      });
 }
 
-void DepsgraphNodeBuilder::build_lightprobe(LightProbe *probe)
+void DGraphNodeBuilder::build_lightprobe(LightProbe *probe)
 {
   if (built_map_.checkIsBuiltAndTag(probe)) {
     return;
@@ -1971,10 +1971,10 @@ void DepsgraphNodeBuilder::build_lightprobe(LightProbe *probe)
   add_op_node(&probe->id, NodeType::PARAMS, OpCode::LIGHT_PROBE_EVAL);
   build_idprops(probe->id.props);
   build_animdata(&probe->id);
-  build_parameters(&probe->id);
+  build_params(&probe->id);
 }
 
-void DepsgraphNodeBuilder::build_speaker(Speaker *speaker)
+void DGraphNodeBuilder::build_speaker(Speaker *speaker)
 {
   if (built_map_.checkIsBuiltAndTag(speaker)) {
     return;
@@ -1989,7 +1989,7 @@ void DepsgraphNodeBuilder::build_speaker(Speaker *speaker)
   }
 }
 
-void DepsgraphNodeBuilder::build_sound(DSound *sound)
+void DGraphNodeBuilder::build_sound(DSound *sound)
 {
   if (built_map_.checkIsBuiltAndTag(sound)) {
     return;
@@ -1999,21 +1999,21 @@ void DepsgraphNodeBuilder::build_sound(DSound *sound)
   add_op_node(&sound->id,
                      NodeType::AUDIO,
                      OpCode::SOUND_EVAL,
-                     [dmain = dmain_, sound_cow](::Depsgraph *depsgraph) {
-                       dune_sound_evaluate(depsgraph, dmain, sound_cow);
+                     [dmain = dmain_, sound_cow](::DGraph *dgraph) {
+                       dune_sound_evaluate(dgraph, dmain, sound_cow);
                      });
   build_idprops(sound->id.props);
   build_animdata(&sound->id);
   build_params(&sound->id);
 }
 
-void DepsgraphNodeBuilder::build_simulation(Simulation *simulation)
+void DGraphNodeBuilder::build_simulation(Simulation *simulation)
 {
   if (built_map_.checkIsBuiltAndTag(simulation)) {
     return;
   }
   add_id_node(&simulation->id);
-  build_idprops(simulation->id.properties);
+  build_idprops(simulation->id.props);
   build_animdata(&simulation->id);
   build_params(&simulation->id);
   build_nodetree(simulation->nodetree);
@@ -2024,12 +2024,12 @@ void DepsgraphNodeBuilder::build_simulation(Simulation *simulation)
   add_op_node(&simulation->id,
                      NodeType::SIMULATION,
                      OpCode::SIMULATION_EVAL,
-                     [scene_cow, simulation_cow](::Depsgraph *depsgraph) {
-                       dune_simulation_data_update(depsgraph, scene_cow, simulation_cow);
+                     [scene_cow, simulation_cow](::DGraph *dgraph) {
+                       dune_simulation_data_update(dgraph, scene_cow, simulation_cow);
                      });
 }
 
-void DepsgraphNodeBuilder::build_vfont(VFont *vfont)
+void DGraphNodeBuilder::build_vfont(VFont *vfont)
 {
   if (built_map_.checkIsBuiltAndTag(vfont)) {
     return;
@@ -2042,7 +2042,7 @@ void DepsgraphNodeBuilder::build_vfont(VFont *vfont)
 
 static bool seq_node_build_cb(Sequence *seq, void *user_data)
 {
-  DepsgraphNodeBuilder *nb = (DepsgraphNodeBuilder *)user_data;
+  DGraphNodeBuilder *nb = (DGraphNodeBuilder *)user_data;
   nb->build_idprops(seq->prop);
   if (seq->sound != nullptr) {
     nb->build_sound(seq->sound);
@@ -2061,7 +2061,7 @@ static bool seq_node_build_cb(Sequence *seq, void *user_data)
   return true;
 }
 
-void DepsgraphNodeBuilder::build_scene_sequencer(Scene *scene)
+void DGraphNodeBuilder::build_scene_sequencer(Scene *scene)
 {
   if (scene->ed == nullptr) {
     return;
@@ -2072,16 +2072,16 @@ void DepsgraphNodeBuilder::build_scene_sequencer(Scene *scene)
   build_scene_audio(scene);
   Scene *scene_cow = get_cow_datablock(scene);
   add_op_node(&scene->id,
-                     NodeType::SEQUENCER,
-                     OpCode::SEQUENCES_EVAL,
-                     [scene_cow](::Depsgraph *depsgraph) {
-                       seq_eval_sequences(depsgraph, scene_cow, &scene_cow->ed->seqbase);
-                     });
+              NodeType::SEQUENCER,
+              OpCode::SEQUENCES_EVAL,
+              [scene_cow](::DGraph *dgraph) {
+               seq_eval_sequences(dgraph, scene_cow, &scene_cow->ed->seqbase);
+              });
   /* Make sure data for sequences is in the graph. */
   seq_for_each_callback(&scene->ed->seqbase, seq_node_build_cb, this);
 }
 
-void DepsgraphNodeBuilder::build_scene_audio(Scene *scene)
+void DGraphNodeBuilder::build_scene_audio(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_SCENE_AUDIO)) {
     return;
@@ -2095,11 +2095,11 @@ void DepsgraphNodeBuilder::build_scene_audio(Scene *scene)
 
   Scene *scene_cow = get_cow_datablock(scene);
   add_op_node(&scene->id,
-                     NodeType::AUDIO,
-                     OpCode::AUDIO_VOLUME,
-                     [scene_cow](::Depsgraph *depsgraph) {
-                       dune_scene_update_tag_audio_volume(depsgraph, scene_cow);
-                     });
+              NodeType::AUDIO,
+              OpCode::AUDIO_VOLUME,
+              [scene_cow](::DGraph *dgraph) {
+               dune_scene_update_tag_audio_volume(dgraph, scene_cow);
+              });
 }
 
 void DepsgraphNodeBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer)
