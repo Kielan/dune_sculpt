@@ -2506,7 +2506,7 @@ void DGraphRelationBuilder::build_armature_bones(ListBase *bones)
   }
 }
 
-void DepsgraphRelationBuilder::build_camera(Camera *camera)
+void DGraphRelationBuilder::build_camera(Camera *camera)
 {
   if (built_map_.checkIsBuiltAndTag(camera)) {
     return;
@@ -2541,7 +2541,7 @@ void DGraphRelationBuilder::build_light(Light *lamp)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(lamp->id);
 
-  build_idprops(lamp->id.properties);
+  build_idprops(lamp->id.props);
   build_animdata(&lamp->id);
   build_parameters(&lamp->id);
 
@@ -2566,13 +2566,13 @@ void DGraphRelationBuilder::build_nodetree_socket(DNodeSocket *socket)
   build_idprops(socket->prop);
 
   if (socket->type == SOCK_OBJECT) {
-    Object *object = ((bNodeSocketValueObject *)socket->default_value)->value;
+    Object *object = ((DNodeSocketValueObject *)socket->default_value)->value;
     if (object != nullptr) {
       build_object(object);
     }
   }
   else if (socket->type == SOCK_IMAGE) {
-    Image *image = ((bNodeSocketValueImage *)socket->default_value)->value;
+    Image *image = ((DNodeSocketValueImage *)socket->default_value)->value;
     if (image != nullptr) {
       build_image(image);
     }
@@ -2691,7 +2691,7 @@ void DGraphRelationBuilder::build_nodetree(bNodeTree *ntree)
       add_relation(vfont_key, ntree_output_key, "VFont -> Node");
     }
     else if (ELEM(bnode->type, NODE_GROUP, NODE_CUSTOM_GROUP)) {
-      DNodeTree *group_ntree = (bNodeTree *)id;
+      DNodeTree *group_ntree = (DNodeTree *)id;
       build_nodetree(group_ntree);
       ComponentKey group_output_key(&group_ntree->id, NodeType::NTREE_OUTPUT);
       /* This relation is not necessary in all cases (e.g. when the group node is not connected to
@@ -2701,20 +2701,20 @@ void DGraphRelationBuilder::build_nodetree(bNodeTree *ntree)
       if (group_ntree->type == NTREE_GEOMETRY) {
         OpKey group_preprocess_key(&group_ntree->id,
                                           NodeType::NTREE_GEOMETRY_PREPROCESS,
-                                          OperationCode::NTREE_GEOMETRY_PREPROCESS);
+                                          OpCode::NTREE_GEOMETRY_PREPROCESS);
         add_relation(group_preprocess_key, ntree_geo_preprocess_key, "Group Node Preprocess");
       }
     }
     else {
-      BLI_assert_msg(0, "Unknown ID type used for node");
+      lib_assert_msg(0, "Unknown ID type used for node");
     }
   }
 
-  LISTBASE_FOREACH (bNodeSocket *, socket, &ntree->inputs) {
-    build_idproperties(socket->prop);
+  LISTBASE_FOREACH (DNodeSocket *, socket, &ntree->inputs) {
+    build_idprops(socket->prop);
   }
-  LISTBASE_FOREACH (bNodeSocket *, socket, &ntree->outputs) {
-    build_idproperties(socket->prop);
+  LISTBASE_FOREACH (DNodeSocket *, socket, &ntree->outputs) {
+    build_idprops(socket->prop);
   }
 
   if (check_id_has_anim_component(&ntree->id)) {
@@ -2727,7 +2727,7 @@ void DGraphRelationBuilder::build_nodetree(bNodeTree *ntree)
 }
 
 /* Recursively build graph for material */
-void DepsgraphRelationBuilder::build_material(Material *material)
+void DGraphRelationBuilder::build_material(Material *material)
 {
   if (built_map_.checkIsBuiltAndTag(material)) {
     return;
@@ -2735,27 +2735,27 @@ void DepsgraphRelationBuilder::build_material(Material *material)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(material->id);
 
-  build_idproperties(material->id.properties);
+  build_idprops(material->id.props);
   /* animation */
   build_animdata(&material->id);
-  build_parameters(&material->id);
+  build_params(&material->id);
 
-  /* Animated / driven parameters (without nodetree). */
-  OperationKey material_key(&material->id, NodeType::SHADING, OperationCode::MATERIAL_UPDATE);
-  ComponentKey parameters_key(&material->id, NodeType::PARAMETERS);
-  add_relation(parameters_key, material_key, "Material's parameters");
+  /* Animated / driven params (without nodetree). */
+  OpKey material_key(&material->id, NodeType::SHADING, OpCode::MATERIAL_UPDATE);
+  ComponentKey params_key(&material->id, NodeType::PARAMETERS);
+  add_relation(params_key, material_key, "Material's parameters");
 
   /* material's nodetree */
   if (material->nodetree != nullptr) {
     build_nodetree(material->nodetree);
-    OperationKey ntree_key(
-        &material->nodetree->id, NodeType::NTREE_OUTPUT, OperationCode::NTREE_OUTPUT);
+    OpKey ntree_key(
+        &material->nodetree->id, NodeType::NTREE_OUTPUT, OpCode::NTREE_OUTPUT);
     add_relation(ntree_key, material_key, "Material's NTree");
     build_nested_nodetree(&material->id, material->nodetree);
   }
 }
 
-void DepsgraphRelationBuilder::build_materials(Material **materials, int num_materials)
+void DGraphRelationBuilder::build_materials(Material **materials, int num_materials)
 {
   for (int i = 0; i < num_materials; i++) {
     if (materials[i] == nullptr) {
@@ -2766,7 +2766,7 @@ void DepsgraphRelationBuilder::build_materials(Material **materials, int num_mat
 }
 
 /* Recursively build graph for texture */
-void DepsgraphRelationBuilder::build_texture(Tex *texture)
+void DGraphRelationBuilder::build_texture(Tex *texture)
 {
   if (built_map_.checkIsBuiltAndTag(texture)) {
     return;
@@ -2776,15 +2776,15 @@ void DepsgraphRelationBuilder::build_texture(Tex *texture)
 
   /* texture itself */
   ComponentKey texture_key(&texture->id, NodeType::GENERIC_DATABLOCK);
-  build_idproperties(texture->id.properties);
+  build_idprops(texture->id.props);
   build_animdata(&texture->id);
   build_parameters(&texture->id);
 
   /* texture's nodetree */
   if (texture->nodetree) {
     build_nodetree(texture->nodetree);
-    OperationKey ntree_key(
-        &texture->nodetree->id, NodeType::NTREE_OUTPUT, OperationCode::NTREE_OUTPUT);
+    OpKey ntree_key(
+        &texture->nodetree->id, NodeType::NTREE_OUTPUT, OpCode::NTREE_OUTPUT);
     add_relation(ntree_key, texture_key, "Texture's NTree");
     build_nested_nodetree(&texture->id, texture->nodetree);
   }
