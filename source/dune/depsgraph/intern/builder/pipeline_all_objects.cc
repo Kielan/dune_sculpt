@@ -4,15 +4,15 @@
 #include "intern/builder/deg_builder_relations.h"
 #include "intern/depsgraph.h"
 
-#include "DNA_layer_types.h"
+#include "types_layer.h"
 
-namespace blender::deg {
+namespace dune::deg {
 
 namespace {
 
 class AllObjectsNodeBuilder : public DepsgraphNodeBuilder {
  public:
-  AllObjectsNodeBuilder(Main *bmain, Depsgraph *graph, DepsgraphBuilderCache *cache)
+  AllObjectsNodeBuilder(Main *dmain, Depsgraph *graph, DepsgraphBuilderCache *cache)
       : DepsgraphNodeBuilder(bmain, graph, cache)
   {
   }
@@ -50,7 +50,7 @@ unique_ptr<DepsgraphNodeBuilder> AllObjectsBuilderPipeline::construct_node_build
 
 unique_ptr<DepsgraphRelationBuilder> AllObjectsBuilderPipeline::construct_relation_builder()
 {
-  return std::make_unique<AllObjectsRelationBuilder>(bmain_, deg_graph_, &builder_cache_);
+  return std::make_unique<AllObjectsRelationBuilder>(dmain_, deg_graph_, &builder_cache_);
 }
 
 }  // namespace dune::deg
