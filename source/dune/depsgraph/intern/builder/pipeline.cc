@@ -15,7 +15,7 @@ namespace dune::deg {
 
 AbstractBuilderPipeline::AbstractBuilderPipeline(::Depsgraph *graph)
     : deg_graph_(reinterpret_cast<Depsgraph *>(graph)),
-      bmain_(deg_graph_->bmain),
+      dmain_(deg_graph_->bmain),
       scene_(deg_graph_->scene),
       view_layer_(deg_graph_->view_layer)
 {
@@ -40,9 +40,9 @@ void AbstractBuilderPipeline::build()
 
 void AbstractBuilderPipeline::build_step_sanity_check()
 {
-  BLI_assert(BLI_findindex(&scene_->view_layers, view_layer_) != -1);
-  BLI_assert(deg_graph_->scene == scene_);
-  BLI_assert(deg_graph_->view_layer == view_layer_);
+  lib_assert(lib_findindex(&scene_->view_layers, view_layer_) != -1);
+  lib_assert(deg_graph_->scene == scene_);
+  lib_assert(deg_graph_->view_layer == view_layer_);
 }
 
 void AbstractBuilderPipeline::build_step_nodes()
@@ -78,10 +78,10 @@ void AbstractBuilderPipeline::build_step_finalize()
   /* Store pointers to commonly used evaluated datablocks. */
   deg_graph_->scene_cow = (Scene *)deg_graph_->get_cow_id(&deg_graph_->scene->id);
   /* Flush visibility layer and re-schedule nodes for update. */
-  deg_graph_build_finalize(bmain_, deg_graph_);
-  DEG_graph_tag_on_visible_update(reinterpret_cast<::Depsgraph *>(deg_graph_), false);
+  deg_graph_build_finalize(dmain_, deg_graph_);
+  deg_graph_tag_on_visible_update(reinterpret_cast<::Depsgraph *>(deg_graph_), false);
 #if 0
-  if (!DEG_debug_consistency_check(deg_graph_)) {
+  if (!deg_debug_consistency_check(deg_graph_)) {
     printf("Consistency validation failed, ABORTING!\n");
     abort();
   }
