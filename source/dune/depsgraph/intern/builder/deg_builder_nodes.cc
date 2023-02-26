@@ -1952,7 +1952,7 @@ void DGraphNodeBuilder::build_movieclip(MovieClip *clip)
   build_idprops(clip_id->props);
   /* Animation. */
   build_animdata(clip_id);
-  build_parameters(clip_id);
+  build_params(clip_id);
   /* Movie clip evaluation. */
   add_op_node(clip_id,
                      NodeType::PARAMS,
@@ -2022,11 +2022,11 @@ void DGraphNodeBuilder::build_simulation(Simulation *simulation)
   Scene *scene_cow = get_cow_datablock(scene_);
 
   add_op_node(&simulation->id,
-                     NodeType::SIMULATION,
-                     OpCode::SIMULATION_EVAL,
-                     [scene_cow, simulation_cow](::DGraph *dgraph) {
-                       dune_simulation_data_update(dgraph, scene_cow, simulation_cow);
-                     });
+              NodeType::SIMULATION,
+              OpCode::SIMULATION_EVAL,
+              [scene_cow, simulation_cow](::DGraph *dgraph) {
+               dune_simulation_data_update(dgraph, scene_cow, simulation_cow);
+              });
 }
 
 void DGraphNodeBuilder::build_vfont(VFont *vfont)
@@ -2102,7 +2102,7 @@ void DGraphNodeBuilder::build_scene_audio(Scene *scene)
               });
 }
 
-void DepsgraphNodeBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer)
+void DGraphNodeBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer)
 {
   dune_view_layer_synced_ensure(scene, view_layer);
   LISTBASE_FOREACH (Base *, base, dune_view_layer_object_bases_get(view_layer)) {
@@ -2117,7 +2117,7 @@ void DepsgraphNodeBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_la
 
 /* **** ID traversal callbacks functions **** */
 
-void DepsgraphNodeBuilder::modifier_walk(void *user_data,
+void DGraphNodeBuilder::modifier_walk(void *user_data,
                                          struct Object * /*object*/,
                                          struct Id **idpoin,
                                          int /*cb_flag*/)
@@ -2137,9 +2137,9 @@ void DepsgraphNodeBuilder::modifier_walk(void *user_data,
   }
 }
 
-void DepsgraphNodeBuilder::constraint_walk(bConstraint * /*con*/,
-                                           ID **idpoint,
-                                           bool /*is_reference*/,
+void DGraphNodeBuilder::constraint_walk(DConstraint * /*con*/,
+                                           Id **idpoint,
+                                           bool /*is_ref*/,
                                            void *user_data)
 {
   BuilderWalkUserData *data = (BuilderWalkUserData *)user_data;
