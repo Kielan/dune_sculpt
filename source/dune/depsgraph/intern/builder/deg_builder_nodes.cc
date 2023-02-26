@@ -237,17 +237,17 @@ OpNode *DGraphNodeBuilder::add_op_node(Id *id,
   return add_op_node(comp_node, opcode, op, name, name_tag);
 }
 
-OpNode *DepsgraphNodeBuilder::add_op_node(ID *id,
+OpNode *DGraphNodeBuilder::add_op_node(ID *id,
                                                         NodeType comp_type,
                                                         OpCode opcode,
-                                                        const DepsEvalOperationCb &op,
+                                                        const DepsEvalOpCb &op,
                                                         const char *name,
                                                         int name_tag)
 {
   return add_op_node(id, comp_type, "", opcode, op, name, name_tag);
 }
 
-OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
+OpNode *DGraphNodeBuilder::ensure_op_node(Id *id,
                                                            NodeType comp_type,
                                                            const char *comp_name,
                                                            OpCode opcode,
@@ -262,36 +262,36 @@ OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
   return add_op_node(id, comp_type, comp_name, opcode, op, name, name_tag);
 }
 
-OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
-                                                           NodeType comp_type,
-                                                           OpCode opcode,
-                                                           const DepsEvalOpCb &op,
-                                                           const char *name,
-                                                           int name_tag)
+OpNode *DGraphNodeBuilder::ensure_op_node(Id *id,
+                                          NodeType comp_type,
+                                          OpCode opcode,
+                                          const DepsEvalOpCb &op,
+                                          const char *name,
+                                          int name_tag)
 {
   OpNode *op = find_op_node(id, comp_type, opcode, name, name_tag);
   if (op != nullptr) {
-    return operation;
+    return op;
   }
   return add_op_node(id, comp_type, opcode, op, name, name_tag);
 }
 
 bool DGraphNodeBuilder::has_op_node(Id *id,
-                                              NodeType comp_type,
-                                              const char *comp_name,
-                                              OpCode opcode,
-                                              const char *name,
-                                              int name_tag)
+                                    NodeType comp_type,
+                                    const char *comp_name,
+                                    OpCode opcode,
+                                    const char *name,
+                                    int name_tag)
 {
   return find_op_node(id, comp_type, comp_name, opcode, name, name_tag) != nullptr;
 }
 
-OpNode *DGraphNodeBuilder::find_op_node(ID *id,
-                                                         NodeType comp_type,
-                                                         const char *comp_name,
-                                                         OpCode opcode,
-                                                         const char *name,
-                                                         int name_tag)
+OpNode *DGraphNodeBuilder::find_op_node(Id *id,
+                                        NodeType comp_type,
+                                        const char *comp_name,
+                                        OpCode opcode,
+                                        const char *name,
+                                        int name_tag)
 {
   ComponentNode *comp_node = add_component_node(id, comp_type, comp_name);
   return comp_node->find_op(opcode, name, name_tag);
@@ -330,7 +330,7 @@ void DGraphNodeBuilder::begin_build()
      * for whether id_cow is expanded to access freed memory. In order to deal with this we
      * check whether CoW is needed based on a scalar value which does not lead to access of
      * possibly deleted memory. */
-    IdInfo *id_info = (IDInfo *)MEM_mallocN(sizeof(IdInfo), "depsgraph id info");
+    IdInfo *id_info = (IdInfo *)MEM_mallocN(sizeof(IdInfo), "depsgraph id info");
     if (deg_copy_on_write_is_needed(id_node->id_type) &&
         deg_copy_on_write_is_expanded(id_node->id_cow) && id_node->id_orig != id_node->id_cow) {
       id_info->id_cow = id_node->id_cow;
@@ -365,7 +365,7 @@ void DGraphNodeBuilder::begin_build()
   graph_->entry_tags.clear();
 }
 
-/* Util callbacks for `BKE_library_foreach_ID_link`, used to detect when a COW ID is using ID
+/* Util callbacks for `dune_lib_foreach_id_link`, used to detect when a COW ID is using ID
  * pointers that are either:
  *  - COW id pointers that do not exist anymore in current depsgraph.
  *  - Orig id pointers that do have now a COW version in current depsgraph.
@@ -375,13 +375,13 @@ void DGraphNodeBuilder::begin_build()
  * NOTE: This is split in two, a static function and a public method of the node builder, to allow
  * the code to access the builder's data more easily. */
 
-int DepsgraphNodeBuilder::foreach_id_cow_detect_need_for_update_callback(Id *id_cow_self,
+int DGraphNodeBuilder::foreach_id_cow_detect_need_for_update_callback(Id *id_cow_self,
                                                                          Id *id_pointer)
 {
   if (id_pointer->orig_id == nullptr) {
     /* `id_cow_self` uses a non-cow ID, if that ID has a COW copy in current depsgraph its owner
      * needs to be remapped, i.e. COW-flushed. */
-    IDNode *id_node = find_id_node(id_pointer);
+    IdNode *id_node = find_id_node(id_pointer);
     if (id_node != nullptr && id_node->id_cow != nullptr) {
       graph_id_tag_update(dmain_,
                           graph_,
@@ -410,20 +410,20 @@ int DepsgraphNodeBuilder::foreach_id_cow_detect_need_for_update_callback(Id *id_
   return IDWALK_RET_NOP;
 }
 
-static int foreach_id_cow_detect_need_for_update_callback(LibraryIDLinkCallbackData *cb_data)
+static int foreach_id_cow_detect_need_for_update_cb(LibIdLinkCbData *cb_data)
 {
   Id *id = *cb_data->id_pointer;
   if (id == nullptr) {
     return IDWALK_RET_NOP;
   }
 
-  DepsgraphNodeBuilder *builder = static_cast<DepsgraphNodeBuilder *>(cb_data->user_data);
+  DGraphNodeBuilder *builder = static_cast<DGraphNodeBuilder *>(cb_data->user_data);
   Id *id_cow_self = cb_data->id_self;
 
   return builder->foreach_id_cow_detect_need_for_update_callback(id_cow_self, id);
 }
 
-void DepsgraphNodeBuilder::update_invalid_cow_pointers()
+void DGraphNodeBuilder::update_invalid_cow_pointers()
 {
   /* NOTE: Currently the only ID types that depsgraph may decide to not evaluate/generate COW
    * copies for, even though they are referenced by other data-blocks, are Collections and Objects
@@ -435,7 +435,7 @@ void DepsgraphNodeBuilder::update_invalid_cow_pointers()
    * some cases. This is slightly unfortunate (as it may hide issues in other parts of Blender
    * code), but cannot really be avoided currently. */
 
-  for (const IDNode *id_node : graph_->id_nodes) {
+  for (const IdNode *id_node : graph_->id_nodes) {
     if (id_node->previously_visible_components_mask == 0) {
       /* Newly added node/ID, no need to check it. */
       continue;
@@ -472,7 +472,7 @@ void DepsgraphNodeBuilder::update_invalid_cow_pointers()
   }
 }
 
-void DepsgraphNodeBuilder::tag_previously_tagged_nodes()
+void DGraphNodeBuilder::tag_previously_tagged_nodes()
 {
   for (const SavedEntryTag &entry_tag : saved_entry_tags_) {
     IdNode *id_node = find_id_node(entry_tag.id_orig);
@@ -494,13 +494,13 @@ void DepsgraphNodeBuilder::tag_previously_tagged_nodes()
   }
 }
 
-void DepsgraphNodeBuilder::end_build()
+void DGraphNodeBuilder::end_build()
 {
   tag_previously_tagged_nodes();
   update_invalid_cow_pointers();
 }
 
-void DepsgraphNodeBuilder::build_id(ID *id)
+void DGraphNodeBuilder::build_id(Id *id)
 {
   if (id == nullptr) {
     return;
@@ -613,7 +613,7 @@ void DepsgraphNodeBuilder::build_id(ID *id)
   }
 }
 
-void DepsgraphNodeBuilder::build_generic_id(Id *id)
+void DGraphNodeBuilder::build_generic_id(Id *id)
 {
   if (built_map_.checkIsBuiltAndTag(id)) {
     return;
@@ -621,22 +621,22 @@ void DepsgraphNodeBuilder::build_generic_id(Id *id)
 
   build_idprops(id->props);
   build_animdata(id);
-  build_parameters(id);
+  build_params(id);
 }
 
 static void build_idprops_callback(IdProp *id_prop, void *user_data)
 {
-  DepsgraphNodeBuilder *builder = reinterpret_cast<DepsgraphNodeBuilder *>(user_data);
+  DGraphNodeBuilder *builder = reinterpret_cast<DGraphNodeBuilder *>(user_data);
   lib_assert(id_prop->type == IDP_ID);
   builder->build_id(reinterpret_cast<ID *>(id_prop->data.pointer));
 }
 
-void DepsgraphNodeBuilder::build_idprops(IdProp *id_prop)
+void DGraphNodeBuilder::build_idprops(IdProp *id_prop)
 {
   IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_callback, this);
 }
 
-void DepsgraphNodeBuilder::build_collection(LayerCollection *from_layer_collection,
+void DeGraphNodeBuilder::build_collection(LayerCollection *from_layer_collection,
                                             Collection *collection)
 {
   const int visibility_flag = (graph_->mode == DAG_EVAL_VIEWPORT) ? COLLECTION_HIDE_VIEWPORT :
@@ -693,7 +693,7 @@ void DepsgraphNodeBuilder::build_collection(LayerCollection *from_layer_collecti
   id_node->is_collection_fully_expanded = true;
 }
 
-void DepsgraphNodeBuilder::build_object(int base_index,
+void DGraphNodeBuilder::build_object(int base_index,
                                         Object *object,
                                         eDepsNode_LinkedState_Type linked_state,
                                         bool is_visible)
@@ -804,7 +804,7 @@ void DepsgraphNodeBuilder::build_object(int base_index,
                      });
 }
 
- void DepsgraphNodeBuilder::build_object_from_layer(int base_index,
+ void DGraphNodeBuilder::build_object_from_layer(int base_index,
                                                    Object *object,
                                                    eDepsNode_LinkedState_Type linked_state)
 {
@@ -819,7 +819,7 @@ void DepsgraphNodeBuilder::build_object(int base_index,
   build_object_flags(base_index, object, linked_state);
 }
 
-void DepsgraphNodeBuilder::build_object_flags(int base_index,
+void DGraphNodeBuilder::build_object_flags(int base_index,
                                               Object *object,
                                               eDepsNode_LinkedState_Type linked_state)
 {
@@ -835,13 +835,13 @@ void DepsgraphNodeBuilder::build_object_flags(int base_index,
       NodeType::OBJECT_FROM_LAYER,
       OpCode::OBJECT_BASE_FLAGS,
       [view_layer_index = view_layer_index_, scene_cow, object_cow, base_index, is_from_set](
-          ::Depsgraph *depsgraph) {
+          ::DGraph *depsgraph) {
         dune_object_eval_eval_base_flags(
             depsgraph, scene_cow, view_layer_index, object_cow, base_index, is_from_set);
       });
 }
 
-void DepsgraphNodeBuilder::build_object_instance_collection(Object *object, bool is_object_visible)
+void DGraphNodeBuilder::build_object_instance_collection(Object *object, bool is_object_visible)
 {
   if (object->instance_collection == nullptr) {
     return;
@@ -852,7 +852,7 @@ void DepsgraphNodeBuilder::build_object_instance_collection(Object *object, bool
   is_parent_collection_visible_ = is_current_parent_collection_visible;
 }
 
-void DepsgraphNodeBuilder::build_object_modifiers(Object *object)
+void DGraphNodeBuilder::build_object_modifiers(Object *object)
 {
   if (lib_listbase_is_empty(&object->modifiers)) {
     return;
@@ -866,13 +866,13 @@ void DepsgraphNodeBuilder::build_object_modifiers(Object *object)
   add_op_node(&object->id,
                      NodeType::GEOMETRY,
                      OpCode::VISIBILITY,
-                     [id_node](::Depsgraph *depsgraph) {
+                     [id_node](::DGraph *dgraph) {
                        deg_evaluate_object_modifiers_mode_node_visibility(depsgraph, id_node);
                      });
 
   LISTBASE_FOREACH (ModifierData *, modifier, &object->modifiers) {
     OpNode *modifier_node = add_op_node(
-        &object->id, NodeType::GEOMETRY, OpnCode::MODIFIER, nullptr, modifier->name);
+        &object->id, NodeType::GEOMETRY, OpCode::MODIFIER, nullptr, modifier->name);
 
     /* Mute modifier mode if the modifier is not enabled for the dependency graph mode.
      * This handles static (non-animated) mode of the modifier. */
@@ -890,7 +890,7 @@ void DepsgraphNodeBuilder::build_object_modifiers(Object *object)
   dune_modifiers_foreach_id_link(object, modifier_walk, &data);
 }
 
-void DepsgraphNodeBuilder::build_object_data(Object *object)
+void DGraphNodeBuilder::build_object_data(Object *object)
 {
   if (object->data == nullptr) {
     return;
@@ -940,38 +940,38 @@ void DepsgraphNodeBuilder::build_object_data(Object *object)
   }
 }
 
-void DepsgraphNodeBuilder::build_object_data_camera(Object *object)
+void DGraphNodeBuilder::build_object_data_camera(Object *object)
 {
   Camera *camera = (Camera *)object->data;
   build_camera(camera);
 }
 
-void DepsgraphNodeBuilder::build_object_data_light(Object *object)
+void DGraphNodeBuilder::build_object_data_light(Object *object)
 {
   Light *lamp = (Light *)object->data;
   build_light(lamp);
 }
 
-void DepsgraphNodeBuilder::build_object_data_lightprobe(Object *object)
+void DGraphNodeBuilder::build_object_data_lightprobe(Object *object)
 {
   LightProbe *probe = (LightProbe *)object->data;
   build_lightprobe(probe);
   add_op_node(&object->id, NodeType::PARAMS, OpCode::LIGHT_PROBE_EVAL);
 }
 
-void DepsgraphNodeBuilder::build_object_data_speaker(Object *object)
+void DGraphNodeBuilder::build_object_data_speaker(Object *object)
 {
   Speaker *speaker = (Speaker *)object->data;
   build_speaker(speaker);
   add_op_node(&object->id, NodeType::AUDIO, OperationCode::SPEAKER_EVAL);
 }
 
-void DepsgraphNodeBuilder::build_object_transform(Object *object)
+void DGraphNodeBuilder::build_object_transform(Object *object)
 {
   OpNode *op_node;
   Object *ob_cow = get_cow_datablock(object);
   /* Transform entry operation. */
-  op_node = add_operation_node(&object->id, NodeType::TRANSFORM, OperationCode::TRANSFORM_INIT);
+  op_node = add_op_node(&object->id, NodeType::TRANSFORM, OperationCode::TRANSFORM_INIT);
   op_node->set_as_entry();
   /* Local transforms (from transform channels - loc/rot/scale + deltas). */
   add_op_node(
@@ -996,10 +996,10 @@ void DepsgraphNodeBuilder::build_object_transform(Object *object)
       &object->id,
       NodeType::TRANSFORM,
       OpCode::TRANSFORM_EVAL,
-      [ob_cow](::Depsgraph *depsgraph) { BKE_object_eval_uber_transform(depsgraph, ob_cow); });
+      [ob_cow](::DGraph *depsgraph) { dune_object_eval_uber_transform(dgraph, ob_cow); });
   /* Operation to take of rigid body simulation. soft bodies and other friends
    * in the context of point cache invalidation. */
-  add_operation_node(&object->id, NodeType::TRANSFORM, OperationCode::TRANSFORM_SIMULATION_INIT);
+  add_op_node(&object->id, NodeType::TRANSFORM, OpCode::TRANSFORM_SIMULATION_INIT);
   /* Object transform is done. */
   op_node = add_op_node(
       &object->id,
@@ -1026,7 +1026,7 @@ void DepsgraphNodeBuilder::build_object_transform(Object *object)
  *
  * -- Aligorith, August 2013
  */
-void DepsgraphNodeBuilder::build_object_constraints(Object *object)
+void DGraphNodeBuilder::build_object_constraints(Object *object)
 {
   /* create node for constraint stack */
   Scene *scene_cow = get_cow_datablock(scene_);
@@ -1034,7 +1034,7 @@ void DepsgraphNodeBuilder::build_object_constraints(Object *object)
   add_op_node(&object->id,
                      NodeType::TRANSFORM,
                      OpCode::TRANSFORM_CONSTRAINTS,
-                     [scene_cow, object_cow](::Depsgraph *depsgraph) {
+                     [scene_cow, object_cow](::DGraph *dgraph) {
                        dune_object_eval_constraints(depsgraph, scene_cow, object_cow);
                      });
 }
