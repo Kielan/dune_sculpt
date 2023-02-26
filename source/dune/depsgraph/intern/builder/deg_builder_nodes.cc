@@ -835,7 +835,7 @@ void DGraphNodeBuilder::build_object_flags(int base_index,
       NodeType::OBJECT_FROM_LAYER,
       OpCode::OBJECT_BASE_FLAGS,
       [view_layer_index = view_layer_index_, scene_cow, object_cow, base_index, is_from_set](
-          ::DGraph *depsgraph) {
+          ::DGraph *dgraph) {
         dune_object_eval_eval_base_flags(
             depsgraph, scene_cow, view_layer_index, object_cow, base_index, is_from_set);
       });
@@ -985,7 +985,7 @@ void DGraphNodeBuilder::build_object_transform(Object *object)
         &object->id,
         NodeType::TRANSFORM,
         OpCode::TRANSFORM_PARENT,
-        [ob_cow](::Depsgraph *depsgraph) { dune_object_eval_parent(dgraph, ob_cow); });
+        [ob_cow](::DGraph *dgraph) { dune_object_eval_parent(dgraph, ob_cow); });
   }
   /* Object constraints. */
   if (object->constraints.first != nullptr) {
@@ -996,7 +996,7 @@ void DGraphNodeBuilder::build_object_transform(Object *object)
       &object->id,
       NodeType::TRANSFORM,
       OpCode::TRANSFORM_EVAL,
-      [ob_cow](::DGraph *depsgraph) { dune_object_eval_uber_transform(dgraph, ob_cow); });
+      [ob_cow](::DGraph *dgraph) { dune_object_eval_uber_transform(dgraph, ob_cow); });
   /* Operation to take of rigid body simulation. soft bodies and other friends
    * in the context of point cache invalidation. */
   add_op_node(&object->id, NodeType::TRANSFORM, OpCode::TRANSFORM_SIMULATION_INIT);
@@ -1005,7 +1005,7 @@ void DGraphNodeBuilder::build_object_transform(Object *object)
       &object->id,
       NodeType::TRANSFORM,
       OpCode::TRANSFORM_FINAL,
-      [ob_cow](::Depsgraph *depsgraph) { BKE_object_eval_transform_final(dgraph, ob_cow); });
+      [ob_cow](::DGraph *dgraph) { dune_object_eval_transform_final(dgraph, ob_cow); });
   op_node->set_as_exit();
 }
 
