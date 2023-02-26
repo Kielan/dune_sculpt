@@ -1,14 +1,14 @@
 #pragma once
 
-#include "BLI_utildefines.h"
-#include "BLI_vector.hh"
+#include "lib_utildefines.h"
+#include "lib_vector.hh"
 
-struct ID;
-struct bConstraint;
-struct bPoseChannel;
+struct Id;
+struct DConstraint;
+struct DPoseChannel;
 struct ModifierData;
 
-namespace blender::deg {
+namespace dune::deg {
 
 /* This class keeps track of the builder calls nesting, allowing to unroll them back and provide a
  * clue about how the builder made it to its current state.
@@ -33,15 +33,15 @@ class BuilderStack {
    * the stack is printed. */
   class Entry {
    public:
-    explicit Entry(const ID &id) : id_(&id)
+    explicit Entry(const Id &id) : id_(&id)
     {
     }
 
-    explicit Entry(const bConstraint &constraint) : constraint_(&constraint)
+    explicit Entry(const DConstraint &constraint) : constraint_(&constraint)
     {
     }
 
-    explicit Entry(const bPoseChannel &pchan) : pchan_(&pchan)
+    explicit Entry(const DPoseChannel &pchan) : pchan_(&pchan)
     {
     }
 
@@ -52,10 +52,10 @@ class BuilderStack {
    private:
     friend class BuilderStack;
 
-    const ID *id_ = nullptr;
-    const bConstraint *constraint_ = nullptr;
+    const Id *id_ = nullptr;
+    const DConstraint *constraint_ = nullptr;
     const ModifierData *modifier_data_ = nullptr;
-    const bPoseChannel *pchan_ = nullptr;
+    const DPoseChannel *pchan_ = nullptr;
   };
 
   using Stack = Vector<Entry>;
@@ -94,7 +94,7 @@ class BuilderStack {
     {
       /* Stack will become nullptr when the entry was moved somewhere else. */
       if (stack_ != nullptr) {
-        BLI_assert(!stack_->is_empty());
+        lib_assert(!stack_->is_empty());
         stack_->pop_last();
       }
     }
