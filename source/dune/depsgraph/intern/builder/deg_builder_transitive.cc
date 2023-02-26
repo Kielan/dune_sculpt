@@ -10,7 +10,7 @@
 #include "intern/depsgraph.h"
 #include "intern/depsgraph_relation.h"
 
-namespace blender::deg {
+namespace dune::deg {
 
 /* -------------------------------------------------- */
 
