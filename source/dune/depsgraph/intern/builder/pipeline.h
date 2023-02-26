@@ -9,7 +9,7 @@ struct Main;
 struct Scene;
 struct ViewLayer;
 
-namespace blender::deg {
+namespace dune::deg {
 
 struct Depsgraph;
 class DepsgraphNodeBuilder;
@@ -32,7 +32,7 @@ class AbstractBuilderPipeline {
 
  protected:
   Depsgraph *deg_graph_;
-  Main *bmain_;
+  Main *dmain_;
   Scene *scene_;
   ViewLayer *view_layer_;
   DepsgraphBuilderCache builder_cache_;
