@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
 namespace dune::deg {
 
