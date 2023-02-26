@@ -2,18 +2,18 @@
 
 #include <cstring>
 
-#include "DNA_ID.h"
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_object_types.h"
+#include "types_id.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_layer.h"
+#include "types_object.h"
 
-#include "BLI_stack.h"
-#include "BLI_utildefines.h"
+#include "lib_stack.h"
+#include "lib_utildefines.h"
 
-#include "BKE_action.h"
+#include "dune_action.h"
 
-#include "RNA_prototypes.h"
+#include "api_prototypes.h"
 
 #include "intern/builder/deg_builder_cache.h"
 #include "intern/builder/deg_builder_remove_noop.h"
@@ -27,20 +27,20 @@
 #include "intern/node/deg_node_id.h"
 #include "intern/node/deg_node_operation.h"
 
-#include "DEG_depsgraph.h"
+#include "dgraph.h"
 
-namespace blender::deg {
+namespace dune::deg {
 
-bool deg_check_id_in_depsgraph(const Depsgraph *graph, ID *id_orig)
+bool deg_check_id_in_dgraph(const DGraph *graph, ID *id_orig)
 {
-  IDNode *id_node = graph->find_id_node(id_orig);
+  IdNode *id_node = graph->find_id_node(id_orig);
   return id_node != nullptr;
 }
 
-bool deg_check_base_in_depsgraph(const Depsgraph *graph, Base *base)
+bool deg_check_base_in_dgraph(const Depsgraph *graph, Base *base)
 {
   Object *object_orig = base->base_orig->object;
-  IDNode *id_node = graph->find_id_node(&object_orig->id);
+  IdNode *id_node = graph->find_id_node(&object_orig->id);
   if (id_node == nullptr) {
     return false;
   }
@@ -51,12 +51,12 @@ bool deg_check_base_in_depsgraph(const Depsgraph *graph, Base *base)
  * Base class for builders.
  */
 
-DepsgraphBuilder::DepsgraphBuilder(Main *bmain, Depsgraph *graph, DepsgraphBuilderCache *cache)
-    : bmain_(bmain), graph_(graph), cache_(cache)
+DGraphBuilder::DGraphBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache)
+    : dmain_(dmain), graph_(graph), cache_(cache)
 {
 }
 
-bool DepsgraphBuilder::need_pull_base_into_graph(Base *base)
+bool DGraphBuilder::need_pull_base_into_graph(Base *base)
 {
   /* Simple check: enabled bases are always part of dependency graph. */
   const int base_flag = (graph_->mode == DAG_EVAL_VIEWPORT) ? BASE_ENABLED_VIEWPORT :
@@ -68,23 +68,23 @@ bool DepsgraphBuilder::need_pull_base_into_graph(Base *base)
    * all visible objects are to be part of dependency graph, we pull all objects which has animated
    * visibility. */
   Object *object = base->object;
-  AnimatedPropertyID property_id;
+  AnimatedPropId prop_id;
   if (graph_->mode == DAG_EVAL_VIEWPORT) {
-    property_id = AnimatedPropertyID(&object->id, &RNA_Object, "hide_viewport");
+    property_id = AnimatedPropId(&object->id, &api_Object, "hide_viewport");
   }
   else if (graph_->mode == DAG_EVAL_RENDER) {
-    property_id = AnimatedPropertyID(&object->id, &RNA_Object, "hide_render");
+    prop_id = AnimatedPropId(&object->id, &api_Object, "hide_render");
   }
   else {
-    BLI_assert_msg(0, "Unknown evaluation mode.");
+    lib_assert_msg(0, "Unknown evaluation mode.");
     return false;
   }
-  return cache_->isPropertyAnimated(&object->id, property_id);
+  return cache_->isPropAnimated(&object->id, prop_id);
 }
 
-bool DepsgraphBuilder::check_pchan_has_bbone(Object *object, const bPoseChannel *pchan)
+bool DGraphBuilder::check_pchan_has_bbone(Object *object, const bPoseChannel *pchan)
 {
-  BLI_assert(object->type == OB_ARMATURE);
+  lib_assert(object->type == OB_ARMATURE);
   if (pchan == nullptr || pchan->bone == nullptr) {
     return false;
   }
@@ -94,22 +94,22 @@ bool DepsgraphBuilder::check_pchan_has_bbone(Object *object, const bPoseChannel 
   if (pchan->bone->segments > 1) {
     return true;
   }
-  bArmature *armature = static_cast<bArmature *>(object->data);
-  AnimatedPropertyID property_id(&armature->id, &RNA_Bone, pchan->bone, "bbone_segments");
+  DArmature *armature = static_cast<bArmature *>(object->data);
+  AnimatedPropId prop_id(&armature->id, &api_Bone, pchan->bone, "bbone_segments");
   /* Check both Object and Armature animation data, because drivers modifying Armature
    * state could easily be created in the Object AnimData. */
-  return cache_->isPropertyAnimated(&object->id, property_id) ||
-         cache_->isPropertyAnimated(&armature->id, property_id);
+  return cache_->isPropAnimated(&object->id, prop_id) ||
+         cache_->isPropAnimated(&armature->id, prop_id);
 }
 
-bool DepsgraphBuilder::check_pchan_has_bbone_segments(Object *object, const bPoseChannel *pchan)
+bool DGraphBuilder::check_pchan_has_bbone_segments(Object *object, const DPoseChannel *pchan)
 {
   return check_pchan_has_bbone(object, pchan);
 }
 
-bool DepsgraphBuilder::check_pchan_has_bbone_segments(Object *object, const char *bone_name)
+bool DGraphBuilder::check_pchan_has_bbone_segments(Object *object, const char *bone_name)
 {
-  const bPoseChannel *pchan = BKE_pose_channel_find_name(object->pose, bone_name);
+  const DPoseChannel *pchan = dune_pose_channel_find_name(object->pose, bone_name);
   return check_pchan_has_bbone_segments(object, pchan);
 }
 
@@ -119,19 +119,19 @@ bool DepsgraphBuilder::check_pchan_has_bbone_segments(Object *object, const char
 
 namespace {
 
-void deg_graph_build_flush_visibility(Depsgraph *graph)
+void dgraph_build_flush_visibility(Depsgraph *graph)
 {
   enum {
     DEG_NODE_VISITED = (1 << 0),
   };
 
-  BLI_Stack *stack = BLI_stack_new(sizeof(OperationNode *), "DEG flush layers stack");
-  for (IDNode *id_node : graph->id_nodes) {
+  LibStack *stack = lib_stack_new(sizeof(OpNode *), "DEG flush layers stack");
+  for (IdNode *id_node : graph->id_nodes) {
     for (ComponentNode *comp_node : id_node->components.values()) {
       comp_node->affects_directly_visible |= id_node->is_directly_visible;
     }
   }
-  for (OperationNode *op_node : graph->operations) {
+  for (OpNode *op_node : graph->operations) {
     op_node->custom_flags = 0;
     op_node->num_links_pending = 0;
     for (Relation *rel : op_node->outlinks) {
@@ -140,17 +140,17 @@ void deg_graph_build_flush_visibility(Depsgraph *graph)
       }
     }
     if (op_node->num_links_pending == 0) {
-      BLI_stack_push(stack, &op_node);
+      lib_stack_push(stack, &op_node);
       op_node->custom_flags |= DEG_NODE_VISITED;
     }
   }
-  while (!BLI_stack_is_empty(stack)) {
-    OperationNode *op_node;
-    BLI_stack_pop(stack, &op_node);
+  while (!lib_stack_is_empty(stack)) {
+    OpNode *op_node;
+    lib_stack_pop(stack, &op_node);
     /* Flush layers to parents. */
     for (Relation *rel : op_node->inlinks) {
       if (rel->from->type == NodeType::OPERATION) {
-        OperationNode *op_from = (OperationNode *)rel->from;
+        OpNode *op_from = (OpNode *)rel->from;
         ComponentNode *comp_from = op_from->owner;
         const bool target_directly_visible = op_node->owner->affects_directly_visible;
 
@@ -158,7 +158,7 @@ void deg_graph_build_flush_visibility(Depsgraph *graph)
          * affecting directly visible. */
         if (comp_from->type == NodeType::VISIBILITY) {
           if (target_directly_visible) {
-            IDNode *id_node_from = comp_from->owner;
+            IdNode *id_node_from = comp_from->owner;
             for (ComponentNode *comp_node : id_node_from->components.values()) {
               comp_node->affects_directly_visible |= target_directly_visible;
             }
@@ -172,33 +172,33 @@ void deg_graph_build_flush_visibility(Depsgraph *graph)
     /* Schedule parent nodes. */
     for (Relation *rel : op_node->inlinks) {
       if (rel->from->type == NodeType::OPERATION) {
-        OperationNode *op_from = (OperationNode *)rel->from;
+        OpNode *op_from = (OpNode *)rel->from;
         if ((rel->flag & RELATION_FLAG_CYCLIC) == 0) {
-          BLI_assert(op_from->num_links_pending > 0);
+          lib_assert(op_from->num_links_pending > 0);
           --op_from->num_links_pending;
         }
         if ((op_from->num_links_pending == 0) && (op_from->custom_flags & DEG_NODE_VISITED) == 0) {
-          BLI_stack_push(stack, &op_from);
+          lib_stack_push(stack, &op_from);
           op_from->custom_flags |= DEG_NODE_VISITED;
         }
       }
     }
   }
-  BLI_stack_free(stack);
+  lib_stack_free(stack);
 }
 
 }  // namespace
 
-void deg_graph_build_finalize(Main *bmain, Depsgraph *graph)
+void dgraph_build_finalize(Main *dmain, DGraph *graph)
 {
   /* Make sure dependencies of visible ID datablocks are visible. */
-  deg_graph_build_flush_visibility(graph);
-  deg_graph_remove_unused_noops(graph);
+  dgraph_build_flush_visibility(graph);
+  dgraph_remove_unused_noops(graph);
 
   /* Re-tag IDs for update if it was tagged before the relations
    * update tag. */
-  for (IDNode *id_node : graph->id_nodes) {
-    ID *id_orig = id_node->id_orig;
+  for (IdNode *id_node : graph->id_nodes) {
+    Id *id_orig = id_node->id_orig;
     id_node->finalize_build(graph);
     int flag = 0;
     /* Tag rebuild if special evaluation flags changed. */
@@ -221,7 +221,7 @@ void deg_graph_build_finalize(Main *bmain, Depsgraph *graph)
      * an operator and then were carried on by the undo system. */
     flag |= id_orig->recalc;
     if (flag != 0) {
-      graph_id_tag_update(bmain, graph, id_node->id_orig, flag, DEG_UPDATE_SOURCE_RELATIONS);
+      graph_id_tag_update(dmain, graph, id_node->id_orig, flag, DEG_UPDATE_SOURCE_RELATIONS);
     }
   }
 }
