@@ -173,17 +173,17 @@ IdNode *DGraphNodeBuilder::add_id_node(Id *id)
     }
 
     ComponentNode *visibility_component = id_node->add_component(NodeType::VISIBILITY);
-    OpNode *visibility_operation = visibility_component->add_operation(
+    OpNode *visibility_op = visibility_component->add_op(
         nullptr, OpCode::OPERATION, "", -1);
     /* Pin the node so that it and its relations are preserved by the unused nodes/relations
      * deletion. This is mainly to make it easier to debug visibility. */
     visibility_op->flag |= OpFlag::DEPSOP_FLAG_PINNED;
-    graph_->ops.append(visibility_operation);
+    graph_->ops.append(visibility_op);
   }
   return id_node;
 }
 
-IDNode *DGraphNodeBuilder::find_id_node(ID *id)
+IDNode *DGraphNodeBuilder::find_id_node(Id *id)
 {
   return graph_->find_id_node(id);
 }
@@ -193,9 +193,9 @@ TimeSourceNode *DGraphNodeBuilder::add_time_source()
   return graph_->add_time_source();
 }
 
-ComponentNode *DGraphNodeBuilder::add_component_node(ID *id,
-                                                        NodeType comp_type,
-                                                        const char *comp_name)
+ComponentNode *DGraphNodeBuilder::add_component_node(Id *id,
+                                                     NodeType comp_type,
+                                                     const char *comp_name)
 {
   IdNode *id_node = add_id_node(id);
   ComponentNode *comp_node = id_node->add_component(comp_type, comp_name);
@@ -251,7 +251,7 @@ OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
                                                            NodeType comp_type,
                                                            const char *comp_name,
                                                            OpCode opcode,
-                                                           const DepsEvalOperationCb &op,
+                                                           const DepsEvalOpCb &op,
                                                            const char *name,
                                                            int name_tag)
 {
@@ -265,7 +265,7 @@ OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
 OpNode *DGraphNodeBuilder::ensure_op_node(ID *id,
                                                            NodeType comp_type,
                                                            OpCode opcode,
-                                                           const DepsEvalOperationCb &op,
+                                                           const DepsEvalOpCb &op,
                                                            const char *name,
                                                            int name_tag)
 {
@@ -303,24 +303,24 @@ OpNode *DGraphNodeBuilder::find_op_node(
   return find_op_node(id, comp_type, "", opcode, name, name_tag);
 }
 
-ID *DGraphNodeBuilder::get_cow_id(const ID *id_orig) const
+Id *DGraphNodeBuilder::get_cow_id(const ID *id_orig) const
 {
   return graph_->get_cow_id(id_orig);
 }
 
-ID *DGraphNodeBuilder::ensure_cow_id(ID *id_orig)
+Id *DGraphNodeBuilder::ensure_cow_id(Id *id_orig)
 {
   if (id_orig->tag & LIB_TAG_COPIED_ON_WRITE) {
     /* ID is already remapped to copy-on-write. */
     return id_orig;
   }
-  IDNode *id_node = add_id_node(id_orig);
+  IdNode *id_node = add_id_node(id_orig);
   return id_node->id_cow;
 }
 
 /* **** Build functions for entity nodes **** */
 
-void DepsgraphNodeBuilder::begin_build()
+void DGraphNodeBuilder::begin_build()
 {
   /* Store existing copy-on-write versions of datablock, so we can re-use
    * them for new ID nodes. */
