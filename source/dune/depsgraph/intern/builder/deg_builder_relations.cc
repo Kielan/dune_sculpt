@@ -3197,13 +3197,13 @@ void DepsgraphRelationBuilder::build_copy_on_write_relations(IDNode *id_node)
     }
     /* All entry operations of each component should wait for a proper
      * copy of ID. */
-    OperationNode *op_entry = comp_node->get_entry_operation();
+    OpNode *op_entry = comp_node->get_entry_operation();
     if (op_entry != nullptr) {
       Relation *rel = graph_->add_new_relation(op_cow, op_entry, "CoW Dependency");
       rel->flag |= rel_flag;
     }
     /* All dangling operations should also be executed after copy-on-write. */
-    for (OperationNode *op_node : comp_node->operations_map->values()) {
+    for (OpNode *op_node : comp_node->operations_map->values()) {
       if (op_node == op_entry) {
         continue;
       }
@@ -3217,7 +3217,7 @@ void DepsgraphRelationBuilder::build_copy_on_write_relations(IDNode *id_node)
           if (rel_current->from->type != NodeType::OPERATION) {
             continue;
           }
-          OperationNode *op_node_from = (OperationNode *)rel_current->from;
+          OpNode *op_node_from = (OperationNode *)rel_current->from;
           if (op_node_from->owner == op_node->owner) {
             has_same_comp_dependency = true;
             break;
@@ -3237,21 +3237,21 @@ void DepsgraphRelationBuilder::build_copy_on_write_relations(IDNode *id_node)
      * evaluation step needs geometry, it will have transitive dependency
      * to Mesh copy-on-write already. */
   }
-  /* TODO(sergey): This solves crash for now, but causes too many
+  /* TODO: This solves crash for now, but causes too many
    * updates potentially. */
   if (GS(id_orig->name) == ID_OB) {
     Object *object = (Object *)id_orig;
-    ID *object_data_id = (ID *)object->data;
+    Id *object_data_id = (Id *)object->data;
     if (object_data_id != nullptr) {
       if (deg_copy_on_write_is_needed(object_data_id)) {
-        OperationKey data_copy_on_write_key(
+        OpKey data_copy_on_write_key(
             object_data_id, NodeType::COPY_ON_WRITE, OperationCode::COPY_ON_WRITE);
         add_relation(
             data_copy_on_write_key, copy_on_write_key, "Eval Order", RELATION_FLAG_GODMODE);
       }
     }
     else {
-      BLI_assert(object->type == OB_EMPTY);
+      lib_assert(object->type == OB_EMPTY);
     }
   }
 
@@ -3260,13 +3260,13 @@ void DepsgraphRelationBuilder::build_copy_on_write_relations(IDNode *id_node)
    * See comment in  AnimationBackup:init_from_id(). */
 
   /* Copy-on-write of write will iterate over f-curves to store current values corresponding
-   * to their RNA path. This means that action must be copied prior to the ID's copy-on-write,
+   * to their api path. This means that action must be copied prior to the ID's copy-on-write,
    * otherwise depsgraph might try to access freed data. */
-  AnimData *animation_data = BKE_animdata_from_id(id_orig);
+  AnimData *animation_data = dune_animdata_from_id(id_orig);
   if (animation_data != nullptr) {
     if (animation_data->action != nullptr) {
-      OperationKey action_copy_on_write_key(
-          &animation_data->action->id, NodeType::COPY_ON_WRITE, OperationCode::COPY_ON_WRITE);
+      OpKey action_copy_on_write_key(
+          &animation_data->action->id, NodeType::COPY_ON_WRITE, OpCode::COPY_ON_WRITE);
       add_relation(action_copy_on_write_key,
                    copy_on_write_key,
                    "Eval Order",
@@ -3278,26 +3278,26 @@ void DepsgraphRelationBuilder::build_copy_on_write_relations(IDNode *id_node)
 
 /* **** ID traversal callbacks functions **** */
 
-void DepsgraphRelationBuilder::modifier_walk(void *user_data,
+void DGraphRelationBuilder::modifier_walk(void *user_data,
                                              struct Object * /*object*/,
                                              struct ID **idpoin,
                                              int /*cb_flag*/)
 {
   BuilderWalkUserData *data = (BuilderWalkUserData *)user_data;
-  ID *id = *idpoin;
+  Id *id = *idpoint;
   if (id == nullptr) {
     return;
   }
   data->builder->build_id(id);
 }
 
-void DepsgraphRelationBuilder::constraint_walk(bConstraint * /*con*/,
+void DGraphRelationBuilder::constraint_walk(bConstraint * /*con*/,
                                                ID **idpoin,
                                                bool /*is_reference*/,
                                                void *user_data)
 {
   BuilderWalkUserData *data = (BuilderWalkUserData *)user_data;
-  ID *id = *idpoin;
+  Id *id = *idpoint;
   if (id == nullptr) {
     return;
   }
