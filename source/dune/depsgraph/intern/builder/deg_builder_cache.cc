@@ -16,123 +16,123 @@ AnimatedPropID::AnimatedPropID() : data(nullptr), prop_api(nullptr)
 {
 }
 
-AnimatedPropertyID::AnimatedPropertyID(const PointerRNA *pointer_rna,
-                                       const PropertyRNA *property_rna)
-    : AnimatedPropertyID(*pointer_rna, property_rna)
+AnimatedPropId::AnimatedPropId(const ApiPtr *ptr_api,
+                               const ApiProp *prop_api)
+    : AnimatedPropId(*ptr_api, prop_api)
 {
 }
 
-AnimatedPropertyID::AnimatedPropertyID(const PointerRNA &pointer_rna,
-                                       const PropertyRNA *property_rna)
-    : data(pointer_rna.data), property_rna(property_rna)
+AnimatedPropId::AnimatedPropId(const ApiPtr &ptr_api,
+                               const ApiProp *prop_api)
+    : data(ptr_api.data), prop_api(prop_api)
 {
 }
 
-AnimatedPropertyID::AnimatedPropertyID(ID *id, StructRNA *type, const char *property_name)
+AnimatedPropId::AnimatedPropId(Id *id, ApiStruct *type, const char *prop_name)
     : data(id)
 {
-  property_rna = RNA_struct_type_find_property(type, property_name);
+  prop_api = api_struct_type_find_prop(type, prop_name);
 }
 
-AnimatedPropertyID::AnimatedPropertyID(ID * /*id*/,
-                                       StructRNA *type,
+AnimatedPropId::AnimatedPropId(Id * /*id*/,
+                                       ApiStruct *type,
                                        void *data,
-                                       const char *property_name)
+                                       const char *prop_name)
     : data(data)
 {
-  property_rna = RNA_struct_type_find_property(type, property_name);
+  property_api = api_struct_type_find_prop(type, prop_name);
 }
 
-bool operator==(const AnimatedPropertyID &a, const AnimatedPropertyID &b)
+bool op==(const AnimatedPropId &a, const AnimatedPropId &b)
 {
-  return a.data == b.data && a.property_rna == b.property_rna;
+  return a.data == b.data && a.prop_api == b.prop_api;
 }
 
-uint64_t AnimatedPropertyID::hash() const
+uint64_t AnimatedPropId::hash() const
 {
   uintptr_t ptr1 = (uintptr_t)data;
-  uintptr_t ptr2 = (uintptr_t)property_rna;
+  uintptr_t ptr2 = (uintptr_t)prop_api;
   return static_cast<uint64_t>(((ptr1 >> 4) * 33) ^ (ptr2 >> 4));
 }
 
 namespace {
 
-struct AnimatedPropertyCallbackData {
-  PointerRNA pointer_rna;
-  AnimatedPropertyStorage *animated_property_storage;
-  DepsgraphBuilderCache *builder_cache;
+struct AnimatedPropCbData {
+  ApiPtr ptr_api;
+  AnimatedPropStorage *animated_prop_storage;
+  DGraphBuilderCache *builder_cache;
 };
 
-void animated_property_cb(ID * /*id*/, FCurve *fcurve, void *data_v)
+void animated_prop_cb(Id * /*id*/, FCurve *fcurve, void *data_v)
 {
-  if (fcurve->rna_path == nullptr || fcurve->rna_path[0] == '\0') {
+  if (fcurve->api_path == nullptr || fcurve->api_path[0] == '\0') {
     return;
   }
-  AnimatedPropertyCallbackData *data = static_cast<AnimatedPropertyCallbackData *>(data_v);
+  AnimatedPropCbData *data = static_cast<AnimatedPropCbData *>(data_v);
   /* Resolve property. */
-  PointerRNA pointer_rna;
-  PropertyRNA *property_rna = nullptr;
-  if (!RNA_path_resolve_property(
-          &data->pointer_rna, fcurve->rna_path, &pointer_rna, &property_rna)) {
+  ApiPtr ptr_api;
+  ApiProp *prop_api = nullptr;
+  if (!api_path_resolve_prop(
+          &data->ptr_api, fcurve->api_path, &ptr_api, &prop_api)) {
     return;
   }
   /* Get storage for the ID.
    * This is needed to deal with cases when nested datablock is animated by its parent. */
-  AnimatedPropertyStorage *animated_property_storage = data->animated_property_storage;
-  if (pointer_rna.owner_id != data->pointer_rna.owner_id) {
-    animated_property_storage = data->builder_cache->ensureAnimatedPropertyStorage(
-        pointer_rna.owner_id);
+  AnimatedPropStorage *animated_property_storage = data->animated_prop_storage;
+  if (ptr_api.owner_id != data->ptr_api.owner_id) {
+    animated_prop_storage = data->builder_cache->ensureAnimatedPropStorage(
+        ptr_api.owner_id);
   }
   /* Set the property as animated. */
-  animated_property_storage->tagPropertyAsAnimated(&pointer_rna, property_rna);
+  animated_prop_storage->tagPropAsAnimated(&ptr_api, prop_api);
 }
 
 }  // namespace
 
-AnimatedPropertyStorage::AnimatedPropertyStorage() : is_fully_initialized(false)
+AnimatedPropStorage::AnimatedPropStorage() : is_fully_initialized(false)
 {
 }
 
-void AnimatedPropertyStorage::initializeFromID(DepsgraphBuilderCache *builder_cache, ID *id)
+void AnimatedPropStorage::initializeFromId(DGraphBuilderCache *builder_cache, Id *id)
 {
-  AnimatedPropertyCallbackData data;
-  RNA_id_pointer_create(id, &data.pointer_rna);
-  data.animated_property_storage = this;
+  AnimatedPropCbData data;
+  api_id_ptr_create(id, &data.ptr_api);
+  data.animated_prop_storage = this;
   data.builder_cache = builder_cache;
-  BKE_fcurves_id_cb(id, animated_property_cb, &data);
+  dune_fcurves_id_cb(id, animated_prop_cb, &data);
 }
 
-void AnimatedPropertyStorage::tagPropertyAsAnimated(const AnimatedPropertyID &property_id)
+void AnimatedPropStorage::tagPropAsAnimated(const AnimatedPropId &prop_id)
 {
-  animated_objects_set.add(property_id.data);
-  animated_properties_set.add(property_id);
+  animated_objects_set.add(prop_id.data);
+  animated_props_set.add(prop_id);
 }
 
-void AnimatedPropertyStorage::tagPropertyAsAnimated(const PointerRNA *pointer_rna,
-                                                    const PropertyRNA *property_rna)
+void AnimatedPropStorage::tagPropAsAnimated(const ApiPtr *ptr_api,
+                                                    const ApiProp *prop_api)
 {
-  tagPropertyAsAnimated(AnimatedPropertyID(pointer_rna, property_rna));
+  tagPropAsAnimated(AnimatedPropId(ptr_api, prop_api));
 }
 
-bool AnimatedPropertyStorage::isPropertyAnimated(const AnimatedPropertyID &property_id)
+bool AnimatedPropStorage::isPropAnimated(const AnimatedPropId &prop_id)
 {
-  return animated_properties_set.contains(property_id);
+  return animated_props_set.contains(prop_id);
 }
 
-bool AnimatedPropertyStorage::isPropertyAnimated(const PointerRNA *pointer_rna,
-                                                 const PropertyRNA *property_rna)
+bool AnimatedPropStorage::isPropAnimated(const ApiPtr *ptr_api,
+                                         const ApiProp *prop_api)
 {
-  return isPropertyAnimated(AnimatedPropertyID(pointer_rna, property_rna));
+  return isPropAnimated(AnimatedPropId(ptr_api, prop_api));
 }
 
-bool AnimatedPropertyStorage::isAnyPropertyAnimated(const ApiPtr *ptr_api)
+bool AnimatedPropStorage::isAnyPropAnimated(const ApiPtr *ptr_api)
 {
   return animated_objects_set.contains(ptr_api->data);
 }
 
 /* Builder cache itself. */
 
-DepsgraphBuilderCache::~DepsgraphBuilderCache()
+DGraphBuilderCache::~DGraphBuilderCache()
 {
   for (AnimatedPropStorage *animated_prop_storage :
        animated_prop_storage_map_.values()) {
@@ -140,18 +140,18 @@ DepsgraphBuilderCache::~DepsgraphBuilderCache()
   }
 }
 
-AnimatedPropStorage *DepsgraphBuilderCache::ensureAnimatedPropStorage(ID *id)
+AnimatedPropStorage *DGraphBuilderCache::ensureAnimatedPropStorage(Id *id)
 {
   return animated_prop_storage_map_.lookup_or_add_cb(
       id, []() { return new AnimatedPropStorage(); });
 }
 
-AnimatedPropStorage *DepsgraphBuilderCache::ensureInitializedAnimatedPropStorage(ID *id)
+AnimatedPropStorage *DGraphBuilderCache::ensureInitializedAnimatedPropStorage(Id *id)
 {
-  AnimatedPropStorage *animated_property_storage = ensureAnimatedPropStorage(id);
+  AnimatedPropStorage *animated_prop_storage = ensureAnimatedPropStorage(id);
   if (!animated_prop_storage->is_fully_initialized) {
-    animated_property_storage->initializeFromID(this, id);
-    animated_property_storage->is_fully_initialized = true;
+    animated_prop_storage->initializeFromId(this, id);
+    animated_prop_storage->is_fully_initialized = true;
   }
   return animated_prop_storage;
 }
