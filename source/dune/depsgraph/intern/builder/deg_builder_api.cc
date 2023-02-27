@@ -107,7 +107,7 @@ Node *ApiNodeQuery::find_node(const ApiPtr *ptr,
   if (!node_id.is_valid()) {
     return nullptr;
   }
-  IDNode *id_node = dgraph_->find_id_node(node_id.id);
+  IdNode *id_node = dgraph_->find_id_node(node_id.id);
   if (id_node == nullptr) {
     return nullptr;
   }
@@ -119,7 +119,7 @@ Node *ApiNodeQuery::find_node(const ApiPtr *ptr,
   if (node_id.op_code == OpCode::OPERATION) {
     return comp_node;
   }
-  return comp_node->find_operation(node_id.op_code,
+  return comp_node->find_op(node_id.op_code,
                                    node_id.op_name,
                                    node_id.op_name_tag);
 }
@@ -166,11 +166,11 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
       node_id.component_name = pchan->name;
     }
     else {
-      node_id.type = NodeType::PARAMETERS;
+      node_id.type = NodeType::PARAMS;
     }
-    node_id.op_code = OpCode::ID_PROPERTY;
+    node_id.op_code = OpCode::ID_PROP;
     node_id.op_name = api_prop_id(
-        reinterpret_cast<const PropAPI *>(prop));
+        reinterpret_cast<const PropApi *>(prop));
     return node_id;
   }
   if (ptr->type == &Api_PoseBone) {
@@ -266,25 +266,25 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
             contains(prop_id, "show_render"))) {
     node_id.type = NodeType::GEOMETRY;
     node_id.op_code = OpCode::VISIBILITY;
-    return node_identifier;
+    return node_id;
   }
-  else if (api_struct_is_a(ptr->type, &RNA_Mesh) || RNA_struct_is_a(ptr->type, &RNA_Modifier) ||
-           api_struct_is_a(ptr->type, &RNA_GpencilModifier) ||
-           api_struct_is_a(ptr->type, &RNA_Spline) || RNA_struct_is_a(ptr->type, &RNA_TextBox) ||
-           api_struct_is_a(ptr->type, &RNA_GPencilLayer) ||
-           api_struct_is_a(ptr->type, &RNA_LatticePoint) ||
-           api_struct_is_a(ptr->type, &RNA_MeshUVLoop) ||
-           api_struct_is_a(ptr->type, &RNA_MeshLoopColor) ||
-           api_struct_is_a(ptr->type, &RNA_VertexGroupElement) ||
-           api_struct_is_a(ptr->type, &RNA_ShaderFx)) {
+  else if (api_struct_is_a(ptr->type, &Api_Mesh) || api_struct_is_a(ptr->type, &Api_Modifier) ||
+           api_struct_is_a(ptr->type, &Api_DpenModifier) ||
+           api_struct_is_a(ptr->type, &Api_Spline) || api_struct_is_a(ptr->type, &Api_TextBox) ||
+           api_struct_is_a(ptr->type, &Api_DPenLayer) ||
+           api_struct_is_a(ptr->type, &Api_LatticePoint) ||
+           api_struct_is_a(ptr->type, &Api_MeshUVLoop) ||
+           api_struct_is_a(ptr->type, &Api_MeshLoopColor) ||
+           api_struct_is_a(ptr->type, &Api_VertexGroupElement) ||
+           api_struct_is_a(ptr->type, &Api_ShaderFx)) {
     /* When modifier is used as FROM operation this is likely referencing to
      * the property (for example, modifier's influence).
      * But when it's used as TO operation, this is geometry component. */
     switch (source) {
-      case ApiPointerSource::ENTRY:
+      case ApiPtrSource::ENTRY:
         node_id.type = NodeType::GEOMETRY;
         break;
-      case ApiPointerSource::EXIT:
+      case ApiPtrSource::EXIT:
         node_id.type = NodeType::PARAMS;
         node_id.op_code = OpCode::PARAMS_EVAL;
         break;
@@ -295,7 +295,7 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
     /* Transforms props? */
     if (prop != nullptr) {
       /* TODO: How to optimize this? */
-      if (contains(prop_id, "location") || contains(prop_identifier, "matrix_basis") ||
+      if (contains(prop_id, "location") || contains(prop_id, "matrix_basis") ||
           contains(prop_id, "matrix_channel") ||
           contains(prop_id, "matrix_inverse") ||
           contains(prop_id, "matrix_local") ||
@@ -304,7 +304,7 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
           contains(prop_id, "rotation_axis_angle") ||
           contains(prop_id, "rotation_euler") ||
           contains(prop_id, "rotation_mode") ||
-          contains(prop_id, "rotation_quaternion") || contains(prop_identifier, "scale") ||
+          contains(prop_id, "rotation_quaternion") || contains(prop_id, "scale") ||
           contains(prop_id, "delta_location") ||
           contains(prop_id, "delta_rotation_euler") ||
           contains(prop_id, "delta_rotation_quaternion") ||
@@ -312,89 +312,89 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
         node_id.type = NodeType::TRANSFORM;
         return node_id;
       }
-      if (contains(prop_identifier, "data")) {
+      if (contains(prop_id, "data")) {
         /* We access object.data, most likely a geometry.
          * Might be a bone tho. */
-        node_identifier.type = NodeType::GEOMETRY;
-        return node_identifier;
+        node_id.type = NodeType::GEOMETRY;
+        return node_id;
       }
-      if (STR_ELEM(prop_identifier, "hide_viewport", "hide_render")) {
-        node_identifier.type = NodeType::OBJECT_FROM_LAYER;
-        return node_identifier;
+      if (STR_ELEM(prop_id, "hide_viewport", "hide_render")) {
+        node_id.type = NodeType::OBJECT_FROM_LAYER;
+        return node_id;
       }
-      if (STREQ(prop_identifier, "dimensions")) {
-        node_identifier.type = NodeType::PARAMETERS;
-        node_identifier.operation_code = OperationCode::DIMENSIONS;
-        return node_identifier;
+      if (STREQ(prop_id, "dimensions")) {
+        node_id.type = NodeType::PARAMS;
+        node_id.op_code = OpCode::DIMENSIONS;
+        return node_id;
       }
     }
   }
-  else if (ptr->type == &RNA_ShapeKey) {
+  else if (ptr->type == &Api_ShapeKey) {
     KeyBlock *key_block = static_cast<KeyBlock *>(ptr->data);
-    node_identifier.id = ptr->owner_id;
-    node_identifier.type = NodeType::PARAMETERS;
-    node_identifier.operation_code = OperationCode::PARAMETERS_EVAL;
-    node_identifier.operation_name = key_block->name;
-    return node_identifier;
+    node_id.id = ptr->owner_id;
+    node_id.type = NodeType::PARAMS;
+    node_id.op_code = OpCode::PARAMS_EVAL;
+    node_id.op_name = key_block->name;
+    return node_id;
   }
-  else if (ptr->type == &RNA_Key) {
-    node_identifier.id = ptr->owner_id;
-    node_identifier.type = NodeType::GEOMETRY;
-    return node_identifier;
+  else if (ptr->type == &Api_Key) {
+    node_id.id = ptr->owner_id;
+    node_id.type = NodeType::GEOMETRY;
+    return node_id;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_Sequence)) {
+  else if (api_struct_is_a(ptr->type, &Api_Sequence)) {
     /* Sequencer strip */
-    node_identifier.type = NodeType::SEQUENCER;
-    return node_identifier;
+    node_id.type = NodeType::SEQUENCER;
+    return node_id;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_NodeSocket)) {
-    node_identifier.type = NodeType::NTREE_OUTPUT;
-    return node_identifier;
+  else if (api_struct_is_a(ptr->type, &Api_NodeSocket)) {
+    node_id.type = NodeType::NTREE_OUTPUT;
+    return node_id;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_ShaderNode)) {
-    node_identifier.type = NodeType::SHADING;
-    return node_identifier;
+  else if (api_struct_is_a(ptr->type, &Api_ShaderNode)) {
+    node_id.type = NodeType::SHADING;
+    return node_id;
   }
-  else if (ELEM(ptr->type, &RNA_Curve, &RNA_TextCurve)) {
-    node_identifier.id = ptr->owner_id;
-    node_identifier.type = NodeType::GEOMETRY;
-    return node_identifier;
+  else if (ELEM(ptr->type, &Api_Curve, &Api_TextCurve)) {
+    node_id.id = ptr->owner_id;
+    node_id.type = NodeType::GEOMETRY;
+    return node_id;
   }
-  else if (ELEM(ptr->type, &RNA_BezierSplinePoint, &RNA_SplinePoint)) {
-    node_identifier.id = ptr->owner_id;
-    node_identifier.type = NodeType::GEOMETRY;
-    return node_identifier;
+  else if (ELEM(ptr->type, &Api_BezierSplinePoint, &Api_SplinePoint)) {
+    node_id.id = ptr->owner_id;
+    node_id.type = NodeType::GEOMETRY;
+    return node_id;
   }
-  else if (RNA_struct_is_a(ptr->type, &RNA_ImageUser)) {
-    if (GS(node_identifier.id->name) == ID_NT) {
-      node_identifier.type = NodeType::IMAGE_ANIMATION;
-      node_identifier.operation_code = OperationCode::IMAGE_ANIMATION;
-      return node_identifier;
+  else if (api_struct_is_a(ptr->type, &Api_ImageUser)) {
+    if (GS(node_id.id->name) == ID_NT) {
+      node_id.type = NodeType::IMAGE_ANIMATION;
+      node_id.op_code = OpCode::IMAGE_ANIMATION;
+      return node_id;
     }
   }
-  else if (ELEM(ptr->type, &RNA_MeshVertex, &RNA_MeshEdge, &RNA_MeshLoop, &RNA_MeshPolygon)) {
-    node_identifier.type = NodeType::GEOMETRY;
-    return node_identifier;
+  else if (ELEM(ptr->type, &Api_MeshVertex, &Api_MeshEdge, &Api_MeshLoop, &Api_MeshPolygon)) {
+    node_id.type = NodeType::GEOMETRY;
+    return node_id;
   }
   if (prop != nullptr) {
     /* All unknown data effectively falls under "parameter evaluation". */
-    node_identifier.type = NodeType::PARAMETERS;
-    node_identifier.operation_code = OperationCode::PARAMETERS_EVAL;
-    node_identifier.operation_name = "";
-    node_identifier.operation_name_tag = -1;
-    return node_identifier;
+    node_id.type = NodeType::PARAMS;
+    node_id.op_code = OpCode::PARAMS_EVAL;
+    node_id.op_name = "";
+    node_id.op_name_tag = -1;
+    return node_id;
   }
-  return node_identifier;
+  return node_id;
 }
 
-ApiNodeQueryIDData *apiNodeQuery::ensure_id_data(const ID *id)
+ApiNodeQueryIdData *apiNodeQuery::ensure_id_data(const Id *id)
 {
-  unique_ptr<ApiNodeQueryIDData> &id_data = id_data_map_.lookup_or_add_cb(
-      id, [&]() { return std::make_unique<ApiNodeQueryIDData>(id); });
+  unique_ptr<ApiNodeQueryIdData> &id_data = id_data_map_.lookup_or_add_cb(
+      id, [&]() { return std::make_unique<ApiNodeQueryIdData>(id); });
   return id_data.get();
 }
 
-bool api_prop_affects_parameters_node(const ApiPointerRNA *ptr, const PropertyRNA *prop)
+bool api_prop_affects_params_node(const ApiPtr *ptr, const ApiProp *prop)
 {
   return prop != nullptr && api_prop_is_idprop(prop) &&
          /* ID properties in the geometry nodes modifier don't affect that parameters node.
