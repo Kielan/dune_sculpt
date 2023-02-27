@@ -3,21 +3,21 @@
 #include "intern/node/deg_node.h"
 #include "intern/node/deg_node_operation.h"
 
-struct ID;
-struct PointerRNA;
-struct PropertyRNA;
+struct Id;
+struct ApiPtr;
+struct ApiProp;
 
-namespace blender::deg {
+namespace dune::deg {
 
-struct Depsgraph;
+struct DGraph;
 struct Node;
-class RNANodeQueryIDData;
-class DepsgraphBuilder;
+class ApiNodeQueryIdData;
+class DGraphBuilder;
 
 /* For queries which gives operation node or key defines whether we are
  * interested in a result of the given property or whether we are linking some
  * dependency to that property. */
-enum class RNAPointerSource {
+enum class ApiPtrSource {
   /* Query will return pointer to an entry operation of component which is
    * responsible for evaluation of the given property. */
   ENTRY,
@@ -30,60 +30,60 @@ enum class RNAPointerSource {
 
 /* A helper structure which wraps all fields needed to find a node inside of
  * the dependency graph. */
-class RNANodeIdentifier {
+class ApiNodeId {
  public:
-  RNANodeIdentifier();
+  ApiNodeId();
 
   /* Check whether this identifier is valid and usable. */
   bool is_valid() const;
 
-  ID *id;
+  Id *id;
   NodeType type;
   const char *component_name;
-  OperationCode operation_code;
-  const char *operation_name;
-  int operation_name_tag;
+  OpCode op_code;
+  const char *op_name;
+  int op_name_tag;
 };
 
 /* Helper class which performs optimized lookups of a node within a given
- * dependency graph which satisfies given RNA pointer or RAN path. */
-class RNANodeQuery {
+ * dependency graph which satisfies given Api pointer or RAN path. */
+class ApiNodeQuery {
  public:
-  RNANodeQuery(Depsgraph *depsgraph, DepsgraphBuilder *builder);
-  ~RNANodeQuery();
+  ApiNodeQuery(DGraph *dgraph, DGraphBuilder *builder);
+  ~ApiNodeQuery();
 
-  Node *find_node(const PointerRNA *ptr, const PropertyRNA *prop, RNAPointerSource source);
+  Node *find_node(const ApiPtr *ptr, const ApiProp *prop, ApiPtrSource source);
 
  protected:
-  Depsgraph *depsgraph_;
-  DepsgraphBuilder *builder_;
+  DGraph *dgraph_;
+  DGraphBuilder *builder_;
 
-  /* Indexed by an ID, returns RNANodeQueryIDData associated with that ID. */
-  Map<const ID *, unique_ptr<RNANodeQueryIDData>> id_data_map_;
+  /* Indexed by an Id, returns ApiNodeQueryIdData associated with that Id. */
+  Map<const Id *, unique_ptr<ApiNodeQueryIdData>> id_data_map_;
 
   /* Construct identifier of the node which corresponds given configuration
-   * of RNA property. */
-  RNANodeIdentifier construct_node_identifier(const PointerRNA *ptr,
-                                              const PropertyRNA *prop,
-                                              RNAPointerSource source);
+   * of Api property. */
+  ApiNodeId construct_node_id(const ApiPtr *ptr,
+                              const ApiProp *prop,
+                              ApiPtrSource source);
 
-  /* Make sure ID data exists for the given ID, and returns it. */
-  RNANodeQueryIDData *ensure_id_data(const ID *id);
+  /* Make sure Id data exists for the given Id, and returns it. */
+  ApiNodeQueryIdData *ensure_id_data(const Id *id);
 
-  /* Check whether prop_identifier contains rna_path_component.
+  /* Check whether prop_id contains api_path_component.
    *
    * This checks more than a sub-string:
    *
-   * prop_identifier           contains(prop_identifier, "location")
+   * prop_id.                  contains(prop_id, "location")
    * ------------------------  -------------------------------------
    * location                  true
    * ["test_location"]         false
    * pose["bone"].location     true
    * pose["bone"].location.x   true
    */
-  static bool contains(const char *prop_identifier, const char *rna_path_component);
+  static bool contains(const char *prop_id, const char *api_path_component);
 };
 
-bool api_prop_affects_parameters_node(const ApiPtr *ptr, const ApiProp *prop);
+bool api_prop_affects_params_node(const ApiPtr *ptr, const ApiProp *prop);
 
 }  // namespace dune::deg
