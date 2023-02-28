@@ -31,7 +31,7 @@ struct FCurve;
 struct FreestyleLineSet;
 struct FreestyleLineStyle;
 struct Id;
-struct IDProp;
+struct IdProp;
 struct Image;
 struct Key;
 struct LayerCollection;
@@ -153,19 +153,19 @@ class DGraphRelationBuilder : public DGraphBuilder {
                                              ComponentKey &adt_key,
                                              OpNode *op_from,
                                              ListBase *curves);
-  virtual void build_animdata_nlastrip_targets(ID *id,
+  virtual void build_animdata_nlastrip_targets(Id *id,
                                                ComponentKey &adt_key,
-                                               OperationNode *operation_from,
+                                               OpNode *op_from,
                                                ListBase *strips);
-  virtual void build_animdata_drivers(ID *id);
-  virtual void build_animdata_force(ID *id);
-  virtual void build_animation_images(ID *id);
-  virtual void build_action(bAction *action);
-  virtual void build_driver(ID *id, FCurve *fcurve);
-  virtual void build_driver_data(ID *id, FCurve *fcurve);
-  virtual void build_driver_variables(ID *id, FCurve *fcurve);
-  virtual void build_driver_id_property(ID *id, const char *rna_path);
-  virtual void build_parameters(ID *id);
+  virtual void build_animdata_drivers(Id *id);
+  virtual void build_animdata_force(Id *id);
+  virtual void build_animation_images(Id *id);
+  virtual void build_action(DAction *action);
+  virtual void build_driver(Id *id, FCurve *fcurve);
+  virtual void build_driver_data(Id *id, FCurve *fcurve);
+  virtual void build_driver_variables(Id *id, FCurve *fcurve);
+  virtual void build_driver_id_prop(Id *id, const char *api_path);
+  virtual void build_params(Id *id);
   virtual void build_dimensions(Object *object);
   virtual void build_world(World *world);
   virtual void build_rigidbody(Scene *scene);
@@ -175,25 +175,25 @@ class DGraphRelationBuilder : public DGraphBuilder {
                                                           ParticleSystem *psys,
                                                           Object *draw_object);
   virtual void build_ik_pose(Object *object,
-                             bPoseChannel *pchan,
-                             bConstraint *con,
+                             DPoseChannel *pchan,
+                             DConstraint *con,
                              RootPChanMap *root_map);
   virtual void build_splineik_pose(Object *object,
-                                   bPoseChannel *pchan,
-                                   bConstraint *con,
+                                   DPoseChannel *pchan,
+                                   DConstraint *con,
                                    RootPChanMap *root_map);
   virtual void build_inter_ik_chains(Object *object,
-                                     const OperationKey &solver_key,
-                                     const bPoseChannel *rootchan,
+                                     const OpKey &solver_key,
+                                     const DPoseChannel *rootchan,
                                      const RootPChanMap *root_map);
   virtual void build_rig(Object *object);
   virtual void build_shapekeys(Key *key);
-  virtual void build_armature(bArmature *armature);
+  virtual void build_armature(DArmature *armature);
   virtual void build_armature_bones(ListBase *bones);
   virtual void build_camera(Camera *camera);
   virtual void build_light(Light *lamp);
-  virtual void build_nodetree(bNodeTree *ntree);
-  virtual void build_nodetree_socket(bNodeSocket *socket);
+  virtual void build_nodetree(DNodeTree *ntree);
+  virtual void build_nodetree_socket(DNodeSocket *socket);
   virtual void build_material(Material *ma);
   virtual void build_materials(Material **materials, int num_materials);
   virtual void build_freestyle_lineset(FreestyleLineSet *fls);
@@ -205,22 +205,22 @@ class DGraphRelationBuilder : public DGraphBuilder {
   virtual void build_movieclip(MovieClip *clip);
   virtual void build_lightprobe(LightProbe *probe);
   virtual void build_speaker(Speaker *speaker);
-  virtual void build_sound(bSound *sound);
+  virtual void build_sound(DSound *sound);
   virtual void build_simulation(Simulation *simulation);
   virtual void build_scene_sequencer(Scene *scene);
   virtual void build_scene_audio(Scene *scene);
   virtual void build_scene_speakers(Scene *scene, ViewLayer *view_layer);
   virtual void build_vfont(VFont *vfont);
 
-  virtual void build_nested_datablock(ID *owner, ID *id, bool flush_cow_changes);
-  virtual void build_nested_nodetree(ID *owner, bNodeTree *ntree);
-  virtual void build_nested_shapekey(ID *owner, Key *key);
+  virtual void build_nested_datablock(Id *owner, Id *id, bool flush_cow_changes);
+  virtual void build_nested_nodetree(Id *owner, DNodeTree *ntree);
+  virtual void build_nested_shapekey(Id *owner, Key *key);
 
-  void add_particle_collision_relations(const OperationKey &key,
+  void add_particle_collision_relations(const OpKey &key,
                                         Object *object,
                                         Collection *collection,
                                         const char *name);
-  void add_particle_forcefield_relations(const OperationKey &key,
+  void add_particle_forcefield_relations(const OpKey &key,
                                          Object *object,
                                          ParticleSystem *psys,
                                          EffectorWeights *eff,
@@ -228,22 +228,22 @@ class DGraphRelationBuilder : public DGraphBuilder {
                                          const char *name);
 
   virtual void build_copy_on_write_relations();
-  virtual void build_copy_on_write_relations(IDNode *id_node);
+  virtual void build_copy_on_write_relations(IdNode *id_node);
   virtual void build_driver_relations();
-  virtual void build_driver_relations(IDNode *id_node);
+  virtual void build_driver_relations(IdNode *id_node);
 
-  template<typename KeyType> OperationNode *find_operation_node(const KeyType &key);
+  template<typename KeyType> OpNode *find_op_node(const KeyType &key);
 
-  Depsgraph *getGraph();
+  DGraph *getGraph();
 
  protected:
   TimeSourceNode *get_node(const TimeSourceKey &key) const;
   ComponentNode *get_node(const ComponentKey &key) const;
-  OperationNode *get_node(const OperationKey &key) const;
-  Node *get_node(const RNAPathKey &key);
+  OpNode *get_node(const OpKey &key) const;
+  Node *get_node(const ApiPathKey &key);
 
-  OperationNode *find_node(const OperationKey &key) const;
-  bool has_node(const OperationKey &key) const;
+  OpNode *find_node(const OpKey &key) const;
+  bool has_node(const OpKey &key) const;
 
   Relation *add_time_relation(TimeSourceNode *timesrc,
                               Node *node_to,
@@ -254,15 +254,15 @@ class DGraphRelationBuilder : public DGraphBuilder {
    * For the more detailed explanation see comment for `NodeType::VISIBILITY`. */
   void add_visibility_relation(ID *id_from, ID *id_to);
 
-  Relation *add_operation_relation(OperationNode *node_from,
-                                   OperationNode *node_to,
-                                   const char *description,
-                                   int flags = 0);
+  Relation *add_op_relation(OpNode *node_from,
+                            OpNode *node_to,
+                            const char *description,
+                            int flags = 0);
 
   template<typename KeyType>
   DepsNodeHandle create_node_handle(const KeyType &key, const char *default_name = "");
 
-  /* TODO(sergey): All those is_same* functions are to be generalized. */
+  /* TODO: All those is_same* functions are to be generalized. */
 
   /* Check whether two keys corresponds to the same bone from same armature.
    *
@@ -279,38 +279,38 @@ class DGraphRelationBuilder : public DGraphBuilder {
 
  private:
   struct BuilderWalkUserData {
-    DepsgraphRelationBuilder *builder;
+    DGraphRelationBuilder *builder;
   };
 
   static void modifier_walk(void *user_data,
                             struct Object *object,
-                            struct ID **idpoin,
+                            struct Id **idpoint,
                             int cb_flag);
 
-  static void constraint_walk(bConstraint *con, ID **idpoin, bool is_reference, void *user_data);
+  static void constraint_walk(DConstraint *con, Id **idpoint, bool is_ref, void *user_data);
 
   /* State which demotes currently built entities. */
   Scene *scene_;
 
   BuilderMap built_map_;
-  RNANodeQuery rna_node_query_;
+  ApiNodeQuery api_node_query_;
   BuilderStack stack_;
 };
 
 struct DepsNodeHandle {
-  DepsNodeHandle(DepsgraphRelationBuilder *builder,
-                 OperationNode *node,
+  DepsNodeHandle(DGraphRelationBuilder *builder,
+                 OpNode *node,
                  const char *default_name = "")
       : builder(builder), node(node), default_name(default_name)
   {
     lib_assert(node != nullptr);
   }
 
-  DepsgraphRelationBuilder *builder;
+  DGraphRelationBuilder *builder;
   OpNode *node;
   const char *default_name;
 };
 
 }  // namespace dune::deg
 
-#include "intern/builder/deg_builder_relations_impl.h"
+#include "intern/builder/dgraph_builder_relations_impl.h"
