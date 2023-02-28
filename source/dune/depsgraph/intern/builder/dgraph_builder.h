@@ -1,7 +1,7 @@
 #pragma once
 
 struct Base;
-struct ID;
+struct Id;
 struct Main;
 struct Object;
 struct DPoseChannel;
@@ -9,12 +9,12 @@ struct DPoseChannel;
 namespace dune {
 namespace deg {
 
-struct Depsgraph;
-class DepsgraphBuilderCache;
+struct DGraph;
+class DGraphBuilderCache;
 
-class DepsgraphBuilder {
+class DGraphBuilder {
  public:
-  virtual ~DepsgraphBuilder() = default;
+  virtual ~DGraphBuilder() = default;
 
   virtual bool need_pull_base_into_graph(Base *base);
 
@@ -24,17 +24,17 @@ class DepsgraphBuilder {
 
  protected:
   /* NOTE: The builder does NOT take ownership over any of those resources. */
-  DepsgraphBuilder(Main *dmain, Depsgraph *graph, DepsgraphBuilderCache *cache);
+  DGraphBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache);
 
   /* State which never changes, same for the whole builder time. */
   Main *dmain_;
-  Depsgraph *graph_;
-  DepsgraphBuilderCache *cache_;
+  DGraph *graph_;
+  DGraphBuilderCache *cache_;
 };
 
-bool deg_check_id_in_depsgraph(const Depsgraph *graph, ID *id_orig);
-bool deg_check_base_in_depsgraph(const Depsgraph *graph, Base *base);
-void deg_graph_build_finalize(Main *dmain, Depsgraph *graph);
+bool dgraph_check_id_in_dgraph(const DGraph *graph, Id *id_orig);
+bool dgraph_check_base_in_dgraph(const DGraph *graph, Base *base);
+void dgraph_build_finalize(Main *dmain, DGraph *graph);
 
 }  // namespace deg
 }  // namespace dune
