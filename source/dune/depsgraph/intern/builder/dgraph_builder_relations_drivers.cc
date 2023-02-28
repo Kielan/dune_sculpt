@@ -68,10 +68,10 @@ bool DriverDescriptor::is_same_array_as(const DriverDescriptor &other) const
   return api_suffix == other.api_suffix;
 }
 
-OpKey DriverDescriptor::depsgraph_key() const
+OpKey DriverDescriptor::dgraph_key() const
 {
   return OpKey(id_ptr_->owner_id,
-                      NodeType::PARAMETERS,
+                      NodeType::PARAMS,
                       OpCode::DRIVER,
                       fcu_->api_path,
                       fcu_->array_index);
