@@ -126,16 +126,16 @@ static bool is_reachable(const Node *const from, const Node *const to)
   return false;
 }
 
-/* **** DepsgraphRelationBuilder functions **** */
+/* **** DGraphRelationBuilder functions **** */
 
-void DepsgraphRelationBuilder::build_driver_relations()
+void DGraphRelationBuilder::build_driver_relations()
 {
-  for (IDNode *id_node : graph_->id_nodes) {
+  for (IdNode *id_node : graph_->id_nodes) {
     build_driver_relations(id_node);
   }
 }
 
-void DepsgraphRelationBuilder::build_driver_relations(IDNode *id_node)
+void DGraphRelationBuilder::build_driver_relations(IdNode *id_node)
 {
   /* Add relations between drivers that write to the same datablock.
    *
@@ -147,13 +147,13 @@ void DepsgraphRelationBuilder::build_driver_relations(IDNode *id_node)
    *   value will write the entire int containing the bit, in a non-thread-safe
    *   way.
    */
-  ID *id_orig = id_node->id_orig;
+  Id *id_orig = id_node->id_orig;
   AnimData *adt = dune_animdata_from_id(id_orig);
   if (adt == nullptr) {
     return;
   }
 
-  /* Mapping from RNA prefix -> set of driver descriptors: */
+  /* Mapping from api prefix -> set of driver descriptors: */
   Map<string, Vector<DriverDescriptor>> driver_groups;
 
   ApiPtr id_ptr;
@@ -169,7 +169,7 @@ void DepsgraphRelationBuilder::build_driver_relations(IDNode *id_node)
       continue;
     }
 
-    driver_groups.lookup_or_add_default_as(driver_desc.rna_prefix).append(driver_desc);
+    driver_groups.lookup_or_add_default_as(driver_desc.api_prefix).append(driver_desc);
   }
 
   for (Span<DriverDescriptor> prefix_group : driver_groups.values()) {
@@ -182,15 +182,15 @@ void DepsgraphRelationBuilder::build_driver_relations(IDNode *id_node)
     }
     for (int from_index = 0; from_index < num_drivers; ++from_index) {
       const DriverDescriptor &driver_from = prefix_group[from_index];
-      Node *op_from = get_node(driver_from.depsgraph_key());
+      Node *op_from = get_node(driver_from.dgraph_key());
 
       /* Start by trying the next node in the group. */
       for (int to_offset = 1; to_offset < num_drivers; ++to_offset) {
         const int to_index = (from_index + to_offset) % num_drivers;
         const DriverDescriptor &driver_to = prefix_group[to_index];
-        Node *op_to = get_node(driver_to.depsgraph_key());
+        Node *op_to = get_node(driver_to.dgraph_key());
 
-        /* Duplicate drivers can exist (see #78615), but cannot be distinguished by OperationKey
+        /* Duplicate drivers can exist (see #78615), but cannot be distinguished by OpKey
          * and thus have the same depsgraph node. Relations between those drivers should not be
          * created. This not something that is expected to happen (both the UI and the Python API
          * prevent duplicate drivers), it did happen in a file and it is easy to deal with here. */
@@ -220,11 +220,11 @@ void DepsgraphRelationBuilder::build_driver_relations(IDNode *id_node)
         }
 
         add_op_relation(
-            op_from->get_exit_operation(), op_to->get_entry_operation(), "Driver Serialization");
+            op_from->get_exit_op(), op_to->get_entry_op(), "Driver Serialization");
         break;
       }
     }
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
