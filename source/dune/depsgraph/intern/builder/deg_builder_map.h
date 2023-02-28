@@ -2,7 +2,7 @@
 
 #include "intern/depsgraph_type.h"
 
-struct ID;
+struct Id;
 
 namespace dune {
 namespace deg {
@@ -11,7 +11,7 @@ class BuilderMap {
  public:
   enum {
     TAG_ANIMATION = (1 << 0),
-    TAG_PARAMETERS = (1 << 1),
+    TAG_PARAMS = (1 << 1),
     TAG_TRANSFORM = (1 << 2),
     TAG_GEOMETRY = (1 << 3),
 
@@ -20,19 +20,19 @@ class BuilderMap {
     TAG_SCENE_AUDIO = (1 << 6),
 
     /* All ID components has been built. */
-    TAG_COMPLETE = (TAG_ANIMATION | TAG_PARAMETERS | TAG_TRANSFORM | TAG_GEOMETRY |
+    TAG_COMPLETE = (TAG_ANIMATION | TAG_PARAMS | TAG_TRANSFORM | TAG_GEOMETRY |
                     TAG_SCENE_COMPOSITOR | TAG_SCENE_SEQUENCER | TAG_SCENE_AUDIO),
   };
 
   /* Check whether given ID is already handled by builder (or if it's being handled). */
-  bool checkIsBuilt(ID *id, int tag = TAG_COMPLETE) const;
+  bool checkIsBuilt(Id *id, int tag = TAG_COMPLETE) const;
 
-  /* Tag given ID as handled/built. */
-  void tagBuild(ID *id, int tag = TAG_COMPLETE);
+  /* Tag given Id as handled/built. */
+  void tagBuild(Id *id, int tag = TAG_COMPLETE);
 
   /* Combination of previous two functions, returns truth if ID was already handled, or tags is
    * handled otherwise and return false. */
-  bool checkIsBuiltAndTag(ID *id, int tag = TAG_COMPLETE);
+  bool checkIsBuiltAndTag(Id *id, int tag = TAG_COMPLETE);
 
   template<typename T> bool checkIsBuilt(T *datablock, int tag = TAG_COMPLETE) const
   {
@@ -48,9 +48,9 @@ class BuilderMap {
   }
 
  protected:
-  int getIDTag(ID *id) const;
+  int getIdTag(Id *id) const;
 
-  Map<ID *, int> id_tags_;
+  Map<Id *, int> id_tags_;
 };
 
 }  // namespace deg
