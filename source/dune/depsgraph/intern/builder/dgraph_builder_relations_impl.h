@@ -1,17 +1,17 @@
 #pragma once
 
-#include "intern/node/deg_node_id.h"
+#include "intern/node/dgraph_node_id.h"
 
 #include <iostream>
 
-#include "DNA_ID.h"
-#include "DNA_object_types.h"
-#include "DNA_rigidbody_types.h"
+#include "types_Id.h"
+#include "types_object.h"
+#include "types_rigidbody.h"
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 template<typename KeyType>
-OperationNode *DepsgraphRelationBuilder::find_operation_node(const KeyType &key)
+OpNode *DGraphRelationBuilder::find_op_node(const KeyType &key)
 {
   Node *node = get_node(key);
   return node != nullptr ? node->get_exit_operation() : nullptr;
