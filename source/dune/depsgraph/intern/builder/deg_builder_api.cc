@@ -1,4 +1,4 @@
-#include "intern/builder/deg_builder_rna.h"
+#include "intern/builder/dgraph_builder_api.h"
 
 #include <cstring>
 
@@ -32,7 +32,7 @@ namespace dune::deg {
 
 class ApiNodeQueryIdData {
  public:
-  explicit apiNodeQueryIdData(const Id *id) : id_(id)
+  explicit ApiNodeQueryIdData(const Id *id) : id_(id)
   {
   }
 
@@ -41,7 +41,7 @@ class ApiNodeQueryIdData {
     delete constraint_to_pchan_map_;
   }
 
-  const DPoseChannel *get_pchan_for_constraint(const bConstraint *constraint)
+  const DPoseChannel *get_pchan_for_constraint(const DConstraint *constraint)
   {
     ensure_constraint_to_pchan_map();
     return constraint_to_pchan_map_->lookup_default(constraint, nullptr);
@@ -85,14 +85,14 @@ ApiNodeId::apiNodeId()
 {
 }
 
-bool apiNodeIdentifier::is_valid() const
+bool apiNodeId::is_valid() const
 {
   return id != nullptr && type != NodeType::UNDEFINED;
 }
 
 /* ********************************** Query ********************************* */
 
-apiNodeQuery::ApiNodeQuery(DGraph *dgraph, DGraphBuilder *builder)
+ApiNodeQuery::apiNodeQuery(DGraph *dgraph, DGraphBuilder *builder)
     : dgraph_(dgraph), builder_(builder)
 {
 }
@@ -103,7 +103,7 @@ Node *ApiNodeQuery::find_node(const ApiPtr *ptr,
                               const ApiProp *prop,
                               ApiPtrSource source)
 {
-  const ApiNodeId node_id = construct_node_identifier(ptr, prop, source);
+  const ApiNodeId node_id = construct_node_id(ptr, prop, source);
   if (!node_id.is_valid()) {
     return nullptr;
   }
@@ -131,8 +131,8 @@ bool ApiNodeQuery::contains(const char *prop_id, const char *api_path_component)
     return false;
   }
 
-  /* If `substr != prop_identifier`, it means that the sub-string is found further in
-   * `prop_identifier`, and that thus index -1 is a valid memory location. */
+  /* If `substr != prop_id`, it means that the sub-string is found further in
+   * `prop_id`, and that thus index -1 is a valid memory location. */
   const bool start_ok = substr == prop_id || substr[-1] == '.';
   if (!start_ok) {
     return false;
@@ -222,7 +222,7 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
   const char *prop_id = prop != nullptr ? api_prop_id((ApiProp *)prop) :
                                                   "";
 
-  if (api_struct_is_a(ptr->type, &api_Constraint)) {
+  if (api_struct_is_a(ptr->type, &Api_Constraint)) {
     const Object *object = reinterpret_cast<const Object *>(ptr->owner_id);
     const DConstraint *constraint = static_cast<const DConstraint *>(ptr->data);
     ApiNodeQueryIdData *id_data = ensure_id_data(&object->id);
