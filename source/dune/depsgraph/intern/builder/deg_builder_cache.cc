@@ -146,7 +146,7 @@ AnimatedPropStorage *DGraphBuilderCache::ensureAnimatedPropStorage(Id *id)
       id, []() { return new AnimatedPropStorage(); });
 }
 
-AnimatedPropStorage *DGraphBuilderCache::ensureInitializedAnimatedPropStorage(Id *id)
+AnimatedPropStorage *DGraphBuilderCache::ensureInitAnimatedPropStorage(Id *id)
 {
   AnimatedPropStorage *animated_prop_storage = ensureAnimatedPropStorage(id);
   if (!animated_prop_storage->is_fully_initialized) {
