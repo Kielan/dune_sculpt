@@ -1,6 +1,6 @@
 /**  Methods for constructing depsgraph relations for drivers. **/
 
-#include "intern/builder/deg_builder_relations_drivers.h"
+#include "intern/builder/dgraph_builder_relations_drivers.h"
 
 #include <cstring>
 
@@ -8,9 +8,9 @@
 
 #include "dune_anim_data.h"
 
-#include "intern/builder/deg_builder_relations.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/node/deg_node.h"
+#include "intern/builder/dgraph_builder_relations.h"
+#include "intern/dgraph_relation.h"
+#include "intern/node/dgraph_node.h"
 
 namespace dune::deg {
 
