@@ -252,7 +252,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
 
   /* Add relation which ensures visibility of `id_from` when `id_to` is visible.
    * For the more detailed explanation see comment for `NodeType::VISIBILITY`. */
-  void add_visibility_relation(ID *id_from, ID *id_to);
+  void add_visibility_relation(Id *id_from, Id *id_to);
 
   Relation *add_op_relation(OpNode *node_from,
                             OpNode *node_to,
