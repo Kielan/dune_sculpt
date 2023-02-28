@@ -15,17 +15,17 @@
 
 #include "api_prototypes.h"
 
-#include "intern/builder/deg_builder_cache.h"
-#include "intern/builder/deg_builder_remove_noop.h"
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/depsgraph_tag.h"
-#include "intern/depsgraph_type.h"
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/builder/dgraph_builder_cache.h"
+#include "intern/builder/dgraph_builder_remove_noop.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_relation.h"
+#include "intern/dgraph_tag.h"
+#include "intern/dgraph_type.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
 
 #include "dgraph.h"
 
@@ -119,19 +119,19 @@ bool DGraphBuilder::check_pchan_has_bbone_segments(Object *object, const char *b
 
 namespace {
 
-void dgraph_build_flush_visibility(Depsgraph *graph)
+void dgraph_build_flush_visibility(DGraph *graph)
 {
   enum {
-    DEG_NODE_VISITED = (1 << 0),
+    DGRAPH_NODE_VISITED = (1 << 0),
   };
 
-  LibStack *stack = lib_stack_new(sizeof(OpNode *), "DEG flush layers stack");
+  LibStack *stack = lib_stack_new(sizeof(OpNode *), "DGraph flush layers stack");
   for (IdNode *id_node : graph->id_nodes) {
     for (ComponentNode *comp_node : id_node->components.values()) {
       comp_node->affects_directly_visible |= id_node->is_directly_visible;
     }
   }
-  for (OpNode *op_node : graph->operations) {
+  for (OpNode *op_node : graph->ops) {
     op_node->custom_flags = 0;
     op_node->num_links_pending = 0;
     for (Relation *rel : op_node->outlinks) {
@@ -141,7 +141,7 @@ void dgraph_build_flush_visibility(Depsgraph *graph)
     }
     if (op_node->num_links_pending == 0) {
       lib_stack_push(stack, &op_node);
-      op_node->custom_flags |= DEG_NODE_VISITED;
+      op_node->custom_flags |= DGRAPH_NODE_VISITED;
     }
   }
   while (!lib_stack_is_empty(stack)) {
