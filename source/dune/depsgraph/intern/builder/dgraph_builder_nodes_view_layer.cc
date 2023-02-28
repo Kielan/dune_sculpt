@@ -1,6 +1,6 @@
 /**  Methods for constructing depsgraph's nodes **/
 
-#include "intern/builder/deg_builder_nodes.h"
+#include "intern/builder/dgraph_builder_nodes.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -23,17 +23,17 @@
 #include "dune_main.h"
 #include "dune_node.h"
 
-#include "deg_depsgraph.h"
-#include "deg_depsgraph_build.h"
+#include "dgraph.h"
+#include "dgraph_build.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_type.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/builder/dgraph_builder.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_type.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_operation.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 void DGraphNodeBuilder::build_layer_collections(ListBase *lb)
 {
@@ -62,8 +62,8 @@ void DGraphNodeBuilder::build_freestyle_lineset(FreestyleLineSet *fls)
 }
 
 void DGraphNodeBuilder::build_view_layer(Scene *scene,
-                                            ViewLayer *view_layer,
-                                            eDepsNode_LinkedState_Type linked_state)
+                                         ViewLayer *view_layer,
+                                         eDepsNode_LinkedState_Type linked_state)
 {
   /* NOTE: Pass view layer index of 0 since after scene CoW there is
    * only one view layer in there. */
@@ -156,7 +156,7 @@ void DGraphNodeBuilder::build_view_layer(Scene *scene,
   /* Build all set scenes. */
   if (scene->set != nullptr) {
     ViewLayer *set_view_layer = dune_view_layer_default_render(scene->set);
-    build_view_layer(scene->set, set_view_layer, DEG_ID_LINKED_VIA_SET);
+    build_view_layer(scene->set, set_view_layer, DGRAPH_ID_LINKED_VIA_SET);
   }
 }
 
