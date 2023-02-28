@@ -3,25 +3,25 @@
 #include <cstdio>
 #include <cstring>
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
-#include "DNA_ID.h"
+#include "types_Id.h"
 
-#include "RNA_path.h"
+#include "api_path.h"
 
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/builder/deg_builder_key.h"
-#include "intern/builder/deg_builder_map.h"
-#include "intern/builder/deg_builder_rna.h"
-#include "intern/builder/deg_builder_stack.h"
-#include "intern/depsgraph.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/builder/dgraph_builder.h"
+#include "intern/builder/dgraph_builder_key.h"
+#include "intern/builder/dgraph_builder_map.h"
+#include "intern/builder/dgraph_builder_api.h"
+#include "intern/builder/dgraph_builder_stack.h"
+#include "intern/dgraph.h"
+#include "intern/node/dnode.h"
+#include "intern/node/dnode_component.h"
+#include "intern/node/dnode_id.h"
+#include "intern/node/dnode_operation.h"
 
 struct CacheFile;
 struct Camera;
@@ -30,8 +30,8 @@ struct EffectorWeights;
 struct FCurve;
 struct FreestyleLineSet;
 struct FreestyleLineStyle;
-struct ID;
-struct IDProperty;
+struct Id;
+struct IDProp;
 struct Image;
 struct Key;
 struct LayerCollection;
@@ -52,30 +52,30 @@ struct Tex;
 struct VFont;
 struct ViewLayer;
 struct World;
-struct bAction;
-struct bArmature;
-struct bConstraint;
-struct bNodeSocket;
-struct bNodeTree;
-struct bPoseChannel;
-struct bSound;
+struct DAction;
+struct DArmature;
+struct DConstraint;
+struct DNodeSocket;
+struct DNodeTree;
+struct DPoseChannel;
+struct DSound;
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 struct ComponentNode;
 struct DepsNodeHandle;
-struct Depsgraph;
-class DepsgraphBuilderCache;
-struct IDNode;
+struct DGraph;
+class DGraphBuilderCache;
+struct IdNode;
 struct Node;
-struct OperationNode;
+struct OpNode;
 struct Relation;
 struct RootPChanMap;
 struct TimeSourceNode;
 
-class DepsgraphRelationBuilder : public DepsgraphBuilder {
+class DGraphRelationBuilder : public DGraphBuilder {
  public:
-  DepsgraphRelationBuilder(Main *bmain, Depsgraph *graph, DepsgraphBuilderCache *cache);
+  DGraphRelationBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache);
 
   void begin_build();
 
@@ -98,7 +98,7 @@ class DepsgraphRelationBuilder : public DepsgraphBuilder {
                                      int flags = 0);
 
   template<typename KeyTo>
-  Relation *add_depends_on_transform_relation(ID *id,
+  Relation *add_depends_on_transform_relation(Id *id,
                                               const KeyTo &key_to,
                                               const char *description,
                                               int flags = 0);
@@ -108,18 +108,18 @@ class DepsgraphRelationBuilder : public DepsgraphBuilder {
    * of this object. */
   void add_depends_on_transform_relation(const DepsNodeHandle *handle, const char *description);
 
-  void add_customdata_mask(Object *object, const DEGCustomDataMeshMasks &customdata_masks);
-  void add_special_eval_flag(ID *id, uint32_t flag);
+  void add_customdata_mask(Object *object, const DGraphCustomDataMeshMasks &customdata_masks);
+  void add_special_eval_flag(Id *id, uint32_t flag);
 
-  virtual void build_id(ID *id);
+  virtual void build_id(Id *id);
 
   /* Build function for ID types that do not need their own build_xxx() function. */
   virtual void build_generic_id(ID *id);
 
-  virtual void build_idproperties(IDProperty *id_property);
+  virtual void build_idprops(IdProp *id_prop);
 
   virtual void build_scene_render(Scene *scene, ViewLayer *view_layer);
-  virtual void build_scene_parameters(Scene *scene);
+  virtual void build_scene_params(Scene *scene);
   virtual void build_scene_compositor(Scene *scene);
 
   virtual void build_layer_collections(ListBase *lb);
@@ -136,22 +136,22 @@ class DepsgraphRelationBuilder : public DepsgraphBuilder {
   virtual void build_object_data(Object *object);
   virtual void build_object_data_camera(Object *object);
   virtual void build_object_data_geometry(Object *object);
-  virtual void build_object_data_geometry_datablock(ID *obdata);
+  virtual void build_object_data_geometry_datablock(Id *obdata);
   virtual void build_object_data_light(Object *object);
   virtual void build_object_data_lightprobe(Object *object);
   virtual void build_object_data_speaker(Object *object);
   virtual void build_object_parent(Object *object);
   virtual void build_object_pointcache(Object *object);
-  virtual void build_constraints(ID *id,
+  virtual void build_constraints(Id *id,
                                  NodeType component_type,
                                  const char *component_subdata,
                                  ListBase *constraints,
                                  RootPChanMap *root_map);
-  virtual void build_animdata(ID *id);
-  virtual void build_animdata_curves(ID *id);
-  virtual void build_animdata_curves_targets(ID *id,
+  virtual void build_animdata(Id *id);
+  virtual void build_animdata_curves(Id *id);
+  virtual void build_animdata_curves_targets(Id *id,
                                              ComponentKey &adt_key,
-                                             OperationNode *operation_from,
+                                             OpNode *op_from,
                                              ListBase *curves);
   virtual void build_animdata_nlastrip_targets(ID *id,
                                                ComponentKey &adt_key,
