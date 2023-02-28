@@ -1,4 +1,4 @@
-#include "intern/builder/deg_builder_cache.h"
+#include "intern/builder/dgraph_builder_cache.h"
 
 #include "MEM_guardedalloc.h"
 
