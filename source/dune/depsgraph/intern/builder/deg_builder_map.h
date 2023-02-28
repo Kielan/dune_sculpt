@@ -1,6 +1,6 @@
 #pragma once
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
 struct Id;
 
