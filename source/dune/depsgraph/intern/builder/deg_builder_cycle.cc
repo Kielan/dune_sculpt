@@ -1,4 +1,4 @@
-#include "intern/builder/deg_builder_cycle.h"
+#include "intern/builder/dgraph_builder_cycle.h"
 
 // TOO: Use some wrappers over those?
 #include <cstdio>
@@ -7,12 +7,12 @@
 #include "lib_stack.h"
 #include "lib_utildefines.h"
 
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_operation.h"
 
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_relation.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_relation.h"
 
 namespace dune::deg {
 
@@ -34,7 +34,7 @@ struct StackEntry {
 };
 
 struct CyclesSolverState {
-  CyclesSolverState(Depsgraph *graph)
+  CyclesSolverState(DGraph *graph)
       : graph(graph),
         traversal_stack(lib_stack_new(sizeof(StackEntry), "DEG detect cycles stack")),
         num_cycles(0)
@@ -48,8 +48,8 @@ struct CyclesSolverState {
       printf("Detected %d dependency cycles\n", num_cycles);
     }
   }
-  Depsgraph *graph;
-  BLI_Stack *traversal_stack;
+  DGraph *graph;
+  LibStack *traversal_stack;
   int num_cycles;
 };
 
@@ -73,7 +73,7 @@ inline int get_node_num_visited_children(Node *node)
   return node->custom_flags >> 2;
 }
 
-void schedule_node_to_stack(CyclesSolverState *state, OperationNode *node)
+void schedule_node_to_stack(CyclesSolverState *state, OpNode *node)
 {
   StackEntry entry;
   entry.node = node;
@@ -86,7 +86,7 @@ void schedule_node_to_stack(CyclesSolverState *state, OperationNode *node)
 /* Schedule leaf nodes (node without input links) for traversal. */
 void schedule_leaf_nodes(CyclesSolverState *state)
 {
-  for (OpNode *node : state->graph->operations) {
+  for (OpNode *node : state->graph->ops) {
     bool has_inlinks = false;
     for (Relation *rel : node->inlinks) {
       if (rel->from->type == NodeType::OPERATION) {
@@ -108,7 +108,7 @@ void schedule_leaf_nodes(CyclesSolverState *state)
  */
 bool schedule_non_checked_node(CyclesSolverState *state)
 {
-  for (OpNode *node : state->graph->operations) {
+  for (OpNode *node : state->graph->ops) {
     if (get_node_visited_state(node) == NODE_NOT_VISITED) {
       schedule_node_to_stack(state, node);
       return true;
@@ -135,7 +135,7 @@ Relation *select_relation_to_murder(Relation *relation, StackEntry *cycle_start_
     return relation;
   }
   StackEntry *current = cycle_start_entry;
-  OpNode *to_node = (OperationNode *)relation->to;
+  OpNode *to_node = (OpNode *)relation->to;
   while (current->node != to_node) {
     if (check_relation_can_murder(current->via_relation)) {
       return current->via_relation;
@@ -160,12 +160,12 @@ void solve_cycles(CyclesSolverState *state)
         OpNode *to = (OpNode *)rel->to;
         eCyclicCheckVisitedState to_state = get_node_visited_state(to);
         if (to_state == NODE_IN_STACK) {
-          string cycle_str = "  " + to->full_identifier() + " depends on\n  " +
-                             node->full_identifier() + " via '" + rel->name + "'\n";
+          string cycle_str = "  " + to->full_id() + " depends on\n  " +
+                             node->full_id() + " via '" + rel->name + "'\n";
           StackEntry *current = entry;
           while (current->node != to) {
             lib_assert(current != nullptr);
-            cycle_str += "  " + current->from->node->full_identifier() + " via '" +
+            cycle_str += "  " + current->from->node->full_id() + " via '" +
                          current->via_relation->name + "'\n";
             current = current->from;
           }
@@ -196,7 +196,7 @@ void solve_cycles(CyclesSolverState *state)
 
 }  // namespace
 
-void deg_graph_detect_cycles(Depsgraph *graph)
+void dgraph_detect_cycles(DGraph *graph)
 {
   CyclesSolverState state(graph);
   /* First we solve cycles which are reachable from leaf nodes. */
