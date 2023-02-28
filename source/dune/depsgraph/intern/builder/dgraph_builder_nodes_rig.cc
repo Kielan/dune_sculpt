@@ -1,6 +1,6 @@
 /** Methods for constructing depsgraph's nodes **/
 
-#include "intern/builder/deg_builder_nodes.h"
+#include "intern/builder/dgraph_builder_nodes.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -21,15 +21,15 @@
 #include "dune_armature.h"
 #include "dune_constraint.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
+#include "depsgraph.h"
+#include "depsgraph_build.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/depsgraph_type.h"
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/builder/dgraph_builder.h"
+#include "intern/dgraph_type.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_operation.h"
 
 namespace dune::deg {
 
@@ -46,13 +46,13 @@ void DGraphNodeBuilder::build_pose_constraints(Object *object,
   Scene *scene_cow = get_cow_datablock(scene_);
   Object *object_cow = get_cow_datablock(object);
   add_op_node(&object->id,
-                     NodeType::BONE,
-                     pchan->name,
-                     OpCode::BONE_CONSTRAINTS,
-                     [scene_cow, object_cow, pchan_index](::DGraph *dgraph) {
-                       dune_pose_constraints_evaluate(
-                           depsgraph, scene_cow, object_cow, pchan_index);
-                     });
+              NodeType::BONE,
+              pchan->name,
+              OpCode::BONE_CONSTRAINTS,
+              [scene_cow, object_cow, pchan_index](::DGraph *dgraph) {
+                dune_pose_constraints_evaluate(
+                dgraph, scene_cow, object_cow, pchan_index);
+              });
 }
 
 /* IK Solver Eval Steps */
@@ -66,8 +66,8 @@ void DGraphNodeBuilder::build_ik_pose(Object *object, DPoseChannel *pchan, DCons
     return;
   }
 
-  if (has_operation_node(
-          &object->id, NodeType::EVAL_POSE, rootchan->name, OperationCode::POSE_IK_SOLVER)) {
+  if (has_op_node(
+          &object->id, NodeType::EVAL_POSE, rootchan->name, OpCode::POSE_IK_SOLVER)) {
     return;
   }
 
@@ -78,12 +78,12 @@ void DGraphNodeBuilder::build_ik_pose(Object *object, DPoseChannel *pchan, DCons
   Scene *scene_cow = get_cow_datablock(scene_);
   Object *object_cow = get_cow_datablock(object);
   add_op_node(&object->id,
-                     NodeType::EVAL_POSE,
-                     rootchan->name,
-                     OpCode::POSE_IK_SOLVER,
-                     [scene_cow, object_cow, rootchan_index](::Depsgraph *depsgraph) {
-                       dune_pose_iktree_evaluate(depsgraph, scene_cow, object_cow, rootchan_index);
-                     });
+              NodeType::EVAL_POSE,
+              rootchan->name,
+              OpCode::POSE_IK_SOLVER,
+              [scene_cow, object_cow, rootchan_index](::Depsgraph *depsgraph) {
+                dune_pose_iktree_evaluate(depsgraph, scene_cow, object_cow, rootchan_index);
+              });
 }
 
 /* Spline IK Eval Steps */
@@ -124,7 +124,7 @@ void DGraphNodeBuilder::build_splineik_pose(Object *object,
 /* Pose/Armature Bones Graph */
 void DGraphNodeBuilder::build_rig(Object *object)
 {
-  DArmature *armature = (bArmature *)object->data;
+  DArmature *armature = (DArmature *)object->data;
   Scene *scene_cow = get_cow_datablock(scene_);
   Object *object_cow = get_cow_datablock(object);
   OperationNode *op_node;
@@ -140,13 +140,13 @@ void DGraphNodeBuilder::build_rig(Object *object)
   /* Rebuild pose if not up to date. */
   if (object->pose == nullptr || (object->pose->flag & POSE_RECALC)) {
     /* By definition, no need to tag depsgraph as dirty from here, so we can pass nullptr bmain. */
-    BKE_pose_rebuild(nullptr, object, armature, true);
+    dune_pose_rebuild(nullptr, object, armature, true);
   }
   /* Speed optimization for animation lookups. */
   if (object->pose != nullptr) {
-    BKE_pose_channels_hash_ensure(object->pose);
+    dune_pose_channels_hash_ensure(object->pose);
     if (object->pose->flag & POSE_CONSTRAINTS_NEED_UPDATE_FLAGS) {
-      BKE_pose_update_constraint_flags(object->pose);
+      dune_pose_update_constraint_flags(object->pose);
     }
   }
   /**
@@ -171,26 +171,26 @@ void DGraphNodeBuilder::build_rig(Object *object)
    *   post-IK/post-constraint/post-matrix steps, as needed. */
   /* Pose eval context. */
   op_node = add_op_node(&object->id,
-                               NodeType::EVAL_POSE,
-                               OpCode::POSE_INIT,
-                               [scene_cow, object_cow](::DGraph *dgraph) {
-                                 dune_pose_eval_init(dgraph, scene_cow, object_cow);
-                               });
+                        NodeType::EVAL_POSE,
+                        OpCode::POSE_INIT,
+                        [scene_cow, object_cow](::DGraph *dgraph) {
+                          dune_pose_eval_init(dgraph, scene_cow, object_cow);
+                        });
   op_node->set_as_entry();
 
   op_node = add_op_node(&object->id,
-                               NodeType::EVAL_POSE,
-                               OpCode::POSE_INIT_IK,
-                               [scene_cow, object_cow](::DGraph *dgraph) {
-                                 dune_pose_eval_init_ik(dgraph, scene_cow, object_cow);
-                               });
+                        NodeType::EVAL_POSE,
+                        OpCode::POSE_INIT_IK,
+                        [scene_cow, object_cow](::DGraph *dgraph) {
+                          dune_pose_eval_init_ik(dgraph, scene_cow, object_cow);
+                        });
 
   add_op_node(&object->id,
-                     NodeType::EVAL_POSE,
-                     OpCode::POSE_CLEANUP,
-                     [scene_cow, object_cow](::DGraph *dgraph) {
-                       dune_pose_eval_cleanup(dgraph, scene_cow, object_cow);
-                     });
+              NodeType::EVAL_POSE,
+              OpCode::POSE_CLEANUP,
+              [scene_cow, object_cow](::DGraph *dgraph) {
+                dune_pose_eval_cleanup(dgraph, scene_cow, object_cow);
+              });
 
   op_node = add_op_node(
       &object->id,
@@ -207,34 +207,34 @@ void DGraphNodeBuilder::build_rig(Object *object)
     op_node->set_as_entry();
 
     add_op_node(&object->id,
-                       NodeType::BONE,
-                       pchan->name,
-                       OpCode::BONE_POSE_PARENT,
-                       [scene_cow, object_cow, pchan_index](::DGraph *dgraph) {
-                         dune_pose_eval_bone(depsgraph, scene_cow, object_cow, pchan_index);
-                       });
+                NodeType::BONE,
+                pchan->name,
+                OpCode::BONE_POSE_PARENT,
+                [scene_cow, object_cow, pchan_index](::DGraph *dgraph) {
+                  dune_pose_eval_bone(dgraph, scene_cow, object_cow, pchan_index);
+                });
 
     /* NOTE: Dedicated noop for easier relationship construction. */
     add_op_node(&object->id, NodeType::BONE, pchan->name, OpCode::BONE_READY);
 
     op_node = add_op_node(&object->id,
-                                 NodeType::BONE,
-                                 pchan->name,
-                                 OpCode::BONE_DONE,
-                                 [object_cow, pchan_index](::Depsgraph *depsgraph) {
-                                   dune_pose_bone_done(depsgraph, object_cow, pchan_index);
-                                 });
+                          NodeType::BONE,
+                          pchan->name,
+                          OpCode::BONE_DONE,
+                          [object_cow, pchan_index](::Depsgraph *depsgraph) {
+                             dune_pose_bone_done(depsgraph, object_cow, pchan_index);
+                          });
 
     /* B-Bone shape computation - the real last step if present. */
     if (check_pchan_has_bbone(object, pchan)) {
       op_node = add_op_node(&object->id,
-                                   NodeType::BONE,
-                                   pchan->name,
-                                   OpCode::BONE_SEGMENTS,
-                                   [object_cow, pchan_index](::DGraph *dgraph) {
-                                     dune_pose_eval_bbone_segments(
-                                         depsgraph, object_cow, pchan_index);
-                                   });
+                            NodeType::BONE,
+                            pchan->name,
+                            OpCode::BONE_SEGMENTS,
+                            [object_cow, pchan_index](::DGraph *dgraph) {
+                              dune_pose_eval_bbone_segments(
+                              dgraph, object_cow, pchan_index);
+                            });
     }
 
     op_node->set_as_exit();
