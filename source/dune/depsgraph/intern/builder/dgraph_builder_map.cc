@@ -1,4 +1,4 @@
-#include "intern/builder/deg_builder_map.h"
+#include "intern/builder/dgraph_builder_map.h"
 
 #include "types_id.h"
 
