@@ -3,10 +3,10 @@
 namespace dune {
 namespace deg {
 
-struct Depsgraph;
+struct DGraph;
 
 /* Detect and solve dependency cycles. */
-void deg_graph_detect_cycles(Depsgraph *graph);
+void dgraph_detect_cycles(DGraph *graph);
 
 }  // namespace deg
 }  // namespace dune
