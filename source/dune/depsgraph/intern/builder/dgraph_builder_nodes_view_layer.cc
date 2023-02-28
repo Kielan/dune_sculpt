@@ -152,7 +152,7 @@ void DGraphNodeBuilder::build_view_layer(Scene *scene,
                      });
   /* Parameters evaluation for scene relations mainly. */
   build_scene_compositor(scene);
-  build_scene_parameters(scene);
+  build_scene_params(scene);
   /* Build all set scenes. */
   if (scene->set != nullptr) {
     ViewLayer *set_view_layer = dune_view_layer_default_render(scene->set);
