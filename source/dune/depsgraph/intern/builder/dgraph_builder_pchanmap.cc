@@ -5,7 +5,7 @@
 
 #include "lib_utildefines.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 void RootPChanMap::print_debug()
 {
@@ -43,4 +43,4 @@ bool RootPChanMap::has_common_root(const char *bone1, const char *bone2) const
   return Set<StringRefNull>::Intersects(*bone1_roots, *bone2_roots);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
