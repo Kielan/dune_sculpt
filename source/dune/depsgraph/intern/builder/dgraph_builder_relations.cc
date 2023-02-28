@@ -1,6 +1,6 @@
-/** Methods for constructing depsgraph **/
+/** Methods for constructing dgraph **/
 
-#include "intern/builder/deg_builder_relations.h"
+#include "intern/builder/dgraph_builder_relations.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -197,10 +197,10 @@ bool check_id_has_driver_component(Id *id)
 }
 
 OpCode bone_target_opcode(Id *target,
-                                 const char *subtarget,
-                                 Id *id,
-                                 const char *component_subdata,
-                                 RootPChanMap *root_map)
+                          const char *subtarget,
+                          Id *id,
+                          const char *component_subdata,
+                          RootPChanMap *root_map)
 {
   /* Same armature. */
   if (target == id) {
@@ -1123,7 +1123,7 @@ void DGraphRelationBuilder::build_object_parent(Object *object)
 
   /* Dupliverts uses original vertex index. */
   if (parent->transflag & OB_DUPLIVERTS) {
-    add_customdata_mask(parent, DEGCustomDataMeshMasks::MaskVert(CD_MASK_ORIGINDEX));
+    add_customdata_mask(parent, DGraphCustomDataMeshMasks::MaskVert(CD_MASK_ORIGINDEX));
   }
 }
 
@@ -1401,9 +1401,9 @@ void DGraphRelationBuilder::build_animdata_curves(ID *id)
     return;
   }
   /* Ensure evaluation order from entry to exit. */
-  OpKey animation_entry_key(id, NodeType::ANIMATION, OperationCode::ANIMATION_ENTRY);
-  OpKey animation_eval_key(id, NodeType::ANIMATION, OperationCode::ANIMATION_EVAL);
-  OpKey animation_exit_key(id, NodeType::ANIMATION, OperationCode::ANIMATION_EXIT);
+  OpKey animation_entry_key(id, NodeType::ANIMATION, OpCode::ANIMATION_ENTRY);
+  OpKey animation_eval_key(id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL);
+  OpKey animation_exit_key(id, NodeType::ANIMATION, OpCode::ANIMATION_EXIT);
   add_relation(animation_entry_key, animation_eval_key, "Init -> Eval");
   add_relation(animation_eval_key, animation_exit_key, "Eval -> Exit");
   /* Wire up dependency from action. */
@@ -1437,7 +1437,7 @@ void DGraphRelationBuilder::build_animdata_curves_targets(Id *id,
 {
   /* Iterate over all curves and build relations. */
   ApiPtr id_ptr;
-  api_id_pointer_create(id, &id_ptr);
+  api_id_ptr_create(id, &id_ptr);
   LISTBASE_FOREACH (FCurve *, fcu, curves) {
     ApiPtr ptr;
     ApiProp *prop;
@@ -1474,10 +1474,10 @@ void DGraphRelationBuilder::build_animdata_curves_targets(Id *id,
   }
 }
 
-void DGraphRelationBuilder::build_animdata_nlastrip_targets(ID *id,
-                                                               ComponentKey &adt_key,
-                                                               OperationNode *operation_from,
-                                                               ListBase *strips)
+void DGraphRelationBuilder::build_animdata_nlastrip_targets(Id *id,
+                                                            ComponentKey &adt_key,
+                                                            OpNode *op_from,
+                                                            ListBase *strips)
 {
   LISTBASE_FOREACH (NlaStrip *, strip, strips) {
     if (strip->act != nullptr) {
@@ -1486,10 +1486,10 @@ void DGraphRelationBuilder::build_animdata_nlastrip_targets(ID *id,
       ComponentKey action_key(&strip->act->id, NodeType::ANIMATION);
       add_relation(action_key, adt_key, "Action -> Animation");
 
-      build_animdata_curves_targets(id, adt_key, operation_from, &strip->act->curves);
+      build_animdata_curves_targets(id, adt_key, op_from, &strip->act->curves);
     }
     else if (strip->strips.first != nullptr) {
-      build_animdata_nlastrip_targets(id, adt_key, operation_from, &strip->strips);
+      build_animdata_nlastrip_targets(id, adt_key, op_from, &strip->strips);
     }
   }
 }
@@ -1709,7 +1709,7 @@ void DGraphRelationBuilder::build_driver_data(Id *id, FCurve *fcu)
                                prop_entry_key.prop,
                                ApiPtrSource::EXIT);
       OpKey params_key(id, NodeType::PARAMS, OpCode::PARAMS_EVAL);
-      add_relation(prop_exit_key, parameters_key, "Driven Property -> Props");
+      add_relation(prop_exit_key, params_key, "Driven Property -> Props");
     }
   }
 
@@ -1879,7 +1879,7 @@ void DGraphRelationBuilder::build_driver_id_prop(Id *id, const char *api_path)
         ptr.owner_id, NodeType::PARAMS, OpCode::ID_PROP, prop_id);
   }
   OpKey params_exit_key(
-      ptr.owner_id, NodeType::PARAMETERS, OpCode::PARAMS_EXIT);
+      ptr.owner_id, NodeType::PARAMS, OpCode::PARAMS_EXIT);
   add_relation(
       id_prop_key, param_exit_key, "IdProp -> Done", RELATION_CHECK_BEFORE_ADD);
 }
@@ -1913,7 +1913,7 @@ void DGraphRelationBuilder::build_world(World *world)
   build_idprops(world->id.props);
   /* animation */
   build_animdata(&world->id);
-  build_parameters(&world->id);
+  build_params(&world->id);
 
   /* Animated / driven parameters (without nodetree). */
   OpKey world_key(&world->id, NodeType::SHADING, OpCode::WORLD_UPDATE);
@@ -1934,7 +1934,7 @@ void DGraphRelationBuilder::build_rigidbody(Scene *scene)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   OpKey rb_init_key(&scene->id, NodeType::TRANSFORM, OpCode::RIGIDBODY_REBUILD);
-  OpKey rb_simulate_key(&scene->id, NodeType::TRANSFORM, OperationCode::RIGIDBODY_SIM);
+  OpKey rb_simulate_key(&scene->id, NodeType::TRANSFORM, OpCode::RIGIDBODY_SIM);
   /* Simulation depends on time. */
   TimeSourceKey time_src_key;
   add_relation(time_src_key, rb_init_key, "TimeSrc -> Rigidbody Init");
@@ -2209,7 +2209,7 @@ void DGraphRelationBuilder::build_shapekeys(Key *key)
     OpKey key_block_key(
         &key->id, NodeType::PARAMS, OpCode::PARAMS_EVAL, key_block->name);
     add_relation(key_block_key, geometry_key, "Key Block Properties");
-    add_relation(key_block_key, parameters_eval_key, "Key Block Properties");
+    add_relation(key_block_key, params_eval_key, "Key Block Properties");
   }
 }
 
@@ -2250,9 +2250,9 @@ void DGraphRelationBuilder::build_object_data_geometry(Object *object)
    * evaluated prior to Scene's CoW is ready. */
   OpKey scene_key(&scene_->id, NodeType::PARAMS, OpCode::SCENE_EVAL);
   add_relation(scene_key, obdata_ubereval_key, "CoW Relation", RELATION_FLAG_NO_FLUSH);
-  /* Grease Pencil Modifiers. */
+  /* Dune Pen Modifiers. */
   if (object->dpen_modifiers.first != nullptr) {
-    ModifierUpdateDepsgraphContext ctx = {};
+    ModifierUpdateDGraphContext ctx = {};
     ctx.scene = scene_;
     ctx.object = object;
     LISTBASE_FOREACH (DPenModifierData *, md, &object->dpen_modifiers) {
@@ -2276,7 +2276,7 @@ void DGraphRelationBuilder::build_object_data_geometry(Object *object)
     ctx.object = object;
     LISTBASE_FOREACH (ShaderFxData *, fx, &object->shader_fx) {
       const ShaderFxTypeInfo *fxi = dune_shaderfx_get_info((ShaderFxType)fx->type);
-      if (fxi->updateDepsgraph) {
+      if (fxi->updateDGraph) {
         DepsNodeHandle handle = create_node_handle(obdata_ubereval_key);
         ctx.node = reinterpret_cast<::DepsNodeHandle *>(&handle);
         fxi->updateDepsgraph(fx, &ctx);
@@ -2333,7 +2333,7 @@ void DGraphRelationBuilder::build_object_data_geometry(Object *object)
   if (key != nullptr) {
     if (key->adt != nullptr) {
       if (key->adt->action || key->adt->nla_tracks.first) {
-        ComponentKey obdata_key((ID *)object->data, NodeType::GEOMETRY);
+        ComponentKey obdata_key((Id *)object->data, NodeType::GEOMETRY);
         ComponentKey adt_key(&key->id, NodeType::ANIMATION);
         add_relation(adt_key, obdata_key, "Animation");
       }
@@ -2373,13 +2373,13 @@ void DGraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
     build_shapekeys(key);
   }
   /* Link object data evaluation node to exit operation. */
-  OpKey obdata_geom_eval_key(obdata, NodeType::GEOMETRY, OperationCode::GEOMETRY_EVAL);
-  OpKey obdata_geom_done_key(obdata, NodeType::GEOMETRY, OperationCode::GEOMETRY_EVAL_DONE);
+  OpKey obdata_geom_eval_key(obdata, NodeType::GEOMETRY, OpCode::GEOMETRY_EVAL);
+  OpKey obdata_geom_done_key(obdata, NodeType::GEOMETRY, OpCode::GEOMETRY_EVAL_DONE);
   add_relation(obdata_geom_eval_key, obdata_geom_done_key, "ObData Geom Eval Done");
 
   /* Link object data evaluation to parameter evaluation. */
-  ComponentKey parameters_key(obdata, NodeType::PARAMETERS);
-  add_relation(parameters_key, obdata_geom_eval_key, "ObData Geom Params");
+  ComponentKey params_key(obdata, NodeType::PARAMS);
+  add_relation(params_key, obdata_geom_eval_key, "ObData Geom Params");
 
   /* Type-specific links. */
   const ID_Type id_type = GS(obdata->name);
@@ -2524,9 +2524,9 @@ void DGraphRelationBuilder::build_camera(Camera *camera)
     add_relation(dof_ob_key, camera_params_key, "Camera DOF");
     if (camera->dof.focus_subtarget[0]) {
       OpKey target_key(&camera->dof.focus_object->id,
-                              NodeType::BONE,
-                              camera->dof.focus_subtarget,
-                              OpCode::BONE_DONE);
+                       NodeType::BONE,
+                       camera->dof.focus_subtarget,
+                       OpCode::BONE_DONE);
       add_relation(target_key, camera_params_key, "Camera DOF subtarget");
     }
   }
@@ -2597,7 +2597,7 @@ void DGraphRelationBuilder::build_nodetree_socket(DNodeSocket *socket)
   }
 }
 
-void DGraphRelationBuilder::build_nodetree(bNodeTree *ntree)
+void DGraphRelationBuilder::build_nodetree(DNodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
@@ -2677,12 +2677,12 @@ void DGraphRelationBuilder::build_nodetree(bNodeTree *ntree)
     }
     else if (id_type == ID_MSK) {
       build_mask((Mask *)id);
-      OpKey mask_key(id, NodeType::PARAMETERS, OperationCode::MASK_EVAL);
+      OpKey mask_key(id, NodeType::PARAMS, OpCode::MASK_EVAL);
       add_relation(mask_key, ntree_output_key, "Mask -> Node");
     }
     else if (id_type == ID_MC) {
       build_movieclip((MovieClip *)id);
-      OpKey clip_key(id, NodeType::PARAMETERS, OperationCode::MOVIECLIP_EVAL);
+      OpKey clip_key(id, NodeType::PARAMS, OpCode::MOVIECLIP_EVAL);
       add_relation(clip_key, ntree_output_key, "Clip -> Node");
     }
     else if (id_type == ID_VF) {
@@ -2946,7 +2946,7 @@ void DGraphRelationBuilder::build_speaker(Speaker *speaker)
 
   build_idprops(speaker->id.props);
   build_animdata(&speaker->id);
-  build_parameters(&speaker->id);
+  build_params(&speaker->id);
   if (speaker->sound != nullptr) {
     build_sound(speaker->sound);
     ComponentKey speaker_key(&speaker->id, NodeType::AUDIO);
@@ -2955,7 +2955,7 @@ void DGraphRelationBuilder::build_speaker(Speaker *speaker)
   }
 }
 
-void DepsgraphRelationBuilder::build_sound(bSound *sound)
+void DGraphRelationBuilder::build_sound(DSound *sound)
 {
   if (built_map_.checkIsBuiltAndTag(sound)) {
     return;
@@ -2963,17 +2963,17 @@ void DepsgraphRelationBuilder::build_sound(bSound *sound)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(sound->id);
 
-  build_idproperties(sound->id.properties);
+  build_idprops(sound->id.props);
   build_animdata(&sound->id);
-  build_parameters(&sound->id);
+  build_params(&sound->id);
 
-  const ComponentKey parameters_key(&sound->id, NodeType::PARAMETERS);
+  const ComponentKey params_key(&sound->id, NodeType::PARAMS);
   const ComponentKey audio_key(&sound->id, NodeType::AUDIO);
 
-  add_relation(parameters_key, audio_key, "Parameters -> Audio");
+  add_relation(params_key, audio_key, "Parameters -> Audio");
 }
 
-void DepsgraphRelationBuilder::build_simulation(Simulation *simulation)
+void DGraphRelationBuilder::build_simulation(Simulation *simulation)
 {
   if (built_map_.checkIsBuiltAndTag(simulation)) {
     return;
@@ -2981,25 +2981,25 @@ void DepsgraphRelationBuilder::build_simulation(Simulation *simulation)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(simulation->id);
 
-  build_idproperties(simulation->id.properties);
+  build_idprops(simulation->id.props);
   build_animdata(&simulation->id);
-  build_parameters(&simulation->id);
+  build_params(&simulation->id);
 
   build_nodetree(simulation->nodetree);
   build_nested_nodetree(&simulation->id, simulation->nodetree);
 
-  OperationKey simulation_eval_key(
-      &simulation->id, NodeType::SIMULATION, OperationCode::SIMULATION_EVAL);
+  OpKey simulation_eval_key(
+      &simulation->id, NodeType::SIMULATION, OpCode::SIMULATION_EVAL);
   TimeSourceKey time_src_key;
   add_relation(time_src_key, simulation_eval_key, "TimeSrc -> Simulation");
 
-  OperationKey nodetree_key(
-      &simulation->nodetree->id, NodeType::PARAMETERS, OperationCode::PARAMETERS_EXIT);
+  OpKey nodetree_key(
+      &simulation->nodetree->id, NodeType::PARAMS, OpCode::PARAMS_EXIT);
   add_relation(nodetree_key, simulation_eval_key, "NodeTree -> Simulation", 0);
 }
 
 using Seq_build_prop_cb_data = struct Seq_build_prop_cb_data {
-  DepsgraphRelationBuilder *builder;
+  DGraphRelationBuilder *builder;
   ComponentKey sequencer_key;
   bool has_audio_strips;
 };
@@ -3016,7 +3016,7 @@ static bool seq_build_prop_cb(Sequence *seq, void *user_data)
     cd->has_audio_strips = true;
   }
   if (seq->scene != nullptr) {
-    cd->builder->build_scene_parameters(seq->scene);
+    cd->builder->build_scene_params(seq->scene);
     /* This is to support 3D audio. */
     cd->has_audio_strips = true;
   }
@@ -3030,14 +3030,14 @@ static bool seq_build_prop_cb(Sequence *seq, void *user_data)
       cd->builder->add_relation(
           sequence_scene_key, cd->sequencer_key, "Sequence Scene -> Sequencer");
     }
-    ViewLayer *sequence_view_layer = BKE_view_layer_default_render(seq->scene);
+    ViewLayer *sequence_view_layer = dune_view_layer_default_render(seq->scene);
     cd->builder->build_scene_speakers(seq->scene, sequence_view_layer);
   }
-  /* TODO(sergey): Movie clip, camera, mask. */
+  /* TODO: Movie clip, camera, mask. */
   return true;
 }
 
-void DepsgraphRelationBuilder::build_scene_sequencer(Scene *scene)
+void DGraphRelationBuilder::build_scene_sequencer(Scene *scene)
 {
   if (scene->ed == nullptr) {
     return;
@@ -3046,26 +3046,25 @@ void DepsgraphRelationBuilder::build_scene_sequencer(Scene *scene)
     return;
   }
 
-  /* TODO(sergey): Trace as a scene sequencer. */
+  /* TODO: Trace as a scene sequencer. */
 
   build_scene_audio(scene);
   ComponentKey scene_audio_key(&scene->id, NodeType::AUDIO);
   /* Make sure dependencies from sequences data goes to the sequencer evaluation. */
   ComponentKey sequencer_key(&scene->id, NodeType::SEQUENCER);
 
-  Seq_build_prop_cb_data cb_data = {this, sequencer_key, false};
-
-  SEQ_for_each_callback(&scene->ed->seqbase, seq_build_prop_cb, &cb_data);
+  SeqBuildPropCbData cb_data = {this, sequencer_key, fa }
+  seq_for_each_cb(&scene->ed->seqbase, seq_build_prop_cb, &cb_data);
   if (cb_data.has_audio_strips) {
     add_relation(sequencer_key, scene_audio_key, "Sequencer -> Audio");
   }
 }
 
-void DepsgraphRelationBuilder::build_scene_audio(Scene *scene)
+void DGraphRelationBuilder::build_scene_audio(Scene *scene)
 {
-  OperationKey scene_audio_entry_key(&scene->id, NodeType::AUDIO, OperationCode::AUDIO_ENTRY);
-  OperationKey scene_audio_volume_key(&scene->id, NodeType::AUDIO, OperationCode::AUDIO_VOLUME);
-  OperationKey scene_sound_eval_key(&scene->id, NodeType::AUDIO, OperationCode::SOUND_EVAL);
+  OpKey scene_audio_entry_key(&scene->id, NodeType::AUDIO, OpCode::AUDIO_ENTRY);
+  OperationKey scene_audio_volume_key(&scene->id, NodeType::AUDIO, OpCode::AUDIO_VOLUME);
+  OperationKey scene_sound_eval_key(&scene->id, NodeType::AUDIO, OpCode::SOUND_EVAL);
   add_relation(scene_audio_entry_key, scene_audio_volume_key, "Audio Entry -> Volume");
   add_relation(scene_audio_volume_key, scene_sound_eval_key, "Audio Volume -> Sound");
 
