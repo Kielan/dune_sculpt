@@ -1,4 +1,4 @@
-#include "intern/builder/deg_builder_rna.h"
+#include "intern/builder/dgraph_builder_api.h"
 
 #include "testing/testing.h"
 
