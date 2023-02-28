@@ -82,28 +82,28 @@
 
 #include "seq_iterator.h"
 
-#include "deg_depsgraph.h"
-#include "deg_depsgraph_build.h"
+#include "dgraph_dgraph.h"
+#include "dgraph_build.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/builder/deg_builder_pchanmap.h"
-#include "intern/builder/deg_builder_relations_drivers.h"
-#include "intern/debug/deg_debug.h"
-#include "intern/depsgraph_physics.h"
-#include "intern/depsgraph_tag.h"
-#include "intern/eval/deg_eval_copy_on_write.h"
+#include "intern/builder/dgraph_builder.h"
+#include "intern/builder/dgraph_builder_pchanmap.h"
+#include "intern/builder/dgraph_builder_relations_drivers.h"
+#include "intern/debug/dgraph_debug.h"
+#include "intern/dgraph_physics.h"
+#include "intern/dgraph_tag.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
 
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/dgraph_node_time.h"
 
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_relation.h"
+#include "intern/dgraph_type.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* ***************** */
 /* Relations Builder */
@@ -225,19 +225,19 @@ bool object_have_geometry_component(const Object *object)
 
 /* **** General purpose functions **** */
 
-DGraphRelationBuilder::DepsgraphRelationBuilder(Main *dmain,
-                                                   Depsgraph *graph,
-                                                   DepsgraphBuilderCache *cache)
-    : DepsgraphBuilder(dmain, graph, cache), scene_(nullptr), rna_node_query_(graph, this)
+DGraphRelationBuilder::DGraphRelationBuilder(Main *dmain,
+                                             DGraph *graph,
+                                             DGraphBuilderCache *cache)
+    : DGraphBuilder(dmain, graph, cache), scene_(nullptr), api_node_query_(graph, this)
 {
 }
 
-TimeSourceNode *DepsgraphRelationBuilder::get_node(const TimeSourceKey & /*key*/) const
+TimeSourceNode *DGraphRelationBuilder::get_node(const TimeSourceKey & /*key*/) const
 {
   return graph_->time_source;
 }
 
-ComponentNode *DepsgraphRelationBuilder::get_node(const ComponentKey &key) const
+ComponentNode *DGraphRelationBuilder::get_node(const ComponentKey &key) const
 {
   IdNode *id_node = graph_->find_id_node(key.id);
   if (!id_node) {
@@ -297,10 +297,10 @@ void DGraphRelationBuilder::add_depends_on_transform_relation(const DepsNodeHand
   add_depends_on_transform_relation(id, geometry_key, description);
 }
 
-void DepsgraphRelationBuilder::add_customdata_mask(Object *object,
-                                                   const DEGCustomDataMeshMasks &customdata_masks)
+void DGraphRelationBuilder::add_customdata_mask(Object *object,
+                                                   const DGraphCustomDataMeshMasks &customdata_masks)
 {
-  if (customdata_masks != DEGCustomDataMeshMasks() && object != nullptr &&
+  if (customdata_masks != DGraphCustomDataMeshMasks() && object != nullptr &&
       object->type == OB_MESH) {
     IdNode *id_node = graph_->find_id_node(&object->id);
 
@@ -333,13 +333,13 @@ Relation *DGraphRelationBuilder::add_time_relation(TimeSourceNode *timesrc,
     return graph_->add_new_relation(timesrc, node_to, description, flags);
   }
 
-  DEG_DEBUG_PRINTF((::Depsgraph *)graph_,
+  DEG_DEBUG_PRINTF((::DGraph *)graph_,
                    BUILD,
                    "add_time_relation(%p = %s, %p = %s, %s) Failed\n",
                    timesrc,
-                   (timesrc) ? timesrc->identifier().c_str() : "<None>",
+                   (timesrc) ? timesrc->id().c_str() : "<None>",
                    node_to,
-                   (node_to) ? node_to->identifier().c_str() : "<None>",
+                   (node_to) ? node_to->id().c_str() : "<None>",
                    description);
 
   return nullptr;
@@ -353,15 +353,15 @@ void DGraphRelationBuilder::add_visibility_relation(Id *id_from, Id *id_to)
 }
 
 Relation *DGraphRelationBuilder::add_op_relation(OpNode *node_from,
-                                                    OpNode *node_to,
-                                                    const char *description,
-                                                    int flags)
+                                                 OpNode *node_to,
+                                                 const char *description,
+                                                 int flags)
 {
   if (node_from && node_to) {
     return graph_->add_new_relation(node_from, node_to, description, flags);
   }
 
-  DEG_DEBUG_PRINTF((::Depsgraph *)graph_,
+  DEG_DEBUG_PRINTF((::DGraph *)graph_,
                    BUILD,
                    "add_op_relation(%p = %s, %p = %s, %s) Failed\n",
                    node_from,
@@ -374,9 +374,9 @@ Relation *DGraphRelationBuilder::add_op_relation(OpNode *node_from,
 }
 
 void DGraphRelationBuilder::add_particle_collision_relations(const OpKey &key,
-                                                                Object *object,
-                                                                Collection *collection,
-                                                                const char *name)
+                                                             Object *object,
+                                                             Collection *collection,
+                                                             const char *name)
 {
   ListBase *relations = build_collision_relations(graph_, collection, eModifierType_Collision);
 
@@ -391,12 +391,12 @@ void DGraphRelationBuilder::add_particle_collision_relations(const OpKey &key,
   }
 }
 
-void DGraphRelationBuilder::add_particle_forcefield_relations(const OperationKey &key,
-                                                                 Object *object,
-                                                                 ParticleSystem *psys,
-                                                                 EffectorWeights *eff,
-                                                                 bool add_absorption,
-                                                                 const char *name)
+void DGraphRelationBuilder::add_particle_forcefield_relations(const OpKey &key,
+                                                              Object *object,
+                                                              ParticleSystem *psys,
+                                                              EffectorWeights *eff,
+                                                              bool add_absorption,
+                                                              const char *name)
 {
   ListBase *relations = build_effector_relations(graph_, eff->group);
 
@@ -453,7 +453,7 @@ void DGraphRelationBuilder::add_particle_forcefield_relations(const OperationKey
       else if (relation->psys != psys) {
         OpKey eff_key(&relation->ob->id,
                              NodeType::PARTICLE_SYSTEM,
-                             OperationCode::PARTICLE_SYSTEM_EVAL,
+                             OpCode::PARTICLE_SYSTEM_EVAL,
                              relation->psys->name);
         add_relation(eff_key, key, name);
       }
@@ -585,12 +585,12 @@ void DGraphRelationBuilder::build_generic_id(ID *id)
 
   build_idprops(id->props);
   build_animdata(id);
-  build_parameters(id);
+  build_params(id);
 }
 
 static void build_idprops_callback(IdProp *id_prop, void *user_data)
 {
-  DGraphRelationBuilder *builder = reinterpret_cast<DepsgraphRelationBuilder *>(user_data);
+  DGraphRelationBuilder *builder = reinterpret_cast<DGraphRelationBuilder *>(user_data);
   lib_assert(id_prop->type == IDP_ID);
   builder->build_id(reinterpret_cast<ID *>(id_prop->data.pointer));
 }
@@ -600,9 +600,9 @@ void DGraphRelationBuilder::build_idprops(IdProp *id_prop)
   IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_callback, this);
 }
 
-void DepsgraphRelationBuilder::build_collection(LayerCollection *from_layer_collection,
-                                                Object *object,
-                                                Collection *collection)
+void DGaphRelationBuilder::build_collection(LayerCollection *from_layer_collection,
+                                            Object *object,
+                                            Collection *collection)
 {
   if (from_layer_collection != nullptr) {
     /* If we came from layer collection we don't go deeper, view layer
@@ -838,11 +838,11 @@ void DGraphRelationBuilder::build_object_from_view_layer_base(Object *object)
 void DGraphRelationBuilder::build_object_layer_component_relations(Object *object)
 {
   OpKey object_from_layer_entry_key(
-      &object->id, NodeType::OBJECT_FROM_LAYER, OperationCode::OBJECT_FROM_LAYER_ENTRY);
+      &object->id, NodeType::OBJECT_FROM_LAYER, OpCode::OBJECT_FROM_LAYER_ENTRY);
   OpKey object_from_layer_exit_key(
-      &object->id, NodeType::OBJECT_FROM_LAYER, OperationCode::OBJECT_FROM_LAYER_EXIT);
+      &object->id, NodeType::OBJECT_FROM_LAYER, OpCode::OBJECT_FROM_LAYER_EXIT);
   OpKey object_flags_key(
-      &object->id, NodeType::OBJECT_FROM_LAYER, OperationCode::OBJECT_BASE_FLAGS);
+      &object->id, NodeType::OBJECT_FROM_LAYER, OpCode::OBJECT_BASE_FLAGS);
 
   if (!has_node(object_flags_key)) {
     /* Just connect Entry -> Exit if there is no OBJECT_BASE_FLAGS node. */
@@ -969,7 +969,7 @@ void DGraphRelationBuilder::build_object_data(Object *object)
       build_object_data_speaker(object);
       break;
   }
-  Key *key = BKE_key_from_object(object);
+  Key *key = dune_key_from_object(object);
   if (key != nullptr) {
     ComponentKey geometry_key((ID *)object->data, NodeType::GEOMETRY);
     ComponentKey key_key(&key->id, NodeType::GEOMETRY);
@@ -1057,10 +1057,10 @@ void DGraphRelationBuilder::build_object_parent(Object *object)
        * we can get rid of this mask here, or bring the optimization
        * back. */
       add_customdata_mask(object->parent,
-                          DEGCustomDataMeshMasks::MaskVert(CD_MASK_ORIGINDEX) |
-                              DEGCustomDataMeshMasks::MaskEdge(CD_MASK_ORIGINDEX) |
-                              DEGCustomDataMeshMasks::MaskFace(CD_MASK_ORIGINDEX) |
-                              DEGCustomDataMeshMasks::MaskPoly(CD_MASK_ORIGINDEX));
+                          DGraphCustomDataMeshMasks::MaskVert(CD_MASK_ORIGINDEX) |
+                          DGraphCustomDataMeshMasks::MaskEdge(CD_MASK_ORIGINDEX) |
+                          DGraphCustomDataMeshMasks::MaskFace(CD_MASK_ORIGINDEX) |
+                          DGraphCustomDataMeshMasks::MaskPoly(CD_MASK_ORIGINDEX));
       ComponentKey transform_key(parent_id, NodeType::TRANSFORM);
       add_relation(transform_key, object_transform_key, "Vertex Parent TFM");
       break;
@@ -1127,7 +1127,7 @@ void DGraphRelationBuilder::build_object_parent(Object *object)
   }
 }
 
-void DepsgraphRelationBuilder::build_object_pointcache(Object *object)
+void DGraphRelationBuilder::build_object_pointcache(Object *object)
 {
   ComponentKey point_cache_key(&object->id, NodeType::POINT_CACHE);
   /* Different point caches are affecting different aspects of life of the
@@ -1189,20 +1189,20 @@ void DepsgraphRelationBuilder::build_object_pointcache(Object *object)
   lib_freelistN(&ptcache_id_list);
 }
 
-void DepsgraphRelationBuilder::build_constraints(Id *id,
-                                                 NodeType component_type,
-                                                 const char *component_subdata,
-                                                 ListBase *constraints,
-                                                 RootPChanMap *root_map)
+void DGraphRelationBuilder::build_constraints(Id *id,
+                                              NodeType component_type,
+                                              const char *component_subdata,
+                                              ListBase *constraints,
+                                              RootPChanMap *root_map)
 {
   OpKey constraint_op_key(id,
-                                 component_type,
-                                 component_subdata,
-                                 (component_type == NodeType::BONE) ?
-                                     OpCode::BONE_CONSTRAINTS :
-                                     OpCode::TRANSFORM_CONSTRAINTS);
+                          component_type,
+                          component_subdata,
+                          (component_type == NodeType::BONE) ?
+                            OpCode::BONE_CONSTRAINTS :
+                          OpCode::TRANSFORM_CONSTRAINTS);
   /* Add dependencies for each constraint in turn. */
-  for (DConstraint *con = (bConstraint *)constraints->first; con; con = con->next) {
+  for (DConstraint *con = (DConstraint *)constraints->first; con; con = con->next) {
     const DConstraintTypeInfo *cti = dune_constraint_typeinfo_get(con);
     ListBase targets = {nullptr, nullptr};
     /* Invalid constraint type. */
@@ -1397,7 +1397,7 @@ void DGraphRelationBuilder::build_animdata_curves(ID *id)
   if (adt->action != nullptr) {
     build_action(adt->action);
   }
-  if (adt->action == nullptr && BLI_listbase_is_empty(&adt->nla_tracks)) {
+  if (adt->action == nullptr && lib_listbase_is_empty(&adt->nla_tracks)) {
     return;
   }
   /* Ensure evaluation order from entry to exit. */
@@ -1420,7 +1420,7 @@ void DGraphRelationBuilder::build_animdata_curves(ID *id)
     return;
   }
   OpNode *op_from = node_from->get_exit_op();
-  lib_assert(operation_from != nullptr);
+  lib_assert(op_from != nullptr);
   /* Build relations from animation operation to properties it changes. */
   if (adt->action != nullptr) {
     build_animdata_curves_targets(id, adt_key, op_from, &adt->action->curves);
@@ -1431,9 +1431,9 @@ void DGraphRelationBuilder::build_animdata_curves(ID *id)
 }
 
 void DGraphRelationBuilder::build_animdata_curves_targets(Id *id,
-                                                             ComponentKey &adt_key,
-                                                             OpNode *op_from,
-                                                             ListBase *curves)
+                                                          ComponentKey &adt_key,
+                                                          OpNode *op_from,
+                                                          ListBase *curves)
 {
   /* Iterate over all curves and build relations. */
   ApiPtr id_ptr;
@@ -1449,7 +1449,7 @@ void DGraphRelationBuilder::build_animdata_curves_targets(Id *id,
     if (node_to == nullptr) {
       continue;
     }
-    OpNode *operation_to = node_to->get_entry_op();
+    OpNode *op_to = node_to->get_entry_op();
     /* NOTE: Special case for bones, avoid relation from animation to
      * each of the bones. Bone evaluation could only start from pose
      * init anyway. */
@@ -1461,7 +1461,7 @@ void DGraphRelationBuilder::build_animdata_curves_targets(Id *id,
     graph_->add_new_relation(
         op_from, op_to, "Animation -> Prop", RELATION_CHECK_BEFORE_ADD);
     /* It is possible that animation is writing to a nested ID data-block,
-     * need to make sure animation is evaluated after target ID is copied. */
+     * need to make sure animation is evaluated after target Id is copied. */
     const IdNode *id_node_from = op_from->owner->owner;
     const IdNode *id_node_to = op_to->owner->owner;
     if (id_node_from != id_node_to) {
@@ -1503,10 +1503,10 @@ void DGraphRelationBuilder::build_animdata_drivers(ID *id)
   ComponentKey adt_key(id, NodeType::ANIMATION);
   LISTBASE_FOREACH (FCurve *, fcu, &adt->drivers) {
     OpKey driver_key(id,
-                            NodeType::PARAMS,
-                            OpCode::DRIVER,
-                            fcu->api_path ? fcu->api_path : "",
-                            fcu->array_index);
+                     NodeType::PARAMS,
+                     OpCode::DRIVER,
+                     fcu->api_path ? fcu->api_path : "",
+                     fcu->array_index);
 
     /* create the driver's relations to targets */
     build_driver(id, fcu);
@@ -1587,14 +1587,14 @@ void DGraphRelationBuilder::build_action(DAction *action)
   }
 }
 
-void DepsgraphRelationBuilder::build_driver(Id *id, FCurve *fcu)
+void DGraphRelationBuilder::build_driver(Id *id, FCurve *fcu)
 {
   ChannelDriver *driver = fcu->driver;
   OpKey driver_key(id,
-                          NodeType::PARAMS,
-                          OpCode::DRIVER,
-                          fcu->api_path ? fcu->api_path : "",
-                          fcu->array_index);
+                   NodeType::PARAMS,
+                   OpCode::DRIVER,
+                   fcu->api_path ? fcu->api_path : "",
+                   fcu->array_index);
   /* Driver -> data components (for interleaved evaluation
    * bones/constraints/modifiers). */
   build_driver_data(id, fcu);
@@ -1609,7 +1609,7 @@ void DepsgraphRelationBuilder::build_driver(Id *id, FCurve *fcu)
   }
 }
 
-void DepsgraphRelationBuilder::build_driver_data(ID *id, FCurve *fcu)
+void DGraphRelationBuilder::build_driver_data(Id *id, FCurve *fcu)
 {
   /* Validate the api path pointer just in case. */
   const char *api_path = fcu->api_path;
@@ -1626,7 +1626,7 @@ void DepsgraphRelationBuilder::build_driver_data(ID *id, FCurve *fcu)
     return;
   }
   OpKey driver_key(
-      id, NodeType::PARAMS, OpCode::DRIVER, rna_path, fcu->array_index);
+      id, NodeType::PARAMS, OpCode::DRIVER, api_path, fcu->array_index);
   /* If the target of the driver is a Bone property, find the Armature data,
    * and then link the driver to all pose bone evaluation components that use
    * it. This is necessary to provide more granular dependencies specifically for
@@ -1642,14 +1642,14 @@ void DepsgraphRelationBuilder::build_driver_data(ID *id, FCurve *fcu)
   if (is_bone && GS(id_ptr->name) == ID_AR) {
     /* Drivers on armature-level bone settings (i.e. bbone stuff),
      * which will affect the evaluation of corresponding pose bones. */
-    Bone *bone = (Bone *)property_entry_key.ptr.data;
+    Bone *bone = (Bone *)prop_entry_key.ptr.data;
     if (bone == nullptr) {
-      fprintf(stderr, "Couldn't find armature bone name for driver path - '%s'\n", rna_path);
+      fprintf(stderr, "Couldn't find armature bone name for driver path - '%s'\n", api_path);
       return;
     }
 
-    const char *prop_identifier = api_prop_id(prop_entry_key.prop);
-    const bool driver_targets_bbone = STRPREFIX(prop_identifier, "bbone_");
+    const char *prop_id = api_prop_id(prop_entry_key.prop);
+    const bool driver_targets_bbone = STRPREFIX(prop_id, "bbone_");
 
     /* Find objects which use this, and make their eval callbacks depend on this. */
     for (IdNode *to_node : graph_->id_nodes) {
@@ -1705,9 +1705,9 @@ void DepsgraphRelationBuilder::build_driver_data(ID *id, FCurve *fcu)
     }
     if (api_prop_affects_params_node(&prop_entry_key.ptr, prop_entry_key.prop)) {
       ApiPathKey prop_exit_key(prop_entry_key.id,
-                                   prop_entry_key.ptr,
-                                   prop_entry_key.prop,
-                                   ApiPtrSource::EXIT);
+                               prop_entry_key.ptr,
+                               prop_entry_key.prop,
+                               ApiPtrSource::EXIT);
       OpKey params_key(id, NodeType::PARAMS, OpCode::PARAMS_EVAL);
       add_relation(prop_exit_key, parameters_key, "Driven Property -> Props");
     }
@@ -1727,14 +1727,14 @@ void DepsgraphRelationBuilder::build_driver_data(ID *id, FCurve *fcu)
   }
 }
 
-void DepsgraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
+void DGraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
 {
   ChannelDriver *driver = fcu->driver;
   OpKey driver_key(id,
-                          NodeType::PARAMS,
-                          OpCode::DRIVER,
-                          fcu->api_path ? fcu->api_path : "",
-                          fcu->array_index);
+                   NodeType::PARAMS,
+                   OpCode::DRIVER,
+                   fcu->api_path ? fcu->api_path : "",
+                   fcu->array_index);
   const char *api_path = fcu->api_path ? fcu->api_path : "";
   const ApiPathKey self_key(id, api_path, ApiPtrSource::ENTRY);
   LISTBASE_FOREACH (DriverVar *, dvar, &driver->variables) {
@@ -1776,7 +1776,7 @@ void DepsgraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
         add_relation(target_key, driver_key, "Target -> Driver");
       }
       else if (dtar->rna_path != nullptr && dtar->api_path[0] != '\0') {
-        ApiPathKey variable_exit_key(target_id, dtar->api_path, RNAPointerSource::EXIT);
+        ApiPathKey variable_exit_key(target_id, dtar->api_path, ApiPointerSource::EXIT);
         if (api_ptr_is_null(&variable_exit_key.ptr)) {
           continue;
         }
@@ -1813,7 +1813,7 @@ void DepsgraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
         if (target_id != variable_exit_key.ptr.owner_id) {
           if (deg_copy_on_write_is_needed(GS(target_id->name))) {
             ComponentKey target_id_key(target_id, NodeType::COPY_ON_WRITE);
-            add_relation(target_id_key, driver_key, "Target ID -> Driver");
+            add_relation(target_id_key, driver_key, "Target id -> Driver");
           }
         }
 
@@ -2413,9 +2413,9 @@ void DGraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
     }
     case ID_LT:
       break;
-    case ID_GD: /* Grease Pencil */
+    case ID_DPEN: /* Dune Pen */
     {
-      bGPdata *gpd = (bGPdata *)obdata;
+      DPenData *dpd = (DPenData *)obdata;
 
       /* Geometry cache needs to be recalculated on frame change
        * (e.g. to fix crashes after scrubbing the timeline when
@@ -2423,35 +2423,35 @@ void DGraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
        * re-added to the cache once scrubbing ends). */
       TimeSourceKey time_key;
       ComponentKey geometry_key(obdata, NodeType::GEOMETRY);
-      add_relation(time_key, geometry_key, "GP Frame Change");
+      add_relation(time_key, geometry_key, "DPen Frame Change");
 
       /* Geometry cache also needs to be recalculated when Material
        * settings change (e.g. when fill.opacity changes on/off,
-       * we need to rebuild the bGPDstroke->triangles caches). */
-      for (int i = 0; i < gpd->totcol; i++) {
-        Material *ma = gpd->mat[i];
-        if ((ma != nullptr) && (ma->gp_style != nullptr)) {
-          OperationKey material_key(&ma->id, NodeType::SHADING, OperationCode::MATERIAL_UPDATE);
-          add_relation(material_key, geometry_key, "Material -> GP Data");
+       * we need to rebuild the DPenStroke->triangles caches). */
+      for (int i = 0; i < dpd->totcol; i++) {
+        Material *ma = dpd->mat[i];
+        if ((ma != nullptr) && (ma->dp_style != nullptr)) {
+          OpKey material_key(&ma->id, NodeType::SHADING, OpCode::MATERIAL_UPDATE);
+          add_relation(material_key, geometry_key, "Material -> DPen Data");
         }
       }
 
       /* Layer parenting need react to the parent object transformation. */
-      LISTBASE_FOREACH (bGPDlayer *, gpl, &gpd->layers) {
-        if (gpl->parent != nullptr) {
-          ComponentKey gpd_geom_key(&gpd->id, NodeType::GEOMETRY);
+      LISTBASE_FOREACH (DPenLayer *, dpl, &dpd->layers) {
+        if (dpl->parent != nullptr) {
+          ComponentKey dpd_geom_key(&dpd->id, NodeType::GEOMETRY);
 
           if (gpl->partype == PARBONE) {
-            ComponentKey bone_key(&gpl->parent->id, NodeType::BONE, gpl->parsubstr);
-            OperationKey armature_key(
-                &gpl->parent->id, NodeType::TRANSFORM, OperationCode::TRANSFORM_FINAL);
+            ComponentKey bone_key(&dpl->parent->id, NodeType::BONE, dpl->parsubstr);
+            OpKey armature_key(
+                &dpl->parent->id, NodeType::TRANSFORM, OpCode::TRANSFORM_FINAL);
 
-            add_relation(bone_key, gpd_geom_key, "Bone Parent");
-            add_relation(armature_key, gpd_geom_key, "Armature Parent");
+            add_relation(bone_key, dpd_geom_key, "Bone Parent");
+            add_relation(armature_key, dpd_geom_key, "Armature Parent");
           }
           else {
-            ComponentKey transform_key(&gpl->parent->id, NodeType::TRANSFORM);
-            add_relation(transform_key, gpd_geom_key, "GPencil Parent Layer");
+            ComponentKey transform_key(&dpl->parent->id, NodeType::TRANSFORM);
+            add_relation(transform_key, dpd_geom_key, "GPencil Parent Layer");
           }
         }
       }
@@ -2479,12 +2479,12 @@ void DGraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
       break;
     }
     default:
-      BLI_assert_msg(0, "Should not happen");
+      lib_assert_msg(0, "Should not happen");
       break;
   }
 }
 
-void DGraphRelationBuilder::build_armature(bArmature *armature)
+void DGraphRelationBuilder::build_armature(DArmature *armature)
 {
   if (built_map_.checkIsBuiltAndTag(armature)) {
     return;
@@ -2492,9 +2492,9 @@ void DGraphRelationBuilder::build_armature(bArmature *armature)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(armature->id);
 
-  build_idproperties(armature->id.properties);
+  build_idprops(armature->id.props);
   build_animdata(&armature->id);
-  build_parameters(&armature->id);
+  build_params(&armature->id);
   build_armature_bones(&armature->bonebase);
 }
 
@@ -2527,7 +2527,7 @@ void DGraphRelationBuilder::build_camera(Camera *camera)
                               NodeType::BONE,
                               camera->dof.focus_subtarget,
                               OpCode::BONE_DONE);
-      add_relation(target_key, camera_parameters_key, "Camera DOF subtarget");
+      add_relation(target_key, camera_params_key, "Camera DOF subtarget");
     }
   }
 }
@@ -2543,9 +2543,9 @@ void DGraphRelationBuilder::build_light(Light *lamp)
 
   build_idprops(lamp->id.props);
   build_animdata(&lamp->id);
-  build_parameters(&lamp->id);
+  build_params(&lamp->id);
 
-  ComponentKey lamp_parameters_key(&lamp->id, NodeType::PARAMETERS);
+  ComponentKey lamp_params_key(&lamp->id, NodeType::PARAMS);
 
   /* For allowing drivers on lamp properties. */
   ComponentKey shading_key(&lamp->id, NodeType::SHADING);
@@ -2804,13 +2804,13 @@ void DGraphRelationBuilder::build_texture(Tex *texture)
     add_relation(animation_key, texture_key, "Datablock Animation");
   }
 
-  if (BKE_image_user_id_has_animation(&texture->id)) {
+  if (dune_image_user_id_has_animation(&texture->id)) {
     ComponentKey image_animation_key(&texture->id, NodeType::IMAGE_ANIMATION);
     add_relation(image_animation_key, texture_key, "Datablock Image Animation");
   }
 }
 
-void DepsgraphRelationBuilder::build_image(Image *image)
+void DGraphRelationBuilder::build_image(Image *image)
 {
   if (built_map_.checkIsBuiltAndTag(image)) {
     return;
@@ -2818,11 +2818,11 @@ void DepsgraphRelationBuilder::build_image(Image *image)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(image->id);
 
-  build_idproperties(image->id.properties);
-  build_parameters(&image->id);
+  build_idprops(image->id.props);
+  build_params(&image->id);
 }
 
-void DepsgraphRelationBuilder::build_cachefile(CacheFile *cache_file)
+void DGraphRelationBuilder::build_cachefile(CacheFile *cache_file)
 {
   if (built_map_.checkIsBuiltAndTag(cache_file)) {
     return;
@@ -2830,10 +2830,10 @@ void DepsgraphRelationBuilder::build_cachefile(CacheFile *cache_file)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(cache_file->id);
 
-  build_idproperties(cache_file->id.properties);
+  build_idprops(cache_file->id.props);
   /* Animation. */
   build_animdata(&cache_file->id);
-  build_parameters(&cache_file->id);
+  build_params(&cache_file->id);
   if (check_id_has_anim_component(&cache_file->id)) {
     ComponentKey animation_key(&cache_file->id, NodeType::ANIMATION);
     ComponentKey datablock_key(&cache_file->id, NodeType::CACHE);
@@ -2847,14 +2847,14 @@ void DepsgraphRelationBuilder::build_cachefile(CacheFile *cache_file)
 
   /* Cache file updates */
   if (cache_file->is_sequence) {
-    OperationKey cache_update_key(
-        &cache_file->id, NodeType::CACHE, OperationCode::FILE_CACHE_UPDATE);
+    OpKey cache_update_key(
+        &cache_file->id, NodeType::CACHE, OpCode::FILE_CACHE_UPDATE);
     TimeSourceKey time_src_key;
     add_relation(time_src_key, cache_update_key, "TimeSrc -> Cache File Eval");
   }
 }
 
-void DepsgraphRelationBuilder::build_mask(Mask *mask)
+void DGraphRelationBuilder::build_mask(Mask *mask)
 {
   if (built_map_.checkIsBuiltAndTag(mask)) {
     return;
@@ -2862,17 +2862,17 @@ void DepsgraphRelationBuilder::build_mask(Mask *mask)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(mask->id);
 
-  ID *mask_id = &mask->id;
-  build_idproperties(mask_id->properties);
+  Id *mask_id = &mask->id;
+  build_idprops(mask_id->props);
   /* F-Curve animation. */
   build_animdata(mask_id);
-  build_parameters(mask_id);
+  build_params(mask_id);
   /* Own mask animation. */
-  OperationKey mask_animation_key(mask_id, NodeType::ANIMATION, OperationCode::MASK_ANIMATION);
+  OpKey mask_animation_key(mask_id, NodeType::ANIMATION, OpCode::MASK_ANIMATION);
   TimeSourceKey time_src_key;
   add_relation(time_src_key, mask_animation_key, "TimeSrc -> Mask Animation");
   /* Final mask evaluation. */
-  OperationKey mask_eval_key(mask_id, NodeType::PARAMETERS, OperationCode::MASK_EVAL);
+  OperationKey mask_eval_key(mask_id, NodeType::PARAMETERS, OpCode::MASK_EVAL);
   add_relation(mask_animation_key, mask_eval_key, "Mask Animation -> Mask Eval");
   /* Build parents. */
   LISTBASE_FOREACH (MaskLayer *, mask_layer, &mask->masklayers) {
@@ -2885,8 +2885,8 @@ void DepsgraphRelationBuilder::build_mask(Mask *mask)
         }
         build_id(parent->id);
         if (parent->id_type == ID_MC) {
-          OperationKey movieclip_eval_key(
-              parent->id, NodeType::PARAMETERS, OperationCode::MOVIECLIP_EVAL);
+          OpKey movieclip_eval_key(
+              parent->id, NodeType::PARAMS, OpCode::MOVIECLIP_EVAL);
           add_relation(movieclip_eval_key, mask_eval_key, "Movie Clip -> Mask Eval");
         }
       }
@@ -2894,7 +2894,7 @@ void DepsgraphRelationBuilder::build_mask(Mask *mask)
   }
 }
 
-void DepsgraphRelationBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
+void DGraphRelationBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
 {
   if (built_map_.checkIsBuiltAndTag(linestyle)) {
     return;
@@ -2902,14 +2902,14 @@ void DepsgraphRelationBuilder::build_freestyle_linestyle(FreestyleLineStyle *lin
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(linestyle->id);
 
-  ID *linestyle_id = &linestyle->id;
-  build_parameters(linestyle_id);
-  build_idproperties(linestyle_id->properties);
+  Id *linestyle_id = &linestyle->id;
+  build_params(linestyle_id);
+  build_idprops(linestyle_id->props);
   build_animdata(linestyle_id);
   build_nodetree(linestyle->nodetree);
 }
 
-void DepsgraphRelationBuilder::build_movieclip(MovieClip *clip)
+void DGraphRelationBuilder::build_movieclip(MovieClip *clip)
 {
   if (built_map_.checkIsBuiltAndTag(clip)) {
     return;
@@ -2918,12 +2918,12 @@ void DepsgraphRelationBuilder::build_movieclip(MovieClip *clip)
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(clip->id);
 
   /* Animation. */
-  build_idproperties(clip->id.properties);
+  build_idprops(clip->id.props);
   build_animdata(&clip->id);
-  build_parameters(&clip->id);
+  build_params(&clip->id);
 }
 
-void DepsgraphRelationBuilder::build_lightprobe(LightProbe *probe)
+void DGraphRelationBuilder::build_lightprobe(LightProbe *probe)
 {
   if (built_map_.checkIsBuiltAndTag(probe)) {
     return;
@@ -2931,12 +2931,12 @@ void DepsgraphRelationBuilder::build_lightprobe(LightProbe *probe)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(probe->id);
 
-  build_idproperties(probe->id.properties);
+  build_idprops(probe->id.props);
   build_animdata(&probe->id);
-  build_parameters(&probe->id);
+  build_params(&probe->id);
 }
 
-void DepsgraphRelationBuilder::build_speaker(Speaker *speaker)
+void DGraphRelationBuilder::build_speaker(Speaker *speaker)
 {
   if (built_map_.checkIsBuiltAndTag(speaker)) {
     return;
@@ -2944,7 +2944,7 @@ void DepsgraphRelationBuilder::build_speaker(Speaker *speaker)
 
   const BuilderStack::ScopedEntry stack_entry = stack_.trace(speaker->id);
 
-  build_idproperties(speaker->id.properties);
+  build_idprops(speaker->id.props);
   build_animdata(&speaker->id);
   build_parameters(&speaker->id);
   if (speaker->sound != nullptr) {
