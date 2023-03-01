@@ -18,31 +18,31 @@ OpNode *DGraphRelationBuilder::find_op_node(const KeyType &key)
 }
 
 template<typename KeyFrom, typename KeyTo>
-Relation *DepsgraphRelationBuilder::add_relation(const KeyFrom &key_from,
+Relation *DGraphRelationBuilder::add_relation(const KeyFrom &key_from,
                                                  const KeyTo &key_to,
                                                  const char *description,
                                                  int flags)
 {
   Node *node_from = get_node(key_from);
   Node *node_to = get_node(key_to);
-  OperationNode *op_from = node_from ? node_from->get_exit_operation() : nullptr;
-  OperationNode *op_to = node_to ? node_to->get_entry_operation() : nullptr;
+  OpNode *op_from = node_from ? node_from->get_exit_op() : nullptr;
+  OpNode *op_to = node_to ? node_to->get_entry_op() : nullptr;
 
   if (op_from && op_to) {
-    return add_operation_relation(op_from, op_to, description, flags);
+    return add_op_relation(op_from, op_to, description, flags);
   }
 
-  /* TODO(sergey): Report error in the interface. */
+  /* TODO: Report error in the interface. */
 
   std::cerr << "--------------------------------------------------------------------\n";
   std::cerr << "Failed to add relation \"" << description << "\"\n";
 
   if (!op_from) {
-    std::cerr << "Could not find op_from: " << key_from.identifier() << "\n";
+    std::cerr << "Could not find op_from: " << key_from.id() << "\n";
   }
 
   if (!op_to) {
-    std::cerr << "Could not find op_to: " << key_to.identifier() << "\n";
+    std::cerr << "Could not find op_to: " << key_to.id() << "\n";
   }
 
   if (!stack_.is_empty()) {
@@ -55,14 +55,14 @@ Relation *DepsgraphRelationBuilder::add_relation(const KeyFrom &key_from,
 }
 
 template<typename KeyTo>
-Relation *DepsgraphRelationBuilder::add_relation(const TimeSourceKey &key_from,
-                                                 const KeyTo &key_to,
-                                                 const char *description,
-                                                 int flags)
+Relation *DGraphRelationBuilder::add_relation(const TimeSourceKey &key_from,
+                                              const KeyTo &key_to,
+                                              const char *description,
+                                              int flags)
 {
   TimeSourceNode *time_from = get_node(key_from);
   Node *node_to = get_node(key_to);
-  OperationNode *op_to = node_to ? node_to->get_entry_operation() : nullptr;
+  OpNode *op_to = node_to ? node_to->get_entry_op() : nullptr;
   if (time_from != nullptr && op_to != nullptr) {
     return add_time_relation(time_from, op_to, description, flags);
   }
@@ -70,29 +70,29 @@ Relation *DepsgraphRelationBuilder::add_relation(const TimeSourceKey &key_from,
 }
 
 template<typename KeyType>
-Relation *DepsgraphRelationBuilder::add_node_handle_relation(const KeyType &key_from,
-                                                             const DepsNodeHandle *handle,
-                                                             const char *description,
-                                                             int flags)
+Relation *DGraphRelationBuilder::add_node_handle_relation(const KeyType &key_from,
+                                                          const DepsNodeHandle *handle,
+                                                          const char *description,
+                                                          int flags)
 {
   Node *node_from = get_node(key_from);
-  OperationNode *op_from = node_from ? node_from->get_exit_operation() : nullptr;
-  OperationNode *op_to = handle->node->get_entry_operation();
+  OpNode *op_from = node_from ? node_from->get_exit_op() : nullptr;
+  OpNode *op_to = handle->node->get_entry_op();
   if (op_from != nullptr && op_to != nullptr) {
-    return add_operation_relation(op_from, op_to, description, flags);
+    return add_op_relation(op_from, op_to, description, flags);
   }
   else {
     if (!op_from) {
       fprintf(stderr,
               "add_node_handle_relation(%s) - Could not find op_from (%s)\n",
               description,
-              key_from.identifier().c_str());
+              key_from.id().c_str());
     }
     if (!op_to) {
       fprintf(stderr,
               "add_node_handle_relation(%s) - Could not find op_to (%s)\n",
               description,
-              key_from.identifier().c_str());
+              key_from.id().c_str());
     }
   }
   return nullptr;
@@ -112,7 +112,7 @@ static inline bool rigidbody_object_depends_on_evaluated_geometry(const RigidBod
 }
 
 template<typename KeyTo>
-Relation *DepsgraphRelationBuilder::add_depends_on_transform_relation(ID *id,
+Relation *DGraphRelationBuilder::add_depends_on_transform_relation(ID *id,
                                                                       const KeyTo &key_to,
                                                                       const char *description,
                                                                       int flags)
@@ -120,7 +120,7 @@ Relation *DepsgraphRelationBuilder::add_depends_on_transform_relation(ID *id,
   if (GS(id->name) == ID_OB) {
     Object *object = reinterpret_cast<Object *>(id);
     if (rigidbody_object_depends_on_evaluated_geometry(object->rigidbody_object)) {
-      OperationKey transform_key(&object->id, NodeType::TRANSFORM, OperationCode::TRANSFORM_EVAL);
+      OpKey transform_key(&object->id, NodeType::TRANSFORM, OpCode::TRANSFORM_EVAL);
       return add_relation(transform_key, key_to, description, flags);
     }
   }
@@ -129,8 +129,8 @@ Relation *DepsgraphRelationBuilder::add_depends_on_transform_relation(ID *id,
 }
 
 template<typename KeyType>
-DepsNodeHandle DepsgraphRelationBuilder::create_node_handle(const KeyType &key,
-                                                            const char *default_name)
+DepsNodeHandle DGraphRelationBuilder::create_node_handle(const KeyType &key,
+                                                         const char *default_name)
 {
   return DepsNodeHandle(this, get_node(key), default_name);
 }
@@ -140,8 +140,8 @@ DepsNodeHandle DepsgraphRelationBuilder::create_node_handle(const KeyType &key,
  * dependency cycles.
  */
 template<typename KeyFrom, typename KeyTo>
-bool DepsgraphRelationBuilder::is_same_bone_dependency(const KeyFrom &key_from,
-                                                       const KeyTo &key_to)
+bool DGraphRelationBuilder::is_same_bone_dependency(const KeyFrom &key_from,
+                                                    const KeyTo &key_to)
 {
   /* Get operations for requested keys. */
   Node *node_from = get_node(key_from);
@@ -149,8 +149,8 @@ bool DepsgraphRelationBuilder::is_same_bone_dependency(const KeyFrom &key_from,
   if (node_from == nullptr || node_to == nullptr) {
     return false;
   }
-  OperationNode *op_from = node_from->get_exit_operation();
-  OperationNode *op_to = node_to->get_entry_operation();
+  OpNode *op_from = node_from->get_exit_op();
+  OpNode *op_to = node_to->get_entry_op();
   if (op_from == nullptr || op_to == nullptr) {
     return false;
   }
@@ -159,8 +159,8 @@ bool DepsgraphRelationBuilder::is_same_bone_dependency(const KeyFrom &key_from,
     return false;
   }
   /* We are only interested in relations like BONE_DONE -> BONE_LOCAL... */
-  if (!(op_from->opcode == OperationCode::BONE_DONE &&
-        op_to->opcode == OperationCode::BONE_LOCAL)) {
+  if (!(op_from->opcode == OpCode::BONE_DONE &&
+        op_to->opcode == OpCode::BONE_LOCAL)) {
     return false;
   }
   /* ... BUT, we also need to check if it's same bone. */
@@ -171,8 +171,8 @@ bool DepsgraphRelationBuilder::is_same_bone_dependency(const KeyFrom &key_from,
 }
 
 template<typename KeyFrom, typename KeyTo>
-bool DepsgraphRelationBuilder::is_same_nodetree_node_dependency(const KeyFrom &key_from,
-                                                                const KeyTo &key_to)
+bool DGraphRelationBuilder::is_same_nodetree_node_dependency(const KeyFrom &key_from,
+                                                             const KeyTo &key_to)
 {
   /* Get operations for requested keys. */
   Node *node_from = get_node(key_from);
