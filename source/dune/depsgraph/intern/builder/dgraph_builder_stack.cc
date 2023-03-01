@@ -6,7 +6,7 @@
 
 #include "dune_idtype.h"
 
-#include "types_Id.h"
+#include "types_id.h"
 #include "types_action.h"
 #include "types_constraint.h"
 #include "types_modifier.h"
