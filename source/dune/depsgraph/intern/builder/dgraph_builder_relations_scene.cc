@@ -1,15 +1,15 @@
-#include "intern/builder/deg_builder_relations.h"
+#include "intern/builder/dgraph_builder_relations.h"
 
 #include "types_scene.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
-void DepsgraphRelationBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
+void DGraphRelationBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
 {
   scene_ = scene;
   const bool build_compositor = (scene->r.scemode & R_DOCOMP);
   const bool build_sequencer = (scene->r.scemode & R_DOSEQ);
-  build_scene_parameters(scene);
+  build_scene_params(scene);
   build_animdata(&scene->id);
   build_scene_audio(scene);
   if (build_compositor) {
@@ -24,15 +24,15 @@ void DepsgraphRelationBuilder::build_scene_render(Scene *scene, ViewLayer *view_
   }
 }
 
-void DepsgraphRelationBuilder::build_scene_parameters(Scene *scene)
+void DGaphRelationBuilder::build_scene_params(Scene *scene)
 {
-  if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_PARAMETERS)) {
+  if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_PARAMS)) {
     return;
   }
 
   /* TODO: Trace as a scene parameters. */
 
-  build_idproperties(scene->id.properties);
+  build_idprops(scene->id.props);
   build_params(&scene->id);
   OpKey params_eval_key(
       &scene->id, NodeType::PARAMS, OpCode::PARAMS_EXIT);
@@ -44,7 +44,7 @@ void DepsgraphRelationBuilder::build_scene_parameters(Scene *scene)
   }
 }
 
-void DepsgraphRelationBuilder::build_scene_compositor(Scene *scene)
+void DGraphRelationBuilder::build_scene_compositor(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_SCENE_COMPOSITOR)) {
     return;
@@ -58,4 +58,4 @@ void DepsgraphRelationBuilder::build_scene_compositor(Scene *scene)
   build_nodetree(scene->nodetree);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
