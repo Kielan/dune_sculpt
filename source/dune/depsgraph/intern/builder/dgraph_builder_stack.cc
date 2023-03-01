@@ -1,17 +1,17 @@
-#include "intern/builder/deg_builder_stack.h"
+#include "intern/builder/dgraph_builder_stack.h"
 
 #include <iomanip>
 #include <ios>
 #include <iostream>
 
-#include "BKE_idtype.h"
+#include "dune_idtype.h"
 
-#include "DNA_ID.h"
-#include "DNA_action_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_modifier_types.h"
+#include "types_Id.h"
+#include "types_action.h"
+#include "types_constraint.h"
+#include "types_modifier.h"
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 /* Spacing between adjacent columns, in number of spaces. */
 constexpr int kColumnSpacing = 4;
@@ -25,13 +25,13 @@ namespace {
 
 /* NOTE: Depth column printing is already taken care of. */
 
-void print(std::ostream &stream, const ID *id)
+void print(std::ostream &stream, const Id *id)
 {
-  const IDTypeInfo *id_type_info = BKE_idtype_get_info_from_id(id);
+  const IdTypeInfo *id_type_info = dune_idtype_get_info_from_id(id);
   stream << std::setw(kPrintTypeWidth) << id_type_info->name << (id->name + 2) << "\n";
 }
 
-void print(std::ostream &stream, const bConstraint *constraint)
+void print(std::ostream &stream, const DConstraint *constraint)
 {
   stream << std::setw(kPrintTypeWidth) << ("Constraint") << constraint->name << "\n";
 }
@@ -41,7 +41,7 @@ void print(std::ostream &stream, const ModifierData *modifier_data)
   stream << std::setw(kPrintTypeWidth) << ("Modifier") << modifier_data->name << "\n";
 }
 
-void print(std::ostream &stream, const bPoseChannel *pchan)
+void print(std::ostream &stream, const DPoseChannel *pchan)
 {
   stream << std::setw(kPrintTypeWidth) << ("Pose Channel") << pchan->name << "\n";
 }
@@ -84,4 +84,4 @@ void BuilderStack::print_backtrace(std::ostream &stream)
   stream.flags(old_flags);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
