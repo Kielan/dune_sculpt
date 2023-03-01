@@ -1,6 +1,6 @@
  /** Methods for constructing depsgraph **/
 
-#include "intern/builder/deg_builder_relations.h"
+#include "intern/builder/dgraph_builder_relations.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -21,20 +21,20 @@
 #include "dune_main.h"
 #include "dune_node.h"
 
-#include "deg_depsgraph.h"
-#include "deg_depsgraph_build.h"
+#include "dgraph.h"
+#include "dgraph_build.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/builder/deg_builder_pchanmap.h"
+#include "intern/builder/dgraph_builder.h"
+#include "intern/builder/dgraph_builder_pchanmap.h"
 
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 void DepsgraphRelationBuilder::build_layer_collections(ListBase *lb)
 {
