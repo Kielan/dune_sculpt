@@ -8,14 +8,14 @@ struct DConstraint;
 struct DPoseChannel;
 struct ModifierData;
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* This class keeps track of the builder calls nesting, allowing to unroll them back and provide a
  * clue about how the builder made it to its current state.
  *
  * The tracing is based on the builder giving a trace clues to the stack. Typical usage is:
  *
- *   void DepsgraphRelationBuilder::my_id_builder(ID *id)
+ *   void DGraphRelationBuilder::my_id_builder(Id *id)
  *   {
  *     if (built_map_.checkIsBuiltAndTag(id)) {
  *       return;
@@ -78,7 +78,7 @@ class BuilderStack {
     {
       other.stack_ = nullptr;
     }
-    ScopedEntry &operator=(ScopedEntry &&other)
+    ScopedEntry &op=(ScopedEntry &&other)
     {
       if (this == &other) {
         return *this;
@@ -130,4 +130,4 @@ class BuilderStack {
   Stack stack_;
 };
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
