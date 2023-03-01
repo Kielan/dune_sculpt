@@ -79,7 +79,7 @@ void DGraphRelationBuilder::build_ik_pose(Object *object,
   /* The ITASC solver currently accesses the target transforms in init tree :(
    * TODO: Fix ITASC and remove this.
    */
-  OperationKey target_dependent_key = is_itasc ? init_ik_key : solver_key;
+  OpKey target_dependent_key = is_itasc ? init_ik_key : solver_key;
   /* IK target */
   /* TODO: This should get handled as part of the constraint code. */
   if (data->tar != nullptr) {
@@ -317,7 +317,7 @@ void DGraphRelationBuilder::build_rig(Object *object)
   LISTBASE_FOREACH (DPoseChannel *, pchan, &object->pose->chanbase) {
     const BuilderStack::ScopedEntry stack_entry = stack_.trace(*pchan);
 
-    LISTBASE_FOREACH (bConstraint *, con, &pchan->constraints) {
+    LISTBASE_FOREACH (DConstraint *, con, &pchan->constraints) {
       const BuilderStack::ScopedEntry stack_entry = stack_.trace(*con);
 
       switch (con->type) {
@@ -359,9 +359,9 @@ void DGraphRelationBuilder::build_rig(Object *object)
         &object->id, NodeType::BONE, pchan->name, OpCode::BONE_LOCAL);
     OpKey bone_pose_key(
         &object->id, NodeType::BONE, pchan->name, OpCode::BONE_POSE_PARENT);
-    OperationKey bone_ready_key(
+    OpKey bone_ready_key(
         &object->id, NodeType::BONE, pchan->name, OpCode::BONE_READY);
-    OperationKey bone_done_key(&object->id, NodeType::BONE, pchan->name, OperationCode::BONE_DONE);
+    OpKey bone_done_key(&object->id, NodeType::BONE, pchan->name, OpCode::BONE_DONE);
     pchan->flag &= ~POSE_DONE;
     /* Pose init to bone local. */
     add_relation(pose_init_key, bone_local_key, "Pose Init - Bone Local", RELATION_FLAG_GODMODE);
@@ -369,17 +369,17 @@ void DGraphRelationBuilder::build_rig(Object *object)
     add_relation(bone_local_key, bone_pose_key, "Bone Local - Bone Pose");
     /* Parent relation. */
     if (pchan->parent != nullptr) {
-      OperationCode parent_key_opcode;
+      OpCode parent_key_opcode;
       /* NOTE: this difference in handling allows us to prevent lockups
        * while ensuring correct poses for separate chains. */
       if (root_map.has_common_root(pchan->name, pchan->parent->name)) {
-        parent_key_opcode = OperationCode::BONE_READY;
+        parent_key_opcode = OpCode::BONE_READY;
       }
       else {
-        parent_key_opcode = OperationCode::BONE_DONE;
+        parent_key_opcode = OpCode::BONE_DONE;
       }
 
-      OperationKey parent_key(&object->id, NodeType::BONE, pchan->parent->name, parent_key_opcode);
+      OpKey parent_key(&object->id, NodeType::BONE, pchan->parent->name, parent_key_opcode);
       add_relation(parent_key, bone_pose_key, "Parent Bone -> Child Bone");
     }
     /* Build constraints. */
@@ -387,16 +387,16 @@ void DGraphRelationBuilder::build_rig(Object *object)
       /* Build relations for indirectly linked objects. */
       BuilderWalkUserData data;
       data.builder = this;
-      BKE_constraints_id_loop(&pchan->constraints, constraint_walk, &data);
+      dune_constraints_id_loop(&pchan->constraints, constraint_walk, &data);
       /* Constraints stack and constraint dependencies. */
       build_constraints(&object->id, NodeType::BONE, pchan->name, &pchan->constraints, &root_map);
       /* Pose -> constraints. */
-      OperationKey constraints_key(
-          &object->id, NodeType::BONE, pchan->name, OperationCode::BONE_CONSTRAINTS);
+      OpKey constraints_key(
+          &object->id, NodeType::BONE, pchan->name, OpCode::BONE_CONSTRAINTS);
       add_relation(bone_pose_key, constraints_key, "Pose -> Constraints Stack");
       add_relation(bone_local_key, constraints_key, "Local -> Constraints Stack");
       /* Constraints -> ready/ */
-      /* TODO(sergey): When constraint stack is exploded, this step should
+      /* TODO: When constraint stack is exploded, this step should
        * occur before the first IK solver. */
       add_relation(constraints_key, bone_ready_key, "Constraints -> Ready");
     }
@@ -411,25 +411,25 @@ void DGraphRelationBuilder::build_rig(Object *object)
     add_relation(bone_ready_key, bone_done_key, "Ready -> Done");
     /* B-Bone shape is the real final step after Done if present. */
     if (check_pchan_has_bbone(object, pchan)) {
-      OperationKey bone_segments_key(
-          &object->id, NodeType::BONE, pchan->name, OperationCode::BONE_SEGMENTS);
+      OpKey bone_segments_key(
+          &object->id, NodeType::BONE, pchan->name, OpCode::BONE_SEGMENTS);
       /* B-Bone shape depends on the final position of the bone. */
       add_relation(bone_done_key, bone_segments_key, "Done -> B-Bone Segments");
       /* B-Bone shape depends on final position of handle bones. */
-      bPoseChannel *prev, *next;
-      BKE_pchan_bbone_handles_get(pchan, &prev, &next);
+      DPoseChannel *prev, *next;
+      dune_pchan_bbone_handles_get(pchan, &prev, &next);
       if (prev) {
-        OperationCode opcode = OperationCode::BONE_DONE;
+        OpCode opcode = OpCode::BONE_DONE;
         /* Inheriting parent roll requires access to prev handle's B-Bone properties. */
         if ((pchan->bone->bbone_flag & BBONE_ADD_PARENT_END_ROLL) != 0 &&
             check_pchan_has_bbone_segments(object, prev)) {
-          opcode = OperationCode::BONE_SEGMENTS;
+          opcode = OpCode::BONE_SEGMENTS;
         }
-        OperationKey prev_key(&object->id, NodeType::BONE, prev->name, opcode);
+        OpKey prev_key(&object->id, NodeType::BONE, prev->name, opcode);
         add_relation(prev_key, bone_segments_key, "Prev Handle -> B-Bone Segments");
       }
       if (next) {
-        OperationKey next_key(&object->id, NodeType::BONE, next->name, OperationCode::BONE_DONE);
+        OpKey next_key(&object->id, NodeType::BONE, next->name, OpKeyCode::BONE_DONE);
         add_relation(next_key, bone_segments_key, "Next Handle -> B-Bone Segments");
       }
       /* Pose requires the B-Bone shape. */
