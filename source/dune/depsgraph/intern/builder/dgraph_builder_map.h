@@ -5,7 +5,7 @@
 struct Id;
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
 class BuilderMap {
  public:
@@ -53,5 +53,5 @@ class BuilderMap {
   Map<Id *, int> id_tags_;
 };
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
