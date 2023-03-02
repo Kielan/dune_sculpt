@@ -1,4 +1,4 @@
-#include "intern/builder/deg_builder_pchanmap.h"
+#include "intern/builder/dgraph_builder_pchanmap.h"
 
 #include <cstdio>
 #include <cstring>
