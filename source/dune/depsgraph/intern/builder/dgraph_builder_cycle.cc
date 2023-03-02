@@ -14,7 +14,7 @@
 #include "intern/dgraph.h"
 #include "intern/dgraph_relation.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 namespace {
 
@@ -211,4 +211,4 @@ void dgraph_detect_cycles(DGraph *graph)
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
