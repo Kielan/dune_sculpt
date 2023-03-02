@@ -145,11 +145,11 @@ void DGraphNodeBuilder::build_view_layer(Scene *scene,
   }
   /* Collections. */
   add_op_node(&scene->id,
-                     NodeType::LAYER_COLLECTIONS,
-                     OpCode::VIEW_LAYER_EVAL,
-                     [view_layer_index = view_layer_index_, scene_cow](::DGraph *dgraph) {
-                       dune_layer_eval_view_layer_indexed(dgraph, scene_cow, view_layer_index);
-                     });
+              NodeType::LAYER_COLLECTIONS,
+              OpCode::VIEW_LAYER_EVAL,
+              [view_layer_index = view_layer_index_, scene_cow](::DGraph *dgraph) {
+                dune_layer_eval_view_layer_indexed(dgraph, scene_cow, view_layer_index);
+              });
   /* Parameters evaluation for scene relations mainly. */
   build_scene_compositor(scene);
   build_scene_params(scene);
@@ -160,4 +160,4 @@ void DGraphNodeBuilder::build_view_layer(Scene *scene,
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
