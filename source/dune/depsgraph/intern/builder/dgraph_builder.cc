@@ -1,4 +1,4 @@
-#include "intern/builder/deg_builder.h"
+#include "intern/builder/dgraph_builder.h"
 
 #include <cstring>
 
@@ -37,7 +37,7 @@ bool deg_check_id_in_dgraph(const DGraph *graph, ID *id_orig)
   return id_node != nullptr;
 }
 
-bool deg_check_base_in_dgraph(const Depsgraph *graph, Base *base)
+bool dgraph_check_base_in_dgraph(const Depsgraph *graph, Base *base)
 {
   Object *object_orig = base->base_orig->object;
   IdNode *id_node = graph->find_id_node(&object_orig->id);
@@ -226,4 +226,4 @@ void dgraph_build_finalize(Main *dmain, DGraph *graph)
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
