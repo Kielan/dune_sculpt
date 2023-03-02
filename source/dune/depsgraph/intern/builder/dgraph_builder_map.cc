@@ -2,7 +2,7 @@
 
 #include "types_id.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 bool BuilderMap::checkIsBuilt(Id *id, int tag) const
 {
@@ -27,4 +27,4 @@ int BuilderMap::getIdTag(Id *id) const
   return id_tags_.lookup_default(id, 0);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
