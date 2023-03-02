@@ -93,31 +93,31 @@ class DGraphNodeBuilder : public DGraphBuilder {
   ComponentNode *find_component_node(const Id *id, NodeType comp_type, const char *comp_name = "");
 
   OpNode *add_op_node(ComponentNode *comp_node,
-                                    OpCode opcode,
-                                    const DepsEvalOpCb &op = nullptr,
-                                    const char *name = "",
-                                    int name_tag = -1);
+                      OpCode opcode,
+                      const DepsEvalOpCb &op = nullptr,
+                      const char *name = "",
+                      int name_tag = -1);
   OpNode *add_op_node(Id *id,
-                                    NodeType comp_type,
-                                    const char *comp_name,
-                                    OpCode opcode,
-                                    const DepsEvalOpCb &op = nullptr,
-                                    const char *name = "",
-                                    int name_tag = -1);
+                      NodeType comp_type,
+                      const char *comp_name,
+                      OpCode opcode,
+                      const DepsEvalOpCb &op = nullptr,
+                      const char *name = "",
+                      int name_tag = -1);
   OpNode *add_op_node(Id *id,
-                                    NodeType comp_type,
-                                    OpCode opcode,
-                                    const DepsEvalOpCb &op = nullptr,
-                                    const char *name = "",
-                                    int name_tag = -1);
+                      NodeType comp_type,
+                      OpCode opcode,
+                      const DepsEvalOpCb &op = nullptr,
+                      const char *name = "",
+                      int name_tag = -1);
 
   OpNode *ensure_op_node(Id *id,
-                                       NodeType comp_type,
-                                       const char *comp_name,
-                                       OperationCode opcode,
-                                       const DepsEvalOpCb &op = nullptr,
-                                       const char *name = "",
-                                       int name_tag = -1);
+                         NodeType comp_type,
+                         const char *comp_name,
+                         OpCode opcode,
+                         const DepsEvalOpCb &op = nullptr,
+                         const char *name = "",
+                         int name_tag = -1);
   OperationNode *ensure_op_node(Id *id,
                                 NodeType comp_type,
                                 OpCode opcode,
@@ -178,7 +178,7 @@ class DGraphNodeBuilder : public DGraphBuilder {
   virtual void build_object_data(Object *object);
   virtual void build_object_data_camera(Object *object);
   virtual void build_object_data_geometry(Object *object);
-  virtual void build_object_data_geometry_datablock(ID *obdata);
+  virtual void build_object_data_geometry_datablock(Id *obdata);
   virtual void build_object_data_light(Object *object);
   virtual void build_object_data_lightprobe(Object *object);
   virtual void build_object_data_speaker(Object *object);
@@ -193,12 +193,12 @@ class DGraphNodeBuilder : public DGraphBuilder {
    * Build graph nodes for #AnimData block and any animated images used.
    * \param id: ID-Block which hosts the #AnimData
    */
-  virtual void build_animdata(ID *id);
+  virtual void build_animdata(Id *id);
   virtual void build_animdata_nlastrip_targets(ListBase *strips);
   /**
    * Build graph nodes to update the current frame in image users.
    */
-  virtual void build_animation_images(ID *id);
+  virtual void build_animation_images(Id *id);
   virtual void build_action(bAction *action);
   /**
    * Build graph node(s) for Driver
@@ -298,4 +298,4 @@ class DGraphNodeBuilder : public DGraphBuilder {
   BuilderMap built_map_;
 };
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
