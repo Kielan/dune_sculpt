@@ -8,11 +8,11 @@
 
 #include "dune_animsys.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* Animated property storage. */
 
-AnimatedPropID::AnimatedPropID() : data(nullptr), prop_api(nullptr)
+AnimatedPropId::AnimatedPropId() : data(nullptr), prop_api(nullptr)
 {
 }
 
@@ -156,4 +156,4 @@ AnimatedPropStorage *DGraphBuilderCache::ensureInitAnimatedPropStorage(Id *id)
   return animated_prop_storage;
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
