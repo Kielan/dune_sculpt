@@ -1,16 +1,16 @@
-#include "intern/builder/deg_builder_transitive.h"
+#include "intern/builder/dgraph_builder_transitive.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_operation.h"
 
-#include "intern/debug/deg_debug.h"
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_relation.h"
+#include "intern/debug/dgraph_debug.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_relation.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* -------------------------------------------------- */
 
@@ -32,28 +32,28 @@ enum {
   OP_REACHABLE = 2,
 };
 
-static void deg_graph_tag_paths_recursive(Node *node)
+static void dgraph_tag_paths_recursive(Node *node)
 {
   if (node->custom_flags & OP_VISITED) {
     return;
   }
   node->custom_flags |= OP_VISITED;
   for (Relation *rel : node->inlinks) {
-    deg_graph_tag_paths_recursive(rel->from);
+    dgraph_tag_paths_recursive(rel->from);
     /* Do this only in inlinks loop, so the target node does not get
      * flagged. */
     rel->from->custom_flags |= OP_REACHABLE;
   }
 }
 
-void deg_graph_transitive_reduction(Depsgraph *graph)
+void dgraph_transitive_reduction(DGraph *graph)
 {
   int num_removed_relations = 0;
   Vector<Relation *> relations_to_remove;
 
-  for (OperationNode *target : graph->operations) {
+  for (OpNode *target : graph->ops) {
     /* Clear tags. */
-    for (OperationNode *node : graph->operations) {
+    for (OpNode *node : graph->ops) {
       node->custom_flags = 0;
     }
     /* Mark nodes from which we can reach the target
@@ -61,7 +61,7 @@ void deg_graph_transitive_reduction(Depsgraph *graph)
      * flagged. */
     target->custom_flags |= OP_VISITED;
     for (Relation *rel : target->inlinks) {
-      deg_graph_tag_paths_recursive(rel->from);
+      dgraph_tag_paths_recursive(rel->from);
     }
     /* Remove redundant paths to the target. */
     for (Relation *rel : target->inlinks) {
@@ -83,7 +83,7 @@ void deg_graph_transitive_reduction(Depsgraph *graph)
     num_removed_relations += relations_to_remove.size();
     relations_to_remove.clear();
   }
-  DEG_DEBUG_PRINTF((::Depsgraph *)graph, BUILD, "Removed %d relations\n", num_removed_relations);
+  DEG_DEBUG_PRINTF((::DGraph *)graph, BUILD, "Removed %d relations\n", num_removed_relations);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
