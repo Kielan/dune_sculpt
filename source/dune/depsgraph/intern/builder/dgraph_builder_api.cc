@@ -26,7 +26,7 @@
 #include "intern/node/dgraph_node_id.h"
 #include "intern/node/dgraph_node_operation.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* ********************************* Id Data ******************************** */
 
@@ -402,4 +402,4 @@ bool api_prop_affects_params_node(const ApiPtr *ptr, const ApiProp *prop)
          !api_struct_is_a(ptr->type, &api_NodesModifier);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
