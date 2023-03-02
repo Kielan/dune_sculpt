@@ -2,7 +2,7 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
 #include "api_access.h"
 
@@ -38,13 +38,13 @@ class AnimatedPropStorage {
  public:
   AnimatedPropStorage();
 
-  void initializeFromID(DepsgraphBuilderCache *builder_cache, Id *id);
+  void initializeFromId(DGraphBuilderCache *builder_cache, Id *id);
 
   void tagPropAsAnimated(const AnimatedPropId &prop_id);
   void tagPropAsAnimated(const ApiPtr *ptr_api, const ApiProp *prop_api);
 
-  bool isPropertyAnimated(const AnimatedPropId &prop_id);
-  bool isPropertyAnimated(const ApiPtr *ptr_api, const PropAPi *prop_api);
+  bool isPropAnimated(const AnimatedPropId &prop_id);
+  bool isPropAnimated(const ApiPtr *ptr_api, const PropApi *prop_api);
 
   bool isAnyPropAnimated(const ApiPtr *ptr_api);
 
@@ -53,7 +53,7 @@ class AnimatedPropStorage {
 
   /* indexed by ApiPtr.data. */
   Set<void *> animated_objects_set;
-  Set<AnimatedPropID> animated_prop_set;
+  Set<AnimatedPropId> animated_prop_set;
 
   MEM_CXX_CLASS_ALLOC_FUNCS("AnimatedPropStorage");
 };
@@ -89,10 +89,10 @@ class DGraphBuilderCache {
     return animated_prop_storage->isAnyPropAnimated(ptr);
   }
 
-  Map<ID *, AnimatedPropStorage *> animated_prop_storage_map_;
+  Map<Id *, AnimatedPropStorage *> animated_prop_storage_map_;
 
   MEM_CXX_CLASS_ALLOC_FUNCS("DGraphBuilderCache");
 };
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
