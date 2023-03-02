@@ -87,8 +87,8 @@
 #include "api_prototypes.h"
 #include "api_types.h"
 
-#include "deg_depsgraph.h"
-#include "deg_depsgraph_build.h"
+#include "dgraph.h"
+#include "dgraph_build.h"
 
 #include "seq_iterator.h"
 #include "seq_sequencer.h"
@@ -104,7 +104,7 @@
 #include "intern/node/dgraph_node_id.h"
 #include "intern/node/dgraph_node_operation.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* ************ */
 /* Node Builder */
@@ -164,7 +164,7 @@ IdNode *DGraphNodeBuilder::add_id_node(Id *id)
   if (is_newly_created) {
     if (deg_copy_on_write_is_needed(id_type)) {
       ComponentNode *comp_cow = id_node->add_component(NodeType::COPY_ON_WRITE);
-      OpNode *op_cow = comp_cow->add_operation(
+      OpNode *op_cow = comp_cow->add_op(
           [id_node](::DGraph *dgraph) { dgraph_evaluate_copy_on_write(dgraph, id_node); },
           OpCode::COPY_ON_WRITE,
           "",
@@ -237,7 +237,7 @@ OpNode *DGraphNodeBuilder::add_op_node(Id *id,
   return add_op_node(comp_node, opcode, op, name, name_tag);
 }
 
-OpNode *DGraphNodeBuilder::add_op_node(ID *id,
+OpNode *DGraphNodeBuilder::add_op_node(Id *id,
                                        NodeType comp_type,
                                        OpCode opcode,
                                        const DepsEvalOpCb &op,
@@ -256,7 +256,7 @@ OpNode *DGraphNodeBuilder::ensure_op_node(Id *id,
                                           int name_tag)
 {
   OpNode *op = find_op_node(id, comp_type, comp_name, opcode, name, name_tag);
-  if (op != nullptr) {
+  if (op != nullptr) {ui
     return op;
   }
   return add_op_node(id, comp_type, comp_name, opcode, op, name, name_tag);
@@ -466,7 +466,7 @@ void DGraphNodeBuilder::update_invalid_cow_ptrs()
     }
     dune_lib_foreach_id_link(nullptr,
                              id_node->id_cow,
-                             deg::foreach_id_cow_detect_need_for_update_cb,
+                             dgraph::foreach_id_cow_detect_need_for_update_cb,
                              this,
                              IDWALK_IGNORE_EMBEDDED_ID | IDWALK_READONLY);
   }
@@ -1047,11 +1047,11 @@ void DGraphNodeBuilder::build_object_pointcache(Object *object)
   Scene *scene_cow = get_cow_datablock(scene_);
   Object *object_cow = get_cow_datablock(object);
   add_op_node(&object->id,
-                     NodeType::POINT_CACHE,
-                     OpCode::POINT_CACHE_RESET,
-                     [scene_cow, object_cow](::DGraph *dgraph) {
-                       dune_object_eval_ptcache_reset(dgraph, scene_cow, object_cow);
-                     });
+              NodeType::POINT_CACHE,
+              OpCode::POINT_CACHE_RESET,
+              [scene_cow, object_cow](::DGraph *dgraph) {
+                dune_object_eval_ptcache_reset(dgraph, scene_cow, object_cow);
+              });
 }
 
 void DGraphNodeBuilder::build_animdata(Id *id)
@@ -1198,11 +1198,11 @@ void DGraphNodeBuilder::build_driver_id_prop(Id *id, const char *api_path)
   if (api_struct_is_a(ptr.type, &api_PoseBone)) {
     const DPoseChannel *pchan = static_cast<const DPoseChannel *>(ptr.data);
     ensure_op_node(ptr.owner_id,
-                          NodeType::BONE,
-                          pchan->name,
-                          OpCode::ID_PROP,
-                          nullptr,
-                          prop_id);
+                   NodeType::BONE,
+                   pchan->name,
+                   OpCode::ID_PROP,
+                   nullptr,
+                   prop_id);
   }
   else {
     ensure_op_node(
@@ -1328,11 +1328,11 @@ void DGraphNodeBuilder::build_rigidbody(Scene *scene)
        * lives. */
       Object *object_cow = get_cow_datablock(object);
       add_op_node(&object->id,
-                         NodeType::TRANSFORM,
-                         OpCode::RIGIDBODY_TRANSFORM_COPY,
-                         [scene_cow, object_cow](::DGraph *dgraph) {
-                           dune_rigidbody_object_sync_transforms(depsgraph, scene_cow, object_cow);
-                         });
+                  NodeType::TRANSFORM,
+                  OpCode::RIGIDBODY_TRANSFORM_COPY,
+                  [scene_cow, object_cow](::DGraph *dgraph) {
+                    dune_rigidbody_object_sync_transforms(depsgraph, scene_cow, object_cow);
+                  });
     }
     FOREACH_COLLECTION_OBJECT_RECURSIVE_END;
   }
@@ -1636,11 +1636,11 @@ void DGraphNodeBuilder::build_armature(DArmature *armature)
   /* Make sure pose is up-to-date with armature updates. */
   DArmature *armature_cow = (DArmature *)get_cow_id(&armature->id);
   add_op_node(&armature->id,
-                     NodeType::ARMATURE,
-                     OpCode::ARMATURE_EVAL,
-                     [armature_cow](::DGraph *dgraph) {
-                       dune_armature_refresh_layer_used(dgraph, armature_cow);
-                     });
+              NodeType::ARMATURE,
+              OpCode::ARMATURE_EVAL,
+              [armature_cow](::DGraph *dgraph) {
+               dune_armature_refresh_layer_used(dgraph, armature_cow);
+              });
   build_armature_bones(&armature->bonebase);
 }
 
@@ -1997,11 +1997,11 @@ void DGraphNodeBuilder::build_sound(DSound *sound)
   add_id_node(&sound->id);
   DSound *sound_cow = get_cow_datablock(sound);
   add_op_node(&sound->id,
-                     NodeType::AUDIO,
-                     OpCode::SOUND_EVAL,
-                     [dmain = dmain_, sound_cow](::DGraph *dgraph) {
-                       dune_sound_evaluate(dgraph, dmain, sound_cow);
-                     });
+              NodeType::AUDIO,
+              OpCode::SOUND_EVAL,
+              [dmain = dmain_, sound_cow](::DGraph *dgraph) {
+                dune_sound_evaluate(dgraph, dmain, sound_cow);
+              });
   build_idprops(sound->id.props);
   build_animdata(&sound->id);
   build_params(&sound->id);
@@ -2157,4 +2157,4 @@ void DGraphNodeBuilder::constraint_walk(DConstraint * /*con*/,
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
