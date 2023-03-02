@@ -1,8 +1,8 @@
-#include "intern/builder/deg_builder_nodes.h"
+#include "intern/builder/dgraph_builder_nodes.h"
 
 #include "types_scene.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 void DGraphNodeBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
 {
@@ -11,7 +11,7 @@ void DGraphNodeBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
   const bool build_compositor = (scene->r.scemode & R_DOCOMP);
   const bool build_sequencer = (scene->r.scemode & R_DOSEQ);
   IdNode *id_node = add_id_node(&scene->id);
-  id_node->linked_state = DEG_ID_LINKED_DIRECTLY;
+  id_node->linked_state = DGRAPH_ID_LINKED_DIRECTLY;
   add_time_source();
   build_animdata(&scene->id);
   build_scene_params(scene);
@@ -64,4 +64,4 @@ void DGraphNodeBuilder::build_scene_compositor(Scene *scene)
   build_nodetree(scene->nodetree);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
