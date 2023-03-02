@@ -30,4 +30,4 @@ TEST(dgraph_builder_api, contains)
   EXPECT_FALSE(TestableApiNodeQuery::contains("pose.bone[\"location\"].scale[0]", "location"));
 }
 
-}  // namespace dune::deg::tests
+}  // namespace dune::dgraph::tests
