@@ -12,7 +12,7 @@ namespace {
 
 class DGraphFromIdsFilter {
  public:
-  DGraphFromIDsFilter(Span<Id *> ids)
+  DGraphFromIdsFilter(Span<Id *> ids)
   {
     ids_.add_multiple(ids);
   }
@@ -98,10 +98,10 @@ void FromIdsBuilderPipeline::build_nodes(DGraphNodeBuilder &node_builder)
 
 void FromIdsBuilderPipeline::build_relations(DGraphRelationBuilder &relation_builder)
 {
-  relation_builder.build_view_layer(scene_, view_layer_, DEG_ID_LINKED_DIRECTLY);
-  for (ID *id : ids_) {
+  relation_builder.build_view_layer(scene_, view_layer_, DGRAPH_ID_LINKED_DIRECTLY);
+  for (Id *id : ids_) {
     relation_builder.build_id(id);
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
