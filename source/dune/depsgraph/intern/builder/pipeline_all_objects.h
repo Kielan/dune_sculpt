@@ -2,18 +2,18 @@
 
 #include "pipeline_view_layer.h"
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 /* Builds a dependency graph that contains all objects in the view layer.
  * This is contrary to the regular ViewLayerBuilderPipeline, which is limited to visible objects
  * (and their dependencies). */
 class AllObjectsBuilderPipeline : public ViewLayerBuilderPipeline {
  public:
-  AllObjectsBuilderPipeline(::Depsgraph *graph);
+  AllObjectsBuilderPipeline(::DGraph *graph);
 
  protected:
-  virtual unique_ptr<DepsgraphNodeBuilder> construct_node_builder() override;
-  virtual unique_ptr<DepsgraphRelationBuilder> construct_relation_builder() override;
+  virtual unique_ptr<DGraphraphNodeBuilder> construct_node_builder() override;
+  virtual unique_ptr<DGraphRelationBuilder> construct_relation_builder() override;
 };
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
