@@ -2,7 +2,7 @@
 
 #include "pipeline.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* Optimized builders for dependency graph built from a given set of IDs.
  *
@@ -14,19 +14,19 @@ namespace dune::deg {
  *   completely ignored.
  */
 
-class FromIDsBuilderPipeline : public AbstractBuilderPipeline {
+class FromIdsBuilderPipeline : public AbstractBuilderPipeline {
  public:
-  FromIDsBuilderPipeline(::Depsgraph *graph, Span<ID *> ids);
+  FromIdsBuilderPipeline(::DGraph *graph, Span<Id *> ids);
 
  protected:
-  virtual unique_ptr<DepsgraphNodeBuilder> construct_node_builder() override;
-  virtual unique_ptr<DepsgraphRelationBuilder> construct_relation_builder() override;
+  virtual unique_ptr<DGraphNodeBuilder> construct_node_builder() override;
+  virtual unique_ptr<DGraphRelationBuilder> construct_relation_builder() override;
 
-  virtual void build_nodes(DepsgraphNodeBuilder &node_builder) override;
-  virtual void build_relations(DepsgraphRelationBuilder &relation_builder) override;
+  virtual void build_nodes(DGraphNodeBuilder &node_builder) override;
+  virtual void build_relations(DGraphRelationBuilder &relation_builder) override;
 
  private:
   Span<Id *> ids_;
 };
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
