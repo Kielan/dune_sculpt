@@ -2,37 +2,37 @@
 
 #include "types_layer.h"
 
-#include "intern/builder/deg_builder_nodes.h"
-#include "intern/builder/deg_builder_relations.h"
-#include "intern/depsgraph.h"
+#include "intern/builder/dgraph_builder_nodes.h"
+#include "intern/builder/dgraph_builder_relations.h"
+#include "intern/dgraph.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 namespace {
 
-class DepsgraphFromIDsFilter {
+class DGraphFromIdsFilter {
  public:
-  DepsgraphFromIDsFilter(Span<ID *> ids)
+  DGraphFromIDsFilter(Span<Id *> ids)
   {
     ids_.add_multiple(ids);
   }
 
-  bool contains(ID *id)
+  bool contains(Id *id)
   {
     return ids_.contains(id);
   }
 
  protected:
-  Set<ID *> ids_;
+  Set<Id *> ids_;
 };
 
-class DepsgraphFromIDsNodeBuilder : public DepsgraphNodeBuilder {
+class DGraphFromIdsNodeBuilder : public DGraphNodeBuilder {
  public:
-  DepsgraphFromIDsNodeBuilder(Main *bmain,
-                              Depsgraph *graph,
-                              DepsgraphBuilderCache *cache,
-                              Span<ID *> ids)
-      : DepsgraphNodeBuilder(bmain, graph, cache), filter_(ids)
+  DGraphFromIdsNodeBuilder(Main *dmain,
+                              DGraph *graph,
+                              DGraphBuilderCache *cache,
+                              Span<Id *> ids)
+      : DGraphNodeBuilder(dmain, graph, cache), filter_(ids)
   {
   }
 
@@ -41,20 +41,20 @@ class DepsgraphFromIDsNodeBuilder : public DepsgraphNodeBuilder {
     if (!filter_.contains(&base->object->id)) {
       return false;
     }
-    return DepsgraphNodeBuilder::need_pull_base_into_graph(base);
+    return DGraphNodeBuilder::need_pull_base_into_graph(base);
   }
 
  protected:
-  DepsgraphFromIDsFilter filter_;
+  DepsGraphFromIdsFilter filter_;
 };
 
-class DepsgraphFromIDsRelationBuilder : public DepsgraphRelationBuilder {
+class DGraphFromIdsRelationBuilder : public DGraphRelationBuilder {
  public:
-  DepsgraphFromIDsRelationBuilder(Main *bmain,
-                                  Depsgraph *graph,
-                                  DepsgraphBuilderCache *cache,
-                                  Span<ID *> ids)
-      : DepsgraphRelationBuilder(bmain, graph, cache), filter_(ids)
+  DGraphFromIdsRelationBuilder(Main *dmain,
+                                  DGraph *graph,
+                                  DGraphBuilderCache *cache,
+                                  Span<Id *> ids)
+      : DGraphRelationBuilder(dmain, graph, cache), filter_(ids)
   {
   }
 
@@ -63,40 +63,40 @@ class DepsgraphFromIDsRelationBuilder : public DepsgraphRelationBuilder {
     if (!filter_.contains(&base->object->id)) {
       return false;
     }
-    return DepsgraphRelationBuilder::need_pull_base_into_graph(base);
+    return DGraphRelationBuilder::need_pull_base_into_graph(base);
   }
 
  protected:
-  DepsgraphFromIDsFilter filter_;
+  DGraphFromIdsFilter filter_;
 };
 
 }  // namespace
 
-FromIDsBuilderPipeline::FromIDsBuilderPipeline(::Depsgraph *graph, Span<ID *> ids)
+FromIdsBuilderPipeline::FromIdsBuilderPipeline(::DGraph *graph, Span<Id *> ids)
     : AbstractBuilderPipeline(graph), ids_(ids)
 {
 }
 
-unique_ptr<DepsgraphNodeBuilder> FromIDsBuilderPipeline::construct_node_builder()
+unique_ptr<DGraphNodeBuilder> FromIdsBuilderPipeline::construct_node_builder()
 {
-  return std::make_unique<DepsgraphFromIDsNodeBuilder>(bmain_, deg_graph_, &builder_cache_, ids_);
+  return std::make_unique<DGraphFromIdsNodeBuilder>(dmain_, dgraph_, &builder_cache_, ids_);
 }
 
-unique_ptr<DepsgraphRelationBuilder> FromIDsBuilderPipeline::construct_relation_builder()
+unique_ptr<DGraphRelationBuilder> FromIdsBuilderPipeline::construct_relation_builder()
 {
-  return std::make_unique<DepsgraphFromIDsRelationBuilder>(
-      bmain_, deg_graph_, &builder_cache_, ids_);
+  return std::make_unique<DGraphFromIdsRelationBuilder>(
+      dmain_, dgraph_, &builder_cache_, ids_);
 }
 
-void FromIDsBuilderPipeline::build_nodes(DepsgraphNodeBuilder &node_builder)
+void FromIdsBuilderPipeline::build_nodes(DGraphNodeBuilder &node_builder)
 {
-  node_builder.build_view_layer(scene_, view_layer_, DEG_ID_LINKED_DIRECTLY);
-  for (ID *id : ids_) {
+  node_builder.build_view_layer(scene_, view_layer_, DGRAPH_ID_LINKED_DIRECTLY);
+  for (Id *id : ids_) {
     node_builder.build_id(id);
   }
 }
 
-void FromIDsBuilderPipeline::build_relations(DepsgraphRelationBuilder &relation_builder)
+void FromIdsBuilderPipeline::build_relations(DGraphRelationBuilder &relation_builder)
 {
   relation_builder.build_view_layer(scene_, view_layer_, DEG_ID_LINKED_DIRECTLY);
   for (ID *id : ids_) {
