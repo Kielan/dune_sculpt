@@ -1,21 +1,21 @@
 #pragma once
 
-#include "deg_builder_cache.h"
+#include "dgraph_builder_cache.h"
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
-struct Depsgraph;
+struct DGraph;
 struct Main;
 struct Scene;
 struct ViewLayer;
 
-namespace dune::deg {
+namespace dune::dgraph {
 
-struct Depsgraph;
-class DepsgraphNodeBuilder;
-class DepsgraphRelationBuilder;
+struct DGraph;
+class DGraphNodeBuilder;
+class DGraphRelationBuilder;
 
-/* Base class for Depsgraph Builder pipelines.
+/* Base class for DGraph Builder pipelines.
  *
  * Basically it runs through the following steps:
  * - sanity check
@@ -25,28 +25,28 @@ class DepsgraphRelationBuilder;
  */
 class AbstractBuilderPipeline {
  public:
-  AbstractBuilderPipeline(::Depsgraph *graph);
+  AbstractBuilderPipeline(::DGraph *graph);
   virtual ~AbstractBuilderPipeline() = default;
 
   void build();
 
  protected:
-  Depsgraph *deg_graph_;
+  DGraph *dgraph_;
   Main *dmain_;
   Scene *scene_;
   ViewLayer *view_layer_;
-  DepsgraphBuilderCache builder_cache_;
+  DGraphBuilderCache builder_cache_;
 
-  virtual unique_ptr<DepsgraphNodeBuilder> construct_node_builder();
-  virtual unique_ptr<DepsgraphRelationBuilder> construct_relation_builder();
+  virtual unique_ptr<DGraphNodeBuilder> construct_node_builder();
+  virtual unique_ptr<DGraphRelationBuilder> construct_relation_builder();
 
   virtual void build_step_sanity_check();
   void build_step_nodes();
   void build_step_relations();
   void build_step_finalize();
 
-  virtual void build_nodes(DepsgraphNodeBuilder &node_builder) = 0;
-  virtual void build_relations(DepsgraphRelationBuilder &relation_builder) = 0;
+  virtual void build_nodes(DGraphNodeBuilder &node_builder) = 0;
+  virtual void build_relations(DGraphRelationBuilder &relation_builder) = 0;
 };
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
