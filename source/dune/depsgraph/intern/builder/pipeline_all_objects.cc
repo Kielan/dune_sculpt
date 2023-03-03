@@ -1,19 +1,19 @@
 #include "pipeline_all_objects.h"
 
-#include "intern/builder/deg_builder_nodes.h"
-#include "intern/builder/deg_builder_relations.h"
-#include "intern/depsgraph.h"
+#include "intern/builder/dgraph_builder_nodes.h"
+#include "intern/builder/dgraph_builder_relations.h"
+#include "intern/dgraph.h"
 
 #include "types_layer.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 namespace {
 
-class AllObjectsNodeBuilder : public DepsgraphNodeBuilder {
+class AllObjectsNodeBuilder : public DGraphNodeBuilder {
  public:
-  AllObjectsNodeBuilder(Main *dmain, Depsgraph *graph, DepsgraphBuilderCache *cache)
-      : DepsgraphNodeBuilder(bmain, graph, cache)
+  AllObjectsNodeBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache)
+      : DGraphNodeBuilder(dmain, graph, cache)
   {
   }
 
@@ -23,10 +23,10 @@ class AllObjectsNodeBuilder : public DepsgraphNodeBuilder {
   }
 };
 
-class AllObjectsRelationBuilder : public DepsgraphRelationBuilder {
+class AllObjectsRelationBuilder : public DGraphRelationBuilder {
  public:
-  AllObjectsRelationBuilder(Main *bmain, Depsgraph *graph, DepsgraphBuilderCache *cache)
-      : DepsgraphRelationBuilder(bmain, graph, cache)
+  AllObjectsRelationBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache)
+      : DGraphRelationBuilder(dmain, graph, cache)
   {
   }
 
@@ -38,19 +38,19 @@ class AllObjectsRelationBuilder : public DepsgraphRelationBuilder {
 
 }  // namespace
 
-AllObjectsBuilderPipeline::AllObjectsBuilderPipeline(::Depsgraph *graph)
+AllObjectsBuilderPipeline::AllObjectsBuilderPipeline(::DGraph *graph)
     : ViewLayerBuilderPipeline(graph)
 {
 }
 
-unique_ptr<DepsgraphNodeBuilder> AllObjectsBuilderPipeline::construct_node_builder()
+unique_ptr<DGraphNodeBuilder> AllObjectsBuilderPipeline::construct_node_builder()
 {
-  return std::make_unique<AllObjectsNodeBuilder>(bmain_, deg_graph_, &builder_cache_);
+  return std::make_unique<AllObjectsNodeBuilder>(dmain_, dgraph_, &builder_cache_);
 }
 
-unique_ptr<DepsgraphRelationBuilder> AllObjectsBuilderPipeline::construct_relation_builder()
+unique_ptr<DGraphRelationBuilder> AllObjectsBuilderPipeline::construct_relation_builder()
 {
-  return std::make_unique<AllObjectsRelationBuilder>(dmain_, deg_graph_, &builder_cache_);
+  return std::make_unique<AllObjectsRelationBuilder>(dmain_, dgraph_, &builder_cache_);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
