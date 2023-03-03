@@ -12,7 +12,7 @@
 #include "intern/dgraph_relation.h"
 #include "intern/node/dgraph_node.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 DriverDescriptor::DriverDescriptor(ApiPtr *id_ptr, FCurve *fcu)
     : id_ptr_(id_ptr),
@@ -90,7 +90,7 @@ void DriverDescriptor::split_api_path()
   api_suffix = StringRef(last_dot + 1);
 }
 
-bool DriverDescriptor::resolve_rna()
+bool DriverDescriptor::resolve_api()
 {
   return api_path_resolve_prop(id_ptr_, fcu_->api_path, &ptr_api_, &prop_api_);
 }
@@ -160,7 +160,7 @@ void DGraphRelationBuilder::build_driver_relations(IdNode *id_node)
   api_id_ptr_create(id_orig, &id_ptr);
 
   LISTBASE_FOREACH (FCurve *, fcu, &adt->drivers) {
-    if (fcu->rna_path == nullptr) {
+    if (fcu->api_path == nullptr) {
       continue;
     }
 
