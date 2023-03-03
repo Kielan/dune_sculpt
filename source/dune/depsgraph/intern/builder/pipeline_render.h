@@ -2,15 +2,15 @@
 
 #include "pipeline.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 class RenderBuilderPipeline : public AbstractBuilderPipeline {
  public:
-  RenderBuilderPipeline(::Depsgraph *graph);
+  RenderBuilderPipeline(::DGraph *graph);
 
  protected:
-  virtual void build_nodes(DepsgraphNodeBuilder &node_builder) override;
-  virtual void build_relations(DepsgraphRelationBuilder &relation_builder) override;
+  virtual void build_nodes(DGraphNodeBuilder &node_builder) override;
+  virtual void build_relations(DGraphRelationBuilder &relation_builder) override;
 };
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
