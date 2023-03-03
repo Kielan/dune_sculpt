@@ -5,7 +5,7 @@
 
 #include "intern/dgraph_type.h"
 
-#include "types_Id.h"
+#include "types_id.h"
 
 #include "api_path.h"
 
@@ -63,7 +63,7 @@ struct DSound;
 namespace dune::dgraph {
 
 struct ComponentNode;
-struct DepsNodeHandle;
+struct DNodeHandle;
 struct DGraph;
 class DGraphBuilderCache;
 struct IdNode;
@@ -93,7 +93,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
 
   template<typename KeyType>
   Relation *add_node_handle_relation(const KeyType &key_from,
-                                     const DepsNodeHandle *handle,
+                                     const DNodeHandle *handle,
                                      const char *description,
                                      int flags = 0);
 
@@ -106,7 +106,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
   /* Adds relation from proper transformation operation to the modifier.
    * Takes care of checking for possible physics solvers modifying position
    * of this object. */
-  void add_depends_on_transform_relation(const DepsNodeHandle *handle, const char *description);
+  void add_depends_on_transform_relation(const DNodeHandle *handle, const char *description);
 
   void add_customdata_mask(Object *object, const DGraphCustomDataMeshMasks &customdata_masks);
   void add_special_eval_flag(Id *id, uint32_t flag);
@@ -114,7 +114,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
   virtual void build_id(Id *id);
 
   /* Build function for ID types that do not need their own build_xxx() function. */
-  virtual void build_generic_id(ID *id);
+  virtual void build_generic_id(Id *id);
 
   virtual void build_idprops(IdProp *id_prop);
 
@@ -260,7 +260,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
                             int flags = 0);
 
   template<typename KeyType>
-  DepsNodeHandle create_node_handle(const KeyType &key, const char *default_name = "");
+  DNodeHandle create_node_handle(const KeyType &key, const char *default_name = "");
 
   /* TODO: All those is_same* functions are to be generalized. */
 
@@ -297,10 +297,10 @@ class DGraphRelationBuilder : public DGraphBuilder {
   BuilderStack stack_;
 };
 
-struct DepsNodeHandle {
-  DepsNodeHandle(DGraphRelationBuilder *builder,
-                 OpNode *node,
-                 const char *default_name = "")
+struct DNodeHandle {
+  DNodeHandle(DGraphRelationBuilder *builder,
+              OpNode *node,
+              const char *default_name = "")
       : builder(builder), node(node), default_name(default_name)
   {
     lib_assert(node != nullptr);
@@ -311,6 +311,6 @@ struct DepsNodeHandle {
   const char *default_name;
 };
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
 
 #include "intern/builder/dgraph_builder_relations_impl.h"
