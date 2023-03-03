@@ -4,18 +4,18 @@
 
 struct DNodeTree;
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 class CompositorBuilderPipeline : public AbstractBuilderPipeline {
  public:
-  CompositorBuilderPipeline(::Depsgraph *graph, bNodeTree *nodetree);
+  CompositorBuilderPipeline(::DGraph *graph, DNodeTree *nodetree);
 
  protected:
-  virtual void build_nodes(DepsgraphNodeBuilder &node_builder) override;
-  virtual void build_relations(DepsgraphRelationBuilder &relation_builder) override;
+  virtual void build_nodes(DGraphNodeBuilder &node_builder) override;
+  virtual void build_relations(DGraphRelationBuilder &relation_builder) override;
 
  private:
-  bNodeTree *nodetree_;
+  DNodeTree *nodetree_;
 };
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
