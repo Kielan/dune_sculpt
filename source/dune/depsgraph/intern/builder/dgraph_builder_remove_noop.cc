@@ -17,7 +17,7 @@ static inline bool is_unused_noop(OpNode *op_node)
   if (op_node == nullptr) {
     return false;
   }
-  if (op_node->flag & OpFlag::DEPSOP_FLAG_PINNED) {
+  if (op_node->flag & OpFlag::DGRAPH_OP_FLAG_PINNED) {
     return false;
   }
   return op_node->is_noop() && op_node->outlinks.is_empty();
