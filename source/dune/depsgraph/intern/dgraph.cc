@@ -1,6 +1,4 @@
-/**
- * DGraph core routines.
- */
+/** DGraph core routines. **/
 
 #include "intern/dgraph.h" /* own include */
 
@@ -264,66 +262,66 @@ Depsgraph *dgraph_new(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluat
   return reinterpret_cast<DGraph *>(dgraph);
 }
 
-void dgraph_replace_owners(struct Depsgraph *depsgraph,
-                              Main *bmain,
+void dgraph_replace_owners(struct DGraph *dgraph,
+                              Main *dmain,
                               Scene *scene,
                               ViewLayer *view_layer)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
 
-  const bool do_update_register = deg_graph->bmain != bmain;
-  if (do_update_register && deg_graph->bmain != nullptr) {
-    deg::unregister_graph(deg_graph);
+  const bool do_update_register = dgraph->dmain != bmain;
+  if (do_update_register && dgraph->dmain != nullptr) {
+    deg::unregister_graph(dgraph);
   }
 
-  deg_graph->bmain = bmain;
-  deg_graph->scene = scene;
-  deg_graph->view_layer = view_layer;
+  dgraph->dmain = dmain;
+  dgraph->scene = scene;
+  dgraph->view_layer = view_layer;
 
   if (do_update_register) {
-    deg::register_graph(deg_graph);
+    dgraph::register_graph(dgraph);
   }
 }
 
-void deg_graph_free(Depsgraph *graph)
+void dgraph_free(DGraph *graph)
 {
   if (graph == nullptr) {
     return;
   }
-  using deg::Depsgraph;
-  deg::Depsgraph *deg_depsgraph = reinterpret_cast<deg::Depsgraph *>(graph);
-  deg::unregister_graph(deg_depsgraph);
-  delete deg_depsgraph;
+  using dgraph::DGraph;
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(graph);
+  dgraph::unregister_graph(dgraph);
+  delete dgraph;
 }
 
-bool deg_is_evaluating(const struct Depsgraph *depsgraph)
+bool deg_is_evaluating(const struct DGraph *dgraph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(depsgraph);
-  return deg_graph->is_evaluating;
+  const deg::Depsgraph *deg_graph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
+  return dgraph->is_evaluating;
 }
 
-bool deg_is_active(const struct Depsgraph *depsgraph)
+bool dgraph_is_active(const struct DGraph *dgraph)
 {
-  if (depsgraph == nullptr) {
+  if (dgraph == nullptr) {
     /* Happens for such cases as work object in what_does_obaction(),
      * and sine render pipeline parts. Shouldn't really be accepting
-     * nullptr depsgraph, but is quite hard to get proper one in those
+     * nullptr dgraph, but is quite hard to get proper one in those
      * cases. */
     return false;
   }
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(depsgraph);
-  return deg_graph->is_active;
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
+  return dgraph->is_active;
 }
 
-void deg_make_active(struct Depsgraph *depsgraph)
+void dgraph_make_active(struct DGraph *dgraph)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
-  deg_graph->is_active = true;
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
+  dgraph->is_active = true;
   /* TODO: Copy data from evaluated state to original. */
 }
 
-void deg_make_inactive(struct Depsgraph *depsgraph)
+void dgraph_make_inactive(struct DGraph *dgraph)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
-  deg_graph->is_active = false;
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
+  dgraph->is_active = false;
 }
