@@ -1,94 +1,92 @@
-/** \file
- * \ingroup depsgraph
- *
- * Methods for constructing depsgraph.
+/**
+ * Methods for constructing dgraph.
  */
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_utildefines.h"
 
 #include "PIL_time.h"
 #include "PIL_time_utildefines.h"
 
-#include "DNA_cachefile_types.h"
-#include "DNA_collection_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_simulation_types.h"
+#include "types_cachefile_types.h"
+#include "types_collection_types.h"
+#include "types_node_types.h"
+#include "types_object_types.h"
+#include "types_scene_types.h"
+#include "types_simulation_types.h"
 
-#include "BKE_collection.h"
-#include "BKE_main.h"
-#include "BKE_scene.h"
+#include "dune_collection.h"
+#include "dune_main.h"
+#include "dune_scene.h"
 
-#include "deg_depsgraph.h"
-#include "deg_depsgraph_build.h"
-#include "deg_depsgraph_debug.h"
+#include "dgraph.h"
+#include "dgraph_build.h"
+#include "dgraph_debug.h"
 
-#include "builder/deg_builder_relations.h"
+#include "builder/dgraph_builder_relations.h"
 #include "builder/pipeline_all_objects.h"
 #include "builder/pipeline_compositor.h"
 #include "builder/pipeline_from_ids.h"
 #include "builder/pipeline_render.h"
 #include "builder/pipeline_view_layer.h"
 
-#include "intern/debug/deg_debug.h"
+#include "intern/debug/dgraph_debug.h"
 
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
 
-#include "intern/depsgraph_registry.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/depsgraph_tag.h"
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_registry.h"
+#include "intern/dgraph_relation.h"
+#include "intern/draph_tag.h"
+#include "intern/dgraph_type.h"
 
 /* ****************** */
 /* External Build API */
 
-namespace deg = blender::deg;
+namespace dgraph = dune::dgraph;
 
-static deg::NodeType deg_build_scene_component_type(eDepsSceneComponentType component)
+static dgraph::NodeType dgraph_build_scene_component_type(eDGraphSceneComponentType component)
 {
   switch (component) {
-    case DEG_SCENE_COMP_PARAMETERS:
-      return deg::NodeType::PARAMETERS;
-    case DEG_SCENE_COMP_ANIMATION:
-      return deg::NodeType::ANIMATION;
-    case DEG_SCENE_COMP_SEQUENCER:
-      return deg::NodeType::SEQUENCER;
+    case DGRAPH_SCENE_COMP_PARAMS:
+      return dgraph::NodeType::PARAMS;
+    case DGRAPH_SCENE_COMP_ANIMATION:
+      return dgraph::NodeType::ANIMATION;
+    case DGRAPH_SCENE_COMP_SEQUENCER:
+      return dgraph::NodeType::SEQUENCER;
   }
-  return deg::NodeType::UNDEFINED;
+  return dgraph::NodeType::UNDEFINED;
 }
 
-static deg::DepsNodeHandle *get_node_handle(DepsNodeHandle *node_handle)
+static dgraph::DNodeHandle *get_node_handle(DNodeHandle *node_handle)
 {
-  return reinterpret_cast<deg::DepsNodeHandle *>(node_handle);
+  return reinterpret_cast<deg::DNodeHandle *>(node_handle);
 }
 
-void deg_add_scene_relation(DepsNodeHandle *node_handle,
+void dgraph_add_scene_relation(DNodeHandle *node_handle,
                             Scene *scene,
-                            eDepsSceneComponentType component,
+                            eDGraphSceneComponentType component,
                             const char *description)
 {
-  deg::NodeType type = deg_build_scene_component_type(component);
-  deg::ComponentKey comp_key(&scene->id, type);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
+  dgraph::NodeType type = deg_build_scene_component_type(component);
+  dgraph::ComponentKey comp_key(&scene->id, type);
+  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(comp_key, dgraph_node_handle, description);
 }
 
-void deg_add_object_relation(DepsNodeHandle *node_handle,
+void dgraph_add_object_relation(DNodeHandle *node_handle,
                              Object *object,
-                             eDepsObjectComponentType component,
+                             eDGraphObjectComponentType component,
                              const char *description)
 {
-  deg::NodeType type = deg::nodeTypeFromObjectComponent(component);
-  deg::ComponentKey comp_key(&object->id, type);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
+  dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
+  dgraph::ComponentKey comp_key(&object->id, type);
+  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
 }
 
 bool deg_object_has_geometry_component(Object *object)
