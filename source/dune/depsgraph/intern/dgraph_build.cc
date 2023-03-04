@@ -10,12 +10,12 @@
 #include "PIL_time.h"
 #include "PIL_time_utildefines.h"
 
-#include "types_cachefile_types.h"
-#include "types_collection_types.h"
-#include "types_node_types.h"
-#include "types_object_types.h"
-#include "types_scene_types.h"
-#include "types_simulation_types.h"
+#include "types_cachefile.h"
+#include "types_collection.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_simulation.h"
 
 #include "dune_collection.h"
 #include "dune_main.h"
@@ -86,52 +86,52 @@ void dgraph_add_object_relation(DNodeHandle *node_handle,
   dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
   dgraph::ComponentKey comp_key(&object->id, type);
   dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
-  dgraph_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
+  dgraph_node_handle->builder->add_node_handle_relation(comp_key, dgraph_node_handle, description);
 }
 
-bool deg_object_has_geometry_component(Object *object)
+bool dgraph_object_has_geometry_component(Object *object)
 {
-  return deg::geometry_tag_to_component(&object->id) != deg::NodeType::UNDEFINED;
+  return dgraph::geometry_tag_to_component(&object->id) != dgraph::NodeType::UNDEFINED;
 }
 
-void deg_add_collection_geometry_relation(DepsNodeHandle *node_handle,
-                                          Collection *collection,
-                                          const char *description)
+void dgraph_add_collection_geometry_relation(DNodeHandle *node_handle,
+                                             Collection *collection,
+                                             const char *description)
 {
-  deg::OperationKey operation_key{
-      &collection->id, deg::NodeType::GEOMETRY, deg::OperationCode::GEOMETRY_EVAL_DONE};
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(operation_key, deg_node_handle, description);
+  dgraph::OpKey op_key{
+      &collection->id, dgraph::NodeType::GEOMETRY, dgraph::OpCode::GEOMETRY_EVAL_DONE};
+  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(op_key, dgraph_node_handle, description);
 }
 
-void deg_add_collection_geometry_customdata_mask(DepsNodeHandle *node_handle,
+void dgraph_add_collection_geometry_customdata_mask(DNodeHandle *node_handle,
                                                  Collection *collection,
                                                  const CustomData_MeshMasks *masks)
 {
   FOREACH_COLLECTION_OBJECT_RECURSIVE_BEGIN (collection, ob) {
-    deg_add_customdata_mask(node_handle, ob, masks);
+    dgraph_add_customdata_mask(node_handle, ob, masks);
     if (ob->type == OB_EMPTY && ob->instance_collection != nullptr) {
-      deg_add_collection_geometry_customdata_mask(node_handle, ob->instance_collection, masks);
+      dgraph_add_collection_geometry_customdata_mask(node_handle, ob->instance_collection, masks);
     }
   }
   FOREACH_COLLECTION_OBJECT_RECURSIVE_END;
 }
 
-void deg_add_simulation_relation(DepsNodeHandle *node_handle,
-                                 Simulation *simulation,
-                                 const char *description)
+void dgraph_add_simulation_relation(DNodeHandle *node_handle,
+                                    Simulation *simulation,
+                                    const char *description)
 {
-  deg::OperationKey operation_key(
-      &simulation->id, deg::NodeType::SIMULATION, deg::OperationCode::SIMULATION_EVAL);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(operation_key, deg_node_handle, description);
+  dgraph::OpKey op_key(
+      &simulation->id, dgraph::NodeType::SIMULATION, dgraph::OpCode::SIMULATION_EVAL);
+  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(op_key, dgraph_node_handle, description);
 }
 
-void deg_add_node_tree_output_relation(DepsNodeHandle *node_handle,
-                                       bNodeTree *node_tree,
-                                       const char *description)
+void dgraph_add_node_tree_output_relation(DNodeHandle *node_handle,
+                                          DNodeTree *node_tree,
+                                          const char *description)
 {
-  deg::OperationKey ntree_output_key(
+  dgraph::OpKey ntree_output_key(
       &node_tree->id, deg::NodeType::NTREE_OUTPUT, deg::OperationCode::NTREE_OUTPUT);
   deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
   deg_node_handle->builder->add_node_handle_relation(
