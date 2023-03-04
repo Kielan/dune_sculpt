@@ -1,46 +1,44 @@
-/** \file
- * \ingroup depsgraph
- *
- * Core routines for how the Depsgraph works.
+/**
+ * DGraph core routines.
  */
 
-#include "intern/depsgraph.h" /* own include */
+#include "intern/dgraph.h" /* own include */
 
 #include <algorithm>
 #include <cstring>
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_console.h"
-#include "BLI_hash.h"
-#include "BLI_utildefines.h"
+#include "lib_console.h"
+#include "lib_hash.h"
+#include "lib_utildefines.h"
 
-#include "BKE_global.h"
-#include "BKE_idtype.h"
-#include "BKE_scene.h"
+#include "dune_global.h"
+#include "dune_idtype.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_debug.h"
+#include "DGRAPH_dgraph.h"
+#include "DGRAPH_dgraph_debug.h"
 
-#include "intern/depsgraph_physics.h"
-#include "intern/depsgraph_registry.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/depsgraph_update.h"
+#include "intern/dgraph_physics.h"
+#include "intern/dgraph_registry.h"
+#include "intern/dgraph_relation.h"
+#include "intern/dgraph_update.h"
 
-#include "intern/eval/deg_eval_copy_on_write.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
 
-#include "intern/node/deg_node.h"
+#include "intern/node/dgraph_node.h"
 #include "intern/node/deg_node_component.h"
 #include "intern/node/deg_node_factory.h"
 #include "intern/node/deg_node_id.h"
 #include "intern/node/deg_node_operation.h"
 #include "intern/node/deg_node_time.h"
 
-namespace deg = blender::deg;
+namespace dgraph = dune::dgraph;
 
-namespace blender::deg {
+namespace dune::dgraph {
 
-Depsgraph::Depsgraph(Main *bmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
+Depsgraph::DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
     : time_source(nullptr),
       need_update(true),
       need_visibility_update(true),
