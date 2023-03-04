@@ -1,9 +1,7 @@
-/** \file
- * \ingroup depsgraph
+/**
+ * Datatypes for internal use in the DGraph
  *
- * Datatypes for internal use in the Depsgraph
- *
- * All of these datatypes are only really used within the "core" depsgraph.
+ * All of these datatypes are only really used within the "core" dgraph.
  * In particular, node types declared here form the structure of operations
  * in the graph.
  */
@@ -14,43 +12,43 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_ID.h" /* for ID_Type and INDEX_ID_MAX */
+#include "types_id.h" /* for ID_Type and INDEX_ID_MAX */
 
-#include "BLI_threads.h" /* for SpinLock */
+#include "lib_threads.h" /* for SpinLock */
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_physics.h"
+#include "dgraph.h"
+#include "dgraph_physics.h"
 
-#include "intern/debug/deg_debug.h"
-#include "intern/depsgraph_type.h"
+#include "intern/debug/dgraph_debug.h"
+#include "intern/dgraph_type.h"
 
-struct ID;
+struct Id;
 struct Scene;
 struct ViewLayer;
 
-namespace blender {
-namespace deg {
+namespace dune {
+namespace dgraph {
 
-struct IDNode;
+struct IdNode;
 struct Node;
-struct OperationNode;
+struct OpNode;
 struct Relation;
 struct TimeSourceNode;
 
 /* Dependency Graph object */
-struct Depsgraph {
-  typedef Vector<OperationNode *> OperationNodes;
-  typedef Vector<IDNode *> IDDepsNodes;
+struct DGraph {
+  typedef Vector<OpNode *> OpNodes;
+  typedef Vector<IdNode *> IdDNodes;
 
-  Depsgraph(Main *bmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode);
-  ~Depsgraph();
+  DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode);
+  ~DGraph();
 
   TimeSourceNode *add_time_source();
   TimeSourceNode *find_time_source() const;
   void tag_time_source();
 
-  IDNode *find_id_node(const ID *id) const;
-  IDNode *add_id_node(ID *id, ID *id_cow_hint = nullptr);
+  IdNode *find_id_node(const Id *id) const;
+  IdNode *add_id_node(Id *id, Id *id_cow_hint = nullptr);
   void clear_id_nodes();
 
   /** Add new relationship between two nodes. */
@@ -62,26 +60,26 @@ struct Depsgraph {
   Relation *check_nodes_connected(const Node *from, const Node *to, const char *description);
 
   /* Tag a specific node as needing updates. */
-  void add_entry_tag(OperationNode *node);
+  void add_entry_tag(OpNode *node);
 
   /* Clear storage used by all nodes. */
   void clear_all_nodes();
 
   /* Copy-on-Write Functionality ........ */
 
-  /* For given original ID get ID which is created by CoW system. */
-  ID *get_cow_id(const ID *id_orig) const;
+  /* For given original Id get Id which is created by CoW system. */
+  Id *get_cow_id(const Id *id_orig) const;
 
   /* Core Graph Functionality ........... */
 
-  /* <ID : IDNode> mapping from ID blocks to nodes representing these
+  /* <Id : IdNode> mapping from If blocks to nodes representing these
    * blocks, used for quick lookups. */
-  Map<const ID *, IDNode *> id_hash;
+  Map<const Id *, IdNode *> id_hash;
 
-  /* Ordered list of ID nodes, order matches ID allocation order.
+  /* Ordered list of Id nodes, order matches Id allocation order.
    * Used for faster iteration, especially for areas which are critical to
    * keep exact order of iteration. */
-  IDDepsNodes id_nodes;
+  IdDNodes id_nodes;
 
   /* Top-level time source node. */
   TimeSourceNode *time_source;
@@ -103,20 +101,20 @@ struct Depsgraph {
   /* Quick-Access Temp Data ............. */
 
   /* Nodes which have been tagged as "directly modified". */
-  Set<OperationNode *> entry_tags;
+  Set<OpNode *> entry_tags;
 
   /* Convenience Data ................... */
 
   /* XXX: should be collected after building (if actually needed?) */
   /* All operation nodes, sorted in order of single-thread traversal order. */
-  OperationNodes operations;
+  OpNodes ops;
 
   /* Spin lock for threading-critical operations.
    * Mainly used by graph evaluation. */
   SpinLock lock;
 
   /* Main, scene, layer, mode this dependency graph is built for. */
-  Main *bmain;
+  Main *dmain;
   Scene *scene;
   ViewLayer *view_layer;
   eEvaluationMode mode;
@@ -139,7 +137,7 @@ struct Depsgraph {
    * to read stuff from. */
   bool is_active;
 
-  DepsgraphDebug debug;
+  DGraphDebug debug;
 
   bool is_evaluating;
 
@@ -147,17 +145,17 @@ struct Depsgraph {
    * sequencer).
    * Such dependency graph needs all view layers (so render pipeline can access names), but it
    * does not need any bases. */
-  bool is_render_pipeline_depsgraph;
+  bool is_render_pipeline_dgraph;
 
   /* Notify editors about changes to IDs in this depsgraph. */
   bool use_editors_update;
 
   /* Cached list of colliders/effectors for collections and the scene
    * created along with relations, for fast lookup during evaluation. */
-  Map<const ID *, ListBase *> *physics_relations[DEG_PHYSICS_RELATIONS_NUM];
+  Map<const Id *, ListBase *> *physics_relations[DGRAPH_PHYSICS_RELATIONS_NUM];
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("Depsgraph");
+  MEM_CXX_CLASS_ALLOC_FNS("DGraph");
 };
 
-}  // namespace deg
-}  // namespace blender
+}  // namespace dune
+}  // namespace dgraph
