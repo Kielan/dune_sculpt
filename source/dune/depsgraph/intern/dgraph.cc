@@ -17,8 +17,8 @@
 #include "dune_idtype.h"
 #include "dune_scene.h"
 
-#include "DGRAPH_dgraph.h"
-#include "DGRAPH_dgraph_debug.h"
+#include "dgraph.h"
+#include "dgraph_debug.h"
 
 #include "intern/dgraph_physics.h"
 #include "intern/dgraph_registry.h"
@@ -28,11 +28,11 @@
 #include "intern/eval/dgraph_eval_copy_on_write.h"
 
 #include "intern/node/dgraph_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_factory.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_factory.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/dgraph_node_time.h"
 
 namespace dgraph = dune::dgraph;
 
@@ -43,19 +43,19 @@ Depsgraph::DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationM
       need_update(true),
       need_visibility_update(true),
       need_visibility_time_update(false),
-      bmain(bmain),
+      dmain(dmain),
       scene(scene),
       view_layer(view_layer),
       mode(mode),
-      frame(BKE_scene_frame_get(scene)),
-      ctime(BKE_scene_ctime_get(scene)),
+      frame(dune_scene_frame_get(scene)),
+      ctime(dune_scene_ctime_get(scene)),
       scene_cow(nullptr),
       is_active(false),
       is_evaluating(false),
-      is_render_pipeline_depsgraph(false),
+      is_render_pipeline_dgraph(false),
       use_editors_update(false)
 {
-  BLI_spin_init(&lock);
+  lib_spin_init(&lock);
   memset(id_type_updated, 0, sizeof(id_type_updated));
   memset(id_type_exist, 0, sizeof(id_type_exist));
   memset(physics_relations, 0, sizeof(physics_relations));
@@ -63,50 +63,50 @@ Depsgraph::DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationM
   add_time_source();
 }
 
-Depsgraph::~Depsgraph()
+DGraph::~DGraph()
 {
   clear_id_nodes();
   delete time_source;
-  BLI_spin_end(&lock);
+  lib_spin_end(&lock);
 }
 
 /* Node Management ---------------------------- */
 
-TimeSourceNode *Depsgraph::add_time_source()
+TimeSourceNode *DGraph::add_time_source()
 {
   if (time_source == nullptr) {
-    DepsNodeFactory *factory = type_get_factory(NodeType::TIMESOURCE);
+    DNodeFactory *factory = type_get_factory(NodeType::TIMESOURCE);
     time_source = (TimeSourceNode *)factory->create_node(nullptr, "", "Time Source");
   }
   return time_source;
 }
 
-TimeSourceNode *Depsgraph::find_time_source() const
+TimeSourceNode *DGraph::find_time_source() const
 {
   return time_source;
 }
 
-void Depsgraph::tag_time_source()
+void DGraph::tag_time_source()
 {
-  time_source->tag_update(this, DEG_UPDATE_SOURCE_TIME);
+  time_source->tag_update(this, DGRAPH_UPDATE_SOURCE_TIME);
 }
 
-IDNode *Depsgraph::find_id_node(const ID *id) const
+IdNode *DGraph::find_id_node(const Id *id) const
 {
   return id_hash.lookup_default(id, nullptr);
 }
 
-IDNode *Depsgraph::add_id_node(ID *id, ID *id_cow_hint)
+IdNode *DGraph::add_id_node(Id *id, Id *id_cow_hint)
 {
   lib_assert((id->tag & LIB_TAG_COPIED_ON_WRITE) == 0);
-  IDNode *id_node = find_id_node(id);
+  IdNode *id_node = find_id_node(id);
   if (!id_node) {
-    DepsNodeFactory *factory = type_get_factory(NodeType::ID_REF);
-    id_node = (IDNode *)factory->create_node(id, "", id->name);
+    DNodeFactory *factory = type_get_factory(NodeType::ID_REF);
+    id_node = (IdNode *)factory->create_node(id, "", id->name);
     id_node->init_copy_on_write(id_cow_hint);
-    /* Register node in ID hash.
+    /* Register node in Id hash.
      *
-     * NOTE: We address ID nodes by the original ID pointer they are
+     * NOTE: We address Id nodes by the original Id pointer they are
      * referencing to. */
     id_hash.add_new(id, id_node);
     id_nodes.append(id_node);
@@ -117,23 +117,23 @@ IDNode *Depsgraph::add_id_node(ID *id, ID *id_cow_hint)
 }
 
 template<typename FilterFunc>
-static void clear_id_nodes_conditional(Depsgraph::IDDepsNodes *id_nodes, const FilterFunc &filter)
+static void clear_id_nodes_conditional(DGraph::IdDNodes *id_nodes, const FilterFn &filter)
 {
-  for (IDNode *id_node : *id_nodes) {
+  for (IdNode *id_node : *id_nodes) {
     if (id_node->id_cow == nullptr) {
       /* This means builder "stole" ownership of the copy-on-written
        * datablock for her own dirty needs. */
       continue;
     }
     if (id_node->id_cow == id_node->id_orig) {
-      /* Copy-on-write version is not needed for this ID type.
+      /* Copy-on-write version is not needed for this Id type.
        *
        * NOTE: Is important to not de-reference the original datablock here because it might be
-       * freed already (happens during main database free when some IDs are freed prior to a
+       * freed already (happens during main database free when some Ids are freed prior to a
        * scene). */
       continue;
     }
-    if (!deg_copy_on_write_is_expanded(id_node->id_cow)) {
+    if (!dgraph_copy_on_write_is_expanded(id_node->id_cow)) {
       continue;
     }
     const ID_Type id_type = GS(id_node->id_cow->name);
@@ -143,15 +143,15 @@ static void clear_id_nodes_conditional(Depsgraph::IDDepsNodes *id_nodes, const F
   }
 }
 
-void Depsgraph::clear_id_nodes()
+void DGraph::clear_id_nodes()
 {
   /* Free memory used by ID nodes. */
 
   /* Stupid workaround to ensure we free IDs in a proper order. */
-  clear_id_nodes_conditional(&id_nodes, [](ID_Type id_type) { return id_type == ID_SCE; });
-  clear_id_nodes_conditional(&id_nodes, [](ID_Type id_type) { return id_type != ID_PA; });
+  clear_id_nodes_conditional(&id_nodes, [](IdType id_type) { return id_type == ID_SCE; });
+  clear_id_nodes_conditional(&id_nodes, [](IdType id_type) { return id_type != ID_PA; });
 
-  for (IDNode *id_node : id_nodes) {
+  for (IdNode *id_node : id_nodes) {
     delete id_node;
   }
   /* Clear containers. */
@@ -161,7 +161,7 @@ void Depsgraph::clear_id_nodes()
   clear_physics_relations(this);
 }
 
-Relation *Depsgraph::add_new_relation(Node *from, Node *to, const char *description, int flags)
+Relation *DGraph::add_new_relation(Node *from, Node *to, const char *description, int flags)
 {
   Relation *rel = nullptr;
   if (flags & RELATION_CHECK_BEFORE_ADD) {
@@ -174,10 +174,10 @@ Relation *Depsgraph::add_new_relation(Node *from, Node *to, const char *descript
 
 #ifndef NDEBUG
   if (from->type == NodeType::OPERATION && to->type == NodeType::OPERATION) {
-    OperationNode *operation_from = static_cast<OperationNode *>(from);
-    OperationNode *operation_to = static_cast<OperationNode *>(to);
-    lib_assert(operation_to->owner->type != NodeType::COPY_ON_WRITE ||
-               operation_from->owner->type == NodeType::COPY_ON_WRITE);
+    OpNode *op_from = static_cast<OpNode *>(from);
+    OpNode *op_to = static_cast<OpNode *>(to);
+    lib_assert(op_to->owner->type != NodeType::COPY_ON_WRITE ||
+               op_from->owner->type == NodeType::COPY_ON_WRITE);
   }
 #endif
 
@@ -187,9 +187,9 @@ Relation *Depsgraph::add_new_relation(Node *from, Node *to, const char *descript
   return rel;
 }
 
-Relation *Depsgraph::check_nodes_connected(const Node *from,
-                                           const Node *to,
-                                           const char *description)
+Relation *DGraph::check_nodes_connected(const Node *from,
+                                        const Node *to,
+                                        const char *description)
 {
   for (Relation *rel : from->outlinks) {
     lib_assert(rel->from == from);
@@ -206,7 +206,7 @@ Relation *Depsgraph::check_nodes_connected(const Node *from,
 
 /* Low level tagging -------------------------------------- */
 
-void Depsgraph::add_entry_tag(OperationNode *node)
+void DGraph::add_entry_tag(OpNode *node)
 {
   /* Sanity check. */
   if (node == nullptr) {
@@ -219,16 +219,16 @@ void Depsgraph::add_entry_tag(OperationNode *node)
   entry_tags.add(node);
 }
 
-void Depsgraph::clear_all_nodes()
+void DGraph::clear_all_nodes()
 {
   clear_id_nodes();
   delete time_source;
   time_source = nullptr;
 }
 
-ID *Depsgraph::get_cow_id(const ID *id_orig) const
+Id *DGraph::get_cow_id(const Id *id_orig) const
 {
-  IDNode *id_node = find_id_node(id_orig);
+  IdNode *id_node = find_id_node(id_orig);
   if (id_node == nullptr) {
     /* This function is used from places where we expect ID to be either
      * already a copy-on-write version or have a corresponding copy-on-write
@@ -247,24 +247,24 @@ ID *Depsgraph::get_cow_id(const ID *id_orig) const
        *   object data). */
       // lib_assert_msg(0, "Request for non-existing copy-on-write ID");
     }
-    return (ID *)id_orig;
+    return (Id *)id_orig;
   }
   return id_node->id_cow;
 }
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
 
 /* **************** */
 /* Public Graph API */
 
-Depsgraph *deg_graph_new(Main *bmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
+Depsgraph *dgraph_new(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
 {
-  deg::Depsgraph *deg_depsgraph = new deg::Depsgraph(bmain, scene, view_layer, mode);
-  deg::register_graph(deg_depsgraph);
-  return reinterpret_cast<Depsgraph *>(deg_depsgraph);
+  dgraph::DGraph *dgraph = new dgraph::DGraph(dmain, scene, view_layer, mode);
+  dgraph::register_graph(dgraph);
+  return reinterpret_cast<DGraph *>(dgraph);
 }
 
-void deg_graph_replace_owners(struct Depsgraph *depsgraph,
+void dgraph_replace_owners(struct Depsgraph *depsgraph,
                               Main *bmain,
                               Scene *scene,
                               ViewLayer *view_layer)
