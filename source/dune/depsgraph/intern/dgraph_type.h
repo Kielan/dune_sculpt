@@ -1,5 +1,4 @@
-/** \file
- * \ingroup depsgraph
+/**
  *
  * Datatypes for internal use in the Depsgraph
  *
@@ -12,7 +11,7 @@
 
 #include <functional>
 
-/* TODO(sergey): Ideally we'll just use char* and statically allocated strings
+/* TODO: Ideally we'll just use char* and statically allocated strings
  * to avoid any possible overhead caused by string (re)allocation/formatting. */
 #include <algorithm>
 #include <deque>
@@ -21,18 +20,18 @@
 #include <string>
 #include <vector>
 
-#include "BLI_map.hh"
-#include "BLI_set.hh"
-#include "BLI_string_ref.hh"
-#include "BLI_vector.hh"
-#include "BLI_vector_set.hh"
+#include "lib_map.hh"
+#include "lib_set.hh"
+#include "lib_string_ref.hh"
+#include "lib_vector.hh"
+#include "lib_vector_set.hh"
 
-struct Depsgraph;
+struct DGraph;
 
 struct CustomData_MeshMasks;
 
-namespace blender {
-namespace deg {
+namespace dune {
+namespace dgraph {
 
 /* Commonly used types. */
 using std::deque;
@@ -55,16 +54,16 @@ using namespace std::placeholders;
  *
  * NOTE: This is a bit mask, so accumulation of sources is possible.
  *
- * TODO(sergey): Find a better place for this. */
+ * TODO: Find a better place for this. */
 enum eUpdateSource {
   /* Update is caused by a time change. */
-  DEG_UPDATE_SOURCE_TIME = (1 << 0),
+  DGRAPH_UPDATE_SOURCE_TIME = (1 << 0),
   /* Update caused by user directly or indirectly influencing the node. */
-  DEG_UPDATE_SOURCE_USER_EDIT = (1 << 1),
+  DGRAPH_UPDATE_SOURCE_USER_EDIT = (1 << 1),
   /* Update is happening as a special response for the relations update. */
-  DEG_UPDATE_SOURCE_RELATIONS = (1 << 2),
+  DGRAPH_UPDATE_SOURCE_RELATIONS = (1 << 2),
   /* Update is happening due to visibility change. */
-  DEG_UPDATE_SOURCE_VISIBILITY = (1 << 3),
+  DGRAPH_UPDATE_SOURCE_VISIBILITY = (1 << 3),
 };
 
 /* C++ wrapper around DNA's CustomData_MeshMasks struct. */
@@ -75,13 +74,13 @@ struct DEGCustomDataMeshMasks {
   uint64_t loop_mask;
   uint64_t poly_mask;
 
-  DEGCustomDataMeshMasks() : vert_mask(0), edge_mask(0), face_mask(0), loop_mask(0), poly_mask(0)
+  DGraphCustomDataMeshMasks() : vert_mask(0), edge_mask(0), face_mask(0), loop_mask(0), poly_mask(0)
   {
   }
 
-  explicit DEGCustomDataMeshMasks(const CustomData_MeshMasks *other);
+  explicit DGraphCustomDataMeshMasks(const CustomDataMeshMasks *other);
 
-  DEGCustomDataMeshMasks &operator|=(const DEGCustomDataMeshMasks &other)
+  DGraphCustomDataMeshMasks &operator|=(const DGraphCustomDataMeshMasks &other)
   {
     this->vert_mask |= other.vert_mask;
     this->edge_mask |= other.edge_mask;
@@ -91,9 +90,9 @@ struct DEGCustomDataMeshMasks {
     return *this;
   }
 
-  DEGCustomDataMeshMasks operator|(const DEGCustomDataMeshMasks &other) const
+  DGraphCustomDataMeshMasks operator|(const DGraphCustomDataMeshMasks &other) const
   {
-    DEGCustomDataMeshMasks result;
+    DGraphCustomDataMeshMasks result;
     result.vert_mask = this->vert_mask | other.vert_mask;
     result.edge_mask = this->edge_mask | other.edge_mask;
     result.face_mask = this->face_mask | other.face_mask;
@@ -109,46 +108,46 @@ struct DEGCustomDataMeshMasks {
             this->poly_mask == other.poly_mask);
   }
 
-  bool operator!=(const DEGCustomDataMeshMasks &other) const
+  bool operator!=(const DGraphCustomDataMeshMasks &other) const
   {
     return !(*this == other);
   }
 
-  static DEGCustomDataMeshMasks MaskVert(const uint64_t vert_mask)
+  static DGraphCustomDataMeshMasks MaskVert(const uint64_t vert_mask)
   {
-    DEGCustomDataMeshMasks result;
+    DGraphCustomDataMeshMasks result;
     result.vert_mask = vert_mask;
     return result;
   }
 
-  static DEGCustomDataMeshMasks MaskEdge(const uint64_t edge_mask)
+  static DGraphCustomDataMeshMasks MaskEdge(const uint64_t edge_mask)
   {
-    DEGCustomDataMeshMasks result;
+    DGraphCustomDataMeshMasks result;
     result.edge_mask = edge_mask;
     return result;
   }
 
-  static DEGCustomDataMeshMasks MaskFace(const uint64_t face_mask)
+  static DGraphCustomDataMeshMasks MaskFace(const uint64_t face_mask)
   {
-    DEGCustomDataMeshMasks result;
+    DGraphCustomDataMeshMasks result;
     result.face_mask = face_mask;
     return result;
   }
 
-  static DEGCustomDataMeshMasks MaskLoop(const uint64_t loop_mask)
+  static DGraphCustomDataMeshMasks MaskLoop(const uint64_t loop_mask)
   {
-    DEGCustomDataMeshMasks result;
+    DGraphCustomDataMeshMasks result;
     result.loop_mask = loop_mask;
     return result;
   }
 
-  static DEGCustomDataMeshMasks MaskPoly(const uint64_t poly_mask)
+  static DGraphCustomDataMeshMasks MaskPoly(const uint64_t poly_mask)
   {
-    DEGCustomDataMeshMasks result;
+    DGraphCustomDataMeshMasks result;
     result.poly_mask = poly_mask;
     return result;
   }
 };
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
