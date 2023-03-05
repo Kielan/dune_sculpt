@@ -84,45 +84,45 @@ void depsgraph_select_tag_to_component_opcode(const ID *id,
      * does nothing and which is only used to cascade flush down the
      * road. */
     *component_type = NodeType::LAYER_COLLECTIONS;
-    *operation_code = OperationCode::VIEW_LAYER_EVAL;
+    *operation_code = OpCode::VIEW_LAYER_EVAL;
   }
   else if (id_type == ID_OB) {
     *component_type = NodeType::OBJECT_FROM_LAYER;
-    *operation_code = OperationCode::OBJECT_FROM_LAYER_ENTRY;
+    *op_code = OpCode::OBJECT_FROM_LAYER_ENTRY;
   }
   else if (id_type == ID_MC) {
     *component_type = NodeType::BATCH_CACHE;
-    *operation_code = OperationCode::MOVIECLIP_SELECT_UPDATE;
+    *op_code = OpCode::MOVIECLIP_SELECT_UPDATE;
   }
   else if (is_selectable_data_id_type(id_type)) {
     *component_type = NodeType::BATCH_CACHE;
-    *operation_code = OperationCode::GEOMETRY_SELECT_UPDATE;
+    *op_code = OperationCode::GEOMETRY_SELECT_UPDATE;
   }
   else {
     *component_type = NodeType::COPY_ON_WRITE;
-    *operation_code = OperationCode::COPY_ON_WRITE;
+    *op_code = OperationCode::COPY_ON_WRITE;
   }
 }
 
-void depsgraph_base_flags_tag_to_component_opcode(const ID *id,
+void dgraph_base_flags_tag_to_component_opcode(const ID *id,
                                                   NodeType *component_type,
                                                   OperationCode *operation_code)
 {
   const ID_Type id_type = GS(id->name);
   if (id_type == ID_SCE) {
     *component_type = NodeType::LAYER_COLLECTIONS;
-    *operation_code = OperationCode::VIEW_LAYER_EVAL;
+    *op_code = OperationCode::VIEW_LAYER_EVAL;
   }
   else if (id_type == ID_OB) {
     *component_type = NodeType::OBJECT_FROM_LAYER;
-    *operation_code = OperationCode::OBJECT_BASE_FLAGS;
+    *op_code = OpCode::OBJECT_BASE_FLAGS;
   }
 }
 
-OperationCode psysTagToOperationCode(IDRecalcFlag tag)
+OpCode psysTagToOpCode(IdRecalcFlag tag)
 {
   if (tag == ID_RECALC_PSYS_RESET) {
-    return OperationCode::PARTICLE_SETTINGS_RESET;
+    return OpCode::PARTICLE_SETTINGS_RESET;
   }
   return OperationCode::OPERATION;
 }
