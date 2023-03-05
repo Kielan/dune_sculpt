@@ -1,37 +1,35 @@
-/** \file
- * \ingroup depsgraph
- */
+/** depsgraph **/
 
 /* Enable special trickery to treat nested owned IDs (such as nodetree of
  * material) to be handled in same way as "real" data-blocks, even tho some
- * internal BKE routines doesn't treat them like that.
+ * internal dune routines doesn't treat them like that.
  *
- * TODO(sergey): Re-evaluate that after new ID handling is in place. */
+ * TODO: Re-evaluate that after new ID handling is in place. */
 #define NESTED_ID_NASTY_WORKAROUND
 
 /* Silence warnings from copying deprecated fields. */
-#define DNA_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
-#include "intern/eval/deg_eval_copy_on_write.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
 
 #include <cstring>
 
-#include "BLI_listbase.h"
-#include "BLI_string.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_string.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
-#include "BKE_curve.h"
-#include "BKE_global.h"
-#include "BKE_gpencil.h"
-#include "BKE_gpencil_update_cache.h"
-#include "BKE_idprop.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_scene.h"
+#include "dune_curve.h"
+#include "dune_global.h"
+#include "dune_gpencil.h"
+#include "dune_gpencil_update_cache.h"
+#include "dune_idprop.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "dgraph.h"
+#include "dgraph_query.h"
 
 #include "MEM_guardedalloc.h"
 
