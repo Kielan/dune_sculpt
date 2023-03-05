@@ -1,27 +1,25 @@
-/** \file
- * \ingroup depsgraph
- *
+/**
  * Evaluation engine entry-points for Depsgraph Engine.
  */
 
-#include "intern/eval/deg_eval.h"
+#include "intern/eval/dgraph_eval.h"
 
 #include "PIL_time.h"
 
-#include "BLI_compiler_attrs.h"
-#include "BLI_function_ref.hh"
-#include "BLI_gsqueue.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "lib_compiler_attrs.h"
+#include "lib_function_ref.hh"
+#include "lib_gsqueue.h"
+#include "lib_task.h"
+#include "lib_utildefines.h"
 
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "dgraph.h"
+#include "dgraph_query.h"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
@@ -29,20 +27,20 @@
 
 #include "atomic_ops.h"
 
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/depsgraph_tag.h"
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/eval/deg_eval_flush.h"
-#include "intern/eval/deg_eval_stats.h"
-#include "intern/eval/deg_eval_visibility.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_relation.h"
+#include "intern/dgraph_tag.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/eval/dgraph_eval_flush.h"
+#include "intern/eval/dgraph_eval_stats.h"
+#include "intern/eval/dgraph_eval_visibility.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/dgraph_node_time.h"
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 namespace {
 
@@ -375,7 +373,7 @@ TaskPool *deg_evaluate_task_pool_create(DepsgraphEvalState *state)
 
 }  // namespace
 
-void deg_evaluate_on_refresh(Depsgraph *graph)
+void dgraph_evaluate_on_refresh(DGraph *graph)
 {
   /* Nothing to update, early out. */
   if (graph->entry_tags.is_empty()) {
@@ -390,10 +388,10 @@ void deg_evaluate_on_refresh(Depsgraph *graph)
 #endif
 
   graph->is_evaluating = true;
-  depsgraph_ensure_view_layer(graph);
+  dgraph_ensure_view_layer(graph);
 
   /* Set up evaluation state. */
-  DepsgraphEvalState state;
+  DGraphEvalState state;
   state.graph = graph;
   state.do_stats = graph->debug.do_time_debug();
 
@@ -428,7 +426,7 @@ void deg_evaluate_on_refresh(Depsgraph *graph)
 
     evaluate_graph_threaded_stage(&state, task_pool, EvaluationStage::DYNAMIC_VISIBILITY);
 
-    deg_graph_flush_visibility_flags_if_needed(graph);
+    dgraph_flush_visibility_flags_if_needed(graph);
 
     /* Update parents to an updated visibility and evaluation stage.
      *
@@ -440,7 +438,7 @@ void deg_evaluate_on_refresh(Depsgraph *graph)
 
   evaluate_graph_threaded_stage(&state, task_pool, EvaluationStage::THREADED_EVALUATION);
 
-  BLI_task_pool_free(task_pool);
+  lib_task_pool_free(task_pool);
 
   evaluate_graph_single_threaded_if_needed(&state);
 
@@ -452,7 +450,7 @@ void deg_evaluate_on_refresh(Depsgraph *graph)
   }
 
   /* Clear any uncleared tags. */
-  deg_graph_clear_tags(graph);
+  dgraph_clear_tags(graph);
   graph->is_evaluating = false;
 
 #ifdef WITH_PYTHON
