@@ -132,21 +132,21 @@ void dgraph_add_node_tree_output_relation(DNodeHandle *node_handle,
                                           const char *description)
 {
   dgraph::OpKey ntree_output_key(
-      &node_tree->id, deg::NodeType::NTREE_OUTPUT, deg::OperationCode::NTREE_OUTPUT);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(
-      ntree_output_key, deg_node_handle, description);
+      &node_tree->id, dgraph::NodeType::NTREE_OUTPUT, dgraph::OpCode::NTREE_OUTPUT);
+  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(
+      ntree_output_key, dgraph_node_handle, description);
 }
 
-void deg_add_object_cache_relation(DepsNodeHandle *node_handle,
+void dgraph_add_object_cache_relation(DNodeHandle *node_handle,
                                    CacheFile *cache_file,
-                                   eDepsObjectComponentType component,
+                                   eDGraphObjectComponentType component,
                                    const char *description)
 {
-  deg::NodeType type = deg::nodeTypeFromObjectComponent(component);
-  deg::ComponentKey comp_key(&cache_file->id, type);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
+  dgraph::NodeType type = deg::nodeTypeFromObjectComponent(component);
+  dgraph::ComponentKey comp_key(&cache_file->id, type);
+  dgraph::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
 }
 
 void deg_add_bone_relation(DepsNodeHandle *node_handle,
