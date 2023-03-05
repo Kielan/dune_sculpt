@@ -2,36 +2,36 @@
 
 #include <stddef.h>
 
-#include "DNA_ID.h"
+#include "types_id.h"
 
-struct ID;
+struct Id;
 
 /* Uncomment this to have verbose log about original and CoW pointers
  * logged, with detailed information when they are allocated, expanded
  * and remapped.
  */
-// #define DEG_DEBUG_COW_POINTERS
+// #define DGRAPH_DEBUG_COW_PTRS
 
-#ifdef DEG_DEBUG_COW_POINTERS
-#  define DEG_COW_PRINT(format, ...) printf(format, __VA_ARGS__);
+#ifdef DGRAPH_DEBUG_COW_PTRS
+#  define DGRAPH_COW_PRINT(format, ...) printf(format, __VA_ARGS__);
 #else
-#  define DEG_COW_PRINT(format, ...)
+#  define DGRAPH_COW_PRINT(format, ...)
 #endif
 
-struct Depsgraph;
+struct DGraph;
 
-namespace dune::deg {
+namespace dune::dgraph {
 
-struct Depsgraph;
-class DepsgraphNodeBuilder;
-struct IDNode;
+struct DGraph;
+class DGraphNodeBuilder;
+struct IdNode;
 
 /**
  * Makes sure given CoW data-block is brought back to state of the original
  * data-block.
  */
-ID *deg_update_copy_on_write_datablock(const struct Depsgraph *depsgraph, const IDNode *id_node);
-ID *deg_update_copy_on_write_datablock(const struct Depsgraph *depsgraph, struct ID *id_orig);
+Id *dgraph_update_copy_on_write_datablock(const struct DGraph *depsgraph, const IDNode *id_node);
+Id *dgraph_update_copy_on_write_datablock(const struct DGraph *depsgraph, struct ID *id_orig);
 
 /** Helper function which frees memory used by copy-on-written data-block. */
 void deg_free_copy_on_write_datablock(struct ID *id_cow);
