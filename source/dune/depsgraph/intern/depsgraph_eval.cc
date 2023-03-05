@@ -10,44 +10,44 @@
 #include "types_object.h"
 #include "types_scene.h"
 
-#include "deg_depsgraph.h"
-#include "deg_depsgraph_query.h"
+#include "dgraph.h"
+#include "dgraph_query.h"
 
-#include "intern/eval/deg_eval.h"
-#include "intern/eval/deg_eval_flush.h"
+#include "intern/eval/dgraph_eval.h"
+#include "intern/eval/dgraph_eval_flush.h"
 
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_operation.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/dgraph_node_time.h"
 
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_tag.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_tag.h"
 
-namespace deg = dune::deg;
+namespace dgraph = dune::dgraph;
 
-static void deg_flush_updates_and_refresh(deg::Depsgraph *deg_graph)
+static void dgraph_flush_updates_and_refresh(dgrapg::DGraph *dgraph)
 {
   /* Update the time on the cow scene. */
-  if (deg_graph->scene_cow) {
-    dune_scene_frame_set(deg_graph->scene_cow, deg_graph->frame);
+  if (dgraph->scene_cow) {
+    dune_scene_frame_set(dgraph->scene_cow, dgraph->frame);
   }
 
-  deg::graph_tag_ids_for_visible_update(deg_graph);
-  deg::deg_graph_flush_updates(deg_graph);
-  deg::deg_evaluate_on_refresh(deg_graph);
+  dgraph::graph_tag_ids_for_visible_update(dgraph);
+  dgraph::graph_flush_updates(dgraph);
+  dgraph::dgraph_evaluate_on_refresh(dgraph);
 }
 
-void deg_evaluate_on_refresh(Depsgraph *graph)
+void dgraph_evaluate_on_refresh(DGraph *graph)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(graph);
-  const Scene *scene = deg_get_input_scene(graph);
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(graph);
+  const Scene *scene = dgraph_get_input_scene(graph);
   const float frame = dune_scene_frame_get(scene);
   const float ctime = dune_scene_ctime_get(scene);
 
-  if (deg_graph->frame != frame || ctime != deg_graph->ctime) {
-    deg_graph->tag_time_source();
-    deg_graph->frame = frame;
-    deg_graph->ctime = ctime;
+  if (dgraph->frame != frame || ctime != dgraph->ctime) {
+    dgraph->tag_time_source();
+    dgraph->frame = frame;
+    dgraph->ctime = ctime;
   }
   else if (scene->id.recalc & ID_RECALC_FRAME_CHANGE) {
     /* Comparing depsgraph & scene frame fails in the case of undo,
@@ -55,19 +55,19 @@ void deg_evaluate_on_refresh(Depsgraph *graph)
      * In this case reading back the undo state will behave as if no updates on frame change
      * is needed as the #Depsgraph.ctime & frame will match the values in the input scene.
      * Use #ID_RECALC_FRAME_CHANGE to detect that recalculation is necessary. see: T66913. */
-    deg_graph->tag_time_source();
+    dgraph->tag_time_source();
   }
 
-  deg_flush_updates_and_refresh(deg_graph);
+  dgraph_flush_updates_and_refresh(dgraph);
 }
 
-void deg_evaluate_on_framechange(Depsgraph *graph, float frame)
+void dgraph_evaluate_on_framechange(DGraph *graph, float frame)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(graph);
-  const Scene *scene = deg_get_input_scene(graph);
+  dgraph::DGraph *deg_graph = reinterpret_cast<dgraph::DGraph *>(graph);
+  const Scene *scene = dgraph_get_input_scene(graph);
 
-  deg_graph->tag_time_source();
-  deg_graph->frame = frame;
-  deg_graph->ctime = dune_scene_frame_to_ctime(scene, frame);
-  deg_flush_updates_and_refresh(deg_graph);
+  dgraph->tag_time_source();
+  dgraph->frame = frame;
+  dgraph->ctime = dune_scene_frame_to_ctime(scene, frame);
+  dgraph_flush_updates_and_refresh(dgraph);
 }
