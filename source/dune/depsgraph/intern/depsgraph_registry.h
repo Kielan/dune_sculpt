@@ -1,17 +1,17 @@
 #pragma once
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
 struct Main;
 
-namespace blender {
-namespace deg {
+namespace dune {
+namespace dgraph {
 
-struct Depsgraph;
+struct DGraph;
 
-void register_graph(Depsgraph *depsgraph);
-void unregister_graph(Depsgraph *depsgraph);
-Span<Depsgraph *> get_all_registered_graphs(Main *bmain);
+void register_graph(DGraph *dgraph);
+void unregister_graph(DGraph *dgraph);
+Span<DGraph *> get_all_registered_graphs(Main *dmain);
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
