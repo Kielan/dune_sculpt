@@ -671,15 +671,15 @@ void graph_id_tag_update(
    * physics did change and that cache is to be invalidated.
    * This is only needed if data changes. If it's just a drawing, we keep the
    * point cache. */
-  if (update_source == DEG_UPDATE_SOURCE_USER_EDIT && flag != ID_RECALC_SHADING) {
+  if (update_source == DGRAPH_UPDATE_SOURCE_USER_EDIT && flag != ID_RECALC_SHADING) {
     graph_id_tag_update_single_flag(
         bmain, graph, id, id_node, ID_RECALC_POINT_CACHE, update_source);
   }
 }
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
 
-const char *DEG_update_tag_as_string(IDRecalcFlag flag)
+const char *dgraph_update_tag_as_string(IdRecalcFlag flag)
 {
   switch (flag) {
     case ID_RECALC_TRANSFORM:
@@ -726,7 +726,7 @@ const char *DEG_update_tag_as_string(IDRecalcFlag flag)
       return "AUDIO_LISTENER";
     case ID_RECALC_AUDIO:
       return "AUDIO";
-    case ID_RECALC_PARAMETERS:
+    case ID_RECALC_PARAMS:
       return "PARAMETERS";
     case ID_RECALC_SOURCE:
       return "SOURCE";
@@ -753,42 +753,42 @@ void DGraph_id_tag_update_ex(Main *dmain, Id *id, int flag)
     /* Ideally should not happen, but old dgraph allowed this. */
     return;
   }
-  dgraph::id_tag_update(dmain, id, flag, deg::DGRAPH_UPDATE_SOURCE_USER_EDIT);
+  dgraph::id_tag_update(dmain, id, flag, dgraph::DGRAPH_UPDATE_SOURCE_USER_EDIT);
 }
 
-void dgraph_id_tag_update(struct Main *bmain,
-                             struct Depsgraph *depsgraph,
-                             struct ID *id,
+void dgraph_id_tag_update(struct Main *dmain,
+                             struct DGraph *dgraph,
+                             struct Id *id,
                              int flag)
 {
-  deg::Depsgraph *graph = (deg::Depsgraph *)depsgraph;
-  deg::graph_id_tag_update(bmain, graph, id, flag, deg::DEG_UPDATE_SOURCE_USER_EDIT);
+  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
+  dgraph::graph_id_tag_update(dmain, graph, id, flag, dgrap::DGRAPH_UPDATE_SOURCE_USER_EDIT);
 }
 
-void DEG_time_tag_update(struct Main *bmain)
+void dgraph_time_tag_update(struct Main *dmain)
 {
-  for (deg::Depsgraph *depsgraph : deg::get_all_registered_graphs(bmain)) {
-    DEG_graph_time_tag_update(reinterpret_cast<::Depsgraph *>(depsgraph));
+  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
+    DGraph_time_tag_update(reinterpret_cast<::DGraph *>(dgraph));
   }
 }
 
-void DEG_graph_time_tag_update(struct Depsgraph *depsgraph)
+void DGraph_time_tag_update(struct DGraph *dgraph)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
-  deg_graph->tag_time_source();
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
+  dgraph->tag_time_source();
 }
 
-void DEG_graph_id_type_tag(Depsgraph *depsgraph, short id_type)
+void DGraph_id_type_tag(DGraph *dgraph, short id_type)
 {
   if (id_type == ID_NT) {
     /* Stupid workaround so parent data-blocks of nested node-tree get looped
      * over when we loop over tagged data-block types. */
-    DEG_graph_id_type_tag(depsgraph, ID_MA);
-    DEG_graph_id_type_tag(depsgraph, ID_TE);
-    DEG_graph_id_type_tag(depsgraph, ID_LA);
-    DEG_graph_id_type_tag(depsgraph, ID_WO);
-    DEG_graph_id_type_tag(depsgraph, ID_SCE);
-    DEG_graph_id_type_tag(depsgraph, ID_SIM);
+    DGraph_id_type_tag(dgraph, ID_MA);
+    DGraph_id_type_tag(dgraph, ID_TE);
+    DGraph_id_type_tag(dgraph, ID_LA);
+    DGraph_id_type_tag(dgraph, ID_WO);
+    DGraph_id_type_tag(dgraph, ID_SCE);
+    DGraph_id_type_tag(dgraph, ID_SIM);
   }
   const int id_type_index = BKE_idtype_idcode_to_index(id_type);
   deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
