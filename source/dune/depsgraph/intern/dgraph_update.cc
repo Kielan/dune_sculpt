@@ -6,7 +6,7 @@
 
 namespace dgraph = dune::dgraph;
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 static DGraphEditorUpdateIdCb dgraph_editor_update_id_cb = nullptr;
 static DGraphEditorUpdateSceneCb dgraph_editor_update_scene_cb = nullptr;
