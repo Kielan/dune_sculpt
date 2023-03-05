@@ -1,6 +1,4 @@
-/** \file
- * \ingroup depsgraph
- *
+/**
  * Implementation of Querying API
  */
 
@@ -16,36 +14,36 @@
 #include "dune_idtype.h"
 #include "dune_main.h"
 
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "dgraph.h"
+#include "dgraph_query.h"
 
-#include "intern/depsgraph.h"
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/node/deg_node_id.h"
+#include "intern/dgraph.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/node/dgraph_node_id.h"
 
-namespace deg = blender::deg;
+namespace dgraph = dune::dgraph;
 
-struct Scene *DEG_get_input_scene(const Depsgraph *graph)
+struct Scene *DGRAPH_get_input_scene(const DGraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  return deg_graph->scene;
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
+  return dgraph->scene;
 }
 
-struct ViewLayer *DEG_get_input_view_layer(const Depsgraph *graph)
+struct ViewLayer *DGRAPH_get_input_view_layer(const DGraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  return deg_graph->view_layer;
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
+  return dgraph->view_layer;
 }
 
-struct Main *DEG_get_bmain(const Depsgraph *graph)
+struct Main *DGRAPH_get_bmain(const DGraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   return deg_graph->bmain;
 }
 
