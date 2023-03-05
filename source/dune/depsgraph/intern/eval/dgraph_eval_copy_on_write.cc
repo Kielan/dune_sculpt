@@ -34,55 +34,55 @@
 #include "MEM_guardedalloc.h"
 
 #include "types_id.h"
-#include "types_anim_types.h"
-#include "types_armature_types.h"
-#include "types_gpencil_types.h"
-#include "types_mesh_types.h"
-#include "types_modifier_types.h"
-#include "types_object_types.h"
-#include "types_particle_types.h"
-#include "types_rigidbody_types.h"
-#include "types_scene_types.h"
-#include "types_sequence_types.h"
-#include "types_simulation_types.h"
-#include "types_sound_types.h"
+#include "types_anim.h"
+#include "types_armature.h"
+#include "types_dpen.h"
+#include "types_mesh.h"
+#include "types_modifier.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_rigidbody.h"
+#include "types_scene.h"
+#include "types_sequence.h"
+#include "types_simulation.h"
+#include "types_sound.h"
 
 #include "DRW_engine.h"
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
-#  include "types_curve_types.h"
-#  include "types_key_types.h"
-#  include "types_lattice_types.h"
-#  include "types_light_types.h"
-#  include "types_linestyle_types.h"
-#  include "types_material_types.h"
-#  include "types_meta_types.h"
-#  include "types_node_types.h"
-#  include "types_texture_types.h"
-#  include "types_world_types.h"
+#  include "types_curve.h"
+#  include "types_key.h"
+#  include "types_lattice.h"
+#  include "types_light.h"
+#  include "types_linestyle.h"
+#  include "types_material.h"
+#  include "types_meta.h"
+#  include "types_node.h"
+#  include "types_texture.h"
+#  include "types_world.h"
 #endif
 
 #include "dune_action.h"
-#include "BKE_anim_data.h"
-#include "BKE_animsys.h"
-#include "BKE_armature.h"
-#include "BKE_editmesh.h"
-#include "BKE_lib_query.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_pointcache.h"
-#include "BKE_sound.h"
+#include "dune_anim_data.h"
+#include "dune_animsys.h"
+#include "dune_armature.h"
+#include "dune_editmesh.h"
+#include "dune_lib_query.h"
+#include "dune_modifier.h"
+#include "dune_object.h"
+#include "dune_pointcache.h"
+#include "dune_sound.h"
 
 #include "SEQ_relations.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/builder/deg_builder_nodes.h"
-#include "intern/depsgraph.h"
-#include "intern/eval/deg_eval_runtime_backup.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_id.h"
+#include "intern/builder/dgraph_builder.h"
+#include "intern/builder/dgraph_builder_nodes.h"
+#include "intern/dgraph.h"
+#include "intern/eval/dgraph_eval_runtime_backup.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_id.h"
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 #define DEBUG_PRINT \
   if (G.debug & G_DEBUG_DEPSGRAPH_EVAL) \
@@ -91,7 +91,7 @@ namespace blender::deg {
 namespace {
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
-union NestedIDHackTempStorage {
+union NestedIdHackTempStorage {
   Curve curve;
   FreestyleLineStyle linestyle;
   Light lamp;
@@ -104,13 +104,13 @@ union NestedIDHackTempStorage {
   Simulation simulation;
 };
 
-/* Set nested owned ID pointers to nullptr. */
-void nested_id_hack_discard_pointers(ID *id_cow)
+/* Set nested owned id pointers to nullptr. */
+void nested_id_hack_discard_ptrs(Id *id_cow)
 {
   switch (GS(id_cow->name)) {
-#  define SPECIAL_CASE(id_type, dna_type, field) \
+#  define SPECIAL_CASE(id_type, types_type, field) \
     case id_type: { \
-      ((dna_type *)id_cow)->field = nullptr; \
+      ((types_type *)id_cow)->field = nullptr; \
       break; \
     }
 
@@ -127,7 +127,7 @@ void nested_id_hack_discard_pointers(ID *id_cow)
 
     case ID_SCE: {
       Scene *scene_cow = (Scene *)id_cow;
-      /* Node trees always have their own ID node in the graph, and are
+      /* Node trees always have their own id node in the graph, and are
        * being copied as part of their copy-on-write process. */
       scene_cow->nodetree = nullptr;
       /* Tool settings pointer is shared with the original scene. */
@@ -150,15 +150,15 @@ void nested_id_hack_discard_pointers(ID *id_cow)
   }
 }
 
-/* Set ID pointer of nested owned IDs (nodetree, key) to nullptr.
+/* Set id pointer of nested owned ids (nodetree, key) to nullptr.
  *
- * Return pointer to a new ID to be used. */
-const ID *nested_id_hack_get_discarded_pointers(NestedIDHackTempStorage *storage, const ID *id)
+ * Return pointer to a new id to be used. */
+const Id *nested_id_hack_get_discarded_ptrs(NestedIdHackTempStorage *storage, const ID *id)
 {
   switch (GS(id->name)) {
-#  define SPECIAL_CASE(id_type, dna_type, field, variable) \
+#  define SPECIAL_CASE(id_type, types_type, field, variable) \
     case id_type: { \
-      storage->variable = dna::shallow_copy(*(dna_type *)id); \
+      storage->variable = types::shallow_copy(*(types_type *)id); \
       storage->variable.field = nullptr; \
       return &storage->variable.id; \
     }
@@ -189,16 +189,16 @@ const ID *nested_id_hack_get_discarded_pointers(NestedIDHackTempStorage *storage
   return id;
 }
 
-/* Set ID pointer of nested owned IDs (nodetree, key) to the original value. */
-void nested_id_hack_restore_pointers(const ID *old_id, ID *new_id)
+/* Set id pointer of nested owned ids (nodetree, key) to the original value. */
+void nested_id_hack_restore_ptrs(const Id *old_id, Id *new_id)
 {
   if (new_id == nullptr) {
     return;
   }
   switch (GS(old_id->name)) {
-#  define SPECIAL_CASE(id_type, dna_type, field) \
+#  define SPECIAL_CASE(id_type, types_type, field) \
     case id_type: { \
-      ((dna_type *)(new_id))->field = ((dna_type *)(old_id))->field; \
+      ((types_type *)(new_id))->field = ((types_type *)(old_id))->field; \
       break; \
     }
 
@@ -220,15 +220,15 @@ void nested_id_hack_restore_pointers(const ID *old_id, ID *new_id)
   }
 }
 
-/* Remap pointer of nested owned IDs (nodetree. key) to the new ID values. */
-void ntree_hack_remap_pointers(const Depsgraph *depsgraph, ID *id_cow)
+/* Remap pointer of nested owned ids (nodetree. key) to the new id values. */
+void ntree_hack_remap_ptrs(const DGraph *dgraph, Id *id_cow)
 {
   switch (GS(id_cow->name)) {
-#  define SPECIAL_CASE(id_type, dna_type, field, field_type) \
+#  define SPECIAL_CASE(id_type, types_type, field, field_type) \
     case id_type: { \
-      dna_type *data = (dna_type *)id_cow; \
+      types_type *data = (types_type *)id_cow; \
       if (data->field != nullptr) { \
-        ID *ntree_id_cow = depsgraph->get_cow_id(&data->field->id); \
+        Id *ntree_id_cow = dgraph->get_cow_id(&data->field->id); \
         if (ntree_id_cow != nullptr) { \
           DEG_COW_PRINT("    Remapping datablock for %s: id_orig=%p id_cow=%p\n", \
                         data->field->id.name, \
@@ -263,64 +263,64 @@ struct ValidateData {
   bool is_valid;
 };
 
-/* Similar to generic BKE_id_copy() but does not require main and assumes pointer
+/* Similar to generic dune_id_copy() but does not require main and assumes pointer
  * is already allocated. */
-bool id_copy_inplace_no_main(const ID *id, ID *newid)
+bool id_copy_inplace_no_main(const Id *id, Id *newid)
 {
-  const ID *id_for_copy = id;
+  const Id *id_for_copy = id;
 
   if (G.debug & G_DEBUG_DEPSGRAPH_UUID) {
     const ID_Type id_type = GS(id_for_copy->name);
     if (id_type == ID_OB) {
       const Object *object = reinterpret_cast<const Object *>(id_for_copy);
-      BKE_object_check_uuids_unique_and_report(object);
+      dune_object_check_uuids_unique_and_report(object);
     }
   }
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
-  NestedIDHackTempStorage id_hack_storage;
-  id_for_copy = nested_id_hack_get_discarded_pointers(&id_hack_storage, id);
+  NestedIdHackTempStorage id_hack_storage;
+  id_for_copy = nested_id_hack_get_discarded_ptrs(&id_hack_storage, id);
 #endif
 
-  bool result = (BKE_id_copy_ex(nullptr,
-                                (ID *)id_for_copy,
+  bool result = (dune_id_copy_ex(nullptr,
+                                (Id *)id_for_copy,
                                 &newid,
                                 (LIB_ID_COPY_LOCALIZE | LIB_ID_CREATE_NO_ALLOCATE |
                                  LIB_ID_COPY_SET_COPIED_ON_WRITE)) != nullptr);
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
   if (result) {
-    nested_id_hack_restore_pointers(id, newid);
+    nested_id_hack_restore_ptrs(id, newid);
   }
 #endif
 
   return result;
 }
 
-/* Similar to BKE_scene_copy() but does not require main and assumes pointer
+/* Similar to dune_scene_copy() but does not require main and assumes pointer
  * is already allocated. */
 bool scene_copy_inplace_no_main(const Scene *scene, Scene *new_scene)
 {
 
   if (G.debug & G_DEBUG_DEPSGRAPH_UUID) {
-    SEQ_relations_check_uuids_unique_and_report(scene);
+    seq_relations_check_uuids_unique_and_report(scene);
   }
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
-  NestedIDHackTempStorage id_hack_storage;
-  const ID *id_for_copy = nested_id_hack_get_discarded_pointers(&id_hack_storage, &scene->id);
+  NestedIdHackTempStorage id_hack_storage;
+  const Id *id_for_copy = nested_id_hack_get_discarded_ptrs(&id_hack_storage, &scene->id);
 #else
-  const ID *id_for_copy = &scene->id;
+  const Id *id_for_copy = &scene->id;
 #endif
-  bool result = (BKE_id_copy_ex(nullptr,
+  bool result = (dune_id_copy_ex(nullptr,
                                 id_for_copy,
-                                (ID **)&new_scene,
+                                (Id **)&new_scene,
                                 (LIB_ID_COPY_LOCALIZE | LIB_ID_CREATE_NO_ALLOCATE |
                                  LIB_ID_COPY_SET_COPIED_ON_WRITE)) != nullptr);
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
   if (result) {
-    nested_id_hack_restore_pointers(&scene->id, &new_scene->id);
+    nested_id_hack_restore_ptrs(&scene->id, &new_scene->id);
   }
 #endif
 
@@ -330,31 +330,31 @@ bool scene_copy_inplace_no_main(const Scene *scene, Scene *new_scene)
 /* For the given scene get view layer which corresponds to an original for the
  * scene's evaluated one. This depends on how the scene is pulled into the
  * dependency graph. */
-ViewLayer *get_original_view_layer(const Depsgraph *depsgraph, const IDNode *id_node)
+ViewLayer *get_original_view_layer(const DGraph *dgraph, const IdNode *id_node)
 {
-  if (id_node->linked_state == DEG_ID_LINKED_DIRECTLY) {
-    return depsgraph->view_layer;
+  if (id_node->linked_state == DGRAPH_ID_LINKED_DIRECTLY) {
+    return dgraph->view_layer;
   }
-  if (id_node->linked_state == DEG_ID_LINKED_VIA_SET) {
+  if (id_node->linked_state == DGRAPH_ID_LINKED_VIA_SET) {
     Scene *scene_orig = reinterpret_cast<Scene *>(id_node->id_orig);
-    return BKE_view_layer_default_render(scene_orig);
+    return dune_view_layer_default_render(scene_orig);
   }
   /* Is possible to have scene linked indirectly (i.e. via the driver) which
    * we need to support. Currently there are issues somewhere else, which
    * makes testing hard. This is a reported problem, so will eventually be
    * properly fixed.
    *
-   * TODO(sergey): Support indirectly linked scene. */
+   * TODO: Support indirectly linked scene. */
   return nullptr;
 }
 
 /* Remove all view layers but the one which corresponds to an input one. */
-void scene_remove_unused_view_layers(const Depsgraph *depsgraph,
-                                     const IDNode *id_node,
+void scene_remove_unused_view_layers(const DGraph *dgraph,
+                                     const IdNode *id_node,
                                      Scene *scene_cow)
 {
   const ViewLayer *view_layer_input;
-  if (depsgraph->is_render_pipeline_depsgraph) {
+  if (dgraph->is_render_pipeline_dgraph) {
     /* If the dependency graph is used for post-processing (such as compositor) we do need to
      * have access to its view layer names so can not remove any view layers.
      * On a more positive side we can remove all the bases from all the view layers.
@@ -375,7 +375,7 @@ void scene_remove_unused_view_layers(const Depsgraph *depsgraph,
     view_layer_input = nullptr;
   }
   else {
-    view_layer_input = get_original_view_layer(depsgraph, id_node);
+    view_layer_input = get_original_view_layer(dgraph, id_node);
   }
   ViewLayer *view_layer_eval = nullptr;
   /* Find evaluated view layer. At the same time we free memory used by
@@ -385,11 +385,11 @@ void scene_remove_unused_view_layers(const Depsgraph *depsgraph,
        view_layer_cow != nullptr;
        view_layer_cow = view_layer_next) {
     view_layer_next = view_layer_cow->next;
-    if (view_layer_input != nullptr && STREQ(view_layer_input->name, view_layer_cow->name)) {
+    if (view_layer_input != nullptr && streq(view_layer_input->name, view_layer_cow->name)) {
       view_layer_eval = view_layer_cow;
     }
     else {
-      BKE_view_layer_free_ex(view_layer_cow, false);
+      dune_view_layer_free_ex(view_layer_cow, false);
     }
   }
   /* Make evaluated view layer the only one in the evaluated scene (if it exists). */
@@ -403,13 +403,13 @@ void scene_remove_unused_view_layers(const Depsgraph *depsgraph,
 void scene_remove_all_bases(Scene *scene_cow)
 {
   LISTBASE_FOREACH (ViewLayer *, view_layer, &scene_cow->view_layers) {
-    BLI_freelistN(&view_layer->object_bases);
+    lib_freelistN(&view_layer->object_bases);
   }
 }
 
 /* Makes it so given view layer only has bases corresponding to enabled
  * objects. */
-void view_layer_remove_disabled_bases(const Depsgraph *depsgraph,
+void view_layer_remove_disabled_bases(const DGraph *dgraph,
                                       const Scene *scene,
                                       ViewLayer *view_layer)
 {
@@ -417,9 +417,9 @@ void view_layer_remove_disabled_bases(const Depsgraph *depsgraph,
     return;
   }
   ListBase enabled_bases = {nullptr, nullptr};
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  LISTBASE_FOREACH_MUTABLE (Base *, base, BKE_view_layer_object_bases_get(view_layer)) {
-    /* TODO(sergey): Would be cool to optimize this somehow, or make it so
+  dune_view_layer_synced_ensure(scene, view_layer);
+  LISTBASE_FOREACH_MUTABLE (Base *, base, dune_view_layer_object_bases_get(view_layer)) {
+    /* TODO: Would be cool to optimize this somehow, or make it so
      * builder tags bases.
      *
      * NOTE: The idea of using id's tag and check whether its copied ot not
@@ -430,9 +430,9 @@ void view_layer_remove_disabled_bases(const Depsgraph *depsgraph,
      * points to is not yet copied. This is dangerous access from evaluated
      * domain to original one, but this is how the entire copy-on-write works:
      * it does need to access original for an initial copy. */
-    const bool is_object_enabled = deg_check_base_in_depsgraph(depsgraph, base);
+    const bool is_object_enabled = deg_check_base_in_dgraph(dgraph, base);
     if (is_object_enabled) {
-      BLI_addtail(&enabled_bases, base);
+      lib_addtail(&enabled_bases, base);
     }
     else {
       if (base == view_layer->basact) {
@@ -458,58 +458,58 @@ void view_layer_update_orig_base_pointers(const ViewLayer *view_layer_orig,
   }
 }
 
-void scene_setup_view_layers_before_remap(const Depsgraph *depsgraph,
-                                          const IDNode *id_node,
+void scene_setup_view_layers_before_remap(const DGraph *dgraph,
+                                          const IdNode *id_node,
                                           Scene *scene_cow)
 {
-  scene_remove_unused_view_layers(depsgraph, id_node, scene_cow);
+  scene_remove_unused_view_layers(dgraph, id_node, scene_cow);
   /* If dependency graph is used for post-processing we don't need any bases and can free of them.
    * Do it before re-mapping to make that process faster. */
-  if (depsgraph->is_render_pipeline_depsgraph) {
+  if (dgraph->is_render_pipeline_dgraph) {
     scene_remove_all_bases(scene_cow);
   }
 }
 
-void scene_setup_view_layers_after_remap(const Depsgraph *depsgraph,
-                                         const IDNode *id_node,
+void scene_setup_view_layers_after_remap(const DGraph *dgraph,
+                                         const IdNode *id_node,
                                          Scene *scene_cow)
 {
-  const ViewLayer *view_layer_orig = get_original_view_layer(depsgraph, id_node);
+  const ViewLayer *view_layer_orig = get_original_view_layer(dgraph, id_node);
   ViewLayer *view_layer_eval = reinterpret_cast<ViewLayer *>(scene_cow->view_layers.first);
-  view_layer_update_orig_base_pointers(view_layer_orig, view_layer_eval);
-  view_layer_remove_disabled_bases(depsgraph, scene_cow, view_layer_eval);
-  /* TODO(sergey): Remove objects from collections as well.
+  view_layer_update_orig_base_ptrs(view_layer_orig, view_layer_eval);
+  view_layer_remove_disabled_bases(dgraph, scene_cow, view_layer_eval);
+  /* TODO: Remove objects from collections as well.
    * Not a HUGE deal for now, nobody is looking into those CURRENTLY.
    * Still not an excuse to have those. */
 }
 
-/* Check whether given ID is expanded or still a shallow copy. */
-inline bool check_datablock_expanded(const ID *id_cow)
+/* Check whether given id is expanded or still a shallow copy. */
+inline bool check_datablock_expanded(const Id *id_cow)
 {
   return (id_cow->name[0] != '\0');
 }
 
-/* Callback for BKE_library_foreach_ID_link which remaps original ID pointer
+/* Callback for dune_lib_foreach_id_link which remaps original id pointer
  * with the one created by CoW system. */
 
-struct RemapCallbackUserData {
+struct RemapCbUserData {
   /* Dependency graph for which remapping is happening. */
-  const Depsgraph *depsgraph;
+  const DGraph *dGraph;
 };
 
-int foreach_libblock_remap_callback(LibraryIDLinkCallbackData *cb_data)
+int foreach_libblock_remap_callback(LibraryIdLinkCbData *cb_data)
 {
-  ID **id_p = cb_data->id_pointer;
+  Id **id_p = cb_data->id_pyr;
   if (*id_p == nullptr) {
     return IDWALK_RET_NOP;
   }
 
-  RemapCallbackUserData *user_data = (RemapCallbackUserData *)cb_data->user_data;
-  const Depsgraph *depsgraph = user_data->depsgraph;
-  ID *id_orig = *id_p;
-  if (deg_copy_on_write_is_needed(id_orig)) {
-    ID *id_cow = depsgraph->get_cow_id(id_orig);
-    BLI_assert(id_cow != nullptr);
+  RemapCbUserData *user_data = (RemapCbUserData *)cb_data->user_data;
+  const DGraph *dgraph = user_data->dgraph;
+  Id *id_orig = *id_p;
+  if (dgraph_copy_on_write_is_needed(id_orig)) {
+    Id *id_cow = dgraph->get_cow_id(id_orig);
+    lib_assert(id_cow != nullptr);
     DEG_COW_PRINT(
         "    Remapping datablock for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
     *id_p = id_cow;
@@ -517,19 +517,19 @@ int foreach_libblock_remap_callback(LibraryIDLinkCallbackData *cb_data)
   return IDWALK_RET_NOP;
 }
 
-void update_armature_edit_mode_pointers(const Depsgraph * /*depsgraph*/,
-                                        const ID *id_orig,
-                                        ID *id_cow)
+void update_armature_edit_mode_ptrs(const DGraph * /*depsgraph*/,
+                                        const Id *id_orig,
+                                        Id *id_cow)
 {
-  const bArmature *armature_orig = (const bArmature *)id_orig;
-  bArmature *armature_cow = (bArmature *)id_cow;
+  const DArmature *armature_orig = (const DArmature *)id_orig;
+  DArmature *armature_cow = (DArmature *)id_cow;
   armature_cow->edbo = armature_orig->edbo;
   armature_cow->act_edbone = armature_orig->act_edbone;
 }
 
-void update_curve_edit_mode_pointers(const Depsgraph * /*depsgraph*/,
-                                     const ID *id_orig,
-                                     ID *id_cow)
+void update_curve_edit_mode_ptrs(const DGraph * /*depsgraph*/,
+                                     const Id *id_orig,
+                                     Id *id_cow)
 {
   const Curve *curve_orig = (const Curve *)id_orig;
   Curve *curve_cow = (Curve *)id_cow;
@@ -537,9 +537,9 @@ void update_curve_edit_mode_pointers(const Depsgraph * /*depsgraph*/,
   curve_cow->editfont = curve_orig->editfont;
 }
 
-void update_mball_edit_mode_pointers(const Depsgraph * /*depsgraph*/,
-                                     const ID *id_orig,
-                                     ID *id_cow)
+void update_mball_edit_mode_ptrs(const DGraph * /*dgraph*/,
+                                     const Id *id_orig,
+                                     Id *id_cow)
 {
   const MetaBall *mball_orig = (const MetaBall *)id_orig;
   MetaBall *mball_cow = (MetaBall *)id_cow;
