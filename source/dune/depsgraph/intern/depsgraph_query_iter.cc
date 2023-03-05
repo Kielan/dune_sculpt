@@ -173,7 +173,7 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
     if (dob->ob->data != dob->ob_data) {
       /* Do not modify the original boundbox. */
       temp_dupli_object->runtime.bb = nullptr;
-      BKE_object_replace_data_on_shallow_copy(temp_dupli_object, dob->ob_data);
+      dune_object_replace_data_on_shallow_copy(temp_dupli_object, dob->ob_data);
     }
 
     /* Duplicated elements shouldn't care whether their original collection is visible or not. */
@@ -218,24 +218,24 @@ bool dgraph_iterator_objects_step(DGraphObjectIterData *data)
       continue;
     }
 
-    const ID_Type id_type = GS(id_node->id_orig->name);
+    const IdType id_type = GS(id_node->id_orig->name);
 
     if (id_type != ID_OB) {
       continue;
     }
 
     switch (id_node->linked_state) {
-      case deg::DEG_ID_LINKED_DIRECTLY:
-        if ((data->flag & DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY) == 0) {
+      case deg::DGRAPH_ID_LINKED_DIRECTLY:
+        if ((data->flag & DGRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY) == 0) {
           continue;
         }
         break;
-      case deg::DEG_ID_LINKED_VIA_SET:
+      case deg::DGRAPH_ID_LINKED_VIA_SET:
         if ((data->flag & DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET) == 0) {
           continue;
         }
         break;
-      case deg::DEG_ID_LINKED_INDIRECTLY:
+      case deg::DGRAPH_ID_LINKED_INDIRECTLY:
         if ((data->flag & DEG_ITER_OBJECT_FLAG_LINKED_INDIRECTLY) == 0) {
           continue;
         }
@@ -243,11 +243,11 @@ bool dgraph_iterator_objects_step(DGraphObjectIterData *data)
     }
 
     Object *object = (Object *)id_node->id_cow;
-    BLI_assert(deg::deg_validate_copy_on_write_datablock(&object->id));
+    lib_assert(dgraph::dgraph_validate_copy_on_write_datablock(&object->id));
 
     int ob_visibility = OB_VISIBLE_ALL;
-    if (data->flag & DEG_ITER_OBJECT_FLAG_VISIBLE) {
-      ob_visibility = BKE_object_visibility(object, data->eval_mode);
+    if (data->flag & DGRAPH_ITER_OBJECT_FLAG_VISIBLE) {
+      ob_visibility = DUNE_object_visibility(object, data->eval_mode);
 
       if (object->type != OB_MBALL && deg_object_hide_original(data->eval_mode, object, nullptr)) {
         continue;
