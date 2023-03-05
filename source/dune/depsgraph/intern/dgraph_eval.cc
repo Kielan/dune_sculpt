@@ -25,7 +25,7 @@
 
 namespace dgraph = dune::dgraph;
 
-static void dgraph_flush_updates_and_refresh(dgrapg::DGraph *dgraph)
+static void dgraph_flush_updates_and_refresh(dgraph::DGraph *dgraph)
 {
   /* Update the time on the cow scene. */
   if (dgraph->scene_cow) {
