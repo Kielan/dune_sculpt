@@ -369,7 +369,7 @@ void scene_remove_unused_view_layers(const DGraph *dgraph,
     }
     return;
   }
-  if (id_node->linked_state == DEG_ID_LINKED_INDIRECTLY) {
+  if (id_node->linked_state == DGRAPH m_ID_LINKED_INDIRECTLY) {
     /* Indirectly linked scenes means it's not an input scene and not a set scene, and is pulled
      * via some driver. Such scenes should not have view layers after copy. */
     view_layer_input = nullptr;
@@ -497,7 +497,7 @@ struct RemapCbUserData {
   const DGraph *dGraph;
 };
 
-int foreach_libblock_remap_callback(LibraryIdLinkCbData *cb_data)
+int foreach_libblock_remap_cb(LibIdLinkCbData *cb_data)
 {
   Id **id_p = cb_data->id_pyr;
   if (*id_p == nullptr) {
@@ -510,14 +510,14 @@ int foreach_libblock_remap_callback(LibraryIdLinkCbData *cb_data)
   if (dgraph_copy_on_write_is_needed(id_orig)) {
     Id *id_cow = dgraph->get_cow_id(id_orig);
     lib_assert(id_cow != nullptr);
-    DEG_COW_PRINT(
+    DGRAPH_COW_PRINT(
         "    Remapping datablock for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
     *id_p = id_cow;
   }
   return IDWALK_RET_NOP;
 }
 
-void update_armature_edit_mode_ptrs(const DGraph * /*depsgraph*/,
+void update_armature_edit_mode_ptrs(const DGraph * /*dgraph*/,
                                         const Id *id_orig,
                                         Id *id_cow)
 {
@@ -527,9 +527,9 @@ void update_armature_edit_mode_ptrs(const DGraph * /*depsgraph*/,
   armature_cow->act_edbone = armature_orig->act_edbone;
 }
 
-void update_curve_edit_mode_ptrs(const DGraph * /*depsgraph*/,
-                                     const Id *id_orig,
-                                     Id *id_cow)
+void update_curve_edit_mode_ptrs(const DGraph * /*dgraph*/,
+                                 const Id *id_orig,
+                                 Id *id_cow)
 {
   const Curve *curve_orig = (const Curve *)id_orig;
   Curve *curve_cow = (Curve *)id_cow;
@@ -546,9 +546,9 @@ void update_mball_edit_mode_ptrs(const DGraph * /*dgraph*/,
   mball_cow->editelems = mball_orig->editelems;
 }
 
-void update_lattice_edit_mode_pointers(const Depsgraph * /*depsgraph*/,
-                                       const ID *id_orig,
-                                       ID *id_cow)
+void update_lattice_edit_mode_ptrs(const DGraph * /*depsgraph*/,
+                                       const Id *id_orig,
+                                       Id *id_cow)
 {
   const Lattice *lt_orig = (const Lattice *)id_orig;
   Lattice *lt_cow = (Lattice *)id_cow;
