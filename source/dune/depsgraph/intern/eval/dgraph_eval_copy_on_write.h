@@ -30,33 +30,33 @@ struct IdNode;
  * Makes sure given CoW data-block is brought back to state of the original
  * data-block.
  */
-Id *dgraph_update_copy_on_write_datablock(const struct DGraph *depsgraph, const IDNode *id_node);
-Id *dgraph_update_copy_on_write_datablock(const struct DGraph *depsgraph, struct ID *id_orig);
+Id *dgraph_update_copy_on_write_datablock(const struct DGraph *dgraph, const IdNode *id_node);
+Id *dgraph_update_copy_on_write_datablock(const struct DGraph *dgraph, struct Id *id_orig);
 
 /** Helper function which frees memory used by copy-on-written data-block. */
-void deg_free_copy_on_write_datablock(struct ID *id_cow);
+void dgraph_free_copy_on_write_datablock(struct Id *id_cow);
 
 /**
- * Callback function for depsgraph operation node which ensures copy-on-write
+ * Callback function for dgraph operation node which ensures copy-on-write
  * data-block is ready for use by further evaluation routines.
  */
-void deg_evaluate_copy_on_write(struct ::Depsgraph *depsgraph, const struct IDNode *id_node);
+void dgraph_evaluate_copy_on_write(struct ::DGraph *dgraph, const struct IdNode *id_node);
 
 /**
- * Check that given ID is properly expanded and does not have any shallow
+ * Check that gives id is properly expanded and does not have any shallow
  * copies inside.
  */
-bool deg_validate_copy_on_write_datablock(ID *id_cow);
+bool dgraph_validate_copy_on_write_datablock(Id *id_cow);
 
-/** Tag given ID block as being copy-on-written. */
-void deg_tag_copy_on_write_id(struct ID *id_cow, const struct ID *id_orig);
+/** Tag given id block as being copy-on-written. */
+void dgraph_tag_copy_on_write_id(struct Id *id_cow, const struct Id *id_orig);
 
 /**
- * Check whether ID data-block is expanded.
+ * Check whether id data-block is expanded.
  *
- * TODO(sergey): Make it an inline function or a macro.
+ * TODO: Make it an inline function or a macro.
  */
-bool deg_copy_on_write_is_expanded(const struct ID *id_cow);
+bool dgraph_copy_on_write_is_expanded(const struct Id *id_cow);
 
 /**
  * Check whether copy-on-write data-block is needed for given ID.
@@ -66,7 +66,7 @@ bool deg_copy_on_write_is_expanded(const struct ID *id_cow);
  *
  * This includes images.
  */
-bool deg_copy_on_write_is_needed(const ID *id_orig);
-bool deg_copy_on_write_is_needed(const ID_Type id_type);
+bool dgraph_copy_on_write_is_needed(const Id *id_orig);
+bool dgraph_copy_on_write_is_needed(const IdType id_type);
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
