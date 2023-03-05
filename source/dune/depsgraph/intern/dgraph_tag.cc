@@ -790,61 +790,61 @@ void DGraph_id_type_tag(DGraph *dgraph, short id_type)
     DGraph_id_type_tag(dgraph, ID_SCE);
     DGraph_id_type_tag(dgraph, ID_SIM);
   }
-  const int id_type_index = BKE_idtype_idcode_to_index(id_type);
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
-  deg_graph->id_type_updated[id_type_index] = 1;
+  const int id_type_index = dune_idtype_idcode_to_index(id_type);
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
+  dgraph->id_type_updated[id_type_index] = 1;
 }
 
-void DEG_id_type_tag(Main *bmain, short id_type)
+void dgraph_id_type_tag(Main *dmain, short id_type)
 {
-  for (deg::Depsgraph *depsgraph : deg::get_all_registered_graphs(bmain)) {
-    DEG_graph_id_type_tag(reinterpret_cast<::Depsgraph *>(depsgraph), id_type);
+  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
+    dgraph_id_type_tag(reinterpret_cast<::DGraph *>(dgraph), id_type);
   }
 }
 
-void DEG_graph_tag_on_visible_update(Depsgraph *depsgraph, const bool do_time)
+void dgraph_tag_on_visible_update(DGraph *dgraph, const bool do_time)
 {
-  deg::Depsgraph *graph = (deg::Depsgraph *)depsgraph;
-  deg::graph_tag_on_visible_update(graph, do_time);
+  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
+  dgraph::graph_tag_on_visible_update(graph, do_time);
 }
 
-void DEG_tag_on_visible_update(Main *bmain, const bool do_time)
+void dgraph_tag_on_visible_update(Main *dmain, const bool do_time)
 {
-  for (deg::Depsgraph *depsgraph : deg::get_all_registered_graphs(bmain)) {
-    deg::graph_tag_on_visible_update(depsgraph, do_time);
+  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
+    dgraph::graph_tag_on_visible_update(depsgraph, do_time);
   }
 }
 
-void DEG_enable_editors_update(Depsgraph *depsgraph)
+void dgraph_enable_editors_update(DGraph *dgraph)
 {
-  deg::Depsgraph *graph = (deg::Depsgraph *)depsgraph;
+  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
   graph->use_editors_update = true;
 }
 
-void DEG_editors_update(Depsgraph *depsgraph, bool time)
+void DGraph_editors_update(DGraph *dgraph, bool time)
 {
-  deg::Depsgraph *graph = (deg::Depsgraph *)depsgraph;
+  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
   if (!graph->use_editors_update) {
     return;
   }
 
-  Scene *scene = DEG_get_input_scene(depsgraph);
-  ViewLayer *view_layer = DEG_get_input_view_layer(depsgraph);
-  Main *bmain = DEG_get_bmain(depsgraph);
-  bool updated = time || DEG_id_type_any_updated(depsgraph);
+  Scene *scene = dgraph_get_input_scene(dgraph);
+  ViewLayer *view_layer = dgraph_get_input_view_layer(dgraph);
+  Main *dmain = dgraph_get_dmain(dgraph);
+  bool updated = time || dgraph_id_type_any_updated(dgraph);
 
-  DEGEditorUpdateContext update_ctx = {nullptr};
-  update_ctx.bmain = bmain;
-  update_ctx.depsgraph = depsgraph;
+  DGraphEditorUpdateContext update_ctx = {nullptr};
+  update_ctx.dmain = dmain;
+  update_ctx.dgraph = dgraph;
   update_ctx.scene = scene;
   update_ctx.view_layer = view_layer;
-  deg::deg_editors_scene_update(&update_ctx, updated);
+  dgraph::dgraph_editors_scene_update(&update_ctx, updated);
 }
 
-static void deg_graph_clear_id_recalc_flags(ID *id)
+static void dgraph_clear_id_recalc_flags(Id *id)
 {
   id->recalc &= ~ID_RECALC_ALL;
-  bNodeTree *ntree = ntreeFromID(id);
+  DNodeTree *ntree = ntreeFromId(id);
   /* Clear embedded node trees too. */
   if (ntree) {
     ntree->id.recalc &= ~ID_RECALC_ALL;
@@ -852,16 +852,16 @@ static void deg_graph_clear_id_recalc_flags(ID *id)
   /* XXX And what about scene's master collection here? */
 }
 
-void DEG_ids_clear_recalc(Depsgraph *depsgraph, const bool backup)
+void dgraph_ids_clear_recalc(DGraph *dgraph, const bool backup)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
-  /* TODO(sergey): Re-implement POST_UPDATE_HANDLER_WORKAROUND using entry_tags
+  dgraph::DGraph *dgraph = reinterpret_cast<deg::DGraph *>(dgraph);
+  /* TODO: Re-implement POST_UPDATE_HANDLER_WORKAROUND using entry_tags
    * and id_tags storage from the new dependency graph. */
-  if (!DEG_id_type_any_updated(depsgraph)) {
+  if (!dgraph_id_type_any_updated(depsgraph)) {
     return;
   }
   /* Go over all ID nodes, clearing tags. */
-  for (deg::IDNode *id_node : deg_graph->id_nodes) {
+  for (dgraph::IdNode *id_node : dgraph->id_nodes) {
     if (backup) {
       id_node->id_cow_recalc_backup |= id_node->id_cow->recalc;
     }
@@ -870,19 +870,19 @@ void DEG_ids_clear_recalc(Depsgraph *depsgraph, const bool backup)
      * the recalc flag. */
     id_node->is_user_modified = false;
     id_node->is_cow_explicitly_tagged = false;
-    deg_graph_clear_id_recalc_flags(id_node->id_cow);
-    if (deg_graph->is_active) {
-      deg_graph_clear_id_recalc_flags(id_node->id_orig);
+    dgraph_clear_id_recalc_flags(id_node->id_cow);
+    if (dgraph->is_active) {
+      dgraph_clear_id_recalc_flags(id_node->id_orig);
     }
   }
-  memset(deg_graph->id_type_updated, 0, sizeof(deg_graph->id_type_updated));
+  memset(dgraph->id_type_updated, 0, sizeof(dgraph->id_type_updated));
 }
 
-void DEG_ids_restore_recalc(Depsgraph *depsgraph)
+void DGraph_ids_restore_recalc(DGraph *dgraph)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
 
-  for (deg::IDNode *id_node : deg_graph->id_nodes) {
+  for (dgraph::IdNode *id_node : dgraph_graph->id_nodes) {
     id_node->id_cow->recalc |= id_node->id_cow_recalc_backup;
     id_node->id_cow_recalc_backup = 0;
   }
