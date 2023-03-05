@@ -13,46 +13,46 @@
 #include "lib_utildefines.h"
 
 #include "types_anim_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_key_types.h"
-#include "DNA_lattice_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_curve_types.h"
+#include "types_key_types.h"
+#include "types_lattice_types.h"
+#include "types_mesh_types.h"
+#include "types_object_types.h"
+#include "types_particle_types.h"
+#include "types_screen_types.h"
+#include "types_windowmanager_types.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_global.h"
-#include "BKE_idtype.h"
-#include "BKE_node.h"
-#include "BKE_scene.h"
-#include "BKE_screen.h"
-#include "BKE_workspace.h"
+#include "dune_anim_data.h"
+#include "dune_global.h"
+#include "dune_idtype.h"
+#include "dune_node.h"
+#include "dune_scene.h"
+#include "dune_screen.h"
+#include "dune_workspace.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_debug.h"
-#include "DEG_depsgraph_query.h"
+#include "dgraph.h"
+#include "dgraph_debug.h"
+#include "dgraph_query.h"
 
-#include "intern/builder/deg_builder.h"
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_registry.h"
-#include "intern/depsgraph_update.h"
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/eval/deg_eval_flush.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_factory.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/builder/dgraph_builder.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_registry.h"
+#include "intern/dgraph_update.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/eval/dgraph_eval_flush.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_factory.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/dgraph_node_time.h"
 
-namespace deg = blender::deg;
+namespace dune = dune::dgraph;
 
 /* *********************** */
 /* Update Tagging/Flushing */
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 namespace {
 
