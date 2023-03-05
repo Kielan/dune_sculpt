@@ -1,21 +1,19 @@
-/** \file
- * \ingroup depsgraph
- *
- * Implementation of tools for debugging the depsgraph
+/**
+ * Implementation of tools for debugging the dgraph
  */
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "DNA_scene_types.h"
+#include "types_scene_types.h"
 
-#include "DNA_object_types.h"
+#include "types_object_types.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
-#include "DEG_depsgraph_debug.h"
-#include "DEG_depsgraph_query.h"
+#include "dgraph.h"
+#include "dgraph_build.h"
+#include "dgraph_debug.h"
+#include "dgraph_query.h"
 
-#include "intern/debug/deg_debug.h"
+#include "intern/debug/dgraph_debug.h"
 #include "intern/depsgraph.h"
 #include "intern/depsgraph_relation.h"
 #include "intern/depsgraph_type.h"
