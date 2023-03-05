@@ -12,15 +12,15 @@
 #include "lib_task.h"
 #include "lib_utildefines.h"
 
-#include "types_anim_types.h"
-#include "types_curve_types.h"
-#include "types_key_types.h"
-#include "types_lattice_types.h"
-#include "types_mesh_types.h"
-#include "types_object_types.h"
-#include "types_particle_types.h"
-#include "types_screen_types.h"
-#include "types_windowmanager_types.h"
+#include "types_anim.h"
+#include "types_curve.h"
+#include "types_key.h"
+#include "types_lattice.h"
+#include "types_mesh.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_screen.h"
+#include "types_windowmanager.h"
 
 #include "dune_anim_data.h"
 #include "dune_global.h"
@@ -358,12 +358,12 @@ void graph_id_tag_update_single_flag(Main *dmain,
   }
   /* Get description of what is to be tagged. */
   NodeType component_type;
-  OperationCode operation_code;
-  depsgraph_tag_to_component_opcode(id, tag, &component_type, &operation_code);
+  OpCode operation_code;
+  dgraph_tag_to_component_opcode(id, tag, &component_type, &operation_code);
   /* Check whether we've got something to tag. */
   if (component_type == NodeType::UNDEFINED) {
-    /* Given ID does not support tag. */
-    /* TODO(sergey): Shall we raise some panic here? */
+    /* Given id does not support tag. */
+    /* TODO: Shall we raise some panic here? */
     return;
   }
   /* Some sanity checks before moving forward. */
@@ -372,7 +372,7 @@ void graph_id_tag_update_single_flag(Main *dmain,
      * dependency graph (but will be after relations update). */
     return;
   }
-  /* Tag ID recalc flag. */
+  /* Tag id recalc flag. */
   DGraphNodeFactory *factory = type_get_factory(component_type);
   lib_assert(factory != nullptr);
   id_node->id_cow->recalc |= factory->id_recalc_tag();
@@ -425,26 +425,26 @@ string stringify_update_bitfield(int flag)
 const char *update_source_as_string(eUpdateSource source)
 {
   switch (source) {
-    case DEG_UPDATE_SOURCE_TIME:
+    case DGRAPH_UPDATE_SOURCE_TIME:
       return "TIME";
-    case DEG_UPDATE_SOURCE_USER_EDIT:
+    case DGRAPH_UPDATE_SOURCE_USER_EDIT:
       return "USER_EDIT";
-    case DEG_UPDATE_SOURCE_RELATIONS:
+    case DGRAPH_UPDATE_SOURCE_RELATIONS:
       return "RELATIONS";
-    case DEG_UPDATE_SOURCE_VISIBILITY:
+    case DGRAPH_UPDATE_SOURCE_VISIBILITY:
       return "VISIBILITY";
   }
-  BLI_assert_msg(0, "Should never happen.");
+  lib_assert_msg(0, "Should never happen.");
   return "UNKNOWN";
 }
 
-int deg_recalc_flags_for_legacy_zero()
+int dgraph_recalc_flags_for_legacy_zero()
 {
   return ID_RECALC_ALL &
          ~(ID_RECALC_PSYS_ALL | ID_RECALC_ANIMATION | ID_RECALC_SOURCE | ID_RECALC_EDITORS);
 }
 
-int deg_recalc_flags_effective(Depsgraph *graph, int flags)
+int dgraph_recalc_flags_effective(DGraph *graph, int flags)
 {
   if (graph != nullptr) {
     if (!graph->is_active) {
@@ -452,7 +452,7 @@ int deg_recalc_flags_effective(Depsgraph *graph, int flags)
     }
   }
   if (flags == 0) {
-    return deg_recalc_flags_for_legacy_zero();
+    return dgraph_recalc_flags_for_legacy_zero();
   }
   return flags;
 }
@@ -460,10 +460,10 @@ int deg_recalc_flags_effective(Depsgraph *graph, int flags)
 /* Special tag function which tags all components which needs to be tagged
  * for update flag=0.
  *
- * TODO(sergey): This is something to be avoid in the future, make it more
+ * TODO: This is something to be avoid in the future, make it more
  * explicit and granular for users to tag what they really need. */
-void deg_graph_node_tag_zero(Main *bmain,
-                             Depsgraph *graph,
+void dgraph_node_tag_zero(Main *bmain,
+                             DGraph *graph,
                              IDNode *id_node,
                              eUpdateSource update_source)
 {
