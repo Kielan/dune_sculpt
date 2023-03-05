@@ -41,36 +41,36 @@ struct ViewLayer *DGRAPH_get_input_view_layer(const DGraph *graph)
   return dgraph->view_layer;
 }
 
-struct Main *DGRAPH_get_bmain(const DGraph *graph)
+struct Main *DGRAPH_get_dmain(const DGraph *graph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  return deg_graph->bmain;
+  return dgraph->dmain;
 }
 
-eEvaluationMode DEG_get_mode(const Depsgraph *graph)
+eEvaluationMode DGRAPH_get_mode(const DGraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  return deg_graph->mode;
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
+  return dgraph->mode;
 }
 
-float DEG_get_ctime(const Depsgraph *graph)
+float DGRAPH_get_ctime(const DGraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  return deg_graph->ctime;
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
+  return dgraph->ctime;
 }
 
-bool DEG_id_type_updated(const Depsgraph *graph, short id_type)
+bool DGRAPH_id_type_updated(const DGraph *graph, short id_type)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  return deg_graph->id_type_updated[BKE_idtype_idcode_to_index(id_type)] != 0;
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
+  return dgraph->id_type_updated[dune_idtype_idcode_to_index(id_type)] != 0;
 }
 
-bool DEG_id_type_any_updated(const Depsgraph *graph)
+bool DGRAPH_id_type_any_updated(const DGraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
+  const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
 
   /* Loop over all ID types. */
-  for (char id_type_index : deg_graph->id_type_updated) {
+  for (char id_type_index : dgraph->id_type_updated) {
     if (id_type_index) {
       return true;
     }
@@ -79,13 +79,13 @@ bool DEG_id_type_any_updated(const Depsgraph *graph)
   return false;
 }
 
-bool DEG_id_type_any_exists(const Depsgraph *depsgraph, short id_type)
+bool DGRAPH_id_type_any_exists(const DGraph *dgraph, short id_type)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(depsgraph);
-  return deg_graph->id_type_exist[BKE_idtype_idcode_to_index(id_type)] != 0;
+  const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(dgraph);
+  return DGraph->id_type_exist[dune_idtype_idcode_to_index(id_type)] != 0;
 }
 
-uint32_t DEG_get_eval_flags_for_id(const Depsgraph *graph, ID *id)
+uint32_t DGRAPH_get_eval_flags_for_id(const DGraph *graph, Id *id)
 {
   if (graph == nullptr) {
     /* Happens when converting objects to mesh from a python script
@@ -96,17 +96,17 @@ uint32_t DEG_get_eval_flags_for_id(const Depsgraph *graph, ID *id)
     return 0;
   }
 
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  const deg::IDNode *id_node = deg_graph->find_id_node(DEG_get_original_id(id));
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
+  const dgraph::IdNode *id_node = dgraph->find_id_node(DGRAPH_get_original_id(id));
   if (id_node == nullptr) {
-    /* TODO(sergey): Does it mean we need to check set scene? */
+    /* TODO: Does it mean we need to check set scene? */
     return 0;
   }
 
   return id_node->eval_flags;
 }
 
-void DEG_get_customdata_mask_for_object(const Depsgraph *graph,
+void DGRAPH_get_customdata_mask_for_object(const DGraph *graph,
                                         Object *ob,
                                         CustomData_MeshMasks *r_mask)
 {
@@ -119,10 +119,10 @@ void DEG_get_customdata_mask_for_object(const Depsgraph *graph,
     return;
   }
 
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  const deg::IDNode *id_node = deg_graph->find_id_node(DEG_get_original_id(&ob->id));
+  const dune::DGraph *deg_graph = reinterpret_cast<const dune::DGraph *>(graph);
+  const dune::IdNode *id_node = dgraph->find_id_node(DGRAPH_get_original_id(&ob->id));
   if (id_node == nullptr) {
-    /* TODO(sergey): Does it mean we need to check set scene? */
+    /* TODO: Does it mean we need to check set scene? */
     return;
   }
 
