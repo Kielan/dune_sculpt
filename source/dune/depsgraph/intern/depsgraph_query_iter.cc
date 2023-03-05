@@ -151,7 +151,7 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
     if (obd->type == OB_MBALL) {
       continue;
     }
-    if (deg_object_hide_original(data->eval_mode, dob->ob, dob)) {
+    if (dgraph_object_hide_original(data->eval_mode, dob->ob, dob)) {
       continue;
     }
 
@@ -179,7 +179,7 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
     /* Duplicated elements shouldn't care whether their original collection is visible or not. */
     temp_dupli_object->base_flag |= BASE_VISIBLE_DEPSGRAPH;
 
-    int ob_visibility = BKE_object_visibility(temp_dupli_object, data->eval_mode);
+    int ob_visibility = dune_object_visibility(temp_dupli_object, data->eval_mode);
     if ((ob_visibility & (OB_VISIBLE_SELF | OB_VISIBLE_PARTICLES)) == 0) {
       continue;
     }
@@ -192,7 +192,7 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
     copy_m4_m4(data->temp_dupli_object.obmat, dob->mat);
     invert_m4_m4(data->temp_dupli_object.imat, data->temp_dupli_object.obmat);
     data->next_object = &data->temp_dupli_object;
-    BLI_assert(deg::deg_validate_copy_on_write_datablock(&data->temp_dupli_object.id));
+    lib_assert(dgraph::dgraph_validate_copy_on_write_datablock(&data->temp_dupli_object.id));
     return true;
   }
 
@@ -207,12 +207,12 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
 }
 
 /* Returns false when iterator is exhausted. */
-bool deg_iterator_objects_step(DEGObjectIterData *data)
+bool dgraph_iterator_objects_step(DGraphObjectIterData *data)
 {
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(data->graph);
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(data->graph);
 
   for (; data->id_node_index < data->num_id_nodes; data->id_node_index++) {
-    deg::IDNode *id_node = deg_graph->id_nodes[data->id_node_index];
+    dgraph::IdNode *id_node = dgraph->id_nodes[data->id_node_index];
 
     if (!id_node->is_directly_visible) {
       continue;
