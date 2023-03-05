@@ -1,35 +1,33 @@
-/** \file
- * \ingroup depsgraph
- *
+/**
  * Implementation of Querying and Filtering API's
  */
 
 /* Silence warnings from copying deprecated fields. */
-#define DNA_DEPRECATED_ALLOW
+#define TYPES_DEPRECATED_ALLOW
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_duplilist.h"
-#include "BKE_geometry_set.hh"
-#include "BKE_idprop.h"
-#include "BKE_layer.h"
-#include "BKE_node.h"
-#include "BKE_object.h"
+#include "dune_duplilist.h"
+#include "dune_geometry_set.hh"
+#include "dune_idprop.h"
+#include "dune_layer.h"
+#include "dune_node.h"
+#include "dune_object.h"
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_object_types.h"
+#include "types_scene_types.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "DGRAPH_dgraph.h"
+#include "DGRAPH_dgraph_query.h"
 
-#include "intern/depsgraph.h"
-#include "intern/node/deg_node_id.h"
+#include "intern/dgraph.h"
+#include "intern/node/dgraph_node_id.h"
 
 #ifndef NDEBUG
-#  include "intern/eval/deg_eval_copy_on_write.h"
+#  include "intern/eval/dgraph_eval_copy_on_write.h"
 #endif
 
 /* If defined, all working data will be set to an invalid state, helping
@@ -41,35 +39,35 @@
 #  define INVALIDATE_WORK_DATA
 #endif
 
-namespace deg = blender::deg;
+namespace dgraph = dune::dgraph;
 
 /* ************************ DEG ITERATORS ********************* */
 
 namespace {
 
-void deg_invalidate_iterator_work_data(DEGObjectIterData *data)
+void dgraph_invalidate_iterator_work_data(DGraphObjectIterData *data)
 {
 #ifdef INVALIDATE_WORK_DATA
-  BLI_assert(data != nullptr);
+  lib_assert(data != nullptr);
   memset(&data->temp_dupli_object, 0xff, sizeof(data->temp_dupli_object));
 #else
   (void)data;
 #endif
 }
 
-void ensure_id_properties_freed(const Object *dupli_object, Object *temp_dupli_object)
+void ensure_id_props_freed(const Object *dupli_object, Object *temp_dupli_object)
 {
   if (temp_dupli_object->id.properties == nullptr) {
     /* No ID properties in temp data-block -- no leak is possible. */
     return;
   }
-  if (temp_dupli_object->id.properties == dupli_object->id.properties) {
+  if (temp_dupli_object->id.props == dupli_object->id.props) {
     /* Temp copy of object did not modify ID properties. */
     return;
   }
   /* Free memory which is owned by temporary storage which is about to get overwritten. */
-  IDP_FreeProperty(temp_dupli_object->id.properties);
-  temp_dupli_object->id.properties = nullptr;
+  IDP_FreeProp(temp_dupli_object->id.props);
+  temp_dupli_object->id.props = nullptr;
 }
 
 void ensure_boundbox_freed(const Object *dupli_object, Object *temp_dupli_object)
@@ -101,7 +99,7 @@ void free_owned_memory(DEGObjectIterData *data)
   ensure_boundbox_freed(dupli_object, temp_dupli_object);
 }
 
-bool deg_object_hide_original(eEvaluationMode eval_mode, Object *ob, DupliObject *dob)
+bool dgraph_object_hide_original(eEvaluationMode eval_mode, Object *ob, DupliObject *dob)
 {
   /* Automatic hiding if this object is being instanced on verts/faces/frames
    * by its parent. Ideally this should not be needed, but due to the wrong
@@ -124,7 +122,7 @@ bool deg_object_hide_original(eEvaluationMode eval_mode, Object *ob, DupliObject
   return false;
 }
 
-void deg_iterator_duplis_init(DEGObjectIterData *data, Object *object)
+void dgraph_iterator_duplis_init(DGraphObjectIterData *data, Object *object)
 {
   if ((data->flag & DEG_ITER_OBJECT_FLAG_DUPLI) &&
       ((object->transflag & OB_DUPLI) || object->runtime.geometry_set_eval != nullptr)) {
