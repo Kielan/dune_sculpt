@@ -1,6 +1,6 @@
-#include "intern/depsgraph_update.h"
+#include "intern/dgraph_update.h"
 
-#include "deg_depsgraph.h"
+#include "dgraph.h"
 
 #include "intern/depsgraph_type.h"
 
