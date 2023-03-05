@@ -373,17 +373,17 @@ void graph_id_tag_update_single_flag(Main *dmain,
     return;
   }
   /* Tag ID recalc flag. */
-  DepsNodeFactory *factory = type_get_factory(component_type);
-  BLI_assert(factory != nullptr);
+  DGraphNodeFactory *factory = type_get_factory(component_type);
+  lib_assert(factory != nullptr);
   id_node->id_cow->recalc |= factory->id_recalc_tag();
   /* Tag corresponding dependency graph operation for update. */
   if (component_type == NodeType::ID_REF) {
     id_node->tag_update(graph, update_source);
   }
   else {
-    depsgraph_tag_component(graph, id_node, component_type, operation_code, update_source);
+    dgraph_tag_component(graph, id_node, component_type, op_code, update_source);
   }
-  /* TODO(sergey): Get rid of this once all areas are using proper data ID
+  /* TODO: Get rid of this once all areas are using proper data ID
    * for tagging. */
   deg_graph_id_tag_legacy_compat(bmain, graph, id, tag, update_source);
 }
