@@ -41,4 +41,4 @@ Span<DGraph *> get_all_registered_graphs(Main *dmain)
   return {};
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
