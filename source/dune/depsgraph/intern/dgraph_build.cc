@@ -149,48 +149,48 @@ void dgraph_add_object_cache_relation(DNodeHandle *node_handle,
   dgraph_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
 }
 
-void deg_add_bone_relation(DepsNodeHandle *node_handle,
+void dgraph_add_bone_relation(DGraphNodeHandle *node_handle,
                            Object *object,
                            const char *bone_name,
-                           eDepsObjectComponentType component,
+                           eDGraphObjectComponentType component,
                            const char *description)
 {
-  deg::NodeType type = deg::nodeTypeFromObjectComponent(component);
-  deg::ComponentKey comp_key(&object->id, type, bone_name);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
+  dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
+  dgraph::ComponentKey comp_key(&object->id, type, bone_name);
+  dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(comp_key, dgraph_node_handle, description);
 }
 
-void deg_add_object_pointcache_relation(struct DepsNodeHandle *node_handle,
+void dgraph_add_object_pointcache_relation(struct DGraphNodeHandle *node_handle,
                                         struct Object *object,
-                                        eDepsObjectComponentType component,
+                                        eDGraphObjectComponentType component,
                                         const char *description)
 {
-  deg::NodeType type = deg::nodeTypeFromObjectComponent(component);
-  deg::ComponentKey comp_key(&object->id, type);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg::DepsgraphRelationBuilder *relation_builder = deg_node_handle->builder;
+  dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
+  dgraph::ComponentKey comp_key(&object->id, type);
+  dgraph::DGraphNodeHandle *deg_node_handle = get_node_handle(node_handle);
+  dgraph::DGraphRelationBuilder *relation_builder = dgraph_node_handle->builder;
   /* Add relation from source to the node handle. */
   relation_builder->add_node_handle_relation(comp_key, deg_node_handle, description);
   /* Node deduct point cache component and connect source to it. */
-  ID *id = deg_get_id_from_handle(node_handle);
-  deg::ComponentKey point_cache_key(id, deg::NodeType::POINT_CACHE);
-  deg::Relation *rel = relation_builder->add_relation(comp_key, point_cache_key, "Point Cache");
+  Id *id = dgraph_get_id_from_handle(node_handle);
+  dgraph::ComponentKey point_cache_key(id, dgraph::NodeType::POINT_CACHE);
+  dgraph::Relation *rel = relation_builder->add_relation(comp_key, point_cache_key, "Point Cache");
   if (rel != nullptr) {
-    rel->flag |= deg::RELATION_FLAG_FLUSH_USER_EDIT_ONLY;
+    rel->flag |= dgraph::RELATION_FLAG_FLUSH_USER_EDIT_ONLY;
   }
   else {
     fprintf(stderr, "Error in point cache relation from %s to ^%s.\n", object->id.name, id->name);
   }
 }
 
-void deg_add_generic_id_relation(struct DepsNodeHandle *node_handle,
-                                 struct ID *id,
+void dgraph_add_generic_id_relation(struct DGraphNodeHandle *node_handle,
+                                 struct Id *id,
                                  const char *description)
 {
-  deg::OperationKey operation_key(
-      id, deg::NodeType::GENERIC_DATABLOCK, deg::OperationCode::GENERIC_DATABLOCK_UPDATE);
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
+  dgraph::OpKey op_key(
+      id, dgraph::NodeType::GENERIC_DATABLOCK, dgraph::OpCode::GENERIC_DATABLOCK_UPDATE);
+  dgraph::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
   deg_node_handle->builder->add_node_handle_relation(operation_key, deg_node_handle, description);
 }
 
