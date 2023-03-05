@@ -252,10 +252,10 @@ void dgraph_id_tag_copy_on_write(DGraph *graph, IdNode *id_node, eUpdateSource u
 }
 
 void dgraph_tag_component(DGraph *graph,
-                             IdNode *id_node,
-                             NodeType component_type,
-                             OpCode op_code,
-                             eUpdateSource update_source)
+                          IdNode *id_node,
+                          NodeType component_type,
+                          OpCode op_code,
+                          eUpdateSource update_source)
 {
   ComponentNode *component_node = id_node->find_component(component_type);
   /* NOTE: Animation component might not be existing yet (which happens when adding new driver or
@@ -358,8 +358,8 @@ void graph_id_tag_update_single_flag(Main *dmain,
   }
   /* Get description of what is to be tagged. */
   NodeType component_type;
-  OpCode operation_code;
-  dgraph_tag_to_component_opcode(id, tag, &component_type, &operation_code);
+  OpCode op_code;
+  dgraph_tag_to_component_opcode(id, tag, &component_type, &op_code);
   /* Check whether we've got something to tag. */
   if (component_type == NodeType::UNDEFINED) {
     /* Given id does not support tag. */
@@ -385,12 +385,12 @@ void graph_id_tag_update_single_flag(Main *dmain,
   }
   /* TODO: Get rid of this once all areas are using proper data ID
    * for tagging. */
-  deg_graph_id_tag_legacy_compat(bmain, graph, id, tag, update_source);
+  dgraph_id_tag_legacy_compat(dmain, graph, id, tag, update_source);
 }
 
 string stringify_append_bit(const string &str, IDRecalcFlag tag)
 {
-  const char *tag_name = DEG_update_tag_as_string(tag);
+  const char *tag_name = DGraph_update_tag_as_string(tag);
   if (tag_name == nullptr) {
     return str;
   }
@@ -416,7 +416,7 @@ string stringify_update_bitfield(int flag)
   }
   /* Handle all the rest of the flags. */
   while (current_flag != 0) {
-    IDRecalcFlag tag = (IDRecalcFlag)(1 << bitscan_forward_clear_i(&current_flag));
+    IdRecalcFlag tag = (IdRecalcFlag)(1 << bitscan_forward_clear_i(&current_flag));
     result = stringify_append_bit(result, tag);
   }
   return result;
@@ -484,10 +484,10 @@ void dgraph_node_tag_zero(Main *bmain,
 
     comp_node->tag_update(graph, update_source);
   }
-  deg_graph_id_tag_legacy_compat(bmain, graph, id, (IDRecalcFlag)0, update_source);
+  dgrapg_graph_id_tag_legacy_compat(dmain, graph, id, (IdRecalcFlag)0, update_source);
 }
 
-void graph_tag_on_visible_update(Depsgraph *graph, const bool do_time)
+void graph_tag_on_visible_update(DGraph *graph, const bool do_time)
 {
   graph->need_visibility_update = true;
   graph->need_visibility_time_update |= do_time;
@@ -495,38 +495,38 @@ void graph_tag_on_visible_update(Depsgraph *graph, const bool do_time)
 
 } /* namespace */
 
-void graph_tag_ids_for_visible_update(Depsgraph *graph)
+void graph_tag_ids_for_visible_update(DGraph *graph)
 {
   if (!graph->need_visibility_update) {
     return;
   }
 
   const bool do_time = graph->need_visibility_time_update;
-  Main *bmain = graph->bmain;
+  Main *dmain = graph->dmain;
 
   /* NOTE: It is possible to have this function called with `do_time=false` first and later (prior
    * to evaluation though) with `do_time=true`. This means early output checks should be aware of
    * this. */
-  for (deg::IDNode *id_node : graph->id_nodes) {
-    const ID_Type id_type = GS(id_node->id_orig->name);
+  for (dgraph::IdNode *id_node : graph->id_nodes) {
+    const IdType id_type = GS(id_node->id_orig->name);
 
     if (!id_node->visible_components_mask) {
-      /* ID has no components which affects anything visible.
+      /* id has no components which affects anything visible.
        * No need bother with it to tag or anything. */
       continue;
     }
     int flag = 0;
-    if (!deg::deg_copy_on_write_is_expanded(id_node->id_cow)) {
+    if (!dgraph::dgraph_copy_on_write_is_expanded(id_node->id_cow)) {
       flag |= ID_RECALC_COPY_ON_WRITE;
       if (do_time) {
-        if (BKE_animdata_from_id(id_node->id_orig) != nullptr) {
+        if (dune_animdata_from_id(id_node->id_orig) != nullptr) {
           flag |= ID_RECALC_ANIMATION;
         }
       }
     }
     else {
       if (id_node->visible_components_mask == id_node->previously_visible_components_mask) {
-        /* The ID was already visible and evaluated, all the subsequent
+        /* The id was already visible and evaluated, all the subsequent
          * updates and tags are to be done explicitly. */
         continue;
       }
@@ -535,7 +535,7 @@ void graph_tag_ids_for_visible_update(Depsgraph *graph)
      * not a good idea because that might reset particles cache (or any
      * other type of cache).
      *
-     * TODO(sergey): Need to generalize this somehow. */
+     * TODO: Need to generalize this somehow. */
     if (id_type == ID_OB) {
       flag |= ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY;
     }
@@ -580,7 +580,7 @@ NodeType geometry_tag_to_component(const ID *id)
           return NodeType::GEOMETRY;
         case OB_ARMATURE:
           return NodeType::EVAL_POSE;
-          /* TODO(sergey): More cases here? */
+          /* TODO: More cases here? */
       }
       break;
     }
@@ -596,33 +596,33 @@ NodeType geometry_tag_to_component(const ID *id)
     case ID_PA: /* Particles */
       return NodeType::UNDEFINED;
     case ID_LP:
-      return NodeType::PARAMETERS;
+      return NodeType::PARAMS;
     case ID_GD:
       return NodeType::GEOMETRY;
     case ID_PAL: /* Palettes */
-      return NodeType::PARAMETERS;
+      return NodeType::PARAMS;
     case ID_MSK:
-      return NodeType::PARAMETERS;
+      return NodeType::PARAMS;
     default:
       break;
   }
   return NodeType::UNDEFINED;
 }
 
-void id_tag_update(Main *bmain, ID *id, int flag, eUpdateSource update_source)
+void id_tag_update(Main *dmain, Id *id, int flag, eUpdateSource update_source)
 {
-  graph_id_tag_update(bmain, nullptr, id, flag, update_source);
-  for (deg::Depsgraph *depsgraph : deg::get_all_registered_graphs(bmain)) {
-    graph_id_tag_update(bmain, depsgraph, id, flag, update_source);
+  graph_id_tag_update(dmain, nullptr, id, flag, update_source);
+  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
+    graph_id_tag_update(bmain, dgraph, id, flag, update_source);
   }
 
-  /* Accumulate all tags for an ID between two undo steps, so they can be
+  /* Accumulate all tags for an id between two undo steps, so they can be
    * replayed for undo. */
-  id->recalc_after_undo_push |= deg_recalc_flags_effective(nullptr, flag);
+  id->recalc_after_undo_push |= dgraph_recalc_flags_effective(nullptr, flag);
 }
 
 void graph_id_tag_update(
-    Main *bmain, Depsgraph *graph, ID *id, int flag, eUpdateSource update_source)
+    Main *dmain, DGraph *graph, Id *id, int flag, eUpdateSource update_source)
 {
   const int debug_flags = (graph != nullptr) ? DEG_debug_flags_get((::Depsgraph *)graph) : G.debug;
   if (graph != nullptr && graph->is_evaluating) {
@@ -638,31 +638,31 @@ void graph_id_tag_update(
            stringify_update_bitfield(flag).c_str(),
            update_source_as_string(update_source));
   }
-  IDNode *id_node = (graph != nullptr) ? graph->find_id_node(id) : nullptr;
+  IdNode *id_node = (graph != nullptr) ? graph->find_id_node(id) : nullptr;
   if (graph != nullptr) {
-    DEG_graph_id_type_tag(reinterpret_cast<::Depsgraph *>(graph), GS(id->name));
+    dgraph_id_type_tag(reinterpret_cast<::DGraph *>(graph), GS(id->name));
   }
   if (flag == 0) {
-    deg_graph_node_tag_zero(bmain, graph, id_node, update_source);
+    dgraph_node_tag_zero(dmain, graph, id_node, update_source);
   }
-  /* Store original flag in the ID.
+  /* Store original flag in the id.
    * Allows to have more granularity than a node-factory based flags. */
   if (id_node != nullptr) {
     id_node->id_cow->recalc |= flag;
   }
-  /* When ID is tagged for update based on an user edits store the recalc flags in the original ID.
-   * This way IDs in the undo steps will have this flag preserved, making it possible to restore
+  /* When id is tagged for update based on an user edits store the recalc flags in the original ID.
+   * This way ids in the undo steps will have this flag preserved, making it possible to restore
    * all needed tags when new dependency graph is created on redo.
    * This is the only way to ensure modifications to animation data (such as keyframes i.e.)
    * properly triggers animation update for the newly constructed dependency graph on redo (while
    * usually newly created dependency graph skips animation update to avoid loss of unkeyed
    * changes). */
-  if (update_source == DEG_UPDATE_SOURCE_USER_EDIT) {
-    id->recalc |= deg_recalc_flags_effective(graph, flag);
+  if (update_source == DGRAPH_UPDATE_SOURCE_USER_EDIT) {
+    id->recalc |= dgraph_recalc_flags_effective(graph, flag);
   }
   int current_flag = flag;
   while (current_flag != 0) {
-    IDRecalcFlag tag = (IDRecalcFlag)(1 << bitscan_forward_clear_i(&current_flag));
+    IdRecalcFlag tag = (IdRecalcFlag)(1 << bitscan_forward_clear_i(&current_flag));
     graph_id_tag_update_single_flag(bmain, graph, id, id_node, tag, update_source);
   }
   /* Special case for nested node tree data-blocks. */
@@ -742,21 +742,21 @@ const char *DEG_update_tag_as_string(IDRecalcFlag flag)
 
 /* Data-Based Tagging. */
 
-void DEG_id_tag_update(ID *id, int flag)
+void dgraph_id_tag_update(Id *id, int flag)
 {
-  DEG_id_tag_update_ex(G.main, id, flag);
+  dgraph_id_tag_update_ex(G.main, id, flag);
 }
 
-void DEG_id_tag_update_ex(Main *bmain, ID *id, int flag)
+void DGraph_id_tag_update_ex(Main *dmain, Id *id, int flag)
 {
   if (id == nullptr) {
-    /* Ideally should not happen, but old depsgraph allowed this. */
+    /* Ideally should not happen, but old dgraph allowed this. */
     return;
   }
-  deg::id_tag_update(bmain, id, flag, deg::DEG_UPDATE_SOURCE_USER_EDIT);
+  dgraph::id_tag_update(dmain, id, flag, deg::DGRAPH_UPDATE_SOURCE_USER_EDIT);
 }
 
-void DEG_graph_id_tag_update(struct Main *bmain,
+void dgraph_id_tag_update(struct Main *bmain,
                              struct Depsgraph *depsgraph,
                              struct ID *id,
                              int flag)
