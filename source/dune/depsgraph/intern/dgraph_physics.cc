@@ -1,6 +1,6 @@
 /**  Physics utilities for effectors and collision. **/
 
-#include "intern/depsgraph_physics.h"
+#include "intern/dgraph_physics.h"
 
 #include "MEM_guardedalloc.h"
 
@@ -15,13 +15,13 @@
 #include "types_object_force.h"
 #include "types_object.h"
 
-#include "deg_depsgraph_build.h"
-#include "deg_depsgraph_physics.h"
-#include "deg_depsgraph_query.h"
+#include "dgraph_build.h"
+#include "dgraph_physics.h"
+#include "dgraph_query.h"
 
-#include "depsgraph.h"
+#include "dgraph.h"
 
-namespace deg = dune::deg;
+namespace dgraph = dune::dgraph;
 
 /*************************** Evaluation Query API *****************************/
 
@@ -29,20 +29,20 @@ static ePhysicsRelationType modifier_to_relation_type(unsigned int modifier_type
 {
   switch (modifier_type) {
     case eModifierType_Collision:
-      return DEG_PHYS_COLLISION;
+      return DGRAPH_PHYS_COLLISION;
     case eModifierType_Fluid:
-      return DEG_PHYS_SMOKE_COLLISION;
+      return DGRAPH_PHYS_SMOKE_COLLISION;
     case eModifierType_DynamicPaint:
-      return DEG_PHYS_DYNAMIC_BRUSH;
+      return DGRAPH_PHYS_DYNAMIC_BRUSH;
   }
 
   lib_assert_msg(0, "Unknown collision modifier type");
-  return DEG_PHYS_RELATIONS_NUM;
+  return DGRAPH_PHYS_RELATIONS_NUM;
 }
 /* Get ID from an ID type object, in a safe manner. This means that object can be nullptr,
  * in which case the function returns nullptr.
  */
-template<class T> static ID *object_id_safe(T *object)
+template<class T> static Id *object_id_safe(T *object)
 {
   if (object == nullptr) {
     return nullptr;
@@ -50,16 +50,16 @@ template<class T> static ID *object_id_safe(T *object)
   return &object->id;
 }
 
-ListBase *deg_get_effector_relations(const Depsgraph *graph, Collection *collection)
+ListBase *dgraph_get_effector_relations(const DGraph *graph, Collection *collection)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  dune::Map<const ID *, ListBase *> *hash = deg_graph->physics_relations[DEG_PHYSICS_EFFECTOR];
+  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::DGraph *>(graph);
+  dune::Map<const Id *, ListBase *> *hash = dgraph->physics_relations[DGRAPH_PHYSICS_EFFECTOR];
   if (hash == nullptr) {
     return nullptr;
   }
   /* NOTE: nullptr is a valid lookup key here as it means that the relation is not bound to a
    * specific collection. */
-  ID *collection_orig = deg_get_original_id(object_id_safe(collection));
+  Id *collection_orig = deg_get_original_id(object_id_safe(collection));
   return hash->lookup_default(collection_orig, nullptr);
 }
 
