@@ -1,22 +1,20 @@
-/** \file
- * \ingroup depsgraph
- *
+/**
  * Evaluation engine entry-points for Depsgraph Engine.
  */
 
 #pragma once
 
-namespace blender::deg {
+namespace dune::dgraph {
 
-struct Depsgraph;
+struct DGraph;
 
 /**
  * Evaluate all nodes tagged for updating,
- * \warning This is usually done as part of main loop, but may also be
+ * This is usually done as part of main loop, but may also be
  * called from frame-change update.
  *
- * \note Time sources should be all valid!
+ * Time sources should be all valid!
  */
-void deg_evaluate_on_refresh(Depsgraph *graph);
+void dgraph_evaluate_on_refresh(DGraph *graph);
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
