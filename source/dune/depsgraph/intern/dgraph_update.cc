@@ -2,33 +2,33 @@
 
 #include "dgraph.h"
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
-namespace deg = dune::deg;
+namespace dgraph = dune::dgraph;
 
 namespace dune::deg {
 
-static DEG_EditorUpdateIDCb deg_editor_update_id_cb = nullptr;
-static DEG_EditorUpdateSceneCb deg_editor_update_scene_cb = nullptr;
+static DGraphEditorUpdateIdCb dgraph_editor_update_id_cb = nullptr;
+static DGraphEditorUpdateSceneCb dgraph_editor_update_scene_cb = nullptr;
 
-void deg_editors_id_update(const DEGEditorUpdateContext *update_ctx, ID *id)
+void dgraph_editors_id_update(const DGraphEditorUpdateContext *update_ctx, Id *id)
 {
-  if (deg_editor_update_id_cb != nullptr) {
-    deg_editor_update_id_cb(update_ctx, id);
+  if (dgraph_editor_update_id_cb != nullptr) {
+    dgraph_editor_update_id_cb(update_ctx, id);
   }
 }
 
-void deg_editors_scene_update(const DEGEditorUpdateContext *update_ctx, bool updated)
+void dgraph_editors_scene_update(const DGraphEditorUpdateContext *update_ctx, bool updated)
 {
-  if (deg_editor_update_scene_cb != nullptr) {
-    deg_editor_update_scene_cb(update_ctx, updated);
+  if (dgraph_editor_update_scene_cb != nullptr) {
+    dgraph_editor_update_scene_cb(update_ctx, updated);
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
 
-void deg_editors_set_update_cb(deg_EditorUpdateIDCb id_func, DEG_EditorUpdateSceneCb scene_func)
+void dgraph_editors_set_update_cb(DGraphEditorUpdateIdCb id_fn, DGraphEditorUpdateSceneCb scene_fn)
 {
-  deg::deg_editor_update_id_cb = id_func;
-  deg::deg_editor_update_scene_cb = scene_func;
+  dgraph::dgraph_editor_update_id_cb = id_fn;
+  dgraph::dgraph_editor_update_scene_cb = scene_fn;
 }
