@@ -592,7 +592,7 @@ void update_edit_mode_pointers(const Depsgraph *depsgraph, const ID *id_orig, ID
 }
 
 template<typename T>
-void update_list_orig_pointers(const ListBase *listbase_orig,
+void update_list_orig_ptrs(const ListBase *listbase_orig,
                                ListBase *listbase,
                                T *T::*orig_field)
 {
@@ -607,13 +607,13 @@ void update_list_orig_pointers(const ListBase *listbase_orig,
     element_orig = element_orig->next;
   }
 
-  BLI_assert((element_orig == nullptr && element_cow == nullptr) ||
+  lib_assert((element_orig == nullptr && element_cow == nullptr) ||
              !"list of pointers of different sizes, unable to reliably set orig pointer");
 }
 
-void update_particle_system_orig_pointers(const Object *object_orig, Object *object_cow)
+void update_particle_system_orig_ptrs(const Object *object_orig, Object *object_cow)
 {
-  update_list_orig_pointers(
+  update_list_orig_ptrs(
       &object_orig->particlesystem, &object_cow->particlesystem, &ParticleSystem::orig_psys);
 }
 
@@ -628,11 +628,11 @@ void set_particle_system_modifiers_loaded(Object *object_cow)
   }
 }
 
-void reset_particle_system_edit_eval(const Depsgraph *depsgraph, Object *object_cow)
+void reset_particle_system_edit_eval(const DGraph *dgraph, Object *object_cow)
 {
   /* Inactive (and render) dependency graphs are living in their own little bubble, should not care
    * about edit mode at all. */
-  if (!DEG_is_active(reinterpret_cast<const ::Depsgraph *>(depsgraph))) {
+  if (!dgraph_is_active(reinterpret_cast<const ::DGraph *>(dgraph))) {
     return;
   }
   LISTBASE_FOREACH (ParticleSystem *, psys, &object_cow->particlesystem) {
@@ -644,33 +644,33 @@ void reset_particle_system_edit_eval(const Depsgraph *depsgraph, Object *object_
   }
 }
 
-void update_particles_after_copy(const Depsgraph *depsgraph,
+void update_particles_after_copy(const DGraph *dgraph,
                                  const Object *object_orig,
                                  Object *object_cow)
 {
-  update_particle_system_orig_pointers(object_orig, object_cow);
+  update_particle_system_orig_ptrs(object_orig, object_cow);
   set_particle_system_modifiers_loaded(object_cow);
-  reset_particle_system_edit_eval(depsgraph, object_cow);
+  reset_particle_system_edit_eval(dgraph, object_cow);
 }
 
-void update_pose_orig_pointers(const bPose *pose_orig, bPose *pose_cow)
+void update_pose_orig_ptrs(const DPose *pose_orig, DPose *pose_cow)
 {
-  update_list_orig_pointers(&pose_orig->chanbase, &pose_cow->chanbase, &bPoseChannel::orig_pchan);
+  update_list_orig_ptrs(&pose_orig->chanbase, &pose_cow->chanbase, &DPoseChannel::orig_pchan);
 }
 
-void update_nla_strips_orig_pointers(const ListBase *strips_orig, ListBase *strips_cow)
+void update_nla_strips_orig_ptrs(const ListBase *strips_orig, ListBase *strips_cow)
 {
   NlaStrip *strip_orig = reinterpret_cast<NlaStrip *>(strips_orig->first);
   NlaStrip *strip_cow = reinterpret_cast<NlaStrip *>(strips_cow->first);
   while (strip_orig != nullptr) {
     strip_cow->orig_strip = strip_orig;
-    update_nla_strips_orig_pointers(&strip_orig->strips, &strip_cow->strips);
+    update_nla_strips_orig_ptrs(&strip_orig->strips, &strip_cow->strips);
     strip_cow = strip_cow->next;
     strip_orig = strip_orig->next;
   }
 }
 
-void update_nla_tracks_orig_pointers(const ListBase *tracks_orig, ListBase *tracks_cow)
+void update_nla_tracks_orig_ptrs(const ListBase *tracks_orig, ListBase *tracks_cow)
 {
   NlaTrack *track_orig = reinterpret_cast<NlaTrack *>(tracks_orig->first);
   NlaTrack *track_cow = reinterpret_cast<NlaTrack *>(tracks_cow->first);
@@ -681,27 +681,27 @@ void update_nla_tracks_orig_pointers(const ListBase *tracks_orig, ListBase *trac
   }
 }
 
-void update_animation_data_after_copy(const ID *id_orig, ID *id_cow)
+void update_animation_data_after_copy(const Id *id_orig, Id *id_cow)
 {
-  const AnimData *anim_data_orig = BKE_animdata_from_id(const_cast<ID *>(id_orig));
+  const AnimData *anim_data_orig = dune_animdata_from_id(const_cast<Id *>(id_orig));
   if (anim_data_orig == nullptr) {
     return;
   }
-  AnimData *anim_data_cow = BKE_animdata_from_id(id_cow);
-  BLI_assert(anim_data_cow != nullptr);
+  AnimData *anim_data_cow = dune_animdata_from_id(id_cow);
+  lib_assert(anim_data_cow != nullptr);
   update_nla_tracks_orig_pointers(&anim_data_orig->nla_tracks, &anim_data_cow->nla_tracks);
 }
 
-/* Do some special treatment of data transfer from original ID to its
+/* Do some special treatment of data transfer from original id to its
  * CoW complementary part.
  *
  * Only use for the newly created CoW data-blocks. */
-void update_id_after_copy(const Depsgraph *depsgraph,
-                          const IDNode *id_node,
-                          const ID *id_orig,
-                          ID *id_cow)
+void update_id_after_copy(const DGraph *dgraph,
+                          const IdNode *id_node,
+                          const Id *id_orig,
+                          Id *id_cow)
 {
-  const ID_Type type = GS(id_orig->name);
+  const IdType type = GS(id_orig->name);
   update_animation_data_after_copy(id_orig, id_cow);
   switch (type) {
     case ID_OB: {
@@ -711,17 +711,17 @@ void update_id_after_copy(const Depsgraph *depsgraph,
       const Object *object_orig = (const Object *)id_orig;
       object_cow->mode = object_orig->mode;
       object_cow->sculpt = object_orig->sculpt;
-      object_cow->runtime.data_orig = (ID *)object_cow->data;
+      object_cow->runtime.data_orig = (Id *)object_cow->data;
       if (object_cow->type == OB_ARMATURE) {
-        const bArmature *armature_orig = (bArmature *)object_orig->data;
-        bArmature *armature_cow = (bArmature *)object_cow->data;
-        BKE_pose_remap_bone_pointers(armature_cow, object_cow->pose);
+        const DArmature *armature_orig = (DArmature *)object_orig->data;
+        DArmature *armature_cow = (DArmature *)object_cow->data;
+        dune_pose_remap_bone_ptrs(armature_cow, object_cow->pose);
         if (armature_orig->edbo == nullptr) {
           update_pose_orig_pointers(object_orig->pose, object_cow->pose);
         }
-        BKE_pose_pchan_index_rebuild(object_cow->pose);
+        dune_pose_pchan_index_rebuild(object_cow->pose);
       }
-      update_particles_after_copy(depsgraph, object_orig, object_cow);
+      update_particles_after_copy(dgraph, object_orig, object_cow);
       break;
     }
     case ID_SCE: {
@@ -735,31 +735,31 @@ void update_id_after_copy(const Depsgraph *depsgraph,
     /* FIXME: This is a temporary fix to update the runtime pointers properly, see #96216. Should
      * be removed at some point. */
     case ID_GD: {
-      bGPdata *gpd_cow = (bGPdata *)id_cow;
-      bGPDlayer *gpl = (bGPDlayer *)(gpd_cow->layers.first);
-      if (gpl != nullptr && gpl->runtime.gpl_orig == nullptr) {
-        BKE_gpencil_data_update_orig_pointers((bGPdata *)id_orig, gpd_cow);
+      DPenData *dpd_cow = (DPenData *)id_cow;
+      DPenDataLayer *dpl = (DPenDataLayer *)(dpd_cow->layers.first);
+      if (dpl != nullptr && dpl->runtime.dpl_orig == nullptr) {
+        dune_dpen_data_update_orig_ptrs((DPenData *)id_orig, dpd_cow);
       }
       break;
     }
     default:
       break;
   }
-  update_edit_mode_pointers(depsgraph, id_orig, id_cow);
-  BKE_animsys_update_driver_array(id_cow);
+  update_edit_mode_ptrs(dgraph, id_orig, id_cow);
+  dune_animsys_update_driver_array(id_cow);
 }
 
-/* This callback is used to validate that all nested ID data-blocks are
+/* This callback is used to validate that all nested id data-blocks are
  * properly expanded. */
-int foreach_libblock_validate_callback(LibraryIDLinkCallbackData *cb_data)
+int foreach_libblock_validate_callback(LibIdLinkCbData *cb_data)
 {
   ValidateData *data = (ValidateData *)cb_data->user_data;
-  ID **id_p = cb_data->id_pointer;
+  Id **id_p = cb_data->id_ptr;
 
   if (*id_p != nullptr) {
     if (!check_datablock_expanded(*id_p)) {
       data->is_valid = false;
-      /* TODO(sergey): Store which is not valid? */
+      /* TODO: Store which is not valid? */
     }
   }
   return IDWALK_RET_NOP;
@@ -769,15 +769,15 @@ int foreach_libblock_validate_callback(LibraryIDLinkCallbackData *cb_data)
  * yet copied-on-write.
  *
  * NOTE: Expects that CoW datablock is empty. */
-ID *deg_expand_copy_on_write_datablock(const Depsgraph *depsgraph, const IDNode *id_node)
+Id *dgraph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id_node)
 {
-  const ID *id_orig = id_node->id_orig;
-  ID *id_cow = id_node->id_cow;
+  const Id *id_orig = id_node->id_orig;
+  Id *id_cow = id_node->id_cow;
   const int id_cow_recalc = id_cow->recalc;
 
-  /* No need to expand such datablocks, their copied ID is same as original
+  /* No need to expand such datablocks, their copied id is same as original
    * one already. */
-  if (!deg_copy_on_write_is_needed(id_orig)) {
+  if (!dgraph_copy_on_write_is_needed(id_orig)) {
     return id_cow;
   }
 
@@ -785,36 +785,36 @@ ID *deg_expand_copy_on_write_datablock(const Depsgraph *depsgraph, const IDNode 
       "Expanding datablock for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
 
   /* Sanity checks. */
-  BLI_assert(check_datablock_expanded(id_cow) == false);
-  BLI_assert(id_cow->py_instance == nullptr);
+  lib_assert(check_datablock_expanded(id_cow) == false);
+  lib_assert(id_cow->py_instance == nullptr);
 
-  /* Copy data from original ID to a copied version. */
-  /* TODO(sergey): Avoid doing full ID copy somehow, make Mesh to reference
+  /* Copy data from original id to a copied version. */
+  /* TODO: Avoid doing full id copy somehow, make Mesh to reference
    * original geometry arrays for until those are modified. */
-  /* TODO(sergey): We do some trickery with temp bmain and extra ID pointer
+  /* TODO: We do some trickery with temp bmain and extra id pointer
    * just to be able to use existing API. Ideally we need to replace this with
    * in-place copy from existing datablock to a prepared memory.
    *
-   * NOTE: We don't use BKE_main_{new,free} because:
+   * NOTE: We don't use dune_main_{new,free} because:
    * - We don't want heap-allocations here.
    * - We don't want bmain's content to be freed when main is freed. */
   bool done = false;
   /* First we handle special cases which are not covered by BKE_id_copy() yet.
    * or cases where we want to do something smarter than simple datablock
    * copy. */
-  const ID_Type id_type = GS(id_orig->name);
+  const IdType id_type = GS(id_orig->name);
   switch (id_type) {
     case ID_SCE: {
       done = scene_copy_inplace_no_main((Scene *)id_orig, (Scene *)id_cow);
       if (done) {
         /* NOTE: This is important to do before remap, because this
-         * function will make it so less IDs are to be remapped. */
-        scene_setup_view_layers_before_remap(depsgraph, id_node, (Scene *)id_cow);
+         * function will make it so less ids are to be remapped. */
+        scene_setup_view_layers_before_remap(dgraph, id_node, (Scene *)id_cow);
       }
       break;
     }
     case ID_ME: {
-      /* TODO(sergey): Ideally we want to handle meshes in a special
+      /* TODO: Ideally we want to handle meshes in a special
        * manner here to avoid initial copy of all the geometry arrays. */
       break;
     }
@@ -825,41 +825,41 @@ ID *deg_expand_copy_on_write_datablock(const Depsgraph *depsgraph, const IDNode 
     done = id_copy_inplace_no_main(id_orig, id_cow);
   }
   if (!done) {
-    BLI_assert_msg(0, "No idea how to perform CoW on datablock");
+    lib_assert_msg(0, "No idea how to perform CoW on datablock");
   }
-  /* Update pointers to nested ID datablocks. */
-  DEG_COW_PRINT(
-      "  Remapping ID links for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
+  /* Update pointers to nested id datablocks. */
+  DGRAPH_COW_PRINT(
+      "  Remapping id links for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
-  ntree_hack_remap_pointers(depsgraph, id_cow);
+  ntree_hack_remap_ptrs(dgraph, id_cow);
 #endif
-  /* Do it now, so remapping will understand that possibly remapped self ID
+  /* Do it now, so remapping will understand that possibly remapped self id
    * is not to be remapped again. */
-  deg_tag_copy_on_write_id(id_cow, id_orig);
+  dgraph_tag_copy_on_write_id(id_cow, id_orig);
   /* Perform remapping of the nodes. */
-  RemapCallbackUserData user_data = {nullptr};
-  user_data.depsgraph = depsgraph;
-  BKE_library_foreach_ID_link(nullptr,
+  RemapCbUserData user_data = {nullptr};
+  user_data.dgraph = dgraph;
+  dune_lib_foreach_id_link(nullptr,
                               id_cow,
-                              foreach_libblock_remap_callback,
+                              foreach_libblock_remap_cb,
                               (void *)&user_data,
                               IDWALK_IGNORE_EMBEDDED_ID);
   /* Correct or tweak some pointers which are not taken care by foreach
    * from above. */
-  update_id_after_copy(depsgraph, id_node, id_orig, id_cow);
+  update_id_after_copy(dgraph, id_node, id_orig, id_cow);
   id_cow->recalc = id_cow_recalc;
   return id_cow;
 }
 
 }  // namespace
 
-ID *deg_update_copy_on_write_datablock(const Depsgraph *depsgraph, const IDNode *id_node)
+Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id_node)
 {
-  const ID *id_orig = id_node->id_orig;
-  ID *id_cow = id_node->id_cow;
+  const Id *id_orig = id_node->id_orig;
+  Id *id_cow = id_node->id_cow;
   /* Similar to expansion, no need to do anything here. */
-  if (!deg_copy_on_write_is_needed(id_orig)) {
+  if (!dgraph_copy_on_write_is_needed(id_orig)) {
     return id_cow;
   }
 
@@ -869,12 +869,12 @@ ID *deg_update_copy_on_write_datablock(const Depsgraph *depsgraph, const IDNode 
    *
    * TODO: Investigate modes besides edit-mode. */
   if (check_datablock_expanded(id_cow) && !id_node->is_cow_explicitly_tagged) {
-    const ID_Type id_type = GS(id_orig->name);
+    const IdType id_type = GS(id_orig->name);
     /* Pass nullptr as the object is only needed for Curves which do not have edit mode pointers.
      */
-    if (OB_DATA_SUPPORT_EDITMODE(id_type) && BKE_object_data_is_in_editmode(nullptr, id_orig)) {
+    if (OB_DATA_SUPPORT_EDITMODE(id_type) && dune_object_data_is_in_editmode(nullptr, id_orig)) {
       /* Make sure pointers in the edit mode data are updated in the copy.
-       * This allows depsgraph to pick up changes made in another context after it has been
+       * This allows dgraph to pick up changes made in another context after it has been
        * evaluated. Consider the following scenario:
        *
        *  - ObjectA in SceneA is using Mesh.
@@ -882,7 +882,7 @@ ID *deg_update_copy_on_write_datablock(const Depsgraph *depsgraph, const IDNode 
        *  - Depsgraph of SceneA is evaluated.
        *  - Depsgraph of SceneB is evaluated.
        *  - User enters edit mode of ObjectA in SceneA. */
-      update_edit_mode_pointers(depsgraph, id_orig, id_cow);
+      update_edit_mode_ptrs(dgraph, id_orig, id_cow);
       return id_cow;
     }
     /* In case we don't need to do a copy-on-write, we can use the update cache of the grease
