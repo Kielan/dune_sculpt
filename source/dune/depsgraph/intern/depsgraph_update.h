@@ -1,14 +1,14 @@
 #pragma once
 
-struct DEGEditorUpdateContext;
-struct ID;
+struct DGraphEditorUpdateContext;
+struct Id;
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
-void deg_editors_id_update(const DEGEditorUpdateContext *update_ctx, struct ID *id);
+void dgraph_editors_id_update(const DGraphEditorUpdateContext *update_ctx, struct Id *id);
 
-void deg_editors_scene_update(const DEGEditorUpdateContext *update_ctx, bool updated);
+void dgraph_editors_scene_update(const DGraphEditorUpdateContext *update_ctx, bool updated);
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
