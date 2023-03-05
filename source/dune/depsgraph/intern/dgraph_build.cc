@@ -190,56 +190,56 @@ void dgraph_add_generic_id_relation(struct DGraphNodeHandle *node_handle,
 {
   dgraph::OpKey op_key(
       id, dgraph::NodeType::GENERIC_DATABLOCK, dgraph::OpCode::GENERIC_DATABLOCK_UPDATE);
-  dgraph::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_node_handle_relation(operation_key, deg_node_handle, description);
+  dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_node_handle_relation(op_key, dgraph_node_handle, description);
 }
 
-void deg_add_modifier_to_transform_relation(struct DepsNodeHandle *node_handle,
-                                            const char *description)
+void dgraph_add_modifier_to_transform_relation(struct DGraphNodeHandle *node_handle,
+                                               const char *description)
 {
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_modifier_to_transform_relation(deg_node_handle, description);
+  dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_modifier_to_transform_relation(dgraph_node_handle, description);
 }
 
-void deg_add_special_eval_flag(struct DepsNodeHandle *node_handle, ID *id, uint32_t flag)
+void dgraph_add_special_eval_flag(struct DGraphNodeHandle *node_handle, Id *id, uint32_t flag)
 {
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_special_eval_flag(id, flag);
+  dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_special_eval_flag(id, flag);
 }
 
-void deg_add_customdata_mask(struct DepsNodeHandle *node_handle,
+void dgraph_add_customdata_mask(struct DGraphNodeHandle *node_handle,
                              struct Object *object,
                              const CustomData_MeshMasks *masks)
 {
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg_node_handle->builder->add_customdata_mask(object, deg::DEGCustomDataMeshMasks(masks));
+  dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph_node_handle->builder->add_customdata_mask(object, dgraph::DGraphCustomDataMeshMasks(masks));
 }
 
-struct ID *deg_get_id_from_handle(struct DepsNodeHandle *node_handle)
+struct Id *dgraph_get_id_from_handle(struct DGraphNodeHandle *node_handle)
 {
-  deg::DepsNodeHandle *deg_handle = get_node_handle(node_handle);
-  return deg_handle->node->owner->owner->id_orig;
+  dgraph::DGraphNodeHandle *dgraph_handle = get_node_handle(node_handle);
+  return dgraph_handle->node->owner->owner->id_orig;
 }
 
-struct Depsgraph *deg_get_graph_from_handle(struct DepsNodeHandle *node_handle)
+struct DGraph *dgraph_get_graph_from_handle(struct DGraphNodeHandle *node_handle)
 {
-  deg::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
-  deg::DepsgraphRelationBuilder *relation_builder = deg_node_handle->builder;
-  return reinterpret_cast<Depsgraph *>(relation_builder->getGraph());
+  dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph::DGraphRelationBuilder *relation_builder = dgraph_node_handle->builder;
+  return reinterpret_cast<DGraph *>(relation_builder->getGraph());
 }
 
 /* ******************** */
 /* Graph Building API's */
 
-void deg_graph_build_from_view_layer(Depsgraph *graph)
+void dgraph_build_from_view_layer(DGraph *graph)
 {
-  deg::ViewLayerBuilderPipeline builder(graph);
+  dgraph::ViewLayerBuilderPipeline builder(graph);
   builder.build();
 }
 
-void deg_graph_build_for_all_objects(struct Depsgraph *graph)
+void dgraph_build_for_all_objects(struct DGraph *graph)
 {
-  deg::AllObjectsBuilderPipeline builder(graph);
+  dgraph::AllObjectsBuilderPipeline builder(graph);
   builder.build();
 }
 
