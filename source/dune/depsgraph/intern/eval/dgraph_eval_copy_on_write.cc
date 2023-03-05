@@ -1,10 +1,10 @@
-/** depsgraph **/
+/** dgraph **/
 
-/* Enable special trickery to treat nested owned IDs (such as nodetree of
+/* Enable special trickery to treat nested owned ids (such as nodetree of
  * material) to be handled in same way as "real" data-blocks, even tho some
  * internal dune routines doesn't treat them like that.
  *
- * TODO: Re-evaluate that after new ID handling is in place. */
+ * TODO: Re-evaluate that after new id handling is in place. */
 #define NESTED_ID_NASTY_WORKAROUND
 
 /* Silence warnings from copying deprecated fields. */
@@ -21,8 +21,8 @@
 
 #include "dune_curve.h"
 #include "dune_global.h"
-#include "dune_gpencil.h"
-#include "dune_gpencil_update_cache.h"
+#include "dune_dpen.h"
+#include "dune_dpen_update_cache.h"
 #include "dune_idprop.h"
 #include "dune_layer.h"
 #include "dune_lib_id.h"
@@ -33,36 +33,36 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_ID.h"
-#include "DNA_anim_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_gpencil_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_rigidbody_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_sequence_types.h"
-#include "DNA_simulation_types.h"
-#include "DNA_sound_types.h"
+#include "types_id.h"
+#include "types_anim_types.h"
+#include "types_armature_types.h"
+#include "types_gpencil_types.h"
+#include "types_mesh_types.h"
+#include "types_modifier_types.h"
+#include "types_object_types.h"
+#include "types_particle_types.h"
+#include "types_rigidbody_types.h"
+#include "types_scene_types.h"
+#include "types_sequence_types.h"
+#include "types_simulation_types.h"
+#include "types_sound_types.h"
 
 #include "DRW_engine.h"
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
-#  include "DNA_curve_types.h"
-#  include "DNA_key_types.h"
-#  include "DNA_lattice_types.h"
-#  include "DNA_light_types.h"
-#  include "DNA_linestyle_types.h"
-#  include "DNA_material_types.h"
-#  include "DNA_meta_types.h"
-#  include "DNA_node_types.h"
-#  include "DNA_texture_types.h"
-#  include "DNA_world_types.h"
+#  include "types_curve_types.h"
+#  include "types_key_types.h"
+#  include "types_lattice_types.h"
+#  include "types_light_types.h"
+#  include "types_linestyle_types.h"
+#  include "types_material_types.h"
+#  include "types_meta_types.h"
+#  include "types_node_types.h"
+#  include "types_texture_types.h"
+#  include "types_world_types.h"
 #endif
 
-#include "BKE_action.h"
+#include "dune_action.h"
 #include "BKE_anim_data.h"
 #include "BKE_animsys.h"
 #include "BKE_armature.h"
