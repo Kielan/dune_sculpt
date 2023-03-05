@@ -207,13 +207,13 @@ void dgraph_tag_to_component_opcode(const Id *id,
     case ID_RECALC_GEOMETRY_ALL_MODES:
     case ID_RECALC_ALL:
     case ID_RECALC_PSYS_ALL:
-      BLI_assert_msg(0, "Should not happen");
+      lib_assert_msg(0, "Should not happen");
       break;
     case ID_RECALC_TAG_FOR_UNDO:
       break; /* Must be ignored by depsgraph. */
     case ID_RECALC_NTREE_OUTPUT:
       *component_type = NodeType::NTREE_OUTPUT;
-      *operation_code = OperationCode::NTREE_OUTPUT;
+      *op_code = OpCode::NTREE_OUTPUT;
       break;
   }
 }
@@ -292,19 +292,19 @@ void dgraph_tag_component(DGraph *graph,
  * that object's data data-block changed. Now API expects that ID is given
  * explicitly, but not all areas are aware of this yet. */
 void dgraph_id_tag_legacy_compat(
-    Main *dmain, Depsgraph *depsgraph, ID *id, IDRecalcFlag tag, eUpdateSource update_source)
+    Main *dmain, DGraph *dgraph, Id *id, IdRecalcFlag tag, eUpdateSource update_source)
 {
   if (ELEM(tag, ID_RECALC_GEOMETRY, 0)) {
     switch (GS(id->name)) {
       case ID_OB: {
         Object *object = (Object *)id;
-        ID *data_id = (ID *)object->data;
+        Id *data_id = (Id *)object->data;
         if (data_id != nullptr) {
-          graph_id_tag_update(bmain, depsgraph, data_id, 0, update_source);
+          graph_id_tag_update(dmain, dgraph, data_id, 0, update_source);
         }
         break;
       }
-      /* TODO(sergey): Shape keys are annoying, maybe we should find a
+      /* TODO: Shape keys are annoying, maybe we should find a
        * way to chain geometry evaluation to them, so we don't need extra
        * tagging here. */
       case ID_ME: {
@@ -312,7 +312,7 @@ void dgraph_id_tag_legacy_compat(
         if (mesh->key != nullptr) {
           ID *key_id = &mesh->key->id;
           if (key_id != nullptr) {
-            graph_id_tag_update(bmain, depsgraph, key_id, 0, update_source);
+            graph_id_tag_update(dmain, dgraph, key_id, 0, update_source);
           }
         }
         break;
@@ -320,9 +320,9 @@ void dgraph_id_tag_legacy_compat(
       case ID_LT: {
         Lattice *lattice = (Lattice *)id;
         if (lattice->key != nullptr) {
-          ID *key_id = &lattice->key->id;
+          Id *key_id = &lattice->key->id;
           if (key_id != nullptr) {
-            graph_id_tag_update(bmain, depsgraph, key_id, 0, update_source);
+            graph_id_tag_update(dmain, depsgraph, key_id, 0, update_source);
           }
         }
         break;
@@ -330,9 +330,9 @@ void dgraph_id_tag_legacy_compat(
       case ID_CU_LEGACY: {
         Curve *curve = (Curve *)id;
         if (curve->key != nullptr) {
-          ID *key_id = &curve->key->id;
+          Id *key_id = &curve->key->id;
           if (key_id != nullptr) {
-            graph_id_tag_update(bmain, depsgraph, key_id, 0, update_source);
+            graph_id_tag_update(dmain, dgraph, key_id, 0, update_source);
           }
         }
         break;
@@ -343,16 +343,16 @@ void dgraph_id_tag_legacy_compat(
   }
 }
 
-void graph_id_tag_update_single_flag(Main *bmain,
-                                     Depsgraph *graph,
-                                     ID *id,
-                                     IDNode *id_node,
-                                     IDRecalcFlag tag,
+void graph_id_tag_update_single_flag(Main *dmain,
+                                     DGraph *graph,
+                                     Id *id,
+                                     IdNode *id_node,
+                                     IdRecalcFlag tag,
                                      eUpdateSource update_source)
 {
   if (tag == ID_RECALC_EDITORS) {
     if (graph != nullptr && graph->is_active) {
-      depsgraph_update_editors_tag(bmain, graph, id);
+      dgraph_update_editors_tag(bmain, graph, id);
     }
     return;
   }
