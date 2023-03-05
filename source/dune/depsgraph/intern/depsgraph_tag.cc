@@ -219,42 +219,42 @@ void depsgraph_tag_to_component_opcode(const ID *id,
 }
 
 void id_tag_update_ntree_special(
-    Main *bmain, Depsgraph *graph, ID *id, int flag, eUpdateSource update_source)
+    Main *dmain, DGraph *graph, Id *id, int flag, eUpdateSource update_source)
 {
-  bNodeTree *ntree = ntreeFromID(id);
+  DNodeTree *ntree = ntreeFromID(id);
   if (ntree == nullptr) {
     return;
   }
-  graph_id_tag_update(bmain, graph, &ntree->id, flag, update_source);
+  graph_id_tag_update(dmain, graph, &ntree->id, flag, update_source);
 }
 
-void depsgraph_update_editors_tag(Main *bmain, Depsgraph *graph, ID *id)
+void dgraph_update_editors_tag(Main *dmain, DGraph *graph, Id *id)
 {
   /* NOTE: We handle this immediately, without delaying anything, to be
    * sure we don't cause threading issues with OpenGL. */
-  /* TODO(sergey): Make sure this works for CoW-ed data-blocks as well. */
-  DEGEditorUpdateContext update_ctx = {nullptr};
-  update_ctx.bmain = bmain;
-  update_ctx.depsgraph = (::Depsgraph *)graph;
+  /* TODO: Make sure this works for CoW-ed data-blocks as well. */
+  DGraphEditorUpdateContext update_ctx = {nullptr};
+  update_ctx.dmain = bmain;
+  update_ctx.dgraph = (::DGraph *)graph;
   update_ctx.scene = graph->scene;
   update_ctx.view_layer = graph->view_layer;
-  deg_editors_id_update(&update_ctx, id);
+  dgraph_editors_id_update(&update_ctx, id);
 }
 
-void depsgraph_id_tag_copy_on_write(Depsgraph *graph, IDNode *id_node, eUpdateSource update_source)
+void dgraph_id_tag_copy_on_write(Depsgraph *graph, IDNode *id_node, eUpdateSource update_source)
 {
   ComponentNode *cow_comp = id_node->find_component(NodeType::COPY_ON_WRITE);
   if (cow_comp == nullptr) {
-    BLI_assert(!deg_copy_on_write_is_needed(GS(id_node->id_orig->name)));
+    lib_assert(!deg_copy_on_write_is_needed(GS(id_node->id_orig->name)));
     return;
   }
   cow_comp->tag_update(graph, update_source);
 }
 
-void depsgraph_tag_component(Depsgraph *graph,
-                             IDNode *id_node,
+void depsgraph_tag_component(DGraph *graph,
+                             IfNode *id_node,
                              NodeType component_type,
-                             OperationCode operation_code,
+                             OpCode op_code,
                              eUpdateSource update_source)
 {
   ComponentNode *component_node = id_node->find_component(component_type);
@@ -264,7 +264,7 @@ void depsgraph_tag_component(Depsgraph *graph,
   if (component_node == nullptr) {
     if (component_type == NodeType::ANIMATION) {
       id_node->is_cow_explicitly_tagged = true;
-      depsgraph_id_tag_copy_on_write(graph, id_node, update_source);
+      dgraph_id_tag_copy_on_write(graph, id_node, update_source);
     }
     return;
   }
