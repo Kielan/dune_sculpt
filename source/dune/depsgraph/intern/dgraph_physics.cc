@@ -200,19 +200,19 @@ void clear_physics_relations(DGraph *graph)
       const ePhysicsRelationType type = (ePhysicsRelationType)i;
 
       switch (type) {
-        case DEG_PHYSICS_EFFECTOR:
+        case DGRAPH_PHYS_EFFECTOR:
           for (ListBase *list : hash->values()) {
             dune_effector_relations_free(list);
           }
           break;
-        case DEG_PHYS_COLLISION:
-        case DEG_PHYS_SMOKE_COLLISION:
+        case DGRAPH_PHYS_COLLISION:
+        case DGRAPH_PHYS_SMOKE_COLLISION:
         case DEG_PHYS_DYNAMIC_BRUSH:
           for (ListBase *list : hash->values()) {
             dune_collision_relations_free(list);
           }
           break;
-        case DEG_PHYS_RELATIONS_NUM:
+        case DGRAPH_PHYS_RELATIONS_NUM:
           break;
       }
       delete hash;
@@ -221,4 +221,4 @@ void clear_physics_relations(DGraph *graph)
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
