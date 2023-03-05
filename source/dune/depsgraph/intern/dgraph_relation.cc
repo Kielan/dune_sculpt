@@ -1,11 +1,11 @@
-#include "intern/depsgraph_relation.h" /* own include */
+#include "intern/dgraph_relation.h"
+ /* own include */
+#include "lib_utildefines.h"
 
-#include "BLI_utildefines.h"
+#include "intern/dgraph_type.h"
+#include "intern/node/dgraph_node.h"
 
-#include "intern/depsgraph_type.h"
-#include "intern/node/deg_node.h"
-
-namespace blender::deg {
+namespace dune::dgraph {
 
 Relation::Relation(Node *from, Node *to, const char *description)
     : from(from), to(to), name(description), flag(0)
@@ -30,15 +30,15 @@ Relation::Relation(Node *from, Node *to, const char *description)
 Relation::~Relation()
 {
   /* Sanity check. */
-  BLI_assert(from != nullptr && to != nullptr);
+  lib_assert(from != nullptr && to != nullptr);
 }
 
 void Relation::unlink()
 {
   /* Sanity check. */
-  BLI_assert(from != nullptr && to != nullptr);
+  lib_assert(from != nullptr && to != nullptr);
   from->outlinks.remove_first_occurrence_and_reorder(this);
   to->inlinks.remove_first_occurrence_and_reorder(this);
 }
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
