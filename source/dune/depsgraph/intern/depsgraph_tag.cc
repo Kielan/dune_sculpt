@@ -56,7 +56,7 @@ namespace dune::dgraph {
 
 namespace {
 
-void depsgraph_geometry_tag_to_component(const ID *id, NodeType *component_type)
+void dgraph_geometry_tag_to_component(const Id *id, NodeType *component_type)
 {
   const NodeType result = geometry_tag_to_component(id);
   if (result != NodeType::UNDEFINED) {
@@ -64,27 +64,27 @@ void depsgraph_geometry_tag_to_component(const ID *id, NodeType *component_type)
   }
 }
 
-bool is_selectable_data_id_type(const ID_Type id_type)
+bool is_selectable_data_id_type(const IdType id_type)
 {
   return ELEM(id_type, ID_ME, ID_CU_LEGACY, ID_MB, ID_LT, ID_GD, ID_CV, ID_PT, ID_VO);
 }
 
-void depsgraph_select_tag_to_component_opcode(const ID *id,
+void dgraph_select_tag_to_component_opcode(const ID *id,
                                               NodeType *component_type,
                                               OperationCode *operation_code)
 {
-  const ID_Type id_type = GS(id->name);
+  const IdType id_type = GS(id->name);
   if (id_type == ID_SCE) {
     /* We need to flush base flags to all objects in a scene since we
      * don't know which ones changed. However, we don't want to update
      * the whole scene, so pick up some operation which will do as less
      * as possible.
      *
-     * TODO(sergey): We can introduce explicit exit operation which
+     * TODO: We can introduce explicit exit operation which
      * does nothing and which is only used to cascade flush down the
      * road. */
     *component_type = NodeType::LAYER_COLLECTIONS;
-    *operation_code = OpCode::VIEW_LAYER_EVAL;
+    *op_code = OpCode::VIEW_LAYER_EVAL;
   }
   else if (id_type == ID_OB) {
     *component_type = NodeType::OBJECT_FROM_LAYER;
@@ -96,11 +96,11 @@ void depsgraph_select_tag_to_component_opcode(const ID *id,
   }
   else if (is_selectable_data_id_type(id_type)) {
     *component_type = NodeType::BATCH_CACHE;
-    *op_code = OperationCode::GEOMETRY_SELECT_UPDATE;
+    *op_code = OpCode::GEOMETRY_SELECT_UPDATE;
   }
   else {
     *component_type = NodeType::COPY_ON_WRITE;
-    *op_code = OperationCode::COPY_ON_WRITE;
+    *op_code = OpCode::COPY_ON_WRITE;
   }
 }
 
@@ -124,21 +124,21 @@ OpCode psysTagToOpCode(IdRecalcFlag tag)
   if (tag == ID_RECALC_PSYS_RESET) {
     return OpCode::PARTICLE_SETTINGS_RESET;
   }
-  return OperationCode::OPERATION;
+  return OpCode::OPERATION;
 }
 
-void depsgraph_tag_to_component_opcode(const ID *id,
-                                       IDRecalcFlag tag,
-                                       NodeType *component_type,
-                                       OperationCode *operation_code)
+void dgraph_tag_to_component_opcode(const Id *id,
+                                    IdRecalcFlag tag,
+                                    NodeType *component_type,
+                                    OpCode *op_code)
 {
-  const ID_Type id_type = GS(id->name);
+  const IdType id_type = GS(id->name);
   *component_type = NodeType::UNDEFINED;
-  *operation_code = OperationCode::OPERATION;
+  *operation_code = OpCode::OPERATION;
   /* Special case for now, in the future we should get rid of this. */
   if (tag == 0) {
     *component_type = NodeType::ID_REF;
-    *operation_code = OperationCode::OPERATION;
+    *op_code = OpCode::OPERATION;
     return;
   }
   switch (tag) {
@@ -146,7 +146,7 @@ void depsgraph_tag_to_component_opcode(const ID *id,
       *component_type = NodeType::TRANSFORM;
       break;
     case ID_RECALC_GEOMETRY:
-      depsgraph_geometry_tag_to_component(id, component_type);
+      dgraph_geometry_tag_to_component(id, component_type);
       break;
     case ID_RECALC_ANIMATION:
       *component_type = NodeType::ANIMATION;
@@ -175,10 +175,10 @@ void depsgraph_tag_to_component_opcode(const ID *id,
       *component_type = NodeType::SHADING;
       break;
     case ID_RECALC_SELECT:
-      depsgraph_select_tag_to_component_opcode(id, component_type, operation_code);
+      dgraph_select_tag_to_component_opcode(id, component_type, operation_code);
       break;
     case ID_RECALC_BASE_FLAGS:
-      depsgraph_base_flags_tag_to_component_opcode(id, component_type, operation_code);
+      dgraph_base_flags_tag_to_component_opcode(id, component_type, operation_code);
       break;
     case ID_RECALC_POINT_CACHE:
       *component_type = NodeType::POINT_CACHE;
@@ -221,7 +221,7 @@ void depsgraph_tag_to_component_opcode(const ID *id,
 void id_tag_update_ntree_special(
     Main *dmain, DGraph *graph, Id *id, int flag, eUpdateSource update_source)
 {
-  DNodeTree *ntree = ntreeFromID(id);
+  DNodeTree *ntree = ntreeFromId(id);
   if (ntree == nullptr) {
     return;
   }
@@ -234,7 +234,7 @@ void dgraph_update_editors_tag(Main *dmain, DGraph *graph, Id *id)
    * sure we don't cause threading issues with OpenGL. */
   /* TODO: Make sure this works for CoW-ed data-blocks as well. */
   DGraphEditorUpdateContext update_ctx = {nullptr};
-  update_ctx.dmain = bmain;
+  update_ctx.dmain = dmain;
   update_ctx.dgraph = (::DGraph *)graph;
   update_ctx.scene = graph->scene;
   update_ctx.view_layer = graph->view_layer;
@@ -251,7 +251,7 @@ void dgraph_id_tag_copy_on_write(Depsgraph *graph, IDNode *id_node, eUpdateSourc
   cow_comp->tag_update(graph, update_source);
 }
 
-void depsgraph_tag_component(DGraph *graph,
+void dgraph_tag_component(DGraph *graph,
                              IfNode *id_node,
                              NodeType component_type,
                              OpCode op_code,
