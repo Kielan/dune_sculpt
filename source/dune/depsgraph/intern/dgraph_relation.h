@@ -2,8 +2,8 @@
 
 #include "MEM_guardedalloc.h"
 
-namespace blender {
-namespace deg {
+namespace dune {
+namespace dgraph {
 
 struct Node;
 
@@ -42,5 +42,5 @@ struct Relation {
   MEM_CXX_CLASS_ALLOC_FUNCS("Relation");
 };
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
