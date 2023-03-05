@@ -1,10 +1,8 @@
-/** \file
- * \ingroup depsgraph
- *
+/**
  * Defines and code for core node types.
  */
 
-#include <cstdlib> /* for BLI_assert() */
+#include <cstdlib> /* for lib_assert() */
 
 #include "lib_utildefines.h"
 
