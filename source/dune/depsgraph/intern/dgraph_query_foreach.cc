@@ -257,26 +257,26 @@ void dgraph_foreach_dependent_Id(const DGraph *dgraph,
   dgraph::dgraph_foreach_dependent_Id((const deg::DGraph *)depsgraph, id, callback, user_data);
 }
 
-void deg_foreach_dependent_ID_component(const Depsgraph *depsgraph,
-                                        const ID *id,
-                                        eDepsObjectComponentType source_component_type,
+void deg_foreach_dependent_ID_component(const DGraph *dgraph,
+                                        const Id *id,
+                                        eDGraphObjectComponentType source_component_type,
                                         int flags,
-                                        DEGForeachIDComponentCallback callback,
+                                        DGraphForeachIdComponentCb cb,
                                         void *user_data)
 {
-  deg::deg_foreach_dependent_ID_component(
-      (const deg::Depsgraph *)depsgraph, id, source_component_type, flags, callback, user_data);
+  dgraph::dgraph_foreach_dependent_id_component(
+      (const dgraph::DGraph *)dgraph, id, source_component_type, flags, cb, user_data);
 }
 
-void deg_foreach_ancestor_ID(const Depsgraph *depsgraph,
-                             const ID *id,
-                             DEGForeachIDCallback callback,
+void dgraph_foreach_ancestor_id(const DGraph *dgraph,
+                             const Id *id,
+                             DGraphForeachIdCb cb,
                              void *user_data)
 {
-  deg::deg_foreach_ancestor_ID((const deg::Depsgraph *)depsgraph, id, callback, user_data);
+  dgraph::dgraph_foreach_ancestor_id((const dgraph::DGraph *)dgraph, id, callback, user_data);
 }
 
-void deg_foreach_ID(const Depsgraph *depsgraph, DEGForeachIDCallback callback, void *user_data)
+void dgraph_foreach_id(const DGraph *dgraph, DGraphForeachIdCb callback, void *user_data)
 {
-  deg::deg_foreach_id((const deg::Depsgraph *)depsgraph, callback, user_data);
+  dgraph::dgraph_foreach_id((const dgraph::DGraph *)dgraph, callback, user_data);
 }
