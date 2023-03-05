@@ -1,6 +1,4 @@
-/**
- * Methods for constructing dgraph.
- */
+/** Methods for constructing dgraph. **/
 
 #include "MEM_guardedalloc.h"
 
@@ -139,21 +137,21 @@ void dgraph_add_node_tree_output_relation(DNodeHandle *node_handle,
 }
 
 void dgraph_add_object_cache_relation(DNodeHandle *node_handle,
-                                   CacheFile *cache_file,
-                                   eDGraphObjectComponentType component,
-                                   const char *description)
+                                      CacheFile *cache_file,
+                                      eDGraphObjectComponentType component,
+                                      const char *description)
 {
-  dgraph::NodeType type = deg::nodeTypeFromObjectComponent(component);
+  dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
   dgraph::ComponentKey comp_key(&cache_file->id, type);
-  dgraph::DepsNodeHandle *deg_node_handle = get_node_handle(node_handle);
+  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
   dgraph_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
 }
 
 void dgraph_add_bone_relation(DGraphNodeHandle *node_handle,
-                           Object *object,
-                           const char *bone_name,
-                           eDGraphObjectComponentType component,
-                           const char *description)
+                              Object *object,
+                              const char *bone_name,
+                              eDGraphObjectComponentType component,
+                              const char *description)
 {
   dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
   dgraph::ComponentKey comp_key(&object->id, type, bone_name);
@@ -168,7 +166,7 @@ void dgraph_add_object_pointcache_relation(struct DGraphNodeHandle *node_handle,
 {
   dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
   dgraph::ComponentKey comp_key(&object->id, type);
-  dgraph::DGraphNodeHandle *deg_node_handle = get_node_handle(node_handle);
+  dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
   dgraph::DGraphRelationBuilder *relation_builder = dgraph_node_handle->builder;
   /* Add relation from source to the node handle. */
   relation_builder->add_node_handle_relation(comp_key, deg_node_handle, description);
@@ -185,8 +183,8 @@ void dgraph_add_object_pointcache_relation(struct DGraphNodeHandle *node_handle,
 }
 
 void dgraph_add_generic_id_relation(struct DGraphNodeHandle *node_handle,
-                                 struct Id *id,
-                                 const char *description)
+                                    struct Id *id,
+                                    const char *description)
 {
   dgraph::OpKey op_key(
       id, dgraph::NodeType::GENERIC_DATABLOCK, dgraph::OpCode::GENERIC_DATABLOCK_UPDATE);
@@ -243,55 +241,55 @@ void dgraph_build_for_all_objects(struct DGraph *graph)
   builder.build();
 }
 
-void deg_graph_build_for_render_pipeline(Depsgraph *graph)
+void dgraph_build_for_render_pipeline(DGraph *graph)
 {
-  deg::RenderBuilderPipeline builder(graph);
+  dgraph::RenderBuilderPipeline builder(graph);
   builder.build();
 }
 
-void deg_graph_build_for_compositor_preview(Depsgraph *graph, bNodeTree *nodetree)
+void dgraph_build_for_compositor_preview(DGraph *graph, DNodeTree *nodetree)
 {
-  deg::CompositorBuilderPipeline builder(graph, nodetree);
+  dgraph::CompositorBuilderPipeline builder(graph, nodetree);
   builder.build();
 }
 
-void deg_graph_build_from_ids(Depsgraph *graph, ID **ids, const int num_ids)
+void draph_build_from_ids(DGraph *graph, Id **ids, const int num_ids)
 {
-  deg::FromIDsBuilderPipeline builder(graph, blender::Span(ids, num_ids));
+  dgraph::FromIdsBuilderPipeline builder(graph, dune::Span(ids, num_ids));
   builder.build();
 }
 
-void deg_graph_tag_relations_update(Depsgraph *graph)
+void dgraph_tag_relations_update(DGraph *graph)
 {
   DEG_DEBUG_PRINTF(graph, TAG, "%s: Tagging relations for update.\n", __func__);
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(graph);
-  deg_graph->need_update = true;
+  dgraph::DGraph *deg_graph = reinterpret_cast<dgraph::DGraph *>(graph);
+  dgraph->need_update = true;
   /* NOTE: When relations are updated, it's quite possible that
    * we've got new bases in the scene. This means, we need to
    * re-create flat array of bases in view layer.
    *
-   * TODO(sergey): Try to make it so we don't flush updates
-   * to the whole depsgraph. */
-  deg::IDNode *id_node = deg_graph->find_id_node(&deg_graph->scene->id);
+   * TODO: Try to make it so we don't flush updates
+   * to the whole d dependency graph. */
+  dgraph::IdNode *id_node = dgraph->find_id_node(&dgraph->scene->id);
   if (id_node != nullptr) {
-    id_node->tag_update(deg_graph, deg::DEG_UPDATE_SOURCE_RELATIONS);
+    id_node->tag_update(dgraph, deg::DGRAPH_UPDATE_SOURCE_RELATIONS);
   }
 }
 
-void dep_graph_relations_update(Depsgraph *graph)
+void dgraph_relations_update(DGraph *graph)
 {
-  deg::Depsgraph *deg_graph = (deg::Depsgraph *)graph;
-  if (!deg_graph->need_update) {
+  dgraph::DGraph *dgraph = (dgraph::DGraph *)graph;
+  if (!dgraph->need_update) {
     /* Graph is up to date, nothing to do. */
     return;
   }
-  deg_graph_build_from_view_layer(graph);
+  dgraph_build_from_view_layer(graph);
 }
 
-void deg_relations_tag_update(Main *bmain)
+void dgraph_relations_tag_update(Main *dmain)
 {
   DEG_GLOBAL_DEBUG_PRINTF(TAG, "%s: Tagging relations for update.\n", __func__);
-  for (deg::Depsgraph *depsgraph : deg::get_all_registered_graphs(bmain)) {
-    deg_graph_tag_relations_update(reinterpret_cast<Depsgraph *>(depsgraph));
+  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
+    dgraph_graph_tag_relations_update(reinterpret_cast<DGraph *>(dgraph));
   }
 }
