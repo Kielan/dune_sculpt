@@ -162,7 +162,7 @@ void dgraph_tag_to_component_opcode(const Id *id,
          *   but we can survive for now with single exception here.
          *   Particles needs reconsideration anyway, */
         *component_type = NodeType::PARTICLE_SETTINGS;
-        *operation_code = psysTagToOperationCode(tag);
+        *operation_code = psysTagToOpCode(tag);
       }
       else {
         *component_type = NodeType::PARTICLE_SYSTEM;
@@ -198,11 +198,11 @@ void dgraph_tag_to_component_opcode(const Id *id,
     case ID_RECALC_AUDIO:
       *component_type = NodeType::AUDIO;
       break;
-    case ID_RECALC_PARAMETERS:
-      *component_type = NodeType::PARAMETERS;
+    case ID_RECALC_PARAMS:
+      *component_type = NodeType::PARAMS;
       break;
     case ID_RECALC_SOURCE:
-      *component_type = NodeType::PARAMETERS;
+      *component_type = NodeType::PARAMS;
       break;
     case ID_RECALC_GEOMETRY_ALL_MODES:
     case ID_RECALC_ALL:
@@ -241,18 +241,18 @@ void dgraph_update_editors_tag(Main *dmain, DGraph *graph, Id *id)
   dgraph_editors_id_update(&update_ctx, id);
 }
 
-void dgraph_id_tag_copy_on_write(Depsgraph *graph, IDNode *id_node, eUpdateSource update_source)
+void dgraph_id_tag_copy_on_write(DGraph *graph, IdNode *id_node, eUpdateSource update_source)
 {
   ComponentNode *cow_comp = id_node->find_component(NodeType::COPY_ON_WRITE);
   if (cow_comp == nullptr) {
-    lib_assert(!deg_copy_on_write_is_needed(GS(id_node->id_orig->name)));
+    lib_assert(!dgraph_copy_on_write_is_needed(GS(id_node->id_orig->name)));
     return;
   }
   cow_comp->tag_update(graph, update_source);
 }
 
 void dgraph_tag_component(DGraph *graph,
-                             IfNode *id_node,
+                             IdNode *id_node,
                              NodeType component_type,
                              OpCode op_code,
                              eUpdateSource update_source)
@@ -268,18 +268,18 @@ void dgraph_tag_component(DGraph *graph,
     }
     return;
   }
-  if (operation_code == OperationCode::OPERATION) {
+  if (op_code == OpCode::OPERATION) {
     component_node->tag_update(graph, update_source);
   }
   else {
-    OperationNode *operation_node = component_node->find_operation(operation_code);
-    if (operation_node != nullptr) {
-      operation_node->tag_update(graph, update_source);
+    OpNode *op_node = component_node->find_op(op_code);
+    if (op_node != nullptr) {
+      op_node->tag_update(graph, update_source);
     }
   }
   /* If component depends on copy-on-write, tag it as well. */
   if (component_node->need_tag_cow_before_update()) {
-    depsgraph_id_tag_copy_on_write(graph, id_node, update_source);
+    dgraph_id_tag_copy_on_write(graph, id_node, update_source);
   }
   if (component_type == NodeType::COPY_ON_WRITE) {
     id_node->is_cow_explicitly_tagged = true;
@@ -291,8 +291,8 @@ void dgraph_tag_component(DGraph *graph,
  * Mainly, old code was tagging object with ID_RECALC_GEOMETRY tag to inform
  * that object's data data-block changed. Now API expects that ID is given
  * explicitly, but not all areas are aware of this yet. */
-void deg_graph_id_tag_legacy_compat(
-    Main *bmain, Depsgraph *depsgraph, ID *id, IDRecalcFlag tag, eUpdateSource update_source)
+void dgraph_id_tag_legacy_compat(
+    Main *dmain, Depsgraph *depsgraph, ID *id, IDRecalcFlag tag, eUpdateSource update_source)
 {
   if (ELEM(tag, ID_RECALC_GEOMETRY, 0)) {
     switch (GS(id->name)) {
