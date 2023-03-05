@@ -262,7 +262,7 @@ void draph_build_from_ids(DGraph *graph, Id **ids, const int num_ids)
 void dgraph_tag_relations_update(DGraph *graph)
 {
   DEG_DEBUG_PRINTF(graph, TAG, "%s: Tagging relations for update.\n", __func__);
-  dgraph::DGraph *deg_graph = reinterpret_cast<dgraph::DGraph *>(graph);
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(graph);
   dgraph->need_update = true;
   /* NOTE: When relations are updated, it's quite possible that
    * we've got new bases in the scene. This means, we need to
@@ -272,7 +272,7 @@ void dgraph_tag_relations_update(DGraph *graph)
    * to the whole d dependency graph. */
   dgraph::IdNode *id_node = dgraph->find_id_node(&dgraph->scene->id);
   if (id_node != nullptr) {
-    id_node->tag_update(dgraph, deg::DGRAPH_UPDATE_SOURCE_RELATIONS);
+    id_node->tag_update(dgraph, dgraph::DGRAPH_UPDATE_SOURCE_RELATIONS);
   }
 }
 
