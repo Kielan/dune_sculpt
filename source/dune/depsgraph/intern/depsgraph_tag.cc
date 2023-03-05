@@ -1,20 +1,18 @@
-/** \file
- * \ingroup depsgraph
- *
+/**
  * Core routines for how the Depsgraph works.
  */
 
-#include "intern/depsgraph_tag.h"
+#include "intern/dgraph_tag.h"
 
 #include <cstdio>
 #include <cstring> /* required for memset */
 #include <queue>
 
-#include "BLI_math_bits.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "lib_math_bits.h"
+#include "lib_task.h"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
+#include "types_anim_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_key_types.h"
 #include "DNA_lattice_types.h"
