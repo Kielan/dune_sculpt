@@ -133,75 +133,75 @@ void DGRAPH_get_customdata_mask_for_object(const DGraph *graph,
   r_mask->pmask |= id_node->customdata_masks.poly_mask;
 }
 
-Scene *DEG_get_evaluated_scene(const Depsgraph *graph)
+Scene *dgraph_get_evaluated_scene(const Depsgraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  Scene *scene_cow = deg_graph->scene_cow;
-  /* TODO(sergey): Shall we expand data-block here? Or is it OK to assume
+  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::Depsgraph *>(graph);
+  Scene *scene_cow = dgraph->scene_cow;
+  /* TODO: Shall we expand data-block here? Or is it OK to assume
    * that caller is OK with just a pointer in case scene is not updated yet? */
-  BLI_assert(scene_cow != nullptr && deg::deg_copy_on_write_is_expanded(&scene_cow->id));
+  lib_assert(scene_cow != nullptr && dgraph::dgraph_copy_on_write_is_expanded(&scene_cow->id));
   return scene_cow;
 }
 
-ViewLayer *DEG_get_evaluated_view_layer(const Depsgraph *graph)
+ViewLayer *dgraph_get_evaluated_view_layer(const DGraph *graph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  Scene *scene_cow = DEG_get_evaluated_scene(graph);
+  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::DGraph *>(graph);
+  Scene *scene_cow = dgraph_get_scene_eval(graph);
   if (scene_cow == nullptr) {
     return nullptr; /* Happens with new, not-yet-built/evaluated graphs. */
   }
   /* Do name-based lookup. */
-  /* TODO(sergey): Can this be optimized? */
-  ViewLayer *view_layer_orig = deg_graph->view_layer;
-  ViewLayer *view_layer_cow = (ViewLayer *)BLI_findstring(
+  /* TODO: Can this be optimized? */
+  ViewLayer *view_layer_orig = dgraph->view_layer;
+  ViewLayer *view_layer_cow = (ViewLayer *)lib_findstring(
       &scene_cow->view_layers, view_layer_orig->name, offsetof(ViewLayer, name));
-  BLI_assert(view_layer_cow != nullptr);
+  lib_assert(view_layer_cow != nullptr);
   return view_layer_cow;
 }
 
-Object *DEG_get_evaluated_object(const Depsgraph *depsgraph, Object *object)
+Object *dgraph_get_evaluated_object(const Dgraph *dgraph, Object *object)
 {
-  return (Object *)DEG_get_evaluated_id(depsgraph, &object->id);
+  return (Object *)dgraph_get_evaluated_id(dgraph, &object->id);
 }
 
-ID *DEG_get_evaluated_id(const Depsgraph *depsgraph, ID *id)
+Id *dgraph_get_evaluated_id(const DGraph *dgraph, Id *id)
 {
   if (id == nullptr) {
     return nullptr;
   }
-  /* TODO(sergey): This is a duplicate of Depsgraph::get_cow_id(),
+  /* TODO: This is a duplicate of DGraph::get_cow_id(),
    * but here we never do assert, since we don't know nature of the
    * incoming ID data-block. */
-  const deg::Depsgraph *deg_graph = (const deg::Depsgraph *)depsgraph;
-  const deg::IDNode *id_node = deg_graph->find_id_node(id);
+  const dgraph::DGraph *dgraph = (const dgraph::DGraph *)dgraph;
+  const dgraph::IdNode *id_node = dgraph->find_id_node(id);
   if (id_node == nullptr) {
     return id;
   }
   return id_node->id_cow;
 }
 
-void DEG_get_evaluated_rna_pointer(const Depsgraph *depsgraph,
-                                   PointerRNA *ptr,
-                                   PointerRNA *r_ptr_eval)
+void dgraph_api_ptr_get_eval(const DGraph *dgraph,
+                                   ApiPtr *ptr,
+                                   ApiPtr *r_ptr_eval)
 {
   if ((ptr == nullptr) || (r_ptr_eval == nullptr)) {
     return;
   }
-  ID *orig_id = ptr->owner_id;
-  ID *cow_id = DEG_get_evaluated_id(depsgraph, orig_id);
+  Id *orig_id = ptr->owner_id;
+  Id *cow_id = DGRAPH_get_evaluated_id(dgraph, orig_id);
   if (ptr->owner_id == ptr->data) {
-    /* For ID pointers, it's easy... */
+    /* For Id pointers, it's easy... */
     r_ptr_eval->owner_id = cow_id;
     r_ptr_eval->data = (void *)cow_id;
     r_ptr_eval->type = ptr->type;
   }
-  else if (ptr->type == &RNA_PoseBone) {
+  else if (ptr->type == &api_PoseBone) {
     /* HACK: Since bone keyframing is quite commonly used,
      * speed things up for this case by doing a special lookup
      * for bones */
     const Object *ob_eval = (Object *)cow_id;
-    bPoseChannel *pchan = (bPoseChannel *)ptr->data;
-    const bPoseChannel *pchan_eval = BKE_pose_channel_find_name(ob_eval->pose, pchan->name);
+    DPoseChannel *pchan = (DPoseChannel *)ptr->data;
+    const DPoseChannel *pchan_eval = dune_pose_channel_find_name(ob_eval->pose, pchan->name);
     r_ptr_eval->owner_id = cow_id;
     r_ptr_eval->data = (void *)pchan_eval;
     r_ptr_eval->type = ptr->type;
@@ -214,9 +214,9 @@ void DEG_get_evaluated_rna_pointer(const Depsgraph *depsgraph,
      * common types too above (e.g. modifiers) */
     char *path = RNA_path_from_ID_to_struct(ptr);
     if (path) {
-      PointerRNA cow_id_ptr;
-      RNA_id_pointer_create(cow_id, &cow_id_ptr);
-      if (!RNA_path_resolve(&cow_id_ptr, path, r_ptr_eval, nullptr)) {
+      ApiPtr cow_id_ptr;
+      api_id_ptr_create(cow_id, &cow_id_ptr);
+      if (!api_path_resolve(&cow_id_ptr, path, r_ptr_eval, nullptr)) {
         /* Couldn't find COW copy of data */
         fprintf(stderr,
                 "%s: Couldn't resolve RNA path ('%s') relative to COW ID (%p) for '%s'\n",
@@ -229,20 +229,20 @@ void DEG_get_evaluated_rna_pointer(const Depsgraph *depsgraph,
     else {
       /* Path resolution failed - XXX: Hide this behind a debug flag */
       fprintf(stderr,
-              "%s: Couldn't get RNA path for %s relative to %s\n",
+              "%s: Couldn't get api path for %s relative to %s\n",
               __func__,
-              RNA_struct_identifier(ptr->type),
+              api_struct_id(ptr->type),
               orig_id->name);
     }
   }
 }
 
-Object *DEG_get_original_object(Object *object)
+Object *DGRAPH_get_original_object(Object *object)
 {
-  return (Object *)DEG_get_original_id(&object->id);
+  return (Object *)DGRAPH_get_original_id(&object->id);
 }
 
-ID *DEG_get_original_id(ID *id)
+Id *DGRAPH_get_original_id(Id *id)
 {
   if (id == nullptr) {
     return nullptr;
@@ -250,11 +250,11 @@ ID *DEG_get_original_id(ID *id)
   if (id->orig_id == nullptr) {
     return id;
   }
-  BLI_assert((id->tag & LIB_TAG_COPIED_ON_WRITE) != 0);
-  return (ID *)id->orig_id;
+  lib_assert((id->tag & LIB_TAG_COPIED_ON_WRITE) != 0);
+  return (Id *)id->orig_id;
 }
 
-bool DEG_is_original_id(const ID *id)
+bool DGRAPH_is_original_id(const ID *id)
 {
   /* Some explanation of the logic.
    *
@@ -279,30 +279,30 @@ bool DEG_is_original_id(const ID *id)
   return true;
 }
 
-bool deg_is_original_object(const Object *object)
+bool dgraph_is_original_object(const Object *object)
 {
-  return deg_is_original_id(&object->id);
+  return dgraph_is_original_id(&object->id);
 }
 
-bool deg_is_evaluated_id(const ID *id)
+bool dgraph_is_evaluated_id(const Id *id)
 {
-  return !deg_is_original_id(id);
+  return !dgraph_is_original_id(id);
 }
 
-bool deg_is_evaluated_object(const Object *object)
+bool dgraph_is_evaluated_object(const Object *object)
 {
-  return !deg_is_original_object(object);
+  return !dgaph_is_original_object(object);
 }
 
-bool deg_is_fully_evaluated(const struct Depsgraph *depsgraph)
+bool dgraph_is_fully_evaluated(const struct DGraph *dgraph)
 {
-  const deg::Depsgraph *deg_graph = (const deg::Depsgraph *)depsgraph;
+  const dgraph::DGraph *dgraph = (const dune::DGraph *)dgraph;
   /* Check whether relations are up to date. */
-  if (deg_graph->need_update) {
+  if (dgraph->need_update) {
     return false;
   }
   /* Check whether IDs are up to date. */
-  if (!deg_graph->entry_tags.is_empty()) {
+  if (!dgraph->entry_tags.is_empty()) {
     return false;
   }
   return true;
