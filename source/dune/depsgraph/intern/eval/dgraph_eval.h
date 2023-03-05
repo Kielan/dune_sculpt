@@ -1,5 +1,5 @@
 /**
- * Evaluation engine entry-points for Depsgraph Engine.
+ * Evaluation engine entry-points for DGraph Engine.
  */
 
 #pragma once
