@@ -2,36 +2,36 @@
 
 #include <cmath>
 
-#include "BLI_listbase.h"
-#include "BLI_math_vector.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_math_vector.h"
+#include "lib_task.h"
+#include "lib_utildefines.h"
 
-#include "BKE_key.h"
-#include "BKE_object.h"
-#include "BKE_scene.h"
+#include "dune_key.h"
+#include "dune_object.h"
+#include "dune_scene.h"
 
-#include "DNA_key_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_key_types.h"
+#include "types_object_types.h"
+#include "types_scene_types.h"
 
 #include "DRW_engine.h"
 
-#include "DEG_depsgraph.h"
+#include "dgraph.h"
 
-#include "intern/debug/deg_debug.h"
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/depsgraph_type.h"
-#include "intern/depsgraph_update.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_factory.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/debug/dgraph_debug.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_relation.h"
+#include "intern/dgraph_type.h"
+#include "intern/dgraph_update.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_factory.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/dgraph_node_time.h"
 
-#include "intern/eval/deg_eval_copy_on_write.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
 
 /* Invalidate data-block data when update is flushed on it.
  *
@@ -44,7 +44,7 @@
  * catch usage of invalid state. */
 #undef INVALIDATE_ON_FLUSH
 
-namespace blender::deg {
+namespace dune::draph {
 
 enum {
   ID_STATE_NONE = 0,
@@ -57,15 +57,15 @@ enum {
   COMPONENT_STATE_DONE = 2,
 };
 
-using FlushQueue = deque<OperationNode *>;
+using FlushQueue = deque<OpNode *>;
 
 namespace {
 
-void flush_init_id_node_func(void *__restrict data_v,
+void flush_init_id_node_fn(void *__restrict data_v,
                              const int i,
                              const TaskParallelTLS *__restrict /*tls*/)
 {
-  Depsgraph *graph = (Depsgraph *)data_v;
+  DGraph *graph = (DGraph *)data_v;
   IDNode *id_node = graph->id_nodes[i];
   id_node->custom_flags = ID_STATE_NONE;
   for (ComponentNode *comp_node : id_node->components.values()) {
