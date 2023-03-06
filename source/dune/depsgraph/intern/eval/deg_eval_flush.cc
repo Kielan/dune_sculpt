@@ -1,4 +1,4 @@
-#include "intern/eval/deg_eval_flush.h"
+#include "intern/eval/dgraph_eval_flush.h"
 
 #include <cmath>
 
@@ -11,9 +11,9 @@
 #include "dune_object.h"
 #include "dune_scene.h"
 
-#include "types_key_types.h"
-#include "types_object_types.h"
-#include "types_scene_types.h"
+#include "types_key.h"
+#include "types_object.h"
+#include "types_scene.h"
 
 #include "DRW_engine.h"
 
@@ -66,47 +66,47 @@ void flush_init_id_node_fn(void *__restrict data_v,
                              const TaskParallelTLS *__restrict /*tls*/)
 {
   DGraph *graph = (DGraph *)data_v;
-  IDNode *id_node = graph->id_nodes[i];
+  IdNode *id_node = graph->id_nodes[i];
   id_node->custom_flags = ID_STATE_NONE;
   for (ComponentNode *comp_node : id_node->components.values()) {
     comp_node->custom_flags = COMPONENT_STATE_NONE;
   }
 }
 
-inline void flush_prepare(Depsgraph *graph)
+inline void flush_prepare(DGraph *graph)
 {
-  for (OperationNode *node : graph->operations) {
+  for (OpNode *node : graph->ops) {
     node->scheduled = false;
   }
 
   {
     const int num_id_nodes = graph->id_nodes.size();
     TaskParallelSettings settings;
-    BLI_parallel_range_settings_defaults(&settings);
+    lib_parallel_range_settings_defaults(&settings);
     settings.min_iter_per_thread = 1024;
-    BLI_task_parallel_range(0, num_id_nodes, graph, flush_init_id_node_func, &settings);
+    lib_task_parallel_range(0, num_id_nodes, graph, flush_init_id_node_func, &settings);
   }
 }
 
-inline void flush_schedule_entrypoints(Depsgraph *graph, FlushQueue *queue)
+inline void flush_schedule_entrypoints(DGraph *graph, FlushQueue *queue)
 {
-  for (OperationNode *op_node : graph->entry_tags) {
+  for (OpNode *op_node : graph->entry_tags) {
     queue->push_back(op_node);
     op_node->scheduled = true;
-    DEG_DEBUG_PRINTF((::Depsgraph *)graph,
+    DGRAPH_DEBUG_PRINTF((::DGraph *)graph,
                      EVAL,
-                     "Operation is entry point for update: %s\n",
-                     op_node->identifier().c_str());
+                     "Op is entry point for update: %s\n",
+                     op_node->ide().c_str());
   }
 }
 
-inline void flush_handle_id_node(IDNode *id_node)
+inline void flush_handle_id_node(IdNode *id_node)
 {
   id_node->custom_flags = ID_STATE_MODIFIED;
 }
 
-/* TODO(sergey): We can reduce number of arguments here. */
-inline void flush_handle_component_node(IDNode *id_node,
+/* TODO: We can reduce number of arguments here. */
+inline void flush_handle_component_node(IdNode *id_node,
                                         ComponentNode *comp_node,
                                         FlushQueue *queue)
 {
@@ -118,10 +118,10 @@ inline void flush_handle_component_node(IDNode *id_node,
   /* Tag all required operations in component for update, unless this is a
    * special component where we don't want all operations to be tagged.
    *
-   * TODO(sergey): Make this a more generic solution. */
+   * TODO: Make this a more generic solution. */
   if (!ELEM(comp_node->type, NodeType::PARTICLE_SETTINGS, NodeType::PARTICLE_SYSTEM)) {
     const bool is_geometry_component = comp_node->type == NodeType::GEOMETRY;
-    for (OperationNode *op : comp_node->operations) {
+    for (OpNode *op : comp_node->ops) {
       /* Special case for the visibility operation in the geometry component.
        *
        * This operation is a part of the geometry component so that manual tag for geometry recalc
@@ -129,7 +129,7 @@ inline void flush_handle_component_node(IDNode *id_node,
        * an update is flushed to the geometry component via a time dependency or a driver targeting
        * a modifier. Skipping update in this case avoids CPU time unnecessarily spent looping over
        * modifiers and looking up operations by name in the visibility evaluation function. */
-      if (is_geometry_component && op->opcode == OperationCode::VISIBILITY) {
+      if (is_geometry_component && op->opcode == OpCode::VISIBILITY) {
         continue;
       }
       op->flag |= DEPSOP_FLAG_NEEDS_UPDATE;
@@ -139,7 +139,7 @@ inline void flush_handle_component_node(IDNode *id_node,
    * whole IK solver, otherwise result might be unpredictable. */
   if (comp_node->type == NodeType::BONE) {
     ComponentNode *pose_comp = id_node->find_component(NodeType::EVAL_POSE);
-    BLI_assert(pose_comp != nullptr);
+    as lib_assert(pose_comp != nullptr);
     if (pose_comp->custom_flags == COMPONENT_STATE_NONE) {
       queue->push_front(pose_comp->get_entry_operation());
       pose_comp->custom_flags = COMPONENT_STATE_SCHEDULED;
@@ -153,14 +153,14 @@ inline void flush_handle_component_node(IDNode *id_node,
  * return value, so it can start being handled right away, without building too
  * much of a queue.
  */
-inline OperationNode *flush_schedule_children(OperationNode *op_node, FlushQueue *queue)
+inline OpNode *flush_schedule_children(OpNode *op_node, FlushQueue *queue)
 {
   if (op_node->flag & DEPSOP_FLAG_USER_MODIFIED) {
-    IDNode *id_node = op_node->owner->owner;
+    IdNode *id_node = op_node->owner->owner;
     id_node->is_user_modified = true;
   }
 
-  OperationNode *result = nullptr;
+  OpNode *result = nullptr;
   for (Relation *rel : op_node->outlinks) {
     /* Flush is forbidden, completely. */
     if (rel->flag & RELATION_FLAG_NO_FLUSH) {
@@ -172,7 +172,7 @@ inline OperationNode *flush_schedule_children(OperationNode *op_node, FlushQueue
         (op_node->flag & DEPSOP_FLAG_USER_MODIFIED) == 0) {
       continue;
     }
-    OperationNode *to_node = (OperationNode *)rel->to;
+    OperationNode *to_node = (OpNode *)rel->to;
     /* Always flush flushable flags, so children always know what happened
      * to their parents. */
     to_node->flag |= (op_node->flag & DEPSOP_FLAG_FLUSH);
@@ -203,14 +203,14 @@ void flush_engine_data_update(ID *id)
 }
 
 /* NOTE: It will also accumulate flags from changed components. */
-void flush_editors_id_update(Depsgraph *graph, const DEGEditorUpdateContext *update_ctx)
+void flush_editors_id_update(DGraph *graph, const DEGEditorUpdateContext *update_ctx)
 {
-  for (IDNode *id_node : graph->id_nodes) {
+  for (IdNode *id_node : graph->id_nodes) {
     if (id_node->custom_flags != ID_STATE_MODIFIED) {
       continue;
     }
-    DEG_graph_id_type_tag(reinterpret_cast<::Depsgraph *>(graph), GS(id_node->id_orig->name));
-    /* TODO(sergey): Do we need to pass original or evaluated ID here? */
+    dgraph_id_type_tag(reinterpret_cast<::Depsgraph *>(graph), GS(id_node->id_orig->name));
+    /* TODO: Do we need to pass original or evaluated ID here? */
     ID *id_orig = id_node->id_orig;
     ID *id_cow = id_node->id_cow;
     /* Gather recalc flags from all changed components. */
@@ -218,8 +218,8 @@ void flush_editors_id_update(Depsgraph *graph, const DEGEditorUpdateContext *upd
       if (comp_node->custom_flags != COMPONENT_STATE_DONE) {
         continue;
       }
-      DepsNodeFactory *factory = type_get_factory(comp_node->type);
-      BLI_assert(factory != nullptr);
+      DGraphNodeFactory *factory = type_get_factory(comp_node->type);
+      lib_assert(factory != nullptr);
       id_cow->recalc |= factory->id_recalc_tag();
     }
     DEG_DEBUG_PRINTF((::Depsgraph *)graph,
