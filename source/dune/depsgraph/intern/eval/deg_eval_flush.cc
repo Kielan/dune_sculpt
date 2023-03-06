@@ -62,8 +62,8 @@ using FlushQueue = deque<OpNode *>;
 namespace {
 
 void flush_init_id_node_fn(void *__restrict data_v,
-                             const int i,
-                             const TaskParallelTLS *__restrict /*tls*/)
+                           const int i,
+                           const TaskParallelTLS *__restrict /*tls*/)
 {
   DGraph *graph = (DGraph *)data_v;
   IdNode *id_node = graph->id_nodes[i];
@@ -141,7 +141,7 @@ inline void flush_handle_component_node(IdNode *id_node,
     ComponentNode *pose_comp = id_node->find_component(NodeType::EVAL_POSE);
     as lib_assert(pose_comp != nullptr);
     if (pose_comp->custom_flags == COMPONENT_STATE_NONE) {
-      queue->push_front(pose_comp->get_entry_operation());
+      queue->push_front(pose_comp->get_entry_op());
       pose_comp->custom_flags = COMPONENT_STATE_SCHEDULED;
     }
   }
@@ -172,10 +172,10 @@ inline OpNode *flush_schedule_children(OpNode *op_node, FlushQueue *queue)
         (op_node->flag & DEPSOP_FLAG_USER_MODIFIED) == 0) {
       continue;
     }
-    OperationNode *to_node = (OpNode *)rel->to;
+    OpNode *to_node = (OpNode *)rel->to;
     /* Always flush flushable flags, so children always know what happened
      * to their parents. */
-    to_node->flag |= (op_node->flag & DEPSOP_FLAG_FLUSH);
+    to_node->flag |= (op_node->flag & DGRAPHOP_FLAG_FLUSH);
     /* Flush update over the relation, if it was not flushed yet. */
     if (to_node->scheduled) {
       continue;
@@ -191,7 +191,7 @@ inline OpNode *flush_schedule_children(OpNode *op_node, FlushQueue *queue)
   return result;
 }
 
-void flush_engine_data_update(ID *id)
+void flush_engine_data_update(Id *id)
 {
   DrawDataList *draw_data_list = DRW_drawdatalist_from_id(id);
   if (draw_data_list == nullptr) {
@@ -211,8 +211,8 @@ void flush_editors_id_update(DGraph *graph, const DEGEditorUpdateContext *update
     }
     dgraph_id_type_tag(reinterpret_cast<::Depsgraph *>(graph), GS(id_node->id_orig->name));
     /* TODO: Do we need to pass original or evaluated ID here? */
-    ID *id_orig = id_node->id_orig;
-    ID *id_cow = id_node->id_cow;
+    Id *id_orig = id_node->id_orig;
+    Id *id_cow = id_node->id_cow;
     /* Gather recalc flags from all changed components. */
     for (ComponentNode *comp_node : id_node->components.values()) {
       if (comp_node->custom_flags != COMPONENT_STATE_DONE) {
@@ -222,7 +222,7 @@ void flush_editors_id_update(DGraph *graph, const DEGEditorUpdateContext *update
       lib_assert(factory != nullptr);
       id_cow->recalc |= factory->id_recalc_tag();
     }
-    DEG_DEBUG_PRINTF((::Depsgraph *)graph,
+    DGRAPH_DEBUG_PRINTF((::DGraph *)graph,
                      EVAL,
                      "Accumulated recalc bits for %s: %u\n",
                      id_orig->name,
@@ -234,31 +234,31 @@ void flush_editors_id_update(DGraph *graph, const DEGEditorUpdateContext *update
      *
      * TODO: image data-blocks do not use COW, so might not be detected
      * correctly. */
-    if (deg_copy_on_write_is_expanded(id_cow)) {
+    if (dgraph_copy_on_write_is_expanded(id_cow)) {
       if (graph->is_active && id_node->is_user_modified) {
-        deg_editors_id_update(update_ctx, id_orig);
+        dgraph_editors_id_update(update_ctx, id_orig);
 
-        /* We only want to tag an ID for lib-override auto-refresh if it was actually tagged as
-         * changed. CoW IDs indirectly modified because of changes in other IDs should never
+        /* We only want to tag an id for lib-override auto-refresh if it was actually tagged as
+         * changed. CoW ids indirectly modified because of changes in other ids should never
          * require a lib-override diffing. */
-        if (ID_IS_OVERRIDE_LIBRARY_REAL(id_orig)) {
+        if (ID_IS_OVERRIDE_LIBR_REAL(id_orig)) {
           id_orig->tag |= LIB_TAG_OVERRIDE_LIBRARY_AUTOREFRESH;
         }
-        else if (ID_IS_OVERRIDE_LIBRARY_VIRTUAL(id_orig)) {
+        else if (ID_IS_OVERRIDE_LIB_VIRTUAL(id_orig)) {
           switch (GS(id_orig->name)) {
             case ID_KE:
-              ((Key *)id_orig)->from->tag |= LIB_TAG_OVERRIDE_LIBRARY_AUTOREFRESH;
+              ((Key *)id_orig)->from->tag |= LIB_TAG_OVERRIDE_LIB_AUTOREFRESH;
               break;
             case ID_GR:
-              BLI_assert(id_orig->flag & LIB_EMBEDDED_DATA);
+              lib_assert(id_orig->flag & LIB_EMBEDDED_DATA);
               /* TODO. */
               break;
             case ID_NT:
-              BLI_assert(id_orig->flag & LIB_EMBEDDED_DATA);
+              lib_assert(id_orig->flag & LIB_EMBEDDED_DATA);
               /* TODO. */
               break;
             default:
-              BLI_assert(0);
+              lib_assert(0);
           }
         }
       }
@@ -269,9 +269,9 @@ void flush_editors_id_update(DGraph *graph, const DEGEditorUpdateContext *update
 }
 
 #ifdef INVALIDATE_ON_FLUSH
-void invalidate_tagged_evaluated_transform(ID *id)
+void invalidate_tagged_evaluated_transform(Id *id)
 {
-  const ID_Type id_type = GS(id->name);
+  const IdType id_type = GS(id->name);
   switch (id_type) {
     case ID_OB: {
       Object *object = (Object *)id;
@@ -283,13 +283,13 @@ void invalidate_tagged_evaluated_transform(ID *id)
   }
 }
 
-void invalidate_tagged_evaluated_geometry(ID *id)
+void invalidate_tagged_evaluated_geometry(Id *id)
 {
-  const ID_Type id_type = GS(id->name);
+  const IdType id_type = GS(id->name);
   switch (id_type) {
     case ID_OB: {
       Object *object = (Object *)id;
-      BKE_object_free_derived_caches(object);
+      dune_object_free_derived_caches(object);
       break;
     }
     default:
@@ -298,15 +298,15 @@ void invalidate_tagged_evaluated_geometry(ID *id)
 }
 #endif
 
-void invalidate_tagged_evaluated_data(Depsgraph *graph)
+void invalidate_tagged_evaluated_data(DGraph *graph)
 {
 #ifdef INVALIDATE_ON_FLUSH
-  for (IDNode *id_node : graph->id_nodes) {
+  for (IdNode *id_node : graph->id_nodes) {
     if (id_node->custom_flags != ID_STATE_MODIFIED) {
       continue;
     }
-    ID *id_cow = id_node->id_cow;
-    if (!deg_copy_on_write_is_expanded(id_cow)) {
+    Id *id_cow = id_node->id_cow;
+    if (!dgraph_copy_on_write_is_expanded(id_cow)) {
       continue;
     }
     for (ComponentNode *comp_node : id_node->components.values()) {
@@ -332,7 +332,7 @@ void invalidate_tagged_evaluated_data(Depsgraph *graph)
 
 }  // namespace
 
-void deg_graph_flush_updates(Depsgraph *graph)
+void dgraph_flush_updates(Depsgraph *graph)
 {
   /* Sanity checks. */
   BLI_assert(graph != nullptr);
