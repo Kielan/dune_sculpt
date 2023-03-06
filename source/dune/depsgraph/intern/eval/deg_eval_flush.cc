@@ -332,11 +332,11 @@ void invalidate_tagged_evaluated_data(DGraph *graph)
 
 }  // namespace
 
-void dgraph_flush_updates(Depsgraph *graph)
+void dgraph_flush_updates(DGraph *graph)
 {
   /* Sanity checks. */
-  BLI_assert(graph != nullptr);
-  Main *bmain = graph->bmain;
+  lib_assert(graph != nullptr);
+  Main *bmain = graph->dmain;
 
   graph->time_source->flush_update_tag(graph);
 
@@ -350,14 +350,14 @@ void dgraph_flush_updates(Depsgraph *graph)
   FlushQueue queue;
   flush_schedule_entrypoints(graph, &queue);
   /* Prepare update context for editors. */
-  DEGEditorUpdateContext update_ctx;
-  update_ctx.bmain = bmain;
-  update_ctx.depsgraph = (::Depsgraph *)graph;
+  DGraphEditorUpdateContext update_ctx;
+  update_ctx.dmain = dmain;
+  update_ctx.dgraph = (::DGraph *)graph;
   update_ctx.scene = graph->scene;
   update_ctx.view_layer = graph->view_layer;
   /* Do actual flush. */
   while (!queue.empty()) {
-    OperationNode *op_node = queue.front();
+    OpNode *op_node = queue.front();
     queue.pop_front();
     while (op_node != nullptr) {
       /* Tag operation as required for update. */
@@ -378,7 +378,7 @@ void dgraph_flush_updates(Depsgraph *graph)
   invalidate_tagged_evaluated_data(graph);
 }
 
-void deg_graph_clear_tags(Depsgraph *graph)
+void dgraph_clear_tags(DGraph *graph)
 {
   /* Clear any entry tags which haven't been flushed. */
   graph->entry_tags.clear();
@@ -386,4 +386,4 @@ void deg_graph_clear_tags(Depsgraph *graph)
   graph->time_source->tagged_for_update = false;
 }
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
