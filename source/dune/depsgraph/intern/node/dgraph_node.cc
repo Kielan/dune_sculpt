@@ -1,19 +1,19 @@
-#include "intern/node/deg_node.h"
+#include "intern/node/dgraph_node.h"
 
 #include <cstdio>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "intern/depsgraph.h"
-#include "intern/depsgraph_relation.h"
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_factory.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/dgraph.h"
+#include "intern/dgraph_relation.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_factory.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/dgraph_node_time.h"
 
-namespace blender::deg {
+namespace dune::dgraph {
 
 const char *nodeClassAsString(NodeClass node_class)
 {
@@ -98,28 +98,28 @@ const char *nodeTypeAsString(NodeType type)
     case NodeType::NUM_TYPES:
       return "SpecialCase";
   }
-  BLI_assert_msg(0, "Unhandled node type, should never happen.");
+  lib_assert_msg(0, "Unhandled node type, should never happen.");
   return "UNKNOWN";
 }
 
 NodeType nodeTypeFromSceneComponent(eDepsSceneComponentType component)
 {
   switch (component) {
-    case DEG_SCENE_COMP_PARAMETERS:
+    case DGRAPH_SCENE_COMP_PARAMETERS:
       return NodeType::PARAMETERS;
-    case DEG_SCENE_COMP_ANIMATION:
+    case DGRAPH_SCENE_COMP_ANIMATION:
       return NodeType::ANIMATION;
-    case DEG_SCENE_COMP_SEQUENCER:
+    case DGRAPH_SCENE_COMP_SEQUENCER:
       return NodeType::SEQUENCER;
   }
   return NodeType::UNDEFINED;
 }
 
-eDepsSceneComponentType nodeTypeToSceneComponent(NodeType type)
+eDGraphSceneComponentType nodeTypeToSceneComponent(NodeType type)
 {
   switch (type) {
-    case NodeType::PARAMETERS:
-      return DEG_SCENE_COMP_PARAMETERS;
+    case NodeType::PARAMS:
+      return DEG_SCENE_COMP_PARAMS;
     case NodeType::ANIMATION:
       return DEG_SCENE_COMP_ANIMATION;
     case NodeType::SEQUENCER:
@@ -151,60 +151,60 @@ eDepsSceneComponentType nodeTypeToSceneComponent(NodeType type)
     case NodeType::CACHE:
     case NodeType::SIMULATION:
     case NodeType::NTREE_OUTPUT:
-      return DEG_SCENE_COMP_PARAMETERS;
+      return DGRAPH_SCENE_COMP_PARAMETERS;
 
     case NodeType::VISIBILITY:
-      BLI_assert_msg(0, "Visibility component is supposed to be only used internally.");
-      return DEG_SCENE_COMP_PARAMETERS;
+      lib_assert_msg(0, "Visibility component is supposed to be only used internally.");
+      return DGRAPH_SCENE_COMP_PARAMS;
   }
-  BLI_assert_msg(0, "Unhandled node type, not supposed to happen.");
-  return DEG_SCENE_COMP_PARAMETERS;
+  lib_assert_msg(0, "Unhandled node type, not supposed to happen.");
+  return DGRAPH_SCENE_COMP_PARAMS;
 }
 
-NodeType nodeTypeFromObjectComponent(eDepsObjectComponentType component_type)
+NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type)
 {
   switch (component_type) {
-    case DEG_OB_COMP_ANY:
+    case DGRAPH_OB_COMP_ANY:
       return NodeType::UNDEFINED;
-    case DEG_OB_COMP_PARAMETERS:
+    case DGRAPH_OB_COMP_PARAMETERS:
       return NodeType::PARAMETERS;
-    case DEG_OB_COMP_ANIMATION:
+    case DGRAPH_OB_COMP_ANIMATION:
       return NodeType::ANIMATION;
-    case DEG_OB_COMP_TRANSFORM:
+    case DGRAPH_OB_COMP_TRANSFORM:
       return NodeType::TRANSFORM;
-    case DEG_OB_COMP_GEOMETRY:
+    case DGRAPH_OB_COMP_GEOMETRY:
       return NodeType::GEOMETRY;
-    case DEG_OB_COMP_EVAL_POSE:
+    case DGRAPH_OB_COMP_EVAL_POSE:
       return NodeType::EVAL_POSE;
-    case DEG_OB_COMP_BONE:
+    case DGRAPH_OB_COMP_BONE:
       return NodeType::BONE;
-    case DEG_OB_COMP_SHADING:
+    case DGRAPH_OB_COMP_SHADING:
       return NodeType::SHADING;
-    case DEG_OB_COMP_CACHE:
+    case DGRAPH_OB_COMP_CACHE:
       return NodeType::CACHE;
   }
   return NodeType::UNDEFINED;
 }
 
-eDepsObjectComponentType nodeTypeToObjectComponent(NodeType type)
+eDGraphObjectComponentType nodeTypeToObjectComponent(NodeType type)
 {
   switch (type) {
     case NodeType::PARAMETERS:
-      return DEG_OB_COMP_PARAMETERS;
+      return DGRAPH_OB_COMP_PARAMETERS;
     case NodeType::ANIMATION:
-      return DEG_OB_COMP_ANIMATION;
+      return DGRAPH_OB_COMP_ANIMATION;
     case NodeType::TRANSFORM:
-      return DEG_OB_COMP_TRANSFORM;
+      return DGRAPH_OB_COMP_TRANSFORM;
     case NodeType::GEOMETRY:
-      return DEG_OB_COMP_GEOMETRY;
+      return DGRAPH_OB_COMP_GEOMETRY;
     case NodeType::EVAL_POSE:
-      return DEG_OB_COMP_EVAL_POSE;
+      return DGRAPH_OB_COMP_EVAL_POSE;
     case NodeType::BONE:
-      return DEG_OB_COMP_BONE;
+      return DGRAPH_OB_COMP_BONE;
     case NodeType::SHADING:
-      return DEG_OB_COMP_SHADING;
+      return DGRAPH_OB_COMP_SHADING;
     case NodeType::CACHE:
-      return DEG_OB_COMP_CACHE;
+      return DGRAPH_OB_COMP_CACHE;
 
     case NodeType::OPERATION:
     case NodeType::TIMESOURCE:
@@ -227,14 +227,14 @@ eDepsObjectComponentType nodeTypeToObjectComponent(NodeType type)
     case NodeType::NTREE_OUTPUT:
     case NodeType::UNDEFINED:
     case NodeType::NUM_TYPES:
-      return DEG_OB_COMP_PARAMETERS;
+      return DGRAPH_OB_COMP_PARAMS;
 
     case NodeType::VISIBILITY:
-      BLI_assert_msg(0, "Visibility component is supposed to be only used internally.");
-      return DEG_OB_COMP_PARAMETERS;
+      lib_assert_msg(0, "Visibility component is supposed to be only used internally.");
+      return DGRAPH_OB_COMP_PARAMS;
   }
-  BLI_assert_msg(0, "Unhandled node type, not suppsed to happen.");
-  return DEG_OB_COMP_PARAMETERS;
+  lib_assert_msg(0, "Unhandled node type, not suppsed to happen.");
+  return DGRAPH_OB_COMP_PARAMS;
 }
 
 /*******************************************************************************
@@ -295,7 +295,7 @@ NodeClass Node::get_class() const
   if (type == NodeType::OPERATION) {
     return NodeClass::OPERATION;
   }
-  if (type < NodeType::PARAMETERS) {
+  if (type < NodeType::PARAMS) {
     return NodeClass::GENERIC;
   }
 
