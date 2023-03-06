@@ -25,7 +25,7 @@ const char *nodeClassAsString(NodeClass node_class)
     case NodeClass::OPERATION:
       return "OPERATION";
   }
-  BLI_assert_msg(0, "Unhandled node class, should never happen.");
+  lib_assert_msg(0, "Unhandled node class, should never happen.");
   return "UNKNOWN";
 }
 
@@ -42,7 +42,7 @@ const char *nodeTypeAsString(NodeType type)
     case NodeType::ID_REF:
       return "ID_REF";
     /* **** Outer Types **** */
-    case NodeType::PARAMETERS:
+    case NodeType::PARAMS:
       return "PARAMETERS";
     case NodeType::ANIMATION:
       return "ANIMATION";
@@ -102,11 +102,11 @@ const char *nodeTypeAsString(NodeType type)
   return "UNKNOWN";
 }
 
-NodeType nodeTypeFromSceneComponent(eDepsSceneComponentType component)
+NodeType nodeTypeFromSceneComponent(eDGraphSceneComponentType component)
 {
   switch (component) {
-    case DGRAPH_SCENE_COMP_PARAMETERS:
-      return NodeType::PARAMETERS;
+    case DGRAPH_SCENE_COMP_PARAMS:
+      return NodeType::PARAMS;
     case DGRAPH_SCENE_COMP_ANIMATION:
       return NodeType::ANIMATION;
     case DGRAPH_SCENE_COMP_SEQUENCER:
@@ -189,7 +189,7 @@ NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type)
 eDGraphObjectComponentType nodeTypeToObjectComponent(NodeType type)
 {
   switch (type) {
-    case NodeType::PARAMETERS:
+    case NodeType::PARAMS:
       return DGRAPH_OB_COMP_PARAMETERS;
     case NodeType::ANIMATION:
       return DGRAPH_OB_COMP_ANIMATION;
@@ -285,7 +285,7 @@ Node::~Node()
   }
 }
 
-string Node::identifier() const
+string Node::id() const
 {
   return string(nodeTypeAsString(type)) + " : " + name;
 }
@@ -306,8 +306,8 @@ NodeClass Node::get_class() const
  * Generic nodes definition.
  */
 
-DEG_DEPSNODE_DEFINE(TimeSourceNode, NodeType::TIMESOURCE, "Time Source");
-static DepsNodeFactoryImpl<TimeSourceNode> DNTI_TIMESOURCE;
+DGRAPH_NODE_DEFINE(TimeSourceNode, NodeType::TIMESOURCE, "Time Source");
+static DGraphNodeFactoryImpl<TimeSourceNode> DNTI_TIMESOURCE;
 
 DEG_DEPSNODE_DEFINE(IDNode, NodeType::ID_REF, "ID Node");
 static DepsNodeFactoryImpl<IDNode> DNTI_ID_REF;
