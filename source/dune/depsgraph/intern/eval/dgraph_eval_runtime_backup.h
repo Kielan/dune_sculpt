@@ -1,14 +1,14 @@
 #pragma once
 
-#include "DNA_ID.h"
+#include "types_id.h"
 
-#include "intern/eval/deg_eval_runtime_backup_animation.h"
-#include "intern/eval/deg_eval_runtime_backup_gpencil.h"
-#include "intern/eval/deg_eval_runtime_backup_movieclip.h"
-#include "intern/eval/deg_eval_runtime_backup_object.h"
-#include "intern/eval/deg_eval_runtime_backup_scene.h"
-#include "intern/eval/deg_eval_runtime_backup_sound.h"
-#include "intern/eval/deg_eval_runtime_backup_volume.h"
+#include "intern/eval/dgraph_eval_runtime_backup_animation.h"
+#include "intern/eval/dgraph_eval_runtime_backup_dpeb.h"
+#include "intern/eval/dgraph_eval_runtime_backup_movieclip.h"
+#include "intern/eval/dgraph_eval_runtime_backup_object.h"
+#include "intern/eval/dgraph_eval_runtime_backup_scene.h"
+#include "intern/eval/dgraph_eval_runtime_backup_sound.h"
+#include "intern/eval/dgraph_eval_runtime_backup_volume.h"
 
 namespace blender::deg {
 
@@ -22,7 +22,7 @@ class RuntimeBackup {
   void init_from_id(ID *id);
 
   /* Restore fields to the given ID. */
-  void restore_to_id(ID *id);
+  void restore_to_id(Id *id);
 
   /* Denotes whether init_from_id did put anything into the backup storage.
    * This will not be the case when init_from_id() is called for an ID which has never been
@@ -48,7 +48,7 @@ class RuntimeBackup {
   DrawDataList *drawdata_ptr;
   MovieClipBackup movieclip_backup;
   VolumeBackup volume_backup;
-  GPencilBackup gpencil_backup;
+  DPenBackup dpen_backup;
 };
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
