@@ -55,12 +55,12 @@ struct ComponentNode : public Node {
   OpNode *find_op(OpCode opcode, const char *name, int name_tag) const;
 
   /* Find an existing operation, will throw an assert() if it does not exist. */
-  OperationNode *get_op(OpIdKey key) const;
-  OperationNode *get_op(OpCode opcode, const char *name, int name_tag) const;
+  OpNode *get_op(OpIdKey key) const;
+  OpNode *get_op(OpCode opcode, const char *name, int name_tag) const;
 
   /* Check operation exists and return it. */
-  bool has_operation(OpIdKey key) const;
-  bool has_operation(OpCode opcode, const char *name, int name_tag) const;
+  bool has_op(OpIdKey key) const;
+  bool has_op(OpCode opcode, const char *name, int name_tag) const;
 
   /**
    * Create a new node for representing an operation and add this to graph
@@ -91,7 +91,7 @@ struct ComponentNode : public Node {
 
   void finalize_build(DGraph *graph);
 
-  IDNode *owner;
+  IdNode *owner;
 
   /* ** Inner nodes for this component ** */
 
@@ -101,10 +101,10 @@ struct ComponentNode : public Node {
 
   /* This is a "normal" list of operations, used by evaluation
    * and other routines after construction. */
-  Vector<OperationNode *> operations;
+  Vector<OpNode *> ops;
 
-  OperationNode *entry_operation;
-  OperationNode *exit_operation;
+  OpNode *entry_op;
+  OpNode *exit_op;
 
   virtual bool depends_on_cow()
   {
@@ -125,19 +125,19 @@ struct ComponentNode : public Node {
 
 /* ---------------------------------------- */
 
-#define DEG_COMPONENT_NODE_DEFINE_TYPEINFO(NodeType, type_, type_name_, id_recalc_tag) \
+#define DGRAPH_COMPONENT_NODE_DEFINE_TYPEINFO(NodeType, type_, type_name_, id_recalc_tag) \
   const Node::TypeInfo NodeType::typeinfo = Node::TypeInfo(type_, type_name_, id_recalc_tag)
 
-#define DEG_COMPONENT_NODE_DECLARE DEG_DEPSNODE_DECLARE
+#define DGRAPH_COMPONENT_NODE_DECLARE DGRAPH_DEPSNODE_DECLARE
 
-#define DEG_COMPONENT_NODE_DEFINE(name, NAME, id_recalc_tag) \
-  DEG_COMPONENT_NODE_DEFINE_TYPEINFO( \
+#define DGRAPH_COMPONENT_NODE_DEFINE(name, NAME, id_recalc_tag) \
+  DGRAPH_COMPONENT_NODE_DEFINE_TYPEINFO( \
       name##ComponentNode, NodeType::NAME, #name " Component", id_recalc_tag); \
-  static DepsNodeFactoryImpl<name##ComponentNode> DNTI_##NAME
+  static DGraphNodeFactoryImpl<name##ComponentNode> DNTI_##NAME
 
-#define DEG_COMPONENT_NODE_DECLARE_GENERIC(name) \
+#define DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(name) \
   struct name##ComponentNode : public ComponentNode { \
-    DEG_COMPONENT_NODE_DECLARE; \
+    DGRAPH_COMPONENT_NODE_DECLARE; \
   }
 
 #define DEG_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(name) \
@@ -188,7 +188,7 @@ struct BoneComponentNode : public ComponentNode {
   /** Initialize 'bone component' node - from pointer data given. */
   void init(const ID *id, const char *subdata);
 
-  struct bPoseChannel *pchan; /* the bone that this component represents */
+  struct DPoseChannel *pchan; /* the bone that this component represents */
 
   DEG_COMPONENT_NODE_DECLARE;
 };
