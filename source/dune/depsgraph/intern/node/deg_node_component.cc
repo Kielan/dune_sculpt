@@ -44,27 +44,27 @@ string ComponentNode::OpIdKey::id() const
   return "OpIdKey(" + codebuf + ", " + name + ")";
 }
 
-bool ComponentNode::OperationIDKey::operator==(const OperationIDKey &other) const
+bool ComponentNode::OpIdKey::op==(const OpIdKey &other) const
 {
   return (opcode == other.opcode) && (STREQ(name, other.name)) && (name_tag == other.name_tag);
 }
 
-uint64_t ComponentNode::OperationIDKey::hash() const
+uint64_t ComponentNode::OpIdKey::hash() const
 {
   const int opcode_as_int = static_cast<int>(opcode);
   return lib_ghashutil_combine_hash(
       name_tag,
-      lib_ghashutil_combine_hash(BLI_ghashutil_uinthash(opcode_as_int),
-                                 BLI_ghashutil_strhash_p(name)));
+      lib_ghashutil_combine_hash(lib_ghashutil_uinthash(opcode_as_int),
+                                 lib_ghashutil_strhash_p(name)));
 }
 
 ComponentNode::ComponentNode()
-    : entry_operation(nullptr), exit_operation(nullptr), affects_directly_visible(false)
+    : entry_op(nullptr), exit_op(nullptr), affects_directly_visible(false)
 {
-  operations_map = new Map<ComponentNode::OperationIDKey, OperationNode *>();
+  ops_map = new Map<ComponentNode::OpIdKey, OpNode *>();
 }
 
-void ComponentNode::init(const ID * /*id*/, const char * /*subdata*/)
+void ComponentNode::init(const Id * /*id*/, const char * /*subdata*/)
 {
   /* hook up eval context? */
   /* XXX: maybe this needs a special API? */
@@ -73,11 +73,11 @@ void ComponentNode::init(const ID * /*id*/, const char * /*subdata*/)
 /* Free 'component' node */
 ComponentNode::~ComponentNode()
 {
-  clear_operations();
-  delete operations_map;
+  clear_ops();
+  delete ops_map;
 }
 
-string ComponentNode::identifier() const
+string ComponentNode::id() const
 {
   const string idname = this->owner->name;
   const string typebuf = "" + to_string(static_cast<int>(type)) + ")";
@@ -85,14 +85,14 @@ string ComponentNode::identifier() const
          "( affects_directly_visible: " + (affects_directly_visible ? "true" : "false") + ")";
 }
 
-OperationNode *ComponentNode::find_operation(OperationIDKey key) const
+OpNode *ComponentNode::find_op(OpIdKey key) const
 {
-  OperationNode *node = nullptr;
-  if (operations_map != nullptr) {
-    node = operations_map->lookup_default(key, nullptr);
+  OpNode *node = nullptr;
+  if (ops_map != nullptr) {
+    node = opers_map->lookup_default(key, nullptr);
   }
   else {
-    for (OperationNode *op_node : operations) {
+    for (OpNode *op_node : ops) {
       if (op_node->opcode == key.opcode && op_node->name_tag == key.name_tag &&
           STREQ(op_node->name.c_str(), key.name)) {
         node = op_node;
@@ -103,53 +103,53 @@ OperationNode *ComponentNode::find_operation(OperationIDKey key) const
   return node;
 }
 
-OperationNode *ComponentNode::find_operation(OperationCode opcode,
-                                             const char *name,
-                                             int name_tag) const
+OpNode *ComponentNode::find_op(OpCode opcode,
+                               const char *name,
+                               int name_tag) const
 {
-  OperationIDKey key(opcode, name, name_tag);
-  return find_operation(key);
+  OpIdKey key(opcode, name, name_tag);
+  return find_op(key);
 }
 
-OperationNode *ComponentNode::get_operation(OperationIDKey key) const
+OpNode *ComponentNode::get_op(OpIdKey key) const
 {
-  OperationNode *node = find_operation(key);
+  OpNode *node = find_op(key);
   if (node == nullptr) {
     fprintf(stderr,
-            "%s: find_operation(%s) failed\n",
-            this->identifier().c_str(),
-            key.identifier().c_str());
+            "%s: find_op(%s) failed\n",
+            this->id().c_str(),
+            key.id().c_str());
     lib_assert_msg(0, "Request for non-existing operation, should not happen");
     return nullptr;
   }
   return node;
 }
 
-OperationNode *ComponentNode::get_operation(OperationCode opcode,
-                                            const char *name,
-                                            int name_tag) const
+OpNode *ComponentNode::get_op(OpCode opcode,
+                              const char *name,
+                              int name_tag) const
 {
-  OperationIDKey key(opcode, name, name_tag);
-  return get_operation(key);
+  OpIdKey key(opcode, name, name_tag);
+  return get_op(key);
 }
 
-bool ComponentNode::has_operation(OperationIDKey key) const
+bool ComponentNode::has_op(OpIdKey key) const
 {
-  return find_operation(key) != nullptr;
+  return find_op(key) != nullptr;
 }
 
-bool ComponentNode::has_operation(OperationCode opcode, const char *name, int name_tag) const
+bool ComponentNode::has_op(OpCode opcode, const char *name, int name_tag) const
 {
-  OperationIDKey key(opcode, name, name_tag);
-  return has_operation(key);
+  OpIdKey key(opcode, name, name_tag);
+  return has_op(key);
 }
 
-OperationNode *ComponentNode::add_operation(const DepsEvalOperationCb &op,
-                                            OperationCode opcode,
-                                            const char *name,
-                                            int name_tag)
+OpNode *ComponentNode::add_op(const DGraphEvalOpCb &op,
+                              OpCode opcode,
+                              const char *name,
+                              int name_tag)
 {
-  OperationNode *op_node = find_operation(opcode, name, name_tag);
+  OpNode *op_node = find_op(opcode, name, name_tag);
   if (!op_node) {
     DepsNodeFactory *factory = type_get_factory(NodeType::OPERATION);
     op_node = (OperationNode *)factory->create_node(this->owner->id_orig, "", name);
