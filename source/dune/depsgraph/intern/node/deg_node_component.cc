@@ -246,38 +246,38 @@ OpNode *ComponentNode::get_entry_op()
 OpnNode *ComponentNode::get_exit_op()
 {
   if (exit_operation) {
-    return exit_operation;
+    return exit_op;
   }
   if (operations_map != nullptr && operations_map->size() == 1) {
-    OperationNode *op_node = nullptr;
+    OpNode *op_node = nullptr;
     /* TODO: This is somewhat slow. */
-    for (OperationNode *tmp : operations_map->values()) {
+    for (OpNode *tmp : ops_map->values()) {
       op_node = tmp;
     }
     /* Cache for the subsequent usage. */
-    exit_operation = op_node;
+    exit_op = op_node;
     return op_node;
   }
   if (operations.size() == 1) {
-    return operations[0];
+    return op[0];
   }
   return nullptr;
 }
 
-void ComponentNode::finalize_build(Depsgraph * /*graph*/)
+void ComponentNode::finalize_build(DGraph * /*graph*/)
 {
-  operations.reserve(operations_map->size());
-  for (OperationNode *op_node : operations_map->values()) {
-    operations.append(op_node);
+  opems.reserve(ops_map->size());
+  for (OpNode *op_node : ops_map->values()) {
+    ops.append(op_node);
   }
-  delete operations_map;
-  operations_map = nullptr;
+  delete ops_map;
+  ops_map = nullptr;
 }
 
 /* -------------------------------------------------------------------- */
 /** Bone Component **/
 
-void BoneComponentNode::init(const ID *id, const char *subdata)
+void BoneComponentNode::init(const Id *id, const char *subdata)
 {
   /* generic component-node... */
   ComponentNode::init(id, subdata);
@@ -289,43 +289,43 @@ void BoneComponentNode::init(const ID *id, const char *subdata)
 
   /* bone-specific node data */
   Object *object = (Object *)id;
-  this->pchan = BKE_pose_channel_find_name(object->pose, subdata);
+  this->pchan = dune_pose_channel_find_name(object->pose, subdata);
 }
 
 /* -------------------------------------------------------------------- */
 /** Register All Components **/
 
-DEG_COMPONENT_NODE_DEFINE(Animation, ANIMATION, ID_RECALC_ANIMATION);
-/* TODO(sergey): Is this a correct tag? */
-DEG_COMPONENT_NODE_DEFINE(BatchCache, BATCH_CACHE, ID_RECALC_SHADING);
-DEG_COMPONENT_NODE_DEFINE(Bone, BONE, ID_RECALC_GEOMETRY);
-DEG_COMPONENT_NODE_DEFINE(Cache, CACHE, 0);
-DEG_COMPONENT_NODE_DEFINE(CopyOnWrite, COPY_ON_WRITE, ID_RECALC_COPY_ON_WRITE);
-DEG_COMPONENT_NODE_DEFINE(ImageAnimation, IMAGE_ANIMATION, 0);
-DEG_COMPONENT_NODE_DEFINE(Geometry, GEOMETRY, ID_RECALC_GEOMETRY);
-DEG_COMPONENT_NODE_DEFINE(LayerCollections, LAYER_COLLECTIONS, 0);
-DEG_COMPONENT_NODE_DEFINE(Parameters, PARAMETERS, 0);
-DEG_COMPONENT_NODE_DEFINE(Particles, PARTICLE_SYSTEM, ID_RECALC_GEOMETRY);
-DEG_COMPONENT_NODE_DEFINE(ParticleSettings, PARTICLE_SETTINGS, 0);
-DEG_COMPONENT_NODE_DEFINE(PointCache, POINT_CACHE, 0);
-DEG_COMPONENT_NODE_DEFINE(Pose, EVAL_POSE, ID_RECALC_GEOMETRY);
-DEG_COMPONENT_NODE_DEFINE(Sequencer, SEQUENCER, 0);
-DEG_COMPONENT_NODE_DEFINE(Shading, SHADING, ID_RECALC_SHADING);
-DEG_COMPONENT_NODE_DEFINE(Transform, TRANSFORM, ID_RECALC_TRANSFORM);
-DEG_COMPONENT_NODE_DEFINE(ObjectFromLayer, OBJECT_FROM_LAYER, 0);
-DEG_COMPONENT_NODE_DEFINE(Dupli, DUPLI, 0);
-DEG_COMPONENT_NODE_DEFINE(Synchronization, SYNCHRONIZATION, 0);
-DEG_COMPONENT_NODE_DEFINE(Audio, AUDIO, 0);
-DEG_COMPONENT_NODE_DEFINE(Armature, ARMATURE, 0);
-DEG_COMPONENT_NODE_DEFINE(GenericDatablock, GENERIC_DATABLOCK, 0);
-DEG_COMPONENT_NODE_DEFINE(Visibility, VISIBILITY, 0);
-DEG_COMPONENT_NODE_DEFINE(Simulation, SIMULATION, 0);
-DEG_COMPONENT_NODE_DEFINE(NTreeOutput, NTREE_OUTPUT, ID_RECALC_NTREE_OUTPUT);
+DGRAPH_COMPONENT_NODE_DEFINE(Animation, ANIMATION, ID_RECALC_ANIMATION);
+/* TODO: Is this a correct tag? */
+DGRAPH_COMPONENT_NODE_DEFINE(BatchCache, BATCH_CACHE, ID_RECALC_SHADING);
+DGRAPH_COMPONENT_NODE_DEFINE(Bone, BONE, ID_RECALC_GEOMETRY);
+DGRAPH_COMPONENT_NODE_DEFINE(Cache, CACHE, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(CopyOnWrite, COPY_ON_WRITE, ID_RECALC_COPY_ON_WRITE);
+DGRAPH_COMPONENT_NODE_DEFINE(ImageAnimation, IMAGE_ANIMATION, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Geometry, GEOMETRY, ID_RECALC_GEOMETRY);
+DGRAPH_COMPONENT_NODE_DEFINE(LayerCollections, LAYER_COLLECTIONS, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Parameters, PARAMETERS, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Particles, PARTICLE_SYSTEM, ID_RECALC_GEOMETRY);
+DGRAPH_COMPONENT_NODE_DEFINE(ParticleSettings, PARTICLE_SETTINGS, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(PointCache, POINT_CACHE, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Pose, EVAL_POSE, ID_RECALC_GEOMETRY);
+DGRAPH_COMPONENT_NODE_DEFINE(Sequencer, SEQUENCER, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Shading, SHADING, ID_RECALC_SHADING);
+DGRAPH_COMPONENT_NODE_DEFINE(Transform, TRANSFORM, ID_RECALC_TRANSFORM);
+DGRAPH_COMPONENT_NODE_DEFINE(ObjectFromLayer, OBJECT_FROM_LAYER, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Dupli, DUPLI, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Synchronization, SYNCHRONIZATION, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Audio, AUDIO, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Armature, ARMATURE, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(GenericDatablock, GENERIC_DATABLOCK, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Visibility, VISIBILITY, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(Simulation, SIMULATION, 0);
+DGRAPH_COMPONENT_NODE_DEFINE(NTreeOutput, NTREE_OUTPUT, ID_RECALC_NTREE_OUTPUT);
 
 /* -------------------------------------------------------------------- */
 /** Node Types Register */
 
-void deg_register_component_depsnodes()
+void dgraph_register_component_nodes()
 {
   register_node_typeinfo(&DNTI_ANIMATION);
   register_node_typeinfo(&DNTI_BONE);
