@@ -113,7 +113,7 @@ void IdNode::destroy()
     delete comp_node;
   }
 
-  /* Free memory used by this CoW ID. */
+  /* Free memory used by this CoW id. */
   if (!ELEM(id_cow, id_orig, nullptr)) {
     dgraph_free_copy_on_write_datablock(id_cow);
     MEM_freeN(id_cow);
@@ -125,7 +125,7 @@ void IdNode::destroy()
   id_orig = nullptr;
 }
 
-string IDNode::id() const
+string IdNode::id() const
 {
   char orig_ptr[24], cow_ptr[24];
   lib_snprintf(orig_ptr, sizeof(orig_ptr), "%p", id_orig);
@@ -168,7 +168,7 @@ void IdNode::tag_update(DGraph *graph, eUpdateSource source)
   }
 }
 
-void IDNode::finalize_build(Depsgraph *graph)
+void IdNode::finalize_build(DGraph *graph)
 {
   /* Finalize build of all components. */
   for (ComponentNode *comp_node : components.values()) {
@@ -177,9 +177,9 @@ void IDNode::finalize_build(Depsgraph *graph)
   visible_components_mask = get_visible_components_mask();
 }
 
-IDComponentsMask IDNode::get_visible_components_mask() const
+IdComponentsMask IdNode::get_visible_components_mask() const
 {
-  IDComponentsMask result = 0;
+  IdComponentsMask result = 0;
   for (ComponentNode *comp_node : components.values()) {
     if (comp_node->affects_directly_visible) {
       const int component_type_as_int = static_cast<int>(comp_node->type);
