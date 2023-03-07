@@ -1,42 +1,42 @@
 #pragma once
 
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
 
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
 #include "dune_object.h"
 
-#include "types_object_types.h"
+#include "types_object.h"
 
-struct ID;
-struct dPoseChannel;
+struct Id;
+struct DPoseChannel;
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
 struct BoneComponentNode;
-struct Depsgraph;
-struct IDNode;
-struct OperationNode;
+struct DGraph;
+struct IdNode;
+struct OpNode;
 
-/* ID Component - Base type for all components */
+/* id Component - Base type for all components */
 struct ComponentNode : public Node {
   /* Key used to look up operations within a component */
-  struct OperationIDKey {
-    OperationCode opcode;
+  struct OpIdKey {
+    OpCode opcode;
     const char *name;
     int name_tag;
 
-    OperationIDKey();
-    OperationIDKey(OperationCode opcode);
-    OperationIDKey(OperationCode opcode, const char *name, int name_tag);
+    OpIdKey();
+    OpIdKey(OpCode opcode);
+    OpIdKey(OpCode opcode, const char *name, int name_tag);
 
-    string identifier() const;
-    bool operator==(const OperationIDKey &other) const;
+    string id() const;
+    bool op==(const OpIdKey &other) const;
     uint64_t hash() const;
   };
 
@@ -45,22 +45,22 @@ struct ComponentNode : public Node {
   ~ComponentNode();
 
   /** Initialize 'component' node - from pointer data given. */
-  void init(const ID *id, const char *subdata) override;
+  void init(const Id *id, const char *subdata) override;
 
-  virtual string identifier() const override;
+  virtual string id() const override;
 
   /* Find an existing operation, if requested operation does not exist
    * nullptr will be returned. */
-  OperationNode *find_operation(OperationIDKey key) const;
-  OperationNode *find_operation(OperationCode opcode, const char *name, int name_tag) const;
+  OperationNode *find_op(OpIdKey key) const;
+  OperationNode *find_op(OpCode opcode, const char *name, int name_tag) const;
 
   /* Find an existing operation, will throw an assert() if it does not exist. */
-  OperationNode *get_operation(OperationIDKey key) const;
-  OperationNode *get_operation(OperationCode opcode, const char *name, int name_tag) const;
+  OperationNode *get_op(OpIdKey key) const;
+  OperationNode *get_op(OpCode opcode, const char *name, int name_tag) const;
 
   /* Check operation exists and return it. */
-  bool has_operation(OperationIDKey key) const;
-  bool has_operation(OperationCode opcode, const char *name, int name_tag) const;
+  bool has_operation(OpIdKey key) const;
+  bool has_operation(OpCode opcode, const char *name, int name_tag) const;
 
   /**
    * Create a new node for representing an operation and add this to graph
