@@ -1,9 +1,9 @@
 #pragma once
 
-#include "intern/node/deg_node.h"
+#include "intern/node/dgraph_node.h"
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
 /* Time Source Node. */
 struct TimeSourceNode : public Node {
@@ -11,9 +11,9 @@ struct TimeSourceNode : public Node {
 
   // TODO: evaluate() operation needed
 
-  virtual void tag_update(Depsgraph *graph, eUpdateSource source) override;
+  virtual void tag_update(DGraph *graph, eUpdateSource source) override;
 
-  void flush_update_tag(Depsgraph *graph);
+  void flush_update_tag(DGraph *graph);
 
   DEG_DEPSNODE_DECLARE;
 };
