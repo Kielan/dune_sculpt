@@ -48,17 +48,17 @@ struct IsNode : public Node {
 
   virtual void tag_update(DGraph *graph, eUpdateSource source) override;
 
-  void finalize_build(Depsgraph *graph);
+  void finalize_build(DGraph *graph);
 
-  IDComponentsMask get_visible_components_mask() const;
+  IdComponentsMask get_visible_components_mask() const;
 
-  /* Type of the ID stored separately, so it's possible to perform check whether CoW is needed
+  /* Type of the id stored separately, so it's possible to perform check whether CoW is needed
    * without de-referencing the id_cow (which is not safe when ID is NOT covered by CoW and has
    * been deleted from the main database.) */
-  ID_Type id_type;
+  IdType id_type;
 
   /* ID Block referenced. */
-  ID *id_orig;
+  Id *id_orig;
 
   /* Session-wide UUID of the id_orig.
    * Is used on relations update to map evaluated state from old nodes to the new ones, without
@@ -68,7 +68,7 @@ struct IsNode : public Node {
 
   /* Evaluated data-block.
    * Will be covered by the copy-on-write system if the ID Type needs it. */
-  ID *id_cow;
+  Id *id_cow;
 
   /* Hash to make it faster to look up components. */
   Map<ComponentIDKey, ComponentNode *> components;
@@ -83,12 +83,12 @@ struct IsNode : public Node {
   DGraphCustomDataMeshMasks customdata_masks;
   DGraphCustomDataMeshMasks previous_customdata_masks;
 
-  eDepsNode_LinkedState_Type linked_state;
+  eDGraphNodeLinkedStateType linked_state;
 
   /* Indicates the data-block is visible in the evaluated scene. */
   bool is_directly_visible;
 
-  /* For the collection type of ID, denotes whether collection was fully
+  /* For the collection type of id, denotes whether collection was fully
    * recursed into. */
   bool is_collection_fully_expanded;
 
@@ -104,11 +104,11 @@ struct IsNode : public Node {
   /* Accumulate recalc flags from multiple update passes. */
   int id_cow_recalc_backup;
 
-  IDComponentsMask visible_components_mask;
-  IDComponentsMask previously_visible_components_mask;
+  IdComponentsMask visible_components_mask;
+  IdComponentsMask previously_visible_components_mask;
 
-  DEG_DEPSNODE_DECLARE;
+  DGRAPH_NODE_DECLARE;
 };
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
