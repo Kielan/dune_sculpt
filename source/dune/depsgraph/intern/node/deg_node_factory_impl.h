@@ -1,11 +1,11 @@
 #pragma once
 
-#include "intern/node/deg_node_factory.h"
+#include "intern/node/dgraph_node_factory.h"
 
-struct ID;
+struct Id;
 
-namespace blender {
-namespace deg {
+namespace dune {
+namespace dgraph {
 
 template<class ModeObjectType> NodeType DepsNodeFactoryImpl<ModeObjectType>::type() const
 {
@@ -23,7 +23,7 @@ template<class ModeObjectType> int DepsNodeFactoryImpl<ModeObjectType>::id_recal
 }
 
 template<class ModeObjectType>
-Node *DepsNodeFactoryImpl<ModeObjectType>::create_node(const ID *id,
+Node *DGraphNodeFactoryImpl<ModeObjectType>::create_node(const ID *id,
                                                        const char *subdata,
                                                        const char *name) const
 {
@@ -41,5 +41,5 @@ Node *DepsNodeFactoryImpl<ModeObjectType>::create_node(const ID *id,
   return node;
 }
 
-}  // namespace deg
-}  // namespace blender
+}  // namespace dgraph
+}  // namespace dune
