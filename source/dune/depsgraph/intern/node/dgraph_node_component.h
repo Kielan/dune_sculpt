@@ -186,30 +186,30 @@ DEG_COMPONENT_NODE_DECLARE_GENERIC(NTreeOutput);
 /* Bone Component */
 struct BoneComponentNode : public ComponentNode {
   /** Initialize 'bone component' node - from pointer data given. */
-  void init(const ID *id, const char *subdata);
+  void init(const Id *id, const char *subdata);
 
   struct DPoseChannel *pchan; /* the bone that this component represents */
 
-  DEG_COMPONENT_NODE_DECLARE;
+  DGRAPH_COMPONENT_NODE_DECLARE;
 };
 
 /* Eventually we would not tag parameters in all cases.
  * Support for this each ID needs to be added on an individual basis. */
-struct ParametersComponentNode : public ComponentNode {
+struct ParamsComponentNode : public ComponentNode {
   virtual bool need_tag_cow_before_update() override
   {
     if (ID_TYPE_SUPPORTS_PARAMS_WITHOUT_COW(owner->id_type)) {
       /* Disabled as this is not true for newly added objects, needs investigation. */
-      // lib_assert(deg_copy_on_write_is_expanded(owner->id_cow));
+      // lib_assert(dgraph_copy_on_write_is_expanded(owner->id_cow));
       return false;
     }
     return true;
   }
 
-  DEG_COMPONENT_NODE_DECLARE;
+  DGRAPH_COMPONENT_NODE_DECLARE;
 };
 
-void deg_register_component_depsnodes();
+void dgraph_register_component_dnodes();
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
