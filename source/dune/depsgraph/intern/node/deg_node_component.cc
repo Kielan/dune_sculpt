@@ -1,4 +1,4 @@
-#include "intern/node/deg_node_component.h"
+#include "intern/node/dgraph_node_component.h"
 
 #include <cstdio>
 #include <cstring> /* required for STREQ later on. */
@@ -11,11 +11,11 @@
 
 #include "dune_action.h"
 
-#include "intern/node/deg_node_factory.h"
-#include "intern/node/deg_node_id.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/node/dgraph_node_factory.h"
+#include "intern/node/dgraph_node_id.h"
+#include "intern/node/dgraph_node_operation.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 /* *********** */
 /* Outer Nodes */
@@ -23,12 +23,12 @@ namespace dune::deg {
 /* -------------------------------------------------------------------- */
 /** Standard Component Methods */
 
-ComponentNode::OperationIDKey::OperationIDKey()
-    : opcode(OperationCode::OPERATION), name(""), name_tag(-1)
+ComponentNode::OpIdKey::OpIdKey()
+    : opcode(OpCode::OPERATION), name(""), name_tag(-1)
 {
 }
 
-ComponentNode::OperationIDKey::OperationIDKey(OperationCode opcode)
+ComponentNode::OperationIDKey::OperationIDKey(OpCode opcode)
     : opcode(opcode), name(""), name_tag(-1)
 {
 }
@@ -354,4 +354,4 @@ void deg_register_component_depsnodes()
   register_node_typeinfo(&DNTI_NTREE_OUTPUT);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph 
