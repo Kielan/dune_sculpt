@@ -2,51 +2,51 @@
 
 #include "lib_ghash.h"
 #include "lib_sys_types.h"
-#include "dune_ID.h"
-#include "intern/node/deg_node.h"
+#include "dune_id.h"
+#include "intern/node/dgraph_node.h"
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
 struct ComponentNode;
 
-typedef uint64_t IDComponentsMask;
+typedef uint64_t IdComponentsMask;
 
 /* NOTE: We use max comparison to mark an id node that is linked more than once
  * So keep this enum ordered accordingly. */
-enum eDepsNode_LinkedState_Type {
+enum eDGraphNodeLinkedState_Type {
   /* Generic indirectly linked id node. */
-  DEG_ID_LINKED_INDIRECTLY = 0,
+  DGRAPH_ID_LINKED_INDIRECTLY = 0,
   /* Id node present in the set (background) only. */
-  DEG_ID_LINKED_VIA_SET = 1,
+  DGRAPH_ID_LINKED_VIA_SET = 1,
   /* Id node directly linked via the SceneLayer. */
-  DEG_ID_LINKED_DIRECTLY = 2,
+  DGRAPH_ID_LINKED_DIRECTLY = 2,
 };
-const char *linkedStateAsString(eDepsNode_LinkedState_Type linked_state);
+const char *linkedStateAsString(eDGraphNodeLinkedStateType linked_state);
 
-/* ID-Block Reference */
-struct IDNode : public Node {
-  struct ComponentIDKey {
-    ComponentIDKey(NodeType type, const char *name = "");
+/* id-block Reference */
+struct IsNode : public Node {
+  struct ComponentIdKey {
+    ComponentIdKey(NodeType type, const char *name = "");
     uint64_t hash() const;
-    bool operator==(const ComponentIDKey &other) const;
+    bool op==(const ComponentIdKey &other) const;
 
     NodeType type;
     const char *name;
   };
 
   /** Initialize 'id' node - from pointer data given. */
-  virtual void init(const ID *id, const char *subdata) override;
-  void init_copy_on_write(ID *id_cow_hint = nullptr);
-  ~IDNode();
+  virtual void init(const Id *id, const char *subdata) override;
+  void init_copy_on_write(Id *id_cow_hint = nullptr);
+  ~IdNode();
   void destroy();
 
-  virtual string identifier() const override;
+  virtual string id() const override;
 
   ComponentNode *find_component(NodeType type, const char *name = "") const;
   ComponentNode *add_component(NodeType type, const char *name = "");
 
-  virtual void tag_update(Depsgraph *graph, eUpdateSource source) override;
+  virtual void tag_update(DGraph *graph, eUpdateSource source) override;
 
   void finalize_build(Depsgraph *graph);
 
@@ -80,8 +80,8 @@ struct IDNode : public Node {
   uint32_t previous_eval_flags;
 
   /* Extra customdata mask which needs to be evaluated for the mesh object. */
-  DEGCustomDataMeshMasks customdata_masks;
-  DEGCustomDataMeshMasks previous_customdata_masks;
+  DGraphCustomDataMeshMasks customdata_masks;
+  DGraphCustomDataMeshMasks previous_customdata_masks;
 
   eDepsNode_LinkedState_Type linked_state;
 
