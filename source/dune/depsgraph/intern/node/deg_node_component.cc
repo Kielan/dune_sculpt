@@ -151,21 +151,21 @@ OpNode *ComponentNode::add_op(const DGraphEvalOpCb &op,
 {
   OpNode *op_node = find_op(opcode, name, name_tag);
   if (!op_node) {
-    DepsNodeFactory *factory = type_get_factory(NodeType::OPERATION);
-    op_node = (OperationNode *)factory->create_node(this->owner->id_orig, "", name);
+    DGraphNodeFactory *factory = type_get_factory(NodeType::OPERATION);
+    op_node = (OpNode *)factory->create_node(this->owner->id_orig, "", name);
 
     /* register opnode in this component's operation set */
-    OperationIDKey key(opcode, name, name_tag);
-    operations_map->add(key, op_node);
+    OpIdKey key(opcode, name, name_tag);
+    ops_map->add(key, op_node);
 
     /* Set back-link. */
     op_node->owner = this;
   }
   else {
     fprintf(stderr,
-            "add_operation: Operation already exists - %s has %s at %p\n",
-            this->identifier().c_str(),
-            op_node->identifier().c_str(),
+            "add_op: Op already exists - %s has %s at %p\n",
+            this->id().c_str(),
+            op_node->id().c_str(),
             op_node);
     lib_assert_msg(0, "Should not happen!");
   }
@@ -179,71 +179,71 @@ OpNode *ComponentNode::add_op(const DGraphEvalOpCb &op,
   return op_node;
 }
 
-void ComponentNode::set_entry_operation(OperationNode *op_node)
+void ComponentNode::set_entry_op(OpNode *op_node)
 {
-  lib_assert(entry_operation == nullptr);
-  entry_operation = op_node;
+  lib_assert(entry_op == nullptr);
+  entry_op = op_node;
 }
 
-void ComponentNode::set_exit_operation(OperationNode *op_node)
+void ComponentNode::set_exit_op(OpNode *op_node)
 {
-  lib_assert(exit_operation == nullptr);
-  exit_operation = op_node;
+  lib_assert(exit_op == nullptr);
+  exit_op = op_node;
 }
 
-void ComponentNode::clear_operations()
+void ComponentNode::clear_ops()
 {
-  if (operations_map != nullptr) {
-    for (OperationNode *op_node : operations_map->values()) {
+  if (ops_map != nullptr) {
+    for (OpNode *op_node : ops_map->values()) {
       delete op_node;
     }
-    operations_map->clear();
+    ops_map->clear();
   }
-  for (OperationNode *op_node : operations) {
+  for (OpNode *op_node : ops) {
     delete op_node;
   }
-  operations.clear();
+  ops.clear();
 }
 
-void ComponentNode::tag_update(Depsgraph *graph, eUpdateSource source)
+void ComponentNode::tag_update(DGraph *graph, eUpdateSource source)
 {
-  OperationNode *entry_op = get_entry_operation();
-  if (entry_op != nullptr && entry_op->flag & DEPSOP_FLAG_NEEDS_UPDATE) {
+  OpNode *entry_op = get_entry_op();
+  if (entry_op != nullptr && entry_op->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) {
     return;
   }
-  for (OperationNode *op_node : operations) {
+  for (OpNode *op_node : ops) {
     op_node->tag_update(graph, source);
   }
   /* It is possible that tag happens before finalization. */
-  if (operations_map != nullptr) {
-    for (OperationNode *op_node : operations_map->values()) {
+  if (ops_map != nullptr) {
+    for (OpNode *op_node : ops_map->values()) {
       op_node->tag_update(graph, source);
     }
   }
 }
 
-OperationNode *ComponentNode::get_entry_operation()
+OpNode *ComponentNode::get_entry_op()
 {
-  if (entry_operation) {
-    return entry_operation;
+  if (entry_op) {
+    return entry_op;
   }
-  if (operations_map != nullptr && operations_map->size() == 1) {
-    OperationNode *op_node = nullptr;
+  if (ops_map != nullptr && ops_map->size() == 1) {
+    OpNode *op_node = nullptr;
     /* TODO: This is somewhat slow. */
-    for (OperationNode *tmp : operations_map->values()) {
+    for (OpNode *tmp : ops_map->values()) {
       op_node = tmp;
     }
     /* Cache for the subsequent usage. */
-    entry_operation = op_node;
+    entry_op = op_node;
     return op_node;
   }
-  if (operations.size() == 1) {
-    return operations[0];
+  if (ops.size() == 1) {
+    return ops[0];
   }
   return nullptr;
 }
 
-OperationNode *ComponentNode::get_exit_operation()
+OpnNode *ComponentNode::get_exit_op()
 {
   if (exit_operation) {
     return exit_operation;
