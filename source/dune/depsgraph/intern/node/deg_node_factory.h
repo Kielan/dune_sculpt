@@ -2,39 +2,39 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "intern/depsgraph_type.h"
-#include "intern/node/deg_node.h"
+#include "intern/dgraph_type.h"
+#include "intern/node/dgraph_node.h"
 
-struct ID;
+struct Id;
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
-struct DepsNodeFactory {
+struct DGraphNodeFactory {
   virtual NodeType type() const = 0;
   virtual const char *type_name() const = 0;
 
   virtual int id_recalc_tag() const = 0;
 
-  virtual Node *create_node(const ID *id, const char *subdata, const char *name) const = 0;
+  virtual Node *create_node(const Id *id, const char *subdata, const char *name) const = 0;
 };
 
-template<class ModeObjectType> struct DepsNodeFactoryImpl : public DepsNodeFactory {
+template<class ModeObjectType> struct DGraphNodeFactoryImpl : public DGraphNodeFactory {
   virtual NodeType type() const override;
   virtual const char *type_name() const override;
 
   virtual int id_recalc_tag() const override;
 
-  virtual Node *create_node(const ID *id, const char *subdata, const char *name) const override;
+  virtual Node *create_node(const Id *id, const char *subdata, const char *name) const override;
 };
 
 /* Register typeinfo */
-void register_node_typeinfo(DepsNodeFactory *factory);
+void register_node_typeinfo(DGraphNodeFactory *factory);
 
 /* Get typeinfo for specified type */
-DepsNodeFactory *type_get_factory(NodeType type);
+DGraphNodeFactory *type_get_factory(NodeType type);
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
 
-#include "intern/node/deg_node_factory_impl.h"
+#include "intern/node/dgraph_node_factory_impl.h"
