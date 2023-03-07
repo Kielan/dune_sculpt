@@ -25,25 +25,25 @@ const char *linkedStateAsString(eDGraphNodeLinkedStateType linked_state)
   switch (linked_state) {
     case DGRAPH_ID_LINKED_INDIRECTLY:
       return "INDIRECTLY";
-    case DEG_ID_LINKED_VIA_SET:
+    case DGRAPH_ID_LINKED_VIA_SET:
       return "VIA_SET";
-    case DEG_ID_LINKED_DIRECTLY:
+    case DGRAPH_ID_LINKED_DIRECTLY:
       return "DIRECTLY";
   }
   lib_assert_msg(0, "Unhandled linked state, should never happen.");
   return "UNKNOWN";
 }
 
-IDNode::ComponentIDKey::ComponentIDKey(NodeType type, const char *name) : type(type), name(name)
+IdNode::ComponentIdKey::ComponentIdKey(NodeType type, const char *name) : type(type), name(name)
 {
 }
 
-bool IDNode::ComponentIDKey::operator==(const ComponentIDKey &other) const
+bool IdNode::ComponentIdKey::op==(const ComponentIdKey &other) const
 {
   return type == other.type && STREQ(name, other.name);
 }
 
-uint64_t IdNode::ComponentIDKey::hash() const
+uint64_t IdNode::ComponentIdKey::hash() const
 {
   const int type_as_int = static_cast<int>(type);
   return lib_ghashutil_combine_hash(lib_ghashutil_uinthash(type_as_int),
@@ -53,15 +53,15 @@ uint64_t IdNode::ComponentIDKey::hash() const
 void IdNode::init(const Id *id, const char *UNUSED(subdata))
 {
   lib_assert(id != nullptr);
-  /* Store ID-pointer. */
+  /* Store id-pointer. */
   id_type = GS(id->name);
-  id_orig = (ID *)id;
+  id_orig = (Id *)id;
   id_orig_session_uuid = id->session_uuid;
   eval_flags = 0;
   previous_eval_flags = 0;
-  customdata_masks = DEGCustomDataMeshMasks();
-  previous_customdata_masks = DEGCustomDataMeshMasks();
-  linked_state = DEG_ID_LINKED_INDIRECTLY;
+  customdata_masks = DGraphCustomDataMeshMasks();
+  previous_customdata_masks = DGraphCustomDataMeshMasks();
+  linked_state = DGRAPH_ID_LINKED_INDIRECTLY;
   is_directly_visible = true;
   is_collection_fully_expanded = false;
   has_base = false;
@@ -72,25 +72,25 @@ void IdNode::init(const Id *id, const char *UNUSED(subdata))
   previously_visible_components_mask = 0;
 }
 
-void IDNode::init_copy_on_write(ID *id_cow_hint)
+void IdNode::init_copy_on_write(Id *id_cow_hint)
 {
   /* Create pointer as early as possible, so we can use it for function
    * bindings. Rest of data we'll be copying to the new datablock when
    * it is actually needed. */
   if (id_cow_hint != nullptr) {
-    // lib_assert(deg_copy_on_write_is_needed(id_orig));
-    if (deg_copy_on_write_is_needed(id_orig)) {
+    // lib_assert(dgraph_copy_on_write_is_needed(id_orig));
+    if (dgraph_copy_on_write_is_needed(id_orig)) {
       id_cow = id_cow_hint;
     }
     else {
       id_cow = id_orig;
     }
   }
-  else if (deg_copy_on_write_is_needed(id_orig)) {
-    id_cow = (ID *)dune_libblock_alloc_notest(GS(id_orig->name));
-    DEG_COW_PRINT(
+  else if (dgraph_copy_on_write_is_needed(id_orig)) {
+    id_cow = (Id *)dune_libblock_alloc_notest(GS(id_orig->name));
+    DGRAPH_COW_PRINT(
         "Create shallow copy for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
-    deg_tag_copy_on_write_id(id_cow, id_orig);
+    dgraph_tag_copy_on_write_id(id_cow, id_orig);
   }
   else {
     id_cow = id_orig;
@@ -98,12 +98,12 @@ void IDNode::init_copy_on_write(ID *id_cow_hint)
 }
 
 /* Free 'id' node. */
-IDNode::~IDNode()
+IdNode::~IdNode()
 {
   destroy();
 }
 
-void IDNode::destroy()
+void IdNode::destroy()
 {
   if (id_orig == nullptr) {
     return;
@@ -115,17 +115,17 @@ void IDNode::destroy()
 
   /* Free memory used by this CoW ID. */
   if (!ELEM(id_cow, id_orig, nullptr)) {
-    deg_free_copy_on_write_datablock(id_cow);
+    dgraph_free_copy_on_write_datablock(id_cow);
     MEM_freeN(id_cow);
     id_cow = nullptr;
-    DEG_COW_PRINT("Destroy CoW for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
+    DGRAPH_COW_PRINT("Destroy CoW for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
   }
 
   /* Tag that the node is freed. */
   id_orig = nullptr;
 }
 
-string IDNode::identifier() const
+string IDNode::id() const
 {
   char orig_ptr[24], cow_ptr[24];
   lib_snprintf(orig_ptr, sizeof(orig_ptr), "%p", id_orig);
@@ -135,28 +135,28 @@ string IDNode::identifier() const
          (is_directly_visible ? "true" : "false") + ")";
 }
 
-ComponentNode *IDNode::find_component(NodeType type, const char *name) const
+ComponentNode *IdNode::find_component(NodeType type, const char *name) const
 {
-  ComponentIDKey key(type, name);
+  ComponentIdKey key(type, name);
   return components.lookup_default(key, nullptr);
 }
 
-ComponentNode *IDNode::add_component(NodeType type, const char *name)
+ComponentNode *IdNode::add_component(NodeType type, const char *name)
 {
   ComponentNode *comp_node = find_component(type, name);
   if (!comp_node) {
-    DepsNodeFactory *factory = type_get_factory(type);
+    DGraphNodeFactory *factory = type_get_factory(type);
     comp_node = (ComponentNode *)factory->create_node(this->id_orig, "", name);
 
     /* Register. */
-    ComponentIDKey key(type, name);
+    ComponentIdKey key(type, name);
     components.add_new(key, comp_node);
     comp_node->owner = this;
   }
   return comp_node;
 }
 
-void IDNode::tag_update(Depsgraph *graph, eUpdateSource source)
+void IdNode::tag_update(DGraph *graph, eUpdateSource source)
 {
   for (ComponentNode *comp_node : components.values()) {
     /* Relations update does explicit animation update when needed. Here we ignore animation
