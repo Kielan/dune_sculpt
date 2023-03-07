@@ -2,20 +2,20 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
 #include "lib_utildefines.h"
 
-#include "deg_depsgraph_build.h"
+#include "dgraph_build.h"
 
 struct ID;
 struct Scene;
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
-struct Depsgraph;
-struct OperationNode;
+struct DGraph;
+struct OpNode;
 struct Relation;
 
 /* Metatype of Nodes - The general "level" in the graph structure
@@ -78,9 +78,9 @@ enum class NodeType {
    * not have very distinctive update procedure. */
   GENERIC_DATABLOCK,
 
-  /* Component which is used to define visibility relation between IDs, on the ID level.
+  /* Component which is used to define visibility relation between ids, on the id level.
    *
-   * Consider two ID nodes NodeA and NodeB, with the relation between visibility components going
+   * Consider two id nodes NodeA and NodeB, with the relation between visibility components going
    * as NodeA -> NodeB. If NodeB is considered visible on screen, then the relation will ensure
    * that NodeA is also visible. The way how relation is oriented could be seen as a inverted from
    * visibility dependency point of view, but it follows the same direction as data dependency
@@ -130,11 +130,11 @@ enum class NodeType {
 };
 const char *nodeTypeAsString(NodeType type);
 
-NodeType nodeTypeFromSceneComponent(eDepsSceneComponentType component_type);
-eDepsSceneComponentType nodeTypeToSceneComponent(NodeType type);
+NodeType nodeTypeFromSceneComponent(eDGraphSceneComponentType component_type);
+eDGraphSceneComponentType nodeTypeToSceneComponent(NodeType type);
 
-NodeType nodeTypeFromObjectComponent(eDepsObjectComponentType component_type);
-eDepsObjectComponentType nodeTypeToObjectComponent(NodeType type);
+NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type);
+eDGraphObjectComponentType nodeTypeToObjectComponent(NodeType type);
 
 /* All nodes in Depsgraph are descended from this. */
 struct Node {
@@ -178,22 +178,22 @@ struct Node {
   Node();
   virtual ~Node();
 
-  /** Generic identifier for Depsgraph Nodes. */
-  virtual string identifier() const;
+  /** Generic identifier for DGraph Nodes. */
+  virtual string id() const;
 
-  virtual void init(const ID * /*id*/, const char * /*subdata*/)
+  virtual void init(const Id * /*id*/, const char * /*subdata*/)
   {
   }
 
-  virtual void tag_update(Depsgraph * /*graph*/, eUpdateSource /*source*/)
+  virtual void tag_update(DGraph * /*graph*/, eUpdateSource /*source*/)
   {
   }
 
-  virtual OperationNode *get_entry_operation()
+  virtual OpNode *get_entry_op()
   {
     return nullptr;
   }
-  virtual OperationNode *get_exit_operation()
+  virtual OpNode *get_exit_op()
   {
     return nullptr;
   }
@@ -204,11 +204,11 @@ struct Node {
 };
 
 /* Macros for common static typeinfo. */
-#define DEG_DEPSNODE_DECLARE static const Node::TypeInfo typeinfo
-#define DEG_DEPSNODE_DEFINE(NodeType, type_, tname_) \
+#define DGRAPH_NODE_DECLARE static const Node::TypeInfo typeinfo
+#define DGRAPH_NODE_DEFINE(NodeType, type_, tname_) \
   const Node::TypeInfo NodeType::typeinfo = Node::TypeInfo(type_, tname_)
 
-void deg_register_base_depsnodes();
+void dgraph_register_base_nodes();
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
