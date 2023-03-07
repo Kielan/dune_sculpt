@@ -309,13 +309,13 @@ NodeClass Node::get_class() const
 DGRAPH_NODE_DEFINE(TimeSourceNode, NodeType::TIMESOURCE, "Time Source");
 static DGraphNodeFactoryImpl<TimeSourceNode> DNTI_TIMESOURCE;
 
-DEG_DEPSNODE_DEFINE(IDNode, NodeType::ID_REF, "ID Node");
-static DepsNodeFactoryImpl<IDNode> DNTI_ID_REF;
+DGRAPH_DEPSNODE_DEFINE(IdNode, NodeType::ID_REF, "ID Node");
+static DGraphNodeFactoryImpl<IdNode> DNTI_ID_REF;
 
-void deg_register_base_depsnodes()
+void dgraph_register_base_nodes()
 {
   register_node_typeinfo(&DNTI_TIMESOURCE);
   register_node_typeinfo(&DNTI_ID_REF);
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
