@@ -28,20 +28,20 @@ ComponentNode::OpIdKey::OpIdKey()
 {
 }
 
-ComponentNode::OperationIDKey::OperationIDKey(OpCode opcode)
+ComponentNode::OpIDKey::OpIdKey(OpCode opcode)
     : opcode(opcode), name(""), name_tag(-1)
 {
 }
 
-ComponentNode::OperationIDKey::OperationIDKey(OperationCode opcode, const char *name, int name_tag)
+ComponentNode::OpIdKey::OpIdKey(OpCode opcode, const char *name, int name_tag)
     : opcode(opcode), name(name), name_tag(name_tag)
 {
 }
 
-string ComponentNode::OperationIDKey::identifier() const
+string ComponentNode::OpIdKey::id() const
 {
   const string codebuf = to_string(static_cast<int>(opcode));
-  return "OperationIDKey(" + codebuf + ", " + name + ")";
+  return "OpIdKey(" + codebuf + ", " + name + ")";
 }
 
 bool ComponentNode::OperationIDKey::operator==(const OperationIDKey &other) const
