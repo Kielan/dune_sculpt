@@ -1,13 +1,13 @@
 #pragma once
 
-#include "intern/node/deg_node.h"
+#include "intern/node/dgraph_node.h"
 
-#include "intern/depsgraph_type.h"
+#include "intern/dgraph_type.h"
 
-struct Depsgraph;
+struct DGraph;
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
 struct ComponentNode;
 
@@ -23,10 +23,10 @@ enum class OpCode {
   OPERATION = 0,
 
   /* Generic parameters evaluation. */
-  ID_PROPERTY,
-  PARAMETERS_ENTRY,
-  PARAMETERS_EVAL,
-  PARAMETERS_EXIT,
+  ID_PROP,
+  PARAMS_ENTRY,
+  PARAMS_EVAL,
+  PARAMS_EXIT,
 
   /* Animation, Drivers, etc. --------------------------------------------- */
   /* NLA + Action */
@@ -194,43 +194,43 @@ const char *opCodeAsString(OpCode opcode);
  */
 enum OpFlag {
   /* Node needs to be updated. */
-  DEPSOP_FLAG_NEEDS_UPDATE = (1 << 0),
+  DGRAPH_OP_FLAG_NEEDS_UPDATE = (1 << 0),
   /* Node was directly modified, causing need for update. */
-  DEPSOP_FLAG_DIRECTLY_MODIFIED = (1 << 1),
+  DGRAPH_OP_FLAG_DIRECTLY_MODIFIED = (1 << 1),
   /* Node was updated due to user input. */
-  DEPSOP_FLAG_USER_MODIFIED = (1 << 2),
+  DGRAPH_OP_FLAG_USER_MODIFIED = (1 << 2),
   /* Node may not be removed, even when it has no evaluation callback and no
    * outgoing relations. This is for NO-OP nodes that are purely used to indicate a
    * relation between components/IDs, and not for connecting to an operation. */
-  DEPSOP_FLAG_PINNED = (1 << 3),
+  DGRAPH_OP_FLAG_PINNED = (1 << 3),
 
   /* Set of flags which gets flushed along the relations. */
-  DEPSOP_FLAG_FLUSH = (DEPSOP_FLAG_USER_MODIFIED),
+  DGRAPH_OP_FLAG_FLUSH = (DEPSOP_FLAG_USER_MODIFIED),
 };
 
 /* Atomic Operation - Base type for all operations */
 struct OpNode : public Node {
   OpNode();
 
-  virtual string identifier() const override;
+  virtual string id() const override;
   /**
    * Full node identifier, including owner name.
    * used for logging and debug prints.
    */
-  string full_identifier() const;
+  string full_id() const;
 
-  virtual void tag_update(Depsgraph *graph, eUpdateSource source) override;
+  virtual void tag_update(DGraph *graph, eUpdateSource source) override;
 
   bool is_noop() const
   {
     return (bool)evaluate == false;
   }
 
-  virtual OpNode *get_entry_operation() override
+  virtual OpNode *get_entry_op() override
   {
     return this;
   }
-  virtual OpNode *get_exit_operation() override
+  virtual OpNode *get_exit_op() override
   {
     return this;
   }
@@ -243,7 +243,7 @@ struct OpNode : public Node {
   ComponentNode *owner;
 
   /* Callback for operation. */
-  DepsEvalOpCb evaluate;
+  DGraphEvalOpCb evaluate;
 
   /* How many inlinks are we still waiting on before we can be evaluated. */
   uint32_t num_links_pending;
@@ -256,10 +256,10 @@ struct OpNode : public Node {
   /* (OpFlag) extra settings affecting evaluation. */
   int flag;
 
-  DEG_DEPSNODE_DECLARE;
+  DGRAPH_NODE_DECLARE;
 };
 
-void deg_register_op_depsnodes();
+void dgraph_register_op_dgraphnodes();
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
