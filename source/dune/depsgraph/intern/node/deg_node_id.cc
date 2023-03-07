@@ -23,7 +23,7 @@ namespace dune::dgraph {
 const char *linkedStateAsString(eDGraphNodeLinkedStateType linked_state)
 {
   switch (linked_state) {
-    case DEG_ID_LINKED_INDIRECTLY:
+    case DGRAPH_ID_LINKED_INDIRECTLY:
       return "INDIRECTLY";
     case DEG_ID_LINKED_VIA_SET:
       return "VIA_SET";
@@ -43,14 +43,14 @@ bool IDNode::ComponentIDKey::operator==(const ComponentIDKey &other) const
   return type == other.type && STREQ(name, other.name);
 }
 
-uint64_t IDNode::ComponentIDKey::hash() const
+uint64_t IdNode::ComponentIDKey::hash() const
 {
   const int type_as_int = static_cast<int>(type);
-  return lib_ghashutil_combine_hash(BLI_ghashutil_uinthash(type_as_int),
-                                    BLI_ghashutil_strhash_p(name));
+  return lib_ghashutil_combine_hash(lib_ghashutil_uinthash(type_as_int),
+                                    lib_ghashutil_strhash_p(name));
 }
 
-void IDNode::init(const ID *id, const char *UNUSED(subdata))
+void IdNode::init(const Id *id, const char *UNUSED(subdata))
 {
   lib_assert(id != nullptr);
   /* Store ID-pointer. */
