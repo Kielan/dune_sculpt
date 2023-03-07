@@ -1,4 +1,4 @@
-#include "intern/node/deg_node_id.h"
+#include "intern/node/dgraph_node_id.h"
 
 #include <cstdio>
 #include <cstring> /* required for STREQ later on. */
@@ -6,21 +6,21 @@
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
-#include "types_ID.h"
+#include "types_id.h"
 #include "types_anim.h"
 
 #include "dune_lib_id.h"
 
-#include "deg_depsgraph.h"
+#include "dgraph.h"
 
-#include "intern/eval/deg_eval_copy_on_write.h"
-#include "intern/node/deg_node_component.h"
-#include "intern/node/deg_node_factory.h"
-#include "intern/node/deg_node_time.h"
+#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/node/dgraph_node_component.h"
+#include "intern/node/dgraph_node_factory.h"
+#include "intern/node/dgraph_node_time.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
-const char *linkedStateAsString(eDepsNode_LinkedState_Type linked_state)
+const char *linkedStateAsString(eDGraphNodeLinkedStateType linked_state)
 {
   switch (linked_state) {
     case DEG_ID_LINKED_INDIRECTLY:
@@ -183,11 +183,11 @@ IDComponentsMask IDNode::get_visible_components_mask() const
   for (ComponentNode *comp_node : components.values()) {
     if (comp_node->affects_directly_visible) {
       const int component_type_as_int = static_cast<int>(comp_node->type);
-      BLI_assert(component_type_as_int < 64);
+      lib_assert(component_type_as_int < 64);
       result |= (1ULL << component_type_as_int);
     }
   }
   return result;
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
