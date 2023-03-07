@@ -51,8 +51,8 @@ struct ComponentNode : public Node {
 
   /* Find an existing operation, if requested operation does not exist
    * nullptr will be returned. */
-  OperationNode *find_op(OpIdKey key) const;
-  OperationNode *find_op(OpCode opcode, const char *name, int name_tag) const;
+  OpNode *find_op(OpIdKey key) const;
+  OpNode *find_op(OpCode opcode, const char *name, int name_tag) const;
 
   /* Find an existing operation, will throw an assert() if it does not exist. */
   OperationNode *get_op(OpIdKey key) const;
@@ -71,25 +71,25 @@ struct ComponentNode : public Node {
    * param opcode: The operation to perform.
    * param name: Identifier for operation - used to find/locate it again.
    */
-  OperationNode *add_operation(const DepsEvalOperationCb &op,
-                               OperationCode opcode,
+  OpNode *add_op(const DGraphEvalOpCb &op,
+                               OpCode opcode,
                                const char *name,
                                int name_tag);
 
   /* Entry/exit operations management.
    *
    * Use those instead of direct set since this will perform sanity checks. */
-  void set_entry_operation(OperationNode *op_node);
-  void set_exit_operation(OperationNode *op_node);
+  void set_entry_op(OpNode *op_node);
+  void set_exit_op(OpNode *op_node);
 
-  void clear_operations();
+  void clear_ops();
 
-  virtual void tag_update(Depsgraph *graph, eUpdateSource source) override;
+  virtual void tag_update(DGraph *graph, eUpdateSource source) override;
 
-  virtual OperationNode *get_entry_operation() override;
-  virtual OperationNode *get_exit_operation() override;
+  virtual OpNode *get_entry_op() override;
+  virtual OpNode *get_exit_op() override;
 
-  void finalize_build(Depsgraph *graph);
+  void finalize_build(DGraph *graph);
 
   IDNode *owner;
 
@@ -97,7 +97,7 @@ struct ComponentNode : public Node {
 
   /* Operations stored as a hash map, for faster build.
    * This hash map will be freed when graph is fully built. */
-  Map<ComponentNode::OperationIDKey, OperationNode *> *operations_map;
+  Map<ComponentNode::OpIdKey, OpNode *> *ops_map;
 
   /* This is a "normal" list of operations, used by evaluation
    * and other routines after construction. */
