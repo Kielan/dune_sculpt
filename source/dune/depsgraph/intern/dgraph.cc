@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_console.h"
 #include "lib_hash.h"
