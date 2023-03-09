@@ -1,7 +1,5 @@
 
-/** \file
- * \ingroup gpu
- *
+/**
  * This interface allow GPU to manage VAOs for multiple context and threads.
  */
 
