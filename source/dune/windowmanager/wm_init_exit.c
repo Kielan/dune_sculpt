@@ -31,12 +31,12 @@ void wm_init(DContext *C, int argc, const char **argv)
 
   ed_undosys_type_init();
 
-  dune_library_callback_free_notifier_reference_set(
-      wm_main_remove_notifier_reference);                    /* lib_id.c */
-  dune_region_callback_free_gizmomap_set(wm_gizmomap_remove); /* screen.c */
-  dune_region_callback_refresh_tag_gizmomap_set(WM_gizmomap_tag_refresh);
-  dune_library_callback_remap_editor_id_reference_set(
-      wm_main_remap_editor_id_reference);                     /* lib_id.c */
-  dune_spacedata_callback_id_remap_set(ED_spacedata_id_remap); /* screen.c */
+  dune_lib_cb_free_notifier_ref_set(
+      wm_main_remove_notifier_ref);                    /* lib_id.c */
+  dune_region_cb_free_gizmomap_set(wm_gizmomap_remove); /* screen.c */
+  dune_region_cb_refresh_tag_gizmomap_set(wm_gizmomap_tag_refresh);
+  dune_lib_cb_remap_editor_id_ref_set(
+      wm_main_remap_editor_id_ref);                     /* lib_id.c */
+  dune_spacedata_cb_id_remap_set(ED_spacedata_id_remap); /* screen.c */
 
 }
