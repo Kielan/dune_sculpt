@@ -1,13 +1,9 @@
-/** \file
- * \ingroup intern_mem
- *
- * Guarded memory allocation, and boundary-write detection.
- */
+/** Guarded memory allocation, and boundary-write detection. **/
 
 #include "MEM_guardedalloc.h"
 
 /* to ensure strict conversions */
-#include "../../source/blender/blenlib/BLI_strict_flags.h"
+#include "../../source/dune/dune/lib/lib_strict_flags.h"
 
 #include <assert.h>
 
@@ -20,33 +16,33 @@
 const char *malloc_conf = "background_thread:true,dirty_decay_ms:4000";
 #endif
 
-/* NOTE: Keep in sync with MEM_use_lockfree_allocator(). */
-size_t (*MEM_allocN_len)(const void *vmemh) = MEM_lockfree_allocN_len;
-void (*MEM_freeN)(void *vmemh) = MEM_lockfree_freeN;
-void *(*MEM_dupallocN)(const void *vmemh) = MEM_lockfree_dupallocN;
-void *(*MEM_reallocN_id)(void *vmemh, size_t len, const char *str) = MEM_lockfree_reallocN_id;
-void *(*MEM_recallocN_id)(void *vmemh, size_t len, const char *str) = MEM_lockfree_recallocN_id;
-void *(*MEM_callocN)(size_t len, const char *str) = MEM_lockfree_callocN;
-void *(*MEM_calloc_arrayN)(size_t len, size_t size, const char *str) = MEM_lockfree_calloc_arrayN;
-void *(*MEM_mallocN)(size_t len, const char *str) = MEM_lockfree_mallocN;
-void *(*MEM_malloc_arrayN)(size_t len, size_t size, const char *str) = MEM_lockfree_malloc_arrayN;
-void *(*MEM_mallocN_aligned)(size_t len,
+/* NOTE: Keep in sync with mem_use_lockfree_allocator(). */
+size_t (*mem_allocn_len)(const void *vmemh) = mem_lockfree_allocN_len;
+void (*mem_freen)(void *vmemh) = mem_lockfree_freeN;
+void *(*mem_dupallocn)(const void *vmemh) = Zmem_lockfree_dupallocn;
+void *(*mem_reallocn_id)(void *vmemh, size_t len, const char *str) = mem_lockfree_reallocn_id;
+void *(*mem_recallocn_id)(void *vmemh, size_t len, const char *str) = mem_lockfree_recallocn_id;
+void *(*mem_callocn)(size_t len, const char *str) = mem_lockfree_callocN;
+void *(*mem_calloc_arrayn)(size_t len, size_t size, const char *str) = mem_lockfree_calloc_arrayN;
+void *(*mem_mallocn)(size_t len, const char *str) = mem_lockfree_mallocN;
+void *(*mem_malloc_arrayn)(size_t len, size_t size, const char *str) = mem_lockfree_malloc_arrayN;
+void *(*mem_mallocN_aligned)(size_t len,
                              size_t alignment,
-                             const char *str) = MEM_lockfree_mallocN_aligned;
-void (*MEM_printmemlist_pydict)(void) = MEM_lockfree_printmemlist_pydict;
-void (*MEM_printmemlist)(void) = MEM_lockfree_printmemlist;
-void (*MEM_callbackmemlist)(void (*func)(void *)) = MEM_lockfree_callbackmemlist;
-void (*MEM_printmemlist_stats)(void) = MEM_lockfree_printmemlist_stats;
-void (*MEM_set_error_callback)(void (*func)(const char *)) = MEM_lockfree_set_error_callback;
-bool (*MEM_consistency_check)(void) = MEM_lockfree_consistency_check;
-void (*MEM_set_memory_debug)(void) = MEM_lockfree_set_memory_debug;
-size_t (*MEM_get_memory_in_use)(void) = MEM_lockfree_get_memory_in_use;
-unsigned int (*MEM_get_memory_blocks_in_use)(void) = MEM_lockfree_get_memory_blocks_in_use;
-void (*MEM_reset_peak_memory)(void) = MEM_lockfree_reset_peak_memory;
-size_t (*MEM_get_peak_memory)(void) = MEM_lockfree_get_peak_memory;
+                             const char *str) = mem_lockfree_mallocN_aligned;
+void (*mem_printmemlist_pydict)(void) = mem_lockfree_printmemlist_pydict;
+void (*mem_printmemlist)(void) = mem_lockfree_printmemlist;
+void (*mem_cbmemlist)(void (*fn)(void *)) = mem_lockfree_callbackmemlist;
+void (*mem_printmemlist_stats)(void) = mem_lockfree_printmemlist_stats;
+void (*mem_set_error_callback)(void (*fn)(const char *)) = MEM_lockfree_set_error_callback;
+bool (*mem_consistency_check)(void) = mem_lockfree_consistency_check;
+void (*mem_set_memory_debug)(void) = m_lockfree_set_memory_debug;
+size_t (*mem_get_memory_in_use)(void) = mem_lockfree_get_memory_in_use;
+unsigned int (*mem_get_memory_blocks_in_use)(void) = MEM_lockfree_get_memory_blocks_in_use;
+void (*mem_reset_peak_memory)(void) = mem_lockfree_reset_peak_memory;
+size_t (*mem_get_peak_memory)(void) = mem_lockfree_get_peak_memory;
 
 #ifndef NDEBUG
-const char *(*MEM_name_ptr)(void *vmemh) = MEM_lockfree_name_ptr;
+const char *(*mem_name_ptr)(void *vmemh) = mem_lockfree_name_ptr;
 #endif
 
 void *aligned_malloc(size_t size, size_t alignment)
@@ -90,72 +86,72 @@ static void assert_for_allocator_change(void)
    * type after all allocations are freed unsafe. In fact, it should be safe to change allocator
    * type after all blocks has been freed: some regression tests do rely on this property of
    * allocators. */
-  assert(MEM_get_memory_blocks_in_use() == 0);
+  assert(mem_get_memory_blocks_in_use() == 0);
 }
 
-void MEM_use_lockfree_allocator(void)
+void mem_use_lockfree_allocator(void)
 {
   /* NOTE: Keep in sync with static initialization of the variables. */
 
-  /* TODO(sergey): Find a way to de-duplicate the logic. Maybe by requiring an explicit call
+  /* Find a way to de-duplicate the logic. Maybe by requiring an explicit call
    * to guarded allocator initialization at an application startup. */
 
   assert_for_allocator_change();
 
-  MEM_allocN_len = MEM_lockfree_allocN_len;
-  MEM_freeN = MEM_lockfree_freeN;
-  MEM_dupallocN = MEM_lockfree_dupallocN;
-  MEM_reallocN_id = MEM_lockfree_reallocN_id;
-  MEM_recallocN_id = MEM_lockfree_recallocN_id;
-  MEM_callocN = MEM_lockfree_callocN;
-  MEM_calloc_arrayN = MEM_lockfree_calloc_arrayN;
-  MEM_mallocN = MEM_lockfree_mallocN;
-  MEM_malloc_arrayN = MEM_lockfree_malloc_arrayN;
-  MEM_mallocN_aligned = MEM_lockfree_mallocN_aligned;
-  MEM_printmemlist_pydict = MEM_lockfree_printmemlist_pydict;
-  MEM_printmemlist = MEM_lockfree_printmemlist;
-  MEM_callbackmemlist = MEM_lockfree_callbackmemlist;
-  MEM_printmemlist_stats = MEM_lockfree_printmemlist_stats;
-  MEM_set_error_callback = MEM_lockfree_set_error_callback;
-  MEM_consistency_check = MEM_lockfree_consistency_check;
-  MEM_set_memory_debug = MEM_lockfree_set_memory_debug;
-  MEM_get_memory_in_use = MEM_lockfree_get_memory_in_use;
-  MEM_get_memory_blocks_in_use = MEM_lockfree_get_memory_blocks_in_use;
-  MEM_reset_peak_memory = MEM_lockfree_reset_peak_memory;
-  MEM_get_peak_memory = MEM_lockfree_get_peak_memory;
+  mem_allocN_len = mem_lockfree_allocN_len;
+  mem_freen = mem_lockfree_freen;
+  mem_dupallocn = mem_lockfree_dupallocn;
+  mem_reallocN_id = mem_lockfree_reallocn_id;
+  mem_recallocN_id = mem_lockfree_recallocn_id;
+  mem_callocN = mem_lockfree_callocn;
+  mem_calloc_arrayn = mem_lockfree_calloc_arrayn;
+  mem_mallocN = mem_lockfree_mallocn;
+  mem_malloc_arrayn = mem_lockfree_malloc_arrayn;
+  mem_mallocN_aligned = mem_lockfree_mallocN_aligned;
+  mem_printmemlist_pydict = mem_lockfree_printmemlist_pydict;
+  mem_printmemlist = mem_lockfree_printmemlist;
+  mem_callbackmemlist = mem_lockfree_cbmemlist;
+  mem_printmemlist_stats = mem_lockfree_printmemlist_stats;
+  mem_set_error_cb = mem_lockfree_set_error_cb;
+  mem_consistency_check = mem_lockfree_consistency_check;
+  mem_set_memory_debug = mem_lockfree_set_memory_debug;
+  mem_get_memory_in_use = mem_lockfree_get_memory_in_use;
+  mem_get_memory_blocks_in_use = mem_lockfree_get_memory_blocks_in_use;
+  mem_reset_peak_memory = mem_lockfree_reset_peak_memory;
+  mem_get_peak_memory = mem_lockfree_get_peak_memory;
 
 #ifndef NDEBUG
-  MEM_name_ptr = MEM_lockfree_name_ptr;
+  MEM_name_ptr = mem_lockfree_name_ptr;
 #endif
 }
 
-void MEM_use_guarded_allocator(void)
+void mem_use_guarded_allocator(void)
 {
   assert_for_allocator_change();
 
-  MEM_allocN_len = MEM_guarded_allocN_len;
-  MEM_freeN = MEM_guarded_freeN;
-  MEM_dupallocN = MEM_guarded_dupallocN;
-  MEM_reallocN_id = MEM_guarded_reallocN_id;
-  MEM_recallocN_id = MEM_guarded_recallocN_id;
-  MEM_callocN = MEM_guarded_callocN;
-  MEM_calloc_arrayN = MEM_guarded_calloc_arrayN;
-  MEM_mallocN = MEM_guarded_mallocN;
-  MEM_malloc_arrayN = MEM_guarded_malloc_arrayN;
-  MEM_mallocN_aligned = MEM_guarded_mallocN_aligned;
-  MEM_printmemlist_pydict = MEM_guarded_printmemlist_pydict;
-  MEM_printmemlist = MEM_guarded_printmemlist;
-  MEM_callbackmemlist = MEM_guarded_callbackmemlist;
-  MEM_printmemlist_stats = MEM_guarded_printmemlist_stats;
-  MEM_set_error_callback = MEM_guarded_set_error_callback;
-  MEM_consistency_check = MEM_guarded_consistency_check;
-  MEM_set_memory_debug = MEM_guarded_set_memory_debug;
-  MEM_get_memory_in_use = MEM_guarded_get_memory_in_use;
-  MEM_get_memory_blocks_in_use = MEM_guarded_get_memory_blocks_in_use;
-  MEM_reset_peak_memory = MEM_guarded_reset_peak_memory;
-  MEM_get_peak_memory = MEM_guarded_get_peak_memory;
+  mem_allocN_len = mem_guarded_allocN_len;
+  mem_freeN = mem_guarded_freeN;
+  mem_dupallocN = mem_guarded_dupallocn;
+  mem_reallocN_id = mem_guarded_reallocn_id;
+  mem_recallocN_id = mem_guarded_recallocn_id;
+  mem_callocN = mem_guarded_callocn;
+  mem_calloc_arrayn = mem_guarded_calloc_arrayn;
+  mem_mallocN = mem_guarded_mallocn;
+  mem_malloc_arrayn = mem_guarded_malloc_arrayn;
+  mem_mallocn_aligned = mem_guarded_mallocn_aligned;
+  mem_printmemlist_pydict = mem_guarded_printmemlist_pydict;
+  mem_ = mem_guarded_printmemlist;
+  mem_cbmemlist = mem_guarded_cbmemlist;
+  mem_printmemlist_stats = mem_guarded_printmemlist_stats;
+  mem_set_error_callback = mem_guarded_set_error_callback;
+  mem_consistency_check = mem_guarded_consistency_check;
+  mem_set_memory_debug = mem_guarded_set_memory_debug;
+  mem_get_memory_in_use = mem_guarded_get_memory_in_use;
+  mem_get_memory_blocks_in_use = mem_guarded_get_memory_blocks_in_use;
+  mem_reset_peak_memory = mem_guarded_reset_peak_memory;
+  mem_get_peak_memory = mem_guarded_get_peak_memory;
 
 #ifndef NDEBUG
-  MEM_name_ptr = MEM_guarded_name_ptr;
+  mem_name_ptr = mem_guarded_name_ptr;
 #endif
 }
