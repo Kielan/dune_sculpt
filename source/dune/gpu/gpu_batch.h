@@ -74,14 +74,14 @@ typedef struct GpuBatch {
 
 GpuBatch *gpu_batch_calloc(void);
 GpuBatch *gpu_batch_create_ex(GpuPrimType prim,
-                              GPUVertBuf *vert,
-                              GPUIndexBuf *elem,
-                              eGPUBatchFlag owns_flag);
-void gpu_batch_init_ex(GPUBatch *batch,
-                       GPUPrimType prim,
-                       GPUVertBuf *vert,
-                       GPUIndexBuf *elem,
-                       eGPUBatchFlag owns_flag);
+                              GpuVertBuf *vert,
+                              GpuIndexBuf *elem,
+                              eGpuBatchFlag owns_flag);
+void gpu_batch_init_ex(GpuBatch *batch,
+                       GpuPrimType prim,
+                       GpuVertBuf *vert,
+                       GpuIndexBuf *elem,
+                       eGpuBatchFlag owns_flag);
 /**
  * This will share the VBOs with the new batch.
  */
@@ -96,7 +96,7 @@ void gpu_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src);
 void gpu_batch_clear(GPUBatch *);
 
 /**
- * \note Verts & elem are not discarded.
+ * Verts & elem are not discarded.
  */
 void gpu_batch_discard(GPUBatch *);
 
@@ -107,18 +107,18 @@ void gpu_batch_instbuf_set(GPUBatch *, GPUVertBuf *, bool own_vbo); /* Instancin
 /**
  * Override any previously assigned elem (and free it if owned).
  */
-void gpu_batch_elembuf_set(GPUBatch *batch, GPUIndexBuf *elem, bool own_ibo);
+void gpu_batch_elembuf_set(GpuBatch *batch, GPUIndexBuf *elem, bool own_ibo);
 
 int gpu_batch_instbuf_add_ex(GPUBatch *, GPUVertBuf *, bool own_vbo);
 /**
  * Returns the index of verts in the batch.
  */
-int gpu_batch_vertbuf_add_ex(GPUBatch *, GPUVertBuf *, bool own_vbo);
-bool gpu_batch_vertbuf_has(GPUBatch *, GPUVertBuf *);
+int gpu_batch_vertbuf_add_ex(GpuBatch *, GPUVertBuf *, bool own_vbo);
+bool gpu_batch_vertbuf_has(GpuBatch *, GPUVertBuf *);
 
 #define gpu_batch_vertbuf_add(batch, verts) GPU_batch_vertbuf_add_ex(batch, verts, false)
 
-void gpu_batch_set_shader(GPUBatch *batch, GPUShader *shader);
+void gpu_batch_set_shader(GpuBatch *batch, GPUShader *shader);
 /**
  * Bind program bound to IMM to the batch.
  *
