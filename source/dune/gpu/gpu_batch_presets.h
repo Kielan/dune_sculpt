@@ -1,14 +1,12 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * Batched geometry rendering is powered by the GPU library.
  * This file contains any additions or modifications specific to Blender.
  */
 
 #pragma once
 
-#include "BLI_compiler_attrs.h"
-#include "BLI_sys_types.h"
+#include "lib_compiler_attrs.h"
+#include "lib_sys_types.h"
 
 #ifdef __cplusplus
 extern "C" {
