@@ -87,38 +87,38 @@ void gpu_batch_init_ex(GPUBatch *batch,
  */
 void gpu_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src);
 
-#define GPU_batch_create(prim, verts, elem) GPU_batch_create_ex(prim, verts, elem, 0)
-#define GPU_batch_init(batch, prim, verts, elem) GPU_batch_init_ex(batch, prim, verts, elem, 0)
+#define gpu_batch_create(prim, verts, elem) gpu_batch_create_ex(prim, verts, elem, 0)
+#define gpu_batch_init(batch, prim, verts, elem) gpu_batch_init_ex(batch, prim, verts, elem, 0)
 
 /**
  * Same as discard but does not free. (does not call free callback).
  */
-void GPU_batch_clear(GPUBatch *);
+void gpu_batch_clear(GPUBatch *);
 
 /**
  * \note Verts & elem are not discarded.
  */
-void GPU_batch_discard(GPUBatch *);
+void gpu_batch_discard(GPUBatch *);
 
 /**
- * \note Override ONLY the first instance VBO (and free them if owned).
+ * Override ONLY the first instance VBO (and free them if owned).
  */
-void GPU_batch_instbuf_set(GPUBatch *, GPUVertBuf *, bool own_vbo); /* Instancing */
+void gpu_batch_instbuf_set(GPUBatch *, GPUVertBuf *, bool own_vbo); /* Instancing */
 /**
- * \note Override any previously assigned elem (and free it if owned).
+ * Override any previously assigned elem (and free it if owned).
  */
-void GPU_batch_elembuf_set(GPUBatch *batch, GPUIndexBuf *elem, bool own_ibo);
+void gpu_batch_elembuf_set(GPUBatch *batch, GPUIndexBuf *elem, bool own_ibo);
 
-int GPU_batch_instbuf_add_ex(GPUBatch *, GPUVertBuf *, bool own_vbo);
+int gpu_batch_instbuf_add_ex(GPUBatch *, GPUVertBuf *, bool own_vbo);
 /**
  * Returns the index of verts in the batch.
  */
-int GPU_batch_vertbuf_add_ex(GPUBatch *, GPUVertBuf *, bool own_vbo);
-bool GPU_batch_vertbuf_has(GPUBatch *, GPUVertBuf *);
+int gpu_batch_vertbuf_add_ex(GPUBatch *, GPUVertBuf *, bool own_vbo);
+bool gpu_batch_vertbuf_has(GPUBatch *, GPUVertBuf *);
 
-#define GPU_batch_vertbuf_add(batch, verts) GPU_batch_vertbuf_add_ex(batch, verts, false)
+#define gpu_batch_vertbuf_add(batch, verts) GPU_batch_vertbuf_add_ex(batch, verts, false)
 
-void GPU_batch_set_shader(GPUBatch *batch, GPUShader *shader);
+void gpu_batch_set_shader(GPUBatch *batch, GPUShader *shader);
 /**
  * Bind program bound to IMM to the batch.
  *
@@ -148,16 +148,16 @@ void GPU_batch_program_set_builtin_with_config(GPUBatch *batch,
 #define GPU_batch_uniform_2fv_array(batch, name, len, val) \
   GPU_shader_uniform_2fv_array((batch)->shader, name, len, val);
 #define GPU_batch_uniform_4fv_array(batch, name, len, val) \
-  GPU_shader_uniform_4fv_array((batch)->shader, name, len, val);
+  gpu_shader_uniform_4fv_array((batch)->shader, name, len, val);
 #define GPU_batch_uniform_mat4(batch, name, val) \
-  GPU_shader_uniform_mat4((batch)->shader, name, val);
-#define GPU_batch_uniformbuf_bind(batch, name, ubo) \
-  GPU_uniformbuf_bind(ubo, GPU_shader_get_uniform_block_binding((batch)->shader, name));
-#define GPU_batch_texture_bind(batch, name, tex) \
-  GPU_texture_bind(tex, GPU_shader_get_texture_binding((batch)->shader, name));
+  gpu_shader_uniform_mat4((batch)->shader, name, val);
+#define gpu_batch_uniformbuf_bind(batch, name, ubo) \
+  gpu_uniformbuf_bind(ubo, GPU_shader_get_uniform_block_binding((batch)->shader, name));
+#define gpu_batch_texture_bind(batch, name, tex) \
+  gpu_texture_bind(tex, GPU_shader_get_texture_binding((batch)->shader, name));
 
-void GPU_batch_draw(GPUBatch *batch);
-void GPU_batch_draw_range(GPUBatch *batch, int v_first, int v_count);
+void gpu_batch_draw(GPUBatch *batch);
+void gpu_batch_draw_range(GPUBatch *batch, int v_first, int v_count);
 /**
  * Draw multiple instance of a batch without having any instance attributes.
  */
