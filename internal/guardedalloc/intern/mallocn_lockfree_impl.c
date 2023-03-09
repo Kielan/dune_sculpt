@@ -1,8 +1,4 @@
-/** \file
- * \ingroup intern_mem
- *
- * Memory allocation which keeps track on allocated memory counters
- */
+/** Memory allocation which keeps track on allocated memory counters */
 
 #include <stdarg.h>
 #include <stdio.h> /* printf */
@@ -10,10 +6,10 @@
 #include <string.h> /* memcpy */
 #include <sys/types.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 /* to ensure strict conversions */
-#include "../../source/blender/blenlib/BLI_strict_flags.h"
+#include "../../source/dune/dunelib/lib_strict_flags.h"
 
 #include "atomic_ops.h"
 #include "mallocn_intern.h"
@@ -32,7 +28,7 @@ static unsigned int totblock = 0;
 static size_t mem_in_use = 0, peak_mem = 0;
 static bool malloc_debug_memset = false;
 
-static void (*error_callback)(const char *) = NULL;
+static void (*error_cb)(const char *) = NULL;
 
 enum {
   MEMHEAD_ALIGN_FLAG = 1,
@@ -74,7 +70,7 @@ print_error(const char *str, ...)
   }
 }
 
-size_t MEM_lockfree_allocN_len(const void *vmemh)
+size_t men_lockfree_allocN_len(const void *vmemh)
 {
   if (vmemh) {
     return MEMHEAD_FROM_PTR(vmemh)->len & ~((size_t)(MEMHEAD_ALIGN_FLAG));
@@ -83,7 +79,7 @@ size_t MEM_lockfree_allocN_len(const void *vmemh)
   return 0;
 }
 
-void MEM_lockfree_freeN(void *vmemh)
+void mem_lockfree_freen(void *vmemh)
 {
   if (leak_detector_has_run) {
     print_error("%s\n", free_after_leak_detection_message);
@@ -115,39 +111,39 @@ void MEM_lockfree_freeN(void *vmemh)
   }
 }
 
-void *MEM_lockfree_dupallocN(const void *vmemh)
+void *mem_lockfree_dupallocN(const void *vmemh)
 {
   void *newp = NULL;
   if (vmemh) {
     MemHead *memh = MEMHEAD_FROM_PTR(vmemh);
-    const size_t prev_size = MEM_lockfree_allocN_len(vmemh);
+    const size_t prev_size = mem_lockfree_allocN_len(vmemh);
     if (UNLIKELY(MEMHEAD_IS_ALIGNED(memh))) {
       MemHeadAligned *memh_aligned = MEMHEAD_ALIGNED_FROM_PTR(vmemh);
-      newp = MEM_lockfree_mallocN_aligned(
+      newp = mem_lockfree_mallocn_aligned(
           prev_size, (size_t)memh_aligned->alignment, "dupli_malloc");
     }
     else {
-      newp = MEM_lockfree_mallocN(prev_size, "dupli_malloc");
+      newp = mem_lockfree_mallocn(prev_size, "dupli_malloc");
     }
     memcpy(newp, vmemh, prev_size);
   }
   return newp;
 }
 
-void *MEM_lockfree_reallocN_id(void *vmemh, size_t len, const char *str)
+void *mem_lockfree_reallocn_id(void *vmemh, size_t len, const char *str)
 {
   void *newp = NULL;
 
   if (vmemh) {
     MemHead *memh = MEMHEAD_FROM_PTR(vmemh);
-    size_t old_len = MEM_lockfree_allocN_len(vmemh);
+    size_t old_len = mem_lockfree_allocn_len(vmemh);
 
     if (LIKELY(!MEMHEAD_IS_ALIGNED(memh))) {
-      newp = MEM_lockfree_mallocN(len, "realloc");
+      newp = mem_lockfree_mallocn(len, "realloc");
     }
     else {
       MemHeadAligned *memh_aligned = MEMHEAD_ALIGNED_FROM_PTR(vmemh);
-      newp = MEM_lockfree_mallocN_aligned(len, (size_t)memh_aligned->alignment, "realloc");
+      newp = mem_lockfree_mallocn_aligned(len, (size_t)memh_aligned->alignment, "realloc");
     }
 
     if (newp) {
@@ -161,10 +157,10 @@ void *MEM_lockfree_reallocN_id(void *vmemh, size_t len, const char *str)
       }
     }
 
-    MEM_lockfree_freeN(vmemh);
+    mem_lockfree_freen(vmemh);
   }
   else {
-    newp = MEM_lockfree_mallocN(len, str);
+    newp = mem_lockfree_mallocn(len, str);
   }
 
   return newp;
@@ -398,7 +394,7 @@ size_t mem_lockfree_get_memory_in_use(void)
   return mem_in_use;
 }
 
-unsigned int MEM_lockfree_get_memory_blocks_in_use(void)
+unsigned int mem_lockfree_get_memory_blocks_in_use(void)
 {
   return totblock;
 }
