@@ -70,7 +70,7 @@ print_error(const char *str, ...)
   }
 }
 
-size_t men_lockfree_allocN_len(const void *vmemh)
+size_t men_lockfree_allocn_len(const void *vmemh)
 {
   if (vmemh) {
     return MEMHEAD_FROM_PTR(vmemh)->len & ~((size_t)(MEMHEAD_ALIGN_FLAG));
@@ -111,7 +111,7 @@ void mem_lockfree_freen(void *vmemh)
   }
 }
 
-void *mem_lockfree_dupallocN(const void *vmemh)
+void *mem_lockfree_dupallocn(const void *vmemh)
 {
   void *newp = NULL;
   if (vmemh) {
@@ -166,7 +166,7 @@ void *mem_lockfree_reallocn_id(void *vmemh, size_t len, const char *str)
   return newp;
 }
 
-void *MEM_lockfree_recallocN_id(void *vmemh, size_t len, const char *str)
+void *mem_lockfree_recallocn_id(void *vmemh, size_t len, const char *str)
 {
   void *newp = NULL;
 
@@ -179,7 +179,7 @@ void *MEM_lockfree_recallocN_id(void *vmemh, size_t len, const char *str)
     }
     else {
       MemHeadAligned *memh_aligned = MEMHEAD_ALIGNED_FROM_PTR(vmemh);
-      newp = MEM_lockfree_mallocN_aligned(len, (size_t)memh_aligned->alignment, "recalloc");
+      newp = mem_lockfree_mallocn_aligned(len, (size_t)memh_aligned->alignment, "recalloc");
     }
 
     if (newp) {
@@ -198,16 +198,16 @@ void *MEM_lockfree_recallocN_id(void *vmemh, size_t len, const char *str)
       }
     }
 
-    MEM_lockfree_freeN(vmemh);
+    mem_lockfree_freen(vmemh);
   }
   else {
-    newp = MEM_lockfree_callocN(len, str);
+    newp = mem_lockfree_callocn(len, str);
   }
 
   return newp;
 }
 
-void *MEM_lockfree_callocN(size_t len, const char *str)
+void *mem_lockfree_callocn(size_t len, const char *str)
 {
   MemHead *memh;
 
@@ -230,7 +230,7 @@ void *MEM_lockfree_callocN(size_t len, const char *str)
   return NULL;
 }
 
-void *MEM_lockfree_calloc_arrayN(size_t len, size_t size, const char *str)
+void *mem_lockfree_calloc_arrayn(size_t len, size_t size, const char *str)
 {
   size_t total_size;
   if (UNLIKELY(!MEM_size_safe_multiply(len, size, &total_size))) {
@@ -245,10 +245,10 @@ void *MEM_lockfree_calloc_arrayN(size_t len, size_t size, const char *str)
     return NULL;
   }
 
-  return MEM_lockfree_callocN(total_size, str);
+  return mem_lockfree_callocn(total_size, str);
 }
 
-void *MEM_lockfree_mallocN(size_t len, const char *str)
+void *mem_lockfree_mallocn(size_t len, const char *str)
 {
   MemHead *memh;
 
@@ -275,7 +275,7 @@ void *MEM_lockfree_mallocN(size_t len, const char *str)
   return NULL;
 }
 
-void *MEM_lockfree_malloc_arrayN(size_t len, size_t size, const char *str)
+void *mem_lockfree_malloc_arrayn(size_t len, size_t size, const char *str)
 {
   size_t total_size;
   if (UNLIKELY(!MEM_size_safe_multiply(len, size, &total_size))) {
@@ -293,7 +293,7 @@ void *MEM_lockfree_malloc_arrayN(size_t len, size_t size, const char *str)
   return mem_lockfree_mallocN(total_size, str);
 }
 
-void *mem_lockfree_mallocN_aligned(size_t len, size_t alignment, const char *str)
+void *mem_lockfree_mallocn_aligned(size_t len, size_t alignment, const char *str)
 {
   /* Huge alignment values doesn't make sense and they wouldn't fit into 'short' used in the
    * MemHead. */
@@ -355,7 +355,7 @@ void mem_lockfree_printmemlist(void)
 }
 
 /* unused */
-void mem_lockfree_callbackmemlist(void (*func)(void *))
+void mem_lockfree_cbmemlist(void (*func)(void *))
 {
   (void)func; /* Ignored. */
 }
@@ -374,9 +374,9 @@ void mem_lockfree_printmemlist_stats(void)
 #endif
 }
 
-void mem_lockfree_set_error_callback(void (*func)(const char *))
+void mem_lockfree_set_error_cb(void (*fn)(const char *))
 {
-  error_callback = func;
+  error_cb = fn;
 }
 
 bool mem_lockfree_consistency_check(void)
