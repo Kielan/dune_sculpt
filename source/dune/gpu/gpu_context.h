@@ -5,17 +5,17 @@
 
 #pragma once
 
-#include "GPU_batch.h"
-#include "GPU_common.h"
-#include "GPU_platform.h"
+#include "gpu_batch.h"
+#include "gpu_common.h"
+#include "gpu_platform.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void GPU_backend_init(eGPUBackendType backend);
-void GPU_backend_exit(void);
-bool GPU_backend_supported(eGPUBackendType type);
+void gpu_backend_init(eGPUBackendType backend);
+void gpu_backend_exit(void);
+bool gpu_backend_supported(eGPUBackendType type);
 
 eGPUBackendType GPU_backend_get_type(void);
 
