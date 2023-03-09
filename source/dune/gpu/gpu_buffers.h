@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-struct BMesh;
+struct DMesh;
 struct CCGElem;
 struct CCGKey;
 struct DMFlagMat;
@@ -32,7 +32,7 @@ typedef struct GPU_PBVH_Buffers GPU_PBVH_Buffers;
  *
  * Threaded: do not call any functions that use OpenGL calls!
  */
-GPU_PBVH_Buffers *GPU_pbvh_mesh_buffers_build(const struct MPoly *mpoly,
+GPU_PBVH_Buffers *gpu_pbvh_mesh_buffers_build(const struct MPoly *mpoly,
                                               const struct MLoop *mloop,
                                               const struct MLoopTri *looptri,
                                               const struct MVert *mvert,
@@ -44,18 +44,18 @@ GPU_PBVH_Buffers *GPU_pbvh_mesh_buffers_build(const struct MPoly *mpoly,
 /**
  * Threaded: do not call any functions that use OpenGL calls!
  */
-GPU_PBVH_Buffers *GPU_pbvh_grid_buffers_build(int totgrid, unsigned int **grid_hidden);
+GPU_PBVH_Buffers *gpu_pbvh_grid_buffers_build(int totgrid, unsigned int **grid_hidden);
 
 /**
  * Threaded: do not call any functions that use OpenGL calls!
  */
-GPU_PBVH_Buffers *GPU_pbvh_bmesh_buffers_build(bool smooth_shading);
+GPU_PBVH_Buffers *gpu_pbvh_bmesh_buffers_build(bool smooth_shading);
 
 /**
  * Free part of data for update. Not thread safe, must run in OpenGL main thread.
  */
-void GPU_pbvh_bmesh_buffers_update_free(GPU_PBVH_Buffers *buffers);
-void GPU_pbvh_grid_buffers_update_free(GPU_PBVH_Buffers *buffers,
+void gpu_pbvh_bmesh_buffers_update_free(GPU_PBVH_Buffers *buffers);
+void gpu_pbvh_grid_buffers_update_free(GPU_PBVH_Buffers *buffers,
                                        const struct DMFlagMat *grid_flag_mats,
                                        const int *grid_indices);
 
@@ -71,7 +71,7 @@ enum {
 /**
  * Threaded: do not call any functions that use OpenGL calls!
  */
-void GPU_pbvh_mesh_buffers_update(GPU_PBVH_Buffers *buffers,
+void gpu_pbvh_mesh_buffers_update(GPU_PBVH_Buffers *buffers,
                                   const struct MVert *mvert,
                                   const float (*vert_normals)[3],
                                   const float *vmask,
