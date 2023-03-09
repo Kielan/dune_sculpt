@@ -1,18 +1,16 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * GPU geometry batch
  * Contains VAOs + VBOs + Shader representing a drawable entity.
  */
 
 #pragma once
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "GPU_index_buffer.h"
-#include "GPU_shader.h"
-#include "GPU_uniform_buffer.h"
-#include "GPU_vertex_buffer.h"
+#include "gpu_index_buffer.h"
+#include "gpu_shader.h"
+#include "gpu_uniform_buffer.h"
+#include "gpu_vertex_buffer.h"
 
 #define GPU_BATCH_VBO_MAX_LEN 16
 #define GPU_BATCH_INST_VBO_MAX_LEN 2
@@ -74,12 +72,12 @@ typedef struct GPUBatch {
   struct GPUShader *shader;
 } GPUBatch;
 
-GPUBatch *GPU_batch_calloc(void);
-GPUBatch *GPU_batch_create_ex(GPUPrimType prim,
+GPUBatch *gpu_batch_calloc(void);
+GPUBatch *gpu_batch_create_ex(GPUPrimType prim,
                               GPUVertBuf *vert,
                               GPUIndexBuf *elem,
                               eGPUBatchFlag owns_flag);
-void GPU_batch_init_ex(GPUBatch *batch,
+void gpu_batch_init_ex(GPUBatch *batch,
                        GPUPrimType prim,
                        GPUVertBuf *vert,
                        GPUIndexBuf *elem,
@@ -87,7 +85,7 @@ void GPU_batch_init_ex(GPUBatch *batch,
 /**
  * This will share the VBOs with the new batch.
  */
-void GPU_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src);
+void gpu_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src);
 
 #define GPU_batch_create(prim, verts, elem) GPU_batch_create_ex(prim, verts, elem, 0)
 #define GPU_batch_init(batch, prim, verts, elem) GPU_batch_init_ex(batch, prim, verts, elem, 0)
