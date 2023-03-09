@@ -26,23 +26,22 @@ int gpu_max_vertex_attribs(void);
 int gpu_max_varying_floats(void);
 int gpu_max_shader_storage_buffer_bindings(void);
 
-int GPU_extensions_len(void);
-const char *GPU_extension_get(int i);
+int gpu_extensions_len(void);
+const char *gpu_extension_get(int i);
+int gpu_texture_size_with_limit(int res, bool limit_gl_texture_size);
 
-int GPU_texture_size_with_limit(int res, bool limit_gl_texture_size);
+bool gpu_mip_render_workaround(void);
+bool gpu_depth_blitting_workaround(void);
+bool gpu_use_main_context_workaround(void);
+bool gpu_use_hq_normals_workaround(void);
+bool gpu_crappy_amd_driver(void);
 
-bool GPU_mip_render_workaround(void);
-bool GPU_depth_blitting_workaround(void);
-bool GPU_use_main_context_workaround(void);
-bool GPU_use_hq_normals_workaround(void);
-bool GPU_crappy_amd_driver(void);
+bool gpu_compute_shader_support(void);
+bool gpu_shader_storage_buffer_objects_support(void);
+bool gpu_shader_image_load_store_support(void);
 
-bool GPU_compute_shader_support(void);
-bool GPU_shader_storage_buffer_objects_support(void);
-bool GPU_shader_image_load_store_support(void);
-
-bool GPU_mem_stats_supported(void);
-void GPU_mem_stats_get(int *totalmem, int *freemem);
+bool gpu_mem_stats_supported(void);
+void gpu_mem_stats_get(int *totalmem, int *freemem);
 
 /**
  * Return support for the active context + window.
