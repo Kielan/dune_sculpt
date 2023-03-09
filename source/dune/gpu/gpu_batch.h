@@ -17,7 +17,7 @@
 #define GPU_BATCH_VAO_STATIC_LEN 3
 #define GPU_BATCH_VAO_DYN_ALLOC_COUNT 16
 
-typedef enum eGPUBatchFlag {
+typedef enum eGpuBatchFlag {
   /** Invalid default state. */
   GPU_BATCH_INVALID = 0,
 
@@ -39,11 +39,11 @@ typedef enum eGPUBatchFlag {
   GPU_BATCH_BUILDING = (1 << 26),
   /** Cached data need to be rebuild. (VAO, PSO, ...) */
   GPU_BATCH_DIRTY = (1 << 27),
-} eGPUBatchFlag;
+} eGpuBatchFlag;
 
 #define GPU_BATCH_OWNS_NONE GPU_BATCH_INVALID
 
-BLI_STATIC_ASSERT(GPU_BATCH_OWNS_INDEX < GPU_BATCH_INIT,
+LIB_STATIC_ASSERT(GPU_BATCH_OWNS_INDEX < GPU_BATCH_INIT,
                   "eGPUBatchFlag: Error: status flags are shadowed by the ownership bits!")
 
 ENUM_OPERATORS(eGPUBatchFlag, GPU_BATCH_DIRTY)
@@ -85,7 +85,7 @@ void gpu_batch_init_ex(GpuBatch *batch,
 /**
  * This will share the VBOs with the new batch.
  */
-void gpu_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src);
+void gpu_batch_copy(GpuBatch *batch_dst, GPUBatch *batch_src);
 
 #define gpu_batch_create(prim, verts, elem) gpu_batch_create_ex(prim, verts, elem, 0)
 #define gpu_batch_init(batch, prim, verts, elem) gpu_batch_init_ex(batch, prim, verts, elem, 0)
