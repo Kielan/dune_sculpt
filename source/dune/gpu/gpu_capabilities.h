@@ -46,7 +46,7 @@ void gpu_mem_stats_get(int *totalmem, int *freemem);
 /**
  * Return support for the active context + window.
  */
-bool GPU_stereo_quadbuffer_support(void);
+bool gpu_stereo_quadbuffer_support(void);
 
 #ifdef __cplusplus
 }
