@@ -87,7 +87,7 @@ extern char free_after_leak_detection_message[];
 size_t mem_lockfree_allocn_len(const void *vmemh) ATTR_WARN_UNUSED_RESULT;
 void mem_lockfree_freen(void *vmemh);
 void *mem_lockfree_dupallocn(const void *vmemh) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT;
-void *mem_lockfree_reallocN_id(void *vmemh,
+void *mem_lockfree_reallocn_id(void *vmemh,
                                size_t len,
                                const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(2);
@@ -95,19 +95,19 @@ void *mem_lockfree_recallocn_id(void *vmemh,
                                 size_t len,
                                 const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(2);
-void *mem_lockfree_callocN(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
+void *mem_lockfree_callocn(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1) ATTR_NONNULL(2);
-void *mem_lockfree_calloc_arrayN(size_t len,
+void *mem_lockfree_calloc_arrayn(size_t len,
                                  size_t size,
                                  const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1, 2) ATTR_NONNULL(3);
-void *mem_lockfree_mallocN(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
+void *mem_lockfree_mallocn(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1) ATTR_NONNULL(2);
 void *mem_lockfree_malloc_arrayN(size_t len,
                                  size_t size,
                                  const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1, 2) ATTR_NONNULL(3);
-void *mem_lockfree_mallocN_aligned(size_t len,
+void *mem_lockfree_mallocn_aligned(size_t len,
                                    size_t alignment,
                                    const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1) ATTR_NONNULL(3);
@@ -138,35 +138,35 @@ void *mem_guarded_recallocn_id(void *vmemh,
                                size_t len,
                                const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(2);
-void *MEM_guarded_callocN(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
+void *mem_guarded_callocn(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1) ATTR_NONNULL(2);
-void *MEM_guarded_calloc_arrayN(size_t len,
+void *mem_guarded_calloc_arrayN(size_t len,
                                 size_t size,
                                 const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1, 2) ATTR_NONNULL(3);
-void *MEM_guarded_mallocN(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
+void *mem_guarded_mallocn(size_t len, const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1) ATTR_NONNULL(2);
-void *MEM_guarded_malloc_arrayN(size_t len,
+void *mem_guarded_malloc_arrayn(size_t len,
                                 size_t size,
                                 const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1, 2) ATTR_NONNULL(3);
-void *MEM_guarded_mallocN_aligned(size_t len,
+void *mem_guarded_mallocN_aligned(size_t len,
                                   size_t alignment,
                                   const char *str) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT
     ATTR_ALLOC_SIZE(1) ATTR_NONNULL(3);
-void MEM_guarded_printmemlist_pydict(void);
-void MEM_guarded_printmemlist(void);
-void MEM_guarded_callbackmemlist(void (*func)(void *));
-void MEM_guarded_printmemlist_stats(void);
-void MEM_guarded_set_error_callback(void (*func)(const char *));
-bool MEM_guarded_consistency_check(void);
-void MEM_guarded_set_memory_debug(void);
-size_t MEM_guarded_get_memory_in_use(void);
-unsigned int MEM_guarded_get_memory_blocks_in_use(void);
-void MEM_guarded_reset_peak_memory(void);
-size_t MEM_guarded_get_peak_memory(void) ATTR_WARN_UNUSED_RESULT;
+void mem_guarded_printmemlist_pydict(void);
+void mem_guarded_printmemlist(void);
+void mem_guarded_cbmemlist(void (*fn)(void *));
+void mem_guarded_printmemlist_stats(void);
+void mem_guarded_set_error_cb(void (*fn)(const char *));
+bool mem_guarded_consistency_check(void);
+void mem_guarded_set_memory_debug(void);
+size_t mem_guarded_get_memory_in_use(void);
+unsigned int mem_guarded_get_memory_blocks_in_use(void);
+void mem_guarded_reset_peak_memory(void);
+size_t mem_guarded_get_peak_memory(void) ATTR_WARN_UNUSED_RESULT;
 #ifndef NDEBUG
-const char *MEM_guarded_name_ptr(void *vmemh);
+const char *mem_guarded_name_ptr(void *vmemh);
 #endif
 
 #ifdef __cplusplus
