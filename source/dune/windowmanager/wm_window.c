@@ -5,14 +5,14 @@ static GHOST_SystemHandle g_system = NULL;
 
 /* Direct OpenGL Context Management */
 
-void *WM_opengl_context_create(void)
+void *wm_opengl_context_create(void)
 {
   /* On Windows there is a problem creating contexts that share lists
    * from one context that is current in another thread.
    * So we should call this function only on the main thread.
    */
-  LIB_assert(LIB_thread_is_main());
-  LIB_assert(GPU_framebuffer_active_get() == GPU_framebuffer_back_get());
+  lib_assert(lib_thread_is_main());
+  lib_assert(gpu_framebuffer_active_get() == gpu_framebuffer_back_get());
 
   GHOST_GLSettings glSettings = {0};
   if (G.debug & G_DEBUG_GPU) {
@@ -21,19 +21,19 @@ void *WM_opengl_context_create(void)
   return GHOST_CreateOpenGLContext(g_system, glSettings);
 }
 
-void WM_opengl_context_activate(void *context)
+void wm_opengl_context_activate(void *context)
 {
-  LIB_assert(GPU_framebuffer_active_get() == GPU_framebuffer_back_get());
+  lib_assert(gpu_framebuffer_active_get() == gpu_framebuffer_back_get());
   GHOST_ActivateOpenGLContext((GHOST_ContextHandle)context);
 }
 
 /* Ghost Init/Exit */
 
 /**
- * #bContext can be null in background mode because we don't
+ * #DContext can be null in background mode because we don't
  * need to event handling.
  */
-void wm_ghost_init(bContext *C)
+void wm_ghost_init(DContext *C)
 {
   if (!g_system) {
     GHOST_EventConsumerHandle consumer;
