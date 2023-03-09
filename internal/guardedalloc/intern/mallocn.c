@@ -1,6 +1,6 @@
 /** Guarded memory allocation, and boundary-write detection. **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 /* to ensure strict conversions */
 #include "../../source/dune/dune/lib/lib_strict_flags.h"
