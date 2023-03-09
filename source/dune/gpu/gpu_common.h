@@ -10,7 +10,7 @@
 #  define TRUST_NO_ONE 1
 #endif
 
-#include "BLI_sys_types.h"
+#include "lib_sys_types.h"
 #include <stdbool.h>
 #include <stdint.h>
 
