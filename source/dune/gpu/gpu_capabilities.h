@@ -1,6 +1,4 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * GPU Capabilities & workarounds
  * This module expose the reported implementation limits & enabled
  * workaround for drivers that needs specific code-paths.
@@ -12,21 +10,21 @@
 extern "C" {
 #endif
 
-int GPU_max_texture_size(void);
-int GPU_max_texture_layers(void);
-int GPU_max_textures(void);
-int GPU_max_textures_vert(void);
-int GPU_max_textures_geom(void);
-int GPU_max_textures_frag(void);
-int GPU_max_work_group_count(int index);
-int GPU_max_work_group_size(int index);
-int GPU_max_uniforms_vert(void);
-int GPU_max_uniforms_frag(void);
-int GPU_max_batch_indices(void);
-int GPU_max_batch_vertices(void);
-int GPU_max_vertex_attribs(void);
-int GPU_max_varying_floats(void);
-int GPU_max_shader_storage_buffer_bindings(void);
+int gpu_max_texture_size(void);
+int gpu_max_texture_layers(void);
+int gpu_max_textures(void);
+int gpu_max_textures_vert(void);
+int gpu_max_textures_geom(void);
+int gpu_max_textures_frag(void);
+int gpu_max_work_group_count(int index);
+int gpu_max_work_group_size(int index);
+int gpu_max_uniforms_vert(void);
+int gpu_max_uniforms_frag(void);
+int gpu_max_batch_indices(void);
+int gpu_max_batch_vertices(void);
+int gpu_max_vertex_attribs(void);
+int gpu_max_varying_floats(void);
+int gpu_max_shader_storage_buffer_bindings(void);
 
 int GPU_extensions_len(void);
 const char *GPU_extension_get(int i);
