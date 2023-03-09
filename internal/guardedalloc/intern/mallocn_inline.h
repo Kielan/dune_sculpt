@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-MEM_INLINE bool MEM_size_safe_multiply(size_t a, size_t b, size_t *result)
+MEM_INLINE bool mem_size_safe_multiply(size_t a, size_t b, size_t *result)
 {
   /* A size_t with its high-half bits all set to 1. */
   const size_t high_bits = SIZE_MAX << (sizeof(size_t) * 8 / 2);
