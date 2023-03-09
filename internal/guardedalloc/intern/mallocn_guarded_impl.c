@@ -422,7 +422,7 @@ static void make_memhead_header(MemHead *memh, size_t len, const char *str)
   mem_unlock_thread();
 }
 
-void *MEM_guarded_mallocN(size_t len, const char *str)
+void *mem_guarded_mallocn(size_t len, const char *str)
 {
   MemHead *memh;
 
@@ -450,7 +450,7 @@ void *MEM_guarded_mallocN(size_t len, const char *str)
   return NULL;
 }
 
-void *MEM_guarded_malloc_arrayN(size_t len, size_t size, const char *str)
+void *mem_guarded_malloc_arrayN(size_t len, size_t size, const char *str)
 {
   size_t total_size;
   if (UNLIKELY(!MEM_size_safe_multiply(len, size, &total_size))) {
@@ -465,10 +465,10 @@ void *MEM_guarded_malloc_arrayN(size_t len, size_t size, const char *str)
     return NULL;
   }
 
-  return MEM_guarded_mallocN(total_size, str);
+  return mem_guarded_mallocn(total_size, str);
 }
 
-void *MEM_guarded_mallocN_aligned(size_t len, size_t alignment, const char *str)
+void *mem_guarded_mallocn_aligned(size_t len, size_t alignment, const char *str)
 {
   /* We only support alignment to a power of two. */
   assert(IS_POW2(alignment));
@@ -523,7 +523,7 @@ void *MEM_guarded_mallocN_aligned(size_t len, size_t alignment, const char *str)
   return NULL;
 }
 
-void *MEM_guarded_callocN(size_t len, const char *str)
+void *mem_guarded_callocn(size_t len, const char *str)
 {
   MemHead *memh;
 
@@ -547,10 +547,10 @@ void *MEM_guarded_callocN(size_t len, const char *str)
   return NULL;
 }
 
-void *MEM_guarded_calloc_arrayN(size_t len, size_t size, const char *str)
+void *mem_guarded_calloc_arrayn(size_t len, size_t size, const char *str)
 {
   size_t total_size;
-  if (UNLIKELY(!MEM_size_safe_multiply(len, size, &total_size))) {
+  if (UNLIKELY(!mem_size_safe_multiply(len, size, &total_size))) {
     print_error(
         "Calloc array aborted due to integer overflow: "
         "len=" SIZET_FORMAT "x" SIZET_FORMAT " in %s, total %u\n",
@@ -562,7 +562,7 @@ void *MEM_guarded_calloc_arrayN(size_t len, size_t size, const char *str)
     return NULL;
   }
 
-  return MEM_guarded_callocN(total_size, str);
+  return mem_guarded_callocn(total_size, str);
 }
 
 /* Memory statistics print */
@@ -595,7 +595,7 @@ static int compare_len(const void *p1, const void *p2)
   return -1;
 }
 
-void MEM_guarded_printmemlist_stats(void)
+void mem_guarded_printmemlist_stats(void)
 {
   MemHead *membl;
   MemPrintBlock *pb, *printblock;
@@ -776,7 +776,7 @@ static void MEM_guarded_printmemlist_internal(int pydict)
   mem_unlock_thread();
 }
 
-void MEM_guarded_callbackmemlist(void (*func)(void *))
+void mem_guarded_callbackmemlist(void (*func)(void *))
 {
   MemHead *membl;
 
@@ -801,7 +801,7 @@ void MEM_guarded_callbackmemlist(void (*func)(void *))
 }
 
 #if 0
-short MEM_guarded_testN(void *vmemh)
+short mem_guarded_testN(void *vmemh)
 {
   MemHead *membl;
 
@@ -830,16 +830,16 @@ short MEM_guarded_testN(void *vmemh)
 }
 #endif
 
-void MEM_guarded_printmemlist(void)
+void mem_guarded_printmemlist(void)
 {
-  MEM_guarded_printmemlist_internal(0);
+  mem_guarded_printmemlist_internal(0);
 }
-void MEM_guarded_printmemlist_pydict(void)
+void mem_guarded_printmemlist_pydict(void)
 {
-  MEM_guarded_printmemlist_internal(1);
+  mem_guarded_printmemlist_internal(1);
 }
 
-void MEM_guarded_freeN(void *vmemh)
+void mem_guarded_freen(void *vmemh)
 {
   MemTail *memt;
   MemHead *memh = vmemh;
@@ -1141,7 +1141,7 @@ static const char *check_memlist(MemHead *memh)
   return name;
 }
 
-size_t MEM_guarded_get_peak_memory(void)
+size_t mem_guarded_get_peak_memory(void)
 {
   size_t _peak_mem;
 
@@ -1152,14 +1152,14 @@ size_t MEM_guarded_get_peak_memory(void)
   return _peak_mem;
 }
 
-void MEM_guarded_reset_peak_memory(void)
+void mem_guarded_reset_peak_memory(void)
 {
   mem_lock_thread();
   peak_mem = mem_in_use;
   mem_unlock_thread();
 }
 
-size_t MEM_guarded_get_memory_in_use(void)
+size_t mem_guarded_get_memory_in_use(void)
 {
   size_t _mem_in_use;
 
@@ -1170,7 +1170,7 @@ size_t MEM_guarded_get_memory_in_use(void)
   return _mem_in_use;
 }
 
-unsigned int MEM_guarded_get_memory_blocks_in_use(void)
+unsigned int mem_guarded_get_memory_blocks_in_use(void)
 {
   unsigned int _totblock;
 
@@ -1182,7 +1182,7 @@ unsigned int MEM_guarded_get_memory_blocks_in_use(void)
 }
 
 #ifndef NDEBUG
-const char *MEM_guarded_name_ptr(void *vmemh)
+const char *mem_guarded_name_ptr(void *vmemh)
 {
   if (vmemh) {
     MemHead *memh = vmemh;
@@ -1190,6 +1190,6 @@ const char *MEM_guarded_name_ptr(void *vmemh)
     return memh->name;
   }
 
-  return "MEM_guarded_name_ptr(NULL)";
+  return "mem_guarded_name_ptr(NULL)";
 }
 #endif /* NDEBUG */
