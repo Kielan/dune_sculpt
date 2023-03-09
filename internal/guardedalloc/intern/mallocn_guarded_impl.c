@@ -1,8 +1,4 @@
-/** \file
- * \ingroup intern_mem
- *
- * Guarded memory allocation, and boundary-write detection.
- */
+/** Guarded memory allocation, and boundary-write detection. **/
 
 #include <stdarg.h>
 #include <stddef.h> /* offsetof */
@@ -13,10 +9,10 @@
 
 #include <pthread.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 /* to ensure strict conversions */
-#include "../../source/blender/blenlib/BLI_strict_flags.h"
+#include "../../source/dune/dunelib/lib_strict_flags.h"
 
 #include "atomic_ops.h"
 #include "mallocn_intern.h"
@@ -200,7 +196,7 @@ static void mem_unlock_thread(void)
   pthread_mutex_unlock(&thread_lock);
 }
 
-bool MEM_guarded_consistency_check(void)
+bool mem_guarded_consistency_check(void)
 {
   const char *err_val = NULL;
   MemHead *listend;
@@ -213,17 +209,17 @@ bool MEM_guarded_consistency_check(void)
   return (err_val == NULL);
 }
 
-void MEM_guarded_set_error_callback(void (*func)(const char *))
+void mem_guarded_set_error_cb(void (*func)(const char *))
 {
   error_callback = func;
 }
 
-void MEM_guarded_set_memory_debug(void)
+void mem_guarded_set_memory_debug(void)
 {
   malloc_debug_memset = true;
 }
 
-size_t MEM_guarded_allocN_len(const void *vmemh)
+size_t mem_guarded_allocN_len(const void *vmemh)
 {
   if (vmemh) {
     const MemHead *memh = vmemh;
@@ -235,7 +231,7 @@ size_t MEM_guarded_allocN_len(const void *vmemh)
   return 0;
 }
 
-void *MEM_guarded_dupallocN(const void *vmemh)
+void *mem_guarded_dupallocN(const void *vmemh)
 {
   void *newp = NULL;
 
@@ -245,10 +241,10 @@ void *MEM_guarded_dupallocN(const void *vmemh)
 
 #ifndef DEBUG_MEMDUPLINAME
     if (LIKELY(memh->alignment == 0)) {
-      newp = MEM_guarded_mallocN(memh->len, "dupli_alloc");
+      newp = mem_guarded_mallocn(memh->len, "dupli_alloc");
     }
     else {
-      newp = MEM_guarded_mallocN_aligned(memh->len, (size_t)memh->alignment, "dupli_alloc");
+      newp = mem_guarded_mallocn_aligned(memh->len, (size_t)memh->alignment, "dupli_alloc");
     }
 
     if (newp == NULL) {
@@ -261,11 +257,11 @@ void *MEM_guarded_dupallocN(const void *vmemh)
 
       if (LIKELY(memh->alignment == 0)) {
         sprintf(name, "%s %s", "dupli_alloc", memh->name);
-        newp = MEM_guarded_mallocN(memh->len, name);
+        newp = mem_guarded_mallocn(memh->len, name);
       }
       else {
         sprintf(name, "%s %s", "dupli_alloc", memh->name);
-        newp = MEM_guarded_mallocN_aligned(memh->len, (size_t)memh->alignment, name);
+        newp = mem_guarded_mallocn_aligned(memh->len, (size_t)memh->alignment, name);
       }
 
       if (newp == NULL)
@@ -284,7 +280,7 @@ void *MEM_guarded_dupallocN(const void *vmemh)
   return newp;
 }
 
-void *MEM_guarded_reallocN_id(void *vmemh, size_t len, const char *str)
+void *men_guarded_reallocn_id(void *vmemh, size_t len, const char *str)
 {
   void *newp = NULL;
 
@@ -293,10 +289,10 @@ void *MEM_guarded_reallocN_id(void *vmemh, size_t len, const char *str)
     memh--;
 
     if (LIKELY(memh->alignment == 0)) {
-      newp = MEM_guarded_mallocN(len, memh->name);
+      newp = mem_guarded_mallocn(len, memh->name);
     }
     else {
-      newp = MEM_guarded_mallocN_aligned(len, (size_t)memh->alignment, memh->name);
+      newp = mem_guarded_mallocn_aligned(len, (size_t)memh->alignment, memh->name);
     }
 
     if (newp) {
@@ -310,16 +306,16 @@ void *MEM_guarded_reallocN_id(void *vmemh, size_t len, const char *str)
       }
     }
 
-    MEM_guarded_freeN(vmemh);
+    mem_guarded_freeN(vmemh);
   }
   else {
-    newp = MEM_guarded_mallocN(len, str);
+    newp = mem_guarded_mallocn(len, str);
   }
 
   return newp;
 }
 
-void *MEM_guarded_recallocN_id(void *vmemh, size_t len, const char *str)
+void *mem_guarded_recallocn_id(void *vmemh, size_t len, const char *str)
 {
   void *newp = NULL;
 
@@ -328,10 +324,10 @@ void *MEM_guarded_recallocN_id(void *vmemh, size_t len, const char *str)
     memh--;
 
     if (LIKELY(memh->alignment == 0)) {
-      newp = MEM_guarded_mallocN(len, memh->name);
+      newp = mem_guarded_mallocN(len, memh->name);
     }
     else {
-      newp = MEM_guarded_mallocN_aligned(len, (size_t)memh->alignment, memh->name);
+      newp = mem_guarded_mallocN_aligned(len, (size_t)memh->alignment, memh->name);
     }
 
     if (newp) {
