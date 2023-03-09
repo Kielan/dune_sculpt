@@ -87,7 +87,7 @@ void gpu_pbvh_mesh_buffers_update(GPU_PBVH_Buffers *buffers,
  * if smooth shading, an element index buffer.
  * Threaded: do not call any functions that use OpenGL calls!
  */
-void GPU_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
+void gpu_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
                                    struct BMesh *bm,
                                    struct GSet *bm_faces,
                                    struct GSet *bm_unique_verts,
@@ -97,7 +97,7 @@ void GPU_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
 /**
  * Threaded: do not call any functions that use OpenGL calls!
  */
-void GPU_pbvh_grid_buffers_update(GPU_PBVH_Buffers *buffers,
+void gpu_pbvh_grid_buffers_update(GPU_PBVH_Buffers *buffers,
                                   struct SubdivCCG *subdiv_ccg,
                                   struct CCGElem **grids,
                                   const struct DMFlagMat *grid_flag_mats,
@@ -112,19 +112,19 @@ void GPU_pbvh_grid_buffers_update(GPU_PBVH_Buffers *buffers,
 /**
  * Finish update. Not thread safe, must run in OpenGL main thread.
  */
-void GPU_pbvh_buffers_update_flush(GPU_PBVH_Buffers *buffers);
+void gpu_pbvh_buffers_update_flush(GPU_PBVH_Buffers *buffers);
 
 /**
  * Free buffers. Not thread safe, must run in OpenGL main thread.
  */
-void GPU_pbvh_buffers_free(GPU_PBVH_Buffers *buffers);
+void gpu_pbvh_buffers_free(GPU_PBVH_Buffers *buffers);
 
 /** Draw. */
-struct GPUBatch *GPU_pbvh_buffers_batch_get(GPU_PBVH_Buffers *buffers, bool fast, bool wires);
+struct GPUBatch *gpu_pbvh_buffers_batch_get(GPU_PBVH_Buffers *buffers, bool fast, bool wires);
 
-short GPU_pbvh_buffers_material_index_get(GPU_PBVH_Buffers *buffers);
+short gpu_pbvh_buffers_material_index_get(GPU_PBVH_Buffers *buffers);
 
-bool GPU_pbvh_buffers_has_overlays(GPU_PBVH_Buffers *buffers);
+bool gpu_pbvh_buffers_has_overlays(GPU_PBVH_Buffers *buffers);
 
 #ifdef __cplusplus
 }
