@@ -1,10 +1,10 @@
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "BLI_string.h"
-#include "BLI_vector.hh"
+#include "lib_string.h"
+#include "lib_vector.hh"
 
-#include "GPU_capabilities.h"
-#include "GPU_platform.h"
+#include "gpu_capabilities.h"
+#include "gpu_platform.h"
 
 #include "gl_backend.hh"
 #include "gl_debug.hh"
@@ -13,21 +13,20 @@
 #include "gl_shader.hh"
 #include "gl_shader_interface.hh"
 
-using namespace blender;
-using namespace blender::gpu;
-using namespace blender::gpu::shader;
+using namespace dune;
+using namespace dune::gpu;
+using namespace dune::gpu::shader;
 
 extern "C" char datatoc_glsl_shader_defines_glsl[];
 
 /* -------------------------------------------------------------------- */
-/** \name Creation / Destruction
- * \{ */
+/** Creation / Destruction */
 
 GLShader::GLShader(const char *name) : Shader(name)
 {
 #if 0 /* Would be nice to have, but for now the Deferred compilation \
        * does not have a GPUContext. */
-  BLI_assert(GLContext::get() != nullptr);
+  lib_assert(GLContext::get() != nullptr);
 #endif
   shader_program_ = glCreateProgram();
 
@@ -38,7 +37,7 @@ GLShader::~GLShader()
 {
 #if 0 /* Would be nice to have, but for now the Deferred compilation \
        * does not have a GPUContext. */
-  BLI_assert(GLContext::get() != nullptr);
+  lib_assert(GLContext::get() != nullptr);
 #endif
   /* Invalid handles are silently ignored. */
   glDeleteShader(vert_shader_);
@@ -48,11 +47,8 @@ GLShader::~GLShader()
   glDeleteProgram(shader_program_);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Create Info
- * \{ */
+/**  Create Info **/
 
 static const char *to_string(const Interpolation &interp)
 {
@@ -555,7 +551,7 @@ std::string GLShader::fragment_interface_declare(const ShaderCreateInfo &info) c
       ss << "noperspective in vec3 gpu_BaryCoordNoPersp;\n";
     }
     else if (GLEW_AMD_shader_explicit_vertex_parameter) {
-      /* NOTE(fclem): This won't work with geometry shader. Hopefully, we don't need geometry
+      /* NOTE: This won't work with geometry shader. Hopefully, we don't need geometry
        * shader workaround if this extension/feature is detected. */
       ss << "\n/* Stable Barycentric Coordinates. */\n";
       ss << "flat in vec4 gpu_pos_flat;\n";
@@ -746,11 +742,8 @@ bool GLShader::do_geometry_shader_injection(const shader::ShaderCreateInfo *info
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Shader stage creation
- * \{ */
+/** Shader stage creation **/
 
 static char *glsl_patch_default_get()
 {
@@ -845,6 +838,356 @@ static char *glsl_patch_compute_get()
   /* Array compat. */
   STR_CONCAT(patch, slen, "#define array(_type) _type[]\n");
 
-  BLI_assert(slen < sizeof(patch));
+  lib_assert(slen < sizeof(patch));
   return patch;
 }
+
+char *GLShader::glsl_patch_get(GLenum gl_stage)
+{
+  if (gl_stage == GL_COMPUTE_SHADER) {
+    return glsl_patch_compute_get();
+  }
+  return glsl_patch_default_get();
+}
+
+GLuint GLShader::create_shader_stage(GLenum gl_stage, MutableSpan<const char *> sources)
+{
+  GLuint shader = glCreateShader(gl_stage);
+  if (shader == 0) {
+    fprintf(stderr, "GLShader: Error: Could not create shader object.");
+    return 0;
+  }
+
+  /* Patch the shader code using the first source slot. */
+  sources[0] = glsl_patch_get(gl_stage);
+
+  glShaderSource(shader, sources.size(), sources.data(), nullptr);
+  glCompileShader(shader);
+
+  GLint status;
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+  if (!status || (G.debug & G_DEBUG_GPU)) {
+    char log[5000] = "";
+    glGetShaderInfoLog(shader, sizeof(log), nullptr, log);
+    if (log[0] != '\0') {
+      GLLogParser parser;
+      switch (gl_stage) {
+        case GL_VERTEX_SHADER:
+          this->print_log(sources, log, "VertShader", !status, &parser);
+          break;
+        case GL_GEOMETRY_SHADER:
+          this->print_log(sources, log, "GeomShader", !status, &parser);
+          break;
+        case GL_FRAGMENT_SHADER:
+          this->print_log(sources, log, "FragShader", !status, &parser);
+          break;
+        case GL_COMPUTE_SHADER:
+          this->print_log(sources, log, "ComputeShader", !status, &parser);
+          break;
+      }
+    }
+  }
+  if (!status) {
+    glDeleteShader(shader);
+    compilation_failed_ = true;
+    return 0;
+  }
+
+  debug::object_label(gl_stage, shader, name);
+
+  glAttachShader(shader_program_, shader);
+  return shader;
+}
+
+void GLShader::vertex_shader_from_glsl(MutableSpan<const char *> sources)
+{
+  vert_shader_ = this->create_shader_stage(GL_VERTEX_SHADER, sources);
+}
+
+void GLShader::geometry_shader_from_glsl(MutableSpan<const char *> sources)
+{
+  geom_shader_ = this->create_shader_stage(GL_GEOMETRY_SHADER, sources);
+}
+
+void GLShader::fragment_shader_from_glsl(MutableSpan<const char *> sources)
+{
+  frag_shader_ = this->create_shader_stage(GL_FRAGMENT_SHADER, sources);
+}
+
+void GLShader::compute_shader_from_glsl(MutableSpan<const char *> sources)
+{
+  compute_shader_ = this->create_shader_stage(GL_COMPUTE_SHADER, sources);
+}
+
+bool GLShader::finalize(const shader::ShaderCreateInfo *info)
+{
+  if (compilation_failed_) {
+    return false;
+  }
+
+  if (info && do_geometry_shader_injection(info)) {
+    std::string source = workaround_geometry_shader_source_create(*info);
+    Vector<const char *> sources;
+    sources.append("version");
+    sources.append(source.c_str());
+    geometry_shader_from_glsl(sources);
+  }
+
+  glLinkProgram(shader_program_);
+
+  GLint status;
+  glGetProgramiv(shader_program_, GL_LINK_STATUS, &status);
+  if (!status) {
+    char log[5000];
+    glGetProgramInfoLog(shader_program_, sizeof(log), nullptr, log);
+    Span<const char *> sources;
+    GLLogParser parser;
+    this->print_log(sources, log, "Linking", true, &parser);
+    return false;
+  }
+
+  if (info != nullptr) {
+    interface = new GLShaderInterface(shader_program_, *info);
+  }
+  else {
+    interface = new GLShaderInterface(shader_program_);
+  }
+
+  return true;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Binding
+ * \{ */
+
+void GLShader::bind()
+{
+  BLI_assert(shader_program_ != 0);
+  glUseProgram(shader_program_);
+}
+
+void GLShader::unbind()
+{
+#ifndef NDEBUG
+  glUseProgram(0);
+#endif
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Transform feedback
+ *
+ * TODO(fclem): Should be replaced by compute shaders.
+ * \{ */
+
+void GLShader::transform_feedback_names_set(Span<const char *> name_list,
+                                            const eGPUShaderTFBType geom_type)
+{
+  glTransformFeedbackVaryings(
+      shader_program_, name_list.size(), name_list.data(), GL_INTERLEAVED_ATTRIBS);
+  transform_feedback_type_ = geom_type;
+}
+
+bool GLShader::transform_feedback_enable(GPUVertBuf *buf_)
+{
+  if (transform_feedback_type_ == GPU_SHADER_TFB_NONE) {
+    return false;
+  }
+
+  GLVertBuf *buf = static_cast<GLVertBuf *>(unwrap(buf_));
+
+  BLI_assert(buf->vbo_id_ != 0);
+
+  glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, buf->vbo_id_);
+
+  switch (transform_feedback_type_) {
+    case GPU_SHADER_TFB_POINTS:
+      glBeginTransformFeedback(GL_POINTS);
+      break;
+    case GPU_SHADER_TFB_LINES:
+      glBeginTransformFeedback(GL_LINES);
+      break;
+    case GPU_SHADER_TFB_TRIANGLES:
+      glBeginTransformFeedback(GL_TRIANGLES);
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
+
+void GLShader::transform_feedback_disable()
+{
+  glEndTransformFeedback();
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Uniforms setters
+ * \{ */
+
+void GLShader::uniform_float(int location, int comp_len, int array_size, const float *data)
+{
+  switch (comp_len) {
+    case 1:
+      glUniform1fv(location, array_size, data);
+      break;
+    case 2:
+      glUniform2fv(location, array_size, data);
+      break;
+    case 3:
+      glUniform3fv(location, array_size, data);
+      break;
+    case 4:
+      glUniform4fv(location, array_size, data);
+      break;
+    case 9:
+      glUniformMatrix3fv(location, array_size, 0, data);
+      break;
+    case 16:
+      glUniformMatrix4fv(location, array_size, 0, data);
+      break;
+    default:
+      BLI_assert(0);
+      break;
+  }
+}
+
+void GLShader::uniform_int(int location, int comp_len, int array_size, const int *data)
+{
+  switch (comp_len) {
+    case 1:
+      glUniform1iv(location, array_size, data);
+      break;
+    case 2:
+      glUniform2iv(location, array_size, data);
+      break;
+    case 3:
+      glUniform3iv(location, array_size, data);
+      break;
+    case 4:
+      glUniform4iv(location, array_size, data);
+      break;
+    default:
+      BLI_assert(0);
+      break;
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name GPUVertFormat from Shader
+ * \{ */
+
+static uint calc_component_size(const GLenum gl_type)
+{
+  switch (gl_type) {
+    case GL_FLOAT_VEC2:
+    case GL_INT_VEC2:
+    case GL_UNSIGNED_INT_VEC2:
+      return 2;
+    case GL_FLOAT_VEC3:
+    case GL_INT_VEC3:
+    case GL_UNSIGNED_INT_VEC3:
+      return 3;
+    case GL_FLOAT_VEC4:
+    case GL_FLOAT_MAT2:
+    case GL_INT_VEC4:
+    case GL_UNSIGNED_INT_VEC4:
+      return 4;
+    case GL_FLOAT_MAT3:
+      return 9;
+    case GL_FLOAT_MAT4:
+      return 16;
+    case GL_FLOAT_MAT2x3:
+    case GL_FLOAT_MAT3x2:
+      return 6;
+    case GL_FLOAT_MAT2x4:
+    case GL_FLOAT_MAT4x2:
+      return 8;
+    case GL_FLOAT_MAT3x4:
+    case GL_FLOAT_MAT4x3:
+      return 12;
+    default:
+      return 1;
+  }
+}
+
+static void get_fetch_mode_and_comp_type(int gl_type,
+                                         GPUVertCompType *r_comp_type,
+                                         GPUVertFetchMode *r_fetch_mode)
+{
+  switch (gl_type) {
+    case GL_FLOAT:
+    case GL_FLOAT_VEC2:
+    case GL_FLOAT_VEC3:
+    case GL_FLOAT_VEC4:
+    case GL_FLOAT_MAT2:
+    case GL_FLOAT_MAT3:
+    case GL_FLOAT_MAT4:
+    case GL_FLOAT_MAT2x3:
+    case GL_FLOAT_MAT2x4:
+    case GL_FLOAT_MAT3x2:
+    case GL_FLOAT_MAT3x4:
+    case GL_FLOAT_MAT4x2:
+    case GL_FLOAT_MAT4x3:
+      *r_comp_type = GPU_COMP_F32;
+      *r_fetch_mode = GPU_FETCH_FLOAT;
+      break;
+    case GL_INT:
+    case GL_INT_VEC2:
+    case GL_INT_VEC3:
+    case GL_INT_VEC4:
+      *r_comp_type = GPU_COMP_I32;
+      *r_fetch_mode = GPU_FETCH_INT;
+      break;
+    case GL_UNSIGNED_INT:
+    case GL_UNSIGNED_INT_VEC2:
+    case GL_UNSIGNED_INT_VEC3:
+    case GL_UNSIGNED_INT_VEC4:
+      *r_comp_type = GPU_COMP_U32;
+      *r_fetch_mode = GPU_FETCH_INT;
+      break;
+    default:
+      BLI_assert(0);
+  }
+}
+
+void GLShader::vertformat_from_shader(GPUVertFormat *format) const
+{
+  GPU_vertformat_clear(format);
+
+  GLint attr_len;
+  glGetProgramiv(shader_program_, GL_ACTIVE_ATTRIBUTES, &attr_len);
+
+  for (int i = 0; i < attr_len; i++) {
+    char name[256];
+    GLenum gl_type;
+    GLint size;
+    glGetActiveAttrib(shader_program_, i, sizeof(name), nullptr, &size, &gl_type, name);
+
+    /* Ignore OpenGL names like `gl_BaseInstanceARB`, `gl_InstanceID` and `gl_VertexID`. */
+    if (glGetAttribLocation(shader_program_, name) == -1) {
+      continue;
+    }
+
+    GPUVertCompType comp_type;
+    GPUVertFetchMode fetch_mode;
+    get_fetch_mode_and_comp_type(gl_type, &comp_type, &fetch_mode);
+
+    int comp_len = calc_component_size(gl_type) * size;
+
+    GPU_vertformat_attr_add(format, name, comp_type, comp_len, fetch_mode);
+  }
+}
+
+int GLShader::program_handle_get() const
+{
+  return (int)this->shader_program_;
+}
+
