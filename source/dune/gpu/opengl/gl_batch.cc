@@ -1,12 +1,10 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * GL implementation of GPUBatch.
  * The only specificity of GL here is that it caches a list of
  * Vertex Array Objects based on the bound shader interface.
  */
 
-#include "BLI_assert.h"
+#include "lib_assert.h"
 
 #include "glew-mx.h"
 
@@ -22,14 +20,14 @@
 
 #include "gl_batch.hh"
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
 /* -------------------------------------------------------------------- */
-/** \name VAO Cache
+/** VAO Cache
  *
  * Each #GLBatch has a small cache of VAO objects that are used to avoid VAO reconfiguration.
- * TODO(fclem): Could be revisited to avoid so much cross references.
- * \{ */
+ * TODO: Could be revisited to avoid so much cross refs.
+ **/
 
 GLVaoCache::GLVaoCache()
 {
@@ -82,9 +80,9 @@ void GLVaoCache::insert(const GLShaderInterface *interface, GLuint vao)
       is_dynamic_vao_count = true;
       /* Init dynamic arrays and let the branch below set the values. */
       dynamic_vaos.count = GPU_BATCH_VAO_DYN_ALLOC_COUNT;
-      dynamic_vaos.interfaces = (const GLShaderInterface **)MEM_callocN(
+      dynamic_vaos.interfaces = (const GLShaderInterface **)mem_callocn(
           dynamic_vaos.count * sizeof(GLShaderInterface *), "dyn vaos interfaces");
-      dynamic_vaos.vao_ids = (GLuint *)MEM_callocN(dynamic_vaos.count * sizeof(GLuint),
+      dynamic_vaos.vao_ids = (GLuint *)mem_callocn(dynamic_vaos.count * sizeof(GLuint),
                                                    "dyn vaos ids");
     }
   }
@@ -101,9 +99,9 @@ void GLVaoCache::insert(const GLShaderInterface *interface, GLuint vao)
       /* Not enough place, realloc the array. */
       i = dynamic_vaos.count;
       dynamic_vaos.count += GPU_BATCH_VAO_DYN_ALLOC_COUNT;
-      dynamic_vaos.interfaces = (const GLShaderInterface **)MEM_recallocN(
+      dynamic_vaos.interfaces = (const GLShaderInterface **)mem_recallocn(
           (void *)dynamic_vaos.interfaces, sizeof(GLShaderInterface *) * dynamic_vaos.count);
-      dynamic_vaos.vao_ids = (GLuint *)MEM_recallocN(dynamic_vaos.vao_ids,
+      dynamic_vaos.vao_ids = (GLuint *)mem_recallocn(dynamic_vaos.vao_ids,
                                                      sizeof(GLuint) * dynamic_vaos.count);
     }
     dynamic_vaos.interfaces[i] = interface;
@@ -160,8 +158,8 @@ void GLVaoCache::clear()
   }
 
   if (is_dynamic_vao_count) {
-    MEM_freeN((void *)dynamic_vaos.interfaces);
-    MEM_freeN(dynamic_vaos.vao_ids);
+    mem_freen((void *)dynamic_vaos.interfaces);
+    mem_freen(dynamic_vaos.vao_ids);
   }
 
   if (context_) {
@@ -187,7 +185,7 @@ GLuint GLVaoCache::lookup(const GLShaderInterface *interface)
 void GLVaoCache::context_check()
 {
   GLContext *ctx = GLContext::get();
-  BLI_assert(ctx);
+  lib_assert(ctx);
 
   if (context_ != ctx) {
     if (context_ != nullptr) {
