@@ -1,19 +1,17 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * GPU geometry batch
  * Contains VAOs + VBOs + Shader representing a drawable entity.
  */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math_base.h"
+#include "lib_math_base.h"
 
-#include "GPU_batch.h"
-#include "GPU_batch_presets.h"
-#include "GPU_matrix.h"
-#include "GPU_platform.h"
-#include "GPU_shader.h"
+#include "gpu_batch.h"
+#include "gpu_batch_presets.h"
+#include "gpu_matrix.h"
+#include "gpu_platform.h"
+#include "gpu_shader.h"
 
 #include "gpu_backend.hh"
 #include "gpu_context_private.hh"
@@ -25,11 +23,10 @@
 
 #include <cstring>
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
 /* -------------------------------------------------------------------- */
-/** \name Creation & Deletion
- * \{ */
+/** Creation & Deletion **/
 
 GPUBatch *GPU_batch_calloc()
 {
@@ -48,15 +45,15 @@ GPUBatch *GPU_batch_create_ex(GPUPrimType prim_type,
   return batch;
 }
 
-void GPU_batch_init_ex(GPUBatch *batch,
+void gpu_batch_init_ex(GPUBatch *batch,
                        GPUPrimType prim_type,
                        GPUVertBuf *verts,
                        GPUIndexBuf *elem,
                        eGPUBatchFlag owns_flag)
 {
-  BLI_assert(verts != nullptr);
+  lib_assert(verts != nullptr);
   /* Do not pass any other flag */
-  BLI_assert((owns_flag & ~(GPU_BATCH_OWNS_VBO | GPU_BATCH_OWNS_INDEX)) == 0);
+  lib_assert((owns_flag & ~(GPU_BATCH_OWNS_VBO | GPU_BATCH_OWNS_INDEX)) == 0);
 
   batch->verts[0] = verts;
   for (int v = 1; v < GPU_BATCH_VBO_MAX_LEN; v++) {
@@ -71,9 +68,9 @@ void GPU_batch_init_ex(GPUBatch *batch,
   batch->shader = nullptr;
 }
 
-void GPU_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src)
+void gpu_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src)
 {
-  GPU_batch_init_ex(
+  gpu_batch_init_ex(
       batch_dst, GPU_PRIM_POINTS, batch_src->verts[0], batch_src->elem, GPU_BATCH_INVALID);
 
   batch_dst->prim_type = batch_src->prim_type;
@@ -82,10 +79,10 @@ void GPU_batch_copy(GPUBatch *batch_dst, GPUBatch *batch_src)
   }
 }
 
-void GPU_batch_clear(GPUBatch *batch)
+void gpu_batch_clear(GPUBatch *batch)
 {
   if (batch->flag & GPU_BATCH_OWNS_INDEX) {
-    GPU_indexbuf_discard(batch->elem);
+    gpu_indexbuf_discard(batch->elem);
   }
   if (batch->flag & GPU_BATCH_OWNS_VBO_ANY) {
     for (int v = 0; (v < GPU_BATCH_VBO_MAX_LEN) && batch->verts[v]; v++) {
@@ -104,48 +101,45 @@ void GPU_batch_clear(GPUBatch *batch)
   batch->flag = GPU_BATCH_INVALID;
 }
 
-void GPU_batch_discard(GPUBatch *batch)
+void gpu_batch_discard(GPUBatch *batch)
 {
-  GPU_batch_clear(batch);
+  gpu_batch_clear(batch);
 
   delete static_cast<Batch *>(batch);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Buffers Management
- * \{ */
+/** Buffers Management **/
 
-void GPU_batch_instbuf_set(GPUBatch *batch, GPUVertBuf *inst, bool own_vbo)
+void gpu_batch_instbuf_set(GPUBatch *batch, GPUVertBuf *inst, bool own_vbo)
 {
-  BLI_assert(inst);
+  lib_assert(inst);
   batch->flag |= GPU_BATCH_DIRTY;
 
   if (batch->inst[0] && (batch->flag & GPU_BATCH_OWNS_INST_VBO)) {
-    GPU_vertbuf_discard(batch->inst[0]);
+    lib_vertbuf_discard(batch->inst[0]);
   }
   batch->inst[0] = inst;
 
   SET_FLAG_FROM_TEST(batch->flag, own_vbo, GPU_BATCH_OWNS_INST_VBO);
 }
 
-void GPU_batch_elembuf_set(GPUBatch *batch, GPUIndexBuf *elem, bool own_ibo)
+void gpu_batch_elembuf_set(GPUBatch *batch, GPUIndexBuf *elem, bool own_ibo)
 {
-  BLI_assert(elem);
+  lib_assert(elem);
   batch->flag |= GPU_BATCH_DIRTY;
 
   if (batch->elem && (batch->flag & GPU_BATCH_OWNS_INDEX)) {
-    GPU_indexbuf_discard(batch->elem);
+    gpu_indexbuf_discard(batch->elem);
   }
   batch->elem = elem;
 
   SET_FLAG_FROM_TEST(batch->flag, own_ibo, GPU_BATCH_OWNS_INDEX);
 }
 
-int GPU_batch_instbuf_add_ex(GPUBatch *batch, GPUVertBuf *insts, bool own_vbo)
+int gpu_batch_instbuf_add_ex(GPUBatch *batch, GPUVertBuf *insts, bool own_vbo)
 {
-  BLI_assert(insts);
+  lib_assert(insts);
   batch->flag |= GPU_BATCH_DIRTY;
 
   for (uint v = 0; v < GPU_BATCH_INST_VBO_MAX_LEN; v++) {
@@ -153,7 +147,7 @@ int GPU_batch_instbuf_add_ex(GPUBatch *batch, GPUVertBuf *insts, bool own_vbo)
       /* for now all VertexBuffers must have same vertex_len */
       if (batch->inst[0]) {
         /* Allow for different size of vertex buffer (will choose the smallest number of verts). */
-        // BLI_assert(insts->vertex_len == batch->inst[0]->vertex_len);
+        // lib_assert(insts->vertex_len == batch->inst[0]->vertex_len);
       }
 
       batch->inst[v] = insts;
@@ -162,13 +156,13 @@ int GPU_batch_instbuf_add_ex(GPUBatch *batch, GPUVertBuf *insts, bool own_vbo)
     }
   }
   /* we only make it this far if there is no room for another GPUVertBuf */
-  BLI_assert_msg(0, "Not enough Instance VBO slot in batch");
+  lib_assert_msg(0, "Not enough Instance VBO slot in batch");
   return -1;
 }
 
-int GPU_batch_vertbuf_add_ex(GPUBatch *batch, GPUVertBuf *verts, bool own_vbo)
+int gpu_batch_vertbuf_add_ex(GPUBatch *batch, GPUVertBuf *verts, bool own_vbo)
 {
-  BLI_assert(verts);
+  lib_assert(verts);
   batch->flag |= GPU_BATCH_DIRTY;
 
   for (uint v = 0; v < GPU_BATCH_VBO_MAX_LEN; v++) {
@@ -268,13 +262,10 @@ void GPU_batch_draw_advanced(
   batch->draw(v_first, v_count, i_first, i_count);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Utilities
- * \{ */
+/** Utilities **/
 
-void GPU_batch_program_set_builtin_with_config(GPUBatch *batch,
+void gpu_batch_program_set_builtin_with_config(GPUBatch *batch,
                                                eGPUBuiltinShader shader_id,
                                                eGPUShaderConfig sh_cfg)
 {
@@ -282,21 +273,18 @@ void GPU_batch_program_set_builtin_with_config(GPUBatch *batch,
   GPU_batch_set_shader(batch, shader);
 }
 
-void GPU_batch_program_set_builtin(GPUBatch *batch, eGPUBuiltinShader shader_id)
+void gpu_batch_program_set_builtin(GPUBatch *batch, eGPUBuiltinShader shader_id)
 {
-  GPU_batch_program_set_builtin_with_config(batch, shader_id, GPU_SHADER_CFG_DEFAULT);
+  gpu_batch_program_set_builtin_with_config(batch, shader_id, GPU_SHADER_CFG_DEFAULT);
 }
 
-void GPU_batch_program_set_imm_shader(GPUBatch *batch)
+void gpu_batch_program_set_imm_shader(GPUBatch *batch)
 {
-  GPU_batch_set_shader(batch, immGetShader());
+  gpu_batch_set_shader(batch, immGetShader());
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Init/Exit
- * \{ */
+/** Init/Exit **/
 
 void gpu_batch_init()
 {
