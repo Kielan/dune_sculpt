@@ -1,14 +1,14 @@
-/** \file
- * \ingroup gpu
+/**
+ * gpu
  *
  * GPUBackend derived class contain allocators that do not need a context bound.
- * The backend is init at startup and is accessible using GPU_backend_get() */
+ * The backend is init at startup and is accessible using gpu_backend_get() */
 
 #pragma once
 
-#include "GPU_vertex_buffer.h"
+#include "gpu_vertex_buffer.h"
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 class Context;
