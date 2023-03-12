@@ -1,21 +1,20 @@
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
-#include "MEM_guardedalloc.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_userdef_types.h"
+#include "types_userdef_types.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui_interface.h"
+#include "ui_resources.h"
 
-#include "GPU_batch.h"
-#include "GPU_batch_presets.h" /* own include */
-#include "GPU_batch_utils.h"
+#include "gpu_batch.h"
+#include "gpu_batch_presets.h" /* own include */
+#include "gpu_batch_utils.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Local Structures
- * \{ */
+/** Local Structures **/
 
 /* Struct to store 3D Batches and their format */
 static struct {
@@ -55,8 +54,6 @@ static struct {
 } g_presets_2d = {{0}};
 
 static ListBase presets_list = {NULL, NULL};
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name 3D Primitives
