@@ -336,7 +336,7 @@ void gpu_clear_color(float red, float green, float blue, float alpha)
   Context::get()->active_fb->clear(GPU_COLOR_BIT, clear_col, 0.0f, 0x0);
 }
 
-void gou_clear_depth(float depth)
+void gpu_clear_depth(float depth)
 {
   float clear_col[4] = {0};
   Context::get()->active_fb->clear(GPU_DEPTH_BIT, clear_col, depth, 0x0);
@@ -536,10 +536,10 @@ GPUOffScreen *gpu_offscreen_create(
   height = max_ii(1, height);
   width = max_ii(1, width);
 
-  ofs->color = GPU_texture_create_2d("ofs_color", width, height, 1, format, nullptr);
+  ofs->color = gpu_texture_create_2d("ofs_color", width, height, 1, format, nullptr);
 
   if (depth) {
-    ofs->depth = GPU_texture_create_2d(
+    ofs->depth = gpu_texture_create_2d(
         "ofs_depth", width, height, 1, GPU_DEPTH24_STENCIL8, nullptr);
   }
 
@@ -566,33 +566,33 @@ GPUOffScreen *gpu_offscreen_create(
   return ofs;
 }
 
-void GPU_offscreen_free(GPUOffScreen *ofs)
+void gpu_offscreen_free(GPUOffScreen *ofs)
 {
   for (auto &framebuffer : ofs->framebuffers) {
     if (framebuffer.fb) {
-      GPU_framebuffer_free(framebuffer.fb);
+      gpu_framebuffer_free(framebuffer.fb);
     }
   }
   if (ofs->color) {
-    GPU_texture_free(ofs->color);
+    gpu_texture_free(ofs->color);
   }
   if (ofs->depth) {
-    GPU_texture_free(ofs->depth);
+    gpu_texture_free(ofs->depth);
   }
 
-  MEM_freeN(ofs);
+  mem_freen(ofs);
 }
 
-void GPU_offscreen_bind(GPUOffScreen *ofs, bool save)
+void gpu_offscreen_bind(GPUOffScreen *ofs, bool save)
 {
   if (save) {
-    GPUFrameBuffer *fb = GPU_framebuffer_active_get();
-    GPU_framebuffer_push(fb);
+    GPUFrameBuffer *fb = gpu_framebuffer_active_get();
+    gpu_framebuffer_push(fb);
   }
   unwrap(gpu_offscreen_fb_get(ofs))->bind(false);
 }
 
-void GPU_offscreen_unbind(GPUOffScreen *UNUSED(ofs), bool restore)
+void gpu_offscreen_unbind(GPUOffScreen *UNUSED(ofs), bool restore)
 {
   GPUFrameBuffer *fb = nullptr;
   if (restore) {
@@ -600,14 +600,14 @@ void GPU_offscreen_unbind(GPUOffScreen *UNUSED(ofs), bool restore)
   }
 
   if (fb) {
-    GPU_framebuffer_bind(fb);
+    gpu_framebuffer_bind(fb);
   }
   else {
-    GPU_framebuffer_restore();
+    gpu_framebuffer_restore();
   }
 }
 
-void GPU_offscreen_draw_to_screen(GPUOffScreen *ofs, int x, int y)
+void gpu_offscreen_draw_to_screen(GPUOffScreen *ofs, int x, int y)
 {
   Context *ctx = Context::get();
   FrameBuffer *ofs_fb = unwrap(gpu_offscreen_fb_get(ofs));
