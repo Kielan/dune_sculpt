@@ -1,6 +1,6 @@
 /*** Convert material node-trees to GLSL. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "types_customdata_types.h"
 #include "types_image_types.h"
@@ -285,21 +285,21 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
   /* Textures */
   LISTBASE_FOREACH (GPUMaterialTexture *, tex, &graph->textures) {
     if (tex->colorband) {
-      BLI_dynstr_appendf(ds, "uniform sampler1DArray %s;\n", tex->sampler_name);
+      lib_dynstr_appendf(ds, "uniform sampler1DArray %s;\n", tex->sampler_name);
     }
     else if (tex->tiled_mapping_name[0]) {
-      BLI_dynstr_appendf(ds, "uniform sampler2DArray %s;\n", tex->sampler_name);
-      BLI_dynstr_appendf(ds, "uniform sampler1DArray %s;\n", tex->tiled_mapping_name);
+      lib_dynstr_appendf(ds, "uniform sampler2DArray %s;\n", tex->sampler_name);
+      lib_dynstr_appendf(ds, "uniform sampler1DArray %s;\n", tex->tiled_mapping_name);
     }
     else {
-      BLI_dynstr_appendf(ds, "uniform sampler2D %s;\n", tex->sampler_name);
+      lib_dynstr_appendf(ds, "uniform sampler2D %s;\n", tex->sampler_name);
     }
   }
 
   /* Volume Grids */
   LISTBASE_FOREACH (GPUMaterialVolumeGrid *, grid, &graph->volume_grids) {
-    BLI_dynstr_appendf(ds, "uniform sampler3D %s;\n", grid->sampler_name);
-    BLI_dynstr_appendf(ds, "uniform mat4 %s = mat4(0.0);\n", grid->transform_name);
+    lib_dynstr_appendf(ds, "uniform sampler3D %s;\n", grid->sampler_name);
+    lib_dynstr_appendf(ds, "uniform mat4 %s = mat4(0.0);\n", grid->transform_name);
   }
 
   /* Print other uniforms */
@@ -312,17 +312,17 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
           builtins |= input->builtin;
           name = gpu_builtin_name(input->builtin);
 
-          if (BLI_str_startswith(name, "unf")) {
-            BLI_dynstr_appendf(ds, "uniform %s %s;\n", gpu_data_type_to_string(input->type), name);
+          if (lib_str_startswith(name, "unf")) {
+            lib_dynstr_appendf(ds, "uniform %s %s;\n", gpu_data_type_to_string(input->type), name);
           }
           else {
-            BLI_dynstr_appendf(ds, "in %s %s;\n", gpu_data_type_to_string(input->type), name);
+            lib_dynstr_appendf(ds, "in %s %s;\n", gpu_data_type_to_string(input->type), name);
           }
         }
       }
       else if (input->source == GPU_SOURCE_STRUCT) {
         /* Add other struct here if needed. */
-        BLI_dynstr_appendf(ds, "Closure strct%d = CLOSURE_DEFAULT;\n", input->id);
+        lib_dynstr_appendf(ds, "Closure strct%d = CLOSURE_DEFAULT;\n", input->id);
       }
       else if (input->source == GPU_SOURCE_UNIFORM) {
         if (!input->link) {
@@ -331,43 +331,43 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
         }
       }
       else if (input->source == GPU_SOURCE_CONSTANT) {
-        BLI_dynstr_appendf(
+        lib_dynstr_appendf(
             ds, "const %s cons%d = ", gpu_data_type_to_string(input->type), input->id);
         codegen_print_datatype(ds, input->type, input->vec);
-        BLI_dynstr_append(ds, ";\n");
+        lib_dynstr_append(ds, ";\n");
       }
     }
   }
 
   /* Handle the UBO block separately. */
-  if ((material != NULL) && !BLI_listbase_is_empty(&ubo_inputs)) {
-    GPU_material_uniform_buffer_create(material, &ubo_inputs);
+  if ((material != NULL) && !lib_listbase_is_empty(&ubo_inputs)) {
+    gpu_material_uniform_buffer_create(material, &ubo_inputs);
 
     /* Inputs are sorted */
-    BLI_dynstr_appendf(ds, "\nlayout (std140) uniform %s {\n", GPU_UBO_BLOCK_NAME);
+    lib_dynstr_appendf(ds, "\nlayout (std140) uniform %s {\n", GPU_UBO_BLOCK_NAME);
 
     LISTBASE_FOREACH (LinkData *, link, &ubo_inputs) {
       GPUInput *input = (GPUInput *)(link->data);
-      BLI_dynstr_appendf(ds, "  %s unf%d;\n", gpu_data_type_to_string(input->type), input->id);
+      lib_dynstr_appendf(ds, "  %s unf%d;\n", gpu_data_type_to_string(input->type), input->id);
     }
-    BLI_dynstr_append(ds, "};\n");
-    BLI_freelistN(&ubo_inputs);
+    lib_dynstr_append(ds, "};\n");
+    lib_freelistN(&ubo_inputs);
   }
 
   /* Generate the uniform attribute UBO if necessary. */
-  if (!BLI_listbase_is_empty(&graph->uniform_attrs.list)) {
-    BLI_dynstr_append(ds, "\nstruct UniformAttributes {\n");
+  if (!lib_listbase_is_empty(&graph->uniform_attrs.list)) {
+    lib_dynstr_append(ds, "\nstruct UniformAttributes {\n");
     LISTBASE_FOREACH (GPUUniformAttr *, attr, &graph->uniform_attrs.list) {
-      BLI_dynstr_appendf(ds, "  vec4 attr%d;\n", attr->id);
+      lib_dynstr_appendf(ds, "  vec4 attr%d;\n", attr->id);
     }
-    BLI_dynstr_append(ds, "};\n");
-    BLI_dynstr_appendf(ds, "layout (std140) uniform %s {\n", GPU_ATTRIBUTE_UBO_BLOCK_NAME);
-    BLI_dynstr_append(ds, "  UniformAttributes uniform_attrs[DRW_RESOURCE_CHUNK_LEN];\n");
-    BLI_dynstr_append(ds, "};\n");
-    BLI_dynstr_append(ds, "#define GET_UNIFORM_ATTR(name) (uniform_attrs[resource_id].name)\n");
+    lib_dynstr_append(ds, "};\n");
+    lib_dynstr_appendf(ds, "layout (std140) uniform %s {\n", GPU_ATTRIBUTE_UBO_BLOCK_NAME);
+    lib_dynstr_append(ds, "  UniformAttributes uniform_attrs[DRW_RESOURCE_CHUNK_LEN];\n");
+    lib_dynstr_append(ds, "};\n");
+    lib_dynstr_append(ds, "#define GET_UNIFORM_ATTR(name) (uniform_attrs[resource_id].name)\n");
   }
 
-  BLI_dynstr_append(ds, "\n");
+  lib_dynstr_append(ds, "\n");
 
   return builtins;
 }
@@ -378,14 +378,14 @@ static void codegen_declare_tmps(DynStr *ds, GPUNodeGraph *graph)
     /* declare temporary variables for node output storage */
     LISTBASE_FOREACH (GPUOutput *, output, &node->outputs) {
       if (output->type == GPU_CLOSURE) {
-        BLI_dynstr_appendf(ds, "  Closure tmp%d;\n", output->id);
+        lib_dynstr_appendf(ds, "  Closure tmp%d;\n", output->id);
       }
       else {
-        BLI_dynstr_appendf(ds, "  %s tmp%d;\n", gpu_data_type_to_string(output->type), output->id);
+        lib_dynstr_appendf(ds, "  %s tmp%d;\n", gpu_data_type_to_string(output->type), output->id);
       }
     }
   }
-  BLI_dynstr_append(ds, "\n");
+  lib_dynstr_append(ds, "\n");
 }
 
 static void codegen_call_functions(DynStr *ds, GPUNodeGraph *graph)
@@ -1097,9 +1097,9 @@ void GPU_pass_cache_free(void)
     gpu_pass_free(pass_cache);
     pass_cache = next;
   }
-  BLI_spin_unlock(&pass_cache_spin);
+  lib_spin_unlock(&pass_cache_spin);
 
-  BLI_spin_end(&pass_cache_spin);
+  lib_spin_end(&pass_cache_spin);
 }
 
 /* Module */
