@@ -1,14 +1,10 @@
-/** \file
- * \ingroup gpu
- *
- * This interface allow GPU to manage GL objects for multiple context and threads.
- */
+/** This interface allow GPU to manage GL objects for multiple context and threads. **/
 
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "GPU_context.h"
+#include "gpu_context.h"
 
 #include "gpu_debug_private.hh"
 #include "gpu_framebuffer_private.hh"
@@ -20,7 +16,7 @@
 
 struct GPUMatrixState;
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 class Context {
  public:
