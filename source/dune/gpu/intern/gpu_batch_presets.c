@@ -344,34 +344,34 @@ void gpu_batch_presets_init(void)
 
 void gpu_batch_presets_register(GPUBatch *preset_batch)
 {
-  BLI_mutex_lock(&g_presets_3d.mutex);
-  BLI_addtail(&presets_list, BLI_genericNodeN(preset_batch));
-  BLI_mutex_unlock(&g_presets_3d.mutex);
+  lib_mutex_lock(&g_presets_3d.mutex);
+  lib_addtail(&presets_list, lib_genericNodeN(preset_batch));
+  lib_mutex_unlock(&g_presets_3d.mutex);
 }
 
 bool gpu_batch_presets_unregister(GPUBatch *preset_batch)
 {
-  BLI_mutex_lock(&g_presets_3d.mutex);
+  lib_mutex_lock(&g_presets_3d.mutex);
   for (LinkData *link = presets_list.last; link; link = link->prev) {
     if (preset_batch == link->data) {
-      BLI_remlink(&presets_list, link);
-      BLI_mutex_unlock(&g_presets_3d.mutex);
-      MEM_freeN(link);
+      lib_remlink(&presets_list, link);
+      lib_mutex_unlock(&g_presets_3d.mutex);
+      mem_freeN(link);
       return true;
     }
   }
-  BLI_mutex_unlock(&g_presets_3d.mutex);
+  lib_mutex_unlock(&g_presets_3d.mutex);
   return false;
 }
 
 void gpu_batch_presets_exit(void)
 {
   LinkData *link;
-  while ((link = BLI_pophead(&presets_list))) {
+  while ((link = lib_pophead(&presets_list))) {
     GPUBatch *preset = link->data;
-    GPU_batch_discard(preset);
-    MEM_freeN(link);
+    gpu_batch_discard(preset);
+    men_freen(link);
   }
 
-  BLI_mutex_end(&g_presets_3d.mutex);
+  lib_mutex_end(&g_presets_3d.mutex);
 }
