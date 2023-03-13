@@ -1,7 +1,5 @@
 
-/** \file
- * \ingroup gpu
- *
+/**
  * Manage GL vertex array IDs in a thread-safe way
  * Use these instead of glGenBuffers & its friends
  * - alloc must be called from a thread that is bound
@@ -15,11 +13,11 @@
 #  define WITH_OPENGL_BACKEND 1
 #endif
 
-#include "BLI_assert.h"
-#include "BLI_utildefines.h"
+#include "lib_assert.h"
+#include "lib_utildefines.h"
 
-#include "GPU_context.h"
-#include "GPU_framebuffer.h"
+#include "gpu_context.h"
+#include "gpu_framebuffer.h"
 
 #include "GHOST_C-api.h"
 
@@ -39,26 +37,25 @@
 #include <mutex>
 #include <vector>
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
 static thread_local Context *active_ctx = nullptr;
 
 /* -------------------------------------------------------------------- */
-/** \name gpu::Context methods
- * \{ */
+/** gpu::Context methods **/
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 Context::Context()
 {
   thread_ = pthread_self();
   is_active_ = false;
-  matrix_state = GPU_matrix_state_create();
+  matrix_state = gpu_matrix_state_create();
 }
 
 Context::~Context()
 {
-  GPU_matrix_state_discard(matrix_state);
+  gpu_matrix_state_discard(matrix_state);
   delete state_manager;
   delete front_left;
   delete back_left;
@@ -77,33 +74,31 @@ Context *Context::get()
   return active_ctx;
 }
 
-}  // namespace blender::gpu
-
-/** \} */
+}  // namespace dune::gpu
 
 /* -------------------------------------------------------------------- */
 
-GPUContext *GPU_context_create(void *ghost_window)
+GPUContext *gpu_ctx_create(void *ghost_window)
 {
   if (GPUBackend::get() == nullptr) {
     /* TODO: move where it make sense. */
-    GPU_backend_init(GPU_BACKEND_OPENGL);
+    gpu_backend_init(GPU_BACKEND_OPENGL);
   }
 
   Context *ctx = GPUBackend::get()->context_alloc(ghost_window);
 
-  GPU_context_active_set(wrap(ctx));
+  gpu_context_active_set(wrap(ctx));
   return wrap(ctx);
 }
 
-void GPU_context_discard(GPUContext *ctx_)
+void gpu_ctx_discard(GPUContext *ctx_)
 {
   Context *ctx = unwrap(ctx_);
   delete ctx;
   active_ctx = nullptr;
 }
 
-void GPU_context_active_set(GPUContext *ctx_)
+void gpu_ctx_active_set(GPUContext *ctx_)
 {
   Context *ctx = unwrap(ctx_);
 
@@ -118,66 +113,61 @@ void GPU_context_active_set(GPUContext *ctx_)
   }
 }
 
-GPUContext *GPU_context_active_get()
+GPUContext *gpu_ctx_active_get()
 {
   return wrap(Context::get());
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Main context global mutex
+/** Main context global mutex
  *
  * Used to avoid crash on some old drivers.
- * \{ */
+ **/
 
-static std::mutex main_context_mutex;
+static std::mutex main_ctx_mutex;
 
-void GPU_context_main_lock()
+void gpu_context_main_lock()
 {
   main_context_mutex.lock();
 }
 
-void GPU_context_main_unlock()
+void gpu_context_main_unlock()
 {
   main_context_mutex.unlock();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name  GPU Begin/end work blocks
+/** GPU Begin/end work blocks
  *
  * Used to explicitly define a per-frame block within which GPU work will happen.
  * Used for global autoreleasepool flushing in Metal
- * \{ */
+ **/
 
-void GPU_render_begin()
+void gpu_render_begin()
 {
   GPUBackend *backend = GPUBackend::get();
-  BLI_assert(backend);
+  lib_assert(backend);
   backend->render_begin();
 }
-void GPU_render_end()
+void gpu_render_end()
 {
   GPUBackend *backend = GPUBackend::get();
-  BLI_assert(backend);
+  lib_assert(backend);
   backend->render_end();
 }
-void GPU_render_step()
+void gpu_render_step()
 {
   GPUBackend *backend = GPUBackend::get();
-  BLI_assert(backend);
+  lib_assert(backend);
   backend->render_step();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Backend selection
- * \{ */
+/** Backend selection */
 
 static GPUBackend *g_backend;
 
-bool GPU_backend_supported(eGPUBackendType type)
+bool gpu_backend_supported(eGPUBackendType type)
 {
   switch (type) {
     case GPU_BACKEND_OPENGL:
@@ -193,15 +183,15 @@ bool GPU_backend_supported(eGPUBackendType type)
       return false;
 #endif
     default:
-      BLI_assert(false && "No backend specified");
+      lib_assert(false && "No backend specified");
       return false;
   }
 }
 
-void GPU_backend_init(eGPUBackendType backend_type)
+void gpu_backend_init(eGPUBackendType backend_type)
 {
-  BLI_assert(g_backend == nullptr);
-  BLI_assert(GPU_backend_supported(backend_type));
+  lib_assert(g_backend == nullptr);
+  lib_assert(gpu_backend_supported(backend_type));
 
   switch (backend_type) {
 #ifdef WITH_OPENGL_BACKEND
@@ -215,12 +205,12 @@ void GPU_backend_init(eGPUBackendType backend_type)
       break;
 #endif
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 }
 
-void GPU_backend_exit()
+void gpu_backend_exit()
 {
   /* TODO: assert no resource left. Currently UI textures are still not freed in their context
    * correctly. */
