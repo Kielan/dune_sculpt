@@ -874,7 +874,7 @@ GPUPass *gpu_generate_pass(GPUMaterial *material,
 
   char *geometrycode = code_generate_geometry(graph, interface_str, geom_code, builtins);
   char *vertexcode = code_generate_vertex(graph, interface_str, vert_code, builtins);
-  char *fragmentcode = BLI_strdupcat(tmp, fragmentgen);
+  char *fragmentcode = lib_strdupcat(tmp, fragmentgen);
 
   MEM_SAFE_FREE(interface_str);
   mem_freen(fragmentgen);
@@ -949,7 +949,7 @@ static int count_active_texture_sampler(GPUShader *shader, const char *source)
       code++;
     }
     /* Skip following spaces. */
-    if (BLI_str_startswith(code, "sampler")) {
+    if (lib_str_startswith(code, "sampler")) {
       /* Move past "uniform". */
       code += 7;
       /* Skip sampler type suffix. */
@@ -1013,11 +1013,11 @@ static bool gpu_pass_shader_validate(GPUPass *pass, GPUShader *shader)
   return (total_samplers_len <= GPU_max_textures());
 }
 
-bool GPU_pass_compile(GPUPass *pass, const char *shname)
+bool gpu_pass_compile(GPUPass *pass, const char *shname)
 {
   bool success = true;
   if (!pass->compiled) {
-    GPUShader *shader = GPU_shader_create(
+    GPUShader *shader = gpu_shader_create(
         pass->vertexcode, pass->fragmentcode, pass->geometrycode, NULL, pass->defines, shname);
 
     /* NOTE: Some drivers / gpu allows more active samplers than the opengl limit.
@@ -1026,7 +1026,7 @@ bool GPU_pass_compile(GPUPass *pass, const char *shname)
       success = false;
       if (shader != NULL) {
         fprintf(stderr, "GPUShader: error: too many samplers in shader.\n");
-        GPU_shader_free(shader);
+        gpu_shader_free(shader);
         shader = NULL;
       }
     }
@@ -1037,15 +1037,15 @@ bool GPU_pass_compile(GPUPass *pass, const char *shname)
   return success;
 }
 
-void GPU_pass_release(GPUPass *pass)
+void gpu_pass_release(GPUPass *pass)
 {
-  BLI_assert(pass->refcount > 0);
+  lib_assert(pass->refcount > 0);
   pass->refcount--;
 }
 
 static void gpu_pass_free(GPUPass *pass)
 {
-  BLI_assert(pass->refcount == 0);
+  lib_assert(pass->refcount == 0);
   if (pass->shader) {
     GPU_shader_free(pass->shader);
   }
@@ -1056,7 +1056,7 @@ static void gpu_pass_free(GPUPass *pass)
   MEM_freeN(pass);
 }
 
-void GPU_pass_cache_garbage_collect(void)
+void gpu_pass_cache_garbage_collect(void)
 {
   static int lasttime = 0;
   const int shadercollectrate = 60; /* hardcoded for now. */
@@ -1068,7 +1068,7 @@ void GPU_pass_cache_garbage_collect(void)
 
   lasttime = ctime;
 
-  BLI_spin_lock(&pass_cache_spin);
+  lib_spin_lock(&pass_cache_spin);
   GPUPass *next, **prev_pass = &pass_cache;
   for (GPUPass *pass = pass_cache; pass; pass = next) {
     next = pass->next;
@@ -1081,17 +1081,17 @@ void GPU_pass_cache_garbage_collect(void)
       prev_pass = &pass->next;
     }
   }
-  BLI_spin_unlock(&pass_cache_spin);
+  lib_spin_unlock(&pass_cache_spin);
 }
 
-void GPU_pass_cache_init(void)
+void gpu_pass_cache_init(void)
 {
-  BLI_spin_init(&pass_cache_spin);
+  lib_spin_init(&pass_cache_spin);
 }
 
-void GPU_pass_cache_free(void)
+void gpu_pass_cache_free(void)
 {
-  BLI_spin_lock(&pass_cache_spin);
+  lib_spin_lock(&pass_cache_spin);
   while (pass_cache) {
     GPUPass *next = pass_cache->next;
     gpu_pass_free(pass_cache);
