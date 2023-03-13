@@ -1,33 +1,29 @@
-/** \file
- * \ingroup gpu
- *
- * Convert material node-trees to GLSL.
- */
+/*** Convert material node-trees to GLSL. */
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_customdata_types.h"
-#include "DNA_image_types.h"
+#include "types_customdata_types.h"
+#include "types_image_types.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_dynstr.h"
-#include "BLI_ghash.h"
-#include "BLI_hash_mm2a.h"
-#include "BLI_link_utils.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_blenlib.h"
+#include "lib_dynstr.h"
+#include "lib_ghash.h"
+#include "lib_hash_mm2a.h"
+#include "lib_link_utils.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
 #include "PIL_time.h"
 
-#include "BKE_material.h"
+#include "dune_material.h"
 
-#include "GPU_capabilities.h"
-#include "GPU_material.h"
-#include "GPU_shader.h"
-#include "GPU_uniform_buffer.h"
-#include "GPU_vertex_format.h"
+#include "gpu_capabilities.h"
+#include "gpu_material.h"
+#include "gpu_shader.h"
+#include "gpu_uniform_buffer.h"
+#include "gpu_vertex_format.h"
 
-#include "BLI_sys_types.h" /* for intptr_t support */
+#include "lib_sys_types.h" /* for intptr_t support */
 
 #include "gpu_codegen.h"
 #include "gpu_material_library.h"
@@ -52,24 +48,24 @@ static SpinLock pass_cache_spin;
 
 static uint32_t gpu_pass_hash(const char *frag_gen, const char *defs, ListBase *attributes)
 {
-  BLI_HashMurmur2A hm2a;
-  BLI_hash_mm2a_init(&hm2a, 0);
-  BLI_hash_mm2a_add(&hm2a, (uchar *)frag_gen, strlen(frag_gen));
+  lib_HashMurmur2A hm2a;
+  lib_hash_mm2a_init(&hm2a, 0);
+  lib_hash_mm2a_add(&hm2a, (uchar *)frag_gen, strlen(frag_gen));
   LISTBASE_FOREACH (GPUMaterialAttribute *, attr, attributes) {
-    BLI_hash_mm2a_add(&hm2a, (uchar *)attr->name, strlen(attr->name));
+    lib_hash_mm2a_add(&hm2a, (uchar *)attr->name, strlen(attr->name));
   }
   if (defs) {
-    BLI_hash_mm2a_add(&hm2a, (uchar *)defs, strlen(defs));
+    lib_hash_mm2a_add(&hm2a, (uchar *)defs, strlen(defs));
   }
 
-  return BLI_hash_mm2a_end(&hm2a);
+  return lib_hash_mm2a_end(&hm2a);
 }
 
 /* Search by hash only. Return first pass with the same hash.
  * There is hash collision if (pass->next && pass->next->hash == hash) */
 static GPUPass *gpu_pass_cache_lookup(uint32_t hash)
 {
-  BLI_spin_lock(&pass_cache_spin);
+  lib_spin_lock(&pass_cache_spin);
   /* Could be optimized with a Lookup table. */
   for (GPUPass *pass = pass_cache; pass; pass = pass->next) {
     if (pass->hash == hash) {
