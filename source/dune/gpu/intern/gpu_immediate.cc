@@ -241,17 +241,17 @@ void immEnd()
     BLI_assert(imm->vertex_idx == imm->vertex_len); /* With all vertices defined. */
   }
   else {
-    BLI_assert(imm->vertex_idx <= imm->vertex_len);
-    BLI_assert(imm->vertex_idx == 0 ||
+    lib_assert(imm->vertex_idx <= imm->vertex_len);
+    lib_assert(imm->vertex_idx == 0 ||
                vertex_count_makes_sense_for_primitive(imm->vertex_idx, imm->prim_type));
   }
 
   if (imm->batch) {
     if (imm->vertex_idx < imm->vertex_len) {
-      GPU_vertbuf_data_resize(imm->batch->verts[0], imm->vertex_idx);
+      gpu_vertbuf_data_resize(imm->batch->verts[0], imm->vertex_idx);
       /* TODO: resize only if vertex count is much smaller */
     }
-    GPU_batch_set_shader(imm->batch, imm->shader);
+    gpu_batch_set_shader(imm->batch, imm->shader);
     imm->batch->flag &= ~GPU_BATCH_BUILDING;
     imm->batch = nullptr; /* don't free, batch belongs to caller */
   }
@@ -270,7 +270,7 @@ void immEnd()
 static void setAttrValueBit(uint attr_id)
 {
   uint16_t mask = 1 << attr_id;
-  BLI_assert(imm->unassigned_attr_bits & mask); /* not already set */
+  lib_assert(imm->unassigned_attr_bits & mask); /* not already set */
   imm->unassigned_attr_bits &= ~mask;
 }
 
@@ -279,11 +279,11 @@ static void setAttrValueBit(uint attr_id)
 void immAttr1f(uint attr_id, float x)
 {
   GPUVertAttr *attr = &imm->vertex_format.attrs[attr_id];
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(attr->comp_type == GPU_COMP_F32);
-  BLI_assert(attr->comp_len == 1);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(attr->comp_type == GPU_COMP_F32);
+  lib_assert(attr->comp_len == 1);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm->vertex_data + attr->offset);
@@ -295,11 +295,11 @@ void immAttr1f(uint attr_id, float x)
 void immAttr2f(uint attr_id, float x, float y)
 {
   GPUVertAttr *attr = &imm->vertex_format.attrs[attr_id];
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(attr->comp_type == GPU_COMP_F32);
-  BLI_assert(attr->comp_len == 2);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(attr->comp_type == GPU_COMP_F32);
+  lib_assert(attr->comp_len == 2);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm->vertex_data + attr->offset);
@@ -312,11 +312,11 @@ void immAttr2f(uint attr_id, float x, float y)
 void immAttr3f(uint attr_id, float x, float y, float z)
 {
   GPUVertAttr *attr = &imm->vertex_format.attrs[attr_id];
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(attr->comp_type == GPU_COMP_F32);
-  BLI_assert(attr->comp_len == 3);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(attr->comp_type == GPU_COMP_F32);
+  lib_assert(attr->comp_len == 3);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm->vertex_data + attr->offset);
@@ -330,11 +330,11 @@ void immAttr3f(uint attr_id, float x, float y, float z)
 void immAttr4f(uint attr_id, float x, float y, float z, float w)
 {
   GPUVertAttr *attr = &imm->vertex_format.attrs[attr_id];
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(attr->comp_type == GPU_COMP_F32);
-  BLI_assert(attr->comp_len == 4);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(attr->comp_type == GPU_COMP_F32);
+  lib_assert(attr->comp_len == 4);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 
   float *data = (float *)(imm->vertex_data + attr->offset);
@@ -349,11 +349,11 @@ void immAttr4f(uint attr_id, float x, float y, float z, float w)
 void immAttr1u(uint attr_id, uint x)
 {
   GPUVertAttr *attr = &imm->vertex_format.attrs[attr_id];
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(attr->comp_type == GPU_COMP_U32);
-  BLI_assert(attr->comp_len == 1);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(attr->comp_type == GPU_COMP_U32);
+  lib_assert(attr->comp_len == 1);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 
   uint *data = (uint *)(imm->vertex_data + attr->offset);
@@ -364,11 +364,11 @@ void immAttr1u(uint attr_id, uint x)
 void immAttr2i(uint attr_id, int x, int y)
 {
   GPUVertAttr *attr = &imm->vertex_format.attrs[attr_id];
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(attr->comp_type == GPU_COMP_I32);
-  BLI_assert(attr->comp_len == 2);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(attr->comp_type == GPU_COMP_I32);
+  lib_assert(attr->comp_len == 2);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 
   int *data = (int *)(imm->vertex_data + attr->offset);
