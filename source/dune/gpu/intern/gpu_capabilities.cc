@@ -1,19 +1,17 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * Wrap OpenGL features such as textures, shaders and GLSL
  * with checks for drivers and GPU support.
  */
 
-#include "DNA_userdef_types.h"
+#include "types_userdef.h"
 
-#include "GPU_capabilities.h"
+#include "gpu_capabilities.h"
 
 #include "gpu_context_private.hh"
 
 #include "gpu_capabilities_private.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 GPUCapabilities GCaps;
 
@@ -22,53 +20,52 @@ GPUCapabilities GCaps;
 using namespace blender::gpu;
 
 /* -------------------------------------------------------------------- */
-/** \name Capabilities
- * \{ */
+/** Capabilities **/
 
-int GPU_max_texture_size()
+int gpu_max_texture_size()
 {
   return GCaps.max_texture_size;
 }
 
-int GPU_texture_size_with_limit(int res, bool limit_gl_texture_size)
+int gpu_texture_size_with_limit(int res, bool limit_gl_texture_size)
 {
-  int size = GPU_max_texture_size();
+  int size = gpu_max_texture_size();
   int reslimit = (limit_gl_texture_size && (U.glreslimit != 0)) ? min_ii(U.glreslimit, size) :
                                                                   size;
   return min_ii(reslimit, res);
 }
 
-int GPU_max_texture_layers()
+int gpu_max_texture_layers()
 {
   return GCaps.max_texture_layers;
 }
 
-int GPU_max_textures_vert()
+int gpu_max_textures_vert()
 {
   return GCaps.max_textures_vert;
 }
 
-int GPU_max_textures_geom()
+int gpu_max_textures_geom()
 {
   return GCaps.max_textures_geom;
 }
 
-int GPU_max_textures_frag()
+int gpu_max_textures_frag()
 {
   return GCaps.max_textures_frag;
 }
 
-int GPU_max_textures()
+int gpu_max_textures()
 {
   return GCaps.max_textures;
 }
 
-int GPU_max_work_group_count(int index)
+int gpu_max_work_group_count(int index)
 {
   return GCaps.max_work_group_count[index];
 }
 
-int GPU_max_work_group_size(int index)
+int gpu_max_work_group_size(int index)
 {
   return GCaps.max_work_group_size[index];
 }
@@ -175,7 +172,7 @@ void GPU_mem_stats_get(int *totalmem, int *freemem)
   Context::get()->memory_statistics_get(totalmem, freemem);
 }
 
-bool GPU_stereo_quadbuffer_support()
+bool gpu_stereo_quadbuffer_support()
 {
   return Context::get()->front_right != nullptr;
 }
