@@ -593,21 +593,21 @@ static char *code_generate_fragment(GPUMaterial *material,
   lib_dynstr_append(ds, "      default: {\n");
   lib_dynstr_append(ds, "        Closure no_aov = CLOSURE_DEFAULT;\n");
   lib_dynstr_append(ds, "        no_aov.holdout = 1.0;\n");
-  BLI_dynstr_append(ds, "        return no_aov;\n");
-  BLI_dynstr_append(ds, "      }\n");
-  BLI_dynstr_append(ds, "    }\n");
-  BLI_dynstr_append(ds, "  } else {\n");
-  BLI_dynstr_append(ds, "  #else /* VOLUMETRICS */\n");
-  BLI_dynstr_append(ds, "  {\n");
-  BLI_dynstr_append(ds, "  #endif /* VOLUMETRICS */\n    ");
+  lib_dynstr_append(ds, "        return no_aov;\n");
+  lib_dynstr_append(ds, "      }\n");
+  lib_dynstr_append(ds, "    }\n");
+  lib_dynstr_append(ds, "  } else {\n");
+  lib_dynstr_append(ds, "  #else /* VOLUMETRICS */\n");
+  lib_dynstr_append(ds, "  {\n");
+  lib_dynstr_append(ds, "  #endif /* VOLUMETRICS */\n    ");
   codegen_final_output(ds, graph->outlink->output);
-  BLI_dynstr_append(ds, "  }\n");
+  lib_dynstr_append(ds, "  }\n");
 
-  BLI_dynstr_append(ds, "}\n");
+  lib_dynstr_append(ds, "}\n");
 
   /* create shader */
-  code = BLI_dynstr_get_cstring(ds);
-  BLI_dynstr_free(ds);
+  code = lib_dynstr_get_cstring(ds);
+  lib_dynstr_free(ds);
 
 #if 0
   if (G.debug & G_DEBUG) {
@@ -644,14 +644,14 @@ static const char *attr_prefix_get(CustomDataType type)
 /* We talk about shader stage interface, not to be mistaken with GPUShaderInterface. */
 static char *code_generate_interface(GPUNodeGraph *graph, int builtins)
 {
-  if (BLI_listbase_is_empty(&graph->attributes) &&
+  if (lib_listbase_is_empty(&graph->attributes) &&
       (builtins & (GPU_BARYCENTRIC_DIST | GPU_BARYCENTRIC_TEXCO)) == 0) {
     return NULL;
   }
 
-  DynStr *ds = BLI_dynstr_new();
+  DynStr *ds = lib_dynstr_new();
 
-  BLI_dynstr_append(ds, "\n");
+  lib_dynstr_append(ds, "\n");
 
   LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     if (attr->type == CD_HAIRLENGTH) {
@@ -717,46 +717,46 @@ static char *code_generate_vertex(GPUNodeGraph *graph,
   }
 
   /* Prototype. Needed for hair functions. */
-  BLI_dynstr_append(ds, "void pass_attr(vec3 position, mat3 normalmat, mat4 modelmatinv);\n");
-  BLI_dynstr_append(ds, "#define USE_ATTR\n\n");
+  lib_dynstr_append(ds, "void pass_attr(vec3 position, mat3 normalmat, mat4 modelmatinv);\n");
+  lib_dynstr_append(ds, "#define USE_ATTR\n\n");
 
-  BLI_dynstr_append(ds, vert_code);
-  BLI_dynstr_append(ds, "\n\n");
+  lib_dynstr_append(ds, vert_code);
+  lib_dynstr_append(ds, "\n\n");
 
-  BLI_dynstr_append(ds, "void pass_attr(vec3 position, mat3 normalmat, mat4 modelmatinv) {\n");
+  lib_dynstr_append(ds, "void pass_attr(vec3 position, mat3 normalmat, mat4 modelmatinv) {\n");
 
   /* GPU_BARYCENTRIC_TEXCO cannot be computed based on gl_VertexID
    * for MESH_SHADER because of indexed drawing. In this case a
    * geometry shader is needed. */
   if (builtins & GPU_BARYCENTRIC_TEXCO) {
-    BLI_dynstr_appendf(ds, "  barycentricTexCo = barycentric_get();\n");
+    lib_dynstr_appendf(ds, "  barycentricTexCo = barycentric_get();\n");
   }
   if (builtins & GPU_BARYCENTRIC_DIST) {
-    BLI_dynstr_appendf(ds, "  barycentricDist = vec3(0);\n");
+    lib_dynstr_appendf(ds, "  barycentricDist = vec3(0);\n");
   }
 
   LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     if (attr->type == CD_TANGENT) { /* silly exception */
-      BLI_dynstr_appendf(ds, "  var%d = tangent_get(att%d, normalmat);\n", attr->id, attr->id);
+      lib_dynstr_appendf(ds, "  var%d = tangent_get(att%d, normalmat);\n", attr->id, attr->id);
     }
     else if (attr->type == CD_ORCO) {
-      BLI_dynstr_appendf(
+      lib_dynstr_appendf(
           ds, "  var%d = orco_get(position, modelmatinv, OrcoTexCoFactors, orco);\n", attr->id);
     }
     else if (attr->type == CD_HAIRLENGTH) {
-      BLI_dynstr_appendf(ds, "  var%d = hair_len_get(hair_get_strand_id(), hairLen);\n", attr->id);
+      lib_dynstr_appendf(ds, "  var%d = hair_len_get(hair_get_strand_id(), hairLen);\n", attr->id);
     }
     else {
       const char *type_str = gpu_data_type_to_string(attr->gputype);
-      BLI_dynstr_appendf(ds, "  var%d = GET_ATTR(%s, att%d);\n", attr->id, type_str, attr->id);
+      lib_dynstr_appendf(ds, "  var%d = GET_ATTR(%s, att%d);\n", attr->id, type_str, attr->id);
     }
   }
 
-  BLI_dynstr_append(ds, "}\n");
+  lib_dynstr_append(ds, "}\n");
 
-  char *code = BLI_dynstr_get_cstring(ds);
+  char *code = lib_dynstr_get_cstring(ds);
 
-  BLI_dynstr_free(ds);
+  lib_dynstr_free(ds);
 
 #if 0
   if (G.debug & G_DEBUG) {
@@ -776,45 +776,45 @@ static char *code_generate_geometry(GPUNodeGraph *graph,
     return NULL;
   }
 
-  DynStr *ds = BLI_dynstr_new();
+  DynStr *ds = lib_dynstr_new();
 
   /* Attributes, Shader interface; */
   if (interface_str) {
-    BLI_dynstr_appendf(ds, "in codegenInterface {%s} dataAttrIn[];\n\n", interface_str);
-    BLI_dynstr_appendf(ds, "out codegenInterface {%s} dataAttrOut;\n\n", interface_str);
+    lib_dynstr_appendf(ds, "in codegenInterface {%s} dataAttrIn[];\n\n", interface_str);
+    lib_dynstr_appendf(ds, "out codegenInterface {%s} dataAttrOut;\n\n", interface_str);
   }
 
-  BLI_dynstr_append(ds, datatoc_gpu_shader_codegen_lib_glsl);
+  lib_dynstr_append(ds, datatoc_gpu_shader_codegen_lib_glsl);
 
   if (builtins & GPU_BARYCENTRIC_DIST) {
     /* geom_code should do something with this, but may not. */
-    BLI_dynstr_append(ds, "#define DO_BARYCENTRIC_DISTANCES\n");
+    lib_dynstr_append(ds, "#define DO_BARYCENTRIC_DISTANCES\n");
   }
 
   /* Generate varying assignments. */
-  BLI_dynstr_append(ds, "#define USE_ATTR\n");
+  lib_dynstr_append(ds, "#define USE_ATTR\n");
   /* This needs to be a define. Some drivers don't like variable vert index inside dataAttrIn. */
-  BLI_dynstr_append(ds, "#define pass_attr(vert) {\\\n");
+  lib_dynstr_append(ds, "#define pass_attr(vert) {\\\n");
 
   if (builtins & GPU_BARYCENTRIC_TEXCO) {
-    BLI_dynstr_append(ds, "dataAttrOut.barycentricTexCo = calc_barycentric_co(vert);\\\n");
+    lib_dynstr_append(ds, "dataAttrOut.barycentricTexCo = calc_barycentric_co(vert);\\\n");
   }
 
   LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     /* TODO: let shader choose what to do depending on what the attribute is. */
-    BLI_dynstr_appendf(ds, "dataAttrOut.var%d = dataAttrIn[vert].var%d;\\\n", attr->id, attr->id);
+    lib_dynstr_appendf(ds, "dataAttrOut.var%d = dataAttrIn[vert].var%d;\\\n", attr->id, attr->id);
   }
-  BLI_dynstr_append(ds, "}\n\n");
+  lib_dynstr_append(ds, "}\n\n");
 
-  BLI_dynstr_append(ds, geom_code);
+  lib_dynstr_append(ds, geom_code);
 
-  char *code = BLI_dynstr_get_cstring(ds);
-  BLI_dynstr_free(ds);
+  char *code = lib_dynstr_get_cstring(ds);
+  lib_dynstr_free(ds);
 
   return code;
 }
 
-GPUShader *GPU_pass_shader_get(GPUPass *pass)
+GPUShader *gpu_pass_shader_get(GPUPass *pass)
 {
   return pass->shader;
 }
@@ -827,7 +827,7 @@ static bool gpu_pass_is_valid(GPUPass *pass)
   return (pass->compiled == false || pass->shader != NULL);
 }
 
-GPUPass *GPU_generate_pass(GPUMaterial *material,
+GPUPass *gpu_generate_pass(GPUMaterial *material,
                            GPUNodeGraph *graph,
                            const char *vert_code,
                            const char *geom_code,
@@ -877,8 +877,8 @@ GPUPass *GPU_generate_pass(GPUMaterial *material,
   char *fragmentcode = BLI_strdupcat(tmp, fragmentgen);
 
   MEM_SAFE_FREE(interface_str);
-  MEM_freeN(fragmentgen);
-  MEM_freeN(tmp);
+  mem_freen(fragmentgen);
+  mem_freen(tmp);
 
   GPUPass *pass = NULL;
   if (pass_hash) {
@@ -903,7 +903,7 @@ GPUPass *GPU_generate_pass(GPUMaterial *material,
   else {
     /* We still create a pass even if shader compilation
      * fails to avoid trying to compile again and again. */
-    pass = MEM_callocN(sizeof(GPUPass), "GPUPass");
+    pass = mem_callocn(sizeof(GPUPass), "GPUPass");
     pass->shader = NULL;
     pass->refcount = 1;
     pass->hash = hash;
@@ -913,7 +913,7 @@ GPUPass *GPU_generate_pass(GPUMaterial *material,
     pass->defines = (defines) ? BLI_strdup(defines) : NULL;
     pass->compiled = false;
 
-    BLI_spin_lock(&pass_cache_spin);
+    lib_spin_lock(&pass_cache_spin);
     if (pass_hash != NULL) {
       /* Add after the first pass having the same hash. */
       pass->next = pass_hash->next;
@@ -923,7 +923,7 @@ GPUPass *GPU_generate_pass(GPUMaterial *material,
       /* No other pass have same hash, just prepend to the list. */
       BLI_LINKS_PREPEND(pass_cache, pass);
     }
-    BLI_spin_unlock(&pass_cache_spin);
+    lib_spin_unlock(&pass_cache_spin);
   }
 
   return pass;
@@ -934,7 +934,7 @@ static int count_active_texture_sampler(GPUShader *shader, const char *source)
   const char *code = source;
 
   /* Remember this is per stage. */
-  GSet *sampler_ids = BLI_gset_int_new(__func__);
+  GSet *sampler_ids = lib_gset_int_new(__func__);
   int num_samplers = 0;
 
   while ((code = strstr(code, "uniform "))) {
@@ -964,20 +964,20 @@ static int count_active_texture_sampler(GPUShader *shader, const char *source)
       if (*code != '\0') {
         char sampler_name[64];
         code = gpu_str_skip_token(code, sampler_name, sizeof(sampler_name));
-        int id = GPU_shader_get_uniform(shader, sampler_name);
+        int id = gpu_shader_get_uniform(shader, sampler_name);
 
         if (id == -1) {
           continue;
         }
         /* Catch duplicates. */
-        if (BLI_gset_add(sampler_ids, POINTER_FROM_INT(id))) {
+        if (lib_gset_add(sampler_ids, POINTER_FROM_INT(id))) {
           num_samplers++;
         }
       }
     }
   }
 
-  BLI_gset_free(sampler_ids, NULL);
+  lib_gset_free(sampler_ids, NULL);
 
   return num_samplers;
 }
