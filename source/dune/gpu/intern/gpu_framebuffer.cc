@@ -380,7 +380,7 @@ void gpu_framebuffer_blit(GPUFrameBuffer *gpufb_read,
 {
   FrameBuffer *fb_read = unwrap(gpufb_read);
   FrameBuffer *fb_write = unwrap(gpufb_write);
-  BLI_assert(blit_buffers != 0);
+  lib_assert(blit_buffers != 0);
 
   FrameBuffer *prev_fb = Context::get()->active_fb;
 
@@ -407,7 +407,7 @@ void gpu_framebuffer_blit(GPUFrameBuffer *gpufb_read,
 
   fb_read->blit_to(blit_buffers, read_slot, fb_write, write_slot, 0, 0);
 
-  /* FIXME(@fclem): sRGB is not saved. */
+  /* FIXME: sRGB is not saved. */
   prev_fb->bind(true);
 }
 
@@ -529,7 +529,7 @@ static GPUFrameBuffer *gpu_offscreen_fb_get(GPUOffScreen *ofs)
 GPUOffScreen *gpu_offscreen_create(
     int width, int height, bool depth, eGPUTextureFormat format, char err_out[256])
 {
-  GPUOffScreen *ofs = MEM_cnew<GPUOffScreen>(__func__);
+  GPUOffScreen *ofs = mem_cnew<GPUOffScreen>(__func__);
 
   /* Sometimes areas can have 0 height or width and this will
    * create a 1D texture which we don't want. */
@@ -546,23 +546,23 @@ GPUOffScreen *gpu_offscreen_create(
   if ((depth && !ofs->depth) || !ofs->color) {
     const char error[] = "GPUTexture: Texture allocation failed.";
     if (err_out) {
-      BLI_snprintf(err_out, 256, error);
+      lib_snprintf(err_out, 256, error);
     }
     else {
       fprintf(stderr, error);
     }
-    GPU_offscreen_free(ofs);
+    gpu_offscreen_free(ofs);
     return nullptr;
   }
 
   GPUFrameBuffer *fb = gpu_offscreen_fb_get(ofs);
 
   /* check validity at the very end! */
-  if (!GPU_framebuffer_check_valid(fb, err_out)) {
-    GPU_offscreen_free(ofs);
+  if (!gpu_framebuffer_check_valid(fb, err_out)) {
+    gpu_offscreen_free(ofs);
     return nullptr;
   }
-  GPU_framebuffer_restore();
+  gpu_framebuffer_restore();
   return ofs;
 }
 
