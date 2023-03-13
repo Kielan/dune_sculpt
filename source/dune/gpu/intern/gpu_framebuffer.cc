@@ -1,13 +1,13 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math_base.h"
-#include "BLI_utildefines.h"
+#include "lib_dunelib.h"
+#include "lib_math_base.h"
+#include "lib_utildefines.h"
 
-#include "GPU_batch.h"
-#include "GPU_capabilities.h"
-#include "GPU_shader.h"
-#include "GPU_texture.h"
+#include "gpu_batch.h"
+#include "gpu_capabilities.h"
+#include "gpu_shader.h"
+#include "gpu_texture.h"
 
 #include "gpu_backend.hh"
 #include "gpu_context_private.hh"
@@ -16,16 +16,15 @@
 
 #include "gpu_framebuffer_private.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 /* -------------------------------------------------------------------- */
-/** \name Constructor / Destructor
- * \{ */
+/** Constructor / Destructor  */
 
 FrameBuffer::FrameBuffer(const char *name)
 {
   if (name) {
-    BLI_strncpy(name_, name, sizeof(name_));
+    lib_strncpy(name_, name, sizeof(name_));
   }
   else {
     name_[0] = '\0';
