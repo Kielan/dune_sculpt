@@ -5,7 +5,7 @@
 #include "types_customdata_types.h"
 #include "types_image_types.h"
 
-#include "lib_blenlib.h"
+#include "lib_dunelib.h"
 #include "lib_dynstr.h"
 #include "lib_ghash.h"
 #include "lib_hash_mm2a.h"
@@ -327,7 +327,7 @@ static int codegen_process_uniforms_functions(GPUMaterial *material,
       else if (input->source == GPU_SOURCE_UNIFORM) {
         if (!input->link) {
           /* We handle the UBOuniforms separately. */
-          BLI_addtail(&ubo_inputs, BLI_genericNodeN(input));
+          lib_addtail(&ubo_inputs, lib_genericNodeN(input));
         }
       }
       else if (input->source == GPU_SOURCE_CONSTANT) {
@@ -411,7 +411,7 @@ static void codegen_call_functions(DynStr *ds, GPUNodeGraph *graph)
             ds, input->link->output->type, input->type, "tmp", input->link->output->id);
       }
       else if (input->source == GPU_SOURCE_BUILTIN) {
-        /* TODO(fclem): get rid of that. */
+        /* TODO: get rid of that. */
         if (input->builtin == GPU_INVERSE_VIEW_MATRIX) {
           lib_dynstr_append(ds, "viewinv");
         }
@@ -523,7 +523,7 @@ static char *code_generate_fragment(GPUMaterial *material,
   if (builtins & GPU_BARYCENTRIC_TEXCO) {
     lib_dynstr_append(ds, "  vec2 barytexco = barycentric_resolve(barycentricTexCo);\n");
   }
-  /* TODO(fclem): get rid of that. */
+  /* TODO: get rid of that. */
   if (builtins & GPU_VIEW_MATRIX) {
     lib_dynstr_append(ds, "  #define viewmat ViewMatrix\n");
   }
@@ -558,41 +558,41 @@ static char *code_generate_fragment(GPUMaterial *material,
   if (builtins & GPU_WORLD_NORMAL) {
     lib_dynstr_append(ds, "  vec3 facingwnormal;\n");
     if (builtins & GPU_VIEW_NORMAL) {
-      BLI_dynstr_append(ds, "#ifdef HAIR_SHADER\n");
-      BLI_dynstr_append(ds, "  facingwnormal = n;\n");
-      BLI_dynstr_append(ds, "#else\n");
-      BLI_dynstr_append(ds, "  world_normals_get(facingwnormal);\n");
-      BLI_dynstr_append(ds, "#endif\n");
+      lib_dynstr_append(ds, "#ifdef HAIR_SHADER\n");
+      lib_dynstr_append(ds, "  facingwnormal = n;\n");
+      lib_dynstr_append(ds, "#else\n");
+      lib_dynstr_append(ds, "  world_normals_get(facingwnormal);\n");
+      lib_dynstr_append(ds, "#endif\n");
     }
     else {
-      BLI_dynstr_append(ds, "  world_normals_get(facingwnormal);\n");
+      lib_dynstr_append(ds, "  world_normals_get(facingwnormal);\n");
     }
   }
   if (builtins & GPU_VIEW_POSITION) {
-    BLI_dynstr_append(ds, "  #define viewposition viewPosition\n");
+    lib_dynstr_append(ds, "  #define viewposition viewPosition\n");
   }
 
   codegen_declare_tmps(ds, graph);
   codegen_call_functions(ds, graph);
 
-  BLI_dynstr_append(ds, "  #ifndef VOLUMETRICS\n");
-  BLI_dynstr_append(ds, "  if (renderPassAOV) {\n");
-  BLI_dynstr_append(ds, "    switch (render_pass_aov_hash()) {\n");
-  GSet *aovhashes_added = BLI_gset_int_new(__func__);
+  lib_dynstr_append(ds, "  #ifndef VOLUMETRICS\n");
+  lib_dynstr_append(ds, "  if (renderPassAOV) {\n");
+  lib_dynstr_append(ds, "    switch (render_pass_aov_hash()) {\n");
+  GSet *aovhashes_added = lib_gset_int_new(__func__);
   LISTBASE_FOREACH (GPUNodeGraphOutputLink *, aovlink, &graph->outlink_aovs) {
     void *aov_key = POINTER_FROM_INT(aovlink->hash);
-    if (BLI_gset_haskey(aovhashes_added, aov_key)) {
+    if (lib_gset_haskey(aovhashes_added, aov_key)) {
       continue;
     }
-    BLI_dynstr_appendf(ds, "      case %d: {\n        ", aovlink->hash);
+    lib_dynstr_appendf(ds, "      case %d: {\n        ", aovlink->hash);
     codegen_final_output(ds, aovlink->outlink->output);
-    BLI_dynstr_append(ds, "      }\n");
-    BLI_gset_add(aovhashes_added, aov_key);
+    lib_dynstr_append(ds, "      }\n");
+    lib_gset_add(aovhashes_added, aov_key);
   }
-  BLI_gset_free(aovhashes_added, NULL);
-  BLI_dynstr_append(ds, "      default: {\n");
-  BLI_dynstr_append(ds, "        Closure no_aov = CLOSURE_DEFAULT;\n");
-  BLI_dynstr_append(ds, "        no_aov.holdout = 1.0;\n");
+  lib_gset_free(aovhashes_added, NULL);
+  lib_dynstr_append(ds, "      default: {\n");
+  lib_dynstr_append(ds, "        Closure no_aov = CLOSURE_DEFAULT;\n");
+  lib_dynstr_append(ds, "        no_aov.holdout = 1.0;\n");
   BLI_dynstr_append(ds, "        return no_aov;\n");
   BLI_dynstr_append(ds, "      }\n");
   BLI_dynstr_append(ds, "    }\n");
@@ -655,22 +655,22 @@ static char *code_generate_interface(GPUNodeGraph *graph, int builtins)
 
   LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
     if (attr->type == CD_HAIRLENGTH) {
-      BLI_dynstr_appendf(ds, "float var%d;\n", attr->id);
+      lib_dynstr_appendf(ds, "float var%d;\n", attr->id);
     }
     else {
-      BLI_dynstr_appendf(ds, "%s var%d;\n", gpu_data_type_to_string(attr->gputype), attr->id);
+      lib_dynstr_appendf(ds, "%s var%d;\n", gpu_data_type_to_string(attr->gputype), attr->id);
     }
   }
   if (builtins & GPU_BARYCENTRIC_TEXCO) {
-    BLI_dynstr_append(ds, "vec2 barycentricTexCo;\n");
+    lib_dynstr_append(ds, "vec2 barycentricTexCo;\n");
   }
   if (builtins & GPU_BARYCENTRIC_DIST) {
-    BLI_dynstr_append(ds, "vec3 barycentricDist;\n");
+    lib_dynstr_append(ds, "vec3 barycentricDist;\n");
   }
 
-  char *code = BLI_dynstr_get_cstring(ds);
+  char *code = lib_dynstr_get_cstring(ds);
 
-  BLI_dynstr_free(ds);
+  lib_dynstr_free(ds);
 
   return code;
 }
@@ -680,9 +680,9 @@ static char *code_generate_vertex(GPUNodeGraph *graph,
                                   const char *vert_code,
                                   int builtins)
 {
-  DynStr *ds = BLI_dynstr_new();
+  DynStr *ds = lib_dynstr_new();
 
-  BLI_dynstr_append(ds, datatoc_gpu_shader_codegen_lib_glsl);
+  lub_dynstr_append(ds, datatoc_gpu_shader_codegen_lib_glsl);
 
   /* Inputs */
   LISTBASE_FOREACH (GPUMaterialAttribute *, attr, &graph->attributes) {
@@ -692,28 +692,28 @@ static char *code_generate_vertex(GPUNodeGraph *graph,
     /* NOTE: Replicate changes to mesh_render_data_create() in draw_cache_impl_mesh.c */
     if (attr->type == CD_ORCO) {
       /* OPTI: orco is computed from local positions, but only if no modifier is present. */
-      BLI_dynstr_append(ds, datatoc_gpu_shader_common_obinfos_lib_glsl);
-      BLI_dynstr_append(ds, "DEFINE_ATTR(vec4, orco);\n");
+      lib_dynstr_append(ds, datatoc_gpu_shader_common_obinfos_lib_glsl);
+      lib_dynstr_append(ds, "DEFINE_ATTR(vec4, orco);\n");
     }
     else if (attr->type == CD_HAIRLENGTH) {
-      BLI_dynstr_append(ds, datatoc_gpu_shader_common_obinfos_lib_glsl);
-      BLI_dynstr_append(ds, "DEFINE_ATTR(float, hairLen);\n");
+      lib_dynstr_append(ds, datatoc_gpu_shader_common_obinfos_lib_glsl);
+      lib_dynstr_append(ds, "DEFINE_ATTR(float, hairLen);\n");
     }
     else if (attr->name[0] == '\0') {
-      BLI_dynstr_appendf(ds, "DEFINE_ATTR(%s, %s);\n", type_str, prefix);
-      BLI_dynstr_appendf(ds, "#define att%d %s\n", attr->id, prefix);
+      lib_dynstr_appendf(ds, "DEFINE_ATTR(%s, %s);\n", type_str, prefix);
+      lib_dynstr_appendf(ds, "#define att%d %s\n", attr->id, prefix);
     }
     else {
       char attr_safe_name[GPU_MAX_SAFE_ATTR_NAME];
-      GPU_vertformat_safe_attr_name(attr->name, attr_safe_name, GPU_MAX_SAFE_ATTR_NAME);
-      BLI_dynstr_appendf(ds, "DEFINE_ATTR(%s, %s%s);\n", type_str, prefix, attr_safe_name);
-      BLI_dynstr_appendf(ds, "#define att%d %s%s\n", attr->id, prefix, attr_safe_name);
+      gpu_vertformat_safe_attr_name(attr->name, attr_safe_name, GPU_MAX_SAFE_ATTR_NAME);
+      lib_dynstr_appendf(ds, "DEFINE_ATTR(%s, %s%s);\n", type_str, prefix, attr_safe_name);
+      lib_dynstr_appendf(ds, "#define att%d %s%s\n", attr->id, prefix, attr_safe_name);
     }
   }
 
   /* Outputs interface */
   if (interface_str) {
-    BLI_dynstr_appendf(ds, "out codegenInterface {%s};\n\n", interface_str);
+    lib_dynstr_appendf(ds, "out codegenInterface {%s};\n\n", interface_str);
   }
 
   /* Prototype. Needed for hair functions. */
