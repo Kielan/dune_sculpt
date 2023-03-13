@@ -294,7 +294,7 @@ void gpu_pbvh_mesh_buffers_update(GPU_PBVH_Buffers *buffers,
             }
           }
           /* Face Sets. */
-          memcpy(GPU_vertbuf_raw_step(&fset_step), face_set_color, sizeof(uchar[3]));
+          memcpy(gpu_vertbuf_raw_step(&fset_step), face_set_color, sizeof(uchar[3]));
         }
       }
     }
@@ -311,7 +311,7 @@ void gpu_pbvh_mesh_buffers_update(GPU_PBVH_Buffers *buffers,
   buffers->mvert = mvert;
 }
 
-GPU_PBVH_Buffers *GPU_pbvh_mesh_buffers_build(const MPoly *mpoly,
+GPU_PBVH_Buffers *gpu_pbvh_mesh_buffers_build(const MPoly *mpoly,
                                               const MLoop *mloop,
                                               const MLoopTri *looptri,
                                               const MVert *mvert,
@@ -607,7 +607,7 @@ void gpu_pbvh_grid_buffers_update(GPU_PBVH_Buffers *buffers,
     GPUIndexBufBuilder elb_lines;
 
     if (buffers->index_lines_buf == NULL) {
-      GPU_indexbuf_init(&elb_lines, GPU_PRIM_LINES, totgrid * key->grid_area * 2, vert_count);
+      gpu_indexbuf_init(&elb_lines, GPU_PRIM_LINES, totgrid * key->grid_area * 2, vert_count);
     }
 
     for (i = 0; i < totgrid; i++) {
@@ -632,7 +632,7 @@ void gpu_pbvh_grid_buffers_update(GPU_PBVH_Buffers *buffers,
         for (y = 0; y < key->grid_size; y++) {
           for (x = 0; x < key->grid_size; x++) {
             CCGElem *elem = CCG_grid_elem(key, grid, x, y);
-            GPU_vertbuf_attr_set(
+            gpu_vertbuf_attr_set(
                 buffers->vert_buf, g_vbo_id.pos, vbo_index, CCG_elem_co(key, elem));
 
             short no_short[3];
@@ -892,14 +892,14 @@ void gpu_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
   if (buffers->smooth) {
     /* Fill the vertex and triangle buffer in one pass over faces. */
     GPUIndexBufBuilder elb, elb_lines;
-    GPU_indexbuf_init(&elb, GPU_PRIM_TRIS, tottri, totvert);
-    GPU_indexbuf_init(&elb_lines, GPU_PRIM_LINES, tottri * 3, totvert);
+    gpu_indexbuf_init(&elb, GPU_PRIM_TRIS, tottri, totvert);
+    gpu_indexbuf_init(&elb_lines, GPU_PRIM_LINES, tottri * 3, totvert);
 
-    GHash *bm_vert_to_index = BLI_ghash_int_new_ex("bm_vert_to_index", totvert);
+    GHash *bm_vert_to_index = lib_ghash_int_new_ex("bm_vert_to_index", totvert);
 
     GSetIterator gs_iter;
     GSET_ITER (gs_iter, bm_faces) {
-      f = BLI_gsetIterator_getKey(&gs_iter);
+      f = lib_gsetIterator_getKey(&gs_iter);
 
       if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
         BMVert *v[3];
@@ -908,7 +908,7 @@ void gpu_pbvh_bmesh_buffers_update(GPU_PBVH_Buffers *buffers,
         uint idx[3];
         for (int i = 0; i < 3; i++) {
           void **idx_p;
-          if (!BLI_ghash_ensure_p(bm_vert_to_index, v[i], &idx_p)) {
+          if (!lib_ghash_ensure_p(bm_vert_to_index, v[i], &idx_p)) {
             /* Add vertex to the vertex buffer each time a new one is encountered */
             *idx_p = POINTER_FROM_UINT(v_index);
 
@@ -1019,7 +1019,7 @@ GPU_PBVH_Buffers *gpu_pbvh_bmesh_buffers_build(bool smooth_shading)
   return buffers;
 }
 
-GPUBatch *GPU_pbvh_buffers_batch_get(GPU_PBVH_Buffers *buffers, bool fast, bool wires)
+GPUBatch *gpu_pbvh_buffers_batch_get(GPU_PBVH_Buffers *buffers, bool fast, bool wires)
 {
   if (wires) {
     return (fast && buffers->lines_fast) ? buffers->lines_fast : buffers->lines;
@@ -1028,12 +1028,12 @@ GPUBatch *GPU_pbvh_buffers_batch_get(GPU_PBVH_Buffers *buffers, bool fast, bool 
   return (fast && buffers->triangles_fast) ? buffers->triangles_fast : buffers->triangles;
 }
 
-bool GPU_pbvh_buffers_has_overlays(GPU_PBVH_Buffers *buffers)
+bool gpu_pbvh_buffers_has_overlays(GPU_PBVH_Buffers *buffers)
 {
   return buffers->show_overlay;
 }
 
-short GPU_pbvh_buffers_material_index_get(GPU_PBVH_Buffers *buffers)
+short gou_pbvh_buffers_material_index_get(GPU_PBVH_Buffers *buffers)
 {
   return buffers->material_index;
 }
@@ -1051,7 +1051,7 @@ static void gpu_pbvh_buffers_clear(GPU_PBVH_Buffers *buffers)
   GPU_VERTBUF_DISCARD_SAFE(buffers->vert_buf);
 }
 
-void GPU_pbvh_buffers_update_flush(GPU_PBVH_Buffers *buffers)
+void gpu_pbvh_buffers_update_flush(GPU_PBVH_Buffers *buffers)
 {
   /* Free empty bmesh node buffers. */
   if (buffers->clear_bmesh_on_flush) {
@@ -1060,15 +1060,15 @@ void GPU_pbvh_buffers_update_flush(GPU_PBVH_Buffers *buffers)
   }
 
   /* Force flushing to the GPU. */
-  if (buffers->vert_buf && GPU_vertbuf_get_data(buffers->vert_buf)) {
-    GPU_vertbuf_use(buffers->vert_buf);
+  if (buffers->vert_buf && gpy_vertbuf_get_data(buffers->vert_buf)) {
+    gpu_vertbuf_use(buffers->vert_buf);
   }
 }
 
-void GPU_pbvh_buffers_free(GPU_PBVH_Buffers *buffers)
+void gpu_pbvh_buffers_free(GPU_PBVH_Buffers *buffers)
 {
   if (buffers) {
     gpu_pbvh_buffers_clear(buffers);
-    MEM_freeN(buffers);
+    mem_freen(buffers);
   }
 }
