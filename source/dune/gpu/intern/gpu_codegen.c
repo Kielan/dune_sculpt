@@ -69,11 +69,11 @@ static GPUPass *gpu_pass_cache_lookup(uint32_t hash)
   /* Could be optimized with a Lookup table. */
   for (GPUPass *pass = pass_cache; pass; pass = pass->next) {
     if (pass->hash == hash) {
-      BLI_spin_unlock(&pass_cache_spin);
+      lib_spin_unlock(&pass_cache_spin);
       return pass;
     }
   }
-  BLI_spin_unlock(&pass_cache_spin);
+  lib_spin_unlock(&pass_cache_spin);
   return NULL;
 }
 
@@ -85,7 +85,7 @@ static GPUPass *gpu_pass_cache_resolve_collision(GPUPass *pass,
                                                  const char *defs,
                                                  uint32_t hash)
 {
-  BLI_spin_lock(&pass_cache_spin);
+  lib_spin_lock(&pass_cache_spin);
   /* Collision, need to `strcmp` the whole shader. */
   for (; pass && (pass->hash == hash); pass = pass->next) {
     if ((defs != NULL) && (!STREQ(pass->defines, defs))) { /* Pass */
@@ -490,14 +490,14 @@ static void codegen_call_functions(DynStr *ds, GPUNodeGraph *graph)
 
 static void codegen_final_output(DynStr *ds, GPUOutput *finaloutput)
 {
-  BLI_dynstr_appendf(ds, "return tmp%d;\n", finaloutput->id);
+  lib_dynstr_appendf(ds, "return tmp%d;\n", finaloutput->id);
 }
 
 static char *code_generate_fragment(GPUMaterial *material,
                                     GPUNodeGraph *graph,
                                     const char *interface_str)
 {
-  DynStr *ds = BLI_dynstr_new();
+  DynStr *ds = lib_dynstr_new();
   char *code;
   int builtins;
 
@@ -505,58 +505,58 @@ static char *code_generate_fragment(GPUMaterial *material,
 
   /* Attributes, Shader stage interface. */
   if (interface_str) {
-    BLI_dynstr_appendf(ds, "in codegenInterface {%s};\n\n", interface_str);
+    lib_dynstr_appendf(ds, "in codegenInterface {%s};\n\n", interface_str);
   }
 
   builtins = codegen_process_uniforms_functions(material, ds, graph);
 
   if (builtins & (GPU_OBJECT_INFO | GPU_OBJECT_COLOR)) {
-    BLI_dynstr_append(ds, datatoc_gpu_shader_common_obinfos_lib_glsl);
+    lib_dynstr_append(ds, datatoc_gpu_shader_common_obinfos_lib_glsl);
   }
 
   if (builtins & GPU_BARYCENTRIC_TEXCO) {
-    BLI_dynstr_append(ds, datatoc_gpu_shader_codegen_lib_glsl);
+    lib_dynstr_append(ds, datatoc_gpu_shader_codegen_lib_glsl);
   }
 
-  BLI_dynstr_append(ds, "Closure nodetree_exec(void)\n{\n");
+  lib_dynstr_append(ds, "Closure nodetree_exec(void)\n{\n");
 
   if (builtins & GPU_BARYCENTRIC_TEXCO) {
-    BLI_dynstr_append(ds, "  vec2 barytexco = barycentric_resolve(barycentricTexCo);\n");
+    lib_dynstr_append(ds, "  vec2 barytexco = barycentric_resolve(barycentricTexCo);\n");
   }
   /* TODO(fclem): get rid of that. */
   if (builtins & GPU_VIEW_MATRIX) {
-    BLI_dynstr_append(ds, "  #define viewmat ViewMatrix\n");
+    lib_dynstr_append(ds, "  #define viewmat ViewMatrix\n");
   }
   if (builtins & GPU_CAMERA_TEXCO_FACTORS) {
-    BLI_dynstr_append(ds, "  #define camtexfac CameraTexCoFactors\n");
+    lib_dynstr_append(ds, "  #define camtexfac CameraTexCoFactors\n");
   }
   if (builtins & GPU_OBJECT_MATRIX) {
-    BLI_dynstr_append(ds, "  #define objmat ModelMatrix\n");
+    lib_dynstr_append(ds, "  #define objmat ModelMatrix\n");
   }
   if (builtins & GPU_INVERSE_OBJECT_MATRIX) {
-    BLI_dynstr_append(ds, "  #define objinv ModelMatrixInverse\n");
+    lib_dynstr_append(ds, "  #define objinv ModelMatrixInverse\n");
   }
   if (builtins & GPU_INVERSE_VIEW_MATRIX) {
-    BLI_dynstr_append(ds, "  #define viewinv ViewMatrixInverse\n");
+    lib_dynstr_append(ds, "  #define viewinv ViewMatrixInverse\n");
   }
   if (builtins & GPU_LOC_TO_VIEW_MATRIX) {
-    BLI_dynstr_append(ds, "  #define localtoviewmat (ViewMatrix * ModelMatrix)\n");
+    lib_dynstr_append(ds, "  #define localtoviewmat (ViewMatrix * ModelMatrix)\n");
   }
   if (builtins & GPU_INVERSE_LOC_TO_VIEW_MATRIX) {
-    BLI_dynstr_append(ds,
+    lib_dynstr_append(ds,
                       "  #define invlocaltoviewmat (ModelMatrixInverse * ViewMatrixInverse)\n");
   }
   if (builtins & GPU_VIEW_NORMAL) {
-    BLI_dynstr_append(ds, "#ifdef HAIR_SHADER\n");
-    BLI_dynstr_append(ds, "  vec3 n;\n");
-    BLI_dynstr_append(ds, "  world_normals_get(n);\n");
-    BLI_dynstr_append(ds, "  vec3 facingnormal = transform_direction(ViewMatrix, n);\n");
-    BLI_dynstr_append(ds, "#else\n");
-    BLI_dynstr_append(ds, "  vec3 facingnormal = gl_FrontFacing ? viewNormal: -viewNormal;\n");
-    BLI_dynstr_append(ds, "#endif\n");
+    lib_dynstr_append(ds, "#ifdef HAIR_SHADER\n");
+    lib_dynstr_append(ds, "  vec3 n;\n");
+    lib_dynstr_append(ds, "  world_normals_get(n);\n");
+    lib_dynstr_append(ds, "  vec3 facingnormal = transform_direction(ViewMatrix, n);\n");
+    lib_dynstr_append(ds, "#else\n");
+    lib_dynstr_append(ds, "  vec3 facingnormal = gl_FrontFacing ? viewNormal: -viewNormal;\n");
+    lib_dynstr_append(ds, "#endif\n");
   }
   if (builtins & GPU_WORLD_NORMAL) {
-    BLI_dynstr_append(ds, "  vec3 facingwnormal;\n");
+    lib_dynstr_append(ds, "  vec3 facingwnormal;\n");
     if (builtins & GPU_VIEW_NORMAL) {
       BLI_dynstr_append(ds, "#ifdef HAIR_SHADER\n");
       BLI_dynstr_append(ds, "  facingwnormal = n;\n");
