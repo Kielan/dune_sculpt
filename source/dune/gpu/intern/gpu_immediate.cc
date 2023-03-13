@@ -1,16 +1,12 @@
-/** \file
- * \ingroup gpu
- *
- * Mimics old style opengl immediate mode drawing.
- */
+/** Mimics old style opengl immediate mode drawing. **/
 
 #ifndef GPU_STANDALONE
-#  include "UI_resources.h"
+#  include "ui_resources.h"
 #endif
 
-#include "GPU_immediate.h"
-#include "GPU_matrix.h"
-#include "GPU_texture.h"
+#include "gpu_immediate.h"
+#include "gpu_matrix.h"
+#include "gpu_texture.h"
 
 #include "gpu_context_private.hh"
 #include "gpu_immediate_private.hh"
@@ -18,7 +14,7 @@
 #include "gpu_vertex_buffer_private.hh"
 #include "gpu_vertex_format_private.h"
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
 static thread_local Immediate *imm = nullptr;
 
@@ -34,13 +30,13 @@ void immDeactivate()
 
 GPUVertFormat *immVertexFormat()
 {
-  GPU_vertformat_clear(&imm->vertex_format);
+  dune_vertformat_clear(&imm->vertex_format);
   return &imm->vertex_format;
 }
 
 void immBindShader(GPUShader *shader)
 {
-  BLI_assert(imm->shader == nullptr);
+  lib_assert(imm->shader == nullptr);
 
   imm->shader = shader;
   imm->builtin_shader_bound = GPU_SHADER_TEXT; /* Default value. */
@@ -50,23 +46,23 @@ void immBindShader(GPUShader *shader)
     imm->enabled_attr_bits = 0xFFFFu & ~(0xFFFFu << imm->vertex_format.attr_len);
   }
 
-  GPU_shader_bind(shader);
-  GPU_matrix_bind(shader);
-  GPU_shader_set_srgb_uniform(shader);
+  gpu_shader_bind(shader);
+  gpu_matrix_bind(shader);
+  gpu_shader_set_srgb_uniform(shader);
 }
 
 void immBindBuiltinProgram(eGPUBuiltinShader shader_id)
 {
-  GPUShader *shader = GPU_shader_get_builtin_shader(shader_id);
+  GPUShader *shader = gpu_shader_get_builtin_shader(shader_id);
   immBindShader(shader);
   imm->builtin_shader_bound = shader_id;
 }
 
 void immUnbindProgram()
 {
-  BLI_assert(imm->shader != nullptr);
+  lib_assert(imm->shader != nullptr);
 
-  GPU_shader_unbind();
+  gpu_shader_unbind();
   imm->shader = nullptr;
 }
 
@@ -105,11 +101,11 @@ static bool vertex_count_makes_sense_for_primitive(uint vertex_len, GPUPrimType 
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name Wide line workaround
+/** Wide line workaround
  *
  * Some systems do not support wide lines.
  * We workaround this by using specialized shaders.
- * \{ */
+ **/
 
 static void wide_line_workaround_start(GPUPrimType prim_type)
 {
@@ -150,17 +146,17 @@ static void wide_line_workaround_start(GPUPrimType prim_type)
 
   immUnbindProgram();
 
-  /* TODO(fclem): Don't use geometry shader and use quad instancing with double load. */
-  // GPU_vertformat_multiload_enable(imm->vertex_format, 2);
+  /* TODO: Don't use geometry shader and use quad instancing with double load. */
+  // gpu_vertformat_multiload_enable(imm->vertex_format, 2);
 
   immBindBuiltinProgram(polyline_sh);
 
   float viewport[4];
-  GPU_viewport_size_get_f(viewport);
+  gpu_viewport_size_get_f(viewport);
   immUniform2fv("viewportSize", &viewport[2]);
   immUniform1f("lineWidth", line_width);
 
-  if (GPU_blend_get() == GPU_BLEND_NONE) {
+  if (gpu_blend_get() == GPU_BLEND_NONE) {
     /* Disable line smoothing when blending is disabled (see T81827). */
     immUniform1i("lineSmooth", 0);
   }
@@ -175,7 +171,7 @@ static void wide_line_workaround_start(GPUPrimType prim_type)
 static void wide_line_workaround_end()
 {
   if (imm->prev_builtin_shader) {
-    if (GPU_blend_get() == GPU_BLEND_NONE) {
+    if (gpu_blend_get() == GPU_BLEND_NONE) {
       /* Restore default. */
       immUniform1i("lineSmooth", 1);
     }
@@ -186,12 +182,10 @@ static void wide_line_workaround_end()
   }
 }
 
-/** \} */
-
 void immBegin(GPUPrimType prim_type, uint vertex_len)
 {
-  BLI_assert(imm->prim_type == GPU_PRIM_NONE); /* Make sure we haven't already begun. */
-  BLI_assert(vertex_count_makes_sense_for_primitive(vertex_len, prim_type));
+  lib_assert(imm->prim_type == GPU_PRIM_NONE); /* Make sure we haven't already begun. */
+  lib_assert(vertex_count_makes_sense_for_primitive(vertex_len, prim_type));
 
   wide_line_workaround_start(prim_type);
 
