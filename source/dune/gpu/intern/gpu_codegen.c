@@ -93,11 +93,11 @@ static GPUPass *gpu_pass_cache_resolve_collision(GPUPass *pass,
     else if ((geom != NULL) && (!STREQ(pass->geometrycode, geom))) { /* Pass */
     }
     else if ((!STREQ(pass->fragmentcode, frag) == 0) && (STREQ(pass->vertexcode, vert))) {
-      BLI_spin_unlock(&pass_cache_spin);
+      lib_spin_unlock(&pass_cache_spin);
       return pass;
     }
   }
-  BLI_spin_unlock(&pass_cache_spin);
+  lib_spin_unlock(&pass_cache_spin);
   return NULL;
 }
 
@@ -107,71 +107,71 @@ static void codegen_convert_datatype(DynStr *ds, int from, int to, const char *t
 {
   char name[1024];
 
-  BLI_snprintf(name, sizeof(name), "%s%d", tmp, id);
+  lib_snprintf(name, sizeof(name), "%s%d", tmp, id);
 
   if (from == to) {
-    BLI_dynstr_append(ds, name);
+    lib_dynstr_append(ds, name);
   }
   else if (to == GPU_FLOAT) {
     if (from == GPU_VEC4) {
-      BLI_dynstr_appendf(ds, "dot(%s.rgb, vec3(0.2126, 0.7152, 0.0722))", name);
+      lib_dynstr_appendf(ds, "dot(%s.rgb, vec3(0.2126, 0.7152, 0.0722))", name);
     }
     else if (from == GPU_VEC3) {
-      BLI_dynstr_appendf(ds, "(%s.r + %s.g + %s.b) / 3.0", name, name, name);
+      lib_dynstr_appendf(ds, "(%s.r + %s.g + %s.b) / 3.0", name, name, name);
     }
     else if (from == GPU_VEC2) {
-      BLI_dynstr_appendf(ds, "%s.r", name);
+      lib_dynstr_appendf(ds, "%s.r", name);
     }
   }
   else if (to == GPU_VEC2) {
     if (from == GPU_VEC4) {
-      BLI_dynstr_appendf(ds, "vec2((%s.r + %s.g + %s.b) / 3.0, %s.a)", name, name, name, name);
+      lib_dynstr_appendf(ds, "vec2((%s.r + %s.g + %s.b) / 3.0, %s.a)", name, name, name, name);
     }
     else if (from == GPU_VEC3) {
-      BLI_dynstr_appendf(ds, "vec2((%s.r + %s.g + %s.b) / 3.0, 1.0)", name, name, name);
+      lib_dynstr_appendf(ds, "vec2((%s.r + %s.g + %s.b) / 3.0, 1.0)", name, name, name);
     }
     else if (from == GPU_FLOAT) {
-      BLI_dynstr_appendf(ds, "vec2(%s, 1.0)", name);
+      lib_dynstr_appendf(ds, "vec2(%s, 1.0)", name);
     }
   }
   else if (to == GPU_VEC3) {
     if (from == GPU_VEC4) {
-      BLI_dynstr_appendf(ds, "%s.rgb", name);
+      lib_dynstr_appendf(ds, "%s.rgb", name);
     }
     else if (from == GPU_VEC2) {
-      BLI_dynstr_appendf(ds, "vec3(%s.r, %s.r, %s.r)", name, name, name);
+      lib_dynstr_appendf(ds, "vec3(%s.r, %s.r, %s.r)", name, name, name);
     }
     else if (from == GPU_FLOAT) {
-      BLI_dynstr_appendf(ds, "vec3(%s, %s, %s)", name, name, name);
+      lib_dynstr_appendf(ds, "vec3(%s, %s, %s)", name, name, name);
     }
   }
   else if (to == GPU_VEC4) {
     if (from == GPU_VEC3) {
-      BLI_dynstr_appendf(ds, "vec4(%s, 1.0)", name);
+      lib_dynstr_appendf(ds, "vec4(%s, 1.0)", name);
     }
     else if (from == GPU_VEC2) {
-      BLI_dynstr_appendf(ds, "vec4(%s.r, %s.r, %s.r, %s.g)", name, name, name, name);
+      lib_dynstr_appendf(ds, "vec4(%s.r, %s.r, %s.r, %s.g)", name, name, name, name);
     }
     else if (from == GPU_FLOAT) {
-      BLI_dynstr_appendf(ds, "vec4(%s, %s, %s, 1.0)", name, name, name);
+      lib_dynstr_appendf(ds, "vec4(%s, %s, %s, 1.0)", name, name, name);
     }
   }
   else if (to == GPU_CLOSURE) {
     if (from == GPU_VEC4) {
-      BLI_dynstr_appendf(ds, "closure_emission(%s.rgb)", name);
+      lib_dynstr_appendf(ds, "closure_emission(%s.rgb)", name);
     }
     else if (from == GPU_VEC3) {
-      BLI_dynstr_appendf(ds, "closure_emission(%s.rgb)", name);
+      lib_dynstr_appendf(ds, "closure_emission(%s.rgb)", name);
     }
     else if (from == GPU_VEC2) {
-      BLI_dynstr_appendf(ds, "closure_emission(%s.rrr)", name);
+      lib_dynstr_appendf(ds, "closure_emission(%s.rrr)", name);
     }
     else if (from == GPU_FLOAT) {
-      BLI_dynstr_appendf(ds, "closure_emission(vec3(%s, %s, %s))", name, name, name);
+      lib_dynstr_appendf(ds, "closure_emission(vec3(%s, %s, %s))", name, name, name);
     }
   }
   else {
-    BLI_dynstr_append(ds, name);
+    lib_dynstr_append(ds, name);
   }
 }
 
@@ -179,15 +179,15 @@ static void codegen_print_datatype(DynStr *ds, const eGPUType type, float *data)
 {
   int i;
 
-  BLI_dynstr_appendf(ds, "%s(", gpu_data_type_to_string(type));
+  lib_dynstr_appendf(ds, "%s(", gpu_data_type_to_string(type));
 
   for (i = 0; i < type; i++) {
-    BLI_dynstr_appendf(ds, "%.12f", data[i]);
+    lib_dynstr_appendf(ds, "%.12f", data[i]);
     if (i == type - 1) {
-      BLI_dynstr_append(ds, ")");
+      lib_dynstr_append(ds, ")");
     }
     else {
-      BLI_dynstr_append(ds, ", ");
+      lib_dynstr_append(ds, ", ");
     }
   }
 }
@@ -391,20 +391,20 @@ static void codegen_declare_tmps(DynStr *ds, GPUNodeGraph *graph)
 static void codegen_call_functions(DynStr *ds, GPUNodeGraph *graph)
 {
   LISTBASE_FOREACH (GPUNode *, node, &graph->nodes) {
-    BLI_dynstr_appendf(ds, "  %s(", node->name);
+    lib_dynstr_appendf(ds, "  %s(", node->name);
 
     LISTBASE_FOREACH (GPUInput *, input, &node->inputs) {
       if (input->source == GPU_SOURCE_TEX) {
-        BLI_dynstr_append(ds, input->texture->sampler_name);
+        lib_dynstr_append(ds, input->texture->sampler_name);
       }
       else if (input->source == GPU_SOURCE_TEX_TILED_MAPPING) {
-        BLI_dynstr_append(ds, input->texture->tiled_mapping_name);
+        lib_dynstr_append(ds, input->texture->tiled_mapping_name);
       }
       else if (input->source == GPU_SOURCE_VOLUME_GRID) {
-        BLI_dynstr_append(ds, input->volume_grid->sampler_name);
+        lib_dynstr_append(ds, input->volume_grid->sampler_name);
       }
       else if (input->source == GPU_SOURCE_VOLUME_GRID_TRANSFORM) {
-        BLI_dynstr_append(ds, input->volume_grid->transform_name);
+        lib_dynstr_append(ds, input->volume_grid->transform_name);
       }
       else if (input->source == GPU_SOURCE_OUTPUT) {
         codegen_convert_datatype(
@@ -413,78 +413,78 @@ static void codegen_call_functions(DynStr *ds, GPUNodeGraph *graph)
       else if (input->source == GPU_SOURCE_BUILTIN) {
         /* TODO(fclem): get rid of that. */
         if (input->builtin == GPU_INVERSE_VIEW_MATRIX) {
-          BLI_dynstr_append(ds, "viewinv");
+          lib_dynstr_append(ds, "viewinv");
         }
         else if (input->builtin == GPU_VIEW_MATRIX) {
-          BLI_dynstr_append(ds, "viewmat");
+          lib_dynstr_append(ds, "viewmat");
         }
         else if (input->builtin == GPU_CAMERA_TEXCO_FACTORS) {
-          BLI_dynstr_append(ds, "camtexfac");
+          lib_dynstr_append(ds, "camtexfac");
         }
         else if (input->builtin == GPU_LOC_TO_VIEW_MATRIX) {
-          BLI_dynstr_append(ds, "localtoviewmat");
+          lib_dynstr_append(ds, "localtoviewmat");
         }
         else if (input->builtin == GPU_INVERSE_LOC_TO_VIEW_MATRIX) {
-          BLI_dynstr_append(ds, "invlocaltoviewmat");
+          lib_dynstr_append(ds, "invlocaltoviewmat");
         }
         else if (input->builtin == GPU_BARYCENTRIC_DIST) {
-          BLI_dynstr_append(ds, "barycentricDist");
+          lib_dynstr_append(ds, "barycentricDist");
         }
         else if (input->builtin == GPU_BARYCENTRIC_TEXCO) {
-          BLI_dynstr_append(ds, "barytexco");
+          lib_dynstr_append(ds, "barytexco");
         }
         else if (input->builtin == GPU_OBJECT_MATRIX) {
-          BLI_dynstr_append(ds, "objmat");
+          lib_dynstr_append(ds, "objmat");
         }
         else if (input->builtin == GPU_OBJECT_INFO) {
-          BLI_dynstr_append(ds, "ObjectInfo");
+          lib_dynstr_append(ds, "ObjectInfo");
         }
         else if (input->builtin == GPU_OBJECT_COLOR) {
-          BLI_dynstr_append(ds, "ObjectColor");
+          lib_dynstr_append(ds, "ObjectColor");
         }
         else if (input->builtin == GPU_INVERSE_OBJECT_MATRIX) {
-          BLI_dynstr_append(ds, "objinv");
+          lib_dynstr_append(ds, "objinv");
         }
         else if (input->builtin == GPU_VIEW_POSITION) {
-          BLI_dynstr_append(ds, "viewposition");
+          lib_dynstr_append(ds, "viewposition");
         }
         else if (input->builtin == GPU_VIEW_NORMAL) {
-          BLI_dynstr_append(ds, "facingnormal");
+          lib_dynstr_append(ds, "facingnormal");
         }
         else if (input->builtin == GPU_WORLD_NORMAL) {
-          BLI_dynstr_append(ds, "facingwnormal");
+          lib_dynstr_append(ds, "facingwnormal");
         }
         else {
-          BLI_dynstr_append(ds, gpu_builtin_name(input->builtin));
+          lib_dynstr_append(ds, gpu_builtin_name(input->builtin));
         }
       }
       else if (input->source == GPU_SOURCE_STRUCT) {
-        BLI_dynstr_appendf(ds, "strct%d", input->id);
+        lib_dynstr_appendf(ds, "strct%d", input->id);
       }
       else if (input->source == GPU_SOURCE_UNIFORM) {
-        BLI_dynstr_appendf(ds, "unf%d", input->id);
+        lib_dynstr_appendf(ds, "unf%d", input->id);
       }
       else if (input->source == GPU_SOURCE_CONSTANT) {
-        BLI_dynstr_appendf(ds, "cons%d", input->id);
+        lib_dynstr_appendf(ds, "cons%d", input->id);
       }
       else if (input->source == GPU_SOURCE_ATTR) {
         codegen_convert_datatype(ds, input->attr->gputype, input->type, "var", input->attr->id);
       }
       else if (input->source == GPU_SOURCE_UNIFORM_ATTR) {
-        BLI_dynstr_appendf(ds, "GET_UNIFORM_ATTR(attr%d)", input->uniform_attr->id);
+        lib_dynstr_appendf(ds, "GET_UNIFORM_ATTR(attr%d)", input->uniform_attr->id);
       }
 
-      BLI_dynstr_append(ds, ", ");
+      lib_dynstr_append(ds, ", ");
     }
 
     LISTBASE_FOREACH (GPUOutput *, output, &node->outputs) {
-      BLI_dynstr_appendf(ds, "tmp%d", output->id);
+      lib_dynstr_appendf(ds, "tmp%d", output->id);
       if (output->next) {
-        BLI_dynstr_append(ds, ", ");
+        lib_dynstr_append(ds, ", ");
       }
     }
 
-    BLI_dynstr_append(ds, ");\n");
+    lib_dynstr_append(ds, ");\n");
   }
 }
 
