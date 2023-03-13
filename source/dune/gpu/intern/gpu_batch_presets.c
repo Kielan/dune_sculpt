@@ -92,13 +92,13 @@ static void batch_sphere_lat_lon_vert(GPUVertBufRaw *pos_step,
   pos[0] = sinf(lat) * cosf(lon);
   pos[1] = cosf(lat);
   pos[2] = sinf(lat) * sinf(lon);
-  copy_v3_v3(GPU_vertbuf_raw_step(pos_step), pos);
-  copy_v3_v3(GPU_vertbuf_raw_step(nor_step), pos);
+  copy_v3_v3(gpu_vertbuf_raw_step(pos_step), pos);
+  copy_v3_v3(gpu_vertbuf_raw_step(nor_step), pos);
 }
-GPUBatch *GPU_batch_preset_sphere(int lod)
+GPUBatch *gpu_batch_preset_sphere(int lod)
 {
-  BLI_assert(lod >= 0 && lod <= 2);
-  BLI_assert(BLI_thread_is_main());
+  lib_assert(lod >= 0 && lod <= 2);
+  lib_assert(lib_thread_is_main());
 
   if (lod == 0) {
     return g_presets_3d.batch.sphere_low;
@@ -110,10 +110,10 @@ GPUBatch *GPU_batch_preset_sphere(int lod)
   return g_presets_3d.batch.sphere_high;
 }
 
-GPUBatch *GPU_batch_preset_sphere_wire(int lod)
+GPUBatch *gpu_batch_preset_sphere_wire(int lod)
 {
-  BLI_assert(lod >= 0 && lod <= 1);
-  BLI_assert(BLI_thread_is_main());
+  lib_assert(lod >= 0 && lod <= 1);
+  lib_assert(lib_thread_is_main());
 
   if (lod == 0) {
     return g_presets_3d.batch.sphere_wire_low;
@@ -122,11 +122,8 @@ GPUBatch *GPU_batch_preset_sphere_wire(int lod)
   return g_presets_3d.batch.sphere_wire_med;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Create Sphere (3D)
- * \{ */
+/** Create Sphere (3D) **/
 
 GPUBatch *gpu_batch_sphere(int lat_res, int lon_res)
 {
@@ -160,10 +157,10 @@ GPUBatch *gpu_batch_sphere(int lat_res, int lon_res)
     }
   }
 
-  BLI_assert(vbo_len == GPU_vertbuf_raw_used(&pos_step));
-  BLI_assert(vbo_len == GPU_vertbuf_raw_used(&nor_step));
+  lib_assert(vbo_len == GPU_vertbuf_raw_used(&pos_step));
+  lib_assert(vbo_len == GPU_vertbuf_raw_used(&nor_step));
 
-  return GPU_batch_create_ex(GPU_PRIM_TRIS, vbo, NULL, GPU_BATCH_OWNS_VBO);
+  return gou_batch_create_ex(GPU_PRIM_TRIS, vbo, NULL, GPU_BATCH_OWNS_VBO);
 }
 
 static GPUBatch *batch_sphere_wire(int lat_res, int lon_res)
@@ -177,8 +174,8 @@ static GPUBatch *batch_sphere_wire(int lat_res, int lon_res)
   GPU_vertbuf_data_alloc(vbo, vbo_len);
 
   GPUVertBufRaw pos_step, nor_step;
-  GPU_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.pos, &pos_step);
-  GPU_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.nor, &nor_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.pos, &pos_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.nor, &nor_step);
 
   lon = 0.0f;
   for (int i = 0; i < lon_res; i++, lon += lon_inc) {
@@ -194,13 +191,11 @@ static GPUBatch *batch_sphere_wire(int lat_res, int lon_res)
     }
   }
 
-  BLI_assert(vbo_len == GPU_vertbuf_raw_used(&pos_step));
-  BLI_assert(vbo_len == GPU_vertbuf_raw_used(&nor_step));
+  lib_assert(vbo_len == gpu_vertbuf_raw_used(&pos_step));
+  lib_assert(vbo_len == gpu_vertbuf_raw_used(&nor_step));
 
-  return GPU_batch_create_ex(GPU_PRIM_LINES, vbo, NULL, GPU_BATCH_OWNS_VBO);
+  return gpu_batch_create_ex(GPU_PRIM_LINES, vbo, NULL, GPU_BATCH_OWNS_VBO);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name Panel Drag Widget
