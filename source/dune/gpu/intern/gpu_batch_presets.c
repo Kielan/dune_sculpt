@@ -131,13 +131,13 @@ GPUBatch *gpu_batch_sphere(int lat_res, int lon_res)
   const float lat_inc = M_PI / lat_res;
   float lon, lat;
 
-  GPUVertBuf *vbo = GPU_vertbuf_create_with_format(preset_3d_format());
+  GPUVertBuf *vbo = gpu_vertbuf_create_with_format(preset_3d_format());
   const uint vbo_len = (lat_res - 1) * lon_res * 6;
-  GPU_vertbuf_data_alloc(vbo, vbo_len);
+  gpu_vertbuf_data_alloc(vbo, vbo_len);
 
   GPUVertBufRaw pos_step, nor_step;
-  GPU_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.pos, &pos_step);
-  GPU_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.nor, &nor_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.pos, &pos_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.nor, &nor_step);
 
   lon = 0.0f;
   for (int i = 0; i < lon_res; i++, lon += lon_inc) {
@@ -157,8 +157,8 @@ GPUBatch *gpu_batch_sphere(int lat_res, int lon_res)
     }
   }
 
-  lib_assert(vbo_len == GPU_vertbuf_raw_used(&pos_step));
-  lib_assert(vbo_len == GPU_vertbuf_raw_used(&nor_step));
+  lib_assert(vbo_len == gpu_vertbuf_raw_used(&pos_step));
+  lib_assert(vbo_len == gpu_vertbuf_raw_used(&nor_step));
 
   return gou_batch_create_ex(GPU_PRIM_TRIS, vbo, NULL, GPU_BATCH_OWNS_VBO);
 }
@@ -169,9 +169,9 @@ static GPUBatch *batch_sphere_wire(int lat_res, int lon_res)
   const float lat_inc = M_PI / lat_res;
   float lon, lat;
 
-  GPUVertBuf *vbo = GPU_vertbuf_create_with_format(preset_3d_format());
+  GPUVertBuf *vbo = gpu_vertbuf_create_with_format(preset_3d_format());
   const uint vbo_len = (lat_res * lon_res * 2) + ((lat_res - 1) * lon_res * 2);
-  GPU_vertbuf_data_alloc(vbo, vbo_len);
+  gpu_vertbuf_data_alloc(vbo, vbo_len);
 
   GPUVertBufRaw pos_step, nor_step;
   gpu_vertbuf_attr_get_raw_data(vbo, g_presets_3d.attr_id.pos, &pos_step);
@@ -198,8 +198,7 @@ static GPUBatch *batch_sphere_wire(int lat_res, int lon_res)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Panel Drag Widget
- * \{ */
+/** Panel Drag Widget **/
 
 static void gpu_batch_preset_rectf_tris_color_ex(GPUVertBufRaw *pos_step,
                                                  float x1,
@@ -209,23 +208,23 @@ static void gpu_batch_preset_rectf_tris_color_ex(GPUVertBufRaw *pos_step,
                                                  GPUVertBufRaw *col_step,
                                                  const float color[4])
 {
-  copy_v2_v2(GPU_vertbuf_raw_step(pos_step), (const float[2]){x1, y1});
-  copy_v4_v4(GPU_vertbuf_raw_step(col_step), color);
+  copy_v2_v2(gpu_vertbuf_raw_step(pos_step), (const float[2]){x1, y1});
+  copy_v4_v4(gpu_vertbuf_raw_step(col_step), color);
 
-  copy_v2_v2(GPU_vertbuf_raw_step(pos_step), (const float[2]){x2, y1});
-  copy_v4_v4(GPU_vertbuf_raw_step(col_step), color);
+  copy_v2_v2(gpu_vertbuf_raw_step(pos_step), (const float[2]){x2, y1});
+  copy_v4_v4(gpu_vertbuf_raw_step(col_step), color);
 
-  copy_v2_v2(GPU_vertbuf_raw_step(pos_step), (const float[2]){x2, y2});
-  copy_v4_v4(GPU_vertbuf_raw_step(col_step), color);
+  copy_v2_v2(gpu_vertbuf_raw_step(pos_step), (const float[2]){x2, y2});
+  copy_v4_v4(gpu_vertbuf_raw_step(col_step), color);
 
-  copy_v2_v2(GPU_vertbuf_raw_step(pos_step), (const float[2]){x1, y1});
-  copy_v4_v4(GPU_vertbuf_raw_step(col_step), color);
+  copy_v2_v2(gpu_vertbuf_raw_step(pos_step), (const float[2]){x1, y1});
+  copy_v4_v4(gpu_vertbuf_raw_step(col_step), color);
 
-  copy_v2_v2(GPU_vertbuf_raw_step(pos_step), (const float[2]){x2, y2});
-  copy_v4_v4(GPU_vertbuf_raw_step(col_step), color);
+  copy_v2_v2(gpu_vertbuf_raw_step(pos_step), (const float[2]){x2, y2});
+  copy_v4_v4(gpu_vertbuf_raw_step(col_step), color);
 
-  copy_v2_v2(GPU_vertbuf_raw_step(pos_step), (const float[2]){x1, y2});
-  copy_v4_v4(GPU_vertbuf_raw_step(col_step), color);
+  copy_v2_v2(gpu_vertbuf_raw_step(pos_step), (const float[2]){x1, y2});
+  copy_v4_v4(gpu_vertbuf_raw_step(col_step), color);
 }
 
 static GPUBatch *gpu_batch_preset_panel_drag_widget(float pixelsize,
@@ -233,12 +232,12 @@ static GPUBatch *gpu_batch_preset_panel_drag_widget(float pixelsize,
                                                     const float col_dark[4],
                                                     const float width)
 {
-  GPUVertBuf *vbo = GPU_vertbuf_create_with_format(preset_2d_format());
+  GPUVertBuf *vbo = gpu_vertbuf_create_with_format(preset_2d_format());
   const uint vbo_len = 4 * 2 * (6 * 2);
-  GPU_vertbuf_data_alloc(vbo, vbo_len);
+  gpu_vertbuf_data_alloc(vbo, vbo_len);
 
   GPUVertBufRaw pos_step, col_step;
-  GPU_vertbuf_attr_get_raw_data(vbo, g_presets_2d.attr_id.pos, &pos_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_presets_2d.attr_id.pos, &pos_step);
   GPU_vertbuf_attr_get_raw_data(vbo, g_presets_2d.attr_id.col, &col_step);
 
   const int px = (int)pixelsize;
@@ -267,10 +266,10 @@ static GPUBatch *gpu_batch_preset_panel_drag_widget(float pixelsize,
           &pos_step, x_co - box_size, y_co, x_co, y_co + box_size, &col_step, col_high);
     }
   }
-  return GPU_batch_create_ex(GPU_PRIM_TRIS, vbo, NULL, GPU_BATCH_OWNS_VBO);
+  return gpu_batch_create_ex(GPU_PRIM_TRIS, vbo, NULL, GPU_BATCH_OWNS_VBO);
 }
 
-GPUBatch *GPU_batch_preset_panel_drag_widget(const float pixelsize,
+GPUBatch *gpu_batch_preset_panel_drag_widget(const float pixelsize,
                                              const float col_high[4],
                                              const float col_dark[4],
                                              const float width)
@@ -283,7 +282,7 @@ GPUBatch *GPU_batch_preset_panel_drag_widget(const float pixelsize,
 
   if (g_presets_2d.batch.panel_drag_widget && parameters_changed) {
     gpu_batch_presets_unregister(g_presets_2d.batch.panel_drag_widget);
-    GPU_batch_discard(g_presets_2d.batch.panel_drag_widget);
+    gpu_batch_discard(g_presets_2d.batch.panel_drag_widget);
     g_presets_2d.batch.panel_drag_widget = NULL;
   }
 
@@ -299,17 +298,17 @@ GPUBatch *GPU_batch_preset_panel_drag_widget(const float pixelsize,
   return g_presets_2d.batch.panel_drag_widget;
 }
 
-GPUBatch *GPU_batch_preset_quad(void)
+GPUBatch *gpu_batch_preset_quad(void)
 {
   if (!g_presets_2d.batch.quad) {
-    GPUVertBuf *vbo = GPU_vertbuf_create_with_format(preset_2d_format());
-    GPU_vertbuf_data_alloc(vbo, 4);
+    GPUVertBuf *vbo = gpu_vertbuf_create_with_format(preset_2d_format());
+    gpu_vertbuf_data_alloc(vbo, 4);
 
     float pos_data[4][2] = {{0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}};
-    GPU_vertbuf_attr_fill(vbo, g_presets_2d.attr_id.pos, pos_data);
+    gpu_vertbuf_attr_fill(vbo, g_presets_2d.attr_id.pos, pos_data);
     /* Don't fill the color. */
 
-    g_presets_2d.batch.quad = GPU_batch_create_ex(GPU_PRIM_TRI_FAN, vbo, NULL, GPU_BATCH_OWNS_VBO);
+    g_presets_2d.batch.quad = gpu_batch_create_ex(GPU_PRIM_TRI_FAN, vbo, NULL, GPU_BATCH_OWNS_VBO);
 
     gpu_batch_presets_register(g_presets_2d.batch.quad);
   }
