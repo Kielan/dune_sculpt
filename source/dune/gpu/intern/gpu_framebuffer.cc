@@ -55,11 +55,8 @@ FrameBuffer::~FrameBuffer()
 #endif
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Attachments Management
- * \{ */
+/** Attachments Management **/
 
 void FrameBuffer::attachment_set(GPUAttachmentType type, const GPUAttachment &new_attachment)
 {
@@ -77,13 +74,13 @@ void FrameBuffer::attachment_set(GPUAttachmentType type, const GPUAttachment &ne
 
   if (new_attachment.tex) {
     if (new_attachment.layer > 0) {
-      BLI_assert(GPU_texture_cube(new_attachment.tex) || GPU_texture_array(new_attachment.tex));
+      lib_assert(gpu_texture_cube(new_attachment.tex) || GPU_texture_array(new_attachment.tex));
     }
-    if (GPU_texture_stencil(new_attachment.tex)) {
-      BLI_assert(ELEM(type, GPU_FB_DEPTH_STENCIL_ATTACHMENT));
+    if (gpu_texture_stencil(new_attachment.tex)) {
+      lib_assert(ELEM(type, GPU_FB_DEPTH_STENCIL_ATTACHMENT));
     }
-    else if (GPU_texture_depth(new_attachment.tex)) {
-      BLI_assert(ELEM(type, GPU_FB_DEPTH_ATTACHMENT));
+    else if (gpu_texture_depth(new_attachment.tex)) {
+      lib_assert(ELEM(type, GPU_FB_DEPTH_ATTACHMENT));
     }
   }
 
@@ -94,7 +91,7 @@ void FrameBuffer::attachment_set(GPUAttachmentType type, const GPUAttachment &ne
     return; /* Exact same texture already bound here. */
   }
   /* Unbind previous and bind new. */
-  /* TODO(fclem): cleanup the casts. */
+  /* TODO: cleanup the casts. */
   if (attachment.tex) {
     reinterpret_cast<Texture *>(attachment.tex)->detach_from(this);
   }
@@ -161,44 +158,41 @@ void FrameBuffer::recursive_downsample(int max_lvl,
   dirty_attachments_ = true;
 }
 
-/** \} */
-
-}  // namespace blender::gpu
+}  // namespace dune::gpu
 
 /* -------------------------------------------------------------------- */
-/** \name C-API
- * \{ */
+/** C-API */
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
-GPUFrameBuffer *GPU_framebuffer_create(const char *name)
+GPUFrameBuffer *gpu_framebuffer_create(const char *name)
 {
   /* We generate the FB object later at first use in order to
    * create the frame-buffer in the right opengl context. */
   return wrap(GPUBackend::get()->framebuffer_alloc(name));
 }
 
-void GPU_framebuffer_free(GPUFrameBuffer *gpu_fb)
+void gpu_framebuffer_free(GPUFrameBuffer *gpu_fb)
 {
   delete unwrap(gpu_fb);
 }
 
 /* ---------- Binding ----------- */
 
-void GPU_framebuffer_bind(GPUFrameBuffer *gpu_fb)
+void gpu_framebuffer_bind(GPUFrameBuffer *gpu_fb)
 {
   const bool enable_srgb = true;
   unwrap(gpu_fb)->bind(enable_srgb);
 }
 
-void GPU_framebuffer_bind_no_srgb(GPUFrameBuffer *gpu_fb)
+void gpu_framebuffer_bind_no_srgb(GPUFrameBuffer *gpu_fb)
 {
   const bool enable_srgb = false;
   unwrap(gpu_fb)->bind(enable_srgb);
 }
 
-void GPU_backbuffer_bind(eGPUBackBuffer buffer)
+void gpu_backbuffer_bind(eGPUBackBuffer buffer)
 {
   Context *ctx = Context::get();
 
@@ -210,63 +204,63 @@ void GPU_backbuffer_bind(eGPUBackBuffer buffer)
   }
 }
 
-void GPU_framebuffer_restore()
+void gpu_framebuffer_restore()
 {
   Context::get()->back_left->bind(false);
 }
 
-GPUFrameBuffer *GPU_framebuffer_active_get()
+GPUFrameBuffer *gpu_framebuffer_active_get()
 {
   Context *ctx = Context::get();
   return wrap(ctx ? ctx->active_fb : nullptr);
 }
 
-GPUFrameBuffer *GPU_framebuffer_back_get()
+GPUFrameBuffer *gpu_framebuffer_back_get()
 {
   Context *ctx = Context::get();
   return wrap(ctx ? ctx->back_left : nullptr);
 }
 
-bool GPU_framebuffer_bound(GPUFrameBuffer *gpu_fb)
+bool gpu_framebuffer_bound(GPUFrameBuffer *gpu_fb)
 {
-  return (gpu_fb == GPU_framebuffer_active_get());
+  return (gpu_fb == gpu_framebuffer_active_get());
 }
 
 /* ---------- Attachment Management ----------- */
 
-bool GPU_framebuffer_check_valid(GPUFrameBuffer *gpu_fb, char err_out[256])
+bool gpu_framebuffer_check_valid(GPUFrameBuffer *gpu_fb, char err_out[256])
 {
   return unwrap(gpu_fb)->check(err_out);
 }
 
-void GPU_framebuffer_texture_attach_ex(GPUFrameBuffer *gpu_fb, GPUAttachment attachment, int slot)
+void gpu_framebuffer_texture_attach_ex(GPUFrameBuffer *gpu_fb, GPUAttachment attachment, int slot)
 {
   Texture *tex = reinterpret_cast<Texture *>(attachment.tex);
   GPUAttachmentType type = tex->attachment_type(slot);
   unwrap(gpu_fb)->attachment_set(type, attachment);
 }
 
-void GPU_framebuffer_texture_attach(GPUFrameBuffer *fb, GPUTexture *tex, int slot, int mip)
+void gpu_framebuffer_texture_attach(GPUFrameBuffer *fb, GPUTexture *tex, int slot, int mip)
 {
   GPUAttachment attachment = GPU_ATTACHMENT_TEXTURE_MIP(tex, mip);
-  GPU_framebuffer_texture_attach_ex(fb, attachment, slot);
+  gpu_framebuffer_texture_attach_ex(fb, attachment, slot);
 }
 
-void GPU_framebuffer_texture_layer_attach(
+void gpu_framebuffer_texture_layer_attach(
     GPUFrameBuffer *fb, GPUTexture *tex, int slot, int layer, int mip)
 {
   GPUAttachment attachment = GPU_ATTACHMENT_TEXTURE_LAYER_MIP(tex, layer, mip);
-  GPU_framebuffer_texture_attach_ex(fb, attachment, slot);
+  gpu_framebuffer_texture_attach_ex(fb, attachment, slot);
 }
 
-void GPU_framebuffer_texture_cubeface_attach(
+void gpu_framebuffer_texture_cubeface_attach(
     GPUFrameBuffer *fb, GPUTexture *tex, int slot, int face, int mip)
 {
   GPUAttachment attachment = GPU_ATTACHMENT_TEXTURE_CUBEFACE_MIP(tex, face, mip);
-  GPU_framebuffer_texture_attach_ex(fb, attachment, slot);
+  gpu_framebuffer_texture_attach_ex(fb, attachment, slot);
 }
 
-void GPU_framebuffer_texture_detach(GPUFrameBuffer *fb, GPUTexture *tex)
+void gpu_framebuffer_texture_detach(GPUFrameBuffer *fb, GPUTexture *tex)
 {
   unwrap(tex)->detach_from(unwrap(fb));
 }
