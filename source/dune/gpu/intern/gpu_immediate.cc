@@ -234,11 +234,11 @@ GPUBatch *immBeginBatchAtMost(GPUPrimType prim_type, uint vertex_len)
 
 void immEnd()
 {
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* Make sure we're between a Begin/End pair. */
-  BLI_assert(imm->vertex_data || imm->batch);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* Make sure we're between a Begin/End pair. */
+  lib_assert(imm->vertex_data || imm->batch);
 
   if (imm->strict_vertex_len) {
-    BLI_assert(imm->vertex_idx == imm->vertex_len); /* With all vertices defined. */
+    lib_assert(imm->vertex_idx == imm->vertex_len); /* With all vertices defined. */
   }
   else {
     lib_assert(imm->vertex_idx <= imm->vertex_len);
@@ -429,11 +429,11 @@ void immAttr3ub(uint attr_id, uchar r, uchar g, uchar b)
 void immAttr4ub(uint attr_id, uchar r, uchar g, uchar b, uchar a)
 {
   GPUVertAttr *attr = &imm->vertex_format.attrs[attr_id];
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(attr->comp_type == GPU_COMP_U8);
-  BLI_assert(attr->comp_len == 4);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(attr->comp_type == GPU_COMP_U8);
+  lib_assert(attr->comp_len == 4);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 
   uchar *data = imm->vertex_data + attr->offset;
@@ -457,21 +457,21 @@ void immAttr4ubv(uint attr_id, const uchar data[4])
 
 void immAttrSkip(uint attr_id)
 {
-  BLI_assert(attr_id < imm->vertex_format.attr_len);
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(attr_id < imm->vertex_format.attr_len);
+  lib_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
   setAttrValueBit(attr_id);
 }
 
 static void immEndVertex() /* and move on to the next vertex */
 {
-  BLI_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
-  BLI_assert(imm->vertex_idx < imm->vertex_len);
+  lib_assert(imm->prim_type != GPU_PRIM_NONE); /* make sure we're between a Begin/End pair */
+  lib_assert(imm->vertex_idx < imm->vertex_len);
 
   /* Have all attributes been assigned values?
    * If not, copy value from previous vertex. */
   if (imm->unassigned_attr_bits) {
-    BLI_assert(imm->vertex_idx > 0); /* first vertex must have all attributes specified */
+    lib_assert(imm->vertex_idx > 0); /* first vertex must have all attributes specified */
     for (uint a_idx = 0; a_idx < imm->vertex_format.attr_len; a_idx++) {
       if ((imm->unassigned_attr_bits >> a_idx) & 1) {
         const GPUVertAttr *a = &imm->vertex_format.attrs[a_idx];
@@ -544,7 +544,7 @@ void immVertex2iv(uint attr_id, const int data[2])
 
 void immUniform1f(const char *name, float x)
 {
-  GPU_shader_uniform_1f(imm->shader, name, x);
+  gpu_shader_uniform_1f(imm->shader, name, x);
 }
 
 void immUniform2f(const char *name, float x, float y)
