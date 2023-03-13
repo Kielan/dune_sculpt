@@ -113,7 +113,7 @@ static void wide_line_workaround_start(GPUPrimType prim_type)
     return;
   }
 
-  float line_width = GPU_line_width_get();
+  float line_width = gpu_line_width_get();
 
   if (line_width == 1.0f) {
     /* No need to change the shader. */
@@ -199,7 +199,7 @@ void immBegin(GPUPrimType prim_type, uint vertex_len)
 
 void immBeginAtMost(GPUPrimType prim_type, uint vertex_len)
 {
-  BLI_assert(vertex_len > 0);
+  lib_assert(vertex_len > 0);
   imm->strict_vertex_len = false;
   immBegin(prim_type, vertex_len);
 }
@@ -214,12 +214,12 @@ GPUBatch *immBeginBatch(GPUPrimType prim_type, uint vertex_len)
   imm->vertex_idx = 0;
   imm->unassigned_attr_bits = imm->enabled_attr_bits;
 
-  GPUVertBuf *verts = GPU_vertbuf_create_with_format(&imm->vertex_format);
-  GPU_vertbuf_data_alloc(verts, vertex_len);
+  GPUVertBuf *verts = gpu_vertbuf_create_with_format(&imm->vertex_format);
+  gpu_vertbuf_data_alloc(verts, vertex_len);
 
-  imm->vertex_data = (uchar *)GPU_vertbuf_get_data(verts);
+  imm->vertex_data = (uchar *)gpu_vertbuf_get_data(verts);
 
-  imm->batch = GPU_batch_create_ex(prim_type, verts, nullptr, GPU_BATCH_OWNS_VBO);
+  imm->batch = gpu_batch_create_ex(prim_type, verts, nullptr, GPU_BATCH_OWNS_VBO);
   imm->batch->flag |= GPU_BATCH_BUILDING;
 
   return imm->batch;
@@ -227,7 +227,7 @@ GPUBatch *immBeginBatch(GPUPrimType prim_type, uint vertex_len)
 
 GPUBatch *immBeginBatchAtMost(GPUPrimType prim_type, uint vertex_len)
 {
-  BLI_assert(vertex_len > 0);
+  lib_assert(vertex_len > 0);
   imm->strict_vertex_len = false;
   return immBeginBatch(prim_type, vertex_len);
 }
