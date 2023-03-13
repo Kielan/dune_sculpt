@@ -1,21 +1,17 @@
-/** \file
- * \ingroup gpu
- *
- * Debug features of OpenGL.
- */
+/** Debug features of OpenGL. **/
 
-#include "BKE_global.h"
+#include "dune_global.h"
 
-#include "BLI_string.h"
+#include "lib_string.h"
 
 #include "gpu_context_private.hh"
 
-#include "GPU_debug.h"
+#include "gpu_debug.h"
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
-void GPU_debug_group_begin(const char *name)
+void gpu_debug_group_begin(const char *name)
 {
   if (!(G.debug & G_DEBUG_GPU)) {
     return;
@@ -26,7 +22,7 @@ void GPU_debug_group_begin(const char *name)
   ctx->debug_group_begin(name, stack.size());
 }
 
-void GPU_debug_group_end()
+void gpu_debug_group_end()
 {
   if (!(G.debug & G_DEBUG_GPU)) {
     return;
@@ -36,7 +32,7 @@ void GPU_debug_group_end()
   ctx->debug_group_end();
 }
 
-void GPU_debug_get_groups_names(int name_buf_len, char *r_name_buf)
+void gpu_debug_get_groups_names(int name_buf_len, char *r_name_buf)
 {
   Context *ctx = Context::get();
   if (ctx == nullptr) {
@@ -54,10 +50,10 @@ void GPU_debug_get_groups_names(int name_buf_len, char *r_name_buf)
   r_name_buf[sz - 3] = '\0';
 }
 
-bool GPU_debug_group_match(const char *ref)
+bool gpu_debug_group_match(const char *ref)
 {
   /* Otherwise there will be no names. */
-  BLI_assert(G.debug & G_DEBUG_GPU);
+  lib_assert(G.debug & G_DEBUG_GPU);
   Context *ctx = Context::get();
   if (ctx == nullptr) {
     return false;
