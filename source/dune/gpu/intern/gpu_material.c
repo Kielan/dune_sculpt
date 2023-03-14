@@ -1,13 +1,10 @@
-/** \file
- * \ingroup gpu
- *
- * Manages materials, lights and textures.
- */
+/** l
+ * Manages materials, lights and textures. **/
 
 #include <math.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "DNA_material_types.h"
 #include "DNA_scene_types.h"
