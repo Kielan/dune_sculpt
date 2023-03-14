@@ -41,7 +41,7 @@ void gpu_init(void)
 #endif
 }
 
-void GPU_exit(void)
+void gpu_exit(void)
 {
 #ifndef GPU_STANDALONE
   gpu_pbvh_exit();
@@ -58,7 +58,7 @@ void GPU_exit(void)
   initialized = false;
 }
 
-bool GPU_is_init(void)
+bool gpu_is_init(void)
 {
   return initialized;
 }
