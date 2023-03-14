@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "GPU_batch.h"
-#include "GPU_primitive.h"
-#include "GPU_shader.h"
-#include "GPU_vertex_format.h"
+#include "gpu_batch.h"
+#include "gpu_primitive.h"
+#include "gpu_shader.h"
+#include "gpu_vertex_format.h"
 
 namespace dune::gpu {
 
@@ -49,7 +49,7 @@ class Immediate {
   virtual void end() = 0;
 };
 
-}  // namespace blender::gpu
+}  // namespace dune::gpu
 
 void immActivate();
 void immDeactivate();
