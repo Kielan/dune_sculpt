@@ -9,24 +9,24 @@
 #include "types_scene_types.h"
 #include "typee_world_types.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
+#include "lib_string.h"
+#include "lib_string_utils.h"
+#include "lib_utildefines.h"
 
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_node.h"
-#include "BKE_scene.h"
+#include "dune_main.h"
+#include "dune_material.h"
+#include "dune_node.h"
+#include "dune_scene.h"
 
 #include "NOD_shader.h"
 
-#include "GPU_material.h"
-#include "GPU_shader.h"
-#include "GPU_texture.h"
-#include "GPU_uniform_buffer.h"
+#include "gpu_material.h"
+#include "gpu_shader.h"
+#include "gpu_texture.h"
+#include "gpu_uniform_buffer.h"
 
 #include "DRW_engine.h"
 
@@ -101,11 +101,11 @@ GPUTexture **gpu_material_ramp_texture_row_set(GPUMaterial *mat,
 {
   /* In order to put all the color-bands into one 1D array texture,
    * we need them to be the same size. */
-  BLI_assert(size == CM_TABLE + 1);
+  lib_assert(size == CM_TABLE + 1);
   UNUSED_VARS_NDEBUG(size);
 
   if (mat->coba_builder == NULL) {
-    mat->coba_builder = MEM_mallocN(sizeof(GPUColorBandBuilder), "GPUColorBandBuilder");
+    mat->coba_builder = mem_mallocn(sizeof(GPUColorBandBuilder), "GPUColorBandBuilder");
     mat->coba_builder->current_layer = 0;
   }
 
@@ -147,13 +147,13 @@ static void gpu_material_free_single(GPUMaterial *material)
   gpu_node_graph_free(&material->graph);
 
   if (material->pass != NULL) {
-    GPU_pass_release(material->pass);
+    gpu_pass_release(material->pass);
   }
   if (material->ubo != NULL) {
-    GPU_uniformbuf_free(material->ubo);
+    gpu_uniformbuf_free(material->ubo);
   }
   if (material->sss_tex_profile != NULL) {
-    GPU_texture_free(material->sss_tex_profile);
+    gpu_texture_free(material->sss_tex_profile);
   }
   if (material->sss_profile != NULL) {
     GPU_uniformbuf_free(material->sss_profile);
@@ -412,7 +412,7 @@ static void compute_sss_translucence_kernel(const GPUSssKernelData *kd,
 }
 #undef INTEGRAL_RESOLUTION
 
-void GPU_material_sss_profile_create(GPUMaterial *material, float radii[3])
+void gpu_material_sss_profile_create(GPUMaterial *material, float radii[3])
 {
   copy_v3_v3(material->sss_radii, radii);
   material->sss_dirty = true;
@@ -424,7 +424,7 @@ void GPU_material_sss_profile_create(GPUMaterial *material, float radii[3])
   }
 }
 
-struct GPUUniformBuf *GPU_material_sss_profile_get(GPUMaterial *material,
+struct GPUUniformBuf *gpu_material_sss_profile_get(GPUMaterial *material,
                                                    int sample_len,
                                                    GPUTexture **tex_profile)
 {
@@ -438,7 +438,7 @@ struct GPUUniformBuf *GPU_material_sss_profile_get(GPUMaterial *material,
     compute_sss_kernel(&kd, material->sss_radii, sample_len);
 
     /* Update / Create UBO */
-    GPU_uniformbuf_update(material->sss_profile, &kd);
+    gpu_uniformbuf_update(material->sss_profile, &kd);
 
     /* Update / Create Tex */
     float *translucence_profile;
@@ -451,7 +451,7 @@ struct GPUUniformBuf *GPU_material_sss_profile_get(GPUMaterial *material,
     material->sss_tex_profile = GPU_texture_create_1d(
         "sss_tex_profile", 64, 1, GPU_RGBA16F, translucence_profile);
 
-    MEM_freeN(translucence_profile);
+    men_freen(translucence_profile);
 
     material->sss_samples = sample_len;
     material->sss_dirty = false;
