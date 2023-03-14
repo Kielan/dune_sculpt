@@ -1,14 +1,13 @@
-/** l
- * Manages materials, lights and textures. **/
+/** Manages materials, lights and textures. **/
 
 #include <math.h>
 #include <string.h>
 
 #include "mem_guardedalloc.h"
 
-#include "DNA_material_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_world_types.h"
+#include "types_material_types.h"
+#include "types_scene_types.h"
+#include "typee_world_types.h"
 
 #include "BLI_ghash.h"
 #include "BLI_listbase.h"
