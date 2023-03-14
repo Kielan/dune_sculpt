@@ -420,7 +420,7 @@ void gpu_material_sss_profile_create(GPUMaterial *material, float radii[3])
 
   /* Update / Create UBO */
   if (material->sss_profile == NULL) {
-    material->sss_profile = GPU_uniformbuf_create(sizeof(GPUSssKernelData));
+    material->sss_profile = gpu_uniformbuf_create(sizeof(GPUSssKernelData));
   }
 }
 
@@ -448,7 +448,7 @@ struct GPUUniformBuf *gpu_material_sss_profile_get(GPUMaterial *material,
       gpu_texture_free(material->sss_tex_profile);
     }
 
-    material->sss_tex_profile = GPU_texture_create_1d(
+    material->sss_tex_profile = gpu_texture_create_1d(
         "sss_tex_profile", 64, 1, GPU_RGBA16F, translucence_profile);
 
     men_freen(translucence_profile);
@@ -539,17 +539,17 @@ bool gpu_material_is_volume_shader(GPUMaterial *mat)
   return mat->is_volume_shader;
 }
 
-void GPU_material_flag_set(GPUMaterial *mat, eGPUMatFlag flag)
+void gpu_material_flag_set(GPUMaterial *mat, eGPUMatFlag flag)
 {
   mat->flag |= flag;
 }
 
-bool GPU_material_flag_get(GPUMaterial *mat, eGPUMatFlag flag)
+bool gpu_material_flag_get(GPUMaterial *mat, eGPUMatFlag flag)
 {
   return (mat->flag & flag) != 0;
 }
 
-GPUMaterial *GPU_material_from_nodetree_find(ListBase *gpumaterials,
+GPUMaterial *gpu_material_from_nodetree_find(ListBase *gpumaterials,
                                              const void *engine_type,
                                              int options)
 {
@@ -563,9 +563,9 @@ GPUMaterial *GPU_material_from_nodetree_find(ListBase *gpumaterials,
   return NULL;
 }
 
-GPUMaterial *GPU_material_from_nodetree(Scene *scene,
+GPUMaterial *gpu_material_from_nodetree(Scene *scene,
                                         struct Material *ma,
-                                        struct bNodeTree *ntree,
+                                        struct DNodeTree *ntree,
                                         ListBase *gpumaterials,
                                         const void *engine_type,
                                         const int options,
@@ -581,29 +581,29 @@ GPUMaterial *GPU_material_from_nodetree(Scene *scene,
   bool has_volume_output, has_surface_output;
 
   /* Caller must re-use materials. */
-  BLI_assert(GPU_material_from_nodetree_find(gpumaterials, engine_type, options) == NULL);
+  lib_assert(gpu_material_from_nodetree_find(gpumaterials, engine_type, options) == NULL);
 
   /* HACK: Eevee assume this to create #GHash keys. */
-  BLI_assert(sizeof(GPUPass) > 16);
+  lib_assert(sizeof(GPUPass) > 16);
 
   /* allocate material */
-  GPUMaterial *mat = MEM_callocN(sizeof(GPUMaterial), "GPUMaterial");
+  GPUMaterial *mat = mem_callocn(sizeof(GPUMaterial), "GPUMaterial");
   mat->ma = ma;
   mat->scene = scene;
   mat->engine_type = engine_type;
   mat->options = options;
   mat->is_volume_shader = is_volume_shader;
 #ifndef NDEBUG
-  BLI_snprintf(mat->name, sizeof(mat->name), "%s", name);
+  lib_snprintf(mat->name, sizeof(mat->name), "%s", name);
 #else
   UNUSED_VARS(name);
 #endif
 
-  mat->used_libraries = BLI_gset_new(
-      BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, "GPUMaterial.used_libraries");
+  mat->used_libraries = lib_gset_new(
+      lib_ghashutil_ptrhash, lib_ghashutil_ptrcmp, "GPUMaterial.used_libraries");
 
   /* localize tree to create links for reroute and mute */
-  bNodeTree *localtree = ntreeLocalize(ntree);
+  DNodeTree *localtree = ntreeLocalize(ntree);
   ntreeGPUMaterialNodes(localtree, mat, &has_surface_output, &has_volume_output);
 
   gpu_material_ramp_texture_build(mat);
@@ -616,17 +616,17 @@ GPUMaterial *GPU_material_from_nodetree(Scene *scene,
       callback(mat, options, &vert_code, &geom_code, &frag_lib, &defines);
     }
     /* HACK: this is only for eevee. We add the define here after the nodetree evaluation. */
-    if (GPU_material_flag_get(mat, GPU_MATFLAG_SSS)) {
-      defines = BLI_string_joinN(defines,
+    if (gpu_material_flag_get(mat, GPU_MATFLAG_SSS)) {
+      defines = lib_string_joinn(defines,
                                  "#ifndef USE_ALPHA_BLEND\n"
                                  "#  define USE_SSS\n"
                                  "#endif\n");
     }
     /* Create source code and search pass cache for an already compiled version. */
-    mat->pass = GPU_generate_pass(mat, &mat->graph, vert_code, geom_code, frag_lib, defines);
+    mat->pass = gpu_generate_pass(mat, &mat->graph, vert_code, geom_code, frag_lib, defines);
 
-    if (GPU_material_flag_get(mat, GPU_MATFLAG_SSS)) {
-      MEM_freeN((char *)defines);
+    if (gpu_material_flag_get(mat, GPU_MATFLAG_SSS)) {
+      Mnemonic_freen((char *)defines);
     }
 
     if (mat->pass == NULL) {
@@ -654,37 +654,37 @@ GPUMaterial *GPU_material_from_nodetree(Scene *scene,
   /* Only free after GPU_pass_shader_get where GPUUniformBuf
    * read data from the local tree. */
   ntreeFreeLocalTree(localtree);
-  BLI_assert(!localtree->id.py_instance); /* Or call #BKE_libblock_free_data_py. */
-  MEM_freeN(localtree);
+  lib_assert(!localtree->id.py_instance); /* Or call #BKE_libblock_free_data_py. */
+  mem_freen(localtree);
 
   /* note that even if building the shader fails in some way, we still keep
    * it to avoid trying to compile again and again, and simply do not use
    * the actual shader on drawing */
 
-  link = MEM_callocN(sizeof(LinkData), "GPUMaterialLink");
+  link = mem_callocn(sizeof(LinkData), "GPUMaterialLink");
   link->data = mat;
-  BLI_addtail(gpumaterials, link);
+  lib_addtail(gpumaterials, link);
 
   return mat;
 }
 
-void GPU_material_compile(GPUMaterial *mat)
+void gpu_material_compile(GPUMaterial *mat)
 {
   bool success;
 
-  BLI_assert(mat->status == GPU_MAT_QUEUED);
-  BLI_assert(mat->pass);
+  lib_assert(mat->status == GPU_MAT_QUEUED);
+  lib_assert(mat->pass);
 
   /* NOTE: The shader may have already been compiled here since we are
    * sharing GPUShader across GPUMaterials. In this case it's a no-op. */
 #ifndef NDEBUG
-  success = GPU_pass_compile(mat->pass, mat->name);
+  success = gpu_pass_compile(mat->pass, mat->name);
 #else
-  success = GPU_pass_compile(mat->pass, __func__);
+  success = gpu_pass_compile(mat->pass, __func__);
 #endif
 
   if (success) {
-    GPUShader *sh = GPU_pass_shader_get(mat->pass);
+    GPUShader *sh = gpu_pass_shader_get(mat->pass);
     if (sh != NULL) {
       mat->status = GPU_MAT_SUCCESS;
       gpu_node_graph_free_nodes(&mat->graph);
@@ -692,21 +692,21 @@ void GPU_material_compile(GPUMaterial *mat)
   }
   else {
     mat->status = GPU_MAT_FAILED;
-    GPU_pass_release(mat->pass);
+    gpu_pass_release(mat->pass);
     mat->pass = NULL;
     gpu_node_graph_free(&mat->graph);
   }
 }
 
-void GPU_materials_free(Main *bmain)
+void gpu_materials_free(Main *dmain)
 {
-  LISTBASE_FOREACH (Material *, ma, &bmain->materials) {
-    GPU_material_free(&ma->gpumaterial);
+  LISTBASE_FOREACH (Material *, ma, &dmain->materials) {
+    gpu_material_free(&ma->gpumaterial);
   }
 
   LISTBASE_FOREACH (World *, wo, &bmain->worlds) {
-    GPU_material_free(&wo->gpumaterial);
+    gpu_material_free(&wo->gpumaterial);
   }
 
-  BKE_material_defaults_free_gpu();
+  dune_material_defaults_free_gpu();
 }
