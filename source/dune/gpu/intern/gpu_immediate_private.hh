@@ -1,8 +1,4 @@
-/** \file
- * \ingroup gpu
- *
- * Mimics old style opengl immediate mode drawing.
- */
+/** Mimics old style opengl immediate mode drawing. **/
 
 #pragma once
 
@@ -11,7 +7,7 @@
 #include "GPU_shader.h"
 #include "GPU_vertex_format.h"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 class Immediate {
  public:
