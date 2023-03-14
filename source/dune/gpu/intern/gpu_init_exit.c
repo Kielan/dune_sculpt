@@ -1,10 +1,10 @@
-#include "GPU_init_exit.h" /* interface */
-#include "BKE_global.h"
-#include "BLI_sys_types.h"
-#include "GPU_batch.h"
-#include "GPU_buffers.h"
-#include "GPU_context.h"
-#include "GPU_immediate.h"
+#include "gpu_init_exit.h" /* interface */
+#include "dune_global.h"
+#include "lib_sys_types.h"
+#include "gpu_batch.h"
+#include "gpu_buffers.h"
+#include "gpu_context.h"
+#include "gpu_immediate.h"
 
 #include "intern/gpu_codegen.h"
 #include "intern/gpu_material_library.h"
@@ -19,7 +19,7 @@
 
 static bool initialized = false;
 
-void GPU_init(void)
+void gpu_init(void)
 {
   /* can't avoid calling this multiple times, see wm_window_ghostwindow_add */
   if (initialized) {
