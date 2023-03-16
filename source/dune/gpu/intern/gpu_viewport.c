@@ -267,8 +267,8 @@ void gpu_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
   gpu_framebuffer_bind(viewport->stereo_comp_fb);
   gpu_matrix_push();
   gpu_matrix_push_projection();
-  GPU_matrix_id_set();
-  GPU_matrix_id_projection_set();
+  gpu_matrix_id_set();
+  gpu_matrix_id_projection_set();
   immBindBuiltinProgram(GPU_SHADER_2D_IMAGE_OVERLAYS_STEREO_MERGE);
   int settings = stereo_format->display_mode;
   if (settings == S3D_DISPLAY_ANAGLYPH) {
