@@ -1,7 +1,7 @@
-#include "BLI_string.h"
+#include "lib_string.h"
 
-#include "GPU_framebuffer.h"
-#include "GPU_texture.h"
+#include "gpu_framebuffer.h"
+#include "gpu_texture.h"
 
 #include "gpu_backend.hh"
 #include "gpu_context_private.hh"
@@ -10,16 +10,15 @@
 
 #include "gpu_texture_private.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 /* -------------------------------------------------------------------- */
-/** \name Creation & Deletion
- * \{ */
+/** Creation & Deletion **/
 
 Texture::Texture(const char *name)
 {
   if (name) {
-    BLI_strncpy(name_, name, sizeof(name_));
+    lib_strncpy(name_, name, sizeof(name_));
   }
   else {
     name_[0] = '\0';
@@ -115,7 +114,7 @@ bool Texture::init_buffer(GPUVertBuf *vbo, eGPUTextureFormat format)
   if (format == GPU_DEPTH_COMPONENT24) {
     return false;
   }
-  w_ = GPU_vertbuf_get_vertex_len(vbo);
+  w_ = gpu_vertbuf_get_vertex_len(vbo);
   h_ = 0;
   d_ = 0;
   format_ = format;
@@ -143,13 +142,13 @@ bool Texture::init_view(const GPUTexture *src_,
       h_ = layer_len;
       break;
     case GPU_TEXTURE_CUBE_ARRAY:
-      BLI_assert(layer_len % 6 == 0);
+      lib_assert(layer_len % 6 == 0);
       ATTR_FALLTHROUGH;
     case GPU_TEXTURE_2D_ARRAY:
       d_ = layer_len;
       break;
     default:
-      BLI_assert(layer_len == 1 && layer_start == 0);
+      lib_assert(layer_len == 1 && layer_start == 0);
       break;
   }
   mip_start = min_ii(mip_start, src->mipmaps_ - 1);
@@ -160,18 +159,15 @@ bool Texture::init_view(const GPUTexture *src_,
   /* For now always copy the target. Target aliasing could be exposed later. */
   type_ = src->type_;
   if (cube_as_array) {
-    BLI_assert(type_ & GPU_TEXTURE_CUBE);
+    lib_assert(type_ & GPU_TEXTURE_CUBE);
     type_ = (type_ & ~GPU_TEXTURE_CUBE) | GPU_TEXTURE_2D_ARRAY;
   }
   sampler_state = src->sampler_state;
   return this->init_internal(src_, mip_start, layer_start);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Operation
- * \{ */
+/** Operation **/
 
 void Texture::attach_to(FrameBuffer *fb, GPUAttachmentType type)
 {
@@ -182,7 +178,7 @@ void Texture::attach_to(FrameBuffer *fb, GPUAttachmentType type)
       return;
     }
   }
-  BLI_assert_msg(0, "GPU: Error: Texture: Not enough attachment");
+  lib_assert_msg(0, "GPU: Error: Texture: Not enough attachment");
 }
 
 void Texture::detach_from(FrameBuffer *fb)
@@ -194,7 +190,7 @@ void Texture::detach_from(FrameBuffer *fb)
       return;
     }
   }
-  BLI_assert_msg(0, "GPU: Error: Texture: Framebuffer is not attached");
+  lib_assert_msg(0, "GPU: Error: Texture: Framebuffer is not attached");
 }
 
 void Texture::update(eGPUDataFormat format, const void *data)
@@ -205,22 +201,19 @@ void Texture::update(eGPUDataFormat format, const void *data)
   this->update_sub(mip, offset, extent, format, data);
 }
 
-/** \} */
-
-}  // namespace blender::gpu
+}  // namespace dune::gpu
 
 /* -------------------------------------------------------------------- */
-/** \name C-API
- * \{ */
+/** C-API **/
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
 /* ------ Memory Management ------ */
 
-uint GPU_texture_memory_usage_get()
+uint dune_texture_memory_usage_get()
 {
-  /* TODO(fclem): Do that inside the new Texture class. */
+  /* TODO: Do that inside the new Texture class. */
   return 0;
 }
 
@@ -236,7 +229,7 @@ static inline GPUTexture *gpu_texture_create(const char *name,
                                              eGPUDataFormat data_format,
                                              const void *pixels)
 {
-  BLI_assert(mips > 0);
+  lib_assert(mips > 0);
   Texture *tex = GPUBackend::get()->texture_alloc(name);
   bool success = false;
   switch (type) {
