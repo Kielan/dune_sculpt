@@ -337,19 +337,19 @@ static GPUBatch *gpu_viewport_batch_create(const rctf *rect_pos, const rctf *rec
   gpu_vertbuf_data_alloc(vbo, vbo_len);
 
   GPUVertBufRaw pos_step, tex_coord_step;
-  GPU_vertbuf_attr_get_raw_data(vbo, g_viewport.attr_id.pos, &pos_step);
-  GPU_vertbuf_attr_get_raw_data(vbo, g_viewport.attr_id.tex_coord, &tex_coord_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_viewport.attr_id.pos, &pos_step);
+  gpu_vertbuf_attr_get_raw_data(vbo, g_viewport.attr_id.tex_coord, &tex_coord_step);
 
   copy_v2_fl2(gpu_vertbuf_raw_step(&pos_step), rect_pos->xmin, rect_pos->ymin);
-  copy_v2_fl2(GPU_vertbuf_raw_step(&tex_coord_step), rect_uv->xmin, rect_uv->ymin);
-  copy_v2_fl2(GPU_vertbuf_raw_step(&pos_step), rect_pos->xmax, rect_pos->ymin);
-  copy_v2_fl2(GPU_vertbuf_raw_step(&tex_coord_step), rect_uv->xmax, rect_uv->ymin);
-  copy_v2_fl2(GPU_vertbuf_raw_step(&pos_step), rect_pos->xmin, rect_pos->ymax);
-  copy_v2_fl2(GPU_vertbuf_raw_step(&tex_coord_step), rect_uv->xmin, rect_uv->ymax);
-  copy_v2_fl2(GPU_vertbuf_raw_step(&pos_step), rect_pos->xmax, rect_pos->ymax);
-  copy_v2_fl2(GPU_vertbuf_raw_step(&tex_coord_step), rect_uv->xmax, rect_uv->ymax);
+  copy_v2_fl2(gpu_vertbuf_raw_step(&tex_coord_step), rect_uv->xmin, rect_uv->ymin);
+  copy_v2_fl2(gpu_vertbuf_raw_step(&pos_step), rect_pos->xmax, rect_pos->ymin);
+  copy_v2_fl2(gpu_vertbuf_raw_step(&tex_coord_step), rect_uv->xmax, rect_uv->ymin);
+  copy_v2_fl2(gpu_vertbuf_raw_step(&pos_step), rect_pos->xmin, rect_pos->ymax);
+  copy_v2_fl2(gpu_vertbuf_raw_step(&tex_coord_step), rect_uv->xmin, rect_uv->ymax);
+  copy_v2_fl2(gpu_vertbuf_raw_step(&pos_step), rect_pos->xmax, rect_pos->ymax);
+  copy_v2_fl2(gpu_vertbuf_raw_step(&tex_coord_step), rect_uv->xmax, rect_uv->ymax);
 
-  return GPU_batch_create_ex(GPU_PRIM_TRI_STRIP, vbo, NULL, GPU_BATCH_OWNS_VBO);
+  return gpu_batch_create_ex(GPU_PRIM_TRI_STRIP, vbo, NULL, GPU_BATCH_OWNS_VBO);
 }
 
 static GPUBatch *gpu_viewport_batch_get(GPUViewport *viewport,
@@ -358,7 +358,7 @@ static GPUBatch *gpu_viewport_batch_get(GPUViewport *viewport,
 {
   const float compare_limit = 0.0001f;
   const bool parameters_changed =
-      (!BLI_rctf_compare(
+      (!lib_rctf_compare(
            &viewport->batch.last_used_parameters.rect_pos, rect_pos, compare_limit) ||
        !BLI_rctf_compare(&viewport->batch.last_used_parameters.rect_uv, rect_uv, compare_limit));
 
@@ -414,17 +414,17 @@ static void gpu_viewport_draw_colormanaged(GPUViewport *viewport,
 
   GPUBatch *batch = gpu_viewport_batch_get(viewport, rect_pos, rect_uv);
   if (use_ocio) {
-    GPU_batch_program_set_imm_shader(batch);
+    gpu_batch_program_set_imm_shader(batch);
   }
   else {
-    GPU_batch_program_set_builtin(batch, GPU_SHADER_2D_IMAGE_OVERLAYS_MERGE);
-    GPU_batch_uniform_1i(batch, "overlay", do_overlay_merge);
-    GPU_batch_uniform_1i(batch, "display_transform", display_colorspace);
+    gpu_batch_program_set_builtin(batch, GPU_SHADER_2D_IMAGE_OVERLAYS_MERGE);
+    gpu_batch_uniform_1i(batch, "overlay", do_overlay_merge);
+    gpu_batch_uniform_1i(batch, "display_transform", display_colorspace);
   }
 
-  GPU_texture_bind(color, 0);
-  GPU_texture_bind(color_overlay, 1);
-  GPU_batch_draw(batch);
+  gpu_texture_bind(color, 0);
+  gpu_texture_bind(color_overlay, 1);
+  gpu_batch_draw(batch);
   GPU_texture_unbind(color);
   GPU_texture_unbind(color_overlay);
 
@@ -445,15 +445,15 @@ void GPU_viewport_draw_to_screen_ex(GPUViewport *viewport,
     return;
   }
 
-  const float w = (float)GPU_texture_width(color);
-  const float h = (float)GPU_texture_height(color);
+  const float w = (float)gpu_texture_width(color);
+  const float h = (float)gpu_texture_height(color);
 
   /* We allow rects with min/max swapped, but we also need correctly assigned coordinates. */
   rcti sanitized_rect = *rect;
-  BLI_rcti_sanitize(&sanitized_rect);
+  lib_rcti_sanitize(&sanitized_rect);
 
-  BLI_assert(w == BLI_rcti_size_x(&sanitized_rect) + 1);
-  BLI_assert(h == BLI_rcti_size_y(&sanitized_rect) + 1);
+  lib_assert(w == lib_rcti_size_x(&sanitized_rect) + 1);
+  lib_assert(h == lib_rcti_size_y(&sanitized_rect) + 1);
 
   /* wmOrtho for the screen has this same offset */
   const float halfx = GLA_PIXEL_OFS / w;
@@ -534,22 +534,22 @@ int GPU_viewport_active_view_get(GPUViewport *viewport)
   return viewport->active_view;
 }
 
-bool GPU_viewport_is_stereo_get(GPUViewport *viewport)
+bool gpu_viewport_is_stereo_get(GPUViewport *viewport)
 {
   return (viewport->flag & GPU_VIEWPORT_STEREO) != 0;
 }
 
-GPUTexture *GPU_viewport_color_texture(GPUViewport *viewport, int view)
+GPUTexture *gpu_viewport_color_texture(GPUViewport *viewport, int view)
 {
   return viewport->color_render_tx[view];
 }
 
-GPUTexture *GPU_viewport_overlay_texture(GPUViewport *viewport, int view)
+GPUTexture *gpu_viewport_overlay_texture(GPUViewport *viewport, int view)
 {
   return viewport->color_overlay_tx[view];
 }
 
-GPUTexture *GPU_viewport_depth_texture(GPUViewport *viewport)
+GPUTexture *gpu_viewport_depth_texture(GPUViewport *viewport)
 {
   return viewport->depth_tx;
 }
@@ -576,5 +576,5 @@ void gpu_viewport_free(GPUViewport *viewport)
   dune_color_managed_view_settings_free(&viewport->view_settings);
   gpu_viewport_batch_free(viewport);
 
-  MEM_freeN(viewport);
+  mem_freen(viewport);
 }
