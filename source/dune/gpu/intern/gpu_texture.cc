@@ -530,25 +530,25 @@ void gpu_texture_anisotropic_filter(GPUTexture *tex_, bool use_aniso)
   SET_FLAG_FROM_TEST(tex->sampler_state, use_aniso, GPU_SAMPLER_ANISO);
 }
 
-void GPU_texture_wrap_mode(GPUTexture *tex_, bool use_repeat, bool use_clamp)
+void gpu_texture_wrap_mode(GPUTexture *tex_, bool use_repeat, bool use_clamp)
 {
   Texture *tex = reinterpret_cast<Texture *>(tex_);
   SET_FLAG_FROM_TEST(tex->sampler_state, use_repeat, GPU_SAMPLER_REPEAT);
   SET_FLAG_FROM_TEST(tex->sampler_state, !use_clamp, GPU_SAMPLER_CLAMP_BORDER);
 }
 
-void GPU_texture_swizzle_set(GPUTexture *tex, const char swizzle[4])
+void gpu_texture_swizzle_set(GPUTexture *tex, const char swizzle[4])
 {
   reinterpret_cast<Texture *>(tex)->swizzle_set(swizzle);
 }
 
-void GPU_texture_stencil_texture_mode_set(GPUTexture *tex, bool use_stencil)
+void gpu_texture_stencil_texture_mode_set(GPUTexture *tex, bool use_stencil)
 {
-  BLI_assert(GPU_texture_stencil(tex) || !use_stencil);
+  lib_assert(gpu_texture_stencil(tex) || !use_stencil);
   reinterpret_cast<Texture *>(tex)->stencil_texture_mode_set(use_stencil);
 }
 
-void GPU_texture_free(GPUTexture *tex_)
+void gpu_texture_free(GPUTexture *tex_)
 {
   Texture *tex = reinterpret_cast<Texture *>(tex_);
   tex->refcount--;
@@ -562,12 +562,12 @@ void GPU_texture_free(GPUTexture *tex_)
   }
 }
 
-void GPU_texture_ref(GPUTexture *tex)
+void gpu_texture_ref(GPUTexture *tex)
 {
   reinterpret_cast<Texture *>(tex)->refcount++;
 }
 
-int GPU_texture_dimensions(const GPUTexture *tex_)
+int gpu_texture_dimensions(const GPUTexture *tex_)
 {
   eGPUTextureType type = reinterpret_cast<const Texture *>(tex_)->type_get();
   if (type & GPU_TEXTURE_1D) {
@@ -586,12 +586,12 @@ int GPU_texture_dimensions(const GPUTexture *tex_)
   return 1;
 }
 
-int GPU_texture_width(const GPUTexture *tex)
+int gpu_texture_width(const GPUTexture *tex)
 {
   return reinterpret_cast<const Texture *>(tex)->width_get();
 }
 
-int GPU_texture_height(const GPUTexture *tex)
+int gpu_texture_height(const GPUTexture *tex)
 {
   return reinterpret_cast<const Texture *>(tex)->height_get();
 }
@@ -677,31 +677,27 @@ void GPU_texture_get_mipmap_size(GPUTexture *tex, int lvl, int *r_size)
   return reinterpret_cast<Texture *>(tex)->mip_size_get(lvl, r_size);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name GPU Sampler Objects
+/** GPU Sampler Objects
  *
  * Simple wrapper around opengl sampler objects.
  * Override texture sampler state for one sampler unit only.
- * \{ */
+ **/
 
 void GPU_samplers_update()
 {
   GPUBackend::get()->samplers_update();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
 /** GPU texture utilities **/
 
-size_t GPU_texture_component_len(eGPUTextureFormat tex_format)
+size_t gpu_texture_component_len(eGPUTextureFormat tex_format)
 {
   return to_component_len(tex_format);
 }
 
-size_t GPU_texture_dataformat_size(eGPUDataFormat data_format)
+size_t gpu_texture_dataformat_size(eGPUDataFormat data_format)
 {
   return to_bytesize(data_format);
 }
