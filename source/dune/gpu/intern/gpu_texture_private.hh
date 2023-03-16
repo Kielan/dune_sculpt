@@ -1,12 +1,12 @@
 #pragma once
 
-#include "BLI_assert.h"
+#include "lib_assert.h"
 
-#include "GPU_vertex_buffer.h"
+#include "gpu_vertex_buffer.h"
 
 #include "gpu_framebuffer_private.hh"
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 typedef enum eGPUTextureFormatFlag {
@@ -77,7 +77,7 @@ class Texture {
   eGPUTextureType type_;
 
   /** Number of mipmaps this texture has (Max miplvl). */
-  /* TODO(fclem): Should become immutable and the need for mipmaps should be specified upfront. */
+  /* TODO: Should become immutable and the need for mipmaps should be specified upfront. */
   int mipmaps_ = -1;
   /** For error checking */
   int mip_min_ = 0, mip_max_ = 0;
@@ -122,7 +122,7 @@ class Texture {
   virtual void update_sub(
       int mip, int offset[3], int extent[3], eGPUDataFormat format, const void *data) = 0;
 
-  /* TODO(fclem): Legacy. Should be removed at some point. */
+  /* TODO: Legacy. Should be removed at some point. */
   virtual uint gl_bindcode_get() const = 0;
 
   int width_get() const
@@ -226,11 +226,11 @@ class Texture {
       case GPU_DEPTH_COMPONENT32F:
       case GPU_DEPTH_COMPONENT24:
       case GPU_DEPTH_COMPONENT16:
-        BLI_assert(slot == 0);
+        lib_assert(slot == 0);
         return GPU_FB_DEPTH_ATTACHMENT;
       case GPU_DEPTH24_STENCIL8:
       case GPU_DEPTH32F_STENCIL8:
-        BLI_assert(slot == 0);
+        lib_assert(slot == 0);
         return GPU_FB_DEPTH_STENCIL_ATTACHMENT;
       default:
         return GPU_FB_COLOR_ATTACHMENT0 + slot;
@@ -307,7 +307,7 @@ inline size_t to_bytesize(eGPUTextureFormat format)
     case GPU_RGBA8_DXT5:
       return 1; /* Incorrect but actual size is fractional. */
     default:
-      BLI_assert_msg(0, "Texture format incorrect or unsupported");
+      lib_assert_msg(0, "Texture format incorrect or unsupported");
       return 0;
   }
 }
@@ -513,7 +513,7 @@ inline eGPUFrameBufferBits to_framebuffer_bits(eGPUTextureFormat tex_format)
 static inline eGPUTextureFormat to_texture_format(const GPUVertFormat *format)
 {
   if (format->attr_len > 1 || format->attr_len == 0) {
-    BLI_assert_msg(0, "Incorrect vertex format for buffer texture");
+    lib_assert_msg(0, "Incorrect vertex format for buffer texture");
     return GPU_DEPTH_COMPONENT24;
   }
   switch (format->attrs[0].comp_len) {
@@ -594,7 +594,7 @@ static inline eGPUTextureFormat to_texture_format(const GPUVertFormat *format)
     default:
       break;
   }
-  BLI_assert_msg(0, "Unsupported vertex format for buffer texture");
+  lib_assert_msg(0, "Unsupported vertex format for buffer texture");
   return GPU_DEPTH_COMPONENT24;
 }
 
