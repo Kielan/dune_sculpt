@@ -182,8 +182,8 @@ void gpu_viewport_bind_from_offscreen(GPUViewport *viewport,
 {
   GPUTexture *color, *depth;
   GPUFrameBuffer *fb;
-  viewport->size[0] = GPU_offscreen_width(ofs);
-  viewport->size[1] = GPU_offscreen_height(ofs);
+  viewport->size[0] = gpu_offscreen_width(ofs);
+  viewport->size[1] = gpu_offscreen_height(ofs);
 
   gpu_offscreen_viewport_data_get(ofs, &fb, &color, &depth);
 
@@ -232,22 +232,22 @@ void gpu_viewport_colorspace_set(GPUViewport *viewport,
   view_settings->curve_mapping = NULL;
   viewport->view_settings.curve_mapping = NULL;
 
-  BKE_color_managed_view_settings_copy(&viewport->view_settings, view_settings);
+  dune_color_managed_view_settings_copy(&viewport->view_settings, view_settings);
   /* Restore. */
   view_settings->curve_mapping = tmp_curve_mapping;
   viewport->view_settings.curve_mapping = tmp_curve_mapping_vp;
   /* Only copy curve-mapping if needed. Avoid unneeded OCIO cache miss. */
   if (tmp_curve_mapping && viewport->view_settings.curve_mapping == NULL) {
-    BKE_color_managed_view_settings_free(&viewport->view_settings);
-    viewport->view_settings.curve_mapping = BKE_curvemapping_copy(tmp_curve_mapping);
+    dune_color_managed_view_settings_free(&viewport->view_settings);
+    viewport->view_settings.curve_mapping = dune_curvemapping_copy(tmp_curve_mapping);
   }
 
-  BKE_color_managed_display_settings_copy(&viewport->display_settings, display_settings);
+  dune_color_managed_display_settings_copy(&viewport->display_settings, display_settings);
   viewport->dither = dither;
   viewport->do_color_management = true;
 }
 
-void GPU_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo_format)
+void gpu_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo_format)
 {
   if (!ELEM(stereo_format->display_mode, S3D_DISPLAY_ANAGLYPH, S3D_DISPLAY_INTERLACE)) {
     /* Early Exit: the other display modes need access to the full screen and cannot be
@@ -255,7 +255,7 @@ void GPU_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
     return;
   }
   /* The composite framebuffer object needs to be created in the window context. */
-  GPU_framebuffer_ensure_config(&viewport->stereo_comp_fb,
+  gpu_framebuffer_ensure_config(&viewport->stereo_comp_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(viewport->color_overlay_tx[0]),
@@ -263,12 +263,12 @@ void GPU_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
                                 });
 
   GPUVertFormat *vert_format = immVertexFormat();
-  uint pos = GPU_vertformat_attr_add(vert_format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-  GPU_framebuffer_bind(viewport->stereo_comp_fb);
-  GPU_matrix_push();
-  GPU_matrix_push_projection();
-  GPU_matrix_identity_set();
-  GPU_matrix_identity_projection_set();
+  uint pos = gpu_vertformat_attr_add(vert_format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
+  gpu_framebuffer_bind(viewport->stereo_comp_fb);
+  gpu_matrix_push();
+  gpu_matrix_push_projection();
+  GPU_matrix_id_set();
+  GPU_matrix_id_projection_set();
   immBindBuiltinProgram(GPU_SHADER_2D_IMAGE_OVERLAYS_STEREO_MERGE);
   int settings = stereo_format->display_mode;
   if (settings == S3D_DISPLAY_ANAGLYPH) {
@@ -316,16 +316,15 @@ void GPU_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
   GPU_framebuffer_restore();
 }
 /* -------------------------------------------------------------------- */
-/** \name Viewport Batches
- * \{ */
+/** Viewport Batches */
 
 static GPUVertFormat *gpu_viewport_batch_format(void)
 {
   if (g_viewport.format.attr_len == 0) {
     GPUVertFormat *format = &g_viewport.format;
-    g_viewport.attr_id.pos = GPU_vertformat_attr_add(
+    g_viewport.attr_id.pos = gpu_vertformat_attr_add(
         format, "pos", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
-    g_viewport.attr_id.tex_coord = GPU_vertformat_attr_add(
+    g_viewport.attr_id.tex_coord = gpu_vertformat_attr_add(
         format, "texCoord", GPU_COMP_F32, 2, GPU_FETCH_FLOAT);
   }
   return &g_viewport.format;
@@ -333,9 +332,9 @@ static GPUVertFormat *gpu_viewport_batch_format(void)
 
 static GPUBatch *gpu_viewport_batch_create(const rctf *rect_pos, const rctf *rect_uv)
 {
-  GPUVertBuf *vbo = GPU_vertbuf_create_with_format(gpu_viewport_batch_format());
+  GPUVertBuf *vbo = gpu_vertbuf_create_with_format(gpu_viewport_batch_format());
   const uint vbo_len = 4;
-  GPU_vertbuf_data_alloc(vbo, vbo_len);
+  gpu_vertbuf_data_alloc(vbo, vbo_len);
 
   GPUVertBufRaw pos_step, tex_coord_step;
   GPU_vertbuf_attr_get_raw_data(vbo, g_viewport.attr_id.pos, &pos_step);
@@ -557,9 +556,9 @@ GPUTexture *GPU_viewport_depth_texture(GPUViewport *viewport)
   return viewport->depth_tx;
 }
 
-GPUFrameBuffer *GPU_viewport_framebuffer_overlay_get(GPUViewport *viewport)
+GPUFrameBuffer *gpu_viewport_framebuffer_overlay_get(GPUViewport *viewport)
 {
-  GPU_framebuffer_ensure_config(
+  gpu_framebuffer_ensure_config(
       &viewport->overlay_fb,
       {
           GPU_ATTACHMENT_TEXTURE(viewport->depth_tx),
@@ -568,7 +567,7 @@ GPUFrameBuffer *GPU_viewport_framebuffer_overlay_get(GPUViewport *viewport)
   return viewport->overlay_fb;
 }
 
-void GPU_viewport_free(GPUViewport *viewport)
+void gpu_viewport_free(GPUViewport *viewport)
 {
   if (viewport->draw_data) {
     DRW_viewport_data_free(viewport->draw_data);
@@ -576,7 +575,7 @@ void GPU_viewport_free(GPUViewport *viewport)
 
   gpu_viewport_textures_free(viewport);
 
-  BKE_color_managed_view_settings_free(&viewport->view_settings);
+  dune_color_managed_view_settings_free(&viewport->view_settings);
   gpu_viewport_batch_free(viewport);
 
   MEM_freeN(viewport);
