@@ -110,17 +110,17 @@ GPUVertBuf *gpu_vertbuf_create_with_format_ex(const GPUVertFormat *format, GPUUs
   return verts;
 }
 
-void GPU_vertbuf_init_with_format_ex(GPUVertBuf *verts_,
+void gpu_vertbuf_init_with_format_ex(GPUVertBuf *verts_,
                                      const GPUVertFormat *format,
                                      GPUUsageType usage)
 {
   unwrap(verts_)->init(format, usage);
 }
 
-void GPU_vertbuf_init_build_on_device(GPUVertBuf *verts, GPUVertFormat *format, uint v_len)
+void gpu_vertbuf_init_build_on_device(GPUVertBuf *verts, GPUVertFormat *format, uint v_len)
 {
-  GPU_vertbuf_init_with_format_ex(verts, format, GPU_USAGE_DEVICE_ONLY);
-  GPU_vertbuf_data_alloc(verts, v_len);
+  gpu_vertbuf_init_with_format_ex(verts, format, GPU_USAGE_DEVICE_ONLY);
+  gpu_vertbuf_data_alloc(verts, v_len);
 }
 
 GPUVertBuf *GPU_vertbuf_duplicate(GPUVertBuf *verts_)
@@ -161,25 +161,25 @@ void GPU_vertbuf_handle_ref_remove(GPUVertBuf *verts)
 
 /* -------- Data update -------- */
 
-void GPU_vertbuf_data_alloc(GPUVertBuf *verts, uint v_len)
+void gpu_vertbuf_data_alloc(GPUVertBuf *verts, uint v_len)
 {
   unwrap(verts)->allocate(v_len);
 }
 
-void GPU_vertbuf_data_resize(GPUVertBuf *verts, uint v_len)
+void gpu_vertbuf_data_resize(GPUVertBuf *verts, uint v_len)
 {
   unwrap(verts)->resize(v_len);
 }
 
-void GPU_vertbuf_data_len_set(GPUVertBuf *verts_, uint v_len)
+void gpu_vertbuf_data_len_set(GPUVertBuf *verts_, uint v_len)
 {
   VertBuf *verts = unwrap(verts_);
-  BLI_assert(verts->data != nullptr); /* Only for dynamic data. */
-  BLI_assert(v_len <= verts->vertex_alloc);
+  lib_assert(verts->data != nullptr); /* Only for dynamic data. */
+  lib_assert(v_len <= verts->vertex_alloc);
   verts->vertex_len = v_len;
 }
 
-void GPU_vertbuf_attr_set(GPUVertBuf *verts_, uint a_idx, uint v_idx, const void *data)
+void gpu_vertbuf_attr_set(GPUVertBuf *verts_, uint a_idx, uint v_idx, const void *data)
 {
   VertBuf *verts = unwrap(verts_);
   const GPUVertFormat *format = &verts->format;
@@ -191,34 +191,34 @@ void GPU_vertbuf_attr_set(GPUVertBuf *verts_, uint a_idx, uint v_idx, const void
   memcpy(verts->data + a->offset + v_idx * format->stride, data, a->sz);
 }
 
-void GPU_vertbuf_attr_fill(GPUVertBuf *verts_, uint a_idx, const void *data)
+void gpu_vertbuf_attr_fill(GPUVertBuf *verts_, uint a_idx, const void *data)
 {
   VertBuf *verts = unwrap(verts_);
   const GPUVertFormat *format = &verts->format;
-  BLI_assert(a_idx < format->attr_len);
+  lib_assert(a_idx < format->attr_len);
   const GPUVertAttr *a = &format->attrs[a_idx];
   const uint stride = a->sz; /* tightly packed input data */
   verts->flag |= GPU_VERTBUF_DATA_DIRTY;
-  GPU_vertbuf_attr_fill_stride(verts_, a_idx, stride, data);
+  gpu_vertbuf_attr_fill_stride(verts_, a_idx, stride, data);
 }
 
-void GPU_vertbuf_vert_set(GPUVertBuf *verts_, uint v_idx, const void *data)
+void gpu_vertbuf_vert_set(GPUVertBuf *verts_, uint v_idx, const void *data)
 {
   VertBuf *verts = unwrap(verts_);
   const GPUVertFormat *format = &verts->format;
-  BLI_assert(v_idx < verts->vertex_alloc);
-  BLI_assert(verts->data != nullptr);
+  lib_assert(v_idx < verts->vertex_alloc);
+  lib_assert(verts->data != nullptr);
   verts->flag |= GPU_VERTBUF_DATA_DIRTY;
   memcpy(verts->data + v_idx * format->stride, data, format->stride);
 }
 
-void GPU_vertbuf_attr_fill_stride(GPUVertBuf *verts_, uint a_idx, uint stride, const void *data)
+void gpu_vertbuf_attr_fill_stride(GPUVertBuf *verts_, uint a_idx, uint stride, const void *data)
 {
   VertBuf *verts = unwrap(verts_);
   const GPUVertFormat *format = &verts->format;
   const GPUVertAttr *a = &format->attrs[a_idx];
-  BLI_assert(a_idx < format->attr_len);
-  BLI_assert(verts->data != nullptr);
+  lib_assert(a_idx < format->attr_len);
+  lib_assert(verts->data != nullptr);
   verts->flag |= GPU_VERTBUF_DATA_DIRTY;
   const uint vertex_len = verts->vertex_len;
 
@@ -235,7 +235,7 @@ void GPU_vertbuf_attr_fill_stride(GPUVertBuf *verts_, uint a_idx, uint stride, c
   }
 }
 
-void GPU_vertbuf_attr_get_raw_data(GPUVertBuf *verts_, uint a_idx, GPUVertBufRaw *access)
+void gpu_vertbuf_attr_get_raw_data(GPUVertBuf *verts_, uint a_idx, GPUVertBufRaw *access)
 {
   VertBuf *verts = unwrap(verts_);
   const GPUVertFormat *format = &verts->format;
