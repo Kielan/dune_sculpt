@@ -1,13 +1,13 @@
-#include "GPU_vertex_format.h"
+#include "gpu_vertex_format.h"
 #include "gpu_shader_private.hh"
 #include "gpu_vertex_format_private.h"
 
 #include <cstddef>
 #include <cstring>
 
-#include "BLI_ghash.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
 #define PACK_DEBUG 0
 
@@ -15,9 +15,9 @@
 #  include <stdio.h>
 #endif
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
-void GPU_vertformat_clear(GPUVertFormat *format)
+void gpu_vertformat_clear(GPUVertFormat *format)
 {
 #if TRUST_NO_ONE
   memset(format, 0, sizeof(GPUVertFormat));
@@ -184,7 +184,7 @@ void GPU_vertformat_multiload_enable(GPUVertFormat *format, int load_count)
     const char *attr_name = GPU_vertformat_attr_name_get(format, attr, 0);
     for (int j = 1; j < load_count; j++) {
       char load_name[64];
-      BLI_snprintf(load_name, sizeof(load_name), "%s%d", attr_name, j);
+      lib_snprintf(load_name, sizeof(load_name), "%s%d", attr_name, j);
       GPUVertAttr *dst_attr = &format->attrs[format->attr_len++];
       *dst_attr = *attr;
 
@@ -195,12 +195,12 @@ void GPU_vertformat_multiload_enable(GPUVertFormat *format, int load_count)
   }
 }
 
-int GPU_vertformat_attr_id_get(const GPUVertFormat *format, const char *name)
+int gpu_vertformat_attr_id_get(const GPUVertFormat *format, const char *name)
 {
   for (int i = 0; i < format->attr_len; i++) {
     const GPUVertAttr *attr = &format->attrs[i];
     for (int j = 0; j < attr->name_len; j++) {
-      const char *attr_name = GPU_vertformat_attr_name_get(format, attr, j);
+      const char *attr_name = gpu_vertformat_attr_name_get(format, attr, j);
       if (STREQ(name, attr_name)) {
         return i;
       }
@@ -209,12 +209,12 @@ int GPU_vertformat_attr_id_get(const GPUVertFormat *format, const char *name)
   return -1;
 }
 
-void GPU_vertformat_attr_rename(GPUVertFormat *format, int attr_id, const char *new_name)
+void gpu_vertformat_attr_rename(GPUVertFormat *format, int attr_id, const char *new_name)
 {
-  BLI_assert(attr_id > -1 && attr_id < format->attr_len);
+  lib_assert(attr_id > -1 && attr_id < format->attr_len);
   GPUVertAttr *attr = &format->attrs[attr_id];
-  char *attr_name = (char *)GPU_vertformat_attr_name_get(format, attr, 0);
-  BLI_assert(strlen(attr_name) == strlen(new_name));
+  char *attr_name = (char *)gpu_vertformat_attr_name_get(format, attr, 0);
+  lib_assert(strlen(attr_name) == strlen(new_name));
   int i = 0;
   while (attr_name[i] != '\0') {
     attr_name[i] = new_name[i];
@@ -235,7 +235,7 @@ static void safe_bytes(char out[11], const char data[8])
   }
 }
 
-void GPU_vertformat_safe_attr_name(const char *attr_name, char *r_safe_name, uint UNUSED(max_len))
+void gpu_vertformat_safe_attr_name(const char *attr_name, char *r_safe_name, uint UNUSED(max_len))
 {
   char data[8] = {0};
   uint len = strlen(attr_name);
@@ -262,16 +262,16 @@ void GPU_vertformat_safe_attr_name(const char *attr_name, char *r_safe_name, uin
   /* End the string */
   r_safe_name[11] = '\0';
 
-  BLI_assert(GPU_MAX_SAFE_ATTR_NAME >= 12);
+  lib_assert(GPU_MAX_SAFE_ATTR_NAME >= 12);
 #if 0 /* For debugging */
   printf("%s > %lx > %s\n", attr_name, *(uint64_t *)data, r_safe_name);
 #endif
 }
 
-void GPU_vertformat_deinterleave(GPUVertFormat *format)
+void gpu_vertformat_deinterleave(GPUVertFormat *format)
 {
   /* Ideally we should change the stride and offset here. This would allow
-   * us to use GPU_vertbuf_attr_set / GPU_vertbuf_attr_fill. But since
+   * us to use gpu_vertbuf_attr_set / GPU_vertbuf_attr_fill. But since
    * we use only 11 bits for attr->offset this limits the size of the
    * buffer considerably. So instead we do the conversion when creating
    * bindings in create_bindings(). */
@@ -329,7 +329,7 @@ void VertexFormat_pack(GPUVertFormat *format)
   format->packed = true;
 }
 
-void GPU_vertformat_from_shader(GPUVertFormat *format, const struct GPUShader *gpushader)
+void gpu_vertformat_from_shader(GPUVertFormat *format, const struct GPUShader *gpushader)
 {
   const Shader *shader = reinterpret_cast<const Shader *>(gpushader);
   shader->vertformat_from_shader(format);
