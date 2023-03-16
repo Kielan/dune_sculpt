@@ -274,13 +274,13 @@ void gpu_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
   if (settings == S3D_DISPLAY_ANAGLYPH) {
     switch (stereo_format->anaglyph_type) {
       case S3D_ANAGLYPH_REDCYAN:
-        GPU_color_mask(false, true, true, true);
+        gpu_color_mask(false, true, true, true);
         break;
       case S3D_ANAGLYPH_GREENMAGENTA:
-        GPU_color_mask(true, false, true, true);
+        gpu_color_mask(true, false, true, true);
         break;
       case S3D_ANAGLYPH_YELLOWBLUE:
-        GPU_color_mask(false, false, true, true);
+        gpu_color_mask(false, false, true, true);
         break;
     }
   }
@@ -290,8 +290,8 @@ void gpu_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
   }
   immUniform1i("stereoDisplaySettings", settings);
 
-  GPU_texture_bind(viewport->color_render_tx[1], 0);
-  GPU_texture_bind(viewport->color_overlay_tx[1], 1);
+  gpu_texture_bind(viewport->color_render_tx[1], 0);
+  gpu_texture_bind(viewport->color_overlay_tx[1], 1);
 
   immBegin(GPU_PRIM_TRI_STRIP, 4);
 
@@ -302,18 +302,18 @@ void gpu_viewport_stereo_composite(GPUViewport *viewport, Stereo3dFormat *stereo
 
   immEnd();
 
-  GPU_texture_unbind(viewport->color_render_tx[1]);
-  GPU_texture_unbind(viewport->color_overlay_tx[1]);
+  gpu_texture_unbind(viewport->color_render_tx[1]);
+  gpu_texture_unbind(viewport->color_overlay_tx[1]);
 
   immUnbindProgram();
-  GPU_matrix_pop_projection();
-  GPU_matrix_pop();
+  gpu_matrix_pop_projection();
+  gpu_matrix_pop();
 
   if (settings == S3D_DISPLAY_ANAGLYPH) {
-    GPU_color_mask(true, true, true, true);
+    gpu_color_mask(true, true, true, true);
   }
 
-  GPU_framebuffer_restore();
+  gpu_framebuffer_restore();
 }
 /* -------------------------------------------------------------------- */
 /** Viewport Batches */
@@ -378,12 +378,10 @@ static GPUBatch *gpu_viewport_batch_get(GPUViewport *viewport,
 static void gpu_viewport_batch_free(GPUViewport *viewport)
 {
   if (viewport->batch.batch) {
-    GPU_batch_discard(viewport->batch.batch);
+    gpu_batch_discard(viewport->batch.batch);
     viewport->batch.batch = NULL;
   }
 }
-
-/** \} */
 
 static void gpu_viewport_draw_colormanaged(GPUViewport *viewport,
                                            int view,
