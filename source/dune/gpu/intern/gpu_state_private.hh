@@ -1,14 +1,14 @@
 #pragma once
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "GPU_state.h"
+#include "gpu_state.h"
 
 #include "gpu_texture_private.hh"
 
 #include <cstring>
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 /* Encapsulate all pipeline state that we need to track.
@@ -34,7 +34,7 @@ union GPUState {
     uint32_t invert_facing : 1;
     uint32_t shadow_bias : 1;
     /** Number of clip distances enabled. */
-    /* TODO(fclem): This should be a shader property. */
+    /* TODO: This should be a shader property. */
     uint32_t clip_distances : 3;
     /* TODO(fclem): remove, old opengl features. */
     uint32_t polygon_smooth : 1;
@@ -44,7 +44,7 @@ union GPUState {
   uint64_t data;
 };
 
-BLI_STATIC_ASSERT(sizeof(GPUState) == sizeof(uint64_t), "GPUState is too big.");
+LIB_STATIC_ASSERT(sizeof(GPUState) == sizeof(uint64_t), "GPUState is too big.");
 
 inline bool operator==(const GPUState &a, const GPUState &b)
 {
@@ -77,7 +77,7 @@ union GPUStateMutable {
     /** TODO: remove. */
     float depth_range[2];
     /** Positive if using program point size. */
-    /* TODO(fclem): should be passed as uniform to all shaders. */
+    /* TODO: should be passed as uniform to all shaders. */
     float point_size;
     /** Not supported on every platform. Prefer using wide-line shader. */
     float line_width;
@@ -92,7 +92,7 @@ union GPUStateMutable {
   uint64_t data[9];
 };
 
-BLI_STATIC_ASSERT(sizeof(GPUStateMutable) == sizeof(GPUStateMutable::data),
+LIB_STATIC_ASSERT(sizeof(GPUStateMutable) == sizeof(GPUStateMutable::data),
                   "GPUStateMutable is too big.");
 
 inline bool operator==(const GPUStateMutable &a, const GPUStateMutable &b)
