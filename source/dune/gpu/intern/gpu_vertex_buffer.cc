@@ -1,10 +1,6 @@
-/** \file
- * \ingroup gpu
- *
- * GPU vertex buffer
- */
+/** GPU vertex buffer **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "gpu_backend.hh"
 #include "gpu_vertex_format_private.h"
@@ -17,10 +13,9 @@
 #include <cstring>
 
 /* -------------------------------------------------------------------- */
-/** \name VertBuf
- * \{ */
+/** VertBuf **/
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 size_t VertBuf::memory_usage = 0;
 
@@ -33,14 +28,14 @@ VertBuf::VertBuf()
 VertBuf::~VertBuf()
 {
   /* Should already have been cleared. */
-  BLI_assert(flag == GPU_VERTBUF_INVALID);
+  lib_assert(flag == GPU_VERTBUF_INVALID);
 }
 
 void VertBuf::init(const GPUVertFormat *format, GPUUsageType usage)
 {
   usage_ = usage;
   flag = GPU_VERTBUF_DATA_DIRTY;
-  GPU_vertformat_copy(&this->format, format);
+  gpu_vertformat_copy(&this->format, format);
   if (!format->packed) {
     VertexFormat_pack(&this->format);
   }
@@ -67,9 +62,9 @@ VertBuf *VertBuf::duplicate()
 
 void VertBuf::allocate(uint vert_len)
 {
-  BLI_assert(format.packed);
+  lib_assert(format.packed);
   /* Catch any unnecessary usage. */
-  BLI_assert(vertex_alloc != vert_len || data == nullptr);
+  lib_assert(vertex_alloc != vert_len || data == nullptr);
   vertex_len = vertex_alloc = vert_len;
 
   this->acquire_data();
@@ -80,7 +75,7 @@ void VertBuf::allocate(uint vert_len)
 void VertBuf::resize(uint vert_len)
 {
   /* Catch any unnecessary usage. */
-  BLI_assert(vertex_alloc != vert_len);
+  lib_assert(vertex_alloc != vert_len);
   vertex_len = vertex_alloc = vert_len;
 
   this->resize_data();
@@ -93,25 +88,22 @@ void VertBuf::upload()
   this->upload_data();
 }
 
-}  // namespace blender::gpu
-
-/** \} */
+}  // namespace dune::gpu
 
 /* -------------------------------------------------------------------- */
-/** \name C-API
- * \{ */
+/** C-API */
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
 /* -------- Creation & deletion -------- */
 
-GPUVertBuf *GPU_vertbuf_calloc()
+GPUVertBuf *gpu_vertbuf_calloc()
 {
   return wrap(GPUBackend::get()->vertbuf_alloc());
 }
 
-GPUVertBuf *GPU_vertbuf_create_with_format_ex(const GPUVertFormat *format, GPUUsageType usage)
+GPUVertBuf *gpu_vertbuf_create_with_format_ex(const GPUVertFormat *format, GPUUsageType usage)
 {
   GPUVertBuf *verts = GPU_vertbuf_calloc();
   unwrap(verts)->init(format, usage);
