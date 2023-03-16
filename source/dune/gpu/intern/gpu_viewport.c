@@ -425,15 +425,15 @@ static void gpu_viewport_draw_colormanaged(GPUViewport *viewport,
   gpu_texture_bind(color, 0);
   gpu_texture_bind(color_overlay, 1);
   gpu_batch_draw(batch);
-  GPU_texture_unbind(color);
-  GPU_texture_unbind(color_overlay);
+  gpu_texture_unbind(color);
+  gpu_texture_unbind(color_overlay);
 
   if (use_ocio) {
     IMB_colormanagement_finish_glsl_draw();
   }
 }
 
-void GPU_viewport_draw_to_screen_ex(GPUViewport *viewport,
+void gpu_viewport_draw_to_screen_ex(GPUViewport *viewport,
                                     int view,
                                     const rcti *rect,
                                     bool display_colorspace,
@@ -485,12 +485,12 @@ void GPU_viewport_draw_to_screen_ex(GPUViewport *viewport,
       viewport, view, &pos_rect, &uv_rect, display_colorspace, do_overlay_merge);
 }
 
-void GPU_viewport_draw_to_screen(GPUViewport *viewport, int view, const rcti *rect)
+void gpu_viewport_draw_to_screen(GPUViewport *viewport, int view, const rcti *rect)
 {
-  GPU_viewport_draw_to_screen_ex(viewport, view, rect, true, true);
+  gpu_viewport_draw_to_screen_ex(viewport, view, rect, true, true);
 }
 
-void GPU_viewport_unbind_from_offscreen(GPUViewport *viewport,
+void gpu_viewport_unbind_from_offscreen(GPUViewport *viewport,
                                         struct GPUOffScreen *ofs,
                                         bool display_colorspace,
                                         bool do_overlay_merge)
@@ -499,8 +499,8 @@ void GPU_viewport_unbind_from_offscreen(GPUViewport *viewport,
     return;
   }
 
-  GPU_depth_test(GPU_DEPTH_NONE);
-  GPU_offscreen_bind(ofs, false);
+  gpu_depth_test(GPU_DEPTH_NONE);
+  gpu_offscreen_bind(ofs, false);
 
   rctf pos_rect = {
       .xmin = -1.0f,
@@ -523,13 +523,13 @@ void GPU_viewport_unbind_from_offscreen(GPUViewport *viewport,
   viewport->depth_tx = NULL;
 }
 
-void GPU_viewport_unbind(GPUViewport *UNUSED(viewport))
+void gpu_viewport_unbind(GPUViewport *UNUSED(viewport))
 {
-  GPU_framebuffer_restore();
+  gpu_framebuffer_restore();
   DRW_opengl_context_disable();
 }
 
-int GPU_viewport_active_view_get(GPUViewport *viewport)
+int gpu_viewport_active_view_get(GPUViewport *viewport)
 {
   return viewport->active_view;
 }
