@@ -1,33 +1,29 @@
-/** \file
- * \ingroup gpu
- *
- * System that manages viewport drawing.
- */
+/*** System that manages viewport drawing. */
 
 #include <string.h>
 
-#include "BLI_listbase.h"
-#include "BLI_math_vector.h"
-#include "BLI_memblock.h"
-#include "BLI_rect.h"
+#include "lib_listbase.h"
+#include "lib_math_vector.h"
+#include "lib_memblock.h"
+#include "lib_rect.h"
 
-#include "BKE_colortools.h"
+#include "dune_colortools.h"
 
 #include "IMB_colormanagement.h"
 
-#include "DNA_userdef_types.h"
-#include "DNA_vec_types.h"
+#include "types_userdef_types.h"
+#include "types_vec_types.h"
 
-#include "GPU_framebuffer.h"
-#include "GPU_immediate.h"
-#include "GPU_matrix.h"
-#include "GPU_texture.h"
-#include "GPU_uniform_buffer.h"
-#include "GPU_viewport.h"
+#include "gpu_framebuffer.h"
+#include "gpu_immediate.h"
+#include "gpu_matrix.h"
+#include "gpu_texture.h"
+#include "gpu_uniform_buffer.h"
+#include "gpu_viewport.h"
 
 #include "DRW_engine.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 /* Struct storing a viewport specific GPUBatch.
  * The end-goal is to have a single batch shared across viewport and use a model matrix to place
@@ -71,7 +67,7 @@ struct GPUViewport {
   ColorManagedDisplaySettings display_settings;
   CurveMapping *orig_curve_mapping;
   float dither;
-  /* TODO(fclem): the uvimage display use the viewport but do not set any view transform for the
+  /* TODO: the uvimage display use the viewport but do not set any view transform for the
    * moment. The end goal would be to let the GPUViewport do the color management. */
   bool do_color_management;
   struct GPUViewportBatch batch;
@@ -82,35 +78,35 @@ enum {
   GPU_VIEWPORT_STEREO = (1 << 1),
 };
 
-void GPU_viewport_tag_update(GPUViewport *viewport)
+void gpu_viewport_tag_update(GPUViewport *viewport)
 {
   viewport->flag |= DO_UPDATE;
 }
 
-bool GPU_viewport_do_update(GPUViewport *viewport)
+bool gpu_viewport_do_update(GPUViewport *viewport)
 {
   bool ret = (viewport->flag & DO_UPDATE);
   viewport->flag &= ~DO_UPDATE;
   return ret;
 }
 
-GPUViewport *GPU_viewport_create(void)
+GPUViewport *gpu_viewport_create(void)
 {
-  GPUViewport *viewport = MEM_callocN(sizeof(GPUViewport), "GPUViewport");
+  GPUViewport *viewport = mem_callocN(sizeof(GPUViewport), "GPUViewport");
   viewport->do_color_management = false;
   viewport->size[0] = viewport->size[1] = -1;
   viewport->active_view = 0;
   return viewport;
 }
 
-GPUViewport *GPU_viewport_stereo_create(void)
+GPUViewport *gpu_viewport_stereo_create(void)
 {
-  GPUViewport *viewport = GPU_viewport_create();
+  GPUViewport *viewport = gpu_viewport_create();
   viewport->flag = GPU_VIEWPORT_STEREO;
   return viewport;
 }
 
-struct DRWData **GPU_viewport_data_get(GPUViewport *viewport)
+struct DRWData **gpu_viewport_data_get(GPUViewport *viewport)
 {
   return &viewport->draw_data;
 }
@@ -123,19 +119,19 @@ static void gpu_viewport_textures_create(GPUViewport *viewport)
   if (viewport->color_render_tx[0] == NULL) {
     viewport->color_render_tx[0] = GPU_texture_create_2d(
         "dtxl_color", UNPACK2(size), 1, GPU_RGBA16F, NULL);
-    GPU_texture_clear(viewport->color_render_tx[0], GPU_DATA_FLOAT, empty_pixel);
+    gpu_texture_clear(viewport->color_render_tx[0], GPU_DATA_FLOAT, empty_pixel);
     viewport->color_overlay_tx[0] = GPU_texture_create_2d(
         "dtxl_color_overlay", UNPACK2(size), 1, GPU_SRGB8_A8, NULL);
-    GPU_texture_clear(viewport->color_overlay_tx[0], GPU_DATA_FLOAT, empty_pixel);
+    gpu_texture_clear(viewport->color_overlay_tx[0], GPU_DATA_FLOAT, empty_pixel);
   }
 
   if ((viewport->flag & GPU_VIEWPORT_STEREO) != 0 && viewport->color_render_tx[1] == NULL) {
     viewport->color_render_tx[1] = GPU_texture_create_2d(
         "dtxl_color_stereo", UNPACK2(size), 1, GPU_RGBA16F, NULL);
-    GPU_texture_clear(viewport->color_render_tx[1], GPU_DATA_FLOAT, empty_pixel);
+    gpu_texture_clear(viewport->color_render_tx[1], GPU_DATA_FLOAT, empty_pixel);
     viewport->color_overlay_tx[1] = GPU_texture_create_2d(
         "dtxl_color_overlay_stereo", UNPACK2(size), 1, GPU_SRGB8_A8, NULL);
-    GPU_texture_clear(viewport->color_overlay_tx[1], GPU_DATA_FLOAT, empty_pixel);
+    gpu_texture_clear(viewport->color_overlay_tx[1], GPU_DATA_FLOAT, empty_pixel);
   }
 
   /* Can be shared with GPUOffscreen. */
@@ -145,7 +141,7 @@ static void gpu_viewport_textures_create(GPUViewport *viewport)
   }
 
   if (!viewport->depth_tx || !viewport->color_render_tx[0] || !viewport->color_overlay_tx[0]) {
-    GPU_viewport_free(viewport);
+    gpu_viewport_free(viewport);
   }
 }
 
@@ -162,7 +158,7 @@ static void gpu_viewport_textures_free(GPUViewport *viewport)
   GPU_TEXTURE_FREE_SAFE(viewport->depth_tx);
 }
 
-void GPU_viewport_bind(GPUViewport *viewport, int view, const rcti *rect)
+void gpu_viewport_bind(GPUViewport *viewport, int view, const rcti *rect)
 {
   int rect_size[2];
   /* add one pixel because of scissor test */
@@ -180,7 +176,7 @@ void GPU_viewport_bind(GPUViewport *viewport, int view, const rcti *rect)
   viewport->active_view = view;
 }
 
-void GPU_viewport_bind_from_offscreen(GPUViewport *viewport,
+void gpu_viewport_bind_from_offscreen(GPUViewport *viewport,
                                       struct GPUOffScreen *ofs,
                                       bool is_xr_surface)
 {
@@ -189,7 +185,7 @@ void GPU_viewport_bind_from_offscreen(GPUViewport *viewport,
   viewport->size[0] = GPU_offscreen_width(ofs);
   viewport->size[1] = GPU_offscreen_height(ofs);
 
-  GPU_offscreen_viewport_data_get(ofs, &fb, &color, &depth);
+  gpu_offscreen_viewport_data_get(ofs, &fb, &color, &depth);
 
   /* XR surfaces will already check for texture size changes and free if necessary (see
    * #wm_xr_session_surface_offscreen_ensure()), so don't free here as it has a significant
@@ -205,13 +201,13 @@ void GPU_viewport_bind_from_offscreen(GPUViewport *viewport,
   gpu_viewport_textures_create(viewport);
 }
 
-void GPU_viewport_colorspace_set(GPUViewport *viewport,
+void gpu_viewport_colorspace_set(GPUViewport *viewport,
                                  ColorManagedViewSettings *view_settings,
                                  const ColorManagedDisplaySettings *display_settings,
                                  float dither)
 {
   /**
-   * HACK(fclem): We copy the settings here to avoid use after free if an update frees the scene
+   * HACK: We copy the settings here to avoid use after free if an update frees the scene
    * and the viewport stays cached (see T75443). But this means the OCIO curve-mapping caching
    * (which is based on #CurveMap pointer address) cannot operate correctly and it will create
    * a different OCIO processor for each viewport. We try to only reallocate the curve-map copy
@@ -221,14 +217,14 @@ void GPU_viewport_colorspace_set(GPUViewport *viewport,
     if (viewport->view_settings.curve_mapping) {
       if (view_settings->curve_mapping->changed_timestamp !=
           viewport->view_settings.curve_mapping->changed_timestamp) {
-        BKE_color_managed_view_settings_free(&viewport->view_settings);
+        dune_color_managed_view_settings_free(&viewport->view_settings);
       }
     }
   }
 
   if (viewport->orig_curve_mapping != view_settings->curve_mapping) {
     viewport->orig_curve_mapping = view_settings->curve_mapping;
-    BKE_color_managed_view_settings_free(&viewport->view_settings);
+    dune_color_managed_view_settings_free(&viewport->view_settings);
   }
   /* Don't copy the curve mapping already. */
   CurveMapping *tmp_curve_mapping = view_settings->curve_mapping;
