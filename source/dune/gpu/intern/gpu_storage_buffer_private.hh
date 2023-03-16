@@ -1,10 +1,10 @@
 #pragma once
 
-#include "BLI_sys_types.h"
+#include "lib_sys_types.h"
 
 struct GPUStorageBuf;
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 #ifdef DEBUG
