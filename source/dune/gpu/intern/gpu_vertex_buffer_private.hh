@@ -62,13 +62,13 @@ class VertBuf {
     return vertex_len * format.stride;
   }
 
-  void reference_add()
+  void ref_add()
   {
     handle_refcount_++;
   }
-  void reference_remove()
+  void ref_remove()
   {
-    BLI_assert(handle_refcount_ > 0);
+    lib_assert(handle_refcount_ > 0);
     handle_refcount_--;
     if (handle_refcount_ == 0) {
       delete this;
