@@ -1,32 +1,31 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 #include <cstring>
 
-#include "BLI_blenlib.h"
-#include "BLI_math_base.h"
+#include "lib_blenlib.h"
+#include "lib_math_base.h"
 
 #include "gpu_backend.hh"
 #include "gpu_node_graph.h"
 
-#include "GPU_material.h"
-#include "GPU_vertex_buffer.h" /* For GPUUsageType. */
+#include "gpu_material.h"
+#include "gpu_vertex_buffer.h" /* For GPUUsageType. */
 
-#include "GPU_storage_buffer.h"
+#include "gpu_storage_buffer.h"
 #include "gpu_storage_buffer_private.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Creation & Deletion
- * \{ */
+/** Creation & Deletion **/
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 StorageBuf::StorageBuf(size_t size, const char *name)
 {
   /* Make sure that UBO is padded to size of vec4 */
-  BLI_assert((size % 16) == 0);
+  lib_assert((size % 16) == 0);
 
   size_in_bytes_ = size;
 
-  BLI_strncpy(name_, name, sizeof(name_));
+  lib_strncpy(name_, name, sizeof(name_));
 }
 
 StorageBuf::~StorageBuf()
@@ -34,17 +33,14 @@ StorageBuf::~StorageBuf()
   MEM_SAFE_FREE(data_);
 }
 
-}  // namespace blender::gpu
-
-/** \} */
+}  // namespace dune::gpu
 
 /* -------------------------------------------------------------------- */
-/** \name C-API
- * \{ */
+/** C-API **/
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
-GPUStorageBuf *GPU_storagebuf_create_ex(size_t size,
+GPUStorageBuf *gpu_storagebuf_create_ex(size_t size,
                                         const void *data,
                                         GPUUsageType usage,
                                         const char *name)
@@ -57,27 +53,27 @@ GPUStorageBuf *GPU_storagebuf_create_ex(size_t size,
   return wrap(ssbo);
 }
 
-void GPU_storagebuf_free(GPUStorageBuf *ssbo)
+void gpu_storagebuf_free(GPUStorageBuf *ssbo)
 {
   delete unwrap(ssbo);
 }
 
-void GPU_storagebuf_update(GPUStorageBuf *ssbo, const void *data)
+void gpu_storagebuf_update(GPUStorageBuf *ssbo, const void *data)
 {
   unwrap(ssbo)->update(data);
 }
 
-void GPU_storagebuf_bind(GPUStorageBuf *ssbo, int slot)
+void gpu_storagebuf_bind(GPUStorageBuf *ssbo, int slot)
 {
   unwrap(ssbo)->bind(slot);
 }
 
-void GPU_storagebuf_unbind(GPUStorageBuf *ssbo)
+void gpu_storagebuf_unbind(GPUStorageBuf *ssbo)
 {
   unwrap(ssbo)->unbind();
 }
 
-void GPU_storagebuf_unbind_all()
+void gpu_storagebuf_unbind_all()
 {
   /* FIXME */
 }
