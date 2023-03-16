@@ -105,7 +105,7 @@ GPUVertBuf *gpu_vertbuf_calloc()
 
 GPUVertBuf *gpu_vertbuf_create_with_format_ex(const GPUVertFormat *format, GPUUsageType usage)
 {
-  GPUVertBuf *verts = GPU_vertbuf_calloc();
+  GPUVertBuf *verts = gpu_vertbuf_calloc();
   unwrap(verts)->init(format, usage);
   return verts;
 }
@@ -123,40 +123,40 @@ void gpu_vertbuf_init_build_on_device(GPUVertBuf *verts, GPUVertFormat *format, 
   gpu_vertbuf_data_alloc(verts, v_len);
 }
 
-GPUVertBuf *GPU_vertbuf_duplicate(GPUVertBuf *verts_)
+GPUVertBuf *gpu_vertbuf_duplicate(GPUVertBuf *verts_)
 {
   return wrap(unwrap(verts_)->duplicate());
 }
 
-const void *GPU_vertbuf_read(GPUVertBuf *verts)
+const void *gpu_vertbuf_read(GPUVertBuf *verts)
 {
   return unwrap(verts)->read();
 }
 
-void *GPU_vertbuf_unmap(const GPUVertBuf *verts, const void *mapped_data)
+void *gpu_vertbuf_unmap(const GPUVertBuf *verts, const void *mapped_data)
 {
   return unwrap(verts)->unmap(mapped_data);
 }
 
-void GPU_vertbuf_clear(GPUVertBuf *verts)
+void gpu_vertbuf_clear(GPUVertBuf *verts)
 {
   unwrap(verts)->clear();
 }
 
-void GPU_vertbuf_discard(GPUVertBuf *verts)
+void gpu_vertbuf_discard(GPUVertBuf *verts)
 {
   unwrap(verts)->clear();
-  unwrap(verts)->reference_remove();
+  unwrap(verts)->ref_remove();
 }
 
-void GPU_vertbuf_handle_ref_add(GPUVertBuf *verts)
+void gpu_vertbuf_handle_ref_add(GPUVertBuf *verts)
 {
-  unwrap(verts)->reference_add();
+  unwrap(verts)->ref_add();
 }
 
-void GPU_vertbuf_handle_ref_remove(GPUVertBuf *verts)
+void gpu_vertbuf_handle_ref_remove(GPUVertBuf *verts)
 {
-  unwrap(verts)->reference_remove();
+  unwrap(verts)->refuse_remove();
 }
 
 /* -------- Data update -------- */
@@ -184,9 +184,9 @@ void gpu_vertbuf_attr_set(GPUVertBuf *verts_, uint a_idx, uint v_idx, const void
   VertBuf *verts = unwrap(verts_);
   const GPUVertFormat *format = &verts->format;
   const GPUVertAttr *a = &format->attrs[a_idx];
-  BLI_assert(v_idx < verts->vertex_alloc);
-  BLI_assert(a_idx < format->attr_len);
-  BLI_assert(verts->data != nullptr);
+  lib_assert(v_idx < verts->vertex_alloc);
+  lib_assert(a_idx < format->attr_len);
+  lib_assert(verts->data != nullptr);
   verts->flag |= GPU_VERTBUF_DATA_DIRTY;
   memcpy(verts->data + a->offset + v_idx * format->stride, data, a->sz);
 }
@@ -240,8 +240,8 @@ void gpu_vertbuf_attr_get_raw_data(GPUVertBuf *verts_, uint a_idx, GPUVertBufRaw
   VertBuf *verts = unwrap(verts_);
   const GPUVertFormat *format = &verts->format;
   const GPUVertAttr *a = &format->attrs[a_idx];
-  BLI_assert(a_idx < format->attr_len);
-  BLI_assert(verts->data != nullptr);
+  lib_assert(a_idx < format->attr_len);
+  lib_assert(verts->data != nullptr);
 
   verts->flag |= GPU_VERTBUF_DATA_DIRTY;
   verts->flag &= ~GPU_VERTBUF_DATA_UPLOADED;
@@ -256,38 +256,38 @@ void gpu_vertbuf_attr_get_raw_data(GPUVertBuf *verts_, uint a_idx, GPUVertBufRaw
 
 /* -------- Getters -------- */
 
-void *GPU_vertbuf_get_data(const GPUVertBuf *verts)
+void *gpu_vertbuf_get_data(const GPUVertBuf *verts)
 {
   /* TODO: Assert that the format has no padding. */
   return unwrap(verts)->data;
 }
 
-void *GPU_vertbuf_steal_data(GPUVertBuf *verts_)
+void *gpu_vertbuf_steal_data(GPUVertBuf *verts_)
 {
   VertBuf *verts = unwrap(verts_);
   /* TODO: Assert that the format has no padding. */
-  BLI_assert(verts->data);
+  lib_assert(verts->data);
   void *data = verts->data;
   verts->data = nullptr;
   return data;
 }
 
-const GPUVertFormat *GPU_vertbuf_get_format(const GPUVertBuf *verts)
+const GPUVertFormat *gpu_vertbuf_get_format(const GPUVertBuf *verts)
 {
   return &unwrap(verts)->format;
 }
 
-uint GPU_vertbuf_get_vertex_alloc(const GPUVertBuf *verts)
+uint gpu_vertbuf_get_vertex_alloc(const GPUVertBuf *verts)
 {
   return unwrap(verts)->vertex_alloc;
 }
 
-uint GPU_vertbuf_get_vertex_len(const GPUVertBuf *verts)
+uint gpu_vertbuf_get_vertex_len(const GPUVertBuf *verts)
 {
   return unwrap(verts)->vertex_len;
 }
 
-GPUVertBufStatus GPU_vertbuf_get_status(const GPUVertBuf *verts)
+GPUVertBufStatus gpu_vertbuf_get_status(const GPUVertBuf *verts)
 {
   return unwrap(verts)->flag;
 }
