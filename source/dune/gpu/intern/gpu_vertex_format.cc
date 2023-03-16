@@ -154,7 +154,7 @@ uint GPU_vertformat_attr_add(GPUVertFormat *format,
   return attr_id;
 }
 
-void GPU_vertformat_alias_add(GPUVertFormat *format, const char *alias)
+void gpu_vertformat_alias_add(GPUVertFormat *format, const char *alias)
 {
   GPUVertAttr *attr = &format->attrs[format->attr_len - 1];
 #if TRUST_NO_ONE
@@ -165,18 +165,18 @@ void GPU_vertformat_alias_add(GPUVertFormat *format, const char *alias)
   attr->names[attr->name_len++] = copy_attr_name(format, alias);
 }
 
-void GPU_vertformat_multiload_enable(GPUVertFormat *format, int load_count)
+void gpu_vertformat_multiload_enable(GPUVertFormat *format, int load_count)
 {
   /* Sanity check. Maximum can be upgraded if needed. */
-  BLI_assert(load_count > 1 && load_count < 5);
+  lib_assert(load_count > 1 && load_count < 5);
   /* We need a packed format because of format->stride. */
   if (!format->packed) {
     VertexFormat_pack(format);
   }
 
-  BLI_assert((format->name_len + 1) * load_count < GPU_VERT_FORMAT_MAX_NAMES);
-  BLI_assert(format->attr_len * load_count <= GPU_VERT_ATTR_MAX_LEN);
-  BLI_assert(format->name_offset * load_count < GPU_VERT_ATTR_NAMES_BUF_LEN);
+  lib_assert((format->name_len + 1) * load_count < GPU_VERT_FORMAT_MAX_NAMES);
+  lib_assert(format->attr_len * load_count <= GPU_VERT_ATTR_MAX_LEN);
+  lib_assert(format->name_offset * load_count < GPU_VERT_ATTR_NAMES_BUF_LEN);
 
   const GPUVertAttr *attr = format->attrs;
   int attr_len = format->attr_len;
