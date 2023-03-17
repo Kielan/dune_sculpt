@@ -31,57 +31,57 @@ using namespace dune::gpu;
 /* -------------------------------------------------------------------- */
 /** Immutable state Setters **/
 
-void GPU_blend(eGPUBlend blend)
+void gpu_blend(eGPUBlend blend)
 {
   SET_IMMUTABLE_STATE(blend, blend);
 }
 
-void GPU_face_culling(eGPUFaceCullTest culling)
+void gpu_face_culling(eGPUFaceCullTest culling)
 {
   SET_IMMUTABLE_STATE(culling_test, culling);
 }
 
-void GPU_front_facing(bool invert)
+void gpu_front_facing(bool invert)
 {
   SET_IMMUTABLE_STATE(invert_facing, invert);
 }
 
-void GPU_provoking_vertex(eGPUProvokingVertex vert)
+void gpu_provoking_vertex(eGPUProvokingVertex vert)
 {
   SET_IMMUTABLE_STATE(provoking_vert, vert);
 }
 
-void GPU_depth_test(eGPUDepthTest test)
+void gpu_depth_test(eGPUDepthTest test)
 {
   SET_IMMUTABLE_STATE(depth_test, test);
 }
 
-void GPU_stencil_test(eGPUStencilTest test)
+void gpu_stencil_test(eGPUStencilTest test)
 {
   SET_IMMUTABLE_STATE(stencil_test, test);
 }
 
-void GPU_line_smooth(bool enable)
+void gpu_line_smooth(bool enable)
 {
   SET_IMMUTABLE_STATE(line_smooth, enable);
 }
 
-void GPU_polygon_smooth(bool enable)
+void gpu_polygon_smooth(bool enable)
 {
   SET_IMMUTABLE_STATE(polygon_smooth, enable);
 }
 
-void GPU_logic_op_xor_set(bool enable)
+void gpu_logic_op_xor_set(bool enable)
 {
   SET_IMMUTABLE_STATE(logic_op_xor, enable);
 }
 
-void GPU_write_mask(eGPUWriteMask mask)
+void gpu_write_mask(eGPUWriteMask mask)
 {
   SET_IMMUTABLE_STATE(write_mask, mask);
 }
 
-void GPU_color_mask(bool r, bool g, bool b, bool a)
+void gpu_color_mask(bool r, bool g, bool b, bool a)
 {
   StateManager *stack = Context::get()->state_manager;
   auto &state = stack->state;
@@ -93,7 +93,7 @@ void GPU_color_mask(bool r, bool g, bool b, bool a)
   state.write_mask = write_mask;
 }
 
-void GPU_depth_mask(bool depth)
+void gpu_depth_mask(bool depth)
 {
   StateManager *stack = Context::get()->state_manager;
   auto &state = stack->state;
@@ -102,17 +102,17 @@ void GPU_depth_mask(bool depth)
   state.write_mask = write_mask;
 }
 
-void GPU_shadow_offset(bool enable)
+void gpu_shadow_offset(bool enable)
 {
   SET_IMMUTABLE_STATE(shadow_bias, enable);
 }
 
-void GPU_clip_distances(int distances_enabled)
+void gpu_clip_distances(int distances_enabled)
 {
   SET_IMMUTABLE_STATE(clip_distances, distances_enabled);
 }
 
-void GPU_state_set(eGPUWriteMask write_mask,
+void gpu_state_set(eGPUWriteMask write_mask,
                    eGPUBlend blend,
                    eGPUFaceCullTest culling_test,
                    eGPUDepthTest depth_test,
@@ -131,26 +131,23 @@ void GPU_state_set(eGPUWriteMask write_mask,
   state.provoking_vert = (uint32_t)provoking_vert;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Mutable State Setters
- * \{ */
+/** Mutable State Setters **/
 
-void GPU_depth_range(float near, float far)
+void gpu_depth_range(float near, float far)
 {
   StateManager *stack = Context::get()->state_manager;
   auto &state = stack->mutable_state;
   copy_v2_fl2(state.depth_range, near, far);
 }
 
-void GPU_line_width(float width)
+void gpu_line_width(float width)
 {
   width = max_ff(1.0f, width * PIXELSIZE);
   SET_MUTABLE_STATE(line_width, width);
 }
 
-void GPU_point_size(float size)
+void gpu_point_size(float size)
 {
   StateManager *stack = Context::get()->state_manager;
   auto &state = stack->mutable_state;
@@ -158,7 +155,7 @@ void GPU_point_size(float size)
   state.point_size = size * ((state.point_size > 0.0) ? 1.0f : -1.0f);
 }
 
-void GPU_program_point_size(bool enable)
+void gpu_program_point_size(bool enable)
 {
   StateManager *stack = Context::get()->state_manager;
   auto &state = stack->mutable_state;
@@ -166,34 +163,34 @@ void GPU_program_point_size(bool enable)
   state.point_size = fabsf(state.point_size) * (enable ? 1 : -1);
 }
 
-void GPU_scissor_test(bool enable)
+void gpu_scissor_test(bool enable)
 {
   Context::get()->active_fb->scissor_test_set(enable);
 }
 
-void GPU_scissor(int x, int y, int width, int height)
+void gpu_scissor(int x, int y, int width, int height)
 {
   int scissor_rect[4] = {x, y, width, height};
   Context::get()->active_fb->scissor_set(scissor_rect);
 }
 
-void GPU_viewport(int x, int y, int width, int height)
+void gpu_viewport(int x, int y, int width, int height)
 {
   int viewport_rect[4] = {x, y, width, height};
   Context::get()->active_fb->viewport_set(viewport_rect);
 }
 
-void GPU_stencil_reference_set(uint reference)
+void gpu_stencil_ref_set(uint ref)
 {
-  SET_MUTABLE_STATE(stencil_reference, (uint8_t)reference);
+  SET_MUTABLE_STATE(stencil_ref, (uint8_t)ref);
 }
 
-void GPU_stencil_write_mask_set(uint write_mask)
+void gpu_stencil_write_mask_set(uint write_mask)
 {
   SET_MUTABLE_STATE(stencil_write_mask, (uint8_t)write_mask);
 }
 
-void GPU_stencil_compare_mask_set(uint compare_mask)
+void gpu_stencil_compare_mask_set(uint compare_mask)
 {
   SET_MUTABLE_STATE(stencil_compare_mask, (uint8_t)compare_mask);
 }
@@ -201,48 +198,48 @@ void GPU_stencil_compare_mask_set(uint compare_mask)
 /* -------------------------------------------------------------------- */
 /** State Getters **/
 
-eGPUBlend GPU_blend_get()
+eGPUBlend gpu_blend_get()
 {
   GPUState &state = Context::get()->state_manager->state;
   return (eGPUBlend)state.blend;
 }
 
-eGPUWriteMask GPU_write_mask_get()
+eGPUWriteMask gpu_write_mask_get()
 {
   GPUState &state = Context::get()->state_manager->state;
   return (eGPUWriteMask)state.write_mask;
 }
 
-uint GPU_stencil_mask_get()
+uint gpu_stencil_mask_get()
 {
   const GPUStateMutable &state = Context::get()->state_manager->mutable_state;
   return state.stencil_write_mask;
 }
 
-eGPUDepthTest GPU_depth_test_get()
+eGPUDepthTest gpu_depth_test_get()
 {
   GPUState &state = Context::get()->state_manager->state;
   return (eGPUDepthTest)state.depth_test;
 }
 
-eGPUStencilTest GPU_stencil_test_get()
+eGPUStencilTest gpu_stencil_test_get()
 {
   GPUState &state = Context::get()->state_manager->state;
   return (eGPUStencilTest)state.stencil_test;
 }
 
-float GPU_line_width_get()
+float gpu_line_width_get()
 {
   const GPUStateMutable &state = Context::get()->state_manager->mutable_state;
   return state.line_width;
 }
 
-void GPU_scissor_get(int coords[4])
+void gpu_scissor_get(int coords[4])
 {
   Context::get()->active_fb->scissor_get(coords);
 }
 
-void GPU_viewport_size_get_f(float coords[4])
+void gpu_viewport_size_get_f(float coords[4])
 {
   int viewport[4];
   Context::get()->active_fb->viewport_get(viewport);
@@ -251,37 +248,37 @@ void GPU_viewport_size_get_f(float coords[4])
   }
 }
 
-void GPU_viewport_size_get_i(int coords[4])
+void gpu_viewport_size_get_i(int coords[4])
 {
   Context::get()->active_fb->viewport_get(coords);
 }
 
-bool GPU_depth_mask_get()
+bool gpu_depth_mask_get()
 {
   const GPUState &state = Context::get()->state_manager->state;
   return (state.write_mask & GPU_WRITE_DEPTH) != 0;
 }
 
-bool GPU_mipmap_enabled()
+bool gpu_mipmap_enabled()
 {
-  /* TODO(fclem): this used to be a userdef option. */
+  /* TODO: this used to be a userdef option. */
   return true;
 }
 
 /* -------------------------------------------------------------------- */
 /** Context Utils **/
 
-void GPU_flush()
+void gpu_flush()
 {
   Context::get()->flush();
 }
 
-void GPU_finish()
+void gpu_finish()
 {
   Context::get()->finish();
 }
 
-void GPU_apply_state()
+void gpu_apply_state()
 {
   Context::get()->state_manager->apply_state();
 }
@@ -292,9 +289,9 @@ void GPU_apply_state()
  * bgl makes direct GL calls that makes our state tracking out of date.
  * This flag make it so that the pyGPU calls will not override the state set by
  * bgl functions.
- * \{ */
+ **/
 
-void GPU_bgl_start()
+void gpu_bgl_start()
 {
   Context *ctx = Context::get();
   if (!(ctx && ctx->state_manager)) {
@@ -304,7 +301,7 @@ void GPU_bgl_start()
   if (state_manager.use_bgl == false) {
     /* Expected by many addons (see T80169, T81289).
      * This will reset the blend function. */
-    GPU_blend(GPU_BLEND_NONE);
+    gpu_blend(GPU_BLEND_NONE);
 
     /* Equivalent of setting the depth func `glDepthFunc(GL_LEQUAL)`
      * Needed since Python scripts may enable depth test.
@@ -313,9 +310,9 @@ void GPU_bgl_start()
       eGPUDepthTest depth_test_real = GPU_depth_test_get();
       eGPUDepthTest depth_test_temp = GPU_DEPTH_LESS_EQUAL;
       if (depth_test_real != depth_test_temp) {
-        GPU_depth_test(depth_test_temp);
+        gpu_depth_test(depth_test_temp);
         state_manager.apply_state();
-        GPU_depth_test(depth_test_real);
+        gpu_depth_test(depth_test_real);
       }
     }
 
@@ -324,7 +321,7 @@ void GPU_bgl_start()
   }
 }
 
-void GPU_bgl_end()
+void gpu_bgl_end()
 {
   Context *ctx = Context::get();
   if (!(ctx && ctx->state_manager)) {
@@ -338,7 +335,7 @@ void GPU_bgl_end()
   }
 }
 
-bool GPU_bgl_get()
+bool gpu_bgl_get()
 {
   return Context::get()->state_manager->use_bgl;
 }
@@ -346,12 +343,10 @@ bool GPU_bgl_get()
 /* -------------------------------------------------------------------- */
 /** Synchronization Utils **/
 
-void GPU_memory_barrier(eGPUBarrier barrier)
+void gpu_memory_barrier(eGPUBarrier barrier)
 {
   Context::get()->state_manager->issue_barrier(barrier);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /* Default State **/
