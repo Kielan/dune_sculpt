@@ -1,16 +1,16 @@
 #pragma once
 
-#include "BLI_span.hh"
-#include "BLI_string_ref.hh"
+#include "lib_span.hh"
+#include "lib_string_ref.hh"
 
-#include "GPU_shader.h"
+#include "gpu_shader.h"
 #include "gpu_shader_create_info.hh"
 #include "gpu_shader_interface.hh"
 #include "gpu_vertex_buffer_private.hh"
 
 #include <string>
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 class GPULogParser;
@@ -119,7 +119,7 @@ class GPULogParser {
   bool at_any(const char *log_line, const StringRef chars) const;
   int parse_number(const char *log_line, char **r_new_position) const;
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("GPULogParser");
+  MEM_CXX_CLASS_ALLOC_FNS("GPULogParser");
 };
 
 }  // namespace gpu
