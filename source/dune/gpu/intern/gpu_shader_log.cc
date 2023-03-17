@@ -39,17 +39,17 @@ void Shader::print_log(Span<const char *> sources,
   char warn_col[] = "\033[33;1m";
   char info_col[] = "\033[0;2m";
   char reset_col[] = "\033[0;0m";
-  char *sources_combined = BLI_string_join_arrayN((const char **)sources.data(), sources.size());
-  DynStr *dynstr = BLI_dynstr_new();
+  char *sources_combined = lib_string_join_arrayN((const char **)sources.data(), sources.size());
+  DynStr *dynstr = lib_dynstr_new();
 
   if (!CLG_color_support_get(&LOG)) {
     err_col[0] = warn_col[0] = info_col[0] = reset_col[0] = '\0';
   }
 
-  BLI_dynstr_appendf(dynstr, "\n");
+  lib_dynstr_appendf(dynstr, "\n");
 
 #if DEBUG_DEPENDENCIES
-  BLI_dynstr_appendf(
+  lib_dynstr_appendf(
       dynstr, "%s%sIncluded files (in order):%s\n", info_col, line_prefix, reset_col);
 #endif
 
@@ -66,7 +66,7 @@ void Shader::print_log(Span<const char *> sources,
 #if DEBUG_DEPENDENCIES
     StringRefNull filename = shader::gpu_shader_dependency_get_filename_from_source_string(src);
     if (!filename.is_empty()) {
-      BLI_dynstr_appendf(
+      lib_dynstr_appendf(
           dynstr, "%s%s  %s%s\n", info_col, line_prefix, filename.c_str(), reset_col);
     }
 #endif
@@ -119,10 +119,10 @@ void Shader::print_log(Span<const char *> sources,
     /* Separate from previous block. */
     if (previous_location.source != log_item.cursor.source ||
         previous_location.row != log_item.cursor.row) {
-      BLI_dynstr_appendf(dynstr, "%s%s%s\n", info_col, line_prefix, reset_col);
+      lib_dynstr_appendf(dynstr, "%s%s%s\n", info_col, line_prefix, reset_col);
     }
     else if (log_item.cursor.column != previous_location.column) {
-      BLI_dynstr_appendf(dynstr, "%s\n", line_prefix);
+      lib_dynstr_appendf(dynstr, "%s\n", line_prefix);
     }
     /* Print line from the source file that is producing the error. */
     if ((log_item.cursor.row != -1) && (log_item.cursor.row != previous_location.row ||
@@ -147,10 +147,10 @@ void Shader::print_log(Span<const char *> sources,
       /* Print error source. */
       if (found_line_id) {
         if (log_item.cursor.row != previous_location.row) {
-          BLI_dynstr_appendf(dynstr, "%5d | ", src_line_index);
+          lib_dynstr_appendf(dynstr, "%5d | ", src_line_index);
         }
         else {
-          BLI_dynstr_appendf(dynstr, line_prefix);
+          lib_dynstr_appendf(dynstr, line_prefix);
         }
         BLI_dynstr_nappend(dynstr, src_line, (src_line_end + 1) - src_line);
         /* Print char offset. */
