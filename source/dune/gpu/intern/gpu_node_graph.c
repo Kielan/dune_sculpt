@@ -1,13 +1,9 @@
-/** \file
- * \ingroup gpu
- *
- * Intermediate node graph for generating GLSL shaders.
- */
+/** Intermediate node graph for generating GLSL shaders. **/
 
 #include <stdio.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "DNA_node_types.h"
 
