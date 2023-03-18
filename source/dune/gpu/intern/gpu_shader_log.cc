@@ -137,8 +137,8 @@ void Shader::print_log(Span<const char *> sources,
           break;
         }
         if (src_line_index >= log_item.cursor.row - DEBUG_CONTEXT_LINES) {
-          BLI_dynstr_appendf(dynstr, "%5d | ", src_line_index);
-          BLI_dynstr_nappend(dynstr, src_line, (src_line_end + 1) - src_line);
+          lib_dynstr_appendf(dynstr, "%5d | ", src_line_index);
+          lib_dynstr_nappend(dynstr, src_line, (src_line_end + 1) - src_line);
         }
         /* Continue to next line. */
         src_line = src_line_end + 1;
@@ -152,16 +152,16 @@ void Shader::print_log(Span<const char *> sources,
         else {
           lib_dynstr_appendf(dynstr, line_prefix);
         }
-        BLI_dynstr_nappend(dynstr, src_line, (src_line_end + 1) - src_line);
+        lib_dynstr_nappend(dynstr, src_line, (src_line_end + 1) - src_line);
         /* Print char offset. */
-        BLI_dynstr_appendf(dynstr, line_prefix);
+        lib_dynstr_appendf(dynstr, line_prefix);
         if (log_item.cursor.column != -1) {
           for (int i = 0; i < log_item.cursor.column; i++) {
-            BLI_dynstr_appendf(dynstr, " ");
+            lib_dynstr_appendf(dynstr, " ");
           }
-          BLI_dynstr_appendf(dynstr, "^");
+          lib_dynstr_appendf(dynstr, "^");
         }
-        BLI_dynstr_appendf(dynstr, "\n");
+        lib_dynstr_appendf(dynstr, "\n");
 
         /* Skip the error line. */
         src_line = src_line_end + 1;
@@ -170,15 +170,15 @@ void Shader::print_log(Span<const char *> sources,
           if (src_line_index > log_item.cursor.row + DEBUG_CONTEXT_LINES) {
             break;
           }
-          BLI_dynstr_appendf(dynstr, "%5d | ", src_line_index);
-          BLI_dynstr_nappend(dynstr, src_line, (src_line_end + 1) - src_line);
+          lib_dynstr_appendf(dynstr, "%5d | ", src_line_index);
+          lib_dynstr_nappend(dynstr, src_line, (src_line_end + 1) - src_line);
           /* Continue to next line. */
           src_line = src_line_end + 1;
           src_line_index++;
         }
       }
     }
-    BLI_dynstr_appendf(dynstr, line_prefix);
+    lib_dynstr_appendf(dynstr, line_prefix);
 
     /* Search the correct source index. */
     int row_in_file = log_item.cursor.row;
@@ -199,7 +199,7 @@ void Shader::print_log(Span<const char *> sources,
       StringRefNull filename = shader::gpu_shader_dependency_get_filename_from_source_string(
           sources[source_index]);
       if (!filename.is_empty()) {
-        BLI_dynstr_appendf(dynstr,
+        lib_dynstr_appendf(dynstr,
                            "%s%s:%d:%d: %s",
                            info_col,
                            filename.c_str(),
@@ -210,20 +210,20 @@ void Shader::print_log(Span<const char *> sources,
     }
 
     if (log_item.severity == Severity::Error) {
-      BLI_dynstr_appendf(dynstr, "%s%s%s: ", err_col, "Error", info_col);
+      lib_dynstr_appendf(dynstr, "%s%s%s: ", err_col, "Error", info_col);
     }
     else if (log_item.severity == Severity::Error) {
-      BLI_dynstr_appendf(dynstr, "%s%s%s: ", warn_col, "Warning", info_col);
+      lib_dynstr_appendf(dynstr, "%s%s%s: ", warn_col, "Warning", info_col);
     }
     /* Print the error itself. */
-    BLI_dynstr_append(dynstr, info_col);
-    BLI_dynstr_nappend(dynstr, log_line, (line_end + 1) - log_line);
-    BLI_dynstr_append(dynstr, reset_col);
+    lib_dynstr_append(dynstr, info_col);
+    lib_dynstr_nappend(dynstr, log_line, (line_end + 1) - log_line);
+    lib_dynstr_append(dynstr, reset_col);
     /* Continue to next line. */
     log_line = line_end + 1;
     previous_location = log_item.cursor;
   }
-  MEM_freeN(sources_combined);
+  mem_freen(sources_combined);
 
   CLG_Severity severity = error ? CLG_SEVERITY_ERROR : CLG_SEVERITY_WARN;
 
