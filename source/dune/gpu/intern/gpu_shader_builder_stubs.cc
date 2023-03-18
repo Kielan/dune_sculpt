@@ -1,24 +1,20 @@
-/** \file
- * \ingroup gpu
- *
- * Stubs to reduce linking time for shader_builder.
- */
+/** Stubs to reduce linking time for shader_builder. */
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "BKE_customdata.h"
-#include "BKE_global.h"
-#include "BKE_material.h"
-#include "BKE_mesh.h"
-#include "BKE_node.h"
-#include "BKE_paint.h"
-#include "BKE_pbvh.h"
-#include "BKE_subdiv_ccg.h"
+#include "dune_customdata.h"
+#include "dune_global.h"
+#include "dune_material.h"
+#include "dune_mesh.h"
+#include "dune_node.h"
+#include "dune_paint.h"
+#include "dune_pbvh.h"
+#include "dune_subdiv_ccg.h"
 
-#include "DNA_userdef_types.h"
+#include "types_userdef.h"
 
 #include "NOD_shader.h"
 
@@ -26,7 +22,7 @@
 
 #include "bmesh.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 extern "C" {
 
@@ -34,19 +30,15 @@ Global G;
 UserDef U;
 
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BLI_imbuf_types.h
- * \{ */
+/** Stubs of BLI_imbuf_types.h **/
 
 void IMB_freeImBuf(ImBuf *UNUSED(ibuf))
 {
   BLI_assert_unreachable();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of UI_resources.h
- * \{ */
+/** Stubs of UI_resources.h **/
 
 void UI_GetThemeColor4fv(int UNUSED(colorid), float UNUSED(col[4]))
 {
