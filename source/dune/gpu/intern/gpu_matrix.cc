@@ -3,16 +3,16 @@
 
 #define SUPPRESS_GENERIC_MATRIX_API
 #define USE_GPU_PY_MATRIX_API /* only so values are declared */
-#include "GPU_matrix.h"
+#include "gpu_matrix.h"
 #undef USE_GPU_PY_MATRIX_API
 
-#include "BLI_math_matrix.h"
-#include "BLI_math_rotation.h"
-#include "BLI_math_vector.h"
+#include "lib_math_matrix.h"
+#include "lib_math_rotation.h"
+#include "lib_math_vector.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
 #define MATRIX_STACK_DEPTH 32
 
@@ -44,7 +44,7 @@ struct GPUMatrixState {
 #define ProjectionStack Context::get()->matrix_state->projection_stack
 #define Projection ProjectionStack.stack[ProjectionStack.top]
 
-GPUMatrixState *GPU_matrix_state_create()
+GPUMatrixState *gpu_matrix_state_create()
 {
 #define MATRIX_4X4_IDENTITY \
   { \
@@ -54,7 +54,7 @@ GPUMatrixState *GPU_matrix_state_create()
     } \
   }
 
-  GPUMatrixState *state = (GPUMatrixState *)MEM_mallocN(sizeof(*state), __func__);
+  GPUMatrixState *state = (GPUMatrixState *)mem_mallocn(sizeof(*state), __func__);
   const MatrixStack identity_stack = {{MATRIX_4X4_IDENTITY}, 0};
 
   state->model_view_stack = state->projection_stack = identity_stack;
