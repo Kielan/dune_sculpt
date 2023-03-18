@@ -170,7 +170,7 @@ void gpu_matrix_translate_2f(float x, float y)
   unit_m4(m);
   m[3][0] = x;
   m[3][1] = y;
-  GPU_matrix_mul(m);
+  gpu_matrix_mul(m);
 }
 
 void gpu_matrix_translate_2fv(const float vec[2])
@@ -189,39 +189,39 @@ void gpu_matrix_translate_3f(float x, float y, float z)
   m[3][0] = x;
   m[3][1] = y;
   m[3][2] = z;
-  GPU_matrix_mul(m);
+  gpu_matrix_mul(m);
 #endif
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_translate_3fv(const float vec[3])
+void gpu_matrix_translate_3fv(const float vec[3])
 {
-  GPU_matrix_translate_3f(vec[0], vec[1], vec[2]);
+  gpu_matrix_translate_3f(vec[0], vec[1], vec[2]);
 }
 
-void GPU_matrix_scale_1f(float factor)
+void gpu_matrix_scale_1f(float factor)
 {
   Mat4 m;
   scale_m4_fl(m, factor);
-  GPU_matrix_mul(m);
+  gpu_matrix_mul(m);
 }
 
-void GPU_matrix_scale_2f(float x, float y)
+void gpu_matrix_scale_2f(float x, float y)
 {
   Mat4 m = {{0.0f}};
   m[0][0] = x;
   m[1][1] = y;
   m[2][2] = 1.0f;
   m[3][3] = 1.0f;
-  GPU_matrix_mul(m);
+  gpu_matrix_mul(m);
 }
 
-void GPU_matrix_scale_2fv(const float vec[2])
+void gpu_matrix_scale_2fv(const float vec[2])
 {
-  GPU_matrix_scale_2f(vec[0], vec[1]);
+  gpu_matrix_scale_2f(vec[0], vec[1]);
 }
 
-void GPU_matrix_scale_3f(float x, float y, float z)
+void gpu_matrix_scale_3f(float x, float y, float z)
 {
   Mat4 m = {{0.0f}};
   m[0][0] = x;
@@ -231,19 +231,19 @@ void GPU_matrix_scale_3f(float x, float y, float z)
   GPU_matrix_mul(m);
 }
 
-void GPU_matrix_scale_3fv(const float vec[3])
+void gpu_matrix_scale_3fv(const float vec[3])
 {
-  GPU_matrix_scale_3f(vec[0], vec[1], vec[2]);
+  gpu_matrix_scale_3f(vec[0], vec[1], vec[2]);
 }
 
-void GPU_matrix_mul(const float m[4][4])
+void gpu_matrix_mul(const float m[4][4])
 {
   mul_m4_m4_post(ModelView, m);
   CHECKMAT(ModelView);
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_rotate_2d(float deg)
+void gpu_matrix_rotate_2d(float deg)
 {
   /* essentially RotateAxis('Z')
    * TODO: simpler math for 2D case
@@ -251,20 +251,20 @@ void GPU_matrix_rotate_2d(float deg)
   rotate_m4(ModelView, 'Z', DEG2RADF(deg));
 }
 
-void GPU_matrix_rotate_3f(float deg, float x, float y, float z)
+void gpu_matrix_rotate_3f(float deg, float x, float y, float z)
 {
   const float axis[3] = {x, y, z};
-  GPU_matrix_rotate_3fv(deg, axis);
+  gpu_matrix_rotate_3fv(deg, axis);
 }
 
-void GPU_matrix_rotate_3fv(float deg, const float axis[3])
+void gpu_matrix_rotate_3fv(float deg, const float axis[3])
 {
   Mat4 m;
   axis_angle_to_mat4(m, axis, DEG2RADF(deg));
-  GPU_matrix_mul(m);
+  gpu_matrix_mul(m);
 }
 
-void GPU_matrix_rotate_axis(float deg, char axis)
+void gpu_matrix_rotate_axis(float deg, char axis)
 {
   /* rotate_m4 works in place */
   rotate_m4(ModelView, axis, DEG2RADF(deg));
@@ -323,39 +323,8 @@ static void mat4_frustum_set(
 
   gpu_matrix_state_active_set_dirty(true);
 }
-
-static void mat4_look_from_origin(float m[4][4], float lookdir[3], float camup[3])
-{
-  /* This function is loosely based on Mesa implementation.
-   *
-   * SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
-   * Copyright (C) 1991-2000 Silicon Graphics, Inc. All Rights Reserved.
-   *
-   * Permission is hereby granted, free of charge, to any person obtaining a
-   * copy of this software and associated documentation files (the "Software"),
-   * to deal in the Software without restriction, including without limitation
-   * the rights to use, copy, modify, merge, publish, distribute, sublicense,
-   * and/or sell copies of the Software, and to permit persons to whom the
-   * Software is furnished to do so, subject to the following conditions:
-   *
-   * The above copyright notice including the dates of first publication and
-   * either this permission notice or a reference to
-   * http://oss.sgi.com/projects/FreeB/
-   * shall be included in all copies or substantial portions of the Software.
-   *
-   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-   * SILICON GRAPHICS, INC. BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-   * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
-   * OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-   * SOFTWARE.
-   *
-   * Except as contained in this notice, the name of Silicon Graphics, Inc.
-   * shall not be used in advertising or otherwise to promote the sale, use or
-   * other dealings in this Software without prior written authorization from
-   * Silicon Graphics, Inc.
-   */
+ /* try to remove this static */
+static void mat4_look_from_origin(float m[4][4], float lookdir[3], float camup[3]) {
   float side[3];
 
   normalize_v3(lookdir);
@@ -389,14 +358,14 @@ static void mat4_look_from_origin(float m[4][4], float lookdir[3], float camup[3
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_ortho_set(float left, float right, float bottom, float top, float near, float far)
+void gpu_matrix_ortho_set(float left, float right, float bottom, float top, float near, float far)
 {
   mat4_ortho_set(Projection, left, right, bottom, top, near, far);
   CHECKMAT(Projection);
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_ortho_set_z(float near, float far)
+void gpu_matrix_ortho_set_z(float near, float far)
 {
   CHECKMAT(Projection);
   Projection[2][2] = -2.0f / (far - near);
@@ -404,7 +373,7 @@ void GPU_matrix_ortho_set_z(float near, float far)
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_ortho_2d_set(float left, float right, float bottom, float top)
+void gpu_matrix_ortho_2d_set(float left, float right, float bottom, float top)
 {
   Mat4 m;
   mat4_ortho_set(m, left, right, bottom, top, -1.0f, 1.0f);
@@ -412,7 +381,7 @@ void GPU_matrix_ortho_2d_set(float left, float right, float bottom, float top)
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_frustum_set(
+void gpu_matrix_frustum_set(
     float left, float right, float bottom, float top, float near, float far)
 {
   mat4_frustum_set(Projection, left, right, bottom, top, near, far);
@@ -420,14 +389,14 @@ void GPU_matrix_frustum_set(
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_perspective_set(float fovy, float aspect, float near, float far)
+void gpu_matrix_perspective_set(float fovy, float aspect, float near, float far)
 {
   float half_height = tanf(fovy * (float)(M_PI / 360.0)) * near;
   float half_width = half_height * aspect;
-  GPU_matrix_frustum_set(-half_width, +half_width, -half_height, +half_height, near, far);
+  gpu_matrix_frustum_set(-half_width, +half_width, -half_height, +half_height, near, far);
 }
 
-void GPU_matrix_look_at(float eyeX,
+void gpu_matrix_look_at(float eyeX,
                         float eyeY,
                         float eyeZ,
                         float centerX,
@@ -447,11 +416,11 @@ void GPU_matrix_look_at(float eyeX,
 
   mat4_look_from_origin(cm, lookdir, camup);
 
-  GPU_matrix_mul(cm);
-  GPU_matrix_translate_3f(-eyeX, -eyeY, -eyeZ);
+  gpu_matrix_mul(cm);
+  gpu_matrix_translate_3f(-eyeX, -eyeY, -eyeZ);
 }
 
-void GPU_matrix_project_3fv(const float world[3],
+void gpu_matrix_project_3fv(const float world[3],
                             const float model[4][4],
                             const float proj[4][4],
                             const int view[4],
@@ -471,7 +440,7 @@ void GPU_matrix_project_3fv(const float world[3],
   win[2] = (v[2] + 1) * 0.5f;
 }
 
-void GPU_matrix_project_2fv(const float world[3],
+void gpu_matrix_project_2fv(const float world[3],
                             const float model[4][4],
                             const float proj[4][4],
                             const int view[4],
@@ -490,7 +459,7 @@ void GPU_matrix_project_2fv(const float world[3],
   win[1] = view[1] + (view[3] * (v[1] + 1)) * 0.5f;
 }
 
-bool GPU_matrix_unproject_3fv(const float win[3],
+bool gpu_matrix_unproject_3fv(const float win[3],
                               const float model_inverted[4][4],
                               const float proj[4][4],
                               const int view[4],
@@ -506,12 +475,12 @@ bool GPU_matrix_unproject_3fv(const float win[3],
   /**
    * The same result could be obtained as follows:
    *
-   * \code{.c}
+   *
    * float projinv[4][4];
    * invert_m4_m4(projinv, projview);
    * copy_v3_v3(r_world, in);
    * mul_project_m4_v3(projinv, r_world);
-   * \endcode
+   *
    *
    * But that solution loses much precision.
    * Therefore, get the same result without inverting the project view matrix.
@@ -542,7 +511,7 @@ bool GPU_matrix_unproject_3fv(const float win[3],
   return true;
 }
 
-const float (*GPU_matrix_model_view_get(float m[4][4]))[4]
+const float (*gpu_matrix_model_view_get(float m[4][4]))[4]
 {
   if (m) {
     copy_m4_m4(m, ModelView);
@@ -552,7 +521,7 @@ const float (*GPU_matrix_model_view_get(float m[4][4]))[4]
   return ModelView;
 }
 
-const float (*GPU_matrix_projection_get(float m[4][4]))[4]
+const float (*gpu_matrix_projection_get(float m[4][4]))[4]
 {
   if (m) {
     copy_m4_m4(m, Projection);
@@ -562,7 +531,7 @@ const float (*GPU_matrix_projection_get(float m[4][4]))[4]
   return Projection;
 }
 
-const float (*GPU_matrix_model_view_projection_get(float m[4][4]))[4]
+const float (*gpu_matrix_model_view_projection_get(float m[4][4]))[4]
 {
   if (m == nullptr) {
     static Mat4 temp;
@@ -573,7 +542,7 @@ const float (*GPU_matrix_model_view_projection_get(float m[4][4]))[4]
   return m;
 }
 
-const float (*GPU_matrix_normal_get(float m[3][3]))[3]
+const float (*gpu_matrix_normal_get(float m[3][3]))[3]
 {
   if (m == nullptr) {
     static Mat3 temp3;
@@ -588,99 +557,96 @@ const float (*GPU_matrix_normal_get(float m[3][3]))[3]
   return m;
 }
 
-const float (*GPU_matrix_normal_inverse_get(float m[3][3]))[3]
+const float (*gpu_matrix_normal_inverse_get(float m[3][3]))[3]
 {
   if (m == nullptr) {
     static Mat3 temp3;
     m = temp3;
   }
 
-  GPU_matrix_normal_get(m);
+  gpu_matrix_normal_get(m);
   invert_m3(m);
 
   return m;
 }
 
-void GPU_matrix_bind(GPUShader *shader)
+void gpu_matrix_bind(GPUShader *shader)
 {
   /* set uniform values to matrix stack values
    * call this before a draw call if desired matrices are dirty
    * call glUseProgram before this, as glUniform expects program to be bound
    */
-  int32_t MV = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_MODELVIEW);
-  int32_t P = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_PROJECTION);
-  int32_t MVP = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_MVP);
+  int32_t MV = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_MODELVIEW);
+  int32_t P = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_PROJECTION);
+  int32_t MVP = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_MVP);
 
-  int32_t N = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_NORMAL);
-  int32_t MV_inv = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_MODELVIEW_INV);
-  int32_t P_inv = GPU_shader_get_builtin_uniform(shader, GPU_UNIFORM_PROJECTION_INV);
+  int32_t N = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_NORMAL);
+  int32_t MV_inv = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_MODELVIEW_INV);
+  int32_t P_inv = gpu_shader_get_builtin_uniform(shader, GPU_UNIFORM_PROJECTION_INV);
 
   if (MV != -1) {
-    GPU_shader_uniform_vector(
-        shader, MV, 16, 1, (const float *)GPU_matrix_model_view_get(nullptr));
+    gpu_shader_uniform_vector(
+        shader, MV, 16, 1, (const float *)gpu_matrix_model_view_get(nullptr));
   }
   if (P != -1) {
-    GPU_shader_uniform_vector(shader, P, 16, 1, (const float *)GPU_matrix_projection_get(nullptr));
+    gpu_shader_uniform_vector(shader, P, 16, 1, (const float *)GPU_matrix_projection_get(nullptr));
   }
   if (MVP != -1) {
-    GPU_shader_uniform_vector(
+    gpu_shader_uniform_vector(
         shader, MVP, 16, 1, (const float *)GPU_matrix_model_view_projection_get(nullptr));
   }
   if (N != -1) {
-    GPU_shader_uniform_vector(shader, N, 9, 1, (const float *)GPU_matrix_normal_get(nullptr));
+    gpu_shader_uniform_vector(shader, N, 9, 1, (const float *)GPU_matrix_normal_get(nullptr));
   }
   if (MV_inv != -1) {
     Mat4 m;
-    GPU_matrix_model_view_get(m);
+    gpu_matrix_model_view_get(m);
     invert_m4(m);
-    GPU_shader_uniform_vector(shader, MV_inv, 16, 1, (const float *)m);
+    gpu_shader_uniform_vector(shader, MV_inv, 16, 1, (const float *)m);
   }
   if (P_inv != -1) {
     Mat4 m;
-    GPU_matrix_projection_get(m);
+    gpu_matrix_projection_get(m);
     invert_m4(m);
-    GPU_shader_uniform_vector(shader, P_inv, 16, 1, (const float *)m);
+    gpu_shader_uniform_vector(shader, P_inv, 16, 1, (const float *)m);
   }
 
   gpu_matrix_state_active_set_dirty(false);
 }
 
-bool GPU_matrix_dirty_get()
+bool gpu_matrix_dirty_get()
 {
   GPUMatrixState *state = Context::get()->matrix_state;
   return state->dirty;
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Python API Helpers
- * \{ */
+/ Python API Helpers **/
 
-BLI_STATIC_ASSERT(GPU_PY_MATRIX_STACK_LEN + 1 == MATRIX_STACK_DEPTH, "define mismatch");
+LIB_STATIC_ASSERT(GPU_PY_MATRIX_STACK_LEN + 1 == MATRIX_STACK_DEPTH, "define mismatch");
 
 /* Return int since caller is may subtract. */
 
-int GPU_matrix_stack_level_get_model_view()
+int gpu_matrix_stack_level_get_model_view()
 {
   GPUMatrixState *state = Context::get()->matrix_state;
   return (int)state->model_view_stack.top;
 }
 
-int GPU_matrix_stack_level_get_projection()
+int gpu_matrix_stack_level_get_projection()
 {
   GPUMatrixState *state = Context::get()->matrix_state;
   return (int)state->projection_stack.top;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Polygon Offset Hack
+/** Polygon Offset Hack
  *
  * Workaround the fact that polygon-offset is implementation dependent.
  * We modify the projection matrix \a winmat in order to change the final depth a tiny amount.
- * \{ */
+ **/
 
-float GPU_polygon_offset_calc(const float (*winmat)[4], float viewdist, float dist)
+float gpu_polygon_offset_calc(const float (*winmat)[4], float viewdist, float dist)
 {
   /* Seems like we have a factor of 2 more offset than 2.79 for some reason. Correct for this. */
   dist *= 0.5f;
@@ -710,17 +676,17 @@ float GPU_polygon_offset_calc(const float (*winmat)[4], float viewdist, float di
   return winmat[3][2] * -0.0025f * dist;
 }
 
-void GPU_polygon_offset(float viewdist, float dist)
+void gpu_polygon_offset(float viewdist, float dist)
 {
   static float winmat[4][4], offset = 0.0f;
 
   if (dist != 0.0f) {
     /* hack below is to mimic polygon offset */
-    GPU_matrix_projection_get(winmat);
+    gpu_matrix_projection_get(winmat);
 
     /* dist is from camera to center point */
 
-    float ofs = GPU_polygon_offset_calc(winmat, viewdist, dist);
+    float ofs = gpu_polygon_offset_calc(winmat, viewdist, dist);
 
     winmat[3][2] -= ofs;
     offset += ofs;
@@ -730,5 +696,5 @@ void GPU_polygon_offset(float viewdist, float dist)
     offset = 0.0;
   }
 
-  GPU_matrix_projection_set(winmat);
+  gpu_matrix_projection_set(winmat);
 }
