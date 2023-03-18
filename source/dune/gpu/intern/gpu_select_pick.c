@@ -76,7 +76,7 @@ static void rect_subregion_stride_calc(const rcti *src, const rcti *dst, SubRect
  * Ignore depth clearing as a change,
  * only check if its been changed _and_ filled in (ignore clearing since XRAY does this).
  */
-BLI_INLINE bool depth_is_filled(const depth_t *prev, const depth_t *curr)
+LIB_INLINE bool depth_is_filled(const depth_t *prev, const depth_t *curr)
 {
   return (*prev != *curr) && (*curr != DEPTH_MAX);
 }
@@ -84,7 +84,7 @@ BLI_INLINE bool depth_is_filled(const depth_t *prev, const depth_t *curr)
 /* -------------------------------------------------------------------- */
 /** #DepthBufCache
  *
- * Result of reading #gpu_framebuffer_read_depth,
+ * Result of reading gpu_framebuffer_read_depth,
  * use for both cache and non-cached storage.
  **/
 
@@ -601,7 +601,7 @@ uint gpu_select_pick_end(void)
   ((void)0)
 
     {
-      DepthID *depth_last = NULL;
+      DepthId *depth_last = NULL;
       if (ps->is_cached == false) {
         for (uint i = 0; i < ps->src.rect_len; i++) {
           EVAL_TEST(i, i);
