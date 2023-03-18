@@ -1,17 +1,13 @@
-/** \file
- * \ingroup gpu
- *
- * Descriptor type used to define shader structure, resources and interfaces.
- */
+/** Descriptor type used to define shader structure, resources and interfaces. **/
 
-#include "BLI_map.hh"
-#include "BLI_set.hh"
-#include "BLI_string_ref.hh"
+#include "lib_map.hh"
+#include "lib_set.hh"
+#include "lib_string_ref.hh"
 
-#include "GPU_capabilities.h"
-#include "GPU_platform.h"
-#include "GPU_shader.h"
-#include "GPU_texture.h"
+#include "gpu_capabilities.h"
+#include "gpu_platform.h"
+#include "gpu_shader.h"
+#include "gpu_texture.h"
 
 #include "gpu_shader_create_info.hh"
 #include "gpu_shader_create_info_private.hh"
@@ -21,7 +17,7 @@
 #undef GPU_SHADER_INTERFACE_INFO
 #undef GPU_SHADER_CREATE_INFO
 
-namespace blender::gpu::shader {
+namespace dune::gpu::shader {
 
 using CreateInfoDictionnary = Map<StringRef, ShaderCreateInfo *>;
 using InterfaceDictionnary = Map<StringRef, StageInterfaceInfo *>;
@@ -189,13 +185,13 @@ void ShaderCreateInfo::validate(const ShaderCreateInfo &other_info)
     }
   }
   {
-    /* TODO(@fclem): Push constant validation. */
+    /* TODO: Push constant validation. */
   }
 }
 
-}  // namespace blender::gpu::shader
+}  // namespace dune::gpu::shader
 
-using namespace blender::gpu::shader;
+using namespace dune::gpu::shader;
 
 void gpu_shader_create_info_init()
 {
@@ -218,7 +214,7 @@ void gpu_shader_create_info_init()
 #include "gpu_shader_create_info_list.hh"
 
 /* Baked shader data appended to create infos. */
-/* TODO(jbakker): should call a function with a callback. so we could switch implementations.
+/* TODO: should call a function with a callback. so we could switch implementations.
  * We cannot compile bf_gpu twice. */
 #ifdef GPU_RUNTIME
 #  include "gpu_shader_baked.hh"
@@ -273,17 +269,17 @@ bool gpu_shader_create_info_compile_all()
       else {
         success++;
 
-#if 0 /* TODO(fclem): This is too verbose for now. Make it a cmake option. */
+#if 0 /* TODO: This is too verbose for now. Make it a cmake option. */
         /* Test if any resource is optimized out and print a warning if that's the case. */
-        /* TODO(fclem): Limit this to OpenGL backend. */
+        /* TODO: Limit this to OpenGL backend. */
         const ShaderInterface *interface = unwrap(shader)->interface;
 
-        blender::Vector<ShaderCreateInfo::Resource> all_resources;
+        dune::Vector<ShaderCreateInfo::Resource> all_resources;
         all_resources.extend(info->pass_resources_);
         all_resources.extend(info->batch_resources_);
 
         for (ShaderCreateInfo::Resource &res : all_resources) {
-          blender::StringRefNull name = "";
+          dune::StringRefNull name = "";
           const ShaderInput *input = nullptr;
 
           switch (res.bind_type) {
@@ -316,7 +312,7 @@ bool gpu_shader_create_info_compile_all()
         }
 #endif
       }
-      GPU_shader_free(shader);
+      gpu_shader_free(shader);
     }
   }
   printf("===============================\n");
