@@ -1,32 +1,30 @@
 /** \file
- * \ingroup gpu
- *
  * Interface for accessing GPU-related methods for selection. The semantics will be
  * similar to `glRenderMode(GL_SELECT)` since the goal is to maintain compatibility.
  */
 
 #include <cstdlib>
 
-#include "GPU_debug.h"
-#include "GPU_framebuffer.h"
-#include "GPU_select.h"
-#include "GPU_state.h"
+#include "gpu_debug.h"
+#include "gpu_framebuffer.h"
+#include "gpu_select.h"
+#include "gpu_state.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_rect.h"
+#include "lib_rect.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_utildefines.h"
-#include "BLI_vector.hh"
+#include "lib_bitmap.h"
+#include "lib_utildefines.h"
+#include "lib_vector.hh"
 
 #include "gpu_backend.hh"
 #include "gpu_query.hh"
 
 #include "gpu_select_private.h"
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
 struct GPUSelectQueryState {
   /** Tracks whether a query has been issued so that gpu_load_id can end the previous one. */
@@ -59,7 +57,7 @@ void gpu_select_query_begin(GPUSelectResult *buffer,
                             const eGPUSelectMode mode,
                             int oldhits)
 {
-  GPU_debug_group_begin("Selection Queries");
+  gpu_debug_group_begin("Selection Queries");
 
   g_query_state.query_issued = false;
   g_query_state.buffer = buffer;
@@ -72,13 +70,13 @@ void gpu_select_query_begin(GPUSelectResult *buffer,
   g_query_state.queries = GPUBackend::get()->querypool_alloc();
   g_query_state.queries->init(GPU_QUERY_OCCLUSION);
 
-  g_query_state.write_mask = GPU_write_mask_get();
-  g_query_state.depth_test = GPU_depth_test_get();
-  GPU_scissor_get(g_query_state.scissor);
-  GPU_viewport_size_get_i(g_query_state.viewport);
+  g_query_state.write_mask = gpu_write_mask_get();
+  g_query_state.depth_test = gpu_depth_test_get();
+  gpu_scissor_get(g_query_state.scissor);
+  gpu_viewport_size_get_i(g_query_state.viewport);
 
   /* Write to color buffer. Seems to fix issues with selecting alpha blended geom (see T7997). */
-  GPU_color_mask(true, true, true, true);
+  gpu_color_mask(true, true, true, true);
 
   /* In order to save some fill rate we minimize the viewport using rect.
    * We need to get the region of the viewport so that our geometry doesn't
@@ -88,26 +86,26 @@ void gpu_select_query_begin(GPUSelectResult *buffer,
   int viewport[4] = {
       UNPACK2(g_query_state.viewport), BLI_rcti_size_x(input), BLI_rcti_size_y(input)};
 
-  GPU_viewport(UNPACK4(viewport));
-  GPU_scissor(UNPACK4(viewport));
-  GPU_scissor_test(false);
+  gpu_viewport(UNPACK4(viewport));
+  gpu_scissor(UNPACK4(viewport));
+  gpu_scissor_test(false);
 
   /* occlusion queries operates on fragments that pass tests and since we are interested on all
    * objects in the view frustum independently of their order, we need to disable the depth test */
   if (mode == GPU_SELECT_ALL) {
     /* #glQueries on Windows+Intel drivers only works with depth testing turned on.
      * See T62947 for details */
-    GPU_depth_test(GPU_DEPTH_ALWAYS);
-    GPU_depth_mask(true);
+    gpu_depth_test(GPU_DEPTH_ALWAYS);
+    gpu_depth_mask(true);
   }
   else if (mode == GPU_SELECT_NEAREST_FIRST_PASS) {
-    GPU_depth_test(GPU_DEPTH_LESS_EQUAL);
-    GPU_depth_mask(true);
-    GPU_clear_depth(1.0f);
+    gpu_depth_test(GPU_DEPTH_LESS_EQUAL);
+    gpu_depth_mask(true);
+    gpu_clear_depth(1.0f);
   }
   else if (mode == GPU_SELECT_NEAREST_SECOND_PASS) {
-    GPU_depth_test(GPU_DEPTH_EQUAL);
-    GPU_depth_mask(false);
+    gpu_depth_test(GPU_DEPTH_EQUAL);
+    gpu_depth_mask(false);
   }
 }
 
@@ -124,7 +122,7 @@ bool gpu_select_query_load_id(uint id)
   if (g_query_state.mode == GPU_SELECT_NEAREST_SECOND_PASS) {
     /* Second pass should never run if first pass fails,
      * can read past `buffer_len` in this case. */
-    BLI_assert(g_query_state.oldhits != -1);
+    lib_assert(g_query_state.oldhits != -1);
     if (g_query_state.index < g_query_state.oldhits) {
       if (g_query_state.buffer[g_query_state.index].id == id) {
         g_query_state.index++;
@@ -178,11 +176,11 @@ uint gpu_select_query_end()
   delete g_query_state.queries;
   delete g_query_state.ids;
 
-  GPU_write_mask(g_query_state.write_mask);
-  GPU_depth_test(g_query_state.depth_test);
-  GPU_viewport(UNPACK4(g_query_state.viewport));
+  gpu_write_mask(g_query_state.write_mask);
+  gpu_depth_test(g_query_state.depth_test);
+  gpu_viewport(UNPACK4(g_query_state.viewport));
 
-  GPU_debug_group_end();
+  gpu_debug_group_end();
 
   return hits;
 }
