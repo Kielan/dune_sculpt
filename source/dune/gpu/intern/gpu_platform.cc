@@ -8,7 +8,7 @@
 #include "lib_dynstr.h"
 #include "lib_string.h"
 
-#include "gpy_platform.h"
+#include "gpu_platform.h"
 
 #include "gpu_platform_private.hh"
 
