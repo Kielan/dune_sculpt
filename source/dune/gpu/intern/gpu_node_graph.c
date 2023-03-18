@@ -304,7 +304,7 @@ void gpu_uniform_attr_list_free(GPUUniformAttrList *set)
 void gpu_node_graph_finalize_uniform_attrs(GPUNodeGraph *graph)
 {
   GPUUniformAttrList *attrs = &graph->uniform_attrs;
-  lib_assert(attrs->count == BLI_listbase_count(&attrs->list));
+  lib_assert(attrs->count == lib_listbase_count(&attrs->list));
 
   /* Sort the attributes by name to ensure a stable order. */
   lib_listbase_sort(&attrs->list, uniform_attr_sort_cmp);
@@ -316,10 +316,10 @@ void gpu_node_graph_finalize_uniform_attrs(GPUNodeGraph *graph)
   LISTBASE_FOREACH (GPUUniformAttr *, attr, &attrs->list) {
     attr->id = next_id++;
 
-    attrs->hash_code ^= BLI_ghashutil_strhash_p(attr->name);
+    attrs->hash_code ^= lib_ghashutil_strhash_p(attr->name);
 
     if (attr->use_dupli) {
-      attrs->hash_code ^= BLI_ghashutil_uinthash(attr->id);
+      attrs->hash_code ^= lib_ghashutil_uinthash(attr->id);
     }
   }
 }
@@ -348,7 +348,7 @@ static GPUMaterialAttribute *gpu_node_graph_add_attribute(GPUNodeGraph *graph,
 
   /* Add new requested attribute if it's within GPU limits. */
   if (attr == NULL && num_attributes < GPU_MAX_ATTR) {
-    attr = MEM_callocN(sizeof(*attr), __func__);
+    attr = mem_callocn(sizeof(*attr), __func__);
     attr->type = type;
     STRNCPY(attr->name, name);
     attr->id = num_attributes;
@@ -454,8 +454,8 @@ static GPUMaterialVolumeGrid *gpu_node_graph_add_volume_grid(GPUNodeGraph *graph
     grid->name = lib_strdup(name);
     grid->default_value = default_value;
     lib_snprintf(grid->sampler_name, sizeof(grid->sampler_name), "vsamp%d", num_grids);
-    BLI_snprintf(grid->transform_name, sizeof(grid->transform_name), "vtfm%d", num_grids);
-    BLI_addtail(&graph->volume_grids, grid);
+    lib_snprintf(grid->transform_name, sizeof(grid->transform_name), "vtfm%d", num_grids);
+    lib_addtail(&graph->volume_grids, grid);
   }
 
   grid->users++;
@@ -465,7 +465,7 @@ static GPUMaterialVolumeGrid *gpu_node_graph_add_volume_grid(GPUNodeGraph *graph
 
 /* Creating Inputs */
 
-GPUNodeLink *GPU_attribute(GPUMaterial *mat, const CustomDataType type, const char *name)
+GPUNodeLink *gpu_attribute(GPUMaterial *mat, const CustomDataType type, const char *name)
 {
   GPUNodeGraph *graph = gpu_material_node_graph(mat);
   GPUMaterialAttribute *attr = gpu_node_graph_add_attribute(graph, type, name);
@@ -473,7 +473,7 @@ GPUNodeLink *GPU_attribute(GPUMaterial *mat, const CustomDataType type, const ch
   /* Dummy fallback if out of slots. */
   if (attr == NULL) {
     static const float zero_data[GPU_MAX_CONSTANT_DATA] = {0.0f};
-    return GPU_constant(zero_data);
+    return gpu_constant(zero_data);
   }
 
   GPUNodeLink *link = gpu_node_link_create();
@@ -482,7 +482,7 @@ GPUNodeLink *GPU_attribute(GPUMaterial *mat, const CustomDataType type, const ch
   return link;
 }
 
-GPUNodeLink *GPU_uniform_attribute(GPUMaterial *mat, const char *name, bool use_dupli)
+GPUNodeLink *gpu_uniform_attribute(GPUMaterial *mat, const char *name, bool use_dupli)
 {
   GPUNodeGraph *graph = gpu_material_node_graph(mat);
   GPUUniformAttr *attr = gpu_node_graph_add_uniform_attribute(graph, name, use_dupli);
