@@ -229,12 +229,12 @@ void Shader::print_log(Span<const char *> sources,
 
   if (((LOG.type->flag & CLG_FLAG_USE) && (LOG.type->level >= 0)) ||
       (severity >= CLG_SEVERITY_WARN)) {
-    const char *_str = BLI_dynstr_get_cstring(dynstr);
+    const char *_str = lib_dynstr_get_cstring(dynstr);
     CLG_log_str(LOG.type, severity, this->name, stage, _str);
-    MEM_freeN((void *)_str);
+    mem_freen((void *)_str);
   }
 
-  BLI_dynstr_free(dynstr);
+  lib_dynstr_free(dynstr);
 }
 
 char *GPULogParser::skip_severity(char *log_line,
