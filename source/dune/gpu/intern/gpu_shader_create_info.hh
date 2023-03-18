@@ -1,7 +1,5 @@
 
-/** \file
- * \ingroup gpu
- *
+/**
  * Descriptor type used to define shader structure, resources and interfaces.
  *
  * Some rule of thumb:
@@ -10,14 +8,14 @@
 
 #pragma once
 
-#include "BLI_string_ref.hh"
-#include "BLI_vector.hh"
-#include "GPU_material.h"
-#include "GPU_texture.h"
+#include "lib_string_ref.hh"
+#include "lib_vector.hh"
+#include "gpu_material.h"
+#include "gpu_texture.h"
 
 #include <iostream>
 
-namespace blender::gpu::shader {
+namespace dune::gpu::shader {
 
 #ifndef GPU_SHADER_CREATE_INFO
 /* Helps intellisense / auto-completion. */
@@ -85,7 +83,7 @@ static inline std::ostream &operator<<(std::ostream &stream, const Type type)
     case Type::MAT4:
       return stream << "mat4";
     default:
-      BLI_assert(0);
+      lib_assert(0);
       return stream;
   }
 }
@@ -104,7 +102,7 @@ enum class BuiltinBits {
   NONE = 0,
   /**
    * Allow getting barycentric coordinates inside the fragment shader.
-   * \note Emulated on OpenGL.
+   * note Emulated on OpenGL.
    */
   BARYCENTRIC_COORD = (1 << 0),
   FRAG_COORD = (1 << 2),
@@ -113,7 +111,7 @@ enum class BuiltinBits {
   INSTANCE_ID = (1 << 6),
   /**
    * Allow setting the target layer when the output is a layered frame-buffer.
-   * \note Emulated through geometry shader on older hardware.
+   * note Emulated through geometry shader on older hardware.
    */
   LAYER = (1 << 7),
   LOCAL_INVOCATION_ID = (1 << 8),
@@ -253,7 +251,7 @@ struct StageInterfaceInfo {
 };
 
 /**
- * \brief Describe inputs & outputs, stage interfaces, resources and sources of a shader.
+ * brief Describe inputs & outputs, stage interfaces, resources and sources of a shader.
  *        If all data is correctly provided, this is all that is needed to create and compile
  *        a GPUShader.
  *
@@ -479,8 +477,7 @@ struct ShaderCreateInfo {
   using Self = ShaderCreateInfo;
 
   /* -------------------------------------------------------------------- */
-  /** \name Shaders in/outs (fixed function pipeline config)
-   * \{ */
+  /** Shaders in/outs (fixed function pipeline config) **/
 
   Self &vertex_in(int slot, Type type, StringRefNull name)
   {
@@ -549,11 +546,8 @@ struct ShaderCreateInfo {
     return *(Self *)this;
   }
 
-  /** \} */
-
   /* -------------------------------------------------------------------- */
-  /** \name Resources bindings points
-   * \{ */
+  /** Resources bindings points **/
 
   Self &uniform_buf(int slot,
                     StringRefNull type_name,
@@ -615,11 +609,8 @@ struct ShaderCreateInfo {
     return *(Self *)this;
   }
 
-  /** \} */
-
   /* -------------------------------------------------------------------- */
-  /** \name Shader Source
-   * \{ */
+  /** Shader Source **/
 
   Self &vertex_source(StringRefNull filename)
   {
@@ -645,17 +636,15 @@ struct ShaderCreateInfo {
     return *(Self *)this;
   }
 
-  /** \} */
-
   /* -------------------------------------------------------------------- */
-  /** \name Push constants
+  /** Push constants
    *
    * Data managed by GPUShader. Can be set through uniform functions. Must be less than 128bytes.
-   * \{ */
+   **/
 
   Self &push_constant(Type type, StringRefNull name, int array_size = 0)
   {
-    BLI_assert_msg(name.find("[") == -1,
+    lib_assert_msg(name.find("[") == -1,
                    "Array syntax is forbidden for push constants."
                    "Use the array_size parameter instead.");
     push_constants_.append({type, name, array_size});
@@ -663,19 +652,14 @@ struct ShaderCreateInfo {
     return *(Self *)this;
   }
 
-  /** \} */
-
   /* -------------------------------------------------------------------- */
-  /** \name Defines
-   * \{ */
+  /** Defines  **/
 
   Self &define(StringRefNull name, StringRefNull value = "")
   {
     defines_.append({name, value});
     return *(Self *)this;
   }
-
-  /** \} */
 
   /* -------------------------------------------------------------------- */
   /** \name Defines
@@ -822,7 +806,7 @@ struct ShaderCreateInfo {
       }
     };
 
-    /* TODO(@fclem): Order the resources. */
+    /* TODO: Order the resources. */
     for (auto &res : info.batch_resources_) {
       print_resource(res);
     }
