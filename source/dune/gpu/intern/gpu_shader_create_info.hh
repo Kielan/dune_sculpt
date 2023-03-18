@@ -662,8 +662,7 @@ struct ShaderCreateInfo {
   }
 
   /* -------------------------------------------------------------------- */
-  /** \name Defines
-   * \{ */
+  /** Defines **/
 
   Self &do_static_compilation(bool value)
   {
@@ -683,13 +682,11 @@ struct ShaderCreateInfo {
     return *(Self *)this;
   }
 
-  /** \} */
-
   /* -------------------------------------------------------------------- */
-  /** \name Additional Create Info
+  /** Additional Create Info
    *
    * Used to share parts of the infos that are common to many shaders.
-   * \{ */
+   **/
 
   Self &additional_info(StringRefNull info_name0,
                         StringRefNull info_name1 = "",
@@ -748,12 +745,10 @@ struct ShaderCreateInfo {
   /** Error detection that some backend compilers do not complain about. */
   void validate(const ShaderCreateInfo &other_info);
 
-  /** \} */
-
   /* -------------------------------------------------------------------- */
-  /** \name Operators.
+  /** Operators.
    *
-   * \{ */
+   **/
 
   /* Comparison operator for GPUPass cache. We only compare if it will create the same shader code.
    * So we do not compare name and some other internal stuff. */
@@ -785,7 +780,7 @@ struct ShaderCreateInfo {
   /** Debug print */
   friend std::ostream &operator<<(std::ostream &stream, const ShaderCreateInfo &info)
   {
-    /* TODO(@fclem): Complete print. */
+    /* TODO: Complete print. */
 
     auto print_resource = [&](const Resource &res) {
       switch (res.bind_type) {
