@@ -1,6 +1,4 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * GPU shader interface (C --> GLSL)
  *
  * Structure detailing needed vertex inputs and resources for a specific shader.
@@ -11,13 +9,13 @@
 
 #include <cstring> /* required for STREQ later on. */
 
-#include "BLI_hash.h"
-#include "BLI_utildefines.h"
+#include "lib_hash.h"
+#include "lib_utildefines.h"
 
-#include "GPU_shader.h"
+#include "gpu_shader.h"
 #include "gpu_shader_create_info.hh"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 typedef struct ShaderInput {
   uint32_t name_offset;
@@ -33,7 +31,7 @@ typedef struct ShaderInput {
  */
 class ShaderInterface {
   friend shader::ShaderCreateInfo;
-  /* TODO(fclem): should be protected. */
+  /* TODO: should be protected. */
  public:
   /** Flat array. In this order: Attributes, Ubos, Uniforms. */
   ShaderInput *inputs_ = NULL;
@@ -102,14 +100,14 @@ class ShaderInterface {
   /* Returns uniform location. */
   inline int32_t uniform_builtin(const GPUUniformBuiltin builtin) const
   {
-    BLI_assert(builtin >= 0 && builtin < GPU_NUM_UNIFORMS);
+    lib_assert(builtin >= 0 && builtin < GPU_NUM_UNIFORMS);
     return builtins_[builtin];
   }
 
   /* Returns binding position. */
   inline int32_t ubo_builtin(const GPUUniformBlockBuiltin builtin) const
   {
-    BLI_assert(builtin >= 0 && builtin < GPU_NUM_UNIFORM_BLOCKS);
+    lib_assert(builtin >= 0 && builtin < GPU_NUM_UNIFORM_BLOCKS);
     return builtin_blocks_[builtin];
   }
 
@@ -225,7 +223,7 @@ inline uint32_t ShaderInterface::set_input_name(ShaderInput *input,
   }
 
   input->name_offset = (uint32_t)(name - name_buffer_);
-  input->name_hash = BLI_hash_string(name);
+  input->name_hash = lib_hash_string(name);
   return name_len + 1; /* include NULL terminator */
 }
 
@@ -261,7 +259,7 @@ inline const ShaderInput *ShaderInterface::input_lookup(const ShaderInput *const
       /* This is a bit dangerous since we could have a hash collision.
        * where the asked uniform that does not exist has the same hash
        * as a real uniform. */
-      BLI_assert(STREQ(name, name_buffer_ + inputs[i].name_offset));
+      lib_assert(STREQ(name, name_buffer_ + inputs[i].name_offset));
       return inputs + i;
     }
   }
