@@ -1,6 +1,4 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * Custom select code for picking small regions (not efficient for large regions).
  * `gpu_select_pick_*` API.
  */
@@ -8,21 +6,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "GPU_debug.h"
-#include "GPU_framebuffer.h"
-#include "GPU_immediate.h"
-#include "GPU_select.h"
-#include "GPU_state.h"
+#include "gpu_debug.h"
+#include "gpu_framebuffer.h"
+#include "gpu_immediate.h"
+#include "gpu_select.h"
+#include "gpu_state.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_rect.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_rect.h"
+#include "lib_utildefines.h"
 
 #include "gpu_select_private.h"
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
 /* #define DEBUG_PRINT */
 
@@ -33,8 +31,7 @@
 #define DEPTH_MAX 0xffffffff
 
 /* -------------------------------------------------------------------- */
-/** \name #SubRectStride
- * \{ */
+/** #SubRectStride **/
 
 /** For looping over a sub-region of a #rcti, could be moved into 'rct.c'. */
 typedef struct SubRectStride {
@@ -65,9 +62,9 @@ static void rect_subregion_stride_calc(const rcti *src, const rcti *dst, SubRect
   const int x = dst->xmin - src->xmin;
   const int y = dst->ymin - src->ymin;
 
-  BLI_assert(src->xmin <= dst->xmin && src->ymin <= dst->ymin && src->xmax >= dst->xmax &&
+  lib_assert(src->xmin <= dst->xmin && src->ymin <= dst->ymin && src->xmax >= dst->xmax &&
              src->ymax >= dst->ymax);
-  BLI_assert(x >= 0 && y >= 0);
+  lib_assert(x >= 0 && y >= 0);
 
   r_sub->start = (uint)((src_x * y) + x);
   r_sub->span = (uint)dst_x;
@@ -84,14 +81,12 @@ BLI_INLINE bool depth_is_filled(const depth_t *prev, const depth_t *curr)
   return (*prev != *curr) && (*curr != DEPTH_MAX);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name #DepthBufCache
+/** #DepthBufCache
  *
  * Result of reading #GPU_framebuffer_read_depth,
  * use for both cache and non-cached storage.
- * \{ */
+ **/
 
 /** Store result of #GPU_framebuffer_read_depth. */
 typedef struct DepthBufCache {
