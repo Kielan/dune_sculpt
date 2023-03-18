@@ -400,13 +400,13 @@ GPUShader *gpu_shader_create_from_python(const char *vertcode,
     libcode = datatoc_gpu_shader_colorspace_lib_glsl;
   }
   else {
-    libcode = libcodecat = BLI_strdupcat(libcode, datatoc_gpu_shader_colorspace_lib_glsl);
+    libcode = libcodecat = lib_strdupcat(libcode, datatoc_gpu_shader_colorspace_lib_glsl);
   }
 
   /* Use pyGPUShader as default name for shader. */
   const char *shname = name != nullptr ? name : "pyGPUShader";
 
-  GPUShader *sh = GPU_shader_create_ex(vertcode,
+  GPUShader *sh = gpu_shader_create_ex(vertcode,
                                        fragcode,
                                        geomcode,
                                        nullptr,
@@ -440,14 +440,14 @@ static const char *string_join_array_maybe_alloc(const char **str_arr, bool *r_i
   }
   *r_is_alloc = is_alloc;
   if (is_alloc) {
-    return BLI_string_join_arrayN(str_arr, i);
+    return lib_string_join_arrayn(str_arr, i);
   }
 
   return str_arr[0];
 }
 
-struct GPUShader *GPU_shader_create_from_arrays_impl(
-    const struct GPU_ShaderCreateFromArray_Params *params, const char *func, int line)
+struct GPUShader *gpu_shader_create_from_arrays_impl(
+    const struct gpu_ShaderCreateFromArray_Params *params, const char *func, int line)
 {
   struct {
     const char *str;
@@ -460,26 +460,23 @@ struct GPUShader *GPU_shader_create_from_arrays_impl(
   }
 
   char name[64];
-  BLI_snprintf(name, sizeof(name), "%s_%d", func, line);
+  lib_snprintf(name, sizeof(name), "%s_%d", func, line);
 
-  GPUShader *sh = GPU_shader_create(
+  GPUShader *sh = gpu_shader_create(
       str_dst[0].str, str_dst[1].str, str_dst[2].str, nullptr, str_dst[3].str, name);
 
   for (auto &i : str_dst) {
     if (i.is_alloc) {
-      MEM_freeN((void *)i.str);
+      mem_freen((void *)i.str);
     }
   }
   return sh;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Binding
- * \{ */
+/** Binding **/
 
-void GPU_shader_bind(GPUShader *gpu_shader)
+void gpu_shader_bind(GPUShader *gpu_shader)
 {
   Shader *shader = unwrap(gpu_shader);
 
@@ -488,20 +485,20 @@ void GPU_shader_bind(GPUShader *gpu_shader)
   if (ctx->shader != shader) {
     ctx->shader = shader;
     shader->bind();
-    GPU_matrix_bind(gpu_shader);
-    GPU_shader_set_srgb_uniform(gpu_shader);
+    gpu_matrix_bind(gpu_shader);
+    gpu_shader_set_srgb_uniform(gpu_shader);
   }
   else {
     if (gpu_shader_srgb_uniform_dirty_get()) {
-      GPU_shader_set_srgb_uniform(gpu_shader);
+      gpu_shader_set_srgb_uniform(gpu_shader);
     }
-    if (GPU_matrix_dirty_get()) {
-      GPU_matrix_bind(gpu_shader);
+    if (gpu_matrix_dirty_get()) {
+      gpu_matrix_bind(gpu_shader);
     }
   }
 }
 
-void GPU_shader_unbind()
+void gpu_shader_unbind()
 {
 #ifndef NDEBUG
   Context *ctx = Context::get();
@@ -512,26 +509,21 @@ void GPU_shader_unbind()
 #endif
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Shader name
- * \{ */
+/** Shader name **/
 
-const char *GPU_shader_get_name(GPUShader *shader)
+const char *gpu_shader_get_name(GPUShader *shader)
 {
   return unwrap(shader)->name_get();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Transform feedback
+/** Transform feedback
  *
- * TODO(fclem): Should be replaced by compute shaders.
- * \{ */
+ * TODO: Should be replaced by compute shaders.
+ **/
 
-bool GPU_shader_transform_feedback_enable(GPUShader *shader, GPUVertBuf *vertbuf)
+bool gpu_shader_transform_feedback_enable(GPUShader *shader, GPUVertBuf *vertbuf)
 {
   return unwrap(shader)->transform_feedback_enable(vertbuf);
 }
