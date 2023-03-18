@@ -97,7 +97,7 @@ bool paint_is_face_hidden(const struct MLoopTri *UNUSED(lt),
   return false;
 }
 
-void BKE_paint_face_set_overlay_color_get(const int UNUSED(face_set),
+void dune_paint_face_set_overlay_color_get(const int UNUSED(face_set),
                                           const int UNUSED(seed),
                                           uchar UNUSED(r_color[4]))
 {
@@ -109,37 +109,31 @@ bool paint_is_grid_face_hidden(const unsigned int *UNUSED(grid_hidden),
                                int UNUSED(x),
                                int UNUSED(y))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BKE_mesh.h
- * \{ */
-void BKE_mesh_calc_poly_normal(const struct MPoly *UNUSED(mpoly),
+/** Stubs of dune_mesh.h **/
+void dune_mesh_calc_poly_normal(const struct MPoly *UNUSED(mpoly),
                                const struct MLoop *UNUSED(loopstart),
                                const struct MVert *UNUSED(mvarray),
                                float UNUSED(r_no[3]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-void BKE_mesh_looptri_get_real_edges(const struct Mesh *UNUSED(mesh),
+void dune_mesh_looptri_get_real_edges(const struct Mesh *UNUSED(mesh),
                                      const struct MLoopTri *UNUSED(looptri),
                                      int UNUSED(r_edges[3]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BKE_material.h
- * \{ */
+/** Stubs of dune_material.h */
 
-void BKE_material_defaults_free_gpu()
+void dune_material_defaults_free_gpu()
 {
   /* This function is reachable via GPU_exit. */
 }
@@ -181,34 +175,29 @@ void ntreeGPUMaterialNodes(struct bNodeTree *UNUSED(localtree),
                            bool *UNUSED(has_surface_output),
                            bool *UNUSED(has_volume_output))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-struct bNodeTree *ntreeLocalize(struct bNodeTree *UNUSED(ntree))
+struct DNodeTree *ntreeLocalize(struct bNodeTree *UNUSED(ntree))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
   return nullptr;
 }
 
-void ntreeFreeLocalTree(struct bNodeTree *UNUSED(ntree))
+void ntreeFreeLocalTree(struct DNodeTree *UNUSED(ntree))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of bmesh.h
- * \{ */
+/** Stubs of bmesh.h **/
 void BM_face_as_array_vert_tri(BMFace *UNUSED(f), BMVert *UNUSED(r_verts[3]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Stubs of DRW_engine.h
- * \{ */
+/** Stubs of DRW_engine.h **/
 void DRW_deferred_shader_remove(struct GPUMaterial *UNUSED(mat))
 {
   lib_assert_unreachable();
