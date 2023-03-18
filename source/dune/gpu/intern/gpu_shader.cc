@@ -240,7 +240,7 @@ const GPUShaderCreateInfo *gpu_shader_create_info_get(const char *info_name)
 
 GPUShader *gpu_shader_create_from_info_name(const char *info_name)
 {
-  using namespace blender::gpu::shader;
+  using namespace dune::gpu::shader;
   const GPUShaderCreateInfo *_info = gpu_shader_create_info_get(info_name);
   const ShaderCreateInfo &info = *reinterpret_cast<const ShaderCreateInfo *>(_info);
   if (!info.do_static_compilation_) {
@@ -528,65 +528,62 @@ bool gpu_shader_transform_feedback_enable(GPUShader *shader, GPUVertBuf *vertbuf
   return unwrap(shader)->transform_feedback_enable(vertbuf);
 }
 
-void GPU_shader_transform_feedback_disable(GPUShader *shader)
+void gpu_shader_transform_feedback_disable(GPUShader *shader)
 {
   unwrap(shader)->transform_feedback_disable();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Uniforms / Resource location
- * \{ */
+/** Uniforms / Resource location **/
 
-int GPU_shader_get_uniform(GPUShader *shader, const char *name)
+int gpu_shader_get_uniform(GPUShader *shader, const char *name)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   const ShaderInput *uniform = interface->uniform_get(name);
   return uniform ? uniform->location : -1;
 }
 
-int GPU_shader_get_builtin_uniform(GPUShader *shader, int builtin)
+int gpu_shader_get_builtin_uniform(GPUShader *shader, int builtin)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   return interface->uniform_builtin((GPUUniformBuiltin)builtin);
 }
 
-int GPU_shader_get_builtin_block(GPUShader *shader, int builtin)
+int gpu_shader_get_builtin_block(GPUShader *shader, int builtin)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   return interface->ubo_builtin((GPUUniformBlockBuiltin)builtin);
 }
 
-int GPU_shader_get_ssbo(GPUShader *shader, const char *name)
+int gpu_shader_get_ssbo(GPUShader *shader, const char *name)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   const ShaderInput *ssbo = interface->ssbo_get(name);
   return ssbo ? ssbo->location : -1;
 }
 
-int GPU_shader_get_uniform_block(GPUShader *shader, const char *name)
+int gpu_shader_get_uniform_block(GPUShader *shader, const char *name)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   const ShaderInput *ubo = interface->ubo_get(name);
   return ubo ? ubo->location : -1;
 }
 
-int GPU_shader_get_uniform_block_binding(GPUShader *shader, const char *name)
+int gpu_shader_get_uniform_block_binding(GPUShader *shader, const char *name)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   const ShaderInput *ubo = interface->ubo_get(name);
   return ubo ? ubo->binding : -1;
 }
 
-int GPU_shader_get_texture_binding(GPUShader *shader, const char *name)
+int gpu_shader_get_texture_binding(GPUShader *shader, const char *name)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   const ShaderInput *tex = interface->uniform_get(name);
   return tex ? tex->binding : -1;
 }
 
-int GPU_shader_get_attribute(GPUShader *shader, const char *name)
+int gpu_shader_get_attribute(GPUShader *shader, const char *name)
 {
   ShaderInterface *interface = unwrap(shader)->interface;
   const ShaderInput *attr = interface->attr_get(name);
