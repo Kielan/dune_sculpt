@@ -1,11 +1,11 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_string_utils.h"
+#include "lib_string_utils.h"
 
-#include "GPU_capabilities.h"
-#include "GPU_debug.h"
-#include "GPU_matrix.h"
-#include "GPU_platform.h"
+#include "gpu_capabilities.h"
+#include "gpu_debug.h"
+#include "gpu_matrix.h"
+#include "gpu_platform.h"
 
 #include "gpu_backend.hh"
 #include "gpu_context_private.hh"
@@ -18,7 +18,7 @@
 
 extern "C" char datatoc_gpu_shader_colorspace_lib_glsl[];
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 std::string Shader::defines_declare(const shader::ShaderCreateInfo &info) const
 {
@@ -33,20 +33,19 @@ std::string Shader::defines_declare(const shader::ShaderCreateInfo &info) const
   return defines;
 }
 
-}  // namespace blender::gpu
+}  // namespace dune::gpu
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
 static bool gpu_shader_srgb_uniform_dirty_get();
 
 /* -------------------------------------------------------------------- */
-/** \name Creation / Destruction
- * \{ */
+/** Creation / Destruction **/
 
 Shader::Shader(const char *sh_name)
 {
-  BLI_strncpy(this->name, sh_name, sizeof(this->name));
+  lib_strncpy(this->name, sh_name, sizeof(this->name));
 }
 
 Shader::~Shader()
@@ -56,48 +55,48 @@ Shader::~Shader()
 
 static void standard_defines(Vector<const char *> &sources)
 {
-  BLI_assert(sources.size() == 0);
+  lib_assert(sources.size() == 0);
   /* Version needs to be first. Exact values will be added by implementation. */
   sources.append("version");
   /* Define to identify code usage in shading language. */
   sources.append("#define GPU_SHADER\n");
   /* some useful defines to detect GPU type */
-  if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_ANY, GPU_DRIVER_ANY)) {
+  if (gpu_type_matches(GPU_DEVICE_ATI, GPU_OS_ANY, GPU_DRIVER_ANY)) {
     sources.append("#define GPU_ATI\n");
   }
-  else if (GPU_type_matches(GPU_DEVICE_NVIDIA, GPU_OS_ANY, GPU_DRIVER_ANY)) {
+  else if (gpu_type_matches(GPU_DEVICE_NVIDIA, GPU_OS_ANY, GPU_DRIVER_ANY)) {
     sources.append("#define GPU_NVIDIA\n");
   }
   else if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_ANY, GPU_DRIVER_ANY)) {
     sources.append("#define GPU_INTEL\n");
   }
   /* some useful defines to detect OS type */
-  if (GPU_type_matches(GPU_DEVICE_ANY, GPU_OS_WIN, GPU_DRIVER_ANY)) {
+  if (gpu_type_matches(GPU_DEVICE_ANY, GPU_OS_WIN, GPU_DRIVER_ANY)) {
     sources.append("#define OS_WIN\n");
   }
-  else if (GPU_type_matches(GPU_DEVICE_ANY, GPU_OS_MAC, GPU_DRIVER_ANY)) {
+  else if (gpu_type_matches(GPU_DEVICE_ANY, GPU_OS_MAC, GPU_DRIVER_ANY)) {
     sources.append("#define OS_MAC\n");
   }
-  else if (GPU_type_matches(GPU_DEVICE_ANY, GPU_OS_UNIX, GPU_DRIVER_ANY)) {
+  else if (gpu_type_matches(GPU_DEVICE_ANY, GPU_OS_UNIX, GPU_DRIVER_ANY)) {
     sources.append("#define OS_UNIX\n");
   }
   /* API Definition */
-  eGPUBackendType backend = GPU_backend_get_type();
+  eGPUBackendType backend = gpu_backend_get_type();
   switch (backend) {
     case GPU_BACKEND_OPENGL:
       sources.append("#define GPU_OPENGL\n");
       break;
     default:
-      BLI_assert(false && "Invalid GPU Backend Type");
+      lib_assert(false && "Invalid GPU Backend Type");
       break;
   }
 
-  if (GPU_crappy_amd_driver()) {
+  if (gpu_crappy_amd_driver()) {
     sources.append("#define GPU_DEPRECATED_AMD_DRIVER\n");
   }
 }
 
-GPUShader *GPU_shader_create_ex(const char *vertcode,
+GPUShader *gpu_shader_create_ex(const char *vertcode,
                                 const char *fragcode,
                                 const char *geomcode,
                                 const char *computecode,
@@ -109,7 +108,7 @@ GPUShader *GPU_shader_create_ex(const char *vertcode,
                                 const char *shname)
 {
   /* At least a vertex shader and a fragment shader are required, or only a compute shader. */
-  BLI_assert(((fragcode != nullptr) && (vertcode != nullptr) && (computecode == nullptr)) ||
+  lib_assert(((fragcode != nullptr) && (vertcode != nullptr) && (computecode == nullptr)) ||
              ((fragcode == nullptr) && (vertcode == nullptr) && (geomcode == nullptr) &&
               (computecode != nullptr)));
 
@@ -178,7 +177,7 @@ GPUShader *GPU_shader_create_ex(const char *vertcode,
   }
 
   if (tf_names != nullptr && tf_count > 0) {
-    BLI_assert(tf_type != GPU_SHADER_TFB_NONE);
+    lib_assert(tf_type != GPU_SHADER_TFB_NONE);
     shader->transform_feedback_names_set(Span<const char *>(tf_names, tf_count), tf_type);
   }
 
@@ -190,25 +189,22 @@ GPUShader *GPU_shader_create_ex(const char *vertcode,
   return wrap(shader);
 }
 
-void GPU_shader_free(GPUShader *shader)
+void gpu_shader_free(GPUShader *shader)
 {
   delete unwrap(shader);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Creation utils
- * \{ */
+/** Creation utils **/
 
-GPUShader *GPU_shader_create(const char *vertcode,
+GPUShader *gpu_shader_create(const char *vertcode,
                              const char *fragcode,
                              const char *geomcode,
                              const char *libcode,
                              const char *defines,
                              const char *shname)
 {
-  return GPU_shader_create_ex(vertcode,
+  return gpu_shader_create_ex(vertcode,
                               fragcode,
                               geomcode,
                               nullptr,
@@ -220,12 +216,12 @@ GPUShader *GPU_shader_create(const char *vertcode,
                               shname);
 }
 
-GPUShader *GPU_shader_create_compute(const char *computecode,
+GPUShader *gpu_shader_create_compute(const char *computecode,
                                      const char *libcode,
                                      const char *defines,
                                      const char *shname)
 {
-  return GPU_shader_create_ex(nullptr,
+  return gpu_shader_create_ex(nullptr,
                               nullptr,
                               nullptr,
                               computecode,
@@ -237,12 +233,12 @@ GPUShader *GPU_shader_create_compute(const char *computecode,
                               shname);
 }
 
-const GPUShaderCreateInfo *GPU_shader_create_info_get(const char *info_name)
+const GPUShaderCreateInfo *gpu_shader_create_info_get(const char *info_name)
 {
   return gpu_shader_create_info_get(info_name);
 }
 
-GPUShader *GPU_shader_create_from_info_name(const char *info_name)
+GPUShader *gpu_shader_create_from_info_name(const char *info_name)
 {
   using namespace blender::gpu::shader;
   const GPUShaderCreateInfo *_info = gpu_shader_create_info_get(info_name);
@@ -251,17 +247,17 @@ GPUShader *GPU_shader_create_from_info_name(const char *info_name)
     printf("Warning: Trying to compile \"%s\" which was not marked for static compilation.\n",
            info.name_.c_str());
   }
-  return GPU_shader_create_from_info(_info);
+  return gpu_shader_create_from_info(_info);
 }
 
-GPUShader *GPU_shader_create_from_info(const GPUShaderCreateInfo *_info)
+GPUShader *gpu_shader_create_from_info(const GPUShaderCreateInfo *_info)
 {
-  using namespace blender::gpu::shader;
+  using namespace dune::gpu::shader;
   const ShaderCreateInfo &info = *reinterpret_cast<const ShaderCreateInfo *>(_info);
 
   const_cast<ShaderCreateInfo &>(info).finalize();
 
-  GPU_debug_group_begin(GPU_DEBUG_SHADER_COMPILATION_GROUP);
+  gpu_debug_group_begin(GPU_DEBUG_SHADER_COMPILATION_GROUP);
 
   /* At least a vertex shader and a fragment shader are required, or only a compute shader. */
   if (info.compute_source_.is_empty()) {
@@ -271,7 +267,7 @@ GPUShader *GPU_shader_create_from_info(const GPUShaderCreateInfo *_info)
     if (info.fragment_source_.is_empty()) {
       printf("Missing fragment shader in %s.\n", info.name_.c_str());
     }
-    BLI_assert(!info.vertex_source_.is_empty() && !info.fragment_source_.is_empty());
+    lib_assert(!info.vertex_source_.is_empty() && !info.fragment_source_.is_empty());
   }
   else {
     if (!info.vertex_source_.is_empty()) {
@@ -283,7 +279,7 @@ GPUShader *GPU_shader_create_from_info(const GPUShaderCreateInfo *_info)
     if (!info.fragment_source_.is_empty()) {
       printf("Compute shader has fragment_source_ shader attached in %s.\n", info.name_.c_str());
     }
-    BLI_assert(info.vertex_source_.is_empty() && info.geometry_source_.is_empty() &&
+    lib_assert(info.vertex_source_.is_empty() && info.geometry_source_.is_empty() &&
                info.fragment_source_.is_empty());
   }
 
@@ -383,15 +379,15 @@ GPUShader *GPU_shader_create_from_info(const GPUShaderCreateInfo *_info)
 
   if (!shader->finalize(&info)) {
     delete shader;
-    GPU_debug_group_end();
+    gpu_debug_group_end();
     return nullptr;
   }
 
-  GPU_debug_group_end();
+  gpu_debug_group_end();
   return wrap(shader);
 }
 
-GPUShader *GPU_shader_create_from_python(const char *vertcode,
+GPUShader *gpu_shader_create_from_python(const char *vertcode,
                                          const char *fragcode,
                                          const char *geomcode,
                                          const char *libcode,
