@@ -65,9 +65,9 @@ GPUMatrixState *gpu_matrix_state_create()
   return state;
 }
 
-void GPU_matrix_state_discard(GPUMatrixState *state)
+void gpu_matrix_state_discard(GPUMatrixState *state)
 {
-  MEM_freeN(state);
+  mem_freen(state);
 }
 
 static void gpu_matrix_state_active_set_dirty(bool value)
@@ -76,7 +76,7 @@ static void gpu_matrix_state_active_set_dirty(bool value)
   state->dirty = value;
 }
 
-void GPU_matrix_reset()
+void gpu_matrix_reset()
 {
   GPUMatrixState *state = Context::get()->matrix_state;
   state->model_view_stack.top = 0;
@@ -94,9 +94,9 @@ static void checkmat(cosnt float *m)
   const int n = 16;
   for (int i = 0; i < n; i++) {
 #  if _MSC_VER
-    BLI_assert(_finite(m[i]));
+    lib_assert(_finite(m[i]));
 #  else
-    BLI_assert(!isinf(m[i]));
+    lib_assert(!isinf(m[i]));
 #  endif
   }
 }
@@ -109,62 +109,62 @@ static void checkmat(cosnt float *m)
 
 #endif
 
-void GPU_matrix_push()
+void gpu_matrix_push()
 {
-  BLI_assert(ModelViewStack.top + 1 < MATRIX_STACK_DEPTH);
+  lib_assert(ModelViewStack.top + 1 < MATRIX_STACK_DEPTH);
   ModelViewStack.top++;
   copy_m4_m4(ModelView, ModelViewStack.stack[ModelViewStack.top - 1]);
 }
 
-void GPU_matrix_pop()
+void gpu_matrix_pop()
 {
-  BLI_assert(ModelViewStack.top > 0);
+  lib_assert(ModelViewStack.top > 0);
   ModelViewStack.top--;
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_push_projection()
+void gpu_matrix_push_projection()
 {
-  BLI_assert(ProjectionStack.top + 1 < MATRIX_STACK_DEPTH);
+  lib_assert(ProjectionStack.top + 1 < MATRIX_STACK_DEPTH);
   ProjectionStack.top++;
   copy_m4_m4(Projection, ProjectionStack.stack[ProjectionStack.top - 1]);
 }
 
-void GPU_matrix_pop_projection()
+void gpu_matrix_pop_projection()
 {
-  BLI_assert(ProjectionStack.top > 0);
+  lib_assert(ProjectionStack.top > 0);
   ProjectionStack.top--;
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_set(const float m[4][4])
+void gpu_matrix_set(const float m[4][4])
 {
   copy_m4_m4(ModelView, m);
   CHECKMAT(ModelView3D);
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_identity_projection_set()
+void gpu_matrix_identity_projection_set()
 {
   unit_m4(Projection);
   CHECKMAT(Projection3D);
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_projection_set(const float m[4][4])
+void gpu_matrix_projection_set(const float m[4][4])
 {
   copy_m4_m4(Projection, m);
   CHECKMAT(Projection3D);
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_identity_set()
+void gpu_matrix_identity_set()
 {
   unit_m4(ModelView);
   gpu_matrix_state_active_set_dirty(true);
 }
 
-void GPU_matrix_translate_2f(float x, float y)
+void gpu_matrix_translate_2f(float x, float y)
 {
   Mat4 m;
   unit_m4(m);
@@ -173,12 +173,12 @@ void GPU_matrix_translate_2f(float x, float y)
   GPU_matrix_mul(m);
 }
 
-void GPU_matrix_translate_2fv(const float vec[2])
+void gpu_matrix_translate_2fv(const float vec[2])
 {
-  GPU_matrix_translate_2f(vec[0], vec[1]);
+  gpu_matrix_translate_2f(vec[0], vec[1]);
 }
 
-void GPU_matrix_translate_3f(float x, float y, float z)
+void gpu_matrix_translate_3f(float x, float y, float z)
 {
 #if 1
   translate_m4(ModelView, x, y, z);
