@@ -101,7 +101,7 @@ void dune_paint_face_set_overlay_color_get(const int UNUSED(face_set),
                                           const int UNUSED(seed),
                                           uchar UNUSED(r_color[4]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
 bool paint_is_grid_face_hidden(const unsigned int *UNUSED(grid_hidden),
