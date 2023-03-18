@@ -1,5 +1,5 @@
-/** \file
- * \ingroup gpu
+/**
+ * gpu
  *
  * Interface for accessing GPU-related methods for selection. The semantics are
  * similar to `glRenderMode(GL_SELECT)` from older OpenGL versions.
@@ -7,21 +7,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "GPU_select.h"
+#include "gpu_select.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_rect.h"
+#include "lib_rect.h"
 
-#include "DNA_userdef_types.h"
+#include "types_userdef.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
 #include "gpu_select_private.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Internal Types
- * \{ */
+/** Internal Types **/
 
 /* Internal algorithm used */
 typedef enum eGPUSelectAlgo {
@@ -40,28 +39,25 @@ typedef struct GPUSelectState {
   eGPUSelectMode mode;
   /* internal algorithm for selection */
   eGPUSelectAlgo algorithm;
-  /* allow GPU_select_begin/end without drawing */
+  /* allow gpu_select_begin/end without drawing */
   bool use_cache;
   /**
-   * Signifies that #GPU_select_cache_begin has been called,
-   * future calls to #GPU_select_begin should initialize the cache.
+   * Signifies that gpu_select_cache_begin has been called,
+   * future calls to gpu_select_begin should initialize the cache.
    *
-   * \note #GPU_select_cache_begin could perform initialization but doesn't as it's inconvenient
+   * note gpu_select_cache_begin could perform initialization but doesn't as it's inconvenient
    * for callers making the cache begin/end calls outside lower level selection logic
-   * where the `mode` to pass to #GPU_select_begin yet isn't known.
+   * where the `mode` to pass to GPU_select_begin yet isn't known.
    */
   bool use_cache_needs_init;
 } GPUSelectState;
 
 static GPUSelectState g_select_state = {0};
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Public API
- * \{ */
+/** Public API **/
 
-void GPU_select_begin(GPUSelectResult *buffer,
+void gpu_select_begin(GPUSelectResult *buffer,
                       const uint buffer_len,
                       const rcti *input,
                       eGPUSelectMode mode,
@@ -71,7 +67,7 @@ void GPU_select_begin(GPUSelectResult *buffer,
     /* In the case hits was '-1',
      * don't start the second pass since it's not going to give useful results.
      * As well as buffer overflow in 'gpu_select_query_load_id'. */
-    BLI_assert(oldhits != -1);
+    lib_assert(oldhits != -1);
   }
 
   g_select_state.select_is_active = true;
@@ -115,7 +111,7 @@ void GPU_select_begin(GPUSelectResult *buffer,
   }
 }
 
-bool GPU_select_load_id(uint id)
+bool gpu_select_load_id(uint id)
 {
   /* if no selection mode active, ignore */
   if (!g_select_state.select_is_active) {
@@ -133,7 +129,7 @@ bool GPU_select_load_id(uint id)
   }
 }
 
-uint GPU_select_end(void)
+uint gpu_select_end(void)
 {
   uint hits = 0;
 
@@ -154,29 +150,27 @@ uint GPU_select_end(void)
   return hits;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Caching
+/** Caching
  *
  * Support multiple begin/end's as long as they are within the initial region.
- * Currently only used by #ALGO_GL_PICK.
- * \{ */
+ * Currently only used by ALGO_GL_PICK.
+ **/
 
-void GPU_select_cache_begin(void)
+void gpu_select_cache_begin(void)
 {
-  BLI_assert(g_select_state.select_is_active == false);
-  /* Ensure #GPU_select_cache_end is always called. */
-  BLI_assert(g_select_state.use_cache_needs_init == false);
+  lib_assert(g_select_state.select_is_active == false);
+  /* Ensure gpu_select_cache_end is always called. */
+  lib_assert(g_select_state.use_cache_needs_init == false);
 
   /* Signal that cache should be used, instead of calling the algorithms cache-begin function.
    * This is more convenient as the exact method of selection may not be known by the caller. */
   g_select_state.use_cache_needs_init = true;
 }
 
-void GPU_select_cache_load_id(void)
+void gpu_select_cache_load_id(void)
 {
-  BLI_assert(g_select_state.use_cache == true);
+  lib_assert(g_select_state.use_cache == true);
   if (g_select_state.algorithm == ALGO_GL_PICK) {
     gpu_select_pick_cache_load_id();
   }
