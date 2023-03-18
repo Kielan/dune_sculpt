@@ -202,7 +202,7 @@ static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
     }
 
     if (in_out == SOCK_IN) {
-      GPU_link(mat, gpu_uniform_set_function_from_type(socket->type), link, &stack->link);
+      gpu_link(mat, gpu_uniform_set_function_from_type(socket->type), link, &stack->link);
     }
     return link;
   }
@@ -226,8 +226,7 @@ static void gpu_node_input_socket(
 
 static void gpu_node_output(GPUNode *node, const eGPUType type, GPUNodeLink **link)
 {
-  GPUOutput *output = MEM_callocN(sizeof(GPUOutput), "GPUOutput");
-
+  GPUOutput *output = mem_callocn(sizeof(GPUOutput), "GPUOutput");
   output->type = type;
   output->node = node;
 
@@ -241,7 +240,7 @@ static void gpu_node_output(GPUNode *node, const eGPUType type, GPUNodeLink **li
      * set that pointer to NULL */
   }
 
-  BLI_addtail(&node->outputs, output);
+  lib_addtail(&node->outputs, output);
 }
 
 /* Uniform Attribute Functions */
@@ -283,23 +282,23 @@ static bool uniform_attr_list_cmp(const void *a, const void *b)
   return attr_a || attr_b;
 }
 
-struct GHash *GPU_uniform_attr_list_hash_new(const char *info)
+struct GHash *gpu_uniform_attr_list_hash_new(const char *info)
 {
-  return BLI_ghash_new(uniform_attr_list_hash, uniform_attr_list_cmp, info);
+  return lib_ghash_new(uniform_attr_list_hash, uniform_attr_list_cmp, info);
 }
 
-void GPU_uniform_attr_list_copy(GPUUniformAttrList *dest, GPUUniformAttrList *src)
+void gpu_uniform_attr_list_copy(GPUUniformAttrList *dest, GPUUniformAttrList *src)
 {
   dest->count = src->count;
   dest->hash_code = src->hash_code;
-  BLI_duplicatelist(&dest->list, &src->list);
+  lib_duplicatelist(&dest->list, &src->list);
 }
 
-void GPU_uniform_attr_list_free(GPUUniformAttrList *set)
+void gpu_uniform_attr_list_free(GPUUniformAttrList *set)
 {
   set->count = 0;
   set->hash_code = 0;
-  BLI_freelistN(&set->list);
+  lib_freelistn(&set->list);
 }
 
 void gpu_node_graph_finalize_uniform_attrs(GPUNodeGraph *graph)
