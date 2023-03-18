@@ -36,22 +36,22 @@ static char *create_key(eGPUSupportLevel support_level,
     BLI_dynstr_append(ds, "UNSUPPORTED");
   }
 
-  char *support_key = BLI_dynstr_get_cstring(ds);
-  BLI_dynstr_free(ds);
-  BLI_str_replace_char(support_key, '\n', ' ');
-  BLI_str_replace_char(support_key, '\r', ' ');
+  char *support_key = lib_dynstr_get_cstring(ds);
+  lib_dynstr_free(ds);
+  lib_str_replace_char(support_key, '\n', ' ');
+  lib_str_replace_char(support_key, '\r', ' ');
   return support_key;
 }
 
 static char *create_gpu_name(const char *vendor, const char *renderer, const char *version)
 {
-  DynStr *ds = BLI_dynstr_new();
-  BLI_dynstr_appendf(ds, "%s %s %s", vendor, renderer, version);
+  DynStr *ds = lib_dynstr_new();
+  lib_dynstr_appendf(ds, "%s %s %s", vendor, renderer, version);
 
-  char *gpu_name = BLI_dynstr_get_cstring(ds);
-  BLI_dynstr_free(ds);
-  BLI_str_replace_char(gpu_name, '\n', ' ');
-  BLI_str_replace_char(gpu_name, '\r', ' ');
+  char *gpu_name = lib_dynstr_get_cstring(ds);
+  lib_dynstr_free(ds);
+  lib_str_replace_char(gpu_name, '\n', ' ');
+  lib_str_replace_char(gpu_name, '\r', ' ');
   return gpu_name;
 }
 
@@ -73,9 +73,9 @@ void GPUPlatformGlobal::init(eGPUDeviceType gpu_device,
   this->driver = driver_type;
   this->support_level = gpu_support_level;
 
-  this->vendor = BLI_strdup(vendor_str);
-  this->renderer = BLI_strdup(renderer_str);
-  this->version = BLI_strdup(version_str);
+  this->vendor = lib_strdup(vendor_str);
+  this->renderer = lib_strdup(renderer_str);
+  this->version = lib_strdup(version_str);
   this->support_key = create_key(gpu_support_level, vendor_str, renderer_str, version_str);
   this->gpu_name = create_gpu_name(vendor_str, renderer_str, version_str);
   this->backend = backend;
@@ -91,19 +91,16 @@ void GPUPlatformGlobal::clear()
   initialized = false;
 }
 
-}  // namespace blender::gpu
-
-/** \} */
+}  // namespace dune::gpu
 
 /* -------------------------------------------------------------------- */
-/** \name C-API
- * \{ */
+/** C-API **/
 
-using namespace blender::gpu;
+using namespace dune::gpu;
 
-eGPUSupportLevel GPU_platform_support_level()
+eGPUSupportLevel gpu_platform_support_level()
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   return GPG.support_level;
 }
 
