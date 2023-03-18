@@ -499,7 +499,7 @@ GPUNodeLink *gpu_uniform_attribute(GPUMaterial *mat, const char *name, bool use_
   return link;
 }
 
-GPUNodeLink *GPU_constant(const float *num)
+GPUNodeLink *gpu_constant(const float *num)
 {
   GPUNodeLink *link = gpu_node_link_create();
   link->link_type = GPU_NODE_LINK_CONSTANT;
@@ -507,7 +507,7 @@ GPUNodeLink *GPU_constant(const float *num)
   return link;
 }
 
-GPUNodeLink *GPU_uniform(const float *num)
+GPUNodeLink *gpu_uniform(const float *num)
 {
   GPUNodeLink *link = gpu_node_link_create();
   link->link_type = GPU_NODE_LINK_UNIFORM;
@@ -528,7 +528,7 @@ GPUNodeLink *GPU_image(GPUMaterial *mat,
   return link;
 }
 
-GPUNodeLink *GPU_image_tiled(GPUMaterial *mat,
+GPUNodeLink *gpu_image_tiled(GPUMaterial *mat,
                              Image *ima,
                              ImageUser *iuser,
                              eGPUSamplerState sampler_state)
@@ -541,7 +541,7 @@ GPUNodeLink *GPU_image_tiled(GPUMaterial *mat,
   return link;
 }
 
-GPUNodeLink *GPU_image_tiled_mapping(GPUMaterial *mat, Image *ima, ImageUser *iuser)
+GPUNodeLink *gpu_image_tiled_mapping(GPUMaterial *mat, Image *ima, ImageUser *iuser)
 {
   GPUNodeGraph *graph = gpu_material_node_graph(mat);
   GPUNodeLink *link = gpu_node_link_create();
@@ -551,10 +551,10 @@ GPUNodeLink *GPU_image_tiled_mapping(GPUMaterial *mat, Image *ima, ImageUser *iu
   return link;
 }
 
-GPUNodeLink *GPU_color_band(GPUMaterial *mat, int size, float *pixels, float *row)
+GPUNodeLink *gpu_color_band(GPUMaterial *mat, int size, float *pixels, float *row)
 {
   struct GPUTexture **colorband = gpu_material_ramp_texture_row_set(mat, size, pixels, row);
-  MEM_freeN(pixels);
+  mem_freen(pixels);
 
   GPUNodeGraph *graph = gpu_material_node_graph(mat);
   GPUNodeLink *link = gpu_node_link_create();
@@ -564,7 +564,7 @@ GPUNodeLink *GPU_color_band(GPUMaterial *mat, int size, float *pixels, float *ro
   return link;
 }
 
-GPUNodeLink *GPU_volume_grid(GPUMaterial *mat,
+GPUNodeLink *gpu_volume_grid(GPUMaterial *mat,
                              const char *name,
                              eGPUVolumeDefaultValue default_value)
 {
@@ -583,19 +583,19 @@ GPUNodeLink *GPU_volume_grid(GPUMaterial *mat,
   /* Two special cases, where we adjust the output values of smoke grids to
    * bring the into standard range without having to modify the grid values. */
   if (STREQ(name, "color")) {
-    GPU_link(mat, "node_attribute_volume_color", link, transform_link, &link);
+    gpu_link(mat, "node_attribute_volume_color", link, transform_link, &link);
   }
   else if (STREQ(name, "temperature")) {
-    GPU_link(mat, "node_attribute_volume_temperature", link, transform_link, &link);
+    gpu_link(mat, "node_attribute_volume_temperature", link, transform_link, &link);
   }
   else {
-    GPU_link(mat, "node_attribute_volume", link, transform_link, &link);
+    gpu_link(mat, "node_attribute_volume", link, transform_link, &link);
   }
 
   return link;
 }
 
-GPUNodeLink *GPU_builtin(eGPUBuiltin builtin)
+GPUNodeLink *gpu_builtin(eGPUBuiltin builtin)
 {
   GPUNodeLink *link = gpu_node_link_create();
   link->link_type = GPU_NODE_LINK_BUILTIN;
@@ -605,7 +605,7 @@ GPUNodeLink *GPU_builtin(eGPUBuiltin builtin)
 
 /* Creating Nodes */
 
-bool GPU_link(GPUMaterial *mat, const char *name, ...)
+bool gpu_link(GPUMaterial *mat, const char *name, ...)
 {
   GSet *used_libraries = gpu_material_used_libraries(mat);
   GPUNode *node;
@@ -636,12 +636,12 @@ bool GPU_link(GPUMaterial *mat, const char *name, ...)
   va_end(params);
 
   GPUNodeGraph *graph = gpu_material_node_graph(mat);
-  BLI_addtail(&graph->nodes, node);
+  lib_addtail(&graph->nodes, node);
 
   return true;
 }
 
-bool GPU_stack_link(GPUMaterial *material,
+bool gpu_stack_link(GPUMaterial *material,
                     bNode *bnode,
                     const char *name,
                     GPUNodeStack *in,
