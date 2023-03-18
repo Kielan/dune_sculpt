@@ -1,6 +1,4 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * Descriptor type used to define shader structure, resources and interfaces.
  *
  * Some rule of thumb:
@@ -9,7 +7,7 @@
 
 #pragma once
 
-#include "GPU_shader.h"
+#include "gpu_shader.h"
 
 #ifdef __cplusplus
 extern "C" {
