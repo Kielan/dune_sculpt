@@ -30,10 +30,10 @@ static char *create_key(eGPUSupportLevel support_level,
     lib_dynstr_append(ds, "SUPPORTED");
   }
   else if (support_level == GPU_SUPPORT_LEVEL_LIMITED) {
-    BLI_dynstr_append(ds, "LIMITED");
+    lib_dynstr_append(ds, "LIMITED");
   }
   else {
-    BLI_dynstr_append(ds, "UNSUPPORTED");
+    lib_dynstr_append(ds, "UNSUPPORTED");
   }
 
   char *support_key = lib_dynstr_get_cstring(ds);
@@ -104,47 +104,47 @@ eGPUSupportLevel gpu_platform_support_level()
   return GPG.support_level;
 }
 
-const char *GPU_platform_vendor()
+const char *gpu_platform_vendor()
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   return GPG.vendor;
 }
 
-const char *GPU_platform_renderer()
+const char *gpu_platform_renderer()
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   return GPG.renderer;
 }
 
-const char *GPU_platform_version()
+const char *gpu_platform_version()
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   return GPG.version;
 }
 
-const char *GPU_platform_support_level_key()
+const char *gpu_platform_support_level_key()
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   return GPG.support_key;
 }
 
-const char *GPU_platform_gpu_name()
+const char *gpu_platform_gpu_name()
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   return GPG.gpu_name;
 }
 
-bool GPU_type_matches(eGPUDeviceType device, eGPUOSType os, eGPUDriverType driver)
+bool gpu_type_matches(eGPUDeviceType device, eGPUOSType os, eGPUDriverType driver)
 {
-  return GPU_type_matches_ex(device, os, driver, GPU_BACKEND_ANY);
+  return gpu_type_matches_ex(device, os, driver, GPU_BACKEND_ANY);
 }
 
-bool GPU_type_matches_ex(eGPUDeviceType device,
+bool gpu_type_matches_ex(eGPUDeviceType device,
                          eGPUOSType os,
                          eGPUDriverType driver,
                          eGPUBackendType backend)
 {
-  BLI_assert(GPG.initialized);
+  lib_assert(GPG.initialized);
   return (GPG.device & device) && (GPG.os & os) && (GPG.driver & driver) &&
          (GPG.backend & backend);
 }
