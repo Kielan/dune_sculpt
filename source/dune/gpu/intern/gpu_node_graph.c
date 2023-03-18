@@ -151,7 +151,7 @@ static const char *gpu_uniform_set_function_from_type(eNodeSocketDatatype type)
     case SOCK_RGBA:
       return "set_rgba";
     default:
-      BLI_assert_msg(0, "No gpu function for non-supported eNodeSocketDatatype");
+      lib_assert_msg(0, "No gpu function for non-supported eNodeSocketDatatype");
       return NULL;
   }
 }
@@ -182,18 +182,18 @@ static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
     GPUNodeLink *link;
     switch (socket->type) {
       case SOCK_FLOAT: {
-        bNodeSocketValueFloat *socket_data = socket->default_value;
-        link = GPU_uniform(&socket_data->value);
+        DNodeSocketValueFloat *socket_data = socket->default_value;
+        link = gpu_uniform(&socket_data->value);
         break;
       }
       case SOCK_VECTOR: {
-        bNodeSocketValueVector *socket_data = socket->default_value;
-        link = GPU_uniform(socket_data->value);
+        DNodeSocketValueVector *socket_data = socket->default_value;
+        link = gpu_uniform(socket_data->value);
         break;
       }
       case SOCK_RGBA: {
-        bNodeSocketValueRGBA *socket_data = socket->default_value;
-        link = GPU_uniform(socket_data->value);
+        DNodeSocketValueRGBA *socket_data = socket->default_value;
+        link = gpu_uniform(socket_data->value);
         break;
       }
       default:
@@ -304,10 +304,10 @@ void gpu_uniform_attr_list_free(GPUUniformAttrList *set)
 void gpu_node_graph_finalize_uniform_attrs(GPUNodeGraph *graph)
 {
   GPUUniformAttrList *attrs = &graph->uniform_attrs;
-  BLI_assert(attrs->count == BLI_listbase_count(&attrs->list));
+  lib_assert(attrs->count == BLI_listbase_count(&attrs->list));
 
   /* Sort the attributes by name to ensure a stable order. */
-  BLI_listbase_sort(&attrs->list, uniform_attr_sort_cmp);
+  lib_listbase_sort(&attrs->list, uniform_attr_sort_cmp);
 
   /* Compute the indices and the hash code. */
   int next_id = 0;
@@ -352,7 +352,7 @@ static GPUMaterialAttribute *gpu_node_graph_add_attribute(GPUNodeGraph *graph,
     attr->type = type;
     STRNCPY(attr->name, name);
     attr->id = num_attributes;
-    BLI_addtail(&graph->attributes, attr);
+    lib_addtail(&graph->attributes, attr);
   }
 
   if (attr != NULL) {
@@ -379,11 +379,11 @@ static GPUUniformAttr *gpu_node_graph_add_uniform_attribute(GPUNodeGraph *graph,
 
   /* Add new requested attribute if it's within GPU limits. */
   if (attr == NULL && attrs->count < GPU_MAX_UNIFORM_ATTR) {
-    attr = MEM_callocN(sizeof(*attr), __func__);
+    attr = mem_callocn(sizeof(*attr), __func__);
     STRNCPY(attr->name, name);
     attr->use_dupli = use_dupli;
     attr->id = -1;
-    BLI_addtail(&attrs->list, attr);
+    lib_addtail(&attrs->list, attr);
     attrs->count++;
   }
 
@@ -413,7 +413,7 @@ static GPUMaterialTexture *gpu_node_graph_add_texture(GPUNodeGraph *graph,
 
   /* Add new requested texture. */
   if (tex == NULL) {
-    tex = MEM_callocN(sizeof(*tex), __func__);
+    tex = mem_callocn(sizeof(*tex), __func__);
     tex->ima = ima;
     if (iuser != NULL) {
       tex->iuser = *iuser;
@@ -421,12 +421,12 @@ static GPUMaterialTexture *gpu_node_graph_add_texture(GPUNodeGraph *graph,
     }
     tex->colorband = colorband;
     tex->sampler_state = sampler_state;
-    BLI_snprintf(tex->sampler_name, sizeof(tex->sampler_name), "samp%d", num_textures);
+    lib_snprintf(tex->sampler_name, sizeof(tex->sampler_name), "samp%d", num_textures);
     if (ELEM(link_type, GPU_NODE_LINK_IMAGE_TILED, GPU_NODE_LINK_IMAGE_TILED_MAPPING)) {
-      BLI_snprintf(
+      lib_snprintf(
           tex->tiled_mapping_name, sizeof(tex->tiled_mapping_name), "tsamp%d", num_textures);
     }
-    BLI_addtail(&graph->textures, tex);
+    lib_addtail(&graph->textures, tex);
   }
 
   tex->users++;
@@ -450,10 +450,10 @@ static GPUMaterialVolumeGrid *gpu_node_graph_add_volume_grid(GPUNodeGraph *graph
 
   /* Add new requested volume grid. */
   if (grid == NULL) {
-    grid = MEM_callocN(sizeof(*grid), __func__);
-    grid->name = BLI_strdup(name);
+    grid = mem_callocn(sizeof(*grid), __func__);
+    grid->name = lib_strdup(name);
     grid->default_value = default_value;
-    BLI_snprintf(grid->sampler_name, sizeof(grid->sampler_name), "vsamp%d", num_grids);
+    lib_snprintf(grid->sampler_name, sizeof(grid->sampler_name), "vsamp%d", num_grids);
     BLI_snprintf(grid->transform_name, sizeof(grid->transform_name), "vtfm%d", num_grids);
     BLI_addtail(&graph->volume_grids, grid);
   }
