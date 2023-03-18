@@ -170,13 +170,11 @@ static bool depth_buf_subrect_depth_any_filled(const DepthBufCache *rect_src,
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name #DepthID
+/** #DepthID
  *
  * Internal structure for storing hits.
- * \{ */
+ **/
 
 typedef struct DepthID {
   uint id;
@@ -198,7 +196,7 @@ static int depth_id_cmp(const void *v1, const void *v2)
 
 static int depth_cmp(const void *v1, const void *v2)
 {
-  const DepthID *d1 = v1, *d2 = v2;
+  const DepthId *d1 = v1, *d2 = v2;
   if (d1->depth < d2->depth) {
     return -1;
   }
@@ -209,11 +207,8 @@ static int depth_cmp(const void *v1, const void *v2)
   return 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Main Selection Begin/End/Load API
- * \{ */
+/** Main Selection Begin/End/Load API **/
 
 /** Depth sorting. */
 typedef struct GPUPickState {
@@ -247,7 +242,7 @@ typedef struct GPUPickState {
     uint rect_len;
   } src, dst;
 
-  /** Store cache between `GPU_select_cache_begin/end` */
+  /** Store cache between `gpu_select_cache_begin/end` */
   bool use_cache;
   bool is_cached;
   struct {
@@ -265,7 +260,7 @@ typedef struct GPUPickState {
   union {
     /** #GPU_SELECT_PICK_ALL */
     struct {
-      DepthID *hits;
+      DepthId *hits;
       uint hits_len;
       uint hits_len_alloc;
     } all;
@@ -300,7 +295,7 @@ void gpu_select_pick_begin(GPUSelectResult *buffer,
          ps->is_cached);
 #endif
 
-  GPU_debug_group_begin("Selection Pick");
+  gpu_debug_group_begin("Selection Pick");
 
   ps->buffer = buffer;
   ps->buffer_len = buffer_len;
@@ -314,10 +309,10 @@ void gpu_select_pick_begin(GPUSelectResult *buffer,
   if (ps->is_cached == false) {
     ps->write_mask = GPU_write_mask_get();
     ps->depth_test = GPU_depth_test_get();
-    GPU_scissor_get(ps->scissor);
+    gpu_scissor_get(ps->scissor);
 
     /* Disable writing to the frame-buffer. */
-    GPU_color_mask(false, false, false, false);
+    gpu_color_mask(false, false, false, false);
 
     GPU_depth_mask(true);
     /* Always use #GPU_DEPTH_LESS_EQUAL even though #GPU_SELECT_PICK_ALL always clears the buffer.
