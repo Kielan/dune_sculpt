@@ -1,24 +1,21 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * Wrap OpenGL features such as textures, shaders and GLSL
  * with checks for drivers and GPU support.
  */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_dynstr.h"
-#include "BLI_string.h"
+#include "lib_dynstr.h"
+#include "lib_string.h"
 
-#include "GPU_platform.h"
+#include "gpy_platform.h"
 
 #include "gpu_platform_private.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name GPUPlatformGlobal
- * \{ */
+/** GPUPlatformGlobal **/
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 GPUPlatformGlobal GPG;
 
@@ -27,10 +24,10 @@ static char *create_key(eGPUSupportLevel support_level,
                         const char *renderer,
                         const char *version)
 {
-  DynStr *ds = BLI_dynstr_new();
-  BLI_dynstr_appendf(ds, "{%s/%s/%s}=", vendor, renderer, version);
+  DynStr *ds = lib_dynstr_new();
+  lib_dynstr_appendf(ds, "{%s/%s/%s}=", vendor, renderer, version);
   if (support_level == GPU_SUPPORT_LEVEL_SUPPORTED) {
-    BLI_dynstr_append(ds, "SUPPORTED");
+    lib_dynstr_append(ds, "SUPPORTED");
   }
   else if (support_level == GPU_SUPPORT_LEVEL_LIMITED) {
     BLI_dynstr_append(ds, "LIMITED");
