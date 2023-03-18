@@ -30,73 +30,70 @@ Global G;
 UserDef U;
 
 /* -------------------------------------------------------------------- */
-/** Stubs of BLI_imbuf_types.h **/
+/** Stubs of lib_imbuf_types.h **/
 
 void IMB_freeImBuf(ImBuf *UNUSED(ibuf))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
 /* -------------------------------------------------------------------- */
-/** Stubs of UI_resources.h **/
+/** Stubs of ui_resources.h **/
 
-void UI_GetThemeColor4fv(int UNUSED(colorid), float UNUSED(col[4]))
+void ui_GetThemeColor4fv(int UNUSED(colorid), float UNUSED(col[4]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-void UI_GetThemeColor3fv(int UNUSED(colorid), float UNUSED(col[3]))
+void ui_GetThemeColor3fv(int UNUSED(colorid), float UNUSED(col[3]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-void UI_GetThemeColorShade4fv(int UNUSED(colorid), int UNUSED(offset), float UNUSED(col[4]))
+void ui_GetThemeColorShade4fv(int UNUSED(colorid), int UNUSED(offset), float UNUSED(col[4]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-void UI_GetThemeColorShadeAlpha4fv(int UNUSED(colorid),
+void ui_GetThemeColorShadeAlpha4fv(int UNUSED(colorid),
                                    int UNUSED(coloffset),
                                    int UNUSED(alphaoffset),
                                    float UNUSED(col[4]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
-void UI_GetThemeColorBlendShade4fv(int UNUSED(colorid1),
+void ui_GetThemeColorBlendShade4fv(int UNUSED(colorid1),
                                    int UNUSED(colorid2),
                                    float UNUSED(fac),
                                    int UNUSED(offset),
                                    float UNUSED(col[4]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-void UI_GetThemeColorBlend3ubv(int UNUSED(colorid1),
+void ui_GetThemeColorBlend3ubv(int UNUSED(colorid1),
                                int UNUSED(colorid2),
                                float UNUSED(fac),
                                unsigned char UNUSED(col[3]))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
 }
 
-void UI_GetThemeColorShadeAlpha4ubv(int UNUSED(colorid),
+void ui_GetThemeColorShadeAlpha4ubv(int UNUSED(colorid),
                                     int UNUSED(coloffset),
                                     int UNUSED(alphaoffset),
                                     unsigned char UNUSED(col[4]))
 {
-  BLI_assert_unreachable();
+  gpu_assert_unreachable();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BKE_paint.h
- * \{ */
+/** Stubs of dune_paint.h **/
 bool paint_is_face_hidden(const struct MLoopTri *UNUSED(lt),
                           const struct MVert *UNUSED(mvert),
                           const struct MLoop *UNUSED(mloop))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
   return false;
 }
 
@@ -147,50 +144,38 @@ void BKE_material_defaults_free_gpu()
   /* This function is reachable via GPU_exit. */
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BKE_customdata.h
- * \{ */
+/** Stubs of dune_customdata.h **/
 
 int CustomData_get_offset(const struct CustomData *UNUSED(data), int UNUSED(type))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
   return 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BKE_pbvh.h
- * \{ */
+/** Stubs of dune_pbvh.h **/
 
-int BKE_pbvh_count_grid_quads(BLI_bitmap **UNUSED(grid_hidden),
+int dune_pbvh_count_grid_quads(lib_bitmap **UNUSED(grid_hidden),
                               const int *UNUSED(grid_indices),
                               int UNUSED(totgrid),
                               int UNUSED(gridsize))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
   return 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BKE_subdiv_ccg.h
- * \{ */
-int BKE_subdiv_ccg_grid_to_face_index(const SubdivCCG *UNUSED(subdiv_ccg),
+/** Stubs of dune_subdiv_ccg.h **/
+int dune_subdiv_ccg_grid_to_face_index(const SubdivCCG *UNUSED(subdiv_ccg),
                                       const int UNUSED(grid_index))
 {
-  BLI_assert_unreachable();
+  lib_assert_unreachable();
   return 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Stubs of BKE_node.h
- * \{ */
+/** Stubs of dune_node.h **/
 void ntreeGPUMaterialNodes(struct bNodeTree *UNUSED(localtree),
                            struct GPUMaterial *UNUSED(mat),
                            bool *UNUSED(has_surface_output),
