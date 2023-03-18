@@ -210,7 +210,7 @@ static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
 }
 
 static void gpu_node_input_socket(
-    GPUMaterial *material, bNode *bnode, GPUNode *node, GPUNodeStack *sock, const int index)
+    GPUMaterial *material, DNode *dnode, GPUNode *node, GPUNodeStack *sock, const int index)
 {
   if (sock->link) {
     gpu_node_input_link(node, sock->link, sock->type);
@@ -220,7 +220,7 @@ static void gpu_node_input_socket(
     gpu_node_input_link(node, sock->link, sock->type);
   }
   else {
-    gpu_node_input_link(node, GPU_constant(sock->vec), sock->type);
+    gpu_node_input_link(node, gpu_constant(sock->vec), sock->type);
   }
 }
 
@@ -515,7 +515,7 @@ GPUNodeLink *gpu_uniform(const float *num)
   return link;
 }
 
-GPUNodeLink *GPU_image(GPUMaterial *mat,
+GPUNodeLink *gpu_image(GPUMaterial *mat,
                        Image *ima,
                        ImageUser *iuser,
                        eGPUSamplerState sampler_state)
@@ -712,12 +712,12 @@ bool gpu_stack_link(GPUMaterial *material,
   va_end(params);
 
   GPUNodeGraph *graph = gpu_material_node_graph(material);
-  BLI_addtail(&graph->nodes, node);
+  lib_addtail(&graph->nodes, node);
 
   return true;
 }
 
-GPUNodeLink *GPU_uniformbuf_link_out(GPUMaterial *mat,
+GPUNodeLink *gpu_uniformbuf_link_out(GPUMaterial *mat,
                                      bNode *node,
                                      GPUNodeStack *stack,
                                      const int index)
@@ -766,15 +766,15 @@ static void gpu_node_free(GPUNode *node)
     }
   }
 
-  BLI_freelistN(&node->outputs);
-  MEM_freeN(node);
+  lib_freelistN(&node->outputs);
+  mem_freen(node);
 }
 
 void gpu_node_graph_free_nodes(GPUNodeGraph *graph)
 {
   GPUNode *node;
 
-  while ((node = BLI_pophead(&graph->nodes))) {
+  while ((node = lib_pophead(&graph->nodes))) {
     gpu_node_free(node);
   }
 
@@ -783,16 +783,16 @@ void gpu_node_graph_free_nodes(GPUNodeGraph *graph)
 
 void gpu_node_graph_free(GPUNodeGraph *graph)
 {
-  BLI_freelistN(&graph->outlink_aovs);
+  lib_freelistn(&graph->outlink_aovs);
   gpu_node_graph_free_nodes(graph);
 
   LISTBASE_FOREACH (GPUMaterialVolumeGrid *, grid, &graph->volume_grids) {
     MEM_SAFE_FREE(grid->name);
   }
-  BLI_freelistN(&graph->volume_grids);
-  BLI_freelistN(&graph->textures);
-  BLI_freelistN(&graph->attributes);
-  GPU_uniform_attr_list_free(&graph->uniform_attrs);
+  lib_freelistn(&graph->volume_grids);
+  lib_freelistn(&graph->textures);
+  lib_freelistn(&graph->attributes);
+  gpu_uniform_attr_list_free(&graph->uniform_attrs);
 }
 
 /* Prune Unused Nodes */
@@ -834,7 +834,7 @@ void gpu_node_graph_prune_unused(GPUNodeGraph *graph)
     next = node->next;
 
     if (!node->tag) {
-      BLI_remlink(&graph->nodes, node);
+      lib_remlink(&graph->nodes, node);
       gpu_node_free(node);
     }
   }
@@ -842,14 +842,14 @@ void gpu_node_graph_prune_unused(GPUNodeGraph *graph)
   for (GPUMaterialAttribute *attr = graph->attributes.first, *next = NULL; attr; attr = next) {
     next = attr->next;
     if (attr->users == 0) {
-      BLI_freelinkN(&graph->attributes, attr);
+      lib_freelinkn(&graph->attributes, attr);
     }
   }
 
   for (GPUMaterialTexture *tex = graph->textures.first, *next = NULL; tex; tex = next) {
     next = tex->next;
     if (tex->users == 0) {
-      BLI_freelinkN(&graph->textures, tex);
+      lib_freelinkn(&graph->textures, tex);
     }
   }
 
@@ -857,7 +857,7 @@ void gpu_node_graph_prune_unused(GPUNodeGraph *graph)
     next = grid->next;
     if (grid->users == 0) {
       MEM_SAFE_FREE(grid->name);
-      BLI_freelinkN(&graph->volume_grids, grid);
+      lib_freelinkn(&graph->volume_grids, grid);
     }
   }
 
@@ -865,7 +865,7 @@ void gpu_node_graph_prune_unused(GPUNodeGraph *graph)
 
   LISTBASE_FOREACH_MUTABLE (GPUUniformAttr *, attr, &uattrs->list) {
     if (attr->users == 0) {
-      BLI_freelinkN(&uattrs->list, attr);
+      lib_freelinkn(&uattrs->list, attr);
       uattrs->count--;
     }
   }
