@@ -1,6 +1,4 @@
-/** \file
- * \ingroup gpu
- *
+/**
  * Shader source dependency builder that make possible to support #include directive inside the
  * shader files.
  */
@@ -8,9 +6,9 @@
 #include <iomanip>
 #include <iostream>
 
-#include "BLI_map.hh"
-#include "BLI_set.hh"
-#include "BLI_string_ref.hh"
+#include "lib_map.hh"
+#include "lib_set.hh"
+#include "lib_string_ref.hh"
 
 #include "gpu_shader_create_info.hh"
 #include "gpu_shader_dependency_private.h"
@@ -25,7 +23,7 @@ extern "C" {
 #undef SHADER_SOURCE
 }
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 using GPUSourceDictionnary = Map<StringRef, struct GPUSource *>;
 
@@ -43,7 +41,7 @@ struct GPUSource {
   {
     /* Scan for builtins. */
     /* FIXME: This can trigger false positive caused by disabled #if blocks. */
-    /* TODO(fclem): Could be made faster by scanning once. */
+    /* TODO: Could be made faster by scanning once. */
     if (source.find("gl_FragCoord", 0)) {
       builtins |= shader::BuiltinBits::FRAG_COORD;
     }
@@ -338,9 +336,9 @@ struct GPUSource {
   }
 };
 
-}  // namespace blender::gpu
+}  // namespace dune::gpu
 
-using namespace blender::gpu;
+using namespace dune::gpu
 
 static GPUSourceDictionnary *g_sources = nullptr;
 
@@ -361,7 +359,7 @@ void gpu_shader_dependency_init()
   for (auto *value : g_sources->values()) {
     errors += value->init_dependencies(*g_sources);
   }
-  BLI_assert_msg(errors == 0, "Dependency errors detected: Aborting");
+  lib_assert_msg(errors == 0, "Dependency errors detected: Aborting");
   UNUSED_VARS_NDEBUG(errors);
 }
 
@@ -373,7 +371,7 @@ void gpu_shader_dependency_exit()
   delete g_sources;
 }
 
-namespace blender::gpu::shader {
+namespace dune::gpu::shader {
 
 BuiltinBits gpu_shader_dependency_get_builtins(const StringRefNull shader_source_name)
 {
@@ -383,7 +381,7 @@ BuiltinBits gpu_shader_dependency_get_builtins(const StringRefNull shader_source
   if (g_sources->contains(shader_source_name) == false) {
     std::cout << "Error: Could not find \"" << shader_source_name
               << "\" in the list of registered source.\n";
-    BLI_assert(0);
+    lib_assert(0);
     return shader::BuiltinBits::NONE;
   }
   GPUSource *source = g_sources->lookup(shader_source_name);
