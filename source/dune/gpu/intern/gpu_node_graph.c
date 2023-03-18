@@ -5,23 +5,23 @@
 
 #include "mem_guardedalloc.h"
 
-#include "DNA_node_types.h"
+#include "types_node.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_listbase.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "GPU_texture.h"
+#include "gpu_texture.h"
 
-#include "gpu_material_library.h"
+#include "gpu_material_lib.h"
 #include "gpu_node_graph.h"
 
 /* Node Link Functions */
 
 static GPUNodeLink *gpu_node_link_create(void)
 {
-  GPUNodeLink *link = MEM_callocN(sizeof(GPUNodeLink), "GPUNodeLink");
+  GPUNodeLink *link = mem_callocn(sizeof(GPUNodeLink), "GPUNodeLink");
   link->users++;
 
   return link;
@@ -39,7 +39,7 @@ static void gpu_node_link_free(GPUNodeLink *link)
     if (link->output) {
       link->output->link = NULL;
     }
-    MEM_freeN(link);
+    mem_freen(link);
   }
 }
 
@@ -47,7 +47,7 @@ static void gpu_node_link_free(GPUNodeLink *link)
 
 static GPUNode *gpu_node_create(const char *name)
 {
-  GPUNode *node = MEM_callocN(sizeof(GPUNode), "GPUNode");
+  GPUNode *node = mem_callocn(sizeof(GPUNode), "GPUNode");
 
   node->name = name;
 
@@ -70,12 +70,12 @@ static void gpu_node_input_link(GPUNode *node, GPUNodeLink *link, const eGPUType
       if (input->link) {
         input->link->users++;
       }
-      BLI_addtail(&node->inputs, input);
+      lib_addtail(&node->inputs, input);
       return;
     }
   }
 
-  input = MEM_callocN(sizeof(GPUInput), "GPUInput");
+  input = mem_callocn(sizeof(GPUInput), "GPUInput");
   input->node = node;
   input->type = type;
 
@@ -134,9 +134,9 @@ static void gpu_node_input_link(GPUNode *node, GPUNodeLink *link, const eGPUType
   }
 
   if (link->link_type != GPU_NODE_LINK_OUTPUT) {
-    MEM_freeN(link);
+    mem_freen(link);
   }
-  BLI_addtail(&node->inputs, input);
+  lib_addtail(&node->inputs, input);
 }
 
 static const char *gpu_uniform_set_function_from_type(eNodeSocketDatatype type)
@@ -166,17 +166,17 @@ static GPUNodeLink *gpu_uniformbuffer_link(GPUMaterial *mat,
                                            const int index,
                                            const eNodeSocketInOut in_out)
 {
-  bNodeSocket *socket;
+  DNodeSocket *socket;
 
   if (in_out == SOCK_IN) {
-    socket = BLI_findlink(&node->inputs, index);
+    socket = lib_findlink(&node->inputs, index);
   }
   else {
-    socket = BLI_findlink(&node->outputs, index);
+    socket = lib_findlink(&node->outputs, index);
   }
 
-  BLI_assert(socket != NULL);
-  BLI_assert(socket->in_out == in_out);
+  lib_assert(socket != NULL);
+  lib_assert(socket->in_out == in_out);
 
   if ((socket->flag & SOCK_HIDE_VALUE) == 0) {
     GPUNodeLink *link;
