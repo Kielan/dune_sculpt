@@ -1,22 +1,22 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math_base.h"
-#include "BLI_math_vector.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_string_utils.h"
-#include "BLI_utildefines.h"
+#include "lib_math_base.h"
+#include "lib_math_vector.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_string_utils.h"
+#include "lib_utildefines.h"
 
-#include "BKE_appdir.h"
-#include "BKE_global.h"
+#include "dune_appdir.h"
+#include "dune_global.h"
 
-#include "DNA_space_types.h"
+#include "types_space.h"
 
-#include "GPU_matrix.h"
-#include "GPU_platform.h"
-#include "GPU_shader.h"
-#include "GPU_texture.h"
-#include "GPU_uniform_buffer.h"
+#include "gpu_matrix.h"
+#include "gpu_platform.h"
+#include "gpu_shader.h"
+#include "gpu_texture.h"
+#include "gpu_uniform_buffer.h"
 
 /* Adjust these constants as needed. */
 #define MAX_DEFINE_LENGTH 256
@@ -327,11 +327,11 @@ static const GPUShaderStages builtin_shader_stages[GPU_SHADER_BUILTIN_LEN] = {
                                    .create_info = "gpu_shader_gpencil_stroke"},
 };
 
-GPUShader *GPU_shader_get_builtin_shader_with_config(eGPUBuiltinShader shader,
+GPUShader *gpu_shader_get_builtin_shader_with_config(eGPUBuiltinShader shader,
                                                      eGPUShaderConfig sh_cfg)
 {
-  BLI_assert(shader < GPU_SHADER_BUILTIN_LEN);
-  BLI_assert(sh_cfg < GPU_SHADER_CFG_LEN);
+  lib_assert(shader < GPU_SHADER_BUILTIN_LEN);
+  lib_assert(sh_cfg < GPU_SHADER_CFG_LEN);
   GPUShader **sh_p = &builtin_shaders[sh_cfg][shader];
 
   if (*sh_p == NULL) {
@@ -340,10 +340,10 @@ GPUShader *GPU_shader_get_builtin_shader_with_config(eGPUBuiltinShader shader,
     /* common case */
     if (sh_cfg == GPU_SHADER_CFG_DEFAULT) {
       if (stages->create_info != NULL) {
-        *sh_p = GPU_shader_create_from_info_name(stages->create_info);
+        *sh_p = gpu_shader_create_from_info_name(stages->create_info);
       }
       else {
-        *sh_p = GPU_shader_create_from_arrays_named(
+        *sh_p = gpu_shader_create_from_arrays_named(
             stages->name,
             {
                 .vert = (const char *[]){stages->vert, NULL},
@@ -356,7 +356,7 @@ GPUShader *GPU_shader_get_builtin_shader_with_config(eGPUBuiltinShader shader,
     }
     else if (sh_cfg == GPU_SHADER_CFG_CLIPPED) {
       /* Remove eventually, for now ensure support for each shader has been added. */
-      BLI_assert(ELEM(shader,
+      lib_assert(ELEM(shader,
                       GPU_SHADER_3D_UNIFORM_COLOR,
                       GPU_SHADER_3D_SMOOTH_COLOR,
                       GPU_SHADER_3D_DEPTH_ONLY,
@@ -366,12 +366,12 @@ GPUShader *GPU_shader_get_builtin_shader_with_config(eGPUBuiltinShader shader,
                       GPU_SHADER_3D_LINE_DASHED_UNIFORM_COLOR));
       /* In rare cases geometry shaders calculate clipping themselves. */
       if (stages->clipped_create_info != NULL) {
-        *sh_p = GPU_shader_create_from_info_name(stages->clipped_create_info);
+        *sh_p = gpu_shader_create_from_info_name(stages->clipped_create_info);
       }
       else {
         const char *world_clip_lib = datatoc_gpu_shader_cfg_world_clip_lib_glsl;
         const char *world_clip_def = "#define USE_WORLD_CLIP_PLANES\n";
-        *sh_p = GPU_shader_create_from_arrays_named(
+        *sh_p = gpu_shader_create_from_arrays_named(
             stages->name,
             {
                 .vert = (const char *[]){world_clip_lib, stages->vert, NULL},
@@ -383,19 +383,19 @@ GPUShader *GPU_shader_get_builtin_shader_with_config(eGPUBuiltinShader shader,
       }
     }
     else {
-      BLI_assert(0);
+      lib_assert(0);
     }
   }
 
   return *sh_p;
 }
 
-GPUShader *GPU_shader_get_builtin_shader(eGPUBuiltinShader shader)
+GPUShader *gpu_shader_get_builtin_shader(eGPUBuiltinShader shader)
 {
-  return GPU_shader_get_builtin_shader_with_config(shader, GPU_SHADER_CFG_DEFAULT);
+  return gpu_shader_get_builtin_shader_with_config(shader, GPU_SHADER_CFG_DEFAULT);
 }
 
-void GPU_shader_get_builtin_shader_code(eGPUBuiltinShader shader,
+void gpu_shader_get_builtin_shader_code(eGPUBuiltinShader shader,
                                         const char **r_vert,
                                         const char **r_frag,
                                         const char **r_geom,
@@ -408,12 +408,12 @@ void GPU_shader_get_builtin_shader_code(eGPUBuiltinShader shader,
   *r_defines = stages->defs;
 }
 
-void GPU_shader_free_builtin_shaders(void)
+void gpu_shader_free_builtin_shaders(void)
 {
   for (int i = 0; i < GPU_SHADER_CFG_LEN; i++) {
     for (int j = 0; j < GPU_SHADER_BUILTIN_LEN; j++) {
       if (builtin_shaders[i][j]) {
-        GPU_shader_free(builtin_shaders[i][j]);
+        gou_shader_free(builtin_shaders[i][j]);
         builtin_shaders[i][j] = NULL;
       }
     }
