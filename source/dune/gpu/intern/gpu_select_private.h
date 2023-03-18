@@ -1,8 +1,4 @@
-/** \file
- * \ingroup gpu
- *
- * Selection implementations.
- */
+/** Selection implementations. **/
 
 #pragma once
 
@@ -22,7 +18,7 @@ uint gpu_select_pick_end(void);
 void gpu_select_pick_cache_begin(void);
 void gpu_select_pick_cache_end(void);
 /**
- * \return true if drawing is not needed.
+ * return true if drawing is not needed.
  */
 bool gpu_select_pick_is_cached(void);
 void gpu_select_pick_cache_load_id(void);
