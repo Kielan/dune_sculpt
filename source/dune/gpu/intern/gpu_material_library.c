@@ -863,7 +863,7 @@ static void gpu_material_use_lib_with_dependencies(GSet *used_libs,
 
 GPUFn *gpu_material_lib_use_fn(GSet *used_libs, const char *name)
 {
-  GPUFn *function = lib_ghash_lookup(FUNCTION_HASH, (const void *)name);
+  GPUFn *function = lib_ghash_lookup(FN_HASH, (const void *)name);
   if (function) {
     gpu_material_use_lib_with_dependencies(used_libs, function->lib);
   }
@@ -875,11 +875,11 @@ char *gpu_material_lib_generate_code(GSet *used_libs, const char *frag_lib)
   DynStr *ds = lib_dynstr_new();
 
   if (frag_lib) {
-    BLI_dynstr_append(ds, frag_lib);
+    lib_dynstr_append(ds, frag_lib);
   }
 
   /* Always include those because they may be needed by the execution function. */
-  gpu_material_use_library_with_dependencies(used_libs,
+  gpu_material_use_lib_with_dependencies(used_libs,
                                              &gpu_shader_material_world_normals_library);
 
   /* Add library code in order, for dependencies. */
@@ -890,8 +890,8 @@ char *gpu_material_lib_generate_code(GSet *used_libs, const char *frag_lib)
     }
   }
 
-  char *result = BLI_dynstr_get_cstring(ds);
-  BLI_dynstr_free(ds);
+  char *result = lib_dynstr_get_cstring(ds);
+  lib_dynstr_free(ds);
 
   return result;
 }
