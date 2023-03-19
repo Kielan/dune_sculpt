@@ -1,45 +1,42 @@
-/** \file
- * \ingroup gpu
- *
- * Parsing of and code generation using GLSL shaders in gpu/shaders/material. */
+/** Parsing of and code generation using GLSL shaders in gpu/shaders/material. */
 
 #pragma once
 
-#include "GPU_material.h"
+#include "gpu_material.h"
 
-#define MAX_FUNCTION_NAME 64
-#define MAX_PARAMETER 36
+#define MAX_FN_NAME 64
+#define MAX_PARAM 36
 
 struct GSet;
 
-typedef struct GPUMaterialLibrary {
+typedef struct GPUMaterialLib {
   char *code;
-  struct GPUMaterialLibrary *dependencies[8];
-} GPUMaterialLibrary;
+  struct GPUMaterialLib *dependencies[8];
+} GPUMaterialLib;
 
 typedef enum {
-  FUNCTION_QUAL_IN,
-  FUNCTION_QUAL_OUT,
-  FUNCTION_QUAL_INOUT,
-} GPUFunctionQual;
+  FN_QUAL_IN,
+  FN_QUAL_OUT,
+  FN_QUAL_INOUT,
+} GPUFnQual;
 
-typedef struct GPUFunction {
+typedef struct GPUFn {
   char name[MAX_FUNCTION_NAME];
-  eGPUType paramtype[MAX_PARAMETER];
-  GPUFunctionQual paramqual[MAX_PARAMETER];
+  eGPUType paramtype[MAX_PARAM];
+  GPUFunctionQual paramqual[MAX_PARAM];
   int totparam;
-  GPUMaterialLibrary *library;
-} GPUFunction;
+  GPUMaterialLib *lib;
+} GPUFn;
 
 /* Module */
 
-void gpu_material_library_init(void);
-void gpu_material_library_exit(void);
+void gpu_material_lib_init(void);
+void gpu_material_lib_exit(void);
 
 /* Code Generation */
 
-GPUFunction *gpu_material_library_use_function(struct GSet *used_libraries, const char *name);
-char *gpu_material_library_generate_code(struct GSet *used_libraries, const char *frag_lib);
+GPUFn *gpu_material_lib_use_fn(struct GSet *used_libs, const char *name);
+char *gpu_material_lib_generate_code(struct GSet *used_libs, const char *frag_lib);
 
 /* Code Parsing */
 
