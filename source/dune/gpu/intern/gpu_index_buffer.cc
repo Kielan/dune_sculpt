@@ -203,13 +203,10 @@ void gpu_indexbuf_set_tri_restart(GPUIndexBufBuilder *builder, uint elem)
   builder->index_len = MAX2(builder->index_len, idx);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Creation & Deletion
- * \{ */
+/** Creation & Deletion **/
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 IndexBuf::~IndexBuf()
 {
@@ -251,8 +248,8 @@ void IndexBuf::init_build_on_device(uint index_len)
 void IndexBuf::init_subrange(IndexBuf *elem_src, uint start, uint length)
 {
   /* We don't support nested subranges. */
-  BLI_assert(elem_src && elem_src->is_subrange_ == false);
-  BLI_assert((length == 0) || (start + length <= elem_src->index_len_));
+  lib_assert(elem_src && elem_src->is_subrange_ == false);
+  lib_assert((length == 0) || (start + length <= elem_src->index_len_));
 
   is_init_ = true;
   is_subrange_ = true;
@@ -322,43 +319,40 @@ uint32_t *IndexBuf::unmap(const uint32_t *mapped_memory) const
   return result;
 }
 
-}  // namespace blender::gpu
-
-/** \} */
+}  // namespace dune::gpu
 
 /* -------------------------------------------------------------------- */
-/** \name C-API
- * \{ */
+/** C-API **/
 
-GPUIndexBuf *GPU_indexbuf_calloc()
+GPUIndexBuf *gpu_indexbuf_calloc()
 {
   return wrap(GPUBackend::get()->indexbuf_alloc());
 }
 
-GPUIndexBuf *GPU_indexbuf_build(GPUIndexBufBuilder *builder)
+GPUIndexBuf *gpu_indexbuf_build(GPUIndexBufBuilder *builder)
 {
-  GPUIndexBuf *elem = GPU_indexbuf_calloc();
-  GPU_indexbuf_build_in_place(builder, elem);
+  GPUIndexBuf *elem = gpu_indexbuf_calloc();
+  gpu_indexbuf_build_in_place(builder, elem);
   return elem;
 }
 
-GPUIndexBuf *GPU_indexbuf_create_subrange(GPUIndexBuf *elem_src, uint start, uint length)
+GPUIndexBuf *gpu_indexbuf_create_subrange(GPUIndexBuf *elem_src, uint start, uint length)
 {
-  GPUIndexBuf *elem = GPU_indexbuf_calloc();
-  GPU_indexbuf_create_subrange_in_place(elem, elem_src, start, length);
+  GPUIndexBuf *elem = gpu_indexbuf_calloc();
+  gpu_indexbuf_create_subrange_in_place(elem, elem_src, start, length);
   return elem;
 }
 
-void GPU_indexbuf_build_in_place(GPUIndexBufBuilder *builder, GPUIndexBuf *elem)
+void gpu_indexbuf_build_in_place(GPUIndexBufBuilder *builder, GPUIndexBuf *elem)
 {
-  BLI_assert(builder->data != nullptr);
+  lib_assert(builder->data != nullptr);
   /* Transfer data ownership to GPUIndexBuf.
    * It will be uploaded upon first use. */
   unwrap(elem)->init(builder->index_len, builder->data, builder->index_min, builder->index_max);
   builder->data = nullptr;
 }
 
-void GPU_indexbuf_create_subrange_in_place(GPUIndexBuf *elem,
+void gpu_indexbuf_create_subrange_in_place(GPUIndexBuf *elem,
                                            GPUIndexBuf *elem_src,
                                            uint start,
                                            uint length)
@@ -366,42 +360,42 @@ void GPU_indexbuf_create_subrange_in_place(GPUIndexBuf *elem,
   unwrap(elem)->init_subrange(unwrap(elem_src), start, length);
 }
 
-const uint32_t *GPU_indexbuf_read(GPUIndexBuf *elem)
+const uint32_t *gpu_indexbuf_read(GPUIndexBuf *elem)
 {
   return unwrap(elem)->read();
 }
 
-uint32_t *GPU_indexbuf_unmap(const GPUIndexBuf *elem, const uint32_t *mapped_buffer)
+uint32_t *gpu_indexbuf_unmap(const GPUIndexBuf *elem, const uint32_t *mapped_buffer)
 {
   return unwrap(elem)->unmap(mapped_buffer);
 }
 
-void GPU_indexbuf_discard(GPUIndexBuf *elem)
+void gpu_indexbuf_discard(GPUIndexBuf *elem)
 {
   delete unwrap(elem);
 }
 
-bool GPU_indexbuf_is_init(GPUIndexBuf *elem)
+bool gpu_indexbuf_is_init(GPUIndexBuf *elem)
 {
   return unwrap(elem)->is_init();
 }
 
-int GPU_indexbuf_primitive_len(GPUPrimType prim_type)
+int gpu_indexbuf_primitive_len(GPUPrimType prim_type)
 {
   return indices_per_primitive(prim_type);
 }
 
-void GPU_indexbuf_use(GPUIndexBuf *elem)
+void gpu_indexbuf_use(GPUIndexBuf *elem)
 {
   unwrap(elem)->upload_data();
 }
 
-void GPU_indexbuf_bind_as_ssbo(GPUIndexBuf *elem, int binding)
+void gpu_indexbuf_bind_as_ssbo(GPUIndexBuf *elem, int binding)
 {
   unwrap(elem)->bind_as_ssbo(binding);
 }
 
-void GPU_indexbuf_update_sub(GPUIndexBuf *elem, uint start, uint len, const void *data)
+void gpu_indexbuf_update_sub(GPUIndexBuf *elem, uint start, uint len, const void *data)
 {
   unwrap(elem)->update_sub(start, len, data);
 }
