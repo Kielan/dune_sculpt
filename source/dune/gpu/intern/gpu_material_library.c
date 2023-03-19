@@ -779,16 +779,16 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
         }
       }
 
-      if (!type && BLI_str_startswith(code, "samplerCube")) {
+      if (!type && lib_str_startswith(code, "samplerCube")) {
         type = GPU_TEXCUBE;
       }
-      if (!type && BLI_str_startswith(code, "sampler2DShadow")) {
+      if (!type && lib_str_startswith(code, "sampler2DShadow")) {
         type = GPU_SHADOW2D;
       }
-      if (!type && BLI_str_startswith(code, "sampler1DArray")) {
+      if (!type && lib_str_startswith(code, "sampler1DArray")) {
         type = GPU_TEX1D_ARRAY;
       }
-      if (!type && BLI_str_startswith(code, "sampler2DArray")) {
+      if (!type && lib_str_startswith(code, "sampler2DArray")) {
         type = GPU_TEX2D_ARRAY;
       }
       if (!type && lib_str_startswith(code, "sampler2D")) {
@@ -822,55 +822,55 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
       break;
     }
 
-    BLI_ghash_insert(hash, function->name, function);
+    lib_ghash_insert(hash, function->name, function);
   }
 }
 
 /* Module */
 
-void gpu_material_library_init(void)
+void gpu_material_lib_init(void)
 {
   /* Only parse GLSL shader files once. */
   if (FUNCTION_HASH) {
     return;
   }
 
-  FUNCTION_HASH = BLI_ghash_str_new("GPU_lookup_function gh");
-  for (int i = 0; gpu_material_libraries[i]; i++) {
-    gpu_parse_material_library(FUNCTION_HASH, gpu_material_libraries[i]);
+  FUNCTION_HASH = lib_ghash_str_new("GPU_lookup_function gh");
+  for (int i = 0; gpu_material_libs[i]; i++) {
+    gpu_parse_material_lib(FUNCTION_HASH, gpu_material_libraries[i]);
   }
 }
 
-void gpu_material_library_exit(void)
+void gpu_material_lib_exit(void)
 {
-  if (FUNCTION_HASH) {
-    BLI_ghash_free(FUNCTION_HASH, NULL, MEM_freeN);
-    FUNCTION_HASH = NULL;
+  if (FN_HASH) {
+    lib_ghash_free(FN_HASH, NULL, MEM_freeN);
+    FN_HASH = NULL;
   }
 }
 
 /* Code Generation */
 
-static void gpu_material_use_library_with_dependencies(GSet *used_libraries,
-                                                       GPUMaterialLibrary *library)
+static void gpu_material_use_lib_with_dependencies(GSet *used_libs,
+                                                       GPUMaterialLibrary *lib)
 {
-  if (BLI_gset_add(used_libraries, library->code)) {
-    for (int i = 0; library->dependencies[i]; i++) {
-      gpu_material_use_library_with_dependencies(used_libraries, library->dependencies[i]);
+  if (lib_gset_add(used_libs, lib->code)) {
+    for (int i = 0; lib->dependencies[i]; i++) {
+      gpu_material_use_lib_with_dependencies(used_libs, lib->dependencies[i]);
     }
   }
 }
 
-GPUFunction *gpu_material_library_use_function(GSet *used_libraries, const char *name)
+GPUFn *gpu_material_lib_use_fn(GSet *used_libs, const char *name)
 {
-  GPUFunction *function = BLI_ghash_lookup(FUNCTION_HASH, (const void *)name);
+  GPUFn *function = lib_ghash_lookup(FUNCTION_HASH, (const void *)name);
   if (function) {
-    gpu_material_use_library_with_dependencies(used_libraries, function->library);
+    gpu_material_use_library_with_dependencies(used_libraries, function->lib);
   }
   return function;
 }
 
-char *gpu_material_library_generate_code(GSet *used_libraries, const char *frag_lib)
+char *gpu_material_library_generate_code(GSet *used_libs, const char *frag_lib)
 {
   DynStr *ds = BLI_dynstr_new();
 
