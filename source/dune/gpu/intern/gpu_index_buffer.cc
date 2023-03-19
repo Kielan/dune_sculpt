@@ -1,8 +1,4 @@
-/** \file
- * \ingroup gpu
- *
- * GPU element list (AKA index buffer)
- */
+/** GPU element list (AKA index buffer) */
 
 #include "MEM_guardedalloc.h"
 
