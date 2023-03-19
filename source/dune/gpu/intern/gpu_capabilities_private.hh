@@ -1,8 +1,8 @@
 #pragma once
 
-#include "GPU_platform.h"
+#include "gpu_platform.h"
 
-namespace blender::gpu {
+namespace dune::gpu {
 
 /**
  * This includes both hardware capabilities & workarounds.
