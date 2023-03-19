@@ -16,13 +16,12 @@
 #define RESTART_INDEX 0xFFFFFFFF
 
 /* -------------------------------------------------------------------- */
-/** \name IndexBufBuilder
- * \{ */
+/** IndexBufBuilder **/
 
-using namespace blender;
-using namespace blender::gpu;
+using namespace dune;
+using namespace dune::gpu;
 
-void GPU_indexbuf_init_ex(GPUIndexBufBuilder *builder,
+void gpu_indexbuf_init_ex(GPUIndexBufBuilder *builder,
                           GPUPrimType prim_type,
                           uint index_len,
                           uint vertex_len)
@@ -36,19 +35,19 @@ void GPU_indexbuf_init_ex(GPUIndexBufBuilder *builder,
   builder->data = (uint *)MEM_callocN(builder->max_index_len * sizeof(uint), "GPUIndexBuf data");
 }
 
-void GPU_indexbuf_init(GPUIndexBufBuilder *builder,
+void gpu_indexbuf_init(GPUIndexBufBuilder *builder,
                        GPUPrimType prim_type,
                        uint prim_len,
                        uint vertex_len)
 {
-  int verts_per_prim = GPU_indexbuf_primitive_len(prim_type);
+  int verts_per_prim = gpu_indexbuf_primitive_len(prim_type);
 #if TRUST_NO_ONE
   assert(verts_per_prim != -1);
 #endif
-  GPU_indexbuf_init_ex(builder, prim_type, prim_len * (uint)verts_per_prim, vertex_len);
+  gpu_indexbuf_init_ex(builder, prim_type, prim_len * (uint)verts_per_prim, vertex_len);
 }
 
-GPUIndexBuf *GPU_indexbuf_build_on_device(uint index_len)
+GPUIndexBuf *gpu_indexbuf_build_on_device(uint index_len)
 {
   GPUIndexBuf *elem_ = GPU_indexbuf_calloc();
   GPU_indexbuf_init_build_on_device(elem_, index_len);
