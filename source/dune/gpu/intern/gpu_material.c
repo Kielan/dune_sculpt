@@ -575,7 +575,7 @@ GPUMaterial *gpu_material_from_nodetree(Scene *scene,
                                         const char *frag_lib,
                                         const char *defines,
                                         const char *name,
-                                        GPUMaterialEvalCallbackFn callback)
+                                        GPUMaterialEvalCbFn cb)
 {
   LinkData *link;
   bool has_volume_output, has_surface_output;
@@ -626,7 +626,7 @@ GPUMaterial *gpu_material_from_nodetree(Scene *scene,
     mat->pass = gpu_generate_pass(mat, &mat->graph, vert_code, geom_code, frag_lib, defines);
 
     if (gpu_material_flag_get(mat, GPU_MATFLAG_SSS)) {
-      Mnemonic_freen((char *)defines);
+      mnemonic_freen((char *)defines);
     }
 
     if (mat->pass == NULL) {
@@ -635,7 +635,7 @@ GPUMaterial *gpu_material_from_nodetree(Scene *scene,
       gpu_node_graph_free(&mat->graph);
     }
     else {
-      GPUShader *sh = GPU_pass_shader_get(mat->pass);
+      GPUShader *sh = gpu_pass_shader_get(mat->pass);
       if (sh != NULL) {
         /* We had a cache hit and the shader is already compiled. */
         mat->status = GPU_MAT_SUCCESS;
@@ -704,7 +704,7 @@ void gpu_materials_free(Main *dmain)
     gpu_material_free(&ma->gpumaterial);
   }
 
-  LISTBASE_FOREACH (World *, wo, &bmain->worlds) {
+  LISTBASE_FOREACH (World *, wo, &dmain->worlds) {
     gpu_material_free(&wo->gpumaterial);
   }
 
