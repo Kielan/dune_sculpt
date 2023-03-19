@@ -1,4 +1,4 @@
-/** GPU material library parsing and code generation. */
+/** GPU material lib parsing and code generation. */
 
 #include <stdio.h>
 #include <string.h>
@@ -575,7 +575,7 @@ static GPUMaterialLib gpu_shader_material_world_normals_lib = {
     .dependencies = {&gpu_shader_material_texture_coordinates_lib, NULL},
 };
 
-static GPUMaterialLib *gpu_material_libraries[] = {
+static GPUMaterialLib *gpu_material_libs[] = {
     &gpu_shader_material_math_util_lib,
     &gpu_shader_material_color_util_lib,
     &gpu_shader_material_hash_lib,
@@ -865,28 +865,28 @@ GPUFn *gpu_material_lib_use_fn(GSet *used_libs, const char *name)
 {
   GPUFn *function = lib_ghash_lookup(FUNCTION_HASH, (const void *)name);
   if (function) {
-    gpu_material_use_library_with_dependencies(used_libraries, function->lib);
+    gpu_material_use_lib_with_dependencies(used_libs, function->lib);
   }
   return function;
 }
 
-char *gpu_material_library_generate_code(GSet *used_libs, const char *frag_lib)
+char *gpu_material_lib_generate_code(GSet *used_libs, const char *frag_lib)
 {
-  DynStr *ds = BLI_dynstr_new();
+  DynStr *ds = lib_dynstr_new();
 
   if (frag_lib) {
     BLI_dynstr_append(ds, frag_lib);
   }
 
   /* Always include those because they may be needed by the execution function. */
-  gpu_material_use_library_with_dependencies(used_libraries,
+  gpu_material_use_library_with_dependencies(used_libs,
                                              &gpu_shader_material_world_normals_library);
 
   /* Add library code in order, for dependencies. */
   for (int i = 0; gpu_material_libraries[i]; i++) {
-    GPUMaterialLibrary *library = gpu_material_libraries[i];
-    if (BLI_gset_haskey(used_libraries, library->code)) {
-      BLI_dynstr_append(ds, library->code);
+    GPUMaterialLib *lib = gpu_material_libs[i];
+    if (lib_gset_haskey(used_libs, lib->code)) {
+      lib_dynstr_append(ds, lib->code);
     }
   }
 
