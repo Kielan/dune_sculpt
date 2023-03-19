@@ -474,10 +474,10 @@ void gpu_viewport_draw_to_screen_ex(GPUViewport *viewport,
   };
   /* Mirror the UV rect in case axis-swapped drawing is requested (by passing a rect with min and
    * max values swapped). */
-  if (BLI_rcti_size_x(rect) < 0) {
+  if (lib_rcti_size_x(rect) < 0) {
     SWAP(float, uv_rect.xmin, uv_rect.xmax);
   }
-  if (BLI_rcti_size_y(rect) < 0) {
+  if (lib_rcti_size_y(rect) < 0) {
     SWAP(float, uv_rect.ymin, uv_rect.ymax);
   }
 
