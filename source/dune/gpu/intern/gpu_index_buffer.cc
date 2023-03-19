@@ -1,9 +1,9 @@
 /** GPU element list (AKA index buffer) */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math_base.h"
-#include "BLI_utildefines.h"
+#include "lib_math_base.h"
+#include "lib_utildefines.h"
 
 #include "gpu_backend.hh"
 
@@ -49,26 +49,26 @@ void gpu_indexbuf_init(GPUIndexBufBuilder *builder,
 
 GPUIndexBuf *gpu_indexbuf_build_on_device(uint index_len)
 {
-  GPUIndexBuf *elem_ = GPU_indexbuf_calloc();
+  GPUIndexBuf *elem_ = gpu_indexbuf_calloc();
   GPU_indexbuf_init_build_on_device(elem_, index_len);
   return elem_;
 }
 
-void GPU_indexbuf_init_build_on_device(GPUIndexBuf *elem, uint index_len)
+void gpu_indexbuf_init_build_on_device(GPUIndexBuf *elem, uint index_len)
 {
   IndexBuf *elem_ = unwrap(elem);
   elem_->init_build_on_device(index_len);
 }
 
-void GPU_indexbuf_join(GPUIndexBufBuilder *builder_to, const GPUIndexBufBuilder *builder_from)
+void gpu_indexbuf_join(GPUIndexBufBuilder *builder_to, const GPUIndexBufBuilder *builder_from)
 {
-  BLI_assert(builder_to->data == builder_from->data);
+  lib_assert(builder_to->data == builder_from->data);
   builder_to->index_len = max_uu(builder_to->index_len, builder_from->index_len);
   builder_to->index_min = min_uu(builder_to->index_min, builder_from->index_min);
   builder_to->index_max = max_uu(builder_to->index_max, builder_from->index_max);
 }
 
-void GPU_indexbuf_add_generic_vert(GPUIndexBufBuilder *builder, uint v)
+void gpu_indexbuf_add_generic_vert(GPUIndexBufBuilder *builder, uint v)
 {
 #if TRUST_NO_ONE
   assert(builder->data != nullptr);
@@ -80,7 +80,7 @@ void GPU_indexbuf_add_generic_vert(GPUIndexBufBuilder *builder, uint v)
   builder->index_max = MAX2(builder->index_max, v);
 }
 
-void GPU_indexbuf_add_primitive_restart(GPUIndexBufBuilder *builder)
+void gpu_indexbuf_add_primitive_restart(GPUIndexBufBuilder *builder)
 {
 #if TRUST_NO_ONE
   assert(builder->data != nullptr);
@@ -89,25 +89,25 @@ void GPU_indexbuf_add_primitive_restart(GPUIndexBufBuilder *builder)
   builder->data[builder->index_len++] = RESTART_INDEX;
 }
 
-void GPU_indexbuf_add_point_vert(GPUIndexBufBuilder *builder, uint v)
+void gpu_indexbuf_add_point_vert(GPUIndexBufBuilder *builder, uint v)
 {
 #if TRUST_NO_ONE
   assert(builder->prim_type == GPU_PRIM_POINTS);
 #endif
-  GPU_indexbuf_add_generic_vert(builder, v);
+  gpu_indexbuf_add_generic_vert(builder, v);
 }
 
-void GPU_indexbuf_add_line_verts(GPUIndexBufBuilder *builder, uint v1, uint v2)
+void gpu_indexbuf_add_line_verts(GPUIndexBufBuilder *builder, uint v1, uint v2)
 {
 #if TRUST_NO_ONE
   assert(builder->prim_type == GPU_PRIM_LINES);
   assert(v1 != v2);
 #endif
-  GPU_indexbuf_add_generic_vert(builder, v1);
-  GPU_indexbuf_add_generic_vert(builder, v2);
+  gpu_indexbuf_add_generic_vert(builder, v1);
+  gpu_indexbuf_add_generic_vert(builder, v2);
 }
 
-void GPU_indexbuf_add_tri_verts(GPUIndexBufBuilder *builder, uint v1, uint v2, uint v3)
+void gpu_indexbuf_add_tri_verts(GPUIndexBufBuilder *builder, uint v1, uint v2, uint v3)
 {
 #if TRUST_NO_ONE
   assert(builder->prim_type == GPU_PRIM_TRIS);
