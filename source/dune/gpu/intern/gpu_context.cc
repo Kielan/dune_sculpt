@@ -218,7 +218,7 @@ void gpu_backend_exit()
   g_backend = nullptr;
 }
 
-eGPUBackendType GPU_backend_get_type()
+eGPUBackendType gpu_backend_get_type()
 {
 
 #ifdef WITH_OPENGL_BACKEND
