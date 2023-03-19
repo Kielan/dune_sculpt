@@ -1,8 +1,4 @@
-/** \file
- * \ingroup gpu
- *
- * Private frame buffer API.
- */
+/** Private frame buffer API. **/
 
 #pragma once
 
@@ -57,7 +53,7 @@ inline GPUAttachmentType &operator--(GPUAttachmentType &a)
   return a;
 }
 
-namespace blender {
+namespace dune {
 namespace gpu {
 
 #ifdef DEBUG
