@@ -760,20 +760,20 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
 
       /* test if it's an input or output */
       qual = FUNCTION_QUAL_IN;
-      if (BLI_str_startswith(code, "out ")) {
+      if (lib_str_startswith(code, "out ")) {
         qual = FUNCTION_QUAL_OUT;
       }
-      if (BLI_str_startswith(code, "inout ")) {
+      if (lib_str_startswith(code, "inout ")) {
         qual = FUNCTION_QUAL_INOUT;
       }
-      if ((qual != FUNCTION_QUAL_IN) || BLI_str_startswith(code, "in ")) {
+      if ((qual != FUNCTION_QUAL_IN) || lib_str_startswith(code, "in ")) {
         code = gpu_str_skip_token(code, NULL, 0);
       }
 
       /* test for type */
       type = GPU_NONE;
       for (i = 1; i < ARRAY_SIZE(GPU_DATATYPE_STR); i++) {
-        if (GPU_DATATYPE_STR[i] && BLI_str_startswith(code, GPU_DATATYPE_STR[i])) {
+        if (GPU_DATATYPE_STR[i] && lib_str_startswith(code, GPU_DATATYPE_STR[i])) {
           type = i;
           break;
         }
@@ -791,14 +791,14 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
       if (!type && BLI_str_startswith(code, "sampler2DArray")) {
         type = GPU_TEX2D_ARRAY;
       }
-      if (!type && BLI_str_startswith(code, "sampler2D")) {
+      if (!type && lib_str_startswith(code, "sampler2D")) {
         type = GPU_TEX2D;
       }
-      if (!type && BLI_str_startswith(code, "sampler3D")) {
+      if (!type && lib_str_startswith(code, "sampler3D")) {
         type = GPU_TEX3D;
       }
 
-      if (!type && BLI_str_startswith(code, "Closure")) {
+      if (!type && lib_str_startswith(code, "Closure")) {
         type = GPU_CLOSURE;
       }
 
@@ -818,7 +818,7 @@ static void gpu_parse_material_lib(GHash *hash, GPUMaterialLib *library)
 
     if (function->name[0] == '\0' || function->totparam == 0) {
       fprintf(stderr, "GPU functions parse error.\n");
-      MEM_freeN(function);
+      mem_freen(function);
       break;
     }
 
