@@ -56,8 +56,7 @@ static struct {
 static ListBase presets_list = {NULL, NULL};
 
 /* -------------------------------------------------------------------- */
-/** \name 3D Primitives
- * \{ */
+/** 3D Primitives **/
 
 static GPUVertFormat *preset_3d_format(void)
 {
@@ -315,15 +314,12 @@ GPUBatch *gpu_batch_preset_quad(void)
   return g_presets_2d.batch.quad;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Preset Registration Management
- * \{ */
+/** Preset Registration Management **/
 
 void gpu_batch_presets_init(void)
 {
-  BLI_mutex_init(&g_presets_3d.mutex);
+  lib_mutex_init(&g_presets_3d.mutex);
 
   /* Hard coded resolution */
   g_presets_3d.batch.sphere_low = gpu_batch_sphere(8, 16);
@@ -356,7 +352,7 @@ bool gpu_batch_presets_unregister(GPUBatch *preset_batch)
     if (preset_batch == link->data) {
       lib_remlink(&presets_list, link);
       lib_mutex_unlock(&g_presets_3d.mutex);
-      mem_freeN(link);
+      mem_freen(link);
       return true;
     }
   }
