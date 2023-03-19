@@ -111,22 +111,22 @@ extern char datatoc_gpu_shader_material_volume_scatter_glsl[];
 extern char datatoc_gpu_shader_material_wireframe_glsl[];
 extern char datatoc_gpu_shader_material_world_normals_glsl[];
 
-static GPUMaterialLibrary gpu_shader_material_math_util_library = {
+static GPUMaterialLibrary gpu_shader_material_math_util_lib = {
     .code = datatoc_gpu_shader_material_math_util_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_color_util_library = {
+static GPUMaterialLib gpu_shader_material_color_util_lib = {
     .code = datatoc_gpu_shader_material_color_util_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_hash_library = {
+static GPUMaterialLib gpu_shader_material_hash_lib = {
     .code = datatoc_gpu_shader_material_hash_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_noise_library = {
+static GPUMaterialLib gpu_shader_material_noise_lib = {
     .code = datatoc_gpu_shader_material_noise_glsl,
     .dependencies = {&gpu_shader_material_hash_library, NULL},
 };
@@ -141,7 +141,7 @@ static GPUMaterialLib gpu_shader_material_add_shader_lib = {
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_ambient_occlusion_library = {
+static GPUMaterialLib gpu_shader_material_ambient_occlusion_lib = {
     .code = datatoc_gpu_shader_material_ambient_occlusion_glsl,
     .dependencies = {NULL},
 };
@@ -161,336 +161,336 @@ static GPUMaterialLib gpu_shader_material_attribute_lib = {
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_background_library = {
+static GPUMaterialLib gpu_shader_material_background_lib = {
     .code = datatoc_gpu_shader_material_background_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_bevel_library = {
+static GPUMaterialLib gpu_shader_material_bevel_lib = {
     .code = datatoc_gpu_shader_material_bevel_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_wavelength_library = {
+static GPUMaterialLib gpu_shader_material_wavelength_lib = {
     .code = datatoc_gpu_shader_material_wavelength_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_blackbody_library = {
+static GPUMaterialLib gpu_shader_material_blackbody_lib = {
     .code = datatoc_gpu_shader_material_blackbody_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_bright_contrast_library = {
+static GPUMaterialLib gpu_shader_material_bright_contrast_lib = {
     .code = datatoc_gpu_shader_material_bright_contrast_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_bump_library = {
+static GPUMaterialLib gpu_shader_material_bump_lib = {
     .code = datatoc_gpu_shader_material_bump_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_camera_library = {
+static GPUMaterialLib gpu_shader_material_camera_lib = {
     .code = datatoc_gpu_shader_material_camera_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_clamp_library = {
+static GPUMaterialLib gpu_shader_material_clamp_lib = {
     .code = datatoc_gpu_shader_material_clamp_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_color_ramp_library = {
+static GPUMaterialLib gpu_shader_material_color_ramp_lib = {
     .code = datatoc_gpu_shader_material_color_ramp_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_combine_hsv_library = {
+static GPUMaterialLib gpu_shader_material_combine_hsv_lib = {
     .code = datatoc_gpu_shader_material_combine_hsv_glsl,
-    .dependencies = {&gpu_shader_material_color_util_library, NULL},
+    .dependencies = {&gpu_shader_material_color_util_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_combine_rgb_library = {
+static GPUMaterialLib gpu_shader_material_combine_rgb_lib = {
     .code = datatoc_gpu_shader_material_combine_rgb_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_combine_xyz_library = {
+static GPUMaterialLib gpu_shader_material_combine_xyz_lib = {
     .code = datatoc_gpu_shader_material_combine_xyz_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_diffuse_library = {
+static GPUMaterialLib gpu_shader_material_diffuse_lib = {
     .code = datatoc_gpu_shader_material_diffuse_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_displacement_library = {
+static GPUMaterialLib gpu_shader_material_displacement_lib = {
     .code = datatoc_gpu_shader_material_displacement_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_eevee_specular_library = {
+static GPUMaterialLib gpu_shader_material_eevee_specular_lib = {
     .code = datatoc_gpu_shader_material_eevee_specular_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_emission_library = {
+static GPUMaterialLib gpu_shader_material_emission_lib = {
     .code = datatoc_gpu_shader_material_emission_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_float_curve_library = {
+static GPUMaterialLib gpu_shader_material_float_curve_lib = {
     .code = datatoc_gpu_shader_material_float_curve_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_fresnel_library = {
+static GPUMaterialLib gpu_shader_material_fresnel_lib = {
     .code = datatoc_gpu_shader_material_fresnel_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_gamma_library = {
+static GPUMaterialLib gpu_shader_material_gamma_lib = {
     .code = datatoc_gpu_shader_material_gamma_glsl,
-    .dependencies = {&gpu_shader_material_math_util_library, NULL},
+    .dependencies = {&gpu_shader_material_math_util_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tangent_library = {
+static GPUMaterialLib gpu_shader_material_tangent_lib = {
     .code = datatoc_gpu_shader_material_tangent_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_geometry_library = {
+static GPUMaterialLib gpu_shader_material_geometry_lib = {
     .code = datatoc_gpu_shader_material_geometry_glsl,
-    .dependencies = {&gpu_shader_material_tangent_library, NULL},
+    .dependencies = {&gpu_shader_material_tangent_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_glass_library = {
+static GPUMaterialLib gpu_shader_material_glass_lib = {
     .code = datatoc_gpu_shader_material_glass_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_hair_info_library = {
+static GPUMaterialLib gpu_shader_material_hair_info_lib = {
     .code = datatoc_gpu_shader_material_hair_info_glsl,
-    .dependencies = {&gpu_shader_material_hash_library, NULL},
+    .dependencies = {&gpu_shader_material_hash_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_holdout_library = {
+static GPUMaterialLib gpu_shader_material_holdout_lib = {
     .code = datatoc_gpu_shader_material_holdout_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_hue_sat_val_library = {
+static GPUMaterialLib gpu_shader_material_hue_sat_val_lib = {
     .code = datatoc_gpu_shader_material_hue_sat_val_glsl,
     .dependencies = {&gpu_shader_material_color_util_library, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_invert_library = {
+static GPUMaterialLib gpu_shader_material_invert_lib = {
     .code = datatoc_gpu_shader_material_invert_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_layer_weight_library = {
+static GPUMaterialLib gpu_shader_material_layer_weight_lib = {
     .code = datatoc_gpu_shader_material_layer_weight_glsl,
     .dependencies = {&gpu_shader_material_fresnel_library, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_light_falloff_library = {
+static GPUMaterialLib gpu_shader_material_light_falloff_lib = {
     .code = datatoc_gpu_shader_material_light_falloff_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_light_path_library = {
+static GPUMaterialLib gpu_shader_material_light_path_lib = {
     .code = datatoc_gpu_shader_material_light_path_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_mapping_library = {
+static GPUMaterialLib gpu_shader_material_mapping_lib = {
     .code = datatoc_gpu_shader_material_mapping_glsl,
-    .dependencies = {&gpu_shader_material_math_util_library, NULL},
-};
+    .dependencies = {&gpu_shader_material_math_util_lib, NULL},
+}
 
-static GPUMaterialLib gpu_shader_material_map_range_library = {
+static GPUMaterialLib gpu_shader_material_map_range_lib = {
     .code = datatoc_gpu_shader_material_map_range_glsl,
-    .dependencies = {&gpu_shader_material_math_util_library, NULL},
+    .dependencies = {&gpu_shader_material_math_util_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_math_library = {
+static GPUMaterialLib gpu_shader_material_math_lib = {
     .code = datatoc_gpu_shader_material_math_glsl,
-    .dependencies = {&gpu_shader_material_math_util_library, NULL},
+    .dependencies = {&gpu_shader_material_math_util_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_mix_rgb_library = {
+static GPUMaterialLib gpu_shader_material_mix_rgb_lib = {
     .code = datatoc_gpu_shader_material_mix_rgb_glsl,
-    .dependencies = {&gpu_shader_material_color_util_library, NULL},
+    .dependencies = {&gpu_shader_material_color_util_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_mix_shader_library = {
+static GPUMaterialLib gpu_shader_material_mix_shader_lib = {
     .code = datatoc_gpu_shader_material_mix_shader_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_normal_library = {
+static GPUMaterialLib gpu_shader_material_normal_lib = {
     .code = datatoc_gpu_shader_material_normal_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_normal_map_library = {
+static GPUMaterialLib gpu_shader_material_normal_map_lib = {
     .code = datatoc_gpu_shader_material_normal_map_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_object_info_library = {
+static GPUMaterialLib gpu_shader_material_object_info_lib = {
     .code = datatoc_gpu_shader_material_object_info_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_output_aov_library = {
+static GPUMaterialLib gpu_shader_material_output_aov_lib = {
     .code = datatoc_gpu_shader_material_output_aov_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_output_material_library = {
+static GPUMaterialLib gpu_shader_material_output_material_lib = {
     .code = datatoc_gpu_shader_material_output_material_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_output_world_library = {
+static GPUMaterialLib gpu_shader_material_output_world_lib = {
     .code = datatoc_gpu_shader_material_output_world_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_particle_info_library = {
+static GPUMaterialLib gpu_shader_material_particle_info_lib = {
     .code = datatoc_gpu_shader_material_particle_info_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_point_info_library = {
+static GPUMaterialLib gpu_shader_material_point_info_lib = {
     .code = datatoc_gpu_shader_material_point_info_glsl,
-    .dependencies = {&gpu_shader_material_hash_library, NULL},
+    .dependencies = {&gpu_shader_material_hash_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_principled_library = {
+static GPUMaterialLib gpu_shader_material_principled_lib = {
     .code = datatoc_gpu_shader_material_principled_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_refraction_library = {
+static GPUMaterialLib gpu_shader_material_refraction_lib = {
     .code = datatoc_gpu_shader_material_refraction_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_rgb_curves_library = {
+static GPUMaterialLib gpu_shader_material_rgb_curves_lib = {
     .code = datatoc_gpu_shader_material_rgb_curves_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_rgb_to_bw_library = {
+static GPUMaterialLib gpu_shader_material_rgb_to_bw_lib = {
     .code = datatoc_gpu_shader_material_rgb_to_bw_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_separate_hsv_library = {
+static GPUMaterialLib gpu_shader_material_separate_hsv_lib = {
     .code = datatoc_gpu_shader_material_separate_hsv_glsl,
     .dependencies = {&gpu_shader_material_color_util_library, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_separate_rgb_library = {
+static GPUMaterialLib gpu_shader_material_separate_rgb_lib = {
     .code = datatoc_gpu_shader_material_separate_rgb_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_separate_xyz_library = {
+static GPUMaterialLib gpu_shader_material_separate_xyz_lib = {
     .code = datatoc_gpu_shader_material_separate_xyz_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_set_library = {
+static GPUMaterialLib gpu_shader_material_set_lib = {
     .code = datatoc_gpu_shader_material_set_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_shader_to_rgba_library = {
+static GPUMaterialLib gpu_shader_material_shader_to_rgba_lib = {
     .code = datatoc_gpu_shader_material_shader_to_rgba_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_squeeze_library = {
+static GPUMaterialLib gpu_shader_material_squeeze_lib = {
     .code = datatoc_gpu_shader_material_squeeze_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_subsurface_scattering_library = {
+static GPUMaterialLib gpu_shader_material_subsurface_scattering_lib = {
     .code = datatoc_gpu_shader_material_subsurface_scattering_glsl,
     .dependencies = {&gpu_shader_material_diffuse_library, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_brick_library = {
+static GPUMaterialLib gpu_shader_material_tex_brick_lib = {
     .code = datatoc_gpu_shader_material_tex_brick_glsl,
-    .dependencies = {&gpu_shader_material_math_util_library,
-                     &gpu_shader_material_hash_library,
+    .dependencies = {&gpu_shader_material_math_util_lib,
+                     &gpu_shader_material_hash_lib,
                      NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_checker_library = {
+static GPUMaterialLib gpu_shader_material_tex_checker_lib = {
     .code = datatoc_gpu_shader_material_tex_checker_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_environment_library = {
+static GPUMaterialLib gpu_shader_material_tex_environment_lib = {
     .code = datatoc_gpu_shader_material_tex_environment_glsl,
-    .dependencies = {&gpu_shader_material_math_util_library, NULL},
+    .dependencies = {&gpu_shader_material_math_util_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_gradient_library = {
+static GPUMaterialLib gpu_shader_material_tex_gradient_lib = {
     .code = datatoc_gpu_shader_material_tex_gradient_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_image_library = {
+static GPUMaterialLib gpu_shader_material_tex_image_lib = {
     .code = datatoc_gpu_shader_material_tex_image_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_magic_library = {
+static GPUMaterialLib gpu_shader_material_tex_magic_lib = {
     .code = datatoc_gpu_shader_material_tex_magic_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_musgrave_library = {
+static GPUMaterialLib gpu_shader_material_tex_musgrave_lib = {
     .code = datatoc_gpu_shader_material_tex_musgrave_glsl,
-    .dependencies = {&gpu_shader_material_noise_library, NULL},
+    .dependencies = {&gpu_shader_material_noise_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_noise_library = {
+static GPUMaterialLib gpu_shader_material_tex_noise_lib = {
     .code = datatoc_gpu_shader_material_tex_noise_glsl,
-    .dependencies = {&gpu_shader_material_fractal_noise_library, NULL},
+    .dependencies = {&gpu_shader_material_fractal_noise_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_sky_library = {
+static GPUMaterialLib gpu_shader_material_tex_sky_lib = {
     .code = datatoc_gpu_shader_material_tex_sky_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_texture_coordinates_library = {
+static GPUMaterialLib gpu_shader_material_texture_coordinates_lib = {
     .code = datatoc_gpu_shader_material_texture_coordinates_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_voronoi_library = {
+static GPUMaterialLib gpu_shader_material_tex_voronoi_lib = {
     .code = datatoc_gpu_shader_material_tex_voronoi_glsl,
-    .dependencies = {&gpu_shader_material_math_util_library,
-                     &gpu_shader_material_hash_library,
+    .dependencies = {&gpu_shader_material_math_util_lib,
+                     &gpu_shader_material_hash_lib,
                      NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_wave_library = {
+static GPUMaterialLib gpu_shader_material_tex_wave_lib = {
     .code = datatoc_gpu_shader_material_tex_wave_glsl,
-    .dependencies = {&gpu_shader_material_fractal_noise_library, NULL},
+    .dependencies = {&gpu_shader_material_fractal_noise_lib, NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_tex_white_noise_library = {
+static GPUMaterialLib gpu_shader_material_tex_white_noise_lib = {
     .code = datatoc_gpu_shader_material_tex_white_noise_glsl,
     .dependencies = {&gpu_shader_material_hash_lib, NULL},
 };
@@ -510,7 +510,7 @@ static GPUMaterialLib gpu_shader_material_transparent_lib = {
     .dependencies = {NULL},
 };
 
-static GPUMaterialLib gpu_shader_material_uv_map_library = {
+static GPUMaterialLib gpu_shader_material_uv_map_lib = {
     .code = datatoc_gpu_shader_material_uv_map_glsl,
     .dependencies = {NULL},
 };
@@ -560,30 +560,30 @@ static GPUMaterialLib gpu_shader_material_volume_principled_lib = {
     .dependencies = {&gpu_shader_material_blackbody_lib, NULL},
 };
 
-static GPUMaterialLibrary gpu_shader_material_volume_scatter_library = {
+static GPUMaterialLib gpu_shader_material_volume_scatter_lib = {
     .code = datatoc_gpu_shader_material_volume_scatter_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLibrary gpu_shader_material_wireframe_library = {
+static GPUMaterialLib gpu_shader_material_wireframe_lib = {
     .code = datatoc_gpu_shader_material_wireframe_glsl,
     .dependencies = {NULL},
 };
 
-static GPUMaterialLibrary gpu_shader_material_world_normals_library = {
+static GPUMaterialLib gpu_shader_material_world_normals_lib = {
     .code = datatoc_gpu_shader_material_world_normals_glsl,
-    .dependencies = {&gpu_shader_material_texture_coordinates_library, NULL},
+    .dependencies = {&gpu_shader_material_texture_coordinates_lib, NULL},
 };
 
-static GPUMaterialLibrary *gpu_material_libraries[] = {
-    &gpu_shader_material_math_util_library,
-    &gpu_shader_material_color_util_library,
-    &gpu_shader_material_hash_library,
-    &gpu_shader_material_noise_library,
-    &gpu_shader_material_float_curve_library,
-    &gpu_shader_material_fractal_noise_library,
-    &gpu_shader_material_add_shader_library,
-    &gpu_shader_material_ambient_occlusion_library,
+static GPUMaterialLib *gpu_material_libraries[] = {
+    &gpu_shader_material_math_util_lib,
+    &gpu_shader_material_color_util_lib,
+    &gpu_shader_material_hash_lib,
+    &gpu_shader_material_noise_lib,
+    &gpu_shader_material_float_curve_lib,
+    &gpu_shader_material_fractal_noise_lib,
+    &gpu_shader_material_add_shader_lib,
+    &gpu_shader_material_ambient_occlusion_lib,
     &gpu_shader_material_glossy_library,
     &gpu_shader_material_anisotropic_library,
     &gpu_shader_material_attribute_library,
