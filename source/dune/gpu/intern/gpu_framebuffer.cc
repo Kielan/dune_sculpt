@@ -614,28 +614,28 @@ void gpu_offscreen_draw_to_screen(GPUOffScreen *ofs, int x, int y)
   ofs_fb->blit_to(GPU_COLOR_BIT, 0, ctx->active_fb, 0, x, y);
 }
 
-void GPU_offscreen_read_pixels(GPUOffScreen *ofs, eGPUDataFormat format, void *pixels)
+void gpu_offscreen_read_pixels(GPUOffScreen *ofs, eGPUDataFormat format, void *pixels)
 {
-  BLI_assert(ELEM(format, GPU_DATA_UBYTE, GPU_DATA_FLOAT));
+  lib_assert(ELEM(format, GPU_DATA_UBYTE, GPU_DATA_FLOAT));
 
   const int w = GPU_texture_width(ofs->color);
   const int h = GPU_texture_height(ofs->color);
 
   GPUFrameBuffer *ofs_fb = gpu_offscreen_fb_get(ofs);
-  GPU_framebuffer_read_color(ofs_fb, 0, 0, w, h, 4, 0, format, pixels);
+  gpu_framebuffer_read_color(ofs_fb, 0, 0, w, h, 4, 0, format, pixels);
 }
 
-int GPU_offscreen_width(const GPUOffScreen *ofs)
+int gpu_offscreen_width(const GPUOffScreen *ofs)
 {
-  return GPU_texture_width(ofs->color);
+  return gpu_texture_width(ofs->color);
 }
 
-int GPU_offscreen_height(const GPUOffScreen *ofs)
+int gpu_offscreen_height(const GPUOffScreen *ofs)
 {
-  return GPU_texture_height(ofs->color);
+  return gpu_texture_height(ofs->color);
 }
 
-GPUTexture *GPU_offscreen_color_texture(const GPUOffScreen *ofs)
+GPUTexture *gpu_offscreen_color_texture(const GPUOffScreen *ofs)
 {
   return ofs->color;
 }
