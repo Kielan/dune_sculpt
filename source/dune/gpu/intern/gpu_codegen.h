@@ -1,8 +1,4 @@
-/** \file
- * \ingroup gpu
- *
- * Generate shader code from the intermediate node graph.
- */
+/** Generate shader code from the intermediate node graph. **/
 
 #pragma once
 
@@ -29,15 +25,15 @@ typedef struct GPUPass {
 
 /* Pass */
 
-GPUPass *GPU_generate_pass(struct GPUMaterial *material,
+GPUPass *gpu_generate_pass(struct GPUMaterial *material,
                            struct GPUNodeGraph *graph,
                            const char *vert_code,
                            const char *geom_code,
                            const char *frag_lib,
                            const char *defines);
-struct GPUShader *GPU_pass_shader_get(GPUPass *pass);
-bool GPU_pass_compile(GPUPass *pass, const char *shname);
-void GPU_pass_release(GPUPass *pass);
+struct GPUShader *gpu_pass_shader_get(GPUPass *pass);
+bool gpu_pass_compile(GPUPass *pass, const char *shname);
+void gpu_pass_release(GPUPass *pass);
 
 /* Module */
 
