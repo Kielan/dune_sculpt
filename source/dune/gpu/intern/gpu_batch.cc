@@ -28,20 +28,20 @@ using namespace dune::gpu;
 /* -------------------------------------------------------------------- */
 /** Creation & Deletion **/
 
-GPUBatch *GPU_batch_calloc()
+GPUBatch *gpu_batch_calloc()
 {
   GPUBatch *batch = GPUBackend::get()->batch_alloc();
   memset(batch, 0, sizeof(*batch));
   return batch;
 }
 
-GPUBatch *GPU_batch_create_ex(GPUPrimType prim_type,
+GPUBatch *gpu_batch_create_ex(GPUPrimType prim_type,
                               GPUVertBuf *verts,
                               GPUIndexBuf *elem,
                               eGPUBatchFlag owns_flag)
 {
-  GPUBatch *batch = GPU_batch_calloc();
-  GPU_batch_init_ex(batch, prim_type, verts, elem, owns_flag);
+  GPUBatch *batch = gpu_batch_calloc();
+  gpu_batch_init_ex(batch, prim_type, verts, elem, owns_flag);
   return batch;
 }
 
@@ -178,11 +178,11 @@ int gpu_batch_vertbuf_add_ex(GPUBatch *batch, GPUVertBuf *verts, bool own_vbo)
     }
   }
   /* we only make it this far if there is no room for another GPUVertBuf */
-  BLI_assert_msg(0, "Not enough VBO slot in batch");
+  lib_assert_msg(0, "Not enough VBO slot in batch");
   return -1;
 }
 
-bool GPU_batch_vertbuf_has(GPUBatch *batch, GPUVertBuf *verts)
+bool gpu_batch_vertbuf_has(GPUBatch *batch, GPUVertBuf *verts)
 {
   for (uint v = 0; v < GPU_BATCH_VBO_MAX_LEN; v++) {
     if (batch->verts[v] == verts) {
@@ -192,50 +192,45 @@ bool GPU_batch_vertbuf_has(GPUBatch *batch, GPUVertBuf *verts)
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Uniform setters
+/** Uniform setters
  *
- * TODO(fclem): port this to GPUShader.
- * \{ */
+ * TODO: port this to GPUShader.
+ **/
 
-void GPU_batch_set_shader(GPUBatch *batch, GPUShader *shader)
+void gpu_batch_set_shader(GPUBatch *batch, GPUShader *shader)
 {
   batch->shader = shader;
-  GPU_shader_bind(batch->shader);
+  gpu_shader_bind(batch->shader);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Drawing / Drawcall functions
- * \{ */
+/** Drawing / Drawcall functions **/
 
-void GPU_batch_draw(GPUBatch *batch)
+void gpu_batch_draw(GPUBatch *batch)
 {
-  GPU_shader_bind(batch->shader);
-  GPU_batch_draw_advanced(batch, 0, 0, 0, 0);
+  gpu_shader_bind(batch->shader);
+  gpu_batch_draw_advanced(batch, 0, 0, 0, 0);
 }
 
-void GPU_batch_draw_range(GPUBatch *batch, int v_first, int v_count)
+void gpu_batch_draw_range(GPUBatch *batch, int v_first, int v_count)
 {
-  GPU_shader_bind(batch->shader);
-  GPU_batch_draw_advanced(batch, v_first, v_count, 0, 0);
+  gpu_shader_bind(batch->shader);
+  gpu_batch_draw_advanced(batch, v_first, v_count, 0, 0);
 }
 
-void GPU_batch_draw_instanced(GPUBatch *batch, int i_count)
+void gpu_batch_draw_instanced(GPUBatch *batch, int i_count)
 {
-  BLI_assert(batch->inst[0] == nullptr);
+  lib_assert(batch->inst[0] == nullptr);
 
-  GPU_shader_bind(batch->shader);
-  GPU_batch_draw_advanced(batch, 0, 0, 0, i_count);
+  gpu_shader_bind(batch->shader);
+  gpu_batch_draw_advanced(batch, 0, 0, 0, i_count);
 }
 
-void GPU_batch_draw_advanced(
+void gpu_batch_draw_advanced(
     GPUBatch *gpu_batch, int v_first, int v_count, int i_first, int i_count)
 {
-  BLI_assert(Context::get()->shader != nullptr);
+  gpu_assert(Context::get()->shader != nullptr);
   Batch *batch = static_cast<Batch *>(gpu_batch);
 
   if (v_count == 0) {
@@ -269,8 +264,8 @@ void gpu_batch_program_set_builtin_with_config(GPUBatch *batch,
                                                eGPUBuiltinShader shader_id,
                                                eGPUShaderConfig sh_cfg)
 {
-  GPUShader *shader = GPU_shader_get_builtin_shader_with_config(shader_id, sh_cfg);
-  GPU_batch_set_shader(batch, shader);
+  GPUShader *shader = gpu_shader_get_builtin_shader_with_config(shader_id, sh_cfg);
+  gpu_batch_set_shader(batch, shader);
 }
 
 void gpu_batch_program_set_builtin(GPUBatch *batch, eGPUBuiltinShader shader_id)
