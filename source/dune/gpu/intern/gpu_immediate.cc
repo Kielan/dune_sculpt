@@ -206,8 +206,8 @@ void immBeginAtMost(GPUPrimType prim_type, uint vertex_len)
 
 GPUBatch *immBeginBatch(GPUPrimType prim_type, uint vertex_len)
 {
-  BLI_assert(imm->prim_type == GPU_PRIM_NONE); /* Make sure we haven't already begun. */
-  BLI_assert(vertex_count_makes_sense_for_primitive(vertex_len, prim_type));
+  lib_assert(imm->prim_type == GPU_PRIM_NONE); /* Make sure we haven't already begun. */
+  lib_assert(vertex_count_makes_sense_for_primitive(vertex_len, prim_type));
 
   imm->prim_type = prim_type;
   imm->vertex_len = vertex_len;
@@ -549,75 +549,75 @@ void immUniform1f(const char *name, float x)
 
 void immUniform2f(const char *name, float x, float y)
 {
-  GPU_shader_uniform_2f(imm->shader, name, x, y);
+  gpu_shader_uniform_2f(imm->shader, name, x, y);
 }
 
 void immUniform2fv(const char *name, const float data[2])
 {
-  GPU_shader_uniform_2fv(imm->shader, name, data);
+  gpu_shader_uniform_2fv(imm->shader, name, data);
 }
 
 void immUniform3f(const char *name, float x, float y, float z)
 {
-  GPU_shader_uniform_3f(imm->shader, name, x, y, z);
+  gpu_shader_uniform_3f(imm->shader, name, x, y, z);
 }
 
 void immUniform3fv(const char *name, const float data[3])
 {
-  GPU_shader_uniform_3fv(imm->shader, name, data);
+  gpu_shader_uniform_3fv(imm->shader, name, data);
 }
 
 void immUniform4f(const char *name, float x, float y, float z, float w)
 {
-  GPU_shader_uniform_4f(imm->shader, name, x, y, z, w);
+  gpu_shader_uniform_4f(imm->shader, name, x, y, z, w);
 }
 
 void immUniform4fv(const char *name, const float data[4])
 {
-  GPU_shader_uniform_4fv(imm->shader, name, data);
+  gpu_shader_uniform_4fv(imm->shader, name, data);
 }
 
 void immUniformArray4fv(const char *name, const float *data, int count)
 {
-  GPU_shader_uniform_4fv_array(imm->shader, name, count, (const float(*)[4])data);
+  gpu_shader_uniform_4fv_array(imm->shader, name, count, (const float(*)[4])data);
 }
 
 void immUniformMatrix4fv(const char *name, const float data[4][4])
 {
-  GPU_shader_uniform_mat4(imm->shader, name, data);
+  gpu_shader_uniform_mat4(imm->shader, name, data);
 }
 
 void immUniform1i(const char *name, int x)
 {
-  GPU_shader_uniform_1i(imm->shader, name, x);
+  gpu_shader_uniform_1i(imm->shader, name, x);
 }
 
 void immBindTexture(const char *name, GPUTexture *tex)
 {
-  int binding = GPU_shader_get_texture_binding(imm->shader, name);
-  GPU_texture_bind(tex, binding);
+  int binding = gpu_shader_get_texture_binding(imm->shader, name);
+  gpu_texture_bind(tex, binding);
 }
 
 void immBindTextureSampler(const char *name, GPUTexture *tex, eGPUSamplerState state)
 {
-  int binding = GPU_shader_get_texture_binding(imm->shader, name);
-  GPU_texture_bind_ex(tex, state, binding, true);
+  int binding = gpu_shader_get_texture_binding(imm->shader, name);
+  gpu_texture_bind_ex(tex, state, binding, true);
 }
 
 void immBindUniformBuf(const char *name, GPUUniformBuf *ubo)
 {
-  int binding = GPU_shader_get_uniform_block_binding(imm->shader, name);
-  GPU_uniformbuf_bind(ubo, binding);
+  int binding = gpu_shader_get_uniform_block_binding(imm->shader, name);
+  gpu_uniformbuf_bind(ubo, binding);
 }
 
 /* --- convenience functions for setting "uniform vec4 color" --- */
 
 void immUniformColor4f(float r, float g, float b, float a)
 {
-  int32_t uniform_loc = GPU_shader_get_builtin_uniform(imm->shader, GPU_UNIFORM_COLOR);
-  BLI_assert(uniform_loc != -1);
+  int32_t uniform_loc = gpu_shader_get_builtin_uniform(imm->shader, GPU_UNIFORM_COLOR);
+  lib_assert(uniform_loc != -1);
   float data[4] = {r, g, b, a};
-  GPU_shader_uniform_vector(imm->shader, uniform_loc, 4, 1, data);
+  gpu_shader_uniform_vector(imm->shader, uniform_loc, 4, 1, data);
   /* For wide Line workaround. */
   copy_v4_v4(imm->uniform_color, data);
 }
