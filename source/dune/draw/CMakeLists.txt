@@ -2,20 +2,20 @@ set(INC
   .
   intern
 
-  ../blenfont
-  ../blenkernel
-  ../blenlib
-  ../blenloader
-  ../blentranslation
+  ../dunefont
+  ../dunekernel
+  ../dunelib
+  ../duneloader
+  ../dunetranslation
   ../bmesh
-  ../depsgraph
+  ../dgraph
   ../editors/include
   ../editors/space_view3d
   ../functions
   ../gpu
   ../imbuf
-  ../makesdna
-  ../makesrna
+  ../types
+  ../api
   ../nodes
   ../render
   ../render/intern
@@ -68,7 +68,7 @@ set(SRC
   intern/draw_cache_impl_curve.cc
   intern/draw_cache_impl_curves.cc
   intern/draw_cache_impl_displist.c
-  intern/draw_cache_impl_gpencil.c
+  intern/draw_cache_impl_dpen.c
   intern/draw_cache_impl_lattice.c
   intern/draw_cache_impl_mesh.c
   intern/draw_cache_impl_metaball.c
@@ -233,8 +233,8 @@ set(SRC
 )
 
 set(LIB
-  bf_blenkernel
-  bf_blenlib
+  bf_dunekernel
+  bf_dunelib
   bf_windowmanager
 )
 
@@ -389,19 +389,19 @@ set(GLSL_SRC
 
   intern/draw_shader_shared.h
 
-  engines/gpencil/shaders/gpencil_frag.glsl
-  engines/gpencil/shaders/gpencil_vert.glsl
-  engines/gpencil/shaders/gpencil_antialiasing_frag.glsl
-  engines/gpencil/shaders/gpencil_antialiasing_vert.glsl
-  engines/gpencil/shaders/gpencil_common_lib.glsl
-  engines/gpencil/shaders/gpencil_layer_blend_frag.glsl
-  engines/gpencil/shaders/gpencil_mask_invert_frag.glsl
-  engines/gpencil/shaders/gpencil_depth_merge_frag.glsl
-  engines/gpencil/shaders/gpencil_depth_merge_vert.glsl
-  engines/gpencil/shaders/gpencil_vfx_frag.glsl
+  engines/dpen/shaders/dpen_frag.glsl
+  engines/dpen/shaders/dpen_vert.glsl
+  engines/dpen/shaders/dpen_antialiasing_frag.glsl
+  engines/dpen/shaders/dpen_antialiasing_vert.glsl
+  engines/dpen/shaders/dpen_common_lib.glsl
+  engines/dpen/shaders/dpen_layer_blend_frag.glsl
+  engines/dpen/shaders/dpen_mask_invert_frag.glsl
+  engines/dpen/shaders/dpen_depth_merge_frag.glsl
+  engines/dpen/shaders/dpen_depth_merge_vert.glsl
+  engines/dpen/shaders/dpen_vfx_frag.glsl
 
-  engines/gpencil/gpencil_defines.h
-  engines/gpencil/gpencil_shader_shared.h
+  engines/dpen/dpen_defines.h
+  engines/dpen/dpen_shader_shared.h
 
   engines/select/shaders/selection_id_3D_vert.glsl
   engines/select/shaders/selection_id_frag.glsl
@@ -518,7 +518,7 @@ foreach(GLSL_FILE ${GLSL_SRC})
   data_to_c_simple(${GLSL_FILE} GLSL_C)
 endforeach()
 
-blender_add_lib(bf_draw_shaders "${GLSL_C}" "" "" "")
+dune_add_lib(bf_draw_shaders "${GLSL_C}" "" "" "")
 
 list(APPEND LIB
   bf_draw_shaders
@@ -570,10 +570,10 @@ if(WITH_GTESTS)
 endif()
 
 
-blender_add_lib(bf_draw "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(bf_draw "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
 # Needed so we can use dna_type_offsets.h for defaults initialization.
-add_dependencies(bf_draw bf_dna)
+add_dependencies(df_draw df_types)
 
 if(WITH_GTESTS)
   if(WITH_OPENGL_DRAW_TESTS)
@@ -590,6 +590,6 @@ if(WITH_GTESTS)
     set(TEST_LIB
     )
     include(GTestTesting)
-    blender_add_test_lib(bf_draw_tests "${TEST_SRC}" "${INC};${TEST_INC}" "${INC_SYS}" "${LIB};${TEST_LIB}")
+    Dune_add_test_lib(df_draw_tests "${TEST_SRC}" "${INC};${TEST_INC}" "${INC_SYS}" "${LIB};${TEST_LIB}")
   endif()
 endif()
