@@ -737,18 +737,18 @@ static void drw_shgroup_bone_point(ArmatureDrawContext *ctx,
   BoneInstanceData inst_data;
   mul_m4_m4m4(inst_data.mat, ctx->ob->obmat, bone_mat);
   if (ctx->point_solid) {
-    OVERLAY_bone_instance_data_set_color(&inst_data, bone_color);
-    OVERLAY_bone_instance_data_set_color_hint(&inst_data, hint_color);
-    DRW_buffer_add_entry_struct(ctx->point_solid, &inst_data);
+    overlay_bone_instance_data_set_color(&inst_data, bone_color);
+    overlay_bone_instance_data_set_color_hint(&inst_data, hint_color);
+    draw_buffer_add_entry_struct(ctx->point_solid, &inst_data);
   }
   if (outline_color[3] > 0.0f) {
-    OVERLAY_bone_instance_data_set_color(&inst_data, outline_color);
-    DRW_buffer_add_entry_struct(ctx->point_outline, &inst_data);
+    overlay_bone_instance_data_set_color(&inst_data, outline_color);
+    draw_buffer_add_entry_struct(ctx->point_outline, &inst_data);
   }
 }
 
 /* Axes */
-static void drw_shgroup_bone_axes(ArmatureDrawContext *ctx,
+static void draw_shgroup_bone_axes(ArmatureDrawContext *ctx,
                                   const float (*bone_mat)[4],
                                   const float color[4])
 {
@@ -756,11 +756,11 @@ static void drw_shgroup_bone_axes(ArmatureDrawContext *ctx,
   mul_m4_m4m4(mat, ctx->ob->obmat, bone_mat);
   /* Move to bone tail. */
   add_v3_v3(mat[3], mat[1]);
-  OVERLAY_empty_shape(ctx->extras, mat, 0.25f, OB_ARROWS, color);
+  overkay_empty_shape(ctx->extras, mat, 0.25f, OB_ARROWS, color);
 }
 
 /* Relationship lines */
-static void drw_shgroup_bone_relationship_lines_ex(ArmatureDrawContext *ctx,
+static void draw_shgroup_bone_relationship_lines_ex(ArmatureDrawContext *ctx,
                                                    const float start[3],
                                                    const float end[3],
                                                    const float color[4])
@@ -772,42 +772,40 @@ static void drw_shgroup_bone_relationship_lines_ex(ArmatureDrawContext *ctx,
   OVERLAY_extra_line_dashed(ctx->extras, s, e, color);
 }
 
-static void drw_shgroup_bone_relationship_lines(ArmatureDrawContext *ctx,
+static void draw_shgroup_bone_relationship_lines(ArmatureDrawContext *ctx,
                                                 const float start[3],
                                                 const float end[3])
 {
-  drw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorWire);
+  draw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorWire);
 }
 
-static void drw_shgroup_bone_ik_lines(ArmatureDrawContext *ctx,
+static void draw_shgroup_bone_ik_lines(ArmatureDrawContext *ctx,
                                       const float start[3],
                                       const float end[3])
 {
-  drw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorBoneIKLine);
+  draw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorBoneIKLine);
 }
 
-static void drw_shgroup_bone_ik_no_target_lines(ArmatureDrawContext *ctx,
+static void draw_shgroup_bone_ik_no_target_lines(ArmatureDrawContext *ctx,
                                                 const float start[3],
                                                 const float end[3])
 {
-  drw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorBoneIKLineNoTarget);
+  draw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorBoneIKLineNoTarget);
 }
 
-static void drw_shgroup_bone_ik_spline_lines(ArmatureDrawContext *ctx,
+static void draw_shgroup_bone_ik_spline_lines(ArmatureDrawContext *ctx,
                                              const float start[3],
                                              const float end[3])
 {
-  drw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorBoneIKLineSpline);
+  draw_shgroup_bone_relationship_lines_ex(ctx, start, end, G_draw.block.colorBoneIKLineSpline);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Drawing Theme Helpers
+/** Drawing Theme Helpers
  *
- * \note this section is duplicate of code in 'drawarmature.c'.
+ * this section is duplicate of code in 'drawarmature.c'.
  *
- * \{ */
+ **/
 
 /* values of colCode for set_pchan_color */
 enum {
