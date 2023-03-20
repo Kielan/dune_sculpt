@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_view3d_types.h"
+#include "types_armature.h"
+#include "types_constraint.h"
+#include "types_mesh.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_view3d.h"
 
 #include "DRW_render.h"
 
