@@ -129,7 +129,7 @@ void overlay_armature_cache_init(overlay_Data *vedata)
 
     float alpha = pd->overlay.xray_alpha_bone;
     struct GPUShader *sh = overlay_shader_uniform_color();
-    DRWShadingGroup *grp;
+    DrawShadingGroup *grp;
 
     pd->armature_bone_select_act_grp = grp = DRW_shgroup_create(sh, psl->armature_bone_select_ps);
     draw_shgroup_uniform_vec4_copy(grp, "color", (float[4]){0.0f, 0.0f, 0.0f, alpha});
@@ -141,7 +141,7 @@ void overlay_armature_cache_init(overlay_Data *vedata)
   for (int i = 0; i < 2; i++) {
     struct GPUShader *sh;
     struct GPUVertFormat *format;
-    DRWShadingGroup *grp = NULL;
+    DrawShadingGroup *grp = NULL;
 
     OVERLAY_InstanceFormats *formats = OVERLAY_shader_instance_formats_get();
     OVERLAY_ArmatureCallBuffers *cb = &pd->armature_call_buffers[i];
@@ -149,16 +149,16 @@ void overlay_armature_cache_init(overlay_Data *vedata)
     cb->solid.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
     cb->transp.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
 
-    DRWPass **p_armature_ps = &psl->armature_ps[i];
-    DRWState infront_state = (DRW_state_is_select() && (i == 1)) ? DRW_STATE_IN_FRONT_SELECT : 0;
+    DrawPass **p_armature_ps = &psl->armature_ps[i];
+    DrawState infront_state = (DRW_state_is_select() && (i == 1)) ? DRW_STATE_IN_FRONT_SELECT : 0;
     state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_WRITE_DEPTH;
     DRW_PASS_CREATE(*p_armature_ps, state | pd->clipping_state | infront_state);
-    DRWPass *armature_ps = *p_armature_ps;
+    DrawPass *armature_ps = *p_armature_ps;
 
-    DRWPass **p_armature_trans_ps = &psl->armature_transp_ps[i];
+    DrawPass **p_armature_trans_ps = &psl->armature_transp_ps[i];
     state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_BLEND_ADD;
     DRW_PASS_CREATE(*p_armature_trans_ps, state | pd->clipping_state);
-    DRWPass *armature_transp_ps = *p_armature_trans_ps;
+    DrawPass *armature_transp_ps = *p_armature_trans_ps;
 
 #define BUF_INSTANCE DRW_shgroup_call_buffer_instance
 #define BUF_LINE(grp, format) DRW_shgroup_call_buffer(grp, format, GPU_PRIM_LINES)
@@ -167,7 +167,7 @@ void overlay_armature_cache_init(overlay_Data *vedata)
     {
       format = formats->instance_bone;
 
-      sh = OVERLAY_shader_armature_sphere(false);
+      sh = overlay_shader_armature_sphere(false);
       grp = DRW_shgroup_create(sh, armature_ps);
       DRW_shgroup_uniform_float_copy(grp, "alpha", 1.0f);
       cb->solid.point_fill = BUF_INSTANCE(grp, format, DRW_cache_bone_point_get());
