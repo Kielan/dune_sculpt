@@ -39,37 +39,37 @@
 
 #define PT_DEFAULT_RAD 0.05f /* radius of the point batch. */
 
-typedef struct ArmatureDrawContext {
+typedef struct ArmatureDrawCtx {
   /* Current armature object */
   Object *ob;
-  /* bArmature *arm; */ /* TODO */
+  /* DArmature *arm; */ /* TODO */
 
   union {
     struct {
-      DRWCallBuffer *outline;
-      DRWCallBuffer *solid;
-      DRWCallBuffer *wire;
+      DrawCallBuffer *outline;
+      DrawCallBuffer *solid;
+      DrawCallBuffer *wire;
     };
     struct {
-      DRWCallBuffer *envelope_outline;
-      DRWCallBuffer *envelope_solid;
-      DRWCallBuffer *envelope_distance;
+      DrawCallBuffer *envelope_outline;
+      DrawCallBuffer *envelope_solid;
+      DrawCallBuffer *envelope_distance;
     };
     struct {
       DRWCallBuffer *stick;
     };
   };
 
-  DRWCallBuffer *dof_lines;
-  DRWCallBuffer *dof_sphere;
-  DRWCallBuffer *point_solid;
-  DRWCallBuffer *point_outline;
-  DRWShadingGroup *custom_solid;
-  DRWShadingGroup *custom_outline;
-  DRWShadingGroup *custom_wire;
+  DrawCallBuffer *dof_lines;
+  DrawCallBuffer *dof_sphere;
+  DrawCallBuffer *point_solid;
+  DrawCallBuffer *point_outline;
+  DrawShadingGroup *custom_solid;
+  DrawShadingGroup *custom_outline;
+  DrawShadingGroup *custom_wire;
   GHash *custom_shapes_ghash;
 
-  OVERLAY_ExtraCallBuffers *extras;
+  Overlay_ExtraCallBuffers *extras;
 
   /* not a theme, this is an override */
   const float *const_color;
@@ -80,7 +80,7 @@ typedef struct ArmatureDrawContext {
   bool show_relations;
 
   const ThemeWireColor *bcolor; /* pchan color */
-} ArmatureDrawContext;
+} ArmatureDrawCtx;
 
 bool overay_armature_is_pose_mode(Object *ob, const DRWContextState *draw_ctx)
 {
@@ -121,11 +121,11 @@ void overlay_armature_cache_init(overlay_Data *vedata)
   const float wire_alpha = pd->overlay.bone_wire_alpha;
   const bool use_wire_alpha = (wire_alpha < 1.0f);
 
-  DRWState state;
+  DrawState state;
 
   if (pd->armature.do_pose_fade_geom) {
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
-    DRW_PASS_CREATE(psl->armature_bone_select_ps, state | pd->clipping_state);
+    state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
+    DRAW_PASS_CREATE(psl->armature_bone_select_ps, state | pd->clipping_state);
 
     float alpha = pd->overlay.xray_alpha_bone;
     struct GPUShader *sh = overlay_shader_uniform_color();
@@ -143,21 +143,21 @@ void overlay_armature_cache_init(overlay_Data *vedata)
     struct GPUVertFormat *format;
     DrawShadingGroup *grp = NULL;
 
-    OVERLAY_InstanceFormats *formats = OVERLAY_shader_instance_formats_get();
-    OVERLAY_ArmatureCallBuffers *cb = &pd->armature_call_buffers[i];
+    Overlay_InstanceFormats *formats = OVERLAY_shader_instance_formats_get();
+    Overlay_ArmatureCallBuffers *cb = &pd->armature_call_buffers[i];
 
     cb->solid.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
     cb->transp.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
 
     DrawPass **p_armature_ps = &psl->armature_ps[i];
     DrawState infront_state = (DRW_state_is_select() && (i == 1)) ? DRW_STATE_IN_FRONT_SELECT : 0;
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_WRITE_DEPTH;
-    DRW_PASS_CREATE(*p_armature_ps, state | pd->clipping_state | infront_state);
+    state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_WRITE_DEPTH;
+    DRAW_PASS_CREATE(*p_armature_ps, state | pd->clipping_state | infront_state);
     DrawPass *armature_ps = *p_armature_ps;
 
     DrawPass **p_armature_trans_ps = &psl->armature_transp_ps[i];
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_BLEND_ADD;
-    DRW_PASS_CREATE(*p_armature_trans_ps, state | pd->clipping_state);
+    state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_BLEND_ADD;
+    DRAW_PASS_CREATE(*p_armature_trans_ps, state | pd->clipping_state);
     DrawPass *armature_transp_ps = *p_armature_trans_ps;
 
 #define BUF_INSTANCE DRW_shgroup_call_buffer_instance
