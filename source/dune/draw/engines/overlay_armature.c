@@ -107,7 +107,7 @@ void overlay_armature_cache_init(overlay_Data *vedata)
   overlay_PassList *psl = vedata->psl;
   overlay_PrivateData *pd = vedata->stl->pd;
 
-  const DRWContextState *draw_ctx = draw_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const bool is_select_mode = draw_state_is_select();
   pd->armature.transparent = (draw_ctx->v3d->shading.type == OB_WIRE) ||
                              XRAY_FLAG_ENABLED(draw_ctx->v3d);
@@ -146,8 +146,8 @@ void overlay_armature_cache_init(overlay_Data *vedata)
     OVERLAY_InstanceFormats *formats = OVERLAY_shader_instance_formats_get();
     OVERLAY_ArmatureCallBuffers *cb = &pd->armature_call_buffers[i];
 
-    cb->solid.custom_shapes_ghash = BLI_ghash_ptr_new(__func__);
-    cb->transp.custom_shapes_ghash = BLI_ghash_ptr_new(__func__);
+    cb->solid.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
+    cb->transp.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
 
     DRWPass **p_armature_ps = &psl->armature_ps[i];
     DRWState infront_state = (DRW_state_is_select() && (i == 1)) ? DRW_STATE_IN_FRONT_SELECT : 0;
