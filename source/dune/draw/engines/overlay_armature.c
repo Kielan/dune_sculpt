@@ -386,8 +386,7 @@ void overlay_armature_cache_init(overlay_Data *vedata)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Shader Groups (DRW_shgroup)
- * \{ */
+/** Shader Groups (draw_shgroup) **/
 
 static void bone_instance_data_set_angle_minmax(BoneInstanceData *data,
                                                 const float aminx,
