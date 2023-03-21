@@ -1,8 +1,8 @@
-#include "types_collection_types.h"
-#include "types_mesh_types.h"
-#include "types_particle_types.h"
-#include "types_view3d_types.h"
-#include "types_volume_types.h"
+#include "types_collection.h"
+#include "types_mesh.h"
+#include "types_particle.h"
+#include "types_view3d.h"
+#include "types_volume.h"
 
 #include "dune_curve.h"
 #include "dune_displist.h"
@@ -15,8 +15,8 @@
 
 #include "lib_hash.h"
 
-#include "DRW_render.h"
-#include "GPU_shader.h"
+#include "draw_render.h"
+#include "gpu_shader.h"
 
 #include "ED_view3d.h"
 
