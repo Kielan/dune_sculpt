@@ -959,3 +959,971 @@ static bool set_pchan_color(const ArmatureDrawCtx *ctx,
 
   return false;
 }
+
+/** \name Drawing Color Helpers
+ * \{ */
+
+static void bone_locked_color_shade(float color[4])
+{
+  float *locked_color = G_draw.block.colorBoneLocked;
+
+  interp_v3_v3v3(color, color, locked_color, locked_color[3]);
+}
+
+static const float *get_bone_solid_color(const ArmatureDrawContext *ctx,
+                                         const EditBone *UNUSED(eBone),
+                                         const bPoseChannel *pchan,
+                                         const bArmature *arm,
+                                         const int boneflag,
+                                         const short constflag)
+{
+  if (ctx->const_color) {
+    return G_draw.block.colorBoneSolid;
+  }
+
+  if (arm->flag & ARM_POSEMODE) {
+    static float disp_color[4];
+    copy_v4_v4(disp_color, pchan->draw_data->solid_color);
+    set_pchan_color(ctx, PCHAN_COLOR_SOLID, boneflag, constflag, disp_color);
+
+    if (boneflag & BONE_DRAW_LOCKED_WEIGHT) {
+      bone_locked_color_shade(disp_color);
+    }
+
+    return disp_color;
+  }
+
+  return G_draw.block.colorBoneSolid;
+}
+
+static const float *get_bone_solid_with_consts_color(const ArmatureDrawContext *ctx,
+                                                     const EditBone *eBone,
+                                                     const bPoseChannel *pchan,
+                                                     const bArmature *arm,
+                                                     const int boneflag,
+                                                     const short constflag)
+{
+  if (ctx->const_color) {
+    return G_draw.block.colorBoneSolid;
+  }
+
+  const float *col = get_bone_solid_color(ctx, eBone, pchan, arm, boneflag, constflag);
+
+  static float consts_color[4];
+  if ((arm->flag & ARM_POSEMODE) && !(boneflag & BONE_DRAW_LOCKED_WEIGHT) &&
+      set_pchan_color(ctx, PCHAN_COLOR_CONSTS, boneflag, constflag, consts_color)) {
+    interp_v3_v3v3(consts_color, col, consts_color, 0.5f);
+  }
+  else {
+    copy_v4_v4(consts_color, col);
+  }
+  return consts_color;
+}
+
+static float get_bone_wire_thickness(const ArmatureDrawContext *ctx, int boneflag)
+{
+  if (ctx->const_color) {
+    return ctx->const_wire;
+  }
+  if (boneflag & (BONE_DRAW_ACTIVE | BONE_SELECTED)) {
+    return 2.0f;
+  }
+
+  return 1.0f;
+}
+
+static const float *get_bone_wire_color(const ArmatureDrawContext *ctx,
+                                        const EditBone *eBone,
+                                        const bPoseChannel *pchan,
+                                        const bArmature *arm,
+                                        const int boneflag,
+                                        const short constflag)
+{
+  static float disp_color[4];
+
+  if (ctx->const_color) {
+    copy_v3_v3(disp_color, ctx->const_color);
+  }
+  else if (eBone) {
+    if (boneflag & BONE_SELECTED) {
+      if (boneflag & BONE_DRAW_ACTIVE) {
+        copy_v3_v3(disp_color, G_draw.block.colorBoneActive);
+      }
+      else {
+        copy_v3_v3(disp_color, G_draw.block.colorBoneSelect);
+      }
+    }
+    else {
+      if (boneflag & BONE_DRAW_ACTIVE) {
+        copy_v3_v3(disp_color, G_draw.block.colorBoneActiveUnsel);
+      }
+      else {
+        copy_v3_v3(disp_color, G_draw.block.colorWireEdit);
+      }
+    }
+  }
+  else if (arm->flag & ARM_POSEMODE) {
+    copy_v4_v4(disp_color, pchan->draw_data->wire_color);
+    set_pchan_color(ctx, PCHAN_COLOR_NORMAL, boneflag, constflag, disp_color);
+
+    if (boneflag & BONE_DRAW_LOCKED_WEIGHT) {
+      bone_locked_color_shade(disp_color);
+    }
+  }
+  else {
+    copy_v3_v3(disp_color, G_draw.block.colorVertex);
+  }
+
+  disp_color[3] = get_bone_wire_thickness(ctx, boneflag);
+
+  return disp_color;
+}
+
+static void bone_hint_color_shade(float hint_color[4], const float color[4])
+{
+  /* Increase contrast. */
+  mul_v3_v3v3(hint_color, color, color);
+  /* Decrease value to add mode shading to the shape. */
+  mul_v3_fl(hint_color, 0.1f);
+  hint_color[3] = 1.0f;
+}
+
+static const float *get_bone_hint_color(const ArmatureDrawContext *ctx,
+                                        const EditBone *eBone,
+                                        const bPoseChannel *pchan,
+                                        const bArmature *arm,
+                                        const int boneflag,
+                                        const short constflag)
+{
+  static float hint_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+
+  if (ctx->const_color) {
+    bone_hint_color_shade(hint_color, G_draw.block.colorBoneSolid);
+  }
+  else {
+    const float *wire_color = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+    bone_hint_color_shade(hint_color, wire_color);
+  }
+
+  return hint_color;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Helper Utils
+ * \{ */
+
+static void pchan_draw_data_init(bPoseChannel *pchan)
+{
+  if (pchan->draw_data != NULL) {
+    if (pchan->draw_data->bbone_matrix_len != pchan->bone->segments) {
+      MEM_SAFE_FREE(pchan->draw_data);
+    }
+  }
+
+  if (pchan->draw_data == NULL) {
+    pchan->draw_data = MEM_mallocN(
+        sizeof(*pchan->draw_data) + sizeof(Mat4) * pchan->bone->segments, __func__);
+    pchan->draw_data->bbone_matrix_len = pchan->bone->segments;
+  }
+}
+
+static void draw_bone_update_disp_matrix_default(EditBone *eBone, bPoseChannel *pchan)
+{
+  float ebmat[4][4];
+  float bone_scale[3];
+  float(*bone_mat)[4];
+  float(*disp_mat)[4];
+  float(*disp_tail_mat)[4];
+
+  /* TODO: This should be moved to depsgraph or armature refresh
+   * and not be tight to the draw pass creation.
+   * This would refresh armature without invalidating the draw cache */
+  if (pchan) {
+    bone_mat = pchan->pose_mat;
+    disp_mat = pchan->disp_mat;
+    disp_tail_mat = pchan->disp_tail_mat;
+    copy_v3_fl(bone_scale, pchan->bone->length);
+  }
+  else {
+    eBone->length = len_v3v3(eBone->tail, eBone->head);
+    ED_armature_ebone_to_mat4(eBone, ebmat);
+
+    copy_v3_fl(bone_scale, eBone->length);
+    bone_mat = ebmat;
+    disp_mat = eBone->disp_mat;
+    disp_tail_mat = eBone->disp_tail_mat;
+  }
+
+  copy_m4_m4(disp_mat, bone_mat);
+  rescale_m4(disp_mat, bone_scale);
+  copy_m4_m4(disp_tail_mat, disp_mat);
+  translate_m4(disp_tail_mat, 0.0f, 1.0f, 0.0f);
+}
+
+/* compute connected child pointer for B-Bone drawing */
+static void edbo_compute_bbone_child(bArmature *arm)
+{
+  EditBone *eBone;
+
+  for (eBone = arm->edbo->first; eBone; eBone = eBone->next) {
+    eBone->bbone_child = NULL;
+  }
+
+  for (eBone = arm->edbo->first; eBone; eBone = eBone->next) {
+    if (eBone->parent && (eBone->flag & BONE_CONNECTED)) {
+      eBone->parent->bbone_child = eBone;
+    }
+  }
+}
+
+/* A version of BKE_pchan_bbone_spline_setup() for previewing editmode curve settings. */
+static void ebone_spline_preview(EditBone *ebone, const float result_array[MAX_BBONE_SUBDIV][4][4])
+{
+  BBoneSplineParameters param;
+  EditBone *prev, *next;
+  float imat[4][4], bonemat[4][4];
+  float tmp[3];
+
+  memset(&param, 0, sizeof(param));
+
+  param.segments = ebone->segments;
+  param.length = ebone->length;
+
+  /* Get "next" and "prev" bones - these are used for handle calculations. */
+  if (ebone->bbone_prev_type == BBONE_HANDLE_AUTO) {
+    /* Use connected parent. */
+    if (ebone->flag & BONE_CONNECTED) {
+      prev = ebone->parent;
+    }
+    else {
+      prev = NULL;
+    }
+  }
+  else {
+    prev = ebone->bbone_prev;
+  }
+
+  if (ebone->bbone_next_type == BBONE_HANDLE_AUTO) {
+    /* Use connected child. */
+    next = ebone->bbone_child;
+  }
+  else {
+    next = ebone->bbone_next;
+  }
+
+  /* compute handles from connected bones */
+  if (prev || next) {
+    ED_armature_ebone_to_mat4(ebone, imat);
+    invert_m4(imat);
+
+    if (prev) {
+      param.use_prev = true;
+
+      if (ebone->bbone_prev_type == BBONE_HANDLE_RELATIVE) {
+        zero_v3(param.prev_h);
+      }
+      else if (ebone->bbone_prev_type == BBONE_HANDLE_TANGENT) {
+        sub_v3_v3v3(tmp, prev->tail, prev->head);
+        sub_v3_v3v3(tmp, ebone->head, tmp);
+        mul_v3_m4v3(param.prev_h, imat, tmp);
+      }
+      else {
+        param.prev_bbone = (prev->segments > 1);
+
+        mul_v3_m4v3(param.prev_h, imat, prev->head);
+      }
+
+      if (!param.prev_bbone) {
+        ED_armature_ebone_to_mat4(prev, bonemat);
+        mul_m4_m4m4(param.prev_mat, imat, bonemat);
+      }
+    }
+
+    if (next) {
+      param.use_next = true;
+
+      if (ebone->bbone_next_type == BBONE_HANDLE_RELATIVE) {
+        copy_v3_fl3(param.next_h, 0.0f, param.length, 0.0);
+      }
+      else if (ebone->bbone_next_type == BBONE_HANDLE_TANGENT) {
+        sub_v3_v3v3(tmp, next->tail, next->head);
+        add_v3_v3v3(tmp, ebone->tail, tmp);
+        mul_v3_m4v3(param.next_h, imat, tmp);
+      }
+      else {
+        param.next_bbone = (next->segments > 1);
+
+        mul_v3_m4v3(param.next_h, imat, next->tail);
+      }
+
+      ED_armature_ebone_to_mat4(next, bonemat);
+      mul_m4_m4m4(param.next_mat, imat, bonemat);
+    }
+  }
+
+  param.ease1 = ebone->ease1;
+  param.ease2 = ebone->ease2;
+  param.roll1 = ebone->roll1;
+  param.roll2 = ebone->roll2;
+
+  if (prev && (ebone->bbone_flag & BBONE_ADD_PARENT_END_ROLL)) {
+    param.roll1 += prev->roll2;
+  }
+
+  copy_v3_v3(param.scale_in, ebone->scale_in);
+  copy_v3_v3(param.scale_out, ebone->scale_out);
+
+  param.curve_in_x = ebone->curve_in_x;
+  param.curve_in_z = ebone->curve_in_z;
+
+  param.curve_out_x = ebone->curve_out_x;
+  param.curve_out_z = ebone->curve_out_z;
+
+  if (ebone->bbone_flag & BBONE_SCALE_EASING) {
+    param.ease1 *= param.scale_in[1];
+    param.curve_in_x *= param.scale_in[1];
+    param.curve_in_z *= param.scale_in[1];
+
+    param.ease2 *= param.scale_out[1];
+    param.curve_out_x *= param.scale_out[1];
+    param.curve_out_z *= param.scale_out[1];
+  }
+
+  ebone->segments = BKE_pchan_bbone_spline_compute(&param, false, (Mat4 *)result_array);
+}
+
+static void draw_bone_update_disp_matrix_bbone(EditBone *eBone, bPoseChannel *pchan)
+{
+  float s[4][4], ebmat[4][4];
+  float length, xwidth, zwidth;
+  float(*bone_mat)[4];
+  short bbone_segments;
+
+  /* TODO: This should be moved to depsgraph or armature refresh
+   * and not be tight to the draw pass creation.
+   * This would refresh armature without invalidating the draw cache. */
+  if (pchan) {
+    length = pchan->bone->length;
+    xwidth = pchan->bone->xwidth;
+    zwidth = pchan->bone->zwidth;
+    bone_mat = pchan->pose_mat;
+    bbone_segments = pchan->bone->segments;
+  }
+  else {
+    eBone->length = len_v3v3(eBone->tail, eBone->head);
+    ED_armature_ebone_to_mat4(eBone, ebmat);
+
+    length = eBone->length;
+    xwidth = eBone->xwidth;
+    zwidth = eBone->zwidth;
+    bone_mat = ebmat;
+    bbone_segments = eBone->segments;
+  }
+
+  size_to_mat4(s, (const float[3]){xwidth, length / bbone_segments, zwidth});
+
+  /* Compute BBones segment matrices... */
+  /* Note that we need this even for one-segment bones, because box drawing need specific weirdo
+   * matrix for the box, that we cannot use to draw end points & co. */
+  if (pchan) {
+    Mat4 *bbones_mat = (Mat4 *)pchan->draw_data->bbone_matrix;
+    if (bbone_segments > 1) {
+      BKE_pchan_bbone_spline_setup(pchan, false, false, bbones_mat);
+
+      for (int i = bbone_segments; i--; bbones_mat++) {
+        mul_m4_m4m4(bbones_mat->mat, bbones_mat->mat, s);
+        mul_m4_m4m4(bbones_mat->mat, bone_mat, bbones_mat->mat);
+      }
+    }
+    else {
+      mul_m4_m4m4(bbones_mat->mat, bone_mat, s);
+    }
+  }
+  else {
+    float(*bbones_mat)[4][4] = eBone->disp_bbone_mat;
+
+    if (bbone_segments > 1) {
+      ebone_spline_preview(eBone, bbones_mat);
+
+      for (int i = bbone_segments; i--; bbones_mat++) {
+        mul_m4_m4m4(*bbones_mat, *bbones_mat, s);
+        mul_m4_m4m4(*bbones_mat, bone_mat, *bbones_mat);
+      }
+    }
+    else {
+      mul_m4_m4m4(*bbones_mat, bone_mat, s);
+    }
+  }
+
+  /* Grrr... We need default display matrix to draw end points, axes, etc. :( */
+  draw_bone_update_disp_matrix_default(eBone, pchan);
+}
+
+static void draw_bone_update_disp_matrix_custom(bPoseChannel *pchan)
+{
+  float bone_scale[3];
+  float(*bone_mat)[4];
+  float(*disp_mat)[4];
+  float(*disp_tail_mat)[4];
+  float rot_mat[3][3];
+
+  /* See TODO: above. */
+  mul_v3_v3fl(bone_scale, pchan->custom_scale_xyz, PCHAN_CUSTOM_BONE_LENGTH(pchan));
+  bone_mat = pchan->custom_tx ? pchan->custom_tx->pose_mat : pchan->pose_mat;
+  disp_mat = pchan->disp_mat;
+  disp_tail_mat = pchan->disp_tail_mat;
+
+  eulO_to_mat3(rot_mat, pchan->custom_rotation_euler, ROT_MODE_XYZ);
+
+  copy_m4_m4(disp_mat, bone_mat);
+  translate_m4(disp_mat,
+               pchan->custom_translation[0],
+               pchan->custom_translation[1],
+               pchan->custom_translation[2]);
+  mul_m4_m4m3(disp_mat, disp_mat, rot_mat);
+  rescale_m4(disp_mat, bone_scale);
+  copy_m4_m4(disp_tail_mat, disp_mat);
+  translate_m4(disp_tail_mat, 0.0f, 1.0f, 0.0f);
+}
+
+static void draw_axes(ArmatureDrawContext *ctx,
+                      const EditBone *eBone,
+                      const bPoseChannel *pchan,
+                      const bArmature *arm)
+{
+  float final_col[4];
+  const float *col = (ctx->const_color)                        ? ctx->const_color :
+                     (BONE_FLAG(eBone, pchan) & BONE_SELECTED) ? G_draw.block.colorTextHi :
+                                                                 G_draw.block.colorText;
+  copy_v4_v4(final_col, col);
+  /* Mix with axes color. */
+  final_col[3] = (ctx->const_color) ? 1.0 : (BONE_FLAG(eBone, pchan) & BONE_SELECTED) ? 0.1 : 0.65;
+
+  if (pchan && pchan->custom && !(arm->flag & ARM_NO_CUSTOM)) {
+    /* Special case: Custom bones can have different scale than the bone.
+     * Recompute display matrix without the custom scaling applied. (T65640). */
+    float axis_mat[4][4];
+    float length = pchan->bone->length;
+    copy_m4_m4(axis_mat, pchan->custom_tx ? pchan->custom_tx->pose_mat : pchan->pose_mat);
+    rescale_m4(axis_mat, (float[3]){length, length, length});
+    translate_m4(axis_mat, 0.0, arm->axes_position - 1.0, 0.0);
+
+    drw_shgroup_bone_axes(ctx, axis_mat, final_col);
+  }
+  else {
+    float disp_mat[4][4];
+    copy_m4_m4(disp_mat, BONE_VAR(eBone, pchan, disp_mat));
+    translate_m4(disp_mat, 0.0, arm->axes_position - 1.0, 0.0);
+    drw_shgroup_bone_axes(ctx, disp_mat, final_col);
+  }
+}
+
+static void draw_points(ArmatureDrawContext *ctx,
+                        const EditBone *eBone,
+                        const bPoseChannel *pchan,
+                        const bArmature *arm,
+                        const int boneflag,
+                        const short constflag,
+                        const int select_id)
+{
+  float col_solid_root[4], col_solid_tail[4], col_wire_root[4], col_wire_tail[4];
+  float col_hint_root[4], col_hint_tail[4];
+
+  copy_v4_v4(col_solid_root, G_draw.block.colorBoneSolid);
+  copy_v4_v4(col_solid_tail, G_draw.block.colorBoneSolid);
+  copy_v4_v4(col_wire_root, (ctx->const_color) ? ctx->const_color : G_draw.block.colorVertex);
+  copy_v4_v4(col_wire_tail, (ctx->const_color) ? ctx->const_color : G_draw.block.colorVertex);
+
+  const bool is_envelope_draw = (arm->drawtype == ARM_ENVELOPE);
+  const float envelope_ignore = -1.0f;
+
+  col_wire_tail[3] = col_wire_root[3] = get_bone_wire_thickness(ctx, boneflag);
+
+  /* Edit bone points can be selected */
+  if (eBone) {
+    if (eBone->flag & BONE_ROOTSEL) {
+      copy_v3_v3(col_wire_root, G_draw.block.colorVertexSelect);
+    }
+    if (eBone->flag & BONE_TIPSEL) {
+      copy_v3_v3(col_wire_tail, G_draw.block.colorVertexSelect);
+    }
+  }
+  else if (arm->flag & ARM_POSEMODE) {
+    const float *solid_color = get_bone_solid_color(ctx, eBone, pchan, arm, boneflag, constflag);
+    const float *wire_color = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+    copy_v4_v4(col_wire_tail, wire_color);
+    copy_v4_v4(col_wire_root, wire_color);
+    copy_v4_v4(col_solid_tail, solid_color);
+    copy_v4_v4(col_solid_root, solid_color);
+  }
+
+  bone_hint_color_shade(col_hint_root, (ctx->const_color) ? col_solid_root : col_wire_root);
+  bone_hint_color_shade(col_hint_tail, (ctx->const_color) ? col_solid_tail : col_wire_tail);
+
+  /* Draw root point if we are not connected to our parent */
+  if (!(eBone ? (eBone->parent && (boneflag & BONE_CONNECTED)) :
+                (pchan->bone->parent && (boneflag & BONE_CONNECTED)))) {
+    if (select_id != -1) {
+      DRW_select_load_id(select_id | BONESEL_ROOT);
+    }
+
+    if (eBone) {
+      if (is_envelope_draw) {
+        drw_shgroup_bone_envelope(ctx,
+                                  eBone->disp_mat,
+                                  col_solid_root,
+                                  col_hint_root,
+                                  col_wire_root,
+                                  &eBone->rad_head,
+                                  &envelope_ignore);
+      }
+      else {
+        drw_shgroup_bone_point(ctx, eBone->disp_mat, col_solid_root, col_hint_root, col_wire_root);
+      }
+    }
+    else {
+      Bone *bone = pchan->bone;
+      if (is_envelope_draw) {
+        draw_shgroup_bone_envelope(ctx,
+                                  pchan->disp_mat,
+                                  col_solid_root,
+                                  col_hint_root,
+                                  col_wire_root,
+                                  &bone->rad_head,
+                                  &envelope_ignore);
+      }
+      else {
+        draw_shgroup_bone_point(ctx, pchan->disp_mat, col_solid_root, col_hint_root, col_wire_root);
+      }
+    }
+  }
+
+  /*  Draw tip point */
+  if (select_id != -1) {
+    draw_select_load_id(select_id | BONESEL_TIP);
+  }
+
+  if (is_envelope_draw) {
+    const float *rad_tail = eBone ? &eBone->rad_tail : &pchan->bone->rad_tail;
+    draw_shgroup_bone_envelope(ctx,
+                              BONE_VAR(eBone, pchan, disp_mat),
+                              col_solid_tail,
+                              col_hint_tail,
+                              col_wire_tail,
+                              &envelope_ignore,
+                              rad_tail);
+  }
+  else {
+    draw_shgroup_bone_point(
+        ctx, BONE_VAR(eBone, pchan, disp_tail_mat), col_solid_tail, col_hint_tail, col_wire_tail);
+  }
+
+  if (select_id != -1) {
+    draw_select_load_id(-1);
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/** Draw Bones **/
+
+static void draw_bone_custom_shape(ArmatureDrawContext *ctx,
+                                   EditBone *eBone,
+                                   bPoseChannel *pchan,
+                                   bArmature *arm,
+                                   const int boneflag,
+                                   const short constflag,
+                                   const int select_id)
+{
+  const float *col_solid = get_bone_solid_color(ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_wire = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_hint = get_bone_hint_color(ctx, eBone, pchan, arm, boneflag, constflag);
+  const float(*disp_mat)[4] = pchan->disp_mat;
+
+  if (select_id != -1) {
+    draw_select_load_id(select_id | BONESEL_BONE);
+  }
+
+  if (pchan->custom->type == OB_EMPTY) {
+    Object *ob = pchan->custom;
+    if (ob->empty_drawtype != OB_EMPTY_IMAGE) {
+      draw_shgroup_bone_custom_empty(ctx, disp_mat, col_wire, pchan->custom);
+    }
+  }
+  if ((boneflag & BONE_DRAWWIRE) == 0 && (boneflag & BONE_DRAW_LOCKED_WEIGHT) == 0) {
+    draw_shgroup_bone_custom_solid(ctx, disp_mat, col_solid, col_hint, col_wire, pchan->custom);
+  }
+  else {
+    draw_shgroup_bone_custom_wire(ctx, disp_mat, col_wire, pchan->custom);
+  }
+
+  if (select_id != -1) {
+    draw_select_load_id(-1);
+  }
+}
+
+static void draw_bone_envelope(ArmatureDrawCtx *ctx,
+                               EditBone *eBone,
+                               DPoseChannel *pchan,
+                               DArmature *arm,
+                               const int boneflag,
+                               const short constflag,
+                               const int select_id)
+{
+  const float *col_solid = get_bone_solid_with_consts_color(
+      ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_wire = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_hint = get_bone_hint_color(ctx, eBone, pchan, arm, boneflag, constflag);
+
+  float *rad_head, *rad_tail, *distance;
+  if (eBone) {
+    rad_tail = &eBone->rad_tail;
+    distance = &eBone->dist;
+    rad_head = (eBone->parent && (boneflag & BONE_CONNECTED)) ? &eBone->parent->rad_tail :
+                                                                &eBone->rad_head;
+  }
+  else {
+    rad_tail = &pchan->bone->rad_tail;
+    distance = &pchan->bone->dist;
+    rad_head = (pchan->parent && (boneflag & BONE_CONNECTED)) ? &pchan->parent->bone->rad_tail :
+                                                                &pchan->bone->rad_head;
+  }
+
+  if ((select_id == -1) && (boneflag & BONE_NO_DEFORM) == 0 &&
+      ((boneflag & BONE_SELECTED) || (eBone && (boneflag & (BONE_ROOTSEL | BONE_TIPSEL))))) {
+    draw_shgroup_bone_envelope_distance(
+        ctx, BONE_VAR(eBone, pchan, disp_mat), rad_head, rad_tail, distance);
+  }
+
+  if (select_id != -1) {
+    draw_select_load_id(select_id | BONESEL_BONE);
+  }
+
+  draw_shgroup_bone_envelope(
+      ctx, BONE_VAR(eBone, pchan, disp_mat), col_solid, col_hint, col_wire, rad_head, rad_tail);
+
+  if (select_id != -1) {
+    draw_select_load_id(-1);
+  }
+
+  draw_points(ctx, eBone, pchan, arm, boneflag, constflag, select_id);
+}
+
+static void draw_bone_line(ArmatureDrawCtx *ctx,
+                           EditBone *eBone,
+                           DPoseChannel *pchan,
+                           DArmature *arm,
+                           const int boneflag,
+                           const short constflag,
+                           const int select_id)
+{
+  const float *col_bone = get_bone_solid_with_consts_color(
+      ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_wire = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+  const float no_display[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+  const float *col_head = no_display;
+  const float *col_tail = col_bone;
+
+  if (ctx->const_color != NULL) {
+    col_wire = no_display; /* actually shrink the display. */
+    col_bone = col_head = col_tail = ctx->const_color;
+  }
+  else {
+    if (eBone) {
+      if (eBone->flag & BONE_TIPSEL) {
+        col_tail = G_draw.block.colorVertexSelect;
+      }
+      if (boneflag & BONE_SELECTED) {
+        col_bone = G_draw.block.colorBoneActive;
+      }
+      col_wire = G_draw.block.colorWire;
+    }
+
+    /* Draw root point if we are not connected to our parent. */
+    if (!(eBone ? (eBone->parent && (boneflag & BONE_CONNECTED)) :
+                  (pchan->bone->parent && (boneflag & BONE_CONNECTED)))) {
+
+      if (eBone) {
+        col_head = (eBone->flag & BONE_ROOTSEL) ? G_draw.block.colorVertexSelect : col_bone;
+      }
+      else {
+        col_head = col_bone;
+      }
+    }
+  }
+
+  if (select_id == -1) {
+    /* Not in selection mode, draw everything at once. */
+    draw_shgroup_bone_stick(
+        ctx, BONE_VAR(eBone, pchan, disp_mat), col_wire, col_bone, col_head, col_tail);
+  }
+  else {
+    /* In selection mode, draw bone, root and tip separately. */
+    draw_select_load_id(select_id | BONESEL_BONE);
+    draw_shgroup_bone_stick(
+        ctx, BONE_VAR(eBone, pchan, disp_mat), col_wire, col_bone, no_display, no_display);
+
+    if (col_head[3] > 0.0f) {
+      draw_select_load_id(select_id | BONESEL_ROOT);
+      draw_shgroup_bone_stick(
+          ctx, BONE_VAR(eBone, pchan, disp_mat), col_wire, no_display, col_head, no_display);
+    }
+
+    draw_select_load_id(select_id | BONESEL_TIP);
+    draw_shgroup_bone_stick(
+        ctx, BONE_VAR(eBone, pchan, disp_mat), col_wire, no_display, no_display, col_tail);
+
+    draw_select_load_id(-1);
+  }
+}
+
+static void draw_bone_wire(ArmatureDrawCtx *ctx,
+                           EditBone *eBone,
+                           DPoseChannel *pchan,
+                           DArmature *arm,
+                           const int boneflag,
+                           const short constflag,
+                           const int select_id)
+{
+  const float *col_wire = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+
+  if (select_id != -1) {
+    draw_select_load_id(select_id | BONESEL_BONE);
+  }
+
+  if (pchan) {
+    Mat4 *bbones_mat = (Mat4 *)pchan->draw_data->bbone_matrix;
+    lib_assert(bbones_mat != NULL);
+
+    for (int i = pchan->bone->segments; i--; bbones_mat++) {
+      draw_shgroup_bone_wire(ctx, bbones_mat->mat, col_wire);
+    }
+  }
+  else if (eBone) {
+    for (int i = 0; i < eBone->segments; i++) {
+      draw_shgroup_bone_wire(ctx, eBone->disp_bbone_mat[i], col_wire);
+    }
+  }
+
+  if (select_id != -1) {
+    draw_select_load_id(-1);
+  }
+
+  if (eBone) {
+    draw_points(ctx, eBone, pchan, arm, boneflag, constflag, select_id);
+  }
+}
+
+static void draw_bone_box(ArmatureDrawCtx *ctx,
+                          EditBone *eBone,
+                          DPoseChannel *pchan,
+                          DArmature *arm,
+                          const int boneflag,
+                          const short constflag,
+                          const int select_id)
+{
+  const float *col_solid = get_bone_solid_with_consts_color(
+      ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_wire = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_hint = get_bone_hint_color(ctx, eBone, pchan, arm, boneflag, constflag);
+
+  if (select_id != -1) {
+    draw_select_load_id(select_id | BONESEL_BONE);
+  }
+
+  if (pchan) {
+    Mat4 *bbones_mat = (Mat4 *)pchan->draw_data->bbone_matrix;
+    lib_assert(bbones_mat != NULL);
+
+    for (int i = pchan->bone->segments; i--; bbones_mat++) {
+      draw_shgroup_bone_box(ctx, bbones_mat->mat, col_solid, col_hint, col_wire);
+    }
+  }
+  else if (eBone) {
+    for (int i = 0; i < eBone->segments; i++) {
+      draw_shgroup_bone_box(ctx, eBone->disp_bbone_mat[i], col_solid, col_hint, col_wire);
+    }
+  }
+
+  if (select_id != -1) {
+    draw_select_load_id(-1);
+  }
+
+  if (eBone) {
+    draw_points(ctx, eBone, pchan, arm, boneflag, constflag, select_id);
+  }
+}
+
+static void draw_bone_octahedral(ArmatureDrawCtx *ctx,
+                                 EditBone *eBone,
+                                 DPoseChannel *pchan,
+                                 DArmature *arm,
+                                 const int boneflag,
+                                 const short constflag,
+                                 const int select_id)
+{
+  const float *col_solid = get_bone_solid_with_consts_color(
+      ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_wire = get_bone_wire_color(ctx, eBone, pchan, arm, boneflag, constflag);
+  const float *col_hint = get_bone_hint_color(ctx, eBone, pchan, arm, boneflag, constflag);
+
+  if (select_id != -1) {
+    draw_select_load_id(select_id | BONESEL_BONE);
+  }
+
+  draw_shgroup_bone_octahedral(
+      ctx, BONE_VAR(eBone, pchan, disp_mat), col_solid, col_hint, col_wire);
+
+  if (select_id != -1) {
+    draw_select_load_id(-1);
+  }
+
+  draw_points(ctx, eBone, pchan, arm, boneflag, constflag, select_id);
+}
+
+/* -------------------------------------------------------------------- */
+/** Draw Degrees of Freedom **/
+
+static void draw_bone_degrees_of_freedom(ArmatureDrawCtx *ctx, DPoseChannel *pchan)
+{
+  BoneInstanceData inst_data;
+  float tmp[4][4], posetrans[4][4];
+  float xminmax[2], zminmax[2];
+  float color[4];
+
+  if (ctx->dof_sphere == NULL) {
+    return;
+  }
+
+  /* *0.5f here comes from M_PI/360.0f when rotations were still in degrees */
+  xminmax[0] = sinf(pchan->limitmin[0] * 0.5f);
+  xminmax[1] = sinf(pchan->limitmax[0] * 0.5f);
+  zminmax[0] = sinf(pchan->limitmin[2] * 0.5f);
+  zminmax[1] = sinf(pchan->limitmax[2] * 0.5f);
+
+  unit_m4(posetrans);
+  translate_m4(posetrans, pchan->pose_mat[3][0], pchan->pose_mat[3][1], pchan->pose_mat[3][2]);
+  /* In parent-bone pose space... */
+  if (pchan->parent) {
+    copy_m4_m4(tmp, pchan->parent->pose_mat);
+    zero_v3(tmp[3]);
+    mul_m4_m4m4(posetrans, posetrans, tmp);
+  }
+  /* ... but own rest-space. */
+  mul_m4_m4m3(posetrans, posetrans, pchan->bone->bone_mat);
+
+  float scale = pchan->bone->length * pchan->size[1];
+  scale_m4_fl(tmp, scale);
+  tmp[1][1] = -tmp[1][1];
+  mul_m4_m4m4(posetrans, posetrans, tmp);
+
+  /* into world space. */
+  mul_m4_m4m4(inst_data.mat, ctx->ob->obmat, posetrans);
+
+  if ((pchan->ikflag & BONE_IK_XLIMIT) && (pchan->ikflag & BONE_IK_ZLIMIT)) {
+    bone_instance_data_set_angle_minmax(
+        &inst_data, xminmax[0], zminmax[0], xminmax[1], zminmax[1]);
+
+    copy_v4_fl4(color, 0.25f, 0.25f, 0.25f, 0.25f);
+    draw_buffer_add_entry(ctx->dof_sphere, color, &inst_data);
+
+    copy_v4_fl4(color, 0.0f, 0.0f, 0.0f, 1.0f);
+    draw_buffer_add_entry(ctx->dof_lines, color, &inst_data);
+  }
+  if (pchan->ikflag & BONE_IK_XLIMIT) {
+    bone_instance_data_set_angle_minmax(&inst_data, xminmax[0], 0.0f, xminmax[1], 0.0f);
+    copy_v4_fl4(color, 1.0f, 0.0f, 0.0f, 1.0f);
+    draw_buffer_add_entry(ctx->dof_lines, color, &inst_data);
+  }
+  if (pchan->ikflag & BONE_IK_ZLIMIT) {
+    bone_instance_data_set_angle_minmax(&inst_data, 0.0f, zminmax[0], 0.0f, zminmax[1]);
+    copy_v4_fl4(color, 0.0f, 0.0f, 1.0f, 1.0f);
+    draw_buffer_add_entry(ctx->dof_lines, color, &inst_data);
+  }
+}
+
+/* -------------------------------------------------------------------- */
+/** Draw Relationships **/
+
+static void pchan_draw_ik_lines(ArmatureDrawCtx *ctx,
+                                DPoseChannel *pchan,
+                                const bool only_temp,
+                                const int constflag)
+{
+  DConstraint *con;
+  DPoseChannel *parchan;
+  float *line_start = NULL, *line_end = NULL;
+
+  for (con = pchan->constraints.first; con; con = con->next) {
+    if (con->enforce == 0.0f) {
+      continue;
+    }
+
+    switch (con->type) {
+      case CONSTRAINT_TYPE_KINEMATIC: {
+        DKinematicConstraint *data = (bKinematicConstraint *)con->data;
+        int segcount = 0;
+
+        /* if only_temp, only draw if it is a temporary ik-chain */
+        if (only_temp && !(data->flag & CONSTRAINT_IK_TEMP)) {
+          continue;
+        }
+
+        /* exclude tip from chain? */
+        parchan = ((data->flag & CONSTRAINT_IK_TIP) == 0) ? pchan->parent : pchan;
+        line_start = parchan->pose_tail;
+
+        /* Find the chain's root */
+        while (parchan->parent) {
+          segcount++;
+          if (segcount == data->rootbone || segcount > 255) {
+            break; /* 255 is weak */
+          }
+          parchan = parchan->parent;
+        }
+
+        if (parchan) {
+          line_end = parchan->pose_head;
+
+          if (constflag & PCHAN_HAS_TARGET) {
+            draw_shgroup_bone_ik_lines(ctx, line_start, line_end);
+          }
+          else {
+            draw_shgroup_bone_ik_no_target_lines(ctx, line_start, line_end);
+          }
+        }
+        break;
+      }
+      case CONSTRAINT_TYPE_SPLINEIK: {
+        DSplineIKConstraint *data = (bSplineIKConstraint *)con->data;
+        int segcount = 0;
+
+        /* don't draw if only_temp, as Spline IK chains cannot be temporary */
+        if (only_temp) {
+          continue;
+        }
+
+        parchan = pchan;
+        line_start = parchan->pose_tail;
+
+        /* Find the chain's root */
+        while (parchan->parent) {
+          segcount++;
+          /* fixme: revise the breaking conditions */
+          if (segcount == data->chainlen || segcount > 255) {
+            break; /* 255 is weak */
+          }
+          parchan = parchan->parent;
+        }
+        /* Only draw line in case our chain is more than one bone long! */
+        if (parchan != pchan) { /* XXX revise the breaking conditions to only stop at the tail? */
+          line_end = parchan->pose_head;
+          draw_shgroup_bone_ik_spline_lines(ctx, line_start, line_end);
+        }
+        break;
+      }
+    }
+  }
+}
+
