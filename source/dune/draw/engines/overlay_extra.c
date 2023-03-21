@@ -1332,3 +1332,298 @@ static void OVERLAY_relationship_lines(OVERLAY_ExtraCallBuffers *cb,
     MEM_freeN(cob);
   }
 }
+
+/* -------------------------------------------------------------------- */
+/** \name Volumetric / Smoke sim
+ * \{ */
+
+static void OVERLAY_volume_extra(OVERLAY_ExtraCallBuffers *cb,
+                                 OVERLAY_Data *data,
+                                 Object *ob,
+                                 ModifierData *md,
+                                 Scene *scene,
+                                 const float *color)
+{
+  FluidModifierData *fmd = (FluidModifierData *)md;
+  FluidDomainSettings *fds = fmd->domain;
+
+  /* Don't show smoke before simulation starts, this could be made an option in the future. */
+  const bool draw_velocity = (fds->draw_velocity && fds->fluid &&
+                              CFRA >= fds->point_cache[0]->startframe);
+
+  /* Show gridlines only for slices with no interpolation. */
+  const bool show_gridlines = (fds->show_gridlines && fds->fluid &&
+                               fds->axis_slice_method == AXIS_SLICE_SINGLE &&
+                               (fds->interp_method == FLUID_DISPLAY_INTERP_CLOSEST ||
+                                fds->coba_field == FLUID_DOMAIN_FIELD_FLAGS));
+
+  const bool color_with_flags = (fds->gridlines_color_field == FLUID_GRIDLINE_COLOR_TYPE_FLAGS);
+
+  const bool color_range = (fds->gridlines_color_field == FLUID_GRIDLINE_COLOR_TYPE_RANGE &&
+                            fds->use_coba && fds->coba_field != FLUID_DOMAIN_FIELD_FLAGS);
+
+  /* Small cube showing voxel size. */
+  {
+    float min[3];
+    madd_v3fl_v3fl_v3fl_v3i(min, fds->p0, fds->cell_size, fds->res_min);
+    float voxel_cubemat[4][4] = {{0.0f}};
+    /* scale small cube to voxel size */
+    voxel_cubemat[0][0] = fds->cell_size[0] / 2.0f;
+    voxel_cubemat[1][1] = fds->cell_size[1] / 2.0f;
+    voxel_cubemat[2][2] = fds->cell_size[2] / 2.0f;
+    voxel_cubemat[3][3] = 1.0f;
+    /* translate small cube to corner */
+    copy_v3_v3(voxel_cubemat[3], min);
+    /* move small cube into the domain (otherwise its centered on vertex of domain object) */
+    translate_m4(voxel_cubemat, 1.0f, 1.0f, 1.0f);
+    mul_m4_m4m4(voxel_cubemat, ob->obmat, voxel_cubemat);
+
+    DRW_buffer_add_entry(cb->empty_cube, color, voxel_cubemat);
+  }
+
+  int slice_axis = -1;
+
+  if (fds->axis_slice_method == AXIS_SLICE_SINGLE) {
+    float viewinv[4][4];
+    DRW_view_viewmat_get(NULL, viewinv, true);
+
+    const int axis = (fds->slice_axis == SLICE_AXIS_AUTO) ? axis_dominant_v3_single(viewinv[2]) :
+                                                            fds->slice_axis - 1;
+    slice_axis = axis;
+  }
+
+  if (draw_velocity) {
+    const bool use_needle = (fds->vector_draw_type == VECTOR_DRAW_NEEDLE);
+    const bool use_mac = (fds->vector_draw_type == VECTOR_DRAW_MAC);
+    const bool draw_mac_x = (fds->vector_draw_mac_components & VECTOR_DRAW_MAC_X);
+    const bool draw_mac_y = (fds->vector_draw_mac_components & VECTOR_DRAW_MAC_Y);
+    const bool draw_mac_z = (fds->vector_draw_mac_components & VECTOR_DRAW_MAC_Z);
+    const bool cell_centered = (fds->vector_field == FLUID_DOMAIN_VECTOR_FIELD_FORCE);
+    int line_count = 1;
+    if (use_needle) {
+      line_count = 6;
+    }
+    else if (use_mac) {
+      line_count = 3;
+    }
+    line_count *= fds->res[0] * fds->res[1] * fds->res[2];
+
+    if (fds->axis_slice_method == AXIS_SLICE_SINGLE) {
+      line_count /= fds->res[slice_axis];
+    }
+
+    DRW_smoke_ensure_velocity(fmd);
+
+    GPUShader *sh = OVERLAY_shader_volume_velocity(use_needle, use_mac);
+    DRWShadingGroup *grp = DRW_shgroup_create(sh, data->psl->extra_ps[0]);
+    DRW_shgroup_uniform_texture(grp, "velocityX", fds->tex_velocity_x);
+    DRW_shgroup_uniform_texture(grp, "velocityY", fds->tex_velocity_y);
+    DRW_shgroup_uniform_texture(grp, "velocityZ", fds->tex_velocity_z);
+    DRW_shgroup_uniform_float_copy(grp, "displaySize", fds->vector_scale);
+    DRW_shgroup_uniform_float_copy(grp, "slicePosition", fds->slice_depth);
+    DRW_shgroup_uniform_vec3_copy(grp, "cellSize", fds->cell_size);
+    DRW_shgroup_uniform_vec3_copy(grp, "domainOriginOffset", fds->p0);
+    DRW_shgroup_uniform_ivec3_copy(grp, "adaptiveCellOffset", fds->res_min);
+    DRW_shgroup_uniform_int_copy(grp, "sliceAxis", slice_axis);
+    DRW_shgroup_uniform_bool_copy(grp, "scaleWithMagnitude", fds->vector_scale_with_magnitude);
+    DRW_shgroup_uniform_bool_copy(grp, "isCellCentered", cell_centered);
+
+    if (use_mac) {
+      DRW_shgroup_uniform_bool_copy(grp, "drawMACX", draw_mac_x);
+      DRW_shgroup_uniform_bool_copy(grp, "drawMACY", draw_mac_y);
+      DRW_shgroup_uniform_bool_copy(grp, "drawMACZ", draw_mac_z);
+    }
+
+    DRW_shgroup_call_procedural_lines(grp, ob, line_count);
+  }
+
+  if (show_gridlines) {
+    GPUShader *sh = OVERLAY_shader_volume_gridlines(color_with_flags, color_range);
+    DRWShadingGroup *grp = DRW_shgroup_create(sh, data->psl->extra_ps[0]);
+    DRW_shgroup_uniform_ivec3_copy(grp, "volumeSize", fds->res);
+    DRW_shgroup_uniform_float_copy(grp, "slicePosition", fds->slice_depth);
+    DRW_shgroup_uniform_vec3_copy(grp, "cellSize", fds->cell_size);
+    DRW_shgroup_uniform_vec3_copy(grp, "domainOriginOffset", fds->p0);
+    DRW_shgroup_uniform_ivec3_copy(grp, "adaptiveCellOffset", fds->res_min);
+    DRW_shgroup_uniform_int_copy(grp, "sliceAxis", slice_axis);
+
+    if (color_with_flags || color_range) {
+      DRW_fluid_ensure_flags(fmd);
+      DRW_shgroup_uniform_texture(grp, "flagTexture", fds->tex_flags);
+    }
+
+    if (color_range) {
+      DRW_fluid_ensure_range_field(fmd);
+      DRW_shgroup_uniform_texture(grp, "fieldTexture", fds->tex_range_field);
+      DRW_shgroup_uniform_float_copy(grp, "lowerBound", fds->gridlines_lower_bound);
+      DRW_shgroup_uniform_float_copy(grp, "upperBound", fds->gridlines_upper_bound);
+      DRW_shgroup_uniform_vec4_copy(grp, "rangeColor", fds->gridlines_range_color);
+      DRW_shgroup_uniform_int_copy(grp, "cellFilter", fds->gridlines_cell_filter);
+    }
+
+    const int line_count = 4 * fds->res[0] * fds->res[1] * fds->res[2] / fds->res[slice_axis];
+    DRW_shgroup_call_procedural_lines(grp, ob, line_count);
+  }
+
+  if (draw_velocity || show_gridlines) {
+    BLI_addtail(&data->stl->pd->smoke_domains, BLI_genericNodeN(fmd));
+  }
+}
+
+static void OVERLAY_volume_free_smoke_textures(OVERLAY_Data *data)
+{
+  /* Free Smoke Textures after rendering */
+  /* XXX This is a waste of processing and GPU bandwidth if nothing
+   * is updated. But the problem is since Textures are stored in the
+   * modifier we don't want them to take precious VRAM if the
+   * modifier is not used for display. We should share them for
+   * all viewport in a redraw at least. */
+  LinkData *link;
+  while ((link = BLI_pophead(&data->stl->pd->smoke_domains))) {
+    FluidModifierData *fmd = (FluidModifierData *)link->data;
+    DRW_smoke_free_velocity(fmd);
+    MEM_freeN(link);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+
+static void OVERLAY_object_center(OVERLAY_ExtraCallBuffers *cb,
+                                  Object *ob,
+                                  OVERLAY_PrivateData *pd,
+                                  ViewLayer *view_layer)
+{
+  const bool is_library = ID_REAL_USERS(&ob->id) > 1 || ID_IS_LINKED(ob);
+
+  if (ob == OBACT(view_layer)) {
+    DRW_buffer_add_entry(cb->center_active, ob->obmat[3]);
+  }
+  else if (ob->base_flag & BASE_SELECTED) {
+    DRWCallBuffer *cbuf = (is_library) ? cb->center_selected_lib : cb->center_selected;
+    DRW_buffer_add_entry(cbuf, ob->obmat[3]);
+  }
+  else if (pd->v3d_flag & V3D_DRAW_CENTERS) {
+    DRWCallBuffer *cbuf = (is_library) ? cb->center_deselected_lib : cb->center_deselected;
+    DRW_buffer_add_entry(cbuf, ob->obmat[3]);
+  }
+}
+
+static void OVERLAY_object_name(Object *ob, int theme_id)
+{
+  struct DRWTextStore *dt = DRW_text_cache_ensure();
+  uchar color[4];
+  /* Color Management: Exception here as texts are drawn in sRGB space directly. */
+  UI_GetThemeColor4ubv(theme_id, color);
+
+  DRW_text_cache_add(dt,
+                     ob->obmat[3],
+                     ob->id.name + 2,
+                     strlen(ob->id.name + 2),
+                     10,
+                     0,
+                     DRW_TEXT_CACHE_GLOBALSPACE | DRW_TEXT_CACHE_STRING_PTR,
+                     color);
+}
+
+void OVERLAY_extra_cache_populate(OVERLAY_Data *vedata, Object *ob)
+{
+  OVERLAY_ExtraCallBuffers *cb = OVERLAY_extra_call_buffer_get(vedata, ob);
+  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  const DRWContextState *draw_ctx = DRW_context_state_get();
+  ViewLayer *view_layer = draw_ctx->view_layer;
+  Scene *scene = draw_ctx->scene;
+  ModifierData *md = NULL;
+
+  const bool is_select_mode = DRW_state_is_select();
+  const bool is_paint_mode = (draw_ctx->object_mode &
+                              (OB_MODE_ALL_PAINT | OB_MODE_ALL_PAINT_GPENCIL)) != 0;
+  const bool from_dupli = (ob->base_flag & (BASE_FROM_SET | BASE_FROM_DUPLI)) != 0;
+  const bool has_bounds = !ELEM(ob->type, OB_LAMP, OB_CAMERA, OB_EMPTY, OB_SPEAKER, OB_LIGHTPROBE);
+  const bool has_texspace = has_bounds &&
+                            !ELEM(ob->type, OB_EMPTY, OB_LATTICE, OB_ARMATURE, OB_GPENCIL);
+
+  const bool draw_relations = ((pd->v3d_flag & V3D_HIDE_HELPLINES) == 0) && !is_select_mode;
+  const bool draw_obcenters = !is_paint_mode &&
+                              (pd->overlay.flag & V3D_OVERLAY_HIDE_OBJECT_ORIGINS) == 0;
+  const bool draw_texspace = (ob->dtx & OB_TEXSPACE) && has_texspace;
+  const bool draw_obname = (ob->dtx & OB_DRAWNAME) && DRW_state_show_text();
+  const bool draw_bounds = has_bounds && ((ob->dt == OB_BOUNDBOX) ||
+                                          ((ob->dtx & OB_DRAWBOUNDOX) && !from_dupli));
+  const bool draw_xform = draw_ctx->object_mode == OB_MODE_OBJECT &&
+                          (scene->toolsettings->transform_flag & SCE_XFORM_DATA_ORIGIN) &&
+                          (ob->base_flag & BASE_SELECTED) && !is_select_mode;
+  /* Don't show fluid domain overlay extras outside of cache range. */
+  const bool draw_volume = !from_dupli &&
+                           (md = BKE_modifiers_findby_type(ob, eModifierType_Fluid)) &&
+                           (BKE_modifier_is_enabled(scene, md, eModifierMode_Realtime)) &&
+                           (((FluidModifierData *)md)->domain != NULL) &&
+                           (CFRA >= (((FluidModifierData *)md)->domain->cache_frame_start)) &&
+                           (CFRA <= (((FluidModifierData *)md)->domain->cache_frame_end));
+
+  float *color;
+  int theme_id = DRW_object_wire_theme_get(ob, view_layer, &color);
+
+  if (ob->pd && ob->pd->forcefield) {
+    OVERLAY_forcefield(cb, ob, view_layer);
+  }
+
+  if (draw_bounds) {
+    OVERLAY_bounds(cb, ob, color, ob->boundtype, false);
+  }
+  /* Helpers for when we're transforming origins. */
+  if (draw_xform) {
+    const float color_xform[4] = {0.15f, 0.15f, 0.15f, 0.7f};
+    DRW_buffer_add_entry(cb->origin_xform, color_xform, ob->obmat);
+  }
+  /* don't show object extras in set's */
+  if (!from_dupli) {
+    if (draw_obcenters) {
+      OVERLAY_object_center(cb, ob, pd, view_layer);
+    }
+    if (draw_relations) {
+      OVERLAY_relationship_lines(cb, draw_ctx->depsgraph, draw_ctx->scene, ob);
+    }
+    if (draw_obname) {
+      OVERLAY_object_name(ob, theme_id);
+    }
+    if (draw_texspace) {
+      OVERLAY_texture_space(cb, ob, color);
+    }
+    if (ob->rigidbody_object != NULL) {
+      OVERLAY_collision(cb, ob, color);
+    }
+    if (ob->dtx & OB_AXIS) {
+      DRW_buffer_add_entry(cb->empty_axes, color, ob->obmat);
+    }
+    if (draw_volume) {
+      OVERLAY_volume_extra(cb, vedata, ob, md, scene, color);
+    }
+  }
+}
+
+void OVERLAY_extra_blend_draw(OVERLAY_Data *vedata)
+{
+  DRW_draw_pass(vedata->psl->extra_blend_ps);
+}
+
+void OVERLAY_extra_draw(OVERLAY_Data *vedata)
+{
+  DRW_draw_pass(vedata->psl->extra_ps[0]);
+}
+
+void OVERLAY_extra_in_front_draw(OVERLAY_Data *vedata)
+{
+  DRW_draw_pass(vedata->psl->extra_ps[1]);
+
+  OVERLAY_volume_free_smoke_textures(vedata);
+}
+
+void OVERLAY_extra_centers_draw(OVERLAY_Data *vedata)
+{
+  OVERLAY_PassList *psl = vedata->psl;
+
+  DRW_draw_pass(psl->extra_grid_ps);
+  DRW_draw_pass(psl->extra_centers_ps);
+}
