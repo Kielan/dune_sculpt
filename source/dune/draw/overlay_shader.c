@@ -1651,3 +1651,134 @@ GPUShader *OVERLAY_shader_edit_uv_verts_get(void)
 
   return sh_data->edit_uv_verts;
 }
+
+GPUShader *OVERLAY_shader_edit_uv_stretching_area_get(void)
+{
+  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
+  if (!sh_data->edit_uv_stretching_area) {
+    sh_data->edit_uv_stretching_area = DRW_shader_create_with_shaderlib(
+        datatoc_edit_uv_stretching_vert_glsl,
+        NULL,
+        datatoc_gpu_shader_2D_smooth_color_frag_glsl,
+        e_data.lib,
+        "#define blender_srgb_to_framebuffer_space(a) a\n");
+  }
+
+  return sh_data->edit_uv_stretching_area;
+}
+
+GPUShader *overlay_shader_edit_uv_stretching_angle_get(void)
+{
+  OverlayShaders *sh_data = &e_data.sh_data[0];
+  if (!sh_data->edit_uv_stretching_angle) {
+    sh_data->edit_uv_stretching_angle = draw_shader_create_with_shaderlib(
+        datatoc_edit_uv_stretching_vert_glsl,
+        NULL,
+        datatoc_gpu_shader_2D_smooth_color_frag_glsl,
+        e_data.lib,
+        "#define blender_srgb_to_framebuffer_space(a) a\n#define STRETCH_ANGLE\n");
+  }
+
+  return sh_data->edit_uv_stretching_angle;
+}
+
+GPUShader *overlay_shader_edit_uv_tiled_image_borders_get(void)
+{
+  OverlayShaders *sh_data = &e_data.sh_data[0];
+  if (!sh_data->edit_uv_tiled_image_borders) {
+    sh_data->edit_uv_tiled_image_borders = DRW_shader_create_with_shaderlib(
+        datatoc_edit_uv_tiled_image_borders_vert_glsl,
+        NULL,
+        datatoc_gpu_shader_uniform_color_frag_glsl,
+        e_data.lib,
+        "#define blender_srgb_to_framebuffer_space(a) a\n");
+  }
+  return sh_data->edit_uv_tiled_image_borders;
+}
+
+static OverlayInstanceFormats g_formats = {NULL};
+
+OverlayInstanceFormats *overlay_shader_instance_formats_get(void)
+{
+  draw_shgroup_instance_format(g_formats.pos,
+                              {
+                                  {"pos", DRW_ATTR_FLOAT, 3},
+                              });
+  draw_shgroup_instance_format(g_formats.pos_color,
+                              {
+                                  {"pos", DRW_ATTR_FLOAT, 3},
+                                  {"color", DRW_ATTR_FLOAT, 4},
+                              });
+  draw_shgroup_instance_format(g_formats.instance_pos,
+                              {
+                                  {"inst_pos", DRW_ATTR_FLOAT, 3},
+                              });
+  draw_shgroup_instance_format(g_formats.instance_extra,
+                              {
+                                  {"color", DRW_ATTR_FLOAT, 4},
+                                  {"inst_obmat", DRW_ATTR_FLOAT, 16},
+                              });
+  draw_shgroup_instance_format(g_formats.wire_extra,
+                              {
+                                  {"pos", DRW_ATTR_FLOAT, 3},
+                                  {"colorid", DRW_ATTR_INT, 1},
+                              });
+  draw_shgroup_instance_format(g_formats.point_extra,
+                              {
+                                  {"pos", DRW_ATTR_FLOAT, 3},
+                                  {"colorid", DRW_ATTR_INT, 1},
+                              });
+  draw_shgroup_instance_format(g_formats.instance_bone,
+                              {
+                                  {"inst_obmat", DRW_ATTR_FLOAT, 16},
+                              });
+  draw_shgroup_instance_format(g_formats.instance_bone_stick,
+                              {
+                                  {"boneStart", DRW_ATTR_FLOAT, 3},
+                                  {"boneEnd", DRW_ATTR_FLOAT, 3},
+                                  {"wireColor", DRW_ATTR_FLOAT, 4}, /* TODO: uchar color. */
+                                  {"boneColor", DRW_ATTR_FLOAT, 4},
+                                  {"headColor", DRW_ATTR_FLOAT, 4},
+                                  {"tailColor", DRW_ATTR_FLOAT, 4},
+                              });
+  draw_shgroup_instance_format(g_formats.instance_bone_envelope_outline,
+                              {
+                                  {"headSphere", DRW_ATTR_FLOAT, 4},
+                                  {"tailSphere", DRW_ATTR_FLOAT, 4},
+                                  {"outlineColorSize", DRW_ATTR_FLOAT, 4},
+                                  {"xAxis", DRW_ATTR_FLOAT, 3},
+                              });
+  draw_shgroup_instance_format(g_formats.instance_bone_envelope_distance,
+                              {
+                                  {"headSphere", DRW_ATTR_FLOAT, 4},
+                                  {"tailSphere", DRW_ATTR_FLOAT, 4},
+                                  {"xAxis", DRW_ATTR_FLOAT, 3},
+                              });
+  draw_shgroup_instance_format(g_formats.instance_bone_envelope,
+                              {
+                                  {"headSphere", DRW_ATTR_FLOAT, 4},
+                                  {"tailSphere", DRW_ATTR_FLOAT, 4},
+                                  {"boneColor", DRW_ATTR_FLOAT, 3},
+                                  {"stateColor", DRW_ATTR_FLOAT, 3},
+                                  {"xAxis", DRW_ATTR_FLOAT, 3},
+                              });
+
+  return &g_formats;
+}
+
+void overlay_shader_free(void)
+{
+  DRAW_SHADER_LIB_FREE_SAFE(e_data.lib);
+
+  for (int sh_data_index = 0; sh_data_index < ARRAY_SIZE(e_data.sh_data); sh_data_index++) {
+    OverlayShaders *sh_data = &e_data.sh_data[sh_data_index];
+    GPUShader **sh_data_as_array = (GPUShader **)sh_data;
+    for (int i = 0; i < (sizeof(OverlayShaders) / sizeof(GPUShader *)); i++) {
+      DRAW_SHADER_FREE_SAFE(sh_data_as_array[i]);
+    }
+  }
+  struct GPUVertFormat **format = (struct GPUVertFormat **)&g_formats;
+  for (int i = 0; i < sizeof(g_formats) / sizeof(void *); i++, format++) {
+    MEM_SAFE_FREE(*format);
+  }
+}
