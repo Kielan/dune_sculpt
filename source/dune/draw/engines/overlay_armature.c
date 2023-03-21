@@ -170,13 +170,13 @@ void overlay_armature_cache_init(overlay_Data *vedata)
       sh = overlay_shader_armature_sphere(false);
       grp = draw_shgroup_create(sh, armature_ps);
       draw_shgroup_uniform_float_copy(grp, "alpha", 1.0f);
-      cb->solid.point_fill = BUF_INSTANCE(grp, format, DRW_cache_bone_point_get());
+      cb->solid.point_fill = BUF_INSTANCE(grp, format, draw_cache_bone_point_get());
 
       grp = draw_shgroup_create(sh, armature_ps);
-      draw_shgroup_state_disable(grp, DRW_STATE_WRITE_DEPTH);
-      draw_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
+      draw_shgroup_state_disable(grp, draw_STATE_WRITE_DEPTH);
+      draw_shgroup_state_enable(grp, draw_STATE_BLEND_ALPHA);
       draw_shgroup_uniform_float_copy(grp, "alpha", wire_alpha * 0.4f);
-      cb->transp.point_fill = BUF_INSTANCE(grp, format, DRW_cache_bone_point_get());
+      cb->transp.point_fill = BUF_INSTANCE(grp, format, draw_cache_bone_point_get());
 
       sh = overlay_shader_armature_shape(false);
       grp = draw_shgroup_create(sh, armature_ps);
@@ -297,7 +297,7 @@ void overlay_armature_cache_init(overlay_Data *vedata)
         draw_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
         draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
         draw_shgroup_uniform_float_copy(grp, "alpha", wire_alpha);
-        cb->transp.stick = BUF_INSTANCE(grp, format, DRW_cache_bone_stick_get());
+        cb->transp.stick = BUF_INSTANCE(grp, format, DRAW_cache_bone_stick_get());
       }
       else {
         cb->transp.stick = cb->solid.stick;
@@ -313,7 +313,7 @@ void overlay_armature_cache_init(overlay_Data *vedata)
       draw_shgroup_uniform_float_copy(grp, "alpha", 1.0f);
       cb->solid.envelope_fill = BUF_INSTANCE(grp, format, draw_cache_bone_envelope_solid_get());
 
-      grp = DRW_shgroup_create(sh, armature_ps);
+      grp = DRAW_shgroup_create(sh, armature_ps);
       draw_shgroup_state_disable(grp, DRAW_STATE_WRITE_DEPTH);
       draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA | DRAW_STATE_CULL_BACK);
       draw_shgroup_uniform_float_copy(grp, "alpha", wire_alpha * 0.6f);
@@ -698,7 +698,7 @@ static void draw_shgroup_bone_custom_wire(ArmatureDrawContext *ctx,
     draw_buffer_add_entry_struct(buf, inst_data.mat);
   }
 
-  /* TODO(fclem): needs to be moved elsewhere. */
+  /* TODO: needs to be moved elsewhere. */
   drw_batch_cache_generate_requested_delayed(custom);
 }
 
@@ -728,7 +728,7 @@ static void drw_shgroup_bone_custom_empty(ArmatureDrawContext *ctx,
 }
 
 /* Head and tail sphere */
-static void drw_shgroup_bone_point(ArmatureDrawContext *ctx,
+static void draw_shgroup_bone_point(ArmatureDrawCtx *ctx,
                                    const float (*bone_mat)[4],
                                    const float bone_color[4],
                                    const float hint_color[4],
@@ -857,7 +857,7 @@ static void set_pchan_colorset(ArmatureDrawCtx *ctx, Object *ob, DPoseChannel *p
   }
 }
 
-/* This function is for brightening/darkening a given color (like UI_GetThemeColorShade3ubv()) */
+/* This function is for brightening/darkening a given color (like ui_GetThemeColorShade3ubv()) */
 static void cp_shade_color3ub(uchar cp[3], const int offset)
 {
   int r, g, b;
@@ -875,31 +875,31 @@ static void cp_shade_color3ub(uchar cp[3], const int offset)
 }
 
 /* This function sets the gl-color for coloring a certain bone (based on bcolor) */
-static bool set_pchan_color(const ArmatureDrawContext *ctx,
+static bool set_pchan_color(const ArmatureDrawCtx *ctx,
                             short colCode,
                             const int boneflag,
                             const short constflag,
                             float r_color[4])
 {
   float *fcolor = r_color;
-  const ThemeWireColor *bcolor = ctx->bcolor;
+  const ThemeWireColor *dcolor = ctx->bcolor;
 
   switch (colCode) {
     case PCHAN_COLOR_NORMAL: {
-      if (bcolor) {
+      if (dcolor) {
         uchar cp[4] = {255};
         if (boneflag & BONE_DRAW_ACTIVE) {
-          copy_v3_v3_uchar(cp, bcolor->active);
+          copy_v3_v3_uchar(cp, dcolor->active);
           if (!(boneflag & BONE_SELECTED)) {
             cp_shade_color3ub(cp, -80);
           }
         }
         else if (boneflag & BONE_SELECTED) {
-          copy_v3_v3_uchar(cp, bcolor->select);
+          copy_v3_v3_uchar(cp, dcolor->select);
         }
         else {
           /* a bit darker than solid */
-          copy_v3_v3_uchar(cp, bcolor->solid);
+          copy_v3_v3_uchar(cp, dcolor->solid);
           cp_shade_color3ub(cp, -50);
         }
         rgb_uchar_to_float(fcolor, cp);
@@ -935,7 +935,7 @@ static bool set_pchan_color(const ArmatureDrawContext *ctx,
       return true;
     }
     case PCHAN_COLOR_CONSTS: {
-      if ((bcolor == NULL) || (bcolor->flag & TH_WIRECOLOR_CONSTCOLS)) {
+      if ((bcolor == NULL) || (dcolor->flag & TH_WIRECOLOR_CONSTCOLS)) {
         if (constflag & PCHAN_HAS_TARGET) {
           copy_v4_v4(fcolor, G_draw.block.colorBonePoseTarget);
         }
