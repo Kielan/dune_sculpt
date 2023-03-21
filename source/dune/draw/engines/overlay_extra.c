@@ -36,9 +36,9 @@
 #include "draw_common.h"
 #include "draw_manager_text.h"
 
-void OVERLAY_extra_cache_init(OVERLAY_Data *vedata)
+void overlay_extra_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
   OVERLAY_TextureList *txl = vedata->txl;
   OVERLAY_PrivateData *pd = vedata->stl->pd;
   const bool is_select = draw_state_is_select();
@@ -52,7 +52,7 @@ void OVERLAY_extra_cache_init(OVERLAY_Data *vedata)
 
     DRAW_PASS_CREATE(psl->extra_grid_ps, state | pd->clipping_state);
     DefaultTextureList *dtxl = draw_viewport_texture_list_get();
-    DRWShadingGroup *grp;
+    DrawShadingGroup *grp;
     struct GPUShader *sh = overlay_shader_extra_grid();
     struct GPUTexture *tex = draw_state_is_fbo() ? dtxl->depth : txl->dummy_depth_tx;
 
@@ -142,7 +142,7 @@ void OVERLAY_extra_cache_init(OVERLAY_Data *vedata)
       cb->light_spot_cone_back = BUF_INSTANCE(grp_sub, format, DRW_cache_light_spot_volume_get());
 
       grp_sub = draw_shgroup_create_sub(grp);
-      DRW_shgroup_state_enable(grp_sub, DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_CULL_FRONT);
+      draw_shgroup_state_enable(grp_sub, DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_CULL_FRONT);
       cb->light_spot_cone_front = BUF_INSTANCE(grp_sub, format, DRW_cache_light_spot_volume_get());
     }
     {
@@ -150,106 +150,106 @@ void OVERLAY_extra_cache_init(OVERLAY_Data *vedata)
       sh = OVERLAY_shader_extra_groundline();
 
       grp = DRW_shgroup_create(sh, extra_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
 
       cb->groundline = BUF_INSTANCE(grp, format, DRW_cache_groundline_get());
     }
     {
-      sh = OVERLAY_shader_extra_wire(false, is_select);
+      sh = overlay_shader_extra_wire(false, is_select);
 
-      grp = DRW_shgroup_create(sh, extra_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      grp = draw_shgroup_create(sh, extra_ps);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
 
       cb->extra_dashed_lines = BUF_LINE(grp, formats->pos_color);
       cb->extra_lines = BUF_LINE(grp, formats->wire_extra);
     }
     {
-      sh = OVERLAY_shader_extra_wire(true, is_select);
+      sh = overlay_shader_extra_wire(true, is_select);
 
-      cb->extra_wire = grp = DRW_shgroup_create(sh, extra_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      cb->extra_wire = grp = draw_shgroup_create(sh, extra_ps);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
     }
     {
-      sh = OVERLAY_shader_extra_loose_point();
+      sh = overlay_shader_extra_loose_point();
 
-      cb->extra_loose_points = grp = DRW_shgroup_create(sh, extra_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      cb->extra_loose_points = grp = draw_shgroup_create(sh, extra_ps);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
 
       /* Buffer access for drawing isolated points, matching `extra_lines`. */
       cb->extra_points = BUF_POINT(grp, formats->point_extra);
     }
     {
       format = formats->pos;
-      sh = OVERLAY_shader_extra_point();
+      sh = overlay_shader_extra_point();
 
-      grp = DRW_shgroup_create(sh, psl->extra_centers_ps); /* NOTE: not the same pass! */
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      grp = draw_shgroup_create(sh, psl->extra_centers_ps); /* NOTE: not the same pass! */
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
 
-      grp_sub = DRW_shgroup_create_sub(grp);
-      DRW_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorActive);
+      grp_sub = draw_shgroup_create_sub(grp);
+      draw_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorActive);
       cb->center_active = BUF_POINT(grp_sub, format);
 
-      grp_sub = DRW_shgroup_create_sub(grp);
-      DRW_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorSelect);
+      grp_sub = draw_shgroup_create_sub(grp);
+      draw_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorSelect);
       cb->center_selected = BUF_POINT(grp_sub, format);
 
-      grp_sub = DRW_shgroup_create_sub(grp);
-      DRW_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorDeselect);
+      grp_sub = draw_shgroup_create_sub(grp);
+      draw_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorDeselect);
       cb->center_deselected = BUF_POINT(grp_sub, format);
 
-      grp_sub = DRW_shgroup_create_sub(grp);
-      DRW_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorLibrarySelect);
+      grp_sub = draw_shgroup_create_sub(grp);
+      draw_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorLibrarySelect);
       cb->center_selected_lib = BUF_POINT(grp_sub, format);
 
-      grp_sub = DRW_shgroup_create_sub(grp);
-      DRW_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorLibrary);
+      grp_sub = draw_shgroup_create_sub(grp);
+      draw_shgroup_uniform_vec4_copy(grp_sub, "color", G_draw.block.colorLibrary);
       cb->center_deselected_lib = BUF_POINT(grp_sub, format);
     }
   }
 }
 
-void OVERLAY_extra_point(OVERLAY_ExtraCallBuffers *cb, const float point[3], const float color[4])
+void overlay_extra_point(OverlayExtraCallBuffers *cb, const float point[3], const float color[4])
 {
-  DRW_buffer_add_entry(cb->extra_points, point, color);
+  draw_buffer_add_entry(cb->extra_points, point, color);
 }
 
-void OVERLAY_extra_line_dashed(OVERLAY_ExtraCallBuffers *cb,
+void overlay_extra_line_dashed(OverlayExtraCallBuffers *cb,
                                const float start[3],
                                const float end[3],
                                const float color[4])
 {
-  DRW_buffer_add_entry(cb->extra_dashed_lines, end, color);
-  DRW_buffer_add_entry(cb->extra_dashed_lines, start, color);
+  draw_buffer_add_entry(cb->extra_dashed_lines, end, color);
+  draw_buffer_add_entry(cb->extra_dashed_lines, start, color);
 }
 
-void OVERLAY_extra_line(OVERLAY_ExtraCallBuffers *cb,
+void overlay_extra_line(OverlayExtraCallBuffers *cb,
                         const float start[3],
                         const float end[3],
                         const int color_id)
 {
-  DRW_buffer_add_entry(cb->extra_lines, start, &color_id);
-  DRW_buffer_add_entry(cb->extra_lines, end, &color_id);
+  draw_buffer_add_entry(cb->extra_lines, start, &color_id);
+  draw_buffer_add_entry(cb->extra_lines, end, &color_id);
 }
 
-OVERLAY_ExtraCallBuffers *OVERLAY_extra_call_buffer_get(OVERLAY_Data *vedata, Object *ob)
+OverlayExtraCallBuffers *overlay_extra_call_buffer_get(OverlayData *vedata, Object *ob)
 {
   bool do_in_front = (ob->dtx & OB_DRAW_IN_FRONT) != 0;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   return &pd->extra_call_buffers[do_in_front];
 }
 
-void OVERLAY_extra_loose_points(OVERLAY_ExtraCallBuffers *cb,
+void overlay_extra_loose_points(OverlayExtraCallBuffers *cb,
                                 struct GPUBatch *geom,
                                 const float mat[4][4],
                                 const float color[4])
 {
   float draw_mat[4][4];
   pack_v4_in_mat4(draw_mat, mat, color);
-  DRW_shgroup_call_obmat(cb->extra_loose_points, geom, draw_mat);
+  draw_shgroup_call_obmat(cb->extra_loose_points, geom, draw_mat);
 }
 
-void OVERLAY_extra_wire(OVERLAY_ExtraCallBuffers *cb,
+void overlay_extra_wire(OverlayExtraCallBuffers *cb,
                         struct GPUBatch *geom,
                         const float mat[4][4],
                         const float color[4])
@@ -257,14 +257,13 @@ void OVERLAY_extra_wire(OVERLAY_ExtraCallBuffers *cb,
   float draw_mat[4][4];
   const float col[4] = {UNPACK3(color), 0.0f /* No stipples. */};
   pack_v4_in_mat4(draw_mat, mat, col);
-  DRW_shgroup_call_obmat(cb->extra_wire, geom, draw_mat);
+  draw_shgroup_call_obmat(cb->extra_wire, geom, draw_mat);
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Empties
- * \{ */
+/** Empties **/
 
-void OVERLAY_empty_shape(OVERLAY_ExtraCallBuffers *cb,
+void overlay_empty_shape(OverlayExtraCallBuffers *cb,
                          const float mat[4][4],
                          const float draw_size,
                          const char draw_type,
@@ -275,42 +274,42 @@ void OVERLAY_empty_shape(OVERLAY_ExtraCallBuffers *cb,
 
   switch (draw_type) {
     case OB_PLAINAXES:
-      DRW_buffer_add_entry(cb->empty_plain_axes, color, instdata);
+      draw_buffer_add_entry(cb->empty_plain_axes, color, instdata);
       break;
     case OB_SINGLE_ARROW:
-      DRW_buffer_add_entry(cb->empty_single_arrow, color, instdata);
+      draw_buffer_add_entry(cb->empty_single_arrow, color, instdata);
       break;
     case OB_CUBE:
-      DRW_buffer_add_entry(cb->empty_cube, color, instdata);
+      draw_buffer_add_entry(cb->empty_cube, color, instdata);
       break;
     case OB_CIRCLE:
-      DRW_buffer_add_entry(cb->empty_circle, color, instdata);
+      draw_buffer_add_entry(cb->empty_circle, color, instdata);
       break;
     case OB_EMPTY_SPHERE:
-      DRW_buffer_add_entry(cb->empty_sphere, color, instdata);
+      draw_buffer_add_entry(cb->empty_sphere, color, instdata);
       break;
     case OB_EMPTY_CONE:
-      DRW_buffer_add_entry(cb->empty_cone, color, instdata);
+      draw_buffer_add_entry(cb->empty_cone, color, instdata);
       break;
     case OB_ARROWS:
-      DRW_buffer_add_entry(cb->empty_axes, color, instdata);
+      draw_buffer_add_entry(cb->empty_axes, color, instdata);
       break;
     case OB_EMPTY_IMAGE:
       /* This only show the frame. See OVERLAY_image_empty_cache_populate() for the image. */
-      DRW_buffer_add_entry(cb->empty_image_frame, color, instdata);
+      draw_buffer_add_entry(cb->empty_image_frame, color, instdata);
       break;
   }
 }
 
-void OVERLAY_empty_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_empty_cache_populate(OverlayData *vedata, Object *ob)
 {
   if (((ob->base_flag & BASE_FROM_DUPLI) != 0) && ((ob->transflag & OB_DUPLICOLLECTION) != 0) &&
       ob->instance_collection) {
     return;
   }
 
-  OVERLAY_ExtraCallBuffers *cb = OVERLAY_extra_call_buffer_get(vedata, ob);
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayExtraCallBuffers *cb = overlay_extra_call_buffer_get(vedata, ob);
+  const DrawCtxState *draw_ctx = draw_context_state_get();
   ViewLayer *view_layer = draw_ctx->view_layer;
   float *color;
 
