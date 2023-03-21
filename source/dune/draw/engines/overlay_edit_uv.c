@@ -203,11 +203,11 @@ void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
       if (pd->edit_uv.do_uv_overlay) {
         pd->edit_uv_edges_grp = DRW_shgroup_create(sh, psl->edit_uv_edges_ps);
         draw_shgroup_uniform_block(pd->edit_uv_edges_grp, "globalsBlock", G_draw.block_ubo);
-        DRW_shgroup_uniform_int_copy(pd->edit_uv_edges_grp, "lineStyle", pd->edit_uv.line_style);
-        DRW_shgroup_uniform_float_copy(pd->edit_uv_edges_grp, "alpha", pd->edit_uv.uv_opacity);
-        DRW_shgroup_uniform_float(
+        draw_shgroup_uniform_int_copy(pd->edit_uv_edges_grp, "lineStyle", pd->edit_uv.line_style);
+        draw_shgroup_uniform_float_copy(pd->edit_uv_edges_grp, "alpha", pd->edit_uv.uv_opacity);
+        draw_shgroup_uniform_float(
             pd->edit_uv_edges_grp, "dashLength", &pd->edit_uv.dash_length, 1);
-        DRW_shgroup_uniform_bool(
+        draw_shgroup_uniform_bool(
             pd->edit_uv_edges_grp, "doSmoothWire", &pd->edit_uv.do_smooth_wire, 1);
       }
     }
@@ -215,32 +215,32 @@ void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
 
   if (pd->edit_uv.do_uv_overlay) {
     if (pd->edit_uv.do_verts || pd->edit_uv.do_face_dots) {
-      DRW_PASS_CREATE(psl->edit_uv_verts_ps,
-                      DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL |
-                          DRW_STATE_BLEND_ALPHA);
+      DRAW_PASS_CREATE(psl->edit_uv_verts_ps,
+                      DRAW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL |
+                          DRAW_STATE_BLEND_ALPHA);
     }
 
     /* uv verts */
     if (pd->edit_uv.do_verts) {
-      GPUShader *sh = OVERLAY_shader_edit_uv_verts_get();
-      pd->edit_uv_verts_grp = DRW_shgroup_create(sh, psl->edit_uv_verts_ps);
+      GPUShader *sh = overlay_shader_edit_uv_verts_get();
+      pd->edit_uv_verts_grp = draw_shgroup_create(sh, psl->edit_uv_verts_ps);
 
-      const float point_size = UI_GetThemeValuef(TH_VERTEX_SIZE) * U.dpi_fac;
+      const float point_size = ui_GetThemeValuef(TH_VERTEX_SIZE) * U.dpi_fac;
 
-      DRW_shgroup_uniform_block(pd->edit_uv_verts_grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_float_copy(
+      draw_shgroup_uniform_block(pd->edit_uv_verts_grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_float_copy(
           pd->edit_uv_verts_grp, "pointSize", (point_size + 1.5f) * M_SQRT2);
-      DRW_shgroup_uniform_float_copy(pd->edit_uv_verts_grp, "outlineWidth", 0.75f);
-    }
+      draw_shgroup_uniform_float_copy(pd->edit_uv_verts_grp, "outlineWidth", 0.75f);
+   }
 
     /* uv faces */
     if (pd->edit_uv.do_faces) {
-      DRW_PASS_CREATE(psl->edit_uv_faces_ps,
+      DRAW_PASS_CREATE(psl->edit_uv_faces_ps,
                       DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_ALWAYS | DRW_STATE_BLEND_ALPHA);
       GPUShader *sh = OVERLAY_shader_edit_uv_face_get();
       pd->edit_uv_faces_grp = DRW_shgroup_create(sh, psl->edit_uv_faces_ps);
-      DRW_shgroup_uniform_block(pd->edit_uv_faces_grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_float(pd->edit_uv_faces_grp, "uvOpacity", &pd->edit_uv.uv_opacity, 1);
+      draw_shgroup_uniform_block(pd->edit_uv_faces_grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_float(pd->edit_uv_faces_grp, "uvOpacity", &pd->edit_uv.uv_opacity, 1);
     }
 
     /* uv face dots */
