@@ -121,7 +121,7 @@ extern char datatoc_common_globals_lib_glsl[];
 extern char datatoc_common_pointcloud_lib_glsl[];
 extern char datatoc_common_view_lib_glsl[];
 
-typedef struct OVERLAY_Shaders {
+typedef struct OverlayShaders {
   GPUShader *antialiasing;
   GPUShader *armature_dof_wire;
   GPUShader *armature_dof_solid;
@@ -176,7 +176,7 @@ typedef struct OVERLAY_Shaders {
   GPUShader *extra_lightprobe_grid;
   GPUShader *extra_loose_point;
   GPUShader *facing;
-  GPUShader *gpencil_canvas;
+  GPUShader *dpen_canvas;
   GPUShader *grid;
   GPUShader *grid_background;
   GPUShader *grid_image;
@@ -215,21 +215,21 @@ static struct {
   DrawShaderLib *lib;
 } e_data = {{{NULL}}};
 
-void OVERLAY_shader_library_ensure(void)
+void overlay_shader_lib_ensure(void)
 {
   if (e_data.lib == NULL) {
     e_data.lib = draw_shader_lib_create();
     /* NOTE: These need to be ordered by dependencies. */
-    DRW_SHADER_LIB_ADD(e_data.lib, common_globals_lib);
-    DRW_SHADER_LIB_ADD(e_data.lib, common_overlay_lib);
-    DRW_SHADER_LIB_ADD(e_data.lib, common_colormanagement_lib);
-    DRW_SHADER_LIB_ADD(e_data.lib, common_view_lib);
+    DRAW_SHADER_LIB_ADD(e_data.lib, common_globals_lib);
+    DRAW_SHADER_LIB_ADD(e_data.lib, common_overlay_lib);
+    DRAW_SHADER_LIB_ADD(e_data.lib, common_colormanagement_lib);
+    DRAW_SHADER_LIB_ADD(e_data.lib, common_view_lib);
   }
 }
 
 GPUShader *overlay_shader_antialiasing(void)
 {
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
+  OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->antialiasing) {
     sh_data->antialiasing = GPU_shader_create_from_arrays({
         .vert = (const char *[]){datatoc_common_globals_lib_glsl,
@@ -244,7 +244,7 @@ GPUShader *overlay_shader_antialiasing(void)
   return sh_data->antialiasing;
 }
 
-GPUShader *OVERLAY_shader_background(void)
+GPUShader *overlay_shader_background(void)
 {
   OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->background) {
