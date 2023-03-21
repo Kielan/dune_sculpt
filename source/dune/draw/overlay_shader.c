@@ -289,13 +289,13 @@ GPUShader *OVERLAY_shader_depth_only(void)
   return sh_data->depth_only;
 }
 
-GPUShader *OVERLAY_shader_edit_mesh_vert(void)
+GPUShader *overlay_shader_edit_mesh_vert(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
   OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->edit_mesh_vert) {
-    sh_data->edit_mesh_vert = GPU_shader_create_from_arrays({
+    sh_data->edit_mesh_vert = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
