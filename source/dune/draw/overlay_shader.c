@@ -359,9 +359,9 @@ GPUShader *OVERLAY_shader_edit_mesh_edge(bool use_flat_interp)
   return *sh;
 }
 
-GPUShader *OVERLAY_shader_armature_sphere(bool use_outline)
+GPUShader *overlay_shader_armature_sphere(bool use_outline)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = DRW_context_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
   OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   const char extensions[] = "";
