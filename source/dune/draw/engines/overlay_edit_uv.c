@@ -410,3 +410,169 @@ void OVERLAY_edit_uv_cache_init(OVERLAY_Data *vedata)
     MEM_freeN(objects);
   }
 }
+
+static void overlay_edit_uv_cache_populate(OVERLAY_Data *vedata, Object *ob)
+{
+  if (!(DRW_object_visibility_in_active_context(ob) & OB_VISIBLE_SELF)) {
+    return;
+  }
+
+  OVERLAY_StorageList *stl = vedata->stl;
+  OVERLAY_PrivateData *pd = stl->pd;
+  GPUBatch *geom;
+
+  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const bool is_edit_object = DRW_object_is_in_edit_mode(ob);
+  Mesh *me = (Mesh *)ob->data;
+  const bool has_active_object_uvmap = CustomData_get_active_layer(&me->ldata, CD_MLOOPUV) != -1;
+  const bool has_active_edit_uvmap = is_edit_object &&
+                                     (CustomData_get_active_layer(&me->edit_mesh->bm->ldata,
+                                                                  CD_MLOOPUV) != -1);
+  const bool draw_shadows = (draw_ctx->object_mode != OB_MODE_OBJECT) &&
+                            (ob->mode == draw_ctx->object_mode);
+
+  if (has_active_edit_uvmap) {
+    if (pd->edit_uv.do_uv_overlay) {
+      geom = DRW_mesh_batch_cache_get_edituv_edges(ob, ob->data);
+      if (geom) {
+        DRW_shgroup_call_obmat(pd->edit_uv_edges_grp, geom, NULL);
+      }
+      if (pd->edit_uv.do_verts) {
+        geom = DRW_mesh_batch_cache_get_edituv_verts(ob, ob->data);
+        if (geom) {
+          DRW_shgroup_call_obmat(pd->edit_uv_verts_grp, geom, NULL);
+        }
+      }
+      if (pd->edit_uv.do_faces) {
+        geom = DRW_mesh_batch_cache_get_edituv_faces(ob, ob->data);
+        if (geom) {
+          DRW_shgroup_call_obmat(pd->edit_uv_faces_grp, geom, NULL);
+        }
+      }
+      if (pd->edit_uv.do_face_dots) {
+        geom = DRW_mesh_batch_cache_get_edituv_facedots(ob, ob->data);
+        if (geom) {
+          DRW_shgroup_call_obmat(pd->edit_uv_face_dots_grp, geom, NULL);
+        }
+      }
+    }
+
+    if (pd->edit_uv.do_uv_stretching_overlay) {
+      if (pd->edit_uv.draw_type == SI_UVDT_STRETCH_ANGLE) {
+        geom = DRW_mesh_batch_cache_get_edituv_faces_stretch_angle(ob, me);
+      }
+      else /* SI_UVDT_STRETCH_AREA */ {
+        OVERLAY_StretchingAreaTotals *totals = MEM_mallocN(sizeof(OVERLAY_StretchingAreaTotals),
+                                                           __func__);
+        BLI_addtail(&pd->edit_uv.totals, totals);
+        geom = DRW_mesh_batch_cache_get_edituv_faces_stretch_area(
+            ob, me, &totals->total_area, &totals->total_area_uv);
+      }
+      if (geom) {
+        DRW_shgroup_call_obmat(pd->edit_uv_stretching_grp, geom, NULL);
+      }
+    }
+  }
+
+  if (draw_shadows && (has_active_object_uvmap || has_active_edit_uvmap)) {
+    if (pd->edit_uv.do_uv_shadow_overlay) {
+      geom = DRW_mesh_batch_cache_get_uv_edges(ob, ob->data);
+      if (geom) {
+        DRW_shgroup_call_obmat(pd->edit_uv_shadow_edges_grp, geom, NULL);
+      }
+    }
+  }
+}
+
+static void edit_uv_stretching_update_ratios(OVERLAY_Data *vedata)
+{
+  OVERLAY_StorageList *stl = vedata->stl;
+  OVERLAY_PrivateData *pd = stl->pd;
+
+  if (pd->edit_uv.draw_type == SI_UVDT_STRETCH_AREA) {
+    float total_area = 0.0f;
+    float total_area_uv = 0.0f;
+
+    LISTBASE_FOREACH (OVERLAY_StretchingAreaTotals *, totals, &pd->edit_uv.totals) {
+      total_area += *totals->total_area;
+      total_area_uv += *totals->total_area_uv;
+    }
+
+    if (total_area > FLT_EPSILON && total_area_uv > FLT_EPSILON) {
+      pd->edit_uv.total_area_ratio = total_area / total_area_uv;
+      pd->edit_uv.total_area_ratio_inv = total_area_uv / total_area;
+    }
+  }
+  BLI_freelistN(&pd->edit_uv.totals);
+}
+
+void OVERLAY_edit_uv_cache_finish(OVERLAY_Data *vedata)
+{
+  OVERLAY_StorageList *stl = vedata->stl;
+  OVERLAY_PrivateData *pd = stl->pd;
+
+  if (pd->edit_uv.do_uv_stretching_overlay) {
+    edit_uv_stretching_update_ratios(vedata);
+  }
+}
+
+static void OVERLAY_edit_uv_draw_finish(OVERLAY_Data *vedata)
+{
+  OVERLAY_StorageList *stl = vedata->stl;
+  OVERLAY_PrivateData *pd = stl->pd;
+
+  if (pd->edit_uv.stencil_ibuf) {
+    BKE_image_release_ibuf(
+        pd->edit_uv.stencil_image, pd->edit_uv.stencil_ibuf, pd->edit_uv.stencil_lock);
+    pd->edit_uv.stencil_image = NULL;
+    pd->edit_uv.stencil_ibuf = NULL;
+  }
+
+  DRW_TEXTURE_FREE_SAFE(pd->edit_uv.mask_texture);
+}
+
+void OVERLAY_edit_uv_draw(OVERLAY_Data *vedata)
+{
+  OVERLAY_PassList *psl = vedata->psl;
+  OVERLAY_StorageList *stl = vedata->stl;
+  OVERLAY_PrivateData *pd = stl->pd;
+
+  if (pd->edit_uv.do_tiled_image_border_overlay) {
+    DRW_draw_pass(psl->edit_uv_tiled_image_borders_ps);
+  }
+  if (pd->edit_uv.do_mask_overlay) {
+    /* Combined overlay renders in the default framebuffer and modifies the image in SRS.
+     * The alpha overlay renders in the overlay framebuffer. */
+    const bool is_combined_overlay = pd->edit_uv.mask_overlay_mode == MASK_OVERLAY_COMBINED;
+    GPUFrameBuffer *previous_framebuffer = NULL;
+    if (is_combined_overlay) {
+      DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
+      previous_framebuffer = GPU_framebuffer_active_get();
+      GPU_framebuffer_bind(dfbl->default_fb);
+    }
+    DRW_draw_pass(psl->edit_uv_mask_ps);
+    if (previous_framebuffer) {
+      GPU_framebuffer_bind(previous_framebuffer);
+    }
+  }
+
+  if (pd->edit_uv.do_uv_stretching_overlay) {
+    DRW_draw_pass(psl->edit_uv_stretching_ps);
+  }
+
+  if (pd->edit_uv.do_uv_overlay) {
+    if (pd->edit_uv.do_faces) {
+      DRW_draw_pass(psl->edit_uv_faces_ps);
+    }
+    DRW_draw_pass(psl->edit_uv_edges_ps);
+
+    DRW_draw_pass(psl->edit_uv_verts_ps);
+  }
+  else if (pd->edit_uv.do_uv_shadow_overlay) {
+    DRW_draw_pass(psl->edit_uv_edges_ps);
+  }
+  if (pd->edit_uv.do_stencil_overlay) {
+    DRW_draw_pass(psl->edit_uv_stencil_ps);
+  }
+  OVERLAY_edit_uv_draw_finish(vedata);
+}
