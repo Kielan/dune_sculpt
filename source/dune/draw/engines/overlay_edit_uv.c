@@ -1,40 +1,40 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #include "draw_cache_impl.h"
 #include "draw_manager_text.h"
 
-#include "BKE_customdata.h"
-#include "BKE_editmesh.h"
-#include "BKE_image.h"
-#include "BKE_layer.h"
-#include "BKE_mask.h"
-#include "BKE_object.h"
-#include "BKE_paint.h"
+#include "dune_customdata.h"
+#include "dune_editmesh.h"
+#include "dune_image.h"
+#include "dune_layer.h"
+#include "dune_mask.h"
+#include "dune_object.h"
+#include "dune_paint.h"
 
-#include "DNA_brush_types.h"
-#include "DNA_mesh_types.h"
+#include "types_brush.h"
+#include "types_mesh.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "ED_image.h"
+#include "ed_image.h"
 
-#include "IMB_imbuf_types.h"
+#include "imb_imbuf_types.h"
 
-#include "GPU_batch.h"
+#include "gpu_batch.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui_interface.h"
+#include "ui_resources.h"
 
 #include "overlay_private.h"
 
 /* Forward declarations. */
 static void overlay_edit_uv_cache_populate(OVERLAY_Data *vedata, Object *ob);
 
-typedef struct OVERLAY_StretchingAreaTotals {
+typedef struct OverlayStretchingAreaTotals {
   void *next, *prev;
   float *total_area;
   float *total_area_uv;
-} OVERLAY_StretchingAreaTotals;
+} OverlayStretchingAreaTotals;
 
 static OVERLAY_UVLineStyle edit_uv_line_style_from_space_image(const SpaceImage *sima)
 {
@@ -58,7 +58,7 @@ static OVERLAY_UVLineStyle edit_uv_line_style_from_space_image(const SpaceImage 
   }
 }
 
-/* TODO(jbakker): the GPU texture should be cached with the mask. */
+/* TODO: the GPU texture should be cached with the mask. */
 static GPUTexture *edit_uv_mask_texture(
     Mask *mask, const int width, const int height_, const float aspx, const float aspy)
 {
@@ -67,31 +67,30 @@ static GPUTexture *edit_uv_mask_texture(
   float *buffer = MEM_mallocN(sizeof(float) * height * width, __func__);
 
   /* Initialize rasterization handle. */
-  handle = BKE_maskrasterize_handle_new();
-  BKE_maskrasterize_handle_init(handle, mask, width, height, true, true, true);
+  handle = dune_maskrasterize_handle_new();
+  dune_maskrasterize_handle_init(handle, mask, width, height, true, true, true);
 
-  BKE_maskrasterize_buffer(handle, width, height, buffer);
+  dune_maskrasterize_buffer(handle, width, height, buffer);
 
   /* Free memory. */
-  BKE_maskrasterize_handle_free(handle);
-  GPUTexture *texture = GPU_texture_create_2d(mask->id.name, width, height, 1, GPU_R16F, buffer);
-  MEM_freeN(buffer);
+  dune_maskrasterize_handle_free(handle);
+  GPUTexture *texture = gpu_texture_create_2d(mask->id.name, width, height, 1, GPU_R16F, buffer);
+  mem_freen(buffer);
   return texture;
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Internal API
- * \{ */
+/** Internal API **/
 
-void OVERLAY_edit_uv_init(OVERLAY_Data *vedata)
+void overlay_edit_uv_init(Overlay_Data *vedata)
 {
-  OVERLAY_StorageList *stl = vedata->stl;
-  OVERLAY_PrivateData *pd = stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayStorageList *stl = vedata->stl;
+  OverlayPrivateData *pd = stl->pd;
+  const DrawCtxState *draw_ctx = draw_context_state_get();
   SpaceImage *sima = (SpaceImage *)draw_ctx->space_data;
   const Scene *scene = draw_ctx->scene;
   ToolSettings *ts = scene->toolsettings;
-  const Brush *brush = BKE_paint_brush(&ts->imapaint.paint);
+  const Brush *brush = dune_paint_brush(&ts->imapaint.paint);
   const bool show_overlays = !pd->hide_overlays;
 
   Image *image = sima->image;
@@ -152,7 +151,7 @@ void OVERLAY_edit_uv_init(OVERLAY_Data *vedata)
   pd->edit_uv.do_stencil_overlay = show_overlays && do_stencil_overlay;
 
   pd->edit_uv.draw_type = sima->dt_uvstretch;
-  BLI_listbase_clear(&pd->edit_uv.totals);
+  lib _listbase_clear(&pd->edit_uv.totals);
   pd->edit_uv.total_area_ratio = 0.0f;
   pd->edit_uv.total_area_ratio_inv = 0.0f;
 
@@ -160,16 +159,16 @@ void OVERLAY_edit_uv_init(OVERLAY_Data *vedata)
    * we are able to retrieve the needed data.
    * During cache_init the image engine locks the `sima` and makes it impossible
    * to retrieve the data. */
-  ED_space_image_get_uv_aspect(sima, &pd->edit_uv.uv_aspect[0], &pd->edit_uv.uv_aspect[1]);
-  ED_space_image_get_size(sima, &pd->edit_uv.image_size[0], &pd->edit_uv.image_size[1]);
-  ED_space_image_get_aspect(sima, &pd->edit_uv.image_aspect[0], &pd->edit_uv.image_aspect[1]);
+  ed_space_image_get_uv_aspect(sima, &pd->edit_uv.uv_aspect[0], &pd->edit_uv.uv_aspect[1]);
+  ed_space_image_get_size(sima, &pd->edit_uv.image_size[0], &pd->edit_uv.image_size[1]);
+  ed_space_image_get_aspect(sima, &pd->edit_uv.image_aspect[0], &pd->edit_uv.image_aspect[1]);
 }
 
-void OVERLAY_edit_uv_cache_init(OVERLAY_Data *vedata)
+void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
 {
-  OVERLAY_StorageList *stl = vedata->stl;
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = stl->pd;
+  OverlayStorageList *stl = vedata->stl;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = stl->pd;
 
   const DRWContextState *draw_ctx = DRW_context_state_get();
   SpaceImage *sima = (SpaceImage *)draw_ctx->space_data;
@@ -180,9 +179,9 @@ void OVERLAY_edit_uv_cache_init(OVERLAY_Data *vedata)
   if (pd->edit_uv.do_uv_overlay || pd->edit_uv.do_uv_shadow_overlay) {
     /* uv edges */
     {
-      DRW_PASS_CREATE(psl->edit_uv_edges_ps,
-                      DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL |
-                          DRW_STATE_BLEND_ALPHA);
+      DRAW_PASS_CREATE(psl->edit_uv_edges_ps,
+                      DRAW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL |
+                          DRAW_STATE_BLEND_ALPHA);
       const bool do_edges_only = (ts->uv_flag & UV_SYNC_SELECTION) ?
                                      false :
                                      (ts->uv_selectmode & UV_SELECT_EDGE);
@@ -203,7 +202,7 @@ void OVERLAY_edit_uv_cache_init(OVERLAY_Data *vedata)
 
       if (pd->edit_uv.do_uv_overlay) {
         pd->edit_uv_edges_grp = DRW_shgroup_create(sh, psl->edit_uv_edges_ps);
-        DRW_shgroup_uniform_block(pd->edit_uv_edges_grp, "globalsBlock", G_draw.block_ubo);
+        draw_shgroup_uniform_block(pd->edit_uv_edges_grp, "globalsBlock", G_draw.block_ubo);
         DRW_shgroup_uniform_int_copy(pd->edit_uv_edges_grp, "lineStyle", pd->edit_uv.line_style);
         DRW_shgroup_uniform_float_copy(pd->edit_uv_edges_grp, "alpha", pd->edit_uv.uv_opacity);
         DRW_shgroup_uniform_float(
