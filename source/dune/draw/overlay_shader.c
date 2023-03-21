@@ -1,8 +1,8 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "GPU_shader.h"
+#include "gpu_shader.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 #include "overlay_private.h"
 
@@ -140,9 +140,9 @@ typedef struct OVERLAY_Shaders {
   GPUShader *edit_curve_handle;
   GPUShader *edit_curve_point;
   GPUShader *edit_curve_wire;
-  GPUShader *edit_gpencil_guide_point;
-  GPUShader *edit_gpencil_point;
-  GPUShader *edit_gpencil_wire;
+  GPUShader *edit_dpen_guide_point;
+  GPUShader *edit_dpen_point;
+  GPUShader *edit_dpen_wire;
   GPUShader *edit_lattice_point;
   GPUShader *edit_lattice_wire;
   GPUShader *edit_mesh_vert;
@@ -211,14 +211,14 @@ typedef struct OVERLAY_Shaders {
 } OVERLAY_Shaders;
 
 static struct {
-  OVERLAY_Shaders sh_data[GPU_SHADER_CFG_LEN];
-  DRWShaderLibrary *lib;
+  OverlayShaders sh_data[GPU_SHADER_CFG_LEN];
+  DrawShaderLib *lib;
 } e_data = {{{NULL}}};
 
 void OVERLAY_shader_library_ensure(void)
 {
   if (e_data.lib == NULL) {
-    e_data.lib = DRW_shader_library_create();
+    e_data.lib = draw_shader_lib_create();
     /* NOTE: These need to be ordered by dependencies. */
     DRW_SHADER_LIB_ADD(e_data.lib, common_globals_lib);
     DRW_SHADER_LIB_ADD(e_data.lib, common_overlay_lib);
@@ -227,7 +227,7 @@ void OVERLAY_shader_library_ensure(void)
   }
 }
 
-GPUShader *OVERLAY_shader_antialiasing(void)
+GPUShader *overlay_shader_antialiasing(void)
 {
   OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->antialiasing) {
