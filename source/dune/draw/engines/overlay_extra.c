@@ -1,35 +1,35 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "BKE_anim_path.h"
-#include "BKE_camera.h"
-#include "BKE_constraint.h"
-#include "BKE_curve.h"
-#include "BKE_global.h"
-#include "BKE_mball.h"
-#include "BKE_mesh.h"
-#include "BKE_modifier.h"
-#include "BKE_movieclip.h"
-#include "BKE_object.h"
-#include "BKE_tracking.h"
+#include "dune_anim_path.h"
+#include "dune_camera.h"
+#include "dune_constraint.h"
+#include "dune_curve.h"
+#include "dune_global.h"
+#include "dune_mball.h"
+#include "dune_mesh.h"
+#include "dune_modifier.h"
+#include "dune_movieclip.h"
+#include "dune_object.h"
+#include "dune_tracking.h"
 
-#include "BLI_listbase.h"
+#include "lib_listbase.h"
 
-#include "DNA_camera_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_fluid_types.h"
-#include "DNA_lightprobe_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meta_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_pointcache_types.h"
-#include "DNA_rigidbody_types.h"
+#include "types_camera_types.h"
+#include "types_constraint_types.h"
+#include "types_curve_types.h"
+#include "types_fluid_types.h"
+#include "types_lightprobe_types.h"
+#include "types_mesh_types.h"
+#include "types_meta_types.h"
+#include "types_modifier_types.h"
+#include "types_pointcache_types.h"
+#include "types_rigidbody_types.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
 #include "overlay_private.h"
 
@@ -41,56 +41,56 @@ void OVERLAY_extra_cache_init(OVERLAY_Data *vedata)
   OVERLAY_PassList *psl = vedata->psl;
   OVERLAY_TextureList *txl = vedata->txl;
   OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const bool is_select = DRW_state_is_select();
+  const bool is_select = draw_state_is_select();
 
-  DRWState state_blend = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
-  DRW_PASS_CREATE(psl->extra_blend_ps, state_blend | pd->clipping_state);
-  DRW_PASS_CREATE(psl->extra_centers_ps, state_blend | pd->clipping_state);
+  DrawState state_blend = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
+  DRAW_PASS_CREATE(psl->extra_blend_ps, state_blend | pd->clipping_state);
+  DRAW_PASS_CREATE(psl->extra_centers_ps, state_blend | pd->clipping_state);
 
   {
-    DRWState state = DRW_STATE_WRITE_COLOR;
+    DrawState state = DRAW_STATE_WRITE_COLOR;
 
-    DRW_PASS_CREATE(psl->extra_grid_ps, state | pd->clipping_state);
-    DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+    DRAW_PASS_CREATE(psl->extra_grid_ps, state | pd->clipping_state);
+    DefaultTextureList *dtxl = draw_viewport_texture_list_get();
     DRWShadingGroup *grp;
-    struct GPUShader *sh = OVERLAY_shader_extra_grid();
-    struct GPUTexture *tex = DRW_state_is_fbo() ? dtxl->depth : txl->dummy_depth_tx;
+    struct GPUShader *sh = overlay_shader_extra_grid();
+    struct GPUTexture *tex = draw_state_is_fbo() ? dtxl->depth : txl->dummy_depth_tx;
 
-    pd->extra_grid_grp = grp = DRW_shgroup_create(sh, psl->extra_grid_ps);
-    DRW_shgroup_uniform_texture(grp, "depthBuffer", tex);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
+    pd->extra_grid_grp = grp = draw_shgroup_create(sh, psl->extra_grid_ps);
+    draw_shgroup_uniform_texture(grp, "depthBuffer", tex);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
   }
 
   for (int i = 0; i < 2; i++) {
     /* Non Meshes Pass (Camera, empties, lights ...) */
     struct GPUShader *sh;
     struct GPUVertFormat *format;
-    DRWShadingGroup *grp, *grp_sub;
+    DrawShadingGroup *grp, *grp_sub;
 
-    OVERLAY_InstanceFormats *formats = OVERLAY_shader_instance_formats_get();
-    OVERLAY_ExtraCallBuffers *cb = &pd->extra_call_buffers[i];
-    DRWPass **p_extra_ps = &psl->extra_ps[i];
+    OverlayInstanceFormats *formats = overlay_shader_instance_formats_get();
+    OverlayExtraCallBuffers *cb = &pd->extra_call_buffers[i];
+    DrawPass **p_extra_ps = &psl->extra_ps[i];
 
-    DRWState infront_state = (DRW_state_is_select() && (i == 1)) ? DRW_STATE_IN_FRONT_SELECT : 0;
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
-    DRW_PASS_CREATE(*p_extra_ps, state | pd->clipping_state | infront_state);
+    DrawState infront_state = (draw_state_is_select() && (i == 1)) ? DRW_STATE_IN_FRONT_SELECT : 0;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
+    DRAW_PASS_CREATE(*p_extra_ps, state | pd->clipping_state | infront_state);
 
-    DRWPass *extra_ps = *p_extra_ps;
+    DrawPass *extra_ps = *p_extra_ps;
 
-#define BUF_INSTANCE DRW_shgroup_call_buffer_instance
-#define BUF_POINT(grp, format) DRW_shgroup_call_buffer(grp, format, GPU_PRIM_POINTS)
-#define BUF_LINE(grp, format) DRW_shgroup_call_buffer(grp, format, GPU_PRIM_LINES)
+#define BUF_INSTANCE draw_shgroup_call_buffer_instance
+#define BUF_POINT(grp, format) draw_shgroup_call_buffer(grp, format, GPU_PRIM_POINTS)
+#define BUF_LINE(grp, format) draw_shgroup_call_buffer(grp, format, GPU_PRIM_LINES)
 
     /* Sorted by shader to avoid state changes during render. */
     {
       format = formats->instance_extra;
-      sh = OVERLAY_shader_extra(is_select);
+      sh = overlay_shader_extra(is_select);
 
-      grp = DRW_shgroup_create(sh, extra_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      grp = draw_shgroup_create(sh, extra_ps);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
 
-      grp_sub = DRW_shgroup_create_sub(grp);
+      grp_sub = draw_shgroup_create_sub(grp);
       cb->camera_distances = BUF_INSTANCE(grp_sub, format, DRW_cache_camera_distances_get());
       cb->camera_frame = BUF_INSTANCE(grp_sub, format, DRW_cache_camera_frame_get());
       cb->camera_tria[0] = BUF_INSTANCE(grp_sub, format, DRW_cache_camera_tria_wire_get());
@@ -132,16 +132,16 @@ void OVERLAY_extra_cache_init(OVERLAY_Data *vedata)
     }
     {
       format = formats->instance_extra;
-      grp = DRW_shgroup_create(sh, psl->extra_blend_ps); /* NOTE: not the same pass! */
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      grp = draw_shgroup_create(sh, psl->extra_blend_ps); /* NOTE: not the same pass! */
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
 
-      grp_sub = DRW_shgroup_create_sub(grp);
-      DRW_shgroup_state_enable(grp_sub, DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_CULL_BACK);
+      grp_sub = draw_shgroup_create_sub(grp);
+      draw_shgroup_state_enable(grp_sub, DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_CULL_BACK);
       cb->camera_volume = BUF_INSTANCE(grp_sub, format, DRW_cache_camera_volume_get());
       cb->camera_volume_frame = BUF_INSTANCE(grp_sub, format, DRW_cache_camera_volume_wire_get());
       cb->light_spot_cone_back = BUF_INSTANCE(grp_sub, format, DRW_cache_light_spot_volume_get());
 
-      grp_sub = DRW_shgroup_create_sub(grp);
+      grp_sub = draw_shgroup_create_sub(grp);
       DRW_shgroup_state_enable(grp_sub, DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_CULL_FRONT);
       cb->light_spot_cone_front = BUF_INSTANCE(grp_sub, format, DRW_cache_light_spot_volume_get());
     }
