@@ -18,7 +18,7 @@
 #include "draw_render.h"
 #include "gpu_shader.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
 #include "overlay_private.h"
 
@@ -72,18 +72,18 @@ void overlay_wireframe_cache_init(OverlayData *vedata)
 
     for (int use_coloring = 0; use_coloring < 2; use_coloring++) {
       pd->wires_grp[xray][use_coloring] = grp = DRW_shgroup_create(wires_sh, pass);
-      DRAW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
       DRW_shgroup_uniform_texture_ref(grp, "depthTex", depth_tx);
       DRW_shgroup_uniform_float_copy(grp, "wireStepParam", pd->shdata.wire_step_param);
-      DRW_shgroup_uniform_float_copy(grp, "wireOpacity", pd->shdata.wire_opacity);
-      DRW_shgroup_uniform_bool_copy(grp, "useColoring", use_coloring);
-      DRW_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
-      DRW_shgroup_uniform_bool_copy(grp, "isObjectColor", is_object_color);
-      DRW_shgroup_uniform_bool_copy(grp, "isRandomColor", is_random_color);
-      DRW_shgroup_uniform_bool_copy(grp, "isHair", false);
+      draw_shgroup_uniform_float_copy(grp, "wireOpacity", pd->shdata.wire_opacity);
+      draw_shgroup_uniform_bool_copy(grp, "useColoring", use_coloring);
+      draw_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
+      draw_shgroup_uniform_bool_copy(grp, "isObjectColor", is_object_color);
+      draw_shgroup_uniform_bool_copy(grp, "isRandomColor", is_random_color);
+      draw_shgroup_uniform_bool_copy(grp, "isHair", false);
 
       pd->wires_all_grp[xray][use_coloring] = grp = DRW_shgroup_create(wires_sh, pass);
-      DRW_shgroup_uniform_float_copy(grp, "wireStepParam", 1.0f);
+      draw_shgroup_uniform_float_copy(grp, "wireStepParam", 1.0f);
 
       pd->wires_hair_grp[xray][use_coloring] = grp = DRW_shgroup_create(wires_sh, pass);
       DRW_shgroup_uniform_bool_copy(grp, "isHair", true);
