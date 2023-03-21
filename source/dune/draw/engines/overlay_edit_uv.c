@@ -189,14 +189,14 @@ void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
                                       OVERLAY_shader_edit_uv_edges_get();
       if (pd->edit_uv.do_uv_shadow_overlay) {
         pd->edit_uv_shadow_edges_grp = DRW_shgroup_create(sh, psl->edit_uv_edges_ps);
-        DRW_shgroup_uniform_block(pd->edit_uv_shadow_edges_grp, "globalsBlock", G_draw.block_ubo);
-        DRW_shgroup_uniform_int_copy(
+        draw_shgroup_uniform_block(pd->edit_uv_shadow_edges_grp, "globalsBlock", G_draw.block_ubo);
+        draw_shgroup_uniform_int_copy(
             pd->edit_uv_shadow_edges_grp, "lineStyle", OVERLAY_UV_LINE_STYLE_SHADOW);
-        DRW_shgroup_uniform_float_copy(
+        draw_shgroup_uniform_float_copy(
             pd->edit_uv_shadow_edges_grp, "alpha", pd->edit_uv.uv_opacity);
-        DRW_shgroup_uniform_float(
+        draw_shgroup_uniform_float(
             pd->edit_uv_shadow_edges_grp, "dashLength", &pd->edit_uv.dash_length, 1);
-        DRW_shgroup_uniform_bool(
+        draw_shgroup_uniform_bool(
             pd->edit_uv_shadow_edges_grp, "doSmoothWire", &pd->edit_uv.do_smooth_wire, 1);
       }
 
@@ -260,28 +260,28 @@ void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
     if (pd->edit_uv.draw_type == SI_UVDT_STRETCH_ANGLE) {
       GPUShader *sh = OVERLAY_shader_edit_uv_stretching_angle_get();
       pd->edit_uv_stretching_grp = DRW_shgroup_create(sh, psl->edit_uv_stretching_ps);
-      DRW_shgroup_uniform_block(pd->edit_uv_stretching_grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_vec2_copy(pd->edit_uv_stretching_grp, "aspect", pd->edit_uv.uv_aspect);
+      draw_shgroup_uniform_block(pd->edit_uv_stretching_grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_vec2_copy(pd->edit_uv_stretching_grp, "aspect", pd->edit_uv.uv_aspect);
     }
     else /* SI_UVDT_STRETCH_AREA */ {
       GPUShader *sh = OVERLAY_shader_edit_uv_stretching_area_get();
       pd->edit_uv_stretching_grp = DRW_shgroup_create(sh, psl->edit_uv_stretching_ps);
-      DRW_shgroup_uniform_block(pd->edit_uv_stretching_grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_float(
+      draw_shgroup_uniform_block(pd->edit_uv_stretching_grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_float(
           pd->edit_uv_stretching_grp, "totalAreaRatio", &pd->edit_uv.total_area_ratio, 1);
-      DRW_shgroup_uniform_float(
+      draw_shgroup_uniform_float(
           pd->edit_uv_stretching_grp, "totalAreaRatioInv", &pd->edit_uv.total_area_ratio_inv, 1);
     }
   }
 
   if (pd->edit_uv.do_tiled_image_border_overlay) {
-    GPUBatch *geom = DRW_cache_quad_wires_get();
+    GPUBatch *geom = draw_cache_quad_wires_get();
     float obmat[4][4];
     unit_m4(obmat);
 
-    DRW_PASS_CREATE(psl->edit_uv_tiled_image_borders_ps,
-                    DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_ALWAYS);
-    GPUShader *sh = OVERLAY_shader_edit_uv_tiled_image_borders_get();
+    DRAW_PASS_CREATE(psl->edit_uv_tiled_image_borders_ps,
+                    DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_ALWAYS);
+    GPUShader *sh = overlay_shader_edit_uv_tiled_image_borders_get();
 
     float theme_color[4], selected_color[4];
     UI_GetThemeColorShade4fv(TH_BACK, 60, theme_color);
