@@ -22,21 +22,21 @@
 
 #include "overlay_private.h"
 
-void OVERLAY_wireframe_init(OVERLAY_Data *vedata)
+void overlay_wireframe_init(OverlayData *vedata)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  DRWView *default_view = (DRWView *)DRW_view_default_get();
-  pd->view_wires = DRW_view_create_with_zoffset(default_view, draw_ctx->rv3d, 0.5f);
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  DrawView *default_view = (DrawView *)draw_view_default_get();
+  pd->view_wires = draw_view_create_with_zoffset(default_view, draw_ctx->rv3d, 0.5f);
 }
 
-void OVERLAY_wireframe_cache_init(OVERLAY_Data *vedata)
+void overlay_wireframe_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  DRWShadingGroup *grp = NULL;
+  OverlayPassList *psl = vedata->psl;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DrawCtxState *draw_ctx = draw_context_state_get();
+  DrawShadingGroup *grp = NULL;
 
   View3DShading *shading = &draw_ctx->v3d->shading;
 
@@ -48,31 +48,31 @@ void OVERLAY_wireframe_cache_init(OVERLAY_Data *vedata)
   bool is_object_color = is_wire_shmode && (shading->wire_color_type == V3D_SHADING_OBJECT_COLOR);
   bool is_random_color = is_wire_shmode && (shading->wire_color_type == V3D_SHADING_RANDOM_COLOR);
 
-  const bool use_select = (DRW_state_is_select() || DRW_state_is_depth());
-  GPUShader *wires_sh = use_select ? OVERLAY_shader_wireframe_select() :
-                                     OVERLAY_shader_wireframe(pd->antialiasing.enabled);
+  const bool use_select = (draw_state_is_select() || DRW_state_is_depth());
+  GPUShader *wires_sh = use_select ? overlay_shader_wireframe_select() :
+                                     overlay_shader_wireframe(pd->antialiasing.enabled);
 
   for (int xray = 0; xray < (is_material_shmode ? 1 : 2); xray++) {
-    DRWState state = DRW_STATE_FIRST_VERTEX_CONVENTION | DRW_STATE_WRITE_COLOR |
-                     DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
-    DRWPass *pass;
+    DrawState state = DRAW_STATE_FIRST_VERTEX_CONVENTION | DRW_STATE_WRITE_COLOR |
+                     DRAW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
+    DrawPass *pass;
     GPUTexture **depth_tx = ((!pd->xray_enabled || pd->xray_opacity > 0.0f) &&
                              DRW_state_is_fbo()) ?
                                 &txl->temp_depth_tx :
                                 &txl->dummy_depth_tx;
 
     if (xray == 0) {
-      DRW_PASS_CREATE(psl->wireframe_ps, state | pd->clipping_state);
+      DRAW_PASS_CREATE(psl->wireframe_ps, state | pd->clipping_state);
       pass = psl->wireframe_ps;
     }
     else {
-      DRW_PASS_CREATE(psl->wireframe_xray_ps, state | pd->clipping_state);
+      DRAW_PASS_CREATE(psl->wireframe_xray_ps, state | pd->clipping_state);
       pass = psl->wireframe_xray_ps;
     }
 
     for (int use_coloring = 0; use_coloring < 2; use_coloring++) {
       pd->wires_grp[xray][use_coloring] = grp = DRW_shgroup_create(wires_sh, pass);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      DRAW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
       DRW_shgroup_uniform_texture_ref(grp, "depthTex", depth_tx);
       DRW_shgroup_uniform_float_copy(grp, "wireStepParam", pd->shdata.wire_step_param);
       DRW_shgroup_uniform_float_copy(grp, "wireOpacity", pd->shdata.wire_opacity);
@@ -145,7 +145,7 @@ static void wireframe_hair_cache_populate(OVERLAY_Data *vedata, Object *ob, Part
   DRW_shgroup_call_no_cull(shgrp, hairs, ob);
 }
 
-void OVERLAY_wireframe_cache_populate(OVERLAY_Data *vedata,
+void overlay_wireframe_cache_populate(OVERLAY_Data *vedata,
                                       Object *ob,
                                       OVERLAY_DupliData *dupli,
                                       bool init_dupli)
