@@ -1927,3 +1927,622 @@ static void pchan_draw_ik_lines(ArmatureDrawCtx *ctx,
   }
 }
 
+static void draw_bone_relations(ArmatureDrawContext *ctx,
+                                EditBone *ebone,
+                                bPoseChannel *pchan,
+                                bArmature *arm,
+                                const int boneflag,
+                                const short constflag)
+{
+  if (ebone && ebone->parent) {
+    if (ctx->do_relations) {
+      /* Always draw for unconnected bones, regardless of selection,
+       * since riggers will want to know about the links between bones
+       */
+      if ((boneflag & BONE_CONNECTED) == 0) {
+        drw_shgroup_bone_relationship_lines(ctx, ebone->head, ebone->parent->tail);
+      }
+    }
+  }
+  else if (pchan && pchan->parent) {
+    if (ctx->do_relations) {
+      /* Only draw if bone or its parent is selected - reduces viewport complexity with complex
+       * rigs */
+      if ((boneflag & BONE_SELECTED) ||
+          (pchan->parent->bone && (pchan->parent->bone->flag & BONE_SELECTED))) {
+        if ((boneflag & BONE_CONNECTED) == 0) {
+          drw_shgroup_bone_relationship_lines(ctx, pchan->pose_head, pchan->parent->pose_tail);
+        }
+      }
+    }
+
+    /* Draw a line to IK root bone if bone is selected. */
+    if (arm->flag & ARM_POSEMODE) {
+      if (constflag & (PCHAN_HAS_IK | PCHAN_HAS_SPLINEIK)) {
+        if (boneflag & BONE_SELECTED) {
+          pchan_draw_ik_lines(ctx, pchan, !ctx->do_relations, constflag);
+        }
+      }
+    }
+  }
+}
+
+static void draw_bone_name(ArmatureDrawContext *ctx,
+                           EditBone *eBone,
+                           bPoseChannel *pchan,
+                           bArmature *arm,
+                           const int boneflag)
+{
+  struct DRWTextStore *dt = DRW_text_cache_ensure();
+  uchar color[4];
+  float vec[3];
+
+  bool highlight = (pchan && (arm->flag & ARM_POSEMODE) && (boneflag & BONE_SELECTED)) ||
+                   (eBone && (eBone->flag & BONE_SELECTED));
+
+  /* Color Management: Exception here as texts are drawn in sRGB space directly. */
+  UI_GetThemeColor4ubv(highlight ? TH_TEXT_HI : TH_TEXT, color);
+
+  float *head = pchan ? pchan->pose_head : eBone->head;
+  float *tail = pchan ? pchan->pose_tail : eBone->tail;
+  mid_v3_v3v3(vec, head, tail);
+  mul_m4_v3(ctx->ob->obmat, vec);
+
+  DRW_text_cache_add(dt,
+                     vec,
+                     (pchan) ? pchan->name : eBone->name,
+                     (pchan) ? strlen(pchan->name) : strlen(eBone->name),
+                     10,
+                     0,
+                     DRW_TEXT_CACHE_GLOBALSPACE | DRW_TEXT_CACHE_STRING_PTR,
+                     color);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Pose Bone Culling
+ *
+ * Used for selection since drawing many bones can be slow, see: T91253.
+ *
+ * Bounding spheres are used with margins added to ensure bones are included.
+ * An added margin is needed because #BKE_pchan_minmax only returns the bounds
+ * of the bones head & tail which doesn't account for parts of the bone users may select
+ * (octahedral spheres or envelope radius for example).
+ * \{ */
+
+static void pchan_culling_calc_bsphere(const Object *ob,
+                                       const bPoseChannel *pchan,
+                                       BoundSphere *r_bsphere)
+{
+  float min[3], max[3];
+  INIT_MINMAX(min, max);
+  BKE_pchan_minmax(ob, pchan, min, max);
+  mid_v3_v3v3(r_bsphere->center, min, max);
+  r_bsphere->radius = len_v3v3(min, r_bsphere->center);
+}
+
+/**
+ * \return true when bounding sphere from `pchan` intersect the view.
+ * (same for other "test" functions defined here).
+ */
+static bool pchan_culling_test_simple(const DRWView *view,
+                                      const Object *ob,
+                                      const bPoseChannel *pchan)
+{
+  BoundSphere bsphere;
+  pchan_culling_calc_bsphere(ob, pchan, &bsphere);
+  return DRW_culling_sphere_test(view, &bsphere);
+}
+
+static bool pchan_culling_test_with_radius_scale(const DRWView *view,
+                                                 const Object *ob,
+                                                 const bPoseChannel *pchan,
+                                                 const float scale)
+{
+  BoundSphere bsphere;
+  pchan_culling_calc_bsphere(ob, pchan, &bsphere);
+  bsphere.radius *= scale;
+  return DRW_culling_sphere_test(view, &bsphere);
+}
+
+static bool pchan_culling_test_custom(const DRWView *view,
+                                      const Object *ob,
+                                      const bPoseChannel *pchan)
+{
+  /* For more aggressive culling the bounding box of the custom-object could be used. */
+  return pchan_culling_test_simple(view, ob, pchan);
+}
+
+static bool pchan_culling_test_wire(const DRWView *view,
+                                    const Object *ob,
+                                    const bPoseChannel *pchan)
+{
+  BLI_assert(((const bArmature *)ob->data)->drawtype == ARM_WIRE);
+  return pchan_culling_test_simple(view, ob, pchan);
+}
+
+static bool pchan_culling_test_line(const DRWView *view,
+                                    const Object *ob,
+                                    const bPoseChannel *pchan)
+{
+  BLI_assert(((const bArmature *)ob->data)->drawtype == ARM_LINE);
+  /* Account for the end-points, as the line end-points size is in pixels, this is a rough value.
+   * Since the end-points are small the difference between having any margin or not is unlikely
+   * to be noticeable. */
+  const float scale = 1.1f;
+  return pchan_culling_test_with_radius_scale(view, ob, pchan, scale);
+}
+
+static bool pchan_culling_test_envelope(const DRWView *view,
+                                        const Object *ob,
+                                        const bPoseChannel *pchan)
+{
+  const bArmature *arm = ob->data;
+  BLI_assert(arm->drawtype == ARM_ENVELOPE);
+  UNUSED_VARS_NDEBUG(arm);
+  BoundSphere bsphere;
+  pchan_culling_calc_bsphere(ob, pchan, &bsphere);
+  bsphere.radius += max_ff(pchan->bone->rad_head, pchan->bone->rad_tail) *
+                    mat4_to_size_max_axis(ob->obmat) * mat4_to_size_max_axis(pchan->disp_mat);
+  return DRW_culling_sphere_test(view, &bsphere);
+}
+
+static bool pchan_culling_test_bbone(const DRWView *view,
+                                     const Object *ob,
+                                     const bPoseChannel *pchan)
+{
+  const bArmature *arm = ob->data;
+  BLI_assert(arm->drawtype == ARM_B_BONE);
+  UNUSED_VARS_NDEBUG(arm);
+  const float ob_scale = mat4_to_size_max_axis(ob->obmat);
+  const Mat4 *bbones_mat = (const Mat4 *)pchan->draw_data->bbone_matrix;
+  for (int i = pchan->bone->segments; i--; bbones_mat++) {
+    BoundSphere bsphere;
+    float size[3];
+    mat4_to_size(size, bbones_mat->mat);
+    mul_v3_m4v3(bsphere.center, ob->obmat, bbones_mat->mat[3]);
+    bsphere.radius = len_v3(size) * ob_scale;
+    if (DRW_culling_sphere_test(view, &bsphere)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool pchan_culling_test_octohedral(const DRWView *view,
+                                          const Object *ob,
+                                          const bPoseChannel *pchan)
+{
+  /* No type assertion as this is a fallback (files from the future will end up here). */
+  /* Account for spheres on the end-points. */
+  const float scale = 1.2f;
+  return pchan_culling_test_with_radius_scale(view, ob, pchan, scale);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Main Draw Loops
+ * \{ */
+
+static void draw_armature_edit(ArmatureDrawContext *ctx)
+{
+  Object *ob = ctx->ob;
+  EditBone *eBone;
+  int index;
+  const bool is_select = DRW_state_is_select();
+  const bool show_text = DRW_state_show_text();
+
+  const Object *ob_orig = DEG_get_original_object(ob);
+  /* FIXME(campbell): We should be able to use the CoW object,
+   * however the active bone isn't updated. Long term solution is an 'EditArmature' struct.
+   * for now we can draw from the original armature. See: T66773. */
+  // bArmature *arm = ob->data;
+  bArmature *arm = ob_orig->data;
+
+  edbo_compute_bbone_child(arm);
+
+  for (eBone = arm->edbo->first, index = ob_orig->runtime.select_id; eBone;
+       eBone = eBone->next, index += 0x10000) {
+    if (eBone->layer & arm->layer) {
+      if ((eBone->flag & BONE_HIDDEN_A) == 0) {
+        const int select_id = is_select ? index : (uint)-1;
+        const short constflag = 0;
+
+        /* catch exception for bone with hidden parent */
+        int boneflag = eBone->flag;
+        if ((eBone->parent) && !EBONE_VISIBLE(arm, eBone->parent)) {
+          boneflag &= ~BONE_CONNECTED;
+        }
+
+        /* set temporary flag for drawing bone as active, but only if selected */
+        if (eBone == arm->act_edbone) {
+          boneflag |= BONE_DRAW_ACTIVE;
+        }
+
+        boneflag &= ~BONE_DRAW_LOCKED_WEIGHT;
+
+        if (!is_select) {
+          draw_bone_relations(ctx, eBone, NULL, arm, boneflag, constflag);
+        }
+
+        if (arm->drawtype == ARM_ENVELOPE) {
+          draw_bone_update_disp_matrix_default(eBone, NULL);
+          draw_bone_envelope(ctx, eBone, NULL, arm, boneflag, constflag, select_id);
+        }
+        else if (arm->drawtype == ARM_LINE) {
+          draw_bone_update_disp_matrix_default(eBone, NULL);
+          draw_bone_line(ctx, eBone, NULL, arm, boneflag, constflag, select_id);
+        }
+        else if (arm->drawtype == ARM_WIRE) {
+          draw_bone_update_disp_matrix_bbone(eBone, NULL);
+          draw_bone_wire(ctx, eBone, NULL, arm, boneflag, constflag, select_id);
+        }
+        else if (arm->drawtype == ARM_B_BONE) {
+          draw_bone_update_disp_matrix_bbone(eBone, NULL);
+          draw_bone_box(ctx, eBone, NULL, arm, boneflag, constflag, select_id);
+        }
+        else {
+          draw_bone_update_disp_matrix_default(eBone, NULL);
+          draw_bone_octahedral(ctx, eBone, NULL, arm, boneflag, constflag, select_id);
+        }
+
+        if (!is_select) {
+          if (show_text && (arm->flag & ARM_DRAWNAMES)) {
+            draw_bone_name(ctx, eBone, NULL, arm, boneflag);
+          }
+
+          if (arm->flag & ARM_DRAWAXES) {
+            draw_axes(ctx, eBone, NULL, arm);
+          }
+        }
+      }
+    }
+  }
+}
+
+static void draw_armature_pose(ArmatureDrawContext *ctx)
+{
+  Object *ob = ctx->ob;
+  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const Scene *scene = draw_ctx->scene;
+  bArmature *arm = ob->data;
+  bPoseChannel *pchan;
+  int index = -1;
+  const bool show_text = DRW_state_show_text();
+  bool draw_locked_weights = false;
+
+  /* We can't safely draw non-updated pose, might contain NULL bone pointers... */
+  if (ob->pose->flag & POSE_RECALC) {
+    return;
+  }
+
+  bool is_pose_select = false;
+  /* Object can be edited in the scene. */
+  if ((ob->base_flag & (BASE_FROM_SET | BASE_FROM_DUPLI)) == 0) {
+    if ((draw_ctx->object_mode & OB_MODE_POSE) || (ob == draw_ctx->object_pose)) {
+      arm->flag |= ARM_POSEMODE;
+    }
+    is_pose_select =
+        /* If we're in pose-mode or object-mode with the ability to enter pose mode. */
+        (
+            /* Draw as if in pose mode (when selection is possible). */
+            (arm->flag & ARM_POSEMODE) ||
+            /* When we're in object mode, which may select bones. */
+            ((ob->mode & OB_MODE_POSE) &&
+             (
+                 /* Switch from object mode when object lock is disabled. */
+                 ((draw_ctx->object_mode == OB_MODE_OBJECT) &&
+                  (scene->toolsettings->object_flag & SCE_OBJECT_MODE_LOCK) == 0) ||
+                 /* Allow selection when in weight-paint mode
+                  * (selection code ensures this won't become active). */
+                 ((draw_ctx->object_mode & OB_MODE_ALL_WEIGHT_PAINT) &&
+                  (draw_ctx->object_pose != NULL))))) &&
+        DRW_state_is_select();
+
+    if (is_pose_select) {
+      const Object *ob_orig = DEG_get_original_object(ob);
+      index = ob_orig->runtime.select_id;
+    }
+  }
+
+  /* In weight paint mode retrieve the vertex group lock status. */
+  if ((draw_ctx->object_mode & OB_MODE_ALL_WEIGHT_PAINT) && (draw_ctx->object_pose == ob) &&
+      (draw_ctx->obact != NULL)) {
+    draw_locked_weights = true;
+
+    for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {
+      pchan->bone->flag &= ~BONE_DRAW_LOCKED_WEIGHT;
+    }
+
+    const Object *obact_orig = DEG_get_original_object(draw_ctx->obact);
+
+    const ListBase *defbase = BKE_object_defgroup_list(obact_orig);
+    LISTBASE_FOREACH (const bDeformGroup *, dg, defbase) {
+      if (dg->flag & DG_LOCK_WEIGHT) {
+        pchan = BKE_pose_channel_find_name(ob->pose, dg->name);
+
+        if (pchan) {
+          pchan->bone->flag |= BONE_DRAW_LOCKED_WEIGHT;
+        }
+      }
+    }
+  }
+
+  const DRWView *view = is_pose_select ? DRW_view_default_get() : NULL;
+
+  for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next, index += 0x10000) {
+    Bone *bone = pchan->bone;
+    const bool bone_visible = (bone->flag & (BONE_HIDDEN_P | BONE_HIDDEN_PG)) == 0;
+
+    if (bone_visible) {
+      if (bone->layer & arm->layer) {
+        const bool draw_dofs = !is_pose_select && ctx->show_relations &&
+                               (arm->flag & ARM_POSEMODE) && (bone->flag & BONE_SELECTED) &&
+                               ((ob->base_flag & BASE_FROM_DUPLI) == 0) &&
+                               (pchan->ikflag & (BONE_IK_XLIMIT | BONE_IK_ZLIMIT));
+        const int select_id = is_pose_select ? index : (uint)-1;
+        const short constflag = pchan->constflag;
+
+        pchan_draw_data_init(pchan);
+
+        if (!ctx->const_color) {
+          set_pchan_colorset(ctx, ob, pchan);
+        }
+
+        /* catch exception for bone with hidden parent */
+        int boneflag = bone->flag;
+        if ((bone->parent) && (bone->parent->flag & (BONE_HIDDEN_P | BONE_HIDDEN_PG))) {
+          boneflag &= ~BONE_CONNECTED;
+        }
+
+        /* set temporary flag for drawing bone as active, but only if selected */
+        if (bone == arm->act_bone) {
+          boneflag |= BONE_DRAW_ACTIVE;
+        }
+
+        if (!draw_locked_weights) {
+          boneflag &= ~BONE_DRAW_LOCKED_WEIGHT;
+        }
+
+        if (!is_pose_select) {
+          draw_bone_relations(ctx, NULL, pchan, arm, boneflag, constflag);
+        }
+
+        if ((pchan->custom) && !(arm->flag & ARM_NO_CUSTOM)) {
+          draw_bone_update_disp_matrix_custom(pchan);
+          if (!is_pose_select || pchan_culling_test_custom(view, ob, pchan)) {
+            draw_bone_custom_shape(ctx, NULL, pchan, arm, boneflag, constflag, select_id);
+          }
+        }
+        else if (arm->drawtype == ARM_ENVELOPE) {
+          draw_bone_update_disp_matrix_default(NULL, pchan);
+          if (!is_pose_select || pchan_culling_test_envelope(view, ob, pchan)) {
+            draw_bone_envelope(ctx, NULL, pchan, arm, boneflag, constflag, select_id);
+          }
+        }
+        else if (arm->drawtype == ARM_LINE) {
+          draw_bone_update_disp_matrix_default(NULL, pchan);
+          if (!is_pose_select || pchan_culling_test_line(view, ob, pchan)) {
+            draw_bone_line(ctx, NULL, pchan, arm, boneflag, constflag, select_id);
+          }
+        }
+        else if (arm->drawtype == ARM_WIRE) {
+          draw_bone_update_disp_matrix_bbone(NULL, pchan);
+          if (!is_pose_select || pchan_culling_test_wire(view, ob, pchan)) {
+            draw_bone_wire(ctx, NULL, pchan, arm, boneflag, constflag, select_id);
+          }
+        }
+        else if (arm->drawtype == ARM_B_BONE) {
+          draw_bone_update_disp_matrix_bbone(NULL, pchan);
+          if (!is_pose_select || pchan_culling_test_bbone(view, ob, pchan)) {
+            draw_bone_box(ctx, NULL, pchan, arm, boneflag, constflag, select_id);
+          }
+        }
+        else {
+          draw_bone_update_disp_matrix_default(NULL, pchan);
+          if (!is_pose_select || pchan_culling_test_octohedral(view, ob, pchan)) {
+            draw_bone_octahedral(ctx, NULL, pchan, arm, boneflag, constflag, select_id);
+          }
+        }
+
+        /* These aren't included in the selection. */
+        if (!is_pose_select) {
+          if (draw_dofs) {
+            draw_bone_degrees_of_freedom(ctx, pchan);
+          }
+
+          if (show_text && (arm->flag & ARM_DRAWNAMES)) {
+            draw_bone_name(ctx, NULL, pchan, arm, boneflag);
+          }
+
+          if (arm->flag & ARM_DRAWAXES) {
+            draw_axes(ctx, NULL, pchan, arm);
+          }
+        }
+      }
+    }
+  }
+
+  arm->flag &= ~ARM_POSEMODE;
+}
+
+static void armature_context_setup(ArmatureDrawContext *ctx,
+                                   OVERLAY_PrivateData *pd,
+                                   Object *ob,
+                                   const bool do_envelope_dist,
+                                   const bool is_edit_mode,
+                                   const bool is_pose_mode,
+                                   const float *const_color)
+{
+  const bool is_object_mode = !do_envelope_dist;
+  const bool is_xray = (ob->dtx & OB_DRAW_IN_FRONT) != 0 ||
+                       (pd->armature.do_pose_xray && is_pose_mode);
+  const bool draw_as_wire = (ob->dt < OB_SOLID);
+  const bool is_filled = (!pd->armature.transparent && !draw_as_wire) || !is_object_mode;
+  const bool is_transparent = pd->armature.transparent || (draw_as_wire && !is_object_mode);
+  bArmature *arm = ob->data;
+  OVERLAY_ArmatureCallBuffers *cbo = &pd->armature_call_buffers[is_xray];
+  OVERLAY_ArmatureCallBuffersInner *cb = is_transparent ? &cbo->transp : &cbo->solid;
+
+  static const float select_const_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+  switch (arm->drawtype) {
+    case ARM_ENVELOPE:
+      ctx->envelope_outline = cb->envelope_outline;
+      ctx->envelope_solid = (is_filled) ? cb->envelope_fill : NULL;
+      ctx->envelope_distance = (do_envelope_dist) ? cb->envelope_distance : NULL;
+      break;
+    case ARM_LINE:
+      ctx->stick = cb->stick;
+      break;
+    case ARM_WIRE:
+      ctx->wire = cb->wire;
+      break;
+    case ARM_B_BONE:
+      ctx->outline = cb->box_outline;
+      ctx->solid = (is_filled) ? cb->box_fill : NULL;
+      break;
+    case ARM_OCTA:
+      ctx->outline = cb->octa_outline;
+      ctx->solid = (is_filled) ? cb->octa_fill : NULL;
+      break;
+  }
+  ctx->ob = ob;
+  ctx->extras = &pd->extra_call_buffers[is_xray];
+  ctx->dof_lines = cb->dof_lines;
+  ctx->dof_sphere = cb->dof_sphere;
+  ctx->point_solid = (is_filled) ? cb->point_fill : NULL;
+  ctx->point_outline = cb->point_outline;
+  ctx->custom_solid = (is_filled) ? cb->custom_fill : NULL;
+  ctx->custom_outline = cb->custom_outline;
+  ctx->custom_wire = cb->custom_wire;
+  ctx->custom_shapes_ghash = cb->custom_shapes_ghash;
+  ctx->show_relations = pd->armature.show_relations;
+  ctx->do_relations = !DRW_state_is_select() && pd->armature.show_relations &&
+                      (is_edit_mode | is_pose_mode);
+  ctx->const_color = DRW_state_is_select() ? select_const_color : const_color;
+  ctx->const_wire = ((((ob->base_flag & BASE_SELECTED) && (pd->v3d_flag & V3D_SELECT_OUTLINE)) ||
+                      (arm->drawtype == ARM_WIRE)) ?
+                         1.5f :
+                         ((!is_filled || is_transparent) ? 1.0f : 0.0f));
+}
+
+void OVERLAY_edit_armature_cache_populate(OVERLAY_Data *vedata, Object *ob)
+{
+  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  ArmatureDrawContext arm_ctx;
+  armature_context_setup(&arm_ctx, pd, ob, true, true, false, NULL);
+  draw_armature_edit(&arm_ctx);
+}
+
+void OVERLAY_pose_armature_cache_populate(OVERLAY_Data *vedata, Object *ob)
+{
+  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  ArmatureDrawContext arm_ctx;
+  armature_context_setup(&arm_ctx, pd, ob, true, false, true, NULL);
+  draw_armature_pose(&arm_ctx);
+}
+
+void OVERLAY_armature_cache_populate(OVERLAY_Data *vedata, Object *ob)
+{
+  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  ArmatureDrawContext arm_ctx;
+  float *color;
+
+  if (ob->dt == OB_BOUNDBOX) {
+    return;
+  }
+
+  DRW_object_wire_theme_get(ob, draw_ctx->view_layer, &color);
+  armature_context_setup(&arm_ctx, pd, ob, false, false, false, color);
+  draw_armature_pose(&arm_ctx);
+}
+
+static bool POSE_is_driven_by_active_armature(Object *ob)
+{
+  Object *ob_arm = BKE_modifiers_is_deformed_by_armature(ob);
+  if (ob_arm) {
+    const DRWContextState *draw_ctx = DRW_context_state_get();
+    bool is_active = OVERLAY_armature_is_pose_mode(ob_arm, draw_ctx);
+    return is_active;
+  }
+
+  Object *ob_mesh_deform = BKE_modifiers_is_deformed_by_meshdeform(ob);
+  if (ob_mesh_deform) {
+    /* Recursive. */
+    return POSE_is_driven_by_active_armature(ob_mesh_deform);
+  }
+
+  return false;
+}
+
+void OVERLAY_pose_cache_populate(OVERLAY_Data *vedata, Object *ob)
+{
+  OVERLAY_PrivateData *pd = vedata->stl->pd;
+
+  struct GPUBatch *geom = DRW_cache_object_surface_get(ob);
+  if (geom) {
+    if (POSE_is_driven_by_active_armature(ob)) {
+      DRW_shgroup_call(pd->armature_bone_select_act_grp, geom, ob);
+    }
+    else {
+      DRW_shgroup_call(pd->armature_bone_select_grp, geom, ob);
+    }
+  }
+}
+
+void OVERLAY_armature_cache_finish(OVERLAY_Data *vedata)
+{
+  OVERLAY_PrivateData *pd = vedata->stl->pd;
+
+  for (int i = 0; i < 2; i++) {
+    if (pd->armature_call_buffers[i].solid.custom_shapes_ghash) {
+      /* TODO(fclem): Do not free it for each frame but reuse it. Avoiding alloc cost. */
+      BLI_ghash_free(pd->armature_call_buffers[i].solid.custom_shapes_ghash, NULL, NULL);
+      BLI_ghash_free(pd->armature_call_buffers[i].transp.custom_shapes_ghash, NULL, NULL);
+    }
+  }
+}
+
+void OVERLAY_armature_draw(OVERLAY_Data *vedata)
+{
+  OVERLAY_PassList *psl = vedata->psl;
+
+  DRW_draw_pass(psl->armature_transp_ps[0]);
+  DRW_draw_pass(psl->armature_ps[0]);
+}
+
+void overlay_armature_in_front_draw(OVERLAY_Data *vedata)
+{
+  overlay_PassList *psl = vedata->psl;
+
+  if (psl->armature_bone_select_ps == NULL || DRW_state_is_select()) {
+    draw_draw_pass(psl->armature_transp_ps[1]);
+    draw_draw_pass(psl->armature_ps[1]);
+  }
+}
+
+void overlay_pose_draw(OVERLAY_Data *vedata)
+{
+  overlay_PassList *psl = vedata->psl;
+  overlay_FramebufferList *fbl = vedata->fbl;
+
+  if (psl->armature_bone_select_ps != NULL) {
+    if (draw_state_is_fbo()) {
+      gpu_framebuffer_bind(fbl->overlay_default_fb);
+    }
+
+    draw_draw_pass(psl->armature_bone_select_ps);
+
+    if (gpu_state_is_fbo()) {
+      gpu_framebuffer_bind(fbl->overlay_line_in_front_fb);
+      gpu_framebuffer_clear_depth(fbl->overlay_line_in_front_fb, 1.0f);
+    }
+
+    draw_draw_pass(psl->armature_transp_ps[1]);
+    draw_draw_pass(psl->armature_ps[1]);
+  }
+}
