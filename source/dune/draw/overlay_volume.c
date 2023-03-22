@@ -5,7 +5,7 @@
 
 #include "overlay_private.h"
 
-void overlay_volume_cache_init(OVERLAY_Data *vedata)
+void overlay_volume_cache_init(OverlayData *vedata)
 {
   OverlayPassList *psl = vedata->psl;
   OverlayPrivateData *pd = vedata->stl->pd;
@@ -24,7 +24,7 @@ void overlay_volume_cache_init(OVERLAY_Data *vedata)
   }
 }
 
-void overlay_volume_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_volume_cache_populate(OverlayData *vedata, Object *ob)
 {
   OverlayPrivateData *pd = vedata->stl->pd;
   const bool is_select = draw_state_is_select();
@@ -37,11 +37,11 @@ void overlay_volume_cache_populate(OVERLAY_Data *vedata, Object *ob)
   }
 }
 
-void OVERLAY_volume_draw(OVERLAY_Data *vedata)
+void kernel overlay_volume_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
   if (psl->volume_ps) {
-    DRW_draw_pass(psl->volume_ps);
+    draw_draw_pass(psl->volume_ps);
   }
 }
