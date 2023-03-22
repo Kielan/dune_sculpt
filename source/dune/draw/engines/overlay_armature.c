@@ -1087,10 +1087,10 @@ static void bone_hint_color_shade(float hint_color[4], const float color[4])
   hint_color[3] = 1.0f;
 }
 
-static const float *get_bone_hint_color(const ArmatureDrawContext *ctx,
+static const float *get_bone_hint_color(const ArmatureDrawCtx *ctx,
                                         const EditBone *eBone,
-                                        const bPoseChannel *pchan,
-                                        const bArmature *arm,
+                                        const DPoseChannel *pchan,
+                                        const DArmature *arm,
                                         const int boneflag,
                                         const short constflag)
 {
@@ -1125,7 +1125,7 @@ static void pchan_draw_data_init(DPoseChannel *pchan)
   }
 }
 
-static void draw_bone_update_disp_matrix_default(EditBone *eBone, bPoseChannel *pchan)
+static void draw_bone_update_disp_matrix_default(EditBone *eBone, DPoseChannel *pchan)
 {
   float ebmat[4][4];
   float bone_scale[3];
@@ -1133,7 +1133,7 @@ static void draw_bone_update_disp_matrix_default(EditBone *eBone, bPoseChannel *
   float(*disp_mat)[4];
   float(*disp_tail_mat)[4];
 
-  /* TODO: This should be moved to depsgraph or armature refresh
+  /* TODO: This should be moved to dgraph or armature refresh
    * and not be tight to the draw pass creation.
    * This would refresh armature without invalidating the draw cache */
   if (pchan) {
@@ -1232,7 +1232,7 @@ static void ebone_spline_preview(EditBone *ebone, const float result_array[MAX_B
       }
 
       if (!param.prev_bbone) {
-        ED_armature_ebone_to_mat4(prev, bonemat);
+        ed_armature_ebone_to_mat4(prev, bonemat);
         mul_m4_m4m4(param.prev_mat, imat, bonemat);
       }
     }
@@ -1406,7 +1406,7 @@ static void draw_axes(ArmatureDrawCtx *ctx,
     rescale_m4(axis_mat, (float[3]){length, length, length});
     translate_m4(axis_mat, 0.0, arm->axes_position - 1.0, 0.0);
 
-    drw_shgroup_bone_axes(ctx, axis_mat, final_col);
+    draw_shgroup_bone_axes(ctx, axis_mat, final_col);
   }
   else {
     float disp_mat[4][4];
@@ -1923,10 +1923,10 @@ static void pchan_draw_ik_lines(ArmatureDrawCtx *ctx,
   }
 }
 
-static void draw_bone_relations(ArmatureDrawContext *ctx,
+static void draw_bone_relations(ArmatureDrawCtx *ctx,
                                 EditBone *ebone,
-                                bPoseChannel *pchan,
-                                bArmature *arm,
+                                DPoseChannel *pchan,
+                                DArmature *arm,
                                 const int boneflag,
                                 const short constflag)
 {
@@ -1963,13 +1963,13 @@ static void draw_bone_relations(ArmatureDrawContext *ctx,
   }
 }
 
-static void draw_bone_name(ArmatureDrawContext *ctx,
+static void draw_bone_name(ArmatureDrawCtx *ctx,
                            EditBone *eBone,
                            bPoseChannel *pchan,
                            bArmature *arm,
                            const int boneflag)
 {
-  struct DRWTextStore *dt = DRW_text_cache_ensure();
+  struct DrawTextStore *dt = DRW_text_cache_ensure();
   uchar color[4];
   float vec[3];
 
@@ -1977,27 +1977,25 @@ static void draw_bone_name(ArmatureDrawContext *ctx,
                    (eBone && (eBone->flag & BONE_SELECTED));
 
   /* Color Management: Exception here as texts are drawn in sRGB space directly. */
-  UI_GetThemeColor4ubv(highlight ? TH_TEXT_HI : TH_TEXT, color);
+  ui_GetThemeColor4ubv(highlight ? TH_TEXT_HI : TH_TEXT, color);
 
   float *head = pchan ? pchan->pose_head : eBone->head;
   float *tail = pchan ? pchan->pose_tail : eBone->tail;
   mid_v3_v3v3(vec, head, tail);
   mul_m4_v3(ctx->ob->obmat, vec);
 
-  DRW_text_cache_add(dt,
+  draw_text_cache_add(dt,
                      vec,
                      (pchan) ? pchan->name : eBone->name,
                      (pchan) ? strlen(pchan->name) : strlen(eBone->name),
                      10,
                      0,
-                     DRW_TEXT_CACHE_GLOBALSPACE | DRW_TEXT_CACHE_STRING_PTR,
+                     DRAW_TEXT_CACHE_GLOBALSPACE | DRW_TEXT_CACHE_STRING_PTR,
                      color);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Pose Bone Culling
+/** Pose Bone Culling
  *
  * Used for selection since drawing many bones can be slow, see: T91253.
  *
@@ -2005,7 +2003,7 @@ static void draw_bone_name(ArmatureDrawContext *ctx,
  * An added margin is needed because #BKE_pchan_minmax only returns the bounds
  * of the bones head & tail which doesn't account for parts of the bone users may select
  * (octahedral spheres or envelope radius for example).
- * \{ */
+ **/
 
 static void pchan_culling_calc_bsphere(const Object *ob,
                                        const bPoseChannel *pchan,
@@ -2116,11 +2114,9 @@ static bool pchan_culling_test_octohedral(const DRWView *view,
   return pchan_culling_test_with_radius_scale(view, ob, pchan, scale);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Main Draw Loops
- * \{ */
+/** Main Draw Loops
+ **/
 
 static void draw_armature_edit(ArmatureDrawContext *ctx)
 {
