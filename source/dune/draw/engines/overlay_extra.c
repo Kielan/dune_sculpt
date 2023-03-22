@@ -446,7 +446,7 @@ static void overlay_texture_space(OverlayExtraCallBuffers *cb, Object *ob, const
 
   switch (GS(ob_data->name)) {
     case ID_ME:
-      dune_mesh_texspace_get_reference((Mesh *)ob_data, NULL, &texcoloc, &texcosize);
+      dune_mesh_texspace_get_ref((Mesh *)ob_data, NULL, &texcoloc, &texcosize);
       break;
     case ID_CU_LEGACY: {
       Curve *cu = (Curve *)ob_data;
@@ -713,18 +713,18 @@ void overlay_lightprobe_cache_populate(OverlayData *vedata, Object *ob)
         char shape = (prb->parallax_type == LIGHTPROBE_SHAPE_BOX) ? OB_CUBE : OB_EMPTY_SPHERE;
         float dist = ((prb->flag & LIGHTPROBE_FLAG_CUSTOM_PARALLAX) != 0) ? prb->distpar :
                                                                             prb->distinf;
-        OVERLAY_empty_shape(cb, ob->obmat, dist, shape, color_p);
+        overlay_empty_shape(cb, ob->obmat, dist, shape, color_p);
       }
       break;
     case LIGHTPROBE_TYPE_GRID:
       instdata.clip_sta = show_clipping ? prb->clipsta : -1.0;
       instdata.clip_end = show_clipping ? prb->clipend : -1.0;
-      DRW_buffer_add_entry(cb->probe_grid, color_p, &instdata);
+      draw_buffer_add_entry(cb->probe_grid, color_p, &instdata);
 
       if (show_influence) {
         float f = 1.0f - prb->falloff;
-        OVERLAY_empty_shape(cb, ob->obmat, 1.0 + prb->distinf, OB_CUBE, color_p);
-        OVERLAY_empty_shape(cb, ob->obmat, 1.0 + prb->distinf * f, OB_CUBE, color_p);
+        overlay_empty_shape(cb, ob->obmat, 1.0 + prb->distinf, OB_CUBE, color_p);
+        overlay_empty_shape(cb, ob->obmat, 1.0 + prb->distinf * f, OB_CUBE, color_p);
       }
 
       /* Data dots */
@@ -741,57 +741,51 @@ void overlay_lightprobe_cache_populate(OverlayData *vedata, Object *ob)
         }
 
         uint cell_count = prb->grid_resolution_x * prb->grid_resolution_y * prb->grid_resolution_z;
-        DRWShadingGroup *grp = DRW_shgroup_create_sub(vedata->stl->pd->extra_grid_grp);
-        DRW_shgroup_uniform_vec4_array_copy(grp, "gridModelMatrix", instdata.mat, 4);
-        DRW_shgroup_call_procedural_points(grp, NULL, cell_count);
+        DrawShadingGroup *grp = draw_shgroup_create_sub(vedata->stl->pd->extra_grid_grp);
+        draw_shgroup_uniform_vec4_array_copy(grp, "gridModelMatrix", instdata.mat, 4);
+        draw_shgroup_call_procedural_points(grp, NULL, cell_count);
       }
       break;
     case LIGHTPROBE_TYPE_PLANAR:
-      DRW_buffer_add_entry(cb->probe_planar, color_p, &instdata);
+      draw_buffer_add_entry(cb->probe_planar, color_p, &instdata);
 
-      if (DRW_state_is_select() && (prb->flag & LIGHTPROBE_FLAG_SHOW_DATA)) {
-        DRW_buffer_add_entry(cb->solid_quad, color_p, &instdata);
+      if (draw_state_is_select() && (prb->flag & LIGHTPROBE_FLAG_SHOW_DATA)) {
+        draw_buffer_add_entry(cb->solid_quad, color_p, &instdata);
       }
 
       if (show_influence) {
         normalize_v3_length(instdata.mat[2], prb->distinf);
-        DRW_buffer_add_entry(cb->empty_cube, color_p, &instdata);
+        draw_buffer_add_entry(cb->empty_cube, color_p, &instdata);
         mul_v3_fl(instdata.mat[2], 1.0f - prb->falloff);
-        DRW_buffer_add_entry(cb->empty_cube, color_p, &instdata);
+        draw_buffer_add_entry(cb->empty_cube, color_p, &instdata);
       }
       zero_v3(instdata.mat[2]);
-      DRW_buffer_add_entry(cb->empty_cube, color_p, &instdata);
+      draw_buffer_add_entry(cb->empty_cube, color_p, &instdata);
 
       normalize_m4_m4(instdata.mat, ob->obmat);
-      OVERLAY_empty_shape(cb, instdata.mat, ob->empty_drawsize, OB_SINGLE_ARROW, color_p);
+      overlay_empty_shape(cb, instdata.mat, ob->empty_drawsize, OB_SINGLE_ARROW, color_p);
       break;
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Speaker
- * \{ */
+/** Speaker **/
 
-void OVERLAY_speaker_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_speaker_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_ExtraCallBuffers *cb = OVERLAY_extra_call_buffer_get(vedata, ob);
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayExtraCallBuffers *cb = overlay_extra_call_buffer_get(vedata, ob);
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   ViewLayer *view_layer = draw_ctx->view_layer;
   float *color_p;
-  DRW_object_wire_theme_get(ob, view_layer, &color_p);
+  draw_object_wire_theme_get(ob, view_layer, &color_p);
 
-  DRW_buffer_add_entry(cb->speaker, color_p, ob->obmat);
+  draw_buffer_add_entry(cb->speaker, color_p, ob->obmat);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Camera
- * \{ */
+/** Camera **/
 
-typedef union OVERLAY_CameraInstanceData {
+typedef union OverlayCameraInstanceData {
   /* Pack render data into object matrix and object color. */
   struct {
     float color[4];
@@ -827,15 +821,15 @@ typedef union OVERLAY_CameraInstanceData {
       float mist_end;
     };
   };
-} OVERLAY_CameraInstanceData;
+} OverlayCameraInstanceData;
 
 static void camera_view3d_reconstruction(
-    OVERLAY_ExtraCallBuffers *cb, Scene *scene, View3D *v3d, Object *ob, const float color[4])
+    OverlayExtraCallBuffers *cb, Scene *scene, View3D *v3d, Object *ob, const float color[4])
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const bool is_select = DRW_state_is_select();
+  const DRWContextState *draw_ctx = draw_ctx_state_get();
+  const bool is_select = draw_state_is_select();
 
-  MovieClip *clip = BKE_object_movieclip_get(scene, ob, false);
+  MovieClip *clip = dub_object_movieclip_get(scene, ob, false);
   if (clip == NULL) {
     return;
   }
@@ -852,11 +846,11 @@ static void camera_view3d_reconstruction(
   float *bundle_color_unselected = G_draw.block.colorWire;
   uchar text_color_selected[4], text_color_unselected[4];
   /* Color Management: Exception here as texts are drawn in sRGB space directly. */
-  UI_GetThemeColor4ubv(TH_SELECT, text_color_selected);
-  UI_GetThemeColor4ubv(TH_TEXT, text_color_unselected);
+  ui_GetThemeColor4ubv(TH_SELECT, text_color_selected);
+  ui_GetThemeColor4ubv(TH_TEXT, text_color_unselected);
 
   float camera_mat[4][4];
-  BKE_tracking_get_camera_object_matrix(ob, camera_mat);
+  dune_tracking_get_camera_object_matrix(ob, camera_mat);
 
   LISTBASE_FOREACH (MovieTrackingObject *, tracking_object, &tracking->objects) {
     float tracking_object_mat[4][4];
@@ -866,10 +860,10 @@ static void camera_view3d_reconstruction(
     }
     else {
       const int framenr = BKE_movieclip_remap_scene_to_clip_frame(
-          clip, DEG_get_ctime(draw_ctx->depsgraph));
+          clip, dgraph_get_ctime(draw_ctx->depsgraph));
 
       float object_mat[4][4];
-      BKE_tracking_camera_get_reconstructed_interpolate(
+      dune_tracking_camera_get_reconstructed_interpolate(
           tracking, tracking_object, framenr, object_mat);
 
       float object_imat[4][4];
@@ -907,13 +901,13 @@ static void camera_view3d_reconstruction(
       }
 
       if (is_select) {
-        DRW_select_load_id(ob->runtime.select_id | (track_index << 16));
+        draw_select_load_id(ob->runtime.select_id | (track_index << 16));
         track_index++;
       }
 
       if (is_solid_bundle) {
         if (is_selected) {
-          OVERLAY_empty_shape(cb, bundle_mat, v3d->bundle_size, v3d->bundle_drawtype, color);
+          overlay_empty_shape(cb, bundle_mat, v3d->bundle_size, v3d->bundle_drawtype, color);
         }
 
         const float bundle_color_v4[4] = {
@@ -924,7 +918,7 @@ static void camera_view3d_reconstruction(
         };
 
         bundle_mat[3][3] = v3d->bundle_size; /* See shader. */
-        DRW_buffer_add_entry(cb->empty_sphere_solid, bundle_color_v4, bundle_mat);
+        draw_buffer_add_entry(cb->empty_sphere_solid, bundle_color_v4, bundle_mat);
       }
       else {
         OVERLAY_empty_shape(cb, bundle_mat, v3d->bundle_size, v3d->bundle_drawtype, bundle_color);
