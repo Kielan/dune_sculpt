@@ -1,6 +1,4 @@
-/** \file
- * \ingroup draw_engine
- *
+/**
  * Overlay antialiasing:
  *
  * Most of the overlays are wires which causes a lot of flickering in motions
@@ -36,26 +34,26 @@
  *  - No convergence time (compared to TAA).
  */
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_antialiasing_init(OVERLAY_Data *vedata)
+void overlay_antialiasing_init(OverlayData *vedata)
 {
-  OVERLAY_FramebufferList *fbl = vedata->fbl;
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  OverlayFramebufferList *fbl = vedata->fbl;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
   /* Small texture which will have very small impact on rendertime. */
   if (txl->dummy_depth_tx == NULL) {
     const float pixel[1] = {1.0f};
-    txl->dummy_depth_tx = DRW_texture_create_2d(1, 1, GPU_DEPTH_COMPONENT24, 0, pixel);
+    txl->dummy_depth_tx = draw_texture_create_2d(1, 1, GPU_DEPTH_COMPONENT24, 0, pixel);
   }
 
-  if (!DRW_state_is_fbo()) {
+  if (!draw_state_is_fbo()) {
     pd->antialiasing.enabled = false;
     return;
   }
@@ -68,8 +66,8 @@ void OVERLAY_antialiasing_init(OVERLAY_Data *vedata)
   GPUTexture *line_tex = NULL;
 
   if (pd->antialiasing.enabled) {
-    DRW_texture_ensure_fullscreen_2d(&txl->overlay_color_tx, GPU_SRGB8_A8, DRW_TEX_FILTER);
-    DRW_texture_ensure_fullscreen_2d(&txl->overlay_line_tx, GPU_RGBA8, 0);
+    draw_texture_ensure_fullscreen_2d(&txl->overlay_color_tx, GPU_SRGB8_A8, DRAW_TEX_FILTER);
+    draw_texture_ensure_fullscreen_2d(&txl->overlay_line_tx, GPU_RGBA8, 0);
 
     color_tex = txl->overlay_color_tx;
     line_tex = txl->overlay_line_tx;
@@ -79,17 +77,17 @@ void OVERLAY_antialiasing_init(OVERLAY_Data *vedata)
     color_tex = dtxl->color_overlay;
   }
 
-  GPU_framebuffer_ensure_config(&fbl->overlay_color_only_fb,
+  gpu_framebuffer_ensure_config(&fbl->overlay_color_only_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(color_tex),
                                 });
-  GPU_framebuffer_ensure_config(&fbl->overlay_default_fb,
+  gpu_framebuffer_ensure_config(&fbl->overlay_default_fb,
                                 {
                                     GPU_ATTACHMENT_TEXTURE(dtxl->depth),
                                     GPU_ATTACHMENT_TEXTURE(color_tex),
                                 });
-  GPU_framebuffer_ensure_config(&fbl->overlay_line_fb,
+  gpu_framebuffer_ensure_config(&fbl->overlay_line_fb,
                                 {
                                     GPU_ATTACHMENT_TEXTURE(dtxl->depth),
                                     GPU_ATTACHMENT_TEXTURE(color_tex),
@@ -97,46 +95,46 @@ void OVERLAY_antialiasing_init(OVERLAY_Data *vedata)
                                 });
 }
 
-void OVERLAY_antialiasing_cache_init(OVERLAY_Data *vedata)
+void overlay_antialiasing_cache_init(OverlayData *vedata)
 {
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  OVERLAY_PassList *psl = vedata->psl;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
   struct GPUShader *sh;
-  DRWShadingGroup *grp;
+  DrawShadingGroup *grp;
 
   if (pd->antialiasing.enabled) {
     /* `antialiasing.enabled` is also enabled for wire expansion. Check here if
      * anti aliasing is needed. */
     const bool do_smooth_lines = (U.gpu_flag & USER_GPU_FLAG_OVERLAY_SMOOTH_WIRE) != 0;
 
-    DRW_PASS_CREATE(psl->antialiasing_ps, DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL);
+    DRAW_PASS_CREATE(psl->antialiasing_ps, DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL);
 
-    sh = OVERLAY_shader_antialiasing();
-    grp = DRW_shgroup_create(sh, psl->antialiasing_ps);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_bool_copy(grp, "doSmoothLines", do_smooth_lines);
-    DRW_shgroup_uniform_texture_ref(grp, "depthTex", &dtxl->depth);
-    DRW_shgroup_uniform_texture_ref(grp, "colorTex", &txl->overlay_color_tx);
-    DRW_shgroup_uniform_texture_ref(grp, "lineTex", &txl->overlay_line_tx);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    sh = overlay_shader_antialiasing();
+    grp = draw_shgroup_create(sh, psl->antialiasing_ps);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_bool_copy(grp, "doSmoothLines", do_smooth_lines);
+    draw_shgroup_uniform_texture_ref(grp, "depthTex", &dtxl->depth);
+    draw_shgroup_uniform_texture_ref(grp, "colorTex", &txl->overlay_color_tx);
+    draw_shgroup_uniform_texture_ref(grp, "lineTex", &txl->overlay_line_tx);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 
   /* A bit out of place... not related to antialiasing. */
   if (pd->xray_enabled) {
-    DRW_PASS_CREATE(psl->xray_fade_ps, DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_MUL);
+    DRAW_PASS_CREATE(psl->xray_fade_ps, DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_MUL);
 
-    sh = OVERLAY_shader_xray_fade();
-    grp = DRW_shgroup_create(sh, psl->xray_fade_ps);
-    DRW_shgroup_uniform_texture_ref(grp, "depthTex", &dtxl->depth);
-    DRW_shgroup_uniform_texture_ref(grp, "xrayDepthTex", &txl->temp_depth_tx);
-    DRW_shgroup_uniform_float_copy(grp, "opacity", 1.0f - pd->xray_opacity);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    sh = overlay_shader_xray_fade();
+    grp = draw_shgroup_create(sh, psl->xray_fade_ps);
+    draw_shgroup_uniform_texture_ref(grp, "depthTex", &dtxl->depth);
+    draw_shgroup_uniform_texture_ref(grp, "xrayDepthTex", &txl->temp_depth_tx);
+    draw_shgroup_uniform_float_copy(grp, "opacity", 1.0f - pd->xray_opacity);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 }
 
-void OVERLAY_antialiasing_cache_finish(OVERLAY_Data *vedata)
+void overlay_antialiasing_cache_finish(OVERLAY_Data *vedata)
 {
   OVERLAY_FramebufferList *fbl = vedata->fbl;
   OVERLAY_TextureList *txl = vedata->txl;
