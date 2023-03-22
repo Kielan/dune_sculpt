@@ -134,30 +134,30 @@ void overlay_antialiasing_cache_init(OverlayData *vedata)
   }
 }
 
-void overlay_antialiasing_cache_finish(OVERLAY_Data *vedata)
+void overlay_antialiasing_cache_finish(OverlayData *vedata)
 {
-  OVERLAY_FramebufferList *fbl = vedata->fbl;
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  OverlayFramebufferList *fbl = vedata->fbl;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
   if (pd->antialiasing.enabled) {
-    GPU_framebuffer_ensure_config(&fbl->overlay_in_front_fb,
+    gpu_framebuffer_ensure_config(&fbl->overlay_in_front_fb,
                                   {GPU_ATTACHMENT_TEXTURE(dtxl->depth_in_front),
                                    GPU_ATTACHMENT_TEXTURE(txl->overlay_color_tx)});
 
-    GPU_framebuffer_ensure_config(&fbl->overlay_line_in_front_fb,
+    gpu_framebuffer_ensure_config(&fbl->overlay_line_in_front_fb,
                                   {GPU_ATTACHMENT_TEXTURE(dtxl->depth_in_front),
                                    GPU_ATTACHMENT_TEXTURE(txl->overlay_color_tx),
                                    GPU_ATTACHMENT_TEXTURE(txl->overlay_line_tx)});
   }
   else {
-    GPU_framebuffer_ensure_config(&fbl->overlay_in_front_fb,
+    gpu_framebuffer_ensure_config(&fbl->overlay_in_front_fb,
                                   {GPU_ATTACHMENT_TEXTURE(dtxl->depth_in_front),
                                    GPU_ATTACHMENT_TEXTURE(dtxl->color_overlay)});
 
-    GPU_framebuffer_ensure_config(&fbl->overlay_line_in_front_fb,
+    gpu_framebuffer_ensure_config(&fbl->overlay_line_in_front_fb,
                                   {GPU_ATTACHMENT_TEXTURE(dtxl->depth_in_front),
                                    GPU_ATTACHMENT_TEXTURE(dtxl->color_overlay),
                                    GPU_ATTACHMENT_TEXTURE(txl->overlay_line_tx)});
