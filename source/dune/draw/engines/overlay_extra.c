@@ -16,16 +16,16 @@
 
 #include "lib_listbase.h"
 
-#include "types_camera_types.h"
-#include "types_constraint_types.h"
-#include "types_curve_types.h"
-#include "types_fluid_types.h"
-#include "types_lightprobe_types.h"
-#include "types_mesh_types.h"
-#include "types_meta_types.h"
-#include "types_modifier_types.h"
-#include "types_pointcache_types.h"
-#include "types_rigidbody_types.h"
+#include "types_camera.h"
+#include "types_constraint.h"
+#include "types_curve.h"
+#include "types_fluid.h"
+#include "types_lightprobe.h"
+#include "types_mesh.h"
+#include "types_meta.h"
+#include "types_modifier.h"
+#include "types_pointcache.h"
+#include "types_rigidbody.h"
 
 #include "dgraph_query.h"
 
@@ -39,8 +39,8 @@
 void overlay_extra_cache_init(OverlayData *vedata)
 {
   OverlayPassList *psl = vedata->psl;
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
   const bool is_select = draw_state_is_select();
 
   DrawState state_blend = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
@@ -125,9 +125,9 @@ void overlay_extra_cache_init(OverlayData *vedata)
       cb->solid_quad = BUF_INSTANCE(grp_sub, format, DRW_cache_quad_get());
       cb->speaker = BUF_INSTANCE(grp_sub, format, DRW_cache_speaker_get());
 
-      grp_sub = DRW_shgroup_create_sub(grp);
-      DRW_shgroup_state_enable(grp_sub, DRW_STATE_DEPTH_ALWAYS);
-      DRW_shgroup_state_disable(grp_sub, DRW_STATE_DEPTH_LESS_EQUAL);
+      grp_sub = draw_shgroup_create_sub(grp);
+      draw_shgroup_state_enable(grp_sub, DRW_STATE_DEPTH_ALWAYS);
+      draw_shgroup_state_disable(grp_sub, DRW_STATE_DEPTH_LESS_EQUAL);
       cb->origin_xform = BUF_INSTANCE(grp_sub, format, DRW_cache_bone_arrows_get());
     }
     {
@@ -147,9 +147,9 @@ void overlay_extra_cache_init(OverlayData *vedata)
     }
     {
       format = formats->instance_pos;
-      sh = OVERLAY_shader_extra_groundline();
+      sh = overlay_shader_extra_groundline();
 
-      grp = DRW_shgroup_create(sh, extra_ps);
+      grp = draw_shgroup_create(sh, extra_ps);
       draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
       draw_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
 
