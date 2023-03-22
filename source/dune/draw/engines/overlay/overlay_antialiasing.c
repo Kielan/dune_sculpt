@@ -172,57 +172,57 @@ void overlay_antialiasing_cache_finish(OverlayData *vedata)
   const bool do_wireframe = pd->antialiasing.do_depth_copy ||
                             pd->antialiasing.do_depth_infront_copy;
   if (pd->xray_enabled || do_wireframe) {
-    DRW_texture_ensure_fullscreen_2d(&txl->temp_depth_tx, GPU_DEPTH24_STENCIL8, 0);
+    draw_texture_ensure_fullscreen_2d(&txl->temp_depth_tx, GPU_DEPTH24_STENCIL8, 0);
   }
 }
 
-void OVERLAY_antialiasing_start(OVERLAY_Data *vedata)
+void overlay_antialiasing_start(OverlayData *vedata)
 {
-  OVERLAY_FramebufferList *fbl = vedata->fbl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OVerlayFramebufferList *fbl = vedata->fbl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
   if (pd->antialiasing.enabled) {
     const float clear_col[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    GPU_framebuffer_bind(fbl->overlay_line_fb);
-    GPU_framebuffer_clear_color(fbl->overlay_line_fb, clear_col);
+    gpu_framebuffer_bind(fbl->overlay_line_fb);
+    gpu_framebuffer_clear_color(fbl->overlay_line_fb, clear_col);
   }
 
   /* If we are not in solid shading mode, we clear the depth. */
-  if (DRW_state_is_fbo() && pd->clear_in_front) {
-    /* TODO(fclem): This clear should be done in a global place. */
-    GPU_framebuffer_bind(fbl->overlay_in_front_fb);
-    GPU_framebuffer_clear_depth(fbl->overlay_in_front_fb, 1.0f);
+  if (draw_state_is_fbo() && pd->clear_in_front) {
+    /* TODO: This clear should be done in a global place. */
+    gpu_framebuffer_bind(fbl->overlay_in_front_fb);
+    gpu_framebuffer_clear_depth(fbl->overlay_in_front_fb, 1.0f);
   }
 }
 
-void OVERLAY_xray_depth_copy(OVERLAY_Data *vedata)
+void overlay_xray_depth_copy(OverlayData *vedata)
 {
-  OVERLAY_FramebufferList *fbl = vedata->fbl;
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayFramebufferList *fbl = vedata->fbl;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
-  if (DRW_state_is_fbo() && pd->antialiasing.do_depth_copy) {
-    DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  if (draw_state_is_fbo() && pd->antialiasing.do_depth_copy) {
+    DefaultTextureList *dtxl = draw_viewport_texture_list_get();
     /* We copy the depth of the rendered geometry to be able to compare to the overlays depth. */
-    GPU_texture_copy(txl->temp_depth_tx, dtxl->depth);
+    gpu_texture_copy(txl->temp_depth_tx, dtxl->depth);
   }
 
-  if (DRW_state_is_fbo() && pd->xray_enabled) {
+  if (draw_state_is_fbo() && pd->xray_enabled) {
     /* We then clear to not occlude the overlays directly. */
-    GPU_framebuffer_bind(fbl->overlay_default_fb);
-    GPU_framebuffer_clear_depth(fbl->overlay_default_fb, 1.0f);
+    gpu_framebuffer_bind(fbl->overlay_default_fb);
+    gpu_framebuffer_clear_depth(fbl->overlay_default_fb, 1.0f);
   }
 }
 
-void OVERLAY_xray_depth_infront_copy(OVERLAY_Data *vedata)
+void overlay_xray_depth_infront_copy(OverlayData *vedata)
 {
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
-  if (DRW_state_is_fbo() && pd->antialiasing.do_depth_infront_copy) {
-    DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  if (draw_state_is_fbo() && pd->antialiasing.do_depth_infront_copy) {
+    DefaultTextureList *dtxl = draw_viewport_texture_list_get();
     /* We copy the depth of the rendered geometry to be able to compare to the overlays depth. */
-    GPU_texture_copy(txl->temp_depth_tx, dtxl->depth_in_front);
+    gpu_texture_copy(txl->temp_depth_tx, dtxl->depth_in_front);
   }
 }
 
