@@ -143,8 +143,8 @@ void overlay_armature_cache_init(overlay_Data *vedata)
     struct GPUVertFormat *format;
     DrawShadingGroup *grp = NULL;
 
-    Overlay_InstanceFormats *formats = overlay_shader_instance_formats_get();
-    Overlay_ArmatureCallBuffers *cb = &pd->armature_call_buffers[i];
+    OverlayInstanceFormats *formats = overlay_shader_instance_formats_get();
+    OverlayArmatureCallBuffers *cb = &pd->armature_call_buffers[i];
 
     cb->solid.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
     cb->transp.custom_shapes_ghash = lib_ghash_ptr_new(__func__);
@@ -756,7 +756,7 @@ static void draw_shgroup_bone_axes(ArmatureDrawContext *ctx,
   mul_m4_m4m4(mat, ctx->ob->obmat, bone_mat);
   /* Move to bone tail. */
   add_v3_v3(mat[3], mat[1]);
-  overkay_empty_shape(ctx->extras, mat, 0.25f, OB_ARROWS, color);
+  overlay_empty_shape(ctx->extras, mat, 0.25f, OB_ARROWS, color);
 }
 
 /* Relationship lines */
@@ -845,15 +845,15 @@ static void set_pchan_colorset(ArmatureDrawCtx *ctx, Object *ob, DPoseChannel *p
    * color set (based on the theme colors for 3d-view) is used.
    */
   if (color_index > 0) {
-    bTheme *btheme = UI_GetTheme();
-    ctx->bcolor = &btheme->tarm[(color_index - 1)];
+    DTheme *dtheme = ui_GetTheme();
+    ctx->bcolor = &dtheme->tarm[(color_index - 1)];
   }
   else if (color_index == -1) {
     /* use the group's own custom color set (grp is always != NULL here) */
-    ctx->bcolor = &grp->cs;
+    ctx->dcolor = &grp->cs;
   }
   else {
-    ctx->bcolor = NULL;
+    ctx->dcolor = NULL;
   }
 }
 
@@ -960,8 +960,7 @@ static bool set_pchan_color(const ArmatureDrawCtx *ctx,
   return false;
 }
 
-/** \name Drawing Color Helpers
- * \{ */
+/** Drawing Color Helpers **/
 
 static void bone_locked_color_shade(float color[4])
 {
@@ -970,10 +969,10 @@ static void bone_locked_color_shade(float color[4])
   interp_v3_v3v3(color, color, locked_color, locked_color[3]);
 }
 
-static const float *get_bone_solid_color(const ArmatureDrawContext *ctx,
+static const float *get_bone_solid_color(const ArmatureDrawCtx *ctx,
                                          const EditBone *UNUSED(eBone),
-                                         const bPoseChannel *pchan,
-                                         const bArmature *arm,
+                                         const DPoseChannel *pchan,
+                                         const DArmature *arm,
                                          const int boneflag,
                                          const short constflag)
 {
@@ -1108,13 +1107,10 @@ static const float *get_bone_hint_color(const ArmatureDrawContext *ctx,
   return hint_color;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Helper Utils
- * \{ */
+/** Helper Utils **/
 
-static void pchan_draw_data_init(bPoseChannel *pchan)
+static void pchan_draw_data_init(DPoseChannel *pchan)
 {
   if (pchan->draw_data != NULL) {
     if (pchan->draw_data->bbone_matrix_len != pchan->bone->segments) {
@@ -1123,7 +1119,7 @@ static void pchan_draw_data_init(bPoseChannel *pchan)
   }
 
   if (pchan->draw_data == NULL) {
-    pchan->draw_data = MEM_mallocN(
+    pchan->draw_data = mem_mallocn(
         sizeof(*pchan->draw_data) + sizeof(Mat4) * pchan->bone->segments, __func__);
     pchan->draw_data->bbone_matrix_len = pchan->bone->segments;
   }
@@ -1148,7 +1144,7 @@ static void draw_bone_update_disp_matrix_default(EditBone *eBone, bPoseChannel *
   }
   else {
     eBone->length = len_v3v3(eBone->tail, eBone->head);
-    ED_armature_ebone_to_mat4(eBone, ebmat);
+    ed_armature_ebone_to_mat4(eBone, ebmat);
 
     copy_v3_fl(bone_scale, eBone->length);
     bone_mat = ebmat;
@@ -1178,7 +1174,7 @@ static void edbo_compute_bbone_child(bArmature *arm)
   }
 }
 
-/* A version of BKE_pchan_bbone_spline_setup() for previewing editmode curve settings. */
+/* A version of dune_pchan_bbone_spline_setup() for previewing editmode curve settings. */
 static void ebone_spline_preview(EditBone *ebone, const float result_array[MAX_BBONE_SUBDIV][4][4])
 {
   BBoneSplineParameters param;
@@ -1215,7 +1211,7 @@ static void ebone_spline_preview(EditBone *ebone, const float result_array[MAX_B
 
   /* compute handles from connected bones */
   if (prev || next) {
-    ED_armature_ebone_to_mat4(ebone, imat);
+    ed_armature_ebone_to_mat4(ebone, imat);
     invert_m4(imat);
 
     if (prev) {
@@ -1258,7 +1254,7 @@ static void ebone_spline_preview(EditBone *ebone, const float result_array[MAX_B
         mul_v3_m4v3(param.next_h, imat, next->tail);
       }
 
-      ED_armature_ebone_to_mat4(next, bonemat);
+      ed_armature_ebone_to_mat4(next, bonemat);
       mul_m4_m4m4(param.next_mat, imat, bonemat);
     }
   }
@@ -1291,10 +1287,10 @@ static void ebone_spline_preview(EditBone *ebone, const float result_array[MAX_B
     param.curve_out_z *= param.scale_out[1];
   }
 
-  ebone->segments = BKE_pchan_bbone_spline_compute(&param, false, (Mat4 *)result_array);
+  ebone->segments = dune_pchan_bbone_spline_compute(&param, false, (Mat4 *)result_array);
 }
 
-static void draw_bone_update_disp_matrix_bbone(EditBone *eBone, bPoseChannel *pchan)
+static void draw_bone_update_disp_matrix_bbone(EditBone *eBone, DPoseChannel *pchan)
 {
   float s[4][4], ebmat[4][4];
   float length, xwidth, zwidth;
@@ -1313,7 +1309,7 @@ static void draw_bone_update_disp_matrix_bbone(EditBone *eBone, bPoseChannel *pc
   }
   else {
     eBone->length = len_v3v3(eBone->tail, eBone->head);
-    ED_armature_ebone_to_mat4(eBone, ebmat);
+    ed_armature_ebone_to_mat4(eBone, ebmat);
 
     length = eBone->length;
     xwidth = eBone->xwidth;
@@ -1330,7 +1326,7 @@ static void draw_bone_update_disp_matrix_bbone(EditBone *eBone, bPoseChannel *pc
   if (pchan) {
     Mat4 *bbones_mat = (Mat4 *)pchan->draw_data->bbone_matrix;
     if (bbone_segments > 1) {
-      BKE_pchan_bbone_spline_setup(pchan, false, false, bbones_mat);
+      dune_pchan_bbone_spline_setup(pchan, false, false, bbones_mat);
 
       for (int i = bbone_segments; i--; bbones_mat++) {
         mul_m4_m4m4(bbones_mat->mat, bbones_mat->mat, s);
@@ -1361,7 +1357,7 @@ static void draw_bone_update_disp_matrix_bbone(EditBone *eBone, bPoseChannel *pc
   draw_bone_update_disp_matrix_default(eBone, pchan);
 }
 
-static void draw_bone_update_disp_matrix_custom(bPoseChannel *pchan)
+static void draw_bone_update_disp_matrix_custom(DPoseChannel *pchan)
 {
   float bone_scale[3];
   float(*bone_mat)[4];
@@ -1388,7 +1384,7 @@ static void draw_bone_update_disp_matrix_custom(bPoseChannel *pchan)
   translate_m4(disp_tail_mat, 0.0f, 1.0f, 0.0f);
 }
 
-static void draw_axes(ArmatureDrawContext *ctx,
+static void draw_axes(ArmatureDrawCtx *ctx,
                       const EditBone *eBone,
                       const bPoseChannel *pchan,
                       const bArmature *arm)
@@ -1420,10 +1416,10 @@ static void draw_axes(ArmatureDrawContext *ctx,
   }
 }
 
-static void draw_points(ArmatureDrawContext *ctx,
+static void draw_points(ArmatureDrawCtx *ctx,
                         const EditBone *eBone,
-                        const bPoseChannel *pchan,
-                        const bArmature *arm,
+                        const DPoseChannel *pchan,
+                        const DArmature *arm,
                         const int boneflag,
                         const short constflag,
                         const int select_id)
@@ -1466,12 +1462,12 @@ static void draw_points(ArmatureDrawContext *ctx,
   if (!(eBone ? (eBone->parent && (boneflag & BONE_CONNECTED)) :
                 (pchan->bone->parent && (boneflag & BONE_CONNECTED)))) {
     if (select_id != -1) {
-      DRW_select_load_id(select_id | BONESEL_ROOT);
+      draw_select_load_id(select_id | BONESEL_ROOT);
     }
 
     if (eBone) {
       if (is_envelope_draw) {
-        drw_shgroup_bone_envelope(ctx,
+        draw_shgroup_bone_envelope(ctx,
                                   eBone->disp_mat,
                                   col_solid_root,
                                   col_hint_root,
@@ -1480,7 +1476,7 @@ static void draw_points(ArmatureDrawContext *ctx,
                                   &envelope_ignore);
       }
       else {
-        drw_shgroup_bone_point(ctx, eBone->disp_mat, col_solid_root, col_hint_root, col_wire_root);
+        draw_shgroup_bone_point(ctx, eBone->disp_mat, col_solid_root, col_hint_root, col_wire_root);
       }
     }
     else {
