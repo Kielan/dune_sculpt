@@ -671,7 +671,7 @@ static void draw_shgroup_bone_custom_solid(ArmatureDrawCtx *ctx,
   }
 
   /* TODO: needs to be moved elsewhere. */
-  drw_batch_cache_generate_requested_delayed(custom);
+  draw_batch_cache_generate_requested_delayed(custom);
 }
 
 static void draw_shgroup_bone_custom_wire(ArmatureDrawContext *ctx,
@@ -2011,13 +2011,13 @@ static void pchan_culling_calc_bsphere(const Object *ob,
 {
   float min[3], max[3];
   INIT_MINMAX(min, max);
-  BKE_pchan_minmax(ob, pchan, min, max);
+  dune_pchan_minmax(ob, pchan, min, max);
   mid_v3_v3v3(r_bsphere->center, min, max);
   r_bsphere->radius = len_v3v3(min, r_bsphere->center);
 }
 
 /**
- * \return true when bounding sphere from `pchan` intersect the view.
+ * return true when bounding sphere from `pchan` intersect the view.
  * (same for other "test" functions defined here).
  */
 static bool pchan_culling_test_simple(const DRWView *view,
@@ -2026,7 +2026,7 @@ static bool pchan_culling_test_simple(const DRWView *view,
 {
   BoundSphere bsphere;
   pchan_culling_calc_bsphere(ob, pchan, &bsphere);
-  return DRW_culling_sphere_test(view, &bsphere);
+  return draw_culling_sphere_test(view, &bsphere);
 }
 
 static bool pchan_culling_test_with_radius_scale(const DRWView *view,
@@ -2037,7 +2037,7 @@ static bool pchan_culling_test_with_radius_scale(const DRWView *view,
   BoundSphere bsphere;
   pchan_culling_calc_bsphere(ob, pchan, &bsphere);
   bsphere.radius *= scale;
-  return DRW_culling_sphere_test(view, &bsphere);
+  return draw_culling_sphere_test(view, &bsphere);
 }
 
 static bool pchan_culling_test_custom(const DRWView *view,
@@ -2052,7 +2052,7 @@ static bool pchan_culling_test_wire(const DRWView *view,
                                     const Object *ob,
                                     const bPoseChannel *pchan)
 {
-  BLI_assert(((const bArmature *)ob->data)->drawtype == ARM_WIRE);
+  lib_assert(((const bArmature *)ob->data)->drawtype == ARM_WIRE);
   return pchan_culling_test_simple(view, ob, pchan);
 }
 
@@ -2060,7 +2060,7 @@ static bool pchan_culling_test_line(const DRWView *view,
                                     const Object *ob,
                                     const bPoseChannel *pchan)
 {
-  BLI_assert(((const bArmature *)ob->data)->drawtype == ARM_LINE);
+  lib_assert(((const bArmature *)ob->data)->drawtype == ARM_LINE);
   /* Account for the end-points, as the line end-points size is in pixels, this is a rough value.
    * Since the end-points are small the difference between having any margin or not is unlikely
    * to be noticeable. */
@@ -2073,21 +2073,21 @@ static bool pchan_culling_test_envelope(const DRWView *view,
                                         const bPoseChannel *pchan)
 {
   const bArmature *arm = ob->data;
-  BLI_assert(arm->drawtype == ARM_ENVELOPE);
+  lib_assert(arm->drawtype == ARM_ENVELOPE);
   UNUSED_VARS_NDEBUG(arm);
   BoundSphere bsphere;
   pchan_culling_calc_bsphere(ob, pchan, &bsphere);
   bsphere.radius += max_ff(pchan->bone->rad_head, pchan->bone->rad_tail) *
                     mat4_to_size_max_axis(ob->obmat) * mat4_to_size_max_axis(pchan->disp_mat);
-  return DRW_culling_sphere_test(view, &bsphere);
+  return draw_culling_sphere_test(view, &bsphere);
 }
 
 static bool pchan_culling_test_bbone(const DRWView *view,
                                      const Object *ob,
                                      const bPoseChannel *pchan)
 {
-  const bArmature *arm = ob->data;
-  BLI_assert(arm->drawtype == ARM_B_BONE);
+  const DArmature *arm = ob->data;
+  lib_assert(arm->drawtype == ARM_B_BONE);
   UNUSED_VARS_NDEBUG(arm);
   const float ob_scale = mat4_to_size_max_axis(ob->obmat);
   const Mat4 *bbones_mat = (const Mat4 *)pchan->draw_data->bbone_matrix;
@@ -2097,7 +2097,7 @@ static bool pchan_culling_test_bbone(const DRWView *view,
     mat4_to_size(size, bbones_mat->mat);
     mul_v3_m4v3(bsphere.center, ob->obmat, bbones_mat->mat[3]);
     bsphere.radius = len_v3(size) * ob_scale;
-    if (DRW_culling_sphere_test(view, &bsphere)) {
+    if (draw_culling_sphere_test(view, &bsphere)) {
       return true;
     }
   }
@@ -2118,20 +2118,20 @@ static bool pchan_culling_test_octohedral(const DRWView *view,
 /** Main Draw Loops
  **/
 
-static void draw_armature_edit(ArmatureDrawContext *ctx)
+static void draw_armature_edit(ArmatureDrawCtx *ctx)
 {
   Object *ob = ctx->ob;
   EditBone *eBone;
   int index;
-  const bool is_select = DRW_state_is_select();
-  const bool show_text = DRW_state_show_text();
+  const bool is_select = draw_state_is_select();
+  const bool show_text = draw_state_show_text();
 
-  const Object *ob_orig = DEG_get_original_object(ob);
-  /* FIXME(campbell): We should be able to use the CoW object,
+  const Object *ob_orig = dgraph_get_original_object(ob);
+  /* FIXME: We should be able to use the CoW object,
    * however the active bone isn't updated. Long term solution is an 'EditArmature' struct.
    * for now we can draw from the original armature. See: T66773. */
-  // bArmature *arm = ob->data;
-  bArmature *arm = ob_orig->data;
+  // DArmature *arm = ob->data;
+  DArmature *arm = ob_orig->data;
 
   edbo_compute_bbone_child(arm);
 
@@ -2194,15 +2194,15 @@ static void draw_armature_edit(ArmatureDrawContext *ctx)
   }
 }
 
-static void draw_armature_pose(ArmatureDrawContext *ctx)
+static void draw_armature_pose(ArmatureDrawCtx *ctx)
 {
   Object *ob = ctx->ob;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const Scene *scene = draw_ctx->scene;
-  bArmature *arm = ob->data;
-  bPoseChannel *pchan;
+  DArmature *arm = ob->data;
+  DPoseChannel *pchan;
   int index = -1;
-  const bool show_text = DRW_state_show_text();
+  const bool show_text = draw_state_show_text();
   bool draw_locked_weights = false;
 
   /* We can't safely draw non-updated pose, might contain NULL bone pointers... */
@@ -2234,7 +2234,7 @@ static void draw_armature_pose(ArmatureDrawContext *ctx)
         DRW_state_is_select();
 
     if (is_pose_select) {
-      const Object *ob_orig = DEG_get_original_object(ob);
+      const Object *ob_orig = dgraph_get_original_object(ob);
       index = ob_orig->runtime.select_id;
     }
   }
@@ -2248,12 +2248,12 @@ static void draw_armature_pose(ArmatureDrawContext *ctx)
       pchan->bone->flag &= ~BONE_DRAW_LOCKED_WEIGHT;
     }
 
-    const Object *obact_orig = DEG_get_original_object(draw_ctx->obact);
+    const Object *obact_orig = dgraph_get_original_object(draw_ctx->obact);
 
-    const ListBase *defbase = BKE_object_defgroup_list(obact_orig);
+    const ListBase *defbase = dune_object_defgroup_list(obact_orig);
     LISTBASE_FOREACH (const bDeformGroup *, dg, defbase) {
       if (dg->flag & DG_LOCK_WEIGHT) {
-        pchan = BKE_pose_channel_find_name(ob->pose, dg->name);
+        pchan = dune_pose_channel_find_name(ob->pose, dg->name);
 
         if (pchan) {
           pchan->bone->flag |= BONE_DRAW_LOCKED_WEIGHT;
@@ -2262,7 +2262,7 @@ static void draw_armature_pose(ArmatureDrawContext *ctx)
     }
   }
 
-  const DRWView *view = is_pose_select ? DRW_view_default_get() : NULL;
+  const DrawView *view = is_pose_select ? DRW_view_default_get() : NULL;
 
   for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next, index += 0x10000) {
     Bone *bone = pchan->bone;
@@ -2374,9 +2374,9 @@ static void armature_context_setup(ArmatureDrawContext *ctx,
   const bool draw_as_wire = (ob->dt < OB_SOLID);
   const bool is_filled = (!pd->armature.transparent && !draw_as_wire) || !is_object_mode;
   const bool is_transparent = pd->armature.transparent || (draw_as_wire && !is_object_mode);
-  bArmature *arm = ob->data;
-  OVERLAY_ArmatureCallBuffers *cbo = &pd->armature_call_buffers[is_xray];
-  OVERLAY_ArmatureCallBuffersInner *cb = is_transparent ? &cbo->transp : &cbo->solid;
+  DArmature *arm = ob->data;
+  OverlayArmatureCallBuffers *cbo = &pd->armature_call_buffers[is_xray];
+  OverlayArmatureCallBuffersInner *cb = is_transparent ? &cbo->transp : &cbo->solid;
 
   static const float select_const_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -2412,76 +2412,76 @@ static void armature_context_setup(ArmatureDrawContext *ctx,
   ctx->custom_wire = cb->custom_wire;
   ctx->custom_shapes_ghash = cb->custom_shapes_ghash;
   ctx->show_relations = pd->armature.show_relations;
-  ctx->do_relations = !DRW_state_is_select() && pd->armature.show_relations &&
+  ctx->do_relations = !draw_state_is_select() && pd->armature.show_relations &&
                       (is_edit_mode | is_pose_mode);
-  ctx->const_color = DRW_state_is_select() ? select_const_color : const_color;
+  ctx->const_color = draw_state_is_select() ? select_const_color : const_color;
   ctx->const_wire = ((((ob->base_flag & BASE_SELECTED) && (pd->v3d_flag & V3D_SELECT_OUTLINE)) ||
                       (arm->drawtype == ARM_WIRE)) ?
                          1.5f :
                          ((!is_filled || is_transparent) ? 1.0f : 0.0f));
 }
 
-void OVERLAY_edit_armature_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_edit_armature_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  ArmatureDrawContext arm_ctx;
-  armature_context_setup(&arm_ctx, pd, ob, true, true, false, NULL);
+  OverlayPrivateData *pd = vedata->stl->pd;
+  ArmatureDrawCtx arm_ctx;
+  armature_ctx_setup(&arm_ctx, pd, ob, true, true, false, NULL);
   draw_armature_edit(&arm_ctx);
 }
 
-void OVERLAY_pose_armature_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_pose_armature_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  ArmatureDrawContext arm_ctx;
-  armature_context_setup(&arm_ctx, pd, ob, true, false, true, NULL);
+  OverlayPrivateData *pd = vedata->stl->pd;
+  ArmatureDrawCtx arm_ctx;
+  armature_ctx_setup(&arm_ctx, pd, ob, true, false, true, NULL);
   draw_armature_pose(&arm_ctx);
 }
 
-void OVERLAY_armature_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_armature_cache_populate(OverlayData *vedata, Object *ob)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  ArmatureDrawContext arm_ctx;
+  const DrawCtxState *draw_ctx = DRW_context_state_get();
+  OverlayPrivateData *pd = vedata->stl->pd;
+  ArmatureDrawCtx arm_ctx;
   float *color;
 
   if (ob->dt == OB_BOUNDBOX) {
     return;
   }
 
-  DRW_object_wire_theme_get(ob, draw_ctx->view_layer, &color);
-  armature_context_setup(&arm_ctx, pd, ob, false, false, false, color);
+  draw_object_wire_theme_get(ob, draw_ctx->view_layer, &color);
+  armature_ctx_setup(&arm_ctx, pd, ob, false, false, false, color);
   draw_armature_pose(&arm_ctx);
 }
 
-static bool POSE_is_driven_by_active_armature(Object *ob)
+static bool pose_is_driven_by_active_armature(Object *ob)
 {
-  Object *ob_arm = BKE_modifiers_is_deformed_by_armature(ob);
+  Object *ob_arm = dune_modifiers_is_deformed_by_armature(ob);
   if (ob_arm) {
-    const DRWContextState *draw_ctx = DRW_context_state_get();
-    bool is_active = OVERLAY_armature_is_pose_mode(ob_arm, draw_ctx);
+    const DrawCtxState *draw_ctx = draw_ctx_state_get();
+    bool is_active = overlay_armature_is_pose_mode(ob_arm, draw_ctx);
     return is_active;
   }
 
-  Object *ob_mesh_deform = BKE_modifiers_is_deformed_by_meshdeform(ob);
+  Object *ob_mesh_deform = dune_modifiers_is_deformed_by_meshdeform(ob);
   if (ob_mesh_deform) {
     /* Recursive. */
-    return POSE_is_driven_by_active_armature(ob_mesh_deform);
+    return pose_is_driven_by_active_armature(ob_mesh_deform);
   }
 
   return false;
 }
 
-void OVERLAY_pose_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_pose_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
-  struct GPUBatch *geom = DRW_cache_object_surface_get(ob);
+  struct GPUBatch *geom = draw_cache_object_surface_get(ob);
   if (geom) {
-    if (POSE_is_driven_by_active_armature(ob)) {
-      DRW_shgroup_call(pd->armature_bone_select_act_grp, geom, ob);
+    if (pose_is_driven_by_active_armature(ob)) {
+      draw_shgroup_call(pd->armature_bone_select_act_grp, geom, ob);
     }
     else {
-      DRW_shgroup_call(pd->armature_bone_select_grp, geom, ob);
+      draw_shgroup_call(pd->armature_bone_select_grp, geom, ob);
     }
   }
 }
