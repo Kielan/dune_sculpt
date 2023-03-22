@@ -1,21 +1,21 @@
-#include "DNA_volume_types.h"
+#include "types_volume.h"
 
-#include "DRW_render.h"
-#include "GPU_shader.h"
+#include "draw_render.h"
+#include "gpu_shader.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_volume_cache_init(OVERLAY_Data *vedata)
+void overlay_volume_cache_init(OVERLAY_Data *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const bool is_select = DRW_state_is_select();
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const bool is_select = draw_state_is_select();
 
   if (is_select) {
-    DRWState state = DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
-    DRW_PASS_CREATE(psl->volume_ps, state | pd->clipping_state);
-    GPUShader *sh = OVERLAY_shader_depth_only();
-    DRWShadingGroup *grp = DRW_shgroup_create(sh, psl->volume_ps);
+    DrawState state = DRAW_STATE_WRITE_DEPTH | DRAW_STATE_DEPTH_LESS_EQUAL;
+    DRAW_PASS_CREATE(psl->volume_ps, state | pd->clipping_state);
+    GPUShader *sh = overlay_shader_depth_only();
+    DrawShadingGroup *grp = draw_shgroup_create(sh, psl->volume_ps);
     pd->volume_selection_surface_grp = grp;
   }
   else {
@@ -24,15 +24,15 @@ void OVERLAY_volume_cache_init(OVERLAY_Data *vedata)
   }
 }
 
-void OVERLAY_volume_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_volume_cache_populate(OVERLAY_Data *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const bool is_select = DRW_state_is_select();
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const bool is_select = draw_state_is_select();
 
   if (is_select) {
-    struct GPUBatch *geom = DRW_cache_volume_selection_surface_get(ob);
+    struct GPUBatch *geom = draw_cache_volume_selection_surface_get(ob);
     if (geom != NULL) {
-      DRW_shgroup_call(pd->volume_selection_surface_grp, geom, ob);
+      draw_shgroup_call(pd->volume_selection_surface_grp, geom, ob);
     }
   }
 }
