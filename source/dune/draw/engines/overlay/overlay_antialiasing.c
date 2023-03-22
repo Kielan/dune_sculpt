@@ -226,25 +226,25 @@ void OVERLAY_xray_depth_infront_copy(OVERLAY_Data *vedata)
   }
 }
 
-void OVERLAY_xray_fade_draw(OVERLAY_Data *vedata)
+void overlay_xray_fade_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
-  if (DRW_state_is_fbo() && pd->xray_enabled && pd->xray_opacity > 0.0f) {
+  if (draw_state_is_fbo() && pd->xray_enabled && pd->xray_opacity > 0.0f) {
     /* Partially occlude overlays using the geometry depth pass. */
-    DRW_draw_pass(psl->xray_fade_ps);
+    draw_draw_pass(psl->xray_fade_ps);
   }
 }
 
-void OVERLAY_antialiasing_end(OVERLAY_Data *vedata)
+void overlay_antialiasing_end(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
 
   if (pd->antialiasing.enabled) {
-    GPU_framebuffer_bind(dfbl->overlay_only_fb);
-    DRW_draw_pass(psl->antialiasing_ps);
+    gpu_framebuffer_bind(dfbl->overlay_only_fb);
+    draw_draw_pass(psl->antialiasing_ps);
   }
 }
