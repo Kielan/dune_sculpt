@@ -321,16 +321,16 @@ void overlay_empty_cache_populate(OverlayData *vedata, Object *ob)
     case OB_EMPTY_SPHERE:
     case OB_EMPTY_CONE:
     case OB_ARROWS:
-      DRW_object_wire_theme_get(ob, view_layer, &color);
-      OVERLAY_empty_shape(cb, ob->obmat, ob->empty_drawsize, ob->empty_drawtype, color);
+      draw_object_wire_theme_get(ob, view_layer, &color);
+      overlay_empty_shape(cb, ob->obmat, ob->empty_drawsize, ob->empty_drawtype, color);
       break;
     case OB_EMPTY_IMAGE:
-      OVERLAY_image_empty_cache_populate(vedata, ob);
+      overlay_image_empty_cache_populate(vedata, ob);
       break;
   }
 }
 
-static void OVERLAY_bounds(OVERLAY_ExtraCallBuffers *cb,
+static void overlay_bounds(OverlayExtraCallBuffers *cb,
                            Object *ob,
                            const float *color,
                            char boundtype,
@@ -343,21 +343,21 @@ static void OVERLAY_bounds(OVERLAY_ExtraCallBuffers *cb,
     return;
   }
 
-  BoundBox *bb = BKE_object_boundbox_get(ob);
+  BoundBox *bb = dune_object_boundbox_get(ob);
 
   if (bb == NULL) {
     const float min[3] = {-1.0f, -1.0f, -1.0f}, max[3] = {1.0f, 1.0f, 1.0f};
     bb = &bb_local;
-    BKE_boundbox_init_from_minmax(bb, min, max);
+    dune_boundbox_init_from_minmax(bb, min, max);
   }
 
-  BKE_boundbox_calc_size_aabb(bb, size);
+  dune_boundbox_calc_size_aabb(bb, size);
 
   if (around_origin) {
     zero_v3(center);
   }
   else {
-    BKE_boundbox_calc_center_aabb(bb, center);
+    dune_boundbox_calc_center_aabb(bb, center);
   }
 
   switch (boundtype) {
@@ -365,7 +365,7 @@ static void OVERLAY_bounds(OVERLAY_ExtraCallBuffers *cb,
       size_to_mat4(tmp, size);
       copy_v3_v3(tmp[3], center);
       mul_m4_m4m4(tmp, ob->obmat, tmp);
-      DRW_buffer_add_entry(cb->empty_cube, color, tmp);
+      draw_buffer_add_entry(cb->empty_cube, color, tmp);
       break;
     case OB_BOUND_SPHERE:
       size[0] = max_fff(size[0], size[1], size[2]);
@@ -373,7 +373,7 @@ static void OVERLAY_bounds(OVERLAY_ExtraCallBuffers *cb,
       size_to_mat4(tmp, size);
       copy_v3_v3(tmp[3], center);
       mul_m4_m4m4(tmp, ob->obmat, tmp);
-      DRW_buffer_add_entry(cb->empty_sphere, color, tmp);
+      draw_buffer_add_entry(cb->empty_sphere, color, tmp);
       break;
     case OB_BOUND_CYLINDER:
       size[0] = max_ff(size[0], size[1]);
@@ -381,7 +381,7 @@ static void OVERLAY_bounds(OVERLAY_ExtraCallBuffers *cb,
       size_to_mat4(tmp, size);
       copy_v3_v3(tmp[3], center);
       mul_m4_m4m4(tmp, ob->obmat, tmp);
-      DRW_buffer_add_entry(cb->empty_cylinder, color, tmp);
+      draw_buffer_add_entry(cb->empty_cylinder, color, tmp);
       break;
     case OB_BOUND_CONE:
       size[0] = max_ff(size[0], size[1]);
@@ -392,7 +392,7 @@ static void OVERLAY_bounds(OVERLAY_ExtraCallBuffers *cb,
       swap_v3_v3(tmp[1], tmp[2]);
       tmp[3][2] -= size[2];
       mul_m4_m4m4(tmp, ob->obmat, tmp);
-      DRW_buffer_add_entry(cb->empty_cone, color, tmp);
+      draw_buffer_add_entry(cb->empty_cone, color, tmp);
       break;
     case OB_BOUND_CAPSULE:
       size[0] = max_ff(size[0], size[1]);
@@ -401,56 +401,56 @@ static void OVERLAY_bounds(OVERLAY_ExtraCallBuffers *cb,
       copy_v2_v2(tmp[3], center);
       tmp[3][2] = center[2] + max_ff(0.0f, size[2] - size[0]);
       mul_m4_m4m4(final_mat, ob->obmat, tmp);
-      DRW_buffer_add_entry(cb->empty_capsule_cap, color, final_mat);
+      draw_buffer_add_entry(cb->empty_capsule_cap, color, final_mat);
       negate_v3(tmp[2]);
       tmp[3][2] = center[2] - max_ff(0.0f, size[2] - size[0]);
       mul_m4_m4m4(final_mat, ob->obmat, tmp);
-      DRW_buffer_add_entry(cb->empty_capsule_cap, color, final_mat);
+      draw_buffer_add_entry(cb->empty_capsule_cap, color, final_mat);
       tmp[2][2] = max_ff(0.0f, size[2] * 2.0f - size[0] * 2.0f);
       mul_m4_m4m4(final_mat, ob->obmat, tmp);
-      DRW_buffer_add_entry(cb->empty_capsule_body, color, final_mat);
+      draw_buffer_add_entry(cb->empty_capsule_body, color, final_mat);
       break;
   }
 }
 
-static void OVERLAY_collision(OVERLAY_ExtraCallBuffers *cb, Object *ob, const float *color)
+static void overlat_collision(OverlayExtraCallBuffers *cb, Object *ob, const float *color)
 {
   switch (ob->rigidbody_object->shape) {
     case RB_SHAPE_BOX:
-      OVERLAY_bounds(cb, ob, color, OB_BOUND_BOX, true);
+      overlay_bounds(cb, ob, color, OB_BOUND_BOX, true);
       break;
     case RB_SHAPE_SPHERE:
-      OVERLAY_bounds(cb, ob, color, OB_BOUND_SPHERE, true);
+      overlay_bounds(cb, ob, color, OB_BOUND_SPHERE, true);
       break;
     case RB_SHAPE_CONE:
-      OVERLAY_bounds(cb, ob, color, OB_BOUND_CONE, true);
+      overlay_bounds(cb, ob, color, OB_BOUND_CONE, true);
       break;
     case RB_SHAPE_CYLINDER:
-      OVERLAY_bounds(cb, ob, color, OB_BOUND_CYLINDER, true);
+      overlay_bounds(cb, ob, color, OB_BOUND_CYLINDER, true);
       break;
     case RB_SHAPE_CAPSULE:
-      OVERLAY_bounds(cb, ob, color, OB_BOUND_CAPSULE, true);
+      overlay_bounds(cb, ob, color, OB_BOUND_CAPSULE, true);
       break;
   }
 }
 
-static void OVERLAY_texture_space(OVERLAY_ExtraCallBuffers *cb, Object *ob, const float *color)
+static void overlay_texture_space(OverlayExtraCallBuffers *cb, Object *ob, const float *color)
 {
   if (ob->data == NULL) {
     return;
   }
 
-  ID *ob_data = ob->data;
+  Id *ob_data = ob->data;
   float *texcoloc = NULL;
   float *texcosize = NULL;
 
   switch (GS(ob_data->name)) {
     case ID_ME:
-      BKE_mesh_texspace_get_reference((Mesh *)ob_data, NULL, &texcoloc, &texcosize);
+      dune_mesh_texspace_get_reference((Mesh *)ob_data, NULL, &texcoloc, &texcosize);
       break;
     case ID_CU_LEGACY: {
       Curve *cu = (Curve *)ob_data;
-      BKE_curve_texspace_ensure(cu);
+      dune_curve_texspace_ensure(cu);
       texcoloc = cu->loc;
       texcosize = cu->size;
       break;
@@ -468,7 +468,7 @@ static void OVERLAY_texture_space(OVERLAY_ExtraCallBuffers *cb, Object *ob, cons
       break;
     }
     default:
-      BLI_assert(0);
+      lib_assert(0);
   }
 
   float mat[4][4];
@@ -483,13 +483,13 @@ static void OVERLAY_texture_space(OVERLAY_ExtraCallBuffers *cb, Object *ob, cons
 
   mul_m4_m4m4(mat, ob->obmat, mat);
 
-  DRW_buffer_add_entry(cb->empty_cube, color, mat);
+  draw_buffer_add_entry(cb->empty_cube, color, mat);
 }
 
-static void OVERLAY_forcefield(OVERLAY_ExtraCallBuffers *cb, Object *ob, ViewLayer *view_layer)
+static void overlay_forcefield(OverlayExtraCallBuffers *cb, Object *ob, ViewLayer *view_layer)
 {
-  int theme_id = DRW_object_wire_theme_get(ob, view_layer, NULL);
-  float *color = DRW_color_background_blend_get(theme_id);
+  int theme_id = draw_object_wire_theme_get(ob, view_layer, NULL);
+  float *color = draw_color_background_blend_get(theme_id);
   PartDeflect *pd = ob->pd;
   Curve *cu = (ob->type == OB_CURVES_LEGACY) ? ob->data : NULL;
 
@@ -508,29 +508,29 @@ static void OVERLAY_forcefield(OVERLAY_ExtraCallBuffers *cb, Object *ob, ViewLay
 
   switch (pd->forcefield) {
     case PFIELD_FORCE:
-      DRW_buffer_add_entry(cb->field_force, color, &instdata);
+      draw_buffer_add_entry(cb->field_force, color, &instdata);
       break;
     case PFIELD_WIND:
       instdata.size_z = pd->f_strength;
-      DRW_buffer_add_entry(cb->field_wind, color, &instdata);
+      draw_buffer_add_entry(cb->field_wind, color, &instdata);
       break;
     case PFIELD_VORTEX:
       instdata.size_y = (pd->f_strength < 0.0f) ? -instdata.size_y : instdata.size_y;
-      DRW_buffer_add_entry(cb->field_vortex, color, &instdata);
+      draw_buffer_add_entry(cb->field_vortex, color, &instdata);
       break;
     case PFIELD_GUIDE:
       if (cu && (cu->flag & CU_PATH) && ob->runtime.curve_cache->anim_path_accum_length) {
         instdata.size_x = instdata.size_y = instdata.size_z = pd->f_strength;
         float pos[4], tmp[3];
-        BKE_where_on_path(ob, 0.0f, pos, tmp, NULL, NULL, NULL);
+        dune_where_on_path(ob, 0.0f, pos, tmp, NULL, NULL, NULL);
         copy_v3_v3(instdata.pos, ob->obmat[3]);
         translate_m4(instdata.mat, pos[0], pos[1], pos[2]);
-        DRW_buffer_add_entry(cb->field_curve, color, &instdata);
+        draw_buffer_add_entry(cb->field_curve, color, &instdata);
 
-        BKE_where_on_path(ob, 1.0f, pos, tmp, NULL, NULL, NULL);
+        dube_where_on_path(ob, 1.0f, pos, tmp, NULL, NULL, NULL);
         copy_v3_v3(instdata.pos, ob->obmat[3]);
         translate_m4(instdata.mat, pos[0], pos[1], pos[2]);
-        DRW_buffer_add_entry(cb->field_sphere_limit, color, &instdata);
+        draw_buffer_add_entry(cb->field_sphere_limit, color, &instdata);
         /* Restore */
         copy_v3_v3(instdata.pos, ob->obmat[3]);
       }
@@ -542,13 +542,13 @@ static void OVERLAY_forcefield(OVERLAY_ExtraCallBuffers *cb, Object *ob, ViewLay
       instdata.size_z = (pd->flag & PFIELD_USEMAX) ? pd->maxdist : 0.0f;
       instdata.size_x = (pd->flag & PFIELD_USEMAXR) ? pd->maxrad : 1.0f;
       instdata.size_y = instdata.size_x;
-      DRW_buffer_add_entry(cb->field_tube_limit, color, &instdata);
+      draw_buffer_add_entry(cb->field_tube_limit, color, &instdata);
     }
     if (pd->flag & (PFIELD_USEMIN | PFIELD_USEMINR)) {
       instdata.size_z = (pd->flag & PFIELD_USEMIN) ? pd->mindist : 0.0f;
       instdata.size_x = (pd->flag & PFIELD_USEMINR) ? pd->minrad : 1.0f;
       instdata.size_y = instdata.size_x;
-      DRW_buffer_add_entry(cb->field_tube_limit, color, &instdata);
+      draw_buffer_add_entry(cb->field_tube_limit, color, &instdata);
     }
   }
   else if (pd->falloff == PFIELD_FALL_CONE) {
@@ -558,7 +558,7 @@ static void OVERLAY_forcefield(OVERLAY_ExtraCallBuffers *cb, Object *ob, ViewLay
       instdata.size_x = distance * sinf(radius);
       instdata.size_z = distance * cosf(radius);
       instdata.size_y = instdata.size_x;
-      DRW_buffer_add_entry(cb->field_cone_limit, color, &instdata);
+      draw_buffer_add_entry(cb->field_cone_limit, color, &instdata);
     }
     if (pd->flag & (PFIELD_USEMIN | PFIELD_USEMINR)) {
       float radius = DEG2RADF((pd->flag & PFIELD_USEMINR) ? pd->minrad : 1.0f);
@@ -566,36 +566,33 @@ static void OVERLAY_forcefield(OVERLAY_ExtraCallBuffers *cb, Object *ob, ViewLay
       instdata.size_x = distance * sinf(radius);
       instdata.size_z = distance * cosf(radius);
       instdata.size_y = instdata.size_x;
-      DRW_buffer_add_entry(cb->field_cone_limit, color, &instdata);
+      draw_buffer_add_entry(cb->field_cone_limit, color, &instdata);
     }
   }
   else if (pd->falloff == PFIELD_FALL_SPHERE) {
     if (pd->flag & PFIELD_USEMAX) {
       instdata.size_x = instdata.size_y = instdata.size_z = pd->maxdist;
-      DRW_buffer_add_entry(cb->field_sphere_limit, color, &instdata);
+      draw_buffer_add_entry(cb->field_sphere_limit, color, &instdata);
     }
     if (pd->flag & PFIELD_USEMIN) {
       instdata.size_x = instdata.size_y = instdata.size_z = pd->mindist;
-      DRW_buffer_add_entry(cb->field_sphere_limit, color, &instdata);
+      draw_buffer_add_entry(cb->field_sphere_limit, color, &instdata);
     }
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Lights
- * \{ */
+/** Lights **/
 
-void OVERLAY_light_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_light_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_ExtraCallBuffers *cb = OVERLAY_extra_call_buffer_get(vedata, ob);
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayExtraCallBuffers *cb = overlat_extra_call_buffer_get(vedata, ob);
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   ViewLayer *view_layer = draw_ctx->view_layer;
 
   Light *la = ob->data;
   float *color_p;
-  DRW_object_wire_theme_get(ob, view_layer, &color_p);
+  draw_object_wire_theme_get(ob, view_layer, &color_p);
   /* Remove the alpha. */
   float color[4] = {UNPACK3(color_p), 1.0f};
   /* Pack render data into object matrix. */
@@ -625,14 +622,14 @@ void OVERLAY_light_cache_populate(OVERLAY_Data *vedata, Object *ob)
   instdata.clip_end = la->att_dist;
   instdata.clip_sta = la->clipsta;
 
-  DRW_buffer_add_entry(cb->groundline, instdata.pos);
+  draw_buffer_add_entry(cb->groundline, instdata.pos);
 
   if (la->type == LA_LOCAL) {
     instdata.area_size_x = instdata.area_size_y = la->area_size;
-    DRW_buffer_add_entry(cb->light_point, color, &instdata);
+    draw_buffer_add_entry(cb->light_point, color, &instdata);
   }
   else if (la->type == LA_SUN) {
-    DRW_buffer_add_entry(cb->light_sun, color, &instdata);
+    draw_buffer_add_entry(cb->light_sun, color, &instdata);
   }
   else if (la->type == LA_SPOT) {
     /* Previous implementation was using the clipend distance as cone size.
@@ -652,13 +649,13 @@ void OVERLAY_light_cache_populate(OVERLAY_Data *vedata, Object *ob)
     instdata.spot_cosine = a;
     /* HACK: We pack the area size in alpha color. This is decoded by the shader. */
     color[3] = -max_ff(la->area_size, FLT_MIN);
-    DRW_buffer_add_entry(cb->light_spot, color, &instdata);
+    draw_buffer_add_entry(cb->light_spot, color, &instdata);
 
     if ((la->mode & LA_SHOW_CONE) && !DRW_state_is_select()) {
       const float color_inside[4] = {0.0f, 0.0f, 0.0f, 0.5f};
       const float color_outside[4] = {1.0f, 1.0f, 1.0f, 0.3f};
-      DRW_buffer_add_entry(cb->light_spot_cone_front, color_inside, &instdata);
-      DRW_buffer_add_entry(cb->light_spot_cone_back, color_outside, &instdata);
+      draw_buffer_add_entry(cb->light_spot_cone_front, color_inside, &instdata);
+      draw_buffer_add_entry(cb->light_spot_cone_back, color_outside, &instdata);
     }
   }
   else if (la->type == LA_AREA) {
@@ -666,23 +663,20 @@ void OVERLAY_light_cache_populate(OVERLAY_Data *vedata, Object *ob)
     int sqr = ELEM(la->area_shape, LA_AREA_SQUARE, LA_AREA_RECT);
     instdata.area_size_x = la->area_size;
     instdata.area_size_y = uniform_scale ? la->area_size : la->area_sizey;
-    DRW_buffer_add_entry(cb->light_area[sqr], color, &instdata);
+    draw_buffer_add_entry(cb->light_area[sqr], color, &instdata);
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Light-probe
- * \{ */
+/** Light-probe **/
 
-void OVERLAY_lightprobe_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_lightprobe_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_ExtraCallBuffers *cb = OVERLAY_extra_call_buffer_get(vedata, ob);
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayExtraCallBuffers *cb = overlay_extra_call_buffer_get(vedata, ob);
+  const DrawCtxState *draw_ctx = draw_context_state_get();
   ViewLayer *view_layer = draw_ctx->view_layer;
   float *color_p;
-  int theme_id = DRW_object_wire_theme_get(ob, view_layer, &color_p);
+  int theme_id = draw_object_wire_theme_get(ob, view_layer, &color_p);
   const LightProbe *prb = (LightProbe *)ob->data;
   const bool show_clipping = (prb->flag & LIGHTPROBE_FLAG_SHOW_CLIP_DIST) != 0;
   const bool show_parallax = (prb->flag & LIGHTPROBE_FLAG_SHOW_PARALLAX) != 0;
@@ -705,14 +699,14 @@ void OVERLAY_lightprobe_cache_populate(OVERLAY_Data *vedata, Object *ob)
     case LIGHTPROBE_TYPE_CUBE:
       instdata.clip_sta = show_clipping ? prb->clipsta : -1.0;
       instdata.clip_end = show_clipping ? prb->clipend : -1.0;
-      DRW_buffer_add_entry(cb->probe_cube, color_p, &instdata);
-      DRW_buffer_add_entry(cb->groundline, instdata.pos);
+      draw_buffer_add_entry(cb->probe_cube, color_p, &instdata);
+      draw_buffer_add_entry(cb->groundline, instdata.pos);
 
       if (show_influence) {
         char shape = (prb->attenuation_type == LIGHTPROBE_SHAPE_BOX) ? OB_CUBE : OB_EMPTY_SPHERE;
         float f = 1.0f - prb->falloff;
-        OVERLAY_empty_shape(cb, ob->obmat, prb->distinf, shape, color_p);
-        OVERLAY_empty_shape(cb, ob->obmat, prb->distinf * f, shape, color_p);
+        overlay_empty_shape(cb, ob->obmat, prb->distinf, shape, color_p);
+        overlay_empty_shape(cb, ob->obmat, prb->distinf * f, shape, color_p);
       }
 
       if (show_parallax) {
