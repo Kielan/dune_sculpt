@@ -1,9 +1,9 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BKE_camera.h"
-#include "BKE_image.h"
-#include "BKE_movieclip.h"
-#include "BKE_object.h"
+#include "dune_camera.h"
+#include "dune_image.h"
+#include "dune_movieclip.h"
+#include "dune_object.h"
 
 #include "BLI_listbase.h"
 
