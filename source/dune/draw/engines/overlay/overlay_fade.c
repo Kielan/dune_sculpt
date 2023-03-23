@@ -16,7 +16,7 @@ void overlay_fade_cache_init(OverlayData *vedata)
 
   for (int i = 0; i < 2; i++) {
     /* Non Meshes Pass (Camera, empties, lights ...) */
-    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_EQUAL | DRAW_STATE_BLEND_ALPHA;
     DRAW_PASS_CREATE(psl->fade_ps[i], state | pd->clipping_state);
 
     GPUShader *sh = overlay_shader_uniform_color();
@@ -37,7 +37,7 @@ void overlay_fade_cache_init(OverlayData *vedata)
   }
 }
 
-void overlay_fade_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_fade_cache_populate(OverlayData *vedata, Object *ob)
 {
   OverlayPrivateData *pd = vedata->stl->pd;
 
@@ -68,9 +68,9 @@ void overlay_fade_draw(OverlayData *vedata)
   draw_draw_pass(psl->fade_ps[NOT_IN_FRONT]);
 }
 
-void overlay_fade_infront_draw(OVERLAY_Data *vedata)
+void overlay_fade_infront_draw(OverlayData *vedata)
 {
   OverlayPassList *psl = vedata->psl;
 
-  DRW_draw_pass(psl->fade_ps[IN_FRONT]);
+  draw_draw_pass(psl->fade_ps[IN_FRONT]);
 }
