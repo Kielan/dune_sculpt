@@ -73,11 +73,11 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
                           !use_sculpt_mask && !use_vertex_mask && !show_lines;
 
   /* Special case when vertex paint and multiedit lines. */
-  if (do_multiedit && show_multi_edit_lines && GPENCIL_VERTEX_MODE(gpd)) {
+  if (do_multiedit && show_multi_edit_lines && DPEN_VERTEX_MODE(dpd)) {
     use_vertex_mask = true;
   }
 
-  const bool is_weight_paint = (gpd) && (gpd->flag & GP_DATA_STROKE_WEIGHTMODE);
+  const bool is_weight_paint = (dpd) && (dpd->flag & DP_DATA_STROKE_WEIGHTMODE);
 
   /* Show Edit points if:
    *  Edit mode: Not in Stroke selection mode
@@ -86,29 +86,29 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
    *  Vertex mode: If use Mask and not Stroke mode
    */
   const bool show_points = show_sculpt_points || is_weight_paint || show_vertex_points ||
-                           (GPENCIL_EDIT_MODE(gpd) &&
-                            (ts->gpencil_selectmode_edit != GP_SELECTMODE_STROKE));
+                           (DPEN_EDIT_MODE(dpd) &&
+                            (ts->dpen_selectmode_edit != DP_SELECTMODE_STROKE));
 
-  if ((!GPENCIL_CURVE_EDIT_SESSIONS_ON(gpd)) &&
-      ((!GPENCIL_VERTEX_MODE(gpd) && !GPENCIL_PAINT_MODE(gpd)) || use_vertex_mask)) {
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL |
-                     DRW_STATE_BLEND_ALPHA;
-    DRW_PASS_CREATE(psl->edit_gpencil_ps, state | pd->clipping_state);
+  if ((!DPEN_CURVE_EDIT_SESSIONS_ON(dpd)) &&
+      ((!DPEN_VERTEX_MODE(dpd) && !DPEN_PAINT_MODE(dpd)) || use_vertex_mask)) {
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL |
+                     DRAW_STATE_BLEND_ALPHA;
+    DRAW_PASS_CREATE(psl->edit_gpencil_ps, state | pd->clipping_state);
 
     if (show_lines && !hide_lines) {
-      sh = OVERLAY_shader_edit_gpencil_wire();
-      pd->edit_gpencil_wires_grp = grp = DRW_shgroup_create(sh, psl->edit_gpencil_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_bool_copy(grp, "doMultiframe", show_multi_edit_lines);
-      DRW_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
-      DRW_shgroup_uniform_bool_copy(grp, "hideSelect", hide_select);
-      DRW_shgroup_uniform_float_copy(grp, "gpEditOpacity", v3d->vertex_opacity);
-      DRW_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
+      sh = overlay_shader_edit_dpen_wire();
+      pd->edit_dpen_wires_grp = grp = draw_shgroup_create(sh, psl->edit_dpen_ps);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_bool_copy(grp, "doMultiframe", show_multi_edit_lines);
+      draw_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
+      draw_shgroup_uniform_bool_copy(grp, "hideSelect", hide_select);
+      draw_shgroup_uniform_float_copy(grp, "gpEditOpacity", v3d->vertex_opacity);
+      draw_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
     }
 
     if (show_points && !hide_select) {
-      sh = OVERLAY_shader_edit_gpencil_point();
-      pd->edit_gpencil_points_grp = grp = DRW_shgroup_create(sh, psl->edit_gpencil_ps);
+      sh = overlay_shader_edit_gpencil_point();
+      pd->edit_dpen_points_grp = grp = DRW_shgroup_create(sh, psl->edit_gpencil_ps);
       DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
       DRW_shgroup_uniform_bool_copy(grp, "doMultiframe", do_multiedit);
       DRW_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
