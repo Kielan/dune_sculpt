@@ -1,12 +1,12 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
-#include "DNA_mesh_types.h"
+#include "types_mesh.h"
 
-#include "BKE_customdata.h"
-#include "BKE_editmesh.h"
-#include "BKE_object.h"
+#include "dune_customdata.h"
+#include "dune_editmesh.h"
+#include "dune_object.h"
 
 #include "draw_cache_impl.h"
 #include "draw_manager_text.h"
@@ -17,7 +17,7 @@
   (V3D_OVERLAY_EDIT_EDGE_LEN | V3D_OVERLAY_EDIT_FACE_AREA | V3D_OVERLAY_EDIT_FACE_ANG | \
    V3D_OVERLAY_EDIT_EDGE_ANG | V3D_OVERLAY_EDIT_INDICES)
 
-void OVERLAY_edit_mesh_init(OVERLAY_Data *vedata)
+void overlay_edit_mesh_init(OVERLAY_Data *vedata)
 {
   OVERLAY_PrivateData *pd = vedata->stl->pd;
   const DRWContextState *draw_ctx = DRW_context_state_get();
