@@ -22,26 +22,26 @@ void overlay_edit_text_cache_init(OVERLAY_Data *vedata)
 
   /* Run Twice for in-front passes. */
   for (int i = 0; i < 2; i++) {
-    state = DRAW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH;
-    state |= ((i == 0) ? DRW_STATE_DEPTH_LESS_EQUAL : DRW_STATE_DEPTH_ALWAYS);
+    state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_WRITE_DEPTH;
+    state |= ((i == 0) ? DRAW_STATE_DEPTH_LESS_EQUAL : DRW_STATE_DEPTH_ALWAYS);
     DRAW_PASS_CREATE(psl->edit_text_wire_ps[i], state | pd->clipping_state);
 
     sh = overlay_shader_uniform_color();
-    pd->edit_text_wire_grp[i] = grp = DRW_shgroup_create(sh, psl->edit_text_wire_ps[i]);
+    pd->edit_text_wire_grp[i] = grp = DRAW_shgroup_create(sh, psl->edit_text_wire_ps[i]);
     draw_shgroup_uniform_vec4_copy(grp, "color", G_draw.block.colorWire);
   }
   {
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
-    DRW_PASS_CREATE(psl->edit_text_overlay_ps, state | pd->clipping_state);
+    state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ALPHA;
+    DRAW_PASS_CREATE(psl->edit_text_overlay_ps, state | pd->clipping_state);
 
-    sh = OVERLAY_shader_uniform_color();
-    pd->edit_text_overlay_grp = grp = DRW_shgroup_create(sh, psl->edit_text_overlay_ps);
+    sh = overlay_shader_uniform_color();
+    pd->edit_text_overlay_grp = grp = draw_shgroup_create(sh, psl->edit_text_overlay_ps);
 
-    DRW_shgroup_uniform_vec4(grp, "color", pd->edit_text.overlay_color, 1);
+    draw_shgroup_uniform_vec4(grp, "color", pd->edit_text.overlay_color, 1);
 
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_MUL | DRW_STATE_DEPTH_GREATER_EQUAL |
+    state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_MUL | DRAW_STATE_DEPTH_GREATER_EQUAL |
             pd->clipping_state;
-    DRW_PASS_INSTANCE_CREATE(psl->edit_text_darken_ps, psl->edit_text_overlay_ps, state);
+    DRAW_PASS_INSTANCE_CREATE(psl->edit_text_darken_ps, psl->edit_text_overlay_ps, state);
   }
   {
     /* Create view which will render everything (hopefully) behind the text geometry. */
