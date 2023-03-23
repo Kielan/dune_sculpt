@@ -1,8 +1,4 @@
-/** \file
- * \ingroup draw_engine
- *
- * Engine for drawing a selection map where the pixels indicate the selection indices.
- */
+/** Engine for drawing a selection map where the pixels indicate the selection indices. **/
 
 #include "DRW_engine.h"
 #include "DRW_render.h"
