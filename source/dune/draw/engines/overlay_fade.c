@@ -5,21 +5,21 @@
 
 #include "overlay_private.h"
 
-void OVERLAY_fade_init(OVERLAY_Data *UNUSED(vedata))
+void overlay_fade_init(OverlayData *UNUSED(vedata))
 {
 }
 
-void OVERLAY_fade_cache_init(OVERLAY_Data *vedata)
+void overlay_fade_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
   for (int i = 0; i < 2; i++) {
     /* Non Meshes Pass (Camera, empties, lights ...) */
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
-    DRW_PASS_CREATE(psl->fade_ps[i], state | pd->clipping_state);
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
+    DRAW_PASS_CREATE(psl->fade_ps[i], state | pd->clipping_state);
 
-    GPUShader *sh = OVERLAY_shader_uniform_color();
+    GPUShader *sh = overlay_shader_uniform_color();
     pd->fade_grp[i] = DRW_shgroup_create(sh, psl->fade_ps[i]);
 
     const DRWContextState *draw_ctx = DRW_context_state_get();
