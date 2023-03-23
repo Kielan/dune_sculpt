@@ -93,45 +93,45 @@ void overlay_edit_mesh_cache_init(OverlayData *vedata)
   /* Run Twice for in-front passes. */
   for (int i = 0; i < 2; i++) {
     /* Complementary Depth Pass */
-    state = DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_CULL_BACK;
-    DRW_PASS_CREATE(psl->edit_mesh_depth_ps[i], state | pd->clipping_state);
+    state = DRW_STATE_WRITE_DEPTH | DRAW_STATE_DEPTH_LESS_EQUAL | DRAW_STATE_CULL_BACK;
+    DRAW_PASS_CREATE(psl->edit_mesh_depth_ps[i], state | pd->clipping_state);
 
-    sh = OVERLAY_shader_depth_only();
-    pd->edit_mesh_depth_grp[i] = DRW_shgroup_create(sh, psl->edit_mesh_depth_ps[i]);
+    sh = overlay_shader_depth_only();
+    pd->edit_mesh_depth_grp[i] = draw_shgroup_create(sh, psl->edit_mesh_depth_ps[i]);
   }
   {
     /* Normals */
-    state = DRW_STATE_WRITE_DEPTH | DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL |
-            (pd->edit_mesh.do_zbufclip ? DRW_STATE_BLEND_ALPHA : 0);
-    DRW_PASS_CREATE(psl->edit_mesh_normals_ps, state | pd->clipping_state);
+    state = DRAW_STATE_WRITE_DEPTH | DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_LESS_EQUAL |
+            (pd->edit_mesh.do_zbufclip ? DRAW_STATE_BLEND_ALPHA : 0);
+    DRAW_PASS_CREATE(psl->edit_mesh_normals_ps, state | pd->clipping_state);
 
-    sh = OVERLAY_shader_edit_mesh_normal();
-    pd->edit_mesh_normals_grp = grp = DRW_shgroup_create(sh, psl->edit_mesh_normals_ps);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_float_copy(grp, "normalSize", v3d->overlay.normals_length);
-    DRW_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
-    DRW_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
-    DRW_shgroup_uniform_bool_copy(grp,
+    sh = overlay_shader_edit_mesh_normal();
+    pd->edit_mesh_normals_grp = grp = draw_shgroup_create(sh, psl->edit_mesh_normals_ps);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_float_copy(grp, "normalSize", v3d->overlay.normals_length);
+    draw_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
+    draw_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
+    draw_shgroup_uniform_bool_copy(grp,
                                   "isConstantScreenSizeNormals",
                                   (flag & V3D_OVERLAY_EDIT_CONSTANT_SCREEN_SIZE_NORMALS) != 0);
-    DRW_shgroup_uniform_float_copy(
+    draw_shgroup_uniform_float_copy(
         grp, "normalScreenSize", v3d->overlay.normals_constant_screen_size);
   }
   {
     /* Mesh Analysis Pass */
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_BLEND_ALPHA;
-    DRW_PASS_CREATE(psl->edit_mesh_analysis_ps, state | pd->clipping_state);
+    state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_BLEND_ALPHA;
+    DRAW_PASS_CREATE(psl->edit_mesh_analysis_ps, state | pd->clipping_state);
 
-    sh = OVERLAY_shader_edit_mesh_analysis();
+    sh = overlay_shader_edit_mesh_analysis();
     pd->edit_mesh_analysis_grp = grp = DRW_shgroup_create(sh, psl->edit_mesh_analysis_ps);
-    DRW_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
+    draw_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
   }
   /* Run Twice for in-front passes. */
   for (int i = 0; i < 2; i++) {
     GPUShader *edge_sh = OVERLAY_shader_edit_mesh_edge(!select_vert);
     GPUShader *face_sh = OVERLAY_shader_edit_mesh_face();
     const bool do_zbufclip = (i == 0 && pd->edit_mesh.do_zbufclip);
-    DRWState state_common = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL |
+    DrawState state_common = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL |
                             DRW_STATE_BLEND_ALPHA;
     /* Faces */
     /* Cage geom needs an offset applied to avoid Z-fighting. */
