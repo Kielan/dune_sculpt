@@ -142,10 +142,10 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
     draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA);
 
     sh = overlay_shader_edit_curve_point();
-    pd->edit_dpen_curve_points_grp = grp = DRW_shgroup_create(sh, psl->edit_gpencil_curve_ps);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_bool_copy(grp, "showCurveHandles", pd->edit_curve.show_handles);
-    DRW_shgroup_uniform_int_copy(grp, "curveHandleDisplay", pd->edit_curve.handle_display);
+    pd->edit_dpen_curve_points_grp = grp = DRAW_shgroup_create(sh, psl->edit_gpencil_curve_ps);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_bool_copy(grp, "showCurveHandles", pd->edit_curve.show_handles);
+    draw_shgroup_uniform_int_copy(grp, "curveHandleDisplay", pd->edit_curve.handle_display);
   }
 
   /* control points for primitives and speed guide */
@@ -156,20 +156,20 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
                               ((v3d->gizmo_flag & V3D_GIZMO_HIDE_TOOL) == 0));
 
   if ((is_cppoint || is_speed_guide) && (is_show_gizmo)) {
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
-    DRW_PASS_CREATE(psl->edit_gpencil_gizmos_ps, state);
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ALPHA;
+    DRAW_PASS_CREATE(psl->edit_dpen_gizmos_ps, state);
 
-    sh = OVERLAY_shader_edit_gpencil_guide_point();
-    grp = DRW_shgroup_create(sh, psl->edit_gpencil_gizmos_ps);
+    sh = overay_shader_edit_dpen_guide_point();
+    grp = draw_shgroup_create(sh, psl->edit_dpen_gizmos_ps);
 
-    if (gpd->runtime.cp_points != NULL) {
-      for (int i = 0; i < gpd->runtime.tot_cp_points; i++) {
-        bGPDcontrolpoint *cp = &gpd->runtime.cp_points[i];
-        grp = DRW_shgroup_create_sub(grp);
-        DRW_shgroup_uniform_vec3_copy(grp, "pPosition", &cp->x);
-        DRW_shgroup_uniform_float_copy(grp, "pSize", cp->size * 0.8f * G_draw.block.sizePixel);
-        DRW_shgroup_uniform_vec4_copy(grp, "pColor", cp->color);
-        DRW_shgroup_call_procedural_points(grp, NULL, 1);
+    if (dpd->runtime.cp_points != NULL) {
+      for (int i = 0; i < dpd->runtime.tot_cp_points; i++) {
+        DPenDataControlpoint *cp = &dpd->runtime.cp_points[i];
+        grp = draw_shgroup_create_sub(grp);
+        draw_shgroup_uniform_vec3_copy(grp, "pPosition", &cp->x);
+        draw_shgroup_uniform_float_copy(grp, "pSize", cp->size * 0.8f * G_draw.block.sizePixel);
+        draw_shgroup_uniform_vec4_copy(grp, "pColor", cp->color);
+        draw_shgroup_call_procedural_points(grp, NULL, 1);
       }
     }
 
