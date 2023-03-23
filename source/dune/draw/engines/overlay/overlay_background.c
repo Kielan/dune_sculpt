@@ -14,10 +14,10 @@
 
 void overlay_background_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
   DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = DRW_context_state_get();
   const Scene *scene = draw_ctx->scene;
   const RegionView3D *rv3d = draw_ctx->rv3d;
   const BoundBox *bb = rv3d ? rv3d->clipbb : NULL;
