@@ -289,16 +289,16 @@ void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
     srgb_to_linearrgb_v4(theme_color, theme_color);
     srgb_to_linearrgb_v4(selected_color, selected_color);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(sh, psl->edit_uv_tiled_image_borders_ps);
-    DRW_shgroup_uniform_vec4_copy(grp, "color", theme_color);
-    DRW_shgroup_uniform_vec3_copy(grp, "offset", (float[3]){0.0f, 0.0f, 0.0f});
+    DrawShadingGroup *grp = draw_shgroup_create(sh, psl->edit_uv_tiled_image_borders_ps);
+    draw_shgroup_uniform_vec4_copy(grp, "color", theme_color);
+    draw_shgroup_uniform_vec3_copy(grp, "offset", (float[3]){0.0f, 0.0f, 0.0f});
 
     LISTBASE_FOREACH (ImageTile *, tile, &image->tiles) {
       const int tile_x = ((tile->tile_number - 1001) % 10);
       const int tile_y = ((tile->tile_number - 1001) / 10);
       obmat[3][1] = (float)tile_y;
       obmat[3][0] = (float)tile_x;
-      DRW_shgroup_call_obmat(grp, geom, obmat);
+      draw_shgroup_call_obmat(grp, geom, obmat);
     }
     /* Only mark active border when overlays are enabled. */
     if (pd->edit_uv.do_tiled_image_overlay) {
@@ -340,14 +340,14 @@ void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
     }
     else {
       DRAW_PASS_CREATE(psl->edit_uv_stencil_ps,
-                      DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_ALWAYS |
-                          DRW_STATE_BLEND_ALPHA_PREMUL);
-      GPUShader *sh = OVERLAY_shader_edit_uv_stencil_image();
-      GPUBatch *geom = DRW_cache_quad_get();
-      DRWShadingGroup *grp = DRW_shgroup_create(sh, psl->edit_uv_stencil_ps);
+                      DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_ALWAYS |
+                          DRAW_STATE_BLEND_ALPHA_PREMUL);
+      GPUShader *sh = overlay_shader_edit_uv_stencil_image();
+      GPUBatch *geom = draw_cache_quad_get();
+      DRWShadingGroup *grp = draw_shgroup_create(sh, psl->edit_uv_stencil_ps);
       pd->edit_uv.stencil_ibuf = stencil_ibuf;
       pd->edit_uv.stencil_image = stencil_image;
-      GPUTexture *stencil_texture = BKE_image_get_gpu_texture(stencil_image, NULL, stencil_ibuf);
+      GPUTexture *stencil_texture = dune_image_get_gpu_texture(stencil_image, NULL, stencil_ibuf);
       draw_shgroup_uniform_texture(grp, "imgTexture", stencil_texture);
       draw_shgroup_uniform_bool_copy(grp, "imgPremultiplied", true);
       draw_shgroup_uniform_bool_copy(grp, "imgAlphaBlend", true);
@@ -365,7 +365,7 @@ void overlay_edit_uv_cache_init(OVERLAY_Data *vedata)
       obmat[0][0] = size_stencil_image[0] / size_image[0];
       obmat[1][1] = size_stencil_image[1] / size_image[1];
 
-      DRW_shgroup_call_obmat(grp, geom, obmat);
+      draw_shgroup_call_obmat(grp, geom, obmat);
     }
   }
   else {
@@ -416,11 +416,11 @@ static void overlay_edit_uv_cache_populate(OverlayData *vedata, Object *ob)
     return;
   }
 
-  OVERLAY_StorageList *stl = vedata->stl;
-  OVERLAY_PrivateData *pd = stl->pd;
+  OverlayStorageList *stl = vedata->stl;
+  OverlayPrivateData *pd = stl->pd;
   GPUBatch *geom;
 
-  const DRWContextState *draw_ctx = draw_ctx_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const bool is_edit_object = draw_object_is_in_edit_mode(ob);
   Mesh *me = (Mesh *)ob->data;
   const bool has_active_object_uvmap = CustomData_get_active_layer(&me->ldata, CD_MLOOPUV) != -1;
