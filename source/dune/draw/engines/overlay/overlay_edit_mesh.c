@@ -17,30 +17,30 @@
   (V3D_OVERLAY_EDIT_EDGE_LEN | V3D_OVERLAY_EDIT_FACE_AREA | V3D_OVERLAY_EDIT_FACE_ANG | \
    V3D_OVERLAY_EDIT_EDGE_ANG | V3D_OVERLAY_EDIT_INDICES)
 
-void overlay_edit_mesh_init(OVERLAY_Data *vedata)
+void overlay_edit_mesh_init(OverlayData *vedata)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DeawCtxState *draw_ctx = draw_ctx_state_get();
 
   pd->edit_mesh.do_zbufclip = XRAY_FLAG_ENABLED(draw_ctx->v3d);
 
   /* Create view with depth offset */
-  DRWView *default_view = (DRWView *)DRW_view_default_get();
+  DrawView *default_view = (DrawView *)draw_view_default_get();
   pd->view_edit_faces = default_view;
-  pd->view_edit_faces_cage = DRW_view_create_with_zoffset(default_view, draw_ctx->rv3d, 0.5f);
-  pd->view_edit_edges = DRW_view_create_with_zoffset(default_view, draw_ctx->rv3d, 1.0f);
-  pd->view_edit_verts = DRW_view_create_with_zoffset(default_view, draw_ctx->rv3d, 1.5f);
+  pd->view_edit_faces_cage = draw_view_create_with_zoffset(default_view, draw_ctx->rv3d, 0.5f);
+  pd->view_edit_edges = draw_view_create_with_zoffset(default_view, draw_ctx->rv3d, 1.0f);
+  pd->view_edit_verts = draw_view_create_with_zoffset(default_view, draw_ctx->rv3d, 1.5f);
 }
 
-void OVERLAY_edit_mesh_cache_init(OVERLAY_Data *vedata)
+void overlay_edit_mesh_cache_init(OverlayData *vedata)
 {
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  OVERLAY_ShadingData *shdata = &pd->shdata;
-  DRWShadingGroup *grp = NULL;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  OverlayShadingData *shdata = &pd->shdata;
+  DrawShadingGroup *grp = NULL;
   GPUShader *sh = NULL;
-  DRWState state = 0;
+  DrawState state = 0;
 
   DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
 
