@@ -1,29 +1,29 @@
-#include "BKE_paint.h"
-#include "DRW_render.h"
+#include "dune_paint.h"
+#include "draw_render.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
 #include "PIL_time.h"
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_mode_transfer_cache_init(OVERLAY_Data *vedata)
+void overlay_mode_transfer_cache_init(OVERLAY_Data *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
   pd->mode_transfer.time = PIL_check_seconds_timer();
 
   for (int i = 0; i < 2; i++) {
     /* Non Meshes Pass (Camera, empties, lights ...) */
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
-    DRW_PASS_CREATE(psl->mode_transfer_ps[i], state | pd->clipping_state);
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
+    DRAW_PASS_CREATE(psl->mode_transfer_ps[i], state | pd->clipping_state);
   }
 }
 
 #define MODE_TRANSFER_FLASH_LENGTH 0.55f
-/* TODO(pablodp606): Remove this option for 3.0 if fade in/out is not used. */
+/* TODO: Remove this option for 3.0 if fade in/out is not used. */
 #define MODE_TRANSFER_FLASH_FADE 0.0f
 #define MODE_TRANSFER_FLASH_MAX_ALPHA 0.25f
 
@@ -61,10 +61,10 @@ static float mode_transfer_alpha_for_animation_time_get(const float anim_time)
   return alpha * MODE_TRANSFER_FLASH_MAX_ALPHA;
 }
 
-void OVERLAY_mode_transfer_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_mode_transfer_cache_populate(OVERLAY_Data *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
 
   if (pd->xray_enabled) {
     return;
@@ -77,17 +77,17 @@ void OVERLAY_mode_transfer_cache_populate(OVERLAY_Data *vedata, Object *ob)
     return;
   }
 
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const bool use_sculpt_pbvh = BKE_sculptsession_use_pbvh_draw(ob, draw_ctx->v3d) &&
-                               !DRW_state_is_image_render();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const bool use_sculpt_pbvh = dune_sculptsession_use_pbvh_draw(ob, draw_ctx->v3d) &&
+                               !draw_state_is_image_render();
   const bool is_xray = (ob->dtx & OB_DRAW_IN_FRONT) != 0;
 
-  DRWShadingGroup *mode_transfer_grp[2];
+  DrawShadingGroup *mode_transfer_grp[2];
 
   for (int i = 0; i < 2; i++) {
-    GPUShader *sh = OVERLAY_shader_uniform_color();
+    GPUShader *sh = overlay_shader_uniform_color();
     mode_transfer_grp[i] = DRW_shgroup_create(sh, psl->mode_transfer_ps[i]);
-    DRW_shgroup_uniform_block(mode_transfer_grp[i], "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_block(mode_transfer_grp[i], "globalsBlock", G_draw.block_ubo);
 
     float color[4];
     UI_GetThemeColor3fv(TH_VERTEX_SELECT, color);
