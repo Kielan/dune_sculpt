@@ -1386,8 +1386,8 @@ static void draw_bone_update_disp_matrix_custom(DPoseChannel *pchan)
 
 static void draw_axes(ArmatureDrawCtx *ctx,
                       const EditBone *eBone,
-                      const bPoseChannel *pchan,
-                      const bArmature *arm)
+                      const DPoseChannel *pchan,
+                      const DArmature *arm)
 {
   float final_col[4];
   const float *col = (ctx->const_color)                        ? ctx->const_color :
@@ -1524,10 +1524,10 @@ static void draw_points(ArmatureDrawCtx *ctx,
 /* -------------------------------------------------------------------- */
 /** Draw Bones **/
 
-static void draw_bone_custom_shape(ArmatureDrawContext *ctx,
+static void draw_bone_custom_shape(ArmatureDrawCtx *ctx,
                                    EditBone *eBone,
-                                   bPoseChannel *pchan,
-                                   bArmature *arm,
+                                   DPoseChannel *pchan,
+                                   DArmature *arm,
                                    const int boneflag,
                                    const short constflag,
                                    const int select_id)
@@ -1936,7 +1936,7 @@ static void draw_bone_relations(ArmatureDrawCtx *ctx,
        * since riggers will want to know about the links between bones
        */
       if ((boneflag & BONE_CONNECTED) == 0) {
-        drw_shgroup_bone_relationship_lines(ctx, ebone->head, ebone->parent->tail);
+        draw_shgroup_bone_relationship_lines(ctx, ebone->head, ebone->parent->tail);
       }
     }
   }
@@ -1947,7 +1947,7 @@ static void draw_bone_relations(ArmatureDrawCtx *ctx,
       if ((boneflag & BONE_SELECTED) ||
           (pchan->parent->bone && (pchan->parent->bone->flag & BONE_SELECTED))) {
         if ((boneflag & BONE_CONNECTED) == 0) {
-          drw_shgroup_bone_relationship_lines(ctx, pchan->pose_head, pchan->parent->pose_tail);
+          draw_shgroup_bone_relationship_lines(ctx, pchan->pose_head, pchan->parent->pose_tail);
         }
       }
     }
@@ -1965,11 +1965,11 @@ static void draw_bone_relations(ArmatureDrawCtx *ctx,
 
 static void draw_bone_name(ArmatureDrawCtx *ctx,
                            EditBone *eBone,
-                           bPoseChannel *pchan,
-                           bArmature *arm,
+                           DPoseChannel *pchan,
+                           DArmature *arm,
                            const int boneflag)
 {
-  struct DrawTextStore *dt = DRW_text_cache_ensure();
+  struct DrawTextStore *dt = draw_text_cache_ensure();
   uchar color[4];
   float vec[3];
 
@@ -2000,13 +2000,13 @@ static void draw_bone_name(ArmatureDrawCtx *ctx,
  * Used for selection since drawing many bones can be slow, see: T91253.
  *
  * Bounding spheres are used with margins added to ensure bones are included.
- * An added margin is needed because #BKE_pchan_minmax only returns the bounds
+ * An added margin is needed because #dune_pchan_minmax only returns the bounds
  * of the bones head & tail which doesn't account for parts of the bone users may select
  * (octahedral spheres or envelope radius for example).
  **/
 
 static void pchan_culling_calc_bsphere(const Object *ob,
-                                       const bPoseChannel *pchan,
+                                       const DPoseChannel *pchan,
                                        BoundSphere *r_bsphere)
 {
   float min[3], max[3];
@@ -2020,9 +2020,9 @@ static void pchan_culling_calc_bsphere(const Object *ob,
  * return true when bounding sphere from `pchan` intersect the view.
  * (same for other "test" functions defined here).
  */
-static bool pchan_culling_test_simple(const DRWView *view,
+static bool pchan_culling_test_simple(const DrawView *view,
                                       const Object *ob,
-                                      const bPoseChannel *pchan)
+                                      const DPoseChannel *pchan)
 {
   BoundSphere bsphere;
   pchan_culling_calc_bsphere(ob, pchan, &bsphere);
@@ -2040,27 +2040,27 @@ static bool pchan_culling_test_with_radius_scale(const DRWView *view,
   return draw_culling_sphere_test(view, &bsphere);
 }
 
-static bool pchan_culling_test_custom(const DRWView *view,
+static bool pchan_culling_test_custom(const DrawView *view,
                                       const Object *ob,
-                                      const bPoseChannel *pchan)
+                                      const DPoseChannel *pchan)
 {
   /* For more aggressive culling the bounding box of the custom-object could be used. */
   return pchan_culling_test_simple(view, ob, pchan);
 }
 
-static bool pchan_culling_test_wire(const DRWView *view,
+static bool pchan_culling_test_wire(const DrawView *view,
                                     const Object *ob,
-                                    const bPoseChannel *pchan)
+                                    const DPoseChannel *pchan)
 {
-  lib_assert(((const bArmature *)ob->data)->drawtype == ARM_WIRE);
+  lib_assert(((const DArmature *)ob->data)->drawtype == ARM_WIRE);
   return pchan_culling_test_simple(view, ob, pchan);
 }
 
-static bool pchan_culling_test_line(const DRWView *view,
+static bool pchan_culling_test_line(const DrawView *view,
                                     const Object *ob,
-                                    const bPoseChannel *pchan)
+                                    const DPoseChannel *pchan)
 {
-  lib_assert(((const bArmature *)ob->data)->drawtype == ARM_LINE);
+  lib_assert(((const DArmature *)ob->data)->drawtype == ARM_LINE);
   /* Account for the end-points, as the line end-points size is in pixels, this is a rough value.
    * Since the end-points are small the difference between having any margin or not is unlikely
    * to be noticeable. */
@@ -2084,7 +2084,7 @@ static bool pchan_culling_test_envelope(const DRWView *view,
 
 static bool pchan_culling_test_bbone(const DRWView *view,
                                      const Object *ob,
-                                     const bPoseChannel *pchan)
+                                     const DPoseChannel *pchan)
 {
   const DArmature *arm = ob->data;
   lib_assert(arm->drawtype == ARM_B_BONE);
@@ -2251,7 +2251,7 @@ static void draw_armature_pose(ArmatureDrawCtx *ctx)
     const Object *obact_orig = dgraph_get_original_object(draw_ctx->obact);
 
     const ListBase *defbase = dune_object_defgroup_list(obact_orig);
-    LISTBASE_FOREACH (const bDeformGroup *, dg, defbase) {
+    LISTBASE_FOREACH (const DDeformGroup *, dg, defbase) {
       if (dg->flag & DG_LOCK_WEIGHT) {
         pchan = dune_pose_channel_find_name(ob->pose, dg->name);
 
@@ -2262,7 +2262,7 @@ static void draw_armature_pose(ArmatureDrawCtx *ctx)
     }
   }
 
-  const DrawView *view = is_pose_select ? DRW_view_default_get() : NULL;
+  const DrawView *view = is_pose_select ? draw_view_default_get() : NULL;
 
   for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next, index += 0x10000) {
     Bone *bone = pchan->bone;
@@ -2360,13 +2360,13 @@ static void draw_armature_pose(ArmatureDrawCtx *ctx)
   arm->flag &= ~ARM_POSEMODE;
 }
 
-static void armature_context_setup(ArmatureDrawContext *ctx,
-                                   OVERLAY_PrivateData *pd,
-                                   Object *ob,
-                                   const bool do_envelope_dist,
-                                   const bool is_edit_mode,
-                                   const bool is_pose_mode,
-                                   const float *const_color)
+static void armature_ctx_setup(ArmatureDrawCtx *ctx,
+                               OverlayPrivateData *pd,
+                               Object *ob,
+                               const bool do_envelope_dist,
+                               const bool is_edit_mode,
+                               const bool is_pose_mode,
+                               const float *const_color)
 {
   const bool is_object_mode = !do_envelope_dist;
   const bool is_xray = (ob->dtx & OB_DRAW_IN_FRONT) != 0 ||
@@ -2486,41 +2486,41 @@ void overlay_pose_cache_populate(OverlayData *vedata, Object *ob)
   }
 }
 
-void OVERLAY_armature_cache_finish(OVERLAY_Data *vedata)
+void overlay_armature_cache_finish(OverlayData *vedata)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
   for (int i = 0; i < 2; i++) {
     if (pd->armature_call_buffers[i].solid.custom_shapes_ghash) {
-      /* TODO(fclem): Do not free it for each frame but reuse it. Avoiding alloc cost. */
-      BLI_ghash_free(pd->armature_call_buffers[i].solid.custom_shapes_ghash, NULL, NULL);
-      BLI_ghash_free(pd->armature_call_buffers[i].transp.custom_shapes_ghash, NULL, NULL);
+      /* TODO: Do not free it for each frame but reuse it. Avoiding alloc cost. */
+      lib_ghash_free(pd->armature_call_buffers[i].solid.custom_shapes_ghash, NULL, NULL);
+      lib_ghash_free(pd->armature_call_buffers[i].transp.custom_shapes_ghash, NULL, NULL);
     }
   }
 }
 
-void OVERLAY_armature_draw(OVERLAY_Data *vedata)
+void overlay_armature_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
-  DRW_draw_pass(psl->armature_transp_ps[0]);
-  DRW_draw_pass(psl->armature_ps[0]);
+  draw_draw_pass(psl->armature_transp_ps[0]);
+  draw_draw_pass(psl->armature_ps[0]);
 }
 
-void overlay_armature_in_front_draw(OVERLAY_Data *vedata)
+void overlay_armature_in_front_draw(OverlayData *vedata)
 {
   overlay_PassList *psl = vedata->psl;
 
-  if (psl->armature_bone_select_ps == NULL || DRW_state_is_select()) {
+  if (psl->armature_bone_select_ps == NULL || draw_state_is_select()) {
     draw_draw_pass(psl->armature_transp_ps[1]);
     draw_draw_pass(psl->armature_ps[1]);
   }
 }
 
-void overlay_pose_draw(OVERLAY_Data *vedata)
+void overlay_pose_draw(OverlayData *vedata)
 {
-  overlay_PassList *psl = vedata->psl;
-  overlay_FramebufferList *fbl = vedata->fbl;
+  OverlayPassList *psl = vedata->psl;
+  OverlayFramebufferList *fbl = vedata->fbl;
 
   if (psl->armature_bone_select_ps != NULL) {
     if (draw_state_is_fbo()) {
