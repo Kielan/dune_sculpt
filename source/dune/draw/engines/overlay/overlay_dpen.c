@@ -109,23 +109,23 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
     if (show_points && !hide_select) {
       sh = overlay_shader_edit_gpencil_point();
       pd->edit_dpen_points_grp = grp = DRW_shgroup_create(sh, psl->edit_gpencil_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_bool_copy(grp, "doMultiframe", do_multiedit);
-      DRW_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
-      DRW_shgroup_uniform_float_copy(grp, "gpEditOpacity", v3d->vertex_opacity);
-      DRW_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_bool_copy(grp, "doMultiframe", do_multiedit);
+      draw_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
+      draw_shgroup_uniform_float_copy(grp, "gpEditOpacity", v3d->vertex_opacity);
+      draw_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
     }
   }
 
   /* Handles and curve point for Curve Edit submode. */
-  if (GPENCIL_CURVE_EDIT_SESSIONS_ON(gpd)) {
-    DRWState state = DRW_STATE_WRITE_COLOR;
-    DRW_PASS_CREATE(psl->edit_gpencil_curve_ps, state | pd->clipping_state);
+  if (DPEN_CURVE_EDIT_SESSIONS_ON(dpd)) {
+    DrawState state = DRAW_STATE_WRITE_COLOR;
+    DRAW_PASS_CREATE(psl->edit_gpencil_curve_ps, state | pd->clipping_state);
 
     /* Edit lines. */
     if (show_lines) {
-      sh = OVERLAY_shader_edit_gpencil_wire();
-      pd->edit_gpencil_wires_grp = grp = DRW_shgroup_create(sh, psl->edit_gpencil_curve_ps);
+      sh = overlay_shader_edit_dpen_wire();
+      pd->edit_dpen_wires_grp = grp = draw_shgroup_create(sh, psl->edit_dpen_curve_ps);
       DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
       DRW_shgroup_uniform_bool_copy(grp, "doMultiframe", show_multi_edit_lines);
       DRW_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
