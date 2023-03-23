@@ -1,7 +1,7 @@
-#include "BKE_paint.h"
-#include "DRW_render.h"
+#include "dune_paint.h"
+#include "draw_render.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
 #include "overlay_private.h"
 
