@@ -70,7 +70,7 @@ static void edit_text_cache_populate_select(OVERLAY_Data *vedata, Object *ob)
   const Curve *cu = ob->data;
   EditFont *ef = cu->editfont;
   float final_mat[4][4], box[4][2];
-  struct GPUBatch *geom = DRW_cache_quad_get();
+  struct GPUBatch *geom = draw_cache_quad_get();
 
   for (int i = 0; i < ef->selboxes_len; i++) {
     EditFontSelBox *sb = &ef->selboxes[i];
@@ -105,13 +105,13 @@ static void edit_text_cache_populate_select(OVERLAY_Data *vedata, Object *ob)
     v2_quad_corners_to_mat4(box, final_mat);
     mul_m4_m4m4(final_mat, ob->obmat, final_mat);
 
-    DRW_shgroup_call_obmat(pd->edit_text_overlay_grp, geom, final_mat);
+    draw_shgroup_call_obmat(pd->edit_text_overlay_grp, geom, final_mat);
   }
 }
 
-static void edit_text_cache_populate_cursor(OVERLAY_Data *vedata, Object *ob)
+static void edit_text_cache_populate_cursor(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   const Curve *cu = ob->data;
   EditFont *edit_font = cu->editfont;
   float(*cursor)[2] = edit_font->textcurs;
@@ -120,13 +120,13 @@ static void edit_text_cache_populate_cursor(OVERLAY_Data *vedata, Object *ob)
   v2_quad_corners_to_mat4(cursor, mat);
   mul_m4_m4m4(mat, ob->obmat, mat);
 
-  struct GPUBatch *geom = DRW_cache_quad_get();
-  DRW_shgroup_call_obmat(pd->edit_text_overlay_grp, geom, mat);
+  struct GPUBatch *geom = draw_cache_quad_get();
+  draw_shgroup_call_obmat(pd->edit_text_overlay_grp, geom, mat);
 }
 
-static void edit_text_cache_populate_boxes(OVERLAY_Data *vedata, Object *ob)
+static void edit_text_cache_populate_boxes(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_ExtraCallBuffers *cb = OVERLAY_extra_call_buffer_get(vedata, ob);
+  OverlayExtraCallBuffers *cb = overlay_extra_call_buffer_get(vedata, ob);
   const Curve *cu = ob->data;
 
   for (int i = 0; i < cu->totbox; i++) {
@@ -149,21 +149,21 @@ static void edit_text_cache_populate_boxes(OVERLAY_Data *vedata, Object *ob)
         mul_v3_m4v3(vecs[j], ob->obmat, vecs[j]);
       }
       for (int j = 0; j < 4; j++) {
-        OVERLAY_extra_line_dashed(cb, vecs[j], vecs[(j + 1) % 4], color);
+        overlay_extra_line_dashed(cb, vecs[j], vecs[(j + 1) % 4], color);
       }
     }
   }
 }
 
-void OVERLAY_edit_text_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_edit_text_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   struct GPUBatch *geom;
   bool do_in_front = (ob->dtx & OB_DRAW_IN_FRONT) != 0;
 
-  geom = DRW_cache_text_edge_wire_get(ob);
+  geom = draw_cache_text_edge_wire_get(ob);
   if (geom) {
-    DRW_shgroup_call(pd->edit_text_wire_grp[do_in_front], geom, ob);
+    draw_shgroup_call(pd->edit_text_wire_grp[do_in_front], geom, ob);
   }
 
   edit_text_cache_populate_select(vedata, ob);
@@ -171,26 +171,26 @@ void OVERLAY_edit_text_cache_populate(OVERLAY_Data *vedata, Object *ob)
   edit_text_cache_populate_boxes(vedata, ob);
 }
 
-void OVERLAY_edit_text_draw(OVERLAY_Data *vedata)
+void overlay_edit_text_draw(OverlayData *vedata)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_FramebufferList *fbl = vedata->fbl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayFramebufferList *fbl = vedata->fbl;
 
-  if (DRW_state_is_fbo()) {
-    GPU_framebuffer_bind(fbl->overlay_default_fb);
+  if (draw_state_is_fbo()) {
+    gpu_framebuffer_bind(fbl->overlay_default_fb);
   }
 
-  DRW_draw_pass(psl->edit_text_wire_ps[0]);
-  DRW_draw_pass(psl->edit_text_wire_ps[1]);
+  draw_draw_pass(psl->edit_text_wire_ps[0]);
+  draw_draw_pass(psl->edit_text_wire_ps[1]);
 
-  DRW_view_set_active(pd->view_edit_text);
+  draw_view_set_active(pd->view_edit_text);
 
   /* Alpha blended. */
   copy_v4_fl4(pd->edit_text.overlay_color, 0.8f, 0.8f, 0.8f, 0.5f);
-  DRW_draw_pass(psl->edit_text_overlay_ps);
+  draw_draw_pass(psl->edit_text_overlay_ps);
 
   /* Multiply previous result where depth test fail. */
   copy_v4_fl4(pd->edit_text.overlay_color, 0.0f, 0.0f, 0.0f, 1.0f);
-  DRW_draw_pass(psl->edit_text_darken_ps);
+  draw_draw_pass(psl->edit_text_darken_ps);
 }
