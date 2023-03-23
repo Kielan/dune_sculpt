@@ -177,7 +177,7 @@ void overlay_grid_init(OverlayData *vedata)
 
   shd->grid_distance = dist / 2.0f;
 
-  ED_view3d_grid_steps(scene, v3d, rv3d, shd->grid_steps);
+  ed_view3d_grid_steps(scene, v3d, rv3d, shd->grid_steps);
 
   if ((v3d->flag & (V3D_XR_SESSION_SURFACE | V3D_XR_SESSION_MIRROR)) != 0) {
     /* The calculations for the grid parameters assume that the view matrix has no scale component,
@@ -189,22 +189,22 @@ void overlay_grid_init(OverlayData *vedata)
   }
 }
 
-void OVERLAY_grid_cache_init(OVERLAY_Data *vedata)
+void overlay_grid_cache_init(OverlayData *vedata)
 {
-  OVERLAY_StorageList *stl = vedata->stl;
-  OVERLAY_PrivateData *pd = stl->pd;
-  OVERLAY_ShadingData *shd = &pd->shdata;
+  OverlayStorageList *stl = vedata->stl;
+  OverlayPrivateData *pd = stl->pd;
+  OverlayShadingData *shd = &pd->shdata;
 
   OverlayPassList *psl = vedata->psl;
   DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
   psl->grid_ps = NULL;
 
-  if ((shd->grid_flag == 0 && shd->zpos_flag == 0) || !DRW_state_is_fbo()) {
+  if ((shd->grid_flag == 0 && shd->zpos_flag == 0) || !draw_state_is_fbo()) {
     return;
   }
 
-  DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
+  DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ALPHA;
   DRAW_PASS_CREATE(psl->grid_ps, state);
   DrawShadingGroup *grp;
   GPUShader *sh;
@@ -227,15 +227,15 @@ void OVERLAY_grid_cache_init(OVERLAY_Data *vedata)
     draw_shgroup_call_obmat(grp, DRW_cache_quad_get(), mat);
   }
 
-  sh = overlaY_shader_grid();
+  sh = overlay_shader_grid();
 
   /* Create 3 quads to render ordered transparency Z axis */
   grp = draw_shgroup_create(sh, psl->grid_ps);
-  DRW_shgroup_uniform_int(grp, "gridFlag", &shd->zneg_flag, 1);
-  DRW_shgroup_uniform_vec3(grp, "planeAxes", shd->zplane_axes, 1);
-  DRW_shgroup_uniform_float(grp, "gridDistance", &shd->grid_distance, 1);
-  DRW_shgroup_uniform_float_copy(grp, "lineKernel", shd->grid_line_size);
-  DRW_shgroup_uniform_vec3(grp, "gridSize", shd->grid_size, 1);
+  draw_shgroup_uniform_int(grp, "gridFlag", &shd->zneg_flag, 1);
+  draw_shgroup_uniform_vec3(grp, "planeAxes", shd->zplane_axes, 1);
+  draw_shgroup_uniform_float(grp, "gridDistance", &shd->grid_distance, 1);
+  draw_shgroup_uniform_float_copy(grp, "lineKernel", shd->grid_line_size);
+  draw_shgroup_uniform_vec3(grp, "gridSize", shd->grid_size, 1);
   DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
   DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
   if (shd->zneg_flag & SHOW_AXIS_Z) {
