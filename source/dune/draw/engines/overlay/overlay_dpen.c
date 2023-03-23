@@ -126,15 +126,15 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
     if (show_lines) {
       sh = overlay_shader_edit_dpen_wire();
       pd->edit_dpen_wires_grp = grp = draw_shgroup_create(sh, psl->edit_dpen_curve_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_bool_copy(grp, "doMultiframe", show_multi_edit_lines);
-      DRW_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
-      DRW_shgroup_uniform_bool_copy(grp, "hideSelect", hide_select);
-      DRW_shgroup_uniform_float_copy(grp, "gpEditOpacity", v3d->vertex_opacity);
-      DRW_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_bool_copy(grp, "doMultiframe", show_multi_edit_lines);
+      draw_shgroup_uniform_bool_copy(grp, "doWeightColor", is_weight_paint);
+      draw_shgroup_uniform_bool_copy(grp, "hideSelect", hide_select);
+      draw_shgroup_uniform_float_copy(grp, "gpEditOpacity", v3d->vertex_opacity);
+      draw_shgroup_uniform_texture(grp, "weightTex", G_draw.weight_ramp);
     }
 
-    sh = OVERLAY_shader_edit_curve_handle();
+    sh = overlay_shader_edit_curve_handle();
     pd->edit_gpencil_curve_handle_grp = grp = DRW_shgroup_create(sh, psl->edit_gpencil_curve_ps);
     DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
     DRW_shgroup_uniform_bool_copy(grp, "showCurveHandles", pd->edit_curve.show_handles);
