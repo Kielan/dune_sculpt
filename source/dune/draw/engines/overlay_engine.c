@@ -24,28 +24,28 @@ static void overlay_engine_init(void *vedata)
 {
   OverlayData *data = vedata;
   OverlayStorageList *stl = data->stl;
-  const DrawCtxState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const RegionView3D *rv3d = draw_ctx->rv3d;
   const View3D *v3d = draw_ctx->v3d;
   const Scene *scene = draw_ctx->scene;
   const ToolSettings *ts = scene->toolsettings;
 
-  OVERLAY_shader_library_ensure();
+  overlay_shader_lib_ensure();
 
   if (!stl->pd) {
     /* Allocate transient pointers. */
-    stl->pd = MEM_callocN(sizeof(*stl->pd), __func__);
+    stl->pd = mem_callocn(sizeof(*stl->pd), __func__);
   }
 
-  OVERLAY_PrivateData *pd = stl->pd;
+  OverlayPrivateData *pd = stl->pd;
   pd->space_type = v3d != NULL ? SPACE_VIEW3D : draw_ctx->space_data->spacetype;
 
   if (pd->space_type == SPACE_IMAGE) {
     const SpaceImage *sima = (SpaceImage *)draw_ctx->space_data;
     pd->hide_overlays = (sima->overlay.flag & SI_OVERLAY_SHOW_OVERLAYS) == 0;
     pd->clipping_state = 0;
-    OVERLAY_grid_init(data);
-    OVERLAY_edit_uv_init(data);
+    overlay_grid_init(data);
+    overlay_edit_uv_init(data);
     return;
   }
   if (pd->space_type == SPACE_NODE) {
@@ -88,43 +88,43 @@ static void overlay_engine_init(void *vedata)
   }
 
   pd->use_in_front = (v3d->shading.type <= OB_SOLID) ||
-                     BKE_scene_uses_blender_workbench(draw_ctx->scene);
+                     dune_scene_uses_blender_workbench(draw_ctx->scene);
   pd->wireframe_mode = (v3d->shading.type == OB_WIRE);
   pd->clipping_state = RV3D_CLIPPING_ENABLED(v3d, rv3d) ? DRW_STATE_CLIP_PLANES : 0;
   pd->xray_opacity = XRAY_ALPHA(v3d);
   pd->xray_enabled = XRAY_ACTIVE(v3d);
   pd->xray_enabled_and_not_wire = pd->xray_enabled && v3d->shading.type > OB_WIRE;
   pd->clear_in_front = (v3d->shading.type != OB_SOLID);
-  pd->cfra = DEG_get_ctime(draw_ctx->depsgraph);
+  pd->cfra = DEG_get_ctime(draw_ctx->dgraph);
 
-  OVERLAY_antialiasing_init(vedata);
+  overlay_antialiasing_init(vedata);
 
   switch (stl->pd->ctx_mode) {
     case CTX_MODE_EDIT_MESH:
-      OVERLAY_edit_mesh_init(vedata);
+      overlay_edit_mesh_init(vedata);
       break;
     default:
       /* Nothing to do. */
       break;
   }
-  OVERLAY_facing_init(vedata);
-  OVERLAY_grid_init(vedata);
-  OVERLAY_image_init(vedata);
-  OVERLAY_outline_init(vedata);
-  OVERLAY_wireframe_init(vedata);
-  OVERLAY_paint_init(vedata);
+  overlay_facing_init(vedata);
+  overlay_grid_init(vedata);
+  overlay_image_init(vedata);
+  overlay_outline_init(vedata);
+  overlay_wireframe_init(vedata);
+  overlay_paint_init(vedata);
 }
 
-static void OVERLAY_cache_init(void *vedata)
+static void overlay_cache_init(void *vedata)
 {
-  OVERLAY_Data *data = vedata;
-  OVERLAY_StorageList *stl = data->stl;
-  OVERLAY_PrivateData *pd = stl->pd;
+  OverlayData *data = vedata;
+  OverlayStorageList *stl = data->stl;
+  OverlayPrivateData *pd = stl->pd;
 
   if (pd->space_type == SPACE_IMAGE) {
-    OVERLAY_background_cache_init(vedata);
-    OVERLAY_grid_cache_init(vedata);
-    OVERLAY_edit_uv_cache_init(vedata);
+    overlay_background_cache_init(vedata);
+    overlay_grid_cache_init(vedata);
+    overlay_edit_uv_cache_init(vedata);
     return;
   }
   if (pd->space_type == SPACE_NODE) {
