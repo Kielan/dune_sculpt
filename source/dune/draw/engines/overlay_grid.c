@@ -157,7 +157,7 @@ void overlay_grid_init(OverlayData *vedata)
 
   float dist;
   if (rv3d->persp == RV3D_CAMOB && v3d->camera && v3d->camera->type == OB_CAMERA) {
-    Object *camera_object = DEG_get_evaluated_object(draw_ctx->depsgraph, v3d->camera);
+    Object *camera_object = DEG_get_evaluated_object(draw_ctx->dgraph, v3d->camera);
     dist = ((Camera *)(camera_object->data))->clip_end;
     shd->grid_flag |= GRID_CAMERA;
     shd->zneg_flag |= GRID_CAMERA;
@@ -224,7 +224,7 @@ void overlay_grid_cache_init(OverlayData *vedata)
     mat[0][0] = shd->grid_size[0];
     mat[1][1] = shd->grid_size[1];
     mat[2][2] = shd->grid_size[2];
-    draw_shgroup_call_obmat(grp, DRW_cache_quad_get(), mat);
+    draw_shgroup_call_obmat(grp, draw_cache_quad_get(), mat);
   }
 
   sh = overlay_shader_grid();
@@ -264,20 +264,20 @@ void overlay_grid_cache_init(OverlayData *vedata)
 
   if (pd->space_type == SPACE_IMAGE) {
     float theme_color[4];
-    UI_GetThemeColorShade4fv(TH_BACK, 60, theme_color);
+    ui_GetThemeColorShade4fv(TH_BACK, 60, theme_color);
     srgb_to_linearrgb_v4(theme_color, theme_color);
 
     float mat[4][4];
     /* add wire border */
-    sh = OVERLAY_shader_grid_image();
-    grp = DRW_shgroup_create(sh, psl->grid_ps);
-    DRW_shgroup_uniform_vec4_copy(grp, "color", theme_color);
+    sh = overlay_shader_grid_image();
+    grp = draw_shgroup_create(sh, psl->grid_ps);
+    draw_shgroup_uniform_vec4_copy(grp, "color", theme_color);
     unit_m4(mat);
     for (int x = 0; x < shd->grid_size[0]; x++) {
       mat[3][0] = x;
       for (int y = 0; y < shd->grid_size[1]; y++) {
         mat[3][1] = y;
-        DRW_shgroup_call_obmat(grp, DRW_cache_quad_wires_get(), mat);
+        draw_shgroup_call_obmat(grp, draw_cache_quad_wires_get(), mat);
       }
     }
   }
