@@ -236,30 +236,30 @@ void overlay_grid_cache_init(OverlayData *vedata)
   draw_shgroup_uniform_float(grp, "gridDistance", &shd->grid_distance, 1);
   draw_shgroup_uniform_float_copy(grp, "lineKernel", shd->grid_line_size);
   draw_shgroup_uniform_vec3(grp, "gridSize", shd->grid_size, 1);
-  DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-  DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
+  draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+  draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
   if (shd->zneg_flag & SHOW_AXIS_Z) {
-    DRW_shgroup_call(grp, geom, NULL);
+    draw_shgroup_call(grp, geom, NULL);
   }
 
-  grp = DRW_shgroup_create(sh, psl->grid_ps);
-  DRW_shgroup_uniform_int(grp, "gridFlag", &shd->grid_flag, 1);
-  DRW_shgroup_uniform_float_copy(grp, "zoomFactor", shd->zoom_factor);
-  DRW_shgroup_uniform_vec3(grp, "planeAxes", shd->grid_axes, 1);
-  DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-  DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
-  DRW_shgroup_uniform_float(grp, "gridSteps", shd->grid_steps, ARRAY_SIZE(shd->grid_steps));
+  grp = draw_shgroup_create(sh, psl->grid_ps);
+  draw_shgroup_uniform_int(grp, "gridFlag", &shd->grid_flag, 1);
+  draw_shgroup_uniform_float_copy(grp, "zoomFactor", shd->zoom_factor);
+  draw_shgroup_uniform_vec3(grp, "planeAxes", shd->grid_axes, 1);
+  draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+  draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
+  draw_shgroup_uniform_float(grp, "gridSteps", shd->grid_steps, ARRAY_SIZE(shd->grid_steps));
   if (shd->grid_flag) {
-    DRW_shgroup_call(grp, geom, NULL);
+    draw_shgroup_call(grp, geom, NULL);
   }
 
-  grp = DRW_shgroup_create(sh, psl->grid_ps);
-  DRW_shgroup_uniform_int(grp, "gridFlag", &shd->zpos_flag, 1);
-  DRW_shgroup_uniform_vec3(grp, "planeAxes", shd->zplane_axes, 1);
-  DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-  DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
+  grp = draw_shgroup_create(sh, psl->grid_ps);
+  draw_shgroup_uniform_int(grp, "gridFlag", &shd->zpos_flag, 1);
+  draw_shgroup_uniform_vec3(grp, "planeAxes", shd->zplane_axes, 1);
+  draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+  draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
   if (shd->zpos_flag & SHOW_AXIS_Z) {
-    DRW_shgroup_call(grp, geom, NULL);
+    draw_shgroup_call(grp, geom, NULL);
   }
 
   if (pd->space_type == SPACE_IMAGE) {
