@@ -39,7 +39,7 @@ void overlay_fade_cache_init(OverlayData *vedata)
 
 void overlay_fade_cache_populate(OVERLAY_Data *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
   if (pd->xray_enabled) {
     return;
@@ -51,26 +51,26 @@ void overlay_fade_cache_populate(OVERLAY_Data *vedata, Object *ob)
   const bool is_xray = (ob->dtx & OB_DRAW_IN_FRONT) != 0;
 
   if (use_sculpt_pbvh) {
-    D draw_shgroup_call_sculpt(pd->fade_grp[is_xray], ob, false, false);
+    draw_shgroup_call_sculpt(pd->fade_grp[is_xray], ob, false, false);
   }
   else {
-    struct GPUBatch *geom = DRW_cache_object_surface_get(ob);
+    struct GPUBatch *geom = draw_cache_object_surface_get(ob);
     if (geom) {
-      DRW_shgroup_call(pd->fade_grp[is_xray], geom, ob);
+      draw_shgroup_call(pd->fade_grp[is_xray], geom, ob);
     }
   }
 }
 
-void OVERLAY_fade_draw(OVERLAY_Data *vedata)
+void overlay_fade_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
-  DRW_draw_pass(psl->fade_ps[NOT_IN_FRONT]);
+  draw_draw_pass(psl->fade_ps[NOT_IN_FRONT]);
 }
 
-void OVERLAY_fade_infront_draw(OVERLAY_Data *vedata)
+void overlay_fade_infront_draw(OVERLAY_Data *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
   DRW_draw_pass(psl->fade_ps[IN_FRONT]);
 }
