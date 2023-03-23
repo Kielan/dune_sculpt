@@ -1,36 +1,36 @@
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "DNA_meta_types.h"
+#include "types_meta.h"
 
-#include "BKE_object.h"
+#include "dune_object.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dsgraph_query.h"
 
-#include "ED_mball.h"
+#include "ed_mball.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_metaball_cache_init(OVERLAY_Data *vedata)
+void overlay_metaball_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
-  OVERLAY_InstanceFormats *formats = OVERLAY_shader_instance_formats_get();
+  OverlayInstanceFormats *formats = overlay_shader_instance_formats_get();
 
 #define BUF_INSTANCE DRW_shgroup_call_buffer_instance
 
   for (int i = 0; i < 2; i++) {
-    DRWState infront_state = (DRW_state_is_select() && (i == 1)) ? DRW_STATE_IN_FRONT_SELECT : 0;
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
-    DRW_PASS_CREATE(psl->metaball_ps[i], state | pd->clipping_state | infront_state);
+    DrawState infront_state = (draw_state_is_select() && (i == 1)) ? DRAW_STATE_IN_FRONT_SELECT : 0;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_WRITE_DEPTH | DRAW_STATE_DEPTH_LESS_EQUAL;
+    DRAW_PASS_CREATE(psl->metaball_ps[i], state | pd->clipping_state | infront_state);
 
     /* Reuse armature shader as it's perfect to outline ellipsoids. */
     struct GPUVertFormat *format = formats->instance_bone;
-    struct GPUShader *sh = OVERLAY_shader_armature_sphere(true);
-    DRWShadingGroup *grp = DRW_shgroup_create(sh, psl->metaball_ps[i]);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    pd->mball.handle[i] = BUF_INSTANCE(grp, format, DRW_cache_bone_point_wire_outline_get());
+    struct GPUShader *sh = overlay_shader_armature_sphere(true);
+    DrawShadingGroup *grp = draw_shgroup_create(sh, psl->metaball_ps[i]);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    pd->mball.handle[i] = BUF_INSTANCE(grp, format, draw_cache_bone_point_wire_outline_get());
   }
 }
 
@@ -43,14 +43,14 @@ static void metaball_instance_data_set(
   mul_v3_v3fl(data->mat[2], ob->obmat[2], radius / 0.05f);
   mul_v3_m4v3(data->mat[3], ob->obmat, pos);
   /* WATCH: Reminder, alpha is wire-size. */
-  OVERLAY_bone_instance_data_set_color(data, color);
+  overlay_bone_instance_data_set_color(data, color);
 }
 
-void OVERLAY_edit_metaball_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_edit_metaball_cache_populate(OverlayData *vedata, Object *ob)
 {
   const bool do_in_front = (ob->dtx & OB_DRAW_IN_FRONT) != 0;
-  const bool is_select = DRW_state_is_select();
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  const bool is_select = draw_state_is_select();
+  OverlayPrivateData *pd = vedata->stl->pd;
   MetaBall *mb = ob->data;
 
   const float *color;
@@ -71,56 +71,56 @@ void OVERLAY_edit_metaball_cache_populate(OVERLAY_Data *vedata, Object *ob)
     BoneInstanceData instdata;
 
     if (is_select) {
-      DRW_select_load_id(select_id | MBALLSEL_RADIUS);
+      draw_select_load_id(select_id | MBALLSEL_RADIUS);
     }
     color = (is_selected && is_scale_radius) ? col_radius_select : col_radius;
     metaball_instance_data_set(&instdata, ob, &ml->x, ml->rad, color);
-    DRW_buffer_add_entry_struct(pd->mball.handle[do_in_front], &instdata);
+    draw_buffer_add_entry_struct(pd->mball.handle[do_in_front], &instdata);
 
     if (is_select) {
-      DRW_select_load_id(select_id | MBALLSEL_STIFF);
+      draw_select_load_id(select_id | MBALLSEL_STIFF);
     }
     color = (is_selected && !is_scale_radius) ? col_stiffness_select : col_stiffness;
     metaball_instance_data_set(&instdata, ob, &ml->x, stiffness_radius, color);
-    DRW_buffer_add_entry_struct(pd->mball.handle[do_in_front], &instdata);
+    draw_buffer_add_entry_struct(pd->mball.handle[do_in_front], &instdata);
 
     select_id += 0x10000;
   }
 
   /* Needed so object centers and geometry are not detected as meta-elements. */
   if (is_select) {
-    DRW_select_load_id(-1);
+    draw_select_load_id(-1);
   }
 }
 
-void OVERLAY_metaball_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_metaball_cache_populate(OverlayData *vedata, Object *ob)
 {
   const bool do_in_front = (ob->dtx & OB_DRAW_IN_FRONT) != 0;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   MetaBall *mb = ob->data;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
 
   float *color;
-  DRW_object_wire_theme_get(ob, draw_ctx->view_layer, &color);
+  draw_object_wire_theme_get(ob, draw_ctx->view_layer, &color);
 
   LISTBASE_FOREACH (MetaElem *, ml, &mb->elems) {
     /* Draw radius only. */
     BoneInstanceData instdata;
     metaball_instance_data_set(&instdata, ob, &ml->x, ml->rad, color);
-    DRW_buffer_add_entry_struct(pd->mball.handle[do_in_front], &instdata);
+    draw_buffer_add_entry_struct(pd->mball.handle[do_in_front], &instdata);
   }
 }
 
-void OVERLAY_metaball_draw(OVERLAY_Data *vedata)
+void overlay_metaball_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
-  DRW_draw_pass(psl->metaball_ps[0]);
+  draw_draw_pass(psl->metaball_ps[0]);
 }
 
-void OVERLAY_metaball_in_front_draw(OVERLAY_Data *vedata)
+void oerkay_metaball_in_front_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
-  DRW_draw_pass(psl->metaball_ps[1]);
+  draw_draw_pass(psl->metaball_ps[1]);
 }
