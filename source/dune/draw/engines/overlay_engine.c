@@ -179,15 +179,15 @@ static void overlay_cache_init(void *vedata)
     case CTX_MODE_EDIT_CURVES:
       break;
     default:
-      BLI_assert_msg(0, "Draw mode invalid");
+      lib_assert_msg(0, "Draw mode invalid");
       break;
   }
-  OVERLAY_antialiasing_cache_init(vedata);
-  OVERLAY_armature_cache_init(vedata);
-  OVERLAY_background_cache_init(vedata);
-  OVERLAY_fade_cache_init(vedata);
+  overlay_antialiasing_cache_init(vedata);
+  overlay_armature_cache_init(vedata);
+  overlay_background_cache_init(vedata);
+  overlay_fade_cache_init(vedata);
   OVERLAY_mode_transfer_cache_init(vedata);
-  OVERLAY_extra_cache_init(vedata);
+  overlay_extra_cache_init(vedata);
   OVERLAY_facing_cache_init(vedata);
   OVERLAY_gpencil_cache_init(vedata);
   OVERLAY_grid_cache_init(vedata);
