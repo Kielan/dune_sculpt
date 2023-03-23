@@ -20,7 +20,7 @@
 void overlay_edit_mesh_init(OverlayData *vedata)
 {
   OverlayPrivateData *pd = vedata->stl->pd;
-  const DeawCtxState *draw_ctx = draw_ctx_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
 
   pd->edit_mesh.do_zbufclip = XRAY_FLAG_ENABLED(draw_ctx->v3d);
 
@@ -232,21 +232,21 @@ static void overlay_edit_mesh_add_ob_to_pass(OverlayPrivateData *pd, Object *ob,
     draw_shgroup_call_no_cull(vert_shgrp, geom_verts, ob);
 
     if (has_skin_roots) {
-      circle = DRW_cache_circle_get();
-      skin_roots = DRW_mesh_batch_cache_get_edit_skin_roots(ob->data);
-      DRW_shgroup_call_instances_with_attrs(skin_roots_shgrp, ob, circle, skin_roots);
+      circle = draw_cache_circle_get();
+      skin_roots = draw_mesh_batch_cache_get_edit_skin_roots(ob->data);
+      draw_shgroup_call_instances_with_attrs(skin_roots_shgrp, ob, circle, skin_roots);
     }
   }
 
   if (fdot_shgrp) {
-    geom_fcenter = DRW_mesh_batch_cache_get_edit_facedots(ob->data);
-    DRW_shgroup_call_no_cull(fdot_shgrp, geom_fcenter, ob);
+    geom_fcenter = draw_mesh_batch_cache_get_edit_facedots(ob->data);
+    draw_shgroup_call_no_cull(fdot_shgrp, geom_fcenter, ob);
   }
 }
 
-void OVERLAY_edit_mesh_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_edit_mesh_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPrivateData *pd = vedata->stl->pd;
   struct GPUBatch *geom = NULL;
 
   bool draw_as_solid = (ob->dt > OB_WIRE);
@@ -258,30 +258,30 @@ void OVERLAY_edit_mesh_cache_populate(OVERLAY_Data *vedata, Object *ob)
   bool lnormals_do = (pd->edit_mesh.flag & V3D_OVERLAY_EDIT_LOOP_NORMALS) != 0;
 
   if (do_show_mesh_analysis && !pd->xray_enabled) {
-    geom = DRW_cache_mesh_surface_mesh_analysis_get(ob);
+    geom = draw_cache_mesh_surface_mesh_analysis_get(ob);
     if (geom) {
-      DRW_shgroup_call_no_cull(pd->edit_mesh_analysis_grp, geom, ob);
+      draw_shgroup_call_no_cull(pd->edit_mesh_analysis_grp, geom, ob);
     }
   }
 
   if (do_occlude_wire || (do_in_front && draw_as_solid)) {
-    geom = DRW_cache_mesh_surface_get(ob);
-    DRW_shgroup_call_no_cull(pd->edit_mesh_depth_grp[do_in_front], geom, ob);
+    geom = draw_cache_mesh_surface_get(ob);
+    draw_shgroup_call_no_cull(pd->edit_mesh_depth_grp[do_in_front], geom, ob);
   }
 
   if (vnormals_do || lnormals_do || fnormals_do) {
-    struct GPUBatch *normal_geom = DRW_cache_normal_arrow_get();
+    struct GPUBatch *normal_geom = draw_cache_normal_arrow_get();
     if (vnormals_do) {
-      geom = DRW_mesh_batch_cache_get_edit_vnors(ob->data);
-      DRW_shgroup_call_instances_with_attrs(pd->edit_mesh_normals_grp, ob, normal_geom, geom);
+      geom = draw_mesh_batch_cache_get_edit_vnors(ob->data);
+      draw_shgroup_call_instances_with_attrs(pd->edit_mesh_normals_grp, ob, normal_geom, geom);
     }
     if (lnormals_do) {
-      geom = DRW_mesh_batch_cache_get_edit_lnors(ob->data);
-      DRW_shgroup_call_instances_with_attrs(pd->edit_mesh_normals_grp, ob, normal_geom, geom);
+      geom = draw_mesh_batch_cache_get_edit_lnors(ob->data);
+      draw_shgroup_call_instances_with_attrs(pd->edit_mesh_normals_grp, ob, normal_geom, geom);
     }
     if (fnormals_do) {
-      geom = DRW_mesh_batch_cache_get_edit_facedots(ob->data);
-      DRW_shgroup_call_instances_with_attrs(pd->edit_mesh_normals_grp, ob, normal_geom, geom);
+      geom = draw_mesh_batch_cache_get_edit_facedots(ob->data);
+      draw_shgroup_call_instances_with_attrs(pd->edit_mesh_normals_grp, ob, normal_geom, geom);
     }
   }
 
@@ -293,8 +293,8 @@ void OVERLAY_edit_mesh_cache_populate(OVERLAY_Data *vedata, Object *ob)
   }
 
   if (DRW_state_show_text() && (pd->edit_mesh.flag & OVERLAY_EDIT_TEXT)) {
-    const DRWContextState *draw_ctx = DRW_context_state_get();
-    DRW_text_edit_mesh_measure_stats(draw_ctx->region, draw_ctx->v3d, ob, &draw_ctx->scene->unit);
+    const DrawCtxtState *draw_ctx = draw_context_state_get();
+    draw_text_edit_mesh_measure_stats(draw_ctx->region, draw_ctx->v3d, ob, &draw_ctx->scene->unit);
   }
 }
 
