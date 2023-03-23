@@ -1,16 +1,16 @@
-#include "BKE_paint.h"
-#include "DRW_render.h"
+#include "dune_paint.h"
+#include "draw_render.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_facing_init(OVERLAY_Data *UNUSED(vedata))
+void overlay_facing_init(OverlayData *UNUSED(vedata))
 {
 }
 
-void OVERLAY_facing_cache_init(OVERLAY_Data *vedata)
+void overlay_facing_cache_init(OVERLAY_Data *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
 
   for (int i = 0; i < 2; i++) {
     /* Non Meshes Pass (Camera, empties, lights ...) */
