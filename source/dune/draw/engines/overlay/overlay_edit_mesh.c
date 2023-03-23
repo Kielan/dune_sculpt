@@ -141,13 +141,13 @@ void overlay_edit_mesh_cache_init(OverlayData *vedata)
       DRWShadingGroup **shgrp = (j == 0) ? &pd->edit_mesh_faces_grp[i] :
                                            &pd->edit_mesh_faces_cage_grp[i];
       state = state_common;
-      DRW_PASS_CREATE(*edit_face_ps, state | pd->clipping_state);
+      DRAW_PASS_CREATE(*edit_face_ps, state | pd->clipping_state);
 
       grp = *shgrp = DRW_shgroup_create(face_sh, *edit_face_ps);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_ivec4(grp, "dataMask", mask, 1);
-      DRW_shgroup_uniform_float_copy(grp, "alpha", face_alpha);
-      DRW_shgroup_uniform_bool_copy(grp, "selectFaces", select_face);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_ivec4(grp, "dataMask", mask, 1);
+      draw_shgroup_uniform_float_copy(grp, "alpha", face_alpha);
+      draw_shgroup_uniform_bool_copy(grp, "selectFaces", select_face);
     }
 
     if (do_zbufclip) {
