@@ -5,26 +5,26 @@
 #include "dune_movieclip.h"
 #include "dune_object.h"
 
-#include "BLI_listbase.h"
+#include "lib_listbase.h"
 
-#include "DNA_camera_types.h"
-#include "DNA_screen_types.h"
+#include "types_camera.h"
+#include "types_screen.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
 #include "IMB_imbuf_types.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_image_init(OVERLAY_Data *vedata)
+void OVERLAY_image_init(OverlayData *vedata)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  OverlayPrivateData *pd = vedata->stl->pd;
 
-  DRWView *default_view = (DRWView *)DRW_view_default_get();
-  pd->view_reference_images = DRW_view_create_with_zoffset(default_view, draw_ctx->rv3d, -1.0f);
+  DrawView *default_view = (DrawView *)draw_view_default_get();
+  pd->view_reference_images = draw_view_create_with_zoffset(default_view, draw_ctx->rv3d, -1.0f);
 }
 
 void OVERLAY_image_cache_init(OVERLAY_Data *vedata)
