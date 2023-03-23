@@ -93,7 +93,7 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
       ((!DPEN_VERTEX_MODE(dpd) && !DPEN_PAINT_MODE(dpd)) || use_vertex_mask)) {
     DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL |
                      DRAW_STATE_BLEND_ALPHA;
-    DRAW_PASS_CREATE(psl->edit_gpencil_ps, state | pd->clipping_state);
+    DRAW_PASS_CREATE(psl->edit_dpen_ps, state | pd->clipping_state);
 
     if (show_lines && !hide_lines) {
       sh = overlay_shader_edit_dpen_wire();
@@ -173,24 +173,24 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
       }
     }
 
-    if (ts->gp_sculpt.guide.use_guide) {
+    if (ts->dp_sculpt.guide.use_guide) {
       float color[4];
-      if (ts->gp_sculpt.guide.reference_point == GP_GUIDE_REF_CUSTOM) {
-        UI_GetThemeColor4fv(TH_GIZMO_PRIMARY, color);
-        DRW_shgroup_uniform_vec3_copy(grp, "pPosition", ts->gp_sculpt.guide.location);
+      if (ts->gp_sculpt.guide.reference_point == DP_GUIDE_REF_CUSTOM) {
+        ui_GetThemeColor4fv(TH_GIZMO_PRIMARY, color);
+        draw_shgroup_uniform_vec3_copy(grp, "pPosition", ts->dp_sculpt.guide.location);
       }
-      else if (ts->gp_sculpt.guide.reference_point == GP_GUIDE_REF_OBJECT &&
-               ts->gp_sculpt.guide.reference_object != NULL) {
-        UI_GetThemeColor4fv(TH_GIZMO_SECONDARY, color);
-        DRW_shgroup_uniform_vec3_copy(grp, "pPosition", ts->gp_sculpt.guide.reference_object->loc);
+      else if (ts->dp_sculpt.guide.reference_point == DP_GUIDE_REF_OBJECT &&
+               ts->dp_sculpt.guide.reference_object != NULL) {
+        ui_GetThemeColor4fv(TH_GIZMO_SECONDARY, color);
+        draw_shgroup_uniform_vec3_copy(grp, "pPosition", ts->gp_sculpt.guide.reference_object->loc);
       }
       else {
-        UI_GetThemeColor4fv(TH_REDALERT, color);
-        DRW_shgroup_uniform_vec3_copy(grp, "pPosition", scene->cursor.location);
+        ui_GetThemeColor4fv(TH_REDALERT, color);
+        draw_shgroup_uniform_vec3_copy(grp, "pPosition", scene->cursor.location);
       }
-      DRW_shgroup_uniform_vec4_copy(grp, "pColor", color);
-      DRW_shgroup_uniform_float_copy(grp, "pSize", 8.0f * G_draw.block.sizePixel);
-      DRW_shgroup_call_procedural_points(grp, NULL, 1);
+      draw_shgroup_uniform_vec4_copy(grp, "pColor", color);
+      draw_shgroup_uniform_float_copy(grp, "pSize", 8.0f * G_draw.block.sizePixel);
+      draw_shgroup_call_procedural_points(grp, NULL, 1);
     }
   }
 }
