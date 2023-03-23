@@ -8,13 +8,13 @@
 
 void overlay_edit_text_cache_init(OVERLAY_Data *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   View3D *v3d = draw_ctx->v3d;
   DRWShadingGroup *grp;
   GPUShader *sh;
-  DRWState state;
+  DrawState state;
 
   pd->edit_curve.show_handles = v3d->overlay.handle_display != CURVE_HANDLE_NONE;
   pd->edit_curve.handle_display = v3d->overlay.handle_display;
@@ -22,13 +22,13 @@ void overlay_edit_text_cache_init(OVERLAY_Data *vedata)
 
   /* Run Twice for in-front passes. */
   for (int i = 0; i < 2; i++) {
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH;
+    state = DRAW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH;
     state |= ((i == 0) ? DRW_STATE_DEPTH_LESS_EQUAL : DRW_STATE_DEPTH_ALWAYS);
-    DRW_PASS_CREATE(psl->edit_text_wire_ps[i], state | pd->clipping_state);
+    DRAW_PASS_CREATE(psl->edit_text_wire_ps[i], state | pd->clipping_state);
 
-    sh = OVERLAY_shader_uniform_color();
+    sh = overlay_shader_uniform_color();
     pd->edit_text_wire_grp[i] = grp = DRW_shgroup_create(sh, psl->edit_text_wire_ps[i]);
-    DRW_shgroup_uniform_vec4_copy(grp, "color", G_draw.block.colorWire);
+    draw_shgroup_uniform_vec4_copy(grp, "color", G_draw.block.colorWire);
   }
   {
     state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
