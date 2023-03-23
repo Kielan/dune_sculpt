@@ -1,6 +1,6 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 #include "draw_manager_text.h"
 #include "overlay_private.h"
@@ -12,7 +12,7 @@
 #define BG_SOLID_CHECKER 4
 #define BG_MASK 5
 
-void OVERLAY_background_cache_init(OVERLAY_Data *vedata)
+void overlay_background_cache_init(OverlayData *vedata)
 {
   OVERLAY_PassList *psl = vedata->psl;
   OVERLAY_PrivateData *pd = vedata->stl->pd;
