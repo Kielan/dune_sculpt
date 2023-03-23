@@ -16,20 +16,20 @@ void overlay_fade_cache_init(OverlayData *vedata)
 
   for (int i = 0; i < 2; i++) {
     /* Non Meshes Pass (Camera, empties, lights ...) */
-    DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
     DRAW_PASS_CREATE(psl->fade_ps[i], state | pd->clipping_state);
 
     GPUShader *sh = overlay_shader_uniform_color();
-    pd->fade_grp[i] = DRW_shgroup_create(sh, psl->fade_ps[i]);
+    pd->fade_grp[i] = draw_shgroup_create(sh, psl->fade_ps[i]);
 
-    const DRWContextState *draw_ctx = DRW_context_state_get();
+    const DrawCtxState *draw_ctx = draw_ctx_state_get();
     float color[4];
-    ED_view3d_background_color_get(draw_ctx->scene, draw_ctx->v3d, color);
+    ed_view3d_background_color_get(draw_ctx->scene, draw_ctx->v3d, color);
     color[3] = pd->overlay.fade_alpha;
     if (draw_ctx->v3d->shading.background_type == V3D_SHADING_BACKGROUND_THEME) {
       srgb_to_linearrgb_v4(color, color);
     }
-    DRW_shgroup_uniform_vec4_copy(pd->fade_grp[i], "color", color);
+    draw_shgroup_uniform_vec4_copy(pd->fade_grp[i], "color", color);
   }
 
   if (!pd->use_in_front) {
@@ -37,7 +37,7 @@ void overlay_fade_cache_init(OverlayData *vedata)
   }
 }
 
-void OVERLAY_fade_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_fade_cache_populate(OVERLAY_Data *vedata, Object *ob)
 {
   OVERLAY_PrivateData *pd = vedata->stl->pd;
 
