@@ -1,12 +1,12 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BKE_vfont.h"
+#include "dune_vfont.h"
 
-#include "DNA_curve_types.h"
+#include "types_curve.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_edit_text_cache_init(OVERLAY_Data *vedata)
+void overlay_edit_text_cache_init(OVERLAY_Data *vedata)
 {
   OVERLAY_PassList *psl = vedata->psl;
   OVERLAY_PrivateData *pd = vedata->stl->pd;
