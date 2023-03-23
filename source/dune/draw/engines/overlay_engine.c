@@ -1,31 +1,30 @@
 /** Engine for drawing a selection map where the pixels indicate the selection indices. **/
 
-#include "DRW_engine.h"
-#include "DRW_render.h"
+#include "draw_engine.h"
+#include "draw_render.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
-#include "UI_interface.h"
+#include "ui_interface.h"
 
-#include "BKE_object.h"
-#include "BKE_paint.h"
+#include "dune_object.h"
+#include "dune_paint.h"
 
-#include "DNA_space_types.h"
+#include "types_space.h"
 
 #include "overlay_engine.h"
 #include "overlay_private.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Engine Callbacks
- * \{ */
+/** Engine Callbacks **/
 
-static void OVERLAY_engine_init(void *vedata)
+static void overlay_engine_init(void *vedata)
 {
-  OVERLAY_Data *data = vedata;
-  OVERLAY_StorageList *stl = data->stl;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayData *data = vedata;
+  OverlayStorageList *stl = data->stl;
+  const DrawCtxState *draw_ctx = DRW_context_state_get();
   const RegionView3D *rv3d = draw_ctx->rv3d;
   const View3D *v3d = draw_ctx->v3d;
   const Scene *scene = draw_ctx->scene;
