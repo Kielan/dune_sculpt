@@ -445,20 +445,20 @@ void OVERLAY_gpencil_draw(OVERLAY_Data *vedata)
   }
 }
 
-void OVERLAY_edit_gpencil_draw(OVERLAY_Data *vedata)
+void overlay_edit_dpen_draw(OVERLAY_Data *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  overlay_PassList *psl = vedata->psl;
 
-  if (psl->edit_gpencil_gizmos_ps) {
-    DRW_draw_pass(psl->edit_gpencil_gizmos_ps);
+  if (psl->edit_dpen_gizmos_ps) {
+    draw_draw_pass(psl->edit_dpen_gizmos_ps);
   }
 
-  if (psl->edit_gpencil_ps) {
-    DRW_draw_pass(psl->edit_gpencil_ps);
+  if (psl->edit_dpen_ps) {
+    draw_draw_pass(psl->edit_dpen_ps);
   }
 
   /* Curve edit handles. */
-  if (psl->edit_gpencil_curve_ps) {
-    DRW_draw_pass(psl->edit_gpencil_curve_ps);
+  if (psl->edit_dpen_curve_ps) {
+    draw_draw_pass(psl->edit_dpen_curve_ps);
   }
 }
