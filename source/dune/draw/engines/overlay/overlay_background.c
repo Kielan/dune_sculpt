@@ -16,8 +16,8 @@ void overlay_background_cache_init(OverlayData *vedata)
 {
   OverlayPassList *psl = vedata->psl;
   OverlayPrivateData *pd = vedata->stl->pd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
-  const DrawCtxState *draw_ctx = DRW_context_state_get();
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const Scene *scene = draw_ctx->scene;
   const RegionView3D *rv3d = draw_ctx->rv3d;
   const BoundBox *bb = rv3d ? rv3d->clipbb : NULL;
@@ -25,11 +25,11 @@ void overlay_background_cache_init(OverlayData *vedata)
   bool draw_clipping_bounds = (pd->clipping_state != 0);
 
   {
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_BACKGROUND;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_BACKGROUND;
     float color_override[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     int background_type;
 
-    if (DRW_state_is_opengl_render() && !DRW_state_draw_background()) {
+    if (draw_state_is_opengl_render() && !draw_state_draw_background()) {
       background_type = BG_SOLID;
       color_override[3] = 1.0f;
     }
@@ -38,14 +38,14 @@ void overlay_background_cache_init(OverlayData *vedata)
     }
     else if (pd->space_type == SPACE_NODE) {
       background_type = BG_MASK;
-      state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_MUL;
+      state = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_MUL;
     }
-    else if (!DRW_state_draw_background()) {
+    else if (!draw_state_draw_background()) {
       background_type = BG_CHECKER;
     }
     else if (v3d->shading.background_type == V3D_SHADING_BACKGROUND_WORLD && scene->world) {
       background_type = BG_SOLID;
-      /* TODO(fclem): this is a scene referred linear color. we should convert
+      /* TODO: this is a scene referred linear color. we should convert
        * it to display linear here. */
       copy_v3_v3(color_override, &scene->world->horr);
       color_override[3] = 1.0f;
@@ -57,7 +57,7 @@ void overlay_background_cache_init(OverlayData *vedata)
       color_override[3] = 1.0f;
     }
     else {
-      switch (UI_GetThemeValue(TH_BACKGROUND_TYPE)) {
+      switch (ui_GetThemeValue(TH_BACKGROUND_TYPE)) {
         case TH_BACKGROUND_GRADIENT_LINEAR:
           background_type = BG_GRADIENT;
           break;
@@ -71,20 +71,20 @@ void overlay_background_cache_init(OverlayData *vedata)
       }
     }
 
-    DRW_PASS_CREATE(psl->background_ps, state);
+    DRAW_PASS_CREATE(psl->background_ps, state);
 
-    GPUShader *sh = OVERLAY_shader_background();
-    DRWShadingGroup *grp = DRW_shgroup_create(sh, psl->background_ps);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_texture_ref(grp, "colorBuffer", &dtxl->color);
-    DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
-    DRW_shgroup_uniform_vec4_copy(grp, "colorOverride", color_override);
-    DRW_shgroup_uniform_int_copy(grp, "bgType", background_type);
+    GPUShader *sh = overlay_shader_background();
+    DrawShadingGroup *grp = draw_shgroup_create(sh, psl->background_ps);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_texture_ref(grp, "colorBuffer", &dtxl->color);
+    draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
+    draw_shgroup_uniform_vec4_copy(grp, "colorOverride", color_override);
+    draw_shgroup_uniform_int_copy(grp, "bgType", background_type);
     draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 
   if (draw_clipping_bounds) {
-    DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA | DRW_STATE_CULL_BACK;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ALPHA | DRAW_STATE_CULL_BACK;
     DRAW_PASS_CREATE(psl->clipping_frustum_ps, state);
 
     GPUShader *sh = overlay_shader_clipbound();
@@ -100,7 +100,7 @@ void overlay_background_cache_init(OverlayData *vedata)
   }
 }
 
-void overlay_background_draw(OVERLAY_Data *vedata)
+void overlay_background_draw(OverlayData *vedata)
 {
   overlay_PassList *psl = vedata->psl;
 
