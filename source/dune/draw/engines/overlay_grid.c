@@ -28,11 +28,11 @@ enum {
   CUSTOM_GRID = (1 << 12),
 };
 
-void OVERLAY_grid_init(OVERLAY_Data *vedata)
+void overlay_grid_init(OverlayData *vedata)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  OVERLAY_ShadingData *shd = &pd->shdata;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayPrivateData *pd = vedata->stl->pd;
+  OverlayShadingData *shd = &pd->shdata;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
 
   shd->grid_flag = 0;
   shd->zneg_flag = 0;
@@ -42,7 +42,7 @@ void OVERLAY_grid_init(OVERLAY_Data *vedata)
   if (pd->space_type == SPACE_IMAGE) {
     SpaceImage *sima = (SpaceImage *)draw_ctx->space_data;
     View2D *v2d = &draw_ctx->region->v2d;
-    if (sima->mode == SI_MODE_UV || !ED_space_image_has_buffer(sima)) {
+    if (sima->mode == SI_MODE_UV || !ed_space_image_has_buffer(sima)) {
       shd->grid_flag = GRID_BACK | PLANE_IMAGE | SHOW_GRID;
     }
     else {
@@ -61,8 +61,8 @@ void OVERLAY_grid_init(OVERLAY_Data *vedata)
     }
 
     const int grid_size = SI_GRID_STEPS_LEN;
-    shd->zoom_factor = ED_space_image_zoom_level(v2d, grid_size);
-    ED_space_image_grid_steps(sima, shd->grid_steps, grid_size);
+    shd->zoom_factor = ed_space_image_zoom_level(v2d, grid_size);
+    ed_space_image_grid_steps(sima, shd->grid_steps, grid_size);
 
     return;
   }
@@ -84,10 +84,10 @@ void OVERLAY_grid_init(OVERLAY_Data *vedata)
 
   float viewinv[4][4], wininv[4][4];
   float viewmat[4][4], winmat[4][4];
-  DRW_view_winmat_get(NULL, winmat, false);
-  DRW_view_winmat_get(NULL, wininv, true);
-  DRW_view_viewmat_get(NULL, viewmat, false);
-  DRW_view_viewmat_get(NULL, viewinv, true);
+  draw_view_winmat_get(NULL, winmat, false);
+  draw_view_winmat_get(NULL, wininv, true);
+  draw_view_viewmat_get(NULL, viewmat, false);
+  draw_view_viewmat_get(NULL, viewinv, true);
 
   /* If perspective view or non-axis aligned view. */
   if (winmat[3][3] == 0.0f || rv3d->view == RV3D_VIEW_USER) {
@@ -195,8 +195,8 @@ void OVERLAY_grid_cache_init(OVERLAY_Data *vedata)
   OVERLAY_PrivateData *pd = stl->pd;
   OVERLAY_ShadingData *shd = &pd->shdata;
 
-  OVERLAY_PassList *psl = vedata->psl;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  OverlayPassList *psl = vedata->psl;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
   psl->grid_ps = NULL;
 
@@ -204,33 +204,33 @@ void OVERLAY_grid_cache_init(OVERLAY_Data *vedata)
     return;
   }
 
-  DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
-  DRW_PASS_CREATE(psl->grid_ps, state);
-  DRWShadingGroup *grp;
+  DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA;
+  DRAW_PASS_CREATE(psl->grid_ps, state);
+  DrawShadingGroup *grp;
   GPUShader *sh;
-  struct GPUBatch *geom = DRW_cache_grid_get();
+  struct GPUBatch *geom = draw_cache_grid_get();
 
   if (pd->space_type == SPACE_IMAGE) {
     float mat[4][4];
 
     /* add quad background */
-    sh = OVERLAY_shader_grid_background();
-    grp = DRW_shgroup_create(sh, psl->grid_ps);
+    sh = overlay_shader_grid_background();
+    grp = draw_shgroup_create(sh, psl->grid_ps);
     float color_back[4];
     interp_v4_v4v4(color_back, G_draw.block.colorBackground, G_draw.block.colorGrid, 0.5);
-    DRW_shgroup_uniform_vec4_copy(grp, "color", color_back);
-    DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
+    draw_shgroup_uniform_vec4_copy(grp, "color", color_back);
+    draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
     unit_m4(mat);
     mat[0][0] = shd->grid_size[0];
     mat[1][1] = shd->grid_size[1];
     mat[2][2] = shd->grid_size[2];
-    DRW_shgroup_call_obmat(grp, DRW_cache_quad_get(), mat);
+    draw_shgroup_call_obmat(grp, DRW_cache_quad_get(), mat);
   }
 
-  sh = OVERLAY_shader_grid();
+  sh = overlaY_shader_grid();
 
   /* Create 3 quads to render ordered transparency Z axis */
-  grp = DRW_shgroup_create(sh, psl->grid_ps);
+  grp = draw_shgroup_create(sh, psl->grid_ps);
   DRW_shgroup_uniform_int(grp, "gridFlag", &shd->zneg_flag, 1);
   DRW_shgroup_uniform_vec3(grp, "planeAxes", shd->zplane_axes, 1);
   DRW_shgroup_uniform_float(grp, "gridDistance", &shd->grid_distance, 1);
