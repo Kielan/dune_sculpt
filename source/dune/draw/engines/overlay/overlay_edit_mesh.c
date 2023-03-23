@@ -336,31 +336,31 @@ void OVERLAY_edit_mesh_draw(OVERLAY_Data *vedata)
     DRW_view_set_active(pd->view_edit_faces);
     DRW_draw_pass(psl->edit_mesh_faces_ps[NOT_IN_FRONT]);
 
-    DRW_view_set_active(pd->view_edit_faces_cage);
-    DRW_draw_pass(psl->edit_mesh_faces_cage_ps[NOT_IN_FRONT]);
+    draw_view_set_active(pd->view_edit_faces_cage);
+    draw_draw_pass(psl->edit_mesh_faces_cage_ps[NOT_IN_FRONT]);
 
-    DRW_view_set_active(NULL);
+    draw_view_set_active(NULL);
 
-    GPU_framebuffer_bind(fbl->overlay_in_front_fb);
-    GPU_framebuffer_clear_depth(fbl->overlay_in_front_fb, 1.0f);
-    DRW_draw_pass(psl->edit_mesh_normals_ps);
+    gpu_framebuffer_bind(fbl->overlay_in_front_fb);
+    gpu_framebuffer_clear_depth(fbl->overlay_in_front_fb, 1.0f);
+    draw_draw_pass(psl->edit_mesh_normals_ps);
 
-    DRW_view_set_active(pd->view_edit_edges);
-    DRW_draw_pass(psl->edit_mesh_edges_ps[NOT_IN_FRONT]);
+    draw_view_set_active(pd->view_edit_edges);
+    draw_draw_pass(psl->edit_mesh_edges_ps[NOT_IN_FRONT]);
 
-    DRW_view_set_active(pd->view_edit_verts);
-    DRW_draw_pass(psl->edit_mesh_verts_ps[NOT_IN_FRONT]);
+    draw_view_set_active(pd->view_edit_verts);
+    draw_draw_pass(psl->edit_mesh_verts_ps[NOT_IN_FRONT]);
   }
   else {
-    DRW_draw_pass(psl->edit_mesh_normals_ps);
+    draw_draw_pass(psl->edit_mesh_normals_ps);
     overlay_edit_mesh_draw_components(psl, pd, false);
 
-    if (DRW_state_is_fbo()) {
-      GPU_framebuffer_bind(fbl->overlay_in_front_fb);
+    if (draw_state_is_fbo()) {
+      gpu_framebuffer_bind(fbl->overlay_in_front_fb);
     }
 
-    if (!DRW_pass_is_empty(psl->edit_mesh_depth_ps[IN_FRONT])) {
-      DRW_view_set_active(NULL);
+    if (!draw_pass_is_empty(psl->edit_mesh_depth_ps[IN_FRONT])) {
+      draw_view_set_active(NULL);
       DRW_draw_pass(psl->edit_mesh_depth_ps[IN_FRONT]);
     }
 
