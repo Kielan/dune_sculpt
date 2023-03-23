@@ -1,4 +1,3 @@
-
 #include "draw_render.h"
 
 #include "dune_dpen.h"
@@ -52,25 +51,25 @@ void overlay_edit_dpen_cache_init(OverlayData *vedata)
                                      DP_SCULPT_MASK_SELECTMODE_SEGMENT)));
 
   /* For vertex paint show only if mask mode, and only points if not stroke mode. */
-  bool use_vertex_mask = (DPEN_VERTEX_MODE(gpd) &&
-                          DPEN_ANY_VERTEX_MASK(ts->gpencil_selectmode_vertex));
+  bool use_vertex_mask = (DPEN_VERTEX_MODE(dpd) &&
+                          DPEN_ANY_VERTEX_MASK(ts->dpen_selectmode_vertex));
   const bool show_vertex_points = (DPEN_VERTEX_MODE(dpd) &&
-                                   (ts->gpencil_selectmode_vertex &
+                                   (ts->dpen_selectmode_vertex &
                                     (DP_VERTEX_MASK_SELECTMODE_POINT |
                                      DP_VERTEX_MASK_SELECTMODE_SEGMENT)));
 
   /* If Sculpt or Vertex mode and the mask is disabled, the select must be hidden. */
-  const bool hide_select = ((GPENCIL_SCULPT_MODE(gpd) && !use_sculpt_mask) ||
-                            (GPENCIL_VERTEX_MODE(gpd) && !use_vertex_mask));
+  const bool hide_select = ((DPEN_SCULPT_MODE(dpd) && !use_sculpt_mask) ||
+                            (DPEN_VERTEX_MODE(dpd) && !use_vertex_mask));
 
-  const bool do_multiedit = GPENCIL_MULTIEDIT_SESSIONS_ON(gpd);
+  const bool do_multiedit = DPEN_MULTIEDIT_SESSIONS_ON(dpd);
   const bool show_multi_edit_lines = (do_multiedit) &&
-                                     ((v3d->gp_flag & (V3D_GP_SHOW_MULTIEDIT_LINES |
-                                                       V3D_GP_SHOW_EDIT_LINES)) != 0);
+                                     ((v3d->dp_flag & (V3D_DP_SHOW_MULTIEDIT_LINES |
+                                                       V3D_DP_SHOW_EDIT_LINES)) != 0);
 
-  const bool show_lines = (v3d->gp_flag & V3D_GP_SHOW_EDIT_LINES) || show_multi_edit_lines;
+  const bool show_lines = (v3d->dp_flag & V3D_DP_SHOW_EDIT_LINES) || show_multi_edit_lines;
 
-  const bool hide_lines = !GPENCIL_EDIT_MODE(gpd) && !GPENCIL_WEIGHT_MODE(gpd) &&
+  const bool hide_lines = !DPEN_EDIT_MODE(dpd) && !DPEN_WEIGHT_MODE(dpd) &&
                           !use_sculpt_mask && !use_vertex_mask && !show_lines;
 
   /* Special case when vertex paint and multiedit lines. */
