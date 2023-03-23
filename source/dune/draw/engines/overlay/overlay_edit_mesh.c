@@ -128,17 +128,17 @@ void overlay_edit_mesh_cache_init(OverlayData *vedata)
   }
   /* Run Twice for in-front passes. */
   for (int i = 0; i < 2; i++) {
-    GPUShader *edge_sh = OVERLAY_shader_edit_mesh_edge(!select_vert);
-    GPUShader *face_sh = OVERLAY_shader_edit_mesh_face();
+    GPUShader *edge_sh = overlay_shader_edit_mesh_edge(!select_vert);
+    GPUShader *face_sh = overlay_shader_edit_mesh_face();
     const bool do_zbufclip = (i == 0 && pd->edit_mesh.do_zbufclip);
-    DrawState state_common = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL |
-                            DRW_STATE_BLEND_ALPHA;
+    DrawState state_common = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_LESS_EQUAL |
+                            DRAW_STATE_BLEND_ALPHA;
     /* Faces */
     /* Cage geom needs an offset applied to avoid Z-fighting. */
     for (int j = 0; j < 2; j++) {
-      DRWPass **edit_face_ps = (j == 0) ? &psl->edit_mesh_faces_ps[i] :
+      DrawPass **edit_face_ps = (j == 0) ? &psl->edit_mesh_faces_ps[i] :
                                           &psl->edit_mesh_faces_cage_ps[i];
-      DRWShadingGroup **shgrp = (j == 0) ? &pd->edit_mesh_faces_grp[i] :
+      DrawShadingGroup **shgrp = (j == 0) ? &pd->edit_mesh_faces_grp[i] :
                                            &pd->edit_mesh_faces_cage_grp[i];
       state = state_common;
       DRAW_PASS_CREATE(*edit_face_ps, state | pd->clipping_state);
@@ -157,39 +157,39 @@ void overlay_edit_mesh_cache_init(OverlayData *vedata)
 
     /* Edges */
     /* Change first vertex convention to match blender loop structure. */
-    state = state_common | DRW_STATE_FIRST_VERTEX_CONVENTION;
-    DRW_PASS_CREATE(psl->edit_mesh_edges_ps[i], state | pd->clipping_state);
+    state = state_common | DRAW_STATE_FIRST_VERTEX_CONVENTION;
+    DRAW_PASS_CREATE(psl->edit_mesh_edges_ps[i], state | pd->clipping_state);
 
     grp = pd->edit_mesh_edges_grp[i] = DRW_shgroup_create(edge_sh, psl->edit_mesh_edges_ps[i]);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_ivec4(grp, "dataMask", mask, 1);
-    DRW_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
-    DRW_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
-    DRW_shgroup_uniform_bool_copy(grp, "selectEdges", pd->edit_mesh.do_edges || select_edge);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_ivec4(grp, "dataMask", mask, 1);
+    draw_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
+    draw_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
+    draw_shgroup_uniform_bool_copy(grp, "selectEdges", pd->edit_mesh.do_edges || select_edge);
 
     /* Verts */
-    state |= DRW_STATE_WRITE_DEPTH;
-    DRW_PASS_CREATE(psl->edit_mesh_verts_ps[i], state | pd->clipping_state);
+    state |= DRAW_STATE_WRITE_DEPTH;
+    DRAW_PASS_CREATE(psl->edit_mesh_verts_ps[i], state | pd->clipping_state);
 
     if (select_vert) {
-      sh = OVERLAY_shader_edit_mesh_vert();
+      sh = overlay_shader_edit_mesh_vert();
       grp = pd->edit_mesh_verts_grp[i] = DRW_shgroup_create(sh, psl->edit_mesh_verts_ps[i]);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
-      DRW_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
+      draw_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
 
-      sh = OVERLAY_shader_edit_mesh_skin_root();
-      grp = pd->edit_mesh_skin_roots_grp[i] = DRW_shgroup_create(sh, psl->edit_mesh_verts_ps[i]);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      sh = overlay_shader_edit_mesh_skin_root();
+      grp = pd->edit_mesh_skin_roots_grp[i] = draw_shgroup_create(sh, psl->edit_mesh_verts_ps[i]);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
     }
     /* Face-dots */
     if (select_face && show_face_dots) {
-      sh = OVERLAY_shader_edit_mesh_facedot();
-      grp = pd->edit_mesh_facedots_grp[i] = DRW_shgroup_create(sh, psl->edit_mesh_verts_ps[i]);
-      DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-      DRW_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
-      DRW_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
-      DRW_shgroup_state_enable(grp, DRW_STATE_WRITE_DEPTH);
+      sh = overlay_shader_edit_mesh_facedot();
+      grp = pd->edit_mesh_facedots_grp[i] = draw_shgroup_create(sh, psl->edit_mesh_verts_ps[i]);
+      draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+      draw_shgroup_uniform_float_copy(grp, "alpha", backwire_opacity);
+      draw_shgroup_uniform_texture_ref(grp, "depthTex", depth_tex);
+      draw_shgroup_state_enable(grp, DRAW_STATE_WRITE_DEPTH);
     }
     else {
       pd->edit_mesh_facedots_grp[i] = NULL;
@@ -197,10 +197,10 @@ void overlay_edit_mesh_cache_init(OverlayData *vedata)
   }
 }
 
-static void overlay_edit_mesh_add_ob_to_pass(OVERLAY_PrivateData *pd, Object *ob, bool in_front)
+static void overlay_edit_mesh_add_ob_to_pass(OverlayPrivateData *pd, Object *ob, bool in_front)
 {
   struct GPUBatch *geom_tris, *geom_verts, *geom_edges, *geom_fcenter, *skin_roots, *circle;
-  DRWShadingGroup *vert_shgrp, *edge_shgrp, *fdot_shgrp, *face_shgrp, *skin_roots_shgrp;
+  DrawShadingGroup *vert_shgrp, *edge_shgrp, *fdot_shgrp, *face_shgrp, *skin_roots_shgrp;
 
   bool has_edit_mesh_cage = false;
   bool has_skin_roots = false;
@@ -208,8 +208,8 @@ static void overlay_edit_mesh_add_ob_to_pass(OVERLAY_PrivateData *pd, Object *ob
   Mesh *me = (Mesh *)ob->data;
   BMEditMesh *embm = me->edit_mesh;
   if (embm) {
-    Mesh *editmesh_eval_final = BKE_object_get_editmesh_eval_final(ob);
-    Mesh *editmesh_eval_cage = BKE_object_get_editmesh_eval_cage(ob);
+    Mesh *editmesh_eval_final = dune_object_get_editmesh_eval_final(ob);
+    Mesh *editmesh_eval_cage = dune_object_get_editmesh_eval_cage(ob);
 
     has_edit_mesh_cage = editmesh_eval_cage && (editmesh_eval_cage != editmesh_eval_final);
     has_skin_roots = CustomData_get_offset(&embm->bm->vdata, CD_MVERT_SKIN) != -1;
@@ -222,14 +222,14 @@ static void overlay_edit_mesh_add_ob_to_pass(OVERLAY_PrivateData *pd, Object *ob
                                       pd->edit_mesh_faces_grp[in_front];
   skin_roots_shgrp = pd->edit_mesh_skin_roots_grp[in_front];
 
-  geom_edges = DRW_mesh_batch_cache_get_edit_edges(ob->data);
-  geom_tris = DRW_mesh_batch_cache_get_edit_triangles(ob->data);
-  DRW_shgroup_call_no_cull(edge_shgrp, geom_edges, ob);
-  DRW_shgroup_call_no_cull(face_shgrp, geom_tris, ob);
+  geom_edges = draw_mesh_batch_cache_get_edit_edges(ob->data);
+  geom_tris = draw_mesh_batch_cache_get_edit_triangles(ob->data);
+  draw_shgroup_call_no_cull(edge_shgrp, geom_edges, ob);
+  draw_shgroup_call_no_cull(face_shgrp, geom_tris, ob);
 
   if (pd->edit_mesh.select_vert) {
-    geom_verts = DRW_mesh_batch_cache_get_edit_vertices(ob->data);
-    DRW_shgroup_call_no_cull(vert_shgrp, geom_verts, ob);
+    geom_verts = draw_mesh_batch_cache_get_edit_vertices(ob->data);
+    draw_shgroup_call_no_cull(vert_shgrp, geom_verts, ob);
 
     if (has_skin_roots) {
       circle = DRW_cache_circle_get();
