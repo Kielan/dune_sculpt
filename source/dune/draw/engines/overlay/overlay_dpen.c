@@ -1,63 +1,63 @@
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BKE_gpencil.h"
+#include "dune_dpen.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "DNA_gpencil_types.h"
+#include "types_dpen.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
 #include "overlay_private.h"
 
 #include "draw_common.h"
 #include "draw_manager_text.h"
 
-void OVERLAY_edit_gpencil_cache_init(OVERLAY_Data *vedata)
+void overlay_edit_dpen_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
   struct GPUShader *sh;
-  DRWShadingGroup *grp;
+  DrawShadingGroup *grp;
 
   /* Default: Display nothing. */
-  pd->edit_gpencil_points_grp = NULL;
-  pd->edit_gpencil_wires_grp = NULL;
-  psl->edit_gpencil_ps = NULL;
+  pd->edit_dpen_points_grp = NULL;
+  pd->edit_dpen_wires_grp = NULL;
+  psl->edit_dpen_ps = NULL;
 
-  pd->edit_gpencil_curve_handle_grp = NULL;
-  pd->edit_gpencil_curve_points_grp = NULL;
-  psl->edit_gpencil_curve_ps = NULL;
+  pd->edit_dpen_curve_handle_grp = NULL;
+  pd->edit_dpen_curve_points_grp = NULL;
+  psl->edit_dpen_curve_ps = NULL;
 
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   View3D *v3d = draw_ctx->v3d;
   Object *ob = draw_ctx->obact;
-  bGPdata *gpd = ob ? (bGPdata *)ob->data : NULL;
+  DPdata *dpd = ob ? (DPdata *)ob->data : NULL;
   Scene *scene = draw_ctx->scene;
   ToolSettings *ts = scene->toolsettings;
 
-  if (gpd == NULL || ob->type != OB_GPENCIL) {
+  if (dpd == NULL || ob->type != OB_DPEN) {
     return;
   }
 
   /* For sculpt show only if mask mode, and only points if not stroke mode. */
-  const bool use_sculpt_mask = (GPENCIL_SCULPT_MODE(gpd) &&
-                                GPENCIL_ANY_SCULPT_MASK(ts->gpencil_selectmode_sculpt));
-  const bool show_sculpt_points = (GPENCIL_SCULPT_MODE(gpd) &&
-                                   (ts->gpencil_selectmode_sculpt &
-                                    (GP_SCULPT_MASK_SELECTMODE_POINT |
-                                     GP_SCULPT_MASK_SELECTMODE_SEGMENT)));
+  const bool use_sculpt_mask = (DPEN_SCULPT_MODE(gpd) &&
+                                DPEN_ANY_SCULPT_MASK(ts->dpen_selectmode_sculpt));
+  const bool show_sculpt_points = (DPEN_SCULPT_MODE(dpd) &&
+                                   (ts->dpen_selectmode_sculpt &
+                                    (DP_SCULPT_MASK_SELECTMODE_POINT |
+                                     DP_SCULPT_MASK_SELECTMODE_SEGMENT)));
 
   /* For vertex paint show only if mask mode, and only points if not stroke mode. */
-  bool use_vertex_mask = (GPENCIL_VERTEX_MODE(gpd) &&
-                          GPENCIL_ANY_VERTEX_MASK(ts->gpencil_selectmode_vertex));
-  const bool show_vertex_points = (GPENCIL_VERTEX_MODE(gpd) &&
+  bool use_vertex_mask = (DPEN_VERTEX_MODE(gpd) &&
+                          DPEN_ANY_VERTEX_MASK(ts->gpencil_selectmode_vertex));
+  const bool show_vertex_points = (DPEN_VERTEX_MODE(dpd) &&
                                    (ts->gpencil_selectmode_vertex &
-                                    (GP_VERTEX_MASK_SELECTMODE_POINT |
-                                     GP_VERTEX_MASK_SELECTMODE_SEGMENT)));
+                                    (DP_VERTEX_MASK_SELECTMODE_POINT |
+                                     DP_VERTEX_MASK_SELECTMODE_SEGMENT)));
 
   /* If Sculpt or Vertex mode and the mask is disabled, the select must be hidden. */
   const bool hide_select = ((GPENCIL_SCULPT_MODE(gpd) && !use_sculpt_mask) ||
