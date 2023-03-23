@@ -1,14 +1,14 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "DNA_camera_types.h"
-#include "DNA_screen_types.h"
+#include "types_camera.h"
+#include "types_screen.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "ED_image.h"
-#include "ED_view3d.h"
+#include "ed_image.h"
+#include "ed_view3d.h"
 
-#include "UI_resources.h"
+#include "uiDefIconTextBtn_resources.h"
 
 #include "overlay_private.h"
 
