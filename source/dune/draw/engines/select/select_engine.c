@@ -1,15 +1,11 @@
-/** \file
- * \ingroup draw_engine
- *
- * Engine for drawing a selection map where the pixels indicate the selection indices.
- */
+/** Engine for drawing a selection map where the pixels indicate the selection indices. */
 
-#include "DNA_screen_types.h"
+#include "types_screen.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "DRW_engine.h"
-#include "DRW_select_buffer.h"
+#include "draw_engine.h"
+#include "draw_select_buffer.h"
 
 #include "draw_cache_impl.h"
 #include "draw_manager.h"
@@ -25,8 +21,8 @@ static struct {
   struct GPUFrameBuffer *framebuffer_select_id;
   struct GPUTexture *texture_u32;
 
-  SELECTID_Shaders sh_data[GPU_SHADER_CFG_LEN];
-  struct SELECTID_Context context;
+  SelectIdShaders sh_data[GPU_SHADER_CFG_LEN];
+  struct SelectIdCtx context;
   uint runtime_new_objects;
 } e_data = {NULL}; /* Engine data */
 
@@ -36,8 +32,7 @@ extern char datatoc_selection_id_3D_vert_glsl[];
 extern char datatoc_selection_id_frag_glsl[];
 
 /* -------------------------------------------------------------------- */
-/** \name Utils
- * \{ */
+/** \name Utils */
 
 static void select_engine_framebuffer_setup(void)
 {
