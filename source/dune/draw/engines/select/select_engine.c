@@ -77,8 +77,8 @@ static void select_engine_init(void *vedata)
 
   /* Prepass */
   if (!sh_data->select_id_flat) {
-    const GPUShaderConfigData *sh_cfg_data = &GPU_shader_cfg_data[sh_cfg];
-    sh_data->select_id_flat = GPU_shader_create_from_arrays({
+    const GPUShaderConfigData *sh_cfg_data = &gpu_shader_cfg_data[sh_cfg];
+    sh_data->select_id_flat = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg_data->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_selection_id_3D_vert_glsl,
@@ -88,7 +88,7 @@ static void select_engine_init(void *vedata)
     });
   }
   if (!sh_data->select_id_uniform) {
-    const GPUShaderConfigData *sh_cfg_data = &GPU_shader_cfg_data[sh_cfg];
+    const GPUShaderConfigData *sh_cfg_data = &gpu_shader_cfg_data[sh_cfg];
     sh_data->select_id_uniform = GPU_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg_data->lib,
                                  datatoc_common_view_lib_glsl,
@@ -101,15 +101,15 @@ static void select_engine_init(void *vedata)
 
   if (!stl->g_data) {
     /* Alloc transient pointers */
-    stl->g_data = MEM_mallocN(sizeof(*stl->g_data), __func__);
+    stl->g_data = mem_mallocn(sizeof(*stl->g_data), __func__);
   }
 
   {
     /* Create view from a subregion */
-    const DRWView *view_default = DRW_view_default_get();
+    const DrawView *view_default = draw_view_default_get();
     float viewmat[4][4], winmat[4][4], winmat_subregion[4][4];
-    DRW_view_viewmat_get(view_default, viewmat, false);
-    DRW_view_winmat_get(view_default, winmat, false);
+    draw_view_viewmat_get(view_default, viewmat, false);
+    draw_view_winmat_get(view_default, winmat, false);
     projmat_from_subregion(winmat,
                            (int[2]){draw_ctx->region->winx, draw_ctx->region->winy},
                            e_data.context.last_rect.xmin,
@@ -118,7 +118,7 @@ static void select_engine_init(void *vedata)
                            e_data.context.last_rect.ymax,
                            winmat_subregion);
 
-    stl->g_data->view_subregion = DRW_view_create(viewmat, winmat_subregion, NULL, NULL, NULL);
+    stl->g_data->view_subregion = draw_view_create(viewmat, winmat_subregion, NULL, NULL, NULL);
 
     /* Create view with depth offset */
     stl->g_data->view_faces = (DRWView *)view_default;
