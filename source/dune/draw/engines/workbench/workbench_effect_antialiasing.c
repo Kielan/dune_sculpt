@@ -1,6 +1,4 @@
-/** \file
- * \ingroup draw_engine
- *
+/**
  * Anti-Aliasing:
  *
  * We use SMAA (Smart Morphological Anti-Aliasing) as a fast antialiasing solution.
@@ -13,9 +11,9 @@
  * to the scene buffer. We softly blend between SMAA and TAA to avoid really harsh transitions.
  */
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
-#include "BLI_jitter_2d.h"
+#include "lib_jitter_2d.h"
 
 #include "smaa_textures.h"
 
@@ -32,7 +30,7 @@ static struct {
 
 static void workbench_taa_jitter_init_order(float (*table)[2], int num)
 {
-  BLI_jitter_init(table, num);
+  lib_jitter_init(table, num);
 
   /* find closest element to center */
   int closest_index = 0;
@@ -92,16 +90,16 @@ static void workbench_taa_jitter_init(void)
   }
 }
 
-int workbench_antialiasing_sample_count_get(WORKBENCH_PrivateData *wpd)
+int workbench_antialiasing_sample_count_get(DBenchPrivateData *wpd)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const Scene *scene = draw_ctx->scene;
 
   if (wpd->is_navigating || wpd->is_playback) {
     /* Only draw using SMAA or no AA when navigating. */
     return min_ii(wpd->preferences->viewport_aa, 1);
   }
-  if (DRW_state_is_image_render()) {
+  if (draw_state_is_image_render()) {
     if (draw_ctx->v3d) {
       return scene->display.viewport_aa;
     }
@@ -112,9 +110,9 @@ int workbench_antialiasing_sample_count_get(WORKBENCH_PrivateData *wpd)
   return wpd->preferences->viewport_aa;
 }
 
-void workbench_antialiasing_view_updated(WORKBENCH_Data *vedata)
+void workbench_antialiasing_view_updated(DBenchData *vedata)
 {
-  WORKBENCH_StorageList *stl = vedata->stl;
+  DBenchStorageList *stl = vedata->stl;
   if (stl && stl->wpd) {
     stl->wpd->view_updated = true;
   }
@@ -123,10 +121,10 @@ void workbench_antialiasing_view_updated(WORKBENCH_Data *vedata)
 /* This function checks if the overlay engine should need center in front depth's.
  * When that is the case the in front depth are stored and restored. Otherwise it
  * will be filled with the current sample data. */
-static bool workbench_in_front_history_needed(WORKBENCH_Data *vedata)
+static bool workbench_in_front_history_needed(DBenchData *vedata)
 {
-  WORKBENCH_StorageList *stl = vedata->stl;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  DBenchStorageList *stl = vedata->stl;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const View3D *v3d = draw_ctx->v3d;
 
   if (!v3d || (v3d->flag2 & V3D_HIDE_OVERLAYS)) {
@@ -140,12 +138,12 @@ static bool workbench_in_front_history_needed(WORKBENCH_Data *vedata)
   return true;
 }
 
-void workbench_antialiasing_engine_init(WORKBENCH_Data *vedata)
+void workbench_antialiasing_engine_init(DBenchData *vedata)
 {
-  WORKBENCH_FramebufferList *fbl = vedata->fbl;
-  WORKBENCH_TextureList *txl = vedata->txl;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
-  DrawEngineType *owner = (DrawEngineType *)&workbench_antialiasing_engine_init;
+  DBenchFramebufferList *fbl = vedata->fbl;
+  DBenchTextureList *txl = vedata->txl;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
+  DrawEngineType *owner = (DrawEngineType *)&dbench_antialiasing_engine_init;
 
   wpd->view = NULL;
 
@@ -182,7 +180,7 @@ void workbench_antialiasing_engine_init(WORKBENCH_Data *vedata)
 
   {
     float persmat[4][4];
-    DRW_view_persmat_get(NULL, persmat, false);
+    draw_view_persmat_get(NULL, persmat, false);
     if (!equals_m4m4(persmat, wpd->last_mat)) {
       copy_m4_m4(wpd->last_mat, persmat);
       wpd->taa_sample = 0;
@@ -192,38 +190,38 @@ void workbench_antialiasing_engine_init(WORKBENCH_Data *vedata)
   if (wpd->taa_sample_len > 0) {
     workbench_taa_jitter_init();
 
-    DRW_texture_ensure_fullscreen_2d(&txl->history_buffer_tx, GPU_RGBA16F, DRW_TEX_FILTER);
-    DRW_texture_ensure_fullscreen_2d(&txl->depth_buffer_tx, GPU_DEPTH24_STENCIL8, 0);
+    draw_texture_ensure_fullscreen_2d(&txl->history_buffer_tx, GPU_RGBA16F, DRW_TEX_FILTER);
+    draw_texture_ensure_fullscreen_2d(&txl->depth_buffer_tx, GPU_DEPTH24_STENCIL8, 0);
     const bool in_front_history = workbench_in_front_history_needed(vedata);
     if (in_front_history) {
-      DRW_texture_ensure_fullscreen_2d(&txl->depth_buffer_in_front_tx, GPU_DEPTH24_STENCIL8, 0);
+      draw_texture_ensure_fullscreen_2d(&txl->depth_buffer_in_front_tx, GPU_DEPTH24_STENCIL8, 0);
     }
     else {
-      DRW_TEXTURE_FREE_SAFE(txl->depth_buffer_in_front_tx);
+      DRAW_TEXTURE_FREE_SAFE(txl->depth_buffer_in_front_tx);
     }
 
-    wpd->smaa_edge_tx = DRW_texture_pool_query_fullscreen(GPU_RG8, owner);
-    wpd->smaa_weight_tx = DRW_texture_pool_query_fullscreen(GPU_RGBA8, owner);
+    wpd->smaa_edge_tx = draw_texture_pool_query_fullscreen(GPU_RG8, owner);
+    wpd->smaa_weight_tx = draw_texture_pool_query_fullscreen(GPU_RGBA8, owner);
 
-    GPU_framebuffer_ensure_config(&fbl->antialiasing_fb,
+    gpu_framebuffer_ensure_config(&fbl->antialiasing_fb,
                                   {
                                       GPU_ATTACHMENT_TEXTURE(txl->depth_buffer_tx),
                                       GPU_ATTACHMENT_TEXTURE(txl->history_buffer_tx),
                                   });
     if (in_front_history) {
-      GPU_framebuffer_ensure_config(&fbl->antialiasing_in_front_fb,
+      gpu_framebuffer_ensure_config(&fbl->antialiasing_in_front_fb,
                                     {
                                         GPU_ATTACHMENT_TEXTURE(txl->depth_buffer_in_front_tx),
                                     });
     }
 
-    GPU_framebuffer_ensure_config(&fbl->smaa_edge_fb,
+    gpu_framebuffer_ensure_config(&fbl->smaa_edge_fb,
                                   {
                                       GPU_ATTACHMENT_NONE,
                                       GPU_ATTACHMENT_TEXTURE(wpd->smaa_edge_tx),
                                   });
 
-    GPU_framebuffer_ensure_config(&fbl->smaa_weight_fb,
+    gpu_framebuffer_ensure_config(&fbl->smaa_weight_fb,
                                   {
                                       GPU_ATTACHMENT_NONE,
                                       GPU_ATTACHMENT_TEXTURE(wpd->smaa_weight_tx),
@@ -231,25 +229,25 @@ void workbench_antialiasing_engine_init(WORKBENCH_Data *vedata)
 
     /* TODO: could be shared for all viewports. */
     if (txl->smaa_search_tx == NULL) {
-      txl->smaa_search_tx = GPU_texture_create_2d(
+      txl->smaa_search_tx = gpu_texture_create_2d(
           "smaa_search", SEARCHTEX_WIDTH, SEARCHTEX_HEIGHT, 1, GPU_R8, NULL);
-      GPU_texture_update(txl->smaa_search_tx, GPU_DATA_UBYTE, searchTexBytes);
+      gpu_texture_update(txl->smaa_search_tx, GPU_DATA_UBYTE, searchTexBytes);
 
       txl->smaa_area_tx = GPU_texture_create_2d(
           "smaa_area", AREATEX_WIDTH, AREATEX_HEIGHT, 1, GPU_RG8, NULL);
-      GPU_texture_update(txl->smaa_area_tx, GPU_DATA_UBYTE, areaTexBytes);
+      gpu_texture_update(txl->smaa_area_tx, GPU_DATA_UBYTE, areaTexBytes);
 
-      GPU_texture_filter_mode(txl->smaa_search_tx, true);
-      GPU_texture_filter_mode(txl->smaa_area_tx, true);
+      gpu_texture_filter_mode(txl->smaa_search_tx, true);
+      gpu_texture_filter_mode(txl->smaa_area_tx, true);
     }
   }
   else {
     /* Cleanup */
-    DRW_TEXTURE_FREE_SAFE(txl->history_buffer_tx);
-    DRW_TEXTURE_FREE_SAFE(txl->depth_buffer_tx);
-    DRW_TEXTURE_FREE_SAFE(txl->depth_buffer_in_front_tx);
-    DRW_TEXTURE_FREE_SAFE(txl->smaa_search_tx);
-    DRW_TEXTURE_FREE_SAFE(txl->smaa_area_tx);
+    DRAW_TEXTURE_FREE_SAFE(txl->history_buffer_tx);
+    DRAW_TEXTURE_FREE_SAFE(txl->depth_buffer_tx);
+    DRAW_TEXTURE_FREE_SAFE(txl->depth_buffer_in_front_tx);
+    DRAW_TEXTURE_FREE_SAFE(txl->smaa_search_tx);
+    DRAW_TEXTURE_FREE_SAFE(txl->smaa_area_tx);
   }
 }
 
@@ -297,18 +295,18 @@ void workbench_antialiasing_cache_init(WORKBENCH_Data *vedata)
   }
 
   {
-    DRW_PASS_CREATE(psl->aa_accum_ps, DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ADD_FULL);
-    DRW_PASS_INSTANCE_CREATE(psl->aa_accum_replace_ps, psl->aa_accum_ps, DRW_STATE_WRITE_COLOR);
+    DRAW_PASS_CREATE(psl->aa_accum_ps, DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ADD_FULL);
+    DRAW_PASS_INSTANCE_CREATE(psl->aa_accum_replace_ps, psl->aa_accum_ps, DRW_STATE_WRITE_COLOR);
 
     GPUShader *shader = workbench_shader_antialiasing_accumulation_get();
-    grp = DRW_shgroup_create(shader, psl->aa_accum_ps);
-    DRW_shgroup_uniform_texture_ex(grp, "colorBuffer", dtxl->color, GPU_SAMPLER_DEFAULT);
-    DRW_shgroup_uniform_float(grp, "samplesWeights", wpd->taa_weights, 9);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    grp = draw_shgroup_create(shader, psl->aa_accum_ps);
+    draw_shgroup_uniform_texture_ex(grp, "colorBuffer", dtxl->color, GPU_SAMPLER_DEFAULT);
+    draw_shgroup_uniform_float(grp, "samplesWeights", wpd->taa_weights, 9);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 
-  const float *size = DRW_viewport_size_get();
-  const float *sizeinv = DRW_viewport_invert_size_get();
+  const float *size = draw_viewport_size_get();
+  const float *sizeinv = draw_viewport_invert_size_get();
   const float metrics[4] = {sizeinv[0], sizeinv[1], size[0], size[1]};
 
   {
