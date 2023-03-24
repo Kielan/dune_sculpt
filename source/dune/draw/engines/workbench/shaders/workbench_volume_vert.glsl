@@ -1,4 +1,4 @@
-#pragma BLENDER_REQUIRE(common_view_lib.glsl)
+#pragma DUNE_REQUIRE(common_view_lib.glsl)
 
 RESOURCE_ID_VARYING
 
