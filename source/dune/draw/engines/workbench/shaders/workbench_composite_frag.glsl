@@ -1,7 +1,7 @@
-#pragma BLENDER_REQUIRE(common_view_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_common_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_matcap_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_world_light_lib.glsl)
+#pragma DUNE_REQUIRE(common_view_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_common_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_matcap_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_world_light_lib.glsl)
 
 void main()
 {
