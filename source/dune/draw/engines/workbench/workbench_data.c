@@ -1,27 +1,26 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #include "workbench_private.h"
 
-#include "BLI_memblock.h"
+#include "lib_memblock.h"
 
-#include "DNA_userdef_types.h"
+#include "types_userdef.h"
 
-#include "ED_screen.h"
-#include "ED_view3d.h"
+#include "ed_screen.h"
+#include "ed_view3d.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
-#include "GPU_uniform_buffer.h"
+#include "gpu_uniform_buffer.h"
 
 /* -------------------------------------------------------------------- */
-/** \name World Data
- * \{ */
+/** World Data */
 
-GPUUniformBuf *workbench_material_ubo_alloc(WORKBENCH_PrivateData *wpd)
+GPUUniformBuf *workbench_material_ubo_alloc(WorkbenchPrivateData *wpd)
 {
-  struct GPUUniformBuf **ubo = BLI_memblock_alloc(wpd->material_ubo);
+  struct GPUUniformBuf **ubo = lib_memblock_alloc(wpd->material_ubo);
   if (*ubo == NULL) {
-    *ubo = GPU_uniformbuf_create(sizeof(WORKBENCH_UBO_Material) * MAX_MATERIAL);
+    *ubo = gpu_uniformbuf_create(sizeof(WORKBENCH_UBO_Material) * MAX_MATERIAL);
   }
   return *ubo;
 }
@@ -29,17 +28,17 @@ GPUUniformBuf *workbench_material_ubo_alloc(WORKBENCH_PrivateData *wpd)
 static void workbench_ubo_free(void *elem)
 {
   GPUUniformBuf **ubo = elem;
-  DRW_UBO_FREE_SAFE(*ubo);
+  DRAW_UBO_FREE_SAFE(*ubo);
 }
 
 static void workbench_view_layer_data_free(void *storage)
 {
-  WORKBENCH_ViewLayerData *vldata = (WORKBENCH_ViewLayerData *)storage;
+  WorkbenchViewLayerData *vldata = (WORKBENCH_ViewLayerData *)storage;
 
-  DRW_UBO_FREE_SAFE(vldata->dof_sample_ubo);
-  DRW_UBO_FREE_SAFE(vldata->world_ubo);
-  DRW_UBO_FREE_SAFE(vldata->cavity_sample_ubo);
-  DRW_TEXTURE_FREE_SAFE(vldata->cavity_jitter_tx);
+  DRAW_UBO_FREE_SAFE(vldata->dof_sample_ubo);
+  DRAW_UBO_FREE_SAFE(vldata->world_ubo);
+  DRAW_UBO_FREE_SAFE(vldata->cavity_sample_ubo);
+  DRAW_TEXTURE_FREE_SAFE(vldata->cavity_jitter_tx);
 
   BLI_memblock_destroy(vldata->material_ubo_data, NULL);
   BLI_memblock_destroy(vldata->material_ubo, workbench_ubo_free);
