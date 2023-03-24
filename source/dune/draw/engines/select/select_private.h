@@ -2,19 +2,19 @@
 
 #define USE_CAGE_OCCLUSION
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
 /* GPUViewport.storage
  * Is freed every time the viewport engine changes. */
-typedef struct SELECTID_StorageList {
-  struct SELECTID_PrivateData *g_data;
-} SELECTID_StorageList;
+typedef struct SelectIdStorageList {
+  struct SelectIdPrivateData *g_data;
+} SelectIdStorageList;
 
-typedef struct SELECTID_PassList {
-  struct DRWPass *depth_only_pass;
-  struct DRWPass *select_id_face_pass;
-  struct DRWPass *select_id_edge_pass;
-  struct DRWPass *select_id_vert_pass;
+typedef struct SelectIdPassList {
+  struct DrawPass *depth_only_pass;
+  struct DrawPass *select_id_face_pass;
+  struct DrawPass *select_id_edge_pass;
+  struct DrawPass *select_id_vert_pass;
 } SELECTID_PassList;
 
 typedef struct SELECTID_Data {
