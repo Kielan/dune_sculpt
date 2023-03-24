@@ -129,12 +129,12 @@ static void select_engine_init(void *vedata)
 
 static void select_cache_init(void *vedata)
 {
-  SELECTID_PassList *psl = ((SelectIdData *)vedata)->psl;
-  SELECTID_StorageList *stl = ((SelectIdData *)vedata)->stl;
-  SELECTID_PrivateData *pd = stl->g_data;
+  SelectIdPassList *psl = ((SelectIdData *)vedata)->psl;
+  SelectIdStorageList *stl = ((SelectIdData *)vedata)->stl;
+  SelectIdPrivateData *pd = stl->g_data;
 
-  const DRWContextState *draw_ctx = draw_ctx_state_get();
-  SELECTID_Shaders *sh = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  SelectIdShaders *sh = &e_data.sh_data[draw_ctx->sh_cfg];
 
   if (e_data.context.select_mode == -1) {
     e_data.context.select_mode = select_id_get_object_select_mode(draw_ctx->scene,
