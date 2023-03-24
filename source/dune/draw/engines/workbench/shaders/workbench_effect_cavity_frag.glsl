@@ -1,7 +1,7 @@
-#pragma BLENDER_REQUIRE(common_view_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_common_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_cavity_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_curvature_lib.glsl)
+#pragma DUNE_REQUIRE(common_view_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_common_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_cavity_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_curvature_lib.glsl)
 
 void main()
 {
