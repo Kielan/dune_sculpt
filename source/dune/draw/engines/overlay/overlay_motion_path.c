@@ -1,21 +1,21 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BLI_listbase.h"
-#include "BLI_string.h"
+#include "lib_listbase.h"
+#include "lib_string.h"
 
-#include "DNA_armature_types.h"
+#include "types_armature.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "GPU_batch.h"
+#include "gpu_batch.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 #include "draw_manager_text.h"
 
 #include "overlay_private.h"
 
-void OVERLAY_motion_path_cache_init(OVERLAY_Data *vedata)
+void overlay_motion_path_cache_init(OVERLAY_Data *vedata)
 {
   OVERLAY_PassList *psl = vedata->psl;
   OVERLAY_PrivateData *pd = vedata->stl->pd;
