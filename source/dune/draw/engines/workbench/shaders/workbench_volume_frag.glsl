@@ -1,6 +1,6 @@
-#pragma BLENDER_REQUIRE(common_math_lib.glsl)
-#pragma BLENDER_REQUIRE(common_view_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_common_lib.glsl)
+#pragma DUNE_REQUIRE(common_math_lib.glsl)
+#pragma DUNE_REQUIRE(common_view_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_common_lib.glsl)
 
 float phase_function_isotropic()
 {
