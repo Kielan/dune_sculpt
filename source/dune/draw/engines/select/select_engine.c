@@ -89,7 +89,7 @@ static void select_engine_init(void *vedata)
   }
   if (!sh_data->select_id_uniform) {
     const GPUShaderConfigData *sh_cfg_data = &gpu_shader_cfg_data[sh_cfg];
-    sh_data->select_id_uniform = GPU_shader_create_from_arrays({
+    sh_data->select_id_uniform = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg_data->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_selection_id_3D_vert_glsl,
@@ -121,9 +121,9 @@ static void select_engine_init(void *vedata)
     stl->g_data->view_subregion = draw_view_create(viewmat, winmat_subregion, NULL, NULL, NULL);
 
     /* Create view with depth offset */
-    stl->g_data->view_faces = (DRWView *)view_default;
-    stl->g_data->view_edges = DRW_view_create_with_zoffset(view_default, draw_ctx->rv3d, 1.0f);
-    stl->g_data->view_verts = DRW_view_create_with_zoffset(view_default, draw_ctx->rv3d, 1.1f);
+    stl->g_data->view_faces = (DrawView *)view_default;
+    stl->g_data->view_edges = draw_view_create_with_zoffset(view_default, draw_ctx->rv3d, 1.0f);
+    stl->g_data->view_verts = draw_view_create_with_zoffset(view_default, draw_ctx->rv3d, 1.1f);
   }
 }
 
