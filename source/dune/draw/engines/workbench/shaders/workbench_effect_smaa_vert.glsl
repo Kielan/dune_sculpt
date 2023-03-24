@@ -1,4 +1,4 @@
-#pragma BLENDER_REQUIRE(common_smaa_lib.glsl)
+#pragma DUNE_REQUIRE(common_smaa_lib.glsl)
 
 void main()
 {
