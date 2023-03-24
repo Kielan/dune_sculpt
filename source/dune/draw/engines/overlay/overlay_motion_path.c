@@ -156,11 +156,11 @@ static void motion_path_cache(OverlayData *vedata,
     int i;
     uchar col[4], col_kf[4];
     /* Color Management: Exception here as texts are drawn in sRGB space directly. */
-    UI_GetThemeColor3ubv(TH_TEXT_HI, col);
-    UI_GetThemeColor3ubv(TH_VERTEX_SELECT, col_kf);
+    ui_GetThemeColor3ubv(TH_TEXT_HI, col);
+    ui_GetThemeColor3ubv(TH_VERTEX_SELECT, col_kf);
     col[3] = col_kf[3] = 255;
 
-    bMotionPathVert *mpv = mpath->points + start_index;
+    DMotionPathVert *mpv = mpath->points + start_index;
     for (i = 0; i < len; i += stepsize, mpv += stepsize) {
       int frame = sfra + i;
       char numstr[32];
@@ -168,31 +168,31 @@ static void motion_path_cache(OverlayData *vedata,
       bool is_keyframe = (mpv->flag & MOTIONPATH_VERT_KEY) != 0;
 
       if ((show_keyframes && show_keyframes_no && is_keyframe) || (show_frame_no && (i == 0))) {
-        numstr_len = BLI_snprintf_rlen(numstr, sizeof(numstr), " %d", frame);
-        DRW_text_cache_add(
+        numstr_len = lib_snprintf_rlen(numstr, sizeof(numstr), " %d", frame);
+        draw_text_cache_add(
             dt, mpv->co, numstr, numstr_len, 0, 0, txt_flag, (is_keyframe) ? col_kf : col);
       }
       else if (show_frame_no) {
-        bMotionPathVert *mpvP = (mpv - stepsize);
-        bMotionPathVert *mpvN = (mpv + stepsize);
+        DMotionPathVert *mpvP = (mpv - stepsize);
+        DMotionPathVert *mpvN = (mpv + stepsize);
         /* Only draw frame number if several consecutive highlighted points
          * don't occur on same point. */
         if ((equals_v3v3(mpv->co, mpvP->co) == 0) || (equals_v3v3(mpv->co, mpvN->co) == 0)) {
-          numstr_len = BLI_snprintf_rlen(numstr, sizeof(numstr), " %d", frame);
-          DRW_text_cache_add(dt, mpv->co, numstr, numstr_len, 0, 0, txt_flag, col);
+          numstr_len = lib_snprintf_rlen(numstr, sizeof(numstr), " %d", frame);
+          draw_text_cache_add(dt, mpv->co, numstr, numstr_len, 0, 0, txt_flag, col);
         }
       }
     }
   }
 }
 
-void OVERLAY_motion_path_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_motion_path_cache_populate(OverlayData *vedata, Object *ob)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
 
   if (ob->type == OB_ARMATURE) {
-    if (OVERLAY_armature_is_pose_mode(ob, draw_ctx)) {
-      LISTBASE_FOREACH (bPoseChannel *, pchan, &ob->pose->chanbase) {
+    if (overlay_armature_is_pose_mode(ob, draw_ctx)) {
+      LISTBASE_FOREACH (DPoseChannel *, pchan, &ob->pose->chanbase) {
         if (pchan->mpath) {
           motion_path_cache(vedata, ob, pchan, &ob->pose->avs, pchan->mpath);
         }
@@ -205,9 +205,9 @@ void OVERLAY_motion_path_cache_populate(OVERLAY_Data *vedata, Object *ob)
   }
 }
 
-void OVERLAY_motion_path_draw(OVERLAY_Data *vedata)
+void overlay_motion_path_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
-  DRW_draw_pass(psl->motion_paths_ps);
+  draw_draw_pass(psl->motion_paths_ps);
 }
