@@ -15,34 +15,34 @@ typedef struct SelectIdPassList {
   struct DrawPass *select_id_face_pass;
   struct DrawPass *select_id_edge_pass;
   struct DrawPass *select_id_vert_pass;
-} SELECTID_PassList;
+} SelectIdPassList;
 
-typedef struct SELECTID_Data {
+typedef struct SelectIdData {
   void *engine_type;
-  DRWViewportEmptyList *fbl;
-  DRWViewportEmptyList *txl;
-  SELECTID_PassList *psl;
-  SELECTID_StorageList *stl;
-} SELECTID_Data;
+  DrawViewportEmptyList *fbl;
+  DrawViewportEmptyList *txl;
+  SelectIdPassList *psl;
+  SelecyIdStorageList *stl;
+} SelectIdData;
 
-typedef struct SELECTID_Shaders {
+typedef struct SelectIdShaders {
   /* Depth Pre Pass */
   struct GPUShader *select_id_flat;
   struct GPUShader *select_id_uniform;
-} SELECTID_Shaders;
+} SelectIdShaders;
 
-typedef struct SELECTID_PrivateData {
-  DRWShadingGroup *shgrp_depth_only;
-  DRWShadingGroup *shgrp_face_unif;
-  DRWShadingGroup *shgrp_face_flat;
-  DRWShadingGroup *shgrp_edge;
-  DRWShadingGroup *shgrp_vert;
+typedef struct SelectIdPrivateData {
+  DrawShadingGroup *shgrp_depth_only;
+  DrawShadingGroup *shgrp_face_unif;
+  DrawShadingGroup *shgrp_face_flat;
+  DrawShadingGroup *shgrp_edge;
+  DrawShadingGroup *shgrp_vert;
 
-  DRWView *view_subregion;
-  DRWView *view_faces;
-  DRWView *view_edges;
-  DRWView *view_verts;
-} SELECTID_PrivateData; /* Transient data */
+  DrawView *view_subregion;
+  DrawView *view_faces;
+  DrawView *view_edges;
+  DrawView *view_verts;
+} SelectIdPrivateData; /* Transient data */
 
 /* select_draw_utils.c */
 void select_id_object_min_max(struct Object *obj, float r_min[3], float r_max[3]);
