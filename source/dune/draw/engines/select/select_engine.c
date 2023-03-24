@@ -36,47 +36,44 @@ extern char datatoc_selection_id_frag_glsl[];
 
 static void select_engine_framebuffer_setup(void)
 {
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
   int size[2];
-  size[0] = GPU_texture_width(dtxl->depth);
-  size[1] = GPU_texture_height(dtxl->depth);
+  size[0] = gpu_texture_width(dtxl->depth);
+  size[1] = gpu_texture_height(dtxl->depth);
 
   if (e_data.framebuffer_select_id == NULL) {
     e_data.framebuffer_select_id = GPU_framebuffer_create("framebuffer_select_id");
   }
 
-  if ((e_data.texture_u32 != NULL) && ((GPU_texture_width(e_data.texture_u32) != size[0]) ||
-                                       (GPU_texture_height(e_data.texture_u32) != size[1]))) {
-    GPU_texture_free(e_data.texture_u32);
+  if ((e_data.texture_u32 != NULL) && ((gpu_texture_width(e_data.texture_u32) != size[0]) ||
+                                       ((gpu_texture_height(e_data.texture_u32) != size[1]))) {
+    gpu_texture_free(e_data.texture_u32);
     e_data.texture_u32 = NULL;
   }
 
   /* Make sure the depth texture is attached.
-   * It may disappear when loading another Blender session. */
-  GPU_framebuffer_texture_attach(e_data.framebuffer_select_id, dtxl->depth, 0, 0);
+   * It may disappear when loading another Dune session. */
+  gpu_framebuffer_texture_attach(e_data.framebuffer_select_id, dtxl->depth, 0, 0);
 
   if (e_data.texture_u32 == NULL) {
     e_data.texture_u32 = GPU_texture_create_2d(
         "select_buf_ids", size[0], size[1], 1, GPU_R32UI, NULL);
-    GPU_framebuffer_texture_attach(e_data.framebuffer_select_id, e_data.texture_u32, 0, 0);
+    gpu_framebuffer_texture_attach(e_data.framebuffer_select_id, e_data.texture_u32, 0, 0);
 
-    GPU_framebuffer_check_valid(e_data.framebuffer_select_id, NULL);
+    gpu_framebuffer_check_valid(e_data.framebuffer_select_id, NULL);
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Engine Functions
- * \{ */
+/** Engine Functions **/
 
 static void select_engine_init(void *vedata)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   eGPUShaderConfig sh_cfg = draw_ctx->sh_cfg;
 
-  SELECTID_StorageList *stl = ((SELECTID_Data *)vedata)->stl;
-  SELECTID_Shaders *sh_data = &e_data.sh_data[sh_cfg];
+  SelectIdStorageList *stl = ((SELECTID_Data *)vedata)->stl;
+  SelectIdShaders *sh_data = &e_data.sh_data[sh_cfg];
 
   /* Prepass */
   if (!sh_data->select_id_flat) {
