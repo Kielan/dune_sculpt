@@ -135,7 +135,7 @@ void workbench_private_data_init(WORKBENCH_PrivateData *wpd)
   wpd->is_playback = DRW_state_is_playback();
   wpd->is_navigating = DRW_state_is_navigating();
 
-  wpd->ctx_mode = CTX_data_mode_enum_ex(
+  wpd->ctx_mode = ctx_data_mode_enum_ex(
       draw_ctx->object_edit, draw_ctx->obact, draw_ctx->object_mode);
 
   wpd->preferences = &U;
@@ -144,7 +144,7 @@ void workbench_private_data_init(WORKBENCH_PrivateData *wpd)
 
   /* FIXME: This reproduce old behavior when workbench was separated in 2 engines.
    * But this is a workaround for a missing update tagging. */
-  DRWState clip_state = RV3D_CLIPPING_ENABLED(v3d, rv3d) ? DRW_STATE_CLIP_PLANES : 0;
+  DrawState clip_state = RV3D_CLIPPING_ENABLED(v3d, rv3d) ? DRW_STATE_CLIP_PLANES : 0;
   if (clip_state != wpd->clip_state) {
     wpd->view_updated = true;
   }
@@ -241,7 +241,7 @@ void workbench_private_data_init(WORKBENCH_PrivateData *wpd)
 
   /* If matcaps are missing, use this as fallback. */
   if (UNLIKELY(wpd->studio_light == NULL)) {
-    wpd->studio_light = BKE_studiolight_find(wpd->shading.studio_light, STUDIOLIGHT_TYPE_STUDIO);
+    wpd->studio_light = dune_studiolight_find(wpd->shading.studio_light, STUDIOLIGHT_TYPE_STUDIO);
   }
 
   {
@@ -260,7 +260,7 @@ void workbench_private_data_init(WORKBENCH_PrivateData *wpd)
   }
 }
 
-void workbench_update_world_ubo(WORKBENCH_PrivateData *wpd)
+void workbench_update_world_ubo(WorkbenchPrivateData *wpd)
 {
   WORKBENCH_UBO_World wd;
 
@@ -268,22 +268,22 @@ void workbench_update_world_ubo(WORKBENCH_PrivateData *wpd)
   copy_v2_v2(wd.viewport_size_inv, DRW_viewport_invert_size_get());
   copy_v3_v3(wd.object_outline_color, wpd->shading.object_outline_color);
   wd.object_outline_color[3] = 1.0f;
-  wd.ui_scale = DRW_state_is_image_render() ? 1.0f : G_draw.block.sizePixel;
+  wd.ui_scale = draw_state_is_image_render() ? 1.0f : G_draw.block.sizePixel;
   wd.matcap_orientation = (wpd->shading.flag & V3D_SHADING_MATCAP_FLIP_X) != 0;
 
   workbench_studiolight_data_update(wpd, &wd);
   workbench_shadow_data_update(wpd, &wd);
   workbench_cavity_data_update(wpd, &wd);
 
-  GPU_uniformbuf_update(wpd->world_ubo, &wd);
+  gpu_uniformbuf_update(wpd->world_ubo, &wd);
 }
 
 void workbench_update_material_ubos(WORKBENCH_PrivateData *UNUSED(wpd))
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  WORKBENCH_ViewLayerData *vldata = workbench_view_layer_data_ensure_ex(draw_ctx->view_layer);
+  const DrawCtxState *draw_ctx = DRW_context_state_get();
+  WorkbenchViewLayerData *vldata = workbench_view_layer_data_ensure_ex(draw_ctx->view_layer);
 
-  BLI_memblock_iter iter, iter_data;
+  lib_memblock_iter iter, iter_data;
   BLI_memblock_iternew(vldata->material_ubo, &iter);
   BLI_memblock_iternew(vldata->material_ubo_data, &iter_data);
   WORKBENCH_UBO_Material *matchunk;
