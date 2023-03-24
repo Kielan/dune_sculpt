@@ -1,8 +1,8 @@
-#pragma BLENDER_REQUIRE(common_view_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_common_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_image_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_matcap_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_world_light_lib.glsl)
+#pragma DUNE_REQUIRE(common_view_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_common_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_image_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_matcap_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_world_light_lib.glsl)
 
 /* Special function only to be used with calculate_transparent_weight(). */
 float linear_zdepth(float depth, vec4 viewvecs[2], mat4 proj_mat)
