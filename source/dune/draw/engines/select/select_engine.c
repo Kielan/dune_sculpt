@@ -32,7 +32,7 @@ extern char datatoc_selection_id_3D_vert_glsl[];
 extern char datatoc_selection_id_frag_glsl[];
 
 /* -------------------------------------------------------------------- */
-/** \name Utils */
+/** Utils */
 
 static void select_engine_framebuffer_setup(void)
 {
@@ -56,7 +56,7 @@ static void select_engine_framebuffer_setup(void)
   gpu_framebuffer_texture_attach(e_data.framebuffer_select_id, dtxl->depth, 0, 0);
 
   if (e_data.texture_u32 == NULL) {
-    e_data.texture_u32 = GPU_texture_create_2d(
+    e_data.texture_u32 = gpu_texture_create_2d(
         "select_buf_ids", size[0], size[1], 1, GPU_R32UI, NULL);
     gpu_framebuffer_texture_attach(e_data.framebuffer_select_id, e_data.texture_u32, 0, 0);
 
@@ -72,7 +72,7 @@ static void select_engine_init(void *vedata)
   const DrawCtxState *draw_ctx = draw_ctx_state_get();
   eGPUShaderConfig sh_cfg = draw_ctx->sh_cfg;
 
-  SelectIdStorageList *stl = ((SELECTID_Data *)vedata)->stl;
+  SelectIdStorageList *stl = ((SelectIdData *)vedata)->stl;
   SelectIdShaders *sh_data = &e_data.sh_data[sh_cfg];
 
   /* Prepass */
@@ -129,11 +129,11 @@ static void select_engine_init(void *vedata)
 
 static void select_cache_init(void *vedata)
 {
-  SELECTID_PassList *psl = ((SELECTID_Data *)vedata)->psl;
-  SELECTID_StorageList *stl = ((SELECTID_Data *)vedata)->stl;
+  SELECTID_PassList *psl = ((SelectIdData *)vedata)->psl;
+  SELECTID_StorageList *stl = ((SelectIdData *)vedata)->stl;
   SELECTID_PrivateData *pd = stl->g_data;
 
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DRWContextState *draw_ctx = draw_ctx_state_get();
   SELECTID_Shaders *sh = &e_data.sh_data[draw_ctx->sh_cfg];
 
   if (e_data.context.select_mode == -1) {
