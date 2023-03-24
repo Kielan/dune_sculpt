@@ -1,5 +1,5 @@
-#pragma BLENDER_REQUIRE(common_view_lib.glsl)
-#pragma BLENDER_REQUIRE(workbench_common_lib.glsl)
+#pragma DUNE_REQUIRE(common_view_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_common_lib.glsl)
 
 /*  From The Alchemy screen-space ambient obscurance algorithm
  * http://graphics.cs.williams.edu/papers/AlchemyHPG11/VV11AlchemyAO.pdf */
