@@ -1,4 +1,4 @@
-#pragma BLENDER_REQUIRE(common_hair_lib.glsl)
+#pragma DUNE_REQUIRE(common_hair_lib.glsl)
 #pragma BLENDER_REQUIRE(common_view_lib.glsl)
 #pragma BLENDER_REQUIRE(common_view_clipping_lib.glsl)
 #pragma BLENDER_REQUIRE(workbench_common_lib.glsl)
