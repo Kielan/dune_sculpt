@@ -1,4 +1,4 @@
-#pragma BLENDER_REQUIRE(workbench_common_lib.glsl)
+#pragma DUNE_REQUIRE(workbench_common_lib.glsl)
 
 #ifdef USE_CURVATURE
 
