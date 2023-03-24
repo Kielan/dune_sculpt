@@ -118,7 +118,7 @@ static void workbench_studiolight_data_update(WORKBENCH_PrivateData *wpd, WORKBE
 void workbench_private_data_alloc(DBenchStorageList *stl)
 {
   if (!stl->wpd) {
-    stl->wpd = MEM_callocN(sizeof(*stl->wpd), __func__);
+    stl->wpd = mem_callocn(sizeof(*stl->wpd), __func__);
     stl->wpd->taa_sample_len_previous = -1;
     stl->wpd->view_updated = true;
   }
@@ -132,8 +132,8 @@ void workbench_private_data_init(DBenchPrivateData *wpd)
   Scene *scene = draw_ctx->scene;
   DBenchViewLayerData *vldata = workbench_view_layer_data_ensure_ex(draw_ctx->view_layer);
 
-  wpd->is_playback = DRW_state_is_playback();
-  wpd->is_navigating = DRW_state_is_navigating();
+  wpd->is_playback = draw_state_is_playback();
+  wpd->is_navigating = draw_state_is_navigating();
 
   wpd->ctx_mode = ctx_data_mode_enum_ex(
       draw_ctx->object_edit, draw_ctx->obact, draw_ctx->object_mode);
@@ -156,7 +156,7 @@ void workbench_private_data_init(DBenchPrivateData *wpd)
   wpd->taa_sample_len = workbench_antialiasing_sample_count_get(wpd);
 
   wpd->volumes_do = false;
-  BLI_listbase_clear(&wpd->smoke_domains);
+  lib_listbase_clear(&wpd->smoke_domains);
 
   /* FIXME: This reproduce old behavior when workbench was separated in 2 engines.
    * But this is a workaround for a missing update tagging. */
@@ -278,9 +278,9 @@ void workbench_update_world_ubo(DBenchPrivateData *wpd)
   gpu_uniformbuf_update(wpd->world_ubo, &wd);
 }
 
-void workbench_update_material_ubos(WORKBENCH_PrivateData *UNUSED(wpd))
+void workbench_update_material_ubos(DBenchPrivateData *UNUSED(wpd))
 {
-  const DrawCtxState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   WorkbenchViewLayerData *vldata = workbench_view_layer_data_ensure_ex(draw_ctx->view_layer);
 
   lib_memblock_iter iter, iter_data;
@@ -288,11 +288,11 @@ void workbench_update_material_ubos(WORKBENCH_PrivateData *UNUSED(wpd))
   lib_memblock_iternew(vldata->material_ubo_data, &iter_data);
   WORKBENCH_UBO_Material *matchunk;
   while ((matchunk = lib_memblock_iterstep(&iter_data))) {
-    GPUUniformBuf **ubo = BLI_memblock_iterstep(&iter);
-    BLI_assert(*ubo != NULL);
-    GPU_uniformbuf_update(*ubo, matchunk);
+    GPUUniformBuf **ubo = lib_memblock_iterstep(&iter);
+    lib_assert(*ubo != NULL);
+    gpu_uniformbuf_update(*ubo, matchunk);
   }
 
-  BLI_memblock_clear(vldata->material_ubo, workbench_ubo_free);
-  BLI_memblock_clear(vldata->material_ubo_data, NULL);
+  lib_memblock_clear(vldata->material_ubo, workbench_ubo_free);
+  lib_memblock_clear(vldata->material_ubo_data, NULL);
 }
