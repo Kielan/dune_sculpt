@@ -15,7 +15,7 @@
 
 #include "overlay_private.h"
 
-void overlay_motion_path_cache_init(OVERLAY_Data *vedata)
+void overlay_motion_path_cache_init(OverlayData *vedata)
 {
   OverlayPassList *psl = vedata->psl;
   OverlayPrivateData *pd = vedata->stl->pd;
@@ -61,7 +61,7 @@ static GPUBatch *mpath_batch_line_get(bMotionPath *mpath)
   return mpath->batch_line;
 }
 
-static GPUBatch *mpath_batch_points_get(bMotionPath *mpath)
+static GPUBatch *mpath_batch_points_get(DMotionPath *mpath)
 {
   if (!mpath->batch_points) {
     mpath->batch_points = GPU_batch_create(GPU_PRIM_POINTS, mpath_vbo_get(mpath), NULL);
@@ -130,7 +130,7 @@ static void motion_path_cache(OverlayData *vedata,
   /* Draw curve-line of path. */
   if (show_lines) {
     const int motion_path_settings[4] = {cfra, sfra, efra, mpath->start_frame};
-    DRWShadingGroup *grp = DRW_shgroup_create_sub(pd->motion_path_lines_grp);
+    DrawShadingGroup *grp = draw_shgroup_create_sub(pd->motion_path_lines_grp);
     draw_shgroup_uniform_ivec4_copy(grp, "mpathLineSettings", motion_path_settings);
     draw_shgroup_uniform_int_copy(grp, "lineThickness", mpath->line_thickness);
     draw_shgroup_uniform_bool_copy(grp, "selected", selected);
@@ -143,7 +143,7 @@ static void motion_path_cache(OverlayData *vedata,
   {
     int pt_size = max_ii(mpath->line_thickness - 1, 1);
     const int motion_path_settings[4] = {pt_size, cfra, mpath->start_frame, stepsize};
-    DRWShadingGroup *grp = DRW_shgroup_create_sub(pd->motion_path_points_grp);
+    DrawShadingGroup *grp = draw_shgroup_create_sub(pd->motion_path_points_grp);
     draw_shgroup_uniform_ivec4_copy(grp, "mpathPointSettings", motion_path_settings);
     draw_shgroup_uniform_bool_copy(grp, "showKeyFrames", show_keyframes);
     draw_shgroup_uniform_vec3_copy(grp, "customColor", color);
