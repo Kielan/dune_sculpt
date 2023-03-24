@@ -103,19 +103,19 @@ void overlay_mode_transfer_cache_populate(OVERLAY_Data *vedata, Object *ob)
   pd->mode_transfer.any_animated = true;
 
   if (use_sculpt_pbvh) {
-    DRW_shgroup_call_sculpt(mode_transfer_grp[is_xray], ob, false, false);
+    draw_shgroup_call_sculpt(mode_transfer_grp[is_xray], ob, false, false);
   }
   else {
-    struct GPUBatch *geom = DRW_cache_object_surface_get(ob);
+    struct GPUBatch *geom = draw_cache_object_surface_get(ob);
     if (geom) {
-      DRW_shgroup_call(mode_transfer_grp[is_xray], geom, ob);
+      draw_shgroup_call(mode_transfer_grp[is_xray], geom, ob);
     }
   }
 }
 
-void OVERLAY_mode_transfer_draw(OVERLAY_Data *vedata)
+void overlay_mode_transfer_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
+  OverlayPassList *psl = vedata->psl;
 
   DRW_draw_pass(psl->mode_transfer_ps[NOT_IN_FRONT]);
 }
