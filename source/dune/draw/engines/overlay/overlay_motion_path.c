@@ -17,36 +17,36 @@
 
 void overlay_motion_path_cache_init(OVERLAY_Data *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  DRWShadingGroup *grp;
+  OverlayPassList *psl = vedata->psl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  DrawShadingGroup *grp;
   GPUShader *sh;
 
-  DRWState state = DRW_STATE_WRITE_COLOR;
-  DRW_PASS_CREATE(psl->motion_paths_ps, state | pd->clipping_state);
+  DrawState state = DRAW_STATE_WRITE_COLOR;
+  DRAW_PASS_CREATE(psl->motion_paths_ps, state | pd->clipping_state);
 
-  sh = OVERLAY_shader_motion_path_line();
-  pd->motion_path_lines_grp = grp = DRW_shgroup_create(sh, psl->motion_paths_ps);
-  DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+  sh = overlay_shader_motion_path_line();
+  pd->motion_path_lines_grp = grp = draw_shgroup_create(sh, psl->motion_paths_ps);
+  draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
 
-  sh = OVERLAY_shader_motion_path_vert();
-  pd->motion_path_points_grp = grp = DRW_shgroup_create(sh, psl->motion_paths_ps);
-  DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+  sh = overlay_shader_motion_path_vert();
+  pd->motion_path_points_grp = grp = draw_shgroup_create(sh, psl->motion_paths_ps);
+  draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
 }
 
 /* Just convert the CPU cache to GPU cache. */
-/* T0D0(fclem) This should go into a draw_cache_impl_motionpath. */
-static GPUVertBuf *mpath_vbo_get(bMotionPath *mpath)
+/* This should go into a draw_cache_impl_motionpath. */
+static GPUVertBuf *mpath_vbo_get(DMotionPath *mpath)
 {
   if (!mpath->points_vbo) {
     GPUVertFormat format = {0};
     /* Match structure of bMotionPathVert. */
-    GPU_vertformat_attr_add(&format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
-    GPU_vertformat_attr_add(&format, "flag", GPU_COMP_I32, 1, GPU_FETCH_INT);
-    mpath->points_vbo = GPU_vertbuf_create_with_format(&format);
+    gpu_vertformat_attr_add(&format, "pos", GPU_COMP_F32, 3, GPU_FETCH_FLOAT);
+    gpu_vertformat_attr_add(&format, "flag", GPU_COMP_I32, 1, GPU_FETCH_INT);
+    mpath->points_vbo = gpu_vertbuf_create_with_format(&format);
     GPU_vertbuf_data_alloc(mpath->points_vbo, mpath->length);
     /* meh... a useless memcpy. */
-    memcpy(GPU_vertbuf_get_data(mpath->points_vbo),
+    memcpy(gpu_vertbuf_get_data(mpath->points_vbo),
            mpath->points,
            sizeof(bMotionPathVert) * mpath->length);
   }
@@ -99,16 +99,16 @@ static void motion_path_get_frame_range_to_draw(bAnimVizSettings *avs,
   *r_step = max_ii(avs->path_step, 1);
 }
 
-static void motion_path_cache(OVERLAY_Data *vedata,
+static void motion_path_cache(OverlayData *vedata,
                               Object *ob,
-                              bPoseChannel *pchan,
-                              bAnimVizSettings *avs,
-                              bMotionPath *mpath)
+                              DPoseChannel *pchan,
+                              DAnimVizSettings *avs,
+                              DMotionPath *mpath)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  struct DRWTextStore *dt = DRW_text_cache_ensure();
-  int txt_flag = DRW_TEXT_CACHE_GLOBALSPACE;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  struct DrawTextStore *dt = draw_text_cache_ensure();
+  int txt_flag = DRAW_TEXT_CACHE_GLOBALSPACE;
   int cfra = (int)DEG_get_ctime(draw_ctx->depsgraph);
   bool selected = (pchan) ? (pchan->bone->flag & BONE_SELECTED) : (ob->base_flag & BASE_SELECTED);
   bool show_keyframes = (avs->path_viewflag & MOTIONPATH_VIEW_KFRAS) != 0;
@@ -131,12 +131,12 @@ static void motion_path_cache(OVERLAY_Data *vedata,
   if (show_lines) {
     const int motion_path_settings[4] = {cfra, sfra, efra, mpath->start_frame};
     DRWShadingGroup *grp = DRW_shgroup_create_sub(pd->motion_path_lines_grp);
-    DRW_shgroup_uniform_ivec4_copy(grp, "mpathLineSettings", motion_path_settings);
-    DRW_shgroup_uniform_int_copy(grp, "lineThickness", mpath->line_thickness);
-    DRW_shgroup_uniform_bool_copy(grp, "selected", selected);
-    DRW_shgroup_uniform_vec3_copy(grp, "customColor", color);
+    draw_shgroup_uniform_ivec4_copy(grp, "mpathLineSettings", motion_path_settings);
+    draw_shgroup_uniform_int_copy(grp, "lineThickness", mpath->line_thickness);
+    draw_shgroup_uniform_bool_copy(grp, "selected", selected);
+    draw_shgroup_uniform_vec3_copy(grp, "customColor", color);
     /* Only draw the required range. */
-    DRW_shgroup_call_range(grp, NULL, mpath_batch_line_get(mpath), start_index, len);
+    draw_shgroup_call_range(grp, NULL, mpath_batch_line_get(mpath), start_index, len);
   }
 
   /* Draw points. */
@@ -144,11 +144,11 @@ static void motion_path_cache(OVERLAY_Data *vedata,
     int pt_size = max_ii(mpath->line_thickness - 1, 1);
     const int motion_path_settings[4] = {pt_size, cfra, mpath->start_frame, stepsize};
     DRWShadingGroup *grp = DRW_shgroup_create_sub(pd->motion_path_points_grp);
-    DRW_shgroup_uniform_ivec4_copy(grp, "mpathPointSettings", motion_path_settings);
-    DRW_shgroup_uniform_bool_copy(grp, "showKeyFrames", show_keyframes);
-    DRW_shgroup_uniform_vec3_copy(grp, "customColor", color);
+    draw_shgroup_uniform_ivec4_copy(grp, "mpathPointSettings", motion_path_settings);
+    draw_shgroup_uniform_bool_copy(grp, "showKeyFrames", show_keyframes);
+    draw_shgroup_uniform_vec3_copy(grp, "customColor", color);
     /* Only draw the required range. */
-    DRW_shgroup_call_range(grp, NULL, mpath_batch_points_get(mpath), start_index, len);
+    draw_shgroup_call_range(grp, NULL, mpath_batch_points_get(mpath), start_index, len);
   }
 
   /* Draw frame numbers at each frame-step value. */
