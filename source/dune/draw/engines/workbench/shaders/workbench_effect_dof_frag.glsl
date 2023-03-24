@@ -1,5 +1,5 @@
-#pragma BLENDER_REQUIRE(common_view_lib.glsl)
-#pragma BLENDER_REQUIRE(common_math_lib.glsl)
+#pragma DUNE_REQUIRE(common_view_lib.glsl)
+#pragma DUNE_REQUIRE(common_math_lib.glsl)
 
 /**
  * Separable Hexagonal Bokeh Blur by Colin Barré-Brisebois
