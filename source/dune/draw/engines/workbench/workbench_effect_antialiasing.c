@@ -282,13 +282,13 @@ static void workbench_antialiasing_weights_get(const float offset[2],
   }
 }
 
-void workbench_antialiasing_cache_init(WORKBENCH_Data *vedata)
+void workbench_antialiasing_cache_init(DBenchData *vedata)
 {
-  WORKBENCH_TextureList *txl = vedata->txl;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
-  WORKBENCH_PassList *psl = vedata->psl;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
-  DRWShadingGroup *grp = NULL;
+  DBenchTextureList *txl = vedata->txl;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
+  DBenchPassList *psl = vedata->psl;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
+  DrawShadingGroup *grp = NULL;
 
   if (wpd->taa_sample_len == 0) {
     return;
@@ -311,43 +311,43 @@ void workbench_antialiasing_cache_init(WORKBENCH_Data *vedata)
 
   {
     /* Stage 1: Edge detection. */
-    DRW_PASS_CREATE(psl->aa_edge_ps, DRW_STATE_WRITE_COLOR);
+    DRAW_PASS_CREATE(psl->aa_edge_ps, DRW_STATE_WRITE_COLOR);
 
     GPUShader *sh = workbench_shader_antialiasing_get(0);
-    grp = DRW_shgroup_create(sh, psl->aa_edge_ps);
-    DRW_shgroup_uniform_texture(grp, "colorTex", txl->history_buffer_tx);
-    DRW_shgroup_uniform_vec4_copy(grp, "viewportMetrics", metrics);
+    grp = draw_shgroup_create(sh, psl->aa_edge_ps);
+    draw_shgroup_uniform_texture(grp, "colorTex", txl->history_buffer_tx);
+    draw_shgroup_uniform_vec4_copy(grp, "viewportMetrics", metrics);
 
-    DRW_shgroup_clear_framebuffer(grp, GPU_COLOR_BIT, 0, 0, 0, 0, 0.0f, 0x0);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    draw_shgroup_clear_framebuffer(grp, GPU_COLOR_BIT, 0, 0, 0, 0, 0.0f, 0x0);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   {
     /* Stage 2: Blend Weight/Coord. */
-    DRW_PASS_CREATE(psl->aa_weight_ps, DRW_STATE_WRITE_COLOR);
+    DRAW_PASS_CREATE(psl->aa_weight_ps, DRW_STATE_WRITE_COLOR);
 
     GPUShader *sh = workbench_shader_antialiasing_get(1);
-    grp = DRW_shgroup_create(sh, psl->aa_weight_ps);
-    DRW_shgroup_uniform_texture(grp, "edgesTex", wpd->smaa_edge_tx);
-    DRW_shgroup_uniform_texture(grp, "areaTex", txl->smaa_area_tx);
-    DRW_shgroup_uniform_texture(grp, "searchTex", txl->smaa_search_tx);
-    DRW_shgroup_uniform_vec4_copy(grp, "viewportMetrics", metrics);
+    grp = draw_shgroup_create(sh, psl->aa_weight_ps);
+    draw_shgroup_uniform_texture(grp, "edgesTex", wpd->smaa_edge_tx);
+    draw_shgroup_uniform_texture(grp, "areaTex", txl->smaa_area_tx);
+    draw_shgroup_uniform_texture(grp, "searchTex", txl->smaa_search_tx);
+    draw_shgroup_uniform_vec4_copy(grp, "viewportMetrics", metrics);
 
-    DRW_shgroup_clear_framebuffer(grp, GPU_COLOR_BIT, 0, 0, 0, 0, 0.0f, 0x0);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    draw_shgroup_clear_framebuffer(grp, GPU_COLOR_BIT, 0, 0, 0, 0, 0.0f, 0x0);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   {
     /* Stage 3: Resolve. */
-    DRW_PASS_CREATE(psl->aa_resolve_ps, DRW_STATE_WRITE_COLOR);
+    DRAW_PASS_CREATE(psl->aa_resolve_ps, DRAW_STATE_WRITE_COLOR);
 
     GPUShader *sh = workbench_shader_antialiasing_get(2);
-    grp = DRW_shgroup_create(sh, psl->aa_resolve_ps);
-    DRW_shgroup_uniform_texture(grp, "blendTex", wpd->smaa_weight_tx);
-    DRW_shgroup_uniform_texture(grp, "colorTex", txl->history_buffer_tx);
-    DRW_shgroup_uniform_vec4_copy(grp, "viewportMetrics", metrics);
-    DRW_shgroup_uniform_float(grp, "mixFactor", &wpd->smaa_mix_factor, 1);
-    DRW_shgroup_uniform_float(grp, "taaAccumulatedWeight", &wpd->taa_weight_accum, 1);
+    grp = draw_shgroup_create(sh, psl->aa_resolve_ps);
+    draw_shgroup_uniform_texture(grp, "blendTex", wpd->smaa_weight_tx);
+    draw_shgroup_uniform_texture(grp, "colorTex", txl->history_buffer_tx);
+    draw_shgroup_uniform_vec4_copy(grp, "viewportMetrics", metrics);
+    draw_shgroup_uniform_float(grp, "mixFactor", &wpd->smaa_mix_factor, 1);
+    draw_shgroup_uniform_float(grp, "taaAccumulatedWeight", &wpd->taa_weight_accum, 1);
 
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 }
 
