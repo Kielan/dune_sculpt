@@ -51,7 +51,7 @@ static const char *workbench_lighting_mode_to_str(int light)
 {
   switch (light) {
     default:
-      BLI_assert_msg(0, "Error: Unknown lighting mode.");
+      lib_assert_msg(0, "Error: Unknown lighting mode.");
       ATTR_FALLTHROUGH;
     case V3D_LIGHTING_STUDIO:
       return "_studio";
@@ -67,7 +67,7 @@ static const char *workbench_datatype_mode_to_str(eWORKBENCH_DataType datatype)
 {
   switch (datatype) {
     default:
-      BLI_assert_msg(0, "Error: Unknown data mode.");
+      lib_assert_msg(0, "Error: Unknown data mode.");
       ATTR_FALLTHROUGH;
     case WORKBENCH_DATATYPE_MESH:
       return "_mesh";
@@ -82,7 +82,7 @@ static const char *workbench_volume_interp_to_str(eWORKBENCH_VolumeInterpType in
 {
   switch (interp_type) {
     default:
-      BLI_assert_msg(0, "Error: Unknown lighting mode.");
+      lib_assert_msg(0, "Error: Unknown lighting mode.");
       ATTR_FALLTHROUGH;
     case WORKBENCH_VOLUME_INTERP_LINEAR:
       return "_linear";
@@ -97,7 +97,7 @@ static const char *workbench_texture_type_to_str(eWORKBENCH_TextureType tex_type
 {
   switch (tex_type) {
     default:
-      BLI_assert_msg(0, "Error: Unknown texture mode.");
+      lib_assert_msg(0, "Error: Unknown texture mode.");
       ATTR_FALLTHROUGH;
     case TEXTURE_SH_NONE:
       return "_tex_none";
@@ -113,11 +113,8 @@ static eWORKBENCH_TextureType workbench_texture_type_get(bool textured, bool til
   return textured ? (tiled ? TEXTURE_SH_TILED : TEXTURE_SH_SINGLE) : TEXTURE_SH_NONE;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Shader request
- * \{ */
+/** Shader request **/
 
 static GPUShader *workbench_shader_get_ex(WORKBENCH_PrivateData *wpd,
                                           bool transp,
