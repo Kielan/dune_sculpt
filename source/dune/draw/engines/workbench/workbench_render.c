@@ -1,8 +1,4 @@
-/** \file
- * \ingroup draw_engine
- *
- * Render functions for final render output.
- */
+/** Render functions for final render output. */
 
 #include "BLI_rect.h"
 
