@@ -1,5 +1,5 @@
-/** \file
- * \ingroup draw_engine
+/**
+ * draw_engine
  *
  * Cavity Effect:
  *
@@ -9,9 +9,9 @@
  * This is done after the opaque pass. It only affects the opaque surfaces.
  */
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BLI_rand.h"
+#include "lib_rand.h"
 
 #include "../eevee/eevee_lut.h" /* TODO: find somewhere to share blue noise Table. */
 
@@ -28,12 +28,12 @@ static float *create_disk_samples(int num_samples, int num_iterations)
   const int total_samples = num_samples * num_iterations;
   const float num_samples_inv = 1.0f / num_samples;
   /* vec4 to ensure memory alignment. */
-  float(*texels)[4] = MEM_callocN(sizeof(float[4]) * CAVITY_MAX_SAMPLES, __func__);
+  float(*texels)[4] = mem_callocn(sizeof(float[4]) * CAVITY_MAX_SAMPLES, __func__);
   for (int i = 0; i < total_samples; i++) {
     float it_add = (i / num_samples) * 0.499f;
     float r = fmodf((i + 0.5f + it_add) * num_samples_inv, 1.0f);
     double dphi;
-    BLI_hammersley_1d(i, &dphi);
+    lib_hammersley_1d(i, &dphi);
 
     float phi = (float)dphi * 2.0f * M_PI + it_add;
     texels[i][0] = cosf(phi);
@@ -65,10 +65,10 @@ static struct GPUTexture *create_jitter_texture(int num_samples)
 
   UNUSED_VARS(bsdf_split_sum_ggx, btdf_split_sum_ggx, ltc_mag_ggx, ltc_mat_ggx, ltc_disk_integral);
 
-  return DRW_texture_create_2d(64, 64, GPU_RGBA16F, DRW_TEX_WRAP, &jitter[0][0]);
+  return draw_texture_create_2d(64, 64, GPU_RGBA16F, DRW_TEX_WRAP, &jitter[0][0]);
 }
 
-BLI_INLINE int workbench_cavity_total_sample_count(const WORKBENCH_PrivateData *wpd,
+LIB_INLINE int workbench_cavity_total_sample_count(const WORKBENCH_PrivateData *wpd,
                                                    const Scene *scene)
 {
   return min_ii(max_ii(1, wpd->taa_sample_len) * scene->display.matcap_ssao_samples,
@@ -113,8 +113,8 @@ void workbench_cavity_samples_ubo_ensure(WORKBENCH_PrivateData *wpd)
   const int max_iter_count = max_ii(1, cavity_sample_count / cavity_sample_count_single_iteration);
 
   if (wpd->vldata->cavity_sample_count != cavity_sample_count) {
-    DRW_UBO_FREE_SAFE(wpd->vldata->cavity_sample_ubo);
-    DRW_TEXTURE_FREE_SAFE(wpd->vldata->cavity_jitter_tx);
+    DRAW_UBO_FREE_SAFE(wpd->vldata->cavity_sample_ubo);
+    DRAW_TEXTURE_FREE_SAFE(wpd->vldata->cavity_jitter_tx);
   }
 
   if (wpd->vldata->cavity_sample_ubo == NULL) {
@@ -124,39 +124,39 @@ void workbench_cavity_samples_ubo_ensure(WORKBENCH_PrivateData *wpd)
     wpd->vldata->cavity_sample_ubo = GPU_uniformbuf_create_ex(
         sizeof(float[4]) * CAVITY_MAX_SAMPLES, samples, "wb_CavitySamples");
     wpd->vldata->cavity_sample_count = cavity_sample_count;
-    MEM_freeN(samples);
+    mem_freen(samples);
   }
 }
 
-void workbench_cavity_cache_init(WORKBENCH_Data *data)
+void workbench_cavity_cache_init(DBenchData *data)
 {
-  WORKBENCH_PassList *psl = data->psl;
-  WORKBENCH_PrivateData *wpd = data->stl->wpd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DBenchPassList *psl = data->psl;
+  DBenchPrivateData *wpd = data->stl->wpd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
   struct GPUShader *sh;
-  DRWShadingGroup *grp;
+  DrawShadingGroup *grp;
 
   if (CAVITY_ENABLED(wpd)) {
     workbench_cavity_samples_ubo_ensure(wpd);
 
-    int state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_MUL;
-    DRW_PASS_CREATE(psl->cavity_ps, state);
+    int state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_MUL;
+    DRAW_PASS_CREATE(psl->cavity_ps, state);
 
     sh = workbench_shader_cavity_get(SSAO_ENABLED(wpd), CURVATURE_ENABLED(wpd));
 
-    grp = DRW_shgroup_create(sh, psl->cavity_ps);
-    DRW_shgroup_uniform_texture(grp, "normalBuffer", wpd->normal_buffer_tx);
-    DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+    grp = draw_shgroup_create(sh, psl->cavity_ps);
+    draw_shgroup_uniform_texture(grp, "normalBuffer", wpd->normal_buffer_tx);
+    draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
 
     if (SSAO_ENABLED(wpd)) {
-      DRW_shgroup_uniform_block(grp, "samples_coords", wpd->vldata->cavity_sample_ubo);
-      DRW_shgroup_uniform_texture(grp, "depthBuffer", dtxl->depth);
-      DRW_shgroup_uniform_texture(grp, "cavityJitter", wpd->vldata->cavity_jitter_tx);
+      draw_shgroup_uniform_block(grp, "samples_coords", wpd->vldata->cavity_sample_ubo);
+      draw_shgroup_uniform_texture(grp, "depthBuffer", dtxl->depth);
+      draw_shgroup_uniform_texture(grp, "cavityJitter", wpd->vldata->cavity_jitter_tx);
     }
     if (CURVATURE_ENABLED(wpd)) {
-      DRW_shgroup_uniform_texture(grp, "objectIdBuffer", wpd->object_id_tx);
+      draw_shgroup_uniform_texture(grp, "objectIdBuffer", wpd->object_id_tx);
     }
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   else {
     psl->cavity_ps = NULL;
