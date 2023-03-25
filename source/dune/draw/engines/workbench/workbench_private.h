@@ -17,7 +17,7 @@ extern "C" {
 
 extern struct DrawEngineType draw_engine_workbench;
 
-#define WORKBENCH_ENGINE "DUNE_WORKBENCH"
+#define DBENCH_ENGINE "DUNE_WORKBENCH"
 
 #define MAX_MATERIAL (1 << 12)
 
