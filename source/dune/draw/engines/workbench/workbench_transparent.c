@@ -1,9 +1,7 @@
-/** \file
- * \ingroup draw_engine
- *
+/**
  * Transparent Pipeline:
  *
- * Use Weight Blended Order Independent Transparency to render transparent surfaces.
+ * Use Weight Dune Order Independent Transparency to render transparent surfaces.
  *
  * The rendering is broken down in two passes:
  * - the accumulation pass where we render all the surfaces and accumulate all the weights.
@@ -13,18 +11,18 @@
  * correct depth and object ids correctly written.
  */
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
 #include "workbench_engine.h"
 #include "workbench_private.h"
 
-void workbench_transparent_engine_init(WORKBENCH_Data *data)
+void workbench_transparent_engine_init(DBenchData *data)
 {
-  WORKBENCH_FramebufferList *fbl = data->fbl;
-  WORKBENCH_PrivateData *wpd = data->stl->wpd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DBenchFramebufferList *fbl = data->fbl;
+  DBenchPrivateData *wpd = data->stl->wpd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
   DrawEngineType *owner = (DrawEngineType *)&workbench_transparent_engine_init;
 
   /* Reuse same format as opaque pipeline to reuse the textures. */
@@ -33,10 +31,10 @@ void workbench_transparent_engine_init(WORKBENCH_Data *data)
   const eGPUTextureFormat accum_tex_format = GPU_RGBA16F;
   const eGPUTextureFormat reveal_tex_format = NORMAL_ENCODING_ENABLED() ? GPU_RG16F : GPU_RGBA32F;
 
-  wpd->accum_buffer_tx = DRW_texture_pool_query_fullscreen(accum_tex_format, owner);
-  wpd->reveal_buffer_tx = DRW_texture_pool_query_fullscreen(reveal_tex_format, owner);
+  wpd->accum_buffer_tx = draw_texture_pool_query_fullscreen(accum_tex_format, owner);
+  wpd->reveal_buffer_tx = draw_texture_pool_query_fullscreen(reveal_tex_format, owner);
 
-  GPU_framebuffer_ensure_config(&fbl->transp_accum_fb,
+  gpu_framebuffer_ensure_config(&fbl->transp_accum_fb,
                                 {
                                     GPU_ATTACHMENT_TEXTURE(dtxl->depth),
                                     GPU_ATTACHMENT_TEXTURE(wpd->accum_buffer_tx),
@@ -44,29 +42,29 @@ void workbench_transparent_engine_init(WORKBENCH_Data *data)
                                 });
 }
 
-static void workbench_transparent_lighting_uniforms(WORKBENCH_PrivateData *wpd,
-                                                    DRWShadingGroup *grp)
+static void workbench_transparent_lighting_uniforms(DBenchPrivateData *wpd,
+                                                    DrawShadingGroup *grp)
 {
-  DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-  DRW_shgroup_uniform_bool_copy(grp, "forceShadowing", false);
+  draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+  draw_shgroup_uniform_bool_copy(grp, "forceShadowing", false);
 
   if (STUDIOLIGHT_TYPE_MATCAP_ENABLED(wpd)) {
-    BKE_studiolight_ensure_flag(wpd->studio_light,
+    dune_studiolight_ensure_flag(wpd->studio_light,
                                 STUDIOLIGHT_MATCAP_DIFFUSE_GPUTEXTURE |
                                     STUDIOLIGHT_MATCAP_SPECULAR_GPUTEXTURE);
     struct GPUTexture *diff_tx = wpd->studio_light->matcap_diffuse.gputexture;
     struct GPUTexture *spec_tx = wpd->studio_light->matcap_specular.gputexture;
     const bool use_spec = workbench_is_specular_highlight_enabled(wpd);
     spec_tx = (use_spec && spec_tx) ? spec_tx : diff_tx;
-    DRW_shgroup_uniform_texture(grp, "matcap_diffuse_tx", diff_tx);
-    DRW_shgroup_uniform_texture(grp, "matcap_specular_tx", spec_tx);
+    draw_shgroup_uniform_texture(grp, "matcap_diffuse_tx", diff_tx);
+    draw_shgroup_uniform_texture(grp, "matcap_specular_tx", spec_tx);
   }
 }
 
 void workbench_transparent_cache_init(WORKBENCH_Data *vedata)
 {
-  WORKBENCH_PassList *psl = vedata->psl;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
+  DBenchPassList *psl = vedata->psl;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
   struct GPUShader *sh;
   DRWShadingGroup *grp;
 
