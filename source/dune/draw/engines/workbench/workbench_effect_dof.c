@@ -146,14 +146,14 @@ void workbench_dof_engine_init(DBenchData *vedata)
       &txl->dof_source_tx, size[0], size[1], GPU_RGBA16F, DRW_TEX_FILTER | DRW_TEX_MIPMAP);
   draw_texture_ensure_2d(
       &txl->coc_halfres_tx, size[0], size[1], GPU_RG8, DRW_TEX_FILTER | DRW_TEX_MIPMAP);
-  wpd->dof_blur_tx = DRW_texture_pool_query_2d(
+  wpd->dof_blur_tx = draw_texture_pool_query_2d(
       size[0], size[1], GPU_RGBA16F, &draw_engine_workbench);
-#if 0 /* TODO(fclem): finish COC min_max optimization. */
-  wpd->coc_temp_tx = DRW_texture_pool_query_2d(
+#if 0 /* TODO: finish COC min_max optimization. */
+  wpd->coc_temp_tx = draw_texture_pool_query_2d(
       shrink_h_size[0], shrink_h_size[1], GPU_RG8, &draw_engine_workbench);
-  wpd->coc_tiles_tx[0] = DRW_texture_pool_query_2d(
+  wpd->coc_tiles_tx[0] = draw_texture_pool_query_2d(
       shrink_w_size[0], shrink_w_size[1], GPU_RG8, &draw_engine_workbench);
-  wpd->coc_tiles_tx[1] = DRW_texture_pool_query_2d(
+  wpd->coc_tiles_tx[1] = draw_texture_pool_query_2d(
       shrink_w_size[0], shrink_w_size[1], GPU_RG8, &draw_engine_workbench);
 #endif
 
