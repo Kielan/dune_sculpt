@@ -130,23 +130,23 @@ typedef struct DBenchPassList {
   struct DrawPass *composite_ps;
 
   struct DrawPass *dof_down_ps;
-  struct DRWPass *dof_down2_ps;
-  struct DRWPass *dof_flatten_v_ps;
-  struct DRWPass *dof_flatten_h_ps;
-  struct DRWPass *dof_dilate_h_ps;
-  struct DRWPass *dof_dilate_v_ps;
-  struct DRWPass *dof_blur1_ps;
-  struct DRWPass *dof_blur2_ps;
-  struct DRWPass *dof_resolve_ps;
+  struct DrawPass *dof_down2_ps;
+  struct DrawPass *dof_flatten_v_ps;
+  struct DrawPass *dof_flatten_h_ps;
+  struct DrawPass *dof_dilate_h_ps;
+  struct DrawPass *dof_dilate_v_ps;
+  struct DrawPass *dof_blur1_ps;
+  struct DrawPass *dof_blur2_ps;
+  struct DrawPass *dof_resolve_ps;
 
-  struct DRWPass *volume_ps;
+  struct DrawPass *volume_ps;
 
-  struct DRWPass *aa_accum_ps;
-  struct DRWPass *aa_accum_replace_ps;
-  struct DRWPass *aa_edge_ps;
-  struct DRWPass *aa_weight_ps;
-  struct DRWPass *aa_resolve_ps;
-} WORKBENCH_PassList;
+  struct DrawPass *aa_accum_ps;
+  struct DrawPass *aa_accum_replace_ps;
+  struct DrawPass *aa_edge_ps;
+  struct DrawPass *aa_weight_ps;
+  struct DrawPass *aa_resolve_ps;
+} DBenchPassList;
 
 typedef struct DBenchData {
   void *engine_type;
@@ -201,20 +201,20 @@ BLI_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_World, 16)
 BLI_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Light, 16)
 BLI_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Material, 16)
 
-typedef struct WORKBENCH_Prepass {
+typedef struct DBenchPrepass {
   /** Hash storing shading group for each Material or GPUTexture to reduce state changes. */
   struct GHash *material_hash;
   /** First common (non-vertex-color and non-image-colored) shading group to created subgroups. */
-  struct DRWShadingGroup *common_shgrp;
+  struct DrawShadingGroup *common_shgrp;
   /** First Vertex Color shading group to created subgroups. */
-  struct DRWShadingGroup *vcol_shgrp;
+  struct DrawShadingGroup *vcol_shgrp;
   /** First Image shading group to created subgroups. */
-  struct DRWShadingGroup *image_shgrp;
+  struct DrawShadingGroup *image_shgrp;
   /** First UDIM (tiled image) shading group to created subgroups. */
-  struct DRWShadingGroup *image_tiled_shgrp;
-} WORKBENCH_Prepass;
+  struct DrawShadingGroup *image_tiled_shgrp;
+} DBenchPrepass;
 
-typedef struct WORKBENCH_PrivateData {
+typedef struct DBenchPrivateData {
   /** ViewLayerData for faster access. */
   struct WORKBENCH_ViewLayerData *vldata;
   /** Copy of draw_ctx->sh_cfg for faster access. */
