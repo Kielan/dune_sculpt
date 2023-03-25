@@ -571,10 +571,10 @@ void workbench_draw_sample(void *ved)
 /* Viewport rendering. */
 static void workbench_draw_scene(void *ved)
 {
-  WORKBENCH_Data *vedata = ved;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
+  DBenchData *vedata = ved;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
 
-  if (DRW_state_is_opengl_render()) {
+  if (draw_state_is_opengl_render()) {
     while (wpd->taa_sample < max_ii(1, wpd->taa_sample_len)) {
       workbench_update_world_ubo(wpd);
 
@@ -590,10 +590,10 @@ static void workbench_draw_scene(void *ved)
 
 void workbench_draw_finish(void *ved)
 {
-  WORKBENCH_Data *vedata = ved;
+  DBenchData *vedata = ved;
   workbench_volume_draw_finish(vedata);
   /* Reset default view. */
-  DRW_view_set_active(NULL);
+  draw_view_set_active(NULL);
 }
 
 static void workbench_engine_free(void)
@@ -603,7 +603,7 @@ static void workbench_engine_free(void)
 
 static void workbench_view_update(void *vedata)
 {
-  WORKBENCH_Data *data = vedata;
+  DBenchData *data = vedata;
   workbench_antialiasing_view_updated(data);
 }
 
@@ -639,14 +639,14 @@ DrawEngineType draw_engine_workbench = {
     NULL,
 };
 
-RenderEngineType DRW_engine_viewport_workbench_type = {
+RenderEngineType draw_engine_viewport_workbench_type = {
     NULL,
     NULL,
     WORKBENCH_ENGINE,
     N_("Workbench"),
     RE_INTERNAL | RE_USE_STEREO_VIEWPORT | RE_USE_GPU_CONTEXT,
     NULL,
-    &DRW_render_to_image,
+    &draw_render_to_image,
     NULL,
     NULL,
     NULL,
