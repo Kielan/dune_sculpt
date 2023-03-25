@@ -61,10 +61,10 @@ static void workbench_dof_setup_samples(struct GPUUniformBuf **ubo,
                                         float bokeh_ratio)
 {
   if (*data == NULL) {
-    *data = MEM_callocN(sizeof(float[4]) * SAMP_LEN, "workbench dof samples");
+    *data = mem_callocn(sizeof(float[4]) * SAMP_LEN, "workbench dof samples");
   }
   if (*ubo == NULL) {
-    *ubo = GPU_uniformbuf_create(sizeof(float[4]) * SAMP_LEN);
+    *ubo = gpu_uniformbuf_create(sizeof(float[4]) * SAMP_LEN);
   }
 
   float *samp = *data;
@@ -100,17 +100,17 @@ static void workbench_dof_setup_samples(struct GPUUniformBuf **ubo,
     }
   }
 
-  GPU_uniformbuf_update(*ubo, *data);
+  gpu_uniformbuf_update(*ubo, *data);
 }
 
-void workbench_dof_engine_init(WORKBENCH_Data *vedata)
+void workbench_dof_engine_init(DBenchData *vedata)
 {
-  WORKBENCH_TextureList *txl = vedata->txl;
-  WORKBENCH_StorageList *stl = vedata->stl;
-  WORKBENCH_PrivateData *wpd = stl->wpd;
-  WORKBENCH_FramebufferList *fbl = vedata->fbl;
+  DBenchTextureList *txl = vedata->txl;
+  DBenchStorageList *stl = vedata->stl;
+  DBenchPrivateData *wpd = stl->wpd;
+  DBenchFramebufferList *fbl = vedata->fbl;
 
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DraeCtxState *draw_ctx = draw_ctx_state_get();
   RegionView3D *rv3d = draw_ctx->rv3d;
   View3D *v3d = draw_ctx->v3d;
 
@@ -129,22 +129,22 @@ void workbench_dof_engine_init(WORKBENCH_Data *vedata)
     wpd->dof_enabled = false;
 
     /* Cleanup. */
-    DRW_TEXTURE_FREE_SAFE(txl->dof_source_tx);
-    DRW_TEXTURE_FREE_SAFE(txl->coc_halfres_tx);
+    DRAW_TEXTURE_FREE_SAFE(txl->dof_source_tx);
+    DRAW_TEXTURE_FREE_SAFE(txl->coc_halfres_tx);
     return;
   }
 
   const float *full_size = DRW_viewport_size_get();
   const int size[2] = {max_ii(1, (int)full_size[0] / 2), max_ii(1, (int)full_size[1] / 2)};
-#if 0 /* TODO(fclem): finish COC min_max optimization. */
+#if 0 /* TODO: finish COC min_max optimization. */
   /* NOTE: We Ceil here in order to not miss any edge texel if using a NPO2 texture. */
   int shrink_h_size[2] = {ceilf(size[0] / 8.0f), size[1]};
   int shrink_w_size[2] = {shrink_h_size[0], ceilf(size[1] / 8.0f)};
 #endif
 
-  DRW_texture_ensure_2d(
+  draw_texture_ensure_2d(
       &txl->dof_source_tx, size[0], size[1], GPU_RGBA16F, DRW_TEX_FILTER | DRW_TEX_MIPMAP);
-  DRW_texture_ensure_2d(
+  draw_texture_ensure_2d(
       &txl->coc_halfres_tx, size[0], size[1], GPU_RG8, DRW_TEX_FILTER | DRW_TEX_MIPMAP);
   wpd->dof_blur_tx = DRW_texture_pool_query_2d(
       size[0], size[1], GPU_RGBA16F, &draw_engine_workbench);
@@ -157,24 +157,24 @@ void workbench_dof_engine_init(WORKBENCH_Data *vedata)
       shrink_w_size[0], shrink_w_size[1], GPU_RG8, &draw_engine_workbench);
 #endif
 
-  GPU_framebuffer_ensure_config(&fbl->dof_downsample_fb,
+  gpu_framebuffer_ensure_config(&fbl->dof_downsample_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(txl->dof_source_tx),
                                     GPU_ATTACHMENT_TEXTURE(txl->coc_halfres_tx),
                                 });
 #if 0 /* TODO(fclem): finish COC min_max optimization. */
-  GPU_framebuffer_ensure_config(&fbl->dof_coc_tile_h_fb,
+  gpu_framebuffer_ensure_config(&fbl->dof_coc_tile_h_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(wpd->coc_temp_tx),
                                 });
-  GPU_framebuffer_ensure_config(&fbl->dof_coc_tile_v_fb,
+  gpu_framebuffer_ensure_config(&fbl->dof_coc_tile_v_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(wpd->coc_tiles_tx[0]),
                                 });
-  GPU_framebuffer_ensure_config(&fbl->dof_coc_dilate_fb,
+  gpu_framebuffer_ensure_config(&fbl->dof_coc_dilate_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(wpd->coc_tiles_tx[1]),
@@ -379,14 +379,14 @@ void workbench_dof_draw_pass(WORKBENCH_Data *vedata)
   DRW_draw_pass(psl->dof_dilate_h_ps);
 #endif
 
-  GPU_framebuffer_bind(fbl->dof_blur1_fb);
-  DRW_draw_pass(psl->dof_blur1_ps);
+  gpu_framebuffer_bind(fbl->dof_blur1_fb);
+  draw_draw_pass(psl->dof_blur1_ps);
 
-  GPU_framebuffer_bind(fbl->dof_blur2_fb);
-  DRW_draw_pass(psl->dof_blur2_ps);
+  gpu_framebuffer_bind(fbl->dof_blur2_fb);
+  dra_draw_pass(psl->dof_blur2_ps);
 
-  GPU_framebuffer_bind(dfbl->color_only_fb);
-  DRW_draw_pass(psl->dof_resolve_ps);
+  gpu_framebuffer_bind(dfbl->color_only_fb);
+  draw_draw_pass(psl->dof_resolve_ps);
 
-  DRW_stats_group_end();
+  draw_stats_group_end();
 }
