@@ -1,19 +1,19 @@
 /** Render functions for final render output. */
 
-#include "BLI_rect.h"
+#include "lib_rect.h"
 
-#include "DNA_node_types.h"
+#include "types_node.h"
 
-#include "BKE_report.h"
+#include "dune_report.h"
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "ED_view3d.h"
+#include "ed_view3d.h"
 
-#include "GPU_shader.h"
+#include "gpu_shader.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "dgraph.h"
+#include "dgraph_query.h"
 
 #include "RE_pipeline.h"
 
@@ -29,7 +29,7 @@ static void workbench_render_cache(void *vedata,
 
 static void workbench_render_matrices_init(RenderEngine *engine, Depsgraph *depsgraph)
 {
-  /* TODO(sergey): Shall render hold pointer to an evaluated camera instead? */
+  /* TODO: Shall render hold pointer to an evaluated camera instead? */
   struct Object *ob_camera_eval = DEG_get_evaluated_object(depsgraph, RE_GetCamera(engine->re));
 
   /* Set the perspective, view and window matrix. */
@@ -40,9 +40,9 @@ static void workbench_render_matrices_init(RenderEngine *engine, Depsgraph *deps
 
   invert_m4_m4(viewmat, viewinv);
 
-  DRWView *view = DRW_view_create(viewmat, winmat, NULL, NULL, NULL);
-  DRW_view_default_set(view);
-  DRW_view_set_active(view);
+  rawView *view = draw_view_create(viewmat, winmat, NULL, NULL, NULL);
+  draw_view_default_set(view);
+  draw_view_set_active(view);
 }
 
 static bool workbench_render_framebuffers_init(void)
@@ -56,7 +56,7 @@ static bool workbench_render_framebuffers_init(void)
   /* When doing a multi view rendering the first view will allocate the buffers
    * the other views will reuse these buffers */
   if (dtxl->color == NULL) {
-    BLI_assert(dtxl->depth == NULL);
+    lib_assert(dtxl->depth == NULL);
     dtxl->color = GPU_texture_create_2d("txl.color", UNPACK2(size), 1, GPU_RGBA16F, NULL);
     dtxl->depth = GPU_texture_create_2d("txl.depth", UNPACK2(size), 1, GPU_DEPTH24_STENCIL8, NULL);
   }
@@ -65,22 +65,22 @@ static bool workbench_render_framebuffers_init(void)
     return false;
   }
 
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
 
-  GPU_framebuffer_ensure_config(
+  gou_framebuffer_ensure_config(
       &dfbl->default_fb,
       {GPU_ATTACHMENT_TEXTURE(dtxl->depth), GPU_ATTACHMENT_TEXTURE(dtxl->color)});
 
-  GPU_framebuffer_ensure_config(&dfbl->depth_only_fb,
+  gpu_framebuffer_ensure_config(&dfbl->depth_only_fb,
                                 {GPU_ATTACHMENT_TEXTURE(dtxl->depth), GPU_ATTACHMENT_NONE});
 
-  GPU_framebuffer_ensure_config(&dfbl->color_only_fb,
+  gpu_framebuffer_ensure_config(&dfbl->color_only_fb,
                                 {GPU_ATTACHMENT_NONE, GPU_ATTACHMENT_TEXTURE(dtxl->color)});
 
   bool ok = true;
-  ok = ok && GPU_framebuffer_check_valid(dfbl->default_fb, NULL);
-  ok = ok && GPU_framebuffer_check_valid(dfbl->color_only_fb, NULL);
-  ok = ok && GPU_framebuffer_check_valid(dfbl->depth_only_fb, NULL);
+  ok = ok && gpu_framebuffer_check_valid(dfbl->default_fb, NULL);
+  ok = ok && gpu_framebuffer_check_valid(dfbl->color_only_fb, NULL);
+  ok = ok && gpu_framebuffer_check_valid(dfbl->depth_only_fb, NULL);
 
   return ok;
 }
@@ -89,15 +89,15 @@ static void workbench_render_result_z(struct RenderLayer *rl,
                                       const char *viewname,
                                       const rcti *rect)
 {
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   ViewLayer *view_layer = draw_ctx->view_layer;
 
   if ((view_layer->passflag & SCE_PASS_Z) != 0) {
     RenderPass *rp = RE_pass_find_by_name(rl, RE_PASSNAME_Z, viewname);
 
-    GPU_framebuffer_bind(dfbl->default_fb);
-    GPU_framebuffer_read_depth(dfbl->default_fb,
+    gpu_framebuffer_bind(dfbl->default_fb);
+    gpu_framebuffer_read_depth(dfbl->default_fb,
                                rect->xmin,
                                rect->ymin,
                                BLI_rcti_size_x(rect),
@@ -106,12 +106,12 @@ static void workbench_render_result_z(struct RenderLayer *rl,
                                rp->rect);
 
     float winmat[4][4];
-    DRW_view_winmat_get(NULL, winmat, false);
+    draw_view_winmat_get(NULL, winmat, false);
 
-    int pix_ct = BLI_rcti_size_x(rect) * BLI_rcti_size_y(rect);
+    int pix_ct = lib_rcti_size_x(rect) * BLI_rcti_size_y(rect);
 
     /* Convert ogl depth [0..1] to view Z [near..far] */
-    if (DRW_view_is_persp_get(NULL)) {
+    if (draw_view_is_persp_get(NULL)) {
       for (int i = 0; i < pix_ct; i++) {
         if (rp->rect[i] == 1.0f) {
           rp->rect[i] = 1e10f; /* Background */
