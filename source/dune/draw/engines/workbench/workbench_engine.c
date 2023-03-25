@@ -1,27 +1,25 @@
-/** \file
- * \ingroup draw_engine
- *
+/**
  * Workbench Engine:
  *
  * Optimized engine to draw the working viewport with solid and transparent geometry.
  */
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BLI_alloca.h"
+#include "lib_alloca.h"
 
-#include "BKE_editmesh.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_paint.h"
-#include "BKE_particle.h"
+#include "dune_editmesh.h"
+#include "dune_modifier.h"
+#include "dune_object.h"
+#include "dune_paint.h"
+#include "dune_particle.h"
 
-#include "DNA_curves_types.h"
-#include "DNA_fluid_types.h"
-#include "DNA_image_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_node_types.h"
+#include "types_curves.h"
+#include "types_fluid.h"
+#include "types_image.h"
+#include "types_mesh.h"
+#include "types_modifier.h"
+#include "types_node.h"
 
 #include "workbench_engine.h"
 #include "workbench_private.h"
@@ -30,23 +28,23 @@
 
 void workbench_engine_init(void *ved)
 {
-  WORKBENCH_Data *vedata = ved;
-  WORKBENCH_StorageList *stl = vedata->stl;
-  WORKBENCH_TextureList *txl = vedata->txl;
+  DBenchData *vedata = ved;
+  DBenchStorageList *stl = vedata->stl;
+  DBenchTextureList *txl = vedata->txl;
 
   workbench_private_data_alloc(stl);
-  WORKBENCH_PrivateData *wpd = stl->wpd;
+  DBenchPrivateData *wpd = stl->wpd;
   workbench_private_data_init(wpd);
   workbench_update_world_ubo(wpd);
 
   if (txl->dummy_image_tx == NULL) {
     const float fpixel[4] = {1.0f, 0.0f, 1.0f, 1.0f};
-    txl->dummy_image_tx = DRW_texture_create_2d(1, 1, GPU_RGBA8, 0, fpixel);
+    txl->dummy_image_tx = draw_texture_create_2d(1, 1, GPU_RGBA8, 0, fpixel);
   }
   wpd->dummy_image_tx = txl->dummy_image_tx;
 
   if (OBJECT_ID_PASS_ENABLED(wpd)) {
-    wpd->object_id_tx = DRW_texture_pool_query_fullscreen(GPU_R16UI, &draw_engine_workbench);
+    wpd->object_id_tx = draw_texture_pool_query_fullscreen(GPU_R16UI, &draw_engine_workbench);
   }
   else {
     /* Don't free because it's a pool texture. */
@@ -62,7 +60,7 @@ void workbench_engine_init(void *ved)
 
 void workbench_cache_init(void *ved)
 {
-  WORKBENCH_Data *vedata = ved;
+  DBenchData *vedata = ved;
 
   workbench_opaque_cache_init(vedata);
   workbench_transparent_cache_init(vedata);
@@ -74,15 +72,15 @@ void workbench_cache_init(void *ved)
   workbench_volume_cache_init(vedata);
 }
 
-/* TODO(fclem): DRW_cache_object_surface_material_get needs a refactor to allow passing NULL
+/* TODO: draw_cache_object_surface_material_get needs a refactor to allow passing NULL
  * instead of gpumat_array. Avoiding all this boilerplate code. */
 static struct GPUBatch **workbench_object_surface_material_get(Object *ob)
 {
   const int materials_len = DRW_cache_object_material_count_get(ob);
-  struct GPUMaterial **gpumat_array = BLI_array_alloca(gpumat_array, materials_len);
+  struct GPUMaterial **gpumat_array = lib_array_alloca(gpumat_array, materials_len);
   memset(gpumat_array, 0, sizeof(*gpumat_array) * materials_len);
 
-  return DRW_cache_object_surface_material_get(ob, gpumat_array, materials_len);
+  return draw_cache_object_surface_material_get(ob, gpumat_array, materials_len);
 }
 
 static void workbench_cache_sculpt_populate(WORKBENCH_PrivateData *wpd,
@@ -90,11 +88,11 @@ static void workbench_cache_sculpt_populate(WORKBENCH_PrivateData *wpd,
                                             eV3DShadingColorType color_type)
 {
   const bool use_single_drawcall = !ELEM(color_type, V3D_SHADING_MATERIAL_COLOR);
-  BLI_assert(color_type != V3D_SHADING_TEXTURE_COLOR);
+  lib_assert(color_type != V3D_SHADING_TEXTURE_COLOR);
 
   if (use_single_drawcall) {
-    DRWShadingGroup *grp = workbench_material_setup(wpd, ob, 0, color_type, NULL);
-    DRW_shgroup_call_sculpt(grp, ob, false, false);
+    DrawShadingGroup *grp = workbench_material_setup(wpd, ob, 0, color_type, NULL);
+    draw_shgroup_call_sculpt(grp, ob, false, false);
   }
   else {
     const int materials_len = DRW_cache_object_material_count_get(ob);
