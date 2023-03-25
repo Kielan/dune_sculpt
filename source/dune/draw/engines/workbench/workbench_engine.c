@@ -115,40 +115,40 @@ BLI_INLINE void workbench_object_drawcall(DRWShadingGroup *grp, struct GPUBatch 
   }
 }
 
-static void workbench_cache_texpaint_populate(WORKBENCH_PrivateData *wpd, Object *ob)
+static void workbench_cache_texpaint_populate(DBenchPrivateData *wpd, Object *ob)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const Scene *scene = draw_ctx->scene;
   const ImagePaintSettings *imapaint = &scene->toolsettings->imapaint;
   const bool use_single_drawcall = imapaint->mode == IMAGEPAINT_MODE_IMAGE;
 
   if (use_single_drawcall) {
-    struct GPUBatch *geom = DRW_cache_mesh_surface_texpaint_single_get(ob);
+    struct GPUBatch *geom = draw_cache_mesh_surface_texpaint_single_get(ob);
     if (geom) {
       Image *ima = imapaint->canvas;
       eGPUSamplerState state = GPU_SAMPLER_REPEAT;
       SET_FLAG_FROM_TEST(state, imapaint->interp == IMAGEPAINT_INTERP_LINEAR, GPU_SAMPLER_FILTER);
 
-      DRWShadingGroup *grp = workbench_image_setup(wpd, ob, 0, ima, NULL, state);
+      DrawShadingGroup *grp = workbench_image_setup(wpd, ob, 0, ima, NULL, state);
       workbench_object_drawcall(grp, geom, ob);
     }
   }
   else {
-    struct GPUBatch **geoms = DRW_cache_mesh_surface_texpaint_get(ob);
+    struct GPUBatch **geoms = drae_cache_mesh_surface_texpaint_get(ob);
     if (geoms) {
       const int materials_len = DRW_cache_object_material_count_get(ob);
       for (int i = 0; i < materials_len; i++) {
         if (geoms[i] == NULL) {
           continue;
         }
-        DRWShadingGroup *grp = workbench_image_setup(wpd, ob, i + 1, NULL, NULL, 0);
+        DrawShadingGroup *grp = workbench_image_setup(wpd, ob, i + 1, NULL, NULL, 0);
         workbench_object_drawcall(grp, geoms[i], ob);
       }
     }
   }
 }
 
-static void workbench_cache_common_populate(WORKBENCH_PrivateData *wpd,
+static void workbench_cache_common_populate(DBenchPrivateData *wpd,
                                             Object *ob,
                                             eV3DShadingColorType color_type,
                                             bool *r_transp)
@@ -162,43 +162,43 @@ static void workbench_cache_common_populate(WORKBENCH_PrivateData *wpd,
     struct GPUBatch *geom;
     if (use_vcol) {
       if (ob->mode & OB_MODE_VERTEX_PAINT) {
-        geom = DRW_cache_mesh_surface_vertpaint_get(ob);
+        geom = draw_cache_mesh_surface_vertpaint_get(ob);
       }
       else {
         if (U.experimental.use_sculpt_vertex_colors) {
-          geom = DRW_cache_mesh_surface_sculptcolors_get(ob);
+          geom = draw_cache_mesh_surface_sculptcolors_get(ob);
         }
         else {
-          geom = DRW_cache_mesh_surface_vertpaint_get(ob);
+          geom = draw_cache_mesh_surface_vertpaint_get(ob);
         }
       }
     }
     else {
-      geom = DRW_cache_object_surface_get(ob);
+      geom = draw_cache_object_surface_get(ob);
     }
 
     if (geom) {
-      DRWShadingGroup *grp = workbench_material_setup(wpd, ob, 0, color_type, r_transp);
+      DrawShadingGroup *grp = workbench_material_setup(wpd, ob, 0, color_type, r_transp);
       workbench_object_drawcall(grp, geom, ob);
     }
   }
   else {
-    struct GPUBatch **geoms = (use_tex) ? DRW_cache_mesh_surface_texpaint_get(ob) :
+    struct GPUBatch **geoms = (use_tex) ? draw_cache_mesh_surface_texpaint_get(ob) :
                                           workbench_object_surface_material_get(ob);
     if (geoms) {
-      const int materials_len = DRW_cache_object_material_count_get(ob);
+      const int materials_len = draw_cache_object_material_count_get(ob);
       for (int i = 0; i < materials_len; i++) {
         if (geoms[i] == NULL) {
           continue;
         }
-        DRWShadingGroup *grp = workbench_material_setup(wpd, ob, i + 1, color_type, r_transp);
+        DrawShadingGroup *grp = workbench_material_setup(wpd, ob, i + 1, color_type, r_transp);
         workbench_object_drawcall(grp, geoms[i], ob);
       }
     }
   }
 }
 
-static void workbench_cache_hair_populate(WORKBENCH_PrivateData *wpd,
+static void workbench_cache_hair_populate(DBenchPrivateData *wpd,
                                           Object *ob,
                                           ParticleSystem *psys,
                                           ModifierData *md,
@@ -206,25 +206,25 @@ static void workbench_cache_hair_populate(WORKBENCH_PrivateData *wpd,
                                           bool use_texpaint_mode,
                                           const int matnr)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const Scene *scene = draw_ctx->scene;
 
   const ImagePaintSettings *imapaint = use_texpaint_mode ? &scene->toolsettings->imapaint : NULL;
   Image *ima = (imapaint && imapaint->mode == IMAGEPAINT_MODE_IMAGE) ? imapaint->canvas : NULL;
   eGPUSamplerState state = 0;
   state |= (imapaint && imapaint->interp == IMAGEPAINT_INTERP_LINEAR) ? GPU_SAMPLER_FILTER : 0;
-  DRWShadingGroup *grp = (use_texpaint_mode) ?
+  DrawShadingGroup *grp = (use_texpaint_mode) ?
                              workbench_image_hair_setup(wpd, ob, matnr, ima, NULL, state) :
                              workbench_material_hair_setup(wpd, ob, matnr, color_type);
 
-  DRW_shgroup_hair_create_sub(ob, psys, md, grp, NULL);
+  draw_shgroup_hair_create_sub(ob, psys, md, grp, NULL);
 }
 
 static const CustomData *workbench_mesh_get_loop_custom_data(const Mesh *mesh)
 {
   if (mesh->runtime.wrapper_type == ME_WRAPPER_TYPE_BMESH) {
-    BLI_assert(mesh->edit_mesh != NULL);
-    BLI_assert(mesh->edit_mesh->bm != NULL);
+    lib_assert(mesh->edit_mesh != NULL);
+    lib_assert(mesh->edit_mesh->bm != NULL);
     return &mesh->edit_mesh->bm->ldata;
   }
   return &mesh->ldata;
@@ -233,8 +233,8 @@ static const CustomData *workbench_mesh_get_loop_custom_data(const Mesh *mesh)
 static const CustomData *workbench_mesh_get_vert_custom_data(const Mesh *mesh)
 {
   if (mesh->runtime.wrapper_type == ME_WRAPPER_TYPE_BMESH) {
-    BLI_assert(mesh->edit_mesh != NULL);
-    BLI_assert(mesh->edit_mesh->bm != NULL);
+    lib_assert(mesh->edit_mesh != NULL);
+    lib_assert(mesh->edit_mesh->bm != NULL);
     return &mesh->edit_mesh->bm->vdata;
   }
   return &mesh->vdata;
@@ -255,11 +255,11 @@ static eV3DShadingColorType workbench_color_type_get(WORKBENCH_PrivateData *wpd,
   const CustomData *ldata = (me == NULL) ? NULL : workbench_mesh_get_loop_custom_data(me);
   const CustomData *vdata = (me == NULL) ? NULL : workbench_mesh_get_vert_custom_data(me);
 
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DRWContextState *draw_ctx = draw_ctx_state_get();
   const bool is_active = (ob == draw_ctx->obact);
-  const bool is_sculpt_pbvh = BKE_sculptsession_use_pbvh_draw(ob, draw_ctx->v3d) &&
-                              !DRW_state_is_image_render();
-  const bool is_render = DRW_state_is_image_render() && (draw_ctx->v3d == NULL);
+  const bool is_sculpt_pbvh = dune_sculptsession_use_pbvh_draw(ob, draw_ctx->v3d) &&
+                              !draw_state_is_image_render();
+  const bool is_render = draw_state_is_image_render() && (draw_ctx->v3d == NULL);
   const bool is_texpaint_mode = is_active && (wpd->ctx_mode == CTX_MODE_PAINT_TEXTURE);
   const bool is_vertpaint_mode = is_active && (wpd->ctx_mode == CTX_MODE_PAINT_VERTEX);
 
@@ -319,7 +319,7 @@ static eV3DShadingColorType workbench_color_type_get(WORKBENCH_PrivateData *wpd,
       *r_draw_shadow = false;
     }
 
-    if (is_active && DRW_object_use_hide_faces(ob)) {
+    if (is_active && draw_object_use_hide_faces(ob)) {
       *r_draw_shadow = false;
     }
   }
@@ -329,11 +329,11 @@ static eV3DShadingColorType workbench_color_type_get(WORKBENCH_PrivateData *wpd,
 
 void workbench_cache_populate(void *ved, Object *ob)
 {
-  WORKBENCH_Data *vedata = ved;
-  WORKBENCH_StorageList *stl = vedata->stl;
-  WORKBENCH_PrivateData *wpd = stl->wpd;
+  DBenchData *vedata = ved;
+  DBenchStorageList *stl = vedata->stl;
+  DBenchPrivateData *wpd = stl->wpd;
 
-  if (!DRW_object_is_renderable(ob)) {
+  if (!draw_object_is_renderable(ob)) {
     return;
   }
 
@@ -346,7 +346,7 @@ void workbench_cache_populate(void *ved, Object *ob)
         continue;
       }
       ParticleSystem *psys = ((ParticleSystemModifierData *)md)->psys;
-      if (!DRW_object_is_visible_psys_in_active_context(ob, psys)) {
+      if (!draw_object_is_visible_psys_in_active_context(ob, psys)) {
         continue;
       }
       ParticleSettings *part = psys->part;
@@ -360,8 +360,8 @@ void workbench_cache_populate(void *ved, Object *ob)
   }
 
   if (!(ob->base_flag & BASE_FROM_DUPLI)) {
-    ModifierData *md = BKE_modifiers_findby_type(ob, eModifierType_Fluid);
-    if (md && BKE_modifier_is_enabled(wpd->scene, md, eModifierMode_Realtime)) {
+    ModifierData *md = dune_modifiers_findby_type(ob, eModifierType_Fluid);
+    if (md && dune_modifier_is_enabled(wpd->scene, md, eModifierMode_Realtime)) {
       FluidModifierData *fmd = (FluidModifierData *)md;
       if (fmd->domain) {
         workbench_volume_cache_populate(vedata, wpd->scene, ob, md, V3D_SHADING_SINGLE_COLOR);
@@ -372,7 +372,7 @@ void workbench_cache_populate(void *ved, Object *ob)
     }
   }
 
-  if (!(DRW_object_visibility_in_active_context(ob) & OB_VISIBLE_SELF)) {
+  if (!(draw_object_visibility_in_active_context(ob) & OB_VISIBLE_SELF)) {
     return;
   }
 
@@ -416,7 +416,7 @@ void workbench_cache_finish(void *ved)
   WORKBENCH_Data *vedata = ved;
   WORKBENCH_StorageList *stl = vedata->stl;
   WORKBENCH_FramebufferList *fbl = vedata->fbl;
-  WORKBENCH_PrivateData *wpd = stl->wpd;
+  DBenchPrivateData *wpd = stl->wpd;
 
   /* TODO(fclem): Only do this when really needed. */
   {
