@@ -1,5 +1,5 @@
-/** \file
- * \ingroup draw_engine
+/**
+ * draw_engine
  *
  * Opaque Pipeline:
  *
@@ -11,14 +11,14 @@
  * - the composite pass where we compute the final aspect of the pixels.
  */
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #include "workbench_engine.h"
 #include "workbench_private.h"
 
 void workbench_opaque_engine_init(WORKBENCH_Data *data)
 {
-  WORKBENCH_FramebufferList *fbl = data->fbl;
+  DBenchFramebufferList *fbl = data->fbl;
   WORKBENCH_PrivateData *wpd = data->stl->wpd;
   DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
   DrawEngineType *owner = (DrawEngineType *)&workbench_opaque_engine_init;
