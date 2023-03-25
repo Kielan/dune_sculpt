@@ -1,13 +1,13 @@
 #pragma once
 
-#include "BKE_studiolight.h"
+#include "dune_studiolight.h"
 
-#include "DNA_image_types.h"
-#include "DNA_userdef_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_world_types.h"
+#include "types_image.h"
+#include "types_userdef.h"
+#include "types_view3d.h"
+#include "types_world.h"
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #include "workbench_engine.h"
 
@@ -109,7 +109,7 @@ typedef struct WORKBENCH_StorageList {
   float *dof_ubo_data;
 } WORKBENCH_StorageList;
 
-typedef struct WORKBENCH_PassList {
+typedef struct DBenchPassList {
   struct DRWPass *opaque_ps;
   struct DRWPass *opaque_infront_ps;
 
