@@ -134,7 +134,7 @@ void workbench_dof_engine_init(DBenchData *vedata)
     return;
   }
 
-  const float *full_size = DRW_viewport_size_get();
+  const float *full_size = draw_viewport_size_get();
   const int size[2] = {max_ii(1, (int)full_size[0] / 2), max_ii(1, (int)full_size[1] / 2)};
 #if 0 /* TODO: finish COC min_max optimization. */
   /* NOTE: We Ceil here in order to not miss any edge texel if using a NPO2 texture. */
@@ -143,9 +143,9 @@ void workbench_dof_engine_init(DBenchData *vedata)
 #endif
 
   draw_texture_ensure_2d(
-      &txl->dof_source_tx, size[0], size[1], GPU_RGBA16F, DRW_TEX_FILTER | DRW_TEX_MIPMAP);
+      &txl->dof_source_tx, size[0], size[1], GPU_RGBA16F, DRAW_TEX_FILTER | DRAW_TEX_MIPMAP);
   draw_texture_ensure_2d(
-      &txl->coc_halfres_tx, size[0], size[1], GPU_RG8, DRW_TEX_FILTER | DRW_TEX_MIPMAP);
+      &txl->coc_halfres_tx, size[0], size[1], GPU_RG8, DRAW_TEX_FILTER | DRAW_TEX_MIPMAP);
   wpd->dof_blur_tx = draw_texture_pool_query_2d(
       size[0], size[1], GPU_RGBA16F, &draw_engine_workbench);
 #if 0 /* TODO: finish COC min_max optimization. */
@@ -233,7 +233,7 @@ void workbench_dof_engine_init(DBenchData *vedata)
   wpd->dof_enabled = true;
 }
 
-void workbench_dof_cache_init(WORKBENCH_Data *vedata)
+void workbench_dof_cache_init(DBenchData *vedata)
 {
   DBenchPassList *psl = vedata->psl;
   DBenchTextureList *txl = vedata->txl;
@@ -309,74 +309,74 @@ void workbench_dof_cache_init(WORKBENCH_Data *vedata)
     float offset = wpd->taa_sample / (float)max_ii(1, wpd->taa_sample_len);
     DrawShadingGroup *grp = draw_shgroup_create(blur1_sh, psl->dof_blur1_ps);
     draw_shgroup_uniform_block(grp, "samples", wpd->vldata->dof_sample_ubo);
-    DRW_shgroup_uniform_texture(grp, "noiseTex", wpd->vldata->cavity_jitter_tx);
-    DRW_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
-    DRW_shgroup_uniform_texture(grp, "halfResColorTex", txl->dof_source_tx);
-    DRW_shgroup_uniform_vec2(grp, "invertedViewportSize", DRW_viewport_invert_size_get(), 1);
-    DRW_shgroup_uniform_float_copy(grp, "noiseOffset", offset);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    draw_shgroup_uniform_texture(grp, "noiseTex", wpd->vldata->cavity_jitter_tx);
+    draw_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
+    draw_shgroup_uniform_texture(grp, "halfResColorTex", txl->dof_source_tx);
+    draw_shgroup_uniform_vec2(grp, "invertedViewportSize", draw_viewport_invert_size_get(), 1);
+    draw_shgroup_uniform_float_copy(grp, "noiseOffset", offset);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   {
-    psl->dof_blur2_ps = DRW_pass_create("DoF Blur 2", DRW_STATE_WRITE_COLOR);
+    psl->dof_blur2_ps = draw_pass_create("DoF Blur 2", DRAW_STATE_WRITE_COLOR);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(blur2_sh, psl->dof_blur2_ps);
-    DRW_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
-    DRW_shgroup_uniform_texture(grp, "blurTex", wpd->dof_blur_tx);
-    DRW_shgroup_uniform_vec2(grp, "invertedViewportSize", DRW_viewport_invert_size_get(), 1);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(blur2_sh, psl->dof_blur2_ps);
+    draw_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
+    draw_shgroup_uniform_texture(grp, "blurTex", wpd->dof_blur_tx);
+    draw_shgroup_uniform_vec2(grp, "invertedViewportSize", DRW_viewport_invert_size_get(), 1);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   {
-    psl->dof_resolve_ps = DRW_pass_create("DoF Resolve",
-                                          DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_CUSTOM);
+    psl->dof_resolve_ps = draw_pass_create("DoF Resolve",
+                                          DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_CUSTOM);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(resolve_sh, psl->dof_resolve_ps);
-    DRW_shgroup_uniform_texture(grp, "halfResColorTex", txl->dof_source_tx);
-    DRW_shgroup_uniform_texture(grp, "sceneDepthTex", dtxl->depth);
-    DRW_shgroup_uniform_vec2(grp, "invertedViewportSize", DRW_viewport_invert_size_get(), 1);
-    DRW_shgroup_uniform_vec3(grp, "dofParams", &wpd->dof_aperturesize, 1);
-    DRW_shgroup_uniform_vec2(grp, "nearFar", wpd->dof_near_far, 1);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(resolve_sh, psl->dof_resolve_ps);
+    draw_shgroup_uniform_texture(grp, "halfResColorTex", txl->dof_source_tx);
+    draw_shgroup_uniform_texture(grp, "sceneDepthTex", dtxl->depth);
+    draw_shgroup_uniform_vec2(grp, "invertedViewportSize", DRW_viewport_invert_size_get(), 1);
+    draw_shgroup_uniform_vec3(grp, "dofParams", &wpd->dof_aperturesize, 1);
+    draw_shgroup_uniform_vec2(grp, "nearFar", wpd->dof_near_far, 1);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 }
 
 static void workbench_dof_downsample_level(void *userData, int UNUSED(level))
 {
-  WORKBENCH_PassList *psl = (WORKBENCH_PassList *)userData;
-  DRW_draw_pass(psl->dof_down2_ps);
+  DBenchPassList *psl = (DBenchPassList *)userData;
+  draw_draw_pass(psl->dof_down2_ps);
 }
 
-void workbench_dof_draw_pass(WORKBENCH_Data *vedata)
+void workbench_dof_draw_pass(DBenchData *vedata)
 {
-  WORKBENCH_FramebufferList *fbl = vedata->fbl;
-  WORKBENCH_StorageList *stl = vedata->stl;
-  WORKBENCH_PassList *psl = vedata->psl;
-  WORKBENCH_PrivateData *wpd = stl->wpd;
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
+  DBenchFramebufferList *fbl = vedata->fbl;
+  DBenchStorageList *stl = vedata->stl;
+  DBenchPassList *psl = vedata->psl;
+  DBenchPrivateData *wpd = stl->wpd;
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
 
   if (!wpd->dof_enabled) {
     return;
   }
 
-  DRW_stats_group_start("Depth Of Field");
+  draw_stats_group_start("Depth Of Field");
 
-  GPU_framebuffer_bind(fbl->dof_downsample_fb);
-  DRW_draw_pass(psl->dof_down_ps);
+  gpu_framebuffer_bind(fbl->dof_downsample_fb);
+  draw_draw_pass(psl->dof_down_ps);
 
-  GPU_framebuffer_recursive_downsample(
+  gpu_framebuffer_recursive_downsample(
       fbl->dof_downsample_fb, 2, workbench_dof_downsample_level, psl);
 
-#if 0 /* TODO(fclem): finish COC min_max optimization */
-  GPU_framebuffer_bind(fbl->dof_coc_tile_h_fb);
-  DRW_draw_pass(psl->dof_flatten_h_ps);
+#if 0 /* TODO: finish COC min_max optimization */
+  gpu_framebuffer_bind(fbl->dof_coc_tile_h_fb);
+  gpu_draw_pass(psl->dof_flatten_h_ps);
 
-  GPU_framebuffer_bind(fbl->dof_coc_tile_v_fb);
-  DRW_draw_pass(psl->dof_flatten_v_ps);
+  gpu_framebuffer_bind(fbl->dof_coc_tile_v_fb);
+  draw_draw_pass(psl->dof_flatten_v_ps);
 
-  GPU_framebuffer_bind(fbl->dof_coc_dilate_fb);
-  DRW_draw_pass(psl->dof_dilate_v_ps);
+  draw_framebuffer_bind(fbl->dof_coc_dilate_fb);
+  draw_draw_pass(psl->dof_dilate_v_ps);
 
-  GPU_framebuffer_bind(fbl->dof_coc_tile_v_fb);
-  DRW_draw_pass(psl->dof_dilate_h_ps);
+  gpu_framebuffer_bind(fbl->dof_coc_tile_v_fb);
+  draw_draw_pass(psl->dof_dilate_h_ps);
 #endif
 
   gpu_framebuffer_bind(fbl->dof_blur1_fb);
