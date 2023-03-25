@@ -17,7 +17,7 @@ extern "C" {
 
 extern struct DrawEngineType draw_engine_workbench;
 
-#define WORKBENCH_ENGINE "BLENDER_WORKBENCH"
+#define WORKBENCH_ENGINE "DUNE_WORKBENCH"
 
 #define MAX_MATERIAL (1 << 12)
 
@@ -90,7 +90,7 @@ typedef struct WORKBENCH_FramebufferList {
   struct GPUFrameBuffer *smaa_weight_fb;
 } WORKBENCH_FramebufferList;
 
-typedef struct WORKBENCH_TextureList {
+typedef struct DBenchTextureList {
   struct GPUTexture *dof_source_tx;
   struct GPUTexture *coc_halfres_tx;
   struct GPUTexture *history_buffer_tx;
@@ -102,34 +102,34 @@ typedef struct WORKBENCH_TextureList {
   struct GPUTexture *dummy_volume_tx;
   struct GPUTexture *dummy_shadow_tx;
   struct GPUTexture *dummy_coba_tx;
-} WORKBENCH_TextureList;
+} DBenchTextureList;
 
-typedef struct WORKBENCH_StorageList {
-  struct WORKBENCH_PrivateData *wpd;
+typedef struct DBenchStorageList {
+  struct DBenchPrivateData *wpd;
   float *dof_ubo_data;
-} WORKBENCH_StorageList;
+} DBenchStorageList;
 
 typedef struct DBenchPassList {
-  struct DRWPass *opaque_ps;
-  struct DRWPass *opaque_infront_ps;
+  struct DrawPass *opaque_ps;
+  struct DrawPass *opaque_infront_ps;
 
-  struct DRWPass *transp_resolve_ps;
-  struct DRWPass *transp_accum_ps;
-  struct DRWPass *transp_accum_infront_ps;
+  struct DrawPass *transp_resolve_ps;
+  struct DrawPass *transp_accum_ps;
+  struct DrawPass *transp_accum_infront_ps;
 
-  struct DRWPass *transp_depth_infront_ps;
-  struct DRWPass *transp_depth_ps;
+  struct DrawPass *transp_depth_infront_ps;
+  struct DrawPass *transp_depth_ps;
 
-  struct DRWPass *shadow_ps[2];
+  struct DrawPass *shadow_ps[2];
 
-  struct DRWPass *merge_infront_ps;
+  struct DrawPass *merge_infront_ps;
 
-  struct DRWPass *cavity_ps;
-  struct DRWPass *outline_ps;
+  struct DrawPass *cavity_ps;
+  struct DrawPass *outline_ps;
 
-  struct DRWPass *composite_ps;
+  struct DrawPass *composite_ps;
 
-  struct DRWPass *dof_down_ps;
+  struct DrawPass *dof_down_ps;
   struct DRWPass *dof_down2_ps;
   struct DRWPass *dof_flatten_v_ps;
   struct DRWPass *dof_flatten_h_ps;
@@ -148,13 +148,13 @@ typedef struct DBenchPassList {
   struct DRWPass *aa_resolve_ps;
 } WORKBENCH_PassList;
 
-typedef struct WORKBENCH_Data {
+typedef struct DBenchData {
   void *engine_type;
   WORKBENCH_FramebufferList *fbl;
   WORKBENCH_TextureList *txl;
   WORKBENCH_PassList *psl;
   WORKBENCH_StorageList *stl;
-} WORKBENCH_Data;
+} DBenchData;
 
 typedef struct WORKBENCH_UBO_Light {
   float light_direction[4];
