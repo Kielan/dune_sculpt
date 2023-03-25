@@ -1,7 +1,5 @@
 
-/** \file
- * \ingroup draw_engine
- *
+/**
  * Shadow:
  *
  * Use stencil shadow buffer to cast a sharp shadow over opaque surfaces.
@@ -12,11 +10,11 @@
  * Then the shading pass will shade the areas with stencil not equal 0 differently.
  */
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BKE_object.h"
+#include "dune_object.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
 #include "workbench_engine.h"
 #include "workbench_private.h"
@@ -60,12 +58,12 @@ static void workbench_shadow_update(WORKBENCH_PrivateData *wpd)
   }
 
   float planes[6][4];
-  DRW_culling_frustum_planes_get(NULL, planes);
+  draw_culling_frustum_planes_get(NULL, planes);
   /* we only need the far plane. */
   copy_v4_v4(wpd->shadow_far_plane, planes[2]);
 
   BoundBox frustum_corners;
-  DRW_culling_frustum_corners_get(NULL, &frustum_corners);
+  draw_culling_frustum_corners_get(NULL, &frustum_corners);
 
   float shadow_near_corners[4][3];
   mul_v3_mat3_m4v3(shadow_near_corners[0], wpd->shadow_inv, frustum_corners.vec[0]);
@@ -88,13 +86,13 @@ static void workbench_shadow_update(WORKBENCH_PrivateData *wpd)
                                       wpd->shadow_near_sides[1]);
 }
 
-void workbench_shadow_data_update(WORKBENCH_PrivateData *wpd, WORKBENCH_UBO_World *wd)
+void workbench_shadow_data_update(DBenchPrivateData *wpd, WORKBENCH_UBO_World *wd)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const Scene *scene = draw_ctx->scene;
 
   float view_matrix[4][4];
-  DRW_view_viewmat_get(NULL, view_matrix, false);
+  draw_view_viewmat_get(NULL, view_matrix, false);
 
   /* Turn the light in a way where it's more user friendly to control. */
   copy_v3_v3(wpd->shadow_direction_ws, scene->display.light_direction);
