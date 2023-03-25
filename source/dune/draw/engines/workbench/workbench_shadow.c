@@ -37,7 +37,7 @@ static void compute_parallel_lines_nor_and_dist(const float v1[2],
   }
 }
 
-static void workbench_shadow_update(WORKBENCH_PrivateData *wpd)
+static void workbench_shadow_update(DBenchPrivateData *wpd)
 {
   wpd->shadow_changed = !compare_v3v3(
       wpd->shadow_cached_direction, wpd->shadow_direction_ws, 1e-5f);
@@ -118,7 +118,7 @@ void workbench_shadow_data_update(DBenchPrivateData *wpd, WORKBENCH_UBO_World *w
   }
 }
 
-void workbench_shadow_cache_init(WORKBENCH_Data *data)
+void workbench_shadow_cache_init(DBenchData *data)
 {
   DBenchPassList *psl = data->psl;
   DBenchPrivateData *wpd = data->stl->wpd;
@@ -174,7 +174,7 @@ static BoundBox *workbench_shadow_object_shadow_bbox_get(WORKBENCH_PrivateData *
     INIT_MINMAX(oed->shadow_min, oed->shadow_max);
 
     /* From object space to shadow space */
-    BoundBox *bbox = BKE_object_boundbox_get(ob);
+    BoundBox *bbox = dune_object_boundbox_get(ob);
     for (int i = 0; i < 8; i++) {
       float corner[3];
       mul_v3_m4v3(corner, tmp_mat, bbox->vec[i]);
@@ -281,7 +281,7 @@ static bool workbench_shadow_camera_in_object_shadow(WORKBENCH_PrivateData *wpd,
 
 static void workbench_init_object_data(DrawData *dd)
 {
-  DBenchObjectData *data = (WORKBENCH_ObjectData *)dd;
+  DBenchObjectData *data = (DBenchObjectData *)dd;
   data->shadow_bbox_dirty = true;
 }
 
