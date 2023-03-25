@@ -1,9 +1,9 @@
 #include "workbench_private.h"
 
-#include "DNA_fluid_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_volume_types.h"
+#include "types_fluid_types.h"
+#include "types_modifier_types.h"
+#include "types_object_force_types.h"
+#include "types_volume.h"
 
 #include "BLI_dynstr.h"
 #include "BLI_listbase.h"
