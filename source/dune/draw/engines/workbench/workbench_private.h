@@ -197,9 +197,9 @@ typedef struct WORKBENCH_UBO_World {
   int _pad2;
 } WORKBENCH_UBO_World;
 
-BLI_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_World, 16)
-BLI_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Light, 16)
-BLI_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Material, 16)
+LIB_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_World, 16)
+LIB_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Light, 16)
+LIB_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Material, 16)
 
 typedef struct DBenchPrepass {
   /** Hash storing shading group for each Material or GPUTexture to reduce state changes. */
@@ -216,11 +216,11 @@ typedef struct DBenchPrepass {
 
 typedef struct DBenchPrivateData {
   /** ViewLayerData for faster access. */
-  struct WORKBENCH_ViewLayerData *vldata;
+  struct DBenchViewLayerData *vldata;
   /** Copy of draw_ctx->sh_cfg for faster access. */
   eGPUShaderConfig sh_cfg;
   /** Global clip and cull states. */
-  DRWState clip_state, cull_state;
+  DrawState clip_state, cull_state;
   /** Copy of scene->display.shading or v3d->shading for viewport. */
   View3DShading shading;
   /** Chosen studiolight or matcap. */
@@ -358,7 +358,7 @@ typedef struct WORKBENCH_ObjectData {
   bool shadow_bbox_dirty;
 } WORKBENCH_ObjectData;
 
-typedef struct WORKBENCH_ViewLayerData {
+typedef struct DBenchViewLayerData {
   /** Depth of field sample location array. */
   struct GPUUniformBuf *dof_sample_ubo;
   /** All constant data used for a render loop. */
@@ -372,10 +372,10 @@ typedef struct WORKBENCH_ViewLayerData {
   struct BLI_memblock *material_ubo_data;
   /** Number of samples for which cavity_sample_ubo is valid. */
   int cavity_sample_count;
-} WORKBENCH_ViewLayerData;
+} DBenchViewLayerData;
 
 /* inline helper functions */
-BLI_INLINE bool workbench_is_specular_highlight_enabled(WORKBENCH_PrivateData *wpd)
+LIB_INLINE bool workbench_is_specular_highlight_enabled(WORKBENCH_PrivateData *wpd)
 {
   if (wpd->shading.flag & V3D_SHADING_SPECULAR_HIGHLIGHT) {
     if (STUDIOLIGHT_ENABLED(wpd) || MATCAP_ENABLED(wpd)) {
@@ -469,7 +469,7 @@ void workbench_material_ubo_data(WORKBENCH_PrivateData *wpd,
                                  WORKBENCH_UBO_Material *data,
                                  eV3DShadingColorType color_type);
 
-DRWShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
+DrawShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
                                              Object *ob,
                                              int mat_nr,
                                              eV3DShadingColorType color_type,
@@ -478,7 +478,7 @@ DRWShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
 /**
  * If `ima` is null, search appropriate image node but will fallback to purple texture otherwise.
  */
-DRWShadingGroup *workbench_image_setup_ex(WORKBENCH_PrivateData *wpd,
+DrawShadingGroup *workbench_image_setup_ex(WORKBENCH_PrivateData *wpd,
                                           Object *ob,
                                           int mat_nr,
                                           Image *ima,
