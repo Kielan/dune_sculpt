@@ -128,24 +128,24 @@ void workbench_opaque_cache_init(WORKBENCH_Data *vedata)
 
     if (SHADOW_ENABLED(wpd)) {
       grp = draw_shgroup_create_sub(grp);
-      DRW_shgroup_uniform_bool_copy(grp, "forceShadowing", true);
-      DRW_shgroup_state_disable(grp, DRW_STATE_STENCIL_EQUAL);
-      DRW_shgroup_state_enable(grp, DRW_STATE_STENCIL_NEQUAL);
-      DRW_shgroup_stencil_mask(grp, 0x00);
-      DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+      draw_shgroup_uniform_bool_copy(grp, "forceShadowing", true);
+      draw_shgroup_state_disable(grp, DRW_STATE_STENCIL_EQUAL);
+      draw_shgroup_state_enable(grp, DRW_STATE_STENCIL_NEQUAL);
+      draw_shgroup_stencil_mask(grp, 0x00);
+      draw_shgroup_call_procedural_triangles(grp, NULL, 1);
     }
   }
   {
-    DRWState state = DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_ALWAYS | DRW_STATE_WRITE_STENCIL |
-                     DRW_STATE_STENCIL_ALWAYS;
+    DrawState state = DRAW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_ALWAYS | DRW_STATE_WRITE_STENCIL |
+                     DRAW_STATE_STENCIL_ALWAYS;
 
-    DRW_PASS_CREATE(psl->merge_infront_ps, state);
+    DRAW_PASS_CREATE(psl->merge_infront_ps, state);
 
     sh = workbench_shader_merge_infront_get(wpd);
 
-    grp = DRW_shgroup_create(sh, psl->merge_infront_ps);
-    DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth_in_front);
-    DRW_shgroup_stencil_mask(grp, 0x00);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    grp = draw_shgroup_create(sh, psl->merge_infront_ps);
+    draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth_in_front);
+    draw_shgroup_stencil_mask(grp, 0x00);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 }
