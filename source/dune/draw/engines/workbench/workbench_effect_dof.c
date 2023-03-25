@@ -272,43 +272,43 @@ void workbench_dof_cache_init(WORKBENCH_Data *vedata)
   }
 #if 0 /* TODO: finish COC min_max optimization */
   {
-    psl->dof_flatten_h_ps = DRW_pass_create("DoF Flatten Coc H", DRW_STATE_WRITE_COLOR);
+    psl->dof_flatten_h_ps = draw_pass_create("DoF Flatten Coc H", DRW_STATE_WRITE_COLOR);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(flatten_h_sh, psl->dof_flatten_h_ps);
-    DRW_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(flatten_h_sh, psl->dof_flatten_h_ps);
+    draw_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   {
-    psl->dof_flatten_v_ps = DRW_pass_create("DoF Flatten Coc V", DRW_STATE_WRITE_COLOR);
+    psl->dof_flatten_v_ps = draw_pass_create("DoF Flatten Coc V", DRW_STATE_WRITE_COLOR);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(flatten_v_sh, psl->dof_flatten_v_ps);
-    DRW_shgroup_uniform_texture(grp, "inputCocTex", wpd->coc_temp_tx);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(flatten_v_sh, psl->dof_flatten_v_ps);
+    draw_shgroup_uniform_texture(grp, "inputCocTex", wpd->coc_temp_tx);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   {
-    psl->dof_dilate_h_ps = DRW_pass_create("DoF Dilate Coc H", DRW_STATE_WRITE_COLOR);
+    psl->dof_dilate_h_ps = draw_pass_create("DoF Dilate Coc H", DRW_STATE_WRITE_COLOR);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(dilate_v_sh, psl->dof_dilate_v_ps);
-    DRW_shgroup_uniform_texture(grp, "inputCocTex", wpd->coc_tiles_tx[0]);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(dilate_v_sh, psl->dof_dilate_v_ps);
+    draw_shgroup_uniform_texture(grp, "inputCocTex", wpd->coc_tiles_tx[0]);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   {
-    psl->dof_dilate_v_ps = DRW_pass_create("DoF Dilate Coc V", DRW_STATE_WRITE_COLOR);
+    psl->dof_dilate_v_ps = draw_pass_create("DoF Dilate Coc V", DRW_STATE_WRITE_COLOR);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(dilate_h_sh, psl->dof_dilate_h_ps);
-    DRW_shgroup_uniform_texture(grp, "inputCocTex", wpd->coc_tiles_tx[1]);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(dilate_h_sh, psl->dof_dilate_h_ps);
+    draw_shgroup_uniform_texture(grp, "inputCocTex", wpd->coc_tiles_tx[1]);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 #endif
   {
-    psl->dof_blur1_ps = DRW_pass_create("DoF Blur 1", DRW_STATE_WRITE_COLOR);
+    psl->dof_blur1_ps = draw_pass_create("DoF Blur 1", DRW_STATE_WRITE_COLOR);
 
     /* We reuse the same noise texture. Ensure it is up to date. */
     workbench_cavity_samples_ubo_ensure(wpd);
 
     float offset = wpd->taa_sample / (float)max_ii(1, wpd->taa_sample_len);
-    DRWShadingGroup *grp = DRW_shgroup_create(blur1_sh, psl->dof_blur1_ps);
-    DRW_shgroup_uniform_block(grp, "samples", wpd->vldata->dof_sample_ubo);
+    DrawShadingGroup *grp = draw_shgroup_create(blur1_sh, psl->dof_blur1_ps);
+    draw_shgroup_uniform_block(grp, "samples", wpd->vldata->dof_sample_ubo);
     DRW_shgroup_uniform_texture(grp, "noiseTex", wpd->vldata->cavity_jitter_tx);
     DRW_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
     DRW_shgroup_uniform_texture(grp, "halfResColorTex", txl->dof_source_tx);
