@@ -41,26 +41,26 @@ void workbench_opaque_engine_init(WORKBENCH_Data *data)
 
 void workbench_opaque_cache_init(WORKBENCH_Data *vedata)
 {
-  WORKBENCH_PassList *psl = vedata->psl;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DBenchPassList *psl = vedata->psl;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
   struct GPUShader *sh;
-  DRWShadingGroup *grp;
+  DrawShadingGroup *grp;
 
   const bool use_matcap = (wpd->shading.light == V3D_LIGHTING_MATCAP);
 
   {
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
 
     int opaque = 0;
     for (int infront = 0; infront < 2; infront++) {
-      DRWPass *pass;
+      DrawPass *pass;
       if (infront) {
-        DRW_PASS_CREATE(psl->opaque_infront_ps, state | wpd->cull_state | wpd->clip_state);
+        DRAW_PASS_CREATE(psl->opaque_infront_ps, state | wpd->cull_state | wpd->clip_state);
         pass = psl->opaque_infront_ps;
       }
       else {
-        DRW_PASS_CREATE(psl->opaque_ps, state | wpd->cull_state | wpd->clip_state);
+        DRAW_PASS_CREATE(psl->opaque_ps, state | wpd->cull_state | wpd->clip_state);
         pass = psl->opaque_ps;
       }
 
@@ -70,16 +70,16 @@ void workbench_opaque_cache_init(WORKBENCH_Data *vedata)
         sh = workbench_shader_opaque_get(wpd, data);
 
         wpd->prepass[opaque][infront][data].common_shgrp = grp = DRW_shgroup_create(sh, pass);
-        DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-        DRW_shgroup_uniform_block(grp, "materials_data", wpd->material_ubo_curr);
-        DRW_shgroup_uniform_int_copy(grp, "materialIndex", -1);
-        DRW_shgroup_uniform_bool_copy(grp, "useMatcap", use_matcap);
+        draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+        draw_shgroup_uniform_block(grp, "materials_data", wpd->material_ubo_curr);
+        draw_shgroup_uniform_int_copy(grp, "materialIndex", -1);
+        draw_shgroup_uniform_bool_copy(grp, "useMatcap", use_matcap);
 
         wpd->prepass[opaque][infront][data].vcol_shgrp = grp = DRW_shgroup_create(sh, pass);
-        DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-        DRW_shgroup_uniform_block(grp, "materials_data", wpd->material_ubo_curr);
-        DRW_shgroup_uniform_int_copy(grp, "materialIndex", 0); /* Default material. (uses vcol) */
-        DRW_shgroup_uniform_bool_copy(grp, "useMatcap", use_matcap);
+        draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+        draw_shgroup_uniform_block(grp, "materials_data", wpd->material_ubo_curr);
+        draw_shgroup_uniform_int_copy(grp, "materialIndex", 0); /* Default material. (uses vcol) */
+        draw_shgroup_uniform_bool_copy(grp, "useMatcap", use_matcap);
 
         sh = workbench_shader_opaque_image_get(wpd, data, false);
 
