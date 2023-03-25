@@ -281,31 +281,31 @@ static bool workbench_shadow_camera_in_object_shadow(WORKBENCH_PrivateData *wpd,
 
 static void workbench_init_object_data(DrawData *dd)
 {
-  WORKBENCH_ObjectData *data = (WORKBENCH_ObjectData *)dd;
+  DBenchObjectData *data = (WORKBENCH_ObjectData *)dd;
   data->shadow_bbox_dirty = true;
 }
 
-void workbench_shadow_cache_populate(WORKBENCH_Data *data, Object *ob, const bool has_transp_mat)
+void workbench_shadow_cache_populate(DBenchData *data, Object *ob, const bool has_transp_mat)
 {
-  WORKBENCH_PrivateData *wpd = data->stl->wpd;
+  DBenchPrivateData *wpd = data->stl->wpd;
 
   bool is_manifold;
-  struct GPUBatch *geom_shadow = DRW_cache_object_edge_detection_get(ob, &is_manifold);
+  struct GPUBatch *geom_shadow = draw_cache_object_edge_detection_get(ob, &is_manifold);
   if (geom_shadow == NULL) {
     return;
   }
 
-  WORKBENCH_ObjectData *engine_object_data = (WORKBENCH_ObjectData *)DRW_drawdata_ensure(
+  DBenchObjectData *engine_object_data = (DBenchObjectData *)draw_drawdata_ensure(
       &ob->id,
       &draw_engine_workbench,
-      sizeof(WORKBENCH_ObjectData),
+      sizeof(DBenchObjectData),
       &workbench_init_object_data,
       NULL);
 
   if (workbench_shadow_object_cast_visible_shadow(wpd, ob, engine_object_data)) {
     mul_v3_mat3_m4v3(engine_object_data->shadow_dir, ob->imat, wpd->shadow_direction_ws);
 
-    DRWShadingGroup *grp;
+    DrawShadingGroup *grp;
     bool use_shadow_pass_technique = !workbench_shadow_camera_in_object_shadow(
         wpd, ob, engine_object_data);
 
@@ -320,33 +320,33 @@ void workbench_shadow_cache_populate(WORKBENCH_Data *data, Object *ob, const boo
     }
 
     if (use_shadow_pass_technique) {
-      grp = DRW_shgroup_create_sub(wpd->shadow_pass_grp[is_manifold]);
-      DRW_shgroup_uniform_vec3(grp, "lightDirection", engine_object_data->shadow_dir, 1);
-      DRW_shgroup_uniform_float_copy(grp, "lightDistance", 1e5f);
-      DRW_shgroup_call_no_cull(grp, geom_shadow, ob);
+      grp = draw_shgroup_create_sub(wpd->shadow_pass_grp[is_manifold]);
+      draw_shgroup_uniform_vec3(grp, "lightDirection", engine_object_data->shadow_dir, 1);
+      draw_shgroup_uniform_float_copy(grp, "lightDistance", 1e5f);
+      draw_shgroup_call_no_cull(grp, geom_shadow, ob);
 #if DEBUG_SHADOW_VOLUME
-      DRW_debug_bbox(&engine_object_data->shadow_bbox, (float[4]){1.0f, 0.0f, 0.0f, 1.0f});
+      draw_debug_bbox(&engine_object_data->shadow_bbox, (float[4]){1.0f, 0.0f, 0.0f, 1.0f});
 #endif
     }
     else {
       float extrude_distance = workbench_shadow_object_shadow_distance(
           wpd, ob, engine_object_data);
 
-      /* TODO(fclem): only use caps if they are in the view frustum. */
+      /* TODO: only use caps if they are in the view frustum. */
       const bool need_caps = true;
       if (need_caps) {
-        grp = DRW_shgroup_create_sub(wpd->shadow_fail_caps_grp[is_manifold]);
-        DRW_shgroup_uniform_vec3(grp, "lightDirection", engine_object_data->shadow_dir, 1);
-        DRW_shgroup_uniform_float_copy(grp, "lightDistance", extrude_distance);
-        DRW_shgroup_call_no_cull(grp, DRW_cache_object_surface_get(ob), ob);
+        grp = draw_shgroup_create_sub(wpd->shadow_fail_caps_grp[is_manifold]);
+        draw_shgroup_uniform_vec3(grp, "lightDirection", engine_object_data->shadow_dir, 1);
+        draw_shgroup_uniform_float_copy(grp, "lightDistance", extrude_distance);
+        draw_shgroup_call_no_cull(grp, draw_cache_object_surface_get(ob), ob);
       }
 
-      grp = DRW_shgroup_create_sub(wpd->shadow_fail_grp[is_manifold]);
-      DRW_shgroup_uniform_vec3(grp, "lightDirection", engine_object_data->shadow_dir, 1);
-      DRW_shgroup_uniform_float_copy(grp, "lightDistance", extrude_distance);
-      DRW_shgroup_call_no_cull(grp, geom_shadow, ob);
+      grp = draw_shgroup_create_sub(wpd->shadow_fail_grp[is_manifold]);
+      draw_shgroup_uniform_vec3(grp, "lightDirection", engine_object_data->shadow_dir, 1);
+      draw_shgroup_uniform_float_copy(grp, "lightDistance", extrude_distance);
+      draw_shgroup_call_no_cull(grp, geom_shadow, ob);
 #if DEBUG_SHADOW_VOLUME
-      DRW_debug_bbox(&engine_object_data->shadow_bbox, (float[4]){0.0f, 1.0f, 0.0f, 1.0f});
+      draw_debug_bbox(&engine_object_data->shadow_bbox, (float[4]){0.0f, 1.0f, 0.0f, 1.0f});
 #endif
     }
   }
