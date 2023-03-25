@@ -1,6 +1,4 @@
-/** \file
- * \ingroup draw_engine
- *
+/**
  * Depth of Field Effect:
  *
  * We use a gather approach by sampling a lowres version of the color buffer.
@@ -15,10 +13,10 @@
 
 #include "workbench_private.h"
 
-#include "BKE_camera.h"
-#include "DEG_depsgraph_query.h"
+#include "dune_camera.h"
+#include "dgraph_query.h"
 
-#include "DNA_camera_types.h"
+#include "types_camera.h"
 
 /**
  * Transform [-1..1] square to unit circle.
