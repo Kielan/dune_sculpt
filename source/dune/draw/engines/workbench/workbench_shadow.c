@@ -120,40 +120,40 @@ void workbench_shadow_data_update(DBenchPrivateData *wpd, WORKBENCH_UBO_World *w
 
 void workbench_shadow_cache_init(WORKBENCH_Data *data)
 {
-  WORKBENCH_PassList *psl = data->psl;
-  WORKBENCH_PrivateData *wpd = data->stl->wpd;
+  DBenchPassList *psl = data->psl;
+  DBenchPrivateData *wpd = data->stl->wpd;
   struct GPUShader *sh;
-  DRWShadingGroup *grp;
+  DrawShadingGroup *grp;
 
   if (SHADOW_ENABLED(wpd)) {
     workbench_shadow_update(wpd);
 
 #if DEBUG_SHADOW_VOLUME
-    DRWState depth_pass_state = DRW_STATE_DEPTH_LESS;
-    DRWState depth_fail_state = DRW_STATE_DEPTH_GREATER_EQUAL;
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ADD_FULL;
+    DrawState depth_pass_state = DRAW_STATE_DEPTH_LESS;
+    DrawState depth_fail_state = DRAW_STATE_DEPTH_GREATER_EQUAL;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ADD_FULL;
 #else
-    DRWState depth_pass_state = DRW_STATE_WRITE_STENCIL_SHADOW_PASS;
-    DRWState depth_fail_state = DRW_STATE_WRITE_STENCIL_SHADOW_FAIL;
-    DRWState state = DRW_STATE_DEPTH_LESS | DRW_STATE_STENCIL_ALWAYS;
+    DrawState depth_pass_state = DRAW_STATE_WRITE_STENCIL_SHADOW_PASS;
+    DrawState depth_fail_state = DRAW_STATE_WRITE_STENCIL_SHADOW_FAIL;
+    DrawState state = DRAW_STATE_DEPTH_LESS | DRAW_STATE_STENCIL_ALWAYS;
 #endif
 
-    /* TODO(fclem): Merge into one pass with sub-passes. */
-    DRW_PASS_CREATE(psl->shadow_ps[0], state | depth_pass_state);
-    DRW_PASS_CREATE(psl->shadow_ps[1], state | depth_fail_state);
+    /* TODO: Merge into one pass with sub-passes. */
+    DRAW_PASS_CREATE(psl->shadow_ps[0], state | depth_pass_state);
+    DRAW_PASS_CREATE(psl->shadow_ps[1], state | depth_fail_state);
 
     /* Stencil Shadow passes. */
     for (int manifold = 0; manifold < 2; manifold++) {
       sh = workbench_shader_shadow_pass_get(manifold);
-      wpd->shadow_pass_grp[manifold] = grp = DRW_shgroup_create(sh, psl->shadow_ps[0]);
-      DRW_shgroup_stencil_mask(grp, 0xFF); /* Needed once to set the stencil state for the pass. */
+      wpd->shadow_pass_grp[manifold] = grp = draw_shgroup_create(sh, psl->shadow_ps[0]);
+      draw_shgroup_stencil_mask(grp, 0xFF); /* Needed once to set the stencil state for the pass. */
 
       sh = workbench_shader_shadow_fail_get(manifold, false);
-      wpd->shadow_fail_grp[manifold] = grp = DRW_shgroup_create(sh, psl->shadow_ps[1]);
-      DRW_shgroup_stencil_mask(grp, 0xFF); /* Needed once to set the stencil state for the pass. */
+      wpd->shadow_fail_grp[manifold] = grp = draw_shgroup_create(sh, psl->shadow_ps[1]);
+      draw_shgroup_stencil_mask(grp, 0xFF); /* Needed once to set the stencil state for the pass. */
 
       sh = workbench_shader_shadow_fail_get(manifold, true);
-      wpd->shadow_fail_caps_grp[manifold] = grp = DRW_shgroup_create(sh, psl->shadow_ps[1]);
+      wpd->shadow_fail_caps_grp[manifold] = grp = draw_shgroup_create(sh, psl->shadow_ps[1]);
     }
   }
   else {
@@ -185,7 +185,7 @@ static BoundBox *workbench_shadow_object_shadow_bbox_get(WORKBENCH_PrivateData *
     oed->shadow_max[2] += 1e4f;
 
     /* Get extended AABB in world space. */
-    BKE_boundbox_init_from_minmax(&oed->shadow_bbox, oed->shadow_min, oed->shadow_max);
+    dune_boundbox_init_from_minmax(&oed->shadow_bbox, oed->shadow_min, oed->shadow_max);
     for (int i = 0; i < 8; i++) {
       mul_m4_v3(wpd->shadow_mat, oed->shadow_bbox.vec[i]);
     }
@@ -195,13 +195,13 @@ static BoundBox *workbench_shadow_object_shadow_bbox_get(WORKBENCH_PrivateData *
   return &oed->shadow_bbox;
 }
 
-static bool workbench_shadow_object_cast_visible_shadow(WORKBENCH_PrivateData *wpd,
+static bool workbench_shadow_object_cast_visible_shadow(DBenchPrivateData *wpd,
                                                         Object *ob,
-                                                        WORKBENCH_ObjectData *oed)
+                                                        DBenchObjectData *oed)
 {
   BoundBox *shadow_bbox = workbench_shadow_object_shadow_bbox_get(wpd, ob, oed);
-  const DRWView *default_view = DRW_view_default_get();
-  return DRW_culling_box_test(default_view, shadow_bbox);
+  const DrawView *default_view = draw_view_default_get();
+  return draw_culling_box_test(default_view, shadow_bbox);
 }
 
 static float workbench_shadow_object_shadow_distance(WORKBENCH_PrivateData *wpd,
