@@ -1,8 +1,8 @@
 #ifndef GPU_SHADER
-#  include "GPU_shader_shared_utils.h"
+#  include "gpu_shader_shared_utils.h"
 #endif
 
-#define WORKBENCH_SHADER_SHARED_H
+#define DBENCH_SHADER_SHARED_H
 
 struct LightData {
   float4 direction;
