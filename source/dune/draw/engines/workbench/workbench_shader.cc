@@ -108,7 +108,7 @@ static const char *workbench_texture_type_to_str(eWORKBENCH_TextureType tex_type
   }
 }
 
-static eWORKBENCH_TextureType workbench_texture_type_get(bool textured, bool tiled)
+static eDBenchTextureType workbench_texture_type_get(bool textured, bool tiled)
 {
   return textured ? (tiled ? TEXTURE_SH_TILED : TEXTURE_SH_SINGLE) : TEXTURE_SH_NONE;
 }
@@ -122,7 +122,7 @@ static GPUShader *workbench_shader_get_ex(WORKBENCH_PrivateData *wpd,
                                           bool textured,
                                           bool tiled)
 {
-  eWORKBENCH_TextureType tex_type = workbench_texture_type_get(textured, tiled);
+  eDBenchTextureType tex_type = workbench_texture_type_get(textured, tiled);
   int light = wpd->shading.light;
   BLI_assert(light < MAX_LIGHTING);
   struct GPUShader **shader =
@@ -139,7 +139,7 @@ static GPUShader *workbench_shader_get_ex(WORKBENCH_PrivateData *wpd,
     create_info_name += workbench_texture_type_to_str(tex_type);
     create_info_name += (wpd->sh_cfg == GPU_SHADER_CFG_CLIPPED) ? "_clip" : "_no_clip";
 
-    *shader = GPU_shader_create_from_info_name(create_info_name.c_str());
+    *shader = gpu_shader_create_from_info_name(create_info_name.c_str());
   }
   return *shader;
 }
@@ -173,12 +173,12 @@ GPUShader *workbench_shader_composite_get(WORKBENCH_PrivateData *wpd)
 {
   int light = wpd->shading.light;
   struct GPUShader **shader = &e_data.opaque_composite_sh[light];
-  BLI_assert(light < MAX_LIGHTING);
+  lib_assert(light < MAX_LIGHTING);
 
   if (*shader == nullptr) {
     std::string create_info_name = "workbench_composite";
     create_info_name += workbench_lighting_mode_to_str(light);
-    *shader = GPU_shader_create_from_info_name(create_info_name.c_str());
+    *shader = gpu_shader_create_from_info_name(create_info_name.c_str());
   }
   return *shader;
 }
@@ -212,7 +212,7 @@ static GPUShader *workbench_shader_shadow_pass_get_ex(bool depth_pass, bool mani
 #if DEBUG_SHADOW_VOLUME
     create_info_name += "_debug";
 #endif
-    *shader = GPU_shader_create_from_info_name(create_info_name.c_str());
+    *shader = gpu_shader_create_from_info_name(create_info_name.c_str());
   }
   return *shader;
 }
@@ -229,14 +229,14 @@ GPUShader *workbench_shader_shadow_fail_get(bool manifold, bool cap)
 
 GPUShader *workbench_shader_cavity_get(bool cavity, bool curvature)
 {
-  BLI_assert(cavity || curvature);
+  lib_assert(cavity || curvature);
   struct GPUShader **shader = &e_data.cavity_sh[cavity][curvature];
 
   if (*shader == nullptr) {
     std::string create_info_name = "workbench_effect";
     create_info_name += (cavity) ? "_cavity" : "";
     create_info_name += (curvature) ? "_curvature" : "";
-    *shader = GPU_shader_create_from_info_name(create_info_name.c_str());
+    *shader = gpu_shader_create_from_info_name(create_info_name.c_str());
   }
   return *shader;
 }
@@ -244,7 +244,7 @@ GPUShader *workbench_shader_cavity_get(bool cavity, bool curvature)
 GPUShader *workbench_shader_outline_get(void)
 {
   if (e_data.outline_sh == nullptr) {
-    e_data.outline_sh = GPU_shader_create_from_info_name("workbench_effect_outline");
+    e_data.outline_sh = gpu_shader_create_from_info_name("workbench_effect_outline");
   }
   return e_data.outline_sh;
 }
@@ -256,17 +256,17 @@ void workbench_shader_depth_of_field_get(GPUShader **prepare_sh,
                                          GPUShader **resolve_sh)
 {
   if (e_data.dof_prepare_sh == nullptr) {
-    e_data.dof_prepare_sh = GPU_shader_create_from_info_name("workbench_effect_dof_prepare");
-    e_data.dof_downsample_sh = GPU_shader_create_from_info_name("workbench_effect_dof_downsample");
-#if 0 /* TODO(fclem): finish COC min_max optimization */
-    e_data.dof_flatten_v_sh = GPU_shader_create_from_info_name("workbench_effect_dof_flatten_v");
-    e_data.dof_flatten_h_sh = GPU_shader_create_from_info_name("workbench_effect_dof_flatten_h");
-    e_data.dof_dilate_v_sh = GPU_shader_create_from_info_name("workbench_effect_dof_dilate_v");
-    e_data.dof_dilate_h_sh = GPU_shader_create_from_info_name("workbench_effect_dof_dilate_h");
+    e_data.dof_prepare_sh = gpu_shader_create_from_info_name("workbench_effect_dof_prepare");
+    e_data.dof_downsample_sh = gpu_shader_create_from_info_name("workbench_effect_dof_downsample");
+#if 0 /* TODO: finish COC min_max optimization */
+    e_data.dof_flatten_v_sh = gpu_shader_create_from_info_name("workbench_effect_dof_flatten_v");
+    e_data.dof_flatten_h_sh = gpu_shader_create_from_info_name("workbench_effect_dof_flatten_h");
+    e_data.dof_dilate_v_sh = gpu_shader_create_from_info_name("workbench_effect_dof_dilate_v");
+    e_data.dof_dilate_h_sh = gpu_shader_create_from_info_name("workbench_effect_dof_dilate_h");
 #endif
-    e_data.dof_blur1_sh = GPU_shader_create_from_info_name("workbench_effect_dof_blur1");
-    e_data.dof_blur2_sh = GPU_shader_create_from_info_name("workbench_effect_dof_blur2");
-    e_data.dof_resolve_sh = GPU_shader_create_from_info_name("workbench_effect_dof_resolve");
+    e_data.dof_blur1_sh = gpu_shader_create_from_info_name("workbench_effect_dof_blur1");
+    e_data.dof_blur2_sh = gpu_shader_create_from_info_name("workbench_effect_dof_blur2");
+    e_data.dof_resolve_sh = gpu_shader_create_from_info_name("workbench_effect_dof_resolve");
   }
 
   *prepare_sh = e_data.dof_prepare_sh;
@@ -286,20 +286,20 @@ GPUShader *workbench_shader_antialiasing_accumulation_get(void)
 
 GPUShader *workbench_shader_antialiasing_get(int stage)
 {
-  BLI_assert(stage < 3);
+  lib_assert(stage < 3);
   GPUShader **shader = &e_data.smaa_sh[stage];
 
   if (*shader == nullptr) {
     std::string create_info_name = "workbench_smaa_stage_";
     create_info_name += std::to_string(stage);
-    *shader = GPU_shader_create_from_info_name(create_info_name.c_str());
+    *shader = gpu_shader_create_from_info_name(create_info_name.c_str());
   }
   return e_data.smaa_sh[stage];
 }
 
 GPUShader *workbench_shader_volume_get(bool slice,
                                        bool coba,
-                                       eWORKBENCH_VolumeInterpType interp_type,
+                                       eDBenchVolumeInterpType interp_type,
                                        bool smoke)
 {
   GPUShader **shader = &e_data.volume_sh[slice][coba][interp_type][smoke];
@@ -310,61 +310,58 @@ GPUShader *workbench_shader_volume_get(bool slice,
     create_info_name += workbench_volume_interp_to_str(interp_type);
     create_info_name += (coba) ? "_coba" : "_no_coba";
     create_info_name += (slice) ? "_slice" : "_no_slice";
-    *shader = GPU_shader_create_from_info_name(create_info_name.c_str());
+    *shader = gpu_shader_create_from_info_name(create_info_name.c_str());
   }
   return *shader;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Cleanup
- * \{ */
+/** Cleanup **/
 
 void workbench_shader_free(void)
 {
   for (int j = 0; j < sizeof(e_data.opaque_prepass_sh_cache) / sizeof(void *); j++) {
     struct GPUShader **sh_array = &e_data.opaque_prepass_sh_cache[0][0][0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
   for (int j = 0; j < sizeof(e_data.transp_prepass_sh_cache) / sizeof(void *); j++) {
     struct GPUShader **sh_array = &e_data.transp_prepass_sh_cache[0][0][0][0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
   for (int j = 0; j < ARRAY_SIZE(e_data.opaque_composite_sh); j++) {
     struct GPUShader **sh_array = &e_data.opaque_composite_sh[0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
   for (int j = 0; j < ARRAY_SIZE(e_data.shadow_depth_pass_sh); j++) {
     struct GPUShader **sh_array = &e_data.shadow_depth_pass_sh[0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
   for (int j = 0; j < sizeof(e_data.shadow_depth_fail_sh) / sizeof(void *); j++) {
     struct GPUShader **sh_array = &e_data.shadow_depth_fail_sh[0][0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
   for (int j = 0; j < sizeof(e_data.cavity_sh) / sizeof(void *); j++) {
     struct GPUShader **sh_array = &e_data.cavity_sh[0][0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
   for (int j = 0; j < ARRAY_SIZE(e_data.smaa_sh); j++) {
     struct GPUShader **sh_array = &e_data.smaa_sh[0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
   for (int j = 0; j < sizeof(e_data.volume_sh) / sizeof(void *); j++) {
     struct GPUShader **sh_array = &e_data.volume_sh[0][0][0][0];
-    DRW_SHADER_FREE_SAFE(sh_array[j]);
+    DRAW_SHADER_FREE_SAFE(sh_array[j]);
   }
 
-  DRW_SHADER_FREE_SAFE(e_data.oit_resolve_sh);
-  DRW_SHADER_FREE_SAFE(e_data.outline_sh);
-  DRW_SHADER_FREE_SAFE(e_data.merge_infront_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.oit_resolve_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.outline_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.merge_infront_sh);
 
-  DRW_SHADER_FREE_SAFE(e_data.dof_prepare_sh);
-  DRW_SHADER_FREE_SAFE(e_data.dof_downsample_sh);
-  DRW_SHADER_FREE_SAFE(e_data.dof_blur1_sh);
-  DRW_SHADER_FREE_SAFE(e_data.dof_blur2_sh);
-  DRW_SHADER_FREE_SAFE(e_data.dof_resolve_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.dof_prepare_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.dof_downsample_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.dof_blur1_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.dof_blur2_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.dof_resolve_sh);
 
-  DRW_SHADER_FREE_SAFE(e_data.aa_accum_sh);
+  DRAW_SHADER_FREE_SAFE(e_data.aa_accum_sh);
 }
