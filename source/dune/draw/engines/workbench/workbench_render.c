@@ -158,19 +158,19 @@ void workbench_render(void *ved, RenderEngine *engine, RenderLayer *render_layer
   workbench_engine_init(data);
 
   workbench_cache_init(data);
-  DRW_render_object_iter(data, engine, depsgraph, workbench_render_cache);
+  draw_render_object_iter(data, engine, depsgraph, workbench_render_cache);
   workbench_cache_finish(data);
 
-  DRW_render_instance_buffer_finish();
+  draw_render_instance_buffer_finish();
 
   /* Also we weed to have a correct FBO bound for #DRW_hair_update */
-  GPU_framebuffer_bind(dfbl->default_fb);
-  DRW_hair_update();
+  gpu_framebuffer_bind(dfbl->default_fb);
+  draw_hair_update();
 
-  GPU_framebuffer_bind(dfbl->default_fb);
-  GPU_framebuffer_clear_depth(dfbl->default_fb, 1.0f);
+  gpu_framebuffer_bind(dfbl->default_fb);
+  gpu_framebuffer_clear_depth(dfbl->default_fb, 1.0f);
 
-  WORKBENCH_PrivateData *wpd = data->stl->wpd;
+  DBenchPrivateData *wpd = data->stl->wpd;
   while (wpd->taa_sample < max_ii(1, wpd->taa_sample_len)) {
     if (RE_engine_test_break(engine)) {
       break;
@@ -185,12 +185,12 @@ void workbench_render(void *ved, RenderEngine *engine, RenderLayer *render_layer
   const char *viewname = RE_GetActiveRenderView(engine->re);
   RenderPass *rp = RE_pass_find_by_name(render_layer, RE_PASSNAME_COMBINED, viewname);
 
-  GPU_framebuffer_bind(dfbl->default_fb);
-  GPU_framebuffer_read_color(dfbl->default_fb,
+  gpu_framebuffer_bind(dfbl->default_fb);
+  gpu_framebuffer_read_color(dfbl->default_fb,
                              rect->xmin,
                              rect->ymin,
-                             BLI_rcti_size_x(rect),
-                             BLI_rcti_size_y(rect),
+                             lib_rcti_size_x(rect),
+                             lib_rcti_size_y(rect),
                              4,
                              0,
                              GPU_DATA_FLOAT,
