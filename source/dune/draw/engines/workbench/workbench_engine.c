@@ -134,9 +134,9 @@ static void workbench_cache_texpaint_populate(DBenchPrivateData *wpd, Object *ob
     }
   }
   else {
-    struct GPUBatch **geoms = drae_cache_mesh_surface_texpaint_get(ob);
+    struct GPUBatch **geoms = draw_cache_mesh_surface_texpaint_get(ob);
     if (geoms) {
-      const int materials_len = DRW_cache_object_material_count_get(ob);
+      const int materials_len = draw_cache_object_material_count_get(ob);
       for (int i = 0; i < materials_len; i++) {
         if (geoms[i] == NULL) {
           continue;
@@ -413,26 +413,26 @@ void workbench_cache_populate(void *ved, Object *ob)
 
 void workbench_cache_finish(void *ved)
 {
-  WORKBENCH_Data *vedata = ved;
-  WORKBENCH_StorageList *stl = vedata->stl;
-  WORKBENCH_FramebufferList *fbl = vedata->fbl;
+  DBenchData *vedata = ved;
+  DBenchStorageList *stl = vedata->stl;
+  DBenchFramebufferList *fbl = vedata->fbl;
   DBenchPrivateData *wpd = stl->wpd;
 
-  /* TODO(fclem): Only do this when really needed. */
+  /* TODO: Only do this when really needed. */
   {
     /* HACK we allocate the in front depth here to avoid the overhead when if is not needed. */
-    DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
-    DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+    DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
+    DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
-    DRW_texture_ensure_fullscreen_2d(&dtxl->depth_in_front, GPU_DEPTH24_STENCIL8, 0);
+    draw_texture_ensure_fullscreen_2d(&dtxl->depth_in_front, GPU_DEPTH24_STENCIL8, 0);
 
-    GPU_framebuffer_ensure_config(&dfbl->in_front_fb,
+    gpu_framebuffer_ensure_config(&dfbl->in_front_fb,
                                   {
                                       GPU_ATTACHMENT_TEXTURE(dtxl->depth_in_front),
                                       GPU_ATTACHMENT_TEXTURE(dtxl->color),
                                   });
 
-    GPU_framebuffer_ensure_config(&fbl->opaque_infront_fb,
+    gpu_framebuffer_ensure_config(&fbl->opaque_infront_fb,
                                   {
                                       GPU_ATTACHMENT_TEXTURE(dtxl->depth_in_front),
                                       GPU_ATTACHMENT_TEXTURE(wpd->material_buffer_tx),
@@ -440,7 +440,7 @@ void workbench_cache_finish(void *ved)
                                       GPU_ATTACHMENT_TEXTURE(wpd->object_id_tx),
                                   });
 
-    GPU_framebuffer_ensure_config(&fbl->transp_accum_infront_fb,
+    gpu_framebuffer_ensure_config(&fbl->transp_accum_infront_fb,
                                   {
                                       GPU_ATTACHMENT_TEXTURE(dtxl->depth_in_front),
                                       GPU_ATTACHMENT_TEXTURE(wpd->accum_buffer_tx),
@@ -449,7 +449,7 @@ void workbench_cache_finish(void *ved)
   }
 
   if (wpd->object_id_tx) {
-    GPU_framebuffer_ensure_config(&fbl->id_clear_fb,
+    gpu_framebuffer_ensure_config(&fbl->id_clear_fb,
                                   {
                                       GPU_ATTACHMENT_NONE,
                                       GPU_ATTACHMENT_TEXTURE(wpd->object_id_tx),
@@ -466,7 +466,7 @@ void workbench_cache_finish(void *ved)
     for (int j = 0; j < 2; j++) {
       for (int k = 0; k < WORKBENCH_DATATYPE_MAX; k++) {
         if (wpd->prepass[i][j][k].material_hash) {
-          BLI_ghash_free(wpd->prepass[i][j][k].material_hash, NULL, NULL);
+          lib_ghash_free(wpd->prepass[i][j][k].material_hash, NULL, NULL);
           wpd->prepass[i][j][k].material_hash = NULL;
         }
       }
@@ -476,10 +476,10 @@ void workbench_cache_finish(void *ved)
 
 void workbench_draw_sample(void *ved)
 {
-  WORKBENCH_Data *vedata = ved;
-  WORKBENCH_FramebufferList *fbl = vedata->fbl;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
-  WORKBENCH_PassList *psl = vedata->psl;
+  DBenchData *vedata = ved;
+  DBenchFramebufferList *fbl = vedata->fbl;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
+  DBenchPassList *psl = vedata->psl;
   DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
   const float clear_col[4] = {0.0f, 0.0f, 0.0f, 0.0f};
   const float clear_col_with_alpha[4] = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -492,42 +492,42 @@ void workbench_draw_sample(void *ved)
   const bool do_opaque_pass = !DRW_pass_is_empty(psl->opaque_ps) || do_opaque_infront_pass;
 
   if (dfbl->in_front_fb) {
-    GPU_framebuffer_bind(dfbl->in_front_fb);
-    GPU_framebuffer_clear_depth(dfbl->in_front_fb, 1.0f);
+    gpu_framebuffer_bind(dfbl->in_front_fb);
+    gpu_framebuffer_clear_depth(dfbl->in_front_fb, 1.0f);
   }
 
   if (do_render) {
-    GPU_framebuffer_bind(dfbl->default_fb);
-    GPU_framebuffer_clear_color_depth_stencil(dfbl->default_fb, wpd->background_color, 1.0f, 0x00);
+    gpu_framebuffer_bind(dfbl->default_fb);
+    gpu_framebuffer_clear_color_depth_stencil(dfbl->default_fb, wpd->background_color, 1.0f, 0x00);
 
     if (fbl->id_clear_fb) {
-      GPU_framebuffer_bind(fbl->id_clear_fb);
-      GPU_framebuffer_clear_color(fbl->id_clear_fb, clear_col);
+      gpu_framebuffer_bind(fbl->id_clear_fb);
+      gpu_framebuffer_clear_color(fbl->id_clear_fb, clear_col);
     }
 
     if (do_opaque_pass) {
-      GPU_framebuffer_bind(fbl->opaque_fb);
-      DRW_draw_pass(psl->opaque_ps);
+      gpu_framebuffer_bind(fbl->opaque_fb);
+      draw_draw_pass(psl->opaque_ps);
 
       if (psl->shadow_ps[0]) {
-        DRW_draw_pass(psl->shadow_ps[0]);
-        DRW_draw_pass(psl->shadow_ps[1]);
+        draw_draw_pass(psl->shadow_ps[0]);
+        draw_draw_pass(psl->shadow_ps[1]);
       }
 
       if (do_opaque_infront_pass) {
-        GPU_framebuffer_bind(fbl->opaque_infront_fb);
-        DRW_draw_pass(psl->opaque_infront_ps);
+        gpu_framebuffer_bind(fbl->opaque_infront_fb);
+        draw_draw_pass(psl->opaque_infront_ps);
 
-        GPU_framebuffer_bind(fbl->opaque_fb);
-        DRW_draw_pass(psl->merge_infront_ps);
+        gpu_framebuffer_bind(fbl->opaque_fb);
+        draw_draw_pass(psl->merge_infront_ps);
       }
 
-      GPU_framebuffer_bind(dfbl->default_fb);
-      DRW_draw_pass(psl->composite_ps);
+      gpu_framebuffer_bind(dfbl->default_fb);
+      draw_draw_pass(psl->composite_ps);
 
       if (psl->cavity_ps) {
-        GPU_framebuffer_bind(dfbl->color_only_fb);
-        DRW_draw_pass(psl->cavity_ps);
+        gpu_framebuffer_bind(dfbl->color_only_fb);
+        draw_draw_pass(psl->cavity_ps);
       }
     }
 
@@ -535,31 +535,31 @@ void workbench_draw_sample(void *ved)
 
     if (xray_is_visible) {
       if (do_transparent_pass) {
-        GPU_framebuffer_bind(fbl->transp_accum_fb);
-        GPU_framebuffer_clear_color(fbl->transp_accum_fb, clear_col_with_alpha);
+        gpu_framebuffer_bind(fbl->transp_accum_fb);
+        gpu_framebuffer_clear_color(fbl->transp_accum_fb, clear_col_with_alpha);
 
-        DRW_draw_pass(psl->transp_accum_ps);
+        draw_draw_pass(psl->transp_accum_ps);
 
-        GPU_framebuffer_bind(dfbl->color_only_fb);
-        DRW_draw_pass(psl->transp_resolve_ps);
+        gpu_framebuffer_bind(dfbl->color_only_fb);
+        draw_draw_pass(psl->transp_resolve_ps);
       }
 
       if (do_transparent_infront_pass) {
-        GPU_framebuffer_bind(fbl->transp_accum_infront_fb);
-        GPU_framebuffer_clear_color(fbl->transp_accum_infront_fb, clear_col_with_alpha);
+        gpu_framebuffer_bind(fbl->transp_accum_infront_fb);
+        gpu_framebuffer_clear_color(fbl->transp_accum_infront_fb, clear_col_with_alpha);
 
-        DRW_draw_pass(psl->transp_accum_infront_ps);
+        draw_draw_pass(psl->transp_accum_infront_ps);
 
-        GPU_framebuffer_bind(dfbl->color_only_fb);
-        DRW_draw_pass(psl->transp_resolve_ps);
+        gpu_framebuffer_bind(dfbl->color_only_fb);
+        draw_draw_pass(psl->transp_resolve_ps);
       }
     }
 
     workbench_transparent_draw_depth_pass(vedata);
 
     if (psl->outline_ps) {
-      GPU_framebuffer_bind(dfbl->color_only_fb);
-      DRW_draw_pass(psl->outline_ps);
+      gpu_framebuffer_bind(dfbl->color_only_fb);
+      draw_draw_pass(psl->outline_ps);
     }
 
     workbench_dof_draw_pass(vedata);
