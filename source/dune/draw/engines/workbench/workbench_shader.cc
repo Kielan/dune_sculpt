@@ -1,4 +1,4 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #include <string>
 
@@ -8,7 +8,7 @@
 /* Maximum number of variations. */
 #define MAX_LIGHTING 3
 
-enum eWORKBENCH_TextureType {
+enum eDBenchTextureType {
   TEXTURE_SH_NONE = 0,
   TEXTURE_SH_SINGLE,
   TEXTURE_SH_TILED,
@@ -45,8 +45,7 @@ static struct {
 } e_data = {{{{nullptr}}}};
 
 /* -------------------------------------------------------------------- */
-/** \name Conversions
- * \{ */
+/** Conversions **/
 
 static const char *workbench_lighting_mode_to_str(int light)
 {
