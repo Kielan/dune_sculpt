@@ -180,12 +180,12 @@ void workbench_dof_engine_init(DBenchData *vedata)
                                     GPU_ATTACHMENT_TEXTURE(wpd->coc_tiles_tx[1]),
                                 });
 #endif
-  GPU_framebuffer_ensure_config(&fbl->dof_blur1_fb,
+  gpu_framebuffer_ensure_config(&fbl->dof_blur1_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(wpd->dof_blur_tx),
                                 });
-  GPU_framebuffer_ensure_config(&fbl->dof_blur2_fb,
+  gpu_framebuffer_ensure_config(&fbl->dof_blur2_fb,
                                 {
                                     GPU_ATTACHMENT_NONE,
                                     GPU_ATTACHMENT_TEXTURE(txl->dof_source_tx),
@@ -194,11 +194,11 @@ void workbench_dof_engine_init(DBenchData *vedata)
   {
     /* Parameters */
     float fstop = cam->dof.aperture_fstop;
-    float sensor = BKE_camera_sensor_size(cam->sensor_fit, cam->sensor_x, cam->sensor_y);
-    float focus_dist = BKE_camera_object_dof_distance(camera);
+    float sensor = dune_camera_sensor_size(cam->sensor_fit, cam->sensor_x, cam->sensor_y);
+    float focus_dist = dune_camera_object_dof_distance(camera);
     float focal_len = cam->lens;
 
-    /* TODO(fclem): de-duplicate with EEVEE. */
+    /* TODO: de-duplicate with EEVEE. */
     const float scale_camera = 0.001f;
     /* We want radius here for the aperture number. */
     float aperture = 0.5f * scale_camera * focal_len / fstop;
@@ -235,10 +235,10 @@ void workbench_dof_engine_init(DBenchData *vedata)
 
 void workbench_dof_cache_init(WORKBENCH_Data *vedata)
 {
-  WORKBENCH_PassList *psl = vedata->psl;
-  WORKBENCH_TextureList *txl = vedata->txl;
-  WORKBENCH_StorageList *stl = vedata->stl;
-  WORKBENCH_PrivateData *wpd = stl->wpd;
+  DBenchPassList *psl = vedata->psl;
+  DBenchTextureList *txl = vedata->txl;
+  DBenchStorageList *stl = vedata->stl;
+  DBenchPrivateData *wpd = stl->wpd;
 
   if (!wpd->dof_enabled) {
     return;
@@ -248,29 +248,29 @@ void workbench_dof_cache_init(WORKBENCH_Data *vedata)
   workbench_shader_depth_of_field_get(
       &prepare_sh, &downsample_sh, &blur1_sh, &blur2_sh, &resolve_sh);
 
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
   {
-    psl->dof_down_ps = DRW_pass_create("DoF DownSample", DRW_STATE_WRITE_COLOR);
+    psl->dof_down_ps = draw_pass_create("DoF DownSample", DRW_STATE_WRITE_COLOR);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(prepare_sh, psl->dof_down_ps);
-    DRW_shgroup_uniform_texture(grp, "sceneColorTex", dtxl->color);
-    DRW_shgroup_uniform_texture(grp, "sceneDepthTex", dtxl->depth);
-    DRW_shgroup_uniform_vec2(grp, "invertedViewportSize", DRW_viewport_invert_size_get(), 1);
-    DRW_shgroup_uniform_vec3(grp, "dofParams", &wpd->dof_aperturesize, 1);
-    DRW_shgroup_uniform_vec2(grp, "nearFar", wpd->dof_near_far, 1);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(prepare_sh, psl->dof_down_ps);
+    draw_shgroup_uniform_texture(grp, "sceneColorTex", dtxl->color);
+    draw_shgroup_uniform_texture(grp, "sceneDepthTex", dtxl->depth);
+    draw_shgroup_uniform_vec2(grp, "invertedViewportSize", DRW_viewport_invert_size_get(), 1);
+    draw_shgroup_uniform_vec3(grp, "dofParams", &wpd->dof_aperturesize, 1);
+    draw_shgroup_uniform_vec2(grp, "nearFar", wpd->dof_near_far, 1);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 
   {
-    psl->dof_down2_ps = DRW_pass_create("DoF DownSample", DRW_STATE_WRITE_COLOR);
+    psl->dof_down2_ps = draw_pass_create("DoF DownSample", DRW_STATE_WRITE_COLOR);
 
-    DRWShadingGroup *grp = DRW_shgroup_create(downsample_sh, psl->dof_down2_ps);
-    DRW_shgroup_uniform_texture_ex(grp, "sceneColorTex", txl->dof_source_tx, GPU_SAMPLER_DEFAULT);
-    DRW_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    DrawShadingGroup *grp = draw_shgroup_create(downsample_sh, psl->dof_down2_ps);
+    draw_shgroup_uniform_texture_ex(grp, "sceneColorTex", txl->dof_source_tx, GPU_SAMPLER_DEFAULT);
+    draw_shgroup_uniform_texture(grp, "inputCocTex", txl->coc_halfres_tx);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
-#if 0 /* TODO(fclem): finish COC min_max optimization */
+#if 0 /* TODO: finish COC min_max optimization */
   {
     psl->dof_flatten_h_ps = DRW_pass_create("DoF Flatten Coc H", DRW_STATE_WRITE_COLOR);
 
