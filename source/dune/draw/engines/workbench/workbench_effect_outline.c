@@ -9,25 +9,25 @@
 #include "workbench_engine.h"
 #include "workbench_private.h"
 
-void workbench_outline_cache_init(WORKBENCH_Data *data)
+void workbench_outline_cache_init(DBenchData *data)
 {
-  WORKBENCH_PassList *psl = data->psl;
-  WORKBENCH_PrivateData *wpd = data->stl->wpd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DBenchPassList *psl = data->psl;
+  DBenchPrivateData *wpd = data->stl->wpd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
   struct GPUShader *sh;
-  DRWShadingGroup *grp;
+  DrawShadingGroup *grp;
 
   if (OBJECT_OUTLINE_ENABLED(wpd)) {
-    int state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL;
-    DRW_PASS_CREATE(psl->outline_ps, state);
+    int state = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL;
+    DRAW_PASS_CREATE(psl->outline_ps, state);
 
     sh = workbench_shader_outline_get();
 
-    grp = DRW_shgroup_create(sh, psl->outline_ps);
-    DRW_shgroup_uniform_texture(grp, "objectIdBuffer", wpd->object_id_tx);
-    DRW_shgroup_uniform_texture(grp, "depthBuffer", dtxl->depth);
-    DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    grp = draw_shgroup_create(sh, psl->outline_ps);
+    draw_shgroup_uniform_texture(grp, "objectIdBuffer", wpd->object_id_tx);
+    draw_shgroup_uniform_texture(grp, "depthBuffer", dtxl->depth);
+    draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
   else {
     psl->outline_ps = NULL;
