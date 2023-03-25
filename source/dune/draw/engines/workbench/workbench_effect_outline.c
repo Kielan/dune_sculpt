@@ -1,12 +1,10 @@
-/** \file
- * \ingroup draw_engine
- *
+/**
  * Outline Effect:
  *
  * Simple effect that just samples an object id buffer to detect objects outlines.
  */
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #include "workbench_engine.h"
 #include "workbench_private.h"
