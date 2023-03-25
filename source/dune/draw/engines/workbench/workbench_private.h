@@ -53,22 +53,22 @@ struct RenderEngine;
 struct RenderLayer;
 struct rcti;
 
-typedef enum eWORKBENCH_DataType {
-  WORKBENCH_DATATYPE_MESH = 0,
-  WORKBENCH_DATATYPE_HAIR,
-  WORKBENCH_DATATYPE_POINTCLOUD,
+typedef enum eDBenchDataType {
+  DBENCH_DATATYPE_MESH = 0,
+  DBENCH_DATATYPE_HAIR,
+  DBENCH_DATATYPE_POINTCLOUD,
 
-  WORKBENCH_DATATYPE_MAX,
-} eWORKBENCH_DataType;
+  DBENCH_DATATYPE_MAX,
+} eDBenchDataType;
 
 /* Types of volume display interpolation. */
 typedef enum eWORKBENCH_VolumeInterpType {
-  WORKBENCH_VOLUME_INTERP_LINEAR = 0,
-  WORKBENCH_VOLUME_INTERP_CUBIC,
-  WORKBENCH_VOLUME_INTERP_CLOSEST,
-} eWORKBENCH_VolumeInterpType;
+  DBENCH_VOLUME_INTERP_LINEAR = 0,
+  DBENCH_VOLUME_INTERP_CUBIC,
+  DBENCH_VOLUME_INTERP_CLOSEST,
+} eDBENCH_VolumeInterpType;
 
-typedef struct WORKBENCH_FramebufferList {
+typedef struct DBenchFramebufferList {
   struct GPUFrameBuffer *opaque_fb;
   struct GPUFrameBuffer *opaque_infront_fb;
 
@@ -88,7 +88,7 @@ typedef struct WORKBENCH_FramebufferList {
   struct GPUFrameBuffer *antialiasing_in_front_fb;
   struct GPUFrameBuffer *smaa_edge_fb;
   struct GPUFrameBuffer *smaa_weight_fb;
-} WORKBENCH_FramebufferList;
+} DBenchFramebufferList;
 
 typedef struct DBenchTextureList {
   struct GPUTexture *dof_source_tx;
@@ -162,18 +162,18 @@ typedef struct WORKBENCH_UBO_Light {
   float diffuse_color[3], wrapped;
 } WORKBENCH_UBO_Light;
 
-typedef struct WORKBENCH_UBO_Material {
+typedef struct DBENCH_UBO_Material {
   float base_color[3];
   /* Packed data into a int. Decoded in the shader. */
   uint32_t packed_data;
-} WORKBENCH_UBO_Material;
+} DBENCH_UBO_Material;
 
-typedef struct WORKBENCH_UBO_World {
+typedef struct DBENCH_UBO_World {
   float viewport_size[2], viewport_size_inv[2];
   float object_outline_color[4];
   float shadow_direction_vs[4];
   float shadow_focus, shadow_shift, shadow_mul, shadow_add;
-  WORKBENCH_UBO_Light lights[4];
+  DBENCH_UBO_Light lights[4];
   float ambient_color[4];
 
   int cavity_sample_start;
@@ -195,11 +195,11 @@ typedef struct WORKBENCH_UBO_World {
   int use_specular; /* Bools are 32bit ints in GLSL. */
   int _pad1;
   int _pad2;
-} WORKBENCH_UBO_World;
+} DBENCH_UBO_World;
 
-LIB_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_World, 16)
-LIB_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Light, 16)
-LIB_STATIC_ASSERT_ALIGN(WORKBENCH_UBO_Material, 16)
+LIB_STATIC_ASSERT_ALIGN(DBENCH_UBO_World, 16)
+LIB_STATIC_ASSERT_ALIGN(DBENCH_UBO_Light, 16)
+LIB_STATIC_ASSERT_ALIGN(DBENCH_UBO_Material, 16)
 
 typedef struct DBenchPrepass {
   /** Hash storing shading group for each Material or GPUTexture to reduce state changes. */
@@ -294,19 +294,19 @@ typedef struct DBenchPrivateData {
   /** Transparent pipeline buffers. */
   struct GPUTexture *accum_buffer_tx;
   struct GPUTexture *reveal_buffer_tx;
-  /** Object IDs buffer for curvature & outline. */
+  /** Object Ids buffer for curvature & outline. */
   struct GPUTexture *object_id_tx;
 
   /** Pre-pass information for each draw types [transparent][infront][datatype]. */
-  WORKBENCH_Prepass prepass[2][2][WORKBENCH_DATATYPE_MAX];
+  DBenchPrepass prepass[2][2][WORKBENCH_DATATYPE_MAX];
 
   /* Materials */
   /** Copy of vldata->material_ubo for faster access. */
-  struct BLI_memblock *material_ubo;
+  struct lib_memblock *material_ubo;
   /** Copy of vldata->material_ubo_data for faster access. */
-  struct BLI_memblock *material_ubo_data;
+  struct lib_memblock *material_ubo_data;
   /** Current material chunk being filled by workbench_material_setup_ex(). */
-  WORKBENCH_UBO_Material *material_ubo_data_curr;
+  DBENCH_UBO_Material *material_ubo_data_curr;
   struct GPUUniformBuf *material_ubo_curr;
   /** Copy of txl->dummy_image_tx for faster access. */
   struct GPUTexture *dummy_image_tx;
@@ -345,9 +345,9 @@ typedef struct DBenchPrivateData {
   bool is_playback;
   bool is_navigating;
   bool reset_next_sample;
-} WORKBENCH_PrivateData; /* Transient data */
+} DBenchPrivateData; /* Transient data */
 
-typedef struct WORKBENCH_ObjectData {
+typedef struct DBenchObjectData {
   DrawData dd;
 
   /* Shadow direction in local object space. */
@@ -356,7 +356,7 @@ typedef struct WORKBENCH_ObjectData {
   float shadow_min[3], shadow_max[3];
   BoundBox shadow_bbox;
   bool shadow_bbox_dirty;
-} WORKBENCH_ObjectData;
+} DBenchObjectData;
 
 typedef struct DBenchViewLayerData {
   /** Depth of field sample location array. */
@@ -368,8 +368,8 @@ typedef struct DBenchViewLayerData {
   /** Blue noise texture used to randomize the sampling of some effects. */
   struct GPUTexture *cavity_jitter_tx;
   /** Materials UBO's allocated in a memblock for easy bookkeeping. */
-  struct BLI_memblock *material_ubo;
-  struct BLI_memblock *material_ubo_data;
+  struct lib_memblock *material_ubo;
+  struct lib_memblock *material_ubo_data;
   /** Number of samples for which cavity_sample_ubo is valid. */
   int cavity_sample_count;
 } DBenchViewLayerData;
