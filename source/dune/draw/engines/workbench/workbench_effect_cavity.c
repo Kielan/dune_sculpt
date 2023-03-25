@@ -24,7 +24,7 @@
 /* Using Hammersley distribution */
 static float *create_disk_samples(int num_samples, int num_iterations)
 {
-  BLI_assert(num_samples * num_iterations <= CAVITY_MAX_SAMPLES);
+  lib_assert(num_samples * num_iterations <= CAVITY_MAX_SAMPLES);
   const int total_samples = num_samples * num_iterations;
   const float num_samples_inv = 1.0f / num_samples;
   /* vec4 to ensure memory alignment. */
@@ -78,7 +78,7 @@ LIB_INLINE int workbench_cavity_total_sample_count(const WORKBENCH_PrivateData *
 void workbench_cavity_data_update(WORKBENCH_PrivateData *wpd, WORKBENCH_UBO_World *wd)
 {
   View3DShading *shading = &wpd->shading;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = DRW_context_state_get();
   Scene *scene = draw_ctx->scene;
 
   if (CAVITY_ENABLED(wpd)) {
@@ -103,9 +103,9 @@ void workbench_cavity_data_update(WORKBENCH_PrivateData *wpd, WORKBENCH_UBO_Worl
   }
 }
 
-void workbench_cavity_samples_ubo_ensure(WORKBENCH_PrivateData *wpd)
+void workbench_cavity_samples_ubo_ensure(DBenchPrivateData *wpd)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   Scene *scene = draw_ctx->scene;
 
   int cavity_sample_count_single_iteration = scene->display.matcap_ssao_samples;
