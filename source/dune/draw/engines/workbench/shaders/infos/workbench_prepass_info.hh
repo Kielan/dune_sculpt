@@ -1,8 +1,7 @@
 #include "gpu_shader_create_info.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Object Type
- **/
+/** Object Type **/
 
 GPU_SHADER_CREATE_INFO(workbench_mesh)
     .vertex_in(0, Type::VEC3, "pos")
@@ -26,8 +25,7 @@ GPU_SHADER_CREATE_INFO(workbench_pointcloud)
     .additional_info("draw_resource_handle");
 
 /* -------------------------------------------------------------------- */
-/** \name Texture Type
- **/
+/** Texture Type **/
 
 GPU_SHADER_CREATE_INFO(workbench_texture_none).define("TEXTURE_NONE");
 
@@ -45,11 +43,8 @@ GPU_SHADER_CREATE_INFO(workbench_texture_tile)
     .define("V3D_SHADING_TEXTURE_COLOR")
     .define("TEXTURE_IMAGE_ARRAY");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Lighting Type (only for transparent)
- * \{ */
+/** Lighting Type (only for transparent) **/
 
 GPU_SHADER_CREATE_INFO(workbench_lighting_flat).define("V3D_LIGHTING_FLAT");
 GPU_SHADER_CREATE_INFO(workbench_lighting_studio).define("V3D_LIGHTING_STUDIO");
