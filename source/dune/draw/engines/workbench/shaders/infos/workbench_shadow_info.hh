@@ -1,8 +1,7 @@
 #include "gpu_shader_create_info.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Common
- * \{ */
+/** Common **/
 
 GPU_SHADER_INTERFACE_INFO(workbench_shadow_iface, "vData")
     .smooth(Type::VEC3, "pos")
@@ -17,11 +16,8 @@ GPU_SHADER_CREATE_INFO(workbench_shadow_common)
     .vertex_source("workbench_shadow_vert.glsl")
     .additional_info("draw_mesh");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Manifold Type
- * \{ */
+/** Manifold Type **/
 
 GPU_SHADER_CREATE_INFO(workbench_shadow_manifold)
     .geometry_layout(PrimitiveIn::LINES_ADJACENCY, PrimitiveOut::TRIANGLE_STRIP, 4, 1)
@@ -31,21 +27,15 @@ GPU_SHADER_CREATE_INFO(workbench_shadow_no_manifold)
     .geometry_layout(PrimitiveIn::LINES_ADJACENCY, PrimitiveOut::TRIANGLE_STRIP, 4, 2)
     .geometry_source("workbench_shadow_geom.glsl");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Caps Type
- * \{ */
+/** Caps Type **/
 
 GPU_SHADER_CREATE_INFO(workbench_shadow_caps)
     .geometry_layout(PrimitiveIn::TRIANGLES, PrimitiveOut::TRIANGLE_STRIP, 3, 2)
     .geometry_source("workbench_shadow_caps_geom.glsl");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Debug Type
- * \{ */
+/** Debug Type **/
 
 GPU_SHADER_CREATE_INFO(workbench_shadow_no_debug)
     .fragment_source("gpu_shader_depth_only_frag.glsl");
@@ -56,11 +46,8 @@ GPU_SHADER_CREATE_INFO(workbench_shadow_debug)
     .fragment_out(2, Type::UINT, "objectId")
     .fragment_source("workbench_shadow_debug_frag.glsl");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Variations Declaration
- * \{ */
+/** Variations Declaration */
 
 #define WORKBENCH_SHADOW_VARIATIONS(suffix, ...) \
   GPU_SHADER_CREATE_INFO(workbench_shadow_pass_manifold_no_caps##suffix) \
