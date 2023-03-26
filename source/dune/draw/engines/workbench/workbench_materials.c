@@ -21,7 +21,7 @@
 void workbench_material_ubo_data(DBenchPrivateData *wpd,
                                  Object *ob,
                                  Material *mat,
-                                 WORKBENCH_UBO_Material *data,
+                                 DBenchUBOMaterial *data,
                                  eV3DShadingColorType color_type)
 {
   float metallic = 0.0f;
@@ -37,7 +37,7 @@ void workbench_material_ubo_data(DBenchPrivateData *wpd,
       if (ob->id.lib) {
         hash = (hash * 13) ^ lib_ghashutil_strhash_p_murmur(ob->id.lib->filepath);
       }
-      float hue = BLI_hash_int_01(hash);
+      float hue = lib_hash_int_01(hash);
       const float hsv[3] = {hue, HSV_SATURATION, HSV_VALUE};
       hsv_to_rgb_v(hsv, data->base_color);
       break;
@@ -163,7 +163,7 @@ DrawShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
     case V3D_SHADING_MATERIAL_COLOR: {
       /* For now, we use the same ubo for material and object coloring but with different indices.
        * This means they are mutually exclusive. */
-      BLI_assert(
+      lib_assert(
           ELEM(wpd->shading.color_type, V3D_SHADING_MATERIAL_COLOR, V3D_SHADING_TEXTURE_COLOR));
 
       Material *ma = workbench_object_material_get(ob, mat_nr);
@@ -177,7 +177,7 @@ DrawShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
 
       DrawShadingGroup **grp_mat = NULL;
       /* A hash-map stores material shgroups to pack all similar drawcalls together. */
-      if (BLI_ghash_ensure_p(prepass->material_hash, ma, (void ***)&grp_mat)) {
+      if (lib_ghash_ensure_p(prepass->material_hash, ma, (void ***)&grp_mat)) {
         return *grp_mat;
       }
 
@@ -211,7 +211,7 @@ DrawShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
       const bool transp = wpd->shading.xray_alpha < 1.0f || ob->color[3] < 1.0f;
       DRWShadingGroup **grp = &wpd->prepass[transp][infront][datatype].common_shgrp;
       if (resource_changed) {
-        *grp = DRW_shgroup_create_sub(*grp);
+        *grp = draw_shgroup_create_sub(*grp);
         draw_shgroup_uniform_block(*grp, "materials_data", wpd->material_ubo_curr);
       }
       if (r_transp && transp) {
@@ -222,13 +222,13 @@ DrawShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
   }
 }
 
-DrawShadingGroup *workbench_image_setup_ex(WORKBENCH_PrivateData *wpd,
+DrawShadingGroup *workbench_image_setup_ex(DBenchPrivateData *wpd,
                                           Object *ob,
                                           int mat_nr,
                                           Image *ima,
                                           ImageUser *iuser,
                                           eGPUSamplerState sampler,
-                                          eWORKBENCH_DataType datatype)
+                                          eDBenchDataType datatype)
 {
   GPUTexture *tex = NULL, *tex_tile_data = NULL;
 
