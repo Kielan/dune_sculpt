@@ -64,7 +64,7 @@ void workbench_opaque_cache_init(WORKBENCH_Data *vedata)
         pass = psl->opaque_ps;
       }
 
-      for (eWORKBENCH_DataType data = 0; data < WORKBENCH_DATATYPE_MAX; data++) {
+      for (eDBenchDataType data = 0; data < WORKBENCH_DATATYPE_MAX; data++) {
         wpd->prepass[opaque][infront][data].material_hash = BLI_ghash_ptr_new(__func__);
 
         sh = workbench_shader_opaque_get(wpd, data);
@@ -100,7 +100,7 @@ void workbench_opaque_cache_init(WORKBENCH_Data *vedata)
     }
   }
   {
-    DrawState state = DRAW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_GREATER | DRW_STATE_STENCIL_EQUAL;
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_GREATER | DRW_STATE_STENCIL_EQUAL;
 
     DRAW_PASS_CREATE(psl->composite_ps, state);
 
@@ -129,14 +129,14 @@ void workbench_opaque_cache_init(WORKBENCH_Data *vedata)
     if (SHADOW_ENABLED(wpd)) {
       grp = draw_shgroup_create_sub(grp);
       draw_shgroup_uniform_bool_copy(grp, "forceShadowing", true);
-      draw_shgroup_state_disable(grp, DRW_STATE_STENCIL_EQUAL);
-      draw_shgroup_state_enable(grp, DRW_STATE_STENCIL_NEQUAL);
+      draw_shgroup_state_disable(grp, DRAW_STATE_STENCIL_EQUAL);
+      draw_shgroup_state_enable(grp, DRAW_STATE_STENCIL_NEQUAL);
       draw_shgroup_stencil_mask(grp, 0x00);
       draw_shgroup_call_procedural_triangles(grp, NULL, 1);
     }
   }
   {
-    DrawState state = DRAW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_ALWAYS | DRW_STATE_WRITE_STENCIL |
+    DrawState state = DRAW_STATE_WRITE_DEPTH | DRAW_STATE_DEPTH_ALWAYS | DRAW_STATE_WRITE_STENCIL |
                      DRAW_STATE_STENCIL_ALWAYS;
 
     DRAW_PASS_CREATE(psl->merge_infront_ps, state);
