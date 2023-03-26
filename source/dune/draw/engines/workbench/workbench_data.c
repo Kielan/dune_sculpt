@@ -33,7 +33,7 @@ static void workbench_ubo_free(void *elem)
 
 static void workbench_view_layer_data_free(void *storage)
 {
-  WorkbenchViewLayerData *vldata = (WORKBENCH_ViewLayerData *)storage;
+  WorkbenchViewLayerData *vldata = (DBenchViewLayerData *)storage;
 
   DRAW_UBO_FREE_SAFE(vldata->dof_sample_ubo);
   DRAW_UBO_FREE_SAFE(vldata->world_ubo);
@@ -44,9 +44,9 @@ static void workbench_view_layer_data_free(void *storage)
   lib_memblock_destroy(vldata->material_ubo, workbench_ubo_free);
 }
 
-static WORKBENCH_ViewLayerData *workbench_view_layer_data_ensure_ex(struct ViewLayer *view_layer)
+static DBenchViewLayerData *workbench_view_layer_data_ensure_ex(struct ViewLayer *view_layer)
 {
-  WORKBENCH_ViewLayerData **vldata = (WORKBENCH_ViewLayerData **)
+  DBenchViewLayerData **vldata = (WORKBENCH_ViewLayerData **)
       draw_view_layer_engine_data_ensure_ex(view_layer,
                                            (DrawEngineType *)&workbench_view_layer_data_ensure_ex,
                                            &workbench_view_layer_data_free);
@@ -66,7 +66,7 @@ static void workbench_studiolight_data_update(WORKBENCH_PrivateData *wpd, WORKBE
 {
   StudioLight *studiolight = wpd->studio_light;
   float view_matrix[4][4], rot_matrix[4][4];
-  DRW_view_viewmat_get(NULL, view_matrix, false);
+  draw_view_viewmat_get(NULL, view_matrix, false);
 
   if (USE_WORLD_ORIENTATION(wpd)) {
     axis_angle_to_mat4_single(rot_matrix, 'Z', -wpd->shading.studiolight_rot_z);
