@@ -57,16 +57,15 @@ typedef enum eDBenchDataType {
   DBENCH_DATATYPE_MESH = 0,
   DBENCH_DATATYPE_HAIR,
   DBENCH_DATATYPE_POINTCLOUD,
-
   DBENCH_DATATYPE_MAX,
 } eDBenchDataType;
 
 /* Types of volume display interpolation. */
-typedef enum eWORKBENCH_VolumeInterpType {
+typedef enum eDBenchVolumeInterpType {
   DBENCH_VOLUME_INTERP_LINEAR = 0,
   DBENCH_VOLUME_INTERP_CUBIC,
   DBENCH_VOLUME_INTERP_CLOSEST,
-} eDBENCH_VolumeInterpType;
+} eDBenchVolumeInterpType;
 
 typedef struct DBenchFramebufferList {
   struct GPUFrameBuffer *opaque_fb;
@@ -150,23 +149,23 @@ typedef struct DBenchPassList {
 
 typedef struct DBenchData {
   void *engine_type;
-  WORKBENCH_FramebufferList *fbl;
-  WORKBENCH_TextureList *txl;
-  WORKBENCH_PassList *psl;
-  WORKBENCH_StorageList *stl;
+  DBenchFramebufferList *fbl;
+  DBenchTextureList *txl;
+  DBenchPassList *psl;
+  DBenchStorageList *stl;
 } DBenchData;
 
-typedef struct WORKBENCH_UBO_Light {
+typedef struct DBenchUBOLight {
   float light_direction[4];
   float specular_color[3], pad;
   float diffuse_color[3], wrapped;
-} WORKBENCH_UBO_Light;
+} DBenchUBOLight;
 
-typedef struct DBENCH_UBO_Material {
+typedef struct DBenchUBOMaterial {
   float base_color[3];
   /* Packed data into a int. Decoded in the shader. */
   uint32_t packed_data;
-} DBENCH_UBO_Material;
+} DBENCHUBOMaterial;
 
 typedef struct DBENCH_UBO_World {
   float viewport_size[2], viewport_size_inv[2];
@@ -195,7 +194,7 @@ typedef struct DBENCH_UBO_World {
   int use_specular; /* Bools are 32bit ints in GLSL. */
   int _pad1;
   int _pad2;
-} DBENCH_UBO_World;
+} DBench_UBO_World;
 
 LIB_STATIC_ASSERT_ALIGN(DBENCH_UBO_World, 16)
 LIB_STATIC_ASSERT_ALIGN(DBENCH_UBO_Light, 16)
@@ -458,12 +457,13 @@ void workbench_cavity_cache_init(WORKBENCH_Data *data);
 /* workbench_effect_outline.c */
 void workbench_outline_cache_init(WORKBENCH_Data *data);
 /* workbench_effect_dof.c */
-void workbench_dof_engine_init(WORKBENCH_Data *vedata);
+void workbench_dof_engine_init(DBench_Data *vedata);
 void workbench_dof_cache_init(WORKBENCH_Data *vedata);
-void workbench_dof_draw_pass(WORKBENCH_Data *vedata);
+void workbench_dof_draw_pass(DBench
+ Data *vedata);
 
 /* workbench_materials.c */
-void workbench_material_ubo_data(WORKBENCH_PrivateData *wpd,
+void workbench_material_ubo_data(DBenchPrivateData *wpd,
                                  Object *ob,
                                  Material *mat,
                                  WORKBENCH_UBO_Material *data,
