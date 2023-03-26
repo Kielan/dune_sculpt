@@ -120,7 +120,7 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
     float slice_ct[3] = {fds->res[0], fds->res[1], fds->res[2]};
     mul_v3_fl(slice_ct, max_ff(0.001f, fds->slice_per_voxel));
     max_slice = max_fff(slice_ct[0], slice_ct[1], slice_ct[2]);
-    BKE_object_dimensions_get(ob, dim);
+    dune_object_dimensions_get(ob, dim);
     invert_v3(slice_ct);
     mul_v3_v3(dim, slice_ct);
     step_length = len_v3(dim);
@@ -236,25 +236,25 @@ static void workbench_volume_object_cache_populate(DBenchData *vedata,
 
   if (use_slice) {
     float invviewmat[4][4];
-    DRW_view_viewmat_get(NULL, invviewmat, true);
+    draw_view_viewmat_get(NULL, invviewmat, true);
 
     const int axis = (volume->display.slice_axis == SLICE_AXIS_AUTO) ?
                          axis_dominant_v3_single(invviewmat[2]) :
                          volume->display.slice_axis - 1;
 
     float dim[3];
-    BKE_object_dimensions_get(ob, dim);
+    dune_object_dimensions_get(ob, dim);
     /* 0.05f to achieve somewhat the same opacity as the full view. */
     float step_length = max_ff(1e-16f, dim[axis] * 0.05f);
 
     const float slice_position = volume->display.slice_depth;
 
-    grp = DRW_shgroup_create(sh, vedata->psl->volume_ps);
-    DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-    DRW_shgroup_uniform_float_copy(grp, "slicePosition", slice_position);
-    DRW_shgroup_uniform_int_copy(grp, "sliceAxis", axis);
-    DRW_shgroup_uniform_float_copy(grp, "stepLength", step_length);
-    DRW_shgroup_state_disable(grp, DRW_STATE_CULL_FRONT);
+    grp = draw_shgroup_create(sh, vedata->psl->volume_ps);
+    draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+    draw_shgroup_uniform_float_copy(grp, "slicePosition", slice_position);
+    draw_shgroup_uniform_int_copy(grp, "sliceAxis", axis);
+    draw_shgroup_uniform_float_copy(grp, "stepLength", step_length);
+    draw_shgroup_state_disable(grp, DRW_STATE_CULL_FRONT);
   }
   else {
     /* Compute world space dimensions for step size. */
@@ -264,10 +264,10 @@ static void workbench_volume_object_cache_populate(DBenchData *vedata,
 
     /* Compute step parameters. */
     double noise_ofs;
-    BLI_halton_1d(3, 0.0, wpd->taa_sample, &noise_ofs);
+    lib_halton_1d(3, 0.0, wpd->taa_sample, &noise_ofs);
     float step_length, max_slice;
     int resolution[3];
-    GPU_texture_get_mipmap_size(grid->texture, 0, resolution);
+    gpu_texture_get_mipmap_size(grid->texture, 0, resolution);
     float slice_ct[3] = {resolution[0], resolution[1], resolution[2]};
     mul_v3_fl(slice_ct, max_ff(0.001f, 5.0f));
     max_slice = max_fff(slice_ct[0], slice_ct[1], slice_ct[2]);
@@ -276,30 +276,30 @@ static void workbench_volume_object_cache_populate(DBenchData *vedata,
     step_length = len_v3(slice_ct);
 
     /* Set uniforms. */
-    grp = DRW_shgroup_create(sh, vedata->psl->volume_ps);
-    DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-    DRW_shgroup_uniform_int_copy(grp, "samplesLen", max_slice);
-    DRW_shgroup_uniform_float_copy(grp, "stepLength", step_length);
-    DRW_shgroup_uniform_float_copy(grp, "noiseOfs", noise_ofs);
-    DRW_shgroup_state_enable(grp, DRW_STATE_CULL_FRONT);
+    grp = draw_shgroup_create(sh, vedata->psl->volume_ps);
+    draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+    draw_shgroup_uniform_int_copy(grp, "samplesLen", max_slice);
+    draw_shgroup_uniform_float_copy(grp, "stepLength", step_length);
+    draw_shgroup_uniform_float_copy(grp, "noiseOfs", noise_ofs);
+    draw_shgroup_state_enable(grp, DRAW_STATE_CULL_FRONT);
   }
 
   /* Compute density scale. */
   const float density_scale = volume->display.density *
-                              BKE_volume_density_scale(volume, ob->obmat);
+                              dune_volume_density_scale(volume, ob->obmat);
 
-  DRW_shgroup_uniform_texture(grp, "densityTexture", grid->texture);
+  draw_shgroup_uniform_texture(grp, "densityTexture", grid->texture);
   /* TODO: implement shadow texture, see manta_smoke_calc_transparency. */
-  DRW_shgroup_uniform_texture(grp, "shadowTexture", txl->dummy_shadow_tx);
-  DRW_shgroup_uniform_vec3_copy(grp, "activeColor", color);
+  draw_shgroup_uniform_texture(grp, "shadowTexture", txl->dummy_shadow_tx);
+  draw_shgroup_uniform_vec3_copy(grp, "activeColor", color);
 
-  DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
-  DRW_shgroup_uniform_float_copy(grp, "densityScale", density_scale);
+  draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
+  draw_shgroup_uniform_float_copy(grp, "densityScale", density_scale);
 
-  DRW_shgroup_uniform_mat4(grp, "volumeObjectToTexture", grid->object_to_texture);
-  DRW_shgroup_uniform_mat4(grp, "volumeTextureToObject", grid->texture_to_object);
+  draw_shgroup_uniform_mat4(grp, "volumeObjectToTexture", grid->object_to_texture);
+  draw_shgroup_uniform_mat4(grp, "volumeTextureToObject", grid->texture_to_object);
 
-  DRW_shgroup_call(grp, DRW_cache_cube_get(), ob);
+  draw_shgroup_call(grp, draw_cache_cube_get(), ob);
 }
 
 void workbench_volume_cache_populate(WORKBENCH_Data *vedata,
@@ -318,19 +318,19 @@ void workbench_volume_cache_populate(WORKBENCH_Data *vedata,
 
 void workbench_volume_draw_pass(WORKBENCH_Data *vedata)
 {
-  WORKBENCH_PassList *psl = vedata->psl;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
+  DBenchPassList *psl = vedata->psl;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
   DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
 
   if (wpd->volumes_do) {
-    GPU_framebuffer_bind(dfbl->color_only_fb);
-    DRW_draw_pass(psl->volume_ps);
+    gpu_framebuffer_bind(dfbl->color_only_fb);
+    draw_draw_pass(psl->volume_ps);
   }
 }
 
 void workbench_volume_draw_finish(WORKBENCH_Data *vedata)
 {
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
 
   /* Free Smoke Textures after rendering */
   /* XXX This is a waste of processing and GPU bandwidth if nothing
