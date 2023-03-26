@@ -1,3 +1,3 @@
 #pragma once
 
-extern RenderEngineType DRW_engine_viewport_workbench_type;
+extern RenderEngineType draw_engine_viewport_workbench_type;
