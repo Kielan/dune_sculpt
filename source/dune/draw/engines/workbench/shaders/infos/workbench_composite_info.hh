@@ -1,7 +1,7 @@
 #include "gpu_shader_create_info.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Base Composite
+/** Base Composite
  * \{ */
 
 GPU_SHADER_CREATE_INFO(workbench_composite)
