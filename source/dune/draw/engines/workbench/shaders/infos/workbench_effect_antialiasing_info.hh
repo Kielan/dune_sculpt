@@ -1,8 +1,7 @@
 #include "gpu_shader_create_info.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name TAA
- * \{ */
+/** TAA **/
 
 GPU_SHADER_CREATE_INFO(workbench_taa)
     .sampler(0, ImageType::FLOAT_2D, "colorBuffer")
