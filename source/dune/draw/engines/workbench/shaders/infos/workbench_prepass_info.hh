@@ -2,7 +2,7 @@
 
 /* -------------------------------------------------------------------- */
 /** \name Object Type
- * \{ */
+ **/
 
 GPU_SHADER_CREATE_INFO(workbench_mesh)
     .vertex_in(0, Type::VEC3, "pos")
@@ -25,11 +25,9 @@ GPU_SHADER_CREATE_INFO(workbench_pointcloud)
     .additional_info("draw_pointcloud")
     .additional_info("draw_resource_handle");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
 /** \name Texture Type
- * \{ */
+ **/
 
 GPU_SHADER_CREATE_INFO(workbench_texture_none).define("TEXTURE_NONE");
 
@@ -60,11 +58,9 @@ GPU_SHADER_CREATE_INFO(workbench_lighting_matcap)
     .sampler(4, ImageType::FLOAT_2D, "matcap_diffuse_tx", Frequency::PASS)
     .sampler(5, ImageType::FLOAT_2D, "matcap_specular_tx", Frequency::PASS);
 
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Material Interface
- * \{ */
+/** Material Interface */
 
 GPU_SHADER_INTERFACE_INFO(workbench_material_iface, "")
     .smooth(Type::VEC3, "normal_interp")
@@ -82,11 +78,8 @@ GPU_SHADER_CREATE_INFO(workbench_material)
     .push_constant(Type::BOOL, "useMatcap")
     .vertex_out(workbench_material_iface);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Pipeline Type
- * \{ */
+/** Pipeline Type */
 
 GPU_SHADER_CREATE_INFO(workbench_transparent_accum)
     /* Note: Blending will be skipped on objectId because output is a
@@ -105,11 +98,8 @@ GPU_SHADER_CREATE_INFO(workbench_opaque)
     .typedef_source("workbench_shader_shared.h")
     .fragment_source("workbench_prepass_frag.glsl");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Variations Declaration
- * \{ */
+/** Variations Declaration **/
 
 #define WORKBENCH_FINAL_VARIATION(name, ...) \
   GPU_SHADER_CREATE_INFO(name).additional_info(__VA_ARGS__).do_static_compilation(true);
