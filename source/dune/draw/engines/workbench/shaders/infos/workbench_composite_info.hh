@@ -1,8 +1,7 @@
 #include "gpu_shader_create_info.hh"
 
 /* -------------------------------------------------------------------- */
-/** Base Composite
- * \{ */
+/** Base Composite */
 
 GPU_SHADER_CREATE_INFO(workbench_composite)
     .sampler(0, ImageType::FLOAT_2D, "normalBuffer", Frequency::PASS)
@@ -14,11 +13,9 @@ GPU_SHADER_CREATE_INFO(workbench_composite)
     .fragment_source("workbench_composite_frag.glsl")
     .additional_info("draw_fullscreen", "draw_view");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Lighting Type
- * \{ */
+/** Lighting Type
+ **/
 
 GPU_SHADER_CREATE_INFO(workbench_composite_studio)
     .define("V3D_LIGHTING_STUDIO")
