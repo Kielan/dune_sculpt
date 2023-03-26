@@ -474,21 +474,21 @@ void workbench_antialiasing_draw_pass(WORKBENCH_Data *vedata)
 
     if (wpd->smaa_mix_factor > 0.0f) {
       gpu_framebuffer_bind(fbl->smaa_edge_fb);
-      DRW_draw_pass(psl->aa_edge_ps);
+      draw_draw_pass(psl->aa_edge_ps);
 
-      GPU_framebuffer_bind(fbl->smaa_weight_fb);
-      DRW_draw_pass(psl->aa_weight_ps);
+      gpu_framebuffer_bind(fbl->smaa_weight_fb);
+      draw_draw_pass(psl->aa_weight_ps);
     }
 
-    GPU_framebuffer_bind(dfbl->default_fb);
-    DRW_draw_pass(psl->aa_resolve_ps);
+    gpu_framebuffer_bind(dfbl->default_fb);
+    draw_draw_pass(psl->aa_resolve_ps);
   }
 
   if (!taa_finished) {
     wpd->taa_sample++;
   }
 
-  if (!DRW_state_is_image_render() && wpd->taa_sample < wpd->taa_sample_len) {
-    DRW_viewport_request_redraw();
+  if (!gpu_state_is_image_render() && wpd->taa_sample < wpd->taa_sample_len) {
+    draw_viewport_request_redraw();
   }
 }
