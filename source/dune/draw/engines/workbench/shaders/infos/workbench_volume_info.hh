@@ -1,8 +1,7 @@
 #include "gpu_shader_create_info.hh"
 
 /* -------------------------------------------------------------------- */
-/** \name Volume shader base
- * \{ */
+/** Volume shader base **/
 
 GPU_SHADER_CREATE_INFO(workbench_volume)
     .vertex_in(0, Type::VEC3, "pos")
@@ -17,11 +16,8 @@ GPU_SHADER_CREATE_INFO(workbench_volume)
     .fragment_source("workbench_volume_frag.glsl")
     .additional_info("draw_object_infos");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Smoke variation
- * \{ */
+/** Smoke variation **/
 
 GPU_SHADER_CREATE_INFO(workbench_volume_smoke)
     .define("VOLUME_SMOKE")
@@ -36,11 +32,8 @@ GPU_SHADER_CREATE_INFO(workbench_volume_object)
     .push_constant(Type::MAT4, "volumeObjectToTexture")
     .additional_info("draw_volume", "draw_resource_id_varying");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Color Band variation
- * \{ */
+/** Color Band variation */
 
 GPU_SHADER_CREATE_INFO(workbench_volume_coba)
     .define("USE_COBA")
@@ -56,21 +49,15 @@ GPU_SHADER_CREATE_INFO(workbench_volume_no_coba)
     .sampler(5, ImageType::UINT_2D, "transferTexture")
     .push_constant(Type::VEC3, "activeColor");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Sampling variation
- * \{ */
+/** Sampling variation */
 
 GPU_SHADER_CREATE_INFO(workbench_volume_linear).define("USE_TRILINEAR");
 GPU_SHADER_CREATE_INFO(workbench_volume_cubic).define("USE_TRICUBIC");
 GPU_SHADER_CREATE_INFO(workbench_volume_closest).define("USE_CLOSEST");
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Slice variation
- * \{ */
+/** Slice variation **/
 
 GPU_SHADER_INTERFACE_INFO(workbench_volume_iface, "").smooth(Type::VEC3, "localPos");
 
