@@ -1,24 +1,24 @@
 #include "workbench_private.h"
 
-#include "types_fluid_types.h"
-#include "types_modifier_types.h"
-#include "types_object_force_types.h"
+#include "types_fluid.h"
+#include "types_modifier.h"
+#include "types_object_force.h"
 #include "types_volume.h"
 
-#include "BLI_dynstr.h"
-#include "BLI_listbase.h"
-#include "BLI_rand.h"
-#include "BLI_string_utils.h"
+#include "lib_dynstr.h"
+#include "lib_listbase.h"
+#include "lib_rand.h"
+#include "lib_string_utils.h"
 
-#include "BKE_fluid.h"
-#include "BKE_global.h"
-#include "BKE_object.h"
-#include "BKE_volume.h"
-#include "BKE_volume_render.h"
+#include "dune_fluid.h"
+#include "dune_global.h"
+#include "dune_object.h"
+#include "dune_volume.h"
+#include "dune_volume_render.h"
 
-void workbench_volume_engine_init(WORKBENCH_Data *vedata)
+void workbench_volume_engine_init(DBenchData *vedata)
 {
-  WORKBENCH_TextureList *txl = vedata->txl;
+  DBenchTextureList *txl = vedata->txl;
 
   if (txl->dummy_volume_tx == NULL) {
     const float zero[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -31,10 +31,10 @@ void workbench_volume_engine_init(WORKBENCH_Data *vedata)
   }
 }
 
-void workbench_volume_cache_init(WORKBENCH_Data *vedata)
+void workbench_volume_cache_init(DBenchData *vedata)
 {
-  vedata->psl->volume_ps = DRW_pass_create(
-      "Volumes", DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL | DRW_STATE_CULL_FRONT);
+  vedata->psl->volume_ps = draw_pass_create(
+      "Volumes", DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL | DRW_STATE_CULL_FRONT);
 
   vedata->stl->wpd->volumes_do = false;
 }
@@ -45,10 +45,10 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
 {
   FluidModifierData *fmd = (FluidModifierData *)md;
   FluidDomainSettings *fds = fmd->domain;
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
-  WORKBENCH_TextureList *txl = vedata->txl;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
-  DRWShadingGroup *grp = NULL;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
+  DBenchTextureList *txl = vedata->txl;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
+  DrawShadingGroup *grp = NULL;
 
   if (!fds->fluid) {
     return;
@@ -56,10 +56,10 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
 
   wpd->volumes_do = true;
   if (fds->use_coba) {
-    DRW_smoke_ensure_coba_field(fmd);
+    draw_smoke_ensure_coba_field(fmd);
   }
   else if (fds->type == FLUID_DOMAIN_TYPE_GAS) {
-    DRW_smoke_ensure(fmd, fds->flags & FLUID_DOMAIN_USE_NOISE);
+    draw_smoke_ensure(fmd, fds->flags & FLUID_DOMAIN_USE_NOISE);
   }
   else {
     return;
@@ -78,7 +78,7 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
                              FLUID_DOMAIN_FIELD_PHI_OBSTACLE);
   const bool show_flags = (fds->coba_field == FLUID_DOMAIN_FIELD_FLAGS);
   const bool show_pressure = (fds->coba_field == FLUID_DOMAIN_FIELD_PRESSURE);
-  eWORKBENCH_VolumeInterpType interp_type = WORKBENCH_VOLUME_INTERP_LINEAR;
+  eDBenchVolumeInterpType interp_type = WORKBENCH_VOLUME_INTERP_LINEAR;
 
   switch ((FLUID_DisplayInterpolationMethod)fds->interp_method) {
     case FLUID_DISPLAY_INTERP_LINEAR:
@@ -96,26 +96,26 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
 
   if (use_slice) {
     float invviewmat[4][4];
-    DRW_view_viewmat_get(NULL, invviewmat, true);
+    draw_view_viewmat_get(NULL, invviewmat, true);
 
     const int axis = (fds->slice_axis == SLICE_AXIS_AUTO) ?
                          axis_dominant_v3_single(invviewmat[2]) :
                          fds->slice_axis - 1;
     float dim[3];
-    BKE_object_dimensions_get(ob, dim);
+    dune_object_dimensions_get(ob, dim);
     /* 0.05f to achieve somewhat the same opacity as the full view. */
     float step_length = max_ff(1e-16f, dim[axis] * 0.05f);
 
-    grp = DRW_shgroup_create(sh, vedata->psl->volume_ps);
-    DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-    DRW_shgroup_uniform_float_copy(grp, "slicePosition", fds->slice_depth);
-    DRW_shgroup_uniform_int_copy(grp, "sliceAxis", axis);
-    DRW_shgroup_uniform_float_copy(grp, "stepLength", step_length);
-    DRW_shgroup_state_disable(grp, DRW_STATE_CULL_FRONT);
+    grp = draw_shgroup_create(sh, vedata->psl->volume_ps);
+    draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+    draw_shgroup_uniform_float_copy(grp, "slicePosition", fds->slice_depth);
+    draw_shgroup_uniform_int_copy(grp, "sliceAxis", axis);
+    draw_shgroup_uniform_float_copy(grp, "stepLength", step_length);
+    draw_shgroup_state_disable(grp, DRAW_STATE_CULL_FRONT);
   }
   else {
     double noise_ofs;
-    BLI_halton_1d(3, 0.0, wpd->taa_sample, &noise_ofs);
+    lib_halton_1d(3, 0.0, wpd->taa_sample, &noise_ofs);
     float dim[3], step_length, max_slice;
     float slice_ct[3] = {fds->res[0], fds->res[1], fds->res[2]};
     mul_v3_fl(slice_ct, max_ff(0.001f, fds->slice_per_voxel));
@@ -125,54 +125,54 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
     mul_v3_v3(dim, slice_ct);
     step_length = len_v3(dim);
 
-    grp = DRW_shgroup_create(sh, vedata->psl->volume_ps);
-    DRW_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
-    DRW_shgroup_uniform_int_copy(grp, "samplesLen", max_slice);
-    DRW_shgroup_uniform_float_copy(grp, "stepLength", step_length);
-    DRW_shgroup_uniform_float_copy(grp, "noiseOfs", noise_ofs);
-    DRW_shgroup_state_enable(grp, DRW_STATE_CULL_FRONT);
+    grp = draw_shgroup_create(sh, vedata->psl->volume_ps);
+    draw_shgroup_uniform_block(grp, "world_data", wpd->world_ubo);
+    draw_shgroup_uniform_int_copy(grp, "samplesLen", max_slice);
+    draw_shgroup_uniform_float_copy(grp, "stepLength", step_length);
+    draw_shgroup_uniform_float_copy(grp, "noiseOfs", noise_ofs);
+    draw_shgroup_state_enable(grp, DRAW_STATE_CULL_FRONT);
   }
 
   if (fds->use_coba) {
     if (show_flags) {
-      DRW_shgroup_uniform_texture(grp, "flagTexture", fds->tex_field);
+      draw_shgroup_uniform_texture(grp, "flagTexture", fds->tex_field);
     }
     else {
-      DRW_shgroup_uniform_texture(grp, "densityTexture", fds->tex_field);
+      draw_shgroup_uniform_texture(grp, "densityTexture", fds->tex_field);
     }
     if (!show_phi && !show_flags && !show_pressure) {
-      DRW_shgroup_uniform_texture(grp, "transferTexture", fds->tex_coba);
+      draw_shgroup_uniform_texture(grp, "transferTexture", fds->tex_coba);
     }
-    DRW_shgroup_uniform_float_copy(grp, "gridScale", fds->grid_scale);
-    DRW_shgroup_uniform_bool_copy(grp, "showPhi", show_phi);
-    DRW_shgroup_uniform_bool_copy(grp, "showFlags", show_flags);
-    DRW_shgroup_uniform_bool_copy(grp, "showPressure", show_pressure);
+    draw_shgroup_uniform_float_copy(grp, "gridScale", fds->grid_scale);
+    draw_shgroup_uniform_bool_copy(grp, "showPhi", show_phi);
+    draw_shgroup_uniform_bool_copy(grp, "showFlags", show_flags);
+    draw_shgroup_uniform_bool_copy(grp, "showPressure", show_pressure);
   }
   else {
     static float white[3] = {1.0f, 1.0f, 1.0f};
     bool use_constant_color = ((fds->active_fields & FLUID_DOMAIN_ACTIVE_COLORS) == 0 &&
                                (fds->active_fields & FLUID_DOMAIN_ACTIVE_COLOR_SET) != 0);
-    DRW_shgroup_uniform_texture(
+    draw_shgroup_uniform_texture(
         grp, "densityTexture", (fds->tex_color) ? fds->tex_color : fds->tex_density);
-    DRW_shgroup_uniform_texture(grp, "shadowTexture", fds->tex_shadow);
-    DRW_shgroup_uniform_texture(
+    draw_shgroup_uniform_texture(grp, "shadowTexture", fds->tex_shadow);
+    draw_shgroup_uniform_texture(
         grp, "flameTexture", (fds->tex_flame) ? fds->tex_flame : txl->dummy_volume_tx);
-    DRW_shgroup_uniform_texture(
+    draw_shgroup_uniform_texture(
         grp, "flameColorTexture", (fds->tex_flame) ? fds->tex_flame_coba : txl->dummy_coba_tx);
-    DRW_shgroup_uniform_vec3(
+    draw_shgroup_uniform_vec3(
         grp, "activeColor", (use_constant_color) ? fds->active_color : white, 1);
   }
-  DRW_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
-  DRW_shgroup_uniform_float_copy(grp, "densityScale", 10.0f * fds->display_thickness);
+  draw_shgroup_uniform_texture_ref(grp, "depthBuffer", &dtxl->depth);
+  draw_shgroup_uniform_float_copy(grp, "densityScale", 10.0f * fds->display_thickness);
 
   if (use_slice) {
-    DRW_shgroup_call(grp, DRW_cache_quad_get(), ob);
+    draw_shgroup_call(grp, draw_cache_quad_get(), ob);
   }
   else {
-    DRW_shgroup_call(grp, DRW_cache_cube_get(), ob);
+    draw_shgroup_call(grp, draw_cache_cube_get(), ob);
   }
 
-  BLI_addtail(&wpd->smoke_domains, BLI_genericNodeN(fmd));
+  lib_addtail(&wpd->smoke_domains, BLI_genericNodeN(fmd));
 }
 
 static void workbench_volume_material_color(WORKBENCH_PrivateData *wpd,
@@ -180,36 +180,36 @@ static void workbench_volume_material_color(WORKBENCH_PrivateData *wpd,
                                             eV3DShadingColorType color_type,
                                             float color[3])
 {
-  Material *ma = BKE_object_material_get_eval(ob, VOLUME_MATERIAL_NR);
-  WORKBENCH_UBO_Material ubo_data;
+  Material *ma = dune_object_material_get_eval(ob, VOLUME_MATERIAL_NR);
+  DBenchUBOMaterial ubo_data;
   workbench_material_ubo_data(wpd, ob, ma, &ubo_data, color_type);
   copy_v3_v3(color, ubo_data.base_color);
 }
 
-static void workbench_volume_object_cache_populate(WORKBENCH_Data *vedata,
+static void workbench_volume_object_cache_populate(DBenchData *vedata,
                                                    Object *ob,
                                                    eV3DShadingColorType color_type)
 {
   /* Create 3D textures. */
   Volume *volume = ob->data;
-  BKE_volume_load(volume, G.main);
-  const VolumeGrid *volume_grid = BKE_volume_grid_active_get_for_read(volume);
+  dune_volume_load(volume, G.main);
+  const VolumeGrid *volume_grid = dune_volume_grid_active_get_for_read(volume);
   if (volume_grid == NULL) {
     return;
   }
-  DRWVolumeGrid *grid = DRW_volume_batch_cache_get_grid(volume, volume_grid);
+  DrawVolumeGrid *grid = draw_volume_batch_cache_get_grid(volume, volume_grid);
   if (grid == NULL) {
     return;
   }
 
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
-  WORKBENCH_TextureList *txl = vedata->txl;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
+  DBenchTextureList *txl = vedata->txl;
   DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
-  DRWShadingGroup *grp = NULL;
+  DrawShadingGroup *grp = NULL;
 
   wpd->volumes_do = true;
   const bool use_slice = (volume->display.axis_slice_method == AXIS_SLICE_SINGLE);
-  eWORKBENCH_VolumeInterpType interp_type = WORKBENCH_VOLUME_INTERP_LINEAR;
+  eDBenchVolumeInterpType interp_type = WORKBENCH_VOLUME_INTERP_LINEAR;
 
   switch ((VolumeDisplayInterpMethod)volume->display.interpolation_method) {
     case VOLUME_DISPLAY_INTERP_LINEAR:
