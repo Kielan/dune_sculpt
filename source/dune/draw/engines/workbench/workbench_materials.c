@@ -18,7 +18,7 @@
 #define HSV_SATURATION 0.5
 #define HSV_VALUE 0.8
 
-void workbench_material_ubo_data(WORKBENCH_PrivateData *wpd,
+void workbench_material_ubo_data(DBenchPrivateData *wpd,
                                  Object *ob,
                                  Material *mat,
                                  WORKBENCH_UBO_Material *data,
@@ -33,9 +33,9 @@ void workbench_material_ubo_data(WORKBENCH_PrivateData *wpd,
       copy_v3_v3(data->base_color, wpd->shading.single_color);
       break;
     case V3D_SHADING_RANDOM_COLOR: {
-      uint hash = BLI_ghashutil_strhash_p_murmur(ob->id.name);
+      uint hash = lib _ghashutil_strhash_p_murmur(ob->id.name);
       if (ob->id.lib) {
-        hash = (hash * 13) ^ BLI_ghashutil_strhash_p_murmur(ob->id.lib->filepath);
+        hash = (hash * 13) ^ lib_ghashutil_strhash_p_murmur(ob->id.lib->filepath);
       }
       float hue = BLI_hash_int_01(hash);
       const float hsv[3] = {hue, HSV_SATURATION, HSV_VALUE};
