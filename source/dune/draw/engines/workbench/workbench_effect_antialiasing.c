@@ -416,12 +416,12 @@ bool workbench_antialiasing_setup(WORKBENCH_Data *vedata)
 
 void workbench_antialiasing_draw_pass(WORKBENCH_Data *vedata)
 {
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
-  WORKBENCH_FramebufferList *fbl = vedata->fbl;
-  WORKBENCH_TextureList *txl = vedata->txl;
-  WORKBENCH_PassList *psl = vedata->psl;
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DBench_PrivateData *wpd = vedata->stl->wpd;
+  DBench_FramebufferList *fbl = vedata->fbl;
+  DBench_TextureList *txl = vedata->txl;
+  DBenchPassList *psl = vedata->psl;
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
   if (wpd->taa_sample_len == 0) {
     /* AA disabled. */
@@ -443,37 +443,37 @@ void workbench_antialiasing_draw_pass(WORKBENCH_Data *vedata)
     wpd->taa_weight_accum = wpd->taa_weights_sum;
     wpd->valid_history = true;
 
-    GPU_framebuffer_bind(fbl->antialiasing_fb);
-    DRW_draw_pass(psl->aa_accum_replace_ps);
+    gpu_framebuffer_bind(fbl->antialiasing_fb);
+    draw_draw_pass(psl->aa_accum_replace_ps);
     /* In playback mode, we are sure the next redraw will not use the same viewmatrix.
      * In this case no need to save the depth buffer. */
     if (!wpd->is_playback) {
-      GPU_texture_copy(txl->depth_buffer_tx, dtxl->depth);
+      gpu_texture_copy(txl->depth_buffer_tx, dtxl->depth);
     }
     if (workbench_in_front_history_needed(vedata)) {
-      GPU_texture_copy(txl->depth_buffer_in_front_tx, dtxl->depth_in_front);
+      gpu_texture_copy(txl->depth_buffer_in_front_tx, dtxl->depth_in_front);
     }
   }
   else {
     if (!taa_finished) {
       /* Accumulate result to the TAA buffer. */
-      GPU_framebuffer_bind(fbl->antialiasing_fb);
-      DRW_draw_pass(psl->aa_accum_ps);
+      gpu_framebuffer_bind(fbl->antialiasing_fb);
+      draw_draw_pass(psl->aa_accum_ps);
       wpd->taa_weight_accum += wpd->taa_weights_sum;
     }
     /* Copy back the saved depth buffer for correct overlays. */
-    GPU_texture_copy(dtxl->depth, txl->depth_buffer_tx);
+    gpu_texture_copy(dtxl->depth, txl->depth_buffer_tx);
     if (workbench_in_front_history_needed(vedata)) {
-      GPU_texture_copy(dtxl->depth_in_front, txl->depth_buffer_in_front_tx);
+      gpu_texture_copy(dtxl->depth_in_front, txl->depth_buffer_in_front_tx);
     }
   }
 
-  if (!DRW_state_is_image_render() || last_sample) {
+  if (!draw_state_is_image_render() || last_sample) {
     /* After a certain point SMAA is no longer necessary. */
     wpd->smaa_mix_factor = 1.0f - clamp_f(wpd->taa_sample / 4.0f, 0.0f, 1.0f);
 
     if (wpd->smaa_mix_factor > 0.0f) {
-      GPU_framebuffer_bind(fbl->smaa_edge_fb);
+      gpu_framebuffer_bind(fbl->smaa_edge_fb);
       DRW_draw_pass(psl->aa_edge_ps);
 
       GPU_framebuffer_bind(fbl->smaa_weight_fb);
