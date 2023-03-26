@@ -52,7 +52,7 @@ static WORKBENCH_ViewLayerData *workbench_view_layer_data_ensure_ex(struct ViewL
                                            &workbench_view_layer_data_free);
 
   if (*vldata == NULL) {
-    *vldata = MEM_callocN(sizeof(**vldata), "WORKBENCH_ViewLayerData");
+    *vldata = mem_callocn(sizeof(**vldata), "WORKBENCH_ViewLayerData");
     size_t matbuf_size = sizeof(WORKBENCH_UBO_Material) * MAX_MATERIAL;
     (*vldata)->material_ubo_data = BLI_memblock_create_ex(matbuf_size, matbuf_size * 2);
     (*vldata)->material_ubo = BLI_memblock_create_ex(sizeof(void *), sizeof(void *) * 8);
@@ -61,8 +61,6 @@ static WORKBENCH_ViewLayerData *workbench_view_layer_data_ensure_ex(struct ViewL
 
   return *vldata;
 }
-
-/** \} */
 
 static void workbench_studiolight_data_update(WORKBENCH_PrivateData *wpd, WORKBENCH_UBO_World *wd)
 {
@@ -86,7 +84,7 @@ static void workbench_studiolight_data_update(WORKBENCH_PrivateData *wpd, WORKBE
 
   /* Studio Lights. */
   for (int i = 0; i < 4; i++) {
-    WORKBENCH_UBO_Light *light = &wd->lights[i];
+    DBenchUBOLight *light = &wd->lights[i];
 
     SolidLight *sl = (studiolight) ? &studiolight->light[i] : NULL;
     if (sl && sl->flag) {
@@ -262,7 +260,7 @@ void workbench_private_data_init(DBenchPrivateData *wpd)
 
 void workbench_update_world_ubo(DBenchPrivateData *wpd)
 {
-  WORKBENCH_UBO_World wd;
+  DBenchUBOWorld wd;
 
   copy_v2_v2(wd.viewport_size, draw_viewport_size_get());
   copy_v2_v2(wd.viewport_size_inv, draw_viewport_invert_size_get());
@@ -281,12 +279,12 @@ void workbench_update_world_ubo(DBenchPrivateData *wpd)
 void workbench_update_material_ubos(DBenchPrivateData *UNUSED(wpd))
 {
   const DrawCtxState *draw_ctx = draw_ctx_state_get();
-  WorkbenchViewLayerData *vldata = workbench_view_layer_data_ensure_ex(draw_ctx->view_layer);
+  DBenchViewLayerData *vldata = workbench_view_layer_data_ensure_ex(draw_ctx->view_layer);
 
   lib_memblock_iter iter, iter_data;
   lib_memblock_iternew(vldata->material_ubo, &iter);
   lib_memblock_iternew(vldata->material_ubo_data, &iter_data);
-  WORKBENCH_UBO_Material *matchunk;
+  DBenchUBOMaterial *matchunk;
   while ((matchunk = lib_memblock_iterstep(&iter_data))) {
     GPUUniformBuf **ubo = lib_memblock_iterstep(&iter);
     lib_assert(*ubo != NULL);
