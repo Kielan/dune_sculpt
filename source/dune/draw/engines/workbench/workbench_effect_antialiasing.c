@@ -353,7 +353,7 @@ void workbench_antialiasing_cache_init(DBenchData *vedata)
 
 bool workbench_antialiasing_setup(WORKBENCH_Data *vedata)
 {
-  WORKBENCH_PrivateData *wpd = vedata->stl->wpd;
+  DBenchPrivateData *wpd = vedata->stl->wpd;
 
   if (wpd->taa_sample_len == 0) {
     /* AA disabled. */
@@ -365,8 +365,8 @@ bool workbench_antialiasing_setup(WORKBENCH_Data *vedata)
     return false;
   }
 
-  const float *viewport_size = DRW_viewport_size_get();
-  const DRWView *default_view = DRW_view_default_get();
+  const float *viewport_size = draw_viewport_size_get();
+  const DRWView *default_view = draw_view_default_get();
   float *transform_offset;
 
   switch (wpd->taa_sample_len) {
@@ -392,9 +392,9 @@ bool workbench_antialiasing_setup(WORKBENCH_Data *vedata)
 
   /* construct new matrices from transform delta */
   float winmat[4][4], viewmat[4][4], persmat[4][4];
-  DRW_view_winmat_get(default_view, winmat, false);
-  DRW_view_viewmat_get(default_view, viewmat, false);
-  DRW_view_persmat_get(default_view, persmat, false);
+  draw_view_winmat_get(default_view, winmat, false);
+  draw_view_viewmat_get(default_view, viewmat, false);
+  draw_view_persmat_get(default_view, persmat, false);
 
   window_translate_m4(winmat,
                       persmat,
@@ -403,7 +403,7 @@ bool workbench_antialiasing_setup(WORKBENCH_Data *vedata)
 
   if (wpd->view) {
     /* When rendering just update the view. This avoids recomputing the culling. */
-    DRW_view_update_sub(wpd->view, viewmat, winmat);
+    draw_view_update_sub(wpd->view, viewmat, winmat);
   }
   else {
     /* TAA is not making a big change to the matrices.
