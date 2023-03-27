@@ -186,12 +186,12 @@ GPUShader *workbench_shader_composite_get(WORKBENCH_PrivateData *wpd)
 GPUShader *workbench_shader_merge_infront_get(WORKBENCH_PrivateData *UNUSED(wpd))
 {
   if (e_data.merge_infront_sh == nullptr) {
-    e_data.merge_infront_sh = GPU_shader_create_from_info_name("workbench_merge_infront");
+    e_data.merge_infront_sh = gpu_shader_create_from_info_name("workbench_merge_infront");
   }
   return e_data.merge_infront_sh;
 }
 
-GPUShader *workbench_shader_transparent_resolve_get(WORKBENCH_PrivateData *UNUSED(wpd))
+GPUShader *workbench_shader_transparent_resolve_get(DBenchPrivateData *UNUSED(wpd))
 {
   if (e_data.oit_resolve_sh == nullptr) {
     e_data.oit_resolve_sh = GPU_shader_create_from_info_name("workbench_transparent_resolve");
