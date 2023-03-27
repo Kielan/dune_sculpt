@@ -385,36 +385,36 @@ LIB_INLINE bool workbench_is_specular_highlight_enabled(WORKBENCH_PrivateData *w
 }
 
 /* workbench_opaque.c */
-void workbench_opaque_engine_init(WORKBENCH_Data *data);
-void workbench_opaque_cache_init(WORKBENCH_Data *data);
+void workbench_opaque_engine_init(DBenchData *data);
+void workbench_opaque_cache_init(DBenchData *data);
 
 /* workbench_transparent.c */
-void workbench_transparent_engine_init(WORKBENCH_Data *data);
-void workbench_transparent_cache_init(WORKBENCH_Data *data);
+void workbench_transparent_engine_init(DBenchData *data);
+void workbench_transparent_cache_init(DBenchData *data);
 /**
  * Redraw the transparent passes but with depth test
  * to output correct outline IDs and depth.
  */
-void workbench_transparent_draw_depth_pass(WORKBENCH_Data *data);
+void workbench_transparent_draw_depth_pass(DBenchData *data);
 
 /* workbench_shadow.c */
-void workbench_shadow_data_update(WORKBENCH_PrivateData *wpd, WORKBENCH_UBO_World *wd);
-void workbench_shadow_cache_init(WORKBENCH_Data *data);
-void workbench_shadow_cache_populate(WORKBENCH_Data *data, Object *ob, bool has_transp_mat);
+void workbench_shadow_data_update(DBenchPrivateData *wpd, DBenchUBOWorld *wd);
+void workbench_shadow_cache_init(DBenchData *data);
+void workbench_shadow_cache_populate(DBenchData *data, Object *ob, bool has_transp_mat);
 
 /* workbench_shader.c */
-GPUShader *workbench_shader_opaque_get(WORKBENCH_PrivateData *wpd, eWORKBENCH_DataType data);
-GPUShader *workbench_shader_opaque_image_get(WORKBENCH_PrivateData *wpd,
-                                             eWORKBENCH_DataType data,
+GPUShader *workbench_shader_opaque_get(DBenchPrivateData *wpd, eDBenchDataType data);
+GPUShader *workbench_shader_opaque_image_get(DBenchPrivateData *wpd,
+                                             eDBenchDataType data,
                                              bool tiled);
-GPUShader *workbench_shader_composite_get(WORKBENCH_PrivateData *wpd);
-GPUShader *workbench_shader_merge_infront_get(WORKBENCH_PrivateData *wpd);
+GPUShader *workbench_shader_composite_get(DBenchPrivateData *wpd);
+GPUShader *workbench_shader_merge_infront_get(DBenchPrivateData *wpd);
 
-GPUShader *workbench_shader_transparent_get(WORKBENCH_PrivateData *wpd, eWORKBENCH_DataType data);
-GPUShader *workbench_shader_transparent_image_get(WORKBENCH_PrivateData *wpd,
-                                                  eWORKBENCH_DataType data,
+GPUShader *workbench_shader_transparent_get(DBenchPrivateData *wpd, eDBenchDataType data);
+GPUShader *workbench_shader_transparent_image_get(DBenchPrivateData *wpd,
+                                                  eDBenchDataType data,
                                                   bool tiled);
-GPUShader *workbench_shader_transparent_resolve_get(WORKBENCH_PrivateData *wpd);
+GPUShader *workbench_shader_transparent_resolve_get(DBenchPrivateData *wpd);
 
 GPUShader *workbench_shader_shadow_pass_get(bool manifold);
 GPUShader *workbench_shader_shadow_fail_get(bool manifold, bool cap);
@@ -427,7 +427,7 @@ GPUShader *workbench_shader_antialiasing_get(int stage);
 
 GPUShader *workbench_shader_volume_get(bool slice,
                                        bool coba,
-                                       eWORKBENCH_VolumeInterpType interp_type,
+                                       eDBenchVolumeInterpType interp_type,
                                        bool smoke);
 
 void workbench_shader_depth_of_field_get(GPUShader **prepare_sh,
