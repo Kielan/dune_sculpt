@@ -15,28 +15,28 @@
 #include "dgraph.h"
 #include "dgraph_query.h"
 
-#include "RE_pipeline.h"
+#include "render_pipeline.h"
 
 #include "workbench_private.h"
 
 static void workbench_render_cache(void *vedata,
                                    struct Object *ob,
                                    struct RenderEngine *UNUSED(engine),
-                                   struct Depsgraph *UNUSED(depsgraph))
+                                   struct Depsgraph *UNUSED(dgraph))
 {
   workbench_cache_populate(vedata, ob);
 }
 
-static void workbench_render_matrices_init(RenderEngine *engine, Depsgraph *depsgraph)
+static void workbench_render_matrices_init(RenderEngine *engine, DGraph *dgraph)
 {
   /* TODO: Shall render hold pointer to an evaluated camera instead? */
-  struct Object *ob_camera_eval = DEG_get_evaluated_object(depsgraph, RE_GetCamera(engine->re));
+  struct Object *ob_camera_eval = dgraph_get_evaluated_object(dgraph, render_GetCamera(engine->re));
 
   /* Set the perspective, view and window matrix. */
   float winmat[4][4], viewmat[4][4], viewinv[4][4];
 
-  RE_GetCameraWindow(engine->re, ob_camera_eval, winmat);
-  RE_GetCameraModelMatrix(engine->re, ob_camera_eval, viewinv);
+  render_GetCameraWindow(engine->re, ob_camera_eval, winmat);
+  render_GetCameraModelMatrix(engine->re, ob_camera_eval, viewinv);
 
   invert_m4_m4(viewmat, viewinv);
 
@@ -48,17 +48,17 @@ static void workbench_render_matrices_init(RenderEngine *engine, Depsgraph *deps
 static bool workbench_render_framebuffers_init(void)
 {
   /* For image render, allocate own buffers because we don't have a viewport. */
-  const float *viewport_size = DRW_viewport_size_get();
+  const float *viewport_size = draw_viewport_size_get();
   const int size[2] = {(int)viewport_size[0], (int)viewport_size[1]};
 
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
   /* When doing a multi view rendering the first view will allocate the buffers
    * the other views will reuse these buffers */
   if (dtxl->color == NULL) {
     lib_assert(dtxl->depth == NULL);
-    dtxl->color = GPU_texture_create_2d("txl.color", UNPACK2(size), 1, GPU_RGBA16F, NULL);
-    dtxl->depth = GPU_texture_create_2d("txl.depth", UNPACK2(size), 1, GPU_DEPTH24_STENCIL8, NULL);
+    dtxl->color = gpu_texture_create_2d("txl.color", UNPACK2(size), 1, GPU_RGBA16F, NULL);
+    dtxl->depth = gpu_texture_create_2d("txl.depth", UNPACK2(size), 1, GPU_DEPTH24_STENCIL8, NULL);
   }
 
   if (!(dtxl->depth && dtxl->color)) {
@@ -94,14 +94,14 @@ static void workbench_render_result_z(struct RenderLayer *rl,
   ViewLayer *view_layer = draw_ctx->view_layer;
 
   if ((view_layer->passflag & SCE_PASS_Z) != 0) {
-    RenderPass *rp = RE_pass_find_by_name(rl, RE_PASSNAME_Z, viewname);
+    RenderPass *rp = render_pass_find_by_name(rl, RE_PASSNAME_Z, viewname);
 
     gpu_framebuffer_bind(dfbl->default_fb);
     gpu_framebuffer_read_depth(dfbl->default_fb,
                                rect->xmin,
                                rect->ymin,
-                               BLI_rcti_size_x(rect),
-                               BLI_rcti_size_y(rect),
+                               lib_rcti_size_x(rect),
+                               lib_rcti_size_y(rect),
                                GPU_DATA_FLOAT,
                                rp->rect);
 
@@ -124,8 +124,8 @@ static void workbench_render_result_z(struct RenderLayer *rl,
     }
     else {
       /* Keep in mind, near and far distance are negatives. */
-      float near = DRW_view_near_distance_get(NULL);
-      float far = DRW_view_far_distance_get(NULL);
+      float near = draw_view_near_distance_get(NULL);
+      float far = draw_view_far_distance_get(NULL);
       float range = fabsf(far - near);
 
       for (int i = 0; i < pix_ct; i++) {
@@ -142,11 +142,11 @@ static void workbench_render_result_z(struct RenderLayer *rl,
 
 void workbench_render(void *ved, RenderEngine *engine, RenderLayer *render_layer, const rcti *rect)
 {
-  WORKBENCH_Data *data = ved;
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  Depsgraph *depsgraph = draw_ctx->depsgraph;
-  workbench_render_matrices_init(engine, depsgraph);
+  DBenchData *data = ved;
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
+  const DRWContextState *draw_ctx = draw_ctx_state_get();
+  Depsgraph *depsgraph = draw_ctx->dgraph;
+  workbench_render_matrices_init(engine, dgraph);
 
   if (!workbench_render_framebuffers_init()) {
     RE_engine_report(engine, RPT_ERROR, "Failed to allocate OpenGL buffers");
@@ -154,7 +154,7 @@ void workbench_render(void *ved, RenderEngine *engine, RenderLayer *render_layer
   }
 
   workbench_private_data_alloc(data->stl);
-  data->stl->wpd->cam_original_ob = DEG_get_evaluated_object(depsgraph, RE_GetCamera(engine->re));
+  data->stl->wpd->cam_original_ob = dgraph_get_evaluated_object(depsgraph, RE_GetCamera(engine->re));
   workbench_engine_init(data);
 
   workbench_cache_init(data);
