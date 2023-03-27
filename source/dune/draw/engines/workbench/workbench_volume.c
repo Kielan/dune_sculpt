@@ -23,11 +23,11 @@ void workbench_volume_engine_init(DBenchData *vedata)
   if (txl->dummy_volume_tx == NULL) {
     const float zero[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     const float one[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-    txl->dummy_volume_tx = GPU_texture_create_3d(
+    txl->dummy_volume_tx = gpu_texture_create_3d(
         "dummy_volume", 1, 1, 1, 1, GPU_RGBA8, GPU_DATA_FLOAT, zero);
-    txl->dummy_shadow_tx = GPU_texture_create_3d(
+    txl->dummy_shadow_tx = gpu_texture_create_3d(
         "dummy_shadow", 1, 1, 1, 1, GPU_RGBA8, GPU_DATA_FLOAT, one);
-    txl->dummy_coba_tx = GPU_texture_create_1d("dummy_coba", 1, 1, GPU_RGBA8, zero);
+    txl->dummy_coba_tx = gpu_texture_create_1d("dummy_coba", 1, 1, GPU_RGBA8, zero);
   }
 }
 
@@ -172,7 +172,7 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
     draw_shgroup_call(grp, draw_cache_cube_get(), ob);
   }
 
-  lib_addtail(&wpd->smoke_domains, BLI_genericNodeN(fmd));
+  lib_addtail(&wpd->smoke_domains, lib_genericNodeN(fmd));
 }
 
 static void workbench_volume_material_color(WORKBENCH_PrivateData *wpd,
@@ -302,7 +302,7 @@ static void workbench_volume_object_cache_populate(DBenchData *vedata,
   draw_shgroup_call(grp, draw_cache_cube_get(), ob);
 }
 
-void workbench_volume_cache_populate(WORKBENCH_Data *vedata,
+void workbench_volume_cache_populate(DBenchData *vedata,
                                      Scene *UNUSED(scene),
                                      Object *ob,
                                      ModifierData *md,
@@ -316,7 +316,7 @@ void workbench_volume_cache_populate(WORKBENCH_Data *vedata,
   }
 }
 
-void workbench_volume_draw_pass(WORKBENCH_Data *vedata)
+void workbench_volume_draw_pass(DBenchData *vedata)
 {
   DBenchPassList *psl = vedata->psl;
   DBenchPrivateData *wpd = vedata->stl->wpd;
