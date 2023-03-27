@@ -17,7 +17,7 @@ extern "C" {
 
 extern struct DrawEngineType draw_engine_workbench;
 
-#define DBENCH_ENGINE "DUNE_WORKBENCH"
+#define DBENCH_ENGINE "DUNE_DBENCH"
 
 #define MAX_MATERIAL (1 << 12)
 
@@ -194,7 +194,7 @@ typedef struct DBENCH_UBO_World {
   int use_specular; /* Bools are 32bit ints in GLSL. */
   int _pad1;
   int _pad2;
-} DBench_UBO_World;
+} DBenchUBOWorld;
 
 LIB_STATIC_ASSERT_ALIGN(DBENCH_UBO_World, 16)
 LIB_STATIC_ASSERT_ALIGN(DBENCH_UBO_Light, 16)
@@ -305,7 +305,7 @@ typedef struct DBenchPrivateData {
   /** Copy of vldata->material_ubo_data for faster access. */
   struct lib_memblock *material_ubo_data;
   /** Current material chunk being filled by workbench_material_setup_ex(). */
-  DBENCH_UBO_Material *material_ubo_data_curr;
+  DBenchUBOMaterial *material_ubo_data_curr;
   struct GPUUniformBuf *material_ubo_curr;
   /** Copy of txl->dummy_image_tx for faster access. */
   struct GPUTexture *dummy_image_tx;
