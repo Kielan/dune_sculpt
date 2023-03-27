@@ -275,7 +275,7 @@ typedef struct DBenchPrivateData {
   /** True if the history buffer contains relevant data and false if it could contain garbage. */
   bool valid_history;
   /** View */
-  struct DRWView *view;
+  struct DrawView *view;
   /** Last projection matrix to see if view is still valid. */
   float last_mat[4][4];
 
@@ -450,12 +450,12 @@ bool workbench_antialiasing_setup(WORKBENCH_Data *vedata);
 void workbench_antialiasing_draw_pass(WORKBENCH_Data *vedata);
 
 /* workbench_effect_cavity.c */
-void workbench_cavity_data_update(WORKBENCH_PrivateData *wpd, WORKBENCH_UBO_World *wd);
-void workbench_cavity_samples_ubo_ensure(WORKBENCH_PrivateData *wpd);
-void workbench_cavity_cache_init(WORKBENCH_Data *data);
+void workbench_cavity_data_update(DBenchPrivateData *wpd, DBenchUBOWorld *wd);
+void workbench_cavity_samples_ubo_ensure(DBencHPrivateData *wpd);
+void workbench_cavity_cache_init(DBenchData *data);
 
 /* workbench_effect_outline.c */
-void workbench_outline_cache_init(WORKBENCH_Data *data);
+void workbench_outline_cache_init(DBenchData *data);
 /* workbench_effect_dof.c */
 void workbench_dof_engine_init(DBench_Data *vedata);
 void workbench_dof_cache_init(WORKBENCH_Data *vedata);
