@@ -116,15 +116,15 @@ static eDBenchTextureType workbench_texture_type_get(bool textured, bool tiled)
 /* -------------------------------------------------------------------- */
 /** Shader request **/
 
-static GPUShader *workbench_shader_get_ex(WORKBENCH_PrivateData *wpd,
+static GPUShader *workbench_shader_get_ex(DBenchPrivateData *wpd,
                                           bool transp,
-                                          eWORKBENCH_DataType datatype,
+                                          eDBenchDataType datatype,
                                           bool textured,
                                           bool tiled)
 {
   eDBenchTextureType tex_type = workbench_texture_type_get(textured, tiled);
   int light = wpd->shading.light;
-  BLI_assert(light < MAX_LIGHTING);
+  lib_assert(light < MAX_LIGHTING);
   struct GPUShader **shader =
       (transp) ? &e_data.transp_prepass_sh_cache[wpd->sh_cfg][datatype][light][tex_type] :
                  &e_data.opaque_prepass_sh_cache[wpd->sh_cfg][datatype][tex_type];
@@ -144,32 +144,32 @@ static GPUShader *workbench_shader_get_ex(WORKBENCH_PrivateData *wpd,
   return *shader;
 }
 
-GPUShader *workbench_shader_opaque_get(WORKBENCH_PrivateData *wpd, eWORKBENCH_DataType datatype)
+GPUShader *workbench_shader_opaque_get(DBenchPrivateData *wpd, eDBenchDataType datatype)
 {
   return workbench_shader_get_ex(wpd, false, datatype, false, false);
 }
 
-GPUShader *workbench_shader_opaque_image_get(WORKBENCH_PrivateData *wpd,
-                                             eWORKBENCH_DataType datatype,
+GPUShader *workbench_shader_opaque_image_get(DBenchPrivateData *wpd,
+                                             eDBenchDataType datatype,
                                              bool tiled)
 {
   return workbench_shader_get_ex(wpd, false, datatype, true, tiled);
 }
 
-GPUShader *workbench_shader_transparent_get(WORKBENCH_PrivateData *wpd,
-                                            eWORKBENCH_DataType datatype)
+GPUShader *workbench_shader_transparent_get(DBenchPrivateData *wpd,
+                                            eDBenchDataType datatype)
 {
   return workbench_shader_get_ex(wpd, true, datatype, false, false);
 }
 
-GPUShader *workbench_shader_transparent_image_get(WORKBENCH_PrivateData *wpd,
-                                                  eWORKBENCH_DataType datatype,
+GPUShader *workbench_shader_transparent_image_get(DBenchPrivateData *wpd,
+                                                  eDBenchDataType datatype,
                                                   bool tiled)
 {
   return workbench_shader_get_ex(wpd, true, datatype, true, tiled);
 }
 
-GPUShader *workbench_shader_composite_get(WORKBENCH_PrivateData *wpd)
+GPUShader *workbench_shader_composite_get(DBenchPrivateData *wpd)
 {
   int light = wpd->shading.light;
   struct GPUShader **shader = &e_data.opaque_composite_sh[light];
@@ -183,7 +183,7 @@ GPUShader *workbench_shader_composite_get(WORKBENCH_PrivateData *wpd)
   return *shader;
 }
 
-GPUShader *workbench_shader_merge_infront_get(WORKBENCH_PrivateData *UNUSED(wpd))
+GPUShader *workbench_shader_merge_infront_get(DBenchPrivateData *UNUSED(wpd))
 {
   if (e_data.merge_infront_sh == nullptr) {
     e_data.merge_infront_sh = gpu_shader_create_from_info_name("workbench_merge_infront");
@@ -194,7 +194,7 @@ GPUShader *workbench_shader_merge_infront_get(WORKBENCH_PrivateData *UNUSED(wpd)
 GPUShader *workbench_shader_transparent_resolve_get(DBenchPrivateData *UNUSED(wpd))
 {
   if (e_data.oit_resolve_sh == nullptr) {
-    e_data.oit_resolve_sh = GPU_shader_create_from_info_name("workbench_transparent_resolve");
+    e_data.oit_resolve_sh = gpu_shader_create_from_info_name("workbench_transparent_resolve");
   }
   return e_data.oit_resolve_sh;
 }
@@ -279,7 +279,7 @@ void workbench_shader_depth_of_field_get(GPUShader **prepare_sh,
 GPUShader *workbench_shader_antialiasing_accumulation_get(void)
 {
   if (e_data.aa_accum_sh == nullptr) {
-    e_data.aa_accum_sh = GPU_shader_create_from_info_name("workbench_taa");
+    e_data.aa_accum_sh = gpu_shader_create_from_info_name("workbench_taa");
   }
   return e_data.aa_accum_sh;
 }
