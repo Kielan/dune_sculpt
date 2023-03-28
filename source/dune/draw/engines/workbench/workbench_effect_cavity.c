@@ -65,17 +65,17 @@ static struct GPUTexture *create_jitter_texture(int num_samples)
 
   UNUSED_VARS(bsdf_split_sum_ggx, btdf_split_sum_ggx, ltc_mag_ggx, ltc_mat_ggx, ltc_disk_integral);
 
-  return draw_texture_create_2d(64, 64, GPU_RGBA16F, DRW_TEX_WRAP, &jitter[0][0]);
+  return draw_texture_create_2d(64, 64, GPU_RGBA16F, DRAW_TEX_WRAP, &jitter[0][0]);
 }
 
-LIB_INLINE int workbench_cavity_total_sample_count(const WORKBENCH_PrivateData *wpd,
+LIB_INLINE int workbench_cavity_total_sample_count(const DBenchPrivateData *wpd,
                                                    const Scene *scene)
 {
   return min_ii(max_ii(1, wpd->taa_sample_len) * scene->display.matcap_ssao_samples,
                 CAVITY_MAX_SAMPLES);
 }
 
-void workbench_cavity_data_update(WORKBENCH_PrivateData *wpd, WORKBENCH_UBO_World *wd)
+void workbench_cavity_data_update(DBenchPrivateData *wpd, DBenchUBOWorld *wd)
 {
   View3DShading *shading = &wpd->shading;
   const DrawCtxState *draw_ctx = DRW_context_state_get();
@@ -121,7 +121,7 @@ void workbench_cavity_samples_ubo_ensure(DBenchPrivateData *wpd)
     float *samples = create_disk_samples(cavity_sample_count_single_iteration, max_iter_count);
     wpd->vldata->cavity_jitter_tx = create_jitter_texture(cavity_sample_count);
     /* NOTE: Uniform buffer needs to always be filled to be valid. */
-    wpd->vldata->cavity_sample_ubo = GPU_uniformbuf_create_ex(
+    wpd->vldata->cavity_sample_ubo = gpu_uniformbuf_create_ex(
         sizeof(float[4]) * CAVITY_MAX_SAMPLES, samples, "wb_CavitySamples");
     wpd->vldata->cavity_sample_count = cavity_sample_count;
     mem_freen(samples);
