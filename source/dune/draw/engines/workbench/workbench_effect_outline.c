@@ -18,7 +18,7 @@ void workbench_outline_cache_init(DBenchData *data)
   DrawShadingGroup *grp;
 
   if (OBJECT_OUTLINE_ENABLED(wpd)) {
-    int state = DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL;
+    int state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ALPHA_PREMUL;
     DRAW_PASS_CREATE(psl->outline_ps, state);
 
     sh = workbench_shader_outline_get();
