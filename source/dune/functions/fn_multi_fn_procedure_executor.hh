@@ -5,7 +5,7 @@
 namespace dune::fn {
 
 /** A multi-function that executes a procedure internally. */
-class MFProcedureExecutor : public MultiFunction {
+class MFProcedureExecutor : public MultiFn {
  private:
   MFSignature signature_;
   const MFProcedure &procedure_;
