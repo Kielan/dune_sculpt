@@ -1,16 +1,12 @@
 #pragma once
 
-/** \file
- * \ingroup fn
- *
- * This file contains several utilities to create multi-functions with less redundant code.
- */
+/** This file contains several utilities to create multi-functions with less redundant code. */
 
 #include <functional>
 
-#include "FN_multi_function.hh"
+#include "fn_multi_fn.hh"
 
-namespace blender::fn {
+namespace dune::fn {
 
 /**
  * Generates a multi-function with the following parameters:
