@@ -1,21 +1,16 @@
-
 #pragma once
 
-/** \file
- * \ingroup fn
- */
+#include "fn_multi_fn_proc.hh"
 
-#include "FN_multi_function_procedure.hh"
-
-namespace blender::fn {
+namespace dune::fn {
 
 /**
  * Utility class to build a #MFProcedure.
  */
-class MFProcedureBuilder {
+class MFProcBuilder {
  private:
   /** Procedure that is being build. */
-  MFProcedure *procedure_ = nullptr;
+  MFProc *proc_ = nullptr;
   /** Cursors where the next instruction should be inserted. */
   Vector<MFInstructionCursor> cursors_;
 
@@ -23,12 +18,12 @@ class MFProcedureBuilder {
   struct Branch;
   struct Loop;
 
-  MFProcedureBuilder(MFProcedure &procedure,
+  MFProcBuilder(MFProcedure &procedure,
                      MFInstructionCursor initial_cursor = MFInstructionCursor::ForEntry());
 
-  MFProcedureBuilder(Span<MFProcedureBuilder *> builders);
+  MFProcBuilder(Span<MFProcedureBuilder *> builders);
 
-  MFProcedureBuilder(Branch &branch);
+  MFProcBuilder(Branch &branch);
 
   void set_cursor(const MFInstructionCursor &cursor);
   void set_cursor(Span<MFInstructionCursor> cursors);
