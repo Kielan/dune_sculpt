@@ -1,8 +1,6 @@
 #pragma once
 
-/** \file
- * \ingroup fn
- *
+/**
  * The signature of a multi-function contains the functions name and expected parameters. New
  * signatures should be build using the #MFSignatureBuilder class.
  */
