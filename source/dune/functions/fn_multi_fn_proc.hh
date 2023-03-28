@@ -1,12 +1,8 @@
 #pragma once
 
-/** \file
- * \ingroup fn
- */
+#include "fn_multi_fn.hh"
 
-#include "FN_multi_function.hh"
-
-namespace blender::fn {
+namespace dune::fn {
 
 class MFVariable;
 class MFInstruction;
@@ -27,7 +23,7 @@ enum class MFInstructionType {
 };
 
 /**
- * An #MFInstructionCursor points to a position in a multi-function procedure, where an instruction
+ * An MFInstructionCursor points to a position in a multi-function procedure, where an instruction
  * can be inserted.
  */
 class MFInstructionCursor {
@@ -239,7 +235,7 @@ struct ConstMFParameter {
  * variables and instructions that operate on those variables. Branching and looping within the
  * procedure is supported as well.
  *
- * Typically, a #MFProcedure should be constructed using a #MFProcedureBuilder, which has many more
+ * Typically, a MFProcedure should be constructed using a MFProcedureBuilder, which has many more
  * utility methods for common use cases.
  */
 class MFProcedure : NonCopyable, NonMovable {
@@ -255,11 +251,11 @@ class MFProcedure : NonCopyable, NonMovable {
   Vector<destruct_ptr<MultiFunction>> owned_functions_;
   MFInstruction *entry_ = nullptr;
 
-  friend class MFProcedureDotExport;
+  friend class MFProcDotExport;
 
  public:
-  MFProcedure() = default;
-  ~MFProcedure();
+  MFProc() = default;
+  ~MFProc();
 
   MFVariable &new_variable(MFDataType data_type, std::string name = "");
   MFCallInstruction &new_call_instruction(const MultiFunction &fn);
@@ -509,13 +505,13 @@ inline Span<MFVariable *> MFProcedure::variables()
   return variables_;
 }
 
-inline Span<const MFVariable *> MFProcedure::variables() const
+inline Span<const MFVariable *> MFProc::variables() const
 {
   return variables_;
 }
 
 template<typename T, typename... Args>
-inline const MultiFn &MFProcedure::construct_fn(Args &&...args)
+inline const MultiFn &MFProc::construct_fn(Args &&...args)
 {
   destruct_ptr<T> fn = allocator_.construct<T>(std::forward<Args>(args)...);
   const MultiFn &fn_ref = *fn;
