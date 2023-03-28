@@ -76,14 +76,14 @@ void workbench_cache_init(void *ved)
  * instead of gpumat_array. Avoiding all this boilerplate code. */
 static struct GPUBatch **workbench_object_surface_material_get(Object *ob)
 {
-  const int materials_len = DRW_cache_object_material_count_get(ob);
+  const int materials_len = draw_cache_object_material_count_get(ob);
   struct GPUMaterial **gpumat_array = lib_array_alloca(gpumat_array, materials_len);
   memset(gpumat_array, 0, sizeof(*gpumat_array) * materials_len);
 
   return draw_cache_object_surface_material_get(ob, gpumat_array, materials_len);
 }
 
-static void workbench_cache_sculpt_populate(WORKBENCH_PrivateData *wpd,
+static void workbench_cache_sculpt_populate(DBenchPrivateData *wpd,
                                             Object *ob,
                                             eV3DShadingColorType color_type)
 {
@@ -95,23 +95,23 @@ static void workbench_cache_sculpt_populate(WORKBENCH_PrivateData *wpd,
     draw_shgroup_call_sculpt(grp, ob, false, false);
   }
   else {
-    const int materials_len = DRW_cache_object_material_count_get(ob);
-    struct DRWShadingGroup **shgrps = BLI_array_alloca(shgrps, materials_len);
+    const int materials_len = draw_cache_object_material_count_get(ob);
+    struct DrawShadingGroup **shgrps = lib_array_alloca(shgrps, materials_len);
     for (int i = 0; i < materials_len; i++) {
       shgrps[i] = workbench_material_setup(wpd, ob, i + 1, color_type, NULL);
     }
-    DRW_shgroup_call_sculpt_with_materials(shgrps, materials_len, ob);
+    draw_shgroup_call_sculpt_with_materials(shgrps, materials_len, ob);
   }
 }
 
-BLI_INLINE void workbench_object_drawcall(DRWShadingGroup *grp, struct GPUBatch *geom, Object *ob)
+LIB_INLINE void workbench_object_drawcall(DRWShadingGroup *grp, struct GPUBatch *geom, Object *ob)
 {
   if (ob->type == OB_POINTCLOUD) {
     /* Draw range to avoid drawcall batching messing up the instance attribute. */
-    DRW_shgroup_call_instance_range(grp, ob, geom, 0, 0);
+    draw_shgroup_call_instance_range(grp, ob, geom, 0, 0);
   }
   else {
-    DRW_shgroup_call(grp, geom, ob);
+    draw_shgroup_call(grp, geom, ob);
   }
 }
 
@@ -244,7 +244,7 @@ static const CustomData *workbench_mesh_get_vert_custom_data(const Mesh *mesh)
  * Decide what color-type to draw the object with.
  * In some cases it can be overwritten by #workbench_material_setup().
  */
-static eV3DShadingColorType workbench_color_type_get(WORKBENCH_PrivateData *wpd,
+static eV3DShadingColorType workbench_color_type_get(DBenchPrivateData *wpd,
                                                      Object *ob,
                                                      bool *r_sculpt_pbvh,
                                                      bool *r_texpaint_mode,
@@ -607,11 +607,11 @@ static void workbench_view_update(void *vedata)
   workbench_antialiasing_view_updated(data);
 }
 
-static void workbench_id_update(void *UNUSED(vedata), struct ID *id)
+static void workbench_id_update(void *UNUSED(vedata), struct Id *id)
 {
   if (GS(id->name) == ID_OB) {
-    WORKBENCH_ObjectData *oed = (WORKBENCH_ObjectData *)DRW_drawdata_get(id,
-                                                                         &draw_engine_workbench);
+    WORKBENCH_ObjectData *oed = (DBenchObjectData *)draw_drawdata_get(id,
+                                                                      &draw_engine_workbench);
     if (oed != NULL && oed->dd.recalc != 0) {
       oed->shadow_bbox_dirty = (oed->dd.recalc & ID_RECALC_ALL) != 0;
       oed->dd.recalc = 0;
@@ -619,7 +619,7 @@ static void workbench_id_update(void *UNUSED(vedata), struct ID *id)
   }
 }
 
-static const DrawEngineDataSize workbench_data_size = DRW_VIEWPORT_DATA_SIZE(WORKBENCH_Data);
+static const DrawEngineDataSize workbench_data_size = DRAW_VIEWPORT_DATA_SIZE(DBenchData);
 
 DrawEngineType draw_engine_workbench = {
     NULL,
@@ -642,7 +642,7 @@ DrawEngineType draw_engine_workbench = {
 RenderEngineType draw_engine_viewport_workbench_type = {
     NULL,
     NULL,
-    WORKBENCH_ENGINE,
+    DBENCH_ENGINE,
     N_("Workbench"),
     RE_INTERNAL | RE_USE_STEREO_VIEWPORT | RE_USE_GPU_CONTEXT,
     NULL,
@@ -658,4 +658,4 @@ RenderEngineType draw_engine_viewport_workbench_type = {
     {NULL, NULL, NULL},
 };
 
-#undef WORKBENCH_ENGINE
+#undef DBENCH_ENGINE
