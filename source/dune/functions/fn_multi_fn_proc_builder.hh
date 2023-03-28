@@ -5,7 +5,7 @@
 namespace dune::fn {
 
 /**
- * Utility class to build a #MFProcedure.
+ * Utility class to build a MFProc.
  */
 class MFProcBuilder {
  private:
@@ -18,16 +18,16 @@ class MFProcBuilder {
   struct Branch;
   struct Loop;
 
-  MFProcBuilder(MFProcedure &procedure,
+  MFProcBuilder(MFProc &proc,
                      MFInstructionCursor initial_cursor = MFInstructionCursor::ForEntry());
 
-  MFProcBuilder(Span<MFProcedureBuilder *> builders);
+  MFProcBuilder(Span<MFProcBuilder *> builders);
 
   MFProcBuilder(Branch &branch);
 
   void set_cursor(const MFInstructionCursor &cursor);
   void set_cursor(Span<MFInstructionCursor> cursors);
-  void set_cursor(Span<MFProcedureBuilder *> builders);
+  void set_cursor(Span<MFProcBuilder *> builders);
   void set_cursor_after_branch(Branch &branch);
   void set_cursor_after_loop(Loop &loop);
 
@@ -42,57 +42,57 @@ class MFProcBuilder {
   void add_loop_continue(Loop &loop);
   void add_loop_break(Loop &loop);
 
-  MFCallInstruction &add_call_with_no_variables(const MultiFunction &fn);
-  MFCallInstruction &add_call_with_all_variables(const MultiFunction &fn,
+  MFCallInstruction &add_call_with_no_variables(const MultiFn &fn);
+  MFCallInstruction &add_call_with_all_variables(const MultiFn &fn,
                                                  Span<MFVariable *> param_variables);
 
-  Vector<MFVariable *> add_call(const MultiFunction &fn,
+  Vector<MFVariable *> add_call(const MultiFn &fn,
                                 Span<MFVariable *> input_and_mutable_variables = {});
 
   template<int OutputN>
-  std::array<MFVariable *, OutputN> add_call(const MultiFunction &fn,
+  std::array<MFVariable *, OutputN> add_call(const MultiFn &fn,
                                              Span<MFVariable *> input_and_mutable_variables = {});
 
-  void add_parameter(MFParamType::InterfaceType interface_type, MFVariable &variable);
-  MFVariable &add_parameter(MFParamType param_type, std::string name = "");
+  void add_param(MFParamType::InterfaceType interface_type, MFVariable &variable);
+  MFVariable &add_param(MFParamType param_type, std::string name = "");
 
   MFVariable &add_input_parameter(MFDataType data_type, std::string name = "");
-  template<typename T> MFVariable &add_single_input_parameter(std::string name = "");
-  template<typename T> MFVariable &add_single_mutable_parameter(std::string name = "");
+  template<typename T> MFVariable &add_single_input_param(std::string name = "");
+  template<typename T> MFVariable &add_single_mutable_param(std::string name = "");
 
-  void add_output_parameter(MFVariable &variable);
+  void add_output_param(MFVariable &variable);
 
  private:
   void link_to_cursors(MFInstruction *instruction);
 };
 
-struct MFProcedureBuilder::Branch {
-  MFProcedureBuilder branch_true;
-  MFProcedureBuilder branch_false;
+struct MFProcBuilder::Branch {
+  MFProcBuilder branch_true;
+  MFProcBuilder branch_false;
 };
 
-struct MFProcedureBuilder::Loop {
+struct MFProcBuilder::Loop {
   MFInstruction *begin = nullptr;
   MFDummyInstruction *end = nullptr;
 };
 
 /* --------------------------------------------------------------------
- * MFProcedureBuilder inline methods.
+ * MFProcBuilder inline methods.
  */
 
-inline MFProcedureBuilder::MFProcedureBuilder(Branch &branch)
-    : MFProcedureBuilder(*branch.branch_true.procedure_)
+inline MFProcBuilder::MFProcedureBuilder(Branch &branch)
+    : MFProcBuilder(*branch.branch_true.procedure_)
 {
   this->set_cursor_after_branch(branch);
 }
 
-inline MFProcedureBuilder::MFProcedureBuilder(MFProcedure &procedure,
-                                              MFInstructionCursor initial_cursor)
+inline MFProcedureBuilder::MFProcBuilder(MFProc &procedure,
+                                         MFInstructionCursor initial_cursor)
     : procedure_(&procedure), cursors_({initial_cursor})
 {
 }
 
-inline MFProcedureBuilder::MFProcedureBuilder(Span<MFProcedureBuilder *> builders)
+inline MFProcBuilder::MFProcBuilder(Span<MFProcBuilder *> builders)
     : MFProcedureBuilder(*builders[0]->procedure_)
 {
   this->set_cursor(builders);
@@ -151,7 +151,7 @@ inline MFVariable &MFProcedureBuilder::add_parameter(MFParamType param_type, std
   return variable;
 }
 
-inline MFVariable &MFProcedureBuilder::add_input_parameter(MFDataType data_type, std::string name)
+inline MFVariable &MFProcBuilder::add_input_parameter(MFDataType data_type, std::string name)
 {
   return this->add_param(MFParamType(MFParamType::Input, data_type), std::move(name));
 }
@@ -159,7 +159,7 @@ inline MFVariable &MFProcedureBuilder::add_input_parameter(MFDataType data_type,
 template<typename T>
 inline MFVariable &MFProcedureBuilder::add_single_input_parameter(std::string name)
 {
-  return this->add_parameter(MFParamType::ForSingleInput(CPPType::get<T>()), std::move(name));
+  return this->add_param(MFParamType::ForSingleInput(CPPType::get<T>()), std::move(name));
 }
 
 template<typename T>
