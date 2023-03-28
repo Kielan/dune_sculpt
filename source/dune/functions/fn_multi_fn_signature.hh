@@ -5,25 +5,25 @@
  * signatures should be build using the #MFSignatureBuilder class.
  */
 
-#include "FN_multi_function_param_type.hh"
+#include "fn_multi_fn_param_type.hh"
 
-#include "BLI_vector.hh"
+#include "lib_vector.hh"
 
-namespace blender::fn {
+namespace dune::fn {
 
 struct MFSignature {
   /**
    * The name should be statically allocated so that it lives longer than this signature. This is
    * used instead of an #std::string because of the overhead when many functions are created.
    * If the name of the function has to be more dynamic for debugging purposes, override
-   * #MultiFunction::debug_name() instead. Then the dynamic name will only be computed when it is
+   * MultiFn::debug_name() instead. Then the dynamic name will only be computed when it is
    * actually needed.
    */
-  const char *function_name;
+  const char *fn_name;
   Vector<const char *> param_names;
   Vector<MFParamType> param_types;
   Vector<int> param_data_indices;
-  bool depends_on_context = false;
+  bool depends_on_ctx = false;
 
   int data_index(int param_index) const
   {
