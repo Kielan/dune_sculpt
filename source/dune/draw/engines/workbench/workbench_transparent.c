@@ -61,7 +61,7 @@ static void workbench_transparent_lighting_uniforms(DBenchPrivateData *wpd,
   }
 }
 
-void workbench_transparent_cache_init(WORKBENCH_Data *vedata)
+void workbench_transparent_cache_init(DBenchData *vedata)
 {
   DBenchPassList *psl = vedata->psl;
   DBenchPrivateData *wpd = vedata->stl->wpd;
@@ -71,7 +71,7 @@ void workbench_transparent_cache_init(WORKBENCH_Data *vedata)
   {
     int transp = 1;
     for (int infront = 0; infront < 2; infront++) {
-      DRWState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_LESS_EQUAL | DRW_STATE_BLEND_OIT |
+      DRWState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_LESS_EQUAL | DRAW_STATE_BLEND_OIT |
                        wpd->cull_state | wpd->clip_state;
 
       DrawPass *pass;
