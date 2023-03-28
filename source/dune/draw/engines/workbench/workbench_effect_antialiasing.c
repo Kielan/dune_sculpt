@@ -190,7 +190,7 @@ void workbench_antialiasing_engine_init(DBenchData *vedata)
   if (wpd->taa_sample_len > 0) {
     workbench_taa_jitter_init();
 
-    draw_texture_ensure_fullscreen_2d(&txl->history_buffer_tx, GPU_RGBA16F, DRW_TEX_FILTER);
+    draw_texture_ensure_fullscreen_2d(&txl->history_buffer_tx, GPU_RGBA16F, DRAW_TEX_FILTER);
     draw_texture_ensure_fullscreen_2d(&txl->depth_buffer_tx, GPU_DEPTH24_STENCIL8, 0);
     const bool in_front_history = workbench_in_front_history_needed(vedata);
     if (in_front_history) {
@@ -295,7 +295,7 @@ void workbench_antialiasing_cache_init(DBenchData *vedata)
   }
 
   {
-    DRAW_PASS_CREATE(psl->aa_accum_ps, DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ADD_FULL);
+    DRAW_PASS_CREATE(psl->aa_accum_ps, DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ADD_FULL);
     DRAW_PASS_INSTANCE_CREATE(psl->aa_accum_replace_ps, psl->aa_accum_ps, DRW_STATE_WRITE_COLOR);
 
     GPUShader *shader = workbench_shader_antialiasing_accumulation_get();
@@ -311,7 +311,7 @@ void workbench_antialiasing_cache_init(DBenchData *vedata)
 
   {
     /* Stage 1: Edge detection. */
-    DRAW_PASS_CREATE(psl->aa_edge_ps, DRW_STATE_WRITE_COLOR);
+    DRAW_PASS_CREATE(psl->aa_edge_ps, DRAW_STATE_WRITE_COLOR);
 
     GPUShader *sh = workbench_shader_antialiasing_get(0);
     grp = draw_shgroup_create(sh, psl->aa_edge_ps);
@@ -323,7 +323,7 @@ void workbench_antialiasing_cache_init(DBenchData *vedata)
   }
   {
     /* Stage 2: Blend Weight/Coord. */
-    DRAW_PASS_CREATE(psl->aa_weight_ps, DRW_STATE_WRITE_COLOR);
+    DRAW_PASS_CREATE(psl->aa_weight_ps, DRAW_STATE_WRITE_COLOR);
 
     GPUShader *sh = workbench_shader_antialiasing_get(1);
     grp = draw_shgroup_create(sh, psl->aa_weight_ps);
@@ -366,7 +366,7 @@ bool workbench_antialiasing_setup(WORKBENCH_Data *vedata)
   }
 
   const float *viewport_size = draw_viewport_size_get();
-  const DRWView *default_view = draw_view_default_get();
+  const DrawView *default_view = draw_view_default_get();
   float *transform_offset;
 
   switch (wpd->taa_sample_len) {
@@ -408,9 +408,9 @@ bool workbench_antialiasing_setup(WORKBENCH_Data *vedata)
   else {
     /* TAA is not making a big change to the matrices.
      * Reuse the main view culling by creating a sub-view. */
-    wpd->view = DRW_view_create_sub(default_view, viewmat, winmat);
+    wpd->view = draw_view_create_sub(default_view, viewmat, winmat);
   }
-  DRW_view_set_active(wpd->view);
+  draw_view_set_active(wpd->view);
   return true;
 }
 
