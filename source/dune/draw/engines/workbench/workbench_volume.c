@@ -34,12 +34,12 @@ void workbench_volume_engine_init(DBenchData *vedata)
 void workbench_volume_cache_init(DBenchData *vedata)
 {
   vedata->psl->volume_ps = draw_pass_create(
-      "Volumes", DRAW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL | DRW_STATE_CULL_FRONT);
+      "Volumes", DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ALPHA_PREMUL | DRW_STATE_CULL_FRONT);
 
   vedata->stl->wpd->volumes_do = false;
 }
 
-static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
+static void workbench_volume_modifier_cache_populate(DBenchData *vedata,
                                                      Object *ob,
                                                      ModifierData *md)
 {
@@ -175,7 +175,7 @@ static void workbench_volume_modifier_cache_populate(WORKBENCH_Data *vedata,
   lib_addtail(&wpd->smoke_domains, lib_genericNodeN(fmd));
 }
 
-static void workbench_volume_material_color(WORKBENCH_PrivateData *wpd,
+static void workbench_volume_material_color(DBenchPrivateData *wpd,
                                             Object *ob,
                                             eV3DShadingColorType color_type,
                                             float color[3])
@@ -254,7 +254,7 @@ static void workbench_volume_object_cache_populate(DBenchData *vedata,
     draw_shgroup_uniform_float_copy(grp, "slicePosition", slice_position);
     draw_shgroup_uniform_int_copy(grp, "sliceAxis", axis);
     draw_shgroup_uniform_float_copy(grp, "stepLength", step_length);
-    draw_shgroup_state_disable(grp, DRW_STATE_CULL_FRONT);
+    draw_shgroup_state_disable(grp, DRAW_STATE_CULL_FRONT);
   }
   else {
     /* Compute world space dimensions for step size. */
@@ -320,7 +320,7 @@ void workbench_volume_draw_pass(DBenchData *vedata)
 {
   DBenchPassList *psl = vedata->psl;
   DBenchPrivateData *wpd = vedata->stl->wpd;
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
 
   if (wpd->volumes_do) {
     gpu_framebuffer_bind(dfbl->color_only_fb);
@@ -328,7 +328,7 @@ void workbench_volume_draw_pass(DBenchData *vedata)
   }
 }
 
-void workbench_volume_draw_finish(WORKBENCH_Data *vedata)
+void workbench_volume_draw_finish(DBenchData *vedata)
 {
   DBenchPrivateData *wpd = vedata->stl->wpd;
 
