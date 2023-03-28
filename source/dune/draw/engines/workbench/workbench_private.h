@@ -167,12 +167,12 @@ typedef struct DBenchUBOMaterial {
   uint32_t packed_data;
 } DBENCHUBOMaterial;
 
-typedef struct DBENCH_UBO_World {
+typedef struct DBenchUBOWorld {
   float viewport_size[2], viewport_size_inv[2];
   float object_outline_color[4];
   float shadow_direction_vs[4];
   float shadow_focus, shadow_shift, shadow_mul, shadow_add;
-  DBENCH_UBO_Light lights[4];
+  DBenchUBOLight lights[4];
   float ambient_color[4];
 
   int cavity_sample_start;
@@ -251,9 +251,9 @@ typedef struct DBenchPrivateData {
   /** This is a parallelogram, so only 2 normal and distance to the edges. */
   float shadow_near_sides[2][4];
   /* Shadow shading groups. First array elem is for non-manifold geom and second for manifold. */
-  struct DRWShadingGroup *shadow_pass_grp[2];
-  struct DRWShadingGroup *shadow_fail_grp[2];
-  struct DRWShadingGroup *shadow_fail_caps_grp[2];
+  struct DrawShadingGroup *shadow_pass_grp[2];
+  struct DrawShadingGroup *shadow_fail_grp[2];
+  struct DrawShadingGroup *shadow_fail_caps_grp[2];
   /** If the shadow has changed direction and ob bboxes needs to be updated. */
   bool shadow_changed;
 
@@ -439,15 +439,15 @@ void workbench_shader_depth_of_field_get(GPUShader **prepare_sh,
 void workbench_shader_free(void);
 
 /* workbench_effect_antialiasing.c */
-int workbench_antialiasing_sample_count_get(WORKBENCH_PrivateData *wpd);
-void workbench_antialiasing_engine_init(WORKBENCH_Data *vedata);
-void workbench_antialiasing_cache_init(WORKBENCH_Data *vedata);
-void workbench_antialiasing_view_updated(WORKBENCH_Data *vedata);
+int workbench_antialiasing_sample_count_get(DBenchPrivateData *wpd);
+void workbench_antialiasing_engine_init(DBenchData *vedata);
+void workbench_antialiasing_cache_init(DBenchData *vedata);
+void workbench_antialiasing_view_updated(DBenchData *vedata);
 /**
  * Return true if render is not cached.
  */
-bool workbench_antialiasing_setup(WORKBENCH_Data *vedata);
-void workbench_antialiasing_draw_pass(WORKBENCH_Data *vedata);
+bool workbench_antialiasing_setup(DBenchData *vedata);
+void workbench_antialiasing_draw_pass(DBenchData *vedata);
 
 /* workbench_effect_cavity.c */
 void workbench_cavity_data_update(DBenchPrivateData *wpd, DBenchUBOWorld *wd);
@@ -458,33 +458,32 @@ void workbench_cavity_cache_init(DBenchData *data);
 void workbench_outline_cache_init(DBenchData *data);
 /* workbench_effect_dof.c */
 void workbench_dof_engine_init(DBench_Data *vedata);
-void workbench_dof_cache_init(WORKBENCH_Data *vedata);
-void workbench_dof_draw_pass(DBench
- Data *vedata);
+void workbench_dof_cache_init(DBenchData *vedata);
+void workbench_dof_draw_pass(DBenchData *vedata);
 
 /* workbench_materials.c */
 void workbench_material_ubo_data(DBenchPrivateData *wpd,
                                  Object *ob,
                                  Material *mat,
-                                 WORKBENCH_UBO_Material *data,
+                                 DBenchUBOMaterial *data,
                                  eV3DShadingColorType color_type);
 
-DrawShadingGroup *workbench_material_setup_ex(WORKBENCH_PrivateData *wpd,
+DrawShadingGroup *workbench_material_setup_ex(DBenchPrivateData *wpd,
                                              Object *ob,
                                              int mat_nr,
                                              eV3DShadingColorType color_type,
-                                             eWORKBENCH_DataType datatype,
+                                             eDBenchDataType datatype,
                                              bool *r_transp);
 /**
  * If `ima` is null, search appropriate image node but will fallback to purple texture otherwise.
  */
-DrawShadingGroup *workbench_image_setup_ex(WORKBENCH_PrivateData *wpd,
+DrawShadingGroup *workbench_image_setup_ex(DBenchPrivateData *wpd,
                                           Object *ob,
                                           int mat_nr,
                                           Image *ima,
                                           ImageUser *iuser,
                                           eGPUSamplerState sampler,
-                                          eWORKBENCH_DataType datatype);
+                                          eDBenchDataType datatype);
 
 #define WORKBENCH_OBJECT_DATATYPE(ob) \
   ((ob->type == OB_POINTCLOUD) ? WORKBENCH_DATATYPE_POINTCLOUD : WORKBENCH_DATATYPE_MESH)
@@ -500,22 +499,22 @@ DrawShadingGroup *workbench_image_setup_ex(WORKBENCH_PrivateData *wpd,
   workbench_image_setup_ex(wpd, ob, mat_nr, ima, iuser, interp, WORKBENCH_DATATYPE_HAIR)
 
 /* workbench_data.c */
-void workbench_private_data_alloc(WORKBENCH_StorageList *stl);
-void workbench_private_data_init(WORKBENCH_PrivateData *wpd);
-void workbench_update_world_ubo(WORKBENCH_PrivateData *wpd);
-void workbench_update_material_ubos(WORKBENCH_PrivateData *wpd);
-struct GPUUniformBuf *workbench_material_ubo_alloc(WORKBENCH_PrivateData *wpd);
+void workbench_private_data_alloc(DBenchStorageList *stl);
+void workbench_private_data_init(DBenchPrivateData *wpd);
+void workbench_update_world_ubo(DBenchPrivateData *wpd);
+void workbench_update_material_ubos(DBenchPrivateData *wpd);
+struct GPUUniformBuf *workbench_material_ubo_alloc(DBenchPrivateData *wpd);
 
 /* workbench_volume.c */
-void workbench_volume_engine_init(WORKBENCH_Data *vedata);
-void workbench_volume_cache_init(WORKBENCH_Data *vedata);
-void workbench_volume_cache_populate(WORKBENCH_Data *vedata,
+void workbench_volume_engine_init(DBenchData *vedata);
+void workbench_volume_cache_init(DBenchData *vedata);
+void workbench_volume_cache_populate(DBenchData *vedata,
                                      struct Scene *scene,
                                      struct Object *ob,
                                      struct ModifierData *md,
                                      eV3DShadingColorType color_type);
-void workbench_volume_draw_pass(WORKBENCH_Data *vedata);
-void workbench_volume_draw_finish(WORKBENCH_Data *vedata);
+void workbench_volume_draw_pass(DBenchData *vedata);
+void workbench_volume_draw_finish(DBenchData *vedata);
 
 /* workbench_engine.c */
 void workbench_engine_init(void *ved);
