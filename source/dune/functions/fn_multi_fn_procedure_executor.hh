@@ -1,12 +1,8 @@
 #pragma once
 
-/** \file
- * \ingroup fn
- */
+#include "fn_multi_fn_procedure.hh"
 
-#include "FN_multi_function_procedure.hh"
-
-namespace blender::fn {
+namespace dune::fn {
 
 /** A multi-function that executes a procedure internally. */
 class MFProcedureExecutor : public MultiFunction {
