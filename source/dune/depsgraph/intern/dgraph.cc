@@ -99,7 +99,7 @@ IdNode *DGraph::add_id_node(Id *id, Id *id_cow_hint)
   lib_assert((id->tag & LIB_TAG_COPIED_ON_WRITE) == 0);
   IdNode *id_node = find_id_node(id);
   if (!id_node) {
-    DNodeFactory *factory = type_get_factory(NodeType::ID_REF);
+    NodeFactory *factory = type_get_factory(NodeType::ID_REF);
     id_node = (IdNode *)factory->create_node(id, "", id->name);
     id_node->init_copy_on_write(id_cow_hint);
     /* Register node in Id hash.
@@ -134,7 +134,7 @@ static void clear_id_nodes_conditional(DGraph::IdDNodes *id_nodes, const FilterF
     if (!dgraph_copy_on_write_is_expanded(id_node->id_cow)) {
       continue;
     }
-    const ID_Type id_type = GS(id_node->id_cow->name);
+    const IdType id_type = GS(id_node->id_cow->name);
     if (filter(id_type)) {
       id_node->destroy();
     }
@@ -143,7 +143,7 @@ static void clear_id_nodes_conditional(DGraph::IdDNodes *id_nodes, const FilterF
 
 void DGraph::clear_id_nodes()
 {
-  /* Free memory used by ID nodes. */
+  /* Free memory used by id nodes. */
 
   /* Stupid workaround to ensure we free IDs in a proper order. */
   clear_id_nodes_conditional(&id_nodes, [](IdType id_type) { return id_type == ID_SCE; });
@@ -171,7 +171,7 @@ Relation *DGraph::add_new_relation(Node *from, Node *to, const char *description
   }
 
 #ifndef NDEBUG
-  if (from->type == NodeType::OPERATION && to->type == NodeType::OPERATION) {
+  if (from->type == NodeType::OP && to->type == NodeType::OPERATION) {
     OpNode *op_from = static_cast<OpNode *>(from);
     OpNode *op_to = static_cast<OpNode *>(to);
     lib_assert(op_to->owner->type != NodeType::COPY_ON_WRITE ||
@@ -294,9 +294,9 @@ void dgraph_free(DGraph *graph)
   delete dgraph;
 }
 
-bool deg_is_evaluating(const struct DGraph *dgraph)
+bool dgraph_is_evaluating(const struct DGraph *dgraph)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
+  const dgraph::DGraph *deg_graph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
   return dgraph->is_evaluating;
 }
 
