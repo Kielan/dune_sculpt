@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "types_id.h" /* for ID_Type and INDEX_ID_MAX */
 
@@ -38,7 +38,7 @@ struct TimeSourceNode;
 /* Dependency Graph object */
 struct DGraph {
   typedef Vector<OpNode *> OpNodes;
-  typedef Vector<IdNode *> IdDNodes;
+  typedef Vector<IdNode *> IdNodes;
 
   DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode);
   ~DGraph();
@@ -92,7 +92,7 @@ struct DGraph {
   bool need_visibility_update;
   bool need_visibility_time_update;
 
-  /* Indicates which ID types were updated. */
+  /* Indicates which id types were updated. */
   char id_type_updated[INDEX_ID_MAX];
 
   /* Indicates type of IDs present in the depsgraph. */
