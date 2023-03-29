@@ -75,41 +75,41 @@ ListBase *dgraph_get_collision_relations(const Depsgraph *graph,
   }
   /* NOTE: nullptr is a valid lookup key here as it means that the relation is not bound to a
    * specific collection. */
-  ID *collection_orig = deg_get_original_id(object_id_safe(collection));
+  Id *collection_orig = deg_get_original_id(object_id_safe(collection));
   return hash->lookup_default(collection_orig, nullptr);
 }
 
-/********************** Depsgraph Building API ************************/
+/********************** DGraph Building API ************************/
 
-void deg_add_collision_relations(DepsNodeHandle *handle,
+void dgraph_add_collision_relations(NodeHandle *handle,
                                  Object *object,
                                  Collection *collection,
                                  unsigned int modifier_type,
-                                 deg_CollobjFilterFunction filter_function,
+                                 DGraph_CollobjFilterFn filter_fn,
                                  const char *name)
 {
-  Depsgraph *depsgraph = deg_get_graph_from_handle(handle);
-  deg::Depsgraph *deg_graph = (deg::Depsgraph *)depsgraph;
-  ListBase *relations = build_collision_relations(deg_graph, collection, modifier_type);
+  DGraph *dgraph = dgraph_get_graph_from_handle(handle);
+  dgraph::DGraph *dgraph_graph = (dgraph::DGraph *)dgraph;
+  ListBase *relations = build_collision_relations(dgraph, collection, modifier_type);
   LISTBASE_FOREACH (CollisionRelation *, relation, relations) {
     Object *ob1 = relation->ob;
     if (ob1 == object) {
       continue;
     }
-    if (filter_function == nullptr ||
-        filter_function(ob1, dune_modifiers_findby_type(ob1, (ModifierType)modifier_type))) {
-      deg_add_object_pointcache_relation(handle, ob1, DEG_OB_COMP_TRANSFORM, name);
-      deg_add_object_pointcache_relation(handle, ob1, DEG_OB_COMP_GEOMETRY, name);
+    if (filter_fn == nullptr ||
+        filter_fn(ob1, dune_modifiers_findby_type(ob1, (ModifierType)modifier_type))) {
+      dgraph_add_object_pointcache_relation(handle, ob1, DGRAPH_OB_COMP_TRANSFORM, name);
+      dgraph_add_object_pointcache_relation(handle, ob1, DGRAPH_OB_COMP_GEOMETRY, name);
     }
   }
 }
 
-void dgraph_add_forcefield_relations(DNodeHandle *handle,
-                                  Object *object,
-                                  EffectorWeights *effector_weights,
-                                  bool add_absorption,
-                                  int skip_forcefield,
-                                  const char *name)
+void dgraph_add_forcefield_relations(NodeHandle *handle,
+                                     Object *object,
+                                     EffectorWeights *effector_weights,
+                                     bool add_absorption,
+                                     int skip_forcefield,
+                                     const char *name)
 {
   DGraph *dgraph = dgraph_get_graph_from_handle(handle);
   dgraph::DGraph *dgraph = (dgraph::DGraph *)dgraph;
@@ -155,9 +155,9 @@ namespace dune::dgraph {
 
 ListBase *build_effector_relations(DGraph *graph, Collection *collection)
 {
-  Map<const Id *, ListBase *> *hash = graph->physics_relations[DEG_PHYS_EFFECTOR];
+  Map<const Id *, ListBase *> *hash = graph->physics_relations[DGRAPH_PHYS_EFFECTOR];
   if (hash == nullptr) {
-    graph->physics_relations[DGRAPH_PHYS_EFFECTOR] = new Map<const ID *, ListBase *>();
+    graph->physics_relations[DGRAPH_PHYS_EFFECTOR] = new Map<const Id *, ListBase *>();
     hash = graph->physics_relations[DGRAPH_PHYS_EFFECTOR];
   }
   /* If collection is nullptr still use it as a key.
@@ -195,7 +195,7 @@ ListBase *build_collision_relations(DGraph *graph,
 void clear_physics_relations(DGraph *graph)
 {
   for (int i = 0; i < DGRAPH_PHYSICS_RELATIONS_NUM; i++) {
-    Map<const ID *, ListBase *> *hash = graph->physics_relations[i];
+    Map<const Id *, ListBase *> *hash = graph->physics_relations[i];
     if (hash) {
       const ePhysicsRelationType type = (ePhysicsRelationType)i;
 
@@ -207,7 +207,7 @@ void clear_physics_relations(DGraph *graph)
           break;
         case DGRAPH_PHYS_COLLISION:
         case DGRAPH_PHYS_SMOKE_COLLISION:
-        case DEG_PHYS_DYNAMIC_BRUSH:
+        case DGRAPH_PHYS_DYNAMIC_BRUSH:
           for (ListBase *list : hash->values()) {
             dune_collision_relations_free(list);
           }
