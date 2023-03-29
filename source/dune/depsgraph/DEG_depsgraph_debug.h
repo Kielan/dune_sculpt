@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-struct Depsgraph;
+struct DGraph;
 struct Scene;
 struct ViewLayer;
 
@@ -16,11 +16,11 @@ struct ViewLayer;
 
 /* NOTE: Those flags are same bit-mask as #G.debug_flags */
 
-void deg_debug_flags_set(struct Depsgraph *depsgraph, int flags);
-int deg_debug_flags_get(const struct Depsgraph *depsgraph);
+void dgraph_debug_flags_set(struct DGraph *dgraph, int flags);
+int dgraph_debug_flags_get(const struct DGraph *dgraph);
 
-void deg_debug_name_set(struct Depsgraph *depsgraph, const char *name);
-const char *deg_debug_name_get(struct Depsgraph *depsgraph);
+void dgraph_debug_name_set(struct DGraph *dgraph, const char *name);
+const char *dgraph_debug_name_get(struct DGraph *dgraph);
 
 /* ------------------------------------------------ */
 
@@ -30,7 +30,7 @@ const char *deg_debug_name_get(struct Depsgraph *depsgraph);
  * param[out] r_operations: The number of operation nodes in the graph.
  * param[out] r_relations:  The number of relations between (executable) nodes in the graph.
  */
-void deg_stats_simple(const struct Depsgraph *graph,
+void dgraph_stats_simple(const struct DGraph *graph,
                       size_t *r_outer,
                       size_t *r_operations,
                       size_t *r_relations);
@@ -38,26 +38,26 @@ void deg_stats_simple(const struct Depsgraph *graph,
 /* ************************************************ */
 /* Diagram-Based Graph Debugging */
 
-void deg_debug_relations_graphviz(const struct Depsgraph *graph, FILE *fp, const char *label);
+void dgraph_debug_relations_graphviz(const struct DGraph *graph, FILE *fp, const char *label);
 
-void deg_debug_stats_gnuplot(const struct Depsgraph *graph,
-                             FILE *fp,
-                             const char *label,
-                             const char *output_filename);
+void dgraph_debug_stats_gnuplot(const struct DGraph *graph,
+                                FILE *fp,
+                                const char *label,
+                                const char *output_filename);
 
 /* ************************************************ */
 
 /** Compare two dependency graphs. */
-bool deg_debug_compare(const struct Depsgraph *graph1, const struct Depsgraph *graph2);
+bool dgraph_debug_compare(const struct DGraph *graph1, const struct Depsgraph *graph2);
 
 /** Check that dependencies in the graph are really up to date. */
-bool deg_debug_graph_relations_validate(struct Depsgraph *graph,
+bool dgraph_debug_graph_relations_validate(struct DGraph *graph,
                                         struct Main *dmain,
                                         struct Scene *scene,
                                         struct ViewLayer *view_layer);
 
 /** Perform consistency check on the graph. */
-bool deg_debug_consistency_check(struct Depsgraph *graph);
+bool dgraph_debug_consistency_check(struct DGraph *graph);
 
 #ifdef __cplusplus
 } /* extern "C" */
