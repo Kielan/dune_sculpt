@@ -47,7 +47,7 @@
 #include "types_simulation.h"
 #include "types_sound.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
 #  include "types_curve.h"
@@ -975,7 +975,7 @@ void discard_edit_mode_pointers(ID *id_cow)
       break;
     case ID_SCE:
       /* Not really edit mode but still needs to run before
-       * BKE_libblock_free_datablock() */
+       * dune_libblock_free_datablock() */
       discard_scene_pointers(id_cow);
       break;
     default:
@@ -1016,41 +1016,41 @@ void deg_free_copy_on_write_datablock(ID *id_cow)
       break;
   }
   discard_edit_mode_pointers(id_cow);
-  BKE_libblock_free_data_py(id_cow);
-  BKE_libblock_free_datablock(id_cow, 0);
-  BKE_libblock_free_data(id_cow, false);
+  dune_libblock_free_data_py(id_cow);
+  dune_libblock_free_datablock(id_cow, 0);
+  dune_libblock_free_data(id_cow, false);
   /* Signal datablock as not being expanded. */
   id_cow->name[0] = '\0';
 }
 
-void deg_evaluate_copy_on_write(struct ::Depsgraph *graph, const IDNode *id_node)
+void dgraph_evaluate_copy_on_write(struct ::DGraph *graph, const IdNode *id_node)
 {
-  const Depsgraph *depsgraph = reinterpret_cast<const Depsgraph *>(graph);
-  DEG_debug_print_eval(graph, __func__, id_node->id_orig->name, id_node->id_cow);
-  if (id_node->id_orig == &depsgraph->scene->id) {
+  const DGraph *dgraph = reinterpret_cast<const DGraph *>(graph);
+  dgraph_debug_print_eval(graph, __func__, id_node->id_orig->name, id_node->id_cow);
+  if (id_node->id_orig == &dgraph->scene->id) {
     /* NOTE: This is handled by eval_ctx setup routines, which
      * ensures scene and view layer pointers are valid. */
     return;
   }
-  deg_update_copy_on_write_datablock(depsgraph, id_node);
+  dgraph_update_copy_on_write_datablock(dgraph, id_node);
 }
 
-bool deg_validate_copy_on_write_datablock(ID *id_cow)
+bool dgraph_validate_copy_on_write_datablock(Id *id_cow)
 {
   if (id_cow == nullptr) {
     return false;
   }
   ValidateData data;
   data.is_valid = true;
-  BKE_library_foreach_ID_link(
-      nullptr, id_cow, foreach_libblock_validate_callback, &data, IDWALK_NOP);
+  dune_lib_foreach_id_link(
+      nullptr, id_cow, foreach_libblock_validate_cb, &data, IDWALK_NOP);
   return data.is_valid;
 }
 
-void deg_tag_copy_on_write_id(ID *id_cow, const ID *id_orig)
+void dgraph_tag_copy_on_write_id(If *id_cow, const Id *id_orig)
 {
-  BLI_assert(id_cow != id_orig);
-  BLI_assert((id_orig->tag & LIB_TAG_COPIED_ON_WRITE) == 0);
+  lib_assert(id_cow != id_orig);
+  lib_assert((id_orig->tag & LIB_TAG_COPIED_ON_WRITE) == 0);
   id_cow->tag |= LIB_TAG_COPIED_ON_WRITE;
   /* This ID is no longer localized, is a self-sustaining copy now. */
   id_cow->tag &= ~LIB_TAG_LOCALIZED;
