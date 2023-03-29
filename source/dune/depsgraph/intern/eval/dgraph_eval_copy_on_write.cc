@@ -914,7 +914,7 @@ Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, Id *id_orig)
 
 namespace {
 
-void discard_armature_edit_mode_pointers(Id *id_cow)
+void discard_armature_edit_mode_ptrs(Id *id_cow)
 {
   DArmature *armature_cow = (DArmature *)id_cow;
   armature_cow->edbo = nullptr;
@@ -945,7 +945,7 @@ void discard_mesh_edit_mode_ptrs(Id *id_cow)
   mesh_cow->edit_mesh = nullptr;
 }
 
-void discard_scene_pointers(Id *id_cow)
+void discard_scene_ptrs(Id *id_cow)
 {
   Scene *scene_cow = (Scene *)id_cow;
   scene_cow->toolsettings = nullptr;
