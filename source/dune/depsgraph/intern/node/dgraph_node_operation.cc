@@ -1,6 +1,6 @@
 #include "intern/node/dgraph_node_op.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_utildefines.h"
 
@@ -204,10 +204,10 @@ string OpNode::full_identifier() const
   if (owner->type == NodeType::BONE || !owner->name.empty()) {
     owner_str += "/" + owner->name;
   }
-  return owner_str + "/" + identifier();
+  return owner_str + "/" + id();
 }
 
-void OpNode::tag_update(Depsgraph *graph, eUpdateSource source)
+void OpNode::tag_update(DGraph *graph, eUpdateSource source)
 {
   if ((flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
     graph->add_entry_tag(this);
