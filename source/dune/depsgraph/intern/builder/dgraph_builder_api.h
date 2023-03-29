@@ -1,13 +1,13 @@
 #pragma once
 
-#include "intern/node/deg_node.h"
-#include "intern/node/deg_node_operation.h"
+#include "intern/node/dgraph_node.h"
+#include "intern/node/dgraph_node_operation.h"
 
 struct Id;
 struct ApiPtr;
 struct ApiProp;
 
-namespace dune::deg {
+namespace dune::dgraph {
 
 struct DGraph;
 struct Node;
@@ -86,4 +86,4 @@ class ApiNodeQuery {
 
 bool api_prop_affects_params_node(const ApiPtr *ptr, const ApiProp *prop);
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
