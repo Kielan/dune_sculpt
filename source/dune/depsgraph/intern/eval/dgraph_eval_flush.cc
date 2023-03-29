@@ -15,7 +15,7 @@
 #include "types_object.h"
 #include "types_scene.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
 #include "dgraph.h"
 
@@ -350,7 +350,7 @@ void dgraph_flush_updates(DGraph *graph)
   FlushQueue queue;
   flush_schedule_entrypoints(graph, &queue);
   /* Prepare update context for editors. */
-  DGraphEditorUpdateContext update_ctx;
+  DGraphEditorUpdateCtx update_ctx;
   update_ctx.dmain = dmain;
   update_ctx.dgraph = (::DGraph *)graph;
   update_ctx.scene = graph->scene;
@@ -364,7 +364,7 @@ void dgraph_flush_updates(DGraph *graph)
       op_node->flag |= DEPSOP_FLAG_NEEDS_UPDATE;
       /* Inform corresponding ID and component nodes about the change. */
       ComponentNode *comp_node = op_node->owner;
-      IDNode *id_node = comp_node->owner;
+      IdNode *id_node = comp_node->owner;
       flush_handle_id_node(id_node);
       flush_handle_component_node(id_node, comp_node, &queue);
       /* Flush to nodes along links. */
