@@ -1,5 +1,5 @@
 /**
- * Public API for Depsgraph
+ * Public API for DGraph
  * ================
  *
  * The dependency graph tracks relations between various pieces of data in
@@ -188,28 +188,28 @@ typedef void (*DEG_EditorUpdateIDCb)(const DEGEditorUpdateContext *update_ctx, s
 typedef void (*DEG_EditorUpdateSceneCb)(const DEGEditorUpdateContext *update_ctx, bool updated);
 
 /** Set callbacks which are being called when depsgraph changes. */
-void deg_editors_set_update_cb(DEG_EditorUpdateIDCb id_func, DEG_EditorUpdateSceneCb scene_func);
+void dgraph_editors_set_update_cb(DEG_EditorUpdateIDCb id_func, DEG_EditorUpdateSceneCb scene_func);
 
 /* -------------------------------------------------------------------- */
 /** Evaluation */
 
 bool deg_is_evaluating(const struct Depsgraph *depsgraph);
 
-bool deg_is_active(const struct Depsgraph *depsgraph);
-void deg_make_active(struct Depsgraph *depsgraph);
-void deg_make_inactive(struct Depsgraph *depsgraph);
+bool dgraph_is_active(const struct Depsgraph *depsgraph);
+void dgraph_make_active(struct Depsgraph *depsgraph);
+void dgraph_make_inactive(struct Depsgraph *depsgraph);
 
 /* -------------------------------------------------------------------- */
 /** Evaluation Debug **/
 
-void deg_debug_print_begin(struct Depsgraph *depsgraph);
+void dgraph_debug_print_begin(struct Depsgraph *depsgraph);
 
-void deg_debug_print_eval(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval(struct Depsgraph *depsgraph,
                           const char *function_name,
                           const char *object_name,
                           const void *object_address);
 
-void deg_debug_print_eval_subdata(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval_subdata(struct Depsgraph *depsgraph,
                                   const char *function_name,
                                   const char *object_name,
                                   const void *object_address,
@@ -217,7 +217,7 @@ void deg_debug_print_eval_subdata(struct Depsgraph *depsgraph,
                                   const char *subdata_name,
                                   const void *subdata_address);
 
-void deg_debug_print_eval_subdata_index(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
                                         const char *function_name,
                                         const char *object_name,
                                         const void *object_address,
@@ -226,7 +226,7 @@ void deg_debug_print_eval_subdata_index(struct Depsgraph *depsgraph,
                                         const void *subdata_address,
                                         int subdata_index);
 
-void deg_debug_print_eval_parent_typed(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
                                        const char *function_name,
                                        const char *object_name,
                                        const void *object_address,
@@ -234,7 +234,7 @@ void deg_debug_print_eval_parent_typed(struct Depsgraph *depsgraph,
                                        const char *parent_name,
                                        const void *parent_address);
 
-void deg_debug_print_eval_time(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval_time(struct Depsgraph *depsgraph,
                                const char *function_name,
                                const char *object_name,
                                const void *object_address,
