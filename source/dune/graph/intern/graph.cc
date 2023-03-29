@@ -15,28 +15,28 @@
 #include "dune_idtype.h"
 #include "dune_scene.h"
 
-#include "dgraph.h"
-#include "dgraph_debug.h"
+#include "graph.h"
+#include "graph_debug.h"
 
-#include "intern/dgraph_physics.h"
-#include "intern/dgraph_registry.h"
-#include "intern/dgraph_relation.h"
-#include "intern/dgraph_update.h"
+#include "intern/graph_physics.h"
+#include "intern/graph_registry.h"
+#include "intern/graph_relation.h"
+#include "intern/graph_update.h"
 
-#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
 
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_factory.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_factory.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_operation.h"
+#include "intern/node/graph_node_time.h"
 
 namespace graph = dune::graph;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-DGraph::DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
+Graph::Graph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
     : time_source(nullptr),
       need_update(true),
       need_visibility_update(true),
@@ -61,7 +61,7 @@ DGraph::DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode
   add_time_source();
 }
 
-DGraph::~DGraph()
+Graph::~Graph()
 {
   clear_id_nodes();
   delete time_source;
@@ -70,31 +70,31 @@ DGraph::~DGraph()
 
 /* Node Management ---------------------------- */
 
-TimeSourceNode *DGraph::add_time_source()
+TimeSourceNode *Graph::add_time_source()
 {
   if (time_source == nullptr) {
-    DNodeFactory *factory = type_get_factory(NodeType::TIMESOURCE);
+    NodeFactory *factory = type_get_factory(NodeType::TIMESOURCE);
     time_source = (TimeSourceNode *)factory->create_node(nullptr, "", "Time Source");
   }
   return time_source;
 }
 
-TimeSourceNode *DGraph::find_time_source() const
+TimeSourceNode *Graph::find_time_source() const
 {
   return time_source;
 }
 
-void DGraph::tag_time_source()
+void Graph::tag_time_source()
 {
-  time_source->tag_update(this, DGRAPH_UPDATE_SOURCE_TIME);
+  time_source->tag_update(this, GRAPH_UPDATE_SOURCE_TIME);
 }
 
-IdNode *DGraph::find_id_node(const Id *id) const
+IdNode *Graph::find_id_node(const Id *id) const
 {
   return id_hash.lookup_default(id, nullptr);
 }
 
-IdNode *DGraph::add_id_node(Id *id, Id *id_cow_hint)
+IdNode *Graph::add_id_node(Id *id, Id *id_cow_hint)
 {
   lib_assert((id->tag & LIB_TAG_COPIED_ON_WRITE) == 0);
   IdNode *id_node = find_id_node(id);
@@ -114,8 +114,8 @@ IdNode *DGraph::add_id_node(Id *id, Id *id_cow_hint)
   return id_node;
 }
 
-template<typename FilterFunc>
-static void clear_id_nodes_conditional(DGraph::IdDNodes *id_nodes, const FilterFn &filter)
+template<typename FilterFn>
+static void clear_id_nodes_conditional(Graph::IdNodes *id_nodes, const FilterFn &filter)
 {
   for (IdNode *id_node : *id_nodes) {
     if (id_node->id_cow == nullptr) {
@@ -131,7 +131,7 @@ static void clear_id_nodes_conditional(DGraph::IdDNodes *id_nodes, const FilterF
        * scene). */
       continue;
     }
-    if (!dgraph_copy_on_write_is_expanded(id_node->id_cow)) {
+    if (!graph_copy_on_write_is_expanded(id_node->id_cow)) {
       continue;
     }
     const IdType id_type = GS(id_node->id_cow->name);
@@ -141,7 +141,7 @@ static void clear_id_nodes_conditional(DGraph::IdDNodes *id_nodes, const FilterF
   }
 }
 
-void DGraph::clear_id_nodes()
+void Graph::clear_id_nodes()
 {
   /* Free memory used by id nodes. */
 
@@ -159,7 +159,7 @@ void DGraph::clear_id_nodes()
   clear_physics_relations(this);
 }
 
-Relation *DGraph::add_new_relation(Node *from, Node *to, const char *description, int flags)
+Relation *Graph::add_new_relation(Node *from, Node *to, const char *description, int flags)
 {
   Relation *rel = nullptr;
   if (flags & RELATION_CHECK_BEFORE_ADD) {
@@ -185,9 +185,9 @@ Relation *DGraph::add_new_relation(Node *from, Node *to, const char *description
   return rel;
 }
 
-Relation *DGraph::check_nodes_connected(const Node *from,
-                                        const Node *to,
-                                        const char *description)
+Relation *Graph::check_nodes_connected(const Node *from,
+                                       const Node *to,
+                                       const char *description)
 {
   for (Relation *rel : from->outlinks) {
     lib_assert(rel->from == from);
@@ -204,7 +204,7 @@ Relation *DGraph::check_nodes_connected(const Node *from,
 
 /* Low level tagging -------------------------------------- */
 
-void DGraph::add_entry_tag(OpNode *node)
+void Graph::add_entry_tag(OpNode *node)
 {
   /* Sanity check. */
   if (node == nullptr) {
@@ -217,14 +217,14 @@ void DGraph::add_entry_tag(OpNode *node)
   entry_tags.add(node);
 }
 
-void DGraph::clear_all_nodes()
+void Graph::clear_all_nodes()
 {
   clear_id_nodes();
   delete time_source;
   time_source = nullptr;
 }
 
-Id *DGraph::get_cow_id(const Id *id_orig) const
+Id *Graph::get_cow_id(const Id *id_orig) const
 {
   IdNode *id_node = find_id_node(id_orig);
   if (id_node == nullptr) {
@@ -255,73 +255,73 @@ Id *DGraph::get_cow_id(const Id *id_orig) const
 /* **************** */
 /* Public Graph API */
 
-Depsgraph *dgraph_new(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
+Gaph *graph_new(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
 {
-  dgraph::DGraph *dgraph = new dgraph::DGraph(dmain, scene, view_layer, mode);
-  dgraph::register_graph(dgraph);
-  return reinterpret_cast<DGraph *>(dgraph);
+  graph::Graph *dgraph = new graph::Graph(dmain, scene, view_layer, mode);
+  graph::register_graph(dgraph);
+  return reinterpret_cast<Graph *>(graph);
 }
 
-void dgraph_replace_owners(struct DGraph *dgraph,
-                              Main *dmain,
-                              Scene *scene,
-                              ViewLayer *view_layer)
+void graph_replace_owners(struct Graph *graph,
+                          Main *dmain,
+                          Scene *scene,
+                          VewLayer *view_layer)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
 
-  const bool do_update_register = dgraph->dmain != bmain;
-  if (do_update_register && dgraph->dmain != nullptr) {
-    deg::unregister_graph(dgraph);
+  const bool do_update_register = graph->dmain != dmin;
+  if (do_update_register && graph->dmain != nullptr) {
+    graph::register_graph(graph);
   }
 
-  dgraph->dmain = dmain;
-  dgraph->scene = scene;
-  dgraph->view_layer = view_layer;
+  graph->dmain = dmain;
+  graph->scene = scene;
+  graph->view_layer = view_layer;
 
   if (do_update_register) {
-    dgraph::register_graph(dgraph);
+    graph::register_graph(graph);
   }
 }
 
-void dgraph_free(DGraph *graph)
+void graph_free(Graph *graph)
 {
   if (graph == nullptr) {
     return;
   }
-  using dgraph::DGraph;
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(graph);
-  dgraph::unregister_graph(dgraph);
-  delete dgraph;
+  using graph::Graph;
+  graph::Graph *dgraph = reinterpret_cast<graph::Graph *>(graph);
+  graph::unregister_graph(graph);
+  delete graph;
 }
 
-bool dgraph_is_evaluating(const struct DGraph *dgraph)
+bool graph_is_evaluating(const struct Graph *graph)
 {
-  const dgraph::DGraph *deg_graph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
-  return dgraph->is_evaluating;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->is_evaluating;
 }
 
-bool dgraph_is_active(const struct DGraph *dgraph)
+bool graph_is_active(const struct Graph *graph)
 {
-  if (dgraph == nullptr) {
+  if (graph == nullptr) {
     /* Happens for such cases as work object in what_does_obaction(),
      * and sine render pipeline parts. Shouldn't really be accepting
      * nullptr dgraph, but is quite hard to get proper one in those
      * cases. */
     return false;
   }
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
-  return dgraph->is_active;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->is_active;
 }
 
-void dgraph_make_active(struct DGraph *dgraph)
+void graph_make_active(struct Graph *graph)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
-  dgraph->is_active = true;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  graph->is_active = true;
   /* TODO: Copy data from evaluated state to original. */
 }
 
-void dgraph_make_inactive(struct DGraph *dgraph)
+void graph_make_inactive(struct Graph *graph)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
-  dgraph->is_active = false;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  graph->is_active = false;
 }
