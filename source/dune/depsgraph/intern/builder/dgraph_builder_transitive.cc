@@ -1,6 +1,6 @@
 #include "intern/builder/dgraph_builder_transitive.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "intern/node/dgraph_node.h"
 #include "intern/node/dgraph_node_component.h"
@@ -83,7 +83,7 @@ void dgraph_transitive_reduction(DGraph *graph)
     num_removed_relations += relations_to_remove.size();
     relations_to_remove.clear();
   }
-  DEG_DEBUG_PRINTF((::DGraph *)graph, BUILD, "Removed %d relations\n", num_removed_relations);
+  DGRAPH_DEBUG_PRINTF((::DGraph *)graph, BUILD, "Removed %d relations\n", num_removed_relations);
 }
 
 }  // namespace dune::dgraph
