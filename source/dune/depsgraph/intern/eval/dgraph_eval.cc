@@ -130,37 +130,37 @@ bool check_op_node_visible(const DGraphEvalState *state, OpNode *op_node)
   /* Special case for dynamic visibility pass: the actual visibility is not yet known, so limit to
    * only operations which affects visibility. */
   if (state->stage == EvaluationStage::DYNAMIC_VISIBILITY) {
-    return op_node->flag & OperationFlag::DEPSOP_FLAG_AFFECTS_VISIBILITY;
+    return op_node->flag & OpFlag::DEPSOP_FLAG_AFFECTS_VISIBILITY;
   }
 
   return comp_node->affects_visible_id;
 }
 
-void calculate_pending_parents_for_node(const DepsgraphEvalState *state, OperationNode *node)
+void calculate_pending_parents_for_node(const DGraphEvalState *state, OperationNode *node)
 {
-  /* Update counters, applies for both visible and invisible IDs. */
+  /* Update counters, applies for both visible and invisible ids. */
   node->num_links_pending = 0;
   node->scheduled = false;
-  /* Invisible IDs requires no pending operations. */
-  if (!check_operation_node_visible(state, node)) {
+  /* Invisible ids requires no pending operations. */
+  if (!check_op_node_visible(state, node)) {
     return;
   }
   /* No need to bother with anything if node is not tagged for update. */
-  if ((node->flag & DEPSOP_FLAG_NEEDS_UPDATE) == 0) {
+  if ((node->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
     return;
   }
   for (Relation *rel : node->inlinks) {
-    if (rel->from->type == NodeType::OPERATION && (rel->flag & RELATION_FLAG_CYCLIC) == 0) {
-      OperationNode *from = (OperationNode *)rel->from;
-      /* TODO(sergey): This is how old layer system was checking for the
+    if (rel->from->type == NodeType::OP && (rel->flag & RELATION_FLAG_CYCLIC) == 0) {
+      OpNode *from = (OpNode *)rel->from;
+      /* TODO: This is how old layer system was checking for the
        * calculation, but how is it possible that visible object depends
        * on an invisible? This is something what is prohibited after
        * deg_graph_build_flush_layers(). */
-      if (!check_operation_node_visible(state, from)) {
+      if (!check_op_node_visible(state, from)) {
         continue;
       }
       /* No need to wait for operation which is up to date. */
-      if ((from->flag & DEPSOP_FLAG_NEEDS_UPDATE) == 0) {
+      if ((from->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
         continue;
       }
       ++node->num_links_pending;
@@ -168,33 +168,33 @@ void calculate_pending_parents_for_node(const DepsgraphEvalState *state, Operati
   }
 }
 
-void calculate_pending_parents_if_needed(DepsgraphEvalState *state)
+void calculate_pending_parents_if_needed(DGraphEvalState *state)
 {
   if (!state->need_update_pending_parents) {
     return;
   }
 
-  for (OperationNode *node : state->graph->operations) {
+  for (OpNode *node : state->graph->ops) {
     calculate_pending_parents_for_node(state, node);
   }
 
   state->need_update_pending_parents = false;
 }
 
-void initialize_execution(DepsgraphEvalState *state, Depsgraph *graph)
+void initialize_execution(DGraphEvalState *state, DGraph *graph)
 {
   /* Clear tags and other things which needs to be clear. */
   if (state->do_stats) {
-    for (OperationNode *node : graph->operations) {
+    for (OpNode *node : graph->operations) {
       node->stats.reset_current();
     }
   }
 }
 
-bool is_metaball_object_operation(const OperationNode *operation_node)
+bool is_metaball_object_op(const OpNode *op_node)
 {
-  const ComponentNode *component_node = operation_node->owner;
-  const IDNode *id_node = component_node->owner;
+  const ComponentNode *component_node = op_node->owner;
+  const IdNode *id_node = component_node->owner;
   if (GS(id_node->id_cow->name) != ID_OB) {
     return false;
   }
