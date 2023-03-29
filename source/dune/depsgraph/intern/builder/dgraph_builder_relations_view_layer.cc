@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <cstring> /* required for STREQ later on. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_dunelib.h"
 #include "lib_utildefines.h"
@@ -64,7 +64,7 @@ void DGraphRelationBuilder::build_freestyle_lineset(FreestyleLineSet *fls)
 
 void DGraphRelationBuilder::build_view_layer(Scene *scene,
                                              ViewLayer *view_layer,
-                                             eDepsNode_LinkedState_Type linked_state)
+                                             eDGraphNodeNode_LinkedState_Type linked_state)
 {
   /* Setup currently building context. */
   scene_ = scene;
