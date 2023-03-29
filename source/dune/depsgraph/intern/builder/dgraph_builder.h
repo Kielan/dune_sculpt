@@ -2,9 +2,9 @@
 
 struct Base;
 struct Id;
-struct DMain;
-struct DObject;
-struct DPoseChannel;
+struct Main;
+struct Object;
+struct PoseChannel;
 
 namespace dune {
 namespace dgraph {
