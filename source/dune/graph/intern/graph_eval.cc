@@ -10,64 +10,64 @@
 #include "types_object.h"
 #include "types_scene.h"
 
-#include "dgraph.h"
-#include "dgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "intern/eval/dgraph_eval.h"
-#include "intern/eval/dgraph_eval_flush.h"
+#include "intern/eval/graph_eval.h"
+#include "intern/eval/graph_eval_flush.h"
 
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_operation.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_op.h"
+#include "intern/node/graph_node_time.h"
 
-#include "intern/dgraph.h"
-#include "intern/dgraph_tag.h"
+#include "intern/graph.h"
+#include "intern/graph_tag.h"
 
-namespace dgraph = dune::dgraph;
+namespace graph = dune::graph;
 
-static void dgraph_flush_updates_and_refresh(dgraph::DGraph *dgraph)
+static void graph_flush_updates_and_refresh(graph::Graph *graph)
 {
   /* Update the time on the cow scene. */
-  if (dgraph->scene_cow) {
-    dune_scene_frame_set(dgraph->scene_cow, dgraph->frame);
+  if (graph->scene_cow) {
+    dune_scene_frame_set(graph->scene_cow, graph->frame);
   }
 
-  dgraph::graph_tag_ids_for_visible_update(dgraph);
-  dgraph::graph_flush_updates(dgraph);
-  dgraph::dgraph_evaluate_on_refresh(dgraph);
+  graph::graph_tag_ids_for_visible_update(graph);
+  graph::graph_flush_updates(graph);
+  graph::graph_evaluate_on_refresh(graph);
 }
 
-void dgraph_evaluate_on_refresh(DGraph *graph)
+void graph_evaluate_on_refresh(Graph *graph)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(graph);
-  const Scene *scene = dgraph_get_input_scene(graph);
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  const Scene *scene = graph_get_input_scene(graph);
   const float frame = dune_scene_frame_get(scene);
   const float ctime = dune_scene_ctime_get(scene);
 
-  if (dgraph->frame != frame || ctime != dgraph->ctime) {
-    dgraph->tag_time_source();
-    dgraph->frame = frame;
-    dgraph->ctime = ctime;
+  if (graph->frame != frame || ctime != graph->ctime) {
+    graph->tag_time_source();
+    graph->frame = frame;
+    graph->ctime = ctime;
   }
   else if (scene->id.recalc & ID_RECALC_FRAME_CHANGE) {
     /* Comparing graph & scene frame fails in the case of undo,
      * since the undo state is stored before updates from the frame change have been applied.
      * In this case reading back the undo state will behave as if no updates on frame change
      * is needed as the #Depsgraph.ctime & frame will match the values in the input scene.
-     * Use #ID_RECALC_FRAME_CHANGE to detect that recalculation is necessary. see: T66913. */
-    dgraph->tag_time_source();
+     * Use ID_RECALC_FRAME_CHANGE to detect that recalculation is necessary. see: T66913. */
+    graph->tag_time_source();
   }
 
-  dgraph_flush_updates_and_refresh(dgraph);
+  graph_flush_updates_and_refresh(graph);
 }
 
-void dgraph_evaluate_on_framechange(DGraph *graph, float frame)
+void graph_evaluate_on_framechange(Graph *graph, float frame)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(graph);
-  const Scene *scene = dgraph_get_input_scene(graph);
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  const Scene *scene = graph_get_input_scene(graph);
 
-  dgraph->tag_time_source();
-  dgraph->frame = frame;
-  dgraph->ctime = dune_scene_frame_to_ctime(scene, frame);
-  dgraph_flush_updates_and_refresh(dgraph);
+  graph->tag_time_source();
+  graph->frame = frame;
+  graph->ctime = dune_scene_frame_to_ctime(scene, frame);
+  graph_flush_updates_and_refresh(graph);
 }
