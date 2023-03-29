@@ -19,9 +19,9 @@ class RuntimeBackup {
   explicit RuntimeBackup(const Depsgraph *depsgraph);
 
   /* NOTE: Will reset all runtime fields which has been backed up to nullptr. */
-  void init_from_id(ID *id);
+  void init_from_id(Id *id);
 
-  /* Restore fields to the given ID. */
+  /* Restore fields to the given id. */
   void restore_to_id(Id *id);
 
   /* Denotes whether init_from_id did put anything into the backup storage.
@@ -35,7 +35,7 @@ class RuntimeBackup {
    * copy-on-write mechanism. */
   bool have_backup;
 
-  /* Struct members of the ID pointer. */
+  /* Struct members of the id pointer. */
   struct {
     void *py_instance;
   } id_data;
