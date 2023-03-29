@@ -312,32 +312,32 @@ void evaluate_graph_threaded_stage(DepsgraphEvalState *state,
 
   calculate_pending_parents_if_needed(state);
 
-  schedule_graph(state, [&](OperationNode *node) {
-    BLI_task_pool_push(task_pool, deg_task_run_func, node, false, nullptr);
+  schedule_graph(state, [&](OpNode *node) {
+    lib_task_pool_push(task_pool, dgraph_task_run_func, node, false, nullptr);
   });
-  BLI_task_pool_work_and_wait(task_pool);
+  lib_task_pool_work_and_wait(task_pool);
 }
 
 /* Evaluate remaining operations of the dependency graph in a single threaded manner. */
-void evaluate_graph_single_threaded_if_needed(DepsgraphEvalState *state)
+void evaluate_graph_single_threaded_if_needed(DGraphEvalState *state)
 {
   if (!state->need_single_thread_pass) {
     return;
   }
 
-  BLI_assert(!state->need_update_pending_parents);
+  lib_assert(!state->need_update_pending_parents);
 
   state->stage = EvaluationStage::SINGLE_THREADED_WORKAROUND;
 
-  GSQueue *evaluation_queue = BLI_gsqueue_new(sizeof(OperationNode *));
-  auto schedule_node_to_queue = [&](OperationNode *node) {
-    BLI_gsqueue_push(evaluation_queue, &node);
+  GSQueue *evaluation_queue = lib_gsqueue_new(sizeof(OpNode *));
+  auto schedule_node_to_queue = [&](OpNode *node) {
+    lib_gsqueue_push(evaluation_queue, &node);
   };
   schedule_graph(state, schedule_node_to_queue);
 
-  while (!BLI_gsqueue_is_empty(evaluation_queue)) {
-    OperationNode *operation_node;
-    BLI_gsqueue_pop(evaluation_queue, &operation_node);
+  while (!lib_gsqueue_is_empty(evaluation_queue)) {
+    OpNode *op_node;
+    lib_gsqueue_pop(evaluation_queue, &operation_node);
 
     evaluate_node(state, operation_node);
     schedule_children(state, operation_node, schedule_node_to_queue);
