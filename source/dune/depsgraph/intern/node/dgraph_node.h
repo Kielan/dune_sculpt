@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "intern/dgraph_type.h"
 
@@ -8,7 +8,7 @@
 
 #include "dgraph_build.h"
 
-struct ID;
+struct Id;
 struct Scene;
 
 namespace dune {
@@ -53,7 +53,7 @@ enum class NodeType {
 
   /* Parameters Component - Default when nothing else fits
    * (i.e. just SDNA property setting). */
-  PARAMETERS,
+  PARAMS,
   /* Animation Component */
   ANIMATION,
   /* Transform Component (Parenting/Constraints) */
@@ -136,7 +136,7 @@ eDGraphSceneComponentType nodeTypeToSceneComponent(NodeType type);
 NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type);
 eDGraphObjectComponentType nodeTypeToObjectComponent(NodeType type);
 
-/* All nodes in Depsgraph are descended from this. */
+/* All nodes in DGraph are descended from this. */
 struct Node {
   /* Helper class for static typeinfo in subclasses. */
   struct TypeInfo {
