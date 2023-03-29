@@ -1,6 +1,6 @@
 /** DGraph core routines. **/
 
-#include "intern/dgraph.h" /* own include */
+#include "intern/graph.h" /* own include */
 
 #include <algorithm>
 #include <cstring>
@@ -32,7 +32,7 @@
 #include "intern/node/dgraph_node_operation.h"
 #include "intern/node/dgraph_node_time.h"
 
-namespace dgraph = dune::dgraph;
+namespace graph = dune::graph;
 
 namespace dune::dgraph {
 
