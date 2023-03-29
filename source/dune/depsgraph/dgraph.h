@@ -218,27 +218,27 @@ void dgraph_debug_print_eval_subdata(struct DGraph *dgraph,
                                      const void *subdata_address);
 
 void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
-                                        const char *fn_name,
-                                        const char *object_name,
-                                        const void *object_address,
-                                        const char *subdata_comment,
-                                        const char *subdata_name,
-                                        const void *subdata_address,
-                                        int subdata_index);
+                                           const char *fn_name,
+                                           const char *object_name,
+                                           const void *object_address,
+                                           const char *subdata_comment,
+                                           const char *subdata_name,
+                                           const void *subdata_address,
+                                           int subdata_index);
 
 void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
-                                       const char *fn_name,
-                                       const char *object_name,
-                                       const void *object_address,
-                                       const char *parent_comment,
-                                       const char *parent_name,
-                                       const void *parent_address);
+                                          const char *fn_name,
+                                          const char *object_name,
+                                          const void *object_address,
+                                          const char *parent_comment,
+                                          const char *parent_name,
+                                          const void *parent_address);
 
 void dgraph_debug_print_eval_time(struct DGraph *dgraph,
-                               const char *fn_name,
-                               const char *object_name,
-                               const void *object_address,
-                               float time);
+                                 const char *fn_name,
+                                 const char *object_name,
+                                 const void *object_address,
+                                 float time);
 
 
 #ifdef __cplusplus
