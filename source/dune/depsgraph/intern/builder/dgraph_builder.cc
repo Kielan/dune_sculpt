@@ -31,13 +31,13 @@
 
 namespace dune::dgraph {
 
-bool dgraph_check_id_in_dgraph(const DGraph *graph, ID *id_orig)
+bool dgraph_check_id_in_dgraph(const DGraph *graph, Id *id_orig)
 {
   IdNode *id_node = graph->find_id_node(id_orig);
   return id_node != nullptr;
 }
 
-bool dgraph_check_base_in_dgraph(const Depsgraph *graph, Base *base)
+bool dgraph_check_base_in_dgraph(const DGraph *graph, Base *base)
 {
   Object *object_orig = base->base_orig->object;
   IdNode *id_node = graph->find_id_node(&object_orig->id);
