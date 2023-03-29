@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "intern/dgraph_type.h"
 
@@ -31,7 +31,7 @@ class AnimatedPropId {
   void *data;
   const ApiProp *prop_api;
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("AnimatedPropertyID");
+  MEM_CXX_CLASS_ALLOC_FNS("AnimatedPropId");
 };
 
 class AnimatedPropStorage {
@@ -55,7 +55,7 @@ class AnimatedPropStorage {
   Set<void *> animated_objects_set;
   Set<AnimatedPropId> animated_prop_set;
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("AnimatedPropStorage");
+  MEM_CXX_CLASS_ALLOC_FNS("AnimatedPropStorage");
 };
 
 /* Cached data which can be re-used by multiple builders. */
