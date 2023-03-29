@@ -2,7 +2,7 @@
 
 #include "intern/dgraph_physics.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_compiler_compat.h"
 #include "lib_listbase.h"
@@ -39,7 +39,7 @@ static ePhysicsRelationType modifier_to_relation_type(unsigned int modifier_type
   lib_assert_msg(0, "Unknown collision modifier type");
   return DGRAPH_PHYS_RELATIONS_NUM;
 }
-/* Get ID from an ID type object, in a safe manner. This means that object can be nullptr,
+/* Get id from an id type object, in a safe manner. This means that object can be nullptr,
  * in which case the function returns nullptr.
  */
 template<class T> static Id *object_id_safe(T *object)
@@ -59,17 +59,17 @@ ListBase *dgraph_get_effector_relations(const DGraph *graph, Collection *collect
   }
   /* NOTE: nullptr is a valid lookup key here as it means that the relation is not bound to a
    * specific collection. */
-  Id *collection_orig = deg_get_original_id(object_id_safe(collection));
+  Id *collection_orig = dgraph_get_original_id(object_id_safe(collection));
   return hash->lookup_default(collection_orig, nullptr);
 }
 
-ListBase *deg_get_collision_relations(const Depsgraph *graph,
+ListBase *dgraph_get_collision_relations(const Depsgraph *graph,
                                       Collection *collection,
                                       unsigned int modifier_type)
 {
-  const deg::Depsgraph *deg_graph = reinterpret_cast<const deg::Depsgraph *>(graph);
+  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::Depsgraph *>(graph);
   const ePhysicsRelationType type = modifier_to_relation_type(modifier_type);
-  dune::Map<const ID *, ListBase *> *hash = deg_graph->physics_relations[type];
+  dune::Map<const Id *, ListBase *> *hash = deg_graph->physics_relations[type];
   if (hash == nullptr) {
     return nullptr;
   }
