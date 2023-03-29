@@ -518,8 +518,8 @@ int foreach_libblock_remap_cb(LibIdLinkCbData *cb_data)
 }
 
 void update_armature_edit_mode_ptrs(const DGraph * /*dgraph*/,
-                                        const Id *id_orig,
-                                        Id *id_cow)
+                                    const Id *id_orig,
+                                    Id *id_cow)
 {
   const DArmature *armature_orig = (const DArmature *)id_orig;
   DArmature *armature_cow = (DArmature *)id_cow;
@@ -538,8 +538,8 @@ void update_curve_edit_mode_ptrs(const DGraph * /*dgraph*/,
 }
 
 void update_mball_edit_mode_ptrs(const DGraph * /*dgraph*/,
-                                     const Id *id_orig,
-                                     Id *id_cow)
+                                 const Id *id_orig,
+                                 Id *id_cow)
 {
   const MetaBall *mball_orig = (const MetaBall *)id_orig;
   MetaBall *mball_cow = (MetaBall *)id_cow;
@@ -547,15 +547,15 @@ void update_mball_edit_mode_ptrs(const DGraph * /*dgraph*/,
 }
 
 void update_lattice_edit_mode_ptrs(const DGraph * /*depsgraph*/,
-                                       const Id *id_orig,
-                                       Id *id_cow)
+                                   const Id *id_orig,
+                                   Id *id_cow)
 {
   const Lattice *lt_orig = (const Lattice *)id_orig;
   Lattice *lt_cow = (Lattice *)id_cow;
   lt_cow->editlatt = lt_orig->editlatt;
 }
 
-void update_mesh_edit_mode_pointers(const Id *id_orig, Id *id_cow)
+void update_mesh_edit_mode_ptrs(const Id *id_orig, Id *id_cow)
 {
   const Mesh *mesh_orig = (const Mesh *)id_orig;
   Mesh *mesh_cow = (Mesh *)id_cow;
@@ -567,24 +567,24 @@ void update_mesh_edit_mode_pointers(const Id *id_orig, Id *id_cow)
 
 /* Edit data is stored and owned by original datablocks, copied ones
  * are simply referencing to them. */
-void update_edit_mode_pointers(const Depsgraph *depsgraph, const ID *id_orig, ID *id_cow)
+void update_edit_mode_pointers(const DGraph *dgraph, const Id *id_orig, Id *id_cow)
 {
   const ID_Type type = GS(id_orig->name);
   switch (type) {
     case ID_AR:
-      update_armature_edit_mode_pointers(depsgraph, id_orig, id_cow);
+      update_armature_edit_mode_ptrs(dgraph, id_orig, id_cow);
       break;
     case ID_ME:
-      update_mesh_edit_mode_pointers(id_orig, id_cow);
+      update_mesh_edit_mode_ptrs(id_orig, id_cow);
       break;
     case ID_CU_LEGACY:
-      update_curve_edit_mode_pointers(depsgraph, id_orig, id_cow);
+      update_curve_edit_mode_ptrs(dgraph, id_orig, id_cow);
       break;
     case ID_MB:
-      update_mball_edit_mode_pointers(depsgraph, id_orig, id_cow);
+      update_mball_edit_mode_prs(dgraph, id_orig, id_cow);
       break;
     case ID_LT:
-      update_lattice_edit_mode_pointers(depsgraph, id_orig, id_cow);
+      update_lattice_edit_mode_ptrs(dgraph, id_orig, id_cow);
       break;
     default:
       break;
@@ -781,7 +781,7 @@ Id *dgraph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
     return id_cow;
   }
 
-  DEG_COW_PRINT(
+  DGRAPH_COW_PRINT(
       "Expanding datablock for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
 
   /* Sanity checks. */
@@ -927,19 +927,19 @@ void discard_curve_edit_mode_ptrs(Id *id_cow)
   curve_cow->editfont = nullptr;
 }
 
-void discard_mball_edit_mode_pointers(Id *id_cow)
+void discard_mball_edit_mode_ptrs(Id *id_cow)
 {
   MetaBall *mball_cow = (MetaBall *)id_cow;
   mball_cow->editelems = nullptr;
 }
 
-void discard_lattice_edit_mode_pointers(Id *id_cow)
+void discard_lattice_edit_mode_ptrs(Id *id_cow)
 {
   Lattice *lt_cow = (Lattice *)id_cow;
   lt_cow->editlatt = nullptr;
 }
 
-void discard_mesh_edit_mode_pointers(ID *id_cow)
+void discard_mesh_edit_mode_ptrs(Id *id_cow)
 {
   Mesh *mesh_cow = (Mesh *)id_cow;
   mesh_cow->edit_mesh = nullptr;
@@ -1000,11 +1000,11 @@ void dgraph_free_copy_on_write_datablock(Id *id_cow)
   }
   const IdType type = GS(id_cow->name);
 #ifdef NESTED_ID_NASTY_WORKAROUND
-  nested_id_hack_discard_pointers(id_cow);
+  nested_id_hack_discard_ptrs(id_cow);
 #endif
   switch (type) {
     case ID_OB: {
-      /* TODO(sergey): This workaround is only to prevent free derived
+      /* TODO: This workaround is only to prevent free derived
        * caches from modifying object->data. This is currently happening
        * due to mesh/curve data-block bound-box tagging dirty. */
       Object *ob_cow = (Object *)id_cow;
@@ -1015,7 +1015,7 @@ void dgraph_free_copy_on_write_datablock(Id *id_cow)
     default:
       break;
   }
-  discard_edit_mode_pointers(id_cow);
+  discard_edit_mode_ptrs(id_cow);
   dune_libblock_free_data_py(id_cow);
   dune_libblock_free_datablock(id_cow, 0);
   dune_libblock_free_data(id_cow, false);
@@ -1052,9 +1052,9 @@ void dgraph_tag_copy_on_write_id(If *id_cow, const Id *id_orig)
   lib_assert(id_cow != id_orig);
   lib_assert((id_orig->tag & LIB_TAG_COPIED_ON_WRITE) == 0);
   id_cow->tag |= LIB_TAG_COPIED_ON_WRITE;
-  /* This ID is no longer localized, is a self-sustaining copy now. */
+  /* This id is no longer localized, is a self-sustaining copy now. */
   id_cow->tag &= ~LIB_TAG_LOCALIZED;
-  id_cow->orig_id = (ID *)id_orig;
+  id_cow->orig_id = (If *)id_orig;
 }
 
 bool dgraph_copy_on_write_is_expanded(const Id *id_cow)
@@ -1065,7 +1065,7 @@ bool dgraph_copy_on_write_is_expanded(const Id *id_cow)
 bool dgraph_copy_on_write_is_needed(const Id *id_orig)
 {
   const IdType id_type = GS(id_orig->name);
-  return deg_copy_on_write_is_needed(id_type);
+  return dgaph_copy_on_write_is_needed(id_type);
 }
 
 bool dgraph_copy_on_write_is_needed(const IdType id_type)
