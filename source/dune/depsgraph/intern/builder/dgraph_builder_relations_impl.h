@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "types_Id.h"
+#include "types_id.h"
 #include "types_object.h"
 #include "types_rigidbody.h"
 
@@ -129,10 +129,10 @@ Relation *DGraphRelationBuilder::add_depends_on_transform_relation(ID *id,
 }
 
 template<typename KeyType>
-DepsNodeHandle DGraphRelationBuilder::create_node_handle(const KeyType &key,
+DGraphNodeHandle DGraphRelationBuilder::create_node_handle(const KeyType &key,
                                                          const char *default_name)
 {
-  return DepsNodeHandle(this, get_node(key), default_name);
+  return DGraphNodeHandle(this, get_node(key), default_name);
 }
 
 /* Rig compatibility: we check if bone is using local transform as a variable
