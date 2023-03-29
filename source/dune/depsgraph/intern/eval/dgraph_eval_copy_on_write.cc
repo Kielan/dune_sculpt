@@ -887,9 +887,9 @@ Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
     }
     /* In case we don't need to do a copy-on-write, we can use the update cache of the grease
      * pencil data to do an update-on-write. */
-    if (id_type == ID_GD && BKE_gpencil_can_avoid_full_copy_on_write(
-                                (const ::Depsgraph *)depsgraph, (bGPdata *)id_orig)) {
-      dune_dpen_update_on_write((bGPdata *)id_orig, (bGPdata *)id_cow);
+    if (id_type == ID_GD && dune_dpen_can_avoid_full_copy_on_write(
+                                (const ::DGraph *)dgraph, (DPenData *)id_orig)) {
+      dune_dpen_update_on_write(DPenData *)id_orig, (bGPdata *)id_cow);
       return id_cow;
     }
   }
@@ -903,7 +903,7 @@ Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
 }
 
 /**
- * dgraph is supposed to have ID node already.
+ * dgraph is supposed to have id node already.
  */
 Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, Id *id_orig)
 {
@@ -920,20 +920,20 @@ void discard_armature_edit_mode_pointers(Id *id_cow)
   armature_cow->edbo = nullptr;
 }
 
-void discard_curve_edit_mode_pointers(Id *id_cow)
+void discard_curve_edit_mode_ptrs(Id *id_cow)
 {
   Curve *curve_cow = (Curve *)id_cow;
   curve_cow->editnurb = nullptr;
   curve_cow->editfont = nullptr;
 }
 
-void discard_mball_edit_mode_pointers(ID *id_cow)
+void discard_mball_edit_mode_pointers(Id *id_cow)
 {
   MetaBall *mball_cow = (MetaBall *)id_cow;
   mball_cow->editelems = nullptr;
 }
 
-void discard_lattice_edit_mode_pointers(ID *id_cow)
+void discard_lattice_edit_mode_pointers(Id *id_cow)
 {
   Lattice *lt_cow = (Lattice *)id_cow;
   lt_cow->editlatt = nullptr;
@@ -945,7 +945,7 @@ void discard_mesh_edit_mode_pointers(ID *id_cow)
   mesh_cow->edit_mesh = nullptr;
 }
 
-void discard_scene_pointers(ID *id_cow)
+void discard_scene_pointers(Id *id_cow)
 {
   Scene *scene_cow = (Scene *)id_cow;
   scene_cow->toolsettings = nullptr;
@@ -954,29 +954,29 @@ void discard_scene_pointers(ID *id_cow)
 
 /* nullptr-ify all edit mode pointers which points to data from
  * original object. */
-void discard_edit_mode_pointers(ID *id_cow)
+void discard_edit_mode_ptrs(Id *id_cow)
 {
   const ID_Type type = GS(id_cow->name);
   switch (type) {
     case ID_AR:
-      discard_armature_edit_mode_pointers(id_cow);
+      discard_armature_edit_mode_ptrs(id_cow);
       break;
     case ID_ME:
-      discard_mesh_edit_mode_pointers(id_cow);
+      discard_mesh_edit_mode_ptrs(id_cow);
       break;
     case ID_CU_LEGACY:
-      discard_curve_edit_mode_pointers(id_cow);
+      discard_curve_edit_mode_ptrs(id_cow);
       break;
     case ID_MB:
-      discard_mball_edit_mode_pointers(id_cow);
+      discard_mball_edit_mode_ptrs(id_cow);
       break;
     case ID_LT:
-      discard_lattice_edit_mode_pointers(id_cow);
+      discard_lattice_edit_mode_ptrs(id_cow);
       break;
     case ID_SCE:
       /* Not really edit mode but still needs to run before
        * dune_libblock_free_datablock() */
-      discard_scene_pointers(id_cow);
+      discard_scene_ptrs(id_cow);
       break;
     default:
       break;
@@ -988,17 +988,17 @@ void discard_edit_mode_pointers(ID *id_cow)
 /**
  *  Free content of the CoW data-block.
  * Notes:
- * - Does not recurse into nested ID data-blocks.
+ * - Does not recurse into nested id data-blocks.
  * - Does not free data-block itself.
  */
-void deg_free_copy_on_write_datablock(ID *id_cow)
+void dgraph_free_copy_on_write_datablock(Id *id_cow)
 {
   if (!check_datablock_expanded(id_cow)) {
     /* Actual content was never copied on top of CoW block, we have
      * nothing to free. */
     return;
   }
-  const ID_Type type = GS(id_cow->name);
+  const IdType type = GS(id_cow->name);
 #ifdef NESTED_ID_NASTY_WORKAROUND
   nested_id_hack_discard_pointers(id_cow);
 #endif
@@ -1057,18 +1057,18 @@ void dgraph_tag_copy_on_write_id(If *id_cow, const Id *id_orig)
   id_cow->orig_id = (ID *)id_orig;
 }
 
-bool deg_copy_on_write_is_expanded(const ID *id_cow)
+bool dgraph_copy_on_write_is_expanded(const Id *id_cow)
 {
   return check_datablock_expanded(id_cow);
 }
 
-bool deg_copy_on_write_is_needed(const ID *id_orig)
+bool dgraph_copy_on_write_is_needed(const Id *id_orig)
 {
-  const ID_Type id_type = GS(id_orig->name);
+  const IdType id_type = GS(id_orig->name);
   return deg_copy_on_write_is_needed(id_type);
 }
 
-bool deg_copy_on_write_is_needed(const ID_Type id_type)
+bool dgraph_copy_on_write_is_needed(const IdType id_type)
 {
   return ID_TYPE_IS_COW(id_type);
 }
