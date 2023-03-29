@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <cstring> /* required for STREQ later on. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_dunelib.h"
 #include "lib_utildefines.h"
