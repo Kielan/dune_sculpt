@@ -184,32 +184,32 @@ typedef struct DGraphEditorUpdateCtx {
   struct ViewLayer *view_layer;
 } DGraphEditorUpdateCtx;
 
-typedef void (*DEG_EditorUpdateIDCb)(const DEGEditorUpdateContext *update_ctx, struct ID *id);
-typedef void (*DEG_EditorUpdateSceneCb)(const DEGEditorUpdateContext *update_ctx, bool updated);
+typedef void (*DGraphEditorUpdateIdCb)(const DEGEditorUpdateContext *update_ctx, struct Id *id);
+typedef void (*DGraphEditorUpdateSceneCb)(const DEGEditorUpdateContext *update_ctx, bool updated);
 
 /** Set callbacks which are being called when depsgraph changes. */
-void dgraph_editors_set_update_cb(DEG_EditorUpdateIDCb id_func, DEG_EditorUpdateSceneCb scene_func);
+void dgraph_editors_set_update_cb(DGraphEditorUpdateIdCb id_fn, DGraphEditorUpdateSceneCb scene_fn);
 
 /* -------------------------------------------------------------------- */
 /** Evaluation */
 
-bool deg_is_evaluating(const struct Depsgraph *depsgraph);
+bool deg_is_evaluating(const struct DGraph *dgraph);
 
-bool dgraph_is_active(const struct Depsgraph *depsgraph);
-void dgraph_make_active(struct Depsgraph *depsgraph);
-void dgraph_make_inactive(struct Depsgraph *depsgraph);
+bool dgraph_is_active(const struct DGraph *dgraph);
+void dgraph_make_active(struct DGraph *dgraph);
+void dgraph_make_inactive(struct DGraph *dgraph);
 
 /* -------------------------------------------------------------------- */
 /** Evaluation Debug **/
 
-void dgraph_debug_print_begin(struct Depsgraph *depsgraph);
+void dgraph_debug_print_begin(struct DGraph *dgraph);
 
-void dgraph_debug_print_eval(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval(struct DGraph *dgraph,
                           const char *function_name,
                           const char *object_name,
                           const void *object_address);
 
-void dgraph_debug_print_eval_subdata(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval_subdata(struct DGraph *dgraph,
                                   const char *function_name,
                                   const char *object_name,
                                   const void *object_address,
@@ -234,7 +234,7 @@ void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
                                        const char *parent_name,
                                        const void *parent_address);
 
-void dgraph_debug_print_eval_time(struct Depsgraph *depsgraph,
+void dgraph_debug_print_eval_time(struct DGraph *dgraph,
                                const char *function_name,
                                const char *object_name,
                                const void *object_address,
