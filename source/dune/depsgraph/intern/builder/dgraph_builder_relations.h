@@ -18,10 +18,10 @@
 #include "intern/builder/dgraph_builder_api.h"
 #include "intern/builder/dgraph_builder_stack.h"
 #include "intern/dgraph.h"
-#include "intern/node/dnode.h"
-#include "intern/node/dnode_component.h"
-#include "intern/node/dnode_id.h"
-#include "intern/node/dnode_operation.h"
+#include "intern/node/node.h"
+#include "intern/node/node_component.h"
+#include "intern/node/node_id.h"
+#include "intern/node/node_operation.h"
 
 struct CacheFile;
 struct Camera;
@@ -52,13 +52,13 @@ struct Tex;
 struct VFont;
 struct ViewLayer;
 struct World;
-struct DAction;
-struct DArmature;
-struct DConstraint;
-struct DNodeSocket;
-struct DNodeTree;
-struct DPoseChannel;
-struct DSound;
+struct Action;
+struct Armature;
+struct Constraint;
+struct NodeSocket;
+struct NodeTree;
+struct PoseChannel;
+struct Sound;
 
 namespace dune::dgraph {
 
@@ -113,7 +113,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
 
   virtual void build_id(Id *id);
 
-  /* Build function for ID types that do not need their own build_xxx() function. */
+  /* Build function for id types that do not need their own build_xxx() function. */
   virtual void build_generic_id(Id *id);
 
   virtual void build_idprops(IdProp *id_prop);
@@ -175,25 +175,25 @@ class DGraphRelationBuilder : public DGraphBuilder {
                                                           ParticleSystem *psys,
                                                           Object *draw_object);
   virtual void build_ik_pose(Object *object,
-                             DPoseChannel *pchan,
-                             DConstraint *con,
+                             PoseChannel *pchan,
+                             Constraint *con,
                              RootPChanMap *root_map);
   virtual void build_splineik_pose(Object *object,
-                                   DPoseChannel *pchan,
-                                   DConstraint *con,
+                                   PoseChannel *pchan,
+                                   Constraint *con,
                                    RootPChanMap *root_map);
   virtual void build_inter_ik_chains(Object *object,
                                      const OpKey &solver_key,
-                                     const DPoseChannel *rootchan,
+                                     const PoseChannel *rootchan,
                                      const RootPChanMap *root_map);
   virtual void build_rig(Object *object);
   virtual void build_shapekeys(Key *key);
-  virtual void build_armature(DArmature *armature);
+  virtual void build_armature(Armature *armature);
   virtual void build_armature_bones(ListBase *bones);
   virtual void build_camera(Camera *camera);
   virtual void build_light(Light *lamp);
-  virtual void build_nodetree(DNodeTree *ntree);
-  virtual void build_nodetree_socket(DNodeSocket *socket);
+  virtual void build_nodetree(NodeTree *ntree);
+  virtual void build_nodetree_socket(NodeSocket *socket);
   virtual void build_material(Material *ma);
   virtual void build_materials(Material **materials, int num_materials);
   virtual void build_freestyle_lineset(FreestyleLineSet *fls);
