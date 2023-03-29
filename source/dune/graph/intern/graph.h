@@ -16,18 +16,18 @@
 
 #include "lib_threads.h" /* for SpinLock */
 
-#include "dgraph.h"
-#include "dgraph_physics.h"
+#include "graph.h"
+#include "graph_phys.h"
 
-#include "intern/debug/dgraph_debug.h"
-#include "intern/dgraph_type.h"
+#include "intern/debug/graph_debug.h"
+#include "intern/graph_type.h"
 
 struct Id;
 struct Scene;
 struct ViewLayer;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 struct IdNode;
 struct Node;
@@ -36,12 +36,12 @@ struct Relation;
 struct TimeSourceNode;
 
 /* Dependency Graph object */
-struct DGraph {
+struct Graph {
   typedef Vector<OpNode *> OpNodes;
   typedef Vector<IdNode *> IdNodes;
 
-  DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode);
-  ~DGraph();
+  Graph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode);
+  ~Graph();
 
   TimeSourceNode *add_time_source();
   TimeSourceNode *find_time_source() const;
@@ -79,7 +79,7 @@ struct DGraph {
   /* Ordered list of Id nodes, order matches Id allocation order.
    * Used for faster iteration, especially for areas which are critical to
    * keep exact order of iteration. */
-  IdDNodes id_nodes;
+  IdNodes id_nodes;
 
   /* Top-level time source node. */
   TimeSourceNode *time_source;
@@ -137,7 +137,7 @@ struct DGraph {
    * to read stuff from. */
   bool is_active;
 
-  DGraphDebug debug;
+  GraphDebug debug;
 
   bool is_evaluating;
 
@@ -152,9 +152,9 @@ struct DGraph {
 
   /* Cached list of colliders/effectors for collections and the scene
    * created along with relations, for fast lookup during evaluation. */
-  Map<const Id *, ListBase *> *physics_relations[DGRAPH_PHYSICS_RELATIONS_NUM];
+  Map<const Id *, ListBase *> *phys_relations[GRAPH_PHYS_RELATIONS_NUM];
 
-  MEM_CXX_CLASS_ALLOC_FNS("DGraph");
+  MEM_CXX_CLASS_ALLOC_FNS("Graph");
 };
 
 }  // namespace dune
