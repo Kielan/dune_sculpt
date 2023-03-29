@@ -1,6 +1,6 @@
 /** Methods for constructing dgraph. **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_listbase.h"
 #include "lib_utildefines.h"
@@ -60,30 +60,30 @@ static dgraph::NodeType dgraph_build_scene_component_type(eDGraphSceneComponentT
   return dgraph::NodeType::UNDEFINED;
 }
 
-static dgraph::DNodeHandle *get_node_handle(DNodeHandle *node_handle)
+static dgraph::DNodeHandle *get_node_handle(NodeHandle *node_handle)
 {
-  return reinterpret_cast<deg::DNodeHandle *>(node_handle);
+  return reinterpret_cast<deg::NodeHandle *>(node_handle);
 }
 
-void dgraph_add_scene_relation(DNodeHandle *node_handle,
-                            Scene *scene,
-                            eDGraphSceneComponentType component,
-                            const char *description)
+void dgraph_add_scene_relation(NodeHandle *node_handle,
+                               Scene *scene,
+                               eDGraphSceneComponentType component,
+                               const char *description)
 {
   dgraph::NodeType type = deg_build_scene_component_type(component);
   dgraph::ComponentKey comp_key(&scene->id, type);
-  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph::NodeHandle *dgraph_node_handle = get_node_handle(node_handle);
   dgraph_node_handle->builder->add_node_handle_relation(comp_key, dgraph_node_handle, description);
 }
 
-void dgraph_add_object_relation(DNodeHandle *node_handle,
-                             Object *object,
-                             eDGraphObjectComponentType component,
-                             const char *description)
+void dgraph_add_object_relation(NodeHandle *node_handle,
+                                Object *object,
+                                eDGraphObjectComponentType component,
+                                const char *description)
 {
   dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
   dgraph::ComponentKey comp_key(&object->id, type);
-  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph::NodeHandle *dgraph_node_handle = get_node_handle(node_handle);
   dgraph_node_handle->builder->add_node_handle_relation(comp_key, dgraph_node_handle, description);
 }
 
@@ -92,7 +92,7 @@ bool dgraph_object_has_geometry_component(Object *object)
   return dgraph::geometry_tag_to_component(&object->id) != dgraph::NodeType::UNDEFINED;
 }
 
-void dgraph_add_collection_geometry_relation(DNodeHandle *node_handle,
+void dgraph_add_collection_geometry_relation(NodeHandle *node_handle,
                                              Collection *collection,
                                              const char *description)
 {
@@ -121,12 +121,12 @@ void dgraph_add_simulation_relation(DNodeHandle *node_handle,
 {
   dgraph::OpKey op_key(
       &simulation->id, dgraph::NodeType::SIMULATION, dgraph::OpCode::SIMULATION_EVAL);
-  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph::NodeHandle *dgraph_node_handle = get_node_handle(node_handle);
   dgraph_node_handle->builder->add_node_handle_relation(op_key, dgraph_node_handle, description);
 }
 
-void dgraph_add_node_tree_output_relation(DNodeHandle *node_handle,
-                                          DNodeTree *node_tree,
+void dgraph_add_node_tree_output_relation(NodeHandle *node_handle,
+                                          NodeTree *node_tree,
                                           const char *description)
 {
   dgraph::OpKey ntree_output_key(
@@ -136,14 +136,14 @@ void dgraph_add_node_tree_output_relation(DNodeHandle *node_handle,
       ntree_output_key, dgraph_node_handle, description);
 }
 
-void dgraph_add_object_cache_relation(DNodeHandle *node_handle,
+void dgraph_add_object_cache_relation(NodeHandle *node_handle,
                                       CacheFile *cache_file,
                                       eDGraphObjectComponentType component,
                                       const char *description)
 {
   dgraph::NodeType type = dgraph::nodeTypeFromObjectComponent(component);
   dgraph::ComponentKey comp_key(&cache_file->id, type);
-  dgraph::DNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
+  dgraph::NodeHandle *dgraph_node_handle = get_node_handle(node_handle);
   dgraph_node_handle->builder->add_node_handle_relation(comp_key, deg_node_handle, description);
 }
 
@@ -206,8 +206,8 @@ void dgraph_add_special_eval_flag(struct DGraphNodeHandle *node_handle, Id *id, 
 }
 
 void dgraph_add_customdata_mask(struct DGraphNodeHandle *node_handle,
-                             struct Object *object,
-                             const CustomData_MeshMasks *masks)
+                               struct Object *object,
+                                const CustomData_MeshMasks *masks)
 {
   dgraph::DGraphNodeHandle *dgraph_node_handle = get_node_handle(node_handle);
   dgraph_node_handle->builder->add_customdata_mask(object, dgraph::DGraphCustomDataMeshMasks(masks));
@@ -288,7 +288,7 @@ void dgraph_relations_update(DGraph *graph)
 
 void dgraph_relations_tag_update(Main *dmain)
 {
-  DEG_GLOBAL_DEBUG_PRINTF(TAG, "%s: Tagging relations for update.\n", __func__);
+  DGRAPH_GLOBAL_DEBUG_PRINTF(TAG, "%s: Tagging relations for update.\n", __func__);
   for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
     dgraph_graph_tag_relations_update(reinterpret_cast<DGraph *>(dgraph));
   }
