@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "intern/dgraph_type.h"
 #include "intern/node/dgraph_node.h"
