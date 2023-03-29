@@ -20,7 +20,7 @@ struct AnimatedPropStoreCbData {
    * Is used to check possibly nested IDs which f-curves are pointing to. */
   Id *id;
 
-  ApiPointer id_ptr_api;
+  ApiPtr id_ptr_api;
 };
 
 void animated_prop_store_cb(Id *id, FCurve *fcurve, void *data_v)
