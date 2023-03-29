@@ -44,13 +44,13 @@ namespace dune::dgraph {
 
 namespace {
 
-struct DepsgraphEvalState;
+struct DGraphEvalState;
 
-void deg_task_run_func(TaskPool *pool, void *taskdata);
+void deg_task_run_fn(TaskPool *pool, void *taskdata);
 
-void schedule_children(DepsgraphEvalState *state,
-                       OperationNode *node,
-                       FunctionRef<void(OperationNode *node)> schedule_fn);
+void schedule_children(DGraphEvalState *state,
+                       OpNode *node,
+                       FnRef<void(OpNode *node)> schedule_fn);
 
 /* Denotes which part of dependency graph is being evaluated. */
 enum class EvaluationStage {
@@ -59,7 +59,7 @@ enum class EvaluationStage {
    * involved. */
   COPY_ON_WRITE,
 
-  /* Evaluate actual ID nodes visibility based on the current state of animation and drivers. */
+  /* Evaluate actual ids nodes visibility based on the current state of animation and drivers. */
   DYNAMIC_VISIBILITY,
 
   /* Threaded evaluation of all possible operations. */
@@ -72,28 +72,28 @@ enum class EvaluationStage {
   SINGLE_THREADED_WORKAROUND,
 };
 
-struct DepsgraphEvalState {
-  Depsgraph *graph;
+struct DGraphEvalState {
+  DGraph *graph;
   bool do_stats;
   EvaluationStage stage;
   bool need_update_pending_parents = true;
   bool need_single_thread_pass = false;
 };
 
-void evaluate_node(const DepsgraphEvalState *state, OperationNode *operation_node)
+void evaluate_node(const DgraphEvalState *state, OpNode *op_node)
 {
-  ::Depsgraph *depsgraph = reinterpret_cast<::Depsgraph *>(state->graph);
+  ::DGraph *dgraph = reinterpret_cast<::DGraph *>(state->graph);
 
   /* Sanity checks. */
-  BLI_assert_msg(!operation_node->is_noop(), "NOOP nodes should not actually be scheduled");
+  lib_assert_msg(!operation_node->is_noop(), "NOOP nodes should not actually be scheduled");
   /* Perform operation. */
   if (state->do_stats) {
     const double start_time = PIL_check_seconds_timer();
-    operation_node->evaluate(depsgraph);
-    operation_node->stats.current_time += PIL_check_seconds_timer() - start_time;
+    op_node->evaluate(dgraph);
+    op_node->stats.current_time += PIL_check_seconds_timer() - start_time;
   }
   else {
-    operation_node->evaluate(depsgraph);
+    op_node->evaluate(depsgraph);
   }
 
   /* Clear the flag early on, allowing partial updates without re-evaluating the same node multiple
