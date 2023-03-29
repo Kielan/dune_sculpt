@@ -36,7 +36,7 @@ namespace dgraph = dune::dgraph;
 
 namespace dune::dgraph {
 
-Depsgraph::DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
+DGraph::DGraph(Main *dmain, Scene *scene, ViewLayer *view_layer, eEvaluationMode mode)
     : time_source(nullptr),
       need_update(true),
       need_visibility_update(true),
