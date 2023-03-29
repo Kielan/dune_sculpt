@@ -68,9 +68,9 @@ extern "C" {
  * TODO: what arguments are needed here? What's the building-graph entry point?
  */
 DGraph *dgraph_new(struct Main *dmain,
-                         struct Scene *scene,
-                         struct ViewLayer *view_layer,
-                         eEvaluationMode mode);
+                   struct Scene *scene,
+                   struct ViewLayer *view_layer,
+                   eEvaluationMode mode);
 
 /**
  * Replace the "owner" pointers (currently Main/Scene/ViewLayer) of this depsgraph.
@@ -114,10 +114,10 @@ const char *dgraph_update_tag_as_string(IdRecalcFlag flag);
 void dgraph_id_tag_update(struct Id *id, int flag);
 void dgraph_id_tag_update_ex(struct Main *dmain, struct Id *id, int flag);
 
-void dgraph_graph_id_tag_update(struct Main *dmain,
-                             struct DGraph *dgraph,
-                             struct Id *id,
-                             int flag);
+void dgraph_id_tag_update(struct Main *dmain,
+                          struct DGraph *dgraph,
+                          struct Id *id,
+                          int flag);
 
 /** Tag all dependency graphs when time has changed. */
 void dgraph_time_tag_update(struct Main *dmain);
@@ -184,16 +184,16 @@ typedef struct DGraphEditorUpdateCtx {
   struct ViewLayer *view_layer;
 } DGraphEditorUpdateCtx;
 
-typedef void (*DGraphEditorUpdateIdCb)(const DEGEditorUpdateContext *update_ctx, struct Id *id);
-typedef void (*DGraphEditorUpdateSceneCb)(const DEGEditorUpdateContext *update_ctx, bool updated);
+typedef void (*DGraphEditorUpdateIdCb)(const DGraphEditorUpdateCtx *update_ctx, struct Id *id);
+typedef void (*DGraphEditorUpdateSceneCb)(const DGraphEditorUpdateCtx *update_ctx, bool updated);
 
-/** Set callbacks which are being called when depsgraph changes. */
+/** Set callbacks which are being called when dgraph changes. */
 void dgraph_editors_set_update_cb(DGraphEditorUpdateIdCb id_fn, DGraphEditorUpdateSceneCb scene_fn);
 
 /* -------------------------------------------------------------------- */
 /** Evaluation */
 
-bool deg_is_evaluating(const struct DGraph *dgraph);
+bool dgraph_is_evaluating(const struct DGraph *dgraph);
 
 bool dgraph_is_active(const struct DGraph *dgraph);
 void dgraph_make_active(struct DGraph *dgraph);
@@ -205,20 +205,20 @@ void dgraph_make_inactive(struct DGraph *dgraph);
 void dgraph_debug_print_begin(struct DGraph *dgraph);
 
 void dgraph_debug_print_eval(struct DGraph *dgraph,
-                          const char *function_name,
-                          const char *object_name,
-                          const void *object_address);
+                             const char *fn_name,
+                             const char *object_name,
+                             const void *object_address);
 
 void dgraph_debug_print_eval_subdata(struct DGraph *dgraph,
-                                  const char *function_name,
-                                  const char *object_name,
-                                  const void *object_address,
-                                  const char *subdata_comment,
-                                  const char *subdata_name,
-                                  const void *subdata_address);
+                                     const char *fn_name,
+                                     const char *object_name,
+                                     const void *object_address,
+                                     const char *subdata_comment,
+                                     const char *subdata_name,
+                                     const void *subdata_address);
 
 void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
-                                        const char *function_name,
+                                        const char *fn_name,
                                         const char *object_name,
                                         const void *object_address,
                                         const char *subdata_comment,
@@ -227,7 +227,7 @@ void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
                                         int subdata_index);
 
 void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
-                                       const char *function_name,
+                                       const char *fn_name,
                                        const char *object_name,
                                        const void *object_address,
                                        const char *parent_comment,
@@ -235,7 +235,7 @@ void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
                                        const void *parent_address);
 
 void dgraph_debug_print_eval_time(struct DGraph *dgraph,
-                               const char *function_name,
+                               const char *fn_name,
                                const char *object_name,
                                const void *object_address,
                                float time);
