@@ -116,7 +116,7 @@ void IdNode::destroy()
   /* Free memory used by this CoW id. */
   if (!ELEM(id_cow, id_orig, nullptr)) {
     dgraph_free_copy_on_write_datablock(id_cow);
-    MEM_freeN(id_cow);
+    mem_freen(id_cow);
     id_cow = nullptr;
     DGRAPH_COW_PRINT("Destroy CoW for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
   }
