@@ -31,7 +31,7 @@
 #include "dgraph.h"
 #include "dgraph_query.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "types_id.h"
 #include "types_anim.h"
@@ -73,7 +73,7 @@
 #include "dune_pointcache.h"
 #include "dune_sound.h"
 
-#include "SEQ_relations.h"
+#include "seq_relations.h"
 
 #include "intern/builder/dgraph_builder.h"
 #include "intern/builder/dgraph_builder_nodes.h"
@@ -270,7 +270,7 @@ bool id_copy_inplace_no_main(const Id *id, Id *newid)
   const Id *id_for_copy = id;
 
   if (G.debug & G_DEBUG_DEPSGRAPH_UUID) {
-    const ID_Type id_type = GS(id_for_copy->name);
+    const IdType id_type = GS(id_for_copy->name);
     if (id_type == ID_OB) {
       const Object *object = reinterpret_cast<const Object *>(id_for_copy);
       dune_object_check_uuids_unique_and_report(object);
@@ -438,7 +438,7 @@ void view_layer_remove_disabled_bases(const DGraph *dgraph,
       if (base == view_layer->basact) {
         view_layer->basact = nullptr;
       }
-      MEM_freeN(base);
+      mem_freen(base);
     }
   }
   view_layer->object_bases = enabled_bases;
@@ -555,7 +555,7 @@ void update_lattice_edit_mode_ptrs(const DGraph * /*depsgraph*/,
   lt_cow->editlatt = lt_orig->editlatt;
 }
 
-void update_mesh_edit_mode_pointers(const ID *id_orig, ID *id_cow)
+void update_mesh_edit_mode_pointers(const Id *id_orig, Id *id_cow)
 {
   const Mesh *mesh_orig = (const Mesh *)id_orig;
   Mesh *mesh_cow = (Mesh *)id_cow;
@@ -889,38 +889,38 @@ Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
      * pencil data to do an update-on-write. */
     if (id_type == ID_GD && BKE_gpencil_can_avoid_full_copy_on_write(
                                 (const ::Depsgraph *)depsgraph, (bGPdata *)id_orig)) {
-      BKE_gpencil_update_on_write((bGPdata *)id_orig, (bGPdata *)id_cow);
+      dune_dpen_update_on_write((bGPdata *)id_orig, (bGPdata *)id_cow);
       return id_cow;
     }
   }
 
-  RuntimeBackup backup(depsgraph);
+  RuntimeBackup backup(dgraph);
   backup.init_from_id(id_cow);
-  deg_free_copy_on_write_datablock(id_cow);
-  deg_expand_copy_on_write_datablock(depsgraph, id_node);
+  dgraph_free_copy_on_write_datablock(id_cow);
+  dgraph_expand_copy_on_write_datablock(dgraph, id_node);
   backup.restore_to_id(id_cow);
   return id_cow;
 }
 
 /**
- * \note Depsgraph is supposed to have ID node already.
+ * dgraph is supposed to have ID node already.
  */
-ID *deg_update_copy_on_write_datablock(const Depsgraph *depsgraph, ID *id_orig)
+Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, Id *id_orig)
 {
-  IDNode *id_node = depsgraph->find_id_node(id_orig);
-  BLI_assert(id_node != nullptr);
-  return deg_update_copy_on_write_datablock(depsgraph, id_node);
+  IdNode *id_node = dgraph->find_id_node(id_orig);
+  lib_assert(id_node != nullptr);
+  return dgraph_update_copy_on_write_datablock(dgraph, id_node);
 }
 
 namespace {
 
-void discard_armature_edit_mode_pointers(ID *id_cow)
+void discard_armature_edit_mode_pointers(Id *id_cow)
 {
-  bArmature *armature_cow = (bArmature *)id_cow;
+  DArmature *armature_cow = (DArmature *)id_cow;
   armature_cow->edbo = nullptr;
 }
 
-void discard_curve_edit_mode_pointers(ID *id_cow)
+void discard_curve_edit_mode_pointers(Id *id_cow)
 {
   Curve *curve_cow = (Curve *)id_cow;
   curve_cow->editnurb = nullptr;
