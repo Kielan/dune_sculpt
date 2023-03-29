@@ -1,6 +1,6 @@
 /** Evaluation engine entry-points for Depsgraph Engine. **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_listbase.h"
 #include "lib_utildefines.h"
@@ -50,7 +50,7 @@ void dgraph_evaluate_on_refresh(DGraph *graph)
     dgraph->ctime = ctime;
   }
   else if (scene->id.recalc & ID_RECALC_FRAME_CHANGE) {
-    /* Comparing depsgraph & scene frame fails in the case of undo,
+    /* Comparing graph & scene frame fails in the case of undo,
      * since the undo state is stored before updates from the frame change have been applied.
      * In this case reading back the undo state will behave as if no updates on frame change
      * is needed as the #Depsgraph.ctime & frame will match the values in the input scene.
@@ -63,7 +63,7 @@ void dgraph_evaluate_on_refresh(DGraph *graph)
 
 void dgraph_evaluate_on_framechange(DGraph *graph, float frame)
 {
-  dgraph::DGraph *deg_graph = reinterpret_cast<dgraph::DGraph *>(graph);
+  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(graph);
   const Scene *scene = dgraph_get_input_scene(graph);
 
   dgraph->tag_time_source();
