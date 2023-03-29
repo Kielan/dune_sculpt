@@ -231,24 +231,24 @@ bool need_evaluate_operation_at_stage(DepsgraphEvalState *state,
  *   dec_parents: Decrement pending parents count, true when child nodes are
  *                scheduled after a task has been completed.
  */
-void schedule_node(DepsgraphEvalState *state,
-                   OperationNode *node,
+void schedule_node(DGraphEvalState *state,
+                   OpNode *node,
                    bool dec_parents,
-                   const FunctionRef<void(OperationNode *node)> schedule_fn)
+                   const FnRef<void(OpNode *node)> schedule_fn)
 {
   /* No need to schedule nodes of invisible ID. */
-  if (!check_operation_node_visible(state, node)) {
+  if (!check_op_node_visible(state, node)) {
     return;
   }
   /* No need to schedule operations which are not tagged for update, they are
    * considered to be up to date. */
-  if ((node->flag & DEPSOP_FLAG_NEEDS_UPDATE) == 0) {
+  if ((node->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
     return;
   }
-  /* TODO(sergey): This is not strictly speaking safe to read
+  /* TODO: This is not strictly speaking safe to read
    * num_links_pending. */
   if (dec_parents) {
-    BLI_assert(node->num_links_pending > 0);
+    lib_assert(node->num_links_pending > 0);
     atomic_sub_and_fetch_uint32(&node->num_links_pending, 1);
   }
   /* Cal not schedule operation while its dependencies are not yet
@@ -266,7 +266,7 @@ void schedule_node(DepsgraphEvalState *state,
     if (node->is_noop()) {
       /* Clear flags to avoid affecting subsequent update propagation.
        * For normal nodes these are cleared when it is evaluated. */
-      node->flag &= ~DEPSOP_FLAG_CLEAR_ON_EVAL;
+      node->flag &= ~DGRAPH_OP_FLAG_CLEAR_ON_EVAL;
 
       /* skip NOOP node, schedule children right away */
       schedule_children(state, node, schedule_fn);
@@ -278,21 +278,21 @@ void schedule_node(DepsgraphEvalState *state,
   }
 }
 
-void schedule_graph(DepsgraphEvalState *state,
-                    const FunctionRef<void(OperationNode *node)> schedule_fn)
+void schedule_graph(DGraphEvalState *state,
+                    const FnRef<void(OpNode *node)> schedule_fn)
 {
-  for (OperationNode *node : state->graph->operations) {
+  for (OpNode *node : state->graph->ops) {
     schedule_node(state, node, false, schedule_fn);
   }
 }
 
-void schedule_children(DepsgraphEvalState *state,
-                       OperationNode *node,
-                       const FunctionRef<void(OperationNode *node)> schedule_fn)
+void schedule_children(DGraphEvalState *state,
+                       OpNode *node,
+                       const FnRef<void(OpNode *node)> schedule_fn)
 {
   for (Relation *rel : node->outlinks) {
-    OperationNode *child = (OperationNode *)rel->to;
-    BLI_assert(child->type == NodeType::OPERATION);
+    OpNode *child = (OpNode *)rel->to;
+    lib_assert(child->type == NodeType::OP);
     if (child->scheduled) {
       /* Happens when having cyclic dependencies. */
       continue;
