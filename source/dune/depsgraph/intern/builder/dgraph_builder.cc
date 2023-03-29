@@ -29,9 +29,9 @@
 
 #include "dgraph.h"
 
-namespace dune::deg {
+namespace dune::dgraph {
 
-bool deg_check_id_in_dgraph(const DGraph *graph, ID *id_orig)
+bool dgraph_check_id_in_dgraph(const DGraph *graph, ID *id_orig)
 {
   IdNode *id_node = graph->find_id_node(id_orig);
   return id_node != nullptr;
