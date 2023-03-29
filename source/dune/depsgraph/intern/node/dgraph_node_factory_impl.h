@@ -7,23 +7,23 @@ struct Id;
 namespace dune {
 namespace dgraph {
 
-template<class ModeObjectType> NodeType DepsNodeFactoryImpl<ModeObjectType>::type() const
+template<class ModeObjectType> NodeType DGraphNodeFactoryImpl<ModeObjectType>::type() const
 {
   return ModeObjectType::typeinfo.type;
 }
 
-template<class ModeObjectType> const char *DepsNodeFactoryImpl<ModeObjectType>::type_name() const
+template<class ModeObjectType> const char *DGraphNodeFactoryImpl<ModeObjectType>::type_name() const
 {
   return ModeObjectType::typeinfo.type_name;
 }
 
-template<class ModeObjectType> int DepsNodeFactoryImpl<ModeObjectType>::id_recalc_tag() const
+template<class ModeObjectType> int DGraphNodeFactoryImpl<ModeObjectType>::id_recalc_tag() const
 {
   return ModeObjectType::typeinfo.id_recalc_tag;
 }
 
 template<class ModeObjectType>
-Node *DGraphNodeFactoryImpl<ModeObjectType>::create_node(const ID *id,
+Node *DGraphNodeFactoryImpl<ModeObjectType>::create_node(const Id *id,
                                                        const char *subdata,
                                                        const char *name) const
 {
