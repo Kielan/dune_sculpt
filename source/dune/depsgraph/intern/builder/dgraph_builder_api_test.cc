@@ -2,7 +2,7 @@
 
 #include "testing/testing.h"
 
-namespace dune::deg::tests {
+namespace dune::dgraph::tests {
 
 class TestableApiNodeQuery : public ApiNodeQuery {
  public:
