@@ -1,6 +1,6 @@
 /**  Physics utilities for effectors and collision. **/
 
-#include "intern/dgraph_physics.h"
+#include "intern/graph_phys.h"
 
 #include "mem_guardedalloc.h"
 
@@ -15,29 +15,29 @@
 #include "types_object_force.h"
 #include "types_object.h"
 
-#include "dgraph_build.h"
-#include "dgraph_physics.h"
-#include "dgraph_query.h"
+#include "graph_build.h"
+#include "graph_phys.h"
+#include "graph_query.h"
 
-#include "dgraph.h"
+#include "graph.h"
 
-namespace dgraph = dune::dgraph;
+namespace graph = dune::graph;
 
 /*************************** Evaluation Query API *****************************/
 
-static ePhysicsRelationType modifier_to_relation_type(unsigned int modifier_type)
+static ePhysRelationType modifier_to_relation_type(unsigned int modifier_type)
 {
   switch (modifier_type) {
     case eModifierType_Collision:
-      return DGRAPH_PHYS_COLLISION;
+      return GRAPH_PHYS_COLLISION;
     case eModifierType_Fluid:
-      return DGRAPH_PHYS_SMOKE_COLLISION;
+      return GRAPH_PHYS_SMOKE_COLLISION;
     case eModifierType_DynamicPaint:
-      return DGRAPH_PHYS_DYNAMIC_BRUSH;
+      return GRAPH_PHYS_DYNAMIC_BRUSH;
   }
 
   lib_assert_msg(0, "Unknown collision modifier type");
-  return DGRAPH_PHYS_RELATIONS_NUM;
+  return GRAPH_PHYS_RELATIONS_NUM;
 }
 /* Get id from an id type object, in a safe manner. This means that object can be nullptr,
  * in which case the function returns nullptr.
@@ -50,47 +50,47 @@ template<class T> static Id *object_id_safe(T *object)
   return &object->id;
 }
 
-ListBase *dgraph_get_effector_relations(const DGraph *graph, Collection *collection)
+ListBase *graph_get_effector_relations(const Graph *graph, Collection *collection)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::DGraph *>(graph);
-  dune::Map<const Id *, ListBase *> *hash = dgraph->physics_relations[DGRAPH_PHYSICS_EFFECTOR];
+  const dgraph::DGraph *dgraph = reinterpret_cast<const graph::Graph *>(graph);
+  dune::Map<const Id *, ListBase *> *hash = graph->physics_relations[GRAPH_PHYS_EFFECTOR];
   if (hash == nullptr) {
     return nullptr;
   }
   /* NOTE: nullptr is a valid lookup key here as it means that the relation is not bound to a
    * specific collection. */
-  Id *collection_orig = dgraph_get_original_id(object_id_safe(collection));
+  Id *collection_orig = graph_get_original_id(object_id_safe(collection));
   return hash->lookup_default(collection_orig, nullptr);
 }
 
-ListBase *dgraph_get_collision_relations(const Depsgraph *graph,
-                                      Collection *collection,
-                                      unsigned int modifier_type)
+ListBase *graph_get_collision_relations(const Graph *graph,
+                                        Collection *collection,
+                                        unsigned int modifier_type)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::Depsgraph *>(graph);
-  const ePhysicsRelationType type = modifier_to_relation_type(modifier_type);
-  dune::Map<const Id *, ListBase *> *hash = deg_graph->physics_relations[type];
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  const ePhysRelationType type = modifier_to_relation_type(modifier_type);
+  dune::Map<const Id *, ListBase *> *hash = graph->phys_relations[type];
   if (hash == nullptr) {
     return nullptr;
   }
   /* NOTE: nullptr is a valid lookup key here as it means that the relation is not bound to a
    * specific collection. */
-  Id *collection_orig = deg_get_original_id(object_id_safe(collection));
+  Id *collection_orig = graph_get_original_id(object_id_safe(collection));
   return hash->lookup_default(collection_orig, nullptr);
 }
 
 /********************** DGraph Building API ************************/
 
-void dgraph_add_collision_relations(NodeHandle *handle,
-                                 Object *object,
-                                 Collection *collection,
-                                 unsigned int modifier_type,
-                                 DGraph_CollobjFilterFn filter_fn,
-                                 const char *name)
+void graph_add_collision_relations(NodeHandle *handle,
+                                   Object *object,
+                                   Collection *collection,
+                                   unsigned int modifier_type,
+                                   Graph_CollobjFilterFn filter_fn,
+                                   const char *name)
 {
-  DGraph *dgraph = dgraph_get_graph_from_handle(handle);
-  dgraph::DGraph *dgraph_graph = (dgraph::DGraph *)dgraph;
-  ListBase *relations = build_collision_relations(dgraph, collection, modifier_type);
+  Graph *graph = graph_get_graph_from_handle(handle);
+  graph::Graph *graph_graph = (graph::Graph *)graph;
+  ListBase *relations = build_collision_relations(graph, collection, modifier_type);
   LISTBASE_FOREACH (CollisionRelation *, relation, relations) {
     Object *ob1 = relation->ob;
     if (ob1 == object) {
@@ -98,22 +98,22 @@ void dgraph_add_collision_relations(NodeHandle *handle,
     }
     if (filter_fn == nullptr ||
         filter_fn(ob1, dune_modifiers_findby_type(ob1, (ModifierType)modifier_type))) {
-      dgraph_add_object_pointcache_relation(handle, ob1, DGRAPH_OB_COMP_TRANSFORM, name);
-      dgraph_add_object_pointcache_relation(handle, ob1, DGRAPH_OB_COMP_GEOMETRY, name);
+      graph_add_object_pointcache_relation(handle, ob1, GRAPH_OB_COMP_TRANSFORM, name);
+      graph_add_object_pointcache_relation(handle, ob1, GRAPH_OB_COMP_GEOMETRY, name);
     }
   }
 }
 
-void dgraph_add_forcefield_relations(NodeHandle *handle,
-                                     Object *object,
-                                     EffectorWeights *effector_weights,
-                                     bool add_absorption,
-                                     int skip_forcefield,
-                                     const char *name)
+void graph_add_forcefield_relations(NodeHandle *handle,
+                                    Object *object,
+                                    EffectorWeights *effector_weights,
+                                    bool add_absorption,
+                                    int skip_forcefield,
+                                    const char *name)
 {
-  DGraph *dgraph = dgraph_get_graph_from_handle(handle);
-  dgraph::DGraph *dgraph = (dgraph::DGraph *)dgraph;
-  ListBase *relations = build_effector_relations(dgraph, effector_weights->group);
+  Graph *graph = graph_get_graph_from_handle(handle);
+  graph::Graph *graph = (graph::Graph *)graph;
+  ListBase *relations = build_effector_relations(graph, effector_weights->group);
   LISTBASE_FOREACH (EffectorRelation *, relation, relations) {
     if (relation->ob == object) {
       continue;
@@ -124,26 +124,26 @@ void dgraph_add_forcefield_relations(NodeHandle *handle,
 
     /* Relation to forcefield object, optionally including geometry.
      * Use special point cache relations for automatic cache clearing. */
-    dgraph_add_object_pointcache_relation(handle, relation->ob, DEG_OB_COMP_TRANSFORM, name);
+    graph_add_object_pointcache_relation(handle, relation->ob, GRAPH_OB_COMP_TRANSFORM, name);
 
     if (relation->psys || ELEM(relation->pd->shape, PFIELD_SHAPE_SURFACE, PFIELD_SHAPE_POINTS) ||
         relation->pd->forcefield == PFIELD_GUIDE) {
       /* TODO: Consider going more granular with more dedicated
        * particle system operation. */
-      dgraph_add_object_pointcache_relation(handle, relation->ob, DGRAPH_OB_COMP_GEOMETRY, name);
+      graph_add_object_pointcache_relation(handle, relation->ob, GRAPH_OB_COMP_GEOMETRY, name);
     }
 
     /* Smoke flow relations. */
     if (relation->pd->forcefield == PFIELD_FLUIDFLOW && relation->pd->f_source != nullptr) {
-      dgraph_add_object_pointcache_relation(
-          handle, relation->pd->f_source, DEG_OB_COMP_TRANSFORM, "Fluid Force Domain");
-      dgraph_add_object_pointcache_relation(
-          handle, relation->pd->f_source, DEG_OB_COMP_GEOMETRY, "Fluid Force Domain");
+      graph_add_object_pointcache_relation(
+          handle, relation->pd->f_source, GRAPH_OB_COMP_TRANSFORM, "Fluid Force Domain");
+      graph_add_object_pointcache_relation(
+          handle, relation->pd->f_source, GRAPH_OB_COMP_GEOMETRY, "Fluid Force Domain");
     }
 
     /* Absorption forces need collision relation. */
     if (add_absorption && (relation->pd->flag & PFIELD_VISIBILITY)) {
-      dgraph_add_collision_relations(
+      graph_add_collision_relations(
           handle, object, nullptr, eModifierType_Collision, nullptr, "Force Absorption");
     }
   }
@@ -153,12 +153,12 @@ void dgraph_add_forcefield_relations(NodeHandle *handle,
 
 namespace dune::dgraph {
 
-ListBase *build_effector_relations(DGraph *graph, Collection *collection)
+ListBase *build_effector_relations(Graph *graph, Collection *collection)
 {
-  Map<const Id *, ListBase *> *hash = graph->physics_relations[DGRAPH_PHYS_EFFECTOR];
+  Map<const Id *, ListBase *> *hash = graph->phys_relations[GRAPH_PHYS_EFFECTOR];
   if (hash == nullptr) {
-    graph->physics_relations[DGRAPH_PHYS_EFFECTOR] = new Map<const Id *, ListBase *>();
-    hash = graph->physics_relations[DGRAPH_PHYS_EFFECTOR];
+    graph->phys_relations[GRAPH_PHYS_EFFECTOR] = new Map<const Id *, ListBase *>();
+    hash = graph->phys_relations[GRAPH_PHYS_EFFECTOR];
   }
   /* If collection is nullptr still use it as a key.
    * In this case the dune_effector_relations_create() will create relates for all bases in the
