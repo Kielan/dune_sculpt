@@ -4,17 +4,17 @@
 
 #include "lib_iterator.h"
 
-#include "deg_depsgraph.h"
-#include "deg_depsgraph_build.h"
+#include "dgraph.h"
+#include "dgraph_build.h"
 
 /* Needed for the instance iterator. */
 #include "types_object_types.h"
 
-struct BLI_Iterator;
+struct lib_Iterator;
 struct CustomData_MeshMasks;
-struct Depsgraph;
+struct DGraph;
 struct DupliObject;
-struct ID;
+struct Id;
 struct ListBase;
 struct PointerRNA;
 struct Scene;
@@ -25,42 +25,38 @@ extern "C" {
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name DEG input data
- * \{ */
+/** dgraph input data **/
 
 /** Get scene that depsgraph was built for. */
-struct Scene *DEG_get_input_scene(const Depsgraph *graph);
+struct Scene *dgraph_get_input_scene(const DGraph *graph);
 
 /** Get view layer that depsgraph was built for. */
-struct ViewLayer *DEG_get_input_view_layer(const Depsgraph *graph);
+struct ViewLayer *graph_get_input_view_layer(const DGraph *graph);
 
-/** Get bmain that depsgraph was built for. */
-struct Main *DEG_get_bmain(const Depsgraph *graph);
+/** Get dmain that depsgraph was built for. */
+struct Main *graph_get_dmain(const DGraph *graph);
 
 /** Get evaluation mode that depsgraph was built for. */
-eEvaluationMode DEG_get_mode(const Depsgraph *graph);
+eEvaluationMode dgraph_get_mode(const DGraph *graph);
 
 /** Get time that depsgraph is being evaluated or was last evaluated at. */
-float DEG_get_ctime(const Depsgraph *graph);
-
-/** \} */
+float dgraph_get_ctime(const DGraph *graph);
 
 /* -------------------------------------------------------------------- */
-/** \name DEG evaluated data
- * \{ */
+/** dgraph evaluated data **/
 
-/** Check if given ID type was tagged for update. */
-bool DEG_id_type_updated(const struct Depsgraph *depsgraph, short id_type);
-bool DEG_id_type_any_updated(const struct Depsgraph *depsgraph);
+/** Check if given id type was tagged for update. */
+bool dgraph_id_type_updated(const struct DGraph *dgraph, short id_type);
+bool dgraph_id_type_any_updated(const struct DGraph *dgraph);
 
 /** Check if given ID type is present in the depsgraph */
-bool DEG_id_type_any_exists(const struct Depsgraph *depsgraph, short id_type);
+bool dgraph_id_type_any_exists(const struct Depsgraph *depsgraph, short id_type);
 
 /** Get additional evaluation flags for the given ID. */
-uint32_t DEG_get_eval_flags_for_id(const struct Depsgraph *graph, struct ID *id);
+uint32_t dgraph_get_eval_flags_for_id(const struct Depsgraph *graph, struct ID *id);
 
 /** Get additional mesh CustomData_MeshMasks flags for the given object. */
-void DEG_get_customdata_mask_for_object(const struct Depsgraph *graph,
+void dgraph_get_customdata_mask_for_object(const struct Depsgraph *graph,
                                         struct Object *object,
                                         struct CustomData_MeshMasks *r_mask);
 
