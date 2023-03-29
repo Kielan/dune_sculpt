@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_dunelib.h"
 #include "lib_string.h"
@@ -139,7 +139,7 @@ void DGraphNodeBuilder::build_view_layer(Scene *scene,
     build_freestyle_lineset(fls);
   }
   /* Sequencer. */
-  if (linked_state == DEG_ID_LINKED_DIRECTLY) {
+  if (linked_state == DGRAPH_ID_LINKED_DIRECTLY) {
     build_scene_audio(scene);
     build_scene_sequencer(scene);
   }
