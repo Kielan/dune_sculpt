@@ -16,7 +16,7 @@ struct DGraph;
 struct DupliObject;
 struct Id;
 struct ListBase;
-struct PointerRNA;
+struct ApiPtr;
 struct Scene;
 struct ViewLayer;
 
@@ -27,7 +27,7 @@ extern "C" {
 /* -------------------------------------------------------------------- */
 /** dgraph input data **/
 
-/** Get scene that depsgraph was built for. */
+/** Get scene that dgraph was built for. */
 struct Scene *dgraph_get_input_scene(const DGraph *graph);
 
 /** Get view layer that depsgraph was built for. */
@@ -49,16 +49,16 @@ float dgraph_get_ctime(const DGraph *graph);
 bool dgraph_id_type_updated(const struct DGraph *dgraph, short id_type);
 bool dgraph_id_type_any_updated(const struct DGraph *dgraph);
 
-/** Check if given ID type is present in the depsgraph */
-bool dgraph_id_type_any_exists(const struct Depsgraph *depsgraph, short id_type);
+/** Check if given id type is present in the dgraph */
+bool dgraph_id_type_any_exists(const struct DGraph *dgraph, short id_type);
 
-/** Get additional evaluation flags for the given ID. */
-uint32_t dgraph_get_eval_flags_for_id(const struct Depsgraph *graph, struct ID *id);
+/** Get additional evaluation flags for the given id. */
+uint32_t dgraph_get_eval_flags_for_id(const struct DGraph *graph, struct ID *id);
 
 /** Get additional mesh CustomData_MeshMasks flags for the given object. */
-void dgraph_get_customdata_mask_for_object(const struct Depsgraph *graph,
-                                        struct Object *object,
-                                        struct CustomData_MeshMasks *r_mask);
+void dgraph_get_customdata_mask_for_object(const struct DGraph *graph,
+                                           struct Object *object,
+                                           struct CustomData_MeshMasks *r_mask);
 
 /**
  * Get scene at its evaluated state.
@@ -67,16 +67,16 @@ void dgraph_get_customdata_mask_for_object(const struct Depsgraph *graph,
  * This function will check that the data-block has been expanded (and copied) from the original
  * one. Assert will happen if it's not.
  */
-struct Scene *DEG_get_evaluated_scene(const struct Depsgraph *graph);
+struct Scene *dgraph_get_evaluated_scene(const struct Depsgraph *graph);
 
 /**
  * Get view layer at its evaluated state.
  * This is a shortcut for accessing active view layer from evaluated scene.
  */
-struct ViewLayer *DEG_get_evaluated_view_layer(const struct Depsgraph *graph);
+struct ViewLayer *dgraph_get_evaluated_view_layer(const struct Depsgraph *graph);
 
 /** Get evaluated version of object for given original one. */
-struct Object *DEG_get_evaluated_object(const struct Depsgraph *depsgraph, struct Object *object);
+struct Object *dgraph_get_evaluated_object(const struct Depsgraph *depsgraph, struct Object *object);
 
 /** Get evaluated version of given ID data-block. */
 struct Id *dgraph_get_evaluated_id(const struct DGraph *depsgraph, struct ID *id);
@@ -151,17 +151,17 @@ typedef struct DGraphObjectIterData {
    * other users of the iterator. */
   struct Object temp_dupli_object;
 
-  /* **** Iteration over ID nodes **** */
+  /* **** Iteration over Id nodes **** */
   size_t id_node_index;
   size_t num_id_nodes;
 } DGraphObjectIterData;
 
-void dgraph_iterator_objects_begin(struct BLI_Iterator *iter, DEGObjectIterData *data);
-void dgraph_iterator_objects_next(struct BLI_Iterator *iter);
-void dgraph_iterator_objects_end(struct BLI_Iterator *iter);
+void dgraph_iterator_objects_begin(struct lib_Iterator *iter, DGraphObjectIterData *data);
+void dgraph_iterator_objects_next(struct lib_Iterator *iter);
+void dgraph_iterator_objects_end(struct lib_Iterator *iter);
 
 /**
- * NOTE: Be careful with DEG_ITER_OBJECT_FLAG_LINKED_INDIRECTLY objects.
+ * NOTE: Be careful with DGRAPH_ITER_OBJECT_FLAG_LINKED_INDIRECTLY objects.
  * Although they are available they have no overrides (collection_properties)
  * and will crash if you try to access it.
  */
@@ -179,13 +179,13 @@ void dgraph_iterator_objects_end(struct BLI_Iterator *iter);
                 Object *, \
                 instance_)
 
-#define DEG_OBJECT_ITER_END \
+#define DGRAPH_OBJECT_ITER_END \
   ITER_END; \
   } \
   ((void)0)
 
 /**
- * Depsgraph objects iterator for draw manager and final render
+ * DGraph objects iterator for draw manager and final render
  */
 #define DGRAPH_OBJECT_ITER_FOR_RENDER_ENGINE_BEGIN(graph_, instance_) \
   DGRAPH_OBJECT_ITER_BEGIN (graph_, \
@@ -250,10 +250,10 @@ void dgraph_foreach_dependent_id_component(const DGraph *dgraph,
                                            const Id *id,
                                            eDGraphObjectComponentType source_component_type,
                                            int flags,
-                                           DGraphForeachIDComponentCallback callback,
-                                        void *user_data);
+                                           DGraphForeachIDComponentCb cb,
+                                           void *user_data);
 
-void deg_foreach_id(const DGraph *dgraph, DGraphForeachIdCb cb, void *user_data);
+void dgraph_foreach_id(const DGraph *dgraph, DGraphForeachIdCb cb, void *user_data);
 
 
 #ifdef __cplusplus
