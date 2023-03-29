@@ -178,7 +178,7 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
     /* Bone - generally, we just want the bone component. */
     node_id.type = NodeType::BONE;
     node_id.component_name = pchan->name;
-    /* However check property name for special handling. */
+    /* However check prop name for special handling. */
     if (prop != nullptr) {
       Object *object = reinterpret_cast<Object *>(node_id.id);
       const char *prop_name = api_prop_id(prop);
