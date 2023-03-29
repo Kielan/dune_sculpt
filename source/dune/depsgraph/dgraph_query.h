@@ -79,55 +79,55 @@ struct ViewLayer *DEG_get_evaluated_view_layer(const struct Depsgraph *graph);
 struct Object *DEG_get_evaluated_object(const struct Depsgraph *depsgraph, struct Object *object);
 
 /** Get evaluated version of given ID data-block. */
-struct ID *DEG_get_evaluated_id(const struct Depsgraph *depsgraph, struct ID *id);
+struct Id *dgraph_get_evaluated_id(const struct DGraph *depsgraph, struct ID *id);
 
 /** Get evaluated version of data pointed to by RNA pointer */
-void DEG_get_evaluated_rna_pointer(const struct Depsgraph *depsgraph,
-                                   struct PointerRNA *ptr,
-                                   struct PointerRNA *r_ptr_eval);
+void dgraph_get_evaluated_rna_pointer(const struct DGraph *dgraph,
+                                   struct ApiPtr *ptr,
+                                   struct ApiPtr *r_ptr_eval);
 
 /** Get original version of object for given evaluated one. */
-struct Object *DEG_get_original_object(struct Object *object);
+struct Object *dgraph_get_original_object(struct Object *object);
 
 /** Get original version of given evaluated ID data-block. */
-struct ID *DEG_get_original_id(struct ID *id);
+struct Id *dgraph_get_original_id(struct ID *id);
 
 /**
- * Check whether given ID is an original,
+ * Check whether given id is an original,
  *
- * Original IDs are considered all the IDs which are not covered by copy-on-write system and are
+ * Original ids are considered all the IDs which are not covered by copy-on-write system and are
  * not out-of-main localized data-blocks.
  */
-bool DEG_is_original_id(const struct ID *id);
-bool DEG_is_original_object(const struct Object *object);
+bool dgraph_is_original_id(const struct Id *id);
+bool dgraph_is_original_object(const struct Object *object);
 
 /* Opposite of the above.
  *
  * If the data-block is not original it must be evaluated, and vice versa. */
 
-bool DEG_is_evaluated_id(const struct ID *id);
-bool DEG_is_evaluated_object(const struct Object *object);
+bool dgraph_is_evaluated_id(const struct Id *id);
+bool dgraph_is_evaluated_object(const struct Object *object);
 
 /**
  * Check whether depsgraph is fully evaluated. This includes the following checks:
  * - Relations are up-to-date.
  * - Nothing is tagged for update.
  */
-bool deg_is_fully_evaluated(const struct Depsgraph *depsgraph);
+bool dgraph_is_fully_evaluated(const struct DGraph *dgraph);
 
 /* -------------------------------------------------------------------- */
-/** DEG object iterators **/
+/** dgraph object iterators **/
 
 enum {
-  DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY = (1 << 0),
-  DEG_ITER_OBJECT_FLAG_LINKED_INDIRECTLY = (1 << 1),
-  DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET = (1 << 2),
-  DEG_ITER_OBJECT_FLAG_VISIBLE = (1 << 3),
-  DEG_ITER_OBJECT_FLAG_DUPLI = (1 << 4),
+  DGRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY = (1 << 0),
+  DGRAPH_ITER_OBJECT_FLAG_LINKED_INDIRECTLY = (1 << 1),
+  DGRAPH_ITER_OBJECT_FLAG_LINKED_VIA_SET = (1 << 2),
+  DGRAPH_ITER_OBJECT_FLAG_VISIBLE = (1 << 3),
+  DGRAPH_ITER_OBJECT_FLAG_DUPLI = (1 << 4),
 };
 
-typedef struct DEGObjectIterData {
-  struct Depsgraph *graph;
+typedef struct DGraphObjectIterData {
+  struct DGraph *graph;
   int flag;
 
   struct Scene *scene;
@@ -154,27 +154,27 @@ typedef struct DEGObjectIterData {
   /* **** Iteration over ID nodes **** */
   size_t id_node_index;
   size_t num_id_nodes;
-} DEGObjectIterData;
+} DGraphObjectIterData;
 
-void deg_iterator_objects_begin(struct BLI_Iterator *iter, DEGObjectIterData *data);
-void deg_iterator_objects_next(struct BLI_Iterator *iter);
-void deg_iterator_objects_end(struct BLI_Iterator *iter);
+void dgraph_iterator_objects_begin(struct BLI_Iterator *iter, DEGObjectIterData *data);
+void dgraph_iterator_objects_next(struct BLI_Iterator *iter);
+void dgraph_iterator_objects_end(struct BLI_Iterator *iter);
 
 /**
  * NOTE: Be careful with DEG_ITER_OBJECT_FLAG_LINKED_INDIRECTLY objects.
  * Although they are available they have no overrides (collection_properties)
  * and will crash if you try to access it.
  */
-#define DEG_OBJECT_ITER_BEGIN(graph_, instance_, flag_) \
+#define DGRAPH_OBJECT_ITER_BEGIN(graph_, instance_, flag_) \
   { \
-    DEGObjectIterData data_ = { \
+    DGraphObjectIterData data_ = { \
         graph_, \
         flag_, \
     }; \
 \
-    ITER_BEGIN (DEG_iterator_objects_begin, \
-                DEG_iterator_objects_next, \
-                DEG_iterator_objects_end, \
+    ITER_BEGIN (dgraph_iterator_objects_begin, \
+                dgraph_iterator_objects_next, \
+                dgraph_iterator_objects_end, \
                 &data_, \
                 Object *, \
                 instance_)
@@ -187,53 +187,52 @@ void deg_iterator_objects_end(struct BLI_Iterator *iter);
 /**
  * Depsgraph objects iterator for draw manager and final render
  */
-#define DEG_OBJECT_ITER_FOR_RENDER_ENGINE_BEGIN(graph_, instance_) \
-  DEG_OBJECT_ITER_BEGIN (graph_, \
+#define DGRAPH_OBJECT_ITER_FOR_RENDER_ENGINE_BEGIN(graph_, instance_) \
+  DGRAPH_OBJECT_ITER_BEGIN (graph_, \
                          instance_, \
-                         DEG_ITER_OBJECT_FLAG_LINKED_DIRECTLY | \
-                             DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET | DEG_ITER_OBJECT_FLAG_VISIBLE | \
-                             DEG_ITER_OBJECT_FLAG_DUPLI)
+                         DGRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY | \
+                             DGRAPH_ITER_OBJECT_FLAG_LINKED_VIA_SET | DGRAPH_ITER_OBJECT_FLAG_VISIBLE | \
+                             DGRAPH_ITER_OBJECT_FLAG_DUPLI)
 
-#define DEG_OBJECT_ITER_FOR_RENDER_ENGINE_END DEG_OBJECT_ITER_END
+#define DGRAPH_OBJECT_ITER_FOR_RENDER_ENGINE_END DEG_OBJECT_ITER_END
 
 /* -------------------------------------------------------------------- */
-/** DEG ID iterators **/
+/** graph id iterators **/
 
-typedef struct DEGIDIterData {
-  struct Depsgraph *graph;
+typedef struct DGraphIdIterData {
+  struct DGraph *graph;
   bool only_updated;
-
   size_t id_node_index;
   size_t num_id_nodes;
-} DEGIDIterData;
+} DGraphIdIterData;
 
-void deg_iterator_ids_begin(struct lib_Iterator *iter, DEGIDIterData *data);
-void deg_iterator_ids_next(struct lib_Iterator *iter);
-void deg_iterator_ids_end(struct lib_Iterator *iter);
+void dgraph_iterator_ids_begin(struct lib_Iterator *iter, DGraphIdIterData *data);
+void dgraph_iterator_ids_next(struct lib_Iterator *iter);
+void dgraph_iterator_ids_end(struct lib_Iterator *iter);
 
 /* -------------------------------------------------------------------- */
-/** DEG traversal **/
+/** dgraph traversal **/
 
-typedef void (*DEGForeachIDCallback)(ID *id, void *user_data);
-typedef void (*DEGForeachIDComponentCallback)(ID *id,
-                                              eDepsObjectComponentType component,
-                                              void *user_data);
+typedef void (*DGraphForeachIdCb)(Id *id, void *user_data);
+typedef void (*DGraphForeachIdComponentCb)(Id *id,
+                                           eDGraphObjectComponentType component,
+                                           void *user_data);
 
 /**
  * Modifies runtime flags in depsgraph nodes,
  * so can not be used in parallel. Keep an eye on that!
  */
-void deg_foreach_ancestor_ID(const Depsgraph *depsgraph,
-                             const ID *id,
-                             DEGForeachIDCallback callback,
-                             void *user_data);
-void deg_foreach_dependent_ID(const Depsgraph *depsgraph,
-                              const ID *id,
-                              DEGForeachIDCallback callback,
-                              void *user_data);
+void dgraph_foreach_ancestor_id(const DGraph *dgraph,
+                                const Id *id,
+                                DGraphForeachIdCb cb,
+                                void *user_data);
+void dgraph_foreach_dependent_id(const DGraph *dgraph,
+                                 const Id *id,
+                                 DGraphForeachIdCb cb,
+                                 void *user_data);
 
 /**
- * Starts traversal from given component of the given ID, invokes callback for every other
+ * Starts traversal from given component of the given id, invokes callback for every other
  * component  which is directly on indirectly dependent on the source one.
  */
 enum {
@@ -245,16 +244,16 @@ enum {
    *     object 1 transform before solver ---> solver ------> object 1 final transform
    *     object 2 transform before solver -----^     \------> object 2 final transform
    */
-  DEG_FOREACH_COMPONENT_IGNORE_TRANSFORM_SOLVERS = (1 << 0),
+  DGRAPH_FOREACH_COMPONENT_IGNORE_TRANSFORM_SOLVERS = (1 << 0),
 };
-void deg_foreach_dependent_ID_component(const Depsgraph *depsgraph,
-                                        const ID *id,
-                                        eDepsObjectComponentType source_component_type,
-                                        int flags,
-                                        DEGForeachIDComponentCallback callback,
+void dgraph_foreach_dependent_id_component(const DGraph *dgraph,
+                                           const Id *id,
+                                           eDGraphObjectComponentType source_component_type,
+                                           int flags,
+                                           DGraphForeachIDComponentCallback callback,
                                         void *user_data);
 
-void deg_foreach_ID(const Depsgraph *depsgraph, DEGForeachIDCallback callback, void *user_data);
+void deg_foreach_id(const DGraph *dgraph, DGraphForeachIdCb cb, void *user_data);
 
 
 #ifdef __cplusplus
