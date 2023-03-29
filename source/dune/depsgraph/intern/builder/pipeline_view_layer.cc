@@ -11,7 +11,7 @@ ViewLayerBuilderPipeline::ViewLayerBuilderPipeline(::DGraph *graph)
 {
 }
 
-void ViewLayerBuilderPipeline::build_nodes(DepsgraphNodeBuilder &node_builder)
+void ViewLayerBuilderPipeline::build_nodes(DGraphNodeBuilder &node_builder)
 {
   node_builder.build_view_layer(scene_, view_layer_, DGRAPH_ID_LINKED_DIRECTLY);
 }
