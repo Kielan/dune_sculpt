@@ -22,10 +22,10 @@
 
 #pragma once
 
-#include "DNA_ID.h"
+#include "types_id.h"
 
 /* Dependency Graph */
-typedef struct Depsgraph Depsgraph;
+typedef struct Dgraph Dgraph;
 
 /* ------------------------------------------------ */
 
@@ -60,14 +60,14 @@ extern "C" {
 /* -------------------------------------------------------------------- */
 /** CRUD **/
 
-/* Get main depsgraph instance from context! */
+/* Get main dgraph instance from context! */
 
 /**
- * Create new Depsgraph instance.
+ * Create new DGraph instance.
  *
  * TODO: what arguments are needed here? What's the building-graph entry point?
  */
-Depsgraph *deg_graph_new(struct Main *dmain,
+DGraph *dgraph_new(struct Main *dmain,
                          struct Scene *scene,
                          struct ViewLayer *view_layer,
                          eEvaluationMode mode);
@@ -78,78 +78,78 @@ Depsgraph *deg_graph_new(struct Main *dmain,
  * - Undo steps when we do want to re-use the old depsgraph data as much as possible.
  * - Rendering where we want to re-use objects between different view layers.
  */
-void deg_graph_replace_owners(struct Depsgraph *depsgraph,
-                              struct Main *bmain,
-                              struct Scene *scene,
-                              struct ViewLayer *view_layer);
+void dgraph_replace_owners(struct DGraph *dgraph,
+                           struct Main *dmain,
+                           struct Scene *scene,
+                           struct ViewLayer *view_layer);
 
 /** Free graph's contents and graph itself. */
-void deg_graph_free(Depsgraph *graph);
+void dgraph_free(DGraph *graph);
 
 /* -------------------------------------------------------------------- */
 /** Node Types Registry **/
 
 /** Register all node types. */
-void deg_register_node_types(void);
+void dgraph_register_node_types(void);
 
 /** Free node type registry on exit. */
-void deg_free_node_types(void);
+void dgraph_free_node_types(void);
 
 /* -------------------------------------------------------------------- */
 /** Update Tagging **/
 
 /** Tag dependency graph for updates when visible scenes/layers changes. */
-void deg_graph_tag_on_visible_update(Depsgraph *depsgraph, bool do_time);
+void dgraph_tag_on_visible_update(DGraph *dgraph, bool do_time);
 
 /** Tag all dependency graphs for update when visible scenes/layers changes. */
-void deg_tag_on_visible_update(struct Main *bmain, bool do_time);
+void dgraph_tag_on_visible_update(struct Main *dmain, bool do_time);
 
 /**
  * note Will return NULL if the flag is not known, allowing to gracefully handle situations
  * when recalc flag has been removed.
  */
-const char *deg_update_tag_as_string(IDRecalcFlag flag);
+const char *dgraph_update_tag_as_string(IdRecalcFlag flag);
 
-/** Tag given ID for an update in all the dependency graphs. */
-void deg_id_tag_update(struct ID *id, int flag);
-void deg_id_tag_update_ex(struct Main *dmain, struct ID *id, int flag);
+/** Tag given id for an update in all the dependency graphs. */
+void dgraph_id_tag_update(struct Id *id, int flag);
+void dgraph_id_tag_update_ex(struct Main *dmain, struct Id *id, int flag);
 
-void deg_graph_id_tag_update(struct Main *dmain,
-                             struct Depsgraph *depsgraph,
-                             struct ID *id,
+void dgraph_graph_id_tag_update(struct Main *dmain,
+                             struct DGraph *dgraph,
+                             struct Id *id,
                              int flag);
 
 /** Tag all dependency graphs when time has changed. */
-void deg_time_tag_update(struct Main *bmain);
+void dgraph_time_tag_update(struct Main *dmain);
 
 /** Tag a dependency graph when time has changed. */
-void deg_graph_time_tag_update(struct Depsgraph *depsgraph);
+void dgraph_time_tag_update(struct DGraph *dgraph);
 
 /**
  * Mark a particular data-block type as having changing.
  * This does not cause any updates but is used by external
  * render engines to detect if for example a data-block was removed.
  */
-void deg_graph_id_type_tag(struct Depsgraph *depsgraph, short id_type);
-void deg_id_type_tag(struct Main *bmain, short id_type);
+void dgraph_id_type_tag(struct DGraph *dgraph, short id_type);
+void dgraph_id_type_tag(struct Main *dmain, short id_type);
 
 /**
  * Set a depsgraph to flush updates to editors. This would be done
- * for viewport depsgraphs, but not render or export depsgraph for example.
+ * for viewport dgraphs, but not render or export dgraph for example.
  */
-void deg_enable_editors_update(struct Depsgraph *depsgraph);
+void dgraph_enable_editors_update(struct DGraph *dgraph);
 
 /** Check if something was changed in the database and inform editors about this. */
-void deg_editors_update(struct Depsgraph *depsgraph, bool time);
+void dgraph_editors_update(struct DGraph *dgraph, bool time);
 
 /** Clear recalc flags after editors or renderers have handled updates. */
-void deg_ids_clear_recalc(Depsgraph *depsgraph, bool backup);
+void dgraph_ids_clear_recalc(DGraph *dgraph, bool backup);
 
 /**
- * Restore recalc flags, backed up by a previous call to #DEG_ids_clear_recalc.
+ * Restore recalc flags, backed up by a previous call to dgraph_ids_clear_recalc.
  * This also clears the backup.
  */
-void deg_ids_restore_recalc(Depsgraph *depsgraph);
+void dgraph_ids_restore_recalc(DGraph *dgraph);
 
 /* ************************************************ */
 /* Evaluation Engine API */
@@ -162,13 +162,13 @@ void deg_ids_restore_recalc(Depsgraph *depsgraph);
  *
  * The frame-change happened for root scene that graph belongs to.
  */
-void deg_evaluate_on_framechange(Depsgraph *graph, float frame);
+void dgraph_evaluate_on_framechange(Depsgraph *graph, float frame);
 
 /**
  * Data changed recalculation entry point.
  * Evaluate all nodes tagged for updating.
  */
-void deg_evaluate_on_refresh(Depsgraph *graph);
+void dgraph_evaluate_on_refresh(DGraph *graph);
 
 /* -------------------------------------------------------------------- */
 /** Editors Integration
@@ -177,12 +177,12 @@ void deg_evaluate_on_refresh(Depsgraph *graph);
  * to do their own updates based on changes.
  **/
 
-typedef struct DEGEditorUpdateContext {
-  struct Main *bmain;
-  struct Depsgraph *depsgraph;
+typedef struct DGraphEditorUpdateCtx {
+  struct Main *dmain;
+  struct DGraph *dgraph;
   struct Scene *scene;
   struct ViewLayer *view_layer;
-} DEGEditorUpdateContext;
+} DGraphEditorUpdateCtx;
 
 typedef void (*DEG_EditorUpdateIDCb)(const DEGEditorUpdateContext *update_ctx, struct ID *id);
 typedef void (*DEG_EditorUpdateSceneCb)(const DEGEditorUpdateContext *update_ctx, bool updated);
