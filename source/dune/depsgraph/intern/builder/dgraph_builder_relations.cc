@@ -286,7 +286,7 @@ bool DGraphRelationBuilder::has_node(const OpKey &key) const
   return find_node(key) != nullptr;
 }
 
-void DGraphRelationBuilder::add_depends_on_transform_relation(const DepsNodeHandle *handle,
+void DGraphRelationBuilder::add_depends_on_transform_relation(const DGraphNodeHandle *handle,
                                                                  const char *description)
 {
   IdNode *id_node = handle->node->owner->owner;
@@ -361,7 +361,7 @@ Relation *DGraphRelationBuilder::add_op_relation(OpNode *node_from,
     return graph_->add_new_relation(node_from, node_to, description, flags);
   }
 
-  DEG_DEBUG_PRINTF((::DGraph *)graph_,
+  DGRAPH_DEBUG_PRINTF((::DGraph *)graph_,
                    BUILD,
                    "add_op_relation(%p = %s, %p = %s, %s) Failed\n",
                    node_from,
@@ -896,7 +896,7 @@ void DGraphRelationBuilder::build_object_modifiers(Object *object)
     if (mti->updateDGraph) {
       const BuilderStack::ScopedEntry stack_entry = stack_.trace(*modifier);
 
-      DepsNodeHandle handle = create_node_handle(modifier_key);
+      DGraphNodeHandle handle = create_node_handle(modifier_key);
       ctx.node = reinterpret_cast<::DNodeHandle *>(&handle);
       mti->updateDGraph(modifier, &ctx);
     }
@@ -2998,7 +2998,7 @@ void DGraphRelationBuilder::build_simulation(Simulation *simulation)
   add_relation(nodetree_key, simulation_eval_key, "NodeTree -> Simulation", 0);
 }
 
-using Seq_build_prop_cb_data = struct Seq_build_prop_cb_data {
+using seq_build_prop_cb_data = struct Seq_build_prop_cb_data {
   DGraphRelationBuilder *builder;
   ComponentKey sequencer_key;
   bool has_audio_strips;
@@ -3183,7 +3183,7 @@ void DGraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
      *   of the (custom) properties in the original datablock (even the
      *   ones which do not imply other component update) need to make
      *   sure drivers are properly updated.
-     *   This way, for example, changing ID property will properly poke
+     *   This way, for example, changing id property will properly poke
      *   all drivers to be updated.
      *
      * - View layers have cached array of bases in them, which is not
@@ -3191,7 +3191,7 @@ void DGraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
      *   to preserve that cache in copy-on-write, but for the time being
      *   we allow flush to layer collections component which will ensure
      *   that cached array of bases exists and is up-to-date. */
-    if (ELEM(comp_node->type, NodeType::PARAMETERS, NodeType::LAYER_COLLECTIONS)) {
+    if (ELEM(comp_node->type, NodeType::PARAMS, NodeType::LAYER_COLLECTIONS)) {
       rel_flag &= ~RELATION_FLAG_NO_FLUSH;
     }
     /* All entry operations of each component should wait for a proper
@@ -3202,7 +3202,7 @@ void DGraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
       rel->flag |= rel_flag;
     }
     /* All dangling operations should also be executed after copy-on-write. */
-    for (OpNode *op_node : comp_node->operations_map->values()) {
+    for (OpNode *op_node : comp_node->ops_map->values()) {
       if (op_node == op_entry) {
         continue;
       }
