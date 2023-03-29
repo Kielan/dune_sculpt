@@ -63,7 +63,7 @@ struct Sound;
 namespace dune::dgraph {
 
 struct ComponentNode;
-struct DNodeHandle;
+struct NodeHandle;
 struct DGraph;
 class DGraphBuilderCache;
 struct IdNode;
@@ -125,7 +125,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
   virtual void build_layer_collections(ListBase *lb);
   virtual void build_view_layer(Scene *scene,
                                 ViewLayer *view_layer,
-                                eDepsNode_LinkedState_Type linked_state);
+                                eDGraphNode_LinkedState_Type linked_state);
   virtual void build_collection(LayerCollection *from_layer_collection,
                                 Object *object,
                                 Collection *collection);
@@ -205,7 +205,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
   virtual void build_movieclip(MovieClip *clip);
   virtual void build_lightprobe(LightProbe *probe);
   virtual void build_speaker(Speaker *speaker);
-  virtual void build_sound(DSound *sound);
+  virtual void build_sound(Sound *sound);
   virtual void build_simulation(Simulation *simulation);
   virtual void build_scene_sequencer(Scene *scene);
   virtual void build_scene_audio(Scene *scene);
@@ -213,7 +213,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
   virtual void build_vfont(VFont *vfont);
 
   virtual void build_nested_datablock(Id *owner, Id *id, bool flush_cow_changes);
-  virtual void build_nested_nodetree(Id *owner, DNodeTree *ntree);
+  virtual void build_nested_nodetree(Id *owner, NodeTree *ntree);
   virtual void build_nested_shapekey(Id *owner, Key *key);
 
   void add_particle_collision_relations(const OpKey &key,
@@ -260,7 +260,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
                             int flags = 0);
 
   template<typename KeyType>
-  DNodeHandle create_node_handle(const KeyType &key, const char *default_name = "");
+  NodeHandle create_node_handle(const KeyType &key, const char *default_name = "");
 
   /* TODO: All those is_same* functions are to be generalized. */
 
@@ -279,7 +279,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
 
  private:
   struct BuilderWalkUserData {
-    DGraphRelationBuilder *builder;
+    GraphRelationBuilder *builder;
   };
 
   static void modifier_walk(void *user_data,
@@ -287,7 +287,7 @@ class DGraphRelationBuilder : public DGraphBuilder {
                             struct Id **idpoint,
                             int cb_flag);
 
-  static void constraint_walk(DConstraint *con, Id **idpoint, bool is_ref, void *user_data);
+  static void constraint_walk(Constraint *con, Id **idpoint, bool is_ref, void *user_data);
 
   /* State which demotes currently built entities. */
   Scene *scene_;
@@ -298,9 +298,9 @@ class DGraphRelationBuilder : public DGraphBuilder {
 };
 
 struct DNodeHandle {
-  DNodeHandle(DGraphRelationBuilder *builder,
-              OpNode *node,
-              const char *default_name = "")
+  NodeHandle(DGraphRelationBuilder *builder,
+             OpNode *node,
+             const char *default_name = "")
       : builder(builder), node(node), default_name(default_name)
   {
     lib_assert(node != nullptr);
