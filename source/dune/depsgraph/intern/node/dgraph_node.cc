@@ -119,11 +119,11 @@ eDGraphSceneComponentType nodeTypeToSceneComponent(NodeType type)
 {
   switch (type) {
     case NodeType::PARAMS:
-      return DEG_SCENE_COMP_PARAMS;
+      return DGRAPH_SCENE_COMP_PARAMS;
     case NodeType::ANIMATION:
-      return DEG_SCENE_COMP_ANIMATION;
+      return DGRAPH_SCENE_COMP_ANIMATION;
     case NodeType::SEQUENCER:
-      return DEG_SCENE_COMP_SEQUENCER;
+      return DGRAPH_SCENE_COMP_SEQUENCER;
 
     case NodeType::OPERATION:
     case NodeType::TIMESOURCE:
@@ -166,8 +166,8 @@ NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type)
   switch (component_type) {
     case DGRAPH_OB_COMP_ANY:
       return NodeType::UNDEFINED;
-    case DGRAPH_OB_COMP_PARAMETERS:
-      return NodeType::PARAMETERS;
+    case DGRAPH_OB_COMP_PARAMS:
+      return NodeType::PARAMS;
     case DGRAPH_OB_COMP_ANIMATION:
       return NodeType::ANIMATION;
     case DGRAPH_OB_COMP_TRANSFORM:
