@@ -278,8 +278,8 @@ void graph_debug_print_eval_subdata(struct Graph *graph,
   fflush(stdout);
 }
 
-void graph_debug_print_eval_subdata_index(struct DGraph *dgraph,
-                                        const char *function_name,
+void graph_debug_print_eval_subdata_index(struct Graph *graph,
+                                        const char *fn_name,
                                         const char *object_name,
                                         const void *object_address,
                                         const char *subdata_comment,
@@ -287,70 +287,70 @@ void graph_debug_print_eval_subdata_index(struct DGraph *dgraph,
                                         const void *subdata_address,
                                         const int subdata_index)
 {
-  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((graph_debug_flags_get(graph) & G_DEBUG_GRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
           "%s%s on %s %s(%p)%s %s %s[%d] %s(%p)%s\n",
-          dgraph_name_for_logging(dgraph).c_str(),
-          function_name,
+          graph_name_for_logging(dgraph).c_str(),
+          fn_name,
           object_name,
-          dgraph::color_for_ptr(object_address).c_str(),
+          graph::color_for_ptr(object_address).c_str(),
           object_address,
-          dgraph::color_end().c_str(),
+          graph::color_end().c_str(),
           subdata_comment,
           subdata_name,
           subdata_index,
-          dgraph::color_for_ptr(subdata_address).c_str(),
+          graph::color_for_ptr(subdata_address).c_str(),
           subdata_address,
           dgraph::color_end().c_str());
   fflush(stdout);
 }
 
-void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
-                                       const char *function_name,
+void graph_debug_print_eval_parent_typed(struct Graph *graph,
+                                       const char *fn_name,
                                        const char *object_name,
                                        const void *object_address,
                                        const char *parent_comment,
                                        const char *parent_name,
                                        const void *parent_address)
 {
-  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((graph_debug_flags_get(graph) & G_DEBUG_GRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
           "%s%s on %s %s(%p) [%s] %s %s %s(%p)%s\n",
-          dgraph_name_for_logging(dgraph).c_str(),
-          function_name,
+          graph_name_for_logging(graph).c_str(),
+          fn_name,
           object_name,
-          dgraph::color_for_ptr(object_address).c_str(),
+          graph::color_for_ptr(object_address).c_str(),
           object_address,
-          dgraph::color_end().c_str(),
+          graph::color_end().c_str(),
           parent_comment,
           parent_name,
-          dgraph::color_for_ptr(parent_address).c_str(),
+          graph::color_for_ptr(parent_address).c_str(),
           parent_address,
-          dgraph::color_end().c_str());
+          graph::color_end().c_str());
   fflush(stdout);
 }
 
-void dgraph_debug_print_eval_time(struct DGraph *graph,
+void graph_debug_print_eval_time(struct Graph *graph,
                                   const char *fn_name,
                                   const char *object_name,
                                   const void *object_address,
                                   float time)
 {
-  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((graph_debug_flags_get(graph) & G_DEBUG_GRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
           "%s%s on %s %s(%p)%s at time %f\n",
-          dgraph_name_for_logging(dgraph).c_str(),
+          graph_name_for_logging(graph).c_str(),
           fn_name,
           object_name,
-          dgraph::color_for_ptr(object_address).c_str(),
+          graph::color_for_ptr(object_address).c_str(),
           object_address,
-          dgraph::color_end().c_str(),
+          graph::color_end().c_str(),
           time);
   fflush(stdout);
 }
