@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <cstring> /* required for STREQ later on. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_dunelib.h"
 #include "lib_utildefines.h"
@@ -52,9 +52,9 @@ void DGraphRelationBuilder::build_ik_pose(Object *object,
     return;
   }
 
-  DKinematicConstraint *data = (DKinematicConstraint *)con->data;
+  KinematicConstraint *data = (KinematicConstraint *)con->data;
   /* Attach owner to IK Solver to. */
-  DPoseChannel *rootchan = dune_armature_ik_solver_find_root(pchan, data);
+  PoseChannel *rootchan = dune_armature_ik_solver_find_root(pchan, data);
   if (rootchan == nullptr) {
     return;
   }
@@ -141,7 +141,7 @@ void DGraphRelationBuilder::build_ik_pose(Object *object,
       add_customdata_mask(data->poletar, DGraphCustomDataMeshMasks::MaskVert(CD_MASK_MDEFORMVERT));
     }
   }
-  DEG_DEBUG_PRINTF((::DGraph *)graph_,
+  DGRAPH_DEBUG_PRINTF((::DGraph *)graph_,
                    BUILD,
                    "\nStarting IK Build: pchan = %s, target = (%s, %s), "
                    "segcount = %d\n",
@@ -149,7 +149,7 @@ void DGraphRelationBuilder::build_ik_pose(Object *object,
                    data->tar ? data->tar->id.name : "nullptr",
                    data->subtarget,
                    data->rootbone);
-  DPoseChannel *parchan = pchan;
+  PoseChannel *parchan = pchan;
   /* Exclude tip from chain if needed. */
   if (!(data->flag & CONSTRAINT_IK_TIP)) {
     parchan = pchan->parent;
@@ -181,7 +181,7 @@ void DGraphRelationBuilder::build_ik_pose(Object *object,
     parchan->flag |= POSE_DONE;
     root_map->add_bone(parchan->name, rootchan->name);
     /* continue up chain, until we reach target number of items. */
-    DEG_DEBUG_PRINTF((::DGraph *)graph_, BUILD, "  %d = %s\n", segcount, parchan->name);
+    DGRAPH_DEBUG_PRINTF((::DGraph *)graph_, BUILD, "  %d = %s\n", segcount, parchan->name);
     /* TODO: This is an arbitrary value, which was just following
      * old code convention. */
     segcount++;
@@ -280,7 +280,7 @@ void DGraphRelationBuilder::build_inter_ik_chains(Object *object,
 void DGraphRelationBuilder::build_rig(Object *object)
 {
   /* Armature-Data */
-  DArmature *armature = (DArmature *)object->data;
+  DArmature *armature = (Armature *)object->data;
   // TODO: selection status?
   /* Attach links between pose operations. */
   ComponentKey local_transform(&object->id, NodeType::TRANSFORM);
@@ -314,7 +314,7 @@ void DGraphRelationBuilder::build_rig(Object *object)
    * - Animated chain-lengths are a problem. */
   RootPChanMap root_map;
   bool pose_depends_on_local_transform = false;
-  LISTBASE_FOREACH (DPoseChannel *, pchan, &object->pose->chanbase) {
+  LISTBASE_FOREACH (PoseChannel *, pchan, &object->pose->chanbase) {
     const BuilderStack::ScopedEntry stack_entry = stack_.trace(*pchan);
 
     LISTBASE_FOREACH (DConstraint *, con, &pchan->constraints) {
@@ -416,7 +416,7 @@ void DGraphRelationBuilder::build_rig(Object *object)
       /* B-Bone shape depends on the final position of the bone. */
       add_relation(bone_done_key, bone_segments_key, "Done -> B-Bone Segments");
       /* B-Bone shape depends on final position of handle bones. */
-      DPoseChannel *prev, *next;
+      PoseChannel *prev, *next;
       dune_pchan_bbone_handles_get(pchan, &prev, &next);
       if (prev) {
         OpCode opcode = OpCode::BONE_DONE;
@@ -455,4 +455,4 @@ void DGraphRelationBuilder::build_rig(Object *object)
   }
 }
 
-}  // namespace dune::deg
+}  // namespace dune::dgraph
