@@ -100,25 +100,25 @@ void evaluate_node(const DgraphEvalState *state, OpNode *op_node)
    * times.
    * This is a thread-safe modification as the node's flags are only read for a non-scheduled nodes
    * and this node has been scheduled. */
-  operation_node->flag &= ~DEPSOP_FLAG_CLEAR_ON_EVAL;
+  op_node->flag &= ~DEPSOP_FLAG_CLEAR_ON_EVAL;
 }
 
-void deg_task_run_func(TaskPool *pool, void *taskdata)
+void dgraph_task_run_func(TaskPool *pool, void *taskdata)
 {
-  void *userdata_v = BLI_task_pool_user_data(pool);
-  DepsgraphEvalState *state = (DepsgraphEvalState *)userdata_v;
+  void *userdata_v = lib_task_pool_user_data(pool);
+  DGraphEvalState *state = (DGraphEvalState *)userdata_v;
 
   /* Evaluate node. */
-  OperationNode *operation_node = reinterpret_cast<OperationNode *>(taskdata);
-  evaluate_node(state, operation_node);
+  OpNode *op_node = reinterpret_cast<OpNode *>(taskdata);
+  evaluate_node(state, op_node);
 
   /* Schedule children. */
-  schedule_children(state, operation_node, [&](OperationNode *node) {
-    BLI_task_pool_push(pool, deg_task_run_func, node, false, nullptr);
+  schedule_children(state, op_node, [&](OpNode *node) {
+    lib_task_pool_push(pool, deg_task_run_func, node, false, nullptr);
   });
 }
 
-bool check_operation_node_visible(const DepsgraphEvalState *state, OperationNode *op_node)
+bool check_op_node_visible(const DGraphEvalState *state, OpNode *op_node)
 {
   const ComponentNode *comp_node = op_node->owner;
   /* Special case for copy on write component: it is to be always evaluated, to keep copied
