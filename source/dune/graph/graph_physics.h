@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "dgraph.h"
+#include "graph.h"
 
-struct DGraphNodeHandle;
-struct DGraph;
+struct GraphNodeHandle;
+struct Graph;
 struct EffectorWeights;
 struct ListBase;
 struct Object;
@@ -17,32 +17,32 @@ extern "C" {
 #endif
 
 typedef enum ePhysRelationType {
-  DGRAPH_PHYS_EFFECTOR = 0,
-  DGRAPH_PHYS_COLLISION = 1,
-  DGRAPH_PHYS_SMOKE_COLLISION = 2,
-  DGRAPH_PHYS_DYNAMIC_BRUSH = 3,
-  DGRAPH_PHYS_RELATIONS_NUM = 4,
+  GRAPH_PHYS_EFFECTOR = 0,
+  GRAPH_PHYS_COLLISION = 1,
+  GRAPH_PHYS_SMOKE_COLLISION = 2,
+  GRAPH_PHYS_DYNAMIC_BRUSH = 3,
+  GRAPH_PHYS_RELATIONS_NUM = 4,
 } ePhysRelationType;
 
 /* Get collision/effector relations from collection or entire scene. These
  * created during dgraph relations building and should only be accessed
  * during evaluation. */
-struct ListBase *dgraph_get_effector_relations(const struct DGraph *dgraph,
+struct ListBase *graph_get_effector_relations(const struct Graph *graph,
                                             struct Collection *collection);
-struct ListBase *dgraph_get_collision_relations(const struct DGraph *dgraph,
+struct ListBase *graph_get_collision_relations(const struct Graph *graph,
                                              struct Collection *collection,
                                              unsigned int modifier_type);
 
 /* Build collision/effector relations for dgraph. */
-typedef bool (*dgraph_CollobjFilterFn)(struct Object *obj, struct ModifierData *md);
+typedef bool (*graph_CollobjFilterFn)(struct Object *obj, struct ModifierData *md);
 
-void dgraph_add_collision_relations(struct DGraphNodeHandle *handle,
+void graph_add_collision_relations(struct GraphNodeHandle *handle,
                                     struct Object *object,
                                     struct Collection *collection,
                                     unsigned int modifier_type,
-                                    dgraph_CollobjFilterFn filter_function,
+                                    graph_CollobjFilterFn filter_function,
                                     const char *name);
-void dgraph_add_forcefield_relations(struct DGraphNodeHandle *handle,
+void graph_add_forcefield_relations(struct GraphNodeHandle *handle,
                                   struct Object *object,
                                   struct EffectorWeights *eff,
                                   bool add_absorption,
