@@ -2,12 +2,12 @@
 
 struct Base;
 struct Id;
-struct Main;
-struct Object;
+struct DMain;
+struct DObject;
 struct DPoseChannel;
 
 namespace dune {
-namespace deg {
+namespace dgraph {
 
 struct DGraph;
 class DGraphBuilderCache;
@@ -36,5 +36,5 @@ bool dgraph_check_id_in_dgraph(const DGraph *graph, Id *id_orig);
 bool dgraph_check_base_in_dgraph(const DGraph *graph, Base *base);
 void dgraph_build_finalize(Main *dmain, DGraph *graph);
 
-}  // namespace deg
+}  // namespace dgraph
 }  // namespace dune
