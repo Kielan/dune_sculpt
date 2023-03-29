@@ -1,8 +1,6 @@
-/**
- * Implementation of Querying API
- */
+/** Implementation of Querying API */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include <cstring> /* XXX: memcpy */
 
@@ -29,47 +27,47 @@
 
 namespace dgraph = dune::dgraph;
 
-struct Scene *DGRAPH_get_input_scene(const DGraph *graph)
+struct Scene *dgraph_get_input_scene(const DGraph *graph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   return dgraph->scene;
 }
 
-struct ViewLayer *DGRAPH_get_input_view_layer(const DGraph *graph)
+struct ViewLayer *dgraph_get_input_view_layer(const DGraph *graph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   return dgraph->view_layer;
 }
 
-struct Main *DGRAPH_get_dmain(const DGraph *graph)
+struct Main *dgraph_get_dmain(const DGraph *graph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   return dgraph->dmain;
 }
 
-eEvaluationMode DGRAPH_get_mode(const DGraph *graph)
+eEvaluationMode dgraph_get_mode(const DGraph *graph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   return dgraph->mode;
 }
 
-float DGRAPH_get_ctime(const DGraph *graph)
+float dgraph_get_ctime(const DGraph *graph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
   return dgraph->ctime;
 }
 
-bool DGRAPH_id_type_updated(const DGraph *graph, short id_type)
+bool dgraph_id_type_updated(const DGraph *graph, short id_type)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   return dgraph->id_type_updated[dune_idtype_idcode_to_index(id_type)] != 0;
 }
 
-bool DGRAPH_id_type_any_updated(const DGraph *graph)
+bool dgraph_id_type_any_updated(const DGraph *graph)
 {
   const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
 
-  /* Loop over all ID types. */
+  /* Loop over all id types. */
   for (char id_type_index : dgraph->id_type_updated) {
     if (id_type_index) {
       return true;
@@ -79,13 +77,13 @@ bool DGRAPH_id_type_any_updated(const DGraph *graph)
   return false;
 }
 
-bool DGRAPH_id_type_any_exists(const DGraph *dgraph, short id_type)
+bool dgraph_id_type_any_exists(const DGraph *dgraph, short id_type)
 {
   const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(dgraph);
   return DGraph->id_type_exist[dune_idtype_idcode_to_index(id_type)] != 0;
 }
 
-uint32_t DGRAPH_get_eval_flags_for_id(const DGraph *graph, Id *id)
+uint32_t dgraph_get_eval_flags_for_id(const DGraph *graph, Id *id)
 {
   if (graph == nullptr) {
     /* Happens when converting objects to mesh from a python script
@@ -106,7 +104,7 @@ uint32_t DGRAPH_get_eval_flags_for_id(const DGraph *graph, Id *id)
   return id_node->eval_flags;
 }
 
-void DGRAPH_get_customdata_mask_for_object(const DGraph *graph,
+void dgraph_get_customdata_mask_for_object(const DGraph *graph,
                                         Object *ob,
                                         CustomData_MeshMasks *r_mask)
 {
@@ -119,8 +117,8 @@ void DGRAPH_get_customdata_mask_for_object(const DGraph *graph,
     return;
   }
 
-  const dune::DGraph *deg_graph = reinterpret_cast<const dune::DGraph *>(graph);
-  const dune::IdNode *id_node = dgraph->find_id_node(DGRAPH_get_original_id(&ob->id));
+  const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
+  const dune::IdNode *id_node = dgraph->find_id_node(dgraph_get_original_id(&ob->id));
   if (id_node == nullptr) {
     /* TODO: Does it mean we need to check set scene? */
     return;
@@ -171,7 +169,7 @@ Id *dgraph_get_evaluated_id(const DGraph *dgraph, Id *id)
   }
   /* TODO: This is a duplicate of DGraph::get_cow_id(),
    * but here we never do assert, since we don't know nature of the
-   * incoming ID data-block. */
+   * incoming id data-block. */
   const dgraph::DGraph *dgraph = (const dgraph::DGraph *)dgraph;
   const dgraph::IdNode *id_node = dgraph->find_id_node(id);
   if (id_node == nullptr) {
@@ -188,7 +186,7 @@ void dgraph_api_ptr_get_eval(const DGraph *dgraph,
     return;
   }
   Id *orig_id = ptr->owner_id;
-  Id *cow_id = DGRAPH_get_evaluated_id(dgraph, orig_id);
+  Id *cow_id = dgraph_get_evaluated_id(dgraph, orig_id);
   if (ptr->owner_id == ptr->data) {
     /* For Id pointers, it's easy... */
     r_ptr_eval->owner_id = cow_id;
@@ -200,14 +198,14 @@ void dgraph_api_ptr_get_eval(const DGraph *dgraph,
      * speed things up for this case by doing a special lookup
      * for bones */
     const Object *ob_eval = (Object *)cow_id;
-    DPoseChannel *pchan = (DPoseChannel *)ptr->data;
-    const DPoseChannel *pchan_eval = dune_pose_channel_find_name(ob_eval->pose, pchan->name);
+    DPoseChannel *pchan = (PoseChannel *)ptr->data;
+    const PoseChannel *pchan_eval = dune_pose_channel_find_name(ob_eval->pose, pchan->name);
     r_ptr_eval->owner_id = cow_id;
     r_ptr_eval->data = (void *)pchan_eval;
     r_ptr_eval->type = ptr->type;
   }
   else {
-    /* For everything else, try to get RNA Path of the BMain-pointer,
+    /* For everything else, try to get api path of the Main-pointer,
      * then use that to look up what the COW-domain one should be
      * given the COW ID pointer as the new lookup point */
     /* TODO: Find a faster alternative, or implement support for other
