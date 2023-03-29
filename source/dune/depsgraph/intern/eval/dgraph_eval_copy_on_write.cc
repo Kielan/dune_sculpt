@@ -889,7 +889,7 @@ Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
      * pencil data to do an update-on-write. */
     if (id_type == ID_GD && dune_dpen_can_avoid_full_copy_on_write(
                                 (const ::DGraph *)dgraph, (DPenData *)id_orig)) {
-      dune_dpen_update_on_write(DPenData *)id_orig, (bGPdata *)id_cow);
+      dune_dpen_update_on_write(DPenData *)id_orig, (DPenData *)id_cow);
       return id_cow;
     }
   }
