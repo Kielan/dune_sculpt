@@ -25,7 +25,7 @@ struct AnimatedPropStoreCbData {
 
 void animated_prop_store_cb(Id *id, FCurve *fcurve, void *data_v)
 {
-  AnimatedPropertyStoreCbData *data = reinterpret_cast<AnimatedPropStoreCbData *>(
+  AnimatedPropStoreCbData *data = reinterpret_cast<AnimatedPropStoreCbData *>(
       data_v);
   if (fcurve->api_path == nullptr || fcurve->api_path[0] == '\0') {
     return;
@@ -97,9 +97,9 @@ void AnimationBackup::restore_to_id(Id *id)
      * changed after copy-on-write. */
     ApiPathResolved resolved_api;
     if (!dune_animsys_rna_path_resolve(&id_ptr_api,
-                                      value_backup.api_path.c_str(),
-                                      value_backup.array_index,
-                                      &resolved_api)) {
+                                       value_backup.api_path.c_str(),
+                                       value_backup.array_index,
+                                       &resolved_api)) {
       return;
     }
 
