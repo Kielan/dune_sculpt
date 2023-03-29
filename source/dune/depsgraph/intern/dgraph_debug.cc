@@ -29,25 +29,25 @@ void DGRAPH_debug_flags_set(DGraph *dgraph, int flags)
   dgraph->debug.flags = flags;
 }
 
-int DGRAPH_debug_flags_get(const DGraph *dgraph)
+int dgraph_debug_flags_get(const DGraph *dgraph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
   return dgraph->debug.flags;
 }
 
-void DGRAPH_debug_name_set(struct DGraph *dgraph, const char *name)
+void dgraph_debug_name_set(struct DGraph *dgraph, const char *name)
 {
   dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
   dgraph->debug.name = name;
 }
 
-const char *DGRAPH_debug_name_get(struct DGraph *dgraph)
+const char *dgraph_debug_name_get(struct DGraph *dgraph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
   return dgraph->debug.name.c_str();
 }
 
-bool DGRAPH_debug_compare(const struct DGraph *graph1, const struct DGraph *graph2)
+bool dgraph_debug_compare(const struct DGraph *graph1, const struct DGraph *graph2)
 {
   lib_assert(graph1 != nullptr);
   lib_assert(graph2 != nullptr);
@@ -65,24 +65,24 @@ bool DGRAPH_debug_compare(const struct DGraph *graph1, const struct DGraph *grap
   return true;
 }
 
-bool DGRAPH_debug_graph_relations_validate(DGraph *graph,
+bool dgraph_debug_graph_relations_validate(DGraph *graph,
                                            Main *dmain,
                                            Scene *scene,
                                            ViewLayer *view_layer)
 {
-  DGraph *temp_dgraph = DGRAPH_graph_new(dmain, scene, view_layer, DGRAPH_get_mode(graph));
+  DGraph *temp_dgraph = dgraph_new(dmain, scene, view_layer, dgraph_get_mode(graph));
   bool valid = true;
-  DGRAPH_graph_build_from_view_layer(temp_dgraph);
-  if (!DGRAPH_debug_compare(temp_dgraph, graph)) {
+  dgraph_graph_build_from_view_layer(temp_dgraph);
+  if (!dgraph_debug_compare(temp_dgraph, graph)) {
     fprintf(stderr, "ERROR! DGraph wasn't tagged for update when it should have!\n");
     lib_assert_msg(0, "This should not happen!");
     valid = false;
   }
-  DGRAPH_graph_free(temp_dgraph);
+  dgraph_free(temp_dgraph);
   return valid;
 }
 
-bool DGRAPH_debug_consistency_check(DGraph *graph)
+bool dgraph_debug_consistency_check(DGraph *graph)
 {
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   /* Validate links exists in both directions. */
@@ -175,7 +175,7 @@ bool DGRAPH_debug_consistency_check(DGraph *graph)
 
 /* ------------------------------------------------ */
 
-void DGRAPH_stats_simple(const DGraph *graph,
+void dgraph_stats_simple(const DGraph *graph,
                       size_t *r_outer,
                       size_t *r_ops,
                       size_t *r_relations)
@@ -227,17 +227,17 @@ static dgraph::string dgraph_name_for_logging(struct DGraph *dgraph)
   return "[" + dgraph::string(name) + "]: ";
 }
 
-void DGRAPH_debug_print_begin(struct DGraph *dgraph)
+void dgraph_debug_print_begin(struct DGraph *dgraph)
 {
   fprintf(stdout, "%s", dgraph_name_for_logging(dgraph).c_str());
 }
 
-void DGRAPH_debug_print_eval(struct DGraph *dgraph,
-                          const char *fn_name,
-                          const char *object_name,
-                          const void *object_address)
+void dgraph_debug_print_eval(struct DGraph *dgraph,
+                             const char *fn_name,
+                             const char *object_name,
+                             const void *object_address)
 {
-  if ((DGRAPH_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
@@ -251,7 +251,7 @@ void DGRAPH_debug_print_eval(struct DGraph *dgraph,
   fflush(stdout);
 }
 
-void DGRAPH_debug_print_eval_subdata(struct DGraph *dgraph,
+void dgraph_debug_print_eval_subdata(struct DGraph *dgraph,
                                   const char *function_name,
                                   const char *object_name,
                                   const void *object_address,
@@ -259,7 +259,7 @@ void DGRAPH_debug_print_eval_subdata(struct DGraph *dgraph,
                                   const char *subdata_name,
                                   const void *subdata_address)
 {
-  if ((DGRAPH_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
@@ -278,7 +278,7 @@ void DGRAPH_debug_print_eval_subdata(struct DGraph *dgraph,
   fflush(stdout);
 }
 
-void DGRAPH_debug_print_eval_subdata_index(struct DGraph *dgraph,
+void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
                                         const char *function_name,
                                         const char *object_name,
                                         const void *object_address,
