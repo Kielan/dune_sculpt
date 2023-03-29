@@ -29,9 +29,9 @@ class DGraphFromIdsFilter {
 class DGraphFromIdsNodeBuilder : public DGraphNodeBuilder {
  public:
   DGraphFromIdsNodeBuilder(Main *dmain,
-                              DGraph *graph,
-                              DGraphBuilderCache *cache,
-                              Span<Id *> ids)
+                           DGraph *graph,
+                           DGraphBuilderCache *cache,
+                           Span<Id *> ids)
       : DGraphNodeBuilder(dmain, graph, cache), filter_(ids)
   {
   }
@@ -51,9 +51,9 @@ class DGraphFromIdsNodeBuilder : public DGraphNodeBuilder {
 class DGraphFromIdsRelationBuilder : public DGraphRelationBuilder {
  public:
   DGraphFromIdsRelationBuilder(Main *dmain,
-                                  DGraph *graph,
-                                  DGraphBuilderCache *cache,
-                                  Span<Id *> ids)
+                               DGraph *graph,
+                               DGraphBuilderCache *cache,
+                               Span<Id *> ids)
       : DGraphRelationBuilder(dmain, graph, cache), filter_(ids)
   {
   }
