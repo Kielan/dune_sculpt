@@ -104,7 +104,7 @@ union NestedIdHackTempStorage {
   Simulation simulation;
 };
 
-/* Set nested owned id pointers to nullptr. */
+/* Set nested owned id ptrs to nullptr. */
 void nested_id_hack_discard_ptrs(Id *id_cow)
 {
   switch (GS(id_cow->name)) {
@@ -230,7 +230,7 @@ void ntree_hack_remap_ptrs(const DGraph *dgraph, Id *id_cow)
       if (data->field != nullptr) { \
         Id *ntree_id_cow = dgraph->get_cow_id(&data->field->id); \
         if (ntree_id_cow != nullptr) { \
-          DEG_COW_PRINT("    Remapping datablock for %s: id_orig=%p id_cow=%p\n", \
+          DGRAPH_COW_PRINT("    Remapping datablock for %s: id_orig=%p id_cow=%p\n", \
                         data->field->id.name, \
                         data->field, \
                         ntree_id_cow); \
@@ -241,12 +241,12 @@ void ntree_hack_remap_ptrs(const DGraph *dgraph, Id *id_cow)
     }
 
     SPECIAL_CASE(ID_LS, FreestyleLineStyle, nodetree, bNodeTree)
-    SPECIAL_CASE(ID_LA, Light, nodetree, bNodeTree)
-    SPECIAL_CASE(ID_MA, Material, nodetree, bNodeTree)
-    SPECIAL_CASE(ID_SCE, Scene, nodetree, bNodeTree)
-    SPECIAL_CASE(ID_TE, Tex, nodetree, bNodeTree)
-    SPECIAL_CASE(ID_WO, World, nodetree, bNodeTree)
-    SPECIAL_CASE(ID_SIM, Simulation, nodetree, bNodeTree)
+    SPECIAL_CASE(ID_LA, Light, nodetree, DNodeTree)
+    SPECIAL_CASE(ID_MA, Material, nodetree, DNodeTree)
+    SPECIAL_CASE(ID_SCE, Scene, nodetree, DNodeTree)
+    SPECIAL_CASE(ID_TE, Tex, nodetree, DNodeTree)
+    SPECIAL_CASE(ID_WO, World, nodetree, DNodeTree)
+    SPECIAL_CASE(ID_SIM, Simulation, nodetree, DNodeTree)
 
     SPECIAL_CASE(ID_CU_LEGACY, Curve, key, Key)
     SPECIAL_CASE(ID_LT, Lattice, key, Key)
@@ -751,7 +751,7 @@ void update_id_after_copy(const DGraph *dgraph,
 
 /* This callback is used to validate that all nested id data-blocks are
  * properly expanded. */
-int foreach_libblock_validate_callback(LibIdLinkCbData *cb_data)
+int foreach_libblock_validate_cb(LibIdLinkCbData *cb_data)
 {
   ValidateData *data = (ValidateData *)cb_data->user_data;
   Id **id_p = cb_data->id_ptr;
@@ -1065,7 +1065,7 @@ bool dgraph_copy_on_write_is_expanded(const Id *id_cow)
 bool dgraph_copy_on_write_is_needed(const Id *id_orig)
 {
   const IdType id_type = GS(id_orig->name);
-  return dgaph_copy_on_write_is_needed(id_type);
+  return dgraph_copy_on_write_is_needed(id_type);
 }
 
 bool dgraph_copy_on_write_is_needed(const IdType id_type)
@@ -1073,4 +1073,4 @@ bool dgraph_copy_on_write_is_needed(const IdType id_type)
   return ID_TYPE_IS_COW(id_type);
 }
 
-}  // namespace blender::deg
+}  // namespace dune::dgraph
