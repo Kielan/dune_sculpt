@@ -28,7 +28,7 @@ ComponentNode::OpIdKey::OpIdKey()
 {
 }
 
-ComponentNode::OpIDKey::OpIdKey(OpCode opcode)
+ComponentNode::OpIdKey::OpIdKey(OpCode opcode)
     : opcode(opcode), name(""), name_tag(-1)
 {
 }
