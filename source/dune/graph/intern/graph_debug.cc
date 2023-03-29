@@ -8,52 +8,52 @@
 
 #include "types_object.h"
 
-#include "dgraph.h"
-#include "dgraph_build.h"
-#include "dgraph_debug.h"
-#include "dgraph_query.h"
+#include "graph.h"
+#include "graph_build.h"
+#include "graph_debug.h"
+#include "graph_query.h"
 
-#include "intern/debug/dgraph_debug.h"
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
-#include "intern/dgraph_type.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/debug/graph_debug.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
+#include "intern/graph_type.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_time.h"
 
-namespace dune = dune::dgraph;
+namespace dune = dune::graph;
 
-void dgraph_debug_flags_set(DGraph *dgraph, int flags)
+void graph_debug_flags_set(Graph *graph, int flags)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
-  dgraph->debug.flags = flags;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  graph->debug.flags = flags;
 }
 
-int dgraph_debug_flags_get(const DGraph *dgraph)
+int graph_debug_flags_get(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
-  return dgraph->debug.flags;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->debug.flags;
 }
 
-void dgraph_debug_name_set(struct DGraph *dgraph, const char *name)
+void graph_debug_name_set(struct Graph *graph, const char *name)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
-  dgraph->debug.name = name;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  graph->debug.name = name;
 }
 
-const char *dgraph_debug_name_get(struct DGraph *dgraph)
+const char *graph_debug_name_get(struct Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(dgraph);
-  return dgraph->debug.name.c_str();
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->debug.name.c_str();
 }
 
-bool dgraph_debug_compare(const struct DGraph *graph1, const struct DGraph *graph2)
+bool graph_debug_compare(const struct Graph *graph1, const struct Graph *graph2)
 {
   lib_assert(graph1 != nullptr);
   lib_assert(graph2 != nullptr);
-  const dgraph::DGraph *dgraph1 = reinterpret_cast<const dgraph::DGraph *>(graph1);
-  const dgraph::DGraph *dgraph2 = reinterpret_cast<const dgraph::DGraph *>(graph2);
-  if (dgraph1->ops.size() != deg_graph2->ops.size()) {
+  const graph::Graph *graph1 = reinterpret_cast<const graph::Graph *>(graph1);
+  const graph::Graph *graph2 = reinterpret_cast<const graph::Graph *>(graph2);
+  if (graph1->ops.size() != graph2->ops.size()) {
     return false;
   }
   /* TODO: Currently we only do real stupid check,
@@ -65,31 +65,31 @@ bool dgraph_debug_compare(const struct DGraph *graph1, const struct DGraph *grap
   return true;
 }
 
-bool dgraph_debug_graph_relations_validate(DGraph *graph,
-                                           Main *dmain,
-                                           Scene *scene,
-                                           ViewLayer *view_layer)
+bool graph_debug_graph_relations_validate(Graph *graph,
+                                          Main *dmain,
+                                          Scene *scene,
+                                          ViewLayer *view_layer)
 {
-  DGraph *temp_dgraph = dgraph_new(dmain, scene, view_layer, dgraph_get_mode(graph));
+  Graph *temp_graph = graph_new(dmain, scene, view_layer, graph_get_mode(graph));
   bool valid = true;
-  dgraph_graph_build_from_view_layer(temp_dgraph);
-  if (!dgraph_debug_compare(temp_dgraph, graph)) {
+  graph_build_from_view_layer(temp_graph);
+  if (!graph_debug_compare(temp_graph, graph)) {
     fprintf(stderr, "ERROR! DGraph wasn't tagged for update when it should have!\n");
     lib_assert_msg(0, "This should not happen!");
     valid = false;
   }
-  dgraph_free(temp_dgraph);
+  graph_free(temp_graph);
   return valid;
 }
 
-bool dgraph_debug_consistency_check(DGraph *graph)
+bool graph_debug_consistency_check(Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
   /* Validate links exists in both directions. */
-  for (dune::OpNode *node : dgraph->ops) {
+  for (dune::OpNode *node : graph->ops) {
     for (dune::Relation *rel : node->outlinks) {
       int counter1 = 0;
-      for (deg::Relation *tmp_rel : node->outlinks) {
+      for (graph::Relation *tmp_rel : node->outlinks) {
         if (tmp_rel == rel) {
           counter1++;
         }
@@ -134,19 +134,19 @@ bool dgraph_debug_consistency_check(DGraph *graph)
   }
 
   /* Validate node valency calculated in both directions. */
-  for (dune::OpNode *node : dgraph->ops) {
+  for (dune::OpNode *node : graph->ops) {
     node->num_links_pending = 0;
     node->custom_flags = 0;
   }
 
-  for (deg::OpNode *node : dgraph->ops) {
+  for (graph::OpNode *node : graph->ops) {
     if (node->custom_flags) {
       printf("Node %s is twice in the operations!\n", node->id().c_str());
       return false;
     }
     for (dune::Relation *rel : node->outlinks) {
-      if (rel->to->type == dgraph::NodeType::OPERATION) {
-        deg::OperationNode *to = (dgraph::OpNode *)rel->to;
+      if (rel->to->type == graph::NodeType::OPERATION) {
+        graph::OpNode *to = (graph::OpNode *)rel->to;
         lib_assert(to->num_links_pending < to->inlinks.size());
         ++to->num_links_pending;
       }
@@ -157,7 +157,7 @@ bool dgraph_debug_consistency_check(DGraph *graph)
   for (deg::OpNode *node : dgraph->ops) {
     int num_links_pending = 0;
     for (dune::Relation *rel : node->inlinks) {
-      if (rel->from->type == dgraph::NodeType::OPERATION) {
+      if (rel->from->type == graph::NodeType::OPERATION) {
         num_links_pending++;
       }
     }
@@ -175,18 +175,18 @@ bool dgraph_debug_consistency_check(DGraph *graph)
 
 /* ------------------------------------------------ */
 
-void dgraph_stats_simple(const DGraph *graph,
-                      size_t *r_outer,
-                      size_t *r_ops,
-                      size_t *r_relations)
+void graph_stats_simple(const Graph *graph,
+                         size_t *r_outer,
+                         size_t *r_ops,
+                         size_t *r_relations)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
 
   /* number of operations */
   if (r_ops) {
     /* All operations should be in this list, allowing us to count the total
      * number of nodes. */
-    *r_ops = dgraph->ops.size();
+    *r_ops = graph->ops.size();
   }
 
   /* Count number of outer nodes and/or relations between these. */
@@ -194,17 +194,17 @@ void dgraph_stats_simple(const DGraph *graph,
     size_t tot_outer = 0;
     size_t tot_rels = 0;
 
-    for (dgraph::IdNode *id_node : dgraph->id_nodes) {
+    for (graph::IdNode *id_node : graph->id_nodes) {
       tot_outer++;
-      for (dgraph::ComponentNode *comp_node : id_node->components.values()) {
+      for (graph::ComponentNode *comp_node : id_node->components.values()) {
         tot_outer++;
-        for (dgraph::OpNode *op_node : comp_node->ops) {
+        for (graph::OpNode *op_node : comp_node->ops) {
           tot_rels += op_node->inlinks.size();
         }
       }
     }
 
-    dgraph::TimeSourceNode *time_source = dgraph->find_time_source();
+    graph::TimeSourceNode *time_source = graph->find_time_source();
     if (time_source != nullptr) {
       tot_rels += time_source->inlinks.size();
     }
@@ -218,67 +218,67 @@ void dgraph_stats_simple(const DGraph *graph,
   }
 }
 
-static dgraph::string dgraph_name_for_logging(struct DGraph *dgraph)
+static graph::string graph_name_for_logging(struct Graph *graph)
 {
-  const char *name = DGRAPH_debug_name_get(dgraph);
+  const char *name = graph_debug_name_get(dgraph);
   if (name[0] == '\0') {
     return "";
   }
-  return "[" + dgraph::string(name) + "]: ";
+  return "[" + graph::string(name) + "]: ";
 }
 
-void dgraph_debug_print_begin(struct DGraph *dgraph)
+void graph_debug_print_begin(struct Graph *graph)
 {
-  fprintf(stdout, "%s", dgraph_name_for_logging(dgraph).c_str());
+  fprintf(stdout, "%s", graph_name_for_logging(dgraph).c_str());
 }
 
-void dgraph_debug_print_eval(struct DGraph *dgraph,
-                             const char *fn_name,
-                             const char *object_name,
-                             const void *object_address)
+void graph_debug_print_eval(struct Graph *graph,
+                            const char *fn_name,
+                            const char *object_name,
+                            const void *object_address)
 {
-  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((graph_debug_flags_get(graph) & G_DEBUG_GRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
           "%s%s on %s %s(%p)%s\n",
-          dgraph_name_for_logging(dgraph).c_str(),
-          function_name,
+          graph_name_for_logging(graph).c_str(),
+          fn_name,
           object_name,
-          dgraph::color_for_ptr(object_address).c_str(),
+          graph::color_for_ptr(object_address).c_str(),
           object_address,
-          dgraph::color_end().c_str());
+          graph::color_end().c_str());
   fflush(stdout);
 }
 
-void dgraph_debug_print_eval_subdata(struct DGraph *dgraph,
-                                  const char *function_name,
-                                  const char *object_name,
-                                  const void *object_address,
-                                  const char *subdata_comment,
-                                  const char *subdata_name,
-                                  const void *subdata_address)
+void graph_debug_print_eval_subdata(struct Graph *graph,
+                                    const char *fn_name,
+                                    const char *object_name,
+                                    const void *object_address,
+                                    const char *subdata_comment,
+                                    const char *subdata_name,
+                                    const void *subdata_address)
 {
-  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((graph_debug_flags_get(dgraph) & G_DEBUG_GRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
           "%s%s on %s %s(%p)%s %s %s %s(%p)%s\n",
-          dgraph_name_for_logging(dgraph).c_str(),
-          function_name,
+          graph_name_for_logging(graph).c_str(),
+          fn_name,
           object_name,
-          dgraph::color_for_pointer(object_address).c_str(),
+          graph::color_for_ptr(object_address).c_str(),
           object_address,
-          dgraph::color_end().c_str(),
+          graph::color_end().c_str(),
           subdata_comment,
           subdata_name,
-          dgraph::color_for_ptr(subdata_address).c_str(),
+          graph::color_for_ptr(subdata_address).c_str(),
           subdata_address,
-          dgraph::color_end().c_str());
+          graph::color_end().c_str());
   fflush(stdout);
 }
 
-void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
+void graph_debug_print_eval_subdata_index(struct DGraph *dgraph,
                                         const char *function_name,
                                         const char *object_name,
                                         const void *object_address,
@@ -334,7 +334,7 @@ void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
   fflush(stdout);
 }
 
-void dgraph_debug_print_eval_time(struct DGraph *dgraph,
+void dgraph_debug_print_eval_time(struct DGraph *graph,
                                   const char *fn_name,
                                   const char *object_name,
                                   const void *object_address,
