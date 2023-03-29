@@ -23,7 +23,7 @@
 
 namespace dune = dune::dgraph;
 
-void DGRAPH_debug_flags_set(DGraph *dgraph, int flags)
+void dgraph_debug_flags_set(DGraph *dgraph, int flags)
 {
   dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
   dgraph->debug.flags = flags;
@@ -287,7 +287,7 @@ void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
                                         const void *subdata_address,
                                         const int subdata_index)
 {
-  if ((DGRAPH_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
@@ -307,7 +307,7 @@ void dgraph_debug_print_eval_subdata_index(struct DGraph *dgraph,
   fflush(stdout);
 }
 
-void DGRAPH_debug_print_eval_parent_typed(struct DGraph *dgraph,
+void dgraph_debug_print_eval_parent_typed(struct DGraph *dgraph,
                                        const char *function_name,
                                        const char *object_name,
                                        const void *object_address,
@@ -315,7 +315,7 @@ void DGRAPH_debug_print_eval_parent_typed(struct DGraph *dgraph,
                                        const char *parent_name,
                                        const void *parent_address)
 {
-  if ((DGRAPH_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
@@ -334,19 +334,19 @@ void DGRAPH_debug_print_eval_parent_typed(struct DGraph *dgraph,
   fflush(stdout);
 }
 
-void DGRAPH_debug_print_eval_time(struct DGraph *dgraph,
-                               const char *function_name,
-                               const char *object_name,
-                               const void *object_address,
-                               float time)
+void dgraph_debug_print_eval_time(struct DGraph *dgraph,
+                                  const char *fn_name,
+                                  const char *object_name,
+                                  const void *object_address,
+                                  float time)
 {
-  if ((DGRAPH_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
+  if ((dgraph_debug_flags_get(dgraph) & G_DEBUG_DGRAPH_EVAL) == 0) {
     return;
   }
   fprintf(stdout,
           "%s%s on %s %s(%p)%s at time %f\n",
           dgraph_name_for_logging(dgraph).c_str(),
-          function_name,
+          fn_name,
           object_name,
           dgraph::color_for_ptr(object_address).c_str(),
           object_address,
