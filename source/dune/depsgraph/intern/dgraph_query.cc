@@ -95,7 +95,7 @@ uint32_t dgraph_get_eval_flags_for_id(const DGraph *graph, Id *id)
   }
 
   const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  const dgraph::IdNode *id_node = dgraph->find_id_node(DGRAPH_get_original_id(id));
+  const dgraph::IdNode *id_node = dgraph->find_id_node(dgraph_get_original_id(id));
   if (id_node == nullptr) {
     /* TODO: Does it mean we need to check set scene? */
     return 0;
@@ -131,9 +131,9 @@ void dgraph_get_customdata_mask_for_object(const DGraph *graph,
   r_mask->pmask |= id_node->customdata_masks.poly_mask;
 }
 
-Scene *dgraph_get_evaluated_scene(const Depsgraph *graph)
+Scene *dgraph_get_evaluated_scene(const DGraph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::Depsgraph *>(graph);
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   Scene *scene_cow = dgraph->scene_cow;
   /* TODO: Shall we expand data-block here? Or is it OK to assume
    * that caller is OK with just a pointer in case scene is not updated yet? */
@@ -143,7 +143,7 @@ Scene *dgraph_get_evaluated_scene(const Depsgraph *graph)
 
 ViewLayer *dgraph_get_evaluated_view_layer(const DGraph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const deg::DGraph *>(graph);
+  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
   Scene *scene_cow = dgraph_get_scene_eval(graph);
   if (scene_cow == nullptr) {
     return nullptr; /* Happens with new, not-yet-built/evaluated graphs. */
