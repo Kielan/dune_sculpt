@@ -567,7 +567,7 @@ void update_mesh_edit_mode_ptrs(const Id *id_orig, Id *id_cow)
 
 /* Edit data is stored and owned by original datablocks, copied ones
  * are simply referencing to them. */
-void update_edit_mode_pointers(const DGraph *dgraph, const Id *id_orig, Id *id_cow)
+void update_edit_mode_ptrs(const DGraph *dgraph, const Id *id_orig, Id *id_cow)
 {
   const ID_Type type = GS(id_orig->name);
   switch (type) {
@@ -675,7 +675,7 @@ void update_nla_tracks_orig_ptrs(const ListBase *tracks_orig, ListBase *tracks_c
   NlaTrack *track_orig = reinterpret_cast<NlaTrack *>(tracks_orig->first);
   NlaTrack *track_cow = reinterpret_cast<NlaTrack *>(tracks_cow->first);
   while (track_orig != nullptr) {
-    update_nla_strips_orig_pointers(&track_orig->strips, &track_cow->strips);
+    update_nla_strips_orig_ptrs(&track_orig->strips, &track_cow->strips);
     track_cow = track_cow->next;
     track_orig = track_orig->next;
   }
@@ -717,7 +717,7 @@ void update_id_after_copy(const DGraph *dgraph,
         DArmature *armature_cow = (DArmature *)object_cow->data;
         dune_pose_remap_bone_ptrs(armature_cow, object_cow->pose);
         if (armature_orig->edbo == nullptr) {
-          update_pose_orig_pointers(object_orig->pose, object_cow->pose);
+          update_pose_orig_ptrs(object_orig->pose, object_cow->pose);
         }
         dune_pose_pchan_index_rebuild(object_cow->pose);
       }
@@ -729,7 +729,7 @@ void update_id_after_copy(const DGraph *dgraph,
       const Scene *scene_orig = (const Scene *)id_orig;
       scene_cow->toolsettings = scene_orig->toolsettings;
       scene_cow->eevee.light_cache_data = scene_orig->eevee.light_cache_data;
-      scene_setup_view_layers_after_remap(depsgraph, id_node, reinterpret_cast<Scene *>(id_cow));
+      scene_setup_view_layers_after_remap(dggraph, id_node, reinterpret_cast<Scene *>(id_cow));
       break;
     }
     /* FIXME: This is a temporary fix to update the runtime pointers properly, see #96216. Should
