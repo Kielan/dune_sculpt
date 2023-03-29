@@ -25,7 +25,7 @@ enum eDGraphNodeLinkedState_Type {
 const char *linkedStateAsString(eDGraphNodeLinkedStateType linked_state);
 
 /* id-block Reference */
-struct IsNode : public Node {
+struct IdNode : public Node {
   struct ComponentIdKey {
     ComponentIdKey(NodeType type, const char *name = "");
     uint64_t hash() const;
@@ -71,7 +71,7 @@ struct IsNode : public Node {
   Id *id_cow;
 
   /* Hash to make it faster to look up components. */
-  Map<ComponentIDKey, ComponentNode *> components;
+  Map<ComponentIdKey, ComponentNode *> components;
 
   /* Additional flags needed for scene evaluation.
    * TODO: Only needed for until really granular updates
