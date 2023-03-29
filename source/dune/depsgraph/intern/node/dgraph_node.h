@@ -200,7 +200,7 @@ struct Node {
 
   virtual NodeClass get_class() const;
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("Node");
+  MEM_CXX_CLASS_ALLOC_FNS("Node");
 };
 
 /* Macros for common static typeinfo. */
