@@ -13,7 +13,7 @@
 #include "types_object.h"
 
 struct Id;
-struct DPoseChannel;
+struct PoseChannel;
 
 namespace dune {
 namespace dgraph {
@@ -140,9 +140,9 @@ struct ComponentNode : public Node {
     DGRAPH_COMPONENT_NODE_DECLARE; \
   }
 
-#define DEG_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(name) \
+#define DGRAPH_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(name) \
   struct name##ComponentNode : public ComponentNode { \
-    DEG_COMPONENT_NODE_DECLARE; \
+    DGRAPH_COMPONENT_NODE_DECLARE; \
     virtual bool need_tag_cow_before_update() \
     { \
       return false; \
@@ -177,18 +177,18 @@ DGRAPH_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(ObjectFromLayer);
 DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Dupli);
 DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Synchronization);
 DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Audio);
-DEG_COMPONENT_NODE_DECLARE_GENERIC(Armature);
-DEG_COMPONENT_NODE_DECLARE_GENERIC(GenericDatablock);
-DEG_COMPONENT_NODE_DECLARE_NO_COW(Visibility);
-DEG_COMPONENT_NODE_DECLARE_GENERIC(Simulation);
-DEG_COMPONENT_NODE_DECLARE_GENERIC(NTreeOutput);
+DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Armature);
+DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(GenericDatablock);
+DGRAPH_COMPONENT_NODE_DECLARE_NO_COW(Visibility);
+DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Simulation);
+DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(NTreeOutput);
 
 /* Bone Component */
 struct BoneComponentNode : public ComponentNode {
   /** Initialize 'bone component' node - from pointer data given. */
   void init(const Id *id, const char *subdata);
 
-  struct DPoseChannel *pchan; /* the bone that this component represents */
+  struct PoseChannel *pchan; /* the bone that this component represents */
 
   DGRAPH_COMPONENT_NODE_DECLARE;
 };
