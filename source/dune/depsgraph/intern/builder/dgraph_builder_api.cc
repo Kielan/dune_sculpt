@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_listbase.h"
 #include "lib_utildefines.h"
