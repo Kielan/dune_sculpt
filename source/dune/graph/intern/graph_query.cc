@@ -105,8 +105,8 @@ uint32_t graph_get_eval_flags_for_id(const Graph *graph, Id *id)
 }
 
 void graph_get_customdata_mask_for_object(const Graph *graph,
-                                        Object *ob,
-                                        CustomData_MeshMasks *r_mask)
+                                          Object *ob,
+                                          CustomData_MeshMasks *r_mask)
 {
   if (graph == nullptr) {
     /* Happens when converting objects to mesh from a python script
@@ -184,7 +184,7 @@ void graph_api_ptr_get_eval(const Graph *graph, ApiPtr *ptr, ApiPtr *r_ptr_eval)
     return;
   }
   Id *orig_id = ptr->owner_id;
-  Id *cow_id = dgraph_get_evaluated_id(dgraph, orig_id);
+  Id *cow_id = graph_get_evaluated_id(graph, orig_id);
   if (ptr->owner_id == ptr->data) {
     /* For Id pointers, it's easy... */
     r_ptr_eval->owner_id = cow_id;
@@ -196,7 +196,7 @@ void graph_api_ptr_get_eval(const Graph *graph, ApiPtr *ptr, ApiPtr *r_ptr_eval)
      * speed things up for this case by doing a special lookup
      * for bones */
     const Object *ob_eval = (Object *)cow_id;
-    DPoseChannel *pchan = (PoseChannel *)ptr->data;
+    PoseChannel *pchan = (PoseChannel *)ptr->data;
     const PoseChannel *pchan_eval = dune_pose_channel_find_name(ob_eval->pose, pchan->name);
     r_ptr_eval->owner_id = cow_id;
     r_ptr_eval->data = (void *)pchan_eval;
@@ -233,12 +233,12 @@ void graph_api_ptr_get_eval(const Graph *graph, ApiPtr *ptr, ApiPtr *r_ptr_eval)
   }
 }
 
-Object *DGRAPH_get_original_object(Object *object)
+Object *graph_get_original_object(Object *object)
 {
-  return (Object *)DGRAPH_get_original_id(&object->id);
+  return (Object *)graph_get_original_id(&object->id);
 }
 
-Id *DGRAPH_get_original_id(Id *id)
+Id *graph_get_original_id(Id *id)
 {
   if (id == nullptr) {
     return nullptr;
@@ -250,7 +250,7 @@ Id *DGRAPH_get_original_id(Id *id)
   return (Id *)id->orig_id;
 }
 
-bool DGRAPH_is_original_id(const ID *id)
+bool graph_is_original_id(const Id *id)
 {
   /* Some explanation of the logic.
    *
@@ -275,30 +275,30 @@ bool DGRAPH_is_original_id(const ID *id)
   return true;
 }
 
-bool dgraph_is_original_object(const Object *object)
+bool graph_is_original_object(const Object *object)
 {
-  return dgraph_is_original_id(&object->id);
+  return graph_is_original_id(&object->id);
 }
 
-bool dgraph_is_evaluated_id(const Id *id)
+bool graph_is_evaluated_id(const Id *id)
 {
-  return !dgraph_is_original_id(id);
+  return !graph_is_original_id(id);
 }
 
-bool dgraph_is_evaluated_object(const Object *object)
+bool graph_is_evaluated_object(const Object *object)
 {
-  return !dgaph_is_original_object(object);
+  return !graph_is_original_object(object);
 }
 
-bool dgraph_is_fully_evaluated(const struct DGraph *dgraph)
+bool graph_is_fully_evaluated(const struct Graph *graph)
 {
-  const dgraph::DGraph *dgraph = (const dune::DGraph *)dgraph;
+  const graph::Graph *graph = (const dune::Graph *)graph;
   /* Check whether relations are up to date. */
-  if (dgraph->need_update) {
+  if (graph->need_update) {
     return false;
   }
   /* Check whether IDs are up to date. */
-  if (!dgraph->entry_tags.is_empty()) {
+  if (!graph->entry_tags.is_empty()) {
     return false;
   }
   return true;
