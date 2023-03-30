@@ -1,10 +1,10 @@
 #include "pipeline_compositor.h"
 
-#include "intern/builder/dgraph_builder_nodes.h"
-#include "intern/builder/dgraph_builder_relations.h"
-#include "intern/dgraph.h"
+#include "intern/builder/graph_builder_nodes.h"
+#include "intern/builder/graph_builder_relations.h"
+#include "intern/graph.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 CompositorBuilderPipeline::CompositorBuilderPipeline(::DGraph *graph, NodeTree *nodetree)
     : AbstractBuilderPipeline(graph), nodetree_(nodetree)
