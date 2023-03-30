@@ -1,16 +1,16 @@
-#include "intern/builder/dgraph_builder_transitive.h"
+#include "intern/builder/graph_builder_transitive.h"
 
 #include "mem_guardedalloc.h"
 
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_operation.h"
 
-#include "intern/debug/dgraph_debug.h"
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
+#include "intern/debug/graph_debug.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* -------------------------------------------------- */
 
