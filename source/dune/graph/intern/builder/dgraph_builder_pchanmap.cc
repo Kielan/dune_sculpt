@@ -1,11 +1,11 @@
-#include "intern/builder/dgraph_builder_pchanmap.h"
+#include "intern/builder/graph_builder_pchanmap.h"
 
 #include <cstdio>
 #include <cstring>
 
 #include "lib_utildefines.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 void RootPChanMap::print_debug()
 {
@@ -43,4 +43,4 @@ bool RootPChanMap::has_common_root(const char *bone1, const char *bone2) const
   return Set<StringRefNull>::Intersects(*bone1_roots, *bone2_roots);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
