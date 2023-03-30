@@ -26,7 +26,7 @@ class GraphFromIdsFilter {
   Set<Id *> ids_;
 };
 
-class GraphFromIdsNodeBuilder : public DGraphNodeBuilder {
+class GraphFromIdsNodeBuilder : public GraphNodeBuilder {
  public:
   GraphFromIdsNodeBuilder(Main *dmain,
                           Graph *graph,
@@ -41,20 +41,20 @@ class GraphFromIdsNodeBuilder : public DGraphNodeBuilder {
     if (!filter_.contains(&base->object->id)) {
       return false;
     }
-    return DGraphNodeBuilder::need_pull_base_into_graph(base);
+    return GraphNodeBuilder::need_pull_base_into_graph(base);
   }
 
  protected:
-  DepsGraphFromIdsFilter filter_;
+  GraphFromIdsFilter filter_;
 };
 
-class DGraphFromIdsRelationBuilder : public DGraphRelationBuilder {
+class GraphFromIdsRelationBuilder : public GraphRelationBuilder {
  public:
-  DGraphFromIdsRelationBuilder(Main *dmain,
-                               DGraph *graph,
-                               DGraphBuilderCache *cache,
+  GraphFromIdsRelationBuilder(Main *dmain,
+                               Graph *graph,
+                               GraphBuilderCache *cache,
                                Span<Id *> ids)
-      : DGraphRelationBuilder(dmain, graph, cache), filter_(ids)
+      : GraphRelationBuilder(dmain, graph, cache), filter_(ids)
   {
   }
 
@@ -63,29 +63,29 @@ class DGraphFromIdsRelationBuilder : public DGraphRelationBuilder {
     if (!filter_.contains(&base->object->id)) {
       return false;
     }
-    return DGraphRelationBuilder::need_pull_base_into_graph(base);
+    return GraphRelationBuilder::need_pull_base_into_graph(base);
   }
 
  protected:
-  DGraphFromIdsFilter filter_;
+  GraphFromIdsFilter filter_;
 };
 
 }  // namespace
 
-FromIdsBuilderPipeline::FromIdsBuilderPipeline(::DGraph *graph, Span<Id *> ids)
+FromIdsBuilderPipeline::FromIdsBuilderPipeline(::Graph *graph, Span<Id *> ids)
     : AbstractBuilderPipeline(graph), ids_(ids)
 {
 }
 
-unique_ptr<DGraphNodeBuilder> FromIdsBuilderPipeline::construct_node_builder()
+unique_ptr<GraphNodeBuilder> FromIdsBuilderPipeline::construct_node_builder()
 {
-  return std::make_unique<DGraphFromIdsNodeBuilder>(dmain_, dgraph_, &builder_cache_, ids_);
+  return std::make_unique<GraphFromIdsNodeBuilder>(dmain_, graph_, &builder_cache_, ids_);
 }
 
-unique_ptr<DGraphRelationBuilder> FromIdsBuilderPipeline::construct_relation_builder()
+unique_ptr<GraphRelationBuilder> FromIdsBuilderPipeline::construct_relation_builder()
 {
-  return std::make_unique<DGraphFromIdsRelationBuilder>(
-      dmain_, dgraph_, &builder_cache_, ids_);
+  return std::make_unique<GraphFromIdsRelationBuilder>(
+      dmain_, graph_, &builder_cache_, ids_);
 }
 
 void FromIdsBuilderPipeline::build_nodes(DGraphNodeBuilder &node_builder)
