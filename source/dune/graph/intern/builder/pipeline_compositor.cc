@@ -6,7 +6,7 @@
 
 namespace dune::graph {
 
-CompositorBuilderPipeline::CompositorBuilderPipeline(::DGraph *graph, NodeTree *nodetree)
+CompositorBuilderPipeline::CompositorBuilderPipeline(::Graph *graph, NodeTree *nodetree)
     : AbstractBuilderPipeline(graph), nodetree_(nodetree)
 {
   graph_->is_render_pipeline_dgraph = true;
