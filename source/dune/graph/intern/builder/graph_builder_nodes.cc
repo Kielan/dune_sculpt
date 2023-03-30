@@ -265,7 +265,7 @@ OpNode *GraphNodeBuilder::ensure_op_node(Id *id,
 OpNode *GraphNodeBuilder::ensure_op_node(Id *id,
                                          NodeType comp_type,
                                          OpCode opcode,
-                                         const DGraphEvalOpCb &op,
+                                         const GraphEvalOpCb &op,
                                          const char *name,
                                          int name_tag)
 {
@@ -277,11 +277,11 @@ OpNode *GraphNodeBuilder::ensure_op_node(Id *id,
 }
 
 bool GraphNodeBuilder::has_op_node(Id *id,
-                                    NodeType comp_type,
-                                    const char *comp_name,
-                                    OpCode opcode,
-                                    const char *name,
-                                    int name_tag)
+                                   NodeType comp_type,
+                                   const char *comp_name,
+                                   OpCode opcode,
+                                   const char *name,
+                                   int name_tag)
 {
   return find_op_node(id, comp_type, comp_name, opcode, name, name_tag) != nullptr;
 }
@@ -1177,26 +1177,26 @@ void DGraphNodeBuilder::build_driver_variables(ID *id, FCurve *fcurve)
 
 void DGraphNodeBuilder::build_driver_id_prop(Id *id, const char *api_path)
 {
-  if (id == nullptr || rna_path == nullptr) {
+  if (id == nullptr || api_path == nullptr) {
     return;
   }
   ApiPtr id_ptr, ptr;
   ApiProp *prop;
   int index;
   api_id_ptr_create(id, &id_ptr);
-  if (!api_path_resolve_full(&id_ptr, rna_path, &ptr, &prop, &index)) {
+  if (!api_path_resolve_full(&id_ptr, api_path, &ptr, &prop, &index)) {
     return;
   }
   if (prop == nullptr) {
     return;
   }
-  if (!api_prop_affects_parameters_node(&ptr, prop)) {
+  if (!api_prop_affects_params_node(&ptr, prop)) {
     return;
   }
-  const char *prop_identifier = api_prop_id((ApiProp *)prop);
+  const char *prop_id = api_prop_id((ApiProp *)prop);
   /* Custom properties of bones are placed in their components to improve granularity. */
   if (api_struct_is_a(ptr.type, &api_PoseBone)) {
-    const DPoseChannel *pchan = static_cast<const DPoseChannel *>(ptr.data);
+    const PoseChannel *pchan = static_cast<const PoseChannel *>(ptr.data);
     ensure_op_node(ptr.owner_id,
                    NodeType::BONE,
                    pchan->name,
@@ -1210,7 +1210,7 @@ void DGraphNodeBuilder::build_driver_id_prop(Id *id, const char *api_path)
   }
 }
 
-void DGraphNodeBuilder::build_params(Id *id)
+void GraphNodeBuilder::build_params(Id *id)
 {
   (void)add_id_node(id);
   OpNode *op_node;
@@ -1236,14 +1236,14 @@ void DGraphNodeBuilder::build_params(Id *id)
   op_node->set_as_exit();
 }
 
-void DGraphNodeBuilder::build_dimensions(Object *object)
+void GraphNodeBuilder::build_dimensions(Object *object)
 {
   /* Object dimensions (bounding box) node. Will depend on both geometry and transform. */
   add_op_node(&object->id, NodeType::PARAMS, OpCode::DIMENSIONS);
 }
 
 /* Recursively build graph for world */
-void DGraphNodeBuilder::build_world(World *world)
+void GraphNodeBuilder::build_world(World *world)
 {
   if (built_map_.checkIsBuiltAndTag(world)) {
     return;
@@ -1256,7 +1256,7 @@ void DGraphNodeBuilder::build_world(World *world)
       &world->id,
       NodeType::SHADING,
       OpCode::WORLD_UPDATE,
-      [world_cow](::DGraph *dgraph) { dune_world_eval(dgraph, world_cow); });
+      [world_cow](::Graph *graph) { dune_world_eval(graph, world_cow); });
   build_idprops(world->id.props);
   /* Animation. */
   build_animdata(&world->id);
@@ -1266,7 +1266,7 @@ void DGraphNodeBuilder::build_world(World *world)
 }
 
 /* Rigidbody Simulation - Scene Level */
-void DGraphNodeBuilder::build_rigidbody(Scene *scene)
+void GraphNodeBuilder::build_rigidbody(Scene *scene)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   Scene *scene_cow = get_cow_datablock(scene);
@@ -1296,15 +1296,14 @@ void DGraphNodeBuilder::build_rigidbody(Scene *scene)
       &scene->id,
       NodeType::TRANSFORM,
       OpCode::RIGIDBODY_REBUILD,
-      [scene_cow](::DGraph *dgraph) { dune_rigidbody_rebuild_sim(dgraph, scene_cow); });
+      [scene_cow](::Graph *graph) { dune_rigidbody_rebuild_sim(graph, scene_cow); });
   /* Do-sim operation. */
   OpNode *sim_node = add_op_node(&scene->id,
-                                               NodeType::TRANSFORM,
-                                               OpCode::RIGIDBODY_SIM,
-                                               [scene_cow](::DGraph *dgraph) {
-                                                 dune_rigidbody_eval_simulation(dgraph,
-                                                                               scene_cow);
-                                               });
+                                 NodeType::TRANSFORM,
+                                 OpCode::RIGIDBODY_SIM,
+                                 [scene_cow](::Graph *graph) {
+                                    dune_rigidbody_eval_simulation(graph, scene_cow);
+                                 });
   sim_node->set_as_entry();
   sim_node->set_as_exit();
   sim_node->owner->entry_op = sim_node;
@@ -1330,8 +1329,8 @@ void DGraphNodeBuilder::build_rigidbody(Scene *scene)
       add_op_node(&object->id,
                   NodeType::TRANSFORM,
                   OpCode::RIGIDBODY_TRANSFORM_COPY,
-                  [scene_cow, object_cow](::DGraph *dgraph) {
-                    dune_rigidbody_object_sync_transforms(depsgraph, scene_cow, object_cow);
+                  [scene_cow, object_cow](::Graph *graph) {
+                    dune_rigidbody_object_sync_transforms(graph, scene_cow, object_cow);
                   });
     }
     FOREACH_COLLECTION_OBJECT_RECURSIVE_END;
@@ -1353,7 +1352,7 @@ void DGraphNodeBuilder::build_rigidbody(Scene *scene)
   }
 }
 
-void DGraphNodeBuilder::build_particle_systems(Object *object, bool is_object_visible)
+void GraphNodeBuilder::build_particle_systems(Object *object, bool is_object_visible)
 {
   /**
    * Particle Systems Nodes
@@ -1374,8 +1373,8 @@ void DGraphNodeBuilder::build_particle_systems(Object *object, bool is_object_vi
   Object *ob_cow = get_cow_datablock(object);
   OpnNode *op_node;
   op_node = add_op_node(
-      psys_comp, OpCode::PARTICLE_SYSTEM_INIT, [ob_cow](::DGraph *dgraph) {
-        dune_particle_system_eval_init(dgraph, ob_cow);
+      psys_comp, OpCode::PARTICLE_SYSTEM_INIT, [ob_cow](::Graph *graph) {
+        dune_particle_system_eval_init(graph, ob_cow);
       });
   op_node->set_as_entry();
   /* Build all particle systems. */
@@ -1393,14 +1392,14 @@ void DGraphNodeBuilder::build_particle_systems(Object *object, bool is_object_vi
         if (ELEM(particle_target->ob, nullptr, object)) {
           continue;
         }
-        build_object(-1, particle_target->ob, DEG_ID_LINKED_INDIRECTLY, is_object_visible);
+        build_object(-1, particle_target->ob, GRAPH_ID_LINKED_INDIRECTLY, is_object_visible);
       }
     }
     /* Visualization of particle system. */
     switch (part->ren_as) {
       case PART_DRAW_OB:
         if (part->instance_object != nullptr) {
-          build_object(-1, part->instance_object, DEG_ID_LINKED_INDIRECTLY, is_object_visible);
+          build_object(-1, part->instance_object, GRAPH_ID_LINKED_INDIRECTLY, is_object_visible);
         }
         break;
       case PART_DRAW_GR:
@@ -1414,7 +1413,7 @@ void DGraphNodeBuilder::build_particle_systems(Object *object, bool is_object_vi
   op_node->set_as_exit();
 }
 
-void DGraphNodeBuilder::build_particle_settings(ParticleSettings *particle_settings)
+void GraphNodeBuilder::build_particle_settings(ParticleSettings *particle_settings)
 {
   if (built_map_.checkIsBuiltAndTag(particle_settings)) {
     return;
@@ -1449,7 +1448,7 @@ void DGraphNodeBuilder::build_particle_settings(ParticleSettings *particle_setti
 }
 
 /* Shape-keys. */
-void DGraphNodeBuilder::build_shapekeys(Key *key)
+void GraphNodeBuilder::build_shapekeys(Key *key)
 {
   if (built_map_.checkIsBuiltAndTag(key)) {
     return;
@@ -1470,7 +1469,7 @@ void DGraphNodeBuilder::build_shapekeys(Key *key)
 
 /* ObData Geometry Evaluation */
 /* XXX: what happens if the datablock is shared! */
-void DGraphNodeBuilder::build_object_data_geometry(Object *object)
+void GraphNodeBuilder::build_object_data_geometry(Object *object)
 {
   OpNode *op_node;
   Scene *scene_cow = get_cow_datablock(scene_);
@@ -1483,8 +1482,8 @@ void DGraphNodeBuilder::build_object_data_geometry(Object *object)
   op_node = add_op_node(&object->id,
                         NodeType::GEOMETRY,
                         OpCode::GEOMETRY_EVAL,
-                        [scene_cow, object_cow](::DGraph *dgraph) {
-                          dune_object_eval_uber_data(dgraph, scene_cow, object_cow);
+                        [scene_cow, object_cow](::Graph *graph) {
+                          dune_object_eval_uber_data(graph, scene_cow, object_cow);
                         });
   op_node->set_as_exit();
   /* Materials. */
@@ -1499,10 +1498,10 @@ void DGraphNodeBuilder::build_object_data_geometry(Object *object)
       &object->id,
       NodeType::BATCH_CACHE,
       OpCode::GEOMETRY_SELECT_UPDATE,
-      [object_cow](::DGraph *dgraph) { dune_object_select_update(dgraph, object_cow); });
+      [object_cow](::Graph *graph) { dune_object_select_update(graph, object_cow); });
 }
 
-void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
+void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
 {
   if (built_map_.checkIsBuiltAndTag(obdata)) {
     return;
@@ -1528,13 +1527,13 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
                             NodeType::GEOMETRY,
                             OpCode::GEOMETRY_EVAL,
                             [obdata_cow](::DGraph *dgraph) {
-                             dune_mesh_eval_geometry(dgraph, (Mesh *)obdata_cow);
+                             dune_mesh_eval_geometry(graph, (Mesh *)obdata_cow);
                             });
       op_node->set_as_entry();
       break;
     }
     case ID_MB: {
-      op_node = add_op_node(obdata, NodeType::GEOMETRY, OperationCode::GEOMETRY_EVAL);
+      op_node = add_op_node(obdata, NodeType::GEOMETRY, OpCode::GEOMETRY_EVAL);
       op_node->set_as_entry();
       break;
     }
@@ -1542,8 +1541,8 @@ void DGraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node = add_op_node(obdata,
                             NodeType::GEOMETRY,
                             OpCode::GEOMETRY_EVAL,
-                            [obdata_cow](::DGraph *dgraph) {
-                             dune_curve_eval_geometry(dgraph, (Curve *)obdata_cow);
+                            [obdata_cow](::Graph *graph) {
+                             dune_curve_eval_geometry(graph, (Curve *)obdata_cow);
                             });
       op_node->set_as_entry();
       Curve *cu = (Curve *)obdata;
@@ -2157,4 +2156,4 @@ void DGraphNodeBuilder::constraint_walk(DConstraint * /*con*/,
   }
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
