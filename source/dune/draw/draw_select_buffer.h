@@ -65,65 +65,61 @@ bool draw_select_buffer_elem_get(uint sel_id, uint *r_elem, uint *r_base_index, 
 uint draw_select_buffer_ctx_offset_for_object_elem(struct Graph *graph,
                                                    struct Object *object,
                                                    char elem_type);
+/** Main function to read a block of pixels from the select frame buffer. */
+uint *draw_select_buffer_read(struct Graph *graph,
+                              struct ARegion *region,
+                              struct View3D *v3d,
+                              const rcti *rect,
+                              uint *r_buf_len);
 /**
- * Main function to read a block of pixels from the select frame buffer.
+ * param rect: The rectangle to sample indices from (min/max inclusive).
+ * returns a lib_bitmap the length of a bitmap_len or NULL on failure.
  */
-uint *DRW_select_buffer_read(struct Graph *graph,
-                             struct ARegion *region,
-                             struct View3D *v3d,
-                             const rcti *rect,
-                             uint *r_buf_len);
+uint *draw_select_buffer_bitmap_from_rect(struct Graph *graph,
+                                          struct ARegion *region,
+                                          struct View3D *v3d,
+                                          const struct rcti *rect,
+                                          uint *r_bitmap_len);
 /**
- * \param rect: The rectangle to sample indices from (min/max inclusive).
- * \returns a #BLI_bitmap the length of \a bitmap_len or NULL on failure.
+ * param center: Circle center.
+ * param radius: Circle radius.
+ * param r_bitmap_len: Number of indices in the selection id buffer.
+ * returns a lib_bitmap the length of a r_bitmap_len or NULL on failure.
  */
-uint *DRW_select_buffer_bitmap_from_rect(struct Depsgraph *depsgraph,
-                                         struct ARegion *region,
-                                         struct View3D *v3d,
-                                         const struct rcti *rect,
-                                         uint *r_bitmap_len);
+uint *draw_select_buffer_bitmap_from_circle(struct Graph *graph,
+                                            struct ARegion *region,
+                                            struct View3D *v3d,
+                                            const int center[2],
+                                            int radius,
+                                            uint *r_bitmap_len);
 /**
- * \param center: Circle center.
- * \param radius: Circle radius.
- * \param r_bitmap_len: Number of indices in the selection id buffer.
- * \returns a #BLI_bitmap the length of \a r_bitmap_len or NULL on failure.
+ * param poly: The polygon coordinates.
+ * param poly_len: Length of the polygon.
+ * param rect: Polygon boundaries.
+ * returns a lib_bitmap.
  */
-uint *DRW_select_buffer_bitmap_from_circle(struct Depsgraph *depsgraph,
-                                           struct ARegion *region,
-                                           struct View3D *v3d,
-                                           const int center[2],
-                                           int radius,
-                                           uint *r_bitmap_len);
+uint *draw_select_buffer_bitmap_from_poly(struct Graph *dgraph,
+                                          struct ARegion *region,
+                                          struct View3D *v3d,
+                                          const int poly[][2],
+                                          int poly_len,
+                                          const struct rcti *rect,
+                                          uint *r_bitmap_len);
+/** Samples a single pixel. **/
+uint draw_select_buffer_sample_point(struct Graph *graph,
+                                     struct ARegion *region,
+                                     struct View3D *v3d,
+                                     const int center[2]);
 /**
- * \param poly: The polygon coordinates.
- * \param poly_len: Length of the polygon.
- * \param rect: Polygon boundaries.
- * \returns a #BLI_bitmap.
- */
-uint *DRW_select_buffer_bitmap_from_poly(struct Depsgraph *depsgraph,
-                                         struct ARegion *region,
-                                         struct View3D *v3d,
-                                         const int poly[][2],
-                                         int poly_len,
-                                         const struct rcti *rect,
-                                         uint *r_bitmap_len);
-/**
- * Samples a single pixel.
- */
-uint DRW_select_buffer_sample_point(struct Depsgraph *depsgraph,
-                                    struct ARegion *region,
-                                    struct View3D *v3d,
-                                    const int center[2]);
-/**
- * Find the selection id closest to \a center.
- * \param dist: Use to initialize the distance,
+ * Find the selection id closest to a center.
+ * param dist: Use to initialize the distance,
  * when found, this value is set to the distance of the selection that's returned.
  */
-uint DRW_select_buffer_find_nearest_to_point(struct Depsgraph *depsgraph,
-                                             struct ARegion *region,
-                                             struct View3D *v3d,
-                                             const int center[2],
-                                             uint id_min,
-                                             uint id_max,
-                                             uint *dist);
-void DRW_select_buffer_context_create(struct Base **bases, uint bases_len, short select_mode);
+uint draw_select_buffer_find_nearest_to_point(struct Graph *graph,
+                                              struct ARegion *region,
+                                              struct View3D *v3d,
+                                              const int center[2],
+                                              uint id_min,
+                                              uint id_max,
+                                              uint *dist);
+void draw_select_buffer_ctx_create(struct Base **bases, uint bases_len, short select_mode);
