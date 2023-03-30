@@ -1,5 +1,5 @@
 /**
- * Evaluation engine entry-points for Depsgraph Engine.
+ * Evaluation engine entry-points for Graph Engine.
  */
 
 #include "intern/eval/graph_eval.h"
@@ -73,7 +73,7 @@ enum class EvaluationStage {
 };
 
 struct GraphEvalState {
-  DGraph *graph;
+  Graph *graph;
   bool do_stats;
   EvaluationStage stage;
   bool need_update_pending_parents = true;
@@ -205,13 +205,13 @@ bool is_metaball_object_op(const OpNode *op_node)
 bool need_evaluate_op_at_stage(GraphEvalState *state,
                                const OpNode *op_node)
 {
-  const ComponentNode *component_node = operation_node->owner;
+  const ComponentNode *component_node = op_node->owner;
   switch (state->stage) {
     case EvaluationStage::COPY_ON_WRITE:
       return (component_node->type == NodeType::COPY_ON_WRITE);
 
     case EvaluationStage::DYNAMIC_VISIBILITY:
-      return operation_node->flag & OperationFlag::DEPSOP_FLAG_AFFECTS_VISIBILITY;
+      return op_node->flag & OpFlag::GRAPH_OP_FLAG_AFFECTS_VISIBILITY;
 
     case EvaluationStage::THREADED_EVALUATION:
       if (is_metaball_object_operation(operation_node)) {
@@ -223,7 +223,7 @@ bool need_evaluate_op_at_stage(GraphEvalState *state,
     case EvaluationStage::SINGLE_THREADED_WORKAROUND:
       return true;
   }
-  BLI_assert_msg(0, "Unhandled evaluation stage, should never happen.");
+  lib_assert_msg(0, "Unhandled evaluation stage, should never happen.");
   return false;
 }
 
@@ -231,7 +231,7 @@ bool need_evaluate_op_at_stage(GraphEvalState *state,
  *   dec_parents: Decrement pending parents count, true when child nodes are
  *                scheduled after a task has been completed.
  */
-void schedule_node(DGraphEvalState *state,
+void schedule_node(GraphEvalState *state,
                    OpNode *node,
                    bool dec_parents,
                    const FnRef<void(OpNode *node)> schedule_fn)
@@ -242,7 +242,7 @@ void schedule_node(DGraphEvalState *state,
   }
   /* No need to schedule operations which are not tagged for update, they are
    * considered to be up to date. */
-  if ((node->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
+  if ((node->flag & GRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
     return;
   }
   /* TODO: This is not strictly speaking safe to read
@@ -257,7 +257,7 @@ void schedule_node(DGraphEvalState *state,
     return;
   }
   /* During the COW stage only schedule COW nodes. */
-  if (!need_evaluate_operation_at_stage(state, node)) {
+  if (!need_evaluate_op_at_stage(state, node)) {
     return;
   }
   /* Actually schedule the node. */
@@ -266,7 +266,7 @@ void schedule_node(DGraphEvalState *state,
     if (node->is_noop()) {
       /* Clear flags to avoid affecting subsequent update propagation.
        * For normal nodes these are cleared when it is evaluated. */
-      node->flag &= ~DGRAPH_OP_FLAG_CLEAR_ON_EVAL;
+      node->flag &= ~GRAPH_OP_FLAG_CLEAR_ON_EVAL;
 
       /* skip NOOP node, schedule children right away */
       schedule_children(state, node, schedule_fn);
@@ -278,7 +278,7 @@ void schedule_node(DGraphEvalState *state,
   }
 }
 
-void schedule_graph(DGraphEvalState *state,
+void schedule_graph(GraphEvalState *state,
                     const FnRef<void(OpNode *node)> schedule_fn)
 {
   for (OpNode *node : state->graph->ops) {
@@ -286,7 +286,7 @@ void schedule_graph(DGraphEvalState *state,
   }
 }
 
-void schedule_children(DGraphEvalState *state,
+void schedule_children(GraphEvalState *state,
                        OpNode *node,
                        const FnRef<void(OpNode *node)> schedule_fn)
 {
@@ -304,7 +304,7 @@ void schedule_children(DGraphEvalState *state,
 /* Evaluate given stage of the dependency graph evaluation using multiple threads.
  *
  * NOTE: Will assign the `state->stage` to the given stage. */
-void evaluate_graph_threaded_stage(DepsgraphEvalState *state,
+void evaluate_graph_threaded_stage(GraphEvalState *state,
                                    TaskPool *task_pool,
                                    const EvaluationStage stage)
 {
@@ -343,37 +343,37 @@ void evaluate_graph_single_threaded_if_needed(DGraphEvalState *state)
     schedule_children(state, operation_node, schedule_node_to_queue);
   }
 
-  BLI_gsqueue_free(evaluation_queue);
+  lib_gsqueue_free(evaluation_queue);
 }
 
-void depsgraph_ensure_view_layer(Depsgraph *graph)
+void graph_ensure_view_layer(Graph *graph)
 {
   /* We update copy-on-write scene in the following cases:
    * - It was not expanded yet.
    * - It was tagged for update of CoW component.
    * This allows us to have proper view layer pointer. */
   Scene *scene_cow = graph->scene_cow;
-  if (deg_copy_on_write_is_expanded(&scene_cow->id) &&
+  if (graph_copy_on_write_is_expanded(&scene_cow->id) &&
       (scene_cow->id.recalc & ID_RECALC_COPY_ON_WRITE) == 0) {
     return;
   }
 
-  const IDNode *scene_id_node = graph->find_id_node(&graph->scene->id);
-  deg_update_copy_on_write_datablock(graph, scene_id_node);
+  const IdNode *scene_id_node = graph->find_id_node(&graph->scene->id);
+  graph_update_copy_on_write_datablock(graph, scene_id_node);
 }
 
-TaskPool *deg_evaluate_task_pool_create(DepsgraphEvalState *state)
+TaskPool *graph_evaluate_task_pool_create(GraphEvalState *state)
 {
-  if (G.debug & G_DEBUG_DEPSGRAPH_NO_THREADS) {
-    return BLI_task_pool_create_no_threads(state);
+  if (G.debug & G_DEBUG_GRAPH_NO_THREADS) {
+    return lib_task_pool_create_no_threads(state);
   }
 
-  return BLI_task_pool_create_suspended(state, TASK_PRIORITY_HIGH);
+  return lib_task_pool_create_suspended(state, TASK_PRIORITY_HIGH);
 }
 
 }  // namespace
 
-void dgraph_evaluate_on_refresh(DGraph *graph)
+void dgraph_evaluate_on_refresh(Graph *graph)
 {
   /* Nothing to update, early out. */
   if (graph->entry_tags.is_empty()) {
@@ -388,10 +388,10 @@ void dgraph_evaluate_on_refresh(DGraph *graph)
 #endif
 
   graph->is_evaluating = true;
-  dgraph_ensure_view_layer(graph);
+  graph_ensure_view_layer(graph);
 
   /* Set up evaluation state. */
-  DGraphEvalState state;
+  GraphEvalState state;
   state.graph = graph;
   state.do_stats = graph->debug.do_time_debug();
 
@@ -426,7 +426,7 @@ void dgraph_evaluate_on_refresh(DGraph *graph)
 
     evaluate_graph_threaded_stage(&state, task_pool, EvaluationStage::DYNAMIC_VISIBILITY);
 
-    dgraph_flush_visibility_flags_if_needed(graph);
+    graph_flush_visibility_flags_if_needed(graph);
 
     /* Update parents to an updated visibility and evaluation stage.
      *
@@ -446,7 +446,7 @@ void dgraph_evaluate_on_refresh(DGraph *graph)
    * operation timing here, without aggregating anything to avoid any extra
    * synchronization. */
   if (state.do_stats) {
-    deg_eval_stats_aggregate(graph);
+    graph_eval_stats_aggregate(graph);
   }
 
   /* Clear any uncleared tags. */
@@ -460,4 +460,4 @@ void dgraph_evaluate_on_refresh(DGraph *graph)
   graph->debug.end_graph_evaluation();
 }
 
-}  // namespace dune::deg
+}  // namespace dune::graph
