@@ -1,24 +1,24 @@
-#include "intern/eval/dgraph_eval_runtime_backup.h"
+#include "intern/eval/graph_eval_runtime_backup.h"
 
-#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
 
 #include "lib_utildefines.h"
 
 #include "draw_engine.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-RuntimeBackup::RuntimeBackup(const DGraph *dgraph)
+RuntimeBackup::RuntimeBackup(const Graph *graph)
     : have_backup(false),
       id_data({nullptr}),
-      animation_backup(dgraph),
-      scene_backup(dgraph),
-      sound_backup(dgraph),
-      object_backup(dgraph),
+      animation_backup(graph),
+      scene_backup(graph),
+      sound_backup(graph),
+      object_backup(graph),
       drawdata_ptr(nullptr),
-      movieclip_backup(dgraph),
-      volume_backup(dgraph),
-      dpen_backup(dgraph)
+      movieclip_backup(graph),
+      volume_backup(graph),
+      dpen_backup(graph)
 {
   drawdata_backup.first = drawdata_backup.last = nullptr;
 }
