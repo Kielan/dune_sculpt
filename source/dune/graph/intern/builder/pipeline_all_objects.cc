@@ -1,8 +1,8 @@
 #include "pipeline_all_objects.h"
 
-#include "intern/builder/dgraph_builder_nodes.h"
-#include "intern/builder/dgraph_builder_relations.h"
-#include "intern/dgraph.h"
+#include "intern/builder/graph_builder_nodes.h"
+#include "intern/builder/graph_builder_relations.h"
+#include "intern/graph.h"
 
 #include "types_layer.h"
 
