@@ -1,10 +1,10 @@
 #include "pipeline_render.h"
 
-#include "intern/builder/dgraph_builder_nodes.h"
-#include "intern/builder/dgraph_builder_relations.h"
-#include "intern/dgraph.h"
+#include "intern/builder/graph_builder_nodes.h"
+#include "intern/builder/graph_builder_relations.h"
+#include "intern/graph.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 RenderBuilderPipeline::RenderBuilderPipeline(::DGraph *graph) : AbstractBuilderPipeline(graph)
 {
