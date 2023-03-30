@@ -1,4 +1,4 @@
-#include "intern/builder/dgraph_builder_stack.h"
+#include "intern/builder/graph_builder_stack.h"
 
 #include <iomanip>
 #include <ios>
@@ -11,7 +11,7 @@
 #include "types_constraint.h"
 #include "types_modifier.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* Spacing between adjacent columns, in number of spaces. */
 constexpr int kColumnSpacing = 4;
@@ -31,7 +31,7 @@ void print(std::ostream &stream, const Id *id)
   stream << std::setw(kPrintTypeWidth) << id_type_info->name << (id->name + 2) << "\n";
 }
 
-void print(std::ostream &stream, const DConstraint *constraint)
+void print(std::ostream &stream, const Constraint *constraint)
 {
   stream << std::setw(kPrintTypeWidth) << ("Constraint") << constraint->name << "\n";
 }
@@ -41,7 +41,7 @@ void print(std::ostream &stream, const ModifierData *modifier_data)
   stream << std::setw(kPrintTypeWidth) << ("Modifier") << modifier_data->name << "\n";
 }
 
-void print(std::ostream &stream, const DPoseChannel *pchan)
+void print(std::ostream &stream, const PoseChannel *pchan)
 {
   stream << std::setw(kPrintTypeWidth) << ("Pose Channel") << pchan->name << "\n";
 }
@@ -84,4 +84,4 @@ void BuilderStack::print_backtrace(std::ostream &stream)
   stream.flags(old_flags);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
