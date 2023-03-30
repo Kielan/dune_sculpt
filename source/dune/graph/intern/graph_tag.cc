@@ -462,17 +462,17 @@ int dgraph_recalc_flags_effective(DGraph *graph, int flags)
  *
  * TODO: This is something to be avoid in the future, make it more
  * explicit and granular for users to tag what they really need. */
-void dgraph_node_tag_zero(Main *bmain,
-                             DGraph *graph,
-                             IDNode *id_node,
-                             eUpdateSource update_source)
+void dgraph_node_tag_zero(Main *dmain,
+                          Graph *graph,
+                          IdNode *id_node,
+                          eUpdateSource update_source)
 {
   if (id_node == nullptr) {
     return;
   }
-  ID *id = id_node->id_orig;
+  Id *id = id_node->id_orig;
   /* TODO(sergey): Which recalc flags to set here? */
-  id_node->id_cow->recalc |= deg_recalc_flags_for_legacy_zero();
+  id_node->id_cow->recalc |= graph_recalc_flags_for_legacy_zero();
 
   for (ComponentNode *comp_node : id_node->components.values()) {
     if (comp_node->type == NodeType::ANIMATION) {
@@ -484,10 +484,10 @@ void dgraph_node_tag_zero(Main *bmain,
 
     comp_node->tag_update(graph, update_source);
   }
-  dgrapg_graph_id_tag_legacy_compat(dmain, graph, id, (IdRecalcFlag)0, update_source);
+  graph_id_tag_legacy_compat(dmain, graph, id, (IdRecalcFlag)0, update_source);
 }
 
-void graph_tag_on_visible_update(DGraph *graph, const bool do_time)
+void graph_tag_on_visible_update(Graph *graph, const bool do_time)
 {
   graph->need_visibility_update = true;
   graph->need_visibility_time_update |= do_time;
@@ -495,7 +495,7 @@ void graph_tag_on_visible_update(DGraph *graph, const bool do_time)
 
 } /* namespace */
 
-void graph_tag_ids_for_visible_update(DGraph *graph)
+void graph_tag_ids_for_visible_update(Graph *graph)
 {
   if (!graph->need_visibility_update) {
     return;
@@ -507,7 +507,7 @@ void graph_tag_ids_for_visible_update(DGraph *graph)
   /* NOTE: It is possible to have this function called with `do_time=false` first and later (prior
    * to evaluation though) with `do_time=true`. This means early output checks should be aware of
    * this. */
-  for (dgraph::IdNode *id_node : graph->id_nodes) {
+  for (graph::IdNode *id_node : graph->id_nodes) {
     const IdType id_type = GS(id_node->id_orig->name);
 
     if (!id_node->visible_components_mask) {
@@ -516,7 +516,7 @@ void graph_tag_ids_for_visible_update(DGraph *graph)
       continue;
     }
     int flag = 0;
-    if (!dgraph::dgraph_copy_on_write_is_expanded(id_node->id_cow)) {
+    if (!graph::graph_copy_on_write_is_expanded(id_node->id_cow)) {
       flag |= ID_RECALC_COPY_ON_WRITE;
       if (do_time) {
         if (dune_animdata_from_id(id_node->id_orig) != nullptr) {
@@ -539,10 +539,10 @@ void graph_tag_ids_for_visible_update(DGraph *graph)
     if (id_type == ID_OB) {
       flag |= ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY;
     }
-    graph_id_tag_update(bmain, graph, id_node->id_orig, flag, DEG_UPDATE_SOURCE_VISIBILITY);
+    graph_id_tag_update(dmain, graph, id_node->id_orig, flag, GRAPH_UPDATE_SOURCE_VISIBILITY);
     if (id_type == ID_SCE) {
       /* Make sure collection properties are up to date. */
-      id_node->tag_update(graph, DEG_UPDATE_SOURCE_VISIBILITY);
+      id_node->tag_update(graph, GRAPH_UPDATE_SOURCE_VISIBILITY);
     }
     /* Now when ID is updated to the new visibility state, prevent it from
      * being re-tagged again. Simplest way to do so is to pretend that it
