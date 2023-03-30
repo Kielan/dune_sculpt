@@ -1886,12 +1886,12 @@ void DGraphNodeBuilder::build_cachefile(CacheFile *cache_file)
   add_op_node(cache_file_id,
               NodeType::CACHE,
               OpCode::FILE_CACHE_UPDATE,
-              [dmain = dmain_, cache_file_cow](::DGraph *dgraph) {
-               dune_cachefile_eval(dmain, dgraph, cache_file_cow);
+              [dmain = dmain_, cache_file_cow](::Graph *graph) {
+               dune_cachefile_eval(dmain, graph, cache_file_cow);
               });
 }
 
-void DGraphNodeBuilder::build_mask(Mask *mask)
+void GraphNodeBuilder::build_mask(Mask *mask)
 {
   if (built_map_.checkIsBuiltAndTag(mask)) {
     return;
@@ -1907,11 +1907,11 @@ void DGraphNodeBuilder::build_mask(Mask *mask)
       mask_id,
       NodeType::ANIMATION,
       OpCode::MASK_ANIMATION,
-      [mask_cow](::DGraph *dgraph) { dune_mask_eval_animation(dgraph, mask_cow); });
+      [mask_cow](::Graph *graph) { dune_mask_eval_animation(graph, mask_cow); });
   /* Final mask evaluation. */
   add_op_node(
-      mask_id, NodeType::PARAMS, OpnCode::MASK_EVAL, [mask_cow](::DGraph *dgraph) {
-        dune_mask_eval_update(depsgraph, mask_cow);
+      mask_id, NodeType::PARAMS, OpCode::MASK_EVAL, [mask_cow](::Graph *graph) {
+        dune_mask_eval_update_graph, mask_cow);
       });
   /* Build parents. */
   LISTBASE_FOREACH (MaskLayer *, mask_layer, &mask->masklayers) {
@@ -1928,7 +1928,7 @@ void DGraphNodeBuilder::build_mask(Mask *mask)
   }
 }
 
-void DGraphNodeBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
+void GraphNodeBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
 {
   if (built_map_.checkIsBuiltAndTag(linestyle)) {
     return;
@@ -1941,7 +1941,7 @@ void DGraphNodeBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
   build_nodetree(linestyle->nodetree);
 }
 
-void DGraphNodeBuilder::build_movieclip(MovieClip *clip)
+void GraphNodeBuilder::build_movieclip(MovieClip *clip)
 {
   if (built_map_.checkIsBuiltAndTag(clip)) {
     return;
@@ -1956,12 +1956,12 @@ void DGraphNodeBuilder::build_movieclip(MovieClip *clip)
   add_op_node(clip_id,
               NodeType::PARAMS,
               OpCode::MOVIECLIP_EVAL,
-              [dmain = dmain_, clip_cow](::DGraph *dgraph) {
-                dune_movieclip_eval_update(dgraph, dmain, clip_cow);
+              [dmain = dmain_, clip_cow](::Graph *graph) {
+                dune_movieclip_eval_update(graph, dmain, clip_cow);
               });
 }
 
-void DGraphNodeBuilder::build_lightprobe(LightProbe *probe)
+void GraphNodeBuilder::build_lightprobe(LightProbe *probe)
 {
   if (built_map_.checkIsBuiltAndTag(probe)) {
     return;
@@ -1973,7 +1973,7 @@ void DGraphNodeBuilder::build_lightprobe(LightProbe *probe)
   build_params(&probe->id);
 }
 
-void DGraphNodeBuilder::build_speaker(Speaker *speaker)
+void GraphNodeBuilder::build_speaker(Speaker *speaker)
 {
   if (built_map_.checkIsBuiltAndTag(speaker)) {
     return;
@@ -1988,25 +1988,25 @@ void DGraphNodeBuilder::build_speaker(Speaker *speaker)
   }
 }
 
-void DGraphNodeBuilder::build_sound(DSound *sound)
+void GraphNodeBuilder::build_sound(Sound *sound)
 {
   if (built_map_.checkIsBuiltAndTag(sound)) {
     return;
   }
   add_id_node(&sound->id);
-  DSound *sound_cow = get_cow_datablock(sound);
+  Sound *sound_cow = get_cow_datablock(sound);
   add_op_node(&sound->id,
               NodeType::AUDIO,
               OpCode::SOUND_EVAL,
-              [dmain = dmain_, sound_cow](::DGraph *dgraph) {
-                dune_sound_evaluate(dgraph, dmain, sound_cow);
+              [dmain = dmain_, sound_cow](::Graph *graph) {
+                dune_sound_evaluate(graph, dmain, sound_cow);
               });
   build_idprops(sound->id.props);
   build_animdata(&sound->id);
   build_params(&sound->id);
 }
 
-void DGraphNodeBuilder::build_simulation(Simulation *simulation)
+void GraphNodeBuilder::build_simulation(Simulation *simulation)
 {
   if (built_map_.checkIsBuiltAndTag(simulation)) {
     return;
@@ -2023,12 +2023,12 @@ void DGraphNodeBuilder::build_simulation(Simulation *simulation)
   add_op_node(&simulation->id,
               NodeType::SIMULATION,
               OpCode::SIMULATION_EVAL,
-              [scene_cow, simulation_cow](::DGraph *dgraph) {
-               dune_simulation_data_update(dgraph, scene_cow, simulation_cow);
+              [scene_cow, simulation_cow](::Graph *graph) {
+               dune_simulation_data_update(graph, scene_cow, simulation_cow);
               });
 }
 
-void DGraphNodeBuilder::build_vfont(VFont *vfont)
+void GraphNodeBuilder::build_vfont(VFont *vfont)
 {
   if (built_map_.checkIsBuiltAndTag(vfont)) {
     return;
@@ -2041,7 +2041,7 @@ void DGraphNodeBuilder::build_vfont(VFont *vfont)
 
 static bool seq_node_build_cb(Sequence *seq, void *user_data)
 {
-  DGraphNodeBuilder *nb = (DGraphNodeBuilder *)user_data;
+  GraphNodeBuilder *nb = (GraphNodeBuilder *)user_data;
   nb->build_idprops(seq->prop);
   if (seq->sound != nullptr) {
     nb->build_sound(seq->sound);
@@ -2060,7 +2060,7 @@ static bool seq_node_build_cb(Sequence *seq, void *user_data)
   return true;
 }
 
-void DGraphNodeBuilder::build_scene_sequencer(Scene *scene)
+void GraphNodeBuilder::build_scene_sequencer(Scene *scene)
 {
   if (scene->ed == nullptr) {
     return;
@@ -2073,14 +2073,14 @@ void DGraphNodeBuilder::build_scene_sequencer(Scene *scene)
   add_op_node(&scene->id,
               NodeType::SEQUENCER,
               OpCode::SEQUENCES_EVAL,
-              [scene_cow](::DGraph *dgraph) {
-               seq_eval_sequences(dgraph, scene_cow, &scene_cow->ed->seqbase);
+              [scene_cow](::Graph *graph) {
+               seq_eval_sequences(graph, scene_cow, &scene_cow->ed->seqbase);
               });
   /* Make sure data for sequences is in the graph. */
   seq_for_each_callback(&scene->ed->seqbase, seq_node_build_cb, this);
 }
 
-void DGraphNodeBuilder::build_scene_audio(Scene *scene)
+void GraphNodeBuilder::build_scene_audio(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_SCENE_AUDIO)) {
     return;
@@ -2096,12 +2096,12 @@ void DGraphNodeBuilder::build_scene_audio(Scene *scene)
   add_op_node(&scene->id,
               NodeType::AUDIO,
               OpCode::AUDIO_VOLUME,
-              [scene_cow](::DGraph *dgraph) {
-               dune_scene_update_tag_audio_volume(dgraph, scene_cow);
+              [scene_cow](::Graph *graph) {
+               dune_scene_update_tag_audio_volume(graph, scene_cow);
               });
 }
 
-void DGraphNodeBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer)
+void GraphNodeBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer)
 {
   dune_view_layer_synced_ensure(scene, view_layer);
   LISTBASE_FOREACH (Base *, base, dune_view_layer_object_bases_get(view_layer)) {
@@ -2110,7 +2110,7 @@ void DGraphNodeBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer
       continue;
     }
     /* NOTE: Can not use base because it does not belong to a current view layer. */
-    build_object(-1, base->object, DEG_ID_LINKED_INDIRECTLY, true);
+    build_object(-1, base->object, GRAPH_ID_LINKED_INDIRECTLY, true);
   }
 }
 
@@ -2128,7 +2128,7 @@ void DGraphNodeBuilder::modifier_walk(void *user_data,
   }
   switch (GS(id->name)) {
     case ID_OB:
-      data->builder->build_object(-1, (Object *)id, DEG_ID_LINKED_INDIRECTLY, false);
+      data->builder->build_object(-1, (Object *)id, GRAPH_ID_LINKED_INDIRECTLY, false);
       break;
     default:
       data->builder->build_id(id);
@@ -2136,7 +2136,7 @@ void DGraphNodeBuilder::modifier_walk(void *user_data,
   }
 }
 
-void DGraphNodeBuilder::constraint_walk(DConstraint * /*con*/,
+void GraphNodeBuilder::constraint_walk(Constraint * /*con*/,
                                         Id **idpoint,
                                         bool /*is_ref*/,
                                         void *user_data)
@@ -2148,7 +2148,7 @@ void DGraphNodeBuilder::constraint_walk(DConstraint * /*con*/,
   }
   switch (GS(id->name)) {
     case ID_OB:
-      data->builder->build_object(-1, (Object *)id, DEG_ID_LINKED_INDIRECTLY, false);
+      data->builder->build_object(-1, (Object *)id, GRAPH_ID_LINKED_INDIRECTLY, false);
       break;
     default:
       data->builder->build_id(id);
