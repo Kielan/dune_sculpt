@@ -2,21 +2,21 @@
 
 #include "types_id.h"
 
-#include "intern/eval/dgraph_eval_runtime_backup_animation.h"
-#include "intern/eval/dgraph_eval_runtime_backup_dpeb.h"
-#include "intern/eval/dgraph_eval_runtime_backup_movieclip.h"
-#include "intern/eval/dgraph_eval_runtime_backup_object.h"
-#include "intern/eval/dgraph_eval_runtime_backup_scene.h"
-#include "intern/eval/dgraph_eval_runtime_backup_sound.h"
-#include "intern/eval/dgraph_eval_runtime_backup_volume.h"
+#include "intern/eval/graph_eval_runtime_backup_animation.h"
+#include "intern/eval/graph_eval_runtime_backup_dpeb.h"
+#include "intern/eval/graph_eval_runtime_backup_movieclip.h"
+#include "intern/eval/graph_eval_runtime_backup_object.h"
+#include "intern/eval/graph_eval_runtime_backup_scene.h"
+#include "intern/eval/graph_eval_runtime_backup_sound.h"
+#include "intern/eval/graph_eval_runtime_backup_volume.h"
 
-namespace blender::deg {
+namespace dune::graph {
 
-struct Depsgraph;
+struct Graph;
 
 class RuntimeBackup {
  public:
-  explicit RuntimeBackup(const Depsgraph *depsgraph);
+  explicit RuntimeBackup(const Graph *graph);
 
   /* NOTE: Will reset all runtime fields which has been backed up to nullptr. */
   void init_from_id(Id *id);
