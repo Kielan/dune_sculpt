@@ -6,14 +6,14 @@
 
 #include "types_layer.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 namespace {
 
-class AllObjectsNodeBuilder : public DGraphNodeBuilder {
+class AllObjectsNodeBuilder : public GraphNodeBuilder {
  public:
-  AllObjectsNodeBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache)
-      : DGraphNodeBuilder(dmain, graph, cache)
+  AllObjectsNodeBuilder(Main *dmain, Graph *graph, GraphBuilderCache *cache)
+      : GraphNodeBuilder(dmain, graph, cache)
   {
   }
 
@@ -23,10 +23,10 @@ class AllObjectsNodeBuilder : public DGraphNodeBuilder {
   }
 };
 
-class AllObjectsRelationBuilder : public DGraphRelationBuilder {
+class AllObjectsRelationBuilder : public GraphRelationBuilder {
  public:
-  AllObjectsRelationBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache)
-      : DGraphRelationBuilder(dmain, graph, cache)
+  AllObjectsRelationBuilder(Main *dmain, Graph *graph, GraphBuilderCache *cache)
+      : GraphRelationBuilder(dmain, graph, cache)
   {
   }
 
@@ -43,14 +43,14 @@ AllObjectsBuilderPipeline::AllObjectsBuilderPipeline(::DGraph *graph)
 {
 }
 
-unique_ptr<DGraphNodeBuilder> AllObjectsBuilderPipeline::construct_node_builder()
+unique_ptr<GraphNodeBuilder> AllObjectsBuilderPipeline::construct_node_builder()
 {
-  return std::make_unique<AllObjectsNodeBuilder>(dmain_, dgraph_, &builder_cache_);
+  return std::make_unique<AllObjectsNodeBuilder>(dmain_, graph_, &builder_cache_);
 }
 
-unique_ptr<DGraphRelationBuilder> AllObjectsBuilderPipeline::construct_relation_builder()
+unique_ptr<GraphRelationBuilder> AllObjectsBuilderPipeline::construct_relation_builder()
 {
-  return std::make_unique<AllObjectsRelationBuilder>(dmain_, dgraph_, &builder_cache_);
+  return std::make_unique<AllObjectsRelationBuilder>(dmain_, graph_, &builder_cache_);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
