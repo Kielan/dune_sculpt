@@ -4,9 +4,9 @@
 
 #pragma once
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-struct DGraph;
+struct Graph;
 
 /**
  * Evaluate all nodes tagged for updating,
@@ -15,6 +15,6 @@ struct DGraph;
  *
  * Time sources should be all valid!
  */
-void dgraph_evaluate_on_refresh(DGraph *graph);
+void graph_evaluate_on_refresh(Graph *graph);
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
