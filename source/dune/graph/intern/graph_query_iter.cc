@@ -317,9 +317,9 @@ void DEG_iterator_objects_next(LibIterator *iter)
   }
 }
 
-void DEG_iterator_objects_end(BLI_Iterator *iter)
+void graph_iterator_objects_end(LibIterator *iter)
 {
-  DEGObjectIterData *data = (DEGObjectIterData *)iter->data;
+  GraphObjectIterData *data = (GraphObjectIterData *)iter->data;
   if (data != nullptr) {
     /* Force crash in case the iterator data is referenced and accessed down
      * the line. (T51718) */
@@ -329,9 +329,9 @@ void DEG_iterator_objects_end(BLI_Iterator *iter)
 
 /* ************************ DEG ID ITERATOR ********************* */
 
-static void DEG_iterator_ids_step(BLI_Iterator *iter, deg::IDNode *id_node, bool only_updated)
+static void graph_iterator_ids_step(LibIterator *iter, graph::IdNode *id_node, bool only_updated)
 {
-  ID *id_cow = id_node->id_cow;
+  Id *id_cow = id_node->id_cow;
 
   if (!id_node->is_directly_visible) {
     iter->skip = true;
@@ -339,7 +339,7 @@ static void DEG_iterator_ids_step(BLI_Iterator *iter, deg::IDNode *id_node, bool
   }
   if (only_updated && !(id_cow->recalc & ID_RECALC_ALL)) {
     /* Node-tree is considered part of the data-block. */
-    bNodeTree *ntree = ntreeFromID(id_cow);
+    NodeTree *ntree = ntreeFromId(id_cow);
     if (ntree == nullptr) {
       iter->skip = true;
       return;
@@ -354,15 +354,15 @@ static void DEG_iterator_ids_step(BLI_Iterator *iter, deg::IDNode *id_node, bool
   iter->skip = false;
 }
 
-void DEG_iterator_ids_begin(BLI_Iterator *iter, DEGIDIterData *data)
+void graph_iterator_ids_begin(LibIterator *iter, GraphIdIterData *data)
 {
-  Depsgraph *depsgraph = data->graph;
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
-  const size_t num_id_nodes = deg_graph->id_nodes.size();
+  Graph *graph = data->graph;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  const size_t num_id_nodes = graph->id_nodes.size();
 
   iter->data = data;
 
-  if ((num_id_nodes == 0) || (data->only_updated && !DEG_id_type_any_updated(depsgraph))) {
+  if ((num_id_nodes == 0) || (data->only_updated && !graph_id_type_any_updated(graph))) {
     iter->valid = false;
     return;
   }
@@ -370,19 +370,19 @@ void DEG_iterator_ids_begin(BLI_Iterator *iter, DEGIDIterData *data)
   data->id_node_index = 0;
   data->num_id_nodes = num_id_nodes;
 
-  deg::IDNode *id_node = deg_graph->id_nodes[data->id_node_index];
-  DEG_iterator_ids_step(iter, id_node, data->only_updated);
+  graph::IdNode *id_node = graph->id_nodes[data->id_node_index];
+  graph_iterator_ids_step(iter, id_node, data->only_updated);
 
   if (iter->skip) {
-    DEG_iterator_ids_next(iter);
+    graph_iterator_ids_next(iter);
   }
 }
 
-void DEG_iterator_ids_next(BLI_Iterator *iter)
+void graph_iterator_ids_next(LibIterator *iter)
 {
-  DEGIDIterData *data = (DEGIDIterData *)iter->data;
-  Depsgraph *depsgraph = data->graph;
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
+  GraphIdIterData *data = (GraphIdIterData *)iter->data;
+  Graph *graph = data->graph;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
 
   do {
     iter->skip = false;
@@ -393,11 +393,11 @@ void DEG_iterator_ids_next(BLI_Iterator *iter)
       return;
     }
 
-    deg::IDNode *id_node = deg_graph->id_nodes[data->id_node_index];
-    DEG_iterator_ids_step(iter, id_node, data->only_updated);
+    graph::IdNode *id_node = graph->id_nodes[data->id_node_index];
+    graph_iterator_ids_step(iter, id_node, data->only_updated);
   } while (iter->skip);
 }
 
-void DEG_iterator_ids_end(BLI_Iterator *UNUSED(iter))
+void graph_iterator_ids_end(LibIterator *UNUSED(iter))
 {
 }
