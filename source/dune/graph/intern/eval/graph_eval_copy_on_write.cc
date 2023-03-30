@@ -769,7 +769,7 @@ int foreach_libblock_validate_cb(LibIdLinkCbData *cb_data)
  * yet copied-on-write.
  *
  * NOTE: Expects that CoW datablock is empty. */
-Id *graph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id_node)
+Id *graph_expand_copy_on_write_datablock(const Graph *graph, const IdNode *id_node)
 {
   const Id *id_orig = id_node->id_orig;
   Id *id_cow = id_node->id_cow;
@@ -828,11 +828,11 @@ Id *graph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id_
     lib_assert_msg(0, "No idea how to perform CoW on datablock");
   }
   /* Update pointers to nested id datablocks. */
-  DGRAPH_COW_PRINT(
+  GRAPH_COW_PRINT(
       "  Remapping id links for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
 
 #ifdef NESTED_ID_NASTY_WORKAROUND
-  ntree_hack_remap_ptrs(dgraph, id_cow);
+  ntree_hack_remap_ptrs(graph, id_cow);
 #endif
   /* Do it now, so remapping will understand that possibly remapped self id
    * is not to be remapped again. */
@@ -1023,19 +1023,19 @@ void dgraph_free_copy_on_write_datablock(Id *id_cow)
   id_cow->name[0] = '\0';
 }
 
-void graph_evaluate_copy_on_write(struct ::DGraph *graph, const IdNode *id_node)
+void graph_evaluate_copy_on_write(struct ::Graph *graph, const IdNode *id_node)
 {
-  const DGraph *dgraph = reinterpret_cast<const DGraph *>(graph);
-  dgraph_debug_print_eval(graph, __func__, id_node->id_orig->name, id_node->id_cow);
-  if (id_node->id_orig == &dgraph->scene->id) {
+  const Graph *graph = reinterpret_cast<const Graph *>(graph);
+  graph_debug_print_eval(graph, __func__, id_node->id_orig->name, id_node->id_cow);
+  if (id_node->id_orig == &graph->scene->id) {
     /* NOTE: This is handled by eval_ctx setup routines, which
      * ensures scene and view layer pointers are valid. */
     return;
   }
-  dgraph_update_copy_on_write_datablock(dgraph, id_node);
+  graph_update_copy_on_write_datablock(dgraph, id_node);
 }
 
-bool dgraph_validate_copy_on_write_datablock(Id *id_cow)
+bool graph_validate_copy_on_write_datablock(Id *id_cow)
 {
   if (id_cow == nullptr) {
     return false;
@@ -1047,7 +1047,7 @@ bool dgraph_validate_copy_on_write_datablock(Id *id_cow)
   return data.is_valid;
 }
 
-void dgraph_tag_copy_on_write_id(If *id_cow, const Id *id_orig)
+void graph_tag_copy_on_write_id(If *id_cow, const Id *id_orig)
 {
   lib_assert(id_cow != id_orig);
   lib_assert((id_orig->tag & LIB_TAG_COPIED_ON_WRITE) == 0);
@@ -1057,20 +1057,20 @@ void dgraph_tag_copy_on_write_id(If *id_cow, const Id *id_orig)
   id_cow->orig_id = (If *)id_orig;
 }
 
-bool dgraph_copy_on_write_is_expanded(const Id *id_cow)
+bool graph_copy_on_write_is_expanded(const Id *id_cow)
 {
   return check_datablock_expanded(id_cow);
 }
 
-bool dgraph_copy_on_write_is_needed(const Id *id_orig)
+bool graph_copy_on_write_is_needed(const Id *id_orig)
 {
   const IdType id_type = GS(id_orig->name);
   return dgraph_copy_on_write_is_needed(id_type);
 }
 
-bool dgraph_copy_on_write_is_needed(const IdType id_type)
+bool graph_copy_on_write_is_needed(const IdType id_type)
 {
   return ID_TYPE_IS_COW(id_type);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
