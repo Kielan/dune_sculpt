@@ -1,13 +1,13 @@
 #pragma once
 
-#include "intern/builder/dgraph_builder.h"
-#include "intern/builder/dgraph_builder_key.h"
-#include "intern/builder/dgraph_builder_map.h"
-#include "intern/dgraph_type.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_op.h"
+#include "intern/builder/graph_builder.h"
+#include "intern/builder/graph_builder_key.h"
+#include "intern/builder/graph_builder_map.h"
+#include "intern/graph_type.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_op.h"
 
-#include "dgraph.h"
+#include "graph.h"
 
 struct CacheFile;
 struct Camera;
@@ -35,28 +35,28 @@ struct Speaker;
 struct Tex;
 struct VFont;
 struct World;
-struct DAction;
-struct DArmature;
-struct DConstraint;
-struct DNodeSocket;
-struct DNodeTree;
-struct DPoseChannel;
-struct DSound;
+struct Action;
+struct Armature;
+struct Constraint;
+struct NodeSocket;
+struct NodeTree;
+struct PoseChannel;
+struct Sound;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 struct ComponentNode;
-struct DGraph;
-class DGraphBuilderCache;
+struct Graph;
+class GraphBuilderCache;
 struct IdNode;
 struct OpKey;
 struct OpNode;
 struct TimeSourceNode;
 
-class DGraphNodeBuilder : public DGraphBuilder {
+class GraphNodeBuilder : public GraphBuilder {
  public:
-  DepsgraphNodeBuilder(Main *Dmain, DGraph *graph, DGraphBuilderCache *cache);
-  ~DepsgraphNodeBuilder();
+  GraphNodeBuilder(Main *Dmain, Graph *graph, GraphBuilderCache *cache);
+  ~GraphNodeBuilder();
 
   /* For given original Id get Id which is created by CoW system. */
   Id *get_cow_id(const Id *id_orig) const;
@@ -94,20 +94,20 @@ class DGraphNodeBuilder : public DGraphBuilder {
 
   OpNode *add_op_node(ComponentNode *comp_node,
                       OpCode opcode,
-                      const DepsEvalOpCb &op = nullptr,
+                      const GraphEvalOpCb &op = nullptr,
                       const char *name = "",
                       int name_tag = -1);
   OpNode *add_op_node(Id *id,
                       NodeType comp_type,
                       const char *comp_name,
                       OpCode opcode,
-                      const DepsEvalOpCb &op = nullptr,
+                      const GraphEvalOpCb &op = nullptr,
                       const char *name = "",
                       int name_tag = -1);
   OpNode *add_op_node(Id *id,
                       NodeType comp_type,
                       OpCode opcode,
-                      const DepsEvalOpCb &op = nullptr,
+                      const GraphEvalOpCb &op = nullptr,
                       const char *name = "",
                       int name_tag = -1);
 
@@ -115,15 +115,15 @@ class DGraphNodeBuilder : public DGraphBuilder {
                          NodeType comp_type,
                          const char *comp_name,
                          OpCode opcode,
-                         const DepsEvalOpCb &op = nullptr,
+                         const GraphEvalOpCb &op = nullptr,
                          const char *name = "",
                          int name_tag = -1);
-  OperationNode *ensure_op_node(Id *id,
-                                NodeType comp_type,
-                                OpCode opcode,
-                                const DepsEvalOpCb &op = nullptr,
-                                const char *name = "",
-                                int name_tag = -1);
+  OpNode *ensure_op_node(Id *id,
+                         NodeType comp_type,
+                         OpCode opcode,
+                         const GraphEvalOpCb &op = nullptr,
+                         const char *name = "",
+                         int name_tag = -1);
 
   bool has_op_node(Id *id,
                    NodeType comp_type,
