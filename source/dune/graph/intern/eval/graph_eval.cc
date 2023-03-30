@@ -130,7 +130,7 @@ bool check_op_node_visible(const GraphEvalState *state, OpNode *op_node)
   /* Special case for dynamic visibility pass: the actual visibility is not yet known, so limit to
    * only operations which affects visibility. */
   if (state->stage == EvaluationStage::DYNAMIC_VISIBILITY) {
-    return op_node->flag & OpFlag::DEPSOP_FLAG_AFFECTS_VISIBILITY;
+    return op_node->flag & OpFlag::GRAPH_OP_FLAG_AFFECTS_VISIBILITY;
   }
 
   return comp_node->affects_visible_id;
@@ -146,7 +146,7 @@ void calculate_pending_parents_for_node(const DGraphEvalState *state, OperationN
     return;
   }
   /* No need to bother with anything if node is not tagged for update. */
-  if ((node->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
+  if ((node->flag & GRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
     return;
   }
   for (Relation *rel : node->inlinks) {
@@ -155,12 +155,12 @@ void calculate_pending_parents_for_node(const DGraphEvalState *state, OperationN
       /* TODO: This is how old layer system was checking for the
        * calculation, but how is it possible that visible object depends
        * on an invisible? This is something what is prohibited after
-       * deg_graph_build_flush_layers(). */
+       * graph_build_flush_layers(). */
       if (!check_op_node_visible(state, from)) {
         continue;
       }
       /* No need to wait for operation which is up to date. */
-      if ((from->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
+      if ((from->flag & GRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
         continue;
       }
       ++node->num_links_pending;
@@ -168,7 +168,7 @@ void calculate_pending_parents_for_node(const DGraphEvalState *state, OperationN
   }
 }
 
-void calculate_pending_parents_if_needed(DGraphEvalState *state)
+void calculate_pending_parents_if_needed(GraphEvalState *state)
 {
   if (!state->need_update_pending_parents) {
     return;
@@ -181,7 +181,7 @@ void calculate_pending_parents_if_needed(DGraphEvalState *state)
   state->need_update_pending_parents = false;
 }
 
-void initialize_execution(DGraphEvalState *state, DGraph *graph)
+void initialize_execution(GraphEvalState *state, Graph *graph)
 {
   /* Clear tags and other things which needs to be clear. */
   if (state->do_stats) {
