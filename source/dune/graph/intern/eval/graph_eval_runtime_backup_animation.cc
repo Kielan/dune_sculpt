@@ -1,4 +1,4 @@
-#include "intern/eval/dgraph_eval_runtime_backup_animation.h"
+#include "intern/eval/graph_eval_runtime_backup_animation.h"
 
 #include "types_anim.h"
 
@@ -7,9 +7,9 @@
 #include "api_access.h"
 #include "api_types.h"
 
-#include "intern/dgraph.h"
+#include "intern/graph.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 namespace {
 
@@ -104,10 +104,10 @@ void AnimationBackup::restore_to_id(Id *id)
     }
 
     /* Write property value. */
-    if (!dune_animsys_write_to_rna_path(&resolved_api, value_backup.value)) {
+    if (!dune_animsys_write_to_api_path(&resolved_api, value_backup.value)) {
       return;
     }
   }
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
