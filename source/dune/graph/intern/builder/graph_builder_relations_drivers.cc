@@ -1,6 +1,6 @@
 /**  Methods for constructing depsgraph relations for drivers. **/
 
-#include "intern/builder/dgraph_builder_relations_drivers.h"
+#include "intern/builder/graph_builder_relations_drivers.h"
 
 #include <cstring>
 
