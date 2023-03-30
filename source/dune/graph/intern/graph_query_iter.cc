@@ -288,28 +288,28 @@ void graph_iterator_objects_begin(LibIterator *iter, GraphObjectIterData *data)
   data->dupli_list = nullptr;
   data->dupli_object_next = nullptr;
   data->dupli_object_current = nullptr;
-  data->scene = DEG_get_evaluated_scene(depsgraph);
+  data->scene = graph_get_evaluated_scene(graph);
   data->id_node_index = 0;
   data->num_id_nodes = num_id_nodes;
-  data->eval_mode = DEG_get_mode(depsgraph);
-  deg_invalidate_iterator_work_data(data);
+  data->eval_mode = graph_get_mode(graph);
+  graph_invalidate_iterator_work_data(data);
 
-  DEG_iterator_objects_next(iter);
+  graph_iterator_objects_next(iter);
 }
 
-void DEG_iterator_objects_next(BLI_Iterator *iter)
+void DEG_iterator_objects_next(LibIterator *iter)
 {
-  DEGObjectIterData *data = (DEGObjectIterData *)iter->data;
+  GraphObjectIterData *data = (GraphObjectIterData *)iter->data;
   while (true) {
     if (data->next_object != nullptr) {
       iter->current = data->next_object;
       data->next_object = nullptr;
       return;
     }
-    if (deg_iterator_duplis_step(data)) {
+    if (graph_iterator_duplis_step(data)) {
       continue;
     }
-    if (deg_iterator_objects_step(data)) {
+    if (graph_iterator_objects_step(data)) {
       continue;
     }
     iter->valid = false;
