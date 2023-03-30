@@ -1,24 +1,24 @@
 
 #pragma once
 
-#include "BLI_sys_types.h" /* for bool */
+#include "lib_sys_types.h" /* for bool */
 
-#include "DNA_object_enums.h"
+#include "types_object_enums.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct ARegion;
-struct DRWData;
-struct DRWInstanceDataList;
-struct Depsgraph;
+struct DrawData;
+struct DrawInstanceDataList;
+struct Graph;
 struct DrawEngineType;
-struct GHash;
+struct Hash;
 struct GPUMaterial;
 struct GPUOffScreen;
 struct GPUViewport;
-struct ID;
+struct Id;
 struct Main;
 struct Object;
 struct Render;
@@ -27,12 +27,12 @@ struct RenderEngineType;
 struct Scene;
 struct View3D;
 struct ViewLayer;
-struct bContext;
+struct Context;
 struct rcti;
 
-void DRW_engines_register(void);
-void DRW_engines_register_experimental(void);
-void DRW_engines_free(void);
+void draw_engines_register(void);
+void draw_engines_register_experimental(void);
+void draw_engines_free(void);
 
 bool DRW_engine_render_support(struct DrawEngineType *draw_engine_type);
 void DRW_engine_register(struct DrawEngineType *draw_engine_type);
