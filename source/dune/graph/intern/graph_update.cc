@@ -1,17 +1,17 @@
-#include "intern/dgraph_update.h"
+#include "intern/graph_update.h"
 
-#include "dgraph.h"
+#include "graph.h"
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
-namespace dgraph = dune::dgraph;
+namespace graph = dune::graph;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-static DGraphEditorUpdateIdCb dgraph_editor_update_id_cb = nullptr;
-static DGraphEditorUpdateSceneCb dgraph_editor_update_scene_cb = nullptr;
+static GraphEditorUpdateIdCb graph_editor_update_id_cb = nullptr;
+static GraphEditorUpdateSceneCb graph_editor_update_scene_cb = nullptr;
 
-void dgraph_editors_id_update(const DGraphEditorUpdateContext *update_ctx, Id *id)
+void dgraph_editors_id_update(const GraphEditorUpdateCtx *update_ctx, Id *id)
 {
   if (dgraph_editor_update_id_cb != nullptr) {
     dgraph_editor_update_id_cb(update_ctx, id);
