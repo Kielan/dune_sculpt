@@ -1,11 +1,11 @@
-#include "intern/dgraph_relation.h"
+#include "intern/graph_relation.h"
  /* own include */
 #include "lib_utildefines.h"
 
-#include "intern/dgraph_type.h"
-#include "intern/node/dgraph_node.h"
+#include "intern/graph_type.h"
+#include "intern/node/graph_node.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 Relation::Relation(Node *from, Node *to, const char *description)
     : from(from), to(to), name(description), flag(0)
@@ -41,4 +41,4 @@ void Relation::unlink()
   to->inlinks.remove_first_occurrence_and_reorder(this);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
