@@ -12,16 +12,16 @@
 #include "lib_string.h"
 #include "lib_utildefines.h"
 
-#include "intern/builder/dgraph_builder.h"
-#include "intern/builder/dgraph_builder_key.h"
-#include "intern/builder/dgraph_builder_map.h"
-#include "intern/builder/dgraph_builder_api.h"
-#include "intern/builder/dgraph_builder_stack.h"
-#include "intern/dgraph.h"
+#include "intern/builder/graph_builder.h"
+#include "intern/builder/graph_builder_key.h"
+#include "intern/builder/graph_builder_map.h"
+#include "intern/builder/graph_builder_api.h"
+#include "intern/builder/graph_builder_stack.h"
+#include "intern/graph.h"
 #include "intern/node/node.h"
 #include "intern/node/node_component.h"
 #include "intern/node/node_id.h"
-#include "intern/node/node_operation.h"
+#include "intern/node/node_op.h"
 
 struct CacheFile;
 struct Camera;
@@ -60,7 +60,7 @@ struct NodeTree;
 struct PoseChannel;
 struct Sound;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 struct ComponentNode;
 struct NodeHandle;
