@@ -2,11 +2,11 @@
 
 #include "dune_modifier.h"
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-struct DGraph;
+struct Graph;
 
 class AnimationValueBackup {
  public:
@@ -27,7 +27,7 @@ class AnimationValueBackup {
 /* Backup of animated properties values. */
 class AnimationBackup {
  public:
-  AnimationBackup(const DGraph *dgraph);
+  AnimationBackup(const Graph *graph);
 
   void reset();
 
@@ -38,4 +38,4 @@ class AnimationBackup {
   Vector<AnimationValueBackup> values_backup;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
