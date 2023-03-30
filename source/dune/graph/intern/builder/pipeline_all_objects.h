@@ -9,11 +9,11 @@ namespace dune::graph {
  * (and their dependencies). */
 class AllObjectsBuilderPipeline : public ViewLayerBuilderPipeline {
  public:
-  AllObjectsBuilderPipeline(::DGraph *graph);
+  AllObjectsBuilderPipeline(::Graph *graph);
 
  protected:
-  virtual unique_ptr<DGraphraphNodeBuilder> construct_node_builder() override;
-  virtual unique_ptr<DGraphRelationBuilder> construct_relation_builder() override;
+  virtual unique_ptr<GraphraphNodeBuilder> construct_node_builder() override;
+  virtual unique_ptr<GraphRelationBuilder> construct_relation_builder() override;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
