@@ -298,7 +298,7 @@ void GraphRelationBuilder::add_depends_on_transform_relation(const DGraphNodeHan
 }
 
 void GraphRelationBuilder::add_customdata_mask(Object *object,
-                                                const GraphCustomDataMeshMasks &customdata_masks)
+                                               const GraphCustomDataMeshMasks &customdata_masks)
 {
   if (customdata_masks != GraphCustomDataMeshMasks() && object != nullptr &&
       object->type == OB_MESH) {
@@ -481,10 +481,10 @@ void GraphRelationBuilder::build_id(Id *id)
   const ID_Type id_type = GS(id->name);
   switch (id_type) {
     case ID_AC:
-      build_action((DAction *)id);
+      build_action((Action *)id);
       break;
     case ID_AR:
-      build_armature((DArmature *)id);
+      build_armature((Armature *)id);
       break;
     case ID_CA:
       build_camera((Camera *)id);
@@ -505,7 +505,7 @@ void GraphRelationBuilder::build_id(Id *id)
       build_lightprobe((LightProbe *)id);
       break;
     case ID_NT:
-      build_nodetree((DNodeTree *)id);
+      build_nodetree((NodeTree *)id);
       break;
     case ID_MA:
       build_material((Material *)id);
@@ -569,13 +569,13 @@ void GraphRelationBuilder::build_id(Id *id)
     case ID_PAL:
     case ID_PC:
     case ID_WS:
-      lib_assert(!deg_copy_on_write_is_needed(id_type));
+      lib_assert(!graph_copy_on_write_is_needed(id_type));
       build_generic_id(id);
       break;
   }
 }
 
-void GraphRelationBuilder::build_generic_id(ID *id)
+void GraphRelationBuilder::build_generic_id(Id *id)
 {
   if (built_map_.checkIsBuiltAndTag(id)) {
     return;
@@ -588,16 +588,16 @@ void GraphRelationBuilder::build_generic_id(ID *id)
   build_params(id);
 }
 
-static void build_idprops_callback(IdProp *id_prop, void *user_data)
+static void build_idprops_cb(IdProp *id_prop, void *user_data)
 {
-  GraphRelationBuilder *builder = reinterpret_cast<DGraphRelationBuilder *>(user_data);
+  GraphRelationBuilder *builder = reinterpret_cast<GraphRelationBuilder *>(user_data);
   lib_assert(id_prop->type == IDP_ID);
   builder->build_id(reinterpret_cast<Id *>(id_prop->data.ptr));
 }
 
 void GraphRelationBuilder::build_idprops(IdProp *id_prop)
 {
-  IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_callback, this);
+  IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_cb, this);
 }
 
 void GraphRelationBuilder::build_collection(LayerCollection *from_layer_collection,
@@ -993,7 +993,7 @@ void GraphRelationBuilder::build_object_data_camera(Object *object)
   add_relation(camera_params_key, object_params_key, "Camera -> Object");
 }
 
-void DGraphRelationBuilder::build_object_data_light(Object *object)
+void GraphRelationBuilder::build_object_data_light(Object *object)
 {
   Light *lamp = (Light *)object->data;
   build_light(lamp);
@@ -1222,7 +1222,7 @@ void GraphRelationBuilder::build_constraints(Id *id,
              CONSTRAINT_TYPE_OBJECTSOLVER)) {
       bool depends_on_camera = false;
       if (cti->type == CONSTRAINT_TYPE_FOLLOWTRACK) {
-        DFollowTrackConstraint *data = (DFollowTrackConstraint *)con->data;
+        FollowTrackConstraint *data = (FollowTrackConstraint *)con->data;
         if (((data->clip) || (data->flag & FOLLOWTRACK_ACTIVECLIP)) && data->track[0]) {
           depends_on_camera = true;
         }
@@ -1663,7 +1663,7 @@ void GraphRelationBuilder::build_driver_data(Id *id, FCurve *fcu)
         continue;
       }
 
-      DPoseChannel *pchan = dune_pose_channel_find_name(object->pose, bone->name);
+      PoseChannel *pchan = dune_pose_channel_find_name(object->pose, bone->name);
       if (pchan == nullptr) {
         continue;
       }
@@ -1753,7 +1753,7 @@ void GraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
       /* Special handling for directly-named bones. */
       if ((dtar->flag & DTAR_FLAG_STRUCT_REF) && (object && object->type == OB_ARMATURE) &&
           (dtar->pchan_name[0])) {
-        DPoseChannel *target_pchan = dune_pose_channel_find_name(object->pose, dtar->pchan_name);
+        PoseChannel *target_pchan = dune_pose_channel_find_name(object->pose, dtar->pchan_name);
         if (target_pchan == nullptr) {
           continue;
         }
@@ -1768,7 +1768,7 @@ void GraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
         /* Get node associated with the object's transforms. */
         if (target_id == id) {
           /* Ignore input dependency if we're driving properties of
-           * the same ID, otherwise we'll be ending up in a cyclic
+           * the same id, otherwise we'll be ending up in a cyclic
            * dependency here. */
           continue;
         }
@@ -1811,7 +1811,7 @@ void GraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
          *   has issues with copy-on-write tagging and the fact that relations are defined by the
          *   original main database status. */
         if (target_id != variable_exit_key.ptr.owner_id) {
-          if (deg_copy_on_write_is_needed(GS(target_id->name))) {
+          if (graph_copy_on_write_is_needed(GS(target_id->name))) {
             ComponentKey target_id_key(target_id, NodeType::COPY_ON_WRITE);
             add_relation(target_id_key, driver_key, "Target id -> Driver");
           }
@@ -1842,7 +1842,7 @@ void GraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
   }
 }
 
-void DGraphRelationBuilder::build_driver_id_prop(Id *id, const char *api_path)
+void GraphRelationBuilder::build_driver_id_prop(Id *id, const char *api_path)
 {
   if (id == nullptr || api_path == nullptr) {
     return;
@@ -1884,7 +1884,7 @@ void DGraphRelationBuilder::build_driver_id_prop(Id *id, const char *api_path)
       id_prop_key, param_exit_key, "IdProp -> Done", RELATION_CHECK_BEFORE_ADD);
 }
 
-void DGraphRelationBuilder::build_params(Id *id)
+void GraphRelationBuilder::build_params(Id *id)
 {
   OpKey params_entry_key(id, NodeType::PARAMS, OpCode::PARAMS_ENTRY);
   OpKey params_eval_key(id, NodeType::PARAMS, OpCode::PARAMS_EVAL);
@@ -1893,7 +1893,7 @@ void DGraphRelationBuilder::build_params(Id *id)
   add_relation(params_eval_key, params_exit_key, "Entry -> Exit");
 }
 
-void DGraphRelationBuilder::build_dimensions(Object *object)
+void GraphRelationBuilder::build_dimensions(Object *object)
 {
   OpKey dimensions_key(&object->id, NodeType::PARAMS, OpCode::DIMENSIONS);
   ComponentKey geometry_key(&object->id, NodeType::GEOMETRY);
@@ -1902,7 +1902,7 @@ void DGraphRelationBuilder::build_dimensions(Object *object)
   add_relation(transform_key, dimensions_key, "Transform -> Dimensions");
 }
 
-void DGraphRelationBuilder::build_world(World *world)
+void GraphRelationBuilder::build_world(World *world)
 {
   if (built_map_.checkIsBuiltAndTag(world)) {
     return;
@@ -1930,7 +1930,7 @@ void DGraphRelationBuilder::build_world(World *world)
   }
 }
 
-void DGraphRelationBuilder::build_rigidbody(Scene *scene)
+void GraphRelationBuilder::build_rigidbody(Scene *scene)
 {
   RigidBodyWorld *rbw = scene->rigidbody_world;
   OpKey rb_init_key(&scene->id, NodeType::TRANSFORM, OpCode::RIGIDBODY_REBUILD);
@@ -2027,7 +2027,7 @@ void DGraphRelationBuilder::build_rigidbody(Scene *scene)
   }
 }
 
-void DGraphRelationBuilder::build_particle_systems(Object *object)
+void GraphRelationBuilder::build_particle_systems(Object *object)
 {
   OpKey obdata_ubereval_key(&object->id, NodeType::GEOMETRY, OpCode::GEOMETRY_EVAL);
   OpKey eval_init_key(
@@ -2129,7 +2129,7 @@ void DGraphRelationBuilder::build_particle_systems(Object *object)
   add_depends_on_transform_relation(&object->id, obdata_ubereval_key, "Particle Eval");
 }
 
-void DGraphRelationBuilder::build_particle_settings(ParticleSettings *part)
+void GraphRelationBuilder::build_particle_settings(ParticleSettings *part)
 {
   if (built_map_.checkIsBuiltAndTag(part)) {
     return;
@@ -2174,7 +2174,7 @@ void DGraphRelationBuilder::build_particle_settings(ParticleSettings *part)
   }
 }
 
-void DGraphRelationBuilder::build_particle_system_visualization_object(Object *object,
+void GraphRelationBuilder::build_particle_system_visualization_object(Object *object,
                                                                       ParticleSystem *psys,
                                                                       Object *draw_object)
 {
@@ -2190,7 +2190,7 @@ void DGraphRelationBuilder::build_particle_system_visualization_object(Object *o
 }
 
 /* Shapekeys */
-void DGraphRelationBuilder::build_shapekeys(Key *key)
+void GraphRelationBuilder::build_shapekeys(Key *key)
 {
   if (built_map_.checkIsBuiltAndTag(key)) {
     return;
@@ -2355,7 +2355,7 @@ void DGraphRelationBuilder::build_object_data_geometry(Object *object)
       geom_key, object_select_key, "Object Geometry -> Select Update", RELATION_FLAG_NO_FLUSH);
 }
 
-void DGraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
+void GraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
 {
   if (built_map_.checkIsBuiltAndTag(obdata)) {
     return;
@@ -2484,7 +2484,7 @@ void DGraphRelationBuilder::build_object_data_geometry_datablock(Id *obdata)
   }
 }
 
-void DGraphRelationBuilder::build_armature(DArmature *armature)
+void GraphRelationBuilder::build_armature(DArmature *armature)
 {
   if (built_map_.checkIsBuiltAndTag(armature)) {
     return;
@@ -2498,7 +2498,7 @@ void DGraphRelationBuilder::build_armature(DArmature *armature)
   build_armature_bones(&armature->bonebase);
 }
 
-void DGraphRelationBuilder::build_armature_bones(ListBase *bones)
+void GraphRelationBuilder::build_armature_bones(ListBase *bones)
 {
   LISTBASE_FOREACH (Bone *, bone, bones) {
     build_idprops(bone->prop);
@@ -2506,7 +2506,7 @@ void DGraphRelationBuilder::build_armature_bones(ListBase *bones)
   }
 }
 
-void DGraphRelationBuilder::build_camera(Camera *camera)
+void GraphRelationBuilder::build_camera(Camera *camera)
 {
   if (built_map_.checkIsBuiltAndTag(camera)) {
     return;
@@ -2533,7 +2533,7 @@ void DGraphRelationBuilder::build_camera(Camera *camera)
 }
 
 /* Lights */
-void DGraphRelationBuilder::build_light(Light *lamp)
+void GraphRelationBuilder::build_light(Light *lamp)
 {
   if (built_map_.checkIsBuiltAndTag(lamp)) {
     return;
@@ -2561,43 +2561,43 @@ void DGraphRelationBuilder::build_light(Light *lamp)
   }
 }
 
-void DGraphRelationBuilder::build_nodetree_socket(DNodeSocket *socket)
+void GraphRelationBuilder::build_nodetree_socket(NodeSocket *socket)
 {
   build_idprops(socket->prop);
 
   if (socket->type == SOCK_OBJECT) {
-    Object *object = ((DNodeSocketValueObject *)socket->default_value)->value;
+    Object *object = ((NodeSocketValueObject *)socket->default_value)->value;
     if (object != nullptr) {
       build_object(object);
     }
   }
   else if (socket->type == SOCK_IMAGE) {
-    Image *image = ((DNodeSocketValueImage *)socket->default_value)->value;
+    Image *image = ((NodeSocketValueImage *)socket->default_value)->value;
     if (image != nullptr) {
       build_image(image);
     }
   }
   else if (socket->type == SOCK_COLLECTION) {
-    Collection *collection = ((DNodeSocketValueCollection *)socket->default_value)->value;
+    Collection *collection = ((NodeSocketValueCollection *)socket->default_value)->value;
     if (collection != nullptr) {
       build_collection(nullptr, nullptr, collection);
     }
   }
   else if (socket->type == SOCK_TEXTURE) {
-    Tex *texture = ((DNodeSocketValueTexture *)socket->default_value)->value;
+    Tex *texture = ((NodeSocketValueTexture *)socket->default_value)->value;
     if (texture != nullptr) {
       build_texture(texture);
     }
   }
   else if (socket->type == SOCK_MATERIAL) {
-    Material *material = ((DNodeSocketValueMaterial *)socket->default_value)->value;
+    Material *material = ((NodeSocketValueMaterial *)socket->default_value)->value;
     if (material != nullptr) {
       build_material(material);
     }
   }
 }
 
-void DGraphRelationBuilder::build_nodetree(DNodeTree *ntree)
+void GraphRelationBuilder::build_nodetree(NodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
@@ -2623,12 +2623,12 @@ void DGraphRelationBuilder::build_nodetree(DNodeTree *ntree)
                  RELATION_FLAG_NO_FLUSH);
   }
   /* nodetree's nodes... */
-  for (DNode *dnode : ntree->all_nodes()) {
+  for (Node *dnode : ntree->all_nodes()) {
     build_idprops(dnode->prop);
-    LISTBASE_FOREACH (DNodeSocket *, socket, &dnode->inputs) {
+    LISTBASE_FOREACH (NodeSocket *, socket, &dnode->inputs) {
       build_nodetree_socket(socket);
     }
-    LISTBASE_FOREACH (DNodeSocket *, socket, &dnode->outputs) {
+    LISTBASE_FOREACH (NodeSocket *, socket, &dnode->outputs) {
       build_nodetree_socket(socket);
     }
 
@@ -3290,7 +3290,7 @@ void DGraphRelationBuilder::modifier_walk(void *user_data,
   data->builder->build_id(id);
 }
 
-void DGraphRelationBuilder::constraint_walk(DConstraint * /*con*/,
+void GraphRelationBuilder::constraint_walk(DConstraint * /*con*/,
                                             Id **idpoint,
                                             bool /*is_ref*/,
                                             void *user_data)
