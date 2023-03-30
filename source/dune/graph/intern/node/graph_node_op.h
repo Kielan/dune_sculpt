@@ -1,19 +1,19 @@
 #pragma once
 
-#include "intern/node/dgraph_node.h"
+#include "intern/node/graph_node.h"
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
-struct DGraph;
+struct Graph;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 struct ComponentNode;
 
 /* Evaluation Operation for atomic operation */
 /* XXX: move this to another header that can be exposed? */
-typedef function<void(struct ::Depsgraph *)> DepsEvalOpCb;
+typedef function<void(struct ::Graph *)> GraphEvalOpCb;
 
 /* Identifiers for common operations (as an enum). */
 enum class OpCode {
@@ -189,23 +189,23 @@ enum class OpCode {
 };
 const char *opCodeAsString(OpCode opcode);
 
-/* Flags for Depsgraph Nodes.
+/* Flags for Graph Nodes.
  * NOTE: IS a bit shifts to allow usage as an accumulated. bitmask.
  */
 enum OpFlag {
   /* Node needs to be updated. */
-  DGRAPH_OP_FLAG_NEEDS_UPDATE = (1 << 0),
+  GRAPH_OP_FLAG_NEEDS_UPDATE = (1 << 0),
   /* Node was directly modified, causing need for update. */
-  DGRAPH_OP_FLAG_DIRECTLY_MODIFIED = (1 << 1),
+  GRAPH_OP_FLAG_DIRECTLY_MODIFIED = (1 << 1),
   /* Node was updated due to user input. */
-  DGRAPH_OP_FLAG_USER_MODIFIED = (1 << 2),
+  GRAPH_OP_FLAG_USER_MODIFIED = (1 << 2),
   /* Node may not be removed, even when it has no evaluation callback and no
    * outgoing relations. This is for NO-OP nodes that are purely used to indicate a
    * relation between components/IDs, and not for connecting to an operation. */
-  DGRAPH_OP_FLAG_PINNED = (1 << 3),
+  GRAPH_OP_FLAG_PINNED = (1 << 3),
 
   /* Set of flags which gets flushed along the relations. */
-  DGRAPH_OP_FLAG_FLUSH = (DEPSOP_FLAG_USER_MODIFIED),
+  GRAPH_OP_FLAG_FLUSH = (DEPSOP_FLAG_USER_MODIFIED),
 };
 
 /* Atomic Operation - Base type for all operations */
@@ -219,7 +219,7 @@ struct OpNode : public Node {
    */
   string full_id() const;
 
-  virtual void tag_update(DGraph *graph, eUpdateSource source) override;
+  virtual void tag_update(Graph *graph, eUpdateSource source) override;
 
   bool is_noop() const
   {
@@ -243,7 +243,7 @@ struct OpNode : public Node {
   ComponentNode *owner;
 
   /* Callback for operation. */
-  DGraphEvalOpCb evaluate;
+  GraphEvalOpCb evaluate;
 
   /* How many inlinks are we still waiting on before we can be evaluated. */
   uint32_t num_links_pending;
@@ -256,10 +256,10 @@ struct OpNode : public Node {
   /* (OpFlag) extra settings affecting evaluation. */
   int flag;
 
-  DGRAPH_NODE_DECLARE;
+  GRAPH_NODE_DECLARE;
 };
 
-void dgraph_register_op_dgraphnodes();
+void graph_register_op_graphnodes();
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
