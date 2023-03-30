@@ -61,9 +61,7 @@ typedef bool (*DrawObjectFilterFn)(struct Object *ob, void *user_data);
  * for each relevant engine / mode engine.
  */
 void draw_view(const struct Context *C);
-/**
- * Draw render engine info.
- */
+/** Draw render engine info. **/
 void draw_region_engine_info(int xoffset, int *yoffset, int line_height);
 
 /**
@@ -80,9 +78,7 @@ void draw_render_loop(struct Graph *graph,
                       struct ARegion *region,
                       struct View3D *v3d,
                       struct GPUViewport *viewport);
-/**
- * param viewport: can be NULL, in this case we create one.
- */
+/** param viewport: can be NULL, in this case we create one. **/
 void draw_render_loop_offscreen(struct Graph *graph,
                                 struct RenderEngineType *engine_type,
                                 struct ARegion *region,
@@ -92,125 +88,116 @@ void draw_render_loop_offscreen(struct Graph *graph,
                                 bool do_color_management,
                                 struct GPUOffScreen *ofs,
                                 struct GPUViewport *viewport);
-void DRW_draw_render_loop_2d_ex(struct Graph *graph,
+void draw_render_loop_2d_ex(struct Graph *graph,
                                 struct ARegion *region,
                                 struct GPUViewport *viewport,
                                 const struct Context *evil_C);
-/**
- * object mode select-loop, see: ed_view3d_draw_select_loop (legacy drawing).
- */
-void DRW_draw_select_loop(struct Graph *graph,
+/** object mode select-loop, see: ed_view3d_draw_select_loop (legacy drawing). **/
+void draw_select_loop(struct Graph *graph,
+                      struct ARegion *region,
+                      struct View3D *v3d,
+                      bool use_obedit_skip,
+                      bool draw_surface,
+                      bool use_nearest,
+                      bool do_material_sub_selection,
+                      const struct rcti *rect,
+                      DrawSelectPassFn select_pass_fn,
+                      void *select_pass_user_data,
+                      DrawObjectFilterFn object_filter_fn,
+                      void *object_filter_user_data);
+/** object mode select-loop, see: ed_view3d_draw_depth_loop (legacy drawing). **/
+void draw_depth_loop(struct Graph *graph,
+                     struct ARegion *region,
+                     struct View3D *v3d,
+                     struct GPUViewport *viewport);
+/** Converted from ed_view3d_draw_depth_dpen (legacy drawing). **/
+void draw_depth_loop_dpen(struct Graph *graph,
                           struct ARegion *region,
                           struct View3D *v3d,
-                          bool use_obedit_skip,
-                          bool draw_surface,
-                          bool use_nearest,
-                          bool do_material_sub_selection,
-                          const struct rcti *rect,
-                          DrawSelectPassFn select_pass_fn,
-                          void *select_pass_user_data,
-                          DrawObjectFilterFn object_filter_fn,
-                          void *object_filter_user_data);
-/**
- * object mode select-loop, see: ed_view3d_draw_depth_loop (legacy drawing).
- */
-void draw_depth_loop(struct Graph *graph,
-                         struct ARegion *region,
-                         struct View3D *v3d,
-                         struct GPUViewport *viewport);
-/**
- * Converted from ed_view3d_draw_depth_dpen (legacy drawing).
- */
-void draw_depth_loop_gpencil(struct Depsgraph *depsgraph,
-                                 struct ARegion *region,
-                                 struct View3D *v3d,
-                                 struct GPUViewport *viewport);
-/**
- * Clears the Depth Buffer and draws only the specified object.
- */
-void DRW_draw_depth_object(struct Scene *scene,
-                           struct ARegion *region,
-                           struct View3D *v3d,
-                           struct GPUViewport *viewport,
-                           struct Object *object);
-void DRW_draw_select_id(struct Depsgraph *depsgraph,
+                          struct GPUViewport *viewport);
+  
+/** Clears the Depth Buffer and draws only the specified object. **/
+void draw_depth_object(struct Scene *scene,
+                       struct ARegion *region,
+                       struct View3D *v3d,
+                       struct GPUViewport *viewport,
+                       struct Object *object);
+void draw_select_id(struct Depsgraph *depsgraph,
                         struct ARegion *region,
                         struct View3D *v3d,
                         const struct rcti *rect);
 
 /* Grease pencil render. */
 
-/**
- * Helper to check if exit object type to render.
- */
-bool DRW_render_check_grease_pencil(struct Depsgraph *depsgraph);
-void DRW_render_gpencil(struct RenderEngine *engine, struct Depsgraph *depsgraph);
+/** Helper to check if exit object type to render. **/
+bool draw_render_check_dpen(struct Graph *graph);
+void draw_render_dpen(struct RenderEngine *engine, struct Graph *graph);
 
 /**
  * This is here because #GPUViewport needs it.
  */
-struct DRWInstanceDataList *DRW_instance_data_list_create(void);
-void DRW_instance_data_list_free(struct DRWInstanceDataList *idatalist);
-void DRW_uniform_attrs_pool_free(struct GHash *table);
+struct DrawInstanceDataList *draw_instance_data_list_create(void);
+void draw_instance_data_list_free(struct DrawInstanceDataList *idatalist);
+void draw_uniform_attrs_pool_free(struct GHash *table);
 
-void DRW_render_context_enable(struct Render *render);
-void DRW_render_context_disable(struct Render *render);
+void draw_render_ctx_enable(struct Render *render);
+void draw_render_ctx_disable(struct Render *render);
 
-void DRW_opengl_context_create(void);
-void DRW_opengl_context_destroy(void);
-void DRW_opengl_context_enable(void);
-void DRW_opengl_context_disable(void);
+void draw_opengl_ctx_create(void);
+void draw_opengl_ctx_destroy(void);
+void draw_opengl_ctx_enable(void);
+void draw_opengl_ctx_disable(void);
 
 #ifdef WITH_XR_OPENXR
-/* XXX see comment on DRW_xr_opengl_context_get() */
-void *DRW_xr_opengl_context_get(void);
-void *DRW_xr_gpu_context_get(void);
-void DRW_xr_drawing_begin(void);
-void DRW_xr_drawing_end(void);
+/* XXX see comment on draw_xr_opengl_ctx_get() */
+void *draw_xr_opengl_ctx_get(void);
+void *draw_xr_gpu_ctx_get(void);
+void draw_xr_drawing_begin(void);
+void draw_xr_drawing_end(void);
 #endif
 
 /* For garbage collection */
-void DRW_cache_free_old_batches(struct Main *bmain);
-void DRW_cache_free_old_subdiv(void);
+void draw_cache_free_old_batches(struct Main *bmain);
+void draw_cache_free_old_subdiv(void);
 
 /* For the OpenGL evaluators and garbage collected subdivision data. */
-void DRW_subdiv_free(void);
+void draw_subdiv_free(void);
 
 /* Never use this. Only for closing blender. */
-void DRW_opengl_context_enable_ex(bool restore);
-void DRW_opengl_context_disable_ex(bool restore);
+void draw_opengl_context_enable_ex(bool restore);
+void draw_opengl_context_disable_ex(bool restore);
 
-void DRW_opengl_render_context_enable(void *re_gl_context);
-void DRW_opengl_render_context_disable(void *re_gl_context);
+void draw_opengl_render_ctx_enable(void *re_gl_ctx);
+void draw_opengl_render_ctx_disable(void *re_gl_ctx);
 /**
- * Needs to be called AFTER #DRW_opengl_render_context_enable().
+ * Needs to be called AFTER draw_opengl_render_ctx_enable().
  */
-void DRW_gpu_render_context_enable(void *re_gpu_context);
+void draw_gpu_render_ctx_enable(void *re_gpu_ctx);
 /**
- * Needs to be called BEFORE #DRW_opengl_render_context_disable().
+ * Needs to be called BEFORE draw_opengl_render_ctx_disable().
  */
-void DRW_gpu_render_context_disable(void *re_gpu_context);
+void draw_gpu_render_ctx_disable(void *re_gpu_ctx);
 
-void DRW_deferred_shader_remove(struct GPUMaterial *mat);
+void draw_deferred_shader_remove(struct GPUMaterial *mat);
 
 /**
  * Get DrawData from the given id-block. In order for this to work, we assume that
- * the DrawData pointer is stored in the struct in the same fashion as in #IdDdtTemplate.
+ * the DrawData pointer is stored in the struct in the same fashion as in IdDdtTemplate.
  */
 struct DrawDataList *draw_drawdatalist_from_id(struct ID *id);
-void DRW_drawdata_free(struct Id *id);
+void draw_drawdata_free(struct Id *id);
 
-struct DRWData *draw_viewport_data_create(void);
-void draw_viewport_data_free(struct DRWData *drw_data);
+struct DrawData *draw_viewport_data_create(void);
+void draw_viewport_data_free(struct DrawData *draw_data);
 
-bool draw_opengl_context_release(void);
-void draw_opengl_context_activate(bool drw_state);
+bool draw_opengl_ctx_release(void);
+void draw_opengl_ctx_activate(bool draw_state);
 
 /**
  * We may want to move this into a more general location.
  * This doesn't require the draw context to be in use.
  */
-void draw_draw_cursor_2d_ex(const struct ARegion *region, const float cursor[2]);
+void draw_cursor_2d_ex(const struct ARegion *region, const float cursor[2]);
 
 #ifdef __cplusplus
 }
