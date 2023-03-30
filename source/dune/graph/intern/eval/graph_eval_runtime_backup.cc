@@ -25,7 +25,7 @@ RuntimeBackup::RuntimeBackup(const Graph *graph)
 
 void RuntimeBackup::init_from_id(Id *id)
 {
-  if (!dgraph_copy_on_write_is_expanded(id)) {
+  if (!graph_copy_on_write_is_expanded(id)) {
     return;
   }
   have_backup = true;
@@ -45,7 +45,7 @@ void RuntimeBackup::init_from_id(Id *id)
       scene_backup.init_from_scene(reinterpret_cast<Scene *>(id));
       break;
     case ID_SO:
-      sound_backup.init_from_sound(reinterpret_cast<DSound *>(id));
+      sound_backup.init_from_sound(reinterpret_cast<Sound *>(id));
       break;
     case ID_MC:
       movieclip_backup.init_from_movieclip(reinterpret_cast<MovieClip *>(id));
@@ -62,7 +62,7 @@ void RuntimeBackup::init_from_id(Id *id)
 
   /* Note that we never free GPU draw data from here since that's not
    * safe for threading and draw data is likely to be re-used. */
-  drawdata_ptr = DRW_drawdatalist_from_id(id);
+  drawdata_ptr = draw_drawdatalist_from_id(id);
   if (drawdata_ptr != nullptr) {
     drawdata_backup = *drawdata_ptr;
     drawdata_ptr->first = drawdata_ptr->last = nullptr;
@@ -88,7 +88,7 @@ void RuntimeBackup::restore_to_id(Id *id)
       scene_backup.restore_to_scene(reinterpret_cast<Scene *>(id));
       break;
     case ID_SO:
-      sound_backup.restore_to_sound(reinterpret_cast<bSound *>(id));
+      sound_backup.restore_to_sound(reinterpret_cast<Sound *>(id));
       break;
     case ID_MC:
       movieclip_backup.restore_to_movieclip(reinterpret_cast<MovieClip *>(id));
@@ -97,7 +97,7 @@ void RuntimeBackup::restore_to_id(Id *id)
       volume_backup.restore_to_volume(reinterpret_cast<Volume *>(id));
       break;
     case ID_GD:
-      gpencil_backup.restore_to_gpencil(reinterpret_cast<bGPdata *>(id));
+      gpencil_backup.restore_to_gpencil(reinterpret_cast<DPenData *>(id));
       break;
     default:
       break;
@@ -107,4 +107,4 @@ void RuntimeBackup::restore_to_id(Id *id)
   }
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
