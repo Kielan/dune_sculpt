@@ -1,19 +1,19 @@
 #pragma once
 
-#include "dgraph_builder_cache.h"
+#include "graph_builder_cache.h"
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
-struct DGraph;
+struct Graph;
 struct Main;
 struct Scene;
 struct ViewLayer;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-struct DGraph;
-class DGraphNodeBuilder;
-class DGraphRelationBuilder;
+struct Graph;
+class GraphNodeBuilder;
+class GraphRelationBuilder;
 
 /* Base class for DGraph Builder pipelines.
  *
