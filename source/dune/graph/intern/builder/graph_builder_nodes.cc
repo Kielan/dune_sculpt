@@ -1547,7 +1547,7 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node->set_as_entry();
       Curve *cu = (Curve *)obdata;
       if (cu->bevobj != nullptr) {
-        build_object(-1, cu->bevobj,DGRAPH_ID_LINKED_INDIRECTLY, false);
+        build_object(-1, cu->bevobj, GRAPH_ID_LINKED_INDIRECTLY, false);
       }
       if (cu->taperobj != nullptr) {
         build_object(-1, cu->taperobj, GRAPH_ID_LINKED_INDIRECTLY, false);
@@ -1561,8 +1561,8 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node = add_op_node(obdata,
                             NodeType::GEOMETRY,
                             OpCode::GEOMETRY_EVAL,
-                            [obdata_cow](::DGraph *dgraph) {
-                             dune_lattice_eval_geometry(dgraph, (Lattice *)obdata_cow);
+                            [obdata_cow](::Graph *graph) {
+                             dune_lattice_eval_geometry(graph, (Lattice *)obdata_cow);
                             });
       op_node->set_as_entry();
       break;
@@ -1573,8 +1573,8 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node = add_op_node(obdata,
                             NodeType::GEOMETRY,
                             OpCode::GEOMETRY_EVAL,
-                            [obdata_cow](::Dgraph *dgraph) {
-                              dune_dpen_frame_active_set(dgraph,
+                            [obdata_cow](::graph *graph) {
+                              dune_dpen_frame_active_set(graph,
                                (DPenData *)obdata_cow);
                             });
       op_node->set_as_entry();
@@ -1624,7 +1624,7 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
               });
 }
 
-void DGraphNodeBuilder::build_armature(DArmature *armature)
+void GraphNodeBuilder::build_armature(Armature *armature)
 {
   if (built_map_.checkIsBuiltAndTag(armature)) {
     return;
@@ -1638,7 +1638,7 @@ void DGraphNodeBuilder::build_armature(DArmature *armature)
               NodeType::ARMATURE,
               OpCode::ARMATURE_EVAL,
               [armature_cow](::Graph *graph) {
-               dune_armature_refresh_layer_used(dgraph, armature_cow);
+               dune_armature_refresh_layer_used(graph, armature_cow);
               });
   build_armature_bones(&armature->bonebase);
 }
@@ -1660,11 +1660,11 @@ void GraphNodeBuilder::build_camera(Camera *camera)
   build_animdata(&camera->id);
   build_params(&camera->id);
   if (camera->dof.focus_object != nullptr) {
-    build_object(-1, camera->dof.focus_object, DEG_ID_LINKED_INDIRECTLY, false);
+    build_object(-1, camera->dof.focus_object, GRAPH_ID_LINKED_INDIRECTLY, false);
   }
 }
 
-void DGraphNodeBuilder::build_light(Light *lamp)
+void GraphNodeBuilder::build_light(Light *lamp)
 {
   if (built_map_.checkIsBuiltAndTag(lamp)) {
     return;
@@ -1682,28 +1682,28 @@ void DGraphNodeBuilder::build_light(Light *lamp)
                [lamp_cow](::DGraph *dgraph) { dune_light_eval(dgraph, lamp_cow); });
 }
 
-void DGraphNodeBuilder::build_nodetree_socket(DNodeSocket *socket)
+void GraphNodeBuilder::build_nodetree_socket(NodeSocket *socket)
 {
   build_idprops(socket->prop);
 
   if (socket->type == SOCK_OBJECT) {
-    build_id((Id *)((DNodeSocketValueObject *)socket->default_value)->value);
+    build_id((Id *)((NodeSocketValueObject *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_IMAGE) {
-    build_id((Id *)((DNodeSocketValueImage *)socket->default_value)->value);
+    build_id((Id *)((NodeSocketValueImage *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_COLLECTION) {
-    build_id((Id *)((DNodeSocketValueCollection *)socket->default_value)->value);
+    build_id((Id *)((NodeSocketValueCollection *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_TEXTURE) {
-    build_id((Id *)((DNodeSocketValueTexture *)socket->default_value)->value);
+    build_id((Id *)((NodeSocketValueTexture *)socket->default_value)->value);
   }
   else if (socket->type == SOCK_MATERIAL) {
-    build_id((Id *)((DNodeSocketValueMaterial *)socket->default_value)->value);
+    build_id((Id *)((NodeSocketValueMaterial *)socket->default_value)->value);
   }
 }
 
-void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
+void GraphNodeBuilder::build_nodetree(NodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
@@ -1719,26 +1719,26 @@ void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
   /* Animation, */
   build_animdata(&ntree->id);
   /* Output update. */
-  add_op_node(&ntree->id, NodeType::NTREE_OUTPUT, OperationCode::NTREE_OUTPUT);
+  add_op_node(&ntree->id, NodeType::NTREE_OUTPUT, OpCode::NTREE_OUTPUT);
   if (ntree->type == NTREE_GEOMETRY) {
     Id *id_cow = get_cow_id(&ntree->id);
     add_op_node(&ntree->id,
                 NodeType::NTREE_GEOMETRY_PREPROCESS,
                 OpCode::NTREE_GEOMETRY_PREPROCESS,
-                [id_cow](::DGraph * /*dgraph*/) {
-                  DNodeTree *ntree_cow = reinterpret_cast<DNodeTree *>(id_cow);
+                [id_cow](::Graph * /*dgraph*/) {
+                  NodeTree *ntree_cow = reinterpret_cast<NodeTree *>(id_cow);
                   dune::node_tree_runtime::preprocess_geometry_node_tree_for_evaluation(
                     *ntree_cow);
                 });
   }
 
   /* nodetree's nodes... */
-  for (DNode *dnode : ntree->all_nodes()) {
-    build_idprops(dnode->prop);
-    LISTBASE_FOREACH (DNodeSocket *, socket, &dnode->inputs) {
+  for (Node *node : ntree->all_nodes()) {
+    build_idprops(node->prop);
+    LISTBASE_FOREACH (DNodeSocket *, socket, &node->inputs) {
       build_nodetree_socket(socket);
     }
-    LISTBASE_FOREACH (DNodeSocket *, socket, &dnode->outputs) {
+    LISTBASE_FOREACH (NodeSocket *, socket, &node->outputs) {
       build_nodetree_socket(socket);
     }
 
@@ -1769,7 +1769,7 @@ void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
        * to have hardcoded node-type exception here. */
       if (node_scene->camera != nullptr) {
         /* TODO: Use visibility of owner of the node tree. */
-        build_object(-1, node_scene->camera, DEG_ID_LINKED_INDIRECTLY, true);
+        build_object(-1, node_scene->camera, GRAPH_ID_LINKED_INDIRECTLY, true);
       }
     }
     else if (id_type == ID_TXT) {
@@ -1796,7 +1796,7 @@ void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
   LISTBASE_FOREACH (DNodeSocket *, socket, &ntree->inputs) {
     build_idprops(socket->prop);
   }
-  LISTBASE_FOREACH (DNodeSocket *, socket, &ntree->outputs) {
+  LISTBASE_FOREACH (NodeSocket *, socket, &ntree->outputs) {
     build_idprops(socket->prop);
   }
 
@@ -1804,7 +1804,7 @@ void DGraphNodeBuilder::build_nodetree(DNodeTree *ntree)
 }
 
 /* Recursively build graph for material */
-void DGraphNodeBuilder::build_material(Material *material)
+void GraphNodeBuilder::build_material(Material *material)
 {
   if (built_map_.checkIsBuiltAndTag(material)) {
     return;
@@ -1817,7 +1817,7 @@ void DGraphNodeBuilder::build_material(Material *material)
       &material->id,
       NodeType::SHADING,
       OpCode::MATERIAL_UPDATE,
-      [material_cow](::DGraph *dgraph) { dune_material_eval(dgraph, material_cow); });
+      [material_cow](::Graph *graph) { dune_material_eval(graph, material_cow); });
   build_idprops(material->id.props);
   /* Material animation. */
   build_animdata(&material->id);
@@ -1826,7 +1826,7 @@ void DGraphNodeBuilder::build_material(Material *material)
   build_nodetree(material->nodetree);
 }
 
-void DGraphNodeBuilder::build_materials(Material **materials, int num_materials)
+void GraphNodeBuilder::build_materials(Material **materials, int num_materials)
 {
   for (int i = 0; i < num_materials; i++) {
     if (materials[i] == nullptr) {
@@ -1859,7 +1859,7 @@ void DGraphNodeBuilder::build_texture(Tex *texture)
       &texture->id, NodeType::GENERIC_DATABLOCK, OpCode::GENERIC_DATABLOCK_UPDATE);
 }
 
-void DGraphNodeBuilder::build_image(Image *image)
+void GraphNodeBuilder::build_image(Image *image)
 {
   if (built_map_.checkIsBuiltAndTag(image)) {
     return;
@@ -1870,7 +1870,7 @@ void DGraphNodeBuilder::build_image(Image *image)
       &image->id, NodeType::GENERIC_DATABLOCK, OpCode::GENERIC_DATABLOCK_UPDATE);
 }
 
-void DGraphNodeBuilder::build_cachefile(CacheFile *cache_file)
+void GraphNodeBuilder::build_cachefile(CacheFile *cache_file)
 {
   if (built_map_.checkIsBuiltAndTag(cache_file)) {
     return;
