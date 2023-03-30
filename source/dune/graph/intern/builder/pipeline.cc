@@ -24,7 +24,7 @@ AbstractBuilderPipeline::AbstractBuilderPipeline(::Graph *graph)
 void AbstractBuilderPipeline::build()
 {
   double start_time = 0.0;
-  if (G.debug & (G_DEBUG_DEPSGRAPH_BUILD | G_DEBUG_DEPSGRAPH_TIME)) {
+  if (G.debug & (G_DEBUG_GRAPH_BUILD | G_DEBUG_GRAPH_TIME)) {
     start_time = PIL_check_seconds_timer();
   }
 
@@ -33,7 +33,7 @@ void AbstractBuilderPipeline::build()
   build_step_relations();
   build_step_finalize();
 
-  if (G.debug & (G_DEBUG_DGRAPH_BUILD | G_DEBUG_DGRAPH_TIME)) {
+  if (G.debug & (G_DEBUG_GRAPH_BUILD | G_DEBUG_GRAPH_TIME)) {
     printf("Depsgraph built in %f seconds.\n", PIL_check_seconds_timer() - start_time);
   }
 }
@@ -41,14 +41,14 @@ void AbstractBuilderPipeline::build()
 void AbstractBuilderPipeline::build_step_sanity_check()
 {
   lib_assert(lib_findindex(&scene_->view_layers, view_layer_) != -1);
-  lib_assert(dgraph_->scene == scene_);
-  lib_assert(dgraph_->view_layer == view_layer_);
+  lib_assert(graph_->scene == scene_);
+  lib_assert(graph_->view_layer == view_layer_);
 }
 
 void AbstractBuilderPipeline::build_step_nodes()
 {
   /* Generate all the nodes in the graph first */
-  unique_ptr<DGraphNodeBuilder> node_builder = construct_node_builder();
+  unique_ptr<GraphNodeBuilder> node_builder = construct_node_builder();
   node_builder->begin_build();
   build_nodes(*node_builder);
   node_builder->end_build();
@@ -57,7 +57,7 @@ void AbstractBuilderPipeline::build_step_nodes()
 void AbstractBuilderPipeline::build_step_relations()
 {
   /* Hook up relationships between operations - to determine evaluation order. */
-  unique_ptr<DGraphRelationBuilder> relation_builder = construct_relation_builder();
+  unique_ptr<GraphRelationBuilder> relation_builder = construct_relation_builder();
   relation_builder->begin_build();
   build_relations(*relation_builder);
   relation_builder->build_copy_on_write_relations();
