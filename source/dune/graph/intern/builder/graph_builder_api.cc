@@ -1,4 +1,4 @@
-#include "intern/builder/dgraph_builder_api.h"
+#include "intern/builder/graph_builder_api.h"
 
 #include <cstring>
 
@@ -19,14 +19,14 @@
 #include "api_access.h"
 #include "api_prototypes.h"
 
-#include "intern/builder/dgraphbuilder.h"
-#include "intern/dgraph.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/builder/graphbuilder.h"
+#include "intern/graph.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_op.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* ********************************* Id Data ******************************** */
 
@@ -41,7 +41,7 @@ class ApiNodeQueryIdData {
     delete constraint_to_pchan_map_;
   }
 
-  const DPoseChannel *get_pchan_for_constraint(const DConstraint *constraint)
+  const PoseChannel *get_pchan_for_constraint(const Constraint *constraint)
   {
     ensure_constraint_to_pchan_map();
     return constraint_to_pchan_map_->lookup_default(constraint, nullptr);
@@ -54,10 +54,10 @@ class ApiNodeQueryIdData {
     }
     lib_assert(GS(id_->name) == ID_OB);
     const Object *object = reinterpret_cast<const Object *>(id_);
-    constraint_to_pchan_map_ = new Map<const DConstraint *, const DPoseChannel *>();
+    constraint_to_pchan_map_ = new Map<const Constraint *, const PoseChannel *>();
     if (object->pose != nullptr) {
-      LISTBASE_FOREACH (const DPoseChannel *, pchan, &object->pose->chanbase) {
-        LISTBASE_FOREACH (const DConstraint *, constraint, &pchan->constraints) {
+      LISTBASE_FOREACH (const PoseChannel *, pchan, &object->pose->chanbase) {
+        LISTBASE_FOREACH (const Constraint *, constraint, &pchan->constraints) {
           constraint_to_pchan_map_->add_new(constraint, pchan);
         }
       }
@@ -70,7 +70,7 @@ class ApiNodeQueryIdData {
 
   /* indexed by DConstraint*, returns pose channel which contains that
    * constraint. */
-  Map<const DConstraint *, const DPoseChannel *> *constraint_to_pchan_map_ = nullptr;
+  Map<const Constraint *, const PoseChannel *> *constraint_to_pchan_map_ = nullptr;
 };
 
 /* ***************************** Node Identifier **************************** */
@@ -92,8 +92,8 @@ bool apiNodeId::is_valid() const
 
 /* ********************************** Query ********************************* */
 
-ApiNodeQuery::apiNodeQuery(DGraph *dgraph, DGraphBuilder *builder)
-    : dgraph_(dgraph), builder_(builder)
+ApiNodeQuery::apiNodeQuery(Graph *graph, GraphBuilder *builder)
+    : graph_(graph), builder_(builder)
 {
 }
 
@@ -120,8 +120,8 @@ Node *ApiNodeQuery::find_node(const ApiPtr *ptr,
     return comp_node;
   }
   return comp_node->find_op(node_id.op_code,
-                                   node_id.op_name,
-                                   node_id.op_name_tag);
+                            node_id.op_name,
+                             node_id.op_name_tag);
 }
 
 bool ApiNodeQuery::contains(const char *prop_id, const char *api_path_component)
@@ -161,7 +161,7 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
   if (api_prop_affects_params_node(ptr, prop)) {
     /* Custom properties of bones are placed in their components to improve granularity. */
     if (api_struct_is_a(ptr->type, &Api_PoseBone)) {
-      const DPoseChannel *pchan = static_cast<const DPoseChannel *>(ptr->data);
+      const PoseChannel *pchan = static_cast<const PoseChannel *>(ptr->data);
       node_id.type = NodeType::BONE;
       node_id.component_name = pchan->name;
     }
@@ -174,7 +174,7 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
     return node_id;
   }
   if (ptr->type == &Api_PoseBone) {
-    const DPoseChannel *pchan = static_cast<const DPoseChannel *>(ptr->data);
+    const PoseChannel *pchan = static_cast<const PoseChannel *>(ptr->data);
     /* Bone - generally, we just want the bone component. */
     node_id.type = NodeType::BONE;
     node_id.component_name = pchan->name;
@@ -214,7 +214,7 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
      * obj.pose.bones[].bone in a driver attached to the Object,
      * redirect to its data. */
     if (GS(node_id.id->name) == ID_OB) {
-      node_id.id = (Id *)((Object *)node_identifier.id)->data;
+      node_id.id = (Id *)((Object *)node_id.id)->data;
     }
     return node_id;
   }
@@ -224,13 +224,13 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
 
   if (api_struct_is_a(ptr->type, &Api_Constraint)) {
     const Object *object = reinterpret_cast<const Object *>(ptr->owner_id);
-    const DConstraint *constraint = static_cast<const DConstraint *>(ptr->data);
+    const Constraint *constraint = static_cast<const Constraint *>(ptr->data);
     ApiNodeQueryIdData *id_data = ensure_id_data(&object->id);
     /* Check whether is object or bone constraint. */
     /* NOTE: Currently none of the area can address transform of an object
      * at a given constraint, but for rigging one might use constraint
      * influence to be used to drive some corrective shape keys or so. */
-    const DPoseChannel *pchan = id_data->get_pchan_for_constraint(constraint);
+    const PoseChannel *pchan = id_data->get_pchan_for_constraint(constraint);
     if (pchan == nullptr) {
       node_id.type = NodeType::TRANSFORM;
       node_id.op_code = OpCode::TRANSFORM_LOCAL;
@@ -244,10 +244,10 @@ ApiNodeId ApiNodeQuery::construct_node_id(const ApiPtr *ptr,
   }
   if (ELEM(ptr->type, &Api_ConstraintTarget, &Api_ConstraintTargetBone)) {
     Object *object = reinterpret_cast<Object *>(ptr->owner_id);
-    DConstraintTarget *tgt = (DConstraintTarget *)ptr->data;
+    ConstraintTarget *tgt = (ConstraintTarget *)ptr->data;
     /* Check whether is object or bone constraint. */
-    DPoseChannel *pchan = nullptr;
-    DConstraint *con = dune_constraint_find_from_target(object, tgt, &pchan);
+    PoseChannel *pchan = nullptr;
+    Constraint *con = dune_constraint_find_from_target(object, tgt, &pchan);
     if (con != nullptr) {
       if (pchan != nullptr) {
         node_id.type = NodeType::BONE;
@@ -397,9 +397,9 @@ ApiNodeQueryIdData *apiNodeQuery::ensure_id_data(const Id *id)
 bool api_prop_affects_params_node(const ApiPtr *ptr, const ApiProp *prop)
 {
   return prop != nullptr && api_prop_is_idprop(prop) &&
-         /* ID properties in the geometry nodes modifier don't affect that parameters node.
+         /* id props in the geometry nodes modifier don't affect that params node.
           * Instead they affect the modifier and therefore the geometry node directly. */
          !api_struct_is_a(ptr->type, &api_NodesModifier);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
