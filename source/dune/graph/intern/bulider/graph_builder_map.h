@@ -1,11 +1,11 @@
 #pragma once
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
 struct Id;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 class BuilderMap {
  public:
@@ -53,5 +53,5 @@ class BuilderMap {
   Map<Id *, int> id_tags_;
 };
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
