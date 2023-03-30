@@ -1,36 +1,36 @@
 /** Implementation of Querying and Filtering API's **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_utildefines.h"
 
 #include "types_object.h"
 #include "types_scene.h"
 
-#include "dgraph.h"
-#include "dgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_op.h"
 
-namespace dgraph = dune::dgraph;
+namespace graph = dune::graph;
 
 /* ************************ DEG TRAVERSAL ********************* */
 
-namespace dune::dgraph {
+namespace dune::graph {
 namespace {
 
 using TraversalQueue = deque<OpNode *>;
 
-using DGraphForeachOp = void (*)(OpNode *, void *);
+using GraphForeachOp = void (*)(OpNode *, void *);
 
-bool dgraph_foreach_needs_visit(const OpNode *op_node, const int flags)
+bool graph_foreach_needs_visit(const OpNode *op_node, const int flags)
 {
-  if (flags & DGRAPH_FOREACH_COMPONENT_IGNORE_TRANSFORM_SOLVERS) {
+  if (flags & GRAPH_FOREACH_COMPONENT_IGNORE_TRANSFORM_SOLVERS) {
     if (op_node->opcode == OpCode::RIGIDBODY_SIM) {
       return false;
     }
@@ -38,12 +38,12 @@ bool dgraph_foreach_needs_visit(const OpNode *op_node, const int flags)
   return true;
 }
 
-void dgraph_foreach_dependent_op(const DGraph *UNUSED(graph),
-                                     const IdNode *target_id_node,
-                                     eDGraphObjectComponentType source_component_type,
-                                     int flags,
-                                     DGraphForeachOp callback,
-                                     void *user_data)
+void graph_foreach_dependent_op(const Graph *UNUSED(graph),
+                                const IdNode *target_id_node,
+                                eGraphObjectComponentType source_component_type,
+                                int flags,
+                                GraphForeachOp cb,
+                                void *user_data)
 {
   if (target_id_node == nullptr) {
     /* TODO: Shall we inform or assert here about attempt to start
@@ -60,12 +60,12 @@ void dgraph_foreach_dependent_op(const DGraph *UNUSED(graph),
       continue;
     }
 
-    if (source_component_type != DGRAPH_OB_COMP_ANY &&
+    if (source_component_type != GRAPH_OB_COMP_ANY &&
         nodeTypeToObjectComponent(comp_node->type) != source_component_type) {
       continue;
     }
     for (OpNode *op_node : comp_node->ops) {
-      if (!dgraph_foreach_needs_visit(op_node, flags)) {
+      if (!graph_foreach_needs_visit(op_node, flags)) {
         continue;
       }
       queue.push_back(op_node);
@@ -82,7 +82,7 @@ void dgraph_foreach_dependent_op(const DGraph *UNUSED(graph),
       /* Schedule outgoing operation nodes. */
       if (op_node->outlinks.size() == 1) {
         OpNode *to_node = (OpNode *)op_node->outlinks[0]->to;
-        if (!scheduled.contains(to_node) && dgraph_foreach_needs_visit(to_node, flags)) {
+        if (!scheduled.contains(to_node) && graph_foreach_needs_visit(to_node, flags)) {
           scheduled.add_new(to_node);
           op_node = to_node;
         }
@@ -105,13 +105,13 @@ void dgraph_foreach_dependent_op(const DGraph *UNUSED(graph),
 }
 
 struct ForeachIdComponentData {
-  DGraphForeachIdComponentCb cb;
+  GraphForeachIdComponentCb cb;
   void *user_data;
   IdNode *target_id_node;
   Set<ComponentNode *> visited;
 };
 
-void dgraph_foreach_dependent_component_callback(OpNode *op_node, void *user_data_v)
+void graph_foreach_dependent_component_cb(OpNode *op_node, void *user_data_v)
 {
   ForeachIdComponentData *user_data = reinterpret_cast<ForeachIdComponentData *>(user_data_v);
   ComponentNode *comp_node = op_node->owner;
@@ -123,12 +123,12 @@ void dgraph_foreach_dependent_component_callback(OpNode *op_node, void *user_dat
   }
 }
 
-void dgraph_foreach_dependent_Id_component(const DGraph *graph,
-                                        const Id *id,
-                                        eDGraphObjectComponentType source_component_type,
-                                        int flags,
-                                        DGraphForeachIdComponentCallback callback,
-                                        void *user_data)
+void graph_foreach_dependent_id_component(const Graph *graph,
+                                          const Id *id,
+                                          eGraphObjectComponentType source_component_type,
+                                          int flags,
+                                          GraphForeachIdComponentCb cb,
+                                          void *user_data)
 {
   ForeachIdComponentData data;
   data.callback = callback;
