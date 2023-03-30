@@ -1,4 +1,4 @@
-#include "intern/eval/dgraph_eval_flush.h"
+#include "intern/eval/graph_eval_flush.h"
 
 #include <cmath>
 
@@ -17,21 +17,21 @@
 
 #include "draw_engine.h"
 
-#include "dgraph.h"
+#include "graph.h"
 
-#include "intern/debug/dgraph_debug.h"
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
-#include "intern/dgraph_type.h"
-#include "intern/dgraph_update.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_factory.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/debug/graph_debug.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
+#include "intern/graph_type.h"
+#include "intern/graph_update.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_factory.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_op.h"
+#include "intern/node/graph_node_time.h"
 
-#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
 
 /* Invalidate data-block data when update is flushed on it.
  *
@@ -44,7 +44,7 @@
  * catch usage of invalid state. */
 #undef INVALIDATE_ON_FLUSH
 
-namespace dune::draph {
+namespace dune::graph {
 
 enum {
   ID_STATE_NONE = 0,
@@ -65,7 +65,7 @@ void flush_init_id_node_fn(void *__restrict data_v,
                            const int i,
                            const TaskParallelTLS *__restrict /*tls*/)
 {
-  DGraph *graph = (DGraph *)data_v;
+  Graph *graph = (Graph *)data_v;
   IdNode *id_node = graph->id_nodes[i];
   id_node->custom_flags = ID_STATE_NONE;
   for (ComponentNode *comp_node : id_node->components.values()) {
@@ -73,7 +73,7 @@ void flush_init_id_node_fn(void *__restrict data_v,
   }
 }
 
-inline void flush_prepare(DGraph *graph)
+inline void flush_prepare(Graph *graph)
 {
   for (OpNode *node : graph->ops) {
     node->scheduled = false;
