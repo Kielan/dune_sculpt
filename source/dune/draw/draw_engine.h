@@ -92,14 +92,14 @@ void draw_render_loop_offscreen(struct Graph *graph,
                                 bool do_color_management,
                                 struct GPUOffScreen *ofs,
                                 struct GPUViewport *viewport);
-void DRW_draw_render_loop_2d_ex(struct Depsgraph *depsgraph,
+void DRW_draw_render_loop_2d_ex(struct Graph *graph,
                                 struct ARegion *region,
                                 struct GPUViewport *viewport,
-                                const struct bContext *evil_C);
+                                const struct Context *evil_C);
 /**
- * object mode select-loop, see: #ED_view3d_draw_select_loop (legacy drawing).
+ * object mode select-loop, see: ed_view3d_draw_select_loop (legacy drawing).
  */
-void DRW_draw_select_loop(struct Depsgraph *depsgraph,
+void DRW_draw_select_loop(struct Graph *graph,
                           struct ARegion *region,
                           struct View3D *v3d,
                           bool use_obedit_skip,
@@ -107,21 +107,21 @@ void DRW_draw_select_loop(struct Depsgraph *depsgraph,
                           bool use_nearest,
                           bool do_material_sub_selection,
                           const struct rcti *rect,
-                          DRW_SelectPassFn select_pass_fn,
+                          DrawSelectPassFn select_pass_fn,
                           void *select_pass_user_data,
-                          DRW_ObjectFilterFn object_filter_fn,
+                          DrawObjectFilterFn object_filter_fn,
                           void *object_filter_user_data);
 /**
- * object mode select-loop, see: #ED_view3d_draw_depth_loop (legacy drawing).
+ * object mode select-loop, see: ed_view3d_draw_depth_loop (legacy drawing).
  */
-void DRW_draw_depth_loop(struct Depsgraph *depsgraph,
+void draw_depth_loop(struct Graph *graph,
                          struct ARegion *region,
                          struct View3D *v3d,
                          struct GPUViewport *viewport);
 /**
- * Converted from #ED_view3d_draw_depth_gpencil (legacy drawing).
+ * Converted from ed_view3d_draw_depth_dpen (legacy drawing).
  */
-void DRW_draw_depth_loop_gpencil(struct Depsgraph *depsgraph,
+void draw_depth_loop_gpencil(struct Depsgraph *depsgraph,
                                  struct ARegion *region,
                                  struct View3D *v3d,
                                  struct GPUViewport *viewport);
