@@ -178,14 +178,14 @@ struct Node {
   Node();
   virtual ~Node();
 
-  /** Generic identifier for DGraph Nodes. */
+  /** Generic identifier for Graph Nodes. */
   virtual string id() const;
 
   virtual void init(const Id * /*id*/, const char * /*subdata*/)
   {
   }
 
-  virtual void tag_update(DGraph * /*graph*/, eUpdateSource /*source*/)
+  virtual void tag_update(Graph * /*graph*/, eUpdateSource /*source*/)
   {
   }
 
@@ -204,11 +204,11 @@ struct Node {
 };
 
 /* Macros for common static typeinfo. */
-#define DGRAPH_NODE_DECLARE static const Node::TypeInfo typeinfo
-#define DGRAPH_NODE_DEFINE(NodeType, type_, tname_) \
+#define GRAPH_NODE_DECLARE static const Node::TypeInfo typeinfo
+#defineDGRAPH_NODE_DEFINE(NodeType, type_, tname_) \
   const Node::TypeInfo NodeType::typeinfo = Node::TypeInfo(type_, tname_)
 
-void dgraph_register_base_nodes();
+void graph_register_base_nodes();
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
