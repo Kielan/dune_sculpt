@@ -462,7 +462,7 @@ void scene_setup_view_layers_before_remap(const Graph *graph,
                                           const IdNode *id_node,
                                           Scene *scene_cow)
 {
-  scene_remove_unused_view_layers(dgraph, id_node, scene_cow);
+  scene_remove_unused_view_layers(graph, id_node, scene_cow);
   /* If dependency graph is used for post-processing we don't need any bases and can free of them.
    * Do it before re-mapping to make that process faster. */
   if (graph->is_render_pipeline_graph) {
@@ -494,7 +494,7 @@ inline bool check_datablock_expanded(const Id *id_cow)
 
 struct RemapCbUserData {
   /* Dependency graph for which remapping is happening. */
-  const DGraph *dGraph;
+  const Graph *Graph;
 };
 
 int foreach_libblock_remap_cb(LibIdLinkCbData *cb_data)
@@ -527,7 +527,7 @@ void update_armature_edit_mode_ptrs(const Graph * /*graph*/,
   armature_cow->act_edbone = armature_orig->act_edbone;
 }
 
-void update_curve_edit_mode_ptrs(const DGraph * /*dgraph*/,
+void update_curve_edit_mode_ptrs(const Graph * /*graph*/,
                                  const Id *id_orig,
                                  Id *id_cow)
 {
@@ -537,7 +537,7 @@ void update_curve_edit_mode_ptrs(const DGraph * /*dgraph*/,
   curve_cow->editfont = curve_orig->editfont;
 }
 
-void update_mball_edit_mode_ptrs(const DGraph * /*dgraph*/,
+void update_mball_edit_mode_ptrs(const Graph * /*graph*/,
                                  const Id *id_orig,
                                  Id *id_cow)
 {
@@ -546,7 +546,7 @@ void update_mball_edit_mode_ptrs(const DGraph * /*dgraph*/,
   mball_cow->editelems = mball_orig->editelems;
 }
 
-void update_lattice_edit_mode_ptrs(const DGraph * /*depsgraph*/,
+void update_lattice_edit_mode_ptrs(const Graph * /*graph*/,
                                    const Id *id_orig,
                                    Id *id_cow)
 {
@@ -593,8 +593,8 @@ void update_edit_mode_ptrs(const DGraph *dgraph, const Id *id_orig, Id *id_cow)
 
 template<typename T>
 void update_list_orig_ptrs(const ListBase *listbase_orig,
-                               ListBase *listbase,
-                               T *T::*orig_field)
+                           ListBase *listbase,
+                           T *T::*orig_field)
 {
   T *element_orig = reinterpret_cast<T *>(listbase_orig->first);
   T *element_cow = reinterpret_cast<T *>(listbase->first);
@@ -628,11 +628,11 @@ void set_particle_system_modifiers_loaded(Object *object_cow)
   }
 }
 
-void reset_particle_system_edit_eval(const DGraph *dgraph, Object *object_cow)
+void reset_particle_system_edit_eval(const Graph *graph, Object *object_cow)
 {
   /* Inactive (and render) dependency graphs are living in their own little bubble, should not care
    * about edit mode at all. */
-  if (!dgraph_is_active(reinterpret_cast<const ::DGraph *>(dgraph))) {
+  if (!graph_is_active(reinterpret_cast<const ::Graph *>(graph))) {
     return;
   }
   LISTBASE_FOREACH (ParticleSystem *, psys, &object_cow->particlesystem) {
@@ -644,7 +644,7 @@ void reset_particle_system_edit_eval(const DGraph *dgraph, Object *object_cow)
   }
 }
 
-void update_particles_after_copy(const DGraph *dgraph,
+void update_particles_after_copy(const Graph *graph,
                                  const Object *object_orig,
                                  Object *object_cow)
 {
@@ -653,9 +653,9 @@ void update_particles_after_copy(const DGraph *dgraph,
   reset_particle_system_edit_eval(dgraph, object_cow);
 }
 
-void update_pose_orig_ptrs(const DPose *pose_orig, DPose *pose_cow)
+void update_pose_orig_ptrs(const Pose *pose_orig, Pose *pose_cow)
 {
-  update_list_orig_ptrs(&pose_orig->chanbase, &pose_cow->chanbase, &DPoseChannel::orig_pchan);
+  update_list_orig_ptrs(&pose_orig->chanbase, &pose_cow->chanbase, &PoseChannel::orig_pchan);
 }
 
 void update_nla_strips_orig_ptrs(const ListBase *strips_orig, ListBase *strips_cow)
@@ -689,14 +689,14 @@ void update_animation_data_after_copy(const Id *id_orig, Id *id_cow)
   }
   AnimData *anim_data_cow = dune_animdata_from_id(id_cow);
   lib_assert(anim_data_cow != nullptr);
-  update_nla_tracks_orig_pointers(&anim_data_orig->nla_tracks, &anim_data_cow->nla_tracks);
+  update_nla_tracks_orig_ptrs(&anim_data_orig->nla_tracks, &anim_data_cow->nla_tracks);
 }
 
 /* Do some special treatment of data transfer from original id to its
  * CoW complementary part.
  *
  * Only use for the newly created CoW data-blocks. */
-void update_id_after_copy(const DGraph *dgraph,
+void update_id_after_copy(const Graph *graph,
                           const IdNode *id_node,
                           const Id *id_orig,
                           Id *id_cow)
