@@ -82,31 +82,31 @@ struct GraphEvalState {
 
 void evaluate_node(const GraphEvalState *state, OpNode *op_node)
 {
-  ::DGraph *dgraph = reinterpret_cast<::DGraph *>(state->graph);
+  ::Graph *graph = reinterpret_cast<::Graph *>(state->graph);
 
   /* Sanity checks. */
-  lib_assert_msg(!operation_node->is_noop(), "NOOP nodes should not actually be scheduled");
+  lib_assert_msg(!op_node->is_noop(), "NOOP nodes should not actually be scheduled");
   /* Perform operation. */
   if (state->do_stats) {
     const double start_time = PIL_check_seconds_timer();
-    op_node->evaluate(dgraph);
+    op_node->evaluate(graph);
     op_node->stats.current_time += PIL_check_seconds_timer() - start_time;
   }
   else {
-    op_node->evaluate(depsgraph);
+    op_node->evaluate(graph);
   }
 
   /* Clear the flag early on, allowing partial updates without re-evaluating the same node multiple
    * times.
    * This is a thread-safe modification as the node's flags are only read for a non-scheduled nodes
    * and this node has been scheduled. */
-  op_node->flag &= ~DEPSOP_FLAG_CLEAR_ON_EVAL;
+  op_node->flag &= ~GRAPH_OP_FLAG_CLEAR_ON_EVAL;
 }
 
 void dgraph_task_run_func(TaskPool *pool, void *taskdata)
 {
   void *userdata_v = lib_task_pool_user_data(pool);
-  DGraphEvalState *state = (DGraphEvalState *)userdata_v;
+  GraphEvalState *state = (GraphEvalState *)userdata_v;
 
   /* Evaluate node. */
   OpNode *op_node = reinterpret_cast<OpNode *>(taskdata);
@@ -114,11 +114,11 @@ void dgraph_task_run_func(TaskPool *pool, void *taskdata)
 
   /* Schedule children. */
   schedule_children(state, op_node, [&](OpNode *node) {
-    lib_task_pool_push(pool, deg_task_run_func, node, false, nullptr);
+    lib_task_pool_push(pool, graph_task_run_fn, node, false, nullptr);
   });
 }
 
-bool check_op_node_visible(const DGraphEvalState *state, OpNode *op_node)
+bool check_op_node_visible(const GraphEvalState *state, OpNode *op_node)
 {
   const ComponentNode *comp_node = op_node->owner;
   /* Special case for copy on write component: it is to be always evaluated, to keep copied
