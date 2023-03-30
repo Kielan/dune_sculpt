@@ -1,10 +1,10 @@
-#include "intern/builder/dgraph_builder_relations.h"
+#include "intern/builder/graph_builder_relations.h"
 
 #include "types_scene.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-void DGraphRelationBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
+void GraphRelationBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
 {
   scene_ = scene;
   const bool build_compositor = (scene->r.scemode & R_DOCOMP);
@@ -24,7 +24,7 @@ void DGraphRelationBuilder::build_scene_render(Scene *scene, ViewLayer *view_lay
   }
 }
 
-void DGaphRelationBuilder::build_scene_params(Scene *scene)
+void GraphRelationBuilder::build_scene_params(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_PARAMS)) {
     return;
@@ -44,7 +44,7 @@ void DGaphRelationBuilder::build_scene_params(Scene *scene)
   }
 }
 
-void DGraphRelationBuilder::build_scene_compositor(Scene *scene)
+void GraphRelationBuilder::build_scene_compositor(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_SCENE_COMPOSITOR)) {
     return;
@@ -58,4 +58,4 @@ void DGraphRelationBuilder::build_scene_compositor(Scene *scene)
   build_nodetree(scene->nodetree);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
