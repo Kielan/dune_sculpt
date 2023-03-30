@@ -18,57 +18,57 @@
 #include "api_access.h"
 #include "api_prototypes.h"
 
-#include "dgraph.h"
-#include "dgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "intern/dgraph.h"
-#include "intern/eval/dgraph_eval_copy_on_write.h"
-#include "intern/node/dgraph_node_id.h"
+#include "intern/graph.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
+#include "intern/node/graph_node_id.h"
 
-namespace dgraph = dune::dgraph;
+namespace graph = dune::graph;
 
-struct Scene *dgraph_get_input_scene(const DGraph *graph)
+struct Scene *graph_get_input_scene(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  return dgraph->scene;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->scene;
 }
 
-struct ViewLayer *dgraph_get_input_view_layer(const DGraph *graph)
+struct ViewLayer *graph_get_input_view_layer(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  return dgraph->view_layer;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->view_layer;
 }
 
-struct Main *dgraph_get_dmain(const DGraph *graph)
+struct Main *graph_get_dmain(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  return dgraph->dmain;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->dmain;
 }
 
-eEvaluationMode dgraph_get_mode(const DGraph *graph)
+eEvaluationMode graph_get_mode(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  return dgraph->mode;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->mode;
 }
 
-float dgraph_get_ctime(const DGraph *graph)
+float graph_get_ctime(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
-  return dgraph->ctime;
+  const graph::Graph *graph = reinterpret_cast<const dune::Graph *>(graph);
+  return graph->ctime;
 }
 
-bool dgraph_id_type_updated(const DGraph *graph, short id_type)
+bool graph_id_type_updated(const Graph *graph, short id_type)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  return dgraph->id_type_updated[dune_idtype_idcode_to_index(id_type)] != 0;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  return graph->id_type_updated[dune_idtype_idcode_to_index(id_type)] != 0;
 }
 
-bool dgraph_id_type_any_updated(const DGraph *graph)
+bool graph_id_type_any_updated(const Graph *graph)
 {
-  const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
+  const dune::Graph *graph = reinterpret_cast<const dune::Graph *>(graph);
 
   /* Loop over all id types. */
-  for (char id_type_index : dgraph->id_type_updated) {
+  for (char id_type_index : graph->id_type_updated) {
     if (id_type_index) {
       return true;
     }
@@ -77,13 +77,13 @@ bool dgraph_id_type_any_updated(const DGraph *graph)
   return false;
 }
 
-bool dgraph_id_type_any_exists(const DGraph *dgraph, short id_type)
+bool graph_id_type_any_exists(const Graph *graph, short id_type)
 {
-  const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(dgraph);
-  return DGraph->id_type_exist[dune_idtype_idcode_to_index(id_type)] != 0;
+  const dune::Graph *graph = reinterpret_cast<const dune::Graph *>(graph);
+  return Graph->id_type_exist[dune_idtype_idcode_to_index(id_type)] != 0;
 }
 
-uint32_t dgraph_get_eval_flags_for_id(const DGraph *graph, Id *id)
+uint32_t graph_get_eval_flags_for_id(const Graph *graph, Id *id)
 {
   if (graph == nullptr) {
     /* Happens when converting objects to mesh from a python script
@@ -94,8 +94,8 @@ uint32_t dgraph_get_eval_flags_for_id(const DGraph *graph, Id *id)
     return 0;
   }
 
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  const dgraph::IdNode *id_node = dgraph->find_id_node(dgraph_get_original_id(id));
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  const graph::IdNode *id_node = graph->find_id_node(graph_get_original_id(id));
   if (id_node == nullptr) {
     /* TODO: Does it mean we need to check set scene? */
     return 0;
@@ -104,7 +104,7 @@ uint32_t dgraph_get_eval_flags_for_id(const DGraph *graph, Id *id)
   return id_node->eval_flags;
 }
 
-void dgraph_get_customdata_mask_for_object(const DGraph *graph,
+void graph_get_customdata_mask_for_object(const Graph *graph,
                                         Object *ob,
                                         CustomData_MeshMasks *r_mask)
 {
@@ -117,8 +117,8 @@ void dgraph_get_customdata_mask_for_object(const DGraph *graph,
     return;
   }
 
-  const dune::DGraph *dgraph = reinterpret_cast<const dune::DGraph *>(graph);
-  const dune::IdNode *id_node = dgraph->find_id_node(dgraph_get_original_id(&ob->id));
+  const dune::Graph *graph = reinterpret_cast<const dune::Graph *>(graph);
+  const dune::IdNode *id_node = graph->find_id_node(graph_get_original_id(&ob->id));
   if (id_node == nullptr) {
     /* TODO: Does it mean we need to check set scene? */
     return;
@@ -131,38 +131,38 @@ void dgraph_get_customdata_mask_for_object(const DGraph *graph,
   r_mask->pmask |= id_node->customdata_masks.poly_mask;
 }
 
-Scene *dgraph_get_evaluated_scene(const DGraph *graph)
+Scene *graph_get_evaluated_scene(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  Scene *scene_cow = dgraph->scene_cow;
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  Scene *scene_cow = graph->scene_cow;
   /* TODO: Shall we expand data-block here? Or is it OK to assume
    * that caller is OK with just a pointer in case scene is not updated yet? */
-  lib_assert(scene_cow != nullptr && dgraph::dgraph_copy_on_write_is_expanded(&scene_cow->id));
+  lib_assert(scene_cow != nullptr && graph::graph_copy_on_write_is_expanded(&scene_cow->id));
   return scene_cow;
 }
 
-ViewLayer *dgraph_get_evaluated_view_layer(const DGraph *graph)
+ViewLayer *graph_get_evaluated_view_layer(const Graph *graph)
 {
-  const dgraph::DGraph *dgraph = reinterpret_cast<const dgraph::DGraph *>(graph);
-  Scene *scene_cow = dgraph_get_scene_eval(graph);
+  const graph::Graph *graph = reinterpret_cast<const graph::Graph *>(graph);
+  Scene *scene_cow = graph_get_scene_eval(graph);
   if (scene_cow == nullptr) {
     return nullptr; /* Happens with new, not-yet-built/evaluated graphs. */
   }
   /* Do name-based lookup. */
   /* TODO: Can this be optimized? */
-  ViewLayer *view_layer_orig = dgraph->view_layer;
+  ViewLayer *view_layer_orig = graph->view_layer;
   ViewLayer *view_layer_cow = (ViewLayer *)lib_findstring(
       &scene_cow->view_layers, view_layer_orig->name, offsetof(ViewLayer, name));
   lib_assert(view_layer_cow != nullptr);
   return view_layer_cow;
 }
 
-Object *dgraph_get_evaluated_object(const Dgraph *dgraph, Object *object)
+Object *graph_get_evaluated_object(const graph *graph, Object *object)
 {
-  return (Object *)dgraph_get_evaluated_id(dgraph, &object->id);
+  return (Object *)graph_get_evaluated_id(graph, &object->id);
 }
 
-Id *dgraph_get_evaluated_id(const DGraph *dgraph, Id *id)
+Id *graph_get_evaluated_id(const Graph *graph, Id *id)
 {
   if (id == nullptr) {
     return nullptr;
@@ -170,17 +170,15 @@ Id *dgraph_get_evaluated_id(const DGraph *dgraph, Id *id)
   /* TODO: This is a duplicate of DGraph::get_cow_id(),
    * but here we never do assert, since we don't know nature of the
    * incoming id data-block. */
-  const dgraph::DGraph *dgraph = (const dgraph::DGraph *)dgraph;
-  const dgraph::IdNode *id_node = dgraph->find_id_node(id);
+  const graph::Graph *graph = (const graph::Graph *)graph;
+  const graph::IdNode *id_node = graph->find_id_node(id);
   if (id_node == nullptr) {
     return id;
   }
   return id_node->id_cow;
 }
 
-void dgraph_api_ptr_get_eval(const DGraph *dgraph,
-                                   ApiPtr *ptr,
-                                   ApiPtr *r_ptr_eval)
+void graph_api_ptr_get_eval(const Graph *graph, ApiPtr *ptr, ApiPtr *r_ptr_eval)
 {
   if ((ptr == nullptr) || (r_ptr_eval == nullptr)) {
     return;
