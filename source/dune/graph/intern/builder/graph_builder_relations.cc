@@ -1,6 +1,6 @@
-/** Methods for constructing dgraph **/
+/** Methods for constructing graph **/
 
-#include "intern/builder/dgraph_builder_relations.h"
+#include "intern/builder/graph_builder_relations.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -82,28 +82,28 @@
 
 #include "seq_iterator.h"
 
-#include "dgraph_dgraph.h"
-#include "dgraph_build.h"
+#include "graph_graph.h"
+#include "graph_build.h"
 
-#include "intern/builder/dgraph_builder.h"
-#include "intern/builder/dgraph_builder_pchanmap.h"
-#include "intern/builder/dgraph_builder_relations_drivers.h"
-#include "intern/debug/dgraph_debug.h"
-#include "intern/dgraph_phys.h"
-#include "intern/dgraph_tag.h"
-#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/builder/graph_builder.h"
+#include "intern/builder/graph_builder_pchanmap.h"
+#include "intern/builder/graph_builder_relations_drivers.h"
+#include "intern/debug/graph_debug.h"
+#include "intern/graph_phys.h"
+#include "intern/graph_tag.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
 
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_operation.h"
+#include "intern/node/graph_node_time.h"
 
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
-#include "intern/dgraph_type.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
+#include "intern/graph_type.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* ***************** */
 /* Relations Builder */
@@ -225,19 +225,19 @@ bool object_have_geometry_component(const Object *object)
 
 /* **** General purpose functions **** */
 
-DGraphRelationBuilder::DGraphRelationBuilder(Main *dmain,
-                                             DGraph *graph,
-                                             DGraphBuilderCache *cache)
-    : DGraphBuilder(dmain, graph, cache), scene_(nullptr), api_node_query_(graph, this)
+GraphRelationBuilder::GraphRelationBuilder(Main *dmain,
+                                           Graph *graph,
+                                           GraphBuilderCache *cache)
+    : GraphBuilder(dmain, graph, cache), scene_(nullptr), api_node_query_(graph, this)
 {
 }
 
-TimeSourceNode *DGraphRelationBuilder::get_node(const TimeSourceKey & /*key*/) const
+TimeSourceNode *GraphRelationBuilder::get_node(const TimeSourceKey & /*key*/) const
 {
   return graph_->time_source;
 }
 
-ComponentNode *DGraphRelationBuilder::get_node(const ComponentKey &key) const
+ComponentNode *GraphRelationBuilder::get_node(const ComponentKey &key) const
 {
   IdNode *id_node = graph_->find_id_node(key.id);
   if (!id_node) {
@@ -251,7 +251,7 @@ ComponentNode *DGraphRelationBuilder::get_node(const ComponentKey &key) const
   return node;
 }
 
-OpNode *DGraphRelationBuilder::get_node(const OpKey &key) const
+OpNode *GraphRelationBuilder::get_node(const OpKey &key) const
 {
   OpNode *op_node = find_node(key);
   if (op_node == nullptr) {
@@ -263,12 +263,12 @@ OpNode *DGraphRelationBuilder::get_node(const OpKey &key) const
   return op_node;
 }
 
-Node *DGraphRelationBuilder::get_node(const ApiPathKey &key)
+Node *GraphRelationBuilder::get_node(const ApiPathKey &key)
 {
   return api_node_query_.find_node(&key.ptr, key.prop, key.source);
 }
 
-OpNode *DGraphRelationBuilder::find_node(const OpKey &key) const
+OpNode *GraphRelationBuilder::find_node(const OpKey &key) const
 {
   IdNode *id_node = graph_->find_id_node(key.id);
   if (!id_node) {
@@ -281,12 +281,12 @@ OpNode *DGraphRelationBuilder::find_node(const OpKey &key) const
   return comp_node->find_op(key.opcode, key.name, key.name_tag);
 }
 
-bool DGraphRelationBuilder::has_node(const OpKey &key) const
+bool GraphRelationBuilder::has_node(const OpKey &key) const
 {
   return find_node(key) != nullptr;
 }
 
-void DGraphRelationBuilder::add_depends_on_transform_relation(const DGraphNodeHandle *handle,
+void GraphRelationBuilder::add_depends_on_transform_relation(const DGraphNodeHandle *handle,
                                                                  const char *description)
 {
   IdNode *id_node = handle->node->owner->owner;
@@ -297,10 +297,10 @@ void DGraphRelationBuilder::add_depends_on_transform_relation(const DGraphNodeHa
   add_depends_on_transform_relation(id, geometry_key, description);
 }
 
-void DGraphRelationBuilder::add_customdata_mask(Object *object,
-                                                const DGraphCustomDataMeshMasks &customdata_masks)
+void GraphRelationBuilder::add_customdata_mask(Object *object,
+                                                const GraphCustomDataMeshMasks &customdata_masks)
 {
-  if (customdata_masks != DGraphCustomDataMeshMasks() && object != nullptr &&
+  if (customdata_masks != GraphCustomDataMeshMasks() && object != nullptr &&
       object->type == OB_MESH) {
     IdNode *id_node = graph_->find_id_node(&object->id);
 
@@ -313,7 +313,7 @@ void DGraphRelationBuilder::add_customdata_mask(Object *object,
   }
 }
 
-void DGraphRelationBuilder::add_special_eval_flag(Id *id, uint32_t flag)
+void GraphRelationBuilder::add_special_eval_flag(Id *id, uint32_t flag)
 {
   IdNode *id_node = graph_->find_id_node(id);
   if (id_node == nullptr) {
@@ -324,16 +324,16 @@ void DGraphRelationBuilder::add_special_eval_flag(Id *id, uint32_t flag)
   }
 }
 
-Relation *DGraphRelationBuilder::add_time_relation(TimeSourceNode *timesrc,
-                                                   Node *node_to,
-                                                   const char *description,
-                                                   int flags)
+Relation *GraphRelationBuilder::add_time_relation(TimeSourceNode *timesrc,
+                                                  Node *node_to,
+                                                  const char *description,
+                                                  int flags)
 {
   if (timesrc && node_to) {
     return graph_->add_new_relation(timesrc, node_to, description, flags);
   }
 
-  DEG_DEBUG_PRINTF((::DGraph *)graph_,
+  GRAPH_DEBUG_PRINTF((::Graph *)graph_,
                    BUILD,
                    "add_time_relation(%p = %s, %p = %s, %s) Failed\n",
                    timesrc,
@@ -345,23 +345,23 @@ Relation *DGraphRelationBuilder::add_time_relation(TimeSourceNode *timesrc,
   return nullptr;
 }
 
-void DGraphRelationBuilder::add_visibility_relation(Id *id_from, Id *id_to)
+void GraphRelationBuilder::add_visibility_relation(Id *id_from, Id *id_to)
 {
   ComponentKey from_key(id_from, NodeType::VISIBILITY);
   ComponentKey to_key(id_to, NodeType::VISIBILITY);
   add_relation(from_key, to_key, "visibility");
 }
 
-Relation *DGraphRelationBuilder::add_op_relation(OpNode *node_from,
-                                                 OpNode *node_to,
-                                                 const char *description,
-                                                 int flags)
+Relation *GraphRelationBuilder::add_op_relation(OpNode *node_from,
+                                                OpNode *node_to,
+                                                const char *description,
+                                                int flags)
 {
   if (node_from && node_to) {
     return graph_->add_new_relation(node_from, node_to, description, flags);
   }
 
-  DGRAPH_DEBUG_PRINTF((::DGraph *)graph_,
+  GRAPH_DEBUG_PRINTF((::Graph *)graph_,
                    BUILD,
                    "add_op_relation(%p = %s, %p = %s, %s) Failed\n",
                    node_from,
@@ -373,10 +373,10 @@ Relation *DGraphRelationBuilder::add_op_relation(OpNode *node_from,
   return nullptr;
 }
 
-void DGraphRelationBuilder::add_particle_collision_relations(const OpKey &key,
-                                                             Object *object,
-                                                             Collection *collection,
-                                                             const char *name)
+void GraphRelationBuilder::add_particle_collision_relations(const OpKey &key,
+                                                            Object *object,
+                                                            Collection *collection,
+                                                            const char *name)
 {
   ListBase *relations = build_collision_relations(graph_, collection, eModifierType_Collision);
 
@@ -391,12 +391,12 @@ void DGraphRelationBuilder::add_particle_collision_relations(const OpKey &key,
   }
 }
 
-void DGraphRelationBuilder::add_particle_forcefield_relations(const OpKey &key,
-                                                              Object *object,
-                                                              ParticleSystem *psys,
-                                                              EffectorWeights *eff,
-                                                              bool add_absorption,
-                                                              const char *name)
+void GraphRelationBuilder::add_particle_forcefield_relations(const OpKey &key,
+                                                             Object *object,
+                                                             ParticleSystem *psys,
+                                                             EffectorWeights *eff,
+                                                             bool add_absorption,
+                                                             const char *name)
 {
   ListBase *relations = build_effector_relations(graph_, eff->group);
 
@@ -461,14 +461,14 @@ void DGraphRelationBuilder::add_particle_forcefield_relations(const OpKey &key,
   }
 }
 
-Depsgraph *DGraphRelationBuilder::getDGraph()
+Graph *GraphRelationBuilder::getGraph()
 {
   return graph_;
 }
 
 /* **** Functions to build relations between entities  **** */
 
-void DGraphRelationBuilder::begin_build()
+void GraphRelationBuilder::begin_build()
 {
 }
 
@@ -600,7 +600,7 @@ void DGraphRelationBuilder::build_idprops(IdProp *id_prop)
   IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_callback, this);
 }
 
-void DGaphRelationBuilder::build_collection(LayerCollection *from_layer_collection,
+void GraphRelationBuilder::build_collection(LayerCollection *from_layer_collection,
                                             Object *object,
                                             Collection *collection)
 {
