@@ -239,44 +239,44 @@ void dgraph_foreach_ancestor_Id(const DGraph *graph,
   }
 }
 
-void dgraph_foreach_id(const DGraph *dgraph, DGraphForeachIdCb cb, void *user_data)
+void graph_foreach_id(const Graph *graph, GraphForeachIdCb cb, void *user_data)
 {
-  for (const IdNode *id_node : dgraph->id_nodes) {
+  for (const IdNode *id_node : graph->id_nodes) {
     cb(id_node->id_orig, user_data);
   }
 }
 
 }  // namespace
-}  // namespace dune::dgraph
+}  // namespace dune::graph
 
-void dgraph_foreach_dependent_Id(const DGraph *dgraph,
-                              const If *id,
-                              DGrsphForeachIdCb cb,
-                              void *user_data)
+void graph_foreach_dependent_id(const Graph *graph,
+                                const Id *id,
+                                GraphForeachIdCb cb,
+                                void *user_data)
 {
-  dgraph::dgraph_foreach_dependent_Id((const deg::DGraph *)depsgraph, id, callback, user_data);
+  graph::graph_foreach_dependent_id((const graph::Graph *)graph, id, cb, user_data);
 }
 
-void deg_foreach_dependent_ID_component(const DGraph *dgraph,
-                                        const Id *id,
-                                        eDGraphObjectComponentType source_component_type,
-                                        int flags,
-                                        DGraphForeachIdComponentCb cb,
-                                        void *user_data)
+void graph_foreach_dependent_id_component(const Graph *graph,
+                                          const Id *id,
+                                          eGraphObjectComponentType source_component_type,
+                                          int flags,
+                                          GraphForeachIdComponentCb cb,
+                                          void *user_data)
 {
-  dgraph::dgraph_foreach_dependent_id_component(
-      (const dgraph::DGraph *)dgraph, id, source_component_type, flags, cb, user_data);
+  graph::graph_foreach_dependent_id_component(
+      (const graph::Graph *)graph, id, source_component_type, flags, cb, user_data);
 }
 
-void dgraph_foreach_ancestor_id(const DGraph *dgraph,
-                             const Id *id,
-                             DGraphForeachIdCb cb,
-                             void *user_data)
+void graph_foreach_ancestor_id(const Graph *graph,
+                               const Id *id,
+                               GraphForeachIdCb cb,
+                               void *user_data)
 {
-  dgraph::dgraph_foreach_ancestor_id((const dgraph::DGraph *)dgraph, id, callback, user_data);
+  graph::graph_foreach_ancestor_id((const graph::Graph *)graph, id, cb, user_data);
 }
 
-void dgraph_foreach_id(const DGraph *dgraph, DGraphForeachIdCb callback, void *user_data)
+void graph_foreach_id(const Graph *graph, GraphForeachIdCb cb, void *user_data)
 {
-  dgraph::dgraph_foreach_id((const dgraph::DGraph *)dgraph, callback, user_data);
+  graph::graph_foreach_id((const graph::Graph *)graph, cb, user_data);
 }
