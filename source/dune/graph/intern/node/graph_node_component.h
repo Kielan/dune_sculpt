@@ -1,9 +1,9 @@
 #pragma once
 
-#include "intern/eval/dgraph_eval_copy_on_write.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_operation.h"
 
 #include "lib_string.h"
 #include "lib_utildefines.h"
@@ -16,10 +16,10 @@ struct Id;
 struct PoseChannel;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 struct BoneComponentNode;
-struct DGraph;
+struct Graph;
 struct IdNode;
 struct OpNode;
 
@@ -69,12 +69,12 @@ struct ComponentNode : public Node {
    * parent item is added)
    *
    * param opcode: The operation to perform.
-   * param name: Identifier for operation - used to find/locate it again.
+   * param name: Id for operation - used to find/locate it again.
    */
-  OpNode *add_op(const DGraphEvalOpCb &op,
-                               OpCode opcode,
-                               const char *name,
-                               int name_tag);
+  OpNode *add_op(const GraphEvalOpCb &op,
+                 OpCode opcode,
+                 const char *name,
+                 int name_tag);
 
   /* Entry/exit operations management.
    *
@@ -84,12 +84,12 @@ struct ComponentNode : public Node {
 
   void clear_ops();
 
-  virtual void tag_update(DGraph *graph, eUpdateSource source) override;
+  virtual void tag_update(Graph *graph, eUpdateSource source) override;
 
   virtual OpNode *get_entry_op() override;
   virtual OpNode *get_exit_op() override;
 
-  void finalize_build(DGraph *graph);
+  void finalize_build(Graph *graph);
 
   IdNode *owner;
 
@@ -125,24 +125,24 @@ struct ComponentNode : public Node {
 
 /* ---------------------------------------- */
 
-#define DGRAPH_COMPONENT_NODE_DEFINE_TYPEINFO(NodeType, type_, type_name_, id_recalc_tag) \
+#define GRAPH_COMPONENT_NODE_DEFINE_TYPEINFO(NodeType, type_, type_name_, id_recalc_tag) \
   const Node::TypeInfo NodeType::typeinfo = Node::TypeInfo(type_, type_name_, id_recalc_tag)
 
-#define DGRAPH_COMPONENT_NODE_DECLARE DGRAPH_DEPSNODE_DECLARE
+#define GRAPH_COMPONENT_NODE_DECLARE DGRAPH_DEPSNODE_DECLARE
 
-#define DGRAPH_COMPONENT_NODE_DEFINE(name, NAME, id_recalc_tag) \
-  DGRAPH_COMPONENT_NODE_DEFINE_TYPEINFO( \
+#define GRAPH_COMPONENT_NODE_DEFINE(name, NAME, id_recalc_tag) \
+  GRAPH_COMPONENT_NODE_DEFINE_TYPEINFO( \
       name##ComponentNode, NodeType::NAME, #name " Component", id_recalc_tag); \
-  static DGraphNodeFactoryImpl<name##ComponentNode> DNTI_##NAME
+  static GraphNodeFactoryImpl<name##ComponentNode> DNTI_##NAME
 
-#define DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(name) \
+#define GRAPH_COMPONENT_NODE_DECLARE_GENERIC(name) \
   struct name##ComponentNode : public ComponentNode { \
-    DGRAPH_COMPONENT_NODE_DECLARE; \
+    GRAPH_COMPONENT_NODE_DECLARE; \
   }
 
-#define DGRAPH_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(name) \
+#define GRAPH_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(name) \
   struct name##ComponentNode : public ComponentNode { \
-    DGRAPH_COMPONENT_NODE_DECLARE; \
+    GRAPH_COMPONENT_NODE_DECLARE; \
     virtual bool need_tag_cow_before_update() \
     { \
       return false; \
@@ -151,16 +151,16 @@ struct ComponentNode : public Node {
 
 #define DEG_COMPONENT_NODE_DECLARE_NO_COW(name) \
   struct name##ComponentNode : public ComponentNode { \
-    DEG_COMPONENT_NODE_DECLARE; \
+    GRAPH_COMPONENT_NODE_DECLARE; \
     virtual bool depends_on_cow() \
     { \
       return false; \
     } \
   }
 
-DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Animation);
-DGRAPH_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(BatchCache);
-DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Cache);
+GRAPH_COMPONENT_NODE_DECLARE_GENERIC(Animation);
+GRAPH_COMPONENT_NODE_DECLARE_NO_COW_TAG_ON_UPDATE(BatchCache);
+GRAPH_COMPONENT_NODE_DECLARE_GENERIC(Cache);
 DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(CopyOnWrite);
 DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(Geometry);
 DGRAPH_COMPONENT_NODE_DECLARE_GENERIC(ImageAnimation);
@@ -190,26 +190,26 @@ struct BoneComponentNode : public ComponentNode {
 
   struct PoseChannel *pchan; /* the bone that this component represents */
 
-  DGRAPH_COMPONENT_NODE_DECLARE;
+  GRAPH_COMPONENT_NODE_DECLARE;
 };
 
 /* Eventually we would not tag parameters in all cases.
- * Support for this each ID needs to be added on an individual basis. */
+ * Support for this each id needs to be added on an individual basis. */
 struct ParamsComponentNode : public ComponentNode {
   virtual bool need_tag_cow_before_update() override
   {
     if (ID_TYPE_SUPPORTS_PARAMS_WITHOUT_COW(owner->id_type)) {
       /* Disabled as this is not true for newly added objects, needs investigation. */
-      // lib_assert(dgraph_copy_on_write_is_expanded(owner->id_cow));
+      // lib_assert(graph_copy_on_write_is_expanded(owner->id_cow));
       return false;
     }
     return true;
   }
 
-  DGRAPH_COMPONENT_NODE_DECLARE;
+  GRAPH_COMPONENT_NODE_DECLARE;
 };
 
-void dgraph_register_component_dnodes();
+void graph_register_component_nodes();
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
