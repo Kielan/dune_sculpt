@@ -472,7 +472,7 @@ void GraphRelationBuilder::begin_build()
 {
 }
 
-void DGraphRelationBuilder::build_id(Id *id)
+void GraphRelationBuilder::build_id(Id *id)
 {
   if (id == nullptr) {
     return;
@@ -542,7 +542,7 @@ void DGraphRelationBuilder::build_id(Id *id)
       build_speaker((Speaker *)id);
       break;
     case ID_SO:
-      build_sound((DSound *)id);
+      build_sound((Sound *)id);
       break;
     case ID_TXT:
       /* Not a part of dependency graph. */
@@ -551,7 +551,7 @@ void DGraphRelationBuilder::build_id(Id *id)
       build_cachefile((CacheFile *)id);
       break;
     case ID_SCE:
-      build_scene_parameters((Scene *)id);
+      build_scene_params((Scene *)id);
       break;
     case ID_SIM:
       build_simulation((Simulation *)id);
@@ -575,7 +575,7 @@ void DGraphRelationBuilder::build_id(Id *id)
   }
 }
 
-void DGraphRelationBuilder::build_generic_id(ID *id)
+void GraphRelationBuilder::build_generic_id(ID *id)
 {
   if (built_map_.checkIsBuiltAndTag(id)) {
     return;
@@ -590,12 +590,12 @@ void DGraphRelationBuilder::build_generic_id(ID *id)
 
 static void build_idprops_callback(IdProp *id_prop, void *user_data)
 {
-  DGraphRelationBuilder *builder = reinterpret_cast<DGraphRelationBuilder *>(user_data);
+  GraphRelationBuilder *builder = reinterpret_cast<DGraphRelationBuilder *>(user_data);
   lib_assert(id_prop->type == IDP_ID);
   builder->build_id(reinterpret_cast<Id *>(id_prop->data.ptr));
 }
 
-void DGraphRelationBuilder::build_idprops(IdProp *id_prop)
+void GraphRelationBuilder::build_idprops(IdProp *id_prop)
 {
   IDP_foreach_prop(id_prop, IDP_TYPE_FILTER_ID, build_idprops_callback, this);
 }
@@ -674,7 +674,7 @@ void GraphRelationBuilder::build_collection(LayerCollection *from_layer_collecti
   }
 }
 
-void DGraphRelationBuilder::build_object(Object *object)
+void GraphRelationBuilder::build_object(Object *object)
 {
   if (built_map_.checkIsBuiltAndTag(object)) {
     return;
@@ -806,7 +806,7 @@ void DGraphRelationBuilder::build_object(Object *object)
 }
 
 /* NOTE: Implies that the object has base in the current view layer. */
-void DGraphRelationBuilder::build_object_from_view_layer_base(Object *object)
+void GraphRelationBuilder::build_object_from_view_layer_base(Object *object)
 {
   /* It is possible to have situation when an object is pulled into the dependency graph in a
    * few different ways:
@@ -835,7 +835,7 @@ void DGraphRelationBuilder::build_object_from_view_layer_base(Object *object)
   build_object(object);
 }
 
-void DGraphRelationBuilder::build_object_layer_component_relations(Object *object)
+void GraphRelationBuilder::build_object_layer_component_relations(Object *object)
 {
   OpKey object_from_layer_entry_key(
       &object->id, NodeType::OBJECT_FROM_LAYER, OpCode::OBJECT_FROM_LAYER_ENTRY);
@@ -860,7 +860,7 @@ void DGraphRelationBuilder::build_object_layer_component_relations(Object *objec
   add_relation(object_from_layer_exit_key, synchronize_key, "Synchronize to Original");
 }
 
-void DGraphRelationBuilder::build_object_modifiers(Object *object)
+void GraphRelationBuilder::build_object_modifiers(Object *object)
 {
   if (lib_listbase_is_empty(&object->modifiers)) {
     return;
@@ -880,7 +880,7 @@ void DGraphRelationBuilder::build_object_modifiers(Object *object)
 
   add_relation(modifier_visibility_key, eval_key, "modifier visibility -> geometry eval");
 
-  ModifierUpdateDGraphContext ctx = {};
+  ModifierUpdateGraphCtx ctx = {};
   ctx.scene = scene_;
   ctx.object = object;
 
@@ -893,12 +893,12 @@ void DGraphRelationBuilder::build_object_modifiers(Object *object)
     add_relation(previous_key, modifier_key, "Modifier");
 
     const ModifierTypeInfo *mti = dune_modifier_get_info((ModifierType)modifier->type);
-    if (mti->updateDGraph) {
+    if (mti->updateGraph) {
       const BuilderStack::ScopedEntry stack_entry = stack_.trace(*modifier);
 
       DGraphNodeHandle handle = create_node_handle(modifier_key);
-      ctx.node = reinterpret_cast<::DNodeHandle *>(&handle);
-      mti->updateDGraph(modifier, &ctx);
+      ctx.node = reinterpret_cast<::NodeHandle *>(&handle);
+      mti->updateGraph(modifier, &ctx);
     }
 
     /* Time dependency. */
@@ -911,13 +911,13 @@ void DGraphRelationBuilder::build_object_modifiers(Object *object)
   }
   add_relation(previous_key, eval_key, "modifier stack order");
 
-  /* Build IDs referenced by the modifiers. */
+  /* Build ids referenced by the modifiers. */
   BuilderWalkUserData data;
   data.builder = this;
   dune_modifiers_foreach_id_link(object, modifier_walk, &data);
 }
 
-void DGraphRelationBuilder::build_object_data(Object *object)
+void GraphRelationBuilder::build_object_data(Object *object)
 {
   if (object->data == nullptr) {
     return;
@@ -984,7 +984,7 @@ void DGraphRelationBuilder::build_object_data(Object *object)
   }
 }
 
-void DGraphRelationBuilder::build_object_data_camera(Object *object)
+void GraphRelationBuilder::build_object_data_camera(Object *object)
 {
   Camera *camera = (Camera *)object->data;
   build_camera(camera);
@@ -1002,7 +1002,7 @@ void DGraphRelationBuilder::build_object_data_light(Object *object)
   add_relation(lamp_params_key, object_params_key, "Light -> Object");
 }
 
-void DGraphRelationBuilder::build_object_data_lightprobe(Object *object)
+void GraphRelationBuilder::build_object_data_lightprobe(Object *object)
 {
   LightProbe *probe = (LightProbe *)object->data;
   build_lightprobe(probe);
@@ -1011,7 +1011,7 @@ void DGraphRelationBuilder::build_object_data_lightprobe(Object *object)
   add_relation(probe_key, object_key, "LightProbe Update");
 }
 
-void DGraphRelationBuilder::build_object_data_speaker(Object *object)
+void GraphRelationBuilder::build_object_data_speaker(Object *object)
 {
   Speaker *speaker = (Speaker *)object->data;
   build_speaker(speaker);
@@ -1020,7 +1020,7 @@ void DGraphRelationBuilder::build_object_data_speaker(Object *object)
   add_relation(speaker_key, object_key, "Speaker Update");
 }
 
-void DGraphRelationBuilder::build_object_parent(Object *object)
+void GraphRelationBuilder::build_object_parent(Object *object)
 {
   Object *parent = object->parent;
   Id *parent_id = &object->parent->id;
@@ -1057,10 +1057,10 @@ void DGraphRelationBuilder::build_object_parent(Object *object)
        * we can get rid of this mask here, or bring the optimization
        * back. */
       add_customdata_mask(object->parent,
-                          DGraphCustomDataMeshMasks::MaskVert(CD_MASK_ORIGINDEX) |
-                          DGraphCustomDataMeshMasks::MaskEdge(CD_MASK_ORIGINDEX) |
-                          DGraphCustomDataMeshMasks::MaskFace(CD_MASK_ORIGINDEX) |
-                          DGraphCustomDataMeshMasks::MaskPoly(CD_MASK_ORIGINDEX));
+                          GraphCustomDataMeshMasks::MaskVert(CD_MASK_ORIGINDEX) |
+                          GraphCustomDataMeshMasks::MaskEdge(CD_MASK_ORIGINDEX) |
+                          GraphCustomDataMeshMasks::MaskFace(CD_MASK_ORIGINDEX) |
+                          GraphCustomDataMeshMasks::MaskPoly(CD_MASK_ORIGINDEX));
       ComponentKey transform_key(parent_id, NodeType::TRANSFORM);
       add_relation(transform_key, object_transform_key, "Vertex Parent TFM");
       break;
@@ -1186,10 +1186,10 @@ void DGraphRelationBuilder::build_object_pointcache(Object *object)
                  "Geometry Init -> Point Cache",
                  RELATION_FLAG_FLUSH_USER_EDIT_ONLY);
   }
-  lib_freelistN(&ptcache_id_list);
+  lib_freelistn(&ptcache_id_list);
 }
 
-void DGraphRelationBuilder::build_constraints(Id *id,
+void GraphRelationBuilder::build_constraints(Id *id,
                                               NodeType component_type,
                                               const char *component_subdata,
                                               ListBase *constraints,
@@ -1202,8 +1202,8 @@ void DGraphRelationBuilder::build_constraints(Id *id,
                             OpCode::BONE_CONSTRAINTS :
                           OpCode::TRANSFORM_CONSTRAINTS);
   /* Add dependencies for each constraint in turn. */
-  for (DConstraint *con = (DConstraint *)constraints->first; con; con = con->next) {
-    const DConstraintTypeInfo *cti = dune_constraint_typeinfo_get(con);
+  for (Constraint *con = (DConstraint *)constraints->first; con; con = con->next) {
+    const ConstraintTypeInfo *cti = dune_constraint_typeinfo_get(con);
     ListBase targets = {nullptr, nullptr};
     /* Invalid constraint type. */
     if (cti == nullptr) {
@@ -1250,14 +1250,14 @@ void DGraphRelationBuilder::build_constraints(Id *id,
        * dependency chain. */
       TimeSourceKey time_src_key;
       add_relation(time_src_key, constraint_op_key, "TimeSrc -> Animation");
-      DTransformCacheConstraint *data = (DTransformCacheConstraint *)con->data;
+      TransformCacheConstraint *data = (TransformCacheConstraint *)con->data;
       if (data->cache_file) {
         ComponentKey cache_key(&data->cache_file->id, NodeType::CACHE);
         add_relation(cache_key, constraint_op_key, cti->name);
       }
     }
     else if (dune_constraint_targets_get(con, &targets)) {
-      LISTBASE_FOREACH (DConstraintTarget *, ct, &targets) {
+      LISTBASE_FOREACH (ConstraintTarget *, ct, &targets) {
         if (ct->tar == nullptr) {
           continue;
         }
@@ -1301,7 +1301,7 @@ void DGraphRelationBuilder::build_constraints(Id *id,
           add_customdata_mask(ct->tar, DEGCustomDataMeshMasks::MaskVert(CD_MASK_MDEFORMVERT));
         }
         else if (con->type == CONSTRAINT_TYPE_SHRINKWRAP) {
-          DShrinkwrapConstraint *scon = (bShrinkwrapConstraint *)con->data;
+          ShrinkwrapConstraint *scon = (bShrinkwrapConstraint *)con->data;
 
           /* Constraints which requires the target object surface. */
           ComponentKey target_key(&ct->tar->id, NodeType::GEOMETRY);
@@ -1371,7 +1371,7 @@ void DGraphRelationBuilder::build_constraints(Id *id,
   }
 }
 
-void DGraphRelationBuilder::build_animdata(Id *id)
+void GraphRelationBuilder::build_animdata(Id *id)
 {
   /* Images. */
   build_anim_images(id);
@@ -1388,7 +1388,7 @@ void DGraphRelationBuilder::build_animdata(Id *id)
   }
 }
 
-void DGraphRelationBuilder::build_animdata_curves(ID *id)
+void GraphRelationBuilder::build_animdata_curves(Id *id)
 {
   AnimData *adt = dune_animdata_from_id(id);
   if (adt == nullptr) {
@@ -1430,7 +1430,7 @@ void DGraphRelationBuilder::build_animdata_curves(ID *id)
   }
 }
 
-void DGraphRelationBuilder::build_animdata_curves_targets(Id *id,
+void GraphRelationBuilder::build_animdata_curves_targets(Id *id,
                                                           ComponentKey &adt_key,
                                                           OpNode *op_from,
                                                           ListBase *curves)
@@ -1474,7 +1474,7 @@ void DGraphRelationBuilder::build_animdata_curves_targets(Id *id,
   }
 }
 
-void DGraphRelationBuilder::build_animdata_nlastrip_targets(Id *id,
+void GraphRelationBuilder::build_animdata_nlastrip_targets(Id *id,
                                                             ComponentKey &adt_key,
                                                             OpNode *op_from,
                                                             ListBase *strips)
@@ -1494,7 +1494,7 @@ void DGraphRelationBuilder::build_animdata_nlastrip_targets(Id *id,
   }
 }
 
-void DGraphRelationBuilder::build_animdata_drivers(Id *id)
+void GraphRelationBuilder::build_animdata_drivers(Id *id)
 {
   AnimData *adt = dune_animdata_from_id(id);
   if (adt == nullptr) {
@@ -1518,12 +1518,12 @@ void DGraphRelationBuilder::build_animdata_drivers(Id *id)
   }
 }
 
-void DGraphRelationBuilder::build_animation_images(Id *id)
+void GraphRelationBuilder::build_animation_images(Id *id)
 {
-  /* See #DGraphNodeBuilder::build_animation_images. */
+  /* See GraphNodeBuilder::build_animation_images. */
   bool has_image_animation = false;
   if (ELEM(GS(id->name), ID_MA, ID_WO)) {
-    DNodeTree *ntree = *dune_ntree_ptr_from_id(id);
+    NodeTree *ntree = *dune_ntree_ptr_from_id(id);
     if (ntree != nullptr &&
         ntree->runtime->runtime_flag & NTREE_RUNTIME_FLAG_HAS_IMAGE_ANIMATION) {
       has_image_animation = true;
@@ -1553,7 +1553,7 @@ void DGraphRelationBuilder::build_animation_images(Id *id)
   }
 }
 
-void DGraphRelationBuilder::build_animdata_force(Id *id)
+void GraphRelationBuilder::build_animdata_force(Id *id)
 {
   if (GS(id->name) != ID_OB) {
     return;
@@ -1571,7 +1571,7 @@ void DGraphRelationBuilder::build_animdata_force(Id *id)
   add_relation(anim_key, rigidbody_key, "Animation -> Rigid Body");
 }
 
-void DGraphRelationBuilder::build_action(DAction *action)
+void GraphRelationBuilder::build_action(DAction *action)
 {
   if (built_map_.checkIsBuiltAndTag(action)) {
     return;
@@ -1587,7 +1587,7 @@ void DGraphRelationBuilder::build_action(DAction *action)
   }
 }
 
-void DGraphRelationBuilder::build_driver(Id *id, FCurve *fcu)
+void GraphRelationBuilder::build_driver(Id *id, FCurve *fcu)
 {
   ChannelDriver *driver = fcu->driver;
   OpKey driver_key(id,
@@ -1609,7 +1609,7 @@ void DGraphRelationBuilder::build_driver(Id *id, FCurve *fcu)
   }
 }
 
-void DGraphRelationBuilder::build_driver_data(Id *id, FCurve *fcu)
+void GraphRelationBuilder::build_driver_data(Id *id, FCurve *fcu)
 {
   /* Validate the api path pointer just in case. */
   const char *api_path = fcu->api_path;
@@ -1727,7 +1727,7 @@ void DGraphRelationBuilder::build_driver_data(Id *id, FCurve *fcu)
   }
 }
 
-void DGraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
+void GraphRelationBuilder::build_driver_variables(Id *id, FCurve *fcu)
 {
   ChannelDriver *driver = fcu->driver;
   OpKey driver_key(id,
