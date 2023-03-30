@@ -26,12 +26,12 @@
 #include "lib_vector.hh"
 #include "lib_vector_set.hh"
 
-struct DGraph;
+struct Graph;
 
 struct CustomData_MeshMasks;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 /* Commonly used types. */
 using std::deque;
