@@ -2,12 +2,12 @@
  * Evaluation engine entry-points for Depsgraph Engine.
  */
 
-#include "intern/eval/dgraph_eval.h"
+#include "intern/eval/graph_eval.h"
 
 #include "PIL_time.h"
 
 #include "lib_compiler_attrs.h"
-#include "lib_function_ref.hh"
+#include "lib_fn_ref.hh"
 #include "lib_gsqueue.h"
 #include "lib_task.h"
 #include "lib_utildefines.h"
@@ -18,8 +18,8 @@
 #include "types_object.h"
 #include "types_scene.h"
 
-#include "dgraph.h"
-#include "dgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
@@ -27,24 +27,24 @@
 
 #include "atomic_ops.h"
 
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
-#include "intern/dgraph_tag.h"
-#include "intern/eval/dgraph_eval_copy_on_write.h"
-#include "intern/eval/dgraph_eval_flush.h"
-#include "intern/eval/dgraph_eval_stats.h"
-#include "intern/eval/dgraph_eval_visibility.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
+#include "intern/graph_tag.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
+#include "intern/eval/graph_eval_flush.h"
+#include "intern/eval/graph_eval_stats.h"
+#include "intern/eval/graph_eval_visibility.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_operation.h"
+#include "intern/node/graph_node_time.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 namespace {
 
-struct DGraphEvalState;
+struct GraphEvalState;
 
 void deg_task_run_fn(TaskPool *pool, void *taskdata);
 
