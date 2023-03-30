@@ -13,11 +13,11 @@
 
 namespace dune::graph {
 
-AbstractBuilderPipeline::AbstractBuilderPipeline(::DGraph *graph)
-    : dgraph_(reinterpret_cast<DGraph *>(graph)),
-      dmain_(dgraph_->dmain),
-      scene_(dgraph_->scene),
-      view_layer_(dgraph_->view_layer)
+AbstractBuilderPipeline::AbstractBuilderPipeline(::Graph *graph)
+    : graph_(reinterpret_cast<Graph *>(graph)),
+      dmain_(graph_->dmain),
+      scene_(graph_->scene),
+      view_layer_(graph_->view_layer)
 {
 }
 
