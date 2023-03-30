@@ -1,8 +1,8 @@
-/** Core routines for how the DGraph works. **/
+/** Core routines for how the Graph works. **/
 
 #pragma once
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 struct DGraph;
 
