@@ -67,27 +67,27 @@ void AbstractBuilderPipeline::build_step_relations()
 void AbstractBuilderPipeline::build_step_finalize()
 {
   /* Detect and solve cycles. */
-  dgraph_detect_cycles(dgraph_);
+  graph_detect_cycles(graph_);
   /* Simplify the graph by removing redundant relations (to optimize
    * traversal later). */
   /* TODO: it would be useful to have an option to disable this in cases where
    *       it is causing trouble. */
   if (G.debug_value == 799) {
-    dgraph_transitive_reduction(dgraph_);
+    graph_transitive_reduction(graph_);
   }
   /* Store pointers to commonly used evaluated datablocks. */
-  dgraph_->scene_cow = (Scene *)dgraph_->get_cow_id(&dgraph_->scene->id);
+  graph_->scene_cow = (Scene *)graph_->get_cow_id(&graph_->scene->id);
   /* Flush visibility layer and re-schedule nodes for update. */
-  dgraph_build_finalize(dmain_, dgraph_);
-  dgraph_tag_on_visible_update(reinterpret_cast<::DGraph *>(dgraph_), false);
+  graph_build_finalize(dmain_, graph_);
+  graph_tag_on_visible_update(reinterpret_cast<::Graph *>(graph_), false);
 #if 0
-  if (!dgraph_debug_consistency_check(dgraph_)) {
+  if (!graph_debug_consistency_check(graph_)) {
     printf("Consistency validation failed, ABORTING!\n");
     abort();
   }
 #endif
   /* Relations are up to date. */
-  dgraph_->need_update_relations = false;
+  graph_->need_update_relations = false;
 }
 
 unique_ptr<GraphNodeBuilder> AbstractBuilderPipeline::construct_node_builder()
