@@ -2,19 +2,19 @@
 
 struct DPenData;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-struct DGraph;
+struct Graph;
 
 /* Backup of volume datablocks runtime data. */
 class DPenBackup {
  public:
-  DPenBackup(const DGraph *dgraph);
+  DPenBackup(const Graph *graph);
 
   void init_from_dpen(DPenData *dpd);
   void restore_to_dpen(DPenData *dpd);
 
-  const DGraph *dgraph;
+  const Graph *graph;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
