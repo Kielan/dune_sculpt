@@ -1,21 +1,21 @@
 
 #pragma once
 
-#include "BLI_sys_types.h" /* for bool and uint */
+#include "lib_sys_types.h" /* for bool and uint */
 
 struct ARegion;
 struct Base;
-struct Depsgraph;
+struct Graph;
 struct Object;
 struct View3D;
 struct rcti;
 
-typedef struct SELECTID_ObjectData {
+typedef struct SelectIdObjectData {
   DrawData dd;
 
   uint drawn_index;
   bool is_drawn;
-} SELECTID_ObjectData;
+} SelectIdObjectData;
 
 struct ObjectOffsets {
   /* For convenience only. */
@@ -34,7 +34,7 @@ struct ObjectOffsets {
   uint vert;
 };
 
-typedef struct SELECTID_Context {
+typedef struct SelectIdCtx {
   /* All context objects */
   struct Object **objects;
 
@@ -57,18 +57,18 @@ typedef struct SELECTID_Context {
   /* To check for updates. */
   float persmat[4][4];
   bool is_dirty;
-} SELECTID_Context;
+} SelectIdCtx;
 
 /* draw_select_buffer.c */
 
-bool DRW_select_buffer_elem_get(uint sel_id, uint *r_elem, uint *r_base_index, char *r_elem_type);
-uint DRW_select_buffer_context_offset_for_object_elem(struct Depsgraph *depsgraph,
-                                                      struct Object *object,
-                                                      char elem_type);
+bool draw_select_buffer_elem_get(uint sel_id, uint *r_elem, uint *r_base_index, char *r_elem_type);
+uint draw_select_buffer_ctx_offset_for_object_elem(struct Graph *graph,
+                                                   struct Object *object,
+                                                   char elem_type);
 /**
  * Main function to read a block of pixels from the select frame buffer.
  */
-uint *DRW_select_buffer_read(struct Depsgraph *depsgraph,
+uint *DRW_select_buffer_read(struct Graph *graph,
                              struct ARegion *region,
                              struct View3D *v3d,
                              const rcti *rect,
