@@ -5,7 +5,7 @@
 /* Silence warnings from copying deprecated fields. */
 #define TYPES_DEPRECATED_ALLOW
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "dune_duplilist.h"
 #include "dune_geometry_set.hh"
@@ -20,14 +20,14 @@
 #include "types_object_types.h"
 #include "types_scene_types.h"
 
-#include "DGRAPH_dgraph.h"
-#include "DGRAPH_dgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
-#include "intern/dgraph.h"
-#include "intern/node/dgraph_node_id.h"
+#include "intern/graph.h"
+#include "intern/node/graph_node_id.h"
 
 #ifndef NDEBUG
-#  include "intern/eval/dgraph_eval_copy_on_write.h"
+#  include "intern/eval/graph_eval_copy_on_write.h"
 #endif
 
 /* If defined, all working data will be set to an invalid state, helping
@@ -39,13 +39,13 @@
 #  define INVALIDATE_WORK_DATA
 #endif
 
-namespace dgraph = dune::dgraph;
+namespace graph = dune::graph;
 
 /* ************************ DEG ITERATORS ********************* */
 
 namespace {
 
-void dgraph_invalidate_iterator_work_data(DGraphObjectIterData *data)
+void graph_invalidate_iterator_work_data(GraphObjectIterData *data)
 {
 #ifdef INVALIDATE_WORK_DATA
   lib_assert(data != nullptr);
@@ -81,11 +81,11 @@ void ensure_boundbox_freed(const Object *dupli_object, Object *temp_dupli_object
     return;
   }
   /* Free memory which is owned by temporary storage which is about to get overwritten. */
-  MEM_freeN(temp_dupli_object->runtime.bb);
+  mem_freen(temp_dupli_object->runtime.bb);
   temp_dupli_object->runtime.bb = nullptr;
 }
 
-void free_owned_memory(DEGObjectIterData *data)
+void free_owned_memory(DraphObjectIterData *data)
 {
   if (data->dupli_object_current == nullptr) {
     /* We didn't enter duplication yet, so we can't have any dangling pointers. */
@@ -95,11 +95,11 @@ void free_owned_memory(DEGObjectIterData *data)
   const Object *dupli_object = data->dupli_object_current->ob;
   Object *temp_dupli_object = &data->temp_dupli_object;
 
-  ensure_id_properties_freed(dupli_object, temp_dupli_object);
+  ensure_id_props_freed(dupli_object, temp_dupli_object);
   ensure_boundbox_freed(dupli_object, temp_dupli_object);
 }
 
-bool dgraph_object_hide_original(eEvaluationMode eval_mode, Object *ob, DupliObject *dob)
+bool graph_object_hide_original(eEvaluationMode eval_mode, Object *ob, DupliObject *dob)
 {
   /* Automatic hiding if this object is being instanced on verts/faces/frames
    * by its parent. Ideally this should not be needed, but due to the wrong
@@ -122,9 +122,9 @@ bool dgraph_object_hide_original(eEvaluationMode eval_mode, Object *ob, DupliObj
   return false;
 }
 
-void dgraph_iterator_duplis_init(DGraphObjectIterData *data, Object *object)
+void graph_iterator_duplis_init(GraphObjectIterData *data, Object *object)
 {
-  if ((data->flag & DEG_ITER_OBJECT_FLAG_DUPLI) &&
+  if ((data->flag & GRAPH_ITER_OBJECT_FLAG_DUPLI) &&
       ((object->transflag & OB_DUPLI) || object->runtime.geometry_set_eval != nullptr)) {
     data->dupli_parent = object;
     data->dupli_list = object_duplilist(data->graph, data->scene, object);
@@ -133,7 +133,7 @@ void dgraph_iterator_duplis_init(DGraphObjectIterData *data, Object *object)
 }
 
 /* Returns false when iterator is exhausted. */
-bool deg_iterator_duplis_step(DEGObjectIterData *data)
+bool graph_iterator_duplis_step(GraphObjectIterData *data)
 {
   if (data->dupli_list == nullptr) {
     return false;
@@ -151,7 +151,7 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
     if (obd->type == OB_MBALL) {
       continue;
     }
-    if (dgraph_object_hide_original(data->eval_mode, dob->ob, dob)) {
+    if (graph_object_hide_original(data->eval_mode, dob->ob, dob)) {
       continue;
     }
 
@@ -192,7 +192,7 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
     copy_m4_m4(data->temp_dupli_object.obmat, dob->mat);
     invert_m4_m4(data->temp_dupli_object.imat, data->temp_dupli_object.obmat);
     data->next_object = &data->temp_dupli_object;
-    lib_assert(dgraph::dgraph_validate_copy_on_write_datablock(&data->temp_dupli_object.id));
+    lib_assert(graph::graph_validate_copy_on_write_datablock(&data->temp_dupli_object.id));
     return true;
   }
 
@@ -202,17 +202,17 @@ bool deg_iterator_duplis_step(DEGObjectIterData *data)
   data->dupli_list = nullptr;
   data->dupli_object_next = nullptr;
   data->dupli_object_current = nullptr;
-  deg_invalidate_iterator_work_data(data);
+  graph_invalidate_iterator_work_data(data);
   return false;
 }
 
 /* Returns false when iterator is exhausted. */
-bool dgraph_iterator_objects_step(DGraphObjectIterData *data)
+bool graph_iterator_objects_step(GraphObjectIterData *data)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(data->graph);
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(data->graph);
 
   for (; data->id_node_index < data->num_id_nodes; data->id_node_index++) {
-    dgraph::IdNode *id_node = dgraph->id_nodes[data->id_node_index];
+    graph::IdNode *id_node = graph->id_nodes[data->id_node_index];
 
     if (!id_node->is_directly_visible) {
       continue;
@@ -225,38 +225,38 @@ bool dgraph_iterator_objects_step(DGraphObjectIterData *data)
     }
 
     switch (id_node->linked_state) {
-      case deg::DGRAPH_ID_LINKED_DIRECTLY:
-        if ((data->flag & DGRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY) == 0) {
+      case graph::GRAPH_ID_LINKED_DIRECTLY:
+        if ((data->flag & GRAPH_ITER_OBJECT_FLAG_LINKED_DIRECTLY) == 0) {
           continue;
         }
         break;
-      case deg::DGRAPH_ID_LINKED_VIA_SET:
+      case graph::GRAPH_ID_LINKED_VIA_SET:
         if ((data->flag & DEG_ITER_OBJECT_FLAG_LINKED_VIA_SET) == 0) {
           continue;
         }
         break;
-      case deg::DGRAPH_ID_LINKED_INDIRECTLY:
-        if ((data->flag & DEG_ITER_OBJECT_FLAG_LINKED_INDIRECTLY) == 0) {
+      case graph::GRAPH_ID_LINKED_INDIRECTLY:
+        if ((data->flag & GRAPH_ITER_OBJECT_FLAG_LINKED_INDIRECTLY) == 0) {
           continue;
         }
         break;
     }
 
     Object *object = (Object *)id_node->id_cow;
-    lib_assert(dgraph::dgraph_validate_copy_on_write_datablock(&object->id));
+    lib_assert(graph::graph_validate_copy_on_write_datablock(&object->id));
 
     int ob_visibility = OB_VISIBLE_ALL;
-    if (data->flag & DGRAPH_ITER_OBJECT_FLAG_VISIBLE) {
-      ob_visibility = DUNE_object_visibility(object, data->eval_mode);
+    if (data->flag & GRAPH_ITER_OBJECT_FLAG_VISIBLE) {
+      ob_visibility = dune_object_visibility(object, data->eval_mode);
 
-      if (object->type != OB_MBALL && deg_object_hide_original(data->eval_mode, object, nullptr)) {
+      if (object->type != OB_MBALL && graph_object_hide_original(data->eval_mode, object, nullptr)) {
         continue;
       }
     }
 
-    object->runtime.select_id = DEG_get_original_object(object)->runtime.select_id;
+    object->runtime.select_id = graph_get_original_object(object)->runtime.select_id;
     if (ob_visibility & OB_VISIBLE_INSTANCES) {
-      deg_iterator_duplis_init(data, object);
+      graph_iterator_duplis_init(data, object);
     }
 
     if (ob_visibility & (OB_VISIBLE_SELF | OB_VISIBLE_PARTICLES)) {
@@ -270,11 +270,11 @@ bool dgraph_iterator_objects_step(DGraphObjectIterData *data)
 
 }  // namespace
 
-void DEG_iterator_objects_begin(BLI_Iterator *iter, DEGObjectIterData *data)
+void graph_iterator_objects_begin(LibIterator *iter, GraphObjectIterData *data)
 {
-  Depsgraph *depsgraph = data->graph;
-  deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
-  const size_t num_id_nodes = deg_graph->id_nodes.size();
+  Graph *graph = data->graph;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  const size_t num_id_nodes = graph->id_nodes.size();
 
   iter->data = data;
 
