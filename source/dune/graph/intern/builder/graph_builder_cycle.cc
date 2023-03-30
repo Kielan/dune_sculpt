@@ -1,4 +1,4 @@
-#include "intern/builder/dgraph_builder_cycle.h"
+#include "intern/builder/graph_builder_cycle.h"
 
 // TOO: Use some wrappers over those?
 #include <cstdio>
@@ -7,14 +7,14 @@
 #include "lib_stack.h"
 #include "lib_utildefines.h"
 
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_op.h"
 
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 namespace {
 
@@ -34,7 +34,7 @@ struct StackEntry {
 };
 
 struct CyclesSolverState {
-  CyclesSolverState(DGraph *graph)
+  CyclesSolverState(Graph *graph)
       : graph(graph),
         traversal_stack(lib_stack_new(sizeof(StackEntry), "DEG detect cycles stack")),
         num_cycles(0)
@@ -48,7 +48,7 @@ struct CyclesSolverState {
       printf("Detected %d dependency cycles\n", num_cycles);
     }
   }
-  DGraph *graph;
+  Graph *graph;
   LibStack *traversal_stack;
   int num_cycles;
 };
@@ -196,7 +196,7 @@ void solve_cycles(CyclesSolverState *state)
 
 }  // namespace
 
-void dgraph_detect_cycles(DGraph *graph)
+void graph_detect_cycles(Graph *graph)
 {
   CyclesSolverState state(graph);
   /* First we solve cycles which are reachable from leaf nodes. */
@@ -211,4 +211,4 @@ void dgraph_detect_cycles(DGraph *graph)
   }
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
