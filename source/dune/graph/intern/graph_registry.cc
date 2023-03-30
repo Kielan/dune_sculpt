@@ -1,4 +1,4 @@
-#include "intern/dgraph_registry.h"
+#include "intern/graph_registry.h"
 
 #include "lib_utildefines.h"
 
