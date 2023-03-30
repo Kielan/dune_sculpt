@@ -2,7 +2,7 @@
 
 #include "pipeline_view_layer.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* Builds a dependency graph that contains all objects in the view layer.
  * This is contrary to the regular ViewLayerBuilderPipeline, which is limited to visible objects
