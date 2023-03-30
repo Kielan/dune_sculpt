@@ -1,8 +1,8 @@
-#include "intern/builder/dgraph_builder_nodes.h"
+#include "intern/builder/graph_builder_nodes.h"
 
 #include "types_scene.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 void DGraphNodeBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
 {
@@ -24,11 +24,11 @@ void DGraphNodeBuilder::build_scene_render(Scene *scene, ViewLayer *view_layer)
     build_scene_speakers(scene, view_layer);
   }
   if (scene->camera != nullptr) {
-    build_object(-1, scene->camera, DEG_ID_LINKED_DIRECTLY, true);
+    build_object(-1, scene->camera, GRAPH_ID_LINKED_DIRECTLY, true);
   }
 }
 
-void DGraphNodeBuilder::build_scene_params(Scene *scene)
+void GraphNodeBuilder::build_scene_params(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_PARAMS)) {
     return;
@@ -53,7 +53,7 @@ void DGraphNodeBuilder::build_scene_params(Scene *scene)
   }
 }
 
-void DGraphNodeBuilder::build_scene_compositor(Scene *scene)
+void GraphNodeBuilder::build_scene_compositor(Scene *scene)
 {
   if (built_map_.checkIsBuiltAndTag(scene, BuilderMap::TAG_SCENE_COMPOSITOR)) {
     return;
@@ -64,4 +64,4 @@ void DGraphNodeBuilder::build_scene_compositor(Scene *scene)
   build_nodetree(scene->nodetree);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
