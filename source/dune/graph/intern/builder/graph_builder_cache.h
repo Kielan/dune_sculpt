@@ -2,7 +2,7 @@
 
 #include "mem_guardedalloc.h"
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
 #include "api_access.h"
 
@@ -11,9 +11,9 @@ struct ApiPtr;
 struct ApiProp;
 
 namespace dune {
-namespace deg {
+namespace graph {
 
-class DGraphBuilderCache;
+class GraphBuilderCache;
 
 /* Identifier for animated property. */
 class AnimatedPropId {
@@ -38,7 +38,7 @@ class AnimatedPropStorage {
  public:
   AnimatedPropStorage();
 
-  void initializeFromId(DGraphBuilderCache *builder_cache, Id *id);
+  void initializeFromId(GraphBuilderCache *builder_cache, Id *id);
 
   void tagPropAsAnimated(const AnimatedPropId &prop_id);
   void tagPropAsAnimated(const ApiPtr *ptr_api, const ApiProp *prop_api);
@@ -59,7 +59,7 @@ class AnimatedPropStorage {
 };
 
 /* Cached data which can be re-used by multiple builders. */
-class DGraphBuilderCache {
+class GraphBuilderCache {
  public:
   ~DGraphBuilderCache();
 
@@ -91,8 +91,8 @@ class DGraphBuilderCache {
 
   Map<Id *, AnimatedPropStorage *> animated_prop_storage_map_;
 
-  MEM_CXX_CLASS_ALLOC_FUNCS("DGraphBuilderCache");
+  MEM_CXX_CLASS_ALLOC_FUNCS("GraphBuilderCache");
 };
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
