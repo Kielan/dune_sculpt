@@ -1,8 +1,8 @@
 #pragma once
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 struct RootPChanMap {
   /** Debug contents of map. */
@@ -22,4 +22,4 @@ struct RootPChanMap {
   Map<StringRefNull, Set<StringRefNull>> map_;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
