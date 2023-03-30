@@ -1,15 +1,15 @@
-#include "intern/node/dgraph_node_op.h"
+#include "intern/node/graph_node_op.h"
 
 #include "mem_guardedalloc.h"
 
 #include "lib_utildefines.h"
 
-#include "intern/dgraph.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_factory.h"
-#include "intern/node/dgraph_node_id.h"
+#include "intern/graph.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_factory.h"
+#include "intern/node/graph_node_id.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 const char *opCodeAsString(OpCode opcode)
 {
@@ -17,8 +17,8 @@ const char *opCodeAsString(OpCode opcode)
     /* Generic Operations. */
     case OpCode::OPERATION:
       return "OPERATION";
-    case OpCode::ID_PROPERTY:
-      return "ID_PROPERTY";
+    case OpCode::ID_PROP:
+      return "ID_PROP";
     case OpCode::PARAMS_ENTRY:
       return "PARAMS_ENTRY";
     case OpCode::PARAMS_EVAL:
@@ -207,21 +207,21 @@ string OpNode::full_identifier() const
   return owner_str + "/" + id();
 }
 
-void OpNode::tag_update(DGraph *graph, eUpdateSource source)
+void OpNode::tag_update(Graph *graph, eUpdateSource source)
 {
-  if ((flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
+  if ((flag & GRAPH_OP_FLAG_NEEDS_UPDATE) == 0) {
     graph->add_entry_tag(this);
   }
   /* Tag for update, but also note that this was the source of an update. */
-  flag |= (DGRAPH_OP_FLAG_NEEDS_UPDATE | DEPSOP_FLAG_DIRECTLY_MODIFIED);
+  flag |= (GRAPH_OP_FLAG_NEEDS_UPDATE | GRAPH_OP_FLAG_DIRECTLY_MODIFIED);
   switch (source) {
-    case DGRAPH_UPDATE_SOURCE_TIME:
-    case DGRAPH_UPDATE_SOURCE_RELATIONS:
-    case DGRAPH_UPDATE_SOURCE_VISIBILITY:
+    case GRAPH_UPDATE_SOURCE_TIME:
+    case GRAPH_UPDATE_SOURCE_RELATIONS:
+    case GRAPH_UPDATE_SOURCE_VISIBILITY:
       /* Currently nothing. */
       break;
-    case DGRAPH_UPDATE_SOURCE_USER_EDIT:
-      flag |= DEPSOP_FLAG_USER_MODIFIED;
+    case GRAPH_UPDATE_SOURCE_USER_EDIT:
+      flag |= GRAPH_FLAG_USER_MODIFIED;
       break;
   }
 }
@@ -238,12 +238,12 @@ void OpNode::set_as_exit()
   owner->set_exit_op(this);
 }
 
-DGRAPH_NODE_DEFINE(OpNode, NodeType::OP, "Operation");
-static DGraphNodeFactoryImpl<OpNode> DNTI_OP;
+GRAPH_NODE_DEFINE(OpNode, NodeType::OP, "Operation");
+static GraphNodeFactoryImpl<OpNode> DNTI_OP;
 
-void dgraph_register_op_dgraphnodes()
+void graph_register_op_graphnodes()
 {
   register_node_typeinfo(&DNTI_OP);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
