@@ -8,9 +8,9 @@
 struct Id;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
-struct DGraphNodeFactory {
+struct GraphNodeFactory {
   virtual NodeType type() const = 0;
   virtual const char *type_name() const = 0;
 
@@ -19,7 +19,7 @@ struct DGraphNodeFactory {
   virtual Node *create_node(const Id *id, const char *subdata, const char *name) const = 0;
 };
 
-template<class ModeObjectType> struct DGraphNodeFactoryImpl : public DGraphNodeFactory {
+template<class ModeObjectType> struct GraphNodeFactoryImpl : public GraphNodeFactory {
   virtual NodeType type() const override;
   virtual const char *type_name() const override;
 
@@ -29,12 +29,12 @@ template<class ModeObjectType> struct DGraphNodeFactoryImpl : public DGraphNodeF
 };
 
 /* Register typeinfo */
-void register_node_typeinfo(DGraphNodeFactory *factory);
+void register_node_typeinfo(GraphNodeFactory *factory);
 
 /* Get typeinfo for specified type */
-DGraphNodeFactory *type_get_factory(NodeType type);
+GraphNodeFactory *type_get_factory(NodeType type);
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
 
-#include "intern/node/dgraph_node_factory_impl.h"
+#include "intern/node/graph_node_factory_impl.h"
