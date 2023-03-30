@@ -1,10 +1,10 @@
-#include "intern/node/dgraph_node.h"
+#include "intern/node/graph_node.h"
 
 struct Id;
 struct Main;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 struct DGraph;
 
