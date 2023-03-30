@@ -2,17 +2,17 @@
 
 #include "types_layer.h"
 
-#include "intern/builder/dgraph_builder_nodes.h"
-#include "intern/builder/dgraph_builder_relations.h"
-#include "intern/dgraph.h"
+#include "intern/builder/graph_builder_nodes.h"
+#include "intern/builder/graph_builder_relations.h"
+#include "intern/graph.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 namespace {
 
-class DGraphFromIdsFilter {
+class GraphFromIdsFilter {
  public:
-  DGraphFromIdsFilter(Span<Id *> ids)
+  GraphFromIdsFilter(Span<Id *> ids)
   {
     ids_.add_multiple(ids);
   }
@@ -26,13 +26,13 @@ class DGraphFromIdsFilter {
   Set<Id *> ids_;
 };
 
-class DGraphFromIdsNodeBuilder : public DGraphNodeBuilder {
+class GraphFromIdsNodeBuilder : public DGraphNodeBuilder {
  public:
-  DGraphFromIdsNodeBuilder(Main *dmain,
-                           DGraph *graph,
-                           DGraphBuilderCache *cache,
-                           Span<Id *> ids)
-      : DGraphNodeBuilder(dmain, graph, cache), filter_(ids)
+  GraphFromIdsNodeBuilder(Main *dmain,
+                          Graph *graph,
+                          GraphBuilderCache *cache,
+                          Span<Id *> ids)
+      : GraphNodeBuilder(dmain, graph, cache), filter_(ids)
   {
   }
 
