@@ -1,6 +1,6 @@
 #pragma once
 
-#include "intern/node/dgraph_node_id.h"
+#include "intern/node/graph_node_id.h"
 
 #include <iostream>
 
@@ -8,17 +8,17 @@
 #include "types_object.h"
 #include "types_rigidbody.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 template<typename KeyType>
-OpNode *DGraphRelationBuilder::find_op_node(const KeyType &key)
+OpNode *GraphRelationBuilder::find_op_node(const KeyType &key)
 {
   Node *node = get_node(key);
   return node != nullptr ? node->get_exit_operation() : nullptr;
 }
 
 template<typename KeyFrom, typename KeyTo>
-Relation *DGraphRelationBuilder::add_relation(const KeyFrom &key_from,
+Relation *GraphRelationBuilder::add_relation(const KeyFrom &key_from,
                                                  const KeyTo &key_to,
                                                  const char *description,
                                                  int flags)
