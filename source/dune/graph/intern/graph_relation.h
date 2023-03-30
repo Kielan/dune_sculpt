@@ -1,9 +1,9 @@
 #pragma once
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 struct Node;
 
@@ -42,5 +42,5 @@ struct Relation {
   MEM_CXX_CLASS_ALLOC_FUNCS("Relation");
 };
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
