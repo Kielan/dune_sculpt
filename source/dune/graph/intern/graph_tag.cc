@@ -560,9 +560,9 @@ void graph_tag_ids_for_visible_update(Graph *graph)
   graph->need_visibility_time_update = false;
 }
 
-NodeType geometry_tag_to_component(const ID *id)
+NodeType geometry_tag_to_component(const Id *id)
 {
-  const ID_Type id_type = GS(id->name);
+  const IdType id_type = GS(id->name);
   switch (id_type) {
     case ID_OB: {
       const Object *object = (Object *)id;
@@ -612,21 +612,21 @@ NodeType geometry_tag_to_component(const ID *id)
 void id_tag_update(Main *dmain, Id *id, int flag, eUpdateSource update_source)
 {
   graph_id_tag_update(dmain, nullptr, id, flag, update_source);
-  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
-    graph_id_tag_update(bmain, dgraph, id, flag, update_source);
+  for (graph::Graph *graph : dgraph::get_all_registered_graphs(dmain)) {
+    graph_id_tag_update(dmain, dgraph, id, flag, update_source);
   }
 
   /* Accumulate all tags for an id between two undo steps, so they can be
    * replayed for undo. */
-  id->recalc_after_undo_push |= dgraph_recalc_flags_effective(nullptr, flag);
+  id->recalc_after_undo_push |= graph_recalc_flags_effective(nullptr, flag);
 }
 
 void graph_id_tag_update(
-    Main *dmain, DGraph *graph, Id *id, int flag, eUpdateSource update_source)
+    Main *dmain, Graph *graph, Id *id, int flag, eUpdateSource update_source)
 {
-  const int debug_flags = (graph != nullptr) ? DEG_debug_flags_get((::Depsgraph *)graph) : G.debug;
+  const int debug_flags = (graph != nullptr) ? graph_debug_flags_get((::Graph *)graph) : G.debug;
   if (graph != nullptr && graph->is_evaluating) {
-    if (debug_flags & G_DEBUG_DEPSGRAPH_TAG) {
+    if (debug_flags & G_DEBUG_GRAPH_TAG) {
       printf("ID tagged for update during dependency graph evaluation.\n");
     }
     return;
@@ -640,10 +640,10 @@ void graph_id_tag_update(
   }
   IdNode *id_node = (graph != nullptr) ? graph->find_id_node(id) : nullptr;
   if (graph != nullptr) {
-    dgraph_id_type_tag(reinterpret_cast<::DGraph *>(graph), GS(id->name));
+    graph_id_type_tag(reinterpret_cast<::Graph *>(graph), GS(id->name));
   }
   if (flag == 0) {
-    dgraph_node_tag_zero(dmain, graph, id_node, update_source);
+    graph_node_tag_zero(dmain, graph, id_node, update_source);
   }
   /* Store original flag in the id.
    * Allows to have more granularity than a node-factory based flags. */
@@ -657,29 +657,29 @@ void graph_id_tag_update(
    * properly triggers animation update for the newly constructed dependency graph on redo (while
    * usually newly created dependency graph skips animation update to avoid loss of unkeyed
    * changes). */
-  if (update_source == DGRAPH_UPDATE_SOURCE_USER_EDIT) {
-    id->recalc |= dgraph_recalc_flags_effective(graph, flag);
+  if (update_source == GRAPH_UPDATE_SOURCE_USER_EDIT) {
+    id->recalc |= graph_recalc_flags_effective(graph, flag);
   }
   int current_flag = flag;
   while (current_flag != 0) {
     IdRecalcFlag tag = (IdRecalcFlag)(1 << bitscan_forward_clear_i(&current_flag));
-    graph_id_tag_update_single_flag(bmain, graph, id, id_node, tag, update_source);
+    graph_id_tag_update_single_flag(dmain, graph, id, id_node, tag, update_source);
   }
   /* Special case for nested node tree data-blocks. */
-  id_tag_update_ntree_special(bmain, graph, id, flag, update_source);
+  id_tag_update_ntree_special(dmain, graph, id, flag, update_source);
   /* Direct update tags means that something outside of simulated/cached
    * physics did change and that cache is to be invalidated.
    * This is only needed if data changes. If it's just a drawing, we keep the
    * point cache. */
-  if (update_source == DGRAPH_UPDATE_SOURCE_USER_EDIT && flag != ID_RECALC_SHADING) {
+  if (update_source == GRAPH_UPDATE_SOURCE_USER_EDIT && flag != ID_RECALC_SHADING) {
     graph_id_tag_update_single_flag(
-        bmain, graph, id, id_node, ID_RECALC_POINT_CACHE, update_source);
+        dmain, graph, id, id_node, ID_RECALC_POINT_CACHE, update_source);
   }
 }
 
 }  // namespace dune::dgraph
 
-const char *dgraph_update_tag_as_string(IdRecalcFlag flag)
+const char *graph_update_tag_as_string(IdRecalcFlag flag)
 {
   switch (flag) {
     case ID_RECALC_TRANSFORM:
@@ -742,109 +742,109 @@ const char *dgraph_update_tag_as_string(IdRecalcFlag flag)
 
 /* Data-Based Tagging. */
 
-void dgraph_id_tag_update(Id *id, int flag)
+void graph_id_tag_update(Id *id, int flag)
 {
-  dgraph_id_tag_update_ex(G.main, id, flag);
+  graph_id_tag_update_ex(G.main, id, flag);
 }
 
-void DGraph_id_tag_update_ex(Main *dmain, Id *id, int flag)
+void graph_id_tag_update_ex(Main *dmain, Id *id, int flag)
 {
   if (id == nullptr) {
     /* Ideally should not happen, but old dgraph allowed this. */
     return;
   }
-  dgraph::id_tag_update(dmain, id, flag, dgraph::DGRAPH_UPDATE_SOURCE_USER_EDIT);
+  graph::id_tag_update(dmain, id, flag, graph::GRAPH_UPDATE_SOURCE_USER_EDIT);
 }
 
-void dgraph_id_tag_update(struct Main *dmain,
-                             struct DGraph *dgraph,
-                             struct Id *id,
-                             int flag)
+void graph_id_tag_update(struct Main *dmain,
+                          struct Graph *graph,
+                          struct Id *id,
+                          int flag)
 {
-  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
-  dgraph::graph_id_tag_update(dmain, graph, id, flag, dgrap::DGRAPH_UPDATE_SOURCE_USER_EDIT);
+  graph::Graph *graph = (graph::Graph *)graph;
+  graph::graph_id_tag_update(dmain, graph, id, flag, grap::GRAPH_UPDATE_SOURCE_USER_EDIT);
 }
 
-void dgraph_time_tag_update(struct Main *dmain)
+void graph_time_tag_update(struct Main *dmain)
 {
-  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
-    DGraph_time_tag_update(reinterpret_cast<::DGraph *>(dgraph));
+  for (graph::Graph *graph : graph::get_all_registered_graphs(dmain)) {
+    graph_time_tag_update(reinterpret_cast<::Graph *>(graph));
   }
 }
 
-void DGraph_time_tag_update(struct DGraph *dgraph)
+void Graph_time_tag_update(struct Graph *graph)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
-  dgraph->tag_time_source();
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  graph->tag_time_source();
 }
 
-void DGraph_id_type_tag(DGraph *dgraph, short id_type)
+void graph_id_type_tag(Graph *graph, short id_type)
 {
   if (id_type == ID_NT) {
     /* Stupid workaround so parent data-blocks of nested node-tree get looped
      * over when we loop over tagged data-block types. */
-    DGraph_id_type_tag(dgraph, ID_MA);
-    DGraph_id_type_tag(dgraph, ID_TE);
-    DGraph_id_type_tag(dgraph, ID_LA);
-    DGraph_id_type_tag(dgraph, ID_WO);
-    DGraph_id_type_tag(dgraph, ID_SCE);
-    DGraph_id_type_tag(dgraph, ID_SIM);
+    Graph_id_type_tag(graph, ID_MA);
+    Graph_id_type_tag(graph, ID_TE);
+    Graph_id_type_tag(graph, ID_LA);
+    Graph_id_type_tag(graph, ID_WO);
+    Graph_id_type_tag(graph, ID_SCE);
+    Graph_id_type_tag(graph, ID_SIM);
   }
   const int id_type_index = dune_idtype_idcode_to_index(id_type);
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
-  dgraph->id_type_updated[id_type_index] = 1;
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
+  graph->id_type_updated[id_type_index] = 1;
 }
 
-void dgraph_id_type_tag(Main *dmain, short id_type)
+void graph_id_type_tag(Main *dmain, short id_type)
 {
-  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
-    dgraph_id_type_tag(reinterpret_cast<::DGraph *>(dgraph), id_type);
+  for (graph::Graph *graph : graph::get_all_registered_graphs(dmain)) {
+    graph_id_type_tag(reinterpret_cast<::Graph *>(graph), id_type);
   }
 }
 
-void dgraph_tag_on_visible_update(DGraph *dgraph, const bool do_time)
+void graph_tag_on_visible_update(Graph *graph, const bool do_time)
 {
-  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
-  dgraph::graph_tag_on_visible_update(graph, do_time);
+  graph::Graph *graph = (graph::Graph *)graph;
+  graph::graph_tag_on_visible_update(graph, do_time);
 }
 
-void dgraph_tag_on_visible_update(Main *dmain, const bool do_time)
+void graph_tag_on_visible_update(Main *dmain, const bool do_time)
 {
-  for (dgraph::DGraph *dgraph : dgraph::get_all_registered_graphs(dmain)) {
-    dgraph::graph_tag_on_visible_update(depsgraph, do_time);
+  for (graph::Graph *graph : graph::get_all_registered_graphs(dmain)) {
+    graph::raph_tag_on_visible_update(graph, do_time);
   }
 }
 
-void dgraph_enable_editors_update(DGraph *dgraph)
+void graph_enable_editors_update(Graph *graph)
 {
-  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
+  graph::Graph *graph = (graph::Graph *)graph;
   graph->use_editors_update = true;
 }
 
-void DGraph_editors_update(DGraph *dgraph, bool time)
+void Graph_editors_update(Graph *graph, bool time)
 {
-  dgraph::DGraph *graph = (dgraph::DGraph *)dgraph;
+  graph::Graph *graph = (graph::Graph *)graph;
   if (!graph->use_editors_update) {
     return;
   }
 
-  Scene *scene = dgraph_get_input_scene(dgraph);
-  ViewLayer *view_layer = dgraph_get_input_view_layer(dgraph);
-  Main *dmain = dgraph_get_dmain(dgraph);
-  bool updated = time || dgraph_id_type_any_updated(dgraph);
+  Scene *scene = graph_get_input_scene(graph);
+  ViewLayer *view_layer = graph_get_input_view_layer(graph);
+  Main *dmain = graph_get_dmain(graph);
+  bool updated = time || graph_id_type_any_updated(graph);
 
-  DGraphEditorUpdateContext update_ctx = {nullptr};
+  GraphEditorUpdateCtx update_ctx = {nullptr};
   update_ctx.dmain = dmain;
-  update_ctx.dgraph = dgraph;
+  update_ctx.graph = graph;
   update_ctx.scene = scene;
   update_ctx.view_layer = view_layer;
-  dgraph::dgraph_editors_scene_update(&update_ctx, updated);
+  graph::graph_editors_scene_update(&update_ctx, updated);
 }
 
-static void dgraph_clear_id_recalc_flags(Id *id)
+static void graph_clear_id_recalc_flags(Id *id)
 {
   id->recalc &= ~ID_RECALC_ALL;
-  DNodeTree *ntree = ntreeFromId(id);
+  NodeTree *ntree = ntreeFromId(id);
   /* Clear embedded node trees too. */
   if (ntree) {
     ntree->id.recalc &= ~ID_RECALC_ALL;
@@ -854,35 +854,35 @@ static void dgraph_clear_id_recalc_flags(Id *id)
 
 void dgraph_ids_clear_recalc(DGraph *dgraph, const bool backup)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<deg::DGraph *>(dgraph);
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
   /* TODO: Re-implement POST_UPDATE_HANDLER_WORKAROUND using entry_tags
    * and id_tags storage from the new dependency graph. */
-  if (!dgraph_id_type_any_updated(depsgraph)) {
+  if (!graph_id_type_any_updated(depsgraph)) {
     return;
   }
-  /* Go over all ID nodes, clearing tags. */
-  for (dgraph::IdNode *id_node : dgraph->id_nodes) {
+  /* Go over all id nodes, clearing tags. */
+  for (graph::IdNode *id_node : graph->id_nodes) {
     if (backup) {
       id_node->id_cow_recalc_backup |= id_node->id_cow->recalc;
     }
-    /* TODO: we clear original ID recalc flags here, but this may not work
+    /* TODO: we clear original id recalc flags here, but this may not work
      * correctly when there are multiple depsgraph with others still using
      * the recalc flag. */
     id_node->is_user_modified = false;
     id_node->is_cow_explicitly_tagged = false;
-    dgraph_clear_id_recalc_flags(id_node->id_cow);
-    if (dgraph->is_active) {
-      dgraph_clear_id_recalc_flags(id_node->id_orig);
+    graph_clear_id_recalc_flags(id_node->id_cow);
+    if (graph->is_active) {
+      graph_clear_id_recalc_flags(id_node->id_orig);
     }
   }
-  memset(dgraph->id_type_updated, 0, sizeof(dgraph->id_type_updated));
+  memset(graph->id_type_updated, 0, sizeof(graph->id_type_updated));
 }
 
-void DGraph_ids_restore_recalc(DGraph *dgraph)
+void Graph_ids_restore_recalc(Graph *graph)
 {
-  dgraph::DGraph *dgraph = reinterpret_cast<dgraph::DGraph *>(dgraph);
+  graph::Graph *graph = reinterpret_cast<graph::Graph *>(graph);
 
-  for (dgraph::IdNode *id_node : dgraph_graph->id_nodes) {
+  for (graph::IdNode *id_node : graph_graph->id_nodes) {
     id_node->id_cow->recalc |= id_node->id_cow_recalc_backup;
     id_node->id_cow_recalc_backup = 0;
   }
