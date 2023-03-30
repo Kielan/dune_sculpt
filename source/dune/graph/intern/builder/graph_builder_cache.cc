@@ -8,7 +8,7 @@
 
 #include "dune_animsys.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* Animated property storage. */
 
@@ -35,12 +35,12 @@ AnimatedPropId::AnimatedPropId(Id *id, ApiStruct *type, const char *prop_name)
 }
 
 AnimatedPropId::AnimatedPropId(Id * /*id*/,
-                                       ApiStruct *type,
-                                       void *data,
-                                       const char *prop_name)
+                               ApiStruct *type,
+                               void *data,
+                               const char *prop_name)
     : data(data)
 {
-  property_api = api_struct_type_find_prop(type, prop_name);
+  prop_api = api_struct_type_find_prop(type, prop_name);
 }
 
 bool op==(const AnimatedPropId &a, const AnimatedPropId &b)
@@ -60,7 +60,7 @@ namespace {
 struct AnimatedPropCbData {
   ApiPtr ptr_api;
   AnimatedPropStorage *animated_prop_storage;
-  DGraphBuilderCache *builder_cache;
+  GraphBuilderCache *builder_cache;
 };
 
 void animated_prop_cb(Id * /*id*/, FCurve *fcurve, void *data_v)
@@ -78,7 +78,7 @@ void animated_prop_cb(Id * /*id*/, FCurve *fcurve, void *data_v)
   }
   /* Get storage for the ID.
    * This is needed to deal with cases when nested datablock is animated by its parent. */
-  AnimatedPropStorage *animated_property_storage = data->animated_prop_storage;
+  AnimatedPropStorage *animated_prop_storage = data->animated_prop_storage;
   if (ptr_api.owner_id != data->ptr_api.owner_id) {
     animated_prop_storage = data->builder_cache->ensureAnimatedPropStorage(
         ptr_api.owner_id);
@@ -93,7 +93,7 @@ AnimatedPropStorage::AnimatedPropStorage() : is_fully_initialized(false)
 {
 }
 
-void AnimatedPropStorage::initializeFromId(DGraphBuilderCache *builder_cache, Id *id)
+void AnimatedPropStorage::initializeFromId(GraphBuilderCache *builder_cache, Id *id)
 {
   AnimatedPropCbData data;
   api_id_ptr_create(id, &data.ptr_api);
@@ -109,7 +109,7 @@ void AnimatedPropStorage::tagPropAsAnimated(const AnimatedPropId &prop_id)
 }
 
 void AnimatedPropStorage::tagPropAsAnimated(const ApiPtr *ptr_api,
-                                                    const ApiProp *prop_api)
+                                            const ApiProp *prop_api)
 {
   tagPropAsAnimated(AnimatedPropId(ptr_api, prop_api));
 }
@@ -132,7 +132,7 @@ bool AnimatedPropStorage::isAnyPropAnimated(const ApiPtr *ptr_api)
 
 /* Builder cache itself. */
 
-DGraphBuilderCache::~DGraphBuilderCache()
+GraphBuilderCache::~GraphBuilderCache()
 {
   for (AnimatedPropStorage *animated_prop_storage :
        animated_prop_storage_map_.values()) {
@@ -140,13 +140,13 @@ DGraphBuilderCache::~DGraphBuilderCache()
   }
 }
 
-AnimatedPropStorage *DGraphBuilderCache::ensureAnimatedPropStorage(Id *id)
+AnimatedPropStorage *GraphBuilderCache::ensureAnimatedPropStorage(Id *id)
 {
   return animated_prop_storage_map_.lookup_or_add_cb(
       id, []() { return new AnimatedPropStorage(); });
 }
 
-AnimatedPropStorage *DGraphBuilderCache::ensureInitAnimatedPropStorage(Id *id)
+AnimatedPropStorage *GraphBuilderCache::ensureInitAnimatedPropStorage(Id *id)
 {
   AnimatedPropStorage *animated_prop_storage = ensureAnimatedPropStorage(id);
   if (!animated_prop_storage->is_fully_initialized) {
@@ -156,4 +156,4 @@ AnimatedPropStorage *DGraphBuilderCache::ensureInitAnimatedPropStorage(Id *id)
   return animated_prop_storage;
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
