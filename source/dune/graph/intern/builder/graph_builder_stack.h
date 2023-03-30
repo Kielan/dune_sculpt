@@ -4,8 +4,8 @@
 #include "lib_vector.hh"
 
 struct Id;
-struct DConstraint;
-struct DPoseChannel;
+struct Constraint;
+struct PoseChannel;
 struct ModifierData;
 
 namespace dune::dgraph {
