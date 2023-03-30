@@ -1,6 +1,6 @@
-#include "intern/builder/dgraph_builder_cache.h"
+#include "intern/builder/graph_builder_cache.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "types_anim.h"
 
