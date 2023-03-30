@@ -1,4 +1,4 @@
-/** dgraph **/
+/** graph **/
 
 /* Enable special trickery to treat nested owned ids (such as nodetree of
  * material) to be handled in same way as "real" data-blocks, even tho some
@@ -10,7 +10,7 @@
 /* Silence warnings from copying deprecated fields. */
 #define TYPES_DEPRECATED_ALLOW
 
-#include "intern/eval/dgraph_eval_copy_on_write.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
 
 #include <cstring>
 
@@ -228,7 +228,7 @@ void ntree_hack_remap_ptrs(const DGraph *dgraph, Id *id_cow)
     case id_type: { \
       types_type *data = (types_type *)id_cow; \
       if (data->field != nullptr) { \
-        Id *ntree_id_cow = dgraph->get_cow_id(&data->field->id); \
+        Id *ntree_id_cow = graph->get_cow_id(&data->field->id); \
         if (ntree_id_cow != nullptr) { \
           DGRAPH_COW_PRINT("    Remapping datablock for %s: id_orig=%p id_cow=%p\n", \
                         data->field->id.name, \
@@ -330,10 +330,10 @@ bool scene_copy_inplace_no_main(const Scene *scene, Scene *new_scene)
 /* For the given scene get view layer which corresponds to an original for the
  * scene's evaluated one. This depends on how the scene is pulled into the
  * dependency graph. */
-ViewLayer *get_original_view_layer(const DGraph *dgraph, const IdNode *id_node)
+ViewLayer *get_original_view_layer(const Graph *graph, const IdNode *id_node)
 {
-  if (id_node->linked_state == DGRAPH_ID_LINKED_DIRECTLY) {
-    return dgraph->view_layer;
+  if (id_node->linked_state == GRAPH_ID_LINKED_DIRECTLY) {
+    return graph->view_layer;
   }
   if (id_node->linked_state == DGRAPH_ID_LINKED_VIA_SET) {
     Scene *scene_orig = reinterpret_cast<Scene *>(id_node->id_orig);
@@ -444,7 +444,7 @@ void view_layer_remove_disabled_bases(const Graph *graph,
   view_layer->object_bases = enabled_bases;
 }
 
-void view_layer_update_orig_base_pointers(const ViewLayer *view_layer_orig,
+void view_layer_update_orig_base_ptrs(const ViewLayer *view_layer_orig,
                                           ViewLayer *view_layer_eval)
 {
   if (view_layer_orig == nullptr || view_layer_eval == nullptr) {
@@ -567,24 +567,24 @@ void update_mesh_edit_mode_ptrs(const Id *id_orig, Id *id_cow)
 
 /* Edit data is stored and owned by original datablocks, copied ones
  * are simply referencing to them. */
-void update_edit_mode_ptrs(const DGraph *dgraph, const Id *id_orig, Id *id_cow)
+void update_edit_mode_ptrs(const Graph *graph, const Id *id_orig, Id *id_cow)
 {
   const ID_Type type = GS(id_orig->name);
   switch (type) {
     case ID_AR:
-      update_armature_edit_mode_ptrs(dgraph, id_orig, id_cow);
+      update_armature_edit_mode_ptrs(graph, id_orig, id_cow);
       break;
     case ID_ME:
       update_mesh_edit_mode_ptrs(id_orig, id_cow);
       break;
     case ID_CU_LEGACY:
-      update_curve_edit_mode_ptrs(dgraph, id_orig, id_cow);
+      update_curve_edit_mode_ptrs(graph, id_orig, id_cow);
       break;
     case ID_MB:
-      update_mball_edit_mode_prs(dgraph, id_orig, id_cow);
+      update_mball_edit_mode_prs(graph, id_orig, id_cow);
       break;
     case ID_LT:
-      update_lattice_edit_mode_ptrs(dgraph, id_orig, id_cow);
+      update_lattice_edit_mode_ptrs(graph, id_orig, id_cow);
       break;
     default:
       break;
@@ -713,8 +713,8 @@ void update_id_after_copy(const Graph *graph,
       object_cow->sculpt = object_orig->sculpt;
       object_cow->runtime.data_orig = (Id *)object_cow->data;
       if (object_cow->type == OB_ARMATURE) {
-        const DArmature *armature_orig = (DArmature *)object_orig->data;
-        DArmature *armature_cow = (DArmature *)object_cow->data;
+        const DArmature *armature_orig = (Armature *)object_orig->data;
+        DArmature *armature_cow = (Armature *)object_cow->data;
         dune_pose_remap_bone_ptrs(armature_cow, object_cow->pose);
         if (armature_orig->edbo == nullptr) {
           update_pose_orig_ptrs(object_orig->pose, object_cow->pose);
@@ -745,7 +745,7 @@ void update_id_after_copy(const Graph *graph,
     default:
       break;
   }
-  update_edit_mode_ptrs(dgraph, id_orig, id_cow);
+  update_edit_mode_ptrs(graph, id_orig, id_cow);
   dune_animsys_update_driver_array(id_cow);
 }
 
@@ -769,7 +769,7 @@ int foreach_libblock_validate_cb(LibIdLinkCbData *cb_data)
  * yet copied-on-write.
  *
  * NOTE: Expects that CoW datablock is empty. */
-Id *dgraph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id_node)
+Id *graph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id_node)
 {
   const Id *id_orig = id_node->id_orig;
   Id *id_cow = id_node->id_cow;
@@ -777,11 +777,11 @@ Id *dgraph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
 
   /* No need to expand such datablocks, their copied id is same as original
    * one already. */
-  if (!dgraph_copy_on_write_is_needed(id_orig)) {
+  if (!graph_copy_on_write_is_needed(id_orig)) {
     return id_cow;
   }
 
-  DGRAPH_COW_PRINT(
+  GRAPH_COW_PRINT(
       "Expanding datablock for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
 
   /* Sanity checks. */
@@ -839,7 +839,7 @@ Id *dgraph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
   dgraph_tag_copy_on_write_id(id_cow, id_orig);
   /* Perform remapping of the nodes. */
   RemapCbUserData user_data = {nullptr};
-  user_data.dgraph = dgraph;
+  user_data.graph = graph;
   dune_lib_foreach_id_link(nullptr,
                               id_cow,
                               foreach_libblock_remap_cb,
@@ -847,14 +847,14 @@ Id *dgraph_expand_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
                               IDWALK_IGNORE_EMBEDDED_ID);
   /* Correct or tweak some pointers which are not taken care by foreach
    * from above. */
-  update_id_after_copy(dgraph, id_node, id_orig, id_cow);
+  update_id_after_copy(graph, id_node, id_orig, id_cow);
   id_cow->recalc = id_cow_recalc;
   return id_cow;
 }
 
 }  // namespace
 
-Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id_node)
+Id *graph_update_copy_on_write_datablock(const Graph *graph, const IdNode *id_node)
 {
   const Id *id_orig = id_node->id_orig;
   Id *id_cow = id_node->id_cow;
@@ -888,35 +888,35 @@ Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, const IdNode *id
     /* In case we don't need to do a copy-on-write, we can use the update cache of the grease
      * pencil data to do an update-on-write. */
     if (id_type == ID_GD && dune_dpen_can_avoid_full_copy_on_write(
-                                (const ::DGraph *)dgraph, (DPenData *)id_orig)) {
+                                (const ::Graph *)graph, (DPenData *)id_orig)) {
       dune_dpen_update_on_write(DPenData *)id_orig, (DPenData *)id_cow);
       return id_cow;
     }
   }
 
-  RuntimeBackup backup(dgraph);
+  RuntimeBackup backup(graph);
   backup.init_from_id(id_cow);
-  dgraph_free_copy_on_write_datablock(id_cow);
-  dgraph_expand_copy_on_write_datablock(dgraph, id_node);
+  graph_free_copy_on_write_datablock(id_cow);
+  graph_expand_copy_on_write_datablock(graph, id_node);
   backup.restore_to_id(id_cow);
   return id_cow;
 }
 
 /**
- * dgraph is supposed to have id node already.
+ * graph is supposed to have id node already.
  */
-Id *dgraph_update_copy_on_write_datablock(const DGraph *dgraph, Id *id_orig)
+Id *graph_update_copy_on_write_datablock(const Graph *graph, Id *id_orig)
 {
-  IdNode *id_node = dgraph->find_id_node(id_orig);
+  IdNode *id_node = graph->find_id_node(id_orig);
   lib_assert(id_node != nullptr);
-  return dgraph_update_copy_on_write_datablock(dgraph, id_node);
+  return graph_update_copy_on_write_datablock(graph, id_node);
 }
 
 namespace {
 
 void discard_armature_edit_mode_ptrs(Id *id_cow)
 {
-  DArmature *armature_cow = (DArmature *)id_cow;
+  Armature *armature_cow = (Armature *)id_cow;
   armature_cow->edbo = nullptr;
 }
 
@@ -956,7 +956,7 @@ void discard_scene_ptrs(Id *id_cow)
  * original object. */
 void discard_edit_mode_ptrs(Id *id_cow)
 {
-  const ID_Type type = GS(id_cow->name);
+  const IdType type = GS(id_cow->name);
   switch (type) {
     case ID_AR:
       discard_armature_edit_mode_ptrs(id_cow);
@@ -1023,7 +1023,7 @@ void dgraph_free_copy_on_write_datablock(Id *id_cow)
   id_cow->name[0] = '\0';
 }
 
-void dgraph_evaluate_copy_on_write(struct ::DGraph *graph, const IdNode *id_node)
+void graph_evaluate_copy_on_write(struct ::DGraph *graph, const IdNode *id_node)
 {
   const DGraph *dgraph = reinterpret_cast<const DGraph *>(graph);
   dgraph_debug_print_eval(graph, __func__, id_node->id_orig->name, id_node->id_cow);
