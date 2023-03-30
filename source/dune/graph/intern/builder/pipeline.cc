@@ -90,14 +90,14 @@ void AbstractBuilderPipeline::build_step_finalize()
   dgraph_->need_update_relations = false;
 }
 
-unique_ptr<DGraphNodeBuilder> AbstractBuilderPipeline::construct_node_builder()
+unique_ptr<GraphNodeBuilder> AbstractBuilderPipeline::construct_node_builder()
 {
-  return std::make_unique<DGraphNodeBuilder>(dmain_, dgraph_, &builder_cache_);
+  return std::make_unique<GraphNodeBuilder>(dmain_,graph_, &builder_cache_);
 }
 
-unique_ptr<DGraphRelationBuilder> AbstractBuilderPipeline::construct_relation_builder()
+unique_ptr<GraphRelationBuilder> AbstractBuilderPipeline::construct_relation_builder()
 {
-  return std::make_unique<DGraphRelationBuilder>(dmain_, dgraph_, &builder_cache_);
+  return std::make_unique<GraphRelationBuilder>(dmain_,graph_, &builder_cache_);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
