@@ -4,16 +4,16 @@
 
 namespace dune::graph {
 
-struct DGraph;
+struct Graph;
 
 /**
  * Flush updates from tagged nodes outwards until all affected nodes are tagged.
  */
-void dgraph_flush_updates(struct DGraph *graph);
+void graph_flush_updates(struct Graph *graph);
 
 /**
  * Clear tags from all operation nodes.
  */
-void dgraph_clear_tags(struct DGraph *graph);
+void graph_clear_tags(struct Graph *graph);
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
