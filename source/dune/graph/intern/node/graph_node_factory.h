@@ -2,8 +2,8 @@
 
 #include "mem_guardedalloc.h"
 
-#include "intern/dgraph_type.h"
-#include "intern/node/dgraph_node.h"
+#include "intern/graph_type.h"
+#include "intern/node/graph_node.h"
 
 struct Id;
 
