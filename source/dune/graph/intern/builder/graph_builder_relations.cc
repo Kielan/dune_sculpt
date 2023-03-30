@@ -2252,16 +2252,16 @@ void DGraphRelationBuilder::build_object_data_geometry(Object *object)
   add_relation(scene_key, obdata_ubereval_key, "CoW Relation", RELATION_FLAG_NO_FLUSH);
   /* Dune Pen Modifiers. */
   if (object->dpen_modifiers.first != nullptr) {
-    ModifierUpdateDGraphContext ctx = {};
+    ModifierUpdateGraphCtx ctx = {};
     ctx.scene = scene_;
     ctx.object = object;
     LISTBASE_FOREACH (DPenModifierData *, md, &object->dpen_modifiers) {
       const DPenModifierData *mti = dune_dpen_modifier_get_info(
           (DPenModifierType)md->type);
-      if (mti->updateDepsgraph) {
-        DNodeHandle handle = create_node_handle(obdata_ubereval_key);
-        ctx.node = reinterpret_cast<::DepsNodeHandle *>(&handle);
-        mti->updateDGraph(md, &ctx, graph_->mode);
+      if (mti->update_graph) {
+        NodeHandle handle = create_node_handle(obdata_ubereval_key);
+        ctx.node = reinterpret_cast<::GraphNodeHandle *>(&handle);
+        mti->updateGraph(md, &ctx, graph_->mode);
       }
       if (dune_dpen_modifier_depends_ontime(md)) {
         TimeSourceKey time_src_key;
@@ -2277,9 +2277,9 @@ void DGraphRelationBuilder::build_object_data_geometry(Object *object)
     LISTBASE_FOREACH (ShaderFxData *, fx, &object->shader_fx) {
       const ShaderFxTypeInfo *fxi = dune_shaderfx_get_info((ShaderFxType)fx->type);
       if (fxi->updateDGraph) {
-        DepsNodeHandle handle = create_node_handle(obdata_ubereval_key);
+        GraphNodeHandle handle = create_node_handle(obdata_ubereval_key);
         ctx.node = reinterpret_cast<::DNodeHandle *>(&handle);
-        fxi->updateDGraph(fx, &ctx);
+        fxi->updateGraph(fx, &ctx);
       }
       if (dune_shaderfx_depends_ontime(fx)) {
         TimeSourceKey time_src_key;
@@ -2691,7 +2691,7 @@ void GraphRelationBuilder::build_nodetree(NodeTree *ntree)
       add_relation(vfont_key, ntree_output_key, "VFont -> Node");
     }
     else if (ELEM(bnode->type, NODE_GROUP, NODE_CUSTOM_GROUP)) {
-      DNodeTree *group_ntree = (DNodeTree *)id;
+      NodeTree *group_ntree = (NodeTree *)id;
       build_nodetree(group_ntree);
       ComponentKey group_output_key(&group_ntree->id, NodeType::NTREE_OUTPUT);
       /* This relation is not necessary in all cases (e.g. when the group node is not connected to
@@ -2700,8 +2700,8 @@ void GraphRelationBuilder::build_nodetree(NodeTree *ntree)
       add_relation(group_output_key, ntree_output_key, "Group Node");
       if (group_ntree->type == NTREE_GEOMETRY) {
         OpKey group_preprocess_key(&group_ntree->id,
-                                          NodeType::NTREE_GEOMETRY_PREPROCESS,
-                                          OpCode::NTREE_GEOMETRY_PREPROCESS);
+                                   NodeType::NTREE_GEOMETRY_PREPROCESS,
+                                   OpCode::NTREE_GEOMETRY_PREPROCESS);
         add_relation(group_preprocess_key, ntree_geo_preprocess_key, "Group Node Preprocess");
       }
     }
@@ -2710,10 +2710,10 @@ void GraphRelationBuilder::build_nodetree(NodeTree *ntree)
     }
   }
 
-  LISTBASE_FOREACH (DNodeSocket *, socket, &ntree->inputs) {
+  LISTBASE_FOREACH (NodeSocket *, socket, &ntree->inputs) {
     build_idprops(socket->prop);
   }
-  LISTBASE_FOREACH (DNodeSocket *, socket, &ntree->outputs) {
+  LISTBASE_FOREACH (NodeSocket *, socket, &ntree->outputs) {
     build_idprops(socket->prop);
   }
 
@@ -2727,7 +2727,7 @@ void GraphRelationBuilder::build_nodetree(NodeTree *ntree)
 }
 
 /* Recursively build graph for material */
-void DGraphRelationBuilder::build_material(Material *material)
+void GraphRelationBuilder::build_material(Material *material)
 {
   if (built_map_.checkIsBuiltAndTag(material)) {
     return;
@@ -2755,7 +2755,7 @@ void DGraphRelationBuilder::build_material(Material *material)
   }
 }
 
-void DGraphRelationBuilder::build_materials(Material **materials, int num_materials)
+void GraphRelationBuilder::build_materials(Material **materials, int num_materials)
 {
   for (int i = 0; i < num_materials; i++) {
     if (materials[i] == nullptr) {
@@ -2766,7 +2766,7 @@ void DGraphRelationBuilder::build_materials(Material **materials, int num_materi
 }
 
 /* Recursively build graph for texture */
-void DGraphRelationBuilder::build_texture(Tex *texture)
+void GraphRelationBuilder::build_texture(Tex *texture)
 {
   if (built_map_.checkIsBuiltAndTag(texture)) {
     return;
@@ -2810,7 +2810,7 @@ void DGraphRelationBuilder::build_texture(Tex *texture)
   }
 }
 
-void DGraphRelationBuilder::build_image(Image *image)
+void GraphRelationBuilder::build_image(Image *image)
 {
   if (built_map_.checkIsBuiltAndTag(image)) {
     return;
@@ -2854,7 +2854,7 @@ void DGraphRelationBuilder::build_cachefile(CacheFile *cache_file)
   }
 }
 
-void DGraphRelationBuilder::build_mask(Mask *mask)
+void GraphRelationBuilder::build_mask(Mask *mask)
 {
   if (built_map_.checkIsBuiltAndTag(mask)) {
     return;
@@ -2894,7 +2894,7 @@ void DGraphRelationBuilder::build_mask(Mask *mask)
   }
 }
 
-void DGraphRelationBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
+void GraphRelationBuilder::build_freestyle_linestyle(FreestyleLineStyle *linestyle)
 {
   if (built_map_.checkIsBuiltAndTag(linestyle)) {
     return;
@@ -2909,7 +2909,7 @@ void DGraphRelationBuilder::build_freestyle_linestyle(FreestyleLineStyle *linest
   build_nodetree(linestyle->nodetree);
 }
 
-void DGraphRelationBuilder::build_movieclip(MovieClip *clip)
+void GraphRelationBuilder::build_movieclip(MovieClip *clip)
 {
   if (built_map_.checkIsBuiltAndTag(clip)) {
     return;
@@ -2923,7 +2923,7 @@ void DGraphRelationBuilder::build_movieclip(MovieClip *clip)
   build_params(&clip->id);
 }
 
-void DGraphRelationBuilder::build_lightprobe(LightProbe *probe)
+void GraphRelationBuilder::build_lightprobe(LightProbe *probe)
 {
   if (built_map_.checkIsBuiltAndTag(probe)) {
     return;
@@ -2936,7 +2936,7 @@ void DGraphRelationBuilder::build_lightprobe(LightProbe *probe)
   build_params(&probe->id);
 }
 
-void DGraphRelationBuilder::build_speaker(Speaker *speaker)
+void GraphRelationBuilder::build_speaker(Speaker *speaker)
 {
   if (built_map_.checkIsBuiltAndTag(speaker)) {
     return;
@@ -2955,7 +2955,7 @@ void DGraphRelationBuilder::build_speaker(Speaker *speaker)
   }
 }
 
-void DGraphRelationBuilder::build_sound(DSound *sound)
+void GraphRelationBuilder::build_sound(DSound *sound)
 {
   if (built_map_.checkIsBuiltAndTag(sound)) {
     return;
@@ -2973,7 +2973,7 @@ void DGraphRelationBuilder::build_sound(DSound *sound)
   add_relation(params_key, audio_key, "Parameters -> Audio");
 }
 
-void DGraphRelationBuilder::build_simulation(Simulation *simulation)
+void GraphRelationBuilder::build_simulation(Simulation *simulation)
 {
   if (built_map_.checkIsBuiltAndTag(simulation)) {
     return;
@@ -2999,7 +2999,7 @@ void DGraphRelationBuilder::build_simulation(Simulation *simulation)
 }
 
 using seq_build_prop_cb_data = struct Seq_build_prop_cb_data {
-  DGraphRelationBuilder *builder;
+  GraphRelationBuilder *builder;
   ComponentKey sequencer_key;
   bool has_audio_strips;
 };
@@ -3037,7 +3037,7 @@ static bool seq_build_prop_cb(Sequence *seq, void *user_data)
   return true;
 }
 
-void DGraphRelationBuilder::build_scene_sequencer(Scene *scene)
+void GraphRelationBuilder::build_scene_sequencer(Scene *scene)
 {
   if (scene->ed == nullptr) {
     return;
@@ -3060,7 +3060,7 @@ void DGraphRelationBuilder::build_scene_sequencer(Scene *scene)
   }
 }
 
-void DGraphRelationBuilder::build_scene_audio(Scene *scene)
+void GraphRelationBuilder::build_scene_audio(Scene *scene)
 {
   OpKey scene_audio_entry_key(&scene->id, NodeType::AUDIO, OpCode::AUDIO_ENTRY);
   OpKey scene_audio_volume_key(&scene->id, NodeType::AUDIO, OpCode::AUDIO_VOLUME);
@@ -3074,7 +3074,7 @@ void DGraphRelationBuilder::build_scene_audio(Scene *scene)
   }
 }
 
-void DGraphRelationBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer)
+void GraphRelationBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_layer)
 {
   dune_view_layer_synced_ensure(scene, view_layer);
   LISTBASE_FOREACH (Base *, base, dune_view_layer_object_bases_get(view_layer)) {
@@ -3086,7 +3086,7 @@ void DGraphRelationBuilder::build_scene_speakers(Scene *scene, ViewLayer *view_l
   }
 }
 
-void DGraphRelationBuilder::build_vfont(VFont *vfont)
+void GraphRelationBuilder::build_vfont(VFont *vfont)
 {
   if (built_map_.checkIsBuiltAndTag(vfont)) {
     return;
@@ -3098,7 +3098,7 @@ void DGraphRelationBuilder::build_vfont(VFont *vfont)
   build_idprops(vfont->id.props);
 }
 
-void DGraphRelationBuilder::build_copy_on_write_relations()
+void GraphRelationBuilder::build_copy_on_write_relations()
 {
   for (IdNode *id_node : graph_->id_nodes) {
     build_copy_on_write_relations(id_node);
@@ -3111,7 +3111,7 @@ void DGraphRelationBuilder::build_copy_on_write_relations()
  *
  * This is similar to what happens in ntree_hack_remap_ptrs().
  */
-void DGraphRelationBuilder::build_nested_datablock(Id *owner, Id *id, bool flush_cow_changes)
+void GraphRelationBuilder::build_nested_datablock(Id *owner, Id *id, bool flush_cow_changes)
 {
   int relation_flag = 0;
   if (!flush_cow_changes) {
