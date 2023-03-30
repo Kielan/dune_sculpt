@@ -1,8 +1,8 @@
-#include "intern/builder/dgraph_builder_api.h"
+#include "intern/builder/graph_builder_api.h"
 
 #include "testing/testing.h"
 
-namespace dune::dgraph::tests {
+namespace dune::graph::tests {
 
 class TestableApiNodeQuery : public ApiNodeQuery {
  public:
@@ -12,7 +12,7 @@ class TestableApiNodeQuery : public ApiNodeQuery {
   }
 };
 
-TEST(dgraph_builder_api, contains)
+TEST(graph_builder_api, contains)
 {
   EXPECT_TRUE(TestableApiNodeQuery::contains("location", "location"));
   EXPECT_TRUE(TestableApiNodeQuery::contains("location.x", "location"));
@@ -30,4 +30,4 @@ TEST(dgraph_builder_api, contains)
   EXPECT_FALSE(TestableApiNodeQuery::contains("pose.bone[\"location\"].scale[0]", "location"));
 }
 
-}  // namespace dune::dgraph::tests
+}  // namespace dune::graph::tests
