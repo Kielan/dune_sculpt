@@ -6,12 +6,12 @@
 
 #include "types_scene.h"
 
-#include "dgraph_builder_cycle.h"
-#include "dgraph_builder_nodes.h"
-#include "dgraph_builder_relations.h"
-#include "dgraph_builder_transitive.h"
+#include "graph_builder_cycle.h"
+#include "graph_builder_nodes.h"
+#include "graph_builder_relations.h"
+#include "graph_builder_transitive.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 AbstractBuilderPipeline::AbstractBuilderPipeline(::DGraph *graph)
     : dgraph_(reinterpret_cast<DGraph *>(graph)),
