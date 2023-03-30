@@ -2,13 +2,13 @@ set(INC
   .
   intern
 
-  ../dunefont
+  ../font
   ../dunekernel
-  ../dunelib
-  ../duneloader
-  ../dunetranslation
-  ../bmesh
-  ../dgraph
+  ../lib
+  ../loader
+  ../i18n
+  ../mesh
+  ../graph
   ../editors/include
   ../editors/space_view3d
   ../functions
@@ -141,14 +141,14 @@ set(SRC
   engines/workbench/workbench_transparent.c
   engines/workbench/workbench_volume.c
   engines/external/external_engine.c
-  engines/gpencil/gpencil_antialiasing.c
-  engines/gpencil/gpencil_cache_utils.c
-  engines/gpencil/gpencil_draw_data.c
-  engines/gpencil/gpencil_engine.c
-  engines/gpencil/gpencil_engine.h
-  engines/gpencil/gpencil_render.c
-  engines/gpencil/gpencil_shader.c
-  engines/gpencil/gpencil_shader_fx.c
+  engines/gpencil/gpen_antialiasing.c
+  engines/gpencil/gpen_cache_utils.c
+  engines/gpencil/gpen_draw_data.c
+  engines/gpencil/gpen_engine.c
+  engines/gpencil/gpen_engine.h
+  engines/gpencil/gpen_render.c
+  engines/gpencil/gpen_shader.c
+  engines/gpencil/gpen_shader_fx.c
   engines/select/select_draw_utils.c
   engines/select/select_engine.c
   engines/overlay/overlay_antialiasing.c
@@ -177,10 +177,10 @@ set(SRC
   engines/overlay/overlay_volume.c
   engines/overlay/overlay_wireframe.c
 
-  DRW_engine.h
-  DRW_select_buffer.h
-  intern/DRW_gpu_wrapper.hh
-  intern/DRW_render.h
+  draw_engine.h
+  draw_select_buffer.h
+  intern/draw_gpu_wrapper.hh
+  intern/draw_render.h
   intern/draw_cache.h
   intern/draw_cache_extract.h
   intern/draw_cache_impl.h
@@ -233,8 +233,8 @@ set(SRC
 )
 
 set(LIB
-  bf_dunekernel
-  bf_dunelib
+  f_dune
+  bf_lib
   bf_windowmanager
 )
 
