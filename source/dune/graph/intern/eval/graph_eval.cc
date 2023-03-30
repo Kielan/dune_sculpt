@@ -136,7 +136,7 @@ bool check_op_node_visible(const GraphEvalState *state, OpNode *op_node)
   return comp_node->affects_visible_id;
 }
 
-void calculate_pending_parents_for_node(const DGraphEvalState *state, OperationNode *node)
+void calculate_pending_parents_for_node(const GraphEvalState *state, OperationNode *node)
 {
   /* Update counters, applies for both visible and invisible ids. */
   node->num_links_pending = 0;
@@ -185,7 +185,7 @@ void initialize_execution(GraphEvalState *state, Graph *graph)
 {
   /* Clear tags and other things which needs to be clear. */
   if (state->do_stats) {
-    for (OpNode *node : graph->operations) {
+    for (OpNode *node : graph->ops) {
       node->stats.reset_current();
     }
   }
@@ -202,8 +202,8 @@ bool is_metaball_object_op(const OpNode *op_node)
   return object->type == OB_MBALL;
 }
 
-bool need_evaluate_operation_at_stage(DepsgraphEvalState *state,
-                                      const OperationNode *operation_node)
+bool need_evaluate_op_at_stage(GraphEvalState *state,
+                               const OpNode *op_node)
 {
   const ComponentNode *component_node = operation_node->owner;
   switch (state->stage) {
