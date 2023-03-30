@@ -1,10 +1,10 @@
 #pragma once
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-struct DGraph;
+struct Graph;
 
 /* Remove all no-op nodes that have zero outgoing relations. */
-void dgraph_remove_unused_noops(DGraph *graph);
+void graph_remove_unused_noops(Graph *graph);
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
