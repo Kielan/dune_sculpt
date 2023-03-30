@@ -37,7 +37,7 @@
 #include "intern/node/graph_node.h"
 #include "intern/node/graph_node_component.h"
 #include "intern/node/graph_node_id.h"
-#include "intern/node/graph_node_operation.h"
+#include "intern/node/graph_node_op.h"
 #include "intern/node/graph_node_time.h"
 
 namespace dune::graph {
@@ -48,7 +48,7 @@ struct GraphEvalState;
 
 void deg_task_run_fn(TaskPool *pool, void *taskdata);
 
-void schedule_children(DGraphEvalState *state,
+void schedule_children(GraphEvalState *state,
                        OpNode *node,
                        FnRef<void(OpNode *node)> schedule_fn);
 
@@ -72,7 +72,7 @@ enum class EvaluationStage {
   SINGLE_THREADED_WORKAROUND,
 };
 
-struct DGraphEvalState {
+struct GraphEvalState {
   DGraph *graph;
   bool do_stats;
   EvaluationStage stage;
@@ -80,7 +80,7 @@ struct DGraphEvalState {
   bool need_single_thread_pass = false;
 };
 
-void evaluate_node(const DgraphEvalState *state, OpNode *op_node)
+void evaluate_node(const GraphEvalState *state, OpNode *op_node)
 {
   ::DGraph *dgraph = reinterpret_cast<::DGraph *>(state->graph);
 
