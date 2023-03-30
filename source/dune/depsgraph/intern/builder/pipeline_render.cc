@@ -6,19 +6,19 @@
 
 namespace dune::graph {
 
-RenderBuilderPipeline::RenderBuilderPipeline(::DGraph *graph) : AbstractBuilderPipeline(graph)
+RenderBuilderPipeline::RenderBuilderPipeline(::Graph *graph) : AbstractBuilderPipeline(graph)
 {
-  dgraph_->is_render_pipeline_dgraph = true;
+ graph_->is_render_pipeline_graph = true;
 }
 
-void RenderBuilderPipeline::build_nodes(DGraphNodeBuilder &node_builder)
+void RenderBuilderPipeline::build_nodes(GraphNodeBuilder &node_builder)
 {
   node_builder.build_scene_render(scene_, view_layer_);
 }
 
-void RenderBuilderPipeline::build_relations(DGraphRelationBuilder &relation_builder)
+void RenderBuilderPipeline::build_relations(GraphRelationBuilder &relation_builder)
 {
   relation_builder.build_scene_render(scene_, view_layer_);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
