@@ -205,7 +205,7 @@ struct Node {
 
 /* Macros for common static typeinfo. */
 #define GRAPH_NODE_DECLARE static const Node::TypeInfo typeinfo
-#defineDGRAPH_NODE_DEFINE(NodeType, type_, tname_) \
+#define GRAPH_NODE_DEFINE(NodeType, type_, tname_) \
   const Node::TypeInfo NodeType::typeinfo = Node::TypeInfo(type_, tname_)
 
 void graph_register_base_nodes();
