@@ -88,12 +88,12 @@ inline void flush_prepare(Graph *graph)
   }
 }
 
-inline void flush_schedule_entrypoints(DGraph *graph, FlushQueue *queue)
+inline void flush_schedule_entrypoints(Graph *graph, FlushQueue *queue)
 {
   for (OpNode *op_node : graph->entry_tags) {
     queue->push_back(op_node);
     op_node->scheduled = true;
-    DGRAPH_DEBUG_PRINTF((::DGraph *)graph,
+    GRAPH_DEBUG_PRINTF((::Graph *)graph,
                      EVAL,
                      "Op is entry point for update: %s\n",
                      op_node->ide().c_str());
@@ -132,7 +132,7 @@ inline void flush_handle_component_node(IdNode *id_node,
       if (is_geometry_component && op->opcode == OpCode::VISIBILITY) {
         continue;
       }
-      op->flag |= DEPSOP_FLAG_NEEDS_UPDATE;
+      op->flag |= GRAPH_OP_FLAG_NEEDS_UPDATE;
     }
   }
   /* when some target changes bone, we might need to re-run the
@@ -155,7 +155,7 @@ inline void flush_handle_component_node(IdNode *id_node,
  */
 inline OpNode *flush_schedule_children(OpNode *op_node, FlushQueue *queue)
 {
-  if (op_node->flag & DEPSOP_FLAG_USER_MODIFIED) {
+  if (op_node->flag & GRAPH_OP_FLAG_USER_MODIFIED) {
     IdNode *id_node = op_node->owner->owner;
     id_node->is_user_modified = true;
   }
@@ -169,13 +169,13 @@ inline OpNode *flush_schedule_children(OpNode *op_node, FlushQueue *queue)
     /* Relation only allows flushes on user changes, but the node was not
      * affected by user. */
     if ((rel->flag & RELATION_FLAG_FLUSH_USER_EDIT_ONLY) &&
-        (op_node->flag & DEPSOP_FLAG_USER_MODIFIED) == 0) {
+        (op_node->flag & GRAPH_OP_FLAG_USER_MODIFIED) == 0) {
       continue;
     }
     OpNode *to_node = (OpNode *)rel->to;
     /* Always flush flushable flags, so children always know what happened
      * to their parents. */
-    to_node->flag |= (op_node->flag & DGRAPHOP_FLAG_FLUSH);
+    to_node->flag |= (op_node->flag & GRAPH_OP_FLAG_FLUSH);
     /* Flush update over the relation, if it was not flushed yet. */
     if (to_node->scheduled) {
       continue;
@@ -193,7 +193,7 @@ inline OpNode *flush_schedule_children(OpNode *op_node, FlushQueue *queue)
 
 void flush_engine_data_update(Id *id)
 {
-  DrawDataList *draw_data_list = DRW_drawdatalist_from_id(id);
+  DrawDataList *draw_data_list = draw_drawdatalist_from_id(id);
   if (draw_data_list == nullptr) {
     return;
   }
@@ -203,14 +203,14 @@ void flush_engine_data_update(Id *id)
 }
 
 /* NOTE: It will also accumulate flags from changed components. */
-void flush_editors_id_update(DGraph *graph, const DEGEditorUpdateContext *update_ctx)
+void flush_editors_id_update(Graph *graph, const GraphEditorUpdateCtx *update_ctx)
 {
   for (IdNode *id_node : graph->id_nodes) {
     if (id_node->custom_flags != ID_STATE_MODIFIED) {
       continue;
     }
-    dgraph_id_type_tag(reinterpret_cast<::Depsgraph *>(graph), GS(id_node->id_orig->name));
-    /* TODO: Do we need to pass original or evaluated ID here? */
+    graph_id_type_tag(reinterpret_cast<::Graph *>(graph), GS(id_node->id_orig->name));
+    /* TODO: Do we need to pass original or evaluated id here? */
     Id *id_orig = id_node->id_orig;
     Id *id_cow = id_node->id_cow;
     /* Gather recalc flags from all changed components. */
@@ -234,15 +234,15 @@ void flush_editors_id_update(DGraph *graph, const DEGEditorUpdateContext *update
      *
      * TODO: image data-blocks do not use COW, so might not be detected
      * correctly. */
-    if (dgraph_copy_on_write_is_expanded(id_cow)) {
+    if (graph_copy_on_write_is_expanded(id_cow)) {
       if (graph->is_active && id_node->is_user_modified) {
-        dgraph_editors_id_update(update_ctx, id_orig);
+        graph_editors_id_update(update_ctx, id_orig);
 
         /* We only want to tag an id for lib-override auto-refresh if it was actually tagged as
          * changed. CoW ids indirectly modified because of changes in other ids should never
          * require a lib-override diffing. */
         if (ID_IS_OVERRIDE_LIBR_REAL(id_orig)) {
-          id_orig->tag |= LIB_TAG_OVERRIDE_LIBRARY_AUTOREFRESH;
+          id_orig->tag |= LIB_TAG_OVERRIDE_LIB_AUTOREFRESH;
         }
         else if (ID_IS_OVERRIDE_LIB_VIRTUAL(id_orig)) {
           switch (GS(id_orig->name)) {
@@ -336,7 +336,7 @@ void dgraph_flush_updates(DGraph *graph)
 {
   /* Sanity checks. */
   lib_assert(graph != nullptr);
-  Main *bmain = graph->dmain;
+  Main *dmain = graph->dmain;
 
   graph->time_source->flush_update_tag(graph);
 
