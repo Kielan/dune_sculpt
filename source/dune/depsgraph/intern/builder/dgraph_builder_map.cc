@@ -1,8 +1,8 @@
-#include "intern/builder/dgraph_builder_map.h"
+#include "intern/builder/graph_builder_map.h"
 
 #include "types_id.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 bool BuilderMap::checkIsBuilt(Id *id, int tag) const
 {
@@ -27,4 +27,4 @@ int BuilderMap::getIdTag(Id *id) const
   return id_tags_.lookup_default(id, 0);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
