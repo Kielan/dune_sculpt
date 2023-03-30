@@ -34,64 +34,64 @@ void draw_engines_register(void);
 void draw_engines_register_experimental(void);
 void draw_engines_free(void);
 
-bool DRW_engine_render_support(struct DrawEngineType *draw_engine_type);
-void DRW_engine_register(struct DrawEngineType *draw_engine_type);
+bool draw_engine_render_support(struct DrawEngineType *draw_engine_type);
+void draw_engine_register(struct DrawEngineType *draw_engine_type);
 
-typedef struct DRWUpdateContext {
-  struct Main *bmain;
-  struct Depsgraph *depsgraph;
+typedef struct DrawUpdateCtx {
+  struct Main *dmain;
+  struct Graph *graph;
   struct Scene *scene;
   struct ViewLayer *view_layer;
   struct ARegion *region;
   struct View3D *v3d;
   struct RenderEngineType *engine_type;
-} DRWUpdateContext;
-void DRW_notify_view_update(const DRWUpdateContext *update_ctx);
+} DrawUpdateCtx;
+void draw_notify_view_update(const DrawUpdateCtx *update_ctx);
 
-typedef enum eDRWSelectStage {
-  DRW_SELECT_PASS_PRE = 1,
-  DRW_SELECT_PASS_POST,
-} eDRWSelectStage;
-typedef bool (*DRW_SelectPassFn)(eDRWSelectStage stage, void *user_data);
-typedef bool (*DRW_ObjectFilterFn)(struct Object *ob, void *user_data);
+typedef enum eDrawSelectStage {
+  DRAW_SELECT_PASS_PRE = 1,
+  DRAW_SELECT_PASS_POST,
+} eDrawSelectStage;
+typedef bool (*DrawSelectPassFn)(eDrawSelectStage stage, void *user_data);
+typedef bool (*DrawObjectFilterFn)(struct Object *ob, void *user_data);
 
 /**
  * Everything starts here.
  * This function takes care of calling all cache and rendering functions
  * for each relevant engine / mode engine.
  */
-void DRW_draw_view(const struct bContext *C);
+void draw_view(const struct Context *C);
 /**
  * Draw render engine info.
  */
-void DRW_draw_region_engine_info(int xoffset, int *yoffset, int line_height);
+void draw_region_engine_info(int xoffset, int *yoffset, int line_height);
 
 /**
  * Used for both regular and off-screen drawing.
  * Need to reset DST before calling this function
  */
-void DRW_draw_render_loop_ex(struct Depsgraph *depsgraph,
-                             struct RenderEngineType *engine_type,
-                             struct ARegion *region,
-                             struct View3D *v3d,
-                             struct GPUViewport *viewport,
-                             const struct bContext *evil_C);
-void DRW_draw_render_loop(struct Depsgraph *depsgraph,
-                          struct ARegion *region,
-                          struct View3D *v3d,
-                          struct GPUViewport *viewport);
+void draw_render_loop_ex(struct Graph *graph,
+                         struct RenderEngineType *engine_type,
+                         struct ARegion *region,
+                         struct View3D *v3d,
+                         struct GPUViewport *viewport,
+                         const struct Context *evil_C);
+void draw_render_loop(struct Graph *graph,
+                      struct ARegion *region,
+                      struct View3D *v3d,
+                      struct GPUViewport *viewport);
 /**
- * \param viewport: can be NULL, in this case we create one.
+ * param viewport: can be NULL, in this case we create one.
  */
-void DRW_draw_render_loop_offscreen(struct Depsgraph *depsgraph,
-                                    struct RenderEngineType *engine_type,
-                                    struct ARegion *region,
-                                    struct View3D *v3d,
-                                    bool is_image_render,
-                                    bool draw_background,
-                                    bool do_color_management,
-                                    struct GPUOffScreen *ofs,
-                                    struct GPUViewport *viewport);
+void draw_render_loop_offscreen(struct Graph *graph,
+                                struct RenderEngineType *engine_type,
+                                struct ARegion *region,
+                                struct View3D *v3d,
+                                bool is_image_render,
+                                bool draw_background,
+                                bool do_color_management,
+                                struct GPUOffScreen *ofs,
+                                struct GPUViewport *viewport);
 void DRW_draw_render_loop_2d_ex(struct Depsgraph *depsgraph,
                                 struct ARegion *region,
                                 struct GPUViewport *viewport,
