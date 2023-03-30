@@ -25,28 +25,28 @@ class GraphRelationBuilder;
  */
 class AbstractBuilderPipeline {
  public:
-  AbstractBuilderPipeline(::DGraph *graph);
+  AbstractBuilderPipeline(::Graph *graph);
   virtual ~AbstractBuilderPipeline() = default;
 
   void build();
 
  protected:
-  DGraph *dgraph_;
+  Graph *graph_;
   Main *dmain_;
   Scene *scene_;
   ViewLayer *view_layer_;
-  DGraphBuilderCache builder_cache_;
+  GraphBuilderCache builder_cache_;
 
-  virtual unique_ptr<DGraphNodeBuilder> construct_node_builder();
-  virtual unique_ptr<DGraphRelationBuilder> construct_relation_builder();
+  virtual unique_ptr<GraphNodeBuilder> construct_node_builder();
+  virtual unique_ptr<GraphRelationBuilder> construct_relation_builder();
 
   virtual void build_step_sanity_check();
   void build_step_nodes();
   void build_step_relations();
   void build_step_finalize();
 
-  virtual void build_nodes(DGraphNodeBuilder &node_builder) = 0;
-  virtual void build_relations(DGraphRelationBuilder &relation_builder) = 0;
+  virtual void build_nodes(GraphNodeBuilder &node_builder) = 0;
+  virtual void build_relations(GraphRelationBuilder &relation_builder) = 0;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
