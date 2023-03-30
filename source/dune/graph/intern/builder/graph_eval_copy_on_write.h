@@ -10,20 +10,20 @@ struct Id;
  * logged, with detailed information when they are allocated, expanded
  * and remapped.
  */
-// #define DGRAPH_DEBUG_COW_PTRS
+// #define GRAPH_DEBUG_COW_PTRS
 
-#ifdef DGRAPH_DEBUG_COW_PTRS
-#  define DGRAPH_COW_PRINT(format, ...) printf(format, __VA_ARGS__);
+#ifdef GRAPH_DEBUG_COW_PTRS
+#  define GRAPH_COW_PRINT(format, ...) printf(format, __VA_ARGS__);
 #else
-#  define DGRAPH_COW_PRINT(format, ...)
+#  define GRAPH_COW_PRINT(format, ...)
 #endif
 
-struct DGraph;
+struct Graph;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-struct DGraph;
-class DGraphNodeBuilder;
+struct Graph;
+class GraphNodeBuilder;
 struct IdNode;
 
 /**
@@ -34,39 +34,39 @@ Id *dgraph_update_copy_on_write_datablock(const struct DGraph *dgraph, const IdN
 Id *dgraph_update_copy_on_write_datablock(const struct DGraph *dgraph, struct Id *id_orig);
 
 /** Helper function which frees memory used by copy-on-written data-block. */
-void dgraph_free_copy_on_write_datablock(struct Id *id_cow);
+void graph_free_copy_on_write_datablock(struct Id *id_cow);
 
 /**
  * Callback function for dgraph operation node which ensures copy-on-write
  * data-block is ready for use by further evaluation routines.
  */
-void dgraph_evaluate_copy_on_write(struct ::DGraph *dgraph, const struct IdNode *id_node);
+void graph_evaluate_copy_on_write(struct ::DGraph *dgraph, const struct IdNode *id_node);
 
 /**
  * Check that gives id is properly expanded and does not have any shallow
  * copies inside.
  */
-bool dgraph_validate_copy_on_write_datablock(Id *id_cow);
+bool graph_validate_copy_on_write_datablock(Id *id_cow);
 
 /** Tag given id block as being copy-on-written. */
-void dgraph_tag_copy_on_write_id(struct Id *id_cow, const struct Id *id_orig);
+void graph_tag_copy_on_write_id(struct Id *id_cow, const struct Id *id_orig);
 
 /**
  * Check whether id data-block is expanded.
  *
  * TODO: Make it an inline function or a macro.
  */
-bool dgraph_copy_on_write_is_expanded(const struct Id *id_cow);
+bool graph_copy_on_write_is_expanded(const struct Id *id_cow);
 
 /**
- * Check whether copy-on-write data-block is needed for given ID.
+ * Check whether copy-on-write data-block is needed for given id.
  *
  * There are some exceptions on data-blocks which are covered by dependency graph
  * but which we don't want to start duplicating.
  *
  * This includes images.
  */
-bool dgraph_copy_on_write_is_needed(const Id *id_orig);
-bool dgraph_copy_on_write_is_needed(const IdType id_type);
+bool graph_copy_on_write_is_needed(const Id *id_orig);
+bool graph_copy_on_write_is_needed(const IdType id_type);
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
