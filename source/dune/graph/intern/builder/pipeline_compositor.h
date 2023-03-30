@@ -2,9 +2,9 @@
 
 #include "pipeline.h"
 
-struct DNodeTree;
+struct NodeTree;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 class CompositorBuilderPipeline : public AbstractBuilderPipeline {
  public:
