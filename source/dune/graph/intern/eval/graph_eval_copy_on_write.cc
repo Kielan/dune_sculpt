@@ -28,8 +28,8 @@
 #include "dune_lib_id.h"
 #include "dune_scene.h"
 
-#include "dgraph.h"
-#include "dgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
 #include "mem_guardedalloc.h"
 
@@ -75,17 +75,17 @@
 
 #include "seq_relations.h"
 
-#include "intern/builder/dgraph_builder.h"
-#include "intern/builder/dgraph_builder_nodes.h"
-#include "intern/dgraph.h"
-#include "intern/eval/dgraph_eval_runtime_backup.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_id.h"
+#include "intern/builder/graph_builder.h"
+#include "intern/builder/graph_builder_nodes.h"
+#include "intern/graph.h"
+#include "intern/eval/graph_eval_runtime_backup.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_id.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 #define DEBUG_PRINT \
-  if (G.debug & G_DEBUG_DEPSGRAPH_EVAL) \
+  if (G.debug & G_DEBUG_GRAPH_EVAL) \
   printf
 
 namespace {
@@ -302,7 +302,7 @@ bool id_copy_inplace_no_main(const Id *id, Id *newid)
 bool scene_copy_inplace_no_main(const Scene *scene, Scene *new_scene)
 {
 
-  if (G.debug & G_DEBUG_DEPSGRAPH_UUID) {
+  if (G.debug & G_DEBUG_GRAPH_UUID) {
     seq_relations_check_uuids_unique_and_report(scene);
   }
 
@@ -349,12 +349,12 @@ ViewLayer *get_original_view_layer(const DGraph *dgraph, const IdNode *id_node)
 }
 
 /* Remove all view layers but the one which corresponds to an input one. */
-void scene_remove_unused_view_layers(const DGraph *dgraph,
+void scene_remove_unused_view_layers(const Graph *graph,
                                      const IdNode *id_node,
                                      Scene *scene_cow)
 {
   const ViewLayer *view_layer_input;
-  if (dgraph->is_render_pipeline_dgraph) {
+  if (graph->is_render_pipeline_graph) {
     /* If the dependency graph is used for post-processing (such as compositor) we do need to
      * have access to its view layer names so can not remove any view layers.
      * On a more positive side we can remove all the bases from all the view layers.
@@ -403,13 +403,13 @@ void scene_remove_unused_view_layers(const DGraph *dgraph,
 void scene_remove_all_bases(Scene *scene_cow)
 {
   LISTBASE_FOREACH (ViewLayer *, view_layer, &scene_cow->view_layers) {
-    lib_freelistN(&view_layer->object_bases);
+    lib_freelistn(&view_layer->object_bases);
   }
 }
 
 /* Makes it so given view layer only has bases corresponding to enabled
  * objects. */
-void view_layer_remove_disabled_bases(const DGraph *dgraph,
+void view_layer_remove_disabled_bases(const Graph *graph,
                                       const Scene *scene,
                                       ViewLayer *view_layer)
 {
@@ -430,7 +430,7 @@ void view_layer_remove_disabled_bases(const DGraph *dgraph,
      * points to is not yet copied. This is dangerous access from evaluated
      * domain to original one, but this is how the entire copy-on-write works:
      * it does need to access original for an initial copy. */
-    const bool is_object_enabled = deg_check_base_in_dgraph(dgraph, base);
+    const bool is_object_enabled = graph_check_base_in_graph(graph, base);
     if (is_object_enabled) {
       lib_addtail(&enabled_bases, base);
     }
@@ -458,26 +458,26 @@ void view_layer_update_orig_base_pointers(const ViewLayer *view_layer_orig,
   }
 }
 
-void scene_setup_view_layers_before_remap(const DGraph *dgraph,
+void scene_setup_view_layers_before_remap(const Graph *graph,
                                           const IdNode *id_node,
                                           Scene *scene_cow)
 {
   scene_remove_unused_view_layers(dgraph, id_node, scene_cow);
   /* If dependency graph is used for post-processing we don't need any bases and can free of them.
    * Do it before re-mapping to make that process faster. */
-  if (dgraph->is_render_pipeline_dgraph) {
+  if (graph->is_render_pipeline_graph) {
     scene_remove_all_bases(scene_cow);
   }
 }
 
-void scene_setup_view_layers_after_remap(const DGraph *dgraph,
+void scene_setup_view_layers_after_remap(const Graph *graph,
                                          const IdNode *id_node,
                                          Scene *scene_cow)
 {
-  const ViewLayer *view_layer_orig = get_original_view_layer(dgraph, id_node);
+  const ViewLayer *view_layer_orig = get_original_view_layer(graph, id_node);
   ViewLayer *view_layer_eval = reinterpret_cast<ViewLayer *>(scene_cow->view_layers.first);
   view_layer_update_orig_base_ptrs(view_layer_orig, view_layer_eval);
-  view_layer_remove_disabled_bases(dgraph, scene_cow, view_layer_eval);
+  view_layer_remove_disabled_bases(graph, scene_cow, view_layer_eval);
   /* TODO: Remove objects from collections as well.
    * Not a HUGE deal for now, nobody is looking into those CURRENTLY.
    * Still not an excuse to have those. */
@@ -505,24 +505,24 @@ int foreach_libblock_remap_cb(LibIdLinkCbData *cb_data)
   }
 
   RemapCbUserData *user_data = (RemapCbUserData *)cb_data->user_data;
-  const DGraph *dgraph = user_data->dgraph;
+  const Graph *graph = user_data->graph;
   Id *id_orig = *id_p;
-  if (dgraph_copy_on_write_is_needed(id_orig)) {
-    Id *id_cow = dgraph->get_cow_id(id_orig);
+  if (graph_copy_on_write_is_needed(id_orig)) {
+    Id *id_cow = graph->get_cow_id(id_orig);
     lib_assert(id_cow != nullptr);
-    DGRAPH_COW_PRINT(
+    GRAPH_COW_PRINT(
         "    Remapping datablock for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
     *id_p = id_cow;
   }
   return IDWALK_RET_NOP;
 }
 
-void update_armature_edit_mode_ptrs(const DGraph * /*dgraph*/,
+void update_armature_edit_mode_ptrs(const Graph * /*graph*/,
                                     const Id *id_orig,
                                     Id *id_cow)
 {
-  const DArmature *armature_orig = (const DArmature *)id_orig;
-  DArmature *armature_cow = (DArmature *)id_cow;
+  const Armature *armature_orig = (const Armature *)id_orig;
+  Armature *armature_cow = (Armature *)id_cow;
   armature_cow->edbo = armature_orig->edbo;
   armature_cow->act_edbone = armature_orig->act_edbone;
 }
