@@ -1,18 +1,18 @@
 #pragma once
 
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_op.h"
 
 struct Id;
 struct ApiPtr;
 struct ApiProp;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-struct DGraph;
+struct Graph;
 struct Node;
 class ApiNodeQueryIdData;
-class DGraphBuilder;
+class GraphBuilder;
 
 /* For queries which gives operation node or key defines whether we are
  * interested in a result of the given property or whether we are linking some
@@ -49,14 +49,14 @@ class ApiNodeId {
  * dependency graph which satisfies given Api pointer or RAN path. */
 class ApiNodeQuery {
  public:
-  ApiNodeQuery(DGraph *dgraph, DGraphBuilder *builder);
+  ApiNodeQuery(Graph *graph, GraphBuilder *builder);
   ~ApiNodeQuery();
 
   Node *find_node(const ApiPtr *ptr, const ApiProp *prop, ApiPtrSource source);
 
  protected:
-  DGraph *dgraph_;
-  DGraphBuilder *builder_;
+  Graph *graph_;
+  GraphBuilder *builder_;
 
   /* Indexed by an Id, returns ApiNodeQueryIdData associated with that Id. */
   Map<const Id *, unique_ptr<ApiNodeQueryIdData>> id_data_map_;
@@ -86,4 +86,4 @@ class ApiNodeQuery {
 
 bool api_prop_affects_params_node(const ApiPtr *ptr, const ApiProp *prop);
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
