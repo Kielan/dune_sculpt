@@ -1,6 +1,6 @@
 /**  Methods for constructing depsgraph's nodes **/
 
-#include "intern/builder/dgraph_builder_nodes.h"
+#include "intern/builder/graph_builder_nodes.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -23,19 +23,19 @@
 #include "dune_main.h"
 #include "dune_node.h"
 
-#include "dgraph.h"
-#include "dgraph_build.h"
+#include "graph.h"
+#include "graph_build.h"
 
-#include "intern/builder/dgraph_builder.h"
-#include "intern/dgraph.h"
-#include "intern/dgraph_type.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/builder/graph_builder.h"
+#include "intern/graph.h"
+#include "intern/graph_type.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_op.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-void DGraphNodeBuilder::build_layer_collections(ListBase *lb)
+void GraphNodeBuilder::build_layer_collections(ListBase *lb)
 {
   const int visibility_flag = (graph_->mode == DAG_EVAL_VIEWPORT) ? COLLECTION_HIDE_VIEWPORT :
                                                                     COLLECTION_HIDE_RENDER;
