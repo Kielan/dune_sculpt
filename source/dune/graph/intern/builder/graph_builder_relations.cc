@@ -3123,7 +3123,7 @@ void GraphRelationBuilder::build_nested_datablock(Id *owner, Id *id, bool flush_
   add_relation(id_copy_on_write_key, owner_copy_on_write_key, "Eval Order", relation_flag);
 }
 
-void DGraphRelationBuilder::build_nested_nodetree(Id *owner, DNodeTree *ntree)
+void GraphRelationBuilder::build_nested_nodetree(Id *owner, DNodeTree *ntree)
 {
   if (ntree == nullptr) {
     return;
@@ -3134,7 +3134,7 @@ void DGraphRelationBuilder::build_nested_nodetree(Id *owner, DNodeTree *ntree)
   build_nested_datablock(owner, &ntree->id, false);
 }
 
-void DGraphRelationBuilder::build_nested_shapekey(Id *owner, Key *key)
+void GraphRelationBuilder::build_nested_shapekey(Id *owner, Key *key)
 {
   if (key == nullptr) {
     return;
@@ -3142,7 +3142,7 @@ void DGraphRelationBuilder::build_nested_shapekey(Id *owner, Key *key)
   build_nested_datablock(owner, &key->id, true);
 }
 
-void DGraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
+void GraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
 {
   Id *id_orig = id_node->id_orig;
 
@@ -3152,13 +3152,13 @@ void DGraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
     return;
   }
 
-  OperationKey copy_on_write_key(id_orig, NodeType::COPY_ON_WRITE, OperationCode::COPY_ON_WRITE);
+  OpKey copy_on_write_key(id_orig, NodeType::COPY_ON_WRITE, OperationCode::COPY_ON_WRITE);
   /* XXX: This is a quick hack to make Alt-A to work. */
   // add_relation(time_source_key, copy_on_write_key, "Fluxgate capacitor hack");
   /* Resat of code is using rather low level trickery, so need to get some
    * explicit pointers. */
   Node *node_cow = find_node(copy_on_write_key);
-  OperationNode *op_cow = node_cow->get_exit_operation();
+  OpNode *op_cow = node_cow->get_exit_op();
   /* Plug any other components to this one. */
   for (ComponentNode *comp_node : id_node->components.values()) {
     if (comp_node->type == NodeType::COPY_ON_WRITE) {
@@ -3195,7 +3195,7 @@ void DGraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
       rel_flag &= ~RELATION_FLAG_NO_FLUSH;
     }
     /* All entry operations of each component should wait for a proper
-     * copy of ID. */
+     * copy of id. */
     OpNode *op_entry = comp_node->get_entry_op();
     if (op_entry != nullptr) {
       Relation *rel = graph_->add_new_relation(op_cow, op_entry, "CoW Dependency");
@@ -3277,7 +3277,7 @@ void DGraphRelationBuilder::build_copy_on_write_relations(IdNode *id_node)
 
 /* **** ID traversal callbacks functions **** */
 
-void DGraphRelationBuilder::modifier_walk(void *user_data,
+void GraphRelationBuilder::modifier_walk(void *user_data,
                                              struct Object * /*object*/,
                                              struct Id **idpoint,
                                              int /*cb_flag*/)
@@ -3303,4 +3303,4 @@ void GraphRelationBuilder::constraint_walk(DConstraint * /*con*/,
   data->builder->build_id(id);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
