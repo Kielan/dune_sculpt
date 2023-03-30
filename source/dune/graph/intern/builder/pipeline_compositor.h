@@ -8,14 +8,14 @@ namespace dune::graph {
 
 class CompositorBuilderPipeline : public AbstractBuilderPipeline {
  public:
-  CompositorBuilderPipeline(::DGraph *graph, DNodeTree *nodetree);
+  CompositorBuilderPipeline(::Graph *graph, NodeTree *nodetree);
 
  protected:
-  virtual void build_nodes(DGraphNodeBuilder &node_builder) override;
-  virtual void build_relations(DGraphRelationBuilder &relation_builder) override;
+  virtual void build_nodes(GraphNodeBuilder &node_builder) override;
+  virtual void build_relations(GraphRelationBuilder &relation_builder) override;
 
  private:
-  DNodeTree *nodetree_;
+  NodeTree *nodetree_;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
