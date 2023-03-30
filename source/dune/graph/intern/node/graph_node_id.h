@@ -14,15 +14,15 @@ typedef uint64_t IdComponentsMask;
 
 /* NOTE: We use max comparison to mark an id node that is linked more than once
  * So keep this enum ordered accordingly. */
-enum eDGraphNodeLinkedState_Type {
+enum eGraphNodeLinkedState_Type {
   /* Generic indirectly linked id node. */
-  DGRAPH_ID_LINKED_INDIRECTLY = 0,
+  GRAPH_ID_LINKED_INDIRECTLY = 0,
   /* Id node present in the set (background) only. */
-  DGRAPH_ID_LINKED_VIA_SET = 1,
+  GRAPH_ID_LINKED_VIA_SET = 1,
   /* Id node directly linked via the SceneLayer. */
-  DGRAPH_ID_LINKED_DIRECTLY = 2,
+  GRAPH_ID_LINKED_DIRECTLY = 2,
 };
-const char *linkedStateAsString(eDGraphNodeLinkedStateType linked_state);
+const char *linkedStateAsString(eGraphNodeLinkedStateType linked_state);
 
 /* id-block Reference */
 struct IdNode : public Node {
@@ -46,9 +46,9 @@ struct IdNode : public Node {
   ComponentNode *find_component(NodeType type, const char *name = "") const;
   ComponentNode *add_component(NodeType type, const char *name = "");
 
-  virtual void tag_update(DGraph *graph, eUpdateSource source) override;
+  virtual void tag_update(Graph *graph, eUpdateSource source) override;
 
-  void finalize_build(DGraph *graph);
+  void finalize_build(Graph *graph);
 
   IdComponentsMask get_visible_components_mask() const;
 
@@ -57,7 +57,7 @@ struct IdNode : public Node {
    * been deleted from the main database.) */
   IdType id_type;
 
-  /* ID Block referenced. */
+  /* id Block referenced. */
   Id *id_orig;
 
   /* Session-wide UUID of the id_orig.
@@ -80,10 +80,10 @@ struct IdNode : public Node {
   uint32_t previous_eval_flags;
 
   /* Extra customdata mask which needs to be evaluated for the mesh object. */
-  DGraphCustomDataMeshMasks customdata_masks;
-  DGraphCustomDataMeshMasks previous_customdata_masks;
+  GraphCustomDataMeshMasks customdata_masks;
+  GraphCustomDataMeshMasks previous_customdata_masks;
 
-  eDGraphNodeLinkedStateType linked_state;
+  eGraphNodeLinkedStateType linked_state;
 
   /* Indicates the data-block is visible in the evaluated scene. */
   bool is_directly_visible;
@@ -107,8 +107,8 @@ struct IdNode : public Node {
   IdComponentsMask visible_components_mask;
   IdComponentsMask previously_visible_components_mask;
 
-  DGRAPH_NODE_DECLARE;
+  GRAPH_NODE_DECLARE;
 };
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
