@@ -264,7 +264,7 @@ OpnNode *ComponentNode::get_exit_op()
   return nullptr;
 }
 
-void ComponentNode::finalize_build(DGraph * /*graph*/)
+void ComponentNode::finalize_build(Graph * /*graph*/)
 {
   opems.reserve(ops_map->size());
   for (OpNode *op_node : ops_map->values()) {
@@ -325,7 +325,7 @@ DGRAPH_COMPONENT_NODE_DEFINE(NTreeOutput, NTREE_OUTPUT, ID_RECALC_NTREE_OUTPUT);
 /* -------------------------------------------------------------------- */
 /** Node Types Register */
 
-void dgraph_register_component_nodes()
+void graph_register_component_nodes()
 {
   register_node_typeinfo(&DNTI_ANIMATION);
   register_node_typeinfo(&DNTI_BONE);
