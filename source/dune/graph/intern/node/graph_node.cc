@@ -1,19 +1,19 @@
-#include "intern/node/dgraph_node.h"
+#include "intern/node/graph_node.h"
 
 #include <cstdio>
 
 #include "lib_utildefines.h"
 
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
-#include "intern/eval/dgraph_eval_copy_on_write.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_factory.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_factory.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_op.h"
+#include "intern/node/graph_node_time.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 const char *nodeClassAsString(NodeClass node_class)
 {
@@ -102,7 +102,7 @@ const char *nodeTypeAsString(NodeType type)
   return "UNKNOWN";
 }
 
-NodeType nodeTypeFromSceneComponent(eDGraphSceneComponentType component)
+NodeType nodeTypeFromSceneComponent(eGraphSceneComponentType component)
 {
   switch (component) {
     case DGRAPH_SCENE_COMP_PARAMS:
@@ -115,15 +115,15 @@ NodeType nodeTypeFromSceneComponent(eDGraphSceneComponentType component)
   return NodeType::UNDEFINED;
 }
 
-eDGraphSceneComponentType nodeTypeToSceneComponent(NodeType type)
+eGraphSceneComponentType nodeTypeToSceneComponent(NodeType type)
 {
   switch (type) {
     case NodeType::PARAMS:
-      return DGRAPH_SCENE_COMP_PARAMS;
+      return GRAPH_SCENE_COMP_PARAMS;
     case NodeType::ANIMATION:
-      return DGRAPH_SCENE_COMP_ANIMATION;
+      return GRAPH_SCENE_COMP_ANIMATION;
     case NodeType::SEQUENCER:
-      return DGRAPH_SCENE_COMP_SEQUENCER;
+      return GRAPH_SCENE_COMP_SEQUENCER;
 
     case NodeType::OPERATION:
     case NodeType::TIMESOURCE:
@@ -151,17 +151,17 @@ eDGraphSceneComponentType nodeTypeToSceneComponent(NodeType type)
     case NodeType::CACHE:
     case NodeType::SIMULATION:
     case NodeType::NTREE_OUTPUT:
-      return DGRAPH_SCENE_COMP_PARAMETERS;
+      return GRAPH_SCENE_COMP_PARAMETERS;
 
     case NodeType::VISIBILITY:
       lib_assert_msg(0, "Visibility component is supposed to be only used internally.");
-      return DGRAPH_SCENE_COMP_PARAMS;
+      return GRAPH_SCENE_COMP_PARAMS;
   }
   lib_assert_msg(0, "Unhandled node type, not supposed to happen.");
-  return DGRAPH_SCENE_COMP_PARAMS;
+  return GRAPH_SCENE_COMP_PARAMS;
 }
 
-NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type)
+NodeType nodeTypeFromObjectComponent(eGraphObjectComponentType component_type)
 {
   switch (component_type) {
     case DGRAPH_OB_COMP_ANY:
@@ -186,25 +186,25 @@ NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type)
   return NodeType::UNDEFINED;
 }
 
-eDGraphObjectComponentType nodeTypeToObjectComponent(NodeType type)
+eGraphObjectComponentType nodeTypeToObjectComponent(NodeType type)
 {
   switch (type) {
     case NodeType::PARAMS:
-      return DGRAPH_OB_COMP_PARAMETERS;
+      return GRAPH_OB_COMP_PARAMS;
     case NodeType::ANIMATION:
-      return DGRAPH_OB_COMP_ANIMATION;
+      return GRAPH_OB_COMP_ANIMATION;
     case NodeType::TRANSFORM:
-      return DGRAPH_OB_COMP_TRANSFORM;
+      return GRAPH_OB_COMP_TRANSFORM;
     case NodeType::GEOMETRY:
-      return DGRAPH_OB_COMP_GEOMETRY;
+      return GRAPH_OB_COMP_GEOMETRY;
     case NodeType::EVAL_POSE:
-      return DGRAPH_OB_COMP_EVAL_POSE;
+      return GRAPH_OB_COMP_EVAL_POSE;
     case NodeType::BONE:
-      return DGRAPH_OB_COMP_BONE;
+      return GRAPH_OB_COMP_BONE;
     case NodeType::SHADING:
-      return DGRAPH_OB_COMP_SHADING;
+      return GRAPH_OB_COMP_SHADING;
     case NodeType::CACHE:
-      return DGRAPH_OB_COMP_CACHE;
+      return GRAPH_OB_COMP_CACHE;
 
     case NodeType::OPERATION:
     case NodeType::TIMESOURCE:
@@ -227,14 +227,14 @@ eDGraphObjectComponentType nodeTypeToObjectComponent(NodeType type)
     case NodeType::NTREE_OUTPUT:
     case NodeType::UNDEFINED:
     case NodeType::NUM_TYPES:
-      return DGRAPH_OB_COMP_PARAMS;
+      return GRAPH_OB_COMP_PARAMS;
 
     case NodeType::VISIBILITY:
       lib_assert_msg(0, "Visibility component is supposed to be only used internally.");
-      return DGRAPH_OB_COMP_PARAMS;
+      return GRAPH_OB_COMP_PARAMS;
   }
   lib_assert_msg(0, "Unhandled node type, not suppsed to happen.");
-  return DGRAPH_OB_COMP_PARAMS;
+  return GRAPH_OB_COMP_PARAMS;
 }
 
 /*******************************************************************************
@@ -306,16 +306,16 @@ NodeClass Node::get_class() const
  * Generic nodes definition.
  */
 
-DGRAPH_NODE_DEFINE(TimeSourceNode, NodeType::TIMESOURCE, "Time Source");
-static DGraphNodeFactoryImpl<TimeSourceNode> DNTI_TIMESOURCE;
+GRAPH_NODE_DEFINE(TimeSourceNode, NodeType::TIMESOURCE, "Time Source");
+static GraphNodeFactoryImpl<TimeSourceNode> DNTI_TIMESOURCE;
 
-DGRAPH_DEPSNODE_DEFINE(IdNode, NodeType::ID_REF, "ID Node");
-static DGraphNodeFactoryImpl<IdNode> DNTI_ID_REF;
+GRAPH_NODE_DEFINE(IdNode, NodeType::ID_REF, "ID Node");
+static GraphNodeFactoryImpl<IdNode> DNTI_ID_REF;
 
-void dgraph_register_base_nodes()
+void graph_register_base_nodes()
 {
   register_node_typeinfo(&DNTI_TIMESOURCE);
   register_node_typeinfo(&DNTI_ID_REF);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
