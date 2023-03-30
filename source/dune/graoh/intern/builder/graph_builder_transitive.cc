@@ -4,7 +4,7 @@
 
 #include "intern/node/graph_node.h"
 #include "intern/node/graph_node_component.h"
-#include "intern/node/graph_node_operation.h"
+#include "intern/node/graph_node_op.h"
 
 #include "intern/debug/graph_debug.h"
 #include "intern/graph.h"
@@ -32,7 +32,7 @@ enum {
   OP_REACHABLE = 2,
 };
 
-static void dgraph_tag_paths_recursive(Node *node)
+static void graph_tag_paths_recursive(Node *node)
 {
   if (node->custom_flags & OP_VISITED) {
     return;
@@ -46,7 +46,7 @@ static void dgraph_tag_paths_recursive(Node *node)
   }
 }
 
-void dgraph_transitive_reduction(DGraph *graph)
+void graph_transitive_reduction(Graph *graph)
 {
   int num_removed_relations = 0;
   Vector<Relation *> relations_to_remove;
@@ -61,7 +61,7 @@ void dgraph_transitive_reduction(DGraph *graph)
      * flagged. */
     target->custom_flags |= OP_VISITED;
     for (Relation *rel : target->inlinks) {
-      dgraph_tag_paths_recursive(rel->from);
+      graph_tag_paths_recursive(rel->from);
     }
     /* Remove redundant paths to the target. */
     for (Relation *rel : target->inlinks) {
@@ -83,7 +83,7 @@ void dgraph_transitive_reduction(DGraph *graph)
     num_removed_relations += relations_to_remove.size();
     relations_to_remove.clear();
   }
-  DGRAPH_DEBUG_PRINTF((::DGraph *)graph, BUILD, "Removed %d relations\n", num_removed_relations);
+  GRAPH_DEBUG_PRINTF((::Graph *)graph, BUILD, "Removed %d relations\n", num_removed_relations);
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
