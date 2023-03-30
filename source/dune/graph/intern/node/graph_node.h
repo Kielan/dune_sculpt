@@ -2,19 +2,19 @@
 
 #include "mem_guardedalloc.h"
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
 #include "lib_utildefines.h"
 
-#include "dgraph_build.h"
+#include "graph_build.h"
 
 struct Id;
 struct Scene;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
-struct DGraph;
+struct Graph;
 struct OpNode;
 struct Relation;
 
@@ -88,7 +88,7 @@ enum class NodeType {
    *
    * The fact that the visibility operates on the ID level basically means that all components in
    * the NodeA will be considered as affecting directly visible when NodeB's visibility is
-   * affecting directly visible ID.
+   * affecting directly visible id.
    *
    * This is the way to ensure objects needed for visualization without any actual data dependency
    * properly evaluated. Example of this is custom shapes for bones. */
@@ -130,11 +130,11 @@ enum class NodeType {
 };
 const char *nodeTypeAsString(NodeType type);
 
-NodeType nodeTypeFromSceneComponent(eDGraphSceneComponentType component_type);
-eDGraphSceneComponentType nodeTypeToSceneComponent(NodeType type);
+NodeType nodeTypeFromSceneComponent(eGraphSceneComponentType component_type);
+eGraphSceneComponentType nodeTypeToSceneComponent(NodeType type);
 
-NodeType nodeTypeFromObjectComponent(eDGraphObjectComponentType component_type);
-eDGraphObjectComponentType nodeTypeToObjectComponent(NodeType type);
+NodeType nodeTypeFromObjectComponent(eGraphObjectComponentType component_type);
+eGraphObjectComponentType nodeTypeToObjectComponent(NodeType type);
 
 /* All nodes in DGraph are descended from this. */
 struct Node {
