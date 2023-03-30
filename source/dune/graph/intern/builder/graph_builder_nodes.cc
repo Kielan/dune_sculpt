@@ -102,7 +102,7 @@
 #include "intern/node/graph_node.h"
 #include "intern/node/graph_node_component.h"
 #include "intern/node/graph_node_id.h"
-#include "intern/node/graph_node_operation.h"
+#include "intern/node/graph_node_op.h"
 
 namespace dune::graph {
 
@@ -996,7 +996,7 @@ void GraphNodeBuilder::build_object_transform(Object *object)
       &object->id,
       NodeType::TRANSFORM,
       OpCode::TRANSFORM_EVAL,
-      [ob_cow](::DGraph *dgraph) { dune_object_eval_uber_transform(dgraph, ob_cow); });
+      [ob_cow](::Graph *graph) { dune_object_eval_uber_transform(graph, ob_cow); });
   /* Operation to take of rigid body simulation. soft bodies and other friends
    * in the context of point cache invalidation. */
   add_op_node(&object->id, NodeType::TRANSFORM, OpCode::TRANSFORM_SIMULATION_INIT);
@@ -1005,7 +1005,7 @@ void GraphNodeBuilder::build_object_transform(Object *object)
       &object->id,
       NodeType::TRANSFORM,
       OpCode::TRANSFORM_FINAL,
-      [ob_cow](::DGraph *dgraph) { dune_object_eval_transform_final(dgraph, ob_cow); });
+      [ob_cow](::Graph *graph) { dune_object_eval_transform_final(graph, ob_cow); });
   op_node->set_as_exit();
 }
 
@@ -1034,12 +1034,12 @@ void DGraphNodeBuilder::build_object_constraints(Object *object)
   add_op_node(&object->id,
               NodeType::TRANSFORM,
               OpCode::TRANSFORM_CONSTRAINTS,
-              [scene_cow, object_cow](::DGraph *dgraph) {
-              dune_object_eval_constraints(dgraph, scene_cow, object_cow);
+              [scene_cow, object_cow](::Graph *graph) {
+              dune_object_eval_constraints(graph, scene_cow, object_cow);
               });
 }
 
-void DGraphNodeBuilder::build_object_pointcache(Object *object)
+void GraphNodeBuilder::build_object_pointcache(Object *object)
 {
   if (!dune_ptcache_object_has(scene_, object, 0)) {
     return;
@@ -1049,12 +1049,12 @@ void DGraphNodeBuilder::build_object_pointcache(Object *object)
   add_op_node(&object->id,
               NodeType::POINT_CACHE,
               OpCode::POINT_CACHE_RESET,
-              [scene_cow, object_cow](::DGraph *dgraph) {
-                dune_object_eval_ptcache_reset(dgraph, scene_cow, object_cow);
+              [scene_cow, object_cow](::Graph *graph) {
+                dune_object_eval_ptcache_reset(graph, scene_cow, object_cow);
               });
 }
 
-void DGraphNodeBuilder::build_animdata(Id *id)
+void GraphNodeBuilder::build_animdata(Id *id)
 {
   /* Special handling for animated images/sequences. */
   build_animation_images(id);
@@ -1069,14 +1069,14 @@ void DGraphNodeBuilder::build_animdata(Id *id)
   /* Make sure ID node exists. */
   (void)add_id_node(id);
   Id *id_cow = get_cow_id(id);
-  if (adt->action != nullptr || !BLI_listbase_is_empty(&adt->nla_tracks)) {
+  if (adt->action != nullptr || !lib_listbase_is_empty(&adt->nla_tracks)) {
     OpNode *op_node;
     /* Explicit entry operation. */
     op_node = add_op_node(id, NodeType::ANIMATION, OpCode::ANIMATION_ENTRY);
     op_node->set_as_entry();
     /* All the evaluation nodes. */
     add_op_node(
-        id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL, [id_cow](::DGraph *dgraph) {
+        id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL, [id_cow](::Graph *graph) {
           dune_animsys_eval_animdata(dgraph, id_cow);
         });
     /* Explicit exit operation. */
@@ -1095,7 +1095,7 @@ void DGraphNodeBuilder::build_animdata(Id *id)
   }
 }
 
-void DGraphNodeBuilder::build_animdata_nlastrip_targets(ListBase *strips)
+void GraphNodeBuilder::build_animdata_nlastrip_targets(ListBase *strips)
 {
   LISTBASE_FOREACH (NlaStrip *, strip, strips) {
     if (strip->act != nullptr) {
@@ -1107,7 +1107,7 @@ void DGraphNodeBuilder::build_animdata_nlastrip_targets(ListBase *strips)
   }
 }
 
-void DGraphNodeBuilder::build_animation_images(Id *id)
+void GraphNodeBuilder::build_animation_images(Id *id)
 {
   /* GPU materials might use an animated image. However, these materials have no been built yet so
    * we have to check if they might be created during evaluation. */
@@ -1126,11 +1126,11 @@ void DGraphNodeBuilder::build_animation_images(Id *id)
         id,
         NodeType::IMAGE_ANIMATION,
         OpCode::IMAGE_ANIMATION,
-        [id_cow](::DGraph *dgraph) { dune_image_user_id_eval_animation(dgraph, id_cow); });
+        [id_cow](::Graph *graph) { dune_image_user_id_eval_animation(graph, id_cow); });
   }
 }
 
-void DGraphNodeBuilder::build_action(DAction *action)
+void GraphNodeBuilder::build_action(Action *action)
 {
   if (built_map_.checkIsBuiltAndTag(action)) {
     return;
@@ -1139,7 +1139,7 @@ void DGraphNodeBuilder::build_action(DAction *action)
   add_op_node(&action->id, NodeType::ANIMATION, OpCode::ANIMATION_EVAL);
 }
 
-void DGraphNodeBuilder::build_driver(Id *id, FCurve *fcurve, int driver_index)
+void GraphNodeBuilder::build_driver(Id *id, FCurve *fcurve, int driver_index)
 {
   /* Create data node for this driver */
   Id *id_cow = get_cow_id(id);
@@ -1152,7 +1152,7 @@ void DGraphNodeBuilder::build_driver(Id *id, FCurve *fcurve, int driver_index)
       id,
       NodeType::PARAMS,
       OpCode::DRIVER,
-      [id_cow, driver_index, fcurve](::DGraph *dgraph) {
+      [id_cow, driver_index, fcurve](::Graph *graph) {
         dune_animsys_eval_driver(dgraph, id_cow, driver_index, fcurve);
       },
       fcurve->api_path ? fcurve->api_path : "",
@@ -1160,9 +1160,9 @@ void DGraphNodeBuilder::build_driver(Id *id, FCurve *fcurve, int driver_index)
   build_driver_variables(id, fcurve);
 }
 
-void DGraphNodeBuilder::build_driver_variables(ID *id, FCurve *fcurve)
+void GraphNodeBuilder::build_driver_variables(Id *id, FCurve *fcurve)
 {
-  build_driver_id_prop(id, fcurve->rna_path);
+  build_driver_id_prop(id, fcurve->api_path);
   LISTBASE_FOREACH (DriverVar *, dvar, &fcurve->driver->variables) {
     DRIVER_TARGETS_USED_LOOPER_BEGIN (dvar) {
       if (dtar->id == nullptr) {
@@ -1175,7 +1175,7 @@ void DGraphNodeBuilder::build_driver_variables(ID *id, FCurve *fcurve)
   }
 }
 
-void DGraphNodeBuilder::build_driver_id_prop(Id *id, const char *api_path)
+void GraphNodeBuilder::build_driver_id_prop(Id *id, const char *api_path)
 {
   if (id == nullptr || api_path == nullptr) {
     return;
@@ -1526,7 +1526,7 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node = add_op_node(obdata,
                             NodeType::GEOMETRY,
                             OpCode::GEOMETRY_EVAL,
-                            [obdata_cow](::DGraph *dgraph) {
+                            [obdata_cow](::Graph *graph) {
                              dune_mesh_eval_geometry(graph, (Mesh *)obdata_cow);
                             });
       op_node->set_as_entry();
@@ -1547,13 +1547,13 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node->set_as_entry();
       Curve *cu = (Curve *)obdata;
       if (cu->bevobj != nullptr) {
-        build_object(-1, cu->bevobj, DGRAPH_ID_LINKED_INDIRECTLY, false);
+        build_object(-1, cu->bevobj,DGRAPH_ID_LINKED_INDIRECTLY, false);
       }
       if (cu->taperobj != nullptr) {
-        build_object(-1, cu->taperobj, DGRAPH_ID_LINKED_INDIRECTLY, false);
+        build_object(-1, cu->taperobj, GRAPH_ID_LINKED_INDIRECTLY, false);
       }
       if (cu->textoncurve != nullptr) {
-        build_object(-1, cu->textoncurve, DGRAPH_ID_LINKED_INDIRECTLY, false);
+        build_object(-1, cu->textoncurve, GRAPH_ID_LINKED_INDIRECTLY, false);
       }
       break;
     }
@@ -1601,8 +1601,8 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
       op_node = add_op_node(obdata,
                             NodeType::GEOMETRY,
                             OpCode::GEOMETRY_EVAL,
-                            [obdata_cow](::DGraph *dgraph) {
-                             dune_volume_eval_geometry(dgraph, (Volume *)obdata_cow);
+                            [obdata_cow](::Graph *graph) {
+                             dune_volume_eval_geometry(graph, (Volume *)obdata_cow);
                             });
       op_node->set_as_entry();
       break;
@@ -1619,8 +1619,8 @@ void GraphNodeBuilder::build_object_data_geometry_datablock(Id *obdata)
   add_op_node(obdata,
               NodeType::BATCH_CACHE,
               OpCode::GEOMETRY_SELECT_UPDATE,
-              [obdata_cow](::DGraph *dgraph) {
-               dune_object_data_select_update(dgraph, obdata_cow);
+              [obdata_cow](::Graph *graph) {
+               dune_object_data_select_update(graph, obdata_cow);
               });
 }
 
@@ -1633,17 +1633,17 @@ void DGraphNodeBuilder::build_armature(DArmature *armature)
   build_animdata(&armature->id);
   build_params(&armature->id);
   /* Make sure pose is up-to-date with armature updates. */
-  DArmature *armature_cow = (DArmature *)get_cow_id(&armature->id);
+  Armature *armature_cow = (Armature *)get_cow_id(&armature->id);
   add_op_node(&armature->id,
               NodeType::ARMATURE,
               OpCode::ARMATURE_EVAL,
-              [armature_cow](::DGraph *dgraph) {
+              [armature_cow](::Graph *graph) {
                dune_armature_refresh_layer_used(dgraph, armature_cow);
               });
   build_armature_bones(&armature->bonebase);
 }
 
-void DGraphNodeBuilder::build_armature_bones(ListBase *bones)
+void GraphNodeBuilder::build_armature_bones(ListBase *bones)
 {
   LISTBASE_FOREACH (Bone *, bone, bones) {
     build_idprops(bone->prop);
@@ -1651,7 +1651,7 @@ void DGraphNodeBuilder::build_armature_bones(ListBase *bones)
   }
 }
 
-void DGraphNodeBuilder::build_camera(Camera *camera)
+void GraphNodeBuilder::build_camera(Camera *camera)
 {
   if (built_map_.checkIsBuiltAndTag(camera)) {
     return;
