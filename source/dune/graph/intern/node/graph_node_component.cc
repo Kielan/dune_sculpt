@@ -1,4 +1,4 @@
-#include "intern/node/dgraph_node_component.h"
+#include "intern/node/graph_node_component.h"
 
 #include <cstdio>
 #include <cstring> /* required for STREQ later on. */
@@ -11,11 +11,11 @@
 
 #include "dune_action.h"
 
-#include "intern/node/dgraph_node_factory.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/node/graph_node_factory.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_operation.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* *********** */
 /* Outer Nodes */
@@ -151,7 +151,7 @@ OpNode *ComponentNode::add_op(const DGraphEvalOpCb &op,
 {
   OpNode *op_node = find_op(opcode, name, name_tag);
   if (!op_node) {
-    DGraphNodeFactory *factory = type_get_factory(NodeType::OPERATION);
+    GraphNodeFactory *factory = type_get_factory(NodeType::OPERATION);
     op_node = (OpNode *)factory->create_node(this->owner->id_orig, "", name);
 
     /* register opnode in this component's operation set */
@@ -205,10 +205,10 @@ void ComponentNode::clear_ops()
   ops.clear();
 }
 
-void ComponentNode::tag_update(DGraph *graph, eUpdateSource source)
+void ComponentNode::tag_update(Graph *graph, eUpdateSource source)
 {
   OpNode *entry_op = get_entry_op();
-  if (entry_op != nullptr && entry_op->flag & DGRAPH_OP_FLAG_NEEDS_UPDATE) {
+  if (entry_op != nullptr && entry_op->flag & GRAPH_OP_FLAG_NEEDS_UPDATE) {
     return;
   }
   for (OpNode *op_node : ops) {
@@ -248,7 +248,7 @@ OpnNode *ComponentNode::get_exit_op()
   if (exit_operation) {
     return exit_op;
   }
-  if (operations_map != nullptr && operations_map->size() == 1) {
+  if (ops_map != nullptr && ops_map->size() == 1) {
     OpNode *op_node = nullptr;
     /* TODO: This is somewhat slow. */
     for (OpNode *tmp : ops_map->values()) {
@@ -258,7 +258,7 @@ OpnNode *ComponentNode::get_exit_op()
     exit_op = op_node;
     return op_node;
   }
-  if (operations.size() == 1) {
+  if (ops.size() == 1) {
     return op[0];
   }
   return nullptr;
@@ -295,7 +295,7 @@ void BoneComponentNode::init(const Id *id, const char *subdata)
 /* -------------------------------------------------------------------- */
 /** Register All Components **/
 
-DGRAPH_COMPONENT_NODE_DEFINE(Animation, ANIMATION, ID_RECALC_ANIMATION);
+GRAPH_COMPONENT_NODE_DEFINE(Animation, ANIMATION, ID_RECALC_ANIMATION);
 /* TODO: Is this a correct tag? */
 DGRAPH_COMPONENT_NODE_DEFINE(BatchCache, BATCH_CACHE, ID_RECALC_SHADING);
 DGRAPH_COMPONENT_NODE_DEFINE(Bone, BONE, ID_RECALC_GEOMETRY);
@@ -354,4 +354,4 @@ void dgraph_register_component_nodes()
   register_node_typeinfo(&DNTI_NTREE_OUTPUT);
 }
 
-}  // namespace dune::dgraph 
+}  // namespace dune::graph 
