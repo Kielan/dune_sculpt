@@ -1,26 +1,26 @@
-#include "intern/node/dgraph_node_time.h"
+#include "intern/node/graph_node_time.h"
 
 #include "types_scene.h"
 
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-void TimeSourceNode::tag_update(DGraph * /*graph*/, eUpdateSource /*source*/)
+void TimeSourceNode::tag_update(Graph * /*graph*/, eUpdateSource /*source*/)
 {
   tagged_for_update = true;
 }
 
-void TimeSourceNode::flush_update_tag(DGraph *graph)
+void TimeSourceNode::flush_update_tag(Graph *graph)
 {
   if (!tagged_for_update) {
     return;
   }
   for (Relation *rel : outlinks) {
     Node *node = rel->to;
-    node->tag_update(graph, DGRAPH_UPDATE_SOURCE_TIME);
+    node->tag_update(graph, GRAPH_UPDATE_SOURCE_TIME);
   }
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
