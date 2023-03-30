@@ -1,4 +1,4 @@
-#include "intern/builder/dgraph_builder.h"
+#include "intern/builder/graph_builder.h"
 
 #include <cstring>
 
@@ -15,29 +15,29 @@
 
 #include "api_prototypes.h"
 
-#include "intern/builder/dgraph_builder_cache.h"
-#include "intern/builder/dgraph_builder_remove_noop.h"
-#include "intern/dgraph.h"
-#include "intern/dgraph_relation.h"
-#include "intern/dgraph_tag.h"
-#include "intern/dgraph_type.h"
-#include "intern/eval/dgraph_eval_copy_on_write.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
+#include "intern/builder/graph_builder_cache.h"
+#include "intern/builder/graph_builder_remove_noop.h"
+#include "intern/graph.h"
+#include "intern/graph_relation.h"
+#include "intern/graph_tag.h"
+#include "intern/graph_type.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_op.h"
 
-#include "dgraph.h"
+#include "graph.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-bool dgraph_check_id_in_dgraph(const DGraph *graph, Id *id_orig)
+bool graph_check_id_in_graph(const Graph *graph, Id *id_orig)
 {
   IdNode *id_node = graph->find_id_node(id_orig);
   return id_node != nullptr;
 }
 
-bool dgraph_check_base_in_dgraph(const DGraph *graph, Base *base)
+bool graph_check_base_in_graph(const Graph *graph, Base *base)
 {
   Object *object_orig = base->base_orig->object;
   IdNode *id_node = graph->find_id_node(&object_orig->id);
@@ -51,12 +51,12 @@ bool dgraph_check_base_in_dgraph(const DGraph *graph, Base *base)
  * Base class for builders.
  */
 
-DGraphBuilder::DGraphBuilder(Main *dmain, DGraph *graph, DGraphBuilderCache *cache)
+GraphBuilder::GraphBuilder(Main *dmain, Graph *graph, GraphBuilderCache *cache)
     : dmain_(dmain), graph_(graph), cache_(cache)
 {
 }
 
-bool DGraphBuilder::need_pull_base_into_graph(Base *base)
+bool GraphBuilder::need_pull_base_into_graph(Base *base)
 {
   /* Simple check: enabled bases are always part of dependency graph. */
   const int base_flag = (graph_->mode == DAG_EVAL_VIEWPORT) ? BASE_ENABLED_VIEWPORT :
@@ -70,7 +70,7 @@ bool DGraphBuilder::need_pull_base_into_graph(Base *base)
   Object *object = base->object;
   AnimatedPropId prop_id;
   if (graph_->mode == DAG_EVAL_VIEWPORT) {
-    property_id = AnimatedPropId(&object->id, &api_Object, "hide_viewport");
+    prop_id = AnimatedPropId(&object->id, &api_Object, "hide_viewport");
   }
   else if (graph_->mode == DAG_EVAL_RENDER) {
     prop_id = AnimatedPropId(&object->id, &api_Object, "hide_render");
@@ -82,7 +82,7 @@ bool DGraphBuilder::need_pull_base_into_graph(Base *base)
   return cache_->isPropAnimated(&object->id, prop_id);
 }
 
-bool DGraphBuilder::check_pchan_has_bbone(Object *object, const bPoseChannel *pchan)
+bool GraphBuilder::check_pchan_has_bbone(Object *object, const PoseChannel *pchan)
 {
   lib_assert(object->type == OB_ARMATURE);
   if (pchan == nullptr || pchan->bone == nullptr) {
@@ -94,7 +94,7 @@ bool DGraphBuilder::check_pchan_has_bbone(Object *object, const bPoseChannel *pc
   if (pchan->bone->segments > 1) {
     return true;
   }
-  DArmature *armature = static_cast<bArmature *>(object->data);
+  Armature *armature = static_cast<Armature *>(object->data);
   AnimatedPropId prop_id(&armature->id, &api_Bone, pchan->bone, "bbone_segments");
   /* Check both Object and Armature animation data, because drivers modifying Armature
    * state could easily be created in the Object AnimData. */
@@ -102,14 +102,14 @@ bool DGraphBuilder::check_pchan_has_bbone(Object *object, const bPoseChannel *pc
          cache_->isPropAnimated(&armature->id, prop_id);
 }
 
-bool DGraphBuilder::check_pchan_has_bbone_segments(Object *object, const DPoseChannel *pchan)
+bool GraphBuilder::check_pchan_has_bbone_segments(Object *object, const PoseChannel *pchan)
 {
   return check_pchan_has_bbone(object, pchan);
 }
 
-bool DGraphBuilder::check_pchan_has_bbone_segments(Object *object, const char *bone_name)
+bool GraphBuilder::check_pchan_has_bbone_segments(Object *object, const char *bone_name)
 {
-  const DPoseChannel *pchan = dune_pose_channel_find_name(object->pose, bone_name);
+  const PoseChannel *pchan = dune_pose_channel_find_name(object->pose, bone_name);
   return check_pchan_has_bbone_segments(object, pchan);
 }
 
@@ -119,10 +119,10 @@ bool DGraphBuilder::check_pchan_has_bbone_segments(Object *object, const char *b
 
 namespace {
 
-void dgraph_build_flush_visibility(DGraph *graph)
+void graph_build_flush_visibility(Graph *graph)
 {
   enum {
-    DGRAPH_NODE_VISITED = (1 << 0),
+    GRAPH_NODE_VISITED = (1 << 0),
   };
 
   LibStack *stack = lib_stack_new(sizeof(OpNode *), "DGraph flush layers stack");
@@ -141,7 +141,7 @@ void dgraph_build_flush_visibility(DGraph *graph)
     }
     if (op_node->num_links_pending == 0) {
       lib_stack_push(stack, &op_node);
-      op_node->custom_flags |= DGRAPH_NODE_VISITED;
+      op_node->custom_flags |= GRAPH_NODE_VISITED;
     }
   }
   while (!lib_stack_is_empty(stack)) {
@@ -189,11 +189,11 @@ void dgraph_build_flush_visibility(DGraph *graph)
 
 }  // namespace
 
-void dgraph_build_finalize(Main *dmain, DGraph *graph)
+void graph_build_finalize(Main *dmain, Graph *graph)
 {
   /* Make sure dependencies of visible ID datablocks are visible. */
-  dgraph_build_flush_visibility(graph);
-  dgraph_remove_unused_noops(graph);
+  graph_build_flush_visibility(graph);
+  graph_remove_unused_noops(graph);
 
   /* Re-tag IDs for update if it was tagged before the relations
    * update tag. */
@@ -226,4 +226,4 @@ void dgraph_build_finalize(Main *dmain, DGraph *graph)
   }
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
