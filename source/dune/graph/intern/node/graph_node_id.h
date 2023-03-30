@@ -3,10 +3,10 @@
 #include "lib_ghash.h"
 #include "lib_sys_types.h"
 #include "dune_id.h"
-#include "intern/node/dgraph_node.h"
+#include "intern/node/graph_node.h"
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
 struct ComponentNode;
 
