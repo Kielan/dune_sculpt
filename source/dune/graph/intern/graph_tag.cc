@@ -2,7 +2,7 @@
  * Core routines for how the Depsgraph works.
  */
 
-#include "intern/dgraph_tag.h"
+#include "intern/graph_tag.h"
 
 #include <cstdio>
 #include <cstring> /* required for memset */
@@ -30,33 +30,33 @@
 #include "dune_screen.h"
 #include "dune_workspace.h"
 
-#include "dgraph.h"
-#include "dgraph_debug.h"
-#include "dgraph_query.h"
+#include "graph.h"
+#include "graph_debug.h"
+#include "graph_query.h"
 
-#include "intern/builder/dgraph_builder.h"
-#include "intern/dgraph.h"
-#include "intern/dgraph_registry.h"
-#include "intern/dgraph_update.h"
-#include "intern/eval/dgraph_eval_copy_on_write.h"
-#include "intern/eval/dgraph_eval_flush.h"
-#include "intern/node/dgraph_node.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_factory.h"
-#include "intern/node/dgraph_node_id.h"
-#include "intern/node/dgraph_node_operation.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/builder/graph_builder.h"
+#include "intern/graph.h"
+#include "intern/graph_registry.h"
+#include "intern/graph_update.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
+#include "intern/eval/graph_eval_flush.h"
+#include "intern/node/graph_node.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_factory.h"
+#include "intern/node/graph_node_id.h"
+#include "intern/node/graph_node_op.h"
+#include "intern/node/graph_node_time.h"
 
-namespace dune = dune::dgraph;
+namespace dune = dune::graph;
 
 /* *********************** */
 /* Update Tagging/Flushing */
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 namespace {
 
-void dgraph_geometry_tag_to_component(const Id *id, NodeType *component_type)
+void graph_geometry_tag_to_component(const Id *id, NodeType *component_type)
 {
   const NodeType result = geometry_tag_to_component(id);
   if (result != NodeType::UNDEFINED) {
@@ -69,9 +69,9 @@ bool is_selectable_data_id_type(const IdType id_type)
   return ELEM(id_type, ID_ME, ID_CU_LEGACY, ID_MB, ID_LT, ID_GD, ID_CV, ID_PT, ID_VO);
 }
 
-void dgraph_select_tag_to_component_opcode(const ID *id,
-                                              NodeType *component_type,
-                                              OperationCode *operation_code)
+void graph_select_tag_to_component_opcode(const Id *id,
+                                          NodeType *component_type,
+                                          OpCode *op_code)
 {
   const IdType id_type = GS(id->name);
   if (id_type == ID_SCE) {
@@ -104,14 +104,14 @@ void dgraph_select_tag_to_component_opcode(const ID *id,
   }
 }
 
-void dgraph_base_flags_tag_to_component_opcode(const ID *id,
-                                                  NodeType *component_type,
-                                                  OperationCode *operation_code)
+void graph_base_flags_tag_to_component_opcode(const Id *id,
+                                               NodeType *component_type,
+                                               OpCode *operation_code)
 {
-  const ID_Type id_type = GS(id->name);
+  const IdType id_type = GS(id->name);
   if (id_type == ID_SCE) {
     *component_type = NodeType::LAYER_COLLECTIONS;
-    *op_code = OperationCode::VIEW_LAYER_EVAL;
+    *op_code = OpCode::VIEW_LAYER_EVAL;
   }
   else if (id_type == ID_OB) {
     *component_type = NodeType::OBJECT_FROM_LAYER;
@@ -127,10 +127,10 @@ OpCode psysTagToOpCode(IdRecalcFlag tag)
   return OpCode::OPERATION;
 }
 
-void dgraph_tag_to_component_opcode(const Id *id,
-                                    IdRecalcFlag tag,
-                                    NodeType *component_type,
-                                    OpCode *op_code)
+void graph_tag_to_component_opcode(const Id *id,
+                                   IdRecalcFlag tag,
+                                   NodeType *component_type,
+                                   OpCode *op_code)
 {
   const IdType id_type = GS(id->name);
   *component_type = NodeType::UNDEFINED;
@@ -162,7 +162,7 @@ void dgraph_tag_to_component_opcode(const Id *id,
          *   but we can survive for now with single exception here.
          *   Particles needs reconsideration anyway, */
         *component_type = NodeType::PARTICLE_SETTINGS;
-        *operation_code = psysTagToOpCode(tag);
+        *op_code = psysTagToOpCode(tag);
       }
       else {
         *component_type = NodeType::PARTICLE_SYSTEM;
@@ -175,10 +175,10 @@ void dgraph_tag_to_component_opcode(const Id *id,
       *component_type = NodeType::SHADING;
       break;
     case ID_RECALC_SELECT:
-      dgraph_select_tag_to_component_opcode(id, component_type, operation_code);
+      graph_select_tag_to_component_opcode(id, component_type, op_code);
       break;
     case ID_RECALC_BASE_FLAGS:
-      dgraph_base_flags_tag_to_component_opcode(id, component_type, operation_code);
+      dgraph_base_flags_tag_to_component_opcode(id, component_type, op_code);
       break;
     case ID_RECALC_POINT_CACHE:
       *component_type = NodeType::POINT_CACHE;
@@ -219,29 +219,29 @@ void dgraph_tag_to_component_opcode(const Id *id,
 }
 
 void id_tag_update_ntree_special(
-    Main *dmain, DGraph *graph, Id *id, int flag, eUpdateSource update_source)
+    Main *dmain, Graph *graph, Id *id, int flag, eUpdateSource update_source)
 {
-  DNodeTree *ntree = ntreeFromId(id);
+  NodeTree *ntree = ntreeFromId(id);
   if (ntree == nullptr) {
     return;
   }
   graph_id_tag_update(dmain, graph, &ntree->id, flag, update_source);
 }
 
-void dgraph_update_editors_tag(Main *dmain, DGraph *graph, Id *id)
+void graph_update_editors_tag(Main *dmain, Graph *graph, Id *id)
 {
   /* NOTE: We handle this immediately, without delaying anything, to be
    * sure we don't cause threading issues with OpenGL. */
   /* TODO: Make sure this works for CoW-ed data-blocks as well. */
-  DGraphEditorUpdateContext update_ctx = {nullptr};
+  GraphEditorUpdateContext update_ctx = {nullptr};
   update_ctx.dmain = dmain;
-  update_ctx.dgraph = (::DGraph *)graph;
+  update_ctx.dgraph = (::Graph *)graph;
   update_ctx.scene = graph->scene;
   update_ctx.view_layer = graph->view_layer;
-  dgraph_editors_id_update(&update_ctx, id);
+  graph_editors_id_update(&update_ctx, id);
 }
 
-void dgraph_id_tag_copy_on_write(DGraph *graph, IdNode *id_node, eUpdateSource update_source)
+void graph_id_tag_copy_on_write(Graph *graph, IdNode *id_node, eUpdateSource update_source)
 {
   ComponentNode *cow_comp = id_node->find_component(NodeType::COPY_ON_WRITE);
   if (cow_comp == nullptr) {
@@ -251,11 +251,11 @@ void dgraph_id_tag_copy_on_write(DGraph *graph, IdNode *id_node, eUpdateSource u
   cow_comp->tag_update(graph, update_source);
 }
 
-void dgraph_tag_component(DGraph *graph,
-                          IdNode *id_node,
-                          NodeType component_type,
-                          OpCode op_code,
-                          eUpdateSource update_source)
+void graph_tag_component(Graph *graph,
+                         IdNode *id_node,
+                         NodeType component_type,
+                         OpCode op_code,
+                         eUpdateSource update_source)
 {
   ComponentNode *component_node = id_node->find_component(component_type);
   /* NOTE: Animation component might not be existing yet (which happens when adding new driver or
@@ -264,7 +264,7 @@ void dgraph_tag_component(DGraph *graph,
   if (component_node == nullptr) {
     if (component_type == NodeType::ANIMATION) {
       id_node->is_cow_explicitly_tagged = true;
-      dgraph_id_tag_copy_on_write(graph, id_node, update_source);
+      graph_id_tag_copy_on_write(graph, id_node, update_source);
     }
     return;
   }
@@ -279,7 +279,7 @@ void dgraph_tag_component(DGraph *graph,
   }
   /* If component depends on copy-on-write, tag it as well. */
   if (component_node->need_tag_cow_before_update()) {
-    dgraph_id_tag_copy_on_write(graph, id_node, update_source);
+    graph_id_tag_copy_on_write(graph, id_node, update_source);
   }
   if (component_type == NodeType::COPY_ON_WRITE) {
     id_node->is_cow_explicitly_tagged = true;
@@ -291,8 +291,8 @@ void dgraph_tag_component(DGraph *graph,
  * Mainly, old code was tagging object with ID_RECALC_GEOMETRY tag to inform
  * that object's data data-block changed. Now API expects that ID is given
  * explicitly, but not all areas are aware of this yet. */
-void dgraph_id_tag_legacy_compat(
-    Main *dmain, DGraph *dgraph, Id *id, IdRecalcFlag tag, eUpdateSource update_source)
+void graph_id_tag_legacy_compat(
+    Main *dmain, Graph *graph, Id *id, IdRecalcFlag tag, eUpdateSource update_source)
 {
   if (ELEM(tag, ID_RECALC_GEOMETRY, 0)) {
     switch (GS(id->name)) {
@@ -310,9 +310,9 @@ void dgraph_id_tag_legacy_compat(
       case ID_ME: {
         Mesh *mesh = (Mesh *)id;
         if (mesh->key != nullptr) {
-          ID *key_id = &mesh->key->id;
+          Id *key_id = &mesh->key->id;
           if (key_id != nullptr) {
-            graph_id_tag_update(dmain, dgraph, key_id, 0, update_source);
+            graph_id_tag_update(dmain, graph, key_id, 0, update_source);
           }
         }
         break;
@@ -322,7 +322,7 @@ void dgraph_id_tag_legacy_compat(
         if (lattice->key != nullptr) {
           Id *key_id = &lattice->key->id;
           if (key_id != nullptr) {
-            graph_id_tag_update(dmain, depsgraph, key_id, 0, update_source);
+            graph_id_tag_update(dmain, graph, key_id, 0, update_source);
           }
         }
         break;
@@ -332,7 +332,7 @@ void dgraph_id_tag_legacy_compat(
         if (curve->key != nullptr) {
           Id *key_id = &curve->key->id;
           if (key_id != nullptr) {
-            graph_id_tag_update(dmain, dgraph, key_id, 0, update_source);
+            graph_id_tag_update(dmain, graph, key_id, 0, update_source);
           }
         }
         break;
@@ -344,7 +344,7 @@ void dgraph_id_tag_legacy_compat(
 }
 
 void graph_id_tag_update_single_flag(Main *dmain,
-                                     DGraph *graph,
+                                     Graph *graph,
                                      Id *id,
                                      IdNode *id_node,
                                      IdRecalcFlag tag,
@@ -352,14 +352,14 @@ void graph_id_tag_update_single_flag(Main *dmain,
 {
   if (tag == ID_RECALC_EDITORS) {
     if (graph != nullptr && graph->is_active) {
-      dgraph_update_editors_tag(bmain, graph, id);
+      graph_update_editors_tag(dmain, graph, id);
     }
     return;
   }
   /* Get description of what is to be tagged. */
   NodeType component_type;
   OpCode op_code;
-  dgraph_tag_to_component_opcode(id, tag, &component_type, &op_code);
+  graph_tag_to_component_opcode(id, tag, &component_type, &op_code);
   /* Check whether we've got something to tag. */
   if (component_type == NodeType::UNDEFINED) {
     /* Given id does not support tag. */
@@ -373,7 +373,7 @@ void graph_id_tag_update_single_flag(Main *dmain,
     return;
   }
   /* Tag id recalc flag. */
-  DGraphNodeFactory *factory = type_get_factory(component_type);
+  GraphNodeFactory *factory = type_get_factory(component_type);
   lib_assert(factory != nullptr);
   id_node->id_cow->recalc |= factory->id_recalc_tag();
   /* Tag corresponding dependency graph operation for update. */
@@ -381,16 +381,16 @@ void graph_id_tag_update_single_flag(Main *dmain,
     id_node->tag_update(graph, update_source);
   }
   else {
-    dgraph_tag_component(graph, id_node, component_type, op_code, update_source);
+    graph_tag_component(graph, id_node, component_type, op_code, update_source);
   }
   /* TODO: Get rid of this once all areas are using proper data ID
    * for tagging. */
-  dgraph_id_tag_legacy_compat(dmain, graph, id, tag, update_source);
+  graph_id_tag_legacy_compat(dmain, graph, id, tag, update_source);
 }
 
-string stringify_append_bit(const string &str, IDRecalcFlag tag)
+string stringify_append_bit(const string &str, IdRecalcFlag tag)
 {
-  const char *tag_name = DGraph_update_tag_as_string(tag);
+  const char *tag_name = Graph_update_tag_as_string(tag);
   if (tag_name == nullptr) {
     return str;
   }
@@ -425,13 +425,13 @@ string stringify_update_bitfield(int flag)
 const char *update_source_as_string(eUpdateSource source)
 {
   switch (source) {
-    case DGRAPH_UPDATE_SOURCE_TIME:
+    case GRAPH_UPDATE_SOURCE_TIME:
       return "TIME";
-    case DGRAPH_UPDATE_SOURCE_USER_EDIT:
+    case GRAPH_UPDATE_SOURCE_USER_EDIT:
       return "USER_EDIT";
-    case DGRAPH_UPDATE_SOURCE_RELATIONS:
+    case GRAPH_UPDATE_SOURCE_RELATIONS:
       return "RELATIONS";
-    case DGRAPH_UPDATE_SOURCE_VISIBILITY:
+    case GRAPH_UPDATE_SOURCE_VISIBILITY:
       return "VISIBILITY";
   }
   lib_assert_msg(0, "Should never happen.");
