@@ -8,14 +8,14 @@ struct Constraint;
 struct PoseChannel;
 struct ModifierData;
 
-namespace dune::dgraph {
+namespace dune::graph {
 
 /* This class keeps track of the builder calls nesting, allowing to unroll them back and provide a
  * clue about how the builder made it to its current state.
  *
  * The tracing is based on the builder giving a trace clues to the stack. Typical usage is:
  *
- *   void DGraphRelationBuilder::my_id_builder(Id *id)
+ *   void GraphRelationBuilder::my_id_builder(Id *id)
  *   {
  *     if (built_map_.checkIsBuiltAndTag(id)) {
  *       return;
@@ -37,11 +37,11 @@ class BuilderStack {
     {
     }
 
-    explicit Entry(const DConstraint &constraint) : constraint_(&constraint)
+    explicit Entry(const Constraint &constraint) : constraint_(&constraint)
     {
     }
 
-    explicit Entry(const DPoseChannel &pchan) : pchan_(&pchan)
+    explicit Entry(const PoseChannel &pchan) : pchan_(&pchan)
     {
     }
 
@@ -53,9 +53,9 @@ class BuilderStack {
     friend class BuilderStack;
 
     const Id *id_ = nullptr;
-    const DConstraint *constraint_ = nullptr;
+    const Constraint *constraint_ = nullptr;
     const ModifierData *modifier_data_ = nullptr;
-    const DPoseChannel *pchan_ = nullptr;
+    const PoseChannel *pchan_ = nullptr;
   };
 
   using Stack = Vector<Entry>;
@@ -130,4 +130,4 @@ class BuilderStack {
   Stack stack_;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
