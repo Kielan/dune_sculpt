@@ -1,6 +1,4 @@
-/**
- * Core routines for how the DGraph works.
- */
+/** Core routines for how the DGraph works. **/
 
 #pragma once
 
