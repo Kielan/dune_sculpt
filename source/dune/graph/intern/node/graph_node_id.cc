@@ -1,4 +1,4 @@
-#include "intern/node/dgraph_node_id.h"
+#include "intern/node/graph_node_id.h"
 
 #include <cstdio>
 #include <cstring> /* required for STREQ later on. */
@@ -11,23 +11,23 @@
 
 #include "dune_lib_id.h"
 
-#include "dgraph.h"
+#include "graph.h"
 
-#include "intern/eval/dgraph_eval_copy_on_write.h"
-#include "intern/node/dgraph_node_component.h"
-#include "intern/node/dgraph_node_factory.h"
-#include "intern/node/dgraph_node_time.h"
+#include "intern/eval/graph_eval_copy_on_write.h"
+#include "intern/node/graph_node_component.h"
+#include "intern/node/graph_node_factory.h"
+#include "intern/node/graph_node_time.h"
 
-namespace dune::dgraph {
+namespace dune::graph {
 
-const char *linkedStateAsString(eDGraphNodeLinkedStateType linked_state)
+const char *linkedStateAsString(eGraphNodeLinkedStateType linked_state)
 {
   switch (linked_state) {
-    case DGRAPH_ID_LINKED_INDIRECTLY:
+    case GRAPH_ID_LINKED_INDIRECTLY:
       return "INDIRECTLY";
-    case DGRAPH_ID_LINKED_VIA_SET:
+    case GRAPH_ID_LINKED_VIA_SET:
       return "VIA_SET";
-    case DGRAPH_ID_LINKED_DIRECTLY:
+    case GRAPH_ID_LINKED_DIRECTLY:
       return "DIRECTLY";
   }
   lib_assert_msg(0, "Unhandled linked state, should never happen.");
@@ -59,9 +59,9 @@ void IdNode::init(const Id *id, const char *UNUSED(subdata))
   id_orig_session_uuid = id->session_uuid;
   eval_flags = 0;
   previous_eval_flags = 0;
-  customdata_masks = DGraphCustomDataMeshMasks();
-  previous_customdata_masks = DGraphCustomDataMeshMasks();
-  linked_state = DGRAPH_ID_LINKED_INDIRECTLY;
+  customdata_masks = GraphCustomDataMeshMasks();
+  previous_customdata_masks = GraphCustomDataMeshMasks();
+  linked_state = GRAPH_ID_LINKED_INDIRECTLY;
   is_directly_visible = true;
   is_collection_fully_expanded = false;
   has_base = false;
@@ -78,19 +78,19 @@ void IdNode::init_copy_on_write(Id *id_cow_hint)
    * bindings. Rest of data we'll be copying to the new datablock when
    * it is actually needed. */
   if (id_cow_hint != nullptr) {
-    // lib_assert(dgraph_copy_on_write_is_needed(id_orig));
-    if (dgraph_copy_on_write_is_needed(id_orig)) {
+    // lib_assert(graph_copy_on_write_is_needed(id_orig));
+    if (graph_copy_on_write_is_needed(id_orig)) {
       id_cow = id_cow_hint;
     }
     else {
       id_cow = id_orig;
     }
   }
-  else if (dgraph_copy_on_write_is_needed(id_orig)) {
+  else if (graph_copy_on_write_is_needed(id_orig)) {
     id_cow = (Id *)dune_libblock_alloc_notest(GS(id_orig->name));
-    DGRAPH_COW_PRINT(
+    GRAPH_COW_PRINT(
         "Create shallow copy for %s: id_orig=%p id_cow=%p\n", id_orig->name, id_orig, id_cow);
-    dgraph_tag_copy_on_write_id(id_cow, id_orig);
+    graph_tag_copy_on_write_id(id_cow, id_orig);
   }
   else {
     id_cow = id_orig;
@@ -145,7 +145,7 @@ ComponentNode *IdNode::add_component(NodeType type, const char *name)
 {
   ComponentNode *comp_node = find_component(type, name);
   if (!comp_node) {
-    DGraphNodeFactory *factory = type_get_factory(type);
+    GraphNodeFactory *factory = type_get_factory(type);
     comp_node = (ComponentNode *)factory->create_node(this->id_orig, "", name);
 
     /* Register. */
@@ -156,19 +156,19 @@ ComponentNode *IdNode::add_component(NodeType type, const char *name)
   return comp_node;
 }
 
-void IdNode::tag_update(DGraph *graph, eUpdateSource source)
+void IdNode::tag_update(Graph *graph, eUpdateSource source)
 {
   for (ComponentNode *comp_node : components.values()) {
     /* Relations update does explicit animation update when needed. Here we ignore animation
      * component to avoid loss of possible unkeyed changes. */
-    if (comp_node->type == NodeType::ANIMATION && source == DEG_UPDATE_SOURCE_RELATIONS) {
+    if (comp_node->type == NodeType::ANIMATION && source == GRAPH_UPDATE_SOURCE_RELATIONS) {
       continue;
     }
     comp_node->tag_update(graph, source);
   }
 }
 
-void IdNode::finalize_build(DGraph *graph)
+void IdNode::finalize_build(Graph *graph)
 {
   /* Finalize build of all components. */
   for (ComponentNode *comp_node : components.values()) {
@@ -190,4 +190,4 @@ IdComponentsMask IdNode::get_visible_components_mask() const
   return result;
 }
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
