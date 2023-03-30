@@ -1,17 +1,17 @@
 #pragma once
 
-#include "intern/dgraph_type.h"
+#include "intern/graph_type.h"
 
 struct Main;
 
 namespace dune {
-namespace dgraph {
+namespace graph {
 
-struct DGraph;
+struct Graph;
 
-void register_graph(DGraph *dgraph);
-void unregister_graph(DGraph *dgraph);
-Span<DGraph *> get_all_registered_graphs(Main *dmain);
+void register_graph(Graph *graph);
+void unregister_graph(Graph *graph);
+Span<Graph *> get_all_registered_graphs(Main *dmain);
 
-}  // namespace dgraph
+}  // namespace graph
 }  // namespace dune
