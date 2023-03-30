@@ -51,4 +51,4 @@ class RuntimeBackup {
   DPenBackup dpen_backup;
 };
 
-}  // namespace dune::dgraph
+}  // namespace dune::graph
