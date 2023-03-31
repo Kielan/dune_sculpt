@@ -1,11 +1,11 @@
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BKE_image.h"
+#include "dune_image.h"
 
-#include "DNA_mesh_types.h"
+#include "types_mesh.h"
 
-#include "DEG_depsgraph_query.h"
+#include "graph_query.h"
 
 #include "overlay_private.h"
 
@@ -43,11 +43,11 @@ static bool paint_object_is_rendered_transparent(View3D *v3d, Object *ob)
   return false;
 }
 
-void OVERLAY_paint_init(OVERLAY_Data *vedata)
+void overlay_paint_init(OverlayData *vedata)
 {
-  OVERLAY_StorageList *stl = vedata->stl;
-  OVERLAY_PrivateData *pd = stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayStorageList *stl = vedata->stl;
+  OverlayPrivateData *pd = stl->pd;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
 
   pd->painting.in_front = pd->use_in_front && draw_ctx->obact &&
                           (draw_ctx->obact->dtx & OB_DRAW_IN_FRONT);
@@ -55,9 +55,9 @@ void OVERLAY_paint_init(OVERLAY_Data *vedata)
                                                                      draw_ctx->obact);
 }
 
-void OVERLAY_paint_cache_init(OVERLAY_Data *vedata)
+void overlay_paint_cache_init(OverlayData *vedata)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   OVERLAY_PassList *psl = vedata->psl;
   OVERLAY_PrivateData *pd = vedata->stl->pd;
   struct GPUShader *sh;
