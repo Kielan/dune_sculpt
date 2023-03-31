@@ -1,22 +1,22 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
-#include "BKE_global.h"
-#include "BKE_gpencil.h"
+#include "dune_global.h"
+#include "dune_dpen.h"
 
-#include "BKE_object.h"
+#include "dune_object.h"
 
-#include "DNA_gpencil_types.h"
+#include "types_dpen.h"
 
-#include "UI_resources.h"
+#include "ui_resources.h"
 
 #include "overlay_private.h"
 
 /* Returns the normal plane in NDC space. */
-static void gpencil_depth_plane(Object *ob, float r_plane[4])
+static void dpen_depth_plane(Object *ob, float r_plane[4])
 {
   /* TODO: put that into private data. */
   float viewinv[4][4];
-  DRW_view_viewmat_get(NULL, viewinv, true);
+  draw_view_viewmat_get(NULL, viewinv, true);
   float *camera_z_axis = viewinv[2];
   float *camera_pos = viewinv[3];
 
@@ -25,11 +25,11 @@ static void gpencil_depth_plane(Object *ob, float r_plane[4])
    * strokes not aligned with the object axes. Maybe we could try to
    * compute the minimum axis of all strokes. But this would be more
    * computationally heavy and should go into the GPData evaluation. */
-  BoundBox *bbox = BKE_object_boundbox_get(ob);
+  BoundBox *bbox = dune_object_boundbox_get(ob);
   /* Convert bbox to matrix */
   float mat[4][4], size[3], center[3];
-  BKE_boundbox_calc_size_aabb(bbox, size);
-  BKE_boundbox_calc_center_aabb(bbox, center);
+  dune_boundbox_calc_size_aabb(bbox, size);
+  dune_boundbox_calc_center_aabb(bbox, center);
   unit_m4(mat);
   copy_v3_v3(mat[3], center);
   /* Avoid division by 0.0 later. */
@@ -40,7 +40,7 @@ static void gpencil_depth_plane(Object *ob, float r_plane[4])
   /* BBox center in world space. */
   copy_v3_v3(center, mat[3]);
   /* View Vector. */
-  if (DRW_view_is_persp_get(NULL)) {
+  if (draw_view_is_persp_get(NULL)) {
     /* BBox center to camera vector. */
     sub_v3_v3v3(r_plane, camera_pos, mat[3]);
   }
@@ -62,24 +62,24 @@ static void gpencil_depth_plane(Object *ob, float r_plane[4])
   plane_from_point_normal_v3(r_plane, center, r_plane);
 }
 
-void OVERLAY_outline_init(OVERLAY_Data *vedata)
+void overlay_outline_init(OverlayData *vedata)
 {
-  OVERLAY_FramebufferList *fbl = vedata->fbl;
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
+  OverlayFramebufferList *fbl = vedata->fbl;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
 
-  if (DRW_state_is_fbo()) {
+  if (draw_state_is_fbo()) {
     /* TODO: only alloc if needed. */
-    DRW_texture_ensure_fullscreen_2d(&txl->temp_depth_tx, GPU_DEPTH24_STENCIL8, 0);
-    DRW_texture_ensure_fullscreen_2d(&txl->outlines_id_tx, GPU_R16UI, 0);
+    draw_texture_ensure_fullscreen_2d(&txl->temp_depth_tx, GPU_DEPTH24_STENCIL8, 0);
+    draw_texture_ensure_fullscreen_2d(&txl->outlines_id_tx, GPU_R16UI, 0);
 
-    GPU_framebuffer_ensure_config(
+    gpu_framebuffer_ensure_config(
         &fbl->outlines_prepass_fb,
         {GPU_ATTACHMENT_TEXTURE(txl->temp_depth_tx), GPU_ATTACHMENT_TEXTURE(txl->outlines_id_tx)});
 
     if (pd->antialiasing.enabled) {
-      GPU_framebuffer_ensure_config(&fbl->outlines_resolve_fb,
+      gpu_framebuffer_ensure_config(&fbl->outlines_resolve_fb,
                                     {
                                         GPU_ATTACHMENT_NONE,
                                         GPU_ATTACHMENT_TEXTURE(txl->overlay_color_tx),
@@ -87,7 +87,7 @@ void OVERLAY_outline_init(OVERLAY_Data *vedata)
                                     });
     }
     else {
-      GPU_framebuffer_ensure_config(&fbl->outlines_resolve_fb,
+      gpu_framebuffer_ensure_config(&fbl->outlines_resolve_fb,
                                     {
                                         GPU_ATTACHMENT_NONE,
                                         GPU_ATTACHMENT_TEXTURE(dtxl->color_overlay),
@@ -96,35 +96,35 @@ void OVERLAY_outline_init(OVERLAY_Data *vedata)
   }
 }
 
-void OVERLAY_outline_cache_init(OVERLAY_Data *vedata)
+void overlay_outline_cache_init(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_TextureList *txl = vedata->txl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  DefaultTextureList *dtxl = DRW_viewport_texture_list_get();
-  DRWShadingGroup *grp = NULL;
+  OverlayPassList *psl = vedata->psl;
+  OverlayTextureList *txl = vedata->txl;
+  OverlayPrivateData *pd = vedata->stl->pd;
+  DefaultTextureList *dtxl = draw_viewport_texture_list_get();
+  DrawShadingGroup *grp = NULL;
 
-  const float outline_width = UI_GetThemeValuef(TH_OUTLINE_WIDTH);
+  const float outline_width = ui_GetThemeValuef(TH_OUTLINE_WIDTH);
   const bool do_expand = (U.pixelsize > 1.0) || (outline_width > 2.0f);
 
   {
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
-    DRW_PASS_CREATE(psl->outlines_prepass_ps, state | pd->clipping_state);
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_WRITE_DEPTH | DRAW_STATE_DEPTH_LESS_EQUAL;
+    DRAW_PASS_CREATE(psl->outlines_prepass_ps, state | pd->clipping_state);
 
-    GPUShader *sh_geom = OVERLAY_shader_outline_prepass(pd->xray_enabled_and_not_wire);
+    GPUShader *sh_geom = ovelay_shader_outline_prepass(pd->xray_enabled_and_not_wire);
 
-    pd->outlines_grp = grp = DRW_shgroup_create(sh_geom, psl->outlines_prepass_ps);
-    DRW_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
+    pd->outlines_grp = grp = draw_shgroup_create(sh_geom, psl->outlines_prepass_ps);
+    draw_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
 
-    GPUShader *sh_geom_ptcloud = OVERLAY_shader_outline_prepass_pointcloud();
+    GPUShader *sh_geom_ptcloud = overlay_shader_outline_prepass_pointcloud();
 
-    pd->outlines_ptcloud_grp = grp = DRW_shgroup_create(sh_geom_ptcloud, psl->outlines_prepass_ps);
-    DRW_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
+    pd->outlines_ptcloud_grp = grp = draw_shgroup_create(sh_geom_ptcloud, psl->outlines_prepass_ps);
+    draw_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
 
-    GPUShader *sh_gpencil = OVERLAY_shader_outline_prepass_gpencil();
+    GPUShader *sh_gpencil = overlay_shader_outline_prepass_dpen();
 
-    pd->outlines_gpencil_grp = grp = DRW_shgroup_create(sh_gpencil, psl->outlines_prepass_ps);
-    DRW_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
+    pd->outlines_gpencil_grp = grp = draw_shgroup_create(sh_gpencil, psl->outlines_prepass_ps);
+    draw_shgroup_uniform_bool_copy(grp, "isTransform", (G.moving & G_TRANSFORM_OBJ) != 0);
   }
 
   /* outlines_prepass_ps is still needed for selection of probes. */
@@ -134,22 +134,22 @@ void OVERLAY_outline_cache_init(OVERLAY_Data *vedata)
 
   {
     /* We can only do alpha blending with lineOutput just after clearing the buffer. */
-    DRWState state = DRW_STATE_WRITE_COLOR | DRW_STATE_BLEND_ALPHA_PREMUL;
-    DRW_PASS_CREATE(psl->outlines_detect_ps, state);
+    DrawState state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_BLEND_ALPHA_PREMUL;
+    DRAW_PASS_CREATE(psl->outlines_detect_ps, state);
 
-    GPUShader *sh = OVERLAY_shader_outline_detect();
+    GPUShader *sh = overlay_shader_outline_detect();
 
-    grp = DRW_shgroup_create(sh, psl->outlines_detect_ps);
+    grp = draw_shgroup_create(sh, psl->outlines_detect_ps);
     /* Don't occlude the "outline" detection pass if in xray mode (too much flickering). */
-    DRW_shgroup_uniform_float_copy(grp, "alphaOcclu", (pd->xray_enabled) ? 1.0f : 0.35f);
-    DRW_shgroup_uniform_bool_copy(grp, "doThickOutlines", do_expand);
-    DRW_shgroup_uniform_bool_copy(grp, "doAntiAliasing", pd->antialiasing.enabled);
-    DRW_shgroup_uniform_bool_copy(grp, "isXrayWires", pd->xray_enabled_and_not_wire);
-    DRW_shgroup_uniform_texture_ref(grp, "outlineId", &txl->outlines_id_tx);
-    DRW_shgroup_uniform_texture_ref(grp, "sceneDepth", &dtxl->depth);
-    DRW_shgroup_uniform_texture_ref(grp, "outlineDepth", &txl->temp_depth_tx);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_call_procedural_triangles(grp, NULL, 1);
+    draw_shgroup_uniform_float_copy(grp, "alphaOcclu", (pd->xray_enabled) ? 1.0f : 0.35f);
+    draw_shgroup_uniform_bool_copy(grp, "doThickOutlines", do_expand);
+    draw_shgroup_uniform_bool_copy(grp, "doAntiAliasing", pd->antialiasing.enabled);
+    draw_shgroup_uniform_bool_copy(grp, "isXrayWires", pd->xray_enabled_and_not_wire);
+    draw_shgroup_uniform_texture_ref(grp, "outlineId", &txl->outlines_id_tx);
+    draw_shgroup_uniform_texture_ref(grp, "sceneDepth", &dtxl->depth);
+    draw_shgroup_uniform_texture_ref(grp, "outlineDepth", &txl->temp_depth_tx);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_call_procedural_triangles(grp, NULL, 1);
   }
 }
 
