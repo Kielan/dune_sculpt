@@ -19,7 +19,7 @@ extern "C" {
 /* Forward declarations */
 struct ImBuf;
 
-typedef struct OVERLAY_FramebufferList {
+typedef struct OverlayFramebufferList {
   struct GPUFrameBuffer *overlay_default_fb;
   struct GPUFrameBuffer *overlay_line_fb;
   struct GPUFrameBuffer *overlay_color_only_fb;
@@ -27,20 +27,20 @@ typedef struct OVERLAY_FramebufferList {
   struct GPUFrameBuffer *overlay_line_in_front_fb;
   struct GPUFrameBuffer *outlines_prepass_fb;
   struct GPUFrameBuffer *outlines_resolve_fb;
-} OVERLAY_FramebufferList;
+} OverlayFramebufferList;
 
-typedef struct OVERLAY_TextureList {
+typedef struct OverlayTextureList {
   struct GPUTexture *temp_depth_tx;
   struct GPUTexture *dummy_depth_tx;
   struct GPUTexture *outlines_id_tx;
   struct GPUTexture *overlay_color_tx;
   struct GPUTexture *overlay_line_tx;
-} OVERLAY_TextureList;
+} OverlayTextureList;
 
 #define NOT_IN_FRONT 0
 #define IN_FRONT 1
 
-typedef enum OVERLAY_UVLineStyle {
+typedef enum OverlayUVLineStyle {
   OVERLAY_UV_LINE_STYLE_OUTLINE = 0,
   OVERLAY_UV_LINE_STYLE_DASH = 1,
   OVERLAY_UV_LINE_STYLE_BLACK = 2,
@@ -48,7 +48,7 @@ typedef enum OVERLAY_UVLineStyle {
   OVERLAY_UV_LINE_STYLE_SHADOW = 4,
 } OVERLAY_UVLineStyle;
 
-typedef struct OVERLAY_PassList {
+typedef struct OverlayPassList {
   DRWPass *antialiasing_ps;
   DRWPass *armature_ps[2];
   DRWPass *armature_bone_select_ps;
@@ -111,10 +111,10 @@ typedef struct OVERLAY_PassList {
   DRWPass *wireframe_ps;
   DRWPass *wireframe_xray_ps;
   DRWPass *xray_fade_ps;
-} OVERLAY_PassList;
+} OverlayPassList;
 
 /* Data used by GLSL shader. To be used as UBO. */
-typedef struct OVERLAY_ShadingData {
+typedef struct OverlayShadingData {
   /** Grid */
   float grid_axes[3], grid_distance;
   float zplane_axes[3], grid_size[3];
