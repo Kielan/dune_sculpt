@@ -110,7 +110,7 @@ extern char datatoc_gpu_shader_flat_color_frag_glsl[];
 extern char datatoc_gpu_shader_point_varying_color_varying_outline_aa_frag_glsl[];
 extern char datatoc_gpu_shader_common_obinfos_lib_glsl[];
 
-extern char datatoc_gpencil_common_lib_glsl[];
+extern char datatoc_dpen_common_lib_glsl[];
 
 extern char datatoc_common_overlay_lib_glsl[];
 extern char datatoc_common_colormanagement_lib_glsl[];
@@ -208,7 +208,7 @@ typedef struct OverlayShaders {
   GPUShader *wireframe_select;
   GPUShader *wireframe[2];
   GPUShader *xray_fade;
-} OVERLAY_Shaders;
+} OverlayShaders;
 
 static struct {
   OverlayShaders sh_data[GPU_SHADER_CFG_LEN];
@@ -231,7 +231,7 @@ GPUShader *overlay_shader_antialiasing(void)
 {
   OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->antialiasing) {
-    sh_data->antialiasing = GPU_shader_create_from_arrays({
+    sh_data->antialiasing = gpu_shader_create_from_arrays({
         .vert = (const char *[]){datatoc_common_globals_lib_glsl,
                                  datatoc_antialiasing_vert_glsl,
                                  NULL},
@@ -246,9 +246,9 @@ GPUShader *overlay_shader_antialiasing(void)
 
 GPUShader *overlay_shader_background(void)
 {
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
+  OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->background) {
-    sh_data->background = GPU_shader_create_from_arrays({
+    sh_data->background = gpu_shader_create_from_arrays({
         .vert = (const char *[]){datatoc_common_fullscreen_vert_glsl, NULL},
         .frag =
             (const char *[]){datatoc_common_globals_lib_glsl, datatoc_background_frag_glsl, NULL},
@@ -257,12 +257,12 @@ GPUShader *overlay_shader_background(void)
   return sh_data->background;
 }
 
-GPUShader *OVERLAY_shader_clipbound(void)
+GPUShader *overlay_shader_clipbound(void)
 {
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[0];
+  OverlayShaders *sh_data = &e_data.sh_data[0];
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[0];
   if (!sh_data->clipbound) {
-    sh_data->clipbound = GPU_shader_create_from_arrays({
+    sh_data->clipbound = gpu_shader_create_from_arrays({
         .vert = (const char *[]){datatoc_common_view_lib_glsl, datatoc_clipbound_vert_glsl, NULL},
         .frag = (const char *[]){datatoc_gpu_shader_uniform_color_frag_glsl, NULL},
         .defs = (const char *[]){sh_cfg->def, NULL},
@@ -271,9 +271,9 @@ GPUShader *OVERLAY_shader_clipbound(void)
   return sh_data->clipbound;
 }
 
-GPUShader *OVERLAY_shader_depth_only(void)
+GPUShader *overlay_shader_depth_only(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
   OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->depth_only) {
@@ -1391,7 +1391,7 @@ GPUShader *OVERLAY_shader_particle_dot(void)
   return sh_data->particle_dot;
 }
 
-GPUShader *OVERLAY_shader_particle_shape(void)
+GPUShader *overlay_shader_particle_shape(void)
 {
   const DRWContextState *draw_ctx = DRW_context_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
@@ -1410,7 +1410,7 @@ GPUShader *OVERLAY_shader_particle_shape(void)
   return sh_data->particle_shape;
 }
 
-GPUShader *OVERLAY_shader_sculpt_mask(void)
+GPUShader *overlay_shader_sculpt_mask(void)
 {
   const DRWContextState *draw_ctx = DRW_context_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
