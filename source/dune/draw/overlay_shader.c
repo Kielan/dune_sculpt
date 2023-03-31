@@ -274,10 +274,10 @@ GPUShader *overlay_shader_clipbound(void)
 GPUShader *overlay_shader_depth_only(void)
 {
   const DrawCtxState *draw_ctx = draw_ctx_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->depth_only) {
-    sh_data->depth_only = GPU_shader_create_from_arrays({
+    sh_data->depth_only = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_depth_only_vert_glsl,
@@ -293,7 +293,7 @@ GPUShader *overlay_shader_edit_mesh_vert(void)
 {
   const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->edit_mesh_vert) {
     sh_data->edit_mesh_vert = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
@@ -311,11 +311,11 @@ GPUShader *overlay_shader_edit_mesh_vert(void)
   return sh_data->edit_mesh_vert;
 }
 
-GPUShader *OVERLAY_shader_edit_mesh_edge(bool use_flat_interp)
+GPUShader *overlay_shader_edit_mesh_edge(bool use_flat_interp)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   GPUShader **sh = use_flat_interp ? &sh_data->edit_mesh_edge_flat : &sh_data->edit_mesh_edge;
   if (*sh == NULL) {
     /* Use geometry shader to draw edge wire-frame. This ensure us
@@ -349,7 +349,7 @@ GPUShader *OVERLAY_shader_edit_mesh_edge(bool use_flat_interp)
                           "#define EDGE\n",
                           NULL};
 
-    *sh = GPU_shader_create_from_arrays({
+    *sh = gpu_shader_create_from_arrays({
         .vert = vert_sh_code,
         .frag = frag_sh_code,
         .geom = geom_sh_code,
@@ -361,12 +361,12 @@ GPUShader *OVERLAY_shader_edit_mesh_edge(bool use_flat_interp)
 
 GPUShader *overlay_shader_armature_sphere(bool use_outline)
 {
-  const DrawCtxState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   const char extensions[] = "";
   if (use_outline && !sh_data->armature_sphere_outline) {
-    sh_data->armature_sphere_outline = GPU_shader_create_from_arrays({
+    sh_data->armature_sphere_outline = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -380,7 +380,7 @@ GPUShader *overlay_shader_armature_sphere(bool use_outline)
     });
   }
   else if (!sh_data->armature_sphere_solid) {
-    sh_data->armature_sphere_solid = GPU_shader_create_from_arrays({
+    sh_data->armature_sphere_solid = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_armature_sphere_solid_vert_glsl,
@@ -395,13 +395,13 @@ GPUShader *overlay_shader_armature_sphere(bool use_outline)
   return use_outline ? sh_data->armature_sphere_outline : sh_data->armature_sphere_solid;
 }
 
-GPUShader *OVERLAY_shader_armature_shape(bool use_outline)
+GPUShader *overlay_shader_armature_shape(bool use_outline)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  overlay_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (use_outline && !sh_data->armature_shape_outline) {
-    sh_data->armature_shape_outline = GPU_shader_create_from_arrays({
+    sh_data->armature_shape_outline = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -430,11 +430,11 @@ GPUShader *OVERLAY_shader_armature_shape(bool use_outline)
   return use_outline ? sh_data->armature_shape_outline : sh_data->armature_shape_solid;
 }
 
-GPUShader *OVERLAY_shader_armature_shape_wire(void)
+GPUShader *overlay_shader_armature_shape_wire(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = DRW_context_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->armature_shape_wire) {
     sh_data->armature_shape_wire = GPU_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
