@@ -1,13 +1,13 @@
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #include "draw_cache_impl.h"
 #include "overlay_private.h"
 
-#include "BKE_paint.h"
-#include "BKE_pbvh.h"
-#include "BKE_subdiv_ccg.h"
+#include "dune_paint.h"
+#include "dune_pbvh.h"
+#include "dune_subdiv_ccg.h"
 
-void OVERLAY_sculpt_cache_init(OVERLAY_Data *vedata)
+void overlay_sculpt_cache_init(OverlayData *vedata)
 {
   OVERLAY_PassList *psl = vedata->psl;
   OVERLAY_PrivateData *pd = vedata->stl->pd;
