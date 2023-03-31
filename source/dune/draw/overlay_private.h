@@ -99,18 +99,18 @@ typedef struct OverlayPassList {
   DrawPass *metaball_ps[2];
   DrawPass *motion_paths_ps;
   DrawPass *outlines_prepass_ps;
-  DRWPass *outlines_detect_ps;
-  DRWPass *outlines_resolve_ps;
-  DRWPass *paint_color_ps;
-  DRWPass *paint_depth_ps;
-  DRWPass *paint_overlay_ps;
-  DRWPass *particle_ps;
-  DRWPass *pointcloud_ps;
-  DRWPass *sculpt_mask_ps;
-  DRWPass *volume_ps;
-  DRWPass *wireframe_ps;
-  DRWPass *wireframe_xray_ps;
-  DRWPass *xray_fade_ps;
+  DrawPass *outlines_detect_ps;
+  DrawPass *outlines_resolve_ps;
+  DrawPass *paint_color_ps;
+  DrawPass *paint_depth_ps;
+  DrawPass *paint_overlay_ps;
+  DrawPass *particle_ps;
+  DrawPass *pointcloud_ps;
+  DrawPass *sculpt_mask_ps;
+  DrawPass *volume_ps;
+  DrawPass *wireframe_ps;
+  DrawPass *wireframe_xray_ps;
+  DrawPass *xray_fade_ps;
 } OverlayPassList;
 
 /* Data used by GLSL shader. To be used as UBO. */
@@ -172,28 +172,28 @@ typedef struct OverlayExtraCallBuffers {
   DrawCallBuffer *field_sphere_limit;
   DrawCallBuffer *field_tube_limit;
 
-  DRWCallBuffer *groundline;
+  DrawCallBuffer *groundline;
 
-  DRWCallBuffer *light_point;
-  DRWCallBuffer *light_sun;
-  DRWCallBuffer *light_spot;
-  DRWCallBuffer *light_spot_cone_back;
-  DRWCallBuffer *light_spot_cone_front;
-  DRWCallBuffer *light_area[2];
+  DrawCallBuffer *light_point;
+  DrawCallBuffer *light_sun;
+  DrawCallBuffer *light_spot;
+  DrawCallBuffer *light_spot_cone_back;
+  DrawCallBuffer *light_spot_cone_front;
+  DrawCallBuffer *light_area[2];
 
-  DRWCallBuffer *origin_xform;
+  DrawCallBuffer *origin_xform;
 
-  DRWCallBuffer *probe_planar;
-  DRWCallBuffer *probe_cube;
-  DRWCallBuffer *probe_grid;
+  DrawCallBuffer *probe_planar;
+  DrawCallBuffer *probe_cube;
+  DrawCallBuffer *probe_grid;
 
-  DRWCallBuffer *solid_quad;
+  DrawCallBuffer *solid_quad;
 
-  DRWCallBuffer *speaker;
+  DrawCallBuffer *speaker;
 
-  DRWShadingGroup *extra_wire;
-  DRWShadingGroup *extra_loose_points;
-} OVERLAY_ExtraCallBuffers;
+  DrawShadingGroup *extra_wire;
+  DrawShadingGroup *extra_loose_points;
+} OverlayExtraCallBuffers;
 
 typedef struct OverlayArmatureCallBuffersInner {
   DRWCallBuffer *box_outline;
