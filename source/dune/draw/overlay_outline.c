@@ -155,41 +155,41 @@ void overlay_outline_cache_init(OverlayData *vedata)
 
 typedef struct iterData {
   Object *ob;
-  DRWShadingGroup *stroke_grp;
-  DRWShadingGroup *fill_grp;
+  DrawShadingGroup *stroke_grp;
+  DrawShadingGroup *fill_grp;
   int cfra;
   float plane[4];
 } iterData;
 
-static void gpencil_layer_cache_populate(bGPDlayer *gpl,
-                                         bGPDframe *UNUSED(gpf),
-                                         bGPDstroke *UNUSED(gps),
+static void dpen_layer_cache_populate(DPenLayer *dpl,
+                                         DPenFrame *UNUSED(gpf),
+                                         DPenStroke *UNUSED(gps),
                                          void *thunk)
 {
   iterData *iter = (iterData *)thunk;
-  bGPdata *gpd = (bGPdata *)iter->ob->data;
+  DPenData *dpd = (DPenData *)iter->ob->data;
 
   const bool is_screenspace = (gpd->flag & GP_DATA_STROKE_KEEPTHICKNESS) != 0;
-  const bool is_stroke_order_3d = (gpd->draw_mode == GP_DRAWMODE_3D);
+  const bool is_stroke_order_3d = (gpd->draw_mode == DP_DRAWMODE_3D);
 
   float object_scale = mat4_to_scale(iter->ob->obmat);
   /* Negate thickness sign to tag that strokes are in screen space.
    * Convert to world units (by default, 1 meter = 2000 pixels). */
-  float thickness_scale = (is_screenspace) ? -1.0f : (gpd->pixfactor / 2000.0f);
+  float thickness_scale = (is_screenspace) ? -1.0f : (dpd->pixfactor / 2000.0f);
 
-  DRWShadingGroup *grp = iter->stroke_grp = DRW_shgroup_create_sub(iter->stroke_grp);
-  DRW_shgroup_uniform_bool_copy(grp, "strokeOrder3d", is_stroke_order_3d);
-  DRW_shgroup_uniform_vec2_copy(grp, "sizeViewportInv", DRW_viewport_invert_size_get());
-  DRW_shgroup_uniform_vec2_copy(grp, "sizeViewport", DRW_viewport_size_get());
-  DRW_shgroup_uniform_float_copy(grp, "thicknessScale", object_scale);
-  DRW_shgroup_uniform_float_copy(grp, "thicknessOffset", (float)gpl->line_change);
-  DRW_shgroup_uniform_float_copy(grp, "thicknessWorldScale", thickness_scale);
-  DRW_shgroup_uniform_vec4_copy(grp, "gpDepthPlane", iter->plane);
+  DrawShadingGroup *grp = iter->stroke_grp = draw_shgroup_create_sub(iter->stroke_grp);
+  draw_shgroup_uniform_bool_copy(grp, "strokeOrder3d", is_stroke_order_3d);
+  draw_shgroup_uniform_vec2_copy(grp, "sizeViewportInv", draw_viewport_invert_size_get());
+  draw_shgroup_uniform_vec2_copy(grp, "sizeViewport", draw_viewport_size_get());
+  draw_shgroup_uniform_float_copy(grp, "thicknessScale", object_scale);
+  draw_shgroup_uniform_float_copy(grp, "thicknessOffset", (float)dpl->line_change);
+  draw_shgroup_uniform_float_copy(grp, "thicknessWorldScale", thickness_scale);
+  draw_shgroup_uniform_vec4_copy(grp, "gpDepthPlane", iter->plane);
 }
 
-static void gpencil_stroke_cache_populate(bGPDlayer *UNUSED(gpl),
-                                          bGPDframe *UNUSED(gpf),
-                                          bGPDstroke *gps,
+static void dpen_stroke_cache_populate(DPenLayer *UNUSED(gpl),
+                                          DPenFrame *UNUSED(gpf),
+                                          DPenStroke *gps,
                                           void *thunk)
 {
   iterData *iter = (iterData *)thunk;
