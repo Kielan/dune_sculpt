@@ -77,24 +77,24 @@ void overlay_paint_cache_init(OverlayData *vedata)
     case CTX_MODE_PAINT_WEIGHT: {
       opacity = is_edit_mode ? 1.0 : pd->overlay.weight_paint_mode_opacity;
       if (opacity > 0.0f) {
-        state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL | DRW_STATE_BLEND_ALPHA;
-        DRW_PASS_CREATE(psl->paint_color_ps, state | pd->clipping_state);
+        state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_EQUAL | DRAW_STATE_BLEND_ALPHA;
+        DRAW_PASS_CREATE(psl->paint_color_ps, state | pd->clipping_state);
 
         const bool do_shading = draw_ctx->v3d->shading.type != OB_WIRE;
 
-        sh = OVERLAY_shader_paint_weight(do_shading);
-        pd->paint_surf_grp = grp = DRW_shgroup_create(sh, psl->paint_color_ps);
-        DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-        DRW_shgroup_uniform_bool_copy(grp, "drawContours", draw_contours);
-        DRW_shgroup_uniform_float_copy(grp, "opacity", opacity);
-        DRW_shgroup_uniform_texture(grp, "colorramp", G_draw.weight_ramp);
+        sh = overlay_shader_paint_weight(do_shading);
+        pd->paint_surf_grp = grp = draw_shgroup_create(sh, psl->paint_color_ps);
+        draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+        draw_shgroup_uniform_bool_copy(grp, "drawContours", draw_contours);
+        draw_shgroup_uniform_float_copy(grp, "opacity", opacity);
+        draw_shgroup_uniform_texture(grp, "colorramp", G_draw.weight_ramp);
 
         /* Arbitrary light to give a hint of the geometry behind the weights. */
         if (do_shading) {
           float light_dir[3];
           copy_v3_fl3(light_dir, 0.0f, 0.5f, 0.86602f);
           normalize_v3(light_dir);
-          DRW_shgroup_uniform_vec3_copy(grp, "light_dir", light_dir);
+          draw_shgroup_uniform_vec3_copy(grp, "light_dir", light_dir);
         }
 
         if (pd->painting.alpha_blending) {
@@ -109,15 +109,15 @@ void overlay_paint_cache_init(OverlayData *vedata)
     case CTX_MODE_PAINT_VERTEX: {
       opacity = pd->overlay.vertex_paint_mode_opacity;
       if (opacity > 0.0f) {
-        state = DRW_STATE_WRITE_COLOR | DRW_STATE_DEPTH_EQUAL;
-        state |= pd->painting.alpha_blending ? DRW_STATE_BLEND_ALPHA : DRW_STATE_BLEND_MUL;
-        DRW_PASS_CREATE(psl->paint_color_ps, state | pd->clipping_state);
+        state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_DEPTH_EQUAL;
+        state |= pd->painting.alpha_blending ? DRAW_STATE_BLEND_ALPHA : DRAW_STATE_BLEND_MUL;
+        DRAW_PASS_CREATE(psl->paint_color_ps, state | pd->clipping_state);
 
-        sh = OVERLAY_shader_paint_vertcol();
+        sh = overlay_shader_paint_vertcol();
         pd->paint_surf_grp = grp = DRW_shgroup_create(sh, psl->paint_color_ps);
-        DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-        DRW_shgroup_uniform_bool_copy(grp, "useAlphaBlend", pd->painting.alpha_blending);
-        DRW_shgroup_uniform_float_copy(grp, "opacity", opacity);
+        draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+        draw_shgroup_uniform_bool_copy(grp, "useAlphaBlend", pd->painting.alpha_blending);
+        draw_shgroup_uniform_float_copy(grp, "opacity", opacity);
       }
       break;
     }
@@ -135,19 +135,19 @@ void overlay_paint_cache_init(OverlayData *vedata)
 
         const bool mask_premult = (imapaint->stencil->alpha_mode == IMA_ALPHA_PREMUL);
         const bool mask_inverted = (imapaint->flag & IMAGEPAINT_PROJECT_LAYER_STENCIL_INV) != 0;
-        sh = OVERLAY_shader_paint_texture();
-        pd->paint_surf_grp = grp = DRW_shgroup_create(sh, psl->paint_color_ps);
-        DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-        DRW_shgroup_uniform_float_copy(grp, "opacity", opacity);
-        DRW_shgroup_uniform_bool_copy(grp, "maskPremult", mask_premult);
-        DRW_shgroup_uniform_vec3_copy(grp, "maskColor", imapaint->stencil_col);
-        DRW_shgroup_uniform_bool_copy(grp, "maskInvertStencil", mask_inverted);
-        DRW_shgroup_uniform_texture(grp, "maskImage", tex);
+        sh = overlay_shader_paint_texture();
+        pd->paint_surf_grp = grp = draw_shgroup_create(sh, psl->paint_color_ps);
+        draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+        draw_shgroup_uniform_float_copy(grp, "opacity", opacity);
+        draw_shgroup_uniform_bool_copy(grp, "maskPremult", mask_premult);
+        draw_shgroup_uniform_vec3_copy(grp, "maskColor", imapaint->stencil_col);
+        draw_shgroup_uniform_bool_copy(grp, "maskInvertStencil", mask_inverted);
+        draw_shgroup_uniform_texture(grp, "maskImage", tex);
       }
       break;
     }
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 
@@ -157,31 +157,31 @@ void overlay_paint_cache_init(OverlayData *vedata)
   }
 
   {
-    state = DRW_STATE_WRITE_COLOR | DRW_STATE_WRITE_DEPTH | DRW_STATE_DEPTH_LESS_EQUAL;
-    DRW_PASS_CREATE(psl->paint_overlay_ps, state | pd->clipping_state);
-    sh = OVERLAY_shader_paint_face();
-    pd->paint_face_grp = grp = DRW_shgroup_create(sh, psl->paint_overlay_ps);
-    DRW_shgroup_uniform_vec4_copy(grp, "color", (float[4]){1.0f, 1.0f, 1.0f, 0.2f});
-    DRW_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
+    state = DRAW_STATE_WRITE_COLOR | DRAW_STATE_WRITE_DEPTH | DRAW_STATE_DEPTH_LESS_EQUAL;
+    DRAW_PASS_CREATE(psl->paint_overlay_ps, state | pd->clipping_state);
+    sh = overlay_shader_paint_face();
+    pd->paint_face_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
+    draw_shgroup_uniform_vec4_copy(grp, "color", (float[4]){1.0f, 1.0f, 1.0f, 0.2f});
+    draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA);
 
-    sh = OVERLAY_shader_paint_wire();
-    pd->paint_wire_selected_grp = grp = DRW_shgroup_create(sh, psl->paint_overlay_ps);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_bool_copy(grp, "useSelect", true);
-    DRW_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
+    sh = overlay_shader_paint_wire();
+    pd->paint_wire_selected_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_bool_copy(grp, "useSelect", true);
+    draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA);
 
-    pd->paint_wire_grp = grp = DRW_shgroup_create(sh, psl->paint_overlay_ps);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
-    DRW_shgroup_uniform_bool_copy(grp, "useSelect", false);
-    DRW_shgroup_state_enable(grp, DRW_STATE_BLEND_ALPHA);
+    pd->paint_wire_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    draw_shgroup_uniform_bool_copy(grp, "useSelect", false);
+    draw_shgroup_state_enable(grp, DRAW_STATE_BLEND_ALPHA);
 
-    sh = OVERLAY_shader_paint_point();
-    pd->paint_point_grp = grp = DRW_shgroup_create(sh, psl->paint_overlay_ps);
-    DRW_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
+    sh = Overlayshader_paint_point();
+    pd->paint_point_grp = grp = draw_shgroup_create(sh, psl->paint_overlay_ps);
+    draw_shgroup_uniform_block(grp, "globalsBlock", G_draw.block_ubo);
   }
 }
 
-void OVERLAY_paint_texture_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_paint_texture_cache_populate(OVERLAY_Data *vedata, Object *ob)
 {
   OVERLAY_PrivateData *pd = vedata->stl->pd;
   struct GPUBatch *geom = NULL;
