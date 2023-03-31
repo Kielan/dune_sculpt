@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "DRW_render.h"
+#include "draw_render.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,8 +14,8 @@ extern "C" {
 #endif
 
 /* Needed for eSpaceImage_UVDT_Stretch and eMaskOverlayMode */
-#include "DNA_mask_types.h"
-#include "DNA_space_types.h"
+#include "types_mask.h"
+#include "types_space.h"
 /* Forward declarations */
 struct ImBuf;
 
