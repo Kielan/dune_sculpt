@@ -199,54 +199,54 @@ typedef struct OverlayArmatureCallBuffersInner {
   DrawCallBuffer *box_outline;
   DrawCallBuffer *box_fill;
 
-  DRWCallBuffer *dof_lines;
-  DRWCallBuffer *dof_sphere;
+  DrawCallBuffer *dof_lines;
+  DrawCallBuffer *dof_sphere;
 
-  DRWCallBuffer *envelope_distance;
-  DRWCallBuffer *envelope_outline;
-  DRWCallBuffer *envelope_fill;
+  DrawCallBuffer *envelope_distance;
+  DrawCallBuffer *envelope_outline;
+  DrawCallBuffer *envelope_fill;
 
-  DRWCallBuffer *octa_outline;
-  DRWCallBuffer *octa_fill;
+  DrawCallBuffer *octa_outline;
+  DrawCallBuffer *octa_fill;
 
-  DRWCallBuffer *point_outline;
-  DRWCallBuffer *point_fill;
+  DrawCallBuffer *point_outline;
+  DrawCallBuffer *point_fill;
 
-  DRWCallBuffer *stick;
+  DrawCallBuffer *stick;
 
-  DRWCallBuffer *wire;
+  DrawCallBuffer *wire;
 
-  DRWShadingGroup *custom_outline;
-  DRWShadingGroup *custom_fill;
-  DRWShadingGroup *custom_wire;
+  DrawShadingGroup *custom_outline;
+  DrawShadingGroup *custom_fill;
+  DrawShadingGroup *custom_wire;
 
   GHash *custom_shapes_ghash;
-} OverlatArmatureCallBuffersInner;
+} OverlayArmatureCallBuffersInner;
 
 typedef struct OverlayArmatureCallBuffers {
-  OVERLAY_ArmatureCallBuffersInner solid;
-  OVERLAY_ArmatureCallBuffersInner transp;
+  OverlayArmatureCallBuffersInner solid;
+  OverlayArmatureCallBuffersInner transp;
 } OverlayArmatureCallBuffers;
 
-typedef struct OVERLAY_PrivateData {
-  DRWShadingGroup *armature_bone_select_act_grp;
-  DRWShadingGroup *armature_bone_select_grp;
-  DRWShadingGroup *edit_curve_normal_grp[2];
-  DRWShadingGroup *edit_curve_wire_grp[2];
-  DRWShadingGroup *edit_curve_handle_grp;
-  DRWShadingGroup *edit_curve_points_grp;
-  DRWShadingGroup *edit_lattice_points_grp;
-  DRWShadingGroup *edit_lattice_wires_grp;
-  DRWShadingGroup *edit_gpencil_points_grp;
-  DRWShadingGroup *edit_gpencil_wires_grp;
-  DRWShadingGroup *edit_gpencil_curve_handle_grp;
-  DRWShadingGroup *edit_gpencil_curve_points_grp;
-  DRWShadingGroup *edit_mesh_depth_grp[2];
-  DRWShadingGroup *edit_mesh_faces_grp[2];
-  DRWShadingGroup *edit_mesh_faces_cage_grp[2];
-  DRWShadingGroup *edit_mesh_verts_grp[2];
-  DRWShadingGroup *edit_mesh_edges_grp[2];
-  DRWShadingGroup *edit_mesh_facedots_grp[2];
+typedef struct OverlayPrivateData {
+  DrawShadingGroup *armature_bone_select_act_grp;
+  DrawShadingGroup *armature_bone_select_grp;
+  DrawShadingGroup *edit_curve_normal_grp[2];
+  DrawShadingGroup *edit_curve_wire_grp[2];
+  DrawShadingGroup *edit_curve_handle_grp;
+  DrawShadingGroup *edit_curve_points_grp;
+  DrawShadingGroup *edit_lattice_points_grp;
+  DrawShadingGroup *edit_lattice_wires_grp;
+  DrawShadingGroup *edit_dpen_points_grp;
+  DrawShadingGroup *edit_dpen_wires_grp;
+  DrawShadingGroup *edit_dpen_curve_handle_grp;
+  DrawShadingGroup *edit_dpen_curve_points_grp;
+  DrawShadingGroup *edit_mesh_depth_grp[2];
+  DrawShadingGroup *edit_mesh_faces_grp[2];
+  DrawShadingGroup *edit_mesh_faces_cage_grp[2];
+  DrawShadingGroup *edit_mesh_verts_grp[2];
+  DrawShadingGroup *edit_mesh_edges_grp[2];
+  DrawShadingGroup *edit_mesh_facedots_grp[2];
   DRWShadingGroup *edit_mesh_skin_roots_grp[2];
   DRWShadingGroup *edit_mesh_normals_grp;
   DRWShadingGroup *edit_mesh_analysis_grp;
@@ -285,26 +285,26 @@ typedef struct OVERLAY_PrivateData {
   DRWShadingGroup *wires_hair_grp[2][2]; /* With and without coloring. */
   DRWShadingGroup *wires_sculpt_grp[2];
 
-  DRWView *view_default;
-  DRWView *view_wires;
-  DRWView *view_edit_faces;
-  DRWView *view_edit_faces_cage;
-  DRWView *view_edit_edges;
-  DRWView *view_edit_verts;
-  DRWView *view_edit_text;
-  DRWView *view_reference_images;
+  DrawView *view_default;
+  DrawView *view_wires;
+  DrawView *view_edit_faces;
+  DrawView *view_edit_faces_cage;
+  DrawView *view_edit_edges;
+  DrawView *view_edit_verts;
+  DrawView *view_edit_text;
+  DrawView *view_ref_images;
 
   /** TODO: get rid of this. */
   ListBase smoke_domains;
   ListBase bg_movie_clips;
 
   /** Two instances for in_front option and without. */
-  OVERLAY_ExtraCallBuffers extra_call_buffers[2];
+  OverlayExtraCallBuffers extra_call_buffers[2];
 
-  OVERLAY_ArmatureCallBuffers armature_call_buffers[2];
+  OverlayArmatureCallBuffers armature_call_buffers[2];
 
   View3DOverlay overlay;
-  enum eContextObjectMode ctx_mode;
+  enum eCtxObjectMode ctx_mode;
   char space_type;
   bool clear_in_front;
   bool use_in_front;
@@ -316,8 +316,8 @@ typedef struct OVERLAY_PrivateData {
   short v3d_flag;     /* TODO: move to #View3DOverlay. */
   short v3d_gridflag; /* TODO: move to #View3DOverlay. */
   int cfra;
-  DRWState clipping_state;
-  OVERLAY_ShadingData shdata;
+  DrawState clipping_state;
+  OverlayShadingData shdata;
 
   struct {
     bool enabled;
@@ -363,7 +363,7 @@ typedef struct OVERLAY_PrivateData {
     float image_aspect[2];
 
     /* edge drawing */
-    OVERLAY_UVLineStyle line_style;
+    OverlayUVLineStyle line_style;
     float dash_length;
     int do_smooth_wire;
 
@@ -395,7 +395,7 @@ typedef struct OVERLAY_PrivateData {
     bool alpha_blending;
   } painting;
   struct {
-    DRWCallBuffer *handle[2];
+    DrawCallBuffer *handle[2];
   } mball;
   struct {
     double time;
