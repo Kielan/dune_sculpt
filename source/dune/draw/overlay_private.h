@@ -83,22 +83,22 @@ typedef struct OverlayPassList {
   DrawPass *extra_blend_ps;
   DrawPass *extra_centers_ps;
   DrawPass *extra_grid_ps;
-  DrawPass *gpencil_canvas_ps;
+  DrawPass *pen_canvas_ps;
   DrawPass *facing_ps[2];
   DrawPass *fade_ps[2];
-  DRWPass *mode_transfer_ps[2];
-  DRWPass *grid_ps;
-  DRWPass *image_background_ps;
-  DRWPass *image_background_scene_ps;
-  DRWPass *image_empties_ps;
-  DRWPass *image_empties_back_ps;
-  DRWPass *image_empties_blend_ps;
-  DRWPass *image_empties_front_ps;
-  DRWPass *image_foreground_ps;
-  DRWPass *image_foreground_scene_ps;
-  DRWPass *metaball_ps[2];
-  DRWPass *motion_paths_ps;
-  DRWPass *outlines_prepass_ps;
+  DrawPass *mode_transfer_ps[2];
+  DrawPass *grid_ps;
+  DrawPass *image_background_ps;
+  DrawPass *image_background_scene_ps;
+  DrawPass *image_empties_ps;
+  DrawPass *image_empties_back_ps;
+  DrawPass *image_empties_blend_ps;
+  DrawPass *image_empties_front_ps;
+  DrawPass *image_foreground_ps;
+  DrawPass *image_foreground_scene_ps;
+  DrawPass *metaball_ps[2];
+  DrawPass *motion_paths_ps;
+  DrawPass *outlines_prepass_ps;
   DRWPass *outlines_detect_ps;
   DRWPass *outlines_resolve_ps;
   DRWPass *paint_color_ps;
@@ -147,30 +147,30 @@ typedef struct OverlayExtraCallBuffers {
   DrawCallBuffer *center_selected_lib;
   DrawCallBuffer *center_deselected_lib;
 
-  DRWCallBuffer *empty_axes;
-  DRWCallBuffer *empty_capsule_body;
-  DRWCallBuffer *empty_capsule_cap;
-  DRWCallBuffer *empty_circle;
-  DRWCallBuffer *empty_cone;
-  DRWCallBuffer *empty_cube;
-  DRWCallBuffer *empty_cylinder;
-  DRWCallBuffer *empty_image_frame;
-  DRWCallBuffer *empty_plain_axes;
-  DRWCallBuffer *empty_single_arrow;
-  DRWCallBuffer *empty_sphere;
-  DRWCallBuffer *empty_sphere_solid;
+  DrawCallBuffer *empty_axes;
+  DrawCallBuffer *empty_capsule_body;
+  DrawCallBuffer *empty_capsule_cap;
+  DrawCallBuffer *empty_circle;
+  DrawCallBuffer *empty_cone;
+  DrawCallBuffer *empty_cube;
+  DrawCallBuffer *empty_cylinder;
+  DrawCallBuffer *empty_image_frame;
+  DrawCallBuffer *empty_plain_axes;
+  DrawCallBuffer *empty_single_arrow;
+  DrawCallBuffer *empty_sphere;
+  DrawCallBuffer *empty_sphere_solid;
 
-  DRWCallBuffer *extra_dashed_lines;
-  DRWCallBuffer *extra_lines;
-  DRWCallBuffer *extra_points;
+  DrawCallBuffer *extra_dashed_lines;
+  DrawCallBuffer *extra_lines;
+  DrawCallBuffer *extra_points;
 
-  DRWCallBuffer *field_curve;
-  DRWCallBuffer *field_force;
-  DRWCallBuffer *field_vortex;
-  DRWCallBuffer *field_wind;
-  DRWCallBuffer *field_cone_limit;
-  DRWCallBuffer *field_sphere_limit;
-  DRWCallBuffer *field_tube_limit;
+  DrawCallBuffer *field_curve;
+  DrawCallBuffer *field_force;
+  DrawCallBuffer *field_vortex;
+  DrawCallBuffer *field_wind;
+  DrawCallBuffer *field_cone_limit;
+  DrawCallBuffer *field_sphere_limit;
+  DrawCallBuffer *field_tube_limit;
 
   DRWCallBuffer *groundline;
 
@@ -195,7 +195,7 @@ typedef struct OverlayExtraCallBuffers {
   DRWShadingGroup *extra_loose_points;
 } OVERLAY_ExtraCallBuffers;
 
-typedef struct OVERLAY_ArmatureCallBuffersInner {
+typedef struct OverlayArmatureCallBuffersInner {
   DRWCallBuffer *box_outline;
   DRWCallBuffer *box_fill;
 
@@ -221,12 +221,12 @@ typedef struct OVERLAY_ArmatureCallBuffersInner {
   DRWShadingGroup *custom_wire;
 
   GHash *custom_shapes_ghash;
-} OVERLAY_ArmatureCallBuffersInner;
+} OverlatArmatureCallBuffersInner;
 
-typedef struct OVERLAY_ArmatureCallBuffers {
+typedef struct OverlayArmatureCallBuffers {
   OVERLAY_ArmatureCallBuffersInner solid;
   OVERLAY_ArmatureCallBuffersInner transp;
-} OVERLAY_ArmatureCallBuffers;
+} OverlayArmatureCallBuffers;
 
 typedef struct OVERLAY_PrivateData {
   DRWShadingGroup *armature_bone_select_act_grp;
@@ -737,7 +737,7 @@ GPUShader *OVERLAY_shader_wireframe(bool custom_bias);
 GPUShader *OVERLAY_shader_wireframe_select(void);
 GPUShader *OVERLAY_shader_xray_fade(void);
 
-OVERLAY_InstanceFormats *OVERLAY_shader_instance_formats_get(void);
+OverlayInstanceFormats *OVERLAY_shader_instance_formats_get(void);
 
 void OVERLAY_shader_free(void);
 
