@@ -57,9 +57,9 @@ typedef struct OverlayPassList {
   DRWPass *clipping_frustum_ps;
   DRWPass *edit_curve_wire_ps[2];
   DRWPass *edit_curve_handle_ps;
-  DRWPass *edit_gpencil_ps;
-  DRWPass *edit_gpencil_gizmos_ps;
-  DRWPass *edit_gpencil_curve_ps;
+  DRWPass *edit_dpen_ps;
+  DRWPass *edit_dpen_gizmos_ps;
+  DRWPass *edit_dpen_curve_ps;
   DRWPass *edit_lattice_ps;
   DRWPass *edit_mesh_depth_ps[2];
   DRWPass *edit_mesh_verts_ps[2];
@@ -132,20 +132,20 @@ typedef struct OverlayShadingData {
   float edit_curve_normal_length;
   /** Edit Mesh */
   int data_mask[4];
-} OVERLAY_ShadingData;
+} OverlayShadingData;
 
-typedef struct OVERLAY_ExtraCallBuffers {
-  DRWCallBuffer *camera_frame;
-  DRWCallBuffer *camera_tria[2];
-  DRWCallBuffer *camera_distances;
-  DRWCallBuffer *camera_volume;
-  DRWCallBuffer *camera_volume_frame;
+typedef struct OverlayExtraCallBuffers {
+  DrawCallBuffer *camera_frame;
+  DrawCallBuffer *camera_tria[2];
+  DrawCallBuffer *camera_distances;
+  DrawCallBuffer *camera_volume;
+  DrawCallBuffer *camera_volume_frame;
 
-  DRWCallBuffer *center_active;
-  DRWCallBuffer *center_selected;
-  DRWCallBuffer *center_deselected;
-  DRWCallBuffer *center_selected_lib;
-  DRWCallBuffer *center_deselected_lib;
+  DrawCallBuffer *center_active;
+  DrawCallBuffer *center_selected;
+  DrawCallBuffer *center_deselected;
+  DrawCallBuffer *center_selected_lib;
+  DrawCallBuffer *center_deselected_lib;
 
   DRWCallBuffer *empty_axes;
   DRWCallBuffer *empty_capsule_body;
