@@ -23,14 +23,14 @@ void overlay_sculpt_cache_init(OverlayData *vedata)
       grp, "faceSetsOpacity", pd->overlay.sculpt_mode_face_sets_opacity);
 }
 
-void OVERLAY_sculpt_cache_populate(OVERLAY_Data *vedata, Object *ob)
+void overlay_sculpt_cache_populate(OverlayData *vedata, Object *ob)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   struct GPUBatch *sculpt_overlays;
   PBVH *pbvh = ob->sculpt->pbvh;
 
-  const bool use_pbvh = BKE_sculptsession_use_pbvh_draw(ob, draw_ctx->v3d);
+  const bool use_pbvh = dune_sculptsession_use_pbvh_draw(ob, draw_ctx->v3d);
 
   if (!pbvh) {
     /* It is possible to have SculptSession without PBVH. This happens, for example, when toggling
@@ -46,25 +46,25 @@ void OVERLAY_sculpt_cache_populate(OVERLAY_Data *vedata, Object *ob)
   }
 
   if (use_pbvh) {
-    DRW_shgroup_call_sculpt(pd->sculpt_mask_grp, ob, false, true);
+    draw_shgroup_call_sculpt(pd->sculpt_mask_grp, ob, false, true);
   }
   else {
-    sculpt_overlays = DRW_mesh_batch_cache_get_sculpt_overlays(ob->data);
+    sculpt_overlays = draw_mesh_batch_cache_get_sculpt_overlays(ob->data);
     if (sculpt_overlays) {
-      DRW_shgroup_call(pd->sculpt_mask_grp, sculpt_overlays, ob);
+      draw_shgroup_call(pd->sculpt_mask_grp, sculpt_overlays, ob);
     }
   }
 }
 
-void OVERLAY_sculpt_draw(OVERLAY_Data *vedata)
+void overlay_sculpt_draw(OverlayData *vedata)
 {
-  OVERLAY_PassList *psl = vedata->psl;
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  DefaultFramebufferList *dfbl = DRW_viewport_framebuffer_list_get();
+  OverlayPassList *psl = vedata->psl;
+  OverlatPrivateData *pd = vedata->stl->pd;
+  DefaultFramebufferList *dfbl = draw_viewport_framebuffer_list_get();
 
-  if (DRW_state_is_fbo()) {
-    GPU_framebuffer_bind(pd->painting.in_front ? dfbl->in_front_fb : dfbl->default_fb);
+  if (draw_state_is_fbo()) {
+    gpu_framebuffer_bind(pd->painting.in_front ? dfbl->in_front_fb : dfbl->default_fb);
   }
 
-  DRW_draw_pass(psl->sculpt_mask_ps);
+  draw_pass(psl->sculpt_mask_ps);
 }
