@@ -27,7 +27,7 @@ struct RenderEngineType;
 struct Scene;
 struct View3D;
 struct ViewLayer;
-struct Context;
+struct Ctx;
 struct rcti;
 
 void draw_engines_register(void);
@@ -122,10 +122,10 @@ void draw_depth_object(struct Scene *scene,
                        struct View3D *v3d,
                        struct GPUViewport *viewport,
                        struct Object *object);
-void draw_select_id(struct Depsgraph *depsgraph,
-                        struct ARegion *region,
-                        struct View3D *v3d,
-                        const struct rcti *rect);
+void draw_select_id(struct Graph *graph,
+                    struct ARegion *region,
+                    struct View3D *v3d,
+                    const struct rcti *rect);
 
 /* Grease pencil render. */
 
@@ -134,7 +134,7 @@ bool draw_render_check_dpen(struct Graph *graph);
 void draw_render_dpen(struct RenderEngine *engine, struct Graph *graph);
 
 /**
- * This is here because #GPUViewport needs it.
+ * This is here because GPUViewport needs it.
  */
 struct DrawInstanceDataList *draw_instance_data_list_create(void);
 void draw_instance_data_list_free(struct DrawInstanceDataList *idatalist);
@@ -164,8 +164,8 @@ void draw_cache_free_old_subdiv(void);
 void draw_subdiv_free(void);
 
 /* Never use this. Only for closing blender. */
-void draw_opengl_context_enable_ex(bool restore);
-void draw_opengl_context_disable_ex(bool restore);
+void draw_opengl_ctx_enable_ex(bool restore);
+void draw_opengl_ctx_disable_ex(bool restore);
 
 void draw_opengl_render_ctx_enable(void *re_gl_ctx);
 void draw_opengl_render_ctx_disable(void *re_gl_ctx);
