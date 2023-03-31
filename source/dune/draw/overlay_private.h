@@ -196,8 +196,8 @@ typedef struct OverlayExtraCallBuffers {
 } OverlayExtraCallBuffers;
 
 typedef struct OverlayArmatureCallBuffersInner {
-  DRWCallBuffer *box_outline;
-  DRWCallBuffer *box_fill;
+  DrawCallBuffer *box_outline;
+  DrawCallBuffer *box_fill;
 
   DRWCallBuffer *dof_lines;
   DRWCallBuffer *dof_sphere;
@@ -722,24 +722,24 @@ GPUShader *OVERLAY_shader_outline_prepass_gpencil(void);
 GPUShader *OVERLAY_shader_outline_prepass_pointcloud(void);
 GPUShader *OVERLAY_shader_extra_grid(void);
 GPUShader *OVERLAY_shader_outline_detect(void);
-GPUShader *OVERLAY_shader_paint_face(void);
-GPUShader *OVERLAY_shader_paint_point(void);
-GPUShader *OVERLAY_shader_paint_texture(void);
-GPUShader *OVERLAY_shader_paint_vertcol(void);
-GPUShader *OVERLAY_shader_paint_weight(bool shading);
-GPUShader *OVERLAY_shader_paint_wire(void);
-GPUShader *OVERLAY_shader_particle_dot(void);
-GPUShader *OVERLAY_shader_particle_shape(void);
-GPUShader *OVERLAY_shader_sculpt_mask(void);
-GPUShader *OVERLAY_shader_volume_velocity(bool use_needle, bool use_mac);
-GPUShader *OVERLAY_shader_volume_gridlines(bool color_with_flags, bool color_range);
-GPUShader *OVERLAY_shader_wireframe(bool custom_bias);
-GPUShader *OVERLAY_shader_wireframe_select(void);
-GPUShader *OVERLAY_shader_xray_fade(void);
+GPUShader *overlay_shader_paint_face(void);
+GPUShader *overlay_shader_paint_point(void);
+GPUShader *overlay_shader_paint_texture(void);
+GPUShader *overlay_shader_paint_vertcol(void);
+GPUShader *overlay_shader_paint_weight(bool shading);
+GPUShader *overlay_shader_paint_wire(void);
+GPUShader *overlay_shader_particle_dot(void);
+GPUShader *overlay_shader_particle_shape(void);
+GPUShader *overlay_shader_sculpt_mask(void);
+GPUShader *overlay_shader_volume_velocity(bool use_needle, bool use_mac);
+GPUShader *overlay_shader_volume_gridlines(bool color_with_flags, bool color_range);
+GPUShader *overlay_shader_wireframe(bool custom_bias);
+GPUShader *overlay_shader_wireframe_select(void);
+GPUShader *overlay_shader_xray_fade(void);
 
-OverlayInstanceFormats *OVERLAY_shader_instance_formats_get(void);
+OverlayInstanceFormats *overlay_shader_instance_formats_get(void);
 
-void OVERLAY_shader_free(void);
+void overlay_shader_free(void);
 
 #ifdef __cplusplus
 }
