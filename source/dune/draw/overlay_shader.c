@@ -676,11 +676,11 @@ GPUShader *OVERLAY_shader_edit_gpencil_wire(void)
 
 GPUShader *OVERLAY_shader_edit_lattice_point(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->edit_lattice_point) {
-    sh_data->edit_lattice_point = GPU_shader_create_from_arrays({
+    sh_data->edit_lattice_point = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -693,7 +693,7 @@ GPUShader *OVERLAY_shader_edit_lattice_point(void)
   return sh_data->edit_lattice_point;
 }
 
-GPUShader *OVERLAY_shader_edit_lattice_wire(void)
+GPUShader *overlay_shader_edit_lattice_wire(void)
 {
   const DRWContextState *draw_ctx = DRW_context_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
@@ -1652,9 +1652,9 @@ GPUShader *OVERLAY_shader_edit_uv_verts_get(void)
   return sh_data->edit_uv_verts;
 }
 
-GPUShader *OVERLAY_shader_edit_uv_stretching_area_get(void)
+GPUShader *Overlayshader_edit_uv_stretching_area_get(void)
 {
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
+  OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->edit_uv_stretching_area) {
     sh_data->edit_uv_stretching_area = DRW_shader_create_with_shaderlib(
         datatoc_edit_uv_stretching_vert_glsl,
@@ -1691,7 +1691,7 @@ GPUShader *overlay_shader_edit_uv_tiled_image_borders_get(void)
         NULL,
         datatoc_gpu_shader_uniform_color_frag_glsl,
         e_data.lib,
-        "#define blender_srgb_to_framebuffer_space(a) a\n");
+        "#define dune_srgb_to_framebuffer_space(a) a\n");
   }
   return sh_data->edit_uv_tiled_image_borders;
 }
@@ -1730,29 +1730,29 @@ OverlayInstanceFormats *overlay_shader_instance_formats_get(void)
                               });
   draw_shgroup_instance_format(g_formats.instance_bone,
                               {
-                                  {"inst_obmat", DRW_ATTR_FLOAT, 16},
+                                  {"inst_obmat", DRAW_ATTR_FLOAT, 16},
                               });
   draw_shgroup_instance_format(g_formats.instance_bone_stick,
                               {
-                                  {"boneStart", DRW_ATTR_FLOAT, 3},
-                                  {"boneEnd", DRW_ATTR_FLOAT, 3},
-                                  {"wireColor", DRW_ATTR_FLOAT, 4}, /* TODO: uchar color. */
-                                  {"boneColor", DRW_ATTR_FLOAT, 4},
-                                  {"headColor", DRW_ATTR_FLOAT, 4},
-                                  {"tailColor", DRW_ATTR_FLOAT, 4},
+                                  {"boneStart", DRAW_ATTR_FLOAT, 3},
+                                  {"boneEnd", DRAW_ATTR_FLOAT, 3},
+                                  {"wireColor", DRAW_ATTR_FLOAT, 4}, /* TODO: uchar color. */
+                                  {"boneColor", DRAW_ATTR_FLOAT, 4},
+                                  {"headColor", DRAW_ATTR_FLOAT, 4},
+                                  {"tailColor", DRAW_ATTR_FLOAT, 4},
                               });
   draw_shgroup_instance_format(g_formats.instance_bone_envelope_outline,
                               {
-                                  {"headSphere", DRW_ATTR_FLOAT, 4},
-                                  {"tailSphere", DRW_ATTR_FLOAT, 4},
-                                  {"outlineColorSize", DRW_ATTR_FLOAT, 4},
-                                  {"xAxis", DRW_ATTR_FLOAT, 3},
+                                  {"headSphere", DRAW_ATTR_FLOAT, 4},
+                                  {"tailSphere", DRAW_ATTR_FLOAT, 4},
+                                  {"outlineColorSize", DRAW_ATTR_FLOAT, 4},
+                                  {"xAxis", DRAW_ATTR_FLOAT, 3},
                               });
   draw_shgroup_instance_format(g_formats.instance_bone_envelope_distance,
                               {
-                                  {"headSphere", DRW_ATTR_FLOAT, 4},
-                                  {"tailSphere", DRW_ATTR_FLOAT, 4},
-                                  {"xAxis", DRW_ATTR_FLOAT, 3},
+                                  {"headSphere", DRAW_ATTR_FLOAT, 4},
+                                  {"tailSphere", DRAW_ATTR_FLOAT, 4},
+                                  {"xAxis", DRAW_ATTR_FLOAT, 3},
                               });
   draw_shgroup_instance_format(g_formats.instance_bone_envelope,
                               {
