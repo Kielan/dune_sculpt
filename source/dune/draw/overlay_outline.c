@@ -232,27 +232,27 @@ static void overlay_outline_dpen(OverlayPrivateData *pd, Object *ob)
 
   iterData iter = {
       .ob = ob,
-      .stroke_grp = pd->outlines_gpencil_grp,
+      .stroke_grp = pd->outlines_dpen_grp,
       .fill_grp = draw_shgroup_create_sub(pd->outlines_dpen_grp),
       .cfra = pd->cfra,
   };
 
-  if (gpd->draw_mode == GP_DRAWMODE_2D) {
+  if (dpd->draw_mode == GP_DRAWMODE_2D) {
     dpen_depth_plane(ob, iter.plane);
   }
 
   dune_dpen_visible_stroke_advanced_iter(NULL,
-                                           ob,
-                                           gpencil_layer_cache_populate,
-                                           gpencil_stroke_cache_populate,
-                                           &iter,
-                                           false,
-                                           pd->cfra);
+                                         ob,
+                                         dpen_layer_cache_populate,
+                                         dpen_stroke_cache_populate,
+                                         &iter,
+                                         false,
+                                         pd->cfra);
 }
 
-static void OVERLAY_outline_volume(OVERLAY_PrivateData *pd, Object *ob)
+static void overlay_outline_volume(OverlayPrivateData *pd, Object *ob)
 {
-  struct GPUBatch *geom = DRW_cache_volume_selection_surface_get(ob);
+  struct GPUBatch *geom = draw_cache_volume_selection_surface_get(ob);
   if (geom == NULL) {
     return;
   }
@@ -261,15 +261,15 @@ static void OVERLAY_outline_volume(OVERLAY_PrivateData *pd, Object *ob)
   DRW_shgroup_call(shgroup, geom, ob);
 }
 
-void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
+void overlay_outline_cache_populate(OverlayData *vedata,
                                     Object *ob,
-                                    OVERLAY_DupliData *dupli,
+                                    OverlayDupliData *dupli,
                                     bool init_dupli)
 {
-  OVERLAY_PrivateData *pd = vedata->stl->pd;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  OverlayPrivateData *pd = vedata->stl->pd;
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   struct GPUBatch *geom;
-  DRWShadingGroup *shgroup = NULL;
+  DrawShadingGroup *shgroup = NULL;
   const bool draw_outline = ob->dt > OB_BOUNDBOX;
 
   /* Early exit: outlines of bounding boxes are not drawn. */
@@ -277,13 +277,13 @@ void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
     return;
   }
 
-  if (ob->type == OB_GPENCIL) {
-    OVERLAY_outline_gpencil(pd, ob);
+  if (ob->type == OB_DPEN) {
+    overlay_outline_dpen(pd, ob);
     return;
   }
 
   if (ob->type == OB_VOLUME) {
-    OVERLAY_outline_volume(pd, ob);
+    overlay_outline_volume(pd, ob);
     return;
   }
 
@@ -301,14 +301,14 @@ void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
     /* This fixes only the biggest case which is a plane in ortho view. */
     int flat_axis = 0;
     bool is_flat_object_viewed_from_side = ((draw_ctx->rv3d->persp == RV3D_ORTHO) &&
-                                            DRW_object_is_flat(ob, &flat_axis) &&
-                                            DRW_object_axis_orthogonal_to_view(ob, flat_axis));
+                                            draw_object_is_flat(ob, &flat_axis) &&
+                                            draw_object_axis_orthogonal_to_view(ob, flat_axis));
 
     if (pd->xray_enabled_and_not_wire || is_flat_object_viewed_from_side) {
-      geom = DRW_cache_object_edge_detection_get(ob, NULL);
+      geom = draw_cache_object_edge_detection_get(ob, NULL);
     }
     else {
-      geom = DRW_cache_object_surface_get(ob);
+      geom = draw_cache_object_surface_get(ob);
     }
 
     if (geom) {
@@ -319,10 +319,10 @@ void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
   if (shgroup && geom) {
     if (ob->type == OB_POINTCLOUD) {
       /* Draw range to avoid drawcall batching messing up the instance attribute. */
-      DRW_shgroup_call_instance_range(shgroup, ob, geom, 0, 0);
+      draw_shgroup_call_instance_range(shgroup, ob, geom, 0, 0);
     }
     else {
-      DRW_shgroup_call(shgroup, geom, ob);
+      draw_shgroup_call(shgroup, geom, ob);
     }
   }
 
@@ -332,14 +332,14 @@ void OVERLAY_outline_cache_populate(OVERLAY_Data *vedata,
   }
 }
 
-void OVERLAY_outline_draw(OVERLAY_Data *vedata)
+void overlay_outline_draw(OverlayData *vedata)
 {
   OverlayFramebufferList *fbl = vedata->fbl;
   OverlayPassList *psl = vedata->psl;
   const float clearcol[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
   bool do_outlines = psl->outlines_prepass_ps != NULL &&
-                     !DRW_pass_is_empty(psl->outlines_prepass_ps);
+                     !draw_pass_is_empty(psl->outlines_prepass_ps);
 
   if (draw_state_is_fbo() && do_outlines) {
     draw_stats_group_start("Outlines");
