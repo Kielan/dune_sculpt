@@ -480,11 +480,11 @@ GPUShader *OVERLAY_shader_armature_envelope(bool use_outline)
   return use_outline ? sh_data->armature_envelope_outline : sh_data->armature_envelope_solid;
 }
 
-GPUShader *OVERLAY_shader_armature_stick(void)
+GPUShader *overlay_shader_armature_stick(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->armature_stick) {
     sh_data->armature_stick = GPU_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
