@@ -905,16 +905,16 @@ GPUShader *overlay_shader_extra_groundline(void)
   return sh_data->extra_groundline;
 }
 
-GPUShader *OVERLAY_shader_extra_wire(bool use_object, bool is_select)
+GPUShader *overlay_shader_extra_wire(bool use_object, bool is_select)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   GPUShader **sh = (is_select) ? &sh_data->extra_wire_select : &sh_data->extra_wire[use_object];
   if (!*sh) {
     char colorids[1024];
     /* NOTE: define all ids we need here. */
-    BLI_snprintf(colorids,
+    lib_snprintf(colorids,
                  sizeof(colorids),
                  "#define TH_ACTIVE %d\n"
                  "#define TH_SELECT %d\n"
@@ -926,7 +926,7 @@ GPUShader *OVERLAY_shader_extra_wire(bool use_object, bool is_select)
                  TH_TRANSFORM,
                  TH_WIRE,
                  TH_CAMERA_PATH);
-    *sh = GPU_shader_create_from_arrays({
+    *sh = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -943,13 +943,13 @@ GPUShader *OVERLAY_shader_extra_wire(bool use_object, bool is_select)
   return *sh;
 }
 
-GPUShader *OVERLAY_shader_extra_loose_point(void)
+GPUShader *overlay_shader_extra_loose_point(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->extra_loose_point) {
-    sh_data->extra_loose_point = GPU_shader_create_from_arrays({
+    sh_data->extra_loose_point = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -964,9 +964,9 @@ GPUShader *OVERLAY_shader_extra_loose_point(void)
   return sh_data->extra_loose_point;
 }
 
-GPUShader *OVERLAY_shader_extra_point(void)
+GPUShader *overlay_shader_extra_point(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
   OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->extra_point) {
@@ -1111,10 +1111,10 @@ GPUShader *overlay_shader_image(void)
 GPUShader *overlay_shader_motion_path_line(void)
 {
   const DrawCtxState *draw_ctx = draw_ctx_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
   Overlayhaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->motion_path_line) {
-    sh_data->motion_path_line = GPU_shader_create_from_arrays({
+    sh_data->motion_path_line = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -1132,9 +1132,9 @@ GPUShader *overlay_shader_motion_path_line(void)
   return sh_data->motion_path_line;
 }
 
-GPUShader *OVERLAY_shader_motion_path_vert(void)
+GPUShader *overlay_shader_motion_path_vert(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
   OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->motion_path_vert) {
