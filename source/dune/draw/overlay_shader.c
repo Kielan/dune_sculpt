@@ -1136,7 +1136,7 @@ GPUShader *overlay_shader_motion_path_vert(void)
 {
   const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->motion_path_vert) {
     sh_data->motion_path_vert = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
@@ -1213,11 +1213,11 @@ GPUShader *overlay_shader_outline_prepass_dpen(void)
 
 GPUShader *overlay_shader_outline_prepass_pointcloud(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->outline_prepass_pointcloud) {
-    sh_data->outline_prepass_pointcloud = GPU_shader_create_from_arrays({
+    sh_data->outline_prepass_pointcloud = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_common_pointcloud_lib_glsl,
@@ -1238,11 +1238,11 @@ GPUShader *overlay_shader_outline_prepass_pointcloud(void)
   return sh_data->outline_prepass_pointcloud;
 }
 
-GPUShader *OVERLAY_shader_outline_detect(void)
+GPUShader *overlay_shader_outline_detect(void)
 {
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
+  OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->outline_detect) {
-    sh_data->outline_detect = GPU_shader_create_from_arrays({
+    sh_data->outline_detect = gpu_shader_create_from_arrays({
         .vert = (const char *[]){datatoc_common_fullscreen_vert_glsl, NULL},
         .frag = (const char *[]){datatoc_common_view_lib_glsl,
                                  datatoc_common_globals_lib_glsl,
@@ -1253,13 +1253,13 @@ GPUShader *OVERLAY_shader_outline_detect(void)
   return sh_data->outline_detect;
 }
 
-GPUShader *OVERLAY_shader_paint_face(void)
+GPUShader *overlay_shader_paint_face(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->paint_face) {
-    sh_data->paint_face = GPU_shader_create_from_arrays({
+    sh_data->paint_face = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_paint_face_vert_glsl,
@@ -1271,13 +1271,13 @@ GPUShader *OVERLAY_shader_paint_face(void)
   return sh_data->paint_face;
 }
 
-GPUShader *OVERLAY_shader_paint_point(void)
+GPUShader *overlay_shader_paint_point(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->paint_point) {
-    sh_data->paint_point = GPU_shader_create_from_arrays({
+    sh_data->paint_point = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -1290,13 +1290,13 @@ GPUShader *OVERLAY_shader_paint_point(void)
   return sh_data->paint_point;
 }
 
-GPUShader *OVERLAY_shader_paint_texture(void)
+GPUShader *overlay_shader_paint_texture(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->paint_texture) {
-    sh_data->paint_texture = GPU_shader_create_from_arrays({
+    sh_data->paint_texture = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_paint_texture_vert_glsl,
@@ -1310,13 +1310,13 @@ GPUShader *OVERLAY_shader_paint_texture(void)
   return sh_data->paint_texture;
 }
 
-GPUShader *OVERLAY_shader_paint_vertcol(void)
+GPUShader *overlay_shader_paint_vertcol(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->paint_vertcol) {
-    sh_data->paint_vertcol = GPU_shader_create_from_arrays({
+    sh_data->paint_vertcol = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -1331,14 +1331,14 @@ GPUShader *OVERLAY_shader_paint_vertcol(void)
   return sh_data->paint_vertcol;
 }
 
-GPUShader *OVERLAY_shader_paint_weight(const bool shading)
+GPUShader *overlay_shader_paint_weight(const bool shading)
 {
   int index = shading ? 1 : 0;
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->paint_weight[index]) {
-    sh_data->paint_weight[index] = GPU_shader_create_from_arrays({
+    sh_data->paint_weight[index] = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -1353,13 +1353,13 @@ GPUShader *OVERLAY_shader_paint_weight(const bool shading)
   return sh_data->paint_weight[index];
 }
 
-GPUShader *OVERLAY_shader_paint_wire(void)
+GPUShader *overlay_shader_paint_wire(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->paint_wire) {
-    sh_data->paint_wire = GPU_shader_create_from_arrays({
+    sh_data->paint_wire = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -1372,13 +1372,13 @@ GPUShader *OVERLAY_shader_paint_wire(void)
   return sh_data->paint_wire;
 }
 
-GPUShader *OVERLAY_shader_particle_dot(void)
+GPUShader *overlay_shader_particle_dot(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->particle_dot) {
-    sh_data->particle_dot = GPU_shader_create_from_arrays({
+    sh_data->particle_dot = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -1393,11 +1393,11 @@ GPUShader *OVERLAY_shader_particle_dot(void)
 
 GPUShader *overlay_shader_particle_shape(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->particle_shape) {
-    sh_data->particle_shape = GPU_shader_create_from_arrays({
+    sh_data->particle_shape = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -1412,7 +1412,7 @@ GPUShader *overlay_shader_particle_shape(void)
 
 GPUShader *overlay_shader_sculpt_mask(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
   OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->sculpt_mask) {
@@ -1661,7 +1661,7 @@ GPUShader *Overlayshader_edit_uv_stretching_area_get(void)
         NULL,
         datatoc_gpu_shader_2D_smooth_color_frag_glsl,
         e_data.lib,
-        "#define blender_srgb_to_framebuffer_space(a) a\n");
+        "#define dune_srgb_to_framebuffer_space(a) a\n");
   }
 
   return sh_data->edit_uv_stretching_area;
@@ -1676,7 +1676,7 @@ GPUShader *overlay_shader_edit_uv_stretching_angle_get(void)
         NULL,
         datatoc_gpu_shader_2D_smooth_color_frag_glsl,
         e_data.lib,
-        "#define blender_srgb_to_framebuffer_space(a) a\n#define STRETCH_ANGLE\n");
+        "#define dune_srgb_to_framebuffer_space(a) a\n#define STRETCH_ANGLE\n");
   }
 
   return sh_data->edit_uv_stretching_angle;
@@ -1686,7 +1686,7 @@ GPUShader *overlay_shader_edit_uv_tiled_image_borders_get(void)
 {
   OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->edit_uv_tiled_image_borders) {
-    sh_data->edit_uv_tiled_image_borders = DRW_shader_create_with_shaderlib(
+    sh_data->edit_uv_tiled_image_borders = draw_shader_create_with_shaderlib(
         datatoc_edit_uv_tiled_image_borders_vert_glsl,
         NULL,
         datatoc_gpu_shader_uniform_color_frag_glsl,
@@ -1715,13 +1715,13 @@ OverlayInstanceFormats *overlay_shader_instance_formats_get(void)
                               });
   draw_shgroup_instance_format(g_formats.instance_extra,
                               {
-                                  {"color", DRW_ATTR_FLOAT, 4},
-                                  {"inst_obmat", DRW_ATTR_FLOAT, 16},
+                                  {"color", DRAW_ATTR_FLOAT, 4},
+                                  {"inst_obmat", DRAW_ATTR_FLOAT, 16},
                               });
   draw_shgroup_instance_format(g_formats.wire_extra,
                               {
-                                  {"pos", DRW_ATTR_FLOAT, 3},
-                                  {"colorid", DRW_ATTR_INT, 1},
+                                  {"pos", DRAW_ATTR_FLOAT, 3},
+                                  {"colorid", DRAW_ATTR_INT, 1},
                               });
   draw_shgroup_instance_format(g_formats.point_extra,
                               {
