@@ -1064,9 +1064,9 @@ GPUShader *OVERLAY_shader_grid_image(void)
   return sh_data->grid_image;
 }
 
-GPUShader *OVERLAY_shader_edit_uv_stencil_image(void)
+GPUShader *overlay_shader_edit_uv_stencil_image(void)
 {
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
+  OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->edit_uv_stencil_image) {
     sh_data->edit_uv_stencil_image = DRW_shader_create_with_shaderlib(
         datatoc_edit_uv_image_vert_glsl, NULL, datatoc_image_frag_glsl, e_data.lib, NULL);
@@ -1074,11 +1074,11 @@ GPUShader *OVERLAY_shader_edit_uv_stencil_image(void)
   return sh_data->edit_uv_stencil_image;
 }
 
-GPUShader *OVERLAY_shader_edit_uv_mask_image(void)
+GPUShader *overlay_shader_edit_uv_mask_image(void)
 {
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[0];
+  OverlayShaders *sh_data = &e_data.sh_data[0];
   if (!sh_data->edit_uv_mask_image) {
-    sh_data->edit_uv_mask_image = DRW_shader_create_with_shaderlib(
+    sh_data->edit_uv_mask_image = draw_shader_create_with_shaderlib(
         datatoc_edit_uv_image_vert_glsl,
         NULL,
         datatoc_edit_uv_image_mask_frag_glsl,
@@ -1088,13 +1088,13 @@ GPUShader *OVERLAY_shader_edit_uv_mask_image(void)
   return sh_data->edit_uv_mask_image;
 }
 
-GPUShader *OVERLAY_shader_image(void)
+GPUShader *overlay_shader_image(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->image) {
-    sh_data->image = GPU_shader_create_from_arrays({
+    sh_data->image = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_view_lib_glsl,
                                  datatoc_image_vert_glsl,
@@ -1108,11 +1108,11 @@ GPUShader *OVERLAY_shader_image(void)
   return sh_data->image;
 }
 
-GPUShader *OVERLAY_shader_motion_path_line(void)
+GPUShader *overlay_shader_motion_path_line(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  Overlayhaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->motion_path_line) {
     sh_data->motion_path_line = GPU_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
