@@ -450,13 +450,13 @@ GPUShader *overlay_shader_armature_shape_wire(void)
   return sh_data->armature_shape_wire;
 }
 
-GPUShader *OVERLAY_shader_armature_envelope(bool use_outline)
+GPUShader *overlay_shader_armature_envelope(bool use_outline)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
-  const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
-  OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
+  const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
+  OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (use_outline && !sh_data->armature_envelope_outline) {
-    sh_data->armature_envelope_outline = GPU_shader_create_from_arrays({
+    sh_data->armature_envelope_outline = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -486,7 +486,7 @@ GPUShader *overlay_shader_armature_stick(void)
   const GPUShaderConfigData *sh_cfg = &gpu_shader_cfg_data[draw_ctx->sh_cfg];
   OverlayShaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->armature_stick) {
-    sh_data->armature_stick = GPU_shader_create_from_arrays({
+    sh_data->armature_stick = gpu_shader_create_from_arrays({
         .vert = (const char *[]){sh_cfg->lib,
                                  datatoc_common_globals_lib_glsl,
                                  datatoc_common_view_lib_glsl,
@@ -886,9 +886,9 @@ GPUShader *overlay_shader_extra_grid(void)
   return sh_data->extra_lightprobe_grid;
 }
 
-GPUShader *OVERLAY_shader_extra_groundline(void)
+GPUShader *overlay_shader_extra_groundline(void)
 {
-  const DRWContextState *draw_ctx = DRW_context_state_get();
+  const DrawCtxState *draw_ctx = draw_ctx_state_get();
   const GPUShaderConfigData *sh_cfg = &GPU_shader_cfg_data[draw_ctx->sh_cfg];
   OVERLAY_Shaders *sh_data = &e_data.sh_data[draw_ctx->sh_cfg];
   if (!sh_data->extra_groundline) {
