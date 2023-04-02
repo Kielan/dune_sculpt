@@ -1,11 +1,11 @@
 /** Main functions for beveling a BMesh (used by the tool and modifier) **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_curveprofile_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_scene_types.h"
+#include "types_curveprofile.h"
+#include "types_meshdata.h"
+#include "types_modifier.h"
+#include "types_scene.h"
 
 #include "BLI_alloca.h"
 #include "BLI_array.h"
