@@ -7,23 +7,23 @@
 #include "types_modifier.h"
 #include "types_scene.h"
 
-#include "BLI_alloca.h"
-#include "BLI_array.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_utildefines.h"
+#include "lib_alloca.h"
+#include "lib_array.h"
+#include "lib_math.h"
+#include "lib_memarena.h"
+#include "lib_utildefines.h"
 
-#include "BKE_curveprofile.h"
-#include "BKE_customdata.h"
-#include "BKE_deform.h"
-#include "BKE_mesh.h"
+#include "dune_curveprofile.h"
+#include "dune_customdata.h"
+#include "dune_deform.h"
+#include "dune_mesh.h"
 
 #include "eigen_capi.h"
 
-#include "bmesh.h"
-#include "bmesh_bevel.h" /* own include */
+#include "mesh.h"
+#include "mesh_bevel.h" /* own include */
 
-#include "./intern/bmesh_private.h"
+#include "./intern/mesh_private.h"
 
 // #define BEVEL_DEBUG_TIME
 #ifdef BEVEL_DEBUG_TIME
@@ -54,7 +54,7 @@
 
 /* Constructed vertex, sometimes later instantiated as BMVert. */
 typedef struct NewVert {
-  BMVert *v;
+  MeshVert *v;
   float co[3];
   char _pad[4];
 } NewVert;
@@ -66,11 +66,11 @@ typedef struct EdgeHalf {
   /** Other EdgeHalves connected to the same BevVert, in CCW order. */
   struct EdgeHalf *next, *prev;
   /** Original mesh edge. */
-  BMEdge *e;
+  MeshEdge *e;
   /** Face between this edge and previous, if any. */
-  BMFace *fprev;
+  MeshFace *fprev;
   /** Face between this edge and next, if any. */
-  BMFace *fnext;
+  MeshFace *fnext;
   /** Left boundary vert (looking along edge to end). */
   struct BoundVert *leftv;
   /** Right boundary vert, if beveled. */
@@ -246,7 +246,7 @@ typedef struct VMesh {
 /* Data for a vertex involved in a bevel. */
 typedef struct BevVert {
   /** Original mesh vertex. */
-  BMVert *v;
+  MeshVert *v;
   /** Total number of edges around the vertex (excluding wire edges if edge beveling). */
   int edgecount;
   /** Number of selected edges around the vertex. */
@@ -263,14 +263,14 @@ typedef struct BevVert {
   char _pad[6];
   EdgeHalf *edges;
   /** Array of size wirecount of wire edges. */
-  BMEdge **wire_edges;
+  MeshEdge **wire_edges;
   /** Mesh structure for replacing vertex. */
   VMesh *vmesh;
 } BevVert;
 
 /**
  * Face classification.
- * \note depends on `F_RECON > F_EDGE > F_VERT`.
+ * depends on `F_RECON > F_EDGE > F_VERT`.
  */
 typedef enum {
   /** Used when there is no face at all. */
@@ -310,10 +310,10 @@ typedef struct BevelParams {
   /** Information about 'math' loop layers, like UV layers. */
   MathLayerInfo math_layer_info;
   /** The argument BMesh. */
-  BMesh *bm;
-  /** Blender units to offset each side of a beveled edge. */
+  Mesh *bm;
+  /** Dune units to offset each side of a beveled edge. */
   float offset;
-  /** How offset is measured; enum defined in bmesh_operators.h. */
+  /** How offset is measured; enum defined in mesh_operators.h. */
   int offset_type;
   /** Profile type: radius, superellipse, or custom */
   int profile_type;
