@@ -115,7 +115,7 @@ static uint mesh_log_vert_id_get(MeshLog *log, MeshVert *v)
 }
 
 /* Set the vertex's unique id in the log */
-static void bm_log_vert_id_set(MeshLog *log, MeshVert *v, uint id)
+static void mesh_log_vert_id_set(MeshLog *log, MeshVert *v, uint id)
 {
   void *vid = PTR_FROM_UINT(id);
 
@@ -126,36 +126,36 @@ static void bm_log_vert_id_set(MeshLog *log, MeshVert *v, uint id)
 /* Get a vertex from its unique id */
 static MeshVert *mesh_log_vert_from_id(MeshLog *log, uint id)
 {
-  void *key = POINTER_FROM_UINT(id);
-  BLI_assert(BLI_ghash_haskey(log->id_to_elem, key));
-  return BLI_ghash_lookup(log->id_to_elem, key);
+  void *key = PTR_FROM_UINT(id);
+  lib_assert(lib_ghash_haskey(log->id_to_elem, key));
+  return lib_ghash_lookup(log->id_to_elem, key);
 }
 
 /* Get the face's unique id from the log */
-static uint bm_log_face_id_get(MeshLog *log, MeshFace *f)
+static uint mesh_log_face_id_get(MeshLog *log, MeshFace *f)
 {
   lib_assert(lib_ghash_haskey(log->elem_to_id, f));
   return PTR_AS_UINT(lib_ghash_lookup(log->elem_to_id, f));
 }
 
-/* Set the face's unique ID in the log */
-static void bm_log_face_id_set(BMLog *log, BMFace *f, uint id)
+/* Set the face's unique id in the log */
+static void bm_log_face_id_set(MeshLog *log, BMFace *f, uint id)
 {
-  void *fid = POINTER_FROM_UINT(id);
+  void *fid = PTR_FROM_UINT(id);
 
-  BLI_ghash_reinsert(log->id_to_elem, fid, f, NULL, NULL);
-  BLI_ghash_reinsert(log->elem_to_id, f, fid, NULL, NULL);
+  lib_ghash_reinsert(log->id_to_elem, fid, f, NULL, NULL);
+  lib_ghash_reinsert(log->elem_to_id, f, fid, NULL, NULL);
 }
 
-/* Get a face from its unique ID */
-static BMFace *bm_log_face_from_id(BMLog *log, uint id)
+/* Get a face from its unique id */
+static MeshFace *mesh_log_face_from_id(MeshLog *log, uint id)
 {
-  void *key = POINTER_FROM_UINT(id);
-  BLI_assert(BLI_ghash_haskey(log->id_to_elem, key));
-  return BLI_ghash_lookup(log->id_to_elem, key);
+  void *key = PTR_FROM_UINT(id);
+  lib_assert(lib_ghash_haskey(log->id_to_elem, key));
+  return lib_ghash_lookup(log->id_to_elem, key);
 }
 
-/************************ BMLogVert / BMLogFace ***********************/
+/************************ MeshLogVert / MeshLogFace ***********************/
 
 /* Get a vertex's paint-mask value
  *
@@ -163,7 +163,7 @@ static BMFace *bm_log_face_from_id(BMLog *log, uint id)
 static float vert_mask_get(BMVert *v, const int cd_vert_mask_offset)
 {
   if (cd_vert_mask_offset != -1) {
-    return BM_ELEM_CD_GET_FLOAT(v, cd_vert_mask_offset);
+    return MESH_ELEM_CD_GET_FLOAT(v, cd_vert_mask_offset);
   }
   return 0.0f;
 }
@@ -171,15 +171,15 @@ static float vert_mask_get(BMVert *v, const int cd_vert_mask_offset)
 /* Set a vertex's paint-mask value
  *
  * Has no effect is no paint-mask layer is present */
-static void vert_mask_set(BMVert *v, const float new_mask, const int cd_vert_mask_offset)
+static void vert_mask_set(MeshVert *v, const float new_mask, const int cd_vert_mask_offset)
 {
   if (cd_vert_mask_offset != -1) {
-    BM_ELEM_CD_SET_FLOAT(v, cd_vert_mask_offset, new_mask);
+    MESH_ELEM_CD_SET_FLOAT(v, cd_vert_mask_offset, new_mask);
   }
 }
 
-/* Update a BMLogVert with data from a BMVert */
-static void bm_log_vert_bmvert_copy(BMLogVert *lv, BMVert *v, const int cd_vert_mask_offset)
+/* Update a MeshLogVert with data from a MeshVert */
+static void mesh_log_vert_bmvert_copy(MeshLogVert *lv, MeshVert *v, const int cd_vert_mask_offset)
 {
   copy_v3_v3(lv->co, v->co);
   copy_v3_v3(lv->no, v->no);
@@ -187,19 +187,19 @@ static void bm_log_vert_bmvert_copy(BMLogVert *lv, BMVert *v, const int cd_vert_
   lv->hflag = v->head.hflag;
 }
 
-/* Allocate and initialize a BMLogVert */
-static BMLogVert *bm_log_vert_alloc(BMLog *log, BMVert *v, const int cd_vert_mask_offset)
+/* Allocate and initialize a MeshLogVert */
+static MeshLogVert *mesh_log_vert_alloc(MeshLog *log, MeshVert *v, const int cd_vert_mask_offset)
 {
-  BMLogEntry *entry = log->current_entry;
-  BMLogVert *lv = BLI_mempool_alloc(entry->pool_verts);
+  MeshLogEntry *entry = log->current_entry;
+  MeshLogVert *lv = lib_mempool_alloc(entry->pool_verts);
 
-  bm_log_vert_bmvert_copy(lv, v, cd_vert_mask_offset);
+  mesh_log_vert_copy(lv, v, cd_vert_mask_offset);
 
   return lv;
 }
 
-/* Allocate and initialize a BMLogFace */
-static BMLogFace *bm_log_face_alloc(BMLog *log, BMFace *f)
+/* Allocate and initialize a MeshLogFace */
+static MeshLogFace *mesh_log_face_alloc(MeshLog *log, MeshFace *f)
 {
   BMLogEntry *entry = log->current_entry;
   BMLogFace *lf = BLI_mempool_alloc(entry->pool_faces);
@@ -936,11 +936,11 @@ void BM_log_original_vert_data(BMLog *log, BMVert *v, const float **r_co, const 
   BMLogEntry *entry = log->current_entry;
   const BMLogVert *lv;
   uint v_id = bm_log_vert_id_get(log, v);
-  void *key = POINTER_FROM_UINT(v_id);
+  void *key = PTR_FROM_UINT(v_id);
 
-  BLI_assert(entry);
+  lib_assert(entry);
 
-  BLI_assert(BLI_ghash_haskey(entry->modified_verts, key));
+  lib_assert(BLI_ghash_haskey(entry->modified_verts, key));
 
   lv = BLI_ghash_lookup(entry->modified_verts, key);
   *r_co = lv->co;
@@ -949,12 +949,12 @@ void BM_log_original_vert_data(BMLog *log, BMVert *v, const float **r_co, const 
 
 /************************ Debugging and Testing ***********************/
 
-BMLogEntry *BM_log_current_entry(BMLog *log)
+MeshLogEntry *mesh_log_current_entry(MeshLog *log)
 {
   return log->current_entry;
 }
 
-RangeTreeUInt *BM_log_unused_ids(BMLog *log)
+RangeTreeUInt *mesh_log_unused_ids(MeshLog *log)
 {
   return log->unused_ids;
 }
@@ -963,9 +963,9 @@ RangeTreeUInt *BM_log_unused_ids(BMLog *log)
 /* Print the list of entries, marking the current one
  *
  * Keep around for debugging */
-void bm_log_print(const BMLog *log, const char *description)
+void mesh_log_print(const MeshLog *log, const char *description)
 {
-  const BMLogEntry *entry;
+  const MeshLogEntry *entry;
   const char *current = " <-- current";
   int i;
 
