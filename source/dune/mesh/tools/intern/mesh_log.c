@@ -1,7 +1,5 @@
-/** \file
- * \ingroup bmesh
- *
- * The BMLog is an interface for storing undo/redo steps as a BMesh is
+/**
+ * The MeshLog is an interface for storing undo/redo steps as a BMesh is
  * modified. It only stores changes to the BMesh, not full copies.
  *
  * Currently it supports the following types of changes:
@@ -13,24 +11,24 @@
  * - Setting vertex hflags
  */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_mempool.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
+#include "lib_mempool.h"
+#include "lib_utildefines.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "bmesh.h"
-#include "bmesh_log.h"
+#include "mesh.h"
+#include "mesh_log.h"
 #include "range_tree.h"
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
-struct BMLogEntry {
-  struct BMLogEntry *next, *prev;
+struct MeshLogEntry {
+  struct MeshLogEntry *next, *prev;
 
   /* The following GHashes map from an element ID to one of the log
    * types above */
