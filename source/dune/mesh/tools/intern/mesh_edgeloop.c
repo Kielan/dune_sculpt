@@ -501,3 +501,280 @@ BMEdgeLoopStore *BM_edgeloop_from_verts(BMVert **v_arr, const int v_arr_tot, boo
   }
   return el_store;
 }
+void BM_edgeloop_free(BMEdgeLoopStore *el_store)
+{
+  BLI_freelistN(&el_store->verts);
+  MEM_freeN(el_store);
+}
+
+bool BM_edgeloop_is_closed(BMEdgeLoopStore *el_store)
+{
+  return (el_store->flag & BM_EDGELOOP_IS_CLOSED) != 0;
+}
+
+ListBase *BM_edgeloop_verts_get(BMEdgeLoopStore *el_store)
+{
+  return &el_store->verts;
+}
+
+int BM_edgeloop_length_get(BMEdgeLoopStore *el_store)
+{
+  return el_store->len;
+}
+
+const float *BM_edgeloop_normal_get(struct BMEdgeLoopStore *el_store)
+{
+  return el_store->no;
+}
+
+const float *BM_edgeloop_center_get(struct BMEdgeLoopStore *el_store)
+{
+  return el_store->co;
+}
+
+#define NODE_AS_V(n) ((BMVert *)((LinkData *)n)->data)
+#define NODE_AS_CO(n) ((BMVert *)((LinkData *)n)->data)->co
+
+void BM_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr)
+{
+  LinkData *node;
+  int i = 0;
+  for (node = el_store->verts.first; node && node->next; node = node->next) {
+    e_arr[i++] = BM_edge_exists(NODE_AS_V(node), NODE_AS_V(node->next));
+    BLI_assert(e_arr[i - 1] != NULL);
+  }
+
+  if (el_store->flag & BM_EDGELOOP_IS_CLOSED) {
+    e_arr[i] = BM_edge_exists(NODE_AS_V(el_store->verts.first), NODE_AS_V(el_store->verts.last));
+    BLI_assert(e_arr[i] != NULL);
+  }
+  BLI_assert(el_store->len == i + 1);
+}
+
+void BM_edgeloop_calc_center(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
+{
+  LinkData *node_curr = el_store->verts.last;
+  LinkData *node_prev = ((LinkData *)el_store->verts.last)->prev;
+  LinkData *node_first = el_store->verts.first;
+  LinkData *node_next = node_first;
+
+  const float *v_prev = NODE_AS_CO(node_prev);
+  const float *v_curr = NODE_AS_CO(node_curr);
+  const float *v_next = NODE_AS_CO(node_next);
+
+  float totw = 0.0f;
+  float w_prev;
+
+  zero_v3(el_store->co);
+
+  w_prev = len_v3v3(v_prev, v_curr);
+  do {
+    const float w_curr = len_v3v3(v_curr, v_next);
+    const float w = (w_curr + w_prev);
+    madd_v3_v3fl(el_store->co, v_curr, w);
+    totw += w;
+    w_prev = w_curr;
+
+    node_prev = node_curr;
+    node_curr = node_next;
+    node_next = node_next->next;
+
+    if (node_next == NULL) {
+      break;
+    }
+    v_prev = v_curr;
+    v_curr = v_next;
+    v_next = NODE_AS_CO(node_next);
+  } while (1);
+
+  if (totw != 0.0f) {
+    mul_v3_fl(el_store->co, 1.0f / (float)totw);
+  }
+}
+
+bool BM_edgeloop_calc_normal(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
+{
+  LinkData *node_curr = el_store->verts.first;
+  const float *v_prev = NODE_AS_CO(el_store->verts.last);
+  const float *v_curr = NODE_AS_CO(node_curr);
+
+  zero_v3(el_store->no);
+
+  /* Newell's Method */
+  do {
+    add_newell_cross_v3_v3v3(el_store->no, v_prev, v_curr);
+
+    if ((node_curr = node_curr->next)) {
+      v_prev = v_curr;
+      v_curr = NODE_AS_CO(node_curr);
+    }
+    else {
+      break;
+    }
+  } while (true);
+
+  if (UNLIKELY(normalize_v3(el_store->no) < EDGELOOP_EPS)) {
+    el_store->no[2] = 1.0f; /* other axis set to 0.0 */
+    return false;
+  }
+  return true;
+}
+
+bool BM_edgeloop_calc_normal_aligned(BMesh *UNUSED(bm),
+                                     BMEdgeLoopStore *el_store,
+                                     const float no_align[3])
+{
+  LinkData *node_curr = el_store->verts.first;
+  const float *v_prev = NODE_AS_CO(el_store->verts.last);
+  const float *v_curr = NODE_AS_CO(node_curr);
+
+  zero_v3(el_store->no);
+
+  /* Own Method */
+  do {
+    float cross[3], no[3], dir[3];
+    sub_v3_v3v3(dir, v_curr, v_prev);
+    cross_v3_v3v3(cross, no_align, dir);
+    cross_v3_v3v3(no, dir, cross);
+    add_v3_v3(el_store->no, no);
+
+    if ((node_curr = node_curr->next)) {
+      v_prev = v_curr;
+      v_curr = NODE_AS_CO(node_curr);
+    }
+    else {
+      break;
+    }
+  } while (true);
+
+  if (UNLIKELY(normalize_v3(el_store->no) < EDGELOOP_EPS)) {
+    el_store->no[2] = 1.0f; /* other axis set to 0.0 */
+    return false;
+  }
+  return true;
+}
+
+void BM_edgeloop_flip(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
+{
+  negate_v3(el_store->no);
+  BLI_listbase_reverse(&el_store->verts);
+}
+
+void BM_edgeloop_expand(
+    BMesh *bm, BMEdgeLoopStore *el_store, int el_store_len, bool split, GSet *split_edges)
+{
+  bool split_swap = true;
+
+#define EDGE_SPLIT(node_copy, node_other) \
+  { \
+    BMVert *v_split, *v_other = (node_other)->data; \
+    BMEdge *e_split, *e_other = BM_edge_exists((node_copy)->data, v_other); \
+    v_split = BM_edge_split( \
+        bm, e_other, split_swap ? (node_copy)->data : v_other, &e_split, 0.0f); \
+    v_split->e = e_split; \
+    BLI_assert(v_split == e_split->v2); \
+    BLI_gset_insert(split_edges, e_split); \
+    (node_copy)->data = v_split; \
+  } \
+  ((void)0)
+
+  /* first double until we are more than half as big */
+  while ((el_store->len * 2) < el_store_len) {
+    LinkData *node_curr = el_store->verts.first;
+    while (node_curr) {
+      LinkData *node_curr_copy = MEM_dupallocN(node_curr);
+      if (split == false) {
+        BLI_insertlinkafter(&el_store->verts, node_curr, node_curr_copy);
+        node_curr = node_curr_copy->next;
+      }
+      else {
+        if (node_curr->next || (el_store->flag & BM_EDGELOOP_IS_CLOSED)) {
+          EDGE_SPLIT(node_curr_copy,
+                     node_curr->next ? node_curr->next : (LinkData *)el_store->verts.first);
+          BLI_insertlinkafter(&el_store->verts, node_curr, node_curr_copy);
+          node_curr = node_curr_copy->next;
+        }
+        else {
+          EDGE_SPLIT(node_curr_copy, node_curr->prev);
+          BLI_insertlinkbefore(&el_store->verts, node_curr, node_curr_copy);
+          node_curr = node_curr->next;
+        }
+        split_swap = !split_swap;
+      }
+      el_store->len++;
+    }
+    split_swap = !split_swap;
+  }
+
+  if (el_store->len < el_store_len) {
+    LinkData *node_curr = el_store->verts.first;
+
+    int iter_prev = 0;
+    BLI_FOREACH_SPARSE_RANGE (el_store->len, (el_store_len - el_store->len), iter) {
+      while (iter_prev < iter) {
+        node_curr = node_curr->next;
+        iter_prev += 1;
+      }
+
+      LinkData *node_curr_copy;
+      node_curr_copy = MEM_dupallocN(node_curr);
+      if (split == false) {
+        BLI_insertlinkafter(&el_store->verts, node_curr, node_curr_copy);
+        node_curr = node_curr_copy->next;
+      }
+      else {
+        if (node_curr->next || (el_store->flag & BM_EDGELOOP_IS_CLOSED)) {
+          EDGE_SPLIT(node_curr_copy,
+                     node_curr->next ? node_curr->next : (LinkData *)el_store->verts.first);
+          BLI_insertlinkafter(&el_store->verts, node_curr, node_curr_copy);
+          node_curr = node_curr_copy->next;
+        }
+        else {
+          EDGE_SPLIT(node_curr_copy, node_curr->prev);
+          BLI_insertlinkbefore(&el_store->verts, node_curr, node_curr_copy);
+          node_curr = node_curr->next;
+        }
+        split_swap = !split_swap;
+      }
+      el_store->len++;
+      iter_prev += 1;
+    }
+  }
+
+#undef BKE_FOREACH_SUBSET_OF_RANGE
+#undef EDGE_SPLIT
+
+  BLI_assert(el_store->len == el_store_len);
+}
+
+bool BM_edgeloop_overlap_check(struct BMEdgeLoopStore *el_store_a,
+                               struct BMEdgeLoopStore *el_store_b)
+{
+  LinkData *node;
+
+  /* A little more efficient if 'a' as smaller. */
+  if (el_store_a->len > el_store_b->len) {
+    SWAP(BMEdgeLoopStore *, el_store_a, el_store_b);
+  }
+
+  /* init */
+  for (node = el_store_a->verts.first; node; node = node->next) {
+    BM_elem_flag_enable((BMVert *)node->data, BM_ELEM_INTERNAL_TAG);
+  }
+  for (node = el_store_b->verts.first; node; node = node->next) {
+    BM_elem_flag_disable((BMVert *)node->data, BM_ELEM_INTERNAL_TAG);
+  }
+
+  /* Check 'a' (clear as we go). */
+  for (node = el_store_a->verts.first; node; node = node->next) {
+    if (!BM_elem_flag_test((BMVert *)node->data, BM_ELEM_INTERNAL_TAG)) {
+      /* Finish clearing 'a', leave tag clean. */
+      while ((node = node->next)) {
+        BM_elem_flag_disable((BMVert *)node->data, BM_ELEM_INTERNAL_TAG);
+      }
+      return true;
+    }
+    mesh_elem_flag_disable((BMVert *)node->data, BM_ELEM_INTERNAL_TAG);
+  }
+  return false;
+}
