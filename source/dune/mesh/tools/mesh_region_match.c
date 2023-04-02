@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
+/**
  * Given a contiguous region of faces,
  * find multiple matching regions (based on topology) and return them.
  *
@@ -17,17 +15,17 @@
 
 #include <string.h>
 
-#include "BLI_alloca.h"
-#include "BLI_ghash.h"
-#include "BLI_linklist.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_listbase.h"
-#include "BLI_mempool.h"
-#include "MEM_guardedalloc.h"
+#include "lib_alloca.h"
+#include "lib_ghash.h"
+#include "lib_linklist.h"
+#include "lib_linklist_stack.h"
+#include "lib_listbase.h"
+#include "lib_mempool.h"
+#include "mem_guardedalloc.h"
 
-#include "bmesh.h"
+#include "mesh.h"
 
-#include "tools/bmesh_region_match.h" /* own include */
+#include "tools/mesh_region_match.h" /* own include */
 
 /* avoid re-creating ghash and pools for each search */
 #define USE_WALKER_REUSE
@@ -48,11 +46,10 @@
 #  include "PIL_time_utildefines.h"
 #endif
 
-#include "BLI_strict_flags.h"
+#include "lib_strict_flags.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Internal UUIDWalk API
- * \{ */
+/** Internal UUIDWalk API **/
 
 #define PRIME_VERT_INIT 100003
 
@@ -116,10 +113,10 @@ typedef struct UUIDFaceStepItem {
   uint list_len;
 } UUIDFaceStepItem;
 
-BLI_INLINE bool bm_uuidwalk_face_test(UUIDWalk *uuidwalk, BMFace *f)
+LIB_INLINE bool bm_uuidwalk_face_test(UUIDWalk *uuidwalk, BMFace *f)
 {
   if (uuidwalk->use_face_isolate) {
-    return BM_elem_flag_test_bool(f, BM_ELEM_TAG);
+    return mesh_elem_flag_test_bool(f, BM_ELEM_TAG);
   }
   return true;
 }
