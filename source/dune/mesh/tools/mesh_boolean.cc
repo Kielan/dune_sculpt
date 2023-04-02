@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
- * Main functions for beveling a BMesh (used by the tool and modifier)
- */
+/** Main functions for beveling a BMesh (used by the tool and modifier) **/
 
 #include "MEM_guardedalloc.h"
 
