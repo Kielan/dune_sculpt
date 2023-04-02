@@ -54,7 +54,7 @@
 
 /* Constructed vertex, sometimes later instantiated as BMVert. */
 typedef struct NewVert {
-  BMVert *v;
+  MeshVert *v;
   float co[3];
   char _pad[4];
 } NewVert;
@@ -66,11 +66,11 @@ typedef struct EdgeHalf {
   /** Other EdgeHalves connected to the same BevVert, in CCW order. */
   struct EdgeHalf *next, *prev;
   /** Original mesh edge. */
-  BMEdge *e;
+  MeshEdge *e;
   /** Face between this edge and previous, if any. */
-  BMFace *fprev;
+  MeshFace *fprev;
   /** Face between this edge and next, if any. */
-  BMFace *fnext;
+  MeshFace *fnext;
   /** Left boundary vert (looking along edge to end). */
   struct BoundVert *leftv;
   /** Right boundary vert, if beveled. */
@@ -168,8 +168,8 @@ typedef struct ProfileSpacing {
  * when there is an odd number of segments.
  *
  * The face_compent field of the following will only be set if there are an odd
- * number of segments. The it uses BMFace indices to index into it, so will
- * only be valid as long BMFaces are not added or deleted in the BMesh.
+ * number of segments. The it uses MeshFace indices to index into it, so will
+ * only be valid as long MeshFaces are not added or deleted in the BMesh.
  * "Connected Component" here means connected in UV space:
  * i.e., one face is directly connected to another if they share an edge and
  * all of Loop UV custom layers are contiguous across that edge.
