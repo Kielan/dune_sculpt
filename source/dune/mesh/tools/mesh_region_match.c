@@ -854,3 +854,602 @@ finally:
 /**
  * Tag as visited, avoid re-use.
  */
+static void bm_face_array_visit(BMFace **faces,
+                                const uint faces_len,
+                                uint *r_verts_len,
+                                bool visit_faces)
+{
+  uint verts_len = 0;
+  uint i;
+  for (i = 0; i < faces_len; i++) {
+    BMFace *f = faces[i];
+    BMLoop *l_iter, *l_first;
+    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    do {
+      if (r_verts_len) {
+        if (!BM_elem_flag_test(l_iter->v, BM_ELEM_TAG)) {
+          verts_len += 1;
+        }
+      }
+
+      BM_elem_flag_enable(l_iter->e, BM_ELEM_TAG);
+      BM_elem_flag_enable(l_iter->v, BM_ELEM_TAG);
+    } while ((l_iter = l_iter->next) != l_first);
+
+    if (visit_faces) {
+      BM_elem_flag_enable(f, BM_ELEM_TAG);
+    }
+  }
+
+  if (r_verts_len) {
+    *r_verts_len = verts_len;
+  }
+}
+
+#ifdef USE_PIVOT_SEARCH
+
+/* -------------------------------------------------------------------- */
+/** \name Internal UUIDWalk API
+ * \{ */
+
+/* signed user id */
+typedef intptr_t SUID_Int;
+
+BLI_INLINE intptr_t abs_intptr(intptr_t a)
+{
+  return (a < 0) ? -a : a;
+}
+
+static bool bm_edge_is_region_boundary(BMEdge *e)
+{
+  if (e->l->radial_next != e->l) {
+    BMLoop *l_iter = e->l;
+    do {
+      if (!BM_elem_flag_test(l_iter->f, BM_ELEM_TAG)) {
+        return true;
+      }
+    } while ((l_iter = l_iter->radial_next) != e->l);
+    return false;
+  }
+  /* boundary */
+  return true;
+}
+
+static void bm_face_region_pivot_edge_use_best(GHash *gh,
+                                               BMEdge *e_test,
+                                               BMEdge **r_e_pivot_best,
+                                               SUID_Int e_pivot_best_id[2])
+{
+  SUID_Int e_pivot_test_id[2];
+
+  e_pivot_test_id[0] = (SUID_Int)BLI_ghash_lookup(gh, e_test->v1);
+  e_pivot_test_id[1] = (SUID_Int)BLI_ghash_lookup(gh, e_test->v2);
+  if (e_pivot_test_id[0] > e_pivot_test_id[1]) {
+    SWAP(SUID_Int, e_pivot_test_id[0], e_pivot_test_id[1]);
+  }
+
+  if ((*r_e_pivot_best == NULL) ||
+      ((e_pivot_best_id[0] != e_pivot_test_id[0]) ? (e_pivot_best_id[0] < e_pivot_test_id[0]) :
+                                                    (e_pivot_best_id[1] < e_pivot_test_id[1]))) {
+    e_pivot_best_id[0] = e_pivot_test_id[0];
+    e_pivot_best_id[1] = e_pivot_test_id[1];
+
+    /* both verts are from the same pass, record this! */
+    *r_e_pivot_best = e_test;
+  }
+}
+
+/* quick id from a boundary vertex */
+static SUID_Int bm_face_region_vert_boundary_id(BMVert *v)
+{
+#  define PRIME_VERT_SMALL_A 7
+#  define PRIME_VERT_SMALL_B 13
+#  define PRIME_VERT_MID_A 103
+#  define PRIME_VERT_MID_B 131
+
+  int tot = 0;
+  BMIter iter;
+  BMLoop *l;
+  SUID_Int id = PRIME_VERT_MID_A;
+
+  BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
+    const bool is_boundary_vert = (bm_edge_is_region_boundary(l->e) ||
+                                   bm_edge_is_region_boundary(l->prev->e));
+    id ^= l->f->len * (is_boundary_vert ? PRIME_VERT_SMALL_A : PRIME_VERT_SMALL_B);
+    tot += 1;
+  }
+
+  id ^= (tot * PRIME_VERT_MID_B);
+
+  return id ? abs_intptr(id) : 1;
+
+#  undef PRIME_VERT_SMALL_A
+#  undef PRIME_VERT_SMALL_B
+#  undef PRIME_VERT_MID_A
+#  undef PRIME_VERT_MID_B
+}
+
+/**
+ * Accumulate id's from a previous pass (swap sign each pass)
+ */
+static SUID_Int bm_face_region_vert_pass_id(GHash *gh, BMVert *v)
+{
+  BMIter eiter;
+  BMEdge *e;
+  SUID_Int tot = 0;
+  SUID_Int v_sum_face_len = 0;
+  SUID_Int v_sum_id = 0;
+  SUID_Int id;
+  SUID_Int id_min = INTPTR_MIN + 1;
+
+#  define PRIME_VERT_MID_A 23
+#  define PRIME_VERT_MID_B 31
+
+  BM_ITER_ELEM (e, &eiter, v, BM_EDGES_OF_VERT) {
+    if (BM_elem_flag_test(e, BM_ELEM_TAG)) {
+      BMVert *v_other = BM_edge_other_vert(e, v);
+      if (BM_elem_flag_test(v_other, BM_ELEM_TAG)) {
+        /* non-zero values aren't allowed... so no need to check haskey */
+        SUID_Int v_other_id = (SUID_Int)BLI_ghash_lookup(gh, v_other);
+        if (v_other_id > 0) {
+          v_sum_id += v_other_id;
+          tot += 1;
+
+          /* face-count */
+          {
+            BMLoop *l_iter = e->l;
+            do {
+              if (BM_elem_flag_test(l_iter->f, BM_ELEM_TAG)) {
+                v_sum_face_len += l_iter->f->len;
+              }
+            } while ((l_iter = l_iter->radial_next) != e->l);
+          }
+        }
+      }
+    }
+  }
+
+  id = (tot * PRIME_VERT_MID_A);
+  id ^= (v_sum_face_len * PRIME_VERT_MID_B);
+  id ^= v_sum_id;
+
+  /* disallow 0 & min (since it can't be flipped) */
+  id = (UNLIKELY(id == 0) ? 1 : UNLIKELY(id < id_min) ? id_min : id);
+
+  return abs_intptr(id);
+
+#  undef PRIME_VERT_MID_A
+#  undef PRIME_VERT_MID_B
+}
+
+/**
+ * Take a face region and find the inner-most vertex.
+ * also calculate the number of connections to the boundary,
+ * and the total number unique of verts used by this face region.
+ *
+ * This is only called once on the source region (no need to be highly optimized).
+ */
+static BMEdge *bm_face_region_pivot_edge_find(BMFace **faces_region,
+                                              uint faces_region_len,
+                                              uint verts_region_len,
+                                              uint *r_depth)
+{
+  /* NOTE: keep deterministic where possible (geometry order independent)
+   * this function assumed all visit faces & edges are tagged */
+
+  BLI_LINKSTACK_DECLARE(vert_queue_prev, BMVert *);
+  BLI_LINKSTACK_DECLARE(vert_queue_next, BMVert *);
+
+  GHash *gh = BLI_ghash_ptr_new(__func__);
+  uint i;
+
+  BMEdge *e_pivot = NULL;
+  /* pick any non-boundary edge (not ideal) */
+  BMEdge *e_pivot_fallback = NULL;
+
+  SUID_Int pass = 0;
+
+  /* total verts in 'gs' we have visited - aka - not v_init_none */
+  uint vert_queue_used = 0;
+
+  BLI_LINKSTACK_INIT(vert_queue_prev);
+  BLI_LINKSTACK_INIT(vert_queue_next);
+
+  /* face-verts */
+  for (i = 0; i < faces_region_len; i++) {
+    BMFace *f = faces_region[i];
+
+    BMLoop *l_iter, *l_first;
+    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    do {
+      BMEdge *e = l_iter->e;
+      if (bm_edge_is_region_boundary(e)) {
+        uint j;
+        for (j = 0; j < 2; j++) {
+          void **val_p;
+          if (!BLI_ghash_ensure_p(gh, (&e->v1)[j], &val_p)) {
+            SUID_Int v_id = bm_face_region_vert_boundary_id((&e->v1)[j]);
+            *val_p = (void *)v_id;
+            BLI_LINKSTACK_PUSH(vert_queue_prev, (&e->v1)[j]);
+            vert_queue_used += 1;
+          }
+        }
+      }
+      else {
+        /* Use in case (depth == 0), no interior verts. */
+        e_pivot_fallback = e;
+      }
+    } while ((l_iter = l_iter->next) != l_first);
+  }
+
+  while (BLI_LINKSTACK_SIZE(vert_queue_prev)) {
+    BMVert *v;
+    while ((v = BLI_LINKSTACK_POP(vert_queue_prev))) {
+      BMIter eiter;
+      BMEdge *e;
+      BLI_assert(BLI_ghash_haskey(gh, v));
+      BLI_assert((SUID_Int)BLI_ghash_lookup(gh, v) > 0);
+      BM_ITER_ELEM (e, &eiter, v, BM_EDGES_OF_VERT) {
+        if (BM_elem_flag_test(e, BM_ELEM_TAG)) {
+          BMVert *v_other = BM_edge_other_vert(e, v);
+          if (BM_elem_flag_test(v_other, BM_ELEM_TAG)) {
+            void **val_p;
+            if (!BLI_ghash_ensure_p(gh, v_other, &val_p)) {
+              /* add as negative, so we know not to read from them this pass */
+              const SUID_Int v_id_other = -bm_face_region_vert_pass_id(gh, v_other);
+              *val_p = (void *)v_id_other;
+              BLI_LINKSTACK_PUSH(vert_queue_next, v_other);
+              vert_queue_used += 1;
+            }
+          }
+        }
+      }
+    }
+
+    /* flip all the newly added hashes to positive */
+    {
+      LinkNode *v_link;
+      for (v_link = vert_queue_next; v_link; v_link = v_link->next) {
+        SUID_Int *v_id_p = (SUID_Int *)BLI_ghash_lookup_p(gh, v_link->link);
+        *v_id_p = -(*v_id_p);
+        BLI_assert(*v_id_p > 0);
+      }
+    }
+
+    BLI_LINKSTACK_SWAP(vert_queue_prev, vert_queue_next);
+    pass += 1;
+
+    if (vert_queue_used == verts_region_len) {
+      break;
+    }
+  }
+
+  if (BLI_LINKSTACK_SIZE(vert_queue_prev) >= 2) {
+    /* common case - we managed to find some interior verts */
+    LinkNode *v_link;
+    BMEdge *e_pivot_best = NULL;
+    SUID_Int e_pivot_best_id[2] = {0, 0};
+
+    /* temp untag, so we can quickly know what other verts are in this last pass */
+    for (v_link = vert_queue_prev; v_link; v_link = v_link->next) {
+      BMVert *v = v_link->link;
+      BM_elem_flag_disable(v, BM_ELEM_TAG);
+    }
+
+    /* restore correct tagging */
+    for (v_link = vert_queue_prev; v_link; v_link = v_link->next) {
+      BMIter eiter;
+      BMEdge *e_test;
+
+      BMVert *v = v_link->link;
+      BM_elem_flag_enable(v, BM_ELEM_TAG);
+
+      BM_ITER_ELEM (e_test, &eiter, v, BM_EDGES_OF_VERT) {
+        if (BM_elem_flag_test(e_test, BM_ELEM_TAG)) {
+          BMVert *v_other = BM_edge_other_vert(e_test, v);
+          if (BM_elem_flag_test(v_other, BM_ELEM_TAG) == false) {
+            bm_face_region_pivot_edge_use_best(gh, e_test, &e_pivot_best, e_pivot_best_id);
+          }
+        }
+      }
+    }
+
+    e_pivot = e_pivot_best;
+  }
+
+  if ((e_pivot == NULL) && BLI_LINKSTACK_SIZE(vert_queue_prev)) {
+    /* find the best single edge */
+    BMEdge *e_pivot_best = NULL;
+    SUID_Int e_pivot_best_id[2] = {0, 0};
+
+    LinkNode *v_link;
+
+    /* reduce a pass since we're having to step into a previous passes vert,
+     * and will be closer to the boundary */
+    BLI_assert(pass != 0);
+    pass -= 1;
+
+    for (v_link = vert_queue_prev; v_link; v_link = v_link->next) {
+      BMVert *v = v_link->link;
+
+      BMIter eiter;
+      BMEdge *e_test;
+      BM_ITER_ELEM (e_test, &eiter, v, BM_EDGES_OF_VERT) {
+        if (BM_elem_flag_test(e_test, BM_ELEM_TAG)) {
+          BMVert *v_other = BM_edge_other_vert(e_test, v);
+          if (BM_elem_flag_test(v_other, BM_ELEM_TAG)) {
+            bm_face_region_pivot_edge_use_best(gh, e_test, &e_pivot_best, e_pivot_best_id);
+          }
+        }
+      }
+    }
+
+    e_pivot = e_pivot_best;
+  }
+
+  BLI_LINKSTACK_FREE(vert_queue_prev);
+  BLI_LINKSTACK_FREE(vert_queue_next);
+
+  BLI_ghash_free(gh, NULL, NULL);
+
+  if (e_pivot == NULL) {
+#  ifdef DEBUG_PRINT
+    printf("%s: using fallback edge!\n", __func__);
+#  endif
+    e_pivot = e_pivot_fallback;
+    pass = 0;
+  }
+
+  *r_depth = (uint)pass;
+
+  return e_pivot;
+}
+
+/** \} */
+
+#endif /* USE_PIVOT_SEARCH */
+
+/* Quick UUID pass - identify candidates */
+
+#ifdef USE_PIVOT_FASTMATCH
+
+/* -------------------------------------------------------------------- */
+/** \name Fast Match
+ * \{ */
+
+typedef uintptr_t UUIDFashMatch;
+
+static UUIDFashMatch bm_vert_fasthash_single(BMVert *v)
+{
+  BMIter eiter;
+  BMEdge *e;
+  UUIDFashMatch e_num = 0, f_num = 0, l_num = 0;
+
+#  define PRIME_EDGE 7
+#  define PRIME_FACE 31
+#  define PRIME_LOOP 61
+
+  BM_ITER_ELEM (e, &eiter, v, BM_EDGES_OF_VERT) {
+    if (!BM_edge_is_wire(e)) {
+      BMLoop *l_iter = e->l;
+      e_num += 1;
+      do {
+        f_num += 1;
+        l_num += (uint)l_iter->f->len;
+      } while ((l_iter = l_iter->radial_next) != e->l);
+    }
+  }
+
+  return ((e_num * PRIME_EDGE) ^ (f_num * PRIME_FACE) * (l_num * PRIME_LOOP));
+
+#  undef PRIME_EDGE
+#  undef PRIME_FACE
+#  undef PRIME_LOOP
+}
+
+static UUIDFashMatch *bm_vert_fasthash_create(BMesh *bm, const uint depth)
+{
+  UUIDFashMatch *id_prev;
+  UUIDFashMatch *id_curr;
+  uint pass, i;
+  BMVert *v;
+  BMIter iter;
+
+  id_prev = MEM_mallocN(sizeof(*id_prev) * (uint)bm->totvert, __func__);
+  id_curr = MEM_mallocN(sizeof(*id_curr) * (uint)bm->totvert, __func__);
+
+  BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
+    id_prev[i] = bm_vert_fasthash_single(v);
+  }
+
+  for (pass = 0; pass < depth; pass++) {
+    BMEdge *e;
+
+    memcpy(id_curr, id_prev, sizeof(*id_prev) * (uint)bm->totvert);
+
+    BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+      if (BM_edge_is_wire(e) == false) {
+        const int i1 = BM_elem_index_get(e->v1);
+        const int i2 = BM_elem_index_get(e->v2);
+
+        id_curr[i1] += id_prev[i2];
+        id_curr[i2] += id_prev[i1];
+      }
+    }
+  }
+  MEM_freeN(id_prev);
+
+  return id_curr;
+}
+
+static void bm_vert_fasthash_edge_order(const UUIDFashMatch *fm,
+                                        const BMEdge *e,
+                                        UUIDFashMatch e_fm[2])
+{
+  e_fm[0] = fm[BM_elem_index_get(e->v1)];
+  e_fm[1] = fm[BM_elem_index_get(e->v2)];
+
+  if (e_fm[0] > e_fm[1]) {
+    SWAP(UUIDFashMatch, e_fm[0], e_fm[1]);
+  }
+}
+
+static bool bm_vert_fasthash_edge_is_match(UUIDFashMatch *fm, const BMEdge *e_a, const BMEdge *e_b)
+{
+  UUIDFashMatch e_a_fm[2];
+  UUIDFashMatch e_b_fm[2];
+
+  bm_vert_fasthash_edge_order(fm, e_a, e_a_fm);
+  bm_vert_fasthash_edge_order(fm, e_b, e_b_fm);
+
+  return ((e_a_fm[0] == e_b_fm[0]) && (e_a_fm[1] == e_b_fm[1]));
+}
+
+static void bm_vert_fasthash_destroy(UUIDFashMatch *fm)
+{
+  MEM_freeN(fm);
+}
+
+/** \} */
+
+#endif /* USE_PIVOT_FASTMATCH */
+
+int BM_mesh_region_match(BMesh *bm,
+                         BMFace **faces_region,
+                         uint faces_region_len,
+                         ListBase *r_face_regions)
+{
+  BMEdge *e_src;
+  BMEdge *e_dst;
+  BMIter iter;
+  uint verts_region_len = 0;
+  uint faces_result_len = 0;
+  /* number of steps from e_src to a boundary vert */
+  uint depth;
+
+#ifdef USE_WALKER_REUSE
+  UUIDWalk w_src, w_dst;
+#endif
+
+#ifdef USE_PIVOT_FASTMATCH
+  UUIDFashMatch *fm;
+#endif
+
+#ifdef DEBUG_PRINT
+  int search_num = 0;
+#endif
+
+#ifdef DEBUG_TIME
+  TIMEIT_START(region_match);
+#endif
+
+  /* initialize visited verts */
+  BM_mesh_elem_hflag_disable_all(bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_TAG, false);
+  bm_face_array_visit(faces_region, faces_region_len, &verts_region_len, true);
+
+  /* needed for 'ghashutil_bmelem_indexhash' */
+  BM_mesh_elem_index_ensure(bm, BM_VERT | BM_FACE);
+
+#ifdef USE_PIVOT_SEARCH
+  e_src = bm_face_region_pivot_edge_find(faces_region, faces_region_len, verts_region_len, &depth);
+
+  /* see which edge is added */
+#  if 0
+  BM_select_history_clear(bm);
+  if (e_src) {
+    BM_select_history_store(bm, e_src);
+  }
+#  endif
+
+#else
+  /* quick test only! */
+  e_src = BM_mesh_active_edge_get(bm);
+#endif
+
+  if (e_src == NULL) {
+#ifdef DEBUG_PRINT
+    printf("Couldn't find 'e_src'");
+#endif
+    return 0;
+  }
+
+  BLI_listbase_clear(r_face_regions);
+
+#ifdef USE_PIVOT_FASTMATCH
+  if (depth > 0) {
+    fm = bm_vert_fasthash_create(bm, depth);
+  }
+  else {
+    fm = NULL;
+  }
+#endif
+
+#ifdef USE_WALKER_REUSE
+  bm_uuidwalk_init(&w_src, faces_region_len, verts_region_len);
+  bm_uuidwalk_init(&w_dst, faces_region_len, verts_region_len);
+#endif
+
+  BM_ITER_MESH (e_dst, &iter, bm, BM_EDGES_OF_MESH) {
+    BMFace **faces_result;
+    uint faces_result_len_out;
+
+    if (BM_elem_flag_test(e_dst, BM_ELEM_TAG) || BM_edge_is_wire(e_dst)) {
+      continue;
+    }
+
+#ifdef USE_PIVOT_FASTMATCH
+    if (fm && !bm_vert_fasthash_edge_is_match(fm, e_src, e_dst)) {
+      continue;
+    }
+#endif
+
+#ifdef DEBUG_PRINT
+    search_num += 1;
+#endif
+
+    faces_result = bm_mesh_region_match_pair(
+#ifdef USE_WALKER_REUSE
+        &w_src,
+        &w_dst,
+#endif
+        e_src,
+        e_dst,
+        faces_region_len,
+        verts_region_len,
+        &faces_result_len_out);
+
+    /* tag verts as visited */
+    if (faces_result) {
+      LinkData *link;
+
+      bm_face_array_visit(faces_result, faces_result_len_out, NULL, false);
+
+      link = BLI_genericNodeN(faces_result);
+      BLI_addtail(r_face_regions, link);
+      faces_result_len += 1;
+    }
+  }
+
+#ifdef USE_WALKER_REUSE
+  bm_uuidwalk_free(&w_src);
+  bm_uuidwalk_free(&w_dst);
+#else
+  (void)bm_uuidwalk_clear;
+#endif
+
+#ifdef USE_PIVOT_FASTMATCH
+  if (fm) {
+    bm_vert_fasthash_destroy(fm);
+  }
+#endif
+
+#ifdef DEBUG_PRINT
+  printf("%s: search: %d, found %d\n", __func__, search_num, faces_result_len);
+#endif
+
+#ifdef DEBUG_TIME
+  TIMEIT_END(region_match);
+#endif
+
+  return (int)faces_result_len;
+}
