@@ -1,18 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
-/** \file
- * \ingroup bmesh
- *
- * Core BMesh functions for adding, removing BMesh elements.
- */
+/** Core Mesh functions for adding, removing BMesh elements. **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_array.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_math_vector.h"
-#include "BLI_utildefines_stack.h"
+#include "lib_alloca.h"
+#include "lib_array.h"
+#include "lib_linklist_stack.h"
+#include "lib_math_vector.h"
+#include "lib_utildefines_stack.h"
 
 #include "BLT_translation.h"
 
