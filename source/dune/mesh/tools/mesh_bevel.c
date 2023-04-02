@@ -1303,3 +1303,672 @@ static void offset_meet_lines_percent_or_absolute(BevelParams *bp,
  * param e_in_plane: If we need to drop from the calculated offset lines to one of the faces,
  * we don't want to drop onto the 'in plane' face, so if this is not null skip this edge's faces.
  */
+static void offset_meet(BevelParams *bp,
+                        EdgeHalf *e1,
+                        EdgeHalf *e2,
+                        BMVert *v,
+                        BMFace *f,
+                        bool edges_between,
+                        float meetco[3],
+                        const EdgeHalf *e_in_plane)
+{
+  /* Get direction vectors for two offset lines. */
+  float dir1[3], dir2[3];
+  sub_v3_v3v3(dir1, v->co, BM_edge_other_vert(e1->e, v)->co);
+  sub_v3_v3v3(dir2, BM_edge_other_vert(e2->e, v)->co, v->co);
+
+  float dir1n[3], dir2p[3];
+  if (edges_between) {
+    EdgeHalf *e1next = e1->next;
+    EdgeHalf *e2prev = e2->prev;
+    sub_v3_v3v3(dir1n, BM_edge_other_vert(e1next->e, v)->co, v->co);
+    sub_v3_v3v3(dir2p, v->co, BM_edge_other_vert(e2prev->e, v)->co);
+  }
+  else {
+    /* Shut up 'maybe unused' warnings. */
+    zero_v3(dir1n);
+    zero_v3(dir2p);
+  }
+
+  float ang = angle_v3v3(dir1, dir2);
+  float norm_perp1[3];
+  if (ang < BEVEL_EPSILON_ANG) {
+    /* Special case: e1 and e2 are parallel; put offset point perp to both, from v.
+     * need to find a suitable plane.
+     * This code used to just use offset and dir1, but that makes for visible errors
+     * on a circle with > 200 sides, which trips this "nearly perp" code (see T61214).
+     * so use the average of the two, and the offset formula for angle bisector.
+     * If offsets are different, we're out of luck:
+     * Use the max of the two (so get consistent looking results if the same situation
+     * arises elsewhere in the object but with opposite roles for e1 and e2. */
+    float norm_v[3];
+    if (f) {
+      copy_v3_v3(norm_v, f->no);
+    }
+    else {
+      /* Get average of face norms of faces between e and e2. */
+      int fcount = 0;
+      zero_v3(norm_v);
+      for (EdgeHalf *eloop = e1; eloop != e2; eloop = eloop->next) {
+        if (eloop->fnext != NULL) {
+          add_v3_v3(norm_v, eloop->fnext->no);
+          fcount++;
+        }
+      }
+      if (fcount == 0) {
+        copy_v3_v3(norm_v, v->no);
+      }
+      else {
+        mul_v3_fl(norm_v, 1.0f / fcount);
+      }
+    }
+    add_v3_v3(dir1, dir2);
+    cross_v3_v3v3(norm_perp1, dir1, norm_v);
+    normalize_v3(norm_perp1);
+    float off1a[3];
+    copy_v3_v3(off1a, v->co);
+    float d = max_ff(e1->offset_r, e2->offset_l);
+    d = d / cosf(ang / 2.0f);
+    madd_v3_v3fl(off1a, norm_perp1, d);
+    copy_v3_v3(meetco, off1a);
+  }
+  else if (fabsf(ang - (float)M_PI) < BEVEL_EPSILON_ANG) {
+    /* Special case: e1 and e2 are antiparallel, so bevel is into a zero-area face.
+     * Just make the offset point on the common line, at offset distance from v. */
+    float d = max_ff(e1->offset_r, e2->offset_l);
+    slide_dist(e2, v, d, meetco);
+  }
+  else {
+    /* Get normal to plane where meet point should be, using cross product instead of f->no
+     * in case f is non-planar.
+     * Except: sometimes locally there can be a small angle between dir1 and dir2 that leads
+     * to a normal that is actually almost perpendicular to the face normal;
+     * in this case it looks wrong to use the local (cross-product) normal, so use the face normal
+     * if the angle between dir1 and dir2 is smallish.
+     * If e1-v-e2 is a reflex angle (viewed from vertex normal side), need to flip.
+     * Use f->no to figure out which side to look at angle from, as even if f is non-planar,
+     * will be more accurate than vertex normal. */
+    float norm_v1[3], norm_v2[3];
+    if (f && ang < BEVEL_SMALL_ANG) {
+      copy_v3_v3(norm_v1, f->no);
+      copy_v3_v3(norm_v2, f->no);
+    }
+    else if (!edges_between) {
+      cross_v3_v3v3(norm_v1, dir2, dir1);
+      normalize_v3(norm_v1);
+      if (dot_v3v3(norm_v1, f ? f->no : v->no) < 0.0f) {
+        negate_v3(norm_v1);
+      }
+      copy_v3_v3(norm_v2, norm_v1);
+    }
+    else {
+      /* Separate faces; get face norms at corners for each separately. */
+      cross_v3_v3v3(norm_v1, dir1n, dir1);
+      normalize_v3(norm_v1);
+      f = e1->fnext;
+      if (dot_v3v3(norm_v1, f ? f->no : v->no) < 0.0f) {
+        negate_v3(norm_v1);
+      }
+      cross_v3_v3v3(norm_v2, dir2, dir2p);
+      normalize_v3(norm_v2);
+      f = e2->fprev;
+      if (dot_v3v3(norm_v2, f ? f->no : v->no) < 0.0f) {
+        negate_v3(norm_v2);
+      }
+    }
+
+    /* Get vectors perp to each edge, perp to norm_v, and pointing into face. */
+    float norm_perp2[3];
+    cross_v3_v3v3(norm_perp1, dir1, norm_v1);
+    cross_v3_v3v3(norm_perp2, dir2, norm_v2);
+    normalize_v3(norm_perp1);
+    normalize_v3(norm_perp2);
+
+    float off1a[3], off1b[3], off2a[3], off2b[3];
+    if (ELEM(bp->offset_type, BEVEL_AMT_PERCENT, BEVEL_AMT_ABSOLUTE)) {
+      offset_meet_lines_percent_or_absolute(bp, e1, e2, v, off1a, off1b, off2a, off2b);
+    }
+    else {
+      /* Get points that are offset distances from each line, then another point on each line. */
+      copy_v3_v3(off1a, v->co);
+      madd_v3_v3fl(off1a, norm_perp1, e1->offset_r);
+      add_v3_v3v3(off1b, off1a, dir1);
+      copy_v3_v3(off2a, v->co);
+      madd_v3_v3fl(off2a, norm_perp2, e2->offset_l);
+      add_v3_v3v3(off2b, off2a, dir2);
+    }
+
+    /* Intersect the offset lines. */
+    float isect2[3];
+    int isect_kind = isect_line_line_v3(off1a, off1b, off2a, off2b, meetco, isect2);
+    if (isect_kind == 0) {
+      /* Lines are collinear: we already tested for this, but this used a different epsilon. */
+      copy_v3_v3(meetco, off1a); /* Just to do something. */
+    }
+    else {
+      /* The lines intersect, but is it at a reasonable place?
+       * One problem to check: if one of the offsets is 0, then we don't want an intersection
+       * that is outside that edge itself. This can happen if angle between them is > 180 degrees,
+       * or if the offset amount is > the edge length. */
+      BMVert *closer_v;
+      if (e1->offset_r == 0.0f && is_outside_edge(e1, meetco, &closer_v)) {
+        copy_v3_v3(meetco, closer_v->co);
+      }
+      if (e2->offset_l == 0.0f && is_outside_edge(e2, meetco, &closer_v)) {
+        copy_v3_v3(meetco, closer_v->co);
+      }
+      if (edges_between && e1->offset_r > 0.0f && e2->offset_l > 0.0f) {
+        /* Try to drop meetco to a face between e1 and e2. */
+        if (isect_kind == 2) {
+          /* Lines didn't meet in 3d: get average of meetco and isect2. */
+          mid_v3_v3v3(meetco, meetco, isect2);
+        }
+        for (EdgeHalf *e = e1; e != e2; e = e->next) {
+          BMFace *fnext = e->fnext;
+          if (!fnext) {
+            continue;
+          }
+          float plane[4];
+          plane_from_point_normal_v3(plane, v->co, fnext->no);
+          float dropco[3];
+          closest_to_plane_normalized_v3(dropco, plane, meetco);
+          /* Don't drop to the faces next to the in plane edge. */
+          if (e_in_plane) {
+            ang = angle_v3v3(fnext->no, e_in_plane->fnext->no);
+            if ((fabsf(ang) < BEVEL_SMALL_ANG) || (fabsf(ang - (float)M_PI) < BEVEL_SMALL_ANG)) {
+              continue;
+            }
+          }
+          if (point_between_edges(dropco, v, fnext, e, e->next)) {
+            copy_v3_v3(meetco, dropco);
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* This was changed from 0.25f to fix bug T86768.
+ * Original bug T44961 remains fixed with this value. */
+#define BEVEL_GOOD_ANGLE 0.0001f
+
+/**
+ * Calculate the meeting point between e1 and e2 (one of which should have zero offsets),
+ * where \a e1 precedes \a e2 in CCW order around their common vertex \a v
+ * (viewed from normal side).
+ * If \a r_angle is provided, return the angle between \a e and \a meetco in `*r_angle`.
+ * If the angle is 0, or it is 180 degrees or larger, there will be no meeting point;
+ * return false in that case, else true.
+ */
+static bool offset_meet_edge(
+    EdgeHalf *e1, EdgeHalf *e2, BMVert *v, float meetco[3], float *r_angle)
+{
+  float dir1[3], dir2[3];
+  sub_v3_v3v3(dir1, BM_edge_other_vert(e1->e, v)->co, v->co);
+  sub_v3_v3v3(dir2, BM_edge_other_vert(e2->e, v)->co, v->co);
+  normalize_v3(dir1);
+  normalize_v3(dir2);
+
+  /* Find angle from dir1 to dir2 as viewed from vertex normal side. */
+  float ang = angle_normalized_v3v3(dir1, dir2);
+  if (fabsf(ang) < BEVEL_GOOD_ANGLE) {
+    if (r_angle) {
+      *r_angle = 0.0f;
+    }
+    return false;
+  }
+  float fno[3];
+  cross_v3_v3v3(fno, dir1, dir2);
+  if (dot_v3v3(fno, v->no) < 0.0f) {
+    ang = 2.0f * (float)M_PI - ang; /* Angle is reflex. */
+    if (r_angle) {
+      *r_angle = ang;
+    }
+    return false;
+  }
+  if (r_angle) {
+    *r_angle = ang;
+  }
+
+  if (fabsf(ang - (float)M_PI) < BEVEL_GOOD_ANGLE) {
+    return false;
+  }
+
+  float sinang = sinf(ang);
+
+  copy_v3_v3(meetco, v->co);
+  if (e1->offset_r == 0.0f) {
+    madd_v3_v3fl(meetco, dir1, e2->offset_l / sinang);
+  }
+  else {
+    madd_v3_v3fl(meetco, dir2, e1->offset_r / sinang);
+  }
+  return true;
+}
+
+/**
+ * Return true if it will look good to put the meeting point where offset_on_edge_between
+ * would put it. This means that neither side sees a reflex angle.
+ */
+static bool good_offset_on_edge_between(EdgeHalf *e1, EdgeHalf *e2, EdgeHalf *emid, BMVert *v)
+{
+  float ang;
+  float meet[3];
+
+  return offset_meet_edge(e1, emid, v, meet, &ang) && offset_meet_edge(emid, e2, v, meet, &ang);
+}
+
+/**
+ * Calculate the best place for a meeting point for the offsets from edges e1 and e2 on the
+ * in-between edge emid. Viewed from the vertex normal side, the CCW order of these edges is e1,
+ * emid, e2. Return true if we placed meetco as compromise between where two edges met. If we did,
+ * put the ratio of sines of angles in *r_sinratio too.
+ * However, if the bp->offset_type is BEVEL_AMT_PERCENT or BEVEL_AMT_ABSOLUTE, we just slide
+ * along emid by the specified amount.
+ */
+static bool offset_on_edge_between(BevelParams *bp,
+                                   EdgeHalf *e1,
+                                   EdgeHalf *e2,
+                                   EdgeHalf *emid,
+                                   BMVert *v,
+                                   float meetco[3],
+                                   float *r_sinratio)
+{
+  bool retval = false;
+
+  BLI_assert(e1->is_bev && e2->is_bev && !emid->is_bev);
+
+  float ang1, ang2;
+  float meet1[3], meet2[3];
+  bool ok1 = offset_meet_edge(e1, emid, v, meet1, &ang1);
+  bool ok2 = offset_meet_edge(emid, e2, v, meet2, &ang2);
+  if (ELEM(bp->offset_type, BEVEL_AMT_PERCENT, BEVEL_AMT_ABSOLUTE)) {
+    BMVert *v2 = BM_edge_other_vert(emid->e, v);
+    if (bp->offset_type == BEVEL_AMT_PERCENT) {
+      float wt = 1.0;
+      if (bp->use_weights) {
+        CustomData *cd = &bp->bm->edata;
+        wt = 0.5f * (BM_elem_float_data_get(cd, e1->e, CD_BWEIGHT) +
+                     BM_elem_float_data_get(cd, e2->e, CD_BWEIGHT));
+      }
+      interp_v3_v3v3(meetco, v->co, v2->co, wt * bp->offset / 100.0f);
+    }
+    else {
+      float dir[3];
+      sub_v3_v3v3(dir, v2->co, v->co);
+      normalize_v3(dir);
+      madd_v3_v3v3fl(meetco, v->co, dir, bp->offset);
+    }
+    if (r_sinratio) {
+      *r_sinratio = (ang1 == 0.0f) ? 1.0f : sinf(ang2) / sinf(ang1);
+    }
+    return true;
+  }
+  if (ok1 && ok2) {
+    mid_v3_v3v3(meetco, meet1, meet2);
+    if (r_sinratio) {
+      /* ang1 should not be 0, but be paranoid. */
+      *r_sinratio = (ang1 == 0.0f) ? 1.0f : sinf(ang2) / sinf(ang1);
+    }
+    retval = true;
+  }
+  else if (ok1 && !ok2) {
+    copy_v3_v3(meetco, meet1);
+  }
+  else if (!ok1 && ok2) {
+    copy_v3_v3(meetco, meet2);
+  }
+  else {
+    /* Neither offset line met emid.
+     * This should only happen if all three lines are on top of each other. */
+    slide_dist(emid, v, e1->offset_r, meetco);
+  }
+
+  return retval;
+}
+
+/* Offset by e->offset in plane with normal plane_no, on left if left==true, else on right.
+ * If plane_no is NULL, choose an arbitrary plane different from eh's direction. */
+static void offset_in_plane(EdgeHalf *e, const float plane_no[3], bool left, float r_co[3])
+{
+  BMVert *v = e->is_rev ? e->e->v2 : e->e->v1;
+
+  float dir[3], no[3];
+  sub_v3_v3v3(dir, BM_edge_other_vert(e->e, v)->co, v->co);
+  normalize_v3(dir);
+  if (plane_no) {
+    copy_v3_v3(no, plane_no);
+  }
+  else {
+    zero_v3(no);
+    if (fabsf(dir[0]) < fabsf(dir[1])) {
+      no[0] = 1.0f;
+    }
+    else {
+      no[1] = 1.0f;
+    }
+  }
+
+  float fdir[3];
+  if (left) {
+    cross_v3_v3v3(fdir, dir, no);
+  }
+  else {
+    cross_v3_v3v3(fdir, no, dir);
+  }
+  normalize_v3(fdir);
+  copy_v3_v3(r_co, v->co);
+  madd_v3_v3fl(r_co, fdir, left ? e->offset_l : e->offset_r);
+}
+
+/* Calculate the point on e where line (co_a, co_b) comes closest to and return it in projco. */
+static void project_to_edge(const BMEdge *e,
+                            const float co_a[3],
+                            const float co_b[3],
+                            float projco[3])
+{
+  float otherco[3];
+  if (!isect_line_line_v3(e->v1->co, e->v2->co, co_a, co_b, projco, otherco)) {
+#ifdef BEVEL_ASSERT_PROJECT
+    BLI_assert_msg(0, "project meet failure");
+#endif
+    copy_v3_v3(projco, e->v1->co);
+  }
+}
+
+/* If there is a bndv->ebev edge, find the mid control point if necessary.
+ * It is the closest point on the beveled edge to the line segment between bndv and bndv->next. */
+static void set_profile_params(BevelParams *bp, BevVert *bv, BoundVert *bndv)
+{
+  bool do_linear_interp = true;
+  EdgeHalf *e = bndv->ebev;
+  Profile *pro = &bndv->profile;
+
+  float start[3], end[3];
+  copy_v3_v3(start, bndv->nv.co);
+  copy_v3_v3(end, bndv->next->nv.co);
+  if (e) {
+    do_linear_interp = false;
+    pro->super_r = bp->pro_super_r;
+    /* Projection direction is direction of the edge. */
+    sub_v3_v3v3(pro->proj_dir, e->e->v1->co, e->e->v2->co);
+    if (e->is_rev) {
+      negate_v3(pro->proj_dir);
+    }
+    normalize_v3(pro->proj_dir);
+    project_to_edge(e->e, start, end, pro->middle);
+    copy_v3_v3(pro->start, start);
+    copy_v3_v3(pro->end, end);
+    /* Default plane to project onto is the one with triangle start - middle - end in it. */
+    float d1[3], d2[3];
+    sub_v3_v3v3(d1, pro->middle, start);
+    sub_v3_v3v3(d2, pro->middle, end);
+    normalize_v3(d1);
+    normalize_v3(d2);
+    cross_v3_v3v3(pro->plane_no, d1, d2);
+    normalize_v3(pro->plane_no);
+    if (nearly_parallel(d1, d2)) {
+      /* Start - middle - end are collinear.
+       * It should be the case that beveled edge is coplanar with two boundary verts.
+       * We want to move the profile to that common plane, if possible.
+       * That makes the multi-segment bevels curve nicely in that plane, as users expect.
+       * The new middle should be either v (when neighbor edges are unbeveled)
+       * or the intersection of the offset lines (if they are).
+       * If the profile is going to lead into unbeveled edges on each side
+       * (that is, both BoundVerts are "on-edge" points on non-beveled edges). */
+      copy_v3_v3(pro->middle, bv->v->co);
+      if (e->prev->is_bev && e->next->is_bev && bv->selcount >= 3) {
+        /* Want mid at the meet point of next and prev offset edges. */
+        float d3[3], d4[3], co4[3], meetco[3], isect2[3];
+        int isect_kind;
+
+        sub_v3_v3v3(d3, e->prev->e->v1->co, e->prev->e->v2->co);
+        sub_v3_v3v3(d4, e->next->e->v1->co, e->next->e->v2->co);
+        normalize_v3(d3);
+        normalize_v3(d4);
+        if (nearly_parallel(d3, d4)) {
+          /* Offset lines are collinear - want linear interpolation. */
+          mid_v3_v3v3(pro->middle, start, end);
+          do_linear_interp = true;
+        }
+        else {
+          float co3[3];
+          add_v3_v3v3(co3, start, d3);
+          add_v3_v3v3(co4, end, d4);
+          isect_kind = isect_line_line_v3(start, co3, end, co4, meetco, isect2);
+          if (isect_kind != 0) {
+            copy_v3_v3(pro->middle, meetco);
+          }
+          else {
+            /* Offset lines don't intersect - want linear interpolation. */
+            mid_v3_v3v3(pro->middle, start, end);
+            do_linear_interp = true;
+          }
+        }
+      }
+      copy_v3_v3(pro->end, end);
+      sub_v3_v3v3(d1, pro->middle, start);
+      normalize_v3(d1);
+      sub_v3_v3v3(d2, pro->middle, end);
+      normalize_v3(d2);
+      cross_v3_v3v3(pro->plane_no, d1, d2);
+      normalize_v3(pro->plane_no);
+      if (nearly_parallel(d1, d2)) {
+        /* Whole profile is collinear with edge: just interpolate. */
+        do_linear_interp = true;
+      }
+      else {
+        copy_v3_v3(pro->plane_co, bv->v->co);
+        copy_v3_v3(pro->proj_dir, pro->plane_no);
+      }
+    }
+    copy_v3_v3(pro->plane_co, start);
+  }
+  else if (bndv->is_arc_start) {
+    /* Assume pro->middle was already set. */
+    copy_v3_v3(pro->start, start);
+    copy_v3_v3(pro->end, end);
+    pro->super_r = PRO_CIRCLE_R;
+    zero_v3(pro->plane_co);
+    zero_v3(pro->plane_no);
+    zero_v3(pro->proj_dir);
+    do_linear_interp = false;
+  }
+  else if (bp->affect_type == BEVEL_AFFECT_VERTICES) {
+    copy_v3_v3(pro->start, start);
+    copy_v3_v3(pro->middle, bv->v->co);
+    copy_v3_v3(pro->end, end);
+    pro->super_r = bp->pro_super_r;
+    zero_v3(pro->plane_co);
+    zero_v3(pro->plane_no);
+    zero_v3(pro->proj_dir);
+    do_linear_interp = false;
+  }
+
+  if (do_linear_interp) {
+    pro->super_r = PRO_LINE_R;
+    copy_v3_v3(pro->start, start);
+    copy_v3_v3(pro->end, end);
+    mid_v3_v3v3(pro->middle, start, end);
+    /* Won't use projection for this line profile. */
+    zero_v3(pro->plane_co);
+    zero_v3(pro->plane_no);
+    zero_v3(pro->proj_dir);
+  }
+}
+
+/**
+ * Maybe move the profile plane for bndv->ebev to the plane its profile's start, and the
+ * original beveled vert, bmv. This will usually be the plane containing its adjacent
+ * non-beveled edges, but sometimes the start and the end are not on those edges.
+ *
+ * Currently just used in #build_boundary_terminal_edge.
+ */
+static void move_profile_plane(BoundVert *bndv, BMVert *bmvert)
+{
+  Profile *pro = &bndv->profile;
+
+  /* Only do this if projecting, and start, end, and proj_dir are not coplanar. */
+  if (is_zero_v3(pro->proj_dir)) {
+    return;
+  }
+
+  float d1[3], d2[3];
+  sub_v3_v3v3(d1, bmvert->co, pro->start);
+  normalize_v3(d1);
+  sub_v3_v3v3(d2, bmvert->co, pro->end);
+  normalize_v3(d2);
+  float no[3], no2[3], no3[3];
+  cross_v3_v3v3(no, d1, d2);
+  cross_v3_v3v3(no2, d1, pro->proj_dir);
+  cross_v3_v3v3(no3, d2, pro->proj_dir);
+
+  if (normalize_v3(no) > BEVEL_EPSILON_BIG && normalize_v3(no2) > BEVEL_EPSILON_BIG &&
+      normalize_v3(no3) > BEVEL_EPSILON_BIG) {
+    float dot2 = dot_v3v3(no, no2);
+    float dot3 = dot_v3v3(no, no3);
+    if (fabsf(dot2) < (1 - BEVEL_EPSILON_BIG) && fabsf(dot3) < (1 - BEVEL_EPSILON_BIG)) {
+      copy_v3_v3(bndv->profile.plane_no, no);
+    }
+  }
+
+  /* We've changed the parameters from their defaults, so don't recalculate them later. */
+  pro->special_params = true;
+}
+
+/**
+ * Move the profile plane for the two BoundVerts involved in a weld.
+ * We want the plane that is most likely to have the intersections of the
+ * two edges' profile projections on it. bndv1 and bndv2 are by construction the
+ * intersection points of the outside parts of the profiles.
+ * The original vertex should form a third point of the desired plane.
+ */
+static void move_weld_profile_planes(BevVert *bv, BoundVert *bndv1, BoundVert *bndv2)
+{
+  /* Only do this if projecting, and d1, d2, and proj_dir are not coplanar. */
+  if (is_zero_v3(bndv1->profile.proj_dir) || is_zero_v3(bndv2->profile.proj_dir)) {
+    return;
+  }
+  float d1[3], d2[3], no[3];
+  sub_v3_v3v3(d1, bv->v->co, bndv1->nv.co);
+  sub_v3_v3v3(d2, bv->v->co, bndv2->nv.co);
+  cross_v3_v3v3(no, d1, d2);
+  float l1 = normalize_v3(no);
+
+  /* "no" is new normal projection plane, but don't move if it is coplanar with both of the
+   * projection directions. */
+  float no2[3], no3[3];
+  cross_v3_v3v3(no2, d1, bndv1->profile.proj_dir);
+  float l2 = normalize_v3(no2);
+  cross_v3_v3v3(no3, d2, bndv2->profile.proj_dir);
+  float l3 = normalize_v3(no3);
+  if (l1 > BEVEL_EPSILON && (l2 > BEVEL_EPSILON || l3 > BEVEL_EPSILON)) {
+    float dot1 = fabsf(dot_v3v3(no, no2));
+    float dot2 = fabsf(dot_v3v3(no, no3));
+    if (fabsf(dot1 - 1.0f) > BEVEL_EPSILON) {
+      copy_v3_v3(bndv1->profile.plane_no, no);
+    }
+    if (fabsf(dot2 - 1.0f) > BEVEL_EPSILON) {
+      copy_v3_v3(bndv2->profile.plane_no, no);
+    }
+  }
+
+  /* We've changed the parameters from their defaults, so don't recalculate them later. */
+  bndv1->profile.special_params = true;
+  bndv2->profile.special_params = true;
+}
+
+/* Return 1 if a and b are in CCW order on the normal side of f,
+ * and -1 if they are reversed, and 0 if there is no shared face f. */
+static int bev_ccw_test(BMEdge *a, BMEdge *b, BMFace *f)
+{
+  if (!f) {
+    return 0;
+  }
+  BMLoop *la = BM_face_edge_share_loop(f, a);
+  BMLoop *lb = BM_face_edge_share_loop(f, b);
+  if (!la || !lb) {
+    return 0;
+  }
+  return lb->next == la ? 1 : -1;
+}
+
+/**
+ * Fill matrix r_mat so that a point in the sheared parallelogram with corners
+ * va, vmid, vb (and the 4th that is implied by it being a parallelogram)
+ * is the result of transforming the unit square by multiplication with r_mat.
+ * If it can't be done because the parallelogram is degenerate, return false,
+ * else return true.
+ * Method:
+ * Find vo, the origin of the parallelogram with other three points va, vmid, vb.
+ * Also find vd, which is in direction normal to parallelogram and 1 unit away
+ * from the origin.
+ * The quarter circle in first quadrant of unit square will be mapped to the
+ * quadrant of a sheared ellipse in the parallelogram, using a matrix.
+ * The matrix mat is calculated to map:
+ *    (0,1,0) -> va
+ *    (1,1,0) -> vmid
+ *    (1,0,0) -> vb
+ *    (0,1,1) -> vd
+ * We want M to make M*A=B where A has the left side above, as columns
+ * and B has the right side as columns - both extended into homogeneous coords.
+ * So M = B*(Ainverse).  Doing Ainverse by hand gives the code below.
+ */
+static bool make_unit_square_map(const float va[3],
+                                 const float vmid[3],
+                                 const float vb[3],
+                                 float r_mat[4][4])
+{
+  float vb_vmid[3], va_vmid[3];
+  sub_v3_v3v3(va_vmid, vmid, va);
+  sub_v3_v3v3(vb_vmid, vmid, vb);
+
+  if (is_zero_v3(va_vmid) || is_zero_v3(vb_vmid)) {
+    return false;
+  }
+
+  if (fabsf(angle_v3v3(va_vmid, vb_vmid) - (float)M_PI) <= BEVEL_EPSILON_ANG) {
+    return false;
+  }
+
+  float vo[3], vd[3], vddir[3];
+  sub_v3_v3v3(vo, va, vb_vmid);
+  cross_v3_v3v3(vddir, vb_vmid, va_vmid);
+  normalize_v3(vddir);
+  add_v3_v3v3(vd, vo, vddir);
+
+  /* The cols of m are: {vmid - va, vmid - vb, vmid + vd - va -vb, va + vb - vmid;
+   * Blender transform matrices are stored such that m[i][*] is ith column;
+   * the last elements of each col remain as they are in unity matrix. */
+  sub_v3_v3v3(&r_mat[0][0], vmid, va);
+  r_mat[0][3] = 0.0f;
+  sub_v3_v3v3(&r_mat[1][0], vmid, vb);
+  r_mat[1][3] = 0.0f;
+  add_v3_v3v3(&r_mat[2][0], vmid, vd);
+  sub_v3_v3(&r_mat[2][0], va);
+  sub_v3_v3(&r_mat[2][0], vb);
+  r_mat[2][3] = 0.0f;
+  add_v3_v3v3(&r_mat[3][0], va, vb);
+  sub_v3_v3(&r_mat[3][0], vmid);
+  r_mat[3][3] = 1.0f;
+
+  return true;
+}
+
+/**
+ * Like make_unit_square_map, but this one makes a matrix that transforms the
+ * (1,1,1) corner of a unit cube into an arbitrary corner with corner vert d
+ * and verts around it a, b, c (in CCW order, viewed from d normal dir).
+ * The matrix mat is calculated to map:
+ *    (1,0,0) -> va
+ *    (0,1,0) -> vb
+ *    (0,0,1) -> vc
+ *    (1,1,1) -> vd
+ * We want M to make M*A=B where A has the left side above, as columns
+ * and B has the right side as columns - both extended into homogeneous coords.
+ * So `M = B*(Ainverse)`.  Doing `Ainverse` by hand gives the code below.
+ * The cols of M are `1/2{va-vb+vc-vd}`, `1/2{-va+vb-vc+vd}`, `1/2{-va-vb+vc+vd}`,
+ * and `1/2{va+vb+vc-vd}`
+ * and Dune matrices have cols at m[i][*].
+ */
