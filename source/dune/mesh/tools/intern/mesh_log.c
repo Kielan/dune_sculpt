@@ -131,11 +131,11 @@ static MeshVert *mesh_log_vert_from_id(MeshLog *log, uint id)
   return BLI_ghash_lookup(log->id_to_elem, key);
 }
 
-/* Get the face's unique ID from the log */
-static uint bm_log_face_id_get(BMLog *log, BMFace *f)
+/* Get the face's unique id from the log */
+static uint bm_log_face_id_get(MeshLog *log, MeshFace *f)
 {
-  BLI_assert(BLI_ghash_haskey(log->elem_to_id, f));
-  return POINTER_AS_UINT(BLI_ghash_lookup(log->elem_to_id, f));
+  lib_assert(lib_ghash_haskey(log->elem_to_id, f));
+  return PTR_AS_UINT(lib_ghash_lookup(log->elem_to_id, f));
 }
 
 /* Set the face's unique ID in the log */
