@@ -46,8 +46,8 @@ struct MeshLogEntry {
   GHash *modified_verts;
   GHash *modified_faces;
 
-  BLI_mempool *pool_verts;
-  BLI_mempool *pool_faces;
+  lib_mempool *pool_verts;
+  lib_mempool *pool_faces;
 
   /* This is only needed for dropping BMLogEntries while still in
    * dynamic-topology mode, as that should release vert/face IDs
@@ -56,26 +56,26 @@ struct MeshLogEntry {
    *
    * This field is not guaranteed to be valid, any use of it should
    * check for NULL. */
-  BMLog *log;
+  MeshLog *log;
 };
 
-struct BMLog {
-  /* Tree of free IDs */
+struct MeshLog {
+  /* Tree of free Ids */
   struct RangeTreeUInt *unused_ids;
 
-  /* Mapping from unique IDs to vertices and faces
+  /* Mapping from unique Ids to vertices and faces
    *
    * Each vertex and face in the log gets a unique uinteger
    * assigned. That ID is taken from the set managed by the
    * unused_ids range tree.
    *
-   * The ID is needed because element pointers will change as they
+   * The Id is needed because element pointers will change as they
    * are created and deleted.
    */
   GHash *id_to_elem;
   GHash *elem_to_id;
 
-  /* All BMLogEntrys, ordered from earliest to most recent */
+  /* All MeshLogEntrys, ordered from earliest to most recent */
   ListBase entries;
 
   /* The current log entry from entries list
@@ -86,7 +86,7 @@ struct BMLog {
    * If equal to the last entry in the entries list, then all log
    * entries have been applied (i.e. there is nothing left to redo.)
    */
-  BMLogEntry *current_entry;
+  MeshLogEntry *current_entry;
 };
 
 typedef struct {
@@ -94,37 +94,37 @@ typedef struct {
   float no[3];
   char hflag;
   float mask;
-} BMLogVert;
+} MeshLogVert;
 
 typedef struct {
   uint v_ids[3];
   char hflag;
-} BMLogFace;
+} MeshLogFace;
 
 /************************* Get/set element IDs ************************/
 
 /* bypass actual hashing, the keys don't overlap */
-#define logkey_hash BLI_ghashutil_inthash_p_simple
-#define logkey_cmp BLI_ghashutil_intcmp
+#define logkey_hash lib_ghashutil_inthash_p_simple
+#define logkey_cmp lib_ghashutil_intcmp
 
-/* Get the vertex's unique ID from the log */
-static uint bm_log_vert_id_get(BMLog *log, BMVert *v)
+/* Get the vertex's unique id from the log */
+static uint mesh_log_vert_id_get(MeshLog *log, MeshVert *v)
 {
-  BLI_assert(BLI_ghash_haskey(log->elem_to_id, v));
-  return POINTER_AS_UINT(BLI_ghash_lookup(log->elem_to_id, v));
+  lib_assert(lib_ghash_haskey(log->elem_to_id, v));
+  return PTR_AS_UINT(lib_ghash_lookup(log->elem_to_id, v));
 }
 
-/* Set the vertex's unique ID in the log */
-static void bm_log_vert_id_set(BMLog *log, BMVert *v, uint id)
+/* Set the vertex's unique id in the log */
+static void bm_log_vert_id_set(MeshLog *log, MeshVert *v, uint id)
 {
-  void *vid = POINTER_FROM_UINT(id);
+  void *vid = PTR_FROM_UINT(id);
 
-  BLI_ghash_reinsert(log->id_to_elem, vid, v, NULL, NULL);
-  BLI_ghash_reinsert(log->elem_to_id, v, vid, NULL, NULL);
+  lib_ghash_reinsert(log->id_to_elem, vid, v, NULL, NULL);
+  lib_ghash_reinsert(log->elem_to_id, v, vid, NULL, NULL);
 }
 
-/* Get a vertex from its unique ID */
-static BMVert *bm_log_vert_from_id(BMLog *log, uint id)
+/* Get a vertex from its unique id */
+static MeshVert *mesh_log_vert_from_id(MeshLog *log, uint id)
 {
   void *key = POINTER_FROM_UINT(id);
   BLI_assert(BLI_ghash_haskey(log->id_to_elem, key));
