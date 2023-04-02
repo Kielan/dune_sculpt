@@ -1,5 +1,3 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
 /** Core Mesh functions for adding, removing BMesh elements. **/
 
 #include "mem_guardedalloc.h"
@@ -10,15 +8,15 @@
 #include "lib_math_vector.h"
 #include "lib_utildefines_stack.h"
 
-#include "BLT_translation.h"
+#include "i18n.h"
 
-#include "DNA_meshdata_types.h"
+#include "types_meshdata.h"
 
-#include "BKE_customdata.h"
-#include "BKE_mesh.h"
+#include "dune_customdata.h"
+#include "dune_mesh.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
 /* use so valgrinds memcheck alerts us when undefined index is used.
  * TESTING ONLY! */
@@ -28,16 +26,16 @@
 #  define DEBUG_MEMCHECK_INDEX_INVALIDATE(ele) \
     { \
       int undef_idx; \
-      BM_elem_index_set(ele, undef_idx); /* set_ok_invalid */ \
+      mesh_elem_index_set(ele, undef_idx); /* set_ok_invalid */ \
     } \
     (void)0
 
 #endif
 
-BMVert *BM_vert_create(BMesh *bm,
+MeshVert *mesh_vert_create(Mesh *mesh,
                        const float co[3],
-                       const BMVert *v_example,
-                       const eBMCreateFlag create_flag)
+                       const MeshVert *v_example,
+                       const eMeshCreateFlag create_flag)
 {
   BMVert *v = BLI_mempool_alloc(bm->vpool);
 
