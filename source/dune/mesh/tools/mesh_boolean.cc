@@ -1,29 +1,29 @@
 /** Main functions for beveling a BMesh (used by the tool and modifier) **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_curveprofile_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_scene_types.h"
+#include "types_curveprofile.h"
+#include "types_meshdata.h"
+#include "types_modifiers.h"
+#include "types_scene.h"
 
-#include "BLI_alloca.h"
-#include "BLI_array.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_utildefines.h"
+#include "lib_alloca.h"
+#include "lib_array.h"
+#include "lib_math.h"
+#include "lib_memarena.h"
+#include "lib_utildefines.h"
 
-#include "BKE_curveprofile.h"
-#include "BKE_customdata.h"
-#include "BKE_deform.h"
-#include "BKE_mesh.h"
+#include "dune_curveprofile.h"
+#include "dune_customdata.h"
+#include "dune_deform.h"
+#include "dune_mesh.h"
 
 #include "eigen_capi.h"
 
-#include "bmesh.h"
-#include "bmesh_bevel.h" /* own include */
+#include "mesh.h"
+#include "mesh_bevel.h" /* own include */
 
-#include "./intern/bmesh_private.h"
+#include "./intern/mesh_private.h"
 
 // #define BEVEL_DEBUG_TIME
 #ifdef BEVEL_DEBUG_TIME
