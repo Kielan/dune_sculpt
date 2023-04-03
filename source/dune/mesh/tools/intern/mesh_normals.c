@@ -1737,3 +1737,526 @@ void BM_lnorspacearr_store(BMesh *bm, float (*r_lnors)[3])
                             false);
   bm->spacearr_dirty &= ~(BM_SPACEARR_DIRTY | BM_SPACEARR_DIRTY_ALL);
 }
+
+#define CLEAR_SPACEARRAY_THRESHOLD(x) ((x) / 2)
+
+void BM_lnorspace_invalidate(BMesh *bm, const bool do_invalidate_all)
+{
+  if (bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL) {
+    return;
+  }
+  if (do_invalidate_all || bm->totvertsel > CLEAR_SPACEARRAY_THRESHOLD(bm->totvert)) {
+    bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+    return;
+  }
+  if (bm->lnor_spacearr == NULL) {
+    bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+    return;
+  }
+
+  BMVert *v;
+  BMLoop *l;
+  BMIter viter, liter;
+  /* NOTE: we could use temp tag of BMItem for that,
+   * but probably better not use it in such a low-level func?
+   * --mont29 */
+  BLI_bitmap *done_verts = BLI_BITMAP_NEW(bm->totvert, __func__);
+
+  BM_mesh_elem_index_ensure(bm, BM_VERT);
+
+  /* When we affect a given vertex, we may affect following smooth fans:
+   * - all smooth fans of said vertex;
+   * - all smooth fans of all immediate loop-neighbors vertices;
+   * This can be simplified as 'all loops of selected vertices and their immediate neighbors'
+   * need to be tagged for update.
+   */
+  BM_ITER_MESH (v, &viter, bm, BM_VERTS_OF_MESH) {
+    if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
+      BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
+        BM_ELEM_API_FLAG_ENABLE(l, BM_LNORSPACE_UPDATE);
+
+        /* Note that we only handle unselected neighbor vertices here, main loop will take care of
+         * selected ones. */
+        if ((!BM_elem_flag_test(l->prev->v, BM_ELEM_SELECT)) &&
+            !BLI_BITMAP_TEST(done_verts, BM_elem_index_get(l->prev->v))) {
+
+          BMLoop *l_prev;
+          BMIter liter_prev;
+          BM_ITER_ELEM (l_prev, &liter_prev, l->prev->v, BM_LOOPS_OF_VERT) {
+            BM_ELEM_API_FLAG_ENABLE(l_prev, BM_LNORSPACE_UPDATE);
+          }
+          BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_prev->v));
+        }
+
+        if ((!BM_elem_flag_test(l->next->v, BM_ELEM_SELECT)) &&
+            !BLI_BITMAP_TEST(done_verts, BM_elem_index_get(l->next->v))) {
+
+          BMLoop *l_next;
+          BMIter liter_next;
+          BM_ITER_ELEM (l_next, &liter_next, l->next->v, BM_LOOPS_OF_VERT) {
+            BM_ELEM_API_FLAG_ENABLE(l_next, BM_LNORSPACE_UPDATE);
+          }
+          BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_next->v));
+        }
+      }
+
+      BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(v));
+    }
+  }
+
+  MEM_freeN(done_verts);
+  bm->spacearr_dirty |= BM_SPACEARR_DIRTY;
+}
+
+void BM_lnorspace_rebuild(BMesh *bm, bool preserve_clnor)
+{
+  BLI_assert(bm->lnor_spacearr != NULL);
+
+  if (!(bm->spacearr_dirty & (BM_SPACEARR_DIRTY | BM_SPACEARR_DIRTY_ALL))) {
+    return;
+  }
+  BMFace *f;
+  BMLoop *l;
+  BMIter fiter, liter;
+
+  float(*r_lnors)[3] = MEM_callocN(sizeof(*r_lnors) * bm->totloop, __func__);
+  float(*oldnors)[3] = preserve_clnor ? MEM_mallocN(sizeof(*oldnors) * bm->totloop, __func__) :
+                                        NULL;
+
+  int cd_loop_clnors_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+
+  BM_mesh_elem_index_ensure(bm, BM_LOOP);
+
+  if (preserve_clnor) {
+    BLI_assert(bm->lnor_spacearr->lspacearr != NULL);
+
+    BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+      BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+        if (BM_ELEM_API_FLAG_TEST(l, BM_LNORSPACE_UPDATE) ||
+            bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL) {
+          short(*clnor)[2] = BM_ELEM_CD_GET_VOID_P(l, cd_loop_clnors_offset);
+          int l_index = BM_elem_index_get(l);
+
+          BKE_lnor_space_custom_data_to_normal(
+              bm->lnor_spacearr->lspacearr[l_index], *clnor, oldnors[l_index]);
+        }
+      }
+    }
+  }
+
+  if (bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL) {
+    BKE_lnor_spacearr_clear(bm->lnor_spacearr);
+  }
+  BM_loops_calc_normal_vcos(bm,
+                            NULL,
+                            NULL,
+                            NULL,
+                            true,
+                            M_PI,
+                            r_lnors,
+                            bm->lnor_spacearr,
+                            NULL,
+                            cd_loop_clnors_offset,
+                            true);
+  MEM_freeN(r_lnors);
+
+  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+    BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+      if (BM_ELEM_API_FLAG_TEST(l, BM_LNORSPACE_UPDATE) ||
+          bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL) {
+        if (preserve_clnor) {
+          short(*clnor)[2] = BM_ELEM_CD_GET_VOID_P(l, cd_loop_clnors_offset);
+          int l_index = BM_elem_index_get(l);
+          BKE_lnor_space_custom_normal_to_data(
+              bm->lnor_spacearr->lspacearr[l_index], oldnors[l_index], *clnor);
+        }
+        BM_ELEM_API_FLAG_DISABLE(l, BM_LNORSPACE_UPDATE);
+      }
+    }
+  }
+
+  MEM_SAFE_FREE(oldnors);
+  bm->spacearr_dirty &= ~(BM_SPACEARR_DIRTY | BM_SPACEARR_DIRTY_ALL);
+
+#ifndef NDEBUG
+  BM_lnorspace_err(bm);
+#endif
+}
+
+void BM_lnorspace_update(BMesh *bm)
+{
+  if (bm->lnor_spacearr == NULL) {
+    bm->lnor_spacearr = MEM_callocN(sizeof(*bm->lnor_spacearr), __func__);
+  }
+  if (bm->lnor_spacearr->lspacearr == NULL) {
+    float(*lnors)[3] = MEM_callocN(sizeof(*lnors) * bm->totloop, __func__);
+
+    BM_lnorspacearr_store(bm, lnors);
+
+    MEM_freeN(lnors);
+  }
+  else if (bm->spacearr_dirty & (BM_SPACEARR_DIRTY | BM_SPACEARR_DIRTY_ALL)) {
+    BM_lnorspace_rebuild(bm, false);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Loop Normal Edit Data Array API
+ *
+ * Utilities for creating/freeing #BMLoopNorEditDataArray.
+ * \{ */
+
+/**
+ * Auxiliary function only used by rebuild to detect if any spaces were not marked as invalid.
+ * Reports error if any of the lnor spaces change after rebuilding, meaning that all the possible
+ * lnor spaces to be rebuilt were not correctly marked.
+ */
+#ifndef NDEBUG
+void BM_lnorspace_err(BMesh *bm)
+{
+  bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  bool clear = true;
+
+  MLoopNorSpaceArray *temp = MEM_callocN(sizeof(*temp), __func__);
+  temp->lspacearr = NULL;
+
+  BKE_lnor_spacearr_init(temp, bm->totloop, MLNOR_SPACEARR_BMLOOP_PTR);
+
+  int cd_loop_clnors_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+  float(*lnors)[3] = MEM_callocN(sizeof(*lnors) * bm->totloop, __func__);
+  BM_loops_calc_normal_vcos(
+      bm, NULL, NULL, NULL, true, M_PI, lnors, temp, NULL, cd_loop_clnors_offset, true);
+
+  for (int i = 0; i < bm->totloop; i++) {
+    int j = 0;
+    j += compare_ff(
+        temp->lspacearr[i]->ref_alpha, bm->lnor_spacearr->lspacearr[i]->ref_alpha, 1e-4f);
+    j += compare_ff(
+        temp->lspacearr[i]->ref_beta, bm->lnor_spacearr->lspacearr[i]->ref_beta, 1e-4f);
+    j += compare_v3v3(
+        temp->lspacearr[i]->vec_lnor, bm->lnor_spacearr->lspacearr[i]->vec_lnor, 1e-4f);
+    j += compare_v3v3(
+        temp->lspacearr[i]->vec_ortho, bm->lnor_spacearr->lspacearr[i]->vec_ortho, 1e-4f);
+    j += compare_v3v3(
+        temp->lspacearr[i]->vec_ref, bm->lnor_spacearr->lspacearr[i]->vec_ref, 1e-4f);
+
+    if (j != 5) {
+      clear = false;
+      break;
+    }
+  }
+  BKE_lnor_spacearr_free(temp);
+  MEM_freeN(temp);
+  MEM_freeN(lnors);
+  BLI_assert(clear);
+
+  bm->spacearr_dirty &= ~BM_SPACEARR_DIRTY_ALL;
+}
+#endif
+
+static void bm_loop_normal_mark_indiv_do_loop(BMLoop *l,
+                                              BLI_bitmap *loops,
+                                              MLoopNorSpaceArray *lnor_spacearr,
+                                              int *totloopsel,
+                                              const bool do_all_loops_of_vert)
+{
+  if (l != NULL) {
+    const int l_idx = BM_elem_index_get(l);
+
+    if (!BLI_BITMAP_TEST(loops, l_idx)) {
+      /* If vert and face selected share a loop, mark it for editing. */
+      BLI_BITMAP_ENABLE(loops, l_idx);
+      (*totloopsel)++;
+
+      if (do_all_loops_of_vert) {
+        /* If required, also mark all loops shared by that vertex.
+         * This is needed when loop spaces may change
+         * (i.e. when some faces or edges might change of smooth/sharp status). */
+        BMIter liter;
+        BMLoop *lfan;
+        BM_ITER_ELEM (lfan, &liter, l->v, BM_LOOPS_OF_VERT) {
+          const int lfan_idx = BM_elem_index_get(lfan);
+          if (!BLI_BITMAP_TEST(loops, lfan_idx)) {
+            BLI_BITMAP_ENABLE(loops, lfan_idx);
+            (*totloopsel)++;
+          }
+        }
+      }
+      else {
+        /* Mark all loops in same loop normal space (aka smooth fan). */
+        if ((lnor_spacearr->lspacearr[l_idx]->flags & MLNOR_SPACE_IS_SINGLE) == 0) {
+          for (LinkNode *node = lnor_spacearr->lspacearr[l_idx]->loops; node; node = node->next) {
+            const int lfan_idx = BM_elem_index_get((BMLoop *)node->link);
+            if (!BLI_BITMAP_TEST(loops, lfan_idx)) {
+              BLI_BITMAP_ENABLE(loops, lfan_idx);
+              (*totloopsel)++;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Mark the individual clnors to be edited, if multiple selection methods are used. */
+static int bm_loop_normal_mark_indiv(BMesh *bm, BLI_bitmap *loops, const bool do_all_loops_of_vert)
+{
+  BMEditSelection *ese, *ese_prev;
+  int totloopsel = 0;
+
+  const bool sel_verts = (bm->selectmode & SCE_SELECT_VERTEX) != 0;
+  const bool sel_edges = (bm->selectmode & SCE_SELECT_EDGE) != 0;
+  const bool sel_faces = (bm->selectmode & SCE_SELECT_FACE) != 0;
+  const bool use_sel_face_history = sel_faces && (sel_edges || sel_verts);
+
+  BM_mesh_elem_index_ensure(bm, BM_LOOP);
+
+  BLI_assert(bm->lnor_spacearr != NULL);
+  BLI_assert(bm->lnor_spacearr->data_type == MLNOR_SPACEARR_BMLOOP_PTR);
+
+  if (use_sel_face_history) {
+    /* Using face history allows to select a single loop from a single face...
+     * Note that this is O(n^2) piece of code,
+     * but it is not designed to be used with huge selection sets,
+     * rather with only a few items selected at most. */
+    /* Goes from last selected to the first selected element. */
+    for (ese = bm->selected.last; ese; ese = ese->prev) {
+      if (ese->htype == BM_FACE) {
+        /* If current face is selected,
+         * then any verts to be edited must have been selected before it. */
+        for (ese_prev = ese->prev; ese_prev; ese_prev = ese_prev->prev) {
+          if (ese_prev->htype == BM_VERT) {
+            bm_loop_normal_mark_indiv_do_loop(
+                BM_face_vert_share_loop((BMFace *)ese->ele, (BMVert *)ese_prev->ele),
+                loops,
+                bm->lnor_spacearr,
+                &totloopsel,
+                do_all_loops_of_vert);
+          }
+          else if (ese_prev->htype == BM_EDGE) {
+            BMEdge *e = (BMEdge *)ese_prev->ele;
+            bm_loop_normal_mark_indiv_do_loop(BM_face_vert_share_loop((BMFace *)ese->ele, e->v1),
+                                              loops,
+                                              bm->lnor_spacearr,
+                                              &totloopsel,
+                                              do_all_loops_of_vert);
+
+            bm_loop_normal_mark_indiv_do_loop(BM_face_vert_share_loop((BMFace *)ese->ele, e->v2),
+                                              loops,
+                                              bm->lnor_spacearr,
+                                              &totloopsel,
+                                              do_all_loops_of_vert);
+          }
+        }
+      }
+    }
+  }
+  else {
+    if (sel_faces) {
+      /* Only select all loops of selected faces. */
+      BMLoop *l;
+      BMFace *f;
+      BMIter liter, fiter;
+      BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+        if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
+          BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+            bm_loop_normal_mark_indiv_do_loop(
+                l, loops, bm->lnor_spacearr, &totloopsel, do_all_loops_of_vert);
+          }
+        }
+      }
+    }
+    if (sel_edges) {
+      /* Only select all loops of selected edges. */
+      BMLoop *l;
+      BMEdge *e;
+      BMIter liter, eiter;
+      BM_ITER_MESH (e, &eiter, bm, BM_EDGES_OF_MESH) {
+        if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
+          BM_ITER_ELEM (l, &liter, e, BM_LOOPS_OF_EDGE) {
+            bm_loop_normal_mark_indiv_do_loop(
+                l, loops, bm->lnor_spacearr, &totloopsel, do_all_loops_of_vert);
+            /* Loops actually 'have' two edges, or said otherwise, a selected edge actually selects
+             * *two* loops in each of its faces. We have to find the other one too. */
+            if (BM_vert_in_edge(e, l->next->v)) {
+              bm_loop_normal_mark_indiv_do_loop(
+                  l->next, loops, bm->lnor_spacearr, &totloopsel, do_all_loops_of_vert);
+            }
+            else {
+              BLI_assert(BM_vert_in_edge(e, l->prev->v));
+              bm_loop_normal_mark_indiv_do_loop(
+                  l->prev, loops, bm->lnor_spacearr, &totloopsel, do_all_loops_of_vert);
+            }
+          }
+        }
+      }
+    }
+    if (sel_verts) {
+      /* Select all loops of selected verts. */
+      BMLoop *l;
+      BMVert *v;
+      BMIter liter, viter;
+      BM_ITER_MESH (v, &viter, bm, BM_VERTS_OF_MESH) {
+        if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
+          BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
+            bm_loop_normal_mark_indiv_do_loop(
+                l, loops, bm->lnor_spacearr, &totloopsel, do_all_loops_of_vert);
+          }
+        }
+      }
+    }
+  }
+
+  return totloopsel;
+}
+
+static void loop_normal_editdata_init(
+    BMesh *bm, BMLoopNorEditData *lnor_ed, BMVert *v, BMLoop *l, const int offset)
+{
+  BLI_assert(bm->lnor_spacearr != NULL);
+  BLI_assert(bm->lnor_spacearr->lspacearr != NULL);
+
+  const int l_index = BM_elem_index_get(l);
+  short *clnors_data = BM_ELEM_CD_GET_VOID_P(l, offset);
+
+  lnor_ed->loop_index = l_index;
+  lnor_ed->loop = l;
+
+  float custom_normal[3];
+  BKE_lnor_space_custom_data_to_normal(
+      bm->lnor_spacearr->lspacearr[l_index], clnors_data, custom_normal);
+
+  lnor_ed->clnors_data = clnors_data;
+  copy_v3_v3(lnor_ed->nloc, custom_normal);
+  copy_v3_v3(lnor_ed->niloc, custom_normal);
+
+  lnor_ed->loc = v->co;
+}
+
+BMLoopNorEditDataArray *BM_loop_normal_editdata_array_init(BMesh *bm,
+                                                           const bool do_all_loops_of_vert)
+{
+  BMLoop *l;
+  BMVert *v;
+  BMIter liter, viter;
+
+  int totloopsel = 0;
+
+  BLI_assert(bm->spacearr_dirty == 0);
+
+  BMLoopNorEditDataArray *lnors_ed_arr = MEM_callocN(sizeof(*lnors_ed_arr), __func__);
+  lnors_ed_arr->lidx_to_lnor_editdata = MEM_callocN(
+      sizeof(*lnors_ed_arr->lidx_to_lnor_editdata) * bm->totloop, __func__);
+
+  if (!CustomData_has_layer(&bm->ldata, CD_CUSTOMLOOPNORMAL)) {
+    BM_data_layer_add(bm, &bm->ldata, CD_CUSTOMLOOPNORMAL);
+  }
+  const int cd_custom_normal_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+
+  BM_mesh_elem_index_ensure(bm, BM_LOOP);
+
+  BLI_bitmap *loops = BLI_BITMAP_NEW(bm->totloop, __func__);
+
+  /* This function define loop normals to edit, based on selection modes and history. */
+  totloopsel = bm_loop_normal_mark_indiv(bm, loops, do_all_loops_of_vert);
+
+  if (totloopsel) {
+    BMLoopNorEditData *lnor_ed = lnors_ed_arr->lnor_editdata = MEM_mallocN(
+        sizeof(*lnor_ed) * totloopsel, __func__);
+
+    BM_ITER_MESH (v, &viter, bm, BM_VERTS_OF_MESH) {
+      BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
+        if (BLI_BITMAP_TEST(loops, BM_elem_index_get(l))) {
+          loop_normal_editdata_init(bm, lnor_ed, v, l, cd_custom_normal_offset);
+          lnors_ed_arr->lidx_to_lnor_editdata[BM_elem_index_get(l)] = lnor_ed;
+          lnor_ed++;
+        }
+      }
+    }
+    lnors_ed_arr->totloop = totloopsel;
+  }
+
+  MEM_freeN(loops);
+  lnors_ed_arr->cd_custom_normal_offset = cd_custom_normal_offset;
+  return lnors_ed_arr;
+}
+
+void BM_loop_normal_editdata_array_free(BMLoopNorEditDataArray *lnors_ed_arr)
+{
+  MEM_SAFE_FREE(lnors_ed_arr->lnor_editdata);
+  MEM_SAFE_FREE(lnors_ed_arr->lidx_to_lnor_editdata);
+  MEM_freeN(lnors_ed_arr);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Custom Normals / Vector Layer Conversion
+ * \{ */
+
+bool BM_custom_loop_normals_to_vector_layer(BMesh *bm)
+{
+  BMFace *f;
+  BMLoop *l;
+  BMIter liter, fiter;
+
+  if (!CustomData_has_layer(&bm->ldata, CD_CUSTOMLOOPNORMAL)) {
+    return false;
+  }
+
+  BM_lnorspace_update(bm);
+
+  /* Create a loop normal layer. */
+  if (!CustomData_has_layer(&bm->ldata, CD_NORMAL)) {
+    BM_data_layer_add(bm, &bm->ldata, CD_NORMAL);
+
+    CustomData_set_layer_flag(&bm->ldata, CD_NORMAL, CD_FLAG_TEMPORARY);
+  }
+
+  const int cd_custom_normal_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+  const int cd_normal_offset = CustomData_get_offset(&bm->ldata, CD_NORMAL);
+
+  int l_index = 0;
+  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+    BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+      const short *clnors_data = BM_ELEM_CD_GET_VOID_P(l, cd_custom_normal_offset);
+      float *normal = BM_ELEM_CD_GET_VOID_P(l, cd_normal_offset);
+
+      BKE_lnor_space_custom_data_to_normal(
+          bm->lnor_spacearr->lspacearr[l_index], clnors_data, normal);
+      l_index += 1;
+    }
+  }
+
+  return true;
+}
+
+void BM_custom_loop_normals_from_vector_layer(BMesh *bm, bool add_sharp_edges)
+{
+  if (!CustomData_has_layer(&bm->ldata, CD_CUSTOMLOOPNORMAL) ||
+      !CustomData_has_layer(&bm->ldata, CD_NORMAL)) {
+    return;
+  }
+
+  const int cd_custom_normal_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+  const int cd_normal_offset = CustomData_get_offset(&bm->ldata, CD_NORMAL);
+
+  if (bm->lnor_spacearr == NULL) {
+    bm->lnor_spacearr = MEM_callocN(sizeof(*bm->lnor_spacearr), __func__);
+  }
+
+  bm_mesh_loops_custom_normals_set(bm,
+                                   NULL,
+                                   NULL,
+                                   bm->lnor_spacearr,
+                                   NULL,
+                                   cd_custom_normal_offset,
+                                   NULL,
+                                   cd_normal_offset,
+                                   add_sharp_edges);
+
+  bm->spacearr_dirty &= ~(BM_SPACEARR_DIRTY | BM_SPACEARR_DIRTY_ALL);
+}
+
