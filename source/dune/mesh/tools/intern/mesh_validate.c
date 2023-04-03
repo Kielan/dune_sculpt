@@ -87,8 +87,8 @@ bool mesh_validate(Mesh *mesh)
     }
 
     if (e->l) {
-      BMLoop *l_iter;
-      BMLoop *l_first;
+      MeshLoop *l_iter;
+      MeshLoop *l_first;
 
       j = 0;
 
@@ -96,52 +96,52 @@ bool mesh_validate(Mesh *mesh)
       /* we could do more checks here, but save for face checks */
       do {
         if (l_iter->e != e) {
-          ERRMSG("edge %d: has invalid loop, loop is of face %d", i, BM_elem_index_get(l_iter->f));
+          ERRMSG("edge %d: has invalid loop, loop is of face %d", i, mesh_elem_index_get(l_iter->f));
         }
-        else if (BM_vert_in_edge(e, l_iter->v) == false) {
+        else if (mesh_vert_in_edge(e, l_iter->v) == false) {
           ERRMSG("edge %d: has invalid loop with vert not in edge, loop is of face %d",
                  i,
-                 BM_elem_index_get(l_iter->f));
+                 mesh_elem_index_get(l_iter->f));
         }
-        else if (BM_vert_in_edge(e, l_iter->next->v) == false) {
+        else if (mesh_vert_in_edge(e, l_iter->next->v) == false) {
           ERRMSG("edge %d: has invalid loop with next vert not in edge, loop is of face %d",
                  i,
-                 BM_elem_index_get(l_iter->f));
+                 mesh_elem_index_get(l_iter->f));
         }
       } while ((l_iter = l_iter->radial_next) != l_first);
     }
   }
 
   /* face structure */
-  BM_ITER_MESH_INDEX (f, &iter, bm, BM_FACES_OF_MESH, i) {
-    BMLoop *l_iter;
-    BMLoop *l_first;
+  MESH_ITER_MESH_INDEX (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
+    MeshLoop *l_iter;
+    MeshLoop *l_first;
 
-    if (BM_elem_flag_test(f, BM_ELEM_SELECT | BM_ELEM_HIDDEN) ==
-        (BM_ELEM_SELECT | BM_ELEM_HIDDEN)) {
+    if (mesh_elem_flag_test(f, MESH_ELEM_SELECT | MESH_ELEM_HIDDEN) ==
+        (MESH_ELEM_SELECT | MESH_ELEM_HIDDEN)) {
       ERRMSG("face %d: is hidden and selected", i);
     }
 
-    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
 
     do {
-      BM_elem_flag_disable(l_iter, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_disable(l_iter->v, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_disable(l_iter->e, BM_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_disable(l_iter, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_disable(l_iter->v, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_disable(l_iter->e, MESH_ELEM_INTERNAL_TAG);
     } while ((l_iter = l_iter->next) != l_first);
 
     j = 0;
 
-    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
-      if (BM_elem_flag_test(l_iter, BM_ELEM_INTERNAL_TAG)) {
+      if (mesh_elem_flag_test(l_iter, MESH_ELEM_INTERNAL_TAG)) {
         ERRMSG("face %d: has duplicate loop at corner: %d", i, j);
       }
-      if (BM_elem_flag_test(l_iter->v, BM_ELEM_INTERNAL_TAG)) {
+      if (mesh_elem_flag_test(l_iter->v, MESH_ELEM_INTERNAL_TAG)) {
         ERRMSG(
             "face %d: has duplicate vert: %d, at corner: %d", i, BM_elem_index_get(l_iter->v), j);
       }
-      if (BM_elem_flag_test(l_iter->e, BM_ELEM_INTERNAL_TAG)) {
+      if (mesh_elem_flag_test(l_iter->e, MESH_ELEM_INTERNAL_TAG)) {
         ERRMSG(
             "face %d: has duplicate edge: %d, at corner: %d", i, BM_elem_index_get(l_iter->e), j);
       }
@@ -150,7 +150,7 @@ bool mesh_validate(Mesh *mesh)
       if (l_iter->f != f) {
         ERRMSG("face %d: has loop that points to face: %d at corner: %d",
                i,
-               BM_elem_index_get(l_iter->f),
+               mesh_elem_index_get(l_iter->f),
                j);
       }
       if (l_iter != l_iter->prev->next) {
@@ -166,9 +166,9 @@ bool mesh_validate(Mesh *mesh)
         ERRMSG("face %d: has invalid 'radial_next/radial_prev' at corner: %d", i, j);
       }
 
-      BM_elem_flag_enable(l_iter, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_enable(l_iter->v, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_enable(l_iter->e, BM_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_enable(l_iter, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_enable(l_iter->v, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_enable(l_iter->e, MESH_ELEM_INTERNAL_TAG);
       j++;
     } while ((l_iter = l_iter->next) != l_first);
 
@@ -178,13 +178,13 @@ bool mesh_validate(Mesh *mesh)
 
     /* leave elements un-tagged, not essential but nice to avoid unintended dirty tag use later. */
     do {
-      BM_elem_flag_disable(l_iter, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_disable(l_iter->v, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_disable(l_iter->e, BM_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_disable(l_iter, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_disable(l_iter->v, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_disable(l_iter->e, MESH_ELEM_INTERNAL_TAG);
     } while ((l_iter = l_iter->next) != l_first);
   }
 
-  BLI_edgehash_free(edge_hash, NULL);
+  lib_edgehash_free(edge_hash, NULL);
 
   const bool is_valid = (errtot == 0);
   ERRMSG("Finished - errors %d", errtot);
