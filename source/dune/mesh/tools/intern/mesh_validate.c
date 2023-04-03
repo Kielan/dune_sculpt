@@ -1,18 +1,14 @@
-/** \file
- * \ingroup bmesh
- *
- * BM mesh validation function.
- */
+/** Mesh validation function. **/
 
 /* debug builds only */
 #ifdef DEBUG
 
-#  include "BLI_edgehash.h"
-#  include "BLI_utildefines.h"
+#  include "lib_edgehash.h"
+#  include "lib_utildefines.h"
 
-#  include "bmesh.h"
+#  include "mesh.h"
 
-#  include "bmesh_mesh_validate.h"
+#  include "mesh_validate.h"
 
 /* macro which inserts the function name */
 #  if defined __GNUC__
@@ -31,15 +27,15 @@
       (void)0
 #  endif
 
-bool BM_mesh_validate(BMesh *bm)
+bool mesh_validate(Mesh *mesh)
 {
-  EdgeHash *edge_hash = BLI_edgehash_new_ex(__func__, bm->totedge);
+  EdgeHash *edge_hash = lib_edgehash_new_ex(__func__, mesh->totedge);
   int errtot;
 
-  BMIter iter;
-  BMVert *v;
-  BMEdge *e;
-  BMFace *f;
+  MIter iter;
+  MVert *v;
+  MEdge *e;
+  MFace *f;
 
   int i, j;
 
