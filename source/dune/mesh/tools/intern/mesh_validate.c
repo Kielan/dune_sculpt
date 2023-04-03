@@ -32,10 +32,10 @@ bool mesh_validate(Mesh *mesh)
   EdgeHash *edge_hash = lib_edgehash_new_ex(__func__, mesh->totedge);
   int errtot;
 
-  MIter iter;
-  MVert *v;
-  MEdge *e;
-  MFace *f;
+  MeshIter iter;
+  MeshVert *v;
+  MeshEdge *e;
+  MeshFace *f;
 
   int i, j;
 
@@ -44,24 +44,24 @@ bool mesh_validate(Mesh *mesh)
   ERRMSG("This is a debugging function and not intended for general use, running slow test!");
 
   /* force recalc, even if tagged as valid, since this mesh is suspect! */
-  bm->elem_index_dirty |= BM_ALL;
-  BM_mesh_elem_index_ensure(bm, BM_ALL);
+  mesh->elem_index_dirty |= MESH_ALL;
+  mesh_elem_index_ensure(mesh, MESH_ALL);
 
-  BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
-    if (BM_elem_flag_test(v, BM_ELEM_SELECT | BM_ELEM_HIDDEN) ==
-        (BM_ELEM_SELECT | BM_ELEM_HIDDEN)) {
+  MESH_ITER_MESH_INDEX (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+    if (mesh_elem_flag_test(v, MESH_ELEM_SELECT | MESH_ELEM_HIDDEN) ==
+        (MESH_ELEM_SELECT | MESH_ELEM_HIDDEN)) {
       ERRMSG("vert %d: is hidden and selected", i);
     }
 
     if (v->e) {
-      if (!BM_vert_in_edge(v->e, v)) {
+      if (!mesh_vert_in_edge(v->e, v)) {
         ERRMSG("vert %d: is not in its referenced edge: %d", i, BM_elem_index_get(v->e));
       }
     }
   }
 
   /* check edges */
-  BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
+  MESH_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
     void **val_p;
 
     if (e->v1 == e->v2) {
@@ -69,9 +69,9 @@ bool mesh_validate(Mesh *mesh)
     }
 
     /* build edgehash at the same time */
-    if (BLI_edgehash_ensure_p(
-            edge_hash, BM_elem_index_get(e->v1), BM_elem_index_get(e->v2), &val_p)) {
-      BMEdge *e_other = *val_p;
+    if (lib_edgehash_ensure_p(
+            edge_hash, mesh_elem_index_get(e->v1), BM_elem_index_get(e->v2), &val_p)) {
+      MeshEdge *e_other = *val_p;
       ERRMSG("edge %d, %d: are duplicates", i, BM_elem_index_get(e_other));
     }
     else {
@@ -80,9 +80,9 @@ bool mesh_validate(Mesh *mesh)
   }
 
   /* edge radial structure */
-  BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
-    if (BM_elem_flag_test(e, BM_ELEM_SELECT | BM_ELEM_HIDDEN) ==
-        (BM_ELEM_SELECT | BM_ELEM_HIDDEN)) {
+  MESH_ITER_MESH_INDEX (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+    if (mesh_elem_flag_test(e, MESH_ELEM_SELECT | BM_ELEM_HIDDEN) ==
+        (MESH_ELEM_SELECT | MESH_ELEM_HIDDEN)) {
       ERRMSG("edge %d: is hidden and selected", i);
     }
 
