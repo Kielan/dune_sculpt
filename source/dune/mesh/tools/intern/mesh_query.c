@@ -1157,3 +1157,1320 @@ BMLoop *BM_loop_find_prev_nodouble(BMLoop *l, BMLoop *l_stop, const float eps_sq
 
   return l_step;
 }
+
+BMLoop *BM_loop_find_next_nodouble(BMLoop *l, BMLoop *l_stop, const float eps_sq)
+{
+  BMLoop *l_step = l->next;
+
+  BLI_assert(!ELEM(l_stop, NULL, l));
+
+  while (UNLIKELY(len_squared_v3v3(l->v->co, l_step->v->co) < eps_sq)) {
+    l_step = l_step->next;
+    BLI_assert(l_step != l);
+    if (UNLIKELY(l_step == l_stop)) {
+      return NULL;
+    }
+  }
+
+  return l_step;
+}
+
+bool BM_loop_is_convex(const BMLoop *l)
+{
+  float e_dir_prev[3];
+  float e_dir_next[3];
+  float l_no[3];
+
+  sub_v3_v3v3(e_dir_prev, l->prev->v->co, l->v->co);
+  sub_v3_v3v3(e_dir_next, l->next->v->co, l->v->co);
+  cross_v3_v3v3(l_no, e_dir_next, e_dir_prev);
+  return dot_v3v3(l_no, l->f->no) > 0.0f;
+}
+
+float BM_loop_calc_face_angle(const BMLoop *l)
+{
+  return angle_v3v3v3(l->prev->v->co, l->v->co, l->next->v->co);
+}
+
+float BM_loop_calc_face_normal_safe_ex(const BMLoop *l, const float epsilon_sq, float r_normal[3])
+{
+  /* NOTE: we cannot use result of normal_tri_v3 here to detect colinear vectors
+   * (vertex on a straight line) from zero value,
+   * because it does not normalize both vectors before making cross-product.
+   * Instead of adding two costly normalize computations,
+   * just check ourselves for colinear case. */
+  /* NOTE: FEPSILON might need some finer tweaking at some point?
+   * Seems to be working OK for now though. */
+  float v1[3], v2[3], v_tmp[3];
+  sub_v3_v3v3(v1, l->prev->v->co, l->v->co);
+  sub_v3_v3v3(v2, l->next->v->co, l->v->co);
+
+  const float fac = ((v2[0] == 0.0f) ?
+                         ((v2[1] == 0.0f) ? ((v2[2] == 0.0f) ? 0.0f : v1[2] / v2[2]) :
+                                            v1[1] / v2[1]) :
+                         v1[0] / v2[0]);
+
+  mul_v3_v3fl(v_tmp, v2, fac);
+  sub_v3_v3(v_tmp, v1);
+  if (fac != 0.0f && !is_zero_v3(v1) && len_squared_v3(v_tmp) > epsilon_sq) {
+    /* Not co-linear, we can compute cross-product and normalize it into normal. */
+    cross_v3_v3v3(r_normal, v1, v2);
+    return normalize_v3(r_normal);
+  }
+  copy_v3_v3(r_normal, l->f->no);
+  return 0.0f;
+}
+
+float BM_loop_calc_face_normal_safe_vcos_ex(const BMLoop *l,
+                                            const float normal_fallback[3],
+                                            float const (*vertexCos)[3],
+                                            const float epsilon_sq,
+                                            float r_normal[3])
+{
+  const int i_prev = BM_elem_index_get(l->prev->v);
+  const int i_next = BM_elem_index_get(l->next->v);
+  const int i = BM_elem_index_get(l->v);
+
+  float v1[3], v2[3], v_tmp[3];
+  sub_v3_v3v3(v1, vertexCos[i_prev], vertexCos[i]);
+  sub_v3_v3v3(v2, vertexCos[i_next], vertexCos[i]);
+
+  const float fac = ((v2[0] == 0.0f) ?
+                         ((v2[1] == 0.0f) ? ((v2[2] == 0.0f) ? 0.0f : v1[2] / v2[2]) :
+                                            v1[1] / v2[1]) :
+                         v1[0] / v2[0]);
+
+  mul_v3_v3fl(v_tmp, v2, fac);
+  sub_v3_v3(v_tmp, v1);
+  if (fac != 0.0f && !is_zero_v3(v1) && len_squared_v3(v_tmp) > epsilon_sq) {
+    /* Not co-linear, we can compute cross-product and normalize it into normal. */
+    cross_v3_v3v3(r_normal, v1, v2);
+    return normalize_v3(r_normal);
+  }
+  copy_v3_v3(r_normal, normal_fallback);
+  return 0.0f;
+}
+
+float BM_loop_calc_face_normal_safe(const BMLoop *l, float r_normal[3])
+{
+  return BM_loop_calc_face_normal_safe_ex(l, 1e-5f, r_normal);
+}
+
+float BM_loop_calc_face_normal_safe_vcos(const BMLoop *l,
+                                         const float normal_fallback[3],
+                                         float const (*vertexCos)[3],
+                                         float r_normal[3])
+
+{
+  return BM_loop_calc_face_normal_safe_vcos_ex(l, normal_fallback, vertexCos, 1e-5f, r_normal);
+}
+
+float BM_loop_calc_face_normal(const BMLoop *l, float r_normal[3])
+{
+  float v1[3], v2[3];
+  sub_v3_v3v3(v1, l->prev->v->co, l->v->co);
+  sub_v3_v3v3(v2, l->next->v->co, l->v->co);
+
+  cross_v3_v3v3(r_normal, v1, v2);
+  const float len = normalize_v3(r_normal);
+  if (UNLIKELY(len == 0.0f)) {
+    copy_v3_v3(r_normal, l->f->no);
+  }
+  return len;
+}
+
+void BM_loop_calc_face_direction(const BMLoop *l, float r_dir[3])
+{
+  float v_prev[3];
+  float v_next[3];
+
+  sub_v3_v3v3(v_prev, l->v->co, l->prev->v->co);
+  sub_v3_v3v3(v_next, l->next->v->co, l->v->co);
+
+  normalize_v3(v_prev);
+  normalize_v3(v_next);
+
+  add_v3_v3v3(r_dir, v_prev, v_next);
+  normalize_v3(r_dir);
+}
+
+void BM_loop_calc_face_tangent(const BMLoop *l, float r_tangent[3])
+{
+  float v_prev[3];
+  float v_next[3];
+  float dir[3];
+
+  sub_v3_v3v3(v_prev, l->prev->v->co, l->v->co);
+  sub_v3_v3v3(v_next, l->v->co, l->next->v->co);
+
+  normalize_v3(v_prev);
+  normalize_v3(v_next);
+  add_v3_v3v3(dir, v_prev, v_next);
+
+  if (compare_v3v3(v_prev, v_next, FLT_EPSILON * 10.0f) == false) {
+    float nor[3]; /* for this purpose doesn't need to be normalized */
+    cross_v3_v3v3(nor, v_prev, v_next);
+    /* concave face check */
+    if (UNLIKELY(dot_v3v3(nor, l->f->no) < 0.0f)) {
+      negate_v3(nor);
+    }
+    cross_v3_v3v3(r_tangent, dir, nor);
+  }
+  else {
+    /* prev/next are the same - compare with face normal since we don't have one */
+    cross_v3_v3v3(r_tangent, dir, l->f->no);
+  }
+
+  normalize_v3(r_tangent);
+}
+
+float BM_edge_calc_face_angle_ex(const BMEdge *e, const float fallback)
+{
+  if (BM_edge_is_manifold(e)) {
+    const BMLoop *l1 = e->l;
+    const BMLoop *l2 = e->l->radial_next;
+    return angle_normalized_v3v3(l1->f->no, l2->f->no);
+  }
+  return fallback;
+}
+float BM_edge_calc_face_angle(const BMEdge *e)
+{
+  return BM_edge_calc_face_angle_ex(e, DEG2RADF(90.0f));
+}
+
+float BM_edge_calc_face_angle_with_imat3_ex(const BMEdge *e,
+                                            const float imat3[3][3],
+                                            const float fallback)
+{
+  if (BM_edge_is_manifold(e)) {
+    const BMLoop *l1 = e->l;
+    const BMLoop *l2 = e->l->radial_next;
+    float no1[3], no2[3];
+    copy_v3_v3(no1, l1->f->no);
+    copy_v3_v3(no2, l2->f->no);
+
+    mul_transposed_m3_v3(imat3, no1);
+    mul_transposed_m3_v3(imat3, no2);
+
+    normalize_v3(no1);
+    normalize_v3(no2);
+
+    return angle_normalized_v3v3(no1, no2);
+  }
+  return fallback;
+}
+float BM_edge_calc_face_angle_with_imat3(const BMEdge *e, const float imat3[3][3])
+{
+  return BM_edge_calc_face_angle_with_imat3_ex(e, imat3, DEG2RADF(90.0f));
+}
+
+float BM_edge_calc_face_angle_signed_ex(const BMEdge *e, const float fallback)
+{
+  if (BM_edge_is_manifold(e)) {
+    BMLoop *l1 = e->l;
+    BMLoop *l2 = e->l->radial_next;
+    const float angle = angle_normalized_v3v3(l1->f->no, l2->f->no);
+    return BM_edge_is_convex(e) ? angle : -angle;
+  }
+  return fallback;
+}
+float BM_edge_calc_face_angle_signed(const BMEdge *e)
+{
+  return BM_edge_calc_face_angle_signed_ex(e, DEG2RADF(90.0f));
+}
+
+void BM_edge_calc_face_tangent(const BMEdge *e, const BMLoop *e_loop, float r_tangent[3])
+{
+  float tvec[3];
+  BMVert *v1, *v2;
+  BM_edge_ordered_verts_ex(e, &v1, &v2, e_loop);
+
+  sub_v3_v3v3(tvec, v1->co, v2->co); /* use for temp storage */
+  /* NOTE: we could average the tangents of both loops,
+   * for non flat ngons it will give a better direction */
+  cross_v3_v3v3(r_tangent, tvec, e_loop->f->no);
+  normalize_v3(r_tangent);
+}
+
+float BM_vert_calc_edge_angle_ex(const BMVert *v, const float fallback)
+{
+  BMEdge *e1, *e2;
+
+  /* Saves `BM_vert_edge_count(v)` and edge iterator,
+   * get the edges and count them both at once. */
+
+  if ((e1 = v->e) && (e2 = bmesh_disk_edge_next(e1, v)) && (e1 != e2) &&
+      /* make sure we come full circle and only have 2 connected edges */
+      (e1 == bmesh_disk_edge_next(e2, v))) {
+    BMVert *v1 = BM_edge_other_vert(e1, v);
+    BMVert *v2 = BM_edge_other_vert(e2, v);
+
+    return (float)M_PI - angle_v3v3v3(v1->co, v->co, v2->co);
+  }
+  return fallback;
+}
+
+float BM_vert_calc_edge_angle(const BMVert *v)
+{
+  return BM_vert_calc_edge_angle_ex(v, DEG2RADF(90.0f));
+}
+
+float BM_vert_calc_shell_factor(const BMVert *v)
+{
+  BMIter iter;
+  BMLoop *l;
+  float accum_shell = 0.0f;
+  float accum_angle = 0.0f;
+
+  BM_ITER_ELEM (l, &iter, (BMVert *)v, BM_LOOPS_OF_VERT) {
+    const float face_angle = BM_loop_calc_face_angle(l);
+    accum_shell += shell_v3v3_normalized_to_dist(v->no, l->f->no) * face_angle;
+    accum_angle += face_angle;
+  }
+
+  if (accum_angle != 0.0f) {
+    return accum_shell / accum_angle;
+  }
+  return 1.0f;
+}
+float BM_vert_calc_shell_factor_ex(const BMVert *v, const float no[3], const char hflag)
+{
+  BMIter iter;
+  const BMLoop *l;
+  float accum_shell = 0.0f;
+  float accum_angle = 0.0f;
+  int tot_sel = 0, tot = 0;
+
+  BM_ITER_ELEM (l, &iter, (BMVert *)v, BM_LOOPS_OF_VERT) {
+    if (BM_elem_flag_test(l->f, hflag)) { /* <-- main difference to BM_vert_calc_shell_factor! */
+      const float face_angle = BM_loop_calc_face_angle(l);
+      accum_shell += shell_v3v3_normalized_to_dist(no, l->f->no) * face_angle;
+      accum_angle += face_angle;
+      tot_sel++;
+    }
+    tot++;
+  }
+
+  if (accum_angle != 0.0f) {
+    return accum_shell / accum_angle;
+  }
+  /* other main difference from BM_vert_calc_shell_factor! */
+  if (tot != 0 && tot_sel == 0) {
+    /* none selected, so use all */
+    return BM_vert_calc_shell_factor(v);
+  }
+  return 1.0f;
+}
+
+float BM_vert_calc_median_tagged_edge_length(const BMVert *v)
+{
+  BMIter iter;
+  BMEdge *e;
+  int tot;
+  float length = 0.0f;
+
+  BM_ITER_ELEM_INDEX (e, &iter, (BMVert *)v, BM_EDGES_OF_VERT, tot) {
+    const BMVert *v_other = BM_edge_other_vert(e, v);
+    if (BM_elem_flag_test(v_other, BM_ELEM_TAG)) {
+      length += BM_edge_calc_length(e);
+    }
+  }
+
+  if (tot) {
+    return length / (float)tot;
+  }
+  return 0.0f;
+}
+
+BMLoop *BM_face_find_shortest_loop(BMFace *f)
+{
+  BMLoop *shortest_loop = NULL;
+  float shortest_len = FLT_MAX;
+
+  BMLoop *l_iter;
+  BMLoop *l_first;
+
+  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+
+  do {
+    const float len_sq = len_squared_v3v3(l_iter->v->co, l_iter->next->v->co);
+    if (len_sq <= shortest_len) {
+      shortest_loop = l_iter;
+      shortest_len = len_sq;
+    }
+  } while ((l_iter = l_iter->next) != l_first);
+
+  return shortest_loop;
+}
+
+BMLoop *BM_face_find_longest_loop(BMFace *f)
+{
+  BMLoop *longest_loop = NULL;
+  float len_max_sq = 0.0f;
+
+  BMLoop *l_iter;
+  BMLoop *l_first;
+
+  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+
+  do {
+    const float len_sq = len_squared_v3v3(l_iter->v->co, l_iter->next->v->co);
+    if (len_sq >= len_max_sq) {
+      longest_loop = l_iter;
+      len_max_sq = len_sq;
+    }
+  } while ((l_iter = l_iter->next) != l_first);
+
+  return longest_loop;
+}
+
+/**
+ * Returns the edge existing between \a v_a and \a v_b, or NULL if there isn't one.
+ *
+ * \note multiple edges may exist between any two vertices, and therefore
+ * this function only returns the first one found.
+ */
+#if 0
+BMEdge *BM_edge_exists(BMVert *v_a, BMVert *v_b)
+{
+  BMIter iter;
+  BMEdge *e;
+
+  BLI_assert(v_a != v_b);
+  BLI_assert(v_a->head.htype == BM_VERT && v_b->head.htype == BM_VERT);
+
+  BM_ITER_ELEM (e, &iter, v_a, BM_EDGES_OF_VERT) {
+    if (e->v1 == v_b || e->v2 == v_b) {
+      return e;
+    }
+  }
+
+  return NULL;
+}
+#else
+BMEdge *BM_edge_exists(BMVert *v_a, BMVert *v_b)
+{
+  /* speedup by looping over both edges verts
+   * where one vert may connect to many edges but not the other. */
+
+  BMEdge *e_a, *e_b;
+
+  BLI_assert(v_a != v_b);
+  BLI_assert(v_a->head.htype == BM_VERT && v_b->head.htype == BM_VERT);
+
+  if ((e_a = v_a->e) && (e_b = v_b->e)) {
+    BMEdge *e_a_iter = e_a, *e_b_iter = e_b;
+
+    do {
+      if (BM_vert_in_edge(e_a_iter, v_b)) {
+        return e_a_iter;
+      }
+      if (BM_vert_in_edge(e_b_iter, v_a)) {
+        return e_b_iter;
+      }
+    } while (((e_a_iter = bmesh_disk_edge_next(e_a_iter, v_a)) != e_a) &&
+             ((e_b_iter = bmesh_disk_edge_next(e_b_iter, v_b)) != e_b));
+  }
+
+  return NULL;
+}
+#endif
+
+BMEdge *BM_edge_find_double(BMEdge *e)
+{
+  BMVert *v = e->v1;
+  BMVert *v_other = e->v2;
+
+  BMEdge *e_iter;
+
+  e_iter = e;
+  while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e) {
+    if (UNLIKELY(BM_vert_in_edge(e_iter, v_other))) {
+      return e_iter;
+    }
+  }
+
+  return NULL;
+}
+
+BMLoop *BM_edge_find_first_loop_visible(BMEdge *e)
+{
+  if (e->l != NULL) {
+    BMLoop *l_iter, *l_first;
+    l_iter = l_first = e->l;
+    do {
+      if (!BM_elem_flag_test(l_iter->f, BM_ELEM_HIDDEN)) {
+        return l_iter;
+      }
+    } while ((l_iter = l_iter->radial_next) != l_first);
+  }
+  return NULL;
+}
+
+BMFace *BM_face_exists(BMVert **varr, int len)
+{
+  if (varr[0]->e) {
+    BMEdge *e_iter, *e_first;
+    e_iter = e_first = varr[0]->e;
+
+    /* would normally use BM_LOOPS_OF_VERT, but this runs so often,
+     * its faster to iterate on the data directly */
+    do {
+      if (e_iter->l) {
+        BMLoop *l_iter_radial, *l_first_radial;
+        l_iter_radial = l_first_radial = e_iter->l;
+
+        do {
+          if ((l_iter_radial->v == varr[0]) && (l_iter_radial->f->len == len)) {
+            /* the fist 2 verts match, now check the remaining (len - 2) faces do too
+             * winding isn't known, so check in both directions */
+            int i_walk = 2;
+
+            if (l_iter_radial->next->v == varr[1]) {
+              BMLoop *l_walk = l_iter_radial->next->next;
+              do {
+                if (l_walk->v != varr[i_walk]) {
+                  break;
+                }
+              } while ((void)(l_walk = l_walk->next), ++i_walk != len);
+            }
+            else if (l_iter_radial->prev->v == varr[1]) {
+              BMLoop *l_walk = l_iter_radial->prev->prev;
+              do {
+                if (l_walk->v != varr[i_walk]) {
+                  break;
+                }
+              } while ((void)(l_walk = l_walk->prev), ++i_walk != len);
+            }
+
+            if (i_walk == len) {
+              return l_iter_radial->f;
+            }
+          }
+        } while ((l_iter_radial = l_iter_radial->radial_next) != l_first_radial);
+      }
+    } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, varr[0])) != e_first);
+  }
+
+  return NULL;
+}
+
+BMFace *BM_face_find_double(BMFace *f)
+{
+  BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
+  for (BMLoop *l_iter = l_first->radial_next; l_first != l_iter; l_iter = l_iter->radial_next) {
+    if (l_iter->f->len == l_first->f->len) {
+      if (l_iter->v == l_first->v) {
+        BMLoop *l_a = l_first, *l_b = l_iter, *l_b_init = l_iter;
+        do {
+          if (l_a->e != l_b->e) {
+            break;
+          }
+        } while (((void)(l_a = l_a->next), (l_b = l_b->next)) != l_b_init);
+        if (l_b == l_b_init) {
+          return l_iter->f;
+        }
+      }
+      else {
+        BMLoop *l_a = l_first, *l_b = l_iter, *l_b_init = l_iter;
+        do {
+          if (l_a->e != l_b->e) {
+            break;
+          }
+        } while (((void)(l_a = l_a->prev), (l_b = l_b->next)) != l_b_init);
+        if (l_b == l_b_init) {
+          return l_iter->f;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+bool BM_face_exists_multi(BMVert **varr, BMEdge **earr, int len)
+{
+  BMFace *f;
+  BMEdge *e;
+  BMVert *v;
+  bool ok;
+  int tot_tag;
+
+  BMIter fiter;
+  BMIter viter;
+
+  int i;
+
+  for (i = 0; i < len; i++) {
+    /* save some time by looping over edge faces rather than vert faces
+     * will still loop over some faces twice but not as many */
+    BM_ITER_ELEM (f, &fiter, earr[i], BM_FACES_OF_EDGE) {
+      BM_elem_flag_disable(f, BM_ELEM_INTERNAL_TAG);
+      BM_ITER_ELEM (v, &viter, f, BM_VERTS_OF_FACE) {
+        BM_elem_flag_disable(v, BM_ELEM_INTERNAL_TAG);
+      }
+    }
+
+    /* clear all edge tags */
+    BM_ITER_ELEM (e, &fiter, varr[i], BM_EDGES_OF_VERT) {
+      BM_elem_flag_disable(e, BM_ELEM_INTERNAL_TAG);
+    }
+  }
+
+  /* now tag all verts and edges in the boundary array as true so
+   * we can know if a face-vert is from our array */
+  for (i = 0; i < len; i++) {
+    BM_elem_flag_enable(varr[i], BM_ELEM_INTERNAL_TAG);
+    BM_elem_flag_enable(earr[i], BM_ELEM_INTERNAL_TAG);
+  }
+
+  /* so! boundary is tagged, everything else cleared */
+
+  /* 1) tag all faces connected to edges - if all their verts are boundary */
+  tot_tag = 0;
+  for (i = 0; i < len; i++) {
+    BM_ITER_ELEM (f, &fiter, earr[i], BM_FACES_OF_EDGE) {
+      if (!BM_elem_flag_test(f, BM_ELEM_INTERNAL_TAG)) {
+        ok = true;
+        BM_ITER_ELEM (v, &viter, f, BM_VERTS_OF_FACE) {
+          if (!BM_elem_flag_test(v, BM_ELEM_INTERNAL_TAG)) {
+            ok = false;
+            break;
+          }
+        }
+
+        if (ok) {
+          /* we only use boundary verts */
+          BM_elem_flag_enable(f, BM_ELEM_INTERNAL_TAG);
+          tot_tag++;
+        }
+      }
+      else {
+        /* we already found! */
+      }
+    }
+  }
+
+  if (tot_tag == 0) {
+    /* no faces use only boundary verts, quit early */
+    ok = false;
+    goto finally;
+  }
+
+  /* 2) loop over non-boundary edges that use boundary verts,
+   *    check each have 2 tagged faces connected (faces that only use 'varr' verts) */
+  ok = true;
+  for (i = 0; i < len; i++) {
+    BM_ITER_ELEM (e, &fiter, varr[i], BM_EDGES_OF_VERT) {
+
+      if (/* non-boundary edge */
+          BM_elem_flag_test(e, BM_ELEM_INTERNAL_TAG) == false &&
+          /* ...using boundary verts */
+          BM_elem_flag_test(e->v1, BM_ELEM_INTERNAL_TAG) &&
+          BM_elem_flag_test(e->v2, BM_ELEM_INTERNAL_TAG)) {
+        int tot_face_tag = 0;
+        BM_ITER_ELEM (f, &fiter, e, BM_FACES_OF_EDGE) {
+          if (BM_elem_flag_test(f, BM_ELEM_INTERNAL_TAG)) {
+            tot_face_tag++;
+          }
+        }
+
+        if (tot_face_tag != 2) {
+          ok = false;
+          break;
+        }
+      }
+    }
+
+    if (ok == false) {
+      break;
+    }
+  }
+
+finally:
+  /* Cleanup */
+  for (i = 0; i < len; i++) {
+    BM_elem_flag_disable(varr[i], BM_ELEM_INTERNAL_TAG);
+    BM_elem_flag_disable(earr[i], BM_ELEM_INTERNAL_TAG);
+  }
+  return ok;
+}
+
+bool BM_face_exists_multi_edge(BMEdge **earr, int len)
+{
+  BMVert **varr = BLI_array_alloca(varr, len);
+
+  /* first check if verts have edges, if not we can bail out early */
+  if (!BM_verts_from_edges(varr, earr, len)) {
+    BMESH_ASSERT(0);
+    return false;
+  }
+
+  return BM_face_exists_multi(varr, earr, len);
+}
+
+BMFace *BM_face_exists_overlap(BMVert **varr, const int len)
+{
+  BMIter viter;
+  BMFace *f;
+  int i;
+  BMFace *f_overlap = NULL;
+  LinkNode *f_lnk = NULL;
+
+#ifdef DEBUG
+  /* check flag isn't already set */
+  for (i = 0; i < len; i++) {
+    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
+      BLI_assert(BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
+    }
+  }
+#endif
+
+  for (i = 0; i < len; i++) {
+    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
+      if (BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0) {
+        if (len <= BM_verts_in_face_count(varr, len, f)) {
+          f_overlap = f;
+          break;
+        }
+
+        BM_ELEM_API_FLAG_ENABLE(f, _FLAG_OVERLAP);
+        BLI_linklist_prepend_alloca(&f_lnk, f);
+      }
+    }
+  }
+
+  for (; f_lnk; f_lnk = f_lnk->next) {
+    BM_ELEM_API_FLAG_DISABLE((BMFace *)f_lnk->link, _FLAG_OVERLAP);
+  }
+
+  return f_overlap;
+}
+
+bool BM_face_exists_overlap_subset(BMVert **varr, const int len)
+{
+  BMIter viter;
+  BMFace *f;
+  bool is_init = false;
+  bool is_overlap = false;
+  LinkNode *f_lnk = NULL;
+
+#ifdef DEBUG
+  /* check flag isn't already set */
+  for (int i = 0; i < len; i++) {
+    BLI_assert(BM_ELEM_API_FLAG_TEST(varr[i], _FLAG_OVERLAP) == 0);
+    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
+      BLI_assert(BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
+    }
+  }
+#endif
+
+  for (int i = 0; i < len; i++) {
+    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
+      if ((f->len <= len) && (BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0)) {
+        /* Check if all vers in this face are flagged. */
+        BMLoop *l_iter, *l_first;
+
+        if (is_init == false) {
+          is_init = true;
+          for (int j = 0; j < len; j++) {
+            BM_ELEM_API_FLAG_ENABLE(varr[j], _FLAG_OVERLAP);
+          }
+        }
+
+        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        is_overlap = true;
+        do {
+          if (BM_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_OVERLAP) == 0) {
+            is_overlap = false;
+            break;
+          }
+        } while ((l_iter = l_iter->next) != l_first);
+
+        if (is_overlap) {
+          break;
+        }
+
+        BM_ELEM_API_FLAG_ENABLE(f, _FLAG_OVERLAP);
+        BLI_linklist_prepend_alloca(&f_lnk, f);
+      }
+    }
+  }
+
+  if (is_init == true) {
+    for (int i = 0; i < len; i++) {
+      BM_ELEM_API_FLAG_DISABLE(varr[i], _FLAG_OVERLAP);
+    }
+  }
+
+  for (; f_lnk; f_lnk = f_lnk->next) {
+    BM_ELEM_API_FLAG_DISABLE((BMFace *)f_lnk->link, _FLAG_OVERLAP);
+  }
+
+  return is_overlap;
+}
+
+bool BM_vert_is_all_edge_flag_test(const BMVert *v, const char hflag, const bool respect_hide)
+{
+  if (v->e) {
+    BMEdge *e_other;
+    BMIter eiter;
+
+    BM_ITER_ELEM (e_other, &eiter, (BMVert *)v, BM_EDGES_OF_VERT) {
+      if (!respect_hide || !BM_elem_flag_test(e_other, BM_ELEM_HIDDEN)) {
+        if (!BM_elem_flag_test(e_other, hflag)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+bool BM_vert_is_all_face_flag_test(const BMVert *v, const char hflag, const bool respect_hide)
+{
+  if (v->e) {
+    BMEdge *f_other;
+    BMIter fiter;
+
+    BM_ITER_ELEM (f_other, &fiter, (BMVert *)v, BM_FACES_OF_VERT) {
+      if (!respect_hide || !BM_elem_flag_test(f_other, BM_ELEM_HIDDEN)) {
+        if (!BM_elem_flag_test(f_other, hflag)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+bool BM_edge_is_all_face_flag_test(const BMEdge *e, const char hflag, const bool respect_hide)
+{
+  if (e->l) {
+    BMLoop *l_iter, *l_first;
+
+    l_iter = l_first = e->l;
+    do {
+      if (!respect_hide || !BM_elem_flag_test(l_iter->f, BM_ELEM_HIDDEN)) {
+        if (!BM_elem_flag_test(l_iter->f, hflag)) {
+          return false;
+        }
+      }
+    } while ((l_iter = l_iter->radial_next) != l_first);
+  }
+
+  return true;
+}
+
+bool BM_edge_is_any_face_flag_test(const BMEdge *e, const char hflag)
+{
+  if (e->l) {
+    BMLoop *l_iter, *l_first;
+
+    l_iter = l_first = e->l;
+    do {
+      if (BM_elem_flag_test(l_iter->f, hflag)) {
+        return true;
+      }
+    } while ((l_iter = l_iter->radial_next) != l_first);
+  }
+
+  return false;
+}
+
+bool BM_edge_is_any_vert_flag_test(const BMEdge *e, const char hflag)
+{
+  return (BM_elem_flag_test(e->v1, hflag) || BM_elem_flag_test(e->v2, hflag));
+}
+
+bool BM_face_is_any_vert_flag_test(const BMFace *f, const char hflag)
+{
+  BMLoop *l_iter;
+  BMLoop *l_first;
+
+  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  do {
+    if (BM_elem_flag_test(l_iter->v, hflag)) {
+      return true;
+    }
+  } while ((l_iter = l_iter->next) != l_first);
+  return false;
+}
+
+bool BM_face_is_any_edge_flag_test(const BMFace *f, const char hflag)
+{
+  BMLoop *l_iter;
+  BMLoop *l_first;
+
+  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  do {
+    if (BM_elem_flag_test(l_iter->e, hflag)) {
+      return true;
+    }
+  } while ((l_iter = l_iter->next) != l_first);
+  return false;
+}
+
+bool BM_edge_is_any_face_len_test(const BMEdge *e, const int len)
+{
+  if (e->l) {
+    BMLoop *l_iter, *l_first;
+
+    l_iter = l_first = e->l;
+    do {
+      if (l_iter->f->len == len) {
+        return true;
+      }
+    } while ((l_iter = l_iter->radial_next) != l_first);
+  }
+
+  return false;
+}
+
+bool BM_face_is_normal_valid(const BMFace *f)
+{
+  const float eps = 0.0001f;
+  float no[3];
+
+  BM_face_calc_normal(f, no);
+  return len_squared_v3v3(no, f->no) < (eps * eps);
+}
+
+/**
+ * Use to accumulate volume calculation for faces with consistent winding.
+ *
+ * Use double precision since this is prone to float precision error, see T73295.
+ */
+static double bm_mesh_calc_volume_face(const BMFace *f)
+{
+  const int tottri = f->len - 2;
+  BMLoop **loops = BLI_array_alloca(loops, f->len);
+  uint(*index)[3] = BLI_array_alloca(index, tottri);
+  double vol = 0.0;
+
+  BM_face_calc_tessellation(f, false, loops, index);
+
+  for (int j = 0; j < tottri; j++) {
+    const float *p1 = loops[index[j][0]]->v->co;
+    const float *p2 = loops[index[j][1]]->v->co;
+    const float *p3 = loops[index[j][2]]->v->co;
+
+    double p1_db[3];
+    double p2_db[3];
+    double p3_db[3];
+
+    copy_v3db_v3fl(p1_db, p1);
+    copy_v3db_v3fl(p2_db, p2);
+    copy_v3db_v3fl(p3_db, p3);
+
+    /* co1.dot(co2.cross(co3)) / 6.0 */
+    double cross[3];
+    cross_v3_v3v3_db(cross, p2_db, p3_db);
+    vol += dot_v3v3_db(p1_db, cross);
+  }
+  return (1.0 / 6.0) * vol;
+}
+double BM_mesh_calc_volume(BMesh *bm, bool is_signed)
+{
+  /* warning, calls own tessellation function, may be slow */
+  double vol = 0.0;
+  BMFace *f;
+  BMIter fiter;
+
+  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+    vol += bm_mesh_calc_volume_face(f);
+  }
+
+  if (is_signed == false) {
+    vol = fabs(vol);
+  }
+
+  return vol;
+}
+
+int BM_mesh_calc_face_groups(BMesh *bm,
+                             int *r_groups_array,
+                             int (**r_group_index)[2],
+                             BMLoopFilterFunc filter_fn,
+                             BMLoopPairFilterFunc filter_pair_fn,
+                             void *user_data,
+                             const char hflag_test,
+                             const char htype_step)
+{
+  /* NOTE: almost duplicate of #BM_mesh_calc_edge_groups, keep in sync. */
+
+#ifdef DEBUG
+  int group_index_len = 1;
+#else
+  int group_index_len = 32;
+#endif
+
+  int(*group_index)[2] = MEM_mallocN(sizeof(*group_index) * group_index_len, __func__);
+
+  int *group_array = r_groups_array;
+  STACK_DECLARE(group_array);
+
+  int group_curr = 0;
+
+  uint tot_faces = 0;
+  uint tot_touch = 0;
+
+  BMFace **stack;
+  STACK_DECLARE(stack);
+
+  BMIter iter;
+  BMFace *f, *f_next;
+  int i;
+
+  STACK_INIT(group_array, bm->totface);
+
+  BLI_assert(((htype_step & ~(BM_VERT | BM_EDGE)) == 0) && (htype_step != 0));
+
+  /* init the array */
+  BM_ITER_MESH_INDEX (f, &iter, bm, BM_FACES_OF_MESH, i) {
+    if ((hflag_test == 0) || BM_elem_flag_test(f, hflag_test)) {
+      tot_faces++;
+      BM_elem_flag_disable(f, BM_ELEM_TAG);
+    }
+    else {
+      /* never walk over tagged */
+      BM_elem_flag_enable(f, BM_ELEM_TAG);
+    }
+
+    BM_elem_index_set(f, i); /* set_inline */
+  }
+  bm->elem_index_dirty &= ~BM_FACE;
+
+  /* detect groups */
+  stack = MEM_mallocN(sizeof(*stack) * tot_faces, __func__);
+
+  f_next = BM_iter_new(&iter, bm, BM_FACES_OF_MESH, NULL);
+
+  while (tot_touch != tot_faces) {
+    int *group_item;
+    bool ok = false;
+
+    BLI_assert(tot_touch < tot_faces);
+
+    STACK_INIT(stack, tot_faces);
+
+    for (; f_next; f_next = BM_iter_step(&iter)) {
+      if (BM_elem_flag_test(f_next, BM_ELEM_TAG) == false) {
+        BM_elem_flag_enable(f_next, BM_ELEM_TAG);
+        STACK_PUSH(stack, f_next);
+        ok = true;
+        break;
+      }
+    }
+
+    BLI_assert(ok == true);
+    UNUSED_VARS_NDEBUG(ok);
+
+    /* manage arrays */
+    if (group_index_len == group_curr) {
+      group_index_len *= 2;
+      group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_index_len);
+    }
+
+    group_item = group_index[group_curr];
+    group_item[0] = STACK_SIZE(group_array);
+    group_item[1] = 0;
+
+    while ((f = STACK_POP(stack))) {
+      BMLoop *l_iter, *l_first;
+
+      /* add face */
+      STACK_PUSH(group_array, BM_elem_index_get(f));
+      tot_touch++;
+      group_item[1]++;
+      /* done */
+
+      if (htype_step & BM_EDGE) {
+        /* search for other faces */
+        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        do {
+          BMLoop *l_radial_iter = l_iter->radial_next;
+          if ((l_radial_iter != l_iter) && ((filter_fn == NULL) || filter_fn(l_iter, user_data))) {
+            do {
+              if ((filter_pair_fn == NULL) || filter_pair_fn(l_iter, l_radial_iter, user_data)) {
+                BMFace *f_other = l_radial_iter->f;
+                if (BM_elem_flag_test(f_other, BM_ELEM_TAG) == false) {
+                  BM_elem_flag_enable(f_other, BM_ELEM_TAG);
+                  STACK_PUSH(stack, f_other);
+                }
+              }
+            } while ((l_radial_iter = l_radial_iter->radial_next) != l_iter);
+          }
+        } while ((l_iter = l_iter->next) != l_first);
+      }
+
+      if (htype_step & BM_VERT) {
+        BMIter liter;
+        /* search for other faces */
+        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        do {
+          if ((filter_fn == NULL) || filter_fn(l_iter, user_data)) {
+            BMLoop *l_other;
+            BM_ITER_ELEM (l_other, &liter, l_iter, BM_LOOPS_OF_LOOP) {
+              if ((filter_pair_fn == NULL) || filter_pair_fn(l_iter, l_other, user_data)) {
+                BMFace *f_other = l_other->f;
+                if (BM_elem_flag_test(f_other, BM_ELEM_TAG) == false) {
+                  BM_elem_flag_enable(f_other, BM_ELEM_TAG);
+                  STACK_PUSH(stack, f_other);
+                }
+              }
+            }
+          }
+        } while ((l_iter = l_iter->next) != l_first);
+      }
+    }
+
+    group_curr++;
+  }
+
+  MEM_freeN(stack);
+
+  /* reduce alloc to required size */
+  if (group_index_len != group_curr) {
+    group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_curr);
+  }
+  *r_group_index = group_index;
+
+  return group_curr;
+}
+
+int BM_mesh_calc_edge_groups(BMesh *bm,
+                             int *r_groups_array,
+                             int (**r_group_index)[2],
+                             BMVertFilterFunc filter_fn,
+                             void *user_data,
+                             const char hflag_test)
+{
+  /* NOTE: almost duplicate of #BM_mesh_calc_face_groups, keep in sync. */
+
+#ifdef DEBUG
+  int group_index_len = 1;
+#else
+  int group_index_len = 32;
+#endif
+
+  int(*group_index)[2] = MEM_mallocN(sizeof(*group_index) * group_index_len, __func__);
+
+  int *group_array = r_groups_array;
+  STACK_DECLARE(group_array);
+
+  int group_curr = 0;
+
+  uint tot_edges = 0;
+  uint tot_touch = 0;
+
+  BMEdge **stack;
+  STACK_DECLARE(stack);
+
+  BMIter iter;
+  BMEdge *e, *e_next;
+  int i;
+  STACK_INIT(group_array, bm->totedge);
+
+  /* init the array */
+  BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
+    if ((hflag_test == 0) || BM_elem_flag_test(e, hflag_test)) {
+      tot_edges++;
+      BM_elem_flag_disable(e, BM_ELEM_TAG);
+    }
+    else {
+      /* never walk over tagged */
+      BM_elem_flag_enable(e, BM_ELEM_TAG);
+    }
+
+    BM_elem_index_set(e, i); /* set_inline */
+  }
+  bm->elem_index_dirty &= ~BM_EDGE;
+
+  /* detect groups */
+  stack = MEM_mallocN(sizeof(*stack) * tot_edges, __func__);
+
+  e_next = BM_iter_new(&iter, bm, BM_EDGES_OF_MESH, NULL);
+
+  while (tot_touch != tot_edges) {
+    int *group_item;
+    bool ok = false;
+
+    BLI_assert(tot_touch < tot_edges);
+
+    STACK_INIT(stack, tot_edges);
+
+    for (; e_next; e_next = BM_iter_step(&iter)) {
+      if (BM_elem_flag_test(e_next, BM_ELEM_TAG) == false) {
+        BM_elem_flag_enable(e_next, BM_ELEM_TAG);
+        STACK_PUSH(stack, e_next);
+        ok = true;
+        break;
+      }
+    }
+
+    BLI_assert(ok == true);
+    UNUSED_VARS_NDEBUG(ok);
+
+    /* manage arrays */
+    if (group_index_len == group_curr) {
+      group_index_len *= 2;
+      group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_index_len);
+    }
+
+    group_item = group_index[group_curr];
+    group_item[0] = STACK_SIZE(group_array);
+    group_item[1] = 0;
+
+    while ((e = STACK_POP(stack))) {
+      BMIter viter;
+      BMIter eiter;
+      BMVert *v;
+
+      /* add edge */
+      STACK_PUSH(group_array, BM_elem_index_get(e));
+      tot_touch++;
+      group_item[1]++;
+      /* done */
+
+      /* search for other edges */
+      BM_ITER_ELEM (v, &viter, e, BM_VERTS_OF_EDGE) {
+        if ((filter_fn == NULL) || filter_fn(v, user_data)) {
+          BMEdge *e_other;
+          BM_ITER_ELEM (e_other, &eiter, v, BM_EDGES_OF_VERT) {
+            if (BM_elem_flag_test(e_other, BM_ELEM_TAG) == false) {
+              BM_elem_flag_enable(e_other, BM_ELEM_TAG);
+              STACK_PUSH(stack, e_other);
+            }
+          }
+        }
+      }
+    }
+
+    group_curr++;
+  }
+
+  MEM_freeN(stack);
+
+  /* reduce alloc to required size */
+  if (group_index_len != group_curr) {
+    group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_curr);
+  }
+  *r_group_index = group_index;
+
+  return group_curr;
+}
+
+int BM_mesh_calc_edge_groups_as_arrays(
+    BMesh *bm, BMVert **verts, BMEdge **edges, BMFace **faces, int (**r_groups)[3])
+{
+  int(*groups)[3] = MEM_mallocN(sizeof(*groups) * bm->totvert, __func__);
+  STACK_DECLARE(groups);
+  STACK_INIT(groups, bm->totvert);
+
+  /* Clear all selected vertices */
+  BM_mesh_elem_hflag_disable_all(bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_TAG, false);
+
+  BMVert **stack = MEM_mallocN(sizeof(*stack) * bm->totvert, __func__);
+  STACK_DECLARE(stack);
+  STACK_INIT(stack, bm->totvert);
+
+  STACK_DECLARE(verts);
+  STACK_INIT(verts, bm->totvert);
+
+  STACK_DECLARE(edges);
+  STACK_INIT(edges, bm->totedge);
+
+  STACK_DECLARE(faces);
+  STACK_INIT(faces, bm->totface);
+
+  BMIter iter;
+  BMVert *v_stack_init;
+  BM_ITER_MESH (v_stack_init, &iter, bm, BM_VERTS_OF_MESH) {
+    if (BM_elem_flag_test(v_stack_init, BM_ELEM_TAG)) {
+      continue;
+    }
+
+    const uint verts_init = STACK_SIZE(verts);
+    const uint edges_init = STACK_SIZE(edges);
+    const uint faces_init = STACK_SIZE(faces);
+
+    /* Initialize stack. */
+    BM_elem_flag_enable(v_stack_init, BM_ELEM_TAG);
+    STACK_PUSH(verts, v_stack_init);
+
+    if (v_stack_init->e != NULL) {
+      BMVert *v_iter = v_stack_init;
+      do {
+        BMEdge *e_iter, *e_first;
+        e_iter = e_first = v_iter->e;
+        do {
+          if (!BM_elem_flag_test(e_iter, BM_ELEM_TAG)) {
+            BM_elem_flag_enable(e_iter, BM_ELEM_TAG);
+            STACK_PUSH(edges, e_iter);
+
+            if (e_iter->l != NULL) {
+              BMLoop *l_iter, *l_first;
+              l_iter = l_first = e_iter->l;
+              do {
+                if (!BM_elem_flag_test(l_iter->f, BM_ELEM_TAG)) {
+                  BM_elem_flag_enable(l_iter->f, BM_ELEM_TAG);
+                  STACK_PUSH(faces, l_iter->f);
+                }
+              } while ((l_iter = l_iter->radial_next) != l_first);
+            }
+
+            BMVert *v_other = BM_edge_other_vert(e_iter, v_iter);
+            if (!BM_elem_flag_test(v_other, BM_ELEM_TAG)) {
+              BM_elem_flag_enable(v_other, BM_ELEM_TAG);
+              STACK_PUSH(verts, v_other);
+
+              STACK_PUSH(stack, v_other);
+            }
+          }
+        } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, v_iter)) != e_first);
+      } while ((v_iter = STACK_POP(stack)));
+    }
+
+    int *g = STACK_PUSH_RET(groups);
+    g[0] = STACK_SIZE(verts) - verts_init;
+    g[1] = STACK_SIZE(edges) - edges_init;
+    g[2] = STACK_SIZE(faces) - faces_init;
+  }
+
+  MEM_freeN(stack);
+
+  /* Reduce alloc to required size. */
+  groups = MEM_reallocN(groups, sizeof(*groups) * STACK_SIZE(groups));
+  *r_groups = groups;
+  return STACK_SIZE(groups);
+}
+
+float bmesh_subd_falloff_calc(const int falloff, float val)
+{
+  switch (falloff) {
+    case SUBD_FALLOFF_SMOOTH:
+      val = 3.0f * val * val - 2.0f * val * val * val;
+      break;
+    case SUBD_FALLOFF_SPHERE:
+      val = sqrtf(2.0f * val - val * val);
+      break;
+    case SUBD_FALLOFF_ROOT:
+      val = sqrtf(val);
+      break;
+    case SUBD_FALLOFF_SHARP:
+      val = val * val;
+      break;
+    case SUBD_FALLOFF_LIN:
+      break;
+    case SUBD_FALLOFF_INVSQUARE:
+      val = val * (2.0f - val);
+      break;
+    default:
+      BLI_assert(0);
+      break;
+  }
+
+  return val;
+}
