@@ -1,29 +1,25 @@
-/** \file
- * \ingroup bmesh
- *
- * BMesh operator access.
- */
+/** Mesh operator access. **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_mempool.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
+#include "lib_memarena.h"
+#include "lib_mempool.h"
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
-#include "BLT_translation.h"
+#include "i18n.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
 /* forward declarations */
-static void bmo_flag_layer_alloc(BMesh *bm);
-static void bmo_flag_layer_free(BMesh *bm);
-static void bmo_flag_layer_clear(BMesh *bm);
-static int bmo_name_to_slotcode(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *identifier);
-static int bmo_name_to_slotcode_check(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+static void mo_flag_layer_alloc(Mesh *bm);
+static void mo_flag_layer_free(Mesh *bm);
+static void bmo_flag_layer_clear(Mesh *bm);
+static int mo_name_to_slotcode(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *identifier);
+static int mo_name_to_slotcode_check(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
                                       const char *identifier);
 
 const int BMO_OPSLOT_TYPEINFO[BMO_OP_SLOT_TOTAL_TYPES] = {
