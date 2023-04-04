@@ -16,12 +16,11 @@
   (void)0
 
 /* -------------------------------------------------------------------- */
-/** \name Mask Flag Checks
- * \{ */
+/** Mask Flag Checks **/
 
-static bool bmw_mask_check_vert(BMWalker *walker, BMVert *v)
+static bool mesh_walker_mask_check_vert(MeshWalker *walker, MeshVert *v)
 {
-  if ((walker->flag & BMW_FLAG_TEST_HIDDEN) && BM_elem_flag_test(v, BM_ELEM_HIDDEN)) {
+  if ((walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(v, MESH_ELEM_HIDDEN)) {
     return false;
   }
   if (walker->mask_vert && !BMO_vert_flag_test(walker->bm, v, walker->mask_vert)) {
@@ -30,9 +29,9 @@ static bool bmw_mask_check_vert(BMWalker *walker, BMVert *v)
   return true;
 }
 
-static bool bmw_mask_check_edge(BMWalker *walker, BMEdge *e)
+static bool mesh_walker_mask_check_edge(BMWalker *walker, BMEdge *e)
 {
-  if ((walker->flag & BMW_FLAG_TEST_HIDDEN) && BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
+  if ((walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
     return false;
   }
   if (walker->mask_edge && !BMO_edge_flag_test(walker->bm, e, walker->mask_edge)) {
@@ -41,9 +40,9 @@ static bool bmw_mask_check_edge(BMWalker *walker, BMEdge *e)
   return true;
 }
 
-static bool bmw_mask_check_face(BMWalker *walker, BMFace *f)
+static bool mesh_walker_mask_check_face(MeshWalker *walker, BMFace *f)
 {
-  if ((walker->flag & BMW_FLAG_TEST_HIDDEN) && BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+  if ((walker->flag & BMW_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
     return false;
   }
   if (walker->mask_face && !BMO_face_flag_test(walker->bm, f, walker->mask_face)) {
