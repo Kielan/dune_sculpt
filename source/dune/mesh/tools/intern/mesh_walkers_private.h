@@ -17,26 +17,26 @@ typedef struct MeshWalkerShell {
 } MeshWalkerShell;
 
 typedef struct MeshWalkerLoopShell {
-  BMwGenericWalker header;
-  BMLoop *curloop;
+  MeshWalkerGeneric header;
+  MeshLoop *curloop;
 } MeshWalkerLoopShell;
 
-typedef struct BMwLoopShellWireWalker {
-  BMwGenericWalker header;
-  BMElem *curelem;
-} BMwLoopShellWireWalker;
+typedef struct MeshWalkerLoopShellWire {
+  MeshWalkerGeneric header;
+  MeshElem *curelem;
+} MeshWalkerLoopShellWire;
 
-typedef struct BMwIslandboundWalker {
+typedef struct MeshWalkerIslandbound {
   BMwGenericWalker header;
   BMLoop *base;
   BMVert *lastv;
   BMLoop *curloop;
-} BMwIslandboundWalker;
+} MeshWalkerIslandbound;
 
-typedef struct BMwIslandWalker {
-  BMwGenericWalker header;
-  BMFace *cur;
-} BMwIslandWalker;
+typedef struct MeshWalkerIsland {
+  MeshWalkerGeneric header;
+  MeshFace *cur;
+} MeshWalkerIsland;
 
 typedef struct BMwEdgeLoopWalker {
   BMwGenericWalker header;
