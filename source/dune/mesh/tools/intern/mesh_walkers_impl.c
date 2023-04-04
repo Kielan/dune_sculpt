@@ -1,17 +1,17 @@
 #include <string.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_walkers_private.h"
+#include "mesh.h"
+#include "intern/mesh_walkers_private.h"
 
 /* Pop into stack memory (common operation). */
-#define BMW_state_remove_r(walker, owalk) \
+#define mesh_walker_state_remove_r(walker, owalk) \
   { \
-    memcpy(owalk, BMW_current_state(walker), sizeof(*(owalk))); \
-    BMW_state_remove(walker); \
+    memcpy(owalk, mesh_walker_state_current(walker), sizeof(*(owalk))); \
+    mesh_walker_state_remove(walker); \
   } \
   (void)0
 
