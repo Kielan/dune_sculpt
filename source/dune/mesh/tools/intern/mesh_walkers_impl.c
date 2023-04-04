@@ -963,3 +963,732 @@ static void bmw_EdgeLoopWalker_begin(BMWalker *walker, void *data)
   BLI_gset_clear(walker->visit_set, NULL);
   BLI_gset_insert(walker->visit_set, owalk.cur);
 }
+
+static void *bmw_EdgeLoopWalker_yield(BMWalker *walker)
+{
+  BMwEdgeLoopWalker *lwalk = BMW_current_state(walker);
+
+  return lwalk->cur;
+}
+
+static void *bmw_EdgeLoopWalker_step(BMWalker *walker)
+{
+  BMwEdgeLoopWalker *lwalk, owalk;
+  BMEdge *e, *nexte = NULL;
+  BMLoop *l;
+  BMVert *v;
+
+  BMW_state_remove_r(walker, &owalk);
+  lwalk = &owalk;
+
+  e = lwalk->cur;
+  l = e->l;
+
+  if (owalk.f_hub) { /* NGON EDGE */
+    int vert_edge_tot;
+
+    v = BM_edge_other_vert(e, lwalk->lastv);
+
+    vert_edge_tot = BM_vert_edge_count_nonwire(v);
+
+    if (vert_edge_tot == 3) {
+      l = BM_face_other_vert_loop(owalk.f_hub, lwalk->lastv, v);
+      nexte = BM_edge_exists(v, l->v);
+
+      if (bmw_mask_check_edge(walker, nexte) && !BLI_gset_haskey(walker->visit_set, nexte) &&
+          /* Never step onto a boundary edge, this gives odd-results. */
+          (BM_edge_is_boundary(nexte) == false)) {
+        lwalk = BMW_state_add(walker);
+        lwalk->cur = nexte;
+        lwalk->lastv = v;
+
+        lwalk->is_boundary = owalk.is_boundary;
+        lwalk->is_single = owalk.is_single;
+        lwalk->f_hub = owalk.f_hub;
+
+        BLI_gset_insert(walker->visit_set, nexte);
+      }
+    }
+  }
+  else if (l == NULL) { /* WIRE EDGE */
+    BMIter eiter;
+
+    /* Match trunk: mark all connected wire edges. */
+    for (int i = 0; i < 2; i++) {
+      v = i ? e->v2 : e->v1;
+
+      BM_ITER_ELEM (nexte, &eiter, v, BM_EDGES_OF_VERT) {
+        if ((nexte->l == NULL) && bmw_mask_check_edge(walker, nexte) &&
+            !BLI_gset_haskey(walker->visit_set, nexte)) {
+          lwalk = BMW_state_add(walker);
+          lwalk->cur = nexte;
+          lwalk->lastv = v;
+
+          lwalk->is_boundary = owalk.is_boundary;
+          lwalk->is_single = owalk.is_single;
+          lwalk->f_hub = owalk.f_hub;
+
+          BLI_gset_insert(walker->visit_set, nexte);
+        }
+      }
+    }
+  }
+  else if (owalk.is_boundary == false) { /* NORMAL EDGE WITH FACES */
+    int vert_edge_tot;
+
+    v = BM_edge_other_vert(e, lwalk->lastv);
+
+    vert_edge_tot = BM_vert_edge_count_nonwire(v);
+
+    /* Typical looping over edges in the middle of a mesh.
+     * Why use 2 here at all? - for internal ngon loops it can be useful. */
+    if (ELEM(vert_edge_tot, 4, 2)) {
+      int i_opposite = vert_edge_tot / 2;
+      int i = 0;
+      do {
+        l = BM_loop_other_edge_loop(l, v);
+        if (BM_edge_is_manifold(l->e)) {
+          l = l->radial_next;
+        }
+        else {
+          l = NULL;
+          break;
+        }
+      } while ((++i != i_opposite));
+    }
+    else {
+      l = NULL;
+    }
+
+    if (l != NULL) {
+      if (l != e->l && bmw_mask_check_edge(walker, l->e) &&
+          !BLI_gset_haskey(walker->visit_set, l->e)) {
+        lwalk = BMW_state_add(walker);
+        lwalk->cur = l->e;
+        lwalk->lastv = v;
+
+        lwalk->is_boundary = owalk.is_boundary;
+        lwalk->is_single = owalk.is_single;
+        lwalk->f_hub = owalk.f_hub;
+
+        BLI_gset_insert(walker->visit_set, l->e);
+      }
+    }
+  }
+  else if (owalk.is_boundary == true) { /* BOUNDARY EDGE WITH FACES */
+    int vert_edge_tot;
+
+    v = BM_edge_other_vert(e, lwalk->lastv);
+
+    vert_edge_tot = BM_vert_edge_count_nonwire(v);
+
+    /* Check if we should step, this is fairly involved. */
+    if (
+        /* Walk over boundary of faces but stop at corners. */
+        (owalk.is_single == false && vert_edge_tot > 2) ||
+
+        /* Initial edge was a boundary, so is this edge and vertex is only a part of this face
+         * this lets us walk over the boundary of an ngon which is handy. */
+        (owalk.is_single == true && vert_edge_tot == 2 && BM_edge_is_boundary(e))) {
+      /* Find next boundary edge in the fan. */
+      do {
+        l = BM_loop_other_edge_loop(l, v);
+        if (BM_edge_is_manifold(l->e)) {
+          l = l->radial_next;
+        }
+        else if (BM_edge_is_boundary(l->e)) {
+          break;
+        }
+        else {
+          l = NULL;
+          break;
+        }
+      } while (true);
+    }
+
+    if (owalk.is_single == false && l && bm_edge_is_single(l->e)) {
+      l = NULL;
+    }
+
+    if (l != NULL) {
+      if (l != e->l && bmw_mask_check_edge(walker, l->e) &&
+          !BLI_gset_haskey(walker->visit_set, l->e)) {
+        lwalk = BMW_state_add(walker);
+        lwalk->cur = l->e;
+        lwalk->lastv = v;
+
+        lwalk->is_boundary = owalk.is_boundary;
+        lwalk->is_single = owalk.is_single;
+        lwalk->f_hub = owalk.f_hub;
+
+        BLI_gset_insert(walker->visit_set, l->e);
+      }
+    }
+  }
+
+  return owalk.cur;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Face Loop Walker
+ *
+ * Starts at a tool-flagged face and walks over the face loop
+ * Conditions for starting and stepping the face loop have been
+ * tuned in an attempt to match the face loops built by edit-mesh
+ * \{ */
+
+/**
+ * Check whether the face loop should includes the face specified
+ * by the given #BMLoop.
+ */
+static bool bmw_FaceLoopWalker_include_face(BMWalker *walker, BMLoop *l)
+{
+  /* Face must have degree 4. */
+  if (l->f->len != 4) {
+    return false;
+  }
+
+  if (!bmw_mask_check_face(walker, l->f)) {
+    return false;
+  }
+
+  /* The face must not have been already visited. */
+  if (BLI_gset_haskey(walker->visit_set, l->f) && BLI_gset_haskey(walker->visit_set_alt, l->e)) {
+    return false;
+  }
+
+  return true;
+}
+
+/* Check whether the face loop can start from the given edge. */
+static bool bmw_FaceLoopWalker_edge_begins_loop(BMWalker *walker, BMEdge *e)
+{
+  /* There is no face loop starting from a wire edge. */
+  if (BM_edge_is_wire(e)) {
+    return false;
+  }
+
+  /* Don't start a loop from a boundary edge if it cannot be extended to cover any faces. */
+  if (BM_edge_is_boundary(e)) {
+    if (!bmw_FaceLoopWalker_include_face(walker, e->l)) {
+      return false;
+    }
+  }
+
+  /* Don't start a face loop from non-manifold edges. */
+  if (!BM_edge_is_manifold(e)) {
+    return false;
+  }
+
+  return true;
+}
+
+static void bmw_FaceLoopWalker_begin(BMWalker *walker, void *data)
+{
+  BMwFaceLoopWalker *lwalk, owalk, *owalk_pt;
+  BMEdge *e = data;
+  /* BMesh *bm = walker->bm; */             /* UNUSED */
+  /* int fcount = BM_edge_face_count(e); */ /* UNUSED */
+
+  if (!bmw_FaceLoopWalker_edge_begins_loop(walker, e)) {
+    return;
+  }
+
+  lwalk = BMW_state_add(walker);
+  lwalk->l = e->l;
+  lwalk->no_calc = false;
+  BLI_gset_insert(walker->visit_set, lwalk->l->f);
+
+  /* Rewind. */
+  while ((owalk_pt = BMW_current_state(walker))) {
+    owalk = *((BMwFaceLoopWalker *)owalk_pt);
+    BMW_walk(walker);
+  }
+
+  lwalk = BMW_state_add(walker);
+  *lwalk = owalk;
+  lwalk->no_calc = false;
+
+  BLI_gset_clear(walker->visit_set_alt, NULL);
+  BLI_gset_insert(walker->visit_set_alt, lwalk->l->e);
+
+  BLI_gset_clear(walker->visit_set, NULL);
+  BLI_gset_insert(walker->visit_set, lwalk->l->f);
+}
+
+static void *bmw_FaceLoopWalker_yield(BMWalker *walker)
+{
+  BMwFaceLoopWalker *lwalk = BMW_current_state(walker);
+
+  if (!lwalk) {
+    return NULL;
+  }
+
+  return lwalk->l->f;
+}
+
+static void *bmw_FaceLoopWalker_step(BMWalker *walker)
+{
+  BMwFaceLoopWalker *lwalk, owalk;
+  BMFace *f;
+  BMLoop *l;
+
+  BMW_state_remove_r(walker, &owalk);
+  lwalk = &owalk;
+
+  f = lwalk->l->f;
+  l = lwalk->l->radial_next;
+
+  if (lwalk->no_calc) {
+    return f;
+  }
+
+  if (!bmw_FaceLoopWalker_include_face(walker, l)) {
+    l = lwalk->l;
+    l = l->next->next;
+    if (!BM_edge_is_manifold(l->e)) {
+      l = l->prev->prev;
+    }
+    l = l->radial_next;
+  }
+
+  if (bmw_FaceLoopWalker_include_face(walker, l)) {
+    lwalk = BMW_state_add(walker);
+    lwalk->l = l;
+
+    if (l->f->len != 4) {
+      lwalk->no_calc = true;
+      lwalk->l = owalk.l;
+    }
+    else {
+      lwalk->no_calc = false;
+    }
+
+    /* Both may already exist. */
+    BLI_gset_add(walker->visit_set_alt, l->e);
+    BLI_gset_add(walker->visit_set, l->f);
+  }
+
+  return f;
+}
+
+/** \} */
+
+// #define BMW_EDGERING_NGON
+
+/* -------------------------------------------------------------------- */
+/** \name Edge Ring Walker
+ *
+ * Starts at a tool-flagged edge and walks over the edge ring
+ * Conditions for starting and stepping the edge ring have been
+ * tuned to match behavior users expect (dating back to v2.4x).
+ * \{ */
+
+static void bmw_EdgeringWalker_begin(BMWalker *walker, void *data)
+{
+  BMwEdgeringWalker *lwalk, owalk, *owalk_pt;
+  BMEdge *e = data;
+
+  lwalk = BMW_state_add(walker);
+  lwalk->l = e->l;
+
+  if (!lwalk->l) {
+    lwalk->wireedge = e;
+    return;
+  }
+  lwalk->wireedge = NULL;
+
+  BLI_gset_insert(walker->visit_set, lwalk->l->e);
+
+  /* Rewind. */
+  while ((owalk_pt = BMW_current_state(walker))) {
+    owalk = *((BMwEdgeringWalker *)owalk_pt);
+    BMW_walk(walker);
+  }
+
+  lwalk = BMW_state_add(walker);
+  *lwalk = owalk;
+
+#ifdef BMW_EDGERING_NGON
+  if (lwalk->l->f->len % 2 != 0)
+#else
+  if (lwalk->l->f->len != 4)
+#endif
+  {
+    lwalk->l = lwalk->l->radial_next;
+  }
+
+  BLI_gset_clear(walker->visit_set, NULL);
+  BLI_gset_insert(walker->visit_set, lwalk->l->e);
+}
+
+static void *bmw_EdgeringWalker_yield(BMWalker *walker)
+{
+  BMwEdgeringWalker *lwalk = BMW_current_state(walker);
+
+  if (!lwalk) {
+    return NULL;
+  }
+
+  if (lwalk->l) {
+    return lwalk->l->e;
+  }
+  return lwalk->wireedge;
+}
+
+static void *bmw_EdgeringWalker_step(BMWalker *walker)
+{
+  BMwEdgeringWalker *lwalk, owalk;
+  BMEdge *e;
+  BMLoop *l;
+#ifdef BMW_EDGERING_NGON
+  int i, len;
+#endif
+
+#define EDGE_CHECK(e) \
+  (bmw_mask_check_edge(walker, e) && (BM_edge_is_boundary(e) || BM_edge_is_manifold(e)))
+
+  BMW_state_remove_r(walker, &owalk);
+  lwalk = &owalk;
+
+  l = lwalk->l;
+  if (!l) {
+    return lwalk->wireedge;
+  }
+
+  e = l->e;
+  if (!EDGE_CHECK(e)) {
+    /* Walker won't traverse to a non-manifold edge, but may
+     * be started on one, and should not traverse *away* from
+     * a non-manifold edge (non-manifold edges are never in an
+     * edge ring with manifold edges. */
+    return e;
+  }
+
+#ifdef BMW_EDGERING_NGON
+  l = l->radial_next;
+
+  i = len = l->f->len;
+  while (i > 0) {
+    l = l->next;
+    i -= 2;
+  }
+
+  if ((len <= 0) || (len % 2 != 0) || !EDGE_CHECK(l->e) || !bmw_mask_check_face(walker, l->f)) {
+    l = owalk.l;
+    i = len;
+    while (i > 0) {
+      l = l->next;
+      i -= 2;
+    }
+  }
+  /* Only walk to manifold edge. */
+  if ((l->f->len % 2 == 0) && EDGE_CHECK(l->e) && !BLI_gset_haskey(walker->visit_set, l->e))
+#else
+
+  l = l->radial_next;
+  l = l->next->next;
+
+  if ((l->f->len != 4) || !EDGE_CHECK(l->e) || !bmw_mask_check_face(walker, l->f)) {
+    l = owalk.l->next->next;
+  }
+  /* Only walk to manifold edge. */
+  if ((l->f->len == 4) && EDGE_CHECK(l->e) && !BLI_gset_haskey(walker->visit_set, l->e))
+#endif
+  {
+    lwalk = BMW_state_add(walker);
+    lwalk->l = l;
+    lwalk->wireedge = NULL;
+
+    BLI_gset_insert(walker->visit_set, l->e);
+  }
+
+  return e;
+
+#undef EDGE_CHECK
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Boundary Edge Walker
+ * \{ */
+
+static void bmw_EdgeboundaryWalker_begin(BMWalker *walker, void *data)
+{
+  BMwEdgeboundaryWalker *lwalk;
+  BMEdge *e = data;
+
+  BLI_assert(BM_edge_is_boundary(e));
+
+  if (BLI_gset_haskey(walker->visit_set, e)) {
+    return;
+  }
+
+  lwalk = BMW_state_add(walker);
+  lwalk->e = e;
+  BLI_gset_insert(walker->visit_set, e);
+}
+
+static void *bmw_EdgeboundaryWalker_yield(BMWalker *walker)
+{
+  BMwEdgeboundaryWalker *lwalk = BMW_current_state(walker);
+
+  if (!lwalk) {
+    return NULL;
+  }
+
+  return lwalk->e;
+}
+
+static void *bmw_EdgeboundaryWalker_step(BMWalker *walker)
+{
+  BMwEdgeboundaryWalker *lwalk, owalk;
+  BMEdge *e, *e_other;
+  BMVert *v;
+  BMIter eiter;
+  BMIter viter;
+
+  BMW_state_remove_r(walker, &owalk);
+  lwalk = &owalk;
+
+  e = lwalk->e;
+
+  if (!bmw_mask_check_edge(walker, e)) {
+    return e;
+  }
+
+  BM_ITER_ELEM (v, &viter, e, BM_VERTS_OF_EDGE) {
+    BM_ITER_ELEM (e_other, &eiter, v, BM_EDGES_OF_VERT) {
+      if (e != e_other && BM_edge_is_boundary(e_other)) {
+        if (BLI_gset_haskey(walker->visit_set, e_other)) {
+          continue;
+        }
+
+        if (!bmw_mask_check_edge(walker, e_other)) {
+          continue;
+        }
+
+        lwalk = BMW_state_add(walker);
+        BLI_gset_insert(walker->visit_set, e_other);
+
+        lwalk->e = e_other;
+      }
+    }
+  }
+
+  return e;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name UV Edge Walker
+ *
+ * walk over uv islands; takes a loop as input.  restrict flag
+ * restricts the walking to loops whose vert has restrict flag set as a
+ * tool flag.
+ *
+ * The flag parameter to BMW_init maps to a loop customdata layer index.
+ * \{ */
+
+static void bmw_UVEdgeWalker_begin(BMWalker *walker, void *data)
+{
+  BMwUVEdgeWalker *lwalk;
+  BMLoop *l = data;
+
+  if (BLI_gset_haskey(walker->visit_set, l)) {
+    return;
+  }
+
+  lwalk = BMW_state_add(walker);
+  lwalk->l = l;
+  BLI_gset_insert(walker->visit_set, l);
+}
+
+static void *bmw_UVEdgeWalker_yield(BMWalker *walker)
+{
+  BMwUVEdgeWalker *lwalk = BMW_current_state(walker);
+
+  if (!lwalk) {
+    return NULL;
+  }
+
+  return lwalk->l;
+}
+
+static void *bmw_UVEdgeWalker_step(BMWalker *walker)
+{
+  const int type = walker->bm->ldata.layers[walker->layer].type;
+  const int offset = walker->bm->ldata.layers[walker->layer].offset;
+
+  BMwUVEdgeWalker *lwalk, owalk;
+  BMLoop *l;
+  int i;
+
+  BMW_state_remove_r(walker, &owalk);
+  lwalk = &owalk;
+
+  l = lwalk->l;
+
+  if (!bmw_mask_check_edge(walker, l->e)) {
+    return l;
+  }
+
+  /* Go over loops around `l->v` and `l->next->v` and see which ones share `l` and `l->next`
+   * UV's coordinates. in addition, push on `l->next` if necessary. */
+  for (i = 0; i < 2; i++) {
+    BMIter liter;
+    BMLoop *l_pivot, *l_radial;
+
+    l_pivot = i ? l->next : l;
+    BM_ITER_ELEM (l_radial, &liter, l_pivot->v, BM_LOOPS_OF_VERT) {
+      BMLoop *l_radial_first = l_radial;
+      void *data_pivot = BM_ELEM_CD_GET_VOID_P(l_pivot, offset);
+
+      do {
+        BMLoop *l_other;
+        void *data_other;
+
+        if (BLI_gset_haskey(walker->visit_set, l_radial)) {
+          continue;
+        }
+
+        if (l_radial->v != l_pivot->v) {
+          if (!bmw_mask_check_edge(walker, l_radial->e)) {
+            continue;
+          }
+        }
+
+        l_other = (l_radial->v != l_pivot->v) ? l_radial->next : l_radial;
+        data_other = BM_ELEM_CD_GET_VOID_P(l_other, offset);
+
+        if (!CustomData_data_equals(type, data_pivot, data_other)) {
+          continue;
+        }
+
+        lwalk = BMW_state_add(walker);
+        BLI_gset_insert(walker->visit_set, l_radial);
+
+        lwalk->l = l_radial;
+
+      } while ((l_radial = l_radial->radial_next) != l_radial_first);
+    }
+  }
+
+  return l;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Non-manifold Edge Walker
+ * \{ */
+
+static void bmw_NonManifoldedgeWalker_begin(BMWalker *walker, void *data)
+{
+  BMwNonManifoldEdgeLoopWalker *lwalk;
+  BMEdge *e = data;
+
+  if (BLI_gset_haskey(walker->visit_set, e)) {
+    return;
+  }
+
+  lwalk = BMW_state_add(walker);
+  lwalk->start = e;
+  lwalk->cur = e;
+  lwalk->startv = e->v1;
+  lwalk->lastv = e->v1;
+  lwalk->face_count = BM_edge_face_count(e);
+  BLI_gset_insert(walker->visit_set, e);
+}
+
+static void *bmw_NonManifoldedgeWalker_yield(BMWalker *walker)
+{
+  BMwNonManifoldEdgeLoopWalker *lwalk = BMW_current_state(walker);
+
+  if (!lwalk) {
+    return NULL;
+  }
+  return lwalk->cur;
+}
+
+/**
+ * Walk over manifold loops around `v` until loop-edge is found with `face_count` users.
+ * or return NULL if not found.
+ */
+static BMLoop *bmw_NonManifoldLoop_find_next_around_vertex(BMLoop *l, BMVert *v, int face_count)
+{
+  BLI_assert(!BM_loop_is_manifold(l));
+  do {
+    l = BM_loop_other_edge_loop(l, v);
+    if (BM_loop_is_manifold(l)) {
+      l = l->radial_next;
+    }
+    else if (BM_edge_face_count_is_equal(l->e, face_count)) {
+      return l;
+    }
+    else {
+      break;
+    }
+  } while (true);
+  return NULL;
+}
+
+static void *bmw_NonManifoldedgeWalker_step(BMWalker *walker)
+{
+  BMwNonManifoldEdgeLoopWalker *lwalk, owalk;
+  BMW_state_remove_r(walker, &owalk);
+  lwalk = &owalk;
+  BMLoop *l_cur = NULL;
+  const int face_count = lwalk->face_count;
+
+  BMVert *v = NULL;
+
+  /* Use the second pass is unlikely, only needed to walk back in the opposite direction. */
+  for (int pass = 0; pass < 2; pass++) {
+
+    BMEdge *e = lwalk->cur;
+    v = BM_edge_other_vert(e, lwalk->lastv);
+
+    /* If `lwalk.lastv` can't be walked along, start walking in the opposite direction
+     * on the initial edge, do this at most one time during this walk operation. */
+    if (UNLIKELY(pass == 1)) {
+      e = lwalk->start;
+      v = lwalk->startv;
+    }
+
+    BMLoop *l = e->l;
+    do {
+      BMLoop *l_next = bmw_NonManifoldLoop_find_next_around_vertex(l, v, face_count);
+      if ((l_next != NULL) && !BLI_gset_haskey(walker->visit_set, l_next->e)) {
+        if (l_cur == NULL) {
+          l_cur = l_next;
+        }
+        else if (l_cur->e != l_next->e) {
+          /* If there are more than one possible edge to step onto (unlikely but possible),
+           * treat as a junction and stop walking as there is no correct answer in this case. */
+          l_cur = NULL;
+          break;
+        }
+      }
+    } while ((l = l->radial_next) != e->l);
+
+    if (l_cur != NULL) {
+      break;
+    }
+  }
+
+  if (l_cur != NULL) {
+    BLI_assert(!BLI_gset_haskey(walker->visit_set, l_cur->e));
+    BLI_assert(BM_edge_face_count(l_cur->e) == face_count);
+    lwalk = BMW_state_add(walker);
+    lwalk->lastv = v;
+    lwalk->cur = l_cur->e;
+    lwalk->face_count = face_count;
+    BLI_gset_insert(walker->visit_set, l_cur->e);
+  }
+  return owalk.cur;
+}
