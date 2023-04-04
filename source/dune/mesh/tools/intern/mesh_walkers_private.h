@@ -1,29 +1,25 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- *
- * BMesh walker API.
- */
+/** Mesh walker API. **/
 
-extern BMWalker *bm_walker_types[];
-extern const int bm_totwalkers;
+extern MeshWalker *mesh_walker_types[];
+extern const int mesh_totwalkers;
 
 /* Pointer hiding */
-typedef struct BMwGenericWalker {
+typedef struct MeshWalkerGeneric {
   Link link;
   int depth;
-} BMwGenericWalker;
+} MeshWalkerGeneric;
 
-typedef struct BMwShellWalker {
-  BMwGenericWalker header;
-  BMEdge *curedge;
-} BMwShellWalker;
+typedef struct MeshWalkerShell {
+  MeshWalkerGeneric header;
+  MeshEdge *curedge;
+} MeshWalkerShell;
 
-typedef struct BMwLoopShellWalker {
+typedef struct MeshWalkerLoopShell {
   BMwGenericWalker header;
   BMLoop *curloop;
-} BMwLoopShellWalker;
+} MeshWalkerLoopShell;
 
 typedef struct BMwLoopShellWireWalker {
   BMwGenericWalker header;
