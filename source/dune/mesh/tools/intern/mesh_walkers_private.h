@@ -47,13 +47,13 @@ typedef struct BMwEdgeLoopWalker {
   bool is_single;   /* single means the edge verts are only connected to 1 face */
 } BMwEdgeLoopWalker;
 
-typedef struct BMwFaceLoopWalker {
+typedef struct MeshWalkerFaceLoop {
   BMwGenericWalker header;
   BMLoop *l;
   bool no_calc;
-} BMwFaceLoopWalker;
+} MeshWalkerFaceLoop;
 
-typedef struct BMwEdgeringWalker {
+typedef struct MeshWalkerEdgering {
   BMwGenericWalker header;
   BMLoop *l;
   BMEdge *wireedge;
