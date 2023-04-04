@@ -1692,3 +1692,169 @@ static void *bmw_NonManifoldedgeWalker_step(BMWalker *walker)
   }
   return owalk.cur;
 }
+static BMWalker bmw_VertShellWalker_Type = {
+    BM_VERT | BM_EDGE,
+    bmw_VertShellWalker_begin,
+    bmw_VertShellWalker_step,
+    bmw_VertShellWalker_yield,
+    sizeof(BMwShellWalker),
+    BMW_BREADTH_FIRST,
+    BM_EDGE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_LoopShellWalker_Type = {
+    BM_FACE | BM_LOOP | BM_EDGE | BM_VERT,
+    bmw_LoopShellWalker_begin,
+    bmw_LoopShellWalker_step,
+    bmw_LoopShellWalker_yield,
+    sizeof(BMwLoopShellWalker),
+    BMW_BREADTH_FIRST,
+    BM_EDGE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_LoopShellWireWalker_Type = {
+    BM_FACE | BM_LOOP | BM_EDGE | BM_VERT,
+    bmw_LoopShellWireWalker_begin,
+    bmw_LoopShellWireWalker_step,
+    bmw_LoopShellWireWalker_yield,
+    sizeof(BMwLoopShellWireWalker),
+    BMW_BREADTH_FIRST,
+    BM_EDGE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_FaceShellWalker_Type = {
+    BM_EDGE,
+    bmw_FaceShellWalker_begin,
+    bmw_FaceShellWalker_step,
+    bmw_FaceShellWalker_yield,
+    sizeof(BMwShellWalker),
+    BMW_BREADTH_FIRST,
+    BM_EDGE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_IslandboundWalker_Type = {
+    BM_LOOP,
+    bmw_IslandboundWalker_begin,
+    bmw_IslandboundWalker_step,
+    bmw_IslandboundWalker_yield,
+    sizeof(BMwIslandboundWalker),
+    BMW_DEPTH_FIRST,
+    BM_FACE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_IslandWalker_Type = {
+    BM_FACE,
+    bmw_IslandWalker_begin,
+    bmw_IslandWalker_step,
+    bmw_IslandWalker_yield,
+    sizeof(BMwIslandWalker),
+    BMW_BREADTH_FIRST,
+    BM_EDGE | BM_FACE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_IslandManifoldWalker_Type = {
+    BM_FACE,
+    bmw_IslandWalker_begin,
+    bmw_IslandManifoldWalker_step, /* Only difference with #BMW_ISLAND. */
+    bmw_IslandWalker_yield,
+    sizeof(BMwIslandWalker),
+    BMW_BREADTH_FIRST,
+    BM_EDGE | BM_FACE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_EdgeLoopWalker_Type = {
+    BM_EDGE,
+    bmw_EdgeLoopWalker_begin,
+    bmw_EdgeLoopWalker_step,
+    bmw_EdgeLoopWalker_yield,
+    sizeof(BMwEdgeLoopWalker),
+    BMW_DEPTH_FIRST,
+    0,
+    /* Valid restrict masks. */ /* Could add flags here but so far none are used. */
+};
+
+static BMWalker bmw_FaceLoopWalker_Type = {
+    BM_EDGE,
+    bmw_FaceLoopWalker_begin,
+    bmw_FaceLoopWalker_step,
+    bmw_FaceLoopWalker_yield,
+    sizeof(BMwFaceLoopWalker),
+    BMW_DEPTH_FIRST,
+    0,
+    /* Valid restrict masks. */ /* Could add flags here but so far none are used. */
+};
+
+static BMWalker bmw_EdgeringWalker_Type = {
+    BM_EDGE,
+    bmw_EdgeringWalker_begin,
+    bmw_EdgeringWalker_step,
+    bmw_EdgeringWalker_yield,
+    sizeof(BMwEdgeringWalker),
+    BMW_DEPTH_FIRST,
+    BM_EDGE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_EdgeboundaryWalker_Type = {
+    BM_EDGE,
+    bmw_EdgeboundaryWalker_begin,
+    bmw_EdgeboundaryWalker_step,
+    bmw_EdgeboundaryWalker_yield,
+    sizeof(BMwEdgeboundaryWalker),
+    BMW_DEPTH_FIRST,
+    0,
+};
+
+static BMWalker bmw_NonManifoldedgeWalker_type = {
+    BM_EDGE,
+    bmw_NonManifoldedgeWalker_begin,
+    bmw_NonManifoldedgeWalker_step,
+    bmw_NonManifoldedgeWalker_yield,
+    sizeof(BMwNonManifoldEdgeLoopWalker),
+    BMW_DEPTH_FIRST,
+    0,
+};
+
+static BMWalker bmw_UVEdgeWalker_Type = {
+    BM_LOOP,
+    bmw_UVEdgeWalker_begin,
+    bmw_UVEdgeWalker_step,
+    bmw_UVEdgeWalker_yield,
+    sizeof(BMwUVEdgeWalker),
+    BMW_DEPTH_FIRST,
+    BM_EDGE, /* Valid restrict masks. */
+};
+
+static BMWalker bmw_ConnectedVertexWalker_Type = {
+    BM_VERT,
+    bmw_ConnectedVertexWalker_begin,
+    bmw_ConnectedVertexWalker_step,
+    bmw_ConnectedVertexWalker_yield,
+    sizeof(BMwConnectedVertexWalker),
+    BMW_BREADTH_FIRST,
+    BM_VERT, /* Valid restrict masks. */
+};
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name All Walker Types
+ * \{ */
+
+BMWalker *bm_walker_types[] = {
+    &bmw_VertShellWalker_Type,       /* #BMW_VERT_SHELL */
+    &bmw_LoopShellWalker_Type,       /* #BMW_LOOP_SHELL */
+    &bmw_LoopShellWireWalker_Type,   /* #BMW_LOOP_SHELL_WIRE */
+    &bmw_FaceShellWalker_Type,       /* #BMW_FACE_SHELL */
+    &bmw_EdgeLoopWalker_Type,        /* #BMW_EDGELOOP */
+    &bmw_FaceLoopWalker_Type,        /* #BMW_FACELOOP */
+    &bmw_EdgeringWalker_Type,        /* #BMW_EDGERING */
+    &bmw_EdgeboundaryWalker_Type,    /* #BMW_EDGEBOUNDARY */
+    &bmw_NonManifoldedgeWalker_type, /* #BMW_EDGELOOP_NONMANIFOLD */
+    &bmw_UVEdgeWalker_Type,          /* #BMW_LOOPDATA_ISLAND */
+    &bmw_IslandboundWalker_Type,     /* #BMW_ISLANDBOUND */
+    &bmw_IslandWalker_Type,          /* #BMW_ISLAND */
+    &bmw_IslandManifoldWalker_Type,  /* #BMW_ISLAND_MANIFOLD */
+    &bmw_ConnectedVertexWalker_Type, /* #BMW_CONNECTED_VERTEX */
+};
+
+const int bm_totwalkers = ARRAY_SIZE(mesh_walker_types);
