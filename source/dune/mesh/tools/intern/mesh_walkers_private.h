@@ -27,10 +27,10 @@ typedef struct MeshWalkerLoopShellWire {
 } MeshWalkerLoopShellWire;
 
 typedef struct MeshWalkerIslandbound {
-  BMwGenericWalker header;
-  BMLoop *base;
-  BMVert *lastv;
-  BMLoop *curloop;
+  MeshWalkerGeneric header;
+  MeshLoop *base;
+  MeshVert *lastv;
+  MeshLoop *curloop;
 } MeshWalkerIslandbound;
 
 typedef struct MeshWalkerIsland {
@@ -38,18 +38,18 @@ typedef struct MeshWalkerIsland {
   MeshFace *cur;
 } MeshWalkerIsland;
 
-typedef struct BMwEdgeLoopWalker {
-  BMwGenericWalker header;
-  BMEdge *cur, *start;
-  BMVert *lastv, *startv;
-  BMFace *f_hub;
+typedef struct MeshWalkerEdgeLoop {
+  MeshWalkerGenericWalker header;
+  MeshEdge *cur, *start;
+  MeshVert *lastv, *startv;
+  MeshFace *f_hub;
   bool is_boundary; /* boundary looping changes behavior */
   bool is_single;   /* single means the edge verts are only connected to 1 face */
-} BMwEdgeLoopWalker;
+} MeshWalkerEdgeLoop;
 
 typedef struct MeshWalkerFaceLoop {
-  BMwGenericWalker header;
-  BMLoop *l;
+  MeshWalkerGeneric header;
+  MeshLoop *l;
   bool no_calc;
 } MeshWalkerFaceLoop;
 
@@ -64,19 +64,19 @@ typedef struct MeshWalkerEdgeboundary {
   MeshEdge *e;
 } MeshWalkerEdgeboundary;
 
-typedef struct BMwNonManifoldEdgeLoopWalker {
-  BMwGenericWalker header;
-  BMEdge *start, *cur;
-  BMVert *startv, *lastv;
+typedef struct MeshWalkerNonManifoldEdgeLoop {
+  MeshWalkerGeneric header;
+  MeshEdge *start, *cur;
+  MeshVert *startv, *lastv;
   int face_count; /* face count around the edge. */
-} BMwNonManifoldEdgeLoopWalker;
+} MeshWalkerNonManifoldEdgeLoop;
 
-typedef struct BMwUVEdgeWalker {
-  BMwGenericWalker header;
-  BMLoop *l;
-} BMwUVEdgeWalker;
+typedef struct MeshWalkerUVEdge {
+  MeehWalkerGenericWalker header;
+  MeshLoop *l;
+} MeshWalkerUVEdge;
 
-typedef struct BMwConnectedVertexWalker {
-  BMwGenericWalker header;
-  BMVert *curvert;
-} BMwConnectedVertexWalker;
+typedef struct MeshWalkerConnectedVertex {
+  MeshWalkerGeneric header;
+  MeshVert *curvert;
+} MeshWalkerConnectedVertex;
