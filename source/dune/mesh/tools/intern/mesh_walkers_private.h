@@ -54,15 +54,15 @@ typedef struct MeshWalkerFaceLoop {
 } MeshWalkerFaceLoop;
 
 typedef struct MeshWalkerEdgering {
-  BMwGenericWalker header;
-  BMLoop *l;
-  BMEdge *wireedge;
-} BMwEdgeringWalker;
+  MeshWalkerGeneric header;
+  MeshLoop *l;
+  MeshEdge *wireedge;
+} MeshWalkerEdgering;
 
-typedef struct BMwEdgeboundaryWalker {
-  BMwGenericWalker header;
-  BMEdge *e;
-} BMwEdgeboundaryWalker;
+typedef struct MeshWalkerEdgeboundary {
+  MeshWalkerGeneric header;
+  MeshEdge *e;
+} MeshWalkerEdgeboundary;
 
 typedef struct BMwNonManifoldEdgeLoopWalker {
   BMwGenericWalker header;
