@@ -51,11 +51,8 @@ static bool mesh_walker_mask_check_face(MeshWalker *walker, BMFace *f)
   return true;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name BMesh Queries (modified to check walker flags)
- * \{ */
+/** Mesh Queries (modified to check walker flags) */
 
 /**
  * Check for a wire edge, taking ignoring hidden.
