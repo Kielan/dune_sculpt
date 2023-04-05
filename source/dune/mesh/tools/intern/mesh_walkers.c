@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
- * BMesh Walker API.
- */
+/** Mesh Walker API. **/
 
 #include <stdlib.h>
 #include <string.h> /* for memcpy */
