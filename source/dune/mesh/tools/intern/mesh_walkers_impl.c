@@ -375,17 +375,17 @@ static void bmw_LoopShellWireWalker_visitVert(BMWalker *walker, BMVert *v, const
   e = v->e;
   do {
     if (bmw_edge_is_wire(walker, e) && (e != e_from)) {
-      BMVert *v_other;
-      BMIter iter;
-      BMLoop *l;
+      MeshVert *v_other;
+      MeshIter iter;
+      MeshLoop *l;
 
-      bmw_LoopShellWalker_visitEdgeWire(walker, e);
+      mesh_walker_LoopShell_visitEdgeWire(walker, e);
 
       /* Check if we step onto a non-wire vertex. */
       v_other = BM_edge_other_vert(e, v);
-      BM_ITER_ELEM (l, &iter, v_other, BM_LOOPS_OF_VERT) {
+      MESH_ITER_ELEM (l, &iter, v_other, MESH_LOOPS_OF_VERT) {
 
-        bmw_LoopShellWalker_visitLoop(walker, l);
+        mesh_walker_LoopShell_visitLoop(walker, l);
       }
     }
   } while ((e = BM_DISK_EDGE_NEXT(e, v)) != v->e);
