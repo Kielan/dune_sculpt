@@ -251,27 +251,27 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
       }
       break;
     }
-    case BM_EDGE: {
-      BMEdge *e = (BMEdge *)h;
-      BMLoop *l;
-      BM_ITER_ELEM (l, &iter, e, BM_LOOPS_OF_EDGE) {
+    case MESH_EDGE: {
+      MeshEdge *e = (MeshEdge *)h;
+      MeshLoop *l;
+      MESH_ITER_ELEM (l, &iter, e, BM_LOOPS_OF_EDGE) {
         bmw_LoopShellWalker_visitLoop(walker, l);
       }
       break;
     }
-    case BM_FACE: {
-      BMFace *f = (BMFace *)h;
-      BMLoop *l = BM_FACE_FIRST_LOOP(f);
+    case MESH_FACE: {
+      MeshFace *f = (MeshFace *)h;
+      MeshLoop *l = MESH_FACE_FIRST_LOOP(f);
       /* Walker will handle other loops within the face. */
-      bmw_LoopShellWalker_visitLoop(walker, l);
+      mesh_walker_LoopShell_visitLoop(walker, l);
       break;
     }
     default:
-      BLI_assert(0);
+      lib_assert(0);
   }
 }
 
-static void *bmw_LoopShellWalker_yield(BMWalker *walker)
+static void *mesh_walker_LoopShell_yield(BMWalker *walker)
 {
   BMwLoopShellWalker *shellWalk = BMW_current_state(walker);
   return shellWalk->curloop;
