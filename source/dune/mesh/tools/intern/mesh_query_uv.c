@@ -1,23 +1,23 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
-#include "BLI_utildefines_stack.h"
+#include "lib_alloca.h"
+#include "lib_linklist.h"
+#include "lib_math.h"
+#include "lib_utildefines_stack.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "DNA_meshdata_types.h"
+#include "types_meshdata.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
-static void uv_aspect(const BMLoop *l,
+static void uv_aspect(const MeshLoop *l,
                       const float aspect[2],
                       const int cd_loop_uv_offset,
                       float r_uv[2])
 {
-  const float *uv = ((const MLoopUV *)BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset))->uv;
+  const float *uv = ((const MeshLoopUV *)MESH_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset))->uv;
   r_uv[0] = uv[0] * aspect[0];
   r_uv[1] = uv[1] * aspect[1];
 }
@@ -28,19 +28,19 @@ static void uv_aspect(const BMLoop *l,
  */
 #define UV_ASPECT(l, r_uv) uv_aspect(l, aspect, cd_loop_uv_offset, r_uv)
 
-void BM_face_uv_calc_center_median_weighted(const BMFace *f,
-                                            const float aspect[2],
-                                            const int cd_loop_uv_offset,
-                                            float r_cent[2])
+void mesh_face_uv_calc_center_median_weighted(const MeshFace *f,
+                                              const float aspect[2],
+                                              const int cd_loop_uv_offset,
+                                              float r_cent[2])
 {
-  const BMLoop *l_iter;
-  const BMLoop *l_first;
+  const MeshLoop *l_iter;
+  const MeshLoop *l_first;
   float totw = 0.0f;
   float w_prev;
 
   zero_v2(r_cent);
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
 
   float uv_prev[2], uv_curr[2];
   UV_ASPECT(l_iter->prev, uv_prev);
@@ -67,12 +67,12 @@ void BM_face_uv_calc_center_median_weighted(const BMFace *f,
 
 #undef UV_ASPECT
 
-void BM_face_uv_calc_center_median(const BMFace *f, const int cd_loop_uv_offset, float r_cent[2])
+void mesh_face_uv_calc_center_median(const MeshFace *f, const int cd_loop_uv_offset, float r_cent[2])
 {
-  const BMLoop *l_iter;
-  const BMLoop *l_first;
+  const MeshLoop *l_iter;
+  const MeshLoop *l_first;
   zero_v2(r_cent);
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
     const MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
     add_v2_v2(r_cent, luv->uv);
