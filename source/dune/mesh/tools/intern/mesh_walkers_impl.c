@@ -57,22 +57,20 @@ static bool mesh_walker_mask_check_face(MeshWalker *walker, BMFace *f)
 /**
  * Check for a wire edge, taking ignoring hidden.
  */
-static bool bmw_edge_is_wire(const BMWalker *walker, const BMEdge *e)
+static bool mesh_walker_edge_is_wire(const MeshWalker *walker, const MeshEdge *e)
 {
-  if (walker->flag & BMW_FLAG_TEST_HIDDEN) {
+  if (walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) {
     /* Check if this is a wire edge, ignoring hidden faces. */
-    if (BM_edge_is_wire(e)) {
+    if (mesh_edge_is_wire(e)) {
       return true;
     }
-    return BM_edge_is_all_face_flag_test(e, BM_ELEM_HIDDEN, false);
+    return mesh_edge_is_all_face_flag_test(e, MESH_ELEM_HIDDEN, false);
   }
-  return BM_edge_is_wire(e);
+  return mesh_edge_is_wire(e);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Shell Walker
+/** Shell Walker
  *
  * Starts at a vertex on the mesh and walks over the 'shell' it belongs
  * to via visiting connected edges.
@@ -80,12 +78,12 @@ static bool bmw_edge_is_wire(const BMWalker *walker, const BMEdge *e)
  * takes an edge or vertex as an argument, and spits out edges,
  * restrict flag acts on the edges as well.
  *
- * \todo Add restriction flag/callback for wire edges.
- * \{ */
+ * todo Add restriction flag/callback for wire edges.
+ **/
 
-static void bmw_VertShellWalker_visitEdge(BMWalker *walker, BMEdge *e)
+static void bmw_VertShellWalker_visitEdge(MeshWalker *walker, MeshEdge *e)
 {
-  BMwShellWalker *shellWalk = NULL;
+  MeshWalkerShell *walkShell = NULL;
 
   if (BLI_gset_haskey(walker->visit_set, e)) {
     return;
