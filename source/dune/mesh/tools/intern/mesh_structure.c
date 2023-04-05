@@ -2,14 +2,12 @@
 
 #include "lib_utildefines.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
-/**
- * MISC utility functions.
- */
+/** MISC utility functions. */
 
-void bmesh_disk_vert_swap(BMEdge *e, BMVert *v_dst, BMVert *v_src)
+void mesh_disk_vert_swap(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src)
 {
   if (e->v1 == v_src) {
     e->v1 = v_dst;
