@@ -81,36 +81,36 @@ static bool mesh_walker_edge_is_wire(const MeshWalker *walker, const MeshEdge *e
  * todo Add restriction flag/callback for wire edges.
  **/
 
-static void bmw_VertShellWalker_visitEdge(MeshWalker *walker, MeshEdge *e)
+static void meeh_walker_VertShell_visitEdge(MeshWalker *walker, MeshEdge *e)
 {
   MeshWalkerShell *walkShell = NULL;
 
-  if (BLI_gset_haskey(walker->visit_set, e)) {
+  if (lib_gset_haskey(walker->visit_set, e)) {
     return;
   }
 
-  if (!bmw_mask_check_edge(walker, e)) {
+  if (!mesh_walker_mask_check_edge(walker, e)) {
     return;
   }
 
-  shellWalk = BMW_state_add(walker);
+  shellWalk = mesh_walker_state_add(walker);
   shellWalk->curedge = e;
-  BLI_gset_insert(walker->visit_set, e);
+  lib_gset_insert(walker->visit_set, e);
 }
 
-static void bmw_VertShellWalker_begin(BMWalker *walker, void *data)
+static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
 {
-  BMIter eiter;
-  BMHeader *h = data;
-  BMEdge *e;
-  BMVert *v;
+  MeshIter eiter;
+  MeshHeader *h = data;
+  MeshEdge *e;
+  MeshVert *v;
 
   if (UNLIKELY(h == NULL)) {
     return;
   }
 
   switch (h->htype) {
-    case BM_VERT: {
+    case MESH_VERT: {
       /* Starting the walk at a vert, add all the edges to the work-list. */
       v = (BMVert *)h;
       MESH_ITER_ELEM (e, &eiter, v, MESH_EDGES_OF_VERT) {
