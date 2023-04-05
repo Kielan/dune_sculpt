@@ -206,30 +206,30 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
  * Starts at any element on the mesh and walks over the 'shell' it belongs
  * to via visiting connected loops.
  *
- * \note this is mainly useful to loop over a shell delimited by edges.
- * \{ */
+ * note this is mainly useful to loop over a shell delimited by edges.
+ **/
 
-static void bmw_LoopShellWalker_visitLoop(BMWalker *walker, BMLoop *l)
+static void mesh_walker_LoopShell_visitLoop(MeshWalker *walker, MeshLoop *l)
 {
-  BMwLoopShellWalker *shellWalk = NULL;
+  MeshWalkerLoopShell *walkShell = NULL;
 
-  if (BLI_gset_haskey(walker->visit_set, l)) {
+  if (lib_gset_haskey(walker->visit_set, l)) {
     return;
   }
 
-  if (!bmw_mask_check_face(walker, l->f)) {
+  if (!m sh_walker_mask_check_face(walker, l->f)) {
     return;
   }
 
-  shellWalk = BMW_state_add(walker);
+  shellWalk = mesh_walker_state_add(walker);
   shellWalk->curloop = l;
-  BLI_gset_insert(walker->visit_set, l);
+  lib_gset_insert(walker->visit_set, l);
 }
 
-static void bmw_LoopShellWalker_begin(BMWalker *walker, void *data)
+static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
 {
-  BMIter iter;
-  BMHeader *h = data;
+  MeshIter iter;
+  MeshHeader *h = data;
 
   if (UNLIKELY(h == NULL)) {
     return;
