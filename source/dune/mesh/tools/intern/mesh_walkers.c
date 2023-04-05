@@ -49,17 +49,17 @@ void BMW_init(BMWalker *walker,
               BMWFlag flag,
               int layer)
 {
-  memset(walker, 0, sizeof(BMWalker));
+  memset(walker, 0, sizeof(MeshWalker));
 
   walker->layer = layer;
   walker->flag = flag;
-  walker->bm = bm;
+  walker->mesh = mesh;
 
   walker->mask_vert = mask_vert;
   walker->mask_edge = mask_edge;
   walker->mask_face = mask_face;
 
-  walker->visit_set = BLI_gset_ptr_new("bmesh walkers");
+  walker->visit_set = lib_gset_ptr_new("bmesh walkers");
   walker->visit_set_alt = BLI_gset_ptr_new("bmesh walkers sec");
 
   if (UNLIKELY(type >= BMW_MAXWALKERS || type < 0)) {
@@ -78,24 +78,24 @@ void BMW_init(BMWalker *walker,
   }
 
   if (type != BMW_CUSTOM) {
-    walker->begin_htype = bm_walker_types[type]->begin_htype;
-    walker->begin = bm_walker_types[type]->begin;
-    walker->yield = bm_walker_types[type]->yield;
-    walker->step = bm_walker_types[type]->step;
-    walker->structsize = bm_walker_types[type]->structsize;
-    walker->order = bm_walker_types[type]->order;
-    walker->valid_mask = bm_walker_types[type]->valid_mask;
+    walker->begin_htype = m_walker_types[type]->begin_htype;
+    walker->begin = m_walker_types[type]->begin;
+    walker->yield = m_walker_types[type]->yield;
+    walker->step = m_walker_types[type]->step;
+    walker->structsize = m_walker_types[type]->structsize;
+    walker->order = m_walker_types[type]->order;
+    walker->valid_mask = m_walker_types[type]->valid_mask;
 
     /* safety checks */
     /* if this raises an error either the caller is wrong or
      * 'bm_walker_types' needs updating */
-    BLI_assert(mask_vert == 0 || (walker->valid_mask & BM_VERT));
-    BLI_assert(mask_edge == 0 || (walker->valid_mask & BM_EDGE));
-    BLI_assert(mask_face == 0 || (walker->valid_mask & BM_FACE));
+    lib_assert(mask_vert == 0 || (walker->valid_mask & BM_VERT));
+    lib_assert(mask_edge == 0 || (walker->valid_mask & BM_EDGE));
+    lib_assert(mask_face == 0 || (walker->valid_mask & BM_FACE));
   }
 
-  walker->worklist = BLI_mempool_create(walker->structsize, 0, 128, BLI_MEMPOOL_NOP);
-  BLI_listbase_clear(&walker->states);
+  walker->worklist = lib_mempool_create(walker->structsize, 0, 128, BLI_MEMPOOL_NOP);
+  lib_listbase_clear(&walker->states);
 }
 
 void BMW_end(BMWalker *walker)
@@ -178,12 +178,12 @@ void *BMW_state_add(BMWalker *walker)
   return newstate;
 }
 
-void BMW_reset(BMWalker *walker)
+void mesh_walker_reset(BMWalker *walker)
 {
-  while (BMW_current_state(walker)) {
-    BMW_state_remove(walker);
+  while (mesh_walker_current_state(walker)) {
+    mesh_walker_state_remove(walker);
   }
   walker->depth = 0;
-  BLI_gset_clear(walker->visit_set, NULL);
-  BLI_gset_clear(walker->visit_set_alt, NULL);
+  lib_gset_clear(walker->visit_set, NULL);
+  lib_gset_clear(walker->visit_set_alt, NULL);
 }
