@@ -8,16 +8,16 @@ typedef enum {
 } MeshWalkOrder;
 
 typedef enum {
-  BMW_FLAG_NOP = 0,
-  BMW_FLAG_TEST_HIDDEN = (1 << 0),
-} BMWFlag;
+  MESH_WALKERS_FLAG_NOP = 0,
+  MESH_WALKERS_FLAG_TEST_HIDDEN = (1 << 0),
+} MeshWalkersFlag;
 
 /*Walkers*/
 typedef struct MeshWalker {
   char begin_htype; /* only for validating input */
-  void (*begin)(struct BMWalker *walker, void *start);
-  void *(*step)(struct BMWalker *walker);
-  void *(*yield)(struct BMWalker *walker);
+  void (*begin)(struct MeshWalker *walker, void *start);
+  void *(*step)(struct MeshMWalker *walker);
+  void *(*yield)(struct MeshWalker *walker);
   int structsize;
   MeshWalkOrder order;
   int valid_mask;
@@ -25,7 +25,7 @@ typedef struct MeshWalker {
   /* runtime */
   int layer;
 
-  Mesh *bm;
+  Mesh *mesh;
   lib_mempool *worklist;
   ListBase states;
 
@@ -42,7 +42,7 @@ typedef struct MeshWalker {
   int depth;
 } MeshWalker;
 
-/* define to make BMW_init more clear */
+/* define to make mesh_walker_init more clear */
 #define MESH_WALKER_MASK_NOP 0
 
 /**
@@ -51,31 +51,21 @@ typedef struct MeshWalker {
  * Allocates and returns a new mesh walker of a given type.
  * The elements visited are filtered by the bitmask 'searchmask'.
  */
-void mesh_walker_init(struct BMWalker *walker,
-              Mesh *bm,
+void mesh_walker_init(struct MeshWalker *walker,
+                      Mesh *mesh,
               int type,
               short mask_vert,
               short mask_edge,
               short mask_face,
-              BMWFlag flag,
+                      MeshWalkerFlag flag,
               int layer);
-void *BMW_begin(BMWalker *walker, void *start);
-/**
- * \brief Step Walker
- */
-void *BMW_step(struct BMWalker *walker);
-/**
- * \brief End Walker
- *
- * Frees a walker's worklist.
- */
-void BMW_end(struct BMWalker *walker);
-/**
- * \brief Walker Current Depth
- *
- * Returns the current depth of the walker.
- */
-int BMW_current_depth(BMWalker *walker);
+void *mesh_walker_begin(MeshWalker *walker, void *start);
+/** Step Walker **/
+void *mesh_walker_step(struct MeshWalker *walker);
+/** End Walker Frees a walker's worklist. */
+void mesh_walker_end(struct BMWalker *walker);
+/** Walker Current Depth Returns the current depth of the walker. */
+int mesh_walker_current_depth(BMWalker *walker);
 
 /* These are used by custom walkers. */
 /**
