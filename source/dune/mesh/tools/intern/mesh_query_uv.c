@@ -142,20 +142,20 @@ bool BM_loop_uv_share_vert_check(BMLoop *l_a, BMLoop *l_b, const int cd_loop_uv_
   return true;
 }
 
-bool BM_edge_uv_share_vert_check(BMEdge *e, BMLoop *l_a, BMLoop *l_b, const int cd_loop_uv_offset)
+bool mesh_edge_uv_share_vert_check(MeshEdge *e, MeshLoop *l_a, MeshLoop *l_b, const int cd_loop_uv_offset)
 {
-  BLI_assert(l_a->v == l_b->v);
-  if (!BM_loop_uv_share_vert_check(l_a, l_b, cd_loop_uv_offset)) {
+  lib_assert(l_a->v == l_b->v);
+  if (!mesh_loop_uv_share_vert_check(l_a, l_b, cd_loop_uv_offset)) {
     return false;
   }
 
   /* No need for NULL checks, these will always succeed. */
-  const BMLoop *l_other_a = BM_loop_other_vert_loop_by_edge(l_a, e);
-  const BMLoop *l_other_b = BM_loop_other_vert_loop_by_edge(l_b, e);
+  const MeshLoop *l_other_a = mesh_loop_other_vert_loop_by_edge(l_a, e);
+  const MeshLoop *l_other_b = mesh_loop_other_vert_loop_by_edge(l_b, e);
 
   {
-    const MLoopUV *luv_other_a = BM_ELEM_CD_GET_VOID_P(l_other_a, cd_loop_uv_offset);
-    const MLoopUV *luv_other_b = BM_ELEM_CD_GET_VOID_P(l_other_b, cd_loop_uv_offset);
+    const MeshLoopUV *luv_other_a = MESH_ELEM_CD_GET_VOID_P(l_other_a, cd_loop_uv_offset);
+    const MeshLoopUV *luv_other_b = MESH_ELEM_CD_GET_VOID_P(l_other_b, cd_loop_uv_offset);
     if (!equals_v2v2(luv_other_a->uv, luv_other_b->uv)) {
       return false;
     }
@@ -164,17 +164,17 @@ bool BM_edge_uv_share_vert_check(BMEdge *e, BMLoop *l_a, BMLoop *l_b, const int 
   return true;
 }
 
-bool BM_face_uv_point_inside_test(const BMFace *f, const float co[2], const int cd_loop_uv_offset)
+bool mesh_face_uv_point_inside_test(const MeshFace *f, const float co[2], const int cd_loop_uv_offset)
 {
-  float(*projverts)[2] = BLI_array_alloca(projverts, f->len);
+  float(*projverts)[2] = lib_array_alloca(projverts, f->len);
 
-  BMLoop *l_iter;
+  MeshLoop *l_iter;
   int i;
 
-  BLI_assert(BM_face_is_normal_valid(f));
+  lib_assert(mesh_face_is_normal_valid(f));
 
-  for (i = 0, l_iter = BM_FACE_FIRST_LOOP(f); i < f->len; i++, l_iter = l_iter->next) {
-    copy_v2_v2(projverts[i], BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset));
+  for (i = 0, l_iter = MESH_FACE_FIRST_LOOP(f); i < f->len; i++, l_iter = l_iter->next) {
+    copy_v2_v2(projverts[i], MESH_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset));
   }
 
   return isect_point_poly_v2(co, projverts, f->len, false);
