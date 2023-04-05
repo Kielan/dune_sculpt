@@ -3,18 +3,18 @@
 #include <stdlib.h>
 #include <string.h> /* for memcpy */
 
-#include "BLI_listbase.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_utildefines.h"
 
-#include "bmesh.h"
+#include "mesh.h"
 
-#include "bmesh_walkers_private.h"
+#include "mesh_walkers_private.h"
 
 /**
- * NOTE(@joeedh): Details on design.
+ * NOTE: Details on design.
  *
  * Original design: walkers directly emulation recursive functions.
- * functions save their state onto a #BMWalker.worklist, and also add new states
+ * functions save their state onto a MeshWalker.worklist, and also add new states
  * to implement recursive or looping behavior.
  * Generally only one state push per call with a specific state is desired.
  *
@@ -31,9 +31,9 @@
  *   for if walkers fail.
  */
 
-void *BMW_begin(BMWalker *walker, void *start)
+void *mesh_walker_begin(MeshWalker *walker, void *start)
 {
-  BLI_assert(((BMHeader *)start)->htype & walker->begin_htype);
+  lib_assert(((MeshHeader *)start)->htype & walker->begin_htype);
 
   walker->begin(walker, start);
 
