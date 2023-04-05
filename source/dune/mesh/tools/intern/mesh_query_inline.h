@@ -4,35 +4,27 @@
  * Returns whether or not a given vertex is
  * is part of a given edge.
  */
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    bool BM_vert_in_edge(const BMEdge *e, const BMVert *v)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    bool mesh_vert_in_edge(const MeshEdge *e, const MeshVert *v)
 {
   return (ELEM(v, e->v1, e->v2));
 }
 
-/**
- * Returns whether or not a given edge is part of a given loop.
- */
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE
-    bool BM_edge_in_loop(const BMEdge *e, const BMLoop *l)
+/** Returns whether or not a given edge is part of a given loop. **/
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
+    bool mesh_edge_in_loop(const MeshEdge *e, const MeshLoop *l)
 {
   return (l->e == e || l->prev->e == e);
 }
 
-/**
- * Returns whether or not two vertices are in
- * a given edge
- */
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2, 3) BLI_INLINE
-    bool BM_verts_in_edge(const BMVert *v1, const BMVert *v2, const BMEdge *e)
+/** Returns whether or not two vertices are in a given edge **/
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2, 3) LIB_INLINE
+    bool mesh_verts_in_edge(const MeshVert *v1, const MeshVert *v2, const BMEdge *e)
 {
   return ((e->v1 == v1 && e->v2 == v2) || (e->v1 == v2 && e->v2 == v1));
 }
 
-/**
- * Given a edge and one of its vertices, returns
- * the other vertex.
- */
+/** Given a edge and one of its vertices, returns the other vertex. **/
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE BMVert *BM_edge_other_vert(BMEdge *e,
                                                                                  const BMVert *v)
 {
@@ -107,15 +99,15 @@ BLI_INLINE int BM_edge_is_boundary(BMEdge *e)
 /**
  * Tests whether one loop is next to another within the same face.
  */
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE
-    bool BM_loop_is_adjacent(const BMLoop *l_a, const BMLoop *l_b)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
+    bool BM_loop_is_adjacent(const MeshLoop *l_a, const MeshLoop *l_b)
 {
   BLI_assert(l_a->f == l_b->f);
   BLI_assert(l_a != l_b);
   return (ELEM(l_b, l_a->next, l_a->prev));
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_loop_is_manifold(const BMLoop *l)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE bool mesh_loop_is_manifold(const MeshLoop *l)
 {
   return ((l != l->radial_next) && (l == l->radial_next->radial_next));
 }
@@ -123,11 +115,11 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_loop_is_manifold(cons
 /**
  * Check if we have a single wire edge user.
  */
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_vert_is_wire_endpoint(const BMVert *v)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE bool mesh_vert_is_wire_endpoint(const MeshVert *v)
 {
-  const BMEdge *e = v->e;
+  const MeshEdge *e = v->e;
   if (e && e->l == NULL) {
-    return (BM_DISK_EDGE_NEXT(e, v) == e);
+    return (MESH_DISK_EDGE_NEXT(e, v) == e);
   }
   return false;
 }
