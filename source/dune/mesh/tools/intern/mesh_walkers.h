@@ -3,8 +3,8 @@
 /** NOTE: do NOT modify topology while walking a mesh! **/
 
 typedef enum {
-  MW_DEPTH_FIRST,
-  MW_BREADTH_FIRST,
+  MESH_W_DEPTH_FIRST,
+  MESH_W_BREADTH_FIRST,
 } MeshWalkOrder;
 
 typedef enum {
@@ -53,10 +53,10 @@ typedef struct MeshWalker {
  */
 void mesh_walker_init(struct MeshWalker *walker,
                       Mesh *mesh,
-              int type,
-              short mask_vert,
-              short mask_edge,
-              short mask_face,
+                      int type,
+                      short mask_vert,
+                      short mask_edge,
+                      short mask_face,
                       MeshWalkerFlag flag,
               int layer);
 void *mesh_walker_begin(MeshWalker *walker, void *start);
@@ -69,13 +69,13 @@ int mesh_walker_current_depth(BMWalker *walker);
 
 /* These are used by custom walkers. */
 /**
- * \brief Current Walker State
+ * Current Walker State
  *
  * Returns the first state from the walker state
  * worklist. This state is the next in the
  * worklist for processing.
  */
-void *BMW_current_state(BMWalker *walker);
+void *mesh_waker_current_state(MeshWalker *walker);
 /**
  * \brief Add a new Walker State
  *
@@ -85,27 +85,27 @@ void *BMW_current_state(BMWalker *walker);
  * at the front for depth-first walks, and at the end for
  * breadth-first walks.
  */
-void *BMW_state_add(BMWalker *walker);
+void *mesh_walker_state_add(MeshWalker *walker);
 /**
- * \brief Remove Current Walker State
+ * Remove Current Walker State
  *
  * Remove and free an item from the end of the walker state
  * worklist.
  */
-void BMW_state_remove(BMWalker *walker);
+void mesh_walker_state_remove(MeshWalker *walker);
 /**
- * \brief Main Walking Function
+ * Main Walking Function
  *
  * Steps a mesh walker forward by one element
  */
-void *BMW_walk(BMWalker *walker);
+void *mesh_walk(MeshWalker *walker);
 /**
- * \brief Reset Walker
+ * Reset Walker
  *
  * Frees all states from the worklist, resetting the walker
  * for reuse in a new walk.
  */
-void BMW_reset(BMWalker *walker);
+void mesh_walker_reset(MeshWalker *walker);
 
 #define BMW_ITER(ele, walker, data) \
   for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BMW_begin(walker, (BM_CHECK_TYPE_ELEM(data), data)); ele; \
