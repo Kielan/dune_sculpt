@@ -1,9 +1,6 @@
 #pragma once
 
-/**
- * Returns whether or not a given vertex is
- * is part of a given edge.
- */
+/** Returns whether or not a given vertex is is part of a given edge. **/
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
     bool mesh_vert_in_edge(const MeshEdge *e, const MeshVert *v)
 {
@@ -19,14 +16,14 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
 
 /** Returns whether or not two vertices are in a given edge **/
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2, 3) LIB_INLINE
-    bool mesh_verts_in_edge(const MeshVert *v1, const MeshVert *v2, const BMEdge *e)
+    bool mesh_verts_in_edge(const MeshVert *v1, const MeshVert *v2, const MeshEdge *e)
 {
   return ((e->v1 == v1 && e->v2 == v2) || (e->v1 == v2 && e->v2 == v1));
 }
 
 /** Given a edge and one of its vertices, returns the other vertex. **/
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE BMVert *BM_edge_other_vert(BMEdge *e,
-                                                                                 const BMVert *v)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE MeshVert *mesh_edge_other_vert(MeshEdge *e,
+                                                                                 const MeshVert *v)
 {
   if (e->v1 == v) {
     return e->v2;
@@ -90,9 +87,9 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_edge_is_boundary(cons
   return (l && (l->radial_next == l));
 }
 #else
-BLI_INLINE int BM_edge_is_boundary(BMEdge *e)
+BLI_INLINE int mesh_edge_is_boundary(MeshEdge *e)
 {
-  return (BM_edge_face_count(e) == 1);
+  return (mesh_edge_face_count(e) == 1);
 }
 #endif
 
@@ -102,8 +99,8 @@ BLI_INLINE int BM_edge_is_boundary(BMEdge *e)
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
     bool BM_loop_is_adjacent(const MeshLoop *l_a, const MeshLoop *l_b)
 {
-  BLI_assert(l_a->f == l_b->f);
-  BLI_assert(l_a != l_b);
+  LIB_assert(l_a->f == l_b->f);
+  LIB_assert(l_a != l_b);
   return (ELEM(l_b, l_a->next, l_a->prev));
 }
 
