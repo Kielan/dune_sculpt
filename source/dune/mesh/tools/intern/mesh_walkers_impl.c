@@ -138,21 +138,21 @@ static void *bmw_VertShellWalker_yield(BMWalker *walker)
 
 static void *bmw_VertShellWalker_step(BMWalker *walker)
 {
-  BMwShellWalker *swalk, owalk;
-  BMEdge *e, *e2;
-  BMVert *v;
-  BMIter iter;
+  MeshWalkerShell *swalk, owalk;
+  MeshEdge *e, *e2;
+  MeshVert *v;
+  MeshIter iter;
   int i;
 
-  BMW_state_remove_r(walker, &owalk);
+  mesh_walker_state_remove_r(walker, &owalk);
   swalk = &owalk;
 
   e = swalk->curedge;
 
   for (i = 0; i < 2; i++) {
     v = i ? e->v2 : e->v1;
-    BM_ITER_ELEM (e2, &iter, v, BM_EDGES_OF_VERT) {
-      bmw_VertShellWalker_visitEdge(walker, e2);
+    MESH_ITER_ELEM (e2, &iter, v, MESH_EDGES_OF_VERT) {
+      mesh_walker_VertShell_visitEdge(walker, e2);
     }
   }
 
@@ -160,18 +160,18 @@ static void *bmw_VertShellWalker_step(BMWalker *walker)
 }
 
 #if 0
-static void *bmw_VertShellWalker_step(BMWalker *walker)
+static void *mesh_walker_VertShell_step(MeshWalker *walker)
 {
-  BMEdge *curedge, *next = NULL;
-  BMVert *v_old = NULL;
+  MeshEdge *curedge, *next = NULL;
+  MeshVert *v_old = NULL;
   bool restrictpass = true;
-  BMwShellWalker shellWalk = *((BMwShellWalker *)BMW_current_state(walker));
+  MeshWalkerShell walkShell = *((MeshWalkerShell *)mesh_walker_current_state(walker));
 
-  if (!BLI_gset_haskey(walker->visit_set, shellWalk.base)) {
-    BLI_gset_insert(walker->visit_set, shellWalk.base);
+  if (!lib_gset_haskey(walker->visit_set, shellWalk.base)) {
+    lib_gset_insert(walker->visit_set, shellWalk.base);
   }
 
-  BMW_state_remove(walker);
+  mesh_walker_state_remove(walker);
 
   /* Find the next edge whose other vertex has not been visited. */
   curedge = shellWalk.curedge;
