@@ -172,7 +172,7 @@ static void mesh_calc_tessellation__single_threaded(Mesh *bm,
   MemArena *pf_arena = NULL;
 
   if (face_normals) {
-    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+    MESH_ITER (efa, &iter, mesh, MESH_FACES_OF_MESH) {
       lib_assert(efa->len >= 3);
       mesh_face_calc_normal(efa, efa->no);
       mesh_calc_tessellation_for_face_with_normal(looptris + i, efa, &pf_arena);
@@ -180,7 +180,7 @@ static void mesh_calc_tessellation__single_threaded(Mesh *bm,
     }
   }
   else {
-    MESH_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
+    MESH_ITER (efa, &iter, bm, BM_FACES_OF_MESH) {
       lib_assert(efa->len >= 3);
       mesh_calc_tessellation_for_face(looptris + i, efa, &pf_arena);
       i += efa->len - 2;
@@ -266,7 +266,7 @@ void mesh_calc_tessellation_ex(Mesh *mesh,
 
 void mesh_calc_tessellation(Mesh *mesh, MeshLoop *(*looptris)[3])
 {
-  mesh_calc_tessellation_ex(bm,
+  mesh_calc_tessellation_ex(mesh,
                             looptris,
                             &(const struct MeshCalcTessellationParams){
                                 .face_normals = false,
@@ -341,8 +341,8 @@ static void mesh_calc_tessellation_with_partial__multi_threaded(
                           faces_len,
                           &data,
                           params->face_normals ?
-                              mesh_calc_tessellation_for_face_partial_with_normals_fn :
-                              mesh_calc_tessellation_for_face_partial_fn,
+                          mesh_calc_tessellation_for_face_partial_with_normals_fn :
+                          mesh_calc_tessellation_for_face_partial_fn,
                           &settings);
 }
 
@@ -522,14 +522,14 @@ static int mesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
   }
 }
 
-void BM_mesh_calc_tessellation_beauty(BMesh *bm, BMLoop *(*looptris)[3])
+void mesh_calc_tessellation_beauty(Mesh *mesh, MeshLoop *(*looptris)[3])
 {
 #ifndef NDEBUG
-  const int looptris_tot = poly_to_tri_count(bm->totface, bm->totloop);
+  const int looptris_tot = poly_to_tri_count(mesh->totface, mesh->totloop);
 #endif
 
-  BMIter iter;
-  BMFace *efa;
+  MeshIter iter;
+  MeshFace *efa;
   int i = 0;
 
   MemArena *pf_arena = NULL;
@@ -537,16 +537,16 @@ void BM_mesh_calc_tessellation_beauty(BMesh *bm, BMLoop *(*looptris)[3])
   /* use_beauty */
   Heap *pf_heap = NULL;
 
-  BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
-    BLI_assert(efa->len >= 3);
-    i += bmesh_calc_tessellation_for_face_beauty(looptris + i, efa, &pf_arena, &pf_heap);
+  MESH_ITER (efa, &iter, mesh, MESH_FACES) {
+    lib_assert(efa->len >= 3);
+    i += mesh_calc_tessellation_for_face_beauty(looptris + i, efa, &pf_arena, &pf_heap);
   }
 
   if (pf_arena) {
-    BLI_memarena_free(pf_arena);
+    lib_memarena_free(pf_arena);
 
-    BLI_heap_free(pf_heap, NULL);
+    lib_heap_free(pf_heap, NULL);
   }
 
-  BLI_assert(i <= looptris_tot);
+  lib_assert(i <= looptris_tot);
 }
