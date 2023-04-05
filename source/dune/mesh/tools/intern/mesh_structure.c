@@ -192,20 +192,20 @@ int bmesh_disk_count(const BMVert *v)
 {
   int count = 0;
   if (v->e) {
-    BMEdge *e_first, *e_iter;
+    MeshEdge *e_first, *e_iter;
     e_iter = e_first = v->e;
     do {
       count++;
-    } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+    } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
   }
   return count;
 }
 
-int bmesh_disk_count_at_most(const BMVert *v, const int count_max)
+int mesh_disk_count_at_most(const MeshVert *v, const int count_max)
 {
   int count = 0;
   if (v->e) {
-    BMEdge *e_first, *e_iter;
+    MeshEdge *e_first, *e_iter;
     e_iter = e_first = v->e;
     do {
       count++;
@@ -217,7 +217,7 @@ int bmesh_disk_count_at_most(const BMVert *v, const int count_max)
   return count;
 }
 
-bool bmesh_disk_validate(int len, BMEdge *e, BMVert *v)
+bool bmesh_disk_validate(int len, MeshEdge *e, MeshVert *v)
 {
   BMEdge *e_iter;
 
