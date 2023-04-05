@@ -119,10 +119,10 @@ static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
       break;
     }
 
-    case BM_EDGE: {
+    case MESH_EDGE: {
       /* Starting the walk at an edge, add the single edge to the work-list. */
       e = (BMEdge *)h;
-      bmw_VertShellWalker_visitEdge(walker, e);
+      mesh_walker_VertShell_visitEdge(walker, e);
       break;
     }
     default:
@@ -130,13 +130,13 @@ static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
   }
 }
 
-static void *bmw_VertShellWalker_yield(BMWalker *walker)
+static void *mesh_walker_VertShell_yield(MeshWalker *walker)
 {
-  BMwShellWalker *shellWalk = BMW_current_state(walker);
+  MeshWalkerShell *shellWalk = mesh_walker_current_state(walker);
   return shellWalk->curedge;
 }
 
-static void *bmw_VertShellWalker_step(BMWalker *walker)
+static void *mesh_walker_VertShell_step(MeshWalker *walker)
 {
   MeshWalkerShell *swalk, owalk;
   MeshEdge *e, *e2;
@@ -176,13 +176,13 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
   /* Find the next edge whose other vertex has not been visited. */
   curedge = shellWalk.curedge;
   do {
-    if (!BLI_gset_haskey(walker->visit_set, curedge)) {
+    if (!lib_gset_haskey(walker->visit_set, curedge)) {
       if (!walker->visibility_flag ||
           (walker->visibility_flag &&
            BMO_edge_flag_test(walker->bm, curedge, walker->visibility_flag))) {
-        BMwShellWalker *newstate;
+        MeshWalkerShell *newstate;
 
-        v_old = BM_edge_other_vert(curedge, shellWalk.base);
+        v_old = mesh_edge_other_vert(curedge, shellWalk.base);
 
         /* Push a new state onto the stack. */
         newState = mesh_walker_state_add(walker);
@@ -236,15 +236,15 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
   }
 
   switch (h->htype) {
-    case BM_LOOP: {
+    case MESH_LOOP: {
       /* Starting the walk at a vert, add all the edges to the work-list. */
-      BMLoop *l = (BMLoop *)h;
-      bmw_LoopShellWalker_visitLoop(walker, l);
+      MeshLoop *l = (MeshLoop *)h;
+      mesh_walker_LoopShell_visitLoop(walker, l);
       break;
     }
 
-    case BM_VERT: {
-      BMVert *v = (BMVert *)h;
+    case MESH_VERT: {
+      BMVert *v = (MeshVert *)h;
       BMLoop *l;
       BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
         bmw_LoopShellWalker_visitLoop(walker, l);
