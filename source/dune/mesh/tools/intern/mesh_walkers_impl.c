@@ -244,10 +244,10 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
     }
 
     case MESH_VERT: {
-      BMVert *v = (MeshVert *)h;
-      BMLoop *l;
-      BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
-        bmw_LoopShellWalker_visitLoop(walker, l);
+      MeshVert *v = (MeshVert *)h;
+      MeshLoop *l;
+      MESH_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
+        mesh_walker_LoopShell_visitLoop(walker, l);
       }
       break;
     }
