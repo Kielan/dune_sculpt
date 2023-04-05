@@ -36,28 +36,28 @@ void mesh_edge_vert_swap(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src)
         l_iter->next->v = v_dst;
       }
       else {
-        BLI_assert(l_iter->prev->v != v_src);
+        lib_assert(l_iter->prev->v != v_src);
       }
     } while ((l_iter = l_iter->radial_next) != l_first);
   }
 
   /* swap out edges */
-  bmesh_disk_vert_replace(e, v_dst, v_src);
+  mesh_disk_vert_replace(e, v_dst, v_src);
 }
 
-void bmesh_disk_vert_replace(BMEdge *e, BMVert *v_dst, BMVert *v_src)
+void mesh_disk_vert_replace(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src)
 {
-  BLI_assert(e->v1 == v_src || e->v2 == v_src);
-  bmesh_disk_edge_remove(e, v_src);      /* remove e from tv's disk cycle */
-  bmesh_disk_vert_swap(e, v_dst, v_src); /* swap out tv for v_new in e */
-  bmesh_disk_edge_append(e, v_dst);      /* add e to v_dst's disk cycle */
-  BLI_assert(e->v1 != e->v2);
+  lib_assert(e->v1 == v_src || e->v2 == v_src);
+  mesh_disk_edge_remove(e, v_src);      /* remove e from tv's disk cycle */
+  mesh_disk_vert_swap(e, v_dst, v_src); /* swap out tv for v_new in e */
+  mesh_disk_edge_append(e, v_dst);      /* add e to v_dst's disk cycle */
+  lib_assert(e->v1 != e->v2);
 }
 
 /**
- * \section bm_cycles BMesh Cycles
+ * section mesh_cycles Mesh Cycles
  *
- * NOTE(@joeedh): this is somewhat outdated, though bits of its API are still used.
+ * NOTE: this is somewhat outdated, though bits of its API are still used.
  *
  * Cycles are circular doubly linked lists that form the basis of adjacency
  * information in the BME modeler. Full adjacency relations can be derived
@@ -124,10 +124,10 @@ void bmesh_disk_vert_replace(BMEdge *e, BMVert *v_dst, BMVert *v_src)
  * cycle order and all non-manifold conditions are represented trivially.
  */
 
-void bmesh_disk_edge_append(BMEdge *e, BMVert *v)
+void mesh_disk_edge_append(MeshEdge *e, BMVert *v)
 {
   if (!v->e) {
-    BMDiskLink *dl1 = bmesh_disk_edge_link_from_vert(e, v);
+    MeshDiskLink *dl1 = bmesh_disk_edge_link_from_vert(e, v);
 
     v->e = e;
     dl1->next = dl1->prev = e;
