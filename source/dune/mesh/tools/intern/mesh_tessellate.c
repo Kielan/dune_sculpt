@@ -352,95 +352,90 @@ static void mesh_calc_tessellation_with_partial__single_threaded(
     const struct MeshCalcTessellation_Params *params)
 {
   const int faces_len = bmpinfo->faces_len;
-  BMFace **faces = bmpinfo->faces;
+  MeshFace **faces = bmpinfo->faces;
 
   MemArena *pf_arena = NULL;
 
   if (params->face_normals) {
     for (int index = 0; index < faces_len; index++) {
-      BMFace *f = faces[index];
-      BMLoop *l = BM_FACE_FIRST_LOOP(f);
-      const int offset = BM_elem_index_get(l) - (BM_elem_index_get(f) * 2);
-      bmesh_calc_tessellation_for_face_with_normal(looptris + offset, f, &pf_arena);
+      MeshFace *f = faces[index];
+      MeshLoop *l = MESH_FACE_FIRST_LOOP(f);
+      const int offset = mesh_elem_index_get(l) - (mesh_elem_index_get(f) * 2);
+      mesh_calc_tessellation_for_face_with_normal(looptris + offset, f, &pf_arena);
     }
   }
   else {
     for (int index = 0; index < faces_len; index++) {
-      BMFace *f = faces[index];
-      BMLoop *l = BM_FACE_FIRST_LOOP(f);
-      const int offset = BM_elem_index_get(l) - (BM_elem_index_get(f) * 2);
-      bmesh_calc_tessellation_for_face(looptris + offset, f, &pf_arena);
+      MeshFace *f = faces[index];
+      MeshLoop *l = MESH_FACE_FIRST_LOOP(f);
+      const int offset = mesh_elem_index_get(l) - (mesh_elem_index_get(f) * 2);
+      mesh_calc_tessellation_for_face(looptris + offset, f, &pf_arena);
     }
   }
 
   if (pf_arena) {
-    BLI_memarena_free(pf_arena);
+    lib_memarena_free(pf_arena);
   }
 }
 
-void BM_mesh_calc_tessellation_with_partial_ex(BMesh *bm,
-                                               BMLoop *(*looptris)[3],
-                                               const BMPartialUpdate *bmpinfo,
-                                               const struct BMeshCalcTessellation_Params *params)
+void mesh_calc_tessellation_with_partial_ex(Mesh *mesh,
+                                            MeshLoop *(*looptris)[3],
+                                            const MeshPartialUpdate *bmpinfo,
+                                            const struct MeshCalcTessellationParams *params)
 {
-  BLI_assert(bmpinfo->params.do_tessellate);
+  lib_assert(bmpinfo->params.do_tessellate);
   /* While harmless, exit early if there is nothing to do (avoids ensuring the index). */
   if (UNLIKELY(bmpinfo->faces_len == 0)) {
     return;
   }
 
-  BM_mesh_elem_index_ensure(bm, BM_LOOP | BM_FACE);
+  mesh_elem_index_ensure(mesh, MESH_LOOP | MESH_FACE);
 
-  if (bmpinfo->faces_len < BM_FACE_TESSELLATE_THREADED_LIMIT) {
-    bm_mesh_calc_tessellation_with_partial__single_threaded(looptris, bmpinfo, params);
+  if (bmpinfo->faces_len < MESH_FACE_TESSELLATE_THREADED_LIMIT) {
+    mesh_calc_tessellation_with_partial__single_threaded(looptris, bmpinfo, params);
   }
   else {
-    bm_mesh_calc_tessellation_with_partial__multi_threaded(looptris, bmpinfo, params);
+    mesh_calc_tessellation_with_partial__multi_threaded(looptris, bmpinfo, params);
   }
 }
 
-void BM_mesh_calc_tessellation_with_partial(BMesh *bm,
-                                            BMLoop *(*looptris)[3],
-                                            const BMPartialUpdate *bmpinfo)
+void mesh_calc_tessellation_with_partial(Mesh *mesh,
+                                         MeshLoop *(*looptris)[3],
+                                         const MeshPartialUpdate *mpinfo)
 {
-  BM_mesh_calc_tessellation_with_partial_ex(bm, looptris, bmpinfo, false);
+  mesh_calc_tessellation_with_partial_ex(mesh, looptris, bmpinfo, false);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Beauty Mesh Tessellation
- *
- * Avoid degenerate triangles.
- * \{ */
+/** Beauty Mesh Tessellation. Avoid degenerate triangles. **/
 
-static int bmesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
+static int mesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
                                                    BMFace *efa,
                                                    MemArena **pf_arena_p,
                                                    Heap **pf_heap_p)
 {
   switch (efa->len) {
     case 3: {
-      BMLoop *l;
-      BMLoop **l_ptr = looptris[0];
-      l_ptr[0] = l = BM_FACE_FIRST_LOOP(efa);
+      MeshLoop *l;
+      MeshLoop **l_ptr = looptris[0];
+      l_ptr[0] = l = MESH_FACE_FIRST_LOOP(efa);
       l_ptr[1] = l = l->next;
       l_ptr[2] = l->next;
       return 1;
     }
     case 4: {
-      BMLoop *l_v1 = BM_FACE_FIRST_LOOP(efa);
-      BMLoop *l_v2 = l_v1->next;
-      BMLoop *l_v3 = l_v2->next;
-      BMLoop *l_v4 = l_v1->prev;
+      MeshLoop *l_v1 = MESH_FACE_FIRST_LOOP(efa);
+      MeshLoop *l_v2 = l_v1->next;
+      MeshLoop *l_v3 = l_v2->next;
+      MeshLoop *l_v4 = l_v1->prev;
 
-      /* #BM_verts_calc_rotate_beauty performs excessive checks we don't need!
+      /* mesh_verts_calc_rotate_beauty performs excessive checks we don't need!
        * It's meant for rotating edges, it also calculates a new normal.
        *
-       * Use #BLI_polyfill_beautify_quad_rotate_calc since we have the normal.
+       * Use lib_polyfill_beautify_quad_rotate_calc since we have the normal.
        */
 #if 0
-      const bool split_13 = (BM_verts_calc_rotate_beauty(
+      const bool split_13 = (mesh_verts_calc_rotate_beauty(
                                  l_v1->v, l_v2->v, l_v3->v, l_v4->v, 0, 0) < 0.0f);
 #else
       float axis_mat[3][3], v_quad[4][2];
@@ -450,12 +445,12 @@ static int bmesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
       mul_v2_m3v3(v_quad[2], axis_mat, l_v3->v->co);
       mul_v2_m3v3(v_quad[3], axis_mat, l_v4->v->co);
 
-      const bool split_13 = BLI_polyfill_beautify_quad_rotate_calc(
+      const bool split_13 = lib_polyfill_beautify_quad_rotate_calc(
                                 v_quad[0], v_quad[1], v_quad[2], v_quad[3]) < 0.0f;
 #endif
 
-      BMLoop **l_ptr_a = looptris[0];
-      BMLoop **l_ptr_b = looptris[1];
+      MeshLoop **l_ptr_a = looptris[0];
+      MeshLoop **l_ptr_b = looptris[1];
       if (split_13) {
         l_ptr_a[0] = l_v1;
         l_ptr_a[1] = l_v2;
@@ -480,12 +475,12 @@ static int bmesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
       MemArena *pf_arena = *pf_arena_p;
       Heap *pf_heap = *pf_heap_p;
       if (UNLIKELY(pf_arena == NULL)) {
-        pf_arena = *pf_arena_p = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
-        pf_heap = *pf_heap_p = BLI_heap_new_ex(BLI_POLYFILL_ALLOC_NGON_RESERVE);
+        pf_arena = *pf_arena_p = lib_memarena_new(LIB_MEMARENA_STD_BUFSIZE, __func__);
+        pf_heap = *pf_heap_p = lib_heap_new_ex(LIB_POLYFILL_ALLOC_NGON_RESERVE);
       }
 
-      BMLoop *l_iter, *l_first;
-      BMLoop **l_arr;
+      MeshLoop *l_iter, *l_first;
+      MeshLoop **l_arr;
 
       float axis_mat[3][3];
       float(*projverts)[2];
@@ -493,9 +488,9 @@ static int bmesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
 
       const int tris_len = efa->len - 2;
 
-      tris = BLI_memarena_alloc(pf_arena, sizeof(*tris) * tris_len);
-      l_arr = BLI_memarena_alloc(pf_arena, sizeof(*l_arr) * efa->len);
-      projverts = BLI_memarena_alloc(pf_arena, sizeof(*projverts) * efa->len);
+      tris = lib_memarena_alloc(pf_arena, sizeof(*tris) * tris_len);
+      l_arr = lib_memarena_alloc(pf_arena, sizeof(*l_arr) * efa->len);
+      projverts = lib_memarena_alloc(pf_arena, sizeof(*projverts) * efa->len);
 
       axis_dominant_v3_to_m3_negate(axis_mat, efa->no);
 
@@ -507,12 +502,12 @@ static int bmesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
         i++;
       } while ((l_iter = l_iter->next) != l_first);
 
-      BLI_polyfill_calc_arena(projverts, efa->len, 1, tris, pf_arena);
+      lib_polyfill_calc_arena(projverts, efa->len, 1, tris, pf_arena);
 
-      BLI_polyfill_beautify(projverts, efa->len, tris, pf_arena, pf_heap);
+      lib_polyfill_beautify(projverts, efa->len, tris, pf_arena, pf_heap);
 
       for (i = 0; i < tris_len; i++) {
-        BMLoop **l_ptr = looptris[i];
+        MeshLoop **l_ptr = looptris[i];
         uint *tri = tris[i];
 
         l_ptr[0] = l_arr[tri[0]];
@@ -520,7 +515,7 @@ static int bmesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
         l_ptr[2] = l_arr[tri[2]];
       }
 
-      BLI_memarena_clear(pf_arena);
+      lib_memarena_clear(pf_arena);
 
       return tris_len;
     }
