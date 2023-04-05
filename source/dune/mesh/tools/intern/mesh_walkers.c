@@ -73,22 +73,22 @@ void mesh_walker_init(MeshWalker *walker,
             mask_face,
             flag,
             layer);
-    BLI_assert(0);
+    lib_assert(0);
     return;
   }
 
-  if (type != BMW_CUSTOM) {
-    walker->begin_htype = m_walker_types[type]->begin_htype;
-    walker->begin = m_walker_types[type]->begin;
-    walker->yield = m_walker_types[type]->yield;
-    walker->step = m_walker_types[type]->step;
-    walker->structsize = m_walker_types[type]->structsize;
-    walker->order = m_walker_types[type]->order;
-    walker->valid_mask = m_walker_types[type]->valid_mask;
+  if (type != MESH_WALKER_CUSTOM) {
+    walker->begin_htype = mesh_walker_types[type]->begin_htype;
+    walker->begin = mesh_walker_types[type]->begin;
+    walker->yield = mesh_walker_types[type]->yield;
+    walker->step = mesh_walker_types[type]->step;
+    walker->structsize = mesh_walker_types[type]->structsize;
+    walker->order = mesh_walker_types[type]->order;
+    walker->valid_mask = mesh_walker_types[type]->valid_mask;
 
     /* safety checks */
     /* if this raises an error either the caller is wrong or
-     * 'bm_walker_types' needs updating */
+     * 'mesh_walker_types' needs updating */
     lib_assert(mask_vert == 0 || (walker->valid_mask & BM_VERT));
     lib_assert(mask_edge == 0 || (walker->valid_mask & BM_EDGE));
     lib_assert(mask_face == 0 || (walker->valid_mask & BM_FACE));
@@ -98,11 +98,11 @@ void mesh_walker_init(MeshWalker *walker,
   lib_listbase_clear(&walker->states);
 }
 
-void BMW_end(BMWalker *walker)
+void mesh_walker_end(MeshWalker *walker)
 {
-  BLI_mempool_destroy(walker->worklist);
-  BLI_gset_free(walker->visit_set, NULL);
-  BLI_gset_free(walker->visit_set_alt, NULL);
+  lib_mempool_destroy(walker->worklist);
+  lib_gset_free(walker->visit_set, NULL);
+  lib_gset_free(walker->visit_set_alt, NULL);
 }
 
 void *BMW_step(BMWalker *walker)
@@ -132,9 +132,9 @@ void *BMW_walk(BMWalker *walker)
   return NULL;
 }
 
-void *BMW_current_state(BMWalker *walker)
+void *mesh_walker_current_state(MeshWalker *walker)
 {
-  BMwGenericWalker *currentstate = walker->states.first;
+  MeshWalkerGeneric *currentstate = walker->states.first;
   if (currentstate) {
     /* Automatic update of depth. For most walkers that
      * follow the standard "Step" pattern of:
@@ -151,34 +151,34 @@ void *BMW_current_state(BMWalker *walker)
   return currentstate;
 }
 
-void BMW_state_remove(BMWalker *walker)
+void mesh_walker_state_remove(MeshWalker *walker)
 {
   void *oldstate;
-  oldstate = BMW_current_state(walker);
-  BLI_remlink(&walker->states, oldstate);
-  BLI_mempool_free(walker->worklist, oldstate);
+  oldstate = mesh_walker_current_state(walker);
+  lib_remlink(&walker->states, oldstate);
+  lib_mempool_free(walker->worklist, oldstate);
 }
 
-void *BMW_state_add(BMWalker *walker)
+void *mesh_walker_state_add(MeshWalker *walker)
 {
-  BMwGenericWalker *newstate;
-  newstate = BLI_mempool_alloc(walker->worklist);
+  MeshWalkerGeneric *newstate;
+  newstate = lib_mempool_alloc(walker->worklist);
   newstate->depth = walker->depth;
   switch (walker->order) {
-    case BMW_DEPTH_FIRST:
-      BLI_addhead(&walker->states, newstate);
+    case MESH_WALKER_DEPTH_FIRST:
+      lib_addhead(&walker->states, newstate);
       break;
-    case BMW_BREADTH_FIRST:
-      BLI_addtail(&walker->states, newstate);
+    case MESH_WALKER_BREADTH_FIRST:
+      lib_addtail(&walker->states, newstate);
       break;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
   return newstate;
 }
 
-void mesh_walker_reset(BMWalker *walker)
+void mesh_walker_reset(MeshWalker *walker)
 {
   while (mesh_walker_current_state(walker)) {
     mesh_walker_state_remove(walker);
