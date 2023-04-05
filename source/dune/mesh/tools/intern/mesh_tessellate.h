@@ -1,19 +1,19 @@
 #pragma once
 
-struct BMPartialUpdate;
+struct MeshPartialUpdate;
 
-struct BMeshCalcTessellation_Params {
+struct BeshCalcTessellation_Params {
   /**
    * When calculating normals as well as tessellation, calculate normals after tessellation
-   * for improved performance. See #BMeshCalcTessellation_Params
+   * for improved performance. See MeshCalcTessellation_Params
    */
   bool face_normals;
 };
 
-void BM_mesh_calc_tessellation_ex(BMesh *bm,
-                                  BMLoop *(*looptris)[3],
-                                  const struct BMeshCalcTessellation_Params *params);
-void BM_mesh_calc_tessellation(BMesh *bm, BMLoop *(*looptris)[3]);
+void mesh_calc_tessellation_ex(Mesh *mesh,
+                               MeshLoop *(*looptris)[3],
+                               const struct MeshCalcTessellationParams *params);
+void mesh_calc_tessellation(Mesh *m, MeshLoop *(*looptris)[3]);
 
 /**
  * A version of #BM_mesh_calc_tessellation that avoids degenerate triangles.
