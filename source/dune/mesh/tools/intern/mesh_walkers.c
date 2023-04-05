@@ -37,16 +37,16 @@ void *mesh_walker_begin(MeshWalker *walker, void *start)
 
   walker->begin(walker, start);
 
-  return BMW_current_state(walker) ? walker->step(walker) : NULL;
+  return mesh_walker_current_state(walker) ? walker->step(walker) : NULL;
 }
 
-void BMW_init(BMWalker *walker,
-              BMesh *bm,
+void mesh_walker_init(MeshWalker *walker,
+              Mesh *bm,
               int type,
               short mask_vert,
               short mask_edge,
               short mask_face,
-              BMWFlag flag,
+              BMeshWalkerFlag flag,
               int layer)
 {
   memset(walker, 0, sizeof(MeshWalker));
@@ -59,10 +59,10 @@ void BMW_init(BMWalker *walker,
   walker->mask_edge = mask_edge;
   walker->mask_face = mask_face;
 
-  walker->visit_set = lib_gset_ptr_new("bmesh walkers");
-  walker->visit_set_alt = BLI_gset_ptr_new("bmesh walkers sec");
+  walker->visit_set = lib_gset_ptr_new("mesh walkers");
+  walker->visit_set_alt = lib_gset_ptr_new("bmesh walkers sec");
 
-  if (UNLIKELY(type >= BMW_MAXWALKERS || type < 0)) {
+  if (UNLIKELY(type >= MESH_WALKER_MAXWALKERS || type < 0)) {
     fprintf(stderr,
             "%s: Invalid walker type in BMW_init; type: %d, "
             "searchmask: (v:%d, e:%d, f:%d), flag: %u, layer: %d\n",
