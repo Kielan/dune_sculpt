@@ -10,7 +10,7 @@
  */
 
 /* LOOP CYCLE MANAGEMENT */
-/*****loop cycle functions, e.g. loops surrounding a face**** */
+/** loop cycle functions, loops surrounding a face **/
 bool mesh_loop_validate(MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /* DISK CYCLE MANAGEMENT */
@@ -24,7 +24,7 @@ LIB_INLINE MeshEdge *mesh_disk_edge_prev_safe(const MeshEdge *e,
     ATTR_NONNULL();
 LIB_INLINE MeshEdge *mesh_disk_edge_next(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-LIB_INLINE MeshEdge *bmesh_disk_edge_prev(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
+LIB_INLINE MeshEdge *mesh_disk_edge_prev(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 int mesh_disk_facevert_count_at_most(const MeshVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
@@ -60,27 +60,27 @@ MeshLoop *mesh_disk_faceloop_find_first(const MeshEdge *e, const MeshVert *v) AT
 MeshLoop *mesh_disk_faceloop_find_first_visible(const MeshEdge *e,
                                                const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-MeshEdge *mesh_disk_faceedge_find_next(const BMEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
+MeshEdge *mesh_disk_faceedge_find_next(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
 /* RADIAL CYCLE MANAGEMENT */
-void bmesh_radial_loop_append(BMEdge *e, BMLoop *l) ATTR_NONNULL();
+void mesh_radial_loop_append(MeshEdge *e, MeshLoop *l) ATTR_NONNULL();
 /**
- * \brief BMESH RADIAL REMOVE LOOP
+ * brief MESH RADIAL REMOVE LOOP
  *
  * Removes a loop from an radial cycle. If edge e is non-NULL
  * it should contain the radial cycle, and it will also get
  * updated (in the case that the edge's link into the radial
  * cycle was the loop which is being removed from the cycle).
  */
-void bmesh_radial_loop_remove(BMEdge *e, BMLoop *l) ATTR_NONNULL();
+void mesh_radial_loop_remove(MeshEdge *e, MeshLoop *l) ATTR_NONNULL();
 /**
- * A version of #bmesh_radial_loop_remove which only performs the radial unlink,
+ * A version of mesh_radial_loop_remove which only performs the radial unlink,
  * leaving the edge untouched.
  */
-void bmesh_radial_loop_unlink(BMLoop *l) ATTR_NONNULL();
+void mesh_radial_loop_unlink(MeshLoop *l) ATTR_NONNULL();
 /* NOTE:
- *      bmesh_radial_loop_next(BMLoop *l) / prev.
+ *      mesh_radial_loop_next(MeshLoop *l) / prev.
  * just use member access l->radial_next, l->radial_prev now */
 
 int bmesh_radial_facevert_count_at_most(const BMLoop *l,
