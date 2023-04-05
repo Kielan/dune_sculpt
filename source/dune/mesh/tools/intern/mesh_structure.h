@@ -1,68 +1,66 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- *
- * The lowest level of functionality for manipulating bmesh structures.
- * None of these functions should ever be exported to the rest of Blender.
+/**
+ * The lowest level of functionality for manipulating mesh structures.
+ * None of these functions should ever be exported to the rest of Dune.
  *
  * in the vast majority of cases there shouldn't be used directly.
  * if absolutely necessary, see function definitions in code for
- * descriptive comments.  but seriously, don't use this stuff.
+ * descriptive comments. Don't import.
  */
 
 /* LOOP CYCLE MANAGEMENT */
 /*****loop cycle functions, e.g. loops surrounding a face**** */
-bool bmesh_loop_validate(BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_loop_validate(MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /* DISK CYCLE MANAGEMENT */
-void bmesh_disk_edge_append(BMEdge *e, BMVert *v) ATTR_NONNULL();
-void bmesh_disk_edge_remove(BMEdge *e, BMVert *v) ATTR_NONNULL();
-BLI_INLINE BMEdge *bmesh_disk_edge_next_safe(const BMEdge *e,
-                                             const BMVert *v) ATTR_WARN_UNUSED_RESULT
+void mesh_disk_edge_append(MeshEdge *e, MeshVert *v) ATTR_NONNULL();
+void mesh_disk_edge_remove(MeshEdge *e, MeshVert *v) ATTR_NONNULL();
+LIB_INLINE MeshEdge *mesh_disk_edge_next_safe(const MeshEdge *e,
+                                              const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-BLI_INLINE BMEdge *bmesh_disk_edge_prev_safe(const BMEdge *e,
-                                             const BMVert *v) ATTR_WARN_UNUSED_RESULT
+LIB_INLINE MeshEdge *mesh_disk_edge_prev_safe(const MeshEdge *e,
+                                             const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-BLI_INLINE BMEdge *bmesh_disk_edge_next(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+LIB_INLINE MeshEdge *mesh_disk_edge_next(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-BLI_INLINE BMEdge *bmesh_disk_edge_prev(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+LIB_INLINE MeshEdge *bmesh_disk_edge_prev(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-int bmesh_disk_facevert_count_at_most(const BMVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
+int mesh_disk_facevert_count_at_most(const MeshVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * \brief DISK COUNT FACE VERT
+ * brief DISK COUNT FACE VERT
  *
  * Counts the number of loop users
  * for this vertex. Note that this is
  * equivalent to counting the number of
  * faces incident upon this vertex
  */
-int bmesh_disk_facevert_count(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+int mesh_disk_facevert_count(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief FIND FIRST FACE EDGE
+ * brief FIND FIRST FACE EDGE
  *
  * Finds the first edge in a vertices
  * Disk cycle that has one of this
  * vert's loops attached
  * to it.
  */
-BMEdge *bmesh_disk_faceedge_find_first(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshEdge *mesh_disk_faceedge_find_first(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * Special case for BM_LOOPS_OF_VERT & BM_FACES_OF_VERT, avoids 2x calls.
+ * Special case for MESH_LOOPS_OF_VERT & MESH_FACES_OF_VERT, avoids 2x calls.
  *
- * The returned BMLoop.e matches the result of #bmesh_disk_faceedge_find_first
+ * The returned MeshLoop.e matches the result of mesh_disk_faceedge_find_first
  */
-BMLoop *bmesh_disk_faceloop_find_first(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_disk_faceloop_find_first(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * A version of #bmesh_disk_faceloop_find_first that ignores hidden faces.
+ * A version of mesh_disk_faceloop_find_first that ignores hidden faces.
  */
-BMLoop *bmesh_disk_faceloop_find_first_visible(const BMEdge *e,
-                                               const BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_disk_faceloop_find_first_visible(const MeshEdge *e,
+                                               const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-BMEdge *bmesh_disk_faceedge_find_next(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshEdge *mesh_disk_faceedge_find_next(const BMEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
 /* RADIAL CYCLE MANAGEMENT */
