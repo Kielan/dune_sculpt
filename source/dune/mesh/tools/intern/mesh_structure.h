@@ -107,26 +107,26 @@ bool bmesh_radial_facevert_check(const BMLoop *l, const BMVert *v) ATTR_WARN_UNU
  * Finds the first loop of v around radial
  * cycle
  */
-BMLoop *bmesh_radial_faceloop_find_first(const BMLoop *l, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *bmesh_radial_faceloop_find_first(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-BMLoop *bmesh_radial_faceloop_find_next(const BMLoop *l, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *bmesh_radial_faceloop_find_next(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-BMLoop *bmesh_radial_faceloop_find_vert(const BMFace *f, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *bmesh_radial_faceloop_find_vert(const MeshFace *f, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /*****radial cycle functions, e.g. loops surrounding edges**** */
-bool bmesh_radial_validate(int radlen, BMLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_radial_validate(int radlen, MeshLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /* EDGE UTILITIES */
-void bmesh_disk_vert_swap(BMEdge *e, BMVert *v_dst, BMVert *v_src) ATTR_NONNULL();
+void mesh_disk_vert_swap(MeshEdge *e, MeshVert *v_dst, BMVert *v_src) ATTR_NONNULL();
 /**
  * Handles all connected data, use with care.
  *
  * Assumes caller has setup correct state before the swap is done.
  */
-void bmesh_edge_vert_swap(BMEdge *e, BMVert *v_dst, BMVert *v_src) ATTR_NONNULL();
-void bmesh_disk_vert_replace(BMEdge *e, BMVert *v_dst, BMVert *v_src) ATTR_NONNULL();
-BMEdge *bmesh_disk_edge_exists(const BMVert *v1, const BMVert *v2) ATTR_WARN_UNUSED_RESULT
+void mesh_edge_vert_swap(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src) ATTR_NONNULL();
+void mesh_disk_vert_replace(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src) ATTR_NONNULL();
+MeshEdge *mesh_disk_edge_exists(const MeshVert *v1, const MeshVert *v2) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-bool bmesh_disk_validate(int len, BMEdge *e, BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_disk_validate(int len, MeshEdge *e, MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-#include "intern/bmesh_structure_inline.h"
+#include "intern/mesh_structure_inline.h"
