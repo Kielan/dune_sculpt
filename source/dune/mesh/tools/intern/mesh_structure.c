@@ -1,10 +1,6 @@
-/** \file
- * \ingroup bmesh
- *
- * Low level routines for manipulating the BM structure.
- */
+/** Low level routines for manipulating the Mesh structure. */
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
 #include "bmesh.h"
 #include "intern/bmesh_private.h"
