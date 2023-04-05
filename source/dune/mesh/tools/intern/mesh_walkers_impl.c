@@ -115,8 +115,8 @@ static void bmw_VertShellWalker_begin(BMWalker *walker, void *data)
     case BM_VERT: {
       /* Starting the walk at a vert, add all the edges to the work-list. */
       v = (BMVert *)h;
-      BM_ITER_ELEM (e, &eiter, v, BM_EDGES_OF_VERT) {
-        bmw_VertShellWalker_visitEdge(walker, e);
+      MESH_ITER_ELEM (e, &eiter, v, MESH_EDGES_OF_VERT) {
+        mesh_walker_VertShellWalker_visitEdge(walker, e);
       }
       break;
     }
