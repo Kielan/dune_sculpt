@@ -83,35 +83,35 @@ void mesh_radial_loop_unlink(MeshLoop *l) ATTR_NONNULL();
  *      mesh_radial_loop_next(MeshLoop *l) / prev.
  * just use member access l->radial_next, l->radial_prev now */
 
-int bmesh_radial_facevert_count_at_most(const BMLoop *l,
-                                        const BMVert *v,
+int mesh_radial_facevert_count_at_most(const MeshLoop *l,
+                                        const MeshVert *v,
                                         int count_max) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief RADIAL COUNT FACE VERT
+ * brief RADIAL COUNT FACE VERT
  *
  * Returns the number of times a vertex appears
  * in a radial cycle
  */
-int bmesh_radial_facevert_count(const BMLoop *l, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+int bmesh_radial_facevert_count(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * \brief RADIAL CHECK FACE VERT
  *
- * Quicker check for `bmesh_radial_facevert_count(...) != 0`.
+ * Quicker check for `mesh_radial_facevert_count(...) != 0`.
  */
-bool bmesh_radial_facevert_check(const BMLoop *l, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+bool mesh_radial_facevert_check(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * \brief BME RADIAL FIND FIRST FACE VERT
+ * brief MESH RADIAL FIND FIRST FACE VERT
  *
  * Finds the first loop of v around radial
  * cycle
  */
-MeshLoop *bmesh_radial_faceloop_find_first(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_radial_faceloop_find_first(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-MeshLoop *bmesh_radial_faceloop_find_next(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_radial_faceloop_find_next(const MeshLoop *l, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-MeshLoop *bmesh_radial_faceloop_find_vert(const MeshFace *f, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_radial_faceloop_find_vert(const MeshFace *f, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /*****radial cycle functions, e.g. loops surrounding edges**** */
 bool mesh_radial_validate(int radlen, MeshLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
