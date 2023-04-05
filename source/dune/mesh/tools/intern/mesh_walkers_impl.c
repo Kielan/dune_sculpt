@@ -185,8 +185,8 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
         v_old = BM_edge_other_vert(curedge, shellWalk.base);
 
         /* Push a new state onto the stack. */
-        newState = BMW_state_add(walker);
-        BLI_gset_insert(walker->visit_set, curedge);
+        newState = mesh_walker_state_add(walker);
+        lib_gset_insert(walker->visit_set, curedge);
 
         /* Populate the new state. */
 
@@ -194,16 +194,14 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
         newState->curedge = curedge;
       }
     }
-  } while ((curedge = bmesh_disk_edge_next(curedge, shellWalk.base)) != shellWalk.curedge);
+  } while ((curedge = mesh_disk_edge_next(curedge, shellWalk.base)) != shellWalk.curedge);
 
   return shellWalk.curedge;
 }
 #endif
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name LoopShell Walker
+/** LoopShell Walker
  *
  * Starts at any element on the mesh and walks over the 'shell' it belongs
  * to via visiting connected loops.
