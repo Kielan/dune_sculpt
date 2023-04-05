@@ -1,9 +1,5 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
 struct BMPartialUpdate;
 
 struct BMeshCalcTessellation_Params {
