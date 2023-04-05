@@ -1,27 +1,23 @@
-/** \file
- * \ingroup bmesh
- *
- * BMesh inline operator functions.
- */
+/** Mesh inline operator functions. **/
 
 #pragma once
 
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2)
-    BLI_INLINE BMDiskLink *bmesh_disk_edge_link_from_vert(const BMEdge *e, const BMVert *v)
+    LIB_INLINE BMDiskLink *mesh_disk_edge_link_from_vert(const MeshEdge *e, const MeshVert *v)
 {
-  BLI_assert(BM_vert_in_edge(e, v));
+  lib_assert(mesh_vert_in_edge(e, v));
   return (BMDiskLink *)&(&e->v1_disk_link)[v == e->v2];
 }
 
 /**
- * \brief Next Disk Edge
+ * Next Disk Edge
  *
  * Find the next edge in a disk cycle
  *
- * \return Pointer to the next edge in the disk cycle for the vertex v.
+ * return Pointer to the next edge in the disk cycle for the vertex v.
  */
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1)
-    BLI_INLINE BMEdge *bmesh_disk_edge_next_safe(const BMEdge *e, const BMVert *v)
+    LIB_INLINE MeshEdge *mesh_disk_edge_next_safe(const MeshEdge *e, const MeshVert *v)
 {
   if (v == e->v1) {
     return e->v1_disk_link.next;
@@ -33,7 +29,7 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1)
 }
 
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1)
-    BLI_INLINE BMEdge *bmesh_disk_edge_prev_safe(const BMEdge *e, const BMVert *v)
+    LIB_INLINE MeshEdge *mesh_disk_edge_prev_safe(const MeshEdge *e, const MeshVert *v)
 {
   if (v == e->v1) {
     return e->v1_disk_link.prev;
@@ -44,14 +40,14 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1)
   return NULL;
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE BMEdge *bmesh_disk_edge_next(const BMEdge *e,
-                                                                                   const BMVert *v)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE MeshEdge *mesh_disk_edge_next(const MeshEdge *e,
+                                                                                    const MeshVert *v)
 {
-  return BM_DISK_EDGE_NEXT(e, v);
+  return MESH_DISK_EDGE_NEXT(e, v);
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE BMEdge *bmesh_disk_edge_prev(const BMEdge *e,
-                                                                                   const BMVert *v)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE MeshEdge *mesh_disk_edge_prev(const MeshEdge *e,
+                                                                                    const MeshVert *v)
 {
-  return BM_DISK_EDGE_PREV(e, v);
+  return MESH_DISK_EDGE_PREV(e, v);
 }
