@@ -271,63 +271,61 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
   }
 }
 
-static void *mesh_walker_LoopShell_yield(BMWalker *walker)
+static void *mesh_walker_LoopShell_yield(MeshWalker *walker)
 {
-  BMwLoopShellWalker *shellWalk = BMW_current_state(walker);
+  MeshWalkerLoopShell *WalkShell = mesh_walker_current_state(walker);
   return shellWalk->curloop;
 }
 
-static void bmw_LoopShellWalker_step_impl(BMWalker *walker, BMLoop *l)
+static void mesh_walker_LoopShell_step_impl(MeshWalker *walker, MeshLoop *l)
 {
-  BMEdge *e_edj_pair[2];
+  MeshEdge *e_edj_pair[2];
   int i;
 
   /* Seems paranoid, but one caller also walks edges. */
-  BLI_assert(l->head.htype == BM_LOOP);
+  lib_assert(l->head.htype == MESH_LOOP);
 
-  bmw_LoopShellWalker_visitLoop(walker, l->next);
-  bmw_LoopShellWalker_visitLoop(walker, l->prev);
+  mesh_walker_LoopShell_visitLoop(walker, l->next);
+  mesh_walker_LoopShell_visitLoop(walker, l->prev);
 
   e_edj_pair[0] = l->e;
   e_edj_pair[1] = l->prev->e;
 
   for (i = 0; i < 2; i++) {
-    BMEdge *e = e_edj_pair[i];
-    if (bmw_mask_check_edge(walker, e)) {
-      BMLoop *l_iter, *l_first;
+    MeshEdge *e = e_edj_pair[i];
+    if (mesh_walk_mask_check_edge(walker, e)) {
+      MeshLoop *l_iter, *l_first;
 
       l_iter = l_first = e->l;
       do {
-        BMLoop *l_radial = (l_iter->v == l->v) ? l_iter : l_iter->next;
-        BLI_assert(l_radial->v == l->v);
+        MeshLoop *l_radial = (l_iter->v == l->v) ? l_iter : l_iter->next;
+        lib_assert(l_radial->v == l->v);
         if (l != l_radial) {
-          bmw_LoopShellWalker_visitLoop(walker, l_radial);
+          mesh_walker_LoopShell_visitLoop(walker, l_radial);
         }
       } while ((l_iter = l_iter->radial_next) != l_first);
     }
   }
 }
 
-static void *bmw_LoopShellWalker_step(BMWalker *walker)
+static void *mesh_walker_LoopShell_stepWalker *walker)
 {
-  BMwLoopShellWalker *swalk, owalk;
-  BMLoop *l;
+  MeshWalkerLoopShell *swalk, owalk;
+  MeshLoop *l;
 
-  BMW_state_remove_r(walker, &owalk);
+  mesh_walker_state_remove_r(walker, &owalk);
   swalk = &owalk;
 
   l = swalk->curloop;
-  bmw_LoopShellWalker_step_impl(walker, l);
+  mesh_walker_LoopShell_step_impl(walker, l);
 
   return l;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name LoopShell & 'Wire' Walker
+/** LoopShell & 'Wire' Walker
  *
- * Piggyback on top of #BMwLoopShellWalker, but also walk over wire edges
+ * Piggyback on top of #MeshWalkerLoopShell but also walk over wire edges
  * This isn't elegant but users expect it when selecting linked,
  * so we can support delimiters _and_ walking over wire edges.
  *
@@ -335,9 +333,9 @@ static void *bmw_LoopShellWalker_step(BMWalker *walker)
  * - can yield edges (as well as loops)
  * - only step over wire edges.
  * - verts and edges are stored in `visit_set_alt`.
- * \{ */
+ **/
 
-static void bmw_LoopShellWalker_visitEdgeWire(BMWalker *walker, BMEdge *e)
+static void mesh_walker_LoopShell_visitEdgeWire(MeshWalker *walker, BMEdge *e)
 {
   BMwLoopShellWireWalker *shellWalk = NULL;
 
