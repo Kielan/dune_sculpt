@@ -7,19 +7,19 @@
 
 #include "types_meshdata.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_heap.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_polyfill_2d.h"
-#include "BLI_polyfill_2d_beautify.h"
-#include "BLI_task.h"
+#include "lib_alloca.h"
+#include "lib_heap.h"
+#include "lib_linklist.h"
+#include "lib_math.h"
+#include "lib_memarena.h"
+#include "lib_polyfill_2d.h"
+#include "lib_polyfill_2d_beautify.h"
+#include "lib_task.h"
 
-#include "bmesh.h"
-#include "bmesh_tools.h"
+#include "mesh.h"
+#include "mesh_tools.h"
 
 /**
  * On systems with 32+ cores,
@@ -28,33 +28,32 @@
  * (tessellation isn't a bottleneck in this case anyway).
  * Avoid the slight overhead of using threads in this case.
  */
-#define BM_FACE_TESSELLATE_THREADED_LIMIT 1024
+#define MESH_FACE_TESSELLATE_THREADED_LIMIT 1024
 
 /* -------------------------------------------------------------------- */
-/** \name Default Mesh Tessellation
- * \{ */
+/** Default Mesh Tessellation **/
 
 /**
- * \param face_normal: This will be optimized out as a constant.
+ * param face_normal: This will be optimized out as a constant.
  */
-BLI_INLINE void bmesh_calc_tessellation_for_face_impl(BMLoop *(*looptris)[3],
-                                                      BMFace *efa,
-                                                      MemArena **pf_arena_p,
-                                                      const bool face_normal)
+LIB_INLINE void mesh_calc_tessellation_for_face_impl(MeshLoop *(*looptris)[3],
+                                                     MeshFace *efa,
+                                                     MemArena **pf_arena_p,
+                                                     const bool face_normal)
 {
 #ifdef DEBUG
   /* The face normal is used for projecting faces into 2D space for tessellation.
    * Invalid normals may result in invalid tessellation.
    * Either `face_normal` should be true or normals should be updated first. */
-  BLI_assert(face_normal || BM_face_is_normal_valid(efa));
+  LIB_assert(face_normal || mesh_face_is_normal_valid(efa));
 #endif
 
   switch (efa->len) {
     case 3: {
       /* `0 1 2` -> `0 1 2` */
-      BMLoop *l;
-      BMLoop **l_ptr = looptris[0];
-      l_ptr[0] = l = BM_FACE_FIRST_LOOP(efa);
+      MeshLoop *l;
+      MeshLoop **l_ptr = looptris[0];
+      l_ptr[0] = l = MESH_FACE_FIRST_LOOP(efa);
       l_ptr[1] = l = l->next;
       l_ptr[2] = l->next;
       if (face_normal) {
@@ -64,10 +63,10 @@ BLI_INLINE void bmesh_calc_tessellation_for_face_impl(BMLoop *(*looptris)[3],
     }
     case 4: {
       /* `0 1 2 3` -> (`0 1 2`, `0 2 3`) */
-      BMLoop *l;
-      BMLoop **l_ptr_a = looptris[0];
-      BMLoop **l_ptr_b = looptris[1];
-      (l_ptr_a[0] = l_ptr_b[0] = l = BM_FACE_FIRST_LOOP(efa));
+      MeshLoop *l;
+      MeshLoop **l_ptr_a = looptris[0];
+      MeshLoop **l_ptr_b = looptris[1];
+      (l_ptr_a[0] = l_ptr_b[0] = l = MESH_FACE_FIRST_LOOP(efa));
       (l_ptr_a[1] = l = l->next);
       (l_ptr_a[2] = l_ptr_b[1] = l = l->next);
       (l_ptr_b[2] = l->next);
@@ -90,11 +89,11 @@ BLI_INLINE void bmesh_calc_tessellation_for_face_impl(BMLoop *(*looptris)[3],
     }
     default: {
       if (face_normal) {
-        BM_face_calc_normal(efa, efa->no);
+        mesh_face_calc_normal(efa, efa->no);
       }
 
-      BMLoop *l_iter, *l_first;
-      BMLoop **l_arr;
+      MeshLoop *l_iter, *l_first;
+      MeshLoop **l_arr;
 
       float axis_mat[3][3];
       float(*projverts)[2];
@@ -104,27 +103,27 @@ BLI_INLINE void bmesh_calc_tessellation_for_face_impl(BMLoop *(*looptris)[3],
 
       MemArena *pf_arena = *pf_arena_p;
       if (UNLIKELY(pf_arena == NULL)) {
-        pf_arena = *pf_arena_p = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
+        pf_arena = *pf_arena_p = lib_memarena_new(LIB_MEMARENA_STD_BUFSIZE, __func__);
       }
 
-      tris = BLI_memarena_alloc(pf_arena, sizeof(*tris) * tris_len);
-      l_arr = BLI_memarena_alloc(pf_arena, sizeof(*l_arr) * efa->len);
-      projverts = BLI_memarena_alloc(pf_arena, sizeof(*projverts) * efa->len);
+      tris = lib_memarena_alloc(pf_arena, sizeof(*tris) * tris_len);
+      l_arr = lib_memarena_alloc(pf_arena, sizeof(*l_arr) * efa->len);
+      projverts = lib_memarena_alloc(pf_arena, sizeof(*projverts) * efa->len);
 
       axis_dominant_v3_to_m3_negate(axis_mat, efa->no);
 
       int i = 0;
-      l_iter = l_first = BM_FACE_FIRST_LOOP(efa);
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(efa);
       do {
         l_arr[i] = l_iter;
         mul_v2_m3v3(projverts[i], axis_mat, l_iter->v->co);
         i++;
       } while ((l_iter = l_iter->next) != l_first);
 
-      BLI_polyfill_calc_arena(projverts, efa->len, 1, tris, pf_arena);
+      lib_polyfill_calc_arena(projverts, efa->len, 1, tris, pf_arena);
 
       for (i = 0; i < tris_len; i++) {
-        BMLoop **l_ptr = looptris[i];
+        MeshLoop **l_ptr = looptris[i];
         uint *tri = tris[i];
 
         l_ptr[0] = l_arr[tri[0]];
@@ -132,51 +131,51 @@ BLI_INLINE void bmesh_calc_tessellation_for_face_impl(BMLoop *(*looptris)[3],
         l_ptr[2] = l_arr[tri[2]];
       }
 
-      BLI_memarena_clear(pf_arena);
+      lib_memarena_clear(pf_arena);
       break;
     }
   }
 }
 
-static void bmesh_calc_tessellation_for_face(BMLoop *(*looptris)[3],
-                                             BMFace *efa,
-                                             MemArena **pf_arena_p)
+static void mesh_calc_tessellation_for_face(MeshLoop *(*looptris)[3],
+                                            MeshFace *efa,
+                                            MemArena **pf_arena_p)
 {
-  bmesh_calc_tessellation_for_face_impl(looptris, efa, pf_arena_p, false);
+  mesh_calc_tessellation_for_face_impl(looptris, efa, pf_arena_p, false);
 }
 
-static void bmesh_calc_tessellation_for_face_with_normal(BMLoop *(*looptris)[3],
-                                                         BMFace *efa,
+static void mesh_calc_tessellation_for_face_with_normal(MeshLoop *(*looptris)[3],
+                                                         MeshFace *efa,
                                                          MemArena **pf_arena_p)
 {
-  bmesh_calc_tessellation_for_face_impl(looptris, efa, pf_arena_p, true);
+  mesh_calc_tessellation_for_face_impl(looptris, efa, pf_arena_p, true);
 }
 
 /**
- * \brief BM_mesh_calc_tessellation get the looptris and its number from a certain bmesh
- * \param looptris:
+ * brief mesh_calc_tessellation get the looptris and its number from a certain bmesh
+ * param looptris:
  *
- * \note \a looptris Must be pre-allocated to at least the size of given by: poly_to_tri_count
+ * looptris Must be pre-allocated to at least the size of given by: poly_to_tri_count
  */
-static void bm_mesh_calc_tessellation__single_threaded(BMesh *bm,
-                                                       BMLoop *(*looptris)[3],
-                                                       const char face_normals)
+static void mesh_calc_tessellation__single_threaded(Mesh *bm,
+                                                    MeshLoop *(*looptris)[3],
+                                                    const char face_normals)
 {
 #ifndef NDEBUG
-  const int looptris_tot = poly_to_tri_count(bm->totface, bm->totloop);
+  const int looptris_tot = poly_to_tri_count(mesh->totface, mesh->totloop);
 #endif
 
-  BMIter iter;
-  BMFace *efa;
+  MeshIter iter;
+  MeshFace *efa;
   int i = 0;
 
   MemArena *pf_arena = NULL;
 
   if (face_normals) {
-    BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
-      BLI_assert(efa->len >= 3);
-      BM_face_calc_normal(efa, efa->no);
-      bmesh_calc_tessellation_for_face_with_normal(looptris + i, efa, &pf_arena);
+    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+      LIB_assert(efa->len >= 3);
+      mesh_face_calc_normal(efa, efa->no);
+      mesh_calc_tessellation_for_face_with_normal(looptris + i, efa, &pf_arena);
       i += efa->len - 2;
     }
   }
