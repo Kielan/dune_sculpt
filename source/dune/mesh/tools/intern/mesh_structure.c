@@ -18,11 +18,11 @@ void mesh_disk_vert_swap(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src)
     e->v2_disk_link.next = e->v2_disk_link.prev = NULL;
   }
   else {
-    BLI_assert(0);
+    lib_assert(0);
   }
 }
 
-void bmesh_edge_vert_swap(BMEdge *e, BMVert *v_dst, BMVert *v_src)
+void mesh_edge_vert_swap(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src)
 {
   /* swap out loops */
   if (e->l) {
