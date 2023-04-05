@@ -1,17 +1,11 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-/*
- * NOTE: do NOT modify topology while walking a mesh!
- */
+/** NOTE: do NOT modify topology while walking a mesh! **/
 
 typedef enum {
-  BMW_DEPTH_FIRST,
-  BMW_BREADTH_FIRST,
-} BMWOrder;
+  MW_DEPTH_FIRST,
+  MW_BREADTH_FIRST,
+} MeshWalkOrder;
 
 typedef enum {
   BMW_FLAG_NOP = 0,
@@ -19,20 +13,20 @@ typedef enum {
 } BMWFlag;
 
 /*Walkers*/
-typedef struct BMWalker {
+typedef struct MeshWalker {
   char begin_htype; /* only for validating input */
   void (*begin)(struct BMWalker *walker, void *start);
   void *(*step)(struct BMWalker *walker);
   void *(*yield)(struct BMWalker *walker);
   int structsize;
-  BMWOrder order;
+  MeshWalkOrder order;
   int valid_mask;
 
   /* runtime */
   int layer;
 
-  BMesh *bm;
-  BLI_mempool *worklist;
+  Mesh *bm;
+  lib_mempool *worklist;
   ListBase states;
 
   /* these masks are to be tested against elements BMO_elem_flag_test(),
@@ -41,24 +35,24 @@ typedef struct BMWalker {
   short mask_edge;
   short mask_face;
 
-  BMWFlag flag;
+  MeshWalkerFlag flag;
 
   struct GSet *visit_set;
   struct GSet *visit_set_alt;
   int depth;
-} BMWalker;
+} MeshWalker;
 
 /* define to make BMW_init more clear */
-#define BMW_MASK_NOP 0
+#define MESH_WALKER_MASK_NOP 0
 
 /**
- * \brief Init Walker
+ * Init Walker
  *
  * Allocates and returns a new mesh walker of a given type.
  * The elements visited are filtered by the bitmask 'searchmask'.
  */
-void BMW_init(struct BMWalker *walker,
-              BMesh *bm,
+void mesh_walker_init(struct BMWalker *walker,
+              Mesh *bm,
               int type,
               short mask_vert,
               short mask_edge,
