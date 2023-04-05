@@ -21,11 +21,11 @@
  * basic design pattern: the walker step function goes through its
  * list of possible choices for recursion, and recurses (by pushing a new state)
  * using the first non-visited one.  This choice is the flagged as visited using the #GHash.
- * Each step may push multiple new states onto the #BMWalker.worklist at once.
+ * Each step may push multiple new states onto the MeshWalker.worklist at once.
  *
  * - Walkers use tool flags, not header flags.
- * - Walkers now use #GHash for storing visited elements,
- *   rather than stealing flags. #GHash can be rewritten
+ * - Walkers now use GHash for storing visited elements,
+ *   rather than stealing flags. GHash can be rewritten
  *   to be faster if necessary, in the far future :) .
  * - tools should ALWAYS have necessary error handling
  *   for if walkers fail.
@@ -41,12 +41,12 @@ void *mesh_walker_begin(MeshWalker *walker, void *start)
 }
 
 void mesh_walker_init(MeshWalker *walker,
-              Mesh *bm,
+              Mesh *m,
               int type,
               short mask_vert,
               short mask_edge,
               short mask_face,
-              BMeshWalkerFlag flag,
+              MeshWalkerFlag flag,
               int layer)
 {
   memset(walker, 0, sizeof(MeshWalker));
@@ -60,7 +60,7 @@ void mesh_walker_init(MeshWalker *walker,
   walker->mask_face = mask_face;
 
   walker->visit_set = lib_gset_ptr_new("mesh walkers");
-  walker->visit_set_alt = lib_gset_ptr_new("bmesh walkers sec");
+  walker->visit_set_alt = lib_gset_ptr_new("mesh walkers sec");
 
   if (UNLIKELY(type >= MESH_WALKER_MAXWALKERS || type < 0)) {
     fprintf(stderr,
@@ -89,9 +89,9 @@ void mesh_walker_init(MeshWalker *walker,
     /* safety checks */
     /* if this raises an error either the caller is wrong or
      * 'mesh_walker_types' needs updating */
-    lib_assert(mask_vert == 0 || (walker->valid_mask & BM_VERT));
-    lib_assert(mask_edge == 0 || (walker->valid_mask & BM_EDGE));
-    lib_assert(mask_face == 0 || (walker->valid_mask & BM_FACE));
+    lib_assert(mask_vert == 0 || (walker->valid_mask & MESH_VERT));
+    lib_assert(mask_edge == 0 || (walker->valid_mask & MESH_EDGE));
+    lib_assert(mask_face == 0 || (walker->valid_mask & MESH_FACE));
   }
 
   walker->worklist = lib_mempool_create(walker->structsize, 0, 128, BLI_MEMPOOL_NOP);
@@ -105,25 +105,25 @@ void mesh_walker_end(MeshWalker *walker)
   lib_gset_free(walker->visit_set_alt, NULL);
 }
 
-void *BMW_step(BMWalker *walker)
+void *mesh_walker_step(MeshWalker *walker)
 {
-  BMHeader *head;
+  MeshHeader *head;
 
-  head = BMW_walk(walker);
+  head = mesh_walk(walker);
 
   return head;
 }
 
-int BMW_current_depth(BMWalker *walker)
+int mesh_walker_current_depth(MeshWalker *walker)
 {
   return walker->depth;
 }
 
-void *BMW_walk(BMWalker *walker)
+void *mesh_walk(MeshWalker *walker)
 {
   void *current = NULL;
 
-  while (BMW_current_state(walker)) {
+  while (mesh_walker_current_state(walker)) {
     current = walker->step(walker);
     if (current) {
       return current;
