@@ -264,48 +264,48 @@ void mesh_calc_tessellation_ex(Mesh *mesh,
   }
 }
 
-void mesh_calc_tessellation(BMesh *mesh, BMLoop *(*looptris)[3])
+void mesh_calc_tessellation(Mesh *mesh, MeshLoop *(*looptris)[3])
 {
-  BM_mesh_calc_tessellation_ex(bm,
-                               looptris,
-                               &(const struct BMeshCalcTessellation_Params){
-                                   .face_normals = false,
-                               });
+  mesh_calc_tessellation_ex(bm,
+                            looptris,
+                            &(const struct MeshCalcTessellationParams){
+                                .face_normals = false,
+                            });
 }
 
 /* -------------------------------------------------------------------- */
 /** Default Tessellation (Partial Updates) **/
 
 struct PartialTessellationUserData {
-  BMFace **faces;
-  BMLoop *(*looptris)[3];
+  MeshFace **faces;
+  MeshLoop *(*looptris)[3];
 };
 
 struct PartialTessellationUserTLS {
   MemArena *pf_arena;
 };
 
-static void bmesh_calc_tessellation_for_face_partial_fn(void *__restrict userdata,
-                                                        const int index,
-                                                        const TaskParallelTLS *__restrict tls)
+static void mesh_calc_tessellation_for_face_partial_fn(void *__restrict userdata,
+                                                       const int index,
+                                                       const TaskParallelTLS *__restrict tls)
 {
   struct PartialTessellationUserTLS *tls_data = tls->userdata_chunk;
   struct PartialTessellationUserData *data = userdata;
-  BMFace *f = data->faces[index];
-  BMLoop *l = BM_FACE_FIRST_LOOP(f);
-  const int offset = BM_elem_index_get(l) - (BM_elem_index_get(f) * 2);
-  bmesh_calc_tessellation_for_face(data->looptris + offset, f, &tls_data->pf_arena);
+  MeshFace *f = data->faces[index];
+  MeshLoop *l = MESH_FACE_FIRST_LOOP(f);
+  const int offset = mesh_elem_index_get(l) - (mesh_elem_index_get(f) * 2);
+  mesh_calc_tessellation_for_face(data->looptris + offset, f, &tls_data->pf_arena);
 }
 
-static void bmesh_calc_tessellation_for_face_partial_with_normals_fn(
+static void mesh_calc_tessellation_for_face_partial_with_normals_fn(
     void *__restrict userdata, const int index, const TaskParallelTLS *__restrict tls)
 {
   struct PartialTessellationUserTLS *tls_data = tls->userdata_chunk;
   struct PartialTessellationUserData *data = userdata;
-  BMFace *f = data->faces[index];
-  BMLoop *l = BM_FACE_FIRST_LOOP(f);
-  const int offset = BM_elem_index_get(l) - (BM_elem_index_get(f) * 2);
-  bmesh_calc_tessellation_for_face_with_normal(data->looptris + offset, f, &tls_data->pf_arena);
+  MeshFace *f = data->faces[index];
+  MeshLoop *l = MESH_FACE_FIRST_LOOP(f);
+  const int offset = mesh_elem_index_get(l) - (mesh_elem_index_get(f) * 2);
+  mesh_calc_tessellation_for_face_with_normal(data->looptris + offset, f, &tls_data->pf_arena);
 }
 
 static void bmesh_calc_tessellation_for_face_partial_free_fn(
@@ -313,17 +313,17 @@ static void bmesh_calc_tessellation_for_face_partial_free_fn(
 {
   struct PartialTessellationUserTLS *tls_data = tls_v;
   if (tls_data->pf_arena) {
-    BLI_memarena_free(tls_data->pf_arena);
+    lib_memarena_free(tls_data->pf_arena);
   }
 }
 
-static void bm_mesh_calc_tessellation_with_partial__multi_threaded(
-    BMLoop *(*looptris)[3],
-    const BMPartialUpdate *bmpinfo,
-    const struct BMeshCalcTessellation_Params *params)
+static void mesh_calc_tessellation_with_partial__multi_threaded(
+    MeshLoop *(*looptris)[3],
+    const MeshPartialUpdate *bmpinfo,
+    const struct MeshCalcTessellationParams *params)
 {
   const int faces_len = bmpinfo->faces_len;
-  BMFace **faces = bmpinfo->faces;
+  MeshFace **faces = bmpinfo->faces;
 
   struct PartialTessellationUserData data = {
       .faces = faces,
@@ -331,25 +331,25 @@ static void bm_mesh_calc_tessellation_with_partial__multi_threaded(
   };
   struct PartialTessellationUserTLS tls_dummy = {NULL};
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  lib_parallel_range_settings_defaults(&settings);
   settings.use_threading = true;
   settings.userdata_chunk = &tls_dummy;
   settings.userdata_chunk_size = sizeof(tls_dummy);
-  settings.func_free = bmesh_calc_tessellation_for_face_partial_free_fn;
+  settings.func_free = mesh_calc_tessellation_for_face_partial_free_fn;
 
-  BLI_task_parallel_range(0,
+  lib_task_parallel_range(0,
                           faces_len,
                           &data,
                           params->face_normals ?
-                              bmesh_calc_tessellation_for_face_partial_with_normals_fn :
-                              bmesh_calc_tessellation_for_face_partial_fn,
+                              mesh_calc_tessellation_for_face_partial_with_normals_fn :
+                              mesh_calc_tessellation_for_face_partial_fn,
                           &settings);
 }
 
-static void bm_mesh_calc_tessellation_with_partial__single_threaded(
-    BMLoop *(*looptris)[3],
-    const BMPartialUpdate *bmpinfo,
-    const struct BMeshCalcTessellation_Params *params)
+static void mesh_calc_tessellation_with_partial__single_threaded(
+    MeshLoop *(*looptris)[3],
+    const MeshPartialUpdate *bmpinfo,
+    const struct MeshCalcTessellation_Params *params)
 {
   const int faces_len = bmpinfo->faces_len;
   BMFace **faces = bmpinfo->faces;
