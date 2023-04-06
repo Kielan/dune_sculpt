@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
+/**
  * This file contains functions for answering common
  * Topological and geometric queries about a mesh, such
  * as, "What is the angle between these two faces?" or,
@@ -9,23 +7,23 @@
  * of inspecting the mesh structure directly.
  */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
-#include "BLI_utildefines_stack.h"
+#include "lib_alloca.h"
+#include "lib_linklist.h"
+#include "lib_math.h"
+#include "lib_utildefines_stack.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
-BMLoop *BM_face_other_edge_loop(BMFace *f, BMEdge *e, BMVert *v)
+MeshLoop *mesh_face_other_edge_loop(MeshFace *f, MeshEdge *e, MeshVert *v)
 {
-  BMLoop *l = BM_face_edge_share_loop(f, e);
-  BLI_assert(l != NULL);
-  return BM_loop_other_edge_loop(l, v);
+  MeshLoop *l = mesh_face_edge_share_loop(f, e);
+  lib_assert(l != NULL);
+  return mesh_loop_other_edge_loop(l, v);
 }
 
 BMLoop *BM_loop_other_edge_loop(BMLoop *l, BMVert *v)
