@@ -159,19 +159,19 @@ MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
 }
 
 MeshFace *mesh_vert_pair_share_face_by_len(
-    BMVert *v_a, BMVert *v_b, BMLoop **r_l_a, BMLoop **r_l_b, const bool allow_adjacent)
+    MeshVert *v_a, MeshVert *v_b, MeshLoop **r_l_a, MeshLoop **r_l_b, const bool allow_adjacent)
 {
-  BMLoop *l_cur_a = NULL, *l_cur_b = NULL;
-  BMFace *f_cur = NULL;
+  MeshLoop *l_cur_a = NULL, *l_cur_b = NULL;
+  MeshFace *f_cur = NULL;
 
   if (v_a->e && v_b->e) {
-    BMIter iter;
-    BMLoop *l_a, *l_b;
+    MeshIter iter;
+    MeshLoop *l_a, *l_b;
 
-    BM_ITER_ELEM (l_a, &iter, v_a, BM_LOOPS_OF_VERT) {
+    MESH_ITER_ELEM (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
       if ((f_cur == NULL) || (l_a->f->len < f_cur->len)) {
-        l_b = BM_face_vert_share_loop(l_a->f, v_b);
-        if (l_b && (allow_adjacent || !BM_loop_is_adjacent(l_a, l_b))) {
+        l_b = mesh_face_vert_share_loop(l_a->f, v_b);
+        if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b))) {
           f_cur = l_a->f;
           l_cur_a = l_a;
           l_cur_b = l_b;
@@ -186,20 +186,20 @@ MeshFace *mesh_vert_pair_share_face_by_len(
   return f_cur;
 }
 
-BMFace *BM_edge_pair_share_face_by_len(
-    BMEdge *e_a, BMEdge *e_b, BMLoop **r_l_a, BMLoop **r_l_b, const bool allow_adjacent)
+MeshFace *mesh_edge_pair_share_face_by_len(
+    MeshEdge *e_a, MeshEdge *e_b, MeshLoop **r_l_a, BMLoop **r_l_b, const bool allow_adjacent)
 {
-  BMLoop *l_cur_a = NULL, *l_cur_b = NULL;
-  BMFace *f_cur = NULL;
+  MeshLoop *l_cur_a = NULL, *l_cur_b = NULL;
+  MeshFace *f_cur = NULL;
 
   if (e_a->l && e_b->l) {
-    BMIter iter;
-    BMLoop *l_a, *l_b;
+    MeshIter iter;
+    MeshLoop *l_a, *l_b;
 
-    BM_ITER_ELEM (l_a, &iter, e_a, BM_LOOPS_OF_EDGE) {
+    MESH_ITER_ELEM (l_a, &iter, e_a, MESH_LOOPS_OF_EDGE) {
       if ((f_cur == NULL) || (l_a->f->len < f_cur->len)) {
-        l_b = BM_face_edge_share_loop(l_a->f, e_b);
-        if (l_b && (allow_adjacent || !BM_loop_is_adjacent(l_a, l_b))) {
+        l_b = mesh_face_edge_share_loop(l_a->f, e_b);
+        if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b))) {
           f_cur = l_a->f;
           l_cur_a = l_a;
           l_cur_b = l_b;
@@ -214,24 +214,24 @@ BMFace *BM_edge_pair_share_face_by_len(
   return f_cur;
 }
 
-static float bm_face_calc_split_dot(BMLoop *l_a, BMLoop *l_b)
+static float mesh_face_calc_split_dot(MeshLoop *l_a, MeshLoop *l_b)
 {
   float no[2][3];
 
-  if ((BM_face_calc_normal_subset(l_a, l_b, no[0]) != 0.0f) &&
-      (BM_face_calc_normal_subset(l_b, l_a, no[1]) != 0.0f)) {
+  if ((mesh_face_calc_normal_subset(l_a, l_b, no[0]) != 0.0f) &&
+      (mesh_face_calc_normal_subset(l_b, l_a, no[1]) != 0.0f)) {
     return dot_v3v3(no[0], no[1]);
   }
   return -1.0f;
 }
 
-float BM_loop_point_side_of_loop_test(const BMLoop *l, const float co[3])
+float mesh_loop_point_side_of_loop_test(const MeshLoop *l, const float co[3])
 {
   const float *axis = l->f->no;
   return dist_signed_squared_to_corner_v3v3v3(co, l->prev->v->co, l->v->co, l->next->v->co, axis);
 }
 
-float BM_loop_point_side_of_edge_test(const BMLoop *l, const float co[3])
+float mesh_loop_point_side_of_edge_test(const MeshLoop *l, const float co[3])
 {
   const float *axis = l->f->no;
   float dir[3];
@@ -244,8 +244,8 @@ float BM_loop_point_side_of_edge_test(const BMLoop *l, const float co[3])
   return dist_signed_squared_to_plane_v3(co, plane);
 }
 
-BMFace *BM_vert_pair_share_face_by_angle(
-    BMVert *v_a, BMVert *v_b, BMLoop **r_l_a, BMLoop **r_l_b, const bool allow_adjacent)
+MeshFace *mesh_vert_pair_share_face_by_angle(
+    MeshVert *v_a, MeshVert *v_b, MeshLoop **r_l_a, MeshLoop **r_l_b, const bool allow_adjacent)
 {
   BMLoop *l_cur_a = NULL, *l_cur_b = NULL;
   BMFace *f_cur = NULL;
