@@ -247,17 +247,17 @@ float mesh_loop_point_side_of_edge_test(const MeshLoop *l, const float co[3])
 MeshFace *mesh_vert_pair_share_face_by_angle(
     MeshVert *v_a, MeshVert *v_b, MeshLoop **r_l_a, MeshLoop **r_l_b, const bool allow_adjacent)
 {
-  BMLoop *l_cur_a = NULL, *l_cur_b = NULL;
-  BMFace *f_cur = NULL;
+  MeshLoop *l_cur_a = NULL, *l_cur_b = NULL;
+  MeshFace *f_cur = NULL;
 
   if (v_a->e && v_b->e) {
-    BMIter iter;
-    BMLoop *l_a, *l_b;
+    MeshIter iter;
+    MeshLoop *l_a, *l_b;
     float dot_best = -1.0f;
 
-    BM_ITER_ELEM (l_a, &iter, v_a, BM_LOOPS_OF_VERT) {
-      l_b = BM_face_vert_share_loop(l_a->f, v_b);
-      if (l_b && (allow_adjacent || !BM_loop_is_adjacent(l_a, l_b))) {
+    MESH_ITER_ELEM (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
+      l_b = mesh_face_vert_share_loop(l_a->f, v_b);
+      if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b))) {
 
         if (f_cur == NULL) {
           f_cur = l_a->f;
@@ -268,10 +268,10 @@ MeshFace *mesh_vert_pair_share_face_by_angle(
           /* avoid expensive calculations if we only ever find one face */
           float dot;
           if (dot_best == -1.0f) {
-            dot_best = bm_face_calc_split_dot(l_cur_a, l_cur_b);
+            dot_best = mesh_face_calc_split_dot(l_cur_a, l_cur_b);
           }
 
-          dot = bm_face_calc_split_dot(l_a, l_b);
+          dot = mesh_face_calc_split_dot(l_a, l_b);
           if (dot > dot_best) {
             dot_best = dot;
 
