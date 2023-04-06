@@ -26,17 +26,17 @@ MeshLoop *mesh_face_other_edge_loop(MeshFace *f, MeshEdge *e, MeshVert *v)
   return mesh_loop_other_edge_loop(l, v);
 }
 
-MeshLoop *mesh_loop_other_edge_loop(MeshLoop *l, BMVert *v)
+MeshLoop *mesh_loop_other_edge_loop(MeshLoop *l, MeehVert *v)
 {
   lib_assert(mesh_vert_in_edge(l->e, v));
   return l->v == v ? l->prev : l->next;
 }
 
-BMLoop *BM_face_other_vert_loop(BMFace *f, BMVert *v_prev, BMVert *v)
+MeshLoop *mesh_face_other_vert_loop(MeshFace *f, MeshVert *v_prev, MeshVert *v)
 {
-  BMLoop *l_iter = BM_face_vert_share_loop(f, v);
+  MeshLoop *l_iter = mesh_face_vert_share_loop(f, v);
 
-  BLI_assert(BM_edge_exists(v_prev, v) != NULL);
+  lib_assert(mesh_edge_exists(v_prev, v) != NULL);
 
   if (l_iter) {
     if (l_iter->prev->v == v_prev) {
@@ -46,18 +46,18 @@ BMLoop *BM_face_other_vert_loop(BMFace *f, BMVert *v_prev, BMVert *v)
       return l_iter->prev;
     }
     /* invalid args */
-    BLI_assert(0);
+    lib_assert(0);
     return NULL;
   }
   /* invalid args */
-  BLI_assert(0);
+  lib_assert(0);
   return NULL;
 }
 
-BMLoop *BM_loop_other_vert_loop(BMLoop *l, BMVert *v)
+MeshLoop *mesh_loop_other_vert_loop(MeshLoop *l, MeshVert *v)
 {
 #if 0 /* works but slow */
-  return BM_face_other_vert_loop(l->f, BM_edge_other_vert(l->e, v), v);
+  return mesh_face_other_vert_loop(l->f, mesh_edge_other_vert(l->e, v), v);
 #else
   MeshEdge *e = l->e;
   MeshVert *v_prev = mesh_edge_other_vert(e, v);
@@ -74,12 +74,12 @@ BMLoop *BM_loop_other_vert_loop(BMLoop *l, BMVert *v)
   if (l->prev->v == v) {
     return l->prev->prev;
   }
-  BLI_assert(l->next->v == v);
+  lib_assert(l->next->v == v);
   return l->next->next;
 #endif
 }
 
-MeehLoop *mesh_loop_other_vert_loop_by_edge(BMLoop *l, BMEdge *e)
+MeehLoop *mesh_loop_other_vert_loop_by_edge(MeshLoop *l, MeshEdge *e)
 {
   lib_assert(mesh_vert_in_edge(e, l->v));
   if (l->e == e) {
@@ -93,14 +93,14 @@ MeehLoop *mesh_loop_other_vert_loop_by_edge(BMLoop *l, BMEdge *e)
   return NULL;
 }
 
-bool mesh_vert_pair_share_face_check(BMVert *v_a, BMVert *v_b)
+bool mesh_vert_pair_share_face_check(MeshVert *v_a, MeshVert *v_b)
 {
   if (v_a->e && v_b->e) {
     MeshIter iter;
     MeshFace *f;
 
-    BM_ITER_ELEM (f, &iter, v_a, BM_FACES_OF_VERT) {
-      if (BM_vert_in_face(v_b, f)) {
+    MESH_ITER_ELEM (f, &iter, v_a, MESH_FACES_OF_VERT) {
+      if (mesh_vert_in_face(v_b, f)) {
         return true;
       }
     }
@@ -109,18 +109,18 @@ bool mesh_vert_pair_share_face_check(BMVert *v_a, BMVert *v_b)
   return false;
 }
 
-bool BM_vert_pair_share_face_check_cb(BMVert *v_a,
-                                      BMVert *v_b,
-                                      bool (*test_fn)(BMFace *, void *user_data),
-                                      void *user_data)
+bool mesh_vert_pair_share_face_check_cb(MeshVert *v_a,
+                                        MeshVert *v_b,
+                                        bool (*test_fn)(MeshFace *, void *user_data),
+                                        void *user_data)
 {
   if (v_a->e && v_b->e) {
-    BMIter iter;
-    BMFace *f;
+    MeshIter iter;
+    MeshFace *f;
 
-    BM_ITER_ELEM (f, &iter, v_a, BM_FACES_OF_VERT) {
+    MESH_ITER_ELEM (f, &iter, v_a, MESH_FACES_OF_VERT) {
       if (test_fn(f, user_data)) {
-        if (BM_vert_in_face(v_b, f)) {
+        if (mesh_vert_in_face(v_b, f)) {
           return true;
         }
       }
@@ -130,17 +130,17 @@ bool BM_vert_pair_share_face_check_cb(BMVert *v_a,
   return false;
 }
 
-BMFace *BM_vert_pair_shared_face_cb(BMVert *v_a,
-                                    BMVert *v_b,
-                                    const bool allow_adjacent,
-                                    bool (*callback)(BMFace *, BMLoop *, BMLoop *, void *userdata),
-                                    void *user_data,
-                                    BMLoop **r_l_a,
-                                    BMLoop **r_l_b)
+MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
+                                        MeshVert *v_b,
+                                        const bool allow_adjacent,
+                                        bool (*cb)(MeshFace *, BMLoop *, BMLoop *, void *userdata),
+                                        void *user_data,
+                                        MeshLoop **r_l_a,
+                                        MeshLoop **r_l_b)
 {
   if (v_a->e && v_b->e) {
-    BMIter iter;
-    BMLoop *l_a, *l_b;
+    MeshIter iter;
+    MeshLoop *l_a, *l_b;
 
     BM_ITER_ELEM (l_a, &iter, v_a, BM_LOOPS_OF_VERT) {
       BMFace *f = l_a->f;
