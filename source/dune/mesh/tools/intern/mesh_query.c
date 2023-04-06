@@ -133,7 +133,7 @@ bool mesh_vert_pair_share_face_check_cb(MeshVert *v_a,
 MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
                                         MeshVert *v_b,
                                         const bool allow_adjacent,
-                                        bool (*cb)(MeshFace *, BMLoop *, BMLoop *, void *userdata),
+                                        bool (*cb)(MeshFace *, MeshLoop *, MeshLoop *, void *userdata),
                                         void *user_data,
                                         MeshLoop **r_l_a,
                                         MeshLoop **r_l_b)
@@ -142,11 +142,11 @@ MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
     MeshIter iter;
     MeshLoop *l_a, *l_b;
 
-    BM_ITER_ELEM (l_a, &iter, v_a, BM_LOOPS_OF_VERT) {
-      BMFace *f = l_a->f;
-      l_b = BM_face_vert_share_loop(f, v_b);
-      if (l_b && (allow_adjacent || !BM_loop_is_adjacent(l_a, l_b)) &&
-          callback(f, l_a, l_b, user_data)) {
+    MESH_ITER_ELEM (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
+      MeshFace *f = l_a->f;
+      l_b = mesh_face_vert_share_loop(f, v_b);
+      if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b)) &&
+          cb(f, l_a, l_b, user_data)) {
         *r_l_a = l_a;
         *r_l_b = l_b;
 
@@ -158,7 +158,7 @@ MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
   return NULL;
 }
 
-BMFace *BM_vert_pair_share_face_by_len(
+MeshFace *mesh_vert_pair_share_face_by_len(
     BMVert *v_a, BMVert *v_b, BMLoop **r_l_a, BMLoop **r_l_b, const bool allow_adjacent)
 {
   BMLoop *l_cur_a = NULL, *l_cur_b = NULL;
