@@ -26,9 +26,9 @@ MeshLoop *mesh_face_other_edge_loop(MeshFace *f, MeshEdge *e, MeshVert *v)
   return mesh_loop_other_edge_loop(l, v);
 }
 
-BMLoop *BM_loop_other_edge_loop(BMLoop *l, BMVert *v)
+MeshLoop *mesh_loop_other_edge_loop(MeshLoop *l, BMVert *v)
 {
-  BLI_assert(BM_vert_in_edge(l->e, v));
+  lib_assert(mesh_vert_in_edge(l->e, v));
   return l->v == v ? l->prev : l->next;
 }
 
@@ -59,17 +59,17 @@ BMLoop *BM_loop_other_vert_loop(BMLoop *l, BMVert *v)
 #if 0 /* works but slow */
   return BM_face_other_vert_loop(l->f, BM_edge_other_vert(l->e, v), v);
 #else
-  BMEdge *e = l->e;
-  BMVert *v_prev = BM_edge_other_vert(e, v);
+  MeshEdge *e = l->e;
+  MeshVert *v_prev = mesh_edge_other_vert(e, v);
   if (l->v == v) {
     if (l->prev->v == v_prev) {
       return l->next;
     }
-    BLI_assert(l->next->v == v_prev);
+    lib_assert(l->next->v == v_prev);
 
     return l->prev;
   }
-  BLI_assert(l->v == v_prev);
+  lib_assert(l->v == v_prev);
 
   if (l->prev->v == v) {
     return l->prev->prev;
@@ -79,9 +79,9 @@ BMLoop *BM_loop_other_vert_loop(BMLoop *l, BMVert *v)
 #endif
 }
 
-BMLoop *BM_loop_other_vert_loop_by_edge(BMLoop *l, BMEdge *e)
+MeehLoop *mesh_loop_other_vert_loop_by_edge(BMLoop *l, BMEdge *e)
 {
-  BLI_assert(BM_vert_in_edge(e, l->v));
+  lib_assert(mesh_vert_in_edge(e, l->v));
   if (l->e == e) {
     return l->next;
   }
@@ -89,15 +89,15 @@ BMLoop *BM_loop_other_vert_loop_by_edge(BMLoop *l, BMEdge *e)
     return l->prev;
   }
 
-  BLI_assert(0);
+  lib_assert(0);
   return NULL;
 }
 
-bool BM_vert_pair_share_face_check(BMVert *v_a, BMVert *v_b)
+bool mesh_vert_pair_share_face_check(BMVert *v_a, BMVert *v_b)
 {
   if (v_a->e && v_b->e) {
-    BMIter iter;
-    BMFace *f;
+    MeshIter iter;
+    MeshFace *f;
 
     BM_ITER_ELEM (f, &iter, v_a, BM_FACES_OF_VERT) {
       if (BM_vert_in_face(v_b, f)) {
