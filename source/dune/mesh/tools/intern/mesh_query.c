@@ -806,9 +806,9 @@ static int bm_loop_region_count__clear(BMLoop *l)
   /* clear flags */
   e_iter = e_first = l->e;
   do {
-    BM_ELEM_API_FLAG_DISABLE(e_iter, EDGE_VISIT);
+    MESH_ELEM_API_FLAG_DISABLE(e_iter, EDGE_VISIT);
     if (e_iter->l) {
-      BMLoop *l_iter, *l_first;
+      MeshLoop *l_iter, *l_first;
       l_iter = l_first = e_iter->l;
       do {
         if (l_iter->v == l->v) {
