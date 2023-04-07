@@ -290,21 +290,21 @@ MeshFace *mesh_vert_pair_share_face_by_angle(
   return f_cur;
 }
 
-BMLoop *BM_vert_find_first_loop(BMVert *v)
+MeshLoop *mesh_vert_find_first_loop(MeshVert *v)
 {
-  return v->e ? bmesh_disk_faceloop_find_first(v->e, v) : NULL;
+  return v->e ? mesh_disk_faceloop_find_first(v->e, v) : NULL;
 }
-BMLoop *BM_vert_find_first_loop_visible(BMVert *v)
+MeshLoop *mesh_vert_find_first_loop_visible(MeshVert *v)
 {
-  return v->e ? bmesh_disk_faceloop_find_first_visible(v->e, v) : NULL;
+  return v->e ? mesh_disk_faceloop_find_first_visible(v->e, v) : NULL;
 }
 
-bool BM_vert_in_face(BMVert *v, BMFace *f)
+bool mesh_vert_in_face(MeshVert *v, MeshFace *f)
 {
-  BMLoop *l_iter, *l_first;
+  MeshLoop *l_iter, *l_first;
 
 #ifdef USE_BMESH_HOLES
-  BMLoopList *lst;
+  MeshLoopList *lst;
   for (lst = f->loops.first; lst; lst = lst->next)
 #endif
   {
@@ -323,33 +323,33 @@ bool BM_vert_in_face(BMVert *v, BMFace *f)
   return false;
 }
 
-int BM_verts_in_face_count(BMVert **varr, int len, BMFace *f)
+int mesh_verts_in_face_count(MeshVert **varr, int len, MeshFace *f)
 {
-  BMLoop *l_iter, *l_first;
+  MeshLoop *l_iter, *l_first;
 
-#ifdef USE_BMESH_HOLES
-  BMLoopList *lst;
+#ifdef USE_MESH_HOLES
+  MeshLoopList *lst;
 #endif
 
   int i, count = 0;
 
   for (i = 0; i < len; i++) {
-    BM_ELEM_API_FLAG_ENABLE(varr[i], _FLAG_OVERLAP);
+    MESH_ELEM_API_FLAG_ENABLE(varr[i], _FLAG_OVERLAP);
   }
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   for (lst = f->loops.first; lst; lst = lst->next)
 #endif
   {
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
     l_iter = l_first = lst->first;
 #else
     l_iter = l_first = f->l_first;
 #endif
 
     do {
-      if (BM_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_OVERLAP)) {
+      if (MESH_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_OVERLAP)) {
         count++;
       }
 
@@ -357,18 +357,18 @@ int BM_verts_in_face_count(BMVert **varr, int len, BMFace *f)
   }
 
   for (i = 0; i < len; i++) {
-    BM_ELEM_API_FLAG_DISABLE(varr[i], _FLAG_OVERLAP);
+    MESH_ELEM_API_FLAG_DISABLE(varr[i], _FLAG_OVERLAP);
   }
 
   return count;
 }
 
-bool BM_verts_in_face(BMVert **varr, int len, BMFace *f)
+bool mesh_verts_in_face(BMVert **varr, int len, BMFace *f)
 {
-  BMLoop *l_iter, *l_first;
+  MeshLoop *l_iter, *l_first;
 
 #ifdef USE_BMESH_HOLES
-  BMLoopList *lst;
+  MeshLoopList *lst;
 #endif
 
   int i;
@@ -380,22 +380,22 @@ bool BM_verts_in_face(BMVert **varr, int len, BMFace *f)
   }
 
   for (i = 0; i < len; i++) {
-    BM_ELEM_API_FLAG_ENABLE(varr[i], _FLAG_OVERLAP);
+    MESH_ELEM_API_FLAG_ENABLE(varr[i], _FLAG_OVERLAP);
   }
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   for (lst = f->loops.first; lst; lst = lst->next)
 #endif
   {
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
     l_iter = l_first = lst->first;
 #else
     l_iter = l_first = f->l_first;
 #endif
 
     do {
-      if (BM_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_OVERLAP)) {
+      if (MESH_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_OVERLAP)) {
         /* pass */
       }
       else {
@@ -407,16 +407,16 @@ bool BM_verts_in_face(BMVert **varr, int len, BMFace *f)
   }
 
   for (i = 0; i < len; i++) {
-    BM_ELEM_API_FLAG_DISABLE(varr[i], _FLAG_OVERLAP);
+    MESH_ELEM_API_FLAG_DISABLE(varr[i], _FLAG_OVERLAP);
   }
 
   return ok;
 }
 
-bool BM_edge_in_face(const BMEdge *e, const BMFace *f)
+bool mesh_edge_in_face(const MeshEdge *e, const MeshFace *f)
 {
   if (e->l) {
-    const BMLoop *l_iter, *l_first;
+    const MeshLoop *l_iter, *l_first;
 
     l_iter = l_first = e->l;
     do {
@@ -429,17 +429,17 @@ bool BM_edge_in_face(const BMEdge *e, const BMFace *f)
   return false;
 }
 
-BMLoop *BM_edge_other_loop(BMEdge *e, BMLoop *l)
+MeshLoop *mesg_edge_other_loop(MeshEdge *e, MeshLoop *l)
 {
-  BMLoop *l_other;
+  MeshLoop *l_other;
 
-  // BLI_assert(BM_edge_is_manifold(e));  // TOO strict, just check if we have another radial face
-  BLI_assert(e->l && e->l->radial_next != e->l);
-  BLI_assert(BM_vert_in_edge(e, l->v));
+  // lib_assert(mesh_edge_is_manifold(e));  // TOO strict, just check if we have another radial face
+  lib_assert(e->l && e->l->radial_next != e->l);
+  lib_assert(mesh_vert_in_edge(e, l->v));
 
   l_other = (l->e == e) ? l : l->prev;
   l_other = l_other->radial_next;
-  BLI_assert(l_other->e == e);
+  lib_assert(l_other->e == e);
 
   if (l_other->v == l->v) {
     /* pass */
@@ -448,16 +448,16 @@ BMLoop *BM_edge_other_loop(BMEdge *e, BMLoop *l)
     l_other = l_other->next;
   }
   else {
-    BLI_assert(0);
+    lib_assert(0);
   }
 
   return l_other;
 }
 
-BMLoop *BM_vert_step_fan_loop(BMLoop *l, BMEdge **e_step)
+MeshLoop *mesh_vert_step_fan_loop(MeshLoop *l, MeshEdge **e_step)
 {
-  BMEdge *e_prev = *e_step;
-  BMEdge *e_next;
+  MeshEdge *e_prev = *e_step;
+  MeshEdge *e_next;
   if (l->e == e_prev) {
     e_next = l->prev->e;
   }
@@ -465,29 +465,29 @@ BMLoop *BM_vert_step_fan_loop(BMLoop *l, BMEdge **e_step)
     e_next = l->e;
   }
   else {
-    BLI_assert(0);
+    lib_assert(0);
     return NULL;
   }
 
-  if (BM_edge_is_manifold(e_next)) {
-    return BM_edge_other_loop((*e_step = e_next), l);
+  if (mesh_edge_is_manifold(e_next)) {
+    return mesh_edge_other_loop((*e_step = e_next), l);
   }
   return NULL;
 }
 
-BMEdge *BM_vert_other_disk_edge(BMVert *v, BMEdge *e_first)
+MeshEdge *mesh_vert_other_disk_edge(MeshVert *v, MeshEdge *e_first)
 {
-  BMLoop *l_a;
+  MeshLoop *l_a;
   int tot = 0;
   int i;
 
-  BLI_assert(BM_vert_in_edge(e_first, v));
+  lib_assert(mesh_vert_in_edge(e_first, v));
 
   l_a = e_first->l;
   do {
-    l_a = BM_loop_other_vert_loop(l_a, v);
-    l_a = BM_vert_in_edge(l_a->e, v) ? l_a : l_a->prev;
-    if (BM_edge_is_manifold(l_a->e)) {
+    l_a = mesh_loop_other_vert_loop(l_a, v);
+    l_a = mesh_vert_in_edge(l_a->e, v) ? l_a : l_a->prev;
+    if (mesh_edge_is_manifold(l_a->e)) {
       l_a = l_a->radial_next;
     }
     else {
@@ -504,13 +504,13 @@ BMEdge *BM_vert_other_disk_edge(BMVert *v, BMEdge *e_first)
   l_a = e_first->l;
   do {
     if (i == tot) {
-      l_a = BM_vert_in_edge(l_a->e, v) ? l_a : l_a->prev;
+      l_a = mesh_vert_in_edge(l_a->e, v) ? l_a : l_a->prev;
       return l_a->e;
     }
 
-    l_a = BM_loop_other_vert_loop(l_a, v);
-    l_a = BM_vert_in_edge(l_a->e, v) ? l_a : l_a->prev;
-    if (BM_edge_is_manifold(l_a->e)) {
+    l_a = mesh_loop_other_vert_loop(l_a, v);
+    l_a = mesh_vert_in_edge(l_a->e, v) ? l_a : l_a->prev;
+    if (mesh_edge_is_manifold(l_a->e)) {
       l_a = l_a->radial_next;
     }
     /* this won't have changed from the previous loop */
@@ -521,7 +521,7 @@ BMEdge *BM_vert_other_disk_edge(BMVert *v, BMEdge *e_first)
   return NULL;
 }
 
-float BM_edge_calc_length(const BMEdge *e)
+float mesh_edge_calc_length(const MeshEdge *e)
 {
   return len_v3v3(e->v1->co, e->v2->co);
 }
