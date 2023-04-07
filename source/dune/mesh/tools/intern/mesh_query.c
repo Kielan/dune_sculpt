@@ -367,7 +367,7 @@ bool mesh_verts_in_face(BMVert **varr, int len, BMFace *f)
 {
   MeshLoop *l_iter, *l_first;
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   MeshLoopList *lst;
 #endif
 
@@ -526,14 +526,14 @@ float mesh_edge_calc_length(const MeshEdge *e)
   return len_v3v3(e->v1->co, e->v2->co);
 }
 
-float BM_edge_calc_length_squared(const BMEdge *e)
+float BM_edge_calc_length_squared(const MeshEdge *e)
 {
   return len_squared_v3v3(e->v1->co, e->v2->co);
 }
 
-bool BM_edge_face_pair(BMEdge *e, BMFace **r_fa, BMFace **r_fb)
+bool mesh_edge_face_pair(MeshEdge *e, MeshFace **r_fa, MeshFace **r_fb)
 {
-  BMLoop *la, *lb;
+  MeshLoop *la, *lb;
 
   if ((la = e->l) && (lb = la->radial_next) && (la != lb) && (lb->radial_next == la)) {
     *r_fa = la->f;
@@ -546,9 +546,9 @@ bool BM_edge_face_pair(BMEdge *e, BMFace **r_fa, BMFace **r_fb)
   return false;
 }
 
-bool BM_edge_loop_pair(BMEdge *e, BMLoop **r_la, BMLoop **r_lb)
+bool mesh_edge_loop_pair(MeshEdge *e, MeshLoop **r_la, BMLoop **r_lb)
 {
-  BMLoop *la, *lb;
+  MeshLoop *la, *lb;
 
   if ((la = e->l) && (lb = la->radial_next) && (la != lb) && (lb->radial_next == la)) {
     *r_la = la;
@@ -561,34 +561,34 @@ bool BM_edge_loop_pair(BMEdge *e, BMLoop **r_la, BMLoop **r_lb)
   return false;
 }
 
-bool BM_vert_is_edge_pair(const BMVert *v)
+bool mesh_vert_is_edge_pair(const MeshVert *v)
 {
-  const BMEdge *e = v->e;
+  const MeshEdge *e = v->e;
   if (e) {
-    BMEdge *e_other = BM_DISK_EDGE_NEXT(e, v);
-    return ((e_other != e) && (BM_DISK_EDGE_NEXT(e_other, v) == e));
+    MeshEdge *e_other = MESH_DISK_EDGE_NEXT(e, v);
+    return ((e_other != e) && (MESH_DISK_EDGE_NEXT(e_other, v) == e));
   }
   return false;
 }
 
-bool BM_vert_is_edge_pair_manifold(const BMVert *v)
+bool mesh_vert_is_edge_pair_manifold(const MeshVert *v)
 {
-  const BMEdge *e = v->e;
+  const MeshEdge *e = v->e;
   if (e) {
-    BMEdge *e_other = BM_DISK_EDGE_NEXT(e, v);
-    if (((e_other != e) && (BM_DISK_EDGE_NEXT(e_other, v) == e))) {
-      return BM_edge_is_manifold(e) && BM_edge_is_manifold(e_other);
+    MeshEdge *e_other = MESH_DISK_EDGE_NEXT(e, v);
+    if (((e_other != e) && (MESH_DISK_EDGE_NEXT(e_other, v) == e))) {
+      return mesh_edge_is_manifold(e) && mesh_edge_is_manifold(e_other);
     }
   }
   return false;
 }
 
-bool BM_vert_edge_pair(BMVert *v, BMEdge **r_e_a, BMEdge **r_e_b)
+bool mesh_vert_edge_pair(MeshVert *v, MeshEdge **r_e_a, MeshEdge **r_e_b)
 {
-  BMEdge *e_a = v->e;
+  MeshEdge *e_a = v->e;
   if (e_a) {
-    BMEdge *e_b = BM_DISK_EDGE_NEXT(e_a, v);
-    if ((e_b != e_a) && (BM_DISK_EDGE_NEXT(e_b, v) == e_a)) {
+    MeshEdge *e_b = MESH_DISK_EDGE_NEXT(e_a, v);
+    if ((e_b != e_a) && (MESH_DISK_EDGE_NEXT(e_b, v) == e_a)) {
       *r_e_a = e_a;
       *r_e_b = e_b;
       return true;
@@ -600,17 +600,17 @@ bool BM_vert_edge_pair(BMVert *v, BMEdge **r_e_a, BMEdge **r_e_b)
   return false;
 }
 
-int BM_vert_edge_count(const BMVert *v)
+int mesh_vert_edge_count(const BMVert *v)
 {
   return bmesh_disk_count(v);
 }
 
-int BM_vert_edge_count_at_most(const BMVert *v, const int count_max)
+int mesh_vert_edge_count_at_most(const MeshVert *v, const int count_max)
 {
-  return bmesh_disk_count_at_most(v, count_max);
+  return mesh_disk_count_at_most(v, count_max);
 }
 
-int BM_vert_edge_count_nonwire(const BMVert *v)
+int mesh_vert_edge_count_nonwire(const BMVert *v)
 {
   int count = 0;
   BMIter eiter;
