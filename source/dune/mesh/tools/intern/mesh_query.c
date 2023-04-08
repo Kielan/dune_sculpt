@@ -745,14 +745,14 @@ bool mesh_vert_is_manifold(const MeshVert *v)
 
   e_first = l_first->e;
   l_first = (l_first->v == v) ? l_first : l_first->next;
-  BLI_assert(l_first->v == v);
+  lib_assert(l_first->v == v);
 
   l_iter = l_first;
   e_prev = e_first;
 
   do {
     loop_num_region += 1;
-  } while (((l_iter = BM_vert_step_fan_loop(l_iter, &e_prev)) != l_first) && (l_iter != NULL));
+  } while (((l_iter = mesh_vert_step_fan_loop(l_iter, &e_prev)) != l_first) && (l_iter != NULL));
 
   return (loop_num == loop_num_region);
 }
@@ -760,18 +760,18 @@ bool mesh_vert_is_manifold(const MeshVert *v)
 #define LOOP_VISIT _FLAG_WALK
 #define EDGE_VISIT _FLAG_WALK
 
-static int bm_loop_region_count__recursive(BMEdge *e, BMVert *v)
+static int mesh_loop_region_count__recursive(MeshEdge *e, MeshVert *v)
 {
-  BMLoop *l_iter, *l_first;
+  MeshLoop *l_iter, *l_first;
   int count = 0;
 
-  BLI_assert(!BM_ELEM_API_FLAG_TEST(e, EDGE_VISIT));
-  BM_ELEM_API_FLAG_ENABLE(e, EDGE_VISIT);
+  lib_assert(!MESH_ELEM_API_FLAG_TEST(e, EDGE_VISIT));
+  MESH_ELEM_API_FLAG_ENABLE(e, EDGE_VISIT);
 
   l_iter = l_first = e->l;
   do {
     if (l_iter->v == v) {
-      BMEdge *e_other = l_iter->prev->e;
+      MeshEdge *e_other = l_iter->prev->e;
       if (!BM_ELEM_API_FLAG_TEST(l_iter, LOOP_VISIT)) {
         BM_ELEM_API_FLAG_ENABLE(l_iter, LOOP_VISIT);
         count += 1;
