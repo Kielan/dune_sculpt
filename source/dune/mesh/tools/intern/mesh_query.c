@@ -822,7 +822,7 @@ static int mesh_loop_region_count__clear(MeshLoop *l)
   return count;
 }
 
-int BM_loop_region_loops_count_at_most(BMLoop *l, int *r_loop_total)
+int mesh_loop_region_loops_count_at_most(BMLoop *l, int *r_loop_total)
 {
   const int count = bm_loop_region_count__recursive(l->e, l->v);
   const int count_total = bm_loop_region_count__clear(l);
@@ -851,7 +851,7 @@ bool mesh_vert_is_manifold_region(const MeshVert *v)
   return true;
 }
 
-bool BM_edge_is_convex(const BMEdge *e)
+bool mesh_edge_is_convex(const MeshEdge *e)
 {
   if (BM_edge_is_manifold(e)) {
     BMLoop *l1 = e->l;
