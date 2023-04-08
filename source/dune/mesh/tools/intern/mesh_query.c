@@ -1139,7 +1139,7 @@ void mesh_edge_ordered_verts(const MeshEdge *edge, MeshVert **r_v1, MeshVert **r
   mesh_edge_ordered_verts_ex(edge, r_v1, r_v2, edge->l);
 }
 
-MeshLoop *mesh_loop_find_prev_nodouble(MeshLoop *l, BMLoop *l_stop, const float eps_sq)
+MeshLoop *mesh_loop_find_prev_nodouble(MeshLoop *l, MeshLoop *l_stop, const float eps_sq)
 {
   MeshLoop *l_step = l->prev;
 
@@ -1855,30 +1855,30 @@ bool mesh_face_exists_overlap_subset(MeshVert **varr, const int len)
 #ifdef DEBUG
   /* check flag isn't already set */
   for (int i = 0; i < len; i++) {
-    lib_assert(BM_ELEM_API_FLAG_TEST(varr[i], _FLAG_OVERLAP) == 0);
-    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
-      BLI_assert(BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
+    lib_assert(MESH_ELEM_API_FLAG_TEST(varr[i], _FLAG_OVERLAP) == 0);
+    MESH_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
+      lib_assert(MESH_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
     }
   }
 #endif
 
   for (int i = 0; i < len; i++) {
-    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
-      if ((f->len <= len) && (BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0)) {
+    MESH_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
+      if ((f->len <= len) && (MESH_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0)) {
         /* Check if all vers in this face are flagged. */
-        BMLoop *l_iter, *l_first;
+        MESHLoop *l_iter, *l_first;
 
         if (is_init == false) {
           is_init = true;
           for (int j = 0; j < len; j++) {
-            BM_ELEM_API_FLAG_ENABLE(varr[j], _FLAG_OVERLAP);
+            MESH_ELEM_API_FLAG_ENABLE(varr[j], _FLAG_OVERLAP);
           }
         }
 
-        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
         is_overlap = true;
         do {
-          if (BM_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_OVERLAP) == 0) {
+          if (MESH_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_OVERLAP) == 0) {
             is_overlap = false;
             break;
           }
@@ -1888,33 +1888,33 @@ bool mesh_face_exists_overlap_subset(MeshVert **varr, const int len)
           break;
         }
 
-        BM_ELEM_API_FLAG_ENABLE(f, _FLAG_OVERLAP);
-        BLI_linklist_prepend_alloca(&f_lnk, f);
+        MESH_ELEM_API_FLAG_ENABLE(f, _FLAG_OVERLAP);
+        lib_linklist_prepend_alloca(&f_lnk, f);
       }
     }
   }
 
   if (is_init == true) {
     for (int i = 0; i < len; i++) {
-      BM_ELEM_API_FLAG_DISABLE(varr[i], _FLAG_OVERLAP);
+      MESH_ELEM_API_FLAG_DISABLE(varr[i], _FLAG_OVERLAP);
     }
   }
 
   for (; f_lnk; f_lnk = f_lnk->next) {
-    BM_ELEM_API_FLAG_DISABLE((BMFace *)f_lnk->link, _FLAG_OVERLAP);
+    MESH_ELEM_API_FLAG_DISABLE((MeshFace *)f_lnk->link, _FLAG_OVERLAP);
   }
 
   return is_overlap;
 }
 
-bool BM_vert_is_all_edge_flag_test(const BMVert *v, const char hflag, const bool respect_hide)
+bool mesh_vert_is_all_edge_flag_test(const MeshVert *v, const char hflag, const bool respect_hide)
 {
   if (v->e) {
-    BMEdge *e_other;
-    BMIter eiter;
+    MeshEdge *e_other;
+    MeshIter eiter;
 
-    BM_ITER_ELEM (e_other, &eiter, (BMVert *)v, BM_EDGES_OF_VERT) {
-      if (!respect_hide || !BM_elem_flag_test(e_other, BM_ELEM_HIDDEN)) {
+    MESH_ITER_ELEM (e_other, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
+      if (!respect_hide || !BM_elem_flag_test(e_other, MESH_ELEM_HIDDEN)) {
         if (!BM_elem_flag_test(e_other, hflag)) {
           return false;
         }
