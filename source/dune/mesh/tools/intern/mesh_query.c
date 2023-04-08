@@ -969,7 +969,7 @@ int mesh_face_share_edge_count(MeshFace *f_a, MeshFace *f_b)
 
   l_iter = l_first = MESH_FACE_FIRST_LOOP(f_a);
   do {
-    if (BM_edge_in_face(l_iter->e, f_b)) {
+    if (mesh_edge_in_face(l_iter->e, f_b)) {
       count++;
     }
   } while ((l_iter = l_iter->next) != l_first);
@@ -1057,7 +1057,7 @@ bool mesh_edge_share_quad_check(MeshEdge *e1, MeshEdge *e2)
     do {
       f = l->f;
       if (f->len == 4) {
-        if (BM_edge_in_face(e2, f)) {
+        if (mesh_edge_in_face(e2, f)) {
           return true;
         }
       }
@@ -1067,38 +1067,38 @@ bool mesh_edge_share_quad_check(MeshEdge *e1, MeshEdge *e2)
   return false;
 }
 
-bool BM_edge_share_vert_check(BMEdge *e1, BMEdge *e2)
+bool mesh_edge_share_vert_check(MeshEdge *e1, MeshEdge *e2)
 {
   return (e1->v1 == e2->v1 || e1->v1 == e2->v2 || e1->v2 == e2->v1 || e1->v2 == e2->v2);
 }
 
-BMVert *BM_edge_share_vert(BMEdge *e1, BMEdge *e2)
+MeshVert *mesh_edge_share_vert(MeshEdge *e1, MeshEdge *e2)
 {
-  BLI_assert(e1 != e2);
-  if (BM_vert_in_edge(e2, e1->v1)) {
+  lib_assert(e1 != e2);
+  if (mesh_vert_in_edge(e2, e1->v1)) {
     return e1->v1;
   }
-  if (BM_vert_in_edge(e2, e1->v2)) {
+  if (mesh_vert_in_edge(e2, e1->v2)) {
     return e1->v2;
   }
   return NULL;
 }
 
-BMLoop *BM_edge_vert_share_loop(BMLoop *l, BMVert *v)
+MeshLoop *mesh_edge_vert_share_loop(M shLoop *l, MeshVert *v)
 {
-  BLI_assert(BM_vert_in_edge(l->e, v));
+  lib_assert(mesh_vert_in_edge(l->e, v));
   if (l->v == v) {
     return l;
   }
   return l->next;
 }
 
-BMLoop *BM_face_vert_share_loop(BMFace *f, BMVert *v)
+MeshLoop *mesh_face_vert_share_loop(MeshFace *f, MeshVert *v)
 {
-  BMLoop *l_first;
-  BMLoop *l_iter;
+  MeshLoop *l_first;
+  MeshLoop *l_iter;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
     if (l_iter->v == v) {
       return l_iter;
@@ -1108,10 +1108,10 @@ BMLoop *BM_face_vert_share_loop(BMFace *f, BMVert *v)
   return NULL;
 }
 
-BMLoop *BM_face_edge_share_loop(BMFace *f, BMEdge *e)
+MeshLoop *mesh_face_edge_share_loop(MeshFace *f, MeshEdge *e)
 {
-  BMLoop *l_first;
-  BMLoop *l_iter;
+  MeshLoop *l_first;
+  MeshLoop *l_iter;
 
   l_iter = l_first = e->l;
   do {
@@ -1123,31 +1123,31 @@ BMLoop *BM_face_edge_share_loop(BMFace *f, BMEdge *e)
   return NULL;
 }
 
-void BM_edge_ordered_verts_ex(const BMEdge *edge,
-                              BMVert **r_v1,
-                              BMVert **r_v2,
-                              const BMLoop *edge_loop)
+void mesh_edge_ordered_verts_ex(const MeshEdge *edge,
+                              MeshVert **r_v1,
+                              MeshVert **r_v2,
+                              const MeshLoop *edge_loop)
 {
-  BLI_assert(edge_loop->e == edge);
+  lib_assert(edge_loop->e == edge);
   (void)edge; /* quiet warning in release build */
   *r_v1 = edge_loop->v;
   *r_v2 = edge_loop->next->v;
 }
 
-void BM_edge_ordered_verts(const BMEdge *edge, BMVert **r_v1, BMVert **r_v2)
+void mesh_edge_ordered_verts(const MeshEdge *edge, MeshVert **r_v1, MeshVert **r_v2)
 {
-  BM_edge_ordered_verts_ex(edge, r_v1, r_v2, edge->l);
+  mesh_edge_ordered_verts_ex(edge, r_v1, r_v2, edge->l);
 }
 
-BMLoop *BM_loop_find_prev_nodouble(BMLoop *l, BMLoop *l_stop, const float eps_sq)
+MeshLoop *mesh_loop_find_prev_nodouble(MeshLoop *l, BMLoop *l_stop, const float eps_sq)
 {
-  BMLoop *l_step = l->prev;
+  MeshLoop *l_step = l->prev;
 
-  BLI_assert(!ELEM(l_stop, NULL, l));
+  lib_assert(!ELEM(l_stop, NULL, l));
 
   while (UNLIKELY(len_squared_v3v3(l->v->co, l_step->v->co) < eps_sq)) {
     l_step = l_step->prev;
-    BLI_assert(l_step != l);
+    lib_assert(l_step != l);
     if (UNLIKELY(l_step == l_stop)) {
       return NULL;
     }
@@ -1156,7 +1156,7 @@ BMLoop *BM_loop_find_prev_nodouble(BMLoop *l, BMLoop *l_stop, const float eps_sq
   return l_step;
 }
 
-BMLoop *BM_loop_find_next_nodouble(BMLoop *l, BMLoop *l_stop, const float eps_sq)
+MeshLoop *mesh_loop_find_next_nodouble(MeshLoop *l, MeshLoop *l_stop, const float eps_sq)
 {
   BMLoop *l_step = l->next;
 
