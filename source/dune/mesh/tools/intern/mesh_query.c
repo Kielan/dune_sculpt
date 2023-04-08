@@ -1717,8 +1717,8 @@ bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
   /* now tag all verts and edges in the boundary array as true so
    * we can know if a face-vert is from our array */
   for (i = 0; i < len; i++) {
-    BM_elem_flag_enable(varr[i], BM_ELEM_INTERNAL_TAG);
-    BM_elem_flag_enable(earr[i], BM_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_enable(varr[i], MESH_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_enable(earr[i], MESH_ELEM_INTERNAL_TAG);
   }
 
   /* so! boundary is tagged, everything else cleared */
@@ -1824,30 +1824,30 @@ MeshFace *mesh_face_exists_overlap(MeshVert **varr, const int len)
 #endif
 
   for (i = 0; i < len; i++) {
-    BM_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
-      if (BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0) {
-        if (len <= BM_verts_in_face_count(varr, len, f)) {
+    MESH_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
+      if (MESH_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0) {
+        if (len <= mesh_verts_in_face_count(varr, len, f)) {
           f_overlap = f;
           break;
         }
 
-        BM_ELEM_API_FLAG_ENABLE(f, _FLAG_OVERLAP);
-        BLI_linklist_prepend_alloca(&f_lnk, f);
+        MESH_ELEM_API_FLAG_ENABLE(f, _FLAG_OVERLAP);
+        lib_linklist_prepend_alloca(&f_lnk, f);
       }
     }
   }
 
   for (; f_lnk; f_lnk = f_lnk->next) {
-    BM_ELEM_API_FLAG_DISABLE((BMFace *)f_lnk->link, _FLAG_OVERLAP);
+    MESH_ELEM_API_FLAG_DISABLE((MeshFace *)f_lnk->link, _FLAG_OVERLAP);
   }
 
   return f_overlap;
 }
 
-bool BM_face_exists_overlap_subset(BMVert **varr, const int len)
+bool mesh_face_exists_overlap_subset(MeshVert **varr, const int len)
 {
-  BMIter viter;
-  BMFace *f;
+  MeshIter viter;
+  MeshFace *f;
   bool is_init = false;
   bool is_overlap = false;
   LinkNode *f_lnk = NULL;
@@ -1855,7 +1855,7 @@ bool BM_face_exists_overlap_subset(BMVert **varr, const int len)
 #ifdef DEBUG
   /* check flag isn't already set */
   for (int i = 0; i < len; i++) {
-    BLI_assert(BM_ELEM_API_FLAG_TEST(varr[i], _FLAG_OVERLAP) == 0);
+    lib_assert(BM_ELEM_API_FLAG_TEST(varr[i], _FLAG_OVERLAP) == 0);
     BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
       BLI_assert(BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
     }
