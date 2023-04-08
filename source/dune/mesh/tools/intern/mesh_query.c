@@ -526,7 +526,7 @@ float mesh_edge_calc_length(const MeshEdge *e)
   return len_v3v3(e->v1->co, e->v2->co);
 }
 
-float BM_edge_calc_length_squared(const MeshEdge *e)
+float mesh_edge_calc_length_squared(const MeshEdge *e)
 {
   return len_squared_v3v3(e->v1->co, e->v2->co);
 }
@@ -977,14 +977,14 @@ int mesh_face_share_edge_count(MeshFace *f_a, MeshFace *f_b)
   return count;
 }
 
-bool BM_face_share_edge_check(BMFace *f1, BMFace *f2)
+bool mesh_face_share_edge_check(MeshFace *f1, MeshFace *f2)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f1);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f1);
   do {
-    if (BM_edge_in_face(l_iter->e, f2)) {
+    if (mesh_edge_in_face(l_iter->e, f2)) {
       return true;
     }
   } while ((l_iter = l_iter->next) != l_first);
@@ -992,15 +992,15 @@ bool BM_face_share_edge_check(BMFace *f1, BMFace *f2)
   return false;
 }
 
-int BM_face_share_vert_count(BMFace *f_a, BMFace *f_b)
+int BM_face_share_vert_count(MeshFace *f_a, MeshFace *f_b)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
   int count = 0;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_a);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_a);
   do {
-    if (BM_vert_in_face(l_iter->v, f_b)) {
+    if (mesh_vert_in_face(l_iter->v, f_b)) {
       count++;
     }
   } while ((l_iter = l_iter->next) != l_first);
@@ -1008,14 +1008,14 @@ int BM_face_share_vert_count(BMFace *f_a, BMFace *f_b)
   return count;
 }
 
-bool BM_face_share_vert_check(BMFace *f_a, BMFace *f_b)
+bool mesh_face_share_vert_check(MeshFace *f_a, MeshFace *f_b)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_a);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_a);
   do {
-    if (BM_vert_in_face(l_iter->v, f_b)) {
+    if (mesh_vert_in_face(l_iter->v, f_b)) {
       return true;
     }
   } while ((l_iter = l_iter->next) != l_first);
@@ -1023,22 +1023,22 @@ bool BM_face_share_vert_check(BMFace *f_a, BMFace *f_b)
   return false;
 }
 
-bool BM_loop_share_edge_check(BMLoop *l_a, BMLoop *l_b)
+bool mesh_loop_share_edge_check(MeshLoop *l_a, MeshLoop *l_b)
 {
-  BLI_assert(l_a->v == l_b->v);
+  lib_assert(l_a->v == l_b->v);
   return (ELEM(l_a->e, l_b->e, l_b->prev->e) || ELEM(l_b->e, l_a->e, l_a->prev->e));
 }
 
-bool BM_edge_share_face_check(BMEdge *e1, BMEdge *e2)
+bool mesh_edge_share_face_check(MeshEdge *e1, MeshEdge *e2)
 {
-  BMLoop *l;
-  BMFace *f;
+  MeshLoop *l;
+  MeshFace *f;
 
   if (e1->l && e2->l) {
     l = e1->l;
     do {
       f = l->f;
-      if (BM_edge_in_face(e2, f)) {
+      if (mesh_edge_in_face(e2, f)) {
         return true;
       }
       l = l->radial_next;
@@ -1047,10 +1047,10 @@ bool BM_edge_share_face_check(BMEdge *e1, BMEdge *e2)
   return false;
 }
 
-bool BM_edge_share_quad_check(BMEdge *e1, BMEdge *e2)
+bool mesh_edge_share_quad_check(MeshEdge *e1, MeshEdge *e2)
 {
-  BMLoop *l;
-  BMFace *f;
+  MeshLoop *l;
+  MeshFace *f;
 
   if (e1->l && e2->l) {
     l = e1->l;
