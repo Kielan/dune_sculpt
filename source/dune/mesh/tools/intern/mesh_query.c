@@ -726,7 +726,7 @@ bool mesh_vert_is_manifold(const MeshVert *v)
       loop_num += 1;
     }
 
-    if (!BM_edge_is_boundary(e_iter)) {
+    if (!mesh_edge_is_boundary(e_iter)) {
       /* non boundary check opposite loop */
       if (e_iter->l->radial_next->v == v) {
         loop_num += 1;
@@ -741,7 +741,7 @@ bool mesh_vert_is_manifold(const MeshVert *v)
         return false;
       }
     }
-  } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+  } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
 
   e_first = l_first->e;
   l_first = (l_first->v == v) ? l_first : l_first->next;
@@ -772,36 +772,36 @@ static int mesh_loop_region_count__recursive(MeshEdge *e, MeshVert *v)
   do {
     if (l_iter->v == v) {
       MeshEdge *e_other = l_iter->prev->e;
-      if (!BM_ELEM_API_FLAG_TEST(l_iter, LOOP_VISIT)) {
-        BM_ELEM_API_FLAG_ENABLE(l_iter, LOOP_VISIT);
+      if (!MESH_ELEM_API_FLAG_TEST(l_iter, LOOP_VISIT)) {
+        MESH_ELEM_API_FLAG_ENABLE(l_iter, LOOP_VISIT);
         count += 1;
       }
-      if (!BM_ELEM_API_FLAG_TEST(e_other, EDGE_VISIT)) {
-        count += bm_loop_region_count__recursive(e_other, v);
+      if (!MESH_ELEM_API_FLAG_TEST(e_other, EDGE_VISIT)) {
+        count += mesh_loop_region_count__recursive(e_other, v);
       }
     }
     else if (l_iter->next->v == v) {
-      BMEdge *e_other = l_iter->next->e;
-      if (!BM_ELEM_API_FLAG_TEST(l_iter->next, LOOP_VISIT)) {
-        BM_ELEM_API_FLAG_ENABLE(l_iter->next, LOOP_VISIT);
+      MeshEdge *e_other = l_iter->next->e;
+      if (!MESH_ELEM_API_FLAG_TEST(l_iter->next, LOOP_VISIT)) {
+        MESH_ELEM_API_FLAG_ENABLE(l_iter->next, LOOP_VISIT);
         count += 1;
       }
-      if (!BM_ELEM_API_FLAG_TEST(e_other, EDGE_VISIT)) {
-        count += bm_loop_region_count__recursive(e_other, v);
+      if (!MESH_ELEM_API_FLAG_TEST(e_other, EDGE_VISIT)) {
+        count += mesh_loop_region_count__recursive(e_other, v);
       }
     }
     else {
-      BLI_assert(0);
+      lib_assert(0);
     }
   } while ((l_iter = l_iter->radial_next) != l_first);
 
   return count;
 }
 
-static int bm_loop_region_count__clear(BMLoop *l)
+static int mesh_loop_region_count__clear(MeshLoop *l)
 {
   int count = 0;
-  BMEdge *e_iter, *e_first;
+  MeshEdge *e_iter, *e_first;
 
   /* clear flags */
   e_iter = e_first = l->e;
@@ -812,12 +812,12 @@ static int bm_loop_region_count__clear(BMLoop *l)
       l_iter = l_first = e_iter->l;
       do {
         if (l_iter->v == l->v) {
-          BM_ELEM_API_FLAG_DISABLE(l_iter, LOOP_VISIT);
+          MESH_ELEM_API_FLAG_DISABLE(l_iter, LOOP_VISIT);
           count += 1;
         }
       } while ((l_iter = l_iter->radial_next) != l_first);
     }
-  } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, l->v)) != e_first);
+  } while ((e_iter = MESH_DISK_EDGE_NEXT(e_iter, l->v)) != e_first);
 
   return count;
 }
@@ -835,14 +835,14 @@ int BM_loop_region_loops_count_at_most(BMLoop *l, int *r_loop_total)
 #undef LOOP_VISIT
 #undef EDGE_VISIT
 
-int BM_loop_region_loops_count(BMLoop *l)
+int mesh_loop_region_loops_count(MeshLoop *l)
 {
-  return BM_loop_region_loops_count_at_most(l, NULL);
+  return mesh_loop_region_loops_count_at_most(l, NULL);
 }
 
-bool BM_vert_is_manifold_region(const BMVert *v)
+bool mesh_vert_is_manifold_region(const MeshVert *v)
 {
-  BMLoop *l_first = BM_vert_find_first_loop((BMVert *)v);
+  MeshLoop *l_first = mesh_vert_find_first_loop((MeshVert *)v);
   if (l_first) {
     int count, count_total;
     count = BM_loop_region_loops_count_at_most(l_first, &count_total);
