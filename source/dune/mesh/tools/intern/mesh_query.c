@@ -992,7 +992,7 @@ bool mesh_face_share_edge_check(MeshFace *f1, MeshFace *f2)
   return false;
 }
 
-int BM_face_share_vert_count(MeshFace *f_a, MeshFace *f_b)
+int mesh_face_share_vert_count(MeshFace *f_a, MeshFace *f_b)
 {
   MeshLoop *l_iter;
   MeshLoop *l_first;
@@ -1164,7 +1164,7 @@ MeshLoop *mesh_loop_find_next_nodouble(MeshLoop *l, MeshLoop *l_stop, const floa
 
   while (UNLIKELY(len_squared_v3v3(l->v->co, l_step->v->co) < eps_sq)) {
     l_step = l_step->next;
-    BLI_assert(l_step != l);
+    lib_assert(l_step != l);
     if (UNLIKELY(l_step == l_stop)) {
       return NULL;
     }
@@ -1452,25 +1452,25 @@ float mesh_vert_calc_shell_factor_ex(const MeshVert *v, const float no[3], const
   if (accum_angle != 0.0f) {
     return accum_shell / accum_angle;
   }
-  /* other main difference from BM_vert_calc_shell_factor! */
+  /* other main difference from mesh_vert_calc_shell_factor! */
   if (tot != 0 && tot_sel == 0) {
     /* none selected, so use all */
-    return BM_vert_calc_shell_factor(v);
+    return mesh_vert_calc_shell_factor(v);
   }
   return 1.0f;
 }
 
-float BM_vert_calc_median_tagged_edge_length(const BMVert *v)
+float mesh_vert_calc_median_tagged_edge_length(const MeshVert *v)
 {
-  BMIter iter;
-  BMEdge *e;
+  MeshIter iter;
+  MeshEdge *e;
   int tot;
   float length = 0.0f;
 
-  BM_ITER_ELEM_INDEX (e, &iter, (BMVert *)v, BM_EDGES_OF_VERT, tot) {
-    const BMVert *v_other = BM_edge_other_vert(e, v);
-    if (BM_elem_flag_test(v_other, BM_ELEM_TAG)) {
-      length += BM_edge_calc_length(e);
+  MESH_ITER_ELEM_INDEX (e, &iter, (MeshVert *)v, MESH_EDGES_OF_VERT, tot) {
+    const MeshVert *v_other = mesh_edge_other_vert(e, v);
+    if (mesh_elem_flag_test(v_other, MESH_ELEM_TAG)) {
+      length += mesh_edge_calc_length(e);
     }
   }
 
@@ -1480,7 +1480,7 @@ float BM_vert_calc_median_tagged_edge_length(const BMVert *v)
   return 0.0f;
 }
 
-BMLoop *BM_face_find_shortest_loop(BMFace *f)
+BMLoop *mesh_face_find_shortest_loop(BMFace *f)
 {
   BMLoop *shortest_loop = NULL;
   float shortest_len = FLT_MAX;
