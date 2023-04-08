@@ -1158,9 +1158,9 @@ MeshLoop *mesh_loop_find_prev_nodouble(MeshLoop *l, BMLoop *l_stop, const float 
 
 MeshLoop *mesh_loop_find_next_nodouble(MeshLoop *l, MeshLoop *l_stop, const float eps_sq)
 {
-  BMLoop *l_step = l->next;
+  MeshLoop *l_step = l->next;
 
-  BLI_assert(!ELEM(l_stop, NULL, l));
+  lib_assert(!ELEM(l_stop, NULL, l));
 
   while (UNLIKELY(len_squared_v3v3(l->v->co, l_step->v->co) < eps_sq)) {
     l_step = l_step->next;
@@ -1173,7 +1173,7 @@ MeshLoop *mesh_loop_find_next_nodouble(MeshLoop *l, MeshLoop *l_stop, const floa
   return l_step;
 }
 
-bool BM_loop_is_convex(const BMLoop *l)
+bool mesh_loop_is_convex(const MeshLoop *l)
 {
   float e_dir_prev[3];
   float e_dir_next[3];
@@ -1249,21 +1249,21 @@ float mesh_loop_calc_face_normal_safe_vcos_ex(const MeshLoop *l,
   return 0.0f;
 }
 
-float BM_loop_calc_face_normal_safe(const BMLoop *l, float r_normal[3])
+float mesh_loop_calc_face_normal_safe(const MeshLoop *l, float r_normal[3])
 {
-  return BM_loop_calc_face_normal_safe_ex(l, 1e-5f, r_normal);
+  return mesh_loop_calc_face_normal_safe_ex(l, 1e-5f, r_normal);
 }
 
-float BM_loop_calc_face_normal_safe_vcos(const BMLoop *l,
+float mesh_loop_calc_face_normal_safe_vcos(const MeshLoop *l,
                                          const float normal_fallback[3],
                                          float const (*vertexCos)[3],
                                          float r_normal[3])
 
 {
-  return BM_loop_calc_face_normal_safe_vcos_ex(l, normal_fallback, vertexCos, 1e-5f, r_normal);
+  return mesh_loop_calc_face_normal_safe_vcos_ex(l, normal_fallback, vertexCos, 1e-5f, r_normal);
 }
 
-float BM_loop_calc_face_normal(const BMLoop *l, float r_normal[3])
+float mesh_loop_calc_face_normal(const MeshLoop *l, float r_normal[3])
 {
   float v1[3], v2[3];
   sub_v3_v3v3(v1, l->prev->v->co, l->v->co);
@@ -1277,7 +1277,7 @@ float BM_loop_calc_face_normal(const BMLoop *l, float r_normal[3])
   return len;
 }
 
-void BM_loop_calc_face_direction(const BMLoop *l, float r_dir[3])
+void mesh_loop_calc_face_direction(const MeshLoop *l, float r_dir[3])
 {
   float v_prev[3];
   float v_next[3];
@@ -1292,7 +1292,7 @@ void BM_loop_calc_face_direction(const BMLoop *l, float r_dir[3])
   normalize_v3(r_dir);
 }
 
-void BM_loop_calc_face_tangent(const BMLoop *l, float r_tangent[3])
+void mesh_loop_calc_face_tangent(const MeshLoop *l, float r_tangent[3])
 {
   float v_prev[3];
   float v_next[3];
@@ -1322,27 +1322,27 @@ void BM_loop_calc_face_tangent(const BMLoop *l, float r_tangent[3])
   normalize_v3(r_tangent);
 }
 
-float BM_edge_calc_face_angle_ex(const BMEdge *e, const float fallback)
+float mesh_edge_calc_face_angle_ex(const MeshEdge *e, const float fallback)
 {
-  if (BM_edge_is_manifold(e)) {
-    const BMLoop *l1 = e->l;
-    const BMLoop *l2 = e->l->radial_next;
+  if (mesh_edge_is_manifold(e)) {
+    const MeshLoop *l1 = e->l;
+    const MeshLoop *l2 = e->l->radial_next;
     return angle_normalized_v3v3(l1->f->no, l2->f->no);
   }
   return fallback;
 }
-float BM_edge_calc_face_angle(const BMEdge *e)
+float mesh_edge_calc_face_angle(const MeshEdge *e)
 {
-  return BM_edge_calc_face_angle_ex(e, DEG2RADF(90.0f));
+  return mesh_edge_calc_face_angle_ex(e, DEG2RADF(90.0f));
 }
 
-float BM_edge_calc_face_angle_with_imat3_ex(const BMEdge *e,
-                                            const float imat3[3][3],
-                                            const float fallback)
+float mesh_edge_calc_face_angle_with_imat3_ex(const MeshEdge *e,
+                                              const float imat3[3][3],
+                                              const float fallback)
 {
-  if (BM_edge_is_manifold(e)) {
-    const BMLoop *l1 = e->l;
-    const BMLoop *l2 = e->l->radial_next;
+  if (mesh_edge_is_manifold(e)) {
+    const MeshLoop *l1 = e->l;
+    const MeshLoop *l2 = e->l->radial_next;
     float no1[3], no2[3];
     copy_v3_v3(no1, l1->f->no);
     copy_v3_v3(no2, l2->f->no);
@@ -1357,31 +1357,31 @@ float BM_edge_calc_face_angle_with_imat3_ex(const BMEdge *e,
   }
   return fallback;
 }
-float BM_edge_calc_face_angle_with_imat3(const BMEdge *e, const float imat3[3][3])
+float mesh_edge_calc_face_angle_with_imat3(const BMEdge *e, const float imat3[3][3])
 {
-  return BM_edge_calc_face_angle_with_imat3_ex(e, imat3, DEG2RADF(90.0f));
+  return mesh_edge_calc_face_angle_with_imat3_ex(e, imat3, DEG2RADF(90.0f));
 }
 
-float BM_edge_calc_face_angle_signed_ex(const BMEdge *e, const float fallback)
+float mesh_edge_calc_face_angle_signed_ex(const MeshEdge *e, const float fallback)
 {
-  if (BM_edge_is_manifold(e)) {
-    BMLoop *l1 = e->l;
-    BMLoop *l2 = e->l->radial_next;
+  if (mesh_edge_is_manifold(e)) {
+    MeshLoop *l1 = e->l;
+    MeshLoop *l2 = e->l->radial_next;
     const float angle = angle_normalized_v3v3(l1->f->no, l2->f->no);
-    return BM_edge_is_convex(e) ? angle : -angle;
+    return mesh_edge_is_convex(e) ? angle : -angle;
   }
   return fallback;
 }
-float BM_edge_calc_face_angle_signed(const BMEdge *e)
+float mesh_edge_calc_face_angle_signed(const MeshEdge *e)
 {
-  return BM_edge_calc_face_angle_signed_ex(e, DEG2RADF(90.0f));
+  return mesh_edge_calc_face_angle_signed_ex(e, DEG2RADF(90.0f));
 }
 
-void BM_edge_calc_face_tangent(const BMEdge *e, const BMLoop *e_loop, float r_tangent[3])
+void mesh_edge_calc_face_tangent(const MeshEdge *e, const MeshLoop *e_loop, float r_tangent[3])
 {
   float tvec[3];
-  BMVert *v1, *v2;
-  BM_edge_ordered_verts_ex(e, &v1, &v2, e_loop);
+  MeshVert *v1, *v2;
+  mesh_edge_ordered_verts_ex(e, &v1, &v2, e_loop);
 
   sub_v3_v3v3(tvec, v1->co, v2->co); /* use for temp storage */
   /* NOTE: we could average the tangents of both loops,
@@ -1390,38 +1390,38 @@ void BM_edge_calc_face_tangent(const BMEdge *e, const BMLoop *e_loop, float r_ta
   normalize_v3(r_tangent);
 }
 
-float BM_vert_calc_edge_angle_ex(const BMVert *v, const float fallback)
+float mesh_vert_calc_edge_angle_ex(const MeshVert *v, const float fallback)
 {
-  BMEdge *e1, *e2;
+  MeshEdge *e1, *e2;
 
-  /* Saves `BM_vert_edge_count(v)` and edge iterator,
+  /* Saves `mesh_vert_edge_count(v)` and edge iterator,
    * get the edges and count them both at once. */
 
   if ((e1 = v->e) && (e2 = bmesh_disk_edge_next(e1, v)) && (e1 != e2) &&
       /* make sure we come full circle and only have 2 connected edges */
       (e1 == bmesh_disk_edge_next(e2, v))) {
-    BMVert *v1 = BM_edge_other_vert(e1, v);
-    BMVert *v2 = BM_edge_other_vert(e2, v);
+    MeshVert *v1 = mesh_edge_other_vert(e1, v);
+    MeshVert *v2 = mesh_edge_other_vert(e2, v);
 
     return (float)M_PI - angle_v3v3v3(v1->co, v->co, v2->co);
   }
   return fallback;
 }
 
-float BM_vert_calc_edge_angle(const BMVert *v)
+float mesh_vert_calc_edge_angle(const MeshVert *v)
 {
-  return BM_vert_calc_edge_angle_ex(v, DEG2RADF(90.0f));
+  return mesh_vert_calc_edge_angle_ex(v, DEG2RADF(90.0f));
 }
 
-float BM_vert_calc_shell_factor(const BMVert *v)
+float mesh_vert_calc_shell_factor(const MeshVert *v)
 {
-  BMIter iter;
-  BMLoop *l;
+  MeshIter iter;
+  MeshLoop *l;
   float accum_shell = 0.0f;
   float accum_angle = 0.0f;
 
-  BM_ITER_ELEM (l, &iter, (BMVert *)v, BM_LOOPS_OF_VERT) {
-    const float face_angle = BM_loop_calc_face_angle(l);
+  MESH_ITER_ELEM (l, &iter, (MeshVert *)v, MESH_LOOPS_OF_VERT) {
+    const float face_angle = mesh_loop_calc_face_angle(l);
     accum_shell += shell_v3v3_normalized_to_dist(v->no, l->f->no) * face_angle;
     accum_angle += face_angle;
   }
@@ -1431,7 +1431,7 @@ float BM_vert_calc_shell_factor(const BMVert *v)
   }
   return 1.0f;
 }
-float BM_vert_calc_shell_factor_ex(const BMVert *v, const float no[3], const char hflag)
+float mesh_vert_calc_shell_factor_ex(const BMVert *v, const float no[3], const char hflag)
 {
   BMIter iter;
   const BMLoop *l;
