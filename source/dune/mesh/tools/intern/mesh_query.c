@@ -303,12 +303,12 @@ bool mesh_vert_in_face(MeshVert *v, MeshFace *f)
 {
   MeshLoop *l_iter, *l_first;
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   MeshLoopList *lst;
   for (lst = f->loops.first; lst; lst = lst->next)
 #endif
   {
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
     l_iter = l_first = lst->first;
 #else
     l_iter = l_first = f->l_first;
@@ -546,7 +546,7 @@ bool mesh_edge_face_pair(MeshEdge *e, MeshFace **r_fa, MeshFace **r_fb)
   return false;
 }
 
-bool mesh_edge_loop_pair(MeshEdge *e, MeshLoop **r_la, BMLoop **r_lb)
+bool mesh_edge_loop_pair(MeshEdge *e, MeshLoop **r_la, MeshLoop **r_lb)
 {
   MeshLoop *la, *lb;
 
@@ -602,7 +602,7 @@ bool mesh_vert_edge_pair(MeshVert *v, MeshEdge **r_e_a, MeshEdge **r_e_b)
 
 int mesh_vert_edge_count(const MeshVert *v)
 {
-  return bmesh_disk_count(v);
+  return mesh_disk_count(v);
 }
 
 int mesh_vert_edge_count_at_most(const MeshVert *v, const int count_max)
@@ -615,7 +615,7 @@ int mesh_vert_edge_count_nonwire(const MeshVert *v)
   int count = 0;
   MeshIter eiter;
   MeshEdge *edge;
-  MESS_ITER_ELEM (edge, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
+  MESH_ITER_ELEM (edge, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
     if (edge->l) {
       count++;
     }
@@ -824,7 +824,7 @@ static int mesh_loop_region_count__clear(MeshLoop *l)
 
 int mesh_loop_region_loops_count_at_most(BMLoop *l, int *r_loop_total)
 {
-  const int count = bm_loop_region_count__recursive(l->e, l->v);
+  const int count = mesh_loop_region_count__recursive(l->e, l->v);
   const int count_total = bm_loop_region_count__clear(l);
   if (r_loop_total) {
     *r_loop_total = count_total;
@@ -853,8 +853,8 @@ bool mesh_vert_is_manifold_region(const MeshVert *v)
 
 bool mesh_edge_is_convex(const MeshEdge *e)
 {
-  if (BM_edge_is_manifold(e)) {
-    BMLoop *l1 = e->l;
+  if (mesh_edge_is_manifold(e)) {
+    MeshLoop *l1 = e->l;
     BMLoop *l2 = e->l->radial_next;
     if (!equals_v3v3(l1->f->no, l2->f->no)) {
       float cross[3];
@@ -928,14 +928,14 @@ bool mesh_vert_is_boundary(const MeshVert *v)
 
 int mesh_face_share_face_count(MeshFace *f_a, MeshFace *f_b)
 {
-  BMIter iter1, iter2;
-  BMEdge *e;
-  BMFace *f;
+  MeshIter iter1, iter2;
+  MeshEdge *e;
+  MeshFace *f;
   int count = 0;
 
-  BM_ITER_ELEM (e, &iter1, f_a, BM_EDGES_OF_FACE) {
-    BM_ITER_ELEM (f, &iter2, e, BM_FACES_OF_EDGE) {
-      if (f != f_a && f != f_b && BM_face_share_edge_check(f, f_b)) {
+  MESH_ITER_ELEM (e, &iter1, f_a, MESH_EDGES_OF_FACE) {
+    MESH_ITER_ELEM (f, &iter2, e, MESH_FACES_OF_EDGE) {
+      if (f != f_a && f != f_b && mesh_face_share_edge_check(f, f_b)) {
         count++;
       }
     }
@@ -944,15 +944,15 @@ int mesh_face_share_face_count(MeshFace *f_a, MeshFace *f_b)
   return count;
 }
 
-bool BM_face_share_face_check(BMFace *f_a, BMFace *f_b)
+bool mesh_face_share_face_check(MeshFace *f_a, MeshFace *f_b)
 {
-  BMIter iter1, iter2;
-  BMEdge *e;
-  BMFace *f;
+  MeshIter iter1, iter2;
+  MeshEdge *e;
+  MeshFace *f;
 
-  BM_ITER_ELEM (e, &iter1, f_a, BM_EDGES_OF_FACE) {
-    BM_ITER_ELEM (f, &iter2, e, BM_FACES_OF_EDGE) {
-      if (f != f_a && f != f_b && BM_face_share_edge_check(f, f_b)) {
+  MESH_ITER_ELEM (e, &iter1, f_a, MESH_EDGES_OF_FACE) {
+    MESH_ITER_ELEM (f, &iter2, e, MESH_FACES_OF_EDGE) {
+      if (f != f_a && f != f_b && mesh_face_share_edge_check(f, f_b)) {
         return true;
       }
     }
@@ -961,13 +961,13 @@ bool BM_face_share_face_check(BMFace *f_a, BMFace *f_b)
   return false;
 }
 
-int BM_face_share_edge_count(BMFace *f_a, BMFace *f_b)
+int mesh_face_share_edge_count(MeshFace *f_a, MeshFace *f_b)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
   int count = 0;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_a);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_a);
   do {
     if (BM_edge_in_face(l_iter->e, f_b)) {
       count++;
