@@ -1480,15 +1480,15 @@ float mesh_vert_calc_median_tagged_edge_length(const MeshVert *v)
   return 0.0f;
 }
 
-BMLoop *mesh_face_find_shortest_loop(BMFace *f)
+MeshLoop *mesh_face_find_shortest_loop(MeshFace *f)
 {
-  BMLoop *shortest_loop = NULL;
+  MeshLoop *shortest_loop = NULL;
   float shortest_len = FLT_MAX;
 
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
 
   do {
     const float len_sq = len_squared_v3v3(l_iter->v->co, l_iter->next->v->co);
@@ -1501,15 +1501,15 @@ BMLoop *mesh_face_find_shortest_loop(BMFace *f)
   return shortest_loop;
 }
 
-BMLoop *BM_face_find_longest_loop(BMFace *f)
+MeshLoop *mesh_face_find_longest_loop(MeshFace *f)
 {
-  BMLoop *longest_loop = NULL;
+  MeshLoop *longest_loop = NULL;
   float len_max_sq = 0.0f;
 
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
 
   do {
     const float len_sq = len_squared_v3v3(l_iter->v->co, l_iter->next->v->co);
@@ -1523,21 +1523,21 @@ BMLoop *BM_face_find_longest_loop(BMFace *f)
 }
 
 /**
- * Returns the edge existing between \a v_a and \a v_b, or NULL if there isn't one.
+ * Returns the edge existing between v_a and v_b, or NULL if there isn't one.
  *
- * \note multiple edges may exist between any two vertices, and therefore
+ * multiple edges may exist between any two vertices, and therefore
  * this function only returns the first one found.
  */
 #if 0
-BMEdge *BM_edge_exists(BMVert *v_a, BMVert *v_b)
+MeshEdge *mesh_edge_exists(MeshVert *v_a, MeshVert *v_b)
 {
-  BMIter iter;
-  BMEdge *e;
+  MeshIter iter;
+  MeshEdge *e;
 
-  BLI_assert(v_a != v_b);
-  BLI_assert(v_a->head.htype == BM_VERT && v_b->head.htype == BM_VERT);
+  lib_assert(v_a != v_b);
+  lib_assert(v_a->head.htype == MESH_VERT && v_b->head.htype == MESH_VERT);
 
-  BM_ITER_ELEM (e, &iter, v_a, BM_EDGES_OF_VERT) {
+  MESH_ITER_ELEM (e, &iter, v_a, MESH_EDGES_OF_VERT) {
     if (e->v1 == v_b || e->v2 == v_b) {
       return e;
     }
@@ -1546,44 +1546,44 @@ BMEdge *BM_edge_exists(BMVert *v_a, BMVert *v_b)
   return NULL;
 }
 #else
-BMEdge *BM_edge_exists(BMVert *v_a, BMVert *v_b)
+MeshEdge *mesh_edge_exists(MeshVert *v_a, MeshVert *v_b)
 {
   /* speedup by looping over both edges verts
    * where one vert may connect to many edges but not the other. */
 
-  BMEdge *e_a, *e_b;
+  MeshEdge *e_a, *e_b;
 
-  BLI_assert(v_a != v_b);
-  BLI_assert(v_a->head.htype == BM_VERT && v_b->head.htype == BM_VERT);
+  lib_assert(v_a != v_b);
+  lib_assert(v_a->head.htype == MESH_VERT && v_b->head.htype == MESH_VERT);
 
   if ((e_a = v_a->e) && (e_b = v_b->e)) {
-    BMEdge *e_a_iter = e_a, *e_b_iter = e_b;
+    MeshEdge *e_a_iter = e_a, *e_b_iter = e_b;
 
     do {
-      if (BM_vert_in_edge(e_a_iter, v_b)) {
+      if (mesh_vert_in_edge(e_a_iter, v_b)) {
         return e_a_iter;
       }
-      if (BM_vert_in_edge(e_b_iter, v_a)) {
+      if (mesh_vert_in_edge(e_b_iter, v_a)) {
         return e_b_iter;
       }
-    } while (((e_a_iter = bmesh_disk_edge_next(e_a_iter, v_a)) != e_a) &&
-             ((e_b_iter = bmesh_disk_edge_next(e_b_iter, v_b)) != e_b));
+    } while (((e_a_iter = mesh_disk_edge_next(e_a_iter, v_a)) != e_a) &&
+             ((e_b_iter = mesh_disk_edge_next(e_b_iter, v_b)) != e_b));
   }
 
   return NULL;
 }
 #endif
 
-BMEdge *BM_edge_find_double(BMEdge *e)
+MeshEdge *mesh_edge_find_double(MeshEdge *e)
 {
-  BMVert *v = e->v1;
-  BMVert *v_other = e->v2;
+  MeshVert *v = e->v1;
+  MeshVert *v_other = e->v2;
 
-  BMEdge *e_iter;
+  MeshEdge *e_iter;
 
   e_iter = e;
-  while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e) {
-    if (UNLIKELY(BM_vert_in_edge(e_iter, v_other))) {
+  while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e) {
+    if (UNLIKELY(mesh_vert_in_edge(e_iter, v_other))) {
       return e_iter;
     }
   }
@@ -1591,13 +1591,13 @@ BMEdge *BM_edge_find_double(BMEdge *e)
   return NULL;
 }
 
-BMLoop *BM_edge_find_first_loop_visible(BMEdge *e)
+MeshLoop *mesh_edge_find_first_loop_visible(MeshEdge *e)
 {
   if (e->l != NULL) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
     l_iter = l_first = e->l;
     do {
-      if (!BM_elem_flag_test(l_iter->f, BM_ELEM_HIDDEN)) {
+      if (!mesh_elem_flag_test(l_iter->f, MESH_ELEM_HIDDEN)) {
         return l_iter;
       }
     } while ((l_iter = l_iter->radial_next) != l_first);
@@ -1605,17 +1605,17 @@ BMLoop *BM_edge_find_first_loop_visible(BMEdge *e)
   return NULL;
 }
 
-BMFace *BM_face_exists(BMVert **varr, int len)
+MeshFace *mesh_face_exists(MeshVert **varr, int len)
 {
   if (varr[0]->e) {
-    BMEdge *e_iter, *e_first;
+    MeshEdge *e_iter, *e_first;
     e_iter = e_first = varr[0]->e;
 
-    /* would normally use BM_LOOPS_OF_VERT, but this runs so often,
+    /* would normally use MESH_LOOPS_OF_VERT, but this runs so often,
      * its faster to iterate on the data directly */
     do {
       if (e_iter->l) {
-        BMLoop *l_iter_radial, *l_first_radial;
+        MeshLoop *l_iter_radial, *l_first_radial;
         l_iter_radial = l_first_radial = e_iter->l;
 
         do {
@@ -1625,7 +1625,7 @@ BMFace *BM_face_exists(BMVert **varr, int len)
             int i_walk = 2;
 
             if (l_iter_radial->next->v == varr[1]) {
-              BMLoop *l_walk = l_iter_radial->next->next;
+              MeshLoop *l_walk = l_iter_radial->next->next;
               do {
                 if (l_walk->v != varr[i_walk]) {
                   break;
@@ -1633,7 +1633,7 @@ BMFace *BM_face_exists(BMVert **varr, int len)
               } while ((void)(l_walk = l_walk->next), ++i_walk != len);
             }
             else if (l_iter_radial->prev->v == varr[1]) {
-              BMLoop *l_walk = l_iter_radial->prev->prev;
+              MeshLoop *l_walk = l_iter_radial->prev->prev;
               do {
                 if (l_walk->v != varr[i_walk]) {
                   break;
@@ -1647,19 +1647,19 @@ BMFace *BM_face_exists(BMVert **varr, int len)
           }
         } while ((l_iter_radial = l_iter_radial->radial_next) != l_first_radial);
       }
-    } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, varr[0])) != e_first);
+    } while ((e_iter = MESH_DISK_EDGE_NEXT(e_iter, varr[0])) != e_first);
   }
 
   return NULL;
 }
 
-BMFace *BM_face_find_double(BMFace *f)
+MeshFace *mesh_face_find_double(MeshFace *f)
 {
-  BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-  for (BMLoop *l_iter = l_first->radial_next; l_first != l_iter; l_iter = l_iter->radial_next) {
+  MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+  for (MeshLoop *l_iter = l_first->radial_next; l_first != l_iter; l_iter = l_iter->radial_next) {
     if (l_iter->f->len == l_first->f->len) {
       if (l_iter->v == l_first->v) {
-        BMLoop *l_a = l_first, *l_b = l_iter, *l_b_init = l_iter;
+        MeshLoop *l_a = l_first, *l_b = l_iter, *l_b_init = l_iter;
         do {
           if (l_a->e != l_b->e) {
             break;
@@ -1670,7 +1670,7 @@ BMFace *BM_face_find_double(BMFace *f)
         }
       }
       else {
-        BMLoop *l_a = l_first, *l_b = l_iter, *l_b_init = l_iter;
+        MeshLoop *l_a = l_first, *l_b = l_iter, *l_b_init = l_iter;
         do {
           if (l_a->e != l_b->e) {
             break;
@@ -1685,32 +1685,32 @@ BMFace *BM_face_find_double(BMFace *f)
   return NULL;
 }
 
-bool BM_face_exists_multi(BMVert **varr, BMEdge **earr, int len)
+bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
 {
-  BMFace *f;
-  BMEdge *e;
-  BMVert *v;
+  MeshFace *f;
+  MeshEdge *e;
+  M shVert *v;
   bool ok;
   int tot_tag;
 
-  BMIter fiter;
-  BMIter viter;
+  MeshIter fiter;
+  MeshIter viter;
 
   int i;
 
   for (i = 0; i < len; i++) {
     /* save some time by looping over edge faces rather than vert faces
      * will still loop over some faces twice but not as many */
-    BM_ITER_ELEM (f, &fiter, earr[i], BM_FACES_OF_EDGE) {
-      BM_elem_flag_disable(f, BM_ELEM_INTERNAL_TAG);
-      BM_ITER_ELEM (v, &viter, f, BM_VERTS_OF_FACE) {
-        BM_elem_flag_disable(v, BM_ELEM_INTERNAL_TAG);
+    MESH_ITER_ELEM (f, &fiter, earr[i], MESH_FACES_OF_EDGE) {
+      mesh_elem_flag_disable(f, MESH_ELEM_INTERNAL_TAG);
+      MESH_ITER_ELEM (v, &viter, f, MEAH_VERTS_OF_FACE) {
+        mesh_elem_flag_disable(v, MESH_ELEM_INTERNAL_TAG);
       }
     }
 
     /* clear all edge tags */
-    BM_ITER_ELEM (e, &fiter, varr[i], BM_EDGES_OF_VERT) {
-      BM_elem_flag_disable(e, BM_ELEM_INTERNAL_TAG);
+    MESH_ITER_ELEM (e, &fiter, varr[i], MESH_EDGES_OF_VERT) {
+      MESH_elem_flag_disable(e, MESH_ELEM_INTERNAL_TAG);
     }
   }
 
