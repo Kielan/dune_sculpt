@@ -1185,12 +1185,12 @@ bool BM_loop_is_convex(const BMLoop *l)
   return dot_v3v3(l_no, l->f->no) > 0.0f;
 }
 
-float BM_loop_calc_face_angle(const BMLoop *l)
+float mesh_loop_calc_face_angle(const MeshLoop *l)
 {
   return angle_v3v3v3(l->prev->v->co, l->v->co, l->next->v->co);
 }
 
-float BM_loop_calc_face_normal_safe_ex(const BMLoop *l, const float epsilon_sq, float r_normal[3])
+float mesh_loop_calc_face_normal_safe_ex(const MeshLoop *l, const float epsilon_sq, float r_normal[3])
 {
   /* NOTE: we cannot use result of normal_tri_v3 here to detect colinear vectors
    * (vertex on a straight line) from zero value,
@@ -1219,15 +1219,15 @@ float BM_loop_calc_face_normal_safe_ex(const BMLoop *l, const float epsilon_sq, 
   return 0.0f;
 }
 
-float BM_loop_calc_face_normal_safe_vcos_ex(const BMLoop *l,
-                                            const float normal_fallback[3],
-                                            float const (*vertexCos)[3],
-                                            const float epsilon_sq,
-                                            float r_normal[3])
+float mesh_loop_calc_face_normal_safe_vcos_ex(const MeshLoop *l,
+                                              const float normal_fallback[3],
+                                              float const (*vertexCos)[3],
+                                              const float epsilon_sq,
+                                              float r_normal[3])
 {
-  const int i_prev = BM_elem_index_get(l->prev->v);
-  const int i_next = BM_elem_index_get(l->next->v);
-  const int i = BM_elem_index_get(l->v);
+  const int i_prev = mesh_elem_index_get(l->prev->v);
+  const int i_next = mesh_elem_index_get(l->next->v);
+  const int i = mesh_elem_index_get(l->v);
 
   float v1[3], v2[3], v_tmp[3];
   sub_v3_v3v3(v1, vertexCos[i_prev], vertexCos[i]);
