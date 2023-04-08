@@ -1431,16 +1431,16 @@ float mesh_vert_calc_shell_factor(const MeshVert *v)
   }
   return 1.0f;
 }
-float mesh_vert_calc_shell_factor_ex(const BMVert *v, const float no[3], const char hflag)
+float mesh_vert_calc_shell_factor_ex(const MeshVert *v, const float no[3], const char hflag)
 {
-  BMIter iter;
-  const BMLoop *l;
+  MeshIter iter;
+  const MeshLoop *l;
   float accum_shell = 0.0f;
   float accum_angle = 0.0f;
   int tot_sel = 0, tot = 0;
 
-  BM_ITER_ELEM (l, &iter, (BMVert *)v, BM_LOOPS_OF_VERT) {
-    if (BM_elem_flag_test(l->f, hflag)) { /* <-- main difference to BM_vert_calc_shell_factor! */
+  MESH_ITER_ELEM (l, &iter, (MeshVert *)v, MESH_LOOPS_OF_VERT) {
+    if (mesh_elem_flag_test(l->f, hflag)) { /* <-- main difference to mesh_vert_calc_shell_factor! */
       const float face_angle = BM_loop_calc_face_angle(l);
       accum_shell += shell_v3v3_normalized_to_dist(no, l->f->no) * face_angle;
       accum_angle += face_angle;
