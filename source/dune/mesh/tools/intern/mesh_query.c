@@ -1441,7 +1441,7 @@ float mesh_vert_calc_shell_factor_ex(const MeshVert *v, const float no[3], const
 
   MESH_ITER_ELEM (l, &iter, (MeshVert *)v, MESH_LOOPS_OF_VERT) {
     if (mesh_elem_flag_test(l->f, hflag)) { /* <-- main difference to mesh_vert_calc_shell_factor! */
-      const float face_angle = BM_loop_calc_face_angle(l);
+      const float face_angle = mesh_loop_calc_face_angle(l);
       accum_shell += shell_v3v3_normalized_to_dist(no, l->f->no) * face_angle;
       accum_angle += face_angle;
       tot_sel++;
@@ -1726,11 +1726,11 @@ bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
   /* 1) tag all faces connected to edges - if all their verts are boundary */
   tot_tag = 0;
   for (i = 0; i < len; i++) {
-    BM_ITER_ELEM (f, &fiter, earr[i], BM_FACES_OF_EDGE) {
-      if (!BM_elem_flag_test(f, BM_ELEM_INTERNAL_TAG)) {
+    MESH_ITER_ELEM (f, &fiter, earr[i], MESH_FACES_OF_EDGE) {
+      if (!mesh_elem_flag_test(f, MESH_ELEM_INTERNAL_TAG)) {
         ok = true;
-        BM_ITER_ELEM (v, &viter, f, BM_VERTS_OF_FACE) {
-          if (!BM_elem_flag_test(v, BM_ELEM_INTERNAL_TAG)) {
+        MESH_ITER_ELEM (v, &viter, f, MESH_VERTS_OF_FACE) {
+          if (!mesh_elem_flag_test(v, MESH_ELEM_INTERNAL_TAG)) {
             ok = false;
             break;
           }
@@ -1738,7 +1738,7 @@ bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
 
         if (ok) {
           /* we only use boundary verts */
-          BM_elem_flag_enable(f, BM_ELEM_INTERNAL_TAG);
+          mesh_elem_flag_enable(f, MESH_ELEM_INTERNAL_TAG);
           tot_tag++;
         }
       }
@@ -1758,16 +1758,16 @@ bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
    *    check each have 2 tagged faces connected (faces that only use 'varr' verts) */
   ok = true;
   for (i = 0; i < len; i++) {
-    BM_ITER_ELEM (e, &fiter, varr[i], BM_EDGES_OF_VERT) {
+    MESH_ITER_ELEM (e, &fiter, varr[i], MESH_EDGES_OF_VERT) {
 
       if (/* non-boundary edge */
-          BM_elem_flag_test(e, BM_ELEM_INTERNAL_TAG) == false &&
+          mesh_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG) == false &&
           /* ...using boundary verts */
-          BM_elem_flag_test(e->v1, BM_ELEM_INTERNAL_TAG) &&
-          BM_elem_flag_test(e->v2, BM_ELEM_INTERNAL_TAG)) {
+          mesh_elem_flag_test(e->v1, MESH_ELEM_INTERNAL_TAG) &&
+          mesh_elem_flag_test(e->v2, MESH_ELEM_INTERNAL_TAG)) {
         int tot_face_tag = 0;
-        BM_ITER_ELEM (f, &fiter, e, BM_FACES_OF_EDGE) {
-          if (BM_elem_flag_test(f, BM_ELEM_INTERNAL_TAG)) {
+        MESG_ITER_ELEM (f, &fiter, e, MESH_FACES_OF_EDGE) {
+          if (mesh_elem_flag_test(f, MESH_ELEM_INTERNAL_TAG)) {
             tot_face_tag++;
           }
         }
@@ -1787,44 +1787,44 @@ bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
 finally:
   /* Cleanup */
   for (i = 0; i < len; i++) {
-    BM_elem_flag_disable(varr[i], BM_ELEM_INTERNAL_TAG);
-    BM_elem_flag_disable(earr[i], BM_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_disable(varr[i], MESH_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_disable(earr[i], MESH_ELEM_INTERNAL_TAG);
   }
   return ok;
 }
 
-bool BM_face_exists_multi_edge(BMEdge **earr, int len)
+bool mesh_face_exists_multi_edge(MeshEdge **earr, int len)
 {
-  BMVert **varr = BLI_array_alloca(varr, len);
+  MeshVert **varr = lib_array_alloca(varr, len);
 
   /* first check if verts have edges, if not we can bail out early */
-  if (!BM_verts_from_edges(varr, earr, len)) {
+  if (!mesh_verts_from_edges(varr, earr, len)) {
     BMESH_ASSERT(0);
     return false;
   }
 
-  return BM_face_exists_multi(varr, earr, len);
+  return mesh_face_exists_multi(varr, earr, len);
 }
 
-BMFace *BM_face_exists_overlap(BMVert **varr, const int len)
+MeshFace *mesh_face_exists_overlap(MeshVert **varr, const int len)
 {
-  BMIter viter;
-  BMFace *f;
+  MeshIter viter;
+  MeshFace *f;
   int i;
-  BMFace *f_overlap = NULL;
+  MeshFace *f_overlap = NULL;
   LinkNode *f_lnk = NULL;
 
 #ifdef DEBUG
   /* check flag isn't already set */
   for (i = 0; i < len; i++) {
-    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
-      BLI_assert(BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
+    MESH_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
+      lib_assert(MESH_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
     }
   }
 #endif
 
   for (i = 0; i < len; i++) {
-    BM_ITER_ELEM (f, &viter, varr[i], BM_FACES_OF_VERT) {
+    BM_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
       if (BM_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0) {
         if (len <= BM_verts_in_face_count(varr, len, f)) {
           f_overlap = f;
