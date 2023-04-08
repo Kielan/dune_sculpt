@@ -600,7 +600,7 @@ bool mesh_vert_edge_pair(MeshVert *v, MeshEdge **r_e_a, MeshEdge **r_e_b)
   return false;
 }
 
-int mesh_vert_edge_count(const BMVert *v)
+int mesh_vert_edge_count(const MeshVert *v)
 {
   return bmesh_disk_count(v);
 }
@@ -610,24 +610,24 @@ int mesh_vert_edge_count_at_most(const MeshVert *v, const int count_max)
   return mesh_disk_count_at_most(v, count_max);
 }
 
-int mesh_vert_edge_count_nonwire(const BMVert *v)
+int mesh_vert_edge_count_nonwire(const MeshVert *v)
 {
   int count = 0;
-  BMIter eiter;
-  BMEdge *edge;
-  BM_ITER_ELEM (edge, &eiter, (BMVert *)v, BM_EDGES_OF_VERT) {
+  MeshIter eiter;
+  MeshEdge *edge;
+  MESS_ITER_ELEM (edge, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
     if (edge->l) {
       count++;
     }
   }
   return count;
 }
-int BM_edge_face_count(const BMEdge *e)
+int mesh_edge_face_count(const MeshEdge *e)
 {
   int count = 0;
 
   if (e->l) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
 
     l_iter = l_first = e->l;
     do {
@@ -638,12 +638,12 @@ int BM_edge_face_count(const BMEdge *e)
   return count;
 }
 
-int BM_edge_face_count_at_most(const BMEdge *e, const int count_max)
+int mesh_edge_face_count_at_most(const MeshEdge *e, const int count_max)
 {
   int count = 0;
 
   if (e->l) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
 
     l_iter = l_first = e->l;
     do {
@@ -657,51 +657,51 @@ int BM_edge_face_count_at_most(const BMEdge *e, const int count_max)
   return count;
 }
 
-int BM_vert_face_count(const BMVert *v)
+int mesh_vert_face_count(const MeshVert *v)
 {
-  return bmesh_disk_facevert_count(v);
+  return mesh_disk_facevert_count(v);
 }
 
-int BM_vert_face_count_at_most(const BMVert *v, int count_max)
+int mesh_vert_face_count_at_most(const MeshVert *v, int count_max)
 {
-  return bmesh_disk_facevert_count_at_most(v, count_max);
+  return mesh_disk_facevert_count_at_most(v, count_max);
 }
 
-bool BM_vert_face_check(const BMVert *v)
+bool mesh_vert_face_check(const MeshVert *v)
 {
   if (v->e != NULL) {
-    const BMEdge *e_iter, *e_first;
+    const MeshEdge *e_iter, *e_first;
     e_first = e_iter = v->e;
     do {
       if (e_iter->l != NULL) {
         return true;
       }
-    } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+    } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
   }
   return false;
 }
 
-bool BM_vert_is_wire(const BMVert *v)
+bool mesh_vert_is_wire(const MeshVert *v)
 {
   if (v->e) {
-    BMEdge *e_first, *e_iter;
+    MeshEdge *e_first, *e_iter;
 
     e_first = e_iter = v->e;
     do {
       if (e_iter->l) {
         return false;
       }
-    } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+    } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
 
     return true;
   }
   return false;
 }
 
-bool BM_vert_is_manifold(const BMVert *v)
+bool mesh_vert_is_manifold(const MeshVert *v)
 {
-  BMEdge *e_iter, *e_first, *e_prev;
-  BMLoop *l_iter, *l_first;
+  MeshEdge *e_iter, *e_first, *e_prev;
+  MeshLoop *l_iter, *l_first;
   int loop_num = 0, loop_num_region = 0, boundary_num = 0;
 
   if (v->e == NULL) {
@@ -716,7 +716,7 @@ bool BM_vert_is_manifold(const BMVert *v)
   do {
     /* loose edge or edge shared by more than two faces,
      * edges with 1 face user are OK, otherwise we could
-     * use BM_edge_is_manifold() here */
+     * use mesh_edge_is_manifold() here */
     if (e_iter->l == NULL || (e_iter->l != e_iter->l->radial_next->radial_next)) {
       return false;
     }
