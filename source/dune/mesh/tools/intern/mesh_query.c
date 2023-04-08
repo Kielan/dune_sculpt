@@ -868,21 +868,21 @@ bool BM_edge_is_convex(const BMEdge *e)
   return true;
 }
 
-bool BM_edge_is_contiguous_loop_cd(const BMEdge *e,
-                                   const int cd_loop_type,
-                                   const int cd_loop_offset)
+bool mesh_edge_is_contiguous_loop_cd(const MeshEdge *e,
+                                     const int cd_loop_type,
+                                     const int cd_loop_offset)
 {
-  BLI_assert(cd_loop_offset != -1);
+  lib_assert(cd_loop_offset != -1);
 
   if (e->l && e->l->radial_next != e->l) {
-    const BMLoop *l_base_v1 = e->l;
-    const BMLoop *l_base_v2 = e->l->next;
-    const void *l_base_cd_v1 = BM_ELEM_CD_GET_VOID_P(l_base_v1, cd_loop_offset);
-    const void *l_base_cd_v2 = BM_ELEM_CD_GET_VOID_P(l_base_v2, cd_loop_offset);
-    const BMLoop *l_iter = e->l->radial_next;
+    const MeshLoop *l_base_v1 = e->l;
+    const MeshLoop *l_base_v2 = e->l->next;
+    const void *l_base_cd_v1 = MESH_ELEM_CD_GET_VOID_P(l_base_v1, cd_loop_offset);
+    const void *l_base_cd_v2 = MESH_ELEM_CD_GET_VOID_P(l_base_v2, cd_loop_offset);
+    const MeshLoop *l_iter = e->l->radial_next;
     do {
-      const BMLoop *l_iter_v1;
-      const BMLoop *l_iter_v2;
+      const MeshLoop *l_iter_v1;
+      const MeshLoop *l_iter_v2;
       const void *l_iter_cd_v1;
       const void *l_iter_cd_v2;
 
@@ -894,10 +894,10 @@ bool BM_edge_is_contiguous_loop_cd(const BMEdge *e,
         l_iter_v1 = l_iter->next;
         l_iter_v2 = l_iter;
       }
-      BLI_assert((l_iter_v1->v == l_base_v1->v) && (l_iter_v2->v == l_base_v2->v));
+      lib_assert((l_iter_v1->v == l_base_v1->v) && (l_iter_v2->v == l_base_v2->v));
 
-      l_iter_cd_v1 = BM_ELEM_CD_GET_VOID_P(l_iter_v1, cd_loop_offset);
-      l_iter_cd_v2 = BM_ELEM_CD_GET_VOID_P(l_iter_v2, cd_loop_offset);
+      l_iter_cd_v1 = MESH_ELEM_CD_GET_VOID_P(l_iter_v1, cd_loop_offset);
+      l_iter_cd_v2 = MESH_ELEM_CD_GET_VOID_P(l_iter_v2, cd_loop_offset);
 
       if ((CustomData_data_equals(cd_loop_type, l_base_cd_v1, l_iter_cd_v1) == 0) ||
           (CustomData_data_equals(cd_loop_type, l_base_cd_v2, l_iter_cd_v2) == 0)) {
@@ -909,24 +909,24 @@ bool BM_edge_is_contiguous_loop_cd(const BMEdge *e,
   return true;
 }
 
-bool BM_vert_is_boundary(const BMVert *v)
+bool mesh_vert_is_boundary(const MeshVert *v)
 {
   if (v->e) {
-    BMEdge *e_first, *e_iter;
+    MeshEdge *e_first, *e_iter;
 
     e_first = e_iter = v->e;
     do {
-      if (BM_edge_is_boundary(e_iter)) {
+      if (mesh_edge_is_boundary(e_iter)) {
         return true;
       }
-    } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+    } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
 
     return false;
   }
   return false;
 }
 
-int BM_face_share_face_count(BMFace *f_a, BMFace *f_b)
+int mesh_face_share_face_count(MeshFace *f_a, MeshFace *f_b)
 {
   BMIter iter1, iter2;
   BMEdge *e;
