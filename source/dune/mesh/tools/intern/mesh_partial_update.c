@@ -24,31 +24,31 @@
  *
  * Optionally support multiple groups since axis-mirror (for example)
  * will transform vertices in different directions, as well as keeping centered vertices.
- * see: #BM_mesh_partial_create_from_verts_group_multi
+ * see: mesh_partial_create_from_verts_group_multi
  *
- * \note Others can be added as needed.
+ * note Others can be added as needed.
  */
 
-#include "DNA_object_types.h"
+#include "types_object.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_bitmap.h"
-#include "BLI_math_vector.h"
+#include "lib_alloca.h"
+#include "lib_bitmap.h"
+#include "lib_math_vector.h"
 
-#include "bmesh.h"
+#include "mesh.h"
 
 /**
  * Grow by 1.5x (rounding up).
  *
- * \note Use conservative reallocation since the initial sizes reserved
+ * note Use conservative reallocation since the initial sizes reserved
  * may be close to (or exactly) the number of elements needed.
  */
 #define GROW(len_alloc) ((len_alloc) + ((len_alloc) - ((len_alloc) / 2)))
 #define GROW_ARRAY(mem, len_alloc) \
   { \
-    mem = MEM_reallocN(mem, (sizeof(*mem)) * ((len_alloc) = GROW(len_alloc))); \
+    mem = mem_reallocn(mem, (sizeof(*mem)) * ((len_alloc) = GROW(len_alloc))); \
   } \
   ((void)0)
 
@@ -61,10 +61,10 @@ BLI_INLINE bool partial_elem_vert_ensure(BMPartialUpdate *bmpinfo,
                                          BLI_bitmap *verts_tag,
                                          BMVert *v)
 {
-  const int i = BM_elem_index_get(v);
-  if (!BLI_BITMAP_TEST(verts_tag, i)) {
-    BLI_BITMAP_ENABLE(verts_tag, i);
-    GROW_ARRAY_AS_NEEDED(bmpinfo->verts, bmpinfo->verts_len_alloc, bmpinfo->verts_len);
+  const int i = mesh_elem_index_get(v);
+  if (!LIB_BITMAP_TEST(verts_tag, i)) {
+    LIB_BITMAP_ENABLE(verts_tag, i);
+    GROW_ARRAY_AS_NEEDED(meshinfo->verts, meshinfo->verts_len_alloc, meshinfo->verts_len);
     bmpinfo->verts[bmpinfo->verts_len++] = v;
     return true;
   }
