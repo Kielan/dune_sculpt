@@ -483,23 +483,23 @@ void mesh_slot_vec_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot
 }
 
 /*
- * BMO_COUNTFLAG
+ * MESH_COUNTFLAG
  *
  * Counts the number of elements of a certain type that have a
  * specific flag enabled (or disabled if test_for_enabled is false).
  */
 
-static int bmo_mesh_flag_count(BMesh *bm,
-                               const char htype,
-                               const short oflag,
-                               const bool test_for_enabled)
+static int mesh_flag_count(Mesh *mesh,
+                           const char htype,
+                           const short oflag,
+                           const bool test_for_enabled)
 {
   int count_vert = 0, count_edge = 0, count_face = 0;
 
-  if (htype & BM_VERT) {
-    BMIter iter;
-    BMVert *ele;
-    BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
+  if (htype & MESH_VERT) {
+    MeshIter iter;
+    MeshVert *ele;
+    MESH_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
       if (BMO_vert_flag_test_bool(bm, ele, oflag) == test_for_enabled) {
         count_vert++;
       }
