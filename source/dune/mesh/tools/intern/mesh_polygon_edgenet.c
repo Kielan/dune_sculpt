@@ -1231,7 +1231,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
   {
     uint i = edge_net_init_len;
     MeshLoop *l_iter, *l_first;
-    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
       lib_assert(!mesh_elem_flag_test(l_iter->v, VERT_NOT_IN_STACK));
       lib_assert(!mesh_elem_flag_test(l_iter->e, EDGE_NOT_IN_STACK));
@@ -1489,13 +1489,13 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
 #ifdef USE_PARTIAL_CONNECT
   if (use_partial_connect) {
     /* needs to be done once the vertex indices have been written into */
-    temp_vert_pairs.remap = BLI_memarena_alloc(mem_arena,
+    temp_vert_pairs.remap = lib_memarena_alloc(mem_arena,
                                                sizeof(*temp_vert_pairs.remap) * vert_arr_len);
     copy_vn_i(temp_vert_pairs.remap, vert_arr_len, -1);
 
     struct TempVertPair *tvp = temp_vert_pairs.list;
     do {
-      temp_vert_pairs.remap[BM_elem_index_get(tvp->v_temp)] = mesh_elem_index_get(tvp->v_orig);
+      temp_vert_pairs.remap[mesh_elem_index_get(tvp->v_temp)] = mesh_elem_index_get(tvp->v_orig);
     } while ((tvp = tvp->next));
   }
 #endif /* USE_PARTIAL_CONNECT */
@@ -1547,15 +1547,15 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
         if (index_other != -1) {
 #ifdef USE_PARTIAL_CONNECT
           if ((use_partial_connect == false) ||
-              (bm_vert_partial_connect_check_overlap(
+              (mesh_vert_partial_connect_check_overlap(
                    temp_vert_pairs.remap, BM_elem_index_get(v_origin), index_other) == false))
 #endif
           {
-            BMVert *v_end = vert_arr[index_other];
+            MeshVert *v_end = vert_arr[index_other];
 
-            edge_net_new[edge_net_new_index] = BM_edge_create(bm, v_origin, v_end, NULL, 0);
+            edge_net_new[edge_net_new_index] = mesh_edge_create(bm, v_origin, v_end, NULL, 0);
 #ifdef USE_PARTIAL_CONNECT
-            BM_elem_index_set(edge_net_new[edge_net_new_index], edge_net_new_index);
+            mesh_elem_index_set(edge_net_new[edge_net_new_index], edge_net_new_index);
 #endif
             edge_net_new_index++;
             args.edge_arr_new_len++;
@@ -1564,21 +1564,21 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
       }
 
       {
-        BMVert *v_origin = g->vert_span.max;
-        /* Index of BMVert for the edge group connection with `v_origin`. */
-        const int index_other = bm_face_split_edgenet_find_connection(&args, v_origin, true);
-        // BLI_assert(index_other >= 0 && index_other < (int)vert_arr_len);
+        MeshVert *v_origin = g->vert_span.max;
+        /* Index of MeshVert for the edge group connection with `v_origin`. */
+        const int index_other = mesh_face_split_edgenet_find_connection(&args, v_origin, true);
+        // lib_assert(index_other >= 0 && index_other < (int)vert_arr_len);
 
         /* only for degenerate geometry */
         if (index_other != -1) {
 #ifdef USE_PARTIAL_CONNECT
           if ((use_partial_connect == false) ||
-              (bm_vert_partial_connect_check_overlap(
-                   temp_vert_pairs.remap, BM_elem_index_get(v_origin), index_other) == false))
+              (mesh_vert_partial_connect_check_overlap(
+                   temp_vert_pairs.remap, mesh_elem_index_get(v_origin), index_other) == false))
 #endif
           {
-            BMVert *v_end = vert_arr[index_other];
-            edge_net_new[edge_net_new_index] = BM_edge_create(bm, v_origin, v_end, NULL, 0);
+            MeshVert *v_end = vert_arr[index_other];
+            edge_net_new[edge_net_new_index] = mesh_edge_create(mesh, v_origin, v_end, NULL, 0);
 #ifdef USE_PARTIAL_CONNECT
             BM_elem_index_set(edge_net_new[edge_net_new_index], edge_net_new_index);
 #endif
