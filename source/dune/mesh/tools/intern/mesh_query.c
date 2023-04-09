@@ -1124,9 +1124,9 @@ MeshLoop *mesh_face_edge_share_loop(MeshFace *f, MeshEdge *e)
 }
 
 void mesh_edge_ordered_verts_ex(const MeshEdge *edge,
-                              MeshVert **r_v1,
-                              MeshVert **r_v2,
-                              const MeshLoop *edge_loop)
+                                MeshVert **r_v1,
+                                MeshVert **r_v2,
+                                const MeshLoop *edge_loop)
 {
   lib_assert(edge_loop->e == edge);
   (void)edge; /* quiet warning in release build */
@@ -2154,8 +2154,8 @@ int mesh_calc_face_groups(Mesh *mesh,
     STACK_INIT(stack, tot_faces);
 
     for (; f_next; f_next = BM_iter_step(&iter)) {
-      if (BM_elem_flag_test(f_next, BM_ELEM_TAG) == false) {
-        BM_elem_flag_enable(f_next, BM_ELEM_TAG);
+      if (mesh_elem_flag_test(f_next, BM_ELEM_TAG) == false) {
+        mesh_elem_flag_enable(f_next, BM_ELEM_TAG);
         STACK_PUSH(stack, f_next);
         ok = true;
         break;
@@ -2227,25 +2227,25 @@ int mesh_calc_face_groups(Mesh *mesh,
     group_curr++;
   }
 
-  MEM_freeN(stack);
+  mem_freen(stack);
 
   /* reduce alloc to required size */
   if (group_index_len != group_curr) {
-    group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_curr);
+    group_index = mem_reallocn(group_index, sizeof(*group_index) * group_curr);
   }
   *r_group_index = group_index;
 
   return group_curr;
 }
 
-int BM_mesh_calc_edge_groups(BMesh *bm,
-                             int *r_groups_array,
-                             int (**r_group_index)[2],
-                             BMVertFilterFunc filter_fn,
-                             void *user_data,
-                             const char hflag_test)
+int mesh_calc_edge_groups(Mesh *mesh,
+                          int *r_groups_array,
+                          int (**r_group_index)[2],
+                          MeshVertFilterFn filter_fn,
+                          void *user_data,
+                          const char hflag_test)
 {
-  /* NOTE: almost duplicate of #BM_mesh_calc_face_groups, keep in sync. */
+  /* NOTE: almost duplicate of mesh_calc_face_groups, keep in sync. */
 
 #ifdef DEBUG
   int group_index_len = 1;
@@ -2253,7 +2253,7 @@ int BM_mesh_calc_edge_groups(BMesh *bm,
   int group_index_len = 32;
 #endif
 
-  int(*group_index)[2] = MEM_mallocN(sizeof(*group_index) * group_index_len, __func__);
+  int(*group_index)[2] = mem_mallocn(sizeof(*group_index) * group_index_len, __func__);
 
   int *group_array = r_groups_array;
   STACK_DECLARE(group_array);
@@ -2263,58 +2263,58 @@ int BM_mesh_calc_edge_groups(BMesh *bm,
   uint tot_edges = 0;
   uint tot_touch = 0;
 
-  BMEdge **stack;
+  MeshEdge **stack;
   STACK_DECLARE(stack);
 
-  BMIter iter;
-  BMEdge *e, *e_next;
+  MeshIter iter;
+  MeshEdge *e, *e_next;
   int i;
-  STACK_INIT(group_array, bm->totedge);
+  STACK_INIT(group_array, mesh->totedge);
 
   /* init the array */
-  BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
-    if ((hflag_test == 0) || BM_elem_flag_test(e, hflag_test)) {
+  MESH_ITER_MESH_INDEX (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+    if ((hflag_test == 0) || mesh_elem_flag_test(e, hflag_test)) {
       tot_edges++;
-      BM_elem_flag_disable(e, BM_ELEM_TAG);
+      mesh_elem_flag_disable(e, MESH_ELEM_TAG);
     }
     else {
       /* never walk over tagged */
-      BM_elem_flag_enable(e, BM_ELEM_TAG);
+      mesh_elem_flag_enable(e, MESH_ELEM_TAG);
     }
 
-    BM_elem_index_set(e, i); /* set_inline */
+    mesh_elem_index_set(e, i); /* set_inline */
   }
-  bm->elem_index_dirty &= ~BM_EDGE;
+  mesh->elem_index_dirty &= ~MESH_EDGE;
 
   /* detect groups */
-  stack = MEM_mallocN(sizeof(*stack) * tot_edges, __func__);
+  stack = mem_mallocn(sizeof(*stack) * tot_edges, __func__);
 
-  e_next = BM_iter_new(&iter, bm, BM_EDGES_OF_MESH, NULL);
+  e_next = mesh_iter_new(&iter, mesh, MESH_EDGES_OF_MESH, NULL);
 
   while (tot_touch != tot_edges) {
     int *group_item;
     bool ok = false;
 
-    BLI_assert(tot_touch < tot_edges);
+    lib_assert(tot_touch < tot_edges);
 
     STACK_INIT(stack, tot_edges);
 
-    for (; e_next; e_next = BM_iter_step(&iter)) {
-      if (BM_elem_flag_test(e_next, BM_ELEM_TAG) == false) {
-        BM_elem_flag_enable(e_next, BM_ELEM_TAG);
+    for (; e_next; e_next = mesh_iter_step(&iter)) {
+      if (mesh_elem_flag_test(e_next, MESH_ELEM_TAG) == false) {
+        mesh_elem_flag_enable(e_next, MESH_ELEM_TAG);
         STACK_PUSH(stack, e_next);
         ok = true;
         break;
       }
     }
 
-    BLI_assert(ok == true);
+    lib_assert(ok == true);
     UNUSED_VARS_NDEBUG(ok);
 
     /* manage arrays */
     if (group_index_len == group_curr) {
       group_index_len *= 2;
-      group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_index_len);
+      group_index = mem_reallocn(group_index, sizeof(*group_index) * group_index_len);
     }
 
     group_item = group_index[group_curr];
@@ -2322,23 +2322,23 @@ int BM_mesh_calc_edge_groups(BMesh *bm,
     group_item[1] = 0;
 
     while ((e = STACK_POP(stack))) {
-      BMIter viter;
-      BMIter eiter;
-      BMVert *v;
+      MeshIter viter;
+      MeshIter eiter;
+      MeshVert *v;
 
       /* add edge */
-      STACK_PUSH(group_array, BM_elem_index_get(e));
+      STACK_PUSH(group_array, mem_elem_index_get(e));
       tot_touch++;
       group_item[1]++;
       /* done */
 
       /* search for other edges */
-      BM_ITER_ELEM (v, &viter, e, BM_VERTS_OF_EDGE) {
+      MESH_ITER_ELEM (v, &viter, e, MESH_VERTS_OF_EDGE) {
         if ((filter_fn == NULL) || filter_fn(v, user_data)) {
-          BMEdge *e_other;
-          BM_ITER_ELEM (e_other, &eiter, v, BM_EDGES_OF_VERT) {
-            if (BM_elem_flag_test(e_other, BM_ELEM_TAG) == false) {
-              BM_elem_flag_enable(e_other, BM_ELEM_TAG);
+          MeshEdge *e_other;
+          MEM_ITER_ELEM (e_other, &eiter, v, MESH_EDGES_OF_VERT) {
+            if (mem_elem_flag_test(e_other, MESH_ELEM_TAG) == false) {
+              mem_elem_flag_enable(e_other, MESH_ELEM_TAG);
               STACK_PUSH(stack, e_other);
             }
           }
@@ -2349,44 +2349,44 @@ int BM_mesh_calc_edge_groups(BMesh *bm,
     group_curr++;
   }
 
-  MEM_freeN(stack);
+  mem_freen(stack);
 
   /* reduce alloc to required size */
   if (group_index_len != group_curr) {
-    group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_curr);
+    group_index = mem_reallocn(group_index, sizeof(*group_index) * group_curr);
   }
   *r_group_index = group_index;
 
   return group_curr;
 }
 
-int BM_mesh_calc_edge_groups_as_arrays(
-    BMesh *bm, BMVert **verts, BMEdge **edges, BMFace **faces, int (**r_groups)[3])
+int mesh_calc_edge_groups_as_arrays(
+    Mesh *mesh, MeshVert **verts, MeshEdge **edges, MeshFace **faces, int (**r_groups)[3])
 {
-  int(*groups)[3] = MEM_mallocN(sizeof(*groups) * bm->totvert, __func__);
+  int(*groups)[3] = mem_mallocn(sizeof(*groups) * mesh->totvert, __func__);
   STACK_DECLARE(groups);
-  STACK_INIT(groups, bm->totvert);
+  STACK_INIT(groups, mesh->totvert);
 
   /* Clear all selected vertices */
-  BM_mesh_elem_hflag_disable_all(bm, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_TAG, false);
+  mesh_elem_hflag_disable_all(mesh, MESH_VERT | MESH_EDGE | MESH_FACE, MESH_ELEM_TAG, false);
 
-  BMVert **stack = MEM_mallocN(sizeof(*stack) * bm->totvert, __func__);
+  MeshVert **stack = mem_mallocn(sizeof(*stack) * mesh->totvert, __func__);
   STACK_DECLARE(stack);
-  STACK_INIT(stack, bm->totvert);
+  STACK_INIT(stack, mesh->totvert);
 
   STACK_DECLARE(verts);
-  STACK_INIT(verts, bm->totvert);
+  STACK_INIT(verts, mesh->totvert);
 
   STACK_DECLARE(edges);
-  STACK_INIT(edges, bm->totedge);
+  STACK_INIT(edges, mesh->totedge);
 
   STACK_DECLARE(faces);
-  STACK_INIT(faces, bm->totface);
+  STACK_INIT(faces, mesh->totface);
 
-  BMIter iter;
-  BMVert *v_stack_init;
-  BM_ITER_MESH (v_stack_init, &iter, bm, BM_VERTS_OF_MESH) {
-    if (BM_elem_flag_test(v_stack_init, BM_ELEM_TAG)) {
+  MeshIter iter;
+  MeehVert *v_stack_init;
+  MESH_ITER_MESH (v_stack_init, &iter, mesh, MESH_VERTS_OF_MESH) {
+    if (mesh_elem_flag_test(v_stack_init, MESH_ELEM_TAG)) {
       continue;
     }
 
@@ -2395,39 +2395,39 @@ int BM_mesh_calc_edge_groups_as_arrays(
     const uint faces_init = STACK_SIZE(faces);
 
     /* Initialize stack. */
-    BM_elem_flag_enable(v_stack_init, BM_ELEM_TAG);
+    mesh_elem_flag_enable(v_stack_init, MESH_ELEM_TAG);
     STACK_PUSH(verts, v_stack_init);
 
     if (v_stack_init->e != NULL) {
-      BMVert *v_iter = v_stack_init;
+      MeshVert *v_iter = v_stack_init;
       do {
-        BMEdge *e_iter, *e_first;
+        MeshEdge *e_iter, *e_first;
         e_iter = e_first = v_iter->e;
         do {
-          if (!BM_elem_flag_test(e_iter, BM_ELEM_TAG)) {
-            BM_elem_flag_enable(e_iter, BM_ELEM_TAG);
+          if (!mesh_elem_flag_test(e_iter, MESH_ELEM_TAG)) {
+            mesh_elem_flag_enable(e_iter, MESH_ELEM_TAG);
             STACK_PUSH(edges, e_iter);
 
             if (e_iter->l != NULL) {
-              BMLoop *l_iter, *l_first;
+              MeshLoop *l_iter, *l_first;
               l_iter = l_first = e_iter->l;
               do {
-                if (!BM_elem_flag_test(l_iter->f, BM_ELEM_TAG)) {
-                  BM_elem_flag_enable(l_iter->f, BM_ELEM_TAG);
+                if (!mesh_elem_flag_test(l_iter->f, MESH_ELEM_TAG)) {
+                  mesh_elem_flag_enable(l_iter->f, MESH_ELEM_TAG);
                   STACK_PUSH(faces, l_iter->f);
                 }
               } while ((l_iter = l_iter->radial_next) != l_first);
             }
 
-            BMVert *v_other = BM_edge_other_vert(e_iter, v_iter);
-            if (!BM_elem_flag_test(v_other, BM_ELEM_TAG)) {
-              BM_elem_flag_enable(v_other, BM_ELEM_TAG);
+            MeshVert *v_other = mesh_edge_other_vert(e_iter, v_iter);
+            if (!mesh_elem_flag_test(v_other, MESH_ELEM_TAG)) {
+              mesh_elem_flag_enable(v_other, MESH_ELEM_TAG);
               STACK_PUSH(verts, v_other);
 
               STACK_PUSH(stack, v_other);
             }
           }
-        } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, v_iter)) != e_first);
+        } while ((e_iter = MESH_DISK_EDGE_NEXT(e_iter, v_iter)) != e_first);
       } while ((v_iter = STACK_POP(stack)));
     }
 
@@ -2437,15 +2437,15 @@ int BM_mesh_calc_edge_groups_as_arrays(
     g[2] = STACK_SIZE(faces) - faces_init;
   }
 
-  MEM_freeN(stack);
+  mem_freen(stack);
 
   /* Reduce alloc to required size. */
-  groups = MEM_reallocN(groups, sizeof(*groups) * STACK_SIZE(groups));
+  groups = mem_reallocn(groups, sizeof(*groups) * STACK_SIZE(groups));
   *r_groups = groups;
   return STACK_SIZE(groups);
 }
 
-float bmesh_subd_falloff_calc(const int falloff, float val)
+float mesh_subd_falloff_calc(const int falloff, float val)
 {
   switch (falloff) {
     case SUBD_FALLOFF_SMOOTH:
@@ -2466,7 +2466,7 @@ float bmesh_subd_falloff_calc(const int falloff, float val)
       val = val * (2.0f - val);
       break;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 
