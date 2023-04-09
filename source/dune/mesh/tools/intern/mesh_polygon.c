@@ -502,53 +502,53 @@ void BM_face_calc_center_bounds(const BMFace *f, float r_cent[3])
   mid_v3_v3v3(r_cent, min, max);
 }
 
-void BM_face_calc_center_bounds_vcos(const BMesh *bm,
-                                     const BMFace *f,
+void mesh_face_calc_center_bounds_vcos(const Mesh *mesh,
+                                     const MeshFace *f,
                                      float r_cent[3],
                                      float const (*vertexCos)[3])
 {
   /* must have valid index data */
-  BLI_assert((bm->elem_index_dirty & BM_VERT) == 0);
-  (void)bm;
+  lib_assert((mesh->elem_index_dirty & MESH_VERT) == 0);
+  (void)mesh;
 
-  const BMLoop *l_iter, *l_first;
+  const MeshLoop *l_iter, *l_first;
   float min[3], max[3];
 
   INIT_MINMAX(min, max);
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    minmax_v3v3_v3(min, max, vertexCos[BM_elem_index_get(l_iter->v)]);
+    minmax_v3v3_v3(min, max, vertexCos[mesh_elem_index_get(l_iter->v)]);
   } while ((l_iter = l_iter->next) != l_first);
 
   mid_v3_v3v3(r_cent, min, max);
 }
-void BM_face_calc_center_median(const BMFace *f, float r_cent[3])
+void mesh_face_calc_center_median(const MeshFace *f, float r_cent[3])
 {
-  const BMLoop *l_iter, *l_first;
+  const MeshLoop *l_iter, *l_first;
 
   zero_v3(r_cent);
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
     add_v3_v3(r_cent, l_iter->v->co);
   } while ((l_iter = l_iter->next) != l_first);
   mul_v3_fl(r_cent, 1.0f / (float)f->len);
 }
 
-void BM_face_calc_center_median_weighted(const BMFace *f, float r_cent[3])
+void mesh_face_calc_center_median_weighted(const MeshFace *f, float r_cent[3])
 {
-  const BMLoop *l_iter;
-  const BMLoop *l_first;
+  const MeshLoop *l_iter;
+  const MeshLoop *l_first;
   float totw = 0.0f;
   float w_prev;
 
   zero_v3(r_cent);
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
-  w_prev = BM_edge_calc_length(l_iter->prev->e);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
+  w_prev = mesh_edge_calc_length(l_iter->prev->e);
   do {
-    const float w_curr = BM_edge_calc_length(l_iter->e);
+    const float w_curr = mesh_edge_calc_length(l_iter->e);
     const float w = (w_curr + w_prev);
     madd_v3_v3fl(r_cent, l_iter->v->co, w);
     totw += w;
@@ -575,24 +575,24 @@ void poly_rotate_plane(const float normal[3], float (*verts)[3], const uint nver
   }
 }
 
-void BM_edge_normals_update(BMEdge *e)
+void mesh_edge_normals_update(MeshEdge *e)
 {
-  BMIter iter;
-  BMFace *f;
+  MeshIter iter;
+  MeshFace *f;
 
-  BM_ITER_ELEM (f, &iter, e, BM_FACES_OF_EDGE) {
-    BM_face_normal_update(f);
+  MESH_ITER_ELEM (f, &iter, e, MESH_FACES_OF_EDGE) {
+    MESH_face_normal_update(f);
   }
 
-  BM_vert_normal_update(e->v1);
-  BM_vert_normal_update(e->v2);
+  mesh_vert_normal_update(e->v1);
+  mesh_vert_normal_update(e->v2);
 }
 
-static void bm_loop_normal_accum(const BMLoop *l, float no[3])
+static void mesh_loop_normal_accum(const MeshLoop *l, float no[3])
 {
   float vec1[3], vec2[3], fac;
 
-  /* Same calculation used in BM_mesh_normals_update */
+  /* Same calculation used in mesh_mesh_normals_update */
   sub_v3_v3v3(vec1, l->v->co, l->prev->v->co);
   sub_v3_v3v3(vec2, l->next->v->co, l->v->co);
   normalize_v3(vec1);
@@ -603,27 +603,27 @@ static void bm_loop_normal_accum(const BMLoop *l, float no[3])
   madd_v3_v3fl(no, l->f->no, fac);
 }
 
-bool BM_vert_calc_normal_ex(const BMVert *v, const char hflag, float r_no[3])
+bool mesh_vert_calc_normal_ex(const MeshVert *v, const char hflag, float r_no[3])
 {
   int len = 0;
 
   zero_v3(r_no);
 
   if (v->e) {
-    const BMEdge *e = v->e;
+    const MeshEdge *e = v->e;
     do {
       if (e->l) {
-        const BMLoop *l = e->l;
+        const MeshLoop *l = e->l;
         do {
           if (l->v == v) {
-            if (BM_elem_flag_test(l->f, hflag)) {
-              bm_loop_normal_accum(l, r_no);
+            if (mesh_elem_flag_test(l->f, hflag)) {
+              mesh_loop_normal_accum(l, r_no);
               len++;
             }
           }
         } while ((l = l->radial_next) != e->l);
       }
-    } while ((e = bmesh_disk_edge_next(e, v)) != v->e);
+    } while ((e = mesh_disk_edge_next(e, v)) != v->e);
   }
 
   if (len) {
@@ -633,25 +633,25 @@ bool BM_vert_calc_normal_ex(const BMVert *v, const char hflag, float r_no[3])
   return false;
 }
 
-bool BM_vert_calc_normal(const BMVert *v, float r_no[3])
+bool mesh_vert_calc_normal(const MeshVert *v, float r_no[3])
 {
   int len = 0;
 
   zero_v3(r_no);
 
   if (v->e) {
-    const BMEdge *e = v->e;
+    const MeshEdge *e = v->e;
     do {
       if (e->l) {
-        const BMLoop *l = e->l;
+        const MeshLoop *l = e->l;
         do {
           if (l->v == v) {
-            bm_loop_normal_accum(l, r_no);
+            mesh_loop_normal_accum(l, r_no);
             len++;
           }
         } while ((l = l->radial_next) != e->l);
       }
-    } while ((e = bmesh_disk_edge_next(e, v)) != v->e);
+    } while ((e = mesh_disk_edge_next(e, v)) != v->e);
   }
 
   if (len) {
@@ -661,7 +661,7 @@ bool BM_vert_calc_normal(const BMVert *v, float r_no[3])
   return false;
 }
 
-void BM_vert_normal_update_all(BMVert *v)
+void mesh_vert_normal_update_all(MeshVert *v)
 {
   int len = 0;
 
