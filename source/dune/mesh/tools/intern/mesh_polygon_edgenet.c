@@ -763,10 +763,10 @@ static int group_min_cmp_fn(const void *p1, const void *p2)
 
 struct Edges_VertVert_BVHTreeTest {
   float dist_orig;
-  BMEdge **edge_arr;
+  MeshEdge **edge_arr;
 
-  BMVert *v_origin;
-  BMVert *v_other;
+  MeshVert *v_origin;
+  MeshVert *v_other;
 
   const uint *vert_range;
 };
