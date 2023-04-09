@@ -946,8 +946,8 @@ void mesh_slot_buffer_append(MeshOpSlot slot_args_dst[MESH_OP_MAX_SLOTS],
  * Copies elements of a certain type, which have a certain flag set
  * into an output slot for an operator.
  */
-static void mesh_slot_buffer_from_flag(Mesh *bm,
-                                       MeshOperator *op,
+static void mesh_slot_buffer_from_flag(Mesh *mesh,
+                                       MeshOp *op,
                                        MeshOpSlot slot_args[BMO_OP_MAX_SLOTS],
                                        const char *slot_name,
                                        const char htype,
@@ -959,7 +959,7 @@ static void mesh_slot_buffer_from_flag(Mesh *bm,
 
   lib_assert(op->slots_in == slot_args || op->slots_out == slot_args);
 
-  lib_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
   lib_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
   lib_assert((slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
 
@@ -982,8 +982,8 @@ static void mesh_slot_buffer_from_flag(Mesh *bm,
     /* TODO: collapse these loops into one. */
 
     if (htype & MESH_VERT) {
-      MESH_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
-        if (mesh_op_vert_flag_test_bool(bm, (BMVert *)ele, oflag) == test_for_enabled) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+        if (mesh_op_vert_flag_test_bool(bm, (MeshVert *)ele, oflag) == test_for_enabled) {
           ele_array[i] = ele;
           i++;
         }
@@ -1040,15 +1040,15 @@ void mesh_op_slot_buffer_hflag_enable(Mesh *mesh,
                                       const char hflag,
                                       const bool do_flush)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BMElem **data = (BMElem **)slot->data.buf;
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  MeshElem **data = (MeshElem **)slot->data.buf;
   int i;
-  const bool do_flush_select = (do_flush && (hflag & BM_ELEM_SELECT));
-  const bool do_flush_hide = (do_flush && (hflag & BM_ELEM_HIDDEN));
+  const bool do_flush_select = (do_flush && (hflag & MESH_ELEM_SELECT));
+  const bool do_flush_hide = (do_flush && (hflag & MESH_ELEM_HIDDEN));
 
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
-  BLI_assert((slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(((slot->slot_subtype.elem & MESH_ALL_NOLOOP) & htype) == htype);
+  lib_assert((slot->slot_subtype.elem & MESH_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
 
   for (i = 0; i < slot->len; i++, data++) {
     if (!(htype & (*data)->head.htype)) {
@@ -1056,26 +1056,26 @@ void mesh_op_slot_buffer_hflag_enable(Mesh *mesh,
     }
 
     if (do_flush_select) {
-      BM_elem_select_set(bm, *data, true);
+      mesh_elem_select_set(mesh, *data, true);
     }
 
     if (do_flush_hide) {
-      BM_elem_hide_set(bm, *data, false);
+      mesh_elem_hide_set(mesh, *data, false);
     }
 
-    BM_elem_flag_enable(*data, hflag);
+    mesh_elem_flag_enable(*data, hflag);
   }
 }
 
-void BMO_slot_buffer_hflag_disable(BMesh *bm,
-                                   BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                                   const char *slot_name,
-                                   const char htype,
-                                   const char hflag,
-                                   const bool do_flush)
+void mesh_slot_buffer_hflag_disable(Mesh *mesh,
+                                    MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                                    const char *slot_name,
+                                    const char htype,
+                                    const char hflag,
+                                    const bool do_flush)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BMElem **data = (BMElem **)slot->data.buf;
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  MeshElem **data = (MeshElem **)slot->data.buf;
   int i;
   const bool do_flush_select = (do_flush && (hflag & BM_ELEM_SELECT));
   const bool do_flush_hide = (do_flush && (hflag & BM_ELEM_HIDDEN));
