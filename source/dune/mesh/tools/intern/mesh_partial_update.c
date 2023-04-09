@@ -129,8 +129,8 @@ BMPartialUpdate *BM_mesh_partial_create_from_verts(BMesh *bm,
       faces_tag = BLI_BITMAP_NEW((size_t)bm->totface, __func__);
     }
 
-    BMVert *v;
-    BMIter iter;
+    MeshVert *v;
+    MeshIter iter;
     int i;
     BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
       BM_elem_index_set(v, i); /* set_inline */
