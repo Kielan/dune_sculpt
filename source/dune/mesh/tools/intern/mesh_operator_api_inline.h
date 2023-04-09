@@ -9,19 +9,19 @@
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
     short _mesh_elem_flag_test(Mesh *mesh, const MeshFlagLayer *oflags, const short oflag)
 {
-  lib_assert(bm->use_toolflags);
+  lib_assert(mesh->use_toolflags);
   return oflags[bm->toolflag_index].f & oflag;
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE
-    bool _bmo_elem_flag_test_bool(BMesh *bm, const BMFlagLayer *oflags, const short oflag)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
+    bool _mesh_elem_flag_test_bool(Mesh *mesh, const MeshFlagLayer *oflags, const short oflag)
 {
-  BLI_assert(bm->use_toolflags);
-  return (oflags[bm->toolflag_index].f & oflag) != 0;
+  lib_assert(mesh->use_toolflags);
+  return (oflags[mesh->toolflag_index].f & oflag) != 0;
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void _bmo_elem_flag_enable(BMesh *bm, BMFlagLayer *oflags, const short oflag)
+LIB_INLINE void _mesh_elem_flag_enable(Mesh *mesh, MeshFlagLayer *oflags, const short oflag)
 {
   BLI_assert(bm->use_toolflags);
   oflags[bm->toolflag_index].f |= oflag;
