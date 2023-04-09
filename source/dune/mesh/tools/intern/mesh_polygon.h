@@ -1,31 +1,25 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-struct BMPartialUpdate;
+struct MeshPartialUpdate;
 struct Heap;
 
-#include "BLI_compiler_attrs.h"
+#include "lib_compiler_attrs.h"
 
 /**
  * For tools that insist on using triangles, ideally we would cache this data.
  *
- * \param use_fixed_quad: When true,
+ * param use_fixed_quad: When true,
  * always split quad along (0 -> 2) regardless of concave corners,
- * (as done in #BM_mesh_calc_tessellation).
- * \param r_loops: Store face loop pointers, (f->len)
- * \param r_index: Store triangle triples, indices into \a r_loops,  `((f->len - 2) * 3)`
+ * (as done in mesh_calc_tessellation).
+ * param r_loops: Store face loop pointers, (f->len)
+ * param r_index: Store triangle triples, indices into \a r_loops,  `((f->len - 2) * 3)`
  */
-void BM_face_calc_tessellation(const BMFace *f,
+void mesh_face_calc_tessellation(const MeshFace *f,
                                bool use_fixed_quad,
-                               BMLoop **r_loops,
+                               MeshLoop **r_loops,
                                uint (*r_index)[3]);
-/**
- * Return a point inside the face.
- */
-void BM_face_calc_point_in_face(const BMFace *f, float r_co[3]);
+/** Return a point inside the face. **/
+void mesh_face_calc_point_in_face(const MeshFace *f, float r_co[3]);
 
 /**
  * \brief BMESH UPDATE FACE NORMAL
@@ -38,72 +32,60 @@ void BM_face_calc_point_in_face(const BMFace *f, float r_co[3]);
  */
 float BM_face_calc_normal(const BMFace *f, float r_no[3]) ATTR_NONNULL();
 /* exact same as 'BM_face_calc_normal' but accepts vertex coords */
-float BM_face_calc_normal_vcos(const BMesh *bm,
-                               const BMFace *f,
+float BM_face_calc_normal_vcos(const Mesh *mesh,
+                               const MeshFace *f,
                                float r_no[3],
                                float const (*vertexCos)[3]) ATTR_NONNULL();
 
 /**
  * Calculate a normal from a vertex cloud.
  *
- * \note We could make a higher quality version that takes all vertices into account.
+ * We could make a higher quality version that takes all vertices into account.
  * Currently it finds 4 outer most points returning its normal.
  */
-void BM_verts_calc_normal_from_cloud_ex(
-    BMVert **varr, int varr_len, float r_normal[3], float r_center[3], int *r_index_tangent);
-void BM_verts_calc_normal_from_cloud(BMVert **varr, int varr_len, float r_normal[3]);
+void mesh_verts_calc_normal_from_cloud_ex(
+    MeshVert **varr, int varr_len, float r_normal[3], float r_center[3], int *r_index_tangent);
+void mesh_verts_calc_normal_from_cloud(MeshVert **varr, int varr_len, float r_normal[3]);
 
 /**
  * Calculates the face subset normal.
  */
-float BM_face_calc_normal_subset(const BMLoop *l_first, const BMLoop *l_last, float r_no[3])
+float mesh_face_calc_normal_subset(const MeshLoop *l_first, const MeshLoop *l_last, float r_no[3])
     ATTR_NONNULL();
-/**
- * get the area of the face
- */
-float BM_face_calc_area(const BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * Get the area of the face in world space.
- */
-float BM_face_calc_area_with_mat3(const BMFace *f, const float mat3[3][3]) ATTR_WARN_UNUSED_RESULT
+/** get the area of the face **/
+float mesh_face_calc_area(const MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** Get the area of the face in world space. **/
+float mesh_face_calc_area_with_mat3(const MeshFace *f, const float mat3[3][3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-/**
- * get the area of UV face
- */
-float BM_face_calc_area_uv(const BMFace *f, int cd_loop_uv_offset) ATTR_WARN_UNUSED_RESULT
+/** get the area of UV face */
+float mesh_face_calc_area_uv(const MeshFace *f, int cd_loop_uv_offset) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-/**
- * compute the perimeter of an ngon
- */
-float BM_face_calc_perimeter(const BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * Calculate the perimeter of a ngon in world space.
- */
-float BM_face_calc_perimeter_with_mat3(const BMFace *f,
+/** compute the perimeter of an ngon */
+float mesh_face_calc_perimeter(const MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** Calculate the perimeter of a ngon in world space. **/
+float mesh_face_calc_perimeter_with_mat3(const MeshFace *f,
                                        const float mat3[3][3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-/**
- * Compute the tangent of the face, using the longest edge.
- */
-void BM_face_calc_tangent_edge(const BMFace *f, float r_tangent[3]) ATTR_NONNULL();
+/** Compute the tangent of the face, using the longest edge. **/
+void mesh_face_calc_tangent_edge(const MeshFace *f, float r_tangent[3]) ATTR_NONNULL();
 /**
  * Compute the tangent of the face, using the two longest disconnected edges.
  *
- * \param r_tangent: Calculated unit length tangent (return value).
+ * param r_tangent: Calculated unit length tangent (return value).
  */
-void BM_face_calc_tangent_edge_pair(const BMFace *f, float r_tangent[3]) ATTR_NONNULL();
+void mesh_face_calc_tangent_edge_pair(const BMFace *f, float r_tangent[3]) ATTR_NONNULL();
 /**
  * Compute the tangent of the face, using the edge farthest away from any vertex in the face.
  *
- * \param r_tangent: Calculated unit length tangent (return value).
+ * param r_tangent: Calculated unit length tangent (return value).
  */
-void BM_face_calc_tangent_edge_diagonal(const BMFace *f, float r_tangent[3]) ATTR_NONNULL();
+void mesh_face_calc_tangent_edge_diagonal(const MeshFace *f, float r_tangent[3]) ATTR_NONNULL();
 /**
  * Compute the tangent of the face, using longest distance between vertices on the face.
  *
- * \note The logic is almost identical to #BM_face_calc_tangent_edge_diagonal
+ * note The logic is almost identical to mesh_face_calc_tangent_edge_diagonal
  */
-void BM_face_calc_tangent_vert_diagonal(const BMFace *f, float r_tangent[3]) ATTR_NONNULL();
+void mesh_face_calc_tangent_vert_diagonal(const MeshFace *f, float r_tangent[3]) ATTR_NONNULL();
 /**
  * Compute a meaningful direction along the face (use for gizmo axis).
  *
