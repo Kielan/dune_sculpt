@@ -822,7 +822,7 @@ static void bvhtree_test_edges_isect_2d_ray_cb(void *user_data,
      * (and needed for partial-connect which will overlap vertices) */
     if (LIKELY(dist_new < hit->dist && (dist_new > 0.0f))) {
       if (e->v1 != data->v_origin && e->v2 != data->v_origin) {
-        const int v1_index = BM_elem_index_get(e->v1);
+        const int v1_index = mesh_elem_index_get(e->v1);
         /* v1/v2 will both be in the same group */
         if (v1_index < (int)data->vert_range[0] || v1_index >= (int)data->vert_range[1]) {
           hit->dist = dist_new;
@@ -1316,20 +1316,20 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
             lib_linklist_prepend_arena(&edge_links, e_iter, mem_arena);
 
             MeshVert *v_other = mesh_edge_other_vert(e_iter, v_iter);
-            if (BM_elem_flag_test(v_other, VERT_NOT_IN_STACK)) {
-              BLI_SMALLSTACK_PUSH(vstack, v_other);
-              BM_elem_flag_disable(v_other, VERT_NOT_IN_STACK);
+            if (mesh_elem_flag_test(v_other, VERT_NOT_IN_STACK)) {
+              LIB_SMALLSTACK_PUSH(vstack, v_other);
+              mesh_elem_flag_disable(v_other, VERT_NOT_IN_STACK);
             }
           }
-        } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, v_iter)) != v_iter->e);
+        } while ((e_iter = MESH_DISK_EDGE_NEXT(e_iter, v_iter)) != v_iter->e);
       }
 
-      struct EdgeGroupIsland *g = BLI_memarena_alloc(mem_arena, sizeof(*g));
+      struct EdgeGroupIsland *g = lib_memarena_alloc(mem_arena, sizeof(*g));
       g->vert_len = unique_verts_in_group;
       g->edge_len = unique_edges_in_group;
       edge_in_group_tot += unique_edges_in_group;
 
-      BLI_linklist_prepend_nlink(&group_head, edge_links, (LinkNode *)g);
+      lib_linklist_prepend_nlink(&group_head, edge_links, (LinkNode *)g);
 
       group_arr_len++;
 
@@ -1338,8 +1338,8 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
       }
 
       /* skip edges in the stack */
-      while (BM_elem_flag_test(edge_arr[edge_index], EDGE_NOT_IN_STACK) == false) {
-        BLI_assert(edge_index != 0);
+      while (mesh_elem_flag_test(edge_arr[edge_index], EDGE_NOT_IN_STACK) == false) {
+        lib_assert(edge_index != 0);
         edge_index--;
       }
     }
@@ -1359,9 +1359,9 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
   float axis_mat[3][3];
   axis_dominant_v3_to_m3(axis_mat, f->no);
 
-#define VERT_IN_ARRAY BM_ELEM_INTERNAL_TAG
+#define VERT_IN_ARRAY MESH_ELEM_INTERNAL_TAG
 
-  struct EdgeGroupIsland **group_arr = BLI_memarena_alloc(mem_arena,
+  struct EdgeGroupIsland **group_arr = lib_memarena_alloc(mem_arena,
                                                           sizeof(*group_arr) * group_arr_len);
   uint vert_arr_len = 0;
   /* sort groups by lowest value vertex */
@@ -1374,18 +1374,18 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
       LinkNode *edge_links = g->edge_links.link;
 
       /* init with *any* different verts */
-      g->vert_span.min = ((BMEdge *)edge_links->link)->v1;
-      g->vert_span.max = ((BMEdge *)edge_links->link)->v2;
+      g->vert_span.min = ((MeshEdge *)edge_links->link)->v1;
+      g->vert_span.max = ((MeshEdge *)edge_links->link)->v2;
       float min_axis[2] = {FLT_MAX, FLT_MAX};
       float max_axis[2] = {-FLT_MAX, -FLT_MAX};
 
       do {
-        BMEdge *e = edge_links->link;
-        BLI_assert(e->head.htype == BM_EDGE);
+        MeshEdge *e = edge_links->link;
+        lib_assert(e->head.htype == MESH_EDGE);
 
         for (int j = 0; j < 2; j++) {
-          BMVert *v_iter = (&e->v1)[j];
-          BLI_assert(v_iter->head.htype == BM_VERT);
+          MeshVert *v_iter = (&e->v1)[j];
+          lib_assert(v_iter->head.htype == MESH_VERT);
           /* ideally we could use 'v_iter->co[SORT_AXIS]' here,
            * but we need to sort the groups before setting the vertex array order */
           const float axis_value[2] = {
@@ -1423,12 +1423,12 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
   qsort(group_arr, group_arr_len, sizeof(*group_arr), group_min_cmp_fn);
 
   /* we don't know how many unique verts there are connecting the edges, so over-alloc */
-  BMVert **vert_arr = BLI_memarena_alloc(mem_arena, sizeof(*vert_arr) * vert_arr_len);
+  MeshVert **vert_arr = lib_memarena_alloc(mem_arena, sizeof(*vert_arr) * vert_arr_len);
   /* map vertex -> group index */
-  uint *verts_group_table = BLI_memarena_alloc(mem_arena,
+  uint *verts_group_table = lib_memarena_alloc(mem_arena,
                                                sizeof(*verts_group_table) * vert_arr_len);
 
-  float(*vert_coords_backup)[3] = BLI_memarena_alloc(mem_arena,
+  float(*vert_coords_backup)[3] = lib_memarena_alloc(mem_arena,
                                                      sizeof(*vert_coords_backup) * vert_arr_len);
 
   {
@@ -1439,7 +1439,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
     for (uint g_index = 0; g_index < group_arr_len; g_index++) {
       LinkNode *edge_links = group_arr[g_index]->edge_links.link;
       do {
-        BMEdge *e = edge_links->link;
+        MeshEdge *e = edge_links->link;
         for (int j = 0; j < 2; j++) {
           BMVert *v_iter = (&e->v1)[j];
           if (!BM_elem_flag_test(v_iter, VERT_IN_ARRAY)) {
