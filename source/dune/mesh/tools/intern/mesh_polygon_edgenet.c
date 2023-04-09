@@ -1195,13 +1195,13 @@ static bool bm_vert_partial_connect_check_overlap(const int *remap,
 
 #endif /* USE_PARTIAL_CONNECT */
 
-bool BM_face_split_edgenet_connect_islands(BMesh *bm,
-                                           BMFace *f,
-                                           BMEdge **edge_net_init,
+bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
+                                           MeshFace *f,
+                                           MeshEdge **edge_net_init,
                                            const uint edge_net_init_len,
                                            bool use_partial_connect,
                                            MemArena *mem_arena,
-                                           BMEdge ***r_edge_net_new,
+                                           MeshEdge ***r_edge_net_new,
                                            uint *r_edge_net_new_len)
 {
   /* -------------------------------------------------------------------- */
@@ -1213,24 +1213,24 @@ bool BM_face_split_edgenet_connect_islands(BMesh *bm,
    *
    * Keep the first part fast since it will run very often for edge-nets that have no holes.
    *
-   * \note Don't use the mem_arena unless we have holes to fill.
+   * note Don't use the mem_arena unless we have holes to fill.
    * (avoid thrashing the area when the initial check isn't so intensive on the stack).
    */
 
   const uint edge_arr_len = (uint)edge_net_init_len + (uint)f->len;
-  BMEdge **edge_arr = BLI_memarena_alloc(mem_arena, sizeof(*edge_arr) * edge_arr_len);
+  MeshEdge **edge_arr = lib_memarena_alloc(mem_arena, sizeof(*edge_arr) * edge_arr_len);
   bool ok = false;
   uint edge_net_new_len = (uint)edge_net_init_len;
 
   memcpy(edge_arr, edge_net_init, sizeof(*edge_arr) * (size_t)edge_net_init_len);
 
   /* _must_ clear on exit */
-#define EDGE_NOT_IN_STACK BM_ELEM_INTERNAL_TAG
-#define VERT_NOT_IN_STACK BM_ELEM_INTERNAL_TAG
+#define EDGE_NOT_IN_STACK MESH_ELEM_INTERNAL_TAG
+#define VERT_NOT_IN_STACK MESH_ELEM_INTERNAL_TAG
 
   {
     uint i = edge_net_init_len;
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
     l_iter = l_first = BM_FACE_FIRST_LOOP(f);
     do {
       BLI_assert(!BM_elem_flag_test(l_iter->v, VERT_NOT_IN_STACK));
