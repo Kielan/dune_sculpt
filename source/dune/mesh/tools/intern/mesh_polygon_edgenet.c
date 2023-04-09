@@ -1179,9 +1179,7 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
   return v_split;
 }
 
-/**
- * Check if connecting vertices would cause an edge with duplicate verts.
- */
+/** Check if connecting vertices would cause an edge with duplicate verts. */
 static bool mesh_vert_partial_connect_check_overlap(const int *remap,
                                                   const int v_a_index,
                                                   const int v_b_index)
@@ -1548,7 +1546,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
 #ifdef USE_PARTIAL_CONNECT
           if ((use_partial_connect == false) ||
               (mesh_vert_partial_connect_check_overlap(
-                   temp_vert_pairs.remap, BM_elem_index_get(v_origin), index_other) == false))
+                   temp_vert_pairs.remap, mesh_elem_index_get(v_origin), index_other) == false))
 #endif
           {
             MeshVert *v_end = vert_arr[index_other];
@@ -1592,11 +1590,11 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
         }
       }
     }
-    BLI_assert(edge_net_new_len >= edge_net_new_index);
+    lib_assert(edge_net_new_len >= edge_net_new_index);
     edge_net_new_len = edge_net_new_index;
   }
 
-  BLI_bvhtree_free(bvhtree);
+  lib_bvhtree_free(bvhtree);
 
   *r_edge_net_new = edge_net_new;
   *r_edge_net_new_len = edge_net_new_len;
@@ -1619,7 +1617,7 @@ finally:
       do {
         /* We must _never_ create connections here
          * (in case the islands can't have a connection at all). */
-        BLI_assert(BM_edge_exists(tvp->v_orig, tvp->v_temp) == NULL);
+        lib_assert(mesh_edge_exists(tvp->v_orig, tvp->v_temp) == NULL);
       } while ((tvp = tvp->next));
     }
 #  endif
@@ -1628,16 +1626,16 @@ finally:
     do {
       /* its _very_ unlikely the edge exists,
        * however splicing may cause this. see: T48012 */
-      if (!BM_edge_exists(tvp->v_orig, tvp->v_temp)) {
-        BM_vert_splice(bm, tvp->v_orig, tvp->v_temp);
+      if (!mesh_edge_exists(tvp->v_orig, tvp->v_temp)) {
+        mesh_vert_splice(bm, tvp->v_orig, tvp->v_temp);
       }
     } while ((tvp = tvp->next));
 
     /* Remove edges which have become doubles since splicing vertices together,
      * its less trouble than detecting future-doubles on edge-creation. */
     for (uint i = edge_net_init_len; i < edge_net_new_len; i++) {
-      while (BM_edge_find_double(edge_net_new[i])) {
-        BM_edge_kill(bm, edge_net_new[i]);
+      while (mesh_edge_find_double(edge_net_new[i])) {
+        mesh_edge_kill(mesh, edge_net_new[i]);
         edge_net_new_len--;
         if (i == edge_net_new_len) {
           break;
@@ -1651,9 +1649,9 @@ finally:
 #endif
 
   for (uint i = 0; i < edge_arr_len; i++) {
-    BM_elem_flag_disable(edge_arr[i], EDGE_NOT_IN_STACK);
-    BM_elem_flag_disable(edge_arr[i]->v1, VERT_NOT_IN_STACK);
-    BM_elem_flag_disable(edge_arr[i]->v2, VERT_NOT_IN_STACK);
+    mesh_elem_flag_disable(edge_arr[i], EDGE_NOT_IN_STACK);
+    mesh_elem_flag_disable(edge_arr[i]->v1, VERT_NOT_IN_STACK);
+    mesh_elem_flag_disable(edge_arr[i]->v2, VERT_NOT_IN_STACK);
   }
 
 #undef VERT_IN_ARRAY
