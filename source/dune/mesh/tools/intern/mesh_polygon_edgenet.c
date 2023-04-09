@@ -1292,22 +1292,22 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
     uint edge_index = (edge_arr_len - 1);
     uint edge_in_group_tot = 0;
 
-    BLI_SMALLSTACK_DECLARE(vstack, BMVert *);
+    LIB_SMALLSTACK_DECLARE(vstack, BMVert *);
 
     while (true) {
       LinkNode *edge_links = NULL;
       uint unique_verts_in_group = 0, unique_edges_in_group = 0;
 
       /* list of groups */
-      BLI_assert(BM_elem_flag_test(edge_arr[edge_index]->v1, VERT_NOT_IN_STACK));
-      BLI_SMALLSTACK_PUSH(vstack, edge_arr[edge_index]->v1);
-      BM_elem_flag_disable(edge_arr[edge_index]->v1, VERT_NOT_IN_STACK);
+      LIB_assert(mesh_elem_flag_test(edge_arr[edge_index]->v1, VERT_NOT_IN_STACK));
+      LIB_SMALLSTACK_PUSH(vstack, edge_arr[edge_index]->v1);
+      mesh_elem_flag_disable(edge_arr[edge_index]->v1, VERT_NOT_IN_STACK);
 
-      BMVert *v_iter;
-      while ((v_iter = BLI_SMALLSTACK_POP(vstack))) {
+      MeshVert *v_iter;
+      while ((v_iter = LIB_SMALLSTACK_POP(vstack))) {
         unique_verts_in_group++;
 
-        BMEdge *e_iter = v_iter->e;
+        MeshEdge *e_iter = v_iter->e;
         do {
           if (BM_elem_flag_test(e_iter, EDGE_NOT_IN_STACK)) {
             BM_elem_flag_disable(e_iter, EDGE_NOT_IN_STACK);
