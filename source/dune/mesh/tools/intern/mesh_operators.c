@@ -44,16 +44,16 @@ void BMO_op_flag_enable(BMesh *UNUSED(bm), BMOperator *op, const int op_flag)
   op->flag |= op_flag;
 }
 
-void BMO_op_flag_disable(BMesh *UNUSED(bm), BMOperator *op, const int op_flag)
+void mesh_op_flag_disable(BMesh *UNUSED(bm), BMOperator *op, const int op_flag)
 {
   op->flag &= ~op_flag;
 }
 
-void BMO_push(BMesh *bm, BMOperator *UNUSED(op))
+void mesh_op_push(Mesh *mesh, BMOperator *UNUSED(op))
 {
-  bm->toolflag_index++;
+  mesh->toolflag_index++;
 
-  BLI_assert(bm->totflags > 0);
+  lib_assert(bm->totflags > 0);
 
   /* add flag layer, if appropriate */
   if (bm->toolflag_index > 0) {
