@@ -572,17 +572,17 @@ void mesh_selected_remap(Mesh *mesh,
                          const bool check_select)
 {
   if (mesh->selected.first) {
-    BMEditSelection *ese, *ese_next;
-    BMOpSlot *slot_elem_map;
+    MeshEditSelection *ese, *ese_next;
+    MeshOpSlot *slot_elem_map;
 
-    for (ese = bm->selected.first; ese; ese = ese_next) {
+    for (ese = mesh->selected.first; ese; ese = ese_next) {
       ese_next = ese->next;
 
       switch (ese->htype) {
-        case BM_VERT:
+        case MESH_VERT:
           slot_elem_map = slot_vert_map;
           break;
-        case BM_EDGE:
+        case MESH_EDGE:
           slot_elem_map = slot_edge_map;
           break;
         default:
@@ -590,28 +590,28 @@ void mesh_selected_remap(Mesh *mesh,
           break;
       }
 
-      ese->ele = BMO_slot_map_elem_get(slot_elem_map, ese->ele);
+      ese->ele = mesh_slot_map_elem_get(slot_elem_map, ese->ele);
 
       if (UNLIKELY((ese->ele == NULL) ||
-                   (check_select && (BM_elem_flag_test(ese->ele, BM_ELEM_SELECT) == false)))) {
-        BLI_remlink(&bm->selected, ese);
-        MEM_freeN(ese);
+                   (check_select && (mesh_elem_flag_test(ese->ele, MESH_ELEM_SELECT) == false)))) {
+        lib_remlink(&mesh->selected, ese);
+        mem_freen(ese);
       }
     }
   }
 
-  if (bm->act_face) {
-    BMFace *f = BMO_slot_map_elem_get(slot_face_map, bm->act_face);
+  if (mesh->act_face) {
+    MeshFace *f = mesh_slot_map_elem_get(slot_face_map, mesh->act_face);
     if (f) {
-      bm->act_face = f;
+      mesh->act_face = f;
     }
   }
 }
 
-int BMO_slot_buffer_len(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+int mesh_slot_buffer_len(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  MeshOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
 
   /* check if its actually a buffer */
   if (slot->slot_type != BMO_OP_SLOT_ELEMENT_BUF) {
