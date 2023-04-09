@@ -1077,11 +1077,11 @@ void mesh_slot_buffer_hflag_disable(Mesh *mesh,
   MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
   MeshElem **data = (MeshElem **)slot->data.buf;
   int i;
-  const bool do_flush_select = (do_flush && (hflag & BM_ELEM_SELECT));
-  const bool do_flush_hide = (do_flush && (hflag & BM_ELEM_HIDDEN));
+  const bool do_flush_select = (do_flush && (hflag & MESH_ELEM_SELECT));
+  const bool do_flush_hide = (do_flush && (hflag & MESH_ELEM_HIDDEN));
 
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(((slot->slot_subtype.elem & MESH_ALL_NOLOOP) & htype) == htype);
 
   for (i = 0; i < slot->len; i++, data++) {
     if (!(htype & (*data)->head.htype)) {
@@ -1111,22 +1111,22 @@ void mesh_op_slot_buffer_flag_enable(Mesh *mesh,
   int i;
 
   lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
-  lib_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
+  lib_assert(((slot->slot_subtype.elem & MESH_ALL_NOLOOP) & htype) == htype);
 
   for (i = 0; i < slot->len; i++) {
     if (!(htype & data[i]->htype)) {
       continue;
     }
 
-    mesh_op_elem_flag_enable(bm, (BMElemF *)data[i], oflag);
+    mesh_op_elem_flag_enable(mesh, (MeshElemF *)data[i], oflag);
   }
 }
 
-void mesh_slot_buffer_flag_disable(BMesh *bm,
-                                  BMOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                                  const char *slot_name,
-                                  const char htype,
-                                  const short oflag)
+void mesh_slot_buffer_flag_disable(Mesh *mesh,
+                                   MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                                   const char *slot_name,
+                                   const char htype,
+                                   const short oflag)
 {
   MeshOpSlot *slot = mesh_op_slot_get(slot_args, slot_name);
   MeshHeader **data = (MeshHeader **)slot->data.buf;
@@ -1140,7 +1140,7 @@ void mesh_slot_buffer_flag_disable(BMesh *bm,
       continue;
     }
 
-    BMO_elem_flag_disable(bm, (BMElemF *)data[i], oflag);
+    mesh_elem_flag_disable(bm, (BMElemF *)data[i], oflag);
   }
 }
 
