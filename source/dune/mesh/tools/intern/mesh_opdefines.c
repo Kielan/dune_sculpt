@@ -1,7 +1,5 @@
-/** \file
- * \ingroup bmesh
- *
- * BMesh operator definitions.
+/**
+ * Mesh operator definitions.
  *
  * This file defines (and documents) all bmesh operators (bmops).
  *
@@ -31,12 +29,12 @@
  * slot definition tells you what types of elements are in it.
  */
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_operators_private.h"
+#include "mesh.h"
+#include "intern/mesh_ops_private.h"
 
-#include "DNA_modifier_types.h"
+#include "dna_modifier_types.h"
 
 /**
  * The formatting of these bmesh operators is parsed by
@@ -63,12 +61,12 @@
  * are extracted from comments next to them.
  *
  * eg:
- *     {BMO_OP_SLOT_ELEMENT_BUF, "geom.out"},  """ output slot, boundary region """
+ *     {MESH_OP_SLOT_ELEMENT_BUF, "geom.out"},  """ output slot, boundary region """
  *
  * ... or:
  *
  * """ output slot, boundary region """
- *     {BMO_OP_SLOT_ELEMENT_BUF, "geom.out"},
+ *     {MESH_OP_SLOT_ELEMENT_BUF, "geom.out"},
  *
  * Both are acceptable.
  * note that '//' comments are ignored.
@@ -79,14 +77,14 @@
 
 /* enums shared between multiple operators */
 
-static BMO_FlagSet bmo_enum_axis_xyz[] = {
+static MeshFlagSet mesh_enum_axis_xyz[] = {
   {0, "X"},
   {1, "Y"},
   {2, "Z"},
   {0, NULL},
 };
 
-static BMO_FlagSet bmo_enum_axis_neg_xyz_and_xyz[] = {
+static MeshFlagSet mesh_enum_axis_neg_xyz_and_xyz[] = {
   {0, "-X"},
   {1, "-Y"},
   {2, "-Z"},
