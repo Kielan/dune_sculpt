@@ -401,13 +401,13 @@ finally:
 }
 
 static bool mesh_face_split_edgenet_find_loop(MeshVert *v_init,
-                                            const float face_normal[3],
-                                            const float face_normal_matrix[3][3],
-                                            /* cache to avoid realloc every time */
-                                            struct VertOrder *edge_order,
-                                            const uint edge_order_len,
-                                            MeshVert **r_face_verts,
-                                            int *r_face_verts_len)
+                                              const float face_normal[3],
+                                              const float face_normal_matrix[3][3],
+                                              /* cache to avoid realloc every time */
+                                              struct VertOrder *edge_order,
+                                              const uint edge_order_len,
+                                              MeshVert **r_face_verts,
+                                              int *r_face_verts_len)
 {
   MeshEdge *e_pair[2];
   MeshVert *v;
@@ -471,7 +471,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
    * large for single faces with complex edge-nets, see: T65980. */
 
   /* over-alloc (probably 2-4 is only used in most cases), for the biggest-fan */
-  edge_order = mem_mallocN(sizeof(*edge_order) * edge_order_len, __func__);
+  edge_order = mem_mallocn(sizeof(*edge_order) * edge_order_len, __func__);
 
   /* use later */
   face_verts = mem_mallocn(sizeof(*face_verts) * (edge_net_len + f->len), __func__);
@@ -515,47 +515,47 @@ bool mesh_face_split_edgenet(Mesh *mesh,
 
   /* any vert can be used to begin with */
   STACK_PUSH(vert_queue, l_first->v);
-  BM_ELEM_API_FLAG_ENABLE(l_first->v, VERT_IN_QUEUE);
+  MESH_ELEM_API_FLAG_ENABLE(l_first->v, VERT_IN_QUEUE);
 
   while ((v = STACK_POP(vert_queue))) {
-    BM_ELEM_API_FLAG_DISABLE(v, VERT_IN_QUEUE);
-    if (bm_face_split_edgenet_find_loop(v,
+    MESH_ELEM_API_FLAG_DISABLE(v, VERT_IN_QUEUE);
+    if (mesh_face_split_edgenet_find_loop(v,
                                         f->no,
                                         face_normal_matrix,
                                         edge_order,
                                         edge_order_len,
                                         face_verts,
                                         &face_verts_len)) {
-      BMFace *f_new;
+      MeshFace *f_new;
 
-      f_new = BM_face_create_verts(bm, face_verts, face_verts_len, f, BM_CREATE_NOP, false);
+      f_new = mesh_face_create_verts(mesh, face_verts, face_verts_len, f, MESH_CREATE_NOP, false);
 
       for (i = 0; i < edge_net_len; i++) {
-        BLI_assert(BM_ELEM_API_FLAG_TEST(edge_net[i], EDGE_NET));
+        lib_assert(MESH_ELEM_API_FLAG_TEST(edge_net[i], EDGE_NET));
       }
 
       if (f_new) {
-        BLI_array_append(face_arr, f_new);
+        lib_array_append(face_arr, f_new);
         copy_v3_v3(f_new->no, f->no);
 
         /* warning, normally don't do this,
          * its needed for mesh intersection - which tracks face-sides based on selection */
         f_new->head.hflag = f->head.hflag;
-        if (f->head.hflag & BM_ELEM_SELECT) {
-          bm->totfacesel++;
+        if (f->head.hflag & MESH_ELEM_SELECT) {
+          mesh->totfacesel++;
         }
 
-        BM_ELEM_API_FLAG_ENABLE(f_new, FACE_NET);
+        MESH_ELEM_API_FLAG_ENABLE(f_new, FACE_NET);
 
         /* add new verts to keep finding loops for
          * (verts between boundary and manifold edges) */
-        l_iter = l_first = BM_FACE_FIRST_LOOP(f_new);
+        l_iter = l_first = MESH_FACE_FIRST_LOOP(f_new);
         do {
           /* Avoid adding to queue multiple times (not common but happens). */
-          if (!BM_ELEM_API_FLAG_TEST(l_iter->v, VERT_IN_QUEUE) &&
-              bm_face_split_edgenet_find_loop_pair_exists(l_iter->v)) {
+          if (!MESH_ELEM_API_FLAG_TEST(l_iter->v, VERT_IN_QUEUE) &&
+              mesh_face_split_edgenet_find_loop_pair_exists(l_iter->v)) {
             STACK_PUSH(vert_queue, l_iter->v);
-            BM_ELEM_API_FLAG_ENABLE(l_iter->v, VERT_IN_QUEUE);
+            MESH_ELEM_API_FLAG_ENABLE(l_iter->v, VERT_IN_QUEUE);
           }
         } while ((l_iter = l_iter->next) != l_first);
       }
@@ -564,13 +564,13 @@ bool mesh_face_split_edgenet(Mesh *mesh,
 
   if (CustomData_has_math(&bm->ldata)) {
     /* reuse VERT_VISIT here to tag vert's already interpolated */
-    BMIter iter;
-    BMLoop *l_other;
+    MeshIter iter;
+    MeshLoop *l_other;
 
-    /* See: #BM_loop_interp_from_face for similar logic. */
-    void **blocks = BLI_array_alloca(blocks, f->len);
-    float(*cos_2d)[2] = BLI_array_alloca(cos_2d, f->len);
-    float *w = BLI_array_alloca(w, f->len);
+    /* See: mesh_loop_interp_from_face for similar logic. */
+    void **blocks = lib_array_alloca(blocks, f->len);
+    float(*cos_2d)[2] = lib_array_alloca(cos_2d, f->len);
+    float *w = lib_array_alloca(w, f->len);
     float axis_mat[3][3];
     float co[2];
 
@@ -579,16 +579,16 @@ bool mesh_face_split_edgenet(Mesh *mesh,
 
     /* first simply copy from existing face */
     i = 0;
-    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
-      BM_ITER_ELEM (l_other, &iter, l_iter->v, BM_LOOPS_OF_VERT) {
-        if ((l_other->f != f) && BM_ELEM_API_FLAG_TEST(l_other->f, FACE_NET)) {
-          CustomData_bmesh_copy_data(
-              &bm->ldata, &bm->ldata, l_iter->head.data, &l_other->head.data);
+      MESH_ITER_ELEM (l_other, &iter, l_iter->v, MESH_LOOPS_OF_VERT) {
+        if ((l_other->f != f) && MESH_ELEM_API_FLAG_TEST(l_other->f, FACE_NET)) {
+          CustomData_mesh_copy_data(
+              &mesh->ldata, &mesh->ldata, l_iter->head.data, &l_other->head.data);
         }
       }
       /* tag not to interpolate */
-      BM_ELEM_API_FLAG_ENABLE(l_iter->v, VERT_VISIT);
+      MESH_ELEM_API_FLAG_ENABLE(l_iter->v, VERT_VISIT);
 
       mul_v2_m3v3(cos_2d[i], axis_mat, l_iter->v->co);
       blocks[i] = l_iter->head.data;
@@ -596,27 +596,27 @@ bool mesh_face_split_edgenet(Mesh *mesh,
     } while ((void)i++, (l_iter = l_iter->next) != l_first);
 
     for (i = 0; i < edge_net_len; i++) {
-      BM_ITER_ELEM (v, &iter, edge_net[i], BM_VERTS_OF_EDGE) {
-        if (!BM_ELEM_API_FLAG_TEST(v, VERT_VISIT)) {
-          BMIter liter;
+      MESH_ITER_ELEM (v, &iter, edge_net[i], MESH_VERTS_OF_EDGE) {
+        if (!MESH_ELEM_API_FLAG_TEST(v, VERT_VISIT)) {
+          MeshIter liter;
 
-          BM_ELEM_API_FLAG_ENABLE(v, VERT_VISIT);
+          MESH_ELEM_API_FLAG_ENABLE(v, VERT_VISIT);
 
           /* interpolate this loop, then copy to the rest */
           l_first = NULL;
 
-          BM_ITER_ELEM (l_iter, &liter, v, BM_LOOPS_OF_VERT) {
-            if (BM_ELEM_API_FLAG_TEST(l_iter->f, FACE_NET)) {
+          MESH_ITER_ELEM (l_iter, &liter, v, MESH_LOOPS_OF_VERT) {
+            if (MESH_ELEM_API_FLAG_TEST(l_iter->f, FACE_NET)) {
               if (l_first == NULL) {
                 mul_v2_m3v3(co, axis_mat, v->co);
                 interp_weights_poly_v2(w, cos_2d, f->len, co);
-                CustomData_bmesh_interp(
+                CustomData_mesh_interp(
                     &bm->ldata, (const void **)blocks, w, NULL, f->len, l_iter->head.data);
                 l_first = l_iter;
               }
               else {
-                CustomData_bmesh_copy_data(
-                    &bm->ldata, &bm->ldata, l_first->head.data, &l_iter->head.data);
+                CustomData_mesh_copy_data(
+                    &mesh->ldata, &mesh->ldata, l_first->head.data, &l_iter->head.data);
               }
             }
           }
@@ -627,44 +627,44 @@ bool mesh_face_split_edgenet(Mesh *mesh,
 
   /* cleanup */
   for (i = 0; i < edge_net_len; i++) {
-    BM_ELEM_API_FLAG_DISABLE(edge_net[i], EDGE_NET);
+    MESH_ELEM_API_FLAG_DISABLE(edge_net[i], EDGE_NET);
     /* from interp only */
-    BM_ELEM_API_FLAG_DISABLE(edge_net[i]->v1, VERT_VISIT);
-    BM_ELEM_API_FLAG_DISABLE(edge_net[i]->v2, VERT_VISIT);
+    MESH_ELEM_API_FLAG_DISABLE(edge_net[i]->v1, VERT_VISIT);
+    MESH_ELEM_API_FLAG_DISABLE(edge_net[i]->v2, VERT_VISIT);
   }
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    BM_ELEM_API_FLAG_DISABLE(l_iter->e, EDGE_NET);
+    MESH_ELEM_API_FLAG_DISABLE(l_iter->e, EDGE_NET);
     /* from interp only */
-    BM_ELEM_API_FLAG_DISABLE(l_iter->v, VERT_VISIT);
+    MESH_ELEM_API_FLAG_DISABLE(l_iter->v, VERT_VISIT);
   } while ((l_iter = l_iter->next) != l_first);
 
-  if (BLI_array_len(face_arr)) {
-    bmesh_face_swap_data(f, face_arr[0]);
-    BM_face_kill(bm, face_arr[0]);
+  if (lib_array_len(face_arr)) {
+    mesh_face_swap_data(f, face_arr[0]);
+    mesh_face_kill(mesh, face_arr[0]);
     face_arr[0] = f;
   }
   else {
-    BM_ELEM_API_FLAG_DISABLE(f, FACE_NET);
+    MESH_ELEM_API_FLAG_DISABLE(f, FACE_NET);
   }
 
-  for (i = 0; i < BLI_array_len(face_arr); i++) {
-    BM_ELEM_API_FLAG_DISABLE(face_arr[i], FACE_NET);
+  for (i = 0; i < lib_array_len(face_arr); i++) {
+    MESH_ELEM_API_FLAG_DISABLE(face_arr[i], FACE_NET);
   }
 
   if (r_face_arr) {
     *r_face_arr = face_arr;
-    *r_face_arr_len = BLI_array_len(face_arr);
+    *r_face_arr_len = lib_array_len(face_arr);
   }
   else {
     if (face_arr) {
-      MEM_freeN(face_arr);
+      mem_freen(face_arr);
     }
   }
 
-  MEM_freeN(edge_order);
-  MEM_freeN(face_verts);
-  MEM_freeN(vert_queue);
+  mem_freen(edge_order);
+  mem_freen(face_verts);
+  mem_freen(vert_queue);
 
   return true;
 }
@@ -673,32 +673,30 @@ bool mesh_face_split_edgenet(Mesh *mesh,
 #undef VERT_VISIT
 #undef EDGE_NET
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Face Split Edge-Net Connect Islands
+/** Face Split Edge-Net Connect Islands
  *
- * #BM_face_split_edgenet_connect_islands and helper functions.
+ * mesh_face_split_edgenet_connect_islands and helper functions.
  *
  * Connect isolated mesh 'islands' so they form legal regions from which we can create faces.
  *
- * Intended to be used as a pre-processing step for #BM_face_split_edgenet.
+ * Intended to be used as a pre-processing step for mesh_face_split_edgenet.
  *
- * \warning Currently this risks running out of stack memory (#alloca),
+ * \warning Currently this risks running out of stack memory (alloca),
  * likely we'll pass in a memory arena (cleared each use) eventually.
  *
- * \{ */
+ **/
 
 #define USE_PARTIAL_CONNECT
 
-#define VERT_IS_VALID BM_ELEM_INTERNAL_TAG
+#define VERT_IS_VALID MESH_ELEM_INTERNAL_TAG
 
 /* can be X or Y */
 #define SORT_AXIS 0
 
-BLI_INLINE bool edge_isect_verts_point_2d(const BMEdge *e,
-                                          const BMVert *v_a,
-                                          const BMVert *v_b,
+LIB_INLINE bool edge_isect_verts_point_2d(const MeshEdge *e,
+                                          const MeshFace *v_a,
+                                          const MeshVert *v_b,
                                           float r_isect[2])
 {
   /* This bias seems like it could be too large,
@@ -813,7 +811,7 @@ static void bvhtree_test_edges_isect_2d_ray_cb(void *user_data,
                                                BVHTreeRayHit *hit)
 {
   struct Edges_VertRay_BVHTreeTest *data = user_data;
-  const BMEdge *e = data->edge_arr[index];
+  const MeshEdge *e = data->edge_arr[index];
 
   /* direction is normalized, so this will be the distance */
   float dist_new;
@@ -843,10 +841,10 @@ static void bvhtree_test_edges_isect_2d_ray_cb(void *user_data,
  */
 struct EdgeGroup_FindConnection_Args {
   BVHTree *bvhtree;
-  BMEdge **edge_arr;
+  MeshEdge **edge_arr;
   uint edge_arr_len;
 
-  BMEdge **edge_arr_new;
+  MeshEdge **edge_arr_new;
   uint edge_arr_new_len;
 
   const uint *vert_range;
