@@ -159,8 +159,8 @@ static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
   /* if we swapped above, search this list for the best edge */
   if (!BLI_SMALLSTACK_IS_EMPTY(edges_search)) {
     /* find the best edge in 'edge_list' to use for 'e_pair[1]' */
-    const BMVert *v_prev = BM_edge_other_vert(e_pair[0], v_init);
-    const BMVert *v_next = BM_edge_other_vert(e_pair[1], v_init);
+    const MeshVert *v_prev = BM_edge_other_vert(e_pair[0], v_init);
+    const MeshVert *v_next = BM_edge_other_vert(e_pair[1], v_init);
 
     float dir_prev[2], dir_next[2];
 
@@ -168,9 +168,9 @@ static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
     normalize_v2_m3_v3v3(dir_next, face_normal_matrix, v_next->co, v_init->co);
     float angle_best_cos = dot_v2v2(dir_next, dir_prev);
 
-    BMEdge *e;
-    while ((e = BLI_SMALLSTACK_POP(edges_search))) {
-      v_next = BM_edge_other_vert(e, v_init);
+    MeshEdge *e;
+    while ((e = LIB_SMALLSTACK_POP(edges_search))) {
+      v_next = mesh_edge_other_vert(e, v_init);
       float dir_test[2];
 
       normalize_v2_m3_v3v3(dir_test, face_normal_matrix, v_next->co, v_init->co);
@@ -184,7 +184,7 @@ static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
   }
 
   /* flip based on winding */
-  l_walk = bm_edge_flagged_radial_first(e_pair[0]);
+  l_walk = mesh_edge_flagged_radial_first(e_pair[0]);
   swap = false;
   if (face_normal == l_walk->f->no) {
     swap = !swap;
@@ -203,20 +203,20 @@ static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
  * A reduced version of #bm_face_split_edgenet_find_loop_pair
  * that only checks if it would return true.
  *
- * \note There is no use in caching resulting edges here,
+ * note There is no use in caching resulting edges here,
  * since between this check and running #bm_face_split_edgenet_find_loop,
  * the selected edges may have had faces attached.
  */
-static bool bm_face_split_edgenet_find_loop_pair_exists(BMVert *v_init)
+static bool mesh_face_split_edgenet_find_loop_pair_exists(BMVert *v_init)
 {
   int edges_boundary_len = 0;
   int edges_wire_len = 0;
 
   {
-    BMEdge *e, *e_first;
+    MeshEdge *e, *e_first;
     e = e_first = v_init->e;
     do {
-      if (BM_ELEM_API_FLAG_TEST(e, EDGE_NET)) {
+      if (MESH_ELEM_API_FLAG_TEST(e, EDGE_NET)) {
         const uint count = bm_edge_flagged_radial_count(e);
         if (count == 1) {
           edges_boundary_len++;
