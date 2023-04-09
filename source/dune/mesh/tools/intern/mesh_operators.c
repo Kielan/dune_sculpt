@@ -347,37 +347,37 @@ void mesh_slot_mat_set(BMOperator *op,
     copy_m4_m3(slot->data.p, (const float(*)[3])mat);
   }
   else {
-    fprintf(stderr, "%s: invalid size argument %d (bmesh internal error)\n", __func__, size);
+    fprintf(stderr, "%s: invalid size argument %d (mesh internal error)\n", __func__, size);
 
     zero_m4(slot->data.p);
   }
 }
 
-void BMO_slot_mat4_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void mesh_slot_mat4_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                        const char *slot_name,
                        float r_mat[4][4])
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_MAT);
-  if (!(slot->slot_type == BMO_OP_SLOT_MAT)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_MAT);
+  if (!(slot->slot_type == MESH_OP_SLOT_MAT)) {
     return;
   }
 
   if (slot->data.p) {
-    copy_m4_m4(r_mat, BMO_SLOT_AS_MATRIX(slot));
+    copy_m4_m4(r_mat, MESH_SLOT_AS_MATRIX(slot));
   }
   else {
     unit_m4(r_mat);
   }
 }
 
-void BMO_slot_mat3_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void mesh_slot_mat3_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                        const char *slot_name,
                        float r_mat[3][3])
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_MAT);
-  if (!(slot->slot_type == BMO_OP_SLOT_MAT)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_MAT);
+  if (!(slot->slot_type == MESH_OP_SLOT_MAT)) {
     return;
   }
 
