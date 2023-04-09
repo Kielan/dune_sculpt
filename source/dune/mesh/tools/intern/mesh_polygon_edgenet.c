@@ -1441,9 +1441,9 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
       do {
         MeshEdge *e = edge_links->link;
         for (int j = 0; j < 2; j++) {
-          BMVert *v_iter = (&e->v1)[j];
-          if (!BM_elem_flag_test(v_iter, VERT_IN_ARRAY)) {
-            BM_elem_flag_enable(v_iter, VERT_IN_ARRAY);
+          MeshVert *v_iter = (&e->v1)[j];
+          if (!mesh_elem_flag_test(v_iter, VERT_IN_ARRAY)) {
+            mesh_elem_flag_enable(v_iter, VERT_IN_ARRAY);
 
             /* not nice, but alternatives aren't much better :S */
             {
@@ -1459,7 +1459,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
               v_iter->co[2] = 0.0f;
             }
 
-            BM_elem_index_set(v_iter, v_index); /* set_dirty */
+            mesh_elem_index_set(v_iter, v_index); /* set_dirty */
 
             vert_arr[v_index] = v_iter;
             verts_group_table[v_index] = g_index;
@@ -1470,21 +1470,21 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
     }
   }
 
-  bm->elem_index_dirty |= BM_VERT;
+  mesh->elem_index_dirty |= MESH_VERT;
 
   /* Now create bvh tree
    *
    * Note that a large epsilon is used because meshes with dimensions of around 100+ need it.
    * see T52329. */
-  BVHTree *bvhtree = BLI_bvhtree_new(edge_arr_len, 1e-4f, 8, 8);
+  BVHTree *bvhtree = lib_bvhtree_new(edge_arr_len, 1e-4f, 8, 8);
   for (uint i = 0; i < edge_arr_len; i++) {
     const float e_cos[2][3] = {
         {UNPACK2(edge_arr[i]->v1->co), 0.0f},
         {UNPACK2(edge_arr[i]->v2->co), 0.0f},
     };
-    BLI_bvhtree_insert(bvhtree, i, (const float *)e_cos, 2);
+    lib_bvhtree_insert(bvhtree, i, (const float *)e_cos, 2);
   }
-  BLI_bvhtree_balance(bvhtree);
+  lib_bvhtree_balance(bvhtree);
 
 #ifdef USE_PARTIAL_CONNECT
   if (use_partial_connect) {
@@ -1495,7 +1495,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
 
     struct TempVertPair *tvp = temp_vert_pairs.list;
     do {
-      temp_vert_pairs.remap[BM_elem_index_get(tvp->v_temp)] = BM_elem_index_get(tvp->v_orig);
+      temp_vert_pairs.remap[BM_elem_index_get(tvp->v_temp)] = mesh_elem_index_get(tvp->v_orig);
     } while ((tvp = tvp->next));
   }
 #endif /* USE_PARTIAL_CONNECT */
@@ -1504,7 +1504,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
 
   /* may be an over-alloc, but not by much */
   edge_net_new_len = (uint)edge_net_init_len + ((group_arr_len - 1) * 2);
-  BMEdge **edge_net_new = BLI_memarena_alloc(mem_arena, sizeof(*edge_net_new) * edge_net_new_len);
+  MeshEdge **edge_net_new = lib_memarena_alloc(mem_arena, sizeof(*edge_net_new) * edge_net_new_len);
   memcpy(edge_net_new, edge_net_init, sizeof(*edge_net_new) * (size_t)edge_net_init_len);
 
   {
@@ -1538,10 +1538,10 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
       vert_range[1] += g->vert_len;
 
       if (g->has_prev_edge == false) {
-        BMVert *v_origin = g->vert_span.min;
-        /* Index of BMVert for the edge group connection with `v_origin`. */
+        MeshVert *v_origin = g->vert_span.min;
+        /* Index of MeshVert for the edge group connection with `v_origin`. */
         const int index_other = bm_face_split_edgenet_find_connection(&args, v_origin, false);
-        // BLI_assert(index_other >= 0 && index_other < (int)vert_arr_len);
+        // lib_assert(index_other >= 0 && index_other < (int)vert_arr_len);
 
         /* only for degenerate geometry */
         if (index_other != -1) {
