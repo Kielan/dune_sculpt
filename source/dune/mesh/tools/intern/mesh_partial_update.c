@@ -75,17 +75,17 @@ BLI_INLINE bool partial_elem_face_ensure(BMPartialUpdate *bmpinfo,
                                          BLI_bitmap *faces_tag,
                                          BMFace *f)
 {
-  const int i = BM_elem_index_get(f);
-  if (!BLI_BITMAP_TEST(faces_tag, i)) {
-    BLI_BITMAP_ENABLE(faces_tag, i);
-    GROW_ARRAY_AS_NEEDED(bmpinfo->faces, bmpinfo->faces_len_alloc, bmpinfo->faces_len);
-    bmpinfo->faces[bmpinfo->faces_len++] = f;
+  const int i = mesh_elem_index_get(f);
+  if (!LIB_BITMAP_TEST(faces_tag, i)) {
+    LIB_BITMAP_ENABLE(faces_tag, i);
+    GROW_ARRAY_AS_NEEDED(meshinfo->faces, bmpinfo->faces_len_alloc, bmpinfo->faces_len);
+    meshinfo->faces[meshinfo->faces_len++] = f;
     return true;
   }
   return false;
 }
 
-BMPartialUpdate *BM_mesh_partial_create_from_verts(BMesh *bm,
+BMPartialUpdate *mesh_mesh_partial_create_from_verts(BMesh *bm,
                                                    const BMPartialUpdate_Params *params,
                                                    const BLI_bitmap *verts_mask,
                                                    const int verts_mask_count)
