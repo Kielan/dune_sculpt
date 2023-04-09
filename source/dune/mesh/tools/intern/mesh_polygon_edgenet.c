@@ -87,7 +87,7 @@ static void normalize_v2_m3_v3v3(float out[2],
 }
 
 /**
- * note Be sure to update #bm_face_split_edgenet_find_loop_pair_exists
+ * note Be sure to update mesh_face_split_edgenet_find_loop_pair_exists
  * when making changes to edge picking logic.
  */
 static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
@@ -419,7 +419,7 @@ static bool mesh_face_split_edgenet_find_loop(MeshVert *v_init,
   lib_assert((mesh_edge_flagged_radial_count(e_pair[0]) == 1) ||
              (mesh_edge_flagged_radial_count(e_pair[1]) == 1));
 
-  if (bm_face_split_edgenet_find_loop_walk(
+  if (mesh_face_split_edgenet_find_loop_walk(
           v_init, face_normal, edge_order, edge_order_len, e_pair)) {
     uint i = 0;
 
@@ -562,7 +562,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
     }
   }
 
-  if (CustomData_has_math(&bm->ldata)) {
+  if (CustomData_has_math(&mesh->ldata)) {
     /* reuse VERT_VISIT here to tag vert's already interpolated */
     MeshIter iter;
     MeshLoop *l_other;
@@ -1082,7 +1082,7 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
       lib_assert(mesh_elem_flag_test(mesh_edge_other_vert(e_iter, v_delimit), VERT_NOT_IN_STACK));
       lib_linklist_prepend_alloca(&e_delimit_list, e_iter);
       e_delimit_list_len++;
-      if (e_iter->l != NULL && BM_edge_in_face(e_iter, f)) {
+      if (e_iter->l != NULL && mesh_edge_in_face(e_iter, f)) {
         e_face_init = e_iter;
       }
     }
