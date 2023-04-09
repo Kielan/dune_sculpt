@@ -882,33 +882,33 @@ void BMO_slot_buffer_from_single(BMOperator *op, BMOpSlot *slot, BMHeader *ele)
   *slot->data.buf = ele;
 }
 
-void BMO_slot_buffer_from_array(BMOperator *op,
-                                BMOpSlot *slot,
-                                BMHeader **ele_buffer,
+void BMO_slot_buffer_from_array(MeshOperator *op,
+                                MeshOpSlot *slot,
+                                MeshHeader **ele_buffer,
                                 int ele_buffer_len)
 {
-  BMO_ASSERT_SLOT_IN_OP(slot, op);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(ELEM(slot->len, 0, ele_buffer_len));
+  MESH_ASSERT_SLOT_IN_OP(slot, op);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(ELEM(slot->len, 0, ele_buffer_len));
 
   if (slot->data.buf == NULL) {
-    slot->data.buf = BLI_memarena_alloc(op->arena, sizeof(*slot->data.buf) * ele_buffer_len);
+    slot->data.buf = lib_memarena_alloc(op->arena, sizeof(*slot->data.buf) * ele_buffer_len);
   }
 
   slot->len = ele_buffer_len;
   memcpy(slot->data.buf, ele_buffer, ele_buffer_len * sizeof(*slot->data.buf));
 }
 
-void *BMO_slot_buffer_get_single(BMOpSlot *slot)
+void *mesh_slot_buffer_get_single(MeshOpSlot *slot)
 {
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE);
-  BLI_assert(ELEM(slot->len, 0, 1));
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE);
+  lib_assert(ELEM(slot->len, 0, 1));
 
-  return slot->len ? (BMHeader *)slot->data.buf[0] : NULL;
+  return slot->len ? (MeshHeader *)slot->data.buf[0] : NULL;
 }
 
-void _bmo_slot_buffer_append(BMOpSlot slot_args_dst[BMO_OP_MAX_SLOTS],
+void mesh_slot_buffer_append(MeshOpSlot slot_args_dst[BMO_OP_MAX_SLOTS],
                              const char *slot_name_dst,
                              BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
                              const char *slot_name_src,
