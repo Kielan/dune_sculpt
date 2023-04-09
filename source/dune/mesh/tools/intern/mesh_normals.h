@@ -1,12 +1,8 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
+#include "mesh_class.h"
 
-#include "bmesh_class.h"
-
-struct BMeshNormalsUpdate_Params {
+struct MeshNormalsUpdate_Params {
   /**
    * When calculating tessellation as well as normals, tessellate & calculate face normals
    * for improved performance. See #BMeshCalcTessellation_Params
@@ -15,17 +11,17 @@ struct BMeshNormalsUpdate_Params {
 };
 
 /**
- * \brief BMesh Compute Normals
+ * Mesh Compute Normals
  *
  * Updates the normals of a mesh.
  */
-void BM_mesh_normals_update_ex(BMesh *bm, const struct BMeshNormalsUpdate_Params *param);
-void BM_mesh_normals_update(BMesh *bm);
+void mesh_normals_update_ex(Mesh *mesh, const struct BMeshNormalsUpdate_Params *param);
+void mesh_normals_update(Mesh *mesh);
 /**
- * A version of #BM_mesh_normals_update that updates a subset of geometry,
+ * A version of #mesh_normals_update that updates a subset of geometry,
  * used to avoid the overhead of updating everything.
  */
-void BM_mesh_normals_update_with_partial_ex(BMesh *bm,
+void mesh_normals_update_with_partial_ex(BMesh *bm,
                                             const struct BMPartialUpdate *bmpinfo,
                                             const struct BMeshNormalsUpdate_Params *param);
 void BM_mesh_normals_update_with_partial(BMesh *bm, const struct BMPartialUpdate *bmpinfo);
