@@ -623,56 +623,56 @@ int mesh_slot_buffer_len(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *sl
 
 int mesh_slot_map_len(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = mesh_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_MAPPING);
-  return BLI_ghash_len(slot->data.ghash);
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_MAPPING);
+  return lib_ghash_len(slot->data.ghash);
 }
 
-void BMO_slot_map_insert(BMOperator *op, BMOpSlot *slot, const void *element, const void *data)
+void mesh_slot_map_insert(MeshOperator *op, MeshOpSlot *slot, const void *element, const void *data)
 {
   (void)op; /* Ignored in release builds. */
 
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_MAPPING);
-  BMO_ASSERT_SLOT_IN_OP(slot, op);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_MAPPING);
+  MESH_ASSERT_SLOT_IN_OP(slot, op);
 
-  BLI_ghash_insert(slot->data.ghash, (void *)element, (void *)data);
+  lib_ghash_insert(slot->data.ghash, (void *)element, (void *)data);
 }
 
 #if 0
-void *bmo_slot_buffer_grow(BMesh *bm, BMOperator *op, int slot_code, int totadd)
+void *mesh_slot_buffer_grow(Mesh *bm, MeshOperator *op, int slot_code, int totadd)
 {
-  BMOpSlot *slot = &op->slots[slot_code];
+  MeshOpSlot *slot = &op->slots[slot_code];
   void *tmp;
   ssize_t allocsize;
 
-  BLI_assert(slot->slottype == BMO_OP_SLOT_ELEMENT_BUF);
+  lib_assert(slot->slottype == MESH_OP_SLOT_ELEMENT_BUF);
 
   /* check if its actually a buffer */
-  if (slot->slottype != BMO_OP_SLOT_ELEMENT_BUF) {
+  if (slot->slottype != MESH_OP_SLOT_ELEMENT_BUF) {
     return NULL;
   }
 
-  if (slot->flag & BMOS_DYNAMIC_ARRAY) {
+  if (slot->flag & MESH_DYNAMIC_ARRAY) {
     if (slot->len >= slot->size) {
       slot->size = (slot->size + 1 + totadd) * 2;
 
-      allocsize = BMO_OPSLOT_TYPEINFO[bmo_opdefines[op->type]->slot_types[slot_code].type] *
+      allocsize = MESH_OPSLOT_TYPEINFO[mesh_opdefines[op->type]->slot_types[slot_code].type] *
                   slot->size;
-      slot->data.buf = MEM_recallocN_id(slot->data.buf, allocsize, "opslot dynamic array");
+      slot->data.buf = mem_recallocn_id(slot->data.buf, allocsize, "opslot dynamic array");
     }
 
     slot->len += totadd;
   }
   else {
-    slot->flag |= BMOS_DYNAMIC_ARRAY;
+    slot->flag |= MESH_OP_SLOT_DYNAMIC_ARRAY;
     slot->len += totadd;
     slot->size = slot->len + 2;
 
-    allocsize = BMO_OPSLOT_TYPEINFO[bmo_opdefines[op->type]->slot_types[slot_code].type] *
+    allocsize = MESH_OP_SLOT_TYPEINFO[mesh_opdefines[op->type]->slot_types[slot_code].type] *
                 slot->len;
 
     tmp = slot->data.buf;
-    slot->data.buf = MEM_callocN(allocsize, "opslot dynamic array");
+    slot->data.buf = mem_callocn(allocsize, "opslot dynamic array");
     memcpy(slot->data.buf, tmp, allocsize);
   }
 
@@ -680,11 +680,11 @@ void *bmo_slot_buffer_grow(BMesh *bm, BMOperator *op, int slot_code, int totadd)
 }
 #endif
 
-void BMO_slot_map_to_flag(BMesh *bm,
-                          BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                          const char *slot_name,
-                          const char htype,
-                          const short oflag)
+void mesh_slot_map_to_flag(Mesh *mesh,
+                           MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                           const char *slot_name,
+                           const char htype,
+                           const short oflag)
 {
   GHashIterator gh_iter;
   BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
