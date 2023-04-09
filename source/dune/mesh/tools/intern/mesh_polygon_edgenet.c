@@ -1107,7 +1107,7 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
     MeshVert *v_other = mesh_edge_other_vert(e_face_init ? e_face_init : v_delimit->e, v_delimit);
 
     LIB_SMALLSTACK_PUSH(search, v_other);
-    if (BM_elem_flag_test(v_other, VERT_NOT_IN_STACK)) {
+    if (mesh_elem_flag_test(v_other, VERT_NOT_IN_STACK)) {
       mesh_elem_flag_disable(v_other, VERT_NOT_IN_STACK);
       LIB_linklist_prepend_alloca(&vert_stack, v_other);
     }
@@ -1250,8 +1250,8 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
   /* Split-out delimiting vertices */
   struct TempVertPair {
     struct TempVertPair *next;
-    BMVert *v_temp;
-    BMVert *v_orig;
+    MeshVert *v_temp;
+    MeshVert *v_orig;
   };
 
   struct {
@@ -1263,8 +1263,8 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
   if (use_partial_connect) {
     for (uint i = 0; i < edge_net_init_len; i++) {
       for (uint j = 0; j < 2; j++) {
-        BMVert *v_delimit = (&edge_arr[i]->v1)[j];
-        BMVert *v_other;
+        MeshVert *v_delimit = (&edge_arr[i]->v1)[j];
+        MeshVert *v_other;
 
         /* NOTE: remapping will _never_ map a vertex to an already mapped vertex. */
         while (UNLIKELY((v_other = bm_face_split_edgenet_partial_connect(bm, v_delimit, f)))) {
@@ -1299,7 +1299,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
       uint unique_verts_in_group = 0, unique_edges_in_group = 0;
 
       /* list of groups */
-      LIB_assert(mesh_elem_flag_test(edge_arr[edge_index]->v1, VERT_NOT_IN_STACK));
+      lib_assert(mesh_elem_flag_test(edge_arr[edge_index]->v1, VERT_NOT_IN_STACK));
       LIB_SMALLSTACK_PUSH(vstack, edge_arr[edge_index]->v1);
       mesh_elem_flag_disable(edge_arr[edge_index]->v1, VERT_NOT_IN_STACK);
 
@@ -1309,13 +1309,13 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
 
         MeshEdge *e_iter = v_iter->e;
         do {
-          if (BM_elem_flag_test(e_iter, EDGE_NOT_IN_STACK)) {
-            BM_elem_flag_disable(e_iter, EDGE_NOT_IN_STACK);
+          if (mesh_elem_flag_test(e_iter, EDGE_NOT_IN_STACK)) {
+            mesh_elem_flag_disable(e_iter, EDGE_NOT_IN_STACK);
             unique_edges_in_group++;
 
-            BLI_linklist_prepend_arena(&edge_links, e_iter, mem_arena);
+            lib_linklist_prepend_arena(&edge_links, e_iter, mem_arena);
 
-            BMVert *v_other = BM_edge_other_vert(e_iter, v_iter);
+            MeshVert *v_other = mesh_edge_other_vert(e_iter, v_iter);
             if (BM_elem_flag_test(v_other, VERT_NOT_IN_STACK)) {
               BLI_SMALLSTACK_PUSH(vstack, v_other);
               BM_elem_flag_disable(v_other, VERT_NOT_IN_STACK);
