@@ -851,8 +851,8 @@ struct EdgeGroup_FindConnection_Args {
 };
 
 static MeshEdge *test_edges_isect_2d_vert(const struct EdgeGroup_FindConnection_Args *args,
-                                        BMVert *v_origin,
-                                        BMVert *v_other)
+                                          MeshVert *v_origin,
+                                          MeshVert *v_other)
 {
   int index;
 
@@ -1145,17 +1145,17 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
 #  undef FOREACH_VERT_EDGE
 
   /* Execute the split */
-  BMVert *v_split = NULL;
+  MeshVert *v_split = NULL;
   if (is_delimit) {
-    v_split = BM_vert_create(bm, v_delimit->co, NULL, 0);
-    BM_vert_separate_tested_edges(bm, v_split, v_delimit, test_tagged_and_notface, f);
-    BM_elem_flag_enable(v_split, VERT_NOT_IN_STACK);
+    v_split = mesh_vert_create(mesh, v_delimit->co, NULL, 0);
+    mesh_vert_separate_tested_edges(mesh, v_split, v_delimit, test_tagged_and_notface, f);
+    mesh_elem_flag_enable(v_split, VERT_NOT_IN_STACK);
 
-    BLI_assert(v_delimit->e != NULL);
+    lib_assert(v_delimit->e != NULL);
 
     /* Degenerate, avoid eternal loop, see: T59074. */
 #  if 0
-    BLI_assert(v_split->e != NULL);
+    lib_assert(v_split->e != NULL);
 #  else
     if (UNLIKELY(v_split->e == NULL)) {
       BM_vert_kill(bm, v_split);
