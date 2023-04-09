@@ -218,7 +218,7 @@ void mesh_slot_copy(MeshOpSlot slot_args_src[MESH_OP_MAX_SLOTS],
     return;
   }
 
-  BLI_assert(slot_src->slot_type == slot_dst->slot_type);
+  lib_assert(slot_src->slot_type == slot_dst->slot_type);
   if (slot_src->slot_type != slot_dst->slot_type) {
     return;
   }
@@ -372,8 +372,8 @@ void mesh_slot_mat4_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
 }
 
 void mesh_slot_mat3_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                       const char *slot_name,
-                       float r_mat[3][3])
+                        const char *slot_name,
+                        float r_mat[3][3])
 {
   MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
   lib_assert(slot->slot_type == MESH_OP_SLOT_MAT);
@@ -426,19 +426,19 @@ float mesh_slot_float_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *s
 
 int mesh_slot_int_get(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_INT);
-  if (!(slot->slot_type == BMO_OP_SLOT_INT)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_INT);
+  if (!(slot->slot_type == MESH_OP_SLOT_INT)) {
     return 0;
   }
 
   return slot->data.i;
 }
 
-bool BMO_slot_bool_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+bool mesh_slot_bool_get(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_BOOL);
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == BMO_OP_SLOT_BOOL);
   if (!(slot->slot_type == BMO_OP_SLOT_BOOL)) {
     return 0;
   }
