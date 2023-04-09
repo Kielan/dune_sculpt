@@ -1184,12 +1184,12 @@ static void mesh_flag_layer_alloc(Mesh *mesh)
 
   MeshVert_OFlag *v_oflag;
   lib_mempool *newpool = bm->vtoolflagpool;
-  MESH_ITER_MESH_INDEX (v_oflag, &iter, bm, BM_VERTS_OF_MESH, i) {
+  MESH_ITER_MESH_INDEX (v_oflag, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     void *oldflags = v_oflag->oflags;
     v_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(v_oflag->oflags, oldflags, old_totflags_size);
     mesh_elem_index_set(&v_oflag->base, i); /* set_inline */
-    MESH_ELEM_API_FLAG_CLEAR((BMElemF *)v_oflag);
+    MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)v_oflag);
   }
 
   MeshEdge_OFlag *e_oflag;
@@ -1229,37 +1229,37 @@ static void mesh_flag_layer_free(Mesh *mesh)
   lib_mempool *foldpool = mesh->ftoolflagpool;
 
   /* store memcpy size for reuse */
-  const size_t new_totflags_size = ((bm->totflags - 1) * sizeof(BMFlagLayer));
+  const size_t new_totflags_size = ((mesh->totflags - 1) * sizeof(BMFlagLayer));
 
   /* de-increment the totflags first. */
-  bm->totflags--;
+  mesh->totflags--;
 
-  bm->vtoolflagpool = BLI_mempool_create(new_totflags_size, bm->totvert, 512, BLI_MEMPOOL_NOP);
-  bm->etoolflagpool = BLI_mempool_create(new_totflags_size, bm->totedge, 512, BLI_MEMPOOL_NOP);
-  bm->ftoolflagpool = BLI_mempool_create(new_totflags_size, bm->totface, 512, BLI_MEMPOOL_NOP);
+  mesh->vtoolflagpool = lib_mempool_create(new_totflags_size, bm->totvert, 512, BLI_MEMPOOL_NOP);
+  mesh->etoolflagpool = lib_mempool_create(new_totflags_size, bm->totedge, 512, BLI_MEMPOOL_NOP);
+  mesh->ftoolflagpool = lib_mempool_create(new_totflags_size, bm->totface, 512, BLI_MEMPOOL_NOP);
 
   /* now go through and memcpy all the flag */
-  BMIter iter;
+  MeshIter iter;
   int i;
 
-  BMVert_OFlag *v_oflag;
-  BLI_mempool *newpool = bm->vtoolflagpool;
-  BM_ITER_MESH_INDEX (v_oflag, &iter, bm, BM_VERTS_OF_MESH, i) {
+  MeshVert_OFlag *v_oflag;
+  lib_mempool *newpool = mesh->vtoolflagpool;
+  MESH_ITER_MESH_INDEX (v_oflag, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     void *oldflags = v_oflag->oflags;
-    v_oflag->oflags = BLI_mempool_alloc(newpool);
+    v_oflag->oflags = lib_mempool_alloc(newpool);
     memcpy(v_oflag->oflags, oldflags, new_totflags_size);
-    BM_elem_index_set(&v_oflag->base, i); /* set_inline */
-    BM_ELEM_API_FLAG_CLEAR((BMElemF *)v_oflag);
+    mesh_elem_index_set(&v_oflag->base, i); /* set_inline */
+    MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)v_oflag);
   }
 
-  BMEdge_OFlag *e_oflag;
-  newpool = bm->etoolflagpool;
-  BM_ITER_MESH_INDEX (e_oflag, &iter, bm, BM_EDGES_OF_MESH, i) {
+  MeshEdge_OFlag *e_oflag;
+  newpool = mesh->etoolflagpool;
+  MESH_ITER_MESH_INDEX (e_oflag, &iter, bm, BM_EDGES_OF_MESH, i) {
     void *oldflags = e_oflag->oflags;
-    e_oflag->oflags = BLI_mempool_alloc(newpool);
+    e_oflag->oflags = lib_mempool_alloc(newpool);
     memcpy(e_oflag->oflags, oldflags, new_totflags_size);
-    BM_elem_index_set(&e_oflag->base, i); /* set_inline */
-    BM_ELEM_API_FLAG_CLEAR((BMElemF *)e_oflag);
+    mesh_elem_index_set(&e_oflag->base, i); /* set_inline */
+    MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)e_oflag);
   }
 
   BMFace_OFlag *f_oflag;
@@ -1307,60 +1307,60 @@ static void bmo_flag_layer_clear(BMesh *bm)
     }
   }
   {
-    BMIter iter;
-    BMFace_OFlag *ele;
+    MeshIter iter;
+    MeshFace_OFlag *ele;
     int i;
-    BM_ITER_MESH_INDEX (ele, &iter, bm, BM_FACES_OF_MESH, i) {
+    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_FACES_OF_MESH, i) {
       ele->oflags[totflags_offset] = zero_flag;
-      BM_elem_index_set(&ele->base, i); /* set_inline */
+      mesh_elem_index_set(&ele->base, i); /* set_inline */
     }
   }
 
-  bm->elem_index_dirty &= ~(BM_VERT | BM_EDGE | BM_FACE);
+  mesh->elem_index_dirty &= ~(MESH_VERT | MESH_EDGE | MESH_FACE);
 }
 
-void *BMO_slot_buffer_get_first(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+void *mesh_slot_buffer_get_first(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  MeshOpSlot *slot = mesh_op_slot_get(slot_args, slot_name);
 
-  if (slot->slot_type != BMO_OP_SLOT_ELEMENT_BUF) {
+  if (slot->slot_type != MESH_OP_SLOT_ELEMENT_BUF) {
     return NULL;
   }
 
   return slot->data.buf ? *slot->data.buf : NULL;
 }
 
-void *BMO_iter_new(BMOIter *iter,
-                   BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                   const char *slot_name,
-                   const char restrictmask)
+void *mesh_iter_new(MeshOpIter *iter,
+                    MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                    const char *slot_name,
+                    const char restrictmask)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
 
-  memset(iter, 0, sizeof(BMOIter));
+  memset(iter, 0, sizeof(MeshIter));
 
   iter->slot = slot;
   iter->cur = 0;
   iter->restrictmask = restrictmask;
 
-  if (iter->slot->slot_type == BMO_OP_SLOT_MAPPING) {
-    BLI_ghashIterator_init(&iter->giter, slot->data.ghash);
+  if (iter->slot->slot_type == MESH_OP_SLOT_MAPPING) {
+    lib_ghashIterator_init(&iter->giter, slot->data.ghash);
   }
-  else if (iter->slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF) {
-    BLI_assert(restrictmask & slot->slot_subtype.elem);
+  else if (iter->slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF) {
+    lib_assert(restrictmask & slot->slot_subtype.elem);
   }
   else {
-    BLI_assert(0);
+    lib_assert(0);
   }
 
-  return BMO_iter_step(iter);
+  return mesh_iter_step(iter);
 }
 
-void *BMO_iter_step(BMOIter *iter)
+void *mesh_iter_step(MeshIter *iter)
 {
-  BMOpSlot *slot = iter->slot;
-  if (slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF) {
-    BMHeader *ele;
+  MeshOpSlot *slot = iter->slot;
+  if (slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF) {
+    MeshHeader *ele;
 
     if (iter->cur >= slot->len) {
       return NULL;
@@ -1373,19 +1373,19 @@ void *BMO_iter_step(BMOIter *iter)
       }
 
       ele = slot->data.buf[iter->cur++];
-      BLI_assert((ele == NULL) || (slot->slot_subtype.elem & ele->htype));
+      lib_assert((ele == NULL) || (slot->slot_subtype.elem & ele->htype));
     }
 
-    BLI_assert((ele == NULL) || (slot->slot_subtype.elem & ele->htype));
+    lib_assert((ele == NULL) || (slot->slot_subtype.elem & ele->htype));
 
     return ele;
   }
-  if (slot->slot_type == BMO_OP_SLOT_MAPPING) {
+  if (slot->slot_type == MESH_OP_SLOT_MAPPING) {
     void *ret;
 
-    if (BLI_ghashIterator_done(&iter->giter) == false) {
-      ret = BLI_ghashIterator_getKey(&iter->giter);
-      iter->val = BLI_ghashIterator_getValue_p(&iter->giter);
+    if (lib_ghashIterator_done(&iter->giter) == false) {
+      ret = lib_ghashIterator_getKey(&iter->giter);
+      iter->val = lib_ghashIterator_getValue_p(&iter->giter);
 
       BLI_ghashIterator_step(&iter->giter);
     }
@@ -1396,14 +1396,14 @@ void *BMO_iter_step(BMOIter *iter)
 
     return ret;
   }
-  BLI_assert(0);
+  lib_assert(0);
 
   return NULL;
 }
 
 /* used for iterating over mappings */
 
-void **BMO_iter_map_value_p(BMOIter *iter)
+void **mesh_op_iter_map_value_p(MeshOpIter *iter)
 {
   return iter->val;
 }
