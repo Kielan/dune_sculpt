@@ -608,22 +608,22 @@ void mesh_selected_remap(Mesh *mesh,
   }
 }
 
-int mesh_slot_buffer_len(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+int mesh_slot_buffer_len(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name)
 {
-  MeshOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  lib_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
 
   /* check if its actually a buffer */
-  if (slot->slot_type != BMO_OP_SLOT_ELEMENT_BUF) {
+  if (slot->slot_type != MESH_OP_SLOT_ELEMENT_BUF) {
     return 0;
   }
 
   return slot->len;
 }
 
-int BMO_slot_map_len(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+int mesh_slot_map_len(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  BMOpSlot *slot = mesh_slot_get(slot_args, slot_name);
   BLI_assert(slot->slot_type == BMO_OP_SLOT_MAPPING);
   return BLI_ghash_len(slot->data.ghash);
 }
