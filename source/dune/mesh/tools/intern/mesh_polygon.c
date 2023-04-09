@@ -1,40 +1,38 @@
-/** \file
- * \ingroup bmesh
- *
+/**
  * This file contains code for dealing
  * with polygons (normal/area calculation, tessellation, etc)
  */
 
-#include "DNA_listBase.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
+#include "types_listBase.h"
+#include "types_meshdata.h"
+#include "types_modifier.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_heap.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_polyfill_2d.h"
-#include "BLI_polyfill_2d_beautify.h"
+#include "lib_alloca.h"
+#include "lib_heap.h"
+#include "lib_linklist.h"
+#include "lib_math.h"
+#include "lib_memarena.h"
+#include "lib_polyfill_2d.h"
+#include "lib_polyfill_2d_beautify.h"
 
-#include "bmesh.h"
-#include "bmesh_tools.h"
+#include "mesh.h"
+#include "mesh_tools.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "intern/bmesh_private.h"
+#include "intern/mesh_private.h"
 
 /**
- * \brief COMPUTE POLY NORMAL (BMFace)
+ * COMPUTE POLY NORMAL (MeshFace)
  *
- * Same as #normal_poly_v3 but operates directly on a bmesh face.
+ * Same as normal_poly_v3 but operates directly on a mesh face.
  */
-static float bm_face_calc_poly_normal(const BMFace *f, float n[3])
+static float mesh_face_calc_poly_normal(const MeshFace *f, float n[3])
 {
-  BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-  BMLoop *l_iter = l_first;
+  MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+  MeshLoop *l_iter = l_first;
   const float *v_prev = l_first->prev->v->co;
   const float *v_curr = l_first->v->co;
 
@@ -54,19 +52,19 @@ static float bm_face_calc_poly_normal(const BMFace *f, float n[3])
 }
 
 /**
- * \brief COMPUTE POLY NORMAL (BMFace)
+ * COMPUTE POLY NORMAL MeshFace
  *
- * Same as #bm_face_calc_poly_normal
+ * Same as mesh_face_calc_poly_normal
  * but takes an array of vertex locations.
  */
-static float bm_face_calc_poly_normal_vertex_cos(const BMFace *f,
+static float mesh_face_calc_poly_normal_vertex_cos(const MeshFace *f,
                                                  float r_no[3],
                                                  float const (*vertexCos)[3])
 {
-  BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-  BMLoop *l_iter = l_first;
-  const float *v_prev = vertexCos[BM_elem_index_get(l_first->prev->v)];
-  const float *v_curr = vertexCos[BM_elem_index_get(l_first->v)];
+  MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+  MeshLoop *l_iter = l_first;
+  const float *v_prev = vertexCos[mesh_elem_index_get(l_first->prev->v)];
+  const float *v_curr = vertexCos[mesh_elem_index_get(l_first->v)];
 
   zero_v3(r_no);
 
@@ -76,16 +74,14 @@ static float bm_face_calc_poly_normal_vertex_cos(const BMFace *f,
 
     l_iter = l_iter->next;
     v_prev = v_curr;
-    v_curr = vertexCos[BM_elem_index_get(l_iter->v)];
+    v_curr = vertexCos[mesh_elem_index_get(l_iter->v)];
   } while (l_iter != l_first);
 
   return normalize_v3(r_no);
 }
 
-/**
- * \brief COMPUTE POLY CENTER (BMFace)
- */
-static void bm_face_calc_poly_center_median_vertex_cos(const BMFace *f,
+/** COMPUTE POLY CENTER MeshFace **/
+static void mesh_face_calc_poly_center_median_vertex_cos(const BMFace *f,
                                                        float r_cent[3],
                                                        float const (*vertexCos)[3])
 {
