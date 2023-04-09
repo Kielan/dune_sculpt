@@ -628,7 +628,7 @@ int mesh_slot_map_len(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_
   return lib_ghash_len(slot->data.ghash);
 }
 
-void mesh_slot_map_insert(MeshOperator *op, MeshOpSlot *slot, const void *element, const void *data)
+void mesh_slot_map_insert(MeshOp *op, MeshOpSlot *slot, const void *element, const void *data)
 {
   (void)op; /* Ignored in release builds. */
 
@@ -639,7 +639,7 @@ void mesh_slot_map_insert(MeshOperator *op, MeshOpSlot *slot, const void *elemen
 }
 
 #if 0
-void *mesh_slot_buffer_grow(Mesh *mesh, MeshOperator *op, int slot_code, int totadd)
+void *mesh_slot_buffer_grow(Mesh *mesh, MeshOp *op, int slot_code, int totadd)
 {
   MeshOpSlot *slot = &op->slots[slot_code];
   void *tmp;
@@ -753,22 +753,22 @@ void mesh_slot_buffer_from_all(Mesh *mesh,
 
     /* TODO: collapse these loops into one. */
 
-    if (htype & BM_VERT) {
+    if (htype & MESH_VERT) {
       MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
         output->data.buf[i] = ele;
         i++;
       }
     }
 
-    if (htype & BM_EDGE) {
-      BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
+    if (htype & MESH_EDGE) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
         output->data.buf[i] = ele;
         i++;
       }
     }
 
-    if (htype & BM_FACE) {
-      BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
+    if (htype & MESH_FACE) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
         output->data.buf[i] = ele;
         i++;
       }
@@ -777,30 +777,30 @@ void mesh_slot_buffer_from_all(Mesh *mesh,
 }
 
 /**
- * \brief BMO_HEADERFLAG_TO_SLOT
+ * MESH_HEADERFLAG_TO_SLOT
  *
  * Copies elements of a certain type, which have a certain header flag
  * enabled/disabled into a slot for an operator.
  */
-static void bmo_slot_buffer_from_hflag(BMesh *bm,
-                                       BMOperator *op,
-                                       BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+static void bmo_slot_buffer_from_hflag(Mesh *mesh,
+                                       MeshOp *op,
+                                       MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                        const char *slot_name,
                                        const char htype,
                                        const char hflag,
                                        const bool test_for_enabled)
 {
-  BMOpSlot *output = BMO_slot_get(slot_args, slot_name);
+  MeshOpSlot *output = mesh_slot_get(slot_args, slot_name);
   int totelement = 0, i = 0;
-  const bool respecthide = ((op->flag & BMO_FLAG_RESPECT_HIDE) != 0) &&
-                           ((hflag & BM_ELEM_HIDDEN) == 0);
+  const bool respecthide = ((op->flag & MESH_FLAG_RESPECT_HIDE) != 0) &&
+                           ((hflag & MESH_ELEM_HIDDEN) == 0);
 
-  BLI_assert(output->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(((output->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
-  BLI_assert((output->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
+  lib_assert(output->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(((output->slot_subtype.elem & MESH_ALL_NOLOOP) & htype) == htype);
+  lib_assert((output->slot_subtype.elem & MESH_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
 
   if (test_for_enabled) {
-    totelement = BM_mesh_elem_hflag_count_enabled(bm, htype, hflag, respecthide);
+    totelement = mesh_elem_hflag_count_enabled(mesh, htype, hflag, respecthide);
   }
   else {
     totelement = BM_mesh_elem_hflag_count_disabled(bm, htype, hflag, respecthide);
