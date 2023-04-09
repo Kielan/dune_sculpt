@@ -153,9 +153,9 @@ void mesh_op_init(Mesh *mesh, MeshOp *op, const int flag, const char *opname)
 void mesh_op_exec(Mesh *mesh, MeshOp *op)
 {
   /* allocate tool flags on demand */
-  mesh_elem_toolflags_ensure(bm);
+  mesh_elem_toolflags_ensure(mesh);
 
-  mesh_push(bm, op);
+  mesh_push(mesh, op);
 
   if (mesh->toolflag_index == 1) {
     mesh_edit_begin(mesh, op->type_flag);
@@ -400,31 +400,31 @@ void mesh_slot_ptr_set(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot
   slot->data.p = p;
 }
 
-void BMO_slot_vec_set(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                      const char *slot_name,
-                      const float vec[3])
+void mesh_slot_vec_set(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                       const char *slot_name,
+                       const float vec[3])
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_VEC);
-  if (!(slot->slot_type == BMO_OP_SLOT_VEC)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_VEC);
+  if (!(slot->slot_type == MESH_OP_SLOT_VEC)) {
     return;
   }
 
   copy_v3_v3(slot->data.vec, vec);
 }
 
-float BMO_slot_float_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+float mesh_slot_float_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_FLT);
-  if (!(slot->slot_type == BMO_OP_SLOT_FLT)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_FLT);
+  if (!(slot->slot_type == MESH_OP_SLOT_FLT)) {
     return 0.0f;
   }
 
   return slot->data.f;
 }
 
-int BMO_slot_int_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+int mesh_slot_int_get(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
 {
   BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
   BLI_assert(slot->slot_type == BMO_OP_SLOT_INT);
