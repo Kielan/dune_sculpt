@@ -6,8 +6,8 @@
 #include "lib_math.h"
 #include "lib_memarena.h"
 #include "lib_mempool.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
 #include "i18n.h"
 
@@ -15,36 +15,36 @@
 #include "intern/mesh_private.h"
 
 /* forward declarations */
-static void mo_flag_layer_alloc(Mesh *bm);
-static void mo_flag_layer_free(Mesh *bm);
-static void bmo_flag_layer_clear(Mesh *bm);
-static int mo_name_to_slotcode(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *identifier);
-static int mo_name_to_slotcode_check(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+static void mesh_op_flag_layer_alloc(Mesh *mesh);
+static void mesh_op_flag_layer_free(Mesh *mesh);
+static void mesh_op_flag_layer_clear(Mesh *mesh);
+static int mesh_op_name_to_slotcode(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *identifier);
+static int mesh_op_name_to_slotcode_check(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                       const char *identifier);
 
-const int BMO_OPSLOT_TYPEINFO[BMO_OP_SLOT_TOTAL_TYPES] = {
-    0,                /*  0: BMO_OP_SLOT_SENTINEL */
-    sizeof(int),      /*  1: BMO_OP_SLOT_BOOL */
-    sizeof(int),      /*  2: BMO_OP_SLOT_INT */
-    sizeof(float),    /*  3: BMO_OP_SLOT_FLT */
-    sizeof(void *),   /*  4: BMO_OP_SLOT_PNT */
-    sizeof(void *),   /*  5: BMO_OP_SLOT_PNT */
+const int MESH_OPSLOT_TYPEINFO[MESH_OP_SLOT_TOTAL_TYPES] = {
+    0,                /*  0: MESH_OP_SLOT_SENTINEL */
+    sizeof(int),      /*  1: MESH_OP_SLOT_BOOL */
+    sizeof(int),      /*  2: MESH_OP_SLOT_INT */
+    sizeof(float),    /*  3: MESH_OP_SLOT_FLT */
+    sizeof(void *),   /*  4: MESH_OP_SLOT_PNT */
+    sizeof(void *),   /*  5: MESH_OP_SLOT_PNT */
     0,                /*  6: unused */
     0,                /*  7: unused */
-    sizeof(float[3]), /*  8: BMO_OP_SLOT_VEC */
-    sizeof(void *),   /*  9: BMO_OP_SLOT_ELEMENT_BUF */
-    sizeof(void *),   /* 10: BMO_OP_SLOT_MAPPING */
+    sizeof(float[3]), /*  8: MESH_OP_SLOT_VEC */
+    sizeof(void *),   /*  9: MESH_OP_SLOT_ELEMENT_BUF */
+    sizeof(void *),   /* 10: MESH_OP_SLOT_MAPPING */
 };
 
 /* Dummy slot so there is something to return when slot name lookup fails */
-// static BMOpSlot BMOpEmptySlot = {0};
+// static MeshOpSlot MeshOpEmptySlot = {0};
 
-void BMO_op_flag_enable(BMesh *UNUSED(bm), BMOperator *op, const int op_flag)
+void mesh_op_flag_enable(Mesh *UNUSED(mesh), MeshOp *op, const int op_flag)
 {
   op->flag |= op_flag;
 }
 
-void mesh_op_flag_disable(BMesh *UNUSED(bm), BMOperator *op, const int op_flag)
+void mesh_op_flag_disable(Mesh *UNUSED(mesh), MeshOp *op, const int op_flag)
 {
   op->flag &= ~op_flag;
 }
@@ -53,14 +53,14 @@ void mesh_op_push(Mesh *mesh, BMOperator *UNUSED(op))
 {
   mesh->toolflag_index++;
 
-  lib_assert(bm->totflags > 0);
+  lib_assert(mesh->totflags > 0);
 
   /* add flag layer, if appropriate */
-  if (bm->toolflag_index > 0) {
-    bmo_flag_layer_alloc(bm);
+  if (mesh->toolflag_index > 0) {
+    mesh_flag_layer_alloc(mesh);
   }
   else {
-    bmo_flag_layer_clear(bm);
+    mesh_flag_layer_clear(mesh);
   }
 }
 
