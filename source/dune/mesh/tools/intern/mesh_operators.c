@@ -1439,12 +1439,12 @@ typedef struct MeshOpError {
   struct MeshOpError *next, *prev;
   MeshOp *op;
   const char *msg;
-  eBMOpErrorLevel level;
-} BMOpError;
+  eMeshOpErrorLevel level;
+} MeshOpError;
 
-void BMO_error_clear(BMesh *bm)
+void mesh_op_error_clear(Mesh *mesh)
 {
-  while (BMO_error_pop(bm, NULL, NULL, NULL)) {
+  while (mesh_op_error_pop(mesh, NULL, NULL, NULL)) {
     /* pass */
   }
 }
