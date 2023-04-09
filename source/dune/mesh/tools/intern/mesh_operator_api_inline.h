@@ -4,12 +4,12 @@
 
 /* Tool Flag API: Tool code must never put junk in header flags (#BMHeader.hflag)
  * instead, use this API to set flags.
- * If you need to store a value per element, use a #GHash or a mapping slot to do it. */
+ * If you need to store a value per element, use aGHash or a mapping slot to do it. */
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) BLI_INLINE
-    short _bmo_elem_flag_test(BMesh *bm, const BMFlagLayer *oflags, const short oflag)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
+    short _mesh_elem_flag_test(Mesh *mesh, const MeshFlagLayer *oflags, const short oflag)
 {
-  BLI_assert(bm->use_toolflags);
+  lib_assert(bm->use_toolflags);
   return oflags[bm->toolflag_index].f & oflag;
 }
 
