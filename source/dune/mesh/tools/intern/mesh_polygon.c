@@ -81,29 +81,29 @@ static float mesh_face_calc_poly_normal_vertex_cos(const MeshFace *f,
 }
 
 /** COMPUTE POLY CENTER MeshFace **/
-static void mesh_face_calc_poly_center_median_vertex_cos(const BMFace *f,
+static void mesh_face_calc_poly_center_median_vertex_cos(const MeshFace *f,
                                                        float r_cent[3],
                                                        float const (*vertexCos)[3])
 {
-  const BMLoop *l_first, *l_iter;
+  const MeshLoop *l_first, *l_iter;
 
   zero_v3(r_cent);
 
   /* Newell's Method */
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    add_v3_v3(r_cent, vertexCos[BM_elem_index_get(l_iter->v)]);
+    add_v3_v3(r_cent, vertexCos[mesh_elem_index_get(l_iter->v)]);
   } while ((l_iter = l_iter->next) != l_first);
   mul_v3_fl(r_cent, 1.0f / f->len);
 }
 
-void BM_face_calc_tessellation(const BMFace *f,
+void mesh_face_calc_tessellation(const MeshFace *f,
                                const bool use_fixed_quad,
-                               BMLoop **r_loops,
+                               MeshLoop **r_loops,
                                uint (*r_index)[3])
 {
-  BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-  BMLoop *l_iter;
+  MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+  MeshLoop *l_iter;
 
   if (f->len == 3) {
     *r_loops++ = (l_iter = l_first);
@@ -130,7 +130,7 @@ void BM_face_calc_tessellation(const BMFace *f,
   }
   else {
     float axis_mat[3][3];
-    float(*projverts)[2] = BLI_array_alloca(projverts, f->len);
+    float(*projverts)[2] = lib_array_alloca(projverts, f->len);
     int j;
 
     axis_dominant_v3_to_m3_negate(axis_mat, f->no);
@@ -144,29 +144,29 @@ void BM_face_calc_tessellation(const BMFace *f,
     } while ((l_iter = l_iter->next) != l_first);
 
     /* complete the loop */
-    BLI_polyfill_calc(projverts, f->len, 1, r_index);
+    lib_polyfill_calc(projverts, f->len, 1, r_index);
   }
 }
 
-void BM_face_calc_point_in_face(const BMFace *f, float r_co[3])
+void mesh_face_calc_point_in_face(const MeshFace *f, float r_co[3])
 {
-  const BMLoop *l_tri[3];
+  const MeshLoop *l_tri[3];
 
   if (f->len == 3) {
-    const BMLoop *l = BM_FACE_FIRST_LOOP(f);
+    const MeshLoop *l = MESH_FACE_FIRST_LOOP(f);
     ARRAY_SET_ITEMS(l_tri, l, l->next, l->prev);
   }
   else {
     /* tessellation here seems overkill when in many cases this will be the center,
      * but without this we can't be sure the point is inside a concave face. */
     const int tottri = f->len - 2;
-    BMLoop **loops = BLI_array_alloca(loops, f->len);
-    uint(*index)[3] = BLI_array_alloca(index, tottri);
+    MeshLoop **loops = lib_array_alloca(loops, f->len);
+    uint(*index)[3] = lib_array_alloca(index, tottri);
     int j;
     int j_best = 0; /* use as fallback when unset */
     float area_best = -1.0f;
 
-    BM_face_calc_tessellation(f, false, loops, index);
+    mesh_face_calc_tessellation(f, false, loops, index);
 
     for (j = 0; j < tottri; j++) {
       const float *p1 = loops[index[j][0]]->v->co;
