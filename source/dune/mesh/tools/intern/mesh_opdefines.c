@@ -34,7 +34,7 @@
 #include "mesh.h"
 #include "intern/mesh_ops_private.h"
 
-#include "dna_modifier_types.h"
+#include "types_modifier.h"
 
 /**
  * The formatting of these bmesh operators is parsed by
@@ -114,23 +114,23 @@ static BMO_FlagSet bmo_enum_falloff_type[] = {
  *
  * Smooths vertices by using a basic vertex averaging scheme.
  */
-static BMOpDefine bmo_smooth_vert_def = {
+static MeshOpDefines mesh_smooth_vert_def = {
   "smooth_vert",
   /* slots_in */
-  {{"verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}},    /* input vertices */
-   {"factor", BMO_OP_SLOT_FLT},           /* smoothing factor */
-   {"mirror_clip_x", BMO_OP_SLOT_BOOL},   /* set vertices close to the x axis before the operation to 0 */
-   {"mirror_clip_y", BMO_OP_SLOT_BOOL},   /* set vertices close to the y axis before the operation to 0 */
-   {"mirror_clip_z", BMO_OP_SLOT_BOOL},   /* set vertices close to the z axis before the operation to 0 */
-   {"clip_dist",  BMO_OP_SLOT_FLT},       /* clipping threshold for the above three slots */
-   {"use_axis_x", BMO_OP_SLOT_BOOL},      /* smooth vertices along X axis */
-   {"use_axis_y", BMO_OP_SLOT_BOOL},      /* smooth vertices along Y axis */
-   {"use_axis_z", BMO_OP_SLOT_BOOL},      /* smooth vertices along Z axis */
+  {{"verts", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT}},    /* input vertices */
+   {"factor", MESH_OP_SLOT_FLT},           /* smoothing factor */
+   {"mirror_clip_x", MESH_OP_SLOT_BOOL},   /* set vertices close to the x axis before the operation to 0 */
+   {"mirror_clip_y", MESH_OP_SLOT_BOOL},   /* set vertices close to the y axis before the operation to 0 */
+   {"mirror_clip_z", MESH_OP_SLOT_BOOL},   /* set vertices close to the z axis before the operation to 0 */
+   {"clip_dist",  MESH_OP_SLOT_FLT},       /* clipping threshold for the above three slots */
+   {"use_axis_x", MESH_OP_SLOT_BOOL},      /* smooth vertices along X axis */
+   {"use_axis_y", MESH_OP_SLOT_BOOL},      /* smooth vertices along Y axis */
+   {"use_axis_z", MESH_OP_SLOT_BOOL},      /* smooth vertices along Z axis */
    {{'\0'}},
   },
   {{{'\0'}}},  /* no output */
-  bmo_smooth_vert_exec,
-  (BMO_OPTYPE_FLAG_NORMALS_CALC),
+  mesh_smooth_vert_exec,
+  (MESH_OPTYPE_FLAG_NORMALS_CALC),
 };
 
 /*
@@ -139,7 +139,7 @@ static BMOpDefine bmo_smooth_vert_def = {
  * Smooths vertices by using Laplacian smoothing propose by.
  * Desbrun, et al. Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow.
  */
-static BMOpDefine bmo_smooth_laplacian_vert_def = {
+static MeshOpDefine mesh_smooth_laplacian_vert_def = {
   "smooth_laplacian_vert",
   /* slots_in */
   {{"verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}},    /* input vertices */
