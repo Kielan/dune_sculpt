@@ -94,7 +94,7 @@ static MeshFlagSet mesh_enum_axis_neg_xyz_and_xyz[] = {
   {0, NULL},
 };
 
-static BMO_FlagSet bmo_enum_falloff_type[] = {
+static MeshFlagSet mesh_op_enum_falloff_type[] = {
   {SUBD_FALLOFF_SMOOTH, "SMOOTH"},
   {SUBD_FALLOFF_SPHERE, "SPHERE"},
   {SUBD_FALLOFF_ROOT, "ROOT"},
@@ -105,9 +105,9 @@ static BMO_FlagSet bmo_enum_falloff_type[] = {
 };
 
 /* Quiet 'enum-conversion' warning. */
-#define BM_FACE ((int)BM_FACE)
-#define BM_EDGE ((int)BM_EDGE)
-#define BM_VERT ((int)BM_VERT)
+#define MESH_FACE ((int)MESH_FACE)
+#define MESH_EDGE ((int)MESH_EDGE)
+#define MESH_VERT ((int)MESH_VERT)
 
 /*
  * Vertex Smooth.
