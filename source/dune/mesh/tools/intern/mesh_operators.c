@@ -1089,24 +1089,24 @@ void mesh_slot_buffer_hflag_disable(Mesh *mesh,
     }
 
     if (do_flush_select) {
-      BM_elem_select_set(bm, *data, false);
+      mesh_elem_select_set(mesh, *data, false);
     }
 
     if (do_flush_hide) {
-      BM_elem_hide_set(bm, *data, false);
+      mesh_elem_hide_set(mesh, *data, false);
     }
 
-    BM_elem_flag_disable(*data, hflag);
+    mesh_elem_flag_disable(*data, hflag);
   }
 }
 
-void BMO_slot_buffer_flag_enable(BMesh *bm,
-                                 BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void mesh_op_slot_buffer_flag_enable(Mesh *mesh,
+                                 MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                  const char *slot_name,
                                  const char htype,
                                  const short oflag)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  BMOpSlot *slot = mesh_slot_get(slot_args, slot_name);
   BMHeader **data = slot->data.p;
   int i;
 
