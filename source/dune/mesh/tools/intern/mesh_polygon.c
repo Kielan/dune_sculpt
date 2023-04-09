@@ -331,30 +331,30 @@ void mesh_vert_tri_calc_tangent_edge_pair(MeshVert *verts[3], float r_tangent[3]
   normalize_v3(r_tangent);
 }
 
-void BM_face_calc_tangent_edge(const BMFace *f, float r_tangent[3])
+void mesh_face_calc_tangent_edge(const MeshFace *f, float r_tangent[3])
 {
-  const BMLoop *l_long = BM_face_find_longest_loop((BMFace *)f);
+  const MeshLoop *l_long = mesh_face_find_longest_loop((MeshFace *)f);
 
   sub_v3_v3v3(r_tangent, l_long->v->co, l_long->next->v->co);
 
   normalize_v3(r_tangent);
 }
 
-void BM_face_calc_tangent_edge_pair(const BMFace *f, float r_tangent[3])
+void mesh_face_calc_tangent_edge_pair(const MeshFace *f, float r_tangent[3])
 {
   if (f->len == 3) {
-    BMVert *verts[3];
+    MeshVert *verts[3];
 
-    BM_face_as_array_vert_tri((BMFace *)f, verts);
+    mesh_face_as_array_vert_tri((MeshFace *)f, verts);
 
-    BM_vert_tri_calc_tangent_edge_pair(verts, r_tangent);
+    mesh_vert_tri_calc_tangent_edge_pair(verts, r_tangent);
   }
   else if (f->len == 4) {
     /* Use longest edge pair */
-    BMVert *verts[4];
+    MeshVert *verts[4];
     float vec[3], vec_a[3], vec_b[3];
 
-    BM_face_as_array_vert_quad((BMFace *)f, verts);
+    mesh_face_as_array_vert_quad((MeshFace *)f, verts);
 
     sub_v3_v3v3(vec_a, verts[3]->co, verts[2]->co);
     sub_v3_v3v3(vec_b, verts[0]->co, verts[1]->co);
@@ -370,14 +370,14 @@ void BM_face_calc_tangent_edge_pair(const BMFace *f, float r_tangent[3])
   }
   else {
     /* For ngons use two longest disconnected edges */
-    BMLoop *l_long = BM_face_find_longest_loop((BMFace *)f);
-    BMLoop *l_long_other = NULL;
+    MeshLoop *l_long = mesh_face_find_longest_loop((MeshFace *)f);
+    MeshLoop *l_long_other = NULL;
 
     float len_max_sq = 0.0f;
     float vec_a[3], vec_b[3];
 
-    BMLoop *l_iter = l_long->prev->prev;
-    BMLoop *l_last = l_long->next;
+    MeshLoop *l_iter = l_long->prev->prev;
+    MeshLoop *l_last = l_long->next;
 
     do {
       const float len_sq = len_squared_v3v3(l_iter->v->co, l_iter->next->v->co);
