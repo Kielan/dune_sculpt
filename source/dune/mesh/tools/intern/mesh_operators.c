@@ -803,41 +803,41 @@ static void bmo_slot_buffer_from_hflag(Mesh *mesh,
     totelement = mesh_elem_hflag_count_enabled(mesh, htype, hflag, respecthide);
   }
   else {
-    totelement = BM_mesh_elem_hflag_count_disabled(bm, htype, hflag, respecthide);
+    totelement = mesh_elem_hflag_count_disabled(bm, htype, hflag, respecthide);
   }
 
   if (totelement) {
-    BMIter iter;
-    BMElem *ele;
+    MeshIter iter;
+    MeshElem *ele;
 
-    BMO_slot_buffer_alloc(op, slot_args, slot_name, totelement);
+    mesh_slot_buffer_alloc(op, slot_args, slot_name, totelement);
 
     /* TODO: collapse these loops into one. */
 
-    if (htype & BM_VERT) {
-      BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
-        if ((!respecthide || !BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) &&
-            BM_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
+    if (htype & MESH_VERT) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+        if ((!respecthide || !mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) &&
+            mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
           output->data.buf[i] = ele;
           i++;
         }
       }
     }
 
-    if (htype & BM_EDGE) {
-      BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
-        if ((!respecthide || !BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) &&
-            BM_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
+    if (htype & MESH_EDGE) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+        if ((!respecthide || !mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) &&
+            mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
           output->data.buf[i] = ele;
           i++;
         }
       }
     }
 
-    if (htype & BM_FACE) {
-      BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
-        if ((!respecthide || !BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) &&
-            BM_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
+    if (htype & MESH_FACE) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+        if ((!respecthide || !mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) &&
+            mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
           output->data.buf[i] = ele;
           i++;
         }
