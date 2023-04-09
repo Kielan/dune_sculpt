@@ -1262,48 +1262,48 @@ static void mesh_flag_layer_free(Mesh *mesh)
     MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)e_oflag);
   }
 
-  BMFace_OFlag *f_oflag;
-  newpool = bm->ftoolflagpool;
-  BM_ITER_MESH_INDEX (f_oflag, &iter, bm, BM_FACES_OF_MESH, i) {
+  MeshFace_OFlag *f_oflag;
+  newpool = mesh->ftoolflagpool;
+  MESH_ITER_MESH_INDEX (f_oflag, &iter, mesh, MESH_FACES_OF_MESH, i) {
     void *oldflags = f_oflag->oflags;
-    f_oflag->oflags = BLI_mempool_alloc(newpool);
+    f_oflag->oflags = lib_mempool_alloc(newpool);
     memcpy(f_oflag->oflags, oldflags, new_totflags_size);
-    BM_elem_index_set(&f_oflag->base, i); /* set_inline */
-    BM_ELEM_API_FLAG_CLEAR((BMElemF *)f_oflag);
+    mesh_elem_index_set(&f_oflag->base, i); /* set_inline */
+    MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)f_oflag);
   }
 
-  BLI_mempool_destroy(voldpool);
-  BLI_mempool_destroy(eoldpool);
-  BLI_mempool_destroy(foldpool);
+  lib_mempool_destroy(voldpool);
+  lib_mempool_destroy(eoldpool);
+  lib_mempool_destroy(foldpool);
 
-  bm->elem_index_dirty &= ~(BM_VERT | BM_EDGE | BM_FACE);
+  mesh->elem_index_dirty &= ~(MESH_VERT | MESH_EDGE | MESH_FACE);
 }
 
-static void bmo_flag_layer_clear(BMesh *bm)
+static void bmo_flag_layer_clear(Mesh *mesh)
 {
   /* set the index values since we are looping over all data anyway,
    * may save time later on */
-  const BMFlagLayer zero_flag = {0};
+  const MeshFlagLayer zero_flag = {0};
 
   const int totflags_offset = bm->totflags - 1;
 
   /* now go through and memcpy all the flag */
   {
-    BMIter iter;
-    BMVert_OFlag *ele;
+    MeshIter iter;
+    MeshVert_OFlag *ele;
     int i;
-    BM_ITER_MESH_INDEX (ele, &iter, bm, BM_VERTS_OF_MESH, i) {
+    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_VERTS_OF_MESH, i) {
       ele->oflags[totflags_offset] = zero_flag;
-      BM_elem_index_set(&ele->base, i); /* set_inline */
+      mesh_elem_index_set(&ele->base, i); /* set_inline */
     }
   }
   {
-    BMIter iter;
-    BMEdge_OFlag *ele;
+    MeshIter iter;
+    MeshEdge_OFlag *ele;
     int i;
-    BM_ITER_MESH_INDEX (ele, &iter, bm, BM_EDGES_OF_MESH, i) {
+    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_EDGES_OF_MESH, i) {
       ele->oflags[totflags_offset] = zero_flag;
-      BM_elem_index_set(&ele->base, i); /* set_inline */
+      mesh_elem_index_set(&ele->base, i); /* set_inline */
     }
   }
   {
@@ -1387,7 +1387,7 @@ void *mesh_iter_step(MeshIter *iter)
       ret = lib_ghashIterator_getKey(&iter->giter);
       iter->val = lib_ghashIterator_getValue_p(&iter->giter);
 
-      BLI_ghashIterator_step(&iter->giter);
+      lib_ghashIterator_step(&iter->giter);
     }
     else {
       ret = NULL;
@@ -1408,36 +1408,36 @@ void **mesh_op_iter_map_value_p(MeshOpIter *iter)
   return iter->val;
 }
 
-void *BMO_iter_map_value_ptr(BMOIter *iter)
+void *mesh_op_iter_map_value_ptr(MeshOpIter *iter)
 {
-  BLI_assert(ELEM(iter->slot->slot_subtype.map,
-                  BMO_OP_SLOT_SUBTYPE_MAP_ELEM,
-                  BMO_OP_SLOT_SUBTYPE_MAP_INTERNAL));
+  lib_assert(ELEM(iter->slot->slot_subtype.map,
+                  MESG_OP_SLOT_SUBTYPE_MAP_ELEM,
+                  MESH_OP_SLOT_SUBTYPE_MAP_INTERNAL));
   return iter->val ? *iter->val : NULL;
 }
 
-float BMO_iter_map_value_float(BMOIter *iter)
+float mesh_op_iter_map_value_float(MeshOpIter *iter)
 {
-  BLI_assert(iter->slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_FLT);
+  lib_assert(iter->slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_FLT);
   return **((float **)iter->val);
 }
 
-int BMO_iter_map_value_int(BMOIter *iter)
+int mesh_iter_map_value_int(MeshOpIter *iter)
 {
-  BLI_assert(iter->slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_INT);
+  lib_assert(iter->slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_INT);
   return **((int **)iter->val);
 }
 
-bool BMO_iter_map_value_bool(BMOIter *iter)
+bool mesh_iter_map_value_bool(MeshOpIter *iter)
 {
-  BLI_assert(iter->slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_BOOL);
+  lib_assert(iter->slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_BOOL);
   return **((bool **)iter->val);
 }
 
 /* error system */
-typedef struct BMOpError {
-  struct BMOpError *next, *prev;
-  BMOperator *op;
+typedef struct MeshOpError {
+  struct MeshOpError *next, *prev;
+  MeshOp *op;
   const char *msg;
   eBMOpErrorLevel level;
 } BMOpError;
