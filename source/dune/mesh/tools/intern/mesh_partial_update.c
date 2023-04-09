@@ -276,30 +276,30 @@ MeshPartialUpdate *mesh_partial_create_from_verts_group_single(
   }
 
   if (verts_tag) {
-    MEM_freeN(verts_tag);
+    mem_freen(verts_tag);
   }
   if (faces_tag) {
-    MEM_freeN(faces_tag);
+    mem_freen(faces_tag);
   }
 
-  bmpinfo->params = *params;
+  meshinfo->params = *params;
 
-  return bmpinfo;
+  return meshinfo;
 }
 
-BMPartialUpdate *BM_mesh_partial_create_from_verts_group_multi(
-    BMesh *bm,
-    const BMPartialUpdate_Params *params,
+MeshPartialUpdate *mesh_partial_create_from_verts_group_multi(
+    Mesh *mesh,
+    const MeshPartialUpdatewParams *params,
     const int *verts_group,
     const int verts_group_count)
 {
   /* Provide a quick way of visualizing which faces are being manipulated. */
   // #define DEBUG_MATERIAL
 
-  BMPartialUpdate *bmpinfo = MEM_callocN(sizeof(*bmpinfo), __func__);
+  MeshPartialUpdate *bmpinfo = mem_callocn(sizeof(*meshinfo), __func__);
 
-  BLI_bitmap *verts_tag = NULL;
-  BLI_bitmap *faces_tag = NULL;
+  lib_bitmap *verts_tag = NULL;
+  lib_bitmap *faces_tag = NULL;
 
   /* It's not worth guessing a large number as isolated regions will allocate zero faces. */
   const int default_faces_len_alloc = 1;
@@ -309,10 +309,10 @@ BMPartialUpdate *BM_mesh_partial_create_from_verts_group_multi(
   if (params->do_normals || params->do_tessellate) {
 
     /* Faces. */
-    if (bmpinfo->faces == NULL) {
-      bmpinfo->faces_len_alloc = default_faces_len_alloc;
-      bmpinfo->faces = MEM_mallocN((sizeof(BMFace *) * bmpinfo->faces_len_alloc), __func__);
-      faces_tag = BLI_BITMAP_NEW((size_t)bm->totface, __func__);
+    if (meshinfo->faces == NULL) {
+      meshinfo->faces_len_alloc = default_faces_len_alloc;
+      meshinfo->faces = mem_mallocn((sizeof(MeshFace *) * meshinfo->faces_len_alloc), __func__);
+      faces_tag = LIB_BITMAP_NEW((size_t)bm->totface, __func__);
     }
 
     MeshFace *f;
