@@ -47,61 +47,61 @@ BLI_INLINE void _bmo_elem_flag_set(BMesh *bm, BMFlagLayer *oflags, const short o
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void _bmo_elem_flag_toggle(BMesh *bm, BMFlagLayer *oflags, const short oflag)
+LIB_INLINE void _mesh_elem_flag_toggle(Mesh *mesh, MeshFlagLayer *oflags, const short oflag)
 {
-  BLI_assert(bm->use_toolflags);
-  oflags[bm->toolflag_index].f ^= oflag;
+  lib_assert(mesh->use_toolflags);
+  oflags[mesh->toolflag_index].f ^= oflag;
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void BMO_slot_map_int_insert(BMOperator *op,
-                                        BMOpSlot *slot,
-                                        void *element,
-                                        const int val)
+LIB_INLINE void mesh_op_slot_map_int_insert(MeshOp *op,
+                                            MeshOpSlot *slot,
+                                            void *element,
+                                            const int val)
 {
   union {
     void *ptr;
     int val;
   } t = {NULL};
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_INT);
-  BMO_slot_map_insert(op, slot, element, ((void)(t.val = val), t.ptr));
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_INT);
+  mesh_slot_map_insert(op, slot, element, ((void)(t.val = val), t.ptr));
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void BMO_slot_map_bool_insert(BMOperator *op,
-                                         BMOpSlot *slot,
-                                         void *element,
-                                         const bool val)
+LIB_INLINE void mesh_slot_map_bool_insert(MeshOp *op,
+                                          MeshOpSlot *slot,
+                                          void *element,
+                                          const bool val)
 {
   union {
     void *ptr;
     bool val;
   } t = {NULL};
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_BOOL);
-  BMO_slot_map_insert(op, slot, element, ((void)(t.val = val), t.ptr));
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_BOOL);
+  mesh_op_slot_map_insert(op, slot, element, ((void)(t.val = val), t.ptr));
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void BMO_slot_map_float_insert(BMOperator *op,
-                                          BMOpSlot *slot,
-                                          void *element,
-                                          const float val)
+LIB_INLINE void mesh_slot_map_float_insert(MeshOp *op,
+                                           MeshOpSlot *slot,
+                                           void *element,
+                                           const float val)
 {
   union {
     void *ptr;
     float val;
   } t = {NULL};
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_FLT);
-  BMO_slot_map_insert(op, slot, element, ((void)(t.val = val), t.ptr));
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_FLT);
+  mesh_op_slot_map_insert(op, slot, element, ((void)(t.val = val), t.ptr));
 }
 
-/* pointer versions of BMO_slot_map_float_get and BMO_slot_map_float_insert.
+/* pointer versions of mesh_op_slot_map_float_get and BMO_slot_map_float_insert.
  *
  * do NOT use these for non-operator-api-allocated memory! instead
  * use BMO_slot_map_data_get and BMO_slot_map_insert, which copies the data. */
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void BMO_slot_map_ptr_insert(BMOperator *op,
+LIB_INLINE void mesh_op_slot_map_ptr_insert(BMOperator *op,
                                         BMOpSlot *slot,
                                         const void *element,
                                         void *val)
