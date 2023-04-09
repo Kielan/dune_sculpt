@@ -315,21 +315,21 @@ BMPartialUpdate *BM_mesh_partial_create_from_verts_group_multi(
       faces_tag = BLI_BITMAP_NEW((size_t)bm->totface, __func__);
     }
 
-    BMFace *f;
-    BMIter iter;
+    MeshFace *f;
+    MeshIter iter;
     int i;
-    BM_ITER_MESH_INDEX (f, &iter, bm, BM_FACES_OF_MESH, i) {
-      BM_elem_index_set(f, i); /* set_inline */
-      BMLoop *l_iter, *l_first;
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
-      const int group_test = verts_group[BM_elem_index_get(l_iter->prev->v)];
+    MESH_ITER_MESH_INDEX (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
+      mesh_elem_index_set(f, i); /* set_inline */
+      MeshLoop *l_iter, *l_first;
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
+      const int group_test = verts_group[mesh_elem_index_get(l_iter->prev->v)];
 #ifdef DEBUG_MATERIAL
       f->mat_nr = 0;
 #endif
       do {
         const int group_iter = verts_group[BM_elem_index_get(l_iter->v)];
         if (UNLIKELY((group_iter != group_test) || (group_iter == -1))) {
-          partial_elem_face_ensure(bmpinfo, faces_tag, f);
+          partial_elem_face_ensure(meshinfo, faces_tag, f);
           face_tag_loop_len += f->len;
 #ifdef DEBUG_MATERIAL
           f->mat_nr = 1;
@@ -348,28 +348,28 @@ BMPartialUpdate *BM_mesh_partial_create_from_verts_group_multi(
     const int default_verts_len_alloc = min_ii(bm->totvert, max_ii(1, face_tag_loop_len));
 
     /* Vertices. */
-    if (bmpinfo->verts == NULL) {
-      bmpinfo->verts_len_alloc = default_verts_len_alloc;
-      bmpinfo->verts = MEM_mallocN((sizeof(BMVert *) * bmpinfo->verts_len_alloc), __func__);
-      verts_tag = BLI_BITMAP_NEW((size_t)bm->totvert, __func__);
+    if (meshinfo->verts == NULL) {
+      meshinfo->verts_len_alloc = default_verts_len_alloc;
+      meshinfo->verts = mem_mallocn((sizeof(MeshVert *) * meshinfo->verts_len_alloc), __func__);
+      verts_tag = LIB_BITMAP_NEW((size_t)mesh->totvert, __func__);
     }
 
-    for (int i = 0; i < bmpinfo->faces_len; i++) {
-      BMFace *f = bmpinfo->faces[i];
-      BMLoop *l_iter, *l_first;
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    for (int i = 0; i < meshinfo->faces_len; i++) {
+      MeshFace *f = meshinfo->faces[i];
+      MeshLoop *l_iter, *l_first;
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
-        partial_elem_vert_ensure(bmpinfo, verts_tag, l_iter->v);
+        partial_elem_vert_ensure(meshinfo, verts_tag, l_iter->v);
       } while ((l_iter = l_iter->next) != l_first);
     }
 
     /* Loose vertex support, these need special handling as loose normals depend on location. */
-    if (bmpinfo->verts_len < verts_group_count) {
-      BMVert *v;
-      BMIter iter;
+    if (meshinfo->verts_len < verts_group_count) {
+      MeshVert *v;
+      MeshIter iter;
       int i;
-      BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
-        if ((verts_group[i] != 0) && (BM_vert_find_first_loop(v) == NULL)) {
+      MESH_ITER_MESH_INDEX (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+        if ((verts_group[i] != 0) && (mesh_vert_find_first_loop(v) == NULL)) {
           partial_elem_vert_ensure(bmpinfo, verts_tag, v);
         }
       }
@@ -377,24 +377,24 @@ BMPartialUpdate *BM_mesh_partial_create_from_verts_group_multi(
   }
 
   if (verts_tag) {
-    MEM_freeN(verts_tag);
+    mem_freen(verts_tag);
   }
   if (faces_tag) {
-    MEM_freeN(faces_tag);
+    mem_freen(faces_tag);
   }
 
-  bmpinfo->params = *params;
+  meshinfo->params = *params;
 
-  return bmpinfo;
+  return meshinfo;
 }
 
-void BM_mesh_partial_destroy(BMPartialUpdate *bmpinfo)
+void mesh_partial_destroy(MeshPartialUpdate *meshinfo)
 {
-  if (bmpinfo->verts) {
-    MEM_freeN(bmpinfo->verts);
+  if (meshinfo->verts) {
+    mem_freen(mesh->verts);
   }
-  if (bmpinfo->faces) {
-    MEM_freeN(bmpinfo->faces);
+  if (meshinfo->faces) {
+    mem_freen(meshinfo->faces);
   }
-  MEM_freeN(bmpinfo);
+  mem_freen(meshinfo);
 }
