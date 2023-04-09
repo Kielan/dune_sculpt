@@ -189,23 +189,23 @@ void BM_mesh_calc_uvs_circle(
  * param cap_ends: Whether the ends of the cone/cylinder are filled or not.
  * param oflag: The flag to check faces with.
  */
-void mesh_calc_uvs_cone(BMesh *bm,
-                           float mat[4][4],
-                           float radius_top,
-                           float radius_bottom,
-                           int segments,
-                           bool cap_ends,
+void mesh_calc_uvs_cone(Mesh *mesh,
+                        float mat[4][4],
+                        float radius_top,
+                        float radius_bottom,
+                        int segments,
+                        bool cap_ends,
                            short oflag,
                            int cd_loop_uv_offset);
 /**
  * Fills first available UV-map with cube-like UVs for all faces with `oflag` set.
  *
- * \note Expects tagged faces to be six quads.
- * \note Caller must order faces for correct alignment.
+ * note Expects tagged faces to be six quads.
+ * note Caller must order faces for correct alignment.
  *
- * \param bm: The BMesh to operate on.
- * \param oflag: The flag to check faces with.
+ * param mesh: The Mesh to operate on.
+ * param oflag: The flag to check faces with.
  */
-void BM_mesh_calc_uvs_cube(BMesh *bm, short oflag);
+void mesh_calc_uvs_cube(Mesh *mesh, short oflag);
 
-#include "intern/bmesh_operator_api_inline.h"
+#include "intern/mesh_operator_api_inline.h"
