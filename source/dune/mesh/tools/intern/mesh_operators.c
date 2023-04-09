@@ -514,11 +514,11 @@ static int mesh_flag_count(Mesh *mesh,
       }
     }
   }
-  if (htype & BM_FACE) {
+  if (htype & MESH_FACE) {
     MeshIter iter;
     MeshFace *ele;
     MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
-      if (mesh_face_flag_test_bool(bm, ele, oflag) == test_for_enabled) {
+      if (mesh_face_flag_test_bool(mesh, ele, oflag) == test_for_enabled) {
         count_face++;
       }
     }
@@ -538,7 +538,7 @@ int mesh_disabled_flag_count(Mesh *mesh, const char htype, const short oflag)
 }
 
 void mesh_flag_disable_all(Mesh *mesh,
-                           MeshOperator *UNUSED(op),
+                           MeshOp *UNUSED(op),
                            const char htype,
                            const short oflag)
 {
@@ -700,7 +700,7 @@ void mesh_slot_map_to_flag(Mesh *mesh,
   }
 }
 
-void *mesh_slot_buffer_alloc(MeshOperator *op,
+void *mesh_slot_buffer_alloc(MeshOp *op,
                              MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                              const char *slot_name,
                              const int len)
@@ -723,38 +723,38 @@ void *mesh_slot_buffer_alloc(MeshOperator *op,
   return slot->data.buf;
 }
 
-void mesh_slot_buffer_from_all(Mesh *bm,
-                               MeshOperator *op,
-                               MeshOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void mesh_slot_buffer_from_all(Mesh *mesh,
+                               MeshOp *op,
+                               MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                const char *slot_name,
                                const char htype)
 {
   MeshOpSlot *output = mesh_slot_get(slot_args, slot_name);
   int totelement = 0, i = 0;
 
-  lib_assert(output->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  lib_assert(output->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
   lib_assert(((output->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
 
-  if (htype & BM_VERT) {
-    totelement += bm->totvert;
+  if (htype & MESH_VERT) {
+    totelement += mesh->totvert;
   }
-  if (htype & BM_EDGE) {
-    totelement += bm->totedge;
+  if (htype & MESH_EDGE) {
+    totelement += mesh->totedge;
   }
-  if (htype & BM_FACE) {
-    totelement += bm->totface;
+  if (htype & MESH_FACE) {
+    totelement += mesh->totface;
   }
 
   if (totelement) {
-    BMIter iter;
-    BMHeader *ele;
+    MeshIter iter;
+    MeshHeader *ele;
 
-    BMO_slot_buffer_alloc(op, slot_args, slot_name, totelement);
+    mesh_slot_buffer_alloc(op, slot_args, slot_name, totelement);
 
     /* TODO: collapse these loops into one. */
 
     if (htype & BM_VERT) {
-      BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
         output->data.buf[i] = ele;
         i++;
       }
