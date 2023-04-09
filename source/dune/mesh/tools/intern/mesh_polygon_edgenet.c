@@ -1193,14 +1193,14 @@ static bool mesh_vert_partial_connect_check_overlap(const int *remap,
 
 #endif /* USE_PARTIAL_CONNECT */
 
-bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
-                                           MeshFace *f,
-                                           MeshEdge **edge_net_init,
-                                           const uint edge_net_init_len,
-                                           bool use_partial_connect,
-                                           MemArena *mem_arena,
-                                           MeshEdge ***r_edge_net_new,
-                                           uint *r_edge_net_new_len)
+bool mesh_face_split_edgenet_connect_islands(Mesh *mesh,
+                                             MeshFace *f,
+                                             MeshEdge **edge_net_init,
+                                             const uint edge_net_init_len,
+                                             bool use_partial_connect,
+                                             MemArena *mem_arena,
+                                             MeshEdge ***r_edge_net_new,
+                                             uint *r_edge_net_new_len)
 {
   /* -------------------------------------------------------------------- */
   /**
@@ -1265,8 +1265,8 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
         MeshVert *v_other;
 
         /* NOTE: remapping will _never_ map a vertex to an already mapped vertex. */
-        while (UNLIKELY((v_other = bm_face_split_edgenet_partial_connect(bm, v_delimit, f)))) {
-          struct TempVertPair *tvp = BLI_memarena_alloc(mem_arena, sizeof(*tvp));
+        while (UNLIKELY((v_other = mesh_face_split_edgenet_partial_connect(mesh, v_delimit, f)))) {
+          struct TempVertPair *tvp = lib_memarena_alloc(mem_arena, sizeof(*tvp));
           tvp->next = temp_vert_pairs.list;
           tvp->v_orig = v_delimit;
           tvp->v_temp = v_other;
@@ -1578,7 +1578,7 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
             MeshVert *v_end = vert_arr[index_other];
             edge_net_new[edge_net_new_index] = mesh_edge_create(mesh, v_origin, v_end, NULL, 0);
 #ifdef USE_PARTIAL_CONNECT
-            BM_elem_index_set(edge_net_new[edge_net_new_index], edge_net_new_index);
+            mesh_elem_index_set(edge_net_new[edge_net_new_index], edge_net_new_index);
 #endif
             edge_net_new_index++;
             args.edge_arr_new_len++;
@@ -1627,7 +1627,7 @@ finally:
       /* its _very_ unlikely the edge exists,
        * however splicing may cause this. see: T48012 */
       if (!mesh_edge_exists(tvp->v_orig, tvp->v_temp)) {
-        mesh_vert_splice(bm, tvp->v_orig, tvp->v_temp);
+        mesh_vert_splice(mesh, tvp->v_orig, tvp->v_temp);
       }
     } while ((tvp = tvp->next));
 
