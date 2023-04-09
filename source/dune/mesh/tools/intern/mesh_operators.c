@@ -186,13 +186,13 @@ void mesh_op_finish(Mesh *mesh, MeshOperator *op)
 #endif
 }
 
-bool BMO_slot_exists(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *identifier)
+bool mesh_slot_exists(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *identifier)
 {
-  int slot_code = bmo_name_to_slotcode(slot_args, identifier);
+  int slot_code = mesh_name_to_slotcode(slot_args, identifier);
   return (slot_code >= 0);
 }
 
-BMOpSlot *BMO_slot_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *identifier)
+MeshOpSlot *mesh_slot_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *identifier)
 {
   int slot_code = bmo_name_to_slotcode_check(slot_args, identifier);
 
