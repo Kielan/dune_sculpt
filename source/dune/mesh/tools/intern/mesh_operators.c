@@ -473,9 +473,9 @@ void *mesh_slot_ptr_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slo
 
 void mesh_slot_vec_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name, float r_vec[3])
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_VEC);
-  if (!(slot->slot_type == BMO_OP_SLOT_VEC)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_VEC);
+  if (!(slot->slot_type == MESH_OP_SLOT_VEC)) {
     return;
   }
 
@@ -499,26 +499,26 @@ static int mesh_flag_count(Mesh *mesh,
   if (htype & MESH_VERT) {
     MeshIter iter;
     MeshVert *ele;
-    MESH_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
-      if (BMO_vert_flag_test_bool(bm, ele, oflag) == test_for_enabled) {
+    MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+      if (mesh_vert_flag_test_bool(mesh, ele, oflag) == test_for_enabled) {
         count_vert++;
       }
     }
   }
   if (htype & BM_EDGE) {
-    BMIter iter;
-    BMEdge *ele;
-    BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
-      if (BMO_edge_flag_test_bool(bm, ele, oflag) == test_for_enabled) {
+    MeshIter iter;
+    MeshEdge *ele;
+    MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      if (mesh_edge_flag_test_bool(mesh, ele, oflag) == test_for_enabled) {
         count_edge++;
       }
     }
   }
   if (htype & BM_FACE) {
-    BMIter iter;
-    BMFace *ele;
-    BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
-      if (BMO_face_flag_test_bool(bm, ele, oflag) == test_for_enabled) {
+    MeshIter iter;
+    MeshFace *ele;
+    MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      if (mesh_face_flag_test_bool(bm, ele, oflag) == test_for_enabled) {
         count_face++;
       }
     }
@@ -527,7 +527,7 @@ static int mesh_flag_count(Mesh *mesh,
   return (count_vert + count_edge + count_face);
 }
 
-int BMO_mesh_enabled_flag_count(BMesh *bm, const char htype, const short oflag)
+int mesh_enabled_flag_count(Mesh *mesh, const char htype, const short oflag)
 {
   return bmo_mesh_flag_count(bm, htype, oflag, true);
 }
