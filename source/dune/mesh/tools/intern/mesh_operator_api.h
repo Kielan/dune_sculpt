@@ -1,10 +1,6 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-#include "BLI_ghash.h"
+#include "lib_ghash.h"
 
 #include <stdarg.h>
 
@@ -32,7 +28,7 @@ extern "C" {
  * bmesh_opdefines.c and the BMOpDefine struct for how to define new operators.
  *
  * in general, operators are fed arrays of elements, created using either
- * #BMO_slot_buffer_from_hflag or #BMO_slot_buffer_from_flag
+ * mesh_op_slot_buffer_from_hflag or #BMO_slot_buffer_from_flag
  * (or through one of the format specifiers in #BMO_op_callf or #BMO_op_initf).
  *
  * \note multiple element types (e.g. faces and edges)
@@ -147,16 +143,16 @@ BLI_INLINE BMFlagLayer *BMO_elem_flag_from_header(BMHeader *ele_head)
   _bmo_elem_flag_set(bm, _BMO_CAST_V(e)->oflags, oflag, val)
 #define BMO_vert_flag_toggle(bm, e, oflag) _bmo_elem_flag_toggle(bm, _BMO_CAST_V(e)->oflags, oflag)
 
-#define BMO_edge_flag_test(bm, e, oflag) \
-  _bmo_elem_flag_test(bm, _BMO_CAST_E_CONST(e)->oflags, oflag)
-#define BMO_edge_flag_test_bool(bm, e, oflag) \
-  _bmo_elem_flag_test_bool(bm, _BMO_CAST_E_CONST(e)->oflags, oflag)
-#define BMO_edge_flag_enable(bm, e, oflag) _bmo_elem_flag_enable(bm, _BMO_CAST_E(e)->oflags, oflag)
-#define BMO_edge_flag_disable(bm, e, oflag) \
-  _bmo_elem_flag_disable(bm, _BMO_CAST_E(e)->oflags, oflag)
-#define BMO_edge_flag_set(bm, e, oflag, val) \
-  _bmo_elem_flag_set(bm, _BMO_CAST_E(e)->oflags, oflag, val)
-#define BMO_edge_flag_toggle(bm, e, oflag) _bmo_elem_flag_toggle(bm, _BMO_CAST_E(e)->oflags, oflag)
+#define mesh_edge_flag_test(bm, e, oflag) \
+  _mesh_elem_flag_test(bm, _BMO_CAST_E_CONST(e)->oflags, oflag)
+#define mesh_edge_flag_test_bool(bm, e, oflag) \
+  _mesh_elem_flag_test_bool(bm, _BMO_CAST_E_CONST(e)->oflags, oflag)
+#define mesh_edge_flag_enable(bm, e, oflag) _bmo_elem_flag_enable(bm, _BMO_CAST_E(e)->oflags, oflag)
+#define mesh_edge_flag_disable(bm, e, oflag) \
+  _mesh_elem_flag_disable(bm, _BMO_CAST_E(e)->oflags, oflag)
+#define mesh_edge_flag_set(bm, e, oflag, val) \
+  _mesh_elem_flag_set(bm, _BMO_CAST_E(e)->oflags, oflag, val)
+#define mesh_edge_flag_toggle(bm, e, oflag) _bmo_elem_flag_toggle(bm, _BMO_CAST_E(e)->oflags, oflag)
 
 #define BMO_face_flag_test(bm, e, oflag) \
   _bmo_elem_flag_test(bm, _BMO_CAST_F_CONST(e)->oflags, oflag)
