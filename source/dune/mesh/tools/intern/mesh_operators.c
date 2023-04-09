@@ -556,7 +556,7 @@ void mesh_flag_disable_all(Mesh *mesh,
       mesh_edge_flag_disable(mesh, ele, oflag);
     }
   }
-  if (htype & BM_FACE) {
+  if (htype & MESH_FACE) {
     MeshIter iter;
     MeshFace *ele;
     MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
@@ -858,26 +858,26 @@ void BMO_slot_buffer_from_enabled_hflag(BMesh *bm,
   bmo_slot_buffer_from_hflag(bm, op, slot_args, slot_name, htype, hflag, true);
 }
 
-void BMO_slot_buffer_from_disabled_hflag(BMesh *bm,
-                                         BMOperator *op,
-                                         BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void BMO_slot_buffer_from_disabled_hflag(Mesh *mesh,
+                                         MeshOp *op,
+                                         MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                          const char *slot_name,
                                          const char htype,
                                          const char hflag)
 {
-  bmo_slot_buffer_from_hflag(bm, op, slot_args, slot_name, htype, hflag, false);
+  mesh_slot_buffer_from_hflag(mesh, op, slot_args, slot_name, htype, hflag, false);
 }
 
-void BMO_slot_buffer_from_single(BMOperator *op, BMOpSlot *slot, BMHeader *ele)
+void mesh_slot_buffer_from_single(MeshOp *op, MeshOpSlot *slot, BMHeader *ele)
 {
-  BMO_ASSERT_SLOT_IN_OP(slot, op);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE);
-  BLI_assert(ELEM(slot->len, 0, 1));
+  MESH_ASSERT_SLOT_IN_OP(slot, op);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(slot->slot_subtype.elem & MESH_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE);
+  lib_assert(ELEM(slot->len, 0, 1));
 
-  BLI_assert(slot->slot_subtype.elem & ele->htype);
+  lib_assert(slot->slot_subtype.elem & ele->htype);
 
-  slot->data.buf = BLI_memarena_alloc(op->arena, sizeof(void *) * 4); /* XXX, why 'x4' ? */
+  slot->data.buf = lib_memarena_alloc(op->arena, sizeof(void *) * 4); /* XXX, why 'x4' ? */
   slot->len = 1;
   *slot->data.buf = ele;
 }
