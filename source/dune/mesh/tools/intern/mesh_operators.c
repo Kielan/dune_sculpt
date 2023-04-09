@@ -133,24 +133,24 @@ void BMO_op_init(BMesh *bm, BMOperator *op, const int flag, const char *opname)
     opcode = 0; /* error!, already printed, have a better way to handle this? */
   }
 
-  memset(op, 0, sizeof(BMOperator));
+  memset(op, 0, sizeof(MeshOp));
   op->type = opcode;
-  op->type_flag = bmo_opdefines[opcode]->type_flag;
+  op->type_flag = mesh_opdefines[opcode]->type_flag;
   op->flag = flag;
 
   /* initialize the operator slot types */
-  bmo_op_slots_init(bmo_opdefines[opcode]->slot_types_in, op->slots_in);
-  bmo_op_slots_init(bmo_opdefines[opcode]->slot_types_out, op->slots_out);
+  mesh_op_slots_init(mesh_opdefines[opcode]->slot_types_in, op->slots_in);
+  mesh_op_slots_init(mesh_opdefines[opcode]->slot_types_out, op->slots_out);
 
   /* callback */
-  op->exec = bmo_opdefines[opcode]->exec;
+  op->exec = mesh_opdefines[opcode]->exec;
 
   /* memarena, used for operator's slot buffers */
-  op->arena = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
-  BLI_memarena_use_calloc(op->arena);
+  op->arena = lib_memarena_new(LIB_MEMARENA_STD_BUFSIZE, __func__);
+  lib_memarena_use_calloc(op->arena);
 }
 
-void BMO_op_exec(BMesh *bm, BMOperator *op)
+void mesh_op_exec(Mesh *mesh, MeshOp *op)
 {
   /* allocate tool flags on demand */
   BM_mesh_elem_toolflags_ensure(bm);
