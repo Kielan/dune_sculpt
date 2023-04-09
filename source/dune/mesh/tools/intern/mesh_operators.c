@@ -1140,31 +1140,31 @@ void mesh_slot_buffer_flag_disable(Mesh *mesh,
       continue;
     }
 
-    mesh_elem_flag_disable(bm, (BMElemF *)data[i], oflag);
+    mesh_elem_flag_disable(mesh, (MeshElemF *)data[i], oflag);
   }
 }
 
 /**
- * \brief ALLOC/FREE FLAG LAYER
+ * ALLOC/FREE FLAG LAYER
  *
  * Used by operator stack to free/allocate
  * private flag data. This is allocated
  * using a mempool so the allocation/frees
  * should be quite fast.
  *
- * BMESH_TODO:
+ * MESH_TODO:
  * Investigate not freeing flag layers until
  * all operators have been executed. This would
  * save a lot of realloc potentially.
  */
-static void bmo_flag_layer_alloc(BMesh *bm)
+static void mesh_flag_layer_alloc(Mesh *mesh)
 {
   /* set the index values since we are looping over all data anyway,
    * may save time later on */
 
-  lib_mempool *voldpool = bm->vtoolflagpool; /* old flag pool */
-  lib_mempool *eoldpool = bm->etoolflagpool; /* old flag pool */
-  lib_mempool *foldpool = bm->ftoolflagpool; /* old flag pool */
+  lib_mempool *voldpool = mesh->vtoolflagpool; /* old flag pool */
+  lib_mempool *eoldpool = mesh->etoolflagpool; /* old flag pool */
+  lib_mempool *foldpool = mesh->ftoolflagpool; /* old flag pool */
 
   /* store memcpy size for reuse */
   const size_t old_totflags_size = (mesh->totflags * sizeof(MeshFlagLayer));
@@ -1172,24 +1172,24 @@ static void bmo_flag_layer_alloc(BMesh *bm)
   mesh->totflags++;
 
   mesh->vtoolflagpool = lib_mempool_create(
-      sizeof(BMFlagLayer) * mesh->totflags, mesh->totvert, 512, LIB_MEMPOOL_NOP);
-  bm->etoolflagpool = lib_mempool_create(
-      sizeof(BMFlagLayer) * mesh->totflags, mesh->totedge, 512, LIB_MEMPOOL_NOP);
-  bm->ftoolflagpool = lib_mempool_create(
-      sizeof(BMFlagLayer) * mesh->totflags, mesh->totface, 512, LIB_MEMPOOL_NOP);
+      sizeof(MeshFlagLayer) * mesh->totflags, mesh->totvert, 512, LIB_MEMPOOL_NOP);
+  mesh->etoolflagpool = lib_mempool_create(
+      sizeof(MeshFlagLayer) * mesh->totflags, mesh->totedge, 512, LIB_MEMPOOL_NOP);
+  mesh->ftoolflagpool = lib_mempool_create(
+      sizeof(MeshFlagLayer) * mesh->totflags, mesh->totface, 512, LIB_MEMPOOL_NOP);
 
   /* now go through and memcpy all the flags. Loops don't get a flag layer at this time. */
-  BMIter iter;
+  MeshIter iter;
   int i;
 
-  BMVert_OFlag *v_oflag;
-  BLI_mempool *newpool = bm->vtoolflagpool;
-  BM_ITER_MESH_INDEX (v_oflag, &iter, bm, BM_VERTS_OF_MESH, i) {
+  MeshVert_OFlag *v_oflag;
+  lib_mempool *newpool = bm->vtoolflagpool;
+  MESH_ITER_MESH_INDEX (v_oflag, &iter, bm, BM_VERTS_OF_MESH, i) {
     void *oldflags = v_oflag->oflags;
-    v_oflag->oflags = BLI_mempool_calloc(newpool);
+    v_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(v_oflag->oflags, oldflags, old_totflags_size);
-    BM_elem_index_set(&v_oflag->base, i); /* set_inline */
-    BM_ELEM_API_FLAG_CLEAR((BMElemF *)v_oflag);
+    mesh_elem_index_set(&v_oflag->base, i); /* set_inline */
+    MESH_ELEM_API_FLAG_CLEAR((BMElemF *)v_oflag);
   }
 
   BMEdge_OFlag *e_oflag;
