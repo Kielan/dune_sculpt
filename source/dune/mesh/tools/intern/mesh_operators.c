@@ -252,8 +252,8 @@ void _bmo_slot_copy(BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
       }
 
       if (slot_dst->len) {
-        const int slot_alloc_size = BMO_OPSLOT_TYPEINFO[slot_dst->slot_type] * slot_dst->len;
-        slot_dst->data.buf = BLI_memarena_alloc(arena_dst, slot_alloc_size);
+        const int slot_alloc_size = MESH_OPSLOT_TYPEINFO[slot_dst->slot_type] * slot_dst->len;
+        slot_dst->data.buf = lib_memarena_alloc(arena_dst, slot_alloc_size);
         if (slot_src->len == slot_dst->len) {
           memcpy(slot_dst->data.buf, slot_src->data.buf, slot_alloc_size);
         }
@@ -261,8 +261,8 @@ void _bmo_slot_copy(BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
           /* only copy compatible elements */
           const uint tot = slot_src->len;
           uint i;
-          BMElem **ele_src = (BMElem **)slot_src->data.buf;
-          BMElem **ele_dst = (BMElem **)slot_dst->data.buf;
+          MeshElem **ele_src = (MeshElem **)slot_src->data.buf;
+          MeshElem **ele_dst = (MeshElem **)slot_dst->data.buf;
           for (i = 0; i < tot; i++, ele_src++) {
             if ((*ele_src)->head.htype & dst_elem_flag) {
               *ele_dst = *ele_src;
@@ -273,12 +273,12 @@ void _bmo_slot_copy(BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
       }
     }
   }
-  else if (slot_dst->slot_type == BMO_OP_SLOT_MAPPING) {
+  else if (slot_dst->slot_type == MESH_OP_SLOT_MAPPING) {
     GHashIterator gh_iter;
     GHASH_ITER (gh_iter, slot_src->data.ghash) {
-      void *key = BLI_ghashIterator_getKey(&gh_iter);
-      void *val = BLI_ghashIterator_getValue(&gh_iter);
-      BLI_ghash_insert(slot_dst->data.ghash, key, val);
+      void *key = lib_ghashIterator_getKey(&gh_iter);
+      void *val = lib_ghashIterator_getValue(&gh_iter);
+      lib_ghash_insert(slot_dst->data.ghash, key, val);
     }
   }
   else {
@@ -287,12 +287,12 @@ void _bmo_slot_copy(BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
 }
 
 /*
- * BMESH OPSTACK SET XXX
+ * MESH OPSTACK SET XXX
  *
  * Sets the value of a slot depending on its type
  */
 
-void BMO_slot_float_set(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name, const float f)
+void mesh_slot_float_set(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name, const float f)
 {
   BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
   BLI_assert(slot->slot_type == BMO_OP_SLOT_FLT);
