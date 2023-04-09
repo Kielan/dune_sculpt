@@ -57,7 +57,7 @@
     GROW_ARRAY(mem, len_alloc); \
   }
 
-BLI_INLINE bool partial_elem_vert_ensure(BMPartialUpdate *bmpinfo,
+LIB_INLINE bool partial_elem_vert_ensure(BMPartialUpdate *bmpinfo,
                                          BLI_bitmap *verts_tag,
                                          BMVert *v)
 {
@@ -65,7 +65,7 @@ BLI_INLINE bool partial_elem_vert_ensure(BMPartialUpdate *bmpinfo,
   if (!LIB_BITMAP_TEST(verts_tag, i)) {
     LIB_BITMAP_ENABLE(verts_tag, i);
     GROW_ARRAY_AS_NEEDED(meshinfo->verts, meshinfo->verts_len_alloc, meshinfo->verts_len);
-    bmpinfo->verts[bmpinfo->verts_len++] = v;
+    meshinfo->verts[meshinfo->verts_len++] = v;
     return true;
   }
   return false;
