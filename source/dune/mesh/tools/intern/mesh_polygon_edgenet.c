@@ -1098,15 +1098,15 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
 
   /* Store connected vertices for restoring the flag */
   LinkNode *vert_stack = NULL;
-  BLI_linklist_prepend_alloca(&vert_stack, v_delimit);
-  BM_elem_flag_disable(v_delimit, VERT_NOT_IN_STACK);
+  lib_linklist_prepend_alloca(&vert_stack, v_delimit);
+  mesh_elem_flag_disable(v_delimit, VERT_NOT_IN_STACK);
 
   /* Walk the net... */
   {
-    BLI_SMALLSTACK_DECLARE(search, BMVert *);
-    BMVert *v_other = BM_edge_other_vert(e_face_init ? e_face_init : v_delimit->e, v_delimit);
+    LIB_SMALLSTACK_DECLARE(search, MeshVert *);
+    MeshVert *v_other = mesh_edge_other_vert(e_face_init ? e_face_init : v_delimit->e, v_delimit);
 
-    BLI_SMALLSTACK_PUSH(search, v_other);
+    LIB_SMALLSTACK_PUSH(search, v_other);
     if (BM_elem_flag_test(v_other, VERT_NOT_IN_STACK)) {
       BM_elem_flag_disable(v_other, VERT_NOT_IN_STACK);
       BLI_linklist_prepend_alloca(&vert_stack, v_other);
