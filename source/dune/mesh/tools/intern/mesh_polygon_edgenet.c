@@ -49,7 +49,7 @@ struct VertOrder {
 static uint mesh_edge_flagged_radial_count(MeshEdge *e)
 {
   uint count = 0;
-  BMLoop *l;
+  MeshLoop *l;
 
   if ((l = e->l)) {
     do {
@@ -157,10 +157,10 @@ static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
   }
 
   /* if we swapped above, search this list for the best edge */
-  if (!BLI_SMALLSTACK_IS_EMPTY(edges_search)) {
+  if (!LIB_SMALLSTACK_IS_EMPTY(edges_search)) {
     /* find the best edge in 'edge_list' to use for 'e_pair[1]' */
-    const MeshVert *v_prev = BM_edge_other_vert(e_pair[0], v_init);
-    const MeshVert *v_next = BM_edge_other_vert(e_pair[1], v_init);
+    const MeshVert *v_prev = mesh_edge_other_vert(e_pair[0], v_init);
+    const MeshVert *v_next = mesh_edge_other_vert(e_pair[1], v_init);
 
     float dir_prev[2], dir_next[2];
 
@@ -485,7 +485,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
 #ifdef DEBUG
   for (i = 0; i < edge_net_len; i++) {
     lib_assert(MESH_ELEM_API_FLAG_TEST(edge_net[i], EDGE_NET) == 0);
-    lib_assert(MESH_edge_in_face(edge_net[i], f) == false);
+    lib_assert(mesh_edge_in_face(edge_net[i], f) == false);
   }
   l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
@@ -835,8 +835,8 @@ static void bvhtree_test_edges_isect_2d_ray_cb(void *user_data,
 
 /**
  * Store values for:
- * - #bm_face_split_edgenet_find_connection
- * - #test_edges_isect_2d_vert
+ * - mesh_face_split_edgenet_find_connection
+ * - test_edges_isect_2d_vert
  * ... which don't change each call.
  */
 struct EdgeGroup_FindConnection_Args {
@@ -850,7 +850,7 @@ struct EdgeGroup_FindConnection_Args {
   const uint *vert_range;
 };
 
-static BMEdge *test_edges_isect_2d_vert(const struct EdgeGroup_FindConnection_Args *args,
+static MeshEdge *test_edges_isect_2d_vert(const struct EdgeGroup_FindConnection_Args *args,
                                         BMVert *v_origin,
                                         BMVert *v_other)
 {
@@ -923,7 +923,7 @@ static MeshEdge *test_edges_isect_2d_ray(const struct EdgeGroup_FindConnection_A
   user_data.v_origin = v_origin;
   user_data.vert_range = args->vert_range;
 
-  index = BLI_bvhtree_ray_cast_ex(args->bvhtree,
+  index = lib_bvhtree_ray_cast_ex(args->bvhtree,
                                   v_origin->co,
                                   dir,
                                   0.0f,
@@ -981,7 +981,7 @@ static int mesh_face_split_edgenet_find_connection(const struct EdgeGroup_FindCo
   if (e_hit) {
     MeshVert *v_other_fallback = NULL;
 
-    LIB_SMALLSTACK_DECLARE(vert_search, BMVert *);
+    LIB_SMALLSTACK_DECLARE(vert_search, MeshVert *);
 
     /* ensure we never add verts multiple times (not all that likely - but possible) */
     LIB_SMALLSTACK_DECLARE(vert_blacklist, BMVert *);
@@ -998,19 +998,19 @@ static int mesh_face_split_edgenet_find_connection(const struct EdgeGroup_FindCo
       }
 
       for (int j = 0; j < 2; j++) {
-        BMVert *v_iter = v_pair[j];
-        if (BM_elem_flag_test(v_iter, VERT_IS_VALID)) {
+        MeshVert *v_iter = v_pair[j];
+        if (mesh_elem_flag_test(v_iter, VERT_IS_VALID)) {
           if (direction_sign ? (v_iter->co[SORT_AXIS] > v_origin->co[SORT_AXIS]) :
                                (v_iter->co[SORT_AXIS] < v_origin->co[SORT_AXIS])) {
-            BLI_SMALLSTACK_PUSH(vert_search, v_iter);
-            BLI_SMALLSTACK_PUSH(vert_blacklist, v_iter);
-            BM_elem_flag_disable(v_iter, VERT_IS_VALID);
+            LIB_SMALLSTACK_PUSH(vert_search, v_iter);
+            LIB_SMALLSTACK_PUSH(vert_blacklist, v_iter);
+            mesh_elem_flag_disable(v_iter, VERT_IS_VALID);
           }
         }
       }
       v_other_fallback = v_other;
 
-    } while ((v_other = BLI_SMALLSTACK_POP(vert_search)) &&
+    } while ((v_other = LIB_SMALLSTACK_POP(vert_search)) &&
              (e_hit = test_edges_isect_2d_vert(args, v_origin, v_other)));
 
     if (v_other == NULL) {
@@ -1019,14 +1019,14 @@ static int mesh_face_split_edgenet_find_connection(const struct EdgeGroup_FindCo
     }
 
     /* reset the blacklist flag, for future use */
-    BMVert *v;
-    while ((v = BLI_SMALLSTACK_POP(vert_blacklist))) {
-      BM_elem_flag_enable(v, VERT_IS_VALID);
+    MeshVert *v;
+    while ((v = LIB_SMALLSTACK_POP(vert_blacklist))) {
+      mesh_elem_flag_enable(v, VERT_IS_VALID);
     }
   }
 
   /* if we reach this line, v_other is either the best vertex or its NULL */
-  return v_other ? BM_elem_index_get(v_other) : -1;
+  return v_other ? mesh_elem_index_get(v_other) : -1;
 }
 
 /**
@@ -1037,22 +1037,22 @@ static int mesh_face_split_edgenet_find_connection(const struct EdgeGroup_FindCo
 
 /**
  * Used to identify edges that get split off when making island from partial connection.
- * fptr should be a BMFace*, but is a void* for general interface to BM_vert_separate_tested_edges
+ * fptr should be a MeshFace*, but is a void* for general interface to mesh_vert_separate_tested_edges
  */
 static bool test_tagged_and_notface(BMEdge *e, void *fptr)
 {
-  BMFace *f = (BMFace *)fptr;
-  return BM_elem_flag_test(e, BM_ELEM_INTERNAL_TAG) && !BM_edge_in_face(e, f);
+  MeshFace *f = (MeshFace *)fptr;
+  return mesh_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG) && !mesh_edge_in_face(e, f);
 }
 
 /**
  * Split vertices which are part of a partial connection
  * (only a single vertex connecting an island).
  *
- * \note All edges and vertices must have their #BM_ELEM_INTERNAL_TAG flag enabled.
+ * note All edges and vertices must have their MESH_ELEM_INTERNAL_TAG flag enabled.
  * This function leaves all the flags set as well.
  */
-static BMVert *bm_face_split_edgenet_partial_connect(BMesh *bm, BMVert *v_delimit, BMFace *f)
+static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v_delimit, MeshFace *f)
 {
   /* -------------------------------------------------------------------- */
   /* Initial check that we may be a delimiting vert (keep this fast) */
@@ -1062,25 +1062,25 @@ static BMVert *bm_face_split_edgenet_partial_connect(BMesh *bm, BMVert *v_delimi
   LinkNode *e_delimit_list = NULL;
   uint e_delimit_list_len = 0;
 
-#  define EDGE_NOT_IN_STACK BM_ELEM_INTERNAL_TAG
-#  define VERT_NOT_IN_STACK BM_ELEM_INTERNAL_TAG
+#  define EDGE_NOT_IN_STACK MESH_ELEM_INTERNAL_TAG
+#  define VERT_NOT_IN_STACK MESH_ELEM_INTERNAL_TAG
 
 #  define FOREACH_VERT_EDGE(v_, e_, body_) \
     { \
-      BMEdge *e_ = v_->e; \
+      MeshEdge *e_ = v_->e; \
       do { \
         body_ \
-      } while ((e_ = BM_DISK_EDGE_NEXT(e_, v_)) != v_->e); \
+      } while ((e_ = MESH_DISK_EDGE_NEXT(e_, v_)) != v_->e); \
     } \
     ((void)0)
 
   /* start with face edges, since we need to split away wire-only edges */
-  BMEdge *e_face_init = NULL;
+  MeshEdge *e_face_init = NULL;
 
   FOREACH_VERT_EDGE(v_delimit, e_iter, {
-    if (BM_elem_flag_test(e_iter, EDGE_NOT_IN_STACK)) {
-      BLI_assert(BM_elem_flag_test(BM_edge_other_vert(e_iter, v_delimit), VERT_NOT_IN_STACK));
-      BLI_linklist_prepend_alloca(&e_delimit_list, e_iter);
+    if (mesh_elem_flag_test(e_iter, EDGE_NOT_IN_STACK)) {
+      lib_assert(mesh_elem_flag_test(mesh_edge_other_vert(e_iter, v_delimit), VERT_NOT_IN_STACK));
+      lib_linklist_prepend_alloca(&e_delimit_list, e_iter);
       e_delimit_list_len++;
       if (e_iter->l != NULL && BM_edge_in_face(e_iter, f)) {
         e_face_init = e_iter;
