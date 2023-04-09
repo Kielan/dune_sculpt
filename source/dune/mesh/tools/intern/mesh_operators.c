@@ -990,18 +990,18 @@ static void mesh_slot_buffer_from_flag(Mesh *bm,
       }
     }
 
-    if (htype & BM_EDGE) {
-      BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
-        if (BMO_edge_flag_test_bool(bm, (BMEdge *)ele, oflag) == test_for_enabled) {
+    if (htype & MESH_EDGE) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+        if (mesh_edge_flag_test_bool(mesh, (MeshEdge *)ele, oflag) == test_for_enabled) {
           ele_array[i] = ele;
           i++;
         }
       }
     }
 
-    if (htype & BM_FACE) {
-      BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
-        if (BMO_face_flag_test_bool(bm, (BMFace *)ele, oflag) == test_for_enabled) {
+    if (htype & MESH_FACE) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+        if (mesh_face_flag_test_bool(mesh, (MeshFace *)ele, oflag) == test_for_enabled) {
           ele_array[i] = ele;
           i++;
         }
@@ -1013,14 +1013,14 @@ static void mesh_slot_buffer_from_flag(Mesh *bm,
   }
 }
 
-void BMO_slot_buffer_from_enabled_flag(BMesh *bm,
-                                       BMOperator *op,
-                                       BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                                       const char *slot_name,
-                                       const char htype,
-                                       const short oflag)
+void mesh_slot_buffer_from_enabled_flag(Mesh *mesh,
+                                        MeshOp *op,
+                                        MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                                        const char *slot_name,
+                                        const char htype,
+                                        const short oflag)
 {
-  bmo_slot_buffer_from_flag(bm, op, slot_args, slot_name, htype, oflag, true);
+  mesh_slot_buffer_from_flag(mesh, op, slot_args, slot_name, htype, oflag, true);
 }
 
 void BMO_slot_buffer_from_disabled_flag(BMesh *bm,
