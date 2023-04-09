@@ -194,25 +194,25 @@ bool mesh_slot_exists(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *ident
 
 MeshOpSlot *mesh_slot_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *identifier)
 {
-  int slot_code = bmo_name_to_slotcode_check(slot_args, identifier);
+  int slot_code = mesh_name_to_slotcode_check(slot_args, identifier);
 
   if (UNLIKELY(slot_code < 0)) {
-    // return &BMOpEmptySlot;
-    BLI_assert(0);
+    // return &MeshOpEmptySlot;
+    lib_assert(0);
     return NULL; /* better crash */
   }
 
   return &slot_args[slot_code];
 }
 
-void _bmo_slot_copy(BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
+void mesh_slot_copy(MeshOpSlot slot_args_src[MESH_OP_MAX_SLOTS],
                     const char *slot_name_src,
-                    BMOpSlot slot_args_dst[BMO_OP_MAX_SLOTS],
+                    MeshOpSlot slot_args_dst[MESH_OP_MAX_SLOTS],
                     const char *slot_name_dst,
                     struct MemArena *arena_dst)
 {
-  BMOpSlot *slot_src = BMO_slot_get(slot_args_src, slot_name_src);
-  BMOpSlot *slot_dst = BMO_slot_get(slot_args_dst, slot_name_dst);
+  MeshOpSlot *slot_src = mesh_slot_get(slot_args_src, slot_name_src);
+  MeshOpSlot *slot_dst = mesh_slot_get(slot_args_dst, slot_name_dst);
 
   if (slot_src == slot_dst) {
     return;
