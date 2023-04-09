@@ -186,29 +186,29 @@ void mesh_face_calc_point_in_face(const MeshFace *f, float r_co[3])
   mid_v3_v3v3v3(r_co, l_tri[0]->v->co, l_tri[1]->v->co, l_tri[2]->v->co);
 }
 
-float BM_face_calc_area(const BMFace *f)
+float mesh_face_calc_area(const MeshFace *f)
 {
   /* inline 'area_poly_v3' logic, avoid creating a temp array */
-  const BMLoop *l_iter, *l_first;
+  const MeshLoop *l_iter, *l_first;
   float n[3];
 
   zero_v3(n);
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
     add_newell_cross_v3_v3v3(n, l_iter->v->co, l_iter->next->v->co);
   } while ((l_iter = l_iter->next) != l_first);
   return len_v3(n) * 0.5f;
 }
 
-float BM_face_calc_area_with_mat3(const BMFace *f, const float mat3[3][3])
+float mesh_face_calc_area_with_mat3(const MeshFace *f, const float mat3[3][3])
 {
   /* inline 'area_poly_v3' logic, avoid creating a temp array */
-  const BMLoop *l_iter, *l_first;
+  const MeshLoop *l_iter, *l_first;
   float co[3];
   float n[3];
 
   zero_v3(n);
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   mul_v3_m3v3(co, mat3, l_iter->v->co);
   do {
     float co_next[3];
@@ -219,28 +219,28 @@ float BM_face_calc_area_with_mat3(const BMFace *f, const float mat3[3][3])
   return len_v3(n) * 0.5f;
 }
 
-float BM_face_calc_area_uv(const BMFace *f, int cd_loop_uv_offset)
+float mesh_face_calc_area_uv(const MeshFace *f, int cd_loop_uv_offset)
 {
   /* inline 'area_poly_v2' logic, avoid creating a temp array */
-  const BMLoop *l_iter, *l_first;
+  const MeshLoop *l_iter, *l_first;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   /* The Trapezium Area Rule */
   float cross = 0.0f;
   do {
-    const MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
-    const MLoopUV *luv_next = BM_ELEM_CD_GET_VOID_P(l_iter->next, cd_loop_uv_offset);
+    const MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
+    const MLoopUV *luv_next = MESH_ELEM_CD_GET_VOID_P(l_iter->next, cd_loop_uv_offset);
     cross += (luv_next->uv[0] - luv->uv[0]) * (luv_next->uv[1] + luv->uv[1]);
   } while ((l_iter = l_iter->next) != l_first);
   return fabsf(cross * 0.5f);
 }
 
-float BM_face_calc_perimeter(const BMFace *f)
+float mesh_face_calc_perimeter(const MeshFace *f)
 {
-  const BMLoop *l_iter, *l_first;
+  const MeshLoop *l_iter, *l_first;
   float perimeter = 0.0f;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
     perimeter += len_v3v3(l_iter->v->co, l_iter->next->v->co);
   } while ((l_iter = l_iter->next) != l_first);
@@ -248,13 +248,13 @@ float BM_face_calc_perimeter(const BMFace *f)
   return perimeter;
 }
 
-float BM_face_calc_perimeter_with_mat3(const BMFace *f, const float mat3[3][3])
+float mesh_face_calc_perimeter_with_mat3(const MeshFace *f, const float mat3[3][3])
 {
-  const BMLoop *l_iter, *l_first;
+  const MeshLoop *l_iter, *l_first;
   float co[3];
   float perimeter = 0.0f;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   mul_v3_m3v3(co, mat3, l_iter->v->co);
   do {
     float co_next[3];
@@ -269,9 +269,9 @@ float BM_face_calc_perimeter_with_mat3(const BMFace *f, const float mat3[3][3])
 /**
  * Utility function to calculate the edge which is most different from the other two.
  *
- * \return The first edge index, where the second vertex is `(index + 1) % 3`.
+ * return The first edge index, where the second vertex is `(index + 1) % 3`.
  */
-static int bm_vert_tri_find_unique_edge(BMVert *verts[3])
+static int mesh_vert_tri_find_unique_edge(MeshVert *verts[3])
 {
   /* find the most 'unique' loop, (greatest difference to others) */
 #if 1
@@ -308,7 +308,7 @@ static int bm_vert_tri_find_unique_edge(BMVert *verts[3])
   return order[0];
 }
 
-void BM_vert_tri_calc_tangent_edge(BMVert *verts[3], float r_tangent[3])
+void mesh_vert_tri_calc_tangent_edge(MeshVert *verts[3], float r_tangent[3])
 {
   const int index = bm_vert_tri_find_unique_edge(verts);
 
@@ -317,9 +317,9 @@ void BM_vert_tri_calc_tangent_edge(BMVert *verts[3], float r_tangent[3])
   normalize_v3(r_tangent);
 }
 
-void BM_vert_tri_calc_tangent_edge_pair(BMVert *verts[3], float r_tangent[3])
+void mesh_vert_tri_calc_tangent_edge_pair(MeshVert *verts[3], float r_tangent[3])
 {
-  const int index = bm_vert_tri_find_unique_edge(verts);
+  const int index = mesh_vert_tri_find_unique_edge(verts);
 
   const float *v_a = verts[index]->co;
   const float *v_b = verts[(index + 1) % 3]->co;
