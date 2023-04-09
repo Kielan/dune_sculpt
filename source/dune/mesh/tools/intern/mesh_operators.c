@@ -105,13 +105,13 @@ static void bmo_op_slots_init(const BMOSlotType *slot_types, BMOpSlot *slot_args
 
 static void bmo_op_slots_free(const BMOSlotType *slot_types, BMOpSlot *slot_args)
 {
-  BMOpSlot *slot;
+  MeshOpSlot *slot;
   uint i;
   for (i = 0; slot_types[i].type; i++) {
     slot = &slot_args[i];
     switch (slot->slot_type) {
-      case BMO_OP_SLOT_MAPPING:
-        BLI_ghash_free(slot->data.ghash, NULL, NULL);
+      case MESH_OP_SLOT_MAPPING:
+        lib_ghash_free(slot->data.ghash, NULL, NULL);
         break;
       default:
         break;
@@ -119,12 +119,12 @@ static void bmo_op_slots_free(const BMOSlotType *slot_types, BMOpSlot *slot_args
   }
 }
 
-void BMO_op_init(BMesh *bm, BMOperator *op, const int flag, const char *opname)
+void mesh_op_init(Mesh *mesh, MeshOp *op, const int flag, const char *opname)
 {
-  int opcode = BMO_opcode_from_opname(opname);
+  int opcode = mesh_opcode_from_opname(opname);
 
 #ifdef DEBUG
-  BM_ELEM_INDEX_VALIDATE(bm, "pre bmo", opname);
+  MESH_ELEM_INDEX_VALIDATE(mesh, "pre bmo", opname);
 #else
   (void)bm;
 #endif
@@ -223,14 +223,14 @@ void _bmo_slot_copy(BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
     return;
   }
 
-  if (slot_dst->slot_type == BMO_OP_SLOT_ELEMENT_BUF) {
+  if (slot_dst->slot_type == MESH_OP_SLOT_ELEMENT_BUF) {
     /* do buffer copy */
     slot_dst->data.buf = NULL;
     slot_dst->len = slot_src->len;
     if (slot_dst->len) {
       /* check dest has all flags enabled that the source has */
-      const eBMOpSlotSubType_Elem src_elem_flag = (slot_src->slot_subtype.elem & BM_ALL_NOLOOP);
-      const eBMOpSlotSubType_Elem dst_elem_flag = (slot_dst->slot_subtype.elem & BM_ALL_NOLOOP);
+      const eMeshOpSlotSubTypeElem src_elem_flag = (slot_src->slot_subtype.elem & BM_ALL_NOLOOP);
+      const eMeshOpSlotSubTypeElem dst_elem_flag = (slot_dst->slot_subtype.elem & BM_ALL_NOLOOP);
 
       if ((src_elem_flag | dst_elem_flag) == dst_elem_flag) {
         /* pass */
@@ -240,7 +240,7 @@ void _bmo_slot_copy(BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
         const uint tot = slot_src->len;
         uint i;
         uint out = 0;
-        BMElem **ele_src = (BMElem **)slot_src->data.buf;
+        MeshElem **ele_src = (MeshElem **)slot_src->data.buf;
         for (i = 0; i < tot; i++, ele_src++) {
           if ((*ele_src)->head.htype & dst_elem_flag) {
             out++;
