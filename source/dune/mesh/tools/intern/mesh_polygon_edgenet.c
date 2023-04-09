@@ -1,31 +1,29 @@
-/** \file
- * \ingroup bmesh
- *
+/**
  * This file contains functions for splitting faces into isolated regions,
  * defined by connected edges.
  */
 // #define DEBUG_PRINT
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_array.h"
-#include "BLI_kdopbvh.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_math.h"
-#include "BLI_memarena.h"
-#include "BLI_sort_utils.h"
-#include "BLI_utildefines_stack.h"
+#include "lib_alloca.h"
+#include "lib_array.h"
+#include "lib_kdopbvh.h"
+#include "lib_linklist_stack.h"
+#include "lib_math.h"
+#include "lib_memarena.h"
+#include "lib_sort_utils.h"
+#include "lib_utildefines_stack.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Face Split Edge-Net
+/** Face Split Edge-Net
  *
- * #BM_face_split_edgenet and helper functions.
+ * mesh_face_split_edgenet and helper functions.
  *
  * \note Don't use #BM_edge_is_wire or #BM_edge_is_boundary
  * since we need to take flagged faces into account.
