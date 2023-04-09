@@ -1233,17 +1233,17 @@ bool mesh_face_split_edgenet_connect_islands(Mesh *bm,
     MeshLoop *l_iter, *l_first;
     l_iter = l_first = BM_FACE_FIRST_LOOP(f);
     do {
-      BLI_assert(!BM_elem_flag_test(l_iter->v, VERT_NOT_IN_STACK));
-      BLI_assert(!BM_elem_flag_test(l_iter->e, EDGE_NOT_IN_STACK));
+      lib_assert(!mesh_elem_flag_test(l_iter->v, VERT_NOT_IN_STACK));
+      lib_assert(!mesh_elem_flag_test(l_iter->e, EDGE_NOT_IN_STACK));
       edge_arr[i++] = l_iter->e;
     } while ((l_iter = l_iter->next) != l_first);
-    BLI_assert(i == edge_arr_len);
+    lib_assert(i == edge_arr_len);
   }
 
   for (uint i = 0; i < edge_arr_len; i++) {
-    BM_elem_flag_enable(edge_arr[i], EDGE_NOT_IN_STACK);
-    BM_elem_flag_enable(edge_arr[i]->v1, VERT_NOT_IN_STACK);
-    BM_elem_flag_enable(edge_arr[i]->v2, VERT_NOT_IN_STACK);
+    mesh_elem_flag_enable(edge_arr[i], EDGE_NOT_IN_STACK);
+    mesh_elem_flag_enable(edge_arr[i]->v1, VERT_NOT_IN_STACK);
+    mesh_elem_flag_enable(edge_arr[i]->v2, VERT_NOT_IN_STACK);
   }
 
 #ifdef USE_PARTIAL_CONNECT
