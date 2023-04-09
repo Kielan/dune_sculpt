@@ -1914,8 +1914,8 @@ bool mesh_vert_is_all_edge_flag_test(const MeshVert *v, const char hflag, const 
     MeshIter eiter;
 
     MESH_ITER_ELEM (e_other, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
-      if (!respect_hide || !BM_elem_flag_test(e_other, MESH_ELEM_HIDDEN)) {
-        if (!BM_elem_flag_test(e_other, hflag)) {
+      if (!respect_hide || !mesh_elem_flag_test(e_other, MESH_ELEM_HIDDEN)) {
+        if (!mesh_elem_flag_test(e_other, hflag)) {
           return false;
         }
       }
@@ -1925,15 +1925,15 @@ bool mesh_vert_is_all_edge_flag_test(const MeshVert *v, const char hflag, const 
   return true;
 }
 
-bool BM_vert_is_all_face_flag_test(const BMVert *v, const char hflag, const bool respect_hide)
+bool mesh_vert_is_all_face_flag_test(const MeshVert *v, const char hflag, const bool respect_hide)
 {
   if (v->e) {
-    BMEdge *f_other;
-    BMIter fiter;
+    MeshEdge *f_other;
+    MeshIter fiter;
 
-    BM_ITER_ELEM (f_other, &fiter, (BMVert *)v, BM_FACES_OF_VERT) {
-      if (!respect_hide || !BM_elem_flag_test(f_other, BM_ELEM_HIDDEN)) {
-        if (!BM_elem_flag_test(f_other, hflag)) {
+    MESH_ITER_ELEM (f_other, &fiter, (MeshVert *)v, MESH_FACES_OF_VERT) {
+      if (!respect_hide || !mesh_elem_flag_test(f_other, MESH_ELEM_HIDDEN)) {
+        if (!mesh_elem_flag_test(f_other, hflag)) {
           return false;
         }
       }
@@ -1943,15 +1943,15 @@ bool BM_vert_is_all_face_flag_test(const BMVert *v, const char hflag, const bool
   return true;
 }
 
-bool BM_edge_is_all_face_flag_test(const BMEdge *e, const char hflag, const bool respect_hide)
+bool mesh_edge_is_all_face_flag_test(const MeshEdge *e, const char hflag, const bool respect_hide)
 {
   if (e->l) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
 
     l_iter = l_first = e->l;
     do {
-      if (!respect_hide || !BM_elem_flag_test(l_iter->f, BM_ELEM_HIDDEN)) {
-        if (!BM_elem_flag_test(l_iter->f, hflag)) {
+      if (!respect_hide || !mesh_elem_flag_test(l_iter->f, MESH_ELEM_HIDDEN)) {
+        if (!mesh_elem_flag_test(l_iter->f, hflag)) {
           return false;
         }
       }
@@ -1961,14 +1961,14 @@ bool BM_edge_is_all_face_flag_test(const BMEdge *e, const char hflag, const bool
   return true;
 }
 
-bool BM_edge_is_any_face_flag_test(const BMEdge *e, const char hflag)
+bool mesh_edge_is_any_face_flag_test(const MeshEdge *e, const char hflag)
 {
   if (e->l) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
 
     l_iter = l_first = e->l;
     do {
-      if (BM_elem_flag_test(l_iter->f, hflag)) {
+      if (mesh_elem_flag_test(l_iter->f, hflag)) {
         return true;
       }
     } while ((l_iter = l_iter->radial_next) != l_first);
@@ -1977,43 +1977,43 @@ bool BM_edge_is_any_face_flag_test(const BMEdge *e, const char hflag)
   return false;
 }
 
-bool BM_edge_is_any_vert_flag_test(const BMEdge *e, const char hflag)
+bool mesh_edge_is_any_vert_flag_test(const MeshEdge *e, const char hflag)
 {
-  return (BM_elem_flag_test(e->v1, hflag) || BM_elem_flag_test(e->v2, hflag));
+  return (mesh_elem_flag_test(e->v1, hflag) || mesh_elem_flag_test(e->v2, hflag));
 }
 
-bool BM_face_is_any_vert_flag_test(const BMFace *f, const char hflag)
+bool mesh_face_is_any_vert_flag_test(const MeshFace *f, const char hflag)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    if (BM_elem_flag_test(l_iter->v, hflag)) {
+    if (mesh_elem_flag_test(l_iter->v, hflag)) {
       return true;
     }
   } while ((l_iter = l_iter->next) != l_first);
   return false;
 }
 
-bool BM_face_is_any_edge_flag_test(const BMFace *f, const char hflag)
+bool mesh_face_is_any_edge_flag_test(const MeshFace *f, const char hflag)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    if (BM_elem_flag_test(l_iter->e, hflag)) {
+    if (mesh_elem_flag_test(l_iter->e, hflag)) {
       return true;
     }
   } while ((l_iter = l_iter->next) != l_first);
   return false;
 }
 
-bool BM_edge_is_any_face_len_test(const BMEdge *e, const int len)
+bool mesh_edge_is_any_face_len_test(const MeshEdge *e, const int len)
 {
   if (e->l) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
 
     l_iter = l_first = e->l;
     do {
@@ -2026,12 +2026,12 @@ bool BM_edge_is_any_face_len_test(const BMEdge *e, const int len)
   return false;
 }
 
-bool BM_face_is_normal_valid(const BMFace *f)
+bool mesh_face_is_normal_valid(const MeshFace *f)
 {
   const float eps = 0.0001f;
   float no[3];
 
-  BM_face_calc_normal(f, no);
+  mesh_face_calc_normal(f, no);
   return len_squared_v3v3(no, f->no) < (eps * eps);
 }
 
@@ -2040,14 +2040,14 @@ bool BM_face_is_normal_valid(const BMFace *f)
  *
  * Use double precision since this is prone to float precision error, see T73295.
  */
-static double bm_mesh_calc_volume_face(const BMFace *f)
+static double mesh_mesh_calc_volume_face(const BMFace *f)
 {
   const int tottri = f->len - 2;
-  BMLoop **loops = BLI_array_alloca(loops, f->len);
-  uint(*index)[3] = BLI_array_alloca(index, tottri);
+  MeshLoop **loops = lib_array_alloca(loops, f->len);
+  uint(*index)[3] = lib_array_alloca(index, tottri);
   double vol = 0.0;
 
-  BM_face_calc_tessellation(f, false, loops, index);
+  mesh_face_calc_tessellation(f, false, loops, index);
 
   for (int j = 0; j < tottri; j++) {
     const float *p1 = loops[index[j][0]]->v->co;
@@ -2069,7 +2069,7 @@ static double bm_mesh_calc_volume_face(const BMFace *f)
   }
   return (1.0 / 6.0) * vol;
 }
-double BM_mesh_calc_volume(BMesh *bm, bool is_signed)
+double mesh_calc_volume(Mesh *mesh, bool is_signed)
 {
   /* warning, calls own tessellation function, may be slow */
   double vol = 0.0;
