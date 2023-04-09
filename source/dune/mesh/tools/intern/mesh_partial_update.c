@@ -219,19 +219,19 @@ MeshPartialUpdate *mesh_partial_create_from_verts_group_single(
       faces_tag = LIB_BITMAP_NEW((size_t)bm->totface, __func__);
     }
 
-    BMFace *f;
-    BMIter iter;
+    MeshFace *f;
+    MeshIter iter;
     int i;
-    BM_ITER_MESH_INDEX (f, &iter, bm, BM_FACES_OF_MESH, i) {
+    MESH_ITER_MESH_INDEX (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
       enum { SIDE_A = (1 << 0), SIDE_B = (1 << 1) } side_flag = 0;
-      BM_elem_index_set(f, i); /* set_inline */
-      BMLoop *l_iter, *l_first;
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+      mesh_elem_index_set(f, i); /* set_inline */
+      MeshLoop *l_iter, *l_first;
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
-        const int j = BM_elem_index_get(l_iter->v);
-        side_flag |= BLI_BITMAP_TEST(verts_mask, j) ? SIDE_A : SIDE_B;
+        const int j = mesh_elem_index_get(l_iter->v);
+        side_flag |= LIB_BITMAP_TEST(verts_mask, j) ? SIDE_A : SIDE_B;
         if (UNLIKELY(side_flag == (SIDE_A | SIDE_B))) {
-          partial_elem_face_ensure(bmpinfo, faces_tag, f);
+          partial_elem_face_ensure(meshinfo, faces_tag, f);
           face_tag_loop_len += f->len;
           break;
         }
@@ -244,13 +244,13 @@ MeshPartialUpdate *mesh_partial_create_from_verts_group_single(
      * Any changes to the faces normal needs to update all surrounding vertices. */
 
     /* Over allocate using the total number of face loops. */
-    const int default_verts_len_alloc = min_ii(bm->totvert, max_ii(1, face_tag_loop_len));
+    const int default_verts_len_alloc = min_ii(mesh->totvert, max_ii(1, face_tag_loop_len));
 
     /* Vertices. */
-    if (bmpinfo->verts == NULL) {
-      bmpinfo->verts_len_alloc = default_verts_len_alloc;
-      bmpinfo->verts = MEM_mallocN((sizeof(BMVert *) * bmpinfo->verts_len_alloc), __func__);
-      verts_tag = BLI_BITMAP_NEW((size_t)bm->totvert, __func__);
+    if (meshinfo->verts == NULL) {
+      meshinfo->verts_len_alloc = default_verts_len_alloc;
+      meshinfo->verts = mem_mallocn((sizeof(MeshVert *) * meshinfo->verts_len_alloc), __func__);
+      verts_tag = LIB_BITMAP_NEW((size_t)bm->totvert, __func__);
     }
 
     for (int i = 0; i < bmpinfo->faces_len; i++) {
@@ -370,7 +370,7 @@ BMPartialUpdate *BM_mesh_partial_create_from_verts_group_multi(
       int i;
       MESH_ITER_MESH_INDEX (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
         if ((verts_group[i] != 0) && (mesh_vert_find_first_loop(v) == NULL)) {
-          partial_elem_vert_ensure(bmpinfo, verts_tag, v);
+          partial_elem_vert_ensure(meshinfo, verts_tag, v);
         }
       }
     }
