@@ -1,18 +1,12 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
+#include "lib_compiler_attrs.h"
 
-#include "BLI_compiler_attrs.h"
-
-/**
- * Parameters used to determine which kinds of data needs to be generated.
- */
-typedef struct BMPartialUpdate_Params {
+/** Parameters used to determine which kinds of data needs to be generated. **/
+typedef struct MeshPartialUpdateParams {
   bool do_normals;
   bool do_tessellate;
-} BMPartialUpdate_Params;
+} MeshPartialUpdateParams;
 
 /**
  * Cached data to speed up partial updates.
@@ -26,24 +20,24 @@ typedef struct BMPartialUpdate_Params {
  * - Partial normal updates use face & loop indices,
  *   setting them to dirty values between updates will slow down normal recalculation.
  */
-typedef struct BMPartialUpdate {
-  BMVert **verts;
-  BMFace **faces;
+typedef struct MeshPartialUpdate {
+  MeshVert **verts;
+  MeshFace **faces;
   int verts_len, verts_len_alloc;
   int faces_len, faces_len_alloc;
 
   /** Store the parameters used in creation so invalid use can be asserted. */
-  BMPartialUpdate_Params params;
-} BMPartialUpdate;
+  MeshPartialUpdateParams params;
+} MeshPartialUpdate;
 
 /**
- * All Tagged & Connected, see: #BM_mesh_partial_create_from_verts
+ * All Tagged & Connected, see: mesh_partial_create_from_verts
  * Operate on everything that's tagged as well as connected geometry.
  */
-BMPartialUpdate *BM_mesh_partial_create_from_verts(BMesh *bm,
-                                                   const BMPartialUpdate_Params *params,
-                                                   const unsigned int *verts_mask,
-                                                   int verts_mask_count)
+MeshPartialUpdate *mesh_partial_create_from_verts(Mesh *mesh,
+                                                  const MeshPartialUpdate_Params *params,
+                                                  const unsigned int *verts_mask,
+                                                  int verts_mask_count)
     ATTR_NONNULL(1, 2, 3) ATTR_WARN_UNUSED_RESULT;
 
 /**
