@@ -782,7 +782,7 @@ void mesh_slot_buffer_from_all(Mesh *mesh,
  * Copies elements of a certain type, which have a certain header flag
  * enabled/disabled into a slot for an operator.
  */
-static void bmo_slot_buffer_from_hflag(Mesh *mesh,
+static void mesh_op_slot_buffer_from_hflag(Mesh *mesh,
                                        MeshOp *op,
                                        MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                        const char *slot_name,
@@ -882,10 +882,10 @@ void mesh_slot_buffer_from_single(MeshOp *op, MeshOpSlot *slot, BMHeader *ele)
   *slot->data.buf = ele;
 }
 
-void BMO_slot_buffer_from_array(MeshOp *op,
-                                MeshOpSlot *slot,
-                                MeshHeader **ele_buffer,
-                                int ele_buffer_len)
+void mesh_op_slot_buffer_from_array(MeshOp *op,
+                                    MeshOpSlot *slot,
+                                    MeshHeader **ele_buffer,
+                                    int ele_buffer_len)
 {
   MESH_ASSERT_SLOT_IN_OP(slot, op);
   lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
@@ -948,7 +948,7 @@ void mesh_slot_buffer_append(MeshOpSlot slot_args_dst[MESH_OP_MAX_SLOTS],
  */
 static void mesh_slot_buffer_from_flag(Mesh *mesh,
                                        MeshOp *op,
-                                       MeshOpSlot slot_args[BMO_OP_MAX_SLOTS],
+                                       MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                        const char *slot_name,
                                        const char htype,
                                        const short oflag,
@@ -960,8 +960,8 @@ static void mesh_slot_buffer_from_flag(Mesh *mesh,
   lib_assert(op->slots_in == slot_args || op->slots_out == slot_args);
 
   lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
-  lib_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
-  lib_assert((slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
+  lib_assert(((slot->slot_subtype.elem & MESH_ALL_NOLOOP) & htype) == htype);
+  lib_assert((slot->slot_subtype.elem & MESH_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
 
   if (test_for_enabled) {
     totelement = mesh_op_mesh_enabled_flag_count(bm, htype, oflag);
@@ -1106,34 +1106,34 @@ void mesh_op_slot_buffer_flag_enable(Mesh *mesh,
                                  const char htype,
                                  const short oflag)
 {
-  BMOpSlot *slot = mesh_slot_get(slot_args, slot_name);
-  BMHeader **data = slot->data.p;
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  MeshHeader **data = slot->data.p;
   int i;
 
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
 
   for (i = 0; i < slot->len; i++) {
     if (!(htype & data[i]->htype)) {
       continue;
     }
 
-    BMO_elem_flag_enable(bm, (BMElemF *)data[i], oflag);
+    mesh_op_elem_flag_enable(bm, (BMElemF *)data[i], oflag);
   }
 }
 
-void BMO_slot_buffer_flag_disable(BMesh *bm,
-                                  BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void mesh_slot_buffer_flag_disable(BMesh *bm,
+                                  BMOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                   const char *slot_name,
                                   const char htype,
                                   const short oflag)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BMHeader **data = (BMHeader **)slot->data.buf;
+  MeshOpSlot *slot = mesh_op_slot_get(slot_args, slot_name);
+  MeshHeader **data = (MeshHeader **)slot->data.buf;
   int i;
 
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
+  lib_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
 
   for (i = 0; i < slot->len; i++) {
     if (!(htype & data[i]->htype)) {
