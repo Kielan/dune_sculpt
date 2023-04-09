@@ -2129,46 +2129,46 @@ int mesh_calc_face_groups(Mesh *mesh,
   MESH_ITER_MESH_INDEX (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
     if ((hflag_test == 0) || mesh_elem_flag_test(f, hflag_test)) {
       tot_faces++;
-      BM_elem_flag_disable(f, BM_ELEM_TAG);
+      mesh_elem_flag_disable(f, MESH_ELEM_TAG);
     }
     else {
       /* never walk over tagged */
-      BM_elem_flag_enable(f, BM_ELEM_TAG);
+      mesh_elem_flag_enable(f, MESH_ELEM_TAG);
     }
 
-    BM_elem_index_set(f, i); /* set_inline */
+    mesh_elem_index_set(f, i); /* set_inline */
   }
-  bm->elem_index_dirty &= ~BM_FACE;
+  mesh->elem_index_dirty &= ~MESH_FACE;
 
   /* detect groups */
-  stack = MEM_mallocN(sizeof(*stack) * tot_faces, __func__);
+  stack = mem_mallocn(sizeof(*stack) * tot_faces, __func__);
 
-  f_next = BM_iter_new(&iter, bm, BM_FACES_OF_MESH, NULL);
+  f_next = mesh_iter_new(&iter, mesh, MESH_FACES_OF_MESH, NULL);
 
   while (tot_touch != tot_faces) {
     int *group_item;
     bool ok = false;
 
-    BLI_assert(tot_touch < tot_faces);
+    lib_assert(tot_touch < tot_faces);
 
     STACK_INIT(stack, tot_faces);
 
-    for (; f_next; f_next = BM_iter_step(&iter)) {
-      if (mesh_elem_flag_test(f_next, BM_ELEM_TAG) == false) {
-        mesh_elem_flag_enable(f_next, BM_ELEM_TAG);
+    for (; f_next; f_next = mesh_iter_step(&iter)) {
+      if (mesh_elem_flag_test(f_next, MESH_ELEM_TAG) == false) {
+        mesh_elem_flag_enable(f_next, MEEH_ELEM_TAG);
         STACK_PUSH(stack, f_next);
         ok = true;
         break;
       }
     }
 
-    BLI_assert(ok == true);
+    lib_assert(ok == true);
     UNUSED_VARS_NDEBUG(ok);
 
     /* manage arrays */
     if (group_index_len == group_curr) {
       group_index_len *= 2;
-      group_index = MEM_reallocN(group_index, sizeof(*group_index) * group_index_len);
+      group_index = mem_reallocn(group_index, sizeof(*group_index) * group_index_len);
     }
 
     group_item = group_index[group_curr];
@@ -2176,25 +2176,25 @@ int mesh_calc_face_groups(Mesh *mesh,
     group_item[1] = 0;
 
     while ((f = STACK_POP(stack))) {
-      BMLoop *l_iter, *l_first;
+      MeshLoop *l_iter, *l_first;
 
       /* add face */
-      STACK_PUSH(group_array, BM_elem_index_get(f));
+      STACK_PUSH(group_array, mesh_elem_index_get(f));
       tot_touch++;
       group_item[1]++;
       /* done */
 
-      if (htype_step & BM_EDGE) {
+      if (htype_step & MESH_EDGE) {
         /* search for other faces */
-        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
         do {
-          BMLoop *l_radial_iter = l_iter->radial_next;
+          MeshLoop *l_radial_iter = l_iter->radial_next;
           if ((l_radial_iter != l_iter) && ((filter_fn == NULL) || filter_fn(l_iter, user_data))) {
             do {
               if ((filter_pair_fn == NULL) || filter_pair_fn(l_iter, l_radial_iter, user_data)) {
-                BMFace *f_other = l_radial_iter->f;
-                if (BM_elem_flag_test(f_other, BM_ELEM_TAG) == false) {
-                  BM_elem_flag_enable(f_other, BM_ELEM_TAG);
+                MeshFace *f_other = l_radial_iter->f;
+                if (mesh_elem_flag_test(f_other, MESH_ELEM_TAG) == false) {
+                  mesh_elem_flag_enable(f_other, MESH_ELEM_TAG);
                   STACK_PUSH(stack, f_other);
                 }
               }
@@ -2203,18 +2203,18 @@ int mesh_calc_face_groups(Mesh *mesh,
         } while ((l_iter = l_iter->next) != l_first);
       }
 
-      if (htype_step & BM_VERT) {
-        BMIter liter;
+      if (htype_step & MESH_VERT) {
+        MeshIter liter;
         /* search for other faces */
-        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
         do {
           if ((filter_fn == NULL) || filter_fn(l_iter, user_data)) {
-            BMLoop *l_other;
-            BM_ITER_ELEM (l_other, &liter, l_iter, BM_LOOPS_OF_LOOP) {
+            MeshLoop *l_other;
+            MESH_ITER_ELEM (l_other, &liter, l_iter, MESH_LOOPS_OF_LOOP) {
               if ((filter_pair_fn == NULL) || filter_pair_fn(l_iter, l_other, user_data)) {
-                BMFace *f_other = l_other->f;
-                if (BM_elem_flag_test(f_other, BM_ELEM_TAG) == false) {
-                  BM_elem_flag_enable(f_other, BM_ELEM_TAG);
+                MeshFace *f_other = l_other->f;
+                if (mesh_elem_flag_test(f_other, MESH_ELEM_TAG) == false) {
+                  mesh_elem_flag_enable(f_other, MESH_ELEM_TAG);
                   STACK_PUSH(stack, f_other);
                 }
               }
