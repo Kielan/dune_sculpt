@@ -1411,7 +1411,7 @@ void **mesh_op_iter_map_value_p(MeshOpIter *iter)
 void *mesh_op_iter_map_value_ptr(MeshOpIter *iter)
 {
   lib_assert(ELEM(iter->slot->slot_subtype.map,
-                  MESG_OP_SLOT_SUBTYPE_MAP_ELEM,
+                  MESH_OP_SLOT_SUBTYPE_MAP_ELEM,
                   MESH_OP_SLOT_SUBTYPE_MAP_INTERNAL));
   return iter->val ? *iter->val : NULL;
 }
@@ -1470,9 +1470,9 @@ bool mesh_op_error_occurred_at_level(Mesh *mesh, eMeshOpErrorLevel level)
   return false;
 }
 
-bool BMO_error_get(BMesh *bm, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level)
+bool mesh_error_get(Mesh *mesh, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level)
 {
-  BMOpError *err = bm->errorstack.first;
+  MeshOpError *err = mesh->errorstack.first;
   if (err == NULL) {
     return false;
   }
@@ -1490,10 +1490,10 @@ bool BMO_error_get(BMesh *bm, const char **r_msg, BMOperator **r_op, eBMOpErrorL
   return true;
 }
 
-bool BMO_error_get_at_level(BMesh *bm,
-                            eBMOpErrorLevel level,
-                            const char **r_msg,
-                            BMOperator **r_op)
+bool mesh_op_error_get_at_level(Mesh *bm,
+                                eMeshOpErrorLevel level,
+                                const char **r_msg,
+                                MeshOperator **r_op)
 {
   for (BMOpError *err = bm->errorstack.first; err; err = err->next) {
     if (err->level >= level) {
