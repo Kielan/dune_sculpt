@@ -902,33 +902,33 @@ void BMO_slot_buffer_from_array(MeshOperator *op,
 void *mesh_slot_buffer_get_single(MeshOpSlot *slot)
 {
   lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
-  lib_assert(slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE);
+  lib_assert(slot->slot_subtype.elem & MESH_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE);
   lib_assert(ELEM(slot->len, 0, 1));
 
   return slot->len ? (MeshHeader *)slot->data.buf[0] : NULL;
 }
 
-void mesh_slot_buffer_append(MeshOpSlot slot_args_dst[BMO_OP_MAX_SLOTS],
+void mesh_slot_buffer_append(MeshOpSlot slot_args_dst[MESH_OP_MAX_SLOTS],
                              const char *slot_name_dst,
-                             BMOpSlot slot_args_src[BMO_OP_MAX_SLOTS],
+                             MeshOpSlot slot_args_src[MESH_OP_MAX_SLOTS],
                              const char *slot_name_src,
                              struct MemArena *arena_dst)
 {
-  BMOpSlot *slot_dst = BMO_slot_get(slot_args_dst, slot_name_dst);
-  BMOpSlot *slot_src = BMO_slot_get(slot_args_src, slot_name_src);
+  MeshOpSlot *slot_dst = mesh_slot_get(slot_args_dst, slot_name_dst);
+  MeshOpSlot *slot_src = mesh_slot_get(slot_args_src, slot_name_src);
 
-  BLI_assert(slot_dst->slot_type == BMO_OP_SLOT_ELEMENT_BUF &&
-             slot_src->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  lib_assert(slot_dst->slot_type == MESH_OP_SLOT_ELEMENT_BUF &&
+             slot_src->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
 
   if (slot_dst->len == 0) {
     /* output slot is empty, copy rather than append */
-    _bmo_slot_copy(slot_args_src, slot_name_src, slot_args_dst, slot_name_dst, arena_dst);
+    mesh_slot_copy(slot_args_src, slot_name_src, slot_args_dst, slot_name_dst, arena_dst);
   }
   else if (slot_src->len != 0) {
-    int elem_size = BMO_OPSLOT_TYPEINFO[slot_dst->slot_type];
+    int elem_size = MESH_OPSLOT_TYPEINFO[slot_dst->slot_type];
     int alloc_size = elem_size * (slot_dst->len + slot_src->len);
     /* allocate new buffer */
-    void *buf = BLI_memarena_alloc(arena_dst, alloc_size);
+    void *buf = lib_memarena_alloc(arena_dst, alloc_size);
 
     /* copy slot data */
     memcpy(buf, slot_dst->data.buf, elem_size * slot_dst->len);
@@ -941,18 +941,18 @@ void mesh_slot_buffer_append(MeshOpSlot slot_args_dst[BMO_OP_MAX_SLOTS],
 }
 
 /**
- * \brief BMO_FLAG_TO_SLOT
+ * MESH_FLAG_TO_SLOT
  *
  * Copies elements of a certain type, which have a certain flag set
  * into an output slot for an operator.
  */
-static void bmo_slot_buffer_from_flag(BMesh *bm,
-                                      BMOperator *op,
-                                      BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                                      const char *slot_name,
-                                      const char htype,
-                                      const short oflag,
-                                      const bool test_for_enabled)
+static void mesh_slot_buffer_from_flag(Mesh *bm,
+                                       MeshOperator *op,
+                                       MeshOpSlot slot_args[BMO_OP_MAX_SLOTS],
+                                       const char *slot_name,
+                                       const char htype,
+                                       const short oflag,
+                                       const bool test_for_enabled)
 {
   BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
   int totelement, i = 0;
