@@ -53,7 +53,7 @@ static uint bm_edge_flagged_radial_count(BMEdge *e)
 
   if ((l = e->l)) {
     do {
-      if (BM_ELEM_API_FLAG_TEST(l->f, FACE_NET)) {
+      if (MESH_ELEM_API_FLAG_TEST(l->f, FACE_NET)) {
         count++;
       }
     } while ((l = l->radial_next) != e->l);
@@ -61,13 +61,13 @@ static uint bm_edge_flagged_radial_count(BMEdge *e)
   return count;
 }
 
-static BMLoop *bm_edge_flagged_radial_first(BMEdge *e)
+static MeshLoop *mesh_edge_flagged_radial_first(MeshEdge *e)
 {
-  BMLoop *l;
+  MeshLoop *l;
 
   if ((l = e->l)) {
     do {
-      if (BM_ELEM_API_FLAG_TEST(l->f, FACE_NET)) {
+      if (MESH_ELEM_API_FLAG_TEST(l->f, FACE_NET)) {
         return l;
       }
     } while ((l = l->radial_next) != e->l);
@@ -87,61 +87,61 @@ static void normalize_v2_m3_v3v3(float out[2],
 }
 
 /**
- * \note Be sure to update #bm_face_split_edgenet_find_loop_pair_exists
+ * note Be sure to update #bm_face_split_edgenet_find_loop_pair_exists
  * when making changes to edge picking logic.
  */
-static bool bm_face_split_edgenet_find_loop_pair(BMVert *v_init,
-                                                 const float face_normal[3],
-                                                 const float face_normal_matrix[3][3],
-                                                 BMEdge *e_pair[2])
+static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
+                                                   const float face_normal[3],
+                                                   const float face_normal_matrix[3][3],
+                                                   MeshEdge *e_pair[2])
 {
   /* Always find one boundary edge (to determine winding)
    * and one wire (if available), otherwise another boundary.
    */
 
   /* detect winding */
-  BMLoop *l_walk;
+  MeshLoop *l_walk;
   bool swap;
 
-  BLI_SMALLSTACK_DECLARE(edges_boundary, BMEdge *);
-  BLI_SMALLSTACK_DECLARE(edges_wire, BMEdge *);
+  LIB_SMALLSTACK_DECLARE(edges_boundary, MeshEdge *);
+  LIB_SMALLSTACK_DECLARE(edges_wire, MeshEdge *);
   int edges_boundary_len = 0;
   int edges_wire_len = 0;
 
   {
-    BMEdge *e, *e_first;
+    MeshEdge *e, *e_first;
     e = e_first = v_init->e;
     do {
-      if (BM_ELEM_API_FLAG_TEST(e, EDGE_NET)) {
-        const uint count = bm_edge_flagged_radial_count(e);
+      if (MESH_ELEM_API_FLAG_TEST(e, EDGE_NET)) {
+        const uint count = mesh_edge_flagged_radial_count(e);
         if (count == 1) {
-          BLI_SMALLSTACK_PUSH(edges_boundary, e);
+          LIB_SMALLSTACK_PUSH(edges_boundary, e);
           edges_boundary_len++;
         }
         else if (count == 0) {
-          BLI_SMALLSTACK_PUSH(edges_wire, e);
+          LIB_SMALLSTACK_PUSH(edges_wire, e);
           edges_wire_len++;
         }
       }
-    } while ((e = BM_DISK_EDGE_NEXT(e, v_init)) != e_first);
+    } while ((e = MESH_DISK_EDGE_NEXT(e, v_init)) != e_first);
   }
 
   /* first edge should always be boundary */
   if (edges_boundary_len == 0) {
     return false;
   }
-  e_pair[0] = BLI_SMALLSTACK_POP(edges_boundary);
+  e_pair[0] = LIB_SMALLSTACK_POP(edges_boundary);
 
   /* use to hold boundary OR wire edges */
-  BLI_SMALLSTACK_DECLARE(edges_search, BMEdge *);
+  LIB_SMALLSTACK_DECLARE(edges_search, MeshEdge *);
 
   /* attempt one boundary and one wire, or 2 boundary */
   if (edges_wire_len == 0) {
     if (edges_boundary_len > 1) {
-      e_pair[1] = BLI_SMALLSTACK_POP(edges_boundary);
+      e_pair[1] = LIB_SMALLSTACK_POP(edges_boundary);
 
       if (edges_boundary_len > 2) {
-        BLI_SMALLSTACK_SWAP(edges_search, edges_boundary);
+        LIB_SMALLSTACK_SWAP(edges_search, edges_boundary);
       }
     }
     else {
@@ -150,9 +150,9 @@ static bool bm_face_split_edgenet_find_loop_pair(BMVert *v_init,
     }
   }
   else {
-    e_pair[1] = BLI_SMALLSTACK_POP(edges_wire);
+    e_pair[1] = LIB_SMALLSTACK_POP(edges_wire);
     if (edges_wire_len > 1) {
-      BLI_SMALLSTACK_SWAP(edges_search, edges_wire);
+      LIB_SMALLSTACK_SWAP(edges_search, edges_wire);
     }
   }
 
