@@ -1449,20 +1449,20 @@ void mesh_op_error_clear(Mesh *mesh)
   }
 }
 
-void BMO_error_raise(BMesh *bm, BMOperator *owner, eBMOpErrorLevel level, const char *msg)
+void mesh_operror_raise(Mesh *mesh, MeshOp *owner, eMeshOpErrorLevel level, const char *msg)
 {
-  BMOpError *err = MEM_callocN(sizeof(BMOpError), "bmop_error");
+  MeshOpError *err = mem_callocn(sizeof(MeshOpError), "mesh_op_error");
 
   err->msg = msg;
   err->op = owner;
   err->level = level;
 
-  BLI_addhead(&bm->errorstack, err);
+  lib_addhead(&mesh->errorstack, err);
 }
 
-bool BMO_error_occurred_at_level(BMesh *bm, eBMOpErrorLevel level)
+bool mesh_op_error_occurred_at_level(Mesh *mesh, eMeshOpErrorLevel level)
 {
-  for (const BMOpError *err = bm->errorstack.first; err; err = err->next) {
+  for (const MeshOpError *err = mesh->errorstack.first; err; err = err->next) {
     if (err->level == level) {
       return true;
     }
