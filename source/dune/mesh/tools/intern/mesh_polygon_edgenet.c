@@ -903,17 +903,17 @@ static BMEdge *test_edges_isect_2d_vert(const struct EdgeGroup_FindConnection_Ar
 }
 
 /**
- * Similar to #test_edges_isect_2d_vert but we're casting into a direction,
+ * Similar to test_edges_isect_2d_vert but we're casting into a direction,
  * (not to a vertex)
  */
 static MeshEdge *test_edges_isect_2d_ray(const struct EdgeGroup_FindConnection_Args *args,
-                                       BMVert *v_origin,
-                                       const float dir[3])
+                                         MeshVert *v_origin,
+                                         const float dir[3])
 {
   int index;
   BVHTreeRayHit hit = {0};
 
-  BLI_ASSERT_UNIT_V2(dir);
+  LIB_ASSERT_UNIT_V2(dir);
 
   hit.index = -1;
   hit.dist = BVH_RAYCAST_DIST_MAX;
@@ -932,12 +932,12 @@ static MeshEdge *test_edges_isect_2d_ray(const struct EdgeGroup_FindConnection_A
                                   &user_data,
                                   0);
 
-  BMEdge *e_hit = (index != -1) ? args->edge_arr[index] : NULL;
+  MeshEdge *e_hit = (index != -1) ? args->edge_arr[index] : NULL;
 
   /* check existing connections (no spatial optimization here since we're continually adding). */
   if (LIKELY(index != -1)) {
     for (uint i = 0; i < args->edge_arr_new_len; i++) {
-      BMEdge *e = args->edge_arr_new[i];
+      MeshEdge *e = args->edge_arr_new[i];
       float dist_new;
       if (isect_ray_seg_v2(v_origin->co, dir, e->v1->co, e->v2->co, &dist_new, NULL)) {
         if (e->v1 != v_origin && e->v2 != v_origin) {
@@ -955,10 +955,10 @@ static MeshEdge *test_edges_isect_2d_ray(const struct EdgeGroup_FindConnection_A
   return e_hit;
 }
 
-static int bm_face_split_edgenet_find_connection(const struct EdgeGroup_FindConnection_Args *args,
-                                                 BMVert *v_origin,
-                                                 /* false = negative, true = positive */
-                                                 bool direction_sign)
+static int mesh_face_split_edgenet_find_connection(const struct EdgeGroup_FindConnection_Args *args,
+                                                   MeshVert *v_origin,
+                                                   /* false = negative, true = positive */
+                                                   bool direction_sign)
 {
   /**
    * Method for finding connection is as follows:
@@ -969,25 +969,25 @@ static int bm_face_split_edgenet_find_connection(const struct EdgeGroup_FindConn
    * - Keep taking the hit-edge and testing its verts
    *   until a vertex is found which isn't blocked by an edge.
    *
-   * \note It's possible none of the verts can be accessed (with self-intersecting lines).
+   * note It's possible none of the verts can be accessed (with self-intersecting lines).
    * In that case there's no right answer (without subdividing edges),
    * so return a fall-back vertex in that case.
    */
 
   const float dir[3] = {[SORT_AXIS] = direction_sign ? 1.0f : -1.0f};
-  BMEdge *e_hit = test_edges_isect_2d_ray(args, v_origin, dir);
-  BMVert *v_other = NULL;
+  MeshEdge *e_hit = test_edges_isect_2d_ray(args, v_origin, dir);
+  MeshVert *v_other = NULL;
 
   if (e_hit) {
-    BMVert *v_other_fallback = NULL;
+    MeshVert *v_other_fallback = NULL;
 
-    BLI_SMALLSTACK_DECLARE(vert_search, BMVert *);
+    LIB_SMALLSTACK_DECLARE(vert_search, BMVert *);
 
     /* ensure we never add verts multiple times (not all that likely - but possible) */
-    BLI_SMALLSTACK_DECLARE(vert_blacklist, BMVert *);
+    LIB_SMALLSTACK_DECLARE(vert_blacklist, BMVert *);
 
     do {
-      BMVert *v_pair[2];
+      MeshVert *v_pair[2];
       /* ensure the closest vertex is popped back off the stack first */
       if (len_squared_v2v2(v_origin->co, e_hit->v1->co) >
           len_squared_v2v2(v_origin->co, e_hit->v2->co)) {
