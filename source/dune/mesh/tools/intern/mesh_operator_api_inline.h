@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
- * BMesh inline operator functions.
- */
+/** Mesh inline operator functions. **/
 
 #pragma once
 
