@@ -25,11 +25,11 @@
  *
  * mesh_face_split_edgenet and helper functions.
  *
- * \note Don't use #BM_edge_is_wire or #BM_edge_is_boundary
+ * note Don't use mesh_edge_is_wire or mesh_edge_is_boundary
  * since we need to take flagged faces into account.
  * Also take care accessing e->l directly.
  *
- * \{ */
+ **/
 
 /* NOTE: All these flags _must_ be cleared on exit. */
 
@@ -43,10 +43,10 @@
 
 struct VertOrder {
   float angle;
-  BMVert *v;
+  MeshVert *v;
 };
 
-static uint bm_edge_flagged_radial_count(BMEdge *e)
+static uint mesh_edge_flagged_radial_count(MeshEdge *e)
 {
   uint count = 0;
   BMLoop *l;
@@ -611,7 +611,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
                 mul_v2_m3v3(co, axis_mat, v->co);
                 interp_weights_poly_v2(w, cos_2d, f->len, co);
                 CustomData_mesh_interp(
-                    &bm->ldata, (const void **)blocks, w, NULL, f->len, l_iter->head.data);
+                    &mesh->ldata, (const void **)blocks, w, NULL, f->len, l_iter->head.data);
                 l_first = l_iter;
               }
               else {
@@ -682,7 +682,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
  *
  * Intended to be used as a pre-processing step for mesh_face_split_edgenet.
  *
- * \warning Currently this risks running out of stack memory (alloca),
+ * warning Currently this risks running out of stack memory (alloca),
  * likely we'll pass in a memory arena (cleared each use) eventually.
  *
  **/
@@ -707,7 +707,7 @@ LIB_INLINE bool edge_isect_verts_point_2d(const MeshEdge *e,
           ((e->v1 != v_a) && (e->v2 != v_a) && (e->v1 != v_b) && (e->v2 != v_b)));
 }
 
-BLI_INLINE int axis_pt_cmp(const float pt_a[2], const float pt_b[2])
+LIB_INLINE int axis_pt_cmp(const float pt_a[2], const float pt_b[2])
 {
   if (pt_a[0] < pt_b[0]) {
     return -1;
@@ -742,7 +742,7 @@ struct EdgeGroupIsland {
   /* verts in the group which has the lowest & highest values,
    * the lower vertex is connected to the first edge */
   struct {
-    BMVert *min, *max;
+    MeshVert *min, *max;
     /* used for sorting only */
     float min_axis[2];
     float max_axis[2];
@@ -772,9 +772,9 @@ struct Edges_VertVert_BVHTreeTest {
 };
 
 struct Edges_VertRay_BVHTreeTest {
-  BMEdge **edge_arr;
+  MeshEdge **edge_arr;
 
-  BMVert *v_origin;
+  MeshVert *v_origin;
 
   const uint *vert_range;
 };
@@ -785,8 +785,8 @@ static void bvhtree_test_edges_isect_2d_vert_cb(void *user_data,
                                                 BVHTreeRayHit *hit)
 {
   struct Edges_VertVert_BVHTreeTest *data = user_data;
-  const BMEdge *e = data->edge_arr[index];
-  const int v1_index = BM_elem_index_get(e->v1);
+  const MeshEdge *e = data->edge_arr[index];
+  const int v1_index = mesh_elem_index_get(e->v1);
   float co_isect[2];
 
   if (edge_isect_verts_point_2d(e, data->v_origin, data->v_other, co_isect)) {
