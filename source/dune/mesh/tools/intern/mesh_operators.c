@@ -153,36 +153,36 @@ void mesh_op_init(Mesh *mesh, MeshOp *op, const int flag, const char *opname)
 void mesh_op_exec(Mesh *mesh, MeshOp *op)
 {
   /* allocate tool flags on demand */
-  BM_mesh_elem_toolflags_ensure(bm);
+  mesh_elem_toolflags_ensure(bm);
 
-  BMO_push(bm, op);
+  mesh_push(bm, op);
 
-  if (bm->toolflag_index == 1) {
-    bmesh_edit_begin(bm, op->type_flag);
+  if (mesh->toolflag_index == 1) {
+    mesh_edit_begin(mesh, op->type_flag);
   }
-  op->exec(bm, op);
+  op->exec(mesh, op);
 
-  if (bm->toolflag_index == 1) {
-    bmesh_edit_end(bm, op->type_flag);
+  if (mesh->toolflag_index == 1) {
+    mesh_edit_end(mesh, op->type_flag);
   }
 
-  BMO_pop(bm);
+  mesh_pop(mesh);
 }
 
-void BMO_op_finish(BMesh *bm, BMOperator *op)
+void mesh_op_finish(Mesh *mesh, MeshOperator *op)
 {
-  bmo_op_slots_free(bmo_opdefines[op->type]->slot_types_in, op->slots_in);
-  bmo_op_slots_free(bmo_opdefines[op->type]->slot_types_out, op->slots_out);
+  mesh_op_slots_free(mesh_opdefines[op->type]->slot_types_in, op->slots_in);
+  mesh_op_slots_free(mesh_opdefines[op->type]->slot_types_out, op->slots_out);
 
-  BLI_memarena_free(op->arena);
+  lib_memarena_free(op->arena);
 
 #ifdef DEBUG
-  BM_ELEM_INDEX_VALIDATE(bm, "post bmo", bmo_opdefines[op->type]->opname);
+  MESH_ELEM_INDEX_VALIDATE(mesh, "post meshop", mesh_opdefines[op->type]->opname);
 
   /* avoid accidental re-use */
   memset(op, 0xff, sizeof(*op));
 #else
-  (void)bm;
+  (void)mesh;
 #endif
 }
 
