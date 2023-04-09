@@ -1108,23 +1108,23 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
 
     LIB_SMALLSTACK_PUSH(search, v_other);
     if (BM_elem_flag_test(v_other, VERT_NOT_IN_STACK)) {
-      BM_elem_flag_disable(v_other, VERT_NOT_IN_STACK);
-      BLI_linklist_prepend_alloca(&vert_stack, v_other);
+      mesh_elem_flag_disable(v_other, VERT_NOT_IN_STACK);
+      LIB_linklist_prepend_alloca(&vert_stack, v_other);
     }
 
-    while ((v_other = BLI_SMALLSTACK_POP(search))) {
-      BLI_assert(BM_elem_flag_test(v_other, VERT_NOT_IN_STACK) == false);
-      BMEdge *e_iter = v_other->e;
+    while ((v_other = LIB_SMALLSTACK_POP(search))) {
+      lib_assert(mesh_elem_flag_test(v_other, VERT_NOT_IN_STACK) == false);
+      MeshEdge *e_iter = v_other->e;
       do {
-        BMVert *v_step = BM_edge_other_vert(e_iter, v_other);
-        if (BM_elem_flag_test(e_iter, EDGE_NOT_IN_STACK)) {
-          if (BM_elem_flag_test(v_step, VERT_NOT_IN_STACK)) {
-            BM_elem_flag_disable(v_step, VERT_NOT_IN_STACK);
-            BLI_SMALLSTACK_PUSH(search, v_step);
-            BLI_linklist_prepend_alloca(&vert_stack, v_step);
+        MeshVert *v_step = mesh_edge_other_vert(e_iter, v_other);
+        if (mesh_elem_flag_test(e_iter, EDGE_NOT_IN_STACK)) {
+          if (mesh_elem_flag_test(v_step, VERT_NOT_IN_STACK)) {
+            mesh_elem_flag_disable(v_step, VERT_NOT_IN_STACK);
+            lib_SMALLSTACK_PUSH(search, v_step);
+            lib_linklist_prepend_alloca(&vert_stack, v_step);
           }
         }
-      } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, v_other)) != v_other->e);
+      } while ((e_iter = MESH_DISK_EDGE_NEXT(e_iter, v_other)) != v_other->e);
     }
   }
 
