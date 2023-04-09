@@ -435,43 +435,43 @@ int mesh_slot_int_get(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_n
   return slot->data.i;
 }
 
-bool mesh_slot_bool_get(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+bool mesh_slot_bool_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name)
 {
   MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
-  lib_assert(slot->slot_type == BMO_OP_SLOT_BOOL);
-  if (!(slot->slot_type == BMO_OP_SLOT_BOOL)) {
+  lib_assert(slot->slot_type == MESH_OP_SLOT_BOOL);
+  if (!(slot->slot_type == MESH_OP_SLOT_BOOL)) {
     return 0;
   }
 
   return slot->data.i;
 }
 
-void *BMO_slot_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name, int *len)
+void *mesh_slot_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name, int *len)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
   void **ret;
 
   /* could add support for mapping type */
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_ELEMENT_BUF);
 
-  ret = MEM_mallocN(sizeof(void *) * slot->len, __func__);
+  ret = mem_mallocn(sizeof(void *) * slot->len, __func__);
   memcpy(ret, slot->data.buf, sizeof(void *) * slot->len);
   *len = slot->len;
   return ret;
 }
 
-void *BMO_slot_ptr_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name)
+void *mesh_slot_ptr_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_PTR);
-  if (!(slot->slot_type == BMO_OP_SLOT_PTR)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_PTR);
+  if (!(slot->slot_type == MESH_OP_SLOT_PTR)) {
     return NULL;
   }
 
   return slot->data.p;
 }
 
-void BMO_slot_vec_get(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name, float r_vec[3])
+void mesh_slot_vec_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name, float r_vec[3])
 {
   BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
   BLI_assert(slot->slot_type == BMO_OP_SLOT_VEC);
