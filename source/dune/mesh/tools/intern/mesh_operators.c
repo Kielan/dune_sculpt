@@ -542,7 +542,7 @@ void mesh_flag_disable_all(Mesh *mesh,
                            const char htype,
                            const short oflag)
 {
-  if (htype & BM_VERT) {
+  if (htype & MESH_VERT) {
     MeshIter iter;
     MeshVert *ele;
     MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
@@ -550,28 +550,28 @@ void mesh_flag_disable_all(Mesh *mesh,
     }
   }
   if (htype & MESH_EDGE) {
-    BMIter iter;
-    BMEdge *ele;
-    BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
-      BMO_edge_flag_disable(bm, ele, oflag);
+    MeshIter iter;
+    MeshEdge *ele;
+    MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      mesh_edge_flag_disable(mesh, ele, oflag);
     }
   }
   if (htype & BM_FACE) {
-    BMIter iter;
-    BMFace *ele;
-    BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
-      BMO_face_flag_disable(bm, ele, oflag);
+    MeshIter iter;
+    MeshFace *ele;
+    MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      mesh_face_flag_disable(mesh, ele, oflag);
     }
   }
 }
 
-void BMO_mesh_selected_remap(BMesh *bm,
-                             BMOpSlot *slot_vert_map,
-                             BMOpSlot *slot_edge_map,
-                             BMOpSlot *slot_face_map,
-                             const bool check_select)
+void mesh_selected_remap(Mesh *mesh,
+                         MeshOpSlot *slot_vert_map,
+                         MeshOpSlot *slot_edge_map,
+                         MeshOpSlot *slot_face_map,
+                         const bool check_select)
 {
-  if (bm->selected.first) {
+  if (mesh->selected.first) {
     BMEditSelection *ese, *ese_next;
     BMOpSlot *slot_elem_map;
 
