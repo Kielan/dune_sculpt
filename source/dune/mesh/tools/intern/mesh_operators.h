@@ -181,15 +181,15 @@ void BM_mesh_calc_uvs_circle(
 /**
  * Fills first available UV-map with cylinder/cone-like UVs for all faces with `oflag` set.
  *
- * \param bm: The BMesh to operate on.
- * \param mat: The transform matrix applied to the created cone/cylinder.
- * \param radius_top: The size of the top end of the cone/cylinder.
- * \param radius_bottom: The size of the bottom end of the cone/cylinder.
- * \param segments: The number of subdivisions in the sides of the cone/cylinder.
- * \param cap_ends: Whether the ends of the cone/cylinder are filled or not.
- * \param oflag: The flag to check faces with.
+ * param mesh: The Mesh to operate on.
+ * param mat: The transform matrix applied to the created cone/cylinder.
+ * param radius_top: The size of the top end of the cone/cylinder.
+ * param radius_bottom: The size of the bottom end of the cone/cylinder.
+ * param segments: The number of subdivisions in the sides of the cone/cylinder.
+ * param cap_ends: Whether the ends of the cone/cylinder are filled or not.
+ * param oflag: The flag to check faces with.
  */
-void BM_mesh_calc_uvs_cone(BMesh *bm,
+void mesh_calc_uvs_cone(BMesh *bm,
                            float mat[4][4],
                            float radius_top,
                            float radius_bottom,
