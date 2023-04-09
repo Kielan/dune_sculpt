@@ -848,17 +848,17 @@ static void bmo_slot_buffer_from_hflag(Mesh *mesh,
     output->len = 0;
   }
 }
-void BMO_slot_buffer_from_enabled_hflag(BMesh *bm,
-                                        BMOperator *op,
-                                        BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void mesh_slot_buffer_from_enabled_hflag(Mesh *mesh,
+                                        MeshOperator *op,
+                                        MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                         const char *slot_name,
                                         const char htype,
                                         const char hflag)
 {
-  bmo_slot_buffer_from_hflag(bm, op, slot_args, slot_name, htype, hflag, true);
+  mesh_slot_buffer_from_hflag(mesh, op, slot_args, slot_name, htype, hflag, true);
 }
 
-void BMO_slot_buffer_from_disabled_hflag(Mesh *mesh,
+void mesh_slot_buffer_from_disabled_hflag(Mesh *mesh,
                                          MeshOp *op,
                                          MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                                          const char *slot_name,
@@ -882,7 +882,7 @@ void mesh_slot_buffer_from_single(MeshOp *op, MeshOpSlot *slot, BMHeader *ele)
   *slot->data.buf = ele;
 }
 
-void BMO_slot_buffer_from_array(MeshOperator *op,
+void BMO_slot_buffer_from_array(MeshOp *op,
                                 MeshOpSlot *slot,
                                 MeshHeader **ele_buffer,
                                 int ele_buffer_len)
@@ -954,14 +954,14 @@ static void mesh_slot_buffer_from_flag(Mesh *bm,
                                        const short oflag,
                                        const bool test_for_enabled)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  MeshOpSlot *slot = mesh_op_slot_get(slot_args, slot_name);
   int totelement, i = 0;
 
-  BLI_assert(op->slots_in == slot_args || op->slots_out == slot_args);
+  lib_assert(op->slots_in == slot_args || op->slots_out == slot_args);
 
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
-  BLI_assert((slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
+  lib_assert(slot->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  lib_assert(((slot->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
+  lib_assert((slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
 
   if (test_for_enabled) {
     totelement = BMO_mesh_enabled_flag_count(bm, htype, oflag);
