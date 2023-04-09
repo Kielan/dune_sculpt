@@ -49,7 +49,7 @@ void mesh_op_flag_disable(Mesh *UNUSED(mesh), MeshOp *op, const int op_flag)
   op->flag &= ~op_flag;
 }
 
-void mesh_op_push(Mesh *mesh, BMOperator *UNUSED(op))
+void mesh_op_push(Mesh *mesh, MeshOp *UNUSED(op))
 {
   mesh->toolflag_index++;
 
@@ -64,19 +64,19 @@ void mesh_op_push(Mesh *mesh, BMOperator *UNUSED(op))
   }
 }
 
-void BMO_pop(BMesh *bm)
+void mesh_pop(Mesh *mesh)
 {
-  if (bm->toolflag_index > 0) {
-    bmo_flag_layer_free(bm);
+  if (mesh->toolflag_index > 0) {
+    mesh_flag_layer_free(mesh);
   }
 
-  bm->toolflag_index--;
+  mesh->toolflag_index--;
 }
 
 /* use for both slot_types_in and slot_types_out */
-static void bmo_op_slots_init(const BMOSlotType *slot_types, BMOpSlot *slot_args)
+static void mesh_op_slots_init(const MeshSlotType *slot_types, MeshOpSlot *slot_args)
 {
-  BMOpSlot *slot;
+  MeshOpSlot *slot;
   uint i;
   for (i = 0; slot_types[i].type; i++) {
     slot = &slot_args[i];
@@ -86,13 +86,13 @@ static void bmo_op_slots_init(const BMOSlotType *slot_types, BMOpSlot *slot_args
     // slot->index = i;  // UNUSED
 
     switch (slot->slot_type) {
-      case BMO_OP_SLOT_MAPPING:
-        slot->data.ghash = BLI_ghash_ptr_new("bmesh slot map hash");
+      case MESH_OP_SLOT_MAPPING:
+        slot->data.ghash = lib_ghash_ptr_new("mesh slot map hash");
         break;
-      case BMO_OP_SLOT_INT:
+      case MESH_OP_SLOT_INT:
         if (ELEM(slot->slot_subtype.intg,
-                 BMO_OP_SLOT_SUBTYPE_INT_ENUM,
-                 BMO_OP_SLOT_SUBTYPE_INT_FLAG)) {
+                 MESH_OP_SLOT_SUBTYPE_INT_ENUM,
+                 MESH_OP_SLOT_SUBTYPE_INT_FLAG)) {
           slot->data.enum_data.flags = slot_types[i].enum_flags;
           /* Set the first value of the enum as the default value. */
           slot->data.i = slot->data.enum_data.flags[0].value;
@@ -103,7 +103,7 @@ static void bmo_op_slots_init(const BMOSlotType *slot_types, BMOpSlot *slot_args
   }
 }
 
-static void bmo_op_slots_free(const BMOSlotType *slot_types, BMOpSlot *slot_args)
+static void mesh_op_slots_free(const MeshOpSlotType *slot_types, MeshOpSlot *slot_args)
 {
   MeshOpSlot *slot;
   uint i;
