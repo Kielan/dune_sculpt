@@ -98,57 +98,57 @@ LIB_INLINE void mesh_slot_map_float_insert(MeshOp *op,
 /* pointer versions of mesh_op_slot_map_float_get and BMO_slot_map_float_insert.
  *
  * do NOT use these for non-operator-api-allocated memory! instead
- * use BMO_slot_map_data_get and BMO_slot_map_insert, which copies the data. */
+ * use mesh_op_slot_map_data_get and mesh_op_slot_map_insert, which copies the data. */
 
 ATTR_NONNULL(1, 2)
-LIB_INLINE void mesh_op_slot_map_ptr_insert(BMOperator *op,
-                                        BMOpSlot *slot,
-                                        const void *element,
-                                        void *val)
+LIB_INLINE void mesh_op_slot_map_ptr_insert(MeshOp *op,
+                                            MeshOpSlot *slot,
+                                            const void *element,
+                                            void *val)
 {
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_INTERNAL);
-  BMO_slot_map_insert(op, slot, element, val);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_INTERNAL);
+  mesh_op_slot_map_insert(op, slot, element, val);
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void BMO_slot_map_elem_insert(BMOperator *op,
-                                         BMOpSlot *slot,
-                                         const void *element,
-                                         void *val)
+LIB_INLINE void mesh_op_slot_map_elem_insert(MeshOp *op,
+                                             MeshOpSlot *slot,
+                                             const void *element,
+                                             void *val)
 {
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_ELEM);
-  BMO_slot_map_insert(op, slot, element, val);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_ELEM);
+  mesh_op_slot_map_insert(op, slot, element, val);
 }
 
 /* no values */
 ATTR_NONNULL(1, 2)
-BLI_INLINE void BMO_slot_map_empty_insert(BMOperator *op, BMOpSlot *slot, const void *element)
+LIB_INLINE void mesh_op_slot_map_empty_insert(MeshOp *op, MeshOpSlot *slot, const void *element)
 {
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_EMPTY);
-  BMO_slot_map_insert(op, slot, element, NULL);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_EMPTY);
+  mesh_op_slot_map_insert(op, slot, element, NULL);
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    bool BMO_slot_map_contains(BMOpSlot *slot, const void *element)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    bool mesh_op_slot_map_contains(MeshOpSlot *slot, const void *element)
 {
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_MAPPING);
-  return BLI_ghash_haskey(slot->data.ghash, element);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_MAPPING);
+  return lib_ghash_haskey(slot->data.ghash, element);
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    void **BMO_slot_map_data_get(BMOpSlot *slot, const void *element)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    void **mesh_op_slot_map_data_get(MeshOpSlot *slot, const void *element)
 {
 
-  return BLI_ghash_lookup_p(slot->data.ghash, element);
+  return lib_ghash_lookup_p(slot->data.ghash, element);
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    float BMO_slot_map_float_get(BMOpSlot *slot, const void *element)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    float mesh_op_slot_map_float_get(MeshOpSlot *slot, const void *element)
 {
   void **data;
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_FLT);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_FLT);
 
-  data = BMO_slot_map_data_get(slot, element);
+  data = mesh_op_slot_map_data_get(slot, element);
   if (data) {
     return *(float *)data;
   }
@@ -157,13 +157,13 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
   }
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    int BMO_slot_map_int_get(BMOpSlot *slot, const void *element)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    int mesh_op_slot_map_int_get(MeshOpSlot *slot, const void *element)
 {
   void **data;
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_INT);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_INT);
 
-  data = BMO_slot_map_data_get(slot, element);
+  data = mesh_op_slot_map_data_get(slot, element);
   if (data) {
     return *(int *)data;
   }
@@ -173,7 +173,7 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
 }
 
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    bool BMO_slot_map_bool_get(BMOpSlot *slot, const void *element)
+    bool mesh_op_slot_map_bool_get(BMOpSlot *slot, const void *element)
 {
   void **data;
   BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_BOOL);
