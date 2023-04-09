@@ -1132,13 +1132,13 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
    * by checking if we didn't walk any of edges connected to 'v_delimit'. */
   bool is_delimit = false;
   FOREACH_VERT_EDGE(v_delimit, e_iter, {
-    BMVert *v_step = BM_edge_other_vert(e_iter, v_delimit);
-    if (BM_elem_flag_test(v_step, VERT_NOT_IN_STACK) && !BM_edge_in_face(e_iter, f)) {
+    MeshVert *v_step = mesh_edge_other_vert(e_iter, v_delimit);
+    if (mesh_elem_flag_test(v_step, VERT_NOT_IN_STACK) && !mesh_edge_in_face(e_iter, f)) {
       is_delimit = true; /* if one vertex is valid - we have a mix */
     }
     else {
       /* match the vertex flag (only for edges around 'v_delimit') */
-      BM_elem_flag_disable(e_iter, EDGE_NOT_IN_STACK);
+      mesh_elem_flag_disable(e_iter, EDGE_NOT_IN_STACK);
     }
   });
 
@@ -1158,7 +1158,7 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
     lib_assert(v_split->e != NULL);
 #  else
     if (UNLIKELY(v_split->e == NULL)) {
-      BM_vert_kill(bm, v_split);
+      mesh_vert_kill(mesh, v_split);
       v_split = NULL;
     }
 #  endif
@@ -1166,11 +1166,11 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
 
   /* Restore flags */
   do {
-    BM_elem_flag_enable((BMVert *)vert_stack->link, VERT_NOT_IN_STACK);
+    mesh_elem_flag_enable((MeshVert *)vert_stack->link, VERT_NOT_IN_STACK);
   } while ((vert_stack = vert_stack->next));
 
   do {
-    BM_elem_flag_enable((BMEdge *)e_delimit_list->link, EDGE_NOT_IN_STACK);
+    mesh_elem_flag_enable((MeshEdge *)e_delimit_list->link, EDGE_NOT_IN_STACK);
   } while ((e_delimit_list = e_delimit_list->next));
 
 #  undef EDGE_NOT_IN_STACK
@@ -1182,7 +1182,7 @@ static MeshVert *mesh_face_split_edgenet_partial_connect(Mesh *mesh, MeshVert *v
 /**
  * Check if connecting vertices would cause an edge with duplicate verts.
  */
-static bool bm_vert_partial_connect_check_overlap(const int *remap,
+static bool mesh_vert_partial_connect_check_overlap(const int *remap,
                                                   const int v_a_index,
                                                   const int v_b_index)
 {
