@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
+/**
  * Generate data needed for partially updating mesh information.
  * Currently this is used for normals and tessellation.
  *
@@ -15,12 +13,12 @@
  * All Tagged
  * ----------
  * Operate on everything that's tagged as well as connected geometry.
- * see: #BM_mesh_partial_create_from_verts
+ * see: mesh_partial_create_from_verts
  *
  * Grouped
  * -------
  * Operate on everything that is connected to both tagged and un-tagged.
- * see: #BM_mesh_partial_create_from_verts_group_single
+ * see: mesh_partial_create_from_verts_group_single
  *
  * Reduces computations when transforming isolated regions.
  *
