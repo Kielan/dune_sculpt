@@ -639,7 +639,7 @@ void mesh_slot_map_insert(MeshOperator *op, MeshOpSlot *slot, const void *elemen
 }
 
 #if 0
-void *mesh_slot_buffer_grow(Mesh *bm, MeshOperator *op, int slot_code, int totadd)
+void *mesh_slot_buffer_grow(Mesh *mesh, MeshOperator *op, int slot_code, int totadd)
 {
   MeshOpSlot *slot = &op->slots[slot_code];
   void *tmp;
@@ -687,34 +687,34 @@ void mesh_slot_map_to_flag(Mesh *mesh,
                            const short oflag)
 {
   GHashIterator gh_iter;
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BMElemF *ele_f;
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  MeshElemF *ele_f;
 
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_MAPPING);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_MAPPING);
 
   GHASH_ITER (gh_iter, slot->data.ghash) {
-    ele_f = BLI_ghashIterator_getKey(&gh_iter);
+    ele_f = lib_ghashIterator_getKey(&gh_iter);
     if (ele_f->head.htype & htype) {
-      BMO_elem_flag_enable(bm, ele_f, oflag);
+      mesh_elem_flag_enable(mesh, ele_f, oflag);
     }
   }
 }
 
-void *BMO_slot_buffer_alloc(BMOperator *op,
-                            BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                            const char *slot_name,
-                            const int len)
+void *mesh_slot_buffer_alloc(MeshOperator *op,
+                             MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                             const char *slot_name,
+                             const int len)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
 
   /* check if its actually a buffer */
-  if (slot->slot_type != BMO_OP_SLOT_ELEMENT_BUF) {
+  if (slot->slot_type != MESH_OP_SLOT_ELEMENT_BUF) {
     return NULL;
   }
 
   slot->len = len;
   if (len) {
-    slot->data.buf = BLI_memarena_alloc(op->arena, BMO_OPSLOT_TYPEINFO[slot->slot_type] * len);
+    slot->data.buf = lib_memarena_alloc(op->arena, BMO_OPSLOT_TYPEINFO[slot->slot_type] * len);
   }
   else {
     slot->data.buf = NULL;
@@ -723,17 +723,17 @@ void *BMO_slot_buffer_alloc(BMOperator *op,
   return slot->data.buf;
 }
 
-void BMO_slot_buffer_from_all(BMesh *bm,
-                              BMOperator *op,
-                              BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                              const char *slot_name,
-                              const char htype)
+void mesh_slot_buffer_from_all(Mesh *bm,
+                               MeshOperator *op,
+                               MeshOpSlot slot_args[BMO_OP_MAX_SLOTS],
+                               const char *slot_name,
+                               const char htype)
 {
-  BMOpSlot *output = BMO_slot_get(slot_args, slot_name);
+  MeshOpSlot *output = mesh_slot_get(slot_args, slot_name);
   int totelement = 0, i = 0;
 
-  BLI_assert(output->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
-  BLI_assert(((output->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
+  lib_assert(output->slot_type == BMO_OP_SLOT_ELEMENT_BUF);
+  lib_assert(((output->slot_subtype.elem & BM_ALL_NOLOOP) & htype) == htype);
 
   if (htype & BM_VERT) {
     totelement += bm->totvert;
