@@ -331,14 +331,14 @@ void mesh_slot_mat_set(MeshOperator *op,
                        const float *mat,
                        int size)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_MAT);
-  if (!(slot->slot_type == BMO_OP_SLOT_MAT)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_MAT);
+  if (!(slot->slot_type == MESH_OP_SLOT_MAT)) {
     return;
   }
 
   slot->len = 4;
-  slot->data.p = BLI_memarena_alloc(op->arena, sizeof(float[4][4]));
+  slot->data.p = lib_memarena_alloc(op->arena, sizeof(float[4][4]));
 
   if (size == 4) {
     copy_m4_m4(slot->data.p, (const float(*)[4])mat);
@@ -354,8 +354,8 @@ void mesh_slot_mat_set(MeshOperator *op,
 }
 
 void mesh_slot_mat4_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                       const char *slot_name,
-                       float r_mat[4][4])
+                        const char *slot_name,
+                        float r_mat[4][4])
 {
   MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
   lib_assert(slot->slot_type == MESH_OP_SLOT_MAT);
@@ -382,18 +382,18 @@ void mesh_slot_mat3_get(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
   }
 
   if (slot->data.p) {
-    copy_m3_m4(r_mat, BMO_SLOT_AS_MATRIX(slot));
+    copy_m3_m4(r_mat, MESH_SLOT_AS_MATRIX(slot));
   }
   else {
     unit_m3(r_mat);
   }
 }
 
-void BMO_slot_ptr_set(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name, void *p)
+void mesh_slot_ptr_set(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *slot_name, void *p)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_PTR);
-  if (!(slot->slot_type == BMO_OP_SLOT_PTR)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_PTR);
+  if (!(slot->slot_type == MESH_OP_SLOT_PTR)) {
     return;
   }
 
