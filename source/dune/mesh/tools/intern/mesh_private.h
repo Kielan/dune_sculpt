@@ -2,7 +2,7 @@
 #pragma once
 
 /**
- * Private function prototypes for bmesh public API.
+ * Private function prototypes for mesh public API.
  * This file is a grab-bag of functions from various
  * parts of the mesh internals.
  */
@@ -16,22 +16,22 @@ extern "C" {
 #ifdef NDEBUG
 /* No error checking for release,
  * it can take most of the CPU time when running some tools. */
-#  define BM_CHECK_ELEMENT(el) (void)(el)
+#  define MESH_CHECK_ELEMENT(el) (void)(el)
 #else
 /**
  * Check the element is valid.
  *
- * BMESH_TODO, when this raises an error the output is incredibly confusing.
+ * MESH_TODO, when this raises an error the output is incredibly confusing.
  * need to have some nice way to print/debug what the heck's going on.
  */
-int bmesh_elem_check(void *element, char htype);
-#  define BM_CHECK_ELEMENT(el) \
+int mesh_elem_check(void *element, char htype);
+#  define MESH_CHECK_ELEMENT(el) \
     { \
-      if (bmesh_elem_check(el, ((BMHeader *)el)->htype)) { \
+      if (mesh_elem_check(el, ((MeshHeader *)el)->htype)) { \
         printf( \
             "check_element failure, with code %i on line %i in file\n" \
             "    \"%s\"\n\n", \
-            bmesh_elem_check(el, ((BMHeader *)el)->htype), \
+            mesh_elem_check(el, ((MeshHeader *)el)->htype), \
             __LINE__, \
             __FILE__); \
       } \
@@ -39,9 +39,9 @@ int bmesh_elem_check(void *element, char htype);
     ((void)0)
 #endif
 
-int mesh_radial_length(const BMLoop *l);
-int mesh_disk_count_at_most(const BMVert *v, int count_max);
-int mesh_disk_count(const BMVert *v);
+int mesh_radial_length(const MeshLoop *l);
+int mesh_disk_count_at_most(const MeshVert *v, int count_max);
+int mesh_disk_count(const MeshVert *v);
 
 /**
  * Internal MeshHeader.api_flag
@@ -54,23 +54,23 @@ enum {
   _FLAG_MV = (1 << 1),       /* Make face, vertex. */
   _FLAG_OVERLAP = (1 << 2),  /* General overlap flag. */
   _FLAG_WALK = (1 << 3),     /* General walk flag (keep clean). */
-  _FLAG_WALK_ALT = (1 << 4), /* Same as #_FLAG_WALK, for when a second tag is needed. */
+  _FLAG_WALK_ALT = (1 << 4), /* Same as _FLAG_WALK, for when a second tag is needed. */
 
-  _FLAG_ELEM_CHECK = (1 << 7), /* Reserved for bmesh_elem_check. */
+  _FLAG_ELEM_CHECK = (1 << 7), /* Reserved for mesh_elem_check. */
 };
 
-#define BM_ELEM_API_FLAG_ENABLE(element, f) \
+#define MESH_ELEM_API_FLAG_ENABLE(element, f) \
   { \
     ((element)->head.api_flag |= (f)); \
   } \
   (void)0
-#define BM_ELEM_API_FLAG_DISABLE(element, f) \
+#define MESH_ELEM_API_FLAG_DISABLE(element, f) \
   { \
     ((element)->head.api_flag &= (uchar) ~(f)); \
   } \
   (void)0
-#define BM_ELEM_API_FLAG_TEST(element, f) ((element)->head.api_flag & (f))
-#define BM_ELEM_API_FLAG_CLEAR(element) \
+#define MESH_ELEM_API_FLAG_TEST(element, f) ((element)->head.api_flag & (f))
+#define MESH_ELEM_API_FLAG_CLEAR(element) \
   { \
     ((element)->head.api_flag = 0); \
   } \
