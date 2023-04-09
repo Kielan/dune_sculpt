@@ -688,19 +688,19 @@ void mesh_vert_normal_update_all(MeshVert *v)
   }
 }
 
-void BM_vert_normal_update(BMVert *v)
+void mesh_vert_normal_update(MeshVert *v)
 {
-  BM_vert_calc_normal(v, v->no);
+  mesh_vert_calc_normal(v, v->no);
 }
 
-float BM_face_calc_normal(const BMFace *f, float r_no[3])
+float mesh_face_calc_normal(const MeshFace *f, float r_no[3])
 {
-  BMLoop *l;
+  MeshLoop *l;
 
   /* common cases first */
   switch (f->len) {
     case 4: {
-      const float *co1 = (l = BM_FACE_FIRST_LOOP(f))->v->co;
+      const float *co1 = (l = MESH_FACE_FIRST_LOOP(f))->v->co;
       const float *co2 = (l = l->next)->v->co;
       const float *co3 = (l = l->next)->v->co;
       const float *co4 = (l->next)->v->co;
@@ -708,7 +708,7 @@ float BM_face_calc_normal(const BMFace *f, float r_no[3])
       return normal_quad_v3(r_no, co1, co2, co3, co4);
     }
     case 3: {
-      const float *co1 = (l = BM_FACE_FIRST_LOOP(f))->v->co;
+      const float *co1 = (l = MESH_FACE_FIRST_LOOP(f))->v->co;
       const float *co2 = (l = l->next)->v->co;
       const float *co3 = (l->next)->v->co;
 
@@ -719,36 +719,36 @@ float BM_face_calc_normal(const BMFace *f, float r_no[3])
     }
   }
 }
-void BM_face_normal_update(BMFace *f)
+void mesh_face_normal_update(MeshFace *f)
 {
-  BM_face_calc_normal(f, f->no);
+  mesh_face_calc_normal(f, f->no);
 }
 
-float BM_face_calc_normal_vcos(const BMesh *bm,
-                               const BMFace *f,
-                               float r_no[3],
-                               float const (*vertexCos)[3])
+float mesh_face_calc_normal_vcos(const Mesh *mesh,
+                                 const MeshFace *f,
+                                 float r_no[3],
+                                 float const (*vertexCos)[3])
 {
-  BMLoop *l;
+  MeshLoop *l;
 
   /* must have valid index data */
-  BLI_assert((bm->elem_index_dirty & BM_VERT) == 0);
+  lib_assert((mesh->elem_index_dirty & MESH_VERT) == 0);
   (void)bm;
 
   /* common cases first */
   switch (f->len) {
     case 4: {
-      const float *co1 = vertexCos[BM_elem_index_get((l = BM_FACE_FIRST_LOOP(f))->v)];
-      const float *co2 = vertexCos[BM_elem_index_get((l = l->next)->v)];
-      const float *co3 = vertexCos[BM_elem_index_get((l = l->next)->v)];
-      const float *co4 = vertexCos[BM_elem_index_get((l->next)->v)];
+      const float *co1 = vertexCos[mesh_elem_index_get((l = MESH_FACE_FIRST_LOOP(f))->v)];
+      const float *co2 = vertexCos[mesh_elem_index_get((l = l->next)->v)];
+      const float *co3 = vertexCos[mesh_elem_index_get((l = l->next)->v)];
+      const float *co4 = vertexCos[mesh_elem_index_get((l->next)->v)];
 
       return normal_quad_v3(r_no, co1, co2, co3, co4);
     }
     case 3: {
-      const float *co1 = vertexCos[BM_elem_index_get((l = BM_FACE_FIRST_LOOP(f))->v)];
-      const float *co2 = vertexCos[BM_elem_index_get((l = l->next)->v)];
-      const float *co3 = vertexCos[BM_elem_index_get((l->next)->v)];
+      const float *co1 = vertexCos[mesh_elem_index_get((l = MESH_FACE_FIRST_LOOP(f))->v)];
+      const float *co2 = vertexCos[mesh_elem_index_get((l = l->next)->v)];
+      const float *co3 = vertexCos[mesh_elem_index_get((l->next)->v)];
 
       return normal_tri_v3(r_no, co1, co2, co3);
     }
