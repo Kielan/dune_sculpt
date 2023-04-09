@@ -505,7 +505,7 @@ static int mesh_flag_count(Mesh *mesh,
       }
     }
   }
-  if (htype & BM_EDGE) {
+  if (htype & MESH_EDGE) {
     MeshIter iter;
     MeshEdge *ele;
     MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
@@ -529,27 +529,27 @@ static int mesh_flag_count(Mesh *mesh,
 
 int mesh_enabled_flag_count(Mesh *mesh, const char htype, const short oflag)
 {
-  return bmo_mesh_flag_count(bm, htype, oflag, true);
+  return mesh_flag_count(mesh, htype, oflag, true);
 }
 
-int BMO_mesh_disabled_flag_count(BMesh *bm, const char htype, const short oflag)
+int mesh_disabled_flag_count(Mesh *mesh, const char htype, const short oflag)
 {
-  return bmo_mesh_flag_count(bm, htype, oflag, false);
+  return mesh_flag_count(mesh, htype, oflag, false);
 }
 
-void BMO_mesh_flag_disable_all(BMesh *bm,
-                               BMOperator *UNUSED(op),
-                               const char htype,
-                               const short oflag)
+void mesh_flag_disable_all(Mesh *mesh,
+                           MeshOperator *UNUSED(op),
+                           const char htype,
+                           const short oflag)
 {
   if (htype & BM_VERT) {
-    BMIter iter;
-    BMVert *ele;
-    BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
-      BMO_vert_flag_disable(bm, ele, oflag);
+    MeshIter iter;
+    MeshVert *ele;
+    MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+      mesh_vert_flag_disable(mesh, ele, oflag);
     }
   }
-  if (htype & BM_EDGE) {
+  if (htype & MESH_EDGE) {
     BMIter iter;
     BMEdge *ele;
     BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
