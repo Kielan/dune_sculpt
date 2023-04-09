@@ -193,21 +193,21 @@ static bool mesh_face_split_edgenet_find_loop_pair(MeshVert *v_init,
     swap = !swap;
   }
   if (swap) {
-    SWAP(BMEdge *, e_pair[0], e_pair[1]);
+    SWAP(MeshEdge *, e_pair[0], e_pair[1]);
   }
 
   return true;
 }
 
 /**
- * A reduced version of #bm_face_split_edgenet_find_loop_pair
+ * A reduced version of mesh_face_split_edgenet_find_loop_pair
  * that only checks if it would return true.
  *
  * note There is no use in caching resulting edges here,
- * since between this check and running #bm_face_split_edgenet_find_loop,
+ * since between this check and running mesh_face_split_edgenet_find_loop,
  * the selected edges may have had faces attached.
  */
-static bool mesh_face_split_edgenet_find_loop_pair_exists(BMVert *v_init)
+static bool mesh_face_split_edgenet_find_loop_pair_exists(MeshVert *v_init)
 {
   int edges_boundary_len = 0;
   int edges_wire_len = 0;
@@ -217,7 +217,7 @@ static bool mesh_face_split_edgenet_find_loop_pair_exists(BMVert *v_init)
     e = e_first = v_init->e;
     do {
       if (MESH_ELEM_API_FLAG_TEST(e, EDGE_NET)) {
-        const uint count = bm_edge_flagged_radial_count(e);
+        const uint count = mesh_edge_flagged_radial_count(e);
         if (count == 1) {
           edges_boundary_len++;
         }
@@ -225,7 +225,7 @@ static bool mesh_face_split_edgenet_find_loop_pair_exists(BMVert *v_init)
           edges_wire_len++;
         }
       }
-    } while ((e = BM_DISK_EDGE_NEXT(e, v_init)) != e_first);
+    } while ((e = MESH_DISK_EDGE_NEXT(e, v_init)) != e_first);
   }
 
   /* first edge should always be boundary */
@@ -250,44 +250,44 @@ static bool mesh_face_split_edgenet_find_loop_pair_exists(BMVert *v_init)
   return true;
 }
 
-static bool bm_face_split_edgenet_find_loop_walk(BMVert *v_init,
-                                                 const float face_normal[3],
-                                                 /* cache to avoid realloc every time */
-                                                 struct VertOrder *edge_order,
-                                                 const uint edge_order_len,
-                                                 BMEdge *e_pair[2])
+static bool mesh_face_split_edgenet_find_loop_walk(MeshVert *v_init,
+                                                   const float face_normal[3],
+                                                   /* cache to avoid realloc every time */
+                                                   struct VertOrder *edge_order,
+                                                   const uint edge_order_len,
+                                                   MeshEdge *e_pair[2])
 {
   /* fast-path for the common case (avoid push-pop).
    * Also avoids tagging as visited since we know we
    * can't reach these verts some other way */
 #define USE_FASTPATH_NOFORK
 
-  BMVert *v;
-  BMVert *v_dst;
-  bool found = false;
+   MeshVert *v;
+   MeshVert *v_dst;
+   bool found = false;
 
   struct VertOrder *eo;
   STACK_DECLARE(edge_order);
 
   /* store visited verts so we can clear the visit flag after execution */
-  BLI_SMALLSTACK_DECLARE(vert_visit, BMVert *);
+  LIB_SMALLSTACK_DECLARE(vert_visit, MeshVert *);
 
   /* likely this will stay very small
    * all verts pushed into this stack _must_ have their previous edges set! */
-  BLI_SMALLSTACK_DECLARE(vert_stack, BMVert *);
-  BLI_SMALLSTACK_DECLARE(vert_stack_next, BMVert *);
+  LIB_SMALLSTACK_DECLARE(vert_stack, MeshVert *);
+  LIB_SMALLSTACK_DECLARE(vert_stack_next, MeshVert *);
 
   STACK_INIT(edge_order, edge_order_len);
 
   /* start stepping */
-  v = BM_edge_other_vert(e_pair[0], v_init);
+  v = mesh_edge_other_vert(e_pair[0], v_init);
   v->e = e_pair[0];
-  BLI_SMALLSTACK_PUSH(vert_stack, v);
+  LIB_SMALLSTACK_PUSH(vert_stack, v);
 
-  v_dst = BM_edge_other_vert(e_pair[1], v_init);
+  v_dst = mesh_edge_other_vert(e_pair[1], v_init);
 
 #ifdef DEBUG_PRINT
-  printf("%s: vert (search) %d\n", __func__, BM_elem_index_get(v_init));
+  printf("%s: vert (search) %d\n", __func__, mesh_elem_index_get(v_init));
 #endif
 
   /* This loop will keep stepping over the best possible edge,
@@ -296,15 +296,15 @@ static bool bm_face_split_edgenet_find_loop_walk(BMVert *v_init,
    * In cases where paths can't be closed,
    * alternatives are stored in the 'vert_stack'.
    */
-  while ((v = BLI_SMALLSTACK_POP_EX(vert_stack, vert_stack_next))) {
+  while ((v = LIB_SMALLSTACK_POP_EX(vert_stack, vert_stack_next))) {
 #ifdef USE_FASTPATH_NOFORK
   walk_nofork:
 #else
-    BLI_SMALLSTACK_PUSH(vert_visit, v);
-    BM_ELEM_API_FLAG_ENABLE(v, VERT_VISIT);
+    LIB_SMALLSTACK_PUSH(vert_visit, v);
+    MESH_ELEM_API_FLAG_ENABLE(v, VERT_VISIT);
 #endif
 
-    BLI_assert(STACK_SIZE(edge_order) == 0);
+    lib_assert(STACK_SIZE(edge_order) == 0);
 
     /* check if we're done! */
     if (v == v_dst) {
@@ -312,42 +312,42 @@ static bool bm_face_split_edgenet_find_loop_walk(BMVert *v_init,
       goto finally;
     }
 
-    BMEdge *e_next, *e_first;
+    MeshEdge *e_next, *e_first;
     e_first = v->e;
-    e_next = BM_DISK_EDGE_NEXT(e_first, v); /* always skip this verts edge */
+    e_next = MESH_DISK_EDGE_NEXT(e_first, v); /* always skip this verts edge */
 
     /* in rare cases there may be edges with a single connecting vertex */
     if (e_next != e_first) {
       do {
-        if (BM_ELEM_API_FLAG_TEST(e_next, EDGE_NET) &&
-            (bm_edge_flagged_radial_count(e_next) < 2)) {
-          BMVert *v_next;
+        if (MESH_ELEM_API_FLAG_TEST(e_next, EDGE_NET) &&
+            (mesh_edge_flagged_radial_count(e_next) < 2)) {
+          MeshVert *v_next;
 
-          v_next = BM_edge_other_vert(e_next, v);
-          BLI_assert(v->e != e_next);
+          v_next = mesh_edge_other_vert(e_next, v);
+          lib_assert(v->e != e_next);
 
 #ifdef DEBUG_PRINT
           /* indent and print */
           {
-            BMVert *_v = v;
+            MeshVert *_v = v;
             do {
               printf("  ");
-            } while ((_v = BM_edge_other_vert(_v->e, _v)) != v_init);
+            } while ((_v = mesh_edge_other_vert(_v->e, _v)) != v_init);
             printf("vert %d -> %d (add=%d)\n",
-                   BM_elem_index_get(v),
-                   BM_elem_index_get(v_next),
-                   BM_ELEM_API_FLAG_TEST(v_next, VERT_VISIT) == 0);
+                   mesh_elem_index_get(v),
+                   mesh_elem_index_get(v_next),
+                   MESH_ELEM_API_FLAG_TEST(v_next, VERT_VISIT) == 0);
           }
 #endif
 
-          if (!BM_ELEM_API_FLAG_TEST(v_next, VERT_VISIT)) {
+          if (!MESH_ELEM_API_FLAG_TEST(v_next, VERT_VISIT)) {
             eo = STACK_PUSH_RET_PTR(edge_order);
             eo->v = v_next;
 
             v_next->e = e_next;
           }
         }
-      } while ((e_next = BM_DISK_EDGE_NEXT(e_next, v)) != e_first);
+      } while ((e_next = MESH_DISK_EDGE_NEXT(e_next, v)) != e_first);
     }
 
 #ifdef USE_FASTPATH_NOFORK
@@ -362,7 +362,7 @@ static bool bm_face_split_edgenet_find_loop_walk(BMVert *v_init,
     /* sort by angle if needed */
     if (STACK_SIZE(edge_order) > 1) {
       uint j;
-      BMVert *v_prev = BM_edge_other_vert(v->e, v);
+      MeshVert *v_prev = mesh_edge_other_vert(v->e, v);
 
       for (j = 0; j < STACK_SIZE(edge_order); j++) {
         edge_order[j].angle = angle_signed_on_axis_v3v3v3_v3(
@@ -371,28 +371,28 @@ static bool bm_face_split_edgenet_find_loop_walk(BMVert *v_init,
       qsort(edge_order,
             STACK_SIZE(edge_order),
             sizeof(struct VertOrder),
-            BLI_sortutil_cmp_float_reverse);
+            lib_sortutil_cmp_float_reverse);
 
 #ifdef USE_FASTPATH_NOFORK
       /* only tag forks */
-      BLI_SMALLSTACK_PUSH(vert_visit, v);
-      BM_ELEM_API_FLAG_ENABLE(v, VERT_VISIT);
+      LIB_SMALLSTACK_PUSH(vert_visit, v);
+      MESH_ELEM_API_FLAG_ENABLE(v, VERT_VISIT);
 #endif
     }
 
     while ((eo = STACK_POP_PTR(edge_order))) {
-      BLI_SMALLSTACK_PUSH(vert_stack_next, eo->v);
+      LIB_SMALLSTACK_PUSH(vert_stack_next, eo->v);
     }
 
-    if (!BLI_SMALLSTACK_IS_EMPTY(vert_stack_next)) {
-      BLI_SMALLSTACK_SWAP(vert_stack, vert_stack_next);
+    if (!LIB_SMALLSTACK_IS_EMPTY(vert_stack_next)) {
+      LIB_SMALLSTACK_SWAP(vert_stack, vert_stack_next);
     }
   }
 
 finally:
   /* clear flag for next execution */
-  while ((v = BLI_SMALLSTACK_POP(vert_visit))) {
-    BM_ELEM_API_FLAG_DISABLE(v, VERT_VISIT);
+  while ((v = LIB_SMALLSTACK_POP(vert_visit))) {
+    MESH_ELEM_API_FLAG_DISABLE(v, VERT_VISIT);
   }
 
   return found;
@@ -400,64 +400,64 @@ finally:
 #undef USE_FASTPATH_NOFORK
 }
 
-static bool bm_face_split_edgenet_find_loop(BMVert *v_init,
+static bool mesh_face_split_edgenet_find_loop(MeshVert *v_init,
                                             const float face_normal[3],
                                             const float face_normal_matrix[3][3],
                                             /* cache to avoid realloc every time */
                                             struct VertOrder *edge_order,
                                             const uint edge_order_len,
-                                            BMVert **r_face_verts,
+                                            MeshVert **r_face_verts,
                                             int *r_face_verts_len)
 {
-  BMEdge *e_pair[2];
-  BMVert *v;
+  MeshEdge *e_pair[2];
+  MeshVert *v;
 
-  if (!bm_face_split_edgenet_find_loop_pair(v_init, face_normal, face_normal_matrix, e_pair)) {
+  if (mesh_face_split_edgenet_find_loop_pair(v_init, face_normal, face_normal_matrix, e_pair)) {
     return false;
   }
 
-  BLI_assert((bm_edge_flagged_radial_count(e_pair[0]) == 1) ||
-             (bm_edge_flagged_radial_count(e_pair[1]) == 1));
+  lib_assert((mesh_edge_flagged_radial_count(e_pair[0]) == 1) ||
+             (mesh_edge_flagged_radial_count(e_pair[1]) == 1));
 
   if (bm_face_split_edgenet_find_loop_walk(
           v_init, face_normal, edge_order, edge_order_len, e_pair)) {
     uint i = 0;
 
     r_face_verts[i++] = v_init;
-    v = BM_edge_other_vert(e_pair[1], v_init);
+    v = mesh_edge_other_vert(e_pair[1], v_init);
     do {
       r_face_verts[i++] = v;
-    } while ((v = BM_edge_other_vert(v->e, v)) != v_init);
+    } while ((v = mesh_edge_other_vert(v->e, v)) != v_init);
     *r_face_verts_len = i;
     return (i > 2) ? true : false;
   }
   return false;
 }
 
-bool BM_face_split_edgenet(BMesh *bm,
-                           BMFace *f,
-                           BMEdge **edge_net,
-                           const int edge_net_len,
-                           BMFace ***r_face_arr,
-                           int *r_face_arr_len)
+bool mesh_face_split_edgenet(Mesh *mesh,
+                             MeshFace *f,
+                             MeshEdge **edge_net,
+                             const int edge_net_len,
+                             MeshFace ***r_face_arr,
+                             int *r_face_arr_len)
 {
   /* re-use for new face verts */
-  BMVert **face_verts;
+  MeshVert **face_verts;
   int face_verts_len;
 
-  BMFace **face_arr = NULL;
-  BLI_array_declare(face_arr);
+  MeshFace **face_arr = NULL;
+  lib_array_declare(face_arr);
 
-  BMVert **vert_queue;
+  MeshVert **vert_queue;
   STACK_DECLARE(vert_queue);
   int i;
 
   struct VertOrder *edge_order;
   const uint edge_order_len = edge_net_len + 2;
 
-  BMVert *v;
+  MeshVert *v;
 
-  BMLoop *l_iter, *l_first;
+  MeshLoop *l_iter, *l_first;
 
   if (!edge_net_len) {
     if (r_face_arr) {
@@ -471,25 +471,25 @@ bool BM_face_split_edgenet(BMesh *bm,
    * large for single faces with complex edge-nets, see: T65980. */
 
   /* over-alloc (probably 2-4 is only used in most cases), for the biggest-fan */
-  edge_order = MEM_mallocN(sizeof(*edge_order) * edge_order_len, __func__);
+  edge_order = mem_mallocN(sizeof(*edge_order) * edge_order_len, __func__);
 
   /* use later */
-  face_verts = MEM_mallocN(sizeof(*face_verts) * (edge_net_len + f->len), __func__);
+  face_verts = mem_mallocn(sizeof(*face_verts) * (edge_net_len + f->len), __func__);
 
-  vert_queue = MEM_mallocN(sizeof(vert_queue) * (edge_net_len + f->len), __func__);
+  vert_queue = mem_mallocn(sizeof(vert_queue) * (edge_net_len + f->len), __func__);
   STACK_INIT(vert_queue, f->len + edge_net_len);
 
-  BLI_assert(BM_ELEM_API_FLAG_TEST(f, FACE_NET) == 0);
-  BM_ELEM_API_FLAG_ENABLE(f, FACE_NET);
+  lib_assert(MESH_ELEM_API_FLAG_TEST(f, FACE_NET) == 0);
+  MESH_ELEM_API_FLAG_ENABLE(f, FACE_NET);
 
 #ifdef DEBUG
   for (i = 0; i < edge_net_len; i++) {
-    BLI_assert(BM_ELEM_API_FLAG_TEST(edge_net[i], EDGE_NET) == 0);
-    BLI_assert(BM_edge_in_face(edge_net[i], f) == false);
+    lib_assert(MESH_ELEM_API_FLAG_TEST(edge_net[i], EDGE_NET) == 0);
+    lib_assert(MESH_edge_in_face(edge_net[i], f) == false);
   }
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    BLI_assert(BM_ELEM_API_FLAG_TEST(l_iter->e, EDGE_NET) == 0);
+    lib_assert(MESH_ELEM_API_FLAG_TEST(l_iter->e, EDGE_NET) == 0);
   } while ((l_iter = l_iter->next) != l_first);
 #endif
 
@@ -500,14 +500,14 @@ bool BM_face_split_edgenet(BMesh *bm,
    * so we better be strict about this! see: T51539 */
 
   for (i = 0; i < edge_net_len; i++) {
-    BM_ELEM_API_FLAG_ENABLE(edge_net[i], EDGE_NET);
-    BM_ELEM_API_FLAG_DISABLE(edge_net[i]->v1, VERT_IN_QUEUE);
-    BM_ELEM_API_FLAG_DISABLE(edge_net[i]->v2, VERT_IN_QUEUE);
+    MESH_ELEM_API_FLAG_ENABLE(edge_net[i], EDGE_NET);
+    MESH_ELEM_API_FLAG_DISABLE(edge_net[i]->v1, VERT_IN_QUEUE);
+    MESH_ELEM_API_FLAG_DISABLE(edge_net[i]->v2, VERT_IN_QUEUE);
   }
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    BM_ELEM_API_FLAG_ENABLE(l_iter->e, EDGE_NET);
-    BM_ELEM_API_FLAG_DISABLE(l_iter->v, VERT_IN_QUEUE);
+    MESH_ELEM_API_FLAG_ENABLE(l_iter->e, EDGE_NET);
+    MESH_ELEM_API_FLAG_DISABLE(l_iter->v, VERT_IN_QUEUE);
   } while ((l_iter = l_iter->next) != l_first);
 
   float face_normal_matrix[3][3];
