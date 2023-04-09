@@ -871,7 +871,7 @@ static BMEdge *test_edges_isect_2d_vert(const struct EdgeGroup_FindConnection_Ar
   user_data.v_other = v_other;
   user_data.vert_range = args->vert_range;
 
-  index = BLI_bvhtree_ray_cast_ex(args->bvhtree,
+  index = lib_bvhtree_ray_cast_ex(args->bvhtree,
                                   v_origin->co,
                                   dir,
                                   0.0f,
@@ -880,7 +880,7 @@ static BMEdge *test_edges_isect_2d_vert(const struct EdgeGroup_FindConnection_Ar
                                   &user_data,
                                   0);
 
-  BMEdge *e_hit = (index != -1) ? args->edge_arr[index] : NULL;
+  MeshEdge *e_hit = (index != -1) ? args->edge_arr[index] : NULL;
 
   /* check existing connections (no spatial optimization here since we're continually adding). */
   if (LIKELY(index == -1)) {
@@ -906,7 +906,7 @@ static BMEdge *test_edges_isect_2d_vert(const struct EdgeGroup_FindConnection_Ar
  * Similar to #test_edges_isect_2d_vert but we're casting into a direction,
  * (not to a vertex)
  */
-static BMEdge *test_edges_isect_2d_ray(const struct EdgeGroup_FindConnection_Args *args,
+static MeshEdge *test_edges_isect_2d_ray(const struct EdgeGroup_FindConnection_Args *args,
                                        BMVert *v_origin,
                                        const float dir[3])
 {
