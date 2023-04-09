@@ -1162,21 +1162,21 @@ static void bmo_flag_layer_alloc(BMesh *bm)
   /* set the index values since we are looping over all data anyway,
    * may save time later on */
 
-  BLI_mempool *voldpool = bm->vtoolflagpool; /* old flag pool */
-  BLI_mempool *eoldpool = bm->etoolflagpool; /* old flag pool */
-  BLI_mempool *foldpool = bm->ftoolflagpool; /* old flag pool */
+  lib_mempool *voldpool = bm->vtoolflagpool; /* old flag pool */
+  lib_mempool *eoldpool = bm->etoolflagpool; /* old flag pool */
+  lib_mempool *foldpool = bm->ftoolflagpool; /* old flag pool */
 
   /* store memcpy size for reuse */
-  const size_t old_totflags_size = (bm->totflags * sizeof(BMFlagLayer));
+  const size_t old_totflags_size = (mesh->totflags * sizeof(MeshFlagLayer));
 
-  bm->totflags++;
+  mesh->totflags++;
 
-  bm->vtoolflagpool = BLI_mempool_create(
-      sizeof(BMFlagLayer) * bm->totflags, bm->totvert, 512, BLI_MEMPOOL_NOP);
-  bm->etoolflagpool = BLI_mempool_create(
-      sizeof(BMFlagLayer) * bm->totflags, bm->totedge, 512, BLI_MEMPOOL_NOP);
-  bm->ftoolflagpool = BLI_mempool_create(
-      sizeof(BMFlagLayer) * bm->totflags, bm->totface, 512, BLI_MEMPOOL_NOP);
+  mesh->vtoolflagpool = lib_mempool_create(
+      sizeof(BMFlagLayer) * mesh->totflags, mesh->totvert, 512, LIB_MEMPOOL_NOP);
+  bm->etoolflagpool = lib_mempool_create(
+      sizeof(BMFlagLayer) * mesh->totflags, mesh->totedge, 512, LIB_MEMPOOL_NOP);
+  bm->ftoolflagpool = lib_mempool_create(
+      sizeof(BMFlagLayer) * mesh->totflags, mesh->totface, 512, LIB_MEMPOOL_NOP);
 
   /* now go through and memcpy all the flags. Loops don't get a flag layer at this time. */
   BMIter iter;
