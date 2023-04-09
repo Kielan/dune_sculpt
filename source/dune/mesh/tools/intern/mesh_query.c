@@ -2073,10 +2073,10 @@ double mesh_calc_volume(Mesh *mesh, bool is_signed)
 {
   /* warning, calls own tessellation function, may be slow */
   double vol = 0.0;
-  BMFace *f;
-  BMIter fiter;
+  MeshFace *f;
+  MeshIter fiter;
 
-  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+  MESH_ITER_MESH (f, &fiter, mesh, MESH_FACES_OF_MESH) {
     vol += bm_mesh_calc_volume_face(f);
   }
 
@@ -2087,16 +2087,16 @@ double mesh_calc_volume(Mesh *mesh, bool is_signed)
   return vol;
 }
 
-int BM_mesh_calc_face_groups(BMesh *bm,
-                             int *r_groups_array,
-                             int (**r_group_index)[2],
-                             BMLoopFilterFunc filter_fn,
-                             BMLoopPairFilterFunc filter_pair_fn,
-                             void *user_data,
-                             const char hflag_test,
-                             const char htype_step)
+int mesh_calc_face_groups(Mesh *mesh,
+                          int *r_groups_array,
+                          int (**r_group_index)[2],
+                          MeshLoopFilterFn filter_fn,
+                          MeshLoopPairFilterFn filter_pair_fn,
+                          void *user_data,
+                          const char hflag_test,
+                          const char htype_step)
 {
-  /* NOTE: almost duplicate of #BM_mesh_calc_edge_groups, keep in sync. */
+  /* NOTE: almost duplicate of mesh_calc_edge_groups, keep in sync. */
 
 #ifdef DEBUG
   int group_index_len = 1;
@@ -2104,7 +2104,7 @@ int BM_mesh_calc_face_groups(BMesh *bm,
   int group_index_len = 32;
 #endif
 
-  int(*group_index)[2] = MEM_mallocN(sizeof(*group_index) * group_index_len, __func__);
+  int(*group_index)[2] = mem_mallocn(sizeof(*group_index) * group_index_len, __func__);
 
   int *group_array = r_groups_array;
   STACK_DECLARE(group_array);
@@ -2114,20 +2114,20 @@ int BM_mesh_calc_face_groups(BMesh *bm,
   uint tot_faces = 0;
   uint tot_touch = 0;
 
-  BMFace **stack;
+  MeshFace **stack;
   STACK_DECLARE(stack);
 
-  BMIter iter;
-  BMFace *f, *f_next;
+  MeshIter iter;
+  MeshFace *f, *f_next;
   int i;
 
-  STACK_INIT(group_array, bm->totface);
+  STACK_INIT(group_array, mesh->totface);
 
-  BLI_assert(((htype_step & ~(BM_VERT | BM_EDGE)) == 0) && (htype_step != 0));
+  lib_assert(((htype_step & ~(MESH_VERT | MESH_EDGE)) == 0) && (htype_step != 0));
 
   /* init the array */
-  BM_ITER_MESH_INDEX (f, &iter, bm, BM_FACES_OF_MESH, i) {
-    if ((hflag_test == 0) || BM_elem_flag_test(f, hflag_test)) {
+  MESH_ITER_MESH_INDEX (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
+    if ((hflag_test == 0) || mesh_elem_flag_test(f, hflag_test)) {
       tot_faces++;
       BM_elem_flag_disable(f, BM_ELEM_TAG);
     }
