@@ -22,7 +22,7 @@ void mesh_face_calc_tessellation(const MeshFace *f,
 void mesh_face_calc_point_in_face(const MeshFace *f, float r_co[3]);
 
 /**
- * \brief BMESH UPDATE FACE NORMAL
+ * MESH UPDATE FACE NORMAL
  *
  * Updates the stored normal for the
  * given face. Requires that a buffer
@@ -30,9 +30,9 @@ void mesh_face_calc_point_in_face(const MeshFace *f, float r_co[3]);
  * coordinates for all of the face's vertices
  * is passed in as well.
  */
-float BM_face_calc_normal(const BMFace *f, float r_no[3]) ATTR_NONNULL();
-/* exact same as 'BM_face_calc_normal' but accepts vertex coords */
-float BM_face_calc_normal_vcos(const Mesh *mesh,
+float mesh_face_calc_normal(const MeshFace *f, float r_no[3]) ATTR_NONNULL();
+/* exact same as 'mesh_face_calc_normal' but accepts vertex coords */
+float mesh_face_calc_normal_vcos(const Mesh *mesh,
                                const MeshFace *f,
                                float r_no[3],
                                float const (*vertexCos)[3]) ATTR_NONNULL();
@@ -47,9 +47,7 @@ void mesh_verts_calc_normal_from_cloud_ex(
     MeshVert **varr, int varr_len, float r_normal[3], float r_center[3], int *r_index_tangent);
 void mesh_verts_calc_normal_from_cloud(MeshVert **varr, int varr_len, float r_normal[3]);
 
-/**
- * Calculates the face subset normal.
- */
+/** Calculates the face subset normal. **/
 float mesh_face_calc_normal_subset(const MeshLoop *l_first, const MeshLoop *l_last, float r_no[3])
     ATTR_NONNULL();
 /** get the area of the face **/
@@ -89,114 +87,101 @@ void mesh_face_calc_tangent_vert_diagonal(const MeshFace *f, float r_tangent[3])
 /**
  * Compute a meaningful direction along the face (use for gizmo axis).
  *
- * \note Callers shouldn't depend on the *exact* method used here.
+ * note Callers shouldn't depend on the *exact* method used here.
  */
-void BM_face_calc_tangent_auto(const BMFace *f, float r_tangent[3]) ATTR_NONNULL();
-/**
- * computes center of face in 3d.  uses center of bounding box.
- */
-void BM_face_calc_center_bounds(const BMFace *f, float r_cent[3]) ATTR_NONNULL();
-/**
- * computes center of face in 3d.  uses center of bounding box.
- */
-void BM_face_calc_center_bounds_vcos(const BMesh *bm,
-                                     const BMFace *f,
+void mesh_face_calc_tangent_auto(const MeshFace *f, float r_tangent[3]) ATTR_NONNULL();
+/** computes center of face in 3d.  uses center of bounding box. **/
+void mesh_face_calc_center_bounds(const MeshFace *f, float r_cent[3]) ATTR_NONNULL();
+/** computes center of face in 3d.  uses center of bounding box. */
+void mesh_face_calc_center_bounds_vcos(const Mesh *mesh,
+                                     const MeshFace *f,
                                      float r_center[3],
                                      float const (*vertexCos)[3]) ATTR_NONNULL();
-/**
- * computes the center of a face, using the mean average
- */
-void BM_face_calc_center_median(const BMFace *f, float r_center[3]) ATTR_NONNULL();
-/* exact same as 'BM_face_calc_normal' but accepts vertex coords */
-void BM_face_calc_center_median_vcos(const BMesh *bm,
-                                     const BMFace *f,
+/** computes the center of a face, using the mean average **/
+void mesh_face_calc_center_median(const MeshFace *f, float r_center[3]) ATTR_NONNULL();
+/* exact same as 'mesh_face_calc_normal' but accepts vertex coords */
+void mesh_face_calc_center_median_vcos(const Mesh *mesh,
+                                     const MeshFace *f,
                                      float r_center[3],
                                      float const (*vertexCos)[3]) ATTR_NONNULL();
-/**
- * computes the center of a face, using the mean average
- * weighted by edge length
- */
-void BM_face_calc_center_median_weighted(const BMFace *f, float r_cent[3]) ATTR_NONNULL();
+/** computes the center of a face,
+ * using the mean average
+ * weighted by edge length **/
+void mesh_face_calc_center_median_weighted(const MeshFace *f, float r_cent[3]) ATTR_NONNULL();
+
+/** expands bounds (min/max must be initialized). **/
+void mesh_face_calc_bounds_expand(const MeshFace *f, float min[3], float max[3]);
+
+void mesh_face_normal_update(MeshFace *f) ATTR_NONNULL();
+
+/** updates face and vertex normals incident on an edge **/
+void mesh_edge_normals_update(MeshEdge *e) ATTR_NONNULL();
+
+bool mesh_vert_calc_normal_ex(const MeshVert *v, char hflag, float r_no[3]);
+bool mesh_vert_calc_normal(const MeshVert *v, float r_no[3]);
+/** update a vert normal (but not the faces incident on it) **/
+void mesh_vert_normal_update(MeshVert *v) ATTR_NONNULL();
+void mesh_vert_normal_update_all(MeshVert *v) ATTR_NONNULL();
 
 /**
- * expands bounds (min/max must be initialized).
- */
-void BM_face_calc_bounds_expand(const BMFace *f, float min[3], float max[3]);
-
-void BM_face_normal_update(BMFace *f) ATTR_NONNULL();
-
-/**
- * updates face and vertex normals incident on an edge
- */
-void BM_edge_normals_update(BMEdge *e) ATTR_NONNULL();
-
-bool BM_vert_calc_normal_ex(const BMVert *v, char hflag, float r_no[3]);
-bool BM_vert_calc_normal(const BMVert *v, float r_no[3]);
-/**
- * update a vert normal (but not the faces incident on it)
- */
-void BM_vert_normal_update(BMVert *v) ATTR_NONNULL();
-void BM_vert_normal_update_all(BMVert *v) ATTR_NONNULL();
-
-/**
- * \brief Face Flip Normal
+ * Face Flip Normal
  *
  * Reverses the winding of a face.
- * \note This updates the calculated normal.
+ * This updates the calculated normal.
  */
-void BM_face_normal_flip_ex(BMesh *bm,
-                            BMFace *f,
-                            int cd_loop_mdisp_offset,
-                            bool use_loop_mdisp_flip) ATTR_NONNULL();
-void BM_face_normal_flip(BMesh *bm, BMFace *f) ATTR_NONNULL();
+void mesh_face_normal_flip_ex(Mesh *mesh,
+                              MeshFace *f,
+                              int cd_loop_mdisp_offset,
+                              bool use_loop_mdisp_flip) ATTR_NONNULL();
+void mesh_face_normal_flip(Mesh *mesh, MeshFace *f) ATTR_NONNULL();
 /**
- * BM POINT IN FACE
+ * MESH POINT IN FACE
  *
  * Projects co onto face f, and returns true if it is inside
  * the face bounds.
  *
- * \note this uses a best-axis projection test,
+ * note this uses a best-axis projection test,
  * instead of projecting co directly into f's orientation space,
  * so there might be accuracy issues.
  */
-bool BM_face_point_inside_test(const BMFace *f, const float co[3]) ATTR_WARN_UNUSED_RESULT
+bool mesh_face_point_inside_test(const BMFace *f, const float co[3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
 /**
- * \brief BMESH TRIANGULATE FACE
+ * MESH TRIANGULATE FACE
  *
  * Breaks all quads and ngons down to triangles.
  * It uses poly-fill for the ngons splitting, and
  * the beautify operator when use_beauty is true.
  *
- * \param r_faces_new: if non-null, must be an array of BMFace pointers,
+ * param r_faces_new: if non-null, must be an array of MeshFace pointers,
  * with a length equal to (f->len - 3). It will be filled with the new
  * triangles (not including the original triangle).
  *
- * \param r_faces_double: When newly created faces are duplicates of existing faces,
+ * param r_faces_double: When newly created faces are duplicates of existing faces,
  * they're added to this list. Caller must handle de-duplication.
  * This is done because its possible _all_ faces exist already,
  * and in that case we would have to remove all faces including the one passed,
  * which causes complications adding/removing faces while looking over them.
  *
- * \note The number of faces is _almost_ always (f->len - 3),
+ * note The number of faces is _almost_ always (f->len - 3),
  *       However there may be faces that already occupying the
  *       triangles we would make, so the caller must check \a r_faces_new_tot.
  *
- * \note use_tag tags new flags and edges.
+ * note use_tag tags new flags and edges.
  */
-void BM_face_triangulate(BMesh *bm,
-                         BMFace *f,
-                         BMFace **r_faces_new,
-                         int *r_faces_new_tot,
-                         BMEdge **r_edges_new,
-                         int *r_edges_new_tot,
-                         struct LinkNode **r_faces_double,
-                         int quad_method,
-                         int ngon_method,
-                         bool use_tag,
-                         struct MemArena *pf_arena,
-                         struct Heap *pf_heap) ATTR_NONNULL(1, 2);
+void mesh_face_triangulate(Mesh *mesh,
+                           MeshFace *f,
+                           MeshFace **r_faces_new,
+                           int *r_faces_new_tot,
+                           MeshEdge **r_edges_new,
+                           int *r_edges_new_tot,
+                           struct LinkNode **r_faces_double,
+                           int quad_method,
+                           int ngon_method,
+                           bool use_tag,
+                           struct MemArena *pf_arena,
+                           struct Heap *pf_heap) ATTR_NONNULL(1, 2);
 
 /**
  * each pair of loops defines a new edge, a split.  this function goes
