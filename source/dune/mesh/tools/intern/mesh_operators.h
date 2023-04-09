@@ -1,10 +1,6 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-/* See comments in `intern/bmesh_opdefines.c` for documentation of specific operators. */
+/* See comments in `intern/mesh_opdefines.c` for documentation of specific operators. */
 
 /*--------defines/enumerations for specific operators-------*/
 
@@ -158,7 +154,7 @@ void BM_mesh_esubdivide(BMesh *bm,
 /**
  * Fills first available UV-map with grid-like UV's for all faces with `oflag` set.
  *
- * \param bm: The BMesh to operate on
+ * \param mesh: The BMesh to operate on
  * \param x_segments: The x-resolution of the grid
  * \param y_segments: The y-resolution of the grid
  * \param oflag: The flag to check faces with.
