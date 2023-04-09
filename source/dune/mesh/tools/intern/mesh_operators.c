@@ -964,26 +964,26 @@ static void mesh_slot_buffer_from_flag(Mesh *bm,
   lib_assert((slot->slot_subtype.elem & BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE) == 0);
 
   if (test_for_enabled) {
-    totelement = BMO_mesh_enabled_flag_count(bm, htype, oflag);
+    totelement = mesh_op_mesh_enabled_flag_count(bm, htype, oflag);
   }
   else {
-    totelement = BMO_mesh_disabled_flag_count(bm, htype, oflag);
+    totelement = mesh_op_mesh_disabled_flag_count(bm, htype, oflag);
   }
 
   if (totelement) {
-    BMIter iter;
-    BMHeader *ele;
-    BMHeader **ele_array;
+    MeshIter iter;
+    MeshHeader *ele;
+    MeshHeader **ele_array;
 
-    BMO_slot_buffer_alloc(op, slot_args, slot_name, totelement);
+    mesh_op_slot_buffer_alloc(op, slot_args, slot_name, totelement);
 
-    ele_array = (BMHeader **)slot->data.buf;
+    ele_array = (MeshHeader **)slot->data.buf;
 
     /* TODO: collapse these loops into one. */
 
-    if (htype & BM_VERT) {
-      BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
-        if (BMO_vert_flag_test_bool(bm, (BMVert *)ele, oflag) == test_for_enabled) {
+    if (htype & MESH_VERT) {
+      MESH_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
+        if (mesh_op_vert_flag_test_bool(bm, (BMVert *)ele, oflag) == test_for_enabled) {
           ele_array[i] = ele;
           i++;
         }
@@ -1023,22 +1023,22 @@ void mesh_slot_buffer_from_enabled_flag(Mesh *mesh,
   mesh_slot_buffer_from_flag(mesh, op, slot_args, slot_name, htype, oflag, true);
 }
 
-void BMO_slot_buffer_from_disabled_flag(BMesh *bm,
-                                        BMOperator *op,
-                                        BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                                        const char *slot_name,
-                                        const char htype,
-                                        const short oflag)
+void mesh_op_slot_buffer_from_disabled_flag(Mesh *mesh,
+                                            MeshOp *op,
+                                            MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                                            const char *slot_name,
+                                            const char htype,
+                                            const short oflag)
 {
-  bmo_slot_buffer_from_flag(bm, op, slot_args, slot_name, htype, oflag, false);
+  mesh_slot_buffer_from_flag(mesh, op, slot_args, slot_name, htype, oflag, false);
 }
 
-void BMO_slot_buffer_hflag_enable(BMesh *bm,
-                                  BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
-                                  const char *slot_name,
-                                  const char htype,
-                                  const char hflag,
-                                  const bool do_flush)
+void mesh_op_slot_buffer_hflag_enable(Mesh *mesh,
+                                      MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                                      const char *slot_name,
+                                      const char htype,
+                                      const char hflag,
+                                      const bool do_flush)
 {
   BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
   BMElem **data = (BMElem **)slot->data.buf;
