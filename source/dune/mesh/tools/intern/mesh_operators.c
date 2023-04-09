@@ -306,8 +306,8 @@ void mesh_slot_float_set(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *sl
 void mesh_slot_int_set(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name, const int i)
 {
   MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
-  lib_assert(slot->slot_type == BMO_OP_SLOT_INT);
-  if (!(slot->slot_type == BMO_OP_SLOT_INT)) {
+  lib_assert(slot->slot_type == MESH_OP_SLOT_INT);
+  if (!(slot->slot_type == MESH_OP_SLOT_INT)) {
     return;
   }
 
@@ -316,16 +316,16 @@ void mesh_slot_int_set(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_
 
 void mesh_slot_bool_set(MeshOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *slot_name, const bool i)
 {
-  BMOpSlot *slot = BMO_slot_get(slot_args, slot_name);
-  BLI_assert(slot->slot_type == BMO_OP_SLOT_BOOL);
-  if (!(slot->slot_type == BMO_OP_SLOT_BOOL)) {
+  MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
+  lib_assert(slot->slot_type == MESH_OP_SLOT_BOOL);
+  if (!(slot->slot_type == MESH_OP_SLOT_BOOL)) {
     return;
   }
 
   slot->data.i = i;
 }
 
-void BMO_slot_mat_set(BMOperator *op,
+void mesh_slot_mat_set(BMOperator *op,
                       BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
                       const char *slot_name,
                       const float *mat,
