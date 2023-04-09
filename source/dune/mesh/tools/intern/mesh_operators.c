@@ -1192,41 +1192,41 @@ static void mesh_flag_layer_alloc(Mesh *mesh)
     MESH_ELEM_API_FLAG_CLEAR((BMElemF *)v_oflag);
   }
 
-  BMEdge_OFlag *e_oflag;
-  newpool = bm->etoolflagpool;
-  BM_ITER_MESH_INDEX (e_oflag, &iter, bm, BM_EDGES_OF_MESH, i) {
+  MeshEdge_OFlag *e_oflag;
+  newpool = mesh->etoolflagpool;
+  MESH_ITER_MESH_INDEX (e_oflag, &iter, mesh, MESH_EDGES_OF_MESH, i) {
     void *oldflags = e_oflag->oflags;
-    e_oflag->oflags = BLI_mempool_calloc(newpool);
+    e_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(e_oflag->oflags, oldflags, old_totflags_size);
-    BM_elem_index_set(&e_oflag->base, i); /* set_inline */
-    BM_ELEM_API_FLAG_CLEAR((BMElemF *)e_oflag);
+    mesh_elem_index_set(&e_oflag->base, i); /* set_inline */
+    MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)e_oflag);
   }
 
-  BMFace_OFlag *f_oflag;
-  newpool = bm->ftoolflagpool;
-  BM_ITER_MESH_INDEX (f_oflag, &iter, bm, BM_FACES_OF_MESH, i) {
+  MeshFace_OFlag *f_oflag;
+  newpool = mesh->ftoolflagpool;
+  MESH_ITER_MESH_INDEX (f_oflag, &iter, mesh, MESH_FACES_OF_MESH, i) {
     void *oldflags = f_oflag->oflags;
-    f_oflag->oflags = BLI_mempool_calloc(newpool);
+    f_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(f_oflag->oflags, oldflags, old_totflags_size);
-    BM_elem_index_set(&f_oflag->base, i); /* set_inline */
-    BM_ELEM_API_FLAG_CLEAR((BMElemF *)f_oflag);
+    mesh_elem_index_set(&f_oflag->base, i); /* set_inline */
+    mesh_ELEM_API_FLAG_CLEAR((MeshElemF *)f_oflag);
   }
 
-  BLI_mempool_destroy(voldpool);
-  BLI_mempool_destroy(eoldpool);
-  BLI_mempool_destroy(foldpool);
+  lib_mempool_destroy(voldpool);
+  lib_mempool_destroy(eoldpool);
+  lib_mempool_destroy(foldpool);
 
-  bm->elem_index_dirty &= ~(BM_VERT | BM_EDGE | BM_FACE);
+  mesh->elem_index_dirty &= ~(MESH_VERT | MESH_EDGE | MESH_FACE);
 }
 
-static void bmo_flag_layer_free(BMesh *bm)
+static void mesh_flag_layer_free(Mesh *mesh)
 {
   /* set the index values since we are looping over all data anyway,
    * may save time later on */
 
-  BLI_mempool *voldpool = bm->vtoolflagpool;
-  BLI_mempool *eoldpool = bm->etoolflagpool;
-  BLI_mempool *foldpool = bm->ftoolflagpool;
+  lib_mempool *voldpool = mesh->vtoolflagpool;
+  lib_mempool *eoldpool = mesh->etoolflagpool;
+  lib_mempool *foldpool = mesh->ftoolflagpool;
 
   /* store memcpy size for reuse */
   const size_t new_totflags_size = ((bm->totflags - 1) * sizeof(BMFlagLayer));
