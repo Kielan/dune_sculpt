@@ -7,10 +7,10 @@ struct MeshLoopNorEditDataArray;
 struct MeshPartialUpdate;
 struct MeshLoopNorSpaceArray;
 
-void BM_mesh_elem_toolflags_ensure(BMesh *bm);
-void BM_mesh_elem_toolflags_clear(BMesh *bm);
+void mesh_elem_toolflags_ensure(BMesh *bm);
+void mesh_elem_toolflags_clear(BMesh *bm);
 
-struct BMeshCreateParams {
+struct MeshCreateParams {
   bool use_toolflags : true;
 };
 
@@ -22,7 +22,7 @@ struct BMeshCreateParams {
  * ob is needed by multires
  */
 Mesh *mesh_create(const struct MeshAllocTemplate *allocsize,
-                      const struct MeshCreateParams *params);
+                  const struct MeshCreateParams *params);
 
 /**
  * Mesh Free Mesh
@@ -37,7 +37,7 @@ void mesh_free(Mesh *mesh);
  *
  * frees mesh, but not actual BMesh struct
  */
-void BM_mesh_data_free(BMesh *bm);
+void mesh_data_free(BMesh *bm);
 /**
  * \brief BMesh Clear Mesh
  *
@@ -161,9 +161,9 @@ void BM_mesh_rebuild(BMesh *bm,
                      struct BLI_mempool *lpool,
                      struct BLI_mempool *fpool);
 
-typedef struct BMAllocTemplate {
+typedef struct MeshAllocTemplate {
   int totvert, totedge, totloop, totface;
-} BMAllocTemplate;
+} MeshAllocTemplate;
 
 /* used as an extern, defined in bmesh.h */
 extern const BMAllocTemplate bm_mesh_allocsize_default;
