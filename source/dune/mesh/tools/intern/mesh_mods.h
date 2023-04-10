@@ -102,23 +102,23 @@ BMFace *BM_face_split_n(BMesh *bm,
  * onto a vertex it shares an edge with.
  * \a fac defines the amount of interpolation for Custom Data.
  *
- * \note that this is not a general edge collapse function.
+ * note that this is not a general edge collapse function.
  *
- * \note this function is very close to #BM_vert_collapse_edge,
+ * note this function is very close to #BM_vert_collapse_edge,
  * both collapse a vertex and return a new edge.
  * Except this takes a factor and merges custom data.
  *
- * \param bm: The bmesh
- * \param e_kill: The edge to collapse
- * \param v_kill: The vertex  to collapse into the edge
- * \param fac: The factor along the edge
- * \param join_faces: When true the faces around the vertex will be joined
+ * param mesh: The mesh
+ * param e_kill: The edge to collapse
+ * param v_kill: The vertex  to collapse into the edge
+ * param fac: The factor along the edge
+ * param join_faces: When true the faces around the vertex will be joined
  * otherwise collapse the vertex by merging the 2 edges this vert touches into one.
- * \param kill_degenerate_faces: Removes faces with less than 3 verts after collapsing.
+ * param kill_degenerate_faces: Removes faces with less than 3 verts after collapsing.
  *
- * \returns The New Edge
+ * returns The New Edge
  */
-BMEdge *BM_vert_collapse_faces(BMesh *bm,
+MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
                                BMEdge *e_kill,
                                BMVert *v_kill,
                                float fac,
