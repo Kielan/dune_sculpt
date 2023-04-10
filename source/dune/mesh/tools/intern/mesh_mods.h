@@ -27,17 +27,15 @@
  */
 bool mesh_vert_dissolve(Mesh *mesh, MeshVert *v);
 
-/**
- * dissolves all faces around a vert, and removes it.
- */
-bool BM_disk_dissolve(BMesh *bm, BMVert *v);
+/** dissolves all faces around a vert, and removes it. **/
+bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v);
 
 /**
- * \brief Faces Join Pair
+ * Faces Join Pair
  *
  * Joins two adjacent faces together.
  *
- * \note This method calls to #BM_faces_join to do its work.
+ * This method calls to mesh_faces_join to do its work.
  * This means connected edges which also share the two faces will be joined.
  *
  * If the windings do not match the winding of the new face will follow
