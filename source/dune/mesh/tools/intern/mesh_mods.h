@@ -41,21 +41,21 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v);
  * If the windings do not match the winding of the new face will follow
  * \a l_a's winding (i.e. \a l_b will be reversed before the join).
  *
- * \return The combined face or NULL on failure.
+ * return The combined face or NULL on failure.
  */
-BMFace *BM_faces_join_pair(BMesh *bm, BMLoop *l_a, BMLoop *l_b, bool do_del);
+MeshFace *mesh_faces_join_pair(Mesh *mesh, MeshLoop *l_a, BMLoop *l_b, bool do_del);
 
-/** see: bmesh_polygon_edgenet.h for #BM_face_split_edgenet */
+/** see: mesh_polygon_edgenet.h for mesh_face_split_edgenet */
 
 /**
- * \brief Face Split
+ * Face Split
  *
  * Split a face along two vertices. returns the newly made face, and sets
  * the \a r_l member to a loop in the newly created edge.
  *
- * \param bm: The bmesh
- * \param f: the original face
- * \param l_a, l_b: Loops of this face, their vertices define
+ * param mesh: The mesh
+ * param f: the original face
+ * param l_a, l_b: Loops of this face, their vertices define
  * the split edge to be created (must be differ and not can't be adjacent in the face).
  * \param r_l: pointer which will receive the BMLoop for the split edge in the new face
  * \param example: Edge used for attributes of splitting edge, if non-NULL
@@ -65,7 +65,7 @@ BMFace *BM_faces_join_pair(BMesh *bm, BMLoop *l_a, BMLoop *l_b, bool do_del);
  * if the split is successful (and the original face will be the other side).
  * NULL if the split fails.
  */
-BMFace *BM_face_split(
+MeshFace *BM_face_split(
     BMesh *bm, BMFace *f, BMLoop *l_a, BMLoop *l_b, BMLoop **r_l, BMEdge *example, bool no_double);
 
 /**
