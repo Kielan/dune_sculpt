@@ -1,15 +1,11 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
+#include "mesh_class.h"
 
-#include "bmesh_class.h"
-
-struct BMAllocTemplate;
-struct BMLoopNorEditDataArray;
-struct BMPartialUpdate;
-struct MLoopNorSpaceArray;
+struct MeshAllocTemplate;
+struct MeshLoopNorEditDataArray;
+struct MeshPartialUpdate;
+struct MeshLoopNorSpaceArray;
 
 void BM_mesh_elem_toolflags_ensure(BMesh *bm);
 void BM_mesh_elem_toolflags_clear(BMesh *bm);
@@ -19,29 +15,27 @@ struct BMeshCreateParams {
 };
 
 /**
- * \brief BMesh Make Mesh
+ * Mesh Make Allocates new Mesh structure.
  *
- * Allocates a new BMesh structure.
+ * return The New mesh
  *
- * \return The New bmesh
- *
- * \note ob is needed by multires
+ * ob is needed by multires
  */
-BMesh *BM_mesh_create(const struct BMAllocTemplate *allocsize,
-                      const struct BMeshCreateParams *params);
+Mesh *mesh_create(const struct MeshAllocTemplate *allocsize,
+                      const struct MeshCreateParams *params);
 
 /**
- * \brief BMesh Free Mesh
+ * Mesh Free Mesh
  *
- * Frees a BMesh data and its structure.
+ * Frees a Mesh data and its structure.
  */
-void BM_mesh_free(BMesh *bm);
+void mesh_free(Mesh *mesh);
 /**
- * \brief BMesh Free Mesh Data
+ * Mesh Free Mesh Data
  *
- * Frees a BMesh structure.
+ * Frees a Mesh structure.
  *
- * \note frees mesh, but not actual BMesh struct
+ * frees mesh, but not actual BMesh struct
  */
 void BM_mesh_data_free(BMesh *bm);
 /**
