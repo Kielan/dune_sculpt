@@ -5,7 +5,7 @@
  *
  * Turns the face region surrounding a manifold vertex into a single polygon.
  *
- * \par Example:
+ * par Example:
  * <pre>
  *              +---------+             +---------+
  *              |  \   /  |             |         |
@@ -22,10 +22,10 @@
  *     Before:  +----v----+      After: +---------+
  * </pre>
  *
- * \note dissolves vert, in more situations than BM_disk_dissolve
+ * \note dissolves vert, in more situations than mesh_disk_dissolve
  * (e.g. if the vert is part of a wire edge, etc).
  */
-bool mesh_vert_dissolve(BMesh *bm, BMVert *v);
+bool mesh_vert_dissolve(Mesh *mesh, MeshVert *v);
 
 /**
  * dissolves all faces around a vert, and removes it.
