@@ -35,24 +35,24 @@ void mesh_free(Mesh *mesh);
  *
  * Frees a Mesh structure.
  *
- * frees mesh, but not actual BMesh struct
+ * frees mesh, but not actual Mesh struct
  */
 void mesh_data_free(Mesh *mesh);
 /**
  * Mesh Clear Mesh
  *
- * Clear all data in bm
+ * Clear all data in mesh
  */
-void BM_mesh_clear(BMesh *bm);
+void mesh_clear(Mesh *mesh);
 
 /**
- * \brief BMesh Begin Edit
+ * Mesh Begin Edit
  *
  * Functions for setting up a mesh for editing and cleaning up after
  * the editing operations are done. These are called by the tools/operator
  * API for each time a tool is executed.
  */
-void bmesh_edit_begin(BMesh *bm, BMOpTypeFlag type_flag);
+void mesh_edit_begin(Mesh *mesh, MeshOpTypeFlag type_flag);
 /**
  * \brief BMesh End Edit
  */
