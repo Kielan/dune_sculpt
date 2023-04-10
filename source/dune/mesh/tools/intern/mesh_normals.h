@@ -2,7 +2,7 @@
 
 #include "mesh_class.h"
 
-struct MeshNormalsUpdate_Params {
+struct MeshNormalsUpdateParams {
   /**
    * When calculating tessellation as well as normals, tessellate & calculate face normals
    * for improved performance. See #BMeshCalcTessellation_Params
@@ -18,13 +18,13 @@ struct MeshNormalsUpdate_Params {
 void mesh_normals_update_ex(Mesh *mesh, const struct BMeshNormalsUpdate_Params *param);
 void mesh_normals_update(Mesh *mesh);
 /**
- * A version of #mesh_normals_update that updates a subset of geometry,
+ * A version of mesh_normals_update that updates a subset of geometry,
  * used to avoid the overhead of updating everything.
  */
-void mesh_normals_update_with_partial_ex(BMesh *bm,
-                                            const struct BMPartialUpdate *bmpinfo,
-                                            const struct BMeshNormalsUpdate_Params *param);
-void BM_mesh_normals_update_with_partial(BMesh *bm, const struct BMPartialUpdate *bmpinfo);
+void mesh_normals_update_with_partial_ex(Mesh *mesh,
+                                         const struct MeshPartialUpdate *meshinfo,
+                                         const struct MeshNormalsUpdateParams *param);
+void BM_mesh_normals_update_with_partial(Mesh *mesh, const struct MeshPartialUpdate *meshinfo);
 
 /**
  * \brief BMesh Compute Normals from/to external data.
@@ -32,10 +32,10 @@ void BM_mesh_normals_update_with_partial(BMesh *bm, const struct BMPartialUpdate
  * Computes the vertex normals of a mesh into vnos,
  * using given vertex coordinates (vcos) and polygon normals (fnos).
  */
-void BM_verts_calc_normal_vcos(BMesh *bm,
-                               const float (*fnos)[3],
-                               const float (*vcos)[3],
-                               float (*vnos)[3]);
+void mesh_verts_calc_normal_vcos(Mesh *m,
+                                 const float (*fnos)[3],
+                                 const float (*vcos)[3],
+                                 float (*vnos)[3]);
 /**
  * \brief BMesh Compute Loop Normals from/to external data.
  *
@@ -43,7 +43,7 @@ void BM_verts_calc_normal_vcos(BMesh *bm,
  * Useful to materialize sharp edges (or non-smooth faces) without actually modifying the geometry
  * (splitting edges).
  */
-void BM_loops_calc_normal_vcos(BMesh *bm,
+void mesh_loops_calc_normal_vcos(BMesh *bm,
                                const float (*vcos)[3],
                                const float (*vnos)[3],
                                const float (*fnos)[3],
