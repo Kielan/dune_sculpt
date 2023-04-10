@@ -24,10 +24,10 @@ void mesh_normals_update(Mesh *mesh);
 void mesh_normals_update_with_partial_ex(Mesh *mesh,
                                          const struct MeshPartialUpdate *meshinfo,
                                          const struct MeshNormalsUpdateParams *param);
-void BM_mesh_normals_update_with_partial(Mesh *mesh, const struct MeshPartialUpdate *meshinfo);
+void mesh_normals_update_with_partial(Mesh *mesh, const struct MeshPartialUpdate *meshinfo);
 
 /**
- * \brief BMesh Compute Normals from/to external data.
+ * Mesh Compute Normals from/to external data.
  *
  * Computes the vertex normals of a mesh into vnos,
  * using given vertex coordinates (vcos) and polygon normals (fnos).
@@ -37,20 +37,20 @@ void mesh_verts_calc_normal_vcos(Mesh *m,
                                  const float (*vcos)[3],
                                  float (*vnos)[3]);
 /**
- * \brief BMesh Compute Loop Normals from/to external data.
+ * Mesh Compute Loop Normals from/to external data.
  *
  * Compute split normals, i.e. vertex normals associated with each poly (hence 'loop normals').
  * Useful to materialize sharp edges (or non-smooth faces) without actually modifying the geometry
  * (splitting edges).
  */
-void mesh_loops_calc_normal_vcos(BMesh *bm,
+void mesh_loops_calc_normal_vcos(Mesh *msh,
                                const float (*vcos)[3],
                                const float (*vnos)[3],
                                const float (*fnos)[3],
                                bool use_split_normals,
                                float split_angle,
                                float (*r_lnos)[3],
-                               struct MLoopNorSpaceArray *r_lnors_spacearr,
+                               struct MeshLoopNorSpaceArray *r_lnors_spacearr,
                                short (*clnors_data)[2],
                                int cd_loop_clnors_offset,
                                bool do_rebuild);
@@ -60,18 +60,18 @@ void mesh_loops_calc_normal_vcos(BMesh *bm,
  * Needed because cyclic smooth fans have no obvious 'entry point',
  * and yet we need to walk them once, and only once.
  */
-bool BM_loop_check_cyclic_smooth_fan(BMLoop *l_curr);
-void BM_lnorspacearr_store(BMesh *bm, float (*r_lnors)[3]);
-void BM_lnorspace_invalidate(BMesh *bm, bool do_invalidate_all);
-void BM_lnorspace_rebuild(BMesh *bm, bool preserve_clnor);
+bool mesh_loop_check_cyclic_smooth_fan(MeshLoop *l_curr);
+void mesh_lnorspacearr_store(Mesh *mesh, float (*r_lnors)[3]);
+void mesh_lnorspace_invalidate(Mesh *mesh, bool do_invalidate_all);
+void mesh_lnorspace_rebuild(Mesh *m, bool preserve_clnor);
 /**
- * \warning This function sets #BM_ELEM_TAG on loops & edges via #bm_mesh_loops_calc_normals,
+ * warning This function sets MESH_ELEM_TAG on loops & edges via #bm_mesh_loops_calc_normals,
  * take care to run this before setting up tags.
  */
-void BM_lnorspace_update(BMesh *bm);
-void BM_normals_loops_edges_tag(BMesh *bm, bool do_edges);
+void mesh_lnorspace_update(Mesh *m);
+void mesh_normals_loops_edges_tag(Mesh *bm, bool do_edges);
 #ifndef NDEBUG
-void BM_lnorspace_err(BMesh *bm);
+void mesh_lnorspace_err(Mesh *bm);
 #endif
 
 /* Loop Generics */
