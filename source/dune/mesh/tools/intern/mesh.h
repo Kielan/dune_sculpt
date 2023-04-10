@@ -37,9 +37,9 @@ void mesh_free(Mesh *mesh);
  *
  * frees mesh, but not actual BMesh struct
  */
-void mesh_data_free(BMesh *bm);
+void mesh_data_free(Mesh *mesh);
 /**
- * \brief BMesh Clear Mesh
+ * Mesh Clear Mesh
  *
  * Clear all data in bm
  */
