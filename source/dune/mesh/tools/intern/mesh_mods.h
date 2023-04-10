@@ -69,24 +69,24 @@ MeshFace *mesh_face_split(
     Mesh *mesh, MeshFace *f, MeshLoop *l_a, MeshLoop *l_b, MeshLoop **r_l, MeshEdge *example, bool no_double);
 
 /**
- * \brief Face Split with intermediate points
+ * Face Split with intermediate points
  *
- * Like BM_face_split, but with an edge split by \a n intermediate points with given coordinates.
+ * Like mesh_face_split, but with an edge split by n intermediate points with given coordinates.
  *
- * \param bm: The bmesh.
- * \param f: the original face.
- * \param l_a, l_b: Vertices which define the split edge, must be different.
- * \param cos: Array of coordinates for intermediate points.
- * \param n: Length of \a cos (must be > 0).
- * \param r_l: pointer which will receive the BMLoop.
+ * param mesh: The mesh.
+ * param f: the original face.
+ * param l_a, l_b: Vertices which define the split edge, must be different.
+ * param cos: Array of coordinates for intermediate points.
+ * param n: Length of cos (must be > 0).
+ * param r_l: pointer which will receive the MeshLoop.
  * for the first split edge (from \a l_a) in the new face.
- * \param example: Edge used for attributes of splitting edge, if non-NULL.
+ * param example: Edge used for attributes of splitting edge, if non-NULL.
  *
- * \return Pointer to the newly created face representing one side of the split
+ * return Pointer to the newly created face representing one side of the split
  * if the split is successful (and the original face will be the other side).
  * NULL if the split fails.
  */
-BMFace *BM_face_split_n(BMesh *bm,
+MeshFace *mesh_face_split_n(BMesh *bm,
                         BMFace *f,
                         BMLoop *l_a,
                         BMLoop *l_b,
