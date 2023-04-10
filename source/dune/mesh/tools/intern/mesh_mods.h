@@ -127,13 +127,13 @@ BMEdge *BM_vert_collapse_faces(BMesh *bm,
                                bool kill_degenerate_faces,
                                bool kill_duplicate_faces);
 /**
- * \brief Vert Collapse Faces
+ * Vert Collapse Faces
  *
  * Collapses a vertex onto another vertex it shares an edge with.
  *
- * \return The New Edge
+ * return The New Edge
  */
-BMEdge *BM_vert_collapse_edge(BMesh *bm,
+MeshEdge *mesh_vert_collapse_edge(BMesh *bm,
                               BMEdge *e_kill,
                               BMVert *v_kill,
                               bool do_del,
