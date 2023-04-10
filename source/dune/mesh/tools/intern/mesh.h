@@ -7,8 +7,8 @@ struct MeshLoopNorEditDataArray;
 struct MeshPartialUpdate;
 struct MeshLoopNorSpaceArray;
 
-void mesh_elem_toolflags_ensure(BMesh *bm);
-void mesh_elem_toolflags_clear(BMesh *bm);
+void mesh_elem_toolflags_ensure(Mesh *m);
+void mesh_elem_toolflags_clear(Mesh *m);
 
 struct MeshCreateParams {
   bool use_toolflags : true;
