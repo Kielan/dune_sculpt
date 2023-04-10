@@ -1,11 +1,7 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
 /**
- * \brief Dissolve Vert
+ * Dissolve Vert
  *
  * Turns the face region surrounding a manifold vertex into a single polygon.
  *
@@ -29,7 +25,7 @@
  * \note dissolves vert, in more situations than BM_disk_dissolve
  * (e.g. if the vert is part of a wire edge, etc).
  */
-bool BM_vert_dissolve(BMesh *bm, BMVert *v);
+bool mesh_vert_dissolve(BMesh *bm, BMVert *v);
 
 /**
  * dissolves all faces around a vert, and removes it.
