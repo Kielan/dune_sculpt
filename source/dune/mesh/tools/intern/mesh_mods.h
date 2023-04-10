@@ -119,8 +119,8 @@ MeshFace *mesh_face_split_n(BMesh *bm,
  * returns The New Edge
  */
 MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
-                               BMEdge *e_kill,
-                               BMVert *v_kill,
+                               MeshEdge *e_kill,
+                               MeshVert *v_kill,
                                float fac,
                                bool do_del,
                                bool join_faces,
@@ -133,9 +133,9 @@ MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
  *
  * return The New Edge
  */
-MeshEdge *mesh_vert_collapse_edge(BMesh *bm,
-                              BMEdge *e_kill,
-                              BMVert *v_kill,
+MeshEdge *mesh_vert_collapse_edge(Mesh *mesh,
+                              MeshEdge *e_kill,
+                              MeshVert *v_kill,
                               bool do_del,
                               bool kill_degenerate_faces,
                               bool kill_duplicate_faces);
@@ -143,11 +143,11 @@ MeshEdge *mesh_vert_collapse_edge(BMesh *bm,
 /**
  * Collapse and edge into a single vertex.
  */
-BMVert *BM_edge_collapse(
-    BMesh *bm, BMEdge *e_kill, BMVert *v_kill, bool do_del, bool kill_degenerate_faces);
+MeshVert *mesh_edge_collapse(
+    Mesh *mesh, MeshEdge *e_kill, MeshVert *v_kill, bool do_del, bool kill_degenerate_faces);
 
 /**
- * \brief Edge Split
+ * Edge Split
  *
  * <pre>
  * Before: v
@@ -162,10 +162,10 @@ BMVert *BM_edge_collapse(
  * \param e: The edge to split.
  * \param v: One of the vertices in \a e and defines the "from" end of the splitting operation,
  * the new vertex will be \a fac of the way from \a v to the other end.
- * \param r_e: The newly created edge.
- * \return  The new vertex.
+ * param r_e: The newly created edge.
+ * return  The new vertex.
  */
-BMVert *BM_edge_split(BMesh *bm, BMEdge *e, BMVert *v, BMEdge **r_e, float fac);
+MeshVert *mesh_edge_split(Mesh *mesh, MeshEdge *e, MeshVert *v, MeshEdge **r_e, float fac);
 
 /**
  * \brief Split an edge multiple times evenly
