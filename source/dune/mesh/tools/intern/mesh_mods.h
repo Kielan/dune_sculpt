@@ -17,12 +17,12 @@
  * This function can also collapse edges too
  * in cases when it can't merge into faces.
  *
- * \par Example:
+ * par Example:
  * <pre>
  *     Before:  +----v----+      After: +---------+
  * </pre>
  *
- * \note dissolves vert, in more situations than mesh_disk_dissolve
+ * note dissolves vert, in more situations than mesh_disk_dissolve
  * (e.g. if the vert is part of a wire edge, etc).
  */
 bool mesh_vert_dissolve(Mesh *mesh, MeshVert *v);
@@ -39,7 +39,7 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v);
  * This means connected edges which also share the two faces will be joined.
  *
  * If the windings do not match the winding of the new face will follow
- * \a l_a's winding (i.e. \a l_b will be reversed before the join).
+ * a l_a's winding (i.e. a l_b will be reversed before the join).
  *
  * return The combined face or NULL on failure.
  */
@@ -51,22 +51,22 @@ MeshFace *mesh_faces_join_pair(Mesh *mesh, MeshLoop *l_a, BMLoop *l_b, bool do_d
  * Face Split
  *
  * Split a face along two vertices. returns the newly made face, and sets
- * the \a r_l member to a loop in the newly created edge.
+ * the a r_l member to a loop in the newly created edge.
  *
  * param mesh: The mesh
  * param f: the original face
  * param l_a, l_b: Loops of this face, their vertices define
  * the split edge to be created (must be differ and not can't be adjacent in the face).
- * \param r_l: pointer which will receive the BMLoop for the split edge in the new face
- * \param example: Edge used for attributes of splitting edge, if non-NULL
- * \param no_double: Use an existing edge if found
+ * param r_l: pointer which will receive the BMLoop for the split edge in the new face
+ * param example: Edge used for attributes of splitting edge, if non-NULL
+ * param no_double: Use an existing edge if found
  *
- * \return Pointer to the newly created face representing one side of the split
+ * return Pointer to the newly created face representing one side of the split
  * if the split is successful (and the original face will be the other side).
  * NULL if the split fails.
  */
-MeshFace *BM_face_split(
-    BMesh *bm, BMFace *f, BMLoop *l_a, BMLoop *l_b, BMLoop **r_l, BMEdge *example, bool no_double);
+MeshFace *mesh_face_split(
+    Mesh *mesh, MeshFace *f, MeshLoop *l_a, MeshLoop *l_b, MeshLoop **r_l, MeshEdge *example, bool no_double);
 
 /**
  * \brief Face Split with intermediate points
