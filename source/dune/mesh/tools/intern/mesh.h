@@ -159,13 +159,13 @@ typedef struct MeshAllocTemplate {
   int totvert, totedge, totloop, totface;
 } MeshAllocTemplate;
 
-/* used as an extern, defined in bmesh.h */
-extern const BMAllocTemplate bm_mesh_allocsize_default;
-extern const BMAllocTemplate bm_mesh_chunksize_default;
+/* used as an extern, defined in mesh.h */
+extern const MeshAllocTemplate mesh_allocsize_default;
+extern const MeshAllocTemplate mesh_chunksize_default;
 
-#define BMALLOC_TEMPLATE_FROM_BM(bm) \
+#define MESHALLOC_TEMPLATE_FROM_MESH(mesh) \
   { \
-    (CHECK_TYPE_INLINE(bm, BMesh *), (bm)->totvert), (bm)->totedge, (bm)->totloop, (bm)->totface \
+    (CHECK_TYPE_INLINE(mesh, Mesh *), (mesh)->totvert), (mesh)->totedge, (mesh)->totloop, (mesh)->totface \
   }
 
 #define _VA_BMALLOC_TEMPLATE_FROM_ME_1(me) \
