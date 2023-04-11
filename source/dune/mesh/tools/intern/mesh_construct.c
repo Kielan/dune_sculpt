@@ -628,55 +628,55 @@ Mesh *mesh_copy(Mesh *mesh_old)
                            vtable[mesh_elem_index_get(e->v1)],
                            vtable[mesh_elem_index_get(e->v2)],
                            e,
-                           BM_CREATE_SKIP_CD);
+                           MESH_CREATE_SKIP_CD);
 
-    mesh_elem_attrs_copy_ex(mesh_old, bm_new, e, e_new, 0xff, 0x0);
+    mesh_elem_attrs_copy_ex(mesh_old, mesh_new, e, e_new, 0xff, 0x0);
     e_new->head.hflag = e->head.hflag; /* low level! don't do this for normal api use */
     etable[i] = e_new;
-    BM_elem_index_set(e, i);     /* set_inline */
-    BM_elem_index_set(e_new, i); /* set_inline */
+    mesh_elem_index_set(e, i);     /* set_inline */
+    mesh_elem_index_set(e_new, i); /* set_inline */
   }
-  bm_old->elem_index_dirty &= ~BM_EDGE;
-  bm_new->elem_index_dirty &= ~BM_EDGE;
+  mesh_old->elem_index_dirty &= ~MESH_EDGE;
+  mesh_new->elem_index_dirty &= ~MESH_EDGE;
 
   /* safety check */
-  BLI_assert(i == bm_old->totedge);
+  lib_assert(i == mesh_old->totedge);
 
-  BM_ITER_MESH_INDEX (f, &iter, bm_old, BM_FACES_OF_MESH, i) {
-    BM_elem_index_set(f, i); /* set_inline */
+  MESH_ITER_INDEX (f, &iter, mesh_old, MESH_FACES_OF_MESH, i) {
+    mesh_elem_index_set(f, i); /* set_inline */
 
-    f_new = bm_mesh_copy_new_face(bm_new, bm_old, vtable, etable, f);
+    f_new = mesh_copy_new_face(bm_new, bm_old, vtable, etable, f);
 
     ftable[i] = f_new;
 
     if (f == bm_old->act_face) {
-      bm_new->act_face = f_new;
+      mesh_new->act_face = f_new;
     }
   }
-  bm_old->elem_index_dirty &= ~BM_FACE;
-  bm_new->elem_index_dirty &= ~BM_FACE;
+  m_old->elem_index_dirty &= ~MESH_FACE;
+  mesh_new->elem_index_dirty &= ~MESH_FACE;
 
   /* low level! don't do this for normal api use */
-  bm_new->totvertsel = bm_old->totvertsel;
-  bm_new->totedgesel = bm_old->totedgesel;
-  bm_new->totfacesel = bm_old->totfacesel;
+  mesh_new->totvertsel = mesh_old->totvertsel;
+  mesh_new->totedgesel = mesh_old->totedgesel;
+  mesh_new->totfacesel = mesh_old->totfacesel;
 
   /* safety check */
-  BLI_assert(i == bm_old->totface);
+  lib_assert(i == mesh_old->totface);
 
   /* copy over edit selection history */
-  for (ese = bm_old->selected.first; ese; ese = ese->next) {
-    BMElem *ele = NULL;
+  for (ese = mesh_old->selected.first; ese; ese = ese->next) {
+    MeshElem *ele = NULL;
 
     switch (ese->htype) {
-      case BM_VERT:
-        eletable = (BMElem **)vtable;
+      case MESH_VERT:
+        eletable = (MeshElem **)vtable;
         break;
-      case BM_EDGE:
-        eletable = (BMElem **)etable;
+      case MESH_EDGE:
+        eletable = (MeshElem **)etable;
         break;
-      case BM_FACE:
-        eletable = (BMElem **)ftable;
+      case MESH_FACE:
+        eletable = (MeshElem **)ftable;
         break;
       default:
         eletable = NULL;
@@ -684,16 +684,16 @@ Mesh *mesh_copy(Mesh *mesh_old)
     }
 
     if (eletable) {
-      ele = eletable[BM_elem_index_get(ese->ele)];
+      ele = eletable[mesh_elem_index_get(ese->ele)];
       if (ele) {
-        BM_select_history_store(bm_new, ele);
+        mesh_select_history_store(mesh_new, ele);
       }
     }
   }
 
-  MEM_freeN(etable);
-  MEM_freeN(vtable);
-  MEM_freeN(ftable);
+  mem_freen(etable);
+  mem_freen(vtable);
+  mem_freen(ftable);
 
   /* Copy various settings. */
   bm_new->shapenr = bm_old->shapenr;
