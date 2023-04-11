@@ -12,33 +12,33 @@
 
 static MeshVert *mesh_vert_copy(Mesh *mesh_src, Mesh *mesh_dst,MeshVert *v_src)
 {
-  BMVert *v_dst = BM_vert_create(mesh_dst, v_src->co, NULL, MESH_CREATE_SKIP_CD);
-  BM_elem_attrs_copy(bm_src, mesh_dst, v_src, v_dst);
+  MeshVert *v_dst = mesh_vert_create(mesh_dst, v_src->co, NULL, MESH_CREATE_SKIP_CD);
+  mesh_elem_attrs_copy(mesh_src, mesh_dst, v_src, v_dst);
   return v_dst;
 }
 
-static BMEdge *bm_edge_copy_with_arrays(Mesh *bm_src,
-                                        Mesh *bm_dst,
-                                        MEdge *e_src,
-                                        MVert **verts_dst)
+static MeshEdge *mesh_edge_copy_with_arrays(Mesh *mesh_src,
+                                            Mesh *m eh_dst,
+                                            MeshEdge *e_src,
+                                            MeshVert **verts_dst)
 {
-  BMVert *e_dst_v1 = verts_dst[BM_elem_index_get(e_src->v1)];
-  BMVert *e_dst_v2 = verts_dst[BM_elem_index_get(e_src->v2)];
-  BMEdge *e_dst = BM_edge_create(bm_dst, e_dst_v1, e_dst_v2, NULL, BM_CREATE_SKIP_CD);
-  BM_elem_attrs_copy(bm_src, bm_dst, e_src, e_dst);
+  MVert *e_dst_v1 = verts_dst[mesh_elem_index_get(e_src->v1)];
+  MVert *e_dst_v2 = verts_dst[mesh_elem_index_get(e_src->v2)];
+  MEdge *e_dst = mesh_edge_create(mesh_dst, e_dst_v1, e_dst_v2, NULL, M_CREATE_SKIP_CD);
+  M_elem_attrs_copy(mesh_src, mesh_dst, e_src, e_dst);
   return e_dst;
 }
 
-static BMFace *bm_face_copy_with_arrays(
-    BMesh *bm_src, BMesh *bm_dst, BMFace *f_src, BMVert **verts_dst, BMEdge **edges_dst)
+static MeshFace *mesh_face_copy_with_arrays(
+    Mesh *mesh_src, Mesh *mesh_dst, BMFace *f_src, BMVert **verts_dst, BMEdge **edges_dst)
 {
-  BMFace *f_dst;
-  BMVert **vtar = BLI_array_alloca(vtar, f_src->len);
-  BMEdge **edar = BLI_array_alloca(edar, f_src->len);
-  BMLoop *l_iter_src, *l_iter_dst, *l_first_src;
+  MeshFace *f_dst;
+  MeshVert **vtar = lib_array_alloca(vtar, f_src->len);
+  MeshEdge **edar = lib_array_alloca(edar, f_src->len);
+  MeshLoop *l_iter_src, *l_iter_dst, *l_first_src;
   int i;
 
-  l_first_src = BM_FACE_FIRST_LOOP(f_src);
+  l_first_src = MESH_FACE_FIRST_LOOP(f_src);
 
   /* Lookup verts & edges. */
   l_iter_src = l_first_src;
@@ -65,14 +65,14 @@ static BMFace *bm_face_copy_with_arrays(
   return f_dst;
 }
 
-void BM_mesh_copy_arrays(BMesh *bm_src,
-                         BMesh *bm_dst,
-                         BMVert **verts_src,
-                         uint verts_src_len,
-                         BMEdge **edges_src,
-                         uint edges_src_len,
-                         BMFace **faces_src,
-                         uint faces_src_len)
+void mesh_mesh_copy_arrays(Mesh *bm_src,
+                           Mesh *bm_dst,
+                           MeshVert **verts_src,
+                           uint verts_src_len,
+                           MeshEdge **edges_src,
+                           uint edges_src_len,
+                           MeshFace **faces_src,
+                           uint faces_src_len)
 {
   /* Vertices. */
   BMVert **verts_dst = MEM_mallocN(sizeof(*verts_dst) * verts_src_len, __func__);
