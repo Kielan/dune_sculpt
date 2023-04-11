@@ -183,28 +183,28 @@ static void vs_add(
   lib_assert(mesh_vert_in_edge(e_prev, v));
   v->e = e_prev;
 
-  BLI_addtail(lb, vs_new);
+  lib_addtail(lb, vs_new);
 }
 
-static bool bm_loop_path_build_step(BLI_mempool *vs_pool,
+static bool mesh_loop_path_build_step(lib_mempool *vs_pool,
                                     ListBase *lb,
                                     const int dir,
-                                    BMVert *v_match[2])
+                                    MeshVert *v_match[2])
 {
   ListBase lb_tmp = {NULL, NULL};
   struct VertStep *vs, *vs_next;
   lib_assert(abs(dir) == 1);
 
   for (vs = lb->first; vs; vs = vs_next) {
-    MIter iter;
-    MEdge *e;
+    MeshIter iter;
+    MeshEdge *e;
     /* these values will be the same every iteration */
     const int vs_iter_tot = mesh_elem_index_get(vs->v);
     const int vs_iter_next = vs_iter_tot + dir;
 
     vs_next = vs->next;
 
-    M_ITER_ELEM (e, &iter, vs->v, MESH_EDGES_OF_VERT) {
+    MESH_ITER_ELEM (e, &iter, vs->v, MESH_EDGES_OF_VERT) {
       if (M_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG)) {
         MeshVert *v_next = mesh_edge_other_vert(e, vs->v);
         const int v_next_index = mesh_elem_index_get(v_next);
@@ -245,15 +245,15 @@ static bool bm_loop_path_build_step(BLI_mempool *vs_pool,
   return (lib_listbase_is_empty(lb) == false);
 }
 
-bool BM_mesh_edgeloops_find_path(Mesh *mesh,
-                                 ListBase *r_eloops,
-                                 bool (*test_fn)(MeshEdge *, void *user_data),
-                                 void *user_data,
-                                 MeshVert *v_src,
-                                 MeshVert *v_dst)
+bool mesh_edgeloops_find_path(Mesh *mesh,
+                              ListBase *r_eloops,
+                              bool (*test_fn)(MeshEdge *, void *user_data),
+                              void *user_data,
+                              MeshVert *v_src,
+                              MeshVert *v_dst)
 {
-  BMIter iter;
-  BMEdge *e;
+  MeshIter iter;
+  MeshEdge *e;
   bool found = false;
 
   lib_assert(v_src != v_dst);
