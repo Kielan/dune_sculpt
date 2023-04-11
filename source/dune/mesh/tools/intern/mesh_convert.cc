@@ -110,26 +110,26 @@ void BM_mesh_cd_flag_ensure(BMesh *bm, Mesh *mesh, const char cd_flag)
   }
 }
 
-void BM_mesh_cd_flag_apply(BMesh *bm, const char cd_flag)
+void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
 {
-  /* CustomData_bmesh_init_pool() must run first */
-  BLI_assert(bm->vdata.totlayer == 0 || bm->vdata.pool != nullptr);
-  BLI_assert(bm->edata.totlayer == 0 || bm->edata.pool != nullptr);
-  BLI_assert(bm->pdata.totlayer == 0 || bm->pdata.pool != nullptr);
+  /* CustomData_mesh_init_pool() must run first */
+  lib_assert(mesh->vdata.totlayer == 0 || mesh->vdata.pool != nullptr);
+  lib_assert(mesh->edata.totlayer == 0 || mesh->edata.pool != nullptr);
+  lib_assert(mesh->pdata.totlayer == 0 || mesh->pdata.pool != nullptr);
 
   if (cd_flag & ME_CDFLAG_VERT_BWEIGHT) {
-    if (!CustomData_has_layer(&bm->vdata, CD_BWEIGHT)) {
-      BM_data_layer_add(bm, &bm->vdata, CD_BWEIGHT);
+    if (!CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
+      mesh_data_layer_add(mesh, &mesh->vdata, CD_BWEIGHT);
     }
   }
   else {
-    if (CustomData_has_layer(&bm->vdata, CD_BWEIGHT)) {
-      BM_data_layer_free(bm, &bm->vdata, CD_BWEIGHT);
+    if (CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
+      MESH_data_layer_free(mesh, &mesh->vdata, CD_BWEIGHT);
     }
   }
 
   if (cd_flag & ME_CDFLAG_VERT_CREASE) {
-    if (!CustomData_has_layer(&bm->vdata, CD_CREASE)) {
+    if (!CustomData_has_layer(&mesh->vdata, CD_CREASE)) {
       BM_data_layer_add(bm, &bm->vdata, CD_CREASE);
     }
   }
