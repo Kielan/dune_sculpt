@@ -446,7 +446,7 @@ void mesh_elem_select_copy(Mesh *mesh_dst, void *ele_dst_v, const void *ele_src_
 
 /* helper function for 'mesh_copy' */
 static MeshFace *mesh_copy_new_face(
-    Mesh *mesh_new, Mesh *mesh_old, BMVert **vtable, BMEdge **etable, BMFace *f)
+    Mesh *mesh_new, Mesh *mesh_old, MeshVert **vtable, BMEdge **etable, BMFace *f)
 {
   MeshLoop **loops = lib_array_alloca(loops, f->len);
   MeehVert **verts = lib_array_alloca(verts, f->len);
@@ -478,23 +478,23 @@ static MeshFace *mesh_copy_new_face(
   f_new->head.hflag = f->head.hflag; /* low level! don't do this for normal api use */
 
   j = 0;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_new);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_new);
   do {
-    BM_elem_attrs_copy(bm_old, bm_new, loops[j], l_iter);
+    mesh_elem_attrs_copy(mesh_old, mesh_new, loops[j], l_iter);
     j++;
   } while ((l_iter = l_iter->next) != l_first);
 
   return f_new;
 }
 
-void BM_mesh_copy_init_customdata_from_mesh_array(BMesh *bm_dst,
-                                                  const Mesh *me_src_array[],
-                                                  const int me_src_array_len,
-                                                  const BMAllocTemplate *allocsize)
+void mesh_copy_init_customdata_from_mesh_array(Mesh *mesh_dst,
+                                               const Mesh *me_src_array[],
+                                               const int me_src_array_len,
+                                               const MeshAllocTemplate *allocsize)
 
 {
   if (allocsize == NULL) {
-    allocsize = &bm_mesh_allocsize_default;
+    allocsize = &mesh_allocsize_default;
   }
 
   char cd_flag = 0;
@@ -517,17 +517,17 @@ void BM_mesh_copy_init_customdata_from_mesh_array(BMesh *bm_dst,
     cd_flag |= me_src->cd_flag;
   }
 
-  cd_flag |= BM_mesh_cd_flag_from_bmesh(bm_dst);
+  cd_flag |= mesh_cd_flag_from_bmesh(bm_dst);
 
-  CustomData_bmesh_init_pool(&bm_dst->vdata, allocsize->totvert, BM_VERT);
-  CustomData_bmesh_init_pool(&bm_dst->edata, allocsize->totedge, BM_EDGE);
-  CustomData_bmesh_init_pool(&bm_dst->ldata, allocsize->totloop, BM_LOOP);
-  CustomData_bmesh_init_pool(&bm_dst->pdata, allocsize->totface, BM_FACE);
+  CustomData_mesh_init_pool(&mesh_dst->vdata, allocsize->totvert, BM_VERT);
+  CustomData_mesh_init_pool(&mesh_dst->edata, allocsize->totedge, BM_EDGE);
+  CustomData_mesh_init_pool(&mesh_dst->ldata, allocsize->totloop, BM_LOOP);
+  CustomData_mesh_init_pool(&mesh_dst->pdata, allocsize->totface, BM_FACE);
 
-  BM_mesh_cd_flag_apply(bm_dst, cd_flag);
+  mesh_cd_flag_apply(mesh_dst, cd_flag);
 }
 
-void BM_mesh_copy_init_customdata_from_mesh(BMesh *bm_dst,
+void mesh_copy_init_customdata_from_mesh(BMesh *bm_dst,
                                             const Mesh *me_src,
                                             const BMAllocTemplate *allocsize)
 {
