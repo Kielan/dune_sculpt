@@ -131,15 +131,15 @@ void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
         }
       }
       /* now go through and mark all remaining faces all edges for keeping */
-      BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
-        if (!BMO_face_flag_test(bm, f, oflag)) {
-          BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-          BMLoop *l_iter;
+      MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+        if (!mesh_face_flag_test(bm, f, oflag)) {
+          MeshLoop *l_first = BM_FACE_FIRST_LOOP(f);
+          MeshLoop *l_iter;
 
           l_iter = l_first;
           do {
-            BMO_vert_flag_disable(bm, l_iter->v, oflag);
-            BMO_edge_flag_disable(bm, l_iter->e, oflag);
+            mesh_vert_flag_disable(mesh, l_iter->v, oflag);
+            mesh_edge_flag_disable(mesh, l_iter->e, oflag);
           } while ((l_iter = l_iter->next) != l_first);
         }
       }
