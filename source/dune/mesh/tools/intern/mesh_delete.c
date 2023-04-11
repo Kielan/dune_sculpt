@@ -89,14 +89,14 @@ void BMO_mesh_delete_oflag_context(BMesh *bm, const short oflag, const int type)
     }
     case DEL_EDGES: {
       /* flush down to vert */
-      BM_ITER_MESH (e, &eiter, bm, BM_EDGES_OF_MESH) {
-        if (BMO_edge_flag_test(bm, e, oflag)) {
-          BMO_vert_flag_enable(bm, e->v1, oflag);
-          BMO_vert_flag_enable(bm, e->v2, oflag);
+      MESH_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
+        if (mesh_edge_flag_test(mesh, e, oflag)) {
+          mesh_vert_flag_enable(mesh, e->v1, oflag);
+          mesh_vert_flag_enable(mesh, e->v2, oflag);
         }
       }
-      bmo_remove_tagged_edges(bm, oflag);
-      bmo_remove_tagged_verts_loose(bm, oflag);
+      mesh_remove_tagged_edges(bm, oflag);
+      mesh_remove_tagged_verts_loose(bm, oflag);
 
       break;
     }
