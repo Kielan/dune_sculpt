@@ -1,41 +1,41 @@
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math_vector.h"
-#include "BLI_mempool.h"
-#include "BLI_stack.h"
-#include "BLI_utildefines_iter.h"
+#include "lib_listbase.h"
+#include "lib_math_vector.h"
+#include "lib_mempool.h"
+#include "lib_stack.h"
+#include "lib_utildefines_iter.h"
 
-#include "bmesh.h"
+#include "mesh.h"
 
-#include "bmesh_edgeloop.h" /* own include */
+#include "mesh_edgeloop.h" /* own include */
 
-typedef struct BMEdgeLoopStore {
-  struct BMEdgeLoopStore *next, *prev;
+typedef struct MeshEdgeLoopStore {
+  struct MeshEdgeLoopStore *next, *prev;
   ListBase verts;
   int flag;
   int len;
   /* optional values  to calc */
   float co[3], no[3];
-} BMEdgeLoopStore;
+} MeshEdgeLoopStore;
 
-#define BM_EDGELOOP_IS_CLOSED (1 << 0)
+#define MESH_EDGELOOP_IS_CLOSED (1 << 0)
 
 /* Use a small value since we need normals even for very small loops. */
 #define EDGELOOP_EPS 1e-10f
 
 /* -------------------------------------------------------------------- */
-/* BM_mesh_edgeloops_find & Util Functions. */
+/* mesh_edgeloops_find & Util Functions. */
 
-static int bm_vert_other_tag(BMVert *v, BMVert *v_prev, BMEdge **r_e)
+static int mesh_vert_other_tag(MeshVert *v, MeshVert *v_prev, BMEdge **r_e)
 {
-  BMIter iter;
-  BMEdge *e, *e_next = NULL;
+  MeshIter iter;
+  MeshEdge *e, *e_next = NULL;
   uint count = 0;
 
-  BM_ITER_ELEM (e, &iter, v, BM_EDGES_OF_VERT) {
-    if (BM_elem_flag_test(e, BM_ELEM_INTERNAL_TAG)) {
-      BMVert *v_other = BM_edge_other_vert(e, v);
+  MESH_ITER_ELEM (e, &iter, v, MESH_EDGES_OF_VERT) {
+    if (mesh_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG)) {
+      MeshVert *v_other = mesh_edge_other_vert(e, v);
       if (v_other != v_prev) {
         e_next = e;
         count++;
@@ -47,36 +47,34 @@ static int bm_vert_other_tag(BMVert *v, BMVert *v_prev, BMEdge **r_e)
   return count;
 }
 
-/**
- * \return success
- */
-static bool bm_loop_build(BMEdgeLoopStore *el_store, BMVert *v_prev, BMVert *v, int dir)
+/** return success **/
+static bool mesh_loop_build(MeshEdgeLoopStore *el_store, MeshVert *v_prev, MeshVert *v, int dir)
 {
-  void (*add_fn)(ListBase *, void *) = dir == 1 ? BLI_addhead : BLI_addtail;
-  BMEdge *e_next;
-  BMVert *v_next;
-  BMVert *v_first = v;
+  void (*add_fn)(ListBase *, void *) = dir == 1 ? lib_addhead : lib_addtail;
+  MeshEdge *e_next;
+  MeshVert *v_next;
+  MeshVert *v_first = v;
 
-  BLI_assert(abs(dir) == 1);
+  lib_assert(abs(dir) == 1);
 
-  if (!BM_elem_flag_test(v, BM_ELEM_INTERNAL_TAG)) {
+  if (!mesh_elem_flag_test(v, MESH_ELEM_INTERNAL_TAG)) {
     return true;
   }
 
   while (v) {
-    LinkData *node = MEM_callocN(sizeof(*node), __func__);
+    LinkData *node = mem_callocn(sizeof(*node), __func__);
     int count;
     node->data = v;
     add_fn(&el_store->verts, node);
     el_store->len++;
-    BM_elem_flag_disable(v, BM_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_disable(v, MESH_ELEM_INTERNAL_TAG);
 
-    count = bm_vert_other_tag(v, v_prev, &e_next);
+    count = mesh_vert_other_tag(v, v_prev, &e_next);
     if (count == 1) {
-      v_next = BM_edge_other_vert(e_next, v);
-      BM_elem_flag_disable(e_next, BM_ELEM_INTERNAL_TAG);
+      v_next = mesh_edge_other_vert(e_next, v);
+      mesh_elem_flag_disable(e_next, MESH_ELEM_INTERNAL_TAG);
       if (UNLIKELY(v_next == v_first)) {
-        el_store->flag |= BM_EDGELOOP_IS_CLOSED;
+        el_store->flag |= MESH_EDGELOOP_IS_CLOSED;
         v_next = NULL;
       }
     }
@@ -96,7 +94,7 @@ static bool bm_loop_build(BMEdgeLoopStore *el_store, BMVert *v_prev, BMVert *v, 
   return true;
 }
 
-int BM_mesh_edgeloops_find(BMesh *bm,
+int mesh_edgeloops_find(BMesh *bm,
                            ListBase *r_eloops,
                            bool (*test_fn)(BMEdge *, void *user_data),
                            void *user_data)
