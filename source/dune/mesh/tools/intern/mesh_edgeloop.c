@@ -372,21 +372,21 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
 }
 
 /* -------------------------------------------------------------------- */
-/* BM_mesh_edgeloops_xxx utility function */
+/* mesh_edgeloops_xxx utility function */
 
-void BM_mesh_edgeloops_free(ListBase *eloops)
+void mesh_edgeloops_free(ListBase *eloops)
 {
-  BMEdgeLoopStore *el_store;
-  while ((el_store = BLI_pophead(eloops))) {
-    BM_edgeloop_free(el_store);
+  MeshEdgeLoopStore *el_store;
+  while ((el_store = lib_pophead(eloops))) {
+    mesh_edgeloop_free(el_store);
   }
 }
 
-void BM_mesh_edgeloops_calc_center(BMesh *bm, ListBase *eloops)
+void mesh_edgeloops_calc_center(Mesh *mesh, ListBase *eloops)
 {
-  BMEdgeLoopStore *el_store;
+  MeshEdgeLoopStore *el_store;
   for (el_store = eloops->first; el_store; el_store = el_store->next) {
-    BM_edgeloop_calc_center(bm, el_store);
+    mesh_edgeloop_calc_center(mesh, el_store);
   }
 }
 
