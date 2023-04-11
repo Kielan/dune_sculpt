@@ -53,19 +53,19 @@ void BM_edges_from_verts_ensure(BMesh *bm, BMEdge **edge_arr, BMVert **vert_arr,
 }
 
 /* prototypes */
-static void bm_loop_attrs_copy(
-    BMesh *bm_src, BMesh *bm_dst, const BMLoop *l_src, BMLoop *l_dst, CustomDataMask mask_exclude);
+static void mesh_loop_attrs_copy(
+    Mesh *mesh_src, Mesh *mesh_dst, const MeshLoop *l_src, MeshLoop *l_dst, CustomDataMask mask_exclude);
 
-BMFace *BM_face_create_quad_tri(BMesh *bm,
-                                BMVert *v1,
-                                BMVert *v2,
-                                BMVert *v3,
-                                BMVert *v4,
-                                const BMFace *f_example,
-                                const eBMCreateFlag create_flag)
+MeshFace *mesh_face_create_quad_tri(Mesh *bm,
+                                    MVert *v1,
+                                    MVert *v2,
+                                    MVert *v3,
+                                    MVert *v4,
+                                    const MeshFace *f_example,
+                                    const eMeshCreateFlag create_flag)
 {
-  BMVert *vtar[4] = {v1, v2, v3, v4};
-  return BM_face_create_verts(bm, vtar, v4 ? 4 : 3, f_example, create_flag, true);
+  MeshVert *vtar[4] = {v1, v2, v3, v4};
+  return mesh_face_create_verts(mesh, vtar, v4 ? 4 : 3, f_example, create_flag, true);
 }
 
 void BM_face_copy_shared(BMesh *bm, BMFace *f, BMLoopFilterFunc filter_fn, void *user_data)
