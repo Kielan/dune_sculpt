@@ -1,30 +1,26 @@
-/** \file
- * \ingroup bmesh
- *
- * Duplicate geometry from one mesh from another.
- */
+/** Duplicate geometry from one mesh from another. */
 
-#include "DNA_object_types.h"
+#include "types_object.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_math_vector.h"
+#include "lib_alloca.h"
+#include "lib_math_vector.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h" /* for element checking */
+#include "mesh.h"
+#include "intern/mesh_private.h" /* for element checking */
 
-static BMVert *bm_vert_copy(BMesh *bm_src, BMesh *bm_dst, BMVert *v_src)
+static MeshVert *mesh_vert_copy(Mesh *mesh_src, Mesh *mesh_dst,MeshVert *v_src)
 {
-  BMVert *v_dst = BM_vert_create(bm_dst, v_src->co, NULL, BM_CREATE_SKIP_CD);
-  BM_elem_attrs_copy(bm_src, bm_dst, v_src, v_dst);
+  BMVert *v_dst = BM_vert_create(mesh_dst, v_src->co, NULL, MESH_CREATE_SKIP_CD);
+  BM_elem_attrs_copy(bm_src, mesh_dst, v_src, v_dst);
   return v_dst;
 }
 
-static BMEdge *bm_edge_copy_with_arrays(BMesh *bm_src,
-                                        BMesh *bm_dst,
-                                        BMEdge *e_src,
-                                        BMVert **verts_dst)
+static BMEdge *bm_edge_copy_with_arrays(Mesh *bm_src,
+                                        Mesh *bm_dst,
+                                        MEdge *e_src,
+                                        MVert **verts_dst)
 {
   BMVert *e_dst_v1 = verts_dst[BM_elem_index_get(e_src->v1)];
   BMVert *e_dst_v2 = verts_dst[BM_elem_index_get(e_src->v2)];
