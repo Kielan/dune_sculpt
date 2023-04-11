@@ -1,39 +1,35 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-struct BMEdgeLoopStore;
+struct MeshEdgeLoopStore;
 struct GSet;
 struct ListBase;
 
 /* multiple edgeloops (ListBase) */
 /**
- * \return listbase of listbases, each linking to a vertex.
+ * return listbase of listbases, each linking to a vertex.
  */
-int BM_mesh_edgeloops_find(BMesh *bm,
-                           struct ListBase *r_eloops,
-                           bool (*test_fn)(BMEdge *, void *user_data),
-                           void *user_data);
-bool BM_mesh_edgeloops_find_path(BMesh *bm,
+int mesh_edgeloops_find(Mesh *meeh,
+                        struct ListBase *r_eloops,
+                        bool (*test_fn)(MeshEdge *, void *user_data),
+                        void *user_data);
+bool BM_mesh_edgeloops_find_path(Mesh *mesh,
                                  ListBase *r_eloops,
-                                 bool (*test_fn)(BMEdge *, void *user_data),
+                                 bool (*test_fn)(MeehEdge *, void *user_data),
                                  void *user_data,
-                                 BMVert *v_src,
-                                 BMVert *v_dst);
+                                 MeshVert *v_src,
+                                 MeshVert *v_dst);
 
-void BM_mesh_edgeloops_free(struct ListBase *eloops);
-void BM_mesh_edgeloops_calc_center(BMesh *bm, struct ListBase *eloops);
-void BM_mesh_edgeloops_calc_normal(BMesh *bm, struct ListBase *eloops);
-void BM_mesh_edgeloops_calc_normal_aligned(BMesh *bm,
+void mesh_edgeloops_free(struct ListBase *eloops);
+void mesh_edgeloops_calc_center(BMesh *bm, struct ListBase *eloops);
+void mesh_edgeloops_calc_normal(BMesh *bm, struct ListBase *eloops);
+void mesh_edgeloops_calc_normal_aligned(BMesh *bm,
                                            struct ListBase *eloops,
                                            const float no_align[3]);
-void BM_mesh_edgeloops_calc_order(BMesh *bm, ListBase *eloops, bool use_normals);
+void mesh_edgeloops_calc_order(BMesh *bm, ListBase *eloops, bool use_normals);
 
 /**
  * Copy a single edge-loop.
- * \return new edge-loops.
+ * return new edge-loops.
  */
 struct BMEdgeLoopStore *BM_edgeloop_copy(struct BMEdgeLoopStore *el_store);
 struct BMEdgeLoopStore *BM_edgeloop_from_verts(BMVert **v_arr, int v_arr_tot, bool is_closed);
