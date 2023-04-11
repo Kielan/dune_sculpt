@@ -157,7 +157,7 @@ int mesh_edgeloops_find(Mesh *mesh,
 }
 
 /* -------------------------------------------------------------------- */
-/* BM_mesh_edgeloops_find_path & Util Functions. */
+/* mesh_edgeloops_find_path & Util Functions. */
 
 /**
  * Find s single, open edge loop - given 2 vertices.
@@ -165,22 +165,22 @@ int mesh_edgeloops_find(Mesh *mesh,
  */
 struct VertStep {
   struct VertStep *next, *prev;
-  BMVert *v;
+  MeshVert *v;
 };
 
 static void vs_add(
-    BLI_mempool *vs_pool, ListBase *lb, BMVert *v, BMEdge *e_prev, const int iter_tot)
+    lib_mempool *vs_pool, ListBase *lb, BMVert *v, BMEdge *e_prev, const int iter_tot)
 {
-  struct VertStep *vs_new = BLI_mempool_alloc(vs_pool);
+  struct VertStep *vs_new = lib_mempool_alloc(vs_pool);
   vs_new->v = v;
 
-  BM_elem_index_set(v, iter_tot); /* set_dirty */
+  mesh_elem_index_set(v, iter_tot); /* set_dirty */
 
   /* This edge stores a direct path back to the original vertex so we can
    * backtrack without having to store an array of previous verts. */
 
   /* WARNING: Setting the edge is not common practice but currently harmless, take care. */
-  BLI_assert(BM_vert_in_edge(e_prev, v));
+  lib_assert(mesh_vert_in_edge(e_prev, v));
   v->e = e_prev;
 
   BLI_addtail(lb, vs_new);
