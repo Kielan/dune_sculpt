@@ -72,43 +72,39 @@ void BM_mesh_elem_index_ensure(BMesh *bm, char htype);
  *
  * This is read-only, so it can be used for assertions that don't impact behavior.
  */
-void BM_mesh_elem_index_validate(
-    BMesh *bm, const char *location, const char *func, const char *msg_a, const char *msg_b);
+void mesh_elem_index_validate(
+    Mesh *mesh, const char *location, const char *fn, const char *msg_a, const char *msg_b);
 
 #ifndef NDEBUG
-/**
- * \see #BM_mesh_elem_index_validate the same rationale applies to this function.
- */
-bool BM_mesh_elem_table_check(BMesh *bm);
+/** mesh_elem_index_validate the same rationale applies to this function. */
+bool mesh_elem_table_check(BMesh *bm);
 #endif
 
-/**
- * Re-allocates mesh data with/without toolflags.
- */
-void BM_mesh_toolflags_set(BMesh *bm, bool use_toolflags);
+/** Re-allocates mesh data with/without toolflags. */
+void mesh_toolflags_set(Mesh *mesh, bool use_toolflags);
 
-void BM_mesh_elem_table_ensure(BMesh *bm, char htype);
-/* use BM_mesh_elem_table_ensure where possible to avoid full rebuild */
-void BM_mesh_elem_table_init(BMesh *bm, char htype);
-void BM_mesh_elem_table_free(BMesh *bm, char htype);
+void mesh_elem_table_ensure(Mesh *mesh, char htype);
+/* use mesh_elem_table_ensure where possible to avoid full rebuild */
+void BM_mesh_elem_table_init(Mesh *mesh, char htype);
+void BM_mesh_elem_table_free(Mesh *mesh, char htype);
 
-BLI_INLINE BMVert *BM_vert_at_index(BMesh *bm, const int index)
+BLI_INLINE BMVert *BM_vert_at_index(Mesh *mesh, const int index)
 {
-  BLI_assert((index >= 0) && (index < bm->totvert));
-  BLI_assert((bm->elem_table_dirty & BM_VERT) == 0);
-  return bm->vtable[index];
+  lib_assert((index >= 0) && (index < mesh->totvert));
+  lib_assert((bm->elem_table_dirty & MESH_VERT) == 0);
+  return mesh->vtable[index];
 }
-BLI_INLINE BMEdge *BM_edge_at_index(BMesh *bm, const int index)
+LIB_INLINE MeshEdge *mesh_edge_at_index(Mesh *mesh, const int index)
 {
-  BLI_assert((index >= 0) && (index < bm->totedge));
-  BLI_assert((bm->elem_table_dirty & BM_EDGE) == 0);
-  return bm->etable[index];
+  lib_assert((index >= 0) && (index < mesh->totedge));
+  lib_assert((bm->elem_table_dirty & MESH_EDGE) == 0);
+  return mesh->etable[index];
 }
-BLI_INLINE BMFace *BM_face_at_index(BMesh *bm, const int index)
+LIB_INLINE MeshFace *mesh_face_at_index(Mesh *mesh, const int index)
 {
-  BLI_assert((index >= 0) && (index < bm->totface));
-  BLI_assert((bm->elem_table_dirty & BM_FACE) == 0);
-  return bm->ftable[index];
+  lib_assert((index >= 0) && (index < mesh->totface));
+  lib_assert((mesh->elem_table_dirty & MESH_FACE) == 0);
+  return mesh->ftable[index];
 }
 
 BMVert *BM_vert_at_index_find(BMesh *bm, int index);
