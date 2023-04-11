@@ -60,7 +60,7 @@ static void mesh_remove_tagged_verts_loose(Mesh *mesh, const short oflag)
   }
 }
 
-void mesh_mesh_delete_oflag_tagged(BMesh *bm, const short oflag, const char htype)
+void mesh_delete_oflag_tagged(Mesh *mesh, const short oflag, const char htype)
 {
   if (htype & MESH_FACE) {
     mesh_remove_tagged_faces(mesh, oflag);
@@ -75,15 +75,15 @@ void mesh_mesh_delete_oflag_tagged(BMesh *bm, const short oflag, const char htyp
 
 void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
 {
-  BMEdge *e;
-  BMFace *f;
+  MeshEdge *e;
+  MeshFace *f;
 
-  BMIter eiter;
-  BMIter fiter;
+  MeshIter eiter;
+  MeshIter fiter;
 
   switch (type) {
     case DEL_VERTS: {
-      bmo_remove_tagged_verts(bm, oflag);
+      mesh_remove_tagged_verts(mesh, oflag);
 
       break;
     }
@@ -95,45 +95,45 @@ void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
           mesh_vert_flag_enable(mesh, e->v2, oflag);
         }
       }
-      mesh_remove_tagged_edges(bm, oflag);
-      mesh_remove_tagged_verts_loose(bm, oflag);
+      mesh_remove_tagged_edges(mesh, oflag);
+      mesh_remove_tagged_verts_loose(mesh, oflag);
 
       break;
     }
     case DEL_EDGESFACES: {
-      bmo_remove_tagged_edges(bm, oflag);
+      mesh_remove_tagged_edges(mesh, oflag);
 
       break;
     }
     case DEL_ONLYFACES: {
-      bmo_remove_tagged_faces(bm, oflag);
+      mesh_remove_tagged_faces(mesh, oflag);
 
       break;
     }
     case DEL_ONLYTAGGED: {
-      BMO_mesh_delete_oflag_tagged(bm, oflag, BM_ALL_NOLOOP);
+      mesh_delete_oflag_tagged(mesh, oflag, MESH_ALL_NOLOOP);
 
       break;
     }
     case DEL_FACES:
     case DEL_FACES_KEEP_BOUNDARY: {
       /* go through and mark all edges and all verts of all faces for delete */
-      BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
-        if (BMO_face_flag_test(bm, f, oflag)) {
-          BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-          BMLoop *l_iter;
+      MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+        if (mesh_face_flag_test(mesh, f, oflag)) {
+          MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+          MeshLoop *l_iter;
 
           l_iter = l_first;
           do {
-            BMO_vert_flag_enable(bm, l_iter->v, oflag);
-            BMO_edge_flag_enable(bm, l_iter->e, oflag);
+            mesh_vert_flag_enable(mesh, l_iter->v, oflag);
+            mesh_edge_flag_enable(mesh, l_iter->e, oflag);
           } while ((l_iter = l_iter->next) != l_first);
         }
       }
       /* now go through and mark all remaining faces all edges for keeping */
       MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
-        if (!mesh_face_flag_test(bm, f, oflag)) {
-          MeshLoop *l_first = BM_FACE_FIRST_LOOP(f);
+        if (!mesh_face_flag_test(mesh, f, oflag)) {
+          MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
           MeshLoop *l_iter;
 
           l_iter = l_first;
@@ -144,18 +144,18 @@ void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
         }
       }
       /* also mark all the vertices of remaining edges for keeping */
-      BM_ITER_MESH (e, &eiter, bm, BM_EDGES_OF_MESH) {
+      MESH_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
 
         /* Only exception to normal 'DEL_FACES' logic. */
         if (type == DEL_FACES_KEEP_BOUNDARY) {
-          if (BM_edge_is_boundary(e)) {
-            BMO_edge_flag_disable(bm, e, oflag);
+          if (mesh_edge_is_boundary(e)) {
+            mesh_edge_flag_disable(mesh, e, oflag);
           }
         }
 
-        if (!BMO_edge_flag_test(bm, e, oflag)) {
-          BMO_vert_flag_disable(bm, e->v1, oflag);
-          BMO_vert_flag_disable(bm, e->v2, oflag);
+        if (!mesh_edge_flag_test(mesh, e, oflag)) {
+          mesh_vert_flag_disable(mesh, e->v1, oflag);
+          mesh_vert_flag_disable(mesh, e->v2, oflag);
         }
       }
 
@@ -171,9 +171,7 @@ void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
   }
 }
 
-/** \} */
-
-/* BM functions
+/* Mesh functions
  *
  * NOTE: this is just a duplicate of the code above (bad!)
  * but for now keep in sync, its less hassle than having to create bmesh operator flags,
@@ -181,10 +179,9 @@ void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
  */
 
 /* -------------------------------------------------------------------- */
-/** \name BMesh Delete Functions (no oflags)
- * \{ */
+/** Mesh Delete Functions (no oflags) **/
 
-static void bm_remove_tagged_faces(BMesh *bm, const char hflag)
+static void mesh_remove_tagged_faces(Mesh *mesh, const char hflag)
 {
   BMFace *f, *f_next;
   BMIter iter;
