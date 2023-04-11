@@ -1,17 +1,12 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
 /**
- * Geometry must be completely isolated.
- */
-void BM_mesh_copy_arrays(BMesh *bm_src,
-                         BMesh *bm_dst,
-                         BMVert **verts_src,
+ * Geometry must be completely isolated. */
+void mesh_copy_arrays(Mesh *bm_src,
+                         Mesh *bm_dst,
+                         MVert **verts_src,
                          uint verts_src_len,
-                         BMEdge **edges_src,
+                         MEdge **edges_src,
                          uint edges_src_len,
-                         BMFace **faces_src,
+                         MFace **faces_src,
                          uint faces_src_len);
