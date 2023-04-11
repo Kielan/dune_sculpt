@@ -540,15 +540,15 @@ void mesh_copy_init_customdata(Mesh *mesh_dst, Mesh *mesh_src, const BMAllocTemp
     allocsize = &bm_mesh_allocsize_default;
   }
 
-  CustomData_copy(&bm_src->vdata, &bm_dst->vdata, CD_MASK_BMESH.vmask, CD_CALLOC, 0);
-  CustomData_copy(&bm_src->edata, &bm_dst->edata, CD_MASK_BMESH.emask, CD_CALLOC, 0);
-  CustomData_copy(&bm_src->ldata, &bm_dst->ldata, CD_MASK_BMESH.lmask, CD_CALLOC, 0);
-  CustomData_copy(&bm_src->pdata, &bm_dst->pdata, CD_MASK_BMESH.pmask, CD_CALLOC, 0);
+  CustomData_copy(&mesh_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
+  CustomData_copy(&mesh_src->edata, &mesh_dst->edata, CD_MASK_MESH.emask, CD_CALLOC, 0);
+  CustomData_copy(&mesh_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
+  CustomData_copy(&mesh_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
 
-  CustomData_bmesh_init_pool(&bm_dst->vdata, allocsize->totvert, BM_VERT);
-  CustomData_bmesh_init_pool(&bm_dst->edata, allocsize->totedge, BM_EDGE);
-  CustomData_bmesh_init_pool(&bm_dst->ldata, allocsize->totloop, BM_LOOP);
-  CustomData_bmesh_init_pool(&bm_dst->pdata, allocsize->totface, BM_FACE);
+  CustomData_mesh_init_pool(&mesh_dst->vdata, allocsize->totvert, BM_VERT);
+  CustomData_mesh_init_pool(&mesh_dst->edata, allocsize->totedge, BM_EDGE);
+  CustomData_mesh_init_pool(&mesh_dst->ldata, allocsize->totloop, BM_LOOP);
+  CustomData_mesh_init_pool(&mesh_dst->pdata, allocsize->totface, BM_FACE);
 }
 
 void BM_mesh_copy_init_customdata_all_layers(BMesh *bm_dst,
