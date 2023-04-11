@@ -128,7 +128,7 @@ BMEdge *BM_edge_create(
     return e;
   }
 
-  e = BLI_mempool_alloc(bm->epool);
+  e = lib_mempool_alloc(mesh->epool);
 
   /* --- assign all members --- */
   e->head.data = NULL;
@@ -139,13 +139,13 @@ BMEdge *BM_edge_create(
   BM_elem_index_set(e, -1); /* set_ok_invalid */
 #endif
 
-  e->head.htype = BM_EDGE;
-  e->head.hflag = BM_ELEM_SMOOTH | BM_ELEM_DRAW;
+  e->head.htype = MESH_EDGE;
+  e->head.hflag = MESH_ELEM_SMOOTH | MESH_ELEM_DRAW;
   e->head.api_flag = 0;
 
   /* allocate flags */
-  if (bm->use_toolflags) {
-    ((BMEdge_OFlag *)e)->oflags = bm->etoolflagpool ? BLI_mempool_calloc(bm->etoolflagpool) : NULL;
+  if (mesh->use_toolflags) {
+    ((MeshEdge_OFlag *)e)->oflags = bm->etoolflagpool ? BLI_mempool_calloc(bm->etoolflagpool) : NULL;
   }
 
   e->v1 = v1;
@@ -155,13 +155,13 @@ BMEdge *BM_edge_create(
   memset(&e->v1_disk_link, 0, sizeof(BMDiskLink[2]));
   /* --- done --- */
 
-  bmesh_disk_edge_append(e, e->v1);
-  bmesh_disk_edge_append(e, e->v2);
+  mesh_disk_edge_append(e, e->v1);
+  mesh_disk_edge_append(e, e->v2);
 
   /* may add to middle of the pool */
-  bm->elem_index_dirty |= BM_EDGE;
-  bm->elem_table_dirty |= BM_EDGE;
-  bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  mesh->elem_index_dirty |= BM_EDGE;
+  mesh->elem_table_dirty |= BM_EDGE;
+  mesh->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
 
   bm->totedge++;
 
