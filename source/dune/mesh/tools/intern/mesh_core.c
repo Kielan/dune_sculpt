@@ -37,10 +37,10 @@ MeshVert *mesh_vert_create(Mesh *mesh,
                        const MeshVert *v_example,
                        const eMeshCreateFlag create_flag)
 {
-  BMVert *v = BLI_mempool_alloc(bm->vpool);
+  MVert *v = lib_mempool_alloc(bm->vpool);
 
-  BLI_assert((v_example == NULL) || (v_example->head.htype == BM_VERT));
-  BLI_assert(!(create_flag & 1));
+  lib_assert((v_example == NULL) || (v_example->head.htype == BM_VERT));
+  lib_assert(!(create_flag & 1));
 
   /* --- assign all members --- */
   v->head.data = NULL;
@@ -48,10 +48,10 @@ MeshVert *mesh_vert_create(Mesh *mesh,
 #ifdef USE_DEBUG_INDEX_MEMCHECK
   DEBUG_MEMCHECK_INDEX_INVALIDATE(v);
 #else
-  BM_elem_index_set(v, -1); /* set_ok_invalid */
+  mesh_elem_index_set(v, -1); /* set_ok_invalid */
 #endif
 
-  v->head.htype = BM_VERT;
+  v->head.htype = MESH_VERT;
   v->head.hflag = 0;
   v->head.api_flag = 0;
 
