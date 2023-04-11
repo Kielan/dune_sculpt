@@ -1,20 +1,20 @@
 #pragma once
 
 /* stuff for dealing with header flags */
-#define BM_elem_flag_test(ele, hflag) _bm_elem_flag_test(&(ele)->head, hflag)
-#define BM_elem_flag_test_bool(ele, hflag) _bm_elem_flag_test_bool(&(ele)->head, hflag)
-#define BM_elem_flag_enable(ele, hflag) _bm_elem_flag_enable(&(ele)->head, hflag)
-#define BM_elem_flag_disable(ele, hflag) _bm_elem_flag_disable(&(ele)->head, hflag)
-#define BM_elem_flag_set(ele, hflag, val) _bm_elem_flag_set(&(ele)->head, hflag, val)
-#define BM_elem_flag_toggle(ele, hflag) _bm_elem_flag_toggle(&(ele)->head, hflag)
-#define BM_elem_flag_merge(ele_a, ele_b) _bm_elem_flag_merge(&(ele_a)->head, &(ele_b)->head)
-#define BM_elem_flag_merge_ex(ele_a, ele_b, hflag_and) \
-  _bm_elem_flag_merge_ex(&(ele_a)->head, &(ele_b)->head, hflag_and)
-#define BM_elem_flag_merge_into(ele, ele_a, ele_b) \
-  _bm_elem_flag_merge_into(&(ele)->head, &(ele_a)->head, &(ele_b)->head)
+#define mesh_elem_flag_test(ele, hflag) _mesh_elem_flag_test(&(ele)->head, hflag)
+#define mesh_elem_flag_test_bool(ele, hflag) _mesh_elem_flag_test_bool(&(ele)->head, hflag)
+#define mesh_elem_flag_enable(ele, hflag) _mesh_elem_flag_enable(&(ele)->head, hflag)
+#define mesh_elem_flag_disable(ele, hflag) _mesh_elem_flag_disable(&(ele)->head, hflag)
+#define mesh_elem_flag_set(ele, hflag, val) _mesh_elem_flag_set(&(ele)->head, hflag, val)
+#define mesh_elem_flag_toggle(ele, hflag) _mesh_elem_flag_toggle(&(ele)->head, hflag)
+#define mesh_elem_flag_merge(ele_a, ele_b) _mesh_elem_flag_merge(&(ele_a)->head, &(ele_b)->head)
+#define mesh_elem_flag_merge_ex(ele_a, ele_b, hflag_and) \
+  _mesh_elem_flag_merge_ex(&(ele_a)->head, &(ele_b)->head, hflag_and)
+#define mesh_elem_flag_merge_into(ele, ele_a, ele_b) \
+  _mesh_elem_flag_merge_into(&(ele)->head, &(ele_a)->head, &(ele_b)->head)
 
 ATTR_WARN_UNUSED_RESULT
-BLI_INLINE char _bm_elem_flag_test(const BMHeader *head, const char hflag)
+LIB_INLINE char _mesh_elem_flag_test(const BMHeader *head, const char hflag)
 {
   return head->hflag & hflag;
 }
