@@ -1,9 +1,7 @@
-/** \file
- * \ingroup bmesh
+/**
+ * mesh conversion functions.
  *
- * BM mesh conversion functions.
- *
- * \section bm_mesh_conv_shapekey Converting Shape Keys
+ * section mesh_conv_shapekey Converting Shape Keys
  *
  * When converting to/from a Mesh/BMesh you can optionally pass a shape key to edit.
  * This has the effect of editing the shape key-block rather than the original mesh vertex coords
@@ -12,15 +10,15 @@
  * While this works for any mesh/bmesh this is made use of by entering and exiting edit-mode.
  *
  * There are comments in code but this should help explain the general
- * intention as to how this works converting from/to bmesh.
- * \subsection user_pov User Perspective
+ * intention as to how this works converting from/to mesh.
+ * subsection user_pov User Perspective
  *
  * - Editmode operations when a shape key-block is active edits only that key-block.
  * - The first Basis key-block always matches the Mesh verts.
  * - Changing vertex locations of _any_ Basis
  *   will apply offsets to those shape keys using this as their Basis.
  *
- * \subsection enter_editmode Entering EditMode - #BM_mesh_bm_from_me
+ * subsection enter_editmode Entering EditMode - mesh_bm_from_me
  *
  * - The active key-block is used for BMesh vertex locations on entering edit-mode.
  *   So obviously the meshes vertex locations remain unchanged and the shape key
@@ -28,7 +26,7 @@
  *   Simply the #BMVert.co is a initialized from active shape key (when its set).
  * - All key-blocks are added as CustomData layers (read code for details).
  *
- * \subsection exit_editmode Exiting EditMode - #BM_mesh_bm_to_me
+ * subsection exit_editmode Exiting EditMode - #BM_mesh_bm_to_me
  *
  * This is where the most confusing code is! Won't attempt to document the details here,
  * for that read the code.
@@ -53,13 +51,13 @@
  * This has the effect from the users POV of leaving the mesh un-touched,
  * and only editing the active shape key-block.
  *
- * \subsection other_notes Other Notes
+ * subsection other_notes Other Notes
  *
  * Other details noted here which might not be so obvious:
  *
- * - The #CD_SHAPEKEY layer is only used in edit-mode,
- *   and the #Mesh.key is only used in object-mode.
- *   Although the #CD_SHAPEKEY custom-data layer is converted into #Key data-blocks for each
+ * - The CD_SHAPEKEY layer is only used in edit-mode,
+ *   and the Mesh.key is only used in object-mode.
+ *   Although the CD_SHAPEKEY custom-data layer is converted into #Key data-blocks for each
  *   undo-step while in edit-mode.
  * - The #CD_SHAPE_KEYINDEX layer is used to check if vertices existed when entering edit-mode.
  *   Values of the indices are only used for shape-keys when the #CD_SHAPEKEY layer can't be found,
@@ -67,22 +65,22 @@
  *   These indices are also used to maintain correct indices for hook modifiers and vertex parents.
  */
 
-#include "DNA_key_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_object_types.h"
+#include "types_key.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_modifier.h"
+#include "types_object.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_array.hh"
-#include "BLI_index_range.hh"
-#include "BLI_listbase.h"
-#include "BLI_math_vector.h"
-#include "BLI_span.hh"
+#include "lib_alloca.h"
+#include "lib_array.hh"
+#include "lib_index_range.hh"
+#include "lib_listbase.h"
+#include "lib_math_vector.h"
+#include "lib_span.hh"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 #include "BKE_mesh.h"
 #include "BKE_mesh_runtime.h"
 #include "BKE_multires.h"
