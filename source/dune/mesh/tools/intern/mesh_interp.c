@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
- * Functions for interpolating data across the surface of a mesh.
- */
+/** Functions for interpolating data across the surface of a mesh. */
 
 #include "MEM_guardedalloc.h"
 
