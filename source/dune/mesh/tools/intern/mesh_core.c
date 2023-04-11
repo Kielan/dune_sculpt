@@ -109,20 +109,20 @@ MeshVert *mesh_vert_create(Mesh *mesh,
     }
   }
 
-  BM_CHECK_ELEMENT(v);
+  MESH_CHECK_ELEMENT(v);
 
   return v;
 }
 
-BMEdge *BM_edge_create(
-    BMesh *bm, BMVert *v1, BMVert *v2, const BMEdge *e_example, const eBMCreateFlag create_flag)
+MeshEdge *mesh_edge_create(
+    Meshesh *mesh, MeshVert *v1, MeshVert *v2, const MeshEdge *e_example, const eBMCreateFlag create_flag)
 {
-  BMEdge *e;
+  MeshEdge *e;
 
-  BLI_assert(v1 != v2);
-  BLI_assert(v1->head.htype == BM_VERT && v2->head.htype == BM_VERT);
-  BLI_assert((e_example == NULL) || (e_example->head.htype == BM_EDGE));
-  BLI_assert(!(create_flag & 1));
+  lib_assert(v1 != v2);
+  lib_assert(v1->head.htype == MESH_VERT && v2->head.htype == MESH_VERT);
+  lib_assert((e_example == NULL) || (e_example->head.htype == MESH_EDGE));
+  lib_assert(!(create_flag & 1));
 
   if ((create_flag & BM_CREATE_NO_DOUBLE) && (e = BM_edge_exists(v1, v2))) {
     return e;
