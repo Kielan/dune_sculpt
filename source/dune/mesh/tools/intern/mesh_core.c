@@ -145,29 +145,29 @@ MeshEdge *mesh_edge_create(
 
   /* allocate flags */
   if (mesh->use_toolflags) {
-    ((MeshEdge_OFlag *)e)->oflags = bm->etoolflagpool ? BLI_mempool_calloc(bm->etoolflagpool) : NULL;
+    ((MeshEdge_OFlag *)e)->oflags = mesh->etoolflagpool ? lib_mempool_calloc(mesh->etoolflagpool) : NULL;
   }
 
   e->v1 = v1;
   e->v2 = v2;
   e->l = NULL;
 
-  memset(&e->v1_disk_link, 0, sizeof(BMDiskLink[2]));
+  memset(&e->v1_disk_link, 0, sizeof(MeshDiskLink[2]));
   /* --- done --- */
 
   mesh_disk_edge_append(e, e->v1);
   mesh_disk_edge_append(e, e->v2);
 
   /* may add to middle of the pool */
-  mesh->elem_index_dirty |= BM_EDGE;
-  mesh->elem_table_dirty |= BM_EDGE;
-  mesh->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  mesh->elem_index_dirty |= MESH_EDGE;
+  mesh->elem_table_dirty |= MESH_EDGE;
+  mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
 
-  bm->totedge++;
+  mesh->totedge++;
 
-  if (!(create_flag & BM_CREATE_SKIP_CD)) {
+  if (!(create_flag & MESH_CREATE_SKIP_CD)) {
     if (e_example) {
-      BM_elem_attrs_copy(bm, bm, e_example, e);
+      mesh_elem_attrs_copy(mesh, mesh, e_example, e);
     }
     else {
       CustomData_bmesh_set_default(&bm->edata, &e->head.data);
