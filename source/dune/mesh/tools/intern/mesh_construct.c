@@ -249,11 +249,11 @@ MeshFace *mesh_face_create_ngon_verts(Mesh *m3:$,
       /* the edge may exist already and be attached to a face
        * in this case we can find the best winding to use for the new face */
       if (edge_arr[i]->l) {
-        BMVert *test_v1, *test_v2;
+        MeshVert *test_v1, *test_v2;
         /* we want to use the reverse winding to the existing order */
-        BM_edge_ordered_verts(edge_arr[i], &test_v2, &test_v1);
+        mesh_edge_ordered_verts(edge_arr[i], &test_v2, &test_v1);
         winding[(vert_arr[i_prev] == test_v2)]++;
-        BLI_assert(ELEM(vert_arr[i_prev], test_v2, test_v1));
+        lib_assert(ELEM(vert_arr[i_prev], test_v2, test_v1));
       }
     }
 
@@ -331,13 +331,13 @@ static void mesh_vert_attrs_copy(
 static void mesh_edge_attrs_copy(
     Mesh *mesh_src, Mesh *mesh_dst, const MeshEdge *e_src, BMEdge *e_dst, CustomDataMask mask_exclude)
 {
-  if ((bm_src == bm_dst) && (e_src == e_dst)) {
-    BLI_assert_msg(0, "BMEdge: source and target match");
+  if ((mesh_src == bm_dst) && (e_src == e_dst)) {
+    lib_assert_msg(0, "MeshEdge: source and target match");
     return;
   }
-  CustomData_bmesh_free_block_data_exclude_by_type(&bm_dst->edata, e_dst->head.data, mask_exclude);
-  CustomData_bmesh_copy_data_exclude_by_type(
-      &bm_src->edata, &bm_dst->edata, e_src->head.data, &e_dst->head.data, mask_exclude);
+  CustomData_mesh_free_block_data_exclude_by_type(&bm_dst->edata, e_dst->head.data, mask_exclude);
+  CustomData_mesh_copy_data_exclude_by_type(
+      &mesh_src->edata, &mesh_dst->edata, e_src->head.data, &e_dst->head.data, mask_exclude);
 }
 
 static void mesh_loop_attrs_copy(
@@ -355,16 +355,16 @@ static void mesh_loop_attrs_copy(
 static void bm_face_attrs_copy(
     Mesh *mesh_src, Mesh *mesh_dst, const MeshFace *f_src, MeshFace *f_dst, CustomDataMask mask_exclude)
 {
-  if ((bm_src == bm_dst) && (f_src == f_dst)) {
-    BLI_assert_msg(0, "BMFace: source and target match");
+  if ((mesh_src == mesh_dst) && (f_src == f_dst)) {
+    lib_assert_msg(0, "MeshFace: source and target match");
     return;
   }
   if ((mask_exclude & CD_MASK_NORMAL) == 0) {
     copy_v3_v3(f_dst->no, f_src->no);
   }
-  CustomData_bmesh_free_block_data_exclude_by_type(&bm_dst->pdata, f_dst->head.data, mask_exclude);
-  CustomData_bmesh_copy_data_exclude_by_type(
-      &bm_src->pdata, &bm_dst->pdata, f_src->head.data, &f_dst->head.data, mask_exclude);
+  CustomData_mesh_free_block_data_exclude_by_type(&mesh_dst->pdata, f_dst->head.data, mask_exclude);
+  CustomData_mesh_copy_data_exclude_by_type(
+      &mesh_src->pdata, &mesh_dst->pdata, f_src->head.data, &f_dst->head.data, mask_exclude);
   f_dst->mat_nr = f_src->mat_nr;
 }
 
