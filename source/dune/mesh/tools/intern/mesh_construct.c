@@ -42,12 +42,12 @@ bool mesh_edges_from_verts(MeshEdge **edge_arr, BMVert **vert_arr, const int len
   return true;
 }
 
-void BM_edges_from_verts_ensure(BMesh *bm, BMEdge **edge_arr, BMVert **vert_arr, const int len)
+void mesh_edges_from_verts_ensure(Mesh *mesh, MeshEdge **edge_arr, MeshVert **vert_arr, const int len)
 {
   int i, i_prev = len - 1;
   for (i = 0; i < len; i++) {
-    edge_arr[i_prev] = BM_edge_create(
-        bm, vert_arr[i_prev], vert_arr[i], NULL, BM_CREATE_NO_DOUBLE);
+    edge_arr[i_prev] = mesh_edge_create(
+        mesh, vert_arr[i_prev], vert_arr[i], NULL, MESH_CREATE_NO_DOUBLE);
     i_prev = i;
   }
 }
@@ -56,11 +56,11 @@ void BM_edges_from_verts_ensure(BMesh *bm, BMEdge **edge_arr, BMVert **vert_arr,
 static void mesh_loop_attrs_copy(
     Mesh *mesh_src, Mesh *mesh_dst, const MeshLoop *l_src, MeshLoop *l_dst, CustomDataMask mask_exclude);
 
-MeshFace *mesh_face_create_quad_tri(Mesh *bm,
-                                    MVert *v1,
-                                    MVert *v2,
-                                    MVert *v3,
-                                    MVert *v4,
+MeshFace *mesh_face_create_quad_tri(Mesh *mesh,
+                                    MeshVert *v1,
+                                    MeshVert *v2,
+                                    MeshVert *v3,
+                                    MeshVert *v4,
                                     const MeshFace *f_example,
                                     const eMeshCreateFlag create_flag)
 {
@@ -68,25 +68,25 @@ MeshFace *mesh_face_create_quad_tri(Mesh *bm,
   return mesh_face_create_verts(mesh, vtar, v4 ? 4 : 3, f_example, create_flag, true);
 }
 
-void BM_face_copy_shared(BMesh *bm, BMFace *f, BMLoopFilterFunc filter_fn, void *user_data)
+void mesh_face_copy_shared(Mesh *mesh, MeshFace *f, MeshLoopFilterFn filter_fn, void *user_data)
 {
-  BMLoop *l_first;
-  BMLoop *l_iter;
+  MeshLoop *l_first;
+  MeshLoop *l_iter;
 
 #ifdef DEBUG
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    BLI_assert(BM_ELEM_API_FLAG_TEST(l_iter, _FLAG_OVERLAP) == 0);
+    lib_assert(MESH_ELEM_API_FLAG_TEST(l_iter, _FLAG_OVERLAP) == 0);
   } while ((l_iter = l_iter->next) != l_first);
 #endif
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    BMLoop *l_other = l_iter->radial_next;
+    MeshLoop *l_other = l_iter->radial_next;
 
     if (l_other && l_other != l_iter) {
-      BMLoop *l_src[2];
-      BMLoop *l_dst[2] = {l_iter, l_iter->next};
+      MeshLoop *l_src[2];
+      MeshLoop *l_dst[2] = {l_iter, l_iter->next};
       uint j;
 
       if (l_other->v == l_iter->v) {
