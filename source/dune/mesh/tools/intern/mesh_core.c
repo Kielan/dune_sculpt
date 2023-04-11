@@ -387,11 +387,11 @@ LIB_INLINE MeshFace *mesh_face_create__internal(Mesh *mesh)
 }
 
 MeshFace *mesh_face_create(Mesh *mesh,
-                       MeshVert **verts,
-                       MeshEdge **edges,
-                       const int len,
-                       const MeshFace *f_example,
-                       const eMeshCreateFlag create_flag)
+                           MeshVert **verts,
+                           MeshEdge **edges,
+                           const int len,
+                           const MeshFace *f_example,
+                           const eMeshCreateFlag create_flag)
 {
   MeshFace *f = NULL;
   MeshLoop *l, *startl, *lastl;
@@ -556,18 +556,18 @@ int mesh_elem_check(void *element, const char htype)
       MeshLoop *l = element, *l2;
       int i;
 
-      if (l->f->head.htype != BM_FACE) {
+      if (l->f->head.htype != MESH_FACE) {
         err |= IS_LOOP_WRONG_FACE_TYPE;
       }
-      if (l->e->head.htype != BM_EDGE) {
+      if (l->e->head.htype != MESH_EDGE) {
         err |= IS_LOOP_WRONG_EDGE_TYPE;
       }
-      if (l->v->head.htype != BM_VERT) {
+      if (l->v->head.htype != MESH_VERT) {
         err |= IS_LOOP_WRONG_VERT_TYPE;
       }
       if (!mesh_vert_in_edge(l->e, l->v)) {
         fprintf(stderr,
-                "%s: fatal bmesh error (vert not in edge)! (bmesh internal error)\n",
+                "%s: fatal mesh error (vert not in edge)! (bmesh internal error)\n",
                 __func__);
         err |= IS_LOOP_VERT_NOT_IN_EDGE;
       }
@@ -584,7 +584,7 @@ int mesh_elem_check(void *element, const char htype)
       l2 = l;
       i = 0;
       do {
-        if (i >= BM_NGON_MAX) {
+        if (i >= MESH_NGON_MAX) {
           break;
         }
 
@@ -603,8 +603,8 @@ int mesh_elem_check(void *element, const char htype)
     }
     case MESH_FACE: {
       MeshFace *f = element;
-      MLoop *l_iter;
-      MLoop *l_first;
+      MeshLoop *l_iter;
+      MeshLoop *l_first;
       int len = 0;
 
 #  ifdef USE_MESH_HOLES
@@ -636,7 +636,7 @@ int mesh_elem_check(void *element, const char htype)
             err |= IS_FACE_LOOP_VERT_NOT_IN_EDGE;
           }
 
-          if (!mesh_radial_validate(bmesh_radial_length(l_iter), l_iter)) {
+          if (!mesh_radial_validate(mesh_radial_length(l_iter), l_iter)) {
             err |= IS_FACE_LOOP_WRONG_RADIAL_LENGTH;
           }
 
@@ -651,30 +651,30 @@ int mesh_elem_check(void *element, const char htype)
         }
         MESH_ELEM_API_FLAG_ENABLE(l_iter, _FLAG_ELEM_CHECK);
         if (l_iter->v) {
-          if (BM_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_ELEM_CHECK)) {
+          if (MESH_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_ELEM_CHECK)) {
             err |= IS_FACE_LOOP_DUPE_VERT;
           }
-          BM_ELEM_API_FLAG_ENABLE(l_iter->v, _FLAG_ELEM_CHECK);
+          MESH_ELEM_API_FLAG_ENABLE(l_iter->v, _FLAG_ELEM_CHECK);
         }
         if (l_iter->e) {
-          if (BM_ELEM_API_FLAG_TEST(l_iter->e, _FLAG_ELEM_CHECK)) {
+          if (MESH_ELEM_API_FLAG_TEST(l_iter->e, _FLAG_ELEM_CHECK)) {
             err |= IS_FACE_LOOP_DUPE_EDGE;
           }
-          BM_ELEM_API_FLAG_ENABLE(l_iter->e, _FLAG_ELEM_CHECK);
+          MESH_ELEM_API_FLAG_ENABLE(l_iter->e, _FLAG_ELEM_CHECK);
         }
 
         len++;
       } while ((l_iter = l_iter->next) != l_first);
 
       /* cleanup duplicates flag */
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
-        BM_ELEM_API_FLAG_DISABLE(l_iter, _FLAG_ELEM_CHECK);
+        MESH_ELEM_API_FLAG_DISABLE(l_iter, _FLAG_ELEM_CHECK);
         if (l_iter->v) {
-          BM_ELEM_API_FLAG_DISABLE(l_iter->v, _FLAG_ELEM_CHECK);
+          MESH_ELEM_API_FLAG_DISABLE(l_iter->v, _FLAG_ELEM_CHECK);
         }
         if (l_iter->e) {
-          BM_ELEM_API_FLAG_DISABLE(l_iter->e, _FLAG_ELEM_CHECK);
+          MESH_ELEM_API_FLAG_DISABLE(l_iter->e, _FLAG_ELEM_CHECK);
         }
       } while ((l_iter = l_iter->next) != l_first);
 
@@ -684,7 +684,7 @@ int mesh_elem_check(void *element, const char htype)
       break;
     }
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 
