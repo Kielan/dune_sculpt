@@ -404,24 +404,24 @@ void BM_elem_attrs_copy_ex(BMesh *bm_src,
 
   /* Copy specific attributes */
   switch (ele_dst->htype) {
-    case BM_VERT:
-      bm_vert_attrs_copy(
-          bm_src, bm_dst, (const BMVert *)ele_src, (BMVert *)ele_dst, cd_mask_exclude);
+    case MESH_VERT:
+      mesh_vert_attrs_copy(
+          mesh_src, mesh_dst, (const MeshVert *)ele_src, (BMVert *)ele_dst, cd_mask_exclude);
       break;
-    case BM_EDGE:
-      bm_edge_attrs_copy(
-          bm_src, bm_dst, (const BMEdge *)ele_src, (BMEdge *)ele_dst, cd_mask_exclude);
+    case MESH_EDGE:
+      mesh_edge_attrs_copy(
+          mesh_src, mesh_dst, (const MeshEdge *)ele_src, (BMEdge *)ele_dst, cd_mask_exclude);
       break;
-    case BM_LOOP:
-      bm_loop_attrs_copy(
-          bm_src, bm_dst, (const BMLoop *)ele_src, (BMLoop *)ele_dst, cd_mask_exclude);
+    case MESH_LOOP:
+      mesh_loop_attrs_copy(
+          mesh_src, mesh_dst, (const MeshLoop *)ele_src, (BMLoop *)ele_dst, cd_mask_exclude);
       break;
-    case BM_FACE:
-      bm_face_attrs_copy(
-          bm_src, bm_dst, (const BMFace *)ele_src, (BMFace *)ele_dst, cd_mask_exclude);
+    case MESH_FACE:
+      mesh_face_attrs_copy(
+          mesh_src, mesh_dst, (const MeshFace *)ele_src, (BMFace *)ele_dst, cd_mask_exclude);
       break;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 }
