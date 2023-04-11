@@ -1,42 +1,36 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-#include "bmesh_operator_api.h"
+#include "mesh_operator_api.h"
 
 /*----------- bmop error system ----------*/
 
-/**
- * \note More can be added as needed.
- */
-typedef enum eBMOpErrorLevel {
+/** More can be added as needed. **/
+typedef enum eMeshOpErrorLevel {
   /**
    * Use when the operation could not succeed,
    * typically from input that isn't sufficient for completing the operation.
    */
-  BMO_ERROR_CANCEL = 0,
+  MO_ERROR_CANCEL = 0,
   /**
    * Use this when one or more operations could not succeed,
    * when the resulting mesh can be used (since some operations succeeded or no change was made).
    * This is used by default.
    */
-  BMO_ERROR_WARN = 1,
+  MO_ERROR_WARN = 1,
   /**
    * The mesh resulting from this operation should not be used (where possible).
    * It should not be left in a corrupt state either.
    *
-   * See #BMBackup type & function calls.
+   * See MeshBackup type & function calls.
    */
-  BMO_ERROR_FATAL = 2,
-} eBMOpErrorLevel;
+  MO_ERROR_FATAL = 2,
+} eMeshOpErrorLevel;
 
 /**
- * Pushes an error onto the bmesh error stack.
+ * Pushes an error onto the mesh error stack.
  * if msg is null, then the default message for the `errcode` is used.
  */
-void BMO_error_raise(BMesh *bm, BMOperator *owner, eBMOpErrorLevel level, const char *msg)
+void mesh_error_raise(Mesh *mesh, BMOperator *owner, eBMOpErrorLevel level, const char *msg)
     ATTR_NONNULL(1, 2, 4);
 
 /**
