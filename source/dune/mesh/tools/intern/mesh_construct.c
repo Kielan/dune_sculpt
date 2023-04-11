@@ -406,11 +406,11 @@ void mesh_elem_attrs_copy_ex(Mesh *mesh_src,
   switch (ele_dst->htype) {
     case MESH_VERT:
       mesh_vert_attrs_copy(
-          mesh_src, mesh_dst, (const MeshVert *)ele_src, (BMVert *)ele_dst, cd_mask_exclude);
+          mesh_src, mesh_dst, (const MeshVert *)ele_src, (MeshVert *)ele_dst, cd_mask_exclude);
       break;
     case MESH_EDGE:
       mesh_edge_attrs_copy(
-          mesh_src, mesh_dst, (const MeshEdge *)ele_src, (BMEdge *)ele_dst, cd_mask_exclude);
+          mesh_src, mesh_dst, (const MeshEdge *)ele_src, (MeshEdge *)ele_dst, cd_mask_exclude);
       break;
     case MESH_LOOP:
       mesh_loop_attrs_copy(
@@ -502,16 +502,16 @@ void mesh_copy_init_customdata_from_mesh_array(Mesh *mesh_dst,
   for (int i = 0; i < me_src_array_len; i++) {
     const Mesh *me_src = me_src_array[i];
     if (i == 0) {
-      CustomData_copy(&me_src->vdata, &bm_dst->vdata, CD_MASK_BMESH.vmask, CD_CALLOC, 0);
-      CustomData_copy(&me_src->edata, &bm_dst->edata, CD_MASK_BMESH.emask, CD_CALLOC, 0);
-      CustomData_copy(&me_src->ldata, &bm_dst->ldata, CD_MASK_BMESH.lmask, CD_CALLOC, 0);
-      CustomData_copy(&me_src->pdata, &bm_dst->pdata, CD_MASK_BMESH.pmask, CD_CALLOC, 0);
+      CustomData_copy(&me_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
+      CustomData_copy(&me_src->edata, &mesh_dst->edata, CD_MASK_MESH.emask, CD_CALLOC, 0);
+      CustomData_copy(&me_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
+      CustomData_copy(&me_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
     }
     else {
-      CustomData_merge(&me_src->vdata, &bm_dst->vdata, CD_MASK_BMESH.vmask, CD_CALLOC, 0);
-      CustomData_merge(&me_src->edata, &bm_dst->edata, CD_MASK_BMESH.emask, CD_CALLOC, 0);
-      CustomData_merge(&me_src->ldata, &bm_dst->ldata, CD_MASK_BMESH.lmask, CD_CALLOC, 0);
-      CustomData_merge(&me_src->pdata, &bm_dst->pdata, CD_MASK_BMESH.pmask, CD_CALLOC, 0);
+      CustomData_merge(&me_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
+      CustomData_merge(&me_src->edata, &mesh_dst->edata, CD_MASK_MESH.emask, CD_CALLOC, 0);
+      CustomData_merge(&me_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
+      CustomData_merge(&me_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
     }
 
     cd_flag |= me_src->cd_flag;
@@ -519,22 +519,22 @@ void mesh_copy_init_customdata_from_mesh_array(Mesh *mesh_dst,
 
   cd_flag |= mesh_cd_flag_from_bmesh(bm_dst);
 
-  CustomData_mesh_init_pool(&mesh_dst->vdata, allocsize->totvert, BM_VERT);
-  CustomData_mesh_init_pool(&mesh_dst->edata, allocsize->totedge, BM_EDGE);
-  CustomData_mesh_init_pool(&mesh_dst->ldata, allocsize->totloop, BM_LOOP);
-  CustomData_mesh_init_pool(&mesh_dst->pdata, allocsize->totface, BM_FACE);
+  CustomData_mesh_init_pool(&mesh_dst->vdata, allocsize->totvert, MESH_VERT);
+  CustomData_mesh_init_pool(&mesh_dst->edata, allocsize->totedge, MESH_EDGE);
+  CustomData_mesh_init_pool(&mesh_dst->ldata, allocsize->totloop, MESH_LOOP);
+  CustomData_mesh_init_pool(&mesh_dst->pdata, allocsize->totface, MESH_FACE);
 
   mesh_cd_flag_apply(mesh_dst, cd_flag);
 }
 
-void mesh_copy_init_customdata_from_mesh(BMesh *bm_dst,
-                                            const Mesh *me_src,
-                                            const BMAllocTemplate *allocsize)
+void mesh_copy_init_customdata_from_mesh(Mesh *mesh_dst,
+                                         const Mesh *me_src,
+                                         const MeshAllocTemplate *allocsize)
 {
-  BM_mesh_copy_init_customdata_from_mesh_array(bm_dst, &me_src, 1, allocsize);
+  mesh_copy_init_customdata_from_mesh_array(mesh_dst, &me_src, 1, allocsize);
 }
 
-void BM_mesh_copy_init_customdata(BMesh *bm_dst, BMesh *bm_src, const BMAllocTemplate *allocsize)
+void mesh_copy_init_customdata(Mesh *mesh_dst, Mesh *mesh_src, const BMAllocTemplate *allocsize)
 {
   if (allocsize == NULL) {
     allocsize = &bm_mesh_allocsize_default;
