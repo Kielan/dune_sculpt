@@ -406,10 +406,10 @@ void mesh_edgeloops_calc_normal_aligned(Mesh *mesh, ListBase *eloops, const floa
   }
 }
 
-void mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const bool use_normals)
+void mesh_edgeloops_calc_order(Mesh *UNUSED(mesh), ListBase *eloops, const bool use_normals)
 {
   ListBase eloops_ordered = {NULL};
-  BMEdgeLoopStore *el_store;
+  MeshEdgeLoopStore *el_store;
   float cent[3];
   int tot = 0;
   zero_v3(cent);
@@ -421,7 +421,7 @@ void mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const bool u
 
   /* Find the furthest out loop. */
   {
-    BMEdgeLoopStore *el_store_best = NULL;
+    MeshEdgeLoopStore *el_store_best = NULL;
     float len_best_sq = -1.0f;
     for (el_store = eloops->first; el_store; el_store = el_store->next) {
       const float len_sq = len_squared_v3v3(cent, el_store->co);
@@ -431,19 +431,19 @@ void mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const bool u
       }
     }
 
-    BLI_remlink(eloops, el_store_best);
-    BLI_addtail(&eloops_ordered, el_store_best);
+    lib_remlink(eloops, el_store_best);
+    lib_addtail(&eloops_ordered, el_store_best);
   }
 
   /* not so efficient re-ordering */
   while (eloops->first) {
-    BMEdgeLoopStore *el_store_best = NULL;
-    const float *co = ((BMEdgeLoopStore *)eloops_ordered.last)->co;
-    const float *no = ((BMEdgeLoopStore *)eloops_ordered.last)->no;
+    MeshEdgeLoopStore *el_store_best = NULL;
+    const float *co = ((MeshEdgeLoopStore *)eloops_ordered.last)->co;
+    const float *no = ((MeshEdgeLoopStore *)eloops_ordered.last)->no;
     float len_best_sq = FLT_MAX;
 
     if (use_normals) {
-      BLI_ASSERT_UNIT_V3(no);
+      LIB_ASSERT_UNIT_V3(no);
     }
 
     for (el_store = eloops->first; el_store; el_store = el_store->next) {
@@ -466,17 +466,17 @@ void mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const bool u
       }
     }
 
-    BLI_remlink(eloops, el_store_best);
-    BLI_addtail(&eloops_ordered, el_store_best);
+    lib_remlink(eloops, el_store_best);
+    lib_addtail(&eloops_ordered, el_store_best);
   }
 
   *eloops = eloops_ordered;
 }
 
 /* -------------------------------------------------------------------- */
-/* BM_edgeloop_*** functions */
+/* mesh_edgeloop_*** functions */
 
-BMEdgeLoopStore *BM_edgeloop_copy(BMEdgeLoopStore *el_store)
+MeshEdgeLoopStore *_edgeloop_copy(BMEdgeLoopStore *el_store)
 {
   BMEdgeLoopStore *el_store_copy = MEM_mallocN(sizeof(*el_store), __func__);
   *el_store_copy = *el_store;
