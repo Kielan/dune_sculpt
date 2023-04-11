@@ -113,28 +113,28 @@ int mesh_edgeloops_find(BMesh *bm,
   BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
     BLI_assert(!BM_elem_flag_test(e, BM_ELEM_INTERNAL_TAG));
     if (test_fn(e, user_data)) {
-      BM_elem_flag_enable(e, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_enable(e->v1, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_enable(e->v2, BM_ELEM_INTERNAL_TAG);
-      BLI_stack_push(edge_stack, (void *)&e);
+      mesh_elem_flag_enable(e, BM_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_enable(e->v1, BM_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_enable(e->v2, BM_ELEM_INTERNAL_TAG);
+      lib_stack_push(edge_stack, (void *)&e);
     }
     else {
-      BM_elem_flag_disable(e, BM_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_disable(e, BM_ELEM_INTERNAL_TAG);
     }
   }
 
-  const uint edges_len = BLI_stack_count(edge_stack);
-  BMEdge **edges = MEM_mallocN(sizeof(*edges) * edges_len, __func__);
-  BLI_stack_pop_n_reverse(edge_stack, edges, BLI_stack_count(edge_stack));
-  BLI_stack_free(edge_stack);
+  const uint edges_len = lib_stack_count(edge_stack);
+  MeshEdge **edges = mem_mallocn(sizeof(*edges) * edges_len, __func__);
+  lib_stack_pop_n_reverse(edge_stack, edges, BLI_stack_count(edge_stack));
+  lib_stack_free(edge_stack);
 
   for (uint i = 0; i < edges_len; i += 1) {
     e = edges[i];
-    if (BM_elem_flag_test(e, BM_ELEM_INTERNAL_TAG)) {
-      BMEdgeLoopStore *el_store = MEM_callocN(sizeof(BMEdgeLoopStore), __func__);
+    if (mesh_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG)) {
+      MeshEdgeLoopStore *el_store = MEM_callocN(sizeof(BMEdgeLoopStore), __func__);
 
       /* add both directions */
-      if (bm_loop_build(el_store, e->v1, e->v2, 1) && bm_loop_build(el_store, e->v2, e->v1, -1) &&
+      if (mesh_loop_build(el_store, e->v1, e->v2, 1) && bm_loop_build(el_store, e->v2, e->v1, -1) &&
           el_store->len > 1) {
         BLI_addtail(r_eloops, el_store);
         count++;
