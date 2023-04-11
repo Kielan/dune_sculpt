@@ -45,17 +45,17 @@ LIB_INLINE void _mesh_elem_flag_set(MeshHeader *head, const char hflag, const in
   }
 }
 
-LIB_INLINE void _mesh_elem_flag_toggle(BMHeader *head, const char hflag)
+LIB_INLINE void _mesh_elem_flag_toggle(MeshHeader *head, const char hflag)
 {
   head->hflag ^= hflag;
 }
 
-LIB_INLINE void _mesh_elem_flag_merge(BMHeader *head_a, BMHeader *head_b)
+LIB_INLINE void _mesh_elem_flag_merge(MeshHeader *head_a, MeshHeader *head_b)
 {
   head_a->hflag = head_b->hflag = head_a->hflag | head_b->hflag;
 }
 
-LIB_INLINE void _mesh_elem_flag_merge_ex(BMHeader *head_a, BMHeader *head_b, const char hflag_and)
+LIB_INLINE void _mesh_elem_flag_merge_ex(MeshHeader *head_a, MeshHeader *head_b, const char hflag_and)
 {
   if (((head_a->hflag & head_b->hflag) & hflag_and) == 0) {
     head_a->hflag &= ~hflag_and;
@@ -77,18 +77,18 @@ LIB_INLINE void _mesh_elem_flag_merge_into(MeshHeader *head,
  * sure if the index values are valid because certain operations have modified
  * the mesh structure.
  *
- * To set the elements to valid indices 'BM_mesh_elem_index_ensure' should be used
+ * To set the elements to valid indices 'mesh_elem_index_ensure' should be used
  * rather than adding inline loops, however there are cases where we still
  * set the index directly
  *
  * In an attempt to manage this,
- * here are 5 tags I'm adding to uses of #BM_elem_index_set
+ * here are 5 tags I'm adding to uses of mesh_elem_index_set
  *
  * - 'set_inline'  -- since the data is already being looped over set to a
  *                    valid value inline.
  *
  * - 'set_dirty!'  -- intentionally sets the index to an invalid value,
- *                    flagging 'bm->elem_index_dirty' so we don't use it.
+ *                    flagging 'mesh->elem_index_dirty' so we don't use it.
  *
  * - 'set_ok'      -- this is valid use since the part of the code is low level.
  *
@@ -99,10 +99,10 @@ LIB_INLINE void _mesh_elem_flag_merge_into(MeshHeader *head,
  *
  * - campbell */
 
-#define mesh_elem_index_get(ele) _bm_elem_index_get(&(ele)->head)
-#define mesh_elem_index_set(ele, index) _bm_elem_index_set(&(ele)->head, index)
+#define mesh_elem_index_get(ele) _mesh_elem_index_get(&(ele)->head)
+#define mesh_elem_index_set(ele, index) _mesh_elem_index_set(&(ele)->head, index)
 
-BLI_INLINE void _bm_elem_index_set(BMHeader *head, const int index)
+LIB_INLINE void _mesh_elem_index_set(MeshHeader *head, const int index)
 {
   head->index = index;
 }
