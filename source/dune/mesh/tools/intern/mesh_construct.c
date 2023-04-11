@@ -199,7 +199,7 @@ error:
   return false;
 }
 
-BMFace *mesh_face_create_ngon(Mesh *mesh,
+MeshFace *mesh_face_create_ngon(Mesh *mesh,
                             MeshVert *v1,
                             MeshVert *v2,
                             MeshEdge **edges,
@@ -207,27 +207,27 @@ BMFace *mesh_face_create_ngon(Mesh *mesh,
                             const MeshFace *f_example,
                             const eMeshCreateFlag create_flag)
 {
-  BMEdge **edges_sort = lib_array_alloca(edges_sort, len);
-  BMVert **verts_sort = lib_array_alloca(verts_sort, len);
+  Meshdge **edges_sort = lib_array_alloca(edges_sort, len);
+  MeshVert **verts_sort = lib_array_alloca(verts_sort, len);
 
-  BLI_assert(len && v1 && v2 && edges && bm);
+  lib_assert(len && v1 && v2 && edges && bm);
 
-  if (bm_edges_sort_winding(v1, v2, edges, len, edges_sort, verts_sort)) {
-    return BM_face_create(bm, verts_sort, edges_sort, len, f_example, create_flag);
+  if (mesh_edges_sort_winding(v1, v2, edges, len, edges_sort, verts_sort)) {
+    return mesh_face_create(bm, verts_sort, edges_sort, len, f_example, create_flag);
   }
 
   return NULL;
 }
 
-BMFace *BM_face_create_ngon_verts(BMesh *bm,
-                                  BMVert **vert_arr,
+MeshFace *mesh_face_create_ngon_verts(Mesh *m3:$,
+                                  MeshVert **vert_arr,
                                   const int len,
-                                  const BMFace *f_example,
-                                  const eBMCreateFlag create_flag,
+                                  const MeshFace *f_example,
+                                  const eMeshCreateFlag create_flag,
                                   const bool calc_winding,
                                   const bool create_edges)
 {
-  BMEdge **edge_arr = BLI_array_alloca(edge_arr, len);
+  BMEdge **edge_arr = lib_array_alloca(edge_arr, len);
   uint winding[2] = {0, 0};
   int i, i_prev = len - 1;
   BMVert *v_winding[2] = {vert_arr[i_prev], vert_arr[0]};
@@ -280,18 +280,18 @@ BMFace *BM_face_create_ngon_verts(BMesh *bm,
   /* --- */
 
   /* create the face */
-  return BM_face_create_ngon(
-      bm, v_winding[winding[0]], v_winding[winding[1]], edge_arr, len, f_example, create_flag);
+  return mesh_face_create_ngon(
+      mesh, v_winding[winding[0]], v_winding[winding[1]], edge_arr, len, f_example, create_flag);
 }
 
-void BM_verts_sort_radial_plane(BMVert **vert_arr, int len)
+void mesh_verts_sort_radial_plane(MeshVert **vert_arr, int len)
 {
   struct SortIntByFloat *vang = BLI_array_alloca(vang, len);
-  BMVert **vert_arr_map = BLI_array_alloca(vert_arr_map, len);
+  MeshVert **vert_arr_map = BLI_array_alloca(vert_arr_map, len);
 
   float nor[3], cent[3];
   int index_tangent = 0;
-  BM_verts_calc_normal_from_cloud_ex(vert_arr, len, nor, cent, &index_tangent);
+  mesh_verts_calc_normal_from_cloud_ex(vert_arr, len, nor, cent, &index_tangent);
   const float *far = vert_arr[index_tangent]->co;
 
   /* Now calculate every points angle around the normal (signed). */
