@@ -59,7 +59,7 @@
  *   and the Mesh.key is only used in object-mode.
  *   Although the CD_SHAPEKEY custom-data layer is converted into #Key data-blocks for each
  *   undo-step while in edit-mode.
- * - The #CD_SHAPE_KEYINDEX layer is used to check if vertices existed when entering edit-mode.
+ * - The CD_SHAPE_KEYINDEX layer is used to check if vertices existed when entering edit-mode.
  *   Values of the indices are only used for shape-keys when the #CD_SHAPEKEY layer can't be found,
  *   allowing coordinates from the #Key to be used to prevent data-loss.
  *   These indices are also used to maintain correct indices for hook modifiers and vertex parents.
@@ -81,30 +81,30 @@
 #include "lib_span.hh"
 
 #include "dune_customdata.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_runtime.h"
-#include "BKE_multires.h"
+#include "dune_mesh.h"
+#include "dune_mesh_runtime.h"
+#include "dune_multires.h"
 
-#include "BKE_key.h"
-#include "BKE_main.h"
+#include "dune_key.h"
+#include "dune_main.h"
 
-#include "DEG_depsgraph_query.h"
+#include "dgraph_query.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h" /* For element checking. */
+#include "mesh.h"
+#include "intern/mesh_private.h" /* For element checking. */
 
 #include "CLG_log.h"
 
-static CLG_LogRef LOG = {"bmesh.mesh.convert"};
+static CLG_LogRef LOG = {"mesh.mesh.convert"};
 
-using blender::Array;
-using blender::IndexRange;
-using blender::Span;
+using dune::Array;
+using dune::IndexRange;
+using dune::Span;
 
-void BM_mesh_cd_flag_ensure(BMesh *bm, Mesh *mesh, const char cd_flag)
+void mesh_cd_flag_ensure(Mesh *mesh, Mesh *mesh, const char cd_flag)
 {
-  const char cd_flag_all = BM_mesh_cd_flag_from_bmesh(bm) | cd_flag;
-  BM_mesh_cd_flag_apply(bm, cd_flag_all);
+  const char cd_flag_all = mesh_cd_flag_from_mesh(mesh) | cd_flag;
+  mesh_cd_flag_apply(mesh, cd_flag_all);
   if (mesh) {
     mesh->cd_flag = cd_flag_all;
   }
@@ -117,7 +117,7 @@ void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
   lib_assert(mesh->edata.totlayer == 0 || mesh->edata.pool != nullptr);
   lib_assert(mesh->pdata.totlayer == 0 || mesh->pdata.pool != nullptr);
 
-  if (cd_flag & ME_CDFLAG_VERT_BWEIGHT) {
+  if (cd_flag & ME_CDFLAG_VERT_WEIGHT) {
     if (!CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
       mesh_data_layer_add(mesh, &mesh->vdata, CD_BWEIGHT);
     }
@@ -130,43 +130,43 @@ void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
 
   if (cd_flag & ME_CDFLAG_VERT_CREASE) {
     if (!CustomData_has_layer(&mesh->vdata, CD_CREASE)) {
-      BM_data_layer_add(bm, &bm->vdata, CD_CREASE);
+      mesh_data_layer_add(mesh, &mesh->vdata, CD_CREASE);
     }
   }
   else {
-    if (CustomData_has_layer(&bm->vdata, CD_CREASE)) {
-      BM_data_layer_free(bm, &bm->vdata, CD_CREASE);
+    if (CustomData_has_layer(&mesh->vdata, CD_CREASE)) {
+      mesh_data_layer_free(mesh, &mesh->vdata, CD_CREASE);
     }
   }
 
   if (cd_flag & ME_CDFLAG_EDGE_BWEIGHT) {
-    if (!CustomData_has_layer(&bm->edata, CD_BWEIGHT)) {
-      BM_data_layer_add(bm, &bm->edata, CD_BWEIGHT);
+    if (!CustomData_has_layer(&mesh->edata, CD_BWEIGHT)) {
+      mesh_data_layer_add(mesh, &mesh>edata, CD_BWEIGHT);
     }
   }
   else {
-    if (CustomData_has_layer(&bm->edata, CD_BWEIGHT)) {
-      BM_data_layer_free(bm, &bm->edata, CD_BWEIGHT);
+    if (CustomData_has_layer(&mesh->edata, CD_BWEIGHT)) {
+      mesh_data_layer_free(mesh, &mesh->edata, CD_BWEIGHT);
     }
   }
 
   if (cd_flag & ME_CDFLAG_EDGE_CREASE) {
-    if (!CustomData_has_layer(&bm->edata, CD_CREASE)) {
-      BM_data_layer_add(bm, &bm->edata, CD_CREASE);
+    if (!CustomData_has_layer(&mesh->edata, CD_CREASE)) {
+      mesh_data_layer_add(mesh, &mesh->edata, CD_CREASE);
     }
   }
   else {
-    if (CustomData_has_layer(&bm->edata, CD_CREASE)) {
-      BM_data_layer_free(bm, &bm->edata, CD_CREASE);
+    if (CustomData_has_layer(&mesh->edata, CD_CREASE)) {
+      mesh_data_layer_free(mesh, &mesh->edata, CD_CREASE);
     }
   }
 }
 
-char BM_mesh_cd_flag_from_bmesh(BMesh *bm)
+char mesh_cd_flag_from_meshBMesh *mesh)
 {
   char cd_flag = 0;
-  if (CustomData_has_layer(&bm->vdata, CD_BWEIGHT)) {
-    cd_flag |= ME_CDFLAG_VERT_BWEIGHT;
+  if (CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
+    cd_flag |= ME_CDFLAG_VERT_WEIGHT;
   }
   if (CustomData_has_layer(&bm->vdata, CD_CREASE)) {
     cd_flag |= ME_CDFLAG_VERT_CREASE;
@@ -180,24 +180,24 @@ char BM_mesh_cd_flag_from_bmesh(BMesh *bm)
   return cd_flag;
 }
 
-/* Static function for alloc (duplicate in modifiers_bmesh.c) */
-static BMFace *bm_face_create_from_mpoly(BMesh &bm,
-                                         Span<MLoop> loops,
-                                         Span<BMVert *> vtable,
-                                         Span<BMEdge *> etable)
+/* Static function for alloc (duplicate in modifiers_mesh.c) */
+static MeshFace *mesh_face_create_from_mpoly(Mesh &mesh,
+                                         Span<MeshLoop> loops,
+                                         Span<MeshVert *> vtable,
+                                         Span<MeshEdge *> etable)
 {
-  Array<BMVert *, BM_DEFAULT_NGON_STACK_SIZE> verts(loops.size());
-  Array<BMEdge *, BM_DEFAULT_NGON_STACK_SIZE> edges(loops.size());
+  Array<MeshVert *, MESH_DEFAULT_NGON_STACK_SIZE> verts(loops.size());
+  Array<MeshEdge *, MESH_DEFAULT_NGON_STACK_SIZE> edges(loops.size());
 
   for (const int i : loops.index_range()) {
     verts[i] = vtable[loops[i].v];
     edges[i] = etable[loops[i].e];
   }
 
-  return BM_face_create(&bm, verts.data(), edges.data(), loops.size(), nullptr, BM_CREATE_SKIP_CD);
+  return mesh_face_create(&msh, verts.data(), edges.data(), loops.size(), nullptr, BM_CREATE_SKIP_CD);
 }
 
-void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams *params)
+void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams *params)
 {
   const bool is_new = !(bm->totvert || (bm->vdata.totlayer || bm->edata.totlayer ||
                                         bm->pdata.totlayer || bm->ldata.totlayer));
@@ -208,48 +208,48 @@ void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshPar
 
   if (!me || !me->totvert) {
     if (me && is_new) { /* No verts? still copy custom-data layout. */
-      CustomData_copy(&me->vdata, &bm->vdata, mask.vmask, CD_DEFAULT, 0);
-      CustomData_copy(&me->edata, &bm->edata, mask.emask, CD_DEFAULT, 0);
-      CustomData_copy(&me->ldata, &bm->ldata, mask.lmask, CD_DEFAULT, 0);
-      CustomData_copy(&me->pdata, &bm->pdata, mask.pmask, CD_DEFAULT, 0);
+      CustomData_copy(&me->vdata, &mesh->vdata, mask.vmask, CD_DEFAULT, 0);
+      CustomData_copy(&me->edata, &mesh->edata, mask.emask, CD_DEFAULT, 0);
+      CustomData_copy(&me->ldata, &mesh->ldata, mask.lmask, CD_DEFAULT, 0);
+      CustomData_copy(&me->pdata, &mesh->pdata, mask.pmask, CD_DEFAULT, 0);
 
-      CustomData_bmesh_init_pool(&bm->vdata, me->totvert, BM_VERT);
-      CustomData_bmesh_init_pool(&bm->edata, me->totedge, BM_EDGE);
-      CustomData_bmesh_init_pool(&bm->ldata, me->totloop, BM_LOOP);
-      CustomData_bmesh_init_pool(&bm->pdata, me->totpoly, BM_FACE);
+      CustomData_mesh_init_pool(&mesh->vdata, me->totvert, MESH_VERT);
+      CustomData_mesh_init_pool(&mesh->edata, me->totedge, MESH_EDGE);
+      CustomData_mesh_init_pool(&mesh->ldata, me->totloop, MESH_LOOP);
+      CustomData_mesh_init_pool(&mesh->pdata, me->totpoly, MESH_FACE);
     }
     return; /* Sanity check. */
   }
 
-  /* Only copy normals to the new BMesh if they are not already dirty. This avoids unnecessary
+  /* Only copy normals to the new Mesh if they are not already dirty. This avoids unnecessary
    * work, but also accessing normals on an incomplete mesh, for example when restoring undo steps
    * in edit mode. */
   const float(*vert_normals)[3] = nullptr;
   if (params->calc_vert_normal) {
-    vert_normals = BKE_mesh_vertex_normals_ensure(me);
+    vert_normals = dune_mesh_vertex_normals_ensure(me);
   }
 
   if (is_new) {
-    CustomData_copy(&me->vdata, &bm->vdata, mask.vmask, CD_CALLOC, 0);
-    CustomData_copy(&me->edata, &bm->edata, mask.emask, CD_CALLOC, 0);
-    CustomData_copy(&me->ldata, &bm->ldata, mask.lmask, CD_CALLOC, 0);
-    CustomData_copy(&me->pdata, &bm->pdata, mask.pmask, CD_CALLOC, 0);
+    CustomData_copy(&me->vdata, &mesh->vdata, mask.vmask, CD_CALLOC, 0);
+    CustomData_copy(&me->edata, &mesh->edata, mask.emask, CD_CALLOC, 0);
+    CustomData_copy(&me->ldata, &mesh->ldata, mask.lmask, CD_CALLOC, 0);
+    CustomData_copy(&me->pdata, &mesh->pdata, mask.pmask, CD_CALLOC, 0);
   }
   else {
-    CustomData_bmesh_merge(&me->vdata, &bm->vdata, mask.vmask, CD_CALLOC, bm, BM_VERT);
-    CustomData_bmesh_merge(&me->edata, &bm->edata, mask.emask, CD_CALLOC, bm, BM_EDGE);
-    CustomData_bmesh_merge(&me->ldata, &bm->ldata, mask.lmask, CD_CALLOC, bm, BM_LOOP);
-    CustomData_bmesh_merge(&me->pdata, &bm->pdata, mask.pmask, CD_CALLOC, bm, BM_FACE);
+    CustomData_mesh_merge(&me->vdata, &mesh->vdata, mask.vmask, CD_CALLOC, mesh, MESH_VERT);
+    CustomData_mesh_merge(&me->edata, &mesh->edata, mask.emask, CD_CALLOC, mesh, MESH_EDGE);
+    CustomData_mesh_merge(&me->ldata, &mesh->ldata, mask.lmask, CD_CALLOC, mesh, MESH_LOOP);
+    CustomData_mesh_merge(&me->pdata, &mesh->pdata, mask.pmask, CD_CALLOC, mesh, MESH_FACE);
   }
 
   /* -------------------------------------------------------------------- */
   /* Shape Key */
   int tot_shape_keys = 0;
-  if (me->key != nullptr && DEG_is_original_id(&me->id)) {
+  if (me->key != nullptr && dgraph_is_original_id(&me->id)) {
     /* Evaluated meshes can be topologically inconsistent with their shape keys.
      * Shape keys are also already integrated into the state of the evaluated
      * mesh, so considering them here would kind of apply them twice. */
-    tot_shape_keys = BLI_listbase_count(&me->key->block);
+    tot_shape_keys = lib_listbase_count(&me->key->block);
 
     /* Original meshes must never contain a shape-key custom-data layers.
      *
@@ -258,16 +258,16 @@ void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshPar
      * even though the data isn't fully compatible (hence this assert).
      *
      * This results in:
-     * - The newly created #BMesh having twice the number of custom-data layers.
-     * - When converting the #BMesh back to a regular mesh,
+     * - The newly created Mesh having twice the number of custom-data layers.
+     * - When converting the Mesh back to a regular mesh,
      *   At least one of the extra shape-key blocks will be created in #Mesh.key
-     *   depending on the value of #CustomDataLayer.uid.
+     *   depending on the value of CustomDataLayer.uid.
      *
      * We could support mixing both kinds of data if there is a compelling use-case for it.
      * At the moment it's simplest to assume all original meshes use the key-block and meshes
      * that are evaluated (through the modifier stack for example) use custom-data layers.
      */
-    BLI_assert(!CustomData_has_layer(&me->vdata, CD_SHAPEKEY));
+    lib_assert(!CustomData_has_layer(&me->vdata, CD_SHAPEKEY));
   }
   if (is_new == false) {
     tot_shape_keys = min_ii(tot_shape_keys, CustomData_number_of_layers(&bm->vdata, CD_SHAPEKEY));
@@ -285,7 +285,7 @@ void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshPar
 
   if (is_new) {
     if (tot_shape_keys || params->add_key_index) {
-      CustomData_add_layer(&bm->vdata, CD_SHAPE_KEYINDEX, CD_ASSIGN, nullptr, 0);
+      CustomData_add_layer(&mesh->vdata, CD_SHAPE_KEYINDEX, CD_ASSIGN, nullptr, 0);
     }
   }
 
@@ -296,7 +296,7 @@ void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshPar
       if (!me->key->uidgen) {
         fprintf(stderr,
                 "%s had to generate shape key uid's in a situation we shouldn't need to! "
-                "(bmesh internal error)\n",
+                "(mesh internal error)\n",
                 __func__);
 
         me->key->uidgen = 1;
@@ -309,7 +309,7 @@ void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshPar
     if (actkey && actkey->totelem == me->totvert) {
       keyco = params->use_shapekey ? static_cast<float(*)[3]>(actkey->data) : nullptr;
       if (is_new) {
-        bm->shapenr = params->active_shapekey;
+        mesh->shapenr = params->active_shapekey;
       }
     }
 
@@ -318,29 +318,29 @@ void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshPar
     for (i = 0, block = static_cast<KeyBlock *>(me->key->block.first); i < tot_shape_keys;
          block = block->next, i++) {
       if (is_new) {
-        CustomData_add_layer_named(&bm->vdata, CD_SHAPEKEY, CD_ASSIGN, nullptr, 0, block->name);
-        int j = CustomData_get_layer_index_n(&bm->vdata, CD_SHAPEKEY, i);
-        bm->vdata.layers[j].uid = block->uid;
+        CustomData_add_layer_named(&mesh->vdata, CD_SHAPEKEY, CD_ASSIGN, nullptr, 0, block->name);
+        int j = CustomData_get_layer_index_n(&mesh->vdata, CD_SHAPEKEY, i);
+        mesh->vdata.layers[j].uid = block->uid;
       }
       shape_key_table[i] = static_cast<const float(*)[3]>(block->data);
     }
   }
 
   if (is_new) {
-    CustomData_bmesh_init_pool(&bm->vdata, me->totvert, BM_VERT);
-    CustomData_bmesh_init_pool(&bm->edata, me->totedge, BM_EDGE);
-    CustomData_bmesh_init_pool(&bm->ldata, me->totloop, BM_LOOP);
-    CustomData_bmesh_init_pool(&bm->pdata, me->totpoly, BM_FACE);
+    CustomData_mesh_init_pool(&mesh->vdata, me->totvert, MESH_VERT);
+    CustomData_mesh_init_pool(&mesh->edata, me->totedge, MESH_EDGE);
+    CustomData_mesh_init_pool(&mesh->ldata, me->totloop, MESH_LOOP);
+    CustomData_mesh_init_pool(&mesh->pdata, me->totpoly, MESH_FACE);
   }
-  BM_mesh_cd_flag_apply(bm, me->cd_flag | (is_new ? 0 : BM_mesh_cd_flag_from_bmesh(bm)));
+  mesh_cd_flag_apply(mesh, me->cd_flag | (is_new ? 0 : mesh_cd_flag_from_mesh(m)));
 
   /* Only copy these values over if the source mesh is flagged to be using them.
-   * Even if `bm` has these layers, they may have been added from another mesh, when `!is_new`. */
-  const int cd_vert_bweight_offset = (me->cd_flag & ME_CDFLAG_VERT_BWEIGHT) ?
-                                         CustomData_get_offset(&bm->vdata, CD_BWEIGHT) :
+   * Even if `mesh` has these layers, they may have been added from another mesh, when `!is_new`. */
+  const int cd_vert_bweight_offset = (me->cd_flag & ME_CDFLAG_VERT_WEIGHT) ?
+                                         CustomData_get_offset(&mesh->vdata, CD_WEIGHT) :
                                          -1;
-  const int cd_edge_bweight_offset = (me->cd_flag & ME_CDFLAG_EDGE_BWEIGHT) ?
-                                         CustomData_get_offset(&bm->edata, CD_BWEIGHT) :
+  const int cd_edge_weight_offset = (me->cd_flag & ME_CDFLAG_EDGE_BWEIGHT) ?
+                                         CustomData_get_offset(&mesh->edata, CD_BWEIGHT) :
                                          -1;
   const int cd_edge_crease_offset = (me->cd_flag & ME_CDFLAG_EDGE_CREASE) ?
                                         CustomData_get_offset(&bm->edata, CD_CREASE) :
@@ -351,15 +351,15 @@ void BM_mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshPar
                                            CustomData_get_offset(&bm->vdata, CD_SHAPE_KEYINDEX) :
                                            -1;
 
-  Span<MVert> mvert{me->mvert, me->totvert};
-  Array<BMVert *> vtable(me->totvert);
+  Span<MeshVert> mvert{me->mvert, me->totvert};
+  Array<MeshVert *> vtable(me->totvert);
   for (const int i : mvert.index_range()) {
-    BMVert *v = vtable[i] = BM_vert_create(
-        bm, keyco ? keyco[i] : mvert[i].co, nullptr, BM_CREATE_SKIP_CD);
-    BM_elem_index_set(v, i); /* set_ok */
+    MeshVert *v = vtable[i] = mesh_vert_create(
+        mesh, keyco ? keyco[i] : mvert[i].co, nullptr, BM_CREATE_SKIP_CD);
+    mesh_elem_index_set(v, i); /* set_ok */
 
     /* Transfer flag. */
-    v->head.hflag = BM_vert_flag_from_mflag(mvert[i].flag & ~SELECT);
+    v->head.hflag = mesh_vert_flag_from_mflag(mvert[i].flag & ~SELECT);
 
     /* This is necessary for selection counts to work properly. */
     if (mvert[i].flag & SELECT) {
