@@ -14,38 +14,38 @@
   _mesh_elem_flag_merge_into(&(ele)->head, &(ele_a)->head, &(ele_b)->head)
 
 ATTR_WARN_UNUSED_RESULT
-LIB_INLINE char _mesh_elem_flag_test(const BMHeader *head, const char hflag)
+LIB_INLINE char _mesh_elem_flag_test(const MeshHeader *head, const char hflag)
 {
   return head->hflag & hflag;
 }
 
 ATTR_WARN_UNUSED_RESULT
-BLI_INLINE bool _bm_elem_flag_test_bool(const BMHeader *head, const char hflag)
+LIB_INLINE bool _mesh_elem_flag_test_bool(const MeshHeader *head, const char hflag)
 {
   return (head->hflag & hflag) != 0;
 }
 
-BLI_INLINE void _bm_elem_flag_enable(BMHeader *head, const char hflag)
+LIB_INLINE void _mesh_elem_flag_enable(MeshHeader *head, const char hflag)
 {
   head->hflag |= hflag;
 }
 
-BLI_INLINE void _bm_elem_flag_disable(BMHeader *head, const char hflag)
+LIB_INLINE void _mesh_elem_flag_disable(MeshHeader *head, const char hflag)
 {
   head->hflag &= (char)~hflag;
 }
 
-BLI_INLINE void _bm_elem_flag_set(BMHeader *head, const char hflag, const int val)
+LIB_INLINE void _mesh_elem_flag_set(MeshHeader *head, const char hflag, const int val)
 {
   if (val) {
-    _bm_elem_flag_enable(head, hflag);
+    _mesh_elem_flag_enable(head, hflag);
   }
   else {
-    _bm_elem_flag_disable(head, hflag);
+    _mesh_elem_flag_disable(head, hflag);
   }
 }
 
-BLI_INLINE void _bm_elem_flag_toggle(BMHeader *head, const char hflag)
+LIB_INLINE void _mesh_elem_flag_toggle(BMHeader *head, const char hflag)
 {
   head->hflag ^= hflag;
 }
@@ -64,15 +64,15 @@ LIB_INLINE void _mesh_elem_flag_merge_ex(BMHeader *head_a, BMHeader *head_b, con
   _mesh_elem_flag_merge(head_a, head_b);
 }
 
-BLI_INLINE void _bm_elem_flag_merge_into(BMHeader *head,
-                                         const BMHeader *head_a,
-                                         const BMHeader *head_b)
+LIB_INLINE void _mesh_elem_flag_merge_into(MeshHeader *head,
+                                         const MeshHeader *head_a,
+                                         const MeshHeader *head_b)
 {
   head->hflag = head_a->hflag | head_b->hflag;
 }
 
 /**
- * notes on #BM_elem_index_set(...) usage,
+ * notes on mesh_elem_index_set(...) usage,
  * Set index is sometimes abused as temp storage, other times we can't be
  * sure if the index values are valid because certain operations have modified
  * the mesh structure.
@@ -99,8 +99,8 @@ BLI_INLINE void _bm_elem_flag_merge_into(BMHeader *head,
  *
  * - campbell */
 
-#define BM_elem_index_get(ele) _bm_elem_index_get(&(ele)->head)
-#define BM_elem_index_set(ele, index) _bm_elem_index_set(&(ele)->head, index)
+#define mesh_elem_index_get(ele) _bm_elem_index_get(&(ele)->head)
+#define mesh_elem_index_set(ele, index) _bm_elem_index_set(&(ele)->head, index)
 
 BLI_INLINE void _bm_elem_index_set(BMHeader *head, const int index)
 {
