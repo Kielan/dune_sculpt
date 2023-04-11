@@ -414,11 +414,11 @@ void BM_elem_attrs_copy_ex(BMesh *bm_src,
       break;
     case MESH_LOOP:
       mesh_loop_attrs_copy(
-          mesh_src, mesh_dst, (const MeshLoop *)ele_src, (BMLoop *)ele_dst, cd_mask_exclude);
+          mesh_src, mesh_dst, (const MeshLoop *)ele_src, (MeshLoop *)ele_dst, cd_mask_exclude);
       break;
     case MESH_FACE:
       mesh_face_attrs_copy(
-          mesh_src, mesh_dst, (const MeshFace *)ele_src, (BMFace *)ele_dst, cd_mask_exclude);
+          mesh_src, mesh_dst, (const MeshFace *)ele_src, (MeshFace *)ele_dst, cd_mask_exclude);
       break;
     default:
       lib_assert(0);
@@ -426,16 +426,16 @@ void BM_elem_attrs_copy_ex(BMesh *bm_src,
   }
 }
 
-void BM_elem_attrs_copy(BMesh *bm_src, BMesh *bm_dst, const void *ele_src, void *ele_dst)
+void mesh_elem_attrs_copy(Mesh *mesh_src, Mesh *mesh_dst, const void *ele_src, void *ele_dst)
 {
-  /* BMESH_TODO, default 'use_flags' to false */
-  BM_elem_attrs_copy_ex(bm_src, bm_dst, ele_src, ele_dst, BM_ELEM_SELECT, 0x0);
+  /* MESH_TODO, default 'use_flags' to false */
+  mesh_elem_attrs_copy_ex(bm_src, bm_dst, ele_src, ele_dst, BM_ELEM_SELECT, 0x0);
 }
 
-void BM_elem_select_copy(BMesh *bm_dst, void *ele_dst_v, const void *ele_src_v)
+void mesh_elem_select_copy(BMesh *bm_dst, void *ele_dst_v, const void *ele_src_v)
 {
-  BMHeader *ele_dst = ele_dst_v;
-  const BMHeader *ele_src = ele_src_v;
+  MeshHeader *ele_dst = ele_dst_v;
+  const MeshHeader *ele_src = ele_src_v;
 
   BLI_assert(ele_src->htype == ele_dst->htype);
 
