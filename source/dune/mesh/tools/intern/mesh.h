@@ -85,10 +85,10 @@ void mesh_toolflags_set(Mesh *mesh, bool use_toolflags);
 
 void mesh_elem_table_ensure(Mesh *mesh, char htype);
 /* use mesh_elem_table_ensure where possible to avoid full rebuild */
-void BM_mesh_elem_table_init(Mesh *mesh, char htype);
-void BM_mesh_elem_table_free(Mesh *mesh, char htype);
+void mesh_elem_table_init(Mesh *mesh, char htype);
+void mesh_elem_table_free(Mesh *mesh, char htype);
 
-BLI_INLINE BMVert *BM_vert_at_index(Mesh *mesh, const int index)
+LIB_INLINE MeshVert *mesh_vert_at_index(Mesh *mesh, const int index)
 {
   lib_assert((index >= 0) && (index < mesh->totvert));
   lib_assert((bm->elem_table_dirty & MESH_VERT) == 0);
@@ -97,7 +97,7 @@ BLI_INLINE BMVert *BM_vert_at_index(Mesh *mesh, const int index)
 LIB_INLINE MeshEdge *mesh_edge_at_index(Mesh *mesh, const int index)
 {
   lib_assert((index >= 0) && (index < mesh->totedge));
-  lib_assert((bm->elem_table_dirty & MESH_EDGE) == 0);
+  lib_assert((mesh->elem_table_dirty & MESH_EDGE) == 0);
   return mesh->etable[index];
 }
 LIB_INLINE MeshFace *mesh_face_at_index(Mesh *mesh, const int index)
@@ -107,26 +107,24 @@ LIB_INLINE MeshFace *mesh_face_at_index(Mesh *mesh, const int index)
   return mesh->ftable[index];
 }
 
-BMVert *BM_vert_at_index_find(BMesh *bm, int index);
-BMEdge *BM_edge_at_index_find(BMesh *bm, int index);
-BMFace *BM_face_at_index_find(BMesh *bm, int index);
-BMLoop *BM_loop_at_index_find(BMesh *bm, int index);
+MeshVert *mesh_vert_at_index_find(Mesh *mesh, int index);
+MeshEdge *mesh_edge_at_index_find(Mesh *mesh, int index);
+MeshFace *mesh_face_at_index_find(Mesh *mesh, int index);
+MeshLoop *mesh_loop_at_index_find(Mesh *mesh, int index);
 
 /**
  * Use lookup table when available, else use slower find functions.
  *
- * \note Try to use #BM_mesh_elem_table_ensure instead.
+ * Try to use mesh_elem_table_ensure instead.
  */
-BMVert *BM_vert_at_index_find_or_table(BMesh *bm, int index);
-BMEdge *BM_edge_at_index_find_or_table(BMesh *bm, int index);
-BMFace *BM_face_at_index_find_or_table(BMesh *bm, int index);
+MeshVert *mesh_vert_at_index_find_or_table(BMesh *bm, int index);
+MeshEdge *mesh_edge_at_index_find_or_table(BMesh *bm, int index);
+MeshFace *mesh_face_at_index_find_or_table(BMesh *bm, int index);
 
 // XXX
 
-/**
- * Return the amount of element of type 'type' in a given bmesh.
- */
-int BM_mesh_elem_count(BMesh *bm, char htype);
+/** Return the amount of element of type 'type' in a given bmesh. */
+int mesh_elem_count(Mesh *mesh, char htype);
 
 /**
  * Remaps the vertices, edges and/or faces of the bmesh as indicated by vert/edge/face_idx arrays
