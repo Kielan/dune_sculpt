@@ -182,27 +182,27 @@ MeshEdge *mesh_edge_create(
 /**
  * note In most cases a \a l_example should be NULL,
  * since this is a low level API and we shouldn't attempt to be clever and guess what's intended.
- * In cases where copying adjacent loop-data is useful, see #BM_face_copy_shared.
+ * In cases where copying adjacent loop-data is useful, see mesh_face_copy_shared.
  */
 static MeshLoop *mesh_loop_create(Mesh *mesh,
-                              MeshVert *v,
-                              MeshEdge *e,
-                              MeshFace *f,
-                              const MeshLoop *l_example,
-                              const eMeshCreateFlag create_flag)
+                                  MeshVert *v,
+                                  MeshEdge *e,
+                                  MeshFace *f,
+                                  const MeshLoop *l_example,
+                             B     const eMeshCreateFlag create_flag)
 {
   MeshLoop *l = NULL;
 
   l = Aliv_mempool_alloc(mesh->lpool);
 
-  BLI_assert((l_example == NULL) || (l_example->head.htype == BM_LOOP));
-  BLI_assert(!(create_flag & 1));
+  lib_assert((l_example == NULL) || (l_example->head.htype == MESH_LOOP));
+  lib_assert(!(create_flag & 1));
 
 #ifndef NDEBUG
   if (l_example) {
     /* ensure passing a loop is either sharing the same vertex, or entirely disconnected
      * use to catch mistake passing in loop offset-by-one. */
-    BLI_assert((v == l_example->v) || !ELEM(v, l_example->prev->v, l_example->next->v));
+    lib_assert((v == l_example->v) || !ELEM(v, l_example->prev->v, l_example->next->v));
   }
 #endif
 
@@ -212,10 +212,10 @@ static MeshLoop *mesh_loop_create(Mesh *mesh,
 #ifdef USE_DEBUG_INDEX_MEMCHECK
   DEBUG_MEMCHECK_INDEX_INVALIDATE(l);
 #else
-  BM_elem_index_set(l, -1); /* set_ok_invalid */
+  mesh_elem_index_set(l, -1); /* set_ok_invalid */
 #endif
 
-  l->head.htype = BM_LOOP;
+  l->head.htype = MESH_LOOP;
   l->head.hflag = 0;
   l->head.api_flag = 0;
 
@@ -230,28 +230,28 @@ static MeshLoop *mesh_loop_create(Mesh *mesh,
   /* --- done --- */
 
   /* may add to middle of the pool */
-  bm->elem_index_dirty |= BM_LOOP;
-  bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  mesh->elem_index_dirty |= MESH_LOOP;
+  mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
 
-  bm->totloop++;
+  mesh->totloop++;
 
-  if (!(create_flag & BM_CREATE_SKIP_CD)) {
+  if (!(create_flag & MESH_CREATE_SKIP_CD)) {
     if (l_example) {
       /* no need to copy attrs, just handle customdata */
-      // BM_elem_attrs_copy(bm, bm, l_example, l);
-      CustomData_bmesh_free_block_data(&bm->ldata, l->head.data);
-      CustomData_bmesh_copy_data(&bm->ldata, &bm->ldata, l_example->head.data, &l->head.data);
+      // mesh_elem_attrs_copy(mesh, mesh, l_example, l);
+      CustomData_mesh_free_block_data(&mesh->ldata, l->head.data);
+      CustomData_mesh_copy_data(&mesh->ldata, &mesh->ldata, l_example->head.data, &l->head.data);
     }
     else {
-      CustomData_bmesh_set_default(&bm->ldata, &l->head.data);
+      CustomData_mesh_set_default(&mesh->ldata, &l->head.data);
     }
   }
 
   return l;
 }
 
-static BMLoop *bm_face_boundary_add(
-    BMesh *bm, BMFace *f, BMVert *startv, BMEdge *starte, const eBMCreateFlag create_flag)
+static MeshLoop *mesh_face_boundary_add(
+    Mesh *mesh, MeshFace *f, MeshVert *startv, MeshEdge *starte, const eBMCreateFlag create_flag)
 {
 #ifdef USE_BMESH_HOLES
   BMLoopList *lst = BLI_mempool_calloc(bm->looplistpool);
