@@ -123,12 +123,12 @@ void mesh_face_copy_shared(Mesh *mesh, MeshFace *f, MeshLoopFilterFn filter_fn, 
  *
  * All arrays must be \a len long.
  */
-static bool mesh_edges_sort_winding(BMVert *v1,
-                                  BMVert *v2,
-                                  BMEdge **edges,
+static bool mesh_edges_sort_winding(MeshVert *v1,
+                                  MeshVert *v2,
+                                  MeshEdge **edges,
                                   const int len,
-                                  BMEdge **edges_sort,
-                                  BMVert **verts_sort)
+                                  MeshEdge **edges_sort,
+                                  MeshVert **verts_sort)
 {
   MeshEdge *e_iter, *e_first;
   MeshVert *v_iter;
@@ -183,7 +183,7 @@ static bool mesh_edges_sort_winding(BMVert *v1,
 
       e_first = e_iter;
     }
-  } while ((e_iter = bmesh_disk_edge_next(e_iter, v_iter)) != e_first);
+  } while ((e_iter = mesh_disk_edge_next(e_iter, v_iter)) != e_first);
 
   if (i == len) {
     return true;
@@ -191,24 +191,24 @@ static bool mesh_edges_sort_winding(BMVert *v1,
 
 error:
   for (i = 0; i < len; i++) {
-    BM_ELEM_API_FLAG_DISABLE(edges[i], _FLAG_MF);
-    BM_ELEM_API_FLAG_DISABLE(edges[i]->v1, _FLAG_MV);
-    BM_ELEM_API_FLAG_DISABLE(edges[i]->v2, _FLAG_MV);
+    MESH_ELEM_API_FLAG_DISABLE(edges[i], _FLAG_MF);
+    MESH_ELEM_API_FLAG_DISABLE(edges[i]->v1, _FLAG_MV);
+    MESH_ELEM_API_FLAG_DISABLE(edges[i]->v2, _FLAG_MV);
   }
 
   return false;
 }
 
-BMFace *BM_face_create_ngon(BMesh *bm,
-                            BMVert *v1,
-                            BMVert *v2,
-                            BMEdge **edges,
+BMFace *mesh_face_create_ngon(Mesh *mesh,
+                            MeshVert *v1,
+                            MeshVert *v2,
+                            MeshEdge **edges,
                             const int len,
-                            const BMFace *f_example,
-                            const eBMCreateFlag create_flag)
+                            const MeshFace *f_example,
+                            const eMeshCreateFlag create_flag)
 {
-  BMEdge **edges_sort = BLI_array_alloca(edges_sort, len);
-  BMVert **verts_sort = BLI_array_alloca(verts_sort, len);
+  BMEdge **edges_sort = lib_array_alloca(edges_sort, len);
+  BMVert **verts_sort = lib_array_alloca(verts_sort, len);
 
   BLI_assert(len && v1 && v2 && edges && bm);
 
