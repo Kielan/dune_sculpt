@@ -599,14 +599,14 @@ Mesh *mesh_copy(Mesh *mesh_old)
   /* allocate a bmesh */
   mesh_new = mesh_create(&allocsize,
                           &((struct MeshCreateParams){
-                              .use_toolflags = bm_old->use_toolflags,
+                              .use_toolflags = mesh_old->use_toolflags,
                           }));
 
-  mesh_copy_init_customdata(bm_new, bm_old, &allocsize);
+  mesh_copy_init_customdata(mesh_new, Mesh_old, &allocsize);
 
-  vtable = mem_mallocN(sizeof(BMVert *) * bm_old->totvert, "BM_mesh_copy vtable");
-  etable = mem_mallocN(sizeof(BMEdge *) * bm_old->totedge, "BM_mesh_copy etable");
-  ftable = mem_mallocN(sizeof(BMFace *) * bm_old->totface, "BM_mesh_copy ftable");
+  vtable = mem_mallocn(sizeof(MeshVert *) * mesh_old->totvert, "mesh_copy vtable");
+  etable = mem_mallocn(sizeof(MeshEdge *) * mesh_old->totedge, "mesh_copy etable");
+  ftable = mem_mallocn(sizeof(MeshFace *) * mesh_old->totface, "mesh_copy ftable");
 
   BM_ITER_MESH_INDEX (v, &iter, bm_old, BM_VERTS_OF_MESH, i) {
     /* copy between meshes so can't use 'example' argument */
