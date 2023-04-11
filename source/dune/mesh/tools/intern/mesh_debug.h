@@ -5,6 +5,6 @@
 #include "mesh.h"
 
 #ifndef NDEBUG
-char *mesh_debug_info(Mesh *bm) ATTR_NONNULL(1) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT;
-void mesh_debug_print(Mesh *bm) ATTR_NONNULL(1);
+char *mesh_debug_info(Mesh *mesh) ATTR_NONNULL(1) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT;
+void mesh_debug_print(Mesh *mesh) ATTR_NONNULL(1);
 #endif /* NDEBUG */
