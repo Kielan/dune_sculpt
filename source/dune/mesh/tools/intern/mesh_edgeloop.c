@@ -351,10 +351,10 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
         if (v == v_dst) {
           break;
         }
-        v = BM_edge_other_vert(v->e, v);
+        v = mesh_edge_other_vert(v->e, v);
       }
 
-      BLI_addtail(r_eloops, el_store);
+      lib_addtail(r_eloops, el_store);
 
       found = true;
     }
@@ -398,15 +398,15 @@ void mesh_edgeloops_calc_normal(Mesh *mesh, ListBase *eloops)
   }
 }
 
-void BM_mesh_edgeloops_calc_normal_aligned(BMesh *bm, ListBase *eloops, const float no_align[3])
+void mesh_edgeloops_calc_normal_aligned(Mesh *mesh, ListBase *eloops, const float no_align[3])
 {
-  BMEdgeLoopStore *el_store;
+  MeshEdgeLoopStore *el_store;
   for (el_store = eloops->first; el_store; el_store = el_store->next) {
-    BM_edgeloop_calc_normal_aligned(bm, el_store, no_align);
+    mesh_edgeloop_calc_normal_aligned(mesh, el_store, no_align);
   }
 }
 
-void BM_mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const bool use_normals)
+void mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const bool use_normals)
 {
   ListBase eloops_ordered = {NULL};
   BMEdgeLoopStore *el_store;
