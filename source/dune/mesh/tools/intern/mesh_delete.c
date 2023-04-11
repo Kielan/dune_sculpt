@@ -36,26 +36,26 @@ static void mesh_remove_tagged_edges(Mesh *mesh, const short oflag)
   }
 }
 
-static void bmo_remove_tagged_verts(BMesh *bm, const short oflag)
+static void mesh_remove_tagged_verts(Mesh *mesh, const short oflag)
 {
-  BMVert *v, *v_next;
-  BMIter iter;
+  MeshVert *v, *v_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (v, v_next, &iter, bm, BM_VERTS_OF_MESH) {
-    if (BMO_vert_flag_test(bm, v, oflag)) {
-      BM_vert_kill(bm, v);
+  MESH_ITER_MUTABLE (v, v_next, &iter, mesh, MESH_VERTS_OF_MESH) {
+    if (mesh_vert_flag_test(mesh, v, oflag)) {
+      mesh_vert_kill(mesh, v);
     }
   }
 }
 
-static void bmo_remove_tagged_verts_loose(BMesh *bm, const short oflag)
+static void mesh_remove_tagged_verts_loose(Mesh *mesh, const short oflag)
 {
-  BMVert *v, *v_next;
-  BMIter iter;
+  MeshVert *v, *v_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (v, v_next, &iter, bm, BM_VERTS_OF_MESH) {
-    if (BMO_vert_flag_test(bm, v, oflag) && (v->e == NULL)) {
-      BM_vert_kill(bm, v);
+  MESH_ITER_MUTABLE (v, v_next, &iter, mesh, MESH_VERTS_OF_MESH) {
+    if (mesh_vert_flag_test(mesh, v, oflag) && (v->e == NULL)) {
+      mesh_vert_kill(mesh, v);
     }
   }
 }
