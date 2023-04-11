@@ -476,56 +476,56 @@ void mesh_edgeloops_calc_order(Mesh *UNUSED(mesh), ListBase *eloops, const bool 
 /* -------------------------------------------------------------------- */
 /* mesh_edgeloop_*** functions */
 
-MeshEdgeLoopStore *_edgeloop_copy(BMEdgeLoopStore *el_store)
+MeshEdgeLoopStore *_edgeloop_copy(MeshEdgeLoopStore *el_store)
 {
-  BMEdgeLoopStore *el_store_copy = MEM_mallocN(sizeof(*el_store), __func__);
+  MeshEdgeLoopStore *el_store_copy = mem_mallocn(sizeof(*el_store), __func__);
   *el_store_copy = *el_store;
-  BLI_duplicatelist(&el_store_copy->verts, &el_store->verts);
+  lib_duplicatelist(&el_store_copy->verts, &el_store->verts);
   return el_store_copy;
 }
 
-BMEdgeLoopStore *BM_edgeloop_from_verts(BMVert **v_arr, const int v_arr_tot, bool is_closed)
+MeshEdgeLoopStore *mesh_edgeloop_from_verts(MeshVert **v_arr, const int v_arr_tot, bool is_closed)
 {
-  BMEdgeLoopStore *el_store = MEM_callocN(sizeof(*el_store), __func__);
+  MeshEdgeLoopStore *el_store = mem_callocn(sizeof(*el_store), __func__);
   int i;
   for (i = 0; i < v_arr_tot; i++) {
-    LinkData *node = MEM_callocN(sizeof(*node), __func__);
+    LinkData *node = mem_callocn(sizeof(*node), __func__);
     node->data = v_arr[i];
-    BLI_addtail(&el_store->verts, node);
+    lib_addtail(&el_store->verts, node);
   }
   el_store->len = v_arr_tot;
   if (is_closed) {
-    el_store->flag |= BM_EDGELOOP_IS_CLOSED;
+    el_store->flag |= MESH_EDGELOOP_IS_CLOSED;
   }
   return el_store;
 }
-void BM_edgeloop_free(BMEdgeLoopStore *el_store)
+void mesh_edgeloop_free(MeshEdgeLoopStore *el_store)
 {
-  BLI_freelistN(&el_store->verts);
-  MEM_freeN(el_store);
+  lib_freelistn(&el_store->verts);
+  mem_freen(el_store);
 }
 
-bool BM_edgeloop_is_closed(BMEdgeLoopStore *el_store)
+bool mesh_edgeloop_is_closed(MeshEdgeLoopStore *el_store)
 {
-  return (el_store->flag & BM_EDGELOOP_IS_CLOSED) != 0;
+  return (el_store->flag & MESH_EDGELOOP_IS_CLOSED) != 0;
 }
 
-ListBase *BM_edgeloop_verts_get(BMEdgeLoopStore *el_store)
+ListBase *mesh_edgeloop_verts_get(MeshEdgeLoopStore *el_store)
 {
   return &el_store->verts;
 }
 
-int BM_edgeloop_length_get(BMEdgeLoopStore *el_store)
+int mesh_edgeloop_length_get(BMEdgeLoopStore *el_store)
 {
   return el_store->len;
 }
 
-const float *BM_edgeloop_normal_get(struct BMEdgeLoopStore *el_store)
+const float *mesh_edgeloop_normal_get(struct BMEdgeLoopStore *el_store)
 {
   return el_store->no;
 }
 
-const float *BM_edgeloop_center_get(struct BMEdgeLoopStore *el_store)
+const float *mesh_edgeloop_center_get(struct BMEdgeLoopStore *el_store)
 {
   return el_store->co;
 }
@@ -533,23 +533,23 @@ const float *BM_edgeloop_center_get(struct BMEdgeLoopStore *el_store)
 #define NODE_AS_V(n) ((BMVert *)((LinkData *)n)->data)
 #define NODE_AS_CO(n) ((BMVert *)((LinkData *)n)->data)->co
 
-void BM_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr)
+void mesh_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr)
 {
   LinkData *node;
   int i = 0;
   for (node = el_store->verts.first; node && node->next; node = node->next) {
-    e_arr[i++] = BM_edge_exists(NODE_AS_V(node), NODE_AS_V(node->next));
-    BLI_assert(e_arr[i - 1] != NULL);
+    e_arr[i++] = mesh_edge_exists(NODE_AS_V(node), NODE_AS_V(node->next));
+    lib_assert(e_arr[i - 1] != NULL);
   }
 
-  if (el_store->flag & BM_EDGELOOP_IS_CLOSED) {
-    e_arr[i] = BM_edge_exists(NODE_AS_V(el_store->verts.first), NODE_AS_V(el_store->verts.last));
-    BLI_assert(e_arr[i] != NULL);
+  if (el_store->flag & M_EDGELOOP_IS_CLOSED) {
+    e_arr[i] = mesh_edge_exists(NODE_AS_V(el_store->verts.first), NODE_AS_V(el_store->verts.last));
+    lib_assert(e_arr[i] != NULL);
   }
-  BLI_assert(el_store->len == i + 1);
+  lib_assert(el_store->len == i + 1);
 }
 
-void BM_edgeloop_calc_center(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
+void mesh_edgeloop_calc_center(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
 {
   LinkData *node_curr = el_store->verts.last;
   LinkData *node_prev = ((LinkData *)el_store->verts.last)->prev;
