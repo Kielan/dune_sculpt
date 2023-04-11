@@ -515,25 +515,25 @@ ListBase *mesh_edgeloop_verts_get(MeshEdgeLoopStore *el_store)
   return &el_store->verts;
 }
 
-int mesh_edgeloop_length_get(BMEdgeLoopStore *el_store)
+int mesh_edgeloop_length_get(MeshEdgeLoopStore *el_store)
 {
   return el_store->len;
 }
 
-const float *mesh_edgeloop_normal_get(struct BMEdgeLoopStore *el_store)
+const float *mesh_edgeloop_normal_get(struct MeshEdgeLoopStore *el_store)
 {
   return el_store->no;
 }
 
-const float *mesh_edgeloop_center_get(struct BMEdgeLoopStore *el_store)
+const float *mesh_edgeloop_center_get(struct MeshEdgeLoopStore *el_store)
 {
   return el_store->co;
 }
 
-#define NODE_AS_V(n) ((BMVert *)((LinkData *)n)->data)
-#define NODE_AS_CO(n) ((BMVert *)((LinkData *)n)->data)->co
+#define NODE_AS_V(n) ((MeshVert *)((LinkData *)n)->data)
+#define NODE_AS_CO(n) ((MeshVert *)((LinkData *)n)->data)->co
 
-void mesh_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr)
+void mesh_edgeloop_edges_get(struct MeshEdgeLoopStore *el_store, BMEdge **e_arr)
 {
   LinkData *node;
   int i = 0;
@@ -549,7 +549,7 @@ void mesh_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr)
   lib_assert(el_store->len == i + 1);
 }
 
-void mesh_edgeloop_calc_center(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
+void mesh_edgeloop_calc_center(Mesh *UNUSED(mesh), MeshEdgeLoopStore *el_store)
 {
   LinkData *node_curr = el_store->verts.last;
   LinkData *node_prev = ((LinkData *)el_store->verts.last)->prev;
