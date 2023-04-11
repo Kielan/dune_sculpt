@@ -696,27 +696,27 @@ Mesh *mesh_copy(Mesh *mesh_old)
   mem_freen(ftable);
 
   /* Copy various settings. */
-  bm_new->shapenr = bm_old->shapenr;
-  bm_new->selectmode = bm_old->selectmode;
+  mesh_new->shapenr = mesh_old->shapenr;
+  mesh_new->selectmode = mesh_old->selectmode;
 
-  return bm_new;
+  return mesh_new;
 }
 
-char BM_vert_flag_from_mflag(const char mflag)
+char mesh_vert_flag_from_mflag(const char mflag)
 {
-  return (((mflag & SELECT) ? BM_ELEM_SELECT : 0) | ((mflag & ME_HIDE) ? BM_ELEM_HIDDEN : 0));
+  return (((mflag & SELECT) ? MESH_ELEM_SELECT : 0) | ((mflag & ME_HIDE) ? BM_ELEM_HIDDEN : 0));
 }
-char BM_edge_flag_from_mflag(const short mflag)
+char mesh_edge_flag_from_mflag(const short mflag)
 {
-  return (((mflag & SELECT) ? BM_ELEM_SELECT : 0) | ((mflag & ME_SEAM) ? BM_ELEM_SEAM : 0) |
-          ((mflag & ME_EDGEDRAW) ? BM_ELEM_DRAW : 0) |
-          ((mflag & ME_SHARP) == 0 ? BM_ELEM_SMOOTH : 0) | /* invert */
-          ((mflag & ME_HIDE) ? BM_ELEM_HIDDEN : 0));
+  return (((mflag & SELECT) ? MESH_ELEM_SELECT : 0) | ((mflag & ME_SEAM) ? BM_ELEM_SEAM : 0) |
+          ((mflag & ME_EDGEDRAW) ? MESH_ELEM_DRAW : 0) |
+          ((mflag & ME_SHARP) == 0 ? MESH_ELEM_SMOOTH : 0) | /* invert */
+          ((mflag & ME_HIDE) ? MESH_ELEM_HIDDEN : 0));
 }
-char BM_face_flag_from_mflag(const char mflag)
+char mesh_face_flag_from_mflag(const char mflag)
 {
-  return (((mflag & ME_FACE_SEL) ? BM_ELEM_SELECT : 0) |
-          ((mflag & ME_SMOOTH) ? BM_ELEM_SMOOTH : 0) | ((mflag & ME_HIDE) ? BM_ELEM_HIDDEN : 0));
+  return (((mflag & ME_FACE_SEL) ? MESH_ELEM_SELECT : 0) |
+          ((mflag & ME_SMOOTH) ? MESH_ELEM_SMOOTH : 0) | ((mflag & ME_HIDE) ? BM_ELEM_HIDDEN : 0));
 }
 
 char mesh_vert_flag_to_mflag(MeshVert *v)
