@@ -204,12 +204,12 @@ static bool bm_loop_path_build_step(BLI_mempool *vs_pool,
 
     vs_next = vs->next;
 
-    M_ITER_ELEM (e, &iter, vs->v, BM_EDGES_OF_VERT) {
-      if (M_elem_flag_test(e, BM_ELEM_INTERNAL_TAG)) {
-        BMVert *v_next = BM_edge_other_vert(e, vs->v);
-        const int v_next_index = BM_elem_index_get(v_next);
+    M_ITER_ELEM (e, &iter, vs->v, MESH_EDGES_OF_VERT) {
+      if (M_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG)) {
+        MeshVert *v_next = mesh_edge_other_vert(e, vs->v);
+        const int v_next_index = mesh_elem_index_get(v_next);
         /* not essential to clear flag but prevents more checking next time round */
-        BM_elem_flag_disable(e, BM_ELEM_INTERNAL_TAG);
+        mesh_elem_flag_disable(e, MESH_ELEM_INTERNAL_TAG);
         if (v_next_index == 0) {
           vs_add(vs_pool, &lb_tmp, v_next, e, vs_iter_next);
         }
@@ -233,24 +233,24 @@ static bool bm_loop_path_build_step(BLI_mempool *vs_pool,
       }
     }
 
-    BLI_mempool_free(vs_pool, vs);
+    lib_mempool_free(vs_pool, vs);
   }
 
   /* Commented because used in a loop, and this flag has already been set. */
-  /* bm->elem_index_dirty |= BM_VERT; */
+  /* mesh->elem_index_dirty |= MESH_VERT; */
 
   /* lb is now full of free'd items, overwrite */
   *lb = lb_tmp;
 
-  return (BLI_listbase_is_empty(lb) == false);
+  return (lib_listbase_is_empty(lb) == false);
 }
 
-bool BM_mesh_edgeloops_find_path(BMesh *bm,
+bool BM_mesh_edgeloops_find_path(Mesh *mesh,
                                  ListBase *r_eloops,
-                                 bool (*test_fn)(BMEdge *, void *user_data),
+                                 bool (*test_fn)(MeshEdge *, void *user_data),
                                  void *user_data,
-                                 BMVert *v_src,
-                                 BMVert *v_dst)
+                                 MeshVert *v_src,
+                                 MeshVert *v_dst)
 {
   BMIter iter;
   BMEdge *e;
