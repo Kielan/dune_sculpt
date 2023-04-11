@@ -56,11 +56,11 @@ MeshVert *mesh_vert_create(Mesh *mesh,
   v->head.api_flag = 0;
 
   /* allocate flags */
-  if (bm->use_toolflags) {
-    ((BMVert_OFlag *)v)->oflags = bm->vtoolflagpool ? BLI_mempool_calloc(bm->vtoolflagpool) : NULL;
+  if (mesh->use_toolflags) {
+    ((MeshVert_OFlag *)v)->oflags = bm->vtoolflagpool ? BLI_mempool_calloc(bm->vtoolflagpool) : NULL;
   }
 
-  /* 'v->no' is handled by BM_elem_attrs_copy */
+  /* 'v->no' is handled by mesh_elem_attrs_copy */
   if (co) {
     copy_v3_v3(v->co, co);
   }
@@ -73,12 +73,12 @@ MeshVert *mesh_vert_create(Mesh *mesh,
   /* --- done --- */
 
   /* disallow this flag for verts - its meaningless */
-  BLI_assert((create_flag & BM_CREATE_NO_DOUBLE) == 0);
+  lib_assert((create_flag & MESH_CREATE_NO_DOUBLE) == 0);
 
   /* may add to middle of the pool */
-  bm->elem_index_dirty |= BM_VERT;
-  bm->elem_table_dirty |= BM_VERT;
-  bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  mesh->elem_index_dirty |= BM_VERT;
+  mesh->elem_table_dirty |= BM_VERT;
+  mesh->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
 
   bm->totvert++;
 
