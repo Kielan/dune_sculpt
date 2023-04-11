@@ -1,12 +1,12 @@
 /** Functions for interpolating data across the surface of a mesh. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_meshdata_types.h"
+#include "types_meshdata.h"
 
-#include "BLI_alloca.h"
-#include "BLI_linklist.h"
-#include "BLI_math.h"
+#include "lib_alloca.h"
+#include "lib_linklist.h"
+#include "lib_math.h"
 #include "BLI_memarena.h"
 #include "BLI_task.h"
 
