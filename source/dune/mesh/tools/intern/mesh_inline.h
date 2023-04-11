@@ -50,18 +50,18 @@ BLI_INLINE void _bm_elem_flag_toggle(BMHeader *head, const char hflag)
   head->hflag ^= hflag;
 }
 
-BLI_INLINE void _bm_elem_flag_merge(BMHeader *head_a, BMHeader *head_b)
+LIB_INLINE void _mesh_elem_flag_merge(BMHeader *head_a, BMHeader *head_b)
 {
   head_a->hflag = head_b->hflag = head_a->hflag | head_b->hflag;
 }
 
-BLI_INLINE void _bm_elem_flag_merge_ex(BMHeader *head_a, BMHeader *head_b, const char hflag_and)
+LIB_INLINE void _mesh_elem_flag_merge_ex(BMHeader *head_a, BMHeader *head_b, const char hflag_and)
 {
   if (((head_a->hflag & head_b->hflag) & hflag_and) == 0) {
     head_a->hflag &= ~hflag_and;
     head_b->hflag &= ~hflag_and;
   }
-  _bm_elem_flag_merge(head_a, head_b);
+  _mesh_elem_flag_merge(head_a, head_b);
 }
 
 BLI_INLINE void _bm_elem_flag_merge_into(BMHeader *head,
