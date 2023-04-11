@@ -76,27 +76,27 @@ MeshVert *mesh_vert_create(Mesh *mesh,
   lib_assert((create_flag & MESH_CREATE_NO_DOUBLE) == 0);
 
   /* may add to middle of the pool */
-  mesh->elem_index_dirty |= BM_VERT;
-  mesh->elem_table_dirty |= BM_VERT;
-  mesh->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  mesh->elem_index_dirty |= MESH_VERT;
+  mesh->elem_table_dirty |= MESH_VERT;
+  mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
 
-  bm->totvert++;
+  mesh->totvert++;
 
-  if (!(create_flag & BM_CREATE_SKIP_CD)) {
+  if (!(create_flag & MESH_CREATE_SKIP_CD)) {
     if (v_example) {
       int *keyi;
 
       /* handles 'v->no' too */
-      BM_elem_attrs_copy(bm, bm, v_example, v);
+      mesh_elem_attrs_copy(mesh, mesh, v_example, v);
 
       /* exception: don't copy the original shapekey index */
-      keyi = CustomData_bmesh_get(&bm->vdata, v->head.data, CD_SHAPE_KEYINDEX);
+      keyi = CustomData_mesh_get(&mesh->vdata, v->head.data, CD_SHAPE_KEYINDEX);
       if (keyi) {
         *keyi = ORIGINDEX_NONE;
       }
     }
     else {
-      CustomData_bmesh_set_default(&bm->vdata, &v->head.data);
+      CustomData_mesh_set_default(&mesh->vdata, &v->head.data);
       zero_v3(v->no);
     }
   }
@@ -115,7 +115,7 @@ MeshVert *mesh_vert_create(Mesh *mesh,
 }
 
 MeshEdge *mesh_edge_create(
-    Meshesh *mesh, MeshVert *v1, MeshVert *v2, const MeshEdge *e_example, const eBMCreateFlag create_flag)
+    Meshesh *mesh, MeshVert *v1, MeshVert *v2, const MeshEdge *e_example, const eMeshCreateFlag create_flag)
 {
   MeshEdge *e;
 
@@ -124,7 +124,7 @@ MeshEdge *mesh_edge_create(
   lib_assert((e_example == NULL) || (e_example->head.htype == MESH_EDGE));
   lib_assert(!(create_flag & 1));
 
-  if ((create_flag & BM_CREATE_NO_DOUBLE) && (e = BM_edge_exists(v1, v2))) {
+  if ((create_flag & MESH_CREATE_NO_DOUBLE) && (e = mesh_edge_exists(v1, v2))) {
     return e;
   }
 
@@ -136,7 +136,7 @@ MeshEdge *mesh_edge_create(
 #ifdef USE_DEBUG_INDEX_MEMCHECK
   DEBUG_MEMCHECK_INDEX_INVALIDATE(e);
 #else
-  BM_elem_index_set(e, -1); /* set_ok_invalid */
+  mesh_elem_index_set(e, -1); /* set_ok_invalid */
 #endif
 
   e->head.htype = MESH_EDGE;
@@ -170,30 +170,30 @@ MeshEdge *mesh_edge_create(
       mesh_elem_attrs_copy(mesh, mesh, e_example, e);
     }
     else {
-      CustomData_bmesh_set_default(&bm->edata, &e->head.data);
+      CustomData_mesh_set_default(&mesh->edata, &e->head.data);
     }
   }
 
-  BM_CHECK_ELEMENT(e);
+  MESH_CHECK_ELEMENT(e);
 
   return e;
 }
 
 /**
- * \note In most cases a \a l_example should be NULL,
+ * note In most cases a \a l_example should be NULL,
  * since this is a low level API and we shouldn't attempt to be clever and guess what's intended.
  * In cases where copying adjacent loop-data is useful, see #BM_face_copy_shared.
  */
-static BMLoop *bm_loop_create(BMesh *bm,
-                              BMVert *v,
-                              BMEdge *e,
-                              BMFace *f,
-                              const BMLoop *l_example,
-                              const eBMCreateFlag create_flag)
+static MeshLoop *mesh_loop_create(Mesh *mesh,
+                              MeshVert *v,
+                              MeshEdge *e,
+                              MeshFace *f,
+                              const MeshLoop *l_example,
+                              const eMeshCreateFlag create_flag)
 {
-  BMLoop *l = NULL;
+  MeshLoop *l = NULL;
 
-  l = BLI_mempool_alloc(bm->lpool);
+  l = Aliv_mempool_alloc(mesh->lpool);
 
   BLI_assert((l_example == NULL) || (l_example->head.htype == BM_LOOP));
   BLI_assert(!(create_flag & 1));
