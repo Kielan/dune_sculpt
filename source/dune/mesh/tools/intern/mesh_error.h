@@ -30,19 +30,19 @@ typedef enum eMeshOpErrorLevel {
  * Pushes an error onto the mesh error stack.
  * if msg is null, then the default message for the `errcode` is used.
  */
-void mesh_error_raise(Mesh *mesh, BMOperator *owner, eBMOpErrorLevel level, const char *msg)
+void mesh_error_raise(Mesh *mesh, MeshOperator *owner, eMeshOpErrorLevel level, const char *msg)
     ATTR_NONNULL(1, 2, 4);
 
 /**
  * Gets the topmost error from the stack.
  * returns error code or 0 if no error.
  */
-bool BMO_error_get(BMesh *bm, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level);
-bool BMO_error_get_at_level(BMesh *bm,
-                            eBMOpErrorLevel level,
+bool mesh_error_get(Mesh *mesh, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level);
+bool mesh_error_get_at_level(Mesh *meeh,
+                            eMeshOpErrorLevel level,
                             const char **r_msg,
-                            BMOperator **r_op);
-bool BMO_error_occurred_at_level(BMesh *bm, eBMOpErrorLevel level);
+                            MeshOp **r_op);
+bool BMO_error_occurred_at_level(Mesh *mesh, eMOpErrorLevel level);
 
 /* Same as #BMO_error_get, only pops the error off the stack as well. */
 bool BMO_error_pop(BMesh *bm, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level);
@@ -60,22 +60,22 @@ void BMO_error_clear(BMesh *bm);
 
 /* BMESH_ASSERT */
 #ifdef WITH_ASSERT_ABORT
-#  define _BMESH_DUMMY_ABORT abort
+#  define _MESH_DUMMY_ABORT abort
 #else
-#  define _BMESH_DUMMY_ABORT() (void)0
+#  define _MESH_DUMMY_ABORT() (void)0
 #endif
 
 /**
  * This is meant to be higher level than BLI_assert(),
  * its enabled even when in Release mode.
  */
-#define BMESH_ASSERT(a) \
+#define MESH_ASSERT(a) \
   (void)((!(a)) ? ((fprintf(stderr, \
-                            "BMESH_ASSERT failed: %s, %s(), %d at \'%s\'\n", \
+                            "MESH_ASSERT failed: %s, %s(), %d at \'%s\'\n", \
                             __FILE__, \
                             __func__, \
                             __LINE__, \
                             STRINGIFY(a)), \
-                    _BMESH_DUMMY_ABORT(), \
+                    _MESH_DUMMY_ABORT(), \
                     NULL)) : \
                   NULL)
