@@ -193,19 +193,19 @@ static bool bm_loop_path_build_step(BLI_mempool *vs_pool,
 {
   ListBase lb_tmp = {NULL, NULL};
   struct VertStep *vs, *vs_next;
-  BLI_assert(abs(dir) == 1);
+  lib_assert(abs(dir) == 1);
 
   for (vs = lb->first; vs; vs = vs_next) {
-    BMIter iter;
-    BMEdge *e;
+    MIter iter;
+    MEdge *e;
     /* these values will be the same every iteration */
-    const int vs_iter_tot = BM_elem_index_get(vs->v);
+    const int vs_iter_tot = mesh_elem_index_get(vs->v);
     const int vs_iter_next = vs_iter_tot + dir;
 
     vs_next = vs->next;
 
-    BM_ITER_ELEM (e, &iter, vs->v, BM_EDGES_OF_VERT) {
-      if (BM_elem_flag_test(e, BM_ELEM_INTERNAL_TAG)) {
+    M_ITER_ELEM (e, &iter, vs->v, BM_EDGES_OF_VERT) {
+      if (M_elem_flag_test(e, BM_ELEM_INTERNAL_TAG)) {
         BMVert *v_next = BM_edge_other_vert(e, vs->v);
         const int v_next_index = BM_elem_index_get(v_next);
         /* not essential to clear flag but prevents more checking next time round */
