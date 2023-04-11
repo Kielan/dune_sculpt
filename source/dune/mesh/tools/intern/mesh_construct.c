@@ -340,20 +340,20 @@ static void mesh_edge_attrs_copy(
       &bm_src->edata, &bm_dst->edata, e_src->head.data, &e_dst->head.data, mask_exclude);
 }
 
-static void bm_loop_attrs_copy(
-    BMesh *bm_src, BMesh *bm_dst, const BMLoop *l_src, BMLoop *l_dst, CustomDataMask mask_exclude)
+static void mesh_loop_attrs_copy(
+   Mesh *mesh_src, Mesh *mesh_dst, const MeshLoop *l_src, MeshLoop *l_dst, CustomDataMask mask_exclude)
 {
-  if ((bm_src == bm_dst) && (l_src == l_dst)) {
-    BLI_assert_msg(0, "BMLoop: source and target match");
+  if ((mesh_src == mesh_dst) && (l_src == l_dst)) {
+    lib_assert_msg(0, "MeshLoop: source and target match");
     return;
   }
-  CustomData_bmesh_free_block_data_exclude_by_type(&bm_dst->ldata, l_dst->head.data, mask_exclude);
-  CustomData_bmesh_copy_data_exclude_by_type(
-      &bm_src->ldata, &bm_dst->ldata, l_src->head.data, &l_dst->head.data, mask_exclude);
+  CustomData_mesh_free_block_data_exclude_by_type(&mesh_dst->ldata, l_dst->head.data, mask_exclude);
+  CustomData_mesh_copy_data_exclude_by_type(
+      &mesh_src->ldata, &mesh_dst->ldata, l_src->head.data, &l_dst->head.data, mask_exclude);
 }
 
 static void bm_face_attrs_copy(
-    BMesh *bm_src, BMesh *bm_dst, const BMFace *f_src, BMFace *f_dst, CustomDataMask mask_exclude)
+    Mesh *mesh_src, Mesh *mesh_dst, const MeshFace *f_src, MeshFace *f_dst, CustomDataMask mask_exclude)
 {
   if ((bm_src == bm_dst) && (f_src == f_dst)) {
     BLI_assert_msg(0, "BMFace: source and target match");
