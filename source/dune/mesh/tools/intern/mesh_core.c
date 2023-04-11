@@ -254,15 +254,15 @@ static MeshLoop *mesh_face_boundary_add(
     Mesh *mesh, MeshFace *f, MeshVert *startv, MeshEdge *starte, const eBMCreateFlag create_flag)
 {
 #ifdef USE_BMESH_HOLES
-  BMLoopList *lst = BLI_mempool_calloc(bm->looplistpool);
+  MLoopList *lst = lib_mempool_calloc(bm->looplistpool);
 #endif
-  BMLoop *l = bm_loop_create(bm, startv, starte, f, NULL /* starte->l */, create_flag);
+  MLoop *l = mesh_loop_create(bm, startv, starte, f, NULL /* starte->l */, create_flag);
 
-  bmesh_radial_loop_append(starte, l);
+  mesh_radial_loop_append(starte, l);
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   lst->first = lst->last = l;
-  BLI_addtail(&f->loops, lst);
+  lib_addtail(&f->loops, lst);
 #else
   f->l_first = l;
 #endif
@@ -270,24 +270,24 @@ static MeshLoop *mesh_face_boundary_add(
   return l;
 }
 
-BMFace *BM_face_copy(
-    BMesh *bm_dst, BMesh *bm_src, BMFace *f, const bool copy_verts, const bool copy_edges)
+MeshFace *mesh_face_copy(
+    Mesh *mesh_dst, Mesh *mesh_src, MeshFace *f, const bool copy_verts, const bool copy_edges)
 {
-  BMVert **verts = BLI_array_alloca(verts, f->len);
-  BMEdge **edges = BLI_array_alloca(edges, f->len);
-  BMLoop *l_iter;
-  BMLoop *l_first;
-  BMLoop *l_copy;
-  BMFace *f_copy;
+  MVert **verts = lib_array_alloca(verts, f->len);
+  MEdge **edges = lib_array_alloca(edges, f->len);
+  MLoop *l_iter;
+  MLoop *l_first;
+  MLoop *l_copy;
+  MFace *f_copy;
   int i;
 
-  BLI_assert((bm_dst == bm_src) || (copy_verts && copy_edges));
+  lib_assert((mesh_dst == mesh_src) || (copy_verts && copy_edges));
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   i = 0;
   do {
     if (copy_verts) {
-      verts[i] = BM_vert_create(bm_dst, l_iter->v->co, l_iter->v, BM_CREATE_NOP);
+      verts[i] = mesh_vert_create(mesh_dst, l_iter->v->co, l_iter->v, BM_CREATE_NOP);
     }
     else {
       verts[i] = l_iter->v;
@@ -295,7 +295,7 @@ BMFace *BM_face_copy(
     i++;
   } while ((l_iter = l_iter->next) != l_first);
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   i = 0;
   do {
     if (copy_edges) {
