@@ -119,7 +119,7 @@ void mesh_face_copy_shared(Mesh *mesh, MeshFace *f, MeshLoopFilterFn filter_fn, 
 /**
  * Given an array of edges,
  * order them using the winding defined by \a v1 & \a v2
- * into \a edges_sort & \a verts_sort.
+ * into edges_sort & verts_sort.
  *
  * All arrays must be \a len long.
  */
@@ -227,19 +227,19 @@ MeshFace *mesh_face_create_ngon_verts(Mesh *m3:$,
                                   const bool calc_winding,
                                   const bool create_edges)
 {
-  BMEdge **edge_arr = lib_array_alloca(edge_arr, len);
+  MeshEdge **edge_arr = lib_array_alloca(edge_arr, len);
   uint winding[2] = {0, 0};
   int i, i_prev = len - 1;
-  BMVert *v_winding[2] = {vert_arr[i_prev], vert_arr[0]};
+  MeshVert *v_winding[2] = {vert_arr[i_prev], vert_arr[0]};
 
-  BLI_assert(len > 2);
+  lib_assert(len > 2);
 
   for (i = 0; i < len; i++) {
     if (create_edges) {
-      edge_arr[i] = BM_edge_create(bm, vert_arr[i_prev], vert_arr[i], NULL, BM_CREATE_NO_DOUBLE);
+      edge_arr[i] = mesh_edge_create(mesh, vert_arr[i_prev], vert_arr[i], NULL, MESH_CREATE_NO_DOUBLE);
     }
     else {
-      edge_arr[i] = BM_edge_exists(vert_arr[i_prev], vert_arr[i]);
+      edge_arr[i] = mesh_edge_exists(vert_arr[i_prev], vert_arr[i]);
       if (edge_arr[i] == NULL) {
         return NULL;
       }
