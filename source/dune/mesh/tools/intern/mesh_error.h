@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mesh_operator_api.h"
+#include "mesh_op_api.h"
 
 /*----------- bmop error system ----------*/
 
@@ -53,10 +53,10 @@ void BMO_error_clear(BMesh *bm);
 
 /* Catches an error raised by the op pointed to by catchop. */
 /* Not yet implemented. */
-// int BMO_error_catch_op(BMesh *bm, BMOperator *catchop, char **msg);
+// int mesh_error_catch_op(Mesh *mesh, MeshOp *catchop, char **msg);
 
-#define BM_ELEM_INDEX_VALIDATE(_bm, _msg_a, _msg_b) \
-  BM_mesh_elem_index_validate(_bm, __FILE__ ":" STRINGIFY(__LINE__), __func__, _msg_a, _msg_b)
+#define MESH_ELEM_INDEX_VALIDATE(_mesh, _msg_a, _msg_b) \
+  mesh_elem_index_validate(_mesh, __FILE__ ":" STRINGIFY(__LINE__), __func__, _msg_a, _msg_b)
 
 /* BMESH_ASSERT */
 #ifdef WITH_ASSERT_ABORT
