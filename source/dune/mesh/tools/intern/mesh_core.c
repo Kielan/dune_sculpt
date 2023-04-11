@@ -57,7 +57,7 @@ MeshVert *mesh_vert_create(Mesh *mesh,
 
   /* allocate flags */
   if (mesh->use_toolflags) {
-    ((MeshVert_OFlag *)v)->oflags = bm->vtoolflagpool ? BLI_mempool_calloc(bm->vtoolflagpool) : NULL;
+    ((MeshVert_OFlag *)v)->oflags = mesh->vtoolflagpool ? BLI_mempool_calloc(bm->vtoolflagpool) : NULL;
   }
 
   /* 'v->no' is handled by mesh_elem_attrs_copy */
@@ -189,7 +189,7 @@ static MeshLoop *mesh_loop_create(Mesh *mesh,
                                   MeshEdge *e,
                                   MeshFace *f,
                                   const MeshLoop *l_example,
-                             B     const eMeshCreateFlag create_flag)
+                                  const eMeshCreateFlag create_flag)
 {
   MeshLoop *l = NULL;
 
@@ -310,7 +310,7 @@ MeshFace *mesh_face_copy(
         v1 = verts[(i + 1) % f->len];
       }
 
-      edges[i] = BM_edge_create(bm_dst, v1, v2, l_iter->e, BM_CREATE_NOP);
+      edges[i] = mesh_edge_create(mesh_dst, v1, v2, l_iter->e, MESH_CREATE_NOP);
     }
     else {
       edges[i] = l_iter->e;
@@ -318,14 +318,14 @@ MeshFace *mesh_face_copy(
     i++;
   } while ((l_iter = l_iter->next) != l_first);
 
-  f_copy = BM_face_create(bm_dst, verts, edges, f->len, NULL, BM_CREATE_SKIP_CD);
+  f_copy = mesh_face_create(mesh_dst, verts, edges, f->len, NULL, MESH_CREATE_SKIP_CD);
 
-  BM_elem_attrs_copy(bm_src, bm_dst, f, f_copy);
+  mesh_elem_attrs_copy(mesh_src, mesh_dst, f, f_copy);
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
-  l_copy = BM_FACE_FIRST_LOOP(f_copy);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
+  l_copy = MESH_FACE_FIRST_LOOP(f_copy);
   do {
-    BM_elem_attrs_copy(bm_src, bm_dst, l_iter, l_copy);
+    mesh_elem_attrs_copy(mesh_src, mesh_dst, l_iter, l_copy);
     l_copy = l_copy->next;
   } while ((l_iter = l_iter->next) != l_first);
 
@@ -336,33 +336,33 @@ MeshFace *mesh_face_copy(
  * only create the face, since this calloc's the length is initialized to 0,
  * leave adding loops to the caller.
  *
- * \note Caller needs to handle customdata.
+ * note Caller needs to handle customdata.
  */
-BLI_INLINE BMFace *bm_face_create__internal(BMesh *bm)
+LIB_INLINE MeshFace *mesh_face_create__internal(Mesh *mesh)
 {
-  BMFace *f;
+  MeshFace *f;
 
-  f = BLI_mempool_alloc(bm->fpool);
+  f = lib_mempool_alloc(mesh->fpool);
 
   /* --- assign all members --- */
   f->head.data = NULL;
 #ifdef USE_DEBUG_INDEX_MEMCHECK
   DEBUG_MEMCHECK_INDEX_INVALIDATE(f);
 #else
-  BM_elem_index_set(f, -1); /* set_ok_invalid */
+  mesh_elem_index_set(f, -1); /* set_ok_invalid */
 #endif
 
-  f->head.htype = BM_FACE;
+  f->head.htype = MESH_FACE;
   f->head.hflag = 0;
   f->head.api_flag = 0;
 
   /* allocate flags */
-  if (bm->use_toolflags) {
-    ((BMFace_OFlag *)f)->oflags = bm->ftoolflagpool ? BLI_mempool_calloc(bm->ftoolflagpool) : NULL;
+  if (mesh->use_toolflags) {
+    ((MeshFace_OFlag *)f)->oflags = bm->ftoolflagpool ? BLI_mempool_calloc(bm->ftoolflagpool) : NULL;
   }
 
-#ifdef USE_BMESH_HOLES
-  BLI_listbase_clear(&f->loops);
+#ifdef USE_MESH_HOLES
+  lib_listbase_clear(&f->loops);
 #else
   f->l_first = NULL;
 #endif
@@ -373,25 +373,25 @@ BLI_INLINE BMFace *bm_face_create__internal(BMesh *bm)
   /* --- done --- */
 
   /* may add to middle of the pool */
-  bm->elem_index_dirty |= BM_FACE;
-  bm->elem_table_dirty |= BM_FACE;
-  bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  mesh->elem_index_dirty |= MESH_FACE;
+  mesh->elem_table_dirty |= MESH_FACE;
+  mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
 
-  bm->totface++;
+  mesh->totface++;
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   f->totbounds = 0;
 #endif
 
   return f;
 }
 
-BMFace *BM_face_create(BMesh *bm,
-                       BMVert **verts,
-                       BMEdge **edges,
+MeshFace *mesh_face_create(Mesh *mesh,
+                       MVert **verts,
+                       MEdge **edges,
                        const int len,
-                       const BMFace *f_example,
-                       const eBMCreateFlag create_flag)
+                       const MFace *f_example,
+                       const eMCreateFlag create_flag)
 {
   BMFace *f = NULL;
   BMLoop *l, *startl, *lastl;
