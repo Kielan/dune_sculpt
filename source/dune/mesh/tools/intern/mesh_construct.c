@@ -448,33 +448,33 @@ void mesh_elem_select_copy(Mesh *mesh_dst, void *ele_dst_v, const void *ele_src_
 static MeshFace *mesh_copy_new_face(
     Mesh *mesh_new, Mesh *mesh_old, BMVert **vtable, BMEdge **etable, BMFace *f)
 {
-  BMLoop **loops = BLI_array_alloca(loops, f->len);
-  BMVert **verts = BLI_array_alloca(verts, f->len);
-  BMEdge **edges = BLI_array_alloca(edges, f->len);
+  MeshLoop **loops = lib_array_alloca(loops, f->len);
+  MeehVert **verts = lib_array_alloca(verts, f->len);
+  MeshEdge **edges = lib_array_alloca(edges, f->len);
 
-  BMFace *f_new;
-  BMLoop *l_iter, *l_first;
+  MeshFace *f_new;
+  MeshLoop *l_iter, *l_first;
   int j;
 
   j = 0;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
     loops[j] = l_iter;
-    verts[j] = vtable[BM_elem_index_get(l_iter->v)];
-    edges[j] = etable[BM_elem_index_get(l_iter->e)];
+    verts[j] = vtable[mesh_elem_index_get(l_iter->v)];
+    edges[j] = etable[mesh_elem_index_get(l_iter->e)];
     j++;
   } while ((l_iter = l_iter->next) != l_first);
 
-  f_new = BM_face_create(bm_new, verts, edges, f->len, NULL, BM_CREATE_SKIP_CD);
+  f_new = mesh_face_create(mesh_new, verts, edges, f->len, NULL, MESH_CREATE_SKIP_CD);
 
   if (UNLIKELY(f_new == NULL)) {
     return NULL;
   }
 
   /* use totface in case adding some faces fails */
-  BM_elem_index_set(f_new, (bm_new->totface - 1)); /* set_inline */
+  mesh_elem_index_set(f_new, (mesh_new->totface - 1)); /* set_inline */
 
-  BM_elem_attrs_copy_ex(bm_old, bm_new, f, f_new, 0xff, 0x0);
+  mesh_elem_attrs_copy_ex(mesh_old, bm_new, f, f_new, 0xff, 0x0);
   f_new->head.hflag = f->head.hflag; /* low level! don't do this for normal api use */
 
   j = 0;
