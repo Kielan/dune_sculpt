@@ -284,20 +284,20 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
         mesh_elem_flag_disable(e, MESH_ELEM_INTERNAL_TAG);
       }
     }
-    edges_len = BLI_stack_count(edge_stack);
-    edges = MEM_mallocN(sizeof(*edges) * edges_len, __func__);
-    BLI_stack_pop_n_reverse(edge_stack, edges, BLI_stack_count(edge_stack));
-    BLI_stack_free(edge_stack);
+    edges_len = lib_stack_count(edge_stack);
+    edges = mem_mallocn(sizeof(*edges) * edges_len, __func__);
+    lib_stack_pop_n_reverse(edge_stack, edges, lib_stack_count(edge_stack));
+    lib_stack_free(edge_stack);
   }
   else {
     int i = 0;
-    edges_len = bm->totedge;
-    edges = MEM_mallocN(sizeof(*edges) * edges_len, __func__);
+    edges_len = mesh->totedge;
+    edges = mem_mallocn(sizeof(*edges) * edges_len, __func__);
 
-    BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
-      BM_elem_flag_enable(e, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_enable(e->v1, BM_ELEM_INTERNAL_TAG);
-      BM_elem_flag_enable(e->v2, BM_ELEM_INTERNAL_TAG);
+    MESH_ITER_MESH_INDEX (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+      mesh_elem_flag_enable(e, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_enable(e->v1, MESH_ELEM_INTERNAL_TAG);
+      mesh_elem_flag_enable(e->v2, MESH_ELEM_INTERNAL_TAG);
       edges[i] = e;
     }
   }
