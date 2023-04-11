@@ -1,30 +1,26 @@
-/** \file
- * \ingroup bmesh
- *
- * BM construction functions.
- */
+/** Mesh construction functions. */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_math.h"
-#include "BLI_sort_utils.h"
+#include "lib_alloca.h"
+#include "lib_math.h"
+#include "lib_sort_utils.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
 #define SELECT 1
 
-bool BM_verts_from_edges(BMVert **vert_arr, BMEdge **edge_arr, const int len)
+bool mesh_verts_from_edges(MeshVert **vert_arr, BMEdge **edge_arr, const int len)
 {
   int i, i_prev = len - 1;
   for (i = 0; i < len; i++) {
-    vert_arr[i] = BM_edge_share_vert(edge_arr[i_prev], edge_arr[i]);
+    vert_arr[i] = mesh_edge_share_vert(edge_arr[i_prev], edge_arr[i]);
     if (vert_arr[i] == NULL) {
       return false;
     }
@@ -33,7 +29,7 @@ bool BM_verts_from_edges(BMVert **vert_arr, BMEdge **edge_arr, const int len)
   return true;
 }
 
-bool BM_edges_from_verts(BMEdge **edge_arr, BMVert **vert_arr, const int len)
+bool mesh_edges_from_verts(MeshEdge **edge_arr, BMVert **vert_arr, const int len)
 {
   int i, i_prev = len - 1;
   for (i = 0; i < len; i++) {
