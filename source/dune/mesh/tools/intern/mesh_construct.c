@@ -33,7 +33,7 @@ bool mesh_edges_from_verts(MeshEdge **edge_arr, BMVert **vert_arr, const int len
 {
   int i, i_prev = len - 1;
   for (i = 0; i < len; i++) {
-    edge_arr[i_prev] = BM_edge_exists(vert_arr[i_prev], vert_arr[i]);
+    edge_arr[i_prev] = mesh_edge_exists(vert_arr[i_prev], vert_arr[i]);
     if (edge_arr[i_prev] == NULL) {
       return false;
     }
@@ -99,20 +99,20 @@ void mesh_face_copy_shared(Mesh *mesh, MeshFace *f, MeshLoopFilterFn filter_fn, 
       }
 
       for (j = 0; j < 2; j++) {
-        BLI_assert(l_dst[j]->v == l_src[j]->v);
-        if (BM_ELEM_API_FLAG_TEST(l_dst[j], _FLAG_OVERLAP) == 0) {
+        lib_assert(l_dst[j]->v == l_src[j]->v);
+        if (MESH_ELEM_API_FLAG_TEST(l_dst[j], _FLAG_OVERLAP) == 0) {
           if ((filter_fn == NULL) || filter_fn(l_src[j], user_data)) {
-            bm_loop_attrs_copy(bm, bm, l_src[j], l_dst[j], 0x0);
-            BM_ELEM_API_FLAG_ENABLE(l_dst[j], _FLAG_OVERLAP);
+            mesh_loop_attrs_copy(mesh, mesh, l_src[j], l_dst[j], 0x0);
+            MESH_ELEM_API_FLAG_ENABLE(l_dst[j], _FLAG_OVERLAP);
           }
         }
       }
     }
   } while ((l_iter = l_iter->next) != l_first);
 
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    BM_ELEM_API_FLAG_DISABLE(l_iter, _FLAG_OVERLAP);
+    MESH_ELEM_API_FLAG_DISABLE(l_iter, _FLAG_OVERLAP);
   } while ((l_iter = l_iter->next) != l_first);
 }
 
@@ -123,22 +123,22 @@ void mesh_face_copy_shared(Mesh *mesh, MeshFace *f, MeshLoopFilterFn filter_fn, 
  *
  * All arrays must be \a len long.
  */
-static bool bm_edges_sort_winding(BMVert *v1,
+static bool mesh_edges_sort_winding(BMVert *v1,
                                   BMVert *v2,
                                   BMEdge **edges,
                                   const int len,
                                   BMEdge **edges_sort,
                                   BMVert **verts_sort)
 {
-  BMEdge *e_iter, *e_first;
-  BMVert *v_iter;
+  MeshEdge *e_iter, *e_first;
+  MeshVert *v_iter;
   int i;
 
   /* all flags _must_ be cleared on exit! */
   for (i = 0; i < len; i++) {
-    BM_ELEM_API_FLAG_ENABLE(edges[i], _FLAG_MF);
-    BM_ELEM_API_FLAG_ENABLE(edges[i]->v1, _FLAG_MV);
-    BM_ELEM_API_FLAG_ENABLE(edges[i]->v2, _FLAG_MV);
+    MESH_ELEM_API_FLAG_ENABLE(edges[i], _FLAG_MF);
+    MESH_ELEM_API_FLAG_ENABLE(edges[i]->v1, _FLAG_MV);
+    MESH_ELEM_API_FLAG_ENABLE(edges[i]->v2, _FLAG_MV);
   }
 
   /* find first edge */
@@ -146,11 +146,11 @@ static bool bm_edges_sort_winding(BMVert *v1,
   v_iter = v1;
   e_iter = e_first = v1->e;
   do {
-    if (BM_ELEM_API_FLAG_TEST(e_iter, _FLAG_MF) && (BM_edge_other_vert(e_iter, v_iter) == v2)) {
+    if (MESH_ELEM_API_FLAG_TEST(e_iter, _FLAG_MF) && (BM_edge_other_vert(e_iter, v_iter) == v2)) {
       i = 1;
       break;
     }
-  } while ((e_iter = bmesh_disk_edge_next(e_iter, v_iter)) != e_first);
+  } while ((e_iter = mesh_disk_edge_next(e_iter, v_iter)) != e_first);
   if (i == 0) {
     goto error;
   }
@@ -158,22 +158,22 @@ static bool bm_edges_sort_winding(BMVert *v1,
   i = 0;
   do {
     /* entering loop will always succeed */
-    if (BM_ELEM_API_FLAG_TEST(e_iter, _FLAG_MF)) {
-      if (UNLIKELY(BM_ELEM_API_FLAG_TEST(v_iter, _FLAG_MV) == false)) {
+    if (MESH_ELEM_API_FLAG_TEST(e_iter, _FLAG_MF)) {
+      if (UNLIKELY(MESH_ELEM_API_FLAG_TEST(v_iter, _FLAG_MV) == false)) {
         /* vert is in loop multiple times */
         goto error;
       }
 
-      BM_ELEM_API_FLAG_DISABLE(e_iter, _FLAG_MF);
+      MESH_ELEM_API_FLAG_DISABLE(e_iter, _FLAG_MF);
       edges_sort[i] = e_iter;
 
-      BM_ELEM_API_FLAG_DISABLE(v_iter, _FLAG_MV);
+      MESH_ELEM_API_FLAG_DISABLE(v_iter, _FLAG_MV);
       verts_sort[i] = v_iter;
 
       i += 1;
 
       /* walk onto the next vertex */
-      v_iter = BM_edge_other_vert(e_iter, v_iter);
+      v_iter = mesh_edge_other_vert(e_iter, v_iter);
       if (i == len) {
         if (UNLIKELY(v_iter != verts_sort[0])) {
           goto error;
