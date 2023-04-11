@@ -608,29 +608,29 @@ Mesh *mesh_copy(Mesh *mesh_old)
   etable = mem_mallocn(sizeof(MeshEdge *) * mesh_old->totedge, "mesh_copy etable");
   ftable = mem_mallocn(sizeof(MeshFace *) * mesh_old->totface, "mesh_copy ftable");
 
-  BM_ITER_MESH_INDEX (v, &iter, bm_old, BM_VERTS_OF_MESH, i) {
+  MESH_ITER_INDEX (v, &iter, mesh_old, MESH_VERTS_OF_MESH, i) {
     /* copy between meshes so can't use 'example' argument */
-    v_new = BM_vert_create(bm_new, v->co, NULL, BM_CREATE_SKIP_CD);
-    BM_elem_attrs_copy_ex(bm_old, bm_new, v, v_new, 0xff, 0x0);
+    v_new = mesh_vert_create(mesh_new, v->co, NULL, MESH_CREATE_SKIP_CD);
+    mesh_elem_attrs_copy_ex(mesh_old, mesh_new, v, v_new, 0xff, 0x0);
     v_new->head.hflag = v->head.hflag; /* low level! don't do this for normal api use */
     vtable[i] = v_new;
-    BM_elem_index_set(v, i);     /* set_inline */
-    BM_elem_index_set(v_new, i); /* set_inline */
+    mesh_elem_index_set(v, i);     /* set_inline */
+    mesh_elem_index_set(v_new, i); /* set_inline */
   }
-  bm_old->elem_index_dirty &= ~BM_VERT;
-  bm_new->elem_index_dirty &= ~BM_VERT;
+  mesh_old->elem_index_dirty &= ~MESH_VERT;
+  mesh_new->elem_index_dirty &= ~MESH_VERT;
 
   /* safety check */
-  BLI_assert(i == bm_old->totvert);
+  lib_assert(i == mesh_old->totvert);
 
-  BM_ITER_MESH_INDEX (e, &iter, bm_old, BM_EDGES_OF_MESH, i) {
-    e_new = BM_edge_create(bm_new,
-                           vtable[BM_elem_index_get(e->v1)],
-                           vtable[BM_elem_index_get(e->v2)],
+  MESH_ITER_INDEX (e, &iter, mesh_old, MESH_EDGES_OF_MESH, i) {
+    e_new = mesh_edge_create(mesh_new,
+                           vtable[mesh_elem_index_get(e->v1)],
+                           vtable[mesh_elem_index_get(e->v2)],
                            e,
                            BM_CREATE_SKIP_CD);
 
-    BM_elem_attrs_copy_ex(bm_old, bm_new, e, e_new, 0xff, 0x0);
+    mesh_elem_attrs_copy_ex(mesh_old, bm_new, e, e_new, 0xff, 0x0);
     e_new->head.hflag = e->head.hflag; /* low level! don't do this for normal api use */
     etable[i] = e_new;
     BM_elem_index_set(e, i);     /* set_inline */
