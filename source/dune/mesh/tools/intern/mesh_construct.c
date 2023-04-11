@@ -586,15 +586,15 @@ void mesh_copy_init_customdata_all_layers(Mesh *mesh_dst,
 
 Mesh *mesh_copy(Mesh *mesh_old)
 {
-  Mesh *bm_new;
-  MVert *v, *v_new, **vtable = NULL;
-  MEdge *e, *e_new, **etable = NULL;
-  MFace *f, *f_new, **ftable = NULL;
-  MElem **eletable;
-  MEditSelection *ese;
-  MIter iter;
+  Mesh *mesh_new;
+  MeshVert *v, *v_new, **vtable = NULL;
+  MeshEdge *e, *e_new, **etable = NULL;
+  MeshFace *f, *f_new, **ftable = NULL;
+  MeshElem **eletable;
+  MeshEditSelection *ese;
+  MeshIter iter;
   int i;
-  const MAllocTemplate allocsize = MESHALLOC_TEMPLATE_FROM_BM(bm_old);
+  const MeshAllocTemplate allocsize = MESHALLOC_TEMPLATE_FROM_BM(bm_old);
 
   /* allocate a bmesh */
   mesh_new = mesh_create(&allocsize,
@@ -602,11 +602,11 @@ Mesh *mesh_copy(Mesh *mesh_old)
                               .use_toolflags = bm_old->use_toolflags,
                           }));
 
-  BM_mesh_copy_init_customdata(bm_new, bm_old, &allocsize);
+  mesh_copy_init_customdata(bm_new, bm_old, &allocsize);
 
-  vtable = MEM_mallocN(sizeof(BMVert *) * bm_old->totvert, "BM_mesh_copy vtable");
-  etable = MEM_mallocN(sizeof(BMEdge *) * bm_old->totedge, "BM_mesh_copy etable");
-  ftable = MEM_mallocN(sizeof(BMFace *) * bm_old->totface, "BM_mesh_copy ftable");
+  vtable = mem_mallocN(sizeof(BMVert *) * bm_old->totvert, "BM_mesh_copy vtable");
+  etable = mem_mallocN(sizeof(BMEdge *) * bm_old->totedge, "BM_mesh_copy etable");
+  ftable = mem_mallocN(sizeof(BMFace *) * bm_old->totface, "BM_mesh_copy ftable");
 
   BM_ITER_MESH_INDEX (v, &iter, bm_old, BM_VERTS_OF_MESH, i) {
     /* copy between meshes so can't use 'example' argument */
