@@ -517,7 +517,7 @@ void mesh_copy_init_customdata_from_mesh_array(Mesh *mesh_dst,
     cd_flag |= me_src->cd_flag;
   }
 
-  cd_flag |= mesh_cd_flag_from_bmesh(bm_dst);
+  cd_flag |= mesh_cd_flag_from_mesh(mesh_dst);
 
   CustomData_mesh_init_pool(&mesh_dst->vdata, allocsize->totvert, MESH_VERT);
   CustomData_mesh_init_pool(&mesh_dst->edata, allocsize->totedge, MESH_EDGE);
@@ -545,26 +545,26 @@ void mesh_copy_init_customdata(Mesh *mesh_dst, Mesh *mesh_src, const BMAllocTemp
   CustomData_copy(&mesh_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
   CustomData_copy(&mesh_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
 
-  CustomData_mesh_init_pool(&mesh_dst->vdata, allocsize->totvert, BM_VERT);
-  CustomData_mesh_init_pool(&mesh_dst->edata, allocsize->totedge, BM_EDGE);
-  CustomData_mesh_init_pool(&mesh_dst->ldata, allocsize->totloop, BM_LOOP);
-  CustomData_mesh_init_pool(&mesh_dst->pdata, allocsize->totface, BM_FACE);
+  CustomData_mesh_init_pool(&mesh_dst->vdata, allocsize->totvert, MESH_VERT);
+  CustomData_mesh_init_pool(&mesh_dst->edata, allocsize->totedge, MESH_EDGE);
+  CustomData_mesh_init_pool(&mesh_dst->ldata, allocsize->totloop, MESH_LOOP);
+  CustomData_mesh_init_pool(&mesh_dst->pdata, allocsize->totface, MESH_FACE);
 }
 
-void BM_mesh_copy_init_customdata_all_layers(BMesh *bm_dst,
-                                             BMesh *bm_src,
+void mesh_copy_init_customdata_all_layers(Mesh *mesh_dst,
+                                             Mesh *mesh_src,
                                              const char htype,
-                                             const BMAllocTemplate *allocsize)
+                                             const MeshAllocTemplate *allocsize)
 {
   if (allocsize == NULL) {
-    allocsize = &bm_mesh_allocsize_default;
+    allocsize = &mesh_allocsize_default;
   }
 
-  const char htypes[4] = {BM_VERT, BM_EDGE, BM_LOOP, BM_FACE};
-  BLI_assert(((&bm_dst->vdata + 1) == &bm_dst->edata) &&
-             ((&bm_dst->vdata + 2) == &bm_dst->ldata) && ((&bm_dst->vdata + 3) == &bm_dst->pdata));
+  const char htypes[4] = {MESH_VERT, MESH_EDGE, MESH_LOOP, MESH_FACE};
+  lib_assert(((&mesh_dst->vdata + 1) == &mesh_dst->edata) &&
+             ((&mesh_dst->vdata + 2) == &mesh_dst->ldata) && ((&mesh_dst->vdata + 3) == &mesh_dst->pdata));
 
-  BLI_assert(((&allocsize->totvert + 1) == &allocsize->totedge) &&
+  lib_assert(((&allocsize->totvert + 1) == &allocsize->totedge) &&
              ((&allocsize->totvert + 2) == &allocsize->totloop) &&
              ((&allocsize->totvert + 3) == &allocsize->totface));
 
@@ -572,33 +572,33 @@ void BM_mesh_copy_init_customdata_all_layers(BMesh *bm_dst,
     if (!(htypes[i] & htype)) {
       continue;
     }
-    CustomData *dst = &bm_dst->vdata + i;
-    CustomData *src = &bm_src->vdata + i;
+    CustomData *dst = &mesh_dst->vdata + i;
+    CustomData *src = &mesh_src->vdata + i;
     const int size = *(&allocsize->totvert + i);
 
     for (int l = 0; l < src->totlayer; l++) {
       CustomData_add_layer_named(
           dst, src->layers[l].type, CD_CALLOC, NULL, 0, src->layers[l].name);
     }
-    CustomData_bmesh_init_pool(dst, size, htypes[i]);
+    CustomData_mesh_init_pool(dst, size, htypes[i]);
   }
 }
 
-BMesh *BM_mesh_copy(BMesh *bm_old)
+Mesh *mesh_copy(Mesh *mesh_old)
 {
-  BMesh *bm_new;
-  BMVert *v, *v_new, **vtable = NULL;
-  BMEdge *e, *e_new, **etable = NULL;
-  BMFace *f, *f_new, **ftable = NULL;
-  BMElem **eletable;
-  BMEditSelection *ese;
-  BMIter iter;
+  Mesh *bm_new;
+  MVert *v, *v_new, **vtable = NULL;
+  MEdge *e, *e_new, **etable = NULL;
+  MFace *f, *f_new, **ftable = NULL;
+  MElem **eletable;
+  MEditSelection *ese;
+  MIter iter;
   int i;
-  const BMAllocTemplate allocsize = BMALLOC_TEMPLATE_FROM_BM(bm_old);
+  const MAllocTemplate allocsize = MESHALLOC_TEMPLATE_FROM_BM(bm_old);
 
   /* allocate a bmesh */
-  bm_new = BM_mesh_create(&allocsize,
-                          &((struct BMeshCreateParams){
+  mesh_new = mesh_create(&allocsize,
+                          &((struct MeshCreateParams){
                               .use_toolflags = bm_old->use_toolflags,
                           }));
 
