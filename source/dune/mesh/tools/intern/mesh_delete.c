@@ -17,19 +17,19 @@ static void mesh_remove_tagged_faces(Mesh *mesh, const short oflag)
   MeshFace *f, *f_next;
   MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (f, f_next, &iter, mesh, MESH_FACES_OF_MESH) {
-    if (BMO_face_flag_test(bm, f, oflag)) {
-      BM_face_kill(bm, f);
+  MESH_ITER_MUTABLE (f, f_next, &iter, mesh, MESH_FACES_OF_MESH) {
+    if (mesh_face_flag_test(mesh, f, oflag)) {
+      mesh_face_kill(mesh, f);
     }
   }
 }
 
-static void bmo_remove_tagged_edges(BMesh *bm, const short oflag)
+static void mesh_remove_tagged_edges(Mesh *mesh, const short oflag)
 {
-  BMEdge *e, *e_next;
-  BMIter iter;
+  MeshEdge *e, *e_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (e, e_next, &iter, bm, BM_EDGES_OF_MESH) {
+  MESH_ITER_MUTABLE (e, e_next, &iter, mesh, MESH_EDGES_OF_MESH) {
     if (BMO_edge_flag_test(bm, e, oflag)) {
       BM_edge_kill(bm, e);
     }
