@@ -352,7 +352,7 @@ static void mesh_loop_attrs_copy(
       &mesh_src->ldata, &mesh_dst->ldata, l_src->head.data, &l_dst->head.data, mask_exclude);
 }
 
-static void bm_face_attrs_copy(
+static void mesh_face_attrs_copy(
     Mesh *mesh_src, Mesh *mesh_dst, const MeshFace *f_src, MeshFace *f_dst, CustomDataMask mask_exclude)
 {
   if ((mesh_src == mesh_dst) && (f_src == f_dst)) {
@@ -368,26 +368,26 @@ static void bm_face_attrs_copy(
   f_dst->mat_nr = f_src->mat_nr;
 }
 
-void BM_elem_attrs_copy_ex(BMesh *bm_src,
-                           BMesh *bm_dst,
-                           const void *ele_src_v,
-                           void *ele_dst_v,
-                           const char hflag_mask,
-                           const uint64_t cd_mask_exclude)
+void mesh_elem_attrs_copy_ex(Mesh *mesh_src,
+                             Mesh *mesh_dst,
+                             const void *ele_src_v,
+                             void *ele_dst_v,
+                             const char hflag_mask,
+                             const uint64_t cd_mask_exclude)
 {
   /* TODO: Special handling for hide flags? */
   /* TODO: swap src/dst args, everywhere else in bmesh does other way round. */
 
-  const BMHeader *ele_src = ele_src_v;
-  BMHeader *ele_dst = ele_dst_v;
+  const MeshHeader *ele_src = ele_src_v;
+  MeshHeader *ele_dst = ele_dst_v;
 
-  BLI_assert(ele_src->htype == ele_dst->htype);
-  BLI_assert(ele_src != ele_dst);
+  lib_assert(ele_src->htype == ele_dst->htype);
+  lib_assert(ele_src != ele_dst);
 
-  if ((hflag_mask & BM_ELEM_SELECT) == 0) {
+  if ((hflag_mask & MESH_ELEM_SELECT) == 0) {
     /* First we copy select */
-    if (BM_elem_flag_test((BMElem *)ele_src, BM_ELEM_SELECT)) {
-      BM_elem_select_set(bm_dst, (BMElem *)ele_dst, true);
+    if (mesh_elem_flag_test((MeshElem *)ele_src, MESH_ELEM_SELECT)) {
+      mesh_elem_select_set(mesh_dst, (MeshElem *)ele_dst, true);
     }
   }
 
@@ -429,24 +429,24 @@ void BM_elem_attrs_copy_ex(BMesh *bm_src,
 void mesh_elem_attrs_copy(Mesh *mesh_src, Mesh *mesh_dst, const void *ele_src, void *ele_dst)
 {
   /* MESH_TODO, default 'use_flags' to false */
-  mesh_elem_attrs_copy_ex(bm_src, bm_dst, ele_src, ele_dst, BM_ELEM_SELECT, 0x0);
+  mesh_elem_attrs_copy_ex(mesh_src, mesh_dst, ele_src, ele_dst, MESH_ELEM_SELECT, 0x0);
 }
 
-void mesh_elem_select_copy(BMesh *bm_dst, void *ele_dst_v, const void *ele_src_v)
+void mesh_elem_select_copy(Mesh *mesh_dst, void *ele_dst_v, const void *ele_src_v)
 {
   MeshHeader *ele_dst = ele_dst_v;
   const MeshHeader *ele_src = ele_src_v;
 
-  BLI_assert(ele_src->htype == ele_dst->htype);
+  lib_assert(ele_src->htype == ele_dst->htype);
 
-  if ((ele_src->hflag & BM_ELEM_SELECT) != (ele_dst->hflag & BM_ELEM_SELECT)) {
-    BM_elem_select_set(bm_dst, (BMElem *)ele_dst, (ele_src->hflag & BM_ELEM_SELECT) != 0);
+  if ((ele_src->hflag & MESH_ELEM_SELECT) != (ele_dst->hflag & BM_ELEM_SELECT)) {
+    mesh_elem_select_set(mesh_dst, (MeshElem *)ele_dst, (ele_src->hflag & BM_ELEM_SELECT) != 0);
   }
 }
 
-/* helper function for 'BM_mesh_copy' */
-static BMFace *bm_mesh_copy_new_face(
-    BMesh *bm_new, BMesh *bm_old, BMVert **vtable, BMEdge **etable, BMFace *f)
+/* helper function for 'mesh_copy' */
+static MeshFace *mesh_copy_new_face(
+    Mesh *mesh_new, Mesh *mesh_old, BMVert **vtable, BMEdge **etable, BMFace *f)
 {
   BMLoop **loops = BLI_array_alloca(loops, f->len);
   BMVert **verts = BLI_array_alloca(verts, f->len);
