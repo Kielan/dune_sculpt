@@ -379,7 +379,7 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
 
     /* Set shape key original index. */
     if (cd_shape_keyindex_offset != -1) {
-      BM_ELEM_CD_SET_INT(v, cd_shape_keyindex_offset, i);
+      MESH_ELEM_CD_SET_INT(v, cd_shape_keyindex_offset, i);
     }
 
     /* Set shape-key data. */
@@ -391,36 +391,36 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
     }
   }
   if (is_new) {
-    bm->elem_index_dirty &= ~BM_VERT; /* Added in order, clear dirty flag. */
+    mesh->elem_index_dirty &= ~MESH_VERT; /* Added in order, clear dirty flag. */
   }
 
   Span<MEdge> medge{me->medge, me->totedge};
-  Array<BMEdge *> etable(me->totedge);
+  Array<MeshEdge *> etable(me->totedge);
   for (const int i : medge.index_range()) {
-    BMEdge *e = etable[i] = BM_edge_create(
-        bm, vtable[medge[i].v1], vtable[medge[i].v2], nullptr, BM_CREATE_SKIP_CD);
-    BM_elem_index_set(e, i); /* set_ok */
+    MesgEdge *e = etable[i] = mesh_edge_create(
+        mesh, vtable[medge[i].v1], vtable[medge[i].v2], nullptr, MESH_CREATE_SKIP_CD);
+    mesh_elem_index_set(e, i); /* set_ok */
 
     /* Transfer flags. */
-    e->head.hflag = BM_edge_flag_from_mflag(medge[i].flag & ~SELECT);
+    e->head.hflag = mesh_edge_flag_from_mflag(medge[i].flag & ~SELECT);
 
     /* This is necessary for selection counts to work properly. */
     if (medge[i].flag & SELECT) {
-      BM_edge_select_set(bm, e, true);
+      mesh_edge_select_set(bm, e, true);
     }
 
     /* Copy Custom Data */
-    CustomData_to_bmesh_block(&me->edata, &bm->edata, i, &e->head.data, true);
+    CustomData_to_mesh_block(&me->edata, &bm->edata, i, &e->head.data, true);
 
     if (cd_edge_bweight_offset != -1) {
-      BM_ELEM_CD_SET_FLOAT(e, cd_edge_bweight_offset, (float)medge[i].bweight / 255.0f);
+      MESH_ELEM_CD_SET_FLOAT(e, cd_edge_bweight_offset, (float)medge[i].weight / 255.0f);
     }
     if (cd_edge_crease_offset != -1) {
-      BM_ELEM_CD_SET_FLOAT(e, cd_edge_crease_offset, (float)medge[i].crease / 255.0f);
+      MESH_ELEM_CD_SET_FLOAT(e, cd_edge_crease_offset, (float)medge[i].crease / 255.0f);
     }
   }
   if (is_new) {
-    bm->elem_index_dirty &= ~BM_EDGE; /* Added in order, clear dirty flag. */
+    mesh->elem_index_dirty &= ~MESH_EDGE; /* Added in order, clear dirty flag. */
   }
 
   Span<MPoly> mpoly{me->mpoly, me->totpoly};
@@ -428,15 +428,15 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
 
   /* Only needed for selection. */
 
-  Array<BMFace *> ftable;
+  Array<MeshFace *> ftable;
   if (me->mselect && me->totselect != 0) {
     ftable.reinitialize(me->totpoly);
   }
 
   int totloops = 0;
   for (const int i : mpoly.index_range()) {
-    BMFace *f = bm_face_create_from_mpoly(
-        *bm, mloop.slice(mpoly[i].loopstart, mpoly[i].totloop), vtable, etable);
+    MeshFace *f = mesh_face_create_from_mpoly(
+        *mesh, mloop.slice(mpoly[i].loopstart, mpoly[i].totloop), vtable, etable);
     if (!ftable.is_empty()) {
       ftable[i] = f;
     }
@@ -452,41 +452,41 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
     }
 
     /* Don't use 'i' since we may have skipped the face. */
-    BM_elem_index_set(f, bm->totface - 1); /* set_ok */
+    mesh_elem_index_set(f, mesh->totface - 1); /* set_ok */
 
     /* Transfer flag. */
-    f->head.hflag = BM_face_flag_from_mflag(mpoly[i].flag & ~ME_FACE_SEL);
+    f->head.hflag = mesh_face_flag_from_mflag(mpoly[i].flag & ~ME_FACE_SEL);
 
     /* This is necessary for selection counts to work properly. */
     if (mpoly[i].flag & ME_FACE_SEL) {
-      BM_face_select_set(bm, f, true);
+      mesh_face_select_set(bm, f, true);
     }
 
     f->mat_nr = mpoly[i].mat_nr;
     if (i == me->act_face) {
-      bm->act_face = f;
+      mesh->act_face = f;
     }
 
     int j = mpoly[i].loopstart;
-    BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-    BMLoop *l_iter = l_first;
+    MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+    MeshLoop *l_iter = l_first;
     do {
       /* Don't use 'j' since we may have skipped some faces, hence some loops. */
-      BM_elem_index_set(l_iter, totloops++); /* set_ok */
+      mesh_elem_index_set(l_iter, totloops++); /* set_ok */
 
-      /* Save index of corresponding #MLoop. */
-      CustomData_to_bmesh_block(&me->ldata, &bm->ldata, j++, &l_iter->head.data, true);
+      /* Save index of corresponding MeehLoop. */
+      CustomData_to_mesh_block(&me->ldata, &mesh->ldata, j++, &l_iter->head.data, true);
     } while ((l_iter = l_iter->next) != l_first);
 
     /* Copy Custom Data */
-    CustomData_to_bmesh_block(&me->pdata, &bm->pdata, i, &f->head.data, true);
+    CustomData_to_bmesh_block(&me->pdata, &mesh->pdata, i, &f->head.data, true);
 
     if (params->calc_face_normal) {
-      BM_face_normal_update(f);
+      mesh_face_normal_update(f);
     }
   }
   if (is_new) {
-    bm->elem_index_dirty &= ~(BM_FACE | BM_LOOP); /* Added in order, clear dirty flag. */
+    mesh->elem_index_dirty &= ~(MESH_FACE | MESH_LOOP); /* Added in order, clear dirty flag. */
   }
 
   /* -------------------------------------------------------------------- */
@@ -499,16 +499,16 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
     for (const int i : IndexRange(me->totselect)) {
       const MSelect &msel = me->mselect[i];
 
-      BMElem **ele_p;
+      MeshElem **ele_p;
       switch (msel.type) {
         case ME_VSEL:
-          ele_p = (BMElem **)&vtable[msel.index];
+          ele_p = (MeshElem **)&vtable[msel.index];
           break;
         case ME_ESEL:
-          ele_p = (BMElem **)&etable[msel.index];
+          ele_p = (MeshElem **)&etable[msel.index];
           break;
         case ME_FSEL:
-          ele_p = (BMElem **)&ftable[msel.index];
+          ele_p = (MeshElem **)&ftable[msel.index];
           break;
         default:
           continue;
