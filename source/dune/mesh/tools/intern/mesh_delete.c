@@ -60,20 +60,20 @@ static void bmo_remove_tagged_verts_loose(BMesh *bm, const short oflag)
   }
 }
 
-void BMO_mesh_delete_oflag_tagged(BMesh *bm, const short oflag, const char htype)
+void mesh_mesh_delete_oflag_tagged(BMesh *bm, const short oflag, const char htype)
 {
-  if (htype & BM_FACE) {
-    bmo_remove_tagged_faces(bm, oflag);
+  if (htype & MESH_FACE) {
+    mesh_remove_tagged_faces(mesh, oflag);
   }
-  if (htype & BM_EDGE) {
-    bmo_remove_tagged_edges(bm, oflag);
+  if (htype & MESH_EDGE) {
+    mesh_remove_tagged_edges(mesh, oflag);
   }
-  if (htype & BM_VERT) {
-    bmo_remove_tagged_verts(bm, oflag);
+  if (htype & MESH_VERT) {
+    mesh_remove_tagged_verts(mesh, oflag);
   }
 }
 
-void BMO_mesh_delete_oflag_context(BMesh *bm, const short oflag, const int type)
+void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
 {
   BMEdge *e;
   BMFace *f;
