@@ -304,49 +304,49 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
 
   /* prime the lists and begin search */
   {
-    BMVert *v_match[2] = {NULL, NULL};
+    MeehVert *v_match[2] = {NULL, NULL};
     ListBase lb_src = {NULL, NULL};
     ListBase lb_dst = {NULL, NULL};
-    BLI_mempool *vs_pool = BLI_mempool_create(sizeof(struct VertStep), 0, 512, BLI_MEMPOOL_NOP);
+    lib_mempool *vs_pool = lib_mempool_create(sizeof(struct VertStep), 0, 512, BLI_MEMPOOL_NOP);
 
     /* edge args are dummy */
     vs_add(vs_pool, &lb_src, v_src, v_src->e, 1);
     vs_add(vs_pool, &lb_dst, v_dst, v_dst->e, -1);
-    bm->elem_index_dirty |= BM_VERT;
+    mesh->elem_index_dirty |= MESH_VERT;
 
     do {
-      if ((bm_loop_path_build_step(vs_pool, &lb_src, 1, v_match) == false) || v_match[0]) {
+      if ((mesh_loop_path_build_step(vs_pool, &lb_src, 1, v_match) == false) || v_match[0]) {
         break;
       }
-      if ((bm_loop_path_build_step(vs_pool, &lb_dst, -1, v_match) == false) || v_match[0]) {
+      if ((mesh_loop_path_build_step(vs_pool, &lb_dst, -1, v_match) == false) || v_match[0]) {
         break;
       }
     } while (true);
 
-    BLI_mempool_destroy(vs_pool);
+    lib_mempool_destroy(vs_pool);
 
     if (v_match[0]) {
-      BMEdgeLoopStore *el_store = MEM_callocN(sizeof(BMEdgeLoopStore), __func__);
-      BMVert *v;
+      MeshEdgeLoopStore *el_store = mem_callocn(sizeof(MeshEdgeLoopStore), __func__);
+      MeshVert *v;
 
       /* build loop from edge pointers */
       v = v_match[0];
       while (true) {
-        LinkData *node = MEM_callocN(sizeof(*node), __func__);
+        LinkData *node = mem_callocn(sizeof(*node), __func__);
         node->data = v;
-        BLI_addhead(&el_store->verts, node);
+        lib_addhead(&el_store->verts, node);
         el_store->len++;
         if (v == v_src) {
           break;
         }
-        v = BM_edge_other_vert(v->e, v);
+        v = mesh_edge_other_vert(v->e, v);
       }
 
       v = v_match[1];
       while (true) {
-        LinkData *node = MEM_callocN(sizeof(*node), __func__);
+        LinkData *node = mem_callocn(sizeof(*node), __func__);
         node->data = v;
-        BLI_addtail(&el_store->verts, node);
+        lib_addtail(&el_store->verts, node);
         el_store->len++;
         if (v == v_dst) {
           break;
@@ -362,11 +362,11 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
 
   for (uint i = 0; i < edges_len; i += 1) {
     e = edges[i];
-    BM_elem_flag_disable(e, BM_ELEM_INTERNAL_TAG);
-    BM_elem_flag_disable(e->v1, BM_ELEM_INTERNAL_TAG);
-    BM_elem_flag_disable(e->v2, BM_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_disable(e, M_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_disable(e->v1, M_ELEM_INTERNAL_TAG);
+    mesh_elem_flag_disable(e->v2, M_ELEM_INTERNAL_TAG);
   }
-  MEM_freeN(edges);
+  mem_freen(edges);
 
   return found;
 }
