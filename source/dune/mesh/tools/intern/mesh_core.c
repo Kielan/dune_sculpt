@@ -595,19 +595,19 @@ int mesh_elem_check(void *element, const char htype)
         err |= IS_LOOP_WRONG_FACE_LENGTH;
       }
 
-      if (!bmesh_radial_validate(bmesh_radial_length(l), l)) {
+      if (!mesh_radial_validate(mesh_radial_length(l), l)) {
         err |= IS_LOOP_WRONG_RADIAL_LENGTH;
       }
 
       break;
     }
-    case BM_FACE: {
-      BMFace *f = element;
-      BMLoop *l_iter;
-      BMLoop *l_first;
+    case MESH_FACE: {
+      MeshFace *f = element;
+      MLoop *l_iter;
+      MLoop *l_first;
       int len = 0;
 
-#  ifdef USE_BMESH_HOLES
+#  ifdef USE_MESH_HOLES
       if (!f->loops.first)
 #  else
       if (!f->l_first)
@@ -615,7 +615,7 @@ int mesh_elem_check(void *element, const char htype)
       {
         err |= IS_FACE_NULL_LOOP;
       }
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
         if (l_iter->f != f) {
           fprintf(stderr,
@@ -631,25 +631,25 @@ int mesh_elem_check(void *element, const char htype)
           err |= IS_FACE_NULL_VERT;
         }
         if (l_iter->e && l_iter->v) {
-          if (!BM_vert_in_edge(l_iter->e, l_iter->v) ||
-              !BM_vert_in_edge(l_iter->e, l_iter->next->v)) {
+          if (!mesh_vert_in_edge(l_iter->e, l_iter->v) ||
+              !mesh_vert_in_edge(l_iter->e, l_iter->next->v)) {
             err |= IS_FACE_LOOP_VERT_NOT_IN_EDGE;
           }
 
-          if (!bmesh_radial_validate(bmesh_radial_length(l_iter), l_iter)) {
+          if (!mesh_radial_validate(bmesh_radial_length(l_iter), l_iter)) {
             err |= IS_FACE_LOOP_WRONG_RADIAL_LENGTH;
           }
 
-          if (bmesh_disk_count_at_most(l_iter->v, 2) < 2) {
+          if (mesh_disk_count_at_most(l_iter->v, 2) < 2) {
             err |= IS_FACE_LOOP_WRONG_DISK_LENGTH;
           }
         }
 
         /* check for duplicates */
-        if (BM_ELEM_API_FLAG_TEST(l_iter, _FLAG_ELEM_CHECK)) {
+        if (MESH_ELEM_API_FLAG_TEST(l_iter, _FLAG_ELEM_CHECK)) {
           err |= IS_FACE_LOOP_DUPE_LOOP;
         }
-        BM_ELEM_API_FLAG_ENABLE(l_iter, _FLAG_ELEM_CHECK);
+        MESH_ELEM_API_FLAG_ENABLE(l_iter, _FLAG_ELEM_CHECK);
         if (l_iter->v) {
           if (BM_ELEM_API_FLAG_TEST(l_iter->v, _FLAG_ELEM_CHECK)) {
             err |= IS_FACE_LOOP_DUPE_VERT;
