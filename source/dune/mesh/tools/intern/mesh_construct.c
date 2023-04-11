@@ -302,7 +302,7 @@ void mesh_verts_sort_radial_plane(MeshVert **vert_arr, int len)
   }
 
   /* sort by angle and magic! - we have our ngon */
-  qsort(vang, len, sizeof(*vang), BLI_sortutil_cmp_float);
+  qsort(vang, len, sizeof(*vang), lib_sortutil_cmp_float);
 
   /* --- */
 
@@ -313,11 +313,11 @@ void mesh_verts_sort_radial_plane(MeshVert **vert_arr, int len)
 
 /*************************************************************/
 
-static void bm_vert_attrs_copy(
-    BMesh *bm_src, BMesh *bm_dst, const BMVert *v_src, BMVert *v_dst, CustomDataMask mask_exclude)
+static void mesh_vert_attrs_copy(
+    Mesh *mesh_src, Mesh *mesh_dst, const MeshVert *v_src, MeshVert *v_dst, CustomDataMask mask_exclude)
 {
-  if ((bm_src == bm_dst) && (v_src == v_dst)) {
-    BLI_assert_msg(0, "BMVert: source and target match");
+  if ((mesh_src == mesh_dst) && (v_src == v_dst)) {
+    lib_assert_msg(0, "MeshVert: source and target match");
     return;
   }
   if ((mask_exclude & CD_MASK_NORMAL) == 0) {
