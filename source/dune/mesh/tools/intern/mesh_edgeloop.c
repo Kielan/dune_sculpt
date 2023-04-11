@@ -256,32 +256,32 @@ bool BM_mesh_edgeloops_find_path(Mesh *mesh,
   BMEdge *e;
   bool found = false;
 
-  BLI_assert(v_src != v_dst);
+  lib_assert(v_src != v_dst);
 
   {
-    BMVert *v;
-    BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
-      BM_elem_index_set(v, 0);
-      BM_elem_flag_disable(v, BM_ELEM_INTERNAL_TAG);
+    MeshVert *v;
+    MESH_ITER_MESH (v, &iter, mesh, MESH_VERTS_OF_MESH) {
+      mesh_elem_index_set(v, 0);
+      mesh_elem_flag_disable(v, MESH_ELEM_INTERNAL_TAG);
     }
   }
-  bm->elem_index_dirty |= BM_VERT;
+  mesh->elem_index_dirty |= MESH_VERT;
 
   /* first flush edges to tags, and tag verts */
   int edges_len;
-  BMEdge **edges;
+  MeshEdge **edges;
 
   if (test_fn) {
-    BLI_Stack *edge_stack = BLI_stack_new(sizeof(BMEdge *), __func__);
-    BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+    LibStack *edge_stack = lib_stack_new(sizeof(MeshEdge *), __func__);
+    MESH_ITER_MESH (e, &iter, mesh, MESH_EDGES_OF_MESH) {
       if (test_fn(e, user_data)) {
-        BM_elem_flag_enable(e, BM_ELEM_INTERNAL_TAG);
-        BM_elem_flag_enable(e->v1, BM_ELEM_INTERNAL_TAG);
-        BM_elem_flag_enable(e->v2, BM_ELEM_INTERNAL_TAG);
-        BLI_stack_push(edge_stack, (void *)&e);
+        M_elem_flag_enable(e, MESH_ELEM_INTERNAL_TAG);
+        M_elem_flag_enable(e->v1, MESH_ELEM_INTERNAL_TAG);
+        M_elem_flag_enable(e->v2, MESH_ELEM_INTERNAL_TAG);
+        lib_stack_push(edge_stack, (void *)&e);
       }
       else {
-        BM_elem_flag_disable(e, BM_ELEM_INTERNAL_TAG);
+        mesh_elem_flag_disable(e, MESH_ELEM_INTERNAL_TAG);
       }
     }
     edges_len = BLI_stack_count(edge_stack);
