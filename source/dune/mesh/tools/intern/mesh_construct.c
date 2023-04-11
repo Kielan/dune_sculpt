@@ -286,8 +286,8 @@ MeshFace *mesh_face_create_ngon_verts(Mesh *m3:$,
 
 void mesh_verts_sort_radial_plane(MeshVert **vert_arr, int len)
 {
-  struct SortIntByFloat *vang = BLI_array_alloca(vang, len);
-  MeshVert **vert_arr_map = BLI_array_alloca(vert_arr_map, len);
+  struct SortIntByFloat *vang = lib_array_alloca(vang, len);
+  MeshVert **vert_arr_map = lib_array_alloca(vert_arr_map, len);
 
   float nor[3], cent[3];
   int index_tangent = 0;
@@ -323,13 +323,13 @@ static void mesh_vert_attrs_copy(
   if ((mask_exclude & CD_MASK_NORMAL) == 0) {
     copy_v3_v3(v_dst->no, v_src->no);
   }
-  CustomData_bmesh_free_block_data_exclude_by_type(&bm_dst->vdata, v_dst->head.data, mask_exclude);
-  CustomData_bmesh_copy_data_exclude_by_type(
-      &bm_src->vdata, &bm_dst->vdata, v_src->head.data, &v_dst->head.data, mask_exclude);
+  CustomData_mesh_free_block_data_exclude_by_type(&bm_dst->vdata, v_dst->head.data, mask_exclude);
+  CustomData_mesh_copy_data_exclude_by_type(
+      &mesh_src->vdata, &bm_dst->vdata, v_src->head.data, &v_dst->head.data, mask_exclude);
 }
 
-static void bm_edge_attrs_copy(
-    BMesh *bm_src, BMesh *bm_dst, const BMEdge *e_src, BMEdge *e_dst, CustomDataMask mask_exclude)
+static void mesh_edge_attrs_copy(
+    Mesh *mesh_src, Mesh *mesh_dst, const MeshEdge *e_src, BMEdge *e_dst, CustomDataMask mask_exclude)
 {
   if ((bm_src == bm_dst) && (e_src == e_dst)) {
     BLI_assert_msg(0, "BMEdge: source and target match");
