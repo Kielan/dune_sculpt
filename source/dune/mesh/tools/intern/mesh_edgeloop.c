@@ -94,17 +94,17 @@ static bool mesh_loop_build(MeshEdgeLoopStore *el_store, MeshVert *v_prev, MeshV
   return true;
 }
 
-int mesh_edgeloops_find(BMesh *bm,
-                           ListBase *r_eloops,
-                           bool (*test_fn)(BMEdge *, void *user_data),
-                           void *user_data)
+int mesh_edgeloops_find(Mesh *mesh,
+                       ListBase *r_eloops,
+                       bool (*test_fn)(MeshEdge *, void *user_data),
+                       void *user_data)
 {
-  BMIter iter;
-  BMEdge *e;
-  BMVert *v;
+  MeshIter iter;
+  MeshEdge *e;
+  MeshVert *v;
   int count = 0;
 
-  BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+  MESH_ITER_MESH (v, &iter, mesh, BM_VERTS_OF_MESH) {
     BM_elem_flag_disable(v, BM_ELEM_INTERNAL_TAG);
   }
 
