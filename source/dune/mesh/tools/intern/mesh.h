@@ -54,18 +54,18 @@ void mesh_clear(Mesh *mesh);
  */
 void mesh_edit_begin(Mesh *mesh, MeshOpTypeFlag type_flag);
 /**
- * \brief BMesh End Edit
+ * Mesh End Edit
  */
-void bmesh_edit_end(BMesh *bm, BMOpTypeFlag type_flag);
+void mesh_edit_end(Mesh *mesh, MeshOpTypeFlag type_flag);
 
-void BM_mesh_elem_index_ensure_ex(BMesh *bm, char htype, int elem_offset[4]);
-void BM_mesh_elem_index_ensure(BMesh *bm, char htype);
+void mesh_elem_index_ensure_ex(Mesh *mesh, char htype, int elem_offset[4]);
+void mesh_elem_index_ensure(Mesh *mesh, char htype);
 /**
  * Array checking/setting macros.
  *
  * Currently vert/edge/loop/face index data is being abused, in a few areas of the code.
  *
- * To avoid correcting them afterwards, set 'bm->elem_index_dirty' however its possible
+ * To avoid correcting them afterwards, set 'mesh->elem_index_dirty' however its possible
  * this flag is set incorrectly which could crash blender.
  *
  * Functions that calls this function may depend on dirty indices on being set.
@@ -77,7 +77,7 @@ void mesh_elem_index_validate(
 
 #ifndef NDEBUG
 /** mesh_elem_index_validate the same rationale applies to this function. */
-bool mesh_elem_table_check(BMesh *bm);
+bool mesh_elem_table_check(Mesh *mesh);
 #endif
 
 /** Re-allocates mesh data with/without toolflags. */
@@ -117,43 +117,43 @@ MeshLoop *mesh_loop_at_index_find(Mesh *mesh, int index);
  *
  * Try to use mesh_elem_table_ensure instead.
  */
-MeshVert *mesh_vert_at_index_find_or_table(BMesh *bm, int index);
-MeshEdge *mesh_edge_at_index_find_or_table(BMesh *bm, int index);
-MeshFace *mesh_face_at_index_find_or_table(BMesh *bm, int index);
+MeshVert *mesh_vert_at_index_find_or_table(Mesh *mesh, int index);
+MeshEdge *mesh_edge_at_index_find_or_table(Mesh *mesh, int index);
+MeshFace *mesh_face_at_index_find_or_table(Mesh *mesh, int index);
 
 // XXX
 
-/** Return the amount of element of type 'type' in a given bmesh. */
+/** Return the amount of element of type 'type' in a given mesh. */
 int mesh_elem_count(Mesh *mesh, char htype);
 
 /**
- * Remaps the vertices, edges and/or faces of the bmesh as indicated by vert/edge/face_idx arrays
+ * Remaps the vertices, edges and/or faces of the mesh as indicated by vert/edge/face_idx arrays
  * (xxx_idx[org_index] = new_index).
  *
  * A NULL array means no changes.
  *
- * \note
+ * note
  * - Does not mess with indices, just sets elem_index_dirty flag.
  * - For verts/edges/faces only (as loops must remain "ordered" and "aligned"
  *   on a per-face basis...).
  *
- * \warning Be careful if you keep pointers to affected BM elements,
+ * warning Be careful if you keep pointers to affected Mesh elements,
  * or arrays, when using this func!
  */
-void BM_mesh_remap(BMesh *bm, const uint *vert_idx, const uint *edge_idx, const uint *face_idx);
+void mesh_remap(Mesh *mesh, const uint *vert_idx, const uint *edge_idx, const uint *face_idx);
 
 /**
  * Use new memory pools for this mesh.
  *
- * \note needed for re-sizing elements (adding/removing tool flags)
+ * note needed for re-sizing elements (adding/removing tool flags)
  * but could also be used for packing fragmented bmeshes.
  */
-void BM_mesh_rebuild(BMesh *bm,
-                     const struct BMeshCreateParams *params,
-                     struct BLI_mempool *vpool,
-                     struct BLI_mempool *epool,
-                     struct BLI_mempool *lpool,
-                     struct BLI_mempool *fpool);
+void mesh_rebuild(Mesh *mesh,
+                  const struct MeshCreateParams *params,
+                  struct lib_mempool *vpool,
+                  struct lib_mempool *epool,
+                  struct lib_mempool *lpool,
+                  struct lib_mempool *fpool);
 
 typedef struct MeshAllocTemplate {
   int totvert, totedge, totloop, totface;
