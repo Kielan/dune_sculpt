@@ -253,10 +253,10 @@ static MeshLoop *mesh_loop_create(Mesh *mesh,
 static MeshLoop *mesh_face_boundary_add(
     Mesh *mesh, MeshFace *f, MeshVert *startv, MeshEdge *starte, const eBMCreateFlag create_flag)
 {
-#ifdef USE_BMESH_HOLES
-  MLoopList *lst = lib_mempool_calloc(bm->looplistpool);
+#ifdef USE_MESH_HOLES
+  MeshLoopList *lst = lib_mempool_calloc(mesh->looplistpool);
 #endif
-  MLoop *l = mesh_loop_create(bm, startv, starte, f, NULL /* starte->l */, create_flag);
+  MeshLoop *l = mesh_loop_create(mesh, startv, starte, f, NULL /* starte->l */, create_flag);
 
   mesh_radial_loop_append(starte, l);
 
@@ -273,12 +273,12 @@ static MeshLoop *mesh_face_boundary_add(
 MeshFace *mesh_face_copy(
     Mesh *mesh_dst, Mesh *mesh_src, MeshFace *f, const bool copy_verts, const bool copy_edges)
 {
-  MVert **verts = lib_array_alloca(verts, f->len);
-  MEdge **edges = lib_array_alloca(edges, f->len);
-  MLoop *l_iter;
-  MLoop *l_first;
-  MLoop *l_copy;
-  MFace *f_copy;
+  MeshVert **verts = lib_array_alloca(verts, f->len);
+  MeshEdge **edges = lib_array_alloca(edges, f->len);
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
+  MeshLoop *l_copy;
+  MeshFace *f_copy;
   int i;
 
   lib_assert((mesh_dst == mesh_src) || (copy_verts && copy_edges));
@@ -299,7 +299,7 @@ MeshFace *mesh_face_copy(
   i = 0;
   do {
     if (copy_edges) {
-      BMVert *v1, *v2;
+      MeshVert *v1, *v2;
 
       if (l_iter->e->v1 == verts[i]) {
         v1 = verts[i];
@@ -387,18 +387,18 @@ LIB_INLINE MeshFace *mesh_face_create__internal(Mesh *mesh)
 }
 
 MeshFace *mesh_face_create(Mesh *mesh,
-                       MVert **verts,
-                       MEdge **edges,
+                       MeshVert **verts,
+                       MeshEdge **edges,
                        const int len,
-                       const MFace *f_example,
-                       const eMCreateFlag create_flag)
+                       const MeshFace *f_example,
+                       const eMeshCreateFlag create_flag)
 {
-  BMFace *f = NULL;
-  BMLoop *l, *startl, *lastl;
+  MeshFace *f = NULL;
+  MeshLoop *l, *startl, *lastl;
   int i;
 
-  BLI_assert((f_example == NULL) || (f_example->head.htype == BM_FACE));
-  BLI_assert(!(create_flag & 1));
+  lib_assert((f_example == NULL) || (f_example->head.htype == BM_FACE));
+  lib_assert(!(create_flag & 1));
 
   if (len == 0) {
     /* just return NULL for now */
@@ -455,11 +455,11 @@ MeshFace *mesh_face_create(Mesh *mesh,
   return f;
 }
 
-BMFace *BM_face_create_verts(Mesh *bm,
-                             MVert **vert_arr,
+MeshFace *mesh_face_create_verts(Mesh *mesh,
+                             MeshVert **vert_arr,
                              const int len,
-                             const BMFace *f_example,
-                             const eBMCreateFlag create_flag,
+                             const MeshFace *f_example,
+                             const eMeshCreateFlag create_flag,
                              const bool create_edges)
 {
   MeshEdge **edge_arr = lib_array_alloca(edge_arr, len);
