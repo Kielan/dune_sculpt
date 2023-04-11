@@ -405,22 +405,22 @@ BMFace *BM_face_create(BMesh *bm,
     return NULL;
   }
 
-  if (create_flag & BM_CREATE_NO_DOUBLE) {
+  if (create_flag & MESH_CREATE_NO_DOUBLE) {
     /* Check if face already exists */
-    f = BM_face_exists(verts, len);
+    f = mesh_face_exists(verts, len);
     if (f != NULL) {
       return f;
     }
   }
 
-  f = bm_face_create__internal(bm);
+  f = mesh_face_create__internal(mesh);
 
-  startl = lastl = bm_face_boundary_add(bm, f, verts[0], edges[0], create_flag);
+  startl = lastl = mesh_face_boundary_add(bm, f, verts[0], edges[0], create_flag);
 
   for (i = 1; i < len; i++) {
-    l = bm_loop_create(bm, verts[i], edges[i], f, NULL /* edges[i]->l */, create_flag);
+    l = mesh_loop_create(mesh, verts[i], edges[i], f, NULL /* edges[i]->l */, create_flag);
 
-    bmesh_radial_loop_append(edges[i], l);
+    mesh_radial_loop_append(edges[i], l);
 
     l->prev = lastl;
     lastl->next = l;
@@ -432,12 +432,12 @@ BMFace *BM_face_create(BMesh *bm,
 
   f->len = len;
 
-  if (!(create_flag & BM_CREATE_SKIP_CD)) {
+  if (!(create_flag & MESH_CREATE_SKIP_CD)) {
     if (f_example) {
-      BM_elem_attrs_copy(bm, bm, f_example, f);
+      mesh_elem_attrs_copy(mesh, mesh, f_example, f);
     }
     else {
-      CustomData_bmesh_set_default(&bm->pdata, &f->head.data);
+      CustomData_mesh_set_default(&mesh->pdata, &f->head.data);
       zero_v3(f->no);
     }
   }
@@ -450,37 +450,37 @@ BMFace *BM_face_create(BMesh *bm,
     }
   }
 
-  BM_CHECK_ELEMENT(f);
+  MESH_CHECK_ELEMENT(f);
 
   return f;
 }
 
-BMFace *BM_face_create_verts(BMesh *bm,
-                             BMVert **vert_arr,
+BMFace *BM_face_create_verts(Mesh *bm,
+                             MVert **vert_arr,
                              const int len,
                              const BMFace *f_example,
                              const eBMCreateFlag create_flag,
                              const bool create_edges)
 {
-  BMEdge **edge_arr = BLI_array_alloca(edge_arr, len);
+  MeshEdge **edge_arr = lib_array_alloca(edge_arr, len);
 
   if (create_edges) {
-    BM_edges_from_verts_ensure(bm, edge_arr, vert_arr, len);
+    mesh_edges_from_verts_ensure(mesh, edge_arr, vert_arr, len);
   }
   else {
-    if (BM_edges_from_verts(edge_arr, vert_arr, len) == false) {
+    if (mesh_edges_from_verts(edge_arr, vert_arr, len) == false) {
       return NULL;
     }
   }
 
-  return BM_face_create(bm, vert_arr, edge_arr, len, f_example, create_flag);
+  return mesh_face_create(mesh, vert_arr, edge_arr, len, f_example, create_flag);
 }
 
 #ifndef NDEBUG
 
-int bmesh_elem_check(void *element, const char htype)
+int mesh_elem_check(void *element, const char htype)
 {
-  BMHeader *head = element;
+  MeshHeader *head = element;
   enum {
     IS_NULL = (1 << 0),
     IS_WRONG_TYPE = (1 << 1),
@@ -524,15 +524,15 @@ int bmesh_elem_check(void *element, const char htype)
   }
 
   switch (htype) {
-    case BM_VERT: {
-      BMVert *v = element;
+    case MESH_VERT: {
+      MeshVert *v = element;
       if (v->e && v->e->head.htype != BM_EDGE) {
         err |= IS_VERT_WRONG_EDGE_TYPE;
       }
       break;
     }
-    case BM_EDGE: {
-      BMEdge *e = element;
+    case MESH_EDGE: {
+      MeshEdge *e = element;
       if (e->v1_disk_link.prev == NULL || e->v2_disk_link.prev == NULL ||
           e->v1_disk_link.next == NULL || e->v2_disk_link.next == NULL) {
         err |= IS_EDGE_NULL_DISK_LINK;
@@ -552,8 +552,8 @@ int bmesh_elem_check(void *element, const char htype)
       }
       break;
     }
-    case BM_LOOP: {
-      BMLoop *l = element, *l2;
+    case MESH_LOOP: {
+      MeshLoop *l = element, *l2;
       int i;
 
       if (l->f->head.htype != BM_FACE) {
@@ -565,7 +565,7 @@ int bmesh_elem_check(void *element, const char htype)
       if (l->v->head.htype != BM_VERT) {
         err |= IS_LOOP_WRONG_VERT_TYPE;
       }
-      if (!BM_vert_in_edge(l->e, l->v)) {
+      if (!mesh_vert_in_edge(l->e, l->v)) {
         fprintf(stderr,
                 "%s: fatal bmesh error (vert not in edge)! (bmesh internal error)\n",
                 __func__);
