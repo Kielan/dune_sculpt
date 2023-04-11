@@ -390,11 +390,11 @@ void mesh_edgeloops_calc_center(Mesh *mesh, ListBase *eloops)
   }
 }
 
-void BM_mesh_edgeloops_calc_normal(BMesh *bm, ListBase *eloops)
+void mesh_edgeloops_calc_normal(Mesh *mesh, ListBase *eloops)
 {
-  BMEdgeLoopStore *el_store;
+  MeshEdgeLoopStore *el_store;
   for (el_store = eloops->first; el_store; el_store = el_store->next) {
-    BM_edgeloop_calc_normal(bm, el_store);
+    mesh_edgeloop_calc_normal(mesh, el_store);
   }
 }
 
