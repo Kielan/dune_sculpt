@@ -1,24 +1,23 @@
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
-/* BMO functions */
+/* mesh functions */
 
 /* -------------------------------------------------------------------- */
-/** \name BMesh Operator Delete Functions
- * \{ */
+/** Mesh Operator Delete Functions **/
 
 /**
  * Called by operators to remove elements that they have marked for
  * removal.
  */
-static void bmo_remove_tagged_faces(BMesh *bm, const short oflag)
+static void mesh_remove_tagged_faces(Mesh *mesh, const short oflag)
 {
-  BMFace *f, *f_next;
-  BMIter iter;
+  MeshFace *f, *f_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (f, f_next, &iter, bm, BM_FACES_OF_MESH) {
+  BM_ITER_MESH_MUTABLE (f, f_next, &iter, mesh, MESH_FACES_OF_MESH) {
     if (BMO_face_flag_test(bm, f, oflag)) {
       BM_face_kill(bm, f);
     }
