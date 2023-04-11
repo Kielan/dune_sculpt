@@ -168,7 +168,7 @@ extern const MeshAllocTemplate mesh_chunksize_default;
     (CHECK_TYPE_INLINE(mesh, Mesh *), (mesh)->totvert), (mesh)->totedge, (mesh)->totloop, (mesh)->totface \
   }
 
-#define _VA_BMALLOC_TEMPLATE_FROM_ME_1(me) \
+#define _VA_MESHALLOC_TEMPLATE_FROM_ME_1(me) \
   { \
     (CHECK_TYPE_INLINE(me, Mesh *), (me)->totvert), (me)->totedge, (me)->totloop, (me)->totpoly, \
   }
@@ -180,8 +180,8 @@ extern const MeshAllocTemplate mesh_chunksize_default;
         (me_a)->totedge + (me_b)->totedge, (me_a)->totloop + (me_b)->totloop, \
         (me_a)->totpoly + (me_b)->totpoly, \
   }
-#define BMALLOC_TEMPLATE_FROM_ME(...) \
-  VA_NARGS_CALL_OVERLOAD(_VA_BMALLOC_TEMPLATE_FROM_ME_, __VA_ARGS__)
+#define MESHALLOC_TEMPLATE_FROM_ME(...) \
+  VA_NARGS_CALL_OVERLOAD(_VA_MESHALLOC_TEMPLATE_FROM_ME_, __VA_ARGS__)
 
 /* Vertex coords access. */
 void BM_mesh_vert_coords_get(BMesh *bm, float (*vert_coords)[3]);
