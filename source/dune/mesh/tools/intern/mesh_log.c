@@ -562,26 +562,26 @@ void mesh_log_mesh_elems_reorder(Mesh *mesh, MeshLog *log)
 
   GHash *id_to_idx;
 
-  BMIter bm_iter;
-  BMVert *v;
-  BMFace *f;
+  MeshIter mesh_iter;
+  MeshVert *v;
+  MeshFace *f;
 
   uint i;
 
   /* Put all vertex IDs into an array */
-  varr = MEM_mallocN(sizeof(int) * (size_t)bm->totvert, __func__);
-  BM_ITER_MESH_INDEX (v, &bm_iter, bm, BM_VERTS_OF_MESH, i) {
+  varr = mem_mallocn(sizeof(int) * (size_t)mesh->totvert, __func__);
+  MESH_ITER_INDEX (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
     varr[i] = bm_log_vert_id_get(log, v);
   }
 
   /* Put all face IDs into an array */
-  farr = MEM_mallocN(sizeof(int) * (size_t)bm->totface, __func__);
-  BM_ITER_MESH_INDEX (f, &bm_iter, bm, BM_FACES_OF_MESH, i) {
-    farr[i] = bm_log_face_id_get(log, f);
+  farr = mem_mallocn(sizeof(int) * (size_t)mesh->totface, __func__);
+  MESH_ITER_INDEX (f, &mesh_iter, mesh, MESH_FACES_OF_MESH, i) {
+    farr[i] = mesh_log_face_id_get(log, f);
   }
 
-  /* Create BMVert index remap array */
-  id_to_idx = bm_log_compress_ids_to_indices(varr, (uint)bm->totvert);
+  /* Create MeshVert index remap array */
+  id_to_idx = mesh_log_compress_ids_to_indices(varr, (uint)bm->totvert);
   MESH_ITER_INDEX (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
     const uint id = bm_log_vert_id_get(log, v);
     const void *key = PTR_FROM_UINT(id);
@@ -610,36 +610,36 @@ MeshLogEntry *mesh_log_entry_add(MeshLog *log)
 {
   /* WARNING: this is now handled by the UndoSystem: BKE_UNDOSYS_TYPE_SCULPT
    * freeing here causes unnecessary complications. */
-  BMLogEntry *entry;
+  MeshLogEntry *entry;
 #if 0
   /* Delete any entries after the current one */
   entry = log->current_entry;
   if (entry) {
-    BMLogEntry *next;
+    MeshLogEntry *next;
     for (entry = entry->next; entry; entry = next) {
       next = entry->next;
-      bm_log_entry_free(entry);
-      BLI_freelinkN(&log->entries, entry);
+      mesh_log_entry_free(entry);
+      lib_freelinkb(&log->entries, entry);
     }
   }
 #endif
 
   /* Create and append the new entry */
-  entry = bm_log_entry_create();
-  BLI_addtail(&log->entries, entry);
+  entry = mesh_log_entry_create();
+  lib_addtail(&log->entries, entry);
   entry->log = log;
   log->current_entry = entry;
 
   return entry;
 }
 
-void BM_log_entry_drop(BMLogEntry *entry)
+void mesh_log_entry_drop(MeshLogEntry *entry)
 {
-  BMLog *log = entry->log;
+  MeshLog *log = entry->log;
 
   if (!log) {
     /* Unlink */
-    BLI_assert(!(entry->prev && entry->next));
+    lib_assert(!(entry->prev && entry->next));
     if (entry->prev) {
       entry->prev->next = NULL;
     }
@@ -647,8 +647,8 @@ void BM_log_entry_drop(BMLogEntry *entry)
       entry->next->prev = NULL;
     }
 
-    bm_log_entry_free(entry);
-    MEM_freeN(entry);
+    mesh_log_entry_free(entry);
+    mem_freen(entry);
     return;
   }
 
@@ -684,45 +684,45 @@ void BM_log_entry_drop(BMLogEntry *entry)
      * the entry is at the end of the undo stack, and it's being
      * deleted, those elements can never be restored. Their IDs
      * can go back into the pool. */
-    bm_log_id_ghash_release(log, entry->added_faces);
-    bm_log_id_ghash_release(log, entry->added_verts);
+    mesh_log_id_ghash_release(log, entry->added_faces);
+    mesh_log_id_ghash_release(log, entry->added_verts);
   }
   else {
-    BLI_assert_msg(0, "Cannot drop BMLogEntry from middle");
+    lib_assert_msg(0, "Cannot drop MeshLogEntry from middle");
   }
 
   if (log->current_entry == entry) {
     log->current_entry = entry->prev;
   }
 
-  bm_log_entry_free(entry);
-  BLI_freelinkN(&log->entries, entry);
+  mesh_log_entry_free(entry);
+  lib_freelinkn(&log->entries, entry);
 }
 
-void BM_log_undo(BMesh *bm, BMLog *log)
+void mesh_log_undo(Mesh *mesh, MeshLog *log)
 {
-  BMLogEntry *entry = log->current_entry;
+  MeshLogEntry *entry = log->current_entry;
 
   if (entry) {
     log->current_entry = entry->prev;
 
     /* Delete added faces and verts */
-    bm_log_faces_unmake(bm, log, entry->added_faces);
-    bm_log_verts_unmake(bm, log, entry->added_verts);
+    mesh_log_faces_unmake(mesh, log, entry->added_faces);
+    mesh_log_verts_unmake(mesh, log, entry->added_verts);
 
     /* Restore deleted verts and faces */
-    bm_log_verts_restore(bm, log, entry->deleted_verts);
-    bm_log_faces_restore(bm, log, entry->deleted_faces);
+    mesh_log_verts_restore(mesh, log, entry->deleted_verts);
+    mesh_log_faces_restore(mesh, log, entry->deleted_faces);
 
     /* Restore vertex coordinates, mask, and hflag */
-    bm_log_vert_values_swap(bm, log, entry->modified_verts);
-    bm_log_face_values_swap(log, entry->modified_faces);
+    mesh_log_vert_values_swap(mesh, log, entry->modified_verts);
+    mesh_log_face_values_swap(log, entry->modified_faces);
   }
 }
 
-void BM_log_redo(BMesh *bm, BMLog *log)
+void mesh_log_redo(Mesh *mesh, MeshLog *log)
 {
-  BMLogEntry *entry = log->current_entry;
+  MeshLogEntry *entry = log->current_entry;
 
   if (!entry) {
     /* Currently at the beginning of the undo stack, move to first entry */
@@ -741,107 +741,107 @@ void BM_log_redo(BMesh *bm, BMLog *log)
 
   if (entry) {
     /* Re-delete previously deleted faces and verts */
-    bm_log_faces_unmake(bm, log, entry->deleted_faces);
-    bm_log_verts_unmake(bm, log, entry->deleted_verts);
+    mesh_log_faces_unmake(mesh, log, entry->deleted_faces);
+    mesh_log_verts_unmake(mesh, log, entry->deleted_verts);
 
     /* Restore previously added verts and faces */
-    bm_log_verts_restore(bm, log, entry->added_verts);
-    bm_log_faces_restore(bm, log, entry->added_faces);
+    mesh_log_verts_restore(mesh, log, entry->added_verts);
+    mesh_log_faces_restore(mesh, log, entry->added_faces);
 
     /* Restore vertex coordinates, mask, and hflag */
-    bm_log_vert_values_swap(bm, log, entry->modified_verts);
-    bm_log_face_values_swap(log, entry->modified_faces);
+    mesh_log_vert_values_swap(mesh, log, entry->modified_verts);
+    mesh_log_face_values_swap(log, entry->modified_faces);
   }
 }
 
-void BM_log_vert_before_modified(BMLog *log, BMVert *v, const int cd_vert_mask_offset)
+void mesh_log_vert_before_modified(MeshLog *log, MeshVert *v, const int cd_vert_mask_offset)
 {
-  BMLogEntry *entry = log->current_entry;
-  BMLogVert *lv;
-  uint v_id = bm_log_vert_id_get(log, v);
-  void *key = POINTER_FROM_UINT(v_id);
+  MeshLogEntry *entry = log->current_entry;
+  MeshLogVert *lv;
+  uint v_id = mesh_log_vert_id_get(log, v);
+  void *key = PTR_FROM_UINT(v_id);
   void **val_p;
 
-  /* Find or create the BMLogVert entry */
-  if ((lv = BLI_ghash_lookup(entry->added_verts, key))) {
-    bm_log_vert_bmvert_copy(lv, v, cd_vert_mask_offset);
+  /* Find or create the MeshLogVert entry */
+  if ((lv = lib_ghash_lookup(entry->added_verts, key))) {
+    mesh_log_vert_meshvert_copy(lv, v, cd_vert_mask_offset);
   }
-  else if (!BLI_ghash_ensure_p(entry->modified_verts, key, &val_p)) {
-    lv = bm_log_vert_alloc(log, v, cd_vert_mask_offset);
+  else if (!lib_ghash_ensure_p(entry->modified_verts, key, &val_p)) {
+    lv = mesh_log_vert_alloc(log, v, cd_vert_mask_offset);
     *val_p = lv;
   }
 }
 
-void BM_log_vert_added(BMLog *log, BMVert *v, const int cd_vert_mask_offset)
+void mesh_log_vert_added(MeshLog *log, MeshVert *v, const int cd_vert_mask_offset)
 {
-  BMLogVert *lv;
+  MeshLogVert *lv;
   uint v_id = range_tree_uint_take_any(log->unused_ids);
-  void *key = POINTER_FROM_UINT(v_id);
+  void *key = PTR_FROM_UINT(v_id);
 
-  bm_log_vert_id_set(log, v, v_id);
-  lv = bm_log_vert_alloc(log, v, cd_vert_mask_offset);
-  BLI_ghash_insert(log->current_entry->added_verts, key, lv);
+  mesh_log_vert_id_set(log, v, v_id);
+  lv = mesh_log_vert_alloc(log, v, cd_vert_mask_offset);
+  lib_ghash_insert(log->current_entry->added_verts, key, lv);
 }
 
-void BM_log_face_modified(BMLog *log, BMFace *f)
+void mesh_log_face_modified(MeshLog *log, MeshFace *f)
 {
-  BMLogFace *lf;
-  uint f_id = bm_log_face_id_get(log, f);
-  void *key = POINTER_FROM_UINT(f_id);
+  MeshLogFace *lf;
+  uint f_id = mesh_log_face_id_get(log, f);
+  void *key = PTR_FROM_UINT(f_id);
 
-  lf = bm_log_face_alloc(log, f);
-  BLI_ghash_insert(log->current_entry->modified_faces, key, lf);
+  lf = mesh_log_face_alloc(log, f);
+  lib_ghash_insert(log->current_entry->modified_faces, key, lf);
 }
-void BM_log_vert_removed(BMLog *log, BMVert *v, const int cd_vert_mask_offset)
+void mesh_log_vert_removed(MeshLog *log, MeshVert *v, const int cd_vert_mask_offset)
 {
-  BMLogEntry *entry = log->current_entry;
-  uint v_id = bm_log_vert_id_get(log, v);
-  void *key = POINTER_FROM_UINT(v_id);
+  MeshLogEntry *entry = log->current_entry;
+  uint v_id = mesh_log_vert_id_get(log, v);
+  void *key = PTR_FROM_UINT(v_id);
 
   /* if it has a key, it shouldn't be NULL */
-  BLI_assert(!!BLI_ghash_lookup(entry->added_verts, key) ==
-             !!BLI_ghash_haskey(entry->added_verts, key));
+  lib_assert(!!lib_ghash_lookup(entry->added_verts, key) ==
+             !!lib_ghash_haskey(entry->added_verts, key));
 
-  if (BLI_ghash_remove(entry->added_verts, key, NULL, NULL)) {
+  if (lib_ghash_remove(entry->added_verts, key, NULL, NULL)) {
     range_tree_uint_release(log->unused_ids, v_id);
   }
   else {
-    BMLogVert *lv, *lv_mod;
+    MeshLogVert *lv, *lv_mod;
 
-    lv = bm_log_vert_alloc(log, v, cd_vert_mask_offset);
-    BLI_ghash_insert(entry->deleted_verts, key, lv);
+    lv = mesh_log_vert_alloc(log, v, cd_vert_mask_offset);
+    lib_ghash_insert(entry->deleted_verts, key, lv);
 
     /* If the vertex was modified before deletion, ensure that the
      * original vertex values are stored */
-    if ((lv_mod = BLI_ghash_lookup(entry->modified_verts, key))) {
+    if ((lv_mod = lib_ghash_lookup(entry->modified_verts, key))) {
       (*lv) = (*lv_mod);
-      BLI_ghash_remove(entry->modified_verts, key, NULL, NULL);
+      lib_ghash_remove(entry->modified_verts, key, NULL, NULL);
     }
   }
 }
 
-void BM_log_face_removed(BMLog *log, BMFace *f)
+void mesh_log_face_removed(MeshLog *log, MeshFace *f)
 {
-  BMLogEntry *entry = log->current_entry;
-  uint f_id = bm_log_face_id_get(log, f);
-  void *key = POINTER_FROM_UINT(f_id);
+  MeshLogEntry *entry = log->current_entry;
+  uint f_id = mesh_log_face_id_get(log, f);
+  void *key = PTR_FROM_UINT(f_id);
 
   /* if it has a key, it shouldn't be NULL */
-  BLI_assert(!!BLI_ghash_lookup(entry->added_faces, key) ==
-             !!BLI_ghash_haskey(entry->added_faces, key));
+  lib_assert(!!lib_ghash_lookup(entry->added_faces, key) ==
+             !!lib_ghash_haskey(entry->added_faces, key));
 
-  if (BLI_ghash_remove(entry->added_faces, key, NULL, NULL)) {
+  if (lib_ghash_remove(entry->added_faces, key, NULL, NULL)) {
     range_tree_uint_release(log->unused_ids, f_id);
   }
   else {
-    BMLogFace *lf;
+    MeshLogFace *lf;
 
     lf = bm_log_face_alloc(log, f);
-    BLI_ghash_insert(entry->deleted_faces, key, lf);
+    lib_ghash_insert(entry->deleted_faces, key, lf);
   }
 }
 
-void BM_log_all_added(BMesh *bm, BMLog *log)
+void mesh_log_all_added(Mesh *mesh, MeshLog *log)
 {
   const int cd_vert_mask_offset = CustomData_get_offset(&bm->vdata, CD_PAINT_MASK);
   BMIter bm_iter;
