@@ -13,47 +13,47 @@
 
 const char mesh_iter_itype_htype_map[MESH_ITYPE_MAX] = {
     '\0',
-    BM_VERT, /* BM_VERTS_OF_MESH */
-    BM_EDGE, /* BM_EDGES_OF_MESH */
-    BM_FACE, /* BM_FACES_OF_MESH */
-    BM_EDGE, /* BM_EDGES_OF_VERT */
-    BM_FACE, /* BM_FACES_OF_VERT */
-    BM_LOOP, /* BM_LOOPS_OF_VERT */
-    BM_VERT, /* BM_VERTS_OF_EDGE */
-    BM_FACE, /* BM_FACES_OF_EDGE */
-    BM_VERT, /* BM_VERTS_OF_FACE */
-    BM_EDGE, /* BM_EDGES_OF_FACE */
-    BM_LOOP, /* BM_LOOPS_OF_FACE */
-    BM_LOOP, /* BM_LOOPS_OF_LOOP */
-    BM_LOOP, /* BM_LOOPS_OF_EDGE */
+    MESH_VERT, /* BM_VERTS_OF_MESH */
+    MESH_EDGE, /* BM_EDGES_OF_MESH */
+    MESH_FACE, /* BM_FACES_OF_MESH */
+    MESH_EDGE, /* BM_EDGES_OF_VERT */
+    MESH_FACE, /* BM_FACES_OF_VERT */
+    MESH_LOOP, /* BM_LOOPS_OF_VERT */
+    MESH_VERT, /* BM_VERTS_OF_EDGE */
+    MESH_FACE, /* BM_FACES_OF_EDGE */
+    MESH_VERT, /* BM_VERTS_OF_FACE */
+    MESH_EDGE, /* BM_EDGES_OF_FACE */
+    MESH_LOOP, /* BM_LOOPS_OF_FACE */
+    MESH_LOOP, /* BM_LOOPS_OF_LOOP */
+    MESH_LOOP, /* BM_LOOPS_OF_EDGE */
 };
 
-int BM_iter_mesh_count(const char itype, BMesh *bm)
+int mesh_iter_mesh_count(const char itype, BMesh *bm)
 {
   int count;
 
   switch (itype) {
-    case BM_VERTS_OF_MESH:
-      count = bm->totvert;
+    case MESH_VERTS_OF_MESH:
+      count = m->totvert;
       break;
-    case BM_EDGES_OF_MESH:
-      count = bm->totedge;
+    case M_EDGES_OF_MESH:
+      count = m->totedge;
       break;
-    case BM_FACES_OF_MESH:
-      count = bm->totface;
+    case M_FACES_OF_MESH:
+      count = m->totface;
       break;
     default:
       count = 0;
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 
   return count;
 }
 
-void *BM_iter_at_index(BMesh *bm, const char itype, void *data, int index)
+void *mesh_iter_at_index(Mesh *m, const char itype, void *data, int index)
 {
-  BMIter iter;
+  MeshIter iter;
   void *val;
   int i;
 
@@ -62,18 +62,18 @@ void *BM_iter_at_index(BMesh *bm, const char itype, void *data, int index)
     return NULL;
   }
 
-  val = BM_iter_new(&iter, bm, itype, data);
+  val = mesh_iter_new(&iter, mesh, itype, data);
 
   i = 0;
   while (i < index) {
-    val = BM_iter_step(&iter);
+    val = mesh_iter_step(&iter);
     i++;
   }
 
   return val;
 }
 
-int BM_iter_as_array(BMesh *bm, const char itype, void *data, void **array, const int len)
+int mesh_iter_as_array(Mesh *mesh, const char itype, void *data, void **array, const int len)
 {
   int i = 0;
 
@@ -579,18 +579,16 @@ void *bmiter__vert_of_edge_step(struct BMIter__vert_of_edge *iter)
   }
 }
 
-/*
- * VERT OF FACE CALLBACKS
- */
+/** VERT OF FACE CALLBACKS */
 
-void bmiter__vert_of_face_begin(struct BMIter__vert_of_face *iter)
+void meshiter__vert_of_face_begin(struct MeshIter__vert_of_face *iter)
 {
-  iter->l_first = iter->l_next = BM_FACE_FIRST_LOOP(iter->pdata);
+  iter->l_first = iter->l_next = MESH_FACE_FIRST_LOOP(iter->pdata);
 }
 
-void *bmiter__vert_of_face_step(struct BMIter__vert_of_face *iter)
+void *meshiter__vert_of_face_step(struct MeshIter__vert_of_face *iter)
 {
-  BMLoop *l_curr = iter->l_next;
+  MeshLoop *l_curr = iter->l_next;
 
   if (iter->l_next) {
     iter->l_next = iter->l_next->next;
@@ -602,18 +600,16 @@ void *bmiter__vert_of_face_step(struct BMIter__vert_of_face *iter)
   return l_curr ? l_curr->v : NULL;
 }
 
-/*
- * EDGE OF FACE CALLBACKS
- */
+/** EDGE OF FACE CALLBACKS */
 
-void bmiter__edge_of_face_begin(struct BMIter__edge_of_face *iter)
+void meshiter__edge_of_face_begin(struct MeshIter__edge_of_face *iter)
 {
-  iter->l_first = iter->l_next = BM_FACE_FIRST_LOOP(iter->pdata);
+  iter->l_first = iter->l_next = MESH_FACE_FIRST_LOOP(iter->pdata);
 }
 
-void *bmiter__edge_of_face_step(struct BMIter__edge_of_face *iter)
+void *meshiter__edge_of_face_step(struct MeshIter__edge_of_face *iter)
 {
-  BMLoop *l_curr = iter->l_next;
+  MeshLoop *l_curr = iter->l_next;
 
   if (iter->l_next) {
     iter->l_next = iter->l_next->next;
@@ -625,18 +621,16 @@ void *bmiter__edge_of_face_step(struct BMIter__edge_of_face *iter)
   return l_curr ? l_curr->e : NULL;
 }
 
-/*
- * LOOP OF FACE CALLBACKS
- */
+/** LOOP OF FACE CALLBACKS **/
 
-void bmiter__loop_of_face_begin(struct BMIter__loop_of_face *iter)
+void meshiter__loop_of_face_begin(struct BMIter__loop_of_face *iter)
 {
   iter->l_first = iter->l_next = BM_FACE_FIRST_LOOP(iter->pdata);
 }
 
-void *bmiter__loop_of_face_step(struct BMIter__loop_of_face *iter)
+void *meshiter__loop_of_face_step(struct BMIter__loop_of_face *iter)
 {
-  BMLoop *l_curr = iter->l_next;
+  MeshLoop *l_curr = iter->l_next;
 
   if (iter->l_next) {
     iter->l_next = iter->l_next->next;
