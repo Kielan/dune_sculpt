@@ -970,7 +970,7 @@ void mesh_elem_float_data_set(CustomData *cd, void *element, int type, const flo
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Loop interpolation functions: BM_vert_loop_groups_data_layer_***
+/* Loop interpolation functions: mesh_vert_loop_groups_data_layer_***
  *
  * Handling loop custom-data such as UV's, while keeping contiguous fans is rather tedious.
  * Especially when a verts loops can have multiple CustomData layers,
@@ -1058,19 +1058,19 @@ static void mesh_loop_walk_data(struct LoopWalkCtx *lwc, MeshLoop *l_walk)
       if (l_other->v != l_walk->v) {
         l_other = l_other->next;
       }
-      BLI_assert(l_other->v == l_walk->v);
-      if (BM_elem_flag_test(l_other, BM_ELEM_INTERNAL_TAG)) {
+      lib_assert(l_other->v == l_walk->v);
+      if (mesh_elem_flag_test(l_other, MESH_ELEM_INTERNAL_TAG)) {
         if (CustomData_data_equals(
-                lwc->type, lwc->data_ref, BM_ELEM_CD_GET_VOID_P(l_other, lwc->cd_layer_offset))) {
-          bm_loop_walk_data(lwc, l_other);
+                lwc->type, lwc->data_ref, MESH_ELEM_CD_GET_VOID_P(l_other, lwc->cd_layer_offset))) {
+          mesh_loop_walk_data(lwc, l_other);
         }
       }
     }
   }
 }
 
-LinkNode *BM_vert_loop_groups_data_layer_create(
-    BMesh *bm, BMVert *v, const int layer_n, const float *loop_weights, MemArena *arena)
+LinkNode *mesh_vert_loop_groups_data_layer_create(
+    Mesh *mesh, MeshVert *v, const int layer_n, const float *loop_weights, MemArena *arena)
 {
   struct LoopWalkCtx lwc;
   LinkNode *groups = NULL;
@@ -1078,7 +1078,7 @@ LinkNode *BM_vert_loop_groups_data_layer_create(
   BMIter liter;
   int loop_num;
 
-  lwc.type = bm->ldata.layers[layer_n].type;
+  lwc.type = mesh->ldata.layers[layer_n].type;
   lwc.cd_layer_offset = bm->ldata.layers[layer_n].offset;
   lwc.loop_weights = loop_weights;
   lwc.arena = arena;
