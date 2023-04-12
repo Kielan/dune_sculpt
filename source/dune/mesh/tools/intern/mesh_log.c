@@ -139,7 +139,7 @@ static uint mesh_log_face_id_get(MeshLog *log, MeshFace *f)
 }
 
 /* Set the face's unique id in the log */
-static void bm_log_face_id_set(MeshLog *log, BMFace *f, uint id)
+static void mesh_log_face_id_set(MeshLog *log, BMFace *f, uint id)
 {
   void *fid = PTR_FROM_UINT(id);
 
@@ -239,7 +239,7 @@ static void mesh_log_verts_unmake(Mesh *mesh, MeshLog *log, GHash *verts)
   }
 }
 
-static void mesh_log_faces_unmake(BMesh *bm, BMLog *log, GHash *faces)
+static void mesh_log_faces_unmake(Mesh *mesh, MeshLog *log, GHash *faces)
 {
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, faces) {
@@ -453,11 +453,11 @@ MeshLog *mesh_log_create(Mesh *mesh)
   const uint reserve_num = (uint)(mesh->totvert + mesh->totface);
 
   log->unused_ids = range_tree_uint_alloc(0, (uint)-1);
-  log->id_to_elem = BLI_ghash_new_ex(logkey_hash, logkey_cmp, __func__, reserve_num);
-  log->elem_to_id = BLI_ghash_ptr_new_ex(__func__, reserve_num);
+  log->id_to_elem = lib_ghash_new_ex(logkey_hash, logkey_cmp, __func__, reserve_num);
+  log->elem_to_id = lib_ghash_ptr_new_ex(__func__, reserve_num);
 
   /* Assign IDs to all existing vertices and faces */
-  bm_log_assign_ids(bm, log);
+  mesh_log_assign_ids(mesh, log);
 
   return log;
 }
