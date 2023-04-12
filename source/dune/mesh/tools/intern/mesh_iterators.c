@@ -1,20 +1,17 @@
-/** \file
- * \ingroup bmesh
- *
- * Functions to abstract looping over bmesh data structures.
- *
- * See: bmesh_iterators_inlin.c too, some functions are here for speed reasons.
+/**
+ * Functions to abstract looping over mesh data structures.
+ * See:mesh_iters_inlin.c too, some functions are here for speed reasons.
  */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_utildefines.h"
+#include "lib_bitmap.h"
+#include "lib_utildefines.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
-const char bm_iter_itype_htype_map[BM_ITYPE_MAX] = {
+const char mesh_iter_itype_htype_map[MESH_ITYPE_MAX] = {
     '\0',
     BM_VERT, /* BM_VERTS_OF_MESH */
     BM_EDGE, /* BM_EDGES_OF_MESH */
