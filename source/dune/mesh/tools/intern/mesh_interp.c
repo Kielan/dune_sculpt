@@ -7,21 +7,21 @@
 #include "lib_alloca.h"
 #include "lib_linklist.h"
 #include "lib_math.h"
-#include "BLI_memarena.h"
-#include "BLI_task.h"
+#include "lib_memarena.h"
+#include "lib_task.h"
 
-#include "BKE_customdata.h"
-#include "BKE_multires.h"
+#include "dune_customdata.h"
+#include "dune_multires.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
 /* edge and vertex share, currently there's no need to have different logic */
-static void bm_data_interp_from_elem(CustomData *data_layer,
-                                     const BMElem *ele_src_1,
-                                     const BMElem *ele_src_2,
-                                     BMElem *ele_dst,
-                                     const float fac)
+static void mesh_data_interp_from_elem(CustomData *data_layer,
+                                       const MeshElem *ele_src_1,
+                                       const MeshElem *ele_src_2,
+                                       MeshElem *ele_dst,
+                                       const float fac)
 {
   if (ele_src_1->head.data && ele_src_2->head.data) {
     /* first see if we can avoid interpolation */
@@ -30,8 +30,8 @@ static void bm_data_interp_from_elem(CustomData *data_layer,
         /* do nothing */
       }
       else {
-        CustomData_bmesh_free_block_data(data_layer, ele_dst->head.data);
-        CustomData_bmesh_copy_data(
+        CustomData_mesh_free_block_data(data_layer, ele_dst->head.data);
+        CustomData_mesh_copy_data(
             data_layer, data_layer, ele_src_1->head.data, &ele_dst->head.data);
       }
     }
@@ -40,8 +40,8 @@ static void bm_data_interp_from_elem(CustomData *data_layer,
         /* do nothing */
       }
       else {
-        CustomData_bmesh_free_block_data(data_layer, ele_dst->head.data);
-        CustomData_bmesh_copy_data(
+        CustomData_mesh_free_block_data(data_layer, ele_dst->head.data);
+        CustomData_mesh_copy_data(
             data_layer, data_layer, ele_src_2->head.data, &ele_dst->head.data);
       }
     }
@@ -53,46 +53,46 @@ static void bm_data_interp_from_elem(CustomData *data_layer,
       src[1] = ele_src_2->head.data;
       w[0] = 1.0f - fac;
       w[1] = fac;
-      CustomData_bmesh_interp(data_layer, src, w, NULL, 2, ele_dst->head.data);
+      CustomData_mesh_interp(data_layer, src, w, NULL, 2, ele_dst->head.data);
     }
   }
 }
 
-void BM_data_interp_from_verts(
-    BMesh *bm, const BMVert *v_src_1, const BMVert *v_src_2, BMVert *v_dst, const float fac)
+void mesh_data_interp_from_verts(
+    Mesh *mesh, const MeshVert *v_src_1, const MeehVert *v_src_2, MeehVert *v_dst, const float fac)
 {
-  bm_data_interp_from_elem(
-      &bm->vdata, (const BMElem *)v_src_1, (const BMElem *)v_src_2, (BMElem *)v_dst, fac);
+  mesh_data_interp_from_elem(
+      &mesh->vdata, (const MeshElem *)v_src_1, (const MeshElem *)v_src_2, (MeshElem *)v_dst, fac);
 }
 
-void BM_data_interp_from_edges(
-    BMesh *bm, const BMEdge *e_src_1, const BMEdge *e_src_2, BMEdge *e_dst, const float fac)
+void MESH_data_interp_from_edges(
+    Mesh *mesh, const MeshEdge *e_src_1, const MeshEdge *e_src_2, MeehEdge *e_dst, const float fac)
 {
-  bm_data_interp_from_elem(
-      &bm->edata, (const BMElem *)e_src_1, (const BMElem *)e_src_2, (BMElem *)e_dst, fac);
+  meshh_data_interp_from_elem(
+      &mesh->edata, (const MeshElem *)e_src_1, (const MeshElem *)e_src_2, (MeshElem *)e_dst, fac);
 }
 
 /**
- * \brief Data Vert Average
+ * Data Vert Average
  *
  * Sets all the customdata (e.g. vert, loop) associated with a vert
  * to the average of the face regions surrounding it.
  */
-static void UNUSED_FUNCTION(BM_Data_Vert_Average)(BMesh *UNUSED(bm), BMFace *UNUSED(f))
+static void UNUSED_FUNCTION(MESH_Data_Vert_Average)(Mesh *UNUSED(mesh), MeshFace *UNUSED(f))
 {
-  // BMIter iter;
+  // MeshIter iter;
 }
 
-void BM_data_interp_face_vert_edge(BMesh *bm,
-                                   const BMVert *v_src_1,
-                                   const BMVert *UNUSED(v_src_2),
-                                   BMVert *v,
-                                   BMEdge *e,
-                                   const float fac)
+void mesh_data_interp_face_vert_edge(Mesh *mesh,
+                                     const MeshVert *v_src_1,
+                                     const MeshVert *UNUSED(v_src_2),
+                                     MeshVert *v,
+                                     MeshEdge *e,
+                                     const float fac)
 {
   float w[2];
-  BMLoop *l_v1 = NULL, *l_v = NULL, *l_v2 = NULL;
-  BMLoop *l_iter = NULL;
+  MeshLoop *l_v1 = NULL, *l_v = NULL, *l_v2 = NULL;
+  MeshLoop *l_iter = NULL;
 
   if (!e->l) {
     return;
@@ -122,44 +122,44 @@ void BM_data_interp_face_vert_edge(BMesh *bm,
     src[0] = l_v1->head.data;
     src[1] = l_v2->head.data;
 
-    CustomData_bmesh_interp(&bm->ldata, src, w, NULL, 2, l_v->head.data);
+    CustomData_bmesh_interp(&mesh->ldata, src, w, NULL, 2, l_v->head.data);
   } while ((l_iter = l_iter->radial_next) != e->l);
 }
 
-void BM_face_interp_from_face_ex(BMesh *bm,
-                                 BMFace *f_dst,
-                                 const BMFace *f_src,
-                                 const bool do_vertex,
-                                 const void **blocks_l,
-                                 const void **blocks_v,
-                                 float (*cos_2d)[2],
-                                 float axis_mat[3][3])
+void mesh_face_interp_from_face_ex(Mesh *mesh,
+                                   MeshFace *f_dst,
+                                   const MeshFace *f_src,
+                                   const bool do_vertex,
+                                   const void **blocks_l,
+                                   const void **blocks_v,
+                                   float (*cos_2d)[2],
+                                   float axis_mat[3][3])
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  float *w = BLI_array_alloca(w, f_src->len);
+  float *w = lib_array_alloca(w, f_src->len);
   float co[2];
   int i;
 
   if (f_src != f_dst) {
-    BM_elem_attrs_copy(bm, bm, f_src, f_dst);
+    mesh_elem_attrs_copy(mesh, mesh, f_src, f_dst);
   }
 
   /* interpolate */
   i = 0;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_dst);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_dst);
   do {
     mul_v2_m3v3(co, axis_mat, l_iter->v->co);
     interp_weights_poly_v2(w, cos_2d, f_src->len, co);
-    CustomData_bmesh_interp(&bm->ldata, blocks_l, w, NULL, f_src->len, l_iter->head.data);
+    CustomData_bmesh_interp(&mesh->ldata, blocks_l, w, NULL, f_src->len, l_iter->head.data);
     if (do_vertex) {
-      CustomData_bmesh_interp(&bm->vdata, blocks_v, w, NULL, f_src->len, l_iter->v->head.data);
+      CustomData_mesh_interp(&mesh->vdata, blocks_v, w, NULL, f_src->len, l_iter->v->head.data);
     }
   } while ((void)i++, (l_iter = l_iter->next) != l_first);
 }
 
-void BM_face_interp_from_face(BMesh *bm, BMFace *f_dst, const BMFace *f_src, const bool do_vertex)
+void mesh_face_interp_from_face(Mesh *mesh, MeshFace *f_dst, const MeshFace *f_src, const bool do_vertex)
 {
   BMLoop *l_iter;
   BMLoop *l_first;
