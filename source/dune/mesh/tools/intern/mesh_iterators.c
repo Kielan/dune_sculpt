@@ -119,7 +119,7 @@ int mesh_iter_as_array(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
   return i;
 }
 
-void *mesh_iter_as_arrayN(BMesh *bm,
+void *mesh_iter_as_arrayN(Mesh *mesh,
                         const char itype,
                         void *data,
                         int *r_len,
@@ -131,24 +131,24 @@ void *mesh_iter_as_arrayN(BMesh *bm,
 
   BLI_assert(stack_array_size == 0 || (stack_array_size && stack_array));
 
-  /* We can't rely on #BMIter.count being set. */
+  /* We can't rely on MeshIter.count being set. */
   switch (itype) {
     case BM_VERTS_OF_MESH:
-      iter.count = bm->totvert;
+      iter.count = mesh->totvert;
       break;
     case BM_EDGES_OF_MESH:
-      iter.count = bm->totedge;
+      iter.count = mesh->totedge;
       break;
     case BM_FACES_OF_MESH:
-      iter.count = bm->totface;
+      iter.count = mesh->totface;
       break;
     default:
       break;
   }
 
   if (BM_iter_init(&iter, bm, itype, data) && iter.count > 0) {
-    BMElem *ele;
-    BMElem **array = iter.count > stack_array_size ?
+    MeshElem *ele;
+    MeshElem **array = iter.count > stack_array_size ?
                          MEM_mallocN(sizeof(ele) * iter.count, __func__) :
                          stack_array;
     int i = 0;
