@@ -202,31 +202,31 @@ void *mesh_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
   return NULL;
 }
 
-int BM_iter_mesh_bitmap_from_filter(const char itype,
-                                    BMesh *bm,
-                                    BLI_bitmap *bitmap,
-                                    bool (*test_fn)(BMElem *, void *user_data),
-                                    void *user_data)
+int mesh_iter_bitmap_from_filter(const char itype,
+                                 Mesh *mesh,
+                                 lib_bitmap *bitmap,
+                                 bool (*test_fn)(MeshElem *, void *user_data),
+                                 void *user_data)
 {
-  BMIter iter;
-  BMElem *ele;
+  MeshIter iter;
+  MeshElem *ele;
   int i;
   int bitmap_enabled = 0;
 
-  BM_ITER_MESH_INDEX (ele, &iter, bm, itype, i) {
+  MESH_ITER_MESH_INDEX (ele, &iter, bm, itype, i) {
     if (test_fn(ele, user_data)) {
-      BLI_BITMAP_ENABLE(bitmap, i);
+      LIB_BITMAP_ENABLE(bitmap, i);
       bitmap_enabled++;
     }
     else {
-      BLI_BITMAP_DISABLE(bitmap, i);
+      LIB_BITMAP_DISABLE(bitmap, i);
     }
   }
 
   return bitmap_enabled;
 }
 
-int BM_iter_mesh_bitmap_from_filter_tessface(BMesh *bm,
+int mesh_iter_bitmap_from_filter_tessface(BMesh *bm,
                                              BLI_bitmap *bitmap,
                                              bool (*test_fn)(BMFace *, void *user_data),
                                              void *user_data)
