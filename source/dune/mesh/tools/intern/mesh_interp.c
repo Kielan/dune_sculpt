@@ -364,10 +364,10 @@ static float mesh_loop_flip_equotion(float mat[2][2],
 }
 
 static void mesh_loop_flip_disp(const float source_axis_x[3],
-                              const float source_axis_y[3],
-                              const float target_axis_x[3],
-                              const float target_axis_y[3],
-                              float disp[3])
+                                const float source_axis_y[3],
+                                const float target_axis_x[3],
+                                const float target_axis_y[3],
+                                float disp[3])
 {
   float vx[3], vy[3], coord[3];
   float n[3], vec[3];
@@ -944,24 +944,24 @@ void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int
 
     MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
       MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
-        void *ptr = CustomData_bmesh_get_n(data, l->head.data, type, src_n);
-        CustomData_bmesh_set_n(data, l->head.data, type, dst_n, ptr);
+        void *ptr = CustomData_mesh_get_n(data, l->head.data, type, src_n);
+        CustomData_mesh_set_n(data, l->head.data, type, dst_n, ptr);
       }
     }
   }
   else {
     /* should never reach this! */
-    BLI_assert(0);
+    lib_assert(0);
   }
 }
 
-float BM_elem_float_data_get(CustomData *cd, void *element, int type)
+float mesh_elem_float_data_get(CustomData *cd, void *element, int type)
 {
   const float *f = CustomData_bmesh_get(cd, ((BMHeader *)element)->data, type);
   return f ? *f : 0.0f;
 }
 
-void BM_elem_float_data_set(CustomData *cd, void *element, int type, const float val)
+void mesh_elem_float_data_set(CustomData *cd, void *element, int type, const float val)
 {
   float *f = CustomData_bmesh_get(cd, ((BMHeader *)element)->data, type);
   if (f) {
@@ -983,10 +983,10 @@ void BM_elem_float_data_set(CustomData *cd, void *element, int type, const float
  * While these functions don't explicitly handle multiple layers at once,
  * the caller can simply store its own list.
  *
- * \note Currently they are averaged back together (weighted by loop angle)
+ * note Currently they are averaged back together (weighted by loop angle)
  * but we could copy add other methods to re-combine CustomData-Loop-Fans.
  *
- * \{ */
+  */
 
 struct LoopWalkCtx {
   /* same for all groups */
@@ -1023,11 +1023,11 @@ struct LoopGroupCD {
   int data_len;
 };
 
-static void bm_loop_walk_add(struct LoopWalkCtx *lwc, BMLoop *l)
+static void mesh_loop_walk_add(struct LoopWalkCtx *lwc, BMLoop *l)
 {
-  const int i = BM_elem_index_get(l);
+  const int i = mesh_elem_index_get(l);
   const float w = lwc->loop_weights[i];
-  BM_elem_flag_disable(l, BM_ELEM_INTERNAL_TAG);
+  mesh_elem_flag_disable(l, MESH_ELEM_INTERNAL_TAG);
   lwc->data_array[lwc->data_len] = BM_ELEM_CD_GET_VOID_P(l, lwc->cd_layer_offset);
   lwc->data_index_array[lwc->data_len] = i;
   lwc->weight_array[lwc->data_len] = w;
@@ -1039,21 +1039,21 @@ static void bm_loop_walk_add(struct LoopWalkCtx *lwc, BMLoop *l)
 /**
  * called recursively, keep stack-usage minimal.
  *
- * \note called for fan matching so we're pretty much safe not to break the stack
+ * note called for fan matching so we're pretty much safe not to break the stack
  */
-static void bm_loop_walk_data(struct LoopWalkCtx *lwc, BMLoop *l_walk)
+static void mesh_loop_walk_data(struct LoopWalkCtx *lwc, MeshLoop *l_walk)
 {
   int i;
 
-  BLI_assert(CustomData_data_equals(
-      lwc->type, lwc->data_ref, BM_ELEM_CD_GET_VOID_P(l_walk, lwc->cd_layer_offset)));
-  BLI_assert(BM_elem_flag_test(l_walk, BM_ELEM_INTERNAL_TAG));
+  lib_assert(CustomData_data_equals(
+      lwc->type, lwc->data_ref, MESH_ELEM_CD_GET_VOID_P(l_walk, lwc->cd_layer_offset)));
+  lib_assert(mesh_elem_flag_test(l_walk, MESH_ELEM_INTERNAL_TAG));
 
-  bm_loop_walk_add(lwc, l_walk);
+  mesh_loop_walk_add(lwc, l_walk);
 
   /* recurse around this loop-fan (in both directions) */
   for (i = 0; i < 2; i++) {
-    BMLoop *l_other = ((i == 0) ? l_walk : l_walk->prev)->radial_next;
+    MeshLoop *l_other = ((i == 0) ? l_walk : l_walk->prev)->radial_next;
     if (l_other->radial_next != l_other) {
       if (l_other->v != l_walk->v) {
         l_other = l_other->next;
