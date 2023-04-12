@@ -871,7 +871,7 @@ void mesh_data_layer_free(Mesh *mesh, CustomData *data, int type)
   bool has_layer;
 
   olddata = *data;
-  olddata.layers = (olddata.layers) ? MEM_dupallocN(olddata.layers) : NULL;
+  olddata.layers = (olddata.layers) ? mem_dupallocn(olddata.layers) : NULL;
 
   /* the pool is now owned by olddata and must not be shared */
   data->pool = NULL;
@@ -909,14 +909,14 @@ void mesh_data_layer_free_n(Mesh *mesh, CustomData *data, int type, int n)
   }
 }
 
-void BM_data_layer_copy(BMesh *bm, CustomData *data, int type, int src_n, int dst_n)
+void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int dst_n)
 {
-  BMIter iter;
+  MeshIter iter;
 
-  if (&bm->vdata == data) {
-    BMVert *eve;
+  if (&mesh->vdata == data) {
+    MeshVert *eve;
 
-    BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+    MESH_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
       void *ptr = CustomData_bmesh_get_n(data, eve->head.data, type, src_n);
       CustomData_bmesh_set_n(data, eve->head.data, type, dst_n, ptr);
     }
