@@ -46,69 +46,67 @@ typedef enum MeshIterType {
 #define MESH_ITYPE_MAX 14
 
 /* the iterator htype for each iterator */
-extern const char mesh_iter_itype_htype_map[BM_ITYPE_MAX];
+extern const char mesh_iter_itype_htype_map[MESH_ITYPE_MAX];
 
 /* -------------------------------------------------------------------- */
 /** Defines for passing to mesh_iter_new.
  *
- * "OF" can be substituted for "around" so #BM_VERTS_OF_FACE means "vertices* around a face."
+ * "OF" can be substituted for "around" so MESH_VERTS_OF_FACE means "vertices* around a face."
  **/
 
-#define MESH_ITER_MESH(ele, iter, bm, itype) \
-  for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, bm, itype, NULL); ele; \
-       MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_step(iter))
+#define MESH_ITER_MESH(ele, iter, mesh, itype) \
+  for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL); ele; \
+       MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter))
 
-#define BM_ITER_MESH_INDEX(ele, iter, bm, itype, indexvar) \
-  for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, bm, itype, NULL), indexvar = 0; ele; \
-       BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_step(iter), (indexvar)++)
+#define MESH_ITER_MESH_INDEX(ele, iter, mesh, itype, indexvar) \
+  for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL), indexvar = 0; ele; \
+       MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter), (indexvar)++)
 
-/* a version of BM_ITER_MESH which keeps the next item in storage
+/* a version of MESH_ITER which keeps the next item in storage
  * so we can delete the current item, see bug T36923. */
 #ifdef DEBUG
-#  define BM_ITER_MESH_MUTABLE(ele, ele_next, iter, bm, itype) \
-    for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, bm, itype, NULL); \
-         ele ? ((void)((iter)->count = BM_iter_mesh_count(itype, bm)), \
-                (void)(BM_CHECK_TYPE_ELEM_ASSIGN(ele_next) = BM_iter_step(iter)), \
+#  define MESH_ITER_MUTABLE(ele, ele_next, iter, bm, itype) \
+    for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL); \
+         ele ? ((void)((iter)->count = mesh_iter_mesh_count(itype, mesh)), \
+                (void)(MESH_CHECK_TYPE_ELEM_ASSIGN(ele_next) = mesh_iter_step(iter)), \
                 1) : \
                0; \
-         BM_CHECK_TYPE_ELEM_ASSIGN(ele) = ele_next)
+         MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = ele_next)
 #else
-#  define BM_ITER_MESH_MUTABLE(ele, ele_next, iter, bm, itype) \
-    for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, bm, itype, NULL); \
-         ele ? ((BM_CHECK_TYPE_ELEM_ASSIGN(ele_next) = BM_iter_step(iter)), 1) : 0; \
+#  define MESH_ITER_MUTABLE(ele, ele_next, iter, mesh, itype) \
+    for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL); \
+         ele ? ((MESH_CHECK_TYPE_ELEM_ASSIGN(ele_next) = mesh_iter_step(iter)), 1) : 0; \
          ele = ele_next)
 #endif
 
-#define BM_ITER_ELEM(ele, iter, data, itype) \
-  for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, NULL, itype, data); ele; \
-       BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_step(iter))
+#define MESH_ITER_ELEM(ele, iter, data, itype) \
+  for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, NULL, itype, data); ele; \
+       MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter))
 
-#define BM_ITER_ELEM_INDEX(ele, iter, data, itype, indexvar) \
-  for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, NULL, itype, data), indexvar = 0; ele; \
-       BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_step(iter), (indexvar)++)
-
-/** \} */
+#define MESH SH_ITER_ELEM_INDEX(ele, iter, data, itype, indexvar) \
+  for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, NULL, itype, data), indexvar = 0; ele; \
+       MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter), (indexvar)++)
 
 /* iterator type structs */
-struct BMIter__elem_of_mesh {
-  BLI_mempool_iter pooliter;
+struct MeshIter__elem_of_mesh {
+  lib_mempool_iter pooliter;
 };
-struct BMIter__edge_of_vert {
-  BMVert *vdata;
-  BMEdge *e_first, *e_next;
+struct MeshIter__edge_of_vert {
+  MeshVert *vdata;
+  MeshEdge *e_first, *e_next;
 };
-struct BMIter__face_of_vert {
-  BMVert *vdata;
-  BMLoop *l_first, *l_next;
-  BMEdge *e_first, *e_next;
+struct MeshIter__face_of_vert {
+  MeshVert *vdata;
+  MeshLoop *l_first, *l_next;
+  MeshEdge *e_first, *e_next;
 };
-struct BMIter__loop_of_vert {
-  BMVert *vdata;
-  BMLoop *l_first, *l_next;
-  BMEdge *e_first, *e_next;
+struct MeshIter__loop_of_vert {
+  MVert *vdata;
+  MLoop *l_first, *l_next;
+  MEdge *e_first, *e_next;
 };
-struct BMIter__loop_of_edge {
-  BMEdge *edata;
+struct MIter__loop_of_edge {
+  MEdge *edata;
   BMLoop *l_first, *l_next;
 };
 struct BMIter__loop_of_loop {
