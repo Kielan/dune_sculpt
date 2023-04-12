@@ -281,35 +281,35 @@ static void mesh_log_verts_restore(Mesh *mesh, MeshLog *log, GHash *verts)
   }
 }
 
-static void mesh_log_faces_restore(BMesh *bm, BMLog *log, GHash *faces)
+static void mesh_log_faces_restore(Mesh *mesh, MeshLog *log, GHash *faces)
 {
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, faces) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    BMLogFace *lf = BLI_ghashIterator_getValue(&gh_iter);
-    BMVert *v[3] = {
-        bm_log_vert_from_id(log, lf->v_ids[0]),
-        bm_log_vert_from_id(log, lf->v_ids[1]),
-        bm_log_vert_from_id(log, lf->v_ids[2]),
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    MeshLogFace *lf = lib_ghashIterator_getValue(&gh_iter);
+    MeshVert *v[3] = {
+        mesh_log_vert_from_id(log, lf->v_ids[0]),
+        mesh_log_vert_from_id(log, lf->v_ids[1]),
+        mesh_log_vert_from_id(log, lf->v_ids[2]),
     };
-    BMFace *f;
+    MeshFace *f;
 
-    f = BM_face_create_verts(bm, v, 3, NULL, BM_CREATE_NOP, true);
+    f = mesh_face_create_verts(mesh, v, 3, NULL, MESH_CREATE_NOP, true);
     f->head.hflag = lf->hflag;
-    bm_log_face_id_set(log, f, POINTER_AS_UINT(key));
+    mesh_log_face_id_set(log, f, PTR_AS_UINT(key));
   }
 }
 
-static void bm_log_vert_values_swap(BMesh *bm, BMLog *log, GHash *verts)
+static void mesh_log_vert_values_swap(Mesh *mesh, MeshLog *log, GHash *verts)
 {
-  const int cd_vert_mask_offset = CustomData_get_offset(&bm->vdata, CD_PAINT_MASK);
+  const int cd_vert_mask_offset = CustomData_get_offset(&mesh->vdata, CD_PAINT_MASK);
 
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, verts) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    BMLogVert *lv = BLI_ghashIterator_getValue(&gh_iter);
-    uint id = POINTER_AS_UINT(key);
-    BMVert *v = bm_log_vert_from_id(log, id);
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    MeshLogVert *lv = lib_ghashIterator_getValue(&gh_iter);
+    uint id = PTR_AS_UINT(key);
+    MeshVert *v = mesh_log_vert_from_id(log, id);
     float mask;
 
     swap_v3_v3(v->co, lv->co);
@@ -321,13 +321,13 @@ static void bm_log_vert_values_swap(BMesh *bm, BMLog *log, GHash *verts)
   }
 }
 
-static void bm_log_face_values_swap(BMLog *log, GHash *faces)
+static void mesh_log_face_values_swap(MeshLog *log, GHash *faces)
 {
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, faces) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    BMLogFace *lf = BLI_ghashIterator_getValue(&gh_iter);
-    uint id = POINTER_AS_UINT(key);
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    MeshLogFace *lf = lib_ghashIterator_getValue(&gh_iter);
+    uint id = PTR_AS_UINT(key);
     BMFace *f = bm_log_face_from_id(log, id);
 
     SWAP(char, f->head.hflag, lf->hflag);
