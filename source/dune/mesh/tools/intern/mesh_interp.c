@@ -551,7 +551,7 @@ void mesh_face_interp_multires_ex(Mesh *mesh,
 
 void mesh_face_interp_multires(Mesh *mesh, MeshFace *f_dst, const MeshFace *f_src)
 {
-  const int cd_loop_mdisp_offset = CustomData_get_offset(&bm->ldata, CD_MDISPS);
+  const int cd_loop_mdisp_offset = CustomData_get_offset(&mesh->ldata, CD_MDISPS);
 
   if (cd_loop_mdisp_offset != -1) {
     float f_dst_center[3];
@@ -762,11 +762,11 @@ static void update_data_blocks(Mesh *mesh, CustomData *olddata, CustomData *data
   void *block;
 
   if (data == &mesh->vdata) {
-    BMVert *eve;
+    MeshVert *eve;
 
-    CustomData_bmesh_init_pool(data, bm->totvert, BM_VERT);
+    CustomData_mesh_init_pool(data, mesh->totvert, MESH_VERT);
 
-    BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+    MESH_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH) {
       block = NULL;
       CustomData_bmesh_set_default(data, &block);
       CustomData_bmesh_copy_data(olddata, data, eve->head.data, &block);
@@ -774,62 +774,62 @@ static void update_data_blocks(Mesh *mesh, CustomData *olddata, CustomData *data
       eve->head.data = block;
     }
   }
-  else if (data == &bm->edata) {
-    BMEdge *eed;
+  else if (data == &mesh->edata) {
+    MeshEdge *eed;
 
-    CustomData_bmesh_init_pool(data, bm->totedge, BM_EDGE);
+    CustomData_mesh_init_pool(data, mesh->totedge, MESH_EDGE);
 
-    BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
+    MESH_ITER (eed, &iter, mesh, MESH_EDGES_OF_MESH) {
       block = NULL;
-      CustomData_bmesh_set_default(data, &block);
-      CustomData_bmesh_copy_data(olddata, data, eed->head.data, &block);
-      CustomData_bmesh_free_block(olddata, &eed->head.data);
+      CustomData_mesh_set_default(data, &block);
+      CustomData_mesh_copy_data(olddata, data, eed->head.data, &block);
+      CustomData_mesh_free_block(olddata, &eed->head.data);
       eed->head.data = block;
     }
   }
-  else if (data == &bm->ldata) {
-    BMIter liter;
-    BMFace *efa;
-    BMLoop *l;
+  else if (data == &mesh->ldata) {
+    MeshIter liter;
+    MeshFace *efa;
+    MeshLoop *l;
 
-    CustomData_bmesh_init_pool(data, bm->totloop, BM_LOOP);
-    BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
-      BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
+    CustomData_mesh_init_pool(data, mesh->totloop, MESH_LOOP);
+    MESH_ITER (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
         block = NULL;
-        CustomData_bmesh_set_default(data, &block);
-        CustomData_bmesh_copy_data(olddata, data, l->head.data, &block);
-        CustomData_bmesh_free_block(olddata, &l->head.data);
+        CustomData_mesh_set_default(data, &block);
+        CustomData_mesh_copy_data(olddata, data, l->head.data, &block);
+        CustomData_mesh_free_block(olddata, &l->head.data);
         l->head.data = block;
       }
     }
   }
-  else if (data == &bm->pdata) {
-    BMFace *efa;
+  else if (data == &mesh->pdata) {
+    MeshFace *efa;
 
-    CustomData_bmesh_init_pool(data, bm->totface, BM_FACE);
+    CustomData_mesh_init_pool(data, mesh->totface, MESH_FACE);
 
-    BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
+    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
       block = NULL;
-      CustomData_bmesh_set_default(data, &block);
-      CustomData_bmesh_copy_data(olddata, data, efa->head.data, &block);
-      CustomData_bmesh_free_block(olddata, &efa->head.data);
+      CustomData_mesh_set_default(data, &block);
+      CustomData_mesh_copy_data(olddata, data, efa->head.data, &block);
+      CustomData_mesh_free_block(olddata, &efa->head.data);
       efa->head.data = block;
     }
   }
   else {
     /* should never reach this! */
-    BLI_assert(0);
+    lib_assert(0);
   }
 
   if (oldpool) {
     /* this should never happen but can when dissolve fails - T28960. */
-    BLI_assert(data->pool != oldpool);
+    lib_assert(data->pool != oldpool);
 
-    BLI_mempool_destroy(oldpool);
+    lib_mempool_destroy(oldpool);
   }
 }
 
-void BM_data_layer_add(BMesh *bm, CustomData *data, int type)
+void mesh_data_layer_add(BMesh *bm, CustomData *data, int type)
 {
   CustomData olddata;
 
