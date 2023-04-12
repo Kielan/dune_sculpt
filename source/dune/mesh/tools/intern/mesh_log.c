@@ -49,9 +49,9 @@ struct MeshLogEntry {
   lib_mempool *pool_verts;
   lib_mempool *pool_faces;
 
-  /* This is only needed for dropping BMLogEntries while still in
+  /* This is only needed for dropping MeshLogEntries while still in
    * dynamic-topology mode, as that should release vert/face IDs
-   * back to the BMLog but no BMLog pointer is available at that
+   * back to the MeshLog but no MeshLog pointer is available at that
    * time.
    *
    * This field is not guaranteed to be valid, any use of it should
@@ -220,26 +220,26 @@ static MeshLogFace *mesh_log_face_alloc(MeshLog *log, MeshFace *f)
 
 /************************ Helpers for undo/redo ***********************/
 
-static void bm_log_verts_unmake(BMesh *bm, BMLog *log, GHash *verts)
+static void mesh_log_verts_unmake(Mesh *mesh, MeshLog *log, GHash *verts)
 {
   const int cd_vert_mask_offset = CustomData_get_offset(&bm->vdata, CD_PAINT_MASK);
 
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, verts) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    BMLogVert *lv = BLI_ghashIterator_getValue(&gh_iter);
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    MeshLogVert *lv = lib_ghashIterator_getValue(&gh_iter);
     uint id = POINTER_AS_UINT(key);
-    BMVert *v = bm_log_vert_from_id(log, id);
+    MeehVert *v = mesh_log_vert_from_id(log, id);
 
     /* Ensure the log has the final values of the vertex before
      * deleting it */
-    bm_log_vert_bmvert_copy(lv, v, cd_vert_mask_offset);
+    mesh_log_vert_bmvert_copy(lv, v, cd_vert_mask_offset);
 
-    BM_vert_kill(bm, v);
+    mesh_vert_kill(bm, v);
   }
 }
 
-static void bm_log_faces_unmake(BMesh *bm, BMLog *log, GHash *faces)
+static void mesh_log_faces_unmake(BMesh *bm, BMLog *log, GHash *faces)
 {
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, faces) {
