@@ -728,21 +728,21 @@ void mesh_loop_interp_from_face(
 
 void mesh_vert_interp_from_face(Mesh *mesh, MeshVert *v_dst, const MeshFace *f_src)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
-  const void **blocks = BLI_array_alloca(blocks, f_src->len);
-  float(*cos_2d)[2] = BLI_array_alloca(cos_2d, f_src->len);
-  float *w = BLI_array_alloca(w, f_src->len);
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
+  const void **blocks = lib_array_alloca(blocks, f_src->len);
+  float(*cos_2d)[2] = lib_array_alloca(cos_2d, f_src->len);
+  float *w = lib_array_alloca(w, f_src->len);
   float axis_mat[3][3]; /* use normal to transform into 2d xy coords */
   float co[2];
   int i;
 
   /* convert the 3d coords into 2d for projection */
-  BLI_assert(BM_face_is_normal_valid(f_src));
+  lib_assert(mesh_face_is_normal_valid(f_src));
   axis_dominant_v3_to_m3(axis_mat, f_src->no);
 
   i = 0;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_src);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_src);
   do {
     mul_v2_m3v3(cos_2d[i], axis_mat, l_iter->v->co);
     blocks[i] = l_iter->v->head.data;
@@ -752,16 +752,16 @@ void mesh_vert_interp_from_face(Mesh *mesh, MeshVert *v_dst, const MeshFace *f_s
 
   /* interpolate */
   interp_weights_poly_v2(w, cos_2d, f_src->len, co);
-  CustomData_bmesh_interp(&bm->vdata, blocks, w, NULL, f_src->len, v_dst->head.data);
+  CustomData_mesh_interp(&mesh->vdata, blocks, w, NULL, f_src->len, v_dst->head.data);
 }
 
-static void update_data_blocks(BMesh *bm, CustomData *olddata, CustomData *data)
+static void update_data_blocks(Mesh *mesh, CustomData *olddata, CustomData *data)
 {
-  BMIter iter;
-  BLI_mempool *oldpool = olddata->pool;
+  MeshIter iter;
+  lib_mempool *oldpool = olddata->pool;
   void *block;
 
-  if (data == &bm->vdata) {
+  if (data == &mesh->vdata) {
     BMVert *eve;
 
     CustomData_bmesh_init_pool(data, bm->totvert, BM_VERT);
