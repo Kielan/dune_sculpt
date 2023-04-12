@@ -94,10 +94,10 @@ int mesh_iter_as_array(Mesh *mesh, const char itype, void *data, void **array, c
   return i;
 }
 int mesh_iter_as_array(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                      const char *slot_name,
-                      const char restrictmask,
-                      void **array,
-                      const int len)
+                       const char *slot_name,
+                       const char restrictmask,
+                       void **array,
+                       const int len)
 {
   int i = 0;
 
@@ -179,8 +179,8 @@ void *mesh_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
 
   lib_assert(stack_array_size == 0 || (stack_array_size && stack_array));
 
-  if ((ele = BMO_iter_new(&iter, slot_args, slot_name, restrictmask)) && slot_len > 0) {
-    BMElem **array = slot_len > stack_array_size ? MEM_mallocN(sizeof(ele) * slot_len, __func__) :
+  if ((ele = mesh_op_iter_new(&iter, slot_args, slot_name, restrictmask)) && slot_len > 0) {
+    MeshElem **array = slot_len > stack_array_size ? mem_mallocN(sizeof(ele) * slot_len, __func__) :
                                                    stack_array;
     int i = 0;
 
@@ -364,18 +364,16 @@ void bmiter__elem_of_mesh_begin(struct BMIter__elem_of_mesh *iter)
 void *bmiter__elem_of_mesh_step(struct BMIter__elem_of_mesh *iter)
 {
 #ifdef USE_IMMUTABLE_ASSERT
-  BLI_assert(((BMIter *)iter)->count <= BLI_mempool_len(iter->pooliter.pool));
+  lib_assert(((MeshIter *)iter)->count <= BLI_mempool_len(iter->pooliter.pool));
 #endif
-  return BLI_mempool_iterstep(&iter->pooliter);
+  return lib_mempool_iterstep(&iter->pooliter);
 }
 
 #ifdef USE_IMMUTABLE_ASSERT
 #  undef USE_IMMUTABLE_ASSERT
 #endif
 
-/*
- * EDGE OF VERT CALLBACKS
- */
+/** EDGE OF VERT CALLBACKS */
 
 void bmiter__edge_of_vert_begin(struct BMIter__edge_of_vert *iter)
 {
