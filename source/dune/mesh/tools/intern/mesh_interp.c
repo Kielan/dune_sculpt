@@ -122,7 +122,7 @@ void mesh_data_interp_face_vert_edge(Mesh *mesh,
     src[0] = l_v1->head.data;
     src[1] = l_v2->head.data;
 
-    CustomData_bmesh_interp(&mesh->ldata, src, w, NULL, 2, l_v->head.data);
+    CustomData_mesh_interp(&mesh->ldata, src, w, NULL, 2, l_v->head.data);
   } while ((l_iter = l_iter->radial_next) != e->l);
 }
 
@@ -409,7 +409,7 @@ typedef struct MeshLoopInterpMultiresData {
 
   int res;
   float d;
-} BMLoopInterpMultiresData;
+} MeshLoopInterpMultiresData;
 
 static void loop_interp_multires_cb(void *__restrict userdata,
                                     const int ix,
@@ -438,7 +438,7 @@ static void loop_interp_multires_cb(void *__restrict userdata,
   float x = d * ix, y;
   int iy;
   for (y = 0.0f, iy = 0; iy < res; y += d, iy++) {
-    BMLoop *l_iter = l_first;
+    MeshLoop *l_iter = l_first;
     float co1[3], co2[3], co[3];
 
     madd_v3_v3v3fl(co1, v1, e1, y);
@@ -450,11 +450,11 @@ static void loop_interp_multires_cb(void *__restrict userdata,
       float src_axis_x[3], src_axis_y[3];
       float uv[2];
 
-      md_src = BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_mdisp_offset);
+      md_src = MESH_ELEM_CD_GET_VOID_P(l_iter, cd_loop_mdisp_offset);
 
       if (mdisp_in_mdispquad(l_dst, l_iter, f_src_center, co, res, src_axis_x, src_axis_y, uv)) {
         old_mdisps_bilinear(md_dst->disps[iy * res + ix], md_src->disps, res, uv[0], uv[1]);
-        bm_loop_flip_disp(src_axis_x, src_axis_y, axis_x, axis_y, md_dst->disps[iy * res + ix]);
+        mesh_loop_flip_disp(src_axis_x, src_axis_y, axis_x, axis_y, md_dst->disps[iy * res + ix]);
 
         break;
       }
@@ -462,9 +462,9 @@ static void loop_interp_multires_cb(void *__restrict userdata,
   }
 }
 
-void BM_loop_interp_multires_ex(BMesh *UNUSED(bm),
-                                BMLoop *l_dst,
-                                const BMFace *f_src,
+void mesh_loop_interp_multires_ex(Mesh *UNUSED(bm),
+                                MLoop *l_dst,
+                                const MFace *f_src,
                                 const float f_dst_center[3],
                                 const float f_src_center[3],
                                 const int cd_loop_mdisp_offset)
@@ -527,29 +527,29 @@ void mesh_loop_interp_multires(Mesh *mesh, MshLoop *l_dst, const MeshFace *f_src
     float f_dst_center[3];
     float f_src_center[3];
 
-    BM_face_calc_center_median(l_dst->f, f_dst_center);
-    BM_face_calc_center_median(f_src, f_src_center);
+    mesh_face_calc_center_median(l_dst->f, f_dst_center);
+    mesh_face_calc_center_median(f_src, f_src_center);
 
-    BM_loop_interp_multires_ex(bm, l_dst, f_src, f_dst_center, f_src_center, cd_loop_mdisp_offset);
+    mesh_loop_interp_multires_ex(mesh, l_dst, f_src, f_dst_center, f_src_center, cd_loop_mdisp_offset);
   }
 }
 
-void BM_face_interp_multires_ex(BMesh *bm,
-                                BMFace *f_dst,
-                                const BMFace *f_src,
+void mesh_face_interp_multires_ex(Mesh *mesh,
+                                MeshFace *f_dst,
+                                const MeshFace *f_src,
                                 const float f_dst_center[3],
                                 const float f_src_center[3],
                                 const int cd_loop_mdisp_offset)
 {
-  BMLoop *l_iter, *l_first;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_dst);
+  MeshLoop *l_iter, *l_first;
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_dst);
   do {
-    BM_loop_interp_multires_ex(
-        bm, l_iter, f_src, f_dst_center, f_src_center, cd_loop_mdisp_offset);
+    mesh_loop_interp_multires_ex(
+      mesh, l_iter, f_src, f_dst_center, f_src_center, cd_loop_mdisp_offset);
   } while ((l_iter = l_iter->next) != l_first);
 }
 
-void BM_face_interp_multires(BMesh *bm, BMFace *f_dst, const BMFace *f_src)
+void mesh_face_interp_multires(Mesh *mesh, MeshFace *f_dst, const MeshFace *f_src)
 {
   const int cd_loop_mdisp_offset = CustomData_get_offset(&bm->ldata, CD_MDISPS);
 
@@ -557,27 +557,27 @@ void BM_face_interp_multires(BMesh *bm, BMFace *f_dst, const BMFace *f_src)
     float f_dst_center[3];
     float f_src_center[3];
 
-    BM_face_calc_center_median(f_dst, f_dst_center);
-    BM_face_calc_center_median(f_src, f_src_center);
+    mesh_face_calc_center_median(f_dst, f_dst_center);
+    mesh_face_calc_center_median(f_src, f_src_center);
 
-    BM_face_interp_multires_ex(bm, f_dst, f_src, f_dst_center, f_src_center, cd_loop_mdisp_offset);
+    mesh_face_interp_multires_ex(mesh, f_dst, f_src, f_dst_center, f_src_center, cd_loop_mdisp_offset);
   }
 }
 
-void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
+void mesh_face_multires_bounds_smooth(Mesh *mesh, MeshFace *f)
 {
-  const int cd_loop_mdisp_offset = CustomData_get_offset(&bm->ldata, CD_MDISPS);
-  BMLoop *l;
-  BMIter liter;
+  const int cd_loop_mdisp_offset = CustomData_get_offset(&mesh->ldata, CD_MDISPS);
+  MeshLoop *l;
+  MeshIter liter;
 
   if (cd_loop_mdisp_offset == -1) {
     return;
   }
 
-  BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
-    MDisps *mdp = BM_ELEM_CD_GET_VOID_P(l->prev, cd_loop_mdisp_offset);
-    MDisps *mdl = BM_ELEM_CD_GET_VOID_P(l, cd_loop_mdisp_offset);
-    MDisps *mdn = BM_ELEM_CD_GET_VOID_P(l->next, cd_loop_mdisp_offset);
+  MESH_ELEM_ITER_ELEM (l, &liter, f, MESH_LOOPS_OF_FACE) {
+    MDisps *mdp = MESH_ELEM_CD_GET_VOID_P(l->prev, cd_loop_mdisp_offset);
+    MDisps *mdl = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_mdisp_offset);
+    MDisps *mdn = MESH_ELEM_CD_GET_VOID_P(l->next, cd_loop_mdisp_offset);
     float co1[3];
     int sides;
     int y;
@@ -606,8 +606,8 @@ void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
     }
   }
 
-  BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
-    MDisps *mdl1 = BM_ELEM_CD_GET_VOID_P(l, cd_loop_mdisp_offset);
+  MESH_ITER_ELEM (l, &liter, f, MESH_LOOPS_OF_FACE) {
+    MDisps *mdl1 = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_mdisp_offset);
     MDisps *mdl2;
     float co1[3], co2[3], co[3];
     int sides;
@@ -633,10 +633,10 @@ void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
     }
 
     if (l->radial_next->v == l->v) {
-      mdl2 = BM_ELEM_CD_GET_VOID_P(l->radial_next, cd_loop_mdisp_offset);
+      mdl2 = M_ELEM_CD_GET_VOID_P(l->radial_next, cd_loop_mdisp_offset);
     }
     else {
-      mdl2 = BM_ELEM_CD_GET_VOID_P(l->radial_next->next, cd_loop_mdisp_offset);
+      mdl2 = M_ELEM_CD_GET_VOID_P(l->radial_next->next, cd_loop_mdisp_offset);
     }
 
     sides = (int)sqrt(mdl1->totdisp);
@@ -672,15 +672,15 @@ void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
   }
 }
 
-void BM_loop_interp_from_face(
-    BMesh *bm, BMLoop *l_dst, const BMFace *f_src, const bool do_vertex, const bool do_multires)
+void mesh_loop_interp_from_face(
+    Mesh *mesh, MeshLoop *l_dst, const MeshFace *f_src, const bool do_vertex, const bool do_multires)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
-  const void **vblocks = do_vertex ? BLI_array_alloca(vblocks, f_src->len) : NULL;
-  const void **blocks = BLI_array_alloca(blocks, f_src->len);
-  float(*cos_2d)[2] = BLI_array_alloca(cos_2d, f_src->len);
-  float *w = BLI_array_alloca(w, f_src->len);
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
+  const void **vblocks = do_vertex ? lib_array_alloca(vblocks, f_src->len) : NULL;
+  const void **blocks = lib_array_alloca(blocks, f_src->len);
+  float(*cos_2d)[2] = lib_array_alloca(cos_2d, f_src->len);
+  float *w = lib_array_alloca(w, f_src->len);
   float axis_mat[3][3]; /* use normal to transform into 2d xy coords */
   float co[2];
   int i;
@@ -688,21 +688,21 @@ void BM_loop_interp_from_face(
   /* Convert the 3d coords into 2d for projection. */
   float axis_dominant[3];
   if (!is_zero_v3(f_src->no)) {
-    BLI_assert(BM_face_is_normal_valid(f_src));
+    lib_assert(mesh_face_is_normal_valid(f_src));
     copy_v3_v3(axis_dominant, f_src->no);
   }
   else {
     /* Rare case in which all the vertices of the face are aligned.
      * Get a random axis that is orthogonal to the tangent. */
     float vec[3];
-    BM_face_calc_tangent_auto(f_src, vec);
+    mesh_face_calc_tangent_auto(f_src, vec);
     ortho_v3_v3(axis_dominant, vec);
     normalize_v3(axis_dominant);
   }
   axis_dominant_v3_to_m3(axis_mat, axis_dominant);
 
   i = 0;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_src);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_src);
   do {
     mul_v2_m3v3(cos_2d[i], axis_mat, l_iter->v->co);
     blocks[i] = l_iter->head.data;
@@ -716,17 +716,17 @@ void BM_loop_interp_from_face(
 
   /* interpolate */
   interp_weights_poly_v2(w, cos_2d, f_src->len, co);
-  CustomData_bmesh_interp(&bm->ldata, blocks, w, NULL, f_src->len, l_dst->head.data);
+  CustomData_mesh_interp(&mesh->ldata, blocks, w, NULL, f_src->len, l_dst->head.data);
   if (do_vertex) {
-    CustomData_bmesh_interp(&bm->vdata, vblocks, w, NULL, f_src->len, l_dst->v->head.data);
+    CustomData_mesh_interp(&mesh->vdata, vblocks, w, NULL, f_src->len, l_dst->v->head.data);
   }
 
   if (do_multires) {
-    BM_loop_interp_multires(bm, l_dst, f_src);
+    mesh_loop_interp_multires(mesh, l_dst, f_src);
   }
 }
 
-void BM_vert_interp_from_face(BMesh *bm, BMVert *v_dst, const BMFace *f_src)
+void mesh_vert_interp_from_face(Mesh *mesh, MeshVert *v_dst, const MeshFace *f_src)
 {
   BMLoop *l_iter;
   BMLoop *l_first;
