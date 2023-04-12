@@ -201,14 +201,14 @@ static MeshLogVert *mesh_log_vert_alloc(MeshLog *log, MeshVert *v, const int cd_
 /* Allocate and initialize a MeshLogFace */
 static MeshLogFace *mesh_log_face_alloc(MeshLog *log, MeshFace *f)
 {
-  BMLogEntry *entry = log->current_entry;
-  BMLogFace *lf = BLI_mempool_alloc(entry->pool_faces);
-  BMVert *v[3];
+  MeshLogEntry *entry = log->current_entry;
+  MeshLogFace *lf = lib_mempool_alloc(entry->pool_faces);
+  MeshVert *v[3];
 
-  BLI_assert(f->len == 3);
+  lib_assert(f->len == 3);
 
-  // BM_iter_as_array(NULL, BM_VERTS_OF_FACE, f, (void **)v, 3);
-  BM_face_as_array_vert_tri(f, v);
+  // mesh_iter_as_array(NULL, MESH_VERTS_OF_FACE, f, (void **)v, 3);
+  mesh_face_as_array_vert_tri(f, v);
 
   lf->v_ids[0] = bm_log_vert_id_get(log, v[0]);
   lf->v_ids[1] = bm_log_vert_id_get(log, v[1]);
