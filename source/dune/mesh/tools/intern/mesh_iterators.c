@@ -403,11 +403,11 @@ void *meshiter__edge_of_vert_step(struct MeshIter__edge_of_vert *iter)
 
 /* * FACE OF VERT CALLBACKS */
 
-void meshiter__face_of_vert_begin(struct BMIter__face_of_vert *iter)
+void meshiter__face_of_vert_begin(struct MeshIter__face_of_vert *iter)
 {
   ((MeshIter *)iter)->count = mesh_disk_facevert_count(iter->vdata);
   if (((MeshIter *)iter)->count) {
-    iter->l_first = bmesh_disk_faceloop_find_first(iter->vdata->e, iter->vdata);
+    iter->l_first = mesh_disk_faceloop_find_first(iter->vdata->e, iter->vdata);
     iter->e_first = iter->l_first->e;
     iter->e_next = iter->e_first;
     iter->l_next = iter->l_first;
@@ -417,36 +417,34 @@ void meshiter__face_of_vert_begin(struct BMIter__face_of_vert *iter)
     iter->e_first = iter->e_next = NULL;
   }
 }
-void *bmiter__face_of_vert_step(struct BMIter__face_of_vert *iter)
+void *meshiter__face_of_vert_step(struct MeshIter__face_of_vert *iter)
 {
-  BMLoop *l_curr = iter->l_next;
+  MeshLoop *l_curr = iter->l_next;
 
-  if (((BMIter *)iter)->count && iter->l_next) {
-    ((BMIter *)iter)->count--;
-    iter->l_next = bmesh_radial_faceloop_find_next(iter->l_next, iter->vdata);
+  if (((MeshIter *)iter)->count && iter->l_next) {
+    ((MeshIter *)iter)->count--;
+    iter->l_next = mesh_radial_faceloop_find_next(iter->l_next, iter->vdata);
     if (iter->l_next == iter->l_first) {
-      iter->e_next = bmesh_disk_faceedge_find_next(iter->e_next, iter->vdata);
-      iter->l_first = bmesh_radial_faceloop_find_first(iter->e_next->l, iter->vdata);
+      iter->e_next = mesh_disk_faceedge_find_next(iter->e_next, iter->vdata);
+      iter->l_first = mesh_radial_faceloop_find_first(iter->e_next->l, iter->vdata);
       iter->l_next = iter->l_first;
     }
   }
 
-  if (!((BMIter *)iter)->count) {
+  if (!((MeshIter *)iter)->count) {
     iter->l_next = NULL;
   }
 
   return l_curr ? l_curr->f : NULL;
 }
 
-/*
- * LOOP OF VERT CALLBACKS
- */
+/** LOOP OF VERT CALLBACKS **/
 
-void bmiter__loop_of_vert_begin(struct BMIter__loop_of_vert *iter)
+void meshiter__loop_of_vert_begin(struct MeshIter__loop_of_vert *iter)
 {
-  ((BMIter *)iter)->count = bmesh_disk_facevert_count(iter->vdata);
-  if (((BMIter *)iter)->count) {
-    iter->l_first = bmesh_disk_faceloop_find_first(iter->vdata->e, iter->vdata);
+  ((MeshIter *)iter)->count = mesh_disk_facevert_count(iter->vdata);
+  if (((MeshIter *)iter)->count) {
+    iter->l_first = mesh_disk_faceloop_find_first(iter->vdata->e, iter->vdata);
     iter->e_first = iter->l_first->e;
     iter->e_next = iter->e_first;
     iter->l_next = iter->l_first;
@@ -456,21 +454,21 @@ void bmiter__loop_of_vert_begin(struct BMIter__loop_of_vert *iter)
     iter->e_first = iter->e_next = NULL;
   }
 }
-void *bmiter__loop_of_vert_step(struct BMIter__loop_of_vert *iter)
+void *meshiter__loop_of_vert_step(struct MeshIter__loop_of_vert *iter)
 {
-  BMLoop *l_curr = iter->l_next;
+  MeshLoop *l_curr = iter->l_next;
 
-  if (((BMIter *)iter)->count) {
-    ((BMIter *)iter)->count--;
-    iter->l_next = bmesh_radial_faceloop_find_next(iter->l_next, iter->vdata);
+  if (((MeshIter *)iter)->count) {
+    ((MeshIter *)iter)->count--;
+    iter->l_next = mesh_radial_faceloop_find_next(iter->l_next, iter->vdata);
     if (iter->l_next == iter->l_first) {
-      iter->e_next = bmesh_disk_faceedge_find_next(iter->e_next, iter->vdata);
-      iter->l_first = bmesh_radial_faceloop_find_first(iter->e_next->l, iter->vdata);
+      iter->e_next = mesh_disk_faceedge_find_next(iter->e_next, iter->vdata);
+      iter->l_first = mesh_radial_faceloop_find_first(iter->e_next->l, iter->vdata);
       iter->l_next = iter->l_first;
     }
   }
 
-  if (!((BMIter *)iter)->count) {
+  if (!((MeshIter *)iter)->count) {
     iter->l_next = NULL;
   }
 
@@ -478,18 +476,16 @@ void *bmiter__loop_of_vert_step(struct BMIter__loop_of_vert *iter)
   return l_curr;
 }
 
-/*
- * LOOP OF EDGE CALLBACKS
- */
+/** LOOP OF EDGE CALLBACKS */
 
-void bmiter__loop_of_edge_begin(struct BMIter__loop_of_edge *iter)
+void meshiter__loop_of_edge_begin(struct MeshIter__loop_of_edge *iter)
 {
   iter->l_first = iter->l_next = iter->edata->l;
 }
 
-void *bmiter__loop_of_edge_step(struct BMIter__loop_of_edge *iter)
+void *miter__loop_of_edge_step(struct MeshIter__loop_of_edge *iter)
 {
-  BMLoop *l_curr = iter->l_next;
+  MeshLoop *l_curr = iter->l_next;
 
   if (iter->l_next) {
     iter->l_next = iter->l_next->radial_next;
@@ -502,11 +498,9 @@ void *bmiter__loop_of_edge_step(struct BMIter__loop_of_edge *iter)
   return l_curr;
 }
 
-/*
- * LOOP OF LOOP CALLBACKS
- */
+/** LOOP OF LOOP CALLBACKS */
 
-void bmiter__loop_of_loop_begin(struct BMIter__loop_of_loop *iter)
+void meshiter__loop_of_loop_begin(struct BMIter__loop_of_loop *iter)
 {
   iter->l_first = iter->ldata;
   iter->l_next = iter->l_first->radial_next;
@@ -516,9 +510,9 @@ void bmiter__loop_of_loop_begin(struct BMIter__loop_of_loop *iter)
   }
 }
 
-void *bmiter__loop_of_loop_step(struct BMIter__loop_of_loop *iter)
+void *meshiter__loop_of_loop_step(struct MeshIter__loop_of_loop *iter)
 {
-  BMLoop *l_curr = iter->l_next;
+  MeshLoop *l_curr = iter->l_next;
 
   if (iter->l_next) {
     iter->l_next = iter->l_next->radial_next;
@@ -531,18 +525,16 @@ void *bmiter__loop_of_loop_step(struct BMIter__loop_of_loop *iter)
   return l_curr;
 }
 
-/*
- * FACE OF EDGE CALLBACKS
- */
+/** FACE OF EDGE CALLBACKS **/
 
-void bmiter__face_of_edge_begin(struct BMIter__face_of_edge *iter)
+void meshiter__face_of_edge_begin(struct BMIter__face_of_edge *iter)
 {
   iter->l_first = iter->l_next = iter->edata->l;
 }
 
-void *bmiter__face_of_edge_step(struct BMIter__face_of_edge *iter)
+void *meshiter__face_of_edge_step(struct MeshIter__face_of_edge *iter)
 {
-  BMLoop *current = iter->l_next;
+  MeshLoop *current = iter->l_next;
 
   if (iter->l_next) {
     iter->l_next = iter->l_next->radial_next;
@@ -554,13 +546,11 @@ void *bmiter__face_of_edge_step(struct BMIter__face_of_edge *iter)
   return current ? current->f : NULL;
 }
 
-/*
- * VERTS OF EDGE CALLBACKS
- */
+/** VERTS OF EDGE CALLBACKS */
 
-void bmiter__vert_of_edge_begin(struct BMIter__vert_of_edge *iter)
+void meshiter__vert_of_edge_begin(struct BMIter__vert_of_edge *iter)
 {
-  ((BMIter *)iter)->count = 0;
+  ((MeshIter *)iter)->count = 0;
 }
 
 void *bmiter__vert_of_edge_step(struct BMIter__vert_of_edge *iter)
