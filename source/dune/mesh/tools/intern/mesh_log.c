@@ -179,7 +179,7 @@ static void vert_mask_set(MeshVert *v, const float new_mask, const int cd_vert_m
 }
 
 /* Update a MeshLogVert with data from a MeshVert */
-static void mesh_log_vert_bmvert_copy(MeshLogVert *lv, MeshVert *v, const int cd_vert_mask_offset)
+static void mesh_log_vert_meshvert_copy(MeshLogVert *lv, MeshVert *v, const int cd_vert_mask_offset)
 {
   copy_v3_v3(lv->co, v->co);
   copy_v3_v3(lv->no, v->no);
@@ -582,31 +582,31 @@ void BM_log_mesh_elems_reorder(BMesh *bm, BMLog *log)
 
   /* Create BMVert index remap array */
   id_to_idx = bm_log_compress_ids_to_indices(varr, (uint)bm->totvert);
-  BM_ITER_MESH_INDEX (v, &bm_iter, bm, BM_VERTS_OF_MESH, i) {
+  MESH_ITER_INDEX (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
     const uint id = bm_log_vert_id_get(log, v);
-    const void *key = POINTER_FROM_UINT(id);
-    const void *val = BLI_ghash_lookup(id_to_idx, key);
-    varr[i] = POINTER_AS_UINT(val);
+    const void *key = PTR_FROM_UINT(id);
+    const void *val = lib_ghash_lookup(id_to_idx, key);
+    varr[i] = PTR_AS_UINT(val);
   }
-  BLI_ghash_free(id_to_idx, NULL, NULL);
+  lib_ghash_free(id_to_idx, NULL, NULL);
 
-  /* Create BMFace index remap array */
-  id_to_idx = bm_log_compress_ids_to_indices(farr, (uint)bm->totface);
-  BM_ITER_MESH_INDEX (f, &bm_iter, bm, BM_FACES_OF_MESH, i) {
-    const uint id = bm_log_face_id_get(log, f);
-    const void *key = POINTER_FROM_UINT(id);
-    const void *val = BLI_ghash_lookup(id_to_idx, key);
-    farr[i] = POINTER_AS_UINT(val);
+  /* Create MeshFace index remap array */
+  id_to_idx = mesh_log_compress_ids_to_indices(farr, (uint)mesh->totface);
+  MESH_ITER_INDEX (f, &mesh_iter, mesh, MESH_FACES_OF_MESH, i) {
+    const uint id = mesh_log_face_id_get(log, f);
+    const void *key = PTR_FROM_UINT(id);
+    const void *val = lib_ghash_lookup(id_to_idx, key);
+    farr[i] = PTR_AS_UINT(val);
   }
-  BLI_ghash_free(id_to_idx, NULL, NULL);
+  lib_ghash_free(id_to_idx, NULL, NULL);
 
-  BM_mesh_remap(bm, varr, NULL, farr);
+  mesh_remap(mesh, varr, NULL, farr);
 
-  MEM_freeN(varr);
-  MEM_freeN(farr);
+  mem_freen(varr);
+  mem_freen(farr);
 }
 
-BMLogEntry *BM_log_entry_add(BMLog *log)
+MeshLogEntry *mesh_log_entry_add(MeshLog *log)
 {
   /* WARNING: this is now handled by the UndoSystem: BKE_UNDOSYS_TYPE_SCULPT
    * freeing here causes unnecessary complications. */
