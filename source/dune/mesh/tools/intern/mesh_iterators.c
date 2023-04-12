@@ -256,14 +256,14 @@ int mesh_iter_bitmap_from_filter_tessface(BMesh *bm,
   return bitmap_enabled;
 }
 
-int BM_iter_elem_count_flag(const char itype, void *data, const char hflag, const bool value)
+int mesh_iter_elem_count_flag(const char itype, void *data, const char hflag, const bool value)
 {
-  BMIter iter;
-  BMElem *ele;
+  MeshIter iter;
+  MeshElem *ele;
   int count = 0;
 
-  BM_ITER_ELEM (ele, &iter, data, itype) {
-    if (BM_elem_flag_test_bool(ele, hflag) == value) {
+  MESH_ITER_ELEM (ele, &iter, data, itype) {
+    if (mesh_elem_flag_test_bool(ele, hflag) == value) {
       count++;
     }
   }
@@ -271,38 +271,38 @@ int BM_iter_elem_count_flag(const char itype, void *data, const char hflag, cons
   return count;
 }
 
-int BMO_iter_elem_count_flag(
-    BMesh *bm, const char itype, void *data, const short oflag, const bool value)
+int mesh_op_iter_elem_count_flag(
+    Mesh *mesh, const char itype, void *data, const short oflag, const bool value)
 {
-  BMIter iter;
+  MeshIter iter;
   int count = 0;
 
   /* loops have no header flags */
-  BLI_assert(bm_iter_itype_htype_map[itype] != BM_LOOP);
+  lib_assert(mesh_iter_itype_htype_map[itype] != MESH_LOOP);
 
-  switch (bm_iter_itype_htype_map[itype]) {
-    case BM_VERT: {
-      BMVert *ele;
-      BM_ITER_ELEM (ele, &iter, data, itype) {
-        if (BMO_vert_flag_test_bool(bm, ele, oflag) == value) {
+  switch (mesh_iter_itype_htype_map[itype]) {
+    case MESH_VERT: {
+      MeshVert *ele;
+      MESH_ITER_ELEM (ele, &iter, data, itype) {
+        if (mesh_op_vert_flag_test_bool(mesh, ele, oflag) == value) {
           count++;
         }
       }
       break;
     }
-    case BM_EDGE: {
-      BMEdge *ele;
-      BM_ITER_ELEM (ele, &iter, data, itype) {
-        if (BMO_edge_flag_test_bool(bm, ele, oflag) == value) {
+    case MESH_EDGE: {
+      MeshEdge *ele;
+      MESH_ITER_ELEM (ele, &iter, data, itype) {
+        if (mesh_op_edge_flag_test_bool(mesh, ele, oflag) == value) {
           count++;
         }
       }
       break;
     }
-    case BM_FACE: {
-      BMFace *ele;
-      BM_ITER_ELEM (ele, &iter, data, itype) {
-        if (BMO_face_flag_test_bool(bm, ele, oflag) == value) {
+    case MESH_FACE: {
+      MeshFace *ele;
+      MESH_ITER_ELEM (ele, &iter, data, itype) {
+        if (mesh_face_flag_test_bool(mesh, ele, oflag) == value) {
           count++;
         }
       }
@@ -312,10 +312,10 @@ int BMO_iter_elem_count_flag(
   return count;
 }
 
-int BM_iter_mesh_count_flag(const char itype, BMesh *bm, const char hflag, const bool value)
+int mesh_iter_mesh_count_flag(const char itype, BMesh *bm, const char hflag, const bool value)
 {
-  BMIter iter;
-  BMElem *ele;
+  MeshIter iter;
+  MeshElem *ele;
   int count = 0;
 
   BM_ITER_MESH (ele, &iter, bm, itype) {
