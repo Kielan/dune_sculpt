@@ -107,30 +107,30 @@ struct MeshIter__loop_of_vert {
 };
 struct MIter__loop_of_edge {
   MEdge *edata;
-  BMLoop *l_first, *l_next;
+  MLoop *l_first, *l_next;
 };
 struct BMIter__loop_of_loop {
-  BMLoop *ldata;
-  BMLoop *l_first, *l_next;
+  MLoop *ldata;
+  MLoop *l_first, *l_next;
 };
-struct BMIter__face_of_edge {
-  BMEdge *edata;
-  BMLoop *l_first, *l_next;
+struct MIter__face_of_edge {
+  MEdge *edata;
+  MLoop *l_first, *l_next;
 };
-struct BMIter__vert_of_edge {
-  BMEdge *edata;
+struct MIter__vert_of_edge {
+  MEdge *edata;
 };
-struct BMIter__vert_of_face {
-  BMFace *pdata;
-  BMLoop *l_first, *l_next;
+struct MIter__vert_of_face {
+  MFace *pdata;
+  MLoop *l_first, *l_next;
 };
-struct BMIter__edge_of_face {
-  BMFace *pdata;
-  BMLoop *l_first, *l_next;
+struct MIter__edge_of_face {
+  MFace *pdata;
+  MLoop *l_first, *l_next;
 };
-struct BMIter__loop_of_face {
-  BMFace *pdata;
-  BMLoop *l_first, *l_next;
+struct MIter__loop_of_face {
+  MFace *pdata;
+  MLoop *l_first, *l_next;
 };
 
 typedef void (*BMIter__begin_cb)(void *);
@@ -191,16 +191,16 @@ void *BM_iter_as_arrayN(BMesh *bm,
                         void **stack_array,
                         int stack_array_size) ATTR_WARN_UNUSED_RESULT;
 /**
- * \brief Operator Iterator as Array
+ * Operator Iterator as Array
  *
  * Sometimes its convenient to get the iterator as an array.
  */
-int BMO_iter_as_array(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+int mesh_op_iter_as_array(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                       const char *slot_name,
                       char restrictmask,
                       void **array,
                       int len);
-void *mesh_op_iter_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void *mesh_op_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                          const char *slot_name,
                          char restrictmask,
                          int *r_len,
@@ -209,9 +209,9 @@ void *mesh_op_iter_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
                          int stack_array_size);
 
 int mesh_iter_mesh_bitmap_from_filter(char itype,
-                                    BMesh *bm,
+                                    Mesh *mesh,
                                     uint *bitmap,
-                                    bool (*test_fn)(BMElem *, void *user_data),
+                                    bool (*test_fn)(MeshElem *, void *user_data),
                                     void *user_data);
 /** Needed when we want to check faces, but return a loop aligned array. */
 int mesh_iter_mesh_bitmap_from_filter_tessface(BMesh *bm,
@@ -220,21 +220,21 @@ int mesh_iter_mesh_bitmap_from_filter_tessface(BMesh *bm,
                                              void *user_data);
 
 /**
- * \brief Elem Iter Flag Count
+ * Elem Iter Flag Count
  *
  * Counts how many flagged / unflagged items are found in this element.
  */
-int BM_iter_elem_count_flag(char itype, void *data, char hflag, bool value);
+int mesh_iter_elem_count_flag(char itype, void *data, char hflag, bool value);
 /**
- * \brief Elem Iter Tool Flag Count
+ * Elem Iter Tool Flag Count
  *
  * Counts how many flagged / unflagged items are found in this element.
  */
-int BMO_iter_elem_count_flag(BMesh *bm, char itype, void *data, short oflag, bool value);
+int mesh_iter_elem_count_flag(BMesh *bm, char itype, void *data, short oflag, bool value);
 /**
  * Utility function.
  */
-int BM_iter_mesh_count(char itype, BMesh *bm);
+int mesh_iter_mesh_count(char itype, BMesh *bm);
 /**
  * Mesh Iter Flag Count
  *
