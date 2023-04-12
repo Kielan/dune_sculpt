@@ -160,7 +160,7 @@ static MeshFace *mesh_log_face_from_id(MeshLog *log, uint id)
 /* Get a vertex's paint-mask value
  *
  * Returns zero if no paint-mask layer is present */
-static float vert_mask_get(BMVert *v, const int cd_vert_mask_offset)
+static float vert_mask_get(MeshVert *v, const int cd_vert_mask_offset)
 {
   if (cd_vert_mask_offset != -1) {
     return MESH_ELEM_CD_GET_FLOAT(v, cd_vert_mask_offset);
@@ -210,9 +210,9 @@ static MeshLogFace *mesh_log_face_alloc(MeshLog *log, MeshFace *f)
   // mesh_iter_as_array(NULL, MESH_VERTS_OF_FACE, f, (void **)v, 3);
   mesh_face_as_array_vert_tri(f, v);
 
-  lf->v_ids[0] = bm_log_vert_id_get(log, v[0]);
-  lf->v_ids[1] = bm_log_vert_id_get(log, v[1]);
-  lf->v_ids[2] = bm_log_vert_id_get(log, v[2]);
+  lf->v_ids[0] = mesh_log_vert_id_get(log, v[0]);
+  lf->v_ids[1] = mesh_log_vert_id_get(log, v[1]);
+  lf->v_ids[2] = mesh_log_vert_id_get(log, v[2]);
 
   lf->hflag = f->head.hflag;
   return lf;
@@ -228,14 +228,14 @@ static void mesh_log_verts_unmake(Mesh *mesh, MeshLog *log, GHash *verts)
   GHASH_ITER (gh_iter, verts) {
     void *key = lib_ghashIterator_getKey(&gh_iter);
     MeshLogVert *lv = lib_ghashIterator_getValue(&gh_iter);
-    uint id = POINTER_AS_UINT(key);
+    uint id = PTR_AS_UINT(key);
     MeehVert *v = mesh_log_vert_from_id(log, id);
 
     /* Ensure the log has the final values of the vertex before
      * deleting it */
-    mesh_log_vert_bmvert_copy(lv, v, cd_vert_mask_offset);
+    mesh_log_vert_meshvert_copy(lv, v, cd_vert_mask_offset);
 
-    mesh_vert_kill(bm, v);
+    mesh_vert_kill(mesh, v);
   }
 }
 
@@ -243,45 +243,45 @@ static void mesh_log_faces_unmake(BMesh *bm, BMLog *log, GHash *faces)
 {
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, faces) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    uint id = POINTER_AS_UINT(key);
-    BMFace *f = bm_log_face_from_id(log, id);
-    BMEdge *e_tri[3];
-    BMLoop *l_iter;
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    uint id = PTR_AS_UINT(key);
+    MeshFace *f = mesh_log_face_from_id(log, id);
+    MeshEdge *e_tri[3];
+    MeshLoop *l_iter;
     int i;
 
-    l_iter = BM_FACE_FIRST_LOOP(f);
+    l_iter = MESH_FACE_FIRST_LOOP(f);
     for (i = 0; i < 3; i++, l_iter = l_iter->next) {
       e_tri[i] = l_iter->e;
     }
 
     /* Remove any unused edges */
-    BM_face_kill(bm, f);
+    mesh_face_kill(mesh, f);
     for (i = 0; i < 3; i++) {
-      if (BM_edge_is_wire(e_tri[i])) {
-        BM_edge_kill(bm, e_tri[i]);
+      if (mesh_edge_is_wire(e_tri[i])) {
+        mesh_edge_kill(mesh, e_tri[i]);
       }
     }
   }
 }
 
-static void bm_log_verts_restore(BMesh *bm, BMLog *log, GHash *verts)
+static void mesh_log_verts_restore(Mesh *mesh, MeshLog *log, GHash *verts)
 {
-  const int cd_vert_mask_offset = CustomData_get_offset(&bm->vdata, CD_PAINT_MASK);
+  const int cd_vert_mask_offset = CustomData_get_offset(&mesh->vdata, CD_PAINT_MASK);
 
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, verts) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    BMLogVert *lv = BLI_ghashIterator_getValue(&gh_iter);
-    BMVert *v = BM_vert_create(bm, lv->co, NULL, BM_CREATE_NOP);
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    MeshLogVert *lv = lib_ghashIterator_getValue(&gh_iter);
+    MeshVert *v = mesh_vert_create(mesh, lv->co, NULL, MESH_CREATE_NOP);
     vert_mask_set(v, lv->mask, cd_vert_mask_offset);
     v->head.hflag = lv->hflag;
     copy_v3_v3(v->no, lv->no);
-    bm_log_vert_id_set(log, v, POINTER_AS_UINT(key));
+    mesh_log_vert_id_set(log, v, PTR_AS_UINT(key));
   }
 }
 
-static void bm_log_faces_restore(BMesh *bm, BMLog *log, GHash *faces)
+static void mesh_log_faces_restore(BMesh *bm, BMLog *log, GHash *faces)
 {
   GHashIterator gh_iter;
   GHASH_ITER (gh_iter, faces) {
