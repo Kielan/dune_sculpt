@@ -1,11 +1,7 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
 /**
- * \brief BMesh Iterators
+ * Mesh Iterators
  *
  * The functions and structures in this file
  * provide a unified method for iterating over
@@ -15,20 +11,20 @@
  * of inspecting the structure directly.
  */
 
-#include "BLI_compiler_attrs.h"
-#include "BLI_mempool.h"
+#include "lib_compiler_attrs.h"
+#include "lib_mempool.h"
 
 /* these iterator over all elements of a specific
  * type in the mesh.
  *
- * be sure to keep 'bm_iter_itype_htype_map' in sync with any changes
+ * be sure to keep 'mesh_iter_itype_htype_map' in sync with any changes
  */
-typedef enum BMIterType {
-  BM_VERTS_OF_MESH = 1,
-  BM_EDGES_OF_MESH = 2,
-  BM_FACES_OF_MESH = 3,
+typedef enum MeshIterType {
+  MESH_VERTS_OF_MESH = 1,
+  MESH_EDGES_OF_MESH = 2,
+  MESH_FACES_OF_MESH = 3,
   /* these are topological iterators. */
-  BM_EDGES_OF_VERT = 4,
+  MESH_EDGES_OF_VERT = 4,
   BM_FACES_OF_VERT = 5,
   BM_LOOPS_OF_VERT = 6,
   BM_VERTS_OF_EDGE = 7, /* just v1, v2: added so py can use generalized sequencer wrapper */
@@ -206,7 +202,7 @@ int BMO_iter_as_array(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
                       char restrictmask,
                       void **array,
                       int len);
-void *BMO_iter_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void *mesh_op_iter_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
                          const char *slot_name,
                          char restrictmask,
                          int *r_len,
@@ -214,15 +210,13 @@ void *BMO_iter_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
                          void **stack_array,
                          int stack_array_size);
 
-int BM_iter_mesh_bitmap_from_filter(char itype,
+int mesh_iter_mesh_bitmap_from_filter(char itype,
                                     BMesh *bm,
                                     uint *bitmap,
                                     bool (*test_fn)(BMElem *, void *user_data),
                                     void *user_data);
-/**
- * Needed when we want to check faces, but return a loop aligned array.
- */
-int BM_iter_mesh_bitmap_from_filter_tessface(BMesh *bm,
+/** Needed when we want to check faces, but return a loop aligned array. */
+int mesh_iter_mesh_bitmap_from_filter_tessface(BMesh *bm,
                                              uint *bitmap,
                                              bool (*test_fn)(BMFace *, void *user_data),
                                              void *user_data);
@@ -244,11 +238,11 @@ int BMO_iter_elem_count_flag(BMesh *bm, char itype, void *data, short oflag, boo
  */
 int BM_iter_mesh_count(char itype, BMesh *bm);
 /**
- * \brief Mesh Iter Flag Count
+ * Mesh Iter Flag Count
  *
  * Counts how many flagged / unflagged items are found in this mesh.
  */
-int BM_iter_mesh_count_flag(char itype, BMesh *bm, char hflag, bool value);
+int mesh_iter_mesh_count_flag(char itype, BMesh *bm, char hflag, bool value);
 
 /* private for bmesh_iterators_inline.c */
 
