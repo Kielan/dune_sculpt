@@ -478,17 +478,17 @@ void BM_loop_interp_multires_ex(BMesh *UNUSED(bm),
     return;
   }
 
-  md_dst = BM_ELEM_CD_GET_VOID_P(l_dst, cd_loop_mdisp_offset);
+  md_dst = MESH_ELEM_CD_GET_VOID_P(l_dst, cd_loop_mdisp_offset);
   compute_mdisp_quad(l_dst, f_dst_center, v1, v2, v3, v4, e1, e2);
 
   /* if no disps data allocate a new grid, the size of the first grid in f_src. */
   if (!md_dst->totdisp) {
-    const MDisps *md_src = BM_ELEM_CD_GET_VOID_P(BM_FACE_FIRST_LOOP(f_src), cd_loop_mdisp_offset);
+    const MDisps *md_src = MESH_ELEM_CD_GET_VOID_P(MESH_FACE_FIRST_LOOP(f_src), cd_loop_mdisp_offset);
 
     md_dst->totdisp = md_src->totdisp;
     md_dst->level = md_src->level;
     if (md_dst->totdisp) {
-      md_dst->disps = MEM_callocN(sizeof(float[3]) * md_dst->totdisp, __func__);
+      md_dst->disps = mem_callocn(sizeof(float[3]) * md_dst->totdisp, __func__);
     }
     else {
       return;
@@ -498,9 +498,9 @@ void BM_loop_interp_multires_ex(BMesh *UNUSED(bm),
   mdisp_axis_from_quad(v1, v2, v3, v4, axis_x, axis_y);
 
   const int res = (int)sqrt(md_dst->totdisp);
-  BMLoopInterpMultiresData data = {
+  MeshLoopInterpMultiresData data = {
       .l_dst = l_dst,
-      .l_src_first = BM_FACE_FIRST_LOOP(f_src),
+      .l_src_first = MESH_FACE_FIRST_LOOP(f_src),
       .cd_loop_mdisp_offset = cd_loop_mdisp_offset,
       .md_dst = md_dst,
       .f_src_center = f_src_center,
@@ -514,12 +514,12 @@ void BM_loop_interp_multires_ex(BMesh *UNUSED(bm),
       .d = 1.0f / (float)(res - 1),
   };
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  lib_parallel_range_settings_defaults(&settings);
   settings.use_threading = (res > 5);
-  BLI_task_parallel_range(0, res, &data, loop_interp_multires_cb, &settings);
+  lib_task_parallel_range(0, res, &data, loop_interp_multires_cb, &settings);
 }
 
-void BM_loop_interp_multires(BMesh *bm, BMLoop *l_dst, const BMFace *f_src)
+void mesh_loop_interp_multires(Mesh *mesh, MshLoop *l_dst, const MeshFace *f_src)
 {
   const int cd_loop_mdisp_offset = CustomData_get_offset(&bm->ldata, CD_MDISPS);
 
