@@ -13,19 +13,19 @@
 
 const char mesh_iter_itype_htype_map[MESH_ITYPE_MAX] = {
     '\0',
-    MESH_VERT, /* BM_VERTS_OF_MESH */
-    MESH_EDGE, /* BM_EDGES_OF_MESH */
-    MESH_FACE, /* BM_FACES_OF_MESH */
-    MESH_EDGE, /* BM_EDGES_OF_VERT */
-    MESH_FACE, /* BM_FACES_OF_VERT */
-    MESH_LOOP, /* BM_LOOPS_OF_VERT */
-    MESH_VERT, /* BM_VERTS_OF_EDGE */
-    MESH_FACE, /* BM_FACES_OF_EDGE */
-    MESH_VERT, /* BM_VERTS_OF_FACE */
-    MESH_EDGE, /* BM_EDGES_OF_FACE */
-    MESH_LOOP, /* BM_LOOPS_OF_FACE */
-    MESH_LOOP, /* BM_LOOPS_OF_LOOP */
-    MESH_LOOP, /* BM_LOOPS_OF_EDGE */
+    MESH_VERT, /* M_VERTS_OF_MESH */
+    MESH_EDGE, /* M_EDGES_OF_MESH */
+    MESH_FACE, /* M_FACES_OF_MESH */
+    MESH_EDGE, /* M_EDGES_OF_VERT */
+    MESH_FACE, /* M_FACES_OF_VERT */
+    MESH_LOOP, /* M_LOOPS_OF_VERT */
+    MESH_VERT, /* M_VERTS_OF_EDGE */
+    MESH_FACE, /* M_FACES_OF_EDGE */
+    MESH_VERT, /* M_VERTS_OF_FACE */
+    MESH_EDGE, /* M_EDGES_OF_FACE */
+    MESH_LOOP, /* M_LOOPS_OF_FACE */
+    MESH_LOOP, /* M_LOOPS_OF_LOOP */
+    MESH_LOOP, /* M_LOOPS_OF_EDGE */
 };
 
 int mesh_iter_mesh_count(const char itype, BMesh *bm)
@@ -79,10 +79,10 @@ int mesh_iter_as_array(Mesh *mesh, const char itype, void *data, void **array, c
 
   /* sanity check */
   if (len > 0) {
-    BMIter iter;
+    MeshIter iter;
     void *ele;
 
-    for (ele = BM_iter_new(&iter, bm, itype, data); ele; ele = BM_iter_step(&iter)) {
+    for (ele = mesh_iter_new(&iter, bm, itype, data); ele; ele = BM_iter_step(&iter)) {
       array[i] = ele;
       i++;
       if (i == len) {
@@ -93,7 +93,7 @@ int mesh_iter_as_array(Mesh *mesh, const char itype, void *data, void **array, c
 
   return i;
 }
-int BMO_iter_as_array(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+int mesh_iter_as_array(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                       const char *slot_name,
                       const char restrictmask,
                       void **array,
@@ -103,11 +103,11 @@ int BMO_iter_as_array(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
 
   /* sanity check */
   if (len > 0) {
-    BMOIter oiter;
+    MeshOpIter oiter;
     void *ele;
 
-    for (ele = BMO_iter_new(&oiter, slot_args, slot_name, restrictmask); ele;
-         ele = BMO_iter_step(&oiter)) {
+    for (ele = mesh_op_iter_new(&oiter, slot_args, slot_name, restrictmask); ele;
+         ele = mesh_op_iter_step(&oiter)) {
       array[i] = ele;
       i++;
       if (i == len) {
@@ -119,7 +119,7 @@ int BMO_iter_as_array(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
   return i;
 }
 
-void *BM_iter_as_arrayN(BMesh *bm,
+void *mesh_iter_as_arrayN(BMesh *bm,
                         const char itype,
                         void *data,
                         int *r_len,
