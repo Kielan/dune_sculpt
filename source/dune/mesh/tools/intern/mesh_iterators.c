@@ -358,7 +358,7 @@ void meshiter__elem_of_mesh_begin(struct MeshIter__elem_of_mesh *iter)
 #ifdef USE_IMMUTABLE_ASSERT
   ((MeshIter *)iter)->count = lib_mempool_len(iter->pooliter.pool);
 #endif
-  BLI_mempool_iternew(iter->pooliter.pool, &iter->pooliter);
+  lib_mempool_iternew(iter->pooliter.pool, &iter->pooliter);
 }
 
 void *bmiter__elem_of_mesh_step(struct MeshIter__elem_of_mesh *iter)
@@ -405,8 +405,8 @@ void *meshiter__edge_of_vert_step(struct MeshIter__edge_of_vert *iter)
 
 void meshiter__face_of_vert_begin(struct BMIter__face_of_vert *iter)
 {
-  ((BMIter *)iter)->count = bmesh_disk_facevert_count(iter->vdata);
-  if (((BMIter *)iter)->count) {
+  ((MeshIter *)iter)->count = mesh_disk_facevert_count(iter->vdata);
+  if (((MeshIter *)iter)->count) {
     iter->l_first = bmesh_disk_faceloop_find_first(iter->vdata->e, iter->vdata);
     iter->e_first = iter->l_first->e;
     iter->e_next = iter->e_first;
