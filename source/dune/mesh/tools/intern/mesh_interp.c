@@ -161,21 +161,21 @@ void mesh_face_interp_from_face_ex(Mesh *mesh,
 
 void mesh_face_interp_from_face(Mesh *mesh, MeshFace *f_dst, const MeshFace *f_src, const bool do_vertex)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  const void **blocks_l = BLI_array_alloca(blocks_l, f_src->len);
-  const void **blocks_v = do_vertex ? BLI_array_alloca(blocks_v, f_src->len) : NULL;
-  float(*cos_2d)[2] = BLI_array_alloca(cos_2d, f_src->len);
+  const void **blocks_l = lib_array_alloca(blocks_l, f_src->len);
+  const void **blocks_v = do_vertex ? lib_array_alloca(blocks_v, f_src->len) : NULL;
+  float(*cos_2d)[2] = lib_array_alloca(cos_2d, f_src->len);
   float axis_mat[3][3]; /* use normal to transform into 2d xy coords */
   int i;
 
   /* convert the 3d coords into 2d for projection */
-  BLI_assert(BM_face_is_normal_valid(f_src));
+  lib_assert(mesh_face_is_normal_valid(f_src));
   axis_dominant_v3_to_m3(axis_mat, f_src->no);
 
   i = 0;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f_src);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f_src);
   do {
     mul_v2_m3v3(cos_2d[i], axis_mat, l_iter->v->co);
     blocks_l[i] = l_iter->head.data;
@@ -184,11 +184,11 @@ void mesh_face_interp_from_face(Mesh *mesh, MeshFace *f_dst, const MeshFace *f_s
     }
   } while ((void)i++, (l_iter = l_iter->next) != l_first);
 
-  BM_face_interp_from_face_ex(bm, f_dst, f_src, do_vertex, blocks_l, blocks_v, cos_2d, axis_mat);
+  mesh_face_interp_from_face_ex(mesh, f_dst, f_src, do_vertex, blocks_l, blocks_v, cos_2d, axis_mat);
 }
 
 /**
- * \brief Multires Interpolation
+ * Multires Interpolation
  *
  * mdisps is a grid of displacements, ordered thus:
  * <pre>
@@ -201,7 +201,7 @@ void mesh_face_interp_from_face(Mesh *mesh, MeshFace *f_dst, const MeshFace *f_s
  *          y
  * </pre>
  */
-static int compute_mdisp_quad(const BMLoop *l,
+static int compute_mdisp_quad(const MeshLoop *l,
                               const float l_f_center[3],
                               float v1[3],
                               float v2[3],
@@ -216,8 +216,8 @@ static int compute_mdisp_quad(const BMLoop *l,
   {
     float cent[3];
     /* computer center */
-    BM_face_calc_center_median(l->f, cent);
-    BLI_assert(equals_v3v3(cent, l_f_center));
+    mesh_face_calc_center_median(l->f, cent);
+    lib_assert(equals_v3v3(cent, l_f_center));
   }
 #endif
 
@@ -292,13 +292,13 @@ static void mdisp_axis_from_quad(const float v1[3],
 }
 
 /**
- * \param l_src: is loop whose internal displacement.
- * \param l_dst: is loop to project onto.
- * \param p: The point being projected.
- * \param r_axis_x, r_axis_y: The location in loop's #CD_MDISPS grid of point `p`.
+ * param l_src: is loop whose internal displacement.
+ * param l_dst: is loop to project onto.
+ * param p: The point being projected.
+ * param r_axis_x, r_axis_y: The location in loop's CD_MDISPS grid of point `p`.
  */
-static bool mdisp_in_mdispquad(BMLoop *l_src,
-                               BMLoop *l_dst,
+static bool mdisp_in_mdispquad(MeshLoop *l_src,
+                               MeshLoop *l_dst,
                                const float l_dst_f_center[3],
                                const float p[3],
                                int res,
@@ -310,10 +310,10 @@ static bool mdisp_in_mdispquad(BMLoop *l_src,
   float eps = FLT_EPSILON * 4000;
 
   if (is_zero_v3(l_src->v->no)) {
-    BM_vert_normal_update_all(l_src->v);
+    mesh_vert_normal_update_all(l_src->v);
   }
   if (is_zero_v3(l_dst->v->no)) {
-    BM_vert_normal_update_all(l_dst->v);
+    mesh_vert_normal_update_all(l_dst->v);
   }
 
   compute_mdisp_quad(l_dst, l_dst_f_center, v1, v2, v3, v4, e1, e2);
@@ -345,13 +345,13 @@ static bool mdisp_in_mdispquad(BMLoop *l_src,
   return 1;
 }
 
-static float bm_loop_flip_equotion(float mat[2][2],
-                                   float b[2],
-                                   const float target_axis_x[3],
-                                   const float target_axis_y[3],
-                                   const float coord[3],
-                                   int i,
-                                   int j)
+static float mesh_loop_flip_equotion(float mat[2][2],
+                                     float b[2],
+                                     const float target_axis_x[3],
+                                     const float target_axis_y[3],
+                                     const float coord[3],
+                                     int i,
+                                     int j)
 {
   mat[0][0] = target_axis_x[i];
   mat[0][1] = target_axis_y[i];
@@ -363,7 +363,7 @@ static float bm_loop_flip_equotion(float mat[2][2],
   return cross_v2v2(mat[0], mat[1]);
 }
 
-static void bm_loop_flip_disp(const float source_axis_x[3],
+static void mesh_loop_flip_disp(const float source_axis_x[3],
                               const float source_axis_y[3],
                               const float target_axis_x[3],
                               const float target_axis_y[3],
@@ -382,12 +382,12 @@ static void bm_loop_flip_disp(const float source_axis_x[3],
   project_v3_v3v3(vec, coord, n);
   sub_v3_v3v3(coord, coord, vec);
 
-  d = bm_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 0, 1);
+  d = mesh_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 0, 1);
 
   if (fabsf(d) < 1e-4f) {
-    d = bm_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 0, 2);
+    d = mesh_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 0, 2);
     if (fabsf(d) < 1e-4f) {
-      d = bm_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 1, 2);
+      d = mesh_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 1, 2);
     }
   }
 
@@ -395,9 +395,9 @@ static void bm_loop_flip_disp(const float source_axis_x[3],
   disp[1] = (mat[0][0] * b[1] - b[0] * mat[1][0]) / d;
 }
 
-typedef struct BMLoopInterpMultiresData {
-  BMLoop *l_dst;
-  BMLoop *l_src_first;
+typedef struct MeshLoopInterpMultiresData {
+  MeshLoop *l_dst;
+  MeshLoop *l_src_first;
   int cd_loop_mdisp_offset;
 
   MDisps *md_dst;
