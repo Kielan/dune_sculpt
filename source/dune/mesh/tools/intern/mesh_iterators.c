@@ -36,10 +36,10 @@ int mesh_iter_mesh_count(const char itype, BMesh *bm)
     case MESH_VERTS_OF_MESH:
       count = m->totvert;
       break;
-    case M_EDGES_OF_MESH:
+    case MESH_EDGES_OF_MESH:
       count = m->totedge;
       break;
-    case M_FACES_OF_MESH:
+    case MESH_FACES_OF_MESH:
       count = m->totface;
       break;
     default:
