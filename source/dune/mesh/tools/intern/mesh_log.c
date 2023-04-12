@@ -439,18 +439,18 @@ static void mesh_log_id_ghash_release(BMLog *log, GHash *id_ghash)
   GHashIterator gh_iter;
 
   GHASH_ITER (gh_iter, id_ghash) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    uint id = POINTER_AS_UINT(key);
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    uint id = PTR_AS_UINT(key);
     range_tree_uint_release(log->unused_ids, id);
   }
 }
 
 /***************************** Public API *****************************/
 
-BMLog *BM_log_create(BMesh *bm)
+MeshLog *mesh_log_create(Mesh *mesh)
 {
-  BMLog *log = MEM_callocN(sizeof(*log), __func__);
-  const uint reserve_num = (uint)(bm->totvert + bm->totface);
+  MeshLog *log = mem_callocn(sizeof(*log), __func__);
+  const uint reserve_num = (uint)(mesh->totvert + mesh->totface);
 
   log->unused_ids = range_tree_uint_alloc(0, (uint)-1);
   log->id_to_elem = BLI_ghash_new_ex(logkey_hash, logkey_cmp, __func__, reserve_num);
@@ -517,9 +517,9 @@ BMLog *BM_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry)
     bm_log_id_ghash_retake(log->unused_ids, entry->deleted_verts);
     bm_log_id_ghash_retake(log->unused_ids, entry->deleted_faces);
     bm_log_id_ghash_retake(log->unused_ids, entry->added_verts);
-    bm_log_id_ghash_retake(log->unused_ids, entry->added_faces);
-    bm_log_id_ghash_retake(log->unused_ids, entry->modified_verts);
-    bm_log_id_ghash_retake(log->unused_ids, entry->modified_faces);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->added_faces);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->modified_verts);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->modified_faces);
   }
 
   return log;
