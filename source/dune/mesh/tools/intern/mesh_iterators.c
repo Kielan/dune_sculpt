@@ -127,9 +127,9 @@ void *mesh_iter_as_arrayN(Mesh *mesh,
                         void **stack_array,
                         int stack_array_size)
 {
-  BMIter iter;
+  MeshIter iter;
 
-  BLI_assert(stack_array_size == 0 || (stack_array_size && stack_array));
+  lib_assert(stack_array_size == 0 || (stack_array_size && stack_array));
 
   /* We can't rely on MeshIter.count being set. */
   switch (itype) {
@@ -174,10 +174,10 @@ void *mesh_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                          int stack_array_size)
 {
   MeshOpIter iter;
-  BMElem *ele;
+  MeshElem *ele;
   const int slot_len = mesh_slot_buffer_len(slot_args, slot_name);
 
-  BLI_assert(stack_array_size == 0 || (stack_array_size && stack_array));
+  lib_assert(stack_array_size == 0 || (stack_array_size && stack_array));
 
   if ((ele = BMO_iter_new(&iter, slot_args, slot_name, restrictmask)) && slot_len > 0) {
     BMElem **array = slot_len > stack_array_size ? MEM_mallocN(sizeof(ele) * slot_len, __func__) :
