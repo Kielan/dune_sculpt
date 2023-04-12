@@ -82,7 +82,7 @@ int mesh_iter_as_array(Mesh *mesh, const char itype, void *data, void **array, c
     MeshIter iter;
     void *ele;
 
-    for (ele = mesh_iter_new(&iter, bm, itype, data); ele; ele = BM_iter_step(&iter)) {
+    for (ele = mesh_iter_new(&iter, mesh, itype, data); ele; ele = BM_iter_step(&iter)) {
       array[i] = ele;
       i++;
       if (i == len) {
@@ -120,12 +120,12 @@ int mesh_iter_as_array(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
 }
 
 void *mesh_iter_as_arrayN(Mesh *mesh,
-                        const char itype,
-                        void *data,
-                        int *r_len,
-                        /* optional args to avoid an alloc (normally stack array) */
-                        void **stack_array,
-                        int stack_array_size)
+                          const char itype,
+                          void *data,
+                          int *r_len,
+                          /* optional args to avoid an alloc (normally stack array) */
+                          void **stack_array,
+                          int stack_array_size)
 {
   MeshIter iter;
 
@@ -186,12 +186,12 @@ void *mesh_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
 
     do {
       array[i++] = ele;
-    } while ((ele = BMO_iter_step(&iter)));
-    BLI_assert(i <= slot_len);
+    } while ((ele = mesh_op_iter_step(&iter)));
+    lib_assert(i <= slot_len);
 
     if (i != slot_len) {
       if ((void **)array != stack_array) {
-        array = MEM_reallocN(array, sizeof(ele) * i);
+        array = mem_reallocn(array, sizeof(ele) * i);
       }
     }
     *r_len = i;
@@ -213,7 +213,7 @@ int mesh_iter_bitmap_from_filter(const char itype,
   int i;
   int bitmap_enabled = 0;
 
-  MESH_ITER_MESH_INDEX (ele, &iter, bm, itype, i) {
+  MESH_ITER_MESH_INDEX (ele, &iter, mesh, itype, i) {
     if (test_fn(ele, user_data)) {
       LIB_BITMAP_ENABLE(bitmap, i);
       bitmap_enabled++;
@@ -226,28 +226,28 @@ int mesh_iter_bitmap_from_filter(const char itype,
   return bitmap_enabled;
 }
 
-int mesh_iter_bitmap_from_filter_tessface(BMesh *bm,
-                                             BLI_bitmap *bitmap,
-                                             bool (*test_fn)(BMFace *, void *user_data),
-                                             void *user_data)
+int mesh_iter_bitmap_from_filter_tessface(Mesh *mesh,
+                                          lib_bitmap *bitmap,
+                                          bool (*test_fn)(MeshFace *, void *user_data),
+                                          void *user_data)
 {
-  BMIter iter;
-  BMFace *f;
+  MeshIter iter;
+  MeshFace *f;
   int i;
   int j = 0;
   int bitmap_enabled = 0;
 
-  BM_ITER_MESH_INDEX (f, &iter, bm, BM_FACES_OF_MESH, i) {
+  MESH_ITER_MESH_INDEX (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
     if (test_fn(f, user_data)) {
       for (int tri = 2; tri < f->len; tri++) {
-        BLI_BITMAP_ENABLE(bitmap, j);
+        LIB_BITMAP_ENABLE(bitmap, j);
         bitmap_enabled++;
         j++;
       }
     }
     else {
       for (int tri = 2; tri < f->len; tri++) {
-        BLI_BITMAP_DISABLE(bitmap, j);
+        LIB_BITMAP_DISABLE(bitmap, j);
         j++;
       }
     }
@@ -312,14 +312,14 @@ int mesh_op_iter_elem_count_flag(
   return count;
 }
 
-int mesh_iter_mesh_count_flag(const char itype, BMesh *bm, const char hflag, const bool value)
+int mesh_iter_mesh_count_flag(const char itype, Mesh *mesh, const char hflag, const bool value)
 {
   MeshIter iter;
   MeshElem *ele;
   int count = 0;
 
-  BM_ITER_MESH (ele, &iter, bm, itype) {
-    if (BM_elem_flag_test_bool(ele, hflag) == value) {
+  MESH_ITER_MESH (ele, &iter, mesh, itype) {
+    if (mesh_elem_flag_test_bool(ele, hflag) == value) {
       count++;
     }
   }
@@ -336,8 +336,8 @@ int mesh_iter_mesh_count_flag(const char itype, BMesh *bm, const char hflag, con
  *
  * When the end of a sequence is reached, next should always equal NULL
  *
- * The 'bmiter__' prefix is used because these are used in
- * bmesh_iterators_inine.c but should otherwise be seen as
+ * The 'meshiter__' prefix is used because these are used in
+ * mesh_iterators_inine.c but should otherwise be seen as
  * private.
  */
 
@@ -353,18 +353,18 @@ int mesh_iter_mesh_count_flag(const char itype, BMesh *bm, const char hflag, con
 #  define USE_IMMUTABLE_ASSERT
 #endif
 
-void bmiter__elem_of_mesh_begin(struct BMIter__elem_of_mesh *iter)
+void meshiter__elem_of_mesh_begin(struct MeshIter__elem_of_mesh *iter)
 {
 #ifdef USE_IMMUTABLE_ASSERT
-  ((BMIter *)iter)->count = BLI_mempool_len(iter->pooliter.pool);
+  ((MeshIter *)iter)->count = lib_mempool_len(iter->pooliter.pool);
 #endif
   BLI_mempool_iternew(iter->pooliter.pool, &iter->pooliter);
 }
 
-void *bmiter__elem_of_mesh_step(struct BMIter__elem_of_mesh *iter)
+void *bmiter__elem_of_mesh_step(struct MeshIter__elem_of_mesh *iter)
 {
 #ifdef USE_IMMUTABLE_ASSERT
-  lib_assert(((MeshIter *)iter)->count <= BLI_mempool_len(iter->pooliter.pool));
+  lib_assert(((MeshIter *)iter)->count <= lib_mempool_len(iter->pooliter.pool));
 #endif
   return lib_mempool_iterstep(&iter->pooliter);
 }
@@ -375,7 +375,7 @@ void *bmiter__elem_of_mesh_step(struct BMIter__elem_of_mesh *iter)
 
 /** EDGE OF VERT CALLBACKS */
 
-void bmiter__edge_of_vert_begin(struct BMIter__edge_of_vert *iter)
+void meshiter__edge_of_vert_begin(struct MeshIter__edge_of_vert *iter)
 {
   if (iter->vdata->e) {
     iter->e_first = iter->vdata->e;
@@ -387,12 +387,12 @@ void bmiter__edge_of_vert_begin(struct BMIter__edge_of_vert *iter)
   }
 }
 
-void *bmiter__edge_of_vert_step(struct BMIter__edge_of_vert *iter)
+void *meshiter__edge_of_vert_step(struct MeshIter__edge_of_vert *iter)
 {
-  BMEdge *e_curr = iter->e_next;
+  MeshEdge *e_curr = iter->e_next;
 
   if (iter->e_next) {
-    iter->e_next = bmesh_disk_edge_next(iter->e_next, iter->vdata);
+    iter->e_next = mesh_disk_edge_next(iter->e_next, iter->vdata);
     if (iter->e_next == iter->e_first) {
       iter->e_next = NULL;
     }
@@ -401,11 +401,9 @@ void *bmiter__edge_of_vert_step(struct BMIter__edge_of_vert *iter)
   return e_curr;
 }
 
-/*
- * FACE OF VERT CALLBACKS
- */
+/* * FACE OF VERT CALLBACKS */
 
-void bmiter__face_of_vert_begin(struct BMIter__face_of_vert *iter)
+void meshiter__face_of_vert_begin(struct BMIter__face_of_vert *iter)
 {
   ((BMIter *)iter)->count = bmesh_disk_facevert_count(iter->vdata);
   if (((BMIter *)iter)->count) {
