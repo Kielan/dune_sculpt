@@ -146,16 +146,16 @@ void *mesh_iter_as_arrayN(Mesh *mesh,
       break;
   }
 
-  if (mesh_iter_init(&iter, bm, itype, data) && iter.count > 0) {
+  if (mesh_iter_init(&iter, mesh, itype, data) && iter.count > 0) {
     MeshElem *ele;
     MeshElem **array = iter.count > stack_array_size ?
-                         MEM_mallocN(sizeof(ele) * iter.count, __func__) :
+                         mem_mallocn(sizeof(ele) * iter.count, __func__) :
                          stack_array;
     int i = 0;
 
     *r_len = iter.count; /* set before iterating */
 
-    while ((ele = BM_iter_step(&iter))) {
+    while ((ele = mesh_iter_step(&iter))) {
       array[i++] = ele;
     }
     return array;
@@ -165,7 +165,7 @@ void *mesh_iter_as_arrayN(Mesh *mesh,
   return NULL;
 }
 
-void *BMO_iter_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
+void *mesh_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                          const char *slot_name,
                          const char restrictmask,
                          int *r_len,
@@ -173,9 +173,9 @@ void *BMO_iter_as_arrayN(BMOpSlot slot_args[BMO_OP_MAX_SLOTS],
                          void **stack_array,
                          int stack_array_size)
 {
-  BMOIter iter;
+  MeshOpIter iter;
   BMElem *ele;
-  const int slot_len = BMO_slot_buffer_len(slot_args, slot_name);
+  const int slot_len = mesh_slot_buffer_len(slot_args, slot_name);
 
   BLI_assert(stack_array_size == 0 || (stack_array_size && stack_array));
 
