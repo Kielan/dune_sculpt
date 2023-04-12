@@ -328,7 +328,7 @@ static void mesh_log_face_values_swap(MeshLog *log, GHash *faces)
     void *key = lib_ghashIterator_getKey(&gh_iter);
     MeshLogFace *lf = lib_ghashIterator_getValue(&gh_iter);
     uint id = PTR_AS_UINT(key);
-    BMFace *f = bm_log_face_from_id(log, id);
+    MeshFace *f = mesh_log_face_from_id(log, id);
 
     SWAP(char, f->head.hflag, lf->hflag);
   }
@@ -336,40 +336,40 @@ static void mesh_log_face_values_swap(MeshLog *log, GHash *faces)
 
 /**********************************************************************/
 
-/* Assign unique IDs to all vertices and faces already in the BMesh */
-static void bm_log_assign_ids(BMesh *bm, BMLog *log)
+/* Assign unique IDs to all vertices and faces already in the Mesh */
+static void mesh_log_assign_ids(Mesh *mesh, MeshLog *log)
 {
-  BMIter iter;
-  BMVert *v;
-  BMFace *f;
+  MeshIter iter;
+  MeshVert *v;
+  MeshFace *f;
 
   /* Generate vertex IDs */
-  BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+  MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
     uint id = range_tree_uint_take_any(log->unused_ids);
-    bm_log_vert_id_set(log, v, id);
+    mesh_log_vert_id_set(log, v, id);
   }
 
   /* Generate face IDs */
-  BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+  MESH_ITER (f, &iter, mesh, MESH_FACES_OF_MESH) {
     uint id = range_tree_uint_take_any(log->unused_ids);
-    bm_log_face_id_set(log, f, id);
+    mesh_log_face_id_set(log, f, id);
   }
 }
 
 /* Allocate an empty log entry */
-static BMLogEntry *bm_log_entry_create(void)
+static MeshLogEntry *mesh_log_entry_create(void)
 {
-  BMLogEntry *entry = MEM_callocN(sizeof(BMLogEntry), __func__);
+  MeshLogEntry *entry = mem_callocn(sizeof(MeshLogEntry), __func__);
 
-  entry->deleted_verts = BLI_ghash_new(logkey_hash, logkey_cmp, __func__);
-  entry->deleted_faces = BLI_ghash_new(logkey_hash, logkey_cmp, __func__);
-  entry->added_verts = BLI_ghash_new(logkey_hash, logkey_cmp, __func__);
-  entry->added_faces = BLI_ghash_new(logkey_hash, logkey_cmp, __func__);
-  entry->modified_verts = BLI_ghash_new(logkey_hash, logkey_cmp, __func__);
-  entry->modified_faces = BLI_ghash_new(logkey_hash, logkey_cmp, __func__);
+  entry->deleted_verts = lib_ghash_new(logkey_hash, logkey_cmp, __func__);
+  entry->deleted_faces = lib_ghash_new(logkey_hash, logkey_cmp, __func__);
+  entry->added_verts = lib_ghash_new(logkey_hash, logkey_cmp, __func__);
+  entry->added_faces = lib_ghash_new(logkey_hash, logkey_cmp, __func__);
+  entry->modified_verts = lib_ghash_new(logkey_hash, logkey_cmp, __func__);
+  entry->modified_faces = lib_ghash_new(logkey_hash, logkey_cmp, __func__);
 
-  entry->pool_verts = BLI_mempool_create(sizeof(BMLogVert), 0, 64, BLI_MEMPOOL_NOP);
-  entry->pool_faces = BLI_mempool_create(sizeof(BMLogFace), 0, 64, BLI_MEMPOOL_NOP);
+  entry->pool_verts = lib_mempool_create(sizeof(MeshLogVert), 0, 64, LIB_MEMPOOL_NOP);
+  entry->pool_faces = lib_mempool_create(sizeof(MeshLogFace), 0, 64, LIB_MEMPOOL_NOP);
 
   return entry;
 }
@@ -377,26 +377,26 @@ static BMLogEntry *bm_log_entry_create(void)
 /* Free the data in a log entry
  *
  * NOTE: does not free the log entry itself. */
-static void bm_log_entry_free(BMLogEntry *entry)
+static void mesh_log_entry_free(MeshLogEntry *entry)
 {
-  BLI_ghash_free(entry->deleted_verts, NULL, NULL);
-  BLI_ghash_free(entry->deleted_faces, NULL, NULL);
-  BLI_ghash_free(entry->added_verts, NULL, NULL);
-  BLI_ghash_free(entry->added_faces, NULL, NULL);
-  BLI_ghash_free(entry->modified_verts, NULL, NULL);
-  BLI_ghash_free(entry->modified_faces, NULL, NULL);
+  lib_ghash_free(entry->deleted_verts, NULL, NULL);
+  lib_ghash_free(entry->deleted_faces, NULL, NULL);
+  lib_ghash_free(entry->added_verts, NULL, NULL);
+  lib_ghash_free(entry->added_faces, NULL, NULL);
+  lib_ghash_free(entry->modified_verts, NULL, NULL);
+  lib_ghash_free(entry->modified_faces, NULL, NULL);
 
-  BLI_mempool_destroy(entry->pool_verts);
-  BLI_mempool_destroy(entry->pool_faces);
+  lib_mempool_destroy(entry->pool_verts);
+  lib_mempool_destroy(entry->pool_faces);
 }
 
-static void bm_log_id_ghash_retake(RangeTreeUInt *unused_ids, GHash *id_ghash)
+static void mesh_log_id_ghash_retake(RangeTreeUInt *unused_ids, GHash *id_ghash)
 {
   GHashIterator gh_iter;
 
   GHASH_ITER (gh_iter, id_ghash) {
-    void *key = BLI_ghashIterator_getKey(&gh_iter);
-    uint id = POINTER_AS_UINT(key);
+    void *key = lib_ghashIterator_getKey(&gh_iter);
+    uint id = PTR_AS_UINT(key);
 
     range_tree_uint_retake(unused_ids, id);
   }
@@ -417,24 +417,24 @@ static int uint_compare(const void *a_v, const void *b_v)
  *   10 -> 3
  *    3 -> 1
  */
-static GHash *bm_log_compress_ids_to_indices(uint *ids, uint totid)
+static GHash *mesh_log_compress_ids_to_indices(uint *ids, uint totid)
 {
-  GHash *map = BLI_ghash_int_new_ex(__func__, totid);
+  GHash *map = lib_ghash_int_new_ex(__func__, totid);
   uint i;
 
   qsort(ids, totid, sizeof(*ids), uint_compare);
 
   for (i = 0; i < totid; i++) {
-    void *key = POINTER_FROM_UINT(ids[i]);
-    void *val = POINTER_FROM_UINT(i);
-    BLI_ghash_insert(map, key, val);
+    void *key = PTR_FROM_UINT(ids[i]);
+    void *val = PTR_FROM_UINT(i);
+    lib_ghash_insert(map, key, val);
   }
 
   return map;
 }
 
 /* Release all ID keys in id_ghash */
-static void bm_log_id_ghash_release(BMLog *log, GHash *id_ghash)
+static void mesh_log_id_ghash_release(BMLog *log, GHash *id_ghash)
 {
   GHashIterator gh_iter;
 
