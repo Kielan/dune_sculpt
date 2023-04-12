@@ -932,18 +932,18 @@ void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int
   else if (&mesh->pdata == data) {
     MeshFace *efa;
 
-    BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
-      void *ptr = CustomData_bmesh_get_n(data, efa->head.data, type, src_n);
-      CustomData_bmesh_set_n(data, efa->head.data, type, dst_n, ptr);
+    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+      void *ptr = CustomData_mesh_get_n(data, efa->head.data, type, src_n);
+      CustomData_mesh_set_n(data, efa->head.data, type, dst_n, ptr);
     }
   }
-  else if (&bm->ldata == data) {
-    BMIter liter;
-    BMFace *efa;
-    BMLoop *l;
+  else if (&mesh->ldata == data) {
+    MeshIter liter;
+    MeshFace *efa;
+    MeshLoop *l;
 
-    BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
-      BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
+    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
         void *ptr = CustomData_bmesh_get_n(data, l->head.data, type, src_n);
         CustomData_bmesh_set_n(data, l->head.data, type, dst_n, ptr);
       }
