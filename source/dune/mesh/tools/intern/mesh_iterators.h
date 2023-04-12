@@ -41,15 +41,15 @@ typedef enum MeshIterType {
    * input loop's edge. */
   BM_LOOPS_OF_LOOP = 12,
   BM_LOOPS_OF_EDGE = 13,
-} BMIterType;
+} MeshIterType;
 
-#define BM_ITYPE_MAX 14
+#define MESH_ITYPE_MAX 14
 
 /* the iterator htype for each iterator */
-extern const char bm_iter_itype_htype_map[BM_ITYPE_MAX];
+extern const char mesh_iter_itype_htype_map[BM_ITYPE_MAX];
 
 /* -------------------------------------------------------------------- */
-/** \name Defines for passing to #BM_iter_new.
+/** Defines for passing to mesh_iter_new.
  *
  * "OF" can be substituted for "around" so #BM_VERTS_OF_FACE means "vertices* around a face."
  * \{ */
