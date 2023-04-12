@@ -415,10 +415,10 @@ static void loop_interp_multires_cb(void *__restrict userdata,
                                     const int ix,
                                     const TaskParallelTLS *__restrict UNUSED(tls))
 {
-  BMLoopInterpMultiresData *data = userdata;
+  MeshLoopInterpMultiresData *data = userdata;
 
-  BMLoop *l_first = data->l_src_first;
-  BMLoop *l_dst = data->l_dst;
+  MeshLoop *l_first = data->l_src_first;
+  MeshLoop *l_dst = data->l_dst;
   const int cd_loop_mdisp_offset = data->cd_loop_mdisp_offset;
 
   MDisps *md_dst = data->md_dst;
