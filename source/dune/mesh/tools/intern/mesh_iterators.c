@@ -133,20 +133,20 @@ void *mesh_iter_as_arrayN(Mesh *mesh,
 
   /* We can't rely on MeshIter.count being set. */
   switch (itype) {
-    case BM_VERTS_OF_MESH:
+    case MESH_VERTS_OF_MESH:
       iter.count = mesh->totvert;
       break;
-    case BM_EDGES_OF_MESH:
+    case MESH_EDGES_OF_MESH:
       iter.count = mesh->totedge;
       break;
-    case BM_FACES_OF_MESH:
+    case MESH_FACES_OF_MESH:
       iter.count = mesh->totface;
       break;
     default:
       break;
   }
 
-  if (BM_iter_init(&iter, bm, itype, data) && iter.count > 0) {
+  if (mesh_iter_init(&iter, bm, itype, data) && iter.count > 0) {
     MeshElem *ele;
     MeshElem **array = iter.count > stack_array_size ?
                          MEM_mallocN(sizeof(ele) * iter.count, __func__) :
