@@ -25,13 +25,13 @@ typedef enum MeshIterType {
   MESH_FACES_OF_MESH = 3,
   /* these are topological iterators. */
   MESH_EDGES_OF_VERT = 4,
-  BM_FACES_OF_VERT = 5,
-  BM_LOOPS_OF_VERT = 6,
-  BM_VERTS_OF_EDGE = 7, /* just v1, v2: added so py can use generalized sequencer wrapper */
-  BM_FACES_OF_EDGE = 8,
-  BM_VERTS_OF_FACE = 9,
-  BM_EDGES_OF_FACE = 10,
-  BM_LOOPS_OF_FACE = 11,
+  M_FACES_OF_VERT = 5,
+  M_LOOPS_OF_VERT = 6,
+  M_VERTS_OF_EDGE = 7, /* just v1, v2: added so py can use generalized sequencer wrapper */
+  M_FACES_OF_EDGE = 8,
+  M_VERTS_OF_FACE = 9,
+  M_EDGES_OF_FACE = 10,
+  M_LOOPS_OF_FACE = 11,
   /* returns elements from all boundaries, and returns
    * the first element at the end to flag that we're entering
    * a different face hole boundary. */
@@ -39,8 +39,8 @@ typedef enum MeshIterType {
   /* iterate through loops around this loop, which are fetched
    * from the other faces in the radial cycle surrounding the
    * input loop's edge. */
-  BM_LOOPS_OF_LOOP = 12,
-  BM_LOOPS_OF_EDGE = 13,
+  M_LOOPS_OF_LOOP = 12,
+  M_LOOPS_OF_EDGE = 13,
 } MeshIterType;
 
 #define MESH_ITYPE_MAX 14
@@ -52,11 +52,11 @@ extern const char mesh_iter_itype_htype_map[BM_ITYPE_MAX];
 /** Defines for passing to mesh_iter_new.
  *
  * "OF" can be substituted for "around" so #BM_VERTS_OF_FACE means "vertices* around a face."
- * \{ */
+ **/
 
-#define BM_ITER_MESH(ele, iter, bm, itype) \
-  for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, bm, itype, NULL); ele; \
-       BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_step(iter))
+#define MESH_ITER_MESH(ele, iter, bm, itype) \
+  for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, bm, itype, NULL); ele; \
+       MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_step(iter))
 
 #define BM_ITER_MESH_INDEX(ele, iter, bm, itype, indexvar) \
   for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BM_iter_new(iter, bm, itype, NULL), indexvar = 0; ele; \
