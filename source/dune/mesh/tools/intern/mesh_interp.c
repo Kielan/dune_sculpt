@@ -957,13 +957,13 @@ void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int
 
 float mesh_elem_float_data_get(CustomData *cd, void *element, int type)
 {
-  const float *f = CustomData_bmesh_get(cd, ((BMHeader *)element)->data, type);
+  const float *f = CustomData_mesh_get(cd, ((MeshHeader *)element)->data, type);
   return f ? *f : 0.0f;
 }
 
 void mesh_elem_float_data_set(CustomData *cd, void *element, int type, const float val)
 {
-  float *f = CustomData_bmesh_get(cd, ((BMHeader *)element)->data, type);
+  float *f = CustomData_mesh_get(cd, ((MeshHeader *)element)->data, type);
   if (f) {
     *f = val;
   }
@@ -1004,7 +1004,7 @@ struct LoopWalkCtx {
   /* accumulate 'LoopGroupCD.weight' to make unit length */
   float weight_accum;
 
-  /* both arrays the size of the 'BM_vert_face_count(v)'
+  /* both arrays the size of the 'mesh_vert_face_count(v)'
    * each contiguous fan gets a slide of these arrays */
   void **data_array;
   int *data_index_array;
@@ -1023,12 +1023,12 @@ struct LoopGroupCD {
   int data_len;
 };
 
-static void mesh_loop_walk_add(struct LoopWalkCtx *lwc, BMLoop *l)
+static void mesh_loop_walk_add(struct LoopWalkCtx *lwc, MeshLoop *l)
 {
   const int i = mesh_elem_index_get(l);
   const float w = lwc->loop_weights[i];
   mesh_elem_flag_disable(l, MESH_ELEM_INTERNAL_TAG);
-  lwc->data_array[lwc->data_len] = BM_ELEM_CD_GET_VOID_P(l, lwc->cd_layer_offset);
+  lwc->data_array[lwc->data_len] = MESH_ELEM_CD_GET_VOID_P(l, lwc->cd_layer_offset);
   lwc->data_index_array[lwc->data_len] = i;
   lwc->weight_array[lwc->data_len] = w;
   lwc->weight_accum += w;
@@ -1079,23 +1079,23 @@ LinkNode *mesh_vert_loop_groups_data_layer_create(
   int loop_num;
 
   lwc.type = mesh->ldata.layers[layer_n].type;
-  lwc.cd_layer_offset = bm->ldata.layers[layer_n].offset;
+  lwc.cd_layer_offset = mesh->ldata.layers[layer_n].offset;
   lwc.loop_weights = loop_weights;
   lwc.arena = arena;
 
-  /* Enable 'BM_ELEM_INTERNAL_TAG', leaving the flag clean on completion. */
+  /* Enable 'MESH_ELEM_INTERNAL_TAG', leaving the flag clean on completion. */
   loop_num = 0;
-  BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
-    BM_elem_flag_enable(l, BM_ELEM_INTERNAL_TAG);
-    BM_elem_index_set(l, loop_num); /* set_dirty! */
+  MESH_ITER_ELEM (l, &liter, v, NESG_LOOPS_OF_VERT) {
+    mesh_elem_flag_enable(l, MESH_ELEM_INTERNAL_TAG);
+    mesh_elem_index_set(l, loop_num); /* set_dirty! */
     loop_num++;
   }
   bm->elem_index_dirty |= BM_LOOP;
 
   lwc.data_len = 0;
-  lwc.data_array = BLI_memarena_alloc(lwc.arena, sizeof(void *) * loop_num);
-  lwc.data_index_array = BLI_memarena_alloc(lwc.arena, sizeof(int) * loop_num);
-  lwc.weight_array = BLI_memarena_alloc(lwc.arena, sizeof(float) * loop_num);
+  lwc.data_array = lib_memarena_alloc(lwc.arena, sizeof(void *) * loop_num);
+  lwc.data_index_array = lib_memarena_alloc(lwc.arena, sizeof(int) * loop_num);
+  lwc.weight_array = lib_memarena_alloc(lwc.arena, sizeof(float) * loop_num);
 
   BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
     if (BM_elem_flag_test(l, BM_ELEM_INTERNAL_TAG)) {
