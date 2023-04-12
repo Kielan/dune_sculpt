@@ -468,23 +468,23 @@ void BM_log_cleanup_entry(BMLogEntry *entry)
 
   if (log) {
     /* Take all used IDs */
-    bm_log_id_ghash_retake(log->unused_ids, entry->deleted_verts);
-    bm_log_id_ghash_retake(log->unused_ids, entry->deleted_faces);
-    bm_log_id_ghash_retake(log->unused_ids, entry->added_verts);
-    bm_log_id_ghash_retake(log->unused_ids, entry->added_faces);
-    bm_log_id_ghash_retake(log->unused_ids, entry->modified_verts);
-    bm_log_id_ghash_retake(log->unused_ids, entry->modified_faces);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->deleted_verts);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->deleted_faces);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->added_verts);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->added_faces);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->modified_verts);
+    mesh_log_id_ghash_retake(log->unused_ids, entry->modified_faces);
 
     /* delete entries to avoid releasing ids in node cleanup */
-    BLI_ghash_clear(entry->deleted_verts, NULL, NULL);
-    BLI_ghash_clear(entry->deleted_faces, NULL, NULL);
-    BLI_ghash_clear(entry->added_verts, NULL, NULL);
-    BLI_ghash_clear(entry->added_faces, NULL, NULL);
-    BLI_ghash_clear(entry->modified_verts, NULL, NULL);
+    lib_ghash_clear(entry->deleted_verts, NULL, NULL);
+    lib_ghash_clear(entry->deleted_faces, NULL, NULL);
+    lib_ghash_clear(entry->added_verts, NULL, NULL);
+    lib_ghash_clear(entry->added_faces, NULL, NULL);
+    lib_ghash_clear(entry->modified_verts, NULL, NULL);
   }
 }
 
-BMLog *BM_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry)
+BMLog *mesh_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry)
 {
   BMLog *log = BM_log_create(bm);
 
@@ -495,7 +495,7 @@ BMLog *BM_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry)
     log->current_entry = NULL;
   }
 
-  /* Let BMLog manage the entry list again */
+  /* MeshLog manage the entry list again */
   log->entries.first = log->entries.last = entry;
 
   {
@@ -527,7 +527,7 @@ BMLog *BM_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry)
 
 void mesh_log_free(MeshLog *log)
 {
-  BMLogEntry *entry;
+ MeshLogEntry *entry;
 
   if (log->unused_ids) {
     range_tree_uint_free(log->unused_ids);
@@ -550,12 +550,12 @@ void mesh_log_free(MeshLog *log)
   mem_freen(log);
 }
 
-int BM_log_length(const BMLog *log)
+int mesh_log_length(const MeshLog *log)
 {
-  return BLI_listbase_count(&log->entries);
+  return lib_listbase_count(&log->entries);
 }
 
-void BM_log_mesh_elems_reorder(BMesh *bm, BMLog *log)
+void mesh_log_mesh_elems_reorder(Mesh *mesh, MeshLog *log)
 {
   uint *varr;
   uint *farr;
