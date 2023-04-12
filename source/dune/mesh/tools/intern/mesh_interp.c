@@ -768,9 +768,9 @@ static void update_data_blocks(Mesh *mesh, CustomData *olddata, CustomData *data
 
     MESH_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH) {
       block = NULL;
-      CustomData_bmesh_set_default(data, &block);
-      CustomData_bmesh_copy_data(olddata, data, eve->head.data, &block);
-      CustomData_bmesh_free_block(olddata, &eve->head.data);
+      CustomData_mesh_set_default(data, &block);
+      CustomData_mesh_copy_data(olddata, data, eve->head.data, &block);
+      CustomData_mesh_free_block(olddata, &eve->head.data);
       eve->head.data = block;
     }
   }
@@ -916,21 +916,21 @@ void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int
   if (&mesh->vdata == data) {
     MeshVert *eve;
 
-    MESH_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
-      void *ptr = CustomData_bmesh_get_n(data, eve->head.data, type, src_n);
-      CustomData_bmesh_set_n(data, eve->head.data, type, dst_n, ptr);
+    MESH_ITER_MESH (eve, &iter, mesh, MESH_VERTS_OF_MESH) {
+      void *ptr = CustomData_mesh_get_n(data, eve->head.data, type, src_n);
+      CustomData_mesh_set_n(data, eve->head.data, type, dst_n, ptr);
     }
   }
-  else if (&bm->edata == data) {
-    BMEdge *eed;
+  else if (&mesh->edata == data) {
+    MeshEdge *eed;
 
-    BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
-      void *ptr = CustomData_bmesh_get_n(data, eed->head.data, type, src_n);
-      CustomData_bmesh_set_n(data, eed->head.data, type, dst_n, ptr);
+    MESH_ITER_MESH (eed, &iter, mesh, MESH_EDGES_OF_MESH) {
+      void *ptr = CustomData_mesh_get_n(data, eed->head.data, type, src_n);
+      CustomData_mesh_set_n(data, eed->head.data, type, dst_n, ptr);
     }
   }
-  else if (&bm->pdata == data) {
-    BMFace *efa;
+  else if (&mesh->pdata == data) {
+    MeshFace *efa;
 
     BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
       void *ptr = CustomData_bmesh_get_n(data, efa->head.data, type, src_n);
