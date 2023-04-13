@@ -736,23 +736,23 @@ static int mesh_flag_count(Mesh *bm,
                            const bool test_for_enabled)
 {
   MeshElem *ele;
-  BMIter iter;
+  MeshIter iter;
   int tot = 0;
 
-  BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+  lib_assert((htype & ~MESH_ALL_NOLOOP) == 0);
 
-  if (htype & BM_VERT) {
-    BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
-      if (respecthide && BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) {
+  if (htype & MESH_VERT) {
+    MESH_ITER (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+      if (respecthide && mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) {
         continue;
       }
-      if (BM_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
+      if (mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
         tot++;
       }
     }
   }
-  if (htype & BM_EDGE) {
-    BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
+  if (htype & MESH_EDGE) {
+    MESH_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
       if (respecthide && BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) {
         continue;
       }
@@ -775,23 +775,23 @@ static int mesh_flag_count(Mesh *bm,
   return tot;
 }
 
-int BM_mesh_elem_hflag_count_enabled(BMesh *bm,
-                                     const char htype,
-                                     const char hflag,
-                                     const bool respecthide)
+int mesh_elem_hflag_count_enabled(Mesh *mesh,
+                                  const char htype,
+                                  const char hflag,
+                                  const bool respecthide)
 {
-  return bm_mesh_flag_count(bm, htype, hflag, respecthide, true);
+  return mesh_flag_count(mesh, htype, hflag, respecthide, true);
 }
 
-int BM_mesh_elem_hflag_count_disabled(BMesh *bm,
-                                      const char htype,
-                                      const char hflag,
-                                      const bool respecthide)
+int mesh_elem_hflag_count_disabled(Mesh *mesh,
+                                   const char htype,
+                                   const char hflag,
+                                   const bool respecthide)
 {
-  return bm_mesh_flag_count(bm, htype, hflag, respecthide, false);
+  return mesh_flag_count(mesh, htype, hflag, respecthide, false);
 }
 
-void BM_elem_select_set(BMesh *bm, BMElem *ele, const bool select)
+void mesh_elem_select_set(BMesh *bm, BMElem *ele, const bool select)
 {
   switch (ele->head.htype) {
     case BM_VERT:
