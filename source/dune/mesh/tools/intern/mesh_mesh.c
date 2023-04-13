@@ -1,11 +1,11 @@
 /** mesh level functions. **/
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_listBase.h"
-#include "DNA_scene_types.h"
+#include "types_listBase.h"
+#include "types_scene.h"
 
-#include "BLI_listbase.h"
+#include "lib_listbase.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
