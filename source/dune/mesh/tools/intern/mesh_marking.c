@@ -381,7 +381,7 @@ static void mesh_select_mode_flush_edge_to_face(Mesh *mesh)
 
   TaskParallelSettings settings;
   lib_parallel_range_settings_defaults(&settings);
-  settings.use_threading = mesh->totface >= BM_OMP_LIMIT;
+  settings.use_threading = mesh->totface >= MESH_OMP_LIMIT;
   settings.userdata_chunk = &chunk_data;
   settings.userdata_chunk_size = sizeof(chunk_data);
   settings.func_reduce = mesh_mesh_select_mode_flush_reduce_fn;
@@ -683,16 +683,16 @@ void mesh_select_mode_set(Mesh *mesh, int selectmode)
   MeshIter iter;
   MehElem *ele;
 
-  bm->selectmode = selectmode;
+  mesh->selectmode = selectmode;
 
-  if (bm->selectmode & SCE_SELECT_VERTEX) {
+  if (mesh->selectmode & SCE_SELECT_VERTEX) {
     /* disabled because selection flushing handles these */
 #if 0
-    BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
-      BM_elem_flag_disable(ele, BM_ELEM_SELECT);
+    MESH_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
+      MESH_elem_flag_disable(ele, BM_ELEM_SELECT);
     }
-    BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
-      BM_elem_flag_disable(ele, BM_ELEM_SELECT);
+    MESH_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
+      mesh_elem_flag_disable(ele, BM_ELEM_SELECT);
     }
 #endif
     BM_mesh_select_mode_flush(bm);
