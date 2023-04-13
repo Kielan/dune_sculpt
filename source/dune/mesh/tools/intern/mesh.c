@@ -515,14 +515,14 @@ void BM_mesh_elem_index_validate(
 
 /* debug check only - no need to optimize */
 #ifndef NDEBUG
-bool BM_mesh_elem_table_check(BMesh *bm)
+bool mesh_elem_table_check(BMesh *bm)
 {
-  BMIter iter;
-  BMElem *ele;
+  MeshIter iter;
+  MeshElem *ele;
   int i;
 
-  if (bm->vtable && ((bm->elem_table_dirty & BM_VERT) == 0)) {
-    BM_ITER_MESH_INDEX (ele, &iter, bm, BM_VERTS_OF_MESH, i) {
+  if (mesh->vtable && ((mesh->elem_table_dirty & MESH_VERT) == 0)) {
+    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_VERTS_OF_MESH, i) {
       if (ele != (BMElem *)bm->vtable[i]) {
         return false;
       }
