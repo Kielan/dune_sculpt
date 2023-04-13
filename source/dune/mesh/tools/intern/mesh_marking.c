@@ -1130,47 +1130,47 @@ GHash *BM_select_history_map_create(BMesh *bm)
   return map;
 }
 
-void BM_select_history_merge_from_targetmap(
-    BMesh *bm, GHash *vert_map, GHash *edge_map, GHash *face_map, const bool use_chain)
+void mesh_select_history_merge_from_targetmap(
+    Mesh *mesh, GHash *vert_map, GHash *edge_map, GHash *face_map, const bool use_chain)
 {
 
 #ifdef DEBUG
-  LISTBASE_FOREACH (BMEditSelection *, ese, &bm->selected) {
-    BLI_assert(BM_ELEM_API_FLAG_TEST(ese->ele, _FLAG_OVERLAP) == 0);
+  LISTBASE_FOREACH (MeshEditSelection *, ese, &mesh->selected) {
+    LIB_assert(MESH_ELEM_API_FLAG_TEST(ese->ele, _FLAG_OVERLAP) == 0);
   }
 #endif
 
-  LISTBASE_FOREACH (BMEditSelection *, ese, &bm->selected) {
-    BM_ELEM_API_FLAG_ENABLE(ese->ele, _FLAG_OVERLAP);
+  LISTBASE_FOREACH (MeshEditSelection *, ese, &mesh->selected) {
+    MESH_ELEM_API_FLAG_ENABLE(ese->ele, _FLAG_OVERLAP);
 
     /* Only loop when (use_chain == true). */
     GHash *map = NULL;
     switch (ese->ele->head.htype) {
-      case BM_VERT:
+      case MESH_VERT:
         map = vert_map;
         break;
-      case BM_EDGE:
+      case MESH_EDGE:
         map = edge_map;
         break;
-      case BM_FACE:
+      case MESH_FACE:
         map = face_map;
         break;
       default:
-        BMESH_ASSERT(0);
+        MESH_ASSERT(0);
         break;
     }
     if (map != NULL) {
-      BMElem *ele_dst = ese->ele;
+      MeshElem *ele_dst = ese->ele;
       while (true) {
-        BMElem *ele_dst_next = BLI_ghash_lookup(map, ele_dst);
-        BLI_assert(ele_dst != ele_dst_next);
+        MeshElem *ele_dst_next = lib_ghash_lookup(map, ele_dst);
+        lib_assert(ele_dst != ele_dst_next);
         if (ele_dst_next == NULL) {
           break;
         }
         ele_dst = ele_dst_next;
         /* Break loop on circular reference (should never happen). */
         if (UNLIKELY(ele_dst == ese->ele)) {
-          BLI_assert(0);
+          lib_assert(0);
           break;
         }
         if (use_chain == false) {
@@ -1182,10 +1182,10 @@ void BM_select_history_merge_from_targetmap(
   }
 
   /* Remove overlapping duplicates. */
-  for (BMEditSelection *ese = bm->selected.first, *ese_next; ese; ese = ese_next) {
+  for (MeshEditSelection *ese = mesh->selected.first, *ese_next; ese; ese = ese_next) {
     ese_next = ese->next;
-    if (BM_ELEM_API_FLAG_TEST(ese->ele, _FLAG_OVERLAP)) {
-      BM_ELEM_API_FLAG_DISABLE(ese->ele, _FLAG_OVERLAP);
+    if (MESH_ELEM_API_FLAG_TEST(ese->ele, _FLAG_OVERLAP)) {
+      MESH_ELEM_API_FLAG_DISABLE(ese->ele, _FLAG_OVERLAP);
     }
     else {
       BLI_freelinkN(&bm->selected, ese);
