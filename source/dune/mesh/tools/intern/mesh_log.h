@@ -1,16 +1,12 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-struct BMFace;
-struct BMVert;
-struct BMesh;
+struct MeshFace;
+struct MeshVert;
+struct Mesh;
 struct RangeTreeUInt;
 
-typedef struct BMLog BMLog;
-typedef struct BMLogEntry BMLogEntry;
+typedef struct MeshLog MeshLog;
+typedef struct MeshLogEntry MeshLogEntry;
 
 /* Allocate and initialize a new BMLog */
 /* Allocate, initialize, and assign a new BMLog */
