@@ -364,11 +364,11 @@ static void mesh_select_mode_flush_vert_to_edge(Mesh *mesh)
   SelectionFlushChunkData chunk_data = {0};
 
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
-  settings.use_threading = bm->totedge >= MESH_OMP_LIMIT;
+  lib_parallel_range_settings_defaults(&settings);
+  settings.use_threading = mesh->totedge >= MESH_OMP_LIMIT;
   settings.userdata_chunk = &chunk_data;
   settings.userdata_chunk_size = sizeof(chunk_data);
-  settings.func_reduce = bm_mesh_select_mode_flush_reduce_fn;
+  settings.func_reduce = mesh_mesh_select_mode_flush_reduce_fn;
 
   mesh_iter_parallel(
       mesh, MESH_EDGES_OF_MESH, mesh_select_mode_flush_vert_to_edge_iter_fn, NULL, &settings);
@@ -525,12 +525,12 @@ void mesh_edge_select_set(Mesh *mesh, MeshEdge *e, const bool select)
   }
 
   if (select) {
-    if (!mesh_elem_flag_test(e, BM_ELEM_SELECT)) {
-      mesh_elem_flag_enable(e, BM_ELEM_SELECT);
+    if (!mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_enable(e, MESH_ELEM_SELECT);
       mesh->totedgesel += 1;
     }
-    mesh_vert_select_set(bm, e->v1, true);
-    mesh_vert_select_set(bm, e->v2, true);
+    mesh_vert_select_set(mesh, e->v1, true);
+    mesh_vert_select_set(mesh, e->v2, true);
   }
   else {
     if (mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
@@ -538,7 +538,7 @@ void mesh_edge_select_set(Mesh *mesh, MeshEdge *e, const bool select)
       mesh->totedgesel -= 1;
     }
 
-    if ((bm->selectmode & SCE_SELECT_VERTEX) == 0) {
+    if ((mesh->selectmode & SCE_SELECT_VERTEX) == 0) {
       int i;
 
       /* check if the vert is used by a selected edge */
@@ -573,58 +573,58 @@ void mesh_face_select_set(Mesh *mesh, MeshFace *f, const bool select)
       mesh->totfacesel += 1;
     }
 
-    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
-      BM_vert_select_set(bm, l_iter->v, true);
-      BM_edge_select_set(bm, l_iter->e, true);
+      mesh_vert_select_set(mesh, l_iter->v, true);
+      mesh_edge_select_set(mesh, l_iter->e, true);
     } while ((l_iter = l_iter->next) != l_first);
   }
   else {
 
-    if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
-      BM_elem_flag_disable(f, BM_ELEM_SELECT);
-      bm->totfacesel -= 1;
+    if (mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_disable(f, MESH_ELEM_SELECT);
+      mesh->totfacesel -= 1;
     }
     /**
-     * \note This allows a temporarily invalid state - where for eg
+     * This allows a temporarily invalid state - where for eg
      * an edge bay be de-selected, but an adjacent face remains selected.
      *
-     * Rely on #BM_mesh_select_mode_flush to correct these cases.
+     * Rely on mesh_select_mode_flush to correct these cases.
      *
-     * \note flushing based on mode, see T46494
+     * flushing based on mode, see T46494
      */
-    if (bm->selectmode & SCE_SELECT_VERTEX) {
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    if (mesh->selectmode & SCE_SELECT_VERTEX) {
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
-        BM_vert_select_set(bm, l_iter->v, false);
-        BM_edge_select_set_noflush(bm, l_iter->e, false);
+        mesh_vert_select_set(mesh, l_iter->v, false);
+        mesh_edge_select_set_noflush(mesh, l_iter->e, false);
       } while ((l_iter = l_iter->next) != l_first);
     }
     else {
       /**
-       * \note use #BM_edge_select_set_noflush,
+       * use mesh_edge_select_set_noflush,
        * vertex flushing is handled last.
        */
-      if (bm->selectmode & SCE_SELECT_EDGE) {
-        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+      if (mesh->selectmode & SCE_SELECT_EDGE) {
+        l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
         do {
-          BM_edge_select_set_noflush(bm, l_iter->e, false);
+          mesh_edge_select_set_noflush(mesh, l_iter->e, false);
         } while ((l_iter = l_iter->next) != l_first);
       }
       else {
-        l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+        l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
         do {
-          if (bm_edge_is_face_select_any_other(l_iter) == false) {
-            BM_edge_select_set_noflush(bm, l_iter->e, false);
+          if (mesh_edge_is_face_select_any_other(l_iter) == false) {
+            mesh_edge_select_set_noflush(bm, l_iter->e, false);
           }
         } while ((l_iter = l_iter->next) != l_first);
       }
 
       /* flush down to verts */
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
-        if (bm_vert_is_edge_select_any_other(l_iter->v, l_iter->e) == false) {
-          BM_vert_select_set(bm, l_iter->v, false);
+        if (mesh_vert_is_edge_select_any_other(l_iter->v, l_iter->e) == false) {
+          mesh_vert_select_set(mesh, l_iter->v, false);
         }
       } while ((l_iter = l_iter->next) != l_first);
     }
@@ -632,12 +632,11 @@ void mesh_face_select_set(Mesh *mesh, MeshFace *f, const bool select)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Non Flushing Versions Element Selection
- * \{ */
+/** Non Flushing Versions Element Selection **/
 
-void BM_edge_select_set_noflush(BMesh *bm, BMEdge *e, const bool select)
+void mesh_edge_select_set_noflush(Mesh *mesh, MeshEdge *e, const bool select)
 {
-  BLI_assert(e->head.htype == BM_EDGE);
+  lib_assert(e->head.htype == BM_EDGE);
 
   if (BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
     return;
