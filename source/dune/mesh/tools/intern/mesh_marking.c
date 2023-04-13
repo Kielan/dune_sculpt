@@ -688,10 +688,10 @@ void mesh_select_mode_set(Mesh *mesh, int selectmode)
   if (mesh->selectmode & SCE_SELECT_VERTEX) {
     /* disabled because selection flushing handles these */
 #if 0
-    MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
-      MESH_elem_flag_disable(ele, MESH_ELEM_SELECT);
+    MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      mesh_elem_flag_disable(ele, MESH_ELEM_SELECT);
     }
-    MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+    MESH_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH) {
       mesh_elem_flag_disable(ele, MESH_ELEM_SELECT);
     }
 #endif
@@ -710,26 +710,26 @@ void mesh_select_mode_set(Mesh *mesh, int selectmode)
         mesh_edge_select_set(mesh, (MEdge *)ele, true);
       }
     }
-    mesh_select_mode_flush(bm);
+    mesh_select_mode_flush(mesh);
   }
   else if (mesh->selectmode & SCE_SELECT_FACE) {
     /* disabled because selection flushing handles these */
 #if 0
-    MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+    MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
       mesh_elem_flag_disable(ele, MESH_ELEM_SELECT);
     }
 #endif
-    BM_ITER_MESH (ele, &iter, bm, MESH_FACES_OF_MESH) {
-      if (BM_elem_flag_test(ele, MESH_ELEM_SELECT)) {
-        BM_face_select_set(bm, (MeshFace *)ele, true);
+    MESH_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      if (mesh_elem_flag_test(ele, MESH_ELEM_SELECT)) {
+        mesh_face_select_set(mesh, (MeshFace *)ele, true);
       }
     }
-    BM_mesh_select_mode_flush(bm);
+    mesh_select_mode_flush(mesh);
   }
 }
 
 /** counts number of elements with flag enabled/disabled **/
-static int mesh_flag_count(Mesh *bm,
+static int mesh_flag_count(Mesh *mesh,
                            const char htype,
                            const char hflag,
                            const bool respecthide,
@@ -752,21 +752,21 @@ static int mesh_flag_count(Mesh *bm,
     }
   }
   if (htype & MESH_EDGE) {
-    MESH_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
+    MESH_ITER (ele, &iter, bm, BM_EDGES_OF_MESH) {
       if (respecthide && BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) {
         continue;
       }
-      if (BM_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
+      if (elem_flag_test_bool(ele, hflag) == test_for_enabled) {
         tot++;
       }
     }
   }
-  if (htype & BM_FACE) {
-    BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
-      if (respecthide && BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) {
+  if (htype & MESH_FACE) {
+    MESH_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      if (respecthide && mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) {
         continue;
       }
-      if (BM_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
+      if (mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
         tot++;
       }
     }
@@ -800,35 +800,35 @@ void mesh_elem_select_set(Mesh *mesh, MeshElem *ele, const bool select)
     case MESH_EDGE:
       mesh_edge_select_set(mesh, (MeshEdge *)ele, select);
       break;
-    case BM_FACE:
-      BM_face_select_set(bm, (BMFace *)ele, select);
+    case MESH_FACE:
+      mesh_face_select_set(mesh, (MeshFace *)ele, select);
       break;
     default:
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 }
 
-void BM_mesh_active_face_set(BMesh *bm, BMFace *f)
+void mesh_active_face_set(Mesh *mesh, MeshFace *f)
 {
-  bm->act_face = f;
+  mesh->act_face = f;
 }
 
-BMFace *BM_mesh_active_face_get(BMesh *bm, const bool is_sloppy, const bool is_selected)
+MeshFace *mesh_active_face_get(Mesh *mesh, const bool is_sloppy, const bool is_selected)
 {
-  if (bm->act_face && (!is_selected || BM_elem_flag_test(bm->act_face, BM_ELEM_SELECT))) {
-    return bm->act_face;
+  if (mesh->act_face && (!is_selected || mesh_elem_flag_test(mesh->act_face, MESH_ELEM_SELECT))) {
+    return mesh->act_face;
   }
   if (is_sloppy) {
-    BMIter iter;
-    BMFace *f = NULL;
-    BMEditSelection *ese;
+    MeshIter iter;
+    MeshFace *f = NULL;
+    MeshEditSelection *ese;
 
-    /* Find the latest non-hidden face from the BMEditSelection */
-    ese = bm->selected.last;
+    /* Find the latest non-hidden face from the MeshEditSelection */
+    ese = mesh->selected.last;
     for (; ese; ese = ese->prev) {
-      if (ese->htype == BM_FACE) {
-        f = (BMFace *)ese->ele;
+      if (ese->htype == MESH_FACE) {
+        f = (MeshFace *)ese->ele;
 
         if (BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
           f = NULL;
