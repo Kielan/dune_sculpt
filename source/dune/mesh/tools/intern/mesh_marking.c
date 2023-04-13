@@ -474,9 +474,9 @@ void BM_mesh_select_flush(BMesh *bm)
   MESH_ITER_MESH (f, &fiter, mesh, MESH_FACES_OF_MESH) {
     ok = true;
     if (!mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
-        if (!BM_elem_flag_test(l_iter->v, BM_ELEM_SELECT)) {
+        if (!mesh_elem_flag_test(l_iter->v, MESH_ELEM_SELECT)) {
           ok = false;
           break;
         }
@@ -487,47 +487,47 @@ void BM_mesh_select_flush(BMesh *bm)
     }
 
     if (ok) {
-      BM_elem_flag_enable(f, BM_ELEM_SELECT);
+      mesh_elem_flag_enable(f, MESH_ELEM_SELECT);
     }
   }
 
   recount_totsels(bm);
 }
 
-void BM_vert_select_set(BMesh *bm, BMVert *v, const bool select)
+void mesh_vert_select_set(Mesh *mesh, MeshVert *v, const bool select)
 {
-  BLI_assert(v->head.htype == BM_VERT);
+  lib_assert(v->head.htype == MESH_VERT);
 
-  if (BM_elem_flag_test(v, BM_ELEM_HIDDEN)) {
+  if (mesh_elem_flag_test(v, MESH_ELEM_HIDDEN)) {
     return;
   }
 
   if (select) {
-    if (!BM_elem_flag_test(v, BM_ELEM_SELECT)) {
-      BM_elem_flag_enable(v, BM_ELEM_SELECT);
-      bm->totvertsel += 1;
+    if (!mesh_elem_flag_test(v, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_enable(v, MESH_ELEM_SELECT);
+      mesh->totvertsel += 1;
     }
   }
   else {
-    if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
-      bm->totvertsel -= 1;
-      BM_elem_flag_disable(v, BM_ELEM_SELECT);
+    if (mesh_elem_flag_test(v, MESH_ELEM_SELECT)) {
+      mesh->totvertsel -= 1;
+      mesh_elem_flag_disable(v, MESH_ELEM_SELECT);
     }
   }
 }
 
-void BM_edge_select_set(BMesh *bm, BMEdge *e, const bool select)
+void mesh_edge_select_set(Mesh *mesh, MeshEdge *e, const bool select)
 {
-  BLI_assert(e->head.htype == BM_EDGE);
+  lib_assert(e->head.htype == MESH_EDGE);
 
-  if (BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
+  if (mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
     return;
   }
 
   if (select) {
-    if (!BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-      BM_elem_flag_enable(e, BM_ELEM_SELECT);
-      bm->totedgesel += 1;
+    if (!mesh_elem_flag_test(e, BM_ELEM_SELECT)) {
+      mesh_elem_flag_enable(e, BM_ELEM_SELECT);
+      mesh->totedgesel += 1;
     }
     BM_vert_select_set(bm, e->v1, true);
     BM_vert_select_set(bm, e->v2, true);
