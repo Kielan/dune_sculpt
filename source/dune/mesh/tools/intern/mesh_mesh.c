@@ -1,8 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
- * BM mesh level functions.
- */
+/** mesh level functions. **/
 
 #include "MEM_guardedalloc.h"
 
