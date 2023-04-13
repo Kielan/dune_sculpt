@@ -256,30 +256,30 @@ void mesh_select_mode_clean_ex(Mesh *mesh, const short selectmode)
   else if (selectmode & SCE_SELECT_FACE) {
     MeshIter iter;
 
-    if (bm->totvertsel) {
-      BMVert *v;
-      BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
-        BM_elem_flag_disable(v, BM_ELEM_SELECT);
+    if (mesh->totvertsel) {
+      MeshVert *v;
+      MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
+        mesh_elem_flag_disable(v, MESH_ELEM_SELECT);
       }
-      bm->totvertsel = 0;
+      mesh->totvertsel = 0;
     }
 
-    if (bm->totedgesel) {
-      BMEdge *e;
-      BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-        BM_elem_flag_disable(e, BM_ELEM_SELECT);
+    if (mesh->totedgesel) {
+      MeshEdge *e;
+      MESH_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH) {
+        mesh_elem_flag_disable(e, MESH_ELEM_SELECT);
       }
-      bm->totedgesel = 0;
+      mesh->totedgesel = 0;
     }
 
-    if (bm->totfacesel) {
-      BMFace *f;
-      BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
-        if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
-          BMLoop *l_iter, *l_first;
-          l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    if (mesh->totfacesel) {
+      MeshFace *f;
+      MESH_ITER (f, &iter, mesh, MESH_FACES_OF_MESH) {
+        if (mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
+          MeshLoop *l_iter, *l_first;
+          l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
           do {
-            BM_edge_select_set(bm, l_iter->e, true);
+            mesh_edge_select_set(mesh, l_iter->e, true);
           } while ((l_iter = l_iter->next) != l_first);
         }
       }
@@ -287,22 +287,21 @@ void mesh_select_mode_clean_ex(Mesh *mesh, const short selectmode)
   }
 }
 
-void BM_mesh_select_mode_clean(BMesh *bm)
+void mesh_select_mode_clean(Mesh *mesh)
 {
-  BM_mesh_select_mode_clean_ex(bm, bm->selectmode);
+  mesh_select_mode_clean_ex(mesh, mesh->selectmode);
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Select mode flush selection
- * \{ */
+/** Select mode flush selection **/
 
 typedef struct SelectionFlushChunkData {
   int delta_selection_len;
 } SelectionFlushChunkData;
 
-static void bm_mesh_select_mode_flush_vert_to_edge_iter_fn(void *UNUSED(userdata),
-                                                           MempoolIterData *iter,
-                                                           const TaskParallelTLS *__restrict tls)
+static voidmesh_select_mode_flush_vert_to_edge_iter_fn(void *UNUSED(userdata),
+                                                       MempoolIterData *iter,
+                                                       const TaskParallelTLS *__restrict tls)
 {
   SelectionFlushChunkData *chunk_data = tls->userdata_chunk;
   BMEdge *e = (BMEdge *)iter;
