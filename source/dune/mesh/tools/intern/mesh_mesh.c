@@ -151,13 +151,13 @@ void BM_mesh_data_free(BMesh *bm)
   const bool is_pdata_free = CustomData_bmesh_has_free(&bm->pdata);
 
   /* Check if we have to call free, if not we can avoid a lot of looping */
-  if (CustomData_bmesh_has_free(&(bm->vdata))) {
-    BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
-      CustomData_bmesh_free_block(&(bm->vdata), &(v->head.data));
+  if (CustomData_mesh_has_free(&(mesh->vdata))) {
+    MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
+      CustomData_mesh_free_block(&(mesh->vdata), &(v->head.data));
     }
   }
-  if (CustomData_bmesh_has_free(&(bm->edata))) {
-    BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+  if (CustomData_mesh_has_free(&(bm->edata))) {
+    MESH_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
       CustomData_bmesh_free_block(&(bm->edata), &(e->head.data));
     }
   }
