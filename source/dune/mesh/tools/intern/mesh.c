@@ -283,36 +283,36 @@ void bmesh_edit_begin(BMesh *UNUSED(bm), BMOpTypeFlag UNUSED(type_flag))
 #endif
 }
 
-void bmesh_edit_end(BMesh *bm, BMOpTypeFlag type_flag)
+void mesh_edit_end(Mesh *mesh, MeshOpTypeFlag type_flag)
 {
   ListBase select_history;
 
-  /* BMO_OPTYPE_FLAG_UNTAN_MULTIRES disabled for now, see comment above in bmesh_edit_begin. */
-#ifdef BMOP_UNTAN_MULTIRES_ENABLED
+  /* MESHOP_OPTYPE_FLAG_UNTAN_MULTIRES disabled for now, see comment above in bmesh_edit_begin. */
+#ifdef MESH_OP_UNTAN_MULTIRES_ENABLED
   /* switch multires data into tangent space */
-  if ((flag & BMO_OPTYPE_FLAG_UNTAN_MULTIRES) && CustomData_has_layer(&bm->ldata, CD_MDISPS)) {
+  if ((flag & MESH_OPTYPE_FLAG_UNTAN_MULTIRES) && CustomData_has_layer(&mesh->ldata, CD_MDISPS)) {
     /* set normals to their previous winding */
-    bmesh_rationalize_normals(bm, 1);
-    bmesh_mdisps_space_set(bm, MULTIRES_SPACE_ABSOLUTE, MULTIRES_SPACE_TANGENT);
+    mesh_rationalize_normals(mesh, 1);
+    mesh_mdisps_space_set(mesh, MULTIRES_SPACE_ABSOLUTE, MULTIRES_SPACE_TANGENT);
   }
-  else if (flag & BMO_OP_FLAG_RATIONALIZE_NORMALS) {
-    bmesh_rationalize_normals(bm, 1);
+  else if (flag & MESH_OP_FLAG_RATIONALIZE_NORMALS) {
+    mesh_rationalize_normals(bm, 1);
   }
 #endif
 
   /* compute normals, clear temp flags and flush selections */
-  if (type_flag & BMO_OPTYPE_FLAG_NORMALS_CALC) {
-    bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
-    BM_mesh_normals_update(bm);
+  if (type_flag & MESH_OPTYPE_FLAG_NORMALS_CALC) {
+    mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
+    mesh_normals_update(mesh);
   }
 
-  if ((type_flag & BMO_OPTYPE_FLAG_SELECT_VALIDATE) == 0) {
-    select_history = bm->selected;
-    BLI_listbase_clear(&bm->selected);
+  if ((type_flag & MESH_OPTYPE_FLAG_SELECT_VALIDATE) == 0) {
+    select_history = mesh->selected;
+    lib_listbase_clear(&mesh->selected);
   }
 
-  if (type_flag & BMO_OPTYPE_FLAG_SELECT_FLUSH) {
-    BM_mesh_select_mode_flush(bm);
+  if (type_flag & MESH_OPTYPE_FLAG_SELECT_FLUSH) {
+    mesh_select_mode_flush(mesh);
   }
 
   if ((type_flag & BMO_OPTYPE_FLAG_SELECT_VALIDATE) == 0) {
