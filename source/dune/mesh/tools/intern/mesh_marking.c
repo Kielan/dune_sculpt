@@ -791,14 +791,14 @@ int mesh_elem_hflag_count_disabled(Mesh *mesh,
   return mesh_flag_count(mesh, htype, hflag, respecthide, false);
 }
 
-void mesh_elem_select_set(BMesh *bm, BMElem *ele, const bool select)
+void mesh_elem_select_set(Mesh *mesh, MeshElem *ele, const bool select)
 {
   switch (ele->head.htype) {
-    case BM_VERT:
-      BM_vert_select_set(bm, (BMVert *)ele, select);
+    case MESH_VERT:
+      mesh_vert_select_set(mesh, (MeshVert *)ele, select);
       break;
-    case BM_EDGE:
-      BM_edge_select_set(bm, (BMEdge *)ele, select);
+    case MESH_EDGE:
+      mesh_edge_select_set(mesh, (MeshEdge *)ele, select);
       break;
     case BM_FACE:
       BM_face_select_set(bm, (BMFace *)ele, select);
