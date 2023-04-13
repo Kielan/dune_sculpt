@@ -323,15 +323,15 @@ static void mesh_select_mode_flush_edge_to_face_iter_fn(void *UNUSED(userdata),
                                                            const TaskParallelTLS *__restrict tls)
 {
   SelectionFlushChunkData *chunk_data = tls->userdata_chunk;
-  BMFace *f = (BMFace *)iter;
-  BMLoop *l_iter;
-  BMLoop *l_first;
-  const bool is_selected = BM_elem_flag_test(f, BM_ELEM_SELECT);
+  MeshFace *f = (MeshFace *)iter;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
+  const bool is_selected = mesh_elem_flag_test(f, MESH_ELEM_SELECT);
   bool ok = true;
-  if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
-    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  if (!mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
-      if (!BM_elem_flag_test(l_iter->e, BM_ELEM_SELECT)) {
+      if (!mesh_elem_flag_test(l_iter->e, BM_ELEM_SELECT)) {
         ok = false;
         break;
       }
@@ -341,7 +341,7 @@ static void mesh_select_mode_flush_edge_to_face_iter_fn(void *UNUSED(userdata),
     ok = false;
   }
 
-  BM_elem_flag_set(f, BM_ELEM_SELECT, ok);
+  mesh_elem_flag_set(f, BM_ELEM_SELECT, ok);
   if (is_selected && !ok) {
     chunk_data->delta_selection_len -= 1;
   }
