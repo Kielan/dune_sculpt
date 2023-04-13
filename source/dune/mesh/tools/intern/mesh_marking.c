@@ -72,13 +72,13 @@ static void recount_totsels_reduce(const void *__restrict UNUSED(userdata),
   dst->selection_len += src->selection_len;
 }
 
-static TaskParallelMempoolFunc recount_totsels_get_range_func(BMIterType iter_type)
+static TaskParallelMempoolFn recount_totsels_get_range_fn(MeshIterType iter_type)
 {
-  BLI_assert(ELEM(iter_type, BM_VERTS_OF_MESH, BM_EDGES_OF_MESH, BM_FACES_OF_MESH));
+  lib_assert(ELEM(iter_type, MESH_VERTS_OF_MESH, MESH_EDGES_OF_MESH, MESH_FACES_OF_MESH));
 
-  TaskParallelMempoolFunc range_func = NULL;
-  if (iter_type == BM_VERTS_OF_MESH) {
-    range_func = recount_totsels_range_vert_func;
+  TaskParallelMempoolFunc range_fN = NULL;
+  if (iter_type == MESH_VERTS_OF_MESH) {
+    range_func = recount_totsels_range_vert_fn;
   }
   else if (iter_type == BM_EDGES_OF_MESH) {
     range_func = recount_totsels_range_edge_func;
