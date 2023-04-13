@@ -341,7 +341,7 @@ static void mesh_select_mode_flush_edge_to_face_iter_fn(void *UNUSED(userdata),
     ok = false;
   }
 
-  mesh_elem_flag_set(f, BM_ELEM_SELECT, ok);
+  mesh_elem_flag_set(f, MESH_ELEM_SELECT, ok);
   if (is_selected && !ok) {
     chunk_data->delta_selection_len -= 1;
   }
@@ -391,53 +391,51 @@ static void mesh_select_mode_flush_edge_to_face(Mesh *mesh)
   mesh->totfacesel += chunk_data.delta_selection_len;
 }
 
-void BM_mesh_select_mode_flush_ex(BMesh *bm, const short selectmode, eBMSelectionFlushFLags flags)
+void mesh_select_mode_flush_ex(Mesh *mesh, const short selectmode, eBMSelectionFlushFLags flags)
 {
   if (selectmode & SCE_SELECT_VERTEX) {
-    bm_mesh_select_mode_flush_vert_to_edge(bm);
+    mesh_select_mode_flush_vert_to_edge(mesh);
   }
 
   if (selectmode & (SCE_SELECT_VERTEX | SCE_SELECT_EDGE)) {
-    bm_mesh_select_mode_flush_edge_to_face(bm);
+    mesh_select_mode_flush_edge_to_face(mesh);
   }
 
-  /* Remove any deselected elements from the BMEditSelection */
-  BM_select_history_validate(bm);
+  /* Remove any deselected elements from the MeshEditSelection */
+  mesh_select_history_validate(mesh);
 
-  if (flags & BM_SELECT_LEN_FLUSH_RECALC_VERT) {
-    recount_totvertsel(bm);
+  if (flags & MESH_SELECT_LEN_FLUSH_RECALC_VERT) {
+    recount_totvertsel(mesh);
   }
-  if (flags & BM_SELECT_LEN_FLUSH_RECALC_EDGE) {
-    recount_totedgesel(bm);
+  if (flags & MESH_SELECT_LEN_FLUSH_RECALC_EDGE) {
+    recount_totedgesel(mesh);
   }
-  if (flags & BM_SELECT_LEN_FLUSH_RECALC_FACE) {
-    recount_totfacesel(bm);
+  if (flags & MESH_SELECT_LEN_FLUSH_RECALC_FACE) {
+    recount_totfacesel(mesh);
   }
-  BLI_assert(recount_totsels_are_ok(bm));
+  lib_assert(recount_totsels_are_ok(mesh));
 }
 
-void BM_mesh_select_mode_flush(BMesh *bm)
+void mesh_select_mode_flush(Mesh *mesh)
 {
-  BM_mesh_select_mode_flush_ex(bm, bm->selectmode, BM_SELECT_LEN_FLUSH_RECALC_ALL);
+  mesh_select_mode_flush_ex(mesh, mesh->selectmode, BM_SELECT_LEN_FLUSH_RECALC_ALL);
 }
 
-/** \} */
-
-void BM_mesh_deselect_flush(BMesh *bm)
+void mesh_deselect_flush(Mesh *mesh)
 {
-  BMIter eiter;
-  BMEdge *e;
+  MeshIter eiter;
+  MeshEdge *e;
 
-  BM_ITER_MESH (e, &eiter, bm, BM_EDGES_OF_MESH) {
-    if (!BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
-      if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-        if (!BM_elem_flag_test(e->v1, BM_ELEM_SELECT) ||
-            !BM_elem_flag_test(e->v2, BM_ELEM_SELECT)) {
-          BM_elem_flag_disable(e, BM_ELEM_SELECT);
+  MESH_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
+    if (!mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
+      if (mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
+        if (!mesh_elem_flag_test(e->v1, MESH_ELEM_SELECT) ||
+            !mesh_elem_flag_test(e->v2, MESH_ELEM_SELECT)) {
+          mesh_elem_flag_disable(e, MESH_ELEM_SELECT);
         }
       }
 
-      if (e->l && !BM_elem_flag_test(e, BM_ELEM_SELECT)) {
+      if (e->l && !mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
         BMLoop *l_iter;
         BMLoop *l_first;
 
