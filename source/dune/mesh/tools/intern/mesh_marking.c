@@ -304,21 +304,21 @@ static voidmesh_select_mode_flush_vert_to_edge_iter_fn(void *UNUSED(userdata),
                                                        const TaskParallelTLS *__restrict tls)
 {
   SelectionFlushChunkData *chunk_data = tls->userdata_chunk;
-  BMEdge *e = (BMEdge *)iter;
-  const bool is_selected = BM_elem_flag_test(e, BM_ELEM_SELECT);
-  const bool is_hidden = BM_elem_flag_test(e, BM_ELEM_HIDDEN);
+  MeshEdge *e = (MeshEdge *)iter;
+  const bool is_selected = mesh_elem_flag_test(e, MESH_ELEM_SELECT);
+  const bool is_hidden = mesh_elem_flag_test(e, MESH_ELEM_HIDDEN);
   if (!is_hidden &&
-      (BM_elem_flag_test(e->v1, BM_ELEM_SELECT) && BM_elem_flag_test(e->v2, BM_ELEM_SELECT))) {
-    BM_elem_flag_enable(e, BM_ELEM_SELECT);
+      (mesh_elem_flag_test(e->v1, MESH_ELEM_SELECT) && mesh_elem_flag_test(e->v2, BM_ELEM_SELECT))) {
+    mesh_elem_flag_enable(e, MESH_ELEM_SELECT);
     chunk_data->delta_selection_len += is_selected ? 0 : 1;
   }
   else {
-    BM_elem_flag_disable(e, BM_ELEM_SELECT);
+    mesh_elem_flag_disable(e, MESH_ELEM_SELECT);
     chunk_data->delta_selection_len += is_selected ? -1 : 0;
   }
 }
 
-static void bm_mesh_select_mode_flush_edge_to_face_iter_fn(void *UNUSED(userdata),
+static void mesh_select_mode_flush_edge_to_face_iter_fn(void *UNUSED(userdata),
                                                            MempoolIterData *iter,
                                                            const TaskParallelTLS *__restrict tls)
 {
