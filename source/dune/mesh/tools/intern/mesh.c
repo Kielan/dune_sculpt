@@ -196,68 +196,68 @@ void mesh_data_free(Mesh *mesh)
   CustomData_free(&mesh->pdata, 0);
 
   /* destroy element pools */
-  BLI_mempool_destroy(bm->vpool);
-  BLI_mempool_destroy(bm->epool);
-  BLI_mempool_destroy(bm->lpool);
-  BLI_mempool_destroy(bm->fpool);
+  lib_mempool_destroy(mesh->vpool);
+  lib_mempool_destroy(mesh->epool);
+  lib_mempool_destroy(mesh->lpool);
+  lib_mempool_destroy(mesh->fpool);
 
-  if (bm->vtable) {
-    MEM_freeN(bm->vtable);
+  if (mesh->vtable) {
+    mem_freeN(mesh->vtable);
   }
-  if (bm->etable) {
-    MEM_freeN(bm->etable);
+  if (mesh->etable) {
+    me_free(mesh->etable);
   }
-  if (bm->ftable) {
-    MEM_freeN(bm->ftable);
+  if (mesh->ftable) {
+    mem_freen(mesh->ftable);
   }
 
   /* destroy flag pool */
-  BM_mesh_elem_toolflags_clear(bm);
+  mesh_elem_toolflags_clear(mesh);
 
 #ifdef USE_BMESH_HOLES
-  BLI_mempool_destroy(bm->looplistpool);
+  lib_mempool_destroy(mesh->looplistpool);
 #endif
 
-  BLI_freelistN(&bm->selected);
+  lib_freelistn(&mesh->selected);
 
   if (bm->lnor_spacearr) {
-    BKE_lnor_spacearr_free(bm->lnor_spacearr);
-    MEM_freeN(bm->lnor_spacearr);
+    dune_lnor_spacearr_free(mesh->lnor_spacearr);
+    mem_freeN(mesh->lnor_spacearr);
   }
 
-  BMO_error_clear(bm);
+  mesh_op_error_clear(mesh);
 }
 
-void BM_mesh_clear(BMesh *bm)
+void mesh_clear(Mesh *mesh)
 {
-  const bool use_toolflags = bm->use_toolflags;
+  const bool use_toolflags = mesh->use_toolflags;
 
   /* free old mesh */
-  BM_mesh_data_free(bm);
-  memset(bm, 0, sizeof(BMesh));
+  mesh_data_free(mesh);
+  memset(mesh, 0, sizeof(Mesh));
 
   /* allocate the memory pools for the mesh elements */
-  bm_mempool_init(bm, &bm_mesh_allocsize_default, use_toolflags);
+  mesh_mempool_init(mesh, &mesh_allocsize_default, use_toolflags);
 
-  bm->use_toolflags = use_toolflags;
-  bm->toolflag_index = 0;
-  bm->totflags = 0;
+  mesh->use_toolflags = use_toolflags;
+  mesh->toolflag_index = 0;
+  mesh->totflags = 0;
 
-  CustomData_reset(&bm->vdata);
-  CustomData_reset(&bm->edata);
-  CustomData_reset(&bm->ldata);
-  CustomData_reset(&bm->pdata);
+  CustomData_reset(&mesh->vdata);
+  CustomData_reset(&mesh->edata);
+  CustomData_reset(&mesh->ldata);
+  CustomData_reset(&mesh->pdata);
 }
 
-void BM_mesh_free(BMesh *bm)
+void mesh_free(Mesh *mesh)
 {
-  BM_mesh_data_free(bm);
+  mesh_data_free(mesh);
 
-  if (bm->py_handle) {
-    /* keep this out of 'BM_mesh_data_free' because we want python
+  if (mesh->py_handle) {
+    /* keep this out of 'mesh_data_free' because we want python
      * to be able to clear the mesh and maintain access. */
-    bpy_bm_generic_invalidate(bm->py_handle);
-    bm->py_handle = NULL;
+    bpy_mesh_generic_invalidate(mesh->py_handle);
+    mesh->py_handle = NULL;
   }
 
   MEM_freeN(bm);
