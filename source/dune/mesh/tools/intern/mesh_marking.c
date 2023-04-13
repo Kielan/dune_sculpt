@@ -543,34 +543,34 @@ void mesh_edge_select_set(Mesh *mesh, MeshEdge *e, const bool select)
 
       /* check if the vert is used by a selected edge */
       for (i = 0; i < 2; i++) {
-        BMVert *v = *((&e->v1) + i);
-        if (bm_vert_is_edge_select_any_other(v, e) == false) {
-          BM_vert_select_set(bm, v, false);
+        MeshVert *v = *((&e->v1) + i);
+        if (mesh_vert_is_edge_select_any_other(v, e) == false) {
+          mesh_vert_select_set(mesh, v, false);
         }
       }
     }
     else {
-      BM_vert_select_set(bm, e->v1, false);
-      BM_vert_select_set(bm, e->v2, false);
+      mesh_vert_select_set(mesh, e->v1, false);
+      mesh_vert_select_set(mesh, e->v2, false);
     }
   }
 }
 
-void BM_face_select_set(BMesh *bm, BMFace *f, const bool select)
+void mesh_face_select_set(Mesh *mesh, MeshFace *f, const bool select)
 {
-  BMLoop *l_iter;
-  BMLoop *l_first;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
 
-  BLI_assert(f->head.htype == BM_FACE);
+  lib_assert(f->head.htype == MESH_FACE);
 
-  if (BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+  if (mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
     return;
   }
 
   if (select) {
-    if (!BM_elem_flag_test(f, BM_ELEM_SELECT)) {
-      BM_elem_flag_enable(f, BM_ELEM_SELECT);
-      bm->totfacesel += 1;
+    if (!mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_enable(f, MESH_ELEM_SELECT);
+      mesh->totfacesel += 1;
     }
 
     l_iter = l_first = BM_FACE_FIRST_LOOP(f);
