@@ -155,7 +155,7 @@ static bool mesh_vert_is_edge_select_any_other(const MeshVert *v, const MeshEdge
 }
 
 #if 0
-static bool bm_vert_is_edge_select_any(const MeshVert *v)
+static bool mesh_vert_is_edge_select_any(const MeshVert *v)
 {
   if (v->e) {
     const MeshEdge *e_iter, *e_first;
@@ -164,19 +164,19 @@ static bool bm_vert_is_edge_select_any(const MeshVert *v)
       if (mesh_elem_flag_test(e_iter, MESH_ELEM_SELECT)) {
         return true;
       }
-    } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+    } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
   }
   return false;
 }
 #endif
 
-static bool bm_vert_is_edge_visible_any(const MeshVert *v)
+static bool mesh_vert_is_edge_visible_any(const MeshVert *v)
 {
   if (v->e) {
-    const BMEdge *e_iter, *e_first;
+    const MeshEdge *e_iter, *e_first;
     e_iter = e_first = v->e;
     do {
-      if (!BM_elem_flag_test(e_iter, MESH_ELEM_HIDDEN)) {
+      if (!mesh_elem_flag_test(e_iter, MESH_ELEM_HIDDEN)) {
         return true;
       }
     } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
@@ -184,13 +184,13 @@ static bool bm_vert_is_edge_visible_any(const MeshVert *v)
   return false;
 }
 
-static bool bm_edge_is_face_select_any_other(BMLoop *l_first)
+static bool mesh_edge_is_face_select_any_other(MeshLoop *l_first)
 {
-  const BMLoop *l_iter = l_first;
+  const MeehLoop *l_iter = l_first;
 
   /* start by stepping over the current face */
   while ((l_iter = l_iter->radial_next) != l_first) {
-    if (BM_elem_flag_test(l_iter->f, BM_ELEM_SELECT)) {
+    if (mesh_elem_flag_test(l_iter->f, MESH_ELEM_SELECT)) {
       return true;
     }
   }
@@ -198,13 +198,13 @@ static bool bm_edge_is_face_select_any_other(BMLoop *l_first)
 }
 
 #if 0
-static bool bm_edge_is_face_select_any(const BMEdge *e)
+static bool mesh_edge_is_face_select_any(const MeshEdge *e)
 {
   if (e->l) {
-    const BMLoop *l_iter, *l_first;
+    const MeshLoop *l_iter, *l_first;
     l_iter = l_first = e->l;
     do {
-      if (BM_elem_flag_test(l_iter->f, BM_ELEM_SELECT)) {
+      if (mesh_elem_flag_test(l_iter->f, BM_ELEM_SELECT)) {
         return true;
       }
     } while ((l_iter = l_iter->radial_next) != l_first);
@@ -213,13 +213,13 @@ static bool bm_edge_is_face_select_any(const BMEdge *e)
 }
 #endif
 
-static bool bm_edge_is_face_visible_any(const BMEdge *e)
+static bool mesh_edge_is_face_visible_any(const MeshEdge *e)
 {
   if (e->l) {
-    const BMLoop *l_iter, *l_first;
+    const MeshLoop *l_iter, *l_first;
     l_iter = l_first = e->l;
     do {
-      if (!BM_elem_flag_test(l_iter->f, BM_ELEM_HIDDEN)) {
+      if (!mesh_elem_flag_test(l_iter->f, MESH_ELEM_HIDDEN)) {
         return true;
       }
     } while ((l_iter = l_iter->radial_next) != l_first);
@@ -227,36 +227,34 @@ static bool bm_edge_is_face_visible_any(const BMEdge *e)
   return false;
 }
 
-/** \} */
-
-void BM_mesh_select_mode_clean_ex(BMesh *bm, const short selectmode)
+void mesh_select_mode_clean_ex(Mesh *mesh, const short selectmode)
 {
   if (selectmode & SCE_SELECT_VERTEX) {
     /* pass */
   }
   else if (selectmode & SCE_SELECT_EDGE) {
-    BMIter iter;
+   MeshIter iter;
 
-    if (bm->totvertsel) {
-      BMVert *v;
-      BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
-        BM_elem_flag_disable(v, BM_ELEM_SELECT);
+    if (mesh->totvertsel) {
+      MeshVert *v;
+      MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
+        mesh_elem_flag_disable(MESH_ELEM_SELECT);
       }
-      bm->totvertsel = 0;
+     mesh->totvertsel = 0;
     }
 
-    if (bm->totedgesel) {
-      BMEdge *e;
-      BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-        if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-          BM_vert_select_set(bm, e->v1, true);
-          BM_vert_select_set(bm, e->v2, true);
+    if (mesh->totedgesel) {
+      MeshEdge *e;
+      MESH_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH) {
+        if (mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
+          mesh_vert_select_set(mesh, e->v1, true);
+          mesh_vert_select_set(mesh, e->v2, true);
         }
       }
     }
   }
   else if (selectmode & SCE_SELECT_FACE) {
-    BMIter iter;
+    MeshIter iter;
 
     if (bm->totvertsel) {
       BMVert *v;
