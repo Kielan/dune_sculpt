@@ -706,38 +706,36 @@ void mesh_select_mode_set(Mesh *mesh, int selectmode)
 #endif
 
     MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
-      if (BM_elem_flag_test(ele, MESH_ELEM_SELECT)) {
-        BM_edge_select_set(mesh, (BMEdge *)ele, true);
+      if (mesh_elem_flag_test(ele, MESH_ELEM_SELECT)) {
+        mesh_edge_select_set(mesh, (MEdge *)ele, true);
       }
     }
-    BM_mesh_select_mode_flush(bm);
+    mesh_select_mode_flush(bm);
   }
-  else if (bm->selectmode & SCE_SELECT_FACE) {
+  else if (mesh->selectmode & SCE_SELECT_FACE) {
     /* disabled because selection flushing handles these */
 #if 0
-    BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
-      BM_elem_flag_disable(ele, BM_ELEM_SELECT);
+    MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      mesh_elem_flag_disable(ele, MESH_ELEM_SELECT);
     }
 #endif
-    BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
-      if (BM_elem_flag_test(ele, BM_ELEM_SELECT)) {
-        BM_face_select_set(bm, (BMFace *)ele, true);
+    BM_ITER_MESH (ele, &iter, bm, MESH_FACES_OF_MESH) {
+      if (BM_elem_flag_test(ele, MESH_ELEM_SELECT)) {
+        BM_face_select_set(bm, (MeshFace *)ele, true);
       }
     }
     BM_mesh_select_mode_flush(bm);
   }
 }
 
-/**
- * counts number of elements with flag enabled/disabled
- */
-static int bm_mesh_flag_count(BMesh *bm,
-                              const char htype,
-                              const char hflag,
-                              const bool respecthide,
-                              const bool test_for_enabled)
+/** counts number of elements with flag enabled/disabled **/
+static int mesh_flag_count(Mesh *bm,
+                           const char htype,
+                           const char hflag,
+                           const bool respecthide,
+                           const bool test_for_enabled)
 {
-  BMElem *ele;
+  MeshElem *ele;
   BMIter iter;
   int tot = 0;
 
