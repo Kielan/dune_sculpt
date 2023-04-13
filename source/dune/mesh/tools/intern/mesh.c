@@ -74,27 +74,27 @@ void mesh_elem_toolflags_ensure(BMesh *bm)
     return;
   }
 
-  bm->vtoolflagpool = BLI_mempool_create(sizeof(BMFlagLayer), bm->totvert, 512, BLI_MEMPOOL_NOP);
-  bm->etoolflagpool = BLI_mempool_create(sizeof(BMFlagLayer), bm->totedge, 512, BLI_MEMPOOL_NOP);
-  bm->ftoolflagpool = BLI_mempool_create(sizeof(BMFlagLayer), bm->totface, 512, BLI_MEMPOOL_NOP);
+  mesh->vtoolflagpool = lib_mempool_create(sizeof(BMFlagLayer), bm->totvert, 512, BLI_MEMPOOL_NOP);
+  mesh->etoolflagpool = lib_mempool_create(sizeof(BMFlagLayer), bm->totedge, 512, BLI_MEMPOOL_NOP);
+  mesh->ftoolflagpool = lib_mempool_create(sizeof(BMFlagLayer), bm->totface, 512, BLI_MEMPOOL_NOP);
 
-  BMIter iter;
-  BMVert_OFlag *v_olfag;
-  BLI_mempool *toolflagpool = bm->vtoolflagpool;
-  BM_ITER_MESH (v_olfag, &iter, bm, BM_VERTS_OF_MESH) {
-    v_olfag->oflags = BLI_mempool_calloc(toolflagpool);
+  MeshIter iter;
+  MeshVert_OFlag *v_olfag;
+  lib_mempool *toolflagpool = mesh->vtoolflagpool;
+  MESH_ITER (v_olfag, &iter, mesh, NESH_VERTS_OF_MESH) {
+    v_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
-  BMEdge_OFlag *e_olfag;
-  toolflagpool = bm->etoolflagpool;
-  BM_ITER_MESH (e_olfag, &iter, bm, BM_EDGES_OF_MESH) {
-    e_olfag->oflags = BLI_mempool_calloc(toolflagpool);
+  MeshEdge_OFlag *e_olfag;
+  toolflagpool = lib->etoolflagpool;
+  MESH_ITER_MESH (e_olfag, &iter, mesh, MESH_EDGES_OF_MESH) {
+    e_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
-  BMFace_OFlag *f_olfag;
-  toolflagpool = bm->ftoolflagpool;
-  BM_ITER_MESH (f_olfag, &iter, bm, BM_FACES_OF_MESH) {
-    f_olfag->oflags = BLI_mempool_calloc(toolflagpool);
+  MeshFace_OFlag *f_olfag;
+  toolflagpool = MeshLoop ->ftoolflagpool;
+  MESH_ITER (f_olfag, &iter, mesh, MESH_FACES_OF_MESH) {
+    f_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
   bm->totflags = 1;
