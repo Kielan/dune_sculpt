@@ -61,19 +61,19 @@ void BM_log_cleanup_entry(BMLogEntry *entry);
  * This operation is only valid on the first and last entries in the
  * log. Deleting from the middle will assert.
  */
-void BM_log_entry_drop(BMLogEntry *entry);
+void mesh_log_entry_drop(MeshLogEntry *entry);
 
-/* Undo one BMLogEntry */
-/* Undo one BMLogEntry
+/* Undo one MeshLogEntry */
+/* Undo one MeshLogEntry
  *
  * Has no effect if there's nothing left to undo */
-void BM_log_undo(BMesh *bm, BMLog *log);
+void mesh_log_undo(Mesh *mesh, MeshLog *log);
 
-/* Redo one BMLogEntry */
-/* Redo one BMLogEntry
+/* Redo one MeshLogEntry */
+/* Redo one MeshLogEntry
  *
  * Has no effect if there's nothing left to redo */
-void BM_log_redo(BMesh *bm, BMLog *log);
+void mesh_log_redo(Mesh *mesh, MeshLog *log);
 
 /* Log a vertex before it is modified */
 /* Log a vertex before it is modified
@@ -99,16 +99,16 @@ void BM_log_redo(BMesh *bm, BMLog *log);
  * state so that a subsequent redo operation will restore the newer
  * vertex state.
  */
-void BM_log_vert_before_modified(BMLog *log, struct BMVert *v, int cd_vert_mask_offset);
+void mesh_log_vert_before_modified(MeshLog *log, struct MeshVert *v, int cd_vert_mask_offset);
 
-/* Log a new vertex as added to the BMesh */
-/* Log a new vertex as added to the BMesh
+/* Log a new vertex as added to the Mesh */
+/* Log a new vertex as added to the Mesh
  *
  * The new vertex gets a unique ID assigned. It is then added to a map
  * of added vertices, with the key being its ID and the value
  * containing everything needed to reconstruct that vertex.
  */
-void BM_log_vert_added(BMLog *log, struct BMVert *v, int cd_vert_mask_offset);
+void mesh_log_vert_added(BMLog *log, struct BMVert *v, int cd_vert_mask_offset);
 
 /* Log a face before it is modified */
 /* Log a face before it is modified
