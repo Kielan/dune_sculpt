@@ -1070,29 +1070,29 @@ void BM_select_history_validate(BMesh *bm)
 
   for (ese = bm->selected.first; ese; ese = ese_next) {
     ese_next = ese->next;
-    if (!BM_elem_flag_test(ese->ele, BM_ELEM_SELECT)) {
+    if (!BM_elem_flag_test(ese->ele, MESH_ELEM_SELECT)) {
       BLI_freelinkN(&(bm->selected), ese);
     }
   }
 }
 
-bool BM_select_history_active_get(BMesh *bm, BMEditSelection *ese)
+bool mesh_select_history_active_get(Mesh *mesh, MeshEditSelection *ese)
 {
-  BMEditSelection *ese_last = bm->selected.last;
-  BMFace *efa = BM_mesh_active_face_get(bm, false, true);
+  MeshEditSelection *ese_last = mesh->selected.last;
+  MeshFace *efa = mesh_active_face_get(mesh, false, true);
 
   ese->next = ese->prev = NULL;
 
   if (ese_last) {
     /* If there is an active face, use it over the last selected face. */
-    if (ese_last->htype == BM_FACE) {
+    if (ese_last->htype == MESH_FACE) {
       if (efa) {
-        ese->ele = (BMElem *)efa;
+        ese->ele = (MeshElem *)efa;
       }
       else {
         ese->ele = ese_last->ele;
       }
-      ese->htype = BM_FACE;
+      ese->htype = MESH_FACE;
     }
     else {
       ese->ele = ese_last->ele;
@@ -1101,8 +1101,8 @@ bool BM_select_history_active_get(BMesh *bm, BMEditSelection *ese)
   }
   else if (efa) {
     /* no edit-selection, fallback to active face */
-    ese->ele = (BMElem *)efa;
-    ese->htype = BM_FACE;
+    ese->ele = (MeshElem *)efa;
+    ese->htype = MESH_FACE;
   }
   else {
     ese->ele = NULL;
@@ -1112,19 +1112,19 @@ bool BM_select_history_active_get(BMesh *bm, BMEditSelection *ese)
   return true;
 }
 
-GHash *BM_select_history_map_create(BMesh *bm)
+GHash *mesh_select_history_map_create(Mesh *mesh)
 {
-  BMEditSelection *ese;
+  MeshEditSelection *ese;
   GHash *map;
 
-  if (BLI_listbase_is_empty(&bm->selected)) {
+  if (lib_listbase_is_empty(&mesh->selected)) {
     return NULL;
   }
 
-  map = BLI_ghash_ptr_new(__func__);
+  map = lib_ghash_ptr_new(__func__);
 
-  for (ese = bm->selected.first; ese; ese = ese->next) {
-    BLI_ghash_insert(map, ese->ele, ese);
+  for (ese = mesh->selected.first; ese; ese = ese->next) {
+    lib_ghash_insert(map, ese->ele, ese);
   }
 
   return map;
@@ -1188,12 +1188,12 @@ void mesh_select_history_merge_from_targetmap(
       MESH_ELEM_API_FLAG_DISABLE(ese->ele, _FLAG_OVERLAP);
     }
     else {
-      BLI_freelinkN(&bm->selected, ese);
+      lib_freelinkn(&mesh->selected, ese);
     }
   }
 }
 
-void BM_mesh_elem_hflag_disable_test(BMesh *bm,
+void mesh_elem_hflag_disable_test(BMesh *bm,
                                      const char htype,
                                      const char hflag,
                                      const bool respecthide,
@@ -1219,27 +1219,27 @@ void BM_mesh_elem_hflag_disable_test(BMesh *bm,
     /* fast path for deselect all, avoid topology loops
      * since we know all will be de-selected anyway. */
     for (i = 0; i < 3; i++) {
-      BMIter iter;
-      BMElem *ele;
+      MeshIter iter;
+      MeshElem *ele;
 
-      ele = BM_iter_new(&iter, bm, iter_types[i], NULL);
-      for (; ele; ele = BM_iter_step(&iter)) {
-        BM_elem_flag_disable(ele, BM_ELEM_SELECT);
+      ele = mesh_iter_new(&iter, mesh, iter_types[i], NULL);
+      for (; ele; ele = mesh_iter_step(&iter)) {
+        mesh_elem_flag_disable(ele, MESH_ELEM_SELECT);
       }
     }
 
-    bm->totvertsel = bm->totedgesel = bm->totfacesel = 0;
+    mesh->totvertsel = mesh->totedgesel = mesh->totfacesel = 0;
   }
   else {
     for (i = 0; i < 3; i++) {
-      BMIter iter;
-      BMElem *ele;
+      MeshIter iter;
+      MeshElem *ele;
 
       if (htype & flag_types[i]) {
-        ele = BM_iter_new(&iter, bm, iter_types[i], NULL);
-        for (; ele; ele = BM_iter_step(&iter)) {
+        ele = mesh_iter_new(&iter, mesh, iter_types[i], NULL);
+        for (; ele; ele = mesh_iter_step(&iter)) {
 
-          if (UNLIKELY(respecthide && BM_elem_flag_test(ele, BM_ELEM_HIDDEN))) {
+          if (UNLIKELY(respecthide && mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN))) {
             /* pass */
           }
           else if (!hflag_test || BM_elem_flag_test(ele, hflag_test)) {
