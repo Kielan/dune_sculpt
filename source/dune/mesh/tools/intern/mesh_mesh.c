@@ -6,46 +6,46 @@
 #include "types_scene.h"
 
 #include "lib_listbase.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_mesh.h"
+#include "dune_customdata.h"
+#include "dune_mesh.h"
 
-#include "bmesh.h"
+#include "mesh.h"
 
-const BMAllocTemplate bm_mesh_allocsize_default = {512, 1024, 2048, 512};
-const BMAllocTemplate bm_mesh_chunksize_default = {512, 1024, 2048, 512};
+const MeshAllocTemplate mesh_allocsize_default = {512, 1024, 2048, 512};
+const MeshAllocTemplate mesh_chunksize_default = {512, 1024, 2048, 512};
 
-static void bm_mempool_init_ex(const BMAllocTemplate *allocsize,
+static void mempool_init_ex(const MeshAllocTemplate *allocsize,
                                const bool use_toolflags,
-                               BLI_mempool **r_vpool,
-                               BLI_mempool **r_epool,
-                               BLI_mempool **r_lpool,
-                               BLI_mempool **r_fpool)
+                               lib_mempool **r_vpool,
+                               lib_mempool **r_epool,
+                               lib_mempool **r_lpool,
+                               lib_mempool **r_fpool)
 {
   size_t vert_size, edge_size, loop_size, face_size;
 
   if (use_toolflags == true) {
-    vert_size = sizeof(BMVert_OFlag);
-    edge_size = sizeof(BMEdge_OFlag);
-    loop_size = sizeof(BMLoop);
-    face_size = sizeof(BMFace_OFlag);
+    vert_size = sizeof(MeshVert_OFlag);
+    edge_size = sizeof(MeshEdge_OFlag);
+    loop_size = sizeof(MeshLoop);
+    face_size = sizeof(MeshFace_OFlag);
   }
   else {
-    vert_size = sizeof(BMVert);
-    edge_size = sizeof(BMEdge);
-    loop_size = sizeof(BMLoop);
-    face_size = sizeof(BMFace);
+    vert_size = sizeof(MeshVert);
+    edge_size = sizeof(MeshEdge);
+    loop_size = sizeof(MeshLoop);
+    face_size = sizeof(MeshFace);
   }
 
   if (r_vpool) {
-    *r_vpool = BLI_mempool_create(
-        vert_size, allocsize->totvert, bm_mesh_chunksize_default.totvert, BLI_MEMPOOL_ALLOW_ITER);
+    *r_vpool = lib_mempool_create(
+        vert_size, allocsize->totvert, mesh_chunksize_default.totvert, LIB_MEMPOOL_ALLOW_ITER);
   }
   if (r_epool) {
-    *r_epool = BLI_mempool_create(
-        edge_size, allocsize->totedge, bm_mesh_chunksize_default.totedge, BLI_MEMPOOL_ALLOW_ITER);
+    *r_epool = lib_mempool_create(
+        edge_size, allocsize->totedge, mesh_chunksize_default.totedge, LIB_MEMPOOL_ALLOW_ITER);
   }
   if (r_lpool) {
     *r_lpool = BLI_mempool_create(
