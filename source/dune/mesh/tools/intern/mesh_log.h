@@ -8,12 +8,12 @@ struct RangeTreeUInt;
 typedef struct MeshLog MeshLog;
 typedef struct MeshLogEntry MeshLogEntry;
 
-/* Allocate and initialize a new BMLog */
-/* Allocate, initialize, and assign a new BMLog */
-BMLog *BM_log_create(BMesh *bm);
+/* Allocate and initialize a new MeshLog */
+/* Allocate, initialize, and assign a new MeshLog */
+MeshLog *mesh_log_create(Mesh *mesh);
 
-/* Allocate and initialize a new BMLog using existing BMLogEntries */
-/* Allocate and initialize a new BMLog using existing BMLogEntries
+/* Allocate and initialize a new MeshLog using existing MeshLogEntries */
+/* Allocate and initialize a new MeshLog using existing MeshLogEntries
  *
  * The 'entry' should be the last entry in the BMLog. Its prev pointer
  * will be followed back to find the first entry.
@@ -21,19 +21,19 @@ BMLog *BM_log_create(BMesh *bm);
  * The unused IDs field of the log will be initialized by taking all
  * keys from all GHashes in the log entry.
  */
-BMLog *BM_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry);
+MeshLog *mesh_log_from_existing_entries_create(Mesh *mesh, MeshLogEntry *entry);
 
-/* Free all the data in a BMLog including the log itself */
-/* Free all the data in a BMLog including the log itself */
-void BM_log_free(BMLog *log);
+/* Free all the data in a MeshLog including the log itself */
+/* Free all the data in a MeshLog including the log itself */
+void mesh_log_free(MeshLog *log);
 
 /* Get the number of log entries */
 /* Get the number of log entries */
-int BM_log_length(const BMLog *log);
+int mesh_log_length(const MeshLog *log);
 
-/* Apply a consistent ordering to BMesh vertices and faces */
-/* Apply a consistent ordering to BMesh vertices */
-void BM_log_mesh_elems_reorder(BMesh *bm, BMLog *log);
+/* Apply a consistent ordering to Mesh vertices and faces */
+/* Apply a consistent ordering to Mesh vertices */
+void mesh_log_mesh_elems_reorder(Mesh *meeh, MeshLog *log);
 
 /* Start a new log entry and update the log entry list */
 /* Start a new log entry and update the log entry list
