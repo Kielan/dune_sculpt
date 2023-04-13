@@ -48,29 +48,29 @@ static void mempool_init_ex(const MeshAllocTemplate *allocsize,
         edge_size, allocsize->totedge, mesh_chunksize_default.totedge, LIB_MEMPOOL_ALLOW_ITER);
   }
   if (r_lpool) {
-    *r_lpool = BLI_mempool_create(
-        loop_size, allocsize->totloop, bm_mesh_chunksize_default.totloop, BLI_MEMPOOL_NOP);
+    *r_lpool = lib_mempool_create(
+        loop_size, allocsize->totloop, mesh_chunksize_default.totloop, BLI_MEMPOOL_NOP);
   }
   if (r_fpool) {
-    *r_fpool = BLI_mempool_create(
-        face_size, allocsize->totface, bm_mesh_chunksize_default.totface, BLI_MEMPOOL_ALLOW_ITER);
+    *r_fpool = lib_mempool_create(
+        face_size, allocsize->totface, mesh_chunksize_default.totface, BLI_MEMPOOL_ALLOW_ITER);
   }
 }
 
-static void bm_mempool_init(BMesh *bm, const BMAllocTemplate *allocsize, const bool use_toolflags)
+static void mesh_mempool_init(Mesh *mesh, const MeshAllocTemplate *allocsize, const bool use_toolflags)
 {
-  bm_mempool_init_ex(allocsize, use_toolflags, &bm->vpool, &bm->epool, &bm->lpool, &bm->fpool);
+  mesh_mempool_init_ex(allocsize, use_toolflags, &bm->vpool, &bm->epool, &bm->lpool, &bm->fpool);
 
 #ifdef USE_BMESH_HOLES
-  bm->looplistpool = BLI_mempool_create(sizeof(BMLoopList), 512, 512, BLI_MEMPOOL_NOP);
+  mesh->looplistpool = lib_mempool_create(sizeof(BMLoopList), 512, 512, BLI_MEMPOOL_NOP);
 #endif
 }
 
-void BM_mesh_elem_toolflags_ensure(BMesh *bm)
+void mesh_elem_toolflags_ensure(BMesh *bm)
 {
-  BLI_assert(bm->use_toolflags);
+  lib_assert(mesh->use_toolflags);
 
-  if (bm->vtoolflagpool && bm->etoolflagpool && bm->ftoolflagpool) {
+  if (mesh->vtoolflagpool && bm->etoolflagpool && bm->ftoolflagpool) {
     return;
   }
 
