@@ -214,7 +214,7 @@ void mesh_data_free(Mesh *mesh)
   /* destroy flag pool */
   mesh_elem_toolflags_clear(mesh);
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   lib_mempool_destroy(mesh->looplistpool);
 #endif
 
@@ -260,10 +260,10 @@ void mesh_free(Mesh *mesh)
     mesh->py_handle = NULL;
   }
 
-  MEM_freeN(bm);
+  mem_freen(mesh);
 }
 
-void bmesh_edit_begin(BMesh *UNUSED(bm), BMOpTypeFlag UNUSED(type_flag))
+void bmesh_edit_begin(Mesh *UNUSED(mesh), BMOpTypeFlag UNUSED(type_flag))
 {
   /* Most operators seem to be using BMO_OPTYPE_FLAG_UNTAN_MULTIRES to change the MDisps to
    * absolute space during mesh edits. With this enabled, changes to the topology
@@ -272,13 +272,13 @@ void bmesh_edit_begin(BMesh *UNUSED(bm), BMOpTypeFlag UNUSED(type_flag))
    * until this is shown to be better for certain types of mesh edits. */
 #ifdef BMOP_UNTAN_MULTIRES_ENABLED
   /* switch multires data out of tangent space */
-  if ((type_flag & BMO_OPTYPE_FLAG_UNTAN_MULTIRES) &&
-      CustomData_has_layer(&bm->ldata, CD_MDISPS)) {
-    bmesh_mdisps_space_set(bm, MULTIRES_SPACE_TANGENT, MULTIRES_SPACE_ABSOLUTE);
+  if ((type_flag & MESH_OPTYPE_FLAG_UNTAN_MULTIRES) &&
+      CustomData_has_layer(&mesh->ldata, CD_MDISPS)) {
+    mesh_mdisps_space_set(mesh, MULTIRES_SPACE_TANGENT, MULTIRES_SPACE_ABSOLUTE);
 
     /* ensure correct normals, if possible */
-    bmesh_rationalize_normals(bm, 0);
-    BM_mesh_normals_update(bm);
+    mesh_rationalize_normals(mesh, 0);
+    mesh_normals_update(mesh);
   }
 #endif
 }
@@ -296,7 +296,7 @@ void mesh_edit_end(Mesh *mesh, MeshOpTypeFlag type_flag)
     mesh_mdisps_space_set(mesh, MULTIRES_SPACE_ABSOLUTE, MULTIRES_SPACE_TANGENT);
   }
   else if (flag & MESH_OP_FLAG_RATIONALIZE_NORMALS) {
-    mesh_rationalize_normals(bm, 1);
+    mesh_rationalize_normals(mesh, 1);
   }
 #endif
 
@@ -315,69 +315,69 @@ void mesh_edit_end(Mesh *mesh, MeshOpTypeFlag type_flag)
     mesh_select_mode_flush(mesh);
   }
 
-  if ((type_flag & BMO_OPTYPE_FLAG_SELECT_VALIDATE) == 0) {
-    bm->selected = select_history;
+  if ((type_flag & MESH_OPTYPE_FLAG_SELECT_VALIDATE) == 0) {
+    mesh->selected = select_history;
   }
-  if (type_flag & BMO_OPTYPE_FLAG_INVALIDATE_CLNOR_ALL) {
-    bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  if (type_flag & MESH_OPTYPE_FLAG_INVALIDATE_CLNOR_ALL) {
+    mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
   }
 }
 
-void BM_mesh_elem_index_ensure_ex(BMesh *bm, const char htype, int elem_offset[4])
+void mesh_elem_index_ensure_ex(Mesh *mesh, const char htype, int elem_offset[4])
 {
 
 #ifdef DEBUG
-  BM_ELEM_INDEX_VALIDATE(bm, "Should Never Fail!", __func__);
+  MESH_ELEM_INDEX_VALIDATE(mesh, "Should Never Fail!", __func__);
 #endif
 
   if (elem_offset == NULL) {
     /* Simple case. */
-    const char htype_needed = bm->elem_index_dirty & htype;
+    const char htype_needed = mesh->elem_index_dirty & htype;
     if (htype_needed == 0) {
       goto finally;
     }
   }
 
-  if (htype & BM_VERT) {
-    if ((bm->elem_index_dirty & BM_VERT) || (elem_offset && elem_offset[0])) {
-      BMIter iter;
-      BMElem *ele;
+  if (htype & MESH_VERT) {
+    if ((mesh->elem_index_dirty & MESH_VERT) || (elem_offset && elem_offset[0])) {
+      MeshIter iter;
+      MeshElem *ele;
 
       int index = elem_offset ? elem_offset[0] : 0;
-      BM_ITER_MESH (ele, &iter, bm, BM_VERTS_OF_MESH) {
-        BM_elem_index_set(ele, index++); /* set_ok */
+      MESH_ITER (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+        mesh_elem_index_set(ele, index++); /* set_ok */
       }
-      BLI_assert(elem_offset || index == bm->totvert);
+      lib_assert(elem_offset || index == bm->totvert);
     }
     else {
       // printf("%s: skipping vert index calc!\n", __func__);
     }
   }
 
-  if (htype & BM_EDGE) {
-    if ((bm->elem_index_dirty & BM_EDGE) || (elem_offset && elem_offset[1])) {
-      BMIter iter;
-      BMElem *ele;
+  if (htype & MESH_EDGE) {
+    if ((mesh->elem_index_dirty & MESH_EDGE) || (elem_offset && elem_offset[1])) {
+      MeshIter iter;
+      MeshElem *ele;
 
       int index = elem_offset ? elem_offset[1] : 0;
-      BM_ITER_MESH (ele, &iter, bm, BM_EDGES_OF_MESH) {
-        BM_elem_index_set(ele, index++); /* set_ok */
+      MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+        mesh_elem_index_set(ele, index++); /* set_ok */
       }
-      BLI_assert(elem_offset || index == bm->totedge);
+      lib_assert(elem_offset || index == mesh->totedge);
     }
     else {
       // printf("%s: skipping edge index calc!\n", __func__);
     }
   }
 
-  if (htype & (BM_FACE | BM_LOOP)) {
-    if ((bm->elem_index_dirty & (BM_FACE | BM_LOOP)) ||
+  if (htype & (MESH_FACE | MESH_LOOP)) {
+    if ((mesh->elem_index_dirty & (MESH_FACE | MESH_LOOP)) ||
         (elem_offset && (elem_offset[2] || elem_offset[3]))) {
-      BMIter iter;
-      BMElem *ele;
+      MeshIter iter;
+      MeshElem *ele;
 
-      const bool update_face = (htype & BM_FACE) && (bm->elem_index_dirty & BM_FACE);
-      const bool update_loop = (htype & BM_LOOP) && (bm->elem_index_dirty & BM_LOOP);
+      const bool update_face = (htype & MESH_FACE) && (mesh->elem_index_dirty & BM_FACE);
+      const bool update_loop = (htype & MESH_LOOP) && (mesh->elem_index_dirty & BM_LOOP);
 
       int index_loop = elem_offset ? elem_offset[2] : 0;
       int index = elem_offset ? elem_offset[3] : 0;
