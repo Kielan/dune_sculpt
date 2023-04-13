@@ -1193,22 +1193,22 @@ void mesh_select_history_merge_from_targetmap(
   }
 }
 
-void mesh_elem_hflag_disable_test(BMesh *bm,
-                                     const char htype,
-                                     const char hflag,
-                                     const bool respecthide,
-                                     const bool overwrite,
-                                     const char hflag_test)
+void mesh_elem_hflag_disable_test(Mesh *mesh,
+                                  const char htype,
+                                  const char hflag,
+                                  const bool respecthide,
+                                  const bool overwrite,
+                                  const char hflag_test)
 {
-  const char iter_types[3] = {BM_VERTS_OF_MESH, BM_EDGES_OF_MESH, BM_FACES_OF_MESH};
+  const char iter_types[3] = {MESH_VERTS_OF_MESH, MESH_EDGES_OF_MESH, BM_FACES_OF_MESH};
 
-  const char flag_types[3] = {BM_VERT, BM_EDGE, BM_FACE};
+  const char flag_types[3] = {MESH_VERT, MESH_EDGE, MESH_FACE};
 
-  const char hflag_nosel = hflag & ~BM_ELEM_SELECT;
+  const char hflag_nosel = hflag & ~MESH_ELEM_SELECT;
 
   int i;
 
-  BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+  lib_assert((htype & ~BM_ALL_NOLOOP) == 0);
 
   if (hflag & BM_ELEM_SELECT) {
     BM_select_history_clear(bm);
