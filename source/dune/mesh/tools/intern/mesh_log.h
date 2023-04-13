@@ -46,10 +46,10 @@ void mesh_log_mesh_elems_reorder(Mesh *meeh, MeshLog *log);
  *
  * In either case, the new entry is set as the current log entry.
  */
-BMLogEntry *BM_log_entry_add(BMLog *log);
+MeshLogEntry *mesh_log_entry_add(MeshLog *log);
 
 /* Mark all used ids as unused for this node */
-void BM_log_cleanup_entry(BMLogEntry *entry);
+void mesh_log_cleanup_entry(MeshLogEntry *entry);
 
 /* Remove an entry from the log */
 /* Remove an entry from the log
@@ -108,7 +108,7 @@ void mesh_log_vert_before_modified(MeshLog *log, struct MeshVert *v, int cd_vert
  * of added vertices, with the key being its ID and the value
  * containing everything needed to reconstruct that vertex.
  */
-void mesh_log_vert_added(BMLog *log, struct BMVert *v, int cd_vert_mask_offset);
+void mesh_log_vert_added(MeshLog *log, struct MeshVert *v, int cd_vert_mask_offset);
 
 /* Log a face before it is modified */
 /* Log a face before it is modified
@@ -116,7 +116,7 @@ void mesh_log_vert_added(BMLog *log, struct BMVert *v, int cd_vert_mask_offset);
  * This is intended to handle only header flags and we always
  * assume face has been added before
  */
-void mesh_log_face_modified(BMLog *log, struct BMFace *f);
+void mesh_log_face_modified(MeshLog *log, struct MeshFace *f);
 
 /* Log a new face as added to the BMesh */
 /* Log a new face as added to the BMesh
