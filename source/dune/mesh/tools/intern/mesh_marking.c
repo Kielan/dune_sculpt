@@ -1,33 +1,30 @@
-/** \file
- * \ingroup bmesh
- *
- * Selection routines for bmesh structures.
+/**
+ * Selection routines for mesh structures.
  * This is actually all old code ripped from
  * editmesh_lib.c and slightly modified to work
- * for bmesh's. This also means that it has some
+ * for mesh's. This also means that it has some
  * of the same problems.... something that
  * that should be addressed eventually.
  */
 
 #include <stddef.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_scene_types.h"
+#include "types_scene.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_task.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
+#include "lib_task.h"
 
-#include "bmesh.h"
-#include "bmesh_structure.h"
+#include "mesh.h"
+#include "mesh_structure.h"
 
 /* For '_FLAG_OVERLAP'. */
-#include "bmesh_private.h"
+#include "mesh_private.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Recounting total selection.
- * \{ */
+/**Recounting total selection. **/
 
 typedef struct SelectionCountChunkData {
   int selection_len;
@@ -38,8 +35,8 @@ static void recount_totsels_range_vert_func(void *UNUSED(userdata),
                                             const TaskParallelTLS *__restrict tls)
 {
   SelectionCountChunkData *count = tls->userdata_chunk;
-  const BMVert *eve = (const BMVert *)iter;
-  if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+  const MeshVert *eve = (const MeshVert *)iter;
+  if (mesh_elem_flag_test(eve, MESH_ELEM_SELECT)) {
     count->selection_len += 1;
   }
 }
@@ -49,8 +46,8 @@ static void recount_totsels_range_edge_func(void *UNUSED(userdata),
                                             const TaskParallelTLS *__restrict tls)
 {
   SelectionCountChunkData *count = tls->userdata_chunk;
-  const BMEdge *eed = (const BMEdge *)iter;
-  if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+  const MeshEdge *eed = (const MeshEdge *)iter;
+  if (mesh_elem_flag_test(eed, MESH_ELEM_SELECT)) {
     count->selection_len += 1;
   }
 }
@@ -60,8 +57,8 @@ static void recount_totsels_range_face_func(void *UNUSED(userdata),
                                             const TaskParallelTLS *__restrict tls)
 {
   SelectionCountChunkData *count = tls->userdata_chunk;
-  const BMFace *efa = (const BMFace *)iter;
-  if (BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+  const MeshFace *efa = (const MeshFace *)iter;
+  if (mesh_elem_flag_test(efa, MESH_ELEM_SELECT)) {
     count->selection_len += 1;
   }
 }
