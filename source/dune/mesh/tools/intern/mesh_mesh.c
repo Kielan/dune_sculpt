@@ -100,34 +100,34 @@ void mesh_elem_toolflags_ensure(BMesh *bm)
   bm->totflags = 1;
 }
 
-void BM_mesh_elem_toolflags_clear(BMesh *bm)
+void mesh_elem_toolflags_clear(Mesh *mesh)
 {
-  if (bm->vtoolflagpool) {
-    BLI_mempool_destroy(bm->vtoolflagpool);
-    bm->vtoolflagpool = NULL;
+  if (mesh->vtoolflagpool) {
+    lib_mempool_destroy(mesh->vtoolflagpool);
+    mesh->vtoolflagpool = NULL;
   }
-  if (bm->etoolflagpool) {
-    BLI_mempool_destroy(bm->etoolflagpool);
-    bm->etoolflagpool = NULL;
+  if (mesh->etoolflagpool) {
+    lib_mempool_destroy(mesh->etoolflagpool);
+    mesh->etoolflagpool = NULL;
   }
-  if (bm->ftoolflagpool) {
-    BLI_mempool_destroy(bm->ftoolflagpool);
-    bm->ftoolflagpool = NULL;
+  if (mesh->ftoolflagpool) {
+    lib_mempool_destroy(mesh->ftoolflagpool);
+    mesh->ftoolflagpool = NULL;
   }
 }
 
-BMesh *BM_mesh_create(const BMAllocTemplate *allocsize, const struct BMeshCreateParams *params)
+Mesh *mesh_create(const MeshAllocTemplate *allocsize, const struct MeshCreateParams *params)
 {
   /* allocate the structure */
-  BMesh *bm = MEM_callocN(sizeof(BMesh), __func__);
+  Mesh *mesh = mem_callocn(sizeof(Mesh), __func__);
 
   /* allocate the memory pools for the mesh elements */
-  bm_mempool_init(bm, allocsize, params->use_toolflags);
+  mesh_mempool_init(mesh, allocsize, params->use_toolflags);
 
   /* allocate one flag pool that we don't get rid of. */
-  bm->use_toolflags = params->use_toolflags;
-  bm->toolflag_index = 0;
-  bm->totflags = 0;
+  mesh->use_toolflags = params->use_toolflags;
+  mesh->toolflag_index = 0;
+  mesh->totflags = 0;
 
   CustomData_reset(&bm->vdata);
   CustomData_reset(&bm->edata);
@@ -137,7 +137,7 @@ BMesh *BM_mesh_create(const BMAllocTemplate *allocsize, const struct BMeshCreate
   return bm;
 }
 
-void BM_mesh_data_free(BMesh *bm)
+void mesh_data_free(Mesh *mesh)
 {
   BMVert *v;
   BMEdge *e;
