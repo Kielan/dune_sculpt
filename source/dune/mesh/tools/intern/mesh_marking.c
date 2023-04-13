@@ -204,7 +204,7 @@ static bool mesh_edge_is_face_select_any(const MeshEdge *e)
     const MeshLoop *l_iter, *l_first;
     l_iter = l_first = e->l;
     do {
-      if (mesh_elem_flag_test(l_iter->f, BM_ELEM_SELECT)) {
+      if (mesh_elem_flag_test(l_iter->f, MESH_ELEM_SELECT)) {
         return true;
       }
     } while ((l_iter = l_iter->radial_next) != l_first);
@@ -830,10 +830,10 @@ MeshFace *mesh_active_face_get(Mesh *mesh, const bool is_sloppy, const bool is_s
       if (ese->htype == MESH_FACE) {
         f = (MeshFace *)ese->ele;
 
-        if (BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+        if (mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
           f = NULL;
         }
-        else if (is_selected && !BM_elem_flag_test(f, BM_ELEM_SELECT)) {
+        else if (is_selected && !mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
           f = NULL;
         }
         else {
@@ -843,8 +843,8 @@ MeshFace *mesh_active_face_get(Mesh *mesh, const bool is_sloppy, const bool is_s
     }
     /* Last attempt: try to find any selected face */
     if (f == NULL) {
-      BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
-        if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
+       MESH_ITER_MESH (f, &iter, mesh, MESH_FACES_OF_MESH) {
+        if (mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
           break;
         }
       }
@@ -854,36 +854,36 @@ MeshFace *mesh_active_face_get(Mesh *mesh, const bool is_sloppy, const bool is_s
   return NULL;
 }
 
-BMEdge *BM_mesh_active_edge_get(BMesh *bm)
+MeshEdge *mesh_active_edge_get(Mesh *mesh)
 {
-  if (bm->selected.last) {
-    BMEditSelection *ese = bm->selected.last;
+  if (mesh->selected.last) {
+    MeshEditSelection *ese = mesh->selected.last;
 
-    if (ese && ese->htype == BM_EDGE) {
-      return (BMEdge *)ese->ele;
+    if (ese && ese->htype == MESH_EDGE) {
+      return (MeshEdge *)ese->ele;
     }
   }
 
   return NULL;
 }
 
-BMVert *BM_mesh_active_vert_get(BMesh *bm)
+MeshVert *mesh_active_vert_get(Mesh *mesh)
 {
-  if (bm->selected.last) {
-    BMEditSelection *ese = bm->selected.last;
+  if (mesh->selected.last) {
+    MeshEditSelection *ese = mesh->selected.last;
 
-    if (ese && ese->htype == BM_VERT) {
-      return (BMVert *)ese->ele;
+    if (ese && ese->htype == MESH_VERT) {
+      return (MeshVert *)ese->ele;
     }
   }
 
   return NULL;
 }
 
-BMElem *BM_mesh_active_elem_get(BMesh *bm)
+MeshElem *mesh_active_elem_get(Mesh *mesh)
 {
-  if (bm->selected.last) {
-    BMEditSelection *ese = bm->selected.last;
+  if (mesh->selected.last) {
+    MeshEditSelection *ese = mesh->selected.last;
 
     if (ese) {
       return ese->ele;
@@ -893,30 +893,30 @@ BMElem *BM_mesh_active_elem_get(BMesh *bm)
   return NULL;
 }
 
-void BM_editselection_center(BMEditSelection *ese, float r_center[3])
+void mesh_editselection_center(MeshEditSelection *ese, float r_center[3])
 {
-  if (ese->htype == BM_VERT) {
-    BMVert *eve = (BMVert *)ese->ele;
+  if (ese->htype == MESH_VERT) {
+    MeshVert *eve = (MeshVert *)ese->ele;
     copy_v3_v3(r_center, eve->co);
   }
-  else if (ese->htype == BM_EDGE) {
-    BMEdge *eed = (BMEdge *)ese->ele;
+  else if (ese->htype == MESH_EDGE) {
+    MedhEdge *eed = (MeshEdge *)ese->ele;
     mid_v3_v3v3(r_center, eed->v1->co, eed->v2->co);
   }
-  else if (ese->htype == BM_FACE) {
-    BMFace *efa = (BMFace *)ese->ele;
-    BM_face_calc_center_median(efa, r_center);
+  else if (ese->htype == MESH_FACE) {
+    MeshFace *efa = (MeshFace *)ese->ele;
+    mesh_face_calc_center_median(efa, r_center);
   }
 }
 
-void BM_editselection_normal(BMEditSelection *ese, float r_normal[3])
+void mesh_editselection_normal(MeshEditSelection *ese, float r_normal[3])
 {
-  if (ese->htype == BM_VERT) {
-    BMVert *eve = (BMVert *)ese->ele;
+  if (ese->htype == MESH_VERT) {
+    MeshVert *eve = (MeshVert *)ese->ele;
     copy_v3_v3(r_normal, eve->no);
   }
-  else if (ese->htype == BM_EDGE) {
-    BMEdge *eed = (BMEdge *)ese->ele;
+  else if (ese->htype == MESH_EDGE) {
+    MeshEdge *eed = (MeshEdge *)ese->ele;
     float plane[3]; /* need a plane to correct the normal */
     float vec[3];   /* temp vec storage */
 
@@ -931,8 +931,8 @@ void BM_editselection_normal(BMEditSelection *ese, float r_normal[3])
     cross_v3_v3v3(r_normal, plane, vec);
     normalize_v3(r_normal);
   }
-  else if (ese->htype == BM_FACE) {
-    BMFace *efa = (BMFace *)ese->ele;
+  else if (ese->htype == MESH_FACE) {
+    MeshFace *efa = (MeshFace *)ese->ele;
     copy_v3_v3(r_normal, efa->no);
   }
 }
@@ -993,10 +993,10 @@ void mesh_editselection_plane(MeshEditSelection *ese, float r_plane[3])
   }
 }
 
-static MeshEditSelection *bm_select_history_create(BMHeader *ele)
+static MeshEditSelection *mesh_select_history_create(MeshHeader *ele)
 {
-  BMEditSelection *ese = (BMEditSelection *)MEM_callocN(sizeof(BMEditSelection),
-                                                        "BMEdit Selection");
+  MeshEditSelection *ese = (MeshEditSelection *)mem_callocn(sizeof(MeshEditSelection),
+                                                        "MeshEdit Selection");
   ese->htype = ele->htype;
   ese->ele = (BMElem *)ele;
   return ese;
