@@ -139,16 +139,16 @@ Mesh *mesh_create(const MeshAllocTemplate *allocsize, const struct MeshCreatePar
 
 void mesh_data_free(Mesh *mesh)
 {
-  BMVert *v;
-  BMEdge *e;
-  BMLoop *l;
-  BMFace *f;
+  MeshVert *v;
+  MeshEdge *e;
+  MeshLoop *l;
+  MeshFace *f;
 
-  BMIter iter;
-  BMIter itersub;
+  MeshIter iter;
+  MeshIter itersub;
 
-  const bool is_ldata_free = CustomData_bmesh_has_free(&bm->ldata);
-  const bool is_pdata_free = CustomData_bmesh_has_free(&bm->pdata);
+  const bool is_ldata_free = CustomData_mesh_has_free(&mesh->ldata);
+  const bool is_pdata_free = CustomData_mesh_has_free(&mesh->pdata);
 
   /* Check if we have to call free, if not we can avoid a lot of looping */
   if (CustomData_mesh_has_free(&(mesh->vdata))) {
@@ -156,44 +156,44 @@ void mesh_data_free(Mesh *mesh)
       CustomData_mesh_free_block(&(mesh->vdata), &(v->head.data));
     }
   }
-  if (CustomData_mesh_has_free(&(bm->edata))) {
-    MESH_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-      CustomData_bmesh_free_block(&(bm->edata), &(e->head.data));
+  if (CustomData_mesh_has_free(&(mesh->edata))) {
+    MESH_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH) {
+      CustomData_mesh_free_block(&(mesh->edata), &(e->head.data));
     }
   }
 
   if (is_ldata_free || is_pdata_free) {
-    BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+    MESH_ITER (f, &iter, mesh, MESH_FACES_OF_MESH) {
       if (is_pdata_free) {
-        CustomData_bmesh_free_block(&(bm->pdata), &(f->head.data));
+        CustomData_mesh_free_block(&(mesh->pdata), &(f->head.data));
       }
       if (is_ldata_free) {
-        BM_ITER_ELEM (l, &itersub, f, BM_LOOPS_OF_FACE) {
-          CustomData_bmesh_free_block(&(bm->ldata), &(l->head.data));
+         MESH_ITER_ELEM (l, &itersub, f, MESH_LOOPS_OF_FACE) {
+          CustomData_mesh_free_block(&(mesh->ldata), &(l->head.data));
         }
       }
     }
   }
 
   /* Free custom data pools, This should probably go in CustomData_free? */
-  if (bm->vdata.totlayer) {
-    BLI_mempool_destroy(bm->vdata.pool);
+  if (mesh->vdata.totlayer) {
+    lib_mempool_destroy(mesh->vdata.pool);
   }
-  if (bm->edata.totlayer) {
-    BLI_mempool_destroy(bm->edata.pool);
+  if (mesh->edata.totlayer) {
+    lib_mempool_destroy(mesh->edata.pool);
   }
   if (bm->ldata.totlayer) {
-    BLI_mempool_destroy(bm->ldata.pool);
+    BLI_mempool_destroy(mesh->ldata.pool);
   }
   if (bm->pdata.totlayer) {
-    BLI_mempool_destroy(bm->pdata.pool);
+    BLI_mempool_destroy(mesh->pdata.pool);
   }
 
   /* free custom data */
-  CustomData_free(&bm->vdata, 0);
-  CustomData_free(&bm->edata, 0);
-  CustomData_free(&bm->ldata, 0);
-  CustomData_free(&bm->pdata, 0);
+  CustomData_free(&mesh->vdata, 0);
+  CustomData_free(&mesh->edata, 0);
+  CustomData_free(&mesh->ldata, 0);
+  CustomData_free(&mesh->pdata, 0);
 
   /* destroy element pools */
   BLI_mempool_destroy(bm->vpool);
