@@ -350,45 +350,45 @@ static void mesh_select_mode_flush_edge_to_face_iter_fn(void *UNUSED(userdata),
   }
 }
 
-static void bm_mesh_select_mode_flush_reduce_fn(const void *__restrict UNUSED(userdata),
-                                                void *__restrict chunk_join,
-                                                void *__restrict chunk)
+static void mesh_select_mode_flush_reduce_fn(const void *__restrict UNUSED(userdata),
+                                             void *__restrict chunk_join,
+                                             void *__restrict chunk)
 {
   SelectionFlushChunkData *dst = chunk_join;
   const SelectionFlushChunkData *src = chunk;
   dst->delta_selection_len += src->delta_selection_len;
 }
 
-static void bm_mesh_select_mode_flush_vert_to_edge(BMesh *bm)
+static void mesh_select_mode_flush_vert_to_edge(Mesh *mesh)
 {
   SelectionFlushChunkData chunk_data = {0};
 
   TaskParallelSettings settings;
   BLI_parallel_range_settings_defaults(&settings);
-  settings.use_threading = bm->totedge >= BM_OMP_LIMIT;
+  settings.use_threading = bm->totedge >= MESH_OMP_LIMIT;
   settings.userdata_chunk = &chunk_data;
   settings.userdata_chunk_size = sizeof(chunk_data);
   settings.func_reduce = bm_mesh_select_mode_flush_reduce_fn;
 
-  BM_iter_parallel(
-      bm, BM_EDGES_OF_MESH, bm_mesh_select_mode_flush_vert_to_edge_iter_fn, NULL, &settings);
-  bm->totedgesel += chunk_data.delta_selection_len;
+  mesh_iter_parallel(
+      mesh, MESH_EDGES_OF_MESH, mesh_select_mode_flush_vert_to_edge_iter_fn, NULL, &settings);
+  mesh->totedgesel += chunk_data.delta_selection_len;
 }
 
-static void bm_mesh_select_mode_flush_edge_to_face(BMesh *bm)
+static void mesh_select_mode_flush_edge_to_face(Mesh *mesh)
 {
   SelectionFlushChunkData chunk_data = {0};
 
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
-  settings.use_threading = bm->totface >= BM_OMP_LIMIT;
+  lib_parallel_range_settings_defaults(&settings);
+  settings.use_threading = mesh->totface >= BM_OMP_LIMIT;
   settings.userdata_chunk = &chunk_data;
   settings.userdata_chunk_size = sizeof(chunk_data);
-  settings.func_reduce = bm_mesh_select_mode_flush_reduce_fn;
+  settings.func_reduce = mesh_mesh_select_mode_flush_reduce_fn;
 
-  BM_iter_parallel(
-      bm, BM_FACES_OF_MESH, bm_mesh_select_mode_flush_edge_to_face_iter_fn, NULL, &settings);
-  bm->totfacesel += chunk_data.delta_selection_len;
+  mesh_iter_parallel(
+      mesh, MESH_FACES_OF_MESH, mesh_select_mode_flush_edge_to_face_iter_fn, NULL, &settings);
+  mesh->totfacesel += chunk_data.delta_selection_len;
 }
 
 void BM_mesh_select_mode_flush_ex(BMesh *bm, const short selectmode, eBMSelectionFlushFLags flags)
