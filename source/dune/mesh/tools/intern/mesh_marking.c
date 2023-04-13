@@ -52,7 +52,7 @@ static void recount_totsels_range_edge_func(void *UNUSED(userdata),
   }
 }
 
-static void recount_totsels_range_face_func(void *UNUSED(userdata),
+static void recount_totsels_range_face_fn(void *UNUSED(userdata),
                                             MempoolIterData *iter,
                                             const TaskParallelTLS *__restrict tls)
 {
@@ -76,17 +76,17 @@ static TaskParallelMempoolFn recount_totsels_get_range_fn(MeshIterType iter_type
 {
   lib_assert(ELEM(iter_type, MESH_VERTS_OF_MESH, MESH_EDGES_OF_MESH, MESH_FACES_OF_MESH));
 
-  TaskParallelMempoolFunc range_fN = NULL;
+  TaskParallelMempoolFn range_fn = NULL;
   if (iter_type == MESH_VERTS_OF_MESH) {
-    range_func = recount_totsels_range_vert_fn;
+    range_fn = recount_totsels_range_vert_fn;
   }
   else if (iter_type == MESH_EDGES_OF_MESH) {
-    range_func = recount_totsels_range_edge_func;
+    range_fn = recount_totsels_range_edge_func;
   }
   else if (iter_type == MESH_FACES_OF_MESH) {
-    range_func = recount_totsels_range_face_func;
+    range_fn = recount_totsels_range_face_func;
   }
-  return range_func;
+  return range_fn;
 }
 
 static int recount_totsel(Mesh *mesh, MeshIterType iter_type)
@@ -95,7 +95,7 @@ static int recount_totsel(Mesh *mesh, MeshIterType iter_type)
 
   TaskParallelSettings settings;
   lib_parallel_range_settings_defaults(&settings);
-  settings.func_reduce = recount_totsels_reduce;
+  settings.fn_reduce = recount_totsels_reduce;
   settings.min_iter_per_thread = MIN_ITER_SIZE;
 
   SelectionCountChunkData count = {0};
@@ -186,7 +186,7 @@ static bool mesh_vert_is_edge_visible_any(const MeshVert *v)
 
 static bool mesh_edge_is_face_select_any_other(MeshLoop *l_first)
 {
-  const MeehLoop *l_iter = l_first;
+  const MeshLoop *l_iter = l_first;
 
   /* start by stepping over the current face */
   while ((l_iter = l_iter->radial_next) != l_first) {
@@ -436,32 +436,32 @@ void mesh_deselect_flush(Mesh *mesh)
       }
 
       if (e->l && !mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
-        BMLoop *l_iter;
-        BMLoop *l_first;
+        MeshLoop *l_iter;
+        MeshLoop *l_first;
 
         l_iter = l_first = e->l;
         do {
-          BM_elem_flag_disable(l_iter->f, BM_ELEM_SELECT);
+          mesh_elem_flag_disable(l_iter->f, BM_ELEM_SELECT);
         } while ((l_iter = l_iter->radial_next) != l_first);
       }
     }
   }
 
   /* Remove any deselected elements from the BMEditSelection */
-  BM_select_history_validate(bm);
+  mesh_select_history_validate(mesh);
 
-  recount_totsels(bm);
+  recount_totsels(mesh);
 }
 
-void BM_mesh_select_flush(BMesh *bm)
+void mesh_select_flush(Mesh *mesh)
 {
-  BMEdge *e;
-  BMLoop *l_iter;
-  BMLoop *l_first;
-  BMFace *f;
+  MeshEdge *e;
+  MeshLoop *l_iter;
+  MeshLoop *l_first;
+  MeshFace *f;
 
-  BMIter eiter;
-  BMIter fiter;
+  Mesh eiter;
+  MeshIter fiter;
 
   bool ok;
 
@@ -529,13 +529,13 @@ void mesh_edge_select_set(Mesh *mesh, MeshEdge *e, const bool select)
       mesh_elem_flag_enable(e, BM_ELEM_SELECT);
       mesh->totedgesel += 1;
     }
-    BM_vert_select_set(bm, e->v1, true);
-    BM_vert_select_set(bm, e->v2, true);
+    mesh_vert_select_set(bm, e->v1, true);
+    mesh_vert_select_set(bm, e->v2, true);
   }
   else {
-    if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-      BM_elem_flag_disable(e, BM_ELEM_SELECT);
-      bm->totedgesel -= 1;
+    if (mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_disable(e, MESH_ELEM_SELECT);
+      mesh->totedgesel -= 1;
     }
 
     if ((bm->selectmode & SCE_SELECT_VERTEX) == 0) {
