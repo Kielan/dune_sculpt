@@ -636,54 +636,52 @@ void mesh_face_select_set(Mesh *mesh, MeshFace *f, const bool select)
 
 void mesh_edge_select_set_noflush(Mesh *mesh, MeshEdge *e, const bool select)
 {
-  lib_assert(e->head.htype == BM_EDGE);
+  lib_assert(e->head.htype == MESH_EDGE);
 
-  if (BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
+  if (mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
     return;
   }
 
   if (select) {
-    if (!BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-      BM_elem_flag_enable(e, BM_ELEM_SELECT);
-      bm->totedgesel += 1;
+    if (!mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_enable(e, MESH_ELEM_SELECT);
+      mesh->totedgesel += 1;
     }
   }
   else {
-    if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-      BM_elem_flag_disable(e, BM_ELEM_SELECT);
-      bm->totedgesel -= 1;
+    if (mesh_elem_flag_test(e, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_disable(e, MESH_ELEM_SELECT);
+      mesh->totedgesel -= 1;
     }
   }
 }
 
-void BM_face_select_set_noflush(BMesh *bm, BMFace *f, const bool select)
+void mesh_face_select_set_noflush(Mesh *mesh, MeshFace *f, const bool select)
 {
-  BLI_assert(f->head.htype == BM_FACE);
+  lib_assert(f->head.htype == MESH_FACE);
 
-  if (BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+  if (mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
     return;
   }
 
   if (select) {
-    if (!BM_elem_flag_test(f, BM_ELEM_SELECT)) {
-      BM_elem_flag_enable(f, BM_ELEM_SELECT);
-      bm->totfacesel += 1;
+    if (!mesh_elem_flag_test(f, M_ELEM_SELECT)) {
+      mesh_elem_flag_enable(f, M_ELEM_SELECT);
+      meh->totfacesel += 1;
     }
   }
   else {
-    if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
-      BM_elem_flag_disable(f, BM_ELEM_SELECT);
-      bm->totfacesel -= 1;
+    if (mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_disable(f, MESH_ELEM_SELECT);
+      mesh->totfacesel -= 1;
     }
   }
 }
 
-/** \} */
-
-void BM_mesh_select_mode_set(BMesh *bm, int selectmode)
+void mesh_select_mode_set(Mesh *mesh, int selectmode)
 {
-  BMIter iter;
-  BMElem *ele;
+  MeshIter iter;
+  MehElem *ele;
 
   bm->selectmode = selectmode;
 
