@@ -843,106 +843,106 @@ void mesh_log_face_removed(MeshLog *log, MeshFace *f)
 
 void mesh_log_all_added(Mesh *mesh, MeshLog *log)
 {
-  const int cd_vert_mask_offset = CustomData_get_offset(&bm->vdata, CD_PAINT_MASK);
-  BMIter bm_iter;
-  BMVert *v;
-  BMFace *f;
+  const int cd_vert_mask_offset = CustomData_get_offset(&mesh->vdata, CD_PAINT_MASK);
+  MeshIter bm_iter;
+  MeshVert *v;
+  MeshFace *f;
 
   /* avoid unnecessary resizing on initialization */
-  if (BLI_ghash_len(log->current_entry->added_verts) == 0) {
-    BLI_ghash_reserve(log->current_entry->added_verts, (uint)bm->totvert);
+  if (lib_ghash_len(log->current_entry->added_verts) == 0) {
+    lib_ghash_reserve(log->current_entry->added_verts, (uint)mesh->totvert);
   }
 
-  if (BLI_ghash_len(log->current_entry->added_faces) == 0) {
-    BLI_ghash_reserve(log->current_entry->added_faces, (uint)bm->totface);
+  if (lib_ghash_len(log->current_entry->added_faces) == 0) {
+    lib_ghash_reserve(log->current_entry->added_faces, (uint)mesh->totface);
   }
 
   /* Log all vertices as newly created */
-  BM_ITER_MESH (v, &bm_iter, bm, BM_VERTS_OF_MESH) {
-    BM_log_vert_added(log, v, cd_vert_mask_offset);
+  MESH_ITER_MESH (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH) {
+    mesh_log_vert_added(log, v, cd_vert_mask_offset);
   }
 
   /* Log all faces as newly created */
-  BM_ITER_MESH (f, &bm_iter, bm, BM_FACES_OF_MESH) {
-    BM_log_face_added(log, f);
+  MESH_ITER_MESH (f, &mesh_iter, mesh, MESH_FACES_OF_MESH) {
+    mesh_log_face_added(log, f);
   }
 }
 
-void BM_log_before_all_removed(BMesh *bm, BMLog *log)
+void mesh_log_before_all_removed(Mesh *mesh, MeshLog *log)
 {
   const int cd_vert_mask_offset = CustomData_get_offset(&bm->vdata, CD_PAINT_MASK);
-  BMIter bm_iter;
-  BMVert *v;
-  BMFace *f;
+  MeshIter mesh_iter;
+  MeshVert *v;
+  MeshFace *f;
 
   /* Log deletion of all faces */
-  BM_ITER_MESH (f, &bm_iter, bm, BM_FACES_OF_MESH) {
-    BM_log_face_removed(log, f);
+  MESH_ITER (f, &mesh_iter, mesh, MESH_FACES_OF_MESH) {
+    mesh_log_face_removed(log, f);
   }
 
   /* Log deletion of all vertices */
-  BM_ITER_MESH (v, &bm_iter, bm, BM_VERTS_OF_MESH) {
-    BM_log_vert_removed(log, v, cd_vert_mask_offset);
+  MESH_ITER (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH) {
+    mesh_log_vert_removed(log, v, cd_vert_mask_offset);
   }
 }
 
-const float *BM_log_original_vert_co(BMLog *log, BMVert *v)
+const float *mesh_log_original_vert_co(MeshLog *log, MeshVert *v)
 {
-  BMLogEntry *entry = log->current_entry;
-  const BMLogVert *lv;
-  uint v_id = bm_log_vert_id_get(log, v);
-  void *key = POINTER_FROM_UINT(v_id);
-
-  BLI_assert(entry);
-
-  BLI_assert(BLI_ghash_haskey(entry->modified_verts, key));
-
-  lv = BLI_ghash_lookup(entry->modified_verts, key);
-  return lv->co;
-}
-
-const float *BM_log_original_vert_no(BMLog *log, BMVert *v)
-{
-  BMLogEntry *entry = log->current_entry;
-  const BMLogVert *lv;
-  uint v_id = bm_log_vert_id_get(log, v);
-  void *key = POINTER_FROM_UINT(v_id);
-
-  BLI_assert(entry);
-
-  BLI_assert(BLI_ghash_haskey(entry->modified_verts, key));
-
-  lv = BLI_ghash_lookup(entry->modified_verts, key);
-  return lv->no;
-}
-
-float BM_log_original_mask(BMLog *log, BMVert *v)
-{
-  BMLogEntry *entry = log->current_entry;
-  const BMLogVert *lv;
-  uint v_id = bm_log_vert_id_get(log, v);
-  void *key = POINTER_FROM_UINT(v_id);
-
-  BLI_assert(entry);
-
-  BLI_assert(BLI_ghash_haskey(entry->modified_verts, key));
-
-  lv = BLI_ghash_lookup(entry->modified_verts, key);
-  return lv->mask;
-}
-
-void BM_log_original_vert_data(BMLog *log, BMVert *v, const float **r_co, const float **r_no)
-{
-  BMLogEntry *entry = log->current_entry;
-  const BMLogVert *lv;
-  uint v_id = bm_log_vert_id_get(log, v);
+  MeshLogEntry *entry = log->current_entry;
+  const MeshLogVert *lv;
+  uint v_id = mesh_log_vert_id_get(log, v);
   void *key = PTR_FROM_UINT(v_id);
 
   lib_assert(entry);
 
-  lib_assert(BLI_ghash_haskey(entry->modified_verts, key));
+  lib_assert(lib_ghash_haskey(entry->modified_verts, key));
 
-  lv = BLI_ghash_lookup(entry->modified_verts, key);
+  lv = lib_ghash_lookup(entry->modified_verts, key);
+  return lv->co;
+}
+
+const float *mesh_log_original_vert_no(MeshLog *log, MeshVert *v)
+{
+  MeshLogEntry *entry = log->current_entry;
+  const MeshLogVert *lv;
+  uint v_id = mesh_log_vert_id_get(log, v);
+  void *key = PTR_FROM_UINT(v_id);
+
+  lib_assert(entry);
+
+  lib_assert(lib_ghash_haskey(entry->modified_verts, key));
+
+  lv = lib_ghash_lookup(entry->modified_verts, key);
+  return lv->no;
+}
+
+float mesh_log_original_mask(MeshLog *log, MeshVert *v)
+{
+  MeshLogEntry *entry = log->current_entry;
+  const MeshLogVert *lv;
+  uint v_id = mesh_log_vert_id_get(log, v);
+  void *key = PTR_FROM_UINT(v_id);
+
+  lib_assert(entry);
+
+  lib_assert(lib_ghash_haskey(entry->modified_verts, key));
+
+  lv = lib_ghash_lookup(entry->modified_verts, key);
+  return lv->mask;
+}
+
+void mesh_log_original_vert_data(MeshLog *log, MeshVert *v, const float **r_co, const float **r_no)
+{
+  MeshLogEntry *entry = log->current_entry;
+  const MeshLogVert *lv;
+  uint v_id = mesh_log_vert_id_get(log, v);
+  void *key = PTR_FROM_UINT(v_id);
+
+  lib_assert(entry);
+
+  lib_assert(lib_ghash_haskey(entry->modified_verts, key));
+
+  lv = lib_ghash_lookup(entry->modified_verts, key);
   *r_co = lv->co;
   *r_no = lv->no;
 }
