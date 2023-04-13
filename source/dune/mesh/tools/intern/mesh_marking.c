@@ -80,21 +80,21 @@ static TaskParallelMempoolFn recount_totsels_get_range_fn(MeshIterType iter_type
   if (iter_type == MESH_VERTS_OF_MESH) {
     range_func = recount_totsels_range_vert_fn;
   }
-  else if (iter_type == BM_EDGES_OF_MESH) {
+  else if (iter_type == MESH_EDGES_OF_MESH) {
     range_func = recount_totsels_range_edge_func;
   }
-  else if (iter_type == BM_FACES_OF_MESH) {
+  else if (iter_type == MESH_FACES_OF_MESH) {
     range_func = recount_totsels_range_face_func;
   }
   return range_func;
 }
 
-static int recount_totsel(BMesh *bm, BMIterType iter_type)
+static int recount_totsel(Mesh *mesh, MeshIterType iter_type)
 {
   const int MIN_ITER_SIZE = 1024;
 
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  lib_parallel_range_settings_defaults(&settings);
   settings.func_reduce = recount_totsels_reduce;
   settings.min_iter_per_thread = MIN_ITER_SIZE;
 
@@ -102,55 +102,52 @@ static int recount_totsel(BMesh *bm, BMIterType iter_type)
   settings.userdata_chunk = &count;
   settings.userdata_chunk_size = sizeof(count);
 
-  TaskParallelMempoolFunc range_func = recount_totsels_get_range_func(iter_type);
-  BM_iter_parallel(bm, iter_type, range_func, NULL, &settings);
+  TaskParallelMempoolFn range_fn = recount_totsels_get_range_fn(iter_type);
+  mesh_iter_parallel(mesh, iter_type, range_fn, NULL, &settings);
   return count.selection_len;
 }
 
-static void recount_totvertsel(BMesh *bm)
+static void recount_totvertsel(Mesh *meeh)
 {
-  bm->totvertsel = recount_totsel(bm, BM_VERTS_OF_MESH);
+  mesh->totvertsel = recount_totsel(mesh, MESH_VERTS_OF_MESH);
 }
 
-static void recount_totedgesel(BMesh *bm)
+static void recount_totedgesel(Mesh *mesh)
 {
-  bm->totedgesel = recount_totsel(bm, BM_EDGES_OF_MESH);
+  mesh->totedgesel = recount_totsel(mesh, MESH_EDGES_OF_MESH);
 }
 
-static void recount_totfacesel(BMesh *bm)
+static void recount_totfacesel(Mesh *mesh)
 {
-  bm->totfacesel = recount_totsel(bm, BM_FACES_OF_MESH);
+  mesh->totfacesel = recount_totsel(mesh, MESH_FACES_OF_MESH);
 }
 
-static void recount_totsels(BMesh *bm)
+static void recount_totsels(Mesh *mesh)
 {
-  recount_totvertsel(bm);
-  recount_totedgesel(bm);
-  recount_totfacesel(bm);
+  recount_totvertsel(mesh);
+  recount_totedgesel(mesh);
+  recount_totfacesel(mesh);
 }
 
 #ifndef NDEBUG
-static bool recount_totsels_are_ok(BMesh *bm)
+static bool recount_totsels_are_ok(Mesh *mesh)
 {
-  return bm->totvertsel == recount_totsel(bm, BM_VERTS_OF_MESH) &&
-         bm->totedgesel == recount_totsel(bm, BM_EDGES_OF_MESH) &&
-         bm->totfacesel == recount_totsel(bm, BM_FACES_OF_MESH);
+  return mesh->totvertsel == recount_totsel(mesh, MESH_VERTS_OF_MESH) &&
+         mesh->totedgesel == recount_totsel(mesh, MESH_EDGES_OF_MESH) &&
+         mesh->totfacesel == recount_totsel(mesh, MESH_FACES_OF_MESH);
 }
 #endif
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name BMesh helper functions for selection & hide flushing.
- * \{ */
+/** Mesh helper functions for selection & hide flushing. **/
 
-static bool bm_vert_is_edge_select_any_other(const BMVert *v, const BMEdge *e_first)
+static bool mesh_vert_is_edge_select_any_other(const MeshVert *v, const MeshEdge *e_first)
 {
-  const BMEdge *e_iter = e_first;
+  const MeshEdge *e_iter = e_first;
 
   /* start by stepping over the current edge */
-  while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first) {
-    if (BM_elem_flag_test(e_iter, BM_ELEM_SELECT)) {
+  while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first) {
+    if (mesh_elem_flag_test(e_iter, MESH_ELEM_SELECT)) {
       return true;
     }
   }
@@ -158,13 +155,13 @@ static bool bm_vert_is_edge_select_any_other(const BMVert *v, const BMEdge *e_fi
 }
 
 #if 0
-static bool bm_vert_is_edge_select_any(const BMVert *v)
+static bool bm_vert_is_edge_select_any(const MeshVert *v)
 {
   if (v->e) {
-    const BMEdge *e_iter, *e_first;
+    const MeshEdge *e_iter, *e_first;
     e_iter = e_first = v->e;
     do {
-      if (BM_elem_flag_test(e_iter, BM_ELEM_SELECT)) {
+      if (mesh_elem_flag_test(e_iter, MESH_ELEM_SELECT)) {
         return true;
       }
     } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
@@ -173,16 +170,16 @@ static bool bm_vert_is_edge_select_any(const BMVert *v)
 }
 #endif
 
-static bool bm_vert_is_edge_visible_any(const BMVert *v)
+static bool bm_vert_is_edge_visible_any(const MeshVert *v)
 {
   if (v->e) {
     const BMEdge *e_iter, *e_first;
     e_iter = e_first = v->e;
     do {
-      if (!BM_elem_flag_test(e_iter, BM_ELEM_HIDDEN)) {
+      if (!BM_elem_flag_test(e_iter, MESH_ELEM_HIDDEN)) {
         return true;
       }
-    } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+    } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
   }
   return false;
 }
