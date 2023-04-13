@@ -937,14 +937,14 @@ void BM_editselection_normal(BMEditSelection *ese, float r_normal[3])
   }
 }
 
-void BM_editselection_plane(BMEditSelection *ese, float r_plane[3])
+void mesh_editselection_plane(MeshEditSelection *ese, float r_plane[3])
 {
-  if (ese->htype == BM_VERT) {
-    BMVert *eve = (BMVert *)ese->ele;
+  if (ese->htype == MESH_VERT) {
+    MeshVert *eve = (MeshVert *)ese->ele;
     float vec[3] = {0.0f, 0.0f, 0.0f};
 
     if (ese->prev) { /* use previously selected data to make a useful vertex plane */
-      BM_editselection_center(ese->prev, vec);
+      mesh_editselection_center(ese->prev, vec);
       sub_v3_v3v3(r_plane, vec, eve->co);
     }
     else {
@@ -965,10 +965,10 @@ void BM_editselection_plane(BMEditSelection *ese, float r_plane[3])
     }
     normalize_v3(r_plane);
   }
-  else if (ese->htype == BM_EDGE) {
-    BMEdge *eed = (BMEdge *)ese->ele;
+  else if (ese->htype == MESH_EDGE) {
+    MeshEdge *eed = (MeshEdge *)ese->ele;
 
-    if (BM_edge_is_boundary(eed)) {
+    if (mesh_edge_is_boundary(eed)) {
       sub_v3_v3v3(r_plane, eed->l->v->co, eed->l->next->v->co);
     }
     else {
@@ -987,13 +987,13 @@ void BM_editselection_plane(BMEditSelection *ese, float r_plane[3])
 
     normalize_v3(r_plane);
   }
-  else if (ese->htype == BM_FACE) {
-    BMFace *efa = (BMFace *)ese->ele;
-    BM_face_calc_tangent_auto(efa, r_plane);
+  else if (ese->htype == MESH_FACE) {
+    MeshFace *efa = (MeshFace *)ese->ele;
+    mesh_face_calc_tangent_auto(efa, r_plane);
   }
 }
 
-static BMEditSelection *bm_select_history_create(BMHeader *ele)
+static MeshEditSelection *bm_select_history_create(BMHeader *ele)
 {
   BMEditSelection *ese = (BMEditSelection *)MEM_callocN(sizeof(BMEditSelection),
                                                         "BMEdit Selection");
