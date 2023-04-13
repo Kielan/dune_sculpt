@@ -299,7 +299,7 @@ typedef struct SelectionFlushChunkData {
   int delta_selection_len;
 } SelectionFlushChunkData;
 
-static voidmesh_select_mode_flush_vert_to_edge_iter_fn(void *UNUSED(userdata),
+static void mesh_select_mode_flush_vert_to_edge_iter_fn(void *UNUSED(userdata),
                                                        MempoolIterData *iter,
                                                        const TaskParallelTLS *__restrict tls)
 {
@@ -465,15 +465,15 @@ void BM_mesh_select_flush(BMesh *bm)
 
   bool ok;
 
-  BM_ITER_MESH (e, &eiter, bm, BM_EDGES_OF_MESH) {
-    if (BM_elem_flag_test(e->v1, BM_ELEM_SELECT) && BM_elem_flag_test(e->v2, BM_ELEM_SELECT) &&
-        !BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
-      BM_elem_flag_enable(e, BM_ELEM_SELECT);
+  MESH_ITER_MESH (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
+    if (mesh_elem_flag_test(e->v1, MESH_ELEM_SELECT) && mesh_elem_flag_test(e->v2, BM_ELEM_SELECT) &&
+        !mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
+      mesh_elem_flag_enable(e, MESH_ELEM_SELECT);
     }
   }
-  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+  MESH_ITER_MESH (f, &fiter, mesh, MESH_FACES_OF_MESH) {
     ok = true;
-    if (!BM_elem_flag_test(f, BM_ELEM_HIDDEN)) {
+    if (!mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
       l_iter = l_first = BM_FACE_FIRST_LOOP(f);
       do {
         if (!BM_elem_flag_test(l_iter->v, BM_ELEM_SELECT)) {
