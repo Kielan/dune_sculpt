@@ -949,47 +949,47 @@ void mesh_remap(Mesh *mesh, const uint *vert_idx, const uint *edge_idx, const ui
   }
 
   /* Faces' pointers (loops, in fact), always needed... */
-  BM_ITER_MESH (fa, &iter, bm, BM_FACES_OF_MESH) {
-    BM_ITER_ELEM (lo, &iterl, fa, BM_LOOPS_OF_FACE) {
+  MESH_ITER (fa, &iter, mesh, MESH_FACES_OF_MESH) {
+    MESH_ELEM_ITER (lo, &iterl, fa, MESH_LOOPS_OF_FACE) {
       if (vptr_map) {
         // printf("Loop v: %p -> %p\n", lo->v, BLI_ghash_lookup(vptr_map, lo->v));
-        lo->v = BLI_ghash_lookup(vptr_map, lo->v);
-        BLI_assert(lo->v);
+        lo->v = lib_ghash_lookup(vptr_map, lo->v);
+        lib_assert(lo->v);
       }
       if (eptr_map) {
         // printf("Loop e: %p -> %p\n", lo->e, BLI_ghash_lookup(eptr_map, lo->e));
         lo->e = BLI_ghash_lookup(eptr_map, lo->e);
-        BLI_assert(lo->e);
+        lib_assert(lo->e);
       }
       if (fptr_map) {
         // printf("Loop f: %p -> %p\n", lo->f, BLI_ghash_lookup(fptr_map, lo->f));
-        lo->f = BLI_ghash_lookup(fptr_map, lo->f);
-        BLI_assert(lo->f);
+        lo->f = lib_ghash_lookup(fptr_map, lo->f);
+        lib_assert(lo->f);
       }
     }
   }
 
   /* Selection history */
   {
-    BMEditSelection *ese;
-    for (ese = bm->selected.first; ese; ese = ese->next) {
+    MeshEditSelection *ese;
+    for (ese = mesh->selected.first; ese; ese = ese->next) {
       switch (ese->htype) {
-        case BM_VERT:
+        case MESH_VERT:
           if (vptr_map) {
-            ese->ele = BLI_ghash_lookup(vptr_map, ese->ele);
-            BLI_assert(ese->ele);
+            ese->ele = lib_ghash_lookup(vptr_map, ese->ele);
+            lib_assert(ese->ele);
           }
           break;
-        case BM_EDGE:
+        case MESH_EDGE:
           if (eptr_map) {
-            ese->ele = BLI_ghash_lookup(eptr_map, ese->ele);
-            BLI_assert(ese->ele);
+            ese->ele = lib_ghash_lookup(eptr_map, ese->ele);
+            lib_assert(ese->ele);
           }
           break;
-        case BM_FACE:
+        case MESH_FACE:
           if (fptr_map) {
-            ese->ele = BLI_ghash_lookup(fptr_map, ese->ele);
-            BLI_assert(ese->ele);
+            ese->ele = lib_ghash_lookup(fptr_map, ese->ele);
+            lib_assert(ese->ele);
           }
           break;
       }
@@ -997,72 +997,72 @@ void mesh_remap(Mesh *mesh, const uint *vert_idx, const uint *edge_idx, const ui
   }
 
   if (fptr_map) {
-    if (bm->act_face) {
-      bm->act_face = BLI_ghash_lookup(fptr_map, bm->act_face);
-      BLI_assert(bm->act_face);
+    if (mesh->act_face) {
+      mesh->act_face = lib_ghash_lookup(fptr_map, bm->act_face);
+      lib_assert(mesh->act_face);
     }
   }
 
   if (vptr_map) {
-    BLI_ghash_free(vptr_map, NULL, NULL);
+    lib_ghash_free(vptr_map, NULL, NULL);
   }
   if (eptr_map) {
-    BLI_ghash_free(eptr_map, NULL, NULL);
+    lib_ghash_free(eptr_map, NULL, NULL);
   }
   if (fptr_map) {
-    BLI_ghash_free(fptr_map, NULL, NULL);
+    lib_ghash_free(fptr_map, NULL, NULL);
   }
 }
 
-void BM_mesh_rebuild(BMesh *bm,
-                     const struct BMeshCreateParams *params,
-                     BLI_mempool *vpool_dst,
-                     BLI_mempool *epool_dst,
-                     BLI_mempool *lpool_dst,
-                     BLI_mempool *fpool_dst)
+void mesh_rebuild(Mesh *mesh,
+                  const struct MeshCreateParams *params,
+                  lib_mempool *vpool_dst,
+                  lib_mempool *epool_dst,
+                  lib_mempool *lpool_dst,
+                  lib_mempool *fpool_dst)
 {
-  const char remap = (vpool_dst ? BM_VERT : 0) | (epool_dst ? BM_EDGE : 0) |
-                     (lpool_dst ? BM_LOOP : 0) | (fpool_dst ? BM_FACE : 0);
+  const char remap = (vpool_dst ? MESH_VERT : 0) | (epool_dst ? MESH_EDGE : 0) |
+                     (lpool_dst ? MESH_LOOP : 0) | (fpool_dst ? MESH_FACE : 0);
 
-  BMVert **vtable_dst = (remap & BM_VERT) ? MEM_mallocN(bm->totvert * sizeof(BMVert *), __func__) :
+  MeshVert **vtable_dst = (remap & MESH_VERT) ? mem_mallocn(mesh->totvert * sizeof(MeshVert *), __func__) :
                                             NULL;
-  BMEdge **etable_dst = (remap & BM_EDGE) ? MEM_mallocN(bm->totedge * sizeof(BMEdge *), __func__) :
+  MeshEdge **etable_dst = (remap & MESH_EDGE) ? mem_mallocn(bmesh->totedge * sizeof(MeshEdge *), __func__) :
                                             NULL;
-  BMLoop **ltable_dst = (remap & BM_LOOP) ? MEM_mallocN(bm->totloop * sizeof(BMLoop *), __func__) :
+  MeshLoop **ltable_dst = (remap & MESH_LOOP) ? mem_mallocn(bmesh->totloop * sizeof(MeshLoop *), __func__) :
                                             NULL;
-  BMFace **ftable_dst = (remap & BM_FACE) ? MEM_mallocN(bm->totface * sizeof(BMFace *), __func__) :
+  MeshFace **ftable_dst = (remap & MESH_FACE) ? mem_mallocn(mesh->totface * sizeof(MeshFace *), __func__) :
                                             NULL;
 
   const bool use_toolflags = params->use_toolflags;
 
-  if (remap & BM_VERT) {
-    BMIter iter;
+  if (remap & MESH_VERT) {
+    MeshIter iter;
     int index;
-    BMVert *v_src;
-    BM_ITER_MESH_INDEX (v_src, &iter, bm, BM_VERTS_OF_MESH, index) {
-      BMVert *v_dst = BLI_mempool_alloc(vpool_dst);
-      memcpy(v_dst, v_src, sizeof(BMVert));
+    MeshVert *v_src;
+    MESH_INDEX_ITER (v_src, &iter, mesh, MESH_VERTS_OF_MESH, index) {
+      MeshVert *v_dst = mesh_mempool_alloc(vpool_dst);
+      memcpy(v_dst, v_src, sizeof(MeshVert));
       if (use_toolflags) {
-        ((BMVert_OFlag *)v_dst)->oflags = bm->vtoolflagpool ?
-                                              BLI_mempool_calloc(bm->vtoolflagpool) :
+        ((MeshVert_OFlag *)v_dst)->oflags = mesh->vtoolflagpool ?
+                                              lib_mempool_calloc(mesh->vtoolflagpool) :
                                               NULL;
       }
 
       vtable_dst[index] = v_dst;
-      BM_elem_index_set(v_src, index); /* set_ok */
+      mesh_elem_index_set(v_src, index); /* set_ok */
     }
   }
 
-  if (remap & BM_EDGE) {
-    BMIter iter;
+  if (remap & MESH_EDGE) {
+    MeshIter iter;
     int index;
-    BMEdge *e_src;
-    BM_ITER_MESH_INDEX (e_src, &iter, bm, BM_EDGES_OF_MESH, index) {
-      BMEdge *e_dst = BLI_mempool_alloc(epool_dst);
-      memcpy(e_dst, e_src, sizeof(BMEdge));
+    MeshEdge *e_src;
+    MESH_INDEX_ITER (e_src, &iter, mesh, MESH_EDGES_OF_MESH, index) {
+      MeshEdge *e_dst = lib_mempool_alloc(epool_dst);
+      memcpy(e_dst, e_src, sizeof(MeshEdge));
       if (use_toolflags) {
-        ((BMEdge_OFlag *)e_dst)->oflags = bm->etoolflagpool ?
-                                              BLI_mempool_calloc(bm->etoolflagpool) :
+        ((MeshEdge_OFlag *)e_dst)->oflags = mesh->etoolflagpool ?
+                                              lib_mempool_calloc(mesh->etoolflagpool) :
                                               NULL;
       }
 
