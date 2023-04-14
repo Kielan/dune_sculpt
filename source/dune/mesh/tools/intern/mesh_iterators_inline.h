@@ -162,7 +162,7 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
 #ifdef __BLI_TASK_H__
 
 ATTR_NONNULL(1)
-BLI_INLINE void BM_iter_parallel(BMesh *bm,
+LIB_INLINE void mesh_iter_parallel(BMesh *bm,
                                  const char itype,
                                  TaskParallelMempoolFunc func,
                                  void *userdata,
@@ -171,17 +171,17 @@ BLI_INLINE void BM_iter_parallel(BMesh *bm,
   /* inlining optimizes out this switch when called with the defined type */
   switch ((MeshIterType)itype) {
     case MESH_VERTS_OF_MESH:
-      lib_task_parallel_mempool(mesh->vpool, userdata, func, settings);
+      lib_task_parallel_mempool(mesh->vpool, userdata, fn, settings);
       break;
     case MESH_EDGES_OF_MESH:
-      lib_task_parallel_mempool(bm->epool, userdata, func, settings);
+      lib_task_parallel_mempool(mesh->epool, userdata, fn, settings);
       break;
-    case BM_FACES_OF_MESH:
-      BLI_task_parallel_mempool(bm->fpool, userdata, func, settings);
+    case MESH_FACES_OF_MESH:
+      lib_task_parallel_mempool(mesh->fpool, userdata, fn, settings);
       break;
     default:
       /* should never happen */
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 }
