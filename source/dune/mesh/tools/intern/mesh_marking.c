@@ -752,8 +752,8 @@ static int mesh_flag_count(Mesh *mesh,
     }
   }
   if (htype & MESH_EDGE) {
-    MESH_ITER (ele, &iter, bm, BM_EDGES_OF_MESH) {
-      if (respecthide && BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) {
+    MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      if (respecthide && mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) {
         continue;
       }
       if (elem_flag_test_bool(ele, hflag) == test_for_enabled) {
@@ -843,7 +843,7 @@ MeshFace *mesh_active_face_get(Mesh *mesh, const bool is_sloppy, const bool is_s
     }
     /* Last attempt: try to find any selected face */
     if (f == NULL) {
-       MESH_ITER_MESH (f, &iter, mesh, MESH_FACES_OF_MESH) {
+       MESH_ITER (f, &iter, mesh, MESH_FACES_OF_MESH) {
         if (mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
           break;
         }
@@ -1038,40 +1038,40 @@ void _mesh_select_history_store(Mesh *mesh, MeshHeader *ele)
   }
 }
 
-void _bm_select_history_store_head(BMesh *bm, BMHeader *ele)
+void _mesh_select_history_store_head(BMesh *bm, BMHeader *ele)
 {
-  if (!BM_select_history_check(bm, (BMElem *)ele)) {
-    BM_select_history_store_head_notest(bm, (BMElem *)ele);
+  if (!mesh_select_history_check(bm, (BMElem *)ele)) {
+    mesh_select_history_store_head_notest(bm, (BMElem *)ele);
   }
 }
 
-void _bm_select_history_store_after_notest(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele)
+void _mesh_select_history_store_after_notest(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele)
 {
-  BMEditSelection *ese = bm_select_history_create(ele);
-  BLI_insertlinkafter(&(bm->selected), ese_ref, ese);
+  MeshEditSelection *ese = bm_select_history_create(ele);
+  lib_insertlinkafter(&(bm->selected), ese_ref, ese);
 }
 
-void _bm_select_history_store_after(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele)
+void _mesh_select_history_store_after(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele)
 {
-  if (!BM_select_history_check(bm, (BMElem *)ele)) {
-    BM_select_history_store_after_notest(bm, ese_ref, (BMElem *)ele);
+  if (!mesh_select_history_check(bm, (BMElem *)ele)) {
+    mesh_select_history_store_after_notest(bm, ese_ref, (BMElem *)ele);
   }
 }
 /* --- end macro wrapped funcs --- */
 
-void BM_select_history_clear(BMesh *bm)
+void mesh_select_history_clear(Mesh *mesh)
 {
-  BLI_freelistN(&bm->selected);
+  lib_freelistn(&mesh->selected);
 }
 
-void BM_select_history_validate(BMesh *bm)
+void mesh_select_history_validate(Mesh *mesh)
 {
-  BMEditSelection *ese, *ese_next;
+  MeshEditSelection *ese, *ese_next;
 
-  for (ese = bm->selected.first; ese; ese = ese_next) {
+  for (ese = mesh->selected.first; ese; ese = ese_next) {
     ese_next = ese->next;
-    if (!BM_elem_flag_test(ese->ele, MESH_ELEM_SELECT)) {
-      BLI_freelinkN(&(bm->selected), ese);
+    if (!mesh_elem_flag_test(ese->ele, MESH_ELEM_SELECT)) {
+      lib_freelinkn(&(mesh->selected), ese);
     }
   }
 }
@@ -1210,11 +1210,11 @@ void mesh_elem_hflag_disable_test(Mesh *mesh,
 
   lib_assert((htype & ~BM_ALL_NOLOOP) == 0);
 
-  if (hflag & BM_ELEM_SELECT) {
-    BM_select_history_clear(bm);
+  if (hflag & MESH_ELEM_SELECT) {
+    mesh_select_history_clear(bm);
   }
 
-  if ((htype == (BM_VERT | BM_EDGE | BM_FACE)) && (hflag == BM_ELEM_SELECT) &&
+  if ((htype == (MESH_VERT | MESH_EDGE | MESH_FACE)) && (hflag == MESH_ELEM_SELECT) &&
       (respecthide == false) && (hflag_test == 0)) {
     /* fast path for deselect all, avoid topology loops
      * since we know all will be de-selected anyway. */
@@ -1243,17 +1243,17 @@ void mesh_elem_hflag_disable_test(Mesh *mesh,
             /* pass */
           }
           else if (!hflag_test || BM_elem_flag_test(ele, hflag_test)) {
-            if (hflag & BM_ELEM_SELECT) {
-              BM_elem_select_set(bm, ele, false);
+            if (hflag & MESH_ELEM_SELECT) {
+              mesh_elem_select_set(mesh, ele, false);
             }
-            BM_elem_flag_disable(ele, hflag);
+            mesh_elem_flag_disable(ele, hflag);
           }
           else if (overwrite) {
             /* no match! */
-            if (hflag & BM_ELEM_SELECT) {
-              BM_elem_select_set(bm, ele, true);
+            if (hflag & MESH_ELEM_SELECT) {
+              mesh_elem_select_set(mesh, ele, true);
             }
-            BM_elem_flag_enable(ele, hflag_nosel);
+            mesh_elem_flag_enable(ele, hflag_nosel);
           }
         }
       }
