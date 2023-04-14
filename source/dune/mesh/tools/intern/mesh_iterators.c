@@ -213,7 +213,7 @@ int mesh_iter_bitmap_from_filter(const char itype,
   int i;
   int bitmap_enabled = 0;
 
-  MESH_ITER_MESH_INDEX (ele, &iter, mesh, itype, i) {
+  MESH_INDEX_ITER (ele, &iter, mesh, itype, i) {
     if (test_fn(ele, user_data)) {
       LIB_BITMAP_ENABLE(bitmap, i);
       bitmap_enabled++;
@@ -237,7 +237,7 @@ int mesh_iter_bitmap_from_filter_tessface(Mesh *mesh,
   int j = 0;
   int bitmap_enabled = 0;
 
-  MESH_ITER_MESH_INDEX (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
+  MESH_INDEX_ITER (f, &iter, mesh, MESH_FACES_OF_MESH, i) {
     if (test_fn(f, user_data)) {
       for (int tri = 2; tri < f->len; tri++) {
         LIB_BITMAP_ENABLE(bitmap, j);
@@ -341,9 +341,7 @@ int mesh_iter_mesh_count_flag(const char itype, Mesh *mesh, const char hflag, co
  * private.
  */
 
-/*
- * VERT OF MESH CALLBACKS
- */
+/** VERT OF MESH CALLBACKS */
 
 /* see bug T36923 for why we need this,
  * allow adding but not removing, this isn't _totally_ safe since
