@@ -118,11 +118,11 @@ MeshFace *mesh_face_create_ngon_verts(Mesh *mesh,
  * to another of the same type.
  */
 void mesh_elem_attrs_copy_ex(Mesh *mesh_src,
-                           Mesh *mesh_dst,
-                           const void *ele_src_v,
-                           void *ele_dst_v,
-                           char hflag_mask,
-                           uint64_t cd_mask_exclude);
+                             Mesh *mesh_dst,
+                             const void *ele_src_v,
+                             void *ele_dst_v,
+                             char hflag_mask,
+                             uint64_t cd_mask_exclude);
 void mesh_elem_attrs_copy(Mesh *mesh_src, Mesh *mesh_dst, const void *ele_src_v, void *ele_dst_v);
 void mesh_elem_select_copy(Mesh *mesh_dst, void *ele_dst_v, const void *ele_src_v);
 
@@ -158,13 +158,13 @@ void mesh_copy_init_customdata_all_layers(Mesh *mesh_dst,
                                           Mesh *mesh_src,
                                           char htype,
                                           const struct MeshAllocTemplate *allocsize);
-BMesh *BM_mesh_copy(BMesh *bm_old);
+Mesh *mesh_copy(BMesh *bm_old);
 
-char BM_face_flag_from_mflag(char mflag);
-char BM_edge_flag_from_mflag(short mflag);
+char mesh_face_flag_from_mflag(char mflag);
+char mesh_edge_flag_from_mflag(short mflag);
 /* ME -> BM */
-char BM_vert_flag_from_mflag(char mflag);
-char BM_face_flag_to_mflag(BMFace *f);
-short BM_edge_flag_to_mflag(BMEdge *e);
+char mesh_vert_flag_from_mflag(char mflag);
+char mesh_face_flag_to_mflag(MeshFace *f);
+short mesh_edge_flag_to_mflag(MeshEdge *e);
 /* BM -> ME */
-char BM_vert_flag_to_mflag(BMVert *v);
+char mesh_vert_flag_to_mflag(MeshVert *v);
