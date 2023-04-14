@@ -22,10 +22,10 @@ static MeshEdge *mesh_edge_copy_with_arrays(Mesh *mesh_src,
                                             MeshEdge *e_src,
                                             MeshVert **verts_dst)
 {
-  MVert *e_dst_v1 = verts_dst[mesh_elem_index_get(e_src->v1)];
-  MVert *e_dst_v2 = verts_dst[mesh_elem_index_get(e_src->v2)];
-  MEdge *e_dst = mesh_edge_create(mesh_dst, e_dst_v1, e_dst_v2, NULL, M_CREATE_SKIP_CD);
-  M_elem_attrs_copy(mesh_src, mesh_dst, e_src, e_dst);
+  MeshVert *e_dst_v1 = verts_dst[mesh_elem_index_get(e_src->v1)];
+  MeshVert *e_dst_v2 = verts_dst[mesh_elem_index_get(e_src->v2)];
+  MeshEdge *e_dst = mesh_edge_create(mesh_dst, e_dst_v1, e_dst_v2, NULL, M_CREATE_SKIP_CD);
+  mesh_elem_attrs_copy(mesh_src, mesh_dst, e_src, e_dst);
   return e_dst;
 }
 
@@ -50,7 +50,7 @@ static MeshFace *mesh_face_copy_with_arrays(
   } while ((l_iter_src = l_iter_src->next) != l_first_src);
 
   /* Create new face. */
-  f_dst = BM_face_create(bm_dst, vtar, edar, f_src->len, NULL, BM_CREATE_SKIP_CD);
+  f_dst = mesh_face_create(bm_dst, vtar, edar, f_src->len, NULL, BM_CREATE_SKIP_CD);
 
   /* Copy attributes. */
   BM_elem_attrs_copy(bm_src, bm_dst, f_src, f_dst);
