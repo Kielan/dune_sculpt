@@ -621,16 +621,16 @@ finally:
    * This prevents possible threading issues when dirty flag check failed but
    * data wasn't ready still.
    */
-  bm->elem_table_dirty &= ~htype_needed;
+  mesh->elem_table_dirty &= ~htype_needed;
 }
 
-void BM_mesh_elem_table_init(BMesh *bm, const char htype)
+void mesh_elem_table_init(Mesh *mesh, const char htype)
 {
-  BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+  lib_assert((htype & ~BM_ALL_NOLOOP) == 0);
 
   /* force recalc */
-  BM_mesh_elem_table_free(bm, BM_ALL_NOLOOP);
-  BM_mesh_elem_table_ensure(bm, htype);
+  mesh_elem_table_free(bm, BM_ALL_NOLOOP);
+  mesh_elem_table_ensure(bm, htype);
 }
 
 void BM_mesh_elem_table_free(BMesh *bm, const char htype)
