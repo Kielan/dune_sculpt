@@ -49,20 +49,20 @@ static void mempool_init_ex(const MeshAllocTemplate *allocsize,
   }
   if (r_lpool) {
     *r_lpool = lib_mempool_create(
-        loop_size, allocsize->totloop, mesh_chunksize_default.totloop, BLI_MEMPOOL_NOP);
+        loop_size, allocsize->totloop, mesh_chunksize_default.totloop, LIB_MEMPOOL_NOP);
   }
   if (r_fpool) {
     *r_fpool = lib_mempool_create(
-        face_size, allocsize->totface, mesh_chunksize_default.totface, BLI_MEMPOOL_ALLOW_ITER);
+        face_size, allocsize->totface, mesh_chunksize_default.totface, LIB_MEMPOOL_ALLOW_ITER);
   }
 }
 
 static void mesh_mempool_init(Mesh *mesh, const MeshAllocTemplate *allocsize, const bool use_toolflags)
 {
-  mesh_mempool_init_ex(allocsize, use_toolflags, &bm->vpool, &bm->epool, &bm->lpool, &bm->fpool);
+  mesh_mempool_init_ex(allocsize, use_toolflags, &mesh->vpool, &mesh->epool, &mesh->lpool, &mesh->fpool);
 
 #ifdef USE_BMESH_HOLES
-  mesh->looplistpool = lib_mempool_create(sizeof(BMLoopList), 512, 512, BLI_MEMPOOL_NOP);
+  mesh->looplistpool = lib_mempool_create(sizeof(MeshLoopList), 512, 512, LIB_MEMPOOL_NOP);
 #endif
 }
 
@@ -347,7 +347,7 @@ void mesh_elem_index_ensure_ex(Mesh *mesh, const char htype, int elem_offset[4])
       MESH_ITER (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
         mesh_elem_index_set(ele, index++); /* set_ok */
       }
-      lib_assert(elem_offset || index == bm->totvert);
+      lib_assert(elem_offset || index == mesh->totvert);
     }
     else {
       // printf("%s: skipping vert index calc!\n", __func__);
@@ -648,30 +648,30 @@ void mesh_elem_table_free(Mesh *mesh, const char htype)
   }
 }
 
-BMVert *BM_vert_at_index_find(BMesh *bm, const int index)
+MeshVert *mesh_vert_at_index_find(BMesh *bm, const int index)
 {
-  return BLI_mempool_findelem(bm->vpool, index);
+  return lib_mempool_findelem(bm->vpool, index);
 }
 
-BMEdge *BM_edge_at_index_find(BMesh *bm, const int index)
+MeshEdge *mesh_edge_at_index_find(Mesh *mesh, const int index)
 {
-  return BLI_mempool_findelem(bm->epool, index);
+  return lib_mempool_findelem(mesh->epool, index);
 }
 
-BMFace *BM_face_at_index_find(BMesh *bm, const int index)
+MeshFace *mesh_face_at_index_find(Mesh *mesh, const int index)
 {
-  return BLI_mempool_findelem(bm->fpool, index);
+  return lib_mempool_findelem(mesh->fpool, index);
 }
 
-BMLoop *BM_loop_at_index_find(BMesh *bm, const int index)
+MeshLoop *mesh_loop_at_index_find(Mesh *mesh, const int index)
 {
-  BMIter iter;
-  BMFace *f;
+  MeshIter iter;
+  MeshFace *f;
   int i = index;
-  BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+  MESH_ITER (f, &iter, mesh, MESH_FACES_OF_MESH) {
     if (i < f->len) {
-      BMLoop *l_first, *l_iter;
-      l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+      MeshLoop *l_first, *l_iter;
+      l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
       do {
         if (i == 0) {
           return l_iter;
@@ -684,87 +684,87 @@ BMLoop *BM_loop_at_index_find(BMesh *bm, const int index)
   return NULL;
 }
 
-BMVert *BM_vert_at_index_find_or_table(BMesh *bm, const int index)
+MeshVert *mesh_vert_at_index_find_or_table(Mesh *mesh, const int index)
 {
-  if ((bm->elem_table_dirty & BM_VERT) == 0) {
-    return (index < bm->totvert) ? bm->vtable[index] : NULL;
+  if ((mesh->elem_table_dirty & MESH_VERT) == 0) {
+    return (index < mesh->totvert) ? mesh->vtable[index] : NULL;
   }
-  return BM_vert_at_index_find(bm, index);
+  return mesh_vert_at_index_find(mesh, index);
 }
 
-BMEdge *BM_edge_at_index_find_or_table(BMesh *bm, const int index)
+MeshEdge *mesh_edge_at_index_find_or_table(Mesh *mesh, const int index)
 {
-  if ((bm->elem_table_dirty & BM_EDGE) == 0) {
-    return (index < bm->totedge) ? bm->etable[index] : NULL;
+  if ((mesh->elem_table_dirty & MESH_EDGE) == 0) {
+    return (index < mesh->totedge) ? mesh->etable[index] : NULL;
   }
-  return BM_edge_at_index_find(bm, index);
+  return mesh_edge_at_index_find(mesh, index);
 }
 
-BMFace *BM_face_at_index_find_or_table(BMesh *bm, const int index)
+MeshFace *mesh_face_at_index_find_or_table(Mesh *mesh, const int index)
 {
-  if ((bm->elem_table_dirty & BM_FACE) == 0) {
-    return (index < bm->totface) ? bm->ftable[index] : NULL;
+  if ((mesh->elem_table_dirty & MESH_FACE) == 0) {
+    return (index < mesh->totface) ? mesh->ftable[index] : NULL;
   }
-  return BM_face_at_index_find(bm, index);
+  return mesh_face_at_index_find(mesh, index);
 }
 
-int BM_mesh_elem_count(BMesh *bm, const char htype)
+int mesh_elem_count(Mesh *mesh, const char htype)
 {
-  BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+  lib_assert((htype & ~MESH_ALL_NOLOOP) == 0);
 
   switch (htype) {
-    case BM_VERT:
-      return bm->totvert;
-    case BM_EDGE:
-      return bm->totedge;
-    case BM_FACE:
-      return bm->totface;
+    case MESH_VERT:
+      return mesh->totvert;
+    case MESH_EDGE:
+      return mesh->totedge;
+    case MESH_FACE:
+      return mesh->totface;
     default: {
-      BLI_assert(0);
+      lib_assert(0);
       return 0;
     }
   }
 }
 
-void BM_mesh_remap(BMesh *bm, const uint *vert_idx, const uint *edge_idx, const uint *face_idx)
+void mesh_remap(Mesh *mesh, const uint *vert_idx, const uint *edge_idx, const uint *face_idx)
 {
   /* Mapping old to new pointers. */
   GHash *vptr_map = NULL, *eptr_map = NULL, *fptr_map = NULL;
-  BMIter iter, iterl;
-  BMVert *ve;
-  BMEdge *ed;
-  BMFace *fa;
-  BMLoop *lo;
+  MeshIter iter, iterl;
+  MeshVert *ve;
+  MeshEdge *ed;
+  MeshFace *fa;
+  MeshLoop *lo;
 
   if (!(vert_idx || edge_idx || face_idx)) {
     return;
   }
 
-  BM_mesh_elem_table_ensure(
-      bm, (vert_idx ? BM_VERT : 0) | (edge_idx ? BM_EDGE : 0) | (face_idx ? BM_FACE : 0));
+  mesh_elem_table_ensure(
+      mesh, (vert_idx ? MESH_VERT : 0) | (edge_idx ? MESH_EDGE : 0) | (face_idx ? MESH_FACE : 0));
 
   /* Remap Verts */
   if (vert_idx) {
-    BMVert **verts_pool, *verts_copy, **vep;
-    int i, totvert = bm->totvert;
+    MeshVert **verts_pool, *verts_copy, **vep;
+    int i, totvert = mesh->totvert;
     const uint *new_idx;
     /* Special case: Python uses custom data layers to hold PyObject references.
      * These have to be kept in place, else the PyObjects we point to, won't point back to us. */
-    const int cd_vert_pyptr = CustomData_get_offset(&bm->vdata, CD_BM_ELEM_PYPTR);
+    const int cd_vert_pyptr = CustomData_get_offset(&mesh->vdata, CD_MESH_ELEM_PYPTR);
 
     /* Init the old-to-new vert pointers mapping */
-    vptr_map = BLI_ghash_ptr_new_ex("BM_mesh_remap vert pointers mapping", bm->totvert);
+    vptr_map = lib_ghash_ptr_new_ex("mesh_remap vert pointers mapping", mesh->totvert);
 
     /* Make a copy of all vertices. */
-    verts_pool = bm->vtable;
-    verts_copy = MEM_mallocN(sizeof(BMVert) * totvert, "BM_mesh_remap verts copy");
-    void **pyptrs = (cd_vert_pyptr != -1) ? MEM_mallocN(sizeof(void *) * totvert, __func__) : NULL;
+    verts_pool = mesh->vtable;
+    verts_copy = mem_mallocn(sizeof(MeshVert) * totvert, "mesh_remap verts copy");
+    void **pyptrs = (cd_vert_pyptr != -1) ? mem_mallocn(sizeof(void *) * totvert, __func__) : NULL;
     for (i = totvert, ve = verts_copy + totvert - 1, vep = verts_pool + totvert - 1; i--;
          ve--, vep--) {
       *ve = **vep;
       // printf("*vep: %p, verts_pool[%d]: %p\n", *vep, i, verts_pool[i]);
       if (cd_vert_pyptr != -1) {
-        void **pyptr = BM_ELEM_CD_GET_VOID_P(((BMElem *)ve), cd_vert_pyptr);
+        void **pyptr = MESH_ELEM_CD_GET_VOID_P(((MeshElem *)ve), cd_vert_pyptr);
         pyptrs[i] = *pyptr;
       }
     }
@@ -774,48 +774,48 @@ void BM_mesh_remap(BMesh *bm, const uint *vert_idx, const uint *edge_idx, const 
     ve = verts_copy + totvert - 1;
     vep = verts_pool + totvert - 1; /* old, org pointer */
     for (i = totvert; i--; new_idx--, ve--, vep--) {
-      BMVert *new_vep = verts_pool[*new_idx];
+      MeshVert *new_vep = verts_pool[*new_idx];
       *new_vep = *ve;
 #if 0
       printf(
           "mapping vert from %d to %d (%p/%p to %p)\n", i, *new_idx, *vep, verts_pool[i], new_vep);
 #endif
-      BLI_ghash_insert(vptr_map, *vep, new_vep);
+      lib_ghash_insert(vptr_map, *vep, new_vep);
       if (cd_vert_pyptr != -1) {
-        void **pyptr = BM_ELEM_CD_GET_VOID_P(((BMElem *)new_vep), cd_vert_pyptr);
+        void **pyptr = MESH_ELEM_CD_GET_VOID_P(((MeshElem *)new_vep), cd_vert_pyptr);
         *pyptr = pyptrs[*new_idx];
       }
     }
-    bm->elem_index_dirty |= BM_VERT;
-    bm->elem_table_dirty |= BM_VERT;
+    mesh->elem_index_dirty |= MESH_VERT;
+    mesh->elem_table_dirty |= MESH_VERT;
 
-    MEM_freeN(verts_copy);
+    mem_freen(verts_copy);
     if (pyptrs) {
-      MEM_freeN(pyptrs);
+      mem_freen(pyptrs);
     }
   }
 
   /* Remap Edges */
   if (edge_idx) {
-    BMEdge **edges_pool, *edges_copy, **edp;
-    int i, totedge = bm->totedge;
+    MeshEdge **edges_pool, *edges_copy, **edp;
+    int i, totedge = mesh->totedge;
     const uint *new_idx;
     /* Special case: Python uses custom data layers to hold PyObject references.
      * These have to be kept in place, else the PyObjects we point to, won't point back to us. */
-    const int cd_edge_pyptr = CustomData_get_offset(&bm->edata, CD_BM_ELEM_PYPTR);
+    const int cd_edge_pyptr = CustomData_get_offset(&mesh->edata, CD_BM_ELEM_PYPTR);
 
     /* Init the old-to-new vert pointers mapping */
-    eptr_map = BLI_ghash_ptr_new_ex("BM_mesh_remap edge pointers mapping", bm->totedge);
+    eptr_map = lib_ghash_ptr_new_ex("mesh_remap edge pointers mapping", mesh->totedge);
 
     /* Make a copy of all vertices. */
-    edges_pool = bm->etable;
-    edges_copy = MEM_mallocN(sizeof(BMEdge) * totedge, "BM_mesh_remap edges copy");
-    void **pyptrs = (cd_edge_pyptr != -1) ? MEM_mallocN(sizeof(void *) * totedge, __func__) : NULL;
+    edges_pool = mesh->etable;
+    edges_copy = mem_mallocn(sizeof(MeshEdge) * totedge, "mesh_remap edges copy");
+    void **pyptrs = (cd_edge_pyptr != -1) ? mem_mallocn(sizeof(void *) * totedge, __func__) : NULL;
     for (i = totedge, ed = edges_copy + totedge - 1, edp = edges_pool + totedge - 1; i--;
          ed--, edp--) {
       *ed = **edp;
       if (cd_edge_pyptr != -1) {
-        void **pyptr = BM_ELEM_CD_GET_VOID_P(((BMElem *)ed), cd_edge_pyptr);
+        void **pyptr = MESH_ELEM_CD_GET_VOID_P(((MeshElem *)ed), cd_edge_pyptr);
         pyptrs[i] = *pyptr;
       }
     }
@@ -825,48 +825,48 @@ void BM_mesh_remap(BMesh *bm, const uint *vert_idx, const uint *edge_idx, const 
     ed = edges_copy + totedge - 1;
     edp = edges_pool + totedge - 1; /* old, org pointer */
     for (i = totedge; i--; new_idx--, ed--, edp--) {
-      BMEdge *new_edp = edges_pool[*new_idx];
+      MeshEdge *new_edp = edges_pool[*new_idx];
       *new_edp = *ed;
-      BLI_ghash_insert(eptr_map, *edp, new_edp);
+      lib_ghash_insert(eptr_map, *edp, new_edp);
 #if 0
       printf(
           "mapping edge from %d to %d (%p/%p to %p)\n", i, *new_idx, *edp, edges_pool[i], new_edp);
 #endif
       if (cd_edge_pyptr != -1) {
-        void **pyptr = BM_ELEM_CD_GET_VOID_P(((BMElem *)new_edp), cd_edge_pyptr);
+        void **pyptr = MESH_ELEM_CD_GET_VOID_P(((MeshElem *)new_edp), cd_edge_pyptr);
         *pyptr = pyptrs[*new_idx];
       }
     }
-    bm->elem_index_dirty |= BM_EDGE;
-    bm->elem_table_dirty |= BM_EDGE;
+    mesh->elem_index_dirty |= MESH_EDGE;
+    mesh->elem_table_dirty |= MESH_EDGE;
 
-    MEM_freeN(edges_copy);
+    mem_freen(edges_copy);
     if (pyptrs) {
-      MEM_freeN(pyptrs);
+      mem_freen(pyptrs);
     }
   }
 
   /* Remap Faces */
   if (face_idx) {
-    BMFace **faces_pool, *faces_copy, **fap;
-    int i, totface = bm->totface;
+    MeshFace **faces_pool, *faces_copy, **fap;
+    int i, totface = mesh->totface;
     const uint *new_idx;
     /* Special case: Python uses custom data layers to hold PyObject references.
      * These have to be kept in place, else the PyObjects we point to, won't point back to us. */
-    const int cd_poly_pyptr = CustomData_get_offset(&bm->pdata, CD_BM_ELEM_PYPTR);
+    const int cd_poly_pyptr = CustomData_get_offset(&mesh->pdata, CD_MESH_ELEM_PYPTR);
 
     /* Init the old-to-new vert pointers mapping */
-    fptr_map = BLI_ghash_ptr_new_ex("BM_mesh_remap face pointers mapping", bm->totface);
+    fptr_map = lib_ghash_ptr_new_ex("mesh_remap face pointers mapping", mesh->totface);
 
     /* Make a copy of all vertices. */
-    faces_pool = bm->ftable;
-    faces_copy = MEM_mallocN(sizeof(BMFace) * totface, "BM_mesh_remap faces copy");
-    void **pyptrs = (cd_poly_pyptr != -1) ? MEM_mallocN(sizeof(void *) * totface, __func__) : NULL;
+    faces_pool = mesh->ftable;
+    faces_copy = mem_mallocn(sizeof(MeshFace) * totface, "mesh_remap faces copy");
+    void **pyptrs = (cd_poly_pyptr != -1) ? mem_mallocn(sizeof(void *) * totface, __func__) : NULL;
     for (i = totface, fa = faces_copy + totface - 1, fap = faces_pool + totface - 1; i--;
          fa--, fap--) {
       *fa = **fap;
       if (cd_poly_pyptr != -1) {
-        void **pyptr = BM_ELEM_CD_GET_VOID_P(((BMElem *)fa), cd_poly_pyptr);
+        void **pyptr = MESH_ELEM_CD_GET_VOID_P(((MeshElem *)fa), cd_poly_pyptr);
         pyptrs[i] = *pyptr;
       }
     }
@@ -876,32 +876,32 @@ void BM_mesh_remap(BMesh *bm, const uint *vert_idx, const uint *edge_idx, const 
     fa = faces_copy + totface - 1;
     fap = faces_pool + totface - 1; /* old, org pointer */
     for (i = totface; i--; new_idx--, fa--, fap--) {
-      BMFace *new_fap = faces_pool[*new_idx];
+      MeshFace *new_fap = faces_pool[*new_idx];
       *new_fap = *fa;
-      BLI_ghash_insert(fptr_map, *fap, new_fap);
+      lib_hash_insert(fptr_map, *fap, new_fap);
       if (cd_poly_pyptr != -1) {
-        void **pyptr = BM_ELEM_CD_GET_VOID_P(((BMElem *)new_fap), cd_poly_pyptr);
+        void **pyptr = MESH_ELEM_CD_GET_VOID_P(((MeshElem *)new_fap), cd_poly_pyptr);
         *pyptr = pyptrs[*new_idx];
       }
     }
 
-    bm->elem_index_dirty |= BM_FACE | BM_LOOP;
-    bm->elem_table_dirty |= BM_FACE;
+    mesh->elem_index_dirty |= MESH_FACE | MESH_LOOP;
+    mesh->elem_table_dirty |= MESH_FACE;
 
-    MEM_freeN(faces_copy);
+    mem_freen(faces_copy);
     if (pyptrs) {
-      MEM_freeN(pyptrs);
+      mem_freen(pyptrs);
     }
   }
 
   /* And now, fix all vertices/edges/faces/loops pointers! */
   /* Verts' pointers, only edge pointers... */
   if (eptr_map) {
-    BM_ITER_MESH (ve, &iter, bm, BM_VERTS_OF_MESH) {
+    MESH_ITER (ve, &iter, mesh, MESH_VERTS_OF_MESH) {
       // printf("Vert e: %p -> %p\n", ve->e, BLI_ghash_lookup(eptr_map, ve->e));
       if (ve->e) {
-        ve->e = BLI_ghash_lookup(eptr_map, ve->e);
-        BLI_assert(ve->e);
+        ve->e = lib_ghash_lookup(eptr_map, ve->e);
+        lib_assert(ve->e);
       }
     }
   }
@@ -910,40 +910,40 @@ void BM_mesh_remap(BMesh *bm, const uint *vert_idx, const uint *edge_idx, const 
    * and - ack! - edge pointers,
    * as we have to handle disk-links. */
   if (vptr_map || eptr_map) {
-    BM_ITER_MESH (ed, &iter, bm, BM_EDGES_OF_MESH) {
+    MESH_ITER_MESH (ed, &iter, mesh, MESH_EDGES_OF_MESH) {
       if (vptr_map) {
 #if 0
-        printf("Edge v1: %p -> %p\n", ed->v1, BLI_ghash_lookup(vptr_map, ed->v1));
-        printf("Edge v2: %p -> %p\n", ed->v2, BLI_ghash_lookup(vptr_map, ed->v2));
+        printf("Edge v1: %p -> %p\n", ed->v1, lib_ghash_lookup(vptr_map, ed->v1));
+        printf("Edge v2: %p -> %p\n", ed->v2, lib_ghash_lookup(vptr_map, ed->v2));
 #endif
-        ed->v1 = BLI_ghash_lookup(vptr_map, ed->v1);
-        ed->v2 = BLI_ghash_lookup(vptr_map, ed->v2);
-        BLI_assert(ed->v1);
-        BLI_assert(ed->v2);
+        ed->v1 = lib_ghash_lookup(vptr_map, ed->v1);
+        ed->v2 = lib_ghash_lookup(vptr_map, ed->v2);
+        lib_assert(ed->v1);
+        lib_assert(ed->v2);
       }
       if (eptr_map) {
 #if 0
         printf("Edge v1_disk_link prev: %p -> %p\n",
                ed->v1_disk_link.prev,
-               BLI_ghash_lookup(eptr_map, ed->v1_disk_link.prev));
+               lib_ghash_lookup(eptr_map, ed->v1_disk_link.prev));
         printf("Edge v1_disk_link next: %p -> %p\n",
                ed->v1_disk_link.next,
-               BLI_ghash_lookup(eptr_map, ed->v1_disk_link.next));
+               lib_ghash_lookup(eptr_map, ed->v1_disk_link.next));
         printf("Edge v2_disk_link prev: %p -> %p\n",
                ed->v2_disk_link.prev,
-               BLI_ghash_lookup(eptr_map, ed->v2_disk_link.prev));
+               lib_ghash_lookup(eptr_map, ed->v2_disk_link.prev));
         printf("Edge v2_disk_link next: %p -> %p\n",
                ed->v2_disk_link.next,
-               BLI_ghash_lookup(eptr_map, ed->v2_disk_link.next));
+               lib_ghash_lookup(eptr_map, ed->v2_disk_link.next));
 #endif
-        ed->v1_disk_link.prev = BLI_ghash_lookup(eptr_map, ed->v1_disk_link.prev);
-        ed->v1_disk_link.next = BLI_ghash_lookup(eptr_map, ed->v1_disk_link.next);
-        ed->v2_disk_link.prev = BLI_ghash_lookup(eptr_map, ed->v2_disk_link.prev);
-        ed->v2_disk_link.next = BLI_ghash_lookup(eptr_map, ed->v2_disk_link.next);
-        BLI_assert(ed->v1_disk_link.prev);
-        BLI_assert(ed->v1_disk_link.next);
-        BLI_assert(ed->v2_disk_link.prev);
-        BLI_assert(ed->v2_disk_link.next);
+        ed->v1_disk_link.prev = lib_ghash_lookup(eptr_map, ed->v1_disk_link.prev);
+        ed->v1_disk_link.next = lib_ghash_lookup(eptr_map, ed->v1_disk_link.next);
+        ed->v2_disk_link.prev = lib_ghash_lookup(eptr_map, ed->v2_disk_link.prev);
+        ed->v2_disk_link.next = lib_ghash_lookup(eptr_map, ed->v2_disk_link.next);
+        lib_assert(ed->v1_disk_link.prev);
+        lib_assert(ed->v1_disk_link.next);
+        lib_assert(ed->v2_disk_link.prev);
+        lib_assert(ed->v2_disk_link.next);
       }
     }
   }
