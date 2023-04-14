@@ -242,54 +242,54 @@ void BM_mesh_delete_hflag_tagged(BMesh *bm, const char hflag, const char htype)
   }
 }
 
-void BM_mesh_delete_hflag_context(BMesh *bm, const char hflag, const int type)
+void mesh_delete_hflag_context(BMesh *bm, const char hflag, const int type)
 {
-  BMEdge *e;
-  BMFace *f;
+  MeshEdge *e;
+  MeshFace *f;
 
-  BMIter eiter;
-  BMIter fiter;
+  MeshIter eiter;
+  MeshIter fiter;
 
   switch (type) {
     case DEL_VERTS: {
-      bm_remove_tagged_verts(bm, hflag);
+      mesh_remove_tagged_verts(mesh, hflag);
 
       break;
     }
     case DEL_EDGES: {
       /* flush down to vert */
-      BM_ITER_MESH (e, &eiter, bm, BM_EDGES_OF_MESH) {
-        if (BM_elem_flag_test(e, hflag)) {
-          BM_elem_flag_enable(e->v1, hflag);
-          BM_elem_flag_enable(e->v2, hflag);
+      MESH_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
+        if (mesh_elem_flag_test(e, hflag)) {
+          mesh_elem_flag_enable(e->v1, hflag);
+          mesh_elem_flag_enable(e->v2, hflag);
         }
       }
-      bm_remove_tagged_edges(bm, hflag);
-      bm_remove_tagged_verts_loose(bm, hflag);
+      mesh_remove_tagged_edges(mesh, hflag);
+      mesh_remove_tagged_verts_loose(bm, hflag);
 
       break;
     }
     case DEL_EDGESFACES: {
-      bm_remove_tagged_edges(bm, hflag);
+      mesh_remove_tagged_edges(mesh, hflag);
 
       break;
     }
     case DEL_ONLYFACES: {
-      bm_remove_tagged_faces(bm, hflag);
+      mesh_remove_tagged_faces(mesh, hflag);
 
       break;
     }
     case DEL_ONLYTAGGED: {
-      BM_mesh_delete_hflag_tagged(bm, hflag, BM_ALL_NOLOOP);
+      mesh_delete_hflag_tagged(mesh, hflag, MESH_ALL_NOLOOP);
 
       break;
     }
     case DEL_FACES: {
       /* go through and mark all edges and all verts of all faces for delete */
-      BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
-        if (BM_elem_flag_test(f, hflag)) {
-          BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-          BMLoop *l_iter;
+      MESH_ITER (f, &fiter, mesh, MEEH_FACES_OF_MESH) {
+        if (mesh_elem_flag_test(f, hflag)) {
+          MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+          MeshLoop *l_iter;
 
           l_iter = l_first;
           do {
