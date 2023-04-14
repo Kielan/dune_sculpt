@@ -2,7 +2,7 @@
 
 #include "mesh_op_api.h"
 
-/*----------- bmop error system ----------*/
+/*----------- mesh op error system ----------*/
 
 /** More can be added as needed. **/
 typedef enum eMeshOpErrorLevel {
@@ -30,7 +30,7 @@ typedef enum eMeshOpErrorLevel {
  * Pushes an error onto the mesh error stack.
  * if msg is null, then the default message for the `errcode` is used.
  */
-void mesh_error_raise(Mesh *mesh, MeshOperator *owner, eMeshOpErrorLevel level, const char *msg)
+void mesh_error_raise(Mesh *mesh, MeshOp *owner, eMeshOpErrorLevel level, const char *msg)
     ATTR_NONNULL(1, 2, 4);
 
 /**
@@ -42,11 +42,11 @@ bool mesh_error_get_at_level(Mesh *meeh,
                             eMeshOpErrorLevel level,
                             const char **r_msg,
                             MeshOp **r_op);
-bool BMO_error_occurred_at_level(Mesh *mesh, eMOpErrorLevel level);
+bool mesh_op_error_occurred_at_level(Mesh *mesh, eMeshOpErrorLevel level);
 
-/* Same as #BMO_error_get, only pops the error off the stack as well. */
-bool BMO_error_pop(BMesh *bm, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level);
-void BMO_error_clear(BMesh *bm);
+/* Same as mesh_op_error_get, only pops the error off the stack as well. */
+bool mesh_op_error_pop(Mesh *mesh, const char **r_msg, MeshOp **r_op, eMeshOpErrorLevel *r_level);
+void mesh_op_error_clear(Mesh *mesh);
 
 /* This is meant for handling errors, like self-intersection test failures.
  * it's dangerous to handle errors in general though, so disabled for now. */
@@ -58,7 +58,7 @@ void BMO_error_clear(BMesh *bm);
 #define MESH_ELEM_INDEX_VALIDATE(_mesh, _msg_a, _msg_b) \
   mesh_elem_index_validate(_mesh, __FILE__ ":" STRINGIFY(__LINE__), __func__, _msg_a, _msg_b)
 
-/* BMESH_ASSERT */
+/* MESH_ASSERT */
 #ifdef WITH_ASSERT_ABORT
 #  define _MESH_DUMMY_ABORT abort
 #else
@@ -66,7 +66,7 @@ void BMO_error_clear(BMesh *bm);
 #endif
 
 /**
- * This is meant to be higher level than BLI_assert(),
+ * This is meant to be higher level than lib_assert(),
  * its enabled even when in Release mode.
  */
 #define MESH_ASSERT(a) \
