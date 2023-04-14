@@ -113,10 +113,10 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       iter->data.loop_of_loop.ldata = (MeshLoop*)data;
       break;
     case BM_LOOPS_OF_EDGE:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_EDGE);
-      iter->begin = (BMIter__begin_cb)bmiter__loop_of_edge_begin;
-      iter->step = (BMIter__step_cb)bmiter__loop_of_edge_step;
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == BM_EDGE);
+      iter->begin = (MeshIter__begin_cb)bmiter__loop_of_edge_begin;
+      iter->step = (MeshIter__step_cb)bmiter__loop_of_edge_step;
       iter->data.loop_of_edge.edata = (BMEdge *)data;
       break;
     default:
