@@ -108,7 +108,7 @@ LIB_INLINE void _mesh_elem_index_set(MeshHeader *head, const int index)
 }
 
 ATTR_WARN_UNUSED_RESULT
-BLI_INLINE int _bm_elem_index_get(const BMHeader *head)
+LIB_INLINE int _mesh_elem_index_get(const MeshHeader *head)
 {
   return head->index;
 }
