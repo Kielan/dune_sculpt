@@ -184,9 +184,9 @@ extern const MeshAllocTemplate mesh_chunksize_default;
   VA_NARGS_CALL_OVERLOAD(_VA_MESHALLOC_TEMPLATE_FROM_ME_, __VA_ARGS__)
 
 /* Vertex coords access. */
-void BM_mesh_vert_coords_get(BMesh *bm, float (*vert_coords)[3]);
-float (*BM_mesh_vert_coords_alloc(BMesh *bm, int *r_vert_len))[3];
-void BM_mesh_vert_coords_apply(BMesh *bm, const float (*vert_coords)[3]);
-void BM_mesh_vert_coords_apply_with_mat4(BMesh *bm,
+void mesh_vert_coords_get(Mesh *mesh, float (*vert_coords)[3]);
+float (*mesh_vert_coords_alloc(Mesh *mesh, int *r_vert_len))[3];
+void mesh_vert_coords_apply(Mesh *mesh, const float (*vert_coords)[3]);
+void mesh_vert_coords_apply_with_mat4(Mesh *mesh,
                                          const float (*vert_coords)[3],
                                          const float mat[4][4]);
