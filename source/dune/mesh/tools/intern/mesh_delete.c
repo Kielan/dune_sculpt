@@ -160,11 +160,11 @@ void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
       }
 
       /* now delete marked face */
-      bmo_remove_tagged_faces(bm, oflag);
+      mesh_op_remove_tagged_faces(bm, oflag);
       /* delete marked edge */
-      bmo_remove_tagged_edges(bm, oflag);
+      mesh_op_remove_tagged_edges(bm, oflag);
       /* remove loose vertices */
-      bmo_remove_tagged_verts(bm, oflag);
+      mesh_op_remove_tagged_verts(bm, oflag);
 
       break;
     }
