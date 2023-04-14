@@ -6,19 +6,19 @@
 
 #ifndef NDEBUG
 
-#  include <stdio.h>
+#include <stdio.h>
 
-#  include "mem_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#  include "lib_utildefines.h"
+#include "lib_utildefines.h"
 
-#  include "dune_customdata.h"
+#include "dune_customdata.h"
 
-#  include "mesh.h"
+#include "mesh.h"
 
-#  include "mesh_mesh_debug.h"
+#include "mesh_mesh_debug.h"
 
-#  include "lib_dynstr.h"
+#include "lib_dynstr.h"
 
 char *mesh_debug_info(Mesh *mesh)
 {
@@ -58,7 +58,7 @@ char *mesh_debug_info(Mesh *mesh)
 
 void mesh_debug_print(Mesh *mesh)
 {
-  char *str = mesh_debug_info(bm);
+  char *str = mesh_debug_info(mesh);
   puts(str);
   fflush(stdout);
   mem_freen(str);
