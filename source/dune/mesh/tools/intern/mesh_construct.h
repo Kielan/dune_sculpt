@@ -90,13 +90,13 @@ void BM_face_copy_shared(BMesh *bm, BMFace *f, BMLoopFilterFunc filter_fn, void 
  * #BM_face_create should be considered over this function as it
  * avoids some unnecessary work.
  */
-BMFace *BM_face_create_ngon(BMesh *bm,
-                            BMVert *v1,
-                            BMVert *v2,
-                            BMEdge **edges,
+MeshFace *mesh_face_create_ngon(Mesh *bm,
+                            MVert *v1,
+                            MVert *v2,
+                            MEdge **edges,
                             int len,
-                            const BMFace *f_example,
-                            eBMCreateFlag create_flag);
+                            const MFace *f_example,
+                            eMCreateFlag create_flag);
 /**
  * Create an ngon from an array of sorted verts
  *
@@ -105,59 +105,59 @@ BMFace *BM_face_create_ngon(BMesh *bm,
  * - Optionally create edges between vertices.
  * - Uses verts so no need to find edges (handy when you only have verts)
  */
-BMFace *BM_face_create_ngon_verts(BMesh *bm,
-                                  BMVert **vert_arr,
-                                  int len,
-                                  const BMFace *f_example,
-                                  eBMCreateFlag create_flag,
-                                  bool calc_winding,
-                                  bool create_edges);
+MeshFace *mesh_face_create_ngon_verts(Mesh *mesh,
+                                      MeshVert **vert_arr,
+                                      int len,
+                                      const MeshFace *f_example,
+                                      eMeshCreateFlag create_flag,
+                                      bool calc_winding,
+                                      bool create_edges);
 
 /**
  * Copies attributes, e.g. customdata, header flags, etc, from one element
  * to another of the same type.
  */
-void BM_elem_attrs_copy_ex(BMesh *bm_src,
-                           BMesh *bm_dst,
+void mesh_elem_attrs_copy_ex(Mesh *mesh_src,
+                           Mesh *mesh_dst,
                            const void *ele_src_v,
                            void *ele_dst_v,
                            char hflag_mask,
                            uint64_t cd_mask_exclude);
-void BM_elem_attrs_copy(BMesh *bm_src, BMesh *bm_dst, const void *ele_src_v, void *ele_dst_v);
-void BM_elem_select_copy(BMesh *bm_dst, void *ele_dst_v, const void *ele_src_v);
+void mesh_elem_attrs_copy(Mesh *mesh_src, Mesh *mesh_dst, const void *ele_src_v, void *ele_dst_v);
+void mesh_elem_select_copy(Mesh *mesh_dst, void *ele_dst_v, const void *ele_src_v);
 
 /**
  * Initialize the `bm_dst` layers in preparation for populating it's contents with multiple meshes.
- * Typically done using multiple calls to #BM_mesh_bm_from_me with the same `bm` argument).
+ * Typically done using multiple calls to mesh_from_me with the same `bm` argument).
  *
  * \note While the custom-data layers of all meshes are created, the active layers are set
  * by the first instance mesh containing that layer type.
  * This means the first mesh should always be the main mesh (from the user perspective),
  * as this is the mesh they have control over (active UV layer for rendering for example).
  */
-void BM_mesh_copy_init_customdata_from_mesh_array(BMesh *bm_dst,
-                                                  const struct Mesh *me_src_array[],
-                                                  int me_src_array_len,
-                                                  const struct BMAllocTemplate *allocsize);
-void BM_mesh_copy_init_customdata_from_mesh(BMesh *bm_dst,
-                                            const struct Mesh *me_src,
-                                            const struct BMAllocTemplate *allocsize);
-void BM_mesh_copy_init_customdata(BMesh *bm_dst,
-                                  BMesh *bm_src,
-                                  const struct BMAllocTemplate *allocsize);
+void mesh_copy_init_customdata_from_mesh_array(Mesh *mesh_dst,
+                                               const struct Mesh *me_src_array[],
+                                               int me_src_array_len,
+                                               const struct MeshAllocTemplate *allocsize);
+void mesh_copy_init_customdata_from_mesh(Mesh *mesh_dst,
+                                         const struct Mesh *me_src,
+                                         const struct MeshAllocTemplate *allocsize);
+void mesh_copy_init_customdata(Mesh *mesh_dst,
+                               Mesh *mesh_src,
+                               const struct MeshAllocTemplate *allocsize);
 /**
- * Similar to #BM_mesh_copy_init_customdata but copies all layers ignoring
- * flags like #CD_FLAG_NOCOPY.
+ * Similar to mesh_copy_init_customdata but copies all layers ignoring
+ * flags like CD_FLAG_NOCOPY.
  *
- * \param bm_dst: BMesh whose custom-data layers will be added.
- * \param bm_src: BMesh whose custom-data layers will be copied.
- * \param htype: Specifies which custom-data layers will be initiated.
- * \param allocsize: Initialize the memory-pool before use (may be an estimate).
+ * param mesh_dst: Mesh whose custom-data layers will be added.
+ * param mesh_src: Mesh whose custom-data layers will be copied.
+ * param htype: Specifies which custom-data layers will be initiated.
+ * param allocsize: Initialize the memory-pool before use (may be an estimate).
  */
-void BM_mesh_copy_init_customdata_all_layers(BMesh *bm_dst,
-                                             BMesh *bm_src,
-                                             char htype,
-                                             const struct BMAllocTemplate *allocsize);
+void mesh_copy_init_customdata_all_layers(Mesh *mesh_dst,
+                                          Mesh *mesh_src,
+                                          char htype,
+                                          const struct MeshAllocTemplate *allocsize);
 BMesh *BM_mesh_copy(BMesh *bm_old);
 
 char BM_face_flag_from_mflag(char mflag);
