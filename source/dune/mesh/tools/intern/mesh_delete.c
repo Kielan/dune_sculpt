@@ -217,14 +217,14 @@ static void mesh_remove_tagged_verts(BMesh *bm, const char hflag)
   }
 }
 
-static void bm_remove_tagged_verts_loose(BMesh *bm, const char hflag)
+static void mesh_remove_tagged_verts_loose(Mesh *mesh, const char hflag)
 {
-  BMVert *v, *v_next;
-  BMIter iter;
+  MeshVert *v, *v_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (v, v_next, &iter, bm, BM_VERTS_OF_MESH) {
-    if (BM_elem_flag_test(v, hflag) && (v->e == NULL)) {
-      BM_vert_kill(bm, v);
+  MESH_ITER_MUTABLE (v, v_next, &iter, mesh, MESH_VERTS_OF_MESH) {
+    if (mesh_elem_flag_test(v, hflag) && (v->e == NULL)) {
+      mesh_vert_kill(meeh, v);
     }
   }
 }
@@ -299,15 +299,15 @@ void mesh_delete_hflag_context(BMesh *bm, const char hflag, const int type)
         }
       }
       /* now go through and mark all remaining faces all edges for keeping */
-      BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
-        if (!BM_elem_flag_test(f, hflag)) {
-          BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-          BMLoop *l_iter;
+      MESH_ITER_MESH (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+        if (!mesh_elem_flag_test(f, hflag)) {
+          MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+          MeshLoop *l_iter;
 
           l_iter = l_first;
           do {
-            BM_elem_flag_disable(l_iter->v, hflag);
-            BM_elem_flag_disable(l_iter->e, hflag);
+            mesh_elem_flag_disable(l_iter->v, hflag);
+            mesh_elem_flag_disable(l_iter->e, hflag);
           } while ((l_iter = l_iter->next) != l_first);
         }
       }
