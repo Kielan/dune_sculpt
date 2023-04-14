@@ -9,9 +9,7 @@ void mesh_loop_interp_multires_ex(Mesh *mesh,
                                   const float f_dst_center[3],
                                   const float f_src_center[3],
                                   int cd_loop_mdisp_offset);
-/**
- * Project the multi-resolution grid in target onto f_src's set of multi-resolution grids.
- */
+/** Project the multi-resolution grid in target onto f_src's set of multi-resolution grids. */
 void mesh_loop_interp_multires(Mesh *mesh, MeshLoop *l_dst, const MeshFace *f_src);
 
 void mesh_face_interp_multires_ex(Mesh *mesh,
@@ -27,25 +25,25 @@ void mesh_vert_interp_from_face(Mesh *mesh, MeshVert *v_dst, const MeshFace *f_s
 /**
  * Data, Interpolate From Verts
  *
- * Interpolates per-vertex data from two sources to \a v_dst
+ * Interpolates per-vertex data from two sources to v_dst
  *
- * note This is an exact match to #BM_data_interp_from_edges.
+ * note This is an exact match to mesh_data_interp_from_edges.
  */
 void mesh_data_interp_from_verts(
-    Mesh *mesh, const MeshVert *v_src_1, const BMVert *v_src_2, BMVert *v_dst, float fac);
+    Mesh *mesh, const MeshVert *v_src_1, const MeshVert *v_src_2, MeshVert *v_dst, float fac);
 /**
- * \brief Data, Interpolate From Edges
+ * Data, Interpolate From Edges
  *
  * Interpolates per-edge data from two sources to \a e_dst.
  *
- * \note This is an exact match to #BM_data_interp_from_verts.
+ * This is an exact match to mesh_data_interp_from_verts.
  */
-void BM_data_interp_from_edges(
-    Mesh *mesh, const MeshEdge *e_src_1, const BMEdge *e_src_2, BMEdge *e_dst, float fac);
+void mesh_data_interp_from_edges(
+    Mesh *mesh, const MeshEdge *e_src_1, const MeshEdge *e_src_2, BMEdge *e_dst, float fac);
 /**
  * Data Face-Vert Edge Interpolate
  *
- * Walks around the faces of \a e and interpolates
+ * Walks around the faces of e and interpolates
  * the loop data between two sources.
  */
 void mesh_data_interp_face_vert_edge(
@@ -74,32 +72,32 @@ void mesh_face_interp_from_face_ex(Mesh *mesh,
                                  const void **blocks_v,
                                  float (*cos_2d)[2],
                                  float axis_mat[3][3]);
-void mesh_face_interp_from_face(Mesh *mesh, MeshFace *f_dst, const BMFace *f_src, bool do_vertex);
+void mesh_face_interp_from_face(Mesh *mesh, MeshFace *f_dst, const MeshFace *f_src, bool do_vertex);
 /**
  * Projects a single loop, target, onto f_src for custom-data interpolation.
  * multi-resolution is handled.
  * param do_vertex: When true the target's vert data will also get interpolated.
  */
-void BM_loop_interp_from_face(
-    BMesh *bm, BMLoop *l_dst, const BMFace *f_src, bool do_vertex, bool do_multires);
+void mesh_loop_interp_from_face(
+    Mesh *mesh, MeshLoop *l_dst, const MeshFace *f_src, bool do_vertex, bool do_multires);
 
 /**
  * Smooths boundaries between multi-res grids,
  * including some borders in adjacent faces.
  */
-void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f);
+void mesh_face_multires_bounds_smooth(Mesh *mesh, MeshFace *f);
 
-struct LinkNode *BM_vert_loop_groups_data_layer_create(
-    BMesh *bm, BMVert *v, int layer_n, const float *loop_weights, struct MemArena *arena);
+struct LinkNode *mesh_vert_loop_groups_data_layer_create(
+    Mesh *mesh, MeshVert *v, int layer_n, const float *loop_weights, struct MemArena *arena);
 /**
  * Take existing custom data and merge each fan's data.
  */
-void BM_vert_loop_groups_data_layer_merge(BMesh *bm, struct LinkNode *groups, int layer_n);
+void mesh_vert_loop_groups_data_layer_merge(Mesh *mesh, struct LinkNode *groups, int layer_n);
 /**
- * A version of #BM_vert_loop_groups_data_layer_merge
- * that takes an array of loop-weights (aligned with #BM_LOOPS_OF_VERT iterator).
+ * A version of mesh_vert_loop_groups_data_layer_merge
+ * that takes an array of loop-weights (aligned with MESH_LOOPS_OF_VERT iterator).
  */
-void mesh_vert_loop_groups_data_layer_merge_weights(BMesh *bm,
-                                                  struct LinkNode *groups,
-                                                  int layer_n,
-                                                  const float *loop_weights);
+void mesh_vert_loop_groups_data_layer_merge_weights(Mesh *mesh,
+                                                    struct LinkNode *groups,
+                                                    int layer_n,
+                                                    const float *loop_weights);
