@@ -129,10 +129,10 @@ Mesh *mesh_create(const MeshAllocTemplate *allocsize, const struct MeshCreatePar
   mesh->toolflag_index = 0;
   mesh->totflags = 0;
 
-  CustomData_reset(&bm->vdata);
-  CustomData_reset(&bm->edata);
-  CustomData_reset(&bm->ldata);
-  CustomData_reset(&bm->pdata);
+  CustomData_reset(&mesh->vdata);
+  CustomData_reset(&mesh->edata);
+  CustomData_reset(&mesh->ldata);
+  CustomData_reset(&mesh->pdata);
 
   return bm;
 }
@@ -382,24 +382,24 @@ void mesh_elem_index_ensure_ex(Mesh *mesh, const char htype, int elem_offset[4])
       int index_loop = elem_offset ? elem_offset[2] : 0;
       int index = elem_offset ? elem_offset[3] : 0;
 
-      BM_ITER_MESH (ele, &iter, bm, BM_FACES_OF_MESH) {
+      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
         if (update_face) {
-          BM_elem_index_set(ele, index++); /* set_ok */
+          mesh_elem_index_set(ele, index++); /* set_ok */
         }
 
         if (update_loop) {
-          BMLoop *l_iter, *l_first;
+          MeshLoop *l_iter, *l_first;
 
-          l_iter = l_first = BM_FACE_FIRST_LOOP((BMFace *)ele);
+          l_iter = l_first = MESH_FACE_FIRST_LOOP((MeshFace *)ele);
           do {
-            BM_elem_index_set(l_iter, index_loop++); /* set_ok */
+            mesh_elem_index_set(l_iter, index_loop++); /* set_ok */
           } while ((l_iter = l_iter->next) != l_first);
         }
       }
 
-      BLI_assert(elem_offset || !update_face || index == bm->totface);
+      lib_assert(elem_offset || !update_face || index == mesh->totface);
       if (update_loop) {
-        BLI_assert(elem_offset || !update_loop || index_loop == bm->totloop);
+        lib_assert(elem_offset || !update_loop || index_loop == mesh->totloop);
       }
     }
     else {
@@ -408,50 +408,50 @@ void mesh_elem_index_ensure_ex(Mesh *mesh, const char htype, int elem_offset[4])
   }
 
 finally:
-  bm->elem_index_dirty &= ~htype;
+  mesh->elem_index_dirty &= ~htype;
   if (elem_offset) {
-    if (htype & BM_VERT) {
-      elem_offset[0] += bm->totvert;
-      if (elem_offset[0] != bm->totvert) {
-        bm->elem_index_dirty |= BM_VERT;
+    if (htype & MESH_VERT) {
+      elem_offset[0] += mesh->totvert;
+      if (elem_offset[0] != mesh->totvert) {
+        mesh->elem_index_dirty |= MESH_VERT;
       }
     }
-    if (htype & BM_EDGE) {
-      elem_offset[1] += bm->totedge;
-      if (elem_offset[1] != bm->totedge) {
-        bm->elem_index_dirty |= BM_EDGE;
+    if (htype & MESH_EDGE) {
+      elem_offset[1] += mesh->totedge;
+      if (elem_offset[1] != mesh->totedge) {
+        mesh->elem_index_dirty |= MESH_EDGE;
       }
     }
-    if (htype & BM_LOOP) {
-      elem_offset[2] += bm->totloop;
-      if (elem_offset[2] != bm->totloop) {
-        bm->elem_index_dirty |= BM_LOOP;
+    if (htype & MESH_LOOP) {
+      elem_offset[2] += mesh->totloop;
+      if (elem_offset[2] != mesh->totloop) {
+        mesh->elem_index_dirty |= MESH_LOOP;
       }
     }
-    if (htype & BM_FACE) {
-      elem_offset[3] += bm->totface;
-      if (elem_offset[3] != bm->totface) {
-        bm->elem_index_dirty |= BM_FACE;
+    if (htype & MESH_FACE) {
+      elem_offset[3] += mesh->totface;
+      if (elem_offset[3] != mesh->totface) {
+        mesh->elem_index_dirty |= MES_FACE;
       }
     }
   }
 }
 
-void BM_mesh_elem_index_ensure(BMesh *bm, const char htype)
+void mesh_elem_index_ensure(Mesh *mesh, const char htype)
 {
-  BM_mesh_elem_index_ensure_ex(bm, htype, NULL);
+  mesh_elem_index_ensure_ex(mesh, htype, NULL);
 }
 
-void BM_mesh_elem_index_validate(
-    BMesh *bm, const char *location, const char *func, const char *msg_a, const char *msg_b)
+void mesh_elem_index_validate(
+    Mesh *mesh, const char *location, const char *fn, const char *msg_a, const char *msg_b)
 {
-  const char iter_types[3] = {BM_VERTS_OF_MESH, BM_EDGES_OF_MESH, BM_FACES_OF_MESH};
+  const char iter_types[3] = {MESH_VERTS_OF_MESH, MESH_EDGES_OF_MESH, MESH_FACES_OF_MESH};
 
-  const char flag_types[3] = {BM_VERT, BM_EDGE, BM_FACE};
+  const char flag_types[3] = {MESH_VERT, MESH_EDGE, MESH_FACE};
   const char *type_names[3] = {"vert", "edge", "face"};
 
-  BMIter iter;
-  BMElem *ele;
+  MeshIter iter;
+  MeshElem *ele;
   int i;
   bool is_any_error = 0;
 
@@ -462,10 +462,10 @@ void BM_mesh_elem_index_validate(
     int err_val = 0;
     int err_idx = 0;
 
-    BM_ITER_MESH (ele, &iter, bm, iter_types[i]) {
+    MESH_ITER_MESH (ele, &iter, mesh, iter_types[i]) {
       if (!is_dirty) {
-        if (BM_elem_index_get(ele) != index) {
-          err_val = BM_elem_index_get(ele);
+        if (mesh_elem_index_get(ele) != index) {
+          err_val = mesh_elem_index_get(ele);
           err_idx = index;
           is_error = true;
           break;
@@ -495,7 +495,7 @@ void BM_mesh_elem_index_validate(
               "Invalid Dirty: at %s, %s (%s), dirty flag was set but all index values are "
               "correct, '%s', '%s'\n",
               location,
-              func,
+              fn,
               type_names[i],
               msg_a,
               msg_b);
@@ -515,7 +515,7 @@ void BM_mesh_elem_index_validate(
 
 /* debug check only - no need to optimize */
 #ifndef NDEBUG
-bool mesh_elem_table_check(BMesh *bm)
+bool mesh_elem_table_check(Mesh *mesh)
 {
   MeshIter iter;
   MeshElem *ele;
@@ -523,23 +523,23 @@ bool mesh_elem_table_check(BMesh *bm)
 
   if (mesh->vtable && ((mesh->elem_table_dirty & MESH_VERT) == 0)) {
     MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_VERTS_OF_MESH, i) {
-      if (ele != (BMElem *)bm->vtable[i]) {
+      if (ele != (MeshElem *)mesh->vtable[i]) {
         return false;
       }
     }
   }
 
-  if (bm->etable && ((bm->elem_table_dirty & BM_EDGE) == 0)) {
-    BM_ITER_MESH_INDEX (ele, &iter, bm, BM_EDGES_OF_MESH, i) {
-      if (ele != (BMElem *)bm->etable[i]) {
+  if (mesh->etable && ((mesh->elem_table_dirty & MESH_EDGE) == 0)) {
+    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+      if (ele != (MeshElem *)mesh->etable[i]) {
         return false;
       }
     }
   }
 
-  if (bm->ftable && ((bm->elem_table_dirty & BM_FACE) == 0)) {
-    BM_ITER_MESH_INDEX (ele, &iter, bm, BM_FACES_OF_MESH, i) {
-      if (ele != (BMElem *)bm->ftable[i]) {
+  if (mesh->ftable && ((mesh->elem_table_dirty & MESH_FACE) == 0)) {
+    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_FACES_OF_MESH, i) {
+      if (ele != (MeshElem *)mesh->ftable[i]) {
         return false;
       }
     }
@@ -549,16 +549,16 @@ bool mesh_elem_table_check(BMesh *bm)
 }
 #endif
 
-void BM_mesh_elem_table_ensure(BMesh *bm, const char htype)
+void mesh_elem_table_ensure(Mesh *mesh, const char htype)
 {
   /* assume if the array is non-null then its valid and no need to recalc */
   const char htype_needed =
-      (((bm->vtable && ((bm->elem_table_dirty & BM_VERT) == 0)) ? 0 : BM_VERT) |
-       ((bm->etable && ((bm->elem_table_dirty & BM_EDGE) == 0)) ? 0 : BM_EDGE) |
-       ((bm->ftable && ((bm->elem_table_dirty & BM_FACE) == 0)) ? 0 : BM_FACE)) &
+      (((mesh->vtable && ((mesh->elem_table_dirty & M_VERT) == 0)) ? 0 : M_VERT) |
+       ((mesh->etable && ((mesh->elem_table_dirty & M_EDGE) == 0)) ? 0 : M_EDGE) |
+       ((mesh->ftable && ((mesh->elem_table_dirty & M_FACE) == 0)) ? 0 : M_FACE)) &
       htype;
 
-  BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+  lib_assert((htype & ~MESH_ALL_NOLOOP) == 0);
 
   /* in debug mode double check we didn't need to recalculate */
   BLI_assert(BM_mesh_elem_table_check(bm) == true);
