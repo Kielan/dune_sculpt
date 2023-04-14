@@ -63,26 +63,26 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       iter->step = (MeshIter__step_cb)bmiter__face_of_vert_step;
       iter->data.face_of_vert.vdata = (MeshVert *)data;
       break;
-    case BM_LOOPS_OF_VERT:
+    case MESH_LOOPS_OF_VERT:
       lib_assert(data != NULL);
-      lib_assert(((MeshElem *)data)->head.htype == BM_VERT);
-      iter->begin = (BMIter__begin_cb)bmiter__loop_of_vert_begin;
-      iter->step = (BMIter__step_cb)bmiter__loop_of_vert_step;
-      iter->data.loop_of_vert.vdata = (BMVert *)data;
+      lib_assert(((MeshElem *)data)->head.htype == MESH_VERT);
+      iter->begin = (MeshIter__begin_cb)bmiter__loop_of_vert_begin;
+      iter->step = (MeshIter__step_cb)bmiter__loop_of_vert_step;
+      iter->data.loop_of_vert.vdata = (MeshVert *)data;
       break;
-    case BM_VERTS_OF_EDGE:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_EDGE);
-      iter->begin = (BMIter__begin_cb)bmiter__vert_of_edge_begin;
+    case MESH_VERTS_OF_EDGE:
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == MESH_EDGE);
+      iter->begin = (MeshIter__begin_cb)bmiter__vert_of_edge_begin;
       iter->step = (BMIter__step_cb)bmiter__vert_of_edge_step;
-      iter->data.vert_of_edge.edata = (BMEdge *)data;
+      iter->data.vert_of_edge.edata = (MeshEdge *)data;
       break;
     case BM_FACES_OF_EDGE:
       BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_EDGE);
-      iter->begin = (BMIter__begin_cb)bmiter__face_of_edge_begin;
-      iter->step = (BMIter__step_cb)bmiter__face_of_edge_step;
-      iter->data.face_of_edge.edata = (BMEdge *)data;
+      BLI_assert(((MeshElem *)data)->head.htype == MESH_EDGE);
+      iter->begin = (MeshIter__begin_cb)bmiter__face_of_edge_begin;
+      iter->step = (MeshIter__step_cb)bmiter__face_of_edge_step;
+      iter->data.face_of_edge.edata = (MeshEdge *)data;
       break;
     case MESH_VERTS_OF_FACE:
       lib_assert(data != NULL);
