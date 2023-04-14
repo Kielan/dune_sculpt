@@ -183,12 +183,12 @@ void mesh_delete_oflag_context(Mesh *mesh, const short oflag, const int type)
 
 static void mesh_remove_tagged_faces(Mesh *mesh, const char hflag)
 {
-  BMFace *f, *f_next;
-  BMIter iter;
+  MeshFace *f, *f_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (f, f_next, &iter, bm, BM_FACES_OF_MESH) {
-    if (BM_elem_flag_test(f, hflag)) {
-      BM_face_kill(bm, f);
+  MESH_ITER_MUTABLE (f, f_next, &iter, bm, BM_FACES_OF_MESH) {
+    if (mesh_elem_flag_test(f, hflag)) {
+      mesh_face_kill(mesh, f);
     }
   }
 }
