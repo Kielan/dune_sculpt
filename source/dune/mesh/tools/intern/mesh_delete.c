@@ -186,14 +186,14 @@ static void mesh_remove_tagged_faces(Mesh *mesh, const char hflag)
   MeshFace *f, *f_next;
   MeshIter iter;
 
-  MESH_ITER_MUTABLE (f, f_next, &iter, bm, BM_FACES_OF_MESH) {
+  MESH_ITER_MUTABLE (f, f_next, &iter, mesh, MESH_FACES_OF_MESH) {
     if (mesh_elem_flag_test(f, hflag)) {
       mesh_face_kill(mesh, f);
     }
   }
 }
 
-static void bm_remove_tagged_edges(BMesh *bm, const char hflag)
+static void mesh_remove_tagged_edges(Mesh *mesh, const char hflag)
 {
   MeshEdge *e, *e_next;
   MeshIter iter;
@@ -205,14 +205,14 @@ static void bm_remove_tagged_edges(BMesh *bm, const char hflag)
   }
 }
 
-static void bm_remove_tagged_verts(BMesh *bm, const char hflag)
+static void mesh_remove_tagged_verts(BMesh *bm, const char hflag)
 {
-  BMVert *v, *v_next;
-  BMIter iter;
+  MeshVert *v, *v_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (v, v_next, &iter, bm, BM_VERTS_OF_MESH) {
-    if (BM_elem_flag_test(v, hflag)) {
-      BM_vert_kill(bm, v);
+  MESH_ITER_MUTABLE (v, v_next, &iter, bm, BM_VERTS_OF_MESH) {
+    if (mesh_elem_flag_test(v, hflag)) {
+      mesh_vert_kill(mesh, v);
     }
   }
 }
