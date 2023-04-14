@@ -5,43 +5,41 @@
 /* inline here optimizes out the switch statement when called with
  * constant values (which is very common), nicer for loop-in-loop situations */
 
-/**
- * \brief Iterator Step
- *
+/* Iterator Step
  * Calls an iterators step function to return the next element.
  */
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE void *BM_iter_step(BMIter *iter)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE void *mesh_iter_step(MeshIter *iter)
 {
   return iter->step(iter);
 }
 
 /**
- * \brief Iterator Init
+ * Iterator Init
  *
- * Takes a bmesh iterator structure and fills
+ * Takes a mesh iterator structure and fills
  * it with the appropriate function pointers based
  * upon its type.
  */
 ATTR_NONNULL(1)
-BLI_INLINE bool BM_iter_init(BMIter *iter, BMesh *bm, const char itype, void *data)
+LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, void *data)
 {
   /* int argtype; */
   iter->itype = itype;
 
   /* inlining optimizes out this switch when called with the defined type */
-  switch ((BMIterType)itype) {
-    case BM_VERTS_OF_MESH:
-      BLI_assert(bm != NULL);
-      BLI_assert(data == NULL);
-      iter->begin = (BMIter__begin_cb)bmiter__elem_of_mesh_begin;
-      iter->step = (BMIter__step_cb)bmiter__elem_of_mesh_step;
+  switch ((MeshIterType)itype) {
+    case MESH_VERTS_OF_MESH:
+      lib_assert(mesh != NULL);
+      lib_assert(data == NULL);
+      iter->begin = (MeshIter__begin_cb)bmiter__elem_of_mesh_begin;
+      iter->step = (MeshIter__step_cb)bmiter__elem_of_mesh_step;
       iter->data.elem_of_mesh.pooliter.pool = bm->vpool;
       break;
-    case BM_EDGES_OF_MESH:
-      BLI_assert(bm != NULL);
-      BLI_assert(data == NULL);
-      iter->begin = (BMIter__begin_cb)bmiter__elem_of_mesh_begin;
-      iter->step = (BMIter__step_cb)bmiter__elem_of_mesh_step;
+    case MESH_EDGES_OF_MESH:
+      lib_assert(mesh != NULL);
+      lib_assert(data == NULL);
+      iter->begin = (MeshIter__begin_cb)bmiter__elem_of_mesh_begin;
+      iter->step = (MeshIter__step_cb)bmiter__elem_of_mesh_step;
       iter->data.elem_of_mesh.pooliter.pool = bm->epool;
       break;
     case BM_FACES_OF_MESH:
