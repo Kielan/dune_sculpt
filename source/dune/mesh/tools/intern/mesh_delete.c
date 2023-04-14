@@ -30,8 +30,8 @@ static void mesh_remove_tagged_edges(Mesh *mesh, const short oflag)
   MeshIter iter;
 
   MESH_ITER_MUTABLE (e, e_next, &iter, mesh, MESH_EDGES_OF_MESH) {
-    if (BMO_edge_flag_test(bm, e, oflag)) {
-      BM_edge_kill(bm, e);
+    if (mredh_op_edge_flag_test(mesh, e, oflag)) {
+      mesh_edge_kill(mesh, e);
     }
   }
 }
@@ -195,12 +195,12 @@ static void mesh_remove_tagged_faces(Mesh *mesh, const char hflag)
 
 static void bm_remove_tagged_edges(BMesh *bm, const char hflag)
 {
-  BMEdge *e, *e_next;
-  BMIter iter;
+  MeshEdge *e, *e_next;
+  MeshIter iter;
 
-  BM_ITER_MESH_MUTABLE (e, e_next, &iter, bm, BM_EDGES_OF_MESH) {
-    if (BM_elem_flag_test(e, hflag)) {
-      BM_edge_kill(bm, e);
+  MESH_ITER_MESH_MUTABLE (e, e_next, &iter, bm, BM_EDGES_OF_MESH) {
+    if (mesh_elem_flag_test(e, hflag)) {
+      mesh_edge_kill(mesh, e);
     }
   }
 }
