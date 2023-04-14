@@ -100,16 +100,16 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       break;
     case MESH_LOOPS_OF_FACE:
       lib_assert(data != NULL);
-      lib_assert(((BMElem *)data)->head.htype == BM_FACE);
-      iter->begin = (BMIter__begin_cb)bmiter__loop_of_face_begin;
-      iter->step = (BMIter__step_cb)bmiter__loop_of_face_step;
-      iter->data.loop_of_face.pdata = (BMFace *)data;
+      lib_assert(((MeshElem *)data)->head.htype == MESH_FACE);
+      iter->begin = (MeshIter__begin_cb)bmiter__loop_of_face_begin;
+      iter->step = (MeshIter__step_cb)bmiter__loop_of_face_step;
+      iter->data.loop_of_face.pdata = (MeshFace *)data;
       break;
-    case BM_LOOPS_OF_LOOP:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_LOOP);
-      iter->begin = (BMIter__begin_cb)bmiter__loop_of_loop_begin;
-      iter->step = (BMIter__step_cb)bmiter__loop_of_loop_step;
+    case MESH_LOOPS_OF_LOOP:
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == BM_LOOP);
+      iter->begin = (MeshIter__begin_cb)bmiter__loop_of_loop_begin;
+      iter->step = (MeshIter__step_cb)bmiter__loop_of_loop_step;
       iter->data.loop_of_loop.ldata = (BMLoop *)data;
       break;
     case BM_LOOPS_OF_EDGE:
