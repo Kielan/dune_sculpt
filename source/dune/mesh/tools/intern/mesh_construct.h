@@ -39,45 +39,45 @@ void mesh_edges_from_verts_ensure(Mesh *mesh, MeshEdge **edge_arr, MeshVert **ve
  * - find the normal of the vertex-cloud
  * - order the verts around the face based on their angle to the normal vector at the center point.
  *
- * \note Since this is a vertex-cloud there is no direction.
+ * note Since this is a vertex-cloud there is no direction.
  */
 void mesh_verts_sort_radial_plane(MeshVert **vert_arr, int len);
 
 /**
- * \brief Make Quad/Triangle
+ * Make Quad/Triangle
  *
  * Creates a new quad or triangle from a list of 3 or 4 vertices.
- * If \a no_double is true, then a check is done to see if a face
+ * If a no_double is true, then a check is done to see if a face
  * with these vertices already exists and returns it instead.
  *
  * If a pointer to an example face is provided, its custom data
  * and properties will be copied to the new face.
  *
- * \note The winding of the face is determined by the order
+ * note The winding of the face is determined by the order
  * of the vertices in the vertex array.
  */
 MeshFace *mesh_face_create_quad_tri(Mesh *mesh,
-                                MVert *v1,
-                                MVert *v2,
-                                MVert *v3,
-                                MVert *v4,
-                                const MFace *f_example,
-                                eMCreateFlag create_flag);
+                                    MeshVert *v1,
+                                    MeshVert *v2,
+                                    MeshVert *v3,
+                                    MeshVert *v4,
+                                    const MeshFace *f_example,
+                                    eMeshCreateFlag create_flag);
 
 /**
- * \brief copies face loop data from shared adjacent faces.
+ * copies face loop data from shared adjacent faces.
  *
- * \param filter_fn: A function that filters the source loops before copying
+ * param filter_fn: A function that filters the source loops before copying
  * (don't always want to copy all).
  *
- * \note when a matching edge is found, both loops of that edge are copied
+ * when a matching edge is found, both loops of that edge are copied
  * this is done since the face may not be completely surrounded by faces,
  * this way: a quad with 2 connected quads on either side will still get all 4 loops updated
  */
-void BM_face_copy_shared(BMesh *bm, BMFace *f, BMLoopFilterFunc filter_fn, void *user_data);
+void mesh_face_copy_shared(Mesh *mesh, MeshFace *f, MeshLoopFilterFn filter_fn, void *user_data);
 
 /**
- * \brief Make NGon
+ * Make NGon
  *
  * Makes an ngon from an unordered list of edges.
  * Verts \a v1 and \a v2 define the winding of the new face.
@@ -90,13 +90,13 @@ void BM_face_copy_shared(BMesh *bm, BMFace *f, BMLoopFilterFunc filter_fn, void 
  * #BM_face_create should be considered over this function as it
  * avoids some unnecessary work.
  */
-MeshFace *mesh_face_create_ngon(Mesh *bm,
-                            MVert *v1,
-                            MVert *v2,
-                            MEdge **edges,
-                            int len,
-                            const MFace *f_example,
-                            eMCreateFlag create_flag);
+MeshFace *mesh_face_create_ngon(Mesh *mesh,
+                                MeshVert *v1,
+                                MeshVert *v2,
+                                MeshEdge **edges,
+                                int len,
+                                const MeshFace *f_example,
+                                eMeshCreateFlag create_flag);
 /**
  * Create an ngon from an array of sorted verts
  *
