@@ -3,24 +3,24 @@
 struct LinkNode;
 struct MemArena;
 
-void BM_loop_interp_multires_ex(BMesh *bm,
-                                BMLoop *l_dst,
-                                const BMFace *f_src,
-                                const float f_dst_center[3],
-                                const float f_src_center[3],
-                                int cd_loop_mdisp_offset);
+void mesh_loop_interp_multires_ex(Mesh *mesh,
+                                  MeshLoop *l_dst,
+                                  const MeshFace *f_src,
+                                  const float f_dst_center[3],
+                                  const float f_src_center[3],
+                                  int cd_loop_mdisp_offset);
 /**
  * Project the multi-resolution grid in target onto f_src's set of multi-resolution grids.
  */
-void BM_loop_interp_multires(BMesh *bm, BMLoop *l_dst, const BMFace *f_src);
+void BM_loop_interp_multires(Mesh *mesh, MeshLoop *l_dst, const MeshFace *f_src);
 
-void BM_face_interp_multires_ex(BMesh *bm,
-                                BMFace *f_dst,
-                                const BMFace *f_src,
+void BM_face_interp_multires_ex(Mesh *mesh,
+                                MeshFace *f_dst,
+                                const MeshFace *f_src,
                                 const float f_dst_center[3],
                                 const float f_src_center[3],
                                 int cd_loop_mdisp_offset);
-void BM_face_interp_multires(BMesh *bm, BMFace *f_dst, const BMFace *f_src);
+void BM_face_interp_multires(Mesh *mesh, MeshFace *f_dst, const BMFace *f_src);
 
 void BM_vert_interp_from_face(BMesh *bm, BMVert *v_dst, const BMFace *f_src);
 
