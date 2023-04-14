@@ -103,12 +103,12 @@ void mesh_copy_arrays(Mesh *mesh_src,
   /* Faces. */
   for (uint i = 0; i < faces_src_len; i++) {
     MeshFace *f_src = faces_src[i];
-    MeshFace *f_dst = bm_face_copy_with_arrays(bm_src, bm_dst, f_src, verts_dst, edges_dst);
+    MeshFace *f_dst = mesh_face_copy_with_arrays(mesh_src, mesh_dst, f_src, verts_dst, edges_dst);
     mesh_elem_index_set(f_dst, i);
   }
-  bm_dst->elem_index_dirty &= ~BM_FACE;
+  mesh_dst->elem_index_dirty &= ~MESH_FACE;
 
   /* Cleanup. */
-  MEM_freeN(verts_dst);
-  MEM_freeN(edges_dst);
+  mem_freen(verts_dst);
+  mem_freen(edges_dst);
 }
