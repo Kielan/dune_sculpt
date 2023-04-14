@@ -456,7 +456,7 @@ void mesh_elem_index_validate(
   bool is_any_error = 0;
 
   for (i = 0; i < 3; i++) {
-    const bool is_dirty = (flag_types[i] & bm->elem_index_dirty) != 0;
+    const bool is_dirty = (flag_types[i] & mesh->elem_index_dirty) != 0;
     int index = 0;
     bool is_error = false;
     int err_val = 0;
@@ -479,7 +479,7 @@ void mesh_elem_index_validate(
       fprintf(stderr,
               "Invalid Index: at %s, %s, %s[%d] invalid index %d, '%s', '%s'\n",
               location,
-              func,
+              fn,
               type_names[i],
               err_idx,
               err_val,
@@ -1067,72 +1067,72 @@ void mesh_rebuild(Mesh *mesh,
       }
 
       etable_dst[index] = e_dst;
-      BM_elem_index_set(e_src, index); /* set_ok */
+      mem_elem_index_set(e_src, index); /* set_ok */
     }
   }
 
-  if (remap & (BM_LOOP | BM_FACE)) {
-    BMIter iter;
+  if (remap & (MESH_LOOP | MESH_FACE)) {
+    MeshIter iter;
     int index, index_loop = 0;
-    BMFace *f_src;
-    BM_ITER_MESH_INDEX (f_src, &iter, bm, BM_FACES_OF_MESH, index) {
+    MeshFace *f_src;
+    MESH_ITER_MESH_INDEX (f_src, &iter, mesh, MESH_FACES_OF_MESH, index) {
 
-      if (remap & BM_FACE) {
-        BMFace *f_dst = BLI_mempool_alloc(fpool_dst);
-        memcpy(f_dst, f_src, sizeof(BMFace));
+      if (remap & MESH_FACE) {
+        MeshFace *f_dst = lib_mempool_alloc(fpool_dst);
+        memcpy(f_dst, f_src, sizeof(MeshFace));
         if (use_toolflags) {
-          ((BMFace_OFlag *)f_dst)->oflags = bm->ftoolflagpool ?
-                                                BLI_mempool_calloc(bm->ftoolflagpool) :
+          ((MeshFace_OFlag *)f_dst)->oflags = mem->ftoolflagpool ?
+                                                lib_mempool_calloc(mesh->ftoolflagpool) :
                                                 NULL;
         }
 
         ftable_dst[index] = f_dst;
-        BM_elem_index_set(f_src, index); /* set_ok */
+        mesh_elem_index_set(f_src, index); /* set_ok */
       }
 
       /* handle loops */
-      if (remap & BM_LOOP) {
-        BMLoop *l_iter_src, *l_first_src;
-        l_iter_src = l_first_src = BM_FACE_FIRST_LOOP((BMFace *)f_src);
+      if (remap & MESH_LOOP) {
+        MsehLoop *l_iter_src, *l_first_src;
+        l_iter_src = l_first_src = MESH_FACE_FIRST_LOOP((MeshFace *)f_src);
         do {
-          BMLoop *l_dst = BLI_mempool_alloc(lpool_dst);
-          memcpy(l_dst, l_iter_src, sizeof(BMLoop));
+          MeshLoop *l_dst = lib_mempool_alloc(lpool_dst);
+          memcpy(l_dst, l_iter_src, sizeof(MeshLoop));
           ltable_dst[index_loop] = l_dst;
-          BM_elem_index_set(l_iter_src, index_loop++); /* set_ok */
+          mesh_elem_index_set(l_iter_src, index_loop++); /* set_ok */
         } while ((l_iter_src = l_iter_src->next) != l_first_src);
       }
     }
   }
 
-#define MAP_VERT(ele) vtable_dst[BM_elem_index_get(ele)]
-#define MAP_EDGE(ele) etable_dst[BM_elem_index_get(ele)]
-#define MAP_LOOP(ele) ltable_dst[BM_elem_index_get(ele)]
-#define MAP_FACE(ele) ftable_dst[BM_elem_index_get(ele)]
+#define MAP_VERT(ele) vtable_dst[mesh_elem_index_get(ele)]
+#define MAP_EDGE(ele) etable_dst[mesh_elem_index_get(ele)]
+#define MAP_LOOP(ele) ltable_dst[mesh_elem_index_get(ele)]
+#define MAP_FACE(ele) ftable_dst[mesh_elem_index_get(ele)]
 
 #define REMAP_VERT(ele) \
   { \
-    if (remap & BM_VERT) { \
+    if (remap & MESH_VERT) { \
       ele = MAP_VERT(ele); \
     } \
   } \
   ((void)0)
 #define REMAP_EDGE(ele) \
   { \
-    if (remap & BM_EDGE) { \
+    if (remap & MESH_EDGE) { \
       ele = MAP_EDGE(ele); \
     } \
   } \
   ((void)0)
 #define REMAP_LOOP(ele) \
   { \
-    if (remap & BM_LOOP) { \
+    if (remap & MESH_LOOP) { \
       ele = MAP_LOOP(ele); \
     } \
   } \
   ((void)0)
 #define REMAP_FACE(ele) \
   { \
-    if (remap & BM_FACE) { \
+    if (remap & MESH_FACE) { \
       ele = MAP_FACE(ele); \
     } \
   } \
@@ -1140,8 +1140,8 @@ void mesh_rebuild(Mesh *mesh,
 
   /* verts */
   {
-    for (int i = 0; i < bm->totvert; i++) {
-      BMVert *v = vtable_dst[i];
+    for (int i = 0; i < mesh->totvert; i++) {
+      MeshVert *v = vtable_dst[i];
       if (v->e) {
         REMAP_EDGE(v->e);
       }
@@ -1150,8 +1150,8 @@ void mesh_rebuild(Mesh *mesh,
 
   /* edges */
   {
-    for (int i = 0; i < bm->totedge; i++) {
-      BMEdge *e = etable_dst[i];
+    for (int i = 0; i < mesh->totedge; i++) {
+      MeshEdge *e = etable_dst[i];
       REMAP_VERT(e->v1);
       REMAP_VERT(e->v2);
       REMAP_EDGE(e->v1_disk_link.next);
@@ -1166,13 +1166,13 @@ void mesh_rebuild(Mesh *mesh,
 
   /* faces */
   {
-    for (int i = 0; i < bm->totface; i++) {
-      BMFace *f = ftable_dst[i];
+    for (int i = 0; i < mesh->totface; i++) {
+      MeshFace *f = ftable_dst[i];
       REMAP_LOOP(f->l_first);
 
       {
-        BMLoop *l_iter, *l_first;
-        l_iter = l_first = BM_FACE_FIRST_LOOP((BMFace *)f);
+        MeshLoop *l_iter, *l_first;
+        l_iter = l_first = MESH_FACE_FIRST_LOOP((MeshFace *)f);
         do {
           REMAP_VERT(l_iter->v);
           REMAP_EDGE(l_iter->e);
@@ -1187,28 +1187,28 @@ void mesh_rebuild(Mesh *mesh,
     }
   }
 
-  LISTBASE_FOREACH (BMEditSelection *, ese, &bm->selected) {
+  LISTBASE_FOREACH (MeshEditSelection *, ese, &mesh->selected) {
     switch (ese->htype) {
-      case BM_VERT:
-        if (remap & BM_VERT) {
-          ese->ele = (BMElem *)MAP_VERT(ese->ele);
+      case MESH_VERT:
+        if (remap & MESH_VERT) {
+          ese->ele = (MeshElem *)MAP_VERT(ese->ele);
         }
         break;
-      case BM_EDGE:
-        if (remap & BM_EDGE) {
-          ese->ele = (BMElem *)MAP_EDGE(ese->ele);
+      case MESH_EDGE:
+        if (remap & MESH_EDGE) {
+          ese->ele = (MeshElem *)MAP_EDGE(ese->ele);
         }
         break;
-      case BM_FACE:
-        if (remap & BM_FACE) {
-          ese->ele = (BMElem *)MAP_FACE(ese->ele);
+      case MESH_FACE:
+        if (remap & MESH_FACE) {
+          ese->ele = (MeshElem *)MAP_FACE(ese->ele);
         }
         break;
     }
   }
 
-  if (bm->act_face) {
-    REMAP_FACE(bm->act_face);
+  if (mesh->act_face) {
+    REMAP_FACE(mesh->act_face);
   }
 
 #undef MAP_VERT
@@ -1224,44 +1224,44 @@ void mesh_rebuild(Mesh *mesh,
   /* Cleanup, re-use local tables if the current mesh had tables allocated.
    * could use irrespective but it may use more memory than the caller wants
    * (and not be needed). */
-  if (remap & BM_VERT) {
-    if (bm->vtable) {
-      SWAP(BMVert **, vtable_dst, bm->vtable);
-      bm->vtable_tot = bm->totvert;
-      bm->elem_table_dirty &= ~BM_VERT;
+  if (remap & MESH_VERT) {
+    if (mesh->vtable) {
+      SWAP(MeshVert **, vtable_dst, mesh->vtable);
+      mesh->vtable_tot = mesh->totvert;
+      mesh->elem_table_dirty &= ~MESH_VERT;
     }
-    MEM_freeN(vtable_dst);
-    BLI_mempool_destroy(bm->vpool);
-    bm->vpool = vpool_dst;
+    mem_freen(vtable_dst);
+    lib_mempool_destroy(mesh->vpool);
+    mesh->vpool = vpool_dst;
   }
 
-  if (remap & BM_EDGE) {
-    if (bm->etable) {
-      SWAP(BMEdge **, etable_dst, bm->etable);
-      bm->etable_tot = bm->totedge;
-      bm->elem_table_dirty &= ~BM_EDGE;
+  if (remap & MESH_EDGE) {
+    if (mesh->etable) {
+      SWAP(MeshEdge **, etable_dst, mesh->etable);
+      mesh->etable_tot = mesh->totedge;
+      mesh->elem_table_dirty &= ~MESH_EDGE;
     }
-    MEM_freeN(etable_dst);
-    BLI_mempool_destroy(bm->epool);
-    bm->epool = epool_dst;
+    mem_freen(etable_dst);
+    lib_mempool_destroy(mesh->epool);
+    mem->epool = epool_dst;
   }
 
-  if (remap & BM_LOOP) {
+  if (remap & MESH_LOOP) {
     /* no loop table */
-    MEM_freeN(ltable_dst);
-    BLI_mempool_destroy(bm->lpool);
-    bm->lpool = lpool_dst;
+    mem_freen(ltable_dst);
+    lib_mempool_destroy(mesh->lpool);
+    mesh->lpool = lpool_dst;
   }
 
-  if (remap & BM_FACE) {
-    if (bm->ftable) {
-      SWAP(BMFace **, ftable_dst, bm->ftable);
-      bm->ftable_tot = bm->totface;
-      bm->elem_table_dirty &= ~BM_FACE;
+  if (remap & MESH_FACE) {
+    if (mesh->ftable) {
+      SWAP(MeshFace **, ftable_dst, mesh->ftable);
+      mesh->ftable_tot = mesh->totface;
+      mesh->elem_table_dirty &= ~MESH_FACE;
     }
-    MEM_freeN(ftable_dst);
-    BLI_mempool_destroy(bm->fpool);
-    bm->fpool = fpool_dst;
+    mem_freen(ftable_dst);
+    lib_mempool_destroy(mesh->fpool);
+    mesh->fpool = fpool_dst;
   }
 }
 
