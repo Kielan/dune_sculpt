@@ -229,20 +229,20 @@ static void mesh_remove_tagged_verts_loose(Mesh *mesh, const char hflag)
   }
 }
 
-void BM_mesh_delete_hflag_tagged(BMesh *bm, const char hflag, const char htype)
+void mesh_delete_hflag_tagged(Mesh *mesh, const char hflag, const char htype)
 {
-  if (htype & BM_FACE) {
-    bm_remove_tagged_faces(bm, hflag);
+  if (htype & MESH_FACE) {
+    mesh_remove_tagged_faces(mesh, hflag);
   }
-  if (htype & BM_EDGE) {
-    bm_remove_tagged_edges(bm, hflag);
+  if (htype & MESH_EDGE) {
+    mesh_remove_tagged_edges(mesh, hflag);
   }
-  if (htype & BM_VERT) {
-    bm_remove_tagged_verts(bm, hflag);
+  if (htype & MESH_VERT) {
+    mesh_remove_tagged_verts(mesh, hflag);
   }
 }
 
-void mesh_delete_hflag_context(BMesh *bm, const char hflag, const int type)
+void mesh_delete_hflag_context(Mesh *mesh, const char hflag, const int type)
 {
   MeshEdge *e;
   MeshFace *f;
@@ -293,8 +293,8 @@ void mesh_delete_hflag_context(BMesh *bm, const char hflag, const int type)
 
           l_iter = l_first;
           do {
-            BM_elem_flag_enable(l_iter->v, hflag);
-            BM_elem_flag_enable(l_iter->e, hflag);
+            mesh_elem_flag_enable(l_iter->v, hflag);
+            mesh_elem_flag_enable(l_iter->e, hflag);
           } while ((l_iter = l_iter->next) != l_first);
         }
       }
@@ -312,18 +312,18 @@ void mesh_delete_hflag_context(BMesh *bm, const char hflag, const int type)
         }
       }
       /* also mark all the vertices of remaining edges for keeping */
-      BM_ITER_MESH (e, &eiter, bm, BM_EDGES_OF_MESH) {
-        if (!BM_elem_flag_test(e, hflag)) {
-          BM_elem_flag_disable(e->v1, hflag);
-          BM_elem_flag_disable(e->v2, hflag);
+      MESH_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
+        if (!mesh_elem_flag_test(e, hflag)) {
+          mesh_elem_flag_disable(e->v1, hflag);
+          mesh_elem_flag_disable(e->v2, hflag);
         }
       }
       /* now delete marked face */
-      bm_remove_tagged_faces(bm, hflag);
+      mesh_remove_tagged_faces(mesh, hflag);
       /* delete marked edge */
-      bm_remove_tagged_edges(bm, hflag);
+      mesh_remove_tagged_edges(mesh, hflag);
       /* remove loose vertices */
-      bm_remove_tagged_verts(bm, hflag);
+      mesh_remove_tagged_verts(mesh, hflag);
 
       break;
     }
