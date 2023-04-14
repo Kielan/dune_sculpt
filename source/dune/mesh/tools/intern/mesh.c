@@ -591,29 +591,29 @@ void mesh_elem_table_ensure(Mesh *mesh, const char htype)
       mesh->etable_tot = mesh->totedge;
     }
   }
-  if (htype_needed & BM_FACE) {
-    if (bm->ftable && bm->totface <= bm->ftable_tot && bm->totface * 2 >= bm->ftable_tot) {
+  if (htype_needed & MESH_FACE) {
+    if (mesh->ftable && mesh->totface <= mesh->ftable_tot && mesh->totface * 2 >= mesh->ftable_tot) {
       /* pass (re-use the array) */
     }
     else {
-      if (bm->ftable) {
-        MEM_freeN(bm->ftable);
+      if (mesh->ftable) {
+        mesh_freen(mesh->ftable);
       }
-      bm->ftable = MEM_mallocN(sizeof(void **) * bm->totface, "bm->ftable");
-      bm->ftable_tot = bm->totface;
+      mesh->ftable = mem_mallocn(sizeof(void **) * mesh->totface, "mesh->ftable");
+      mesh->ftable_tot = mesh->totface;
     }
   }
 
-  if (htype_needed & BM_VERT) {
-    BM_iter_as_array(bm, BM_VERTS_OF_MESH, NULL, (void **)bm->vtable, bm->totvert);
+  if (htype_needed & MESH_VERT) {
+    mesh_iter_as_array(mesh, MESH_VERTS_OF_MESH, NULL, (void **)mesh->vtable, mesh->totvert);
   }
 
-  if (htype_needed & BM_EDGE) {
-    BM_iter_as_array(bm, BM_EDGES_OF_MESH, NULL, (void **)bm->etable, bm->totedge);
+  if (htype_needed & MESH_EDGE) {
+    mesh_iter_as_array(mesh, MESH_EDGES_OF_MESH, NULL, (void **)mesh->etable, mesh->totedge);
   }
 
-  if (htype_needed & BM_FACE) {
-    BM_iter_as_array(bm, BM_FACES_OF_MESH, NULL, (void **)bm->ftable, bm->totface);
+  if (htype_needed & MESH_FACE) {
+    mesh_iter_as_array(mesh, MESH_FACES_OF_MESH, NULL, (void **)bm->ftable, bm->totface);
   }
 
 finally:
@@ -629,14 +629,14 @@ void mesh_elem_table_init(Mesh *mesh, const char htype)
   lib_assert((htype & ~BM_ALL_NOLOOP) == 0);
 
   /* force recalc */
-  mesh_elem_table_free(bm, BM_ALL_NOLOOP);
-  mesh_elem_table_ensure(bm, htype);
+  mesh_elem_table_free(mesh, MESH_ALL_NOLOOP);
+  mesh_elem_table_ensure(mesh, htype);
 }
 
-void BM_mesh_elem_table_free(BMesh *bm, const char htype)
+void mesh_elem_table_free(Mesh *mesh, const char htype)
 {
-  if (htype & BM_VERT) {
-    MEM_SAFE_FREE(bm->vtable);
+  if (htype & MESH_VERT) {
+    MEM_SAFE_FREE(mesh->vtable);
   }
 
   if (htype & BM_EDGE) {
