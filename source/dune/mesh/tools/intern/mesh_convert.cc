@@ -20,13 +20,13 @@
  *
  * subsection enter_editmode Entering EditMode - mesh_bm_from_me
  *
- * - The active key-block is used for BMesh vertex locations on entering edit-mode.
+ * - The active key-block is used for Mesh vertex locations on entering edit-mode.
  *   So obviously the meshes vertex locations remain unchanged and the shape key
  *   itself is not being edited directly.
- *   Simply the #BMVert.co is a initialized from active shape key (when its set).
+ *   Simply the MeshVert.co is a initialized from active shape key (when its set).
  * - All key-blocks are added as CustomData layers (read code for details).
  *
- * subsection exit_editmode Exiting EditMode - #BM_mesh_bm_to_me
+ * subsection exit_editmode Exiting EditMode - mesh_bm_to_me
  *
  * This is where the most confusing code is! Won't attempt to document the details here,
  * for that read the code.
@@ -270,14 +270,14 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
     lib_assert(!CustomData_has_layer(&me->vdata, CD_SHAPEKEY));
   }
   if (is_new == false) {
-    tot_shape_keys = min_ii(tot_shape_keys, CustomData_number_of_layers(&bm->vdata, CD_SHAPEKEY));
+    tot_shape_keys = min_ii(tot_shape_keys, CustomData_number_of_layers(&mesh->vdata, CD_SHAPEKEY));
   }
-  const float(**shape_key_table)[3] = tot_shape_keys ? (const float(**)[3])BLI_array_alloca(
+  const float(**shape_key_table)[3] = tot_shape_keys ? (const float(**)[3])lib_array_alloca(
                                                            shape_key_table, tot_shape_keys) :
                                                        nullptr;
 
   if ((params->active_shapekey != 0) && tot_shape_keys > 0) {
-    actkey = static_cast<KeyBlock *>(BLI_findlink(&me->key->block, params->active_shapekey - 1));
+    actkey = static_cast<KeyBlock *>(lib_findlink(&me->key->block, params->active_shapekey - 1));
   }
   else {
     actkey = nullptr;
@@ -355,7 +355,7 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
   Array<MeshVert *> vtable(me->totvert);
   for (const int i : mvert.index_range()) {
     MeshVert *v = vtable[i] = mesh_vert_create(
-        mesh, keyco ? keyco[i] : mvert[i].co, nullptr, BM_CREATE_SKIP_CD);
+        mesh, keyco ? keyco[i] : mvert[i].co, nullptr, MESH_CREATE_SKIP_CD);
     mesh_elem_index_set(v, i); /* set_ok */
 
     /* Transfer flag. */
@@ -363,7 +363,7 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
 
     /* This is necessary for selection counts to work properly. */
     if (mvert[i].flag & SELECT) {
-      BM_vert_select_set(bm, v, true);
+      MESH_vert_select_set(bm, v, true);
     }
 
     if (vert_normals) {
@@ -371,10 +371,10 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
     }
 
     /* Copy Custom Data */
-    CustomData_to_bmesh_block(&me->vdata, &bm->vdata, i, &v->head.data, true);
+    CustomData_to_bmesh_block(&me->vdata, &mesh->vdata, i, &v->head.data, true);
 
     if (cd_vert_bweight_offset != -1) {
-      BM_ELEM_CD_SET_FLOAT(v, cd_vert_bweight_offset, (float)mvert[i].bweight / 255.0f);
+      MESH_ELEM_CD_SET_FLOAT(v, cd_vert_bweight_offset, (float)mvert[i].bweight / 255.0f);
     }
 
     /* Set shape key original index. */
@@ -384,7 +384,7 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
 
     /* Set shape-key data. */
     if (tot_shape_keys) {
-      float(*co_dst)[3] = (float(*)[3])BM_ELEM_CD_GET_VOID_P(v, cd_shape_key_offset);
+      float(*co_dst)[3] = (float(*)[3])MESH_ELEM_CD_GET_VOID_P(v, cd_shape_key_offset);
       for (int j = 0; j < tot_shape_keys; j++, co_dst++) {
         copy_v3_v3(*co_dst, shape_key_table[j][i]);
       }
