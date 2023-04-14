@@ -42,30 +42,30 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       iter->step = (MeshIter__step_cb)bmiter__elem_of_mesh_step;
       iter->data.elem_of_mesh.pooliter.pool = bm->epool;
       break;
-    case BM_FACES_OF_MESH:
-      BLI_assert(bm != NULL);
-      BLI_assert(data == NULL);
-      iter->begin = (BMIter__begin_cb)bmiter__elem_of_mesh_begin;
-      iter->step = (BMIter__step_cb)bmiter__elem_of_mesh_step;
-      iter->data.elem_of_mesh.pooliter.pool = bm->fpool;
+    case MESH_FACES_OF_MESH:
+      lib_assert(mesh != NULL);
+      lib_assert(data == NULL);
+      iter->begin = (MeshIter__begin_cb)bmiter__elem_of_mesh_begin;
+      iter->step = (MeshIter__step_cb)bmiter__elem_of_mesh_step;
+      iter->data.elem_of_mesh.pooliter.pool = mesh->fpool;
       break;
-    case BM_EDGES_OF_VERT:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_VERT);
-      iter->begin = (BMIter__begin_cb)bmiter__edge_of_vert_begin;
-      iter->step = (BMIter__step_cb)bmiter__edge_of_vert_step;
-      iter->data.edge_of_vert.vdata = (BMVert *)data;
+    case MESH_EDGES_OF_VERT:
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == MESH_VERT);
+      iter->begin = (MeshIter__begin_cb)bmiter__edge_of_vert_begin;
+      iter->step = (MeshIter__step_cb)bmiter__edge_of_vert_step;
+      iter->data.edge_of_vert.vdata = (MeshVert *)data;
       break;
-    case BM_FACES_OF_VERT:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_VERT);
-      iter->begin = (BMIter__begin_cb)bmiter__face_of_vert_begin;
-      iter->step = (BMIter__step_cb)bmiter__face_of_vert_step;
-      iter->data.face_of_vert.vdata = (BMVert *)data;
+    case MESH_FACES_OF_VERT:
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == MESH_VERT);
+      iter->begin = (MeshIter__begin_cb)bmiter__face_of_vert_begin;
+      iter->step = (MeshIter__step_cb)bmiter__face_of_vert_step;
+      iter->data.face_of_vert.vdata = (MeshVert *)data;
       break;
     case BM_LOOPS_OF_VERT:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_VERT);
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == BM_VERT);
       iter->begin = (BMIter__begin_cb)bmiter__loop_of_vert_begin;
       iter->step = (BMIter__step_cb)bmiter__loop_of_vert_step;
       iter->data.loop_of_vert.vdata = (BMVert *)data;
