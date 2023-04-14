@@ -998,43 +998,43 @@ static MeshEditSelection *mesh_select_history_create(MeshHeader *ele)
   MeshEditSelection *ese = (MeshEditSelection *)mem_callocn(sizeof(MeshEditSelection),
                                                         "MeshEdit Selection");
   ese->htype = ele->htype;
-  ese->ele = (BMElem *)ele;
+  ese->ele = (MeshElem *)ele;
   return ese;
 }
 
 /* --- macro wrapped funcs --- */
 
-bool _bm_select_history_check(BMesh *bm, const BMHeader *ele)
+bool _mesh_select_history_check(Mesh *mesh, const MeshHeader *ele)
 {
-  return (BLI_findptr(&bm->selected, ele, offsetof(BMEditSelection, ele)) != NULL);
+  return (lib_findptr(&mesh->selected, ele, offsetof(MeshEditSelection, ele)) != NULL);
 }
 
-bool _bm_select_history_remove(BMesh *bm, BMHeader *ele)
+bool _mesh_select_history_remove(Mesh *mesh, MeshHeader *ele)
 {
-  BMEditSelection *ese = BLI_findptr(&bm->selected, ele, offsetof(BMEditSelection, ele));
+  MeshEditSelection *ese = lib_findptr(&mesh->selected, ele, offsetof(MeshEditSelection, ele));
   if (ese) {
-    BLI_freelinkN(&bm->selected, ese);
+    lib_freelinkn(&mesh->selected, ese);
     return true;
   }
   return false;
 }
 
-void _bm_select_history_store_notest(BMesh *bm, BMHeader *ele)
+void _mesh_select_history_store_notest(Mesh *mesh, MeshHeader *ele)
 {
-  BMEditSelection *ese = bm_select_history_create(ele);
-  BLI_addtail(&(bm->selected), ese);
+  MeshEditSelection *ese = mesh_select_history_create(ele);
+  lib_addtail(&(mesh->selected), ese);
 }
 
-void _bm_select_history_store_head_notest(BMesh *bm, BMHeader *ele)
+void _mesh_select_history_store_head_notest(Mesh *mesh, MeshHeader *ele)
 {
-  BMEditSelection *ese = bm_select_history_create(ele);
-  BLI_addhead(&(bm->selected), ese);
+  MeshEditSelection *ese = mesh_select_history_create(ele);
+  lib_addhead(&(mesh->selected), ese);
 }
 
-void _bm_select_history_store(BMesh *bm, BMHeader *ele)
+void _mesh_select_history_store(Mesh *mesh, MeshHeader *ele)
 {
-  if (!BM_select_history_check(bm, (BMElem *)ele)) {
-    BM_select_history_store_notest(bm, (BMElem *)ele);
+  if (!mesh_select_history_check(mesh, (MeshElem *)ele)) {
+    mesh_select_history_store_notest(mesh, (MeshElem *)ele);
   }
 }
 
