@@ -182,11 +182,11 @@ void mesh_data_free(Mesh *mesh)
   if (mesh->edata.totlayer) {
     lib_mempool_destroy(mesh->edata.pool);
   }
-  if (bm->ldata.totlayer) {
-    BLI_mempool_destroy(mesh->ldata.pool);
+  if (mesh->ldata.totlayer) {
+    lib_mempool_destroy(mesh->ldata.pool);
   }
-  if (bm->pdata.totlayer) {
-    BLI_mempool_destroy(mesh->pdata.pool);
+  if (mesh->pdata.totlayer) {
+    lib_mempool_destroy(mesh->pdata.pool);
   }
 
   /* free custom data */
@@ -202,10 +202,10 @@ void mesh_data_free(Mesh *mesh)
   lib_mempool_destroy(mesh->fpool);
 
   if (mesh->vtable) {
-    mem_freeN(mesh->vtable);
+    mem_freen(mesh->vtable);
   }
   if (mesh->etable) {
-    me_free(mesh->etable);
+    mem_freen(mesh->etable);
   }
   if (mesh->ftable) {
     mem_freen(mesh->ftable);
@@ -263,14 +263,14 @@ void mesh_free(Mesh *mesh)
   mem_freen(mesh);
 }
 
-void bmesh_edit_begin(Mesh *UNUSED(mesh), BMOpTypeFlag UNUSED(type_flag))
+void mesh_edit_begin(Mesh *UNUSED(mesh), MeshOpTypeFlag UNUSED(type_flag))
 {
-  /* Most operators seem to be using BMO_OPTYPE_FLAG_UNTAN_MULTIRES to change the MDisps to
+  /* Most operators seem to be using MESH_OPTYPE_FLAG_UNTAN_MULTIRES to change the MDisps to
    * absolute space during mesh edits. With this enabled, changes to the topology
    * (loop cuts, edge subdivides, etc) are not reflected in the higher levels of
    * the mesh at all, which doesn't seem right. Turning off completely for now,
    * until this is shown to be better for certain types of mesh edits. */
-#ifdef BMOP_UNTAN_MULTIRES_ENABLED
+#ifdef MESH_OP_UNTAN_MULTIRES_ENABLED
   /* switch multires data out of tangent space */
   if ((type_flag & MESH_OPTYPE_FLAG_UNTAN_MULTIRES) &&
       CustomData_has_layer(&mesh->ldata, CD_MDISPS)) {
@@ -561,34 +561,34 @@ void mesh_elem_table_ensure(Mesh *mesh, const char htype)
   lib_assert((htype & ~MESH_ALL_NOLOOP) == 0);
 
   /* in debug mode double check we didn't need to recalculate */
-  BLI_assert(BM_mesh_elem_table_check(bm) == true);
+  lib_assert(mesh_elem_table_check(bm) == true);
 
   if (htype_needed == 0) {
     goto finally;
   }
 
-  if (htype_needed & BM_VERT) {
-    if (bm->vtable && bm->totvert <= bm->vtable_tot && bm->totvert * 2 >= bm->vtable_tot) {
+  if (htype_needed & MESH_VERT) {
+    if (mesh->vtable && mesh->totvert <= mesh->vtable_tot && mesh->totvert * 2 >= mesh->vtable_tot) {
       /* pass (re-use the array) */
     }
     else {
-      if (bm->vtable) {
-        MEM_freeN(bm->vtable);
+      if (mesh->vtable) {
+        mem_freen(mesh->vtable);
       }
-      bm->vtable = MEM_mallocN(sizeof(void **) * bm->totvert, "bm->vtable");
-      bm->vtable_tot = bm->totvert;
+      mesh->vtable = mem_mallocn(sizeof(void **) * mesh->totvert, "mesh->vtable");
+      mesh->vtable_tot = mesh->totvert;
     }
   }
-  if (htype_needed & BM_EDGE) {
-    if (bm->etable && bm->totedge <= bm->etable_tot && bm->totedge * 2 >= bm->etable_tot) {
+  if (htype_needed &MESH_EDGE) {
+    if (mesh->etable && mesh->totedge <= mesh->etable_tot && mesh->totedge * 2 >= mesh->etable_tot) {
       /* pass (re-use the array) */
     }
     else {
-      if (bm->etable) {
-        MEM_freeN(bm->etable);
+      if (mesh->etable) {
+        mem_freen(mesh->etable);
       }
-      bm->etable = MEM_mallocN(sizeof(void **) * bm->totedge, "bm->etable");
-      bm->etable_tot = bm->totedge;
+      mesh->etable = mem_mallocn(sizeof(void **) * mesh->totedge, "mesh->etable");
+      mesh->etable_tot = mesh->totedge;
     }
   }
   if (htype_needed & BM_FACE) {
