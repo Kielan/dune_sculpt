@@ -1,32 +1,28 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
+#include "mesh_core.h"
 
-#include "bmesh_core.h"
-
-struct BMAllocTemplate;
+struct MeshAllocTemplate;
 struct Mesh;
 
 /**
  * Fill in a vertex array from an edge array.
  *
- * \returns false if any verts aren't found.
+ * returns false if any verts aren't found.
  */
-bool BM_verts_from_edges(BMVert **vert_arr, BMEdge **edge_arr, int len);
+bool mesh_verts_from_edges(MeshVert **vert_arr, MeshEdge **edge_arr, int len);
 
 /**
  * Fill in an edge array from a vertex array (connected polygon loop).
  *
- * \returns false if any edges aren't found.
+ * returns false if any edges aren't found.
  */
-bool BM_edges_from_verts(BMEdge **edge_arr, BMVert **vert_arr, int len);
+bool mesh_edges_from_verts(MeshEdge **edge_arr, MeshVert **vert_arr, int len);
 /**
  * Fill in an edge array from a vertex array (connected polygon loop).
  * Creating edges as-needed.
  */
-void BM_edges_from_verts_ensure(BMesh *bm, BMEdge **edge_arr, BMVert **vert_arr, int len);
+void mesh_edges_from_verts_ensure(Mesh *mesh, MeshEdge **edge_arr, MeshVert **vert_arr, int len);
 
 /**
  * Makes an NGon from an un-ordered set of verts.
@@ -45,7 +41,7 @@ void BM_edges_from_verts_ensure(BMesh *bm, BMEdge **edge_arr, BMVert **vert_arr,
  *
  * \note Since this is a vertex-cloud there is no direction.
  */
-void BM_verts_sort_radial_plane(BMVert **vert_arr, int len);
+void mesh_verts_sort_radial_plane(MeshVert **vert_arr, int len);
 
 /**
  * \brief Make Quad/Triangle
@@ -60,13 +56,13 @@ void BM_verts_sort_radial_plane(BMVert **vert_arr, int len);
  * \note The winding of the face is determined by the order
  * of the vertices in the vertex array.
  */
-BMFace *BM_face_create_quad_tri(BMesh *bm,
-                                BMVert *v1,
-                                BMVert *v2,
-                                BMVert *v3,
-                                BMVert *v4,
-                                const BMFace *f_example,
-                                eBMCreateFlag create_flag);
+MeshFace *mesh_face_create_quad_tri(Mesh *mesh,
+                                MVert *v1,
+                                MVert *v2,
+                                MVert *v3,
+                                MVert *v4,
+                                const MFace *f_example,
+                                eMCreateFlag create_flag);
 
 /**
  * \brief copies face loop data from shared adjacent faces.
