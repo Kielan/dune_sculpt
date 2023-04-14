@@ -74,12 +74,12 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       lib_assert(data != NULL);
       lib_assert(((MeshElem *)data)->head.htype == MESH_EDGE);
       iter->begin = (MeshIter__begin_cb)bmiter__vert_of_edge_begin;
-      iter->step = (BMIter__step_cb)bmiter__vert_of_edge_step;
+      iter->step = (MeshIter__step_cb)bmiter__vert_of_edge_step;
       iter->data.vert_of_edge.edata = (MeshEdge *)data;
       break;
     case BM_FACES_OF_EDGE:
-      BLI_assert(data != NULL);
-      BLI_assert(((MeshElem *)data)->head.htype == MESH_EDGE);
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == MESH_EDGE);
       iter->begin = (MeshIter__begin_cb)bmiter__face_of_edge_begin;
       iter->step = (MeshIter__step_cb)bmiter__face_of_edge_step;
       iter->data.face_of_edge.edata = (MeshEdge *)data;
@@ -89,18 +89,18 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       lib_assert(((MeshElem *)data)->head.htype == MESH_FACE);
       iter->begin = (MeshIter__begin_cb)bmiter__vert_of_face_begin;
       iter->step = (MeshIter__step_cb)bmiter__vert_of_face_step;
-      iter->data.vert_of_face.pdata = (BMFace *)data;
+      iter->data.vert_of_face.pdata = (MeshFace *)data;
       break;
-    case BM_EDGES_OF_FACE:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_FACE);
-      iter->begin = (BMIter__begin_cb)bmiter__edge_of_face_begin;
-      iter->step = (BMIter__step_cb)bmiter__edge_of_face_step;
-      iter->data.edge_of_face.pdata = (BMFace *)data;
+    case MESH_EDGES_OF_FACE:
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == BM_FACE);
+      iter->begin = (MeshIter__begin_cb)bmiter__edge_of_face_begin;
+      iter->step = (MeshIter__step_cb)bmiter__edge_of_face_step;
+      iter->data.edge_of_face.pdata = (MeshFace *)data;
       break;
-    case BM_LOOPS_OF_FACE:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_FACE);
+    case MESH_LOOPS_OF_FACE:
+      lib_assert(data != NULL);
+      lib_assert(((BMElem *)data)->head.htype == BM_FACE);
       iter->begin = (BMIter__begin_cb)bmiter__loop_of_face_begin;
       iter->step = (BMIter__step_cb)bmiter__loop_of_face_step;
       iter->data.loop_of_face.pdata = (BMFace *)data;
