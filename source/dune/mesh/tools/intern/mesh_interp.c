@@ -519,7 +519,7 @@ void mesh_loop_interp_multires_ex(Mesh *UNUSED(bm),
   lib_task_parallel_range(0, res, &data, loop_interp_multires_cb, &settings);
 }
 
-void mesh_loop_interp_multires(Mesh *mesh, MshLoop *l_dst, const MeshFace *f_src)
+void mesh_loop_interp_multires(Mesh *mesh, MeshLoop *l_dst, const MeshFace *f_src)
 {
   const int cd_loop_mdisp_offset = CustomData_get_offset(&bm->ldata, CD_MDISPS);
 
@@ -535,11 +535,11 @@ void mesh_loop_interp_multires(Mesh *mesh, MshLoop *l_dst, const MeshFace *f_src
 }
 
 void mesh_face_interp_multires_ex(Mesh *mesh,
-                                MeshFace *f_dst,
-                                const MeshFace *f_src,
-                                const float f_dst_center[3],
-                                const float f_src_center[3],
-                                const int cd_loop_mdisp_offset)
+                                  MeshFace *f_dst,
+                                  const MeshFace *f_src,
+                                  const float f_dst_center[3],
+                                  const float f_src_center[3],
+                                  const int cd_loop_mdisp_offset)
 {
   MeshLoop *l_iter, *l_first;
   l_iter = l_first = MESH_FACE_FIRST_LOOP(f_dst);
@@ -808,7 +808,7 @@ static void update_data_blocks(Mesh *mesh, CustomData *olddata, CustomData *data
 
     CustomData_mesh_init_pool(data, mesh->totface, MESH_FACE);
 
-    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+    MESH_ITE (efa, &iter, mesh, MESH_FACES_OF_MESH) {
       block = NULL;
       CustomData_mesh_set_default(data, &block);
       CustomData_mesh_copy_data(olddata, data, efa->head.data, &block);
@@ -932,7 +932,7 @@ void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int
   else if (&mesh->pdata == data) {
     MeshFace *efa;
 
-    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+    MESH_ITER (efa, &iter, mesh, MESH_FACES_OF_MESH) {
       void *ptr = CustomData_mesh_get_n(data, efa->head.data, type, src_n);
       CustomData_mesh_set_n(data, efa->head.data, type, dst_n, ptr);
     }
@@ -1090,19 +1090,19 @@ LinkNode *mesh_vert_loop_groups_data_layer_create(
     mesh_elem_index_set(l, loop_num); /* set_dirty! */
     loop_num++;
   }
-  bm->elem_index_dirty |= BM_LOOP;
+  mesh->elem_index_dirty |= MESH_LOOP;
 
   lwc.data_len = 0;
   lwc.data_array = lib_memarena_alloc(lwc.arena, sizeof(void *) * loop_num);
   lwc.data_index_array = lib_memarena_alloc(lwc.arena, sizeof(int) * loop_num);
   lwc.weight_array = lib_memarena_alloc(lwc.arena, sizeof(float) * loop_num);
 
-  BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
-    if (BM_elem_flag_test(l, BM_ELEM_INTERNAL_TAG)) {
-      struct LoopGroupCD *lf = BLI_memarena_alloc(lwc.arena, sizeof(*lf));
+  MESH_ITER (l, &liter, v, MESH_LOOPS_OF_VERT) {
+    if (mesh_elem_flag_test(l, MESH_ELEM_INTERNAL_TAG)) {
+      struct LoopGroupCD *lf = lib_memarena_alloc(lwc.arena, sizeof(*lf));
       int len_prev = lwc.data_len;
 
-      lwc.data_ref = BM_ELEM_CD_GET_VOID_P(l, lwc.cd_layer_offset);
+      lwc.data_ref = MESH_ELEM_CD_GET_VOID_P(l, lwc.cd_layer_offset);
 
       /* assign len-last */
       lf->data = &lwc.data_array[lwc.data_len];
@@ -1111,7 +1111,7 @@ LinkNode *mesh_vert_loop_groups_data_layer_create(
       lwc.weight_accum = 0.0f;
 
       /* new group */
-      bm_loop_walk_data(&lwc, l);
+      mesh_loop_walk_data(&lwc, l);
       lf->data_len = lwc.data_len - len_prev;
 
       if (LIKELY(lwc.weight_accum != 0.0f)) {
@@ -1121,29 +1121,29 @@ LinkNode *mesh_vert_loop_groups_data_layer_create(
         copy_vn_fl(lf->data_weights, lf->data_len, 1.0f / (float)lf->data_len);
       }
 
-      BLI_linklist_prepend_arena(&groups, lf, lwc.arena);
+      lib_linklist_prepend_arena(&groups, lf, lwc.arena);
     }
   }
 
-  BLI_assert(lwc.data_len == loop_num);
+  lib_assert(lwc.data_len == loop_num);
 
   return groups;
 }
 
-static void bm_vert_loop_groups_data_layer_merge__single(BMesh *bm,
-                                                         void *lf_p,
-                                                         int layer_n,
-                                                         void *data_tmp)
+static void mesh_vert_loop_groups_data_layer_merge__single(Mesh *mesh,
+                                                           void *lf_p,
+                                                           int layer_n,
+                                                           void *data_tmp)
 {
   struct LoopGroupCD *lf = lf_p;
-  const int type = bm->ldata.layers[layer_n].type;
+  const int type = mesh->ldata.layers[layer_n].type;
   int i;
   const float *data_weights;
 
   data_weights = lf->data_weights;
 
-  CustomData_bmesh_interp_n(
-      &bm->ldata, (const void **)lf->data, data_weights, NULL, lf->data_len, data_tmp, layer_n);
+  CustomData_mesh_interp_n(
+      &mesh->ldata, (const void **)lf->data, data_weights, NULL, lf->data_len, data_tmp, layer_n);
 
   for (i = 0; i < lf->data_len; i++) {
     CustomData_copy_elements(type, data_tmp, lf->data[i], 1);
