@@ -84,11 +84,11 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       iter->step = (BMIter__step_cb)bmiter__face_of_edge_step;
       iter->data.face_of_edge.edata = (BMEdge *)data;
       break;
-    case BM_VERTS_OF_FACE:
-      BLI_assert(data != NULL);
-      BLI_assert(((BMElem *)data)->head.htype == BM_FACE);
-      iter->begin = (BMIter__begin_cb)bmiter__vert_of_face_begin;
-      iter->step = (BMIter__step_cb)bmiter__vert_of_face_step;
+    case MESH_VERTS_OF_FACE:
+      lib_assert(data != NULL);
+      lib_assert(((MeshElem *)data)->head.htype == MESH_FACE);
+      iter->begin = (MeshIter__begin_cb)bmiter__vert_of_face_begin;
+      iter->step = (MeshIter__step_cb)bmiter__vert_of_face_step;
       iter->data.vert_of_face.pdata = (BMFace *)data;
       break;
     case BM_EDGES_OF_FACE:
