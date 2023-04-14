@@ -107,10 +107,10 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       break;
     case MESH_LOOPS_OF_LOOP:
       lib_assert(data != NULL);
-      lib_assert(((MeshElem *)data)->head.htype == BM_LOOP);
+      lib_assert(((MeshElem *)data)->head.htype == MESH_LOOP);
       iter->begin = (MeshIter__begin_cb)bmiter__loop_of_loop_begin;
       iter->step = (MeshIter__step_cb)bmiter__loop_of_loop_step;
-      iter->data.loop_of_loop.ldata = (BMLoop *)data;
+      iter->data.loop_of_loop.ldata = (MeshLoop*)data;
       break;
     case BM_LOOPS_OF_EDGE:
       BLI_assert(data != NULL);
@@ -121,7 +121,7 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
       break;
     default:
       /* should never happen */
-      BLI_assert(0);
+      lib_assert(0);
       return false;
       break;
   }
@@ -132,18 +132,18 @@ LIB_INLINE bool mesh_iter_init(MeshIter *iter, Mesh *mesh, const char itype, voi
 }
 
 /**
- * \brief Iterator New
+ * Iterator New
  *
- * Takes a bmesh iterator structure and fills
+ * Takes a mesh iterator structure and fills
  * it with the appropriate function pointers based
- * upon its type and then calls BMeshIter_step()
+ * upon its type and then calls MeshIter_step()
  * to return the first element of the iterator.
  */
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    void *BM_iter_new(BMIter *iter, BMesh *bm, const char itype, void *data)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    void *mesh_iter_new(MeshIter *iter, Mesh *mesh, const char itype, void *data)
 {
-  if (LIKELY(BM_iter_init(iter, bm, itype, data))) {
-    return BM_iter_step(iter);
+  if (LIKELY(mesh_iter_init(iter, mesh, itype, data))) {
+    return mesh_iter_step(iter);
   }
   else {
     return NULL;
@@ -151,22 +151,22 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
 }
 
 /**
- * \brief Parallel (threaded) iterator,
+ * Parallel (threaded) iterator,
  * only available for most basic itertypes (verts/edges/faces of mesh).
  *
- * Uses BLI_task_parallel_mempool to iterate over all items of underlying matching mempool.
+ * Uses lib_task_parallel_mempool to iterate over all items of underlying matching mempool.
  *
- * \note You have to include BLI_task.h before BMesh includes to be able to use this function!
+ * You have to include lib_task.h before Mesh includes to be able to use this function!
  */
 
-#ifdef __BLI_TASK_H__
+#ifdef __LIB_TASK_H__
 
 ATTR_NONNULL(1)
-LIB_INLINE void mesh_iter_parallel(BMesh *bm,
-                                 const char itype,
-                                 TaskParallelMempoolFunc func,
-                                 void *userdata,
-                                 const TaskParallelSettings *settings)
+LIB_INLINE void mesh_iter_parallel(Mesh *mesn,
+                                   const char itype,
+                                   TaskParallelMempoolFunc func,
+                                   void *userdata,
+                                   const TaskParallelSettings *settings)
 {
   /* inlining optimizes out this switch when called with the defined type */
   switch ((MeshIterType)itype) {
@@ -186,4 +186,4 @@ LIB_INLINE void mesh_iter_parallel(BMesh *bm,
   }
 }
 
-#endif /* __BLI_TASK_H__ */
+#endif /* __LIB_TASK_H__ */
