@@ -924,7 +924,7 @@ void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int
   else if (&mesh->edata == data) {
     MeshEdge *eed;
 
-    MESH_ITER_MESH (eed, &iter, mesh, MESH_EDGES_OF_MESH) {
+    MESH_ITER (eed, &iter, mesh, MESH_EDGES_OF_MESH) {
       void *ptr = CustomData_mesh_get_n(data, eed->head.data, type, src_n);
       CustomData_mesh_set_n(data, eed->head.data, type, dst_n, ptr);
     }
@@ -1074,8 +1074,8 @@ LinkNode *mesh_vert_loop_groups_data_layer_create(
 {
   struct LoopWalkCtx lwc;
   LinkNode *groups = NULL;
-  BMLoop *l;
-  BMIter liter;
+  MeshLoop *l;
+  MeshIter liter;
   int loop_num;
 
   lwc.type = mesh->ldata.layers[layer_n].type;
@@ -1085,7 +1085,7 @@ LinkNode *mesh_vert_loop_groups_data_layer_create(
 
   /* Enable 'MESH_ELEM_INTERNAL_TAG', leaving the flag clean on completion. */
   loop_num = 0;
-  MESH_ITER_ELEM (l, &liter, v, NESG_LOOPS_OF_VERT) {
+  MESH_ITER (l, &liter, v, NESG_LOOPS_OF_VERT) {
     mesh_elem_flag_enable(l, MESH_ELEM_INTERNAL_TAG);
     mesh_elem_index_set(l, loop_num); /* set_dirty! */
     loop_num++;
@@ -1150,16 +1150,16 @@ static void mesh_vert_loop_groups_data_layer_merge__single(Mesh *mesh,
   }
 }
 
-static void bm_vert_loop_groups_data_layer_merge_weights__single(
-    BMesh *bm, void *lf_p, const int layer_n, void *data_tmp, const float *loop_weights)
+static void mesh_vert_loop_groups_data_layer_merge_weights__single(
+    Mesh *mesh, void *lf_p, const int layer_n, void *data_tmp, const float *loop_weights)
 {
   struct LoopGroupCD *lf = lf_p;
-  const int type = bm->ldata.layers[layer_n].type;
+  const int type = mesh->ldata.layers[layer_n].type;
   int i;
   const float *data_weights;
 
   /* re-weight */
-  float *temp_weights = BLI_array_alloca(temp_weights, lf->data_len);
+  float *temp_weights = lib_array_alloca(temp_weights, lf->data_len);
   float weight_accum = 0.0f;
 
   for (i = 0; i < lf->data_len; i++) {
@@ -1176,36 +1176,36 @@ static void bm_vert_loop_groups_data_layer_merge_weights__single(
     data_weights = lf->data_weights;
   }
 
-  CustomData_bmesh_interp_n(
-      &bm->ldata, (const void **)lf->data, data_weights, NULL, lf->data_len, data_tmp, layer_n);
+  CustomData_mesh_interp_n(
+      &mesh->ldata, (const void **)lf->data, data_weights, NULL, lf->data_len, data_tmp, layer_n);
 
   for (i = 0; i < lf->data_len; i++) {
     CustomData_copy_elements(type, data_tmp, lf->data[i], 1);
   }
 }
 
-void BM_vert_loop_groups_data_layer_merge(BMesh *bm, LinkNode *groups, const int layer_n)
+void mesh_vert_loop_groups_data_layer_merge(Mesh *mesh, LinkNode *groups, const int layer_n)
 {
-  const int type = bm->ldata.layers[layer_n].type;
+  const int type = mesh->ldata.layers[layer_n].type;
   const int size = CustomData_sizeof(type);
   void *data_tmp = alloca(size);
 
   do {
-    bm_vert_loop_groups_data_layer_merge__single(bm, groups->link, layer_n, data_tmp);
+    mesh_vert_loop_groups_data_layer_merge__single(mesh, groups->link, layer_n, data_tmp);
   } while ((groups = groups->next));
 }
 
-void BM_vert_loop_groups_data_layer_merge_weights(BMesh *bm,
-                                                  LinkNode *groups,
-                                                  const int layer_n,
-                                                  const float *loop_weights)
+void mesh_vert_loop_groups_data_layer_merge_weights(Mesh *mesh,
+                                                    LinkNode *groups,
+                                                    const int layer_n,
+                                                    const float *loop_weights)
 {
-  const int type = bm->ldata.layers[layer_n].type;
+  const int type = mesh->ldata.layers[layer_n].type;
   const int size = CustomData_sizeof(type);
   void *data_tmp = alloca(size);
 
   do {
-    bm_vert_loop_groups_data_layer_merge_weights__single(
-        bm, groups->link, layer_n, data_tmp, loop_weights);
+    mesh_vert_loop_groups_data_layer_merge_weights__single(
+        mesh, groups->link, layer_n, data_tmp, loop_weights);
   } while ((groups = groups->next));
 }
