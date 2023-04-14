@@ -75,23 +75,23 @@ void mesh_mesh_copy_arrays(Mesh *bm_src,
                            uint faces_src_len)
 {
   /* Vertices. */
-  BMVert **verts_dst = MEM_mallocN(sizeof(*verts_dst) * verts_src_len, __func__);
+  MeshVert **verts_dst = mem_mallocn(sizeof(*verts_dst) * verts_src_len, __func__);
   for (uint i = 0; i < verts_src_len; i++) {
-    BMVert *v_src = verts_src[i];
-    BM_elem_index_set(v_src, i); /* set_dirty! */
+    MeshVert *v_src = verts_src[i];
+    mesh_elem_index_set(v_src, i); /* set_dirty! */
 
-    BMVert *v_dst = bm_vert_copy(bm_src, bm_dst, v_src);
-    BM_elem_index_set(v_dst, i); /* set_ok */
+    MeshVert *v_dst = mesh_vert_copy(mesh_src, bm_dst, v_src);
+    mesh_elem_index_set(v_dst, i); /* set_ok */
     verts_dst[i] = v_dst;
   }
-  bm_src->elem_index_dirty |= BM_VERT;
-  bm_dst->elem_index_dirty &= ~BM_VERT;
+  mesh_src->elem_index_dirty |= MESH_VERT;
+  mesh_dst->elem_index_dirty &= ~MESH_VERT;
 
   /* Edges. */
-  BMEdge **edges_dst = MEM_mallocN(sizeof(*edges_dst) * edges_src_len, __func__);
+  MeshEdge **edges_dst = mem_mallocn(sizeof(*edges_dst) * edges_src_len, __func__);
   for (uint i = 0; i < edges_src_len; i++) {
-    BMEdge *e_src = edges_src[i];
-    BM_elem_index_set(e_src, i); /* set_dirty! */
+    MeshEdge *e_src = edges_src[i];
+    mesh_elem_index_set(e_src, i); /* set_dirty! */
 
     BMEdge *e_dst = bm_edge_copy_with_arrays(bm_src, bm_dst, e_src, verts_dst);
     BM_elem_index_set(e_dst, i);
