@@ -434,7 +434,7 @@ static GHash *mesh_log_compress_ids_to_indices(uint *ids, uint totid)
 }
 
 /* Release all ID keys in id_ghash */
-static void mesh_log_id_ghash_release(BMLog *log, GHash *id_ghash)
+static void mesh_log_id_ghash_release(MeshLog *log, GHash *id_ghash)
 {
   GHashIterator gh_iter;
 
@@ -462,9 +462,9 @@ MeshLog *mesh_log_create(Mesh *mesh)
   return log;
 }
 
-void BM_log_cleanup_entry(BMLogEntry *entry)
+void mesh_log_cleanup_entry(MeshLogEntry *entry)
 {
-  BMLog *log = entry->log;
+  MeshLog *log = entry->log;
 
   if (log) {
     /* Take all used IDs */
@@ -484,9 +484,9 @@ void BM_log_cleanup_entry(BMLogEntry *entry)
   }
 }
 
-BMLog *mesh_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry)
+MeshLog *mesh_log_from_existing_entries_create(BMesh *bm, BMLogEntry *entry)
 {
-  BMLog *log = BM_log_create(bm);
+  MeshLog *log = mesh_log_create(mesh);
 
   if (entry->prev) {
     log->current_entry = entry;
@@ -570,20 +570,20 @@ void mesh_log_mesh_elems_reorder(Mesh *mesh, MeshLog *log)
 
   /* Put all vertex IDs into an array */
   varr = mem_mallocn(sizeof(int) * (size_t)mesh->totvert, __func__);
-  MESH_ITER_INDEX (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
+  MESH_INDEX_ITER (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
     varr[i] = bm_log_vert_id_get(log, v);
   }
 
   /* Put all face IDs into an array */
   farr = mem_mallocn(sizeof(int) * (size_t)mesh->totface, __func__);
-  MESH_ITER_INDEX (f, &mesh_iter, mesh, MESH_FACES_OF_MESH, i) {
+  MESH_INDEX_ITER (f, &mesh_iter, mesh, MESH_FACES_OF_MESH, i) {
     farr[i] = mesh_log_face_id_get(log, f);
   }
 
   /* Create MeshVert index remap array */
   id_to_idx = mesh_log_compress_ids_to_indices(varr, (uint)bm->totvert);
-  MESH_ITER_INDEX (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
-    const uint id = bm_log_vert_id_get(log, v);
+  MESH_INDEX_ITER_ (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
+    const uint id = mesh_log_vert_id_get(log, v);
     const void *key = PTR_FROM_UINT(id);
     const void *val = lib_ghash_lookup(id_to_idx, key);
     varr[i] = PTR_AS_UINT(val);
@@ -676,8 +676,8 @@ void mesh_log_entry_drop(MeshLogEntry *entry)
      * Also, design wise, a first entry should not have any deleted vertices since it
      * should not have anything to delete them -from-
      */
-    // bm_log_id_ghash_release(log, entry->deleted_faces);
-    // bm_log_id_ghash_release(log, entry->deleted_verts);
+    // mesh_log_id_ghash_release(log, entry->deleted_faces);
+    // mesh_log_id_ghash_release(log, entry->deleted_verts);
   }
   else if (!entry->next) {
     /* Release IDs of elements that are added by this entry. Since
@@ -836,7 +836,7 @@ void mesh_log_face_removed(MeshLog *log, MeshFace *f)
   else {
     MeshLogFace *lf;
 
-    lf = bm_log_face_alloc(log, f);
+    lf = mesh_log_face_alloc(log, f);
     lib_ghash_insert(entry->deleted_faces, key, lf);
   }
 }
@@ -858,12 +858,12 @@ void mesh_log_all_added(Mesh *mesh, MeshLog *log)
   }
 
   /* Log all vertices as newly created */
-  MESH_ITER_MESH (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH) {
+  MESH_ITER (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH) {
     mesh_log_vert_added(log, v, cd_vert_mask_offset);
   }
 
   /* Log all faces as newly created */
-  MESH_ITER_MESH (f, &mesh_iter, mesh, MESH_FACES_OF_MESH) {
+  MESH_ITER (f, &mesh_iter, mesh, MESH_FACES_OF_MESH) {
     mesh_log_face_added(log, f);
   }
 }
