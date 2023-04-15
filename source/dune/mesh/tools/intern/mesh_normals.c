@@ -1,50 +1,44 @@
-/** \file
- * \ingroup bmesh
- *
- * BM mesh normal calculation functions.
- *
- * \see mesh_normals.cc for the equivalent #Mesh functionality.
+/**
+ * mesh normal calculation functions.
+ * mesh_normals.cc for the equivalent #Mesh functionality.
  */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_scene_types.h"
+#include "types_scene.h"
 
-#include "BLI_bitmap.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_math.h"
-#include "BLI_stack.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "lib_bitmap.h"
+#include "lib_linklist_stack.h"
+#include "lib_math.h"
+#include "lib_stack.h"
+#include "lib_task.h"
+#include "lib_utildefines.h"
 
-#include "BKE_customdata.h"
-#include "BKE_editmesh.h"
-#include "BKE_global.h"
-#include "BKE_mesh.h"
+#include "dune_customdata.h"
+#include "dune_editmesh.h"
+#include "dune_global.h"
+#include "dune_mesh.h"
 
-#include "intern/bmesh_private.h"
+#include "intern/mesh_private.h"
 
 /* Smooth angle to use when tagging edges is disabled entirely. */
 #define EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS -FLT_MAX
 
-static void bm_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
-                                                  BMEdge *e,
+static void mesh_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
+                                                  MeshEdge *e,
                                                   const float split_angle_cos);
-static void bm_edge_tag_from_smooth(const float (*fnos)[3],
+static void mesh_edge_tag_from_smooth(const float (*fnos)[3],
                                     BMEdge *e,
                                     const float split_angle_cos);
 
 /* -------------------------------------------------------------------- */
-/** \name Update Vertex & Face Normals
- * \{ */
+/** Update Vertex & Face Normals **/
 
-/**
- * Helpers for #BM_mesh_normals_update and #BM_verts_calc_normal_vcos
- */
+/** Helpers for mesh_normals_update and mesh_verts_calc_normal_vcos */
 
 /* We use that existing internal API flag,
  * assuming no other tool using it would run concurrently to clnors editing. */
-#define BM_LNORSPACE_UPDATE _FLAG_MF
+#define MESH_LNORSPACE_UPDATE _FLAG_MF
 
 typedef struct BMVertsCalcNormalsWithCoordsData {
   /* Read-only data. */
