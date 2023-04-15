@@ -28,8 +28,8 @@ static void mesh_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
                                                   MeshEdge *e,
                                                   const float split_angle_cos);
 static void mesh_edge_tag_from_smooth(const float (*fnos)[3],
-                                    BMEdge *e,
-                                    const float split_angle_cos);
+                                      MeshEdge *e,
+                                      const float split_angle_cos);
 
 /* -------------------------------------------------------------------- */
 /** Update Vertex & Face Normals **/
@@ -47,9 +47,9 @@ typedef struct BMVertsCalcNormalsWithCoordsData {
 
   /* Write data. */
   float (*vnos)[3];
-} BMVertsCalcNormalsWithCoordsData;
+} MeshVertsCalcNormalsWithCoordsData;
 
-BLI_INLINE void bm_vert_calc_normals_accum_loop(const BMLoop *l_iter,
+LIB_INLINE void mesh_vert_calc_normals_accum_loop(const BMLoop *l_iter,
                                                 const float e1diff[3],
                                                 const float e2diff[3],
                                                 const float f_no[3],
@@ -64,11 +64,11 @@ BLI_INLINE void bm_vert_calc_normals_accum_loop(const BMLoop *l_iter,
   }
   const float fac = saacos(-dotprod);
   /* Shouldn't happen as normalizing edge-vectors cause degenerate values to be zeroed out. */
-  BLI_assert(!isnan(fac));
+  lib_assert(!isnan(fac));
   madd_v3_v3fl(v_no, f_no, fac);
 }
 
-static void bm_vert_calc_normals_impl(BMVert *v)
+static void mesh_vert_calc_normals_impl(MeshVert *v)
 {
   /* Note on redundant unit-length edge-vector calculation:
    *
@@ -85,7 +85,7 @@ static void bm_vert_calc_normals_impl(BMVert *v)
    * so face loops that share an edge would not calculate it multiple times.
    * From my tests the performance improvements are so small they're difficult to measure,
    * the time saved removing `sqrtf` calls is lost on storing and looking up the information,
-   * even in the case of `BLI_smallhash.h` & small inline lookup tables.
+   * even in the case of `lib_smallhash.h` & small inline lookup tables.
    *
    * Further, local data structures would need to support cases where
    * stack memory isn't sufficient - adding additional complexity for corner-cases
@@ -100,28 +100,28 @@ static void bm_vert_calc_normals_impl(BMVert *v)
   float *v_no = v->no;
   zero_v3(v_no);
 
-  BMEdge *e_first = v->e;
+  MeshEdge *e_first = v->e;
   if (e_first != NULL) {
     float e1diff[3], e2diff[3];
-    BMEdge *e_iter = e_first;
+    MeshEdge *e_iter = e_first;
     do {
-      BMLoop *l_first = e_iter->l;
+      MeshLoop *l_first = e_iter->l;
       if (l_first != NULL) {
         sub_v3_v3v3(e2diff, e_iter->v1->co, e_iter->v2->co);
         normalize_v3(e2diff);
 
-        BMLoop *l_iter = l_first;
+        MeshLoop *l_iter = l_first;
         do {
           if (l_iter->v == v) {
-            BMEdge *e_prev = l_iter->prev->e;
+            MeshEdge *e_prev = l_iter->prev->e;
             sub_v3_v3v3(e1diff, e_prev->v1->co, e_prev->v2->co);
             normalize_v3(e1diff);
 
-            bm_vert_calc_normals_accum_loop(l_iter, e1diff, e2diff, l_iter->f->no, v_no);
+            mesh_vert_calc_normals_accum_loop(l_iter, e1diff, e2diff, l_iter->f->no, v_no);
           }
         } while ((l_iter = l_iter->radial_next) != l_first);
       }
-    } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, v)) != e_first);
+    } while ((e_iter = MESH_DISK_EDGE_NEXT(e_iter, v)) != e_first);
 
     if (LIKELY(normalize_v3(v_no) != 0.0f)) {
       return;
@@ -131,94 +131,94 @@ static void bm_vert_calc_normals_impl(BMVert *v)
   normalize_v3_v3(v_no, v->co);
 }
 
-static void bm_vert_calc_normals_cb(void *UNUSED(userdata),
-                                    MempoolIterData *mp_v,
-                                    const TaskParallelTLS *__restrict UNUSED(tls))
+static void mesh_vert_calc_normals_cb(void *UNUSED(userdata),
+                                      MempoolIterData *mp_v,
+                                      const TaskParallelTLS *__restrict UNUSED(tls))
 {
-  BMVert *v = (BMVert *)mp_v;
-  bm_vert_calc_normals_impl(v);
+  MeshVert *v = (MeshVert *)mp_v;
+  mesh_vert_calc_normals_impl(v);
 }
 
-static void bm_vert_calc_normals_with_coords(BMVert *v, BMVertsCalcNormalsWithCoordsData *data)
+static void mesh_vert_calc_normals_with_coords(MeehVert *v, MeshVertsCalcNormalsWithCoordsData *data)
 {
-  /* See #bm_vert_calc_normals_impl note on performance. */
-  float *v_no = data->vnos[BM_elem_index_get(v)];
+  /* See mesh_vert_calc_normals_impl note on performance. */
+  float *v_no = data->vnos[mesh_elem_index_get(v)];
   zero_v3(v_no);
 
   /* Loop over edges. */
-  BMEdge *e_first = v->e;
+  MeshEdge *e_first = v->e;
   if (e_first != NULL) {
     float e1diff[3], e2diff[3];
-    BMEdge *e_iter = e_first;
+    MeshEdge *e_iter = e_first;
     do {
-      BMLoop *l_first = e_iter->l;
+      MeshLoop *l_first = e_iter->l;
       if (l_first != NULL) {
         sub_v3_v3v3(e2diff,
-                    data->vcos[BM_elem_index_get(e_iter->v1)],
-                    data->vcos[BM_elem_index_get(e_iter->v2)]);
+                    data->vcos[mesh_elem_index_get(e_iter->v1)],
+                    data->vcos[mesh_elem_index_get(e_iter->v2)]);
         normalize_v3(e2diff);
 
-        BMLoop *l_iter = l_first;
+        MeshLoop *l_iter = l_first;
         do {
           if (l_iter->v == v) {
-            BMEdge *e_prev = l_iter->prev->e;
+            MeshEdge *e_prev = l_iter->prev->e;
             sub_v3_v3v3(e1diff,
-                        data->vcos[BM_elem_index_get(e_prev->v1)],
-                        data->vcos[BM_elem_index_get(e_prev->v2)]);
+                        data->vcos[mesh_elem_index_get(e_prev->v1)],
+                        data->vcos[mesh_elem_index_get(e_prev->v2)]);
             normalize_v3(e1diff);
 
-            bm_vert_calc_normals_accum_loop(
-                l_iter, e1diff, e2diff, data->fnos[BM_elem_index_get(l_iter->f)], v_no);
+            mesh_vert_calc_normals_accum_loop(
+                l_iter, e1diff, e2diff, data->fnos[mesh_elem_index_get(l_iter->f)], v_no);
           }
         } while ((l_iter = l_iter->radial_next) != l_first);
       }
-    } while ((e_iter = BM_DISK_EDGE_NEXT(e_iter, v)) != e_first);
+    } while ((e_iter = MESH_DISK_EDGE_NEXT(e_iter, v)) != e_first);
 
     if (LIKELY(normalize_v3(v_no) != 0.0f)) {
       return;
     }
   }
   /* Fallback normal. */
-  normalize_v3_v3(v_no, data->vcos[BM_elem_index_get(v)]);
+  normalize_v3_v3(v_no, data->vcos[mesh_elem_index_get(v)]);
 }
 
-static void bm_vert_calc_normals_with_coords_cb(void *userdata,
-                                                MempoolIterData *mp_v,
-                                                const TaskParallelTLS *__restrict UNUSED(tls))
+static void mesh_vert_calc_normals_with_coords_cb(void *userdata,
+                                                  MempoolIterData *mp_v,
+                                                  const TaskParallelTLS *__restrict UNUSED(tls))
 {
-  BMVertsCalcNormalsWithCoordsData *data = userdata;
-  BMVert *v = (BMVert *)mp_v;
-  bm_vert_calc_normals_with_coords(v, data);
+  MeshVertsCalcNormalsWithCoordsData *data = userdata;
+  MeshVert *v = (MeshVert *)mp_v;
+  mesh_vert_calc_normals_with_coords(v, data);
 }
 
-static void bm_mesh_verts_calc_normals(BMesh *bm,
+static void mesh_verts_calc_normals(Mesh *mesh,
                                        const float (*fnos)[3],
                                        const float (*vcos)[3],
                                        float (*vnos)[3])
 {
-  BM_mesh_elem_index_ensure(bm, BM_FACE | ((vnos || vcos) ? BM_VERT : 0));
+  mesh_elem_index_ensure(mesh, MESH_FACE | ((vnos || vcos) ? MESH_VERT : 0));
 
   TaskParallelSettings settings;
-  BLI_parallel_mempool_settings_defaults(&settings);
-  settings.use_threading = bm->totvert >= BM_OMP_LIMIT;
+  lib_parallel_mempool_settings_defaults(&settings);
+  settings.use_threading = mesh->totvert >= MESH_OMP_LIMIT;
 
   if (vcos == NULL) {
-    BM_iter_parallel(bm, BM_VERTS_OF_MESH, bm_vert_calc_normals_cb, NULL, &settings);
+    mesh_iter_parallel(mesh, MESH_VERTS_OF_MESH, mesh_vert_calc_normals_cb, NULL, &settings);
   }
   else {
-    BLI_assert(!ELEM(NULL, fnos, vnos));
-    BMVertsCalcNormalsWithCoordsData data = {
+    lib_assert(!ELEM(NULL, fnos, vnos));
+    MeshVertsCalcNormalsWithCoordsData data = {
         .fnos = fnos,
         .vcos = vcos,
         .vnos = vnos,
     };
-    BM_iter_parallel(bm, BM_VERTS_OF_MESH, bm_vert_calc_normals_with_coords_cb, &data, &settings);
+    mesh_iter_parallel(mesh, MESH_VERTS_OF_MESH, mesh_vert_calc_normals_with_coords_cb, &data, &settings);
   }
 }
 
-static void bm_face_calc_normals_cb(void *UNUSED(userdata),
-                                    MempoolIterData *mp_f,
-                                    const TaskParallelTLS *__restrict UNUSED(tls))
+static void mesh_face_calc_normals_cb(void *UNUSED(userdata),
+                                      MempoolIterData *mp_f,
+                                      const TaskParallelTLS *__restrict UNUSED(tls))
 {
   BMFace *f = (BMFace *)mp_f;
 
