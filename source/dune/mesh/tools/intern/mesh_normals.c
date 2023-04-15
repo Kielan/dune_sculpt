@@ -1154,7 +1154,7 @@ typedef struct MeshLoopsCalcNormalsWithCoords_TLS {
   MeshLoopNorSpaceArray lnors_spacearr_buf;
 } MeshLoopsCalcNormalsWithCoords_TLS;
 
-static voidmesh_loops_calc_normals_for_vert_init_fn(const void *__restrict userdata,
+static void mesh_loops_calc_normals_for_vert_init_fn(const void *__restrict userdata,
                                                         void *__restrict chunk)
 {
   const MeshLoopsCalcNormalsWithCoordsData *data = userdata;
@@ -1217,52 +1217,52 @@ static void mesh_loops_calc_normals_for_vert_with_clnors_fn(
                                                   v);
 }
 
-static void bm_mesh_loops_calc_normals_for_vert_without_clnors_fn(
+static void mesh_loops_calc_normals_for_vert_without_clnors_fn(
     void *userdata, MempoolIterData *mp_v, const TaskParallelTLS *__restrict tls)
 {
-  BMVert *v = (BMVert *)mp_v;
+  MeshVert *v = (MeshVert *)mp_v;
   if (v->e == NULL) {
     return;
   }
-  BMLoopsCalcNormalsWithCoordsData *data = userdata;
-  BMLoopsCalcNormalsWithCoords_TLS *tls_data = tls->userdata_chunk;
-  bm_mesh_loops_calc_normals_for_vert_without_clnors(data->bm,
-                                                     data->vcos,
-                                                     data->fnos,
-                                                     data->r_lnos,
+  MeshLoopsCalcNormalsWithCoordsData *data = userdata;
+  MeshLoopsCalcNormalsWithCoords_TLS *tls_data = tls->userdata_chunk;
+  Mesh_loops_calc_normals_for_vert_without_clnors(data->mesh,
+                                                  data->vcos,
+                                                  data->fnos,
+                                                  data->r_lnos,
 
-                                                     data->do_rebuild,
-                                                     data->split_angle_cos,
-                                                     /* Thread local. */
-                                                     tls_data->lnors_spacearr,
-                                                     tls_data->edge_vectors,
-                                                     /* Iterate over. */
-                                                     v);
+                                                  data->do_rebuild,
+                                                  data->split_angle_cos,
+                                                  /* Thread local. */
+                                                  tls_data->lnors_spacearr,
+                                                  tls_data->edge_vectors,
+                                                  /* Iterate over. */
+                                                  v);
 }
 
-static void bm_mesh_loops_calc_normals__multi_threaded(BMesh *bm,
-                                                       const float (*vcos)[3],
-                                                       const float (*fnos)[3],
-                                                       float (*r_lnos)[3],
-                                                       MLoopNorSpaceArray *r_lnors_spacearr,
-                                                       const short (*clnors_data)[2],
-                                                       const int cd_loop_clnors_offset,
-                                                       const bool do_rebuild,
-                                                       const float split_angle_cos)
+static void mesh_loops_calc_normals__multi_threaded(Mesh *mesh,
+                                                    const float (*vcos)[3],
+                                                    const float (*fnos)[3],
+                                                    float (*r_lnos)[3],
+                                                    MeshLoopNorSpaceArray *r_lnors_spacearr,
+                                                    const short (*clnors_data)[2],
+                                                    Mesh const int cd_loop_clnors_offset,
+                                                    const bool do_rebuild,
+                                                    const float split_angle_cos)
 {
   const bool has_clnors = clnors_data || (cd_loop_clnors_offset != -1);
-  MLoopNorSpaceArray _lnors_spacearr = {NULL};
+  MeshLoopNorSpaceArray _lnors_spacearr = {NULL};
 
   {
-    char htype = BM_LOOP;
+    char htype = MESH_LOOP;
     if (vcos) {
-      htype |= BM_VERT;
+      htype |= MESH_VERT;
     }
     if (fnos) {
-      htype |= BM_FACE;
+      htype |= MESH_FACE;
     }
     /* Face/Loop indices are set inline below. */
-    BM_mesh_elem_index_ensure(bm, htype);
+    mesh_elem_index_ensure(mesh, htype);
   }
 
   if (!r_lnors_spacearr && has_clnors) {
@@ -1270,7 +1270,7 @@ static void bm_mesh_loops_calc_normals__multi_threaded(BMesh *bm,
     r_lnors_spacearr = &_lnors_spacearr;
   }
   if (r_lnors_spacearr) {
-    BKE_lnor_spacearr_init(r_lnors_spacearr, bm->totloop, MLNOR_SPACEARR_BMLOOP_PTR);
+    dune_lnor_spacearr_init(r_lnors_spacearr, bm->totloop, MLNOR_SPACEARR_BMLOOP_PTR);
   }
 
   /* We now know edges that can be smoothed (they are tagged),
@@ -1279,18 +1279,18 @@ static void bm_mesh_loops_calc_normals__multi_threaded(BMesh *bm,
    */
 
   TaskParallelSettings settings;
-  BLI_parallel_mempool_settings_defaults(&settings);
+  lib_parallel_mempool_settings_defaults(&settings);
 
-  BMLoopsCalcNormalsWithCoords_TLS tls = {NULL};
+  MeshLoopsCalcNormalsWithCoords_TLS tls = {NULL};
 
   settings.userdata_chunk = &tls;
   settings.userdata_chunk_size = sizeof(tls);
 
-  settings.func_init = bm_mesh_loops_calc_normals_for_vert_init_fn;
-  settings.func_reduce = bm_mesh_loops_calc_normals_for_vert_reduce_fn;
-  settings.func_free = bm_mesh_loops_calc_normals_for_vert_free_fn;
+  settings.func_init = mesh_loops_calc_normals_for_vert_init_fn;
+  settings.func_reduce = mesh_loops_calc_normals_for_vert_reduce_fn;
+  settings.func_free = mesh_loops_calc_normals_for_vert_free_fn;
 
-  BMLoopsCalcNormalsWithCoordsData data = {
+  MeshLoopsCalcNormalsWithCoordsData data = {
       .bm = bm,
       .vcos = vcos,
       .fnos = fnos,
