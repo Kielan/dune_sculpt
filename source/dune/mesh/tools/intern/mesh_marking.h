@@ -164,18 +164,16 @@ bool mesh_select_history_active_get(Mesh *mesh, struct MeshEditSelection *ese);
  * Return a map from MeshVert/MeshEdge/MeshFace -> MeshEditSelection. */
 struct GHash *mesh_select_history_map_create(Mesh *mesh);
 
-/**
- * Map arguments may all be the same pointer.
- */
+/** Map arguments may all be the same pointer. */
 void mesh_select_history_merge_from_targetmap(
     Mesh *mesh, GHash *vert_map, GHash *edge_map, GHash *face_map, bool use_chain);
 
-#define BM_SELECT_HISTORY_BACKUP(bm) \
+#define MESH_SELECT_HISTORY_BACKUP(mesh) \
   { \
-    ListBase _bm_prev_selected = (bm)->selected; \
-    BLI_listbase_clear(&(bm)->selected)
+    ListBase _mesh_prev_selected = (mesh)->selected; \
+    lib_listbase_clear(&(mesh)->selected)
 
-#define BM_SELECT_HISTORY_RESTORE(bm) \
-  (bm)->selected = _bm_prev_selected; \
+#define MESH_SELECT_HISTORY_RESTORE(mesh) \
+  (mesh)->selected = _mesh_prev_selected; \
   } \
   (void)0
