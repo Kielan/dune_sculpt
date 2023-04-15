@@ -220,20 +220,20 @@ static void mesh_face_calc_normals_cb(void *UNUSED(userdata),
                                       MempoolIterData *mp_f,
                                       const TaskParallelTLS *__restrict UNUSED(tls))
 {
-  BMFace *f = (BMFace *)mp_f;
+  MeshFace *f = (MeshFace *)mp_f;
 
-  BM_face_calc_normal(f, f->no);
+  mesh_face_calc_normal(f, f->no);
 }
 
-void BM_mesh_normals_update_ex(BMesh *bm, const struct BMeshNormalsUpdate_Params *params)
+void mesh_normals_update_ex(Mesh *mesh, const struct MeshNormalsUpdateParams *params)
 {
   if (params->face_normals) {
     /* Calculate all face normals. */
     TaskParallelSettings settings;
-    BLI_parallel_mempool_settings_defaults(&settings);
-    settings.use_threading = bm->totedge >= BM_OMP_LIMIT;
+    lib_parallel_mempool_settings_defaults(&settings);
+    settings.use_threading = mesh->totedge >= MESH_OMP_LIMIT;
 
-    mesh_iter_parallel(mesh, MESH_FACES_OF_MESH, bm_face_calc_normals_cb, NULL, &settings);
+    mesh_iter_parallel(mesh, MESH_FACES_OF_MESH, mesh_face_calc_normals_cb, NULL, &settings);
   }
 
   /* Add weighted face normals to vertices, and normalize vert normals. */
@@ -254,8 +254,8 @@ void mesh_normals_update(Mesh *mesh)
 static void mesh_partial_faces_parallel_range_calc_normals_cb(
     void *userdata, const int iter, const TaskParallelTLS *__restrict UNUSED(tls))
 {
-  BMFace *f = ((BMFace **)userdata)[iter];
-  BM_face_calc_normal(f, f->no);
+  MeshFace *f = ((MeshFace **)userdata)[iter];
+  mesh_face_calc_normal(f, f->no);
 }
 
 static void mesh_partial_verts_parallel_range_calc_normal_cb(
