@@ -1195,7 +1195,7 @@ static void dune_mesh_loops_calc_normals_for_vert_free_fn(const void *__restrict
 static void mesh_loops_calc_normals_for_vert_with_clnors_fn(
     void *userdata, MempoolIterData *mp_v, const TaskParallelTLS *__restrict tls)
 {
-  MeshVert *v = (BMVert *)mp_v;
+  MeshVert *v = (MeshVert *)mp_v;
   if (v->e == NULL) {
     return;
   }
@@ -1226,7 +1226,7 @@ static void mesh_loops_calc_normals_for_vert_without_clnors_fn(
   }
   MeshLoopsCalcNormalsWithCoordsData *data = userdata;
   MeshLoopsCalcNormalsWithCoords_TLS *tls_data = tls->userdata_chunk;
-  Mesh_loops_calc_normals_for_vert_without_clnors(data->mesh,
+  mesh_loops_calc_normals_for_vert_without_clnors(data->mesh,
                                                   data->vcos,
                                                   data->fnos,
                                                   data->r_lnos,
@@ -1291,7 +1291,7 @@ static void mesh_loops_calc_normals__multi_threaded(Mesh *mesh,
   settings.func_free = mesh_loops_calc_normals_for_vert_free_fn;
 
   MeshLoopsCalcNormalsWithCoordsData data = {
-      .bm = bm,
+      .mesh = mesh,
       .vcos = vcos,
       .fnos = fnos,
       .r_lnos = r_lnos,
@@ -1302,16 +1302,16 @@ static void mesh_loops_calc_normals__multi_threaded(Mesh *mesh,
       .split_angle_cos = split_angle_cos,
   };
 
-  BM_iter_parallel(bm,
-                   BM_VERTS_OF_MESH,
-                   has_clnors ? bm_mesh_loops_calc_normals_for_vert_with_clnors_fn :
-                                bm_mesh_loops_calc_normals_for_vert_without_clnors_fn,
+  mesh_iter_parallel(mesh,
+                     MESH_VERTS_OF_MESH,
+                     has_clnors ? mesh_loops_calc_normals_for_vert_with_clnors_fn :
+                                mesh_loops_calc_normals_for_vert_without_clnors_fn,
                    &data,
                    &settings);
 
   if (r_lnors_spacearr) {
     if (r_lnors_spacearr == &_lnors_spacearr) {
-      BKE_lnor_spacearr_free(r_lnors_spacearr);
+      dune_lnor_spacearr_free(r_lnors_spacearr);
     }
   }
 }
