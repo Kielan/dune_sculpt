@@ -803,15 +803,15 @@ static void mesh_edge_tag_from_smooth(const float (*fnos)[3], MeshEdge *e, const
  * A version of mesh_edge_tag_from_smooth that sets sharp edges
  * when they would be considered smooth but exceed the split angle .
  *
- * \note This doesn't have the same atomic requirement as #bm_edge_tag_from_smooth
+ * This doesn't have the same atomic requirement as #bm_edge_tag_from_smooth
  * since it isn't run from multiple threads at once.
  */
-static void bm_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
+static void mesh_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
                                                   BMEdge *e,
                                                   const float split_angle_cos)
 {
-  BLI_assert(e->l != NULL);
-  BMLoop *l_a = e->l, *l_b = l_a->radial_next;
+  lib_assert(e->l != NULL);
+  MeshLoop *l_a = e->l, *l_b = l_a->radial_next;
   bool is_smooth = false;
   if (bm_edge_is_smooth_no_angle_test(e, l_a, l_b)) {
     if (split_angle_cos != -1.0f) {
@@ -825,7 +825,7 @@ static void bm_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
         /* Note that we do not care about the other sharp-edge cases
          * (sharp poly, non-manifold edge, etc.),
          * only tag edge as sharp when it is due to angle threshold. */
-        BM_elem_flag_disable(e, BM_ELEM_SMOOTH);
+        mesh_elem_flag_disable(e, MESH_ELEM_SMOOTH);
       }
     }
     else {
@@ -998,13 +998,13 @@ static void mesh_loops_calc_normals_for_vert_without_clnors(
       if (l_curr->v != v) {
         continue;
       }
-      mesh_elem_flag_disable(l_curr, BM_ELEM_TAG);
+      mesh_elem_flag_disable(l_curr, MESH_ELEM_TAG);
     } while ((l_curr = l_curr->radial_next) != e_curr_iter->l);
-  } while ((e_curr_iter = BM_DISK_EDGE_NEXT(e_curr_iter, v)) != v->e);
+  } while ((e_curr_iter = MESH_DISK_EDGE_NEXT(e_curr_iter, v)) != v->e);
 
   e_curr_iter = v->e;
   do { /* Edges of vertex. */
-    BMLoop *l_curr = e_curr_iter->l;
+    MeshLoop *l_curr = e_curr_iter->l;
     if (l_curr == NULL) {
       continue;
     }
@@ -1012,8 +1012,8 @@ static void mesh_loops_calc_normals_for_vert_without_clnors(
       if (l_curr->v != v) {
         continue;
       }
-      if (do_rebuild && !BM_ELEM_API_FLAG_TEST(l_curr, BM_LNORSPACE_UPDATE) &&
-          !(bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL)) {
+      if (do_rebuild && !MESH_ELEM_API_FLAG_TEST(l_curr, MESH_LNORSPACE_UPDATE) &&
+          !(mesh->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL)) {
         continue;
       }
       bm_mesh_loops_calc_normals_for_loop(bm,
