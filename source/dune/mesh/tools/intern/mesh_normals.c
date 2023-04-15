@@ -1135,7 +1135,7 @@ typedef struct MeshLoopsCalcNormalsWithCoordsData {
   /* Read-only data. */
   const float (*fnos)[3];
   const float (*vcos)[3];
-  BMesh *bm;
+  Mesh *mesh;
   const short (*clnors_data)[2];
   const int cd_loop_clnors_offset;
   const bool do_rebuild;
@@ -1143,25 +1143,25 @@ typedef struct MeshLoopsCalcNormalsWithCoordsData {
 
   /* Output. */
   float (*r_lnos)[3];
-  MLoopNorSpaceArray *r_lnors_spacearr;
-} BMLoopsCalcNormalsWithCoordsData;
+  MeshLoopNorSpaceArray *r_lnors_spacearr;
+} MeshLoopsCalcNormalsWithCoordsData;
 
-typedef struct BMLoopsCalcNormalsWithCoords_TLS {
-  BLI_Stack *edge_vectors;
+typedef struct MeshLoopsCalcNormalsWithCoords_TLS {
+  LibStack *edge_vectors;
 
-  /** Copied from #BMLoopsCalcNormalsWithCoordsData.r_lnors_spacearr when it's not NULL. */
-  MLoopNorSpaceArray *lnors_spacearr;
-  MLoopNorSpaceArray lnors_spacearr_buf;
-} BMLoopsCalcNormalsWithCoords_TLS;
+  /** Copied from MeshLoopsCalcNormalsWithCoordsData.r_lnors_spacearr when it's not NULL. */
+  MeshLoopNorSpaceArray *lnors_spacearr;
+  MeshLoopNorSpaceArray lnors_spacearr_buf;
+} MeshLoopsCalcNormalsWithCoords_TLS;
 
-static void bm_mesh_loops_calc_normals_for_vert_init_fn(const void *__restrict userdata,
+static voidmesh_loops_calc_normals_for_vert_init_fn(const void *__restrict userdata,
                                                         void *__restrict chunk)
 {
-  const BMLoopsCalcNormalsWithCoordsData *data = userdata;
-  BMLoopsCalcNormalsWithCoords_TLS *tls_data = chunk;
+  const MeshLoopsCalcNormalsWithCoordsData *data = userdata;
+  MeshLoopsCalcNormalsWithCoords_TLS *tls_data = chunk;
   if (data->r_lnors_spacearr) {
-    tls_data->edge_vectors = BLI_stack_new(sizeof(float[3]), __func__);
-    BKE_lnor_spacearr_tls_init(data->r_lnors_spacearr, &tls_data->lnors_spacearr_buf);
+    tls_data->edge_vectors = lib_stack_new(sizeof(float[3]), __func__);
+    dune_lnor_spacearr_tls_init(data->r_lnors_spacearr, &tls_data->lnors_spacearr_buf);
     tls_data->lnors_spacearr = &tls_data->lnors_spacearr_buf;
   }
   else {
@@ -1169,39 +1169,39 @@ static void bm_mesh_loops_calc_normals_for_vert_init_fn(const void *__restrict u
   }
 }
 
-static void bm_mesh_loops_calc_normals_for_vert_reduce_fn(const void *__restrict userdata,
-                                                          void *__restrict UNUSED(chunk_join),
-                                                          void *__restrict chunk)
+static void mesh_loops_calc_normals_for_vert_reduce_fn(const void *__restrict userdata,
+                                                       void *__restrict UNUSED(chunk_join),
+                                                       void *__restrict chunk)
 {
-  const BMLoopsCalcNormalsWithCoordsData *data = userdata;
-  BMLoopsCalcNormalsWithCoords_TLS *tls_data = chunk;
+  const MeshLoopsCalcNormalsWithCoordsData *data = userdata;
+  MeshLoopsCalcNormalsWithCoords_TLS *tls_data = chunk;
 
   if (data->r_lnors_spacearr) {
-    BKE_lnor_spacearr_tls_join(data->r_lnors_spacearr, tls_data->lnors_spacearr);
+    dune_lnor_spacearr_tls_join(data->r_lnors_spacearr, tls_data->lnors_spacearr);
   }
 }
 
-static void bm_mesh_loops_calc_normals_for_vert_free_fn(const void *__restrict userdata,
+static void dune_mesh_loops_calc_normals_for_vert_free_fn(const void *__restrict userdata,
                                                         void *__restrict chunk)
 {
-  const BMLoopsCalcNormalsWithCoordsData *data = userdata;
-  BMLoopsCalcNormalsWithCoords_TLS *tls_data = chunk;
+  const MeshLoopsCalcNormalsWithCoordsData *data = userdata;
+  MeshLoopsCalcNormalsWithCoords_TLS *tls_data = chunk;
 
   if (data->r_lnors_spacearr) {
-    BLI_stack_free(tls_data->edge_vectors);
+    lib_stack_free(tls_data->edge_vectors);
   }
 }
 
-static void bm_mesh_loops_calc_normals_for_vert_with_clnors_fn(
+static void mesh_loops_calc_normals_for_vert_with_clnors_fn(
     void *userdata, MempoolIterData *mp_v, const TaskParallelTLS *__restrict tls)
 {
-  BMVert *v = (BMVert *)mp_v;
+  MeshVert *v = (BMVert *)mp_v;
   if (v->e == NULL) {
     return;
   }
-  BMLoopsCalcNormalsWithCoordsData *data = userdata;
-  BMLoopsCalcNormalsWithCoords_TLS *tls_data = tls->userdata_chunk;
-  bm_mesh_loops_calc_normals_for_vert_with_clnors(data->bm,
+  MeshLoopsCalcNormalsWithCoordsData *data = userdata;
+  MeshLoopsCalcNormalsWithCoords_TLS *tls_data = tls->userdata_chunk;
+  mesh_loops_calc_normals_for_vert_with_clnors(data->bm,
                                                   data->vcos,
                                                   data->fnos,
                                                   data->r_lnos,
