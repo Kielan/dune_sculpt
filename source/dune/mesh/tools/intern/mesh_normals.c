@@ -399,19 +399,16 @@ void BM_edges_sharp_from_angle_set(BMesh *bm, const float split_angle)
   bm_mesh_edges_sharp_tag(bm, NULL, cosf(split_angle), true);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Loop Normals Calculation API
- * \{ */
+/** Loop Normals Calculation API **/
 
-bool BM_loop_check_cyclic_smooth_fan(BMLoop *l_curr)
+bool mesh_loop_check_cyclic_smooth_fan(MeshLoop *l_curr)
 {
-  BMLoop *lfan_pivot_next = l_curr;
-  BMEdge *e_next = l_curr->e;
+  MeshLoop *lfan_pivot_next = l_curr;
+  MeshEdge *e_next = l_curr->e;
 
-  BLI_assert(!BM_elem_flag_test(lfan_pivot_next, BM_ELEM_TAG));
-  BM_elem_flag_enable(lfan_pivot_next, BM_ELEM_TAG);
+  lib_assert(!mesh_elem_flag_test(lfan_pivot_next, MESH_ELEM_TAG));
+  mesh_elem_flag_enable(lfan_pivot_next, MESH_ELEM_TAG);
 
   while (true) {
     /* Much simpler than in sibling code with basic Mesh data! */
