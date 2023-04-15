@@ -18,29 +18,29 @@ typedef enum eMeshSelectionFlushFLags {
 
 /* Geometry hiding code. */
 
-#define BM_elem_hide_set(bm, ele, hide) _bm_elem_hide_set(bm, &(ele)->head, hide)
-void _bm_elem_hide_set(BMesh *bm, BMHeader *head, bool hide);
-void BM_vert_hide_set(BMVert *v, bool hide);
-void BM_edge_hide_set(BMEdge *e, bool hide);
-void BM_face_hide_set(BMFace *f, bool hide);
+#define mesh_elem_hide_set(mesh, ele, hide) _bm_elem_hide_set(bm, &(ele)->head, hide)
+void _mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, bool hide);
+void mesh_vert_hide_set(MeshVert *v, bool hide);
+void mesh_edge_hide_set(MeshEdge *e, bool hide);
+void mesh_face_hide_set(MeshFace *f, bool hide);
 
 /* Selection code. */
 
 /**
- * \note use BM_elem_flag_test(ele, BM_ELEM_SELECT) to test selection
- * \note by design, this will not touch the editselection history stuff
+ * note use mesh_elem_flag_test(ele, MESH_ELEM_SELECT) to test selection
+ * note by design, this will not touch the editselection history stuff
  */
-void BM_elem_select_set(BMesh *bm, BMElem *ele, bool select);
+void mesh_elem_select_set(Mesh *mesh, MeshElem *ele, bool select);
 
-void BM_mesh_elem_hflag_enable_test(
-    BMesh *bm, char htype, char hflag, bool respecthide, bool overwrite, char hflag_test);
-void BM_mesh_elem_hflag_disable_test(
-    BMesh *bm, char htype, char hflag, bool respecthide, bool overwrite, char hflag_test);
+void mesh_elem_hflag_enable_test(
+    Mesh *mesh, char htype, char hflag, bool respecthide, bool overwrite, char hflag_test);
+void mesh_elem_hflag_disable_test(
+    Mesh *mesh, char htype, char hflag, bool respecthide, bool overwrite, char hflag_test);
 
-void BM_mesh_elem_hflag_enable_all(BMesh *bm, char htype, char hflag, bool respecthide);
-void BM_mesh_elem_hflag_disable_all(BMesh *bm, char htype, char hflag, bool respecthide);
+void mesh_elem_hflag_enable_all(Mesh *mesh, char htype, char hflag, bool respecthide);
+void mesh_elem_hflag_disable_all(Mesh *mesh, char htype, char hflag, bool respecthide);
 
-/* Individual element select functions, #BM_elem_select_set is a shortcut for these
+/* Individual element select functions, mesh_elem_select_set is a shortcut for these
  * that automatically detects which one to use. */
 
 /**
@@ -49,36 +49,36 @@ void BM_mesh_elem_hflag_disable_all(BMesh *bm, char htype, char hflag, bool resp
  * Changes selection state of a single vertex
  * in a mesh
  */
-void BM_vert_select_set(BMesh *bm, BMVert *v, bool select);
+void mesh_vert_select_set(Mesh *mesh, MeshVert *v, bool select);
 /**
- * \brief Select Edge
+ * Select Edge
  *
  * Changes selection state of a single edge in a mesh.
  */
-void BM_edge_select_set(BMesh *bm, BMEdge *e, bool select);
+void mesh_edge_select_set(Mesh *mesh, MeshEdge *e, bool select);
 /**
- * \brief Select Face
+ * Select Face
  *
  * Changes selection state of a single
  * face in a mesh.
  */
-void BM_face_select_set(BMesh *bm, BMFace *f, bool select);
+void mesh_face_select_set(Mesh *mesh, MeshFace *f, bool select);
 
 /* Lower level functions which don't do flushing. */
 
-void BM_edge_select_set_noflush(BMesh *bm, BMEdge *e, bool select);
-void BM_face_select_set_noflush(BMesh *bm, BMFace *f, bool select);
+void mesh_edge_select_set_noflush(Mesh *mesh, MeshEdge *e, bool select);
+void mesh_face_select_set_noflush(Mesh *mesh, MeshFace *f, bool select);
 
 /**
- * \brief Select Mode Clean
+ * Select Mode Clean
  *
  * Remove isolated selected elements when in a mode doesn't support them.
  * eg: in edge-mode a selected vertex must be connected to a selected edge.
  *
- * \note this could be made a part of #BM_mesh_select_mode_flush_ex
+ * this could be made a part of mesh_select_mode_flush_ex
  */
-void BM_mesh_select_mode_clean_ex(BMesh *bm, short selectmode);
-void BM_mesh_select_mode_clean(BMesh *bm);
+void mesh_select_mode_clean_ex(Mesh *mesh, short selectmode);
+void mesh_select_mode_clean(Mesh *mesh);
 
 /**
  * Select Mode Set
