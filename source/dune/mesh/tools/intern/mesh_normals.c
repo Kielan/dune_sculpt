@@ -269,45 +269,42 @@ void mesh_normals_update_with_partial_ex(BMesh *UNUSED(bm),
                                             const BMPartialUpdate *bmpinfo,
                                             const struct BMeshNormalsUpdate_Params *params)
 {
-  BLI_assert(bmpinfo->params.do_normals);
+  lib_assert(bmpinfo->params.do_normals);
   /* While harmless, exit early if there is nothing to do. */
   if (UNLIKELY((bmpinfo->verts_len == 0) && (bmpinfo->faces_len == 0))) {
     return;
   }
 
-  BMVert **verts = bmpinfo->verts;
-  BMFace **faces = bmpinfo->faces;
+  MeshVert **verts = bmpinfo->verts;
+  MeshFace **faces = bmpinfo->faces;
   const int verts_len = bmpinfo->verts_len;
   const int faces_len = bmpinfo->faces_len;
 
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  lib_parallel_range_settings_defaults(&settings);
 
   /* Faces. */
   if (params->face_normals) {
-    BLI_task_parallel_range(
+    lib_task_parallel_range(
         0, faces_len, faces, bm_partial_faces_parallel_range_calc_normals_cb, &settings);
   }
 
   /* Verts. */
-  BLI_task_parallel_range(
+  lib_task_parallel_range(
       0, verts_len, verts, bm_partial_verts_parallel_range_calc_normal_cb, &settings);
 }
 
-void BM_mesh_normals_update_with_partial(BMesh *bm, const BMPartialUpdate *bmpinfo)
+void mesh_normals_update_with_partial(Mesh *mesh, const BMPartialUpdate *bmpinfo)
 {
-  BM_mesh_normals_update_with_partial_ex(bm,
-                                         bmpinfo,
-                                         &(const struct BMeshNormalsUpdate_Params){
-                                             .face_normals = true,
-                                         });
+  mesh_normals_update_with_partial_ex(mesh,
+                                      bmpinfo,
+                                      &(const struct BMeshNormalsUpdate_Params){
+                                         .face_normals = true,
+                                      });
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Update Vertex & Face Normals (Custom Coords)
- * \{ */
+/** Update Vertex & Face Normals (Custom Coords) **/
 
 void BM_verts_calc_normal_vcos(BMesh *bm,
                                const float (*fnos)[3],
