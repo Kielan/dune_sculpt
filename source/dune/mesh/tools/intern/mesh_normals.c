@@ -1412,9 +1412,9 @@ static bool mesh_loops_split_lnor_fans(Mesh *mesh,
            * We know those two loops do not point to the same edge,
            * since we do not allow reversed winding in a same smooth fan.
            */
-          BMEdge *e = (prev_ml->e == ml->prev->e) ? prev_ml->e : ml->e;
+          MeshEdge *e = (prev_ml->e == ml->prev->e) ? prev_ml->e : ml->e;
 
-          BM_elem_flag_disable(e, BM_ELEM_TAG | BM_ELEM_SMOOTH);
+          mesh_elem_flag_disable(e, BM_ELEM_TAG | BM_ELEM_SMOOTH);
           changed = true;
 
           org_nor = nor;
@@ -1422,7 +1422,7 @@ static bool mesh_loops_split_lnor_fans(Mesh *mesh,
 
         prev_ml = ml;
         loops = loops->next;
-        BLI_BITMAP_ENABLE(done_loops, lidx);
+        LIB_BITMAP_ENABLE(done_loops, lidx);
       }
 
       /* We also have to check between last and first loops,
@@ -1431,21 +1431,21 @@ static bool mesh_loops_split_lnor_fans(Mesh *mesh,
        * See T45984. */
       loops = lnors_spacearr->lspacearr[i]->loops;
       if (loops && org_nor) {
-        BMLoop *ml = loops->link;
+        MeshLoop *ml = loops->link;
         const int lidx = BM_elem_index_get(ml);
         const float *nor = new_lnors[lidx];
 
         if (dot_v3v3(org_nor, nor) < LNOR_SPACE_TRIGO_THRESHOLD) {
-          BMEdge *e = (prev_ml->e == ml->prev->e) ? prev_ml->e : ml->e;
+          MeshEdge *e = (prev_ml->e == ml->prev->e) ? prev_ml->e : ml->e;
 
-          BM_elem_flag_disable(e, BM_ELEM_TAG | BM_ELEM_SMOOTH);
+          mesh_elem_flag_disable(e, BM_ELEM_TAG | BM_ELEM_SMOOTH);
           changed = true;
         }
       }
     }
   }
 
-  MEM_freeN(done_loops);
+  mem_freen(done_loops);
   return changed;
 }
 
@@ -1474,7 +1474,7 @@ static void mesh_loops_assign_normal_data(Mesh *mesh,
       continue;
     }
 
-    if (!BLI_BITMAP_TEST(done_loops, i)) {
+    if (!LIB_BITMAP_TEST(done_loops, i)) {
       /* Note we accumulate and average all custom normals in current smooth fan,
        * to avoid getting different clnors data (tiny differences in plain custom normals can
        * give rather huge differences in computed 2D factors).
@@ -1482,17 +1482,17 @@ static void mesh_loops_assign_normal_data(Mesh *mesh,
       LinkNode *loops = lnors_spacearr->lspacearr[i]->loops;
 
       if (lnors_spacearr->lspacearr[i]->flags & MLNOR_SPACE_IS_SINGLE) {
-        BMLoop *ml = (BMLoop *)loops;
-        const int lidx = BM_elem_index_get(ml);
+        MeshLoop *ml = (MeshLoop *)loops;
+        const int lidx = mesh_elem_index_get(ml);
 
-        BLI_assert(lidx == i);
+        lib_assert(lidx == i);
 
         const float *nor = new_lnors[lidx];
         short *clnor = r_clnors_data ? &r_clnors_data[lidx] :
                                        BM_ELEM_CD_GET_VOID_P(ml, cd_loop_clnors_offset);
 
-        BKE_lnor_space_custom_normal_to_data(lnors_spacearr->lspacearr[i], nor, clnor);
-        BLI_BITMAP_ENABLE(done_loops, i);
+        dune_lnor_space_custom_normal_to_data(lnors_spacearr->lspacearr[i], nor, clnor);
+        LIB_BITMAP_ENABLE(done_loops, i);
       }
       else {
         int nbr_nors = 0;
@@ -1502,25 +1502,25 @@ static void mesh_loops_assign_normal_data(Mesh *mesh,
         zero_v3(avg_nor);
 
         while (loops) {
-          BMLoop *ml = loops->link;
-          const int lidx = BM_elem_index_get(ml);
+          MeshLoop *ml = loops->link;
+          const int lidx = mesh m_elem_index_get(ml);
           const float *nor = new_lnors[lidx];
           short *clnor = r_clnors_data ? &r_clnors_data[lidx] :
-                                         BM_ELEM_CD_GET_VOID_P(ml, cd_loop_clnors_offset);
+                                         MESH_ELEM_CD_GET_VOID_P(ml, cd_loop_clnors_offset);
 
           nbr_nors++;
           add_v3_v3(avg_nor, nor);
-          BLI_SMALLSTACK_PUSH(clnors_data, clnor);
+          LIB_SMALLSTACK_PUSH(clnors_data, clnor);
 
           loops = loops->next;
-          BLI_BITMAP_ENABLE(done_loops, lidx);
+          LIB_BITMAP_ENABLE(done_loops, lidx);
         }
 
         mul_v3_fl(avg_nor, 1.0f / (float)nbr_nors);
-        BKE_lnor_space_custom_normal_to_data(
+        dune_lnor_space_custom_normal_to_data(
             lnors_spacearr->lspacearr[i], avg_nor, clnor_data_tmp);
 
-        while ((clnor_data = BLI_SMALLSTACK_POP(clnors_data))) {
+        while ((clnor_data = LIB_SMALLSTACK_POP(clnors_data))) {
           clnor_data[0] = clnor_data_tmp[0];
           clnor_data[1] = clnor_data_tmp[1];
         }
@@ -1528,7 +1528,7 @@ static void mesh_loops_assign_normal_data(Mesh *mesh,
     }
   }
 
-  MEM_freeN(done_loops);
+  mem_freen(done_loops);
 }
 
 /**
