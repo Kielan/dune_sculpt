@@ -237,7 +237,7 @@ void BM_mesh_normals_update_ex(BMesh *bm, const struct BMeshNormalsUpdate_Params
   }
 
   /* Add weighted face normals to vertices, and normalize vert normals. */
-  bm_mesh_verts_calc_normals(bm, NULL, NULL, NULL);
+  mesh_verts_calc_normals(bm, NULL, NULL, NULL);
 }
 
 void mesh_normals_update(Mesh *mesh)
@@ -247,8 +247,6 @@ void mesh_normals_update(Mesh *mesh)
                             .face_normals = true,
                          });
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name Update Vertex & Face Normals (Partial Updates)
