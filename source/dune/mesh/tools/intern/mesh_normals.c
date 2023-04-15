@@ -378,25 +378,25 @@ static void bm_mesh_edges_sharp_tag(BMesh *bm,
     }
   }
   else {
-    BM_ITER_MESH_INDEX (e, &eiter, bm, BM_EDGES_OF_MESH, i) {
-      BM_elem_index_set(e, i); /* set_inline */
+    MESH_INDEX_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH, i) {
+      mesh_elem_index_set(e, i); /* set_inline */
       if (e->l != NULL) {
-        bm_edge_tag_from_smooth(fnos, e, split_angle_cos);
+        mesh_edge_tag_from_smooth(fnos, e, split_angle_cos);
       }
     }
   }
 
-  bm->elem_index_dirty &= ~BM_EDGE;
+  mesh->elem_index_dirty &= ~MESH_EDGE;
 }
 
-void BM_edges_sharp_from_angle_set(BMesh *bm, const float split_angle)
+void mesh_edges_sharp_from_angle_set(Mesh *mesh, const float split_angle)
 {
   if (split_angle >= (float)M_PI) {
     /* Nothing to do! */
     return;
   }
 
-  bm_mesh_edges_sharp_tag(bm, NULL, cosf(split_angle), true);
+  mesh_edges_sharp_tag(mesh, NULL, cosf(split_angle), true);
 }
 
 /* -------------------------------------------------------------------- */
@@ -412,14 +412,14 @@ bool mesh_loop_check_cyclic_smooth_fan(MeshLoop *l_curr)
 
   while (true) {
     /* Much simpler than in sibling code with basic Mesh data! */
-    lfan_pivot_next = BM_vert_step_fan_loop(lfan_pivot_next, &e_next);
+    lfan_pivot_next = mesh_vert_step_fan_loop(lfan_pivot_next, &e_next);
 
-    if (!lfan_pivot_next || !BM_elem_flag_test(e_next, BM_ELEM_TAG)) {
+    if (!lfan_pivot_next || !mesh_elem_flag_test(e_next, BM_ELEM_TAG)) {
       /* Sharp loop/edge, so not a cyclic smooth fan... */
       return false;
     }
     /* Smooth loop/edge... */
-    if (BM_elem_flag_test(lfan_pivot_next, BM_ELEM_TAG)) {
+    if (mesh_elem_flag_test(lfan_pivot_next, BM_ELEM_TAG)) {
       if (lfan_pivot_next == l_curr) {
         /* We walked around a whole cyclic smooth fan
          * without finding any already-processed loop,
@@ -430,23 +430,23 @@ bool mesh_loop_check_cyclic_smooth_fan(MeshLoop *l_curr)
       return false;
     }
     /* ... we can skip it in future, and keep checking the smooth fan. */
-    BM_elem_flag_enable(lfan_pivot_next, BM_ELEM_TAG);
+    mesh_elem_flag_enable(lfan_pivot_next, BM_ELEM_TAG);
   }
 }
 
 /**
  * Called for all faces loops.
  *
- * - All loops must have #BM_ELEM_TAG cleared.
+ * - All loops must have MESH_ELEM_TAG cleared.
  * - Loop indices must be valid.
  *
- * \note When custom normals are present, the order of loops can be important.
+ * note When custom normals are present, the order of loops can be important.
  * Loops with lower indices must be passed before loops with higher indices (for each vertex).
  * This is needed since the first loop sets the reference point for the custom normal offsets.
  *
- * \return The number of loops that were handled (for early exit when all have been handled).
+ * return The number of loops that were handled (for early exit when all have been handled).
  */
-static int bm_mesh_loops_calc_normals_for_loop(BMesh *bm,
+static int mesh_loops_calc_normals_for_loop(BMesh *bm,
                                                const float (*vcos)[3],
                                                const float (*fnos)[3],
                                                const short (*clnors_data)[2],
