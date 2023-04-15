@@ -86,9 +86,9 @@ void mesh_select_mode_clean(Mesh *mesh);
  * Sets the selection mode for the bmesh,
  * updating the selection state.
  */
-void BM_mesh_select_mode_set(BMesh *bm, int selectmode);
+void mesh_select_mode_set(Mesh *mesh, int selectmode);
 /**
- * \brief Select Mode Flush
+ * Select Mode Flush
  *
  * Makes sure to flush selections 'upwards'
  * (ie: all verts of an edge selects the edge and so on).
@@ -104,10 +104,10 @@ void mesh_deselect_flush(Mesh *mesh);
 /**
  * Mode independent selection flush (up/down).
  */
-void mesh_select_flush(BMesh *bm);
+void mesh_select_flush(Mesh *mesh);
 
-int BM_mesh_elem_hflag_count_enabled(BMesh *bm, char htype, char hflag, bool respecthide);
-int BM_mesh_elem_hflag_count_disabled(BMesh *bm, char htype, char hflag, bool respecthide);
+int mesh_elem_hflag_count_enabled(Mesh *mesh, char htype, char hflag, bool respecthide);
+int mesh_elem_hflag_count_disabled(Mesh *mesh, char htype, char hflag, bool respecthide);
 
 /* Edit selection stuff. */
 
@@ -135,26 +135,26 @@ void mesh_editselection_normal(MeshEditSelection *ese, float r_normal[3]);
  */
 void BM_editselection_plane(BMEditSelection *ese, float r_plane[3]);
 
-#define BM_select_history_check(bm, ele) _bm_select_history_check(bm, &(ele)->head)
-#define BM_select_history_remove(bm, ele) _bm_select_history_remove(bm, &(ele)->head)
-#define BM_select_history_store_notest(bm, ele) _bm_select_history_store_notest(bm, &(ele)->head)
-#define BM_select_history_store(bm, ele) _bm_select_history_store(bm, &(ele)->head)
-#define BM_select_history_store_head_notest(bm, ele) \
-  _bm_select_history_store_head_notest(bm, &(ele)->head)
-#define BM_select_history_store_head(bm, ele) _bm_select_history_store_head(bm, &(ele)->head)
-#define BM_select_history_store_after_notest(bm, ese_ref, ele) \
-  _bm_select_history_store_after_notest(bm, ese_ref, &(ele)->head)
-#define BM_select_history_store_after(bm, ese, ese_ref) \
-  _bm_select_history_store_after(bm, ese_ref, &(ele)->head)
+#define mesh_select_history_check(mesh, ele) _mesh_select_history_check(mesh, &(ele)->head)
+#define mesh_select_history_remove(mesh, ele) _mesh_select_history_remove(mesh, &(ele)->head)
+#define mesh_select_history_store_notest(mesh, ele) _mesh_select_history_store_notest(mesh, &(ele)->head)
+#define mesh_select_history_store(mesh, ele) _mesh_select_history_store(mesh, &(ele)->head)
+#define mesh_select_history_store_head_notest(mesh, ele) \
+  _mesh_select_history_store_head_notest(mesh, &(ele)->head)
+#define mesh_select_history_store_head(mesh, ele) _mesh_select_history_store_head(bm, &(ele)->head)
+#define mesh_select_history_store_after_notest(mesh, ese_ref, ele) \
+  _mesh_select_history_store_after_notest(mesh, ese_ref, &(ele)->head)
+#define mesh_select_history_store_after(mesh, ese, ese_ref) \
+  _mesh_select_history_store_after(mesh, ese_ref, &(ele)->head)
 
-bool _bm_select_history_check(BMesh *bm, const BMHeader *ele);
-bool _bm_select_history_remove(BMesh *bm, BMHeader *ele);
-void _bm_select_history_store_notest(BMesh *bm, BMHeader *ele);
-void _bm_select_history_store(BMesh *bm, BMHeader *ele);
-void _bm_select_history_store_head_notest(BMesh *bm, BMHeader *ele);
-void _bm_select_history_store_head(BMesh *bm, BMHeader *ele);
-void _bm_select_history_store_after(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele);
-void _bm_select_history_store_after_notest(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele);
+bool _mesh_select_history_check(BMesh *bm, const BMHeader *ele);
+bool _mesh_select_history_remove(BMesh *bm, BMHeader *ele);
+void _mesh_select_history_store_notest(BMesh *bm, BMHeader *ele);
+void _mesh_select_history_store(BMesh *bm, BMHeader *ele);
+void _mesh_select_history_store_head_notest(BMesh *bm, BMHeader *ele);
+void _mesh_select_history_store_head(BMesh *bm, BMHeader *ele);
+void _mesh_select_history_store_after(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele);
+void _mesh_select_history_store_after_notest(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele);
 
 void BM_select_history_validate(BMesh *bm);
 void BM_select_history_clear(BMesh *bm);
