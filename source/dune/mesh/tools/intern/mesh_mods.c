@@ -159,33 +159,33 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
   return true;
 }
 
-BMFace *BM_faces_join_pair(BMesh *bm, BMLoop *l_a, BMLoop *l_b, const bool do_del)
+MeshFace *mesh_faces_join_pair(Mesh *mesh, MeshLoop *l_a, MeshLoop *l_b, const bool do_del)
 {
-  BLI_assert((l_a != l_b) && (l_a->e == l_b->e));
+  lib_assert((l_a != l_b) && (l_a->e == l_b->e));
 
   if (l_a->v == l_b->v) {
-    const int cd_loop_mdisp_offset = CustomData_get_offset(&bm->ldata, CD_MDISPS);
-    bmesh_kernel_loop_reverse(bm, l_b->f, cd_loop_mdisp_offset, true);
+    const int cd_loop_mdisp_offset = CustomData_get_offset(&mesh->ldata, CD_MDISPS);
+    mesh_kernel_loop_reverse(mesh, l_b->f, cd_loop_mdisp_offset, true);
   }
 
-  BMFace *faces[2] = {l_a->f, l_b->f};
-  return BM_faces_join(bm, faces, 2, do_del);
+  MeshFace *faces[2] = {l_a->f, l_b->f};
+  return mesh_faces_join(mesh, faces, 2, do_del);
 }
 
-BMFace *BM_face_split(BMesh *bm,
-                      BMFace *f,
-                      BMLoop *l_a,
-                      BMLoop *l_b,
-                      BMLoop **r_l,
-                      BMEdge *example,
+MeshFace *mesh_face_split(Mesh *mesh,
+                      MeshFace *f,
+                      MeshLoop *l_a,
+                      MeshLoop *l_b,
+                      MeshLoop **r_l,
+                      MeshEdge *example,
                       const bool no_double)
 {
   const int cd_loop_mdisp_offset = CustomData_get_offset(&bm->ldata, CD_MDISPS);
-  BMFace *f_new, *f_tmp;
+  MeshFace *f_new, *f_tmp;
 
-  BLI_assert(l_a != l_b);
-  BLI_assert(f == l_a->f && f == l_b->f);
-  BLI_assert(!BM_loop_is_adjacent(l_a, l_b));
+  lib_assert(l_a != l_b);
+  lib_assert(f == l_a->f && f == l_b->f);
+  lib_assert(!mesh_loop_is_adjacent(l_a, l_b));
 
   /* could be an assert */
   if (UNLIKELY(BM_loop_is_adjacent(l_a, l_b)) || UNLIKELY((f != l_a->f || f != l_b->f))) {
