@@ -499,15 +499,15 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
       MLoopNorSpace *lnor_space = BKE_lnor_space_create(r_lnors_spacearr);
 
       {
-        const BMVert *v_pivot = l_curr->v;
-        const float *co_pivot = vcos ? vcos[BM_elem_index_get(v_pivot)] : v_pivot->co;
-        const BMVert *v_1 = l_curr->next->v;
-        const float *co_1 = vcos ? vcos[BM_elem_index_get(v_1)] : v_1->co;
-        const BMVert *v_2 = l_curr->prev->v;
-        const float *co_2 = vcos ? vcos[BM_elem_index_get(v_2)] : v_2->co;
+        const MeshVert *v_pivot = l_curr->v;
+        const float *co_pivot = vcos ? vcos[mesh_elem_index_get(v_pivot)] : v_pivot->co;
+        const MeshVert *v_1 = l_curr->next->v;
+        const float *co_1 = vcos ? vcos[mesh_elem_index_get(v_1)] : v_1->co;
+        const MeshVert *v_2 = l_curr->prev->v;
+        const float *co_2 = vcos ? vcos[mesh_elem_index_get(v_2)] : v_2->co;
 
-        BLI_assert(v_1 == BM_edge_other_vert(l_curr->e, v_pivot));
-        BLI_assert(v_2 == BM_edge_other_vert(l_curr->prev->e, v_pivot));
+        lib_assert(v_1 == mesh_edge_other_vert(l_curr->e, v_pivot));
+        lib_assert(v_2 == mesh_edge_other_vert(l_curr->prev->e, v_pivot));
 
         sub_v3_v3v3(vec_curr, co_1, co_pivot);
         normalize_v3(vec_curr);
@@ -515,16 +515,16 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
         normalize_v3(vec_prev);
       }
 
-      BKE_lnor_space_define(lnor_space, r_lnos[l_curr_index], vec_curr, vec_prev, NULL);
+      mesh_lnor_space_define(lnor_space, r_lnos[l_curr_index], vec_curr, vec_prev, NULL);
       /* We know there is only one loop in this space,
        * no need to create a linklist in this case... */
-      BKE_lnor_space_add_loop(r_lnors_spacearr, lnor_space, l_curr_index, l_curr, true);
+      dune_lnor_space_add_loop(r_lnors_spacearr, lnor_space, l_curr_index, l_curr, true);
 
       if (has_clnors) {
         const short(*clnor)[2] = clnors_data ? &clnors_data[l_curr_index] :
-                                               (const void *)BM_ELEM_CD_GET_VOID_P(
+                                               (const void *)MESH_ELEM_CD_GET_VOID_P(
                                                    l_curr, cd_loop_clnors_offset);
-        BKE_lnor_space_custom_data_to_normal(lnor_space, *clnor, r_lnos[l_curr_index]);
+        dune_lnor_space_custom_data_to_normal(lnor_space, *clnor, r_lnos[l_curr_index]);
       }
     }
     handled = 1;
@@ -547,10 +547,10 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
      * per vertex, I doubt the additional memory usage would be worth it, especially as it
      * should not be a common case in real-life meshes anyway).
      */
-    BMVert *v_pivot = l_curr->v;
-    BMEdge *e_next;
-    const BMEdge *e_org = l_curr->e;
-    BMLoop *lfan_pivot, *lfan_pivot_next;
+    MeshVert *v_pivot = l_curr->v;
+    MeshEdge *e_next;
+    const MeshEdge *e_org = l_curr->e;
+    MeshLoop *lfan_pivot, *lfan_pivot_next;
     int lfan_pivot_index;
     float lnor[3] = {0.0f, 0.0f, 0.0f};
     float vec_curr[3], vec_next[3], vec_org[3];
@@ -568,13 +568,13 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
     lib_assert((edge_vectors == NULL) || BLI_stack_is_empty(edge_vectors));
 
     lfan_pivot = l_curr;
-    lfan_pivot_index = BM_elem_index_get(lfan_pivot);
+    lfan_pivot_index = mesh_elem_index_get(lfan_pivot);
     e_next = lfan_pivot->e; /* Current edge here, actually! */
 
     /* Only need to compute previous edge's vector once,
      * then we can just reuse old current one! */
     {
-      const BMVert *v_2 = lfan_pivot->next->v;
+      const MeshVert *v_2 = lfan_pivot->next->v;
       const float *co_2 = vcos ? vcos[mesh_elem_index_get(v_2)] : v_2->co;
 
       lib_assert(v_2 == mesh_edge_other_vert(e_next, v_pivot));
