@@ -223,27 +223,27 @@ MeshFace *mesh_face_split(Mesh *mesh,
 
 #if 0
       /* mesh_face_multires_bounds_smooth doesn't flip displacement correct */
-      mesh_face_multires_bounds_smooth(bm, f);
-      mesh_face_multires_bounds_smooth(bm, f_new);
+      mesh_face_multires_bounds_smooth(mesh, f);
+      mesh_face_multires_bounds_smooth(mesh, f_new);
 #endif
     }
   }
 
   if (cd_loop_mdisp_offset != -1) {
-    BM_face_kill(bm, f_tmp);
+    mesh_face_kill(mesh, f_tmp);
   }
 
   return f_new;
 }
 
-BMFace *BM_face_split_n(BMesh *bm,
-                        BMFace *f,
-                        BMLoop *l_a,
-                        BMLoop *l_b,
+BMFace *BM_face_split_n(Mesh *mesh,
+                        MeshFace *f,
+                        MeshLoop *l_a,
+                        MeshLoop *l_b,
                         float cos[][3],
                         int n,
-                        BMLoop **r_l,
-                        BMEdge *example)
+                        MeshLoop **r_l,
+                        MeshEdge *example)
 {
   MeshFace *f_new, *f_tmp;
   MeshLoop *l_new;
