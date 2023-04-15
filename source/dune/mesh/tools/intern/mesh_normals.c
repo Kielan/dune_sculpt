@@ -496,7 +496,7 @@ static int mesh_loops_calc_normals_for_loop(Mesh *mesh,
     /* If needed, generate this (simple!) lnor space. */
     if (r_lnors_spacearr) {
       float vec_curr[3], vec_prev[3];
-      MLoopNorSpace *lnor_space = BKE_lnor_space_create(r_lnors_spacearr);
+      MLoopNorSpace *lnor_space = dune_lnor_space_create(r_lnors_spacearr);
 
       {
         const MeshVert *v_pivot = l_curr->v;
@@ -813,7 +813,7 @@ static void mesh_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
   lib_assert(e->l != NULL);
   MeshLoop *l_a = e->l, *l_b = l_a->radial_next;
   bool is_smooth = false;
-  if (bm_edge_is_smooth_no_angle_test(e, l_a, l_b)) {
+  if (mesh_edge_is_smooth_no_angle_test(e, l_a, l_b)) {
     if (split_angle_cos != -1.0f) {
       const float dot = (fnos == NULL) ? dot_v3v3(l_a->f->no, l_b->f->no) :
                                          dot_v3v3(fnos[BM_elem_index_get(l_a->f)],
@@ -1016,18 +1016,18 @@ static void mesh_loops_calc_normals_for_vert_without_clnors(
           !(mesh->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL)) {
         continue;
       }
-      bm_mesh_loops_calc_normals_for_loop(bm,
-                                          vcos,
-                                          fnos,
-                                          clnors_data,
-                                          cd_loop_clnors_offset,
-                                          has_clnors,
-                                          edge_vectors,
-                                          l_curr,
-                                          r_lnos,
-                                          r_lnors_spacearr);
+      mesh_loops_calc_normals_for_loop(mesh,
+                                       vcos,
+                                       fnos,
+                                       clnors_data,
+                                       cd_loop_clnors_offset,
+                                       has_clnors,
+                                       edge_vectors,
+                                       l_curr,
+                                       r_lnos,
+                                       r_lnors_spacearr);
     } while ((l_curr = l_curr->radial_next) != e_curr_iter->l);
-  } while ((e_curr_iter = BM_DISK_EDGE_NEXT(e_curr_iter, v)) != v->e);
+  } while ((e_curr_iter = MESH_DISK_EDGE_NEXT(e_curr_iter, v)) != v->e);
 }
 
 /**
@@ -1089,28 +1089,28 @@ static void mesh_loops_calc_normals__single_threaded(Mesh *mesh,
       mesh_elem_flag_disable(l_curr, MESH_ELEM_TAG);
     } while ((l_curr = l_curr->next) != l_first);
   }
-  bm->elem_index_dirty &= ~(BM_FACE | BM_LOOP);
+  mesh->elem_index_dirty &= ~(MESH_FACE | MESH_LOOP);
 
   /* Always tag edges based on winding & sharp edge flag
    * (even when the auto-smooth angle doesn't need to be calculated). */
   if (do_edge_tag) {
-    bm_mesh_edges_sharp_tag(bm, fnos, has_clnors ? -1.0f : split_angle_cos, false);
+    mesh_edges_sharp_tag(bm, fnos, has_clnors ? -1.0f : split_angle_cos, false);
   }
 
   /* We now know edges that can be smoothed (they are tagged),
    * and edges that will be hard (they aren't).
    * Now, time to generate the normals.
    */
-  BM_ITER_MESH (f_curr, &fiter, bm, BM_FACES_OF_MESH) {
-    BMLoop *l_curr, *l_first;
+  MESH_ITER (f_curr, &fiter, mesh, MESH_FACES_OF_MESH) {
+    MeshLoop *l_curr, *l_first;
 
-    l_curr = l_first = BM_FACE_FIRST_LOOP(f_curr);
+    l_curr = l_first = MESH_FACE_FIRST_LOOP(f_curr);
     do {
-      if (do_rebuild && !BM_ELEM_API_FLAG_TEST(l_curr, BM_LNORSPACE_UPDATE) &&
-          !(bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL)) {
+      if (do_rebuild && !MESH_ELEM_API_FLAG_TEST(l_curr, BM_LNORSPACE_UPDATE) &&
+          !(mesh->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL)) {
         continue;
       }
-      bm_mesh_loops_calc_normals_for_loop(bm,
+      mesh_loops_calc_normals_for_loop(mesh,
                                           vcos,
                                           fnos,
                                           clnors_data,
@@ -1124,14 +1124,14 @@ static void mesh_loops_calc_normals__single_threaded(Mesh *mesh,
   }
 
   if (r_lnors_spacearr) {
-    BLI_stack_free(edge_vectors);
+    lib_stack_free(edge_vectors);
     if (r_lnors_spacearr == &_lnors_spacearr) {
-      BKE_lnor_spacearr_free(r_lnors_spacearr);
+      dune_lnor_spacearr_free(r_lnors_spacearr);
     }
   }
 }
 
-typedef struct BMLoopsCalcNormalsWithCoordsData {
+typedef struct MeshLoopsCalcNormalsWithCoordsData {
   /* Read-only data. */
   const float (*fnos)[3];
   const float (*vcos)[3];
