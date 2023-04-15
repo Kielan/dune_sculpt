@@ -438,88 +438,88 @@ MeshEdge *mesh_vert_collapse_edge(Mesh *mesh,
 MeshVert *mesh_edge_collapse(
     Mesh *meeh, MeshEdge *e_kill, MeshVert *v_kill, const bool do_del, const bool kill_degenerate_faces)
 {
-  return bmesh_kernel_join_vert_kill_edge(bm, e_kill, v_kill, do_del, true, kill_degenerate_faces);
+  return mesh_kernel_join_vert_kill_edge(mesh, e_kill, v_kill, do_del, true, kill_degenerate_faces);
 }
 
-BMVert *BM_edge_split(BMesh *bm, BMEdge *e, BMVert *v, BMEdge **r_e, float fac)
+MeshVert *mesh_edge_split(Mesh *mesh, MeshEdge *e, MeshVert *v, MeshEdge **r_e, float fac)
 {
-  BMVert *v_new, *v_other;
-  BMEdge *e_new;
-  BMFace **oldfaces = NULL;
-  BLI_array_staticdeclare(oldfaces, 32);
-  const int cd_loop_mdisp_offset = BM_edge_is_wire(e) ?
+  MeshVert *v_new, *v_other;
+  MeshEdge *e_new;
+  MeshFace **oldfaces = NULL;
+  lib_array_staticdeclare(oldfaces, 32);
+  const int cd_loop_mdisp_offset = mesh_edge_is_wire(e) ?
                                        -1 :
                                        CustomData_get_offset(&bm->ldata, CD_MDISPS);
 
-  BLI_assert(BM_vert_in_edge(e, v) == true);
+  lib_assert(mesh_vert_in_edge(e, v) == true);
 
   /* do we have a multi-res layer? */
   if (cd_loop_mdisp_offset != -1) {
-    BMLoop *l;
+    MeshLoop *l;
     int i;
 
     l = e->l;
     do {
-      BLI_array_append(oldfaces, l->f);
+      lib_array_append(oldfaces, l->f);
       l = l->radial_next;
     } while (l != e->l);
 
     /* flag existing faces so we can differentiate oldfaces from new faces */
-    for (i = 0; i < BLI_array_len(oldfaces); i++) {
-      BM_ELEM_API_FLAG_ENABLE(oldfaces[i], _FLAG_OVERLAP);
-      oldfaces[i] = BM_face_copy(bm, bm, oldfaces[i], true, true);
-      BM_ELEM_API_FLAG_DISABLE(oldfaces[i], _FLAG_OVERLAP);
+    for (i = 0; i < lib_array_len(oldfaces); i++) {
+      MESH_ELEM_API_FLAG_ENABLE(oldfaces[i], _FLAG_OVERLAP);
+      oldfaces[i] = mesh_face_copy(mesh, mesh, oldfaces[i], true, true);
+      MESH_ELEM_API_FLAG_DISABLE(oldfaces[i], _FLAG_OVERLAP);
     }
   }
 
-  v_other = BM_edge_other_vert(e, v);
-  v_new = bmesh_kernel_split_edge_make_vert(bm, v, e, &e_new);
+  v_other = mesh_edge_other_vert(e, v);
+  v_new = mesh_kernel_split_edge_make_vert(mesh, v, e, &e_new);
   if (r_e != NULL) {
     *r_e = e_new;
   }
 
-  BLI_assert(v_new != NULL);
-  BLI_assert(BM_vert_in_edge(e_new, v) && BM_vert_in_edge(e_new, v_new));
-  BLI_assert(BM_vert_in_edge(e, v_new) && BM_vert_in_edge(e, v_other));
+  lib_assert(v_new != NULL);
+  lib_assert(mesh_vert_in_edge(e_new, v) && mesh_vert_in_edge(e_new, v_new));
+  lib_assert(mesh_vert_in_edge(e, v_new) && mesh_vert_in_edge(e, v_other));
 
   sub_v3_v3v3(v_new->co, v_other->co, v->co);
   madd_v3_v3v3fl(v_new->co, v->co, v_new->co, fac);
 
   e_new->head.hflag = e->head.hflag;
-  BM_elem_attrs_copy(bm, bm, e, e_new);
+  mesh_elem_attrs_copy(mesh, mesh, e, e_new);
 
   /* v->v_new->v2 */
-  BM_data_interp_face_vert_edge(bm, v_other, v, v_new, e, fac);
-  BM_data_interp_from_verts(bm, v, v_other, v_new, fac);
+  mesh_data_interp_face_vert_edge(mesh, v_other, v, v_new, e, fac);
+  mesh_data_interp_from_verts(mesh, v, v_other, v_new, fac);
 
   if (cd_loop_mdisp_offset != -1) {
     int i, j;
 
     /* interpolate new/changed loop data from copied old faces */
-    for (i = 0; i < BLI_array_len(oldfaces); i++) {
+    for (i = 0; i < lib_array_len(oldfaces); i++) {
       float f_center_old[3];
 
-      BM_face_calc_center_median(oldfaces[i], f_center_old);
+      mesh_face_calc_center_median(oldfaces[i], f_center_old);
 
       for (j = 0; j < 2; j++) {
-        BMEdge *e1 = j ? e_new : e;
-        BMLoop *l;
+        MeshEdge *e1 = j ? e_new : e;
+        MeshLoop *l;
 
         l = e1->l;
 
         if (UNLIKELY(!l)) {
-          BMESH_ASSERT(0);
+          MESH_ASSERT(0);
           break;
         }
 
         do {
           /* check this is an old face */
-          if (BM_ELEM_API_FLAG_TEST(l->f, _FLAG_OVERLAP)) {
+          if (MESH_ELEM_API_FLAG_TEST(l->f, _FLAG_OVERLAP)) {
             float f_center[3];
 
-            BM_face_calc_center_median(l->f, f_center);
-            BM_face_interp_multires_ex(
-                bm, l->f, oldfaces[i], f_center, f_center_old, cd_loop_mdisp_offset);
+            mesh_face_calc_center_median(l->f, f_center);
+            mesh_face_interp_multires_ex(
+                mesh, l->f, oldfaces[i], f_center, f_center_old, cd_loop_mdisp_offset);
           }
           l = l->radial_next;
         } while (l != e1->l);
@@ -527,36 +527,36 @@ BMVert *BM_edge_split(BMesh *bm, BMEdge *e, BMVert *v, BMEdge **r_e, float fac)
     }
 
     /* destroy the old faces */
-    for (i = 0; i < BLI_array_len(oldfaces); i++) {
-      BM_face_verts_kill(bm, oldfaces[i]);
+    for (i = 0; i < lib_array_len(oldfaces); i++) {
+      mesh_face_verts_kill(mesh, oldfaces[i]);
     }
 
     /* fix boundaries a bit, doesn't work too well quite yet */
 #if 0
     for (j = 0; j < 2; j++) {
-      BMEdge *e1 = j ? e_new : e;
-      BMLoop *l, *l2;
+      MeshEdge *e1 = j ? e_new : e;
+      MeshLoop *l, *l2;
 
       l = e1->l;
       if (UNLIKELY(!l)) {
-        BMESH_ASSERT(0);
+        MESH_ASSERT(0);
         break;
       }
 
       do {
-        BM_face_multires_bounds_smooth(bm, l->f);
+        mesh_face_multires_bounds_smooth(bm, l->f);
         l = l->radial_next;
       } while (l != e1->l);
     }
 #endif
 
-    BLI_array_free(oldfaces);
+    lib_array_free(oldfaces);
   }
 
   return v_new;
 }
 
-BMVert *BM_edge_split_n(BMesh *bm, BMEdge *e, int numcuts, BMVert **r_varr)
+MeshVert *mesh_edge_split_n(Mesh *mesh, BMEdge *e, int numcuts, BMVert **r_varr)
 {
   int i;
   float percent;
