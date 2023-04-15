@@ -76,18 +76,18 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
     MeshLoop *l_a = mesh_face_vert_share_loop(e->l->f, v);
     MeshLoop *l_b = (e->l->v == v) ? e->l->next : e->l;
 
-    if (!BM_face_split(bm, e->l->f, l_a, l_b, NULL, NULL, false)) {
+    if (!mesh_face_split(mesh, e->l->f, l_a, l_b, NULL, NULL, false)) {
       return false;
     }
 
-    if (!BM_disk_dissolve(bm, v)) {
+    if (!mesh_disk_dissolve(mesh, v)) {
       return false;
     }
 #else
-    if (UNLIKELY(!BM_faces_join_pair(bm, e->l, e->l->radial_next, true))) {
+    if (UNLIKELY(!mesh_faces_join_pair(mesh, e->l, e->l->radial_next, true))) {
       return false;
     }
-    if (UNLIKELY(!BM_vert_collapse_faces(bm, v->e, v, 1.0, true, false, true, true))) {
+    if (UNLIKELY(!mesh_vert_collapse_faces(mesh, v->e, v, 1.0, true, false, true, true))) {
       return false;
     }
 #endif
@@ -95,7 +95,7 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
   }
   if (keepedge == NULL && len == 2) {
     /* collapse the vertex */
-    e = BM_vert_collapse_faces(bm, v->e, v, 1.0, true, true, true, true);
+    e = mesh_vert_collapse_faces(mesh, v->e, v, 1.0, true, true, true, true);
 
     if (!e) {
       return false;
@@ -119,8 +119,8 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
       e = v->e;
       do {
         MeshFace *f = NULL;
-        if (BM_edge_is_manifold(e) && (e != baseedge) && (e != keepedge)) {
-          f = BM_faces_join_pair(bm, e->l, e->l->radial_next, true);
+        if (mesh_edge_is_manifold(e) && (e != baseedge) && (e != keepedge)) {
+          f = mesh_faces_join_pair(mesh, e->l, e->l->radial_next, true);
           /* return if couldn't join faces in manifold
            * conditions */
           /* !disabled for testing why bad things happen */
@@ -133,13 +133,13 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
           done = false;
           break;
         }
-      } while ((e = bmesh_disk_edge_next(e, v)) != v->e);
+      } while ((e = mesh_disk_edge_next(e, v)) != v->e);
     }
 
     /* collapse the vertex */
     /* NOTE: the baseedge can be a boundary of manifold, use this as join_faces arg. */
-    e = BM_vert_collapse_faces(
-        bm, baseedge, v, 1.0, true, !BM_edge_is_boundary(baseedge), true, true);
+    e = mesh_vert_collapse_faces(
+        mesh, baseedge, v, 1.0, true, !mesh_edge_is_boundary(baseedge), true, true);
 
     if (!e) {
       return false;
