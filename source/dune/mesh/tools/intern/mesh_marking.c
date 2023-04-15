@@ -1415,11 +1415,11 @@ void mesh_face_hide_set(MeshFace *f, const bool hide)
     lib_assert(!mesh_elem_flag_test(f, MESH_ELEM_SELECT));
   }
 
-  BM_elem_flag_set(f, BM_ELEM_HIDDEN, hide);
+  mesh_elem_flag_set(f, MESH_ELEM_HIDDEN, hide);
 
   if (hide) {
-    BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-    BMLoop *l_iter;
+    MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+    MeshLoop *l_iter;
 
     l_iter = l_first;
     do {
@@ -1432,27 +1432,27 @@ void mesh_face_hide_set(MeshFace *f, const bool hide)
     } while ((l_iter = l_iter->next) != l_first);
   }
   else {
-    BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
-    BMLoop *l_iter;
+    MeshLoop *l_first = MESH_FACE_FIRST_LOOP(f);
+    MeshLoop *l_iter;
 
     l_iter = l_first;
     do {
-      BM_elem_flag_disable(l_iter->e, BM_ELEM_HIDDEN);
-      BM_elem_flag_disable(l_iter->v, BM_ELEM_HIDDEN);
+      mesh_elem_flag_disable(l_iter->e, MESH_ELEM_HIDDEN);
+      mesh_elem_flag_disable(l_iter->v, MESH_ELEM_HIDDEN);
     } while ((l_iter = l_iter->next) != l_first);
   }
 }
 
-void _bm_elem_hide_set(BMesh *bm, BMHeader *head, const bool hide)
+void _mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, const bool hide)
 {
   /* Follow convention of always deselecting before
    * hiding an element */
   switch (head->htype) {
-    case BM_VERT:
+    case M_VERT:
       if (hide) {
-        BM_vert_select_set(bm, (BMVert *)head, false);
+        M_vert_select_set(m, (MVert *)head, false);
       }
-      BM_vert_hide_set((BMVert *)head, hide);
+      M_vert_hide_set((MVert *)head, hide);
       break;
     case BM_EDGE:
       if (hide) {
