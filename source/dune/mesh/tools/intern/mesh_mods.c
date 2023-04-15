@@ -279,20 +279,20 @@ BMFace *BM_face_split_n(Mesh *mesh,
   if (f_new) {
     e = l_new->e;
     for (i = 0; i < n; i++) {
-      v_new = mesh_kernel_split_edge_make_vert(bm, v_b, e, &e_new);
+      v_new = mesh_kernel_split_edge_make_vert(mesh, v_b, e, &e_new);
       lib_assert(v_new != NULL);
-      /* bmesh_kernel_split_edge_make_vert returns in 'e_new'
+      /* mesh_kernel_split_edge_make_vert returns in 'e_new'
        * the edge going from 'v_new' to 'v_b'. */
       copy_v3_v3(v_new->co, cos[i]);
 
       /* interpolate the loop data for the loops with (v == v_new), using orig face */
       for (j = 0; j < 2; j++) {
-        BMEdge *e_iter = (j == 0) ? e : e_new;
-        BMLoop *l_iter = e_iter->l;
+        MeshEdge *e_iter = (j == 0) ? e : e_new;
+        MeshLoop *l_iter = e_iter->l;
         do {
           if (l_iter->v == v_new) {
             /* this interpolates both loop and vertex data */
-            BM_loop_interp_from_face(bm, l_iter, f_tmp, true, true);
+            mesh_loop_interp_from_face(bm, l_iter, f_tmp, true, true);
           }
         } while ((l_iter = l_iter->radial_next) != e_iter->l);
       }
@@ -300,7 +300,7 @@ BMFace *BM_face_split_n(Mesh *mesh,
     }
   }
 
-  BM_face_verts_kill(bm, f_tmp);
+  mesh_face_verts_kill(mesh, f_tmp);
 
   if (r_l) {
     *r_l = l_new;
@@ -309,17 +309,17 @@ BMFace *BM_face_split_n(Mesh *mesh,
   return f_new;
 }
 
-BMEdge *BM_vert_collapse_faces(BMesh *bm,
-                               BMEdge *e_kill,
-                               BMVert *v_kill,
-                               float fac,
-                               const bool do_del,
-                               const bool join_faces,
-                               const bool kill_degenerate_faces,
-                               const bool kill_duplicate_faces)
+MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
+                                   MeshEdge *e_kill,
+                                   MeshVert *v_kill,
+                                   float fac,
+                                   const bool do_del,
+                                   const bool join_faces,
+                                   const bool kill_degenerate_faces,
+                                   const bool kill_duplicate_faces)
 {
-  BMEdge *e_new = NULL;
-  BMVert *tv = BM_edge_other_vert(e_kill, v_kill);
+  MeshEdge *e_new = NULL;
+  MeshVert *tv = mesh_edge_other_vert(e_kill, v_kill);
 
   BMEdge *e2;
   BMVert *tv2;
