@@ -94,40 +94,40 @@ void BM_mesh_select_mode_set(BMesh *bm, int selectmode);
  * (ie: all verts of an edge selects the edge and so on).
  * This should only be called by system and not tool authors.
  */
-void BM_mesh_select_mode_flush_ex(BMesh *bm, short selectmode, eBMSelectionFlushFLags flags);
-void BM_mesh_select_mode_flush(BMesh *bm);
+void mesh_select_mode_flush_ex(Mesh *m, short selectmode, eBMSelectionFlushFLags flags);
+void mesh_select_mode_flush(Mesh *m);
 
 /**
  * Mode independent de-selection flush (up/down).
  */
-void BM_mesh_deselect_flush(BMesh *bm);
+void mesh_deselect_flush(Mesh *mesh);
 /**
  * Mode independent selection flush (up/down).
  */
-void BM_mesh_select_flush(BMesh *bm);
+void mesh_select_flush(BMesh *bm);
 
 int BM_mesh_elem_hflag_count_enabled(BMesh *bm, char htype, char hflag, bool respecthide);
 int BM_mesh_elem_hflag_count_disabled(BMesh *bm, char htype, char hflag, bool respecthide);
 
 /* Edit selection stuff. */
 
-void BM_mesh_active_face_set(BMesh *bm, BMFace *f);
-BMFace *BM_mesh_active_face_get(BMesh *bm, bool is_sloppy, bool is_selected);
-BMEdge *BM_mesh_active_edge_get(BMesh *bm);
-BMVert *BM_mesh_active_vert_get(BMesh *bm);
-BMElem *BM_mesh_active_elem_get(BMesh *bm);
+void mesh_active_face_set(BMesh *bm, BMFace *f);
+MeshFace *mesh_active_face_get(BMesh *bm, bool is_sloppy, bool is_selected);
+MeshEdge *mesh_active_edge_get(BMesh *bm);
+MeshVert *mesh_active_vert_get(BMesh *bm);
+MeshElem *mesh_active_elem_get(BMesh *bm);
 
 /**
  * Generic way to get data from an #BMEditSelection type
  * These functions were written to be used by the Modifier widget
  * when in Rotate about active mode, but can be used anywhere.
  *
- * - #BM_editselection_center
- * - #BM_editselection_normal
- * - #BM_editselection_plane
+ * - mesh_editselection_center
+ * - mesh_editselection_normal
+ * - mesh_editselection_plane
  */
-void BM_editselection_center(BMEditSelection *ese, float r_center[3]);
-void BM_editselection_normal(BMEditSelection *ese, float r_normal[3]);
+void mesh_editselection_center(MeshEditSelection *ese, float r_center[3]);
+void mesh_editselection_normal(MeshEditSelection *ese, float r_normal[3]);
 /**
  * Calculate a plane that is right angles to the edge/vert/faces normal
  * also make the plane run along an axis that is related to the geometry,
