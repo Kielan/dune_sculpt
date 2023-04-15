@@ -1448,26 +1448,26 @@ void _mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, const bool hide)
   /* Follow convention of always deselecting before
    * hiding an element */
   switch (head->htype) {
-    case M_VERT:
+    case MESH_VERT:
       if (hide) {
-        M_vert_select_set(m, (MVert *)head, false);
+        M_vert_select_set(m, (MeshVert *)head, false);
       }
-      M_vert_hide_set((MVert *)head, hide);
+      mesh_vert_hide_set((MeshVert *)head, hide);
       break;
-    case BM_EDGE:
+    case MESH_EDGE:
       if (hide) {
-        BM_edge_select_set(bm, (BMEdge *)head, false);
+        mesh_edge_select_set(mesh, (MeshEdge *)head, false);
       }
-      BM_edge_hide_set((BMEdge *)head, hide);
+      mesh_edge_hide_set((MeshEdge *)head, hide);
       break;
-    case BM_FACE:
+    case M_FACE:
       if (hide) {
-        BM_face_select_set(bm, (BMFace *)head, false);
+        MESH_face_select_set(mesh, (MeshFace *)head, false);
       }
-      BM_face_hide_set((BMFace *)head, hide);
+      mesh_face_hide_set((MeshFace *)head, hide);
       break;
     default:
-      BMESH_ASSERT(0);
+      MESH_ASSERT(0);
       break;
   }
 }
