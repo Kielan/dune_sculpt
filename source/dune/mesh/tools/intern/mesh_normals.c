@@ -762,11 +762,11 @@ static int bm_loop_index_cmp(const void *a, const void *b)
  * - The faces of the edge have compatible (non-flipped) topological normal (winding),
  *   i.e. both loops on the same edge do not share the same vertex.
  */
-BLI_INLINE bool bm_edge_is_smooth_no_angle_test(const BMEdge *e,
+LIB_INLINE bool mesh_edge_is_smooth_no_angle_test(const BMEdge *e,
                                                 const BMLoop *l_a,
                                                 const BMLoop *l_b)
 {
-  BLI_assert(l_a->radial_next == l_b);
+  lib_assert(l_a->radial_next == l_b);
   return (
       /* The face is manifold. */
       (l_b->radial_next == l_a) &&
