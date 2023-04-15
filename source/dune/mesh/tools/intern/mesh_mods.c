@@ -573,22 +573,20 @@ MeshVert *mesh_edge_split_n(Mesh *mesh, BMEdge *e, int numcuts, BMVert **r_varr)
   return v_new;
 }
 
-void BM_edge_verts_swap(BMEdge *e)
+void mesh_edge_verts_swap(MeshEdge *e)
 {
-  SWAP(BMVert *, e->v1, e->v2);
-  SWAP(BMDiskLink, e->v1_disk_link, e->v2_disk_link);
+  SWAP(MeshVert *, e->v1, e->v2);
+  SWAP(MeshDiskLink, e->v1_disk_link, e->v2_disk_link);
 }
 
 #if 0
-/**
- * Checks if a face is valid in the data structure
- */
-bool BM_face_validate(BMFace *face, FILE *err)
+/** Checks if a face is valid in the data structure */
+bool mesh_face_validate(MeshFace *face, FILE *err)
 {
-  BMIter iter;
-  BLI_array_declare(verts);
-  BMVert **verts = NULL;
-  BMLoop *l;
+  MeshIter iter;
+  lib_array_declare(verts);
+  MeshVert **verts = NULL;
+  MeshLoop *l;
   int i, j;
   bool ret = true;
 
@@ -597,11 +595,11 @@ bool BM_face_validate(BMFace *face, FILE *err)
     fflush(err);
   }
 
-  BLI_array_grow_items(verts, face->len);
-  BM_ITER_ELEM_INDEX (l, &iter, face, BM_LOOPS_OF_FACE, i) {
+  lib_array_grow_items(verts, face->len);
+  MES_ELEM_INDEX_ITER (l, &iter, face, MESH_LOOPS_OF_FACE, i) {
     verts[i] = l->v;
     if (l->e->v1 == l->e->v2) {
-      fprintf(err, "Found bmesh edge with identical verts!\n");
+      fprintf(err, "Found mesh edge with identical verts!\n");
       fprintf(err, "  edge ptr: %p, vert: %p\n", l->e, l->e->v1);
       fflush(err);
       ret = false;
@@ -623,38 +621,38 @@ bool BM_face_validate(BMFace *face, FILE *err)
     }
   }
 
-  BLI_array_free(verts);
+  lib_array_free(verts);
   return ret;
 }
 #endif
 
-void BM_edge_calc_rotate(BMEdge *e, const bool ccw, BMLoop **r_l1, BMLoop **r_l2)
+void mesh_edge_calc_rotate(MeshEdge *e, const bool ccw, MeshLoop **r_l1, MeshLoop **r_l2)
 {
-  BMVert *v1, *v2;
-  BMFace *fa, *fb;
+  MeshVert *v1, *v2;
+  MeshFace *fa, *fb;
 
   /* this should have already run */
-  BLI_assert(BM_edge_rotate_check(e) == true);
+  lib_assert(mesh_edge_rotate_check(e) == true);
 
   /* we know this will work */
-  BM_edge_face_pair(e, &fa, &fb);
+  mesh_edge_face_pair(e, &fa, &fb);
 
   /* so we can use `ccw` variable correctly,
    * otherwise we could use the edges verts direct */
-  BM_edge_ordered_verts(e, &v1, &v2);
+  mesh_edge_ordered_verts(e, &v1, &v2);
 
   /* we could swap the verts _or_ the faces, swapping faces
    * gives more predictable results since that way the next vert
    * just stitches from face fa / fb */
   if (!ccw) {
-    SWAP(BMFace *, fa, fb);
+    SWAP(MeshFace *, fa, fb);
   }
 
-  *r_l1 = BM_face_other_vert_loop(fb, v2, v1);
-  *r_l2 = BM_face_other_vert_loop(fa, v1, v2);
+  *r_l1 = mesh_face_other_vert_loop(fb, v2, v1);
+  *r_l2 = mesh_face_other_vert_loop(fa, v1, v2);
 }
 
-bool BM_edge_rotate_check(BMEdge *e)
+bool mesh_edge_rotate_check(MeshEdge *e)
 {
   BMFace *fa, *fb;
   if (BM_edge_face_pair(e, &fa, &fb)) {
