@@ -86,21 +86,21 @@ MeshFace *mesh_face_split(
  * if the split is successful (and the original face will be the other side).
  * NULL if the split fails.
  */
-MeshFace *mesh_face_split_n(BMesh *bm,
-                        BMFace *f,
-                        BMLoop *l_a,
-                        BMLoop *l_b,
-                        float cos[][3],
-                        int n,
-                        BMLoop **r_l,
-                        BMEdge *example);
+MeshFace *mesh_face_split_n(Mesh *mesh,
+                            MeshFace *f,
+                            MeshLoop *l_a,
+                            MeshLoop *l_b,
+                            float cos[][3],
+                            int n,
+                            MeshLoop **r_l,
+                            MeshEdge *example);
 
 /**
- * \brief Vert Collapse Faces
+ * Vert Collapse Faces
  *
- * Collapses vertex \a v_kill that has only two manifold edges
+ * Collapses vertex v_kill that has only two manifold edges
  * onto a vertex it shares an edge with.
- * \a fac defines the amount of interpolation for Custom Data.
+ * fac defines the amount of interpolation for Custom Data.
  *
  * note that this is not a general edge collapse function.
  *
@@ -119,13 +119,13 @@ MeshFace *mesh_face_split_n(BMesh *bm,
  * returns The New Edge
  */
 MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
-                               MeshEdge *e_kill,
-                               MeshVert *v_kill,
-                               float fac,
-                               bool do_del,
-                               bool join_faces,
-                               bool kill_degenerate_faces,
-                               bool kill_duplicate_faces);
+                                   MeshEdge *e_kill,
+                                   MeshVert *v_kill,
+                                   float fac,
+                                   bool do_del,
+                                   bool join_faces,
+                                   bool kill_degenerate_faces,
+                                   bool kill_duplicate_faces);
 /**
  * Vert Collapse Faces
  *
@@ -134,15 +134,13 @@ MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
  * return The New Edge
  */
 MeshEdge *mesh_vert_collapse_edge(Mesh *mesh,
-                              MeshEdge *e_kill,
-                              MeshVert *v_kill,
-                              bool do_del,
-                              bool kill_degenerate_faces,
-                              bool kill_duplicate_faces);
+                                  MeshEdge *e_kill,
+                                  MeshVert *v_kill,
+                                  bool do_del,
+                                  bool kill_degenerate_faces,
+                                  bool kill_duplicate_faces);
 
-/**
- * Collapse and edge into a single vertex.
- */
+/** Collapse and edge into a single vertex. */
 MeshVert *mesh_edge_collapse(
     Mesh *mesh, MeshEdge *e_kill, MeshVert *v_kill, bool do_del, bool kill_degenerate_faces);
 
@@ -159,29 +157,29 @@ MeshVert *mesh_edge_collapse(
  *                 r_e                e
  * </pre>
  *
- * \param e: The edge to split.
- * \param v: One of the vertices in \a e and defines the "from" end of the splitting operation,
- * the new vertex will be \a fac of the way from \a v to the other end.
+ * param e: The edge to split.
+ * param v: One of the vertices in e and defines the "from" end of the splitting operation,
+ * the new vertex will be fac of the way from v to the other end.
  * param r_e: The newly created edge.
  * return  The new vertex.
  */
 MeshVert *mesh_edge_split(Mesh *mesh, MeshEdge *e, MeshVert *v, MeshEdge **r_e, float fac);
 
 /**
- * \brief Split an edge multiple times evenly
+ * brief Split an edge multiple times evenly
  *
- * \param r_varr: Optional array, verts in between (v1 -> v2)
+ * param r_varr: Optional array, verts in between (v1 -> v2)
  */
-BMVert *BM_edge_split_n(BMesh *bm, BMEdge *e, int numcuts, BMVert **r_varr);
+MeshVert *mesh_edge_split_n(Mesh *mesh, MeshEdge *e, int numcuts, MeshVert **r_varr);
 
 /**
  * Swap v1 & v2
  *
- * \note Typically we shouldn't care about this, however it's used when extruding wire edges.
+ * Typically we shouldn't care about this, however it's used when extruding wire edges.
  */
-void BM_edge_verts_swap(BMEdge *e);
+void mesh_edge_verts_swap(BMEdge *e);
 
-bool BM_face_validate(BMFace *face, FILE *err);
+bool mesh_face_validate(BMFace *face, FILE *err);
 
 /**
  * Calculate the 2 loops which _would_ make up the newly rotated Edge
@@ -195,60 +193,58 @@ bool BM_face_validate(BMFace *face, FILE *err);
  * - may want to measure if the new edge gives improved results topology.
  *   over the old one, as with beauty fill.
  *
- * \note #BM_edge_rotate_check must have already run.
+ * mesh_edge_rotate_check must have already run.
  */
-void BM_edge_calc_rotate(BMEdge *e, bool ccw, BMLoop **r_l1, BMLoop **r_l2);
+void mesh_edge_calc_rotate(MeshEdge *e, bool ccw, MeshLoop **r_l1, MeshLoop **r_l2);
 /**
- * \brief Check if Rotate Edge is OK
+ * Check if Rotate Edge is OK
  *
  * Quick check to see if we could rotate the edge,
  * use this to avoid calling exceptions on common cases.
  */
-bool BM_edge_rotate_check(BMEdge *e);
+bool mesh_edge_rotate_check(MeshEdge *e);
 /**
- * \brief Check if Edge Rotate Gives Degenerate Faces
+ * Check if Edge Rotate Gives Degenerate Faces
  *
  * Check 2 cases
  * 1) does the newly forms edge form a flipped face (compare with previous cross product)
  * 2) does the newly formed edge cause a zero area corner (or close enough to be almost zero)
  *
- * \param e: The edge to test rotation.
- * \param l1, l2: are the loops of the proposed verts to rotate too and should
- * be the result of calling #BM_edge_calc_rotate
+ * param e: The edge to test rotation.
+ * param l1, l2: are the loops of the proposed verts to rotate too and should
+ * be the result of calling mesh_edge_calc_rotate
  */
-bool BM_edge_rotate_check_degenerate(BMEdge *e, BMLoop *l1, BMLoop *l2);
-bool BM_edge_rotate_check_beauty(BMEdge *e, BMLoop *l1, BMLoop *l2);
+bool mesh_edge_rotate_check_degenerate(MeshEdge *e, MeshLoop *l1, MeshLoop *l2);
+bool mesh_edge_rotate_check_beauty(MeshEdge *e, MeshLoop *l1, MeshLoop *l2);
 /**
- * \brief Rotate Edge
+ * Rotate Edge
  *
  * Spins an edge topologically,
- * either counter-clockwise or clockwise depending on \a ccw.
+ * either counter-clockwise or clockwise depending on ccw.
  *
- * \return The spun edge, NULL on error
+ * return The spun edge, NULL on error
  * (e.g., if the edge isn't surrounded by exactly two faces).
  *
- * \note This works by dissolving the edge then re-creating it,
+ * This works by dissolving the edge then re-creating it,
  * so the returned edge won't have the same pointer address as the original one.
  *
- * \see header definition for \a check_flag enum.
+ * see header definition for check_flag enum.
  */
-BMEdge *BM_edge_rotate(BMesh *bm, BMEdge *e, bool ccw, short check_flag);
+MeshEdge *mesh_edge_rotate(Mesh *mesh, MeshEdge *e, bool ccw, short check_flag);
 
-/** Flags for #BM_edge_rotate */
+/** Flags for mesh_edge_rotate */
 enum {
   /** Disallow rotating when the new edge matches an existing one. */
-  BM_EDGEROT_CHECK_EXISTS = (1 << 0),
+  MESH_EDGEROT_CHECK_EXISTS = (1 << 0),
   /** Overrides existing check, if the edge already, rotate and merge them. */
-  BM_EDGEROT_CHECK_SPLICE = (1 << 1),
+  MESH_EDGEROT_CHECK_SPLICE = (1 << 1),
   /** Disallow creating bow-tie, concave or zero area faces */
-  BM_EDGEROT_CHECK_DEGENERATE = (1 << 2),
+  MESH_EDGEROT_CHECK_DEGENERATE = (1 << 2),
   /** Disallow rotating into ugly topology. */
-  BM_EDGEROT_CHECK_BEAUTY = (1 << 3),
+  MESH_EDGEROT_CHECK_BEAUTY = (1 << 3),
 };
 
-/**
- * \brief Rip a single face from a vertex fan
- */
-BMVert *BM_face_loop_separate(BMesh *bm, BMLoop *l_sep);
-BMVert *BM_face_loop_separate_multi_isolated(BMesh *bm, BMLoop *l_sep);
-BMVert *BM_face_loop_separate_multi(BMesh *bm, BMLoop **larr, int larr_len);
+/** Rip a single face from a vertex fan */
+MeshVert *mesh_face_loop_separate(Mesh *mesh, MeshLoop *l_sep);
+MeshVert *mesh_face_loop_separate_multi_isolated(Mesh *mesh, MeshLoop *l_sep);
+MeshVert *mesh_face_loop_separate_multi(Mesh *mesh, MeshLoop **larr, int larr_len);
