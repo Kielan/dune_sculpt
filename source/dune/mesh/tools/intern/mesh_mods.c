@@ -188,7 +188,7 @@ MeshFace *mesh_face_split(Mesh *mesh,
   lib_assert(!mesh_loop_is_adjacent(l_a, l_b));
 
   /* could be an assert */
-  if (UNLIKELY(BM_loop_is_adjacent(l_a, l_b)) || UNLIKELY((f != l_a->f || f != l_b->f))) {
+  if (UNLIKELY(mesh_loop_is_adjacent(l_a, l_b)) || UNLIKELY((f != l_a->f || f != l_b->f))) {
     if (r_l) {
       *r_l = NULL;
     }
@@ -197,13 +197,13 @@ MeshFace *mesh_face_split(Mesh *mesh,
 
   /* do we have a multires layer? */
   if (cd_loop_mdisp_offset != -1) {
-    f_tmp = BM_face_copy(bm, bm, f, false, false);
+    f_tmp = mesh_face_copy(mesh, mesh, f, false, false);
   }
 
-#ifdef USE_BMESH_HOLES
-  f_new = bmesh_kernel_split_face_make_edge(bm, f, l_a, l_b, r_l, NULL, example, no_double);
+#ifdef USE_MESH_HOLES
+  f_new = mesh_kernel_split_face_make_edge(bm, f, l_a, l_b, r_l, NULL, example, no_double);
 #else
-  f_new = bmesh_kernel_split_face_make_edge(bm, f, l_a, l_b, r_l, example, no_double);
+  f_new = mesh_kernel_split_face_make_edge(bm, f, l_a, l_b, r_l, example, no_double);
 #endif
 
   if (f_new) {
@@ -212,19 +212,19 @@ MeshFace *mesh_face_split(Mesh *mesh,
       float f_dst_center[3];
       float f_src_center[3];
 
-      BM_face_calc_center_median(f_tmp, f_src_center);
+      mesh_face_calc_center_median(f_tmp, f_src_center);
 
-      BM_face_calc_center_median(f, f_dst_center);
-      BM_face_interp_multires_ex(bm, f, f_tmp, f_dst_center, f_src_center, cd_loop_mdisp_offset);
+      mesh_face_calc_center_median(f, f_dst_center);
+      mesh_face_interp_multires_ex(mesh, f, f_tmp, f_dst_center, f_src_center, cd_loop_mdisp_offset);
 
-      BM_face_calc_center_median(f_new, f_dst_center);
-      BM_face_interp_multires_ex(
-          bm, f_new, f_tmp, f_dst_center, f_src_center, cd_loop_mdisp_offset);
+      mesh_face_calc_center_median(f_new, f_dst_center);
+      mesh_face_interp_multires_ex(
+          mesh, f_new, f_tmp, f_dst_center, f_src_center, cd_loop_mdisp_offset);
 
 #if 0
-      /* BM_face_multires_bounds_smooth doesn't flip displacement correct */
-      BM_face_multires_bounds_smooth(bm, f);
-      BM_face_multires_bounds_smooth(bm, f_new);
+      /* mesh_face_multires_bounds_smooth doesn't flip displacement correct */
+      mesh_face_multires_bounds_smooth(bm, f);
+      mesh_face_multires_bounds_smooth(bm, f_new);
 #endif
     }
   }
