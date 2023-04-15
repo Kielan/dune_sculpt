@@ -560,11 +560,11 @@ MeshVert *mesh_edge_split_n(Mesh *mesh, BMEdge *e, int numcuts, BMVert **r_varr)
 {
   int i;
   float percent;
-  BMVert *v_new = NULL;
+  MeshVert *v_new = NULL;
 
   for (i = 0; i < numcuts; i++) {
     percent = 1.0f / (float)(numcuts + 1 - i);
-    v_new = BM_edge_split(bm, e, e->v2, NULL, percent);
+    v_new = mesh_edge_split(mesh, e, e->v2, NULL, percent);
     if (r_varr) {
       /* fill in reverse order (v1 -> v2) */
       r_varr[numcuts - i - 1] = v_new;
@@ -654,12 +654,12 @@ void mesh_edge_calc_rotate(MeshEdge *e, const bool ccw, MeshLoop **r_l1, MeshLoo
 
 bool mesh_edge_rotate_check(MeshEdge *e)
 {
-  BMFace *fa, *fb;
-  if (BM_edge_face_pair(e, &fa, &fb)) {
-    BMLoop *la, *lb;
+  MeshFace *fa, *fb;
+  if (mesh_edge_face_pair(e, &fa, &fb)) {
+    MeshLoop *la, *lb;
 
-    la = BM_face_other_vert_loop(fa, e->v2, e->v1);
-    lb = BM_face_other_vert_loop(fb, e->v2, e->v1);
+    la = mesh_face_other_vert_loop(fa, e->v2, e->v1);
+    lb = mesh_face_other_vert_loop(fb, e->v2, e->v1);
 
     /* check that the next vert in both faces isn't the same
      * (ie - the next edge doesn't share the same faces).
@@ -669,8 +669,8 @@ bool mesh_edge_rotate_check(MeshEdge *e)
     }
 
     /* mirror of the check above but in the opposite direction */
-    la = BM_face_other_vert_loop(fa, e->v1, e->v2);
-    lb = BM_face_other_vert_loop(fb, e->v1, e->v2);
+    la = mesh_face_other_vert_loop(fa, e->v1, e->v2);
+    lb = mesh_face_other_vert_loop(fb, e->v1, e->v2);
 
     if (la->v == lb->v) {
       return false;
@@ -681,7 +681,7 @@ bool mesh_edge_rotate_check(MeshEdge *e)
   return false;
 }
 
-bool BM_edge_rotate_check_degenerate(BMEdge *e, BMLoop *l1, BMLoop *l2)
+bool mesh_edge_rotate_check_degenerate(BMEdge *e, MeshLoop *l1, MeshLoop *l2)
 {
   /* NOTE: for these vars 'old' just means initial edge state. */
 
