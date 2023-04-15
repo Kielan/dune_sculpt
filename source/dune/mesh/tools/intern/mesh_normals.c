@@ -25,8 +25,8 @@
 #define EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS -FLT_MAX
 
 static void mesh_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
-                                                  MeshEdge *e,
-                                                  const float split_angle_cos);
+                                                    MeshEdge *e,
+                                                    const float split_angle_cos);
 static void mesh_edge_tag_from_smooth(const float (*fnos)[3],
                                       MeshEdge *e,
                                       const float split_angle_cos);
@@ -265,9 +265,9 @@ static void mesh_partial_verts_parallel_range_calc_normal_cb(
   mesh_vert_calc_normals_impl(v);
 }
 
-void mesh_normals_update_with_partial_ex(BMesh *UNUSED(bm),
-                                            const BMPartialUpdate *bmpinfo,
-                                            const struct BMeshNormalsUpdate_Params *params)
+void mesh_normals_update_with_partial_ex(Mesh *UNUSED(mesh),
+                                         const MeshPartialUpdate *bmpinfo,
+                                         const struct MeshNormalsUpdate_Params *params)
 {
   lib_assert(bmpinfo->params.do_normals);
   /* While harmless, exit early if there is nothing to do. */
@@ -1453,21 +1453,21 @@ static bool mesh_loops_split_lnor_fans(Mesh *mesh,
  * Assign custom normal data from given normal vectors, averaging normals
  * from one smooth fan as necessary.
  */
-static void bm_mesh_loops_assign_normal_data(BMesh *bm,
-                                             MLoopNorSpaceArray *lnors_spacearr,
-                                             short (*r_clnors_data)[2],
-                                             const int cd_loop_clnors_offset,
-                                             const float (*new_lnors)[3])
+static void mesh_loops_assign_normal_data(Mesh *mesh,
+                                          MeshLoopNorSpaceArray *lnors_spacearr,
+                                          short (*r_clnors_data)[2],
+                                          const int cd_loop_clnors_offset,
+                                          const float (*new_lnors)[3])
 {
-  BLI_bitmap *done_loops = BLI_BITMAP_NEW((size_t)bm->totloop, __func__);
+  lib_bitmap *done_loops = LIB_BITMAP_NEW((size_t)bm->totloop, __func__);
 
-  BLI_SMALLSTACK_DECLARE(clnors_data, short *);
+  LIB_SMALLSTACK_DECLARE(clnors_data, short *);
 
-  BLI_assert(lnors_spacearr->data_type == MLNOR_SPACEARR_BMLOOP_PTR);
+  LIB_assert(lnors_spacearr->data_type == MLNOR_SPACEARR_BMLOOP_PTR);
 
-  for (int i = 0; i < bm->totloop; i++) {
+  for (int i = 0; i < mesh->totloop; i++) {
     if (!lnors_spacearr->lspacearr[i]) {
-      BLI_BITMAP_ENABLE(done_loops, i);
+      LIB_BITMAP_ENABLE(done_loops, i);
       if (G.debug & G_DEBUG) {
         printf("WARNING! Still getting invalid NULL loop space in second loop for loop %d!\n", i);
       }
