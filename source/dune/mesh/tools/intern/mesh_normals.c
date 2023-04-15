@@ -496,7 +496,7 @@ static int mesh_loops_calc_normals_for_loop(Mesh *mesh,
     /* If needed, generate this (simple!) lnor space. */
     if (r_lnors_spacearr) {
       float vec_curr[3], vec_prev[3];
-      MLoopNorSpace *lnor_space = dune_lnor_space_create(r_lnors_spacearr);
+      MeshLoopNorSpace *lnor_space = dune_lnor_space_create(r_lnors_spacearr);
 
       {
         const MeshVert *v_pivot = l_curr->v;
@@ -1316,32 +1316,32 @@ static void mesh_loops_calc_normals__multi_threaded(Mesh *mesh,
   }
 }
 
-static void bm_mesh_loops_calc_normals(BMesh *bm,
+static void bm_mesh_loops_calc_normals(Mesh *mesh,
                                        const float (*vcos)[3],
                                        const float (*fnos)[3],
                                        float (*r_lnos)[3],
-                                       MLoopNorSpaceArray *r_lnors_spacearr,
+                                       MeshLoopNorSpaceArray *r_lnors_spacearr,
                                        const short (*clnors_data)[2],
                                        const int cd_loop_clnors_offset,
                                        const bool do_rebuild,
                                        const float split_angle_cos)
 {
-  if (bm->totloop < BM_OMP_LIMIT) {
-    bm_mesh_loops_calc_normals__single_threaded(bm,
-                                                vcos,
-                                                fnos,
-                                                r_lnos,
-                                                r_lnors_spacearr,
-                                                clnors_data,
-                                                cd_loop_clnors_offset,
-                                                do_rebuild,
-                                                split_angle_cos);
+  if (mesh->totloop < MESH_OMP_LIMIT) {
+    mesh_loops_calc_normals__single_threaded(mesh,
+                                             vcos,
+                                             fnos,
+                                             r_lnos,
+                                             r_lnors_spacearr,
+                                             clnors_data,
+                                             cd_loop_clnors_offset,
+                                             do_rebuild,
+                                             split_angle_cos);
   }
   else {
-    bm_mesh_loops_calc_normals__multi_threaded(bm,
-                                               vcos,
-                                               fnos,
-                                               r_lnos,
+    mesh_loops_calc_normals__multi_threaded(mesh,
+                                            vcos,
+                                            fnos,
+                                            r_lnos,
                                                r_lnors_spacearr,
                                                clnors_data,
                                                cd_loop_clnors_offset,
@@ -1357,29 +1357,29 @@ static void bm_mesh_loops_calc_normals(BMesh *bm,
  * Check each current smooth fan (one lnor space per smooth fan!), and if all its
  * matching custom lnors are not (enough) equal, add sharp edges as needed.
  */
-static bool bm_mesh_loops_split_lnor_fans(BMesh *bm,
-                                          MLoopNorSpaceArray *lnors_spacearr,
-                                          const float (*new_lnors)[3])
+static bool mesh_loops_split_lnor_fans(Mesh *mesh,
+                                       MeshLoopNorSpaceArray *lnors_spacearr,
+                                       const float (*new_lnors)[3])
 {
-  BLI_bitmap *done_loops = BLI_BITMAP_NEW((size_t)bm->totloop, __func__);
+  lib_bitmap *done_loops = LIB_BITMAP_NEW((size_t)mesh->totloop, __func__);
   bool changed = false;
 
-  BLI_assert(lnors_spacearr->data_type == MLNOR_SPACEARR_BMLOOP_PTR);
+  lib_assert(lnors_spacearr->data_type == MLNOR_SPACEARR_BMLOOP_PTR);
 
-  for (int i = 0; i < bm->totloop; i++) {
+  for (int i = 0; i < mesh->totloop; i++) {
     if (!lnors_spacearr->lspacearr[i]) {
       /* This should not happen in theory, but in some rare case (probably ugly geometry)
        * we can get some NULL loopspacearr at this point. :/
        * Maybe we should set those loops' edges as sharp?
        */
-      BLI_BITMAP_ENABLE(done_loops, i);
+      LIB_BITMAP_ENABLE(done_loops, i);
       if (G.debug & G_DEBUG) {
         printf("WARNING! Getting invalid NULL loop space for loop %d!\n", i);
       }
       continue;
     }
 
-    if (!BLI_BITMAP_TEST(done_loops, i)) {
+    if (!LIB_BITMAP_TEST(done_loops, i)) {
       /* Notes:
        * * In case of mono-loop smooth fan, we have nothing to do.
        * * Loops in this linklist are ordered (in reversed order compared to how they were
