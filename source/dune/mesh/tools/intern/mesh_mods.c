@@ -321,66 +321,66 @@ MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
   MeshEdge *e_new = NULL;
   MeshVert *tv = mesh_edge_other_vert(e_kill, v_kill);
 
-  BMEdge *e2;
-  BMVert *tv2;
+  MeshEdge *e2;
+  MeshVert *tv2;
 
   /* Only intended to be called for 2-valence vertices */
-  BLI_assert(bmesh_disk_count(v_kill) <= 2);
+  lib_assert(mesh_disk_count(v_kill) <= 2);
 
   /* first modify the face loop data */
 
   if (e_kill->l) {
-    BMLoop *l_iter;
+    MeshLoop *l_iter;
     const float w[2] = {1.0f - fac, fac};
 
     l_iter = e_kill->l;
     do {
       if (l_iter->v == tv && l_iter->next->v == v_kill) {
         const void *src[2];
-        BMLoop *tvloop = l_iter;
-        BMLoop *kvloop = l_iter->next;
+        MeshLoop *tvloop = l_iter;
+        MeshLoop *kvloop = l_iter->next;
 
         src[0] = kvloop->head.data;
         src[1] = tvloop->head.data;
-        CustomData_bmesh_interp(&bm->ldata, src, w, NULL, 2, kvloop->head.data);
+        CustomData_mesh_interp(&mesh->ldata, src, w, NULL, 2, kvloop->head.data);
       }
     } while ((l_iter = l_iter->radial_next) != e_kill->l);
   }
 
   /* now interpolate the vertex data */
-  BM_data_interp_from_verts(bm, v_kill, tv, v_kill, fac);
+  mesh_data_interp_from_verts(mesh, v_kill, tv, v_kill, fac);
 
-  e2 = bmesh_disk_edge_next(e_kill, v_kill);
-  tv2 = BM_edge_other_vert(e2, v_kill);
+  e2 = mesh_disk_edge_next(e_kill, v_kill);
+  tv2 = mesh_edge_other_vert(e2, v_kill);
 
   if (join_faces) {
-    BMIter fiter;
-    BMFace **faces = NULL;
-    BMFace *f;
-    BLI_array_staticdeclare(faces, BM_DEFAULT_ITER_STACK_SIZE);
+    MeshIter fiter;
+    MeshFace **faces = NULL;
+    MeshFace *f;
+    lib_array_staticdeclare(faces, MESH_DEFAULT_ITER_STACK_SIZE);
 
-    BM_ITER_ELEM (f, &fiter, v_kill, BM_FACES_OF_VERT) {
-      BLI_array_append(faces, f);
+    MESH_ITER (f, &fiter, v_kill, MESH_FACES_OF_VERT) {
+      lib_array_append(faces, f);
     }
 
-    if (BLI_array_len(faces) >= 2) {
-      BMFace *f2 = BM_faces_join(bm, faces, BLI_array_len(faces), true);
+    if (lib_array_len(faces) >= 2) {
+      MeshFace *f2 = mesh_faces_join(mesh, faces, lib_array_len(faces), true);
       if (f2) {
-        BMLoop *l_a, *l_b;
+        MeshLoop *l_a, *l_b;
 
-        if ((l_a = BM_face_vert_share_loop(f2, tv)) && (l_b = BM_face_vert_share_loop(f2, tv2))) {
-          BMLoop *l_new;
+        if ((l_a = mesh_face_vert_share_loop(f2, tv)) && (l_b = mesh_face_vert_share_loop(f2, tv2))) {
+          MeshLoop *l_new;
 
-          if (BM_face_split(bm, f2, l_a, l_b, &l_new, NULL, false)) {
+          if (mesh_face_split(mesh, f2, l_a, l_b, &l_new, NULL, false)) {
             e_new = l_new->e;
           }
         }
       }
     }
 
-    BLI_assert(BLI_array_len(faces) < 8);
+    lib_assert(lib_array_len(faces) < 8);
 
-    BLI_array_free(faces);
+    lib_array_free(faces);
   }
   else {
     /* single face or no faces */
