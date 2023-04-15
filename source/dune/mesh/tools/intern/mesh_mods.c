@@ -103,7 +103,7 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
 
     /* handle two-valence */
     if (e->l != e->l->radial_next) {
-      if (!BM_faces_join_pair(bm, e->l, e->l->radial_next, true)) {
+      if (!mesh_faces_join_pair(mesh, e->l, e->l->radial_next, true)) {
         return false;
       }
     }
@@ -118,7 +118,7 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
       done = true;
       e = v->e;
       do {
-        BMFace *f = NULL;
+        MeshFace *f = NULL;
         if (BM_edge_is_manifold(e) && (e != baseedge) && (e != keepedge)) {
           f = BM_faces_join_pair(bm, e->l, e->l->radial_next, true);
           /* return if couldn't join faces in manifold
