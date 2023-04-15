@@ -461,7 +461,7 @@ static int mesh_loops_calc_normals_for_loop(Mesh *mesh,
   lib_assert((mesh->elem_index_dirty & MESH_LOOP) == 0);
   lib_assert((fnos == NULL) || ((mesh->elem_index_dirty & BM_FACE) == 0));
   lib_assert((vcos == NULL) || ((mesh->elem_index_dirty & BM_VERT) == 0));
-  UNUSED_VARS_NDEBUG(bm);
+  UNUSED_VARS_NDEBUG(mesh);
 
   int handled = 0;
 
@@ -1031,40 +1031,40 @@ static void mesh_loops_calc_normals_for_vert_without_clnors(
 }
 
 /**
- * BMesh version of BKE_mesh_normals_loop_split() in `mesh_evaluate.cc`
+ * Mesh version of dune_mesh_normals_loop_split() in `mesh_evaluate.cc`
  * Will use first clnors_data array, and fallback to cd_loop_clnors_offset
  * (use NULL and -1 to not use clnors).
  *
- * \note This sets #BM_ELEM_TAG which is used in tool code (e.g. T84426).
- * we could add a low-level API flag for this, see #BM_ELEM_API_FLAG_ENABLE and friends.
+ * This sets MESH_ELEM_TAG which is used in tool code (e.g. T84426).
+ * we could add a low-level API flag for this, see MESH_ELEM_API_FLAG_ENABLE and friends.
  */
-static void bm_mesh_loops_calc_normals__single_threaded(BMesh *bm,
-                                                        const float (*vcos)[3],
-                                                        const float (*fnos)[3],
-                                                        float (*r_lnos)[3],
-                                                        MLoopNorSpaceArray *r_lnors_spacearr,
-                                                        const short (*clnors_data)[2],
-                                                        const int cd_loop_clnors_offset,
-                                                        const bool do_rebuild,
-                                                        const float split_angle_cos)
+static void mesh_loops_calc_normals__single_threaded(Mesh *mesh,
+                                                     const float (*vcos)[3],
+                                                     const float (*fnos)[3],
+                                                     float (*r_lnos)[3],
+                                                     MESHLoopNorSpaceArray *r_lnors_spacearr,
+                                                     const short (*clnors_data)[2],
+                                                     const int cd_loop_clnors_offset,
+                                                     const bool do_rebuild,
+                                                     const float split_angle_cos)
 {
-  BMIter fiter;
-  BMFace *f_curr;
+  MeshIter fiter;
+  MeshFace *f_curr;
   const bool has_clnors = clnors_data || (cd_loop_clnors_offset != -1);
   /* When false the caller must have already tagged the edges. */
   const bool do_edge_tag = (split_angle_cos != EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS);
 
-  MLoopNorSpaceArray _lnors_spacearr = {NULL};
+  MeshLoopNorSpaceArray _lnors_spacearr = {NULL};
 
-  BLI_Stack *edge_vectors = NULL;
+  lib_Stack *edge_vectors = NULL;
 
   {
     char htype = 0;
     if (vcos) {
-      htype |= BM_VERT;
+      htype |= MESH_VERT;
     }
     /* Face/Loop indices are set inline below. */
-    BM_mesh_elem_index_ensure(bm, htype);
+    nmesh_elem_index_ensure(mesh, htype);
   }
 
   if (!r_lnors_spacearr && has_clnors) {
@@ -1072,21 +1072,21 @@ static void bm_mesh_loops_calc_normals__single_threaded(BMesh *bm,
     r_lnors_spacearr = &_lnors_spacearr;
   }
   if (r_lnors_spacearr) {
-    BKE_lnor_spacearr_init(r_lnors_spacearr, bm->totloop, MLNOR_SPACEARR_BMLOOP_PTR);
-    edge_vectors = BLI_stack_new(sizeof(float[3]), __func__);
+    dune_lnor_spacearr_init(r_lnors_spacearr, bm->totloop, MLNOR_SPACEARR_BMLOOP_PTR);
+    edge_vectors = lib_stack_new(sizeof(float[3]), __func__);
   }
 
   /* Clear all loops' tags (means none are to be skipped for now). */
   int index_face, index_loop = 0;
-  BM_ITER_MESH_INDEX (f_curr, &fiter, bm, BM_FACES_OF_MESH, index_face) {
-    BMLoop *l_curr, *l_first;
+  MESH_INDEX_ITER (f_curr, &fiter, mesh, MESH_FACES_OF_MESH, index_face) {
+    MeshLoop *l_curr, *l_first;
 
-    BM_elem_index_set(f_curr, index_face); /* set_inline */
+    mesh_elem_index_set(f_curr, index_face); /* set_inline */
 
-    l_curr = l_first = BM_FACE_FIRST_LOOP(f_curr);
+    l_curr = l_first = MESH_FACE_FIRST_LOOP(f_curr);
     do {
-      BM_elem_index_set(l_curr, index_loop++); /* set_inline */
-      BM_elem_flag_disable(l_curr, BM_ELEM_TAG);
+      mesh_elem_index_set(l_curr, index_loop++); /* set_inline */
+      mesh_elem_flag_disable(l_curr, MESH_ELEM_TAG);
     } while ((l_curr = l_curr->next) != l_first);
   }
   bm->elem_index_dirty &= ~(BM_FACE | BM_LOOP);
