@@ -327,53 +327,51 @@ void mesh_normals_loops_edges_tag(Mesh *mesh, const bool do_edges)
 
   if (do_edges) {
     int index_edge;
-    BM_ITER_MESH_INDEX (e, &eiter, bm, BM_EDGES_OF_MESH, index_edge) {
-      BMLoop *l_a, *l_b;
+    MESH_INDEX_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH, index_edge) {
+      MeshLoop *l_a, *l_b;
 
-      BM_elem_index_set(e, index_edge); /* set_inline */
-      BM_elem_flag_disable(e, BM_ELEM_TAG);
-      if (BM_edge_loop_pair(e, &l_a, &l_b)) {
-        if (BM_elem_flag_test(e, BM_ELEM_SMOOTH) && l_a->v != l_b->v) {
-          BM_elem_flag_enable(e, BM_ELEM_TAG);
+      mesh_elem_index_set(e, index_edge); /* set_inline */
+      mesh_elem_flag_disable(e, MESH_ELEM_TAG);
+      if (mesh_edge_loop_pair(e, &l_a, &l_b)) {
+        if (mesh_elem_flag_test(e, MESH_ELEM_SMOOTH) && l_a->v != l_b->v) {
+          mesh_elem_flag_enable(e, MESH_ELEM_TAG);
         }
       }
     }
-    bm->elem_index_dirty &= ~BM_EDGE;
+    mesh->elem_index_dirty &= ~MESH_EDGE;
   }
 
   int index_face, index_loop = 0;
-  BM_ITER_MESH_INDEX (f, &fiter, bm, BM_FACES_OF_MESH, index_face) {
-    BM_elem_index_set(f, index_face); /* set_inline */
-    l_curr = l_first = BM_FACE_FIRST_LOOP(f);
+  MESH_INDEX_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH, index_face) {
+    mesh_elem_index_set(f, index_face); /* set_inline */
+    l_curr = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
-      BM_elem_index_set(l_curr, index_loop++); /* set_inline */
-      BM_elem_flag_disable(l_curr, BM_ELEM_TAG);
+      mesh_elem_index_set(l_curr, index_loop++); /* set_inline */
+      mesh_elem_flag_disable(l_curr, MESH_ELEM_TAG);
     } while ((l_curr = l_curr->next) != l_first);
   }
-  bm->elem_index_dirty &= ~(BM_FACE | BM_LOOP);
+  mesh->elem_index_dirty &= ~(MESH_FACE | MESH_LOOP);
 }
 
-/**
- * Helpers for #BM_mesh_loop_normals_update and #BM_loops_calc_normal_vcos
- */
-static void bm_mesh_edges_sharp_tag(BMesh *bm,
-                                    const float (*fnos)[3],
-                                    float split_angle_cos,
-                                    const bool do_sharp_edges_tag)
+/** Helpers for mesh_loop_normals_update and mesh_loops_calc_normal_vcos */
+static void mesh_edges_sharp_tag(Mesh *mesh,
+                                 const float (*fnos)[3],
+                                 float split_angle_cos,
+                                 const bool do_sharp_edges_tag)
 {
-  BMIter eiter;
-  BMEdge *e;
+  MeshIter eiter;
+  MeshEdge *e;
   int i;
 
   if (fnos) {
-    BM_mesh_elem_index_ensure(bm, BM_FACE);
+    mesh_elem_index_ensure(mesh, MESH_FACE);
   }
 
   if (do_sharp_edges_tag) {
-    BM_ITER_MESH_INDEX (e, &eiter, bm, BM_EDGES_OF_MESH, i) {
-      BM_elem_index_set(e, i); /* set_inline */
+    MESH_INDEX_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH, i) {
+      MESH_elem_index_set(e, i); /* set_inline */
       if (e->l != NULL) {
-        bm_edge_tag_from_smooth_and_set_sharp(fnos, e, split_angle_cos);
+        mesh_edge_tag_from_smooth_and_set_sharp(fnos, e, split_angle_cos);
       }
     }
   }
