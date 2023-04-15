@@ -841,19 +841,19 @@ static void bm_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
  * operating on vertices this is needed for multi-threading
  * so there is a guarantee that each thread has isolated loops.
  */
-static void bm_mesh_loops_calc_normals_for_vert_with_clnors(BMesh *bm,
-                                                            const float (*vcos)[3],
-                                                            const float (*fnos)[3],
-                                                            float (*r_lnos)[3],
-                                                            const short (*clnors_data)[2],
-                                                            const int cd_loop_clnors_offset,
-                                                            const bool do_rebuild,
-                                                            const float split_angle_cos,
-                                                            /* TLS */
-                                                            MLoopNorSpaceArray *r_lnors_spacearr,
-                                                            BLI_Stack *edge_vectors,
-                                                            /* Iterate over. */
-                                                            BMVert *v)
+static void mesh_loops_calc_normals_for_vert_with_clnors(Mesh *mesh,
+                                                         const float (*vcos)[3],
+                                                         const float (*fnos)[3],
+                                                         float (*r_lnos)[3],
+                                                         const short (*clnors_data)[2],
+                                                         const int cd_loop_clnors_offset,
+                                                         const bool do_rebuild,
+                                                         const float split_angle_cos,
+                                                         /* TLS */
+                                                         MeshLoopNorSpaceArray *r_lnors_spacearr,
+                                                         lib_Stack *edge_vectors,
+                                                         /* Iterate over. */
+                                                         MeshVert *v)
 {
   /* Respecting face order is necessary so the initial starting loop is consistent
    * with looping over loops of all faces.
@@ -874,36 +874,36 @@ static void bm_mesh_loops_calc_normals_for_vert_with_clnors(BMesh *bm,
   {
     LinkNode *link_best;
     uint index_best = UINT_MAX;
-    BMEdge *e_curr_iter = v->e;
+    MeshEdge *e_curr_iter = v->e;
     do { /* Edges of vertex. */
-      BMLoop *l_curr = e_curr_iter->l;
+      MeshLoop *l_curr = e_curr_iter->l;
       if (l_curr == NULL) {
         continue;
       }
 
       if (do_edge_tag) {
-        bm_edge_tag_from_smooth(fnos, e_curr_iter, split_angle_cos);
+        mesh_edge_tag_from_smooth(fnos, e_curr_iter, split_angle_cos);
       }
 
       do { /* Radial loops. */
         if (l_curr->v != v) {
           continue;
         }
-        if (do_rebuild && !BM_ELEM_API_FLAG_TEST(l_curr, BM_LNORSPACE_UPDATE) &&
-            !(bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL)) {
+        if (do_rebuild && !MESH_ELEM_API_FLAG_TEST(l_curr, MESH_LNORSPACE_UPDATE) &&
+            !(mesh->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL)) {
           continue;
         }
-        BM_elem_flag_disable(l_curr, BM_ELEM_TAG);
-        BLI_linklist_prepend_alloca(&loops_of_vert, l_curr);
+        mesh_elem_flag_disable(l_curr, MESH_ELEM_TAG);
+        lib_linklist_prepend_alloca(&loops_of_vert, l_curr);
         loops_of_vert_count += 1;
 
-        const uint index_test = (uint)BM_elem_index_get(l_curr);
+        const uint index_test = (uint)mesh_elem_index_get(l_curr);
         if (index_best > index_test) {
           index_best = index_test;
           link_best = loops_of_vert;
         }
       } while ((l_curr = l_curr->radial_next) != e_curr_iter->l);
-    } while ((e_curr_iter = BM_DISK_EDGE_NEXT(e_curr_iter, v)) != v->e);
+    } while ((e_curr_iter = MESH_DISK_EDGE_NEXT(e_curr_iter, v)) != v->e);
 
     if (UNLIKELY(loops_of_vert == NULL)) {
       return;
@@ -923,11 +923,11 @@ static void bm_mesh_loops_calc_normals_for_vert_with_clnors(BMesh *bm,
   int loops_of_vert_handled = 0;
 
   while (loops_of_vert != NULL) {
-    BMLoop *l_best = loops_of_vert->link;
+    MeshLoop *l_best = loops_of_vert->link;
     loops_of_vert = loops_of_vert->next;
 
-    BLI_assert(l_best->v == v);
-    loops_of_vert_handled += bm_mesh_loops_calc_normals_for_loop(bm,
+    lib_assert(l_best->v == v);
+    loops_of_vert_handled += mesh_loops_calc_normals_for_loop(mesh,
                                                                  vcos,
                                                                  fnos,
                                                                  clnors_data,
@@ -941,7 +941,7 @@ static void bm_mesh_loops_calc_normals_for_vert_with_clnors(BMesh *bm,
     /* Check if an early exit is possible without  an exhaustive inspection of every loop
      * where 1 loop's fan extends out to all remaining loops.
      * This is a common case for smooth vertices. */
-    BLI_assert(loops_of_vert_handled <= loops_of_vert_count);
+    lib_assert(loops_of_vert_handled <= loops_of_vert_count);
     if (loops_of_vert_handled == loops_of_vert_count) {
       break;
     }
@@ -950,7 +950,7 @@ static void bm_mesh_loops_calc_normals_for_vert_with_clnors(BMesh *bm,
      * However in the worst case this is `O(N^2)`, so use a single sort call instead. */
     if (!loops_of_vert_is_sorted) {
       if (loops_of_vert && loops_of_vert->next) {
-        loops_of_vert = BLI_linklist_sort(loops_of_vert, bm_loop_index_cmp);
+        loops_of_vert = lib_linklist_sort(loops_of_vert, bm_loop_index_cmp);
         loops_of_vert_is_sorted = true;
       }
     }
@@ -961,18 +961,18 @@ static void bm_mesh_loops_calc_normals_for_vert_with_clnors(BMesh *bm,
  * A simplified version of #bm_mesh_loops_calc_normals_for_vert_with_clnors
  * that can operate on loops in any order.
  */
-static void bm_mesh_loops_calc_normals_for_vert_without_clnors(
-    BMesh *bm,
+static void mesh_loops_calc_normals_for_vert_without_clnors(
+    Mesh *mesh,
     const float (*vcos)[3],
     const float (*fnos)[3],
     float (*r_lnos)[3],
     const bool do_rebuild,
     const float split_angle_cos,
     /* TLS */
-    MLoopNorSpaceArray *r_lnors_spacearr,
-    BLI_Stack *edge_vectors,
+    MeshLoopNorSpaceArray *r_lnors_spacearr,
+    LibStack *edge_vectors,
     /* Iterate over. */
-    BMVert *v)
+    MeshVert *v)
 {
   const bool has_clnors = false;
   const short(*clnors_data)[2] = NULL;
@@ -980,25 +980,25 @@ static void bm_mesh_loops_calc_normals_for_vert_without_clnors(
   const bool do_edge_tag = (split_angle_cos != EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS);
   const int cd_loop_clnors_offset = -1;
 
-  BMEdge *e_curr_iter;
+  MeshEdge *e_curr_iter;
 
   /* Unfortunately a loop is needed just to clear loop-tags. */
   e_curr_iter = v->e;
   do { /* Edges of vertex. */
-    BMLoop *l_curr = e_curr_iter->l;
+    MeshLoop *l_curr = e_curr_iter->l;
     if (l_curr == NULL) {
       continue;
     }
 
     if (do_edge_tag) {
-      bm_edge_tag_from_smooth(fnos, e_curr_iter, split_angle_cos);
+      mesh_edge_tag_from_smooth(fnos, e_curr_iter, split_angle_cos);
     }
 
     do { /* Radial loops. */
       if (l_curr->v != v) {
         continue;
       }
-      BM_elem_flag_disable(l_curr, BM_ELEM_TAG);
+      mesh_elem_flag_disable(l_curr, BM_ELEM_TAG);
     } while ((l_curr = l_curr->radial_next) != e_curr_iter->l);
   } while ((e_curr_iter = BM_DISK_EDGE_NEXT(e_curr_iter, v)) != v->e);
 
