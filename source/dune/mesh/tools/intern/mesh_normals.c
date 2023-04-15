@@ -678,7 +678,7 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
           lnor_len = 1.0f;
         }
 
-        BKE_lnor_space_define(lnor_space, lnor, vec_org, vec_next, edge_vectors);
+        dune_lnor_space_define(lnor_space, lnor, vec_org, vec_next, edge_vectors);
 
         if (has_clnors) {
           if (clnors_invalid) {
@@ -691,7 +691,7 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
             /* Prints continuously when merge custom normals, so commenting. */
             // printf("Invalid clnors in this fan!\n");
 
-            while ((clnor = BLI_SMALLSTACK_POP(clnors))) {
+            while ((clnor = LIB_SMALLSTACK_POP(clnors))) {
               // print_v2("org clnor", clnor);
               clnor[0] = (short)clnors_avg[0];
               clnor[1] = (short)clnors_avg[1];
@@ -700,11 +700,11 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
           }
           else {
             /* We still have to consume the stack! */
-            while (BLI_SMALLSTACK_POP(clnors)) {
+            while (LIB_SMALLSTACK_POP(clnors)) {
               /* pass */
             }
           }
-          BKE_lnor_space_custom_data_to_normal(lnor_space, *clnor_ref, lnor);
+          dune_lnor_space_custom_data_to_normal(lnor_space, *clnor_ref, lnor);
         }
       }
 
@@ -713,13 +713,13 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
         /* Copy back the final computed normal into all related loop-normals. */
         float *nor;
 
-        while ((nor = BLI_SMALLSTACK_POP(normal))) {
+        while ((nor = LIB_SMALLSTACK_POP(normal))) {
           copy_v3_v3(nor, lnor);
         }
       }
       else {
         /* We still have to consume the stack! */
-        while (BLI_SMALLSTACK_POP(normal)) {
+        while (LIB_SMALLSTACK_POP(normal)) {
           /* pass */
         }
       }
@@ -728,16 +728,16 @@ static int mesh_loops_calc_normals_for_loop(BMesh *bm,
     /* Tag related vertex as sharp, to avoid fanning around it again
      * (in case it was a smooth one). */
     if (r_lnors_spacearr) {
-      BM_elem_flag_enable(l_curr->v, BM_ELEM_TAG);
+      mesh_elem_flag_enable(l_curr->v, MESH_ELEM_TAG);
     }
   }
   return handled;
 }
 
-static int bm_loop_index_cmp(const void *a, const void *b)
+static int mesh_loop_index_cmp(const void *a, const void *b)
 {
-  BLI_assert(BM_elem_index_get((BMLoop *)a) != BM_elem_index_get((BMLoop *)b));
-  if (BM_elem_index_get((BMLoop *)a) < BM_elem_index_get((BMLoop *)b)) {
+  lib_assert(mesh_elem_index_get((MeshLoop *)a) != mesh_elem_index_get((MeshLoop *)b));
+  if (lib_elem_index_get((MeshLoop *)a) < mesh_elem_index_get((MeshLoop *)b)) {
     return -1;
   }
   return 1;
