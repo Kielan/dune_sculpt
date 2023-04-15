@@ -384,12 +384,12 @@ MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
   }
   else {
     /* single face or no faces */
-    /* same as BM_vert_collapse_edge() however we already
+    /* same as mesh_vert_collapse_edge() however we already
      * have vars to perform this operation so don't call. */
-    e_new = bmesh_kernel_join_edge_kill_vert(
-        bm, e_kill, v_kill, do_del, true, kill_degenerate_faces, kill_duplicate_faces);
+    e_new = mesh_kernel_join_edge_kill_vert(
+        mesh, e_kill, v_kill, do_del, true, kill_degenerate_faces, kill_duplicate_faces);
 
-    /* e_new = BM_edge_exists(tv, tv2); */ /* same as return above */
+    /* e_new = mesh_edge_exists(tv, tv2); */ /* same as return above */
   }
 
   return e_new;
@@ -418,7 +418,7 @@ MeshEdge *mesh_vert_collapse_edge(Mesh *mesh,
       MeshVert *tv2 = mesh_edge_other_vert(e2, v_kill);
       if (tv2) {
         /* only action, other calls here only get the edge to return */
-        e_new = bmesh_kernel_join_edge_kill_vert(
+        e_new = mesh_kernel_join_edge_kill_vert(
             mesh, e_kill, v_kill, do_del, true, kill_degenerate_faces);
       }
     }
@@ -721,11 +721,11 @@ bool mesh_edge_rotate_check_degenerate(BMEdge *e, MeshLoop *l1, MeshLoop *l2)
 
   /* normalize all so comparisons are scale independent */
 
-  BLI_assert(BM_edge_exists(v1_old, v1));
-  BLI_assert(BM_edge_exists(v1, v1_alt));
+  lib_assert(mesh_edge_exists(v1_old, v1));
+  lib_assert(mesh_edge_exists(v1, v1_alt));
 
-  BLI_assert(BM_edge_exists(v2_old, v2));
-  BLI_assert(BM_edge_exists(v2, v2_alt));
+  lib_assert(mesh_edge_exists(v2_old, v2));
+  lib_assert(mesh_edge_exists(v2, v2_alt));
 
   /* old and new edge vecs */
   sub_v3_v3v3(ed_dir_old, v1_old->co, v2_old->co);
@@ -768,7 +768,7 @@ bool mesh_edge_rotate_check_degenerate(BMEdge *e, MeshLoop *l1, MeshLoop *l2)
   return true;
 }
 
-bool BM_edge_rotate_check_beauty(BMEdge *e, BMLoop *l1, BMLoop *l2)
+bool mesh_edge_rotate_check_beauty(MeshEdge *e, MeshLoop *l1, BMLoop *l2)
 {
   /* Stupid check for now:
    * Could compare angles of surrounding edges
@@ -776,21 +776,21 @@ bool BM_edge_rotate_check_beauty(BMEdge *e, BMLoop *l1, BMLoop *l2)
   return (len_squared_v3v3(e->v1->co, e->v2->co) > len_squared_v3v3(l1->v->co, l2->v->co));
 }
 
-BMEdge *BM_edge_rotate(BMesh *bm, BMEdge *e, const bool ccw, const short check_flag)
+MeshEdge *mesh_edge_rotate(Mesh *mesh, MeshEdge *e, const bool ccw, const short check_)
 {
-  BMVert *v1, *v2;
-  BMLoop *l1, *l2;
-  BMFace *f;
-  BMEdge *e_new = NULL;
+  MeshVert *v1, *v2;
+  MeshLoop *l1, *l2;
+  MeshFace *f;
+  MeshEdge *e_new = NULL;
   char f_active_prev = 0;
   char f_hflag_prev_1;
   char f_hflag_prev_2;
 
-  if (!BM_edge_rotate_check(e)) {
+  if (!mesh_edge_rotate_check(e)) {
     return NULL;
   }
 
-  BM_edge_calc_rotate(e, ccw, &l1, &l2);
+  mesh_edge_calc_rotate(e, ccw, &l1, &l2);
 
   /* the loops will be freed so assign verts */
   v1 = l1->v;
@@ -799,22 +799,22 @@ BMEdge *BM_edge_rotate(BMesh *bm, BMEdge *e, const bool ccw, const short check_f
   /* --------------------------------------- */
   /* Checking Code - make sure we can rotate */
 
-  if (check_flag & BM_EDGEROT_CHECK_BEAUTY) {
-    if (!BM_edge_rotate_check_beauty(e, l1, l2)) {
+  if (check_flag & MESH_EDGEROT_CHECK_BEAUTY) {
+    if (!mesh_edge_rotate_check_beauty(e, l1, l2)) {
       return NULL;
     }
   }
 
   /* check before applying */
-  if (check_flag & BM_EDGEROT_CHECK_EXISTS) {
-    if (BM_edge_exists(v1, v2)) {
+  if (check_flag & MESH_EDGEROT_CHECK_EXISTS) {
+    if (mesh_edge_exists(v1, v2)) {
       return NULL;
     }
   }
 
   /* slowest, check last */
-  if (check_flag & BM_EDGEROT_CHECK_DEGENERATE) {
-    if (!BM_edge_rotate_check_degenerate(e, l1, l2)) {
+  if (check_flag & MESH_EDGEROT_CHECK_DEGENERATE) {
+    if (!mesh_edge_rotate_check_degenerate(e, l1, l2)) {
       return NULL;
     }
   }
@@ -826,24 +826,24 @@ BMEdge *BM_edge_rotate(BMesh *bm, BMEdge *e, const bool ccw, const short check_f
 
   /* first create the new edge, this is so we can copy the customdata from the old one
    * if splice if disabled, always add in a new edge even if there's one there. */
-  e_new = BM_edge_create(
-      bm, v1, v2, e, (check_flag & BM_EDGEROT_CHECK_SPLICE) ? BM_CREATE_NO_DOUBLE : BM_CREATE_NOP);
+  e_new = mesh_edge_create(
+      mesh, v1, v2, e, (check_flag & MESH_EDGEROT_CHECK_SPLICE) ? BM_CREATE_NO_DOUBLE : BM_CREATE_NOP);
 
   f_hflag_prev_1 = l1->f->head.hflag;
   f_hflag_prev_2 = l2->f->head.hflag;
 
   /* maintain active face */
-  if (bm->act_face == l1->f) {
+  if (mesh->act_face == l1->f) {
     f_active_prev = 1;
   }
-  else if (bm->act_face == l2->f) {
+  else if (mesh->act_face == l2->f) {
     f_active_prev = 2;
   }
 
-  const bool is_flipped = !BM_edge_is_contiguous(e);
+  const bool is_flipped = !mesh_edge_is_contiguous(e);
 
   /* don't delete the edge, manually remove the edge after so we can copy its attributes */
-  f = BM_faces_join_pair(
+  f = mesh_faces_join_pair(
       mesh, mesh_face_edge_share_loop(l1->f, e), BM_face_edge_share_loop(l2->f, e), true);
 
   if (f == NULL) {
