@@ -320,10 +320,10 @@ void mesh_verts_calc_normal_vcos(Mesh *mesh,
 
 void mesh_normals_loops_edges_tag(Mesh *mesh, const bool do_edges)
 {
-  BMFace *f;
-  BMEdge *e;
-  BMIter fiter, eiter;
-  BMLoop *l_curr, *l_first;
+  MeshFace *f;
+  MeshEdge *e;
+  MeshIter fiter, eiter;
+  MeshLoop *l_curr, *l_first;
 
   if (do_edges) {
     int index_edge;
@@ -561,11 +561,11 @@ static int mesh_loops_calc_normals_for_loop(Mesh *mesh,
     int clnors_nbr = 0;
     bool clnors_invalid = false;
 
-    const float *co_pivot = vcos ? vcos[BM_elem_index_get(v_pivot)] : v_pivot->co;
+    const float *co_pivot = vcos ? vcos[mesh_elem_index_get(v_pivot)] : v_pivot->co;
 
-    MeshLoopNorSpace *lnor_space = r_lnors_spacearr ? BKE_lnor_space_create(r_lnors_spacearr) : NULL;
+    MeshLoopNorSpace *lnor_space = r_lnors_spacearr ? dune_lnor_space_create(r_lnors_spacearr) : NULL;
 
-    lib_assert((edge_vectors == NULL) || BLI_stack_is_empty(edge_vectors));
+    lib_assert((edge_vectors == NULL) || lib_stack_is_empty(edge_vectors));
 
     lfan_pivot = l_curr;
     lfan_pivot_index = mesh_elem_index_get(lfan_pivot);
@@ -655,7 +655,7 @@ static int mesh_loops_calc_normals_for_loop(Mesh *mesh,
 
       handled += 1;
 
-      if (!BM_elem_flag_test(e_next, BM_ELEM_TAG) || (e_next == e_org)) {
+      if (!mesh_elem_flag_test(e_next, MESH_ELEM_TAG) || (e_next == e_org)) {
         /* Next edge is sharp, we have finished with this fan of faces around this vert! */
         break;
       }
@@ -664,7 +664,7 @@ static int mesh_loops_calc_normals_for_loop(Mesh *mesh,
       copy_v3_v3(vec_curr, vec_next);
       /* Next pivot loop to current one. */
       lfan_pivot = lfan_pivot_next;
-      lfan_pivot_index = BM_elem_index_get(lfan_pivot);
+      lfan_pivot_index = mesh_elem_index_get(lfan_pivot);
     }
 
     {
@@ -751,9 +751,9 @@ static int mesh_loop_index_cmp(const void *a, const void *b)
  * - The faces of the edge have compatible (non-flipped) topological normal (winding),
  *   i.e. both loops on the same edge do not share the same vertex.
  */
-LIB_INLINE bool mesh_edge_is_smooth_no_angle_test(const BMEdge *e,
-                                                const BMLoop *l_a,
-                                                const BMLoop *l_b)
+LIB_INLINE bool mesh_edge_is_smooth_no_angle_test(const MeshEdge *e,
+                                                const MeshLoop *l_a,
+                                                const MeshLoop *l_b)
 {
   lib_assert(l_a->radial_next == l_b);
   return (
@@ -762,17 +762,17 @@ LIB_INLINE bool mesh_edge_is_smooth_no_angle_test(const BMEdge *e,
       /* Faces have winding that faces the same way. */
       (l_a->v != l_b->v) &&
       /* The edge is smooth. */
-      BM_elem_flag_test(e, BM_ELEM_SMOOTH) &&
+      mesh_elem_flag_test(e, MESH_ELEM_SMOOTH) &&
       /* Both faces are smooth. */
-      BM_elem_flag_test(l_a->f, BM_ELEM_SMOOTH) && BM_elem_flag_test(l_b->f, BM_ELEM_SMOOTH));
+      mesh_elem_flag_test(l_a->f, MESH_ELEM_SMOOTH) && mesh_elem_flag_test(l_b->f, MESH_ELEM_SMOOTH));
 }
 
-static void bm_edge_tag_from_smooth(const float (*fnos)[3], BMEdge *e, const float split_angle_cos)
+static void mesh_edge_tag_from_smooth(const float (*fnos)[3], MeshEdge *e, const float split_angle_cos)
 {
-  BLI_assert(e->l != NULL);
-  BMLoop *l_a = e->l, *l_b = l_a->radial_next;
+  lib_assert(e->l != NULL);
+  MeshLoop *l_a = e->l, *l_b = l_a->radial_next;
   bool is_smooth = false;
-  if (bm_edge_is_smooth_no_angle_test(e, l_a, l_b)) {
+  if (mesh_edge_is_smooth_no_angle_test(e, l_a, l_b)) {
     if (split_angle_cos != -1.0f) {
       const float dot = (fnos == NULL) ? dot_v3v3(l_a->f->no, l_b->f->no) :
                                          dot_v3v3(fnos[mesh_elem_index_get(l_a->f)],
