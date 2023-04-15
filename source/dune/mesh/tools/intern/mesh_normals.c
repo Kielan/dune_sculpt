@@ -286,19 +286,19 @@ void mesh_normals_update_with_partial_ex(BMesh *UNUSED(bm),
   /* Faces. */
   if (params->face_normals) {
     lib_task_parallel_range(
-        0, faces_len, faces, bm_partial_faces_parallel_range_calc_normals_cb, &settings);
+        0, faces_len, faces, mesh_partial_faces_parallel_range_calc_normals_cb, &settings);
   }
 
   /* Verts. */
   lib_task_parallel_range(
-      0, verts_len, verts, bm_partial_verts_parallel_range_calc_normal_cb, &settings);
+      0, verts_len, verts, mesh_partial_verts_parallel_range_calc_normal_cb, &settings);
 }
 
 void mesh_normals_update_with_partial(Mesh *mesh, const BMPartialUpdate *bmpinfo)
 {
   mesh_normals_update_with_partial_ex(mesh,
                                       bmpinfo,
-                                      &(const struct BMeshNormalsUpdate_Params){
+                                      &(const struct MeshNormalsUpdateParams){
                                          .face_normals = true,
                                       });
 }
@@ -306,22 +306,19 @@ void mesh_normals_update_with_partial(Mesh *mesh, const BMPartialUpdate *bmpinfo
 /* -------------------------------------------------------------------- */
 /** Update Vertex & Face Normals (Custom Coords) **/
 
-void BM_verts_calc_normal_vcos(BMesh *bm,
+void mesh_verts_calc_normal_vcos(Mesh *mesh,
                                const float (*fnos)[3],
                                const float (*vcos)[3],
                                float (*vnos)[3])
 {
   /* Add weighted face normals to vertices, and normalize vert normals. */
-  bm_mesh_verts_calc_normals(bm, fnos, vcos, vnos);
+  mesh_verts_calc_normals(mesh, fnos, vcos, vnos);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Tagging Utility Functions
- * \{ */
+/** Tagging Utility Functions **/
 
-void BM_normals_loops_edges_tag(BMesh *bm, const bool do_edges)
+void mesh_normals_loops_edges_tag(Mesh *mesh, const bool do_edges)
 {
   BMFace *f;
   BMEdge *e;
