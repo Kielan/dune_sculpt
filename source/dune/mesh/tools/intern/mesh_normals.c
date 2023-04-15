@@ -1658,74 +1658,72 @@ static void bm_mesh_loops_calc_normals_no_autosmooth(BMesh *bm,
   }
 }
 
-void BM_loops_calc_normal_vcos(BMesh *bm,
-                               const float (*vcos)[3],
-                               const float (*vnos)[3],
-                               const float (*fnos)[3],
-                               const bool use_split_normals,
-                               const float split_angle,
-                               float (*r_lnos)[3],
-                               MLoopNorSpaceArray *r_lnors_spacearr,
-                               short (*clnors_data)[2],
-                               const int cd_loop_clnors_offset,
-                               const bool do_rebuild)
+void mesh_loops_calc_normal_vcos(Mesh *mesh,
+                                 const float (*vcos)[3],
+                                 const float (*vnos)[3],
+                                 const float (*fnos)[3],
+                                 const bool use_split_normals,
+                                 const float split_angle,
+                                 float (*r_lnos)[3],
+                                 MeshLoopNorSpaceArray *r_lnors_spacearr,
+                                 short (*clnors_data)[2],
+                                 const int cd_loop_clnors_offset,
+                                 const bool do_rebuild)
 {
   const bool has_clnors = clnors_data || (cd_loop_clnors_offset != -1);
 
   if (use_split_normals) {
-    bm_mesh_loops_calc_normals(bm,
-                               vcos,
-                               fnos,
-                               r_lnos,
-                               r_lnors_spacearr,
-                               clnors_data,
-                               cd_loop_clnors_offset,
-                               do_rebuild,
-                               has_clnors ? -1.0f : cosf(split_angle));
+    mesh_loops_calc_normals(mesh,
+                            vcos,
+                            fnos,
+                            r_lnos,
+                            r_lnors_spacearr,
+                            clnors_data,
+                            cd_loop_clnors_offset,
+                            do_rebuild,
+                            has_clnors ? -1.0f : cosf(split_angle));
   }
   else {
-    BLI_assert(!r_lnors_spacearr);
-    bm_mesh_loops_calc_normals_no_autosmooth(bm, vnos, fnos, r_lnos);
+    lib_assert(!r_lnors_spacearr);
+    mesh_loops_calc_normals_no_autosmooth(mesh, vnos, fnos, r_lnos);
   }
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** Loop Normal Space API **/
 
-void BM_lnorspacearr_store(BMesh *bm, float (*r_lnors)[3])
+void mesh_lnorspacearr_store(Mesh *mesh, float (*r_lnors)[3])
 {
-  BLI_assert(bm->lnor_spacearr != NULL);
+  lib_assert(mesh->lnor_spacearr != NULL);
 
-  if (!CustomData_has_layer(&bm->ldata, CD_CUSTOMLOOPNORMAL)) {
-    BM_data_layer_add(bm, &bm->ldata, CD_CUSTOMLOOPNORMAL);
+  if (!CustomData_has_layer(&mesh->ldata, CD_CUSTOMLOOPNORMAL)) {
+    mesh_data_layer_add(mesh, &mesh->ldata, CD_CUSTOMLOOPNORMAL);
   }
 
-  int cd_loop_clnors_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+  int cd_loop_clnors_offset = CustomData_get_offset(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
 
-  BM_loops_calc_normal_vcos(bm,
+  mesh_loops_calc_normal_vcos(mesh,
                             NULL,
                             NULL,
                             NULL,
                             true,
                             M_PI,
                             r_lnors,
-                            bm->lnor_spacearr,
+                            mesh->lnor_spacearr,
                             NULL,
                             cd_loop_clnors_offset,
                             false);
-  bm->spacearr_dirty &= ~(BM_SPACEARR_DIRTY | BM_SPACEARR_DIRTY_ALL);
+  bm->spacearr_dirty &= ~(MESH_SPACEARR_DIRTY | MESH_SPACEARR_DIRTY_ALL);
 }
 
 #define CLEAR_SPACEARRAY_THRESHOLD(x) ((x) / 2)
 
-void BM_lnorspace_invalidate(BMesh *bm, const bool do_invalidate_all)
+void BM_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
 {
-  if (bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL) {
+  if (bm->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL) {
     return;
   }
-  if (do_invalidate_all || bm->totvertsel > CLEAR_SPACEARRAY_THRESHOLD(bm->totvert)) {
+  if (do_invalidate_all || mesh->totvertsel > CLEAR_SPACEARRAY_THRESHOLD(mesh->totvert)) {
     bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
     return;
   }
