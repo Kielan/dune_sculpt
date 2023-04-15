@@ -1261,7 +1261,7 @@ void mesh_elem_hflag_disable_test(Mesh *mesh,
   }
 }
 
-void BM_mesh_elem_hflag_enable_test(BMesh *bm,
+void mesh_elem_hflag_enable_test(Mesh *mesh,
                                     const char htype,
                                     const char hflag,
                                     const bool respecthide,
@@ -1369,33 +1369,33 @@ void mesh_vert_hide_set(MeshVert *v, const bool hide)
     do {
       mesh_elem_flag_set(e_iter, MESH_ELEM_HIDDEN, hide);
       if (e_iter->l) {
-        const BMLoop *l_radial_iter, *l_radial_first;
+        const MeshLoop *l_radial_iter, *l_radial_first;
         l_radial_iter = l_radial_first = e_iter->l;
         do {
-          BM_elem_flag_set(l_radial_iter->f, BM_ELEM_HIDDEN, hide);
+          mesh_elem_flag_set(l_radial_iter->f, MESH_ELEM_HIDDEN, hide);
         } while ((l_radial_iter = l_radial_iter->radial_next) != l_radial_first);
       }
-    } while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+    } while ((e_iter = mesh_disk_edge_next(e_iter, v)) != e_first);
   }
 }
 
-void BM_edge_hide_set(BMEdge *e, const bool hide)
+void mesh_edge_hide_set(MeshEdge *e, const bool hide)
 {
-  BLI_assert(e->head.htype == BM_EDGE);
+  lib_assert(e->head.htype == MESH_EDGE);
   if (hide) {
-    BLI_assert(!BM_elem_flag_test(e, BM_ELEM_SELECT));
+    lib_assert(!mesh_elem_flag_test(e, MESH_ELEM_SELECT));
   }
 
   /* edge hiding: faces around the edge */
   if (e->l) {
-    const BMLoop *l_iter, *l_first;
+    const MeshLoop *l_iter, *l_first;
     l_iter = l_first = e->l;
     do {
-      BM_elem_flag_set(l_iter->f, BM_ELEM_HIDDEN, hide);
+      mesh_elem_flag_set(l_iter->f, MESH_ELEM_HIDDEN, hide);
     } while ((l_iter = l_iter->radial_next) != l_first);
   }
 
-  BM_elem_flag_set(e, BM_ELEM_HIDDEN, hide);
+  mesh_elem_flag_set(e, MESH_ELEM_HIDDEN, hide);
 
   /* hide vertices if necessary */
   if (hide) {
@@ -1403,16 +1403,16 @@ void BM_edge_hide_set(BMEdge *e, const bool hide)
     vert_flush_hide_set(e->v2);
   }
   else {
-    BM_elem_flag_disable(e->v1, BM_ELEM_HIDDEN);
-    BM_elem_flag_disable(e->v2, BM_ELEM_HIDDEN);
+    mesh_elem_flag_disable(e->v1, MESH_ELEM_HIDDEN);
+    mesh_elem_flag_disable(e->v2, MESH_ELEM_HIDDEN);
   }
 }
 
-void BM_face_hide_set(BMFace *f, const bool hide)
+void mesh_face_hide_set(MeshFace *f, const bool hide)
 {
-  BLI_assert(f->head.htype == BM_FACE);
+  lib_assert(f->head.htype == MESH_FACE);
   if (hide) {
-    BLI_assert(!BM_elem_flag_test(f, BM_ELEM_SELECT));
+    lib_assert(!mesh_elem_flag_test(f, MESH_ELEM_SELECT));
   }
 
   BM_elem_flag_set(f, BM_ELEM_HIDDEN, hide);
