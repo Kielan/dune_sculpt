@@ -40,7 +40,7 @@ static void mesh_edge_tag_from_smooth(const float (*fnos)[3],
  * assuming no other tool using it would run concurrently to clnors editing. */
 #define MESH_LNORSPACE_UPDATE _FLAG_MF
 
-typedef struct BMVertsCalcNormalsWithCoordsData {
+typedef struct MeshVertsCalcNormalsWithCoordsData {
   /* Read-only data. */
   const float (*fnos)[3];
   const float (*vcos)[3];
@@ -49,11 +49,11 @@ typedef struct BMVertsCalcNormalsWithCoordsData {
   float (*vnos)[3];
 } MeshVertsCalcNormalsWithCoordsData;
 
-LIB_INLINE void mesh_vert_calc_normals_accum_loop(const BMLoop *l_iter,
-                                                const float e1diff[3],
-                                                const float e2diff[3],
-                                                const float f_no[3],
-                                                float v_no[3])
+LIB_INLINE void mesh_vert_calc_normals_accum_loop(const MeshLoop *l_iter,
+                                                  const float e1diff[3],
+                                                  const float e2diff[3],
+                                                  const float f_no[3],
+                                                  float v_no[3])
 {
   /* Calculate the dot product of the two edges that meet at the loop's vertex. */
   /* Edge vectors are calculated from `e->v1` to `e->v2`, so adjust the dot product if one but not
@@ -444,53 +444,53 @@ bool mesh_loop_check_cyclic_smooth_fan(MeshLoop *l_curr)
  *
  * return The number of loops that were handled (for early exit when all have been handled).
  */
-static int mesh_loops_calc_normals_for_loop(BMesh *bm,
-                                               const float (*vcos)[3],
-                                               const float (*fnos)[3],
-                                               const short (*clnors_data)[2],
-                                               const int cd_loop_clnors_offset,
-                                               const bool has_clnors,
-                                               /* Cache. */
-                                               BLI_Stack *edge_vectors,
-                                               /* Iterate. */
-                                               BMLoop *l_curr,
-                                               /* Result. */
-                                               float (*r_lnos)[3],
-                                               MLoopNorSpaceArray *r_lnors_spacearr)
+static int mesh_loops_calc_normals_for_loop(Mesh *mesh,
+                                            const float (*vcos)[3],
+                                            const float (*fnos)[3],
+                                            const short (*clnors_data)[2],
+                                            const int cd_loop_clnors_offset,
+                                            const bool has_clnors,
+                                            /* Cache. */
+                                            lib_Stack *edge_vectors,
+                                            /* Iterate. */
+                                            MeshLoop *l_curr,
+                                            /* Result. */
+                                            float (*r_lnos)[3],
+                                            MeshLoopNorSpaceArray *r_lnors_spacearr)
 {
-  BLI_assert((bm->elem_index_dirty & BM_LOOP) == 0);
-  BLI_assert((fnos == NULL) || ((bm->elem_index_dirty & BM_FACE) == 0));
-  BLI_assert((vcos == NULL) || ((bm->elem_index_dirty & BM_VERT) == 0));
+  lib_assert((mesh->elem_index_dirty & MESH_LOOP) == 0);
+  lib_assert((fnos == NULL) || ((mesh->elem_index_dirty & BM_FACE) == 0));
+  lib_assert((vcos == NULL) || ((mesh->elem_index_dirty & BM_VERT) == 0));
   UNUSED_VARS_NDEBUG(bm);
 
   int handled = 0;
 
   /* Temp normal stack. */
-  BLI_SMALLSTACK_DECLARE(normal, float *);
+  LIB_SMALLSTACK_DECLARE(normal, float *);
   /* Temp clnors stack. */
-  BLI_SMALLSTACK_DECLARE(clnors, short *);
+  LIB_SMALLSTACK_DECLARE(clnors, short *);
   /* Temp edge vectors stack, only used when computing lnor spacearr. */
 
   /* A smooth edge, we have to check for cyclic smooth fan case.
    * If we find a new, never-processed cyclic smooth fan, we can do it now using that loop/edge
    * as 'entry point', otherwise we can skip it. */
 
-  /* NOTE: In theory, we could make bm_mesh_loop_check_cyclic_smooth_fan() store
+  /* NOTE: In theory, we could make mesh_loop_check_cyclic_smooth_fan() store
    * mlfan_pivot's in a stack, to avoid having to fan again around
    * the vert during actual computation of clnor & clnorspace. However, this would complicate
    * the code, add more memory usage, and
-   * BM_vert_step_fan_loop() is quite cheap in term of CPU cycles,
+   * mesh_vert_step_fan_loop() is quite cheap in term of CPU cycles,
    * so really think it's not worth it. */
-  if (BM_elem_flag_test(l_curr->e, BM_ELEM_TAG) &&
-      (BM_elem_flag_test(l_curr, BM_ELEM_TAG) || !BM_loop_check_cyclic_smooth_fan(l_curr))) {
+  if (mesh_elem_flag_test(l_curr->e, MESH_ELEM_TAG) &&
+      (mesh_elem_flag_test(l_curr, MESH_ELEM_TAG) || !mesh_loop_check_cyclic_smooth_fan(l_curr))) {
   }
-  else if (!BM_elem_flag_test(l_curr->e, BM_ELEM_TAG) &&
-           !BM_elem_flag_test(l_curr->prev->e, BM_ELEM_TAG)) {
+  else if (!mesh_elem_flag_test(l_curr->e, MESH_ELEM_TAG) &&
+           !mesh_elem_flag_test(l_curr->prev->e, MESH_ELEM_TAG)) {
     /* Simple case (both edges around that vertex are sharp in related polygon),
      * this vertex just takes its poly normal.
      */
-    const int l_curr_index = BM_elem_index_get(l_curr);
-    const float *no = fnos ? fnos[BM_elem_index_get(l_curr->f)] : l_curr->f->no;
+    const int l_curr_index = mesh_elem_index_get(l_curr);
+    const float *no = fnos ? fnos[mesh_elem_index_get(l_curr->f)] : l_curr->f->no;
     copy_v3_v3(r_lnos[l_curr_index], no);
 
     /* If needed, generate this (simple!) lnor space. */
