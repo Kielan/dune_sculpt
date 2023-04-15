@@ -1038,17 +1038,17 @@ void _mesh_select_history_store(Mesh *mesh, MeshHeader *ele)
   }
 }
 
-void _mesh_select_history_store_head(BMesh *bm, BMHeader *ele)
+void _mesh_select_history_store_head(Mesh *mesh, MeshHeader *ele)
 {
-  if (!mesh_select_history_check(bm, (BMElem *)ele)) {
-    mesh_select_history_store_head_notest(bm, (BMElem *)ele);
+  if (!mesh_select_history_check(mesh, (MeshElem *)ele)) {
+    mesh_select_history_store_head_notest(mesh, (MeshElem *)ele);
   }
 }
 
-void _mesh_select_history_store_after_notest(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele)
+void _mesh_select_history_store_after_notest(Mesh *mesh, MeshEditSelection *ese_ref, MeshHeader *ele)
 {
-  MeshEditSelection *ese = bm_select_history_create(ele);
-  lib_insertlinkafter(&(bm->selected), ese_ref, ese);
+  MeshEditSelection *ese = mesh_select_history_create(ele);
+  lib_insertlinkafter(&(mesh->selected), ese_ref, ese);
 }
 
 void _mesh_select_history_store_after(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele)
