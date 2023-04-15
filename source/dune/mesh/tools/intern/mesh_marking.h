@@ -11,9 +11,9 @@ typedef enum eMeshSelectionFlushFLags {
   M_SELECT_LEN_FLUSH_RECALC_VERT = (1 << 0),
   M_SELECT_LEN_FLUSH_RECALC_EDGE = (1 << 1),
   M_SELECT_LEN_FLUSH_RECALC_FACE = (1 << 2),
-  M_SELECT_LEN_FLUSH_RECALC_ALL = (BM_SELECT_LEN_FLUSH_RECALC_VERT |
-                                    BM_SELECT_LEN_FLUSH_RECALC_EDGE |
-                                    BM_SELECT_LEN_FLUSH_RECALC_FACE),
+  M_SELECT_LEN_FLUSH_RECALC_ALL = (MESH_SELECT_LEN_FLUSH_RECALC_VERT |
+                                   MESH_SELECT_LEN_FLUSH_RECALC_EDGE |
+                                   MESH_SELECT_LEN_FLUSH_RECALC_FACE),
 } eMeshSelectionFlushFLags;
 
 /* Geometry hiding code. */
