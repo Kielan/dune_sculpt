@@ -775,8 +775,8 @@ static void bm_edge_tag_from_smooth(const float (*fnos)[3], BMEdge *e, const flo
   if (bm_edge_is_smooth_no_angle_test(e, l_a, l_b)) {
     if (split_angle_cos != -1.0f) {
       const float dot = (fnos == NULL) ? dot_v3v3(l_a->f->no, l_b->f->no) :
-                                         dot_v3v3(fnos[BM_elem_index_get(l_a->f)],
-                                                  fnos[BM_elem_index_get(l_b->f)]);
+                                         dot_v3v3(fnos[mesh_elem_index_get(l_a->f)],
+                                                  fnos[mesh_elem_index_get(l_b->f)]);
       if (dot >= split_angle_cos) {
         is_smooth = true;
       }
@@ -786,21 +786,21 @@ static void bm_edge_tag_from_smooth(const float (*fnos)[3], BMEdge *e, const flo
     }
   }
 
-  /* Perform `BM_elem_flag_set(e, BM_ELEM_TAG, is_smooth)`
+  /* Perform `mesh_elem_flag_set(e, MESH_ELEM_TAG, is_smooth)`
    * NOTE: This will be set by multiple threads however it will be set to the same value. */
 
   /* No need for atomics here as this is a single byte. */
   char *hflag_p = &e->head.hflag;
   if (is_smooth) {
-    *hflag_p = *hflag_p | BM_ELEM_TAG;
+    *hflag_p = *hflag_p | MESH_ELEM_TAG;
   }
   else {
-    *hflag_p = *hflag_p & ~BM_ELEM_TAG;
+    *hflag_p = *hflag_p & ~MESH_ELEM_TAG;
   }
 }
 
 /**
- * A version of #bm_edge_tag_from_smooth that sets sharp edges
+ * A version of mesh_edge_tag_from_smooth that sets sharp edges
  * when they would be considered smooth but exceed the split angle .
  *
  * \note This doesn't have the same atomic requirement as #bm_edge_tag_from_smooth
