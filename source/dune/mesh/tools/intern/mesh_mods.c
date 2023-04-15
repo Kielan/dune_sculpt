@@ -245,42 +245,42 @@ BMFace *BM_face_split_n(BMesh *bm,
                         BMLoop **r_l,
                         BMEdge *example)
 {
-  BMFace *f_new, *f_tmp;
-  BMLoop *l_new;
-  BMEdge *e, *e_new;
-  BMVert *v_new;
-  // BMVert *v_a = l_a->v; /* UNUSED */
-  BMVert *v_b = l_b->v;
+  MeshFace *f_new, *f_tmp;
+  MeshLoop *l_new;
+  MeshEdge *e, *e_new;
+  MeshVert *v_new;
+  // MeshVert *v_a = l_a->v; /* UNUSED */
+  MeshVert *v_b = l_b->v;
   int i, j;
 
-  BLI_assert(l_a != l_b);
-  BLI_assert(f == l_a->f && f == l_b->f);
-  BLI_assert(!((n == 0) && BM_loop_is_adjacent(l_a, l_b)));
+  lib_assert(l_a != l_b);
+  lib_assert(f == l_a->f && f == l_b->f);
+  lib_assert(!((n == 0) && mesh_loop_is_adjacent(l_a, l_b)));
 
   /* could be an assert */
-  if (UNLIKELY((n == 0) && BM_loop_is_adjacent(l_a, l_b)) || UNLIKELY(l_a->f != l_b->f)) {
+  if (UNLIKELY((n == 0) && mesh_loop_is_adjacent(l_a, l_b)) || UNLIKELY(l_a->f != l_b->f)) {
     if (r_l) {
       *r_l = NULL;
     }
     return NULL;
   }
 
-  f_tmp = BM_face_copy(bm, bm, f, true, true);
+  f_tmp = mesh_face_copy(mesh, mesh, f, true, true);
 
-#ifdef USE_BMESH_HOLES
-  f_new = bmesh_kernel_split_face_make_edge(bm, f, l_a, l_b, &l_new, NULL, example, false);
+#ifdef USE_MESH_HOLES
+  f_new = mesh_kernel_split_face_make_edge(mesh, f, l_a, l_b, &l_new, NULL, example, false);
 #else
-  f_new = bmesh_kernel_split_face_make_edge(bm, f, l_a, l_b, &l_new, example, false);
+  f_new = mesh_kernel_split_face_make_edge(mesh, f, l_a, l_b, &l_new, example, false);
 #endif
-  /* bmesh_kernel_split_face_make_edge returns in 'l_new'
+  /* mesh_kernel_split_face_make_edge returns in 'l_new'
    * a Loop for f_new going from 'v_a' to 'v_b'.
    * The radial_next is for 'f' and goes from 'v_b' to 'v_a'. */
 
   if (f_new) {
     e = l_new->e;
     for (i = 0; i < n; i++) {
-      v_new = bmesh_kernel_split_edge_make_vert(bm, v_b, e, &e_new);
-      BLI_assert(v_new != NULL);
+      v_new = mesh_kernel_split_edge_make_vert(bm, v_b, e, &e_new);
+      lib_assert(v_new != NULL);
       /* bmesh_kernel_split_edge_make_vert returns in 'e_new'
        * the edge going from 'v_new' to 'v_b'. */
       copy_v3_v3(v_new->co, cos[i]);
