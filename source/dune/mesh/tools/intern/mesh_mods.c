@@ -681,7 +681,7 @@ bool mesh_edge_rotate_check(MeshEdge *e)
   return false;
 }
 
-bool mesh_edge_rotate_check_degenerate(BMEdge *e, MeshLoop *l1, MeshLoop *l2)
+bool mesh_edge_rotate_check_degenerate(MeshEdge *e, MeshLoop *l1, MeshLoop *l2)
 {
   /* NOTE: for these vars 'old' just means initial edge state. */
 
@@ -699,25 +699,25 @@ bool mesh_edge_rotate_check_degenerate(BMEdge *e, MeshLoop *l1, MeshLoop *l2)
   float cross_new[3];
 
   /* original verts - these will be in the edge 'e' */
-  BMVert *v1_old, *v2_old;
+  MeshVert *v1_old, *v2_old;
 
   /* verts from the loops passed */
 
-  BMVert *v1, *v2;
+  MeshVert *v1, *v2;
   /* These are the opposite verts - the verts that _would_ be used if `ccw` was inverted. */
-  BMVert *v1_alt, *v2_alt;
+  MeshVert *v1_alt, *v2_alt;
 
   /* this should have already run */
-  BLI_assert(BM_edge_rotate_check(e) == true);
+  lib_assert(mesh_edge_rotate_check(e) == true);
 
-  BM_edge_ordered_verts(e, &v1_old, &v2_old);
+  mesh_edge_ordered_verts(e, &v1_old, &v2_old);
 
   v1 = l1->v;
   v2 = l2->v;
 
   /* get the next vert along */
-  v1_alt = BM_face_other_vert_loop(l1->f, v1_old, v1)->v;
-  v2_alt = BM_face_other_vert_loop(l2->f, v2_old, v2)->v;
+  v1_alt = mesh_face_other_vert_loop(l1->f, v1_old, v1)->v;
+  v2_alt = mesh_face_other_vert_loop(l2->f, v2_old, v2)->v;
 
   /* normalize all so comparisons are scale independent */
 
