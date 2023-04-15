@@ -574,9 +574,9 @@ static int bm_mesh_loops_calc_normals_for_loop(BMesh *bm,
 
     const float *co_pivot = vcos ? vcos[BM_elem_index_get(v_pivot)] : v_pivot->co;
 
-    MLoopNorSpace *lnor_space = r_lnors_spacearr ? BKE_lnor_space_create(r_lnors_spacearr) : NULL;
+    MeshLoopNorSpace *lnor_space = r_lnors_spacearr ? BKE_lnor_space_create(r_lnors_spacearr) : NULL;
 
-    BLI_assert((edge_vectors == NULL) || BLI_stack_is_empty(edge_vectors));
+    lib_assert((edge_vectors == NULL) || BLI_stack_is_empty(edge_vectors));
 
     lfan_pivot = l_curr;
     lfan_pivot_index = BM_elem_index_get(lfan_pivot);
@@ -586,24 +586,24 @@ static int bm_mesh_loops_calc_normals_for_loop(BMesh *bm,
      * then we can just reuse old current one! */
     {
       const BMVert *v_2 = lfan_pivot->next->v;
-      const float *co_2 = vcos ? vcos[BM_elem_index_get(v_2)] : v_2->co;
+      const float *co_2 = vcos ? vcos[mesh_elem_index_get(v_2)] : v_2->co;
 
-      BLI_assert(v_2 == BM_edge_other_vert(e_next, v_pivot));
+      lib_assert(v_2 == mesh_edge_other_vert(e_next, v_pivot));
 
       sub_v3_v3v3(vec_org, co_2, co_pivot);
       normalize_v3(vec_org);
       copy_v3_v3(vec_curr, vec_org);
 
       if (r_lnors_spacearr) {
-        BLI_stack_push(edge_vectors, vec_org);
+        lib_stack_push(edge_vectors, vec_org);
       }
     }
 
     while (true) {
       /* Much simpler than in sibling code with basic Mesh data! */
-      lfan_pivot_next = BM_vert_step_fan_loop(lfan_pivot, &e_next);
+      lfan_pivot_next = mesh_vert_step_fan_loop(lfan_pivot, &e_next);
       if (lfan_pivot_next) {
-        BLI_assert(lfan_pivot_next->v == v_pivot);
+        lib_assert(lfan_pivot_next->v == v_pivot);
       }
       else {
         /* next edge is non-manifold, we have to find it ourselves! */
@@ -617,8 +617,8 @@ static int bm_mesh_loops_calc_normals_for_loop(BMesh *bm,
        * given the fact that this code should not be called that much in real-life meshes.
        */
       {
-        const BMVert *v_2 = BM_edge_other_vert(e_next, v_pivot);
-        const float *co_2 = vcos ? vcos[BM_elem_index_get(v_2)] : v_2->co;
+        const MeshVert *v_2 = mesh_edge_other_vert(e_next, v_pivot);
+        const float *co_2 = vcos ? vcos[mesh_elem_index_get(v_2)] : v_2->co;
 
         sub_v3_v3v3(vec_next, co_2, co_pivot);
         normalize_v3(vec_next);
@@ -627,9 +627,9 @@ static int bm_mesh_loops_calc_normals_for_loop(BMesh *bm,
       {
         /* Code similar to accumulate_vertex_normals_poly_v3. */
         /* Calculate angle between the two poly edges incident on this vertex. */
-        const BMFace *f = lfan_pivot->f;
+        const MeShFace *f = lfan_pivot->f;
         const float fac = saacos(dot_v3v3(vec_next, vec_curr));
-        const float *no = fnos ? fnos[BM_elem_index_get(f)] : f->no;
+        const float *no = fnos ? fnos[mesh_elem_index_get(f)] : f->no;
         /* Accumulate */
         madd_v3_v3fl(lnor, no, fac);
 
@@ -648,19 +648,19 @@ static int bm_mesh_loops_calc_normals_for_loop(BMesh *bm,
           clnors_avg[1] += (*clnor)[1];
           clnors_nbr++;
           /* We store here a pointer to all custom lnors processed. */
-          BLI_SMALLSTACK_PUSH(clnors, (short *)*clnor);
+          LIB_SMALLSTACK_PUSH(clnors, (short *)*clnor);
         }
       }
 
       /* We store here a pointer to all loop-normals processed. */
-      BLI_SMALLSTACK_PUSH(normal, (float *)r_lnos[lfan_pivot_index]);
+      LIB_SMALLSTACK_PUSH(normal, (float *)r_lnos[lfan_pivot_index]);
 
       if (r_lnors_spacearr) {
         /* Assign current lnor space to current 'vertex' loop. */
-        BKE_lnor_space_add_loop(r_lnors_spacearr, lnor_space, lfan_pivot_index, lfan_pivot, false);
+        dune_lnor_space_add_loop(r_lnors_spacearr, lnor_space, lfan_pivot_index, lfan_pivot, false);
         if (e_next != e_org) {
           /* We store here all edges-normalized vectors processed. */
-          BLI_stack_push(edge_vectors, vec_next);
+          lib_stack_push(edge_vectors, vec_next);
         }
       }
 
