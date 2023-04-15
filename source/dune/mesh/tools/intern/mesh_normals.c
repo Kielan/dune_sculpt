@@ -833,7 +833,7 @@ static void bm_edge_tag_from_smooth_and_set_sharp(const float (*fnos)[3],
     }
   }
 
-  BM_elem_flag_set(e, BM_ELEM_TAG, is_smooth);
+  mesh_elem_flag_set(e, MESH_ELEM_TAG, is_smooth);
 }
 
 /**
