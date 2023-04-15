@@ -240,12 +240,12 @@ void BM_mesh_normals_update_ex(BMesh *bm, const struct BMeshNormalsUpdate_Params
   bm_mesh_verts_calc_normals(bm, NULL, NULL, NULL);
 }
 
-void BM_mesh_normals_update(BMesh *bm)
+void mesh_normals_update(Mesh *mesh)
 {
-  BM_mesh_normals_update_ex(bm,
-                            &(const struct BMeshNormalsUpdate_Params){
-                                .face_normals = true,
-                            });
+  mesh_normals_update_ex(mesh,
+                         &(const struct MeshNormalsUpdateParams){
+                            .face_normals = true,
+                         });
 }
 
 /** \} */
