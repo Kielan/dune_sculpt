@@ -1,37 +1,35 @@
-/** \file
- * \ingroup bmesh
- *
+/**
  * This file contains functions for locally modifying
  * the topology of existing mesh data. (split, join, flip etc).
  */
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_array.h"
-#include "BLI_math.h"
+#include "lib_array.h"
+#include "lib_math.h"
 
-#include "BKE_customdata.h"
+#include "dune_customdata.h"
 
-#include "bmesh.h"
-#include "intern/bmesh_private.h"
+#include "mesh.h"
+#include "intern/mesh_private.h"
 
-bool BM_vert_dissolve(BMesh *bm, BMVert *v)
+bool mesh_vert_dissolve(Mesh *mesh, MeshVert *v)
 {
   /* logic for 3 or more is identical */
-  const int len = BM_vert_edge_count_at_most(v, 3);
+  const int len = mesh_vert_edge_count_at_most(v, 3);
 
   if (len == 1) {
-    BM_vert_kill(bm, v); /* will kill edges too */
+    mesh_vert_kill(mesh, v); /* will kill edges too */
     return true;
   }
-  if (!BM_vert_is_manifold(v)) {
+  if (!mesh_vert_is_manifold(v)) {
     if (!v->e) {
-      BM_vert_kill(bm, v);
+      mesh_vert_kill(mesh, v);
       return true;
     }
     if (!v->e->l) {
       if (len == 2) {
-        return (BM_vert_collapse_edge(bm, v->e, v, true, true, true) != NULL);
+        return (mesh_vert_collapse_edge(mesh, v->e, v, true, true, true) != NULL);
       }
       /* used to kill the vertex here, but it may be connected to faces.
        * so better do nothing */
@@ -39,19 +37,19 @@ bool BM_vert_dissolve(BMesh *bm, BMVert *v)
     }
     return false;
   }
-  if (len == 2 && BM_vert_face_count_is_equal(v, 1)) {
+  if (len == 2 && mesh_vert_face_count_is_equal(v, 1)) {
     /* boundary vertex on a face */
-    return (BM_vert_collapse_edge(bm, v->e, v, true, true, true) != NULL);
+    return (mesh_vert_collapse_edge(mesh, v->e, v, true, true, true) != NULL);
   }
-  return BM_disk_dissolve(bm, v);
+  return mesh_disk_dissolve(mesh, v);
 }
 
-bool BM_disk_dissolve(BMesh *bm, BMVert *v)
+bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
 {
-  BMEdge *e, *keepedge = NULL, *baseedge = NULL;
+  MeshEdge *e, *keepedge = NULL, *baseedge = NULL;
   int len = 0;
 
-  if (!BM_vert_is_manifold(v)) {
+  if (!mesh_vert_is_manifold(v)) {
     return false;
   }
 
@@ -59,8 +57,8 @@ bool BM_disk_dissolve(BMesh *bm, BMVert *v)
     /* v->e we keep, what else */
     e = v->e;
     do {
-      e = bmesh_disk_edge_next(e, v);
-      if (!(BM_edge_share_face_check(e, v->e))) {
+      e = mesh_disk_edge_next(e, v);
+      if (!(mesh_edge_share_face_check(e, v->e))) {
         keepedge = e;
         baseedge = v->e;
         break;
@@ -75,8 +73,8 @@ bool BM_disk_dissolve(BMesh *bm, BMVert *v)
 #if 0
     /* handle specific case for three-valence.  solve it by
      * increasing valence to four.  this may be hackish. */
-    BMLoop *l_a = BM_face_vert_share_loop(e->l->f, v);
-    BMLoop *l_b = (e->l->v == v) ? e->l->next : e->l;
+    MeshLoop *l_a = mesh_face_vert_share_loop(e->l->f, v);
+    MeshLoop *l_b = (e->l->v == v) ? e->l->next : e->l;
 
     if (!BM_face_split(bm, e->l->f, l_a, l_b, NULL, NULL, false)) {
       return false;
