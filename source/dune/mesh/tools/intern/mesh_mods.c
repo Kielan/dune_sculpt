@@ -149,7 +149,7 @@ bool mesh_disk_dissolve(Mesh *mesh, MeshVert *v)
       /* get remaining two faces */
       if (e->l != e->l->radial_next) {
         /* join two remaining faces */
-        if (!BM_faces_join_pair(bm, e->l, e->l->radial_next, true)) {
+        if (!mesh_faces_join_pair(mesh, e->l, e->l->radial_next, true)) {
           return false;
         }
       }
@@ -236,14 +236,14 @@ MeshFace *mesh_face_split(Mesh *mesh,
   return f_new;
 }
 
-BMFace *BM_face_split_n(Mesh *mesh,
-                        MeshFace *f,
-                        MeshLoop *l_a,
-                        MeshLoop *l_b,
-                        float cos[][3],
-                        int n,
-                        MeshLoop **r_l,
-                        MeshEdge *example)
+MeshFace *mesh_face_split_n(Mesh *mesh,
+                            MeshFace *f,
+                            MeshLoop *l_a,
+                            MeshLoop *l_b,
+                            float cos[][3],
+                            int n,
+                             MeshLoop **r_l,
+                            MeshEdge *example)
 {
   MeshFace *f_new, *f_tmp;
   MeshLoop *l_new;
@@ -395,31 +395,31 @@ MeshEdge *mesh_vert_collapse_faces(Mesh *mesh,
   return e_new;
 }
 
-BMEdge *BM_vert_collapse_edge(BMesh *bm,
-                              BMEdge *e_kill,
-                              BMVert *v_kill,
-                              const bool do_del,
-                              const bool kill_degenerate_faces,
-                              const bool kill_duplicate_faces)
+MeshEdge *mesh_vert_collapse_edge(Mesh *mesh,
+                                  MeshEdge *e_kill,
+                                  MeshVert *v_kill,
+                                  const bool do_del,
+                                  const bool kill_degenerate_faces,
+                                  const bool kill_duplicate_faces)
 {
   /* nice example implementation but we want loops to have their customdata
    * accounted for */
 #if 0
-  BMEdge *e_new = NULL;
+  MeshEdge *e_new = NULL;
 
   /* Collapse between 2 edges */
 
   /* in this case we want to keep all faces and not join them,
    * rather just get rid of the vertex - see bug T28645. */
-  BMVert *tv = BM_edge_other_vert(e_kill, v_kill);
+  MeshVert *tv = mesh_edge_other_vert(e_kill, v_kill);
   if (tv) {
-    BMEdge *e2 = bmesh_disk_edge_next(e_kill, v_kill);
+    MeshEdge *e2 = mesh_disk_edge_next(e_kill, v_kill);
     if (e2) {
-      BMVert *tv2 = BM_edge_other_vert(e2, v_kill);
+      MeshVert *tv2 = mesh_edge_other_vert(e2, v_kill);
       if (tv2) {
         /* only action, other calls here only get the edge to return */
         e_new = bmesh_kernel_join_edge_kill_vert(
-            bm, e_kill, v_kill, do_del, true, kill_degenerate_faces);
+            mesh, e_kill, v_kill, do_del, true, kill_degenerate_faces);
       }
     }
   }
@@ -428,15 +428,15 @@ BMEdge *BM_vert_collapse_edge(BMesh *bm,
 #else
   /* with these args faces are never joined, same as above
    * but account for loop customdata */
-  return BM_vert_collapse_faces(
-      bm, e_kill, v_kill, 1.0f, do_del, false, kill_degenerate_faces, kill_duplicate_faces);
+  return mesh_vert_collapse_faces(
+      mesh, e_kill, v_kill, 1.0f, do_del, false, kill_degenerate_faces, kill_duplicate_faces);
 #endif
 }
 
 #undef DO_V_INTERP
 
-BMVert *BM_edge_collapse(
-    BMesh *bm, BMEdge *e_kill, BMVert *v_kill, const bool do_del, const bool kill_degenerate_faces)
+MeshVert *mesh_edge_collapse(
+    Mesh *meeh, MeshEdge *e_kill, MeshVert *v_kill, const bool do_del, const bool kill_degenerate_faces)
 {
   return bmesh_kernel_join_vert_kill_edge(bm, e_kill, v_kill, do_del, true, kill_degenerate_faces);
 }
