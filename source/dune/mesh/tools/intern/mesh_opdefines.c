@@ -161,16 +161,16 @@ static MeshOpDefine mesh_smooth_laplacian_vert_def = {
  *
  * Computes an "outside" normal for the specified input faces.
  */
-static BMOpDefine bmo_recalc_face_normals_def = {
+static MeshOpDefine mesh_op_recalc_face_normals_def = {
   "recalc_face_normals",
   /* slots_in */
-  {{"faces", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}}, /* input faces */
+  {{"faces", MESH_OP_SLOT_ELEMENT_BUF, {MESH_FACE}}, /* input faces */
    {{'\0'}},
   },
   {{{'\0'}}},  /* no output */
-  bmo_recalc_face_normals_exec,
-  (BMO_OPTYPE_FLAG_UNTAN_MULTIRES |
-   BMO_OPTYPE_FLAG_NORMALS_CALC),
+  mesh_recalc_face_normals_exec,
+  (MESH_OPTYPE_FLAG_UNTAN_MULTIRES |
+   MESH_OPTYPE_FLAG_NORMALS_CALC),
 };
 
 /*
@@ -178,21 +178,21 @@ static BMOpDefine bmo_recalc_face_normals_def = {
  *
  * Iteratively flatten faces.
  */
-static BMOpDefine bmo_planar_faces_def = {
+static MeshOpDefine mesh_op_planar_faces_def = {
   "planar_faces",
   /* slots_in */
-  {{"faces", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}},    /* input geometry. */
-   {"iterations", BMO_OP_SLOT_INT},  /* Number of times to flatten faces (for when connected faces are used) */
-   {"factor", BMO_OP_SLOT_FLT},  /* Influence for making planar each iteration */
+  {{"faces", MESH_OP_SLOT_ELEMENT_BUF, {BM_FACE}},    /* input geometry. */
+   {"iterations", MESH_OP_SLOT_INT},  /* Number of times to flatten faces (for when connected faces are used) */
+   {"factor", MESH_OP_SLOT_FLT},  /* Influence for making planar each iteration */
    {{'\0'}},
   },
   /* slots_out */
-  {{"geom.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* output slot, computed boundary geometry. */
+  {{"geom.out", MESH_OP_SLOT_ELEMENT_BUF, {MESH_VERT | MESH_EDGE | BM_FACE}}, /* output slot, computed boundary geometry. */
    {{'\0'}},
   },
-  bmo_planar_faces_exec,
-  (BMO_OPTYPE_FLAG_SELECT_FLUSH |
-   BMO_OPTYPE_FLAG_SELECT_VALIDATE),
+  mesh_planar_faces_ex,
+  (MESH_OPTYPE_FLAG_SELECT_FLUSH |
+   MESH_OPTYPE_FLAG_SELECT_VALIDATE),
 };
 
 /*
@@ -205,17 +205,17 @@ static BMOpDefine bmo_planar_faces_def = {
  * if use_faces is 0 then geom.out spits out verts and edges,
  * otherwise it spits out faces.
  */
-static BMOpDefine bmo_region_extend_def = {
+static MeshOpDefine mesh_op_region_extend_def = {
   "region_extend",
   /* slots_in */
-  {{"geom", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},     /* input geometry */
-   {"use_contract", BMO_OP_SLOT_BOOL},    /* find boundary inside the regions, not outside. */
-   {"use_faces", BMO_OP_SLOT_BOOL},       /* extend from faces instead of edges */
-   {"use_face_step", BMO_OP_SLOT_BOOL},   /* step over connected faces */
+  {{"geom", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},     /* input geometry */
+   {"use_contract", MESH_OP_SLOT_BOOL},    /* find boundary inside the regions, not outside. */
+   {"use_faces", MESH_OP_SLOT_BOOL},       /* extend from faces instead of edges */
+   {"use_face_step", MESH_OP_SLOT_BOOL},   /* step over connected faces */
    {{'\0'}},
   },
   /* slots_out */
-  {{"geom.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* output slot, computed boundary geometry. */
+  {{"geom.out", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* output slot, computed boundary geometry. */
    {{'\0'}},
   },
   bmo_region_extend_exec,
