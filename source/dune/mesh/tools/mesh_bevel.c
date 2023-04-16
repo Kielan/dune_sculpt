@@ -1875,13 +1875,13 @@ static void move_weld_profile_planes(BevVert *bv, BoundVert *bndv1, BoundVert *b
 
 /* Return 1 if a and b are in CCW order on the normal side of f,
  * and -1 if they are reversed, and 0 if there is no shared face f. */
-static int bev_ccw_test(BMEdge *a, BMEdge *b, BMFace *f)
+static int bev_ccw_test(MeshEdge *a, MeshEdge *b, MeshFace *f)
 {
   if (!f) {
     return 0;
   }
-  BMLoop *la = BM_face_edge_share_loop(f, a);
-  BMLoop *lb = BM_face_edge_share_loop(f, b);
+  MeshLoop *la = mesh_face_edge_share_loop(f, a);
+  MeshLoop *lb = mesh_face_edge_share_loop(f, b);
   if (!la || !lb) {
     return 0;
   }
@@ -2003,7 +2003,7 @@ static void make_unit_cube_map(
  */
 static double superellipse_co(double x, float r, bool rbig)
 {
-  BLI_assert(r > 0.0f);
+  lib_assert(r > 0.0f);
 
   /* If r<1, mirror the superellipse function by (y=x)-line to get a numerically stable range
    * Possible because of symmetry, later mirror back. */
@@ -2035,11 +2035,11 @@ static void get_profile_point(BevelParams *bp, const Profile *pro, int i, int ns
 
   else {
     if (nseg == bp->seg) {
-      BLI_assert(pro->prof_co != NULL);
+      lib_assert(pro->prof_co != NULL);
       copy_v3_v3(r_co, pro->prof_co + 3 * i);
     }
     else {
-      BLI_assert(is_power_of_2_i(nseg) && nseg <= bp->pro_spacing.seg_2);
+      lib_assert(is_power_of_2_i(nseg) && nseg <= bp->pro_spacing.seg_2);
       /* Find spacing between subsamples in prof_co_2. */
       int subsample_spacing = bp->pro_spacing.seg_2 / nseg;
       copy_v3_v3(r_co, pro->prof_co_2 + 3 * i * subsample_spacing);
@@ -2048,7 +2048,7 @@ static void get_profile_point(BevelParams *bp, const Profile *pro, int i, int ns
 }
 
 /**
- * Helper for #calculate_profile that builds the 3D locations for the segments
+ * Helper for calculate_profile that builds the 3D locations for the segments
  * and the higher power of 2 segments.
  */
 static void calculate_profile_segments(const Profile *profile,
@@ -2119,9 +2119,9 @@ static void calculate_profile(BevelParams *bp, BoundVert *bndv, bool reversed, b
 
   bool need_2 = bp->seg != bp->pro_spacing.seg_2;
   if (pro->prof_co == NULL) {
-    pro->prof_co = (float *)BLI_memarena_alloc(bp->mem_arena, sizeof(float[3]) * (bp->seg + 1));
+    pro->prof_co = (float *)lib_memarena_alloc(bp->mem_arena, sizeof(float[3]) * (bp->seg + 1));
     if (need_2) {
-      pro->prof_co_2 = (float *)BLI_memarena_alloc(bp->mem_arena,
+      pro->prof_co_2 = (float *)lib_memarena_alloc(bp->mem_arena,
                                                    sizeof(float[3]) * (bp->pro_spacing.seg_2 + 1));
     }
     else {
@@ -2187,7 +2187,7 @@ static void snap_to_superellipsoid(float co[3], const float super_r, bool midlin
   float z = c;
   if (ELEM(r, PRO_SQUARE_R, PRO_SQUARE_IN_R)) {
     /* Will only be called for 2d profile. */
-    BLI_assert(fabsf(z) < BEVEL_EPSILON);
+    LIB_assert(fabsf(z) < BEVEL_EPSILON);
     z = 0.0f;
     x = min_ff(1.0f, x);
     y = min_ff(1.0f, y);
@@ -2241,7 +2241,7 @@ static void snap_to_superellipsoid(float co[3], const float super_r, bool midlin
   co[2] = z;
 }
 
-#define BEV_EXTEND_EDGE_DATA_CHECK(eh, flag) (BM_elem_flag_test(eh->e, flag))
+#define BEV_EXTEND_EDGE_DATA_CHECK(eh, flag) (mesh_elem_flag_test(eh->e, flag))
 
 static void check_edge_data_seam_sharp_edges(BevVert *bv, int flag, bool neg)
 {
@@ -2282,10 +2282,10 @@ static void check_edge_data_seam_sharp_edges(BevVert *bv, int flag, bool neg)
       break;
     }
     /* Set seam_len / sharp_len of starting edge. */
-    if (flag == BM_ELEM_SEAM) {
+    if (flag == MESH_ELEM_SEAM) {
       e->rightv->seam_len = flag_count;
     }
-    else if (flag == BM_ELEM_SMOOTH) {
+    else if (flag == MESH_ELEM_SMOOTH) {
       e->rightv->sharp_len = flag_count;
     }
     e = ne;
@@ -2314,8 +2314,8 @@ static void bevel_extend_edge_data(BevVert *bv)
        * for those edges. */
       int idxlen = bcur->index + bcur->seam_len;
       for (int i = bcur->index; i < idxlen; i++) {
-        BMVert *v1 = mesh_vert(vm, i % vm->count, 0, 0)->v, *v2;
-        BMEdge *e;
+        MeshVert *v1 = mesh_vert(vm, i % vm->count, 0, 0)->v, *v2;
+        MeshEdge *e;
         for (int k = 1; k < vm->seg; k++) {
           v2 = mesh_vert(vm, i % vm->count, 0, k)->v;
 
@@ -2330,10 +2330,10 @@ static void bevel_extend_edge_data(BevVert *bv)
               e = e->v2_disk_link.next;
             }
           }
-          BM_elem_flag_set(e, BM_ELEM_SEAM, true);
+          mesh_elem_flag_set(e, MESH_ELEM_SEAM, true);
           v1 = v2;
         }
-        BMVert *v3 = mesh_vert(vm, (i + 1) % vm->count, 0, 0)->v;
+        MeshVert *v3 = mesh_vert(vm, (i + 1) % vm->count, 0, 0)->v;
         e = v1->e; /* Do same as above for first and last vert. */
         while (e->v1 != v3 && e->v2 != v3) {
           if (e->v1 == v1) {
@@ -2343,7 +2343,7 @@ static void bevel_extend_edge_data(BevVert *bv)
             e = e->v2_disk_link.next;
           }
         }
-        BM_elem_flag_set(e, BM_ELEM_SEAM, true);
+        mesh_elem_flag_set(e, MESH_ELEM_SEAM, true);
         bcur = bcur->next;
       }
     }
