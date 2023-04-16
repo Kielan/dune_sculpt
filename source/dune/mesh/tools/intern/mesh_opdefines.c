@@ -142,18 +142,18 @@ static MeshOpDefines mesh_smooth_vert_def = {
 static MeshOpDefine mesh_smooth_laplacian_vert_def = {
   "smooth_laplacian_vert",
   /* slots_in */
-  {{"verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}},    /* input vertices */
-   {"lambda_factor", BMO_OP_SLOT_FLT},           /* lambda param */
-   {"lambda_border", BMO_OP_SLOT_FLT},    /* lambda param in border */
-   {"use_x", BMO_OP_SLOT_BOOL},           /* Smooth object along X axis */
-   {"use_y", BMO_OP_SLOT_BOOL},           /* Smooth object along Y axis */
-   {"use_z", BMO_OP_SLOT_BOOL},           /* Smooth object along Z axis */
-   {"preserve_volume", BMO_OP_SLOT_BOOL}, /* Apply volume preservation after smooth */
+  {{"verts", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT}},    /* input vertices */
+   {"lambda_factor", MESH_OP_SLOT_FLT},           /* lambda param */
+   {"lambda_border", MESH_OP_SLOT_FLT},    /* lambda param in border */
+   {"use_x", MESH_OP_SLOT_BOOL},           /* Smooth object along X axis */
+   {"use_y", MESH_OP_SLOT_BOOL},           /* Smooth object along Y axis */
+   {"use_z", MESH_OP_SLOT_BOOL},           /* Smooth object along Z axis */
+   {"preserve_volume", MESH_OP_SLOT_BOOL}, /* Apply volume preservation after smooth */
    {{'\0'}},
   },
   {{{'\0'}}},  /* no output */
-  bmo_smooth_laplacian_vert_exec,
-  (BMO_OPTYPE_FLAG_NORMALS_CALC),
+  mesh_smooth_laplacian_vert_exec,
+  (MESH_OPTYPE_FLAG_NORMALS_CALC),
 };
 
 /*
