@@ -1703,16 +1703,16 @@ void mesh_lnorspacearr_store(Mesh *mesh, float (*r_lnors)[3])
   int cd_loop_clnors_offset = CustomData_get_offset(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
 
   mesh_loops_calc_normal_vcos(mesh,
-                            NULL,
-                            NULL,
-                            NULL,
-                            true,
-                            M_PI,
-                            r_lnors,
-                            mesh->lnor_spacearr,
-                            NULL,
-                            cd_loop_clnors_offset,
-                            false);
+                              NULL,
+                              NULL,
+                              NULL,
+                              true,
+                              M_PI,
+                              r_lnors,
+                              mesh->lnor_spacearr,
+                              NULL,
+                              cd_loop_clnors_offset,
+                              false);
   mesh->spacearr_dirty &= ~(MESH_SPACEARR_DIRTY | MESH_SPACEARR_DIRTY_ALL);
 }
 
@@ -1760,48 +1760,48 @@ void mesh_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
 
           MeshLoop *l_prev;
           MeshIter liter_prev;
-          MESH_ELEM_ITER (l_prev, &liter_prev, l->prev->v, BM_LOOPS_OF_VERT) {
-            MESH_ELEM_API_FLAG_ENABLE(l_prev, BM_LNORSPACE_UPDATE);
+          MESH_ELEM_ITER (l_prev, &liter_prev, l->prev->v, MESH_LOOPS_OF_VERT) {
+            MESH_ELEM_API_FLAG_ENABLE(l_prev, MESH_LNORSPACE_UPDATE);
           }
-          LIB_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_prev->v));
+          LIB_BITMAP_ENABLE(done_verts, mesh_elem_index_get(l_prev->v));
         }
 
-        if ((!mesh_elem_flag_test(l->next->v, BM_ELEM_SELECT)) &&
-            !LIB_BITMAP_TEST(done_verts, BM_elem_index_get(l->next->v))) {
+        if ((!mesh_elem_flag_test(l->next->v, MESH_ELEM_SELECT)) &&
+            !LIB_BITMAP_TEST(done_verts, mesh_elem_index_get(l->next->v))) {
 
           MeshLoop *l_next;
           MeshIter liter_next;
-          MESH_ELEM_ITER (l_next, &liter_next, l->next->v, BM_LOOPS_OF_VERT) {
-            MESH_ELEM_API_FLAG_ENABLE(l_next, BM_LNORSPACE_UPDATE);
+          MESH_ELEM_ITER (l_next, &liter_next, l->next->v, MESH_LOOPS_OF_VERT) {
+            MESH_ELEM_API_FLAG_ENABLE(l_next, MESH_LNORSPACE_UPDATE);
           }
-          BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_next->v));
+          LIB_BITMAP_ENABLE(done_verts, mesh_elem_index_get(l_next->v));
         }
       }
 
-      BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(v));
+      LIB_BITMAP_ENABLE(done_verts, mesh_elem_index_get(v));
     }
   }
 
-  MEM_freeN(done_verts);
-  bm->spacearr_dirty |= BM_SPACEARR_DIRTY;
+  mem_freen(done_verts);
+  mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY;
 }
 
-void BM_lnorspace_rebuild(BMesh *bm, bool preserve_clnor)
+void mesh_lnorspace_rebuild(Mesh *mesh, bool preserve_clnor)
 {
-  BLI_assert(bm->lnor_spacearr != NULL);
+  lib_assert(bm->lnor_spacearr != NULL);
 
-  if (!(bm->spacearr_dirty & (BM_SPACEARR_DIRTY | BM_SPACEARR_DIRTY_ALL))) {
+  if (!(mesh->spacearr_dirty & (MESH_SPACEARR_DIRTY | MESH_SPACEARR_DIRTY_ALL))) {
     return;
   }
-  BMFace *f;
-  BMLoop *l;
-  BMIter fiter, liter;
+  MFace *f;
+  MLoop *l;
+  MIter fiter, liter;
 
-  float(*r_lnors)[3] = MEM_callocN(sizeof(*r_lnors) * bm->totloop, __func__);
-  float(*oldnors)[3] = preserve_clnor ? MEM_mallocN(sizeof(*oldnors) * bm->totloop, __func__) :
+  float(*r_lnors)[3] = mem_callocn(sizeof(*r_lnors) * mesh->totloop, __func__);
+  float(*oldnors)[3] = preserve_clnor ? mem_mallocn(sizeof(*oldnors) * mesh->totloop, __func__) :
                                         NULL;
 
-  int cd_loop_clnors_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+  int cd_loop_clnors_offset = CustomData_get_offset(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
 
   BM_mesh_elem_index_ensure(bm, BM_LOOP);
 
