@@ -1577,8 +1577,8 @@ static void mesh_loops_custom_normals_set(Mesh *mesh,
   if (new_lnors == NULL) {
     custom_lnors = mem_mallocn(sizeof(*new_lnors) * mesh->totloop, __func__);
 
-    MESH_ITER_MESH (f, &fiter, mesh, MESH_FACES_OF_MESH) {
-      MESH_ITER_ELEM (l, &liter, f, MESH_LOOPS_OF_FACE) {
+    MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ELEM_ITER (l, &liter, f, MESH_LOOPS_OF_FACE) {
         const float *normal = MESH_ELEM_CD_GET_VOID_P(l, cd_new_lnors_offset);
         copy_v3_v3(custom_lnors[mesh_elem_index_get(l)], normal);
       }
@@ -1750,17 +1750,17 @@ void mesh_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
    */
   MESH_ITER (v, &viter, mesh, MESH_VERTS_OF_MESH) {
     if (mesh_elem_flag_test(v, MESH_ELEM_SELECT)) {
-      BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
-        BM_ELEM_API_FLAG_ENABLE(l, BM_LNORSPACE_UPDATE);
+      MESH_ELEM_ITER (l, &liter, v, MESH_LOOPS_OF_VERT) {
+        MESH_ELEM_API_FLAG_ENABLE(l, MESH_LNORSPACE_UPDATE);
 
         /* Note that we only handle unselected neighbor vertices here, main loop will take care of
          * selected ones. */
-        if ((!BM_elem_flag_test(l->prev->v, BM_ELEM_SELECT)) &&
-            !BLI_BITMAP_TEST(done_verts, BM_elem_index_get(l->prev->v))) {
+        if ((!mesh_elem_flag_test(l->prev->v, MESH_ELEM_SELECT)) &&
+            !LIB_BITMAP_TEST(done_verts, mesh_elem_index_get(l->prev->v))) {
 
-          BMLoop *l_prev;
-          BMIter liter_prev;
-          BM_ITER_ELEM (l_prev, &liter_prev, l->prev->v, BM_LOOPS_OF_VERT) {
+          MeshLoop *l_prev;
+          MeshIter liter_prev;
+          MESH_ELEM_ITER (l_prev, &liter_prev, l->prev->v, BM_LOOPS_OF_VERT) {
             BM_ELEM_API_FLAG_ENABLE(l_prev, BM_LNORSPACE_UPDATE);
           }
           BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_prev->v));
