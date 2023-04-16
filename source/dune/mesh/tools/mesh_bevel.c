@@ -2445,57 +2445,57 @@ static void bevel_harden_normals(BevelParams *bp, Mesh *mesh)
   /* I suspect this is not necessary. TODO: test that guess. */
   mesh_normals_update(mesh);
 
-  int cd_clnors_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+  int cd_clnors_offset = CustomData_get_offset(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
 
   /* If there is not already a custom split normal layer then making one (with BM_lnorspace_update)
    * will not respect the autosmooth angle between smooth faces. To get that to happen, we have
    * to mark the sharpen the edges that are only sharp because of the angle test -- otherwise would
    * be smooth. */
   if (cd_clnors_offset == -1) {
-    BM_edges_sharp_from_angle_set(bm, bp->smoothresh);
-    bevel_edges_sharp_boundary(bm, bp);
+    mesh_edges_sharp_from_angle_set(mesh, bp->smoothresh);
+    bevel_edges_sharp_boundary(mesh, bp);
   }
 
   /* Ensure that bm->lnor_spacearr has properly stored loop normals.
    * Side effect: ensures loop indices. */
-  BM_lnorspace_update(bm);
+  mesh_lnorspace_update(mesh);
 
   if (cd_clnors_offset == -1) {
-    cd_clnors_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
+    cd_clnors_offset = CustomData_get_offset(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
   }
 
-  BMIter fiter;
-  BMFace *f;
-  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+  MeshIter fiter;
+  MeshFace *f;
+  MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
     FKind fkind = get_face_kind(bp, f);
     if (ELEM(fkind, F_ORIG, F_RECON)) {
       continue;
     }
-    BMIter liter;
-    BMLoop *l;
-    BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
-      BMEdge *estep = l->prev->e; /* Causes CW walk around l->v fan. */
-      BMLoop *lprev = BM_vert_step_fan_loop(l, &estep);
+    MeshIter liter;
+    MeshLoop *l;
+    MESH_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+      MeshEdge *estep = l->prev->e; /* Causes CW walk around l->v fan. */
+      MeshLoop *lprev = BM_vert_step_fan_loop(l, &estep);
       estep = l->e; /* Causes CCW walk around l->v fan. */
-      BMLoop *lnext = BM_vert_step_fan_loop(l, &estep);
+      MeshLoop *lnext = BM_vert_step_fan_loop(l, &estep);
       FKind fprevkind = lprev ? get_face_kind(bp, lprev->f) : F_NONE;
       FKind fnextkind = lnext ? get_face_kind(bp, lnext->f) : F_NONE;
 
       float norm[3];
       float *pnorm = NULL;
       if (fkind == F_EDGE) {
-        if (fprevkind == F_EDGE && BM_elem_flag_test(l, BM_ELEM_LONG_TAG)) {
+        if (fprevkind == F_EDGE && mesh_elem_flag_test(l, MESH_ELEM_LONG_TAG)) {
           add_v3_v3v3(norm, f->no, lprev->f->no);
           pnorm = norm;
         }
-        else if (fnextkind == F_EDGE && BM_elem_flag_test(lnext, BM_ELEM_LONG_TAG)) {
+        else if (fnextkind == F_EDGE && mesh_elem_flag_test(lnext, MESH_ELEM_LONG_TAG)) {
           add_v3_v3v3(norm, f->no, lnext->f->no);
           pnorm = norm;
         }
-        else if (fprevkind == F_RECON && BM_elem_flag_test(l, BM_ELEM_LONG_TAG)) {
+        else if (fprevkind == F_RECON && BM_elem_flag_test(l, MESH_ELEM_LONG_TAG)) {
           pnorm = lprev->f->no;
         }
-        else if (fnextkind == F_RECON && BM_elem_flag_test(l->prev, BM_ELEM_LONG_TAG)) {
+        else if (fnextkind == F_RECON && BM_elem_flag_test(l->prev, MESH_ELEM_LONG_TAG)) {
           pnorm = lnext->f->no;
         }
         else {
@@ -2513,10 +2513,10 @@ static void bevel_harden_normals(BevelParams *bp, Mesh *mesh)
           pnorm = lnext->f->no;
         }
         else {
-          BMLoop *lprevprev, *lnextnext;
+          MeshLoop *lprevprev, *lnextnext;
           if (lprev) {
             estep = lprev->prev->e;
-            lprevprev = BM_vert_step_fan_loop(lprev, &estep);
+            lprevprev = mesh_vert_step_fan_loop(lprev, &estep);
           }
           else {
             lprevprev = NULL;
@@ -2622,10 +2622,10 @@ static void set_bound_vert_seams(BevVert *bv, bool mark_seam, bool mark_sharp)
   } while ((v = v->next) != bv->vmesh->boundstart);
 
   if (mark_seam) {
-    check_edge_data_seam_sharp_edges(bv, BM_ELEM_SEAM, false);
+    check_edge_data_seam_sharp_edges(bv, MESH_ELEM_SEAM, false);
   }
   if (mark_sharp) {
-    check_edge_data_seam_sharp_edges(bv, BM_ELEM_SMOOTH, true);
+    check_edge_data_seam_sharp_edges(bv, MESH_ELEM_SMOOTH, true);
   }
 }
 
@@ -2659,7 +2659,7 @@ static bool eh_on_plane(EdgeHalf *e)
 /**
  * Calculate the profiles for all the BoundVerts of VMesh vm.
  *
- * \note This should only be called once for each BevVert, after all changes have been made to the
+ * This should only be called once for each BevVert, after all changes have been made to the
  * profile's parameters.
  */
 static void calculate_vm_profiles(BevelParams *bp, BevVert *bv, VMesh *vm)
@@ -2687,7 +2687,7 @@ static void build_boundary_vertex_only(BevelParams *bp, BevVert *bv, bool constr
 {
   VMesh *vm = bv->vmesh;
 
-  BLI_assert(bp->affect_type == BEVEL_AFFECT_VERTICES);
+  lib_assert(bp->affect_type == BEVEL_AFFECT_VERTICES);
 
   EdgeHalf *efirst = &bv->edges[0];
   EdgeHalf *e = efirst;
@@ -2721,7 +2721,7 @@ static void build_boundary_vertex_only(BevelParams *bp, BevVert *bv, bool constr
 /**
  * Special case of build_boundary when a single edge is beveled.
  * The 'width adjust' part of build_boundary has been done already,
- * and \a efirst is the first beveled edge at vertex \a bv.
+ * and efirst is the first beveled edge at vertex bv.
  */
 static void build_boundary_terminal_edge(BevelParams *bp,
                                          BevVert *bv,
@@ -2829,7 +2829,7 @@ static void build_boundary_terminal_edge(BevelParams *bp,
   if (bv->edgecount >= 3) {
     /* Special case: snap profile to plane of adjacent two edges. */
     BoundVert *bndv = vm->boundstart;
-    BLI_assert(bndv->ebev != NULL);
+    lib_assert(bndv->ebev != NULL);
     set_profile_params(bp, bv, bndv);
     move_profile_plane(bndv, bv->v);
   }
@@ -2872,7 +2872,7 @@ static void adjust_miter_coords(BevelParams *bp, BevVert *bv, EdgeHalf *emiter)
     v3 = v2->next;
   }
   else {
-    BLI_assert(miter_outer == BEVEL_MITER_ARC);
+    lib_assert(miter_outer == BEVEL_MITER_ARC);
     v2 = NULL;
     v3 = v1->next;
   }
@@ -2887,7 +2887,7 @@ static void adjust_miter_coords(BevelParams *bp, BevVert *bv, EdgeHalf *emiter)
   /* co1 is intersection of line through co2 in dir of emiter->e
    * and plane with normal the dir of emiter->e and through v1prev. */
   float co1[3], edge_dir[3], line_p[3];
-  BMVert *vother = BM_edge_other_vert(emiter->e, bv->v);
+  MeshVert *vother = mesh_edge_other_vert(emiter->e, bv->v);
   sub_v3_v3v3(edge_dir, bv->v->co, vother->co);
   normalize_v3(edge_dir);
   float d = bp->offset / (bp->seg / 2.0f); /* A fallback amount to move. */
@@ -2900,7 +2900,7 @@ static void adjust_miter_coords(BevelParams *bp, BevVert *bv, EdgeHalf *emiter)
   /* co3 is similar, but plane is through v3next and line is other side of miter edge. */
   float co3[3];
   EdgeHalf *emiter_other = v3->elast;
-  vother = BM_edge_other_vert(emiter_other->e, bv->v);
+  vother = mesh_edge_other_vert(emiter_other->e, bv->v);
   sub_v3_v3v3(edge_dir, bv->v->co, vother->co);
   normalize_v3(edge_dir);
   madd_v3_v3v3fl(line_p, co2, edge_dir, d);
@@ -2921,12 +2921,12 @@ static void adjust_miter_inner_coords(BevelParams *bp, BevVert *bv, EdgeHalf *em
       if (e != emiter) {
         float edge_dir[3], co[3];
         copy_v3_v3(co, v->nv.co);
-        BMVert *vother = BM_edge_other_vert(e->e, bv->v);
+        MeshVert *vother = mesh_edge_other_vert(e->e, bv->v);
         sub_v3_v3v3(edge_dir, vother->co, bv->v->co);
         normalize_v3(edge_dir);
         madd_v3_v3v3fl(v->nv.co, co, edge_dir, bp->spread);
         e = v3->elast;
-        vother = BM_edge_other_vert(e->e, bv->v);
+        vother = mesh_edge_other_vert(e->e, bv->v);
         sub_v3_v3v3(edge_dir, vother->co, bv->v->co);
         normalize_v3(edge_dir);
         madd_v3_v3v3fl(v3->nv.co, co, edge_dir, bp->spread);
@@ -2945,12 +2945,12 @@ static void adjust_miter_inner_coords(BevelParams *bp, BevVert *bv, EdgeHalf *em
  * to be a subsequent pass to make the widths as consistent as possible.
  * Doesn't make the actual BMVerts.
  *
- * For a width consistency pass, we just recalculate the coordinates of the #BoundVerts. If the
+ * For a width consistency pass, we just recalculate the coordinates of the BoundVerts. If the
  * other ends have been (re)built already, then we copy the offsets from there to match, else we
  * use the ideal (user-specified) widths.
  *
- * \param construct: The first time through, construct will be true and we are making the
- * #BoundVerts and setting up the #BoundVert and #EdgeHalf pointers appropriately.
+ * param construct: The first time through, construct will be true and we are making the
+ * BoundVerts and setting up the BoundVert and EdgeHalf pointers appropriately.
  * Also, if construct, decide on the mesh pattern that will be used inside the boundary.
  */
 static void build_boundary(BevelParams *bp, BevVert *bv, bool construct)
@@ -2971,7 +2971,7 @@ static void build_boundary(BevelParams *bp, BevVert *bv, bool construct)
 
   /* Find a beveled edge to be efirst. */
   EdgeHalf *efirst = next_bev(bv, NULL);
-  BLI_assert(efirst->is_bev);
+  lib_assert(efirst->is_bev);
 
   if (bv->selcount == 1) {
     /* Special case: only one beveled edge in. */
