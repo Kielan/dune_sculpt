@@ -31,45 +31,45 @@ extern "C" {
  * mesh_op_slot_buffer_from_hflag or #BMO_slot_buffer_from_flag
  * (or through one of the format specifiers in #BMO_op_callf or #BMO_op_initf).
  *
- * \note multiple element types (e.g. faces and edges)
+ * multiple element types (e.g. faces and edges)
  * can be fed to the same slot array.  Operators act on this data,
  * and possibly spit out data into output slots.
  *
- * \note operators should never read from header flags (e.g. element->head.flag).
+ * operators should never read from header flags (e.g. element->head.flag).
  * For example, if you want an operator to only operate on selected faces, you
- * should use #BMO_slot_buffer_from_hflag to put the selected elements into a slot.
+ * should use mesh_op_slot_buffer_from_hflag to put the selected elements into a slot.
  *
- * \note when you read from an element slot array or mapping, you can either tool-flag
+ * when you read from an element slot array or mapping, you can either tool-flag
  * all the elements in it, or read them using an iterator API (which is semantically
  * similar to the iterator api in bmesh_iterators.h).
  *
- * \note only #BMLoop items can't be put into slots as with verts, edges & faces.
+ * only MeshLoop items can't be put into slots as with verts, edges & faces.
  */
 
 struct GHashIterator;
 
-BLI_INLINE BMFlagLayer *BMO_elem_flag_from_header(BMHeader *ele_head)
+LIB_INLINE MeshFlagLayer *mesh_op_elem_flag_from_header(MeshHeader *ele_head)
 {
   switch (ele_head->htype) {
-    case BM_VERT:
-      return ((BMVert_OFlag *)ele_head)->oflags;
-    case BM_EDGE:
-      return ((BMEdge_OFlag *)ele_head)->oflags;
+    case MESH_VERT:
+      return ((MeshVert_OpFlag *)ele_head)->oflags;
+    case MESH_EDGE:
+      return ((MeshEdge_OpFlag *)ele_head)->oflags;
     default:
-      return ((BMFace_OFlag *)ele_head)->oflags;
+      return ((MeshFace_OFlag *)ele_head)->oflags;
   }
 }
 
-#define BMO_elem_flag_test(bm, ele, oflag) \
-  _bmo_elem_flag_test(bm, BMO_elem_flag_from_header(&(ele)->head), oflag)
-#define BMO_elem_flag_test_bool(bm, ele, oflag) \
-  _bmo_elem_flag_test_bool(bm, BMO_elem_flag_from_header(&(ele)->head), oflag)
-#define BMO_elem_flag_enable(bm, ele, oflag) \
-  _bmo_elem_flag_enable( \
-      bm, (BM_CHECK_TYPE_ELEM_NONCONST(ele), BMO_elem_flag_from_header(&(ele)->head)), oflag)
-#define BMO_elem_flag_disable(bm, ele, oflag) \
-  _bmo_elem_flag_disable( \
-      bm, (BM_CHECK_TYPE_ELEM_NONCONST(ele), BMO_elem_flag_from_header(&(ele)->head)), oflag)
+#define mesh_op_elem_flag_test(mesh, ele, oflag) \
+  _mesh_op_elem_flag_test(mesh, mesh_op_elem_flag_from_header(&(ele)->head), oflag)
+#define mesh_op_elem_flag_test_bool(mesh, ele, oflag) \
+  _mesh_op_elem_flag_test_bool(mesh, mesh_op_elem_flag_from_header(&(ele)->head), oflag)
+#define mesh_op_elem_flag_enable(mesh, ele, oflag) \
+  _mesh_op_elem_flag_enable( \
+      mesh, (MESH_CHECK_TYPE_ELEM_NONCONST(ele), BMO_elem_flag_from_header(&(ele)->head)), oflag)
+#define mesh_op_elem_flag_disable(bm, ele, oflag) \
+  _mesh_op_elem_flag_disable( \
+      mesh, (MESH_CHECK_TYPE_ELEM_NONCONST(ele), BMO_elem_flag_from_header(&(ele)->head)), oflag)
 #define BMO_elem_flag_set(bm, ele, oflag, val) \
   _bmo_elem_flag_set(bm, \
                      (BM_CHECK_TYPE_ELEM_NONCONST(ele), BMO_elem_flag_from_header(&(ele)->head)), \
