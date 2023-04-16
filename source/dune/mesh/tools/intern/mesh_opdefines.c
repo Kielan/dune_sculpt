@@ -218,9 +218,9 @@ static MeshOpDefine mesh_op_region_extend_def = {
   {{"geom.out", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* output slot, computed boundary geometry. */
    {{'\0'}},
   },
-  bmo_region_extend_exec,
-  (BMO_OPTYPE_FLAG_SELECT_FLUSH |
-   BMO_OPTYPE_FLAG_SELECT_VALIDATE),
+  mesh_op_region_extend_ex,
+  (MESH_OPTYPE_FLAG_SELECT_FLUSH |
+   MESH_OPTYPE_FLAG_SELECT_VALIDATE),
 };
 
 /*
@@ -229,22 +229,22 @@ static MeshOpDefine mesh_op_region_extend_def = {
  * Rotates edges topologically.  Also known as "spin edge" to some people.
  * Simple example: `[/] becomes [|] then [\]`.
  */
-static BMOpDefine bmo_rotate_edges_def = {
+static MeshOpDefine mesh_op_rotate_edges_def = {
   "rotate_edges",
   /* slots_in */
-  {{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}},    /* input edges */
-   {"use_ccw", BMO_OP_SLOT_BOOL},         /* rotate edge counter-clockwise if true, otherwise clockwise */
+  {{"edges", MESH_OP_SLOT_ELEMENT_BUF, {MESH_EDGE}},    /* input edges */
+   {"use_ccw", MESH_OP_SLOT_BOOL},         /* rotate edge counter-clockwise if true, otherwise clockwise */
    {{'\0'}},
   },
   /* slots_out */
-  {{"edges.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* newly spun edges */
+  {{"edges.out", MESH_OP_SLOT_ELEMENT_BUF, {MESH_EDGE}}, /* newly spun edges */
    {{'\0'}},
   },
-  bmo_rotate_edges_exec,
-  (BMO_OPTYPE_FLAG_UNTAN_MULTIRES |
-   BMO_OPTYPE_FLAG_NORMALS_CALC |
-   BMO_OPTYPE_FLAG_SELECT_FLUSH |
-   BMO_OPTYPE_FLAG_SELECT_VALIDATE),
+  mesh_rotate_edges_ex,
+  (MESH_OPTYPE_FLAG_UNTAN_MULTIRES |
+   MESH_OPTYPE_FLAG_NORMALS_CALC |
+   MESH_OPTYPE_FLAG_SELECT_FLUSH |
+   MESH_OPTYPE_FLAG_SELECT_VALIDATE),
 };
 
 /*
@@ -253,17 +253,17 @@ static BMOpDefine bmo_rotate_edges_def = {
  * Reverses the winding (vertex order) of faces.
  * This has the effect of flipping the normal.
  */
-static BMOpDefine bmo_reverse_faces_def = {
+static MeshOpDefine mesh_op_reverse_faces_def = {
   "reverse_faces",
   /* slots_in */
-  {{"faces", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}},    /* input faces */
-   {"flip_multires", BMO_OP_SLOT_BOOL},  /* maintain multi-res offset */
+  {{"faces", MESH_OP_SLOT_ELEMENT_BUF, {MESH_FACE}},    /* input faces */
+   {"flip_multires", MESH_OP_SLOT_BOOL},  /* maintain multi-res offset */
    {{'\0'}},
   },
   {{{'\0'}}},  /* no output */
-  bmo_reverse_faces_exec,
-  (BMO_OPTYPE_FLAG_UNTAN_MULTIRES |
-   BMO_OPTYPE_FLAG_NORMALS_CALC),
+  mesh_op_reverse_faces_ex,
+  (MESH_OPTYPE_FLAG_UNTAN_MULTIRES |
+   MESH_OPTYPE_FLAG_NORMALS_CALC),
 };
 
 /*
@@ -272,23 +272,23 @@ static BMOpDefine bmo_reverse_faces_def = {
  * Splits input edges (but doesn't do anything else).
  * This creates a 2-valence vert.
  */
-static BMOpDefine bmo_bisect_edges_def = {
+static MeshOpDefine mesh_op_bisect_edges_def = {
   "bisect_edges",
   /* slots_in */
-  {{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* input edges */
-   {"cuts", BMO_OP_SLOT_INT}, /* number of cuts */
-   {"edge_percents", BMO_OP_SLOT_MAPPING, {(int)BMO_OP_SLOT_SUBTYPE_MAP_FLT}},
+  {{"edges", MESH_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* input edges */
+   {"cuts", MESH_OP_SLOT_INT}, /* number of cuts */
+   {"edge_percents", MESH_OP_SLOT_MAPPING, {(int)BMO_OP_SLOT_SUBTYPE_MAP_FLT}},
    {{'\0'}},
   },
   /* slots_out */
-  {{"geom_split.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* newly created vertices and edges */
+  {{"geom_split.out", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* newly created vertices and edges */
    {{'\0'}},
   },
-  bmo_bisect_edges_exec,
-  (BMO_OPTYPE_FLAG_UNTAN_MULTIRES |
-   BMO_OPTYPE_FLAG_NORMALS_CALC |
-   BMO_OPTYPE_FLAG_SELECT_FLUSH |
-   BMO_OPTYPE_FLAG_SELECT_VALIDATE),
+  mesh_bisect_edges_exec,
+  (MESH_OPTYPE_FLAG_UNTAN_MULTIRES |
+   MESH_OPTYPE_FLAG_NORMALS_CALC |
+   MESH_OPTYPE_FLAG_SELECT_FLUSH |
+   MESH_OPTYPE_FLAG_SELECT_VALIDATE),
 };
 
 /*
@@ -298,17 +298,17 @@ static BMOpDefine bmo_bisect_edges_def = {
  * merge_dist.  Pairs of original/mirrored vertices are welded using the merge_dist
  * parameter (which defines the minimum distance for welding to happen).
  */
-static BMOpDefine bmo_mirror_def = {
+static MeshOpDefine mesh_op_mirror_def = {
   "mirror",
   /* slots_in */
-  {{"geom", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},     /* input geometry */
-   {"matrix",          BMO_OP_SLOT_MAT},   /* matrix defining the mirror transformation */
-   {"merge_dist",      BMO_OP_SLOT_FLT},   /* maximum distance for merging.  does no merging if 0. */
-   {"axis",            BMO_OP_SLOT_INT, {(int)BMO_OP_SLOT_SUBTYPE_INT_ENUM}, bmo_enum_axis_xyz},   /* the axis to use. */
-   {"mirror_u",        BMO_OP_SLOT_BOOL},  /* mirror UVs across the u axis */
-   {"mirror_v",        BMO_OP_SLOT_BOOL},  /* mirror UVs across the v axis */
-   {"mirror_udim",     BMO_OP_SLOT_BOOL},  /* mirror UVs in each tile */
-   {"use_shapekey",    BMO_OP_SLOT_BOOL},  /* Transform shape keys too. */
+  {{"geom", BMO_OP_SLOT_ELEMENT_BUF, {MESH_VERT | MESH_EDGE | MESH_FACE}},     /* input geometry */
+   {"matrix",          MESH_OP_SLOT_MAT},   /* matrix defining the mirror transformation */
+   {"merge_dist",      MESH_OP_SLOT_FLT},   /* maximum distance for merging.  does no merging if 0. */
+   {"axis",            MESH_OP_SLOT_INT, {(int)BMO_OP_SLOT_SUBTYPE_INT_ENUM}, bmo_enum_axis_xyz},   /* the axis to use. */
+   {"mirror_u",        MESH_OP_SLOT_BOOL},  /* mirror UVs across the u axis */
+   {"mirror_v",        MESH_OP_SLOT_BOOL},  /* mirror UVs across the v axis */
+   {"mirror_udim",     MESH_OP_SLOT_BOOL},  /* mirror UVs in each tile */
+   {"use_shapekey",    MESH_OP_SLOT_BOOL},  /* Transform shape keys too. */
    {{'\0'}},
   },
   /* slots_out */
