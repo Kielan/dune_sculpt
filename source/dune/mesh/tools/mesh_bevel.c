@@ -367,9 +367,9 @@ typedef struct BevelParams {
 /* Only for debugging, this file shouldn't be in blender repository. */
 // #include "bevdebug.c"
 
-/* Use the unused _BM_ELEM_TAG_ALT flag to flag the 'long' loops (parallel to beveled edge)
+/* Use the unused _MESH_ELEM_TAG_ALT flag to flag the 'long' loops (parallel to beveled edge)
  * of edge-polygons. */
-#define BM_ELEM_LONG_TAG (1 << 6)
+#define MESH_ELEM_LONG_TAG (1 << 6)
 
 /* These flag values will get set on geom we want to return in 'out' slots for edges and verts. */
 #define EDGE_OUT 4
@@ -377,17 +377,17 @@ typedef struct BevelParams {
 
 /* If we're called from the modifier, tool flags aren't available,
  * but don't need output geometry. */
-static void flag_out_edge(BMesh *bm, BMEdge *bme)
+static void flag_out_edge(Mesh *mesh, MeshEdge *mesh)
 {
-  if (bm->use_toolflags) {
-    BMO_edge_flag_enable(bm, bme, EDGE_OUT);
+  if (mesh->use_toolflags) {
+    mesh_op_edge_flag_enable(mesh, mesh, EDGE_OUT);
   }
 }
 
-static void flag_out_vert(BMesh *bm, BMVert *bmv)
+static void flag_out_vert(Mesh *mesh, MeshVert *meshv)
 {
-  if (bm->use_toolflags) {
-    BMO_vert_flag_enable(bm, bmv, VERT_OUT);
+  if (mesh->use_toolflags) {
+    mesh_op_vert_flag_enable(mesh, meshv, VERT_OUT);
   }
 }
 
