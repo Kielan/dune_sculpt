@@ -754,21 +754,21 @@ void mesh_slot_buffer_from_all(Mesh *mesh,
     /* TODO: collapse these loops into one. */
 
     if (htype & MESH_VERT) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
         output->data.buf[i] = ele;
         i++;
       }
     }
 
     if (htype & MESH_EDGE) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
         output->data.buf[i] = ele;
         i++;
       }
     }
 
     if (htype & MESH_FACE) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH) {
         output->data.buf[i] = ele;
         i++;
       }
@@ -1194,7 +1194,7 @@ static void mesh_flag_layer_alloc(Mesh *mesh)
 
   MeshEdge_OFlag *e_oflag;
   newpool = mesh->etoolflagpool;
-  MESH_ITER_MESH_INDEX (e_oflag, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+  MESH_INDEX_ITER (e_oflag, &iter, mesh, MESH_EDGES_OF_MESH, i) {
     void *oldflags = e_oflag->oflags;
     e_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(e_oflag->oflags, oldflags, old_totflags_size);
@@ -1202,10 +1202,10 @@ static void mesh_flag_layer_alloc(Mesh *mesh)
     MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)e_oflag);
   }
 
-  MeshFace_OFlag *f_oflag;
+  MeshFaceOpFlag *f_opflag;
   newpool = mesh->ftoolflagpool;
   MESH_INDEX_ITER (f_oflag, &iter, mesh, MESH_FACES_OF_MESH, i) {
-    void *oldflags = f_oflag->oflags;
+    void *oldflags = f_opflag->oflags;
     f_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(f_oflag->oflags, oldflags, old_totflags_size);
     mesh_elem_index_set(&f_oflag->base, i); /* set_inline */
@@ -1242,7 +1242,7 @@ static void mesh_flag_layer_free(Mesh *mesh)
   MeshIter iter;
   int i;
 
-  MeshVert_OFlag *v_oflag;
+  MeshVertOpFlag *v_oflag;
   lib_mempool *newpool = mesh->vtoolflagpool;
   MESH_ITER_MESH_INDEX (v_oflag, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     void *oldflags = v_oflag->oflags;
@@ -1252,9 +1252,9 @@ static void mesh_flag_layer_free(Mesh *mesh)
     MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)v_oflag);
   }
 
-  MeshEdge_OFlag *e_oflag;
+  MeshEdgeOpFlag *e_oflag;
   newpool = mesh->etoolflagpool;
-  MESH_ITER_MESH_INDEX (e_oflag, &iter, bm, BM_EDGES_OF_MESH, i) {
+  MESH_INDEX_ITER (e_oflag, &iter, mesh, MESH_EDGES_OF_MESH, i) {
     void *oldflags = e_oflag->oflags;
     e_oflag->oflags = lib_mempool_alloc(newpool);
     memcpy(e_oflag->oflags, oldflags, new_totflags_size);
@@ -1262,7 +1262,7 @@ static void mesh_flag_layer_free(Mesh *mesh)
     MESH_ELEM_API_FLAG_CLEAR((MeshElemF *)e_oflag);
   }
 
-  MeshFace_OFlag *f_oflag;
+  MeshFaceOpFlag *f_oflag;
   newpool = mesh->ftoolflagpool;
   MESH_ITER_MESH_INDEX (f_oflag, &iter, mesh, MESH_FACES_OF_MESH, i) {
     void *oldflags = f_oflag->oflags;
@@ -1279,13 +1279,13 @@ static void mesh_flag_layer_free(Mesh *mesh)
   mesh->elem_index_dirty &= ~(MESH_VERT | MESH_EDGE | MESH_FACE);
 }
 
-static void bmo_flag_layer_clear(Mesh *mesh)
+static void mesh_op_flag_layer_clear(Mesh *mesh)
 {
   /* set the index values since we are looping over all data anyway,
    * may save time later on */
   const MeshFlagLayer zero_flag = {0};
 
-  const int totflags_offset = bm->totflags - 1;
+  const int totflags_offset = mesh->totflags - 1;
 
   /* now go through and memcpy all the flag */
   {
@@ -1299,18 +1299,18 @@ static void bmo_flag_layer_clear(Mesh *mesh)
   }
   {
     MeshIter iter;
-    MeshEdge_OFlag *ele;
+    MeshEdgeOpFlag *ele;
     int i;
-    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+    MESH_INDEX_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH, i) {
       ele->oflags[totflags_offset] = zero_flag;
       mesh_elem_index_set(&ele->base, i); /* set_inline */
     }
   }
   {
     MeshIter iter;
-    MeshFace_OFlag *ele;
+    MeshFaceOpFlag *ele;
     int i;
-    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_FACES_OF_MESH, i) {
+    MESH_INDEX_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH, i) {
       ele->oflags[totflags_offset] = zero_flag;
       mesh_elem_index_set(&ele->base, i); /* set_inline */
     }
@@ -1490,12 +1490,12 @@ bool mesh_error_get(Mesh *mesh, const char **r_msg, BMOperator **r_op, eBMOpErro
   return true;
 }
 
-bool mesh_op_error_get_at_level(Mesh *bm,
+bool mesh_op_error_get_at_level(Mesh *mesh,
                                 eMeshOpErrorLevel level,
                                 const char **r_msg,
-                                MeshOperator **r_op)
+                                MeshOp **r_op)
 {
-  for (BMOpError *err = bm->errorstack.first; err; err = err->next) {
+  for (MeshOpError *err = mesh->errorstack.first; err; err = err->next) {
     if (err->level >= level) {
       if (r_msg) {
         *r_msg = err->msg;
@@ -1510,15 +1510,15 @@ bool mesh_op_error_get_at_level(Mesh *bm,
   return false;
 }
 
-bool BMO_error_pop(BMesh *bm, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level)
+bool mesh_op_error_pop(Mesh *mesh, const char **r_msg, MeshOp **r_op, eMeshOpErrorLevel *r_level)
 {
-  bool result = BMO_error_get(bm, r_msg, r_op, r_level);
+  bool result = mesh_op_error_get(mesh, r_msg, r_op, r_level);
 
   if (result) {
-    BMOpError *err = bm->errorstack.first;
+    MeshOpError *err = mesh->errorstack.first;
 
-    BLI_remlink(&bm->errorstack, bm->errorstack.first);
-    MEM_freeN(err);
+    lib_remlink(&mesh->errorstack, mesh->errorstack.first);
+    mem_freen(err);
   }
 
   return result;
@@ -1526,7 +1526,7 @@ bool BMO_error_pop(BMesh *bm, const char **r_msg, BMOperator **r_op, eBMOpErrorL
 
 #define NEXT_CHAR(fmt) ((fmt)[0] != 0 ? (fmt)[1] : 0)
 
-static int bmo_name_to_slotcode(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *identifier)
+static int mesh_op_name_to_slotcode(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *identifier)
 {
   int i = 0;
 
