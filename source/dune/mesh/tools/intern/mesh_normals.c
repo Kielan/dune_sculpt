@@ -1317,14 +1317,14 @@ static void mesh_loops_calc_normals__multi_threaded(Mesh *mesh,
 }
 
 static void mesh_loops_calc_normals(Mesh *mesh,
-                                       const float (*vcos)[3],
-                                       const float (*fnos)[3],
-                                       float (*r_lnos)[3],
-                                       MeshLoopNorSpaceArray *r_lnors_spacearr,
-                                       const short (*clnors_data)[2],
-                                       const int cd_loop_clnors_offset,
-                                       const bool do_rebuild,
-                                       const float split_angle_cos)
+                                    const float (*vcos)[3],
+                                    const float (*fnos)[3],
+                                    float (*r_lnos)[3],
+                                    MeshLoopNorSpaceArray *r_lnors_spacearr,
+                                    const short (*clnors_data)[2],
+                                    const int cd_loop_clnors_offset,
+                                    const bool do_rebuild,
+                                    const float split_angle_cos)
 {
   if (mesh->totloop < MESH_OMP_LIMIT) {
     mesh_loops_calc_normals__single_threaded(mesh,
@@ -1342,11 +1342,11 @@ static void mesh_loops_calc_normals(Mesh *mesh,
                                             vcos,
                                             fnos,
                                             r_lnos,
-                                               r_lnors_spacearr,
-                                               clnors_data,
-                                               cd_loop_clnors_offset,
-                                               do_rebuild,
-                                               split_angle_cos);
+                                            r_lnors_spacearr,
+                                            clnors_data,
+                                            cd_loop_clnors_offset,
+                                            do_rebuild,
+                                            split_angle_cos);
   }
 }
 
@@ -1761,18 +1761,18 @@ void mesh_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
           MeshLoop *l_prev;
           MeshIter liter_prev;
           MESH_ELEM_ITER (l_prev, &liter_prev, l->prev->v, BM_LOOPS_OF_VERT) {
-            BM_ELEM_API_FLAG_ENABLE(l_prev, BM_LNORSPACE_UPDATE);
+            MESH_ELEM_API_FLAG_ENABLE(l_prev, BM_LNORSPACE_UPDATE);
           }
-          BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_prev->v));
+          LIB_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_prev->v));
         }
 
-        if ((!BM_elem_flag_test(l->next->v, BM_ELEM_SELECT)) &&
-            !BLI_BITMAP_TEST(done_verts, BM_elem_index_get(l->next->v))) {
+        if ((!mesh_elem_flag_test(l->next->v, BM_ELEM_SELECT)) &&
+            !LIB_BITMAP_TEST(done_verts, BM_elem_index_get(l->next->v))) {
 
-          BMLoop *l_next;
-          BMIter liter_next;
-          BM_ITER_ELEM (l_next, &liter_next, l->next->v, BM_LOOPS_OF_VERT) {
-            BM_ELEM_API_FLAG_ENABLE(l_next, BM_LNORSPACE_UPDATE);
+          MeshLoop *l_next;
+          MeshIter liter_next;
+          MESH_ELEM_ITER (l_next, &liter_next, l->next->v, BM_LOOPS_OF_VERT) {
+            MESH_ELEM_API_FLAG_ENABLE(l_next, BM_LNORSPACE_UPDATE);
           }
           BLI_BITMAP_ENABLE(done_verts, BM_elem_index_get(l_next->v));
         }
