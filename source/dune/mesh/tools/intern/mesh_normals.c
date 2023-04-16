@@ -1562,25 +1562,25 @@ static void mesh_loops_custom_normals_set(Mesh *mesh,
   /* Finish computing lnos by accumulating face normals
    * in each fan of faces defined by sharp edges. */
   mesh_loops_calc_normals(mesh,
-                             vcos,
-                             fnos,
-                             cur_lnors,
-                             r_lnors_spacearr,
-                             r_clnors_data,
-                             cd_loop_clnors_offset,
-                             false,
-                             EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS);
+                          vcos,
+                          fnos,
+                          cur_lnors,
+                          r_lnors_spacearr,
+                          r_clnors_data,
+                          cd_loop_clnors_offset,
+                          false,
+                          EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS);
 
   /* Extract new normals from the data layer if necessary. */
   float(*custom_lnors)[3] = new_lnors;
 
   if (new_lnors == NULL) {
-    custom_lnors = MEM_mallocN(sizeof(*new_lnors) * bm->totloop, __func__);
+    custom_lnors = mem_mallocn(sizeof(*new_lnors) * mesh->totloop, __func__);
 
-    BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
-      BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
-        const float *normal = BM_ELEM_CD_GET_VOID_P(l, cd_new_lnors_offset);
-        copy_v3_v3(custom_lnors[BM_elem_index_get(l)], normal);
+    MESH_ITER_MESH (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ITER_ELEM (l, &liter, f, MESH_LOOPS_OF_FACE) {
+        const float *normal = MESH_ELEM_CD_GET_VOID_P(l, cd_new_lnors_offset);
+        copy_v3_v3(custom_lnors[mesh_elem_index_get(l)], normal);
       }
     }
   }
@@ -1597,62 +1597,62 @@ static void mesh_loops_custom_normals_set(Mesh *mesh,
 
   /* Now, check each current smooth fan (one lnor space per smooth fan!),
    * and if all its matching custom lnors are not equal, add sharp edges as needed. */
-  if (do_split_fans && bm_mesh_loops_split_lnor_fans(bm, r_lnors_spacearr, custom_lnors)) {
-    /* If any sharp edges were added, run bm_mesh_loops_calc_normals() again to get lnor
+  if (do_split_fans && mesh_loops_split_lnor_fans(mesh, r_lnors_spacearr, custom_lnors)) {
+    /* If any sharp edges were added, run mesh_loops_calc_normals() again to get lnor
      * spacearr/smooth fans matching the given custom lnors. */
-    BKE_lnor_spacearr_clear(r_lnors_spacearr);
+    dune_lnor_spacearr_clear(r_lnors_spacearr);
 
-    bm_mesh_loops_calc_normals(bm,
-                               vcos,
-                               fnos,
-                               cur_lnors,
-                               r_lnors_spacearr,
-                               r_clnors_data,
-                               cd_loop_clnors_offset,
-                               false,
-                               EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS);
+    mesh_loops_calc_normals(mesh,
+                            vcos,
+                            fnos,
+                            cur_lnors,
+                            r_lnors_spacearr,
+                            r_clnors_data,
+                            cd_loop_clnors_offset,
+                            false,
+                            EDGE_TAG_FROM_SPLIT_ANGLE_BYPASS);
   }
 
   /* And we just have to convert plain object-space custom normals to our
    * lnor space-encoded ones. */
-  bm_mesh_loops_assign_normal_data(
-      bm, r_lnors_spacearr, r_clnors_data, cd_loop_clnors_offset, custom_lnors);
+  mesh_loops_assign_normal_data(
+      mesh, r_lnors_spacearr, r_clnors_data, cd_loop_clnors_offset, custom_lnors);
 
-  MEM_freeN(cur_lnors);
+  mem_freen(cur_lnors);
 
   if (custom_lnors != new_lnors) {
-    MEM_freeN(custom_lnors);
+    mem_freen(custom_lnors);
   }
 }
 
-static void bm_mesh_loops_calc_normals_no_autosmooth(BMesh *bm,
+static void mesh_loops_calc_normals_no_autosmooth(BMesh *bm,
                                                      const float (*vnos)[3],
                                                      const float (*fnos)[3],
                                                      float (*r_lnos)[3])
 {
-  BMIter fiter;
-  BMFace *f_curr;
+  MeshIter fiter;
+  MeshFace *f_curr;
 
   {
-    char htype = BM_LOOP;
+    char htype = MEEH_LOOP;
     if (vnos) {
-      htype |= BM_VERT;
+      htype |= MESH_VERT;
     }
     if (fnos) {
-      htype |= BM_FACE;
+      htype |= MESH_FACE;
     }
-    BM_mesh_elem_index_ensure(bm, htype);
+    mesh_elem_index_ensure(mesh, htype);
   }
 
-  BM_ITER_MESH (f_curr, &fiter, bm, BM_FACES_OF_MESH) {
-    BMLoop *l_curr, *l_first;
-    const bool is_face_flat = !BM_elem_flag_test(f_curr, BM_ELEM_SMOOTH);
+  MESH_ITER (f_curr, &fiter, mesh, MESH_FACES_OF_MESH) {
+    MeshLoop *l_curr, *l_first;
+    const bool is_face_flat = !mesh_elem_flag_test(f_curr, BM_ELEM_SMOOTH);
 
-    l_curr = l_first = BM_FACE_FIRST_LOOP(f_curr);
+    l_curr = l_first = MESH_FACE_FIRST_LOOP(f_curr);
     do {
       const float *no = is_face_flat ? (fnos ? fnos[BM_elem_index_get(f_curr)] : f_curr->no) :
                                        (vnos ? vnos[BM_elem_index_get(l_curr->v)] : l_curr->v->no);
-      copy_v3_v3(r_lnos[BM_elem_index_get(l_curr)], no);
+      copy_v3_v3(r_lnos[mesh_elem_index_get(l_curr)], no);
 
     } while ((l_curr = l_curr->next) != l_first);
   }
@@ -1713,28 +1713,28 @@ void mesh_lnorspacearr_store(Mesh *mesh, float (*r_lnors)[3])
                             NULL,
                             cd_loop_clnors_offset,
                             false);
-  bm->spacearr_dirty &= ~(MESH_SPACEARR_DIRTY | MESH_SPACEARR_DIRTY_ALL);
+  mesh->spacearr_dirty &= ~(MESH_SPACEARR_DIRTY | MESH_SPACEARR_DIRTY_ALL);
 }
 
 #define CLEAR_SPACEARRAY_THRESHOLD(x) ((x) / 2)
 
-void BM_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
+void mesh_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
 {
-  if (bm->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL) {
+  if (mesh->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL) {
     return;
   }
   if (do_invalidate_all || mesh->totvertsel > CLEAR_SPACEARRAY_THRESHOLD(mesh->totvert)) {
-    bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+    mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
     return;
   }
-  if (bm->lnor_spacearr == NULL) {
-    bm->spacearr_dirty |= BM_SPACEARR_DIRTY_ALL;
+  if (mesh->lnor_spacearr == NULL) {
+    mesh->spacearr_dirty |= MESH_SPACEARR_DIRTY_ALL;
     return;
   }
 
-  BMVert *v;
-  BMLoop *l;
-  BMIter viter, liter;
+  MeshVert *v;
+  MeshLoop *l;
+  MeshIter viter, liter;
   /* NOTE: we could use temp tag of BMItem for that,
    * but probably better not use it in such a low-level func?
    * --mont29 */
