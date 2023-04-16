@@ -783,12 +783,12 @@ void mesh_slot_buffer_from_all(Mesh *mesh,
  * enabled/disabled into a slot for an operator.
  */
 static void mesh_op_slot_buffer_from_hflag(Mesh *mesh,
-                                       MeshOp *op,
-                                       MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                                       const char *slot_name,
-                                       const char htype,
-                                       const char hflag,
-                                       const bool test_for_enabled)
+                                           MeshOp *op,
+                                           MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                                           const char *slot_name,
+                                           const char htype,
+                                           const char hflag,
+                                           const bool test_for_enabled)
 {
   MeshOpSlot *output = mesh_slot_get(slot_args, slot_name);
   int totelement = 0, i = 0;
@@ -815,7 +815,7 @@ static void mesh_op_slot_buffer_from_hflag(Mesh *mesh,
     /* TODO: collapse these loops into one. */
 
     if (htype & MESH_VERT) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_VERTS_OF_MESH) {
         if ((!respecthide || !mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) &&
             mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
           output->data.buf[i] = ele;
@@ -825,7 +825,7 @@ static void mesh_op_slot_buffer_from_hflag(Mesh *mesh,
     }
 
     if (htype & MESH_EDGE) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
         if ((!respecthide || !mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) &&
             mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
           output->data.buf[i] = ele;
@@ -835,7 +835,7 @@ static void mesh_op_slot_buffer_from_hflag(Mesh *mesh,
     }
 
     if (htype & MESH_FACE) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH) {
         if ((!respecthide || !mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN)) &&
             mesh_elem_flag_test_bool(ele, hflag) == test_for_enabled) {
           output->data.buf[i] = ele;
@@ -991,7 +991,7 @@ static void mesh_slot_buffer_from_flag(Mesh *mesh,
     }
 
     if (htype & MESH_EDGE) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
         if (mesh_edge_flag_test_bool(mesh, (MeshEdge *)ele, oflag) == test_for_enabled) {
           ele_array[i] = ele;
           i++;
@@ -1000,7 +1000,7 @@ static void mesh_slot_buffer_from_flag(Mesh *mesh,
     }
 
     if (htype & MESH_FACE) {
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH) {
         if (mesh_face_flag_test_bool(mesh, (MeshFace *)ele, oflag) == test_for_enabled) {
           ele_array[i] = ele;
           i++;
@@ -1101,10 +1101,10 @@ void mesh_slot_buffer_hflag_disable(Mesh *mesh,
 }
 
 void mesh_op_slot_buffer_flag_enable(Mesh *mesh,
-                                 MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                                 const char *slot_name,
-                                 const char htype,
-                                 const short oflag)
+                                     MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
+                                     const char *slot_name,
+                                     const char htype,
+                                     const short oflag)
 {
   MeshOpSlot *slot = mesh_slot_get(slot_args, slot_name);
   MeshHeader **data = slot->data.p;
@@ -1183,8 +1183,8 @@ static void mesh_flag_layer_alloc(Mesh *mesh)
   int i;
 
   MeshVert_OFlag *v_oflag;
-  lib_mempool *newpool = bm->vtoolflagpool;
-  MESH_ITER_MESH_INDEX (v_oflag, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+  lib_mempool *newpool = mesh->vtoolflagpool;
+  MESH_INDEX_ITER (v_oflag, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     void *oldflags = v_oflag->oflags;
     v_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(v_oflag->oflags, oldflags, old_totflags_size);
@@ -1204,7 +1204,7 @@ static void mesh_flag_layer_alloc(Mesh *mesh)
 
   MeshFace_OFlag *f_oflag;
   newpool = mesh->ftoolflagpool;
-  MESH_ITER_MESH_INDEX (f_oflag, &iter, mesh, MESH_FACES_OF_MESH, i) {
+  MESH_INDEX_ITER (f_oflag, &iter, mesh, MESH_FACES_OF_MESH, i) {
     void *oldflags = f_oflag->oflags;
     f_oflag->oflags = lib_mempool_calloc(newpool);
     memcpy(f_oflag->oflags, oldflags, old_totflags_size);
