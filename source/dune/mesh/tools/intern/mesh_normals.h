@@ -32,7 +32,7 @@ void mesh_normals_update_with_partial(Mesh *mesh, const struct MeshPartialUpdate
  * Computes the vertex normals of a mesh into vnos,
  * using given vertex coordinates (vcos) and polygon normals (fnos).
  */
-void mesh_verts_calc_normal_vcos(Mesh *m,
+void mesh_verts_calc_normal_vcos(Mesh *mesh,
                                  const float (*fnos)[3],
                                  const float (*vcos)[3],
                                  float (*vnos)[3]);
@@ -80,7 +80,7 @@ struct MeshLoopNorEditDataArray *mesh_loop_normal_editdata_array_init(Mesh *mesh
 void mesh_loop_normal_editdata_array_free(struct MeshLoopNorEditDataArray *lnors_ed_arr);
 
 /**
- * warning This function sets #BM_ELEM_TAG on loops & edges via mesh_loops_calc_normals,
+ * warning This function sets MESH_ELEM_TAG on loops & edges via mesh_loops_calc_normals,
  * take care to run this before setting up tags.
  */
 bool mesh_custom_loop_normals_to_vector_layer(struct Mesh *mesh);
