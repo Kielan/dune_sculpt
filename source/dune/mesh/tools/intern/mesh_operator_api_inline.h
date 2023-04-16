@@ -187,11 +187,11 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
   }
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    void *mesh_op_slot_map_ptr_get(BMOpSlot *slot, const void *element)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    void *mesh_op_slot_map_ptr_get(MeshOpSlot *slot, const void *element)
 {
-  void **val = BMO_slot_map_data_get(slot, element);
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_INTERNAL);
+  void **val = mesh_op_slot_map_data_get(slot, element);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_INTERNAL);
   if (val) {
     return *val;
   }
@@ -199,11 +199,11 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
   return NULL;
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    void *BMO_slot_map_elem_get(BMOpSlot *slot, const void *element)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    void *_mesh_op_slot_map_elem_get(MeshOpSlot *slot, const void *element)
 {
-  void **val = (void **)BMO_slot_map_data_get(slot, element);
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_ELEM);
+  void **val = (void **)mesh_op_slot_map_data_get(slot, element);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_ELEM);
   if (val) {
     return *val;
   }
