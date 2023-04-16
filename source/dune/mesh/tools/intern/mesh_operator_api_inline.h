@@ -35,14 +35,14 @@ LIB_INLINE void _mesh_op_elem_flag_disable(Mesh *mesh, MeshFlagLayer *oflags, co
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void _bmo_elem_flag_set(BMesh *bm, BMFlagLayer *oflags, const short oflag, int val)
+LIB_INLINE void _mesh_op_elem_flag_set(Mesh *mesh, MeshFlagLayer *oflags, const short oflag, int val)
 {
-  LibraryIdLinkCbData_assert(mesh->use_toolflags);
+  LibIdLinkCbData_assert(mesh->use_toolflags);
   if (val) {
-    oflags[bm->toolflag_index].f |= oflag;
+    oflags[mesh->toolflag_index].f |= oflag;
   }
   else {
-    oflags[bm->toolflag_index].f &= (short)~oflag;
+    oflags[mesh->toolflag_index].f &= (short)~oflag;
   }
 }
 
@@ -95,7 +95,7 @@ LIB_INLINE void mesh_slot_map_float_insert(MeshOp *op,
   mesh_op_slot_map_insert(op, slot, element, ((void)(t.val = val), t.ptr));
 }
 
-/* pointer versions of mesh_op_slot_map_float_get and BMO_slot_map_float_insert.
+/* pointer versions of mesh_op_slot_map_float_get and mesh_op_slot_map_float_insert.
  *
  * do NOT use these for non-operator-api-allocated memory! instead
  * use mesh_op_slot_map_data_get and mesh_op_slot_map_insert, which copies the data. */
@@ -172,13 +172,13 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
   }
 }
 
-ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    bool mesh_op_slot_map_bool_get(BMOpSlot *slot, const void *element)
+ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE
+    bool mesh_op_slot_map_bool_get(MeshOpSlot *slot, const void *element)
 {
   void **data;
-  BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_BOOL);
+  lib_assert(slot->slot_subtype.map == MESH_OP_SLOT_SUBTYPE_MAP_BOOL);
 
-  data = BMO_slot_map_data_get(slot, element);
+  data = mesh_op_slot_map_data_get(slot, element);
   if (data) {
     return *(bool *)data;
   }
@@ -188,7 +188,7 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
 }
 
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE
-    void *BMO_slot_map_ptr_get(BMOpSlot *slot, const void *element)
+    void *mesh_op_slot_map_ptr_get(BMOpSlot *slot, const void *element)
 {
   void **val = BMO_slot_map_data_get(slot, element);
   BLI_assert(slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_INTERNAL);
