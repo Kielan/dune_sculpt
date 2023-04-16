@@ -192,9 +192,9 @@ static void mesh_vert_calc_normals_with_coords_cb(void *userdata,
 }
 
 static void mesh_verts_calc_normals(Mesh *mesh,
-                                       const float (*fnos)[3],
-                                       const float (*vcos)[3],
-                                       float (*vnos)[3])
+                                    const float (*fnos)[3],
+                                    const float (*vcos)[3],
+                                    float (*vnos)[3])
 {
   mesh_elem_index_ensure(mesh, MESH_FACE | ((vnos || vcos) ? MESH_VERT : 0));
 
@@ -1586,7 +1586,7 @@ static void mesh_loops_custom_normals_set(Mesh *mesh,
   }
 
   /* Validate the new normals. */
-  for (int i = 0; i < bm->totloop; i++) {
+  for (int i = 0; i < mesh->totloop; i++) {
     if (is_zero_v3(custom_lnors[i])) {
       copy_v3_v3(custom_lnors[i], cur_lnors[i]);
     }
@@ -1793,9 +1793,9 @@ void mesh_lnorspace_rebuild(Mesh *mesh, bool preserve_clnor)
   if (!(mesh->spacearr_dirty & (MESH_SPACEARR_DIRTY | MESH_SPACEARR_DIRTY_ALL))) {
     return;
   }
-  MFace *f;
-  MLoop *l;
-  MIter fiter, liter;
+  MeshFace *f;
+  MeshLoop *l;
+  MeshIter fiter, liter;
 
   float(*r_lnors)[3] = mem_callocn(sizeof(*r_lnors) * mesh->totloop, __func__);
   float(*oldnors)[3] = preserve_clnor ? mem_mallocn(sizeof(*oldnors) * mesh->totloop, __func__) :
@@ -1803,20 +1803,20 @@ void mesh_lnorspace_rebuild(Mesh *mesh, bool preserve_clnor)
 
   int cd_loop_clnors_offset = CustomData_get_offset(&mesh->ldata, CD_CUSTOMLOOPNORMAL);
 
-  BM_mesh_elem_index_ensure(bm, BM_LOOP);
+  mesh_elem_index_ensure(mesh, MAesh_LOOP);
 
   if (preserve_clnor) {
-    BLI_assert(bm->lnor_spacearr->lspacearr != NULL);
+    lib_assert(mesh->lnor_spacearr->lspacearr != NULL);
 
-    BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
-      BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
-        if (BM_ELEM_API_FLAG_TEST(l, BM_LNORSPACE_UPDATE) ||
-            bm->spacearr_dirty & BM_SPACEARR_DIRTY_ALL) {
-          short(*clnor)[2] = BM_ELEM_CD_GET_VOID_P(l, cd_loop_clnors_offset);
-          int l_index = BM_elem_index_get(l);
+    MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ELEM_ITER (l, &liter, f, MESH_LOOPS_OF_FACE) {
+        if (MESH_ELEM_API_FLAG_TEST(l, MESH_LNORSPACE_UPDATE) ||
+            mesh->spacearr_dirty & MESH_SCEARR_DIRTY_ALL) {
+          short(*clnor)[2] = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_clnors_offset);
+          int l_index = mesh_elem_index_get(l);
 
-          BKE_lnor_space_custom_data_to_normal(
-              bm->lnor_spacearr->lspacearr[l_index], *clnor, oldnors[l_index]);
+          dune_lnor_space_custom_data_to_normal(
+              mesh->lnor_spacearr->lspacearr[l_index], *clnor, oldnors[l_index]);
         }
       }
     }
