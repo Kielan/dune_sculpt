@@ -1735,12 +1735,12 @@ void mesh_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
   MeshVert *v;
   MeshLoop *l;
   MeshIter viter, liter;
-  /* NOTE: we could use temp tag of BMItem for that,
+  /* NOTE: we could use temp tag of MeshItem for that,
    * but probably better not use it in such a low-level func?
    * --mont29 */
-  BLI_bitmap *done_verts = BLI_BITMAP_NEW(bm->totvert, __func__);
+  lib_bitmap *done_verts = LIB_BITMAP_NEW(mesh->totvert, __func__);
 
-  BM_mesh_elem_index_ensure(bm, BM_VERT);
+  mesh_elem_index_ensure(mesh, MESH_VERT);
 
   /* When we affect a given vertex, we may affect following smooth fans:
    * - all smooth fans of said vertex;
@@ -1748,8 +1748,8 @@ void mesh_lnorspace_invalidate(Mesh *mesh, const bool do_invalidate_all)
    * This can be simplified as 'all loops of selected vertices and their immediate neighbors'
    * need to be tagged for update.
    */
-  BM_ITER_MESH (v, &viter, bm, BM_VERTS_OF_MESH) {
-    if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
+  MESH_ITER (v, &viter, mesh, MESH_VERTS_OF_MESH) {
+    if (mesh_elem_flag_test(v, MESH_ELEM_SELECT)) {
       BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
         BM_ELEM_API_FLAG_ENABLE(l, BM_LNORSPACE_UPDATE);
 
