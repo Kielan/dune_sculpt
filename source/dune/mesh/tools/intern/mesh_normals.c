@@ -1111,15 +1111,15 @@ static void mesh_loops_calc_normals__single_threaded(Mesh *mesh,
         continue;
       }
       mesh_loops_calc_normals_for_loop(mesh,
-                                          vcos,
-                                          fnos,
-                                          clnors_data,
-                                          cd_loop_clnors_offset,
-                                          has_clnors,
-                                          edge_vectors,
-                                          l_curr,
-                                          r_lnos,
-                                          r_lnors_spacearr);
+                                       vcos,
+                                       fnos,
+                                       clnors_data,
+                                       cd_loop_clnors_offset,
+                                       has_clnors,
+                                       edge_vectors,
+                                       l_curr,
+                                       r_lnos,
+                                       r_lnors_spacearr);
     } while ((l_curr = l_curr->next) != l_first);
   }
 
@@ -1316,7 +1316,7 @@ static void mesh_loops_calc_normals__multi_threaded(Mesh *mesh,
   }
 }
 
-static void bm_mesh_loops_calc_normals(Mesh *mesh,
+static void mesh_loops_calc_normals(Mesh *mesh,
                                        const float (*vcos)[3],
                                        const float (*fnos)[3],
                                        float (*r_lnos)[3],
@@ -1383,23 +1383,23 @@ static bool mesh_loops_split_lnor_fans(Mesh *mesh,
       /* Notes:
        * * In case of mono-loop smooth fan, we have nothing to do.
        * * Loops in this linklist are ordered (in reversed order compared to how they were
-       *   discovered by BKE_mesh_normals_loop_split(), but this is not a problem).
+       *   discovered by dune_mesh_normals_loop_split(), but this is not a problem).
        *   Which means if we find a mismatching clnor,
        *   we know all remaining loops will have to be in a new, different smooth fan/lnor space.
        * * In smooth fan case, we compare each clnor against a ref one,
        *   to avoid small differences adding up into a real big one in the end!
        */
       if (lnors_spacearr->lspacearr[i]->flags & MLNOR_SPACE_IS_SINGLE) {
-        BLI_BITMAP_ENABLE(done_loops, i);
+        LIB_BITMAP_ENABLE(done_loops, i);
         continue;
       }
 
       LinkNode *loops = lnors_spacearr->lspacearr[i]->loops;
-      BMLoop *prev_ml = NULL;
+      MeshLoop *prev_ml = NULL;
       const float *org_nor = NULL;
 
       while (loops) {
-        BMLoop *ml = loops->link;
+        MeshLoop *ml = loops->link;
         const int lidx = BM_elem_index_get(ml);
         const float *nor = new_lnors[lidx];
 
@@ -1432,13 +1432,13 @@ static bool mesh_loops_split_lnor_fans(Mesh *mesh,
       loops = lnors_spacearr->lspacearr[i]->loops;
       if (loops && org_nor) {
         MeshLoop *ml = loops->link;
-        const int lidx = BM_elem_index_get(ml);
+        const int lidx = mesh_elem_index_get(ml);
         const float *nor = new_lnors[lidx];
 
         if (dot_v3v3(org_nor, nor) < LNOR_SPACE_TRIGO_THRESHOLD) {
           MeshEdge *e = (prev_ml->e == ml->prev->e) ? prev_ml->e : ml->e;
 
-          mesh_elem_flag_disable(e, BM_ELEM_TAG | BM_ELEM_SMOOTH);
+          mesh_elem_flag_disable(e, MESH_ELEM_TAG | MESH_ELEM_SMOOTH);
           changed = true;
         }
       }
@@ -1489,7 +1489,7 @@ static void mesh_loops_assign_normal_data(Mesh *mesh,
 
         const float *nor = new_lnors[lidx];
         short *clnor = r_clnors_data ? &r_clnors_data[lidx] :
-                                       BM_ELEM_CD_GET_VOID_P(ml, cd_loop_clnors_offset);
+                                       MESH_ELEM_CD_GET_VOID_P(ml, cd_loop_clnors_offset);
 
         dune_lnor_space_custom_normal_to_data(lnors_spacearr->lspacearr[i], nor, clnor);
         LIB_BITMAP_ENABLE(done_loops, i);
@@ -1538,10 +1538,10 @@ static void mesh_loops_assign_normal_data(Mesh *mesh,
  * the smooth fans when loop normals for the same vertex are different, or averaging the normals
  * instead, depending on the do_split_fans parameter.
  */
-static void bm_mesh_loops_custom_normals_set(BMesh *bm,
-                                             const float (*vcos)[3],
-                                             const float (*fnos)[3],
-                                             MLoopNorSpaceArray *r_lnors_spacearr,
+static void mesh_loops_custom_normals_set(Mesh *mesh,
+                                          const float (*vcos)[3],
+                                          const float (*fnos)[3],
+                                          MeshLoopNorSpaceArray *r_lnors_spacearr,
                                              short (*r_clnors_data)[2],
                                              const int cd_loop_clnors_offset,
                                              float (*new_lnors)[3],
