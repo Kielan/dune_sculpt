@@ -524,7 +524,7 @@ static BevVert *find_bevvert(BevelParams *bp, MeshVert *mv)
 
 /**
  * Find the EdgeHalf representing the other end of e->e.
- * \return other end's BevVert in *r_bvother, if r_bvother is provided. That may not have
+ * return other end's BevVert in *r_bvother, if r_bvother is provided. That may not have
  * been constructed yet, in which case return NULL.
  */
 static EdgeHalf *find_other_end_edge_half(BevelParams *bp, EdgeHalf *e, BevVert **r_bvother)
@@ -2376,10 +2376,10 @@ static void bevel_extend_edge_data(BevVert *bv)
               e = e->v2_disk_link.next;
             }
           }
-          BM_elem_flag_set(e, BM_ELEM_SMOOTH, false);
+          mesh_elem_flag_set(e, MESH_ELEM_SMOOTH, false);
           v1 = v2;
         }
-        BMVert *v3 = mesh_vert(vm, (i + 1) % vm->count, 0, 0)->v;
+        MeshVert *v3 = mesh_vert(vm, (i + 1) % vm->count, 0, 0)->v;
         e = v1->e;
         while (e->v1 != v3 && e->v2 != v3) {
           if (e->v1 == v1) {
@@ -2389,7 +2389,7 @@ static void bevel_extend_edge_data(BevVert *bv)
             e = e->v2_disk_link.next;
           }
         }
-        BM_elem_flag_set(e, BM_ELEM_SMOOTH, false);
+        mesh_elem_flag_set(e, MESH_ELEM_SMOOTH, false);
         bcur = bcur->next;
       }
     }
@@ -2400,27 +2400,27 @@ static void bevel_extend_edge_data(BevVert *bv)
 }
 
 /* Mark edges as sharp if they are between a smooth reconstructed face and a new face. */
-static void bevel_edges_sharp_boundary(BMesh *bm, BevelParams *bp)
+static void bevel_edges_sharp_boundary(Mesh *mesh, BevelParams *bp)
 {
-  BMIter fiter;
-  BMFace *f;
-  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
-    if (!BM_elem_flag_test(f, BM_ELEM_SMOOTH)) {
+  MeshIter fiter;
+  MeshFace *f;
+  MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+    if (!mesh_elem_flag_test(f, MESH_ELEM_SMOOTH)) {
       continue;
     }
     if (get_face_kind(bp, f) != F_RECON) {
       continue;
     }
-    BMIter liter;
-    BMLoop *l;
-    BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+    MeshIter liter;
+    MeshLoop *l;
+    MESH_ELEM_ITER (l, &liter, f, MESH_LOOPS_OF_FACE) {
       /* Cases we care about will have exactly one adjacent face. */
-      BMLoop *lother = l->radial_next;
-      BMFace *fother = lother->f;
+      MeshLoop *lother = l->radial_next;
+      MeshFace *fother = lother->f;
       if (lother != l && fother) {
         FKind fkind = get_face_kind(bp, lother->f);
         if (ELEM(fkind, F_EDGE, F_VERT)) {
-          BM_elem_flag_disable(l->e, BM_ELEM_SMOOTH);
+          mesh_elem_flag_disable(l->e, MESH_ELEM_SMOOTH);
         }
       }
     }
@@ -2428,14 +2428,14 @@ static void bevel_edges_sharp_boundary(BMesh *bm, BevelParams *bp)
 }
 
 /**
- * \brief Harden normals for bevel.
+ * Harden normals for bevel.
  *
  * The desired effect is that the newly created #F_EDGE and #F_VERT faces appear smoothly shaded
  * with the normals at the boundaries with #F_RECON faces matching those recon faces.
  * And at boundaries between #F_EDGE and #F_VERT faces, the normals should match the #F_EDGE ones.
  * Assumes custom loop normals are in use.
  */
-static void bevel_harden_normals(BevelParams *bp, BMesh *bm)
+static void bevel_harden_normals(BevelParams *bp, Mesh *mesh)
 {
   if (bp->offset == 0.0 || !bp->harden_normals) {
     return;
@@ -2443,7 +2443,7 @@ static void bevel_harden_normals(BevelParams *bp, BMesh *bm)
 
   /* Recalculate all face and vertex normals. Side effect: ensures vertex, edge, face indices. */
   /* I suspect this is not necessary. TODO: test that guess. */
-  BM_mesh_normals_update(bm);
+  mesh_normals_update(mesh);
 
   int cd_clnors_offset = CustomData_get_offset(&bm->ldata, CD_CUSTOMLOOPNORMAL);
 
@@ -2523,7 +2523,7 @@ static void bevel_harden_normals(BevelParams *bp, BMesh *bm)
           }
           if (lnext) {
             estep = lnext->e;
-            lnextnext = BM_vert_step_fan_loop(lnext, &estep);
+            lnextnext = mesh_vert_step_fan_loop(lnext, &estep);
           }
           else {
             lnextnext = NULL;
@@ -2550,31 +2550,31 @@ static void bevel_harden_normals(BevelParams *bp, BMesh *bm)
         if (pnorm == norm) {
           normalize_v3(norm);
         }
-        int l_index = BM_elem_index_get(l);
-        short *clnors = BM_ELEM_CD_GET_VOID_P(l, cd_clnors_offset);
-        BKE_lnor_space_custom_normal_to_data(bm->lnor_spacearr->lspacearr[l_index], pnorm, clnors);
+        int l_index = mesh_elem_index_get(l);
+        short *clnors = MESH_ELEM_CD_GET_VOID_P(l, cd_clnors_offset);
+        dune_lnor_space_custom_normal_to_data(mesh->lnor_spacearr->lspacearr[l_index], pnorm, clnors);
       }
     }
   }
 }
 
-static void bevel_set_weighted_normal_face_strength(BMesh *bm, BevelParams *bp)
+static void bevel_set_weighted_normal_face_strength(Mesh *mesh, BevelParams *bp)
 {
   const int mode = bp->face_strength_mode;
   const char *wn_layer_id = MOD_WEIGHTEDNORMALS_FACEWEIGHT_CDLAYER_ID;
-  int cd_prop_int_idx = CustomData_get_named_layer_index(&bm->pdata, CD_PROP_INT32, wn_layer_id);
+  int cd_prop_int_idx = CustomData_get_named_layer_index(&mesh->pdata, CD_PROP_INT32, wn_layer_id);
 
   if (cd_prop_int_idx == -1) {
-    BM_data_layer_add_named(bm, &bm->pdata, CD_PROP_INT32, wn_layer_id);
-    cd_prop_int_idx = CustomData_get_named_layer_index(&bm->pdata, CD_PROP_INT32, wn_layer_id);
+    mesh_data_layer_add_named(mesh, &mesh->pdata, CD_PROP_INT32, wn_layer_id);
+    cd_prop_int_idx = CustomData_get_named_layer_index(&mesh->pdata, CD_PROP_INT32, wn_layer_id);
   }
-  cd_prop_int_idx -= CustomData_get_layer_index(&bm->pdata, CD_PROP_INT32);
+  cd_prop_int_idx -= CustomData_get_layer_index(&mesh->pdata, CD_PROP_INT32);
   const int cd_prop_int_offset = CustomData_get_n_offset(
-      &bm->pdata, CD_PROP_INT32, cd_prop_int_idx);
+      &mesh->pdata, CD_PROP_INT32, cd_prop_int_idx);
 
-  BMIter fiter;
-  BMFace *f;
-  BM_ITER_MESH (f, &fiter, bm, BM_FACES_OF_MESH) {
+  MeshIter fiter;
+  MeshFace *f;
+  MESH_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
     FKind fkind = get_face_kind(bp, f);
     bool do_set_strength = true;
     int strength;
