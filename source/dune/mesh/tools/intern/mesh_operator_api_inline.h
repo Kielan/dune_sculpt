@@ -10,7 +10,7 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
     short _mesh_elem_flag_test(Mesh *mesh, const MeshFlagLayer *oflags, const short oflag)
 {
   lib_assert(mesh->use_toolflags);
-  return oflags[bm->toolflag_index].f & oflag;
+  return oflags[mesh->toolflag_index].f & oflag;
 }
 
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
@@ -23,21 +23,21 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
 ATTR_NONNULL(1, 2)
 LIB_INLINE void _mesh_elem_flag_enable(Mesh *mesh, MeshFlagLayer *oflags, const short oflag)
 {
-  BLI_assert(bm->use_toolflags);
-  oflags[bm->toolflag_index].f |= oflag;
+  lib_assert(mesh->use_toolflags);
+  oflags[mesh->toolflag_index].f |= oflag;
 }
 
 ATTR_NONNULL(1, 2)
-BLI_INLINE void _bmo_elem_flag_disable(BMesh *bm, BMFlagLayer *oflags, const short oflag)
+LIB_INLINE void _mesh_op_elem_flag_disable(Mesh *mesh, MeshFlagLayer *oflags, const short oflag)
 {
-  BLI_assert(bm->use_toolflags);
-  oflags[bm->toolflag_index].f &= (short)~oflag;
+  lib_assert(mesh->use_toolflags);
+  oflags[mesh->toolflag_index].f &= (short)~oflag;
 }
 
 ATTR_NONNULL(1, 2)
 BLI_INLINE void _bmo_elem_flag_set(BMesh *bm, BMFlagLayer *oflags, const short oflag, int val)
 {
-  BLI_assert(bm->use_toolflags);
+  LibraryIdLinkCbData_assert(mesh->use_toolflags);
   if (val) {
     oflags[bm->toolflag_index].f |= oflag;
   }
