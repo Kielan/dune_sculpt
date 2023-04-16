@@ -391,24 +391,24 @@ static void flag_out_vert(Mesh *mesh, MeshVert *meshv)
   }
 }
 
-static void disable_flag_out_edge(BMesh *bm, BMEdge *bme)
+static void disable_flag_out_edge(Mesh *mesh, MeshEdge *me)
 {
-  if (bm->use_toolflags) {
-    BMO_edge_flag_disable(bm, bme, EDGE_OUT);
+  if (mesh->use_toolflags) {
+    mesh_op_edge_flag_disable(mesh, me, EDGE_OUT);
   }
 }
 
-static void record_face_kind(BevelParams *bp, BMFace *f, FKind fkind)
+static void record_face_kind(BevelParams *bp, MeshFace *f, FKind fkind)
 {
   if (bp->face_hash) {
-    BLI_ghash_insert(bp->face_hash, f, POINTER_FROM_INT(fkind));
+    lib_ghash_insert(bp->face_hash, f, PTR_FROM_INT(fkind));
   }
 }
 
-static FKind get_face_kind(BevelParams *bp, BMFace *f)
+static FKind get_face_kind(BevelParams *bp, MeshFace *f)
 {
-  void *val = BLI_ghash_lookup(bp->face_hash, f);
-  return val ? (FKind)POINTER_AS_INT(val) : F_ORIG;
+  void *val = lib_ghash_lookup(bp->face_hash, f);
+  return val ? (FKind)PTR_AS_INT(val) : F_ORIG;
 }
 
 /* Are d1 and d2 parallel or nearly so? */
@@ -419,13 +419,11 @@ static bool nearly_parallel(const float d1[3], const float d2[3])
   return (fabsf(ang) < BEVEL_EPSILON_ANG) || (fabsf(ang - (float)M_PI) < BEVEL_EPSILON_ANG);
 }
 
-/**
- * \return True if d1 and d2 are parallel or nearly parallel.
- */
+/** True if d1 and d2 are parallel or nearly parallel. **/
 static bool nearly_parallel_normalized(const float d1[3], const float d2[3])
 {
-  BLI_ASSERT_UNIT_V3(d1);
-  BLI_ASSERT_UNIT_V3(d2);
+  LIB_ASSERT_UNIT_V3(d1);
+  LIB_ASSERT_UNIT_V3(d2);
 
   const float direction_dot = dot_v3v3(d1, d2);
   return compare_ff(fabsf(direction_dot), 1.0f, BEVEL_EPSILON_ANG_DOT);
@@ -433,7 +431,7 @@ static bool nearly_parallel_normalized(const float d1[3], const float d2[3])
 
 /**
  * calculate the determinant of a matrix formed by three vectors
- * \return dot(a, cross(b, c)) = determinant(a, b, c)
+ * return dot(a, cross(b, c)) = determinant(a, b, c)
  */
 static float determinant_v3v3v3(const float a[3], const float b[3], const float c[3])
 {
@@ -445,7 +443,7 @@ static float determinant_v3v3v3(const float a[3], const float b[3], const float 
  * list with entry point bv->boundstart, and return it. */
 static BoundVert *add_new_bound_vert(MemArena *mem_arena, VMesh *vm, const float co[3])
 {
-  BoundVert *ans = (BoundVert *)BLI_memarena_alloc(mem_arena, sizeof(BoundVert));
+  BoundVert *ans = (BoundVert *)lib_memarena_alloc(mem_arena, sizeof(BoundVert));
 
   copy_v3_v3(ans->nv.co, co);
   if (!vm->boundstart) {
@@ -473,7 +471,7 @@ static BoundVert *add_new_bound_vert(MemArena *mem_arena, VMesh *vm, const float
   return ans;
 }
 
-BLI_INLINE void adjust_bound_vert(BoundVert *bv, const float co[3])
+LIB_INLINE void adjust_bound_vert(BoundVert *bv, const float co[3])
 {
   copy_v3_v3(bv->nv.co, co);
 }
@@ -491,12 +489,12 @@ static NewVert *mesh_vert(VMesh *vm, int i, int j, int k)
   return &vm->mesh[i * nk * nj + j * nk + k];
 }
 
-static void create_mesh_bmvert(BMesh *bm, VMesh *vm, int i, int j, int k, BMVert *eg)
+static void create_mesh_bmvert(Mesh *mesh, VMesh *vm, int i, int j, int k, MeshVert *eg)
 {
   NewVert *nv = mesh_vert(vm, i, j, k);
-  nv->v = BM_vert_create(bm, nv->co, eg, BM_CREATE_NOP);
-  BM_elem_flag_disable(nv->v, BM_ELEM_TAG);
-  flag_out_vert(bm, nv->v);
+  nv->v = mesh_vert_create(mesh, nv->co, eg, MESH_CREATE_NOP);
+  mesh_elem_flag_disable(nv->v, MESH_ELEM_TAG);
+  flag_out_vert(mesh, nv->v);
 }
 
 static void copy_mesh_vert(VMesh *vm, int ito, int jto, int kto, int ifrom, int jfrom, int kfrom)
@@ -508,20 +506,20 @@ static void copy_mesh_vert(VMesh *vm, int ito, int jto, int kto, int ifrom, int 
 }
 
 /* Find the EdgeHalf in bv's array that has edge bme. */
-static EdgeHalf *find_edge_half(BevVert *bv, BMEdge *bme)
+static EdgeHalf *find_edge_half(BevVert *bv, MeshEdge *me)
 {
   for (int i = 0; i < bv->edgecount; i++) {
-    if (bv->edges[i].e == bme) {
+    if (bv->edges[i].e == me) {
       return &bv->edges[i];
     }
   }
   return NULL;
 }
 
-/* Find the BevVert corresponding to BMVert bmv. */
-static BevVert *find_bevvert(BevelParams *bp, BMVert *bmv)
+/* Find the BevVert corresponding to MeshVert mv. */
+static BevVert *find_bevvert(BevelParams *bp, MeshVert *mv)
 {
-  return BLI_ghash_lookup(bp->vert_hash, bmv);
+  return lib_ghash_lookup(bp->vert_hash, bmv);
 }
 
 /**
@@ -537,7 +535,7 @@ static EdgeHalf *find_other_end_edge_half(BevelParams *bp, EdgeHalf *e, BevVert 
       *r_bvother = bvo;
     }
     EdgeHalf *eother = find_edge_half(bvo, e->e);
-    BLI_assert(eother != NULL);
+    lib_assert(eother != NULL);
     return eother;
   }
   if (r_bvother) {
@@ -580,13 +578,13 @@ static int count_ccw_edges_between(EdgeHalf *e1, EdgeHalf *e2)
 
 /* Assume bme1 and bme2 both share some vert. Do they share a face?
  * If they share a face then there is some loop around bme1 that is in a face
- * where the next or previous edge in the face must be bme2. */
-static bool edges_face_connected_at_vert(BMEdge *bme1, BMEdge *bme2)
+ * where the next or previous edge in the face must be me2. */
+static bool edges_face_connected_at_vert(MeshEdge *me1, MeshEdge *me2)
 {
-  BMIter iter;
-  BMLoop *l;
-  BM_ITER_ELEM (l, &iter, bme1, BM_LOOPS_OF_EDGE) {
-    if (l->prev->e == bme2 || l->next->e == bme2) {
+  MeshIter iter;
+  MLoop *l;
+  MESH_ELEM_ITER (l, &iter, me1, MESH_LOOPS_OF_EDGE) {
+    if (l->prev->e == me2 || l->next->e == me2) {
       return true;
     }
   }
@@ -600,11 +598,11 @@ static bool edges_face_connected_at_vert(BMEdge *bme1, BMEdge *bme2)
  * If r_fother parameter is non-NULL and there is another, different,
  * possible frep, return the other one in that parameter.
  */
-static BMFace *boundvert_rep_face(BoundVert *v, BMFace **r_fother)
+static MeshFace *boundvert_rep_face(BoundVert *v, MeshFace **r_fother)
 {
-  BMFace *frep;
+  MeshFace *frep;
 
-  BMFace *frep2 = NULL;
+  MeshFace *frep2 = NULL;
   if (v->ebev) {
     frep = v->ebev->fprev;
     if (v->efirst->fprev != frep) {
