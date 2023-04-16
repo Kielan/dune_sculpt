@@ -1,4 +1,4 @@
-/** Main functions for beveling a BMesh (used by the tool and modifier) **/
+/** Main functions for beveling a Mesh (used by the tool and modifier) **/
 
 #include "mem_guardedalloc.h"
 
