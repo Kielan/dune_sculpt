@@ -419,45 +419,45 @@ void mesh_beautify_fill(Mesh *mesh,
       lib_assert(lib_gset_haskey(e_state_set, (void *)e_state) == false);
       lib_gset_insert(e_state_set, e_state);
 
-      // printf("  %d -> %d, %d\n", i, BM_elem_index_get(e->v1), BM_elem_index_get(e->v2));
+      // printf("  %d -> %d, %d\n", i, mesh_elem_index_get(e->v1), mesh_elem_index_get(e->v2));
 
       /* maintain the index array */
       edge_array[i] = e;
-      BM_elem_index_set(e, i);
+      mesh_elem_index_set(e, i);
 
       /* recalculate faces connected on the heap */
-      bm_edge_update_beauty_cost(e,
+      mesh_edge_update_beauty_cost(e,
                                  eheap,
                                  eheap_table,
                                  edge_state_arr,
-                                 (const BMEdge **)edge_array,
+                                 (const MeshEdge **)edge_array,
                                  edge_array_len,
                                  flag,
                                  method);
 
       /* update flags */
       if (oflag_edge) {
-        BMO_edge_flag_enable(bm, e, oflag_edge);
+        mesh_op_edge_flag_enable(mesh, e, oflag_edge);
       }
 
       if (oflag_face) {
-        BMO_face_flag_enable(bm, e->l->f, oflag_face);
-        BMO_face_flag_enable(bm, e->l->radial_next->f, oflag_face);
+        mesh__face_flag_enable(mesh, e->l->f, oflag_face);
+        mesh_op_face_flag_enable(mesh, e->l->radial_next->f, oflag_face);
       }
     }
   }
 
-  BLI_heap_free(eheap, NULL);
-  MEM_freeN(eheap_table);
+  lib_heap_free(eheap, NULL);
+  mem_freen(eheap_table);
 
   for (i = 0; i < edge_array_len; i++) {
     if (edge_state_arr[i]) {
-      BLI_gset_free(edge_state_arr[i], NULL);
+      lib_gset_free(edge_state_arr[i], NULL);
     }
   }
 
-  MEM_freeN(edge_state_arr);
-  BLI_mempool_destroy(edge_state_pool);
+  mem_freen(edge_state_arr);
+  lib_mempool_destroy(edge_state_pool);
 
 #ifdef DEBUG_TIME
   TIMEIT_END(beautify_fill);
