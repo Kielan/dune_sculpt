@@ -1106,7 +1106,7 @@ static void mesh_loops_calc_normals__single_threaded(Mesh *mesh,
 
     l_curr = l_first = MESH_FACE_FIRST_LOOP(f_curr);
     do {
-      if (do_rebuild && !MESH_ELEM_API_FLAG_TEST(l_curr, BM_LNORSPACE_UPDATE) &&
+      if (do_rebuild && !MESH_ELEM_API_FLAG_TEST(l_curr, MESH_LNORSPACE_UPDATE) &&
           !(mesh->spacearr_dirty & MESH_SPACEARR_DIRTY_ALL)) {
         continue;
       }
@@ -1400,7 +1400,7 @@ static bool mesh_loops_split_lnor_fans(Mesh *mesh,
 
       while (loops) {
         MeshLoop *ml = loops->link;
-        const int lidx = BM_elem_index_get(ml);
+        const int lidx = mesh_elem_index_get(ml);
         const float *nor = new_lnors[lidx];
 
         if (!org_nor) {
@@ -1542,26 +1542,26 @@ static void mesh_loops_custom_normals_set(Mesh *mesh,
                                           const float (*vcos)[3],
                                           const float (*fnos)[3],
                                           MeshLoopNorSpaceArray *r_lnors_spacearr,
-                                             short (*r_clnors_data)[2],
-                                             const int cd_loop_clnors_offset,
-                                             float (*new_lnors)[3],
-                                             const int cd_new_lnors_offset,
-                                             bool do_split_fans)
+                                          short (*r_clnors_data)[2],
+                                          const int cd_loop_clnors_offset,
+                                          float (*new_lnors)[3],
+                                          const int cd_new_lnors_offset,
+                                          bool do_split_fans)
 {
-  BMFace *f;
-  BMLoop *l;
-  BMIter liter, fiter;
-  float(*cur_lnors)[3] = MEM_mallocN(sizeof(*cur_lnors) * bm->totloop, __func__);
+  MeshFace *f;
+  MeshLoop *l;
+  MeshIter liter, fiter;
+  float(*cur_lnors)[3] = mem_mallocn(sizeof(*cur_lnors) * mesh->totloop, __func__);
 
-  BKE_lnor_spacearr_clear(r_lnors_spacearr);
+  dune_lnor_spacearr_clear(r_lnors_spacearr);
 
   /* Tag smooth edges and set lnos from vnos when they might be completely smooth...
    * When using custom loop normals, disable the angle feature! */
-  bm_mesh_edges_sharp_tag(bm, fnos, -1.0f, false);
+  mesh_edges_sharp_tag(bm, fnos, -1.0f, false);
 
   /* Finish computing lnos by accumulating face normals
    * in each fan of faces defined by sharp edges. */
-  bm_mesh_loops_calc_normals(bm,
+  mesh_loops_calc_normals(mesh,
                              vcos,
                              fnos,
                              cur_lnors,
