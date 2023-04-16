@@ -43,7 +43,7 @@ void mesh_verts_calc_normal_vcos(Mesh *m,
  * Useful to materialize sharp edges (or non-smooth faces) without actually modifying the geometry
  * (splitting edges).
  */
-void mesh_loops_calc_normal_vcos(Mesh *msh,
+void mesh_loops_calc_normal_vcos(Mesh *mesh,
                                const float (*vcos)[3],
                                const float (*vnos)[3],
                                const float (*fnos)[3],
@@ -65,26 +65,26 @@ void mesh_lnorspacearr_store(Mesh *mesh, float (*r_lnors)[3]);
 void mesh_lnorspace_invalidate(Mesh *mesh, bool do_invalidate_all);
 void mesh_lnorspace_rebuild(Mesh *m, bool preserve_clnor);
 /**
- * warning This function sets MESH_ELEM_TAG on loops & edges via #bm_mesh_loops_calc_normals,
+ * warning This function sets MESH_ELEM_TAG on loops & edges via _mesh_loops_calc_normals,
  * take care to run this before setting up tags.
  */
 void mesh_lnorspace_update(Mesh *m);
-void mesh_normals_loops_edges_tag(Mesh *bm, bool do_edges);
+void mesh_normals_loops_edges_tag(Mesh *mesh, bool do_edges);
 #ifndef NDEBUG
-void mesh_lnorspace_err(Mesh *bm);
+void mesh_lnorspace_err(Mesh *mesh);
 #endif
 
 /* Loop Generics */
-struct BMLoopNorEditDataArray *BM_loop_normal_editdata_array_init(BMesh *bm,
+struct MeshLoopNorEditDataArray *mesh_loop_normal_editdata_array_init(Mesh *mesh,
                                                                   bool do_all_loops_of_vert);
-void BM_loop_normal_editdata_array_free(struct BMLoopNorEditDataArray *lnors_ed_arr);
+void mesh_loop_normal_editdata_array_free(struct MeshLoopNorEditDataArray *lnors_ed_arr);
 
 /**
- * \warning This function sets #BM_ELEM_TAG on loops & edges via #bm_mesh_loops_calc_normals,
+ * warning This function sets #BM_ELEM_TAG on loops & edges via mesh_loops_calc_normals,
  * take care to run this before setting up tags.
  */
-bool BM_custom_loop_normals_to_vector_layer(struct BMesh *bm);
-void BM_custom_loop_normals_from_vector_layer(struct BMesh *bm, bool add_sharp_edges);
+bool mesh_custom_loop_normals_to_vector_layer(struct Mesh *mesh);
+void mesh_custom_loop_normals_from_vector_layer(struct Mesh *mesh, bool add_sharp_edges);
 
 /**
  * Define sharp edges as needed to mimic 'autosmooth' from angle threshold.
@@ -92,4 +92,4 @@ void BM_custom_loop_normals_from_vector_layer(struct BMesh *bm, bool add_sharp_e
  * Used when defining an empty custom loop normals data layer,
  * to keep same shading as with auto-smooth!
  */
-void BM_edges_sharp_from_angle_set(BMesh *bm, float split_angle);
+void mesh_edges_sharp_from_angle_set(BMesh *bm, float split_angle);
