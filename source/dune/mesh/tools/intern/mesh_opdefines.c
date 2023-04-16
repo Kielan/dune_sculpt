@@ -301,7 +301,7 @@ static MeshOpDefine mesh_op_bisect_edges_def = {
 static MeshOpDefine mesh_op_mirror_def = {
   "mirror",
   /* slots_in */
-  {{"geom", BMO_OP_SLOT_ELEMENT_BUF, {MESH_VERT | MESH_EDGE | MESH_FACE}},     /* input geometry */
+  {{"geom", MESH_OP_SLOT_ELEMENT_BUF, {MESH_VERT | MESH_EDGE | MESH_FACE}},     /* input geometry */
    {"matrix",          MESH_OP_SLOT_MAT},   /* matrix defining the mirror transformation */
    {"merge_dist",      MESH_OP_SLOT_FLT},   /* maximum distance for merging.  does no merging if 0. */
    {"axis",            MESH_OP_SLOT_INT, {(int)BMO_OP_SLOT_SUBTYPE_INT_ENUM}, bmo_enum_axis_xyz},   /* the axis to use. */
@@ -312,13 +312,13 @@ static MeshOpDefine mesh_op_mirror_def = {
    {{'\0'}},
   },
   /* slots_out */
-  {{"geom.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* output geometry, mirrored */
+  {{"geom.out", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* output geometry, mirrored */
    {{'\0'}},
   },
-  bmo_mirror_exec,
-  (BMO_OPTYPE_FLAG_NORMALS_CALC |
-   BMO_OPTYPE_FLAG_SELECT_FLUSH |
-   BMO_OPTYPE_FLAG_SELECT_VALIDATE),
+  mesh_op_mirror_exec,
+  (MESH_OPTYPE_FLAG_NORMALS_CALC |
+   MESH_OPTYPE_FLAG_SELECT_FLUSH |
+   MESH_OPTYPE_FLAG_SELECT_VALIDATE),
 };
 
 /*
@@ -330,18 +330,18 @@ static MeshOpDefine mesh_op_mirror_def = {
  * If keep_verts is used, vertices outside that set can only be merged
  * with vertices in that set.
  */
-static BMOpDefine bmo_find_doubles_def = {
+static MeshOpDefine mesh_op_find_doubles_def = {
   "find_doubles",
   /* slots_in */
-  {{"verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}}, /* input vertices */
-   {"keep_verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}}, /* list of verts to keep */
-   {"dist",         BMO_OP_SLOT_FLT}, /* maximum distance */
+  {{"verts", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT}}, /* input vertices */
+   {"keep_verts", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT}}, /* list of verts to keep */
+   {"dist",         MESH_OP_SLOT_FLT}, /* maximum distance */
    {{'\0'}},
   },
   /* slots_out */
-  {{"targetmap.out", BMO_OP_SLOT_MAPPING, {(int)BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
+  {{"targetmap.out", MESH_OP_SLOT_MAPPING, {(int)BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
    {{'\0'}},
   },
-  bmo_find_doubles_exec,
-  (BMO_OPTYPE_FLAG_NOP),
+  mesh_op_find_doubles_exec,
+  (MESH_OPTYPE_FLAG_NOP),
 };
