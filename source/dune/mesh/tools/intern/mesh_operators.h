@@ -78,9 +78,9 @@ enum {
 
 /* Poke face center calculation */
 enum {
-  BMOP_POKE_MEDIAN_WEIGHTED = 0,
-  BMOP_POKE_MEDIAN,
-  BMOP_POKE_BOUNDS,
+  MESH_OP_POKE_MEDIAN_WEIGHTED = 0,
+  MESH_OP_POKE_MEDIAN,
+  MESH_OP_POKE_BOUNDS,
 };
 
 /* Bevel offset_type slot values */
@@ -133,41 +133,41 @@ enum {
 };
 
 extern const BMOpDefine *bmo_opdefines[];
-extern const int bmo_opdefines_total;
+extern const int mesh_opdefines_total;
 
 /*------specific operator helper functions-------*/
-void BM_mesh_esubdivide(BMesh *bm,
-                        char edge_hflag,
-                        float smooth,
-                        short smooth_falloff,
-                        bool use_smooth_even,
-                        float fractal,
-                        float along_normal,
-                        int numcuts,
-                        int seltype,
-                        int cornertype,
-                        short use_single_edge,
-                        short use_grid_fill,
-                        short use_only_quads,
-                        int seed);
+void mesh_esubdivide(Mesh *mesh,
+                     char edge_hflag,
+                     float smooth,
+                     short smooth_falloff,
+                     bool use_smooth_even,
+                     float fractal,
+                     float along_normal,
+                     int numcuts,
+                     int seltype,
+                     int cornertype,
+                     short use_single_edge,
+                     short use_grid_fill,
+                     short use_only_quads,
+                     int seed);
 
 /**
  * Fills first available UV-map with grid-like UV's for all faces with `oflag` set.
  *
- * \param mesh: The BMesh to operate on
- * \param x_segments: The x-resolution of the grid
- * \param y_segments: The y-resolution of the grid
- * \param oflag: The flag to check faces with.
+ * param mesh: The Mesh to operate on
+ * param x_segments: The x-resolution of the grid
+ * param y_segments: The y-resolution of the grid
+ * param oflag: The flag to check faces with.
  */
-void BM_mesh_calc_uvs_grid(
-    BMesh *bm, uint x_segments, uint y_segments, short oflag, int cd_loop_uv_offset);
+void mesh_calc_uvs_grid(
+    Mesh *mesh, uint x_segments, uint y_segments, short oflag, int cd_loop_uv_offset);
 /**
  * Fills first available UV-map with spherical projected UVs for all faces with `oflag` set.
  *
- * \param bm: The BMesh to operate on
- * \param oflag: The flag to check faces with.
+ * param bm: The BMesh to operate on
+ * param oflag: The flag to check faces with.
  */
-void BM_mesh_calc_uvs_sphere(BMesh *bm, short oflag, int cd_loop_uv_offset);
+void mesh_calc_uvs_sphere(Mesh *mesh, short oflag, int cd_loop_uv_offset);
 /**
  * Fills first available UV-map with 2D projected UVs for all faces with `oflag` set.
  *
@@ -176,8 +176,8 @@ void BM_mesh_calc_uvs_sphere(BMesh *bm, short oflag, int cd_loop_uv_offset);
  * \param radius: The size of the circle.
  * \param oflag: The flag to check faces with.
  */
-void BM_mesh_calc_uvs_circle(
-    BMesh *bm, float mat[4][4], float radius, short oflag, int cd_loop_uv_offset);
+void mesh_calc_uvs_circle(
+    Mesh *mesh, float mat[4][4], float radius, short oflag, int cd_loop_uv_offset);
 /**
  * Fills first available UV-map with cylinder/cone-like UVs for all faces with `oflag` set.
  *
@@ -195,8 +195,8 @@ void mesh_calc_uvs_cone(Mesh *mesh,
                         float radius_bottom,
                         int segments,
                         bool cap_ends,
-                           short oflag,
-                           int cd_loop_uv_offset);
+                        short oflag,
+                        int cd_loop_uv_offset);
 /**
  * Fills first available UV-map with cube-like UVs for all faces with `oflag` set.
  *
