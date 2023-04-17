@@ -1,27 +1,27 @@
 #pragma once
 
-struct MeshOperator;
+struct MeshOp;
 struct Mesh;
 
-void mesh_average_vert_facedata_exec(Mesh *mesh, MOperator *op);
-void mesh_beautify_fill_exec(Mesh *mesh, MOperator *op);
-void mesh_bevel_exec(Mesh *mesh, MOperator *op);
-void mesh_bisect_edges_exec(Mesh *mesh, MOperator *op);
-void mesh_bisect_plane_exec(Mesh *mesh, MOperator *op);
-void mesh_bmesh_to_mesh_exec(Mesh *mesh, MOperator *op);
-void mesh_bridge_loops_exec(Mesh *mesh, MOperator *op);
-void mesh_collapse_exec(Mesh *mesh, MOperator *op);
-void mesh_collapse_uvs_exec(Mesh *mesh, MOperator *op);
-void mesh_connect_verts_exec(Mesh *mesh, MOperator *op);
-void mesh_connect_verts_concave_exec(Mesh *mesh, MOperator *op);
-void mesh_connect_verts_nonplanar_exec(Mesh *mesh, MOperator *op);
-void mesh_connect_vert_pair_exec(Mesh *mesh, BMOperator *op);
-void mesh_contextual_create_exec(Mesh *mesh, BMOperator *op);
-void mesh_convex_hull_exec(Mesh *mesh, BMOperator *op);
-void mesh_create_circle_exec(BMesh *bm, BMOperator *op);
-void mesh_create_cone_exec(BMesh *bm, BMOperator *op);
-void mesh_create_cube_exec(BMesh *bm, BMOperator *op);
-void mesh_create_grid_exec(BMesh *bm, BMOperator *op);
+void mesh_average_vert_facedata_exec(Mesh *mesh, MeshOp *op);
+void mesh_beautify_fill_exec(Mesh *mesh, MeshOp *op);
+void mesh_bevel_exec(Mesh *mesh, MeshOp *op);
+void mesh_bisect_edges_ex(Mesh *mesh, MOperator *op);
+void mesh_bisect_plane_ex(Mesh *mesh, MOperator *op);
+void mesh_bmesh_to_mesh_ex(Mesh *mesh, MOperator *op);
+void mesh_bridge_loops_ex(Mesh *mesh, MOperator *op);
+void mesh_collapse_ex(Mesh *mesh, MOperator *op);
+void mesh_collapse_uvs_ex(Mesh *mesh, MOperator *op);
+void mesh_connect_verts_ex(Mesh *mesh, MOperator *op);
+void mesh_connect_verts_concave_ex(Mesh *mesh, MOperator *op);
+void mesh_connect_verts_nonplanar_ex(Mesh *mesh, MOperator *op);
+void mesh_connect_vert_pair_ex(Mesh *mesh, BMOperator *op);
+void mesh_contextual_create_ex(Mesh *mesh, BMOperator *op);
+void mesh_convex_hull_ex(Mesh *mesh, BMOperator *op);
+void mesh_create_circle_ex(Mesh *bm, BMOperator *op);
+void mesh_create_cone_ex(Mesh *bm, BMOperator *op);
+void mesh_create_cube_ex(Mesh *bm, BMOperator *op);
+void mesh_create_grid_ex(Mesh *bm, BMOperator *op);
 void mesh_create_icosphere_exec(BMesh *bm, BMOperator *op);
 void mesh_create_monkey_exec(BMesh *bm, BMOperator *op);
 void mesh_create_uvsphere_exec(BMesh *bm, BMOperator *op);
