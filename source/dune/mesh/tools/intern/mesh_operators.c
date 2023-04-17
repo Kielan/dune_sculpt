@@ -1554,34 +1554,34 @@ static int bmo_name_to_slotcode_check(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], cons
   return i;
 }
 
-int BMO_opcode_from_opname(const char *opname)
+int mesh_opcode_from_opname(const char *opname)
 {
 
-  const uint tot = bmo_opdefines_total;
+  const uint tot = mesh_opdefines_total;
   uint i;
   for (i = 0; i < tot; i++) {
-    if (STREQ(bmo_opdefines[i]->opname, opname)) {
+    if (STREQ(mesh_opdefines[i]->opname, opname)) {
       return i;
     }
   }
   return -1;
 }
 
-static int BMO_opcode_from_opname_check(const char *opname)
+static int mesh_opcode_from_opname_check(const char *opname)
 {
-  int i = BMO_opcode_from_opname(opname);
+  int i = mesh_opcode_from_opname(opname);
   if (i == -1) {
     fprintf(stderr,
-            "%s: could not find bmesh slot for name %s! (bmesh internal error)\n",
+            "%s: could not find bmesh slot for name %s! (mesh internal error)\n",
             __func__,
             opname);
   }
   return i;
 }
 
-bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, va_list vlist)
+bool mesh_op_vinitf(Mesh *mesh, MeshOp *op, const int flag, const char *_fmt, va_list vlist)
 {
-  //  BMOpDefine *def;
+  //  MeshOpDefine *def;
   char *opname, *ofmt, *fmt;
   char slot_name[64] = {0};
   int i, type;
@@ -1600,7 +1600,7 @@ bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, 
   (void)0
 
   /* we muck around in here, so dup it */
-  fmt = ofmt = BLI_strdup(_fmt);
+  fmt = ofmt = lib_strdup(_fmt);
 
   /* find operator name */
   i = strcspn(fmt, " ");
@@ -1611,16 +1611,16 @@ bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, 
 
   fmt += i + (noslot ? 0 : 1);
 
-  i = BMO_opcode_from_opname_check(opname);
+  i = mesh_opcode_from_opname_check(opname);
 
   if (i == -1) {
-    MEM_freeN(ofmt);
-    BLI_assert(0);
+    mem_freen(ofmt);
+    lib_assert(0);
     return false;
   }
 
-  BMO_op_init(bm, op, flag, opname);
-  //  def = bmo_opdefines[i];
+  mesh_op_init(mesh, op, flag, opname);
+  //  def = mesh_opdefines[i];
 
   i = 0;
   state = true; /* false: not inside slot_code name, true: inside slot_code name */
@@ -1644,11 +1644,11 @@ bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, 
 
       fmt[i] = 0;
 
-      if (bmo_name_to_slotcode_check(op->slots_in, fmt) < 0) {
+      if (mesh_op_name_to_slotcode_check(op->slots_in, fmt) < 0) {
         GOTO_ERROR("name to slot code check failed");
       }
 
-      BLI_strncpy(slot_name, fmt, sizeof(slot_name));
+      lib_strncpy(slot_name, fmt, sizeof(slot_name));
 
       state = false;
       fmt += i;
@@ -1674,30 +1674,30 @@ bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, 
             GOTO_ERROR("matrix size was not 3 or 4");
           }
 
-          BMO_slot_mat_set(op, op->slots_in, slot_name, va_arg(vlist, void *), size);
+          mesh_op_slot_mat_set(op, op->slots_in, slot_name, va_arg(vlist, void *), size);
           state = true;
           break;
         }
         case 'v': {
-          BMO_slot_vec_set(op->slots_in, slot_name, va_arg(vlist, float *));
+          mesh_op_slot_vec_set(op->slots_in, slot_name, va_arg(vlist, float *));
           state = true;
           break;
         }
         case 'e': {
-          BMOpSlot *slot = BMO_slot_get(op->slots_in, slot_name);
+          MeshOpSlot *slot = mesh_op_slot_get(op->slots_in, slot_name);
 
           if (NEXT_CHAR(fmt) == 'b') {
-            BMHeader **ele_buffer = va_arg(vlist, void *);
+            MeshHeader **ele_buffer = va_arg(vlist, void *);
             int ele_buffer_len = va_arg(vlist, int);
 
-            BMO_slot_buffer_from_array(op, slot, ele_buffer, ele_buffer_len);
+            mesh_op_slot_buffer_from_array(op, slot, ele_buffer, ele_buffer_len);
             fmt++;
           }
           else {
             /* single vert/edge/face */
-            BMHeader *ele = va_arg(vlist, void *);
+            MeshHeader *ele = va_arg(vlist, void *);
 
-            BMO_slot_buffer_from_single(op, slot, ele);
+            mesh_op_slot_buffer_from_single(op, slot, ele);
           }
 
           state = true;
@@ -1705,30 +1705,30 @@ bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, 
         }
         case 's':
         case 'S': {
-          BMOperator *op_other = va_arg(vlist, void *);
+          MeshOp *op_other = va_arg(vlist, void *);
           const char *slot_name_other = va_arg(vlist, char *);
 
           if (*fmt == 's') {
-            BLI_assert(bmo_name_to_slotcode_check(op_other->slots_in, slot_name_other) != -1);
-            BMO_slot_copy(op_other, slots_in, slot_name_other, op, slots_in, slot_name);
+            lib_assert(bmo_name_to_slotcode_check(op_other->slots_in, slot_name_other) != -1);
+            mesh_op_slot_copy(op_other, slots_in, slot_name_other, op, slots_in, slot_name);
           }
           else {
-            BLI_assert(bmo_name_to_slotcode_check(op_other->slots_out, slot_name_other) != -1);
-            BMO_slot_copy(op_other, slots_out, slot_name_other, op, slots_in, slot_name);
+            lib_assert(mesh_op_name_to_slotcode_check(op_other->slots_out, slot_name_other) != -1);
+            mesh_op_slot_copy(op_other, slots_out, slot_name_other, op, slots_in, slot_name);
           }
           state = true;
           break;
         }
         case 'i':
-          BMO_slot_int_set(op->slots_in, slot_name, va_arg(vlist, int));
+          mesh_op_slot_int_set(op->slots_in, slot_name, va_arg(vlist, int));
           state = true;
           break;
         case 'b':
-          BMO_slot_bool_set(op->slots_in, slot_name, va_arg(vlist, int));
+          mesh_op_slot_bool_set(op->slots_in, slot_name, va_arg(vlist, int));
           state = true;
           break;
         case 'p':
-          BMO_slot_ptr_set(op->slots_in, slot_name, va_arg(vlist, void *));
+          mesh_op_slot_ptr_set(op->slots_in, slot_name, va_arg(vlist, void *));
           state = true;
           break;
         case 'f':
@@ -1739,7 +1739,7 @@ bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, 
           type = *fmt;
 
           if (NEXT_CHAR(fmt) == ' ' || NEXT_CHAR(fmt) == '\0') {
-            BMO_slot_float_set(op->slots_in, slot_name, va_arg(vlist, double));
+            mesh_op_slot_float_set(op->slots_in, slot_name, va_arg(vlist, double));
           }
           else {
             char htype = 0;
@@ -1748,13 +1748,13 @@ bool BMO_op_vinitf(BMesh *bm, BMOperator *op, const int flag, const char *_fmt, 
               char htype_set;
               const char c = NEXT_CHAR(fmt);
               if (c == 'f') {
-                htype_set = BM_FACE;
+                htype_set = MESH_FACE;
               }
               else if (c == 'e') {
-                htype_set = BM_EDGE;
+                htype_set = MESH_EDGE;
               }
               else if (c == 'v') {
-                htype_set = BM_VERT;
+                htype_set = MESH_VERT;
               }
               else {
                 break;
