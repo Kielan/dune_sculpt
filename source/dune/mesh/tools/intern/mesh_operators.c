@@ -1541,9 +1541,9 @@ static int mesh_op_name_to_slotcode(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], con
   return -1;
 }
 
-static int bmo_name_to_slotcode_check(BMOpSlot slot_args[BMO_OP_MAX_SLOTS], const char *identifier)
+static int mesh_op_name_to_slotcode_check(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS], const char *identifier)
 {
-  int i = bmo_name_to_slotcode(slot_args, identifier);
+  int i = mesh_op_name_to_slotcode(slot_args, identifier);
   if (i < 0) {
     fprintf(stderr,
             "%s: ! could not find bmesh slot for name %s! (bmesh internal error)\n",
@@ -1769,29 +1769,29 @@ bool mesh_op_vinitf(Mesh *mesh, MeshOp *op, const int flag, const char *_fmt, va
             }
 
             if (type == 'h') {
-              BMO_slot_buffer_from_enabled_hflag(
-                  bm, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
+              mesh_op_slot_buffer_from_enabled_hflag(
+                  mesh, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
             }
             else if (type == 'H') {
-              BMO_slot_buffer_from_disabled_hflag(
-                  bm, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
+              mesh_slot_buffer_from_disabled_hflag(
+                  mesh, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
             }
             else if (type == 'a') {
-              if ((op->flag & BMO_FLAG_RESPECT_HIDE) == 0) {
-                BMO_slot_buffer_from_all(bm, op, op->slots_in, slot_name, htype);
+              if ((op->flag & MESH_FLAG_RESPECT_HIDE) == 0) {
+                mesh_slot_buffer_from_all(mesh, op, op->slots_in, slot_name, htype);
               }
               else {
-                BMO_slot_buffer_from_disabled_hflag(
-                    bm, op, op->slots_in, slot_name, htype, BM_ELEM_HIDDEN);
+                mesh_slot_buffer_from_disabled_hflag(
+                    mesh, op, op->slots_in, slot_name, htype, MESH_ELEM_HIDDEN);
               }
             }
             else if (type == 'f') {
-              BMO_slot_buffer_from_enabled_flag(
-                  bm, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
+              mesh_op_slot_buffer_from_enabled_flag(
+                  mesh, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
             }
             else if (type == 'F') {
-              BMO_slot_buffer_from_disabled_flag(
-                  bm, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
+              mesh_op_slot_buffer_from_disabled_flag(
+                  mesh, op, op->slots_in, slot_name, htype, va_arg(vlist, int));
             }
           }
 
@@ -1810,7 +1810,7 @@ bool mesh_op_vinitf(Mesh *mesh, MeshOp *op, const int flag, const char *_fmt, va
     fmt++;
   }
 
-  MEM_freeN(ofmt);
+  mem_freen(ofmt);
   return true;
 error:
 
@@ -1831,20 +1831,20 @@ error:
 
   fprintf(stderr, "reason: %s\n", err_reason);
 
-  MEM_freeN(ofmt);
+  mem_freen(ofmt);
 
-  BMO_op_finish(bm, op);
+  mesh_op_finish(mesh, op);
   return false;
 
 #undef GOTO_ERROR
 }
 
-bool BMO_op_initf(BMesh *bm, BMOperator *op, const int flag, const char *fmt, ...)
+bool mesh_op_initf(Mesh *mesh, MeshOp *op, const int flag, const char *fmt, ...)
 {
   va_list list;
 
   va_start(list, fmt);
-  if (!BMO_op_vinitf(bm, op, flag, fmt, list)) {
+  if (!mesh_op_vinitf(mesh, op, flag, fmt, list)) {
     printf("%s: failed\n", __func__);
     va_end(list);
     return false;
@@ -1854,20 +1854,20 @@ bool BMO_op_initf(BMesh *bm, BMOperator *op, const int flag, const char *fmt, ..
   return true;
 }
 
-bool BMO_op_callf(BMesh *bm, const int flag, const char *fmt, ...)
+bool mesh_op_callf(Mesh *mesh, const int flag, const char *fmt, ...)
 {
   va_list list;
-  BMOperator op;
+  MeshOp op;
 
   va_start(list, fmt);
-  if (!BMO_op_vinitf(bm, &op, flag, fmt, list)) {
+  if (!mesh_op_vinitf(mesh, &op, flag, fmt, list)) {
     printf("%s: failed, format is:\n    \"%s\"\n", __func__, fmt);
     va_end(list);
     return false;
   }
 
-  BMO_op_exec(bm, &op);
-  BMO_op_finish(bm, &op);
+  mesh_op_ex(mesh, &op);
+  mesh_op_finish(mesh, &op);
 
   va_end(list);
   return true;
