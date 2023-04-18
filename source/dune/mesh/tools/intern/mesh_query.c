@@ -99,7 +99,7 @@ bool mesh_vert_pair_share_face_check(MeshVert *v_a, MeshVert *v_b)
     MeshIter iter;
     MeshFace *f;
 
-    MESH_ITER_ELEM (f, &iter, v_a, MESH_FACES_OF_VERT) {
+    MESH_ELEM_ITER (f, &iter, v_a, MESH_FACES_OF_VERT) {
       if (mesh_vert_in_face(v_b, f)) {
         return true;
       }
@@ -118,7 +118,7 @@ bool mesh_vert_pair_share_face_check_cb(MeshVert *v_a,
     MeshIter iter;
     MeshFace *f;
 
-    MESH_ITER_ELEM (f, &iter, v_a, MESH_FACES_OF_VERT) {
+    MESH_ELEM_ITER (f, &iter, v_a, MESH_FACES_OF_VERT) {
       if (test_fn(f, user_data)) {
         if (mesh_vert_in_face(v_b, f)) {
           return true;
@@ -142,7 +142,7 @@ MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
     MeshIter iter;
     MeshLoop *l_a, *l_b;
 
-    MESH_ITER_ELEM (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
+    MESH_ELEM_ITER (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
       MeshFace *f = l_a->f;
       l_b = mesh_face_vert_share_loop(f, v_b);
       if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b)) &&
@@ -168,7 +168,7 @@ MeshFace *mesh_vert_pair_share_face_by_len(
     MeshIter iter;
     MeshLoop *l_a, *l_b;
 
-    MESH_ITER_ELEM (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
+    MESH_ELEM_ITER (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
       if ((f_cur == NULL) || (l_a->f->len < f_cur->len)) {
         l_b = mesh_face_vert_share_loop(l_a->f, v_b);
         if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b))) {
@@ -187,7 +187,7 @@ MeshFace *mesh_vert_pair_share_face_by_len(
 }
 
 MeshFace *mesh_edge_pair_share_face_by_len(
-    MeshEdge *e_a, MeshEdge *e_b, MeshLoop **r_l_a, BMLoop **r_l_b, const bool allow_adjacent)
+    MeshEdge *e_a, MeshEdge *e_b, MeshLoop **r_l_a, MeshLoop **r_l_b, const bool allow_adjacent)
 {
   MeshLoop *l_cur_a = NULL, *l_cur_b = NULL;
   MeshFace *f_cur = NULL;
@@ -196,7 +196,7 @@ MeshFace *mesh_edge_pair_share_face_by_len(
     MeshIter iter;
     MeshLoop *l_a, *l_b;
 
-    MESH_ITER_ELEM (l_a, &iter, e_a, MESH_LOOPS_OF_EDGE) {
+    MESH_ELEM_ITER (l_a, &iter, e_a, MESH_LOOPS_OF_EDGE) {
       if ((f_cur == NULL) || (l_a->f->len < f_cur->len)) {
         l_b = mesh_face_edge_share_loop(l_a->f, e_b);
         if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b))) {
@@ -255,7 +255,7 @@ MeshFace *mesh_vert_pair_share_face_by_angle(
     MeshLoop *l_a, *l_b;
     float dot_best = -1.0f;
 
-    MESH_ITER_ELEM (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
+    MESH_ELEM_ITER (l_a, &iter, v_a, MESH_LOOPS_OF_VERT) {
       l_b = mesh_face_vert_share_loop(l_a->f, v_b);
       if (l_b && (allow_adjacent || !mesh_loop_is_adjacent(l_a, l_b))) {
 
@@ -363,7 +363,7 @@ int mesh_verts_in_face_count(MeshVert **varr, int len, MeshFace *f)
   return count;
 }
 
-bool mesh_verts_in_face(BMVert **varr, int len, BMFace *f)
+bool mesh_verts_in_face(MeshVert **varr, int len, BMFace *f)
 {
   MeshLoop *l_iter, *l_first;
 
@@ -429,7 +429,7 @@ bool mesh_edge_in_face(const MeshEdge *e, const MeshFace *f)
   return false;
 }
 
-MeshLoop *mesg_edge_other_loop(MeshEdge *e, MeshLoop *l)
+MeshLoop *mesh_edge_other_loop(MeshEdge *e, MeshLoop *l)
 {
   MeshLoop *l_other;
 
@@ -615,7 +615,7 @@ int mesh_vert_edge_count_nonwire(const MeshVert *v)
   int count = 0;
   MeshIter eiter;
   MeshEdge *edge;
-  MESH_ITER_ELEM (edge, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
+  MESH_ELEM_ITER (edge, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
     if (edge->l) {
       count++;
     }
@@ -845,7 +845,7 @@ bool mesh_vert_is_manifold_region(const MeshVert *v)
   MeshLoop *l_first = mesh_vert_find_first_loop((MeshVert *)v);
   if (l_first) {
     int count, count_total;
-    count = BM_loop_region_loops_count_at_most(l_first, &count_total);
+    count = mesh_loop_region_loops_count_at_most(l_first, &count_total);
     return (count == count_total);
   }
   return true;
@@ -933,8 +933,8 @@ int mesh_face_share_face_count(MeshFace *f_a, MeshFace *f_b)
   MeshFace *f;
   int count = 0;
 
-  MESH_ITER_ELEM (e, &iter1, f_a, MESH_EDGES_OF_FACE) {
-    MESH_ITER_ELEM (f, &iter2, e, MESH_FACES_OF_EDGE) {
+  MESH_ELEM_ITER (e, &iter1, f_a, MESH_EDGES_OF_FACE) {
+    MESH_ELEM_ITER (f, &iter2, e, MESH_FACES_OF_EDGE) {
       if (f != f_a && f != f_b && mesh_face_share_edge_check(f, f_b)) {
         count++;
       }
@@ -950,8 +950,8 @@ bool mesh_face_share_face_check(MeshFace *f_a, MeshFace *f_b)
   MeshEdge *e;
   MeshFace *f;
 
-  MESH_ITER_ELEM (e, &iter1, f_a, MESH_EDGES_OF_FACE) {
-    MESH_ITER_ELEM (f, &iter2, e, MESH_FACES_OF_EDGE) {
+  MESH_ELEM_ITER (e, &iter1, f_a, MESH_EDGES_OF_FACE) {
+    MESH_ELEM_ITER (f, &iter2, e, MESH_FACES_OF_EDGE) {
       if (f != f_a && f != f_b && mesh_face_share_edge_check(f, f_b)) {
         return true;
       }
@@ -1357,7 +1357,7 @@ float mesh_edge_calc_face_angle_with_imat3_ex(const MeshEdge *e,
   }
   return fallback;
 }
-float mesh_edge_calc_face_angle_with_imat3(const BMEdge *e, const float imat3[3][3])
+float mesh_edge_calc_face_angle_with_imat3(const MeshEdge *e, const float imat3[3][3])
 {
   return mesh_edge_calc_face_angle_with_imat3_ex(e, imat3, DEG2RADF(90.0f));
 }
@@ -1397,9 +1397,9 @@ float mesh_vert_calc_edge_angle_ex(const MeshVert *v, const float fallback)
   /* Saves `mesh_vert_edge_count(v)` and edge iterator,
    * get the edges and count them both at once. */
 
-  if ((e1 = v->e) && (e2 = bmesh_disk_edge_next(e1, v)) && (e1 != e2) &&
+  if ((e1 = v->e) && (e2 = mesh_disk_edge_next(e1, v)) && (e1 != e2) &&
       /* make sure we come full circle and only have 2 connected edges */
-      (e1 == bmesh_disk_edge_next(e2, v))) {
+      (e1 == mesh_disk_edge_next(e2, v))) {
     MeshVert *v1 = mesh_edge_other_vert(e1, v);
     MeshVert *v2 = mesh_edge_other_vert(e2, v);
 
@@ -1439,7 +1439,7 @@ float mesh_vert_calc_shell_factor_ex(const MeshVert *v, const float no[3], const
   float accum_angle = 0.0f;
   int tot_sel = 0, tot = 0;
 
-  MESH_ITER_ELEM (l, &iter, (MeshVert *)v, MESH_LOOPS_OF_VERT) {
+  MESH_ELEM_ITER (l, &iter, (MeshVert *)v, MESH_LOOPS_OF_VERT) {
     if (mesh_elem_flag_test(l->f, hflag)) { /* <-- main difference to mesh_vert_calc_shell_factor! */
       const float face_angle = mesh_loop_calc_face_angle(l);
       accum_shell += shell_v3v3_normalized_to_dist(no, l->f->no) * face_angle;
@@ -1537,7 +1537,7 @@ MeshEdge *mesh_edge_exists(MeshVert *v_a, MeshVert *v_b)
   lib_assert(v_a != v_b);
   lib_assert(v_a->head.htype == MESH_VERT && v_b->head.htype == MESH_VERT);
 
-  MESH_ITER_ELEM (e, &iter, v_a, MESH_EDGES_OF_VERT) {
+  MESH_ELEM_ITER (e, &iter, v_a, MESH_EDGES_OF_VERT) {
     if (e->v1 == v_b || e->v2 == v_b) {
       return e;
     }
@@ -1685,11 +1685,11 @@ MeshFace *mesh_face_find_double(MeshFace *f)
   return NULL;
 }
 
-bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
+bool mesh_face_exists_multi(MeshVert **varr, MeshEdge **earr, int len)
 {
   MeshFace *f;
   MeshEdge *e;
-  M shVert *v;
+  MeshVert *v;
   bool ok;
   int tot_tag;
 
@@ -1758,7 +1758,7 @@ bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
    *    check each have 2 tagged faces connected (faces that only use 'varr' verts) */
   ok = true;
   for (i = 0; i < len; i++) {
-    MESH_ITER_ELEM (e, &fiter, varr[i], MESH_EDGES_OF_VERT) {
+    MESH_ELEM_ITER (e, &fiter, varr[i], MESH_EDGES_OF_VERT) {
 
       if (/* non-boundary edge */
           mesh_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG) == false &&
@@ -1766,7 +1766,7 @@ bool mesh_face_exists_multi(MeshVert **varr, BMEdge **earr, int len)
           mesh_elem_flag_test(e->v1, MESH_ELEM_INTERNAL_TAG) &&
           mesh_elem_flag_test(e->v2, MESH_ELEM_INTERNAL_TAG)) {
         int tot_face_tag = 0;
-        MESG_ITER_ELEM (f, &fiter, e, MESH_FACES_OF_EDGE) {
+        MESH_ELEM_ITER (f, &fiter, e, MESH_FACES_OF_EDGE) {
           if (mesh_elem_flag_test(f, MESH_ELEM_INTERNAL_TAG)) {
             tot_face_tag++;
           }
@@ -1856,17 +1856,17 @@ bool mesh_face_exists_overlap_subset(MeshVert **varr, const int len)
   /* check flag isn't already set */
   for (int i = 0; i < len; i++) {
     lib_assert(MESH_ELEM_API_FLAG_TEST(varr[i], _FLAG_OVERLAP) == 0);
-    MESH_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
+    MESH_ELEM_ITER (f, &viter, varr[i], MESH_FACES_OF_VERT) {
       lib_assert(MESH_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0);
     }
   }
 #endif
 
   for (int i = 0; i < len; i++) {
-    MESH_ITER_ELEM (f, &viter, varr[i], MESH_FACES_OF_VERT) {
+    MESH_ELEM_ITER (f, &viter, varr[i], MESH_FACES_OF_VERT) {
       if ((f->len <= len) && (MESH_ELEM_API_FLAG_TEST(f, _FLAG_OVERLAP) == 0)) {
         /* Check if all vers in this face are flagged. */
-        MESHLoop *l_iter, *l_first;
+        MeshLoop *l_iter, *l_first;
 
         if (is_init == false) {
           is_init = true;
@@ -1913,7 +1913,7 @@ bool mesh_vert_is_all_edge_flag_test(const MeshVert *v, const char hflag, const 
     MeshEdge *e_other;
     MeshIter eiter;
 
-    MESH_ITER_ELEM (e_other, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
+    MESH_ELEM_ITER (e_other, &eiter, (MeshVert *)v, MESH_EDGES_OF_VERT) {
       if (!respect_hide || !mesh_elem_flag_test(e_other, MESH_ELEM_HIDDEN)) {
         if (!mesh_elem_flag_test(e_other, hflag)) {
           return false;
@@ -1931,7 +1931,7 @@ bool mesh_vert_is_all_face_flag_test(const MeshVert *v, const char hflag, const 
     MeshEdge *f_other;
     MeshIter fiter;
 
-    MESH_ITER_ELEM (f_other, &fiter, (MeshVert *)v, MESH_FACES_OF_VERT) {
+    MESH_ELEM_ITER (f_other, &fiter, (MeshVert *)v, MESH_FACES_OF_VERT) {
       if (!respect_hide || !mesh_elem_flag_test(f_other, MESH_ELEM_HIDDEN)) {
         if (!mesh_elem_flag_test(f_other, hflag)) {
           return false;
@@ -2076,8 +2076,8 @@ double mesh_calc_volume(Mesh *mesh, bool is_signed)
   MeshFace *f;
   MeshIter fiter;
 
-  MESH_ITER_MESH (f, &fiter, mesh, MESH_FACES_OF_MESH) {
-    vol += bm_mesh_calc_volume_face(f);
+  MESH_ELEM_ITER (f, &fiter, mesh, MESH_FACES_OF_MESH) {
+    vol += mesh_calc_volume_face(f);
   }
 
   if (is_signed == false) {
@@ -2210,7 +2210,7 @@ int mesh_calc_face_groups(Mesh *mesh,
         do {
           if ((filter_fn == NULL) || filter_fn(l_iter, user_data)) {
             MeshLoop *l_other;
-            MESH_ITER_ELEM (l_other, &liter, l_iter, MESH_LOOPS_OF_LOOP) {
+            MESH_ELEM_ITER (l_other, &liter, l_iter, MESH_LOOPS_OF_LOOP) {
               if ((filter_pair_fn == NULL) || filter_pair_fn(l_iter, l_other, user_data)) {
                 MeshFace *f_other = l_other->f;
                 if (mesh_elem_flag_test(f_other, MESH_ELEM_TAG) == false) {
@@ -2333,10 +2333,10 @@ int mesh_calc_edge_groups(Mesh *mesh,
       /* done */
 
       /* search for other edges */
-      MESH_ITER_ELEM (v, &viter, e, MESH_VERTS_OF_EDGE) {
+      MESH_ELEM_ITER (v, &viter, e, MESH_VERTS_OF_EDGE) {
         if ((filter_fn == NULL) || filter_fn(v, user_data)) {
           MeshEdge *e_other;
-          MEM_ITER_ELEM (e_other, &eiter, v, MESH_EDGES_OF_VERT) {
+          MESH_ELEM_ITER (e_other, &eiter, v, MESH_EDGES_OF_VERT) {
             if (mem_elem_flag_test(e_other, MESH_ELEM_TAG) == false) {
               mem_elem_flag_enable(e_other, MESH_ELEM_TAG);
               STACK_PUSH(stack, e_other);
