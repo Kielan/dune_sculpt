@@ -20,7 +20,7 @@ bool mesh_edge_in_face(const MeshEdge *e, const MeshFace *f) ATTR_WARN_UNUSED_RE
 LIB_INLINE bool mesh_edge_in_loop(const MeshEdge *e, const MeshLoop *l) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
-BLI_INLINE bool BM_vert_in_edge(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+LIB_INLINE bool mesh_vert_in_edge(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 BLI_INLINE bool BM_verts_in_edge(const BMVert *v1,
                                  const BMVert *v2,
