@@ -228,62 +228,57 @@ int mesh_vert_edge_count_nonwire(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR
 #define mesh_vert_edge_count_is_over(v, n) (mesh_vert_edge_count_at_most(v, (n) + 1) == (n) + 1)
 int mesh_vert_edge_count_at_most(const MeshVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-/**
- * Returns the number of edges around this vertex.
- */
-int BM_vert_edge_count(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-#define BM_edge_face_count_is_equal(e, n) (BM_edge_face_count_at_most(e, (n) + 1) == n)
-#define BM_edge_face_count_is_over(e, n) (BM_edge_face_count_at_most(e, (n) + 1) == (n) + 1)
-int BM_edge_face_count_at_most(const BMEdge *e, int count_max) ATTR_WARN_UNUSED_RESULT
+/** Returns the number of edges around this vertex. **/
+int mesh_vert_edge_count(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+#define mesh_edge_face_count_is_equal(e, n) (mesh_edge_face_count_at_most(e, (n) + 1) == n)
+#define mesh_edge_face_count_is_over(e, n) (mesh_edge_face_count_at_most(e, (n) + 1) == (n) + 1)
+int mesh_edge_face_count_at_most(const MeshEdge *e, int count_max) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * Returns the number of faces around this edge
- */
-int BM_edge_face_count(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-#define BM_vert_face_count_is_equal(v, n) (BM_vert_face_count_at_most(v, (n) + 1) == n)
-#define BM_vert_face_count_is_over(v, n) (BM_vert_face_count_at_most(v, (n) + 1) == (n) + 1)
-int BM_vert_face_count_at_most(const BMVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
+ * Returns the number of faces around this edge */
+int mesh_edge_face_count(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+#define mesh_vert_face_count_is_equal(v, n) (mesh_vert_face_count_at_most(v, (n) + 1) == n)
+#define mesh_vert_face_count_is_over(v, n) (mesh_vert_face_count_at_most(v, (n) + 1) == (n) + 1)
+int mesh_vert_face_count_at_most(const MeshVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Returns the number of faces around this vert
- * length matches #BM_LOOPS_OF_VERT iterator
+ * length matches MESH_LOOPS_OF_VERT iterator
  */
-int BM_vert_face_count(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+int mesh_vert_face_count(const MESHVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * The function takes a vertex at the center of a fan and returns the opposite edge in the fan.
  * All edges in the fan must be manifold, otherwise return NULL.
  *
- * \note This could (probably) be done more efficiently.
+ * note This could (probably) be done more efficiently.
  */
-BMEdge *BM_vert_other_disk_edge(BMVert *v, BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshEdge *mesh_vert_other_disk_edge(MeshVert *v, MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
+/** Fast alternative to `(mesh_vert_edge_count(v) == 2)`. */
+bool mesh_vert_is_edge_pair(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * Fast alternative to `(BM_vert_edge_count(v) == 2)`.
- */
-bool BM_vert_is_edge_pair(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * Fast alternative to `(BM_vert_edge_count(v) == 2)`
+ * Fast alternative to `(mesh_vert_edge_count(v) == 2)`
  * that checks both edges connect to the same faces.
  */
-bool BM_vert_is_edge_pair_manifold(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_edge_pair_manifold(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Access a verts 2 connected edges.
  *
- * \return true when only 2 verts are found.
+ * return true when only 2 verts are found.
  */
-bool BM_vert_edge_pair(BMVert *v, BMEdge **r_e_a, BMEdge **r_e_b);
+bool mesh_vert_edge_pair(MeshVert *v, MeshEdge **r_e_a, MeshEdge **r_e_b);
 /**
  * Return true if the vertex is connected to _any_ faces.
  *
- * same as `BM_vert_face_count(v) != 0` or `BM_vert_find_first_loop(v) == NULL`.
+ * same as `mesh_vert_face_count(v) != 0` or `mesh_vert_find_first_loop(v) == NULL`.
  */
-bool BM_vert_face_check(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_face_check(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Tests whether or not the vertex is part of a wire edge.
  * (ie: has no faces attached to it)
  */
-bool BM_vert_is_wire(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-BLI_INLINE bool BM_edge_is_wire(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_wire(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_is_wire(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * A vertex is non-manifold if it meets the following conditions:
@@ -292,16 +287,16 @@ BLI_INLINE bool BM_edge_is_wire(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NO
  * 3: Is part of an edge with more than 2 faces.
  * 4: Is part of a wire edge.
  */
-bool BM_vert_is_manifold(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_manifold(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * A version of #BM_vert_is_manifold
+ * A version of mesh_vert_is_manifold
  * which only checks if we're connected to multiple isolated regions.
  */
-bool BM_vert_is_manifold_region(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-BLI_INLINE bool BM_edge_is_manifold(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-bool BM_vert_is_boundary(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-BLI_INLINE bool BM_edge_is_boundary(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-BLI_INLINE bool BM_edge_is_contiguous(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_manifold_region(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_is_manifold(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_boundary(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_is_boundary(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_is_contiguous(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Check if the edge is convex or concave
  * (depends on face winding)
