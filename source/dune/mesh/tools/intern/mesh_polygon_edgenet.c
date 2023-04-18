@@ -581,7 +581,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
     i = 0;
     l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
-      MESH_ITER_ELEM (l_other, &iter, l_iter->v, MESH_LOOPS_OF_VERT) {
+      MESH_ELEM_ITER (l_other, &iter, l_iter->v, MESH_LOOPS_OF_VERT) {
         if ((l_other->f != f) && MESH_ELEM_API_FLAG_TEST(l_other->f, FACE_NET)) {
           CustomData_mesh_copy_data(
               &mesh->ldata, &mesh->ldata, l_iter->head.data, &l_other->head.data);
@@ -596,7 +596,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
     } while ((void)i++, (l_iter = l_iter->next) != l_first);
 
     for (i = 0; i < edge_net_len; i++) {
-      MESH_ITER_ELEM (v, &iter, edge_net[i], MESH_VERTS_OF_EDGE) {
+      MESH_ELEM_ITER (v, &iter, edge_net[i], MESH_VERTS_OF_EDGE) {
         if (!MESH_ELEM_API_FLAG_TEST(v, VERT_VISIT)) {
           MeshIter liter;
 
@@ -605,7 +605,7 @@ bool mesh_face_split_edgenet(Mesh *mesh,
           /* interpolate this loop, then copy to the rest */
           l_first = NULL;
 
-          MESH_ITER_ELEM (l_iter, &liter, v, MESH_LOOPS_OF_VERT) {
+          MESH_ELEM_ITER (l_iter, &liter, v, MESH_LOOPS_OF_VERT) {
             if (MESH_ELEM_API_FLAG_TEST(l_iter->f, FACE_NET)) {
               if (l_first == NULL) {
                 mul_v2_m3v3(co, axis_mat, v->co);
