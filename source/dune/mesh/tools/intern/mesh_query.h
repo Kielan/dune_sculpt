@@ -6,18 +6,18 @@ bool mesh_vert_in_face(MeshVert *v, MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NO
  * Compares the number of vertices in an array
  * that appear in a given face
  */
-int BM_verts_in_face_count(BMVert **varr, int len, BMFace *f) ATTR_WARN_UNUSED_RESULT
+int mesh_verts_in_face_count(MeshVert **varr, int len, MeshFace *f) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Return true if all verts are in the face.
  */
-bool BM_verts_in_face(BMVert **varr, int len, BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_verts_in_face(MeshVert **varr, int len, MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Returns whether or not a given edge is part of a given face.
  */
-bool BM_edge_in_face(const BMEdge *e, const BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-BLI_INLINE bool BM_edge_in_loop(const BMEdge *e, const BMLoop *l) ATTR_WARN_UNUSED_RESULT
+bool mesh_edge_in_face(const MeshEdge *e, const MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_in_loop(const MeshEdge *e, const MeshLoop *l) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
 BLI_INLINE bool BM_vert_in_edge(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
