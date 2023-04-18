@@ -191,38 +191,38 @@ void mesh_face_triangulate(Mesh *mesh,
  * intersecting splits, only the first of the set of intersecting
  * splits survives
  */
-void BM_face_splits_check_legal(BMesh *bm, BMFace *f, BMLoop *(*loops)[2], int len) ATTR_NONNULL();
+void mesh_face_splits_check_legal(Mesh *mesh, MeshFace *f, MeshLoop *(*loops)[2], int len) ATTR_NONNULL();
 /**
  * This simply checks that the verts don't connect faces which would have more optimal splits.
  * but _not_ check for correctness.
  */
-void BM_face_splits_check_optimal(BMFace *f, BMLoop *(*loops)[2], int len) ATTR_NONNULL();
+void mesh_face_splits_check_optimal(MeshFace *f, MeshLoop *(*loops)[2], int len) ATTR_NONNULL();
 
 /**
  * Small utility functions for fast access
  *
  * faster alternative to:
- * BM_iter_as_array(bm, BM_VERTS_OF_FACE, f, (void **)v, 3);
+ * mesh_iter_as_array(mesh, MESH_VERTS_OF_FACE, f, (void **)v, 3);
  */
-void BM_face_as_array_vert_tri(BMFace *f, BMVert *r_verts[3]) ATTR_NONNULL();
+void mesh_face_as_array_vert_tri(MeshFace *f, MeshVert *r_verts[3]) ATTR_NONNULL();
 /**
  * faster alternative to:
- * BM_iter_as_array(bm, BM_VERTS_OF_FACE, f, (void **)v, 4);
+ * mesh_iter_as_array(mesh, MESH_VERTS_OF_FACE, f, (void **)v, 4);
  */
-void BM_face_as_array_vert_quad(BMFace *f, BMVert *r_verts[4]) ATTR_NONNULL();
+void mesh_face_as_array_vert_quad(MeshFace *f, MeshVert *r_verts[4]) ATTR_NONNULL();
 
 /**
  * Small utility functions for fast access
  *
  * faster alternative to:
- * BM_iter_as_array(bm, BM_LOOPS_OF_FACE, f, (void **)l, 3);
+ * mesh_iter_as_array(mesh, MESH_LOOPS_OF_FACE, f, (void **)l, 3);
  */
-void BM_face_as_array_loop_tri(BMFace *f, BMLoop *r_loops[3]) ATTR_NONNULL();
+void mesh_face_as_array_loop_tri(MeshFace *f, MeshLoop *r_loops[3]) ATTR_NONNULL();
 /**
  * faster alternative to:
- * BM_iter_as_array(bm, BM_LOOPS_OF_FACE, f, (void **)l, 4);
+ * mesh_iter_as_array(mesh, MESH_LOOPS_OF_FACE, f, (void **)l, 4);
  */
-void BM_face_as_array_loop_quad(BMFace *f, BMLoop *r_loops[4]) ATTR_NONNULL();
+void mesh_face_as_array_loop_quad(MeshFace *f, MeshLoop *r_loops[4]) ATTR_NONNULL();
 
 /**
  * Calculate a tangent from any 3 vertices.
@@ -230,15 +230,15 @@ void BM_face_as_array_loop_quad(BMFace *f, BMLoop *r_loops[4]) ATTR_NONNULL();
  * The tangent aligns to the most *unique* edge
  * (the edge most unlike the other two).
  *
- * \param r_tangent: Calculated unit length tangent (return value).
+ * param r_tangent: Calculated unit length tangent (return value).
  */
-void BM_vert_tri_calc_tangent_edge(BMVert *verts[3], float r_tangent[3]);
+void mesh_vert_tri_calc_tangent_edge(MeshVert *verts[3], float r_tangent[3]);
 /**
  * Calculate a tangent from any 3 vertices,
  *
  * The tangent follows the center-line formed by the most unique edges center
  * and the opposite vertex.
  *
- * \param r_tangent: Calculated unit length tangent (return value).
+ * param r_tangent: Calculated unit length tangent (return value).
  */
-void BM_vert_tri_calc_tangent_edge_pair(BMVert *verts[3], float r_tangent[3]);
+void mesh_vert_tri_calc_tangent_edge_pair(MeshVert *verts[3], float r_tangent[3]);
