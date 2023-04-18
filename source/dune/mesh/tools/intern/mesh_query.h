@@ -20,35 +20,33 @@ bool mesh_edge_in_face(const MeshEdge *e, const MeshFace *f) ATTR_WARN_UNUSED_RE
 LIB_INLINE bool mesh_edge_in_loop(const MeshEdge *e, const MeshLoop *l) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
-LIB_INLINE bool mesh_vert_in_edge(const BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+LIB_INLINE bool mesh_vert_in_edge(const MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-BLI_INLINE bool BM_verts_in_edge(const BMVert *v1,
-                                 const BMVert *v2,
-                                 const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_verts_in_edge(const MeshVert *v1,
+                                   const MeshVert *v2,
+                                   const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-/**
- * Returns edge length
- */
-float BM_edge_calc_length(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** Returns edge length */
+float mesh_edge_calc_length(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Returns edge length squared (for comparisons)
  */
-float BM_edge_calc_length_squared(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+float mesh_edge_calc_length_squared(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Utility function, since enough times we have an edge
  * and want to access 2 connected faces.
  *
- * \return true when only 2 faces are found.
+ * return true when only 2 faces are found.
  */
-bool BM_edge_face_pair(BMEdge *e, BMFace **r_fa, BMFace **r_fb) ATTR_NONNULL();
+bool mesh_edge_face_pair(MeshEdge *e, MeshFace **r_fa, MeshFace **r_fb) ATTR_NONNULL();
 /**
  * Utility function, since enough times we have an edge
  * and want to access 2 connected loops.
  *
- * \return true when only 2 faces are found.
+ * return true when only 2 faces are found.
  */
-bool BM_edge_loop_pair(BMEdge *e, BMLoop **r_la, BMLoop **r_lb) ATTR_NONNULL();
-BLI_INLINE BMVert *BM_edge_other_vert(BMEdge *e, const BMVert *v) ATTR_WARN_UNUSED_RESULT
+bool mesh_edge_loop_pair(MeshEdge *e, MeshLoop **r_la, MeshLoop **r_lb) ATTR_NONNULL();
+LIB_INLINE BMVert *mesh_edge_other_vert(MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Given a edge and a loop (assumes the edge is manifold). returns
@@ -66,11 +64,11 @@ BLI_INLINE BMVert *BM_edge_other_vert(BMEdge *e, const BMVert *v) ATTR_WARN_UNUS
  * +-------------------+
  * </pre>
  */
-BMLoop *BM_edge_other_loop(BMEdge *e, BMLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_edge_other_loop(MeshEdge *e, MeshLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief Other Loop in Face Sharing an Edge
+ * brief Other Loop in Face Sharing an Edge
  *
- * Finds the other loop that shares \a v with \a e loop in \a f.
+ * Finds the other loop that shares v with e loop in f.
  * <pre>
  *     +----------+
  *     |          |
@@ -83,9 +81,9 @@ BMLoop *BM_edge_other_loop(BMEdge *e, BMLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NO
  *                      The faces loop direction is ignored.
  * </pre>
  *
- * \note caller must ensure \a e is used in \a f
+ * note caller must ensure a e is used in f
  */
-BMLoop *BM_face_other_edge_loop(BMFace *f, BMEdge *e, BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_face_other_edge_loop(MeshFace *f, MeshEdge *e, MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * See #BM_face_other_edge_loop This is the same functionality
