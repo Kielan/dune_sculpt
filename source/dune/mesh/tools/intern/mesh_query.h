@@ -86,17 +86,17 @@ MeshLoop *mesh_edge_other_loop(MeshEdge *e, MeshLoop *l) ATTR_WARN_UNUSED_RESULT
 MeshLoop *mesh_face_other_edge_loop(MeshFace *f, MeshEdge *e, MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * See #BM_face_other_edge_loop This is the same functionality
+ * See mesh_face_other_edge_loop This is the same functionality
  * to be used when the edges loop is already known.
  */
-BMLoop *BM_loop_other_edge_loop(BMLoop *l, BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_loop_other_edge_loop(MeshLoop *l, MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief Other Loop in Face Sharing a Vertex
+ * brief Other Loop in Face Sharing a Vertex
  *
  * Finds the other loop in a face.
  *
- * This function returns a loop in \a f that shares an edge with \a v
- * The direction is defined by \a v_prev, where the return value is
+ * This function returns a loop in f that shares an edge with \a v
+ * The direction is defined by v_prev, where the return value is
  * the loop of what would be 'v_next'
  * <pre>
  *     +----------+ <-- return the face loop of this vertex.
@@ -110,9 +110,9 @@ BMLoop *BM_loop_other_edge_loop(BMLoop *l, BMVert *v) ATTR_WARN_UNUSED_RESULT AT
  *                      The faces loop direction is ignored.
  * </pre>
  *
- * \note \a v_prev and \a v _implicitly_ define an edge.
+ * note v_prev and v _implicitly_ define an edge.
  */
-BMLoop *BM_face_other_vert_loop(BMFace *f, BMVert *v_prev, BMVert *v) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_face_other_vert_loop(MeshFace *f, MeshVert *v_prev, MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Return the other loop that uses this edge.
@@ -130,12 +130,12 @@ BMLoop *BM_face_other_vert_loop(BMFace *f, BMVert *v_prev, BMVert *v) ATTR_WARN_
  * </pre>
  *
  */
-BMLoop *BM_loop_other_vert_loop_by_edge(BMLoop *l, BMEdge *e) ATTR_WARN_UNUSED_RESULT
+MeshLoop *mesh_loop_other_vert_loop_by_edge(MeshLoop *l, MeshEdge *e) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * \brief Other Loop in Face Sharing a Vert
+ * brief Other Loop in Face Sharing a Vert
  *
- * Finds the other loop that shares \a v with \a e loop in \a f.
+ * Finds the other loop that shares v with e loop in f.
  * <pre>
  *     +----------+ <-- return the face loop of this vertex.
  *     |          |
@@ -148,15 +148,15 @@ BMLoop *BM_loop_other_vert_loop_by_edge(BMLoop *l, BMEdge *e) ATTR_WARN_UNUSED_R
  *                      The faces loop direction is ignored.
  * </pre>
  */
-BMLoop *BM_loop_other_vert_loop(BMLoop *l, BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_loop_other_vert_loop(MeshLoop *l, MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Utility function to step around a fan of loops,
  * using an edge to mark the previous side.
  *
- * \note all edges must be manifold,
+ * note all edges must be manifold,
  * once a non manifold edge is hit, return NULL.
  *
- * \code{.unparsed}
+ * code{.unparsed}
  *                ,.,-->|
  *            _,-'      |
  *          ,'          | (notice how 'e_step'
@@ -171,47 +171,45 @@ BMLoop *BM_loop_other_vert_loop(BMLoop *l, BMVert *v) ATTR_WARN_UNUSED_RESULT AT
  *                      |
  *   begin e_step ----> |
  *                      |
- * \endcode
+ * endcode
  */
-BMLoop *BM_vert_step_fan_loop(BMLoop *l, BMEdge **e_step) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_vert_step_fan_loop(MeshLoop *l, MeshEdge **e_step) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Get the first loop of a vert. Uses the same initialization code for the first loop of the
  * iterator API
  */
-BMLoop *BM_vert_find_first_loop(BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_vert_find_first_loop(MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * A version of #BM_vert_find_first_loop that ignores hidden loops.
+ * A version of Mesh_vert_find_first_loop that ignores hidden loops.
  */
-BMLoop *BM_vert_find_first_loop_visible(BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_vert_find_first_loop_visible(MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * Only #BMEdge.l access us needed, however when we want the first visible loop,
+ * Only MeshEdge.l access us needed, however when we want the first visible loop,
  * a utility function is needed.
  */
-BMLoop *BM_edge_find_first_loop_visible(BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_edge_find_first_loop_visible(MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-/**
- * Check if verts share a face.
- */
-bool BM_vert_pair_share_face_check(BMVert *v_a, BMVert *v_b) ATTR_WARN_UNUSED_RESULT
+/** Check if verts share a face. **/
+bool mesh_vert_pair_share_face_check(MeshVert *v_a, MeshVert *v_b) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-bool BM_vert_pair_share_face_check_cb(BMVert *v_a,
-                                      BMVert *v_b,
-                                      bool (*test_fn)(BMFace *f, void *user_data),
+bool mesh_vert_pair_share_face_check_cb(MeshVert *v_a,
+                                      MeshVert *v_b,
+                                      bool (*test_fn)(MeshFace *f, void *user_data),
                                       void *user_data) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1, 2, 3);
-BMFace *BM_vert_pair_shared_face_cb(BMVert *v_a,
-                                    BMVert *v_b,
+BMFace *BM_vert_pair_shared_face_cb(MeshVert *v_a,
+                                    MeshVert *v_b,
                                     bool allow_adjacent,
-                                    bool (*callback)(BMFace *, BMLoop *, BMLoop *, void *userdata),
+                                    bool (*callback)(MeshFace *, MeshLoop *, BMLoop *, void *userdata),
                                     void *user_data,
-                                    BMLoop **r_l_a,
-                                    BMLoop **r_l_b) ATTR_NONNULL(1, 2, 4, 6, 7);
+                                    MeshLoop **r_l_a,
+                                    MeshLoop **r_l_b) ATTR_NONNULL(1, 2, 4, 6, 7);
 /**
  * Given 2 verts, find the smallest face they share and give back both loops.
  */
-BMFace *BM_vert_pair_share_face_by_len(
-    BMVert *v_a, BMVert *v_b, BMLoop **r_l_a, BMLoop **r_l_b, bool allow_adjacent) ATTR_NONNULL();
+MeshFace *mesh_vert_pair_share_face_by_len(
+    MeshVert *v_a, MeshVert *v_b, MeshLoop **r_l_a, MeshLoop **r_l_b, bool allow_adjacent) ATTR_NONNULL();
 /**
  * Given 2 verts,
  * find a face they share that has the lowest angle across these verts and give back both loops.
