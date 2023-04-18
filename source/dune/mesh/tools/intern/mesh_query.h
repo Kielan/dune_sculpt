@@ -1,13 +1,7 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-/**
- * Returns true if the vertex is used in a given face.
- */
-bool BM_vert_in_face(BMVert *v, BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** Returns true if the vertex is used in a given face. */
+bool mesh_vert_in_face(MeshVert *v, MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Compares the number of vertices in an array
  * that appear in a given face
