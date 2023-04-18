@@ -194,11 +194,11 @@ MeshLoop *mesh_edge_find_first_loop_visible(MeshEdge *e) ATTR_WARN_UNUSED_RESULT
 bool mesh_vert_pair_share_face_check(MeshVert *v_a, MeshVert *v_b) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 bool mesh_vert_pair_share_face_check_cb(MeshVert *v_a,
-                                      MeshVert *v_b,
-                                      bool (*test_fn)(MeshFace *f, void *user_data),
-                                      void *user_data) ATTR_WARN_UNUSED_RESULT
+                                       MeshVert *v_b,
+                                       bool (*test_fn)(MeshFace *f, void *user_data),
+                                       void *user_data) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1, 2, 3);
-BMFace *BM_vert_pair_shared_face_cb(MeshVert *v_a,
+MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
                                     MeshVert *v_b,
                                     bool allow_adjacent,
                                     bool (*callback)(MeshFace *, MeshLoop *, BMLoop *, void *userdata),
@@ -214,19 +214,19 @@ MeshFace *mesh_vert_pair_share_face_by_len(
  * Given 2 verts,
  * find a face they share that has the lowest angle across these verts and give back both loops.
  *
- * This can be better than #BM_vert_pair_share_face_by_len
+ * This can be better than mesh_vert_pair_share_face_by_len
  * because concave splits are ranked lowest.
  */
-BMFace *BM_vert_pair_share_face_by_angle(
-    BMVert *v_a, BMVert *v_b, BMLoop **r_l_a, BMLoop **r_l_b, bool allow_adjacent) ATTR_NONNULL();
+MeshFace *mesh_vert_pair_share_face_by_angle(
+    MeshVert *v_a, MeshVert *v_b, MeshLoop **r_l_a, MeshLoop **r_l_b, bool allow_adjacent) ATTR_NONNULL();
 
-BMFace *BM_edge_pair_share_face_by_len(
-    BMEdge *e_a, BMEdge *e_b, BMLoop **r_l_a, BMLoop **r_l_b, bool allow_adjacent) ATTR_NONNULL();
+MeshFace *mesh_edge_pair_share_face_by_len(
+    MeshEdge *e_a, MeshEdge *e_b, MeshLoop **r_l_a, MeshLoop **r_l_b, bool allow_adjacent) ATTR_NONNULL();
 
-int BM_vert_edge_count_nonwire(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-#define BM_vert_edge_count_is_equal(v, n) (BM_vert_edge_count_at_most(v, (n) + 1) == n)
-#define BM_vert_edge_count_is_over(v, n) (BM_vert_edge_count_at_most(v, (n) + 1) == (n) + 1)
-int BM_vert_edge_count_at_most(const BMVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
+int mesh_vert_edge_count_nonwire(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+#define mesh_vert_edge_count_is_equal(v, n) (mesh_vert_edge_count_at_most(v, (n) + 1) == n)
+#define mesh_vert_edge_count_is_over(v, n) (mesh_vert_edge_count_at_most(v, (n) + 1) == (n) + 1)
+int mesh_vert_edge_count_at_most(const MeshVert *v, int count_max) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Returns the number of edges around this vertex.
