@@ -356,19 +356,19 @@ static void mesh_walker_LoopShellWireWalker_visitVert(MeshWalker *walker, MeshVe
 {
   MeshEdge *e;
 
-  BLI_assert(v->head.htype == BM_VERT);
+  lib_assert(v->head.htype == MESH_VERT);
 
-  if (BLI_gset_haskey(walker->visit_set_alt, v)) {
+  if (lib_gset_haskey(walker->visit_set_alt, v)) {
     return;
   }
 
-  if (!bmw_mask_check_vert(walker, v)) {
+  if (!mesh_walker_mask_check_vert(walker, v)) {
     return;
   }
 
   e = v->e;
   do {
-    if (bmw_edge_is_wire(walker, e) && (e != e_from)) {
+    if (meeh_walk_edge_is_wire(walker, e) && (e != e_from)) {
       MeshVert *v_other;
       MeshIter iter;
       MeshLoop *l;
@@ -376,70 +376,70 @@ static void mesh_walker_LoopShellWireWalker_visitVert(MeshWalker *walker, MeshVe
       mesh_walker_LoopShell_visitEdgeWire(walker, e);
 
       /* Check if we step onto a non-wire vertex. */
-      v_other = BM_edge_other_vert(e, v);
-      MESH_ITER_ELEM (l, &iter, v_other, MESH_LOOPS_OF_VERT) {
+      v_other = mesh_edge_other_vert(e, v);
+      MESH_ELEM_ITER (l, &iter, v_other, MESH_LOOPS_OF_VERT) {
 
         mesh_walker_LoopShell_visitLoop(walker, l);
       }
     }
-  } while ((e = BM_DISK_EDGE_NEXT(e, v)) != v->e);
+  } while ((e = MESH_DISK_EDGE_NEXT(e, v)) != v->e);
 
-  BLI_gset_insert(walker->visit_set_alt, v);
+  lib_gset_insert(walker->visit_set_alt, v);
 }
 
-static void bmw_LoopShellWireWalker_begin(BMWalker *walker, void *data)
+static void mesh_walk_LoopShellWireWalker_begin(MeshWalker *walker, void *data)
 {
-  BMHeader *h = data;
+  MeshHeader *h = data;
 
   if (UNLIKELY(h == NULL)) {
     return;
   }
 
-  bmw_LoopShellWalker_begin(walker, data);
+  mesh_walk_LoopShellWalker_begin(walker, data);
 
   switch (h->htype) {
-    case BM_LOOP: {
-      BMLoop *l = (BMLoop *)h;
-      bmw_LoopShellWireWalker_visitVert(walker, l->v, NULL);
+    case MESH_LOOP: {
+      MeshLoop *l = (MeshLoop *)h;
+      mesh_walker_LoopShellWireWalker_visitVert(walker, l->v, NULL);
       break;
     }
 
-    case BM_VERT: {
-      BMVert *v = (BMVert *)h;
+    case MESH_VERT: {
+      MeshVert *v = (MeshVert *)h;
       if (v->e) {
-        bmw_LoopShellWireWalker_visitVert(walker, v, NULL);
+        mesh_walker_LoopShellWireWalker_visitVert(walker, v, NULL);
       }
       break;
     }
-    case BM_EDGE: {
-      BMEdge *e = (BMEdge *)h;
-      if (bmw_mask_check_edge(walker, e)) {
-        bmw_LoopShellWireWalker_visitVert(walker, e->v1, NULL);
-        bmw_LoopShellWireWalker_visitVert(walker, e->v2, NULL);
+    case MESH_EDGE: {
+      MeshEdge *e = (MeshEdge *)h;
+      if (mesh_walker_mask_check_edge(walker, e)) {
+        mesh_walker_LoopShellWireWalker_visitVert(walker, e->v1, NULL);
+        mesh_walker_LoopShellWireWalker_visitVert(walker, e->v2, NULL);
       }
       else if (e->l) {
-        BMLoop *l_iter, *l_first;
+        MeshLoop *l_iter, *l_first;
 
         l_iter = l_first = e->l;
         do {
-          bmw_LoopShellWalker_visitLoop(walker, l_iter);
-          bmw_LoopShellWalker_visitLoop(walker, l_iter->next);
+          mesh_walker_LoopShellWalker_visitLoop(walker, l_iter);
+          mesh_walker_LoopShellWalker_visitLoop(walker, l_iter->next);
         } while ((l_iter = l_iter->radial_next) != l_first);
       }
       break;
     }
-    case BM_FACE: {
+    case MESH_FACE: {
       /* Wire verts will be walked over. */
       break;
     }
     default:
-      BLI_assert(0);
+      lib_assert(0);
   }
 }
 
-static void *bmw_LoopShellWireWalker_yield(BMWalker *walker)
+static void *mesh_walker_LoopShellWireWalker_yield(BMWalker *walker)
 {
-  BMwLoopShellWireWalker *shellWalk = BMW_current_state(walker);
+  MeshWalkerLoopShellWireWalker *shellWalk = BMW_current_state(walker);
   return shellWalk->curelem;
 }
 
