@@ -1280,17 +1280,17 @@ void mesh_toolflags_set(Mesh *mesh, bool use_toolflags)
   mesh_mempool_init_ex(&allocsize, use_toolflags, &vpool_dst, &epool_dst, NULL, &fpool_dst);
 
   if (use_toolflags == false) {
-    lib_mempool_destroy(bm->vtoolflagpool);
-    lib_mempool_destroy(bm->etoolflagpool);
-    lib_mempool_destroy(bm->ftoolflagpool);
+    lib_mempool_destroy(mesh->vtoolflagpool);
+    lib_mempool_destroy(mesh->etoolflagpool);
+    lib_mempool_destroy(mesh->ftoolflagpool);
 
     mesh->vtoolflagpool = NULL;
     mesh->etoolflagpool = NULL;
     mesh->ftoolflagpool = NULL;
   }
 
-  BM_mesh_rebuild(bm,
-                  &((struct BMeshCreateParams){
+  mesh_rebuild(bm,
+                  &((struct MeshCreateParams){
                       .use_toolflags = use_toolflags,
                   }),
                   vpool_dst,
@@ -1298,7 +1298,7 @@ void mesh_toolflags_set(Mesh *mesh, bool use_toolflags)
                   NULL,
                   fpool_dst);
 
-  bm->use_toolflags = use_toolflags;
+  mesh->use_toolflags = use_toolflags;
 }
 
 /* -------------------------------------------------------------------- */
