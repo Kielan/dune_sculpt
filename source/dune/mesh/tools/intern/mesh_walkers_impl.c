@@ -907,11 +907,11 @@ static void bmw_EdgeLoopWalker_begin(BMWalker *walker, void *data)
        * plus two boundary edges (which would not be stepped over), see T84906. */
       ((vert_edge_count[0] == 3 && vert_face_count[0] == 3) ||
        (vert_edge_count[1] == 3 && vert_face_count[1] == 3))) {
-    BMIter iter;
-    BMFace *f_iter;
-    BMFace *f_best = NULL;
+    MeshIter iter;
+    MeshFace *f_iter;
+    MeshFace *f_best = NULL;
 
-    BM_ITER_ELEM (f_iter, &iter, e, BM_FACES_OF_EDGE) {
+    MESH_ELEM_ITER (f_iter, &iter, e, MESH_FACES_OF_EDGE) {
       if (f_best == NULL || f_best->len < f_iter->len) {
         f_best = f_iter;
       }
