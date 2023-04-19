@@ -63,9 +63,9 @@ void *mesh_walker_begin(MeshWalker *walker, void *start);
 /** Step Walker **/
 void *mesh_walker_step(struct MeshWalker *walker);
 /** End Walker Frees a walker's worklist. */
-void mesh_walker_end(struct BMWalker *walker);
+void mesh_walker_end(struct MeshWalker *walker);
 /** Walker Current Depth Returns the current depth of the walker. */
-int mesh_walker_current_depth(BMWalker *walker);
+int mesh_walker_current_depth(MeshWalker *walker);
 
 /* These are used by custom walkers. */
 /**
@@ -77,7 +77,7 @@ int mesh_walker_current_depth(BMWalker *walker);
  */
 void *mesh_waker_current_state(MeshWalker *walker);
 /**
- * \brief Add a new Walker State
+ * brief Add a new Walker State
  *
  * Allocate a new empty state and put it on the worklist.
  * A pointer to the new state is returned so that the caller
@@ -107,9 +107,9 @@ void *mesh_walk(MeshWalker *walker);
  */
 void mesh_walker_reset(MeshWalker *walker);
 
-#define BMW_ITER(ele, walker, data) \
-  for (BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BMW_begin(walker, (BM_CHECK_TYPE_ELEM(data), data)); ele; \
-       BM_CHECK_TYPE_ELEM_ASSIGN(ele) = BMW_step(walker))
+#define MESH_W_ITER(ele, walker, data) \
+  for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = BMW_begin(walker, (BM_CHECK_TYPE_ELEM(data), data)); ele; \
+       MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = BMW_step(walker))
 
 /*
  * example of usage, walking over an island of tool flagged faces:
