@@ -23,29 +23,29 @@ static bool mesh_walker_mask_check_vert(MeshWalker *walker, MeshVert *v)
   if ((walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(v, MESH_ELEM_HIDDEN)) {
     return false;
   }
-  if (walker->mask_vert && !BMO_vert_flag_test(walker->bm, v, walker->mask_vert)) {
+  if (walker->mask_vert && !mesh_op_vert_flag_test(walker->bm, v, walker->mask_vert)) {
     return false;
   }
   return true;
 }
 
-static bool mesh_walker_mask_check_edge(BMWalker *walker, BMEdge *e)
+static bool mesh_walker_mask_check_edge(BMWalker *walker, MeshEdge *e)
 {
-  if ((walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
+  if ((walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
     return false;
   }
-  if (walker->mask_edge && !BMO_edge_flag_test(walker->bm, e, walker->mask_edge)) {
+  if (walker->mask_edge && !mesh_op_edge_flag_test(walker->mesh, e, walker->mask_edge)) {
     return false;
   }
   return true;
 }
 
-static bool mesh_walker_mask_check_face(MeshWalker *walker, BMFace *f)
+static bool mesh_walker_mask_check_face(MeshWalker *walker, MeshFace *f)
 {
-  if ((walker->flag & BMW_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
+  if ((walker->flag & MESH_WALKERS_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
     return false;
   }
-  if (walker->mask_face && !BMO_face_flag_test(walker->bm, f, walker->mask_face)) {
+  if (walker->mask_face && !mesh_op_face_flag_test(walker->bm, f, walker->mask_face)) {
     return false;
   }
   return true;
@@ -54,9 +54,7 @@ static bool mesh_walker_mask_check_face(MeshWalker *walker, BMFace *f)
 /* -------------------------------------------------------------------- */
 /** Mesh Queries (modified to check walker flags) */
 
-/**
- * Check for a wire edge, taking ignoring hidden.
- */
+/** Check for a wire edge, taking ignoring hidden. */
 static bool mesh_walker_edge_is_wire(const MeshWalker *walker, const MeshEdge *e)
 {
   if (walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) {
@@ -112,8 +110,8 @@ static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
   switch (h->htype) {
     case MESH_VERT: {
       /* Starting the walk at a vert, add all the edges to the work-list. */
-      v = (BMVert *)h;
-      MESH_ITER_ELEM (e, &eiter, v, MESH_EDGES_OF_VERT) {
+      v = (MeshVert *)h;
+      MESH_ELEM_ITER (e, &eiter, v, MESH_EDGES_OF_VERT) {
         mesh_walker_VertShellWalker_visitEdge(walker, e);
       }
       break;
@@ -121,12 +119,12 @@ static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
 
     case MESH_EDGE: {
       /* Starting the walk at an edge, add the single edge to the work-list. */
-      e = (BMEdge *)h;
+      e = (MeshEdge *)h;
       mesh_walker_VertShell_visitEdge(walker, e);
       break;
     }
     default:
-      BLI_assert(0);
+      lib_assert(0);
   }
 }
 
@@ -151,7 +149,7 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
 
   for (i = 0; i < 2; i++) {
     v = i ? e->v2 : e->v1;
-    MESH_ITER_ELEM (e2, &iter, v, MESH_EDGES_OF_VERT) {
+    MESH_ELEM_ITER (e2, &iter, v, MESH_EDGES_OF_VERT) {
       mesh_walker_VertShell_visitEdge(walker, e2);
     }
   }
@@ -179,7 +177,7 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
     if (!lib_gset_haskey(walker->visit_set, curedge)) {
       if (!walker->visibility_flag ||
           (walker->visibility_flag &&
-           BMO_edge_flag_test(walker->bm, curedge, walker->visibility_flag))) {
+           mesh_op_edge_flag_test(walker->bm, curedge, walker->visibility_flag))) {
         MeshWalkerShell *newstate;
 
         v_old = mesh_edge_other_vert(curedge, shellWalk.base);
@@ -246,7 +244,7 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
     case MESH_VERT: {
       MeshVert *v = (MeshVert *)h;
       MeshLoop *l;
-      MESH_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
+      MESH_ITER_ELEM (l, &iter, v, MESH_LOOPS_OF_VERT) {
         mesh_walker_LoopShell_visitLoop(walker, l);
       }
       break;
@@ -254,8 +252,8 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
     case MESH_EDGE: {
       MeshEdge *e = (MeshEdge *)h;
       MeshLoop *l;
-      MESH_ITER_ELEM (l, &iter, e, BM_LOOPS_OF_EDGE) {
-        bmw_LoopShellWalker_visitLoop(walker, l);
+      MESH_ELEM_ITER (l, &iter, e, MESH_LOOPS_OF_EDGE) {
+        mesh_walkers_LoopShellWalker_visitLoop(walker, l);
       }
       break;
     }
@@ -337,26 +335,26 @@ static void *mesh_walker_LoopShell_stepWalker *walker)
 
 static void mesh_walker_LoopShell_visitEdgeWire(MeshWalker *walker, BMEdge *e)
 {
-  BMwLoopShellWireWalker *shellWalk = NULL;
+  MeshWalkerLoopShellWireWalker *shellWalk = NULL;
 
-  BLI_assert(bmw_edge_is_wire(walker, e));
+  lib_assert(bmw_edge_is_wire(walker, e));
 
-  if (BLI_gset_haskey(walker->visit_set_alt, e)) {
+  if (lib_gset_haskey(walker->visit_set_alt, e)) {
     return;
   }
 
-  if (!bmw_mask_check_edge(walker, e)) {
+  if (!mesh_walker_mask_check_edge(walker, e)) {
     return;
   }
 
-  shellWalk = BMW_state_add(walker);
-  shellWalk->curelem = (BMElem *)e;
-  BLI_gset_insert(walker->visit_set_alt, e);
+  shellWalk = mesh_walker_state_add(walker);
+  shellWalk->curelem = (MeshElem *)e;
+  lib_gset_insert(walker->visit_set_alt, e);
 }
 
-static void bmw_LoopShellWireWalker_visitVert(BMWalker *walker, BMVert *v, const BMEdge *e_from)
+static void mesh_walker_LoopShellWireWalker_visitVert(MeshWalker *walker, MeshVert *v, const MeshEdge *e_from)
 {
-  BMEdge *e;
+  MeshEdge *e;
 
   BLI_assert(v->head.htype == BM_VERT);
 
