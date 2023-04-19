@@ -114,15 +114,15 @@ void mesh_walker_reset(MeshWalker *walker);
 /*
  * example of usage, walking over an island of tool flagged faces:
  *
- * BMWalker walker;
- * BMFace *f;
+ * MeshWalker walker;
+ * MeshFace *f;
  *
- * BMW_init(&walker, bm, BMW_ISLAND, SOME_OP_FLAG);
+ * mesh_walker_init(&walker, mesh, MESH_W_ISLAND, SOME_OP_FLAG);
  *
- * for (f = BMW_begin(&walker, some_start_face); f; f = BMW_step(&walker)) {
+ * for (f = mesh_walker_begin(&walker, some_start_face); f; f = mesh_walker_step(&walker)) {
  *     // do something with f
  * }
- * BMW_end(&walker);
+ * mesh_walker_end(&walker);
  */
 
 enum {
