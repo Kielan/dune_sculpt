@@ -28,9 +28,7 @@ LIB_INLINE bool mesh_verts_in_edge(const MeshVert *v1,
 
 /** Returns edge length */
 float mesh_edge_calc_length(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * Returns edge length squared (for comparisons)
- */
+/** Returns edge length squared (for comparisons) */
 float mesh_edge_calc_length_squared(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Utility function, since enough times we have an edge
@@ -384,63 +382,62 @@ float mesh_loop_calc_face_normal_safe_vcos(const MeshLoop *l,
                                          float r_normal[3]) ATTR_NONNULL();
 
 /**
- * \brief BM_loop_calc_face_direction
+ * brief mesh_loop_calc_face_direction
  *
  * Calculate the direction a loop is pointing.
  *
- * \param l: The loop to calculate the direction at
- * \param r_dir: Resulting direction
+ * param l: The loop to calculate the direction at
+ * param r_dir: Resulting direction
  */
-void BM_loop_calc_face_direction(const BMLoop *l, float r_dir[3]);
-/**
- * \brief BM_loop_calc_face_tangent
+void mesh_loop_calc_face_direction(const MeshLoop *l, float r_dir[3]);
+/** mesh_loop_calc_face_tangent
  *
  * Calculate the tangent at this loop corner or fallback to the face normal on straight lines.
  * This vector always points inward into the face.
  *
- * \param l: The loop to calculate the tangent at
- * \param r_tangent: Resulting tangent
+ * param l: The loop to calculate the tangent at
+ * param r_tangent: Resulting tangent
  */
-void BM_loop_calc_face_tangent(const BMLoop *l, float r_tangent[3]);
+void mesh_loop_calc_face_tangent(const BMLoop *l, float r_tangent[3]);
 
 /**
- * \brief BMESH EDGE/FACE ANGLE
+ * MESH EDGE/FACE ANGLE
  *
  * Calculates the angle between two faces.
  * Assumes the face normals are correct.
  *
- * \return angle in radians
+ * return angle in radians
  */
-float BM_edge_calc_face_angle_ex(const BMEdge *e, float fallback) ATTR_WARN_UNUSED_RESULT
+float mesh_edge_calc_face_angle_ex(const BMEdge *e, float fallback) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-float BM_edge_calc_face_angle(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+float mesh_edge_calc_face_angle(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief BMESH EDGE/FACE ANGLE
+ * MESH EDGE/FACE ANGLE
  *
  * Calculates the angle between two faces.
  * Assumes the face normals are correct.
  *
- * \return angle in radians
+ * return angle in radians
  */
-float BM_edge_calc_face_angle_signed_ex(const BMEdge *e, float fallback) ATTR_WARN_UNUSED_RESULT
+float mesh_edge_calc_face_angle_signed_ex(const BMEdge *e, float fallback) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * \brief BMESH EDGE/FACE ANGLE
+ * brief MESH EDGE/FACE ANGLE
  *
  * Calculates the angle between two faces in world space.
  * Assumes the face normals are correct.
  *
- * \return angle in radians
+ * angle in radians
  */
-float BM_edge_calc_face_angle_with_imat3_ex(const BMEdge *e,
+float mesh_edge_calc_face_angle_with_imat3_ex(const BMEdge *e,
                                             const float imat3[3][3],
                                             float fallback) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-float BM_edge_calc_face_angle_with_imat3(const BMEdge *e,
+float mesh_edge_calc_face_angle_with_imat3(const BMEdge *e,
                                          const float imat3[3][3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-float BM_edge_calc_face_angle_signed(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+float mesh_edge_calc_face_angle_signed(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief BMESH EDGE/FACE TANGENT
+ * MESH EDGE/FACE TANGENT
  *
  * Calculate the tangent at this loop corner or fallback to the face normal on straight lines.
  * This vector always points inward into the face.
