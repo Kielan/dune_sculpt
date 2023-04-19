@@ -134,15 +134,15 @@ static void *mesh_walk_VertShell_yield(MeshWalk *walk)
   return shellWalk->curedge;
 }
 
-static void *mesh_walker_VertShell_step(MeshWalker *walker)
+static void *mesh_walk_VertShell_step(MeshWalker *walker)
 {
-  MeshWalkerShell *swalk, owalk;
+  MeshWalkShell *swalk, owalk;
   MeshEdge *e, *e2;
   MeshVert *v;
   MeshIter iter;
   int i;
 
-  mesh_walker_state_remove_r(walker, &owalk);
+  mesh_walker_state_remove_r(walk, &owalk);
   swalk = &owalk;
 
   e = swalk->curedge;
@@ -150,7 +150,7 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
   for (i = 0; i < 2; i++) {
     v = i ? e->v2 : e->v1;
     MESH_ELEM_ITER (e2, &iter, v, MESH_EDGES_OF_VERT) {
-      mesh_walker_VertShell_visitEdge(walker, e2);
+      mesh_walk_VertShell_visitEdge(walk, e2);
     }
   }
 
@@ -165,26 +165,26 @@ static void *mesh_walk_VertShell_step(MeshWalk *walk)
   bool restrictpass = true;
   MeshWalkShell walkShell = *((MeshWalkShell *)mesh_walk_current_state(walk));
 
-  if (!lib_gset_haskey(walker->visit_set, shellWalk.base)) {
-    lib_gset_insert(walker->visit_set, shellWalk.base);
+  if (!lib_gset_haskey(walk->visit_set, shellWalk.base)) {
+    lib_gset_insert(walk->visit_set, shellWalk.base);
   }
 
-  mesh_walker_state_remove(walker);
+  mesh_walk_state_remove(walk);
 
   /* Find the next edge whose other vertex has not been visited. */
   curedge = shellWalk.curedge;
   do {
-    if (!lib_gset_haskey(walker->visit_set, curedge)) {
+    if (!lib_gset_haskey(walk->visit_set, curedge)) {
       if (!walker->visibility_flag ||
           (walker->visibility_flag &&
-           mesh_op_edge_flag_test(walker->bm, curedge, walker->visibility_flag))) {
+           mesh_op_edge_flag_test(walk->mesh, curedge, walk->visibility_flag))) {
         MeshWalkShell *newstate;
 
         v_old = mesh_edge_other_vert(curedge, shellWalk.base);
 
         /* Push a new state onto the stack. */
-        newState = mesh_walker_state_add(walker);
-        lib_gset_insert(walker->visit_set, curedge);
+        newState = mesh_walk_state_add(walk);
+        lib_gset_insert(walk->visit_set, curedge);
 
         /* Populate the new state. */
 
