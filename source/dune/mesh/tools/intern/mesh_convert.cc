@@ -423,8 +423,8 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
     mesh->elem_index_dirty &= ~MESH_EDGE; /* Added in order, clear dirty flag. */
   }
 
-  Span<MPoly> mpoly{me->mpoly, me->totpoly};
-  Span<MLoop> mloop{me->mloop, me->totloop};
+  Span<MeshPoly> mpoly{me->mpoly, me->totpoly};
+  Span<MeshLoop> mloop{me->mloop, me->totloop};
 
   /* Only needed for selection. */
 
@@ -458,7 +458,7 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
     f->head.hflag = mesh_face_flag_from_mflag(mpoly[i].flag & ~ME_FACE_SEL);
 
     /* This is necessary for selection counts to work properly. */
-    if (mpoly[i].flag & ME_FACE_SEL) {
+    if (mpoly[i].flag & MESH_FACE_SEL) {
       mesh_face_select_set(bm, f, true);
     }
 
