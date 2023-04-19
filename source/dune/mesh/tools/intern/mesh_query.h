@@ -471,22 +471,20 @@ float mesh_vert_calc_shell_factor_ex(const MeshVert *v,
                                    const float no[3],
                                    char hflag) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \note quite an obscure function.
+ * quite an obscure function.
  * used in bmesh operators that have a relative scale options,
  */
-float BM_vert_calc_median_tagged_edge_length(const BMVert *v) ATTR_WARN_UNUSED_RESULT
+float mesh_vert_calc_median_tagged_edge_length(const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
-/**
- * Returns the loop of the shortest edge in f.
- */
-BMLoop *BM_face_find_shortest_loop(BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** Returns the loop of the shortest edge in f. **/
+MeshLoop *mesh_face_find_shortest_loop(MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Returns the loop of the longest edge in f.
  */
-BMLoop *BM_face_find_longest_loop(BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_face_find_longest_loop(MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-BMEdge *BM_edge_exists(BMVert *v_a, BMVert *v_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshEdge *mesh_edge_exists(MeshVert *v_a, MeshVert *v_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Returns an edge sharing the same vertices as this one.
  * This isn't an invalid state but tools should clean up these cases before
