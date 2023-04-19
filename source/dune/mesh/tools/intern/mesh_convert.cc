@@ -573,7 +573,7 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
  * Key Block Usage
  * ***************
  *
- * Key blocks (data in #Mesh.key must be used carefully).
+ * Key blocks (data in Mesh.key must be used carefully).
  *
  * They can be used to query which key blocks are relative to the basis
  * since it's not possible to add/remove/reorder key blocks while in edit-mode.
@@ -629,7 +629,7 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
  *
  * - Custom Data & Mesh Key Block Synchronization.
  *   Key blocks in `me->key->block` should always have an associated
- *   #CD_SHAPEKEY layer in `bm->vdata`.
+ *   CD_SHAPEKEY layer in `mesh->vdata`.
  *   If they don't there are two fall-backs for setting the location,
  *   - Use the value from the original shape key
  *     WARNING: this is technically incorrect! (see note on "Key Block Usage").
@@ -674,7 +674,7 @@ static int mesh_to_mesh_shape_layer_index_from_kb(Mesh *mesh, KeyBlock *currkey)
  * param active_shapekey_to_mvert: When editing a non-basis shape key, the coordinates for the
  * basis are typically copied into the `mvert` array since it makes sense for the meshes
  * vertex coordinates to match the "Basis" key.
- * When enabled, skip this step and copy MeshVert.co directly to #MVert.co,
+ * When enabled, skip this step and copy MeshVert.co directly to MeshVert.co,
  * See MeshToMeshParams.active_shapekey_to_mvert doc-string.
  */
 static void mesh_to_mesh_shape(Mesh *mesh,
@@ -682,7 +682,7 @@ static void mesh_to_mesh_shape(Mesh *mesh,
                                MVert *mvert,
                                const bool active_shapekey_to_mvert)
 {
-  KeyBlock *actkey = static_cast<KeyBlock *>(BLI_findlink(&key->block, bm->shapenr - 1));
+  KeyBlock *actkey = static_cast<KeyBlock *>(lib_findlink(&key->block, mesh->shapenr - 1));
 
   /* It's unlikely this ever remains false, check for correctness. */
   bool actkey_has_layer = false;
@@ -851,10 +851,10 @@ static void mesh_to_mesh_shape(Mesh *mesh,
       Mesh_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
 
         if ((currkey->data != nullptr) && (cd_shape_keyindex_offset != -1) &&
-            ((keyi = BM_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset)) != ORIGINDEX_NONE) &&
+            ((keyi = MESH_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset)) != ORIGINDEX_NONE) &&
             (keyi < currkey->totelem)) {
           /* Reconstruct keys via vertices original key indices.
-           * WARNING(@campbellbarton): `currkey->data` is known to be unreliable as the edit-mesh
+           * WARNING: `currkey->data` is known to be unreliable as the edit-mesh
            * coordinates may be flushed back to the shape-key when exporting or rendering.
            * This is a last resort! If this branch is running as part of regular usage
            * it can be considered a bug. */
@@ -867,22 +867,20 @@ static void mesh_to_mesh_shape(Mesh *mesh,
         }
       }
 
-      currkey->totelem = bm->totvert;
+      currkey->totelem = mesh->totvert;
       if (currkey->data) {
-        MEM_freeN(currkey->data);
+        mem_freen(currkey->data);
       }
       currkey->data = currkey_data;
     }
   }
 
   if (ofs) {
-    MEM_freeN(ofs);
+    mem_freen(ofs);
   }
 }
 
-/** \} */
-
-BLI_INLINE void bmesh_quick_edgedraw_flag(MEdge *med, BMEdge *e)
+LIB_INLINE void mesh_quick_edgedraw_flag(MeshEdge *med, MeshEdge *e)
 {
   /* This is a cheap way to set the edge draw, its not precise and will
    * pick the first 2 faces an edge uses.
