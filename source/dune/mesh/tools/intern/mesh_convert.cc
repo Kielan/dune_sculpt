@@ -124,11 +124,11 @@ void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
   }
   else {
     if (CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
-      MESH_data_layer_free(mesh, &mesh->vdata, CD_BWEIGHT);
+      mesh_data_layer_free(mesh, &mesh->vdata, CD_BWEIGHT);
     }
   }
 
-  if (cd_flag & ME_CDFLAG_VERT_CREASE) {
+  if (cd_flag & MESH_CDFLAG_VERT_CREASE) {
     if (!CustomData_has_layer(&mesh->vdata, CD_CREASE)) {
       mesh_data_layer_add(mesh, &mesh->vdata, CD_CREASE);
     }
@@ -139,7 +139,7 @@ void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
     }
   }
 
-  if (cd_flag & ME_CDFLAG_EDGE_BWEIGHT) {
+  if (cd_flag & MESH_CDFLAG_EDGE_BWEIGHT) {
     if (!CustomData_has_layer(&mesh->edata, CD_BWEIGHT)) {
       mesh_data_layer_add(mesh, &mesh>edata, CD_BWEIGHT);
     }
@@ -150,7 +150,7 @@ void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
     }
   }
 
-  if (cd_flag & ME_CDFLAG_EDGE_CREASE) {
+  if (cd_flag & MESH_CDFLAG_EDGE_CREASE) {
     if (!CustomData_has_layer(&mesh->edata, CD_CREASE)) {
       mesh_data_layer_add(mesh, &mesh->edata, CD_CREASE);
     }
@@ -166,16 +166,16 @@ char mesh_cd_flag_from_meshBMesh *mesh)
 {
   char cd_flag = 0;
   if (CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
-    cd_flag |= ME_CDFLAG_VERT_WEIGHT;
+    cd_flag |= MESH_CDFLAG_VERT_WEIGHT;
   }
-  if (CustomData_has_layer(&bm->vdata, CD_CREASE)) {
-    cd_flag |= ME_CDFLAG_VERT_CREASE;
+  if (CustomData_has_layer(&mesh->vdata, CD_CREASE)) {
+    cd_flag |= MESH_CDFLAG_VERT_CREASE;
   }
   if (CustomData_has_layer(&bm->edata, CD_BWEIGHT)) {
-    cd_flag |= ME_CDFLAG_EDGE_BWEIGHT;
+    cd_flag |= MESH_CDFLAG_EDGE_BWEIGHT;
   }
   if (CustomData_has_layer(&bm->edata, CD_CREASE)) {
-    cd_flag |= ME_CDFLAG_EDGE_CREASE;
+    cd_flag |= MESH_CDFLAG_EDGE_CREASE;
   }
   return cd_flag;
 }
@@ -197,10 +197,10 @@ static MeshFace *mesh_face_create_from_mpoly(Mesh &mesh,
   return mesh_face_create(&msh, verts.data(), edges.data(), loops.size(), nullptr, BM_CREATE_SKIP_CD);
 }
 
-void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams *params)
+void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *params)
 {
-  const bool is_new = !(bm->totvert || (bm->vdata.totlayer || bm->edata.totlayer ||
-                                        bm->pdata.totlayer || bm->ldata.totlayer));
+  const bool is_new = !(bm->totvert || (mesh->vdata.totlayer || mesh->edata.totlayer ||
+                                        mesh->pdata.totlayer || mesh->ldata.totlayer));
   KeyBlock *actkey;
   float(*keyco)[3] = nullptr;
   CustomData_MeshMasks mask = CD_MASK_BMESH;
@@ -501,13 +501,13 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
 
       MeshElem **ele_p;
       switch (msel.type) {
-        case ME_VSEL:
+        case MESH_VSEL:
           ele_p = (MeshElem **)&vtable[msel.index];
           break;
-        case ME_ESEL:
+        case MESH_ESEL:
           ele_p = (MeshElem **)&etable[msel.index];
           break;
-        case ME_FSEL:
+        case MESH_FSEL:
           ele_p = (MeshElem **)&ftable[msel.index];
           break;
         default:
@@ -515,19 +515,17 @@ void mesh_bm_from_me(BMesh *bm, const Mesh *me, const struct BMeshFromMeshParams
       }
 
       if (*ele_p != nullptr) {
-        BM_select_history_store_notest(bm, *ele_p);
+        mesh_select_history_store_notest(bm, *ele_p);
         *ele_p = nullptr;
       }
     }
   }
   else {
-    BM_select_history_clear(bm);
+    mesh_select_history_clear(bm);
   }
 }
 
-/**
- * \brief BMesh -> Mesh
- */
+/** Mesh -> Mesh **/
 static BMVert **bm_to_mesh_vertex_map(BMesh *bm, int ototvert)
 {
   const int cd_shape_keyindex_offset = CustomData_get_offset(&bm->vdata, CD_SHAPE_KEYINDEX);
