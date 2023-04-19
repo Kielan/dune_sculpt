@@ -26,7 +26,7 @@ void mesh_edge_vert_swap(MeshEdge *e, MeshVert *v_dst, MeshVert *v_src)
 {
   /* swap out loops */
   if (e->l) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
     l_iter = l_first = e->l;
     do {
       if (l_iter->v == v_src) {
@@ -381,7 +381,7 @@ void mesh_radial_loop_append(MeshEdge *e, MeshLoop *l)
 
   if (UNLIKELY(l->e && l->e != e)) {
     /* l is already in a radial cycle for a different edge */
-    BMESH_ASSERT(0);
+    MESH_ASSERT(0);
   }
 
   l->e = e;
