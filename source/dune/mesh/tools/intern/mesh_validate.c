@@ -47,7 +47,7 @@ bool mesh_validate(Mesh *mesh)
   mesh->elem_index_dirty |= MESH_ALL;
   mesh_elem_index_ensure(mesh, MESH_ALL);
 
-  MESH_ITER_MESH_INDEX (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+  MESH_INDEX_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     if (mesh_elem_flag_test(v, MESH_ELEM_SELECT | MESH_ELEM_HIDDEN) ==
         (MESH_ELEM_SELECT | MESH_ELEM_HIDDEN)) {
       ERRMSG("vert %d: is hidden and selected", i);
@@ -55,17 +55,17 @@ bool mesh_validate(Mesh *mesh)
 
     if (v->e) {
       if (!mesh_vert_in_edge(v->e, v)) {
-        ERRMSG("vert %d: is not in its referenced edge: %d", i, BM_elem_index_get(v->e));
+        ERRMSG("vert %d: is not in its referenced edge: %d", i, mesh_elem_index_get(v->e));
       }
     }
   }
 
   /* check edges */
-  MESH_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
+  MESH_INDEX_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
     void **val_p;
 
     if (e->v1 == e->v2) {
-      ERRMSG("edge %d: duplicate index: %d", i, BM_elem_index_get(e->v1));
+      ERRMSG("edge %d: duplicate index: %d", i, mesh_elem_index_get(e->v1));
     }
 
     /* build edgehash at the same time */
@@ -80,7 +80,7 @@ bool mesh_validate(Mesh *mesh)
   }
 
   /* edge radial structure */
-  MESH_ITER_MESH_INDEX (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+  MESH_INDEX_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
     if (mesh_elem_flag_test(e, MESH_ELEM_SELECT | BM_ELEM_HIDDEN) ==
         (MESH_ELEM_SELECT | MESH_ELEM_HIDDEN)) {
       ERRMSG("edge %d: is hidden and selected", i);
