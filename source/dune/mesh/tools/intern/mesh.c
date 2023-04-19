@@ -61,7 +61,7 @@ static void mesh_mempool_init(Mesh *mesh, const MeshAllocTemplate *allocsize, co
 {
   mesh_mempool_init_ex(allocsize, use_toolflags, &mesh->vpool, &mesh->epool, &mesh->lpool, &mesh->fpool);
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   mesh->looplistpool = lib_mempool_create(sizeof(MeshLoopList), 512, 512, LIB_MEMPOOL_NOP);
 #endif
 }
@@ -97,7 +97,7 @@ void mesh_elem_toolflags_ensure(BMesh *bm)
     f_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
-  bm->totflags = 1;
+  mesh->totflags = 1;
 }
 
 void mesh_elem_toolflags_clear(Mesh *mesh)
@@ -134,7 +134,7 @@ Mesh *mesh_create(const MeshAllocTemplate *allocsize, const struct MeshCreatePar
   CustomData_reset(&mesh->ldata);
   CustomData_reset(&mesh->pdata);
 
-  return bm;
+  return mesh;
 }
 
 void mesh_data_free(Mesh *mesh)
@@ -168,7 +168,7 @@ void mesh_data_free(Mesh *mesh)
         CustomData_mesh_free_block(&(mesh->pdata), &(f->head.data));
       }
       if (is_ldata_free) {
-         MESH_ITER_ELEM (l, &itersub, f, MESH_LOOPS_OF_FACE) {
+         MESH_ELEM_ITER (l, &itersub, f, MESH_LOOPS_OF_FACE) {
           CustomData_mesh_free_block(&(mesh->ldata), &(l->head.data));
         }
       }
@@ -220,9 +220,9 @@ void mesh_data_free(Mesh *mesh)
 
   lib_freelistn(&mesh->selected);
 
-  if (bm->lnor_spacearr) {
+  if (mesh->lnor_spacearr) {
     dune_lnor_spacearr_free(mesh->lnor_spacearr);
-    mem_freeN(mesh->lnor_spacearr);
+    mem_freen(mesh->lnor_spacearr);
   }
 
   mesh_op_error_clear(mesh);
@@ -382,7 +382,7 @@ void mesh_elem_index_ensure_ex(Mesh *mesh, const char htype, int elem_offset[4])
       int index_loop = elem_offset ? elem_offset[2] : 0;
       int index = elem_offset ? elem_offset[3] : 0;
 
-      MESH_ITER_MESH (ele, &iter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH) {
         if (update_face) {
           mesh_elem_index_set(ele, index++); /* set_ok */
         }
@@ -462,7 +462,7 @@ void mesh_elem_index_validate(
     int err_val = 0;
     int err_idx = 0;
 
-    MESH_ITER_MESH (ele, &iter, mesh, iter_types[i]) {
+    MESH_ITER (ele, &iter, mesh, iter_types[i]) {
       if (!is_dirty) {
         if (mesh_elem_index_get(ele) != index) {
           err_val = mesh_elem_index_get(ele);
@@ -530,7 +530,7 @@ bool mesh_elem_table_check(Mesh *mesh)
   }
 
   if (mesh->etable && ((mesh->elem_table_dirty & MESH_EDGE) == 0)) {
-    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+    MESH_INDEX_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH, i) {
       if (ele != (MeshElem *)mesh->etable[i]) {
         return false;
       }
@@ -538,7 +538,7 @@ bool mesh_elem_table_check(Mesh *mesh)
   }
 
   if (mesh->ftable && ((mesh->elem_table_dirty & MESH_FACE) == 0)) {
-    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_FACES_OF_MESH, i) {
+    MESH_INDEX_ITER (ele, &iter, mesh, MESH_FACES_OF_MESH, i) {
       if (ele != (MeshElem *)mesh->ftable[i]) {
         return false;
       }
@@ -626,7 +626,7 @@ finally:
 
 void mesh_elem_table_init(Mesh *mesh, const char htype)
 {
-  lib_assert((htype & ~BM_ALL_NOLOOP) == 0);
+  lib_assert((htype & ~MESH_ALL_NOLOOP) == 0);
 
   /* force recalc */
   mesh_elem_table_free(mesh, MESH_ALL_NOLOOP);
@@ -639,18 +639,18 @@ void mesh_elem_table_free(Mesh *mesh, const char htype)
     MEM_SAFE_FREE(mesh->vtable);
   }
 
-  if (htype & BM_EDGE) {
-    MEM_SAFE_FREE(bm->etable);
+  if (htype & MESH_EDGE) {
+    MEM_SAFE_FREE(mesh->etable);
   }
 
-  if (htype & BM_FACE) {
+  if (htype & MESH_FACE) {
     MEM_SAFE_FREE(bm->ftable);
   }
 }
 
-MeshVert *mesh_vert_at_index_find(BMesh *bm, const int index)
+MeshVert *mesh_vert_at_index_find(Mesh *mesh, const int index)
 {
-  return lib_mempool_findelem(bm->vpool, index);
+  return lib_mempool_findelem(mesh->vpool, index);
 }
 
 MeshEdge *mesh_edge_at_index_find(Mesh *mesh, const int index)
@@ -910,7 +910,7 @@ void mesh_remap(Mesh *mesh, const uint *vert_idx, const uint *edge_idx, const ui
    * and - ack! - edge pointers,
    * as we have to handle disk-links. */
   if (vptr_map || eptr_map) {
-    MESH_ITER_MESH (ed, &iter, mesh, MESH_EDGES_OF_MESH) {
+    MESH_ITER (ed, &iter, mesh, MESH_EDGES_OF_MESH) {
       if (vptr_map) {
 #if 0
         printf("Edge v1: %p -> %p\n", ed->v1, lib_ghash_lookup(vptr_map, ed->v1));
@@ -1265,17 +1265,17 @@ void mesh_rebuild(Mesh *mesh,
   }
 }
 
-void BM_mesh_toolflags_set(BMesh *bm, bool use_toolflags)
+void mesh_toolflags_set(Mesh *mesh, bool use_toolflags)
 {
-  if (bm->use_toolflags == use_toolflags) {
+  if (mesh->use_toolflags == use_toolflags) {
     return;
   }
 
-  const BMAllocTemplate allocsize = BMALLOC_TEMPLATE_FROM_BM(bm);
+  const MeshAllocTemplate allocsize = BMALLOC_TEMPLATE_FROM_BM(bm);
 
-  BLI_mempool *vpool_dst = NULL;
-  BLI_mempool *epool_dst = NULL;
-  BLI_mempool *fpool_dst = NULL;
+  lib_mempool *vpool_dst = NULL;
+  lib_mempool *epool_dst = NULL;
+  lib_mempool *fpool_dst = NULL;
 
   bm_mempool_init_ex(&allocsize, use_toolflags, &vpool_dst, &epool_dst, NULL, &fpool_dst);
 
@@ -1302,28 +1302,27 @@ void BM_mesh_toolflags_set(BMesh *bm, bool use_toolflags)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name BMesh Coordinate Access
- * \{ */
+/** Mesh Coordinate Access **/
 
-void BM_mesh_vert_coords_get(BMesh *bm, float (*vert_coords)[3])
+void mesh_vert_coords_get(Mesh *mesh, float (*vert_coords)[3])
 {
-  BMIter iter;
-  BMVert *v;
+  MeshIter iter;
+  MeshVert *v;
   int i;
-  BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
+  MESH_INDEX_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     copy_v3_v3(vert_coords[i], v->co);
   }
 }
 
-float (*BM_mesh_vert_coords_alloc(BMesh *bm, int *r_vert_len))[3]
+float (*mesh_vert_coords_alloc(Mesh *mesh, int *r_vert_len))[3]
 {
-  float(*vert_coords)[3] = MEM_mallocN(bm->totvert * sizeof(*vert_coords), __func__);
-  BM_mesh_vert_coords_get(bm, vert_coords);
-  *r_vert_len = bm->totvert;
+  float(*vert_coords)[3] = mem_mallocN(mesh->totvert * sizeof(*vert_coords), __func__);
+  mesh_vert_coords_get(mesh, vert_coords);
+  *r_vert_len = mesh->totvert;
   return vert_coords;
 }
 
-void BM_mesh_vert_coords_apply(BMesh *bm, const float (*vert_coords)[3])
+void mesh_vert_coords_apply(Mesh *mesh, const float (*vert_coords)[3])
 {
   BMIter iter;
   BMVert *v;
