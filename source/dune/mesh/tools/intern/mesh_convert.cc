@@ -162,7 +162,7 @@ void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
   }
 }
 
-char mesh_cd_flag_from_meshBMesh *mesh)
+char mesh_cd_flag_from_mesh(Mesh *mesh)
 {
   char cd_flag = 0;
   if (CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
@@ -479,7 +479,7 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
     } while ((l_iter = l_iter->next) != l_first);
 
     /* Copy Custom Data */
-    CustomData_to_bmesh_block(&me->pdata, &mesh->pdata, i, &f->head.data, true);
+    CustomData_to_mesh_block(&me->pdata, &mesh->pdata, i, &f->head.data, true);
 
     if (params->calc_face_normal) {
       mesh_face_normal_update(f);
@@ -654,7 +654,7 @@ static int mesh_to_mesh_shape_layer_index_from_kb(Mesh *mesh, KeyBlock *currkey)
   int i;
   int j = 0;
 
-  for (i = 0; i < bm->vdata.totlayer; i++) {
+  for (i = 0; i < mesh->vdata.totlayer; i++) {
     if (mesh->vdata.layers[i].type == CD_SHAPEKEY) {
       if (currkey->uid == mesh->vdata.layers[i].uid) {
         return j;
@@ -675,12 +675,12 @@ static int mesh_to_mesh_shape_layer_index_from_kb(Mesh *mesh, KeyBlock *currkey)
  * basis are typically copied into the `mvert` array since it makes sense for the meshes
  * vertex coordinates to match the "Basis" key.
  * When enabled, skip this step and copy MeshVert.co directly to #MVert.co,
- * See #BMeshToMeshParams.active_shapekey_to_mvert doc-string.
+ * See MeshToMeshParams.active_shapekey_to_mvert doc-string.
  */
 static void mesh_to_mesh_shape(Mesh *mesh,
-                             Key *key,
-                             MVert *mvert,
-                             const bool active_shapekey_to_mvert)
+                               Key *key,
+                               MVert *mvert,
+                               const bool active_shapekey_to_mvert)
 {
   KeyBlock *actkey = static_cast<KeyBlock *>(BLI_findlink(&key->block, bm->shapenr - 1));
 
@@ -689,14 +689,14 @@ static void mesh_to_mesh_shape(Mesh *mesh,
 
   /* Go through and find any shape-key custom-data layers
    * that might not have corresponding KeyBlocks, and add them if necessary. */
-  for (int i = 0; i < bm->vdata.totlayer; i++) {
+  for (int i = 0; i < mesh->vdata.totlayer; i++) {
     if (bm->vdata.layers[i].type != CD_SHAPEKEY) {
       continue;
     }
 
     KeyBlock *currkey;
     for (currkey = (KeyBlock *)key->block.first; currkey; currkey = currkey->next) {
-      if (currkey->uid == bm->vdata.layers[i].uid) {
+      if (currkey->uid == mesh->vdata.layers[i].uid) {
         break;
       }
     }
@@ -724,23 +724,23 @@ static void mesh_to_mesh_shape(Mesh *mesh,
       /* Original key-indices are only used to check the vertex existed when entering edit-mode. */
       (cd_shape_keyindex_offset != -1) &&
       /* Offsets are only needed if the current shape is a basis for others. */
-      BKE_keyblock_is_basis(key, bm->shapenr - 1)) {
+      dune_keyblock_is_basis(key, mesh->shapenr - 1)) {
 
-    BLI_assert(actkey != nullptr); /* Assured by `actkey_has_layer` check. */
-    const int actkey_uuid = bm_to_mesh_shape_layer_index_from_kb(bm, actkey);
+    lib_assert(actkey != nullptr); /* Assured by `actkey_has_layer` check. */
+    const int actkey_uuid = mesh_to_mesh_shape_layer_index_from_kb(mesh, actkey);
 
     /* Since `actkey_has_layer == true`, this must never fail. */
-    BLI_assert(actkey_uuid != -1);
+    lib_assert(actkey_uuid != -1);
 
-    const int cd_shape_offset = CustomData_get_n_offset(&bm->vdata, CD_SHAPEKEY, actkey_uuid);
+    const int cd_shape_offset = CustomData_get_n_offset(&mesh->vdata, CD_SHAPEKEY, actkey_uuid);
 
-    ofs = static_cast<float(*)[3]>(MEM_mallocN(sizeof(float[3]) * bm->totvert, __func__));
+    ofs = static_cast<float(*)[3]>(mem_mallocn(sizeof(float[3]) * mesh->totvert, __func__));
     int i;
-    BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
-      const int keyi = BM_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset);
+    MESH_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+      const int keyi = MESH_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset);
       /* Check the vertex existed when entering edit-mode (otherwise don't apply an offset). */
       if (keyi != ORIGINDEX_NONE) {
-        float *co_orig = (float *)BM_ELEM_CD_GET_VOID_P(eve, cd_shape_offset);
+        float *co_orig = (float *)MESH_ELEM_CD_GET_VOID_P(eve, cd_shape_offset);
         /* Could use 'eve->co' or the destination #MVert.co, they're the same at this point. */
         sub_v3_v3v3(ofs[i], eve->co, co_orig);
       }
@@ -748,7 +748,7 @@ static void mesh_to_mesh_shape(Mesh *mesh,
         /* If there are new vertices in the mesh, we can't propagate the offset
          * because it will only work for the existing vertices and not the new
          * ones, creating a mess when doing e.g. subdivide + translate. */
-        MEM_freeN(ofs);
+        mem_freen(ofs);
         ofs = nullptr;
         break;
       }
@@ -766,7 +766,7 @@ static void mesh_to_mesh_shape(Mesh *mesh,
   int cd_shape_offset_refkey = -1;
   if (active_shapekey_to_mvert == false) {
     if ((actkey != key->refkey) && (cd_shape_keyindex_offset != -1)) {
-      const int refkey_uuid = bm_to_mesh_shape_layer_index_from_kb(bm, key->refkey);
+      const int refkey_uuid = mesh_to_mesh_shape_layer_index_from_kb(bm, key->refkey);
       if (refkey_uuid != -1) {
         cd_shape_offset_refkey = CustomData_get_n_offset(&bm->vdata, CD_SHAPEKEY, refkey_uuid);
         if (cd_shape_offset_refkey != -1) {
@@ -788,19 +788,19 @@ static void mesh_to_mesh_shape(Mesh *mesh,
     /* Common case, the layer data is available, use it where possible. */
     if (cd_shape_offset != -1) {
       const bool apply_offset = (ofs != nullptr) && (currkey != actkey) &&
-                                (bm->shapenr - 1 == currkey->relative);
+                                (mesh->shapenr - 1 == currkey->relative);
 
-      if (currkey->data && (currkey->totelem == bm->totvert)) {
+      if (currkey->data && (currkey->totelem == mesh->totvert)) {
         /* Use memory in-place. */
       }
       else {
-        currkey->data = MEM_reallocN(currkey->data, key->elemsize * bm->totvert);
-        currkey->totelem = bm->totvert;
+        currkey->data = mem_reallocn(currkey->data, key->elemsize * bm->totvert);
+        currkey->totelem = mesh->totvert;
       }
       currkey_data = (float(*)[3])currkey->data;
 
       int i;
-      BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
+      MESH_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
         float *co_orig = (float *)BM_ELEM_CD_GET_VOID_P(eve, cd_shape_offset);
 
         if (currkey == actkey) {
@@ -923,10 +923,10 @@ void BM_mesh_bm_to_me(Main *bmain, BMesh *bm, Mesh *me, const struct BMeshToMesh
   CustomData_free(&me->pdata, me->totpoly);
 
   /* Add new custom data. */
-  me->totvert = bm->totvert;
-  me->totedge = bm->totedge;
-  me->totloop = bm->totloop;
-  me->totpoly = bm->totface;
+  me->totvert = mesh->totvert;
+  me->totedge = mesh->totedge;
+  me->totloop = mesh->totloop;
+  me->totpoly = mesh->totface;
   /* Will be overwritten with a valid value if 'dotess' is set, otherwise we
    * end up with 'me->totface' and me->mface == nullptr which can crash T28625. */
   me->totface = 0;
@@ -935,19 +935,19 @@ void BM_mesh_bm_to_me(Main *bmain, BMesh *bm, Mesh *me, const struct BMeshToMesh
   {
     CustomData_MeshMasks mask = CD_MASK_MESH;
     CustomData_MeshMasks_update(&mask, &params->cd_mask_extra);
-    CustomData_copy(&bm->vdata, &me->vdata, mask.vmask, CD_CALLOC, me->totvert);
-    CustomData_copy(&bm->edata, &me->edata, mask.emask, CD_CALLOC, me->totedge);
-    CustomData_copy(&bm->ldata, &me->ldata, mask.lmask, CD_CALLOC, me->totloop);
-    CustomData_copy(&bm->pdata, &me->pdata, mask.pmask, CD_CALLOC, me->totpoly);
+    CustomData_copy(&mesh->vdata, &me->vdata, mask.vmask, CD_CALLOC, me->totvert);
+    CustomData_copy(&mesh->edata, &me->edata, mask.emask, CD_CALLOC, me->totedge);
+    CustomData_copy(&mesh->ldata, &me->ldata, mask.lmask, CD_CALLOC, me->totloop);
+    CustomData_copy(&mesh->pdata, &me->pdata, mask.pmask, CD_CALLOC, me->totpoly);
   }
 
-  MVert *mvert = bm->totvert ? (MVert *)MEM_callocN(sizeof(MVert) * bm->totvert, "bm_to_me.vert") :
+  MVert *mvert = mesh->totvert ? (MVert *)MEM_callocN(sizeof(MVert) * bm->totvert, "bm_to_me.vert") :
                                nullptr;
-  MEdge *medge = bm->totedge ? (MEdge *)MEM_callocN(sizeof(MEdge) * bm->totedge, "bm_to_me.edge") :
+  MEdge *medge = mesh->totedge ? (MEdge *)MEM_callocN(sizeof(MEdge) * bm->totedge, "bm_to_me.edge") :
                                nullptr;
-  MLoop *mloop = bm->totloop ? (MLoop *)MEM_callocN(sizeof(MLoop) * bm->totloop, "bm_to_me.loop") :
+  MLoop *mloop = mesh->totloop ? (MLoop *)MEM_callocN(sizeof(MLoop) * bm->totloop, "bm_to_me.loop") :
                                nullptr;
-  MPoly *mpoly = bm->totface ? (MPoly *)MEM_callocN(sizeof(MPoly) * bm->totface, "bm_to_me.poly") :
+  MPoly *mpoly = mesh->totface ? (MPoly *)MEM_callocN(sizeof(MPoly) * bm->totface, "bm_to_me.poly") :
                                nullptr;
 
   CustomData_add_layer(&me->vdata, CD_MVERT, CD_ASSIGN, mvert, me->totvert);
@@ -956,27 +956,27 @@ void BM_mesh_bm_to_me(Main *bmain, BMesh *bm, Mesh *me, const struct BMeshToMesh
   CustomData_add_layer(&me->pdata, CD_MPOLY, CD_ASSIGN, mpoly, me->totpoly);
 
   /* Clear normals on the mesh completely, since the original vertex and polygon count might be
-   * different than the BMesh's. */
-  BKE_mesh_clear_derived_normals(me);
+   * different than the Mesh's. */
+  dune_mesh_clear_derived_normals(me);
 
-  me->cd_flag = BM_mesh_cd_flag_from_bmesh(bm);
+  me->cd_flag = mesh_cd_flag_from_mesh(mesh);
 
   /* This is called again, 'dotess' arg is used there. */
-  BKE_mesh_update_customdata_pointers(me, false);
+  dune_mesh_update_customdata_pointers(me, false);
 
   i = 0;
-  BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+  MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
     copy_v3_v3(mvert->co, v->co);
 
-    mvert->flag = BM_vert_flag_to_mflag(v);
+    mvert->flag = mesh_vert_flag_to_mflag(v);
 
-    BM_elem_index_set(v, i); /* set_inline */
+    mesh_elem_index_set(v, i); /* set_inline */
 
     /* Copy over custom-data. */
-    CustomData_from_bmesh_block(&bm->vdata, &me->vdata, v->head.data, i);
+    CustomData_from_bmesh_block(&mesh->vdata, &me->vdata, v->head.data, i);
 
     if (cd_vert_bweight_offset != -1) {
-      mvert->bweight = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(v, cd_vert_bweight_offset);
+      mvert->bweight = MESH_ELEM_CD_GET_FLOAT_AS_UCHAR(v, cd_vert_bweight_offset);
     }
 
     i++;
