@@ -51,14 +51,14 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_edge_is_wire(const BM
 #if 1 /* fast path for checking manifold */
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_edge_is_manifold(const BMEdge *e)
 {
-  const BMLoop *l = e->l;
+  const MeshLoop *l = e->l;
   return (l && (l->radial_next != l) &&        /* not 0 or 1 face users */
           (l->radial_next->radial_next == l)); /* 2 face users */
 }
 #else
-BLI_INLINE int BM_edge_is_manifold(BMEdge *e)
+LIB_INLINE int mesh_edge_is_manifold(BMEdge *e)
 {
-  return (BM_edge_face_count(e) == 2);
+  return (mesh_edge_face_count(e) == 2);
 }
 #endif
 
@@ -68,8 +68,8 @@ BLI_INLINE int BM_edge_is_manifold(BMEdge *e)
  */
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_edge_is_contiguous(const BMEdge *e)
 {
-  const BMLoop *l = e->l;
-  const BMLoop *l_other;
+  const MeshLoop *l = e->l;
+  const MeshLoop *l_other;
   return (l && ((l_other = l->radial_next) != l) && /* not 0 or 1 face users */
           (l_other->radial_next == l) &&            /* 2 face users */
           (l_other->v != l->v));
@@ -83,21 +83,19 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_edge_is_contiguous(co
 #if 1 /* fast path for checking boundary */
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) BLI_INLINE bool BM_edge_is_boundary(const BMEdge *e)
 {
-  const BMLoop *l = e->l;
+  const MeshLoop *l = e->l;
   return (l && (l->radial_next == l));
 }
 #else
-BLI_INLINE int mesh_edge_is_boundary(MeshEdge *e)
+LIB_INLINE int mesh_edge_is_boundary(MeshEdge *e)
 {
   return (mesh_edge_face_count(e) == 1);
 }
 #endif
 
-/**
- * Tests whether one loop is next to another within the same face.
- */
+/** Tests whether one loop is next to another within the same face. */
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2) LIB_INLINE
-    bool BM_loop_is_adjacent(const MeshLoop *l_a, const MeshLoop *l_b)
+    bool mesh_loop_is_adjacent(const MeshLoop *l_a, const MeshLoop *l_b)
 {
   LIB_assert(l_a->f == l_b->f);
   LIB_assert(l_a != l_b);
@@ -109,9 +107,7 @@ ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE bool mesh_loop_is_manifold(co
   return ((l != l->radial_next) && (l == l->radial_next->radial_next));
 }
 
-/**
- * Check if we have a single wire edge user.
- */
+/** Check if we have a single wire edge user. */
 ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1) LIB_INLINE bool mesh_vert_is_wire_endpoint(const MeshVert *v)
 {
   const MeshEdge *e = v->e;
