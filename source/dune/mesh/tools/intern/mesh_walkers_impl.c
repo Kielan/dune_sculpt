@@ -470,61 +470,59 @@ static void *bmw_LoopShellWireWalker_step(BMWalker *walker)
   return e;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name FaceShell Walker
+/** FaceShell Walker
  *
  * Starts at an edge on the mesh and walks over the 'shell' it belongs
  * to via visiting connected faces.
- * \{ */
+ **/
 
-static void bmw_FaceShellWalker_visitEdge(BMWalker *walker, BMEdge *e)
+static void mesh_walk_FaceShellWalker_visitEdge(MeshWalker *walker, MeshEdge *e)
 {
-  BMwShellWalker *shellWalk = NULL;
+  MeshWalkerShell *shellWalk = NULL;
 
-  if (BLI_gset_haskey(walker->visit_set, e)) {
+  if (lib_gset_haskey(walker->visit_set, e)) {
     return;
   }
 
-  if (!bmw_mask_check_edge(walker, e)) {
+  if (!mesh_walker_mask_check_edge(walker, e)) {
     return;
   }
 
-  shellWalk = BMW_state_add(walker);
+  shellWalk = mesh_walker_state_add(walker);
   shellWalk->curedge = e;
-  BLI_gset_insert(walker->visit_set, e);
+  lib_gset_insert(walker->visit_set, e);
 }
 
-static void bmw_FaceShellWalker_begin(BMWalker *walker, void *data)
+static void mesh_walker_FaceShellWalker_begin(MeshWalker *walker, void *data)
 {
-  BMEdge *e = data;
-  bmw_FaceShellWalker_visitEdge(walker, e);
+  MeshEdge *e = data;
+  mesh_walker_FaceShellWalker_visitEdge(walker, e);
 }
 
-static void *bmw_FaceShellWalker_yield(BMWalker *walker)
+static void *mesh_walker_FaceShellWalker_yield(MeshWalker *walker)
 {
-  BMwShellWalker *shellWalk = BMW_current_state(walker);
+  MeshWalkerShellWalker *shellWalk = mesh_walker_current_state(walker);
   return shellWalk->curedge;
 }
 
-static void *bmw_FaceShellWalker_step(BMWalker *walker)
+static void *mesh_walker_FaceShellWalker_step(MeshWalker *walker)
 {
-  BMwShellWalker *swalk, owalk;
-  BMEdge *e, *e2;
-  BMIter iter;
+  MeshWalkerShellWalker *swalk, owalk;
+  MeshEdge *e, *e2;
+  MeshIter iter;
 
-  BMW_state_remove_r(walker, &owalk);
+  mesh_walker_state_remove_r(walker, &owalk);
   swalk = &owalk;
 
   e = swalk->curedge;
 
   if (e->l) {
-    BMLoop *l_iter, *l_first;
+    MeshLoop *l_iter, *l_first;
 
     l_iter = l_first = e->l;
     do {
-      BM_ITER_ELEM (e2, &iter, l_iter->f, BM_EDGES_OF_FACE) {
+      MESH_ELEM_ITER (e2, &iter, l_iter->f, BM_EDGES_OF_FACE) {
         if (e2 != e) {
           bmw_FaceShellWalker_visitEdge(walker, e2);
         }
@@ -535,83 +533,79 @@ static void *bmw_FaceShellWalker_step(BMWalker *walker)
   return e;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Connected Vertex Walker
+/** Connected Vertex Walker
  *
  * Similar to shell walker, but visits vertices instead of edges.
  *
  * Walk from a vertex to all connected vertices.
- * \{ */
+ **/
 
-static void bmw_ConnectedVertexWalker_visitVertex(BMWalker *walker, BMVert *v)
+static void mesh_walker_ConnectedVertexWalker_visitVertex(MeshWalker *walker, BMVert *v)
 {
-  BMwConnectedVertexWalker *vwalk;
+  MeshWalkerConnectedVertexWalker *vwalk;
 
-  if (BLI_gset_haskey(walker->visit_set, v)) {
+  if (lib_gset_haskey(walker->visit_set, v)) {
     /* Already visited. */
     return;
   }
 
-  if (!bmw_mask_check_vert(walker, v)) {
+  if (!mesh_mask_check_vert(walker, v)) {
     /* Not flagged for walk. */
     return;
   }
 
-  vwalk = BMW_state_add(walker);
+  vwalk = mesh_walker_state_add(walker);
   vwalk->curvert = v;
-  BLI_gset_insert(walker->visit_set, v);
+  lib_gset_insert(walker->visit_set, v);
 }
 
-static void bmw_ConnectedVertexWalker_begin(BMWalker *walker, void *data)
+static void mesh_ConnectedVertexWalker_begin(MeshWalker *walker, void *data)
 {
-  BMVert *v = data;
-  bmw_ConnectedVertexWalker_visitVertex(walker, v);
+  MeshVert *v = data;
+  mesh_walker_ConnectedVertexWalker_visitVertex(walker, v);
 }
 
-static void *bmw_ConnectedVertexWalker_yield(BMWalker *walker)
+static void *mesh_walker_ConnectedVertexWalker_yield(BMWalker *walker)
 {
-  BMwConnectedVertexWalker *vwalk = BMW_current_state(walker);
+  MeshWalkerConnectedVertexWalker *vwalk = BMW_current_state(walker);
   return vwalk->curvert;
 }
 
-static void *bmw_ConnectedVertexWalker_step(BMWalker *walker)
+static void *mesh_walker_ConnectedVertexWalker_step(MeshWalker *walker)
 {
-  BMwConnectedVertexWalker *vwalk, owalk;
-  BMVert *v, *v2;
-  BMEdge *e;
-  BMIter iter;
+  MeshWalkerConnectedVertex *vwalk, owalk;
+  MeshVert *v, *v2;
+  MeshEdge *e;
+  MeshIter iter;
 
-  BMW_state_remove_r(walker, &owalk);
+  mesh_walker_state_remove_r(walker, &owalk);
   vwalk = &owalk;
 
   v = vwalk->curvert;
 
-  BM_ITER_ELEM (e, &iter, v, BM_EDGES_OF_VERT) {
-    v2 = BM_edge_other_vert(e, v);
-    if (!BLI_gset_haskey(walker->visit_set, v2)) {
-      bmw_ConnectedVertexWalker_visitVertex(walker, v2);
+  MESH_ELEM_ITER (e, &iter, v, MESH_EDGES_OF_VERT) {
+    v2 = mesh_edge_other_vert(e, v);
+    if (!lib_gset_haskey(walker->visit_set, v2)) {
+      mesh_walker_ConnectedVertexWalker_visitVertex(walker, v2);
     }
   }
 
   return v;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Island Boundary Walker
+/** Island Boundary Walker
  *
  * Starts at a edge on the mesh and walks over the boundary of an island it belongs to.
  *
- * \note that this doesn't work on non-manifold geometry.
+ * that this doesn't work on non-manifold geometry.
  * it might be better to rewrite this to extract
  * boundary info from the island walker, rather than directly walking
  * over the boundary.  raises an error if it encounters non-manifold geometry.
  *
- * \todo Add restriction flag/callback for wire edges.
- * \{ */
+ * todo Add restriction flag/callback for wire edges.
+ **/
 
 static void bmw_IslandboundWalker_begin(BMWalker *walker, void *data)
 {
