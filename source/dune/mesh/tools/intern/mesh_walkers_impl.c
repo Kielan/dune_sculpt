@@ -612,30 +612,30 @@ static void bmw_IslandboundWalker_begin(BMWalker *walker, void *data)
   BMLoop *l = data;
   BMwIslandboundWalker *iwalk = NULL;
 
-  iwalk = BMW_state_add(walker);
+  iwalk = mesh_walker_state_add(walker);
 
   iwalk->base = iwalk->curloop = l;
   iwalk->lastv = l->v;
 
-  BLI_gset_insert(walker->visit_set, data);
+  lib_gset_insert(walker->visit_set, data);
 }
 
-static void *bmw_IslandboundWalker_yield(BMWalker *walker)
+static void *mesh_walk_IslandboundWalker_yield(MeshWalker *walker)
 {
-  BMwIslandboundWalker *iwalk = BMW_current_state(walker);
+  MeshWalkerIslandbound *iwalk = mesh_walker_current_state(walker);
 
   return iwalk->curloop;
 }
 
-static void *bmw_IslandboundWalker_step(BMWalker *walker)
+static void *mesh_walker_IslandboundWalker_step(BMWalker *walker)
 {
-  BMwIslandboundWalker *iwalk, owalk;
-  BMVert *v;
-  BMEdge *e;
-  BMFace *f;
-  BMLoop *l;
+  MeshWalkerIslandbound *iwalk, owalk;
+  MeshVert *v;
+  MeshEdge *e;
+  MeshFace *f;
+  MeshLoop *l;
 
-  memcpy(&owalk, BMW_current_state(walker), sizeof(owalk));
+  memcpy(&owalk, mesh_walker_current_state(walker), sizeof(owalk));
   /* Normally we'd remove here, but delay until after error checking. */
   iwalk = &owalk;
 
