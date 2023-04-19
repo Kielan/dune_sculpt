@@ -145,8 +145,8 @@ static void mesh_calc_tessellation_for_face(MeshLoop *(*looptris)[3],
 }
 
 static void mesh_calc_tessellation_for_face_with_normal(MeshLoop *(*looptris)[3],
-                                                         MeshFace *efa,
-                                                         MemArena **pf_arena_p)
+                                                        MeshFace *efa,
+                                                        MemArena **pf_arena_p)
 {
   mesh_calc_tessellation_for_face_impl(looptris, efa, pf_arena_p, true);
 }
@@ -157,7 +157,7 @@ static void mesh_calc_tessellation_for_face_with_normal(MeshLoop *(*looptris)[3]
  *
  * looptris Must be pre-allocated to at least the size of given by: poly_to_tri_count
  */
-static void mesh_calc_tessellation__single_threaded(Mesh *bm,
+static void mesh_calc_tessellation__single_threaded(Mesh *mesh,
                                                     MeshLoop *(*looptris)[3],
                                                     const char face_normals)
 {
@@ -180,7 +180,7 @@ static void mesh_calc_tessellation__single_threaded(Mesh *bm,
     }
   }
   else {
-    MESH_ITER (efa, &iter, bm, BM_FACES_OF_MESH) {
+    MESH_ITER (efa, &iter, mesh, BM_FACES_OF_MESH) {
       lib_assert(efa->len >= 3);
       mesh_calc_tessellation_for_face(looptris + i, efa, &pf_arena);
       i += efa->len - 2;
@@ -245,11 +245,11 @@ static void mesh_calc_tessellation__multi_threaded(Mesh *mesh,
   settings.userdata_chunk_size = sizeof(tls_dummy);
   settings.func_free = mesh_calc_tessellation_for_face_free_fn;
   mesh_iter_parallel(mesh,
-                   MESH_FACES_OF_MESH,
-                   face_normals ? mesh_calc_tessellation_for_face_with_normals_fn :
+                     MESH_FACES_OF_MESH,
+                     face_normals ? mesh_calc_tessellation_for_face_with_normals_fn :
                                   mesh_calc_tessellation_for_face_fn,
-                   looptris,
-                   &settings);
+                     looptris,
+                     &settings);
 }
 
 void mesh_calc_tessellation_ex(Mesh *mesh,
@@ -409,10 +409,10 @@ void mesh_calc_tessellation_with_partial(Mesh *mesh,
 /* -------------------------------------------------------------------- */
 /** Beauty Mesh Tessellation. Avoid degenerate triangles. **/
 
-static int mesh_calc_tessellation_for_face_beauty(BMLoop *(*looptris)[3],
-                                                   BMFace *efa,
-                                                   MemArena **pf_arena_p,
-                                                   Heap **pf_heap_p)
+static int mesh_calc_tessellation_for_face_beauty(MeshLoop *(*looptris)[3],
+                                                  MeshFace *efa,
+                                                  MemArena **pf_arena_p,
+                                                  Heap **pf_heap_p)
 {
   switch (efa->len) {
     case 3: {
