@@ -363,7 +363,7 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
 
     /* This is necessary for selection counts to work properly. */
     if (mvert[i].flag & SELECT) {
-      MESH_vert_select_set(bm, v, true);
+      mesh_vert_select_set(mesh, v, true);
     }
 
     if (vert_normals) {
@@ -371,7 +371,7 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
     }
 
     /* Copy Custom Data */
-    CustomData_to_bmesh_block(&me->vdata, &mesh->vdata, i, &v->head.data, true);
+    CustomData_to_mesh_block(&me->vdata, &mesh->vdata, i, &v->head.data, true);
 
     if (cd_vert_bweight_offset != -1) {
       MESH_ELEM_CD_SET_FLOAT(v, cd_vert_bweight_offset, (float)mvert[i].bweight / 255.0f);
@@ -394,7 +394,7 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
     mesh->elem_index_dirty &= ~MESH_VERT; /* Added in order, clear dirty flag. */
   }
 
-  Span<MEdge> medge{me->medge, me->totedge};
+  Span<MeshEdge> medge{me->medge, me->totedge};
   Array<MeshEdge *> etable(me->totedge);
   for (const int i : medge.index_range()) {
     MesgEdge *e = etable[i] = mesh_edge_create(
@@ -537,10 +537,10 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
   /* Caller needs to ensure this. */
   lib_assert(ototvert > 0);
 
-  vertMap = static_cast<BMVert **>(MEM_callocN(sizeof(*vertMap) * ototvert, "vertMap"));
+  vertMap = static_cast<MeshVert **>(mesh_callocn(sizeof(*vertMap) * ototvert, "vertMap"));
   if (cd_shape_keyindex_offset != -1) {
-    BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
-      const int keyi = BM_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset);
+    MESH_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+      const int keyi = MESH_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset);
       if ((keyi != ORIGINDEX_NONE) && (keyi < ototvert) &&
           /* Not fool-proof, but chances are if we have many verts with the same index,
            * we will want to use the first one,
@@ -551,7 +551,7 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
     }
   }
   else {
-    BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
+    MESH_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
       if (i < ototvert) {
         vertMap[i] = eve;
       }
@@ -565,7 +565,7 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Edit-Mesh to Shape Key Conversion
+/** Edit-Mesh to Shape Key Conversion
  *
  * There are some details relating to using data from shape keys that need to be
  * considered carefully for shape key synchronization logic.
@@ -641,22 +641,22 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
  *   a shape-key layer is missing, its coordinates will be initialized from the edit-mesh
  *   vertex locations instead of attempting to remap the shape-keys coordinates.
  *
- * \note These cases are considered abnormal and shouldn't occur in typical usage.
+ * These cases are considered abnormal and shouldn't occur in typical usage.
  * A warning is logged in this case to help troubleshooting bugs with shape-keys.
- * \{ */
+ **/
 
 /**
  * Returns custom-data shape-key index from a key-block or -1
- * \note could split this out into a more generic function.
+ * could split this out into a more generic function.
  */
-static int bm_to_mesh_shape_layer_index_from_kb(BMesh *bm, KeyBlock *currkey)
+static int mesh_to_mesh_shape_layer_index_from_kb(Mesh *mesh, KeyBlock *currkey)
 {
   int i;
   int j = 0;
 
   for (i = 0; i < bm->vdata.totlayer; i++) {
-    if (bm->vdata.layers[i].type == CD_SHAPEKEY) {
-      if (currkey->uid == bm->vdata.layers[i].uid) {
+    if (mesh->vdata.layers[i].type == CD_SHAPEKEY) {
+      if (currkey->uid == mesh->vdata.layers[i].uid) {
         return j;
       }
       j++;
@@ -668,16 +668,16 @@ static int bm_to_mesh_shape_layer_index_from_kb(BMesh *bm, KeyBlock *currkey)
 /**
  * Update `key` with shape key data stored in `bm`.
  *
- * \param bm: The source BMesh.
- * \param key: The destination key.
- * \param mvert: The destination vertex array (in some situations it's coordinates are updated).
- * \param active_shapekey_to_mvert: When editing a non-basis shape key, the coordinates for the
+ * param mesh: The source Mesh.
+ * param key: The destination key.
+ * param mvert: The destination vertex array (in some situations it's coordinates are updated).
+ * param active_shapekey_to_mvert: When editing a non-basis shape key, the coordinates for the
  * basis are typically copied into the `mvert` array since it makes sense for the meshes
  * vertex coordinates to match the "Basis" key.
- * When enabled, skip this step and copy #BMVert.co directly to #MVert.co,
+ * When enabled, skip this step and copy MeshVert.co directly to #MVert.co,
  * See #BMeshToMeshParams.active_shapekey_to_mvert doc-string.
  */
-static void bm_to_mesh_shape(BMesh *bm,
+static void mesh_to_mesh_shape(Mesh *mesh,
                              Key *key,
                              MVert *mvert,
                              const bool active_shapekey_to_mvert)
