@@ -79,9 +79,9 @@ static bool mesh_walker_edge_is_wire(const MeshWalker *walker, const MeshEdge *e
  * todo Add restriction flag/callback for wire edges.
  **/
 
-static void meeh_walker_VertShell_visitEdge(MeshWalker *walker, MeshEdge *e)
+static void mesh_walk_VertShell_visitEdge(MeshWalker *walker, MeshEdge *e)
 {
-  MeshWalkerShell *walkShell = NULL;
+  MeshWalkShell *walkShell = NULL;
 
   if (lib_gset_haskey(walker->visit_set, e)) {
     return;
@@ -91,12 +91,12 @@ static void meeh_walker_VertShell_visitEdge(MeshWalker *walker, MeshEdge *e)
     return;
   }
 
-  shellWalk = mesh_walker_state_add(walker);
+  shellWalk = mesh_walk_state_add(walker);
   shellWalk->curedge = e;
   lib_gset_insert(walker->visit_set, e);
 }
 
-static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
+static void mesh_walk_VertShellWalk_begin(MeshWalk *walk, void *data)
 {
   MeshIter eiter;
   MeshHeader *h = data;
@@ -112,7 +112,7 @@ static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
       /* Starting the walk at a vert, add all the edges to the work-list. */
       v = (MeshVert *)h;
       MESH_ELEM_ITER (e, &eiter, v, MESH_EDGES_OF_VERT) {
-        mesh_walker_VertShellWalker_visitEdge(walker, e);
+        mesh_walk_VertShellWalk_visitEdge(walk, e);
       }
       break;
     }
@@ -120,7 +120,7 @@ static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
     case MESH_EDGE: {
       /* Starting the walk at an edge, add the single edge to the work-list. */
       e = (MeshEdge *)h;
-      mesh_walker_VertShell_visitEdge(walker, e);
+      mesh_walk_VertShell_visitEdge(walk, e);
       break;
     }
     default:
@@ -128,9 +128,9 @@ static void mesh_walker_VertShellWalker_begin(MeshWalker *walker, void *data)
   }
 }
 
-static void *mesh_walker_VertShell_yield(MeshWalker *walker)
+static void *mesh_walk_VertShell_yield(MeshWalk *walk)
 {
-  MeshWalkerShell *shellWalk = mesh_walker_current_state(walker);
+  MeshWalkShell *shellWalk = mesh_walk_current_state(walk);
   return shellWalk->curedge;
 }
 
