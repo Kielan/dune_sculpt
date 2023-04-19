@@ -199,15 +199,13 @@ bool mesh_vert_pair_share_face_check_cb(MeshVert *v_a,
                                        void *user_data) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1, 2, 3);
 MeshFace *mesh_vert_pair_shared_face_cb(MeshVert *v_a,
-                                    MeshVert *v_b,
-                                    bool allow_adjacent,
-                                    bool (*callback)(MeshFace *, MeshLoop *, BMLoop *, void *userdata),
-                                    void *user_data,
-                                    MeshLoop **r_l_a,
-                                    MeshLoop **r_l_b) ATTR_NONNULL(1, 2, 4, 6, 7);
-/**
- * Given 2 verts, find the smallest face they share and give back both loops.
- */
+                                        MeshVert *v_b,
+                                        bool allow_adjacent,
+                                        bool (*callback)(MeshFace *, MeshLoop *, BMLoop *, void *userdata),
+                                        void *user_data,
+                                        MeshLoop **r_l_a,
+                                        MeshLoop **r_l_b) ATTR_NONNULL(1, 2, 4, 6, 7);
+/** Given 2 verts, find the smallest face they share and give back both loops. **/
 MeshFace *mesh_vert_pair_share_face_by_len(
     MeshVert *v_a, MeshVert *v_b, MeshLoop **r_l_a, MeshLoop **r_l_b, bool allow_adjacent) ATTR_NONNULL();
 /**
@@ -287,7 +285,7 @@ LIB_INLINE bool mesh_edge_is_wire(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATT
  * 3: Is part of an edge with more than 2 faces.
  * 4: Is part of a wire edge.
  */
-bool mesh_vert_is_manifold(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_manifold(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * A version of mesh_vert_is_manifold
  * which only checks if we're connected to multiple isolated regions.
@@ -301,7 +299,7 @@ LIB_INLINE bool mesh_edge_is_contiguous(const BMEdge *e) ATTR_WARN_UNUSED_RESULT
  * Check if the edge is convex or concave
  * (depends on face winding)
  */
-bool BM_edge_is_convex(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_edge_is_convex(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * \return true when loop customdata is contiguous.
  */
