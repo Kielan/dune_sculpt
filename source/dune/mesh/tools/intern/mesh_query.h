@@ -44,7 +44,7 @@ bool mesh_edge_face_pair(MeshEdge *e, MeshFace **r_fa, MeshFace **r_fb) ATTR_NON
  * return true when only 2 faces are found.
  */
 bool mesh_edge_loop_pair(MeshEdge *e, MeshLoop **r_la, MeshLoop **r_lb) ATTR_NONNULL();
-LIB_INLINE BMVert *mesh_edge_other_vert(MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
+LIB_INLINE MeshVert *mesh_edge_other_vert(MeshEdge *e, const MeshVert *v) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Given a edge and a loop (assumes the edge is manifold). returns
@@ -442,32 +442,32 @@ float mesh_edge_calc_face_angle_signed(const BMEdge *e) ATTR_WARN_UNUSED_RESULT 
  * Calculate the tangent at this loop corner or fallback to the face normal on straight lines.
  * This vector always points inward into the face.
  *
- * \brief BM_edge_calc_face_tangent
- * \param e:
- * \param e_loop: The loop to calculate the tangent at,
+ * brief mesh_edge_calc_face_tangent
+ * param e:
+ * param e_loop: The loop to calculate the tangent at,
  * used to get the face and winding direction.
- * \param r_tangent: The loop corner tangent to set
+ * param r_tangent: The loop corner tangent to set
  */
-void BM_edge_calc_face_tangent(const BMEdge *e, const BMLoop *e_loop, float r_tangent[3])
+void mesh_edge_calc_face_tangent(const MeshEdge *e, const MeshLoop *e_loop, float r_tangent[3])
     ATTR_NONNULL();
-float BM_vert_calc_edge_angle(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+float mesh_vert_calc_edge_angle(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief BMESH VERT/EDGE ANGLE
+ * MESH VERT/EDGE ANGLE
  *
  * Calculates the angle a verts 2 edges.
  *
- * \returns the angle in radians
+ * returns the angle in radians
  */
-float BM_vert_calc_edge_angle_ex(const BMVert *v, float fallback) ATTR_WARN_UNUSED_RESULT
+float mesh_vert_calc_edge_angle_ex(const MeshVert *v, float fallback) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
- * \note this isn't optimal to run on an array of verts,
+ * this isn't optimal to run on an array of verts,
  * see 'solidify_add_thickness' for a function which runs on an array.
  */
-float BM_vert_calc_shell_factor(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/* alternate version of #BM_vert_calc_shell_factor which only
+float mesh_vert_calc_shell_factor(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/* alternate version of mesh_vert_calc_shell_factor which only
  * uses 'hflag' faces, but falls back to all if none found. */
-float BM_vert_calc_shell_factor_ex(const BMVert *v,
+float mesh_vert_calc_shell_factor_ex(const MeshVert *v,
                                    const float no[3],
                                    char hflag) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
