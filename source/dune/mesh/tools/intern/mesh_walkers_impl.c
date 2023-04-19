@@ -333,13 +333,13 @@ static void *mesh_walker_LoopShell_stepWalker *walker)
  * - verts and edges are stored in `visit_set_alt`.
  **/
 
-static void mesh_walker_LoopShell_visitEdgeWire(MeshWalker *walker, BMEdge *e)
+static void mesh_walk_LoopShell_visitEdgeWire(MeshWalk *walk, MeshEdge *e)
 {
-  MeshWalkerLoopShellWireWalker *shellWalk = NULL;
+  MeshWalkLoopShellWire *shellWalk = NULL;
 
-  lib_assert(bmw_edge_is_wire(walker, e));
+  lib_assert(mesh_edge_is_wire(walk, e));
 
-  if (lib_gset_haskey(walker->visit_set_alt, e)) {
+  if (lib_gset_haskey(walk->visit_set_alt, e)) {
     return;
   }
 
@@ -347,12 +347,12 @@ static void mesh_walker_LoopShell_visitEdgeWire(MeshWalker *walker, BMEdge *e)
     return;
   }
 
-  shellWalk = mesh_walker_state_add(walker);
+  shellWalk = mesh_walk_state_add(walker);
   shellWalk->curelem = (MeshElem *)e;
-  lib_gset_insert(walker->visit_set_alt, e);
+  lib_gset_insert(walk->visit_set_alt, e);
 }
 
-static void mesh_walker_LoopShellWireWalker_visitVert(MeshWalker *walker, MeshVert *v, const MeshEdge *e_from)
+static void mesh_walk_LoopShellWire_visitVert(MeshWalk *walk, MeshVert *v, const MeshEdge *e_from)
 {
   MeshEdge *e;
 
