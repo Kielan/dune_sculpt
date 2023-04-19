@@ -437,17 +437,17 @@ static void mesh_walk_LoopShellWireWalker_begin(MeshWalker *walker, void *data)
   }
 }
 
-static void *mesh_walker_LoopShellWireWalker_yield(BMWalker *walker)
+static void *mesh_walker_LoopShellWireWalker_yield(MeshWalker *walker)
 {
-  MeshWalkerLoopShellWireWalker *shellWalk = BMW_current_state(walker);
+  MeshWalkerLoopShellWireWalker *shellWalk = mesh_walker_current_state(walker);
   return shellWalk->curelem;
 }
 
-static void *bmw_LoopShellWireWalker_step(BMWalker *walker)
+static void *mesh_walker_LoopShellWireWalker_step(MeshWalker *walker)
 {
-  BMwLoopShellWireWalker *swalk, owalk;
+  MeshWalkersLoopShellWireWalker *swalk, owalk;
 
-  BMW_state_remove_r(walker, &owalk);
+  mesh_walker_state_remove_r(walker, &owalk);
   swalk = &owalk;
 
   if (swalk->curelem->head.htype == BM_LOOP) {
