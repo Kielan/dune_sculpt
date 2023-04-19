@@ -387,7 +387,7 @@ static void mesh_walker_LoopShellWireWalker_visitVert(MeshWalker *walker, MeshVe
   lib_gset_insert(walker->visit_set_alt, v);
 }
 
-static void mesh_walk_LoopShellWireWalker_begin(MeshWalker *walker, void *data)
+static void mesh_walk_LoopShellWire_begin(MeshWalker *walker, void *data)
 {
   MeshHeader *h = data;
 
@@ -395,27 +395,27 @@ static void mesh_walk_LoopShellWireWalker_begin(MeshWalker *walker, void *data)
     return;
   }
 
-  mesh_walk_LoopShellWalker_begin(walker, data);
+  mesh_walk_LoopShell_begin(walker, data);
 
   switch (h->htype) {
     case MESH_LOOP: {
       MeshLoop *l = (MeshLoop *)h;
-      mesh_walker_LoopShellWireWalker_visitVert(walker, l->v, NULL);
+      mesh_walker_LoopShellWire_visitVert(walker, l->v, NULL);
       break;
     }
 
     case MESH_VERT: {
       MeshVert *v = (MeshVert *)h;
       if (v->e) {
-        mesh_walker_LoopShellWireWalker_visitVert(walker, v, NULL);
+        mesh_walker_LoopShellWire_visitVert(walker, v, NULL);
       }
       break;
     }
     case MESH_EDGE: {
       MeshEdge *e = (MeshEdge *)h;
       if (mesh_walker_mask_check_edge(walker, e)) {
-        mesh_walker_LoopShellWireWalker_visitVert(walker, e->v1, NULL);
-        mesh_walker_LoopShellWireWalker_visitVert(walker, e->v2, NULL);
+        mesh_walker_LoopShellWire_visitVert(walker, e->v1, NULL);
+        mesh_walker_LoopShellWire_visitVert(walker, e->v2, NULL);
       }
       else if (e->l) {
         MeshLoop *l_iter, *l_first;
@@ -437,7 +437,7 @@ static void mesh_walk_LoopShellWireWalker_begin(MeshWalker *walker, void *data)
   }
 }
 
-static void *mesh_walker_LoopShellWireWalker_yield(MeshWalker *walker)
+static void *mesh_walker_LoopShellWire_yield(MeshWalker *walker)
 {
   MeshWalkerLoopShellWireWalker *shellWalk = mesh_walker_current_state(walker);
   return shellWalk->curelem;
@@ -450,22 +450,22 @@ static void *mesh_walker_LoopShellWireWalker_step(MeshWalker *walker)
   mesh_walker_state_remove_r(walker, &owalk);
   swalk = &owalk;
 
-  if (swalk->curelem->head.htype == BM_LOOP) {
-    BMLoop *l = (BMLoop *)swalk->curelem;
+  if (swalk->curelem->head.htype == MESH_LOOP) {
+    MeshLoop *l = (MeshLoop *)swalk->curelem;
 
-    bmw_LoopShellWalker_step_impl(walker, l);
+    mesh_walkers_LoopShell_step_impl(walker, l);
 
-    bmw_LoopShellWireWalker_visitVert(walker, l->v, NULL);
+    mesh_walkers_LoopShellWire_visitVert(walker, l->v, NULL);
 
     return l;
   }
 
-  BMEdge *e = (BMEdge *)swalk->curelem;
+  MeshEdge *e = (MeshEdge *)swalk->curelem;
 
-  BLI_assert(e->head.htype == BM_EDGE);
+  lib_assert(e->head.htype == MESH_EDGE);
 
-  bmw_LoopShellWireWalker_visitVert(walker, e->v1, e);
-  bmw_LoopShellWireWalker_visitVert(walker, e->v2, e);
+  mesh_walkers_LoopShellWireWalker_visitVert(walker, e->v1, e);
+  mesh_walkers_LoopShellWireWalker_visitVert(walker, e->v2, e);
 
   return e;
 }
