@@ -325,17 +325,17 @@ static void mesh_vert_attrs_copy(
   }
   CustomData_mesh_free_block_data_exclude_by_type(&bm_dst->vdata, v_dst->head.data, mask_exclude);
   CustomData_mesh_copy_data_exclude_by_type(
-      &mesh_src->vdata, &bm_dst->vdata, v_src->head.data, &v_dst->head.data, mask_exclude);
+      &mesh_src->vdata, &MeshVert_dst->vdata, v_src->head.data, &v_dst->head.data, mask_exclude);
 }
 
 static void mesh_edge_attrs_copy(
     Mesh *mesh_src, Mesh *mesh_dst, const MeshEdge *e_src, BMEdge *e_dst, CustomDataMask mask_exclude)
 {
-  if ((mesh_src == bm_dst) && (e_src == e_dst)) {
+  if ((mesh_src == mesh_dst) && (e_src == e_dst)) {
     lib_assert_msg(0, "MeshEdge: source and target match");
     return;
   }
-  CustomData_mesh_free_block_data_exclude_by_type(&bm_dst->edata, e_dst->head.data, mask_exclude);
+  CustomData_mesh_free_block_data_exclude_by_type(&mesh_dst->edata, e_dst->head.data, mask_exclude);
   CustomData_mesh_copy_data_exclude_by_type(
       &mesh_src->edata, &mesh_dst->edata, e_src->head.data, &e_dst->head.data, mask_exclude);
 }
@@ -474,7 +474,7 @@ static MeshFace *mesh_copy_new_face(
   /* use totface in case adding some faces fails */
   mesh_elem_index_set(f_new, (mesh_new->totface - 1)); /* set_inline */
 
-  mesh_elem_attrs_copy_ex(mesh_old, bm_new, f, f_new, 0xff, 0x0);
+  mesh_elem_attrs_copy_ex(mesh_old, mesh_new, f, f_new, 0xff, 0x0);
   f_new->head.hflag = f->head.hflag; /* low level! don't do this for normal api use */
 
   j = 0;
@@ -500,18 +500,18 @@ void mesh_copy_init_customdata_from_mesh_array(Mesh *mesh_dst,
   char cd_flag = 0;
 
   for (int i = 0; i < me_src_array_len; i++) {
-    const Mesh *me_src = me_src_array[i];
+    const Mesh *me_src = mesh_src_array[i];
     if (i == 0) {
-      CustomData_copy(&me_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
-      CustomData_copy(&me_src->edata, &mesh_dst->edata, CD_MASK_MESH.emask, CD_CALLOC, 0);
-      CustomData_copy(&me_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
-      CustomData_copy(&me_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
+      CustomData_copy(&mesh_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
+      CustomData_copy(&mesh_src->edata, &mesh_dst->edata, CD_MASK_MESH.emask, CD_CALLOC, 0);
+      CustomData_copy(&mesh_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
+      CustomData_copy(&mesh_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
     }
     else {
-      CustomData_merge(&me_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
-      CustomData_merge(&me_src->edata, &mesh_dst->edata, CD_MASK_MESH.emask, CD_CALLOC, 0);
-      CustomData_merge(&me_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
-      CustomData_merge(&me_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
+      CustomData_merge(&mesh_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
+      CustomData_merge(&mesh_src->edata, &mesh_dst->edata, CD_MASK_MESH.emask, CD_CALLOC, 0);
+      CustomData_merge(&mesh_src->ldata, &mesh_dst->ldata, CD_MASK_MESH.lmask, CD_CALLOC, 0);
+      CustomData_merge(&mesh_src->pdata, &mesh_dst->pdata, CD_MASK_MESH.pmask, CD_CALLOC, 0);
     }
 
     cd_flag |= me_src->cd_flag;
@@ -534,10 +534,10 @@ void mesh_copy_init_customdata_from_mesh(Mesh *mesh_dst,
   mesh_copy_init_customdata_from_mesh_array(mesh_dst, &me_src, 1, allocsize);
 }
 
-void mesh_copy_init_customdata(Mesh *mesh_dst, Mesh *mesh_src, const BMAllocTemplate *allocsize)
+void mesh_copy_init_customdata(Mesh *mesh_dst, Mesh *mesh_src, const MeshAllocTemplate *allocsize)
 {
   if (allocsize == NULL) {
-    allocsize = &bm_mesh_allocsize_default;
+    allocsize = &mesh_allocsize_default;
   }
 
   CustomData_copy(&mesh_src->vdata, &mesh_dst->vdata, CD_MASK_MESH.vmask, CD_CALLOC, 0);
@@ -594,9 +594,9 @@ Mesh *mesh_copy(Mesh *mesh_old)
   MeshEditSelection *ese;
   MeshIter iter;
   int i;
-  const MeshAllocTemplate allocsize = MESHALLOC_TEMPLATE_FROM_BM(bm_old);
+  const MeshAllocTemplate allocsize = MESHALLOC_TEMPLATE_FROM_MESH(mesh_old);
 
-  /* allocate a bmesh */
+  /* allocate a mesh */
   mesh_new = mesh_create(&allocsize,
                           &((struct MeshCreateParams){
                               .use_toolflags = mesh_old->use_toolflags,
@@ -623,7 +623,7 @@ Mesh *mesh_copy(Mesh *mesh_old)
   /* safety check */
   lib_assert(i == mesh_old->totvert);
 
-  MESH_ITER_INDEX (e, &iter, mesh_old, MESH_EDGES_OF_MESH, i) {
+  MESH_INDEX_ITER (e, &iter, mesh_old, MESH_EDGES_OF_MESH, i) {
     e_new = mesh_edge_create(mesh_new,
                            vtable[mesh_elem_index_get(e->v1)],
                            vtable[mesh_elem_index_get(e->v2)],
@@ -642,14 +642,14 @@ Mesh *mesh_copy(Mesh *mesh_old)
   /* safety check */
   lib_assert(i == mesh_old->totedge);
 
-  MESH_ITER_INDEX (f, &iter, mesh_old, MESH_FACES_OF_MESH, i) {
+  MESH_INDEX_ITER (f, &iter, mesh_old, MESH_FACES_OF_MESH, i) {
     mesh_elem_index_set(f, i); /* set_inline */
 
-    f_new = mesh_copy_new_face(bm_new, bm_old, vtable, etable, f);
+    f_new = mesh_copy_new_face(mesh_new, mesh_old, vtable, etable, f);
 
     ftable[i] = f_new;
 
-    if (f == bm_old->act_face) {
+    if (f == mesh_old->act_face) {
       mesh_new->act_face = f_new;
     }
   }
@@ -704,11 +704,11 @@ Mesh *mesh_copy(Mesh *mesh_old)
 
 char mesh_vert_flag_from_mflag(const char mflag)
 {
-  return (((mflag & SELECT) ? MESH_ELEM_SELECT : 0) | ((mflag & ME_HIDE) ? BM_ELEM_HIDDEN : 0));
+  return (((mflag & SELECT) ? MESH_ELEM_SELECT : 0) | ((mflag & MESH_HIDE) ? MESH_ELEM_HIDDEN : 0));
 }
 char mesh_edge_flag_from_mflag(const short mflag)
 {
-  return (((mflag & SELECT) ? MESH_ELEM_SELECT : 0) | ((mflag & ME_SEAM) ? BM_ELEM_SEAM : 0) |
+  return (((mflag & SELECT) ? MESH_ELEM_SELECT : 0) | ((mflag & MESH_SEAM) ? MESH_ELEM_SEAM : 0) |
           ((mflag & ME_EDGEDRAW) ? MESH_ELEM_DRAW : 0) |
           ((mflag & ME_SHARP) == 0 ? MESH_ELEM_SMOOTH : 0) | /* invert */
           ((mflag & ME_HIDE) ? MESH_ELEM_HIDDEN : 0));
@@ -716,7 +716,7 @@ char mesh_edge_flag_from_mflag(const short mflag)
 char mesh_face_flag_from_mflag(const char mflag)
 {
   return (((mflag & ME_FACE_SEL) ? MESH_ELEM_SELECT : 0) |
-          ((mflag & ME_SMOOTH) ? MESH_ELEM_SMOOTH : 0) | ((mflag & ME_HIDE) ? BM_ELEM_HIDDEN : 0));
+          ((mflag & ME_SMOOTH) ? MESH_ELEM_SMOOTH : 0) | ((mflag & MESH_HIDE) ? MESH_ELEM_HIDDEN : 0));
 }
 
 char mesh_vert_flag_to_mflag(MeshVert *v)
@@ -741,6 +741,6 @@ char mesh_face_flag_to_mflag(MeshFace *f)
 {
   const char hflag = f->head.hflag;
 
-  return (((hflag & MESH_ELEM_SELECT) ? ME_FACE_SEL : 0) |
-          ((hflag & MESH_ELEM_SMOOTH) ? ME_SMOOTH : 0) | ((hflag & MESH_ELEM_HIDDEN) ? ME_HIDE : 0));
+  return (((hflag & MESH_ELEM_SELECT) ? MESH_FACE_SEL : 0) |
+          ((hflag & MESH_ELEM_SMOOTH) ? MESH_SMOOTH : 0) | ((hflag & MESH_ELEM_HIDDEN) ? ME_HIDE : 0));
 }
