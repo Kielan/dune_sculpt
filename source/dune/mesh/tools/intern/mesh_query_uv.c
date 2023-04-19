@@ -110,20 +110,20 @@ void mesh_face_uv_transform(MeshFace *f, const float matrix[2][2], const int cd_
 {
   BMLoop *l_iter;
   BMLoop *l_first;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
+    MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
     mul_m2_v2(matrix, luv->uv);
   } while ((l_iter = l_iter->next) != l_first);
 }
 
-bool BM_loop_uv_share_edge_check(BMLoop *l_a, BMLoop *l_b, const int cd_loop_uv_offset)
+bool mesh_loop_uv_share_edge_check(MeshLoop *l_a, MeshLoop *l_b, const int cd_loop_uv_offset)
 {
-  BLI_assert(l_a->e == l_b->e);
-  MLoopUV *luv_a_curr = BM_ELEM_CD_GET_VOID_P(l_a, cd_loop_uv_offset);
-  MLoopUV *luv_a_next = BM_ELEM_CD_GET_VOID_P(l_a->next, cd_loop_uv_offset);
-  MLoopUV *luv_b_curr = BM_ELEM_CD_GET_VOID_P(l_b, cd_loop_uv_offset);
-  MLoopUV *luv_b_next = BM_ELEM_CD_GET_VOID_P(l_b->next, cd_loop_uv_offset);
+  lib_assert(l_a->e == l_b->e);
+  MLoopUV *luv_a_curr = M_ELEM_CD_GET_VOID_P(l_a, cd_loop_uv_offset);
+  MLoopUV *luv_a_next = M_ELEM_CD_GET_VOID_P(l_a->next, cd_loop_uv_offset);
+  MLoopUV *luv_b_curr = M_ELEM_CD_GET_VOID_P(l_b, cd_loop_uv_offset);
+  MLoopUV *luv_b_next = M_ELEM_CD_GET_VOID_P(l_b->next, cd_loop_uv_offset);
   if (l_a->v != l_b->v) {
     SWAP(MLoopUV *, luv_b_curr, luv_b_next);
   }
@@ -131,7 +131,7 @@ bool BM_loop_uv_share_edge_check(BMLoop *l_a, BMLoop *l_b, const int cd_loop_uv_
           equals_v2v2(luv_a_next->uv, luv_b_next->uv));
 }
 
-bool BM_loop_uv_share_vert_check(BMLoop *l_a, BMLoop *l_b, const int cd_loop_uv_offset)
+bool BM_loop_uv_share_vert_check(MeshLoop *l_a, MesgLoop *l_b, const int cd_loop_uv_offset)
 {
   BLI_assert(l_a->v == l_b->v);
   const MLoopUV *luv_a = BM_ELEM_CD_GET_VOID_P(l_a, cd_loop_uv_offset);
