@@ -707,7 +707,7 @@ static void mesh_to_mesh_shape(Mesh *mesh,
       }
     }
     else {
-      currkey = dune_keyblock_add(key, bm->vdata.layers[i].name);
+      currkey = dune_keyblock_add(key, mesh->vdata.layers[i].name);
       currkey->uid = mesh->vdata.layers[i].uid;
     }
   }
@@ -768,7 +768,7 @@ static void mesh_to_mesh_shape(Mesh *mesh,
     if ((actkey != key->refkey) && (cd_shape_keyindex_offset != -1)) {
       const int refkey_uuid = mesh_to_mesh_shape_layer_index_from_kb(bm, key->refkey);
       if (refkey_uuid != -1) {
-        cd_shape_offset_refkey = CustomData_get_n_offset(&bm->vdata, CD_SHAPEKEY, refkey_uuid);
+        cd_shape_offset_refkey = CustomData_get_n_offset(&mesh->vdata, CD_SHAPEKEY, refkey_uuid);
         if (cd_shape_offset_refkey != -1) {
           update_vertex_coords_from_refkey = true;
         }
@@ -845,10 +845,10 @@ static void mesh_to_mesh_shape(Mesh *mesh,
       }
 
       currkey_data = static_cast<float(*)[3]>(
-          MEM_mallocN(key->elemsize * bm->totvert, "currkey->data"));
+          mem_mallocn(key->elemsize * mesh->totvert, "currkey->data"));
 
       int i;
-      BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
+      Mesh_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
 
         if ((currkey->data != nullptr) && (cd_shape_keyindex_offset != -1) &&
             ((keyi = BM_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset)) != ORIGINDEX_NONE) &&
