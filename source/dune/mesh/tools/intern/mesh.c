@@ -66,28 +66,28 @@ static void mesh_mempool_init(Mesh *mesh, const MeshAllocTemplate *allocsize, co
 #endif
 }
 
-void mesh_elem_toolflags_ensure(BMesh *bm)
+void mesh_elem_toolflags_ensure(Mesh *mesh)
 {
   lib_assert(mesh->use_toolflags);
 
-  if (mesh->vtoolflagpool && bm->etoolflagpool && bm->ftoolflagpool) {
+  if (mesh->vtoolflagpool && mesh->etoolflagpool && mesh->ftoolflagpool) {
     return;
   }
 
-  mesh->vtoolflagpool = lib_mempool_create(sizeof(BMFlagLayer), bm->totvert, 512, BLI_MEMPOOL_NOP);
-  mesh->etoolflagpool = lib_mempool_create(sizeof(BMFlagLayer), bm->totedge, 512, BLI_MEMPOOL_NOP);
-  mesh->ftoolflagpool = lib_mempool_create(sizeof(BMFlagLayer), bm->totface, 512, BLI_MEMPOOL_NOP);
+  mesh->vtoolflagpool = lib_mempool_create(sizeof(MeshFlagLayer), mesh->totvert, 512, LIB_MEMPOOL_NOP);
+  mesh->etoolflagpool = lib_mempool_create(sizeof(MeshFlagLayer), mesh->totedge, 512, LIB_MEMPOOL_NOP);
+  mesh->ftoolflagpool = lib_mempool_create(sizeof(MeshFlagLayer), mesh->totface, 512, LIB_MEMPOOL_NOP);
 
   MeshIter iter;
   MeshVert_OFlag *v_olfag;
   lib_mempool *toolflagpool = mesh->vtoolflagpool;
-  MESH_ITER (v_olfag, &iter, mesh, NESH_VERTS_OF_MESH) {
+  MESH_ITER (v_olfag, &iter, mesh, MESH_VERTS_OF_MESH) {
     v_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
   MeshEdge_OFlag *e_olfag;
   toolflagpool = lib->etoolflagpool;
-  MESH_ITER_MESH (e_olfag, &iter, mesh, MESH_EDGES_OF_MESH) {
+  MESH_ITER (e_olfag, &iter, mesh, MESH_EDGES_OF_MESH) {
     e_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
