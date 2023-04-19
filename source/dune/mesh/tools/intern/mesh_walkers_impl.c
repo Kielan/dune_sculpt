@@ -607,10 +607,10 @@ static void *mesh_walker_ConnectedVertexWalker_step(MeshWalker *walker)
  * todo Add restriction flag/callback for wire edges.
  **/
 
-static void bmw_IslandboundWalker_begin(BMWalker *walker, void *data)
+static void mesh_walk_Islandbound_begin(MeshWalk *walker, void *data)
 {
-  BMLoop *l = data;
-  BMwIslandboundWalker *iwalk = NULL;
+  MeshLoop *l = data;
+  MeshWalkIslandbound *iwalk = NULL;
 
   iwalk = mesh_walker_state_add(walker);
 
@@ -620,14 +620,14 @@ static void bmw_IslandboundWalker_begin(BMWalker *walker, void *data)
   lib_gset_insert(walker->visit_set, data);
 }
 
-static void *mesh_walk_IslandboundWalker_yield(MeshWalker *walker)
+static void *mesh_walk_Islandbound_yield(MeshWalk *walk)
 {
-  MeshWalkerIslandbound *iwalk = mesh_walker_current_state(walker);
+  MeshWalkIslandbound *iwalk = mesh_walk_current_state(walk);
 
   return iwalk->curloop;
 }
 
-static void *mesh_walker_IslandboundWalker_step(BMWalker *walker)
+static void *mesh_walk_Islandbound_step(MeshWalk *walk)
 {
   MeshWalkerIslandbound *iwalk, owalk;
   MeshVert *v;
