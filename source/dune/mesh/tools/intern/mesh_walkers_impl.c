@@ -55,9 +55,9 @@ static bool mesh_walker_mask_check_face(MeshWalker *walker, MeshFace *f)
 /** Mesh Queries (modified to check walker flags) */
 
 /** Check for a wire edge, taking ignoring hidden. */
-static bool mesh_walker_edge_is_wire(const MeshWalker *walker, const MeshEdge *e)
+static bool mesh_walk_edge_is_wire(const MeshWalk *walk, const MeshEdge *e)
 {
-  if (walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) {
+  if (walk->flag & MESH_WALKER_FLAG_TEST_HIDDEN) {
     /* Check if this is a wire edge, ignoring hidden faces. */
     if (mesh_edge_is_wire(e)) {
       return true;
@@ -68,7 +68,7 @@ static bool mesh_walker_edge_is_wire(const MeshWalker *walker, const MeshEdge *e
 }
 
 /* -------------------------------------------------------------------- */
-/** Shell Walker
+/** Shell Walk
  *
  * Starts at a vertex on the mesh and walks over the 'shell' it belongs
  * to via visiting connected edges.
@@ -83,7 +83,7 @@ static void mesh_walk_VertShell_visitEdge(MeshWalker *walker, MeshEdge *e)
 {
   MeshWalkShell *walkShell = NULL;
 
-  if (lib_gset_haskey(walker->visit_set, e)) {
+  if (lib_gset_haskey(walk->visit_set, e)) {
     return;
   }
 
