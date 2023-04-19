@@ -74,39 +74,39 @@ void mesh_face_uv_calc_center_median(const MeshFace *f, const int cd_loop_uv_off
   zero_v2(r_cent);
   l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    const MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
+    const MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
     add_v2_v2(r_cent, luv->uv);
   } while ((l_iter = l_iter->next) != l_first);
 
   mul_v2_fl(r_cent, 1.0f / (float)f->len);
 }
 
-float BM_face_uv_calc_cross(const BMFace *f, const int cd_loop_uv_offset)
+float mesh_face_uv_calc_cross(const MeshFace *f, const int cd_loop_uv_offset)
 {
-  float(*uvs)[2] = BLI_array_alloca(uvs, f->len);
-  const BMLoop *l_iter;
-  const BMLoop *l_first;
+  float(*uvs)[2] = lib_array_alloca(uvs, f->len);
+  const MeshLoop *l_iter;
+  const MeshLoop *l_first;
   int i = 0;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    const MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
+    const MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
     copy_v2_v2(uvs[i++], luv->uv);
   } while ((l_iter = l_iter->next) != l_first);
   return cross_poly_v2(uvs, f->len);
 }
 
-void BM_face_uv_minmax(const BMFace *f, float min[2], float max[2], const int cd_loop_uv_offset)
+void mesh_face_uv_minmax(const MeshFace *f, float min[2], float max[2], const int cd_loop_uv_offset)
 {
-  const BMLoop *l_iter;
-  const BMLoop *l_first;
-  l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+  const MeshLoop *l_iter;
+  const MeshLoop *l_first;
+  l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
   do {
-    const MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
+    const MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset);
     minmax_v2v2_v2(min, max, luv->uv);
   } while ((l_iter = l_iter->next) != l_first);
 }
 
-void BM_face_uv_transform(BMFace *f, const float matrix[2][2], const int cd_loop_uv_offset)
+void mesh_face_uv_transform(MeshFace *f, const float matrix[2][2], const int cd_loop_uv_offset)
 {
   BMLoop *l_iter;
   BMLoop *l_first;
