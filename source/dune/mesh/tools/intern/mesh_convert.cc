@@ -33,7 +33,7 @@
  * But basics are as follows.
  *
  * - Vertex locations (possibly modified from initial active key-block)
- *   are copied directly into #MVert.co
+ *   are copied directly into MeshVert.co
  *   (special confusing note that these may be restored later, when editing the 'Basis', read on).
  * - if the 'Key' is relative, and the active key-block is the basis for ANY other key-blocks -
  *   get an array of offsets between the new vertex locations and the original shape key
@@ -171,10 +171,10 @@ char mesh_cd_flag_from_meshBMesh *mesh)
   if (CustomData_has_layer(&mesh->vdata, CD_CREASE)) {
     cd_flag |= MESH_CDFLAG_VERT_CREASE;
   }
-  if (CustomData_has_layer(&bm->edata, CD_BWEIGHT)) {
+  if (CustomData_has_layer(&mesh->edata, CD_BWEIGHT)) {
     cd_flag |= MESH_CDFLAG_EDGE_BWEIGHT;
   }
-  if (CustomData_has_layer(&bm->edata, CD_CREASE)) {
+  if (CustomData_has_layer(&mesh->edata, CD_CREASE)) {
     cd_flag |= MESH_CDFLAG_EDGE_CREASE;
   }
   return cd_flag;
@@ -182,9 +182,9 @@ char mesh_cd_flag_from_meshBMesh *mesh)
 
 /* Static function for alloc (duplicate in modifiers_mesh.c) */
 static MeshFace *mesh_face_create_from_mpoly(Mesh &mesh,
-                                         Span<MeshLoop> loops,
-                                         Span<MeshVert *> vtable,
-                                         Span<MeshEdge *> etable)
+                                             Span<MeshLoop> loops,
+                                             Span<MeshVert *> vtable,
+                                             Span<MeshEdge *> etable)
 {
   Array<MeshVert *, MESH_DEFAULT_NGON_STACK_SIZE> verts(loops.size());
   Array<MeshEdge *, MESH_DEFAULT_NGON_STACK_SIZE> edges(loops.size());
@@ -194,16 +194,16 @@ static MeshFace *mesh_face_create_from_mpoly(Mesh &mesh,
     edges[i] = etable[loops[i].e];
   }
 
-  return mesh_face_create(&msh, verts.data(), edges.data(), loops.size(), nullptr, BM_CREATE_SKIP_CD);
+  return mesh_face_create(&msh, verts.data(), edges.data(), loops.size(), nullptr, MESH_CREATE_SKIP_CD);
 }
 
 void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *params)
 {
-  const bool is_new = !(bm->totvert || (mesh->vdata.totlayer || mesh->edata.totlayer ||
+  const bool is_new = !(mesh->totvert || (mesh->vdata.totlayer || mesh->edata.totlayer ||
                                         mesh->pdata.totlayer || mesh->ldata.totlayer));
   KeyBlock *actkey;
   float(*keyco)[3] = nullptr;
-  CustomData_MeshMasks mask = CD_MASK_BMESH;
+  CustomData_MeshMasks mask = CD_MASK_MESH;
   CustomData_MeshMasks_update(&mask, &params->cd_mask_extra);
 
   if (!me || !me->totvert) {
@@ -343,12 +343,12 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
                                          CustomData_get_offset(&mesh->edata, CD_BWEIGHT) :
                                          -1;
   const int cd_edge_crease_offset = (me->cd_flag & ME_CDFLAG_EDGE_CREASE) ?
-                                        CustomData_get_offset(&bm->edata, CD_CREASE) :
+                                        CustomData_get_offset(&mesh->edata, CD_CREASE) :
                                         -1;
-  const int cd_shape_key_offset = tot_shape_keys ? CustomData_get_offset(&bm->vdata, CD_SHAPEKEY) :
+  const int cd_shape_key_offset = tot_shape_keys ? CustomData_get_offset(&mesh->vdata, CD_SHAPEKEY) :
                                                    -1;
   const int cd_shape_keyindex_offset = is_new && (tot_shape_keys || params->add_key_index) ?
-                                           CustomData_get_offset(&bm->vdata, CD_SHAPE_KEYINDEX) :
+                                           CustomData_get_offset(&mesh->vdata, CD_SHAPE_KEYINDEX) :
                                            -1;
 
   Span<MeshVert> mvert{me->mvert, me->totvert};
@@ -406,7 +406,7 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
 
     /* This is necessary for selection counts to work properly. */
     if (medge[i].flag & SELECT) {
-      mesh_edge_select_set(bm, e, true);
+      mesh_edge_select_set(mesh, e, true);
     }
 
     /* Copy Custom Data */
@@ -707,14 +707,14 @@ static void mesh_to_mesh_shape(Mesh *mesh,
       }
     }
     else {
-      currkey = BKE_keyblock_add(key, bm->vdata.layers[i].name);
-      currkey->uid = bm->vdata.layers[i].uid;
+      currkey = dune_keyblock_add(key, bm->vdata.layers[i].name);
+      currkey->uid = mesh->vdata.layers[i].uid;
     }
   }
 
   const int cd_shape_keyindex_offset = CustomData_get_offset(&bm->vdata, CD_SHAPE_KEYINDEX);
-  BMIter iter;
-  BMVert *eve;
+  MeshIter iter;
+  MeshVert *eve;
   float(*ofs)[3] = nullptr;
 
   /* Editing the basis key updates others. */
