@@ -420,7 +420,7 @@ float mesh_edge_calc_face_angle(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NO
  * return angle in radians
  */
 float mesh_edge_calc_face_angle_signed_ex(const BMEdge *e, float fallback) ATTR_WARN_UNUSED_RESULT
-    ATTR_NONNULL();
+    ATTR_NONNULL(); dps
 /**
  * brief MESH EDGE/FACE ANGLE
  *
@@ -429,13 +429,13 @@ float mesh_edge_calc_face_angle_signed_ex(const BMEdge *e, float fallback) ATTR_
  *
  * angle in radians
  */
-float mesh_edge_calc_face_angle_with_imat3_ex(const BMEdge *e,
+float mesh_edge_calc_face_angle_with_imat3_ex(const MeshEdge *e,
                                             const float imat3[3][3],
                                             float fallback) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-float mesh_edge_calc_face_angle_with_imat3(const BMEdge *e,
+float mesh_edge_calc_face_angle_with_imat3(const MeshEdge *e,
                                          const float imat3[3][3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-float mesh_edge_calc_face_angle_signed(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+float mesh_edge_calc_face_angle_signed(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * MESH EDGE/FACE TANGENT
  *
@@ -551,7 +551,7 @@ bool mesh_face_exists_overlap_subset(MeshVert **varr, int len) ATTR_WARN_UNUSED_
  * Could be sped up a bit by not using iterators and by tagging
  * faces on either side, then count the tags rather then searching.
  */
-int BM_face_share_face_count(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+int mesh_face_share_face_count(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Counts the number of edges two faces share (if any)
  */
@@ -565,16 +565,12 @@ int mesh_face_share_vert_count(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RE
  * same as mesh_face_share_face_count but returns a bool
  */
 bool mesh_face_share_face_check(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * Returns true if the faces share an edge
- */
+/** Returns true if the faces share an edge */
 bool mesh_face_share_edge_check(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /** Returns true if the faces share a vert. */
 bool mesh_face_share_vert_check(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-/**
- * Returns true when 2 loops share an edge (are adjacent in the face-fan)
- */
+/** Returns true when 2 loops share an edge (are adjacent in the face-fan */
 bool mesh_loop_share_edge_check(MeshLoop *l_a, MeshLoop *l_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /** Test if e1 shares any faces with e2 */
@@ -583,14 +579,10 @@ bool mesh_edge_share_face_check(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RES
  * Test if e1 shares any quad faces with e2
  */
 bool mesh_edge_share_quad_check(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * Tests to see if e1 shares a vertex with e2
- */
+/** Tests to see if e1 shares a vertex with e */
 bool mesh_edge_share_vert_check(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-/**
- * Return the shared vertex between the two edges or NULL
- */
+/** Return the shared vertex between the two edges or NUL */
 MeshVert *mesh_edge_share_vert(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Return the Loop Shared by Edge and Vert
@@ -633,104 +625,104 @@ void mesh_edge_ordered_verts(const MeshEdge *edge, MeshVert **r_v1, BMVert **r_v
  * mainly include this function so the intent is more obvious.
  * We know these 2 verts will _always_ make up the loops edge
  */
-void BM_edge_ordered_verts_ex(const BMEdge *edge,
-                              BMVert **r_v1,
-                              BMVert **r_v2,
-                              const BMLoop *edge_loop) ATTR_NONNULL();
+void mesh_edge_ordered_verts_ex(const MeshEdge *edge,
+                                MeshVert **r_v1,
+                                MeshVert **r_v2,
+                                const MeshLoop *edge_loop) ATTR_NONNULL();
 
-bool BM_vert_is_all_edge_flag_test(const BMVert *v,
+bool mesh_vert_is_all_edge_flag_test(const MeshVert *v,
                                    char hflag,
                                    bool respect_hide) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-bool BM_vert_is_all_face_flag_test(const BMVert *v,
+bool mesh_vert_is_all_face_flag_test(const MeshVert *v,
                                    char hflag,
                                    bool respect_hide) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-bool BM_edge_is_all_face_flag_test(const BMEdge *e,
+bool mesh_edge_is_all_face_flag_test(const MeshEdge *e,
                                    char hflag,
                                    bool respect_hide) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /* convenience functions for checking flags */
-bool BM_edge_is_any_vert_flag_test(const BMEdge *e, char hflag) ATTR_WARN_UNUSED_RESULT
+bool mesh_edge_is_any_vert_flag_test(const MeshEdge *e, char hflag) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-bool BM_edge_is_any_face_flag_test(const BMEdge *e, char hflag) ATTR_WARN_UNUSED_RESULT
+bool mesh_edge_is_any_face_flag_test(const MeshEdge *e, char hflag) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-bool BM_face_is_any_vert_flag_test(const BMFace *f, char hflag) ATTR_WARN_UNUSED_RESULT
+bool mesh_face_is_any_vert_flag_test(const MeshFace *f, char hflag) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-bool BM_face_is_any_edge_flag_test(const BMFace *f, char hflag) ATTR_WARN_UNUSED_RESULT
+bool mesh_face_is_any_edge_flag_test(const MeshFace *f, char hflag) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
-bool BM_edge_is_any_face_len_test(const BMEdge *e, int len) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_edge_is_any_face_len_test(const MeshEdge *e, int len) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Use within assert's to check normals are valid.
  */
-bool BM_face_is_normal_valid(const BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_face_is_normal_valid(const MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-double BM_mesh_calc_volume(BMesh *bm, bool is_signed) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+double mesh_calc_volume(Mesh *mesh, bool is_signed) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Calculate isolated groups of faces with optional filtering.
  *
- * \param bm: the BMesh.
- * \param r_groups_array: Array of ints to fill in, length of bm->totface
+ * param mesh: the Mesh.
+ * param r_groups_array: Array of ints to fill in, length of bm->totface
  *        (or when hflag_test is set, the number of flagged faces).
- * \param r_group_index: index, length pairs into \a r_groups_array, size of return value
+ * param r_group_index: index, length pairs into \a r_groups_array, size of return value
  *        int pairs: (array_start, array_length).
- * \param filter_fn: Filter the edge-loops or vert-loops we step over (depends on \a htype_step).
- * \param user_data: Optional user data for \a filter_fn, can be NULL.
- * \param hflag_test: Optional flag to test faces,
+ * param filter_fn: Filter the edge-loops or vert-loops we step over (depends on \a htype_step).
+ * param user_data: Optional user data for \a filter_fn, can be NULL.
+ * param hflag_test: Optional flag to test faces,
  *        use to exclude faces from the calculation, 0 for all faces.
- * \param htype_step: BM_VERT to walk over face-verts, BM_EDGE to walk over faces edges
+ * param htype_step: MESH_VERT to walk over face-verts, BM_EDGE to walk over faces edges
  *        (having both set is supported too).
- * \return The number of groups found.
+ * return The number of groups found.
  */
-int BM_mesh_calc_face_groups(BMesh *bm,
+int mesh_calc_face_groups(Mesh *mesh,
                              int *r_groups_array,
                              int (**r_group_index)[2],
-                             BMLoopFilterFunc filter_fn,
-                             BMLoopPairFilterFunc filter_pair_fn,
+                             MeshLoopFilterFn filter_fn,
+                             MeshLoopPairFilterFn filter_pair_fn,
                              void *user_data,
                              char hflag_test,
                              char htype_step) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2, 3);
 /**
  * Calculate isolated groups of edges with optional filtering.
  *
- * \param bm: the BMesh.
- * \param r_groups_array: Array of ints to fill in, length of `bm->totedge`
+ * param mesh: the Mesh.
+ * param r_groups_array: Array of ints to fill in, length of `mesh->totedge`
  *        (or when hflag_test is set, the number of flagged edges).
- * \param r_group_index: index, length pairs into \a r_groups_array, size of return value
+ * param r_group_index: index, length pairs into \a r_groups_array, size of return value
  *        int pairs: (array_start, array_length).
- * \param filter_fn: Filter the edges or verts we step over (depends on \a htype_step)
+ * param filter_fn: Filter the edges or verts we step over (depends on \a htype_step)
  *        as to which types we deal with.
- * \param user_data: Optional user data for \a filter_fn, can be NULL.
- * \param hflag_test: Optional flag to test edges,
+ * param user_data: Optional user data for \a filter_fn, can be NULL.
+ * param hflag_test: Optional flag to test edges,
  *        use to exclude edges from the calculation, 0 for all edges.
- * \return The number of groups found.
+ * return The number of groups found.
  *
- * \note Unlike #BM_mesh_calc_face_groups there is no 'htype_step' argument,
+ * Unlike mesh_calc_face_groups there is no 'htype_step' argument,
  *       since we always walk over verts.
  */
-int BM_mesh_calc_edge_groups(BMesh *bm,
-                             int *r_groups_array,
-                             int (**r_group_index)[2],
-                             BMVertFilterFunc filter_fn,
-                             void *user_data,
-                             char hflag_test) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2, 3);
+int mesh_calc_edge_groups(Mesh *mesh,
+                          int *r_groups_array,
+                          int (**r_group_index)[2],
+                          MeshVertFilterFn filter_fn,
+                          void *user_data,
+                          char hflag_test) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2, 3);
 
 /**
- * This is an alternative to #BM_mesh_calc_edge_groups.
+ * This is an alternative to mesh_calc_edge_groups.
  *
  * While we could call this, then create vertex & face arrays,
  * it requires looping over geometry connectivity twice,
  * this slows down edit-mesh separate by loose parts, see: T70864.
  */
-int BM_mesh_calc_edge_groups_as_arrays(BMesh *bm,
-                                       BMVert **verts,
-                                       BMEdge **edges,
-                                       BMFace **faces,
-                                       int (**r_groups)[3]) ATTR_WARN_UNUSED_RESULT
+int mesh_calc_edge_groups_as_arrays(Mesh *mesh,
+                                    MeshVert **verts,
+                                    MeshEdge **edges,
+                                    MeshFace **faces,
+                                    int (**r_groups)[3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1, 2, 3, 4, 5);
 
 /* Not really any good place to put this. */
-float bmesh_subd_falloff_calc(int falloff, float val) ATTR_WARN_UNUSED_RESULT;
+float mesh_subd_falloff_calc(int falloff, float val) ATTR_WARN_UNUSED_RESULT;
 
-#include "bmesh_query_inline.h"
+#include "mesh_query_inline.h"
