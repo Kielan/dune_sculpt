@@ -10,7 +10,7 @@
 /* Pop into stack memory (common operation). */
 #define mesh_walker_state_remove_r(walker, owalk) \
   { \
-    memcpy(owalk, mesh_walker_state_current(walker), sizeof(*(owalk))); \
+    memcpy(owalk, mesh_walk_state_current(walker), sizeof(*(owalk))); \
     mesh_walker_state_remove(walker); \
   } \
   (void)0
@@ -18,23 +18,23 @@
 /* -------------------------------------------------------------------- */
 /** Mask Flag Checks **/
 
-static bool mesh_walker_mask_check_vert(MeshWalker *walker, MeshVert *v)
+static bool mesh_walk_mask_check_vert(MeshWalk *walk, MeshVert *v)
 {
-  if ((walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(v, MESH_ELEM_HIDDEN)) {
+  if ((walk->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(v, MESH_ELEM_HIDDEN)) {
     return false;
   }
-  if (walker->mask_vert && !mesh_op_vert_flag_test(walker->bm, v, walker->mask_vert)) {
+  if (walk->mask_vert && !mesh_op_vert_flag_test(walk->mesh, v, walker->mask_vert)) {
     return false;
   }
   return true;
 }
 
-static bool mesh_walker_mask_check_edge(BMWalker *walker, MeshEdge *e)
+static bool mesh_walk_mask_check_edge(MeshWalk *walk, MeshEdge *e)
 {
-  if ((walker->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
+  if ((walk->flag & MESH_WALKER_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
     return false;
   }
-  if (walker->mask_edge && !mesh_op_edge_flag_test(walker->mesh, e, walker->mask_edge)) {
+  if (walk->mask_edge && !mesh_op_edge_flag_test(walker->mesh, e, walker->mask_edge)) {
     return false;
   }
   return true;
