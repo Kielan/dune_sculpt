@@ -158,12 +158,12 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
 }
 
 #if 0
-static void *mesh_walker_VertShell_step(MeshWalker *walker)
+static void *mesh_walk_VertShell_step(MeshWalk *walk)
 {
   MeshEdge *curedge, *next = NULL;
   MeshVert *v_old = NULL;
   bool restrictpass = true;
-  MeshWalkerShell walkShell = *((MeshWalkerShell *)mesh_walker_current_state(walker));
+  MeshWalkShell walkShell = *((MeshWalkShell *)mesh_walk_current_state(walk));
 
   if (!lib_gset_haskey(walker->visit_set, shellWalk.base)) {
     lib_gset_insert(walker->visit_set, shellWalk.base);
@@ -178,7 +178,7 @@ static void *mesh_walker_VertShell_step(MeshWalker *walker)
       if (!walker->visibility_flag ||
           (walker->visibility_flag &&
            mesh_op_edge_flag_test(walker->bm, curedge, walker->visibility_flag))) {
-        MeshWalkerShell *newstate;
+        MeshWalkShell *newstate;
 
         v_old = mesh_edge_other_vert(curedge, shellWalk.base);
 
