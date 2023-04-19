@@ -300,95 +300,85 @@ LIB_INLINE bool mesh_edge_is_contiguous(const BMEdge *e) ATTR_WARN_UNUSED_RESULT
  * (depends on face winding)
  */
 bool mesh_edge_is_convex(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * \return true when loop customdata is contiguous.
- */
-bool BM_edge_is_contiguous_loop_cd(const BMEdge *e,
-                                   int cd_loop_type,
-                                   int cd_loop_offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** return true when loop customdata is contiguous. **/
+bool mesh_edge_is_contiguous_loop_cd(const MeshEdge *e,
+                                      int cd_loop_type,
+                                      int cd_loop_offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-/**
- * The number of loops connected to this loop (not including disconnected regions).
- */
-int BM_loop_region_loops_count_at_most(BMLoop *l, int *r_loop_total) ATTR_WARN_UNUSED_RESULT
+/** The number of loops connected to this loop (not including disconnected regions). **/
+int mesh_loop_region_loops_count_at_most(MeshLoop *l, int *r_loop_total) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1);
-int BM_loop_region_loops_count(BMLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
+int mesh_loop_region_loops_count(MeshLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 /**
  * Check if the loop is convex or concave
  * (depends on face normal)
  */
-bool BM_loop_is_convex(const BMLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-BLI_INLINE bool BM_loop_is_adjacent(const BMLoop *l_a, const BMLoop *l_b) ATTR_WARN_UNUSED_RESULT
+bool mesh_loop_is_convex(const MeshLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_loop_is_adjacent(const BMLoop *l_a, const BMLoop *l_b) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Check if a point is inside the corner defined by a loop
  * (within the 2 planes defined by the loops corner & face normal).
  *
- * \return signed, squared distance to the loops planes, less than 0.0 when outside.
+ * return signed, squared distance to the loops planes, less than 0.0 when outside.
  */
-float BM_loop_point_side_of_loop_test(const BMLoop *l, const float co[3]) ATTR_WARN_UNUSED_RESULT
+float mesh_loop_point_side_of_loop_test(const MeshLoop *l, const float co[3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 /**
  * Check if a point is inside the edge defined by a loop
  * (within the plane defined by the loops edge & face normal).
  *
- * \return signed, squared distance to the edge plane, less than 0.0 when outside.
+ * return signed, squared distance to the edge plane, less than 0.0 when outside.
  */
-float BM_loop_point_side_of_edge_test(const BMLoop *l, const float co[3]) ATTR_WARN_UNUSED_RESULT
+float mesh_loop_point_side_of_edge_test(const MeshLoop *l, const float co[3]) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
 
-/**
- * \return The previous loop, over \a eps_sq distance from \a l (or \a NULL if l_stop is reached).
- */
-BMLoop *BM_loop_find_prev_nodouble(BMLoop *l, BMLoop *l_stop, float eps_sq);
-/**
- * \return The next loop, over \a eps_sq distance from \a l (or \a NULL if l_stop is reached).
- */
-BMLoop *BM_loop_find_next_nodouble(BMLoop *l, BMLoop *l_stop, float eps_sq);
+/** return The previous loop, over eps_sq distance from l (or NULL if l_stop is reached). */
+MeshLoop *mesh_loop_find_prev_nodouble(MeshLoop *l, MeshLoop *l_stop, float eps_sq);
+/** return The next loop, over eps_sq distance from l (or NULL if l_stop is reached). */
+MeshLoop *mesh_loop_find_next_nodouble(MeshLoop *l, MeshLoop *l_stop, float eps_sq);
 
 /**
  * Calculates the angle between the previous and next loops
  * (angle at this loops face corner).
  *
- * \return angle in radians
+ * return angle in radians
  */
-float BM_loop_calc_face_angle(const BMLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+float mesh_loop_calc_face_angle(const MeshLoop *l) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief BM_loop_calc_face_normal
+ * brief mesh_loop_calc_face_normal
  *
  * Calculate the normal at this loop corner or fallback to the face normal on straight lines.
  *
- * \param l: The loop to calculate the normal at
- * \param r_normal: Resulting normal
- * \return The length of the cross product (double the area).
+ * param l: The loop to calculate the normal at
+ * param r_normal: Resulting normal
+ * return The length of the cross product (double the area).
  */
-float BM_loop_calc_face_normal(const BMLoop *l, float r_normal[3]) ATTR_NONNULL();
+float mesh_loop_calc_face_normal(const MeshLoop *l, float r_normal[3]) ATTR_NONNULL();
 /**
- * #BM_loop_calc_face_normal_safe_ex with predefined sane epsilon.
+ * mesh_loop_calc_face_normal_safe_ex with predefined sane epsilon.
  *
  * Since this doesn't scale based on triangle size, fixed value works well.
  */
-float BM_loop_calc_face_normal_safe(const BMLoop *l, float r_normal[3]) ATTR_NONNULL();
+float mesh_loop_calc_face_normal_safe(const BMLoop *l, float r_normal[3]) ATTR_NONNULL();
 /**
- * \brief BM_loop_calc_face_normal
+ * brief mesh_loop_calc_face_normal
  *
  * Calculate the normal at this loop corner or fallback to the face normal on straight lines.
  *
- * \param l: The loop to calculate the normal at.
- * \param epsilon_sq: Value to avoid numeric errors (1e-5f works well).
- * \param r_normal: Resulting normal.
+ * param l: The loop to calculate the normal at.
+ * param epsilon_sq: Value to avoid numeric errors (1e-5f works well).
+ * param r_normal: Resulting normal.
  */
-float BM_loop_calc_face_normal_safe_ex(const BMLoop *l, float epsilon_sq, float r_normal[3])
-    ATTR_NONNULL();
-/**
- * A version of BM_loop_calc_face_normal_safe_ex which takes vertex coordinates.
+float mesh_loop_calc_face_normal_safe_ex(const MeshLoop *l, float epsilon_sq, float r_normal[3])
+    ATTR_ * A version of mesh_loop_calc_face_normal_safe_ex which takes vertex coordinates.
  */
-float BM_loop_calc_face_normal_safe_vcos_ex(const BMLoop *l,
-                                            const float normal_fallback[3],
-                                            float const (*vertexCos)[3],
-                                            float epsilon_sq,
-                                            float r_normal[3]) ATTR_NONNULL();
-float BM_loop_calc_face_normal_safe_vcos(const BMLoop *l,
+float mesh_loop_calc_face_normal_safe_vcos_ex(const MeshLoop *l,
+                                              const float normal_fallback[3],
+                                              float const (*vertexCos)[3],
+                                              float epsilon_sq,
+                                              float r_normal[3]) ATTR_NONNULL();
+float mesh_loop_calc_face_normal_safe_vcos(const MeshLoop *l,
                                          const float normal_fallback[3],
                                          float const (*vertexCos)[3],
                                          float r_normal[3]) ATTR_NONNULL();
