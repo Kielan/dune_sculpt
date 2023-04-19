@@ -288,16 +288,16 @@ bool mesh_vert_is_manifold(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNU
  * A version of mesh_vert_is_manifold
  * which only checks if we're connected to multiple isolated regions.
  */
-bool mesh_vert_is_manifold_region(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-LIB_INLINE bool mesh_edge_is_manifold(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-bool mesh_vert_is_boundary(const BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-LIB_INLINE bool mesh_edge_is_boundary(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-LIB_INLINE bool mesh_edge_is_contiguous(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_manifold_region(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_is_manifold(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_vert_is_boundary(const MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_is_boundary(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+LIB_INLINE bool mesh_edge_is_contiguous(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Check if the edge is convex or concave
  * (depends on face winding)
  */
-bool mesh_edge_is_convex(const BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_edge_is_convex(const MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /** return true when loop customdata is contiguous. **/
 bool mesh_edge_is_contiguous_loop_cd(const MeshEdge *e,
                                       int cd_loop_type,
@@ -377,9 +377,9 @@ float mesh_loop_calc_face_normal_safe_vcos_ex(const MeshLoop *l,
                                               float epsilon_sq,
                                               float r_normal[3]) ATTR_NONNULL();
 float mesh_loop_calc_face_normal_safe_vcos(const MeshLoop *l,
-                                         const float normal_fallback[3],
-                                         float const (*vertexCos)[3],
-                                         float r_normal[3]) ATTR_NONNULL();
+                                           const float normal_fallback[3],
+                                           float const (*vertexCos)[3],
+                                           float r_normal[3]) ATTR_NONNULL();
 
 /**
  * brief mesh_loop_calc_face_direction
@@ -490,20 +490,20 @@ MeshEdge *mesh_edge_exists(MeshVert *v_a, MeshVert *v_b) ATTR_WARN_UNUSED_RESULT
  * This isn't an invalid state but tools should clean up these cases before
  * returning the mesh to the user.
  */
-BMEdge *BM_edge_find_double(BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshEdge *mesh_edge_find_double(MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Given a set of vertices (varr), find out if
  * there is a face with exactly those vertices
  * (and only those vertices).
  *
- * \note there used to be a BM_face_exists_overlap function that checks for partial overlap.
+ * there used to be a mesh_face_exists_overlap function that checks for partial overlap.
  */
-BMFace *BM_face_exists(BMVert **varr, int len) ATTR_NONNULL(1);
+MeshFace *mesh_face_exists(MeshVert **varr, int len) ATTR_NONNULL(1);
 /**
  * Check if the face has an exact duplicate (both winding directions).
  */
-BMFace *BM_face_find_double(BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshFace *mesh_face_find_double(MeshFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Given a set of vertices and edges (\a varr, \a earr), find out if
@@ -515,116 +515,112 @@ BMFace *BM_face_find_double(BMFace *f) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
  * An example of how this is used: when 2 tri's are selected that share an edge,
  * pressing F-key would make a new overlapping quad (without a check like this)
  *
- * \a earr and \a varr can be in any order, however they _must_ form a closed loop.
+ * earr and varr can be in any order, however they _must_ form a closed loop.
  */
-bool BM_face_exists_multi(BMVert **varr, BMEdge **earr, int len) ATTR_WARN_UNUSED_RESULT
+bool mesh_face_exists_multi(MeshVert **varr, MeshEdge **earr, int len) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL();
-/* same as 'BM_face_exists_multi' but built vert array from edges */
-bool BM_face_exists_multi_edge(BMEdge **earr, int len) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/* same as 'mesh_face_exists_multi' but built vert array from edges */
+bool mesh_face_exists_multi_edge(MeshEdge **earr, int len) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Given a set of vertices (varr), find out if
  * all those vertices overlap an existing face.
  *
- * \note The face may contain other verts \b not in \a varr.
+ * The face may contain other vert not in varr.
  *
- * \note Its possible there are more than one overlapping faces,
+ * Its possible there are more than one overlapping faces,
  * in this case the first one found will be returned.
  *
- * \param varr: Array of unordered verts.
- * \param len: \a varr array length.
- * \return The face or NULL.
+ * param varr: Array of unordered verts.
+ * param len: varr array length.
+ * return The face or NULL.
  */
-BMFace *BM_face_exists_overlap(BMVert **varr, int len) ATTR_WARN_UNUSED_RESULT;
+MeshFace *mesh_face_exists_overlap(MeshVert **varr, int len) ATTR_WARN_UNUSED_RESULT;
 /**
  * Given a set of vertices (varr), find out if
  * there is a face that uses vertices only from this list
  * (that the face is a subset or made from the vertices given).
  *
- * \param varr: Array of unordered verts.
- * \param len: varr array length.
+ * param varr: Array of unordered verts.
+ * param len: varr array length.
  */
-bool BM_face_exists_overlap_subset(BMVert **varr, int len) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_face_exists_overlap_subset(MeshVert **varr, int len) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Returns the number of faces that are adjacent to both f1 and f2,
- * \note Could be sped up a bit by not using iterators and by tagging
+ * Could be sped up a bit by not using iterators and by tagging
  * faces on either side, then count the tags rather then searching.
  */
-int BM_face_share_face_count(BMFace *f_a, BMFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+int BM_face_share_face_count(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Counts the number of edges two faces share (if any)
  */
-int BM_face_share_edge_count(BMFace *f_a, BMFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+int mesh_face_share_edge_count(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Counts the number of verts two faces share (if any).
  */
-int BM_face_share_vert_count(BMFace *f_a, BMFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+int mesh_face_share_vert_count(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
- * same as #BM_face_share_face_count but returns a bool
+ * same as mesh_face_share_face_count but returns a bool
  */
-bool BM_face_share_face_check(BMFace *f_a, BMFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_face_share_face_check(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Returns true if the faces share an edge
  */
-bool BM_face_share_edge_check(BMFace *f_a, BMFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * Returns true if the faces share a vert.
- */
-bool BM_face_share_vert_check(BMFace *f_a, BMFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_face_share_edge_check(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** Returns true if the faces share a vert. */
+bool mesh_face_share_vert_check(MeshFace *f_a, MeshFace *f_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Returns true when 2 loops share an edge (are adjacent in the face-fan)
  */
-bool BM_loop_share_edge_check(BMLoop *l_a, BMLoop *l_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_loop_share_edge_check(MeshLoop *l_a, MeshLoop *l_b) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-/**
- * Test if e1 shares any faces with e2
- */
-bool BM_edge_share_face_check(BMEdge *e1, BMEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/** Test if e1 shares any faces with e2 */
+bool mesh_edge_share_face_check(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Test if e1 shares any quad faces with e2
  */
-bool BM_edge_share_quad_check(BMEdge *e1, BMEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_edge_share_quad_check(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
  * Tests to see if e1 shares a vertex with e2
  */
-bool BM_edge_share_vert_check(BMEdge *e1, BMEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+bool mesh_edge_share_vert_check(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
 /**
  * Return the shared vertex between the two edges or NULL
  */
-BMVert *BM_edge_share_vert(BMEdge *e1, BMEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshVert *mesh_edge_share_vert(MeshEdge *e1, MeshEdge *e2) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief Return the Loop Shared by Edge and Vert
+ * Return the Loop Shared by Edge and Vert
  *
- * Finds the loop used which uses \a  in face loop \a l
+ * Finds the loop used which uses in face loop l
  *
- * \note this function takes a loop rather than an edge
+ * this function takes a loop rather than an edge
  * so we can select the face that the loop should be from.
  */
-BMLoop *BM_edge_vert_share_loop(BMLoop *l, BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
-/**
- * \brief Return the Loop Shared by Face and Vertex
+MeshLoop *mesh_edge_vert_share_loop(MeshLoop *l, MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+/*
+ * Return the Loop Shared by Face and Vertex
  *
- * Finds the loop used which uses \a v in face loop \a l
+ * Finds the loop used which uses v in face loop l
  *
- * \note currently this just uses simple loop in future may be sped up
+ * currently this just uses simple loop in future may be sped up
  * using radial vars
  */
-BMLoop *BM_face_vert_share_loop(BMFace *f, BMVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_face_vert_share_loop(MeshFace *f, MeshVert *v) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 /**
- * \brief Return the Loop Shared by Face and Edge
+ * Return the Loop Shared by Face and Edge
  *
- * Finds the loop used which uses \a e in face loop \a l
+ * Finds the loop used which uses e in face loop l
  *
- * \note currently this just uses simple loop in future may be sped up
+ * currently this just uses simple loop in future may be sped up
  * using radial vars
  */
-BMLoop *BM_face_edge_share_loop(BMFace *f, BMEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
+MeshLoop *mesh_face_edge_share_loop(MeshFace *f, MeshEdge *e) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL();
 
-void BM_edge_ordered_verts(const BMEdge *edge, BMVert **r_v1, BMVert **r_v2) ATTR_NONNULL();
+void mesh_edge_ordered_verts(const MeshEdge *edge, MeshVert **r_v1, BMVert **r_v2) ATTR_NONNULL();
 /**
  * Returns the verts of an edge as used in a face
  * if used in a face at all, otherwise just assign as used in the edge.
