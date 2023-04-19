@@ -40,9 +40,9 @@ static bool mesh_walk_mask_check_edge(MeshWalk *walk, MeshEdge *e)
   return true;
 }
 
-static bool mesh_walker_mask_check_face(MeshWalker *walker, MeshFace *f)
+static bool mesh_walk_mask_check_face(MeshWalker *walker, MeshFace *f)
 {
-  if ((walker->flag & MESH_WALKERS_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
+  if ((walker->flag & MESH_WALK_FLAG_TEST_HIDDEN) && mesh_elem_flag_test(f, MESH_ELEM_HIDDEN)) {
     return false;
   }
   if (walker->mask_face && !mesh_op_face_flag_test(walker->bm, f, walker->mask_face)) {
@@ -57,7 +57,7 @@ static bool mesh_walker_mask_check_face(MeshWalker *walker, MeshFace *f)
 /** Check for a wire edge, taking ignoring hidden. */
 static bool mesh_walk_edge_is_wire(const MeshWalk *walk, const MeshEdge *e)
 {
-  if (walk->flag & MESH_WALKER_FLAG_TEST_HIDDEN) {
+  if (walk->flag & MESH_WALK_FLAG_TEST_HIDDEN) {
     /* Check if this is a wire edge, ignoring hidden faces. */
     if (mesh_edge_is_wire(e)) {
       return true;
@@ -79,7 +79,7 @@ static bool mesh_walk_edge_is_wire(const MeshWalk *walk, const MeshEdge *e)
  * todo Add restriction flag/callback for wire edges.
  **/
 
-static void mesh_walk_VertShell_visitEdge(MeshWalker *walker, MeshEdge *e)
+static void mesh_walk_VertShell_visitEdge(MeshWalk *walk, MeshEdge *e)
 {
   MeshWalkShell *walkShell = NULL;
 
@@ -87,13 +87,13 @@ static void mesh_walk_VertShell_visitEdge(MeshWalker *walker, MeshEdge *e)
     return;
   }
 
-  if (!mesh_walker_mask_check_edge(walker, e)) {
+  if (!mesh_walk_mask_check_edge(walk, e)) {
     return;
   }
 
-  shellWalk = mesh_walk_state_add(walker);
+  shellWalk = mesh_walk_state_add(walk);
   shellWalk->curedge = e;
-  lib_gset_insert(walker->visit_set, e);
+  lib_gset_insert(walk->visit_set, e);
 }
 
 static void mesh_walk_VertShellWalk_begin(MeshWalk *walk, void *data)
@@ -112,7 +112,7 @@ static void mesh_walk_VertShellWalk_begin(MeshWalk *walk, void *data)
       /* Starting the walk at a vert, add all the edges to the work-list. */
       v = (MeshVert *)h;
       MESH_ELEM_ITER (e, &eiter, v, MESH_EDGES_OF_VERT) {
-        mesh_walk_VertShellWalk_visitEdge(walk, e);
+        mesh_walk_VertShell_visitEdge(walk, e);
       }
       break;
     }
@@ -134,7 +134,7 @@ static void *mesh_walk_VertShell_yield(MeshWalk *walk)
   return shellWalk->curedge;
 }
 
-static void *mesh_walk_VertShell_step(MeshWalker *walker)
+static void *mesh_walk_VertShell_step(MeshWalk *walk)
 {
   MeshWalkShell *swalk, owalk;
   MeshEdge *e, *e2;
@@ -142,7 +142,7 @@ static void *mesh_walk_VertShell_step(MeshWalker *walker)
   MeshIter iter;
   int i;
 
-  mesh_walker_state_remove_r(walk, &owalk);
+  mesh_walk_state_remove_r(walk, &owalk);
   swalk = &owalk;
 
   e = swalk->curedge;
@@ -207,21 +207,21 @@ static void *mesh_walk_VertShell_step(MeshWalk *walk)
  * note this is mainly useful to loop over a shell delimited by edges.
  **/
 
-static void mesh_walker_LoopShell_visitLoop(MeshWalker *walker, MeshLoop *l)
+static void mesh_walk_LoopShell_visitLoop(MeshWalk *walk, MeshLoop *l)
 {
-  MeshWalkerLoopShell *walkShell = NULL;
+  MeshWalkLoopShell *walkShell = NULL;
 
-  if (lib_gset_haskey(walker->visit_set, l)) {
+  if (lib_gset_haskey(walk->visit_set, l)) {
     return;
   }
 
-  if (!m sh_walker_mask_check_face(walker, l->f)) {
+  if (!m sh_walk_mask_check_face(walk, l->f)) {
     return;
   }
 
-  shellWalk = mesh_walker_state_add(walker);
+  shellWalk = mesh_walk_state_add(walk);
   shellWalk->curloop = l;
-  lib_gset_insert(walker->visit_set, l);
+  lib_gset_insert(walk->visit_set, l);
 }
 
 static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
@@ -237,7 +237,7 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
     case MESH_LOOP: {
       /* Starting the walk at a vert, add all the edges to the work-list. */
       MeshLoop *l = (MeshLoop *)h;
-      mesh_walker_LoopShell_visitLoop(walker, l);
+      mesh_walk_LoopShell_visitLoop(walker, l);
       break;
     }
 
@@ -245,7 +245,7 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
       MeshVert *v = (MeshVert *)h;
       MeshLoop *l;
       MESH_ITER_ELEM (l, &iter, v, MESH_LOOPS_OF_VERT) {
-        mesh_walker_LoopShell_visitLoop(walker, l);
+        mesh_walk_LoopShell_visitLoop(walk, l);
       }
       break;
     }
@@ -253,7 +253,7 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
       MeshEdge *e = (MeshEdge *)h;
       MeshLoop *l;
       MESH_ELEM_ITER (l, &iter, e, MESH_LOOPS_OF_EDGE) {
-        mesh_walkers_LoopShellWalker_visitLoop(walker, l);
+        mesh_walk_LoopShell_visitLoop(walker, l);
       }
       break;
     }
@@ -261,7 +261,7 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
       MeshFace *f = (MeshFace *)h;
       MeshLoop *l = MESH_FACE_FIRST_LOOP(f);
       /* Walker will handle other loops within the face. */
-      mesh_walker_LoopShell_visitLoop(walker, l);
+      mesh_walker_LoopShell_visitLoop(walk, l);
       break;
     }
     default:
@@ -269,13 +269,13 @@ static void mesh_walker_LoopShell_begin(MeshWalker *walker, void *data)
   }
 }
 
-static void *mesh_walker_LoopShell_yield(MeshWalker *walker)
+static void *mesh_walk_LoopShell_yield(MeshWalk *walk)
 {
-  MeshWalkerLoopShell *WalkShell = mesh_walker_current_state(walker);
+  MeshWalkLoopShell *WalkShell = mesh_walk_current_state(walk);
   return shellWalk->curloop;
 }
 
-static void mesh_walker_LoopShell_step_impl(MeshWalker *walker, MeshLoop *l)
+static void mesh_walk_LoopShell_step_impl(MeshWalk *walk, MeshLoop *l)
 {
   MeshEdge *e_edj_pair[2];
   int i;
@@ -283,8 +283,8 @@ static void mesh_walker_LoopShell_step_impl(MeshWalker *walker, MeshLoop *l)
   /* Seems paranoid, but one caller also walks edges. */
   lib_assert(l->head.htype == MESH_LOOP);
 
-  mesh_walker_LoopShell_visitLoop(walker, l->next);
-  mesh_walker_LoopShell_visitLoop(walker, l->prev);
+  mesh_walk_LoopShell_visitLoop(walk, l->next);
+  mesh_walk_LoopShell_visitLoop(walk, l->prev);
 
   e_edj_pair[0] = l->e;
   e_edj_pair[1] = l->prev->e;
