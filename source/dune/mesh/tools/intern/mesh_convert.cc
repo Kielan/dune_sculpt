@@ -521,21 +521,21 @@ void mesh_from_me(Mesh *mesh, const Mesh *me, const struct MeshFromParams *param
     }
   }
   else {
-    mesh_select_history_clear(bm);
+    mesh_select_history_clear(mesh);
   }
 }
 
 /** Mesh -> Mesh **/
-static BMVert **bm_to_mesh_vertex_map(BMesh *bm, int ototvert)
+static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
 {
-  const int cd_shape_keyindex_offset = CustomData_get_offset(&bm->vdata, CD_SHAPE_KEYINDEX);
-  BMVert **vertMap = nullptr;
-  BMVert *eve;
+  const int cd_shape_keyindex_offset = CustomData_get_offset(&mesh->vdata, CD_SHAPE_KEYINDEX);
+  MeshVert **vertMap = nullptr;
+  MeshVert *eve;
   int i = 0;
-  BMIter iter;
+  MeshIter iter;
 
   /* Caller needs to ensure this. */
-  BLI_assert(ototvert > 0);
+  lib_assert(ototvert > 0);
 
   vertMap = static_cast<BMVert **>(MEM_callocN(sizeof(*vertMap) * ototvert, "vertMap"));
   if (cd_shape_keyindex_offset != -1) {
