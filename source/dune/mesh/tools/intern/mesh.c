@@ -522,7 +522,7 @@ bool mesh_elem_table_check(Mesh *mesh)
   int i;
 
   if (mesh->vtable && ((mesh->elem_table_dirty & MESH_VERT) == 0)) {
-    MESH_ITER_MESH_INDEX (ele, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+    MESH_INDEX_ITER (ele, &iter, mesh, MESH_VERTS_OF_MESH, i) {
       if (ele != (MeshElem *)mesh->vtable[i]) {
         return false;
       }
@@ -1075,7 +1075,7 @@ void mesh_rebuild(Mesh *mesh,
     MeshIter iter;
     int index, index_loop = 0;
     MeshFace *f_src;
-    MESH_ITER_MESH_INDEX (f_src, &iter, mesh, MESH_FACES_OF_MESH, index) {
+    MESH_INDEX_ITER (f_src, &iter, mesh, MESH_FACES_OF_MESH, index) {
 
       if (remap & MESH_FACE) {
         MeshFace *f_dst = lib_mempool_alloc(fpool_dst);
@@ -1277,16 +1277,16 @@ void mesh_toolflags_set(Mesh *mesh, bool use_toolflags)
   lib_mempool *epool_dst = NULL;
   lib_mempool *fpool_dst = NULL;
 
-  bm_mempool_init_ex(&allocsize, use_toolflags, &vpool_dst, &epool_dst, NULL, &fpool_dst);
+  mesh_mempool_init_ex(&allocsize, use_toolflags, &vpool_dst, &epool_dst, NULL, &fpool_dst);
 
   if (use_toolflags == false) {
-    BLI_mempool_destroy(bm->vtoolflagpool);
-    BLI_mempool_destroy(bm->etoolflagpool);
-    BLI_mempool_destroy(bm->ftoolflagpool);
+    lib_mempool_destroy(bm->vtoolflagpool);
+    lib_mempool_destroy(bm->etoolflagpool);
+    lib_mempool_destroy(bm->ftoolflagpool);
 
-    bm->vtoolflagpool = NULL;
-    bm->etoolflagpool = NULL;
-    bm->ftoolflagpool = NULL;
+    mesh->vtoolflagpool = NULL;
+    mesh->etoolflagpool = NULL;
+    mesh->ftoolflagpool = NULL;
   }
 
   BM_mesh_rebuild(bm,
