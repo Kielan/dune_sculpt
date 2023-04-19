@@ -522,9 +522,9 @@ static void *mesh_walker_FaceShellWalker_step(MeshWalker *walker)
 
     l_iter = l_first = e->l;
     do {
-      MESH_ELEM_ITER (e2, &iter, l_iter->f, BM_EDGES_OF_FACE) {
+      MESH_ELEM_ITER (e2, &iter, l_iter->f, MESH_EDGES_OF_FACE) {
         if (e2 != e) {
-          bmw_FaceShellWalker_visitEdge(walker, e2);
+          mesh_walker_FaceShell_visitEdge(walker, e2);
         }
       }
     } while ((l_iter = l_iter->radial_next) != l_first);
