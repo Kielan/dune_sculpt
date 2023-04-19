@@ -608,7 +608,7 @@ Mesh *mesh_copy(Mesh *mesh_old)
   etable = mem_mallocn(sizeof(MeshEdge *) * mesh_old->totedge, "mesh_copy etable");
   ftable = mem_mallocn(sizeof(MeshFace *) * mesh_old->totface, "mesh_copy ftable");
 
-  MESH_ITER_INDEX (v, &iter, mesh_old, MESH_VERTS_OF_MESH, i) {
+  MESH_INDEX_ITER (v, &iter, mesh_old, MESH_VERTS_OF_MESH, i) {
     /* copy between meshes so can't use 'example' argument */
     v_new = mesh_vert_create(mesh_new, v->co, NULL, MESH_CREATE_SKIP_CD);
     mesh_elem_attrs_copy_ex(mesh_old, mesh_new, v, v_new, 0xff, 0x0);
@@ -709,14 +709,14 @@ char mesh_vert_flag_from_mflag(const char mflag)
 char mesh_edge_flag_from_mflag(const short mflag)
 {
   return (((mflag & SELECT) ? MESH_ELEM_SELECT : 0) | ((mflag & MESH_SEAM) ? MESH_ELEM_SEAM : 0) |
-          ((mflag & ME_EDGEDRAW) ? MESH_ELEM_DRAW : 0) |
-          ((mflag & ME_SHARP) == 0 ? MESH_ELEM_SMOOTH : 0) | /* invert */
-          ((mflag & ME_HIDE) ? MESH_ELEM_HIDDEN : 0));
+          ((mflag & MESH_EDGEDRAW) ? MESH_ELEM_DRAW : 0) |
+          ((mflag & MESH_SHARP) == 0 ? MESH_ELEM_SMOOTH : 0) | /* invert */
+          ((mflag & MESH_HIDE) ? MESH_ELEM_HIDDEN : 0));
 }
 char mesh_face_flag_from_mflag(const char mflag)
 {
-  return (((mflag & ME_FACE_SEL) ? MESH_ELEM_SELECT : 0) |
-          ((mflag & ME_SMOOTH) ? MESH_ELEM_SMOOTH : 0) | ((mflag & MESH_HIDE) ? MESH_ELEM_HIDDEN : 0));
+  return (((mflag & MESH_FACE_SEL) ? MESH_ELEM_SELECT : 0) |
+          ((mflag & MESH_SMOOTH) ? MESH_ELEM_SMOOTH : 0) | ((mflag & MESH_HIDE) ? MESH_ELEM_HIDDEN : 0));
 }
 
 char mesh_vert_flag_to_mflag(MeshVert *v)
@@ -730,12 +730,12 @@ short mesh_edge_flag_to_mflag(MeshEdge *e)
 {
   const char hflag = e->head.hflag;
 
-  return (((hflag & M_ELEM_SELECT) ? SELECT : 0) | ((hflag & MESH_ELEM_SEAM) ? ME_SEAM : 0) |
-          ((hflag & M_ELEM_DRAW) ? ME_EDGEDRAW : 0) |
-          ((hflag & M_ELEM_SMOOTH) == 0 ? ME_SHARP : 0) |
-          ((hflag & M_ELEM_HIDDEN) ? ME_HIDE : 0) |
-          (M_edge_is_wire(e) ? ME_LOOSEEDGE : 0) | /* not typical */
-          ME_EDGERENDER);
+  return (((hflag & MESH_ELEM_SELECT) ? SELECT : 0) | ((hflag & MESH_ELEM_SEAM) ? ME_SEAM : 0) |
+          ((hflag & MESH_ELEM_DRAW) ? MESH_EDGEDRAW : 0) |
+          ((hflag & MESH_ELEM_SMOOTH) == 0 ? MESH_SHARP : 0) |
+          ((hflag & MESH_ELEM_HIDDEN) ? MESH_HIDE : 0) |
+          (mesh_edge_is_wire(e) ? MESH_LOOSEEDGE : 0) | /* not typical */
+          MESH_EDGERENDER);
 }
 char mesh_face_flag_to_mflag(MeshFace *f)
 {
