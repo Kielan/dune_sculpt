@@ -1160,17 +1160,17 @@ void BM_mesh_bm_to_me(Main *bmain, BMesh *bm, Mesh *me, const struct BMeshToMesh
   BKE_mesh_runtime_clear_geometry(me);
 }
 
-void BM_mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *cd_mask_extra)
+void mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *cd_mask_extra)
 {
   /* Must be an empty mesh. */
-  BLI_assert(me->totvert == 0);
-  BLI_assert(cd_mask_extra == nullptr || (cd_mask_extra->vmask & CD_MASK_SHAPEKEY) == 0);
+  lib_assert(me->totvert == 0);
+  lib_assert(cd_mask_extra == nullptr || (cd_mask_extra->vmask & CD_MASK_SHAPEKEY) == 0);
 
-  me->totvert = bm->totvert;
-  me->totedge = bm->totedge;
+  me->totvert = mesh->totvert;
+  me->totedge = mesh->totedge;
   me->totface = 0;
-  me->totloop = bm->totloop;
-  me->totpoly = bm->totface;
+  me->totloop = mesh->totloop;
+  me->totpoly = mesh->totface;
 
   CustomData_add_layer(&me->vdata, CD_MVERT, CD_CALLOC, nullptr, bm->totvert);
   CustomData_add_layer(&me->edata, CD_MEDGE, CD_CALLOC, nullptr, bm->totedge);
@@ -1189,16 +1189,16 @@ void BM_mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *
   CustomData_merge(&bm->ldata, &me->ldata, mask.lmask, CD_CALLOC, me->totloop);
   CustomData_merge(&bm->pdata, &me->pdata, mask.pmask, CD_CALLOC, me->totpoly);
 
-  BKE_mesh_update_customdata_pointers(me, false);
+  dune_mesh_update_customdata_pointers(me, false);
 
-  BMIter iter;
-  BMVert *eve;
-  BMEdge *eed;
-  BMFace *efa;
-  MVert *mvert = me->mvert;
-  MEdge *medge = me->medge;
-  MLoop *mloop = me->mloop;
-  MPoly *mpoly = me->mpoly;
+  MeshIter iter;
+  MeshVert *eve;
+  MeshEdge *eed;
+  MeshFace *efa;
+  MeshVert *mvert = me->mvert;
+  MeshEdge *medge = me->medge;
+  MeshLoop *mloop = me->mloop;
+  MeshPoly *mpoly = me->mpoly;
   unsigned int i, j;
 
   const int cd_vert_bweight_offset = CustomData_get_offset(&bm->vdata, CD_BWEIGHT);
@@ -1231,12 +1231,12 @@ void BM_mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *
   BM_ITER_MESH_INDEX (eed, &iter, bm, BM_EDGES_OF_MESH, i) {
     MEdge *med = &medge[i];
 
-    BM_elem_index_set(eed, i); /* set_inline */
+    mesh_elem_index_set(eed, i); /* set_inline */
 
-    med->v1 = BM_elem_index_get(eed->v1);
-    med->v2 = BM_elem_index_get(eed->v2);
+    med->v1 = mesh_elem_index_get(eed->v1);
+    med->v2 = mesh_elem_index_get(eed->v2);
 
-    med->flag = BM_edge_flag_to_mflag(eed);
+    med->flag = mesh_edge_flag_to_mflag(eed);
 
     /* Handle this differently to editmode switching,
      * only enable draw for single user edges rather than calculating angle. */
@@ -1247,44 +1247,44 @@ void BM_mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *
     }
 
     if (cd_edge_crease_offset != -1) {
-      med->crease = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(eed, cd_edge_crease_offset);
+      med->crease = MESH_ELEM_CD_GET_FLOAT_AS_UCHAR(eed, cd_edge_crease_offset);
     }
     if (cd_edge_bweight_offset != -1) {
-      med->bweight = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(eed, cd_edge_bweight_offset);
+      med->bweight = MESH_ELEM_CD_GET_FLOAT_AS_UCHAR(eed, cd_edge_bweight_offset);
     }
 
-    CustomData_from_bmesh_block(&bm->edata, &me->edata, eed->head.data, i);
+    CustomData_from_mesh_block(&mesh->edata, &me->edata, eed->head.data, i);
   }
-  bm->elem_index_dirty &= ~BM_EDGE;
+  mesh->elem_index_dirty &= ~MESH_EDGE;
 
   j = 0;
-  BM_ITER_MESH_INDEX (efa, &iter, bm, BM_FACES_OF_MESH, i) {
-    BMLoop *l_iter;
-    BMLoop *l_first;
-    MPoly *mp = &mpoly[i];
+  MESH_INDEX_ITER (efa, &iter, mesh, MESH_FACES_OF_MESH, i) {
+    MeshLoop *l_iter;
+    MeshLoop *l_first;
+    MeshPoly *mp = &mpoly[i];
 
-    BM_elem_index_set(efa, i); /* set_inline */
+    mesh_elem_index_set(efa, i); /* set_inline */
 
     mp->totloop = efa->len;
-    mp->flag = BM_face_flag_to_mflag(efa);
+    mp->flag = mesh_face_flag_to_mflag(efa);
     mp->loopstart = j;
     mp->mat_nr = efa->mat_nr;
 
-    l_iter = l_first = BM_FACE_FIRST_LOOP(efa);
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(efa);
     do {
-      mloop->v = BM_elem_index_get(l_iter->v);
-      mloop->e = BM_elem_index_get(l_iter->e);
-      CustomData_from_bmesh_block(&bm->ldata, &me->ldata, l_iter->head.data, j);
+      mloop->v = mesh_elem_index_get(l_iter->v);
+      mloop->e = mesh_elem_index_get(l_iter->e);
+      CustomData_from_mesh_block(&mesh->ldata, &me->ldata, l_iter->head.data, j);
 
-      BM_elem_index_set(l_iter, j); /* set_inline */
+      mesh_elem_index_set(l_iter, j); /* set_inline */
 
       j++;
       mloop++;
     } while ((l_iter = l_iter->next) != l_first);
 
-    CustomData_from_bmesh_block(&bm->pdata, &me->pdata, efa->head.data, i);
+    CustomData_from_mesh_block(&mesh->pdata, &me->pdata, efa->head.data, i);
   }
-  bm->elem_index_dirty &= ~(BM_FACE | BM_LOOP);
+  mesh->elem_index_dirty &= ~(MESH_FACE | MESH_LOOP);
 
-  me->cd_flag = BM_mesh_cd_flag_from_bmesh(bm);
+  me->cd_flag = mesh_cd_flag_from_bmesh(bm);
 }
