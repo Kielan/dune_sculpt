@@ -117,7 +117,7 @@ void mesh_cd_flag_apply(Mesh *mesh, const char cd_flag)
   lib_assert(mesh->edata.totlayer == 0 || mesh->edata.pool != nullptr);
   lib_assert(mesh->pdata.totlayer == 0 || mesh->pdata.pool != nullptr);
 
-  if (cd_flag & ME_CDFLAG_VERT_WEIGHT) {
+  if (cd_flag & MESH_CDFLAG_VERT_WEIGHT) {
     if (!CustomData_has_layer(&mesh->vdata, CD_BWEIGHT)) {
       mesh_data_layer_add(mesh, &mesh->vdata, CD_BWEIGHT);
     }
@@ -588,16 +588,16 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
  * fixed-in-place when entering edit-mode allowing them to be used as a reference when exiting.
  * It often does work but isn't reliable since for e.g. rendering may flush changes
  * from the edit-mesh to the key-block (there are a handful of other situations where
- * changes may be flushed, see #ED_editors_flush_edits and related functions).
+ * changes may be flushed, see editors_flush_edits and related functions).
  * When using undo, it's not known if the data in key-block is from the past or future,
  * so just don't use this data as it causes pain and suffering for users and developers alike.
  *
- * Instead, use the shape-key values stored in #CD_SHAPEKEY since they are reliably
+ * Instead, use the shape-key values stored in CD_SHAPEKEY since they are reliably
  * based on the original locations, unless explicitly manipulated.
- * It's important to write the final shape-key values back to the #CD_SHAPEKEY so applying
+ * It's important to write the final shape-key values back to the CD_SHAPEKEY so applying
  * the difference between the original-basis and the new coordinates isn't done multiple times.
- * Therefore #ED_editors_flush_edits and other flushing calls will update both the #Mesh.key
- * and the edit-mode #CD_SHAPEKEY custom-data layers.
+ * Therefore editor_editors_flush_edits and other flushing calls will update both the #Mesh.key
+ * and the edit-mode CD_SHAPEKEY custom-data layers.
  *
  * WARNING: There is an exception to the rule of ignoring coordinates in the destination:
  * that is when shape-key data in `bm` can't be found (which is itself an error/exception).
@@ -606,14 +606,14 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
  * Flushing Coordinates Back to the #BMesh
  * ---------------------------------------
  *
- * The edit-mesh may be flushed back to the #Mesh and #Key used to generate it.
- * When this is done, the new values are written back to the #BMesh's #CD_SHAPEKEY as well.
+ * The edit-mesh may be flushed back to the #Mesh and Key used to generate it.
+ * When this is done, the new values are written back to the Mesh's CD_SHAPEKEY as well.
  * This is necessary when editing basis-shapes so the difference in shape keys
  * is not applied multiple times. If it were important to avoid it could be skipped while
- * exiting edit-mode (as the entire #BMesh is freed in that case), however it's just copying
+ * exiting edit-mode (as the entire Mesh is freed in that case), however it's just copying
  * back a `float[3]` so the work to check if it's necessary isn't worth the overhead.
  *
- * In general updating the #BMesh's #CD_SHAPEKEY makes shake-key logic easier to reason about
+ * In general updating the Mesh's CD_SHAPEKEY makes shake-key logic easier to reason about
  * since it means flushing data back to the mesh has the same behavior as exiting and entering
  * edit-mode (a more common operation). Meaning there is one less corner-case to have to consider.
  *
@@ -621,7 +621,7 @@ static MeshVert **mesh_to_mesh_vertex_map(Mesh *mesh, int ototvert)
  * *****************
  *
  * There are some situations that should not happen in typical usage but are
- * still handled in this code, since failure to handle them could loose user-data.
+ * still handled in this code, since failure to handle them could lose user-data.
  * These could be investigated further since if they never happen in practice,
  * we might consider removing them. However, the possibility of an mesh directly
  * being modified by Python or some other low level logic that changes key-blocks
@@ -679,7 +679,7 @@ static int mesh_to_mesh_shape_layer_index_from_kb(Mesh *mesh, KeyBlock *currkey)
  */
 static void mesh_to_mesh_shape(Mesh *mesh,
                                Key *key,
-                               MVert *mvert,
+                               MeshVert *mvert,
                                const bool active_shapekey_to_mvert)
 {
   KeyBlock *actkey = static_cast<KeyBlock *>(lib_findlink(&key->block, mesh->shapenr - 1));
@@ -690,7 +690,7 @@ static void mesh_to_mesh_shape(Mesh *mesh,
   /* Go through and find any shape-key custom-data layers
    * that might not have corresponding KeyBlocks, and add them if necessary. */
   for (int i = 0; i < mesh->vdata.totlayer; i++) {
-    if (bm->vdata.layers[i].type != CD_SHAPEKEY) {
+    if (mesh->vdata.layers[i].type != CD_SHAPEKEY) {
       continue;
     }
 
@@ -760,13 +760,13 @@ static void mesh_to_mesh_shape(Mesh *mesh,
    * exporters for example may still use the underlying coordinates, see: T30771 & T96135.
    *
    * Needed when editing any shape that isn't the (`key->refkey`), the vertices in `me->mvert`
-   * currently have vertex coordinates set from the current-shape (initialized from #BMVert.co).
+   * currently have vertex coordinates set from the current-shape (initialized from meshVert.co).
    * In this case it's important to overwrite these coordinates with the basis-keys coordinates. */
   bool update_vertex_coords_from_refkey = false;
   int cd_shape_offset_refkey = -1;
   if (active_shapekey_to_mvert == false) {
     if ((actkey != key->refkey) && (cd_shape_keyindex_offset != -1)) {
-      const int refkey_uuid = mesh_to_mesh_shape_layer_index_from_kb(bm, key->refkey);
+      const int refkey_uuid = mesh_to_mesh_shape_layer_index_from_kb(mesh, key->refkey);
       if (refkey_uuid != -1) {
         cd_shape_offset_refkey = CustomData_get_n_offset(&mesh->vdata, CD_SHAPEKEY, refkey_uuid);
         if (cd_shape_offset_refkey != -1) {
@@ -807,10 +807,10 @@ static void mesh_to_mesh_shape(Mesh *mesh,
           copy_v3_v3(currkey_data[i], eve->co);
 
           if (update_vertex_coords_from_refkey) {
-            BLI_assert(actkey != key->refkey);
-            keyi = BM_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset);
+            lib_assert(actkey != key->refkey);
+            keyi = MESH_ELEM_CD_GET_INT(eve, cd_shape_keyindex_offset);
             if (keyi != ORIGINDEX_NONE) {
-              float *co_refkey = (float *)BM_ELEM_CD_GET_VOID_P(eve, cd_shape_offset_refkey);
+              float *co_refkey = (float *)MESH_ELEM_CD_GET_VOID_P(eve, cd_shape_offset_refkey);
               copy_v3_v3(mvert[i].co, co_refkey);
             }
           }
@@ -824,9 +824,9 @@ static void mesh_to_mesh_shape(Mesh *mesh,
           add_v3_v3(currkey_data[i], ofs[i]);
         }
 
-        /* Apply back new coordinates shape-keys that have offset into #BMesh.
-         * Otherwise, in case we call again #BM_mesh_bm_to_me on same #BMesh,
-         * we'll apply diff from previous call to #BM_mesh_bm_to_me,
+        /* Apply back new coordinates shape-keys that have offset into Mesh.
+         * Otherwise, in case we call again mesh_bm_to_me on same Mesh,
+         * we'll apply diff from previous call to mesh_bm_to_me,
          * to shape-key values from original creation of the #BMesh. See T50524. */
         copy_v3_v3(co_orig, currkey_data[i]);
       }
@@ -897,13 +897,13 @@ LIB_INLINE void mesh_quick_edgedraw_flag(MeshEdge *med, MeshEdge *e)
   }
 }
 
-void BM_mesh_bm_to_me(Main *bmain, BMesh *bm, Mesh *me, const struct BMeshToMeshParams *params)
+void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshParams *params)
 {
-  MEdge *med;
-  BMVert *v, *eve;
-  BMEdge *e;
-  BMFace *f;
-  BMIter iter;
+  MeshEdge *med;
+  MeshVert *v, *eve;
+  MeshEdge *e;
+  MeshFace *f;
+  MeshIter iter;
   int i, j;
 
   const int cd_vert_bweight_offset = CustomData_get_offset(&bm->vdata, CD_BWEIGHT);
