@@ -116,10 +116,8 @@ typedef struct MeshEdge {
    */
   MeshVert *v1, *v2;
 
-  /**
-   * The list of loops around the edge, see doc-string for #BMLoop.radial_next
-   * for an example of using this to loop over all faces used by an edge.
-   */
+  /** The list of loops around the edge, see doc-string for MeshLoop.radial_next
+   ** for an example of using this to loop over all faces used by an edge. **/
   struct MeshLoop *l;
 
   /**
@@ -287,10 +285,8 @@ typedef struct Mesh {
    */
   char elem_index_dirty;
 
-  /**
-   * Flag array table as being dirty so we know when its safe to use it,
-   * or when it needs to be re-created.
-   */
+  /** Flag array table as being dirty so we know when its safe to use it, 
+   ** or when it needs to be re-created. **/
   char elem_table_dirty;
 
   /* element pools */
@@ -506,9 +502,9 @@ typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const BMLoop *, void *use
     (lib_assert(offset != -1), \
      _Generic(ele, \
               GENERIC_TYPE_ANY(PTR_OFFSET((ele)->head.data, offset), \
-                               _BM_GENERIC_TYPE_ELEM_NONCONST), \
+                               _MESH_GENERIC_TYPE_ELEM_NONCONST), \
               GENERIC_TYPE_ANY((const void *)POINTER_OFFSET((ele)->head.data, offset), \
-                               _BM_GENERIC_TYPE_ELEM_CONST)))
+                               _MESH_GENERIC_TYPE_ELEM_CONST)))
 #else
 #  define MESH_ELEM_CD_GET_VOID_P(ele, offset) \
     (lib_assert(offset != -1), (void *)((char *)(ele)->head.data + (offset)))
@@ -555,17 +551,17 @@ typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const BMLoop *, void *use
 /**
  * size to use for stack arrays dealing with connected mesh data
  * verts of faces, edges of vert - etc.
- * often used with #BM_iter_as_arrayN() */
+ * often used with mesh_iter_as_arrayn() */
 #define MESH_DEFAULT_ITER_STACK_SIZE 16
 
 /* avoid inf loop, this value is arbitrary
  * but should not error on valid cases */
-#define BM_LOOP_RADIAL_MAX 10000
-#define BM_NGON_MAX 100000
+#define MESH_LOOP_RADIAL_MAX 10000
+#define MESH_NGON_MAX 100000
 
 /* setting zero so we can catch bugs in OpenMP/BMesh */
 #ifdef DEBUG
-#  define BM_OMP_LIMIT 0
+#  define MESH_OMP_LIMIT 0
 #else
-#  define BM_OMP_LIMIT 10000
+#  define MESH_OMP_LIMIT 10000
 #endif
