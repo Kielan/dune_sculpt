@@ -422,14 +422,14 @@ enum {
 #define _MESH_GENERIC_TYPE_VERT_NONCONST MeshVert *, MeshVertOpFlag *
 #define _MESH_GENERIC_TYPE_VERT_CONST const MeshVert *, const MeshVertOpFlag *
 #define MESH_CHECK_TYPE_VERT_CONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_VERT_CONST)
-#define MESH_CHECK_TYPE_VERT_NONCONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST)
+#define MESH_CHECK_TYPE_VERT_NONCONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_ELEM_NONCONST)
 #define MESH_CHECK_TYPE_VERT(ele) \
-  CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_VERT_NONCONST, _BM_GENERIC_TYPE_VERT_CONST)
+  CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_VERT_NONCONST, _MESH_GENERIC_TYPE_VERT_CONST)
 /* edge */
-#define _BM_GENERIC_TYPE_EDGE_NONCONST BMEdge *, BMEdge_OFlag *
-#define _BM_GENERIC_TYPE_EDGE_CONST const BMEdge *, const BMEdge_OFlag *
-#define BM_CHECK_TYPE_EDGE_CONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_EDGE_CONST)
-#define BM_CHECK_TYPE_EDGE_NONCONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST)
+#define _MESH_GENERIC_TYPE_EDGE_NONCONST MeshEdge *, MeshEdgeOpFlag *
+#define _MESH_GENERIC_TYPE_EDGE_CONST const MeshEdge *, const MeshEdge_OFlag *
+#define BM_CHECK_TYPE_EDGE_CONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_EDGE_CONST)
+#define BM_CHECK_TYPE_EDGE_NONCONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_ELEM_NONCONST)
 #define BM_CHECK_TYPE_EDGE(ele) \
   CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_EDGE_NONCONST, _BM_GENERIC_TYPE_EDGE_CONST)
 /* face */
@@ -444,16 +444,16 @@ enum {
  * casting the LHS to void works fine though.
  */
 #ifdef __cplusplus
-#  define BM_CHECK_TYPE_ELEM_ASSIGN(ele) (BM_CHECK_TYPE_ELEM(ele)), *((void **)&ele)
+#  define MESH_CHECK_TYPE_ELEM_ASSIGN(ele) (BM_CHECK_TYPE_ELEM(ele)), *((void **)&ele)
 #else
-#  define BM_CHECK_TYPE_ELEM_ASSIGN(ele) (BM_CHECK_TYPE_ELEM(ele)), ele
+#  define MESH_CHECK_TYPE_ELEM_ASSIGN(ele) (BM_CHECK_TYPE_ELEM(ele)), ele
 #endif
 
-/** #BMHeader.hflag (char) */
+/** MeshHeader.hflag (char) */
 enum {
-  BM_ELEM_SELECT = (1 << 0),
-  BM_ELEM_HIDDEN = (1 << 1),
-  BM_ELEM_SEAM = (1 << 2),
+  MESH_ELEM_SELECT = (1 << 0),
+  MESH_ELEM_HIDDEN = (1 << 1),
+  MESH_ELEM_SEAM = (1 << 2),
   /**
    * used for faces and edges, note from the user POV,
    * this is a sharp edge when disabled */
