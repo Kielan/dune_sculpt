@@ -18,19 +18,19 @@ const MeshAllocTemplate mesh_allocsize_default = {512, 1024, 2048, 512};
 const MeshAllocTemplate mesh_chunksize_default = {512, 1024, 2048, 512};
 
 static void mempool_init_ex(const MeshAllocTemplate *allocsize,
-                               const bool use_toolflags,
-                               lib_mempool **r_vpool,
-                               lib_mempool **r_epool,
-                               lib_mempool **r_lpool,
-                               lib_mempool **r_fpool)
+                            const bool use_toolflags,
+                            lib_mempool **r_vpool,
+                            lib_mempool **r_epool,
+                            lib_mempool **r_lpool,
+                            lib_mempool **r_fpool)
 {
   size_t vert_size, edge_size, loop_size, face_size;
 
   if (use_toolflags == true) {
-    vert_size = sizeof(MeshVert_OFlag);
-    edge_size = sizeof(MeshEdge_OFlag);
+    vert_size = sizeof(MeshVertOpFlag);
+    edge_size = sizeof(MeshEdgeOpFlag);
     loop_size = sizeof(MeshLoop);
-    face_size = sizeof(MeshFace_OFlag);
+    face_size = sizeof(MeshFaceOpFlag);
   }
   else {
     vert_size = sizeof(MeshVert);
@@ -79,19 +79,19 @@ void mesh_elem_toolflags_ensure(Mesh *mesh)
   mesh->ftoolflagpool = lib_mempool_create(sizeof(MeshFlagLayer), mesh->totface, 512, LIB_MEMPOOL_NOP);
 
   MeshIter iter;
-  MeshVert_OFlag *v_olfag;
+  MeshVertOpFlag *v_olfag;
   lib_mempool *toolflagpool = mesh->vtoolflagpool;
   MESH_ITER (v_olfag, &iter, mesh, MESH_VERTS_OF_MESH) {
     v_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
-  MeshEdge_OFlag *e_olfag;
+  MeshEdgeOpFlag *e_olfag;
   toolflagpool = lib->etoolflagpool;
   MESH_ITER (e_olfag, &iter, mesh, MESH_EDGES_OF_MESH) {
     e_olfag->oflags = lib_mempool_calloc(toolflagpool);
   }
 
-  MeshFace_OFlag *f_olfag;
+  MeshFaceOpFlag *f_olfag;
   toolflagpool = MeshLoop ->ftoolflagpool;
   MESH_ITER (f_olfag, &iter, mesh, MESH_FACES_OF_MESH) {
     f_olfag->oflags = lib_mempool_calloc(toolflagpool);
@@ -553,9 +553,9 @@ void mesh_elem_table_ensure(Mesh *mesh, const char htype)
 {
   /* assume if the array is non-null then its valid and no need to recalc */
   const char htype_needed =
-      (((mesh->vtable && ((mesh->elem_table_dirty & M_VERT) == 0)) ? 0 : M_VERT) |
-       ((mesh->etable && ((mesh->elem_table_dirty & M_EDGE) == 0)) ? 0 : M_EDGE) |
-       ((mesh->ftable && ((mesh->elem_table_dirty & M_FACE) == 0)) ? 0 : M_FACE)) &
+      (((mesh->vtable && ((mesh->elem_table_dirty & MESH_VERT) == 0)) ? 0 : M_VERT) |
+       ((mesh->etable && ((mesh->elem_table_dirty & MESH_EDGE) == 0)) ? 0 : M_EDGE) |
+       ((mesh->ftable && ((mesh->elem_table_dirty & MESH_FACE) == 0)) ? 0 : M_FACE)) &
       htype;
 
   lib_assert((htype & ~MESH_ALL_NOLOOP) == 0);
@@ -644,7 +644,7 @@ void mesh_elem_table_free(Mesh *mesh, const char htype)
   }
 
   if (htype & MESH_FACE) {
-    MEM_SAFE_FREE(bm->ftable);
+    MEM_SAFE_FREE(mesh->ftable);
   }
 }
 
@@ -1289,14 +1289,14 @@ void mesh_toolflags_set(Mesh *mesh, bool use_toolflags)
     mesh->ftoolflagpool = NULL;
   }
 
-  mesh_rebuild(bm,
-                  &((struct MeshCreateParams){
-                      .use_toolflags = use_toolflags,
-                  }),
-                  vpool_dst,
-                  epool_dst,
-                  NULL,
-                  fpool_dst);
+  mesh_rebuild(mesh,
+               &((struct MeshCreateParams){
+                 .use_toolflags = use_toolflags,
+               }),
+               vpool_dst,
+               epool_dst,
+               NULL,
+               fpool_dst);
 
   mesh->use_toolflags = use_toolflags;
 }
@@ -1324,22 +1324,22 @@ float (*mesh_vert_coords_alloc(Mesh *mesh, int *r_vert_len))[3]
 
 void mesh_vert_coords_apply(Mesh *mesh, const float (*vert_coords)[3])
 {
-  BMIter iter;
-  BMVert *v;
+  MeshIter iter;
+  MeshVert *v;
   int i;
-  BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
+  MESH_INDEX_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     copy_v3_v3(v->co, vert_coords[i]);
   }
 }
 
-void BM_mesh_vert_coords_apply_with_mat4(BMesh *bm,
-                                         const float (*vert_coords)[3],
-                                         const float mat[4][4])
+void mesh_vert_coords_apply_with_mat4(Mesh *mesh,
+                                      const float (*vert_coords)[3],
+                                      const float mat[4][4])
 {
-  BMIter iter;
-  BMVert *v;
+  MeshIter iter;
+  MeshVert *v;
   int i;
-  BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
+  MESH_INDEX_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH, i) {
     mul_v3_m4v3(v->co, mat, vert_coords[i]);
   }
 }
