@@ -92,10 +92,10 @@ typedef struct MeshVert {
   struct MeshEdge *e;
 } MeshVert;
 
-typedef struct MeshVert_OFlag {
+typedef struct MeshVertOpFlag {
   MeshVert base;
   struct MeshFlagLayer *oflags;
-} MeshVert_OFlag;
+} MeshVertOpFlag;
 
 /* disk link structure, only used by edges */
 typedef struct MeshDiskLink {
@@ -131,10 +131,10 @@ typedef struct MeshEdge {
   MeshDiskLink v1_disk_link, v2_disk_link;
 } MeshEdge;
 
-typedef struct MeshEdge_OFlag {
+typedef struct MeshEdgeOpFlag {
   MeshEdge base;
   struct MeshFlagLayer *oflags;
-} MeshEdge_OFlag;
+} MeshEdgeOpFlag;
 
 typedef struct MeshLoop {
   MeshHeader head;
@@ -300,10 +300,10 @@ typedef struct Mesh {
    * index tables, to map indices to elements via
    * mesh_elem_table_ensure and associated functions.  don't
    * touch this or read it directly.\
-   * Use BM_mesh_elem_table_ensure(), BM_vert/edge/face_at_index() */
-  BMVert **vtable;
-  BMEdge **etable;
-  BMFace **ftable;
+   * Use mesh_elem_table_ensure(), mesh_vert/edge/face_at_index() */
+  MeshVert **vtable;
+  MeshEdge **etable;
+  MeshFace **ftable;
 
   /* size of allocated tables */
   int vtable_tot;
@@ -311,7 +311,7 @@ typedef struct Mesh {
   int ftable_tot;
 
   /* operator api stuff (must be all NULL or all alloc'd) */
-  struct BLI_mempool *vtoolflagpool, *etoolflagpool, *ftoolflagpool;
+  struct lib_mempool *vtoolflagpool, *etoolflagpool, *ftoolflagpool;
 
   uint use_toolflags : 1;
 
@@ -319,15 +319,15 @@ typedef struct Mesh {
 
   CustomData vdata, edata, ldata, pdata;
 
-#ifdef USE_BMESH_HOLES
-  struct BLI_mempool *looplistpool;
+#ifdef USE_MESH_HOLES
+  struct lib_mempool *looplistpool;
 #endif
 
-  struct MLoopNorSpaceArray *lnor_spacearr;
+  struct MeshLoopNorSpaceArray *lnor_spacearr;
   char spacearr_dirty;
 
   /* Should be copy of scene select mode. */
-  /* Stored in #BMEditMesh too, this is a bit confusing,
+  /* Stored in MeshEditMesh too, this is a bit confusing,
    * make sure they're in sync!
    * Only use when the edit mesh can't be accessed - campbell */
   short selectmode;
