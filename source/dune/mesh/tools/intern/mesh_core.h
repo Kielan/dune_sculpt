@@ -21,147 +21,139 @@ MeshVert *mesh_vert_create(Mesh *mesh,
                        const MeshVert *v_example,
                        eMeshCreateFlag create_flag);
 /**
- * \brief Main function for creating a new edge.
+ * Main function for creating a new edge.
  *
- * \note Duplicate edges are supported by the API however users should _never_ see them.
+ * Duplicate edges are supported by the API however users should _never_ see them.
  * so unless you need a unique edge or know the edge won't exist,
- * you should call with \a no_double = true.
+ * you should call with no_double = true.
  */
-BMEdge *BM_edge_create(
-    BMesh *bm, BMVert *v1, BMVert *v2, const BMEdge *e_example, eBMCreateFlag create_flag);
+MeshEdge *mesh_edge_create(
+    Mesh *mesh, MeshVert *v1, MeshVert *v2, const MeshEdge *e_example, eMeshCreateFlag create_flag);
 /**
  * Main face creation function
  *
- * \param bm: The mesh
- * \param verts: A sorted array of verts size of len
- * \param edges: A sorted array of edges size of len
- * \param len: Length of the face
- * \param create_flag: Options for creating the face
+ * param mesh: The mesh
+ * param verts: A sorted array of verts size of len
+ * param edges: A sorted array of edges size of len
+ * param len: Length of the face
+ * param create_flag: Options for creating the face
  */
-BMFace *BM_face_create(BMesh *bm,
-                       BMVert **verts,
-                       BMEdge **edges,
-                       int len,
-                       const BMFace *f_example,
-                       eBMCreateFlag create_flag);
-/**
- * Wrapper for #BM_face_create when you don't have an edge array
- */
-BMFace *BM_face_create_verts(BMesh *bm,
-                             BMVert **vert_arr,
+MeshFace *mesh_face_create(Mesh *mesh,
+                           MeshVert **verts,
+                           MeshEdge **edges,
+                           int len,
+                           const MeshFace *f_example,
+                           eMeshCreateFlag create_flag);
+/** Wrapper for mesh_face_create when you don't have an edge array **/
+MeshFace *mesh_face_create_verts(Mesh *mesh,
+                             MeshVert **vert_arr,
                              int len,
-                             const BMFace *f_example,
-                             eBMCreateFlag create_flag,
+                             const MeshFace *f_example,
+                             eMeshCreateFlag create_flag,
                              bool create_edges);
 
-/**
- * Kills all edges associated with \a f, along with any other faces containing those edges.
- */
-void BM_face_edges_kill(BMesh *bm, BMFace *f);
-/**
- * kills all verts associated with \a f, along with any other faces containing
- * those vertices
- */
-void BM_face_verts_kill(BMesh *bm, BMFace *f);
+/** Kills all edges associated with f, along with any other faces containing those edges. **/
+void mesh_face_edges_kill(Mesh *mesh, MeshFace *f);
+/** kills all verts associated with f, along with any other faces containing
+  * those vertices */
+void mesh_face_verts_kill(Mesh *mesh, MeshFace *f);
 
 /**
- * A version of #BM_face_kill which removes edges and verts
+ * A version of Mesh_face_kill which removes edges and verts
  * which have no remaining connected geometry.
  */
-void BM_face_kill_loose(BMesh *bm, BMFace *f);
+void mesh_face_kill_loose(Mesh *mesh, MeshFace *f);
+
+/** Kills f and its loops. */
+void mesh_face_kill(Mesh *mesh, MeshFace *f);
+/**
+ * Kills e and all faces that use it.
+ */
+void mesh_edge_kill(Mesh *mesh, MeshEdge *e);
+/**
+ * Kills v and all edges that use it.
+ */
+void mesh_vert_kill(Mesh *mesh, MeshVert *v);
 
 /**
- * Kills \a f and its loops.
- */
-void BM_face_kill(BMesh *bm, BMFace *f);
-/**
- * Kills \a e and all faces that use it.
- */
-void BM_edge_kill(BMesh *bm, BMEdge *e);
-/**
- * Kills \a v and all edges that use it.
- */
-void BM_vert_kill(BMesh *bm, BMVert *v);
-
-/**
- * \brief Splice Edge
+ * Splice Edge
  *
  * Splice two unique edges which share the same two vertices into one edge.
- *  (\a e_src into \a e_dst, removing e_src).
+ *  (e_src into e_dst, removing e_src).
  *
- * \return Success
+ * Success
  *
- * \note Edges must already have the same vertices.
+ * Edges must already have the same vertices.
  */
-bool BM_edge_splice(BMesh *bm, BMEdge *e_dst, BMEdge *e_src);
+bool mesh_edge_splice(Mesh *mesh, MeshEdge *e_dst, MeshEdge *e_src);
 /**
- * \brief Splice Vert
+ * Splice Vert
  *
  * Merges two verts into one
- * (\a v_src into \a v_dst, removing \a v_src).
+ * (v_src into v_dst, removing v_src).
  *
- * \return Success
+ * Success
  *
- * \warning This doesn't work for collapsing edges,
- * where \a v and \a vtarget are connected by an edge
+ * This doesn't work for collapsing edges,
+ * where v and vtarget are connected by an edge
  * (assert checks for this case).
  */
-bool BM_vert_splice(BMesh *bm, BMVert *v_dst, BMVert *v_src);
+bool mesh_vert_splice(Mesh *mesh, MeshVert *v_dst, MeshVert *v_src);
 /**
  * Check if splicing vertices would create any double edges.
  *
- * \note assume caller will handle case where verts share an edge.
+ * assume caller will handle case where verts share an edge.
  */
-bool BM_vert_splice_check_double(BMVert *v_a, BMVert *v_b);
+bool mesh_vert_splice_check_double(MeshVert *v_a, MeshVert *v_b);
 
 /**
- * \brief Loop Reverse
+ * Loop Reverse
  *
  * Changes the winding order of a face from CW to CCW or vice versa.
  *
- * \param cd_loop_mdisp_offset: Cached result of `CustomData_get_offset(&bm->ldata, CD_MDISPS)`.
- * \param use_loop_mdisp_flip: When set, flip the Z-depth of the mdisp,
+ * param cd_loop_mdisp_offset: Cached result of `CustomData_get_offset(&bm->ldata, CD_MDISPS)`.
+ * param use_loop_mdisp_flip: When set, flip the Z-depth of the mdisp,
  * (use when flipping normals, disable when mirroring, eg: symmetrize).
  */
-void bmesh_kernel_loop_reverse(BMesh *bm,
-                               BMFace *f,
+void mesh_kernel_loop_reverse(Mesh *mesh,
+                               MeshFace *f,
                                int cd_loop_mdisp_offset,
                                bool use_loop_mdisp_flip);
 
 /**
  * Avoid calling this where possible,
  * low level function so both face pointers remain intact but point to swapped data.
- * \note must be from the same bmesh.
+ * must be from the same mesh.
  */
-void bmesh_face_swap_data(BMFace *f_a, BMFace *f_b);
+void mesh_face_swap_data(MeshFace *f_a, MeshFace *f_b);
 
 /**
- * \brief Join Connected Faces
+ * Join Connected Faces
  *
  * Joins a collected group of faces into one. Only restriction on
  * the input data is that the faces must be connected to each other.
  *
- * \return The newly created combine BMFace.
+ * The newly created combine BMFace.
  *
- * \note If a pair of faces share multiple edges,
+ * If a pair of faces share multiple edges,
  * the pair of faces will be joined at every edge.
  *
- * \note this is a generic, flexible join faces function,
- * almost everything uses this, including #BM_faces_join_pair
+ * this is a generic, flexible join faces function,
+ * almost everything uses this, including mesh_faces_join_pair
  */
-BMFace *BM_faces_join(BMesh *bm, BMFace **faces, int totface, bool do_del);
+MeshFace *mesh_faces_join(Mesh *mesh, MeshFace **faces, int totface, bool do_del);
 /**
- * High level function which wraps both #bmesh_kernel_vert_separate and #bmesh_kernel_edge_separate
+ * High level function which wraps both mesh_kernel_vert_separate and #bmesh_kernel_edge_separate
  */
-void BM_vert_separate(BMesh *bm,
-                      BMVert *v,
-                      BMEdge **e_in,
-                      int e_in_len,
-                      bool copy_select,
-                      BMVert ***r_vout,
-                      int *r_vout_len);
+void mesh_vert_separate(Mesh *bm,
+                        MeshVert *v,
+                        MeshEdge **e_in,
+                        int e_in_len,
+                        bool copy_select,
+                        MeshVert ***r_vout,
+                        int *r_vout_len);
 /**
- * A version of #BM_vert_separate which takes a flag.
+ * A version of mesh_vert_separate which takes a flag.
  */
 void BM_vert_separate_hflag(
     BMesh *bm, BMVert *v, char hflag, bool copy_select, BMVert ***r_vout, int *r_vout_len);
