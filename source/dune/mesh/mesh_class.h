@@ -1,27 +1,25 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- *
- * #BMesh data structures, used for mesh editing operations
+/**
+ * Mesh data structures, used for mesh editing operations
  * that benefit from accessing connectivity information.
  */
 
-#include "BLI_assert.h"
+#include "lib_assert.h"
 
 /* disable holes for now,
  * these are ifdef'd because they use more memory and can't be saved in DNA currently */
-// #define USE_BMESH_HOLES
+// #define USE_MESH_HOLES
 
-struct BMEdge;
-struct BMFace;
-struct BMLoop;
-struct BMVert;
-struct BMesh;
+struct MEdge;
+struct MFace;
+struct MLoop;
+struct MVert;
+struct Mesh;
 
-struct MLoopNorSpaceArray;
+struct MeshLoopNorSpaceArray;
 
-struct BLI_mempool;
+struct lib_mempool;
 
 /* NOTE: it is very important for BMHeader to start with two
  * pointers. this is a requirement of mempool's method of
@@ -33,24 +31,23 @@ struct BLI_mempool;
 // #pragma GCC diagnostic error "-Wpadded"
 
 /**
- * #BMHeader
+ * MeshHeader
  *
- * All mesh elements begin with a #BMHeader. This structure
+ * All mesh elements begin with a MeshHeader. This structure
  * hold several types of data
  *
  * 1: The type of the element (vert, edge, loop or face)
  * 2: Persistent "header" flags/markings (smooth, seam, select, hidden, etc)
  *    note that this is different from the "tool" flags.
- * 3: Unique ID in the #BMesh.
+ * 3: Unique ID in the Mesh.
  * 4: some elements for internal record keeping.
  */
-typedef struct BMHeader {
+typedef struct MeshHeader {
   /** Customdata layers. */
   void *data;
 
   /**
-   * \note
-   * - Use BM_elem_index_get/set macros for index
+   * - Use mesh_elem_index_get/set macros for index
    * - Uninitialized to -1 so we can easily tell its not set.
    * - Used for edge/vert/face/loop, check BMesh.elem_index_dirty for valid index values,
    *   this is abused by various tools which set it dirty.
@@ -65,22 +62,22 @@ typedef struct BMHeader {
 
   /**
    * Internal use only!
-   * \note We are very picky about not bloating this struct
+   * We are very picky about not bloating this struct
    * but in this case its padded up to 16 bytes anyway,
    * so adding a flag here gives no increase in size.
    */
   char api_flag;
   // char _pad;
-} BMHeader;
+} MeshHeader;
 
-BLI_STATIC_ASSERT((sizeof(BMHeader) <= 16), "BMHeader size has grown!");
+LIB_STATIC_ASSERT((sizeof(MeshHeader) <= 16), "MeshHeader size has grown!");
 
 /* NOTE: need some way to specify custom locations for custom data layers.  so we can
  * make them point directly into structs.  and some way to make it only happen to the
  * active layer, and properly update when switching active layers. */
 
-typedef struct BMVert {
-  BMHeader head;
+typedef struct MeshVert {
+  MeshHeader head;
 
   float co[3]; /* vertex coordinates */
   float no[3]; /* vertex normal */
@@ -92,8 +89,8 @@ typedef struct BMVert {
    * which is a bit of an abuse of internal #BMesh data but also works OK for now
    * (use with care!).
    */
-  struct BMEdge *e;
-} BMVert;
+  struct MeshEdge *e;
+} MeshVert;
 
 typedef struct BMVert_OFlag {
   BMVert base;
