@@ -265,10 +265,10 @@ typedef struct MeshFace {
   //  short _pad[3];
 } MeshFace;
 
-typedef struct MeshFace_OFlag {
+typedef struct MeshFaceOpFlag {
   MeshFace base;
   struct MeshFlagLayer *oflags;
-} MeshFace_OFlag;
+} MeshFaceOpFlag;
 
 typedef struct MeshFlagLayer {
   short f; /* flags */
@@ -359,61 +359,61 @@ typedef struct Mesh {
    * instead of crashing on invalid memory access.
    */
   void *py_handle;
-} BMesh;
+} Mesh;
 
-/** #BMHeader.htype (char) */
+/** MeshHeader.htype (char) */
 enum {
-  BM_VERT = 1,
-  BM_EDGE = 2,
-  BM_LOOP = 4,
-  BM_FACE = 8,
+  MESH_VERT = 1,
+  MESH_EDGE = 2,
+  MESH_LOOP = 4,
+  MESH_FACE = 8,
 };
 
-typedef struct BMLoopNorEditData {
+typedef struct MeshLoopNorEditData {
   int loop_index;
-  BMLoop *loop;
+  MeshLoop *loop;
   float niloc[3];
   float nloc[3];
   float *loc;
   short *clnors_data;
-} BMLoopNorEditData;
+} MeshLoopNorEditData;
 
-typedef struct BMLoopNorEditDataArray {
-  BMLoopNorEditData *lnor_editdata;
+typedef struct MeshLoopNorEditDataArray {
+  MeshLoopNorEditData *lnor_editdata;
   /**
    * This one has full amount of loops,
-   * used to map loop index to actual #BMLoopNorEditData struct.
+   * used to map loop index to actual MeshLoopNorEditData struct.
    */
-  BMLoopNorEditData **lidx_to_lnor_editdata;
+  MeshLoopNorEditData **lidx_to_lnor_editdata;
 
   int cd_custom_normal_offset;
   int totloop;
-} BMLoopNorEditDataArray;
+} MeshLoopNorEditDataArray;
 
-#define BM_ALL (BM_VERT | BM_EDGE | BM_LOOP | BM_FACE)
-#define BM_ALL_NOLOOP (BM_VERT | BM_EDGE | BM_FACE)
+#define MESH_ALL (MESH_VERT | MESH_EDGE | MESH_LOOP | MESH_FACE)
+#define NESH_ALL_NOLOOP (MESH_VERT | MESH_EDGE | MESH_FACE)
 
-/** #BMesh.spacearr_dirty */
+/** Mesh.spacearr_dirty */
 enum {
-  BM_SPACEARR_DIRTY = 1 << 0,
-  BM_SPACEARR_DIRTY_ALL = 1 << 1,
-  BM_SPACEARR_BMO_SET = 1 << 2,
+  MESH_SPACEARR_DIRTY = 1 << 0,
+  MESH_SPACEARR_DIRTY_ALL = 1 << 1,
+  MESH_SPACEARR_BMO_SET = 1 << 2,
 };
 
 /* args for _Generic */
 #define _BM_GENERIC_TYPE_ELEM_NONCONST \
-  void *, BMVert *, BMEdge *, BMLoop *, BMFace *, BMVert_OFlag *, BMEdge_OFlag *, BMFace_OFlag *, \
-      BMElem *, BMElemF *, BMHeader *
+  void *, MeshVert *, MeshEdge *, MeshLoop *, MeshFace *, MeshVertOpFlag *, MeshEdgeOpFlag *, MeshFace_OFlag *, \
+      MeshElem *, MeshElemF *, MeshHeader *
 
 #define _BM_GENERIC_TYPE_ELEM_CONST \
-  const void *, const BMVert *, const BMEdge *, const BMLoop *, const BMFace *, \
-      const BMVert_OFlag *, const BMEdge_OFlag *, const BMFace_OFlag *, const BMElem *, \
-      const BMElemF *, const BMHeader *, void *const, BMVert *const, BMEdge *const, \
-      BMLoop *const, BMFace *const, BMElem *const, BMElemF *const, BMHeader *const
+  const void *, const MeshVert *, const MeshEdge *, const MeshLoop *, const MeshFace *, \
+      const MeshVertOpFlag *, const MeshEdge_OFlag *, const MeshFaceOpFlag *, const MeshElem *, \
+      const MeshElemF *, const MeshHeader *, void *const, MeshVert *const, MeshEdge *const, \
+      MeshLoop *const, MeshFace *const, MeshElem *const, MeshElemF *const, MeshHeader *const
 
-#define BM_CHECK_TYPE_ELEM_CONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPES_CONST)
+#define MESH_CHECK_TYPE_ELEM_CONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPES_CONST)
 
-#define BM_CHECK_TYPE_ELEM_NONCONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST)
+#define MESH_CHECK_TYPE_ELEM_NONCONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST)
 
 #define BM_CHECK_TYPE_ELEM(ele) \
   CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST, _BM_GENERIC_TYPE_ELEM_CONST)
