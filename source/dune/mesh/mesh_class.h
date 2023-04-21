@@ -431,12 +431,12 @@ enum {
 #define MESH_CHECK_TYPE_EDGE_CONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_EDGE_CONST)
 #define MESH_CHECK_TYPE_EDGE_NONCONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_ELEM_NONCONST)
 #define MESH_CHECK_TYPE_EDGE(ele) \
-  CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_EDGE_NONCONST, _BM_GENERIC_TYPE_EDGE_CONST)
+  CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_EDGE_NONCONST, _MESH_GENERIC_TYPE_EDGE_CONST)
 /* face */
 #define _MESH_GENERIC_TYPE_FACE_NONCONST MeshFace *, MeshFaceOpFlag *
 #define _MESH_GENERIC_TYPE_FACE_CONST const MeshFace *, const MeshFaceOpFlag *
-#define MESH_CHECK_TYPE_FACE_CONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_FACE_CONST)
-#define MESH_CHECK_TYPE_FACE_NONCONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST)
+#define MESH_CHECK_TYPE_FACE_CONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_FACE_CONST)
+#define MESH_CHECK_TYPE_FACE_NONCONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_ELEM_NONCONST)
 #define MESH_CHECK_TYPE_FACE(ele) \
   CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_FACE_NONCONST, _BM_GENERIC_TYPE_FACE_CONST)
 
@@ -444,9 +444,9 @@ enum {
  * casting the LHS to void works fine though.
  */
 #ifdef __cplusplus
-#  define MESH_CHECK_TYPE_ELEM_ASSIGN(ele) (BM_CHECK_TYPE_ELEM(ele)), *((void **)&ele)
+#  define MESH_CHECK_TYPE_ELEM_ASSIGN(ele) (MESH_CHECK_TYPE_ELEM(ele)), *((void **)&ele)
 #else
-#  define MESH_CHECK_TYPE_ELEM_ASSIGN(ele) (BM_CHECK_TYPE_ELEM(ele)), ele
+#  define MESH_CHECK_TYPE_ELEM_ASSIGN(ele) (MESH_CHECK_TYPE_ELEM(ele)), ele
 #endif
 
 /** MeshHeader.hflag (char) */
@@ -457,7 +457,7 @@ enum {
   /**
    * used for faces and edges, note from the user POV,
    * this is a sharp edge when disabled */
-  BM_ELEM_SMOOTH = (1 << 3),
+  MESH_ELEM_SMOOTH = (1 << 3),
   /**
    * Internal flag, used for ensuring correct normals
    * during multi-resolution interpolation, and any other time
@@ -479,8 +479,8 @@ enum {
   MESH_ELEM_INTERNAL_TAG = (1 << 7),
 };
 
-struct BPy_BMGeneric;
-extern void bpy_mesh_generic_invalidate(struct BPy_BMGeneric *self);
+struct BPyMeshGeneric;
+extern void bpy_mesh_generic_invalidate(struct BPy_MeshGeneric *self);
 
 typedef bool (*MeshVertFilterFn)(const MeshElem *, void *user_data);
 typedef bool (*MeshVertFilterFn)(const MeshVert *, void *user_data);
@@ -551,12 +551,12 @@ typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const BMLoop *, void *use
  * size to use for stack arrays when dealing with NGons,
  * alloc after this limit is reached.
  * this value is rather arbitrary */
-#define BM_DEFAULT_NGON_STACK_SIZE 32
+#define MESH_DEFAULT_NGON_STACK_SIZE 32
 /**
  * size to use for stack arrays dealing with connected mesh data
  * verts of faces, edges of vert - etc.
  * often used with #BM_iter_as_arrayN() */
-#define BM_DEFAULT_ITER_STACK_SIZE 16
+#define MESH_DEFAULT_ITER_STACK_SIZE 16
 
 /* avoid inf loop, this value is arbitrary
  * but should not error on valid cases */
