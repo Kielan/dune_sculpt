@@ -11,10 +11,10 @@
  * these are ifdef'd because they use more memory and can't be saved in DNA currently */
 // #define USE_MESH_HOLES
 
-struct MEdge;
-struct MFace;
-struct MLoop;
-struct MVert;
+struct MeshEdge;
+struct MeshFace;
+struct MeshLoop;
+struct MeshVert;
 struct Mesh;
 
 struct MeshLoopNorSpaceArray;
@@ -102,8 +102,8 @@ typedef struct BMDiskLink {
   struct BMEdge *next, *prev;
 } BMDiskLink;
 
-typedef struct BMEdge {
-  BMHeader head;
+typedef struct MeshEdge {
+  MeshHeader head;
 
   /**
    * Vertices (unordered),
@@ -114,13 +114,13 @@ typedef struct BMEdge {
    * Operations that create/subdivide edges shouldn't flip the order
    * unless there is a good reason to do so.
    */
-  BMVert *v1, *v2;
+  MeshVert *v1, *v2;
 
   /**
    * The list of loops around the edge, see doc-string for #BMLoop.radial_next
    * for an example of using this to loop over all faces used by an edge.
    */
-  struct BMLoop *l;
+  struct MeshLoop *l;
 
   /**
    * Disk Cycle Pointers
@@ -128,16 +128,16 @@ typedef struct BMEdge {
    * relative data: d1 indicates the next/prev
    * edge around vertex v1 and d2 does the same for v2.
    */
-  BMDiskLink v1_disk_link, v2_disk_link;
-} BMEdge;
+  MeshDiskLink v1_disk_link, v2_disk_link;
+} MeshEdge;
 
-typedef struct BMEdge_OFlag {
-  BMEdge base;
-  struct BMFlagLayer *oflags;
-} BMEdge_OFlag;
+typedef struct MeshEdge_OFlag {
+  MeshEdge base;
+  struct MeshFlagLayer *oflags;
+} MeshEdge_OFlag;
 
-typedef struct BMLoop {
-  BMHeader head;
+typedef struct MeshLoop {
+  MeshHeader head;
   /* notice no flags layer */
 
   /**
@@ -145,25 +145,25 @@ typedef struct BMLoop {
    *
    * - This vertex must be unique within the cycle.
    */
-  struct BMVert *v;
+  struct MeshVert *v;
 
   /**
    * The edge this loop uses.
    *
-   * Vertices (#BMLoop.v & #BMLoop.next.v) always contain vertices from (#BMEdge.v1 & #BMEdge.v2).
+   * Vertices (MeshLoop.v & MeshLoop.next.v) always contain vertices from (MeshEdge.v1 &MeshEdge.v2).
    * Although no assumptions can be made about the order,
    * as this isn't meaningful for mesh topology.
    *
-   * - This edge must be unique within the cycle (defined by #BMLoop.next & #BMLoop.prev links).
+   * - This edge must be unique within the cycle (defined by MeshLoop.next & MeshLoop.prev links).
    */
-  struct BMEdge *e;
+  struct MeshEdge *e;
   /**
    * The face this loop is part of.
    *
    * - This face must be shared by all within the cycle.
    *   Used as a back-pointer so loops can know the face they define.
    */
-  struct BMFace *f;
+  struct MeshFace *f;
 
   /**
    * Other loops connected to this edge.
@@ -172,16 +172,16 @@ typedef struct BMLoop {
    * however this is done by stepping over it's loops.
    *
    * - This is a circular list, so there are no first/last storage of the "radial" data.
-   *   Instead #BMEdge.l points to any one of the loops that use it.
+   *   Instead MeshEdge.l points to any one of the loops that use it.
    *
    * - Since the list is circular, the particular loop referenced doesn't matter,
    *   as all other loops can be accessed from it.
    *
-   * - Every loop in this radial list has the same value for #BMLoop.e.
+   * - Every loop in this radial list has the same value for MeshLoop.e.
    *
-   * - The value for #BMLoop.v might not match the radial next/previous
+   * - The value for MeshLoop.v might not match the radial next/previous
    *   as this depends on the face-winding.
-   *   You can be sure #BMLoop.v will either #BMEdge.v1 or #BMEdge.v2 of #BMLoop.e,
+   *   You can be sure MeshLoop.v will either #BMEdge.v1 or #BMEdge.v2 of #BMLoop.e,
    *
    * - Unlike face-winding (which defines if the direction the face points),
    *   next and previous are insignificant. The list could be reversed for example,
@@ -190,13 +190,13 @@ typedef struct BMLoop {
    * This is an example of looping over an edges faces using #BMLoop.radial_next.
    *
    * \code{.c}
-   * BMLoop *l_iter = edge->l;
+   * MeshLoop *l_iter = edge->l;
    * do {
    *   operate_on_face(l_iter->f);
    * } while ((l_iter = l_iter->radial_next) != edge->l);
    * \endcode
    */
-  struct BMLoop *radial_next, *radial_prev;
+  struct MeshLoop *radial_next, *radial_prev;
 
   /**
    * Other loops that are part of this face.
@@ -204,7 +204,7 @@ typedef struct BMLoop {
    * This is typically used for accessing all vertices/edges in a faces.
    *
    * - This is a circular list, so there are no first/last storage of the "cycle" data.
-   *   Instead #BMFace.l_first points to any one of the loops that are part of this face.
+   *   Instead MeshFace.l_first points to any one of the loops that are part of this face.
    *
    * - Since the list is circular, the particular loop referenced doesn't matter,
    *   as all other loops can be accessed from it.
