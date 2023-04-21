@@ -939,13 +939,13 @@ void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshPara
     CustomData_copy(&mesh->pdata, &me->pdata, mask.pmask, CD_CALLOC, me->totpoly);
   }
 
-  MVert *mvert = mesh->totvert ? (MVert *)MEM_callocN(sizeof(MVert) * bm->totvert, "bm_to_me.vert") :
+  MeshVert *mvert = mesh->totvert ? (MeshVert *)mem_callocn(sizeof(MeshVert) * mesh->totvert, "mesh_to_me.vert") :
                                nullptr;
-  MEdge *medge = mesh->totedge ? (MEdge *)MEM_callocN(sizeof(MEdge) * bm->totedge, "bm_to_me.edge") :
+  MeshEdge *medge = mesh->totedge ? (MeshEdge *)MEM_callocN(sizeof(MeshEdge) * mesh->totedge, "mesh_to_me.edge") :
                                nullptr;
-  MLoop *mloop = mesh->totloop ? (MLoop *)MEM_callocN(sizeof(MLoop) * bm->totloop, "bm_to_me.loop") :
+  MeshLoop *mloop = mesh->totloop ? (MeshLoop *)MEM_callocN(sizeof(MeshLoop) * mesh->totloop, "mesh_to_me.loop") :
                                nullptr;
-  MPoly *mpoly = mesh->totface ? (MPoly *)MEM_callocN(sizeof(MPoly) * bm->totface, "bm_to_me.poly") :
+  MeshPoly *mpoly = mesh->totface ? (MeshPoly *)MEM_callocN(sizeof(MeshPoly) * mesh->totface, "mesh_to_me.poly") :
                                nullptr;
 
   CustomData_add_layer(&me->vdata, CD_MVERT, CD_ASSIGN, mvert, me->totvert);
@@ -980,19 +980,19 @@ void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshPara
     i++;
     mvert++;
 
-    BM_CHECK_ELEMENT(v);
+    MESH_CHECK_ELEMENT(v);
   }
-  bm->elem_index_dirty &= ~BM_VERT;
+  mesh->elem_index_dirty &= ~MESH_VERT;
 
   med = medge;
   i = 0;
-  BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
-    med->v1 = BM_elem_index_get(e->v1);
-    med->v2 = BM_elem_index_get(e->v2);
+  MESH_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH) {
+    med->v1 = mesh_elem_index_get(e->v1);
+    med->v2 = mesh_elem_index_get(e->v2);
 
-    med->flag = BM_edge_flag_to_mflag(e);
+    med->flag = mesh_edge_flag_to_mflag(e);
 
-    BM_elem_index_set(e, i); /* set_inline */
+    mesh_elem_index_set(e, i); /* set_inline */
 
     /* Copy over custom-data. */
     CustomData_from_bmesh_block(&bm->edata, &me->edata, e->head.data, i);
@@ -1000,40 +1000,40 @@ void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshPara
     bmesh_quick_edgedraw_flag(med, e);
 
     if (cd_edge_crease_offset != -1) {
-      med->crease = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(e, cd_edge_crease_offset);
+      med->crease = MESH_ELEM_CD_GET_FLOAT_AS_UCHAR(e, cd_edge_crease_offset);
     }
     if (cd_edge_bweight_offset != -1) {
-      med->bweight = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(e, cd_edge_bweight_offset);
+      med->bweight = MESH_ELEM_CD_GET_FLOAT_AS_UCHAR(e, cd_edge_bweight_offset);
     }
 
     i++;
     med++;
-    BM_CHECK_ELEMENT(e);
+    MESH_CHECK_ELEMENT(e);
   }
-  bm->elem_index_dirty &= ~BM_EDGE;
+  mesh->elem_index_dirty &= ~MESH_EDGE;
 
   i = 0;
   j = 0;
-  BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
-    BMLoop *l_iter, *l_first;
+  MESH_ITER (f, &iter, mesh, MESH_FACES_OF_MESH) {
+    MeshLoop *l_iter, *l_first;
     mpoly->loopstart = j;
     mpoly->totloop = f->len;
     mpoly->mat_nr = f->mat_nr;
-    mpoly->flag = BM_face_flag_to_mflag(f);
+    mpoly->flag = mesh_face_flag_to_mflag(f);
 
-    l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+    l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
     do {
-      mloop->e = BM_elem_index_get(l_iter->e);
-      mloop->v = BM_elem_index_get(l_iter->v);
+      mloop->e = mesh_elem_index_get(l_iter->e);
+      mloop->v = mesh_elem_index_get(l_iter->v);
 
       /* Copy over custom-data. */
-      CustomData_from_bmesh_block(&bm->ldata, &me->ldata, l_iter->head.data, j);
+      CustomData_from_bmesh_block(&mesh->ldata, &me->ldata, l_iter->head.data, j);
 
       j++;
       mloop++;
-      BM_CHECK_ELEMENT(l_iter);
-      BM_CHECK_ELEMENT(l_iter->e);
-      BM_CHECK_ELEMENT(l_iter->v);
+      MESH_CHECK_ELEMENT(l_iter);
+      MESH_CHECK_ELEMENT(l_iter->e);
+      MESH_CHECK_ELEMENT(l_iter->v);
     } while ((l_iter = l_iter->next) != l_first);
 
     if (f == bm->act_face) {
@@ -1045,37 +1045,37 @@ void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshPara
 
     i++;
     mpoly++;
-    BM_CHECK_ELEMENT(f);
+    MESH_CHECK_ELEMENT(f);
   }
 
   /* Patch hook indices and vertex parents. */
   if (params->calc_object_remap && (ototvert > 0)) {
-    BLI_assert(bmain != nullptr);
-    BMVert **vertMap = nullptr;
+    lib_assert(bmain != nullptr);
+    MeshVert **vertMap = nullptr;
 
     LISTBASE_FOREACH (Object *, ob, &bmain->objects) {
       if ((ob->parent) && (ob->parent->data == me) && ELEM(ob->partype, PARVERT1, PARVERT3)) {
 
         if (vertMap == nullptr) {
-          vertMap = bm_to_mesh_vertex_map(bm, ototvert);
+          vertMap = mesh_to_mesh_vertex_map(bm, ototvert);
         }
 
         if (ob->par1 < ototvert) {
           eve = vertMap[ob->par1];
           if (eve) {
-            ob->par1 = BM_elem_index_get(eve);
+            ob->par1 = mesh_elem_index_get(eve);
           }
         }
         if (ob->par2 < ototvert) {
           eve = vertMap[ob->par2];
           if (eve) {
-            ob->par2 = BM_elem_index_get(eve);
+            ob->par2 = mesh_elem_index_get(eve);
           }
         }
         if (ob->par3 < ototvert) {
           eve = vertMap[ob->par3];
           if (eve) {
-            ob->par3 = BM_elem_index_get(eve);
+            ob->par3 = mesh_elem_index_get(eve);
           }
         }
       }
@@ -1093,7 +1093,7 @@ void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshPara
                 eve = vertMap[hmd->indexar[i]];
 
                 if (eve) {
-                  hmd->indexar[j++] = BM_elem_index_get(eve);
+                  hmd->indexar[j++] = mesh_elem_index_get(eve);
                 }
               }
               else {
@@ -1108,38 +1108,38 @@ void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshPara
     }
 
     if (vertMap) {
-      MEM_freeN(vertMap);
+      mem_freen(vertMap);
     }
   }
 
-  BKE_mesh_update_customdata_pointers(me, false);
+  dune_mesh_update_customdata_pointers(me, false);
 
   {
-    me->totselect = BLI_listbase_count(&(bm->selected));
+    me->totselect = lib_listbase_count(&(bm->selected));
 
     MEM_SAFE_FREE(me->mselect);
     if (me->totselect != 0) {
-      me->mselect = static_cast<MSelect *>(
-          MEM_mallocN(sizeof(MSelect) * me->totselect, "Mesh selection history"));
+      me->mselect = static_cast<MeshSelect *>(
+          mem_mallocn(sizeof(MeshSelect) * me->totselect, "Mesh selection history"));
     }
 
-    LISTBASE_FOREACH_INDEX (BMEditSelection *, selected, &bm->selected, i) {
-      if (selected->htype == BM_VERT) {
+    LISTBASE_FOREACH_INDEX (MeshEditSelection *, selected, &bm->selected, i) {
+      if (selected->htype == MESH_VERT) {
         me->mselect[i].type = ME_VSEL;
       }
-      else if (selected->htype == BM_EDGE) {
+      else if (selected->htype == MESH_EDGE) {
         me->mselect[i].type = ME_ESEL;
       }
-      else if (selected->htype == BM_FACE) {
+      else if (selected->htype == MESH_FACE) {
         me->mselect[i].type = ME_FSEL;
       }
 
-      me->mselect[i].index = BM_elem_index_get(selected->ele);
+      me->mselect[i].index = mesh_elem_index_get(selected->ele);
     }
   }
 
   if (me->key) {
-    bm_to_mesh_shape(bm, me->key, me->mvert, params->active_shapekey_to_mvert);
+    mesh_to_mesh_shape(mesh, me->key, me->mvert, params->active_shapekey_to_mvert);
   }
 
   /* Run this even when shape keys aren't used since it may be used for hooks or vertex parents. */
@@ -1147,20 +1147,20 @@ void mesh_bm_to_me(Main *main, BMesh *bm, Mesh *me, const struct BMeshToMeshPara
     /* We have written a new shape key, if this mesh is _not_ going to be freed,
      * update the shape key indices to match the newly updated. */
     if (cd_shape_keyindex_offset != -1) {
-      BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
-        BM_ELEM_CD_SET_INT(eve, cd_shape_keyindex_offset, i);
+      MESH_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+        NESH_ELEM_CD_SET_INT(eve, cd_shape_keyindex_offset, i);
       }
     }
   }
 
-  /* Topology could be changed, ensure #CD_MDISPS are ok. */
+  /* Topology could be changed, ensure CD_MDISPS are ok. */
   multires_topology_changed(me);
 
   /* To be removed as soon as COW is enabled by default. */
-  BKE_mesh_runtime_clear_geometry(me);
+  dune_mesh_runtime_clear_geometry(me);
 }
 
-void mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *cd_mask_extra)
+void mesh_bm_to_me_for_eval(Mesh *mesh, Mesh *me, const CustomData_MeshMasks *cd_mask_extra)
 {
   /* Must be an empty mesh. */
   lib_assert(me->totvert == 0);
@@ -1172,10 +1172,10 @@ void mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *cd_
   me->totloop = mesh->totloop;
   me->totpoly = mesh->totface;
 
-  CustomData_add_layer(&me->vdata, CD_MVERT, CD_CALLOC, nullptr, bm->totvert);
-  CustomData_add_layer(&me->edata, CD_MEDGE, CD_CALLOC, nullptr, bm->totedge);
-  CustomData_add_layer(&me->ldata, CD_MLOOP, CD_CALLOC, nullptr, bm->totloop);
-  CustomData_add_layer(&me->pdata, CD_MPOLY, CD_CALLOC, nullptr, bm->totface);
+  CustomData_add_layer(&me->vdata, CD_MVERT, CD_CALLOC, nullptr, mesh->totvert);
+  CustomData_add_layer(&me->edata, CD_MEDGE, CD_CALLOC, nullptr, mesh->totedge);
+  CustomData_add_layer(&me->ldata, CD_MLOOP, CD_CALLOC, nullptr, mesh->totloop);
+  CustomData_add_layer(&me->pdata, CD_MPOLY, CD_CALLOC, nullptr, mesh->totface);
 
   /* Don't process shape-keys, we only feed them through the modifier stack as needed,
    * e.g. for applying modifiers or the like. */
@@ -1206,29 +1206,29 @@ void mesh_bm_to_me_for_eval(BMesh *bm, Mesh *me, const CustomData_MeshMasks *cd_
   const int cd_edge_crease_offset = CustomData_get_offset(&bm->edata, CD_CREASE);
 
   /* Clear normals on the mesh completely, since the original vertex and polygon count might be
-   * different than the BMesh's. */
-  BKE_mesh_clear_derived_normals(me);
+   * different than the Mesh's. */
+  dune_mesh_clear_derived_normals(me);
 
   me->runtime.deformed_only = true;
 
-  BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
-    MVert *mv = &mvert[i];
+  MESH_INDEX_ITER (eve, &iter, mesh, MESH_VERTS_OF_MESH, i) {
+    MeshVert *mv = &mvert[i];
 
     copy_v3_v3(mv->co, eve->co);
 
-    BM_elem_index_set(eve, i); /* set_inline */
+    mesh_elem_index_set(eve, i); /* set_inline */
 
-    mv->flag = BM_vert_flag_to_mflag(eve);
+    mv->flag = mesh_vert_flag_to_mflag(eve);
 
     if (cd_vert_bweight_offset != -1) {
-      mv->bweight = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(eve, cd_vert_bweight_offset);
+      mv->bweight = MESH_ELEM_CD_GET_FLOAT_AS_UCHAR(eve, cd_vert_bweight_offset);
     }
 
-    CustomData_from_bmesh_block(&bm->vdata, &me->vdata, eve->head.data, i);
+    CustomData_from_bmesh_block(&mesh->vdata, &me->vdata, eve->head.data, i);
   }
-  bm->elem_index_dirty &= ~BM_VERT;
+  bm->elem_index_dirty &= ~MESH_VERT;
 
-  BM_ITER_MESH_INDEX (eed, &iter, bm, BM_EDGES_OF_MESH, i) {
+  MESH_ITER_MESH_INDEX (eed, &iter, bm, BM_EDGES_OF_MESH, i) {
     MEdge *med = &medge[i];
 
     mesh_elem_index_set(eed, i); /* set_inline */
