@@ -7,18 +7,18 @@
  *
  * Mesh stores topology in four main element structures:
  *
- * - Faces - MFace
- * - Loops - MLoop, (stores per-face-vertex data, UV's, vertex-colors, etc)
- * - Edges - MEdge
- * - Verts - MVert
+ * - Faces - MeshFace
+ * - Loops - MeshLoop, (stores per-face-vertex data, UV's, vertex-colors, etc)
+ * - Edges - MeshEdge
+ * - Verts - MeshVert
  * subsection m_header_flags Header Flags
  * Each element (vertex/edge/face/loop)
  * in a mesh has an associated bit-field called "header flags".
  *
- * BMHeader flags should **never** be read or written to by bmesh operators (see Operators below).
+ * MeshHeader flags should **never** be read or written to by bmesh operators (see Operators below).
  *
- * Access to header flags is done with `BM_elem_flag_*()` functions.
- * subsection bm_faces Faces
+ * Access to header flags is done with `mesh_elem_flag_*()` functions.
+ * subsection mesh_faces Faces
  *
  * Faces in Mesh are stored as a circular linked list of loops. Loops store per-face-vertex data
  * (among other things outlined later in this document), and define the face boundary.
@@ -33,18 +33,18 @@
  *
  * Loop pointers:
  *
- * - MLoop#v - pointer to the vertex associated with this loop.
- * - MLoop#e - pointer to the edge associated with this loop,
+ * - MeshLoop#v - pointer to the vertex associated with this loop.
+ * - MeshLoop#e - pointer to the edge associated with this loop,
  *   between verts `(loop->v, loop->next->v)`
- * - MLoop#f - pointer to the face associated with this loop.
+ * - MeshLoop#f - pointer to the face associated with this loop.
  * subsection m_two_side_face 2-Sided Faces
  *
  * There are some situations where you need 2-sided faces (e.g. a face of two vertices).
- * This is supported by BMesh, but note that such faces should only be used as intermediary steps,
+ * This is supported by Mesh, but note that such faces should only be used as intermediary steps,
  * and should not end up in the final mesh.
- * bm_edges_and_verts Edges and Vertices
+ * mesh_edges_and_verts Edges and Vertices
  *
- * Edges and Vertices in BMesh are primitive structures.
+ * Edges and Vertices in Mesh are primitive structures.
  *
  * There can be more than one edge between two vertices in Mesh,
  * though the rest of Blender (i.e. DNA and evaluated Mesh) does not support this.
@@ -129,16 +129,16 @@
  * Access to element buffers or maps must go through the slot iterator api,
  * defined in bmesh_operators.h.
  * Use MESH_OP_ITER where ever possible.
- * \subsection bm_elem_buf Element Buffers
+ * mesh_elem_buf Element Buffers
  *
  * The element buffer slot type is used to feed elements (verts/edges/faces) to operators.
  * Internally they are stored as pointer arrays (which happily has not caused any problems so far).
  * Many operators take in a buffer of elements, process it,
  * then spit out a new one; this allows operators to be chained together.
  *
- * \note Element buffers may have elements of different types within the same buffer
+ * Element buffers may have elements of different types within the same buffer
  * (this is supported by the API.
- * \section bm_fname Function Naming Conventions
+ * bm_fname Function Naming Conventions
  *
  * These conventions should be used throughout the bmesh module.
  *
@@ -151,11 +151,11 @@
  * - `bmo_***()` -    Low level / internal operator API functions.
  * - `_bm_***()` -    Functions which are called via macros only.
  *
- * \section bm_todo BMesh TODO's
+ * mesh_todo BMesh TODO's
  *
  * There may be a better place for this section, but adding here for now.
  *
- * \subsection bm_todo_optimize Optimizations
+ * mesh_todo_optimize Optimizations
  *
  * - Skip normal calc when its not needed
  *   (when calling chain of operators & for modifiers, flag as dirty)
@@ -167,8 +167,8 @@
  * - Use two different iterator types for BMO map/buffer types.
  */
 
-#include "DNA_customdata_types.h" /* BMesh struct in bmesh_class.h uses */
-#include "DNA_listBase.h"         /* selection history uses */
+#include "types_customdata.h" /* BMesh struct in bmesh_class.h uses */
+#include "types_listBase.h"   /* selection history uses */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -177,38 +177,38 @@
 extern "C" {
 #endif
 
-#include "bmesh_class.h"
+#include "mesh_class.h"
 
 /* include the rest of the API */
-#include "intern/bmesh_error.h"
-#include "intern/bmesh_operator_api.h"
+#include "intern/mesh_error.h"
+#include "intern/mesh_op_api.h"
 
-#include "intern/bmesh_callback_generic.h"
-#include "intern/bmesh_construct.h"
-#include "intern/bmesh_core.h"
-#include "intern/bmesh_delete.h"
-#include "intern/bmesh_edgeloop.h"
-#include "intern/bmesh_interp.h"
-#include "intern/bmesh_iterators.h"
-#include "intern/bmesh_log.h"
-#include "intern/bmesh_marking.h"
-#include "intern/bmesh_mesh.h"
-#include "intern/bmesh_mesh_convert.h"
-#include "intern/bmesh_mesh_debug.h"
-#include "intern/bmesh_mesh_duplicate.h"
-#include "intern/bmesh_mesh_normals.h"
-#include "intern/bmesh_mesh_partial_update.h"
-#include "intern/bmesh_mesh_tessellate.h"
-#include "intern/bmesh_mesh_validate.h"
-#include "intern/bmesh_mods.h"
-#include "intern/bmesh_operators.h"
-#include "intern/bmesh_polygon.h"
-#include "intern/bmesh_polygon_edgenet.h"
-#include "intern/bmesh_query.h"
-#include "intern/bmesh_query_uv.h"
-#include "intern/bmesh_walkers.h"
+#include "intern/mesh_cb_generic.h"
+#include "intern/mesh_construct.h"
+#include "intern/mesh_core.h"
+#include "intern/mesh_delete.h"
+#include "intern/mesh_edgeloop.h"
+#include "intern/mesh_interp.h"
+#include "intern/mesh_iterators.h"
+#include "intern/mesh_log.h"
+#include "intern/mesh_marking.h"
+#include "intern/mesh_mesh.h"
+#include "intern/mesh_mesh_convert.h"
+#include "intern/mesh_mesh_debug.h"
+#include "intern/mesh_mesh_duplicate.h"
+#include "intern/mesh_mesh_normals.h"
+#include "intern/mesh_mesh_partial_update.h"
+#include "intern/mesh_mesh_tessellate.h"
+#include "intern/mesh_mesh_validate.h"
+#include "intern/mesh_mods.h"
+#include "intern/mesh_operators.h"
+#include "intern/mesh_polygon.h"
+#include "intern/mesh_polygon_edgenet.h"
+#include "intern/mesh_query.h"
+#include "intern/mesh_query_uv.h"
+#include "intern/mesh_walkers.h"
 
-#include "intern/bmesh_inline.h"
+#include "intern/mesh_inline.h"
 
 #ifdef __cplusplus
 }
