@@ -85,22 +85,22 @@ typedef struct MeshVert {
   /**
    * Pointer to (any) edge using this vertex (for disk cycles).
    *
-   * \note Some higher level functions set this to different edges that use this vertex,
-   * which is a bit of an abuse of internal #BMesh data but also works OK for now
+   * Some higher level functions set this to different edges that use this vertex,
+   * which is a bit of an abuse of internal Mesh data but also works OK for now
    * (use with care!).
    */
   struct MeshEdge *e;
 } MeshVert;
 
-typedef struct BMVert_OFlag {
-  BMVert base;
-  struct BMFlagLayer *oflags;
-} BMVert_OFlag;
+typedef struct MeshVert_OFlag {
+  MeshVert base;
+  struct MeshFlagLayer *oflags;
+} MeshVert_OFlag;
 
 /* disk link structure, only used by edges */
-typedef struct BMDiskLink {
-  struct BMEdge *next, *prev;
-} BMDiskLink;
+typedef struct MeshDiskLink {
+  struct MeshEdge *next, *prev;
+} MeshDiskLink;
 
 typedef struct MeshEdge {
   MeshHeader head;
@@ -217,73 +217,73 @@ typedef struct MeshLoop {
    * This is an example loop over all vertices and edges of a face.
    *
    * \code{.c}
-   * BMLoop *l_first, *l_iter;
-   * l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+   * MeshLoop *l_first, *l_iter;
+   * l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
    * do {
    *   operate_on_vert(l_iter->v);
    *   operate_on_edge(l_iter->e);
    * } while ((l_iter = l_iter->next) != l_first);
    * \endcode
    */
-  struct BMLoop *next, *prev;
-} BMLoop;
+  struct MeshLoop *next, *prev;
+} MeshLoop;
 
-/* can cast BMFace/BMEdge/BMVert, but NOT BMLoop, since these don't have a flag layer */
-typedef struct BMElemF {
-  BMHeader head;
-} BMElemF;
+/* can cast MeshFace/MeshEdge/MeshVert, but NOT MeshLoop, since these don't have a flag layer */
+typedef struct MeshElemFlag {
+  MeshHeader head;
+} MeshElemFlag;
 
 /* can cast anything to this, including BMLoop */
-typedef struct BMElem {
-  BMHeader head;
-} BMElem;
+typedef struct MeshElem {
+  MeshHeader head;
+} MeshElem;
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
 /* eventually, this structure will be used for supporting holes in faces */
-typedef struct BMLoopList {
-  struct BMLoopList *next, *prev;
-  struct BMLoop *first, *last;
-} BMLoopList;
+typedef struct MeshLoopList {
+  struct MeshLoopList *next, *prev;
+  struct MeshLoop *first, *last;
+} MeshLoopList;
 #endif
 
-typedef struct BMFace {
-  BMHeader head;
+typedef struct MeshFace {
+  MeshHeader head;
 
-#ifdef USE_BMESH_HOLES
+#ifdef USE_MESH_HOLES
   int totbounds; /* Total boundaries, is one plus the number of holes in the face. */
   ListBase loops;
 #else
-  BMLoop *l_first;
+  MeshLoop *l_first;
 #endif
   /**
    * Number of vertices in the face
-   * (the length of #BMFace.l_first circular linked list).
+   * (the length of MeshFace.l_first circular linked list).
    */
   int len;
   float no[3];  /* face normal */
   short mat_nr; /* material index */
   //  short _pad[3];
-} BMFace;
+} MeshFace;
 
-typedef struct BMFace_OFlag {
-  BMFace base;
-  struct BMFlagLayer *oflags;
-} BMFace_OFlag;
+typedef struct MeshFace_OFlag {
+  MeshFace base;
+  struct MeshFlagLayer *oflags;
+} MeshFace_OFlag;
 
-typedef struct BMFlagLayer {
+typedef struct MeshFlagLayer {
   short f; /* flags */
-} BMFlagLayer;
+} MeshFlagLayer;
 
 // #pragma GCC diagnostic ignored "-Wpadded"
 
-typedef struct BMesh {
+typedef struct Mesh {
   int totvert, totedge, totloop, totface;
   int totvertsel, totedgesel, totfacesel;
 
   /**
    * Flag index arrays as being dirty so we can check if they are clean and
    * avoid looping over the entire vert/edge/face/loop array in those cases.
-   * valid flags are: `(BM_VERT | BM_EDGE | BM_FACE | BM_LOOP)`
+   * valid flags are: `(MESH_VERT | MESH_EDGE | MESH_FACE | MESH_LOOP)`
    */
   char elem_index_dirty;
 
@@ -294,11 +294,11 @@ typedef struct BMesh {
   char elem_table_dirty;
 
   /* element pools */
-  struct BLI_mempool *vpool, *epool, *lpool, *fpool;
+  struct lib_mempool *vpool, *epool, *lpool, *fpool;
 
   /* mempool lookup tables (optional)
    * index tables, to map indices to elements via
-   * BM_mesh_elem_table_ensure and associated functions.  don't
+   * mesh_elem_table_ensure and associated functions.  don't
    * touch this or read it directly.\
    * Use BM_mesh_elem_table_ensure(), BM_vert/edge/face_at_index() */
   BMVert **vtable;
