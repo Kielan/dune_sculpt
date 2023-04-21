@@ -136,11 +136,8 @@ typedef struct MeshLoop {
   MeshHeader head;
   /* notice no flags layer */
 
-  /**
-   * The vertex this loop points to.
-   *
-   * - This vertex must be unique within the cycle.
-   */
+  /** The vertex this loop points to.
+    - This vertex must be unique within the cycle. **/
   struct MeshVert *v;
 
   /**
@@ -229,7 +226,7 @@ typedef struct MeshElemFlag {
   MeshHeader head;
 } MeshElemFlag;
 
-/* can cast anything to this, including BMLoop */
+/* can cast anything to this, including MeshLoop */
 typedef struct MeshElem {
   MeshHeader head;
 } MeshElem;
@@ -401,7 +398,7 @@ enum {
 
 #define _MESH_GENERIC_TYPE_ELEM_CONST \
   const void *, const MeshVert *, const MeshEdge *, const MeshLoop *, const MeshFace *, \
-      const MeshVertOpFlag *, const MeshEdge_OFlag *, const MeshFaceOpFlag *, const MeshElem *, \
+      const MeshVertOpFlag *, const MeshEdgeOpFlag *, const MeshFaceOpFlag *, const MeshElem *, \
       const MeshElemF *, const MeshHeader *, void *const, MeshVert *const, MeshEdge *const, \
       MeshLoop *const, MeshFace *const, MeshElem *const, MeshElemF *const, MeshHeader *const
 
@@ -432,7 +429,7 @@ enum {
 #define MESH_CHECK_TYPE_FACE_CONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_FACE_CONST)
 #define MESH_CHECK_TYPE_FACE_NONCONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_ELEM_NONCONST)
 #define MESH_CHECK_TYPE_FACE(ele) \
-  CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_FACE_NONCONST, _BM_GENERIC_TYPE_FACE_CONST)
+  CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_FACE_NONCONST, _MESH_GENERIC_TYPE_FACE_CONST)
 
 /* Assignment from a void* to a typed pointer is not allowed in C++,
  * casting the LHS to void works fine though.
@@ -501,7 +498,7 @@ typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const BMLoop *, void *use
      _Generic(ele, \
               GENERIC_TYPE_ANY(PTR_OFFSET((ele)->head.data, offset), \
                                _MESH_GENERIC_TYPE_ELEM_NONCONST), \
-              GENERIC_TYPE_ANY((const void *)POINTER_OFFSET((ele)->head.data, offset), \
+              GENERIC_TYPE_ANY((const void *)PTR_OFFSET((ele)->head.data, offset), \
                                _MESH_GENERIC_TYPE_ELEM_CONST)))
 #else
 #  define MESH_ELEM_CD_GET_VOID_P(ele, offset) \
