@@ -17,9 +17,9 @@ typedef enum eMeshCreateFlag {
 /**
  * Main function for creating a new vertex. */
 MeshVert *mesh_vert_create(Mesh *mesh,
-                       const float co[3],
-                       const MeshVert *v_example,
-                       eMeshCreateFlag create_flag);
+                          const float co[3],
+                          const MeshVert *v_example,
+                          eMeshCreateFlag create_flag);
 /**
  * Main function for creating a new edge.
  *
@@ -46,11 +46,11 @@ MeshFace *mesh_face_create(Mesh *mesh,
                            eMeshCreateFlag create_flag);
 /** Wrapper for mesh_face_create when you don't have an edge array **/
 MeshFace *mesh_face_create_verts(Mesh *mesh,
-                             MeshVert **vert_arr,
-                             int len,
-                             const MeshFace *f_example,
-                             eMeshCreateFlag create_flag,
-                             bool create_edges);
+                                 MeshVert **vert_arr,
+                                 int len,
+                                 const MeshFace *f_example,
+                                 eMeshCreateFlag create_flag,
+                                 bool create_edges);
 
 /** Kills all edges associated with f, along with any other faces containing those edges. **/
 void mesh_face_edges_kill(Mesh *mesh, MeshFace *f);
@@ -66,13 +66,9 @@ void mesh_face_kill_loose(Mesh *mesh, MeshFace *f);
 
 /** Kills f and its loops. */
 void mesh_face_kill(Mesh *mesh, MeshFace *f);
-/**
- * Kills e and all faces that use it.
- */
+/** Kills e and all faces that use it. */
 void mesh_edge_kill(Mesh *mesh, MeshEdge *e);
-/**
- * Kills v and all edges that use it.
- */
+/** Kills v and all edges that use it. */
 void mesh_vert_kill(Mesh *mesh, MeshVert *v);
 
 /**
@@ -319,7 +315,7 @@ MeshVert *mesh_kernel_join_vert_kill_edge(BMesh *bm,
                                          bool check_edge_exists,
                                          bool kill_degenerate_faces);
 /**
- * \brief Join Face Kill Edge (JFKE)
+ * Join Face Kill Edge (JFKE)
  *
  * Takes two faces joined by a single 2-manifold edge and fuses them together.
  * The edge shared by the faces must not be connected to any other edges which have
@@ -337,17 +333,17 @@ MeshVert *mesh_kernel_join_vert_kill_edge(BMesh *bm,
  *      +--------+           +--------+
  * </pre>
  *
- * In the example A, faces \a f1 and \a f2 are joined by a single edge,
+ * In the example A, faces f1 and f2 are joined by a single edge,
  * and the euler can safely be used.
- * In example B however, \a f1 and \a f2 are joined by multiple edges and will produce an error.
- * The caller in this case should call #bmesh_kernel_join_edge_kill_vert on the extra edges
- * before attempting to fuse \a f1 and \a f2.
+ * In example B however, f1 and f2 are joined by multiple edges and will produce an error.
+ * The caller in this case should call mesh_kernel_join_edge_kill_vert on the extra edges
+ * before attempting to fuse f1 and f2.
  *
- * \note The order of arguments decides whether or not certain per-face attributes are present
+ * The order of arguments decides whether or not certain per-face attributes are present
  * in the resultant face. For instance vertex winding, material index, smooth flags,
- * etc are inherited from \a f1, not \a f2.
+ * etc are inherited from f1, not f2.
  *
- * \return A BMFace pointer
+ * return A MeshFace pointer
  */
 BMFace *bmesh_kernel_join_face_kill_edge(BMesh *bm, BMFace *f1, BMFace *f2, BMEdge *e);
 
