@@ -1,30 +1,25 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
+MeshFace *mesh_face_copy(Mesh *mesh_dst, Mesh *mesh_src, MeshFace *f, bool copy_verts, bool copy_edges);
 
-BMFace *BM_face_copy(BMesh *bm_dst, BMesh *bm_src, BMFace *f, bool copy_verts, bool copy_edges);
-
-typedef enum eBMCreateFlag {
-  BM_CREATE_NOP = 0,
+typedef enum eMeshCreateFlag {
+  MESH_CREATE_NOP = 0,
   /** Faces and edges only. */
-  BM_CREATE_NO_DOUBLE = (1 << 1),
+  MESH_CREATE_NO_DOUBLE = (1 << 1),
   /**
    * Skip custom-data - for all element types data,
    * use if we immediately write custom-data into the element so this skips copying from 'example'
    * arguments or setting defaults, speeds up conversion when data is converted all at once.
    */
-  BM_CREATE_SKIP_CD = (1 << 2),
-} eBMCreateFlag;
+  MESH_CREATE_SKIP_CD = (1 << 2),
+} eMeshCreateFlag;
 
 /**
- * \brief Main function for creating a new vertex.
- */
-BMVert *BM_vert_create(BMesh *bm,
+ * Main function for creating a new vertex. */
+MeshVert *mesh_vert_create(Mesh *mesh,
                        const float co[3],
-                       const BMVert *v_example,
-                       eBMCreateFlag create_flag);
+                       const MeshVert *v_example,
+                       eMeshCreateFlag create_flag);
 /**
  * \brief Main function for creating a new edge.
  *
