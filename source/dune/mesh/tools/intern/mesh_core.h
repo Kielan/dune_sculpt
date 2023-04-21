@@ -116,9 +116,9 @@ bool mesh_vert_splice_check_double(MeshVert *v_a, MeshVert *v_b);
  * (use when flipping normals, disable when mirroring, eg: symmetrize).
  */
 void mesh_kernel_loop_reverse(Mesh *mesh,
-                               MeshFace *f,
-                               int cd_loop_mdisp_offset,
-                               bool use_loop_mdisp_flip);
+                              MeshFace *f,
+                              int cd_loop_mdisp_offset,
+                              bool use_loop_mdisp_flip);
 
 /**
  * Avoid calling this where possible,
@@ -145,56 +145,54 @@ MeshFace *mesh_faces_join(Mesh *mesh, MeshFace **faces, int totface, bool do_del
 /**
  * High level function which wraps both mesh_kernel_vert_separate and #bmesh_kernel_edge_separate
  */
-void mesh_vert_separate(Mesh *bm,
+void mesh_vert_separate(Mesh *mesh,
                         MeshVert *v,
                         MeshEdge **e_in,
                         int e_in_len,
                         bool copy_select,
                         MeshVert ***r_vout,
                         int *r_vout_len);
-/**
- * A version of mesh_vert_separate which takes a flag.
- */
-void BM_vert_separate_hflag(
-    BMesh *bm, BMVert *v, char hflag, bool copy_select, BMVert ***r_vout, int *r_vout_len);
-void BM_vert_separate_tested_edges(
-    BMesh *bm, BMVert *v_dst, BMVert *v_src, bool (*testfn)(BMEdge *, void *arg), void *arg);
+/** A version of mesh_vert_separate which takes a flag. */
+void mesh_vert_separate_hflag(
+    Mesh *mesh, MeshVert *v, char hflag, bool copy_select, MeshVert ***r_vout, int *r_vout_len);
+void mesh_vert_separate_tested_edges(
+    Mesh *mesh, MeshVert *v_dst, MeshVert *v_src, bool (*testfn)(MeshEdge *, void *arg), void *arg);
 
 /**
- * BMesh Kernel: For modifying structure.
+ * Mesh Kernel: For modifying structure.
  *
  * Names are on the verbose side but these are only for low-level access.
  */
 /**
- * \brief Separate Vert
+ * Separate Vert
  *
  * Separates all disjoint fans that meet at a vertex, making a unique
  * vertex for each region. returns an array of all resulting vertices.
  *
- * \note this is a low level function, bm_edge_separate needs to run on edges first
+ * note this is a low level function, bm_edge_separate needs to run on edges first
  * or, the faces sharing verts must not be sharing edges for them to split at least.
  *
- * \return Success
+ * return Success
  */
-void bmesh_kernel_vert_separate(
-    BMesh *bm, BMVert *v, BMVert ***r_vout, int *r_vout_len, bool copy_select);
+void mesh_kernel_vert_separate(
+    Mesh *mesh, MeshVert *v, MeshVert ***r_vout, int *r_vout_len, bool copy_select);
 /**
- * \brief Separate Edge
+ * Separate Edge
  *
  * Separates a single edge into two edge: the original edge and
- * a new edge that has only \a l_sep in its radial.
+ * a new edge that has only l_sep in its radial.
  *
- * \return Success
+ * return Success
  *
- * \note Does nothing if \a l_sep is already the only loop in the
+ * note Does nothing if l_sep is already the only loop in the
  * edge radial.
  */
-void bmesh_kernel_edge_separate(BMesh *bm, BMEdge *e, BMLoop *l_sep, bool copy_select);
+void mesh_kernel_edge_separate(Mesh *mesh, MeshEdge *e, MeshLoop *l_sep, bool copy_select);
 
 /**
- * \brief Split Face Make Edge (SFME)
+ * Split Face Make Edge (SFME)
  *
- * \warning this is a low level function, most likely you want to use #BM_face_split()
+ * warning this is a low level function, most likely you want to use #BM_face_split()
  *
  * Takes as input two vertices in a single face.
  * An edge is created which divides the original face into two distinct regions.
@@ -213,39 +211,39 @@ void bmesh_kernel_edge_separate(BMesh *bm, BMEdge *e, BMLoop *l_sep, bool copy_s
  *      +--------+           +--------+
  * </pre>
  *
- * \note the input vertices can be part of the same edge. This will
+ * the input vertices can be part of the same edge. This will
  * result in a two edged face. This is desirable for advanced construction
  * tools and particularly essential for edge bevel. Because of this it is
  * up to the caller to decide what to do with the extra edge.
  *
- * \note If \a holes is NULL, then both faces will lose
+ * note If holes is NULL, then both faces will lose
  * all holes from the original face.  Also, you cannot split between
  * a hole vert and a boundary vert; that case is handled by higher-
  * level wrapping functions (when holes are fully implemented, anyway).
  *
- * \note that holes represents which holes goes to the new face, and of
+ * note that holes represents which holes goes to the new face, and of
  * course this requires removing them from the existing face first, since
  * you cannot have linked list links inside multiple lists.
  *
- * \return A BMFace pointer
+ * return A MeshFace pointer
  */
-BMFace *bmesh_kernel_split_face_make_edge(BMesh *bm,
-                                          BMFace *f,
-                                          BMLoop *l_v1,
-                                          BMLoop *l_v2,
-                                          BMLoop **r_l,
-#ifdef USE_BMESH_HOLES
+MeshFace *mesh_kernel_split_face_make_edge(Mesh *mesh,
+                                           MeshFace *f,
+                                           MeshLoop *l_v1,
+                                           MeshLoop *l_v2,
+                                           MeshLoop **r_l,
+#ifdef USE_MESH_HOLES
                                           ListBase *holes,
 #endif
-                                          BMEdge *example,
+                                          MeshEdge *example,
                                           bool no_double);
 
 /**
- * \brief Split Edge Make Vert (SEMV)
+ * Split Edge Make Vert (SEMV)
  *
- * Takes \a e edge and splits it into two, creating a new vert.
- * \a tv should be one end of \a e : the newly created edge
- * will be attached to that end and is returned in \a r_e.
+ * Takes e edge and splits it into two, creating a new vert.
+ * tv should be one end of e : the newly created edge
+ * will be attached to that end and is returned in r_e.
  *
  * \par Examples:
  *
@@ -256,11 +254,11 @@ BMFace *bmesh_kernel_split_face_make_edge(BMesh *bm,
  *     After:  OV------NV-----TV
  * </pre>
  *
- * \return The newly created BMVert pointer.
+ * return The newly created MeshVert pointer.
  */
-BMVert *bmesh_kernel_split_edge_make_vert(BMesh *bm, BMVert *tv, BMEdge *e, BMEdge **r_e);
+MeshVert *mesh_kernel_split_edge_make_vert(Mesh *mesh, MeshVert *tv, MeshEdge *e, MeshEdge **r_e);
 /**
- * \brief Join Edge Kill Vert (JEKV)
+ * Join Edge Kill Vert (JEKV)
  *
  * Takes an edge \a e_kill and pointer to one of its vertices \a v_kill
  * and collapses the edge on that vertex.
@@ -279,17 +277,17 @@ BMVert *bmesh_kernel_split_edge_make_vert(BMesh *bm, BMVert *tv, BMEdge *e, BMEd
  *              v_old           v_target
  * </pre>
  *
- * \par Restrictions:
+ * par Restrictions:
  * KV is a vertex that must have a valance of exactly two. Furthermore
  * both edges in KV's disk cycle (OE and KE) must be unique (no double edges).
  *
- * \return The resulting edge, NULL for failure.
+ * return The resulting edge, NULL for failure.
  *
- * \note This euler has the possibility of creating
+ * note This euler has the possibility of creating
  * faces with just 2 edges. It is up to the caller to decide what to do with
  * these faces.
  */
-BMEdge *bmesh_kernel_join_edge_kill_vert(BMesh *bm,
+MeshEdge *mesh_kernel_join_edge_kill_vert(BMesh *bm,
                                          BMEdge *e_kill,
                                          BMVert *v_kill,
                                          bool do_del,
