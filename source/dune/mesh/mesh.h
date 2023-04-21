@@ -1,9 +1,9 @@
 #pragma once
 
 /**
- * BMesh is a non-manifold boundary representation
+ * Mesh is a non-manifold boundary representation
  * designed to support advanced editing operations.
- * \section m_structure The Structure
+ * m_structure The Structure
  *
  * Mesh stores topology in four main element structures:
  *
@@ -22,7 +22,7 @@
  *
  * Faces in Mesh are stored as a circular linked list of loops. Loops store per-face-vertex data
  * (among other things outlined later in this document), and define the face boundary.
- * subsection bm_loop The Loop
+ * subsection mesh_loop The Loop
  *
  * Loops can be thought of as a *face-corner*, since faces don't reference verts or edges directly.
  * Each loop connects the face to one of its corner vertices,
@@ -138,20 +138,20 @@
  *
  * Element buffers may have elements of different types within the same buffer
  * (this is supported by the API.
- * bm_fname Function Naming Conventions
+ * mesh_fname Function Naming Conventions
  *
  * These conventions should be used throughout the bmesh module.
  *
- * - `bmesh_kernel_*()` - Low level API, for primitive functions that others are built ontop of.
- * - `bmesh_***()` - Low level API function.
- * - `bm_***()` -     'static' functions, not a part of the API at all,
+ * - `mesh_kernel_*()` - Low level API, for primitive functions that others are built ontop of.
+ * - `mesh_***()` - Low level API function.
+ * - `mmesh_static_***()` -     'static' functions, not a part of the API at all,
  *   but use prefix since they operate on BMesh data.
- * - `BM_***()` -     High level BMesh API function for use anywhere.
- * - `BMO_***()` -    High level operator API function for use anywhere.
- * - `bmo_***()` -    Low level / internal operator API functions.
- * - `_bm_***()` -    Functions which are called via macros only.
+ * - `mesh_***()` -     High level Mesh API function for use anywhere.
+ * - `meshop_***()` -    High level operator API function for use anywhere.
+ * - `meshop_***()` -    Low level / internal operator API functions.
+ * - `_dmesh_***()` -    Functions which are called via macros only.
  *
- * mesh_todo BMesh TODO's
+ * mesh_todo Mesh TODO's
  *
  * There may be a better place for this section, but adding here for now.
  *
@@ -159,9 +159,9 @@
  *
  * - Skip normal calc when its not needed
  *   (when calling chain of operators & for modifiers, flag as dirty)
- * - Skip BMO flag allocation, its not needed in many cases,
+ * - Skip MO flag allocation, its not needed in many cases,
  *   this is fairly redundant to calc by default.
- * - Ability to call BMO's with option not to create return data (will save some time)
+ * - Ability to call MO's with option not to create return data (will save some time)
  * - Binary diff UNDO, currently this uses huge amount of ram
  *   when all shapes are stored for each undo step for eg.
  * - Use two different iterator types for BMO map/buffer types.
