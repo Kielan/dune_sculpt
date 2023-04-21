@@ -233,10 +233,10 @@ MeshFace *mesh_kernel_split_face_make_edge(Mesh *mesh,
                                            MeshLoop *l_v2,
                                            MeshLoop **r_l,
 #ifdef USE_MESH_HOLES
-                                          ListBase *holes,
+                                           ListBase *holes,
 #endif
-                                          MeshEdge *example,
-                                          bool no_double);
+                                           MeshEdge *example,
+                                           bool no_double);
 
 /**
  * Split Edge Make Vert (SEMV)
@@ -287,19 +287,19 @@ MeshVert *mesh_kernel_split_edge_make_vert(Mesh *mesh, MeshVert *tv, MeshEdge *e
  * faces with just 2 edges. It is up to the caller to decide what to do with
  * these faces.
  */
-MeshEdge *mesh_kernel_join_edge_kill_vert(BMesh *bm,
-                                         BMEdge *e_kill,
-                                         BMVert *v_kill,
-                                         bool do_del,
-                                         bool check_edge_exists,
-                                         bool kill_degenerate_faces,
-                                         bool kill_duplicate_faces);
+MeshEdge *mesh_kernel_join_edge_kill_vert(Mesh *mesh,
+                                          MeshEdge *e_kill,
+                                          MeshVert *v_kill,
+                                          bool do_del,
+                                          bool check_edge_exists,
+                                          bool kill_degenerate_faces,
+                                          bool kill_duplicate_faces);
 /**
- * \brief Join Vert Kill Edge (JVKE)
+ * Join Vert Kill Edge (JVKE)
  *
  * Collapse an edge, merging surrounding data.
  *
- * Unlike #BM_vert_collapse_edge & #bmesh_kernel_join_edge_kill_vert
+ * Unlike mesh_vert_collapse_edge & #mesh_kernel_join_edge_kill_vert
  * which only handle 2 valence verts,
  * this can handle any number of connected edges/faces.
  *
@@ -312,7 +312,7 @@ MeshEdge *mesh_kernel_join_edge_kill_vert(BMesh *bm,
  * +-+-+-+    +-+-+-+
  * </pre>
  */
-BMVert *bmesh_kernel_join_vert_kill_edge(BMesh *bm,
+MeshVert *mesh_kernel_join_vert_kill_edge(BMesh *bm,
                                          BMEdge *e_kill,
                                          BMVert *v_kill,
                                          bool do_del,
