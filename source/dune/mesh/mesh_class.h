@@ -476,67 +476,67 @@ enum {
    * since tools may want to tag verts and not have functions clobber them.
    * Leave cleared!
    */
-  BM_ELEM_INTERNAL_TAG = (1 << 7),
+  MESH_ELEM_INTERNAL_TAG = (1 << 7),
 };
 
 struct BPy_BMGeneric;
 extern void bpy_bm_generic_invalidate(struct BPy_BMGeneric *self);
 
-typedef bool (*BMElemFilterFunc)(const BMElem *, void *user_data);
-typedef bool (*BMVertFilterFunc)(const BMVert *, void *user_data);
-typedef bool (*BMEdgeFilterFunc)(const BMEdge *, void *user_data);
-typedef bool (*BMFaceFilterFunc)(const BMFace *, void *user_data);
-typedef bool (*BMLoopFilterFunc)(const BMLoop *, void *user_data);
-typedef bool (*BMLoopPairFilterFunc)(const BMLoop *, const BMLoop *, void *user_data);
+typedef bool (*MeshVertFilterFn)(const MeshElem *, void *user_data);
+typedef bool (*MeshVertFilterFn)(const MeshVert *, void *user_data);
+typedef bool (*MeshEdgeFilterFn)(const MeshEdge *, void *user_data);
+typedef bool (*MeshFaceFilterFn)(const MeshFace *, void *user_data);
+typedef bool (*MeshLoopFilterFn)(const MeshLoop *, void *user_data);
+typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const BMLoop *, void *user_data);
 
 /* defines */
-#define BM_ELEM_CD_SET_INT(ele, offset, f) \
+#define MESH_ELEM_CD_SET_INT(ele, offset, f) \
   { \
     CHECK_TYPE_NONCONST(ele); \
-    BLI_assert(offset != -1); \
+    lib_assert(offset != -1); \
     *((int *)((char *)(ele)->head.data + (offset))) = (f); \
   } \
   (void)0
 
-#define BM_ELEM_CD_GET_INT(ele, offset) \
-  (BLI_assert(offset != -1), *((int *)((char *)(ele)->head.data + (offset))))
+#define MESH_ELEM_CD_GET_INT(ele, offset) \
+  (lib_assert(offset != -1), *((int *)((char *)(ele)->head.data + (offset))))
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
-#  define BM_ELEM_CD_GET_VOID_P(ele, offset) \
-    (BLI_assert(offset != -1), \
+#  define MESH_ELEM_CD_GET_VOID_P(ele, offset) \
+    (lib_assert(offset != -1), \
      _Generic(ele, \
-              GENERIC_TYPE_ANY(POINTER_OFFSET((ele)->head.data, offset), \
+              GENERIC_TYPE_ANY(PTR_OFFSET((ele)->head.data, offset), \
                                _BM_GENERIC_TYPE_ELEM_NONCONST), \
               GENERIC_TYPE_ANY((const void *)POINTER_OFFSET((ele)->head.data, offset), \
                                _BM_GENERIC_TYPE_ELEM_CONST)))
 #else
-#  define BM_ELEM_CD_GET_VOID_P(ele, offset) \
-    (BLI_assert(offset != -1), (void *)((char *)(ele)->head.data + (offset)))
+#  define MESH_ELEM_CD_GET_VOID_P(ele, offset) \
+    (lib_assert(offset != -1), (void *)((char *)(ele)->head.data + (offset)))
 #endif
 
-#define BM_ELEM_CD_SET_FLOAT(ele, offset, f) \
+#define MESH_ELEM_CD_SET_FLOAT(ele, offset, f) \
   { \
     CHECK_TYPE_NONCONST(ele); \
-    BLI_assert(offset != -1); \
+    lib_assert(offset != -1); \
     *((float *)((char *)(ele)->head.data + (offset))) = (f); \
   } \
   (void)0
 
-#define BM_ELEM_CD_GET_FLOAT(ele, offset) \
-  (BLI_assert(offset != -1), *((float *)((char *)(ele)->head.data + (offset))))
+#define MESH_ELEM_CD_GET_FLOAT(ele, offset) \
+  (lib_assert(offset != -1), *((float *)((char *)(ele)->head.data + (offset))))
 
-#define BM_ELEM_CD_GET_FLOAT_AS_UCHAR(ele, offset) \
-  (BLI_assert(offset != -1), (uchar)(BM_ELEM_CD_GET_FLOAT(ele, offset) * 255.0f))
+#define MESH_ELEM_CD_GET_FLOAT_AS_UCHAR(ele, offset) \
+  (lib_assert(offset != -1), (uchar)(MESH_ELEM_CD_GET_FLOAT(ele, offset) * 255.0f))
 
 /* Forward declarations. */
 
-#ifdef USE_BMESH_HOLES
-#  define BM_FACE_FIRST_LOOP(p) (((BMLoopList *)((p)->loops.first))->first)
+#ifdef USE_MESH_HOLES
+#  define MESH_FACE_FIRST_LOOP(p) (((MeshLoopList *)((p)->loops.first))->first)
 #else
-#  define BM_FACE_FIRST_LOOP(p) ((p)->l_first)
+#  define MESH_FACE_FIRST_LOOP(p) ((p)->l_first)
 #endif
 
-#define BM_DISK_EDGE_NEXT(e, v) \
+#define MESH_DISK_EDGE_NEXT(e, v) \
   (CHECK_TYPE_INLINE(e, BMEdge *), \
    CHECK_TYPE_INLINE(v, BMVert *), \
    BLI_assert(BM_vert_in_edge(e, v)), \
