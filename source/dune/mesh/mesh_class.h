@@ -174,13 +174,13 @@ typedef struct MeshLoop {
    *
    * - The value for MeshLoop.v might not match the radial next/previous
    *   as this depends on the face-winding.
-   *   You can be sure MeshLoop.v will either #BMEdge.v1 or #BMEdge.v2 of #BMLoop.e,
+   *   You can be sure MeshLoop.v will either MeshEdge.v1 or MeshEdge.v2 of MeshLoop.e,
    *
    * - Unlike face-winding (which defines if the direction the face points),
    *   next and previous are insignificant. The list could be reversed for example,
    *   without any impact on the topology.
    *
-   * This is an example of looping over an edges faces using #BMLoop.radial_next.
+   * This is an example of looping over an edges faces using MeshLoop.radial_next.
    *
    * .c
    * MeshLoop *l_iter = edge->l;
@@ -382,7 +382,7 @@ typedef struct MeshLoopNorEditDataArray {
 } MeshLoopNorEditDataArray;
 
 #define MESH_ALL (MESH_VERT | MESH_EDGE | MESH_LOOP | MESH_FACE)
-#define NESH_ALL_NOLOOP (MESH_VERT | MESH_EDGE | MESH_FACE)
+#define MESH_ALL_NOLOOP (MESH_VERT | MESH_EDGE | MESH_FACE)
 
 /** Mesh.spacearr_dirty */
 enum {
@@ -471,14 +471,14 @@ enum {
 };
 
 struct BPyMeshGeneric;
-extern void bpy_mesh_generic_invalidate(struct BPy_MeshGeneric *self);
+extern void bpy_mesh_generic_invalidate(struct BPyMeshGeneric *self);
 
 typedef bool (*MeshVertFilterFn)(const MeshElem *, void *user_data);
 typedef bool (*MeshVertFilterFn)(const MeshVert *, void *user_data);
 typedef bool (*MeshEdgeFilterFn)(const MeshEdge *, void *user_data);
 typedef bool (*MeshFaceFilterFn)(const MeshFace *, void *user_data);
 typedef bool (*MeshLoopFilterFn)(const MeshLoop *, void *user_data);
-typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const BMLoop *, void *user_data);
+typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const MeshLoop *, void *user_data);
 
 /* defines */
 #define MESH_ELEM_CD_SET_INT(ele, offset, f) \
