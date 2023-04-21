@@ -1,9 +1,7 @@
 #pragma once
 
-/**
- * Mesh data structures, used for mesh editing operations
- * that benefit from accessing connectivity information.
- */
+/** Mesh data structures, used for mesh editing operations
+ ** that benefit from accessing connectivity information. **/
 
 #include "lib_assert.h"
 
