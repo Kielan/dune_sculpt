@@ -189,12 +189,12 @@ typedef struct MeshLoop {
    *
    * This is an example of looping over an edges faces using #BMLoop.radial_next.
    *
-   * \code{.c}
+   * .c
    * MeshLoop *l_iter = edge->l;
    * do {
    *   operate_on_face(l_iter->f);
    * } while ((l_iter = l_iter->radial_next) != edge->l);
-   * \endcode
+   *
    */
   struct MeshLoop *radial_next, *radial_prev;
 
@@ -216,14 +216,14 @@ typedef struct MeshLoop {
    *
    * This is an example loop over all vertices and edges of a face.
    *
-   * \code{.c}
+   * .c
    * MeshLoop *l_first, *l_iter;
    * l_iter = l_first = MESH_FACE_FIRST_LOOP(f);
    * do {
    *   operate_on_vert(l_iter->v);
    *   operate_on_edge(l_iter->e);
    * } while ((l_iter = l_iter->next) != l_first);
-   * \endcode
+   *
    */
   struct MeshLoop *next, *prev;
 } MeshLoop;
@@ -346,9 +346,9 @@ typedef struct Mesh {
    * Without this the active image in the UV editor would flicker in a distracting way
    * while changing selection in the 3D viewport.
    */
-  BMFace *act_face;
+  MeshFace *act_face;
 
-  /** List of #BMOpError, used for operator error handling. */
+  /** List of MeshOpError, used for operator error handling. */
   ListBase errorstack;
 
   /**
@@ -401,11 +401,11 @@ enum {
 };
 
 /* args for _Generic */
-#define _BM_GENERIC_TYPE_ELEM_NONCONST \
+#define _MESH_GENERIC_TYPE_ELEM_NONCONST \
   void *, MeshVert *, MeshEdge *, MeshLoop *, MeshFace *, MeshVertOpFlag *, MeshEdgeOpFlag *, MeshFace_OFlag *, \
       MeshElem *, MeshElemF *, MeshHeader *
 
-#define _BM_GENERIC_TYPE_ELEM_CONST \
+#define _MESH_GENERIC_TYPE_ELEM_CONST \
   const void *, const MeshVert *, const MeshEdge *, const MeshLoop *, const MeshFace *, \
       const MeshVertOpFlag *, const MeshEdge_OFlag *, const MeshFaceOpFlag *, const MeshElem *, \
       const MeshElemF *, const MeshHeader *, void *const, MeshVert *const, MeshEdge *const, \
@@ -415,8 +415,8 @@ enum {
 
 #define MESH_CHECK_TYPE_ELEM_NONCONST(ele) CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST)
 
-#define BM_CHECK_TYPE_ELEM(ele) \
-  CHECK_TYPE_ANY(ele, _BM_GENERIC_TYPE_ELEM_NONCONST, _BM_GENERIC_TYPE_ELEM_CONST)
+#define Mesh_CHECK_TYPE_ELEM(ele) \
+  CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_ELEM_NONCONST, _BM_GENERIC_TYPE_ELEM_CONST)
 
 /* vert */
 #define _BM_GENERIC_TYPE_VERT_NONCONST BMVert *, BMVert_OFlag *
@@ -464,12 +464,12 @@ enum {
    * when temp tagging is handy.
    * always assume dirty & clear before use.
    */
-  BM_ELEM_TAG = (1 << 4),
+  MESH_ELEM_TAG = (1 << 4),
 
-  BM_ELEM_DRAW = (1 << 5), /* edge display */
+  MESH_ELEM_DRAW = (1 << 5), /* edge display */
 
   /** Spare tag, assumed dirty, use define in each function to name based on use. */
-  BM_ELEM_TAG_ALT = (1 << 6),
+  MESH_ELEM_TAG_ALT = (1 << 6),
 
   /**
    * For low level internal API tagging,
@@ -480,7 +480,7 @@ enum {
 };
 
 struct BPy_BMGeneric;
-extern void bpy_bm_generic_invalidate(struct BPy_BMGeneric *self);
+extern void bpy_mesh_generic_invalidate(struct BPy_BMGeneric *self);
 
 typedef bool (*MeshVertFilterFn)(const MeshElem *, void *user_data);
 typedef bool (*MeshVertFilterFn)(const MeshVert *, void *user_data);
@@ -537,14 +537,14 @@ typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const BMLoop *, void *use
 #endif
 
 #define MESH_DISK_EDGE_NEXT(e, v) \
-  (CHECK_TYPE_INLINE(e, BMEdge *), \
-   CHECK_TYPE_INLINE(v, BMVert *), \
-   BLI_assert(BM_vert_in_edge(e, v)), \
+  (CHECK_TYPE_INLINE(e, MeshEdge *), \
+   CHECK_TYPE_INLINE(v, MeshVert *), \
+   lib_assert(mesh_vert_in_edge(e, v)), \
    (((&e->v1_disk_link)[v == e->v2]).next))
-#define BM_DISK_EDGE_PREV(e, v) \
-  (CHECK_TYPE_INLINE(e, BMEdge *), \
-   CHECK_TYPE_INLINE(v, BMVert *), \
-   BLI_assert(BM_vert_in_edge(e, v)), \
+#define MESH_DISK_EDGE_PREV(e, v) \
+  (CHECK_TYPE_INLINE(e, MeshEdge *), \
+   CHECK_TYPE_INLINE(v, MeshVert *), \
+   lib_assert(mesh_vert_in_edge(e, v)), \
    (((&e->v1_disk_link)[v == e->v2]).prev))
 
 /**
