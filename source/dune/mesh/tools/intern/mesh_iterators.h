@@ -65,7 +65,7 @@ extern const char mesh_iter_itype_htype_map[MESH_ITYPE_MAX];
 /* a version of MESH_ITER which keeps the next item in storage
  * so we can delete the current item, see bug T36923. */
 #ifdef DEBUG
-#  define MESH_ITER_MUTABLE(ele, ele_next, iter, bm, itype) \
+#  define MESH_MUTABLE_ITER(ele, ele_next, iter, bm, itype) \
     for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL); \
          ele ? ((void)((iter)->count = mesh_iter_mesh_count(itype, mesh)), \
                 (void)(MESH_CHECK_TYPE_ELEM_ASSIGN(ele_next) = mesh_iter_step(iter)), \
@@ -73,17 +73,17 @@ extern const char mesh_iter_itype_htype_map[MESH_ITYPE_MAX];
                0; \
          MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = ele_next)
 #else
-#  define MESH_ITER_MUTABLE(ele, ele_next, iter, mesh, itype) \
+#  define MESH_MUTABLE_ITER(ele, ele_next, iter, mesh, itype) \
     for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL); \
          ele ? ((MESH_CHECK_TYPE_ELEM_ASSIGN(ele_next) = mesh_iter_step(iter)), 1) : 0; \
          ele = ele_next)
 #endif
 
-#define MESH_ITER_ELEM(ele, iter, data, itype) \
+#define MESH_ITER(ele, iter, data, itype) \
   for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, NULL, itype, data); ele; \
        MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter))
 
-#define MESH SH_ITER_ELEM_INDEX(ele, iter, data, itype, indexvar) \
+#define MESH_INDEX_ITER(ele, iter, data, itype, indexvar) \
   for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, NULL, itype, data), indexvar = 0; ele; \
        MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter), (indexvar)++)
 
@@ -238,12 +238,12 @@ int mesh_iter_mesh_count(char itype, Mesh *mesh);
  */
 int mesh_iter_mesh_count_flag(char itype, Mesh *mesh, char hflag, bool value);
 
-/* private for bmesh_iterators_inline.c */
+/* private for mesh_iterators_inline.c */
 
 #define MESH_ITER_CB_DEF(name) \
   struct MeshIter__##name; \
-  void bmiter__##name##_begin(struct MeshIter__##name *iter); \
-  void *bmiter__##name##_step(struct MeshIter__##name *iter)
+  void meshiter__##name##_begin(struct MeshIter__##name *iter); \
+  void *meshiter__##name##_step(struct MeshIter__##name *iter)
 
 MESH_ITER_CB_DEF(elem_of_mesh);
 MESH_ITER_CB_DEF(edge_of_vert);
