@@ -1,17 +1,13 @@
 #pragma once
 
-/** \file
- * \ingroup bmesh
- */
-
-void BMO_mesh_delete_oflag_tagged(BMesh *bm, short oflag, char htype);
-void BM_mesh_delete_hflag_tagged(BMesh *bm, char hflag, char htype);
+void mesh_op_delete_oflag_tagged(Mesh *mesh, short opflag, char htype);
+void mesh_delete_hflag_tagged(Mesh *mesh, char hflag, char htype);
 
 /**
- * \warning oflag applies to different types in some contexts,
+ * warning opflag applies to different types in some contexts,
  * not just the type being removed.
  */
-void BMO_mesh_delete_oflag_context(BMesh *bm, short oflag, int type);
+void mesh_op_mesh_delete_oflag_ctx(Mesh *mesh, short opflag, int type);
 /**
  * \warning oflag applies to different types in some contexts,
  * not just the type being removed.
