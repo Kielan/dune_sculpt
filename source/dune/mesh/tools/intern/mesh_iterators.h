@@ -58,7 +58,7 @@ extern const char mesh_iter_itype_htype_map[MESH_ITYPE_MAX];
   for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL); ele; \
        MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter))
 
-#define MESH_ITER_MESH_INDEX(ele, iter, mesh, itype, indexvar) \
+#define MESH_INDEX_ITER(ele, iter, mesh, itype, indexvar) \
   for (MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_new(iter, mesh, itype, NULL), indexvar = 0; ele; \
        MESH_CHECK_TYPE_ELEM_ASSIGN(ele) = mesh_iter_step(iter), (indexvar)++)
 
