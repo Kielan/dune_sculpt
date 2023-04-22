@@ -267,6 +267,6 @@ MESH_ITER_CB_DEF(loop_of_face);
   CHECK_TYPE_ANY(data, void *, MeshFace *, MeshEdge *, MeshVert *, MeshLoop *, MeshElem *)
 
 #define mesh_iter_new(iter, mesh, itype, data) \
-  (MESH_ITER_CHECK_TYPE_DATA(data), mesh_iter_new(iter, bm, itype, data))
+  (MESH_ITER_CHECK_TYPE_DATA(data), mesh_iter_new(iter, mesh, itype, data))
 #define mesh_iter_init(iter, mesh, itype, data) \
-  (MESH_ITER_CHECK_TYPE_DATA(data), mesh_iter_init(iter, bm, itype, data))
+  (MESH_ITER_CHECK_TYPE_DATA(data), mesh_iter_init(iter, mesh, itype, data))
