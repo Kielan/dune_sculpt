@@ -463,11 +463,11 @@ static void loop_interp_multires_cb(void *__restrict userdata,
 }
 
 void mesh_loop_interp_multires_ex(Mesh *UNUSED(bm),
-                                MLoop *l_dst,
-                                const MFace *f_src,
-                                const float f_dst_center[3],
-                                const float f_src_center[3],
-                                const int cd_loop_mdisp_offset)
+                                  MeshLoop *l_dst,
+                                  const MFace *f_src,
+                                  const float f_dst_center[3],
+                                  const float f_src_center[3],
+                                  const int cd_loop_mdisp_offset)
 {
   MDisps *md_dst;
   float v1[3], v2[3], v3[3], v4[3] = {0.0f, 0.0f, 0.0f}, e1[3], e2[3];
@@ -574,7 +574,7 @@ void mesh_face_multires_bounds_smooth(Mesh *mesh, MeshFace *f)
     return;
   }
 
-  MESH_ELEM_ITER_ELEM (l, &liter, f, MESH_LOOPS_OF_FACE) {
+  MESH_ELEM_ITER (l, &liter, f, MESH_LOOPS_OF_FACE) {
     MDisps *mdp = MESH_ELEM_CD_GET_VOID_P(l->prev, cd_loop_mdisp_offset);
     MDisps *mdl = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_mdisp_offset);
     MDisps *mdn = MESH_ELEM_CD_GET_VOID_P(l->next, cd_loop_mdisp_offset);
@@ -606,7 +606,7 @@ void mesh_face_multires_bounds_smooth(Mesh *mesh, MeshFace *f)
     }
   }
 
-  MESH_ITER_ELEM (l, &liter, f, MESH_LOOPS_OF_FACE) {
+  MESH_ITER (l, &liter, f, MESH_LOOPS_OF_FACE) {
     MDisps *mdl1 = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_mdisp_offset);
     MDisps *mdl2;
     float co1[3], co2[3], co[3];
@@ -794,7 +794,7 @@ static void update_data_blocks(Mesh *mesh, CustomData *olddata, CustomData *data
 
     CustomData_mesh_init_pool(data, mesh->totloop, MESH_LOOP);
     MESH_ITER (efa, &iter, mesh, MESH_FACES_OF_MESH) {
-      MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
+      MESH_ELEM_ITER (l, &liter, efa, MESH_LOOPS_OF_FACE) {
         block = NULL;
         CustomData_mesh_set_default(data, &block);
         CustomData_mesh_copy_data(olddata, data, l->head.data, &block);
@@ -808,7 +808,7 @@ static void update_data_blocks(Mesh *mesh, CustomData *olddata, CustomData *data
 
     CustomData_mesh_init_pool(data, mesh->totface, MESH_FACE);
 
-    MESH_ITE (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+    MESH_ITER (efa, &iter, mesh, MESH_FACES_OF_MESH) {
       block = NULL;
       CustomData_mesh_set_default(data, &block);
       CustomData_mesh_copy_data(olddata, data, efa->head.data, &block);
@@ -942,8 +942,8 @@ void mesh_data_layer_copy(Mesh *mesh, CustomData *data, int type, int src_n, int
     MeshFace *efa;
     MeshLoop *l;
 
-    MESH_ITER_MESH (efa, &iter, mesh, MESH_FACES_OF_MESH) {
-      MESH_ITER_ELEM (l, &liter, efa, MESH_LOOPS_OF_FACE) {
+    MESH_MESH_ITER (efa, &iter, mesh, MESH_FACES_OF_MESH) {
+      MESH_ELEM_ITER (l, &liter, efa, MESH_LOOPS_OF_FACE) {
         void *ptr = CustomData_mesh_get_n(data, l->head.data, type, src_n);
         CustomData_mesh_set_n(data, l->head.data, type, dst_n, ptr);
       }
