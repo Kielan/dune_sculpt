@@ -39,7 +39,7 @@ void mesh_data_interp_from_verts(
  * This is an exact match to mesh_data_interp_from_verts.
  */
 void mesh_data_interp_from_edges(
-    Mesh *mesh, const MeshEdge *e_src_1, const MeshEdge *e_src_2, BMEdge *e_dst, float fac);
+    Mesh *mesh, const MeshEdge *e_src_1, const MeshEdge *e_src_2, MeshEdge *e_dst, float fac);
 /**
  * Data Face-Vert Edge Interpolate
  *
