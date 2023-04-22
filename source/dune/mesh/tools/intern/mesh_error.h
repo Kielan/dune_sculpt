@@ -37,11 +37,11 @@ void mesh_error_raise(Mesh *mesh, MeshOp *owner, eMeshOpErrorLevel level, const 
  * Gets the topmost error from the stack.
  * returns error code or 0 if no error.
  */
-bool mesh_error_get(Mesh *mesh, const char **r_msg, BMOperator **r_op, eBMOpErrorLevel *r_level);
+bool mesh_error_get(Mesh *mesh, const char **r_msg, MeshOp **r_op, eMeshOpErrorLevel *r_level);
 bool mesh_error_get_at_level(Mesh *meeh,
-                            eMeshOpErrorLevel level,
-                            const char **r_msg,
-                            MeshOp **r_op);
+                             eMeshOpErrorLevel level,
+                             const char **r_msg,
+                             MeshOp **r_op);
 bool mesh_op_error_occurred_at_level(Mesh *mesh, eMeshOpErrorLevel level);
 
 /* Same as mesh_op_error_get, only pops the error off the stack as well. */
