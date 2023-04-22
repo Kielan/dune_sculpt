@@ -52,13 +52,13 @@ bool mesh_edgeloop_calc_normal_aligned(Mesh *mesh,
                                      const float no_align[3]);
 void mesh_edgeloop_flip(Mesh *mesh, struct MeshEdgeLoopStore *el_store);
 void mesh_edgeloop_expand(Mesh *mesh,
-                         struct MeshEdgeLoopStore *el_store,
-                        int el_store_len,
-                        bool split,
-                        struct GSet *split_edges);
+                          struct MeshEdgeLoopStore *el_store,
+                          int el_store_len,
+                          bool split,
+                          struct GSet *split_edges);
 
 bool mesh_edgeloop_overlap_check(struct MeshEdgeLoopStore *el_store_a,
-                               struct MeshEdgeLoopStore *el_store_b);
+                                 struct MeshEdgeLoopStore *el_store_b);
 
 #define MESH_EDGELINK_NEXT(el_store, elink) \
   (elink)->next ? \
