@@ -53,8 +53,8 @@ static void recount_totsels_range_edge_func(void *UNUSED(userdata),
 }
 
 static void recount_totsels_range_face_fn(void *UNUSED(userdata),
-                                            MempoolIterData *iter,
-                                            const TaskParallelTLS *__restrict tls)
+                                          MempoolIterData *iter,
+                                          const TaskParallelTLS *__restrict tls)
 {
   SelectionCountChunkData *count = tls->userdata_chunk;
   const MeshFace *efa = (const MeshFace *)iter;
@@ -300,8 +300,8 @@ typedef struct SelectionFlushChunkData {
 } SelectionFlushChunkData;
 
 static void mesh_select_mode_flush_vert_to_edge_iter_fn(void *UNUSED(userdata),
-                                                       MempoolIterData *iter,
-                                                       const TaskParallelTLS *__restrict tls)
+                                                        MempoolIterData *iter,
+                                                        const TaskParallelTLS *__restrict tls)
 {
   SelectionFlushChunkData *chunk_data = tls->userdata_chunk;
   MeshEdge *e = (MeshEdge *)iter;
@@ -441,13 +441,13 @@ void mesh_deselect_flush(Mesh *mesh)
 
         l_iter = l_first = e->l;
         do {
-          mesh_elem_flag_disable(l_iter->f, BM_ELEM_SELECT);
+          mesh_elem_flag_disable(l_iter->f, MESH_ELEM_SELECT);
         } while ((l_iter = l_iter->radial_next) != l_first);
       }
     }
   }
 
-  /* Remove any deselected elements from the BMEditSelection */
+  /* Remove any deselected elements from the MeshEditSelection */
   mesh_select_history_validate(mesh);
 
   recount_totsels(mesh);
@@ -665,8 +665,8 @@ void mesh_face_select_set_noflush(Mesh *mesh, MeshFace *f, const bool select)
   }
 
   if (select) {
-    if (!mesh_elem_flag_test(f, M_ELEM_SELECT)) {
-      mesh_elem_flag_enable(f, M_ELEM_SELECT);
+    if (!mesh_elem_flag_test(f, MESH_ELEM_SELECT)) {
+      mesh_elem_flag_enable(f, MESH_ELEM_SELECT);
       meh->totfacesel += 1;
     }
   }
@@ -707,7 +707,7 @@ void mesh_select_mode_set(Mesh *mesh, int selectmode)
 
     MESH_ITER (ele, &iter, mesh, MESH_EDGES_OF_MESH) {
       if (mesh_elem_flag_test(ele, MESH_ELEM_SELECT)) {
-        mesh_edge_select_set(mesh, (MEdge *)ele, true);
+        mesh_edge_select_set(mesh, (MeshEdge *)ele, true);
       }
     }
     mesh_select_mode_flush(mesh);
@@ -1051,10 +1051,10 @@ void _mesh_select_history_store_after_notest(Mesh *mesh, MeshEditSelection *ese_
   lib_insertlinkafter(&(mesh->selected), ese_ref, ese);
 }
 
-void _mesh_select_history_store_after(BMesh *bm, BMEditSelection *ese_ref, BMHeader *ele)
+void _mesh_select_history_store_after(Mesh *mesh, MeshEditSelection *ese_ref, MeshHeader *ele)
 {
-  if (!mesh_select_history_check(bm, (BMElem *)ele)) {
-    mesh_select_history_store_after_notest(bm, ese_ref, (BMElem *)ele);
+  if (!mesh_select_history_check(mesh, (MeshElem *)ele)) {
+    mesh_select_history_store_after_notest(bm, ese_ref, (MeshElem *)ele);
   }
 }
 /* --- end macro wrapped funcs --- */
@@ -1262,11 +1262,11 @@ void mesh_elem_hflag_disable_test(Mesh *mesh,
 }
 
 void mesh_elem_hflag_enable_test(Mesh *mesh,
-                                    const char htype,
-                                    const char hflag,
-                                    const bool respecthide,
-                                    const bool overwrite,
-                                    const char hflag_test)
+                                 const char htype,
+                                 const char hflag,
+                                 const bool respecthide,
+                                 const bool overwrite,
+                                 const char hflag_test)
 {
   const char iter_types[3] = {MESH_VERTS_OF_MESH, MESH_EDGES_OF_MESH, MESH_FACES_OF_MESH};
 
@@ -1316,9 +1316,9 @@ void mesh_elem_hflag_enable_test(Mesh *mesh,
 }
 
 void mesh_elem_hflag_disable_all(Mesh *mesh,
-                                const char htype,
-                                const char hflag,
-                                const bool respecthide)
+                                 const char htype,
+                                 const char hflag,
+                                 const bool respecthide)
 {
   /* call with 0 hflag_test */
   mesh_elem_hflag_disable_test(mesh, htype, hflag, respecthide, false, 0);
@@ -1460,9 +1460,9 @@ void _mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, const bool hide)
       }
       mesh_edge_hide_set((MeshEdge *)head, hide);
       break;
-    case M_FACE:
+    case MESH_FACE:
       if (hide) {
-        MESH_face_select_set(mesh, (MeshFace *)head, false);
+        mesh_face_select_set(mesh, (MeshFace *)head, false);
       }
       mesh_face_hide_set((MeshFace *)head, hide);
       break;
