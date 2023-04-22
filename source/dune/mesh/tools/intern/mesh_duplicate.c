@@ -30,7 +30,7 @@ static MeshEdge *mesh_edge_copy_with_arrays(Mesh *mesh_src,
 }
 
 static MeshFace *mesh_face_copy_with_arrays(
-    Mesh *mesh_src, Mesh *mesh_dst, BMFace *f_src, BMVert **verts_dst, BMEdge **edges_dst)
+    Mesh *mesh_src, Mesh *mesh_dst, MeshFace *f_src, MeshVert **verts_dst, MeshEdge **edges_dst)
 {
   MeshFace *f_dst;
   MeshVert **vtar = lib_array_alloca(vtar, f_src->len);
