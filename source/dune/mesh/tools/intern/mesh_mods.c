@@ -768,7 +768,7 @@ bool mesh_edge_rotate_check_degenerate(MeshEdge *e, MeshLoop *l1, MeshLoop *l2)
   return true;
 }
 
-bool mesh_edge_rotate_check_beauty(MeshEdge *e, MeshLoop *l1, BMLoop *l2)
+bool mesh_edge_rotate_check_beauty(MeshEdge *e, MeshLoop *l1, MeshLoop *l2)
 {
   /* Stupid check for now:
    * Could compare angles of surrounding edges
@@ -827,7 +827,7 @@ MeshEdge *mesh_edge_rotate(Mesh *mesh, MeshEdge *e, const bool ccw, const short 
   /* first create the new edge, this is so we can copy the customdata from the old one
    * if splice if disabled, always add in a new edge even if there's one there. */
   e_new = mesh_edge_create(
-      mesh, v1, v2, e, (check_flag & MESH_EDGEROT_CHECK_SPLICE) ? BM_CREATE_NO_DOUBLE : BM_CREATE_NOP);
+      mesh, v1, v2, e, (check_flag & MESH_EDGEROT_CHECK_SPLICE) ? MESH_CREATE_NO_DOUBLE : MESH_CREATE_NOP);
 
   f_hflag_prev_1 = l1->f->head.hflag;
   f_hflag_prev_2 = l2->f->head.hflag;
@@ -844,7 +844,7 @@ MeshEdge *mesh_edge_rotate(Mesh *mesh, MeshEdge *e, const bool ccw, const short 
 
   /* don't delete the edge, manually remove the edge after so we can copy its attributes */
   f = mesh_faces_join_pair(
-      mesh, mesh_face_edge_share_loop(l1->f, e), BM_face_edge_share_loop(l2->f, e), true);
+      mesh, mesh_face_edge_share_loop(l1->f, e), mesh_face_edge_share_loop(l2->f, e), true);
 
   if (f == NULL) {
     return NULL;
