@@ -7,18 +7,18 @@ typedef struct MeshEditSelection {
 } MeshEditSelection;
 
 typedef enum eMeshSelectionFlushFLags {
-  M_SELECT_LEN_FLUSH_RECALC_NOTHING = 0,
-  M_SELECT_LEN_FLUSH_RECALC_VERT = (1 << 0),
-  M_SELECT_LEN_FLUSH_RECALC_EDGE = (1 << 1),
-  M_SELECT_LEN_FLUSH_RECALC_FACE = (1 << 2),
-  M_SELECT_LEN_FLUSH_RECALC_ALL = (MESH_SELECT_LEN_FLUSH_RECALC_VERT |
+  MESH_SELECT_LEN_FLUSH_RECALC_NOTHING = 0,
+  MESH_SELECT_LEN_FLUSH_RECALC_VERT = (1 << 0),
+  MESH_SELECT_LEN_FLUSH_RECALC_EDGE = (1 << 1),
+  MESH_SELECT_LEN_FLUSH_RECALC_FACE = (1 << 2),
+  MESH_SELECT_LEN_FLUSH_RECALC_ALL = (MESH_SELECT_LEN_FLUSH_RECALC_VERT |
                                    MESH_SELECT_LEN_FLUSH_RECALC_EDGE |
                                    MESH_SELECT_LEN_FLUSH_RECALC_FACE),
 } eMeshSelectionFlushFLags;
 
 /* Geometry hiding code. */
 
-#define mesh_elem_hide_set(mesh, ele, hide) _bm_elem_hide_set(bm, &(ele)->head, hide)
+#define mesh_elem_hide_set(mesh, ele, hide) _mesh_elem_hide_set(mesh, &(ele)->head, hide)
 void _mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, bool hide);
 void mesh_vert_hide_set(MeshVert *v, bool hide);
 void mesh_edge_hide_set(MeshEdge *e, bool hide);
@@ -147,14 +147,14 @@ void mesh_editselection_plane(MeshEditSelection *ese, float r_plane[3]);
 #define mesh_select_history_store_after(mesh, ese, ese_ref) \
   _mesh_select_history_store_after(mesh, ese_ref, &(ele)->head)
 
-bool _mesh_select_history_check(Mesh *mesh, const MeshHeader *ele);
-bool _mesh_select_history_remove(Mesh *mesh, MeshHeader *ele);
-void _mesh_select_history_store_notest(Mesh *mesh, MeshHeader *ele);
-void _mesh_select_history_store(Mesh *mesh, MeshHeader *ele);
-void _mesh_select_history_store_head_notest(Mesh *mesh, MeshHeader *ele);
-void _mesh_select_history_store_head(Mesh *mesh, MeshHeader *ele);
-void _mesh_select_history_store_after(Mesh *mesh, MeshEditSelection *ese_ref, BMHeader *ele);
-void _mesh_select_history_store_after_notest(Mesh *mesh, MeshEditSelection *ese_ref, BMHeader *ele);
+bool mesh_select_history_check(Mesh *mesh, const MeshHeader *ele);
+bool mesh_select_history_remove(Mesh *mesh, MeshHeader *ele);
+void mesh_select_history_store_notest(Mesh *mesh, MeshHeader *ele);
+void mesh_select_history_store(Mesh *mesh, MeshHeader *ele);
+void mesh_select_history_store_head_notest(Mesh *mesh, MeshHeader *ele);
+void mesh_select_history_store_head(Mesh *mesh, MeshHeader *ele);
+void mesh_select_history_store_after(Mesh *mesh, MeshEditSelection *ese_ref, BMHeader *ele);
+void mesh_select_history_store_after_notest(Mesh *mesh, MeshEditSelection *ese_ref, BMHeader *ele);
 
 void mesh_select_history_validate(Mesh *mesh);
 void mesh_select_history_clear(Mesh *mesh);
