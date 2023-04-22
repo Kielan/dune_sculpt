@@ -491,7 +491,7 @@ void mesh_select_flush(Mesh *mesh)
     }
   }
 
-  recount_totsels(bm);
+  recount_totsels(mesh);
 }
 
 void mesh_vert_select_set(Mesh *mesh, MeshVert *v, const bool select)
@@ -900,7 +900,7 @@ void mesh_editselection_center(MeshEditSelection *ese, float r_center[3])
     copy_v3_v3(r_center, eve->co);
   }
   else if (ese->htype == MESH_EDGE) {
-    MedhEdge *eed = (MeshEdge *)ese->ele;
+    MeshEdge *eed = (MeshEdge *)ese->ele;
     mid_v3_v3v3(r_center, eed->v1->co, eed->v2->co);
   }
   else if (ese->htype == MESH_FACE) {
@@ -1004,12 +1004,12 @@ static MeshEditSelection *mesh_select_history_create(MeshHeader *ele)
 
 /* --- macro wrapped funcs --- */
 
-bool _mesh_select_history_check(Mesh *mesh, const MeshHeader *ele)
+bool mesh_select_history_check(Mesh *mesh, const MeshHeader *ele)
 {
   return (lib_findptr(&mesh->selected, ele, offsetof(MeshEditSelection, ele)) != NULL);
 }
 
-bool _mesh_select_history_remove(Mesh *mesh, MeshHeader *ele)
+bool mesh_select_history_remove(Mesh *mesh, MeshHeader *ele)
 {
   MeshEditSelection *ese = lib_findptr(&mesh->selected, ele, offsetof(MeshEditSelection, ele));
   if (ese) {
@@ -1019,39 +1019,39 @@ bool _mesh_select_history_remove(Mesh *mesh, MeshHeader *ele)
   return false;
 }
 
-void _mesh_select_history_store_notest(Mesh *mesh, MeshHeader *ele)
+void mesh_select_history_store_notest(Mesh *mesh, MeshHeader *ele)
 {
   MeshEditSelection *ese = mesh_select_history_create(ele);
   lib_addtail(&(mesh->selected), ese);
 }
 
-void _mesh_select_history_store_head_notest(Mesh *mesh, MeshHeader *ele)
+void mesh_select_history_store_head_notest(Mesh *mesh, MeshHeader *ele)
 {
   MeshEditSelection *ese = mesh_select_history_create(ele);
   lib_addhead(&(mesh->selected), ese);
 }
 
-void _mesh_select_history_store(Mesh *mesh, MeshHeader *ele)
+void mesh_select_history_store(Mesh *mesh, MeshHeader *ele)
 {
   if (!mesh_select_history_check(mesh, (MeshElem *)ele)) {
     mesh_select_history_store_notest(mesh, (MeshElem *)ele);
   }
 }
 
-void _mesh_select_history_store_head(Mesh *mesh, MeshHeader *ele)
+void mesh_select_history_store_head(Mesh *mesh, MeshHeader *ele)
 {
   if (!mesh_select_history_check(mesh, (MeshElem *)ele)) {
     mesh_select_history_store_head_notest(mesh, (MeshElem *)ele);
   }
 }
 
-void _mesh_select_history_store_after_notest(Mesh *mesh, MeshEditSelection *ese_ref, MeshHeader *ele)
+void mesh_select_history_store_after_notest(Mesh *mesh, MeshEditSelection *ese_ref, MeshHeader *ele)
 {
   MeshEditSelection *ese = mesh_select_history_create(ele);
   lib_insertlinkafter(&(mesh->selected), ese_ref, ese);
 }
 
-void _mesh_select_history_store_after(Mesh *mesh, MeshEditSelection *ese_ref, MeshHeader *ele)
+void mesh_select_history_store_after(Mesh *mesh, MeshEditSelection *ese_ref, MeshHeader *ele)
 {
   if (!mesh_select_history_check(mesh, (MeshElem *)ele)) {
     mesh_select_history_store_after_notest(bm, ese_ref, (MeshElem *)ele);
@@ -1136,7 +1136,7 @@ void mesh_select_history_merge_from_targetmap(
 
 #ifdef DEBUG
   LISTBASE_FOREACH (MeshEditSelection *, ese, &mesh->selected) {
-    LIB_assert(MESH_ELEM_API_FLAG_TEST(ese->ele, _FLAG_OVERLAP) == 0);
+    lib_assert(MESH_ELEM_API_FLAG_TEST(ese->ele, _FLAG_OVERLAP) == 0);
   }
 #endif
 
@@ -1450,7 +1450,7 @@ void mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, const bool hide)
   switch (head->htype) {
     case MESH_VERT:
       if (hide) {
-        M_vert_select_set(m, (MeshVert *)head, false);
+        mesh_vert_select_set(m, (MeshVert *)head, false);
       }
       mesh_vert_hide_set((MeshVert *)head, hide);
       break;
