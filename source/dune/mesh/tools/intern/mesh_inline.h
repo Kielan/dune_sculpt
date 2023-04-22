@@ -25,17 +25,17 @@ LIB_INLINE bool _mesh_elem_flag_test_bool(const MeshHeader *head, const char hfl
   return (head->hflag & hflag) != 0;
 }
 
-LIB_INLINE void _mesh_elem_flag_enable(MeshHeader *head, const char hflag)
+LIB_INLINE void mesh_elem_flag_enable(MeshHeader *head, const char hflag)
 {
   head->hflag |= hflag;
 }
 
-LIB_INLINE void _mesh_elem_flag_disable(MeshHeader *head, const char hflag)
+LIB_INLINE void mesh_elem_flag_disable(MeshHeader *head, const char hflag)
 {
   head->hflag &= (char)~hflag;
 }
 
-LIB_INLINE void _mesh_elem_flag_set(MeshHeader *head, const char hflag, const int val)
+LIB_INLINE void mesh_elem_flag_set(MeshHeader *head, const char hflag, const int val)
 {
   if (val) {
     _mesh_elem_flag_enable(head, hflag);
@@ -45,17 +45,17 @@ LIB_INLINE void _mesh_elem_flag_set(MeshHeader *head, const char hflag, const in
   }
 }
 
-LIB_INLINE void _mesh_elem_flag_toggle(MeshHeader *head, const char hflag)
+LIB_INLINE void mesh_elem_flag_toggle(MeshHeader *head, const char hflag)
 {
   head->hflag ^= hflag;
 }
 
-LIB_INLINE void _mesh_elem_flag_merge(MeshHeader *head_a, MeshHeader *head_b)
+LIB_INLINE void mesh_elem_flag_merge(MeshHeader *head_a, MeshHeader *head_b)
 {
   head_a->hflag = head_b->hflag = head_a->hflag | head_b->hflag;
 }
 
-LIB_INLINE void _mesh_elem_flag_merge_ex(MeshHeader *head_a, MeshHeader *head_b, const char hflag_and)
+LIB_INLINE void mesh_elem_flag_merge_ex(MeshHeader *head_a, MeshHeader *head_b, const char hflag_and)
 {
   if (((head_a->hflag & head_b->hflag) & hflag_and) == 0) {
     head_a->hflag &= ~hflag_and;
@@ -64,7 +64,7 @@ LIB_INLINE void _mesh_elem_flag_merge_ex(MeshHeader *head_a, MeshHeader *head_b,
   _mesh_elem_flag_merge(head_a, head_b);
 }
 
-LIB_INLINE void _mesh_elem_flag_merge_into(MeshHeader *head,
+LIB_INLINE void mesh_elem_flag_merge_into(MeshHeader *head,
                                          const MeshHeader *head_a,
                                          const MeshHeader *head_b)
 {
@@ -102,13 +102,13 @@ LIB_INLINE void _mesh_elem_flag_merge_into(MeshHeader *head,
 #define mesh_elem_index_get(ele) _mesh_elem_index_get(&(ele)->head)
 #define mesh_elem_index_set(ele, index) _mesh_elem_index_set(&(ele)->head, index)
 
-LIB_INLINE void _mesh_elem_index_set(MeshHeader *head, const int index)
+LIB_INLINE void mesh_elem_index_set(MeshHeader *head, const int index)
 {
   head->index = index;
 }
 
 ATTR_WARN_UNUSED_RESULT
-LIB_INLINE int _mesh_elem_index_get(const MeshHeader *head)
+LIB_INLINE int mesh_elem_index_get(const MeshHeader *head)
 {
   return head->index;
 }
