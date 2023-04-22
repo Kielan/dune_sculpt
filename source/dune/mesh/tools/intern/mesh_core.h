@@ -17,9 +17,9 @@ typedef enum eMeshCreateFlag {
 /**
  * Main function for creating a new vertex. */
 MeshVert *mesh_vert_create(Mesh *mesh,
-                          const float co[3],
-                          const MeshVert *v_example,
-                          eMeshCreateFlag create_flag);
+                           const float co[3],
+                           const MeshVert *v_example,
+                           eMeshCreateFlag create_flag);
 /**
  * Main function for creating a new edge.
  *
@@ -129,7 +129,7 @@ void mesh_face_swap_data(MeshFace *f_a, MeshFace *f_b);
  * Joins a collected group of faces into one. Only restriction on
  * the input data is that the faces must be connected to each other.
  *
- * The newly created combine BMFace.
+ * The newly created combine MeshFace.
  *
  * If a pair of faces share multiple edges,
  * the pair of faces will be joined at every edge.
@@ -138,9 +138,7 @@ void mesh_face_swap_data(MeshFace *f_a, MeshFace *f_b);
  * almost everything uses this, including mesh_faces_join_pair
  */
 MeshFace *mesh_faces_join(Mesh *mesh, MeshFace **faces, int totface, bool do_del);
-/**
- * High level function which wraps both mesh_kernel_vert_separate and #bmesh_kernel_edge_separate
- */
+/** High level function which wraps both mesh_kernel_vert_separate and #bmesh_kernel_edge_separate */
 void mesh_vert_separate(Mesh *mesh,
                         MeshVert *v,
                         MeshEdge **e_in,
@@ -154,11 +152,8 @@ void mesh_vert_separate_hflag(
 void mesh_vert_separate_tested_edges(
     Mesh *mesh, MeshVert *v_dst, MeshVert *v_src, bool (*testfn)(MeshEdge *, void *arg), void *arg);
 
-/**
- * Mesh Kernel: For modifying structure.
- *
- * Names are on the verbose side but these are only for low-level access.
- */
+/** Mesh Kernel: For modifying structure
+ * Names are on the verbose side but these are only for low-level access. **/
 /**
  * Separate Vert
  *
@@ -256,7 +251,7 @@ MeshVert *mesh_kernel_split_edge_make_vert(Mesh *mesh, MeshVert *tv, MeshEdge *e
 /**
  * Join Edge Kill Vert (JEKV)
  *
- * Takes an edge \a e_kill and pointer to one of its vertices \a v_kill
+ * Takes an edge e_kill and pointer to one of its vertices v_kill
  * and collapses the edge on that vertex.
  *
  * \par Examples:
@@ -295,7 +290,7 @@ MeshEdge *mesh_kernel_join_edge_kill_vert(Mesh *mesh,
  *
  * Collapse an edge, merging surrounding data.
  *
- * Unlike mesh_vert_collapse_edge & #mesh_kernel_join_edge_kill_vert
+ * Unlike mesh_vert_collapse_edge & mesh_kernel_join_edge_kill_vert
  * which only handle 2 valence verts,
  * this can handle any number of connected edges/faces.
  *
@@ -308,12 +303,12 @@ MeshEdge *mesh_kernel_join_edge_kill_vert(Mesh *mesh,
  * +-+-+-+    +-+-+-+
  * </pre>
  */
-MeshVert *mesh_kernel_join_vert_kill_edge(BMesh *bm,
-                                         BMEdge *e_kill,
-                                         BMVert *v_kill,
-                                         bool do_del,
-                                         bool check_edge_exists,
-                                         bool kill_degenerate_faces);
+MeshVert *mesh_kernel_join_vert_kill_edge(Mesh *mesh,
+                                          MeshEdge *e_kill,
+                                          MeshVert *v_kill,
+                                          bool do_del,
+                                          bool check_edge_exists,
+                                          bool kill_degenerate_faces);
 /**
  * Join Face Kill Edge (JFKE)
  *
@@ -345,28 +340,28 @@ MeshVert *mesh_kernel_join_vert_kill_edge(BMesh *bm,
  *
  * return A MeshFace pointer
  */
-BMFace *bmesh_kernel_join_face_kill_edge(BMesh *bm, BMFace *f1, BMFace *f2, BMEdge *e);
+MeshFace *mesh_kernel_join_face_kill_edge(Mesh *mesh, MeshFace *f1, MeshFace *f2, MeshEdge *e);
 
 /**
- * \brief Un-glue Region Make Vert (URMV)
+ * brief Un-glue Region Make Vert (URMV)
  *
- * Disconnects a face from its vertex fan at loop \a l_sep
+ * Disconnects a face from its vertex fan at loop l_sep
  *
- * \return The newly created BMVert
+ * return The newly created MeshVert
  *
- * \note Will be a no-op and return original vertex if only two edges at that vertex.
+ * note Will be a no-op and return original vertex if only two edges at that vertex.
  */
-BMVert *bmesh_kernel_unglue_region_make_vert(BMesh *bm, BMLoop *l_sep);
+MeshVert *mesh_kernel_unglue_region_make_vert(Mesh *mesh, MeshLoop *l_sep);
 /**
- * A version of #bmesh_kernel_unglue_region_make_vert that disconnects multiple loops at once.
+ * A version of mesh_kernel_unglue_region_make_vert that disconnects multiple loops at once.
  * The loops must all share the same vertex, can be in any order
  * and are all moved to use a single new vertex - which is returned.
  *
  * This function handles the details of finding fans boundaries.
  */
-BMVert *bmesh_kernel_unglue_region_make_vert_multi(BMesh *bm, BMLoop **larr, int larr_len);
+MeshVert *mesh_kernel_unglue_region_make_vert_multi(Mesh *mesh, MeshLoop **larr, int larr_len);
 /**
  * This function assumes l_sep is a part of a larger fan which has already been
- * isolated by calling #bmesh_kernel_edge_separate to segregate it radially.
+ * isolated by calling mesh_kernel_edge_separate to segregate it radially.
  */
 MeshVert *mesh_kernel_unglue_region_make_vert_multi_isolated(Mesh *mesh, MeshLoop *l_sep);
