@@ -16,7 +16,7 @@
 
 #include "mesh.h"
 
-#include "mesh_mesh_debug.h"
+#include "mesh_debug.h"
 
 #include "lib_dynstr.h"
 
