@@ -418,7 +418,7 @@ void mesh_select_mode_flush_ex(Mesh *mesh, const short selectmode, eMeshSelectio
 
 void mesh_select_mode_flush(Mesh *mesh)
 {
-  mesh_select_mode_flush_ex(mesh, mesh->selectmode, BM_SELECT_LEN_FLUSH_RECALC_ALL);
+  mesh_select_mode_flush_ex(mesh, mesh->selectmode, MESH_SELECT_LEN_FLUSH_RECALC_ALL);
 }
 
 void mesh_deselect_flush(Mesh *mesh)
@@ -1242,7 +1242,7 @@ void mesh_elem_hflag_disable_test(Mesh *mesh,
           if (UNLIKELY(respecthide && mesh_elem_flag_test(ele, MESH_ELEM_HIDDEN))) {
             /* pass */
           }
-          else if (!hflag_test || BM_elem_flag_test(ele, hflag_test)) {
+          else if (!hflag_test || mesh_elem_flag_test(ele, hflag_test)) {
             if (hflag & MESH_ELEM_SELECT) {
               mesh_elem_select_set(mesh, ele, false);
             }
@@ -1443,7 +1443,7 @@ void mesh_face_hide_set(MeshFace *f, const bool hide)
   }
 }
 
-void _mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, const bool hide)
+void mesh_elem_hide_set(Mesh *mesh, MeshHeader *head, const bool hide)
 {
   /* Follow convention of always deselecting before
    * hiding an element */
