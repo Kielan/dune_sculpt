@@ -194,10 +194,10 @@ void *mesh_iter_as_arrayn(Mesh *mesh,
  * Sometimes its convenient to get the iterator as an array.
  */
 int mesh_op_iter_as_array(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                         const char *slot_name,
-                         char restrictmask,
-                         void **array,
-                         int len);
+                          const char *slot_name,
+                          char restrictmask,
+                          void **array,
+                          int len);
 void *mesh_op_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                          const char *slot_name,
                          char restrictmask,
