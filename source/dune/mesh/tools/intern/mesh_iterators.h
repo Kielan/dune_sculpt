@@ -182,7 +182,7 @@ int mesh_iter_as_array(Mesh *mesh, char itype, void *data, void **array, int len
  *
  * Caller needs to free the array.
  */
-void *mesh_iter_as_arrayN(Mesh *mesh,
+void *mesh_iter_as_arrayn(Mesh *mesh,
                           char itype,
                           void *data,
                           int *r_len,
@@ -207,10 +207,10 @@ void *mesh_op_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                          int stack_array_size);
 
 int mesh_iter_mesh_bitmap_from_filter(char itype,
-                                    Mesh *mesh,
-                                    uint *bitmap,
-                                    bool (*test_fn)(MeshElem *, void *user_data),
-                                    void *user_data);
+                                      Mesh *mesh,
+                                      uint *bitmap,
+                                      bool (*test_fn)(MeshElem *, void *user_data),
+                                      void *user_data);
 /** Needed when we want to check faces, but return a loop aligned array. */
 int mesh_iter_mesh_bitmap_from_filter_tessface(Mesh *mesh,
                                                uint *bitmap,
@@ -229,9 +229,7 @@ int mesh_iter_elem_count_flag(char itype, void *data, char hflag, bool value);
  * Counts how many flagged / unflagged items are found in this element.
  */
 int mesh_iter_elem_count_flag(Mesh *mesh, char itype, void *data, short opflag, bool value);
-/**
- * Utility function.
- */
+/** Utility function. */
 int mesh_iter_mesh_count(char itype, Mesh *mesh);
 /**
  * Mesh Iter Flag Count
@@ -244,8 +242,8 @@ int mesh_iter_mesh_count_flag(char itype, Mesh *mesh, char hflag, bool value);
 
 #define MESH_ITER_CB_DEF(name) \
   struct MeshIter__##name; \
-  void bmiter__##name##_begin(struct BMIter__##name *iter); \
-  void *bmiter__##name##_step(struct BMIter__##name *iter)
+  void bmiter__##name##_begin(struct MeshIter__##name *iter); \
+  void *bmiter__##name##_step(struct MeshIter__##name *iter)
 
 MESH_ITER_CB_DEF(elem_of_mesh);
 MESH_ITER_CB_DEF(edge_of_vert);
@@ -261,7 +259,7 @@ MESH_ITER_CB_DEF(loop_of_face);
 
 #undef MESH_ITER_CB_DEF
 
-#include "intern/bmesh_iterators_inline.h"
+#include "intern/mesh_iterators_inline.h"
 
 #define MESH_ITER_CHECK_TYPE_DATA(data) \
   CHECK_TYPE_ANY(data, void *, MeshFace *, MeshEdge *, MeshVert *, MeshLoop *, MeshElem *)
