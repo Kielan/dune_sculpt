@@ -391,7 +391,7 @@ static void mesh_select_mode_flush_edge_to_face(Mesh *mesh)
   mesh->totfacesel += chunk_data.delta_selection_len;
 }
 
-void mesh_select_mode_flush_ex(Mesh *mesh, const short selectmode, eBMSelectionFlushFLags flags)
+void mesh_select_mode_flush_ex(Mesh *mesh, const short selectmode, eMeshSelectionFlushFLags flags)
 {
   if (selectmode & SCE_SELECT_VERTEX) {
     mesh_select_mode_flush_vert_to_edge(mesh);
@@ -465,7 +465,7 @@ void mesh_select_flush(Mesh *mesh)
 
   bool ok;
 
-  MESH_ITER_MESH (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
+  MESH_ITER (e, &eiter, mesh, MESH_EDGES_OF_MESH) {
     if (mesh_elem_flag_test(e->v1, MESH_ELEM_SELECT) && mesh_elem_flag_test(e->v2, BM_ELEM_SELECT) &&
         !mesh_elem_flag_test(e, MESH_ELEM_HIDDEN)) {
       mesh_elem_flag_enable(e, MESH_ELEM_SELECT);
