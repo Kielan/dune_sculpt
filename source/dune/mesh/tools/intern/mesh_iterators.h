@@ -105,101 +105,99 @@ struct MeshIter__loop_of_vert {
   MLoop *l_first, *l_next;
   MEdge *e_first, *e_next;
 };
-struct MIter__loop_of_edge {
-  MEdge *edata;
-  MLoop *l_first, *l_next;
+struct MeshIter__loop_of_edge {
+  MeshEdge *edata;
+  MeshLoop *l_first, *l_next;
 };
-struct BMIter__loop_of_loop {
-  MLoop *ldata;
-  MLoop *l_first, *l_next;
+struct MeshIter__loop_of_loop {
+  MeshLoop *ldata;
+  MeshLoop *l_first, *l_next;
 };
-struct MIter__face_of_edge {
-  MEdge *edata;
-  MLoop *l_first, *l_next;
+struct MeshIter__face_of_edge {
+  MeshEdge *edata;
+  MeshLoop *l_first, *l_next;
 };
-struct MIter__vert_of_edge {
-  MEdge *edata;
+struct MeshIter__vert_of_edge {
+  MeshEdge *edata;
 };
-struct MIter__vert_of_face {
-  MFace *pdata;
-  MLoop *l_first, *l_next;
+struct MeshIter__vert_of_face {
+  MeshFace *pdata;
+  MeshLoop *l_first, *l_next;
 };
-struct MIter__edge_of_face {
-  MFace *pdata;
-  MLoop *l_first, *l_next;
+struct MeshIter__edge_of_face {
+  MeshFace *pdata;
+  MeshLoop *l_first, *l_next;
 };
-struct MIter__loop_of_face {
-  MFace *pdata;
-  MLoop *l_first, *l_next;
+struct MeshIter__loop_of_face {
+  MeshFace *pdata;
+  MeshLoop *l_first, *l_next;
 };
 
-typedef void (*BMIter__begin_cb)(void *);
-typedef void *(*BMIter__step_cb)(void *);
+typedef void (*MeshIter__begin_cb)(void *);
+typedef void *(*Meshter__step_cb)(void *);
 
 /* Iterator Structure */
 /* NOTE: some of these vars are not used,
  * so they have been commented to save stack space since this struct is used all over */
-typedef struct BMIter {
+typedef struct MeshIter {
   /* keep union first */
   union {
-    struct BMIter__elem_of_mesh elem_of_mesh;
+    struct MeshIter__elem_of_mesh elem_of_mesh;
 
-    struct BMIter__edge_of_vert edge_of_vert;
-    struct BMIter__face_of_vert face_of_vert;
-    struct BMIter__loop_of_vert loop_of_vert;
-    struct BMIter__loop_of_edge loop_of_edge;
-    struct BMIter__loop_of_loop loop_of_loop;
-    struct BMIter__face_of_edge face_of_edge;
-    struct BMIter__vert_of_edge vert_of_edge;
-    struct BMIter__vert_of_face vert_of_face;
-    struct BMIter__edge_of_face edge_of_face;
-    struct BMIter__loop_of_face loop_of_face;
+    struct MeshIter__edge_of_vert edge_of_vert;
+    struct MeshIter__face_of_vert face_of_vert;
+    struct MeshIter__loop_of_vert loop_of_vert;
+    struct MeshIter__loop_of_edge loop_of_edge;
+    struct MeshIter__loop_of_loop loop_of_loop;
+    struct MeshIter__face_of_edge face_of_edge;
+    struct MeshIter__vert_of_edge vert_of_edge;
+    struct MeshIter__vert_of_face vert_of_face;
+    struct MeshIter__edge_of_face edge_of_face;
+    struct MeshIter__loop_of_face loop_of_face;
   } data;
 
-  BMIter__begin_cb begin;
-  BMIter__step_cb step;
+  MeshIter__begin_cb begin;
+  MeshIter__step_cb step;
 
   int count; /* NOTE: only some iterators set this, don't rely on it. */
   char itype;
-} BMIter;
+} MeshIter;
 
+/** Use mesh_vert_at_index / mesh_edge_at_index / mesh_face_at_index for mesh arrays. **/
+void *mesh_iter_at_index(Mesh *mesh, char itype, void *data, int index) ATTR_WARN_UNUSED_RESULT;
 /**
- * \note Use #BM_vert_at_index / #BM_edge_at_index / #BM_face_at_index for mesh arrays.
- */
-void *BM_iter_at_index(BMesh *bm, char itype, void *data, int index) ATTR_WARN_UNUSED_RESULT;
-/**
- * \brief Iterator as Array
+ * Iterator as Array
  *
  * Sometimes its convenient to get the iterator as an array
- * to avoid multiple calls to #BM_iter_at_index.
+ * to avoid multiple calls to mesh_iter_at_index.
  */
-int BM_iter_as_array(BMesh *bm, char itype, void *data, void **array, int len);
+int mesh_iter_as_array(Mesh *mesh, char itype, void *data, void **array, int len);
 /**
- * \brief Iterator as Array
+ * Iterator as Array
  *
  * Allocates a new array, has the advantage that you don't need to know the size ahead of time.
  *
  * Takes advantage of less common iterator usage to avoid counting twice,
- * which you might end up doing when #BM_iter_as_array is used.
+ * which you might end up doing when mesh_iter_as_array is used.
  *
  * Caller needs to free the array.
  */
-void *BM_iter_as_arrayN(BMesh *bm,
-                        char itype,
-                        void *data,
-                        int *r_len,
-                        void **stack_array,
-                        int stack_array_size) ATTR_WARN_UNUSED_RESULT;
+void *mesh_iter_as_arrayN(Mesh *mesh,
+                          char itype,
+                          void *data,
+                          int *r_len,
+                          void **stack_array,
+                          int stack_array_size) ATTR_WARN_UNUSED_RESULT;
 /**
  * Operator Iterator as Array
  *
  * Sometimes its convenient to get the iterator as an array.
  */
 int mesh_op_iter_as_array(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
-                      const char *slot_name,
-                      char restrictmask,
-                      void **array,
-                      int len);
+                         const char *slot_name,
+                         char restrictmask,
+                         void **array,
+                         int len);
 void *mesh_op_iter_as_arrayN(MeshOpSlot slot_args[MESH_OP_MAX_SLOTS],
                          const char *slot_name,
                          char restrictmask,
@@ -214,10 +212,10 @@ int mesh_iter_mesh_bitmap_from_filter(char itype,
                                     bool (*test_fn)(MeshElem *, void *user_data),
                                     void *user_data);
 /** Needed when we want to check faces, but return a loop aligned array. */
-int mesh_iter_mesh_bitmap_from_filter_tessface(BMesh *bm,
-                                             uint *bitmap,
-                                             bool (*test_fn)(BMFace *, void *user_data),
-                                             void *user_data);
+int mesh_iter_mesh_bitmap_from_filter_tessface(Mesh *mesh,
+                                               uint *bitmap,
+                                               bool (*test_fn)(MeshFace *, void *user_data),
+                                               void *user_data);
 
 /**
  * Elem Iter Flag Count
@@ -230,45 +228,45 @@ int mesh_iter_elem_count_flag(char itype, void *data, char hflag, bool value);
  *
  * Counts how many flagged / unflagged items are found in this element.
  */
-int mesh_iter_elem_count_flag(BMesh *bm, char itype, void *data, short oflag, bool value);
+int mesh_iter_elem_count_flag(Mesh *mesh, char itype, void *data, short opflag, bool value);
 /**
  * Utility function.
  */
-int mesh_iter_mesh_count(char itype, BMesh *bm);
+int mesh_iter_mesh_count(char itype, Mesh *mesh);
 /**
  * Mesh Iter Flag Count
  *
  * Counts how many flagged / unflagged items are found in this mesh.
  */
-int mesh_iter_mesh_count_flag(char itype, BMesh *bm, char hflag, bool value);
+int mesh_iter_mesh_count_flag(char itype, Mesh *mesh, char hflag, bool value);
 
 /* private for bmesh_iterators_inline.c */
 
-#define BMITER_CB_DEF(name) \
-  struct BMIter__##name; \
+#define MESH_ITER_CB_DEF(name) \
+  struct MeshIter__##name; \
   void bmiter__##name##_begin(struct BMIter__##name *iter); \
   void *bmiter__##name##_step(struct BMIter__##name *iter)
 
-BMITER_CB_DEF(elem_of_mesh);
-BMITER_CB_DEF(edge_of_vert);
-BMITER_CB_DEF(face_of_vert);
-BMITER_CB_DEF(loop_of_vert);
-BMITER_CB_DEF(loop_of_edge);
-BMITER_CB_DEF(loop_of_loop);
-BMITER_CB_DEF(face_of_edge);
-BMITER_CB_DEF(vert_of_edge);
-BMITER_CB_DEF(vert_of_face);
-BMITER_CB_DEF(edge_of_face);
-BMITER_CB_DEF(loop_of_face);
+MESH_ITER_CB_DEF(elem_of_mesh);
+MESH_ITER_CB_DEF(edge_of_vert);
+MESH_ITER_CB_DEF(face_of_vert);
+MESH_ITER_CB_DEF(loop_of_vert);
+MESH_ITER_CB_DEF(loop_of_edge);
+MESH_ITER_CB_DEF(loop_of_loop);
+MESH_ITER_CB_DEF(face_of_edge);
+MESH_ITER_CB_DEF(vert_of_edge);
+MESH_ITER_CB_DEF(vert_of_face);
+MESH_ITER_CB_DEF(edge_of_face);
+MESH_ITER_CB_DEF(loop_of_face);
 
-#undef BMITER_CB_DEF
+#undef MESH_ITER_CB_DEF
 
 #include "intern/bmesh_iterators_inline.h"
 
-#define BM_ITER_CHECK_TYPE_DATA(data) \
-  CHECK_TYPE_ANY(data, void *, BMFace *, BMEdge *, BMVert *, BMLoop *, BMElem *)
+#define MESH_ITER_CHECK_TYPE_DATA(data) \
+  CHECK_TYPE_ANY(data, void *, MeshFace *, MeshEdge *, MeshVert *, MeshLoop *, MeshElem *)
 
-#define BM_iter_new(iter, bm, itype, data) \
-  (BM_ITER_CHECK_TYPE_DATA(data), BM_iter_new(iter, bm, itype, data))
-#define BM_iter_init(iter, bm, itype, data) \
-  (BM_ITER_CHECK_TYPE_DATA(data), BM_iter_init(iter, bm, itype, data))
+#define mesh_iter_new(iter, mesh, itype, data) \
+  (MESH_ITER_CHECK_TYPE_DATA(data), mesh_iter_new(iter, bm, itype, data))
+#define mesh_iter_init(iter, mesh, itype, data) \
+  (MESH_ITER_CHECK_TYPE_DATA(data), mesh_iter_init(iter, bm, itype, data))
