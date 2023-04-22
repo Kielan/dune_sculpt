@@ -571,7 +571,7 @@ void mesh_log_mesh_elems_reorder(Mesh *mesh, MeshLog *log)
   /* Put all vertex IDs into an array */
   varr = mem_mallocn(sizeof(int) * (size_t)mesh->totvert, __func__);
   MESH_INDEX_ITER (v, &mesh_iter, mesh, MESH_VERTS_OF_MESH, i) {
-    varr[i] = bm_log_vert_id_get(log, v);
+    varr[i] = mesh_log_vert_id_get(log, v);
   }
 
   /* Put all face IDs into an array */
@@ -592,7 +592,7 @@ void mesh_log_mesh_elems_reorder(Mesh *mesh, MeshLog *log)
 
   /* Create MeshFace index remap array */
   id_to_idx = mesh_log_compress_ids_to_indices(farr, (uint)mesh->totface);
-  MESH_ITER_INDEX (f, &mesh_iter, mesh, MESH_FACES_OF_MESH, i) {
+  MESH_INDEX_ITER (f, &mesh_iter, mesh, MESH_FACES_OF_MESH, i) {
     const uint id = mesh_log_face_id_get(log, f);
     const void *key = PTR_FROM_UINT(id);
     const void *val = lib_ghash_lookup(id_to_idx, key);
