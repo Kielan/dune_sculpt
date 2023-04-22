@@ -33,7 +33,7 @@ static int mesh_vert_other_tag(MeshVert *v, MeshVert *v_prev, BMEdge **r_e)
   MeshEdge *e, *e_next = NULL;
   uint count = 0;
 
-  MESH_ITER_ELEM (e, &iter, v, MESH_EDGES_OF_VERT) {
+  MESH_ELEM_ITER (e, &iter, v, MESH_EDGES_OF_VERT) {
     if (mesh_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG)) {
       MeshVert *v_other = mesh_edge_other_vert(e, v);
       if (v_other != v_prev) {
@@ -95,22 +95,22 @@ static bool mesh_loop_build(MeshEdgeLoopStore *el_store, MeshVert *v_prev, MeshV
 }
 
 int mesh_edgeloops_find(Mesh *mesh,
-                       ListBase *r_eloops,
-                       bool (*test_fn)(MeshEdge *, void *user_data),
-                       void *user_data)
+                        ListBase *r_eloops,
+                        bool (*test_fn)(MeshEdge *, void *user_data),
+                        void *user_data)
 {
   MeshIter iter;
   MeshEdge *e;
   MeshVert *v;
   int count = 0;
 
-  MESH_ITER_MESH (v, &iter, mesh, BM_VERTS_OF_MESH) {
-    mesh_elem_flag_disable(v, BM_ELEM_INTERNAL_TAG);
+  MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
+    mesh_elem_flag_disable(v, MESH_ELEM_INTERNAL_TAG);
   }
 
   /* first flush edges to tags, and tag verts */
   lib_Stack *edge_stack = lib_stack_new(sizeof(MeshEdge *), __func__);
-  MESH_ITER_MESH (e, &iter, mesh, MESH_EDGES_OF_MESH) {
+  MESH_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH) {
     lib_assert(!mesh_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG));
     if (test_fn(e, user_data)) {
       mesh_elem_flag_enable(e, MESH_ELEM_INTERNAL_TAG);
@@ -159,10 +159,7 @@ int mesh_edgeloops_find(Mesh *mesh,
 /* -------------------------------------------------------------------- */
 /* mesh_edgeloops_find_path & Util Functions. */
 
-/**
- * Find s single, open edge loop - given 2 vertices.
- * Add to
- */
+/** Find s single, open edge loop - given 2 vertices. Add to */
 struct VertStep {
   struct VertStep *next, *prev;
   MeshVert *v;
@@ -204,7 +201,7 @@ static bool mesh_loop_path_build_step(lib_mempool *vs_pool,
 
     vs_next = vs->next;
 
-    MESH_ITER_ELEM (e, &iter, vs->v, MESH_EDGES_OF_VERT) {
+    MESH_ITER (e, &iter, vs->v, MESH_EDGES_OF_VERT) {
       if (M_elem_flag_test(e, MESH_ELEM_INTERNAL_TAG)) {
         MeshVert *v_next = mesh_edge_other_vert(e, vs->v);
         const int v_next_index = mesh_elem_index_get(v_next);
@@ -260,7 +257,7 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
 
   {
     MeshVert *v;
-    MESH_ITER_MESH (v, &iter, mesh, MESH_VERTS_OF_MESH) {
+    MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
       mesh_elem_index_set(v, 0);
       mesh_elem_flag_disable(v, MESH_ELEM_INTERNAL_TAG);
     }
@@ -273,7 +270,7 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
 
   if (test_fn) {
     LibStack *edge_stack = lib_stack_new(sizeof(MeshEdge *), __func__);
-    MESH_ITER_MESH (e, &iter, mesh, MESH_EDGES_OF_MESH) {
+    MESH_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH) {
       if (test_fn(e, user_data)) {
         M_elem_flag_enable(e, MESH_ELEM_INTERNAL_TAG);
         M_elem_flag_enable(e->v1, MESH_ELEM_INTERNAL_TAG);
@@ -294,7 +291,7 @@ bool mesh_edgeloops_find_path(Mesh *mesh,
     edges_len = mesh->totedge;
     edges = mem_mallocn(sizeof(*edges) * edges_len, __func__);
 
-    MESH_ITER_MESH_INDEX (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
+    MESH_INDEX_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
       mesh_elem_flag_enable(e, MESH_ELEM_INTERNAL_TAG);
       mesh_elem_flag_enable(e->v1, MESH_ELEM_INTERNAL_TAG);
       mesh_elem_flag_enable(e->v2, MESH_ELEM_INTERNAL_TAG);
