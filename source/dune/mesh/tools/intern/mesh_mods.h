@@ -104,7 +104,7 @@ MeshFace *mesh_face_split_n(Mesh *mesh,
  *
  * note that this is not a general edge collapse function.
  *
- * note this function is very close to #BM_vert_collapse_edge,
+ * note this function is very close to mesh_vert_collapse_edge,
  * both collapse a vertex and return a new edge.
  * Except this takes a factor and merges custom data.
  *
@@ -177,9 +177,9 @@ MeshVert *mesh_edge_split_n(Mesh *mesh, MeshEdge *e, int numcuts, MeshVert **r_v
  *
  * Typically we shouldn't care about this, however it's used when extruding wire edges.
  */
-void mesh_edge_verts_swap(BMEdge *e);
+void mesh_edge_verts_swap(MeshEdge *e);
 
-bool mesh_face_validate(BMFace *face, FILE *err);
+bool mesh_face_validate(MeshFace *face, FILE *err);
 
 /**
  * Calculate the 2 loops which _would_ make up the newly rotated Edge
