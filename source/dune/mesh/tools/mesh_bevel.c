@@ -582,7 +582,7 @@ static int count_ccw_edges_between(EdgeHalf *e1, EdgeHalf *e2)
 static bool edges_face_connected_at_vert(MeshEdge *me1, MeshEdge *me2)
 {
   MeshIter iter;
-  MLoop *l;
+  MeshLoop *l;
   MESH_ELEM_ITER (l, &iter, me1, MESH_LOOPS_OF_EDGE) {
     if (l->prev->e == me2 || l->next->e == me2) {
       return true;
@@ -726,15 +726,15 @@ static MeshFace *bev_create_ngon(Mesh *mesh,
 }
 
 static MeshFace *bev_create_quad(Mesh *mesh,
-                               MeshVert *v1,
-                               MeshVert *v2,
-                               MeshVert *v3,
-                               MeshVert *v4,
-                               MeshFace *f1,
-                               MeshFace *f2,
-                               MeshFace *f3,
-                               MeshFace *f4,
-                               int mat_nr)
+                                 MeshVert *v1,
+                                 MeshVert *v2,
+                                 MeshVert *v3,
+                                 MeshVert *v4,
+                                 MeshFace *f1,
+                                 MeshFace *f2,
+                                 MeshFace *f3,
+                                 MeshFace *f4,
+                                 int mat_nr)
 {
   MeshVert *varr[4] = {v1, v2, v3, v4};
   MeshFace *farr[4] = {f1, f2, f3, f4};
@@ -764,10 +764,10 @@ static MeshFace *bev_create_quad_ex(Mesh *mesh,
 }
 
 /* Is Loop layer layer_index contiguous across shared vertex of l1 and l2? */
-static bool contig_ldata_across_loops(BMesh *bm, BMLoop *l1, BMLoop *l2, int layer_index)
+static bool contig_ldata_across_loops(Mesh *mesh, MeshLoop *l1, MeshLoop *l2, int layer_index)
 {
-  const int offset = bm->ldata.layers[layer_index].offset;
-  const int type = bm->ldata.layers[layer_index].type;
+  const int offset = mesh->ldata.layers[layer_index].offset;
+  const int type = mesh->ldata.layers[layer_index].type;
 
   return CustomData_data_equals(
       type, (char *)l1->head.data + offset, (char *)l2->head.data + offset);
