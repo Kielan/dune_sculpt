@@ -1,6 +1,4 @@
-/** \file
- * \ingroup bmesh
- *
+/**
  * Cut the geometry in half using a plane.
  *
  * \par Implementation
