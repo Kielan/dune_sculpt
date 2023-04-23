@@ -132,18 +132,18 @@ static bool btns_ctx_path_world(BtnsCtxPath *path)
   return false;
 }
 
-static bool buttons_context_path_collection(const bContext *C,
-                                            ButsContextPath *path,
-                                            wmWindow *window)
+static bool btns_ctx_path_collection(const Ctx *C,
+                                     BtnsCtxPath *path,
+                                     wmWindow *window)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a (pinned) collection, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_Collection)) {
+  if (api_struct_is_a(ptr->type, &ApiCollection)) {
     return true;
   }
 
-  Scene *scene = CTX_data_scene(C);
+  Scene *scene = ctx_data_scene(C);
 
   /* if we have a view layer, use the view layer's active collection */
   if (buttons_context_path_view_layer(path, window)) {
@@ -175,9 +175,9 @@ static bool btns_ctx_path_linestyle(BtnsCtxPath *path, wmWindow *window)
     return true;
   }
   /* if we have a view layer, use the lineset's linestyle */
-  if (buttons_context_path_view_layer(path, window)) {
+  if (btns_ctx_path_view_layer(path, window)) {
     ViewLayer *view_layer = path->ptr[path->len - 1].data;
-    FreestyleLineStyle *linestyle = BKE_linestyle_active_from_view_layer(view_layer);
+    FreestyleLineStyle *linestyle = dune_linestyle_active_from_view_layer(view_layer);
     if (linestyle) {
       api_id_ptr_create(&linestyle->id, &path->ptr[path->len]);
       path->len++;
@@ -189,15 +189,15 @@ static bool btns_ctx_path_linestyle(BtnsCtxPath *path, wmWindow *window)
   return false;
 }
 
-static bool buttons_context_path_object(BtnsCtxPath *path)
+static bool btns_ctx_path_object(BtnsCtxPath *path)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a (pinned) object, we're done */
-  if (RNA_struct_is_a(ptr->type, &ApiObject)) {
+  if (api_struct_is_a(ptr->type, &ApiObject)) {
     return true;
   }
-  if (!RNA_struct_is_a(ptr->type, &ApiViewLayer)) {
+  if (!api_struct_is_a(ptr->type, &ApiViewLayer)) {
     return false;
   }
 
