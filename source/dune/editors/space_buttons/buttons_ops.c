@@ -210,13 +210,13 @@ static int file_browse_exec(bContext *C, wmOperator *op)
     }
   }
 
-  RNA_property_string_set(&fbo->ptr, fbo->prop, str);
-  RNA_property_update(C, &fbo->ptr, fbo->prop);
-  MEM_freeN(str);
+  api_prop_string_set(&fbo->ptr, fbo->prop, str);
+  api_prop_update(C, &fbo->ptr, fbo->prop);
+  mem_freen(str);
 
   if (fbo->is_undo) {
-    const char *undostr = RNA_property_identifier(fbo->prop);
-    ED_undo_push(C, undostr);
+    const char *undostr = api_prop_id(fbo->prop);
+    ed_undo_push(C, undostr);
   }
 
   /* Special annoying exception, filesel on redo panel T26618. */
@@ -224,7 +224,7 @@ static int file_browse_exec(bContext *C, wmOperator *op)
     wmOperator *redo_op = WM_operator_last_redo(C);
     if (redo_op) {
       if (fbo->ptr.data == redo_op->ptr->data) {
-        ED_undo_operator_repeat(C, redo_op);
+        ed_undo_op_repeat(C, redo_op);
       }
     }
   }
@@ -234,29 +234,29 @@ static int file_browse_exec(bContext *C, wmOperator *op)
     U.runtime.is_dirty = true;
   }
 
-  MEM_freeN(op->customdata);
+  mem_freen(op->customdata);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-static void file_browse_cancel(bContext *UNUSED(C), wmOperator *op)
+static void file_browse_cancel(Ctx *UNUSED(C), wmOp *op)
 {
-  MEM_freeN(op->customdata);
+  mem_freen(op->customdata);
   op->customdata = NULL;
 }
 
 static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   bool is_undo;
   bool is_userdef;
   FileBrowseOp *fbo;
   char *str;
 
-  if (CTX_wm_space_file(C)) {
-    BKE_report(op->reports, RPT_ERROR, "Cannot activate a file selector, one already open");
-    return OPERATOR_CANCELLED;
+  if (ctx_wm_space_file(C)) {
+    dune_report(op->reports, RPT_ERROR, "Cannot activate a file selector, one already open");
+    return OP_CANCELLED;
   }
 
   UI_context_active_but_prop_get_filebrowser(C, &ptr, &prop, &is_undo, &is_userdef);
