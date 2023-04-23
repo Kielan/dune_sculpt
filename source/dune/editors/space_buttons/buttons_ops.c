@@ -20,11 +20,11 @@
 #include "wm_api.h"
 #include "wm_types.h"
 
-#include "ED_screen.h"
-#include "ED_undo.h"
+#include "ed_screen.h"
+#include "ed_undo.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
