@@ -86,7 +86,7 @@ void btns_ot_clear_filter(struct wmOpType *ot);
 void btns_ot_toggle_pin(struct wmOpType *ot);
 void btns_it_file_browse(struct wmOpType *ot);
 /**
- * Second operator, only difference from BTNS_OT_file_browse is #WM_FILESEL_DIRECTORY.
+ * Second operator, only difference from btns_ot_file_browse is MESH_FILESEL_DIRECTORY.
  */
 void btns_ot_dir_browse(struct wmOpType *ot);
-void btNs_ot_ctx_menu(struct wmOpType *ot);
+void btns_ot_ctx_menu(struct wmOpType *ot);
