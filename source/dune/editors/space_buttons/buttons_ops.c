@@ -34,8 +34,7 @@
 /* -------------------------------------------------------------------- */
 /** Start / Clear Search Filter Operators
  *
- *  Almost a duplicate of the file browser operator file_ot_start_filter.
- **/
+ *  Almost a duplicate of the file browser operator file_ot_start_filter **/
 
 static int btns_start_filter_ex(Ctx *C, wmOp *UNUSED(op))
 {
@@ -73,7 +72,7 @@ static int btns_clear_filter_ex(Ctx *C, wmOp *UNUSED(op))
   ed_region_search_filter_update(area, ctx_wm_region(C));
   ed_area_tag_redraw(area);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
 void btns_ot_clear_filter(struct wmOpType *ot)
@@ -184,7 +183,7 @@ static int file_browse_ex(Ctx *C, wmOp *op)
     id = fbo->ptr.owner_id;
 
     lib_strncpy(path, str, FILE_MAX);
-    lib_path_abs(path, id ? ID_BLEND_PATH(bmain, id) : dune_main_dunefile_path(main));
+    lib_path_abs(path, id ? ID_DUNE_PATH(bmain, id) : dune_main_dunefile_path(main));
 
     if (lib_is_dir(path)) {
       /* Do this first so '//' isn't converted to '//\' on windows. */
@@ -192,15 +191,15 @@ static int file_browse_ex(Ctx *C, wmOp *op)
       if (is_relative) {
         const int path_len = lib_strncpy_rlen(path, str, FILE_MAX);
         lib_path_rel(path, dune_main_blendfile_path(bmain));
-        str = MEM_reallocN(str, path_len + 2);
-        BLI_strncpy(str, path, FILE_MAX);
+        str = mem_reallocn(str, path_len + 2);
+        lib_strncpy(str, path, FILE_MAX);
       }
       else {
         str = mem_reallocn(str, str_len + 2);
       }
     }
     else {
-      char *const lslash = (char *)BLI_path_slash_rfind(str);
+      char *const lslash = (char *)lib_path_slash_rfind(str);
       if (lslash) {
         lslash[1] = '\0';
       }
@@ -218,7 +217,7 @@ static int file_browse_ex(Ctx *C, wmOp *op)
 
   /* Special annoying exception, filesel on redo panel T26618. */
   {
-    wmOperator *redo_op = WM_operator_last_redo(C);
+    wmOp *redo_op = wm_op_last_redo(C);
     if (redo_op) {
       if (fbo->ptr.data == redo_op->ptr->data) {
         ed_undo_op_repeat(C, redo_op);
@@ -262,15 +261,15 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
     return OP_CANCELLED;
   }
 
-  str = RNA_property_string_get_alloc(&ptr, prop, NULL, 0, NULL);
+  str = api_prop_string_get_alloc(&ptr, prop, NULL, 0, NULL);
 
   /* Useful yet irritating feature, Shift+Click to open the file
    * Alt+Click to browse a folder in the OS's browser. */
   if (event->modifier & (KM_SHIFT | KM_ALT)) {
-    wmOpType *ot = WM_operatortype_find("WM_OT_path_open", true);
+    wmOpType *ot = wm_optype_find("wm_ot_path_open", true);
     ApiPtr props_ptr;
 
-    if (event->modifier & KM_ALT) {
+    if (event->mod & KM_ALT) {
       char *lslash = (char *)lib_path_slash_rfind(str);
       if (lslash) {
         *lslash = '\0';
@@ -280,26 +279,26 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
     wm_op_props_create_ptr(&props_ptr, ot);
     api_string_set(&props_ptr, "filepath", str);
     wm_op_name_call_ptr(C, ot, WM_OP_EX_DEFAULT, &props_ptr, NULL);
-    wm_op_properties_free(&props_ptr);
+    wm_op_props_free(&props_ptr);
 
     mem_freen(str);
     return OP_CANCELLED;
   }
 
-  PropertyRNA *prop_relpath;
-  const char *path_prop = RNA_struct_find_property(op->ptr, "directory") ? "directory" :
+  ApiProp *prop_relpath;
+  const char *path_prop = api_struct_find_prop(op->ptr, "directory") ? "directory" :
                                                                            "filepath";
-  fbo = MEM_callocN(sizeof(FileBrowseOp), "FileBrowseOp");
+  fbo = mem_callocn(sizeof(FileBrowseOp), "FileBrowseOp");
   fbo->ptr = ptr;
   fbo->prop = prop;
   fbo->is_undo = is_undo;
   fbo->is_userdef = is_userdef;
   op->customdata = fbo;
 
-  /* Normally ED_fileselect_get_params would handle this but we need to because of stupid
-   * user-prefs exception. - campbell */
+  /* Normally ed_fileselect_get_params would handle this but we need to because of stupid
+   * user-prefs exception. */
   if ((prop_relpath = api_struct_find_prop(op->ptr, "relative_path"))) {
-    if (!RNA_property_is_set(op->ptr, prop_relpath)) {
+    if (!api_prop_is_set(op->ptr, prop_relpath)) {
       bool is_relative = (U.flag & USER_RELPATHS) != 0;
 
       /* While we want to follow the defaults,
@@ -317,21 +316,21 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
     }
   }
 
-  RNA_string_set(op->ptr, path_prop, str);
-  MEM_freeN(str);
+  api_string_set(op->ptr, path_prop, str);
+  mem_freen(str);
 
-  WM_event_add_fileselect(C, op);
+  wm_event_add_fileselect(C, op);
 
-  return OPERATOR_RUNNING_MODAL;
+  return OP_RUNNING_MODAL;
 }
 
-void BUTTONS_OT_file_browse(wmOperatorType *ot)
+void btns_ot_file_browse(wmOpType *ot)
 {
   /* Identifiers. */
   ot->name = "Accept";
   ot->description =
       "Open a file browser, hold Shift to open the file, Alt to browse containing directory";
-  ot->idname = "BUTTONS_OT_file_browse";
+  ot->idname = "btns_ot_file_browse";
 
   /* Callbacks. */
   ot->invoke = file_browse_invoke;
@@ -342,26 +341,26 @@ void BUTTONS_OT_file_browse(wmOperatorType *ot)
   ot->flag = 0;
 
   /* Properties. */
-  WM_operator_properties_filesel(ot,
-                                 0,
-                                 FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT);
+  wm_op_props_filesel(ot,
+                      0,
+                      FILE_SPECIAL,
+                      FILE_OPENFILE,
+                      WM_FILESEL_FILEPATH | WM_FILESEL_RELPATH,
+                      FILE_DEFAULTDISPLAY,
+                      FILE_SORT_DEFAULT);
 }
 
-void BUTTONS_OT_directory_browse(wmOperatorType *ot)
+void btns_ot_directory_browse(wmOpType *ot)
 {
   /* identifiers */
   ot->name = "Accept";
   ot->description =
       "Open a directory browser, hold Shift to open the file, Alt to browse containing directory";
-  ot->idname = "BUTTONS_OT_directory_browse";
+  ot->idname = "btns_it_directory_browse";
 
   /* api callbacks */
   ot->invoke = file_browse_invoke;
-  ot->exec = file_browse_exec;
+  ot->ex = file_browse_ex;
   ot->cancel = file_browse_cancel;
 
   /* conditional undo based on button flag */
@@ -369,10 +368,10 @@ void BUTTONS_OT_directory_browse(wmOperatorType *ot)
 
   /* properties */
   wm_op_props_filesel(ot,
-                                 0,
-                                 FILE_SPECIAL,
-                                 FILE_OPENFILE,
-                                 WM_FILESEL_DIRECTORY | WM_FILESEL_RELPATH,
-                                 FILE_DEFAULTDISPLAY,
-                                 FILE_SORT_DEFAULT);
+                      0,
+                      FILE_SPECIAL,
+                      FILE_OPENFILE,
+                      WM_FILESEL_DIRECTORY | WM_FILESEL_RELPATH,
+                      FILE_DEFAULTDISPLAY,
+                      FILE_SORT_DEFAULT);
 }
