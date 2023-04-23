@@ -1,37 +1,37 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "DNA_armature_types.h"
-#include "DNA_brush_types.h"
-#include "DNA_collection_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_material_types.h"
-#include "DNA_node_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_windowmanager_types.h"
-#include "DNA_world_types.h"
+#include "types_armature.h"
+#include "types_brush.h"
+#include "types_collection.h"
+#include "types_linestyle.h"
+#include "types_material.h"
+#include "types_node.h"
+#include "types_scene.h"
+#include "types_window.h"
+#include "types_world.h"
 
-#include "BKE_action.h"
-#include "BKE_armature.h"
-#include "BKE_context.h"
-#include "BKE_layer.h"
-#include "BKE_linestyle.h"
-#include "BKE_material.h"
-#include "BKE_modifier.h"
-#include "BKE_object.h"
-#include "BKE_paint.h"
-#include "BKE_particle.h"
-#include "BKE_screen.h"
+#include "dune_action.h"
+#include "dune_armature.h"
+#include "dune_context.h"
+#include "dune_layer.h"
+#include "dune_linestyle.h"
+#include "dune_material.h"
+#include "dune_modifier.h"
+#include "dune_object.h"
+#include "dune_paint.h"
+#include "dune_particle.h"
+#include "dune_screen.h"
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
 #include "ED_buttons.h"
 #include "ED_physics.h"
@@ -40,7 +40,7 @@
 #include "UI_interface.h"
 #include "UI_resources.h"
 
-#include "WM_api.h"
+#include "wm_api.h"
 
 #include "buttons_intern.h" /* own include */
 
