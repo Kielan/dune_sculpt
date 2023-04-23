@@ -1,40 +1,40 @@
 #pragma once
 
-#include "BLI_bitmap.h"
-#include "DNA_listBase.h"
-#include "RNA_types.h"
+#include "lib_bitmap.h"
+#include "types_listBase.h"
+#include "api_types.h"
 
 struct ARegionType;
-struct ID;
-struct SpaceProperties;
+struct Id;
+struct SpaceProps;
 struct Tex;
-struct bContext;
-struct bContextDataResult;
-struct bNode;
-struct bNodeSocket;
-struct bNodeTree;
-struct wmOperatorType;
+struct Ctx;
+struct CtxDataResult;
+struct Node;
+struct NodeSocket;
+struct NodeTree;
+struct wmOpType;
 
-struct SpaceProperties_Runtime {
+struct SpacePropsRuntime {
   /** For filtering properties displayed in the space. */
   char search_string[UI_MAX_NAME_STR];
   /**
    * Bitfield (in the same order as the tabs) for whether each tab has properties
-   * that match the search filter. Only valid when #search_string is set.
+   * that match the search filter. Only valid when search_string is set.
    */
-  BLI_bitmap *tab_search_results;
+  lib_bitmap *tab_search_results;
 };
 
 /* context data */
 
-typedef struct ButsContextPath {
-  PointerRNA ptr[8];
+typedef struct BtnsCtxPath {
+  ApiPtr ptr[8];
   int len;
   int flag;
   int collection_ctx;
-} ButsContextPath;
+} BtnsCtxPath;
 
-typedef struct ButsTextureUser {
+typedef struct BtnsTextureUser {
   struct ButsTextureUser *next, *prev;
 
   struct ID *id;
