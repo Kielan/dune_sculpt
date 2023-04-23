@@ -758,7 +758,7 @@ static MeshFace *bev_create_quad_ex(Mesh *mesh,
                                     int mat_nr)
 {
   MeshVert *varr[4] = {v1, v2, v3, v4};
-  MeehFace *farr[4] = {f1, f2, f3, f4};
+  MeshFace *farr[4] = {f1, f2, f3, f4};
   MeshEdge *earr[4] = {e1, e2, e3, e4};
   return bev_create_ngon(mesh, varr, 4, farr, frep, earr, mat_nr, true);
 }
@@ -875,12 +875,12 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
          * are where contig_ldata_across_edge(...) is true for the
          * shared edge and two faces.
          */
-        BMIter eiter;
-        BMEdge *bme;
-        BM_ITER_ELEM (bme, &eiter, bmf, BM_EDGES_OF_FACE) {
-          BMIter fiter;
-          BMFace *bmf_other;
-          BM_ITER_ELEM (bmf_other, &fiter, bme, BM_FACES_OF_EDGE) {
+        MeshIter eiter;
+        MeshEdge *medge;
+        MESH_ELEM_ITER (medge, &eiter, bmf, BM_EDGES_OF_FACE) {
+          MeshIter fiter;
+          MeshFace *bmf_other;
+          MESH_ELEM_ITER (bmf_other, &fiter, bme, BM_FACES_OF_EDGE) {
             if (bmf_other != bmf) {
               int bmf_other_index = BM_elem_index_get(bmf_other);
               if (face_component[bmf_other_index] != -1 || in_stack[bmf_other_index]) {
@@ -888,7 +888,7 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
               }
               if (contig_ldata_across_edge(bm, bme, bmf, bmf_other)) {
                 stack_top++;
-                BLI_assert(stack_top < totface);
+                lib_assert(stack_top < totface);
                 stack[stack_top] = bmf_other;
                 in_stack[bmf_other_index] = true;
               }
