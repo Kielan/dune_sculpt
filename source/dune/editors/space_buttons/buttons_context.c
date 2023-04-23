@@ -179,7 +179,7 @@ static bool buttons_context_path_linestyle(ButsContextPath *path, wmWindow *wind
     ViewLayer *view_layer = path->ptr[path->len - 1].data;
     FreestyleLineStyle *linestyle = BKE_linestyle_active_from_view_layer(view_layer);
     if (linestyle) {
-      RNA_id_pointer_create(&linestyle->id, &path->ptr[path->len]);
+      api_id_ptr_create(&linestyle->id, &path->ptr[path->len]);
       path->len++;
       return true;
     }
@@ -189,7 +189,7 @@ static bool buttons_context_path_linestyle(ButsContextPath *path, wmWindow *wind
   return false;
 }
 
-static bool buttons_context_path_object(ButsContextPath *path)
+static bool buttons_context_path_object(BtnsCtxPath *path)
 {
   PointerRNA *ptr = &path->ptr[path->len - 1];
 
