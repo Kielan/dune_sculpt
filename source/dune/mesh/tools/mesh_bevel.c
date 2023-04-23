@@ -309,8 +309,8 @@ typedef struct BevelParams {
   ProfileSpacing pro_spacing_miter;
   /** Information about 'math' loop layers, like UV layers. */
   MathLayerInfo math_layer_info;
-  /** The argument BMesh. */
-  Mesh *bm;
+  /** The argument Mesh. */
+  Mesh *mesh;
   /** Dune units to offset each side of a beveled edge. */
   float offset;
   /** How offset is measured; enum defined in mesh_operators.h. */
@@ -987,7 +987,7 @@ static MeshFace *choose_rep_face(BevelParams *bp, MeshFace **face, int nfaces)
 
 /* Merge (using average) all the UV values for loops of v's faces.
  * Caller should ensure that no seams are violated by doing this. */
-static void bev_merge_uvs(BMesh *bm, BMVert *v)
+static void bev_merge_uvs(Mesh *mesh, MeshVert *v)
 {
   int num_of_uv_layers = CustomData_number_of_layers(&mesh->ldata, CD_MLOOPUV);
 
@@ -1204,7 +1204,7 @@ static bool edge_edge_angle_less_than_180(const BMEdge *e1, const BMEdge *e2, co
 static void offset_meet_lines_percent_or_absolute(BevelParams *bp,
                                                   EdgeHalf *e1,
                                                   EdgeHalf *e2,
-                                                  BMVert *v,
+                                                  MeshVert *v,
                                                   float r_l1a[3],
                                                   float r_l1b[3],
                                                   float r_l2a[3],
@@ -1255,9 +1255,9 @@ static void offset_meet_lines_percent_or_absolute(BevelParams *bp,
         d5 = bp->offset * mesh_edge_calc_length(e5.e) / 100.0f;
       }
       if (bp->use_weights) {
-        CustomData *cd = &bp->bm->edata;
-        e1_wt = BM_elem_float_data_get(cd, e1->e, CD_BWEIGHT);
-        e2_wt = BM_elem_float_data_get(cd, e2->e, CD_BWEIGHT);
+        CustomData *cd = &bp->mesh->edata;
+        e1_wt = mesh_elem_float_data_get(cd, e1->e, CD_BWEIGHT);
+        e2_wt = mesh_elem_float_data_get(cd, e2->e, CD_BWEIGHT);
       }
       else {
         e1_wt = 1.0f;
@@ -1298,8 +1298,8 @@ static void offset_meet_lines_percent_or_absolute(BevelParams *bp,
 static void offset_meet(BevelParams *bp,
                         EdgeHalf *e1,
                         EdgeHalf *e2,
-                        BMVert *v,
-                        BMFace *f,
+                        MVert *v,
+                        MFace *f,
                         bool edges_between,
                         float meetco[3],
                         const EdgeHalf *e_in_plane)
