@@ -66,8 +66,8 @@ typedef struct ButsContextTexture {
 
 /* btns_ctx.c */
 
-void btns_ctx_compute(const struct bContext *C, struct SpaceProperties *sbuts);
-int btns_ctxt(const struct bContext *C,
+void btns_ctx_compute(const struct Ctx *C, struct SpaceProps *sbtns);
+int btns_ctxt(const struct Ctx *C,
                     const char *member,
                     struct bContextDataResult *result);
 void buttons_context_register(struct ARegionType *art);
