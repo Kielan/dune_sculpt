@@ -101,42 +101,38 @@ static int toggle_pin_exec(bContext *C, wmOperator *UNUSED(op))
   sbuts->flag ^= SB_PIN_CONTEXT;
 
   /* Create the properties space pointer. */
-  PointerRNA sbuts_ptr;
-  bScreen *screen = CTX_wm_screen(C);
-  RNA_pointer_create(&screen->id, &RNA_SpaceProperties, sbuts, &sbuts_ptr);
+  ApiPtr sbuts_ptr;
+  bScreen *screen = ctx_wm_screen(C);
+  api_pointer_create(&screen->id, &ApiSpaceProps, sbuts, &sbuts_ptr);
 
-  /* Create the new ID pointer and set the pin ID with RNA
+  /* Create the new id pointer and set the pin id with api
    * so we can use the property's RNA update functionality. */
-  ID *new_id = (sbuts->flag & SB_PIN_CONTEXT) ? buttons_context_id_path(C) : NULL;
-  PointerRNA new_id_ptr;
-  RNA_id_pointer_create(new_id, &new_id_ptr);
-  RNA_pointer_set(&sbuts_ptr, "pin_id", new_id_ptr);
+  Id *new_id = (sbuts->flag & SB_PIN_CONTEXT) ? btns_ctx_id_path(C) : NULL;
+  ApiPtr new_id_ptr;
+  api_id_ptr_create(new_id, &new_id_ptr);
+  api_ptr_set(&sbuts_ptr, "pin_id", new_id_ptr);
 
-  ED_area_tag_redraw(CTX_wm_area(C));
+  ed_area_tag_redraw(ctx_wm_area(C));
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void BUTTONS_OT_toggle_pin(wmOperatorType *ot)
+void btns_ot_toggle_pin(wmOpType *ot)
 {
   /* Identifiers. */
   ot->name = "Toggle Pin ID";
   ot->description = "Keep the current data-block displayed";
-  ot->idname = "BUTTONS_OT_toggle_pin";
+  ot->idname = "btns_ot_toggle_pin";
 
   /* Callbacks. */
-  ot->exec = toggle_pin_exec;
-  ot->poll = ED_operator_buttons_active;
+  ot->exec = toggle_pin_ex;
+  ot->poll = ed_op_btns_active;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Context Menu Operator
- * \{ */
+/** Context Menu Operator **/
 
-static int context_menu_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *UNUSED(event))
-{
+static int context_menu_invoke(Ctx *C, wmOpType *ot) {
   uiPopupMenu *pup = UI_popup_menu_begin(C, IFACE_("Context Menu"), ICON_NONE);
   uiLayout *layout = UI_popup_menu_layout(pup);
 
