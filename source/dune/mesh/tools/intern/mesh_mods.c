@@ -1,5 +1,5 @@
 /**
- * This file contains functions for locally modifying
+ * functions for locally modifying
  * the topology of existing mesh data. (split, join, flip etc).
  */
 
@@ -242,7 +242,7 @@ MeshFace *mesh_face_split_n(Mesh *mesh,
                             MeshLoop *l_b,
                             float cos[][3],
                             int n,
-                             MeshLoop **r_l,
+                            MeshLoop **r_l,
                             MeshEdge *example)
 {
   MeshFace *f_new, *f_tmp;
@@ -596,7 +596,7 @@ bool mesh_face_validate(MeshFace *face, FILE *err)
   }
 
   lib_array_grow_items(verts, face->len);
-  MES_ELEM_INDEX_ITER (l, &iter, face, MESH_LOOPS_OF_FACE, i) {
+  MESH_ELEM_INDEX_ITER (l, &iter, face, MESH_LOOPS_OF_FACE, i) {
     verts[i] = l->v;
     if (l->e->v1 == l->e->v2) {
       fprintf(err, "Found mesh edge with identical verts!\n");
@@ -871,7 +871,7 @@ MeshEdge *mesh_edge_rotate(Mesh *mesh, MeshEdge *e, const bool ccw, const short 
       }
 
       if (is_flipped) {
-        mesh_face_normal_flip(bm, fb);
+        mesh_face_normal_flip(mesh, fb);
 
         if (ccw) {
           /* Needed otherwise `ccw` toggles direction */
