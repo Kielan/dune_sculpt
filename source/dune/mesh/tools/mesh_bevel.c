@@ -662,15 +662,15 @@ static MeshFace *boundvert_rep_face(BoundVert *v, MeshFace **r_fother)
  *
  * ALL face creation goes through this function, this is important to keep! */
 static MeshFace *bev_create_ngon(Mesh *mesh,
-                               MeshVert **vert_arr,
-                               const int totv,
-                               MeshFace **face_arr,
-                               MeshFace *facerep,
-                               MeshEdge **edge_arr,
-                               int mat_nr,
-                               bool do_interp)
+                                 MeshVert **vert_arr,
+                                 const int totv,
+                                 MeshFace **face_arr,
+                                 MeshFace *facerep,
+                                 MeshEdge **edge_arr,
+                                 int mat_nr,
+                                 bool do_interp)
 {
-  MeehFace *f = mesh_face_create_verts(mesh, vert_arr, totv, facerep, BM_CREATE_NOP, true);
+  MeshFace *f = mesh_face_create_verts(mesh, vert_arr, totv, facerep, MESH_CREATE_NOP, true);
 
   if ((facerep || (face_arr && face_arr[0])) && f) {
     mesh_elem_attrs_copy(mesh, mesh, facerep ? facerep : face_arr[0], f);
@@ -678,7 +678,7 @@ static MeshFace *bev_create_ngon(Mesh *mesh,
       int i = 0;
       MeshIter iter;
       MeshLoop *l;
-      MESH_ELEM_ITER (l, &iter, f, BM_LOOPS_OF_FACE) {
+      MESH_ELEM_ITER (l, &iter, f, MESH_LOOPS_OF_FACE) {
         MeshFace *interp_f;
         if (face_arr) {
           /* Assume loops of created face are in same order as verts. */
@@ -689,17 +689,17 @@ static MeshFace *bev_create_ngon(Mesh *mesh,
           interp_f = facerep;
         }
         if (interp_f) {
-          MeshEdge *bme = NULL;
+          MeshEdge *medge = NULL;
           if (edge_arr) {
-            bme = edge_arr[i];
+            medge = edge_arr[i];
           }
           float save_co[3];
-          if (bme) {
+          if (medge) {
             copy_v3_v3(save_co, l->v->co);
             closest_to_line_segment_v3(l->v->co, save_co, bme->v1->co, bme->v2->co);
           }
-          mesh_loop_interp_from_face(bm, l, interp_f, true, true);
-          if (bme) {
+          mesh_loop_interp_from_face(mesh, l, interp_f, true, true);
+          if (medge) {
             copy_v3_v3(l->v->co, save_co);
           }
         }
@@ -714,8 +714,8 @@ static MeshFace *bev_create_ngon(Mesh *mesh,
     mesh_elem_flag_enable(f, MESH_ELEM_TAG);
     MeshIter iter;
     MeshEdge *mesh_edge;
-    BM_ITER_ELEM (mesh_edge, &iter, f, MESH_EDGES_OF_FACE) {
-      flag_out_edge(bm, bme);
+    MESH_ELEM_ITER (mesh_edge, &iter, f, MESH_EDGES_OF_FACE) {
+      flag_out_edge(mesh, mesh_edge);
     }
   }
 
@@ -882,7 +882,7 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
           MeshFace *bmf_other;
           MESH_ELEM_ITER (bmf_other, &fiter, bme, BM_FACES_OF_EDGE) {
             if (bmf_other != bmf) {
-              int bmf_other_index = BM_elem_index_get(bmf_other);
+              int bmf_other_index = mesh_elem_index_get(bmf_other);
               if (face_component[bmf_other_index] != -1 || in_stack[bmf_other_index]) {
                 continue;
               }
@@ -898,8 +898,8 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
       }
     }
   }
-  MEM_freeN(stack);
-  MEM_freeN(in_stack);
+  mem_freen(stack);
+  mem_freen(in_stack);
 }
 
 /**
@@ -914,39 +914,39 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
  * assignment can look ugly/inconsistent.
  * Allow for the case when arguments are null.
  */
-static BMFace *choose_rep_face(BevelParams *bp, BMFace **face, int nfaces)
+static MeshFace *choose_rep_face(BevelParams *bp, MeshFace **face, int nfaces)
 {
 #define VEC_VALUE_LEN 6
   float(*value_vecs)[VEC_VALUE_LEN] = NULL;
   int num_viable = 0;
 
-  value_vecs = BLI_array_alloca(value_vecs, nfaces);
-  bool *still_viable = BLI_array_alloca(still_viable, nfaces);
+  value_vecs = lib_array_alloca(value_vecs, nfaces);
+  bool *still_viable = lib_array_alloca(still_viable, nfaces);
   for (int f = 0; f < nfaces; f++) {
-    BMFace *bmf = face[f];
-    if (bmf == NULL) {
+    MeshFace *mface = face[f];
+    if (mface == NULL) {
       still_viable[f] = false;
       continue;
     }
     still_viable[f] = true;
     num_viable++;
-    int bmf_index = BM_elem_index_get(bmf);
+    int mface_index = mesh_elem_index_get(mface);
     int value_index = 0;
     /* First tie-breaker: lower math-layer connected component id. */
     value_vecs[f][value_index++] = bp->math_layer_info.face_component ?
-                                       (float)bp->math_layer_info.face_component[bmf_index] :
+                                       (float)bp->math_layer_info.face_component[mface_index] :
                                        0.0f;
     /* Next tie-breaker: selected face beats unselected one. */
-    value_vecs[f][value_index++] = BM_elem_flag_test(bmf, BM_ELEM_SELECT) ? 0.0f : 1.0f;
+    value_vecs[f][value_index++] = mesh_elem_flag_test(mface, MESH_ELEM_SELECT) ? 0.0f : 1.0f;
     /* Next tie-breaker: lower material index. */
-    value_vecs[f][value_index++] = bmf->mat_nr >= 0 ? (float)bmf->mat_nr : 0.0f;
+    value_vecs[f][value_index++] = mface->mat_nr >= 0 ? (float)bmf->mat_nr : 0.0f;
     /* Next three tie-breakers: z, x, y components of face center. */
     float cent[3];
-    BM_face_calc_center_bounds(bmf, cent);
+    mesh_face_calc_center_bounds(mface, cent);
     value_vecs[f][value_index++] = cent[2];
     value_vecs[f][value_index++] = cent[0];
     value_vecs[f][value_index++] = cent[1];
-    BLI_assert(value_index == VEC_VALUE_LEN);
+    lib_assert(value_index == VEC_VALUE_LEN);
   }
 
   /* Look for a face that has a unique minimum value for in a value_index,
@@ -989,10 +989,10 @@ static BMFace *choose_rep_face(BevelParams *bp, BMFace **face, int nfaces)
  * Caller should ensure that no seams are violated by doing this. */
 static void bev_merge_uvs(BMesh *bm, BMVert *v)
 {
-  int num_of_uv_layers = CustomData_number_of_layers(&bm->ldata, CD_MLOOPUV);
+  int num_of_uv_layers = CustomData_number_of_layers(&mesh->ldata, CD_MLOOPUV);
 
   for (int i = 0; i < num_of_uv_layers; i++) {
-    int cd_loop_uv_offset = CustomData_get_n_offset(&bm->ldata, CD_MLOOPUV, i);
+    int cd_loop_uv_offset = CustomData_get_n_offset(&mesh->ldata, CD_MLOOPUV, i);
 
     if (cd_loop_uv_offset == -1) {
       return;
@@ -1002,15 +1002,15 @@ static void bev_merge_uvs(BMesh *bm, BMVert *v)
     float uv[2] = {0.0f, 0.0f};
     MeshIter iter;
     MeshLoop *l;
-    MESH_ELEM_ITER (l, &iter, v, BM_LOOPS_OF_VERT) {
+    MESH_ELEM_ITER (l, &iter, v, MESH_LOOPS_OF_VERT) {
       MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
       add_v2_v2(uv, luv->uv);
       n++;
     }
     if (n > 1) {
       mul_v2_fl(uv, 1.0f / (float)n);
-      MESH_ELEM_ITER (l, &iter, v, BM_LOOPS_OF_VERT) {
-        MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
+      MESH_ELEM_ITER (l, &iter, v, MESH_LOOPS_OF_VERT) {
+        MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
         copy_v2_v2(luv->uv, uv);
       }
     }
@@ -1047,23 +1047,23 @@ static void bev_merge_edge_uvs(BMesh *bm, BMEdge *bme, BMVert *v)
     }
 
     float uv[2] = {0.0f, 0.0f};
-    MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l1, cd_loop_uv_offset);
+    MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l1, cd_loop_uv_offset);
     add_v2_v2(uv, luv->uv);
-    luv = BM_ELEM_CD_GET_VOID_P(l2, cd_loop_uv_offset);
+    luv = MESH_ELEM_CD_GET_VOID_P(l2, cd_loop_uv_offset);
     add_v2_v2(uv, luv->uv);
     mul_v2_fl(uv, 0.5f);
-    luv = BM_ELEM_CD_GET_VOID_P(l1, cd_loop_uv_offset);
+    luv = MESH_ELEM_CD_GET_VOID_P(l1, cd_loop_uv_offset);
     copy_v2_v2(luv->uv, uv);
-    luv = BM_ELEM_CD_GET_VOID_P(l2, cd_loop_uv_offset);
+    luv = MESH_ELEM_CD_GET_VOID_P(l2, cd_loop_uv_offset);
     copy_v2_v2(luv->uv, uv);
   }
 }
 
 /* Calculate coordinates of a point a distance d from v on e->e and return it in slideco. */
-static void slide_dist(EdgeHalf *e, BMVert *v, float d, float r_slideco[3])
+static void slide_dist(EdgeHalf *e, MeshVert *v, float d, float r_slideco[3])
 {
   float dir[3];
-  sub_v3_v3v3(dir, v->co, BM_edge_other_vert(e->e, v)->co);
+  sub_v3_v3v3(dir, v->co, mesh_edge_other_vert(e->e, v)->co);
   float len = normalize_v3(dir);
 
   if (d > len) {
@@ -1095,10 +1095,10 @@ static bool is_outside_edge(EdgeHalf *e, const float co[3], BMVert **ret_closer_
 }
 
 /* Return whether the angle is less than, equal to, or larger than 180 degrees. */
-static AngleKind edges_angle_kind(EdgeHalf *e1, EdgeHalf *e2, BMVert *v)
+static AngleKind edges_angle_kind(EdgeHalf *e1, EdgeHalf *e2, MeshVert *v)
 {
-  BMVert *v1 = BM_edge_other_vert(e1->e, v);
-  BMVert *v2 = BM_edge_other_vert(e2->e, v);
+  MeshVert *v1 = mesh_edge_other_vert(e1->e, v);
+  MeshVert *v2 = mesh_edge_other_vert(e2->e, v);
   float dir1[3], dir2[3];
   sub_v3_v3v3(dir1, v->co, v1->co);
   sub_v3_v3v3(dir2, v->co, v2->co);
@@ -1134,12 +1134,12 @@ static AngleKind edges_angle_kind(EdgeHalf *e1, EdgeHalf *e2, BMVert *v)
 /* co should be approximately on the plane between e1 and e2, which share common vert v and common
  * face f (which cannot be NULL). Is it between those edges, sweeping CCW? */
 static bool point_between_edges(
-    const float co[3], BMVert *v, BMFace *f, EdgeHalf *e1, EdgeHalf *e2)
+    const float co[3], MeshVert *v, MeshFace *f, EdgeHalf *e1, EdgeHalf *e2)
 {
   float dir1[3], dir2[3], dirco[3], no[3];
 
-  BMVert *v1 = BM_edge_other_vert(e1->e, v);
-  BMVert *v2 = BM_edge_other_vert(e2->e, v);
+  MeshVert *v1 = mesh_edge_other_vert(e1->e, v);
+  MeshVert *v2 = mesh_edge_other_vert(e2->e, v);
   sub_v3_v3v3(dir1, v->co, v1->co);
   sub_v3_v3v3(dir2, v->co, v2->co);
   sub_v3_v3v3(dirco, v->co, co);
@@ -1165,8 +1165,8 @@ static bool point_between_edges(
 static bool edge_edge_angle_less_than_180(const BMEdge *e1, const BMEdge *e2, const BMFace *f)
 {
   float dir1[3], dir2[3], cross[3];
-  BLI_assert(f != NULL);
-  BMVert *v, *v1, *v2;
+  lib_assert(f != NULL);
+  MeshVert *v, *v1, *v2;
   if (e1->v1 == e2->v1) {
     v = e1->v1;
     v1 = e1->v2;
@@ -1188,7 +1188,7 @@ static bool edge_edge_angle_less_than_180(const BMEdge *e1, const BMEdge *e2, co
     v2 = e2->v1;
   }
   else {
-    BLI_assert(false);
+    lib_assert(false);
     return false;
   }
   sub_v3_v3v3(dir1, v1->co, v->co);
@@ -1220,24 +1220,24 @@ static void offset_meet_lines_percent_or_absolute(BevelParams *bp,
    *   e4 : the previous edge around f1 before e1 (may be e2).
    *   e5 : the next edge around f2 after e2 (may be e1).
    */
-  BMVert *v1, *v2;
+  MeshVert *v1, *v2;
   EdgeHalf e0, e3, e4, e5;
-  BMFace *f1, *f2;
+  MeshFace *f1, *f2;
   float d0, d3, d4, d5;
   float e1_wt, e2_wt;
-  v1 = BM_edge_other_vert(e1->e, v);
-  v2 = BM_edge_other_vert(e2->e, v);
+  v1 = mesh_edge_other_vert(e1->e, v);
+  v2 = mesh_edge_other_vert(e2->e, v);
   f1 = e1->fnext;
   f2 = e2->fprev;
   bool no_offsets = f1 == NULL || f2 == NULL;
   if (!no_offsets) {
-    BMLoop *l = BM_face_vert_share_loop(f1, v1);
+    MeshLoop *l = mesh_face_vert_share_loop(f1, v1);
     e0.e = l->e;
-    l = BM_face_vert_share_loop(f2, v2);
+    l = mesh_face_vert_share_loop(f2, v2);
     e3.e = l->prev->e;
-    l = BM_face_vert_share_loop(f1, v);
+    l = mesh_face_vert_share_loop(f1, v);
     e4.e = l->prev->e;
-    l = BM_face_vert_share_loop(f2, v);
+    l = mesh_face_vert_share_loop(f2, v);
     e5.e = l->e;
     /* All the legs must be visible from their opposite legs. */
     no_offsets = !edge_edge_angle_less_than_180(e0.e, e1->e, f1) ||
@@ -1249,10 +1249,10 @@ static void offset_meet_lines_percent_or_absolute(BevelParams *bp,
         d0 = d3 = d4 = d5 = bp->offset;
       }
       else {
-        d0 = bp->offset * BM_edge_calc_length(e0.e) / 100.0f;
-        d3 = bp->offset * BM_edge_calc_length(e3.e) / 100.0f;
-        d4 = bp->offset * BM_edge_calc_length(e4.e) / 100.0f;
-        d5 = bp->offset * BM_edge_calc_length(e5.e) / 100.0f;
+        d0 = bp->offset * mesh_edge_calc_length(e0.e) / 100.0f;
+        d3 = bp->offset * mesh_edge_calc_length(e3.e) / 100.0f;
+        d4 = bp->offset * mesh_edge_calc_length(e4.e) / 100.0f;
+        d5 = bp->offset * mesh_edge_calc_length(e5.e) / 100.0f;
       }
       if (bp->use_weights) {
         CustomData *cd = &bp->bm->edata;
