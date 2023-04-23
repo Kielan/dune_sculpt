@@ -68,10 +68,10 @@ typedef struct ButsContextTexture {
 
 void btns_ctx_compute(const struct Ctx *C, struct SpaceProps *sbtns);
 int btns_ctxt(const struct Ctx *C,
-                    const char *member,
-                    struct bContextDataResult *result);
+              const char *member,
+              struct CtxDataResult *result);
 void buttons_context_register(struct ARegionType *art);
-struct ID *buttons_context_id_path(const struct bContext *C);
+struct ID *btns_context_id_path(const struct Ctx *C);
 
 extern const char *buttons_context_dir[]; /* doc access */
 
@@ -81,12 +81,12 @@ void buttons_texture_context_compute(const struct bContext *C, struct SpacePrope
 
 /* btns_ops.c */
 
-void btns_ot_start_filter(struct wmOperatorType *ot);
-void btns_ot_clear_filter(struct wmOperatorType *ot);
-void btns_ot_toggle_pin(struct wmOperatorType *ot);
-void btns_it_file_browse(struct wmOperatorType *ot);
+void btns_ot_start_filter(struct wmOpType *ot);
+void btns_ot_clear_filter(struct wmOpType *ot);
+void btns_ot_toggle_pin(struct wmOpType *ot);
+void btns_it_file_browse(struct wmOpType *ot);
 /**
- * Second operator, only difference from #BUTTONS_OT_file_browse is #WM_FILESEL_DIRECTORY.
+ * Second operator, only difference from BTNS_OT_file_browse is #WM_FILESEL_DIRECTORY.
  */
-void BUTTONS_OT_directory_browse(struct wmOperatorType *ot);
-void BUTTONS_OT_context_menu(struct wmOperatorType *ot);
+void btns_ot_dir_browse(struct wmOpType *ot);
+void btNs_ot_ctx_menu(struct wmOpType *ot);
