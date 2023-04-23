@@ -76,23 +76,20 @@ static int buttons_clear_filter_exec(bContext *C, wmOperator *UNUSED(op))
   return OPERATOR_FINISHED;
 }
 
-void BUTTONS_OT_clear_filter(struct wmOperatorType *ot)
+void btns_ot_clear_filter(struct wmOperatorType *ot)
 {
   /* Identifiers. */
   ot->name = "Clear Filter";
   ot->description = "Clear the search filter";
-  ot->idname = "BUTTONS_OT_clear_filter";
+  ot->idname = "btns_ot_clear_filter";
 
   /* Callbacks. */
-  ot->exec = buttons_clear_filter_exec;
-  ot->poll = ED_operator_buttons_active;
+  ot->exec = btns_clear_filter_ex;
+  ot->poll = ed_op_btns_active;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Pin ID Operator
- * \{ */
+/** \name Pin ID Operator **/
 
 static int toggle_pin_exec(bContext *C, wmOperator *UNUSED(op))
 {
