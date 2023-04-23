@@ -68,8 +68,8 @@
  * m_iter_api Iterator API
  *
  * Most topological queries in Mesh go through an iterator API (see Queries above).
- * These are defined in bmesh_iterators.h.
- * If you can, please use the M_ITER_MESH, M_ITER_ELEM macros in bmesh_iterators.h
+ * These are defined in mesh_iterators.h.
+ * If you can, please use the MESH_ITER_MESH, MESH_ITER_ELEM macros in bmesh_iterators.h
  * subsectionm_walker_api Walker API
  *
  * Topological queries that require a stack (e.g. recursive queries) go through the Walker API,
@@ -93,7 +93,7 @@
  *
  * These slots are identified by name, using strings.
  *
- * Access to slots is done with `MO_slot_***()` functions.
+ * Access to slots is done with `mesh_op_slot_***()` functions.
  * m_tool_flags Tool Flags
  *
  * The Mesh API provides a set of flags for faces, edges and vertices,
@@ -140,12 +140,12 @@
  * (this is supported by the API.
  * mesh_fname Function Naming Conventions
  *
- * These conventions should be used throughout the bmesh module.
+ * These conventions should be used throughout the mesh module.
  *
  * - `mesh_kernel_*()` - Low level API, for primitive functions that others are built ontop of.
  * - `mesh_***()` - Low level API function.
  * - `mmesh_static_***()` -     'static' functions, not a part of the API at all,
- *   but use prefix since they operate on BMesh data.
+ *   but use prefix since they operate on Mesh data.
  * - `mesh_***()` -     High level Mesh API function for use anywhere.
  * - `meshop_***()` -    High level operator API function for use anywhere.
  * - `meshop_***()` -    Low level / internal operator API functions.
