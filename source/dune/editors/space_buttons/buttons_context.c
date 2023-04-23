@@ -96,7 +96,7 @@ static bool buttons_context_path_view_layer(ButsContextPath *path, wmWindow *win
     ViewLayer *view_layer = (win->scene == scene) ? WM_window_get_active_view_layer(win) :
                                                     BKE_view_layer_default_view(scene);
 
-    RNA_pointer_create(&scene->id, &RNA_ViewLayer, view_layer, &path->ptr[path->len]);
+    api_ptr_create(&scene->id, &RNA_ViewLayer, view_layer, &path->ptr[path->len]);
     path->len++;
     return true;
   }
@@ -106,12 +106,12 @@ static bool buttons_context_path_view_layer(ButsContextPath *path, wmWindow *win
 
 /* NOTE: this function can return true without adding a world to the path
  * so the buttons stay visible, but be sure to check the ID type if a ID_WO */
-static bool buttons_context_path_world(ButsContextPath *path)
+static bool btns_ctx_path_world(BtnsCtxPath *path)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a (pinned) world, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_World)) {
+  if (api_struct_is_a(ptr->type, &ApiWorld)) {
     return true;
   }
   /* if we have a scene, use the scene's world */
@@ -120,7 +120,7 @@ static bool buttons_context_path_world(ButsContextPath *path)
     World *world = scene->world;
 
     if (world) {
-      RNA_id_pointer_create(&scene->world->id, &path->ptr[path->len]);
+      api_id_ptr_create(&scene->world->id, &path->ptr[path->len]);
       path->len++;
       return true;
     }
