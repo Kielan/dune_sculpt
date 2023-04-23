@@ -69,14 +69,14 @@ static int buttons_clear_filter_exec(bContext *C, wmOperator *UNUSED(op))
 
   space->runtime->search_string[0] = '\0';
 
-  ScrArea *area = CTX_wm_area(C);
-  ED_region_search_filter_update(area, CTX_wm_region(C));
+  ScrArea *area = ctx_wm_area(C);
+  ED_region_search_filter_update(area, ctx_wm_region(C));
   ED_area_tag_redraw(area);
 
   return OPERATOR_FINISHED;
 }
 
-void btns_ot_clear_filter(struct wmOperatorType *ot)
+void btns_ot_clear_filter(struct wmOpType *ot)
 {
   /* Identifiers. */
   ot->name = "Clear Filter";
