@@ -392,57 +392,57 @@ void mesh_bisect_plane(Mesh *mesh,
 {
   uint einput_len;
   uint i;
-  BMEdge **edges_arr = MEM_mallocN(sizeof(*edges_arr) * (size_t)bm->totedge, __func__);
+  MeshEdge **edges_arr = mesh_mallocn(sizeof(*edges_arr) * (size_t)bm->totedge, __func__);
 
-  BLI_LINKSTACK_DECLARE(face_stack, BMFace *);
+  LIB_LINKSTACK_DECLARE(face_stack, BMFace *);
 
-  BMVert *v;
-  BMFace *f;
+  MeshVert *v;
+  MeshFace *f;
 
-  BMIter iter;
+  MeshIter iter;
 
   if (use_tag) {
     /* Build tagged edge array. */
-    BMEdge *e;
+    MeshEdge *e;
     einput_len = 0;
 
     /* Flush edge tags to verts. */
-    BM_mesh_elem_hflag_disable_all(bm, BM_VERT, BM_ELEM_TAG, false);
+    mesh_elem_hflag_disable_all(mesh, MESH_VERT, MESH_ELEM_TAG, false);
 
     /* Keep face tags as is. */
-    BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
+    MESH_INDEX_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
       if (edge_is_cut_test(e)) {
         edges_arr[einput_len++] = e;
 
         /* Flush edge tags to verts. */
-        BM_elem_flag_enable(e->v1, BM_ELEM_TAG);
-        BM_elem_flag_enable(e->v2, BM_ELEM_TAG);
+        mesh_elem_flag_enable(e->v1, MESH_ELEM_TAG);
+        mesh_elem_flag_enable(e->v2, MESH_ELEM_TAG);
       }
     }
 
     /* Face tags are set by caller. */
   }
   else {
-    BMEdge *e;
-    einput_len = (uint)bm->totedge;
-    BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, i) {
+    MeshEdge *e;
+    einput_len = (uint)mesh->totedge;
+    MESH_INDEX_ITER (e, &iter, mesh, MESH_EDGES_OF_MESH, i) {
       edge_is_cut_enable(e);
       edges_arr[i] = e;
     }
 
-    BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+    MESH_ITER (f, &iter, mesh, MESH_FACES_OF_MESH) {
       face_in_stack_disable(f);
     }
   }
 
-  BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+  MESH_ITER (v, &iter, bm, BM_VERTS_OF_MESH) {
 
     if (use_tag && !BM_elem_flag_test(v, BM_ELEM_TAG)) {
       vert_is_center_disable(v);
 
       /* These should never be accessed. */
-      BM_VERT_DIR(v) = 0;
-      BM_VERT_DIST(v) = 0.0f;
+      MESH_VERT_DIR(v) = 0;
+      MESH_VERT_DIST(v) = 0.0f;
 
       continue;
     }
