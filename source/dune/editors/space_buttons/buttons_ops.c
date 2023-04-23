@@ -1,24 +1,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_userdef_types.h"
+#include "types_userdef.h"
 
-#include "BLI_fileops.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_fileops.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "BKE_context.h"
-#include "BKE_main.h"
-#include "BKE_report.h"
-#include "BKE_screen.h"
+#include "dune_context.h"
+#include "dune_main.h"
+#include "dune_report.h"
+#include "dune_screen.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
 #include "ED_screen.h"
 #include "ED_undo.h"
@@ -32,10 +32,10 @@
 #include "buttons_intern.h" /* own include */
 
 /* -------------------------------------------------------------------- */
-/** \name Start / Clear Search Filter Operators
+/** Start / Clear Search Filter Operators
  *
- *  \note Almost a duplicate of the file browser operator #FILE_OT_start_filter.
- * \{ */
+ *  Almost a duplicate of the file browser operator #FILE_OT_start_filter.
+ **/
 
 static int buttons_start_filter_exec(bContext *C, wmOperator *UNUSED(op))
 {
