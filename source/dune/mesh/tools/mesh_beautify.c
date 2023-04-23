@@ -128,10 +128,10 @@ static void erot_state_alternate(const MeshEdge *e, EdRotState *e_state)
 /* Calculate the improvement of rotating the edge */
 
 static float mesh_edge_calc_rotate_beauty__area(const float v1[3],
-                                              const float v2[3],
-                                              const float v3[3],
-                                              const float v4[3],
-                                              const bool lock_degenerate)
+                                                const float v2[3],
+                                                const float v3[3],
+                                                const float v4[3],
+                                                const bool lock_degenerate)
 {
   /* not a loop (only to be able to break out) */
   do {
@@ -285,7 +285,6 @@ static void mesh_edge_update_beauty_cost_single(MeshEdge *e,
                                                 /* only for testing the edge is in the array */
                                                 const MeshEdge **edge_array,
                                                 const int edge_array_len,
-
                                                 const short flag,
                                                 const short method)
 {
@@ -358,12 +357,12 @@ static void mesh_edge_update_beauty_cost(MeshEdge *e,
 /* Beautify Fill */
 
 void mesh_beautify_fill(Mesh *mesh,
-                           MEdge **edge_array,
-                           const int edge_array_len,
-                           const short flag,
-                           const short method,
-                           const short oflag_edge,
-                           const short oflag_face)
+                        MeshEdge **edge_array,
+                        const int edge_array_len,
+                        const short flag,
+                        const short method,
+                        const short opflag_edge,
+                        const short opflag_face)
 {
   Heap *eheap;            /* edge heap */
   HeapNode **eheap_table; /* edge index aligned table pointing to the eheap */
