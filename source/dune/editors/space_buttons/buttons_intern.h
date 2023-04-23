@@ -64,10 +64,10 @@ typedef struct ButsContextTexture {
 
 /* internal exports only */
 
-/* buttons_context.c */
+/* btns_ctx.c */
 
-void buttons_context_compute(const struct bContext *C, struct SpaceProperties *sbuts);
-int buttons_context(const struct bContext *C,
+void btns_ctx_compute(const struct bContext *C, struct SpaceProperties *sbuts);
+int btns_ctxt(const struct bContext *C,
                     const char *member,
                     struct bContextDataResult *result);
 void buttons_context_register(struct ARegionType *art);
