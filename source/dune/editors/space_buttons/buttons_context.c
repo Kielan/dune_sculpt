@@ -522,7 +522,7 @@ static bool buttons_context_linestyle_pinnable(const bContext *C, ViewLayer *vie
     return false;
   }
   /* if the scene has already been pinned */
-  SpaceProperties *sbuts = CTX_wm_space_properties(C);
+  SpaceProperties *sbuts = ctx_wm_space_properties(C);
   if (sbuts->pinid && sbuts->pinid == &scene->id) {
     return false;
   }
@@ -530,14 +530,14 @@ static bool buttons_context_linestyle_pinnable(const bContext *C, ViewLayer *vie
 }
 #endif
 
-static bool buttons_context_path(
-    const bContext *C, SpaceProperties *sbuts, ButsContextPath *path, int mainb, int flag)
+static bool btns_ctx_path(
+    const Ctx *C, SpaceProps *sbtns, BtnsCtxPath *path, int mainb, int flag)
 {
-  /* Note we don't use CTX_data here, instead we get it from the window.
+  /* Note we don't use ctx_data here, instead we get it from the window.
    * Otherwise there is a loop reading the context that we are setting. */
-  wmWindow *window = CTX_wm_window(C);
-  Scene *scene = WM_window_get_active_scene(window);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(window);
+  wmWindow *window = ctx_wm_window(C);
+  Scene *scene = wm_window_get_active_scene(window);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(window);
 
   memset(path, 0, sizeof(*path));
   path->flag = flag;
