@@ -711,10 +711,10 @@ static MeshFace *bev_create_ngon(Mesh *mesh,
   /* Not essential for bevels own internal logic,
    * this is done so the operator can select newly created geometry. */
   if (f) {
-    BM_elem_flag_enable(f, BM_ELEM_TAG);
-    BMIter iter;
-    BMEdge *bme;
-    BM_ITER_ELEM (bme, &iter, f, BM_EDGES_OF_FACE) {
+    mesh_elem_flag_enable(f, MESH_ELEM_TAG);
+    MeshIter iter;
+    MeshEdge *mesh_edge;
+    BM_ITER_ELEM (mesh_edge, &iter, f, MESH_EDGES_OF_FACE) {
       flag_out_edge(bm, bme);
     }
   }
