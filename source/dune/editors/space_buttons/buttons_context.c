@@ -205,7 +205,7 @@ static bool btns_ctx_path_object(BtnsCtxPath *path)
   Object *ob = (view_layer->basact) ? view_layer->basact->object : NULL;
 
   if (ob) {
-    RNA_id_pointer_create(&ob->id, &path->ptr[path->len]);
+    api_id_ptr_create(&ob->id, &path->ptr[path->len]);
     path->len++;
 
     return true;
@@ -265,7 +265,7 @@ static bool btns_ctx_path_data(BtnsCtxPath *path, int type)
     return true;
   }
   /* try to get an object in the path, no pinning supported here */
-  if (buttons_context_path_object(path)) {
+  if (btns_ctx_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
     if (ob && (ELEM(type, -1, ob->type))) {
@@ -279,10 +279,10 @@ static bool btns_ctx_path_data(BtnsCtxPath *path, int type)
   /* no path to data possible */
   return false;
 }
-
-static bool buttons_context_path_modifier(ButsContextPath *path)
+/* path modifier */
+static bool btns_ctx_path_mod(BtnsCtxPath *path)
 {
-  if (buttons_context_path_object(path)) {
+  if (btns_ctx_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
     if (ELEM(ob->type,
@@ -291,7 +291,7 @@ static bool buttons_context_path_modifier(ButsContextPath *path)
              OB_FONT,
              OB_SURF,
              OB_LATTICE,
-             OB_GPENCIL,
+             OB_PEN,
              OB_CURVES,
              OB_POINTCLOUD,
              OB_VOLUME)) {
