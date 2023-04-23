@@ -233,11 +233,11 @@ typedef struct VMesh {
   int seg;
   /** The kind of mesh to build at the corner vertex meshes. */
   enum {
-    M_NONE,    /* No polygon mesh needed. */
-    M_POLY,    /* A simple polygon. */
-    M_ADJ,     /* "Adjacent edges" mesh pattern. */
-    M_TRI_FAN, /* A simple polygon - fan filled. */
-    M_CUTOFF,  /* A triangulated face at the end of each profile. */
+    MESH_NONE,    /* No polygon mesh needed. */
+    MESH_POLY,    /* A simple polygon. */
+    MESH_ADJ,     /* "Adjacent edges" mesh pattern. */
+    MESH_TRI_FAN, /* A simple polygon - fan filled. */
+    MESH_CUTOFF,  /* A triangulated face at the end of each profile. */
   } mesh_kind;
 
   int _pad;
@@ -246,7 +246,7 @@ typedef struct VMesh {
 /* Data for a vertex involved in a bevel. */
 typedef struct BevVert {
   /** Original mesh vertex. */
-  BMVert *v;
+  MeshVert *v;
   /** Total number of edges around the vertex (excluding wire edges if edge beveling). */
   int edgecount;
   /** Number of selected edges around the vertex. */
@@ -263,27 +263,27 @@ typedef struct BevVert {
   char _pad[6];
   EdgeHalf *edges;
   /** Array of size wirecount of wire edges. */
-  BMEdge **wire_edges;
+  MeshEdge **wire_edges;
   /** Mesh structure for replacing vertex. */
   VMesh *vmesh;
 } BevVert;
 
 /**
  * Face classification.
- * \note depends on `F_RECON > F_EDGE > F_VERT`.
+ * depends on `F_RECON > F_EDGE > F_VERT`.
  */
 typedef enum {
   /** Used when there is no face at all. */
-  F_NONE,
+  FACE_NONE,
   /** Original face, not touched. */
-  F_ORIG,
+  FACE_ORIG,
   /** Face for construction around a vert. */
-  F_VERT,
+  FACE_VERT,
   /** Face for a beveled edge. */
-  F_EDGE,
+  FACE_EDGE,
   /** Reconstructed original face with some new verts. */
-  F_RECON,
-} FKind;
+  FACE_RECON,
+} FaceKind;
 
 /** Helper for keeping track of angle kind. */
 typedef enum AngleKind {
