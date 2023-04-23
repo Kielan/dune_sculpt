@@ -44,13 +44,13 @@
 
 #include "buttons_intern.h" /* own include */
 
-static int set_pointer_type(ButsContextPath *path, bContextDataResult *result, StructRNA *type)
+static int set_ptr_type(BtnsCtxPath *path, CtxDataResult *result, ApiStruct *type)
 {
   for (int i = 0; i < path->len; i++) {
-    PointerRNA *ptr = &path->ptr[i];
+    ApiPtr *ptr = &path->ptr[i];
 
-    if (RNA_struct_is_a(ptr->type, type)) {
-      CTX_data_pointer_set_ptr(result, ptr);
+    if (api_struct_is_a(ptr->type, type)) {
+      ctx_data_ptr_set_ptr(result, ptr);
       return CTX_RESULT_OK;
     }
   }
@@ -58,12 +58,12 @@ static int set_pointer_type(ButsContextPath *path, bContextDataResult *result, S
   return CTX_RESULT_MEMBER_NOT_FOUND;
 }
 
-static PointerRNA *get_pointer_type(ButsContextPath *path, StructRNA *type)
+static ApiPtr *get_ptr_type(BtnsCtxPath *path, ApiStruct *type)
 {
   for (int i = 0; i < path->len; i++) {
-    PointerRNA *ptr = &path->ptr[i];
+    ApiPtr *ptr = &path->ptr[i];
 
-    if (RNA_struct_is_a(ptr->type, type)) {
+    if (api_struct_is_a(ptr->type, type)) {
       return ptr;
     }
   }
