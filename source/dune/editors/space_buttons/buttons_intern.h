@@ -40,27 +40,27 @@ typedef struct BtnsTextureUser {
   struct Id *id;
 
   ApiPtr ptr;
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  struct bNodeTree *ntree;
-  struct bNode *node;
-  struct bNodeSocket *socket;
+  struct NodeTree *ntree;
+  struct Node *node;
+  struct NodeSocket *socket;
 
   const char *category;
   int icon;
   const char *name;
 
   int index;
-} ButsTextureUser;
+} BtnsTextureUser;
 
-typedef struct ButsContextTexture {
+typedef struct BtnsCtxTexture {
   ListBase users;
 
   struct Tex *texture;
 
   struct ButsTextureUser *user;
   int index;
-} ButsContextTexture;
+} BtnsCtxTexture;
 
 /* internal exports only */
 
@@ -70,8 +70,8 @@ void btns_ctx_compute(const struct Ctx *C, struct SpaceProps *sbtns);
 int btns_ctxt(const struct Ctx *C,
               const char *member,
               struct CtxDataResult *result);
-void buttons_context_register(struct ARegionType *art);
-struct ID *btns_context_id_path(const struct Ctx *C);
+void btns_ctx_register(struct ARegionType *art);
+struct Id *btns_ctx_id_path(const struct Ctx *C);
 
 extern const char *buttons_context_dir[]; /* doc access */
 
