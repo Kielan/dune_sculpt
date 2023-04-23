@@ -298,14 +298,14 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 
   /* Normally ED_fileselect_get_params would handle this but we need to because of stupid
    * user-prefs exception. - campbell */
-  if ((prop_relpath = RNA_struct_find_property(op->ptr, "relative_path"))) {
+  if ((prop_relpath = api_struct_find_prop(op->ptr, "relative_path"))) {
     if (!RNA_property_is_set(op->ptr, prop_relpath)) {
       bool is_relative = (U.flag & USER_RELPATHS) != 0;
 
       /* While we want to follow the defaults,
        * we better not switch existing paths relative/absolute state. */
       if (str[0]) {
-        is_relative = BLI_path_is_rel(str);
+        is_relative = lib_path_is_rel(str);
       }
 
       if (UNLIKELY(ptr.data == &U || is_userdef)) {
@@ -313,7 +313,7 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
       }
 
       /* Annoying exception!, if we're dealing with the user prefs, default relative to be off. */
-      RNA_property_boolean_set(op->ptr, prop_relpath, is_relative);
+      api_prop_bool_set(op->ptr, prop_relpath, is_relative);
     }
   }
 
