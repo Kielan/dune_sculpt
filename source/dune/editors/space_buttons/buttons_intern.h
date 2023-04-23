@@ -35,11 +35,11 @@ typedef struct BtnsCtxPath {
 } BtnsCtxPath;
 
 typedef struct BtnsTextureUser {
-  struct ButsTextureUser *next, *prev;
+  struct BtnsTextureUser *next, *prev;
 
-  struct ID *id;
+  struct Id *id;
 
-  PointerRNA ptr;
+  ApiPtr ptr;
   PropertyRNA *prop;
 
   struct bNodeTree *ntree;
