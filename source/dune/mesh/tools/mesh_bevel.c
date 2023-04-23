@@ -489,7 +489,7 @@ static NewVert *mesh_vert(VMesh *vm, int i, int j, int k)
   return &vm->mesh[i * nk * nj + j * nk + k];
 }
 
-static void create_mesh_bmvert(Mesh *mesh, VMesh *vm, int i, int j, int k, MeshVert *eg)
+static void create_mesh_vert(Mesh *mesh, VMesh *vm, int i, int j, int k, MeshVert *eg)
 {
   NewVert *nv = mesh_vert(vm, i, j, k);
   nv->v = mesh_vert_create(mesh, nv->co, eg, MESH_CREATE_NOP);
@@ -1487,9 +1487,9 @@ static void offset_meet(BevelParams *bp,
 
 /**
  * Calculate the meeting point between e1 and e2 (one of which should have zero offsets),
- * where \a e1 precedes \a e2 in CCW order around their common vertex \a v
+ * where e1 precedes e2 in CCW order around their common vertex \a v
  * (viewed from normal side).
- * If \a r_angle is provided, return the angle between \a e and \a meetco in `*r_angle`.
+ * If r_angle is provided, return the angle between \a e and \a meetco in `*r_angle`.
  * If the angle is 0, or it is 180 degrees or larger, there will be no meeting point;
  * return false in that case, else true.
  */
@@ -1497,8 +1497,8 @@ static bool offset_meet_edge(
     EdgeHalf *e1, EdgeHalf *e2, MeshVert *v, float meetco[3], float *r_angle)
 {
   float dir1[3], dir2[3];
-  sub_v3_v3v3(dir1, BM_edge_other_vert(e1->e, v)->co, v->co);
-  sub_v3_v3v3(dir2, BM_edge_other_vert(e2->e, v)->co, v->co);
+  sub_v3_v3v3(dir1, mesh_edge_other_vert(e1->e, v)->co, v->co);
+  sub_v3_v3v3(dir2, mesh_edge_other_vert(e2->e, v)->co, v->co);
   normalize_v3(dir1);
   normalize_v3(dir2);
 
@@ -1576,13 +1576,13 @@ static bool offset_on_edge_between(BevelParams *bp,
   bool ok1 = offset_meet_edge(e1, emid, v, meet1, &ang1);
   bool ok2 = offset_meet_edge(emid, e2, v, meet2, &ang2);
   if (ELEM(bp->offset_type, BEVEL_AMT_PERCENT, BEVEL_AMT_ABSOLUTE)) {
-    BMVert *v2 = BM_edge_other_vert(emid->e, v);
+    MeshVert *v2 = mesh_edge_other_vert(emid->e, v);
     if (bp->offset_type == BEVEL_AMT_PERCENT) {
       float wt = 1.0;
       if (bp->use_weights) {
-        CustomData *cd = &bp->bm->edata;
-        wt = 0.5f * (BM_elem_float_data_get(cd, e1->e, CD_BWEIGHT) +
-                     BM_elem_float_data_get(cd, e2->e, CD_BWEIGHT));
+        CustomData *cd = &bp->mesh->edata;
+        wt = 0.5f * (mesh_elem_float_data_get(cd, e1->e, CD_BWEIGHT) +
+                     mesh_elem_float_data_get(cd, e2->e, CD_BWEIGHT));
       }
       interp_v3_v3v3(meetco, v->co, v2->co, wt * bp->offset / 100.0f);
     }
@@ -1624,10 +1624,10 @@ static bool offset_on_edge_between(BevelParams *bp,
  * If plane_no is NULL, choose an arbitrary plane different from eh's direction. */
 static void offset_in_plane(EdgeHalf *e, const float plane_no[3], bool left, float r_co[3])
 {
-  BMVert *v = e->is_rev ? e->e->v2 : e->e->v1;
+  MeshVert *v = e->is_rev ? e->e->v2 : e->e->v1;
 
   float dir[3], no[3];
-  sub_v3_v3v3(dir, BM_edge_other_vert(e->e, v)->co, v->co);
+  sub_v3_v3v3(dir, mesh_edge_other_vert(e->e, v)->co, v->co);
   normalize_v3(dir);
   if (plane_no) {
     copy_v3_v3(no, plane_no);
@@ -1655,7 +1655,7 @@ static void offset_in_plane(EdgeHalf *e, const float plane_no[3], bool left, flo
 }
 
 /* Calculate the point on e where line (co_a, co_b) comes closest to and return it in projco. */
-static void project_to_edge(const BMEdge *e,
+static void project_to_edge(const MeshEdge *e,
                             const float co_a[3],
                             const float co_b[3],
                             float projco[3])
@@ -1663,7 +1663,7 @@ static void project_to_edge(const BMEdge *e,
   float otherco[3];
   if (!isect_line_line_v3(e->v1->co, e->v2->co, co_a, co_b, projco, otherco)) {
 #ifdef BEVEL_ASSERT_PROJECT
-    BLI_assert_msg(0, "project meet failure");
+    lib_assert_msg(0, "project meet failure");
 #endif
     copy_v3_v3(projco, e->v1->co);
   }
@@ -1795,9 +1795,9 @@ static void set_profile_params(BevelParams *bp, BevVert *bv, BoundVert *bndv)
  * original beveled vert, bmv. This will usually be the plane containing its adjacent
  * non-beveled edges, but sometimes the start and the end are not on those edges.
  *
- * Currently just used in #build_boundary_terminal_edge.
+ * Currently just used in build_boundary_terminal_edge.
  */
-static void move_profile_plane(BoundVert *bndv, BMVert *bmvert)
+static void move_profile_plane(BoundVert *bndv, MeshVert *meshvert)
 {
   Profile *pro = &bndv->profile;
 
@@ -1807,9 +1807,9 @@ static void move_profile_plane(BoundVert *bndv, BMVert *bmvert)
   }
 
   float d1[3], d2[3];
-  sub_v3_v3v3(d1, bmvert->co, pro->start);
+  sub_v3_v3v3(d1, mvert->co, pro->start);
   normalize_v3(d1);
-  sub_v3_v3v3(d2, bmvert->co, pro->end);
+  sub_v3_v3v3(d2, mvert->co, pro->end);
   normalize_v3(d2);
   float no[3], no2[3], no3[3];
   cross_v3_v3v3(no, d1, d2);
@@ -1931,7 +1931,7 @@ static bool make_unit_square_map(const float va[3],
   add_v3_v3v3(vd, vo, vddir);
 
   /* The cols of m are: {vmid - va, vmid - vb, vmid + vd - va -vb, va + vb - vmid;
-   * Blender transform matrices are stored such that m[i][*] is ith column;
+   * Dune transform matrices are stored such that m[i][*] is ith column;
    * the last elements of each col remain as they are in unity matrix. */
   sub_v3_v3v3(&r_mat[0][0], vmid, va);
   r_mat[0][3] = 0.0f;
@@ -2360,8 +2360,8 @@ static void bevel_extend_edge_data(BevVert *bv)
 
       int idxlen = bcur->index + bcur->sharp_len;
       for (int i = bcur->index; i < idxlen; i++) {
-        BMVert *v1 = mesh_vert(vm, i % vm->count, 0, 0)->v, *v2;
-        BMEdge *e;
+        MeshVert *v1 = mesh_vert(vm, i % vm->count, 0, 0)->v, *v2;
+        MeshEdge *e;
         for (int k = 1; k < vm->seg; k++) {
           v2 = mesh_vert(vm, i % vm->count, 0, k)->v;
 
@@ -2428,9 +2428,9 @@ static void bevel_edges_sharp_boundary(Mesh *mesh, BevelParams *bp)
 /**
  * Harden normals for bevel.
  *
- * The desired effect is that the newly created #F_EDGE and #F_VERT faces appear smoothly shaded
- * with the normals at the boundaries with #F_RECON faces matching those recon faces.
- * And at boundaries between #F_EDGE and #F_VERT faces, the normals should match the #F_EDGE ones.
+ * The desired effect is that the newly created F_EDGE and F_VERT faces appear smoothly shaded
+ * with the normals at the boundaries with F_RECON faces matching those recon faces.
+ * And at boundaries between F_EDGE and F_VERT faces, the normals should match the F_EDGE ones.
  * Assumes custom loop normals are in use.
  */
 static void bevel_harden_normals(BevelParams *bp, Mesh *mesh)
@@ -2454,7 +2454,7 @@ static void bevel_harden_normals(BevelParams *bp, Mesh *mesh)
     bevel_edges_sharp_boundary(mesh, bp);
   }
 
-  /* Ensure that bm->lnor_spacearr has properly stored loop normals.
+  /* Ensure that mesh->lnor_spacearr has properly stored loop normals.
    * Side effect: ensures loop indices. */
   mesh_lnorspace_update(mesh);
 
@@ -2471,11 +2471,11 @@ static void bevel_harden_normals(BevelParams *bp, Mesh *mesh)
     }
     MeshIter liter;
     MeshLoop *l;
-    MESH_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
+    MESH_ITER_ELEM (l, &liter, f, MESH_LOOPS_OF_FACE) {
       MeshEdge *estep = l->prev->e; /* Causes CW walk around l->v fan. */
-      MeshLoop *lprev = BM_vert_step_fan_loop(l, &estep);
+      MeshLoop *lprev = mesh_vert_step_fan_loop(l, &estep);
       estep = l->e; /* Causes CCW walk around l->v fan. */
-      MeshLoop *lnext = BM_vert_step_fan_loop(l, &estep);
+      MeshLoop *lnext = mesh_vert_step_fan_loop(l, &estep);
       FKind fprevkind = lprev ? get_face_kind(bp, lprev->f) : F_NONE;
       FKind fnextkind = lnext ? get_face_kind(bp, lnext->f) : F_NONE;
 
@@ -2597,7 +2597,7 @@ static void bevel_set_weighted_normal_face_strength(Mesh *mesh, BevelParams *bp)
         do_set_strength = false;
     }
     if (do_set_strength) {
-      int *strength_ptr = BM_ELEM_CD_GET_VOID_P(f, cd_prop_int_offset);
+      int *strength_ptr = MESH_ELEM_CD_GET_VOID_P(f, cd_prop_int_offset);
       *strength_ptr = strength;
     }
   }
@@ -2989,7 +2989,7 @@ static void build_boundary(BevelParams *bp, BevVert *bv, bool construct)
    * Non-beveled edges in between will just join to the appropriate juncture point. */
   EdgeHalf *e = efirst;
   do {
-    BLI_assert(e->is_bev);
+    lib_assert(e->is_bev);
     EdgeHalf *eon = NULL;
     /* Make the BoundVert for the right side of e; the other side will be made when the beveled
      * edge to the left of e is handled.
