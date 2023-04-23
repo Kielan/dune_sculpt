@@ -50,14 +50,14 @@ static short plane_point_test_v3(const float plane[4],
  *
  * Wrappers to hide internal data-structure abuse,
  * later we may want to move this into some hash lookup
- * to a separate struct, but for now we can store in #BMesh data.
+ * to a separate struct, but for now we can store in Mesh data.
  **/
 
-#define BM_VERT_DIR(v) ((short *)(&(v)->head.index))[0]  /* Direction -1/0/1 */
-#define BM_VERT_SKIP(v) ((short *)(&(v)->head.index))[1] /* Skip Vert 0/1 */
-#define BM_VERT_DIST(v) ((v)->no[0])                     /* Distance from the plane. */
-#define BM_VERT_SORTVAL(v) ((v)->no[1])                  /* Temp value for sorting. */
-#define BM_VERT_LOOPINDEX(v) /* The verts index within a face (temp var) */ \
+#define MESH_VERT_DIR(v) ((short *)(&(v)->head.index))[0]  /* Direction -1/0/1 */
+#define MESH_VERT_SKIP(v) ((short *)(&(v)->head.index))[1] /* Skip Vert 0/1 */
+#define MESH_VERT_DIST(v) ((v)->no[0])                     /* Distance from the plane. */
+#define MESH_VERT_SORTVAL(v) ((v)->no[1])                  /* Temp value for sorting. */
+#define MESH_VERT_LOOPINDEX(v) /* The verts index within a face (temp var) */ \
   (*((uint *)(&(v)->no[2])))
 
 /* -------------------------------------------------------------------- */
@@ -72,33 +72,33 @@ LIB_INLINE void vert_is_center_enable(MeshVert *v)
 {
   mesh_elem_flag_enable(v, MESH_ELEM_TAG);
 }
-BLI_INLINE void vert_is_center_disable(BMVert *v)
+LIB_INLINE void vert_is_center_disable(MeshVert *v)
 {
-  BM_elem_flag_disable(v, BM_ELEM_TAG);
+  mesh_elem_flag_disable(v, MESH_ELEM_TAG);
 }
-BLI_INLINE bool vert_is_center_test(BMVert *v)
+LIB_INLINE bool vert_is_center_test(MeshVert *v)
 {
-  return (BM_elem_flag_test(v, BM_ELEM_TAG) != 0);
+  return (mesh_elem_flag_test(v, MESH_ELEM_TAG) != 0);
 }
 
-BLI_INLINE bool vert_pair_adjacent_in_orig_face(BMVert *v_a, BMVert *v_b, const uint f_len_orig)
+LIB_INLINE bool vert_pair_adjacent_in_orig_face(MeshVert *v_a, MeshVert *v_b, const uint f_len_orig)
 {
-  const uint delta = (uint)abs((int)BM_VERT_LOOPINDEX(v_a) - (int)BM_VERT_LOOPINDEX(v_b));
+  const uint delta = (uint)abs((int)MESH_VERT_LOOPINDEX(v_a) - (int)MESH_VERT_LOOPINDEX(v_b));
   return ELEM(delta, 1, (uint)(f_len_orig - 1));
 }
 
 /** Enable when the edge can be cut. */
-BLI_INLINE void edge_is_cut_enable(BMEdge *e)
+LIB_INLINE void edge_is_cut_enable(MeshEdge *e)
 {
-  BM_elem_flag_enable(e, BM_ELEM_TAG);
+  mesh_elem_flag_enable(e, MESH_ELEM_TAG);
 }
-BLI_INLINE void edge_is_cut_disable(BMEdge *e)
+LIB_INLINE void edge_is_cut_disable(MeshEdge *e)
 {
-  BM_elem_flag_disable(e, BM_ELEM_TAG);
+  mesh_elem_flag_disable(e, MESH_ELEM_TAG);
 }
-BLI_INLINE bool edge_is_cut_test(BMEdge *e)
+BLI_INLINE bool edge_is_cut_test(MeshEdge *e)
 {
-  return (BM_elem_flag_test(e, BM_ELEM_TAG) != 0);
+  return (BM_elem_flag_test(e, MESH_ELEM_TAG) != 0);
 }
 
 /** Enable when the faces are added to the stack. */
