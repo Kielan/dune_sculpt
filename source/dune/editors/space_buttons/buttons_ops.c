@@ -91,7 +91,7 @@ void btns_ot_clear_filter(struct wmOpType *ot)
 /* -------------------------------------------------------------------- */
 /** Pin id Operator **/
 
-static int toggle_pin_exec(Ctx *C, wmOp *UNUSED(op))
+static int toggle_pin_ex(Ctx *C, wmOp *UNUSED(op))
 {
   SpaceProperties *sbuts = ctx_wm_space_props(C);
 
@@ -103,8 +103,8 @@ static int toggle_pin_exec(Ctx *C, wmOp *UNUSED(op))
   api_ptr_create(&screen->id, &ApiSpaceProps, sbuts, &sbtns_ptr);
 
   /* Create the new id pointer and set the pin id with api
-   * so we can use the property's RNA update functionality. */
-  Id *new_id = (sbuts->flag & SB_PIN_CONTEXT) ? btns_ctx_id_path(C) : NULL;
+   * so we can use the property's api update functionality. */
+  Id *new_id = (sbuts->flag & SB_PIN_CTX) ? btns_ctx_id_path(C) : NULL;
   ApiPtr new_id_ptr;
   api_id_ptr_create(new_id, &new_id_ptr);
   api_ptr_set(&sbuts_ptr, "pin_id", new_id_ptr);
@@ -129,7 +129,7 @@ void btns_ot_toggle_pin(wmOpType *ot)
 /* -------------------------------------------------------------------- */
 /** Context Menu Operator **/
 
-static int context_menu_invoke(Ctx *C, wmOpType *ot) {
+static int ctx_menu_invoke(Ctx *C, wmOpType *ot) {
   uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Context Menu"), ICON_NONE);
   uiLayout *layout = ui_popup_menu_layout(pup);
 
@@ -147,7 +147,7 @@ void btns_ot_ctx_menu(wmOpType *ot)
   ot->idname = "btns_ot_ctx_menu";
 
   /* Callbacks. */
-  ot->invoke = context_menu_invoke;
+  ot->invoke = ctx_menu_invoke;
   ot->poll = ed_op_btns_active;
 }
 
@@ -271,19 +271,19 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
     ApiPtr props_ptr;
 
     if (event->modifier & KM_ALT) {
-      char *lslash = (char *)BLI_path_slash_rfind(str);
+      char *lslash = (char *)lib_path_slash_rfind(str);
       if (lslash) {
         *lslash = '\0';
       }
     }
 
-    WM_operator_properties_create_ptr(&props_ptr, ot);
-    RNA_string_set(&props_ptr, "filepath", str);
-    WM_operator_name_call_ptr(C, ot, WM_OP_EXEC_DEFAULT, &props_ptr, NULL);
-    WM_operator_properties_free(&props_ptr);
+    wm_op_props_create_ptr(&props_ptr, ot);
+    api_string_set(&props_ptr, "filepath", str);
+    wm_op_name_call_ptr(C, ot, WM_OP_EX_DEFAULT, &props_ptr, NULL);
+    wm_op_properties_free(&props_ptr);
 
-    MEM_freeN(str);
-    return OPERATOR_CANCELLED;
+    mem_freen(str);
+    return OP_CANCELLED;
   }
 
   PropertyRNA *prop_relpath;
