@@ -9,7 +9,7 @@
 
 #include "i18n_translation.h"
 
-#include "types_ID.h"
+#include "types_id.h"
 #include "types_brush_types.h"
 #include "types_linestyle_types.h"
 #include "types_node_types.h"
@@ -32,31 +32,31 @@
 #ifdef WITH_FREESTYLE
 #endif
 
-#include "RNA_access.h"
-#include "RNA_prototypes.h"
+#include "api_access.h"
+#include "api_prototypes.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
 
-#include "ED_node.h"
-#include "ED_screen.h"
+#include "ed_node.h"
+#include "ed_screen.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
 #include "../interface/interface_intern.h"
 
 #include "buttons_intern.h" /* own include */
 
-static ScrArea *find_area_properties(const bContext *C);
-static SpaceProperties *find_space_properties(const bContext *C);
+static ScrArea *find_area_props(const Ctx *C);
+static SpaceProps *find_space_props(const Ctx *C);
 
 /************************* Texture User **************************/
 
-static void buttons_texture_user_socket_property_add(ListBase *users,
-                                                     ID *id,
-                                                     PointerRNA ptr,
-                                                     PropertyRNA *prop,
+static void btns_texture_user_socket_prop_add(ListBase *users,
+                                                     Id *id,
+                                                     ApiPtr ptr,
+                                                     ApiProp *prop,
                                                      bNodeTree *ntree,
                                                      bNode *node,
                                                      bNodeSocket *socket,
