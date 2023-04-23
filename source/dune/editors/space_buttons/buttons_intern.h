@@ -55,9 +55,7 @@ typedef struct BtnsTextureUser {
 
 typedef struct BtnsCtxTexture {
   ListBase users;
-
   struct Tex *texture;
-
   struct ButsTextureUser *user;
   int index;
 } BtnsCtxTexture;
@@ -73,11 +71,11 @@ int btns_ctxt(const struct Ctx *C,
 void btns_ctx_register(struct ARegionType *art);
 struct Id *btns_ctx_id_path(const struct Ctx *C);
 
-extern const char *buttons_context_dir[]; /* doc access */
+extern const char *btns_ctx_dir[]; /* doc access */
 
 /* buttons_texture.c */
 
-void buttons_texture_context_compute(const struct bContext *C, struct SpaceProperties *sbuts);
+void btns_texture_ctx_compute(const struct Ctx *C, struct SpaceProps *sbtns);
 
 /* btns_ops.c */
 
