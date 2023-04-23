@@ -1023,11 +1023,11 @@ static void bev_merge_edge_uvs(BMesh *bm, BMEdge *bme, BMVert *v)
 {
   int num_of_uv_layers = CustomData_number_of_layers(&bm->ldata, CD_MLOOPUV);
 
-  BMLoop *l1 = NULL;
-  BMLoop *l2 = NULL;
-  BMIter iter;
-  BMLoop *l;
-  BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
+  MLoop *l1 = NULL;
+  MLoop *l2 = NULL;
+  MIter iter;
+  MeshLoop *l;
+  MESH_ELEM_ITER (l, &iter, v, BM_LOOPS_OF_VERT) {
     if (l->e == bme) {
       l1 = l;
     }
