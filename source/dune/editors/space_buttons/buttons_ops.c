@@ -161,42 +161,42 @@ typedef struct FileBrowseOp {
   bool is_userdef;
 } FileBrowseOp;
 
-static int file_browse_ex(Context *C, wmOperator *op)
+static int file_browse_ex(Ctx *C, wmOp *op)
 {
   Main *main = ctx_data_main(C);
   FileBrowseOp *fbo = op->customdata;
   Id *id;
   char *str;
   int str_len;
-  const char *path_prop = api_struct_find_property(op->ptr, "directory") ? "directory" :
+  const char *path_prop = api_struct_find_prop(op->ptr, "directory") ? "directory" :
                                                                            "filepath";
 
   if (api_struct_prop_is_set(op->ptr, path_prop) == 0 || fbo == NULL) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
-  str = RNA_string_get_alloc(op->ptr, path_prop, NULL, 0, &str_len);
+  str = api_string_get_alloc(op->ptr, path_prop, NULL, 0, &str_len);
 
   /* Add slash for directories, important for some properties. */
-  if (RNA_property_subtype(fbo->prop) == PROP_DIRPATH) {
+  if (api_prop_subtype(fbo->prop) == PROP_DIRPATH) {
     char path[FILE_MAX];
-    const bool is_relative = RNA_boolean_get(op->ptr, "relative_path");
+    const bool is_relative = api_bool_get(op->ptr, "relative_path");
     id = fbo->ptr.owner_id;
 
-    BLI_strncpy(path, str, FILE_MAX);
-    BLI_path_abs(path, id ? ID_BLEND_PATH(bmain, id) : BKE_main_blendfile_path(bmain));
+    lib_strncpy(path, str, FILE_MAX);
+    lib_path_abs(path, id ? ID_BLEND_PATH(bmain, id) : dune_main_dunefile_path(main));
 
-    if (BLI_is_dir(path)) {
+    if (lib_is_dir(path)) {
       /* Do this first so '//' isn't converted to '//\' on windows. */
-      BLI_path_slash_ensure(path);
+      lib_path_slash_ensure(path);
       if (is_relative) {
-        const int path_len = BLI_strncpy_rlen(path, str, FILE_MAX);
-        BLI_path_rel(path, BKE_main_blendfile_path(bmain));
+        const int path_len = lib_strncpy_rlen(path, str, FILE_MAX);
+        lib_path_rel(path, dune_main_blendfile_path(bmain));
         str = MEM_reallocN(str, path_len + 2);
         BLI_strncpy(str, path, FILE_MAX);
       }
       else {
-        str = MEM_reallocN(str, str_len + 2);
+        str = mem_reallocn(str, str_len + 2);
       }
     }
     else {
