@@ -660,37 +660,36 @@ static MeshFace *boundvert_rep_face(BoundVert *v, MeshFace **r_fother)
  * elements of vert_arr are snapped to any non-NULL edges in that array.
  * If mat_nr >= 0 then the material of the face is set to that.
  *
- * \note ALL face creation goes through this function, this is important to keep!
- */
-static BMFace *bev_create_ngon(BMesh *bm,
-                               BMVert **vert_arr,
+ * ALL face creation goes through this function, this is important to keep! */
+static MeshFace *bev_create_ngon(Mesh *mesh,
+                               MeshVert **vert_arr,
                                const int totv,
-                               BMFace **face_arr,
-                               BMFace *facerep,
-                               BMEdge **edge_arr,
+                               MeshFace **face_arr,
+                               MeshFace *facerep,
+                               MeshEdge **edge_arr,
                                int mat_nr,
                                bool do_interp)
 {
-  BMFace *f = BM_face_create_verts(bm, vert_arr, totv, facerep, BM_CREATE_NOP, true);
+  MeehFace *f = mesh_face_create_verts(mesh, vert_arr, totv, facerep, BM_CREATE_NOP, true);
 
   if ((facerep || (face_arr && face_arr[0])) && f) {
-    BM_elem_attrs_copy(bm, bm, facerep ? facerep : face_arr[0], f);
+    mesh_elem_attrs_copy(mesh, mesh, facerep ? facerep : face_arr[0], f);
     if (do_interp) {
       int i = 0;
-      BMIter iter;
-      BMLoop *l;
-      BM_ITER_ELEM (l, &iter, f, BM_LOOPS_OF_FACE) {
-        BMFace *interp_f;
+      MeshIter iter;
+      MeshLoop *l;
+      MESH_ELEM_ITER (l, &iter, f, BM_LOOPS_OF_FACE) {
+        MeshFace *interp_f;
         if (face_arr) {
           /* Assume loops of created face are in same order as verts. */
-          BLI_assert(l->v == vert_arr[i]);
+          lib_assert(l->v == vert_arr[i]);
           interp_f = face_arr[i];
         }
         else {
           interp_f = facerep;
         }
         if (interp_f) {
-          BMEdge *bme = NULL;
+          MeshEdge *bme = NULL;
           if (edge_arr) {
             bme = edge_arr[i];
           }
@@ -699,7 +698,7 @@ static BMFace *bev_create_ngon(BMesh *bm,
             copy_v3_v3(save_co, l->v->co);
             closest_to_line_segment_v3(l->v->co, save_co, bme->v1->co, bme->v2->co);
           }
-          BM_loop_interp_from_face(bm, l, interp_f, true, true);
+          mesh_loop_interp_from_face(bm, l, interp_f, true, true);
           if (bme) {
             copy_v3_v3(l->v->co, save_co);
           }
@@ -726,42 +725,42 @@ static BMFace *bev_create_ngon(BMesh *bm,
   return f;
 }
 
-static BMFace *bev_create_quad(BMesh *bm,
-                               BMVert *v1,
-                               BMVert *v2,
-                               BMVert *v3,
-                               BMVert *v4,
-                               BMFace *f1,
-                               BMFace *f2,
-                               BMFace *f3,
-                               BMFace *f4,
+static MeshFace *bev_create_quad(Mesh *mesh,
+                               MeshVert *v1,
+                               MeshVert *v2,
+                               MeshVert *v3,
+                               MeshVert *v4,
+                               MeshFace *f1,
+                               MeshFace *f2,
+                               MeshFace *f3,
+                               MeshFace *f4,
                                int mat_nr)
 {
-  BMVert *varr[4] = {v1, v2, v3, v4};
-  BMFace *farr[4] = {f1, f2, f3, f4};
-  return bev_create_ngon(bm, varr, 4, farr, f1, NULL, mat_nr, true);
+  MeshVert *varr[4] = {v1, v2, v3, v4};
+  MeshFace *farr[4] = {f1, f2, f3, f4};
+  return bev_create_ngon(mesh, varr, 4, farr, f1, NULL, mat_nr, true);
 }
 
-static BMFace *bev_create_quad_ex(BMesh *bm,
-                                  BMVert *v1,
-                                  BMVert *v2,
-                                  BMVert *v3,
-                                  BMVert *v4,
-                                  BMFace *f1,
-                                  BMFace *f2,
-                                  BMFace *f3,
-                                  BMFace *f4,
-                                  BMEdge *e1,
-                                  BMEdge *e2,
-                                  BMEdge *e3,
-                                  BMEdge *e4,
-                                  BMFace *frep,
-                                  int mat_nr)
+static MeshFace *bev_create_quad_ex(Mesh *mesh,
+                                    MeshVert *v1,
+                                    MeshVert *v2,
+                                    MeshVert *v3,
+                                    MeshVert *v4,
+                                    MeshFace *f1,
+                                    MeshFace *f2,
+                                    MeshFace *f3,
+                                    MeshFace *f4,
+                                    MeshEdge *e1,
+                                    MeshEdge *e2,
+                                    MeshEdge *e3,
+                                    MeshEdge *e4,
+                                    MeshFace *frep,
+                                    int mat_nr)
 {
-  BMVert *varr[4] = {v1, v2, v3, v4};
-  BMFace *farr[4] = {f1, f2, f3, f4};
-  BMEdge *earr[4] = {e1, e2, e3, e4};
-  return bev_create_ngon(bm, varr, 4, farr, frep, earr, mat_nr, true);
+  MeshVert *varr[4] = {v1, v2, v3, v4};
+  MeehFace *farr[4] = {f1, f2, f3, f4};
+  MeshEdge *earr[4] = {e1, e2, e3, e4};
+  return bev_create_ngon(mesh, varr, 4, farr, frep, earr, mat_nr, true);
 }
 
 /* Is Loop layer layer_index contiguous across shared vertex of l1 and l2? */
@@ -783,34 +782,33 @@ static bool contig_ldata_across_edge(BMesh *bm, BMEdge *e, BMFace *f1, BMFace *f
     return true;
   }
 
-  BMLoop *lef1, *lef2;
-  if (!BM_edge_loop_pair(e, &lef1, &lef2)) {
+  MeshLoop *lef1, *lef2;
+  if (!mesh_edge_loop_pair(e, &lef1, &lef2)) {
     return false;
   }
   /* If faces are oriented consistently around e,
-   * should now have lef1 and lef2 being f1 and f2 in either order.
-   */
+   * should now have lef1 and lef2 being f1 and f2 in either order. */
   if (lef1->f == f2) {
-    SWAP(BMLoop *, lef1, lef2);
+    SWAP(MeshLoop *, lef1, lef2);
   }
   if (lef1->f != f1 || lef2->f != f2) {
     return false;
   }
-  BMVert *v1 = lef1->v;
-  BMVert *v2 = lef2->v;
+  MeshVert *v1 = lef1->v;
+  MeshVert *v2 = lef2->v;
   if (v1 == v2) {
     return false;
   }
-  BLI_assert((v1 == e->v1 && v2 == e->v2) || (v1 == e->v2 && v2 == e->v1));
+  lib_assert((v1 == e->v1 && v2 == e->v2) || (v1 == e->v2 && v2 == e->v1));
   UNUSED_VARS_NDEBUG(v1, v2);
-  BMLoop *lv1f1 = lef1;
-  BMLoop *lv2f1 = lef1->next;
-  BMLoop *lv1f2 = lef2->next;
-  BMLoop *lv2f2 = lef2;
-  BLI_assert(lv1f1->v == v1 && lv1f1->f == f1 && lv2f1->v == v2 && lv2f1->f == f1 &&
+  MeshLoop *lv1f1 = lef1;
+  MeshLoop *lv2f1 = lef1->next;
+  MeshLoop *lv1f2 = lef2->next;
+  MeshLoop *lv2f2 = lef2;
+  lib_assert(lv1f1->v == v1 && lv1f1->f == f1 && lv2f1->v == v2 && lv2f1->f == f1 &&
              lv1f2->v == v1 && lv1f2->f == f2 && lv2f2->v == v2 && lv2f2->f == f2);
-  for (int i = 0; i < bm->ldata.totlayer; i++) {
-    if (CustomData_layer_has_math(&bm->ldata, i)) {
+  for (int i = 0; i < mesh->ldata.totlayer; i++) {
+    if (CustomData_layer_has_math(&mesh->ldata, i)) {
       if (!contig_ldata_across_loops(bm, lv1f1, lv1f2, i) ||
           !contig_ldata_across_loops(bm, lv2f1, lv2f2, i)) {
         return false;
@@ -830,8 +828,8 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
 {
   bp->math_layer_info.has_math_layers = false;
   bp->math_layer_info.face_component = NULL;
-  for (int i = 0; i < bm->ldata.totlayer; i++) {
-    if (CustomData_has_layer(&bm->ldata, CD_MLOOPUV)) {
+  for (int i = 0; i < mesh->ldata.totlayer; i++) {
+    if (CustomData_has_layer(&meh->ldata, CD_MLOOPUV)) {
       bp->math_layer_info.has_math_layers = true;
       break;
     }
@@ -840,16 +838,16 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
     return;
   }
 
-  BM_mesh_elem_index_ensure(bm, BM_FACE);
-  BM_mesh_elem_table_ensure(bm, BM_FACE);
-  int totface = bm->totface;
-  int *face_component = BLI_memarena_alloc(bp->mem_arena, sizeof(int) * totface);
+  mesh_elem_index_ensure(mesh, MESH_FACE);
+  mesh_elem_table_ensure(mesh, MESH_FACE);
+  int totface = mesh->totface;
+  int *face_component = lib_memarena_alloc(bp->mem_arena, sizeof(int) * totface);
   bp->math_layer_info.face_component = face_component;
 
   /* Use an array as a stack. Stack size can't exceed total faces if keep track of what is in
    * stack. */
-  BMFace **stack = MEM_malloc_arrayN(totface, sizeof(BMFace *), __func__);
-  bool *in_stack = MEM_malloc_arrayN(totface, sizeof(bool), __func__);
+  MeshFace **stack = mem_malloc_arrayn(totface, sizeof(MeshFace *), __func__);
+  bool *in_stack = mem_malloc_arrayn(totface, sizeof(bool), __func__);
 
   /* Set all component ids by DFS from faces with unassigned components. */
   for (int f = 0; f < totface; f++) {
@@ -861,11 +859,11 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
     if (face_component[f] == -1 && !in_stack[f]) {
       int stack_top = 0;
       current_component++;
-      BLI_assert(stack_top < totface);
-      stack[stack_top] = BM_face_at_index(bm, f);
+      lib_assert(stack_top < totface);
+      stack[stack_top] = mesh_face_at_index(mesh, f);
       in_stack[f] = true;
       while (stack_top >= 0) {
-        BMFace *bmf = stack[stack_top];
+        MeshFace *bmf = stack[stack_top];
         stack_top--;
         int bmf_index = BM_elem_index_get(bmf);
         in_stack[bmf_index] = false;
