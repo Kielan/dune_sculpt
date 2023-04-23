@@ -79,12 +79,12 @@ extern const char *buttons_context_dir[]; /* doc access */
 
 void buttons_texture_context_compute(const struct bContext *C, struct SpaceProperties *sbuts);
 
-/* buttons_ops.c */
+/* btns_ops.c */
 
-void BUTTONS_OT_start_filter(struct wmOperatorType *ot);
-void BUTTONS_OT_clear_filter(struct wmOperatorType *ot);
-void BUTTONS_OT_toggle_pin(struct wmOperatorType *ot);
-void BUTTONS_OT_file_browse(struct wmOperatorType *ot);
+void btns_ot_start_filter(struct wmOperatorType *ot);
+void btns_ot_clear_filter(struct wmOperatorType *ot);
+void btns_ot_toggle_pin(struct wmOperatorType *ot);
+void btns_it_file_browse(struct wmOperatorType *ot);
 /**
  * Second operator, only difference from #BUTTONS_OT_file_browse is #WM_FILESEL_DIRECTORY.
  */
