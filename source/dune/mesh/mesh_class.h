@@ -19,11 +19,11 @@ struct MeshLoopNorSpaceArray;
 
 struct lib_mempool;
 
-/* NOTE: it is very important for BMHeader to start with two
+/* NOTE: it is very important for MeshHeader to start with two
  * pointers. this is a requirement of mempool's method of
  * iteration.
  *
- * hrm. it doesn't but still works ok, remove the comment above? - campbell.
+ * hrm. it doesn't but still works ok, remove the comment above?
  */
 
 // #pragma GCC diagnostic error "-Wpadded"
@@ -185,7 +185,7 @@ typedef struct MeshLoop {
    * .c
    * MeshLoop *l_iter = edge->l;
    * do {
-   *   operate_on_face(l_iter->f);
+   *   op_on_face(l_iter->f);
    * } while ((l_iter = l_iter->radial_next) != edge->l);
    *
    */
@@ -320,7 +320,7 @@ typedef struct Mesh {
   /* Should be copy of scene select mode. */
   /* Stored in MeshEditMesh too, this is a bit confusing,
    * make sure they're in sync!
-   * Only use when the edit mesh can't be accessed - campbell */
+   * Only use when the edit mesh can't be accessed */
   short selectmode;
 
   /* id of the shape key this mesh came from */
