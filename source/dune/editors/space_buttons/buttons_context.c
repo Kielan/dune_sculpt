@@ -445,13 +445,13 @@ static bool buttons_context_path_brush(const bContext *C, ButsContextPath *path)
 
     Brush *br = NULL;
     if (scene) {
-      wmWindow *window = CTX_wm_window(C);
-      ViewLayer *view_layer = WM_window_get_active_view_layer(window);
-      br = BKE_paint_brush(BKE_paint_get_active(scene, view_layer));
+      wmWindow *window = ctx_wm_window(C);
+      ViewLayer *view_layer = wm_window_get_active_view_layer(window);
+      br = dune_paint_brush(dune_paint_get_active(scene, view_layer));
     }
 
     if (br) {
-      RNA_id_pointer_create((ID *)br, &path->ptr[path->len]);
+      api_id_ptr_create((Id *)br, &path->ptr[path->len]);
       path->len++;
 
       return true;
@@ -462,18 +462,18 @@ static bool buttons_context_path_brush(const bContext *C, ButsContextPath *path)
   return false;
 }
 
-static bool buttons_context_path_texture(const bContext *C,
-                                         ButsContextPath *path,
-                                         ButsContextTexture *ct)
+static bool btns_ctx_path_texture(const Ctx *C,
+                                  BtnsCtxPath *path,
+                                  BtnsCtxTexture *ct)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   if (!ct) {
     return false;
   }
 
   /* if we already have a (pinned) texture, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_Texture)) {
+  if (api_struct_is_a(ptr->type, &ApiTexture)) {
     return true;
   }
 
@@ -481,7 +481,7 @@ static bool buttons_context_path_texture(const bContext *C,
     return false;
   }
 
-  ID *id = ct->user->id;
+  Id *id = ct->user->id;
 
   if (id) {
     if (GS(id->name) == ID_BR) {
