@@ -37,7 +37,7 @@ struct lib_mempool;
  * 1: The type of the element (vert, edge, loop or face)
  * 2: Persistent "header" flags/markings (smooth, seam, select, hidden, etc)
  *    note that this is different from the "tool" flags.
- * 3: Unique ID in the Mesh.
+ * 3: Unique id in the Mesh.
  * 4: some elements for internal record keeping.
  */
 typedef struct MeshHeader {
@@ -92,7 +92,7 @@ typedef struct MeshVert {
 
 typedef struct MeshVertOpFlag {
   MeshVert base;
-  struct MeshFlagLayer *oflags;
+  struct MeshFlagLayer *opflags;
 } MeshVertOpFlag;
 
 /* disk link structure, only used by edges */
@@ -260,7 +260,7 @@ typedef struct MeshFace {
 
 typedef struct MeshFaceOpFlag {
   MeshFace base;
-  struct MeshFlagLayer *oflags;
+  struct MeshFlagLayer *opflags;
 } MeshFaceOpFlag;
 
 typedef struct MeshFlagLayer {
@@ -323,7 +323,7 @@ typedef struct Mesh {
    * Only use when the edit mesh can't be accessed - campbell */
   short selectmode;
 
-  /* ID of the shape key this bmesh came from */
+  /* id of the shape key this mesh came from */
   int shapenr;
 
   int totflags;
@@ -388,7 +388,7 @@ typedef struct MeshLoopNorEditDataArray {
 enum {
   MESH_SPACEARR_DIRTY = 1 << 0,
   MESH_SPACEARR_DIRTY_ALL = 1 << 1,
-  MESH_SPACEARR_BMO_SET = 1 << 2,
+  MESH_SPACEARR_MESH_OP_SET = 1 << 2,
 };
 
 /* args for _Generic */
@@ -418,7 +418,7 @@ enum {
   CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_VERT_NONCONST, _MESH_GENERIC_TYPE_VERT_CONST)
 /* edge */
 #define _MESH_GENERIC_TYPE_EDGE_NONCONST MeshEdge *, MeshEdgeOpFlag *
-#define _MESH_GENERIC_TYPE_EDGE_CONST const MeshEdge *, const MeshEdge_OFlag *
+#define _MESH_GENERIC_TYPE_EDGE_CONST const MeshEdge *, const MeshEdge_OpFlag *
 #define MESH_CHECK_TYPE_EDGE_CONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_EDGE_CONST)
 #define MESH_CHECK_TYPE_EDGE_NONCONST(ele) CHECK_TYPE_ANY(ele, _MESH_GENERIC_TYPE_ELEM_NONCONST)
 #define MESH_CHECK_TYPE_EDGE(ele) \
@@ -554,7 +554,7 @@ typedef bool (*MeshLoopPairFilterFn)(const MeshLoop *, const MeshLoop *, void *u
 #define MESH_LOOP_RADIAL_MAX 10000
 #define MESH_NGON_MAX 100000
 
-/* setting zero so we can catch bugs in OpenMP/BMesh */
+/* setting zero so we can catch bugs in OpenMP/Mesh */
 #ifdef DEBUG
 #  define MESH_OMP_LIMIT 0
 #else
