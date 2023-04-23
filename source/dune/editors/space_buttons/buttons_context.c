@@ -168,10 +168,10 @@ static bool buttons_context_path_collection(const bContext *C,
 
 static bool buttons_context_path_linestyle(ButsContextPath *path, wmWindow *window)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a (pinned) linestyle, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_FreestyleLineStyle)) {
+  if (api_struct_is_a(ptr->type, &ApiFreestyleLineStyle)) {
     return true;
   }
   /* if we have a view layer, use the lineset's linestyle */
