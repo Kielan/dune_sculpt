@@ -1019,15 +1019,15 @@ static void bev_merge_uvs(BMesh *bm, BMVert *v)
 
 /* Merge (using average) the UV values for two specific loops of v: those for faces containing v,
  * and part of faces that share edge bme. */
-static void bev_merge_edge_uvs(BMesh *bm, BMEdge *bme, BMVert *v)
+static void bev_merge_edge_uvs(Mesh *mesh, MeshEdge *medge, MeshVert *v)
 {
   int num_of_uv_layers = CustomData_number_of_layers(&bm->ldata, CD_MLOOPUV);
 
-  MLoop *l1 = NULL;
-  MLoop *l2 = NULL;
-  MIter iter;
+  MeshLoop *l1 = NULL;
+  MeshLoop *l2 = NULL;
+  MeshIter iter;
   MeshLoop *l;
-  MESH_ELEM_ITER (l, &iter, v, BM_LOOPS_OF_VERT) {
+  MESH_ELEM_ITER (l, &iter, v, MESH_LOOPS_OF_VERT) {
     if (l->e == bme) {
       l1 = l;
     }
