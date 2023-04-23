@@ -73,21 +73,21 @@ static ApiPtr *get_ptr_type(BtnsCtxPath *path, ApiStruct *type)
 
 /************************* Creating the Path ************************/
 
-static bool buttons_context_path_scene(ButsContextPath *path)
+static bool btns_ctx_path_scene(BtnsCtxPath *path)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* this one just verifies */
-  return RNA_struct_is_a(ptr->type, &RNA_Scene);
+  return api_struct_is_a(ptr->type, &ApiScene);
 }
 
-static bool buttons_context_path_view_layer(ButsContextPath *path, wmWindow *win)
+static bool btns_ctx_path_view_layer(BtnsCtxPath *path, wmWindow *win)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* View Layer may have already been resolved in a previous call
    * (e.g. in buttons_context_path_linestyle). */
-  if (RNA_struct_is_a(ptr->type, &RNA_ViewLayer)) {
+  if (api_struct_is_a(ptr->type, &RNA_ViewLayer)) {
     return true;
   }
 
