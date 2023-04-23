@@ -1000,16 +1000,16 @@ static void bev_merge_uvs(BMesh *bm, BMVert *v)
 
     int n = 0;
     float uv[2] = {0.0f, 0.0f};
-    BMIter iter;
-    BMLoop *l;
-    BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
-      MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
+    MeshIter iter;
+    MeshLoop *l;
+    MESH_ELEM_ITER (l, &iter, v, BM_LOOPS_OF_VERT) {
+      MLoopUV *luv = MESH_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
       add_v2_v2(uv, luv->uv);
       n++;
     }
     if (n > 1) {
       mul_v2_fl(uv, 1.0f / (float)n);
-      BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
+      MESH_ELEM_ITER (l, &iter, v, BM_LOOPS_OF_VERT) {
         MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
         copy_v2_v2(luv->uv, uv);
       }
