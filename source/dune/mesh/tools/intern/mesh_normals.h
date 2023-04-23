@@ -5,7 +5,7 @@
 struct MeshNormalsUpdateParams {
   /**
    * When calculating tessellation as well as normals, tessellate & calculate face normals
-   * for improved performance. See #BMeshCalcTessellation_Params
+   * for improved performance. See MeshCalcTessellationParams
    */
   bool face_normals;
 };
@@ -15,7 +15,7 @@ struct MeshNormalsUpdateParams {
  *
  * Updates the normals of a mesh.
  */
-void mesh_normals_update_ex(Mesh *mesh, const struct BMeshNormalsUpdate_Params *param);
+void mesh_normals_update_ex(Mesh *mesh, const struct MeshNormalsUpdateParams *param);
 void mesh_normals_update(Mesh *mesh);
 /**
  * A version of mesh_normals_update that updates a subset of geometry,
@@ -76,7 +76,7 @@ void mesh_lnorspace_err(Mesh *mesh);
 
 /* Loop Generics */
 struct MeshLoopNorEditDataArray *mesh_loop_normal_editdata_array_init(Mesh *mesh,
-                                                                  bool do_all_loops_of_vert);
+                                                                      bool do_all_loops_of_vert);
 void mesh_loop_normal_editdata_array_free(struct MeshLoopNorEditDataArray *lnors_ed_arr);
 
 /**
@@ -92,4 +92,4 @@ void mesh_custom_loop_normals_from_vector_layer(struct Mesh *mesh, bool add_shar
  * Used when defining an empty custom loop normals data layer,
  * to keep same shading as with auto-smooth!
  */
-void mesh_edges_sharp_from_angle_set(BMesh *bm, float split_angle);
+void mesh_edges_sharp_from_angle_set(Mesh *mesh, float split_angle);
