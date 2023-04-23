@@ -275,9 +275,9 @@ static MeshOpDefine mesh_op_reverse_faces_def = {
 static MeshOpDefine mesh_op_bisect_edges_def = {
   "bisect_edges",
   /* slots_in */
-  {{"edges", MESH_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* input edges */
+  {{"edges", MESH_OP_SLOT_ELEMENT_BUF, {MESH_EDGE}}, /* input edges */
    {"cuts", MESH_OP_SLOT_INT}, /* number of cuts */
-   {"edge_percents", MESH_OP_SLOT_MAPPING, {(int)BMO_OP_SLOT_SUBTYPE_MAP_FLT}},
+   {"edge_percents", MESH_OP_SLOT_MAPPING, {(int)MESH_OP_SLOT_SUBTYPE_MAP_FLT}},
    {{'\0'}},
   },
   /* slots_out */
@@ -312,7 +312,7 @@ static MeshOpDefine mesh_op_mirror_def = {
    {{'\0'}},
   },
   /* slots_out */
-  {{"geom.out", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}}, /* output geometry, mirrored */
+  {{"geom.out", MESH_OP_SLOT_ELEMENT_BUF, {MESH_VERT | MESH_EDGE | MESH_FACE}}, /* output geometry, mirrored */
    {{'\0'}},
   },
   mesh_op_mirror_exec,
@@ -333,13 +333,13 @@ static MeshOpDefine mesh_op_mirror_def = {
 static MeshOpDefine mesh_op_find_doubles_def = {
   "find_doubles",
   /* slots_in */
-  {{"verts", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT}}, /* input vertices */
-   {"keep_verts", MESH_OP_SLOT_ELEMENT_BUF, {BM_VERT}}, /* list of verts to keep */
+  {{"verts", MESH_OP_SLOT_ELEMENT_BUF, {MESH_VERT}}, /* input vertices */
+   {"keep_verts", MESH_OP_SLOT_ELEMENT_BUF, {MESH_VERT}}, /* list of verts to keep */
    {"dist",         MESH_OP_SLOT_FLT}, /* maximum distance */
    {{'\0'}},
   },
   /* slots_out */
-  {{"targetmap.out", MESH_OP_SLOT_MAPPING, {(int)BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
+  {{"targetmap.out", MESH_OP_SLOT_MAPPING, {(int)MESH_OP_SLOT_SUBTYPE_MAP_ELEM}},
    {{'\0'}},
   },
   mesh_op_find_doubles_exec,
