@@ -1,34 +1,34 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_listbase.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_listbase.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "i18n_translation.h"
 
-#include "DNA_ID.h"
-#include "DNA_brush_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_force_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_ID.h"
+#include "types_brush_types.h"
+#include "types_linestyle_types.h"
+#include "types_node_types.h"
+#include "types_object_force.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_scene.h"
+#include "types_screa.h"
+#include "types_space.h"
+#include "types_windowmanager.h"
 
-#include "BKE_context.h"
-#include "BKE_gpencil_modifier.h"
-#include "BKE_layer.h"
-#include "BKE_linestyle.h"
-#include "BKE_modifier.h"
-#include "BKE_node.h"
-#include "BKE_paint.h"
-#include "BKE_particle.h"
+#include "dune_context.h"
+#include "dune_pen_modifier.h"
+#include "dune_layer.h"
+#include "dune_linestyle.h"
+#include "dune_modifier.h"
+#include "dune_node.h"
+#include "dune_paint.h"
+#include "dune_particle.h"
 #ifdef WITH_FREESTYLE
 #endif
 
