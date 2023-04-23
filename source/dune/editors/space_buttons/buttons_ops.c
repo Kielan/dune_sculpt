@@ -37,15 +37,15 @@
  *  Almost a duplicate of the file browser operator #FILE_OT_start_filter.
  **/
 
-static int buttons_start_filter_exec(bContext *C, wmOperator *UNUSED(op))
+static int btns_start_filter_exec(Ctx *C, wmOp *UNUSED(op))
 {
-  SpaceProperties *space = CTX_wm_space_properties(C);
-  ScrArea *area = CTX_wm_area(C);
-  ARegion *region = BKE_area_find_region_type(area, RGN_TYPE_HEADER);
+  SpaceProps *space = ctx_wm_space_props(C);
+  ScrArea *area = ctx_wm_area(C);
+  ARegion *region = dune_area_find_region_type(area, RGN_TYPE_HEADER);
 
-  ARegion *region_ctx = CTX_wm_region(C);
-  CTX_wm_region_set(C, region);
-  UI_textbutton_activate_rna(C, region, space, "search_filter");
+  ARegion *region_ctx = ctx_wm_region(C);
+  ctx_wm_region_set(C, region);
+  ui_textbtn_activate_api(C, region, space, "search_filter");
   CTX_wm_region_set(C, region_ctx);
 
   return OPERATOR_FINISHED;
