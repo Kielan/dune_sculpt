@@ -256,10 +256,10 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
     return OP_CANCELLED;
   }
 
-  UI_context_active_but_prop_get_filebrowser(C, &ptr, &prop, &is_undo, &is_userdef);
+  ui_ctx_active_btn_prop_get_filebrowser(C, &ptr, &prop, &is_undo, &is_userdef);
 
   if (!prop) {
-    return OPERATOR_CANCELLED;
+    return OP_CANCELLED;
   }
 
   str = RNA_property_string_get_alloc(&ptr, prop, NULL, 0, NULL);
@@ -267,8 +267,8 @@ static int file_browse_invoke(bContext *C, wmOperator *op, const wmEvent *event)
   /* Useful yet irritating feature, Shift+Click to open the file
    * Alt+Click to browse a folder in the OS's browser. */
   if (event->modifier & (KM_SHIFT | KM_ALT)) {
-    wmOperatorType *ot = WM_operatortype_find("WM_OT_path_open", true);
-    PointerRNA props_ptr;
+    wmOpType *ot = WM_operatortype_find("WM_OT_path_open", true);
+    ApiPtr props_ptr;
 
     if (event->modifier & KM_ALT) {
       char *lslash = (char *)BLI_path_slash_rfind(str);
