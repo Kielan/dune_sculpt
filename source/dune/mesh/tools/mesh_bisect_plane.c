@@ -1,33 +1,32 @@
 /**
  * Cut the geometry in half using a plane.
  *
- * \par Implementation
+ * par Implementation
  * This simply works by splitting tagged edges who's verts span either side of
  * the plane, then splitting faces along their dividing verts.
  * The only complex case is when a ngon spans the axis multiple times,
  * in this case we need to do some extra checks to correctly bisect the ngon.
- * see: #bm_face_bisect_verts
+ * see: mesh_face_bisect_verts
  */
 
 #include <limits.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_alloca.h"
-#include "BLI_linklist.h"
-#include "BLI_linklist_stack.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
-#include "BLI_utildefines_stack.h"
+#include "lib_alloca.h"
+#include "lib_linklist.h"
+#include "lib_linklist_stack.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
+#include "lib_utildefines_stack.h"
 
-#include "bmesh.h"
-#include "bmesh_bisect_plane.h" /* Own include. */
+#include "mesh.h"
+#include "mesh_bisect_plane.h" /* Own include. */
 
-#include "BLI_strict_flags.h" /* Keep last. */
+#include "lib_strict_flags.h" /* Keep last. */
 
 /* -------------------------------------------------------------------- */
-/** \name Math Functions
- * \{ */
+/** Math Functions **/
 
 static short plane_point_test_v3(const float plane[4],
                                  const float co[3],
@@ -46,15 +45,13 @@ static short plane_point_test_v3(const float plane[4],
   return 0;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name BMesh Element Accessors
+/** Mesh Element Accessors
  *
  * Wrappers to hide internal data-structure abuse,
  * later we may want to move this into some hash lookup
  * to a separate struct, but for now we can store in #BMesh data.
- * \{ */
+ **/
 
 #define BM_VERT_DIR(v) ((short *)(&(v)->head.index))[0]  /* Direction -1/0/1 */
 #define BM_VERT_SKIP(v) ((short *)(&(v)->head.index))[1] /* Skip Vert 0/1 */
@@ -63,19 +60,17 @@ static short plane_point_test_v3(const float plane[4],
 #define BM_VERT_LOOPINDEX(v) /* The verts index within a face (temp var) */ \
   (*((uint *)(&(v)->no[2])))
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name BMesh Flag Accessors
+/** Mesh Flag Accessors
  *
  * Hide flag access
  * (for more readable code since same flag is used differently for vert/edge-face).
- * \{ */
+ **/
 
 /** Enable when vertex is in the center and its faces have been added to the stack. */
-BLI_INLINE void vert_is_center_enable(BMVert *v)
+LIB_INLINE void vert_is_center_enable(MeshVert *v)
 {
-  BM_elem_flag_enable(v, BM_ELEM_TAG);
+  mesh_elem_flag_enable(v, MESH_ELEM_TAG);
 }
 BLI_INLINE void vert_is_center_disable(BMVert *v)
 {
