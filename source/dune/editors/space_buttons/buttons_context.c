@@ -156,7 +156,7 @@ static bool buttons_context_path_collection(const bContext *C,
     }
 
     if (c) {
-      RNA_id_pointer_create(&c->id, &path->ptr[path->len]);
+      api_id_ptr_create(&c->id, &path->ptr[path->len]);
       path->len++;
       return true;
     }
@@ -166,7 +166,7 @@ static bool buttons_context_path_collection(const bContext *C,
   return false;
 }
 
-static bool buttons_context_path_linestyle(ButsContextPath *path, wmWindow *window)
+static bool btns_ctx_path_linestyle(BtnsCtxPath *path, wmWindow *window)
 {
   ApiPtr *ptr = &path->ptr[path->len - 1];
 
