@@ -466,49 +466,49 @@ void mesh_bisect_plane(Mesh *mesh,
   for (i = 0; i < einput_len; i++) {
     /* We could check `edge_is_cut_test(e)` but there is no point. */
     MeshEdge *e = edges_arr[i];
-    const int side[2] = {BM_VERT_DIR(e->v1), BM_VERT_DIR(e->v2)};
-    const float dist[2] = {BM_VERT_DIST(e->v1), BM_VERT_DIST(e->v2)};
+    const int side[2] = {MEEH_VERT_DIR(e->v1), MESH_VERT_DIR(e->v2)};
+    const float dist[2] = {MESH_VERT_DIST(e->v1), MESH_VERT_DIST(e->v2)};
 
     if (side[0] && side[1] && (side[0] != side[1])) {
       const float e_fac = dist[0] / (dist[0] - dist[1]);
-      BMVert *v_new;
+      MeshVert *v_new;
 
       if (e->l) {
-        BMLoop *l_iter, *l_first;
+        MeshLoop *l_iter, *l_first;
         l_iter = l_first = e->l;
         do {
           if (!face_in_stack_test(l_iter->f)) {
             face_in_stack_enable(l_iter->f);
-            BLI_LINKSTACK_PUSH(face_stack, l_iter->f);
+            LIB_LINKSTACK_PUSH(face_stack, l_iter->f);
           }
         } while ((l_iter = l_iter->radial_next) != l_first);
       }
 
       {
-        BMEdge *e_new;
-        v_new = BM_edge_split(bm, e, e->v1, &e_new, e_fac);
+        MESHEdge *e_new;
+        v_new = mesh_edge_split(mesh, e, e->v1, &e_new, e_fac);
         if (oflag_new) {
-          BMO_edge_flag_enable(bm, e_new, oflag_new);
+          mesh_op_edge_flag_enable(mesh, e_new, opflag_new);
         }
       }
 
       vert_is_center_enable(v_new);
-      if (oflag_new | oflag_center) {
-        BMO_vert_flag_enable(bm, v_new, oflag_new | oflag_center);
+      if (opflag_new | opflag_center) {
+        mesh_op_vert_flag_enable(mesh, v_new, opflag_new | opflag_center);
       }
 
-      BM_VERT_DIR(v_new) = 0;
-      BM_VERT_DIST(v_new) = 0.0f;
+      MESH_VERT_DIR(v_new) = 0;
+      MESH_VERT_DIST(v_new) = 0.0f;
     }
     else if (side[0] == 0 || side[1] == 0) {
       /* Check if either edge verts are aligned,
        * if so - tag and push all faces that use it into the stack. */
       uint j;
-      BM_ITER_ELEM_INDEX (v, &iter, e, BM_VERTS_OF_EDGE, j) {
+      MESH_ELEM_INDEX_ITER (v, &iter, e, MESH_VERTS_OF_EDGE, j) {
         if (side[j] == 0) {
           if (vert_is_center_test(v) == 0) {
-            BMIter itersub;
-            BMLoop *l_iter;
+            MeshIter itersub;
+            MeshLoop *l_iter;
 
             vert_is_center_enable(v);
 
