@@ -435,9 +435,9 @@ void mesh_bisect_plane(Mesh *mesh,
     }
   }
 
-  MESH_ITER (v, &iter, bm, BM_VERTS_OF_MESH) {
+  MESH_ITER (v, &iter, mesh, MESH_VERTS_OF_MESH) {
 
-    if (use_tag && !BM_elem_flag_test(v, BM_ELEM_TAG)) {
+    if (use_tag && !mesh_elem_flag_test(v, MESH_ELEM_TAG)) {
       vert_is_center_disable(v);
 
       /* These should never be accessed. */
@@ -512,10 +512,10 @@ void mesh_bisect_plane(Mesh *mesh,
 
             vert_is_center_enable(v);
 
-            BM_ITER_ELEM (l_iter, &itersub, v, BM_LOOPS_OF_VERT) {
+            MESH_ELEM_ITER (l_iter, &itersub, v, MESH_LOOPS_OF_VERT) {
               if (!face_in_stack_test(l_iter->f)) {
                 face_in_stack_enable(l_iter->f);
-                BLI_LINKSTACK_PUSH(face_stack, l_iter->f);
+                LIB_LINKSTACK_PUSH(face_stack, l_iter->f);
               }
             }
           }
@@ -525,7 +525,7 @@ void mesh_bisect_plane(Mesh *mesh,
       /* If both verts are on the center - tag it. */
       if (oflag_center) {
         if (side[0] == 0 && side[1] == 0) {
-          BMO_edge_flag_enable(bm, e, oflag_center);
+          mesh_op_edge_flag_enable(mesh, e, opflag_center);
         }
       }
     }
@@ -534,11 +534,11 @@ void mesh_bisect_plane(Mesh *mesh,
   mem_freen(edges_arr);
 
   while ((f = LIB_LINKSTACK_POP(face_stack))) {
-    mesh_face_bisect_verts(bm, f, plane, oflag_center, oflag_new);
+    mesh_face_bisect_verts(mesh, f, plane, opflag_center, opflag_new);
   }
 
-  /* Caused by access macros: #MESH_VERT_DIR, #BM_VERT_SKIP. */
-  bm->elem_index_dirty |= MESH_VERT;
+  /* Caused by access macros: MESH_VERT_DIR, MESH_VERT_SKIP. */
+  mesh->elem_index_dirty |= MESH_VERT;
 
   /* Now we have all faces to split in the stack. */
   LIB_LINKSTACK_FREE(face_stack);
