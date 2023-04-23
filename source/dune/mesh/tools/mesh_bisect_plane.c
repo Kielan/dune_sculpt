@@ -394,7 +394,7 @@ void mesh_bisect_plane(Mesh *mesh,
   uint i;
   MeshEdge **edges_arr = mesh_mallocn(sizeof(*edges_arr) * (size_t)bm->totedge, __func__);
 
-  LIB_LINKSTACK_DECLARE(face_stack, BMFace *);
+  LIB_LINKSTACK_DECLARE(face_stack, MeshFace *);
 
   MeshVert *v;
   MeshFace *f;
@@ -448,11 +448,11 @@ void mesh_bisect_plane(Mesh *mesh,
     }
 
     vert_is_center_disable(v);
-    BM_VERT_DIR(v) = plane_point_test_v3(plane, v->co, eps, &(BM_VERT_DIST(v)));
+    MESH_VERT_DIR(v) = plane_point_test_v3(plane, v->co, eps, &(BM_VERT_DIST(v)));
 
-    if (BM_VERT_DIR(v) == 0) {
-      if (oflag_center) {
-        BMO_vert_flag_enable(bm, v, oflag_center);
+    if (MESH_VERT_DIR(v) == 0) {
+      if (opflag_center) {
+        mesh_op_vert_flag_enable(mesh, v, opflag_center);
       }
       if (use_snap_center) {
         closest_to_plane_v3(v->co, plane, v->co);
@@ -461,11 +461,11 @@ void mesh_bisect_plane(Mesh *mesh,
   }
 
   /* Store a stack of faces to be evaluated for splitting. */
-  BLI_LINKSTACK_INIT(face_stack);
+  LIB_LINKSTACK_INIT(face_stack);
 
   for (i = 0; i < einput_len; i++) {
     /* We could check `edge_is_cut_test(e)` but there is no point. */
-    BMEdge *e = edges_arr[i];
+    MeshEdge *e = edges_arr[i];
     const int side[2] = {BM_VERT_DIR(e->v1), BM_VERT_DIR(e->v2)};
     const float dist[2] = {BM_VERT_DIST(e->v1), BM_VERT_DIST(e->v2)};
 
