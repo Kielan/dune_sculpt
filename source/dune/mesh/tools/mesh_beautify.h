@@ -23,8 +23,8 @@ void mesh_beautify_fill(Mesh *mesh,
  * return (negative number means the edge can be rotated, lager == better).
  */
 float mesh_verts_calc_rotate_beauty(const MeshVert *v1,
-                                  const MeshVert *v2,
-                                  const MeshVert *v3,
-                                  const MeshVert *v4,
-                                  short flag,
-                                  short method);
+                                    const MeshVert *v2,
+                                    const MeshVert *v3,
+                                    const MeshVert *v4,
+                                    short flag,
+                                    short method);
