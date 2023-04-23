@@ -26,18 +26,18 @@
 #include "api_access.h"
 #include "api_prototypes.h"
 
-#include "UI_interface.h"
-#include "UI_resources.h"
+#include "ui_interface.h"
+#include "ui_resources.h"
 
 #include "buttons_intern.h" /* own include */
 
 /* -------------------------------------------------------------------- */
 /** Start / Clear Search Filter Operators
  *
- *  Almost a duplicate of the file browser operator #FILE_OT_start_filter.
+ *  Almost a duplicate of the file browser operator file_ot_start_filter.
  **/
 
-static int btns_start_filter_exec(Ctx *C, wmOp *UNUSED(op))
+static int btns_start_filter_ex(Ctx *C, wmOp *UNUSED(op))
 {
   SpaceProps *space = ctx_wm_space_props(C);
   ScrArea *area = ctx_wm_area(C);
@@ -46,32 +46,32 @@ static int btns_start_filter_exec(Ctx *C, wmOp *UNUSED(op))
   ARegion *region_ctx = ctx_wm_region(C);
   ctx_wm_region_set(C, region);
   ui_textbtn_activate_api(C, region, space, "search_filter");
-  CTX_wm_region_set(C, region_ctx);
+  ctx_wm_region_set(C, region_ctx);
 
-  return OPERATOR_FINISHED;
+  return OP_FINISHED;
 }
 
-void BUTTONS_OT_start_filter(struct wmOperatorType *ot)
+void btns_ot_start_filter(struct wmOpType *ot)
 {
   /* Identifiers. */
   ot->name = "Filter";
   ot->description = "Start entering filter text";
-  ot->idname = "BUTTONS_OT_start_filter";
+  ot->idname = "btns_ot_start_filter";
 
   /* Callbacks. */
-  ot->exec = buttons_start_filter_exec;
-  ot->poll = ED_operator_buttons_active;
+  ot->exec = btns_start_filter_ex;
+  ot->poll = ed_op_btns_active;
 }
 
-static int buttons_clear_filter_exec(bContext *C, wmOperator *UNUSED(op))
+static int btns_clear_filter_ex(Ctx *C, wmOp *UNUSED(op))
 {
-  SpaceProperties *space = CTX_wm_space_properties(C);
+  SpaceProps *space = ctx_wm_space_props(C);
 
   space->runtime->search_string[0] = '\0';
 
   ScrArea *area = ctx_wm_area(C);
-  ED_region_search_filter_update(area, ctx_wm_region(C));
-  ED_area_tag_redraw(area);
+  ed_region_search_filter_update(area, ctx_wm_region(C));
+  ed_area_tag_redraw(area);
 
   return OPERATOR_FINISHED;
 }
@@ -89,18 +89,18 @@ void btns_ot_clear_filter(struct wmOpType *ot)
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Pin ID Operator **/
+/** Pin id Operator **/
 
-static int toggle_pin_exec(bContext *C, wmOperator *UNUSED(op))
+static int toggle_pin_exec(Ctx *C, wmOp *UNUSED(op))
 {
-  SpaceProperties *sbuts = CTX_wm_space_properties(C);
+  SpaceProperties *sbuts = ctx_wm_space_props(C);
 
-  sbuts->flag ^= SB_PIN_CONTEXT;
+  sbuts->flag ^= SB_PIN_CTX;
 
   /* Create the properties space pointer. */
-  ApiPtr sbuts_ptr;
-  bScreen *screen = ctx_wm_screen(C);
-  api_pointer_create(&screen->id, &ApiSpaceProps, sbuts, &sbuts_ptr);
+  ApiPtr sbtns_ptr;
+  Screen *screen = ctx_wm_screen(C);
+  api_ptr_create(&screen->id, &ApiSpaceProps, sbuts, &sbtns_ptr);
 
   /* Create the new id pointer and set the pin id with api
    * so we can use the property's RNA update functionality. */
@@ -130,51 +130,48 @@ void btns_ot_toggle_pin(wmOpType *ot)
 /** Context Menu Operator **/
 
 static int context_menu_invoke(Ctx *C, wmOpType *ot) {
-  uiPopupMenu *pup = UI_popup_menu_begin(C, IFACE_("Context Menu"), ICON_NONE);
-  uiLayout *layout = UI_popup_menu_layout(pup);
+  uiPopupMenu *pup = ui_popup_menu_begin(C, IFACE_("Context Menu"), ICON_NONE);
+  uiLayout *layout = ui_popup_menu_layout(pup);
 
   uiItemM(layout, "INFO_MT_area", NULL, ICON_NONE);
-  UI_popup_menu_end(C, pup);
+  ui_popup_menu_end(C, pup);
 
-  return OPERATOR_INTERFACE;
+  return OP_INTERFACE;
 }
 
-void BUTTONS_OT_context_menu(wmOperatorType *ot)
+void btns_ot_ctx_menu(wmOpType *ot)
 {
   /* Identifiers. */
   ot->name = "Context Menu";
   ot->description = "Display properties editor context_menu";
-  ot->idname = "BUTTONS_OT_context_menu";
+  ot->idname = "btns_ot_ctx_menu";
 
   /* Callbacks. */
   ot->invoke = context_menu_invoke;
-  ot->poll = ED_operator_buttons_active;
+  ot->poll = ed_op_btns_active;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name File Browse Operator
- * \{ */
+/** File Browse Operator **/
 
 typedef struct FileBrowseOp {
-  PointerRNA ptr;
-  PropertyRNA *prop;
+  ApiPtr ptr;
+  ApiProp *prop;
   bool is_undo;
   bool is_userdef;
 } FileBrowseOp;
 
-static int file_browse_exec(bContext *C, wmOperator *op)
+static int file_browse_ex(Context *C, wmOperator *op)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = ctx_data_main(C);
   FileBrowseOp *fbo = op->customdata;
-  ID *id;
+  Id *id;
   char *str;
   int str_len;
-  const char *path_prop = RNA_struct_find_property(op->ptr, "directory") ? "directory" :
+  const char *path_prop = api_struct_find_property(op->ptr, "directory") ? "directory" :
                                                                            "filepath";
 
-  if (RNA_struct_property_is_set(op->ptr, path_prop) == 0 || fbo == NULL) {
+  if (api_struct_prop_is_set(op->ptr, path_prop) == 0 || fbo == NULL) {
     return OPERATOR_CANCELLED;
   }
 
