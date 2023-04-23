@@ -776,9 +776,9 @@ static bool contig_ldata_across_loops(Mesh *mesh, MeshLoop *l1, MeshLoop *l2, in
 /* Are all loop layers with have math (e.g., UVs)
  * contiguous from face f1 to face f2 across edge e?
  */
-static bool contig_ldata_across_edge(BMesh *bm, BMEdge *e, BMFace *f1, BMFace *f2)
+static bool contig_ldata_across_edge(Mesh *mesh, MeshEdge *e, MeshFace *f1, MeshFace *f2)
 {
-  if (bm->ldata.totlayer == 0) {
+  if (mesh->ldata.totlayer == 0) {
     return true;
   }
 
@@ -809,8 +809,8 @@ static bool contig_ldata_across_edge(BMesh *bm, BMEdge *e, BMFace *f1, BMFace *f
              lv1f2->v == v1 && lv1f2->f == f2 && lv2f2->v == v2 && lv2f2->f == f2);
   for (int i = 0; i < mesh->ldata.totlayer; i++) {
     if (CustomData_layer_has_math(&mesh->ldata, i)) {
-      if (!contig_ldata_across_loops(bm, lv1f1, lv1f2, i) ||
-          !contig_ldata_across_loops(bm, lv2f1, lv2f2, i)) {
+      if (!contig_ldata_across_loops(mesh, lv1f1, lv1f2, i) ||
+          !contig_ldata_across_loops(mesh, lv2f1, lv2f2, i)) {
         return false;
       }
     }
@@ -824,7 +824,7 @@ static bool contig_ldata_across_edge(BMesh *bm, BMEdge *e, BMFace *f1, BMFace *f
  * Only if there are UV layers and the number of segments is odd,
  * we need to calculate connected face components in UV space.
  */
-static void math_layer_info_init(BevelParams *bp, BMesh *bm)
+static void math_layer_info_init(BevelParams *bp, Mesh *mesh)
 {
   bp->math_layer_info.has_math_layers = false;
   bp->math_layer_info.face_component = NULL;
@@ -865,7 +865,7 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
       while (stack_top >= 0) {
         MeshFace *bmf = stack[stack_top];
         stack_top--;
-        int bmf_index = BM_elem_index_get(bmf);
+        int bmf_index = mesh_elem_index_get(bmf);
         in_stack[bmf_index] = false;
         if (face_component[bmf_index] != -1) {
           continue;
@@ -877,16 +877,16 @@ static void math_layer_info_init(BevelParams *bp, BMesh *bm)
          */
         MeshIter eiter;
         MeshEdge *medge;
-        MESH_ELEM_ITER (medge, &eiter, bmf, BM_EDGES_OF_FACE) {
+        MESH_ELEM_ITER (medge, &eiter, bmf, MESH_EDGES_OF_FACE) {
           MeshIter fiter;
           MeshFace *bmf_other;
-          MESH_ELEM_ITER (bmf_other, &fiter, bme, BM_FACES_OF_EDGE) {
+          MESH_ELEM_ITER (bmf_other, &fiter, bme, MESH_FACES_OF_EDGE) {
             if (bmf_other != bmf) {
               int bmf_other_index = mesh_elem_index_get(bmf_other);
               if (face_component[bmf_other_index] != -1 || in_stack[bmf_other_index]) {
                 continue;
               }
-              if (contig_ldata_across_edge(bm, bme, bmf, bmf_other)) {
+              if (contig_ldata_across_edge(mesh, bme, bmf, bmf_other)) {
                 stack_top++;
                 lib_assert(stack_top < totface);
                 stack[stack_top] = bmf_other;
@@ -1298,23 +1298,23 @@ static void offset_meet_lines_percent_or_absolute(BevelParams *bp,
 static void offset_meet(BevelParams *bp,
                         EdgeHalf *e1,
                         EdgeHalf *e2,
-                        MVert *v,
-                        MFace *f,
+                        MeshVert *v,
+                        MeshFace *f,
                         bool edges_between,
                         float meetco[3],
                         const EdgeHalf *e_in_plane)
 {
   /* Get direction vectors for two offset lines. */
   float dir1[3], dir2[3];
-  sub_v3_v3v3(dir1, v->co, BM_edge_other_vert(e1->e, v)->co);
-  sub_v3_v3v3(dir2, BM_edge_other_vert(e2->e, v)->co, v->co);
+  sub_v3_v3v3(dir1, v->co, mesh_edge_other_vert(e1->e, v)->co);
+  sub_v3_v3v3(dir2, mesh_edge_other_vert(e2->e, v)->co, v->co);
 
   float dir1n[3], dir2p[3];
   if (edges_between) {
     EdgeHalf *e1next = e1->next;
     EdgeHalf *e2prev = e2->prev;
-    sub_v3_v3v3(dir1n, BM_edge_other_vert(e1next->e, v)->co, v->co);
-    sub_v3_v3v3(dir2p, v->co, BM_edge_other_vert(e2prev->e, v)->co);
+    sub_v3_v3v3(dir1n, mesh_edge_other_vert(e1next->e, v)->co, v->co);
+    sub_v3_v3v3(dir2p, v->co, mesh_edge_other_vert(e2prev->e, v)->co);
   }
   else {
     /* Shut up 'maybe unused' warnings. */
@@ -1442,7 +1442,7 @@ static void offset_meet(BevelParams *bp,
        * One problem to check: if one of the offsets is 0, then we don't want an intersection
        * that is outside that edge itself. This can happen if angle between them is > 180 degrees,
        * or if the offset amount is > the edge length. */
-      BMVert *closer_v;
+      MeshVert *closer_v;
       if (e1->offset_r == 0.0f && is_outside_edge(e1, meetco, &closer_v)) {
         copy_v3_v3(meetco, closer_v->co);
       }
@@ -1456,7 +1456,7 @@ static void offset_meet(BevelParams *bp,
           mid_v3_v3v3(meetco, meetco, isect2);
         }
         for (EdgeHalf *e = e1; e != e2; e = e->next) {
-          BMFace *fnext = e->fnext;
+          MeshFace *fnext = e->fnext;
           if (!fnext) {
             continue;
           }
@@ -1494,7 +1494,7 @@ static void offset_meet(BevelParams *bp,
  * return false in that case, else true.
  */
 static bool offset_meet_edge(
-    EdgeHalf *e1, EdgeHalf *e2, BMVert *v, float meetco[3], float *r_angle)
+    EdgeHalf *e1, EdgeHalf *e2, MeshVert *v, float meetco[3], float *r_angle)
 {
   float dir1[3], dir2[3];
   sub_v3_v3v3(dir1, BM_edge_other_vert(e1->e, v)->co, v->co);
@@ -1563,13 +1563,13 @@ static bool offset_on_edge_between(BevelParams *bp,
                                    EdgeHalf *e1,
                                    EdgeHalf *e2,
                                    EdgeHalf *emid,
-                                   BMVert *v,
+                                   MeshVert *v,
                                    float meetco[3],
                                    float *r_sinratio)
 {
   bool retval = false;
 
-  BLI_assert(e1->is_bev && e2->is_bev && !emid->is_bev);
+  lib_assert(e1->is_bev && e2->is_bev && !emid->is_bev);
 
   float ang1, ang2;
   float meet1[3], meet2[3];
