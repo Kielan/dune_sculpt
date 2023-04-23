@@ -295,9 +295,9 @@ static bool buttons_context_path_modifier(ButsContextPath *path)
              OB_CURVES,
              OB_POINTCLOUD,
              OB_VOLUME)) {
-      ModifierData *md = BKE_object_active_modifier(ob);
+      ModifierData *md = dune_object_active_modifier(ob);
       if (md != NULL) {
-        RNA_pointer_create(&ob->id, &RNA_Modifier, md, &path->ptr[path->len]);
+        api_ptr_create(&ob->id, &ApiModifier, md, &path->ptr[path->len]);
         path->len++;
       }
 
@@ -308,9 +308,9 @@ static bool buttons_context_path_modifier(ButsContextPath *path)
   return false;
 }
 
-static bool buttons_context_path_shaderfx(ButsContextPath *path)
+static bool buttons_ctx_path_shaderfx(BtnsCtxPath *path)
 {
-  if (buttons_context_path_object(path)) {
+  if (btns_ctx_path_object(path)) {
     Object *ob = path->ptr[path->len - 1].data;
 
     if (ob && ELEM(ob->type, OB_GPENCIL)) {
@@ -321,12 +321,12 @@ static bool buttons_context_path_shaderfx(ButsContextPath *path)
   return false;
 }
 
-static bool buttons_context_path_material(ButsContextPath *path)
+static bool btns_ctx_path_material(BtnsCtxPath *path)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a (pinned) material, we're done */
-  if (RNA_struct_is_a(ptr->type, &RNA_Material)) {
+  if (api_struct_is_a(ptr->type, &ApiMaterial)) {
     return true;
   }
   /* if we have an object, use the object material slot */
@@ -336,7 +336,7 @@ static bool buttons_context_path_material(ButsContextPath *path)
     if (ob && OB_TYPE_SUPPORT_MATERIAL(ob->type)) {
       Material *ma = BKE_object_material_get(ob, ob->actcol);
       if (ma != NULL) {
-        RNA_id_pointer_create(&ma->id, &path->ptr[path->len]);
+        api_id_ptr_create(&ma->id, &path->ptr[path->len]);
         path->len++;
       }
       return true;
