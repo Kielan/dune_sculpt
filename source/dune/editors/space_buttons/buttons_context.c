@@ -215,40 +215,40 @@ static bool buttons_context_path_object(BtnsCtxPath *path)
   return false;
 }
 
-static bool buttons_context_path_data(ButsContextPath *path, int type)
+static bool btns_ctx_path_data(BtnsCtxPath *path, int type)
 {
-  PointerRNA *ptr = &path->ptr[path->len - 1];
+  ApiPtr *ptr = &path->ptr[path->len - 1];
 
   /* if we already have a data, we're done */
-  if (RNA_struct_is_a(ptr->type, &ApiMesh) && (ELEM(type, -1, OB_MESH))) {
+  if (api_struct_is_a(ptr->type, &ApiMesh) && (ELEM(type, -1, OB_MESH))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiCurve) &&
+  if (api_struct_is_a(ptr->type, &ApiCurve) &&
       (type == -1 || ELEM(type, OB_CURVES_LEGACY, OB_SURF, OB_FONT))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiArmature) && (ELEM(type, -1, OB_ARMATURE))) {
+  if (api_struct_is_a(ptr->type, &ApiArmature) && (ELEM(type, -1, OB_ARMATURE))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiMetaBall) && (ELEM(type, -1, OB_MBALL))) {
+  if (api_struct_is_a(ptr->type, &ApiMetaBall) && (ELEM(type, -1, OB_MBALL))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiLattice) && (ELEM(type, -1, OB_LATTICE))) {
+  if (api_struct_is_a(ptr->type, &ApiLattice) && (ELEM(type, -1, OB_LATTICE))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiCamera) && (ELEM(type, -1, OB_CAMERA))) {
+  if (api_struct_is_a(ptr->type, &ApiCamera) && (ELEM(type, -1, OB_CAMERA))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiLight) && (ELEM(type, -1, OB_LAMP))) {
+  if (api_struct_is_a(ptr->type, &ApiLight) && (ELEM(type, -1, OB_LAMP))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiSpeaker) && (ELEM(type, -1, OB_SPEAKER))) {
+  if (api_struct_is_a(ptr->type, &ApiSpeaker) && (ELEM(type, -1, OB_SPEAKER))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiLightProbe) && (ELEM(type, -1, OB_LIGHTPROBE))) {
+  if (api_struct_is_a(ptr->type, &ApiLightProbe) && (ELEM(type, -1, OB_LIGHTPROBE))) {
     return true;
   }
-  if (RNA_struct_is_a(ptr->type, &ApiPen) && (ELEM(type, -1, OB_GPENCIL))) {
+  if (api_struct_is_a(ptr->type, &ApiPen) && (ELEM(type, -1, OB_GPENCIL))) {
     return true;
   }
 #ifdef WITH_NEW_CURVES_TYPE
