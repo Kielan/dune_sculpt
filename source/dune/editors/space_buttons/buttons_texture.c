@@ -117,22 +117,22 @@ static void buttons_texture_user_node_add(ListBase *users,
   user->category = category;
   user->icon = icon;
   user->name = name;
-  user->index = BLI_listbase_count(users);
+  user->index = lib_listbase_count(users);
 
-  BLI_addtail(users, user);
+  lib_addtail(users, user);
 }
 
-static void buttons_texture_users_find_nodetree(ListBase *users,
-                                                ID *id,
-                                                bNodeTree *ntree,
-                                                const char *category)
+static void btns_texture_users_find_nodetree(ListBase *users,
+                                             Id *id,
+                                             NodeTree *ntree,
+                                             const char *category)
 {
-  bNode *node;
+  Node *node;
 
   if (ntree) {
     for (node = ntree->nodes.first; node; node = node->next) {
       if (node->typeinfo->nclass == NODE_CLASS_TEXTURE) {
-        PointerRNA ptr;
+        ApiPtr ptr;
         // PropertyRNA *prop; /* UNUSED */
 
         RNA_pointer_create(&ntree->id, &RNA_Node, node, &ptr);
