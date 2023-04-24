@@ -3,23 +3,23 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_bitmap.h"
 #include "lib_dunelib.h"
 #include "lib_utildefines.h"
 
 #include "dune_context.h"
-#include "dune_gpencil_modifier.h" /* Types for registering panels. */
+#include "dune_pen_mod.h" /* Types for registering panels. */
 #include "dune_lib_remap.h"
 #include "dune_modifier.h"
 #include "dune_screen.h"
 #include "dune_shader_fx.h"
 
-#include "ED_buttons.h"
-#include "ED_screen.h"
-#include "ED_space_api.h"
-#include "ED_view3d.h" /* To draw toolbar UI. */
+#include "ed_buttons.h"
+#include "ed_screen.h"
+#include "ed_space_api.h"
+#include "ed_view3d.h" /* To draw toolbar UI. */
 
 #include "wm_api.h"
 #include "wm_message.h"
@@ -42,8 +42,8 @@ static SpaceLink *buttons_create(const ScrArea *UNUSED(area), const Scene *UNUSE
   ARegion *region;
   SpaceProps *sbtns;
 
-  sbtns = MEM_callocN(sizeof(SpaceProps), "initbuts");
-  sbtns->spacetype = SPACE_PROPERTIES;
+  sbtns = mem_callocn(sizeof(SpaceProps), "initbuts");
+  sbtns->spacetype = SPACE_PROPS;
 
   sbtns->maind = sbtns->mainduser = DCTX_OBJECT;
 
