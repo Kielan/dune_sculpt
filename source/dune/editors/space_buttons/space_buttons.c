@@ -665,8 +665,8 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
         case ND_BONE_ACTIVE:
         case ND_BONE_SELECT:
           btns_area_redraw(area, BCONTEXT_BONE);
-          btns_area_redraw(area, BCONTEXT_BONE_CONSTRAINT);
-          btns_area_redraw(area, BCONTEXT_DATA);
+          btns_area_redraw(area, CTX_BONE_CONSTRAINT);
+          btns_area_redraw(area, CTX_DATA);
           break;
         case ND_MODIFIER:
           if (wmn->action == NA_RENAME) {
