@@ -552,11 +552,11 @@ static void btns_header_region_message_subscribe(const wmRegionMessageSubscribeP
    * where one has no active object, so that available contexts changes. */
   wm_msg_subscribe_api_anon_prop(mbus, Window, view_layer, &msg_sub_value_region_tag_redraw);
 
-  if (!ELEM(sbtns->maind, DCTX_RENDER, DCTX_OUTPUT, DCTX_SCENE, DCTX_WORLD)) {
+  if (!ELEM(sbtns->maind, CTX_RENDER, CTX_OUTPUT, CTX_SCENE, CTX_WORLD)) {
     wm_msg_subscribe_api_anon_prop(mbus, ViewLayer, name, &msg_sub_value_region_tag_redraw);
   }
 
-  if (sbtns->maind == DCTX_TOOL) {
+  if (sbtns->maind == CTX_TOOL) {
     wm_msg_subscribe_api_anon_prop(mbus, WorkSpace, tools, &msg_sub_value_region_tag_redraw);
   }
 }
