@@ -101,7 +101,7 @@ static void btns_texture_user_prop_add(ListBase *users,
   lib_addtail(users, user);
 }
 
-static void buttons_texture_user_node_add(ListBase *users,
+static void btns_texture_user_node_add(ListBase *users,
                                           Id *id,
                                           NodeTree *ntree,
                                           Node *node,
@@ -133,25 +133,25 @@ static void btns_texture_users_find_nodetree(ListBase *users,
     for (node = ntree->nodes.first; node; node = node->next) {
       if (node->typeinfo->nclass == NODE_CLASS_TEXTURE) {
         ApiPtr ptr;
-        // PropertyRNA *prop; /* UNUSED */
+        // ApiProp *prop; /* UNUSED */
 
-        RNA_pointer_create(&ntree->id, &RNA_Node, node, &ptr);
-        // prop = RNA_struct_find_property(&ptr, "texture"); /* UNUSED */
+        api_ptr_create(&ntree->id, &ApiNode, node, &ptr);
+        // prop = api_struct_find_prop(&ptr, "texture"); /* UNUSED */
 
-        buttons_texture_user_node_add(
-            users, id, ntree, node, category, RNA_struct_ui_icon(ptr.type), node->name);
+        btns_texture_user_node_add(
+            users, id, ntree, node, category, api_struct_ui_icon(ptr.type), node->name);
       }
       else if (node->type == NODE_GROUP && node->id) {
-        buttons_texture_users_find_nodetree(users, id, (bNodeTree *)node->id, category);
+        btns_texture_users_find_nodetree(users, id, (NodeTree *)node->id, category);
       }
     }
   }
 }
 
-static void btna_texture_modifier_geonodes_users_add(Object *ob,
-                                                        NodesModifierData *nmd,
-                                                        dNodeTree *node_tree,
-                                                        ListBase *users)
+static void btns_texture_modifier_geonodes_users_add(Object *ob,
+                                                     NodesModifierData *nmd,
+                                                     NodeTree *node_tree,
+                                                     ListBase *users)
 {
   ApiPtr ptr;
   ApiProp *prop;
