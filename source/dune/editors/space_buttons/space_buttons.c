@@ -229,7 +229,7 @@ int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
     ctxt_tabs_array[length] = -1;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTXT_TEXTURE)) {
+  if (sbtns->pathflag & (1 << CTXT_TEXTURE)) {
     context_tabs_array[length] = DCTXT_TEXTURE;
     length++;
   }
@@ -545,7 +545,7 @@ static void btns_header_region_message_subscribe(const wmRegionMessageSubscribeP
   wmMsgSubscribeValue msg_sub_value_region_tag_redraw = {
       .owner = region,
       .user_data = region,
-      .notify = ED_region_do_msg_notify_tag_redraw,
+      .notify = ed_region_do_msg_notify_tag_redraw,
   };
 
   /* Don't check for SpaceProps.maind here, we may toggle between view-layers
@@ -568,20 +568,20 @@ static void btns_navigation_bar_region_init(wmWindowManager *wm, ARegion *region
 {
   region->flag |= RGN_FLAG_PREFSIZE_OR_HIDDEN;
 
-  ED_region_panels_init(wm, region);
+  ed_region_panels_init(wm, region);
   region->v2d.keepzoom |= V2D_LOCKZOOM_X | V2D_LOCKZOOM_Y;
 }
 
-static void btns_navigation_bar_region_draw(const dContext *C, ARegion *region)
+static void btns_navigation_bar_region_draw(const Ctx *C, ARegion *region)
 {
   LISTBASE_FOREACH (PanelType *, pt, &region->type->paneltypes) {
     pt->flag |= PANEL_TYPE_LAYOUT_VERT_BAR;
   }
 
-  ED_region_panels_layout(C, region);
-  /* ED_region_panels_layout adds vertical scrollbars, we don't want them. */
+  ed_region_panels_layout(C, region);
+  /* ed_region_panels_layout adds vertical scrollbars, we don't want them. */
   region->v2d.scroll &= ~V2D_SCROLL_VERTICAL;
-  ED_region_panels_draw(C, region);
+  ed_region_panels_draw(C, region);
 }
 
 static void btns_navigation_bar_region_message_subscribe(
@@ -593,7 +593,7 @@ static void btns_navigation_bar_region_message_subscribe(
   wmMsgSubscribeValue msg_sub_value_region_tag_redraw = {
       .owner = region,
       .user_data = region,
-      .notify = ED_region_do_msg_notify_tag_redraw,
+      .notify = ed_region_do_msg_notify_tag_redraw,
   };
 
   wm_msg_subscribe_api_anon_prop(mbus, Window, view_layer, &msg_sub_value_region_tag_redraw);
@@ -607,7 +607,7 @@ static void btns_area_redraw(ScrArea *area, short btns)
 
   /* if the area's current button set is equal to the one to redraw */
   if (sbtns->maind == btns) {
-    ED_area_tag_redraw(area);
+    ed_area_tag_redraw(area);
   }
 }
 
@@ -651,7 +651,7 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
         case ND_MODE:
         case ND_LAYER:
         default:
-          ED_area_tag_redraw(area);
+          ed_area_tag_redraw(area);
           break;
       }
       break;
@@ -670,7 +670,7 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
           break;
         case ND_MODIFIER:
           if (wmn->action == NA_RENAME) {
-            ED_area_tag_redraw(area);
+            ed_area_tag_redraw(area);
           }
           else {
             btns_area_redraw(area, BCONTEXT_MODIFIER);
@@ -699,7 +699,7 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
           break;
         default:
           /* Not all object API props have a ND_ notifier (yet) */
-          ED_area_tag_redraw(area);
+          ed_area_tag_redraw(area);
           break;
       }
       break;
@@ -708,7 +708,7 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
         case ND_SELECT:
         case ND_DATA:
         case ND_VERTEX_GROUP:
-          ED_area_tag_redraw(area);
+          ed_area_tag_redraw(area);
           break;
       }
       break;
