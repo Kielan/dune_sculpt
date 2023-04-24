@@ -63,14 +63,14 @@ static SpaceLink *btns_create(const ScrArea *UNUSED(area), const Scene *UNUSED(s
 
 #if 0
   /* context region */
-  region = mem_callocn(sizeof(ARegion), "context region for buts");
+  region = mem_callocn(sizeof(ARegion), "context region for btns");
   lib_addtail(&sbtns->regionbase, region);
   region->regiontype = RGN_TYPE_CHANNELS;
   region->alignment = RGN_ALIGN_TOP;
 #endif
 
   /* main region */
-  region = mem_callocn(sizeof(ARegion), "main region for buts");
+  region = mem_callocn(sizeof(ARegion), "main region for btns");
 
   lib_addtail(&sbtns->regionbase, region);
   region->regiontype = RGN_TYPE_WINDOW;
@@ -145,84 +145,84 @@ static void btns_main_region_init(wmWindowManager *wm, ARegion *region)
 int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
 {
   int length = 0;
-  if (sbtns->pathflag & (1 << DCTX_TOOL)) {
-    ctx_tabs_array[length] = DCTX_TOOL;
+  if (sbtns->pathflag & (1 << CTX_TOOL)) {
+    ctx_tabs_array[length] = CTX_TOOL;
     length++;
   }
   if (length != 0) {
     ctx_tabs_array[length] = -1;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_RENDER)) {
-    ctx_tabs_array[length] = DCTX_RENDER;
+  if (sbtns->pathflag & (1 << CTX_RENDER)) {
+    ctx_tabs_array[length] = CTX_RENDER;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_OUTPUT)) {
-    ctx_tabs_array[length] = DCTX_OUTPUT;
+  if (sbtns->pathflag & (1 << CTX_OUTPUT)) {
+    ctx_tabs_array[length] = CTX_OUTPUT;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_VIEW_LAYER)) {
-    ctx_tabs_array[length] = DCTX_VIEW_LAYER;
+  if (sbtns->pathflag & (1 << CTX_VIEW_LAYER)) {
+    ctx_tabs_array[length] = CTX_VIEW_LAYER;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_SCENE)) {
-    ctx_tabs_array[length] = DCTX_SCENE;
+  if (sbtns->pathflag & (1 << CTX_SCENE)) {
+    ctx_tabs_array[length] = CTX_SCENE;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_WORLD)) {
-    ctx_tabs_array[length] = DCTX_WORLD;
+  if (sbtns->pathflag & (1 << CTX_WORLD)) {
+    ctx_tabs_array[length] = CTX_WORLD;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_COLLECTION)) {
+  if (sbtns->pathflag & (1 << CTX_COLLECTION)) {
     if (length != 0) {
       ctx_tabs_array[length] = -1;
       length++;
     }
-    ctx_tabs_array[length] = DCTX_COLLECTION;
+    ctx_tabs_array[length] = CTX_COLLECTION;
     length++;
   }
   if (length != 0) {
     ctx_tabs_array[length] = -1;
     length++;
   }
-  if (sbtns->pathflag & (1 << DTX_OBJECT)) {
-    ctx_tabs_array[length] = DCTX_OBJECT;
+  if (sbtns->pathflag & (1 << CTX_OBJECT)) {
+    ctx_tabs_array[length] = CTX_OBJECT;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_MODIFIER)) {
-    ctx_tabs_array[length] = DCTX_MODIFIER;
+  if (sbtns->pathflag & (1 << CTX_MODIFIER)) {
+    ctx_tabs_array[length] = CTX_MODIFIER;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTX_SHADERFX)) {
-    ctx_tabs_array[length] = DCTX_SHADERFX;
+  if (sbtns->pathflag & (1 << CTX_SHADERFX)) {
+    ctx_tabs_array[length] = CTX_SHADERFX;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCXT_PARTICLE)) {
-    context_tabs_array[length] = DCTX_PARTICLE;
+  if (sbtns->pathflag & (1 << CXT_PARTICLE)) {
+    context_tabs_array[length] = CTX_PARTICLE;
     length++;
   }
   if (sbuts->pathflag & (1 << CTX_PHYSICS)) {
-    ctx_tabs_array[length] = DCTX_PHYSICS;
+    ctx_tabs_array[length] = CTX_PHYSICS;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTXT_CONSTRAINT)) {
-    ctx_tabs_array[length] = DCTXT_CONSTRAINT;
+  if (sbtns->pathflag & (1 << CTXT_CONSTRAINT)) {
+    ctx_tabs_array[length] = CTXT_CONSTRAINT;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTXT_DATA)) {
-    ctxt_tabs_array[length] = DCTXT_DATA;
+  if (sbtns->pathflag & (1 << CTXT_DATA)) {
+    ctxt_tabs_array[length] = CTXT_DATA;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTXT_BONE)) {
-    ctxt_tabs_array[length] = DCTXT_BONE;
+  if (sbtns->pathflag & (1 << CTXT_BONE)) {
+    ctxt_tabs_array[length] = CTXT_BONE;
     length++;
   
-  if (sbtns->pathflag & (1 << DCTXT_BONE_CONSTRAINT)) {
-    ctxt_tabs_array[length] = DCTXT_BONE_CONSTRAINT;
+  if (sbtns->pathflag & (1 << CTXT_BONE_CONSTRAINT)) {
+    ctxt_tabs_array[length] = CTXT_BONE_CONSTRAINT;
     length++;
   }
-  if (sbtns->pathflag & (1 << DCTXT_MATERIAL)) {
-    ctxt_tabs_array[length] = DCTXT_MATERIAL;
+  if (sbtns->pathflag & (1 << CTXT_MATERIAL)) {
+    ctxt_tabs_array[length] = CTXT_MATERIAL;
     length++;
   }
   if (length != 0) {
