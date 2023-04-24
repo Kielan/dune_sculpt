@@ -25,13 +25,13 @@
 #include "ed_curves_sculpt.h"
 #include "ed_fileselect.h"
 #include "ed_geometry.h"
-#include "ed_gizmo_library.h"
+#include "ed_gizmo_lib.h"
 #include "ed_pen.h"
-#include "ED_lattice.h"
-#include "ED_markers.h"
-#include "ED_mask.h"
-#include "ED_mball.h"
-#include "ED_mesh.h"
+#include "ed_lattice.h"
+#include "ed_markers.h"
+#include "ed_mask.h"
+#include "ed_mball.h"
+#include "ed_mesh.h"
 #include "ED_node.h"
 #include "ED_object.h"
 #include "ED_paint.h"
@@ -50,7 +50,7 @@
 
 #include "io_ops.h"
 
-void ED_spacetypes_init(void)
+void ed_spacetypes_init(void)
 {
   /* UI unit is a variable, may be used in some space type initialization. */
   U.widget_unit = 20;
