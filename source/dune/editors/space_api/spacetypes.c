@@ -153,12 +153,12 @@ void ed_spacemacros_init(void)
   ed_opmacros_clip();
   ed_opmacros_curve();
   ed_opmacros_mask();
-  ed_operatormacros_sequencer();
-  ed_operatormacros_paint();
-  ed_operatormacros_gpencil();
+  ed_opmacros_sequencer();
+  ed_opmacros_paint();
+  ed_opmacros_pen();
 
   /* Register dropboxes (can use macros). */
-  ED_dropboxes_ui();
+  ed_dropboxes_ui();
   const ListBase *spacetypes = dune_spacetypes_list();
   LISTBASE_FOREACH (const SpaceType *, type, spacetypes) {
     if (type->dropboxes) {
@@ -185,10 +185,10 @@ void ed_spacetypes_keymap(wmKeyConfig *keyconf)
   ed_keymap_mask(keyconf);
   ed_keymap_marker(keyconf);
 
-  ED_keymap_view2d(keyconf);
-  ED_keymap_ui(keyconf);
+  ed_keymap_view2d(keyconf);
+  ed_keymap_ui(keyconf);
 
-  ED_keymap_transform(keyconf);
+  ed_keymap_transform(keyconf);
 
   const ListBase *spacetypes = dune_spacetypes_list();
   LISTBASE_FOREACH (const SpaceType *, type, spacetypes) {
@@ -216,11 +216,11 @@ typedef struct RegionDrawCB {
 } RegionDrawCB;
 
 void *ed_region_draw_cb_activate(ARegionType *art,
-                                 void (*draw)(const struct dContext *, struct ARegion *, void *),
+                                 void (*draw)(const struct Ctx *, struct ARegion *, void *),
                                  void *customdata,
                                  int type)
 {
-  RegionDrawCB *rdc = MEM_callocN(sizeof(RegionDrawCB), "RegionDrawCB");
+  RegionDrawCB *rdc = mem_callocn(sizeof(RegionDrawCB), "RegionDrawCB");
 
   lib_addtail(&art->drawcalls, rdc);
   rdc->draw = draw;
