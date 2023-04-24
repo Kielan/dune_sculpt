@@ -249,17 +249,17 @@ static void ed_region_draw_cb_draw(const dContext *C, ARegion *region, ARegionTy
       rdc->draw(C, region, rdc->customdata);
 
       /* This is needed until we get rid of BGL which can change the states we are tracking. */
-      GPU_bgl_end();
+      gpu_bgl_end();
     }
   }
 }
 
-void ED_region_draw_cb_draw(const dContext *C, ARegion *region, int type)
+void ed_region_draw_cb_draw(const dContext *C, ARegion *region, int type)
 {
   ed_region_draw_cb_draw(C, region, region->type, type);
 }
 
-void ED_region_surface_draw_cb_draw(ARegionType *art, int type)
+void ed_region_surface_draw_cb_draw(ARegionType *art, int type)
 {
   ed_region_draw_cb_draw(NULL, NULL, art, type);
 }
@@ -272,14 +272,14 @@ void ED_region_draw_cb_remove_by_type(ARegionType *art, void *draw_fn, void (*fr
         free(rdc->customdata);
       }
       lib_remlink(&art->drawcalls, rdc);
-      MEM_freeN(rdc);
+      mem_freen(rdc);
     }
   }
 }
 
 /* ********************* space template *********************** */
 /* forward declare */
-void ED_spacetype_xxx(void);
+void ed_spacetype_xxx(void);
 
 /* allocate and init some vars */
 static SpaceLink *xxx_create(const ScrArea *UNUSED(area), const Scene *UNUSED(scene))
@@ -309,7 +309,7 @@ static SpaceLink *xxx_duplicate(SpaceLink *UNUSED(sl))
   return NULL;
 }
 
-static void xxx_operatortypes(void)
+static void xxx_optypes(void)
 {
   /* register operator types for this space */
 }
