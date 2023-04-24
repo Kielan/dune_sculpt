@@ -726,19 +726,19 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
       }
       break;
     case NC_WORLD:
-      btns_area_redraw(area, BCONTEXT_WORLD);
+      btns_area_redraw(area, CTXT_WORLD);
       sbtns->preview = 1;
       break;
     case NC_LAMP:
-      btns_area_redraw(area, BCONTEXT_DATA);
+      btns_area_redraw(area, CTXT_DATA);
       sbtns->preview = 1;
       break;
     case NC_GROUP:
-      btns_area_redraw(area, BCONTEXT_OBJECT);
+      btns_area_redraw(area, CTXT_OBJECT);
       break;
     case NC_BRUSH:
-      btns_area_redraw(area, BCONTEXT_TEXTURE);
-      btns_area_redraw(area, BCONTEXT_TOOL);
+      btns_area_redraw(area, CTXT_TEXTURE);
+      btns_area_redraw(area, CTXT_TOOL);
       sbtsn->preview = 1;
       break;
     case NC_TEXTURE:
