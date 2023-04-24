@@ -141,18 +141,18 @@ void ED_spacemacros_init(void)
 {
   /* Macros must go last since they reference other operators.
    * They need to be registered after python operators too. */
-  ED_operatormacros_armature();
-  ED_operatormacros_mesh();
-  ED_operatormacros_uvedit();
-  ED_operatormacros_metaball();
-  ED_operatormacros_node();
-  ED_operatormacros_object();
-  ED_operatormacros_file();
-  ED_operatormacros_graph();
-  ED_operatormacros_action();
-  ED_operatormacros_clip();
-  ED_operatormacros_curve();
-  ED_operatormacros_mask();
+  ED_opmacros_armature();
+  ED_opmacros_mesh();
+  ED_opmacros_uvedit();
+  ED_opmacros_metaball();
+  ED_opmacros_node();
+  ED_opmacros_object();
+  ED_opmacros_file();
+  ED_opnacros_graph();
+  ED_opmacros_action();
+  ED_opmacros_clip();
+  ED_opmacros_curve();
+  ED_opmacros_mask();
   ED_operatormacros_sequencer();
   ED_operatormacros_paint();
   ED_operatormacros_gpencil();
