@@ -240,41 +240,41 @@ int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
 static const char *btns_main_region_ctx_string(const short maind)
 {
   switch (maind) {
-    case DCTXT_SCENE:
+    case CTXT_SCENE:
       return "scene";
-    case DCTXT_RENDER:
+    case CTXT_RENDER:
       return "render";
-    case DCTXT_OUTPUT:
+    case CTXT_OUTPUT:
       return "output";
-    case DCTXT_VIEW_LAYER:
+    case CTXT_VIEW_LAYER:
       return "view_layer";
-    case DCTXT_WORLD:
+    case CTXT_WORLD:
       return "world";
-    case DCTXT_COLLECTION:
+    case CTXT_COLLECTION:
       return "collection";
-    case BCTXT_OBJECT:
+    case CTXT_OBJECT:
       return "object";
-    case DCTXT_DATA:
+    case CTXT_DATA:
       return "data";
-    case CONTEXT_MATERIAL:
+    case CTX_MATERIAL:
       return "material";
-    case CONTEXT_TEXTURE:
+    case CTX_TEXTURE:
       return "texture";
-    case CONTEXT_PARTICLE:
+    case CTEXT_PARTICLE:
       return "particle";
-    case CONTEXT_PHYSICS:
+    case CTEXT_PHYSICS:
       return "physics";
-    case CONTEXT_BONE:
+    case CTEXT_BONE:
       return "bone";
-    case CONTEXT_MODIFIER:
+    case CTEXT_MODIFIER:
       return "modifier";
-    case CONTEXT_SHADERFX:
+    case CTEXT_SHADERFX:
       return "shaderfx";
-    case CONTEXT_CONSTRAINT:
+    case CTEXT_CONSTRAINT:
       return "constraint";
-    case CONTEXT_BONE_CONSTRAINT:
+    case CTEXT_BONE_CONSTRAINT:
       return "bone_constraint";
-    case CONTEXT_TOOL:
+    case CTEXT_TOOL:
       return "tool";
   }
 
@@ -283,13 +283,13 @@ static const char *btns_main_region_ctx_string(const short maind)
   return "";
 }
 
-static void btnns_main_region_layout_props(const dContext *C,
+static void btns_main_region_layout_props(const dContext *C,
                                                   SpaceProps *sbtns,
                                                   ARegion *region)
 {
   btns_ctx_compute(C, sbtns);
 
-  const char *contexts[2] = {btns_main_region_ctx_string(sbuts->maind), NULL};
+  const char *contexts[2] = {btns_main_region_ctx_string(sbtns->maind), NULL};
 
   ed_region_panels_layout_ex(C, region, &region->type->paneltypes, ctxts, NULL);
 }
@@ -312,7 +312,7 @@ void ed_btns_search_string_set(SpaceProps *sbtns, const char *value)
   lib_strncpy(sbtbs->runtime->search_string, value, sizeof(sbtns->runtime->search_string));
 }
 
-bool ED_btns_tab_has_search_result(SpaceProps *sbtns, const int index)
+bool ed_btns_tab_has_search_result(SpaceProps *sbtns, const int index)
 {
   return LIB_BITMAP_TEST(sbtns->runtime->tab_search_results, index);
 }
@@ -320,7 +320,7 @@ bool ED_btns_tab_has_search_result(SpaceProps *sbtns, const int index)
 /* -------------------------------------------------------------------- */
 /** "Off Screen" Layout Generation for Property Search **/
 
-static bool prop_search_for_ctx(const dContext *C, ARegion *region, SpaceProps *sbtns)
+static bool prop_search_for_ctx(const Ctx *C, ARegion *region, SpaceProps *sbtns)
 {
   const char *contexts[2] = {bts_main_region_ctx_string(sbtns->maind), NULL};
 
@@ -329,12 +329,12 @@ static bool prop_search_for_ctx(const dContext *C, ARegion *region, SpaceProps *
   }
 
   btns_ctx_compute(C, sbtns);
-  return ED_region_prop_search(C, region, &region->type->paneltypes, contexts, NULL);
+  return ed_region_prop_search(C, region, &region->type->paneltypes, contexts, NULL);
 }
 
 static void prop_search_move_to_next_tab_with_results(SpaceProps *sbtns,
-                                                          const short *ctx_tabs_array,
-                                                          const int tabs_len)
+                                                      const short *ctx_tabs_array,
+                                                      const int tabs_len)
 {
   /* As long as all-tab search in the tool is disabled in the tool context, don't move from it. */
   if (sbtns->maind == DCTX_TOOL) {
@@ -367,10 +367,10 @@ static void prop_search_move_to_next_tab_with_results(SpaceProps *sbtns,
 }
 
 static void prop_search_all_tabs(const dContext *C,
-                                     SpaceProps *sbtns,
-                                     ARegion *region_original,
-                                     const short *ctx_tabs_array,
-                                     const int tabs_len)
+                                 SpaceProps *sbtns,
+                                 ARegion *region_original,
+                                 const short *ctx_tabs_array,
+                                 const int tabs_len)
 {
   /* Use local copies of the area and duplicate the region as a mainly-paranoid protection
    * against changing any of the space / region data while running the search. */
@@ -380,13 +380,13 @@ static void prop_search_all_tabs(const dContext *C,
   /* Set the region visible field. Otherwise some layout code thinks we're drawing in a popup.
    * This likely isn't necessary, but it's nice to emulate a "real" region where possible. */
   region_copy->visible = true;
-  ctx_wm_area_set((dContext *)C, &area_copy);
-  ctx_wm_region_set((dContext *)C, region_copy);
+  ctx_wm_area_set((Ctx *)C, &area_copy);
+  ctx_wm_region_set((Ctx *)C, region_copy);
 
-  SpaceProperties sbtns_copy = *sbtns;
+  SpaceProps sbtns_copy = *sbtns;
   sbtns_copy.path = NULL;
   sbtns_copy.texuser = NULL;
-  sbtns_copy.runtime = MEM_dupallocN(sbtns->runtime);
+  sbtns_copy.runtime = mem_dupallocn(sbtns->runtime);
   sbtns_copy.runtime->tab_search_results = NULL;
   lib_listbase_clear(&area_copy.spacedata);
   lib_addtail(&area_copy.spacedata, &sbtns_copy);
@@ -410,11 +410,11 @@ static void prop_search_all_tabs(const dContext *C,
                    i,
                    props_search_for_ctx(C, region_copy, &sbtns_copy));
 
-    UI_blocklist_free(C, region_copy);
+    ui_blocklist_free(C, region_copy);
   }
 
   dune_area_region_free(area_copy.type, region_copy);
-  MEM_freeN(region_copy);
+  mem_freen(region_copy);
   btns_free((SpaceLink *)&sbtns_copy);
 
   ctx_wm_area_set((dContext *)C, area_original);
@@ -425,20 +425,20 @@ static void prop_search_all_tabs(const dContext *C,
  * Handle property search for the layout pass, including finding which tabs have
  * search results and switching if the current tab doesn't have a result.
  */
-static void btns_main_region_prop_search(const dContext *C,
-                                                SpaceProps *sbtns,
-                                                ARegion *region)
+static void btns_main_region_prop_search(const Ctx *C,
+                                         SpaceProps *sbtns,
+                                         ARegion *region)
 {
   /* Theoretical maximum of every context shown with a spacer between every tab. */
-  short ctx_tabs_array[DCTXT_TOT * 2];
-  int tabs_len = ED_btns_tabs_list(sbtns, ctx_tabs_array);
+  short ctx_tabs_array[CTXT_TOT * 2];
+  int tabs_len = ed_btns_tabs_list(sbtns, ctx_tabs_array);
 
   prop_search_all_tabs(C, sbtns, region, ctx_tabs_array, tabs_len);
 
   /* Check whether the current tab has a search match. */
   bool current_tab_has_search_match = false;
   LISTBASE_FOREACH (Panel *, panel, &region->panels) {
-    if (UI_panel_is_active(panel) && UI_panel_matches_search_filter(panel)) {
+    if (ui_panel_is_active(panel) && UI_panel_matches_search_filter(panel)) {
       current_tab_has_search_match = true;
     }
   }
@@ -467,13 +467,13 @@ static void btns_main_region_prop_search(const dContext *C,
 /* -------------------------------------------------------------------- */
 /** Main Region Layout and Listener **/
 
-static void btns_main_region_layout(const dContext *C, ARegion *region)
+static void btns_main_region_layout(const Ctx *C, ARegion *region)
 {
   /* draw entirely, view changes should be handled here */
-  SpaceProps *sbuts = ctx_wm_space_props(C);
+  SpaceProps *sbtns = ctx_wm_space_props(C);
 
   if (sbtns->maind == DCTX_TOOL) {
-    ED_view3d_btns_region_layout_ex(C, region, "Tool");
+    ed_view3d_btns_region_layout_ex(C, region, "Tool");
   }
   else {
     btns_main_region_layout_props(C, sbtns, region);
@@ -495,7 +495,7 @@ static void btns_main_region_listener(const wmRegionListenerParams *params)
   switch (wmn->category) {
     case NC_SCREEN:
       if (ELEM(wmn->data, ND_LAYER)) {
-        ED_region_tag_redraw(region);
+        ed_region_tag_redraw(region);
       }
       break;
   }
@@ -503,12 +503,12 @@ static void btns_main_region_listener(const wmRegionListenerParams *params)
 
 static void btns_operatortypes(void)
 {
-  WM_operatortype_append(BUTTONS_OT_start_filter);
-  WM_operatortype_append(BUTTONS_OT_clear_filter);
-  WM_operatortype_append(BUTTONS_OT_toggle_pin);
-  WM_operatortype_append(BUTTONS_OT_context_menu);
-  WM_operatortype_append(BUTTONS_OT_file_browse);
-  WM_operatortype_append(BUTTONS_OT_directory_browse);
+  WM_optype_append(BUTTONS_OT_start_filter);
+  WM_optype_append(BUTTONS_OT_clear_filter);
+  WM_optype_append(BUTTONS_OT_toggle_pin);
+  WM_optype_append(BUTTONS_OT_context_menu);
+  WM_optype_append(BUTTONS_OT_file_browse);
+  WM_optype_append(BUTTONS_OT_directory_browse);
 }
 
 static void buttons_keymap(struct wmKeyConfig *keyconf)
