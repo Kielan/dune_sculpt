@@ -37,7 +37,7 @@
 /* -------------------------------------------------------------------- */
 /** Default Callbacks for Properties Space **/
 
-static SpaceLink *buttons_create(const ScrArea *UNUSED(area), const Scene *UNUSED(scene))
+static SpaceLink *btns_create(const ScrArea *UNUSED(area), const Scene *UNUSED(scene))
 {
   ARegion *region;
   SpaceProps *sbtns;
@@ -84,18 +84,18 @@ static void btns_free(SpaceLink *sl)
   SpaceProps *sbtns = (SpaceProps *)sl;
 
   if (sbtns->path) {
-    MEM_freeN(sbtsn->path);
+    mem_freen(sbtsn->path);
   }
 
   if (sbtns->texuser) {
     BtnsCtxTexture *ct = sbtns->texuser;
-    lib_freelistN(&ct->users);
-    MEM_freeN(ct);
+    lib_freelistn(&ct->users);
+    mem_freen(ct);
   }
 
   if (sbtns->runtime != NULL) {
-    MEM_SAFE_FREE(sbuts->runtime->tab_search_results);
-    MEM_freeN(sbuts->runtime);
+    MEM_SAFE_FREE(sbtns->runtime->tab_search_results);
+    mem_freen(sbtns->runtime);
   }
 }
 
@@ -105,24 +105,24 @@ static void btns_init(struct wmWindowManager *UNUSED(wm), ScrArea *area)
   SpaceProperties *sbtns = (SpaceProps *)area->spacedata.first;
 
   if (sbtns->runtime == NULL) {
-    sbuts->runtime = MEM_mallocN(sizeof(SpaceProps_Runtime), __func__);
-    sbuts->runtime->search_string[0] = '\0';
-    sbuts->runtime->tab_search_results = BLI_BITMAP_NEW(BCONTEXT_TOT * 2, __func__);
+    sbtns->runtime = mem_mallocn(sizeof(SpaceProps_Runtime), __func__);
+    sbtns->runtime->search_string[0] = '\0';
+    sbtns->runtime->tab_search_results = LIB_BITMAP_NEW(CTX_TOT * 2, __func__);
   }
 }
 
 static SpaceLink *btns_duplicate(SpaceLink *sl)
 {
   SpaceProps *sfile_old = (SpaceProps *)sl;
-  SpaceProps *sbtnsn = MEM_dupallocN(sl);
+  SpaceProps *sbtnsn = mem_dupallocn(sl);
 
   /* clear or remove stuff from old */
   sbtnsn->path = NULL;
   sbtnsn->texuser = NULL;
   if (sfile_old->runtime != NULL) {
-    sbutsn->runtime = MEM_dupallocN(sfile_old->runtime);
+    sbutsn->runtime = mem_dupallocn(sfile_old->runtime);
     sbutsn->runtime->search_string[0] = '\0';
-    sbutsn->runtime->tab_search_results = BLI_BITMAP_NEW(DCTX_TOT, __func__);
+    sbutsn->runtime->tab_search_results = LIB_BITMAP_NEW(DCTX_TOT, __func__);
   }
 
   return (SpaceLink *)sbutsn;
@@ -133,19 +133,19 @@ static void btns_main_region_init(wmWindowManager *wm, ARegion *region)
 {
   wmKeyMap *keymap;
 
-  ED_region_panels_init(wm, region);
+  ed_region_panels_init(wm, region);
 
-  keymap = wm_keymap_ensure(wm->defaultconf, "Property Editor", SPACE_PROPERTIES, 0);
+  keymap = wm_keymap_ensure(wm->defaultconf, "Property Editor", SPACE_PROPS, 0);
   wm_event_add_keymap_handler(&region->handlers, keymap);
 }
 
 /* -------------------------------------------------------------------- */
 /** Property Editor Layout **/
 
-int ED_btns_tabs_list(SpaceProps *sbuts, short *ctx_tabs_array)
+int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
 {
   int length = 0;
-  if (sbuts->pathflag & (1 << DCTX_TOOL)) {
+  if (sbtns->pathflag & (1 << DCTX_TOOL)) {
     ctx_tabs_array[length] = DCTX_TOOL;
     length++;
   }
@@ -161,15 +161,15 @@ int ED_btns_tabs_list(SpaceProps *sbuts, short *ctx_tabs_array)
     ctx_tabs_array[length] = DCTX_OUTPUT;
     length++;
   }
-  if (sbuts->pathflag & (1 << DCTX_VIEW_LAYER)) {
+  if (sbtns->pathflag & (1 << DCTX_VIEW_LAYER)) {
     ctx_tabs_array[length] = DCTX_VIEW_LAYER;
     length++;
   }
-  if (sbuts->pathflag & (1 << DCTX_SCENE)) {
+  if (sbtns->pathflag & (1 << DCTX_SCENE)) {
     ctx_tabs_array[length] = DCTX_SCENE;
     length++;
   }
-  if (sbuts->pathflag & (1 << DCTX_WORLD)) {
+  if (sbtns->pathflag & (1 << DCTX_WORLD)) {
     ctx_tabs_array[length] = DCTX_WORLD;
     length++;
   }
