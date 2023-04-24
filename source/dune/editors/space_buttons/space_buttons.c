@@ -221,16 +221,16 @@ int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
     ctxt_tabs_array[length] = CTX_BONE_CONSTRAINT;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTXT_MATERIAL)) {
-    ctxt_tabs_array[length] = CTXT_MATERIAL;
+  if (sbtns->pathflag & (1 << CTX_MATERIAL)) {
+    ctxt_tabs_array[length] = CTX_MATERIAL;
     length++;
   }
   if (length != 0) {
     ctxt_tabs_array[length] = -1;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTXT_TEXTURE)) {
-    ctxt_tabs_array[length] = CTXT_TEXTURE;
+  if (sbtns->pathflag & (1 << CTX_TEXTURE)) {
+    ctxt_tabs_array[length] = CTX_TEXTURE;
     length++;
   }
 
@@ -240,41 +240,41 @@ int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
 static const char *btns_main_region_ctx_string(const short maind)
 {
   switch (maind) {
-    case CTXT_SCENE:
+    case CTX_SCENE:
       return "scene";
-    case CTXT_RENDER:
+    case CTX_RENDER:
       return "render";
-    case CTXT_OUTPUT:
+    case CTX_OUTPUT:
       return "output";
-    case CTXT_VIEW_LAYER:
+    case CTX_VIEW_LAYER:
       return "view_layer";
-    case CTXT_WORLD:
+    case CTX_WORLD:
       return "world";
-    case CTXT_COLLECTION:
+    case CTX_COLLECTION:
       return "collection";
-    case CTXT_OBJECT:
+    case CTX_OBJECT:
       return "object";
-    case CTXT_DATA:
+    case CTX_DATA:
       return "data";
-    case CTXT_MATERIAL:
+    case CTX_MATERIAL:
       return "material";
-    case CTXT_TEXTURE:
+    case CTX_TEXTURE:
       return "texture";
-    case CTXT_PARTICLE:
+    case CTX_PARTICLE:
       return "particle";
-    case CTXT_PHYSICS:
+    case CTX_PHYSICS:
       return "physics";
-    case CTXT_BONE:
+    case CTX_BONE:
       return "bone";
-    case CTXT_MODIFIER:
+    case CTX_MODIFIER:
       return "modifier";
-    case CTXT_SHADERFX:
+    case CTX_SHADERFX:
       return "shaderfx";
-    case CTXT_CONSTRAINT:
+    case CTX_CONSTRAINT:
       return "constraint";
-    case CTXT_BONE_CONSTRAINT:
+    case CTX_BONE_CONSTRAINT:
       return "bone_constraint";
-    case CTXT_TOOL:
+    case CTX_TOOL:
       return "tool";
   }
 
