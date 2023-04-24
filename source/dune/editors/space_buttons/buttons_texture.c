@@ -156,12 +156,12 @@ static void btns_texture_modifier_geonodes_users_add(Object *ob,
   ApiPtr ptr;
   ApiProp *prop;
 
-  LISTBASE_FOREACH (dNode *, node, &node_tree->nodes) {
+  LISTBASE_FOREACH (Node *, node, &node_tree->nodes) {
     if (node->type == NODE_GROUP && node->id) {
       /* Recurse into the node group */
-      btns_texture_modifier_geonodes_users_add(ob, nmd, (dNodeTree *)node->id, users);
+      btns_texture_modifier_geonodes_users_add(ob, nmd, (NodeTree *)node->id, users);
     }
-    LISTBASE_FOREACH (dNodeSocket *, socket, &node->inputs) {
+    LISTBASE_FOREACH (NodeSocket *, socket, &node->inputs) {
       if (socket->flag & SOCK_UNAVAIL) {
         continue;
       }
@@ -175,24 +175,24 @@ static void btns_texture_modifier_geonodes_users_add(Object *ob,
       Tex *tex = (api_struct_is_a(texptr.type, &api_Texture)) ? (Tex *)texptr.data : NULL;
       if (tex != NULL) {
         btns_texture_user_socket_prop_add(users,
-                                                 &ob->id,
-                                                 ptr,
-                                                 prop,
-                                                 node_tree,
-                                                 node,
-                                                 socket,
-                                                 N_("Geometry Nodes"),
-                                                 api_struct_ui_icon(ptr.type),
-                                                 nmd->modifier.name);
+                                          &ob->id,
+                                          ptr,
+                                          prop,
+                                          node_tree,
+                                          node,
+                                          socket,
+                                          N_("Geometry Nodes"),
+                                          api_struct_ui_icon(ptr.type),
+                                          nmd->modifier.name);
       }
     }
   }
 }
 
 static void btns_texture_modifier_foreach(void *userData,
-                                             Object *ob,
-                                             ModifierData *md,
-                                             const char *propname)
+                                          Object *ob,
+                                          ModifierData *md,
+                                          const char *propname)
 {
   ListBase *users = userData;
 
