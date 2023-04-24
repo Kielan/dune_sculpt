@@ -77,14 +77,14 @@ void ed_spacetypes_init(void)
   ed_spacetype_spreadsheet();
 
   /* Register operator types for screen and all spaces. */
-  ed_operatortypes_userpref();
-  ed_operatortypes_workspace();
-  ed_operatypes_scene();
+  ed_optypes_userpref();
+  ed_optypes_workspace();
+  ed_optypes_scene();
   ed_optypes_screen();
   ee_optypes_anim();
-  ed_animchannels();
+  ed_optypes_animchannels();
   ed_optypes_asset();
-  ed_optypes_gpencil();
+  ed_optypes_pen();
   ed_optypes_object();
   ed_optypes_lattice();
   ed_optypes_mesh();
@@ -113,16 +113,16 @@ void ed_spacetypes_init(void)
   ed_uilisttypes_ui();
 
   /* Gizmo types. */
-  ED_gizmotypes_button_2d();
-  ED_gizmotypes_dial_3d();
-  ED_gizmotypes_move_3d();
-  ED_gizmotypes_arrow_3d();
-  ED_gizmotypes_preselect_3d();
-  ED_gizmotypes_primitive_3d();
-  ED_gizmotypes_blank_3d();
-  ED_gizmotypes_cage_2d();
-  ED_gizmotypes_cage_3d();
-  ED_gizmotypes_snap_3d();
+  ed_gizmotypes_button_2d();
+  ed_gizmotypes_dial_3d();
+  ed_gizmotypes_move_3d();
+  ed_gizmotypes_arrow_3d();
+  ed_gizmotypes_preselect_3d();
+  ed_gizmotypes_primitive_3d();
+  ed_gizmotypes_blank_3d();
+  ed_gizmotypes_cage_2d();
+  ed_gizmotypes_cage_3d();
+  ed_gizmotypes_snap_3d();
 
   /* Register types for operators and gizmos. */
   const ListBase *spacetypes = dune_spacetypes_list();
@@ -137,25 +137,25 @@ void ed_spacetypes_init(void)
   }
 }
 
-void ED_spacemacros_init(void)
+void ed_spacemacros_init(void)
 {
   /* Macros must go last since they reference other operators.
    * They need to be registered after python operators too. */
-  ED_opmacros_armature();
-  ED_opmacros_mesh();
-  ED_opmacros_uvedit();
-  ED_opmacros_metaball();
-  ED_opmacros_node();
-  ED_opmacros_object();
-  ED_opmacros_file();
-  ED_opnacros_graph();
-  ED_opmacros_action();
-  ED_opmacros_clip();
-  ED_opmacros_curve();
-  ED_opmacros_mask();
-  ED_operatormacros_sequencer();
-  ED_operatormacros_paint();
-  ED_operatormacros_gpencil();
+  ed_opmacros_armature();
+  ed_opmacros_mesh();
+  ed_opmacros_uvedit();
+  ed_opmacros_metaball();
+  ed_opmacros_node();
+  ed_opmacros_object();
+  ed_opmacros_file();
+  ed_opnacros_graph();
+  ed_opmacros_action();
+  ed_opmacros_clip();
+  ed_opmacros_curve();
+  ed_opmacros_mask();
+  ed_operatormacros_sequencer();
+  ed_operatormacros_paint();
+  ed_operatormacros_gpencil();
 
   /* Register dropboxes (can use macros). */
   ED_dropboxes_ui();
