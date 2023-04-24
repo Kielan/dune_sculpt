@@ -10,9 +10,9 @@
 #include "i18n_translation.h"
 
 #include "types_id.h"
-#include "types_brush_types.h"
-#include "types_linestyle_types.h"
-#include "types_node_types.h"
+#include "types_brush.h"
+#include "types_linestyle.h"
+#include "types_node.h"
 #include "types_object_force.h"
 #include "types_object.h"
 #include "types_particle.h"
@@ -54,17 +54,17 @@ static SpaceProps *find_space_props(const Ctx *C);
 /************************* Texture User **************************/
 
 static void btns_texture_user_socket_prop_add(ListBase *users,
-                                                     Id *id,
-                                                     ApiPtr ptr,
-                                                     ApiProp *prop,
-                                                     bNodeTree *ntree,
-                                                     bNode *node,
-                                                     bNodeSocket *socket,
-                                                     const char *category,
-                                                     int icon,
-                                                     const char *name)
+                                              Id *id,
+                                              ApiPtr ptr,
+                                              ApiProp *prop,
+                                              NodeTree *ntree,
+                                              Node *node,
+                                              NodeSocket *socket,
+                                              const char *category,
+                                              int icon,
+                                              const char *name)
 {
-  ButsTextureUser *user = MEM_callocN(sizeof(ButsTextureUser), "ButsTextureUser");
+  ButsTextureUser *user = mem_callocn(sizeof(BtnsTextureUser), "BtnsTextureUser");
 
   user->id = id;
   user->ptr = ptr;
