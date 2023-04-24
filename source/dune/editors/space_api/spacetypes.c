@@ -56,25 +56,25 @@ void ed_spacetypes_init(void)
   U.widget_unit = 20;
 
   /* Create space types. */
-  ED_spacetype_outliner();
-  ED_spacetype_view3d();
-  ED_spacetype_ipo();
-  ED_spacetype_image();
-  ED_spacetype_node();
-  ED_spacetype_buttons();
-  ED_spacetype_info();
-  ED_spacetype_file();
-  ED_spacetype_action();
-  ED_spacetype_nla();
-  ED_spacetype_script();
-  ED_spacetype_text();
-  ED_spacetype_sequencer();
-  ED_spacetype_console();
-  ED_spacetype_userpref();
-  ED_spacetype_clip();
-  ED_spacetype_statusbar();
-  ED_spacetype_topbar();
-  ED_spacetype_spreadsheet();
+  ed_spacetype_outliner();
+  ed_spacetype_view3d();
+  ed_spacetype_ipo();
+  ed_spacetype_image();
+  ed_spacetype_node();
+  ed_spacetype_buttons();
+  ed_spacetype_info();
+  ed_spacetype_file();
+  ed_spacetype_action();
+  ed_spacetype_nla();
+  ed_spacetype_script();
+  ed_spacetype_text();
+  ed_spacetype_sequencer();
+  ed_spacetype_console();
+  ed_spacetype_userpref();
+  ed_spacetype_clip();
+  ed_spacetype_statusbar();
+  ed_spacetype_topbar();
+  ed_spacetype_spreadsheet();
 
   /* Register operator types for screen and all spaces. */
   ed_operatortypes_userpref();
