@@ -64,7 +64,7 @@ static void btns_texture_user_socket_prop_add(ListBase *users,
                                               int icon,
                                               const char *name)
 {
-  ButsTextureUser *user = mem_callocn(sizeof(BtnsTextureUser), "BtnsTextureUser");
+  BtnsTextureUser *user = mem_callocn(sizeof(BtnsTextureUser), "BtnsTextureUser");
 
   user->id = id;
   user->ptr = ptr;
@@ -75,20 +75,20 @@ static void btns_texture_user_socket_prop_add(ListBase *users,
   user->category = category;
   user->icon = icon;
   user->name = name;
-  user->index = BLI_listbase_count(users);
+  user->index = lib_listbase_count(users);
 
-  BLI_addtail(users, user);
+  lib_addtail(users, user);
 }
 
-static void buttons_texture_user_property_add(ListBase *users,
-                                              ID *id,
-                                              PointerRNA ptr,
-                                              PropertyRNA *prop,
-                                              const char *category,
-                                              int icon,
-                                              const char *name)
+static void btns_texture_user_prop_add(ListBase *users,
+                                       Id *id,
+                                       ApiPtr ptr,
+                                       ApiProp *prop,
+                                       const char *category,
+                                       int icon,
+                                       const char *name)
 {
-  ButsTextureUser *user = MEM_callocN(sizeof(ButsTextureUser), "ButsTextureUser");
+  BtnsTextureUser *user = mem_callocn(sizeof(BtnsTextureUser), "BtnsTextureUser");
 
   user->id = id;
   user->ptr = ptr;
@@ -96,20 +96,20 @@ static void buttons_texture_user_property_add(ListBase *users,
   user->category = category;
   user->icon = icon;
   user->name = name;
-  user->index = BLI_listbase_count(users);
+  user->index = lib_listbase_count(users);
 
-  BLI_addtail(users, user);
+  lib_addtail(users, user);
 }
 
 static void buttons_texture_user_node_add(ListBase *users,
-                                          ID *id,
-                                          bNodeTree *ntree,
-                                          bNode *node,
+                                          Id *id,
+                                          NodeTree *ntree,
+                                          Node *node,
                                           const char *category,
                                           int icon,
                                           const char *name)
 {
-  ButsTextureUser *user = MEM_callocN(sizeof(ButsTextureUser), "ButsTextureUser");
+  BtnsTextureUser *user = mem_callocn(sizeof(BtnsTextureUser), "BtnsTextureUser");
 
   user->id = id;
   user->ntree = ntree;
