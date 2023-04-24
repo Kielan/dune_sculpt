@@ -167,23 +167,23 @@ void ed_spacemacros_init(void)
   }
 }
 
-void ED_spacetypes_keymap(wmKeyConfig *keyconf)
+void ed_spacetypes_keymap(wmKeyConfig *keyconf)
 {
-  ED_keymap_screen(keyconf);
-  ED_keymap_anim(keyconf);
-  ED_keymap_animchannels(keyconf);
-  ED_keymap_gpencil(keyconf);
-  ED_keymap_object(keyconf);
-  ED_keymap_lattice(keyconf);
-  ED_keymap_mesh(keyconf);
-  ED_keymap_uvedit(keyconf);
-  ED_keymap_curve(keyconf);
-  ED_keymap_armature(keyconf);
-  ED_keymap_physics(keyconf);
-  ED_keymap_metaball(keyconf);
-  ED_keymap_paint(keyconf);
-  ED_keymap_mask(keyconf);
-  ED_keymap_marker(keyconf);
+  ed_keymap_screen(keyconf);
+  ed_keymap_anim(keyconf);
+  ed_keymap_animchannels(keyconf);
+  ed_keymap_pen(keyconf);
+  ed_keymap_object(keyconf);
+  ed_keymap_lattice(keyconf);
+  ed_keymap_mesh(keyconf);
+  ed_keymap_uvedit(keyconf);
+  ed_keymap_curve(keyconf);
+  ed_keymap_armature(keyconf);
+  ed_keymap_physics(keyconf);
+  ed_keymap_metaball(keyconf);
+  ed_keymap_paint(keyconf);
+  ed_keymap_mask(keyconf);
+  ed_keymap_marker(keyconf);
 
   ED_keymap_view2d(keyconf);
   ED_keymap_ui(keyconf);
