@@ -196,7 +196,7 @@ static void btns_texture_modifier_foreach(void *userData,
 {
   ListBase *users = userData;
 
-  if (md->type == eModifierType_Nodes) {
+  if (md->type == eModType_Nodes) {
     NodesModifierData *nmd = (NodesModData *)md;
     if (nmd->node_group != NULL) {
       btns_texture_mod_geonodes_users_add(ob, nmd, nmd->node_group, users);
@@ -223,7 +223,7 @@ static void btns_texture_modifier_gpencil_foreach(void *userData,
   PropApi *prop;
   ListBase *users = userData;
 
-  api_ptr_create(&ob->id, &api_GpencilModifier, md, &ptr);
+  api_ptr_create(&ob->id, &ApiPenMod, md, &ptr);
   prop = api_struct_find_prop(&ptr, propname);
 
   btns_texture_user_prop_add(users,
@@ -294,7 +294,7 @@ static void btns_texture_users_from_ctx(ListBase *users,
     dune_mods_foreach_tex_link(ob, btns_texture_modifier_foreach, users);
 
     /* grease pencil modifiers */
-    dune_pen_modifiers_foreach_tex_link(ob, btns_texture_mod_pen_foreach, users);
+    dune_pen_mods_foreach_tex_link(ob, btns_texture_mod_pen_foreach, users);
 
     /* particle systems */
     if (psys && !limited_mode) {
