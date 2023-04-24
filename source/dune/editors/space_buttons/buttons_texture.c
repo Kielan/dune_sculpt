@@ -243,7 +243,7 @@ static void btns_texture_users_from_ctx(ListBase *users,
   Object *ob = NULL;
   FreestyleLineStyle *linestyle = NULL;
   Brush *brush = NULL;
-  ID *pinid = sbtns->pinid;
+  Id *pinid = sbtns->pinid;
   bool limited_mode = (sbtns->flag & SB_TEX_USER_LIMITED) != 0;
 
   /* get data from context */
@@ -291,10 +291,10 @@ static void btns_texture_users_from_ctx(ListBase *users,
     int a;
 
     /* modifiers */
-    dune_modifiers_foreach_tex_link(ob, btns_texture_modifier_foreach, users);
+    dune_mods_foreach_tex_link(ob, btns_texture_modifier_foreach, users);
 
     /* grease pencil modifiers */
-    dune_pen_modifiers_foreach_tex_link(ob, btns_texture_modifier_pen_foreach, users);
+    dune_pen_modifiers_foreach_tex_link(ob, btns_texture_mod_pen_foreach, users);
 
     /* particle systems */
     if (psys && !limited_mode) {
@@ -309,12 +309,12 @@ static void btns_texture_users_from_ctx(ListBase *users,
           prop = api_struct_find_prop(&ptr, "texture");
 
           btns_texture_user_prop_add(users,
-                                            &psys->part->id,
-                                            ptr,
-                                            prop,
-                                            N_("Particles"),
-                                            api_struct_ui_icon(&api_ParticleSettings),
-                                            psys->name);
+                                     &psys->part->id,
+                                     ptr,
+                                     prop,
+                                     N_("Particles"),
+                                     api_struct_ui_icon(&api_ParticleSettings),
+                                     psys->name);
         }
       }
     }
@@ -353,19 +353,19 @@ static void btns_texture_users_from_ctx(ListBase *users,
   }
 }
 
-void btns_texture_ctx_compute(const dContext *C, SpaceProperties *sbuts)
+void btns_texture_ctx_compute(const Ctx *C, SpaceProps *sbuts)
 {
   /* gather available texture users in context. runs on every draw of
    * properties editor, before the buttons are created. */
   BtnsCtxTexture *ct = sbtns->texuser;
-  ID *pinid = sbuts->pinid;
+  Id *pinid = sbuts->pinid;
 
   if (!ct) {
-    ct = MEM_callocN(sizeof(BtnsCtxTexture), "BtnsCtxTexture");
+    ct = mem_callocn(sizeof(BtnsCtxTexture), "BtnsCtxTexture");
     sbuts->texuser = ct;
   }
   else {
-    lib_freelistN(&ct->users);
+    lib_freelistn(&ct->users);
   }
 
   btns_texture_users_from_ctx(&ct->users, C, sbtns);
@@ -607,7 +607,7 @@ static SpaceProps *find_space_props(const Ctx *C)
   return NULL;
 }
 
-static void template_texture_show(dContext *C, void *data_p, void *prop_p)
+static void template_texture_show(Ctx *C, void *data_p, void *prop_p)
 {
   if (data_p == NULL || prop_p == NULL) {
     return;
@@ -619,7 +619,7 @@ static void template_texture_show(dContext *C, void *data_p, void *prop_p)
   }
 
   SpaceProps *sbtns = (SpaceProps *)area->spacedata.first;
-  BtnsContextTexture *ct = (sbtns) ? sbtns->texuser : NULL;
+  BtnsCtxTexture *ct = (sbtns) ? sbtns->texuser : NULL;
   if (!ct) {
     return;
   }
@@ -641,11 +641,11 @@ static void template_texture_show(dContext *C, void *data_p, void *prop_p)
     sbtns->preview = 1;
 
     /* redraw editor */
-    ED_area_tag_redraw(area);
+    ed_area_tag_redraw(area);
   }
 }
 
-void uiTemplateTextureShow(uiLayout *layout, const dContext *C, ApiPtr *ptr, ApiProp *prop)
+void uiTemplateTextureShow(uiLayout *layout, const Ctx *C, ApiPtr *ptr, ApiProp *prop)
 {
   /* Only show the button if there is actually a texture assigned. */
   Tex *texture = api_prop_ptr_get(ptr, prop).data;
@@ -655,12 +655,12 @@ void uiTemplateTextureShow(uiLayout *layout, const dContext *C, ApiPtr *ptr, Api
 
   /* Only show the button if we are not in the Properties Editor's texture tab. */
   SpaceProps *sbtns_ctx = ctx_wm_space_props(C);
-  if (sbtns_ctx != NULL && sbtns_ctx->maind == DCONTEXT_TEXTURE) {
+  if (sbtns_ctx != NULL && sbtns_ctx->maind == CONTEXT_TEXTURE) {
     return;
   }
 
   SpaceProps *sbuts = find_space_prop(C);
-  BtnsContextTexture *ct = (sbuts) ? sbuts->texuser : NULL;
+  BtnsCtxTexture *ct = (sbuts) ? sbuts->texuser : NULL;
 
   /* find corresponding texture user */
   BtnsTextureUser *user;
@@ -691,14 +691,14 @@ void uiTemplateTextureShow(uiLayout *layout, const dContext *C, ApiPtr *ptr, Api
                      0.0,
                      0.0,
                      TIP_("Show texture in texture tab"));
-  UI_btn_fn_set(btn,
+  ui_btn_fn_set(btn,
                   template_texture_show,
                   user_found ? user->ptr.data : NULL,
                   user_found ? user->prop : NULL);
   if (ct == NULL) {
-    UI_btn_disable(but, TIP_("No (unpinned) Properties Editor found to display texture in"));
+    ui_btn_disable(but, TIP_("No (unpinned) Properties Editor found to display texture in"));
   }
   else if (!user_found) {
-    UI_btn_disable(but, TIP_("No texture user found"));
+    ui_btn_disable(but, TIP_("No texture user found"));
   }
 }
