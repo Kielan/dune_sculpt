@@ -471,7 +471,7 @@ static void template_texture_user_menu(Ctx *C, uiLayout *layout, void *UNUSED(ar
 {
   /* callback when opening texture user selection menu, to create buttons. */
   SpaceProps *sbtns = ctx_wm_space_props(C);
-  BtnsCtxTexture *ct = sbuts->texuser;
+  BtnsCtxTexture *ct = sbtns->texuser;
   BtnsTextureUser *user;
   uiBlock *block = uiLayoutGetBlock(layout);
   const char *last_category = NULL;
@@ -518,7 +518,7 @@ static void template_texture_user_menu(Ctx *C, uiLayout *layout, void *UNUSED(ar
                            0.0,
                            0.0,
                            "");
-    ui_btn_fnN_set(btn, template_texture_select, MEM_dupallocN(user), NULL);
+    ui_btn_fn_new_set(btn, template_texture_select, mem_dupallocn(user), NULL);
 
     last_category = user->category;
   }
@@ -526,7 +526,7 @@ static void template_texture_user_menu(Ctx *C, uiLayout *layout, void *UNUSED(ar
   ui_block_flag_enable(block, UI_BLOCK_NO_FLIP);
 }
 
-void uiTemplateTextureUser(uiLayout *layout, bContext *C)
+void uiTemplateTextureUser(uiLayout *layout, Ctx *C)
 {
   /* Texture user selection drop-down menu. the available users have been
    * gathered before drawing in #ButsContextTexture, we merely need to
@@ -587,7 +587,7 @@ static ScrArea *find_area_props(const Ctx *C)
     if (area->spacetype == SPACE_PROPS) {
       /* Only if unpinned, or if pinned object matches. */
       SpaceProps *sbtns = area->spacedata.first;
-      Id *pinid = sbuts->pinid;
+      Id *pinid = sbtns->pinid;
       if (pinid == NULL || ((GS(pinid->name) == ID_OB) && (Object *)pinid == ob)) {
         return area;
       }
