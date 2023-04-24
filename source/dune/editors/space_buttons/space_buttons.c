@@ -626,25 +626,25 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
     case NC_SCENE:
       switch (wmn->data) {
         case ND_RENDER_OPTIONS:
-          btns_area_redraw(area, DCTX_RENDER);
-          btns_area_redraw(area, DCTX_OUTPUT);
-          btns_area_redraw(area, DCTX_VIEW_LAYER);
+          btns_area_redraw(area, CTX_RENDER);
+          btns_area_redraw(area, CTX_OUTPUT);
+          btns_area_redraw(area, CTX_VIEW_LAYER);
           break;
         case ND_WORLD:
-          btns_area_redraw(area, DCTX_WORLD);
+          btns_area_redraw(area, CTX_WORLD);
           sbtns->preview = 1;
           break;
         case ND_FRAME:
           /* any buttons area can have animated properties so redraw all */
-          ED_area_tag_redraw(area);
+          ed_area_tag_redraw(area);
           sbtns->preview = 1;
           break;
         case ND_OB_ACTIVE:
-          ED_area_tag_redraw(area);
+          ed_area_tag_redraw(area);
           sbtsn->preview = 1;
           break;
         case ND_KEYINGSET:
-          btns_area_redraw(area, BCONTEXT_SCENE);
+          btns_area_redraw(area, CTX_SCENE);
           break;
         case ND_RENDER_RESULT:
           break;
@@ -658,13 +658,13 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
     case NC_OBJECT:
       switch (wmn->data) {
         case ND_TRANSFORM:
-          btns_area_redraw(area, DCTX_OBJECT);
-          btns_area_redraw(area, DCTX_DATA); /* autotexpace flag */
+          btns_area_redraw(area, CTX_OBJECT);
+          btns_area_redraw(area, CTX_DATA); /* autotexpace flag */
           break;
         case ND_POSE:
         case ND_BONE_ACTIVE:
         case ND_BONE_SELECT:
-          btns_area_redraw(area, BCONTEXT_BONE);
+          btns_area_redraw(area, CTX_BONE);
           btns_area_redraw(area, CTX_BONE_CONSTRAINT);
           btns_area_redraw(area, CTX_DATA);
           break;
