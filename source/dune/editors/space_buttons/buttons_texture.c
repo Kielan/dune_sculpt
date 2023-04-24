@@ -215,9 +215,9 @@ static void btns_texture_modifier_foreach(void *userData,
 }
 
 static void btns_texture_modifier_gpencil_foreach(void *userData,
-                                                     Object *ob,
-                                                     GpencilModifierData *md,
-                                                     const char *propname)
+                                                  Object *ob,
+                                                  PenModData *md,
+                                                  const char *propname)
 {
   ApiPtr ptr;
   PropApi *prop;
