@@ -324,7 +324,7 @@ static bool prop_search_for_ctx(const Ctx *C, ARegion *region, SpaceProps *sbtns
 {
   const char *contexts[2] = {bts_main_region_ctx_string(sbtns->maind), NULL};
 
-  if (sbtns->maind == DCTXT_TOOL) {
+  if (sbtns->maind == CTXT_TOOL) {
     return false;
   }
 
@@ -337,7 +337,7 @@ static void prop_search_move_to_next_tab_with_results(SpaceProps *sbtns,
                                                       const int tabs_len)
 {
   /* As long as all-tab search in the tool is disabled in the tool context, don't move from it. */
-  if (sbtns->maind == DCTX_TOOL) {
+  if (sbtns->maind == CTX_TOOL) {
     return;
   }
 
@@ -472,7 +472,7 @@ static void btns_main_region_layout(const Ctx *C, ARegion *region)
   /* draw entirely, view changes should be handled here */
   SpaceProps *sbtns = ctx_wm_space_props(C);
 
-  if (sbtns->maind == DCTX_TOOL) {
+  if (sbtns->maind == CTX_TOOL) {
     ed_view3d_btns_region_layout_ex(C, region, "Tool");
   }
   else {
@@ -513,7 +513,7 @@ static void btns_optypes(void)
 
 static void buttons_keymap(struct wmKeyConfig *keyconf)
 {
-  WM_keymap_ensure(keyconf, "Property Editor", SPACE_PROPERTIES, 0);
+  wm_keymap_ensure(keyconf, "Property Editor", SPACE_PROPERTIES, 0);
 }
 
 /* -------------------------------------------------------------------- */
