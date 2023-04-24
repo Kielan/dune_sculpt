@@ -256,25 +256,25 @@ static const char *btns_main_region_ctx_string(const short maind)
       return "object";
     case CTXT_DATA:
       return "data";
-    case CTX_MATERIAL:
+    case CTXT_MATERIAL:
       return "material";
-    case CTX_TEXTURE:
+    case CTXT_TEXTURE:
       return "texture";
-    case CTEXT_PARTICLE:
+    case CTXT_PARTICLE:
       return "particle";
-    case CTEXT_PHYSICS:
+    case CTXT_PHYSICS:
       return "physics";
-    case CTEXT_BONE:
+    case CTXT_BONE:
       return "bone";
-    case CTEXT_MODIFIER:
+    case CTXT_MODIFIER:
       return "modifier";
-    case CTEXT_SHADERFX:
+    case CTXT_SHADERFX:
       return "shaderfx";
-    case CTEXT_CONSTRAINT:
+    case CTXT_CONSTRAINT:
       return "constraint";
-    case CTEXT_BONE_CONSTRAINT:
+    case CTXT_BONE_CONSTRAINT:
       return "bone_constraint";
-    case CTEXT_TOOL:
+    case CTXT_TOOL:
       return "tool";
   }
 
@@ -283,9 +283,9 @@ static const char *btns_main_region_ctx_string(const short maind)
   return "";
 }
 
-static void btns_main_region_layout_props(const dContext *C,
-                                                  SpaceProps *sbtns,
-                                                  ARegion *region)
+static void btns_main_region_layout_props(const Ctx *C,
+                                          SpaceProps *sbtns,
+                                          ARegion *region)
 {
   btns_ctx_compute(C, sbtns);
 
@@ -366,7 +366,7 @@ static void prop_search_move_to_next_tab_with_results(SpaceProps *sbtns,
   }
 }
 
-static void prop_search_all_tabs(const dContext *C,
+static void prop_search_all_tabs(const Ctx *C,
                                  SpaceProps *sbtns,
                                  ARegion *region_original,
                                  const short *ctx_tabs_array,
