@@ -77,16 +77,16 @@ void ED_spacetypes_init(void)
   ED_spacetype_spreadsheet();
 
   /* Register operator types for screen and all spaces. */
-  ED_operatortypes_userpref();
-  ED_operatortypes_workspace();
-  ED_operatortypes_scene();
-  ED_operatortypes_screen();
-  ED_operatortypes_anim();
-  ED_operatortypes_animchannels();
-  ED_operatortypes_asset();
-  ED_operatortypes_gpencil();
-  ED_operatortypes_object();
-  ED_operatortypes_lattice();
+  ed_operatortypes_userpref();
+  ed_operatortypes_workspace();
+  ed_operatypes_scene();
+  ed_optypes_screen();
+  ee_optypes_anim();
+  ed_animchannels();
+  ED_optypes_asset();
+  ED_optypes_gpencil();
+  ED_optypes_object();
+  ED_optypes_lattice();
   ED_operatortypes_mesh();
   ED_operatortypes_geometry();
   ED_operatortypes_sculpt();
