@@ -103,14 +103,14 @@ void ED_spacetypes_init(void)
   ED_operatortypes_render();
   ED_operatortypes_mask();
   ED_operatortypes_io();
-  ED_operatortypes_edutils();
+  ed_optypes_edutils();
 
-  ED_operatortypes_view2d();
-  ED_operatortypes_ui();
+  ed_optypes_view2d();
+  ed_optypes_ui();
 
-  ED_screen_user_menu_register();
+  ed_screen_user_menu_register();
 
-  ED_uilisttypes_ui();
+  ed_uilisttypes_ui();
 
   /* Gizmo types. */
   ED_gizmotypes_button_2d();
