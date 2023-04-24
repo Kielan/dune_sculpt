@@ -242,7 +242,7 @@ bool rd_region_draw_cb_exit(ARegionType *art, void *handle)
   return false;
 }
 
-static void ed_region_draw_cb_draw(const dContext *C, ARegion *region, ARegionType *art, int type)
+static void ed_region_draw_cb_draw(const Ctx *C, ARegion *region, ARegionType *art, int type)
 {
   LISTBASE_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
     if (rdc->type == type) {
@@ -254,7 +254,7 @@ static void ed_region_draw_cb_draw(const dContext *C, ARegion *region, ARegionTy
   }
 }
 
-void ed_region_draw_cb_draw(const dContext *C, ARegion *region, int type)
+void ed_region_draw_cb_draw(const Ctx *C, ARegion *region, int type)
 {
   ed_region_draw_cb_draw(C, region, region->type, type);
 }
@@ -264,7 +264,7 @@ void ed_region_surface_draw_cb_draw(ARegionType *art, int type)
   ed_region_draw_cb_draw(NULL, NULL, art, type);
 }
 
-void ED_region_draw_cb_remove_by_type(ARegionType *art, void *draw_fn, void (*free)(void *))
+void ed_region_draw_cb_remove_by_type(ARegionType *art, void *draw_fn, void (*free)(void *))
 {
   LISTBASE_FOREACH_MUTABLE (RegionDrawCB *, rdc, &art->drawcalls) {
     if (rdc->draw == draw_fn) {
@@ -320,7 +320,7 @@ static void xxx_keymap(wmKeyConfig *UNUSED(keyconf))
 }
 
 /* only called once, from screen/spacetypes.c */
-void ED_spacetype_xxx(void)
+void ed_spacetype_xxx(void)
 {
   static SpaceType st;
 
@@ -330,7 +330,7 @@ void ED_spacetype_xxx(void)
   st.free = xxx_free;
   st.init = xxx_init;
   st.duplicate = xxx_duplicate;
-  st.operatortypes = xxx_operatortypes;
+  st.operatortypes = xxx_optypes;
   st.keymap = xxx_keymap;
 
   dune_spacetype_register(&st);
