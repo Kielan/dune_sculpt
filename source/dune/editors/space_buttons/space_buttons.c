@@ -673,27 +673,27 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
             ed_area_tag_redraw(area);
           }
           else {
-            btns_area_redraw(area, BCONTEXT_MODIFIER);
+            btns_area_redraw(area, CTX_MODIFIER);
           }
-          btns_area_redraw(area, BCONTEXT_PHYSICS);
+          btns_area_redraw(area, CTX_PHYSICS);
           break;
         case ND_CONSTRAINT:
-          btns_area_redraw(area, BCONTEXT_CONSTRAINT);
-          btns_area_redraw(area, BCONTEXT_BONE_CONSTRAINT);
+          btns_area_redraw(area, CTX_CONSTRAINT);
+          btns_area_redraw(area, CTX_BONE_CONSTRAINT);
           break;
         case ND_SHADERFX:
-          btns_area_redraw(area, BCONTEXT_SHADERFX);
+          btns_area_redraw(area, CTX_SHADERFX);
           break;
         case ND_PARTICLE:
           if (wmn->action == NA_EDITED) {
-            btns_area_redraw(area, BCONTEXT_PARTICLE);
+            btns_area_redraw(area, CTX_PARTICLE);
           }
           sbtns->preview = 1;
           break;
         case ND_DRAW:
-          btns_area_redraw(area, BCONTEXT_OBJECT);
-          btns_area_redraw(area, BCONTEXT_DATA);
-          btns_area_redraw(area, BCONTEXT_PHYSICS);
+          btns_area_redraw(area, CTX_OBJECT);
+          btns_area_redraw(area, CTX_DATA);
+          btns_area_redraw(area, CTX_PHYSICS);
           /* Needed to refresh context path when changing active particle system index. */
           btns_area_redraw(area, BCONTEXT_PARTICLE);
           break;
@@ -713,7 +713,7 @@ static void btns_area_listener(const wmSpaceTypeListenerParams *params)
       }
       break;
     case NC_MATERIAL:
-      ED_area_tag_redraw(area);
+      ed_area_tag_redraw(area);
       switch (wmn->data) {
         case ND_SHADING:
         case ND_SHADING_DRAW:
