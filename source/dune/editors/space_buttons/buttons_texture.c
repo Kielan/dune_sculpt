@@ -294,7 +294,7 @@ static void btns_texture_users_from_ctx(ListBase *users,
     dune_modifiers_foreach_tex_link(ob, btns_texture_modifier_foreach, users);
 
     /* grease pencil modifiers */
-    dune_gpencil_modifiers_foreach_tex_link(ob, btns_texture_modifier_gpencil_foreach, users);
+    dune_pen_modifiers_foreach_tex_link(ob, btns_texture_modifier_pen_foreach, users);
 
     /* particle systems */
     if (psys && !limited_mode) {
@@ -308,7 +308,7 @@ static void btns_texture_users_from_ctx(ListBase *users,
           api_ptr_create(&psys->part->id, &api_ParticleSettingsTextureSlot, mtex, &ptr);
           prop = api_struct_find_prop(&ptr, "texture");
 
-          buttons_texture_user_property_add(users,
+          btns_texture_user_prop_add(users,
                                             &psys->part->id,
                                             ptr,
                                             prop,
