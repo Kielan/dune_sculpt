@@ -48,14 +48,14 @@ static SpaceLink *buttons_create(const ScrArea *UNUSED(area), const Scene *UNUSE
   sbtns->maind = sbtns->mainduser = DCTX_OBJECT;
 
   /* header */
-  region = MEM_callocN(sizeof(ARegion), "header for btns");
+  region = mem_callocn(sizeof(ARegion), "header for btns");
 
   lib_addtail(&sbtns->regionbase, region);
   region->regiontype = RGN_TYPE_HEADER;
   region->alignment = (U.uiflag & USER_HEADER_BOTTOM) ? RGN_ALIGN_BOTTOM : RGN_ALIGN_TOP;
 
   /* navigation bar */
-  region = MEM_callocN(sizeof(ARegion), "navigation bar for btns");
+  region = mem_callocn(sizeof(ARegion), "navigation bar for btns");
 
   lib_addtail(&sbtns->regionbase, region);
   region->regiontype = RGN_TYPE_NAV_BAR;
@@ -63,14 +63,14 @@ static SpaceLink *buttons_create(const ScrArea *UNUSED(area), const Scene *UNUSE
 
 #if 0
   /* context region */
-  region = MEM_callocN(sizeof(ARegion), "context region for buts");
+  region = mem_callocn(sizeof(ARegion), "context region for buts");
   lib_addtail(&sbtns->regionbase, region);
   region->regiontype = RGN_TYPE_CHANNELS;
   region->alignment = RGN_ALIGN_TOP;
 #endif
 
   /* main region */
-  region = MEM_callocN(sizeof(ARegion), "main region for buts");
+  region = mem_callocn(sizeof(ARegion), "main region for buts");
 
   lib_addtail(&sbtns->regionbase, region);
   region->regiontype = RGN_TYPE_WINDOW;
