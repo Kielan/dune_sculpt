@@ -230,12 +230,12 @@ void *ed_region_draw_cb_activate(ARegionType *art,
   return rdc;
 }
 
-bool ED_region_draw_cb_exit(ARegionType *art, void *handle)
+bool rd_region_draw_cb_exit(ARegionType *art, void *handle)
 {
   LISTBASE_FOREACH (RegionDrawCB *, rdc, &art->drawcalls) {
     if (rdc == (RegionDrawCB *)handle) {
       lib_remlink(&art->drawcalls, rdc);
-      MEM_freeN(rdc);
+      mem_freem(rdc);
       return true;
     }
   }
