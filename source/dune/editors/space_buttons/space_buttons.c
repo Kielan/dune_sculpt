@@ -438,7 +438,7 @@ static void btns_main_region_prop_search(const Ctx *C,
   /* Check whether the current tab has a search match. */
   bool current_tab_has_search_match = false;
   LISTBASE_FOREACH (Panel *, panel, &region->panels) {
-    if (ui_panel_is_active(panel) && UI_panel_matches_search_filter(panel)) {
+    if (ui_panel_is_active(panel) && ui_panel_matches_search_filter(panel)) {
       current_tab_has_search_match = true;
     }
   }
@@ -501,14 +501,14 @@ static void btns_main_region_listener(const wmRegionListenerParams *params)
   }
 }
 
-static void btns_operatortypes(void)
+static void btns_optypes(void)
 {
-  WM_optype_append(BUTTONS_OT_start_filter);
-  WM_optype_append(BUTTONS_OT_clear_filter);
-  WM_optype_append(BUTTONS_OT_toggle_pin);
-  WM_optype_append(BUTTONS_OT_context_menu);
-  WM_optype_append(BUTTONS_OT_file_browse);
-  WM_optype_append(BUTTONS_OT_directory_browse);
+  wm_optype_append(btns_ot_start_filter);
+  wm_optype_append(btns_ot_clear_filter);
+  wm_optype_append(btns_ot_toggle_pin);
+  wm_optype_append(btns_ot_context_menu);
+  wm_optype_append(btns_ot_file_browse);
+  wm_optype_append(btns_ot_directory_browse);
 }
 
 static void buttons_keymap(struct wmKeyConfig *keyconf)
@@ -522,17 +522,17 @@ static void buttons_keymap(struct wmKeyConfig *keyconf)
 /* add handlers, stuff you only do once or on area/region changes */
 static void btns_header_region_init(wmWindowManager *UNUSED(wm), ARegion *region)
 {
-  ED_region_header_init(region);
+  ed_region_header_init(region);
 }
 
-static void btns_header_region_draw(const dContext *C, ARegion *region)
+static void btns_header_region_draw(const Ctx *C, ARegion *region)
 {
   SpaceProps *sbtns = ctx_wm_space_props(C);
 
   /* Needed for API to get the good values! */
-  btns_ctx_compute(C, sbuts);
+  btns_ctx_compute(C, sbtns);
 
-  ED_region_header(C, region);
+  ed_region_header(C, region);
 }
 
 static void btns_header_region_message_subscribe(const wmRegionMessageSubscribeParams *params)
