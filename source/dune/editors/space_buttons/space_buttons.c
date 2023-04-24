@@ -205,20 +205,20 @@ int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
     ctx_tabs_array[length] = CTX_PHYSICS;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTXT_CONSTRAINT)) {
-    ctx_tabs_array[length] = CTXT_CONSTRAINT;
+  if (sbtns->pathflag & (1 << CTX_CONSTRAINT)) {
+    ctx_tabs_array[length] = CTX_CONSTRAINT;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTXT_DATA)) {
-    ctxt_tabs_array[length] = CTXT_DATA;
+  if (sbtns->pathflag & (1 << CTX_DATA)) {
+    ctxt_tabs_array[length] = CTX_DATA;
     length++;
   }
-  if (sbtns->pathflag & (1 << CTXT_BONE)) {
-    ctxt_tabs_array[length] = CTXT_BONE;
+  if (sbtns->pathflag & (1 << CTX_BONE)) {
+    ctxt_tabs_array[length] = CTX_BONE;
     length++;
   
-  if (sbtns->pathflag & (1 << CTXT_BONE_CONSTRAINT)) {
-    ctxt_tabs_array[length] = CTXT_BONE_CONSTRAINT;
+  if (sbtns->pathflag & (1 << CTX_BONE_CONSTRAINT)) {
+    ctxt_tabs_array[length] = CTX_BONE_CONSTRAINT;
     length++;
   }
   if (sbtns->pathflag & (1 << CTXT_MATERIAL)) {
@@ -230,7 +230,7 @@ int ed_btns_tabs_list(SpaceProps *sbtns, short *ctx_tabs_array)
     length++;
   }
   if (sbtns->pathflag & (1 << CTXT_TEXTURE)) {
-    context_tabs_array[length] = DCTXT_TEXTURE;
+    ctxt_tabs_array[length] = CTXT_TEXTURE;
     length++;
   }
 
