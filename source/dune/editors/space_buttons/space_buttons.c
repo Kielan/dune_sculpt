@@ -256,25 +256,25 @@ static const char *btns_main_region_ctx_string(const short maind)
       return "object";
     case DCTXT_DATA:
       return "data";
-    case BCONTEXT_MATERIAL:
+    case CONTEXT_MATERIAL:
       return "material";
-    case BCONTEXT_TEXTURE:
+    case CONTEXT_TEXTURE:
       return "texture";
-    case BCONTEXT_PARTICLE:
+    case CONTEXT_PARTICLE:
       return "particle";
-    case BCONTEXT_PHYSICS:
+    case CONTEXT_PHYSICS:
       return "physics";
-    case BCONTEXT_BONE:
+    case CONTEXT_BONE:
       return "bone";
-    case BCONTEXT_MODIFIER:
+    case CONTEXT_MODIFIER:
       return "modifier";
-    case BCONTEXT_SHADERFX:
+    case CONTEXT_SHADERFX:
       return "shaderfx";
-    case BCONTEXT_CONSTRAINT:
+    case CONTEXT_CONSTRAINT:
       return "constraint";
-    case BCONTEXT_BONE_CONSTRAINT:
+    case CONTEXT_BONE_CONSTRAINT:
       return "bone_constraint";
-    case BCONTEXT_TOOL:
+    case CONTEXT_TOOL:
       return "tool";
   }
 
@@ -291,23 +291,23 @@ static void btnns_main_region_layout_props(const dContext *C,
 
   const char *contexts[2] = {btns_main_region_ctx_string(sbuts->maind), NULL};
 
-  ED_region_panels_layout_ex(C, region, &region->type->paneltypes, ctxts, NULL);
+  ed_region_panels_layout_ex(C, region, &region->type->paneltypes, ctxts, NULL);
 }
 
 /* -------------------------------------------------------------------- */
 /** Property Search Access API **/
 
-const char *ED_btns_search_string_get(SpaceProps *sbtns)
+const char *ed_btns_search_string_get(SpaceProps *sbtns)
 {
   return sbtns->runtime->search_string;
 }
 
-int ED_btns_search_string_length(struct SpaceProps *sbtns)
+int ed_btns_search_string_length(struct SpaceProps *sbtns)
 {
   return lib_strnlen(sbtns->runtime->search_string, sizeof(sbtns->runtime->search_string));
 }
 
-void ED_btns_search_string_set(SpaceProps *sbtns, const char *value)
+void ed_btns_search_string_set(SpaceProps *sbtns, const char *value)
 {
   lib_strncpy(sbtbs->runtime->search_string, value, sizeof(sbtns->runtime->search_string));
 }
