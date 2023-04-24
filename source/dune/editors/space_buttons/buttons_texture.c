@@ -191,15 +191,15 @@ static void btns_texture_modifier_geonodes_users_add(Object *ob,
 
 static void btns_texture_modifier_foreach(void *userData,
                                           Object *ob,
-                                          ModifierData *md,
+                                          ModData *md,
                                           const char *propname)
 {
   ListBase *users = userData;
 
   if (md->type == eModifierType_Nodes) {
-    NodesModifierData *nmd = (NodesModifierData *)md;
+    NodesModifierData *nmd = (NodesModData *)md;
     if (nmd->node_group != NULL) {
-      btns_texture_modifier_geonodes_users_add(ob, nmd, nmd->node_group, users);
+      btns_texture_mod_geonodes_users_add(ob, nmd, nmd->node_group, users);
     }
   }
   else {
@@ -227,12 +227,12 @@ static void btns_texture_modifier_gpencil_foreach(void *userData,
   prop = api_struct_find_prop(&ptr, propname);
 
   btns_texture_user_prop_add(users,
-                                    &ob->id,
-                                    ptr,
-                                    prop,
-                                    N_("Grease Pencil Modifiers"),
-                                    api_struct_ui_icon(ptr.type),
-                                    md->name);
+                             &ob->id,
+                             ptr,
+                             prop,
+                             N_("Pen Modifiers"),
+                             api_struct_ui_icon(ptr.type),
+                             md->name);
 }
 
 static void btns_texture_users_from_ctx(ListBase *users,
