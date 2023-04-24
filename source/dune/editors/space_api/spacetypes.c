@@ -32,21 +32,21 @@
 #include "ed_mask.h"
 #include "ed_mball.h"
 #include "ed_mesh.h"
-#include "ED_node.h"
-#include "ED_object.h"
-#include "ED_paint.h"
-#include "ED_physics.h"
-#include "ED_render.h"
-#include "ED_scene.h"
-#include "ED_screen.h"
-#include "ED_sculpt.h"
-#include "ED_sequencer.h"
-#include "ED_sound.h"
-#include "ED_space_api.h"
-#include "ED_transform.h"
-#include "ED_userpref.h"
-#include "ED_util.h"
-#include "ED_uvedit.h"
+#include "ed_node.h"
+#include "ed_object.h"
+#include "ed_paint.h"
+#include "ed_physics.h"
+#include "ed_render.h"
+#include "ed_scene.h"
+#include "ed_screen.h"
+#include "ed_sculpt.h"
+#include "ed_sequencer.h"
+#include "ed_sound.h"
+#include "ed_space_api.h"
+#include "ed_transform.h"
+#include "ed_userpref.h"
+#include "ed_util.h"
+#include "ed_uvedit.h"
 
 #include "io_ops.h"
 
@@ -215,7 +215,7 @@ typedef struct RegionDrawCB {
 
 } RegionDrawCB;
 
-void *ED_region_draw_cb_activate(ARegionType *art,
+void *ed_region_draw_cb_activate(ARegionType *art,
                                  void (*draw)(const struct dContext *, struct ARegion *, void *),
                                  void *customdata,
                                  int type)
