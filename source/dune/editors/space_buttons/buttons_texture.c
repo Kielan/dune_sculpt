@@ -414,10 +414,10 @@ void btns_texture_ctx_compute(const dContext *C, SpaceProperties *sbuts)
   }
 }
 
-static void template_texture_select(dContext *C, void *user_p, void *UNUSED(arg))
+static void template_texture_select(Ctx *C, void *user_p, void *UNUSED(arg))
 {
   /* callback when selecting a texture user in the menu */
-  SpaceProperties *sbtns = find_space_props(C);
+  SpaceProps *sbtns = find_space_props(C);
   BtnsCtxTexture *ct = (sbtns) ? sbtns->texuser : NULL;
   BtnsTextureUser *user = (BtnsTextureUser *)user_p;
   ApiPtr texptr;
@@ -429,11 +429,11 @@ static void template_texture_select(dContext *C, void *user_p, void *UNUSED(arg)
 
   /* set user as active */
   if (user->node) {
-    ED_node_set_active(ctx_data_main(C), NULL, user->ntree, user->node, NULL);
+    ed_node_set_active(ctx_data_main(C), NULL, user->ntree, user->node, NULL);
     ct->texture = NULL;
 
     /* Not totally sure if we should also change selection? */
-    LISTBASE_FOREACH (bNode *, node, &user->ntree->nodes) {
+    LISTBASE_FOREACH (Node *, node, &user->ntree->nodes) {
       nodeSetSelected(node, false);
     }
     nodeSetSelected(user->node, true);
@@ -467,7 +467,7 @@ static void template_texture_select(dContext *C, void *user_p, void *UNUSED(arg)
   ct->index = user->index;
 }
 
-static void template_texture_user_menu(dContext *C, uiLayout *layout, void *UNUSED(arg))
+static void template_texture_user_menu(Ctx *C, uiLayout *layout, void *UNUSED(arg))
 {
   /* callback when opening texture user selection menu, to create buttons. */
   SpaceProps *sbtns = ctx_wm_space_props(C);
@@ -578,16 +578,16 @@ void uiTemplateTextureUser(uiLayout *layout, bContext *C)
 
 /************************* Texture Show **************************/
 
-static ScrArea *find_area_props(const dContext *C)
+static ScrArea *find_area_props(const Ctx *C)
 {
-  bScreen *screen = ctx_wm_screen(C);
+  Screen *screen = ctx_wm_screen(C);
   Object *ob = ctx_data_active_object(C);
 
   LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
     if (area->spacetype == SPACE_PROPS) {
       /* Only if unpinned, or if pinned object matches. */
       SpaceProps *sbtns = area->spacedata.first;
-      ID *pinid = sbuts->pinid;
+      Id *pinid = sbuts->pinid;
       if (pinid == NULL || ((GS(pinid->name) == ID_OB) && (Object *)pinid == ob)) {
         return area;
       }
@@ -597,7 +597,7 @@ static ScrArea *find_area_props(const dContext *C)
   return NULL;
 }
 
-static SpaceProperties *find_space_props(const dContext *C)
+static SpaceProps *find_space_props(const Ctx *C)
 {
   ScrArea *area = find_area_props(C);
   if (area != NULL) {
