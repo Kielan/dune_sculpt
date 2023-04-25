@@ -1,22 +1,22 @@
-blender_include_dirs(
+dune_include_dirs(
   ../../intern/clog
   ../../intern/glew-mx
   ../../intern/guardedalloc
-  ../blender/blenkernel
-  ../blender/blenlib
-  ../blender/blenloader
-  ../blender/depsgraph
-  ../blender/editors/include
-  ../blender/gpu
-  ../blender/imbuf
-  ../blender/makesdna
-  ../blender/makesrna
-  ../blender/render
-  ../blender/windowmanager
+  ../dune/kernel
+  ../dune/blenlib
+  ../dune/blenloader
+  ../dune/graph
+  ../dune/editors/include
+  ../dune/gpu
+  ../dune/imbuf
+  ../dune/types
+  ../dune/api
+  ../dune/render
+  ../dune/windowmanager
 )
 
 set(LIB
-  bf_windowmanager
+  dunefile_windowmanager
 )
 
 if(WITH_TBB)
