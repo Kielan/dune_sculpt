@@ -106,7 +106,7 @@
 elseif(APPLE)
   if(NOT WITH_PYTHON_MODULE)
     # Uppercase name for app bundle
-    set_target_properties(dune PROPS OUTPUT_NAME Blender)
+    set_target_properties(dune PROPS OUTPUT_NAME Dune)
   
 
   set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Dune.app)
@@ -129,8 +129,8 @@ elseif(APPLE)
   # Give the bundle actual creation/modification date
   #
   # Note that the directory might not yet exist, which happens when CMake is first run.
-  if(NOT EXISTS ${EXECUTABLE_OUTPUT_PATH}/Blender.app)
-    file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/Blender.app)
+  if(NOT EXISTS ${EXECUTABLE_OUTPUT_PATH}/Dune.app)
+    file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/Dune.app)
   endif()
   execute_process(COMMAND SetFile -d ${SETFILE_DATE} -m ${SETFILE_DATE}
                   ${EXECUTABLE_OUTPUT_PATH}/Dune.app)
@@ -152,31 +152,22 @@ elseif(APPLE)
 
   if(WITH_BLENDER_THUMBNAILER)
       install(
-        TARGETS blender-thumbnailer
-        DESTINATION Blender.app/Contents/MacOS/
+        TARGETS dune-thumbnailer
+        DESTINATION Dune.app/Contents/MacOS/
       )
   endif()
 
   if(WITH_OPENMP AND OPENMP_CUSTOM)
     install(
       FILES "${OpenMP_LIBRARY}"
-      DESTINATION "${MAC_BLENDER_TARGET_DYLIBS_DIR}"
+      DESTINATION "${MAC_DUNE_TARGET_DYLIBS_DIR}"
     )
   endif()
 
   if(WITH_COMPILER_ASAN)
     install(
       FILES "${COMPILER_ASAN_LIBRARY}"
-      DESTINATION "${MAC_BLENDER_TARGET_DYLIBS_DIR}"
-    )
-  endif()
-
- 
-
-  if(WITH_DRACO)
-    install(
-      PROGRAMS $<TARGET_FILE:extern_draco>
-      DESTINATION ${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages
+      DESTINATION "${MAC_DUNE_TARGET_DYLIBS_DIR}"
     )
   endif()
 endif()
@@ -184,33 +175,33 @@ endif()
 # -----------------------------------------------------------------------------
 # Generic Install, for all targets
 
-if(DEFINED BLENDER_TEXT_FILES_DESTINATION)
+if(DEFINED DUNE_TEXT_FILES_DESTINATION)
 
   configure_file(${CMAKE_SOURCE_DIR}/release/text/readme.html
                  ${CMAKE_BINARY_DIR}/release/text/readme.html
                  @ONLY
   )
-  list(APPEND BLENDER_TEXT_FILES
+  list(APPEND DUNE_TEXT_FILES
     ${CMAKE_BINARY_DIR}/release/text/readme.html
   )
 
   install(
-    FILES ${BLENDER_TEXT_FILES}
-    DESTINATION "${BLENDER_TEXT_FILES_DESTINATION}"
+    FILES ${DUNE_TEXT_FILES}
+    DESTINATION "${DUNE_TEXT_FILES_DESTINATION}"
   )
 
   install(
     DIRECTORY
     ${CMAKE_SOURCE_DIR}/release/license
-    DESTINATION "${BLENDER_TEXT_FILES_DESTINATION}"
+    DESTINATION "${DUNE_TEXT_FILES_DESTINATION}"
 )
 endif()
 
 # install more files specified elsewhere
 delayed_do_install(${TARGETDIR_VER})
 
-unset(BLENDER_TEXT_FILES)
-unset(BLENDER_TEXT_FILES_DESTINATION)
+unset(DUNE_TEXT_FILES)
+unset(DUNE_TEXT_FILES_DESTINATION)
 
 
 # -----------------------------------------------------------------------------
@@ -245,16 +236,16 @@ install(
 # Setup link libs
 
 add_dependencies(blender makesdna)
-target_link_libraries(blender ${LIB})
+target_link_libraries(dune ${LIB})
 unset(LIB)
 
-setup_platform_linker_flags(blender)
-setup_platform_linker_libs(blender)
+setup_platform_linker_flags(dune)
+setup_platform_linker_libs(dune)
 
 if(APPLE)
-  set_target_properties(blender PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/osx_locals.map)
+  set_target_properties(dune PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/osx_locals.map)
 elseif(UNIX)
-  set_target_properties(blender PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/blender.map)
+  set_target_properties(dune PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/blender.map)
 endif()
 
 # -----------------------------------------------------------------------------
