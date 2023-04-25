@@ -98,7 +98,7 @@ struct ApplicationState app_state = {
 /** Application Level Callbacks
  * Initialize callbacks for the modules that need them. **/
 
-static void callback_mem_error(const char *errorStr)
+static void cb_mem_error(const char *errorStr)
 {
   fputs(errorStr, stderr);
   fflush(stderr);
@@ -107,7 +107,7 @@ static void callback_mem_error(const char *errorStr)
 static void main_callback_setup(void)
 {
   /* Error output from the guarded allocation routines. */
-  MEM_set_error_callback(callback_mem_error);
+  mem_set_error_callback(cb_mem_error);
 }
 
 /* free data on early exit (if Python calls 'sys.exit()' while parsing args for eg). */
@@ -119,12 +119,12 @@ struct CreatorAtExitData {
 #endif
 };
 
-static void callback_main_atexit(void *user_data)
+static void cb_main_atexit(void *user_data)
 {
   struct CreatorAtExitData *app_init_data = user_data;
 
   if (app_init_data->ba) {
-    LIB_args_destroy(app_init_data->ba);
+    lib_args_destroy(app_init_data->ba);
     app_init_data->ba = NULL;
   }
 
@@ -190,9 +190,9 @@ int main(int argc,
 #endif
 )
 {
-  bContext *C;
+  Ctx *C;
 
-  bArgs *ba;
+  Args *ba;
 
 #ifdef WIN32
   char **argv;
@@ -203,7 +203,7 @@ int main(int argc,
 
   /* Ensure we free data on early-exit. */
   struct CreatorAtExitData app_init_data = {NULL};
-  KERNEL_dune_atexit_register(callback_main_atexit, &app_init_data);
+  dune_atexit_register(cb_main_atexit, &app_init_data);
 
   /* Un-buffered `stdout` makes `stdout` and `stderr` better synchronized, and helps
    * when stepping through code in a debugger (prints are immediately
@@ -247,14 +247,14 @@ int main(int argc,
     for (i = 0; i < argc; i++) {
       if (STR_ELEM(argv[i], "-d", "--debug", "--debug-memory", "--debug-all")) {
         printf("Switching to fully guarded memory allocator.\n");
-        MEM_use_guarded_allocator();
+        mem_use_guarded_allocator();
         break;
       }
       if (STREQ(argv[i], "--")) {
         break;
       }
     }
-    MEM_init_memleak_detection();
+    mem_init_memleak_detection();
   }
 
 #ifdef BUILD_DATE
@@ -267,8 +267,8 @@ int main(int argc,
     }
     else {
       const char *unknown = "date-unknown";
-      LIB_strncpy(build_commit_date, unknown, sizeof(build_commit_date));
-      LIB_strncpy(build_commit_time, unknown, sizeof(build_commit_time));
+      lib_strncpy(build_commit_date, unknown, sizeof(build_commit_date));
+      lib_strncpy(build_commit_time, unknown, sizeof(build_commit_time));
     }
   }
 #endif
