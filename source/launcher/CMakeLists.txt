@@ -212,7 +212,7 @@ if(WITH_BUILDINFO)
     -P ${CMAKE_SOURCE_DIR}/build_files/cmake/buildinfo.cmake)
 
   # buildinfo.h is a generated file
-  set_source_files_properties(
+  set_source_files_props(
     ${buildinfo_h_real}
     PROPERTIES GENERATED TRUE
     HEADER_FILE_ONLY TRUE)
@@ -220,7 +220,7 @@ if(WITH_BUILDINFO)
   unset(buildinfo_h_real)
   unset(buildinfo_h_fake)
 
-  # add deps below, after adding blender
+  # add deps below, after adding dune
   # -------------- done with header values.
 
   list(APPEND SRC
@@ -228,7 +228,7 @@ if(WITH_BUILDINFO)
   )
 
   # make an object library so can load with it in tests
-  add_library(buildinfoobj OBJECT buildinfo.c)
+  add_lib(buildinfoobj OBJECT buildinfo.c)
   add_dependencies(buildinfoobj buildinfo)
 endif()
 
@@ -242,10 +242,10 @@ if(WITH_PYTHON_MODULE)
   #
   # note that 'SHARED' works on Linux and Windows,
   # but not OSX which _must_ be 'MODULE'
-  add_library(blender MODULE ${SRC})
+  add_lib(dune MODULE ${SRC})
   set_target_props(
     dune
-    PROPERTIES
+    PROPS
       PREFIX ""
       OUTPUT_NAME bpy
       LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
@@ -258,7 +258,7 @@ if(WITH_PYTHON_MODULE)
 
   if(WIN32)
     # python modules use this
-    set_target_properties(
+    set_target_props(
       dune
       PROPERTIES
       SUFFIX ".pyd"
@@ -274,7 +274,7 @@ else()
         ${CMAKE_BINARY_DIR}/dune.exe.manifest
       )
       target_compile_definitions (dune-launcher PRIVATE -D_UNICODE -DUNICODE)
-      target_link_libraries(dune-launcher Pathcch.lib)
+      target_link_libs(dune-launcher Pathcch.lib)
   endif()
 endif()
 
@@ -544,13 +544,13 @@ if(UNIX AND NOT APPLE)
       FILES ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/symbolic/apps/blender-symbolic.svg
       DESTINATION share/icons/hicolor/symbolic/apps
     )
-    if(WITH_BLENDER_THUMBNAILER)
+    if(WITH_DUNE_THUMBNAILER)
       install(
-        TARGETS blender-thumbnailer
+        TARGETS dune-thumbnailer
         DESTINATION bin
       )
     endif()
-    set(BLENDER_TEXT_FILES_DESTINATION share/doc/blender)
+    set(DUNE_TEXT_FILES_DESTINATION share/doc/blender)
   endif()
 
   if(WITH_PYTHON)
@@ -711,7 +711,7 @@ if(UNIX AND NOT APPLE)
   endif()
 elseif(WIN32)
 
-  set(BLENDER_TEXT_FILES_DESTINATION ".")
+  set(DUNE_TEXT_FILES_DESTINATION ".")
 
   if(WITH_OPENMP AND MSVC_CLANG)
     install(
@@ -769,9 +769,9 @@ elseif(WIN32)
       # Icky hack for older cmake from https://stackoverflow.com/a/21198501
       # $<CONFIG> will work in newer cmake but the version currently (3.12)
       # on the buildbot does not support this endavour.
-      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/blender_public.pdb DESTINATION . RENAME blender.pdb)
+      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}/dune_public.pdb DESTINATION . RENAME dune.pdb)
     else()
-      install(FILES $<TARGET_PDB_FILE:blender> DESTINATION . RENAME blender.pdb)
+      install(FILES $<TARGET_PDB_FILE:blender> DESTINATION . RENAME dune.pdb)
     endif()
   endif()
 
@@ -815,7 +815,7 @@ elseif(WIN32)
 
       install(
         DIRECTORY ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/lib
-        DESTINATION ${BLENDER_VERSION}/python/
+        DESTINATION ${DUNE_VERSION}/python/
         CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
         PATTERN ".svn" EXCLUDE
         PATTERN "*_d.*" EXCLUDE                  # * debug libraries *
@@ -826,7 +826,7 @@ elseif(WIN32)
 
       install(
         DIRECTORY ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/lib
-        DESTINATION ${BLENDER_VERSION}/python/
+        DESTINATION ${DUNE_VERSION}/python/
         CONFIGURATIONS Debug
         PATTERN ".svn" EXCLUDE
         PATTERN "__pycache__" EXCLUDE           # * any cache *
@@ -844,20 +844,20 @@ elseif(WIN32)
 
       install(
         DIRECTORY ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/DLLs
-        DESTINATION ${BLENDER_VERSION}/python
+        DESTINATION ${DUNE_VERSION}/python
         CONFIGURATIONS Debug
       )
 
       install(
         FILES ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/bin/python${_PYTHON_VERSION_NO_DOTS}.dll
               ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/bin/python.exe
-        DESTINATION ${BLENDER_VERSION}/python/bin
+        DESTINATION ${DUNE_VERSION}/python/bin
         CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
       )
       install(
         FILES ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/bin/python${_PYTHON_VERSION_NO_DOTS}_d.dll
               ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/bin/python_d.exe
-        DESTINATION ${BLENDER_VERSION}/python/bin
+        DESTINATION ${DUNE_VERSION}/python/bin
         CONFIGURATIONS Debug
       )
 
@@ -969,16 +969,16 @@ elseif(WIN32)
 
   install(
     FILES
-      ${CMAKE_SOURCE_DIR}/release/windows/batch/blender_debug_gpu.cmd
-      ${CMAKE_SOURCE_DIR}/release/windows/batch/blender_debug_gpu_glitchworkaround.cmd
-      ${CMAKE_SOURCE_DIR}/release/windows/batch/blender_debug_log.cmd
-      ${CMAKE_SOURCE_DIR}/release/windows/batch/blender_factory_startup.cmd
-      ${CMAKE_SOURCE_DIR}/release/windows/batch/blender_oculus.cmd
+      ${CMAKE_SOURCE_DIR}/release/windows/batch/dune_debug_gpu.cmd
+      ${CMAKE_SOURCE_DIR}/release/windows/batch/dune_debug_gpu_glitchworkaround.cmd
+      ${CMAKE_SOURCE_DIR}/release/windows/batch/dune_debug_log.cmd
+      ${CMAKE_SOURCE_DIR}/release/windows/batch/dune_factory_startup.cmd
+      ${CMAKE_SOURCE_DIR}/release/windows/batch/dune_oculus.cmd
       ${CMAKE_SOURCE_DIR}/release/windows/batch/oculus.json
     DESTINATION "."
   )
 
-  if(WITH_BLENDER_THUMBNAILER)
+  if(WITH_DUNE_THUMBNAILER)
     install(
       TARGETS BlendThumb
       DESTINATION "."
@@ -994,7 +994,7 @@ elseif(WIN32)
 elseif(APPLE)
   if(NOT WITH_PYTHON_MODULE)
     # Uppercase name for app bundle
-    set_target_properties(blender PROPERTIES OUTPUT_NAME Blender)
+    set_target_properties(dune PROPS OUTPUT_NAME Blender)
   endif()
 
   # handy install macro to exclude files, we use \$ escape for the "to"
@@ -1024,11 +1024,11 @@ elseif(APPLE)
     )
   endmacro()
 
-  set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Blender.app)
+  set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/Dune.app)
 
   # setup Info.plist
   execute_process(COMMAND date "+%Y-%m-%d"
-                  OUTPUT_VARIABLE BLENDER_DATE
+                  OUTPUT_VARIABLE DUNE_DATE
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
 
   set_target_properties(blender PROPERTIES
