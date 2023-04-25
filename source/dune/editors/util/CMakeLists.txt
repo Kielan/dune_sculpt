@@ -5,8 +5,8 @@ set(INC
   ../../core
   ../../lib
   ../../i18n
-  ../../bmesh
-  ../../depsgraph
+  ../../mesh
+  ../../graph
   ../../gpu
   ../../imbuf
   ../../types
@@ -31,28 +31,28 @@ set(SRC
 
   # general includes
   ../include/BIF_glutil.h
-  ../include/ED_anim_api.h
-  ../include/ED_armature.h
-  ../include/ED_asset.h
-  ../include/ED_buttons.h
-  ../include/ED_clip.h
-  ../include/ED_curve.h
-  ../include/ED_curves.h
-  ../include/ED_curves_sculpt.h
-  ../include/ED_datafiles.h
-  ../include/ED_file_indexer.h
-  ../include/ED_fileselect.h
-  ../include/ED_geometry.h
-  ../include/ED_gizmo_library.h
-  ../include/ED_gizmo_utils.h
-  ../include/ED_gpencil.h
-  ../include/ED_image.h
-  ../include/ED_info.h
-  ../include/ED_keyframes_draw.h
-  ../include/ED_keyframes_edit.h
-  ../include/ED_keyframes_keylist.h
-  ../include/ED_keyframing.h
-  ../include/ED_lattice.h
+  ../include/ed_anim_api.h
+  ../include/ed_armature.h
+  ../include/ed_asset.h
+  ../include/ed_buttons.h
+  ../include/ed_clip.h
+  ../include/ed_curve.h
+  ../include/ed_curves.h
+  ../include/ed_curves_sculpt.h
+  ../include/ed_datafiles.h
+  ../include/ed_file_indexer.h
+  ../include/ed_fileselect.h
+  ../include/ed_geometry.h
+  ../include/ed_gizmo_library.h
+  ../include/ed_gizmo_utils.h
+  ../include/ed_pen.h
+  ../include/ed_image.h
+  ../include/ed_info.h
+  ../include/ed_keyframes_draw.h
+  ../include/ed_keyframes_edit.h
+  ../include/ed_keyframes_keylist.h
+  ../include/ed_keyframing.h
+  ../include/ed_lattice.h
   ../include/ED_markers.h
   ../include/ED_mask.h
   ../include/ED_mball.h
