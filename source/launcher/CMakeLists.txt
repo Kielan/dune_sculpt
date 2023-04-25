@@ -265,9 +265,9 @@ endif()
 # you run these builds on other systems due to missing dlls. So we opt out
 # the use of vcpkg
 if(WIN32)
-  set_target_properties(blender PROPERTIES VS_GLOBAL_VcpkgEnabled "false")
-  set_target_properties(blender PROPERTIES
-    PDB_NAME "blender_private"
+  set_target_properties(dune PROPERTIES VS_GLOBAL_VcpkgEnabled "false")
+  set_target_properties(dune PROPERTIES
+    PDB_NAME "dune_private"
     PDB_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>")
     if(WITH_WINDOWS_PDB AND WITH_WINDOWS_STRIPPED_PDB)
       # This is slightly messy, but single target generators like ninja will not have the
@@ -275,9 +275,9 @@ if(WIN32)
       # CMAKE_BUILD_TYPE. This can be simplified by target_link_options and the $<CONFIG>
       # generator expression in newer cmake (2.13+) but until that time this fill have suffice.
       if(CMAKE_BUILD_TYPE)
-        set_property(TARGET blender APPEND_STRING PROPERTY LINK_FLAGS  " /PDBSTRIPPED:${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/blender_public.pdb")
+        set_property(TARGET dune APPEND_STRING PROPERTY LINK_FLAGS  " /PDBSTRIPPED:${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}/dune_public.pdb")
       else()
-        set_property(TARGET blender APPEND_STRING PROPERTY LINK_FLAGS  " /PDBSTRIPPED:${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/blender_public.pdb")
+        set_property(TARGET dune APPEND_STRING PROPERTY LINK_FLAGS  " /PDBSTRIPPED:${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_CFG_INTDIR}/dune_public.pdb")
       endif()
   endif()
 endif()
@@ -287,14 +287,14 @@ endif()
 
 if(WIN32 AND NOT WITH_PYTHON_MODULE)
   install(
-    TARGETS blender blender-launcher
-    COMPONENT Blender
+    TARGETS dune dune-launcher
+    COMPONENT Dune
     DESTINATION "."
   )
   set_target_properties(
-    blender
+    dune
     PROPERTIES
-      VS_USER_PROPS "blender.Cpp.user.props"
+      VS_USER_PROPS "dune.Cpp.user.props"
   )
 endif()
 
