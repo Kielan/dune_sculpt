@@ -1,11 +1,11 @@
 set(INC
   ../include
   ../io
-  ../../blenkernel
-  ../../blenlib
+  ../../dunekernel
+  ../../dune/lib
   ../../gpu
-  ../../makesdna
-  ../../makesrna
+  ../../types
+  ../../api
   ../../windowmanager
   ../../../../intern/guardedalloc
 )
@@ -41,4 +41,4 @@ set(LIB
   bf_editor_space_view3d
 )
 
-blender_add_lib(bf_editor_space_api "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(bf_editor_space_api "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
