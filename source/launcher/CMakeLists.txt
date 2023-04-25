@@ -297,15 +297,15 @@ set(DUNE_TEXT_FILES
 if(UNIX AND NOT APPLE)
   if(WITH_PYTHON_MODULE)
     if(WITH_INSTALL_PORTABLE)
-      set(TARGETDIR_VER ${BLENDER_VERSION})
+      set(TARGETDIR_VER ${DUNE_VERSION})
     else()
-      set(TARGETDIR_VER ${PYTHON_SITE_PACKAGES}/${BLENDER_VERSION})
+      set(TARGETDIR_VER ${PYTHON_SITE_PACKAGES}/${DUNE_VERSION})
     endif()
   else()
     if(WITH_INSTALL_PORTABLE)
       set(TARGETDIR_VER ${DUNE_VERSION})
     else()
-      set(TARGETDIR_VER share/dune/${BLENDER_VERSION})
+      set(TARGETDIR_VER share/dune/${DUNE_VERSION})
     endif()
   endif()
 
@@ -403,7 +403,7 @@ if(WITH_INTERNATIONAL)
     locales
     DEPENDS ${_all_mo_files})
 
-  add_dependencies(blender locales)
+  add_dependencies(dune  locales)
 
   # Generate INSTALL rules
   install(
@@ -442,7 +442,7 @@ endif()
 if("${CMAKE_GENERATOR}" MATCHES ".*Makefiles.*")
   # message after building.
   add_custom_command(
-    TARGET dune POST_BUILD MAIN_DEPENDENCY blender
+    TARGET dune POST_BUILD MAIN_DEPENDENCY dune
     COMMAND ${CMAKE_COMMAND} -E
             echo 'now run: \"make install\" to copy runtime files and scripts to ${TARGETDIR_VER}'
   )
@@ -458,10 +458,10 @@ if(UNIX AND NOT APPLE)
     if(WITH_DOC_MANPAGE)
       add_custom_target(
         dune_man_page ALL
-        COMMAND ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1.py
-                --blender ${EXECUTABLE_OUTPUT_PATH}/blender
-                --output ${CMAKE_CURRENT_BINARY_DIR}/blender.1)
-      add_dependencies(dune_man_page blender)
+        COMMAND ${CMAKE_SOURCE_DIR}/doc/manpage/dune.1.py
+                --dune ${EXECUTABLE_OUTPUT_PATH}/dune
+                --output ${CMAKE_CURRENT_BINARY_DIR}/dune.1)
+      add_dependencies(dune_man_page dune)
     endif()
   endif()
 
@@ -469,39 +469,39 @@ if(UNIX AND NOT APPLE)
   if(WITH_PYTHON_MODULE)
     if(WITH_INSTALL_PORTABLE)
       install(
-        TARGETS blender
+        TARGETS dune
         DESTINATION "."
       )
     else()
       install(
-        TARGETS blender
+        TARGETS dune
         LIBRARY DESTINATION ${PYTHON_SITE_PACKAGES}
       )
     endif()
     # none of the other files are needed currently
   elseif(WITH_INSTALL_PORTABLE)
     install(
-      TARGETS blender
+      TARGETS dune
       DESTINATION "."
     )
 
     if(WITH_DOC_MANPAGE)
       install(
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/blender.1
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/dune.1
         DESTINATION "."
       )
     endif()
     install(
       FILES
-        ${CMAKE_SOURCE_DIR}/release/freedesktop/blender.desktop
-        ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/blender.svg
-        ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/symbolic/apps/blender-symbolic.svg
+        ${CMAKE_SOURCE_DIR}/release/freedesktop/dune.desktop
+        ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/dune.svg
+        ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/symbolic/apps/dune-symbolic.svg
       DESTINATION "."
     )
 
-    if(WITH_BLENDER_THUMBNAILER)
+    if(WITH_DUNE_THUMBNAILER)
       install(
-        TARGETS blender-thumbnailer
+        TARGETS dune-thumbnailer
         DESTINATION "."
       )
     endif()
@@ -511,22 +511,22 @@ if(UNIX AND NOT APPLE)
 
       install(
         PROGRAMS
-        ${CMAKE_SOURCE_DIR}/release/bin/blender-softwaregl
+        ${CMAKE_SOURCE_DIR}/release/bin/dune-softwaregl
         DESTINATION "."
       )
     endif()
 
-    set(BLENDER_TEXT_FILES_DESTINATION ".")
+    set(DUNE_TEXT_FILES_DESTINATION ".")
   else()
-    # main blender binary
+    # main dune binary
     install(
-      TARGETS blender
+      TARGETS dune
       DESTINATION bin
     )
     if(WITH_DOC_MANPAGE)
-      # manpage only with 'blender' binary
+      # manpage only with 'dune' binary
       install(
-        FILES ${CMAKE_CURRENT_BINARY_DIR}/blender.1
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/dune.1
         DESTINATION share/man/man1
       )
     endif()
