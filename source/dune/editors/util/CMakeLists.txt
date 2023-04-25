@@ -87,17 +87,17 @@ set(SRC
   ../include/ed_uvedit.h
   ../include/ed_view3d.h
   ../include/ed_view3d_offscreen.h
-  ../include/UI_icons.h
-  ../include/UI_interface.h
-  ../include/UI_interface.hh
-  ../include/UI_interface_icons.h
-  ../include/UI_resources.h
-  ../include/UI_tree_view.hh
-  ../include/UI_view2d.h
+  ../include/ui_icons.h
+  ../include/ui_interface.h
+  ../include/ui_interface.hh
+  ../include/ui_interface_icons.h
+  ../include/ui_resources.h
+  ../include/ui_tree_view.hh
+  ../include/ui_view2d.h
 )
 
 set(LIB)
 
 endif()
 
-dune_add_lib(dune_file_editor_util "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(dunefile_editor_util "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
