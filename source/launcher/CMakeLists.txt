@@ -113,16 +113,16 @@ set(SRC
 # MSVC 2010 gives linking errors with the manifest
 if(WIN32 AND NOT UNIX)
   add_definitions(
-    -DBLEN_VER_RC_STR="${BLENDER_VERSION}"
-    -DBLEN_VER_RC_1=${BLENDER_VERSION_MAJOR}
-    -DBLEN_VER_RC_2=${BLENDER_VERSION_MINOR}
-    -DBLEN_VER_RC_3=${BLENDER_VERSION_PATCH}
+    -DBLEN_VER_RC_STR="${DUNE_VERSION}"
+    -DBLEN_VER_RC_1=${DUNE_VERSION_MAJOR}
+    -DBLEN_VER_RC_2=${DUNE_VERSION_MINOR}
+    -DBLEN_VER_RC_3=${DUNE_VERSION_PATCH}
     -DBLEN_VER_RC_4=0
   )
 
 
   list(APPEND SRC
-    ${CMAKE_SOURCE_DIR}/release/windows/icons/winblender.rc
+    ${CMAKE_SOURCE_DIR}/release/windows/icons/windune.rc
     ${CMAKE_BINARY_DIR}/dune.exe.manifest
   )
 endif()
@@ -243,8 +243,8 @@ if(WITH_PYTHON_MODULE)
   # note that 'SHARED' works on Linux and Windows,
   # but not OSX which _must_ be 'MODULE'
   add_library(blender MODULE ${SRC})
-  set_target_properties(
-    blender
+  set_target_props(
+    dune
     PROPERTIES
       PREFIX ""
       OUTPUT_NAME bpy
@@ -253,28 +253,28 @@ if(WITH_PYTHON_MODULE)
   )
 
   if(APPLE)
-    set_target_properties(blender PROPERTIES MACOSX_BUNDLE TRUE)
+    set_target_props(dune PROPERTIES MACOSX_BUNDLE TRUE)
   endif()
 
   if(WIN32)
     # python modules use this
     set_target_properties(
-      blender
+      dune
       PROPERTIES
       SUFFIX ".pyd"
     )
   endif()
 
 else()
-  add_executable(blender ${EXETYPE} ${SRC})
+  add_executable(dune ${EXETYPE} ${SRC})
   if(WIN32)
-      add_executable(blender-launcher WIN32
-        blender_launcher_win32.c
-        ${CMAKE_SOURCE_DIR}/release/windows/icons/winblender.rc
-        ${CMAKE_BINARY_DIR}/blender.exe.manifest
+      add_executable(dune-launcher WIN32
+        dune_launcher_win32.c
+        ${CMAKE_SOURCE_DIR}/release/windows/icons/windune.rc
+        ${CMAKE_BINARY_DIR}/dune.exe.manifest
       )
-      target_compile_definitions (blender-launcher PRIVATE -D_UNICODE -DUNICODE)
-      target_link_libraries(blender-launcher Pathcch.lib)
+      target_compile_definitions (dune-launcher PRIVATE -D_UNICODE -DUNICODE)
+      target_link_libraries(dune-launcher Pathcch.lib)
   endif()
 endif()
 
@@ -284,7 +284,7 @@ if(WITH_BUILDINFO)
 endif()
 
 
-set(BLENDER_TEXT_FILES
+set(DUNE_TEXT_FILES
   ${CMAKE_SOURCE_DIR}/release/text/copyright.txt
   # generate this file
   # ${CMAKE_SOURCE_DIR}/release/text/readme.html
