@@ -3,8 +3,8 @@ dune_include_dirs(
   ../../intern/glew-mx
   ../../intern/guardedalloc
   ../dune/kernel
-  ../dune/blenlib
-  ../dune/blenloader
+  ../dune/lib
+  ../dune/loader
   ../dune/graph
   ../dune/editors/include
   ../dune/gpu
@@ -30,17 +30,17 @@ if(WITH_TBB)
 endif()
 
 if(WIN32)
-  blender_include_dirs(../../intern/utfconv)
+  dune_include_dirs(../../intern/utfconv)
 endif()
 
 if(WITH_LIBMV)
-  blender_include_dirs(../../intern/libmv)
+  dune_include_dirs(../../intern/libmv)
   add_definitions(-DWITH_LIBMV)
 endif()
 
 if(WITH_CYCLES)
   if(WITH_CYCLES_LOGGING)
-    blender_include_dirs(../../intern/cycles/blender)
+    dune_include_dirs(../../intern/cycles/dune)
     add_definitions(-DWITH_CYCLES_LOGGING)
   endif()
 endif()
@@ -50,7 +50,7 @@ if(WITH_CODEC_FFMPEG)
 endif()
 
 if(WITH_TBB)
-  blender_include_dirs(${TBB_INCLUDE_DIRS})
+  dune_include_dirs(${TBB_INCLUDE_DIRS})
   if(WIN32)
     # For pragma that links tbbmalloc_proxy.lib
     link_directories(${LIBDIR}/tbb/lib)
@@ -59,7 +59,7 @@ endif()
 
 
 if(WITH_PYTHON)
-  blender_include_dirs(../blender/python)
+  dune_include_dirs(../dune/python)
   add_definitions(-DWITH_PYTHON)
 
   if(WITH_PYTHON_SECURITY)
@@ -73,19 +73,19 @@ endif()
 
 if(WITH_SDL)
   if(WITH_SDL_DYNLOAD)
-    blender_include_dirs(../../extern/sdlew/include)
+    dune_include_dirs(../../extern/sdlew/include)
     add_definitions(-DWITH_SDL_DYNLOAD)
   endif()
   add_definitions(-DWITH_SDL)
 endif()
 
 if(WITH_BINRELOC)
-  blender_include_dirs(${BINRELOC_INCLUDE_DIRS})
+  dune_include_dirs(${BINRELOC_INCLUDE_DIRS})
   add_definitions(-DWITH_BINRELOC)
 endif()
 
 if(WITH_FREESTYLE)
-  blender_include_dirs(../blender/freestyle)
+  dune_include_dirs(../dune/freestyle)
   add_definitions(-DWITH_FREESTYLE)
 endif()
 
@@ -94,7 +94,7 @@ if(WITH_XR_OPENXR)
 endif()
 
 if(WITH_GMP)
-  blender_include_dirs(${GMP_INCLUDE_DIRS})
+  dune_include_dirs(${GMP_INCLUDE_DIRS})
   add_definitions(-DWITH_GMP)
 endif()
 
@@ -107,7 +107,6 @@ set(SRC
   creator.c
   creator_args.c
   creator_signals.c
-
   creator_intern.h
 )
 
@@ -124,7 +123,7 @@ if(WIN32 AND NOT UNIX)
 
   list(APPEND SRC
     ${CMAKE_SOURCE_DIR}/release/windows/icons/winblender.rc
-    ${CMAKE_BINARY_DIR}/blender.exe.manifest
+    ${CMAKE_BINARY_DIR}/dune.exe.manifest
   )
 endif()
 
