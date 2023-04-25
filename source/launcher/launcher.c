@@ -179,7 +179,7 @@ void gmp_dune_init_allocator()
  * Dune's main function responsibilities are:
  * - setup subsystems.
  * - handle arguments.
- * - run #WM_main() event loop,
+ * - run wm_main() event loop,
  *   or exit immediately when running in background-mode.
  */
 int main(int argc,
@@ -323,10 +323,10 @@ int main(int argc,
 
   dune_globals_init(); /* dune.c */
 
-  KERNEL_idtype_init();
-  KERNEL_cachefiles_init();
+  dune_idtype_init();
+  dune_cachefiles_init();
   KERNEL_modifier_init();
-  KERNEL_gpencil_modifier_init();
+  KERNEL_pen_modifier_init();
   KERNEL_shaderfx_init();
   KERNEL_volumes_init();
   graph_register_node_types();
@@ -358,37 +358,35 @@ int main(int argc,
 #endif
 
   /* After parsing #ARG_PASS_ENVIRONMENT such as `--env-*`,
-   * since they impact `KERNEL_appdir` behavior. */
-  KERNEL_appdir_init();
+   * since they impact `dune_appdir` behavior. */
+  dune_appdir_init();
 
   /* After parsing number of threads argument. */
-  LIB_task_scheduler_init();
+  lib_task_scheduler_init();
 
   /* Initialize sub-systems that use `KERNEL_appdir.h`. */
   IMB_init();
 
-#ifndef WITH_PYTHON_MODULE
   /* First test for background-mode (#Global.background) */
   lib_args_parse(ba, ARG_PASS_SETTINGS, NULL, NULL);
 
   main_signal_setup();
-#endif
 
 #ifdef WITH_FFMPEG
   /* Keep after #ARG_PASS_SETTINGS since debug flags are checked. */
   IMB_ffmpeg_init();
 #endif
 
-  /* After #ARG_PASS_SETTINGS arguments, this is so #WM_main_playanim skips #RNA_init. */
+  /* After ARG_PASS_SETTINGS arguments, this is so #WM_main_playanim skips #RNA_init. */
   api_init();
 
   RE_engines_init();
-  KERNEL_node_system_init();
-  KERNEL_particle_init_rng();
+  dune_node_system_init();
+  dune_particle_init_rng();
   /* End second initialization. */
 
   /* Background render uses this font too. */
-  KERNEL_vfont_builtin_register(datatoc_bfont_pfb, datatoc_bfont_pfb_size);
+  dune_vfont_builtin_register(datatoc_bfont_pfb, datatoc_bfont_pfb_size);
 
   /* Initialize FFMPEG if built in, also needed for background-mode if videos are
    * rendered via FFMPEG. */
@@ -406,8 +404,8 @@ int main(int argc,
   /* Need to be after WM init so that userpref are loaded. */
   RE_engines_init_experimental();
 
-  CTX_py_init_set(C, true);
-  WM_keyconfig_init(C);
+  ctx_py_init_set(C, true);
+  wm_keyconfig_init(C);
 
 #ifdef WITH_FREESTYLE
   /* Initialize Freestyle. */
@@ -422,11 +420,11 @@ int main(int argc,
    * - 'ba'
    * - 'argv' on WIN32.
    */
-  callback_main_atexit(&app_init_data);
-  KERNEL_dune_atexit_unregister(callback_main_atexit, &app_init_data);
+  cb_main_atexit(&app_init_data);
+  dune_atexit_unregister(cb_main_atexit, &app_init_data);
 
   /* End argument parsing, allow memory leaks to be printed. */
-  MEM_use_memleak_detection(true);
+  mem_use_memleak_detection(true);
 
   /* Paranoid, avoid accidental re-use. */
   ba = NULL;
