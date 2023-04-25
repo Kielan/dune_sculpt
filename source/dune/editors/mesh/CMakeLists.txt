@@ -4,9 +4,9 @@ set(INC
   ../../dune/font
   ../../dune/kernel
   ../../dune/lib
-  ../../dune/translation
+  ../../dune/i18n
   ../../dune/mesh
-  ../../depsgraph
+  ../../dune/graph
   ../../draw
   ../../gpu
   ../../imbuf
@@ -17,7 +17,7 @@ set(INC
   ../../../../intern/clog
   ../../../../intern/glew-mx
   ../../../../intern/guardedalloc
-  # RNA_prototypes.h
+  # api_prototypes.h
   ${CMAKE_BINARY_DIR}/source/dune/api
 )
 
