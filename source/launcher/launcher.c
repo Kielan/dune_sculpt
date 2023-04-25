@@ -192,7 +192,7 @@ int main(int argc,
 {
   Ctx *C;
 
-  Args *ba;
+  Args *args;
 
 #ifdef WIN32
   char **argv;
@@ -279,7 +279,7 @@ int main(int argc,
 
   /* Initialize logging. */
   CLG_init();
-  CLG_fatal_fn_set(callback_clg_fatal);
+  CLG_fatal_fn_set(cb_clg_fatal);
 
   C = CTX_create();
 
@@ -293,7 +293,7 @@ int main(int argc,
   CCL_init_logging(argv[0]);
 #endif
 
-  main_callback_setup();
+  main_cb_setup();
 
 #if defined(__APPLE__) && !defined(WITH_PYTHON_MODULE) && !defined(WITH_HEADLESS)
   /* Patch to ignore argument finder gives us (PID?) */
@@ -315,13 +315,13 @@ int main(int argc,
 #endif
 
   /* Initialize path to executable. */
-  KERNEL_appdir_program_path_init(argv[0]);
+  dune_appdir_program_path_init(argv[0]);
 
-  LIB_threadapi_init();
+  lib_threadapi_init();
 
   STRUCTS_sdna_current_init();
 
-  KERNEL_dune_globals_init(); /* dune.c */
+  dune_globals_init(); /* dune.c */
 
   KERNEL_idtype_init();
   KERNEL_cachefiles_init();
@@ -329,16 +329,16 @@ int main(int argc,
   KERNEL_gpencil_modifier_init();
   KERNEL_shaderfx_init();
   KERNEL_volumes_init();
-  DEG_register_node_types();
+  graph_register_node_types();
 
-  KERNEL_brush_system_init();
+  dune_brush_system_init();
   RE_texture_rng_init();
 
-  KERNEL_callback_global_init();
+  KERNEL_cb_global_init();
 
   /* First test for background-mode (#Global.background) */
 #ifndef WITH_PYTHON_MODULE
-  ba = LIB_args_create(argc, (const char **)argv); /* skip binary path */
+  ba = lib_args_create(argc, (const char **)argv); /* skip binary path */
 
   /* Ensure we free on early exit. */
   app_init_data.ba = ba;
@@ -347,7 +347,7 @@ int main(int argc,
 
   /* Begin argument parsing, ignore leaks so arguments that call #exit
    * (such as '--version' & '--help') don't report leaks. */
-  MEM_use_memleak_detection(false);
+  mem_use_memleak_detection(false);
 
   /* Parse environment handling arguments. */
   LIB_args_parse(ba, ARG_PASS_ENVIRONMENT, NULL, NULL);
