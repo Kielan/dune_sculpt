@@ -2,29 +2,29 @@
 #  include <stdlib.h>
 #  include <string.h>
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
 #  include "CLG_log.h"
 
 #  ifdef WIN32
-#    include "LIB_winstuff.h"
+#    include "lib_winstuff.h"
 #  endif
 
-#  include "LIB_args.h"
-#  include "LIB_fileops.h"
-#  include "LIB_listbase.h"
-#  include "LIB_mempool.h"
-#  include "LIB_path_util.h"
-#  include "LIB_string.h"
-#  include "LIB_string_utf8.h"
-#  include "LIB_system.h"
+#  include "lib_args.h"
+#  include "lib_fileops.h"
+#  include "lib_listbase.h"
+#  include "lib_mempool.h"
+#  include "lib_path_util.h"
+#  include "lib_string.h"
+#  include "lib_string_utf8.h"
+#  include "lib_system.h"
 #  include "LIB_threads.h"
 #  include "LIB_utildefines.h"
 
 #  include "LOADER_readfile.h" /* only for BLO_has_bfile_extension */
 
-#  include "KERNEL_blender_version.h"
-#  include "KERNEL_context.h"
+#  include "dune_version.h"
+#  include "dune_context.h"
 
 #  include "KERNEL_global.h"
 #  include "KERNEL_image_format.h"
