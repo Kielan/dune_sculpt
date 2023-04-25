@@ -15,7 +15,6 @@ set(SRC
   script_edit.c
   script_ops.c
   space_script.c
-
   script_intern.h
 )
 
