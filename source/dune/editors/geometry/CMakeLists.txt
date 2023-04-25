@@ -2,8 +2,8 @@ set(INC
   ../include
   ../../dune
   ../../lib
-  ../../depsgraph
-  ../../functions
+  ../../graph
+  ../../fns
   ../../types
   ../../api
   ../../windowmanager
@@ -20,10 +20,10 @@ set(SRC
 )
 
 set(LIB
-  df_dunekernel
-  df_depsgraph
-  df_editor_object
-  df_windowmanager
+  dunefile_kernel
+  dunefile_graph
+  dunefile_editor_object
+  dunefile_windowmanager
 )
 
 dune_add_lib(df_editor_geometry "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
