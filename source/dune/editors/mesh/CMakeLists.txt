@@ -1,24 +1,24 @@
 set(INC
   ../include
   ../uvedit
-  ../../blenfont
-  ../../blenkernel
-  ../../blenlib
-  ../../blentranslation
-  ../../bmesh
+  ../../dune/font
+  ../../dune/kernel
+  ../../dune/lib
+  ../../dune/translation
+  ../../dune/mesh
   ../../depsgraph
   ../../draw
   ../../gpu
   ../../imbuf
-  ../../makesdna
-  ../../makesrna
+  ../../types
+  ../../api
   ../../render
   ../../windowmanager
   ../../../../intern/clog
   ../../../../intern/glew-mx
   ../../../../intern/guardedalloc
   # RNA_prototypes.h
-  ${CMAKE_BINARY_DIR}/source/blender/makesrna
+  ${CMAKE_BINARY_DIR}/source/dune/api
 )
 
 set(SRC
@@ -58,9 +58,9 @@ set(SRC
 )
 
 set(LIB
-  bf_blenkernel
-  bf_blenlib
-  bf_windowmanager
+  dunefile_kernel
+  dunefile_lib
+  dunefile_windowmanager
 )
 
 if(WITH_FREESTYLE)
@@ -76,7 +76,7 @@ if(WITH_GMP)
 endif()
 
 
-blender_add_lib(bf_editor_mesh "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(bf_editor_mesh "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
-# RNA_prototypes.h
-add_dependencies(bf_editor_mesh bf_rna)
+# api_prototypes.h
+add_dependencies(dunefile_editor_mesh dunefile_api)
