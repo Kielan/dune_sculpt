@@ -6,28 +6,28 @@
 #  include <windows.h>
 #endif
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "CLG_log.h"
 
 #include "STRUCTS_genfile.h"
 
-#include "LIB_args.h"
-#include "LIB_string.h"
-#include "LIB_system.h"
-#include "LIB_task.h"
-#include "LIB_threads.h"
-#include "LIB_utildefines.h"
+#include "lib_args.h"
+#include "lib_string.h"
+#include "lib_system.h"
+#include "lib_task.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
 /* Mostly initialization functions. */
-#include "KERNEL_appdir.h"
-#include "KERNEL_blender.h"
+#include "dune_appdir.h"
+#include "dune.h"
 #include "KERNEL_brush.h"
 #include "KERNEL_cachefile.h"
 #include "KERNEL_callbacks.h"
 #include "KERNEL_context.h"
 #include "KERNEL_global.h"
-#include "KERNEL_gpencil_modifier.h"
+#include "KERNEL_pen_modifier.h"
 #include "KERNEL_idtype.h"
 #include "KERNEL_image.h"
 #include "KERNEL_main.h"
@@ -40,7 +40,7 @@
 #include "KERNEL_vfont.h"
 #include "KERNEL_volume.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
 #include "IMB_imbuf.h" /* For #IMB_init. */
 
@@ -96,8 +96,7 @@ struct ApplicationState app_state = {
 
 /* -------------------------------------------------------------------- */
 /** Application Level Callbacks
- * Initialize callbacks for the modules that need them.
- */
+ * Initialize callbacks for the modules that need them. **/
 
 static void callback_mem_error(const char *errorStr)
 {
