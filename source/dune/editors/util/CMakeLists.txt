@@ -53,40 +53,40 @@ set(SRC
   ../include/ed_keyframes_keylist.h
   ../include/ed_keyframing.h
   ../include/ed_lattice.h
-  ../include/ED_markers.h
-  ../include/ED_mask.h
-  ../include/ED_mball.h
-  ../include/ED_mesh.h
-  ../include/ED_node.h
-  ../include/ED_numinput.h
-  ../include/ED_object.h
-  ../include/ED_outliner.h
-  ../include/ED_paint.h
-  ../include/ED_particle.h
-  ../include/ED_physics.h
-  ../include/ED_render.h
-  ../include/ED_scene.h
-  ../include/ED_screen.h
-  ../include/ED_screen_types.h
-  ../include/ED_sculpt.h
-  ../include/ED_select_utils.h
-  ../include/ED_sequencer.h
-  ../include/ED_sound.h
-  ../include/ED_space_api.h
-  ../include/ED_spreadsheet.h
-  ../include/ED_text.h
-  ../include/ED_time_scrub_ui.h
-  ../include/ED_transform.h
-  ../include/ED_transform_snap_object_context.h
-  ../include/ED_transverts.h
-  ../include/ED_types.h
-  ../include/ED_undo.h
-  ../include/ED_userpref.h
-  ../include/ED_util.h
-  ../include/ED_util_imbuf.h
-  ../include/ED_uvedit.h
-  ../include/ED_view3d.h
-  ../include/ED_view3d_offscreen.h
+  ../include/ed_markers.h
+  ../include/ed_mask.h
+  ../include/ed_mball.h
+  ../include/ed_mesh.h
+  ../include/ed_node.h
+  ../include/ed_numinput.h
+  ../include/ed_object.h
+  ../include/ed_outliner.h
+  ../include/ed_paint.h
+  ../include/ed_particle.h
+  ../include/ed_physics.h
+  ../include/ed_render.h
+  ../include/ed_scene.h
+  ../include/ed_screen.h
+  ../include/ed_screen_types.h
+  ../include/ed_sculpt.h
+  ../include/ed_select_utils.h
+  ../include/ed_sequencer.h
+  ../include/ed_sound.h
+  ../include/ed_space_api.h
+  ../include/ed_spreadsheet.h
+  ../include/ed_text.h
+  ../include/ed_time_scrub_ui.h
+  ../include/ed_transform.h
+  ../include/ed_transform_snap_object_context.h
+  ../include/ed_transverts.h
+  ../include/ed_types.h
+  ../include/ed_undo.h
+  ../include/ed_userpref.h
+  ../include/ed_util.h
+  ../include/ed_util_imbuf.h
+  ../include/ed_uvedit.h
+  ../include/ed_view3d.h
+  ../include/ed_view3d_offscreen.h
   ../include/UI_icons.h
   ../include/UI_interface.h
   ../include/UI_interface.hh
