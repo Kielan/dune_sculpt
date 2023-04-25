@@ -280,7 +280,7 @@ endif()
 
 if(WITH_BUILDINFO)
   # explicitly say that the executable depends on the buildinfo
-  add_dependencies(blender buildinfo)
+  add_dependencies(dune buildinfo)
 endif()
 
 
@@ -303,38 +303,38 @@ if(UNIX AND NOT APPLE)
     endif()
   else()
     if(WITH_INSTALL_PORTABLE)
-      set(TARGETDIR_VER ${BLENDER_VERSION})
+      set(TARGETDIR_VER ${DUNE_VERSION})
     else()
-      set(TARGETDIR_VER share/blender/${BLENDER_VERSION})
+      set(TARGETDIR_VER share/dune/${BLENDER_VERSION})
     endif()
   endif()
 
 elseif(WIN32)
-  set(TARGETDIR_VER ${BLENDER_VERSION})
+  set(TARGETDIR_VER ${DUNE_VERSION})
 
 elseif(APPLE)
   if(WITH_PYTHON_MODULE)
     if(WITH_INSTALL_PORTABLE)
       set(BPY_INSTALL_DIR)
-      set(TARGETDIR_VER $<TARGET_FILE_DIR:blender>/../Resources/${BLENDER_VERSION})
-      # Keep the `BLENDER_VERSION` folder and bpy.so in the build folder.
+      set(TARGETDIR_VER $<TARGET_FILE_DIR:dune>/../Resources/${DUNE_VERSION})
+      # Keep the `DUNE_VERSION` folder and bpy.so in the build folder.
       set(INSTALL_BPY_TO_SITE_PACKAGES OFF)
     else()
       # Parent directory of bpy.so for installation.
       set(BPY_INSTALL_DIR ${PYTHON_LIBPATH}/site-packages)
       # Defined in terms of site-packages since the site-packages
       # directory can be a symlink (brew for example).
-      set(TARGETDIR_VER "${BPY_INSTALL_DIR}/../Resources/${BLENDER_VERSION}")
+      set(TARGETDIR_VER "${BPY_INSTALL_DIR}/../Resources/${DUNE_VERSION}")
       set(INSTALL_BPY_TO_SITE_PACKAGES ON)
     endif()
   else()
-    set(TARGETDIR_VER Blender.app/Contents/Resources/${BLENDER_VERSION})
+    set(TARGETDIR_VERB Dune.app/Contents/Resources/${DUNE_VERSION})
   endif()
   # License, copyright, readme files.
-  set(BLENDER_TEXT_FILES_DESTINATION "${TARGETDIR_VER}/../text")
-  set(MAC_BLENDER_TARGET_DYLIBS_DIR "${TARGETDIR_VER}/lib")
+  set(DUNE_TEXT_FILES_DESTINATION "${TARGETDIR_VER}/../text")
+  set(MAC_DUNE_TARGET_DYLIBS_DIR "${TARGETDIR_VER}/lib")
   # Skip relinking on cpack / install
-  set_target_properties(blender PROPERTIES BUILD_WITH_INSTALL_RPATH true)
+  set_target_props(dune PROPERTIES BUILD_WITH_INSTALL_RPATH true)
 endif()
 
 
@@ -352,8 +352,8 @@ if(WITH_PYTHON)
   # install(CODE "message(\"copying blender scripts...\")")
 
   # exclude addons_contrib if release
-  if("${BLENDER_VERSION_CYCLE}" STREQUAL "release" OR
-     "${BLENDER_VERSION_CYCLE}" STREQUAL "rc")
+  if("${DUNE_VERSION_CYCLE}" STREQUAL "release" OR
+     "${DUNE_VERSION_CYCLE}" STREQUAL "rc")
     set(ADDON_EXCLUDE_CONDITIONAL "addons_contrib/*")
   else()
     set(ADDON_EXCLUDE_CONDITIONAL "_addons_contrib/*")  # dummy, won't do anything
@@ -416,7 +416,7 @@ if(WITH_INTERNATIONAL)
     install(
       FILES ${_mo_file}
       DESTINATION ${_locale_target_dir}/${_locale_name}/LC_MESSAGES
-      RENAME blender.mo
+      RENAME dune.mo
     )
     unset(_locale_name)
   endforeach()
@@ -442,7 +442,7 @@ endif()
 if("${CMAKE_GENERATOR}" MATCHES ".*Makefiles.*")
   # message after building.
   add_custom_command(
-    TARGET blender POST_BUILD MAIN_DEPENDENCY blender
+    TARGET dune POST_BUILD MAIN_DEPENDENCY blender
     COMMAND ${CMAKE_COMMAND} -E
             echo 'now run: \"make install\" to copy runtime files and scripts to ${TARGETDIR_VER}'
   )
@@ -457,11 +457,11 @@ if(UNIX AND NOT APPLE)
   if(NOT WITH_PYTHON_MODULE)
     if(WITH_DOC_MANPAGE)
       add_custom_target(
-        blender_man_page ALL
+        dune_man_page ALL
         COMMAND ${CMAKE_SOURCE_DIR}/doc/manpage/blender.1.py
                 --blender ${EXECUTABLE_OUTPUT_PATH}/blender
                 --output ${CMAKE_CURRENT_BINARY_DIR}/blender.1)
-      add_dependencies(blender_man_page blender)
+      add_dependencies(dune_man_page blender)
     endif()
   endif()
 
