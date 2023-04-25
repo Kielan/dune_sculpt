@@ -104,10 +104,10 @@ endif()
 
 # Setup the exe sources and buildinfo
 set(SRC
-  creator.c
-  creator_args.c
-  creator_signals.c
-  creator_intern.h
+    creator.c
+    creator_args.c
+    creator_signals.c
+    creator_intern.h
 )
 
 # MSVC 2010 gives linking errors with the manifest
@@ -232,9 +232,9 @@ if(WITH_BUILDINFO)
   add_dependencies(buildinfoobj buildinfo)
 endif()
 
-add_cc_flags_custom_test(blender)
+add_cc_flags_custom_test(dune)
 
-# message(STATUS "Configuring blender")
+# message(STATUS "Configuring dune")
 if(WITH_PYTHON_MODULE)
   add_definitions(-DWITH_PYTHON_MODULE)
 
