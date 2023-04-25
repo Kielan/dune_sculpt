@@ -10,7 +10,7 @@
 
 #include "CLG_log.h"
 
-#include "STRUCTS_genfile.h"
+#include "types_genfile.h"
 
 #include "lib_args.h"
 #include "lib_string.h"
@@ -168,7 +168,7 @@ void gmp_free(void *ptr, size_t size)
  */
 void gmp_dune_init_allocator()
 {
-  mp_set_memory_functions(gmp_alloc, gmp_realloc, gmp_free);
+  mp_set_memory_fns(gmp_alloc, gmp_realloc, gmp_free);
 }
 #endif
 
@@ -325,16 +325,16 @@ int main(int argc,
 
   dune_idtype_init();
   dune_cachefiles_init();
-  KERNEL_modifier_init();
-  KERNEL_pen_modifier_init();
-  KERNEL_shaderfx_init();
-  KERNEL_volumes_init();
+  dune_mod_init();
+  dune_pen_mod_init();
+  dune_shaderfx_init();
+  dune_volumes_init();
   graph_register_node_types();
 
   dune_brush_system_init();
   RE_texture_rng_init();
 
-  KERNEL_cb_global_init();
+  dune_cb_global_init();
 
   /* First test for background-mode (#Global.background) */
 #ifndef WITH_PYTHON_MODULE
