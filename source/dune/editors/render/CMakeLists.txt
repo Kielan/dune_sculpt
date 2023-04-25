@@ -1,11 +1,11 @@
 set(INC
   ../include
-  ../../blenkernel
-  ../../blenlib
-  ../../blenloader
-  ../../blentranslation
-  ../../bmesh
-  ../../depsgraph
+  ../../dune/kernel
+  ../../dune/lib
+  ../../dune/loader
+  ../../dune/i18n
+  ../../dune/mesh
+  ../../dune/graph
   ../../draw
   ../../gpu
   ../../imbuf
