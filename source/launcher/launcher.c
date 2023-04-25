@@ -336,7 +336,7 @@ int main(int argc,
 
   dune_cb_global_init();
 
-  /* First test for background-mode (#Global.background) */
+  /* First test for background-mode (Global.background) */
 #ifndef WITH_PYTHON_MODULE
   ba = lib_args_create(argc, (const char **)argv); /* skip binary path */
 
@@ -390,9 +390,9 @@ int main(int argc,
 
   /* Initialize FFMPEG if built in, also needed for background-mode if videos are
    * rendered via FFMPEG. */
-  KERNEL_sound_init_once();
+  dune_sound_init_once();
 
-  KERNEL_materials_init();
+  dune_materials_init();
 
   if (G.background == 0) {
     lib_args_parse(ba, ARG_PASS_SETTINGS_GUI, NULL, NULL);
@@ -437,15 +437,15 @@ int main(int argc,
 
   if (G.background) {
     /* Using window-manager API in background-mode is a bit odd, but works fine. */
-    WM_exit(C);
+    wm_exit(C);
   }
   else {
     /* When no file is loaded, show the splash screen. */
     const char *dunefile_path = KERNEL_main_blendfile_path_from_global();
     if (dunefile_path[0] == '\0') {
-      WM_init_splash(C);
+      wm_init_splash(C);
     }
-    WM_main(C);
+    wm_main(C);
   }
 
   return 0;
