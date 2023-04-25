@@ -3,7 +3,7 @@ set(INC
   ../../dune
   ../../lib
   ../../i18n
-  ../../depsgraph
+  ../../graph
   ../../gpu
   ../../types
   ../../api
@@ -34,8 +34,8 @@ set(SRC
 )
 
 set(LIB
-  df_dune
-  df_dunelib
+  dunefile_dune
+  dunefile_dunelib
 )
 
 if(WITH_MOD_FLUID)
