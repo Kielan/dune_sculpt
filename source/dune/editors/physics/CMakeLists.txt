@@ -3,7 +3,7 @@ set(INC
   ../../dune
   ../../lib
   ../../i18n
-  ../../depsgraph
+  ../../graph
   ../../gpu
   ../../types
   ../../api
@@ -34,8 +34,8 @@ set(SRC
 )
 
 set(LIB
-  df_dune
-  df_dunelib
+  dunefile_dune
+  dunefile_lib
 )
 
 if(WITH_MOD_FLUID)
@@ -53,7 +53,7 @@ if(WITH_BULLET)
 endif()
 
 
-dune_add_lib(df_editor_physics "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(dunefile_editor_physics "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
 # api_prototypes.h
-add_dependencies(df_editor_physics df_api)
+add_dependencies(dunefile_editor_physics df_api)
