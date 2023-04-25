@@ -1,17 +1,17 @@
 set(INC
   .
   ../include
-  ../../blenkernel
-  ../../blenlib
-  ../../blenloader
-  ../../blentranslation
-  ../../makesdna
-  ../../makesrna
+  ../../dune/kernel
+  ../../dune/lib
+  ../../dune/loader
+  ../../dune/i18n
+  ../../dune/types
+  ../../dune/api
   ../../windowmanager
   ../../../../intern/clog
   ../../../../intern/guardedalloc
-  # RNA_prototypes.h
-  ${CMAKE_BINARY_DIR}/source/blender/makesrna
+  # api_prototypes.h
+  ${CMAKE_BINARY_DIR}/source/dune/api
 )
 
 set(INC_SYS
@@ -41,7 +41,7 @@ set(SRC
   ED_asset_mark_clear.h
   ED_asset_temp_id_consumer.h
   ED_asset_type.h
-  intern/asset_lib_reference.hh
+  intern/asset_lib_ref.hh
 )
 
 set(LIB
