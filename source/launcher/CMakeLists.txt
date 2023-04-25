@@ -836,7 +836,7 @@ elseif(WIN32)
 
       install(
         DIRECTORY ${LIBDIR}/python/${_PYTHON_VERSION_NO_DOTS}/DLLs
-        DESTINATION ${BLENDER_VERSION}/python
+        DESTINATION ${DUNE_VERSION}/python
         CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
         PATTERN "*.pdb" EXCLUDE
         PATTERN "*_d.*" EXCLUDE
@@ -980,7 +980,7 @@ elseif(WIN32)
 
   if(WITH_DUNE_THUMBNAILER)
     install(
-      TARGETS BlendThumb
+      TARGETS DuneThumb
       DESTINATION "."
     )
   endif()
@@ -1033,8 +1033,8 @@ elseif(APPLE)
 
   set_target_properties(blender PROPERTIES
     MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
-    MACOSX_BUNDLE_SHORT_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH}"
-    MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION}.${BLENDER_VERSION_PATCH} ${BLENDER_DATE}")
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${DUNE_VERSION}.${DUNE_VERSION_PATCH}"
+    MACOSX_BUNDLE_LONG_VERSION_STRING "${DUNE_VERSION}.${DUNE_VERSION_PATCH} ${DUNE_DATE}")
 
   # Gather the date in finder-style
   execute_process(COMMAND date "+%m/%d/%Y/%H:%M"
@@ -1048,21 +1048,21 @@ elseif(APPLE)
     file(MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/Blender.app)
   endif()
   execute_process(COMMAND SetFile -d ${SETFILE_DATE} -m ${SETFILE_DATE}
-                  ${EXECUTABLE_OUTPUT_PATH}/Blender.app)
+                  ${EXECUTABLE_OUTPUT_PATH}/Dune.app)
 
   install(
-    TARGETS blender
+    TARGETS dune
     DESTINATION "."
   )
 
   install(
     FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
-    DESTINATION Blender.app/Contents
+    DESTINATION Dune.app/Contents
   )
 
   install_dir(
     ${OSX_APP_SOURCEDIR}/Contents/Resources
-    Blender.app/Contents/
+    Dune.app/Contents/
   )
 
   if(WITH_BLENDER_THUMBNAILER)
