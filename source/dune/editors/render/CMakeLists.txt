@@ -9,16 +9,16 @@ set(INC
   ../../draw
   ../../gpu
   ../../imbuf
-  ../../makesdna
-  ../../makesrna
+  ../../dune/types
+  ../../dune/api
   ../../nodes
   ../../render
   ../../sequencer
   ../../windowmanager
   ../../../../intern/glew-mx
   ../../../../intern/guardedalloc
-  # RNA_prototypes.h
-  ${CMAKE_BINARY_DIR}/source/blender/makesrna
+  # api_prototypes.h
+  ${CMAKE_BINARY_DIR}/source/dune/api
 )
 
 set(SRC
@@ -52,7 +52,7 @@ if(WITH_FREESTYLE)
   add_definitions(-DWITH_FREESTYLE)
 endif()
 
-blender_add_lib(bf_editor_render "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(dunefile_editor_render "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 
-# RNA_prototypes.h
-add_dependencies(bf_editor_render bf_rna)
+# api_prototypes.h
+add_dependencies(dunefile_editor_render dunefile_api)
