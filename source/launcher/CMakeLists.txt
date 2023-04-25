@@ -150,7 +150,7 @@ elseif(APPLE)
     Dune.app/Contents/
   )
 
-  if(WITH_BLENDER_THUMBNAILER)
+  if(WITH_DUNE_THUMBNAILER)
       install(
         TARGETS dune-thumbnailer
         DESTINATION Dune.app/Contents/MacOS/
@@ -235,7 +235,7 @@ install(
 # -----------------------------------------------------------------------------
 # Setup link libs
 
-add_dependencies(blender makesdna)
+add_dependencies(dune types)
 target_link_libraries(dune ${LIB})
 unset(LIB)
 
@@ -245,7 +245,7 @@ setup_platform_linker_libs(dune)
 if(APPLE)
   set_target_properties(dune PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/osx_locals.map)
 elseif(UNIX)
-  set_target_properties(dune PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/blender.map)
+  set_target_properties(dune PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dune.map)
 endif()
 
 # -----------------------------------------------------------------------------
