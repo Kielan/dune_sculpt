@@ -46,9 +46,9 @@
 #  include "RE_engine.h"
 #  include "RE_pipeline.h"
 
-#  include "ED_datafiles.h"
+#  include "ed_datafiles.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
 #  ifdef WITH_LIBMV
 #    include "libmv-capi.h"
@@ -58,11 +58,11 @@
 #    include "CCL_api.h"
 #  endif
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
-#  include "DEG_depsgraph_debug.h"
+#  include "graph.h"
+#  include "graph_build.h"
+#  include "graph_debug.h"
 
-#  include "WM_types.h"
+#  include "wm_types.h"
 
 #  include "launcher_intern.h" /* own include */
 
@@ -249,7 +249,7 @@ static int *parse_int_relative_clamp_n(
     }
   }
 
-  int *values = MEM_mallocN(sizeof(*values) * len, __func__);
+  int *values = mem_mallocn(sizeof(*values) * len, __func__);
   int i = 0;
   while (true) {
     const char *str_end = strchr(str, sep);
@@ -277,7 +277,7 @@ static int *parse_int_relative_clamp_n(
   return values;
 
 fail:
-  MEM_freeN(values);
+  mem_freen(values);
   return NULL;
 }
 
@@ -305,7 +305,7 @@ static int (*parse_int_range_relative_clamp_n(const char *str,
     }
   }
 
-  int(*values)[2] = MEM_mallocN(sizeof(*values) * len, __func__);
+  int(*values)[2] = mem_mallocn(sizeof(*values) * len, __func__);
   int i = 0;
   while (true) {
     const char *str_end_range;
@@ -341,7 +341,7 @@ static int (*parse_int_range_relative_clamp_n(const char *str,
   return values;
 
 fail:
-  MEM_freeN(values);
+  mem_freen(values);
   return NULL;
 }
 
