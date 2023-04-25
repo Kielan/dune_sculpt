@@ -206,37 +206,7 @@ elseif(APPLE)
     )
   endif()
 
-  # python
-  if(WITH_PYTHON AND NOT WITH_PYTHON_MODULE AND NOT WITH_PYTHON_FRAMEWORK)
-    # Copy the python libs into the install directory
-    install_dir(
-      ${PYTHON_LIBPATH}
-      ${TARGETDIR_VER}/python/lib
-    )
-
-    install(
-      PROGRAMS ${PYTHON_EXECUTABLE}
-      DESTINATION ${TARGETDIR_VER}/python/bin
-    )
-
-    # Needed for distutils/pip
-    # get the last part of the include dir, will be 'python{version}{abiflag}',
-    get_filename_component(_py_inc_suffix ${PYTHON_INCLUDE_DIR} NAME)
-    install(
-      FILES ${PYTHON_INCLUDE_DIR}/pyconfig.h
-      DESTINATION ${TARGETDIR_VER}/python/include/${_py_inc_suffix}
-    )
-    unset(_py_inc_suffix)
-  endif()
-
-  if(WITH_PYTHON_MODULE)
-    if(INSTALL_BPY_TO_SITE_PACKAGES)
-      install(
-        TARGETS blender
-        LIBRARY DESTINATION ${BPY_INSTALL_DIR}
-      )
-    endif()
-  endif()
+ 
 
   if(WITH_DRACO)
     install(
