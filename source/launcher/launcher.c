@@ -47,12 +47,12 @@
 #include "RE_engine.h"
 #include "RE_texture.h"
 
-#include "ED_datafiles.h"
+#include "ed_datafiles.h"
 
 #include "WM_api.h"
 #include "WM_toolsystem.h"
 
-#include "API_define.h"
+#include "api_define.h"
 
 #ifdef WITH_FREESTYLE
 #  include "FRS_freestyle.h"
@@ -104,15 +104,15 @@ static void cb_mem_error(const char *errorStr)
   fflush(stderr);
 }
 
-static void main_callback_setup(void)
+static void main_cb_setup(void)
 {
   /* Error output from the guarded allocation routines. */
-  mem_set_error_callback(cb_mem_error);
+  mem_set_error_cb(cb_mem_error);
 }
 
 /* free data on early exit (if Python calls 'sys.exit()' while parsing args for eg). */
 struct CreatorAtExitData {
-  bArgs *ba;
+  Args *args;
 #ifdef WIN32
   const char **argv;
   int argv_num;
@@ -123,9 +123,9 @@ static void cb_main_atexit(void *user_data)
 {
   struct CreatorAtExitData *app_init_data = user_data;
 
-  if (app_init_data->ba) {
-    lib_args_destroy(app_init_data->ba);
-    app_init_data->ba = NULL;
+  if (app_init_data->args) {
+    lib_args_destroy(app_init_data->args);
+    app_init_data->args = NULL;
   }
 
 #ifdef WIN32
@@ -139,9 +139,9 @@ static void cb_main_atexit(void *user_data)
 #endif
 }
 
-static void callback_clg_fatal(void *fp)
+static void cb_clg_fatal(void *fp)
 {
-  LIB_system_backtrace(fp);
+  lib_system_backtrace(fp);
 }
 
 /* -------------------------------------------------------------------- */
