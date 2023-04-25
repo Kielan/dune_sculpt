@@ -350,7 +350,7 @@ int main(int argc,
   mem_use_memleak_detection(false);
 
   /* Parse environment handling arguments. */
-  LIB_args_parse(ba, ARG_PASS_ENVIRONMENT, NULL, NULL);
+  lib_args_parse(ba, ARG_PASS_ENVIRONMENT, NULL, NULL);
 
 #else
   /* Using preferences or user startup makes no sense for #WITH_PYTHON_MODULE. */
@@ -369,7 +369,7 @@ int main(int argc,
 
 #ifndef WITH_PYTHON_MODULE
   /* First test for background-mode (#Global.background) */
-  LIB_args_parse(ba, ARG_PASS_SETTINGS, NULL, NULL);
+  lib_args_parse(ba, ARG_PASS_SETTINGS, NULL, NULL);
 
   main_signal_setup();
 #endif
@@ -380,7 +380,7 @@ int main(int argc,
 #endif
 
   /* After #ARG_PASS_SETTINGS arguments, this is so #WM_main_playanim skips #RNA_init. */
-  API_init();
+  api_init();
 
   RE_engines_init();
   KERNEL_node_system_init();
@@ -397,11 +397,11 @@ int main(int argc,
   KERNEL_materials_init();
 
   if (G.background == 0) {
-    LIB_args_parse(ba, ARG_PASS_SETTINGS_GUI, NULL, NULL);
+    lib_args_parse(ba, ARG_PASS_SETTINGS_GUI, NULL, NULL);
   }
-  LIB_args_parse(ba, ARG_PASS_SETTINGS_FORCE, NULL, NULL);
+  lib_args_parse(ba, ARG_PASS_SETTINGS_FORCE, NULL, NULL);
 
-  WM_init(C, argc, (const char **)argv);
+  wm_init(C, argc, (const char **)argv);
 
   /* Need to be after WM init so that userpref are loaded. */
   RE_engines_init_experimental();
