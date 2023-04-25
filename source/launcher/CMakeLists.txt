@@ -533,15 +533,15 @@ if(UNIX AND NOT APPLE)
 
     # misc files
     install(
-      FILES ${CMAKE_SOURCE_DIR}/release/freedesktop/blender.desktop
+      FILES ${CMAKE_SOURCE_DIR}/release/freedesktop/dune.desktop
       DESTINATION share/applications
     )
     install(
-      FILES ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/blender.svg
+      FILES ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/scalable/apps/dune.svg
       DESTINATION share/icons/hicolor/scalable/apps
     )
     install(
-      FILES ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/symbolic/apps/blender-symbolic.svg
+      FILES ${CMAKE_SOURCE_DIR}/release/freedesktop/icons/symbolic/apps/dune-symbolic.svg
       DESTINATION share/icons/hicolor/symbolic/apps
     )
     if(WITH_DUNE_THUMBNAILER)
@@ -550,47 +550,13 @@ if(UNIX AND NOT APPLE)
         DESTINATION bin
       )
     endif()
-    set(DUNE_TEXT_FILES_DESTINATION share/doc/blender)
+    set(DUNE_TEXT_FILES_DESTINATION share/doc/dune)
   endif()
 
-  if(WITH_PYTHON)
-    if(WITH_PYTHON_INSTALL)
-
-      install(
-        PROGRAMS ${PYTHON_EXECUTABLE}
-        DESTINATION ${TARGETDIR_VER}/python/bin
-      )
-
-      # on some platforms (like openSUSE) Python is linked
-      # to be used from lib64 folder.
-      # determine this from Python's libraries path
-      #
-      # ugh, its possible 'lib64' is just a symlink to 'lib' which causes incorrect use of 'lib64'
-      get_filename_component(_pypath_real ${PYTHON_LIBPATH} REALPATH)
-      if(${_pypath_real} MATCHES "lib64$")
-        set(_target_LIB "lib64")
-      else()
-        set(_target_LIB "lib")
-      endif()
-      unset(_pypath_real)
-
-      # Copy the systems python into the install directory
-      # install(CODE "message(\"copying a subset of the systems python...\")")
-      install(
-        DIRECTORY ${PYTHON_LIBPATH}/python${PYTHON_VERSION}
-        DESTINATION ${TARGETDIR_VER}/python/${_target_LIB}
-        PATTERN "__pycache__" EXCLUDE               # * any cache *
-        PATTERN "config-${PYTHON_VERSION}/*.a" EXCLUDE  # static lib
-        PATTERN "lib2to3" EXCLUDE                   # ./lib2to3
-        PATTERN "site-packages/*" EXCLUDE           # ./site-packages/*
-        PATTERN "tkinter" EXCLUDE                   # ./tkinter
-        PATTERN "lib-dynload/_tkinter.*" EXCLUDE    # ./lib-dynload/_tkinter.co
-        PATTERN "idlelib" EXCLUDE                   # ./idlelib
-        PATTERN "test" EXCLUDE                      # ./test
-        PATTERN "turtledemo" EXCLUDE                # ./turtledemo
-        PATTERN "turtle.py" EXCLUDE                 # ./turtle.py
-        PATTERN "wininst*.exe" EXCLUDE              # from distutils, avoid malware false positive
-      )
+    install(
+      PROGRAMS ${PYTHON_EXECUTABLE}
+      DESTINATION ${TARGETDIR_VER}/python/bin
+    )
 
       # Needed for distutils/pip
       # get the last part of the include dir, will be 'python{version}{abiflag}',
