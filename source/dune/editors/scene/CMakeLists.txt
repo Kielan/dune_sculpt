@@ -1,11 +1,11 @@
 set(INC
   ../include
-  ../../dune_kernel
-  ../../lib
-  ../../translation
-  ../../depsgraph
-  ../../types
-  ../../api
+  ../../dune/kernel
+  ../../dune/lib
+  ../../dune/i18n
+  ../../dune/graph
+  ../../dune/types
+  ../../dune/api
   ../../windowmanager
   ../../sequencer
 )
@@ -19,9 +19,9 @@ set(SRC
 )
 
 set(LIB
-  df_dune_kernel
-  df_dune_lib
+  dunefile_dune_kernel
+  dunefile_dune_lib
 )
 
 
-dune_add_lib(df_editor_scene "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(dunefile_editor_scene "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
