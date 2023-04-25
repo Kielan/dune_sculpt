@@ -18,21 +18,21 @@
 #  include "lib_string.h"
 #  include "lib_string_utf8.h"
 #  include "lib_system.h"
-#  include "LIB_threads.h"
-#  include "LIB_utildefines.h"
+#  include "lib_threads.h"
+#  include "lib_utildefines.h"
 
 #  include "LOADER_readfile.h" /* only for BLO_has_bfile_extension */
 
 #  include "dune_version.h"
 #  include "dune_context.h"
 
-#  include "KERNEL_global.h"
-#  include "KERNEL_image_format.h"
-#  include "KERNEL_lib_id.h"
-#  include "KERNEL_main.h"
-#  include "KERNEL_report.h"
-#  include "KERNEL_scene.h"
-#  include "KERNEL_sound.h"
+#  include "dune_global.h"
+#  include "dune_image_format.h"
+#  include "dune_lib_id.h"
+#  include "dune_main.h"
+#  include "dune_report.h"
+#  include "dune_scene.h"
+#  include "dune_sound.h"
 
 #  ifdef WITH_FFMPEG
 #    include "IMB_imbuf.h"
@@ -357,7 +357,7 @@ struct DunePyContextStore {
   bool has_win;
 };
 
-static void arg_py_context_backup(bContext *C,
+static void arg_py_ctx_backup(Ctx *C,
                                   struct BlendePyContextStore *c_py,
                                   const char *script_id)
 {
@@ -422,7 +422,7 @@ static void arg_py_context_restore(bContext *C, struct DunePyContextStore *c_py)
 
 static void print_version_full(void)
 {
-  printf("Dune %s\n", KERNEL_dune_version_string());
+  printf("Dune %s\n", dune_version_string());
 #  ifdef BUILD_DATE
   printf("\tbuild date: %s\n", build_date);
   printf("\tbuild time: %s\n", build_time);
@@ -479,10 +479,10 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   printf("Usage: dune [args ...] [file] [args ...]\n\n");
 
   printf("Render Options:\n");
-  LIB_args_print_arg_doc(ba, "--background");
-  LIB_args_print_arg_doc(ba, "--render-anim");
-  LIB_args_print_arg_doc(ba, "--scene");
-  LIB_args_print_arg_doc(ba, "--render-frame");
+  lib_args_print_arg_doc(ba, "--background");
+  lib_args_print_arg_doc(ba, "--render-anim");
+  lib_args_print_arg_doc(ba, "--scene");
+  lib_args_print_arg_doc(ba, "--render-frame");
   LIB_args_print_arg_doc(ba, "--frame-start");
   LIB_args_print_arg_doc(ba, "--frame-end");
   LIB_args_print_arg_doc(ba, "--frame-jump");
