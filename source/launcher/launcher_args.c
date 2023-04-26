@@ -463,8 +463,8 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
 
   printf("\n");
   printf("Debug Options:\n");
-  LIB_args_print_arg_doc(args, "--debug");
-  LIB_args_print_arg_doc(args, "--debug-value");
+  lib_args_print_arg_doc(args, "--debug");
+  lib_args_print_arg_doc(args, "--debug-value");
 
   printf("\n");
   lib_args_print_arg_doc(args, "--debug-events");
@@ -1304,7 +1304,7 @@ static const char arg_handle_engine_set_doc[] =
     "\tUse '-E help' to list available engines.";
 static int arg_handle_engine_set(int argc, const char **argv, void *data)
 {
-  bContext *C = data;
+  Ctx *C = data;
   if (argc >= 2) {
     if (STREQ(argv[1], "help")) {
       RenderEngineType *type = NULL;
