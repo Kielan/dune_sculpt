@@ -123,7 +123,7 @@ static const char *parse_int_range_sep_search(const char *str, const char *str_e
 /**
  * Parse a number as a range, eg: `1..4`.
  *
- * The a str_end_range argument is a result of #parse_int_range_sep_search.
+ * The a str_end_range argument is a result of parse_int_range_sep_search.
  */
 static bool parse_int_range_relative(const char *str,
                                      const char *str_end_range,
@@ -404,7 +404,7 @@ static const char arg_handle_print_help_doc_win32[] =
     "Print this help text and exit (Windows only).";
 static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
-  bArgs *ba = (Args *)data;
+  Args *args = (Args *)data;
 
   printf("Dune %s\n", dune_version_string());
   printf("Usage: dune [args ...] [file] [args ...]\n\n");
@@ -534,9 +534,9 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   lib_args_print_arg_doc(args, "-R");
   lib_args_print_arg_doc(args, "-r");
 
-  lib_args_print_arg_doc(ba, "--version");
+  lib_args_print_arg_doc(args, "--version");
 
-  lib_args_print_arg_doc(ba, "--");
+  lib_args_print_arg_doc(args, "--");
 
   // printf("\n");
   // printf("Experimental Features:\n");
@@ -545,10 +545,10 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
    *
    * Note that it's good practice for this to remain empty,
    * nevertheless print if any exist. */
-  if (LI_args_has_other_doc(ba)) {
+  if (lib_args_has_other_doc(args)) {
     printf("\n");
     printf("Other Options:\n");
-    LI_args_print_other_doc(ba);
+    lib_args_print_other_doc(args);
   }
 
   printf("\n");
