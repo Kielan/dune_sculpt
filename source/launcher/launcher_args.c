@@ -1061,20 +1061,20 @@ static int arg_handle_enable_event_simulate(int UNUSED(argc),
 
 static const char arg_handle_env_system_set_doc_datafiles[] =
     "\n\t"
-    "Set the " STRINGIFY_ARG(BLENDER_SYSTEM_DATAFILES) " environment variable.";
+    "Set the " STRINGIFY_ARG(DUNE_SYSTEM_DATAFILES) " environment variable.";
 static const char arg_handle_env_system_set_doc_scripts[] =
     "\n\t"
-    "Set the " STRINGIFY_ARG(BLENDER_SYSTEM_SCRIPTS) " environment variable.";
+    "Set the " STRINGIFY_ARG(DUNE_SYSTEM_SCRIPTS) " environment variable.";
 static const char arg_handle_env_system_set_doc_python[] =
     "\n\t"
-    "Set the " STRINGIFY_ARG(BLENDER_SYSTEM_PYTHON) " environment variable.";
+    "Set the " STRINGIFY_ARG(DUNE_SYSTEM_PYTHON) " environment variable.";
 
 static int arg_handle_env_system_set(int argc, const char **argv, void *UNUSED(data))
 {
-  /* `--env-system-scripts` -> `BLENDER_SYSTEM_SCRIPTS` */
+  /* `--env-system-scripts` -> `DUNE_SYSTEM_SCRIPTS` */
 
   char env[64] = "SCULPT";
-  char *ch_dst = env + 7;           /* skip BLENDER */
+  char *ch_dst = env + 7;           /* skip DUNE */
   const char *ch_src = argv[0] + 5; /* skip --env */
 
   if (argc < 2) {
@@ -1087,7 +1087,7 @@ static int arg_handle_env_system_set(int argc, const char **argv, void *UNUSED(d
   }
 
   *ch_dst = '\0';
-  LIB_setenv(env, argv[1]);
+  lib_setenv(env, argv[1]);
   return 1;
 }
 
@@ -1123,7 +1123,7 @@ static int arg_handle_playback_mode(int argc, const char **argv, void *UNUSED(da
 #  endif
 
     /* This function knows to skip this argument ('-a'). */
-    WM_main_playanim(argc, argv);
+    wm_main_playanim(argc, argv);
 
     exit(0);
   }
@@ -1152,7 +1152,7 @@ static int arg_handle_window_geometry(int argc, const char **argv, void *UNUSED(
     }
   }
 
-  WM_init_state_size_set(UNPACK4(params));
+  wm_init_state_size_set(UNPACK4(params));
 
   return 4;
 }
@@ -1164,7 +1164,7 @@ static int arg_handle_native_pixels_set(int UNUSED(argc),
                                         const char **UNUSED(argv),
                                         void *UNUSED(data))
 {
-  WM_init_native_pixels(false);
+  wm_init_native_pixels(false);
   return 0;
 }
 
@@ -1173,7 +1173,7 @@ static const char arg_handle_with_borders_doc[] =
     "Force opening with borders.";
 static int arg_handle_with_borders(int UNUSED(argc), const char **UNUSED(argv), void *UNUSED(data))
 {
-  WM_init_state_normal_set();
+  wm_init_state_normal_set();
   return 0;
 }
 
@@ -1184,7 +1184,7 @@ static int arg_handle_without_borders(int UNUSED(argc),
                                       const char **UNUSED(argv),
                                       void *UNUSED(data))
 {
-  WM_init_state_fullscreen_set();
+  wm_init_state_fullscreen_set();
   return 0;
 }
 
@@ -1195,7 +1195,7 @@ static int arg_handle_window_maximized(int UNUSED(argc),
                                        const char **UNUSED(argv),
                                        void *UNUSED(data))
 {
-  WM_init_state_maximized_set();
+  wm_init_state_maximized_set();
   return 0;
 }
 
