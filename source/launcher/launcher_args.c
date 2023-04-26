@@ -518,25 +518,25 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   lib_args_print_arg_doc(args, "--factory-startup");
   lib_args_print_arg_doc(args, "--enable-event-simulate");
   printf("\n");
-  lib_args_print_arg_doc(ba, "--env-system-datafiles");
-  lib_args_print_arg_doc(ba, "--env-system-scripts");
-  lib_args_print_arg_doc(ba, "--env-system-python");
+  lib_args_print_arg_doc(args, "--env-system-datafiles");
+  lib_args_print_arg_doc(args, "--env-system-scripts");
+  lib_args_print_arg_doc(args, "--env-system-python");
   printf("\n");
-  lib_args_print_arg_doc(ba, "-noaudio");
-  lib_args_print_arg_doc(ba, "-setaudio");
+  lib_args_print_arg_doc(args, "-noaudio");
+  lib_args_print_arg_doc(args, "-setaudio");
 
   printf("\n");
 
-  LI_args_print_arg_doc(ba, "--help");
-  LI_args_print_arg_doc(ba, "/?");
+  LI_args_print_arg_doc(args, "--help");
+  LI_args_print_arg_doc(args, "/?");
 
   /* WIN32 only (ignored for non-win32) */
-  LI_args_print_arg_doc(ba, "-R");
-  LI_args_print_arg_doc(ba, "-r");
+  lib_args_print_arg_doc(args, "-R");
+  lib_args_print_arg_doc(args, "-r");
 
-  LI_args_print_arg_doc(ba, "--version");
+  lib_args_print_arg_doc(ba, "--version");
 
-  LI_args_print_arg_doc(ba, "--");
+  lib_args_print_arg_doc(ba, "--");
 
   // printf("\n");
   // printf("Experimental Features:\n");
