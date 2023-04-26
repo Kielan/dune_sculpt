@@ -21,7 +21,7 @@
 #  include "lib_threads.h"
 #  include "lib_utildefines.h"
 
-#  include "LOADER_readfile.h" /* only for BLO_has_bfile_extension */
+#  include "loader_readfile.h" /* only for BLO_has_bfile_extension */
 
 #  include "dune_version.h"
 #  include "dune_context.h"
@@ -38,13 +38,8 @@
 #    include "IMB_imbuf.h"
 #  endif
 
-#  ifdef WITH_PYTHON
-#    include "BPY_extern_python.h"
-#    include "BPY_extern_run.h"
-#  endif
-
-#  include "RE_engine.h"
-#  include "RE_pipeline.h"
+#  include "render_engine.h"
+#  include "render_pipeline.h"
 
 #  include "ed_datafiles.h"
 
@@ -181,9 +176,7 @@ static bool parse_int_range_relative_clamp(const char *str,
   return false;
 }
 
-/**
- * No clamping, fails with any number outside the range.
- */
+/** No clamping, fails with any number outside the range. */
 static bool parse_int_strict_range(const char *str,
                                    const char *str_end_test,
                                    const int min,
@@ -235,7 +228,7 @@ static bool parse_int_clamp(const char *str,
 
 #  if 0
 /**
- * Version of #parse_int_relative_clamp
+ * Version of parse_int_relative_clamp
  * that parses a comma separated list of numbers.
  */
 static int *parse_int_relative_clamp_n(
@@ -384,12 +377,12 @@ static void print_version_short(void)
   /* NOTE: We include built time since sometimes we need to tell broken from
    * working built of the same hash. */
   printf("Dune %s (hash %s built %s %s)\n",
-         KERNEL_dune_version_string(),
+         dune_version_string(),
          build_hash,
          build_date,
          build_time);
 #  else
-  printf("Dune %s\n", KERNEL_dune_version_string());
+  printf("Dune %s\n", dune_version_string());
 #  endif
 }
 
@@ -413,65 +406,65 @@ static const char arg_handle_print_help_doc_win32[] =
     "Print this help text and exit (Windows only).";
 static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
-  bArgs *ba = (bArgs *)data;
+  bArgs *ba = (Args *)data;
 
-  printf("Dune %s\n", KERNEL_dune_version_string());
+  printf("Dune %s\n", dune_version_string());
   printf("Usage: dune [args ...] [file] [args ...]\n\n");
 
   printf("Render Options:\n");
-  lib_args_print_arg_doc(ba, "--background");
-  lib_args_print_arg_doc(ba, "--render-anim");
-  lib_args_print_arg_doc(ba, "--scene");
-  lib_args_print_arg_doc(ba, "--render-frame");
-  LIB_args_print_arg_doc(ba, "--frame-start");
-  LIB_args_print_arg_doc(ba, "--frame-end");
-  LIB_args_print_arg_doc(ba, "--frame-jump");
-  LIB_args_print_arg_doc(ba, "--render-output");
-  LIB_args_print_arg_doc(ba, "--engine");
-  LIB_args_print_arg_doc(ba, "--threads");
+  lib_args_print_arg_doc(args, "--background");
+  lib_args_print_arg_doc(args, "--render-anim");
+  lib_args_print_arg_doc(args, "--scene");
+  lib_args_print_arg_doc(args, "--render-frame");
+  lib_args_print_arg_doc(args, "--frame-start");
+  lib_args_print_arg_doc(args, "--frame-end");
+  lib_args_print_arg_doc(args, "--frame-jump");
+  lib_args_print_arg_doc(args, "--render-output");
+  lib_args_print_arg_doc(args, "--engine");
+  lib_args_print_arg_doc(args, "--threads");
 
   printf("\n");
   printf("Format Options:\n");
-  LIB_args_print_arg_doc(ba, "--render-format");
-  LIB_args_print_arg_doc(ba, "--use-extension");
+  lib_args_print_arg_doc(args, "--render-format");
+  lib_args_print_arg_doc(args, "--use-extension");
 
   printf("\n");
   printf("Animation Playback Options:\n");
-  LIB_args_print_arg_doc(ba, "-a");
+  lib_args_print_arg_doc(args, "-a");
 
   printf("\n");
   printf("Window Options:\n");
-  LIB_args_print_arg_doc(ba, "--window-border");
-  LIB_args_print_arg_doc(ba, "--window-fullscreen");
-  LIB_args_print_arg_doc(ba, "--window-geometry");
-  LIB_args_print_arg_doc(ba, "--window-maximized");
-  LIB_args_print_arg_doc(ba, "--start-console");
-  LIB_args_print_arg_doc(ba, "--no-native-pixels");
-  LIB_args_print_arg_doc(ba, "--no-window-focus");
+  lib_args_print_arg_doc(args, "--window-border");
+  lib_args_print_arg_doc(args, "--window-fullscreen");
+  lib_args_print_arg_doc(args, "--window-geometry");
+  lib_args_print_arg_doc(args, "--window-maximized");
+  lib_args_print_arg_doc(args, "--start-console");
+  lib_args_print_arg_doc(args, "--no-native-pixels");
+  lib_args_print_arg_doc(args, "--no-window-focus");
 
   printf("\n");
   printf("Python Options:\n");
-  LIB_args_print_arg_doc(ba, "--enable-autoexec");
-  LIB_args_print_arg_doc(ba, "--disable-autoexec");
+  lib_args_print_arg_doc(args, "--enable-autoexec");
+  lib_args_print_arg_doc(args, "--disable-autoexec");
 
   printf("\n");
 
-  LIB_args_print_arg_doc(ba, "--python");
-  LIB_args_print_arg_doc(ba, "--python-text");
-  LIB_args_print_arg_doc(ba, "--python-expr");
-  LIB_args_print_arg_doc(ba, "--python-console");
-  LIB_args_print_arg_doc(ba, "--python-exit-code");
-  LIB_args_print_arg_doc(ba, "--python-use-system-env");
-  LIB_args_print_arg_doc(ba, "--addons");
+  lib_args_print_arg_doc(args, "--python");
+  lib_args_print_arg_doc(args, "--python-text");
+  lib_args_print_arg_doc(args, "--python-expr");
+  lib_args_print_arg_doc(args, "--python-console");
+  lib_args_print_arg_doc(args, "--python-exit-code");
+  lib_args_print_arg_doc(args, "--python-use-system-env");
+  lib_args_print_arg_doc(args, "--addons");
 
   printf("\n");
   printf("Logging Options:\n");
-  LIB_args_print_arg_doc(ba, "--log");
-  LIB_args_print_arg_doc(ba, "--log-level");
-  LIB_args_print_arg_doc(ba, "--log-show-basename");
-  LIB_args_print_arg_doc(ba, "--log-show-backtrace");
-  LIB_args_print_arg_doc(ba, "--log-show-timestamp");
-  LIB_args_print_arg_doc(ba, "--log-file");
+  lib_args_print_arg_doc(args, "--log");
+  lib_args_print_arg_doc(args, "--log-level");
+  lib_args_print_arg_doc(args, "--log-show-basename");
+  lib_args_print_arg_doc(args, "--log-show-backtrace");
+  lib_args_print_arg_doc(args, "--log-show-timestamp");
+  lib_args_print_arg_doc(args, "--log-file");
 
   printf("\n");
   printf("Debug Options:\n");
