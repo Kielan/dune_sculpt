@@ -1345,7 +1345,7 @@ static const char arg_handle_image_type_set_doc[] =
     "\tValid options are:\n"
     "\t'TGA' 'RAWTGA' 'JPEG' 'IRIS' 'IRIZ' 'AVIRAW' 'AVIJPEG' 'PNG' 'BMP'\n"
     "\n"
-    "\tFormats that can be compiled into Blender, not available on all systems:\n"
+    "\tFormats that can be compiled into Dune, not available on all systems:\n"
     "\t'HDR' 'TIFF' 'OPEN_EXR' 'OPEN_EXR_MULTILAYER' 'MPEG' 'CINEON' 'DPX' 'DDS' 'JP2'";
 static int arg_handle_image_type_set(int argc, const char **argv, void *data)
 {
@@ -1368,7 +1368,7 @@ static int arg_handle_image_type_set(int argc, const char **argv, void *data)
     }
     else {
       printf(
-          "\nError: no blend loaded. "
+          "\nError: no dune loaded. "
           "order the arguments so '-F  / --render-format' is after the blend is loaded.\n");
     }
     return 1;
@@ -1552,7 +1552,7 @@ static const char arg_handle_scene_set_doc[] =
 static int arg_handle_scene_set(int argc, const char **argv, void *data)
 {
   if (argc > 1) {
-    duneContext *C = data;
+    Ctx *C = data;
     Scene *scene = dune_scene_set_name(CTX_data_main(C), argv[1]);
     if (scene) {
       ctx_data_scene_set(C, scene);
@@ -1579,8 +1579,8 @@ static const char arg_handle_frame_start_set_doc[] =
 static int arg_handle_frame_start_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-s / --frame-start";
-  duneContext *C = data;
-  Scene *scene = CTX_data_scene(C);
+  Ctx *C = data;
+  Scene *scene = ctx_data_scene(C);
   if (scene) {
     if (argc > 1) {
       const char *err_msg = NULL;
@@ -1595,7 +1595,7 @@ static int arg_handle_frame_start_set(int argc, const char **argv, void *data)
         printf("\nError: %s '%s %s'.\n", err_msg, arg_id, argv[1]);
       }
       else {
-        DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
       }
       return 1;
     }
@@ -1612,8 +1612,8 @@ static const char arg_handle_frame_end_set_doc[] =
 static int arg_handle_frame_end_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-e / --frame-end";
-  duneContext *C = data;
-  Scene *scene = CTX_data_scene(C);
+  Ctx *C = data;
+  Scene *scene = ctx_data_scene(C);
   if (scene) {
     if (argc > 1) {
       const char *err_msg = NULL;
