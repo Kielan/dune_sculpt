@@ -823,17 +823,17 @@ static const char arg_handle_debug_mode_set_doc[] =
 static int arg_handle_debug_mode_set(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
   G.debug |= G_DEBUG; /* std output printf's */
-  printf("Dune %s\n", BKE_blender_version_string());
-  MEM_set_memory_debug();
+  printf("Dune %s\n", dune_dune_version_string());
+  mem_set_memory_debug();
 #  ifndef NDEBUG
-  LIB_mempool_set_memory_debug();
+  lib_mempool_set_memory_debug();
 #  endif
 
 #  ifdef WITH_BUILDINFO
   printf("Build: %s %s %s %s\n", build_date, build_time, build_platform, build_type);
 #  endif
 
-  LIB_args_print(data);
+  lib_args_print(data);
   return 0;
 }
 
@@ -1355,9 +1355,9 @@ static int arg_handle_image_type_set(int argc, const char **argv, void *data)
   Ctx *C = data;
   if (argc > 1) {
     const char *imtype = argv[1];
-    Scene *scene = CTX_data_scene(C);
+    Scene *scene = ctx_data_scene(C);
     if (scene) {
-      const char imtype_new = KERNEL_imtype_from_arg(imtype);
+      const char imtype_new = dune_imtype_from_arg(imtype);
 
       if (imtype_new == R_IMF_IMTYPE_INVALID) {
         printf(
@@ -1366,7 +1366,7 @@ static int arg_handle_image_type_set(int argc, const char **argv, void *data)
       }
       else {
         scene->r.im_format.imtype = imtype_new;
-        DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
       }
     }
     else {
@@ -1401,7 +1401,7 @@ static int arg_handle_threads_set(int argc, const char **argv, void *UNUSED(data
       return 1;
     }
 
-    LIB_system_num_threads_override_set(threads);
+    lib_system_num_threads_override_set(threads);
     return 1;
   }
   printf("\nError: you must specify a number of threads in [%d..%d] '%s'.\n", min, max, arg_id);
@@ -1440,17 +1440,17 @@ static const char arg_handle_extension_set_doc[] =
     "\tSet option to add the file extension to the end of the file.";
 static int arg_handle_extension_set(int argc, const char **argv, void *data)
 {
-  bContext *C = data;
+  Ctx *C = data;
   if (argc > 1) {
-    Scene *scene = CTX_data_scene(C);
+    Scene *scene = ctx_data_scene(C);
     if (scene) {
       if (argv[1][0] == '0') {
         scene->r.scemode &= ~R_EXTENSION;
-        DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
       }
       else if (argv[1][0] == '1') {
         scene->r.scemode |= R_EXTENSION;
-        DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
       }
       else {
         printf("\nError: Use '-x 1 / -x 0' To set the extension option or '--use-extension'\n");
@@ -1458,7 +1458,7 @@ static int arg_handle_extension_set(int argc, const char **argv, void *data)
     }
     else {
       printf(
-          "\nError: no blend loaded. "
+          "\nError: no dune loaded. "
           "order the arguments so '-o ' is after '-x '.\n");
     }
     return 1;
@@ -1478,10 +1478,10 @@ static const char arg_handle_render_frame_doc[] =
 static int arg_handle_render_frame(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-f / --render-frame";
-  duneContext *C = data;
-  Scene *scene = CTX_data_scene(C);
+  Ctx *C = data;
+  Scene *scene = ctx_data_scene(C);
   if (scene) {
-    Main *bmain = CTX_data_main(C);
+    Main *main = ctx_data_main(C);
 
     if (argc > 1) {
       const char *err_msg = NULL;
