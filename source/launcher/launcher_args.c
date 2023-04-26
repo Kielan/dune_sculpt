@@ -470,44 +470,44 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   LIB_args_print_arg_doc(args, "--debug-value");
 
   printf("\n");
-  LIB_args_print_arg_doc(args, "--debug-events");
+  lib_args_print_arg_doc(args, "--debug-events");
 #  ifdef WITH_FFMPEG
-  LIB_args_print_arg_doc(args, "--debug-ffmpeg");
+  lib_args_print_arg_doc(args, "--debug-ffmpeg");
 #  endif
-  LIB_args_print_arg_doc(args, "--debug-handlers");
+  lib_args_print_arg_doc(args, "--debug-handlers");
 #  ifdef WITH_LIBMV
-  LIB_args_print_arg_doc(args, "--debug-libmv");
+  lib_args_print_arg_doc(args, "--debug-libmv");
 #  endif
 #  ifdef WITH_CYCLES_LOGGING
-  LIB_args_print_arg_doc(args, "--debug-cycles");
+  lib_args_print_arg_doc(args, "--debug-cycles");
 #  endif
-  LIB_args_print_arg_doc(args, "--debug-memory");
-  LIB_args_print_arg_doc(args, "--debug-jobs");
-  LIB_args_print_arg_doc(args, "--debug-python");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph-eval");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph-build");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph-tag");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph-no-threads");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph-time");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph-pretty");
-  LIB_args_print_arg_doc(args, "--debug-depsgraph-uuid");
-  LIB_args_print_arg_doc(args, "--debug-ghost");
-  LIB_args_print_arg_doc(args, "--debug-gpu");
-  LIB_args_print_arg_doc(srgd, "--debug-gpu-force-workarounds");
-  LIB_args_print_arg_doc(args, "--debug-wm");
+  lib_args_print_arg_doc(args, "--debug-memory");
+  lib_args_print_arg_doc(args, "--debug-jobs");
+  lib_args_print_arg_doc(args, "--debug-python");
+  lib_args_print_arg_doc(args, "--debug-depsgraph");
+  lib_args_print_arg_doc(args, "--debug-depsgraph-eval");
+  lib_args_print_arg_doc(args, "--debug-depsgraph-build");
+  lib_args_print_arg_doc(args, "--debug-depsgraph-tag");
+  lib_args_print_arg_doc(args, "--debug-depsgraph-no-threads");
+  lib_args_print_arg_doc(args, "--debug-depsgraph-time");
+  lib_args_print_arg_doc(args, "--debug-depsgraph-pretty");
+  lib_args_print_arg_doc(args, "--debug-depsgraph-uuid");
+  lib_args_print_arg_doc(args, "--debug-ghost");
+  lib_args_print_arg_doc(args, "--debug-gpu");
+  lib_args_print_arg_doc(srgd, "--debug-gpu-force-workarounds");
+  lib_args_print_arg_doc(args, "--debug-wm");
 #  ifdef WITH_XR_OPENXR
-  LIB_args_print_arg_doc(args, "--debug-xr");
-  LIB_args_print_arg_doc(args, "--debug-xr-time");
+  lib_args_print_arg_doc(args, "--debug-xr");
+  lib_args_print_arg_doc(args, "--debug-xr-time");
 #  endif
-  LIB_args_print_arg_doc(args, "--debug-all");
-  LIB_args_print_arg_doc(args, "--debug-io");
+  lib_args_print_arg_doc(args, "--debug-all");
+  lib_args_print_arg_doc(args, "--debug-io");
 
   printf("\n");
-  LIB_args_print_arg_doc(args, "--debug-fpe");
-  LIB_args_print_arg_doc(args "--debug-exit-on-error");
-  LIB_args_print_arg_doc(args, "--disable-crash-handler");
-  LIB_args_print_arg_doc(args, "--disable-abort-handler");
+  lib_args_print_arg_doc(args, "--debug-fpe");
+  lib_args_print_arg_doc(args "--debug-exit-on-error");
+  lib_args_print_arg_doc(args, "--disable-crash-handler");
+  lib_args_print_arg_doc(args, "--disable-abort-handler");
 
   LIB_args_print_arg_doc(args, "--verbose");
 
