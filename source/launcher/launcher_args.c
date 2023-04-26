@@ -491,7 +491,7 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   lib_args_print_arg_doc(args, "--debug-depsgraph-uuid");
   lib_args_print_arg_doc(args, "--debug-ghost");
   lib_args_print_arg_doc(args, "--debug-gpu");
-  lib_args_print_arg_doc(srgd, "--debug-gpu-force-workarounds");
+  lib_args_print_arg_doc(args, "--debug-gpu-force-workarounds");
   lib_args_print_arg_doc(args, "--debug-wm");
 #  ifdef WITH_XR_OPENXR
   lib_args_print_arg_doc(args, "--debug-xr");
@@ -651,7 +651,7 @@ static int arg_handle_abort_handler_disable(int UNUSED(argc),
   return 0;
 }
 
-static void clog_abort_on_error_callback(void *fp)
+static void clog_abort_on_error_cb(void *fp)
 {
   lib_system_backtrace(fp);
   fflush(fp);
@@ -666,7 +666,7 @@ static int arg_handle_debug_exit_on_error(int UNUSED(argc),
                                           void *UNUSED(data))
 {
   mem_enable_fail_on_memleak();
-  CLG_error_fn_set(clog_abort_on_error_callback);
+  CLG_error_fn_set(clog_abort_on_error_cb);
   return 0;
 }
 
@@ -1559,7 +1559,7 @@ static int arg_handle_scene_set(int argc, const char **argv, void *data)
 
       /* Set the scene of the first window, see: T55991,
        * otherwise scrips that run later won't get this scene back from the context. */
-      wmWindow *win = ctx_wm_window(C);
+      Window *win = ctx_wm_window(C);
       if (win == NULL) {
         win = ctx_wm_manager(C)->windows.first;
       }
@@ -1663,128 +1663,6 @@ static int arg_handle_frame_skip_set(int argc, const char **argv, void *data)
   }
   printf("\nError: no dune loaded. cannot use '%s'.\n", arg_id);
   return 0;
-}
-
-static const char arg_handle_python_file_run_doc[] =
-    "<filename>\n"
-    "\tRun the given Python script file.";
-static int arg_handle_python_file_run(int argc, const char **argv, void *data)
-{
-#  ifdef WITH_PYTHON
-  Ctx *C = data;
-
-  /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
-  if (argc > 1) {
-    /* Make the path absolute because its needed for relative linked blends to be found */
-    char filename[FILE_MAX];
-    lib_strncpy(filename, argv[1], sizeof(filename));
-    lib_path_abs_from_cwd(filename, sizeof(filename));
-
-    bool ok;
-    BPY_CTX_SETUP(ok = BPY_run_filepath(C, filename, NULL));
-    if (!ok && app_state.exit_code_on_error.python) {
-      printf("\nError: script failed, file: '%s', exiting.\n", argv[1]);
-      BPY_python_end();
-      exit(app_state.exit_code_on_error.python);
-    }
-    return 1;
-  }
-  printf("\nError: you must specify a filepath after '%s'.\n", argv[0]);
-  return 0;
-
-#  else
-  UNUSED_VARS(argc, argv, data);
-  printf("This Dune was built without Python support\n");
-  return 0;
-#  endif /* WITH_PYTHON */
-}
-
-static const char arg_handle_python_text_run_doc[] =
-    "<name>\n"
-    "\tRun the given Python script text block.";
-static int arg_handle_python_text_run(int argc, const char **argv, void *data)
-{
-#  ifdef WITH_PYTHON
-  Ctx *C = data;
-
-  /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
-  if (argc > 1) {
-    Main *main  ctx_data_main(C);
-    /* Make the path absolute because its needed for relative linked blends to be found */
-    struct Text *text = (struct Text *)dune_libblock_find_name(main, ID_TXT, argv[1]);
-    bool ok;
-
-    if (text) {
-      BPY_CTX_SETUP(ok = BPY_run_text(C, text, NULL, false));
-    }
-    else {
-      printf("\nError: text block not found %s.\n", argv[1]);
-      ok = false;
-    }
-
-    if (!ok && app_state.exit_code_on_error.python) {
-      printf("\nError: script failed, text: '%s', exiting.\n", argv[1]);
-      BPY_python_end();
-      exit(app_state.exit_code_on_error.python);
-    }
-
-    return 1;
-  }
-  printf("\nError: you must specify a text block after '%s'.\n", argv[0]);
-  return 0;
-
-#  else
-  UNUSED_VARS(argc, argv, data);
-  printf("This Dune was built without Python support\n");
-  return 0;
-#  endif /* WITH_PYTHON */
-}
-
-static const char arg_handle_python_expr_run_doc[] =
-    "<expression>\n"
-    "\tRun the given expression as a Python script.";
-static int arg_handle_python_expr_run(int argc, const char **argv, void *data)
-{
-#  ifdef WITH_PYTHON
-  Ctx *C = data;
-
-  /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
-  if (argc > 1) {
-    bool ok;
-    BPY_CTX_SETUP(ok = BPY_run_string_exec(C, NULL, argv[1]));
-    if (!ok && app_state.exit_code_on_error.python) {
-      printf("\nError: script failed, expr: '%s', exiting.\n", argv[1]);
-      BPY_python_end();
-      exit(app_state.exit_code_on_error.python);
-    }
-    return 1;
-  }
-  printf("\nError: you must specify a Python expression after '%s'.\n", argv[0]);
-  return 0;
-
-#  else
-  UNUSED_VARS(argc, argv, data);
-  printf("This Dune was built without Python support\n");
-  return 0;
-#  endif /* WITH_PYTHON */
-}
-
-static const char arg_handle_python_console_run_doc[] =
-    "\n\t"
-    "Run Dune with an interactive console.";
-static int arg_handle_python_console_run(int UNUSED(argc), const char **argv, void *data)
-{
-#  ifdef WITH_PYTHON
-  Ctx *C = data;
-
-  BPY_CTX_SETUP(BPY_run_string_eval(C, (const char *[]){"code", NULL}, "code.interact()"));
-
-  return 0;
-#  else
-  UNUSED_VARS(argv, data);
-  printf("This Dune was built without python support\n");
-  return 0;
-#  endif /* WITH_PYTHON */
 }
 
 static const char arg_handle_python_exit_code_set_doc[] =
