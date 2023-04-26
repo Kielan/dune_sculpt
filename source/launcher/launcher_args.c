@@ -506,7 +506,7 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   lib_args_print_arg_doc(args, "--disable-crash-handler");
   lib_args_print_arg_doc(args, "--disable-abort-handler");
 
-  LIB_args_print_arg_doc(args, "--verbose");
+  lib_args_print_arg_doc(args, "--verbose");
 
   printf("\n");
   printf("Misc Options:\n");
