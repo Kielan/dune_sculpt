@@ -1206,7 +1206,7 @@ static int arg_handle_no_window_focus(int UNUSED(argc),
                                       const char **UNUSED(argv),
                                       void *UNUSED(data))
 {
-  WM_init_window_focus_set(false);
+  wm_init_window_focus_set(false);
   return 0;
 }
 
@@ -1217,13 +1217,13 @@ static int arg_handle_start_with_console(int UNUSED(argc),
                                          const char **UNUSED(argv),
                                          void *UNUSED(data))
 {
-  WM_init_state_start_with_console_set(true);
+  wm_init_state_start_with_console_set(true);
   return 0;
 }
 
 static const char arg_handle_register_extension_doc[] =
     "\n\t"
-    "Register blend-file extension, then exit (Windows only).";
+    "Register dunr-file extension, then exit (Windows only).";
 static const char arg_handle_register_extension_doc_silent[] =
     "\n\t"
     "Silently register blend-file extension, then exit (Windows only).";
@@ -1318,11 +1318,11 @@ static int arg_handle_engine_set(int argc, const char **argv, void *data)
       exit(0);
     }
     else {
-      Scene *scene = CTX_data_scene(C);
+      Scene *scene = ctx_data_scene(C);
       if (scene) {
-        if (LIB_findstring(&R_engines, argv[1], offsetof(RenderEngineType, idname))) {
-          LIB_strncpy_utf8(scene->r.engine, argv[1], sizeof(scene->r.engine));
-          DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        if (lib_findstring(&R_engines, argv[1], offsetof(RenderEngineType, idname))) {
+          lib_strncpy_utf8(scene->r.engine, argv[1], sizeof(scene->r.engine));
+          graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
         }
         else {
           printf("\nError: engine not found '%s'\n", argv[1]);
@@ -1352,7 +1352,7 @@ static const char arg_handle_image_type_set_doc[] =
     "\t'HDR' 'TIFF' 'OPEN_EXR' 'OPEN_EXR_MULTILAYER' 'MPEG' 'CINEON' 'DPX' 'DDS' 'JP2'";
 static int arg_handle_image_type_set(int argc, const char **argv, void *data)
 {
-  bContext *C = data;
+  Ctx *C = data;
   if (argc > 1) {
     const char *imtype = argv[1];
     Scene *scene = CTX_data_scene(C);
