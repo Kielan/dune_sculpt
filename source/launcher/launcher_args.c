@@ -1233,7 +1233,7 @@ static int arg_handle_register_extension(int UNUSED(argc), const char **UNUSED(a
   if (data) {
     G.background = 1;
   }
-  LIB_windows_register_dune_extension(G.background);
+  lib_windows_register_dune_extension(G.background);
   TerminateProcess(GetCurrentProcess(), 0);
 #  else
   (void)data; /* unused */
@@ -1248,7 +1248,7 @@ static int arg_handle_audio_disable(int UNUSED(argc),
                                     const char **UNUSED(argv),
                                     void *UNUSED(data))
 {
-  KERNEL_sound_force_device("None");
+  dune_sound_force_device("None");
   return 0;
 }
 
@@ -1264,7 +1264,7 @@ static int arg_handle_audio_set(int argc, const char **argv, void *UNUSED(data))
     exit(1);
   }
 
-  KERNEL_sound_force_device(argv[1]);
+  dune_sound_force_device(argv[1]);
   return 1;
 }
 
@@ -1281,16 +1281,16 @@ static const char arg_handle_output_set_doc[] =
     "\tWhen the filename does not contain '#', The suffix '####' is added to the filename.\n"
     "\n"
     "\tThe frame number will be added at the end of the filename, eg:\n"
-    "\t# dune -b animation.blend -o //render_ -F PNG -x 1 -a\n"
+    "\t# dune -b animation.dune -o //render_ -F PNG -x 1 -a\n"
     "\t'//render_' becomes '//render_####', writing frames as '//render_0001.png'";
 static int arg_handle_output_set(int argc, const char **argv, void *data)
 {
-  bContext *C = data;
+  Ctx *C = data;
   if (argc > 1) {
-    Scene *scene = CTX_data_scene(C);
+    Scene *scene = ctx_data_scene(C);
     if (scene) {
-      LIB_strncpy(scene->r.pic, argv[1], sizeof(scene->r.pic));
-      DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+      lib_strncpy(scene->r.pic, argv[1], sizeof(scene->r.pic));
+      graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
     }
     else {
       printf("\nError: no blend loaded. cannot use '-o / --render-output'.\n");
