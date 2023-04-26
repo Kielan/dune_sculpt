@@ -1974,28 +1974,28 @@ void main_args_setup(Ctx *C, Args *ba)
   /* Pass: Background Mode & Settings
    *
    * Also and commands that exit after usage. */
-  LIB_args_pass_set(ba, ARG_PASS_SETTINGS);
-  LIB_args_add(ba, "-h", "--help", CB(arg_handle_print_help), ba);
+  lib_args_pass_set(args, ARG_PASS_SETTINGS);
+  lib_args_add(args, "-h", "--help", CB(arg_handle_print_help), ba);
   /* Windows only */
-  LIB_args_add(ba, "/?", NULL, CB_EX(arg_handle_print_help, win32), ba);
+  lib_args_add(args, "/?", NULL, CB_EX(arg_handle_print_help, win32), ba);
 
-  LIB_args_add(ba, "-v", "--version", CB(arg_handle_print_version), NULL);
+  lib_args_add(args, "-v", "--version", CB(arg_handle_print_version), NULL);
 
-  LIB_args_add(ba, "-y", "--enable-autoexec", CB_EX(arg_handle_python_set, enable), (void *)true);
-  LIB_args_add(
-      ba, "-Y", "--disable-autoexec", CB_EX(arg_handle_python_set, disable), (void *)false);
+  lib_args_add(args, "-y", "--enable-autoexec", CB_EX(arg_handle_python_set, enable), (void *)true);
+  lib_args_add(
+      args, "-Y", "--disable-autoexec", CB_EX(arg_handle_python_set, disable), (void *)false);
 
-  LIB_args_add(ba, NULL, "--disable-crash-handler", CB(arg_handle_crash_handler_disable), NULL);
-  LIB_args_add(ba, NULL, "--disable-abort-handler", CB(arg_handle_abort_handler_disable), NULL);
+  lib_args_add(args, NULL, "--disable-crash-handler", CB(arg_handle_crash_handler_disable), NULL);
+  lib_args_add(args, NULL, "--disable-abort-handler", CB(arg_handle_abort_handler_disable), NULL);
 
-  LIB_args_add(ba, "-b", "--background", CB(arg_handle_background_mode_set), NULL);
+  lib_args_add(args, "-b", "--background", CB(arg_handle_background_mode_set), NULL);
 
-  LIB_args_add(ba, "-a", NULL, CB(arg_handle_playback_mode), NULL);
+  lib_args_add(args, "-a", NULL, CB(arg_handle_playback_mode), NULL);
 
-  LIB_args_add(ba, "-d", "--debug", CB(arg_handle_debug_mode_set), ba);
+  lib_args_add(args, "-d", "--debug", CB(arg_handle_debug_mode_set), ba);
 
 #  ifdef WITH_FFMPEG
-  LIB_args_add(ba,
+  LIB_args_add(args,
                NULL,
                "--debug-ffmpeg",
                CB_EX(arg_handle_debug_mode_generic_set, ffmpeg),
@@ -2003,28 +2003,24 @@ void main_args_setup(Ctx *C, Args *ba)
 #  endif
 
 #  ifdef WITH_FREESTYLE
-  LIB_args_add(ba,
-
+  lib_args_add(args,
                NULL,
                "--debug-freestyle",
                CB_EX(arg_handle_debug_mode_generic_set, freestyle),
                (void *)G_DEBUG_FREESTYLE);
 #  endif
 
-  LIB_args_add(ba,
-
+  lib_args_add(args,
                NULL,
                "--debug-python",
                CB_EX(arg_handle_debug_mode_generic_set, python),
                (void *)G_DEBUG_PYTHON);
-  LIB_args_add(ba,
-
+  lib_args_add(ba,
                NULL,
                "--debug-events",
                CB_EX(arg_handle_debug_mode_generic_set, events),
                (void *)G_DEBUG_EVENTS);
-  LIB_args_add(ba,
-
+  lib_args_add(ba,
                NULL,
                "--debug-handlers",
                CB_EX(arg_handle_debug_mode_generic_set, handlers),
@@ -2035,7 +2031,6 @@ void main_args_setup(Ctx *C, Args *ba)
   LIB_args_add(
       ba, NULL, "--debug-xr", CB_EX(arg_handle_debug_mode_generic_set, xr), (void *)G_DEBUG_XR);
   LIB_args_add(ba,
-
                NULL,
                "--debug-xr-time",
                CB_EX(arg_handle_debug_mode_generic_set, xr_time),
@@ -2167,7 +2162,7 @@ void main_args_setup(Ctx *C, Args *ba)
 }
 
 /** Needs to be added separately. **/
-void main_args_setup_post(duneContext *C, duneArgs *dune_args)
+void main_args_setup_post(Ctx *C, Args *dune_args)
 {
-  LIB_args_parse(dune_args, ARG_PASS_FINAL, arg_handle_load_file, C);
+  lib_args_parse(dune_args, ARG_PASS_FINAL, arg_handle_load_file, C);
 }
