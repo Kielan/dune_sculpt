@@ -1513,7 +1513,7 @@ static int arg_handle_render_frame(int argc, const char **argv, void *data)
       }
       RE_SetReports(re, NULL);
       dune_reports_clear(&reports);
-      mem_freeZn(frame_range_arr);
+      mem_freen(frame_range_arr);
       return 1;
     }
     printf("\nError: frame number must follow '%s'.\n", arg_id);
@@ -1628,7 +1628,7 @@ static int arg_handle_frame_end_set(int argc, const char **argv, void *data)
         printf("\nError: %s '%s %s'.\n", err_msg, arg_id, argv[1]);
       }
       else {
-        DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
       }
       return 1;
     }
@@ -1645,8 +1645,8 @@ static const char arg_handle_frame_skip_set_doc[] =
 static int arg_handle_frame_skip_set(int argc, const char **argv, void *data)
 {
   const char *arg_id = "-j / --frame-jump";
-  duneContext *C = data;
-  Scene *scene = CTX_data_scene(C);
+  Ctx *C = data;
+  Scene *scene = ctx_data_scene(C);
   if (scene) {
     if (argc > 1) {
       const char *err_msg = NULL;
@@ -1654,7 +1654,7 @@ static int arg_handle_frame_skip_set(int argc, const char **argv, void *data)
         printf("\nError: %s '%s %s'.\n", err_msg, arg_id, argv[1]);
       }
       else {
-        DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+        graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
       }
       return 1;
     }
@@ -1705,13 +1705,13 @@ static const char arg_handle_python_text_run_doc[] =
 static int arg_handle_python_text_run(int argc, const char **argv, void *data)
 {
 #  ifdef WITH_PYTHON
-  duneContext *C = data;
+  Ctx *C = data;
 
   /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
   if (argc > 1) {
-    Main *bmain = CTX_data_main(C);
+    Main *main  ctx_data_main(C);
     /* Make the path absolute because its needed for relative linked blends to be found */
-    struct Text *text = (struct Text *)KERNEL_libblock_find_name(bmain, ID_TXT, argv[1]);
+    struct Text *text = (struct Text *)dune_libblock_find_name(main, ID_TXT, argv[1]);
     bool ok;
 
     if (text) {
@@ -1775,14 +1775,14 @@ static const char arg_handle_python_console_run_doc[] =
 static int arg_handle_python_console_run(int UNUSED(argc), const char **argv, void *data)
 {
 #  ifdef WITH_PYTHON
-  duneContext *C = data;
+  Ctx *C = data;
 
   BPY_CTX_SETUP(BPY_run_string_eval(C, (const char *[]){"code", NULL}, "code.interact()"));
 
   return 0;
 #  else
   UNUSED_VARS(argv, data);
-  printf("This Blender was built without python support\n");
+  printf("This Dune was built without python support\n");
   return 0;
 #  endif /* WITH_PYTHON */
 }
@@ -1844,10 +1844,10 @@ static int arg_handle_addons_set(int argc, const char **argv, void *data)
         "        enable(m, persistent=True)";
     const int slen = strlen(argv[1]) + (sizeof(script_str) - 2);
     char *str = malloc(slen);
-    duneContext *C = data;
-    LIB_snprintf(str, slen, script_str, argv[1]);
+    Ctx *C = data;
+    lib_snprintf(str, slen, script_str, argv[1]);
 
-    LIB_assert(strlen(str) + 1 == slen);
+    lib_assert(strlen(str) + 1 == slen);
     BPY_CTX_SETUP(BPY_run_string_exec(C, NULL, str));
     free(str);
 #  else
@@ -1861,7 +1861,7 @@ static int arg_handle_addons_set(int argc, const char **argv, void *data)
 
 static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
 {
-  duneContext *C = data;
+  Ctx *C = data;
   ReportList reports;
   bool success;
 
@@ -1873,21 +1873,21 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
     fprintf(stderr, "unknown argument, loading as file: %s\n", argv[0]);
   }
 
-  LIB_strncpy(filename, argv[0], sizeof(filename));
-  LIB_path_slash_native(filename);
-  LIB_path_abs_from_cwd(filename, sizeof(filename));
-  LIB_path_normalize(NULL, filename);
+  lib_strncpy(filename, argv[0], sizeof(filename));
+  lib_path_slash_native(filename);
+  lib_path_abs_from_cwd(filename, sizeof(filename));
+  lib_path_normalize(NULL, filename);
 
   /* load the file */
-  KERNEL_reports_init(&reports, RPT_PRINT);
-  WM_file_autoexec_init(filename);
-  success = WM_file_read(C, filename, &reports);
-  KERNEL_reports_clear(&reports);
+  dune_reports_init(&reports, RPT_PRINT);
+  wm_file_autoexec_init(filename);
+  success = wm_file_read(C, filename, &reports);
+  dune_reports_clear(&reports);
 
   if (success) {
     if (G.background) {
       /* Ensure we use 'C->data.scene' for background render. */
-      CTX_wm_window_set(C, NULL);
+      ctx_wm_window_set(C, NULL);
     }
   }
   else {
@@ -1913,7 +1913,7 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
           "Error: argument has no '.blend' file extension, not using as new file, exiting! %s\n",
           filename);
       G.is_break = true;
-      WM_exit(C);
+      wm_exit(C);
     }
   }
 
@@ -1925,7 +1925,7 @@ static const char arg_handle_load_last_file_doc[] =
     "Open the most recently opened dune file, instead of the default startup file.";
 static int arg_handle_load_last_file(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
-  if (LIB_listbase_is_empty(&G.recent_files)) {
+  if (lib_listbase_is_empty(&G.recent_files)) {
     printf("Warning: no recent files known, opening default startup file instead.\n");
     return -1;
   }
@@ -1935,32 +1935,32 @@ static int arg_handle_load_last_file(int UNUSED(argc), const char **UNUSED(argv)
   return arg_handle_load_file(ARRAY_SIZE(fake_argv), fake_argv, data);
 }
 
-void main_args_setup(duneContext *C, bArgs *ba)
+void main_args_setup(Ctx *C, Args *ba)
 {
 
 #  define CB(a) a##_doc, a
 #  define CB_EX(a, b) a##_doc_##b, a
 
   /* end argument processing after -- */
-  LIB_args_pass_set(ba, -1);
-  LIB_args_add(ba, "--", NULL, CB(arg_handle_arguments_end), NULL);
+  lib_args_pass_set(ba, -1);
+  lib_args_add(ba, "--", NULL, CB(arg_handle_arguments_end), NULL);
 
   /* Pass: Environment Setup
    *
    * It's important these run before any initialization is done, since they set up
    * the environment used to access data-files, which are be used when initializing
    * sub-systems such as color management. */
-  LIB_args_pass_set(ba, ARG_PASS_ENVIRONMENT);
-  LIB_args_add(
+  lib_args_pass_set(ba, ARG_PASS_ENVIRONMENT);
+  lib_args_add(
       ba, NULL, "--python-use-system-env", CB(arg_handle_python_use_system_env_set), NULL);
 
   /* Note that we could add used environment variables too. */
-  LIB_args_add(
+  lib_args_add(
       ba, NULL, "--env-system-datafiles", CB_EX(arg_handle_env_system_set, datafiles), NULL);
-  LIB_args_add(ba, NULL, "--env-system-scripts", CB_EX(arg_handle_env_system_set, scripts), NULL);
-  LIB_args_add(ba, NULL, "--env-system-python", CB_EX(arg_handle_env_system_set, python), NULL);
+  lib_args_add(ba, NULL, "--env-system-scripts", CB_EX(arg_handle_env_system_set, scripts), NULL);
+  lib_args_add(ba, NULL, "--env-system-python", CB_EX(arg_handle_env_system_set, python), NULL);
 
-  LIB_args_add(ba, "-t", "--threads", CB(arg_handle_threads_set), NULL);
+  lib_args_add(ba, "-t", "--threads", CB(arg_handle_threads_set), NULL);
 
   /* Include in the environment pass so it's possible display errors initializing subsystems,
    * especially `bpy.appdir` since it's useful to show errors finding paths on startup. */
