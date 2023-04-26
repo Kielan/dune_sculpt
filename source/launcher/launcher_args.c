@@ -227,10 +227,8 @@ static bool parse_int_clamp(const char *str,
 }
 
 #  if 0
-/**
- * Version of parse_int_relative_clamp
- * that parses a comma separated list of numbers.
- */
+/** Version of parse_int_relative_clamp
+ * that parses a comma separated list of numbers. **/
 static int *parse_int_relative_clamp_n(
     const char *str, int pos, int neg, int min, int max, int *r_value_len, const char **r_err_msg)
 {
