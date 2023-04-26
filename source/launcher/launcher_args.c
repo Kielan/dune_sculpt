@@ -120,11 +120,8 @@ static const char *parse_int_range_sep_search(const char *str, const char *str_e
   return str_end_range;
 }
 
-/**
- * Parse a number as a range, eg: `1..4`.
- *
- * The a str_end_range argument is a result of parse_int_range_sep_search.
- */
+/** Parse a number as a range, eg: `1..4`.
+  * The a str_end_range argument is a result of parse_int_range_sep_search. */
 static bool parse_int_range_relative(const char *str,
                                      const char *str_end_range,
                                      const char *str_end_test,
@@ -656,7 +653,7 @@ static int arg_handle_abort_handler_disable(int UNUSED(argc),
 
 static void clog_abort_on_error_callback(void *fp)
 {
-  LIB_system_backtrace(fp);
+  lib_system_backtrace(fp);
   fflush(fp);
   abort();
 }
@@ -668,7 +665,7 @@ static int arg_handle_debug_exit_on_error(int UNUSED(argc),
                                           const char **UNUSED(argv),
                                           void *UNUSED(data))
 {
-  MEM_enable_fail_on_memleak();
+  mem_enable_fail_on_memleak();
   CLG_error_fn_set(clog_abort_on_error_callback);
   return 0;
 }
@@ -728,7 +725,7 @@ static int arg_handle_log_show_backtrace_set(int UNUSED(argc),
                                              void *UNUSED(data))
 {
   /* Ensure types don't become incompatible. */
-  void (*fn)(FILE * fp) = LIB_system_backtrace;
+  void (*fn)(FILE * fp) = lib_system_backtrace;
   CLG_backtrace_fn_set((void (*)(void *))fn);
   return 0;
 }
@@ -905,7 +902,7 @@ static int arg_handle_debug_mode_generic_set(int UNUSED(argc),
                                              const char **UNUSED(argv),
                                              void *data)
 {
-  G.debug |= POINTER_AS_INT(data);
+  G.debug |= PTR_AS_INT(data);
   return 0;
 }
 
@@ -971,7 +968,7 @@ static int arg_handle_debug_mode_memory_set(int UNUSED(argc),
                                             const char **UNUSED(argv),
                                             void *UNUSED(data))
 {
-  MEM_set_memory_debug();
+  mem_set_memory_debug();
   return 0;
 }
 
@@ -1029,7 +1026,7 @@ static int arg_handle_app_template(int argc, const char **argv, void *UNUSED(dat
 {
   if (argc > 1) {
     const char *app_template = STREQ(argv[1], "default") ? "" : argv[1];
-    WM_init_state_app_template_set(app_template);
+    wm_init_state_app_template_set(app_template);
     return 1;
   }
   printf("\nError: App template must follow '--app-template'.\n");
@@ -1501,7 +1498,7 @@ static int arg_handle_render_frame(int argc, const char **argv, void *data)
       }
 
       re = RE_NewSceneRender(scene);
-      KERNEL_reports_init(&reports, RPT_STORE);
+      dune_reports_init(&reports, RPT_STORE);
       RE_SetReports(re, &reports);
       for (int i = 0; i < frames_range_len; i++) {
         /* We could pass in frame ranges,
@@ -1511,12 +1508,12 @@ static int arg_handle_render_frame(int argc, const char **argv, void *data)
         }
 
         for (int frame = frame_range_arr[i][0]; frame <= frame_range_arr[i][1]; frame++) {
-          RE_RenderAnim(re, bmain, scene, NULL, NULL, frame, frame, scene->r.frame_step);
+          RE_RenderAnim(re, main, scene, NULL, NULL, frame, frame, scene->r.frame_step);
         }
       }
       RE_SetReports(re, NULL);
-      KERNEL_reports_clear(&reports);
-      MEM_freeN(frame_range_arr);
+      dune_reports_clear(&reports);
+      mem_freeZn(frame_range_arr);
       return 1;
     }
     printf("\nError: frame number must follow '%s'.\n", arg_id);
@@ -1531,17 +1528,17 @@ static const char arg_handle_render_animation_doc[] =
     "Render frames from start to end (inclusive).";
 static int arg_handle_render_animation(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
-  duneContext *C = data;
-  Scene *scene = CTX_data_scene(C);
+  Ctx *C = data;
+  Scene *scene = ctx_data_scene(C);
   if (scene) {
-    Main *dune_main = CTX_data_main(C);
+    Main *dune_main = ctx_data_main(C);
     Render *re = RE_NewSceneRender(scene);
     ReportList reports;
-    KERNEL_reports_init(&reports, RPT_STORE);
+    dune_reports_init(&reports, RPT_STORE);
     RE_SetReports(re, &reports);
     RE_RenderAnim(re, dune_main, scene, NULL, NULL, scene->r.sfra, scene->r.efra, scene->r.frame_step);
     RE_SetReports(re, NULL);
-    KERNEL_reports_clear(&reports);
+    dune_reports_clear(&reports);
   }
   else {
     printf("\nError: no dune loaded. cannot use '-a'.\n");
@@ -1556,18 +1553,18 @@ static int arg_handle_scene_set(int argc, const char **argv, void *data)
 {
   if (argc > 1) {
     duneContext *C = data;
-    Scene *scene = KERNEL_scene_set_name(CTX_data_main(C), argv[1]);
+    Scene *scene = dune_scene_set_name(CTX_data_main(C), argv[1]);
     if (scene) {
-      CTX_data_scene_set(C, scene);
+      ctx_data_scene_set(C, scene);
 
       /* Set the scene of the first window, see: T55991,
        * otherwise scrips that run later won't get this scene back from the context. */
-      wmWindow *win = CTX_wm_window(C);
+      wmWindow *win = ctx_wm_window(C);
       if (win == NULL) {
-        win = CTX_wm_manager(C)->windows.first;
+        win = ctx_wm_manager(C)->windows.first;
       }
       if (win != NULL) {
-        WM_window_set_active_scene(CTX_data_main(C), C, win, scene);
+        wn_window_set_active_scene(CTX_data_main(C), C, win, scene);
       }
     }
     return 1;
