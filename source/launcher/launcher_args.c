@@ -1223,7 +1223,7 @@ static const char arg_handle_register_extension_doc[] =
     "Register dunr-file extension, then exit (Windows only).";
 static const char arg_handle_register_extension_doc_silent[] =
     "\n\t"
-    "Silently register blend-file extension, then exit (Windows only).";
+    "Silently register dune-file extension, then exit (Windows only).";
 static int arg_handle_register_extension(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
 #  ifdef WIN32
@@ -1671,14 +1671,14 @@ static const char arg_handle_python_file_run_doc[] =
 static int arg_handle_python_file_run(int argc, const char **argv, void *data)
 {
 #  ifdef WITH_PYTHON
-  duneContext *C = data;
+  Ctx *C = data;
 
   /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
   if (argc > 1) {
     /* Make the path absolute because its needed for relative linked blends to be found */
     char filename[FILE_MAX];
-    LIB_strncpy(filename, argv[1], sizeof(filename));
-    LIB_path_abs_from_cwd(filename, sizeof(filename));
+    lib_strncpy(filename, argv[1], sizeof(filename));
+    lib_path_abs_from_cwd(filename, sizeof(filename));
 
     bool ok;
     BPY_CTX_SETUP(ok = BPY_run_filepath(C, filename, NULL));
@@ -1746,7 +1746,7 @@ static const char arg_handle_python_expr_run_doc[] =
 static int arg_handle_python_expr_run(int argc, const char **argv, void *data)
 {
 #  ifdef WITH_PYTHON
-  bContext *C = data;
+  Ctx *C = data;
 
   /* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
   if (argc > 1) {
@@ -1964,12 +1964,12 @@ void main_args_setup(Ctx *C, Args *ba)
 
   /* Include in the environment pass so it's possible display errors initializing subsystems,
    * especially `bpy.appdir` since it's useful to show errors finding paths on startup. */
-  LIB_args_add(ba, NULL, "--log", CB(arg_handle_log_set), ba);
-  LIB_args_add(ba, NULL, "--log-level", CB(arg_handle_log_level_set), ba);
-  LIB_args_add(ba, NULL, "--log-show-basename", CB(arg_handle_log_show_basename_set), ba);
-  LIB_args_add(ba, NULL, "--log-show-backtrace", CB(arg_handle_log_show_backtrace_set), ba);
-  LIB_args_add(ba, NULL, "--log-show-timestamp", CB(arg_handle_log_show_timestamp_set), ba);
-  LIB_args_add(ba, NULL, "--log-file", CB(arg_handle_log_file_set), ba);
+  lib_args_add(args, NULL, "--log", CB(arg_handle_log_set), ba);
+  lib_args_add(args, NULL, "--log-level", CB(arg_handle_log_level_set), ba);
+  lib_args_add(args, NULL, "--log-show-basename", CB(arg_handle_log_show_basename_set), ba);
+  lib_args_add(args, NULL, "--log-show-backtrace", CB(arg_handle_log_show_backtrace_set), ba);
+  lib_args_add(args, NULL, "--log-show-timestamp", CB(arg_handle_log_show_timestamp_set), ba);
+  lib_args_add(args, NULL, "--log-file", CB(arg_handle_log_file_set), ba);
 
   /* Pass: Background Mode & Settings
    *
