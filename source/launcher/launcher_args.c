@@ -524,8 +524,8 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
 
   printf("\n");
 
-  LI_args_print_arg_doc(args, "--help");
-  LI_args_print_arg_doc(args, "/?");
+  lib_args_print_arg_doc(args, "--help");
+  lib_args_print_arg_doc(args, "/?");
 
   /* WIN32 only (ignored for non-win32) */
   lib_args_print_arg_doc(args, "-R");
