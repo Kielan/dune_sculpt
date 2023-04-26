@@ -509,21 +509,21 @@ static int arg_handle_print_help(int UNUSED(argc), const char **UNUSED(argv), vo
   LIB_args_print_arg_doc(args, "--disable-crash-handler");
   LIB_args_print_arg_doc(args, "--disable-abort-handler");
 
-  LIB_args_print_arg_doc(ba, "--verbose");
+  LIB_args_print_arg_doc(args, "--verbose");
 
   printf("\n");
   printf("Misc Options:\n");
-  LIB_args_print_arg_doc(ba, "--open-last");
-  LIB_args_print_arg_doc(ba, "--app-template");
-  LIB_args_print_arg_doc(ba, "--factory-startup");
-  LIB_args_print_arg_doc(ba, "--enable-event-simulate");
+  lib_args_print_arg_doc(args, "--open-last");
+  lib_args_print_arg_doc(args, "--app-template");
+  lib_args_print_arg_doc(args, "--factory-startup");
+  lib_args_print_arg_doc(args, "--enable-event-simulate");
   printf("\n");
-  LI_args_print_arg_doc(ba, "--env-system-datafiles");
-  LI_args_print_arg_doc(ba, "--env-system-scripts");
-  LI_args_print_arg_doc(ba, "--env-system-python");
+  lib_args_print_arg_doc(ba, "--env-system-datafiles");
+  lib_args_print_arg_doc(ba, "--env-system-scripts");
+  lib_args_print_arg_doc(ba, "--env-system-python");
   printf("\n");
-  LI_args_print_arg_doc(ba, "-noaudio");
-  LI_args_print_arg_doc(ba, "-setaudio");
+  lib_args_print_arg_doc(ba, "-noaudio");
+  lib_args_print_arg_doc(ba, "-setaudio");
 
   printf("\n");
 
