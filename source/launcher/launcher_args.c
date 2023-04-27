@@ -1792,12 +1792,12 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-handlers",
                CB_EX(arg_handle_debug_mode_generic_set, handlers),
                (void *)G_DEBUG_HANDLERS);
-  LIB_args_add(
+  lib_args_add(
       args, NULL, "--debug-wm", CB_EX(arg_handle_debug_mode_generic_set, wm), (void *)G_DEBUG_WM);
 #  ifdef WITH_XR_OPENXR
-  LIB_args_add(
+  lib_args_add(
       args, NULL, "--debug-xr", CB_EX(arg_handle_debug_mode_generic_set, xr), (void *)G_DEBUG_XR);
-  LIB_args_add(args,
+  lib_args_add(args,
                NULL,
                "--debug-xr-time",
                CB_EX(arg_handle_debug_mode_generic_set, xr_time),
@@ -1815,7 +1815,7 @@ void main_args_setup(Ctx *C, Args *ba)
   lib_args_add(args, NULL, "--debug-fpe", CB(arg_handle_debug_fpe_set), NULL);
 
 #  ifdef WITH_LIBMV
-  lib_args_add(ba, NULL, "--debug-libmv", CB(arg_handle_debug_mode_libmv), NULL);
+  lib_args_add(args, NULL, "--debug-libmv", CB(arg_handle_debug_mode_libmv), NULL);
 #  endif
 #  ifdef WITH_CYCLES_LOGGING
   lib_args_add(args, NULL, "--debug-cycles", CB(arg_handle_debug_mode_cycles), NULL);
@@ -1840,12 +1840,12 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-graph-build",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_build),
                (void *)G_DEBUG_DEPSGRAPH_BUILD);
-  lib_args_add(atgs,
+  lib_args_add(args,
                NULL,
                "--debug-graph-eval",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_eval),
                (void *)G_DEBUG_DEPSGRAPH_EVAL);
- lib_args_add(ba,
+ lib_args_add(args,
                NULL,
                "--debug-graph-tag",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_tag),
@@ -1858,12 +1858,12 @@ void main_args_setup(Ctx *C, Args *ba)
   lib_args_add(args,
 
                NULL,
-               "--debug-depsgraph-no-threads",
+               "--debug-graph-no-threads",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_no_threads),
                (void *)G_DEBUG_DEPSGRAPH_NO_THREADS);
-  LIB_args_add(ba,
+  LIB_args_add(args,
                NULL,
-               "--debug-depsgraph-pretty",
+               "--debug-graph-pretty",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_pretty),
                (void *)G_DEBUG_DEPSGRAPH_PRETTY);
   LIB_args_add(ba,
