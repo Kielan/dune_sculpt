@@ -1833,43 +1833,42 @@ void main_args_setup(Ctx *C, Args *ba)
   lib_args_add(args,
                NULL,
                "--debug-graph",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph),
+               CB_EX(arg_handle_debug_mode_generic_set, graph),
                (void *)G_DEBUG_DEPSGRAPH);
   lib_args_add(args,
                NULL,
                "--debug-graph-build",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph_build),
+               CB_EX(arg_handle_debug_mode_generic_set, graph_build),
                (void *)G_DEBUG_DEPSGRAPH_BUILD);
   lib_args_add(args,
                NULL,
                "--debug-graph-eval",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph_eval),
+               CB_EX(arg_handle_debug_mode_generic_set, graph_eval),
                (void *)G_DEBUG_DEPSGRAPH_EVAL);
  lib_args_add(args,
                NULL,
                "--debug-graph-tag",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph_tag),
+               CB_EX(arg_handle_debug_mode_generic_set, graph_tag),
                (void *)G_DEBUG_DEPSGRAPH_TAG);
   lib_args_add(args,
                NULL,
                "--debug-graph-time",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph_time),
+               CB_EX(arg_handle_debug_mode_generic_set, graph_time),
                (void *)G_DEBUG_DEPSGRAPH_TIME);
   lib_args_add(args,
-
                NULL,
                "--debug-graph-no-threads",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph_no_threads),
+               CB_EX(arg_handle_debug_mode_generic_set, graph_no_threads),
                (void *)G_DEBUG_DEPSGRAPH_NO_THREADS);
   lib_args_add(args,
                NULL,
                "--debug-graph-pretty",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph_pretty),
+               CB_EX(arg_handle_debug_mode_generic_set, graph_pretty),
                (void *)G_DEBUG_DEPSGRAPH_PRETTY);
   lib_args_add(args,
                NULL,
                "--debug-graph-uuid",
-               CB_EX(arg_handle_debug_mode_generic_set, depsgraph_uuid),
+               CB_EX(arg_handle_debug_mode_generic_set, graph_uuid),
                (void *)G_DEBUG_DEPSGRAPH_UUID);
   lib_args_add(args,
                NULL,
