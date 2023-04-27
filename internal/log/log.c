@@ -7,7 +7,7 @@
 
 /* Disable for small single threaded programs
  * to avoid having to link with pthreads. */
-#ifdef WITH_CLOG_PTHREADS
+#ifdef WITH_LOG_PTHREADS
 #  include "atomic_ops.h"
 #  include <pthread.h>
 #endif
@@ -119,7 +119,7 @@ static void clg_str_free(LogStringBuf *cstr)
   }
 }
 
-static void clg_str_reserve(LogStringBuf *cstr, const uint len)
+static void log_str_reserve(LogStringBuf *cstr, const uint len)
 {
   if (len > cstr->len_alloc) {
     cstr->len_alloc *= 2;
@@ -143,7 +143,7 @@ static void clg_str_reserve(LogStringBuf *cstr, const uint len)
 static void log_str_append_with_len(LogStringBuf *cstr, const char *str, const uint len)
 {
   uint len_next = cstr->len + len;
-  clg_str_reserve(cstr, len_next);
+  log_str_reserve(cstr, len_next);
   char *str_dst = cstr->data + cstr->len;
   memcpy(str_dst, str, len);
 #if 0 /* no need. */
@@ -152,13 +152,13 @@ static void log_str_append_with_len(LogStringBuf *cstr, const char *str, const u
   cstr->len = len_next;
 }
 
-static void clg_str_append(LogStringBuf *cstr, const char *str)
+static void log_str_append(LogStringBuf *cstr, const char *str)
 {
-  clg_str_append_with_len(cstr, str, strlen(str));
+  log_str_append_with_len(cstr, str, strlen(str));
 }
 
 ATTR_PRINTF_FORMAT(2, 0)
-static void clg_str_vappendf(LogStringBuf *cstr, const char *fmt, va_list args)
+static void log_str_vappendf(LogStringBuf *cstr, const char *fmt, va_list args)
 {
   /* Use limit because windows may use '-1' for a formatting error. */
   const uint len_max = 65535;
@@ -188,7 +188,7 @@ static void clg_str_vappendf(LogStringBuf *cstr, const char *fmt, va_list args)
         /* Safe upper-limit, just in case... */
         break;
       }
-      clg_str_reserve(cstr, len_alloc);
+      log_str_reserve(cstr, len_alloc);
       len_avail = cstr->len_alloc - cstr->len;
     }
   }
@@ -483,7 +483,7 @@ void logf(LogType *log_type,
 {
   LogStringBuf cstr;
   char cstr_stack_buf[LOG_BUF_LEN_INIT];
-  clg_str_init(&cstr, cstr_stack_buf, sizeof(cstr_stack_buf));
+  log_str_init(&cstr, cstr_stack_buf, sizeof(cstr_stack_buf));
 
   if (log_type->ctx->use_timestamp) {
     write_timestamp(&cstr, log_type->ctx->timestamp_tick_start);
@@ -493,41 +493,38 @@ void logf(LogType *log_type,
   write_type(&cstr, lg);
 
   {
-    write_file_line_fn(&cstr, file_line, fn, lg->ctx->use_basename);
+    write_file_line_fn(&cstr, file_line, fn, log_type->ctx->use_basename);
 
     va_list ap;
     va_start(ap, fmt);
-    clg_str_vappendf(&cstr, fmt, ap);
+    log_str_vappendf(&cstr, fmt, ap);
     va_end(ap);
   }
-  clg_str_append(&cstr, "\n");
+  log_str_append(&cstr, "\n");
 
   /* could be optional */
-  int bytes_written = write(lg->ctx->output, cstr.data, cstr.len);
+  int bytes_written = write(log_type->ctx->output, cstr.data, cstr.len);
   (void)bytes_written;
 
-  clg_str_free(&cstr);
+  log_str_free(&cstr);
 
-  if (lg->ctx->callbacks.backtrace_fn) {
-    clg_ctx_backtrace(lg->ctx);
+  if (log_type->ctx->cbs.backtrace_fn) {
+    log_ctx_backtrace(log_type->ctx);
   }
 
-  if (severity == CLG_SEVERITY_ERROR) {
-    clg_ctx_error_action(lg->ctx);
+  if (severity == LOG_SEVERITY_ERROR) {
+    log_ctx_error_action(log_type->ctx);
   }
 
-  if (severity == CLG_SEVERITY_FATAL) {
-    clg_ctx_fatal_action(lg->ctx);
+  if (severity == LOG_SEVERITY_FATAL) {
+    clg_ctx_fatal_action(log_type->ctx);
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Logging Context API
- * \{ */
+/** Logging Context API **/
 
-static void CLG_ctx_output_set(CLogContext *ctx, void *file_handle)
+static void log_ctx_output_set(LogCtx *ctx, void *file_handle)
 {
   ctx->output_file = file_handle;
   ctx->output = fileno(ctx->output_file);
@@ -541,11 +538,11 @@ static void CLG_ctx_output_set(CLogContext *ctx, void *file_handle)
    * If the system doesn't support virtual terminal processing it will fail silently and the flag
    * will not be set. */
 
-  GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &clg_previous_console_mode);
+  GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &log_previous_console_mode);
 
   ctx->use_color = 0;
   if (IsWindows10OrGreater() && isatty(ctx->output)) {
-    DWORD mode = clg_previous_console_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    DWORD mode = log_previous_console_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
     if (SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode)) {
       ctx->use_color = 1;
     }
@@ -553,12 +550,12 @@ static void CLG_ctx_output_set(CLogContext *ctx, void *file_handle)
 #endif
 }
 
-static void CLG_ctx_output_use_basename_set(CLogContext *ctx, int value)
+static void log_ctx_output_use_basename_set(LogCtx *ctx, int value)
 {
   ctx->use_basename = (bool)value;
 }
 
-static void CLG_ctx_output_use_timestamp_set(CLogContext *ctx, int value)
+static void log_ctx_output_use_timestamp_set(LogCtx *ctx, int value)
 {
   ctx->use_timestamp = (bool)value;
   if (ctx->use_timestamp) {
