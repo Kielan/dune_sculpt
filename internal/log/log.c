@@ -99,14 +99,14 @@ typedef struct LogCtx {
 
 #define LOG_BUF_LEN_INIT 512
 
-typedef struct CLogStringBuf {
+typedef struct LogStringBuf {
   char *data;
   uint len;
   uint len_alloc;
   bool is_alloc;
-} CLogStringBuf;
+} LogStringBuf;
 
-static void clg_str_init(CLogStringBuf *cstr, char *buf_stack, uint buf_stack_len)
+static void clg_str_init(LogStringBuf *cstr, char *buf_stack, uint buf_stack_len)
 {
   cstr->data = buf_stack;
   cstr->len_alloc = buf_stack_len;
@@ -114,14 +114,14 @@ static void clg_str_init(CLogStringBuf *cstr, char *buf_stack, uint buf_stack_le
   cstr->is_alloc = false;
 }
 
-static void clg_str_free(CLogStringBuf *cstr)
+static void clg_str_free(LogStringBuf *cstr)
 {
   if (cstr->is_alloc) {
-    MEM_freeN(cstr->data);
+    mem_freen(cstr->data);
   }
 }
 
-static void clg_str_reserve(CLogStringBuf *cstr, const uint len)
+static void clg_str_reserve(LogStringBuf *cstr, const uint len)
 {
   if (len > cstr->len_alloc) {
     cstr->len_alloc *= 2;
@@ -130,11 +130,11 @@ static void clg_str_reserve(CLogStringBuf *cstr, const uint len)
     }
 
     if (cstr->is_alloc) {
-      cstr->data = MEM_reallocN(cstr->data, cstr->len_alloc);
+      cstr->data = mem_reallocn(cstr->data, cstr->len_alloc);
     }
     else {
       /* Copy the static buffer. */
-      char *data = MEM_mallocN(cstr->len_alloc, __func__);
+      char *data = mem_mallocn(cstr->len_alloc, __func__);
       memcpy(data, cstr->data, cstr->len);
       cstr->data = data;
       cstr->is_alloc = true;
@@ -154,13 +154,13 @@ static void clg_str_append_with_len(CLogStringBuf *cstr, const char *str, const 
   cstr->len = len_next;
 }
 
-static void clg_str_append(CLogStringBuf *cstr, const char *str)
+static void clg_str_append(LogStringBuf *cstr, const char *str)
 {
   clg_str_append_with_len(cstr, str, strlen(str));
 }
 
 ATTR_PRINTF_FORMAT(2, 0)
-static void clg_str_vappendf(CLogStringBuf *cstr, const char *fmt, va_list args)
+static void clg_str_vappendf(LogStringBuf *cstr, const char *fmt, va_list args)
 {
   /* Use limit because windows may use '-1' for a formatting error. */
   const uint len_max = 65535;
@@ -196,13 +196,10 @@ static void clg_str_vappendf(CLogStringBuf *cstr, const char *fmt, va_list args)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Internal Utilities
- * \{ */
+/** Internal Utilities **/
 
-enum eCLogColor {
+enum eLogColor {
   COLOR_DEFAULT,
   COLOR_RED,
   COLOR_GREEN,
@@ -231,14 +228,14 @@ static void clg_color_table_init(bool use_color)
   }
 }
 
-static const char *clg_severity_str[CLG_SEVERITY_LEN] = {
-    [CLG_SEVERITY_INFO] = "INFO",
-    [CLG_SEVERITY_WARN] = "WARN",
-    [CLG_SEVERITY_ERROR] = "ERROR",
-    [CLG_SEVERITY_FATAL] = "FATAL",
+static const char *clg_severity_str[LOG_SEVERITY_LEN] = {
+    [LOG_SEVERITY_INFO] = "INFO",
+    [LOG_SEVERITY_WARN] = "WARN",
+    [LOG_SEVERITY_ERROR] = "ERROR",
+    [LOG_SEVERITY_FATAL] = "FATAL",
 };
 
-static const char *clg_severity_as_text(enum CLG_Severity severity)
+static const char *log_severity_as_text(enum CLG_Severity severity)
 {
   bool ok = (unsigned int)severity < CLG_SEVERITY_LEN;
   assert(ok);
@@ -250,19 +247,19 @@ static const char *clg_severity_as_text(enum CLG_Severity severity)
   }
 }
 
-static enum eCLogColor clg_severity_to_color(enum CLG_Severity severity)
+static enum eLogColor log_severity_to_color(enum LogSeverity severity)
 {
-  assert((unsigned int)severity < CLG_SEVERITY_LEN);
-  enum eCLogColor color = COLOR_DEFAULT;
+  assert((unsigned int)severity < LOG_SEVERITY_LEN);
+  enum eLogColor color = COLOR_DEFAULT;
   switch (severity) {
-    case CLG_SEVERITY_INFO:
+    case LOG_SEVERITY_INFO:
       color = COLOR_DEFAULT;
       break;
-    case CLG_SEVERITY_WARN:
+    case LOG_SEVERITY_WARN:
       color = COLOR_YELLOW;
       break;
-    case CLG_SEVERITY_ERROR:
-    case CLG_SEVERITY_FATAL:
+    case LOG_SEVERITY_ERROR:
+    case LOG_SEVERITY_FATAL:
       color = COLOR_RED;
       break;
     default:
@@ -272,11 +269,8 @@ static enum eCLogColor clg_severity_to_color(enum CLG_Severity severity)
   return color;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Context Type Access
- * \{ */
+/** Context Type Access **/
 
 /**
  * Filter the identifier based on very basic globbing.
@@ -286,21 +280,21 @@ static enum eCLogColor clg_severity_to_color(enum CLG_Severity severity)
  * - `*bar*` match for `foo.bar` & `baz.bar` & `foo.barbaz`
  * - `*` matches everything.
  */
-static bool clg_ctx_filter_check(CLogContext *ctx, const char *identifier)
+static bool clg_ctx_filter_check(LogCtx *ctx, const char *identifier)
 {
-  const size_t identifier_len = strlen(identifier);
+  const size_t id_len = strlen(id);
   for (uint i = 0; i < 2; i++) {
-    const CLG_IDFilter *flt = ctx->filters[i];
+    const LogIdFilter *flt = ctx->filters[i];
     while (flt != NULL) {
       const size_t len = strlen(flt->match);
-      if (STREQ(flt->match, "*") || ((len == identifier_len) && (STREQ(identifier, flt->match)))) {
+      if (STREQ(flt->match, "*") || ((len == id_len) && (STREQ(id, flt->match)))) {
         return (bool)i;
       }
       if (flt->match[0] == '*' && flt->match[len - 1] == '*') {
-        char *match = MEM_callocN(sizeof(char) * len - 1, __func__);
+        char *match = mem_callocn(sizeof(char) * len - 1, __func__);
         memcpy(match, flt->match + 1, len - 2);
         const bool success = (strstr(identifier, match) != NULL);
-        MEM_freeN(match);
+        mem_freen(match);
         if (success) {
           return (bool)i;
         }
@@ -318,20 +312,20 @@ static bool clg_ctx_filter_check(CLogContext *ctx, const char *identifier)
 }
 
 /**
- * \note This should never be called per logging call.
+ * This should never be called per logging call.
  * Searching is only to get an initial handle.
  */
-static CLG_LogType *clg_ctx_type_find_by_name(CLogContext *ctx, const char *identifier)
+static LogType *log_ctx_type_find_by_name(LogCtx *ctx, const char *identifier)
 {
-  for (CLG_LogType *ty = ctx->types; ty; ty = ty->next) {
-    if (STREQ(identifier, ty->identifier)) {
+  for (LogType *ty = ctx->types; ty; ty = ty->next) {
+    if (STREQ(identifier, ty->id)) {
       return ty;
     }
   }
   return NULL;
 }
 
-static CLG_LogType *clg_ctx_type_register(CLogContext *ctx, const char *identifier)
+static LogType *clg_ctx_type_register(LogCtx *ctx, const char *identifier)
 {
   assert(clg_ctx_type_find_by_name(ctx, identifier) == NULL);
   CLG_LogType *ty = MEM_callocN(sizeof(*ty), __func__);
