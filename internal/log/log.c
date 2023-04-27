@@ -62,12 +62,12 @@ typedef struct LogCtx {
   LogType *types;
   /** Single linked list of references. */
   LogRef *refs;
-#ifdef WITH_CLOG_PTHREADS
+#ifdef WITH_LOG_PTHREADS
   pthread_mutex_t types_lock;
 #endif
 
   /* exclude, include filters. */
-  CLG_IDFilter *filters[2];
+  LogIdFilter *filters[2];
   bool use_color;
   bool use_basename;
   bool use_timestamp;
@@ -88,18 +88,16 @@ typedef struct LogCtx {
     void (*error_fn)(void *file_handle);
     void (*fatal_fn)(void *file_handle);
     void (*backtrace_fn)(void *file_handle);
-  } callbacks;
-} CLogContext;
-
-/** \} */
+  } cb;
+} CLogCtx;
 
 /* -------------------------------------------------------------------- */
-/** \name Mini Buffer Functionality
+/** Mini Buffer Functionality
  *
  * Use so we can do a single call to write.
- * \{ */
+ **/
 
-#define CLOG_BUF_LEN_INIT 512
+#define LOG_BUF_LEN_INIT 512
 
 typedef struct CLogStringBuf {
   char *data;
