@@ -49,20 +49,19 @@
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name Internal Types
- * \{ */
+/** Internal Types **/
 
-typedef struct CLG_IDFilter {
-  struct CLG_IDFilter *next;
+typedef struct LogIdFilter {
+  struct LogIdFilter *next;
   /** Over alloc. */
   char match[0];
-} CLG_IDFilter;
+} LogIdFilter;
 
-typedef struct CLogContext {
+typedef struct LogCtx {
   /** Single linked list of types. */
-  CLG_LogType *types;
+  LogType *types;
   /** Single linked list of references. */
-  CLG_LogRef *refs;
+  LogRef *refs;
 #ifdef WITH_CLOG_PTHREADS
   pthread_mutex_t types_lock;
 #endif
