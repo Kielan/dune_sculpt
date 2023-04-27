@@ -1908,21 +1908,21 @@ void main_args_setup(Ctx *C, Args *ba)
   LIB_args_add(ba, "-S", "--scene", CB(arg_handle_scene_set), C);
   lib_args_add(ba, "-s", "--frame-start", CB(arg_handle_frame_start_set), C);
   lib_args_add(ba, "-e", "--frame-end", CB(arg_handle_frame_end_set), C);
-  lib_args_add(ba, "-j", "--frame-jump", CB(arg_handle_frame_skip_set), C);
-  lib_args_add(ba, "-P", "--python", CB(arg_handle_python_file_run), C);
-  lib_args_add(ba, NULL, "--python-text", CB(arg_handle_python_text_run), C);
-  lib_args_add(ba, NULL, "--python-expr", CB(arg_handle_python_expr_run), C);
-  lib_args_add(ba, NULL, "--python-console", CB(arg_handle_python_console_run), C);
-  lib_args_add(ba, NULL, "--python-exit-code", CB(arg_handle_python_exit_code_set), NULL);
-  lib_args_add(ba, NULL, "--addons", CB(arg_handle_addons_set), C);
+  lib_args_add(args, "-j", "--frame-jump", CB(arg_handle_frame_skip_set), C);
+  lib_args_add(args, "-P", "--python", CB(arg_handle_python_file_run), C);
+  lib_args_add(args, NULL, "--python-text", CB(arg_handle_python_text_run), C);
+  lib_args_add(args, NULL, "--python-expr", CB(arg_handle_python_expr_run), C);
+  lib_args_add(args, NULL, "--python-console", CB(arg_handle_python_console_run), C);
+  lib_args_add(args, NULL, "--python-exit-code", CB(arg_handle_python_exit_code_set), NULL);
+  lib_args_add(args, NULL, "--addons", CB(arg_handle_addons_set), C);
 
-  lib_args_add(ba, "-o", "--render-output", CB(arg_handle_output_set), C);
-  lib_args_add(ba, "-E", "--engine", CB(arg_handle_engine_set), C);
+  lib_args_add(args, "-o", "--render-output", CB(arg_handle_output_set), C);
+  lib_args_add(args, "-E", "--engine", CB(arg_handle_engine_set), C);
 
-  lib_args_add(ba, "-F", "--render-format", CB(arg_handle_image_type_set), C);
+  lib_args_add(arg, "-F", "--render-format", CB(arg_handle_image_type_set), C);
   lib_args_add(args, "-x", "--use-extension", CB(arg_handle_extension_set), C);
 
-  LIB_args_add(args, NULL, "--open-last", CB(arg_handle_load_last_file), C);
+  lib_args_add(args, NULL, "--open-last", CB(arg_handle_load_last_file), C);
 
 #  undef CB
 #  undef CB_EX
