@@ -1861,28 +1861,28 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-graph-no-threads",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_no_threads),
                (void *)G_DEBUG_DEPSGRAPH_NO_THREADS);
-  LIB_args_add(args,
+  lib_args_add(args,
                NULL,
                "--debug-graph-pretty",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_pretty),
                (void *)G_DEBUG_DEPSGRAPH_PRETTY);
-  LIB_args_add(ba,
+  lib_args_add(args,
                NULL,
-               "--debug-depsgraph-uuid",
+               "--debug-graph-uuid",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_uuid),
                (void *)G_DEBUG_DEPSGRAPH_UUID);
-  LIB_args_add(ba,
+  lib_args_add(args,
                NULL,
                "--debug-gpu-force-workarounds",
                CB_EX(arg_handle_debug_mode_generic_set, gpu_force_workarounds),
                (void *)G_DEBUG_GPU_FORCE_WORKAROUNDS);
-  LIB_args_add(ba, NULL, "--debug-exit-on-error", CB(arg_handle_debug_exit_on_error), NULL);
+  lib_args_add(ba, NULL, "--debug-exit-on-error", CB(arg_handle_debug_exit_on_error), NULL);
 
-  LIB_args_add(ba, NULL, "--verbose", CB(arg_handle_verbosity_set), NULL);
+  lib_args_add(ba, NULL, "--verbose", CB(arg_handle_verbosity_set), NULL);
 
-  LIB_args_add(ba, NULL, "--app-template", CB(arg_handle_app_template), NULL);
-  LIB_args_add(ba, NULL, "--factory-startup", CB(arg_handle_factory_startup_set), NULL);
-  LIB_args_add(ba, NULL, "--enable-event-simulate", CB(arg_handle_enable_event_simulate), NULL);
+  lib_args_add(ba, NULL, "--app-template", CB(arg_handle_app_template), NULL);
+  lib_args_add(ba, NULL, "--factory-startup", CB(arg_handle_factory_startup_set), NULL);
+  lib_args_add(ba, NULL, "--enable-event-simulate", CB(arg_handle_enable_event_simulate), NULL);
 
   /* Pass: Custom Window Stuff. */
   LIB_args_pass_set(ba, ARG_PASS_SETTINGS_GUI);
