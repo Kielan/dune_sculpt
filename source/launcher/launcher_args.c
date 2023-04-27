@@ -1828,26 +1828,26 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-jobs",
                CB_EX(arg_handle_debug_mode_generic_set, jobs),
                (void *)G_DEBUG_JOBS);
-  LIB_args_add(args, NULL, "--debug-gpu", CB(arg_handle_debug_gpu_set), NULL);
+  lib_args_add(args, NULL, "--debug-gpu", CB(arg_handle_debug_gpu_set), NULL);
 
-  LIB_args_add(args,
+  lib_args_add(args,
                NULL,
-               "--debug-depsgraph",
+               "--debug-graph",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph),
                (void *)G_DEBUG_DEPSGRAPH);
-  LIB_args_add(ba,
+  lib_args_add(args,
                NULL,
-               "--debug-depsgraph-build",
+               "--debug-graph-build",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_build),
                (void *)G_DEBUG_DEPSGRAPH_BUILD);
-  LIB_args_add(ba,
+  lib_args_add(atgs,
                NULL,
-               "--debug-depsgraph-eval",
+               "--debug-graph-eval",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_eval),
                (void *)G_DEBUG_DEPSGRAPH_EVAL);
-  LIB_args_add(ba,
+ lib_args_add(ba,
                NULL,
-               "--debug-depsgraph-tag",
+               "--debug-graph-tag",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_tag),
                (void *)G_DEBUG_DEPSGRAPH_TAG);
   lib_args_add(args,
@@ -1855,7 +1855,7 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-graph-time",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_time),
                (void *)G_DEBUG_DEPSGRAPH_TIME);
-  lib_args_add(ba,
+  lib_args_add(args,
 
                NULL,
                "--debug-depsgraph-no-threads",
