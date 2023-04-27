@@ -566,49 +566,49 @@ static void log_ctx_output_use_timestamp_set(LogCtx *ctx, int value)
 /** Action on error severity. */
 static void CLT_ctx_error_fn_set(CLogContext *ctx, void (*error_fn)(void *file_handle))
 {
-  ctx->callbacks.error_fn = error_fn;
+  ctx->cbs.error_fn = error_fn;
 }
 
 /** Action on fatal severity. */
-static void CLG_ctx_fatal_fn_set(CLogContext *ctx, void (*fatal_fn)(void *file_handle))
+static void log_ctx_fatal_fn_set(LogCtx *ctx, void (*fatal_fn)(void *file_handle))
 {
-  ctx->callbacks.fatal_fn = fatal_fn;
+  ctx->cbs.fatal_fn = fatal_fn;
 }
 
-static void CLG_ctx_backtrace_fn_set(CLogContext *ctx, void (*backtrace_fn)(void *file_handle))
+static void log_ctx_backtrace_fn_set(LogCtx *ctx, void (*backtrace_fn)(void *file_handle))
 {
-  ctx->callbacks.backtrace_fn = backtrace_fn;
+  ctx->cbs.backtrace_fn = backtrace_fn;
 }
 
-static void clg_ctx_type_filter_append(CLG_IDFilter **flt_list,
+static void log_ctx_type_filter_append(LogIdFilter **flt_list,
                                        const char *type_match,
                                        int type_match_len)
 {
   if (type_match_len == 0) {
     return;
   }
-  CLG_IDFilter *flt = MEM_callocN(sizeof(*flt) + (type_match_len + 1), __func__);
+  LogIdFilter *flt = mem_callocn(sizeof(*flt) + (type_match_len + 1), __func__);
   flt->next = *flt_list;
   *flt_list = flt;
   memcpy(flt->match, type_match, type_match_len);
   /* no need to null terminate since we calloc'd */
 }
 
-static void CLG_ctx_type_filter_exclude(CLogContext *ctx,
+static void log_ctx_type_filter_exclude(LogCtx *ctx,
                                         const char *type_match,
                                         int type_match_len)
 {
   clg_ctx_type_filter_append(&ctx->filters[0], type_match, type_match_len);
 }
 
-static void CLG_ctx_type_filter_include(CLogContext *ctx,
+static void log_ctx_type_filter_include(LogCtx *ctx,
                                         const char *type_match,
                                         int type_match_len)
 {
-  clg_ctx_type_filter_append(&ctx->filters[1], type_match, type_match_len);
+  log_ctx_type_filter_append(&ctx->filters[1], type_match, type_match_len);
 }
 
-static void CLG_ctx_level_set(CLogContext *ctx, int level)
+static void log_ctx_level_set(CLogContext *ctx, int level)
 {
   ctx->default_type.level = level;
   for (CLG_LogType *ty = ctx->types; ty; ty = ty->next) {
