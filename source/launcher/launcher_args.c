@@ -1876,21 +1876,21 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-gpu-force-workarounds",
                CB_EX(arg_handle_debug_mode_generic_set, gpu_force_workarounds),
                (void *)G_DEBUG_GPU_FORCE_WORKAROUNDS);
-  lib_args_add(ba, NULL, "--debug-exit-on-error", CB(arg_handle_debug_exit_on_error), NULL);
+  lib_args_add(args, NULL, "--debug-exit-on-error", CB(arg_handle_debug_exit_on_error), NULL);
 
-  lib_args_add(ba, NULL, "--verbose", CB(arg_handle_verbosity_set), NULL);
+  lib_args_add(args, NULL, "--verbose", CB(arg_handle_verbosity_set), NULL);
 
-  lib_args_add(ba, NULL, "--app-template", CB(arg_handle_app_template), NULL);
-  lib_args_add(ba, NULL, "--factory-startup", CB(arg_handle_factory_startup_set), NULL);
-  lib_args_add(ba, NULL, "--enable-event-simulate", CB(arg_handle_enable_event_simulate), NULL);
+  lib_args_add(args, NULL, "--app-template", CB(arg_handle_app_template), NULL);
+  lib_args_add(args, NULL, "--factory-startup", CB(arg_handle_factory_startup_set), NULL);
+  lib_args_add(args, NULL, "--enable-event-simulate", CB(arg_handle_enable_event_simulate), NULL);
 
   /* Pass: Custom Window Stuff. */
-  LIB_args_pass_set(ba, ARG_PASS_SETTINGS_GUI);
-  LIB_args_add(ba, "-p", "--window-geometry", CB(arg_handle_window_geometry), NULL);
-  LIB_args_add(ba, "-w", "--window-border", CB(arg_handle_with_borders), NULL);
-  LIB_args_add(ba, "-W", "--window-fullscreen", CB(arg_handle_without_borders), NULL);
-  LIB_args_add(ba, "-M", "--window-maximized", CB(arg_handle_window_maximized), NULL);
-  LIB_args_add(ba, NULL, "--no-window-focus", CB(arg_handle_no_window_focus), NULL);
+  lib_args_pass_set(ba, ARG_PASS_SETTINGS_GUI);
+  lib_args_add(ba, "-p", "--window-geometry", CB(arg_handle_window_geometry), NULL);
+  lib_args_add(ba, "-w", "--window-border", CB(arg_handle_with_borders), NULL);
+  lib_args_add(ba, "-W", "--window-fullscreen", CB(arg_handle_without_borders), NULL);
+  lib_args_add(ba, "-M", "--window-maximized", CB(arg_handle_window_maximized), NULL);
+  lib_args_add(ba, NULL, "--no-window-focus", CB(arg_handle_no_window_focus), NULL);
   LIB_args_add(ba, "-con", "--start-console", CB(arg_handle_start_with_console), NULL);
   LIB_args_add(ba, "-R", NULL, CB(arg_handle_register_extension), NULL);
   LIB_args_add(ba, "-r", NULL, CB_EX(arg_handle_register_extension, silent), ba);
