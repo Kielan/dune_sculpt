@@ -9,15 +9,14 @@ set(INC_SYS
 )
 
 set(SRC
-  clog.c
-
-  CLG_log.h
+  log.c
+  log.h
 )
 
 set(LIB
 )
 
 # Disabled for makesdna/makesrna.
-add_definitions(-DWITH_CLOG_PTHREADS)
+add_definitions(-DWITH_LOG_PTHREADS)
 
-blender_add_lib(bf_intern_clog "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+dune_add_lib(dunefile_intern_clog "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
