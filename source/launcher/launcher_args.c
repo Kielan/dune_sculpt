@@ -1732,10 +1732,10 @@ void main_args_setup(Ctx *C, Args *ba)
   /* Include in the environment pass so it's possible display errors initializing subsystems,
    * especially `bpy.appdir` since it's useful to show errors finding paths on startup. */
   lib_args_add(args, NULL, "--log", CB(arg_handle_log_set), ba);
-  lib_args_add(args, NULL, "--log-level", CB(arg_handle_log_level_set), ba);
-  lib_args_add(args, NULL, "--log-show-basename", CB(arg_handle_log_show_basename_set), ba);
-  lib_args_add(args, NULL, "--log-show-backtrace", CB(arg_handle_log_show_backtrace_set), ba);
-  lib_args_add(args, NULL, "--log-show-timestamp", CB(arg_handle_log_show_timestamp_set), ba);
+  lib_args_add(args, NULL, "--log-level", CB(arg_handle_log_level_set), args);
+  lib_args_add(args, NULL, "--log-show-basename", CB(arg_handle_log_show_basename_set), args);
+  lib_args_add(args, NULL, "--log-show-backtrace", CB(arg_handle_log_show_backtrace_set), args);
+  lib_args_add(args, NULL, "--log-show-timestamp", CB(arg_handle_log_show_timestamp_set), args);
   lib_args_add(args, NULL, "--log-file", CB(arg_handle_log_file_set), ba);
 
   /* Pass: Background Mode & Settings
