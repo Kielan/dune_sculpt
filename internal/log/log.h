@@ -1,19 +1,17 @@
-/** \file
- * \ingroup intern_clog
- *
- * C Logging Library (clog)
+/**
+ * C Logging Library (log)
  * ========================
  *
  * Usage
  * -----
  *
- * - `CLG_LOGREF_DECLARE_GLOBAL` macro to declare #CLG_LogRef pointers.
- * - `CLOG_` prefixed macros for logging.
+ * - `LOG_REF_DECLARE_GLOBAL` macro to declare LogRef pointers.
+ * - `log_` prefixed macros for logging.
  *
  * Identifiers
  * -----------
  *
- * #CLG_LogRef holds an identifier which defines the category of the logger.
+ * LogRef holds an identifier which defines the category of the logger.
  *
  * You can define and use identifiers as needed, logging will lazily initialize them.
  *
@@ -57,36 +55,36 @@ extern "C" {
 #endif /* __cplusplus */
 
 #ifdef __GNUC__
-#  define _CLOG_ATTR_NONNULL(args...) __attribute__((nonnull(args)))
+#  define _LOG_ATTR_NONNULL(args...) __attribute__((nonnull(args)))
 #else
-#  define _CLOG_ATTR_NONNULL(...)
+#  define _LOG_ATTR_NONNULL(...)
 #endif
 
 #ifdef __GNUC__
-#  define _CLOG_ATTR_PRINTF_FORMAT(format_param, dots_param) \
+#  define _LOG_ATTR_PRINTF_FORMAT(format_param, dots_param) \
     __attribute__((format(printf, format_param, dots_param)))
 #else
-#  define _CLOG_ATTR_PRINTF_FORMAT(format_param, dots_param)
+#  define _LOG_ATTR_PRINTF_FORMAT(format_param, dots_param)
 #endif
 
 #define STRINGIFY_ARG(x) "" #x
 #define STRINGIFY_APPEND(a, b) "" a #b
 #define STRINGIFY(x) STRINGIFY_APPEND("", x)
 
-struct CLogContext;
+struct LogCtx;
 
 /* Don't typedef enums. */
-enum CLG_LogFlag {
-  CLG_FLAG_USE = (1 << 0),
+enum _LogFlag {
+  LOG_FLAG_USE = (1 << 0),
 };
 
-enum CLG_Severity {
-  CLG_SEVERITY_INFO = 0,
-  CLG_SEVERITY_WARN,
-  CLG_SEVERITY_ERROR,
-  CLG_SEVERITY_FATAL,
+enum LogSeverity {
+  LOG_SEVERITY_INFO = 0,
+  LOG_SEVERITY_WARN,
+  LOG_SEVERITY_ERROR,
+  LOG_SEVERITY_FATAL,
 };
-#define CLG_SEVERITY_LEN (CLG_SEVERITY_FATAL + 1)
+#define LOG_SEVERITY_LEN (LOG_SEVERITY_FATAL + 1)
 
 /* Each logger ID has one of these. */
 typedef struct CLG_LogType {
