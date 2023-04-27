@@ -33,7 +33,7 @@
 #include <inttypes.h>
 
 /* Only other dependency (could use regular malloc too). */
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 /* own include. */
 #include "CLG_log.h"
@@ -93,9 +93,7 @@ typedef struct LogCtx {
 
 /* -------------------------------------------------------------------- */
 /** Mini Buffer Functionality
- *
- * Use so we can do a single call to write.
- **/
+ * Use so we can do a single call to write. **/
 
 #define LOG_BUF_LEN_INIT 512
 
@@ -142,7 +140,7 @@ static void clg_str_reserve(LogStringBuf *cstr, const uint len)
   }
 }
 
-static void clg_str_append_with_len(CLogStringBuf *cstr, const char *str, const uint len)
+static void log_str_append_with_len(LogStringBuf *cstr, const char *str, const uint len)
 {
   uint len_next = cstr->len + len;
   clg_str_reserve(cstr, len_next);
@@ -209,38 +207,38 @@ enum eLogColor {
 };
 #define COLOR_LEN (COLOR_RESET + 1)
 
-static const char *clg_color_table[COLOR_LEN] = {NULL};
+static const char *log_color_table[COLOR_LEN] = {NULL};
 #ifdef _WIN32
 static DWORD clg_previous_console_mode = 0;
 #endif
 
-static void clg_color_table_init(bool use_color)
+static void log_color_table_init(bool use_color)
 {
   for (int i = 0; i < COLOR_LEN; i++) {
-    clg_color_table[i] = "";
+    log_color_table[i] = "";
   }
   if (use_color) {
-    clg_color_table[COLOR_DEFAULT] = "\033[1;37m";
-    clg_color_table[COLOR_RED] = "\033[1;31m";
-    clg_color_table[COLOR_GREEN] = "\033[1;32m";
-    clg_color_table[COLOR_YELLOW] = "\033[1;33m";
-    clg_color_table[COLOR_RESET] = "\033[0m";
+    log_color_table[COLOR_DEFAULT] = "\033[1;37m";
+    log_color_table[COLOR_RED] = "\033[1;31m";
+    log_color_table[COLOR_GREEN] = "\033[1;32m";
+    log_color_table[COLOR_YELLOW] = "\033[1;33m";
+    log_color_table[COLOR_RESET] = "\033[0m";
   }
 }
 
-static const char *clg_severity_str[LOG_SEVERITY_LEN] = {
+static const char *log_severity_str[LOG_SEVERITY_LEN] = {
     [LOG_SEVERITY_INFO] = "INFO",
     [LOG_SEVERITY_WARN] = "WARN",
     [LOG_SEVERITY_ERROR] = "ERROR",
     [LOG_SEVERITY_FATAL] = "FATAL",
 };
 
-static const char *log_severity_as_text(enum CLG_Severity severity)
+static const char *log_severity_as_text(enum LogSeverity severity)
 {
-  bool ok = (unsigned int)severity < CLG_SEVERITY_LEN;
+  bool ok = (unsigned int)severity < LOG_SEVERITY_LEN;
   assert(ok);
   if (ok) {
-    return clg_severity_str[severity];
+    return log_severity_str[severity];
   }
   else {
     return "INVALID_SEVERITY";
@@ -280,7 +278,7 @@ static enum eLogColor log_severity_to_color(enum LogSeverity severity)
  * - `*bar*` match for `foo.bar` & `baz.bar` & `foo.barbaz`
  * - `*` matches everything.
  */
-static bool clg_ctx_filter_check(LogCtx *ctx, const char *identifier)
+static bool log_ctx_filter_check(LogCtx *ctx, const char *id)
 {
   const size_t id_len = strlen(id);
   for (uint i = 0; i < 2; i++) {
@@ -300,8 +298,8 @@ static bool clg_ctx_filter_check(LogCtx *ctx, const char *identifier)
         }
       }
       else if ((len >= 2) && (STREQLEN(".*", &flt->match[len - 2], 2))) {
-        if (((identifier_len == len - 2) && STREQLEN(identifier, flt->match, len - 2)) ||
-            ((identifier_len >= len - 1) && STREQLEN(identifier, flt->match, len - 1))) {
+        if (((id_len == len - 2) && STREQLEN(id, flt->match, len - 2)) ||
+            ((id_len >= len - 1) && STREQLEN(id, flt->match, len - 1))) {
           return (bool)i;
         }
       }
@@ -313,56 +311,55 @@ static bool clg_ctx_filter_check(LogCtx *ctx, const char *identifier)
 
 /**
  * This should never be called per logging call.
- * Searching is only to get an initial handle.
- */
+ * Searching is only to get an initial handle. **/
 static LogType *log_ctx_type_find_by_name(LogCtx *ctx, const char *identifier)
 {
   for (LogType *ty = ctx->types; ty; ty = ty->next) {
-    if (STREQ(identifier, ty->id)) {
+    if (STREQ(id, ty->id)) {
       return ty;
     }
   }
   return NULL;
 }
 
-static LogType *clg_ctx_type_register(LogCtx *ctx, const char *identifier)
+static LogType *log_ctx_type_register(LogCtx *ctx, const char *id)
 {
-  assert(clg_ctx_type_find_by_name(ctx, identifier) == NULL);
-  CLG_LogType *ty = MEM_callocN(sizeof(*ty), __func__);
+  assert(log_ctx_type_find_by_name(ctx, id) == NULL);
+  LogType *ty = mem_callocn(sizeof(*ty), __func__);
   ty->next = ctx->types;
   ctx->types = ty;
-  strncpy(ty->identifier, identifier, sizeof(ty->identifier) - 1);
+  strncpy(ty->id, id, sizeof(ty->id) - 1);
   ty->ctx = ctx;
   ty->level = ctx->default_type.level;
 
-  if (clg_ctx_filter_check(ctx, ty->identifier)) {
+  if (clg_ctx_filter_check(ctx, ty->id)) {
     ty->flag |= CLG_FLAG_USE;
   }
   return ty;
 }
 
-static void clg_ctx_error_action(CLogContext *ctx)
+static void log_ctx_error_action(LogCtx *ctx)
 {
-  if (ctx->callbacks.error_fn != NULL) {
-    ctx->callbacks.error_fn(ctx->output_file);
+  if (ctx->cbs.error_fn != NULL) {
+    ctx->cbs.error_fn(ctx->output_file);
   }
 }
 
-static void clg_ctx_fatal_action(CLogContext *ctx)
+static void log_ctx_fatal_action(LogCtx *ctx)
 {
-  if (ctx->callbacks.fatal_fn != NULL) {
-    ctx->callbacks.fatal_fn(ctx->output_file);
+  if (ctx->cbs.fatal_fn != NULL) {
+    ctx->cbs.fatal_fn(ctx->output_file);
   }
   fflush(ctx->output_file);
   abort();
 }
 
-static void clg_ctx_backtrace(CLogContext *ctx)
+static void log_ctx_backtrace(LogCtx *ctx)
 {
   /* NOTE: we avoid writing to 'FILE', for back-trace we make an exception,
    * if necessary we could have a version of the callback that writes to file
    * descriptor all at once. */
-  ctx->callbacks.backtrace_fn(ctx->output_file);
+  ctx->cbs.backtrace_fn(ctx->output_file);
   fflush(ctx->output_file);
 }
 
@@ -379,16 +376,13 @@ static uint64_t clg_timestamp_ticks_get(void)
   return tick;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Logging API
- * \{ */
+/** Logging API **/
 
-static void write_timestamp(CLogStringBuf *cstr, const uint64_t timestamp_tick_start)
+static void write_timestamp(LogStringBuf *cstr, const uint64_t timestamp_tick_start)
 {
   char timestamp_str[64];
-  const uint64_t timestamp = clg_timestamp_ticks_get() - timestamp_tick_start;
+  const uint64_t timestamp = log_timestamp_ticks_get() - timestamp_tick_start;
   const uint timestamp_len = snprintf(timestamp_str,
                                       sizeof(timestamp_str),
                                       "%" PRIu64 ".%03u ",
@@ -397,28 +391,28 @@ static void write_timestamp(CLogStringBuf *cstr, const uint64_t timestamp_tick_s
   clg_str_append_with_len(cstr, timestamp_str, timestamp_len);
 }
 
-static void write_severity(CLogStringBuf *cstr, enum CLG_Severity severity, bool use_color)
+static void write_severity(LogStringBuf *cstr, enum LogSeverity severity, bool use_color)
 {
-  assert((unsigned int)severity < CLG_SEVERITY_LEN);
+  assert((unsigned int)severity < LOG_SEVERITY_LEN);
   if (use_color) {
-    enum eCLogColor color = clg_severity_to_color(severity);
-    clg_str_append(cstr, clg_color_table[color]);
-    clg_str_append(cstr, clg_severity_as_text(severity));
-    clg_str_append(cstr, clg_color_table[COLOR_RESET]);
+    enum eLogColor color = log_severity_to_color(severity);
+    log_str_append(cstr, log_color_table[color]);
+    log_str_append(cstr, log_severity_as_text(severity));
+    log_str_append(cstr, log_color_table[COLOR_RESET]);
   }
   else {
-    clg_str_append(cstr, clg_severity_as_text(severity));
+    log_str_append(cstr, log_severity_as_text(severity));
   }
 }
 
-static void write_type(CLogStringBuf *cstr, CLG_LogType *lg)
+static void write_type(LogStringBuf *cstr, LogType *log_type)
 {
-  clg_str_append(cstr, " (");
-  clg_str_append(cstr, lg->identifier);
-  clg_str_append(cstr, "): ");
+  log_str_append(cstr, " (");
+  log_str_append(cstr, log_type->id);
+  log_str_append(cstr, "): ");
 }
 
-static void write_file_line_fn(CLogStringBuf *cstr,
+static void write_file_line_fn(LogStringBuf *cstr,
                                const char *file_line,
                                const char *fn,
                                const bool use_basename)
@@ -435,67 +429,67 @@ static void write_file_line_fn(CLogStringBuf *cstr,
     file_line += file_line_offset;
     file_line_len -= file_line_offset;
   }
-  clg_str_append_with_len(cstr, file_line, file_line_len);
+  log_str_append_with_len(cstr, file_line, file_line_len);
 
-  clg_str_append(cstr, " ");
-  clg_str_append(cstr, fn);
-  clg_str_append(cstr, ": ");
+  log_str_append(cstr, " ");
+  log_str_append(cstr, fn);
+  log_str_append(cstr, ": ");
 }
 
-void CLG_log_str(CLG_LogType *lg,
-                 enum CLG_Severity severity,
-                 const char *file_line,
-                 const char *fn,
-                 const char *message)
+void log_str(LogType *log_types,
+             enum LogSeverity severity,
+             const char *file_line,
+             const char *fn,
+             const char *message)
 {
-  CLogStringBuf cstr;
-  char cstr_stack_buf[CLOG_BUF_LEN_INIT];
+  LogStringBuf cstr;
+  char cstr_stack_buf[LOG_BUF_LEN_INIT];
   clg_str_init(&cstr, cstr_stack_buf, sizeof(cstr_stack_buf));
 
-  if (lg->ctx->use_timestamp) {
-    write_timestamp(&cstr, lg->ctx->timestamp_tick_start);
+  if (log_type->ctx->use_timestamp) {
+    write_timestamp(&cstr, log_type->ctx->timestamp_tick_start);
   }
 
-  write_severity(&cstr, severity, lg->ctx->use_color);
+  write_severity(&cstr, severity, log_type->ctx->use_color);
   write_type(&cstr, lg);
 
   {
-    write_file_line_fn(&cstr, file_line, fn, lg->ctx->use_basename);
-    clg_str_append(&cstr, message);
+    write_file_line_fn(&cstr, file_line, fn, log_type->ctx->use_basename);
+    log_str_append(&cstr, message);
   }
-  clg_str_append(&cstr, "\n");
+  log_str_append(&cstr, "\n");
 
   /* could be optional */
-  int bytes_written = write(lg->ctx->output, cstr.data, cstr.len);
+  int bytes_written = write(log_type->ctx->output, cstr.data, cstr.len);
   (void)bytes_written;
 
-  clg_str_free(&cstr);
+  log_str_free(&cstr);
 
-  if (lg->ctx->callbacks.backtrace_fn) {
-    clg_ctx_backtrace(lg->ctx);
+  if (log->ctx->cbs.backtrace_fn) {
+    log_ctx_backtrace(log_type->ctx);
   }
 
   if (severity == CLG_SEVERITY_FATAL) {
-    clg_ctx_fatal_action(lg->ctx);
+    log_ctx_fatal_action(log_type->ctx);
   }
 }
 
-void CLG_logf(CLG_LogType *lg,
-              enum CLG_Severity severity,
-              const char *file_line,
-              const char *fn,
-              const char *fmt,
-              ...)
+void logf(LogType *log_type,
+          enum LogSeverity severity,
+          const char *file_line,
+          const char *fn,
+          const char *fmt,
+          ...)
 {
-  CLogStringBuf cstr;
-  char cstr_stack_buf[CLOG_BUF_LEN_INIT];
+  LogStringBuf cstr;
+  char cstr_stack_buf[LOG_BUF_LEN_INIT];
   clg_str_init(&cstr, cstr_stack_buf, sizeof(cstr_stack_buf));
 
-  if (lg->ctx->use_timestamp) {
-    write_timestamp(&cstr, lg->ctx->timestamp_tick_start);
+  if (log_type->ctx->use_timestamp) {
+    write_timestamp(&cstr, log_type->ctx->timestamp_tick_start);
   }
 
-  write_severity(&cstr, severity, lg->ctx->use_color);
+  write_severity(&cstr, severity, log_type->ctx->use_color);
   write_type(&cstr, lg);
 
   {
