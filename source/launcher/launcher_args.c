@@ -1514,7 +1514,7 @@ static int arg_handle_scene_set(int argc, const char **argv, void *data)
 {
   if (argc > 1) {
     Ctx *C = data;
-    Scene *scene = dune_scene_set_name(CTX_data_main(C), argv[1]);
+    Scene *scene = dune_scene_set_name(ctx_data_main(C), argv[1]);
     if (scene) {
       ctx_data_scene_set(C, scene);
 
@@ -1525,7 +1525,7 @@ static int arg_handle_scene_set(int argc, const char **argv, void *data)
         win = ctx_wm_manager(C)->windows.first;
       }
       if (win != NULL) {
-        wn_window_set_active_scene(CTX_data_main(C), C, win, scene);
+        wn_window_set_active_scene(ctx_data_main(C), C, win, scene);
       }
     }
     return 1;
@@ -1885,21 +1885,21 @@ void main_args_setup(Ctx *C, Args *ba)
   lib_args_add(args, NULL, "--enable-event-simulate", CB(arg_handle_enable_event_simulate), NULL);
 
   /* Pass: Custom Window Stuff. */
-  lib_args_pass_set(ba, ARG_PASS_SETTINGS_GUI);
-  lib_args_add(ba, "-p", "--window-geometry", CB(arg_handle_window_geometry), NULL);
-  lib_args_add(ba, "-w", "--window-border", CB(arg_handle_with_borders), NULL);
-  lib_args_add(ba, "-W", "--window-fullscreen", CB(arg_handle_without_borders), NULL);
-  lib_args_add(ba, "-M", "--window-maximized", CB(arg_handle_window_maximized), NULL);
-  lib_args_add(ba, NULL, "--no-window-focus", CB(arg_handle_no_window_focus), NULL);
-  LIB_args_add(ba, "-con", "--start-console", CB(arg_handle_start_with_console), NULL);
-  LIB_args_add(ba, "-R", NULL, CB(arg_handle_register_extension), NULL);
-  LIB_args_add(ba, "-r", NULL, CB_EX(arg_handle_register_extension, silent), ba);
-  LIB_args_add(ba, NULL, "--no-native-pixels", CB(arg_handle_native_pixels_set), ba);
+  lib_args_pass_set(args, ARG_PASS_SETTINGS_GUI);
+  lib_args_add(args, "-p", "--window-geometry", CB(arg_handle_window_geometry), NULL);
+  lib_args_add(args, "-w", "--window-border", CB(arg_handle_with_borders), NULL);
+  lib_args_add(args, "-W", "--window-fullscreen", CB(arg_handle_without_borders), NULL);
+  lib_args_add(args, "-M", "--window-maximized", CB(arg_handle_window_maximized), NULL);
+  lib_args_add(args, NULL, "--no-window-focus", CB(arg_handle_no_window_focus), NULL);
+  LIB_args_add(args, "-con", "--start-console", CB(arg_handle_start_with_console), NULL);
+  LIB_args_add(args, "-R", NULL, CB(arg_handle_register_extension), NULL);
+  LIB_args_add(args, "-r", NULL, CB_EX(arg_handle_register_extension, silent), ba);
+  LIB_args_add(args, NULL, "--no-native-pixels", CB(arg_handle_native_pixels_set), ba);
 
   /* Pass: Disabling Things & Forcing Settings. */
-  LIB_args_pass_set(ba, ARG_PASS_SETTINGS_FORCE);
-  LIB_args_add_case(ba, "-noaudio", 1, NULL, 0, CB(arg_handle_audio_disable), NULL);
-  LIB_args_add_case(ba, "-setaudio", 1, NULL, 0, CB(arg_handle_audio_set), NULL);
+  LIB_args_pass_set(args, ARG_PASS_SETTINGS_FORCE);
+  LIB_args_add_case(args, "-noaudio", 1, NULL, 0, CB(arg_handle_audio_disable), NULL);
+  LIB_args_add_case(args, "-setaudio", 1, NULL, 0, CB(arg_handle_audio_set), NULL);
 
   /* Pass: Processing Arguments. */
   LIB_args_pass_set(ba, ARG_PASS_FINAL);
