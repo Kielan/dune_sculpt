@@ -996,7 +996,7 @@ static int arg_handle_app_template(int argc, const char **argv, void *UNUSED(dat
 
 static const char arg_handle_factory_startup_set_doc[] =
     "\n\t"
-    "Skip reading the " STRINGIFY(BLENDER_STARTUP_FILE) " in the users home directory.";
+    "Skip reading the " STRINGIFY(DUNE_STARTUP_FILE) " in the users home directory.";
 static int arg_handle_factory_startup_set(int UNUSED(argc),
                                           const char **UNUSED(argv),
                                           void *UNUSED(data))
@@ -1669,7 +1669,7 @@ static int arg_handle_load_file(int UNUSED(argc), const char **argv, void *data)
       return -1;
     }
 
-    if (LOADER_has_bfile_extension(filename)) {
+    if (loader_has_bfile_extension(filename)) {
       /* Just pretend a file was loaded, so the user can press Save and it'll
        * save at the filename from the CLI. */
       STRNCPY(G_MAIN->filepath, filename);
@@ -1818,19 +1818,19 @@ void main_args_setup(Ctx *C, Args *ba)
   lib_args_add(ba, NULL, "--debug-libmv", CB(arg_handle_debug_mode_libmv), NULL);
 #  endif
 #  ifdef WITH_CYCLES_LOGGING
-  lib_args_add(ba, NULL, "--debug-cycles", CB(arg_handle_debug_mode_cycles), NULL);
+  lib_args_add(args, NULL, "--debug-cycles", CB(arg_handle_debug_mode_cycles), NULL);
 #  endif
-  lib_args_add(ba, NULL, "--debug-memory", CB(arg_handle_debug_mode_memory_set), NULL);
+  lib_args_add(args, NULL, "--debug-memory", CB(arg_handle_debug_mode_memory_set), NULL);
 
-  lib_args_add(ba, NULL, "--debug-value", CB(arg_handle_debug_value_set), NULL);
-  lib_args_add(ba,
+  lib_args_add(args, NULL, "--debug-value", CB(arg_handle_debug_value_set), NULL);
+  lib_args_add(args,
                NULL,
                "--debug-jobs",
                CB_EX(arg_handle_debug_mode_generic_set, jobs),
                (void *)G_DEBUG_JOBS);
-  LIB_args_add(ba, NULL, "--debug-gpu", CB(arg_handle_debug_gpu_set), NULL);
+  LIB_args_add(args, NULL, "--debug-gpu", CB(arg_handle_debug_gpu_set), NULL);
 
-  LIB_args_add(ba,
+  LIB_args_add(args,
                NULL,
                "--debug-depsgraph",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph),
@@ -1920,9 +1920,9 @@ void main_args_setup(Ctx *C, Args *ba)
   LIB_args_add(ba, "-E", "--engine", CB(arg_handle_engine_set), C);
 
   LIB_args_add(ba, "-F", "--render-format", CB(arg_handle_image_type_set), C);
-  LIB_args_add(ba, "-x", "--use-extension", CB(arg_handle_extension_set), C);
+  LIB_args_add(args, "-x", "--use-extension", CB(arg_handle_extension_set), C);
 
-  LIB_args_add(ba, NULL, "--open-last", CB(arg_handle_load_last_file), C);
+  LIB_args_add(args, NULL, "--open-last", CB(arg_handle_load_last_file), C);
 
 #  undef CB
 #  undef CB_EX
