@@ -144,21 +144,21 @@ int CLG_color_support_get(CLG_LogRef *clg_ref);
 #define CLOG_ENSURE(clg_ref) \
   ((clg_ref)->type ? (clg_ref)->type : (CLG_logref_init(clg_ref), (clg_ref)->type))
 
-#define CLOG_CHECK(clg_ref, verbose_level, ...) \
-  ((void)CLOG_ENSURE(clg_ref), \
-   ((clg_ref)->type->flag & CLG_FLAG_USE) && ((clg_ref)->type->level >= verbose_level))
+#define LOG_CHECK(log_ref, verbose_level, ...) \
+  ((void)LOG_ENSURE(log_ref), \
+   ((Log_ref)->type->flag & LOG_FLAG_USE) && ((log_ref)->type->level >= verbose_level))
 
-#define CLOG_AT_SEVERITY(clg_ref, severity, verbose_level, ...) \
+#define LOG_AT_SEVERITY(log_ref, severity, verbose_level, ...) \
   { \
-    CLG_LogType *_lg_ty = CLOG_ENSURE(clg_ref); \
-    if (((_lg_ty->flag & CLG_FLAG_USE) && (_lg_ty->level >= verbose_level)) || \
+    LogType *_log_type = LOG_ENSURE(log_ref); \
+    if (((_lg_ty->flag & LOG_FLAG_USE) && (_lg_ty->level >= verbose_level)) || \
         (severity >= CLG_SEVERITY_WARN)) { \
-      CLG_logf(_lg_ty, severity, __FILE__ ":" STRINGIFY(__LINE__), __func__, __VA_ARGS__); \
+      logf(_lg_ty, severity, __FILE__ ":" STRINGIFY(__LINE__), __func__, __VA_ARGS__); \
     } \
   } \
   ((void)0)
 
-#define CLOG_STR_AT_SEVERITY(clg_ref, severity, verbose_level, str) \
+#define LOG_STR_AT_SEVERITY(log_ref, severity, verbose_level, str) \
   { \
     LogType *_lg_ty = LOG_ENSURE(clg_ref); \
     if (((_lg_ty->flag & LOG_FLAG_USE) && (_lg_ty->level >= verbose_level)) || \
@@ -168,7 +168,7 @@ int CLG_color_support_get(CLG_LogRef *clg_ref);
   } \
   ((void)0)
 
-#define CLOG_STR_AT_SEVERITY_N(clg_ref, severity, verbose_level, str) \
+#define LOG_STR_AT_SEVERITY_N(log_ref, severity, verbose_level, str) \
   { \
     LogType *_lg_ty = LOG_ENSURE(clg_ref); \
     if (((_lg_ty->flag & LOG_FLAG_USE) && (_lg_ty->level >= verbose_level)) || \
@@ -180,24 +180,24 @@ int CLG_color_support_get(CLG_LogRef *clg_ref);
   } \
   ((void)0)
 
-#define CLOG_INFO(clg_ref, level, ...) \
-  CLOG_AT_SEVERITY(clg_ref, CLG_SEVERITY_INFO, level, __VA_ARGS__)
-#define CLOG_WARN(clg_ref, ...) CLOG_AT_SEVERITY(clg_ref, CLG_SEVERITY_WARN, 0, __VA_ARGS__)
-#define CLOG_ERROR(clg_ref, ...) CLOG_AT_SEVERITY(clg_ref, CLG_SEVERITY_ERROR, 0, __VA_ARGS__)
-#define CLOG_FATAL(clg_ref, ...) CLOG_AT_SEVERITY(clg_ref, CLG_SEVERITY_FATAL, 0, __VA_ARGS__)
+#define LOG_INFO(clg_ref, level, ...) \
+  LOG_AT_SEVERITY(clg_ref, LOG_SEVERITY_INFO, level, __VA_ARGS__)
+#define LOG_WARN(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_WARN, 0, __VA_ARGS__)
+#define LOG_ERROR(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_ERROR, 0, __VA_ARGS__)
+#define LOG_FATAL(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_FATAL, 0, __VA_ARGS__)
 
-#define CLOG_STR_INFO(clg_ref, level, str) \
-  CLOG_STR_AT_SEVERITY(clg_ref, CLG_SEVERITY_INFO, level, str)
-#define CLOG_STR_WARN(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, CLG_SEVERITY_WARN, 0, str)
-#define CLOG_STR_ERROR(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, CLG_SEVERITY_ERROR, 0, str)
-#define CLOG_STR_FATAL(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, CLG_SEVERITY_FATAL, 0, str)
+#define LOG_STR_INFO(clg_ref, level, str) \
+  LOG_STR_AT_SEVERITY(clg_ref, CLG_SEVERITY_INFO, level, str)
+#define LOG_STR_WARN(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_WARN, 0, str)
+#define LOG_STR_ERROR(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_ERROR, 0, str)
+#define LOG_STR_FATAL(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_FATAL, 0, str)
 
 /* Allocated string which is immediately freed. */
-#define CLOG_STR_INFO_N(clg_ref, level, str) \
-  CLOG_STR_AT_SEVERITY_N(clg_ref, CLG_SEVERITY_INFO, level, str)
-#define CLOG_STR_WARN_N(clg_ref, str) CLOG_STR_AT_SEVERITY_N(clg_ref, CLG_SEVERITY_WARN, 0, str)
-#define CLOG_STR_ERROR_N(clg_ref, str) CLOG_STR_AT_SEVERITY_N(clg_ref, CLG_SEVERITY_ERROR, 0, str)
-#define CLOG_STR_FATAL_N(clg_ref, str) CLOG_STR_AT_SEVERITY_N(clg_ref, CLG_SEVERITY_FATAL, 0, str)
+#define LOG_STR_INFO_N(log_ref, level, str) \
+  LOG_STR_AT_SEVERITY_N(log_ref, LOG_SEVERITY_INFO, level, str)
+#define LOG_STR_WARN_N(log_ref, str) LOG_STR_AT_SEVERITY_N(log_ref, LOG_SEVERITY_WARN, 0, str)
+#define LOG_STR_ERROR_N(log_ref, str) LOG_STR_AT_SEVERITY_N(log_ref, LOG_SEVERITY_ERROR, 0, str)
+#define LOG_STR_FATAL_N(log_ref, str) LOG_STR_AT_SEVERITY_N(log_ref, LOG_SEVERITY_FATAL, 0, str)
 
 #ifdef __cplusplus
 }
