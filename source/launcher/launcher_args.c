@@ -599,46 +599,6 @@ static int arg_handle_arguments_end(int UNUSED(argc),
   return -1;
 }
 
-/* only to give help message */
-#  ifndef WITH_PYTHON_SECURITY /* default */
-#    define PY_ENABLE_AUTO ", (default)"
-#    define PY_DISABLE_AUTO ""
-#  else
-#    define PY_ENABLE_AUTO ""
-#    define PY_DISABLE_AUTO ", (compiled as non-standard default)"
-#  endif
-
-static const char arg_handle_python_set_doc_enable[] =
-    "\n\t"
-    "Enable automatic Python script execution" PY_ENABLE_AUTO ".";
-static const char arg_handle_python_set_doc_disable[] =
-    "\n\t"
-    "Disable automatic Python script execution (pydrivers & startup scripts)" PY_DISABLE_AUTO ".";
-#  undef PY_ENABLE_AUTO
-#  undef PY_DISABLE_AUTO
-
-static int arg_handle_python_set(int UNUSED(argc), const char **UNUSED(argv), void *data)
-{
-  if ((bool)data) {
-    G.f |= G_FLAG_SCRIPT_AUTOEXEC;
-  }
-  else {
-    G.f &= ~G_FLAG_SCRIPT_AUTOEXEC;
-  }
-  G.f |= G_FLAG_SCRIPT_OVERRIDE_PREF;
-  return 0;
-}
-
-static const char arg_handle_crash_handler_disable_doc[] =
-    "\n\t"
-    "Disable the crash handler.";
-static int arg_handle_crash_handler_disable(int UNUSED(argc),
-                                            const char **UNUSED(argv),
-                                            void *UNUSED(data))
-{
-  app_state.signal.use_crash_handler = false;
-  return 0;
-}
 
 static const char arg_handle_abort_handler_disable_doc[] =
     "\n\t"
@@ -673,6 +633,7 @@ static int arg_handle_debug_exit_on_error(int UNUSED(argc),
 static const char arg_handle_background_mode_set_doc[] =
     "\n\t"
     "Run in background (often used for UI-less rendering).";
+
 static int arg_handle_background_mode_set(int UNUSED(argc),
                                           const char **UNUSED(argv),
                                           void *UNUSED(data))
@@ -749,7 +710,7 @@ static int arg_handle_log_file_set(int argc, const char **argv, void *UNUSED(dat
   const char *arg_id = "--log-file";
   if (argc > 1) {
     errno = 0;
-    FILE *fp = LIB_fopen(argv[1], "w");
+    FILE *fp = lib_fopen(argv[1], "w");
     if (fp == NULL) {
       const char *err_msg = errno ? strerror(errno) : "unknown";
       printf("\nError: %s '%s %s'.\n", err_msg, arg_id, argv[1]);
@@ -775,7 +736,7 @@ static const char arg_handle_log_set_doc[] =
     "\tSub-string can be matched using a '*' prefix and suffix,\n"
     "\tso '--log \"*undo*\"' logs every kind of undo-related message.\n"
     "\tUse \"^\" prefix to ignore, so '--log \"*,^wm.operator.*\"' logs all except for "
-    "'wm.operators.*'\n"
+    "'wm.ops.*'\n"
     "\tUse \"*\" to log everything.";
 static int arg_handle_log_set(int argc, const char **argv, void *UNUSED(data))
 {
@@ -1497,9 +1458,9 @@ static int arg_handle_render_frame(int argc, const char **argv, void *data)
         return 1;
       }
 
-      re = RE_NewSceneRender(scene);
+      re = render_NewSceneRender(scene);
       dune_reports_init(&reports, RPT_STORE);
-      RE_SetReports(re, &reports);
+      render_SetReports(re, &reports);
       for (int i = 0; i < frames_range_len; i++) {
         /* We could pass in frame ranges,
          * but prefer having exact behavior as passing in multiple frames */
@@ -1508,10 +1469,10 @@ static int arg_handle_render_frame(int argc, const char **argv, void *data)
         }
 
         for (int frame = frame_range_arr[i][0]; frame <= frame_range_arr[i][1]; frame++) {
-          RE_RenderAnim(re, main, scene, NULL, NULL, frame, frame, scene->r.frame_step);
+          render_RenderAnim(re, main, scene, NULL, NULL, frame, frame, scene->r.frame_step);
         }
       }
-      RE_SetReports(re, NULL);
+      render_SetReports(re, NULL);
       dune_reports_clear(&reports);
       mem_freen(frame_range_arr);
       return 1;
@@ -1532,12 +1493,12 @@ static int arg_handle_render_animation(int UNUSED(argc), const char **UNUSED(arg
   Scene *scene = ctx_data_scene(C);
   if (scene) {
     Main *dune_main = ctx_data_main(C);
-    Render *re = RE_NewSceneRender(scene);
+    Render *re = render_NewSceneRender(scene);
     ReportList reports;
     dune_reports_init(&reports, RPT_STORE);
-    RE_SetReports(re, &reports);
-    RE_RenderAnim(re, dune_main, scene, NULL, NULL, scene->r.sfra, scene->r.efra, scene->r.frame_step);
-    RE_SetReports(re, NULL);
+    render_SetReports(re, &reports);
+    render_RenderAnim(re, dune_main, scene, NULL, NULL, scene->r.sfra, scene->r.efra, scene->r.frame_step);
+    render_SetReports(re, NULL);
     dune_reports_clear(&reports);
   }
   else {
@@ -1748,25 +1709,25 @@ void main_args_setup(Ctx *C, Args *ba)
 #  define CB_EX(a, b) a##_doc_##b, a
 
   /* end argument processing after -- */
-  lib_args_pass_set(ba, -1);
-  lib_args_add(ba, "--", NULL, CB(arg_handle_arguments_end), NULL);
+  lib_args_pass_set(args, -1);
+  lib_args_add(args, "--", NULL, CB(arg_handle_arguments_end), NULL);
 
   /* Pass: Environment Setup
    *
    * It's important these run before any initialization is done, since they set up
    * the environment used to access data-files, which are be used when initializing
    * sub-systems such as color management. */
-  lib_args_pass_set(ba, ARG_PASS_ENVIRONMENT);
+  lib_args_pass_set(args, ARG_PASS_ENVIRONMENT);
   lib_args_add(
-      ba, NULL, "--python-use-system-env", CB(arg_handle_python_use_system_env_set), NULL);
+      args, NULL, "--python-use-system-env", CB(arg_handle_python_use_system_env_set), NULL);
 
   /* Note that we could add used environment variables too. */
   lib_args_add(
-      ba, NULL, "--env-system-datafiles", CB_EX(arg_handle_env_system_set, datafiles), NULL);
-  lib_args_add(ba, NULL, "--env-system-scripts", CB_EX(arg_handle_env_system_set, scripts), NULL);
-  lib_args_add(ba, NULL, "--env-system-python", CB_EX(arg_handle_env_system_set, python), NULL);
+      args, NULL, "--env-system-datafiles", CB_EX(arg_handle_env_system_set, datafiles), NULL);
+  lib_args_add(args, NULL, "--env-system-scripts", CB_EX(arg_handle_env_system_set, scripts), NULL);
+  lib_args_add(args, NULL, "--env-system-python", CB_EX(arg_handle_env_system_set, python), NULL);
 
-  lib_args_add(ba, "-t", "--threads", CB(arg_handle_threads_set), NULL);
+  lib_args_add(args, "-t", "--threads", CB(arg_handle_threads_set), NULL);
 
   /* Include in the environment pass so it's possible display errors initializing subsystems,
    * especially `bpy.appdir` since it's useful to show errors finding paths on startup. */
@@ -1801,7 +1762,7 @@ void main_args_setup(Ctx *C, Args *ba)
   lib_args_add(args, "-d", "--debug", CB(arg_handle_debug_mode_set), ba);
 
 #  ifdef WITH_FFMPEG
-  LIB_args_add(args,
+  lib_args_add(args,
                NULL,
                "--debug-ffmpeg",
                CB_EX(arg_handle_debug_mode_generic_set, ffmpeg),
@@ -1821,48 +1782,48 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-python",
                CB_EX(arg_handle_debug_mode_generic_set, python),
                (void *)G_DEBUG_PYTHON);
-  lib_args_add(ba,
+  lib_args_add(args,
                NULL,
                "--debug-events",
                CB_EX(arg_handle_debug_mode_generic_set, events),
                (void *)G_DEBUG_EVENTS);
-  lib_args_add(ba,
+  lib_args_add(args,
                NULL,
                "--debug-handlers",
                CB_EX(arg_handle_debug_mode_generic_set, handlers),
                (void *)G_DEBUG_HANDLERS);
   LIB_args_add(
-      ba, NULL, "--debug-wm", CB_EX(arg_handle_debug_mode_generic_set, wm), (void *)G_DEBUG_WM);
+      args, NULL, "--debug-wm", CB_EX(arg_handle_debug_mode_generic_set, wm), (void *)G_DEBUG_WM);
 #  ifdef WITH_XR_OPENXR
   LIB_args_add(
-      ba, NULL, "--debug-xr", CB_EX(arg_handle_debug_mode_generic_set, xr), (void *)G_DEBUG_XR);
-  LIB_args_add(ba,
+      args, NULL, "--debug-xr", CB_EX(arg_handle_debug_mode_generic_set, xr), (void *)G_DEBUG_XR);
+  LIB_args_add(args,
                NULL,
                "--debug-xr-time",
                CB_EX(arg_handle_debug_mode_generic_set, xr_time),
                (void *)G_DEBUG_XR_TIME);
 #  endif
-  LIB_args_add(ba,
+  lib_args_add(args,
                NULL,
                "--debug-ghost",
                CB_EX(arg_handle_debug_mode_generic_set, handlers),
                (void *)G_DEBUG_GHOST);
-  LIB_args_add(ba, NULL, "--debug-all", CB(arg_handle_debug_mode_all), NULL);
+  lib_args_add(args, NULL, "--debug-all", CB(arg_handle_debug_mode_all), NULL);
 
-  LIB_args_add(ba, NULL, "--debug-io", CB(arg_handle_debug_mode_io), NULL);
+  lib_args_add(args, NULL, "--debug-io", CB(arg_handle_debug_mode_io), NULL);
 
-  LIB_args_add(ba, NULL, "--debug-fpe", CB(arg_handle_debug_fpe_set), NULL);
+  lib_args_add(args, NULL, "--debug-fpe", CB(arg_handle_debug_fpe_set), NULL);
 
 #  ifdef WITH_LIBMV
-  LIB_args_add(ba, NULL, "--debug-libmv", CB(arg_handle_debug_mode_libmv), NULL);
+  lib_args_add(ba, NULL, "--debug-libmv", CB(arg_handle_debug_mode_libmv), NULL);
 #  endif
 #  ifdef WITH_CYCLES_LOGGING
-  LIB_args_add(ba, NULL, "--debug-cycles", CB(arg_handle_debug_mode_cycles), NULL);
+  lib_args_add(ba, NULL, "--debug-cycles", CB(arg_handle_debug_mode_cycles), NULL);
 #  endif
-  LIB_args_add(ba, NULL, "--debug-memory", CB(arg_handle_debug_mode_memory_set), NULL);
+  lib_args_add(ba, NULL, "--debug-memory", CB(arg_handle_debug_mode_memory_set), NULL);
 
-  LIB_args_add(ba, NULL, "--debug-value", CB(arg_handle_debug_value_set), NULL);
-  LIB_args_add(ba,
+  lib_args_add(ba, NULL, "--debug-value", CB(arg_handle_debug_value_set), NULL);
+  lib_args_add(ba,
                NULL,
                "--debug-jobs",
                CB_EX(arg_handle_debug_mode_generic_set, jobs),
