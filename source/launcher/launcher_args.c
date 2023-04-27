@@ -1850,12 +1850,12 @@ void main_args_setup(Ctx *C, Args *ba)
                "--debug-depsgraph-tag",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_tag),
                (void *)G_DEBUG_DEPSGRAPH_TAG);
-  LIB_args_add(ba,
+  lib_args_add(args,
                NULL,
-               "--debug-depsgraph-time",
+               "--debug-graph-time",
                CB_EX(arg_handle_debug_mode_generic_set, depsgraph_time),
                (void *)G_DEBUG_DEPSGRAPH_TIME);
-  LIB_args_add(ba,
+  lib_args_add(ba,
 
                NULL,
                "--debug-depsgraph-no-threads",
