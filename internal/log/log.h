@@ -17,7 +17,7 @@
  *
  * By convention lower case dot separated identifiers are used, eg:
  * `module.sub_module`, this allows filtering by `module.*`,
- * see #CLG_type_filter_include, #CLG_type_filter_exclude
+ * see log_type_filter_include, log_type_filter_exclude
  *
  * There is currently no functionality to remove a category once it's created.
  *
@@ -87,51 +87,51 @@ enum LogSeverity {
 #define LOG_SEVERITY_LEN (LOG_SEVERITY_FATAL + 1)
 
 /* Each logger ID has one of these. */
-typedef struct CLG_LogType {
-  struct CLG_LogType *next;
+typedef struct LogType {
+  struct LogType *next;
   char identifier[64];
   /** FILE output. */
-  struct CLogContext *ctx;
+  struct LogCtx *ctx;
   /** Control behavior. */
   int level;
-  enum CLG_LogFlag flag;
-} CLG_LogType;
+  enum LogFlag flag;
+} LogType;
 
-typedef struct CLG_LogRef {
-  const char *identifier;
-  CLG_LogType *type;
-  struct CLG_LogRef *next;
-} CLG_LogRef;
+typedef struct LogRef {
+  const char *id;
+  LogType *type;
+  struct LogRef *next;
+} LogRef;
 
-void CLG_log_str(CLG_LogType *lg,
-                 enum CLG_Severity severity,
-                 const char *file_line,
-                 const char *fn,
-                 const char *message) _CLOG_ATTR_NONNULL(1, 3, 4, 5);
-void CLG_logf(CLG_LogType *lg,
-              enum CLG_Severity severity,
-              const char *file_line,
-              const char *fn,
-              const char *format,
-              ...) _CLOG_ATTR_NONNULL(1, 3, 4, 5) _CLOG_ATTR_PRINTF_FORMAT(5, 6);
+void log_str(LogType *lg,
+             enum Severity severity,
+             const char *file_line,
+             const char *fn,
+             const char *message) _LOG_ATTR_NONNULL(1, 3, 4, 5);
+void logf(LogType *lg,
+          enum Severity severity,
+          const char *file_line,
+          const char *fn,
+          const char *format,
+          ...) _LOG_ATTR_NONNULL(1, 3, 4, 5) _LOG_ATTR_PRINTF_FORMAT(5, 6);
 
 /* Main initializer and destructor (per session, not logger). */
-void CLG_init(void);
-void CLG_exit(void);
+void log_init(void);
+void log_exit(void);
 
-void CLG_output_set(void *file_handle);
-void CLG_output_use_basename_set(int value);
-void CLG_output_use_timestamp_set(int value);
-void CLG_error_fn_set(void (*error_fn)(void *file_handle));
-void CLG_fatal_fn_set(void (*fatal_fn)(void *file_handle));
-void CLG_backtrace_fn_set(void (*fatal_fn)(void *file_handle));
+void log_output_set(void *file_handle);
+void log_output_use_basename_set(int value);
+void log_output_use_timestamp_set(int value);
+void log_error_fn_set(void (*error_fn)(void *file_handle));
+void log_fatal_fn_set(void (*fatal_fn)(void *file_handle));
+void log_backtrace_fn_set(void (*fatal_fn)(void *file_handle));
 
-void CLG_type_filter_include(const char *type_filter, int type_filter_len);
-void CLG_type_filter_exclude(const char *type_filter, int type_filter_len);
+void log_type_filter_include(const char *type_filter, int type_filter_len);
+void log_type_filter_exclude(const char *type_filter, int type_filter_len);
 
-void CLG_level_set(int level);
+void log_level_set(int level);
 
-void CLG_logref_init(CLG_LogRef *clg_ref);
+void log_ref_init(LogRef *log_ref);
 
 int CLG_color_support_get(CLG_LogRef *clg_ref);
 
