@@ -1,9 +1,9 @@
 
 #pragma once
 
-struct Depsgraph;
+struct Graph;
 struct ImBuf;
-struct MLoopUV;
+struct MeshLoopUV;
 struct Mesh;
 struct Render;
 
@@ -55,10 +55,10 @@ typedef struct BakeHighPolyData {
 } BakeHighPolyData;
 
 /* external_engine.c */
-bool RE_bake_has_engine(const struct Render *re);
+bool render_bake_has_engine(const struct Render *re);
 
-bool RE_bake_engine(struct Render *re,
-                    struct Depsgraph *depsgraph,
+bool render_bake_engine(struct Render *re,
+                    struct Graph *graph,
                     struct Object *object,
                     int object_id,
                     const BakePixel pixel_array[],
@@ -68,9 +68,9 @@ bool RE_bake_engine(struct Render *re,
                     float result[]);
 
 /* bake.c */
-int RE_pass_depth(eScenePassType pass_type);
+int render_pass_depth(eScenePassType pass_type);
 
-bool RE_bake_pixels_populate_from_objects(struct Mesh *me_low,
+bool render_bake_pixels_populate_from_objects(struct Mesh *me_low,
                                           BakePixel pixel_array_from[],
                                           BakePixel pixel_array_to[],
                                           BakeHighPolyData highpoly[],
@@ -83,22 +83,22 @@ bool RE_bake_pixels_populate_from_objects(struct Mesh *me_low,
                                           float mat_cage[4][4],
                                           struct Mesh *me_cage);
 
-void RE_bake_pixels_populate(struct Mesh *me,
+void render_bake_pixels_populate(struct Mesh *me,
                              struct BakePixel *pixel_array,
                              size_t num_pixels,
                              const struct BakeTargets *targets,
                              const char *uv_layer);
 
-void RE_bake_mask_fill(const BakePixel pixel_array[], size_t num_pixels, char *mask);
+void render_bake_mask_fill(const BakePixel pixel_array[], size_t num_pixels, char *mask);
 
-void RE_bake_margin(struct ImBuf *ibuf,
+void render_bake_margin(struct ImBuf *ibuf,
                     char *mask,
                     int margin,
                     char margin_type,
                     struct Mesh const *me,
                     char const *uv_layer);
 
-void RE_bake_normal_world_to_object(const BakePixel pixel_array[],
+void render_bake_normal_world_to_object(const BakePixel pixel_array[],
                                     size_t num_pixels,
                                     int depth,
                                     float result[],
@@ -108,20 +108,20 @@ void RE_bake_normal_world_to_object(const BakePixel pixel_array[],
  * This function converts an object space normal map
  * to a tangent space normal map for a given low poly mesh.
  */
-void RE_bake_normal_world_to_tangent(const BakePixel pixel_array[],
+void render_bake_normal_world_to_tangent(const BakePixel pixel_array[],
                                      size_t num_pixels,
                                      int depth,
                                      float result[],
                                      struct Mesh *me,
                                      const eBakeNormalSwizzle normal_swizzle[3],
                                      float mat[4][4]);
-void RE_bake_normal_world_to_world(const BakePixel pixel_array[],
+void render_bake_normal_world_to_world(const BakePixel pixel_array[],
                                    size_t num_pixels,
                                    int depth,
                                    float result[],
                                    const eBakeNormalSwizzle normal_swizzle[3]);
 
-void RE_bake_ibuf_clear(struct Image *image, bool is_tangent);
+void render_bake_ibuf_clear(struct Image *image, bool is_tangent);
 
 #ifdef __cplusplus
 }
