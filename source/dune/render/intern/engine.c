@@ -123,10 +123,10 @@ bool render_engine_supports_alembic_procedural(const RenderEngineType *render_ty
 
 RenderEngine *render_engine_create(RenderEngineType *type)
 {
-  RenderEngine *engine = MEM_callocN(sizeof(RenderEngine), "RenderEngine");
+  RenderEngine *engine = mem_callocn(sizeof(RenderEngine), "RenderEngine");
   engine->type = type;
 
-  BLI_mutex_init(&engine->update_render_passes_mutex);
+  lib_mutex_init(&engine->update_render_passes_mutex);
 
   return engine;
 }
