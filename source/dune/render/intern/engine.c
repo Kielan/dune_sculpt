@@ -16,17 +16,17 @@
 
 #include "types_object.h"
 
-#include "BKE_camera.h"
-#include "BKE_colortools.h"
-#include "BKE_global.h"
-#include "BKE_layer.h"
-#include "BKE_node.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
+#include "dune_camera.h"
+#include "dune_colortools.h"
+#include "dune_global.h"
+#include "dune_layer.h"
+#include "dune_node.h"
+#include "dune_report.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_debug.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_debug.h"
+#include "graph_query.h"
 
 #include "RNA_access.h"
 
