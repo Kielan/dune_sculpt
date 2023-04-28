@@ -36,7 +36,7 @@
 #include "mem_guardedalloc.h"
 
 /* own include. */
-#include "CLG_log.h"
+#include "log.h"
 
 /* Local utility defines */
 #define STREQ(a, b) (strcmp(a, b) == 0)
@@ -89,7 +89,7 @@ typedef struct LogCtx {
     void (*fatal_fn)(void *file_handle);
     void (*backtrace_fn)(void *file_handle);
   } cb;
-} CLogCtx;
+} LogCtx;
 
 /* -------------------------------------------------------------------- */
 /** Mini Buffer Functionality
@@ -104,7 +104,7 @@ typedef struct LogStringBuf {
   bool is_alloc;
 } LogStringBuf;
 
-static void clg_str_init(LogStringBuf *cstr, char *buf_stack, uint buf_stack_len)
+static void log_str_init(LogStringBuf *cstr, char *buf_stack, uint buf_stack_len)
 {
   cstr->data = buf_stack;
   cstr->len_alloc = buf_stack_len;
@@ -112,7 +112,7 @@ static void clg_str_init(LogStringBuf *cstr, char *buf_stack, uint buf_stack_len
   cstr->is_alloc = false;
 }
 
-static void clg_str_free(LogStringBuf *cstr)
+static void log_str_free(LogStringBuf *cstr)
 {
   if (cstr->is_alloc) {
     mem_freen(cstr->data);
@@ -363,7 +363,7 @@ static void log_ctx_backtrace(LogCtx *ctx)
   fflush(ctx->output_file);
 }
 
-static uint64_t clg_timestamp_ticks_get(void)
+static uint64_t log_timestamp_ticks_get(void)
 {
   uint64_t tick;
 #if defined(_MSC_VER)
@@ -388,7 +388,7 @@ static void write_timestamp(LogStringBuf *cstr, const uint64_t timestamp_tick_st
                                       "%" PRIu64 ".%03u ",
                                       timestamp / 1000,
                                       (uint)(timestamp % 1000));
-  clg_str_append_with_len(cstr, timestamp_str, timestamp_len);
+  log_str_append_with_len(cstr, timestamp_str, timestamp_len);
 }
 
 static void write_severity(LogStringBuf *cstr, enum LogSeverity severity, bool use_color)
@@ -444,7 +444,7 @@ void log_str(LogType *log_types,
 {
   LogStringBuf cstr;
   char cstr_stack_buf[LOG_BUF_LEN_INIT];
-  clg_str_init(&cstr, cstr_stack_buf, sizeof(cstr_stack_buf));
+  log_str_init(&cstr, cstr_stack_buf, sizeof(cstr_stack_buf));
 
   if (log_type->ctx->use_timestamp) {
     write_timestamp(&cstr, log_type->ctx->timestamp_tick_start);
@@ -608,7 +608,7 @@ static void log_ctx_type_filter_include(LogCtx *ctx,
   log_ctx_type_filter_append(&ctx->filters[1], type_match, type_match_len);
 }
 
-static void log_ctx_level_set(CLogContext *ctx, int level)
+static void log_ctx_level_set(LogCtx *ctx, int level)
 {
   ctx->default_type.level = level;
   for (CLG_LogType *ty = ctx->types; ty; ty = ty->next) {
@@ -631,7 +631,7 @@ static CLogContext *CLG_ctx_init(void)
 static void CLG_ctx_free(CLogContext *ctx)
 {
 #if defined(WIN32)
-  SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), clg_previous_console_mode);
+  SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), log_previous_console_mode);
 #endif
   while (ctx->types != NULL) {
     CLG_LogType *item = ctx->types;
