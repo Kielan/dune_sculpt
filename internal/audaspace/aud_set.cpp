@@ -1,19 +1,19 @@
 
 #include <set>
 
-#include "AUD_Set.h"
+#include "aud_set.h"
 
-void *AUD_createSet()
+void *aud_create_set()
 {
   return new std::set<void *>();
 }
 
-void AUD_destroySet(void *set)
+void aud_destroy_set(void *set)
 {
   delete reinterpret_cast<std::set<void *> *>(set);
 }
 
-char AUD_removeSet(void *set, void *entry)
+char aud_remove_set(void *set, void *entry)
 {
   if (set)
     return reinterpret_cast<std::set<void *> *>(set)->erase(entry);
