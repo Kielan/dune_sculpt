@@ -55,9 +55,9 @@ void ibuf_sample(struct ImBuf *ibuf, float fx, float fy, float dx, float dy, flo
 
 struct PointDensity;
 
-void render_point_density_cache(struct Depsgraph *depsgraph, struct PointDensity *pd);
+void render_point_density_cache(struct Graph *graph, struct PointDensity *pd);
 
-void render_point_density_minmax(struct Depsgraph *depsgraph,
+void render_point_density_minmax(struct Graph *graph,
                              struct PointDensity *pd,
                              float r_min[3],
                              float r_max[3]);
@@ -66,10 +66,10 @@ void render_point_density_minmax(struct Depsgraph *depsgraph,
  * note Requires render_point_density_cache() to be called first.
  * note Frees point density structure after sampling.
  */
-void render_point_density_sample(struct Depsgraph *depsgraph,
-                             struct PointDensity *pd,
-                             int resolution,
-                             float *values);
+void render_point_density_sample(struct Graph *graph,
+                                 struct PointDensity *pd,
+                                 int resolution,
+                                 float *values);
 
 void render_point_density_free(struct PointDensity *pd);
 
@@ -89,7 +89,7 @@ typedef struct TexResult {
 /* This one uses nodes. */
 
 /**
- * \warning if the texres's values are not declared zero,
+ * warning if the texres's values are not declared zero,
  * check the return value to be sure the color values are set before using the r/g/b values,
  * otherwise you may use uninitialized values - Campbell
  *
@@ -108,7 +108,7 @@ int multitex_ext(struct Tex *tex,
 
 /**
  * Nodes disabled.
- * extern-tex doesn't support nodes (#ntreeBeginExec() can't be called when rendering is going on).
+ * extern-tex doesn't support nodes (ntreeBeginEx() can't be called when rendering is going on).
  *
  * Use it for stuff which is out of render pipeline.
  */
