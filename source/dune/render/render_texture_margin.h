@@ -23,9 +23,9 @@ void render_generate_texturemargin_adjacentfaces(
     struct ImBuf *ibuf, char *mask, const int margin, struct Mesh const *me, char const *uv_layer);
 
 void render_generate_texturemargin_adjacentfaces_dm(struct ImBuf *ibuf,
-                                                char *mask,
-                                                const int margin,
-                                                struct DerivedMesh *dm);
+                                                    char *mask,
+                                                    const int margin,
+                                                    struct DerivedMesh *dm);
 
 #ifdef __cplusplus
 }
