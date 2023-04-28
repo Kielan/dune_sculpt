@@ -619,76 +619,74 @@ static void log_ctx_level_set(LogCtx *ctx, int level)
 static LogCtx *log_ctx_init(void)
 {
   LogCtx *ctx = mem_callocn(sizeof(*ctx), __func__);
-#ifdef WITH_CLOG_PTHREADS
+#ifdef WITH_LOG_PTHREADS
   pthread_mutex_init(&ctx->types_lock, NULL);
 #endif
   ctx->default_type.level = 1;
-  CLG_ctx_output_set(ctx, stdout);
+  log_ctx_output_set(ctx, stdout);
 
   return ctx;
 }
 
-static void CLG_ctx_free(CLogContext *ctx)
+static void log_ctx_free(LogCtx *ctx)
 {
 #if defined(WIN32)
   SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), log_previous_console_mode);
 #endif
   while (ctx->types != NULL) {
-    CLG_LogType *item = ctx->types;
+    LogType *item = ctx->types;
     ctx->types = item->next;
-    MEM_freeN(item);
+    mem_freen(item);
   }
 
   while (ctx->refs != NULL) {
-    CLG_LogRef *item = ctx->refs;
+    LogRef *item = ctx->refs;
     ctx->refs = item->next;
     item->type = NULL;
   }
 
   for (uint i = 0; i < 2; i++) {
     while (ctx->filters[i] != NULL) {
-      CLG_IDFilter *item = ctx->filters[i];
+      LogIdFilter *item = ctx->filters[i];
       ctx->filters[i] = item->next;
-      MEM_freeN(item);
+      mem_freen(item);
     }
   }
 #ifdef WITH_CLOG_PTHREADS
   pthread_mutex_destroy(&ctx->types_lock);
 #endif
-  MEM_freeN(ctx);
+  mem_freen(ctx);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Public Logging API
+/** Public Logging API
  *
  * Currently uses global context.
- * \{ */
+ **/
 
 /* We could support multiple at once, for now this seems not needed. */
-static struct CLogContext *g_ctx = NULL;
+static struct LogCtx *g_ctx = NULL;
 
-void CLG_init(void)
+void log_init(void)
 {
-  g_ctx = CLG_ctx_init();
+  g_ctx = log_ctx_init();
 
-  clg_color_table_init(g_ctx->use_color);
+  log_color_table_init(g_ctx->use_color);
 }
 
-void CLG_exit(void)
+void log_exit(void)
 {
-  CLG_ctx_free(g_ctx);
+  log_ctx_free(g_ctx);
 }
 
-void CLG_output_set(void *file_handle)
+void log_output_set(void *file_handle)
 {
-  CLG_ctx_output_set(g_ctx, file_handle);
+  log_ctx_output_set(g_ctx, file_handle);
 }
 
-void CLG_output_use_basename_set(int value)
+void log_output_use_basename_set(int value)
 {
-  CLG_ctx_output_use_basename_set(g_ctx, value);
+  log_ctx_output_use_basename_set(g_ctx, value);
 }
 
 void log_output_use_timestamp_set(int value)
@@ -732,7 +730,7 @@ void log_level_set(int level)
  * Use to avoid look-ups each time.
  **/
 
-void logref_init(CLG_LogRef *clg_ref)
+void logref_init(LogRef *log_ref)
 {
 #ifdef WITH_CLOG_PTHREADS
   /* Only runs once when initializing a static type in most cases. */
