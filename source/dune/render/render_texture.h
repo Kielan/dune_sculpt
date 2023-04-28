@@ -1,6 +1,4 @@
-/** render
- *
- * This include is for non-render pipeline exports (still old cruft here). **/
+/** This include is for non-render pipeline exports (still old cruft here). **/
 
 #pragma once
 
