@@ -517,7 +517,7 @@ void logf(LogType *log_type,
   }
 
   if (severity == LOG_SEVERITY_FATAL) {
-    clg_ctx_fatal_action(log_type->ctx);
+    lig_ctx_fatal_action(log_type->ctx);
   }
 }
 
@@ -748,7 +748,7 @@ void logref_init(LogRef *log_ref)
 #ifdef WITH_LOG_PTHREADS
     atomic_cas_ptr((void **)&log_ref->type, log_ref->type, clg_ty);
 #else
-    clg_ref->type = clg_ty;
+    log_ref->type = clg_ty;
 #endif
   }
 #ifdef WITH_LOG_PTHREADS
@@ -758,8 +758,8 @@ void logref_init(LogRef *log_ref)
 
 int log_color_support_get(LogRef *clg_ref)
 {
-  if (clg_ref->type == NULL) {
-    CLG_logref_init(clg_ref);
+  if (log_ref->type == NULL) {
+    logref_init(log_ref);
   }
-  return clg_ref->type->ctx->use_color;
+  return log_ref->type->ctx->use_color;
 }
