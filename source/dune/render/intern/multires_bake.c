@@ -1303,3 +1303,217 @@ static void apply_ao_callback(DerivedMesh *lores_dm,
   }
 }
 #endif
+
+/* ******$***************** Post processing ************************* */
+
+static void bake_ibuf_filter(
+    ImBuf *ibuf, char *mask, const int margin, const char margin_type, DerivedMesh *dm)
+{
+  /* must check before filtering */
+  const bool is_new_alpha = (ibuf->planes != R_IMF_PLANES_RGBA) && BKE_imbuf_alpha_test(ibuf);
+
+  if (margin) {
+    switch (margin_type) {
+      case R_BAKE_ADJACENT_FACES:
+        RE_generate_texturemargin_adjacentfaces_dm(ibuf, mask, margin, dm);
+        break;
+      default:
+      /* fall through */
+      case R_BAKE_EXTEND:
+        IMB_filter_extend(ibuf, mask, margin);
+        break;
+    }
+  }
+
+  /* if the bake results in new alpha then change the image setting */
+  if (is_new_alpha) {
+    ibuf->planes = R_IMF_PLANES_RGBA;
+  }
+  else {
+    if (margin && ibuf->planes != R_IMF_PLANES_RGBA) {
+      /* clear alpha added by filtering */
+      IMB_rectfill_alpha(ibuf, 1.0f);
+    }
+  }
+}
+
+static void bake_ibuf_normalize_displacement(ImBuf *ibuf,
+                                             const float *displacement,
+                                             const char *mask,
+                                             float displacement_min,
+                                             float displacement_max)
+{
+  int i;
+  const float *current_displacement = displacement;
+  const char *current_mask = mask;
+  float max_distance;
+
+  max_distance = max_ff(fabsf(displacement_min), fabsf(displacement_max));
+
+  for (i = 0; i < ibuf->x * ibuf->y; i++) {
+    if (*current_mask == FILTER_MASK_USED) {
+      float normalized_displacement;
+
+      if (max_distance > 1e-5f) {
+        normalized_displacement = (*current_displacement + max_distance) / (max_distance * 2);
+      }
+      else {
+        normalized_displacement = 0.5f;
+      }
+
+      if (ibuf->rect_float) {
+        /* currently baking happens to RGBA only */
+        float *fp = ibuf->rect_float + i * 4;
+        fp[0] = fp[1] = fp[2] = normalized_displacement;
+        fp[3] = 1.0f;
+      }
+
+      if (ibuf->rect) {
+        unsigned char *cp = (unsigned char *)(ibuf->rect + i);
+        cp[0] = cp[1] = cp[2] = unit_float_to_uchar_clamp(normalized_displacement);
+        cp[3] = 255;
+      }
+    }
+
+    current_displacement++;
+    current_mask++;
+  }
+}
+
+/* **************** Common functions public API relates on **************** */
+
+static void count_images(MultiresBakeRender *bkr)
+{
+  BLI_listbase_clear(&bkr->image);
+  bkr->tot_image = 0;
+
+  for (int i = 0; i < bkr->ob_image.len; i++) {
+    Image *ima = bkr->ob_image.array[i];
+    if (ima) {
+      ima->id.tag &= ~LIB_TAG_DOIT;
+    }
+  }
+
+  for (int i = 0; i < bkr->ob_image.len; i++) {
+    Image *ima = bkr->ob_image.array[i];
+    if (ima) {
+      if ((ima->id.tag & LIB_TAG_DOIT) == 0) {
+        LinkData *data = BLI_genericNodeN(ima);
+        BLI_addtail(&bkr->image, data);
+        bkr->tot_image++;
+        ima->id.tag |= LIB_TAG_DOIT;
+      }
+    }
+  }
+
+  for (int i = 0; i < bkr->ob_image.len; i++) {
+    Image *ima = bkr->ob_image.array[i];
+    if (ima) {
+      ima->id.tag &= ~LIB_TAG_DOIT;
+    }
+  }
+}
+
+static void bake_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
+{
+  LinkData *link;
+
+  for (link = bkr->image.first; link; link = link->next) {
+    Image *ima = (Image *)link->data;
+    ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
+
+    if (ibuf->x > 0 && ibuf->y > 0) {
+      BakeImBufuserData *userdata = MEM_callocN(sizeof(BakeImBufuserData),
+                                                "MultiresBake userdata");
+      userdata->mask_buffer = MEM_callocN(ibuf->y * ibuf->x, "MultiresBake imbuf mask");
+      ibuf->userdata = userdata;
+
+      switch (bkr->mode) {
+        case RE_BAKE_NORMALS:
+          do_multires_bake(
+              bkr, ima, true, apply_tangmat_callback, init_normal_data, free_normal_data, result);
+          break;
+        case RE_BAKE_DISPLACEMENT:
+          do_multires_bake(bkr,
+                           ima,
+                           false,
+                           apply_heights_callback,
+                           init_heights_data,
+                           free_heights_data,
+                           result);
+          break;
+/* TODO: restore ambient occlusion baking support. */
+#if 0
+        case RE_BAKE_AO:
+          do_multires_bake(bkr, ima, false, apply_ao_callback, init_ao_data, free_ao_data, result);
+          break;
+#endif
+      }
+    }
+
+    BKE_image_release_ibuf(ima, ibuf, NULL);
+
+    ima->id.tag |= LIB_TAG_DOIT;
+  }
+}
+
+static void finish_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
+{
+  LinkData *link;
+  bool use_displacement_buffer = bkr->mode == RE_BAKE_DISPLACEMENT;
+
+  for (link = bkr->image.first; link; link = link->next) {
+    Image *ima = (Image *)link->data;
+    ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
+    BakeImBufuserData *userdata = (BakeImBufuserData *)ibuf->userdata;
+
+    if (ibuf->x <= 0 || ibuf->y <= 0) {
+      continue;
+    }
+
+    if (use_displacement_buffer) {
+      bake_ibuf_normalize_displacement(ibuf,
+                                       userdata->displacement_buffer,
+                                       userdata->mask_buffer,
+                                       result->height_min,
+                                       result->height_max);
+    }
+
+    bake_ibuf_filter(
+        ibuf, userdata->mask_buffer, bkr->bake_margin, bkr->bake_margin_type, bkr->lores_dm);
+
+    ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
+    BKE_image_mark_dirty(ima, ibuf);
+
+    if (ibuf->rect_float) {
+      ibuf->userflags |= IB_RECT_INVALID;
+    }
+
+    if (ibuf->mipmap[0]) {
+      ibuf->userflags |= IB_MIPMAP_INVALID;
+      imb_freemipmapImBuf(ibuf);
+    }
+
+    if (ibuf->userdata) {
+      if (userdata->displacement_buffer) {
+        MEM_freeN(userdata->displacement_buffer);
+      }
+
+      MEM_freeN(userdata->mask_buffer);
+      MEM_freeN(userdata);
+      ibuf->userdata = NULL;
+    }
+
+    BKE_image_release_ibuf(ima, ibuf, NULL);
+    DEG_id_tag_update(&ima->id, 0);
+  }
+}
+
+void RE_multires_bake_images(MultiresBakeRender *bkr)
+{
+  MultiresBakeResult result;
+
+  count_images(bkr);
+  bake_images(bkr, &result);
+  finish_images(bkr, &result);
+}
