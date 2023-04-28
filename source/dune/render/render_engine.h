@@ -39,7 +39,7 @@ extern "C" {
 #define RENDER_USE_EEVEE_VIEWPORT 16
 /* #define RENDER_USE_SAVE_BUFFERS_DEPRECATED 32 */
 #define RENDER_USE_SHADING_NODES_CUSTOM 64
-#define RENER_USE_SPHERICAL_STEREO 128
+#define RENDER_USE_SPHERICAL_STEREO 128
 #define RENDER_USE_STEREO_VIEWPORT 256
 #define RENDER_USE_GPU_CONTEXT 512
 #define RENDER_USE_CUSTOM_FREESTYLE 1024
@@ -61,13 +61,13 @@ typedef struct RenderEngineType {
   struct RenderEngineType *next, *prev;
 
   /* type info */
-  char idname[64]; /* best keep the same size as BKE_ST_MAXNAME. */
+  char idname[64]; /* best keep the same size as DUNE_ST_MAXNAME. */
   char name[64];
   int flag;
 
-  void (*update)(struct RenderEngine *engine, struct Main *bmain, struct Depsgraph *depsgraph);
+  void (*update)(struct RenderEngine *engine, struct Main *main, struct Graph *graph);
 
-  void (*render)(struct RenderEngine *engine, struct Depsgraph *depsgraph);
+  void (*render)(struct RenderEngine *engine, struct Graph *graph);
 
   /* Offline rendering is finished - no more view layers will be rendered.
    *
@@ -164,8 +164,8 @@ void render_engine_free(RenderEngine *engine);
 void render_layer_load_from_file(
     struct RenderLayer *layer, struct ReportList *reports, const char *filename, int x, int y);
 void renderm_result_load_from_file(struct RenderResult *result,
-                              struct ReportList *reports,
-                              const char *filename);
+                                   struct ReportList *reports,
+                                   const char *filename);
 
 struct RenderResult *render_engine_begin_result(
     RenderEngine *engine, int x, int y, int w, int h, const char *layername, const char *viewname);
@@ -189,8 +189,8 @@ struct RenderPass *render_engine_pass_by_index_get(struct RenderEngine *engine,
 const char *render_engine_active_view_get(RenderEngine *engine);
 void render_engine_active_view_set(RenderEngine *engine, const char *viewname);
 float render_engine_get_camera_shift_x(RenderEngine *engine,
-                                   struct Object *camera,
-                                   bool use_spherical_stereo);
+                                       struct Object *camera,
+                                       bool use_spherical_stereo);
 void render_engine_get_camera_model_matrix(RenderEngine *engine,
                                            struct Object *camera,
                                            bool use_spherical_stereo,
@@ -214,7 +214,7 @@ void render_engine_update_render_passes(struct RenderEngine *engine,
                                     struct Scene *scene,
                                     struct ViewLayer *view_layer,
                                     update_render_passes_cb_t callback,
-                                    void *callback_data);
+                                    void *cb_data);
 void render_engine_register_pass(struct RenderEngine *engine,
                              struct Scene *scene,
                              struct ViewLayer *view_layer,
