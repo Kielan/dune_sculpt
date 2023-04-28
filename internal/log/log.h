@@ -89,7 +89,7 @@ enum LogSeverity {
 /* Each logger ID has one of these. */
 typedef struct LogType {
   struct LogType *next;
-  char identifier[64];
+  char id[64];
   /** FILE output. */
   struct LogCtx *ctx;
   /** Control behavior. */
@@ -133,15 +133,15 @@ void log_level_set(int level);
 
 void log_ref_init(LogRef *log_ref);
 
-int CLG_color_support_get(CLG_LogRef *clg_ref);
+int log_color_support_get(LogRef *log_ref);
 
 /** Declare outside function, declare as extern in header. */
-#define CLG_LOGREF_DECLARE_GLOBAL(var, id) \
-  static CLG_LogRef _static_##var = {id}; \
-  CLG_LogRef *var = &_static_##var
+#define LOG_REF_DECLARE_GLOBAL(var, id) \
+  static LogRef _static_##var = {id}; \
+  LogRef *var = &_static_##var
 
 /** Initialize struct once. */
-#define CLOG_ENSURE(clg_ref) \
+#define LOG_ENSURE(log_ref) \
   ((clg_ref)->type ? (clg_ref)->type : (CLG_logref_init(clg_ref), (clg_ref)->type))
 
 #define LOG_CHECK(log_ref, verbose_level, ...) \
