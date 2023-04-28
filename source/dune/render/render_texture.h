@@ -9,7 +9,7 @@
 /* called by meshtools */
 struct Graph;
 struct ImagePool;
-struct MTex;
+struct MeshTex;
 struct Tex;
 
 #ifdef __cplusplus
@@ -63,10 +63,10 @@ void render_point_density_minmax(struct Depsgraph *depsgraph,
                              float r_max[3]);
 
 /**
- * \note Requires #RE_point_density_cache() to be called first.
- * \note Frees point density structure after sampling.
+ * note Requires render_point_density_cache() to be called first.
+ * note Frees point density structure after sampling.
  */
-void RE_point_density_sample(struct Depsgraph *depsgraph,
+void render_point_density_sample(struct Depsgraph *depsgraph,
                              struct PointDensity *pd,
                              int resolution,
                              float *values);
