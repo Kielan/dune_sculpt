@@ -142,7 +142,7 @@ int log_color_support_get(LogRef *log_ref);
 
 /** Initialize struct once. */
 #define LOG_ENSURE(log_ref) \
-  ((log_ref)->type ? (log_ref)->type : (CLG_logref_init(clg_ref), (clg_ref)->type))
+  ((log_ref)->type ? (log_ref)->type : (CLG_logref_init(log_ref), (log_ref)->type))
 
 #define LOG_CHECK(log_ref, verbose_level, ...) \
   ((void)LOG_ENSURE(log_ref), \
@@ -170,7 +170,7 @@ int log_color_support_get(LogRef *log_ref);
 
 #define LOG_STR_AT_SEVERITY_N(log_ref, severity, verbose_level, str) \
   { \
-    LogType *_lg_ty = LOG_ENSURE(clg_ref); \
+    LogType *_lg_ty = LOG_ENSURE(log_ref); \
     if (((_lg_ty->flag & LOG_FLAG_USE) && (_lg_ty->level >= verbose_level)) || \
         (severity >= LOG_SEVERITY_WARN)) { \
       const char *_str = str; \
@@ -188,9 +188,9 @@ int log_color_support_get(LogRef *log_ref);
 
 #define LOG_STR_INFO(log_ref, level, str) \
   LOG_STR_AT_SEVERITY(log_ref, LOG_SEVERITY_INFO, level, str)
-#define LOG_STR_WARN(log_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_WARN, 0, str)
-#define LOG_STR_ERROR(log_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_ERROR, 0, str)
-#define LOG_STR_FATAL(log_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_FATAL, 0, str)
+#define LOG_STR_WARN(log_ref, str) CLOG_STR_AT_SEVERITY(log_ref, LOG_SEVERITY_WARN, 0, str)
+#define LOG_STR_ERROR(log_ref, str) CLOG_STR_AT_SEVERITY(log_ref, LOG_SEVERITY_ERROR, 0, str)
+#define LOG_STR_FATAL(log_ref, str) CLOG_STR_AT_SEVERITY(log_ref, LOG_SEVERITY_FATAL, 0, str)
 
 /* Allocated string which is immediately freed. */
 #define LOG_STR_INFO_N(log_ref, level, str) \
