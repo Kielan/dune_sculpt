@@ -282,22 +282,22 @@ static void engine_tile_highlight_set(RenderEngine *engine,
 
   Render *re = engine->re;
 
-  BLI_mutex_lock(&re->highlighted_tiles_mutex);
+  lib_mutex_lock(&re->highlighted_tiles_mutex);
 
   if (re->highlighted_tiles == NULL) {
-    re->highlighted_tiles = BLI_gset_new(
-        BLI_ghashutil_inthash_v4_p, BLI_ghashutil_inthash_v4_cmp, "highlighted tiles");
+    re->highlighted_tiles = lib_gset_new(
+        lib_ghashutil_inthash_v4_p, BLI_ghashutil_inthash_v4_cmp, "highlighted tiles");
   }
 
   if (highlight) {
     HighlightedTile **tile_in_set;
-    if (!BLI_gset_ensure_p_ex(re->highlighted_tiles, tile, (void ***)&tile_in_set)) {
-      *tile_in_set = MEM_mallocN(sizeof(HighlightedTile), __func__);
+    if (!lib_gset_ensure_p_ex(re->highlighted_tiles, tile, (void ***)&tile_in_set)) {
+      *tile_in_set = mem_mallocn(sizeof(HighlightedTile), __func__);
       **tile_in_set = *tile;
     }
   }
   else {
-    BLI_gset_remove(re->highlighted_tiles, tile, MEM_freeN);
+    lib_gset_remove(re->highlighted_tiles, tile, MEM_freeN);
   }
 
   BLI_mutex_unlock(&re->highlighted_tiles_mutex);
