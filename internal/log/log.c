@@ -611,12 +611,12 @@ static void log_ctx_type_filter_include(LogCtx *ctx,
 static void log_ctx_level_set(LogCtx *ctx, int level)
 {
   ctx->default_type.level = level;
-  for (CLG_LogType *ty = ctx->types; ty; ty = ty->next) {
+  for (LogType *ty = ctx->types; ty; ty = ty->next) {
     ty->level = level;
   }
 }
 
-static CLogContext *CLG_ctx_init(void)
+static CLogContext *log_ctx_init(void)
 {
   CLogContext *ctx = MEM_callocN(sizeof(*ctx), __func__);
 #ifdef WITH_CLOG_PTHREADS
