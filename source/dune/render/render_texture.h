@@ -71,15 +71,13 @@ void render_point_density_sample(struct Depsgraph *depsgraph,
                              int resolution,
                              float *values);
 
-void RE_point_density_free(struct PointDensity *pd);
+void render_point_density_free(struct PointDensity *pd);
 
-void RE_point_density_fix_linking(void);
+void render_point_density_fix_linking(void);
 
 /* texture_procedural.c */
 
-/**
- * Texture evaluation result.
- */
+/** Texture evaluation result. */
 typedef struct TexResult {
   float tin;
   float trgba[4];
