@@ -403,7 +403,7 @@ void RE_engine_end_result(
 
   if (engine->bake.pixels) {
     render_result_to_bake(engine, result);
-    BLI_remlink(&engine->fullresult, result);
+    lib_remlink(&engine->fullresult, result);
     render_result_free(result);
     return;
   }
@@ -427,18 +427,17 @@ void RE_engine_end_result(
   }
 
   /* free */
-  BLI_remlink(&engine->fullresult, result);
+  lib_remlink(&engine->fullresult, result);
   render_result_free(result);
 }
 
-RenderResult *RE_engine_get_result(RenderEngine *engine)
+RenderResult *render_engine_get_result(RenderEngine *engine)
 {
   return engine->re->result;
 }
 
 /* Cancel */
-
-bool RE_engine_test_break(RenderEngine *engine)
+bool render_engine_test_break(RenderEngine *engine)
 {
   Render *re = engine->re;
 
@@ -451,7 +450,7 @@ bool RE_engine_test_break(RenderEngine *engine)
 
 /* Statistics */
 
-void RE_engine_update_stats(RenderEngine *engine, const char *stats, const char *info)
+void render_engine_update_stats(RenderEngine *engine, const char *stats, const char *info)
 {
   Render *re = engine->re;
 
@@ -468,17 +467,17 @@ void RE_engine_update_stats(RenderEngine *engine, const char *stats, const char 
   engine->text[0] = '\0';
 
   if (stats && stats[0] && info && info[0]) {
-    BLI_snprintf(engine->text, sizeof(engine->text), "%s | %s", stats, info);
+    lib_snprintf(engine->text, sizeof(engine->text), "%s | %s", stats, info);
   }
   else if (info && info[0]) {
-    BLI_strncpy(engine->text, info, sizeof(engine->text));
+    lib_strncpy(engine->text, info, sizeof(engine->text));
   }
   else if (stats && stats[0]) {
-    BLI_strncpy(engine->text, stats, sizeof(engine->text));
+    lib_strncpy(engine->text, stats, sizeof(engine->text));
   }
 }
 
-void RE_engine_update_progress(RenderEngine *engine, float progress)
+void render_engine_update_progress(RenderEngine *engine, float progress)
 {
   Render *re = engine->re;
 
@@ -488,7 +487,7 @@ void RE_engine_update_progress(RenderEngine *engine, float progress)
   }
 }
 
-void RE_engine_update_memory_stats(RenderEngine *engine, float mem_used, float mem_peak)
+void render_engine_update_memory_stats(RenderEngine *engine, float mem_used, float mem_peak)
 {
   Render *re = engine->re;
 
