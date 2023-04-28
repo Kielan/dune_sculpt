@@ -192,9 +192,9 @@ float render_engine_get_camera_shift_x(RenderEngine *engine,
                                    struct Object *camera,
                                    bool use_spherical_stereo);
 void render_engine_get_camera_model_matrix(RenderEngine *engine,
-                                       struct Object *camera,
-                                       bool use_spherical_stereo,
-                                       float r_modelmat[16]);
+                                           struct Object *camera,
+                                           bool use_spherical_stereo,
+                                           float r_modelmat[16]);
 bool render_engine_get_spherical_stereo(RenderEngine *engine, struct Object *camera);
 
 bool render_engine_test_break(RenderEngine *engine);
@@ -204,13 +204,13 @@ void render_engine_update_memory_stats(RenderEngine *engine, float mem_used, flo
 void render_engine_report(RenderEngine *engine, int type, const char *msg);
 void RE_engine_set_error_message(RenderEngine *engine, const char *msg);
 
-bool RE_engine_render(struct Render *re, bool do_all);
+bool render_engine_render(struct Render *re, bool do_all);
 
-bool RE_engine_is_external(const struct Render *re);
+bool render_engine_is_external(const struct Render *re);
 
-void RE_engine_frame_set(struct RenderEngine *engine, int frame, float subframe);
+void render_engine_frame_set(struct RenderEngine *engine, int frame, float subframe);
 
-void RE_engine_update_render_passes(struct RenderEngine *engine,
+void render_engine_update_render_passes(struct RenderEngine *engine,
                                     struct Scene *scene,
                                     struct ViewLayer *view_layer,
                                     update_render_passes_cb_t callback,
