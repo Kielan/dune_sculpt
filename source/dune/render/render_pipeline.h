@@ -346,32 +346,26 @@ void RE_RenderAnim(struct Render *re,
                    int efra,
                    int tfra);
 #ifdef WITH_FREESTYLE
-void RE_RenderFreestyleStrokes(struct Render *re,
-                               struct Main *bmain,
+void render_RenderFreestyleStrokes(struct Render *re,
+                               struct Main *main,
                                struct Scene *scene,
                                int render);
-void RE_RenderFreestyleExternal(struct Render *re);
+void render_RenderFreestyleExternal(struct Render *re);
 #endif
 
-void RE_SetActiveRenderView(struct Render *re, const char *viewname);
-const char *RE_GetActiveRenderView(struct Render *re);
+void render_SetActiveRenderView(struct Render *re, const char *viewname);
+const char *render_GetActiveRenderView(struct Render *re);
 
-/**
- * Error reporting.
- */
-void RE_SetReports(struct Render *re, struct ReportList *reports);
+/** Error reporting.  **/
+void render_SetReports(struct Render *re, struct ReportList *reports);
 
-/**
- * Main preview render call.
- */
-void RE_PreviewRender(struct Render *re, struct Main *bmain, struct Scene *scene);
+/** Main preview render call. */
+void render_PreviewRender(struct Render *re, struct Main *bmain, struct Scene *scene);
 
-/**
- * Only the temp file!
- */
-bool RE_ReadRenderResult(struct Scene *scene, struct Scene *scenode);
+/** Only the temp file! */
+bool render_ReadRenderResult(struct Scene *scene, struct Scene *scenode);
 
-struct RenderResult *RE_MultilayerConvert(
+struct RenderResult *render_MultilayerConvert(
     void *exrhandle, const char *colorspace, bool predivide, int rectx, int recty);
 
 /* Display and event callbacks. */
@@ -379,7 +373,7 @@ struct RenderResult *RE_MultilayerConvert(
 /**
  * Image and movie output has to move to either imbuf or kernel.
  */
-void RE_display_init_cb(struct Render *re,
+void render_display_init_cb(struct Render *re,
                         void *handle,
                         void (*f)(void *handle, RenderResult *rr));
 void RE_display_clear_cb(struct Render *re,
