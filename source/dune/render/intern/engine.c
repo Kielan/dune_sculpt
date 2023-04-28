@@ -906,12 +906,12 @@ static void engine_render_view_layer(Render *re,
   }
 
   /* Free dependency graph, if engine has not done it already. */
-  engine_depsgraph_exit(engine);
+  engine_graph_exit(engine);
 }
 
-bool RE_engine_render(Render *re, bool do_all)
+bool render_engine_render(Render *re, bool do_all)
 {
-  RenderEngineType *type = RE_engines_find(re->r.engine);
+  RenderEngineType *type = render_engines_find(re->r.engine);
 
   /* verify if we can render */
   if (!type->render) {
@@ -939,7 +939,7 @@ bool RE_engine_render(Render *re, bool do_all)
   }
 
   /* create render result */
-  BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+  lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
   if (re->result == NULL || !(re->r.scemode & R_BUTS_PREVIEW)) {
     if (re->result) {
       render_result_free(re->result);
@@ -957,14 +957,14 @@ bool RE_engine_render(Render *re, bool do_all)
     /* Too small image is handled earlier, here it could only happen if
      * there was no sufficient memory to allocate all passes.
      */
-    BKE_report(re->reports, RPT_ERROR, "Failed allocate render result, out of memory");
+    dune_report(re->reports, RPT_ERROR, "Failed allocate render result, out of memory");
     G.is_break = true;
     return true;
   }
 
   /* set render info */
   re->i.cfra = re->scene->r.cfra;
-  BLI_strncpy(re->i.scene_name, re->scene->id.name + 2, sizeof(re->i.scene_name));
+  lib_strncpy(re->i.scene_name, re->scene->id.name + 2, sizeof(re->i.scene_name));
 
   /* render */
   RenderEngine *engine = re->engine;
