@@ -378,10 +378,10 @@ void render_engine_update_result(RenderEngine *engine, RenderResult *result)
 }
 
 void render_engine_add_pass(RenderEngine *engine,
-                        const char *name,
-                        int channels,
-                        const char *chan_id,
-                        const char *layername)
+                            const char *name,
+                            int channels,
+                            const char *chan_id,
+                            const char *layername)
 {
   Render *re = engine->re;
 
@@ -389,10 +389,10 @@ void render_engine_add_pass(RenderEngine *engine,
     return;
   }
 
-  RE_create_render_pass(re->result, name, channels, chan_id, layername, NULL, false);
+  render_create_render_pass(re->result, name, channels, chan_id, layername, NULL, false);
 }
 
-void RE_engine_end_result(
+void render_engine_end_result(
     RenderEngine *engine, RenderResult *result, bool cancel, bool highlight, bool merge_results)
 {
   Render *re = engine->re;
@@ -502,14 +502,14 @@ void RE_engine_report(RenderEngine *engine, int type, const char *msg)
   Render *re = engine->re;
 
   if (re) {
-    BKE_report(engine->re->reports, type, msg);
+    dune_report(engine->re->reports, type, msg);
   }
   else if (engine->reports) {
-    BKE_report(engine->reports, type, msg);
+    dune_report(engine->reports, type, msg);
   }
 }
 
-void RE_engine_set_error_message(RenderEngine *engine, const char *msg)
+void rendee_engine_set_error_message(RenderEngine *engine, const char *msg)
 {
   Render *re = engine->re;
   if (re != NULL) {
