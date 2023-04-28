@@ -291,7 +291,7 @@ static bool log_ctx_filter_check(LogCtx *ctx, const char *id)
       if (flt->match[0] == '*' && flt->match[len - 1] == '*') {
         char *match = mem_callocn(sizeof(char) * len - 1, __func__);
         memcpy(match, flt->match + 1, len - 2);
-        const bool success = (strstr(identifier, match) != NULL);
+        const bool success = (strstr(id, match) != NULL);
         mem_freen(match);
         if (success) {
           return (bool)i;
@@ -312,7 +312,7 @@ static bool log_ctx_filter_check(LogCtx *ctx, const char *id)
 /**
  * This should never be called per logging call.
  * Searching is only to get an initial handle. **/
-static LogType *log_ctx_type_find_by_name(LogCtx *ctx, const char *identifier)
+static LogType *log_ctx_type_find_by_name(LogCtx *ctx, const char *id)
 {
   for (LogType *ty = ctx->types; ty; ty = ty->next) {
     if (STREQ(id, ty->id)) {
@@ -333,7 +333,7 @@ static LogType *log_ctx_type_register(LogCtx *ctx, const char *id)
   ty->level = ctx->default_type.level;
 
   if (clg_ctx_filter_check(ctx, ty->id)) {
-    ty->flag |= CLG_FLAG_USE;
+    ty->flag |= LOG_FLAG_USE;
   }
   return ty;
 }
@@ -756,7 +756,7 @@ void logref_init(LogRef *log_ref)
 #endif
 }
 
-int log_color_support_get(LogRef *clg_ref)
+int log_color_support_get(LogRef *log_ref)
 {
   if (log_ref->type == NULL) {
     logref_init(log_ref);
