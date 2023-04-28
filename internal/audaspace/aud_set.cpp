@@ -20,13 +20,13 @@ char aud_remove_set(void *set, void *entry)
   return 0;
 }
 
-void AUD_addSet(void *set, void *entry)
+void aud_addSet(void *set, void *entry)
 {
   if (entry)
     reinterpret_cast<std::set<void *> *>(set)->insert(entry);
 }
-
-void *AUD_getSet(void *set)
+https://github.com/Kielan/dune_sculpt/edit/main/internal/audaspace/aud_set.cpp
+void *aud_getSet(void *set)
 {
   if (set) {
     std::set<void *> *rset = reinterpret_cast<std::set<void *> *>(set);
