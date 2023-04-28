@@ -497,7 +497,7 @@ void render_engine_update_memory_stats(RenderEngine *engine, float mem_used, flo
   }
 }
 
-void RE_engine_report(RenderEngine *engine, int type, const char *msg)
+void render_engine_report(RenderEngine *engine, int type, const char *msg)
 {
   Render *re = engine->re;
 
@@ -540,18 +540,18 @@ RenderPass *RE_engine_pass_by_index_get(RenderEngine *engine, const char *layer_
       pass = BLI_findlink(&layer->passes, index);
     }
   }
-  RE_ReleaseResult(re);
+  render_ReleaseResult(re);
 
   return pass;
 }
 
-const char *RE_engine_active_view_get(RenderEngine *engine)
+const char *render_engine_active_view_get(RenderEngine *engine)
 {
   Render *re = engine->re;
-  return RE_GetActiveRenderView(re);
+  return render_GetActiveRenderView(re);
 }
 
-void RE_engine_active_view_set(RenderEngine *engine, const char *viewname)
+void render_engine_active_view_set(RenderEngine *engine, const char *viewname)
 {
   Render *re = engine->re;
   RE_SetActiveRenderView(re, viewname);
