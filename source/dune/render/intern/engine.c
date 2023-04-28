@@ -151,12 +151,6 @@ static void engine_graph_free(RenderEngine *engine)
 
 void render_engine_free(RenderEngine *engine)
 {
-#ifdef WITH_PYTHON
-  if (engine->py_instance) {
-    BPY_DECREF_API_INVALIDATE(engine->py_instance);
-  }
-#endif
-
   engine_graph_free(engine);
 
   lib_mutex_end(&engine->update_render_passes_mutex);
@@ -300,7 +294,7 @@ static void engine_tile_highlight_set(RenderEngine *engine,
     lib_gset_remove(re->highlighted_tiles, tile, MEM_freeN);
   }
 
-  BLI_mutex_unlock(&re->highlighted_tiles_mutex);
+  lib_mutex_unlock(&re->highlighted_tiles_mutex);
 }
 
 RenderResult *RE_engine_begin_result(
@@ -308,7 +302,7 @@ RenderResult *RE_engine_begin_result(
 {
   if (engine->bake.pixels) {
     RenderResult *result = render_result_from_bake(engine, x, y, w, h);
-    BLI_addtail(&engine->fullresult, result);
+    lib_addtail(&engine->fullresult, result);
     return result;
   }
 
