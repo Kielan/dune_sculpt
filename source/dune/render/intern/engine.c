@@ -407,7 +407,7 @@ void render_engine_end_result(
     render_result_free(result);
     return;
   }
-  if (re->engine && (re->engine->flag & RE_ENGINE_HIGHLIGHT_TILES)) {
+  if (re->engine && (re->engine->flag & RENDER_ENGINE_HIGHLIGHT_TILES)) {
     const HighlightedTile tile = highlighted_tile_from_result_get(re, result);
 
     engine_tile_highlight_set(engine, &tile, highlight);
@@ -509,22 +509,22 @@ void render_engine_report(RenderEngine *engine, int type, const char *msg)
   }
 }
 
-void rendee_engine_set_error_message(RenderEngine *engine, const char *msg)
+void render_engine_set_error_message(RenderEngine *engine, const char *msg)
 {
   Render *re = engine->re;
   if (re != NULL) {
-    RenderResult *rr = RE_AcquireResultRead(re);
+    RenderResult *rr = render_AcquireResultRead(re);
     if (rr) {
       if (rr->error != NULL) {
-        MEM_freeN(rr->error);
+        mem_freen(rr->error);
       }
-      rr->error = BLI_strdup(msg);
+      rr->error = lib_strdup(msg);
     }
-    RE_ReleaseResult(re);
+    render_ReleaseResult(re);
   }
 }
 
-RenderPass *RE_engine_pass_by_index_get(RenderEngine *engine, const char *layer_name, int index)
+RenderPass *render_engine_pass_by_index_get(RenderEngine *engine, const char *layer_name, int index)
 {
   Render *re = engine->re;
   if (re == NULL) {
@@ -533,9 +533,9 @@ RenderPass *RE_engine_pass_by_index_get(RenderEngine *engine, const char *layer_
 
   RenderPass *pass = NULL;
 
-  RenderResult *rr = RE_AcquireResultRead(re);
+  RenderResult *rr = render_AcquireResultRead(re);
   if (rr != NULL) {
-    const RenderLayer *layer = RE_GetRenderLayer(rr, layer_name);
+    const RenderLayer *layer = render_GetRenderLayer(rr, layer_name);
     if (layer != NULL) {
       pass = BLI_findlink(&layer->passes, index);
     }
