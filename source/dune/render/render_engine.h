@@ -1,15 +1,15 @@
 #pragma once
 
-#include "DNA_listBase.h"
-#include "DNA_node_types.h"
-#include "DNA_scene_types.h"
-#include "RE_bake.h"
-#include "RNA_types.h"
+#include "types_listBase.h"
+#include "types_node_types.h"
+#include "types_scene_types.h"
+#include "render_bake.h"
+#include "api_types.h"
 
-#include "BLI_threads.h"
+#include "lib_threads.h"
 
 struct BakePixel;
-struct Depsgraph;
+struct Graph;
 struct Main;
 struct Object;
 struct Render;
@@ -22,8 +22,8 @@ struct RenderResult;
 struct ReportList;
 struct Scene;
 struct ViewLayer;
-struct bNode;
-struct bNodeTree;
+struct Node;
+struct NodeTree;
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,28 +32,28 @@ extern "C" {
 /* External Engine */
 
 /* RenderEngineType.flag */
-#define RE_INTERNAL 1
-/* #define RE_FLAG_DEPRECATED   2 */
-#define RE_USE_PREVIEW 4
-#define RE_USE_POSTPROCESS 8
-#define RE_USE_EEVEE_VIEWPORT 16
-/* #define RE_USE_SAVE_BUFFERS_DEPRECATED 32 */
-#define RE_USE_SHADING_NODES_CUSTOM 64
-#define RE_USE_SPHERICAL_STEREO 128
-#define RE_USE_STEREO_VIEWPORT 256
-#define RE_USE_GPU_CONTEXT 512
-#define RE_USE_CUSTOM_FREESTYLE 1024
-#define RE_USE_NO_IMAGE_SAVE 2048
-#define RE_USE_ALEMBIC_PROCEDURAL 4096
+#define RENDER_INTERNAL 1
+/* #define RENDER_FLAG_DEPRECATED   2 */
+#define RENDER_USE_PREVIEW 4
+#define RENDER_USE_POSTPROCESS 8
+#define RENDER_USE_EEVEE_VIEWPORT 16
+/* #define RENDER_USE_SAVE_BUFFERS_DEPRECATED 32 */
+#define RENDER_USE_SHADING_NODES_CUSTOM 64
+#define RENER_USE_SPHERICAL_STEREO 128
+#define RENDER_USE_STEREO_VIEWPORT 256
+#define RENDER_USE_GPU_CONTEXT 512
+#define RENDER_USE_CUSTOM_FREESTYLE 1024
+#define RENDER_USE_NO_IMAGE_SAVE 2048
+#define RENDER_USE_ALEMBIC_PROCEDURAL 4096
 
 /* RenderEngine.flag */
-#define RE_ENGINE_ANIMATION 1
-#define RE_ENGINE_PREVIEW 2
-#define RE_ENGINE_DO_DRAW 4
-#define RE_ENGINE_DO_UPDATE 8
-#define RE_ENGINE_RENDERING 16
-#define RE_ENGINE_HIGHLIGHT_TILES 32
-#define RE_ENGINE_CAN_DRAW 64
+#define RENDER_ENGINE_ANIMATION 1
+#define RENDER_ENGINE_PREVIEW 2
+#define RENDER_ENGINE_DO_DRAW 4
+#define RENDER_ENGINE_DO_UPDATE 8
+#define RENDER_ENGINE_RENDERING 16
+#define RENDER_ENGINE_HIGHLIGHT_TILES 32
+#define RENDER_ENGINE_CAN_DRAW 64
 
 extern ListBase R_engines;
 
@@ -77,11 +77,11 @@ typedef struct RenderEngineType {
   void (*render_frame_finish)(struct RenderEngine *engine);
 
   void (*draw)(struct RenderEngine *engine,
-               const struct bContext *context,
-               struct Depsgraph *depsgraph);
+               const struct Ctx *ctx,
+               struct Graph *graph);
 
   void (*bake)(struct RenderEngine *engine,
-               struct Depsgraph *depsgraph,
+               struct Graph *graph,
                struct Object *object,
                int pass_type,
                int pass_filter,
@@ -89,23 +89,23 @@ typedef struct RenderEngineType {
                int height);
 
   void (*view_update)(struct RenderEngine *engine,
-                      const struct bContext *context,
-                      struct Depsgraph *depsgraph);
+                      const struct Ctx *ctx,
+                      struct Graph *graph);
   void (*view_draw)(struct RenderEngine *engine,
-                    const struct bContext *context,
-                    struct Depsgraph *depsgraph);
+                    const struct Ctx *ctx,
+                    struct Graph *graph);
 
   void (*update_script_node)(struct RenderEngine *engine,
-                             struct bNodeTree *ntree,
-                             struct bNode *node);
+                             truct NodeTree *ntree,
+                             struct Node *node);
   void (*update_render_passes)(struct RenderEngine *engine,
                                struct Scene *scene,
                                struct ViewLayer *view_layer);
 
   struct DrawEngineType *draw_engine;
 
-  /* RNA integration */
-  ExtensionRNA rna_ext;
+  /* Api integration */
+  ExtensionApi api_ext;
 } RenderEngineType;
 
 typedef void (*update_render_passes_cb_t)(void *userdata,
@@ -140,8 +140,8 @@ typedef struct RenderEngine {
   } bake;
 
   /* Depsgraph */
-  struct Depsgraph *depsgraph;
-  bool has_grease_pencil;
+  struct Graph *graph;
+  bool has_pen;
 
   /* callback for render pass query */
   ThreadMutex update_render_passes_mutex;
@@ -154,35 +154,35 @@ typedef struct RenderEngine {
   int last_winx, last_winy;
 } RenderEngine;
 
-RenderEngine *RE_engine_create(RenderEngineType *type);
-void RE_engine_free(RenderEngine *engine);
+RenderEngine *render_engine_create(RenderEngineType *type);
+void render_engine_free(RenderEngine *engine);
 
 /**
  * Loads in image into a result, size must match
  * x/y offsets are only used on a partial copy when dimensions don't match.
  */
-void RE_layer_load_from_file(
+void render_layer_load_from_file(
     struct RenderLayer *layer, struct ReportList *reports, const char *filename, int x, int y);
-void RE_result_load_from_file(struct RenderResult *result,
+void renderm_result_load_from_file(struct RenderResult *result,
                               struct ReportList *reports,
                               const char *filename);
 
-struct RenderResult *RE_engine_begin_result(
+struct RenderResult *render_engine_begin_result(
     RenderEngine *engine, int x, int y, int w, int h, const char *layername, const char *viewname);
-void RE_engine_update_result(RenderEngine *engine, struct RenderResult *result);
-void RE_engine_add_pass(RenderEngine *engine,
+void render_engine_update_result(RenderEngine *engine, struct RenderResult *result);
+void render_engine_add_pass(RenderEngine *engine,
                         const char *name,
                         int channels,
                         const char *chan_id,
                         const char *layername);
-void RE_engine_end_result(RenderEngine *engine,
+void render_engine_end_result(RenderEngine *engine,
                           struct RenderResult *result,
                           bool cancel,
                           bool highlight,
                           bool merge_results);
-struct RenderResult *RE_engine_get_result(struct RenderEngine *engine);
+struct RenderResult *render_engine_get_result(struct RenderEngine *engine);
 
-struct RenderPass *RE_engine_pass_by_index_get(struct RenderEngine *engine,
+struct RenderPass *render_engine_pass_by_index_get(struct RenderEngine *engine,
                                                const char *layer_name,
                                                int index);
 
