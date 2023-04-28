@@ -149,12 +149,12 @@ typedef struct RenderStats {
  * The name is used as identifier, so elsewhere in blender the result can retrieved.
  * Calling a new render with same name, frees automatic existing render.
  */
-struct Render *RE_NewRender(const char *name);
-struct Render *RE_GetRender(const char *name);
+struct Render *render_NewRender(const char *name);
+struct Render *render_GetRender(const char *name);
 
 struct Scene;
-struct Render *RE_NewSceneRender(const struct Scene *scene);
-struct Render *RE_GetSceneRender(const struct Scene *scene);
+struct Render *render_NewSceneRender(const struct Scene *scene);
+struct Render *render_GetSceneRender(const struct Scene *scene);
 
 /* Assign default dummy callbacks. */
 
@@ -162,32 +162,30 @@ struct Render *RE_GetSceneRender(const struct Scene *scene);
  * Called for new renders and when finishing rendering
  * so we always have valid callbacks on a render.
  */
-void RE_InitRenderCB(struct Render *re);
+void render_InitRenderCB(struct Render *re);
 
 /**
  * Use free render as signal to do everything over (previews).
  *
  * Only call this while you know it will remove the link too.
  */
-void RE_FreeRender(struct Render *re);
-/**
- * Only called on exit.
- */
-void RE_FreeAllRender(void);
+void render_FreeRender(struct Render *re);
+/** Only called on exit. */
+void render_FreeAllRender(void);
 
 /**
  * On file load, free render results.
  */
-void RE_FreeAllRenderResults(void);
+void render_FreeAllRenderResults(void);
 /**
  * On file load or changes engines, free persistent render data.
  * Assumes no engines are currently rendering.
  */
-void RE_FreeAllPersistentData(void);
+void render_FreeAllPersistentData(void);
 /**
  * Free persistent render data, optionally only for the given scene.
  */
-void RE_FreePersistentData(const struct Scene *scene);
+void render_FreePersistentData(const struct Scene *scene);
 
 /**
  * Get results and statistics.
