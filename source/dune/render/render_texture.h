@@ -1,8 +1,6 @@
-/**
- * render
+/** render
  *
- * This include is for non-render pipeline exports (still old cruft here).
- */
+ * This include is for non-render pipeline exports (still old cruft here). **/
 
 #pragma once
 
@@ -36,18 +34,18 @@ bool render_texture_evaluate(const struct MTex *mtex,
                          float r_rgba[4]) ATTR_NONNULL(1, 2, 7, 8);
 
 /**
- * \param in: Destination
- * \param tex: Texture.
- * \param out: Previous color.
- * \param fact: Texture strength.
- * \param facg: Button strength value.
+ * param in: Destination
+ * param tex: Texture.
+ * param out: Previous color.
+ * param fact: Texture strength.
+ * param facg: Button strength value.
  */
 void texture_rgb_blend(
     float in[3], const float tex[3], const float out[3], float fact, float facg, int blendtype);
 float texture_value_blend(float tex, float out, float fact, float facg, int blendtype);
 
-void RE_texture_rng_init(void);
-void RE_texture_rng_exit(void);
+void render_texture_rng_init(void);
+void render_texture_rng_exit(void);
 
 /* texture_image.c */
 
@@ -57,9 +55,9 @@ void ibuf_sample(struct ImBuf *ibuf, float fx, float fy, float dx, float dy, flo
 
 struct PointDensity;
 
-void RE_point_density_cache(struct Depsgraph *depsgraph, struct PointDensity *pd);
+void render_point_density_cache(struct Depsgraph *depsgraph, struct PointDensity *pd);
 
-void RE_point_density_minmax(struct Depsgraph *depsgraph,
+void render_point_density_minmax(struct Depsgraph *depsgraph,
                              struct PointDensity *pd,
                              float r_min[3],
                              float r_max[3]);
