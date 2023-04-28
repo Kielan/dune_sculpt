@@ -3,18 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "BLT_translation.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
-#include "BLI_math_bits.h"
-#include "BLI_rect.h"
-#include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_listbase.h"
+#include "lib_math_bits.h"
+#include "lib_rect.h"
+#include "lib_string.h"
+#include "lib_utildefines.h"
 
-#include "DNA_object_types.h"
+#include "types_object.h"
 
 #include "BKE_camera.h"
 #include "BKE_colortools.h"
