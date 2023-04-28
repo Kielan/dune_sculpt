@@ -338,7 +338,7 @@ RenderResult *RE_engine_begin_result(
     render_result_clone_passes(re, result, viewname);
     render_result_passes_allocated_ensure(result);
 
-    BLI_addtail(&engine->fullresult, result);
+    lib_addtail(&engine->fullresult, result);
 
     result->tilerect.xmin += re->disprect.xmin;
     result->tilerect.xmax += re->disprect.xmin;
@@ -352,15 +352,15 @@ RenderResult *RE_engine_begin_result(
 static void re_ensure_passes_allocated_thread_safe(Render *re)
 {
   if (!re->result->passes_allocated) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
     if (!re->result->passes_allocated) {
       render_result_passes_allocated_ensure(re->result);
     }
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 }
 
-void RE_engine_update_result(RenderEngine *engine, RenderResult *result)
+void render_engine_update_result(RenderEngine *engine, RenderResult *result)
 {
   if (engine->bake.pixels) {
     /* No interactive baking updates for now. */
@@ -377,7 +377,7 @@ void RE_engine_update_result(RenderEngine *engine, RenderResult *result)
   }
 }
 
-void RE_engine_add_pass(RenderEngine *engine,
+void render_engine_add_pass(RenderEngine *engine,
                         const char *name,
                         int channels,
                         const char *chan_id,
