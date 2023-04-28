@@ -1,8 +1,8 @@
 #pragma once
 
-#include "DEG_depsgraph.h"
-#include "DNA_listBase.h"
-#include "DNA_vec_types.h"
+#include "graph.h"
+#include "types_listBase.h"
+#include "types_vec_types.h"
 
 struct ImBuf;
 struct Image;
@@ -15,7 +15,7 @@ struct ReportList;
 struct Scene;
 struct StampData;
 struct ViewLayer;
-struct bMovieHandle;
+struct MovieHandle;
 
 #ifdef __cplusplus
 extern "C" {
