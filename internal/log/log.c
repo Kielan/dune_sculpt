@@ -741,12 +741,12 @@ void logref_init(LogRef *log_ref)
     log_ref->next = g_ctx->refs;
     g_ctx->refs = clg_ref;
 
-    LogType *clg_ty = clg_ctx_type_find_by_name(g_ctx, log_ref->id);
+    LogType *log_ty = clg_ctx_type_find_by_name(g_ctx, log_ref->id);
     if (log_ty == NULL) {
-      log_ty = log_ctx_type_register(g_ctx, log_ref->identifier);
+      log_ty = log_ctx_type_register(g_ctx, log_ref->id);
     }
 #ifdef WITH_LOG_PTHREADS
-    atomic_cas_ptr((void **)&log_ref->type, log_ref->type, clg_ty);
+    atomic_cas_ptr((void **)&log_ref->type, log_ref->type, log_ty);
 #else
     log_ref->type = clg_ty;
 #endif
