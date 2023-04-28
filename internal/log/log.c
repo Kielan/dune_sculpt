@@ -691,50 +691,48 @@ void CLG_output_use_basename_set(int value)
   CLG_ctx_output_use_basename_set(g_ctx, value);
 }
 
-void CLG_output_use_timestamp_set(int value)
+void log_output_use_timestamp_set(int value)
 {
-  CLG_ctx_output_use_timestamp_set(g_ctx, value);
+  log_ctx_output_use_timestamp_set(g_ctx, value);
 }
 
-void CLG_error_fn_set(void (*error_fn)(void *file_handle))
+void log_error_fn_set(void (*error_fn)(void *file_handle))
 {
   CLT_ctx_error_fn_set(g_ctx, error_fn);
 }
 
-void CLG_fatal_fn_set(void (*fatal_fn)(void *file_handle))
+void log_fatal_fn_set(void (*fatal_fn)(void *file_handle))
 {
-  CLG_ctx_fatal_fn_set(g_ctx, fatal_fn);
+  log_ctx_fatal_fn_set(g_ctx, fatal_fn);
 }
 
-void CLG_backtrace_fn_set(void (*fatal_fn)(void *file_handle))
+void log_backtrace_fn_set(void (*fatal_fn)(void *file_handle))
 {
-  CLG_ctx_backtrace_fn_set(g_ctx, fatal_fn);
+  log_ctx_backtrace_fn_set(g_ctx, fatal_fn);
 }
 
-void CLG_type_filter_exclude(const char *type_match, int type_match_len)
+void log_type_filter_exclude(const char *type_match, int type_match_len)
 {
-  CLG_ctx_type_filter_exclude(g_ctx, type_match, type_match_len);
+  log_ctx_type_filter_exclude(g_ctx, type_match, type_match_len);
 }
 
-void CLG_type_filter_include(const char *type_match, int type_match_len)
+void log_type_filter_include(const char *type_match, int type_match_len)
 {
-  CLG_ctx_type_filter_include(g_ctx, type_match, type_match_len);
+  log_ctx_type_filter_include(g_ctx, type_match, type_match_len);
 }
 
-void CLG_level_set(int level)
+void log_level_set(int level)
 {
-  CLG_ctx_level_set(g_ctx, level);
+  log_ctx_level_set(g_ctx, level);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Logging Reference API
+/** Logging Reference API
  *
  * Use to avoid look-ups each time.
- * \{ */
+ **/
 
-void CLG_logref_init(CLG_LogRef *clg_ref)
+void logref_init(CLG_LogRef *clg_ref)
 {
 #ifdef WITH_CLOG_PTHREADS
   /* Only runs once when initializing a static type in most cases. */
@@ -760,7 +758,7 @@ void CLG_logref_init(CLG_LogRef *clg_ref)
 #endif
 }
 
-int CLG_color_support_get(CLG_LogRef *clg_ref)
+int log_color_support_get(LogRef *clg_ref)
 {
   if (clg_ref->type == NULL) {
     CLG_logref_init(clg_ref);
