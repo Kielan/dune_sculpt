@@ -741,21 +741,21 @@ void CLG_logref_init(CLG_LogRef *clg_ref)
   pthread_mutex_lock(&g_ctx->types_lock);
 #endif
   if (clg_ref->type == NULL) {
-    /* Add to the refs list so we can NULL the pointers to 'type' when CLG_exit() is called. */
+    /* Add to the refs list so we can NULL the pointers to 'type' when log_exit() is called. */
     clg_ref->next = g_ctx->refs;
     g_ctx->refs = clg_ref;
 
-    CLG_LogType *clg_ty = clg_ctx_type_find_by_name(g_ctx, clg_ref->identifier);
+    CLG_LogType *clg_ty = clg_ctx_type_find_by_name(g_ctx, log_ref->id);
     if (clg_ty == NULL) {
-      clg_ty = clg_ctx_type_register(g_ctx, clg_ref->identifier);
+      clg_ty = clg_ctx_type_register(g_ctx, log_ref->identifier);
     }
 #ifdef WITH_CLOG_PTHREADS
-    atomic_cas_ptr((void **)&clg_ref->type, clg_ref->type, clg_ty);
+    atomic_cas_ptr((void **)&log_ref->type, log_ref->type, clg_ty);
 #else
     clg_ref->type = clg_ty;
 #endif
   }
-#ifdef WITH_CLOG_PTHREADS
+#ifdef WITH_LOG_PTHREADS
   pthread_mutex_unlock(&g_ctx->types_lock);
 #endif
 }
