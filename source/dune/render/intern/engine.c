@@ -137,19 +137,19 @@ static void engine_depsgraph_free(RenderEngine *engine)
     /* Need GPU context since this might free GPU buffers. */
     const bool use_gpu_context = (engine->type->flag & RE_USE_GPU_CONTEXT);
     if (use_gpu_context) {
-      DRW_render_context_enable(engine->re);
+      render_ctx_enable(engine->re);
     }
 
-    DEG_graph_free(engine->depsgraph);
-    engine->depsgraph = NULL;
+    graph_free(engine->graph);
+    engine->graph = NULL;
 
-    if (use_gpu_context) {
-      DRW_render_context_disable(engine->re);
+    if (use_gpu_ctx) {
+      draw_render_ctx_disable(engine->re);
     }
   }
 }
 
-void RE_engine_free(RenderEngine *engine)
+void render_engine_free(RenderEngine *engine)
 {
 #ifdef WITH_PYTHON
   if (engine->py_instance) {
