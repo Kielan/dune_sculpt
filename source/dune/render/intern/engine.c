@@ -5,7 +5,7 @@
 
 #include "mem_guardedalloc.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
 #include "lib_ghash.h"
 #include "lib_listbase.h"
@@ -29,10 +29,6 @@
 #include "graph_query.h"
 
 #include "api_access.h"
-
-#ifdef WITH_PYTHON
-#  include "BPY_extern.h"
-#endif
 
 #include "render_bake.h"
 #include "render_engine.h"
@@ -116,7 +112,7 @@ bool render_engine_supports_alembic_procedural(const RenderEngineType *render_ty
     return false;
   }
 
-  if (BKE_scene_uses_cycles(scene) && !BKE_scene_uses_cycles_experimental_features(scene)) {
+  if (dune_scene_uses_cycles(scene) && !BKE_scene_uses_cycles_experimental_features(scene)) {
     return false;
   }
 
@@ -125,7 +121,7 @@ bool render_engine_supports_alembic_procedural(const RenderEngineType *render_ty
 
 /* Create, Free */
 
-RenderEngine *RE_engine_create(RenderEngineType *type)
+RenderEngine *render_engine_create(RenderEngineType *type)
 {
   RenderEngine *engine = MEM_callocN(sizeof(RenderEngine), "RenderEngine");
   engine->type = type;
