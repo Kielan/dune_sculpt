@@ -42,7 +42,7 @@ typedef struct MultiresBakeRender {
   float *progress;
 } MultiresBakeRender;
 
-void RE_multires_bake_images(struct MultiresBakeRender *bkr);
+void render_multires_bake_images(struct MultiresBakeRender *bkr);
 
 #ifdef __cplusplus
 }
