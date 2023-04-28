@@ -19,10 +19,10 @@ struct Mesh;
  * param me: the mesh to use the polygons of.
  * param mloopuv: the uv data to use.
  */
-void RE_generate_texturemargin_adjacentfaces(
+void render_generate_texturemargin_adjacentfaces(
     struct ImBuf *ibuf, char *mask, const int margin, struct Mesh const *me, char const *uv_layer);
 
-void RE_generate_texturemargin_adjacentfaces_dm(struct ImBuf *ibuf,
+void render_generate_texturemargin_adjacentfaces_dm(struct ImBuf *ibuf,
                                                 char *mask,
                                                 const int margin,
                                                 struct DerivedMesh *dm);
