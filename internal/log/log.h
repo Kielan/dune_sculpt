@@ -142,7 +142,7 @@ int log_color_support_get(LogRef *log_ref);
 
 /** Initialize struct once. */
 #define LOG_ENSURE(log_ref) \
-  ((clg_ref)->type ? (clg_ref)->type : (CLG_logref_init(clg_ref), (clg_ref)->type))
+  ((log_ref)->type ? (log_ref)->type : (CLG_logref_init(clg_ref), (clg_ref)->type))
 
 #define LOG_CHECK(log_ref, verbose_level, ...) \
   ((void)LOG_ENSURE(log_ref), \
@@ -180,11 +180,11 @@ int log_color_support_get(LogRef *log_ref);
   } \
   ((void)0)
 
-#define LOG_INFO(clg_ref, level, ...) \
-  LOG_AT_SEVERITY(clg_ref, LOG_SEVERITY_INFO, level, __VA_ARGS__)
-#define LOG_WARN(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_WARN, 0, __VA_ARGS__)
-#define LOG_ERROR(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_ERROR, 0, __VA_ARGS__)
-#define LOG_FATAL(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_FATAL, 0, __VA_ARGS__)
+#define LOG_INFO(log_ref, level, ...) \
+  LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_INFO, level, __VA_ARGS__)
+#define LOG_WARN(log_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_WARN, 0, __VA_ARGS__)
+#define LOG_ERROR(log_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_ERROR, 0, __VA_ARGS__)
+#define LOG_FATAL(log_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_FATAL, 0, __VA_ARGS__)
 
 #define LOG_STR_INFO(log_ref, level, str) \
   LOG_STR_AT_SEVERITY(log_ref, LOG_SEVERITY_INFO, level, str)
