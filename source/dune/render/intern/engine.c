@@ -131,9 +131,9 @@ RenderEngine *render_engine_create(RenderEngineType *type)
   return engine;
 }
 
-static void engine_depsgraph_free(RenderEngine *engine)
+static void engine_graph_free(RenderEngine *engine)
 {
-  if (engine->depsgraph) {
+  if (engine->graph) {
     /* Need GPU context since this might free GPU buffers. */
     const bool use_gpu_context = (engine->type->flag & RE_USE_GPU_CONTEXT);
     if (use_gpu_context) {
@@ -153,15 +153,15 @@ void render_engine_free(RenderEngine *engine)
 {
 #ifdef WITH_PYTHON
   if (engine->py_instance) {
-    BPY_DECREF_RNA_INVALIDATE(engine->py_instance);
+    BPY_DECREF_API_INVALIDATE(engine->py_instance);
   }
 #endif
 
-  engine_depsgraph_free(engine);
+  engine_graph_free(engine);
 
-  BLI_mutex_end(&engine->update_render_passes_mutex);
+  lib_mutex_end(&engine->update_render_passes_mutex);
 
-  MEM_freeN(engine);
+  mem_freen(engine);
 }
 
 /* Bake Render Results */
@@ -169,7 +169,7 @@ void render_engine_free(RenderEngine *engine)
 static RenderResult *render_result_from_bake(RenderEngine *engine, int x, int y, int w, int h)
 {
   /* Create render result with specified size. */
-  RenderResult *rr = MEM_callocN(sizeof(RenderResult), __func__);
+  RenderResult *rr = mem_callocn(sizeof(RenderResult), __func__);
 
   rr->rectx = w;
   rr->recty = h;
@@ -182,7 +182,7 @@ static RenderResult *render_result_from_bake(RenderEngine *engine, int x, int y,
   RenderLayer *rl = MEM_callocN(sizeof(RenderLayer), "bake render layer");
   rl->rectx = w;
   rl->recty = h;
-  BLI_addtail(&rr->layers, rl);
+  lib_addtail(&rr->layers, rl);
 
   /* Add render passes. */
   render_layer_add_pass(rr, rl, engine->bake.depth, RE_PASSNAME_COMBINED, "", "RGBA", true);
