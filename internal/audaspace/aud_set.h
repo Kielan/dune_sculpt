@@ -35,10 +35,10 @@ extern void aud_addSet(void *set, void *entry);
 
 /**
  * Removes one entry from a set and returns it.
- * \param set The set work on.
- * \return The entry or NULL if the set is empty.
+ * param set The set work on.
+ * return The entry or NULL if the set is empty.
  */
-extern void *AUD_getSet(void *set);
+extern void *aud_getSet(void *set);
 
 #ifdef __cplusplus
 }
