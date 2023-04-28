@@ -1,15 +1,15 @@
-/** \file
- * \ingroup render
+/**
+ * render
  *
  * This include is for non-render pipeline exports (still old cruft here).
  */
 
 #pragma once
 
-#include "BLI_compiler_attrs.h"
+#include "lib_compiler_attrs.h"
 
 /* called by meshtools */
-struct Depsgraph;
+struct Graph;
 struct ImagePool;
 struct MTex;
 struct Tex;
@@ -21,11 +21,11 @@ extern "C" {
 /* texture_procedural.c */
 
 /**
- * \param pool: Thread pool, may be NULL.
+ * param pool: Thread pool, may be NULL.
  *
- * \return True if the texture has color, otherwise false.
+ * return True if the texture has color, otherwise false.
  */
-bool RE_texture_evaluate(const struct MTex *mtex,
+bool render_texture_evaluate(const struct MTex *mtex,
                          const float vec[3],
                          int thread,
                          struct ImagePool *pool,
