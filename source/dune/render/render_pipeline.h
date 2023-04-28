@@ -211,13 +211,13 @@ void RE_ReleaseResultImageViews(struct Render *re, struct RenderResult *rr);
 /**
  * Fill provided result struct with what's currently active or done.
  * This #RenderResult struct is the only exception to the rule of a #RenderResult
- * always having at least one #RenderView.
+ * always having at least one RenderView.
  */
-void RE_AcquireResultImage(struct Render *re, struct RenderResult *rr, int view_id);
-void RE_ReleaseResultImage(struct Render *re);
-void RE_SwapResult(struct Render *re, struct RenderResult **rr);
-void RE_ClearResult(struct Render *re);
-struct RenderStats *RE_GetStats(struct Render *re);
+void render_AcquireResultImage(struct Render *re, struct RenderResult *rr, int view_id);
+void render_ReleaseResultImage(struct Render *re);
+void render_SwapResult(struct Render *re, struct RenderResult **rr);
+void render_ClearResult(struct Render *re);
+struct RenderStats *render_GetStats(struct Render *re);
 
 /**
  * Caller is responsible for allocating `rect` in correct size!
@@ -226,14 +226,14 @@ void RE_ResultGet32(struct Render *re, unsigned int *rect);
 /**
  * Only for acquired results, for lock.
  *
- * \note The caller is responsible for allocating `rect` in correct size!
+ * note The caller is responsible for allocating `rect` in correct size!
  */
-void RE_AcquiredResultGet32(struct Render *re,
+void render_AcquiredResultGet32(struct Render *re,
                             struct RenderResult *result,
                             unsigned int *rect,
                             int view_id);
 
-void RE_render_result_full_channel_name(char *fullname,
+void render_result_full_channel_name(char *fullname,
                                         const char *layname,
                                         const char *passname,
                                         const char *viewname,
