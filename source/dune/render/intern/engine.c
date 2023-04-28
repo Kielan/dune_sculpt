@@ -34,11 +34,11 @@
 #  include "BPY_extern.h"
 #endif
 
-#include "RE_bake.h"
-#include "RE_engine.h"
-#include "RE_pipeline.h"
+#include "render_bake.h"
+#include "render_engine.h"
+#include "render_pipeline.h"
 
-#include "DRW_engine.h"
+#include "draw_engine.h"
 
 #include "pipeline.h"
 #include "render_result.h"
@@ -48,9 +48,9 @@
 
 ListBase R_engines = {NULL, NULL};
 
-void RE_engines_init(void)
+void render_engines_init(void)
 {
-  DRW_engines_register();
+  draw_engines_register();
 }
 
 void RE_engines_init_experimental()
