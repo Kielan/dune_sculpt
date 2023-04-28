@@ -8,7 +8,7 @@
 
 #include "mem_guardedalloc.h"
 
-#include "CLG_log.h"
+#include "log.h"
 
 #include "types_genfile.h"
 
@@ -139,7 +139,7 @@ static void cb_main_atexit(void *user_data)
 #endif
 }
 
-static void cb_clg_fatal(void *fp)
+static void cb_log_fatal(void *fp)
 {
   lib_system_backtrace(fp);
 }
@@ -278,10 +278,10 @@ int main(int argc,
 #endif
 
   /* Initialize logging. */
-  CLG_init();
-  CLG_fatal_fn_set(cb_clg_fatal);
+  log_init();
+  log_fatal_fn_set(cb_log_fatal);
 
-  C = CTX_create();
+  C = ctx_create();
 
 #ifdef WITH_BINRELOC
   br_init(NULL);
@@ -338,12 +338,12 @@ int main(int argc,
 
   /* First test for background-mode (Global.background) */
 #ifndef WITH_PYTHON_MODULE
-  ba = lib_args_create(argc, (const char **)argv); /* skip binary path */
+  args = lib_args_create(argc, (const char **)argv); /* skip binary path */
 
   /* Ensure we free on early exit. */
-  app_init_data.ba = ba;
+  app_init_data.args = args;
 
-  main_args_setup(C, ba);
+  main_args_setup(C, args);
 
   /* Begin argument parsing, ignore leaks so arguments that call #exit
    * (such as '--version' & '--help') don't report leaks. */
@@ -368,7 +368,7 @@ int main(int argc,
   IMB_init();
 
   /* First test for background-mode (#Global.background) */
-  lib_args_parse(ba, ARG_PASS_SETTINGS, NULL, NULL);
+  lib_args_parse(args, ARG_PASS_SETTINGS, NULL, NULL);
 
   main_signal_setup();
 
@@ -427,8 +427,8 @@ int main(int argc,
   mem_use_memleak_detection(true);
 
   /* Paranoid, avoid accidental re-use. */
-  ba = NULL;
-  (void)ba;
+  args = NULL;
+  (void)args;
 
 #ifdef WIN32
   argv = NULL;
@@ -441,7 +441,7 @@ int main(int argc,
   }
   else {
     /* When no file is loaded, show the splash screen. */
-    const char *dunefile_path = KERNEL_main_blendfile_path_from_global();
+    const char *dunefile_path = dune_main_dunefile_path_from_global();
     if (dunefile_path[0] == '\0') {
       wm_init_splash(C);
     }
