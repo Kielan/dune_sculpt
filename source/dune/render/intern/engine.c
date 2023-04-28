@@ -173,7 +173,7 @@ static RenderResult *render_result_from_bake(RenderEngine *engine, int x, int y,
   rr->tilerect.ymax = y + h;
 
   /* Add single baking render layer. */
-  RenderLayer *rl = MEM_callocN(sizeof(RenderLayer), "bake render layer");
+  RenderLayer *rl = mem_callocn(sizeof(RenderLayer), "bake render layer");
   rl->rectx = w;
   rl->recty = h;
   lib_addtail(&rr->layers, rl);
@@ -222,7 +222,7 @@ static RenderResult *render_result_from_bake(RenderEngine *engine, int x, int y,
 
 static void render_result_to_bake(RenderEngine *engine, RenderResult *rr)
 {
-  RenderPass *rpass = RE_pass_find_by_name(rr->layers.first, RE_PASSNAME_COMBINED, "");
+  RenderPass *rpass = render_pass_find_by_name(rr->layers.first, RENDER_PASSNAME_COMBINED, "");
 
   if (!rpass) {
     return;
@@ -270,7 +270,7 @@ static void engine_tile_highlight_set(RenderEngine *engine,
                                       const HighlightedTile *tile,
                                       bool highlight)
 {
-  if ((engine->flag & RE_ENGINE_HIGHLIGHT_TILES) == 0) {
+  if ((engine->flag & RENDER_ENGINE_HIGHLIGHT_TILES) == 0) {
     return;
   }
 
@@ -297,7 +297,7 @@ static void engine_tile_highlight_set(RenderEngine *engine,
   lib_mutex_unlock(&re->highlighted_tiles_mutex);
 }
 
-RenderResult *RE_engine_begin_result(
+RenderResult *render_engine_begin_result(
     RenderEngine *engine, int x, int y, int w, int h, const char *layername, const char *viewname)
 {
   if (engine->bake.pixels) {
