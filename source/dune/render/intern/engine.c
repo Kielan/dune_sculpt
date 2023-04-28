@@ -28,7 +28,7 @@
 #include "graph_debug.h"
 #include "graph_query.h"
 
-#include "RNA_access.h"
+#include "api_access.h"
 
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
@@ -53,66 +53,66 @@ void render_engines_init(void)
   draw_engines_register();
 }
 
-void RE_engines_init_experimental()
+void render_engines_init_experimental()
 {
-  DRW_engines_register_experimental();
+  draw_engines_register_experimental();
 }
 
-void RE_engines_exit(void)
+void render_engines_exit(void)
 {
   RenderEngineType *type, *next;
 
-  DRW_engines_free();
+  draw_engines_free();
 
   for (type = R_engines.first; type; type = next) {
     next = type->next;
 
-    BLI_remlink(&R_engines, type);
+    lib_remlink(&R_engines, type);
 
     if (!(type->flag & RE_INTERNAL)) {
-      if (type->rna_ext.free) {
-        type->rna_ext.free(type->rna_ext.data);
+      if (type->api_ext.free) {
+        type->api_ext.free(type->api_ext.data);
       }
 
-      MEM_freeN(type);
+      mem_freen(type);
     }
   }
 }
 
-void RE_engines_register(RenderEngineType *render_type)
+void render_engines_register(RenderEngineType *render_type)
 {
   if (render_type->draw_engine) {
-    DRW_engine_register(render_type->draw_engine);
+    draw_engine_register(render_type->draw_engine);
   }
-  BLI_addtail(&R_engines, render_type);
+  lib_addtail(&R_engines, render_type);
 }
 
-RenderEngineType *RE_engines_find(const char *idname)
+RenderEngineType *render_engines_find(const char *idname)
 {
   RenderEngineType *type;
 
-  type = BLI_findstring(&R_engines, idname, offsetof(RenderEngineType, idname));
+  type = lib_findstring(&R_engines, idname, offsetof(RenderEngineType, idname));
   if (!type) {
-    type = BLI_findstring(&R_engines, "BLENDER_EEVEE", offsetof(RenderEngineType, idname));
+    type = lib_findstring(&R_engines, "BLENDER_EEVEE", offsetof(RenderEngineType, idname));
   }
 
   return type;
 }
 
-bool RE_engine_is_external(const Render *re)
+bool render_engine_is_external(const Render *re)
 {
   return (re->engine && re->engine->type && re->engine->type->render);
 }
 
-bool RE_engine_is_opengl(RenderEngineType *render_type)
+bool render_engine_is_opengl(RenderEngineType *render_type)
 {
   /* TODO: refine? Can we have ogl render engine without ogl render pipeline? */
-  return (render_type->draw_engine != NULL) && DRW_engine_render_support(render_type->draw_engine);
+  return (render_type->draw_engine != NULL) && draw_engine_render_support(render_type->draw_engine);
 }
 
-bool RE_engine_supports_alembic_procedural(const RenderEngineType *render_type, Scene *scene)
+bool render_engine_supports_alembic_procedural(const RenderEngineType *render_type, Scene *scene)
 {
-  if ((render_type->flag & RE_USE_ALEMBIC_PROCEDURAL) == 0) {
+  if ((render_type->flag & RENDER_USE_ALEMBIC_PROCEDURAL) == 0) {
     return false;
   }
 
