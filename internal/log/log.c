@@ -598,7 +598,7 @@ static void log_ctx_type_filter_exclude(LogCtx *ctx,
                                         const char *type_match,
                                         int type_match_len)
 {
-  clg_ctx_type_filter_append(&ctx->filters[0], type_match, type_match_len);
+  log_ctx_type_filter_append(&ctx->filters[0], type_match, type_match_len);
 }
 
 static void log_ctx_type_filter_include(LogCtx *ctx,
@@ -616,9 +616,9 @@ static void log_ctx_level_set(LogCtx *ctx, int level)
   }
 }
 
-static CLogContext *log_ctx_init(void)
+static LogCtx *log_ctx_init(void)
 {
-  CLogContext *ctx = MEM_callocN(sizeof(*ctx), __func__);
+  LogCtx *ctx = mem_callocn(sizeof(*ctx), __func__);
 #ifdef WITH_CLOG_PTHREADS
   pthread_mutex_init(&ctx->types_lock, NULL);
 #endif
