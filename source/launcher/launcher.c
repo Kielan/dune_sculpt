@@ -357,17 +357,17 @@ int main(int argc,
   G.factory_startup = true;
 #endif
 
-  /* After parsing #ARG_PASS_ENVIRONMENT such as `--env-*`,
+  /* After parsing ARG_PASS_ENVIRONMENT such as `--env-*`,
    * since they impact `dune_appdir` behavior. */
   dune_appdir_init();
 
   /* After parsing number of threads argument. */
   lib_task_scheduler_init();
 
-  /* Initialize sub-systems that use `KERNEL_appdir.h`. */
+  /* Initialize sub-systems that use `dune_appdir.h`. */
   IMB_init();
 
-  /* First test for background-mode (#Global.background) */
+  /* First test for background-mode (Global.background) */
   lib_args_parse(args, ARG_PASS_SETTINGS, NULL, NULL);
 
   main_signal_setup();
