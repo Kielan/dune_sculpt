@@ -1,46 +1,40 @@
-#include "AUD_PyInit.h"
-
-#include <AUD_Sound.h>
-#include <python/PyAPI.h>
-#include <python/PySound.h>
-
 extern "C" {
-extern void *BKE_sound_get_factory(void *sound);
+extern void *dune_sound_get_factory(void *sound);
 }
 
-static PyObject *AUD_getSoundFromPointer(PyObject *self, PyObject *args)
+static AudObject *aud_getSoundFromPointer(AudObject *self, AudArgs *args)
 {
-  PyObject *lptr = NULL;
+  AudObject *lptr = NULL;
 
-  if (PyArg_Parse(args, "O:_sound_from_pointer", &lptr)) {
+  if (audarg_parse(args, "O:_sound_from_pointer", &lptr)) {
     if (lptr) {
-      AUD_Sound *sound = BKE_sound_get_factory(PyLong_AsVoidPtr(lptr));
+      aud_sound *sound = dune_sound_get_factory(PyLong_AsVoidPtr(lptr));
 
       if (sound) {
-        Sound *obj = (Sound *)Sound_empty();
+        Sound *obj = (Sound *)sound_empty();
         if (obj) {
-          obj->sound = AUD_Sound_copy(sound);
-          return (PyObject *)obj;
+          obj->sound = aud_sound_copy(sound);
+          return (AudObject *)obj;
         }
       }
     }
   }
 
-  Py_RETURN_NONE;
+  AUD_RETURN_NONE;
 }
 
-static PyMethodDef meth_sound_from_pointer[] = {
-    {"_sound_from_pointer",
-     (PyCFunction)AUD_getSoundFromPointer,
+static AudMethodDef meth_sound_from_ptr[] = {
+    {"_sound_from_ptr",
+     (fn)aud_get_sound_from_ptr,
      METH_O,
-     "_sound_from_pointer(pointer)\n\n"
+     "_sound_from_ptr(ptr)\n\n"
      "Returns the corresponding :class:`Factory` object.\n\n"
-     ":arg pointer: The pointer to the bSound object as long.\n"
-     ":type pointer: long\n"
+     ":arg ptr: The pointer to the bSound object as long.\n"
+     ":type ptr: long\n"
      ":return: The corresponding :class:`Factory` object.\n"
      ":rtype: :class:`Factory`"}};
 
-PyObject *AUD_initPython(void)
+ArgsObject *aud_init(void)
 {
   PyObject *module = PyInit_aud();
   if (module == NULL) {
