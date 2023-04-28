@@ -256,21 +256,21 @@ bool render_engine_is_opengl(RenderEngineType *render_type);
  * Return true if the RenderEngineType has native support for direct loading of Alembic data. For
  * Cycles, this also checks that the experimental feature set is enabled.
  */
-bool RE_engine_supports_alembic_procedural(const RenderEngineType *render_type, Scene *scene);
+bool render_engine_supports_alembic_procedural(const RenderEngineType *render_type, Scene *scene);
 
-RenderEngineType *RE_engines_find(const char *idname);
+RenderEngineType *render_engines_find(const char *idname);
 
-rcti *RE_engine_get_current_tiles(struct Render *re, int *r_total_tiles, bool *r_needs_free);
-struct RenderData *RE_engine_get_render_data(struct Render *re);
-void RE_bake_engine_set_engine_parameters(struct Render *re,
-                                          struct Main *bmain,
+rcti *render_engine_get_current_tiles(struct Render *re, int *r_total_tiles, bool *r_needs_free);
+struct RenderData *render_engine_get_render_data(struct Render *re);
+void render_bake_engine_set_engine_params(struct Render *re,
+                                          struct Main *main,
                                           struct Scene *scene);
 
-void RE_engine_free_blender_memory(struct RenderEngine *engine);
+void render_engine_free_dune_memory(struct RenderEngine *engine);
 
-void RE_engine_tile_highlight_set(
+void render_engine_tile_highlight_set(
     struct RenderEngine *engine, int x, int y, int width, int height, bool highlight);
-void RE_engine_tile_highlight_clear_all(struct RenderEngine *engine);
+void render_engine_tile_highlight_clear_all(struct RenderEngine *engine);
 
 #ifdef __cplusplus
 }
