@@ -65,24 +65,20 @@ typedef struct LogCtx {
 #ifdef WITH_LOG_PTHREADS
   pthread_mutex_t types_lock;
 #endif
-
   /* exclude, include filters. */
   LogIdFilter *filters[2];
   bool use_color;
   bool use_basename;
   bool use_timestamp;
-
   /** Borrowed, not owned. */
   int output;
   FILE *output_file;
-
   /** For timer (use_timestamp). */
   uint64_t timestamp_tick_start;
-
   /** For new types. */
   struct {
     int level;
-  } default_type;
+  } default_types
 
   struct {
     void (*error_fn)(void *file_handle);
@@ -564,7 +560,7 @@ static void log_ctx_output_use_timestamp_set(LogCtx *ctx, int value)
 }
 
 /** Action on error severity. */
-static void CLT_ctx_error_fn_set(CLogContext *ctx, void (*error_fn)(void *file_handle))
+static void CLT_ctx_error_fn_set(LogCtx *ctx, void (*error_fn)(void *file_handle))
 {
   ctx->cbs.error_fn = error_fn;
 }
@@ -736,12 +732,12 @@ void logref_init(LogRef *log_ref)
   /* Only runs once when initializing a static type in most cases. */
   pthread_mutex_lock(&g_ctx->types_lock);
 #endif
-  if (clg_ref->type == NULL) {
+  if (log_ref->type == NULL) {
     /* Add to the refs list so we can NULL the pointers to 'type' when log_exit() is called. */
     log_ref->next = g_ctx->refs;
     g_ctx->refs = clg_ref;
 
-    LogType *log_ty = clg_ctx_type_find_by_name(g_ctx, log_ref->id);
+    LogType *log_ty = log_ctx_type_find_by_name(g_ctx, log_ref->id);
     if (log_ty == NULL) {
       log_ty = log_ctx_type_register(g_ctx, log_ref->id);
     }
