@@ -186,11 +186,11 @@ int CLG_color_support_get(CLG_LogRef *clg_ref);
 #define LOG_ERROR(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_ERROR, 0, __VA_ARGS__)
 #define LOG_FATAL(clg_ref, ...) LOG_AT_SEVERITY(log_ref, LOG_SEVERITY_FATAL, 0, __VA_ARGS__)
 
-#define LOG_STR_INFO(clg_ref, level, str) \
-  LOG_STR_AT_SEVERITY(clg_ref, CLG_SEVERITY_INFO, level, str)
-#define LOG_STR_WARN(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_WARN, 0, str)
-#define LOG_STR_ERROR(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_ERROR, 0, str)
-#define LOG_STR_FATAL(clg_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_FATAL, 0, str)
+#define LOG_STR_INFO(log_ref, level, str) \
+  LOG_STR_AT_SEVERITY(log_ref, LOG_SEVERITY_INFO, level, str)
+#define LOG_STR_WARN(log_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_WARN, 0, str)
+#define LOG_STR_ERROR(log_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_ERROR, 0, str)
+#define LOG_STR_FATAL(log_ref, str) CLOG_STR_AT_SEVERITY(clg_ref, LOG_SEVERITY_FATAL, 0, str)
 
 /* Allocated string which is immediately freed. */
 #define LOG_STR_INFO_N(log_ref, level, str) \
