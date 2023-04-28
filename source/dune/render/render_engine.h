@@ -215,7 +215,7 @@ void render_engine_update_render_passes(struct RenderEngine *engine,
                                     struct ViewLayer *view_layer,
                                     update_render_passes_cb_t callback,
                                     void *callback_data);
-void RE_engine_register_pass(struct RenderEngine *engine,
+void render_engine_register_pass(struct RenderEngine *engine,
                              struct Scene *scene,
                              struct ViewLayer *view_layer,
                              const char *name,
@@ -223,9 +223,9 @@ void RE_engine_register_pass(struct RenderEngine *engine,
                              const char *chanid,
                              eNodeSocketDatatype type);
 
-bool RE_engine_use_persistent_data(struct RenderEngine *engine);
+bool render_engine_use_persistent_data(struct RenderEngine *engine);
 
-struct RenderEngine *RE_engine_get(const struct Render *re);
+struct RenderEngine *render_engine_get(const struct Render *re);
 
 /* Acquire render engine for drawing via its `draw()` callback.
  *
@@ -234,23 +234,23 @@ struct RenderEngine *RE_engine_get(const struct Render *re);
  *
  * Drawing is possible if the engine has the `draw()` callback and it is in its `render()`
  * callback. */
-bool RE_engine_draw_acquire(struct Render *re);
-void RE_engine_draw_release(struct Render *re);
+bool render_engine_draw_acquire(struct Render *re);
+void render_engine_draw_release(struct Render *re);
 
-/* NOTE: Only used for Cycles's BLenderGPUDisplay integration with the draw manager. A subject
+/* NOTE: Only used for Cycles's DuneGPUDisplay integration with the draw manager. A subject
  * for re-consideration. Do not use this functionality. */
-bool RE_engine_has_render_context(struct RenderEngine *engine);
-void RE_engine_render_context_enable(struct RenderEngine *engine);
-void RE_engine_render_context_disable(struct RenderEngine *engine);
+bool render_engine_has_render_ctx(struct RenderEngine *engine);
+void render_engine_render_ctx_enable(struct RenderEngine *engine);
+void render_engine_render_ctx_disable(struct RenderEngine *engine);
 
 /* Engine Types */
 
-void RE_engines_init(void);
-void RE_engines_init_experimental(void);
-void RE_engines_exit(void);
-void RE_engines_register(RenderEngineType *render_type);
+void render_engines_init(void);
+void render_engines_init_experimental(void);
+void render_engines_exit(void);
+void render_engines_register(RenderEngineType *render_type);
 
-bool RE_engine_is_opengl(RenderEngineType *render_type);
+bool render_engine_is_opengl(RenderEngineType *render_type);
 
 /**
  * Return true if the RenderEngineType has native support for direct loading of Alembic data. For
