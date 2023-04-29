@@ -149,7 +149,7 @@ static int clouds(const Tex *tex, const float texvec[3], TexResult *texres)
 {
   int rv = TEX_INT;
 
-  texres->tin = BLI_noise_generic_turbulence(tex->noisesize,
+  texres->tin = lib_noise_generic_turbulence(tex->noisesize,
                                              texvec[0],
                                              texvec[1],
                                              texvec[2],
@@ -277,7 +277,7 @@ static float wood_int(const Tex *tex, float x, float y, float z)
   }
   else if (wt == TEX_RINGNOISE) {
     wi = tex->turbul *
-         BLI_noise_generic_noise(
+         lib_noise_generic_noise(
              tex->noisesize, x, y, z, (tex->noisetype != TEX_NOISESOFT), tex->noisebasis);
     wi = waveform[wf](sqrtf(x * x + y * y + z * z) * 20.0f + wi);
   }
@@ -323,7 +323,7 @@ static float marble_int(const Tex *tex, float x, float y, float z)
 
   n = 5.0f * (x + y + z);
 
-  mi = n + tex->turbul * BLI_noise_generic_turbulence(tex->noisesize,
+  mi = n + tex->turbul * lib_noise_generic_turbulence(tex->noisesize,
                                                       x,
                                                       y,
                                                       z,
@@ -449,7 +449,7 @@ static int stucci(const Tex *tex, const float texvec[3], TexResult *texres)
   float nor[3], b2, ofs;
   int retval = TEX_INT;
 
-  b2 = BLI_noise_generic_noise(tex->noisesize,
+  b2 = lib_noise_generic_noise(tex->noisesize,
                                texvec[0],
                                texvec[1],
                                texvec[2],
@@ -461,7 +461,7 @@ static int stucci(const Tex *tex, const float texvec[3], TexResult *texres)
   if (tex->stype) {
     ofs *= (b2 * b2);
   }
-  nor[0] = BLI_noise_generic_noise(tex->noisesize,
+  nor[0] = lib_noise_generic_noise(tex->noisesize,
                                    texvec[0] + ofs,
                                    texvec[1],
                                    texvec[2],
