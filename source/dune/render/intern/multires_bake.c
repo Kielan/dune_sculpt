@@ -446,8 +446,8 @@ static void do_multires_bake(MultiresBakeRender *bkr,
                              MeshFreeBakeData freeBakeData,
                              MultiresBakeResult *result)
 {
-  DerivedMesh *dm = bkr->lores_dm;
-  const MLoopTri *mlooptri = dm->getLoopTriArray(dm);
+  DerivedMesh *dm = bkr->lores_mesh;
+  const MeshLoopTri *mlooptri = mesh->getLoopTriArray(dm);
   const int lvl = bkr->lvl;
   int tot_tri = dm->getNumLoopTri(dm);
 
@@ -455,11 +455,11 @@ static void do_multires_bake(MultiresBakeRender *bkr,
     MultiresBakeThread *handles;
     MultiresBakeQueue queue;
 
-    ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
-    MVert *mvert = dm->getVertArray(dm);
-    MPoly *mpoly = dm->getPolyArray(dm);
-    MLoop *mloop = dm->getLoopArray(dm);
-    MLoopUV *mloopuv = dm->getLoopDataArray(dm, CD_MLOOPUV);
+    ImBuf *ibuf = dune_image_acquire_ibuf(ima, NULL, NULL);
+    MeshVert *mvert = mesh->getVertArray(dm);
+    MeshPoly *mpoly = mesh->getPolyArray(dm);
+    MeshLoop *mloop = mesh->getLoopArray(dm);
+    MeshLoopUV *mloopuv = mesh->getLoopDataArray(dm, CD_MLOOPUV);
     float *pvtangent = NULL;
 
     ListBase threads;
@@ -468,7 +468,7 @@ static void do_multires_bake(MultiresBakeRender *bkr,
     void *bake_data = NULL;
 
     Mesh *temp_mesh = dune_mesh_new_nomain(
-        dm->getNumVerts(dune), mesh->getNumEdges(mesh), 0, mesh->getNumLoops(mesh), mesh->getNumPolys(mesh));
+        mesh->getNumVerts(dune), mesh->getNumEdges(mesh), 0, mesh->getNumLoops(mesh), mesh->getNumPolys(mesh));
     memcpy(temp_mesh->mvert, mesh->getVertArray(mesh), temp_mesh->totvert * sizeof(*temp_mesh->mvert));
     memcpy(temp_mesh->medge, mesh->getEdgeArray(mesh), temp_mesh->totedge * sizeof(*temp_mesh->medge));
     memcpy(temp_mesh->mpoly, mesh->getPolyArray(mesh), temp_mesh->totpoly * sizeof(*temp_mesh->mpoly));
@@ -499,7 +499,7 @@ static void do_multires_bake(MultiresBakeRender *bkr,
             &mesh->tangent_mask);
       }
 
-      pvtangent = DM_get_loop_data_layer(mesh, CD_TANGENT);
+      pvtangent = mesh_get_loop_data_layer(mesh, CD_TANGENT);
     }
 
     /* all threads shares the same custom bake data */
