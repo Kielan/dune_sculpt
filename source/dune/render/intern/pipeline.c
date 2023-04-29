@@ -135,7 +135,7 @@ static void render_cb_ex_id(Render *re, Main *bmain, ID *id, eCbEvent evt)
   if (re->r.scemode & R_BUTS_PREVIEW) {
     return;
   }
-  BKE_callback_exec_id(bmain, id, evt);
+  dune_cb_ex_id(main, id, evt);
 }
 
 /* -------------------------------------------------------------------- */
