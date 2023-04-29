@@ -98,14 +98,14 @@ typedef struct BakeImBufuserData {
   char *mask_buffer;
 } BakeImBufuserData;
 
-static void multiresbake_get_normal(const MResolvePixelData *data,
+static void multiresbake_get_normal(const MeshResolvePixelData *data,
                                     const int tri_num,
                                     const int vert_index,
                                     float r_normal[3])
 {
   const int poly_index = data->mlooptri[tri_num].poly;
   const MeshPoly *mp = &data->mpoly[poly_index];
-  const bool smoothnormal = (mp->flag & ME_SMOOTH) != 0;
+  const bool smoothnormal = (mp->flag & MESH_SMOOTH) != 0;
 
   if (smoothnormal) {
     const int vi = data->mloop[data->mlooptri[tri_num].tri[vert_index]].v;
@@ -123,13 +123,13 @@ static void multiresbake_get_normal(const MResolvePixelData *data,
 
 static void init_bake_rast(MeshBakeRast *bake_rast,
                            const ImBuf *ibuf,
-                           const MResolvePixelData *data,
+                           const MeshResolvePixelData *data,
                            MeshFlushPixel flush_pixel,
                            short *do_update)
 {
   BakeImBufuserData *userdata = (BakeImBufuserData *)ibuf->userdata;
 
-  memset(bake_rast, 0, sizeof(MBakeRast));
+  memset(bake_rast, 0, sizeof(MeshBakeRast));
 
   bake_rast->texels = userdata->mask_buffer;
   bake_rast->w = ibuf->x;
@@ -139,7 +139,7 @@ static void init_bake_rast(MeshBakeRast *bake_rast,
   bake_rast->do_update = do_update;
 }
 
-static void flush_pixel(const MResolvePixelData *data, const int x, const int y)
+static void flush_pixel(const MeshResolvePixelData *data, const int x, const int y)
 {
   const float st[2] = {(x + 0.5f) / data->w, (y + 0.5f) / data->h};
   const float *st0, *st1, *st2;
@@ -200,7 +200,7 @@ static void flush_pixel(const MResolvePixelData *data, const int x, const int y)
                   y);
 }
 
-static void set_rast_triangle(const MBakeRast *bake_rast, const int x, const int y)
+static void set_rast_triangle(const MeshBakeRast *bake_rast, const int x, const int y)
 {
   const int w = bake_rast->w;
   const int h = bake_rast->h;
@@ -216,7 +216,7 @@ static void set_rast_triangle(const MBakeRast *bake_rast, const int x, const int
   }
 }
 
-static void rasterize_half(const MBakeRast *bake_rast,
+static void rasterize_half(const MeshBakeRast *bake_rast,
                            const float s0_s,
                            const float t0_s,
                            const float s1_s,
@@ -266,7 +266,7 @@ static void rasterize_half(const MBakeRast *bake_rast,
   }
 }
 
-static void bake_rasterize(const MBakeRast *bake_rast,
+static void bake_rasterize(const MeshBakeRast *bake_rast,
                            const float st0_in[2],
                            const float st1_in[2],
                            const float st2_in[2])
@@ -338,8 +338,8 @@ typedef struct MultiresBakeThread {
   void *bake_data;
 
   /* thread-specific data */
-  MBakeRast bake_rast;
-  MResolvePixelData data;
+  MeshBakeRast bake_rast;
+  MeshResolvePixelData data;
 
   /* displacement-specific data */
   float height_min, height_max;
@@ -353,12 +353,12 @@ static int multires_bake_queue_next_tri(MultiresBakeQueue *queue)
    *       for better memory cache utilization
    */
 
-  BLI_spin_lock(&queue->spin);
+  lib_spin_lock(&queue->spin);
   if (queue->cur_tri < queue->tot_tri) {
     face = queue->cur_tri;
     queue->cur_tri++;
   }
-  BLI_spin_unlock(&queue->spin);
+  lib_spin_unlock(&queue->spin);
 
   return face;
 }
@@ -367,15 +367,15 @@ static void *do_multires_bake_thread(void *data_v)
 {
   MultiresBakeThread *handle = (MultiresBakeThread *)data_v;
   MResolvePixelData *data = &handle->data;
-  MBakeRast *bake_rast = &handle->bake_rast;
+  MeshBakeRast *bake_rast = &handle->bake_rast;
   MultiresBakeRender *bkr = handle->bkr;
   int tri_index;
 
   while ((tri_index = multires_bake_queue_next_tri(handle->queue)) >= 0) {
-    const MLoopTri *lt = &data->mlooptri[tri_index];
-    const MPoly *mp = &data->mpoly[lt->poly];
+    const MeshLoopTri *lt = &data->mlooptri[tri_index];
+    const MeshPoly *mp = &data->mpoly[lt->poly];
     const short mat_nr = mp->mat_nr;
-    const MLoopUV *mloopuv = data->mloopuv;
+    const MeshLoopUV *mloopuv = data->mloopuv;
 
     if (multiresbake_test_break(bkr)) {
       break;
