@@ -1065,9 +1065,9 @@ static void create_ao_raytree(MultiresBakeRender *bkr, MAOBakeData *ao_data)
   /* face_side = (grid_size << 1) - 1; */ /* UNUSED */
   num_faces = num_grids * (grid_size - 1) * (grid_size - 1);
 
-  raytree = ao_data->raytree = RE_rayobject_create(
+  raytree = ao_data->raytree = render_rayobject_create(
       bkr->raytrace_structure, num_faces, bkr->octree_resolution);
-  face = ao_data->rayfaces = (RayFace *)MEM_callocN(num_faces * sizeof(RayFace),
+  face = ao_data->rayfaces = (RayFace *)mem_callocn(num_faces * sizeof(RayFace),
                                                     "ObjectRen faces");
 
   for (i = 0; i < num_grids; i++) {
@@ -1081,15 +1081,15 @@ static void create_ao_raytree(MultiresBakeRender *bkr, MAOBakeData *ao_data)
         copy_v3_v3(co[2], CCG_grid_elem_co(&key, grid_data[i], x + 1, y + 1));
         copy_v3_v3(co[3], CCG_grid_elem_co(&key, grid_data[i], x + 1, y));
 
-        RE_rayface_from_coords(face, ao_data, face, co[0], co[1], co[2], co[3]);
-        RE_rayobject_add(raytree, RE_rayobject_unalignRayFace(face));
+        render_rayface_from_coords(face, ao_data, face, co[0], co[1], co[2], co[3]);
+        render_rayobject_add(raytree, RE_rayobject_unalignRayFace(face));
 
         face++;
       }
     }
   }
 
-  RE_rayobject_done(raytree);
+  render_rayobject_done(raytree);
 }
 
 static void *init_ao_data(MultiresBakeRender *bkr, Image *UNUSED(ima))
@@ -1101,7 +1101,7 @@ static void *init_ao_data(MultiresBakeRender *bkr, Image *UNUSED(ima))
 
   init_ao_random();
 
-  ao_data = MEM_callocN(sizeof(MAOBakeData), "MultiresBake aoData");
+  ao_data = mem_callocn(sizeof(MAOBakeData), "MultiresBake aoData");
 
   ao_data->number_of_rays = bkr->number_of_rays;
   ao_data->bias = bkr->bias;
@@ -1112,16 +1112,16 @@ static void *init_ao_data(MultiresBakeRender *bkr, Image *UNUSED(ima))
 
   /* initialize permutation tables */
   permutation_size = sizeof(unsigned short) * bkr->number_of_rays;
-  ao_data->permutation_table_1 = MEM_callocN(permutation_size, "multires AO baker perm1");
-  ao_data->permutation_table_2 = MEM_callocN(permutation_size, "multires AO baker perm2");
-  temp_permutation_table = MEM_callocN(permutation_size, "multires AO baker temp perm");
+  ao_data->permutation_table_1 = mem_callocn(permutation_size, "multires AO baker perm1");
+  ao_data->permutation_table_2 = mem_callocn(permutation_size, "multires AO baker perm2");
+  temp_permutation_table = mem_callocn(permutation_size, "multires AO baker temp perm");
 
   build_permutation_table(
       ao_data->permutation_table_1, temp_permutation_table, bkr->number_of_rays, 1);
   build_permutation_table(
       ao_data->permutation_table_2, temp_permutation_table, bkr->number_of_rays, 0);
 
-  MEM_freeN(temp_permutation_table);
+  mem_freen(temp_permutation_table);
 
   return (void *)ao_data;
 }
