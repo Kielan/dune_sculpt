@@ -37,17 +37,17 @@
 
 static RNG_THREAD_ARRAY *random_tex_array;
 
-void RE_texture_rng_init(void)
+void render_texture_rng_init(void)
 {
-  random_tex_array = BLI_rng_threaded_new();
+  random_tex_array = lib_rng_threaded_new();
 }
 
-void RE_texture_rng_exit(void)
+void render_texture_rng_exit(void)
 {
   if (random_tex_array == NULL) {
     return;
   }
-  BLI_rng_threaded_free(random_tex_array);
+  lib_rng_threaded_free(random_tex_array);
   random_tex_array = NULL;
 }
 
@@ -58,15 +58,15 @@ static void tex_normal_derivate(const Tex *tex, TexResult *texres)
 {
   if (tex->flag & TEX_COLORBAND) {
     float col[4];
-    if (BKE_colorband_evaluate(tex->coba, texres->tin, col)) {
+    if (dune_colorband_evaluate(tex->coba, texres->tin, col)) {
       float fac0, fac1, fac2, fac3;
 
       fac0 = (col[0] + col[1] + col[2]);
-      BKE_colorband_evaluate(tex->coba, texres->nor[0], col);
+      dune_colorband_evaluate(tex->coba, texres->nor[0], col);
       fac1 = (col[0] + col[1] + col[2]);
-      BKE_colorband_evaluate(tex->coba, texres->nor[1], col);
+      dune_colorband_evaluate(tex->coba, texres->nor[1], col);
       fac2 = (col[0] + col[1] + col[2]);
-      BKE_colorband_evaluate(tex->coba, texres->nor[2], col);
+      dune_colorband_evaluate(tex->coba, texres->nor[2], col);
       fac3 = (col[0] + col[1] + col[2]);
 
       texres->nor[0] = (fac0 - fac1) / 3.0f;
