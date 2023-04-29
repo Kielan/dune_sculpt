@@ -710,24 +710,24 @@ static void interp_bilinear_mpoly(DerivedMesh *dm,
   float data[4][3];
 
   if (mode == 0) {
-    dm->getVertNo(dm, mloop[mpoly->loopstart].v, data[0]);
-    dm->getVertNo(dm, mloop[mpoly->loopstart + 1].v, data[1]);
-    dm->getVertNo(dm, mloop[mpoly->loopstart + 2].v, data[2]);
-    dm->getVertNo(dm, mloop[mpoly->loopstart + 3].v, data[3]);
+    mesh->getVertNo(mesh, mloop[mpoly->loopstart].v, data[0]);
+    mesh->getVertNo(mesh, mloop[mpoly->loopstart + 1].v, data[1]);
+    mesh->getVertNo(mesh, mloop[mpoly->loopstart + 2].v, data[2]);
+    mesh->getVertNo(mesh, mloop[mpoly->loopstart + 3].v, data[3]);
   }
   else {
-    dm->getVertCo(dm, mloop[mpoly->loopstart].v, data[0]);
-    dm->getVertCo(dm, mloop[mpoly->loopstart + 1].v, data[1]);
-    dm->getVertCo(dm, mloop[mpoly->loopstart + 2].v, data[2]);
-    dm->getVertCo(dm, mloop[mpoly->loopstart + 3].v, data[3]);
+    mesh->getVertCo(dm, mloop[mpoly->loopstart].v, data[0]);
+    mesh->getVertCo(dm, mloop[mpoly->loopstart + 1].v, data[1]);
+    mesh->getVertCo(dm, mloop[mpoly->loopstart + 2].v, data[2]);
+    mesh->getVertCo(dm, mloop[mpoly->loopstart + 3].v, data[3]);
   }
 
   interp_bilinear_quad_v3(data, u, v, res);
 }
 
-static void interp_barycentric_mlooptri(DerivedMesh *dm,
-                                        MLoop *mloop,
-                                        const MLoopTri *lt,
+static void interp_barycentric_mlooptri(DerivedMesh *mesh,
+                                        MeshLoop *mloop,
+                                        const MeshLoopTri *lt,
                                         const float u,
                                         const float v,
                                         const int mode,
@@ -736,14 +736,14 @@ static void interp_barycentric_mlooptri(DerivedMesh *dm,
   float data[3][3];
 
   if (mode == 0) {
-    dm->getVertNo(dm, mloop[lt->tri[0]].v, data[0]);
-    dm->getVertNo(dm, mloop[lt->tri[1]].v, data[1]);
-    dm->getVertNo(dm, mloop[lt->tri[2]].v, data[2]);
+    mesh->getVertNo(mesh, mloop[lt->tri[0]].v, data[0]);
+    mesg->getVertNo(mesh, mloop[lt->tri[1]].v, data[1]);
+    mesh->getVertNo(mesh, mloop[lt->tri[2]].v, data[2]);
   }
   else {
-    dm->getVertCo(dm, mloop[lt->tri[0]].v, data[0]);
-    dm->getVertCo(dm, mloop[lt->tri[1]].v, data[1]);
-    dm->getVertCo(dm, mloop[lt->tri[2]].v, data[2]);
+    mesh->getVertCo(mesh, mloop[lt->tri[0]].v, data[0]);
+    mesh->getVertCo(mesh, mloop[lt->tri[1]].v, data[1]);
+    mesh->getVertCo(mesh, mloop[lt->tri[2]].v, data[2]);
   }
 
   interp_barycentric_tri_v3(data, u, v, res);
