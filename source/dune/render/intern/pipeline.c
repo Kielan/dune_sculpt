@@ -29,35 +29,35 @@
 
 #include "BLT_translation.h"
 
-#include "BKE_anim_data.h"
-#include "BKE_animsys.h" /* <------ should this be here?, needed for sequencer update */
-#include "BKE_callbacks.h"
-#include "BKE_camera.h"
-#include "BKE_colortools.h"
-#include "BKE_context.h" /* XXX needed by wm_window.h */
-#include "BKE_global.h"
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_image_save.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_remap.h"
-#include "BKE_mask.h"
-#include "BKE_modifier.h"
-#include "BKE_node.h"
-#include "BKE_object.h"
-#include "BKE_pointcache.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_sound.h"
-#include "BKE_writeavi.h" /* <------ should be replaced once with generic movie module */
+#include "dune_anim_data.h"
+#include "dune_animsys.h" /* <------ should this be here?, needed for sequencer update */
+#include "dune_callbacks.h"
+#include "dune_camera.h"
+#include "dune_colortools.h"
+#include "dune_context.h" /* XXX needed by wm_window.h */
+#include "dune_global.h"
+#include "dune_image.h"
+#include "dune_image_format.h"
+#include "dune_image_save.h"
+#include "dune_layer.h"
+#include "dune_lib_id.h"
+#include "dune_lib_remap.h"
+#include "dune_mask.h"
+#include "dune_modifier.h"
+#include "dune_node.h"
+#include "dune_object.h"
+#include "dune_pointcache.h"
+#include "dune_report.h"
+#include "dune_scene.h"
+#include "dune_sound.h"
+#include "dune_writeavi.h" /* <------ should be replaced once with generic movie module */
 
 #include "NOD_composite.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
-#include "DEG_depsgraph_debug.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_build.h"
+#include "graph_debug.h"
+#include "graph_query.h"
 
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf.h"
