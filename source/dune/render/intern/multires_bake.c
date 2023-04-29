@@ -33,16 +33,16 @@
 #include "IMB_imbuf_types.h"
 
 typedef void (*MeshPassKnownData)(DerivedMesh *lores_dm,
-                               DerivedMesh *hires_dm,
-                               void *thread_data,
-                               void *bake_data,
-                               ImBuf *ibuf,
-                               const int face_index,
-                               const int lvl,
-                               const float st[2],
-                               float tangmat[3][3],
-                               const int x,
-                               const int y);
+                                  DerivedMesh *hires_dm,
+                                  void *thread_data,
+                                  void *bake_data,
+                                  ImBuf *ibuf,
+                                  const int face_index,
+                                  const int lvl,
+                                  const float st[2],
+                                  float tangmat[3][3],
+                                  const int x,
+                                  const int y);
 
 typedef void *(*MeshInitBakeData)(MultiresBakeRender *bkr, Image *ima);
 typedef void (*MeshFreeBakeData)(void *bake_data);
@@ -57,7 +57,7 @@ typedef struct {
   MeshPoly *mpoly;
   MeshLoop *mloop;
   MeshLoopUV *mloopuv;
-  const MLoopTri *mlooptri;
+  const MeshLoopTri *mlooptri;
   float *pvtangent;
   const float (*precomputed_normals)[3];
   int w, h;
@@ -72,7 +72,7 @@ typedef struct {
   Image **image_array;
 } MeshResolvePixelData;
 
-typedef void (*MeshFlushPixel)(const MResolvePixelData *data, const int x, const int y);
+typedef void (*MeshFlushPixel)(const MeehResolvePixelData *data, const int x, const int y);
 
 typedef struct {
   int w, h;
@@ -366,7 +366,7 @@ static int multires_bake_queue_next_tri(MultiresBakeQueue *queue)
 static void *do_multires_bake_thread(void *data_v)
 {
   MultiresBakeThread *handle = (MultiresBakeThread *)data_v;
-  MResolvePixelData *data = &handle->data;
+  MeshResolvePixelData *data = &handle->data;
   MeshBakeRast *bake_rast = &handle->bake_rast;
   MultiresBakeRender *bkr = handle->bkr;
   int tri_index;
@@ -399,7 +399,7 @@ static void *do_multires_bake_thread(void *data_v)
     data->ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
 
     /* update progress */
-    BLI_spin_lock(&handle->queue->spin);
+    lib_spin_lock(&handle->queue->spin);
     bkr->baked_faces++;
 
     if (bkr->do_update) {
@@ -411,7 +411,7 @@ static void *do_multires_bake_thread(void *data_v)
                         (float)bkr->baked_faces / handle->queue->tot_tri) /
                        bkr->tot_obj;
     }
-    BLI_spin_unlock(&handle->queue->spin);
+    lib_spin_unlock(&handle->queue->spin);
   }
 
   return NULL;
@@ -441,9 +441,9 @@ static void init_ccgdm_arrays(DerivedMesh *dm)
 static void do_multires_bake(MultiresBakeRender *bkr,
                              Image *ima,
                              bool require_tangent,
-                             MPassKnownData passKnownData,
-                             MInitBakeData initBakeData,
-                             MFreeBakeData freeBakeData,
+                             MeshPassKnownData passKnownData,
+                             MeshInitBakeData initBakeData,
+                             MeshFreeBakeData freeBakeData,
                              MultiresBakeResult *result)
 {
   DerivedMesh *dm = bkr->lores_dm;
