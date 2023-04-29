@@ -242,7 +242,7 @@ RenderResult *render_result_new(Render *re,
     return NULL;
   }
 
-  rr = MEM_callocN(sizeof(RenderResult), "new render result");
+  rr = mem_callocn(sizeof(RenderResult), "new render result");
   rr->rectx = rectx;
   rr->recty = recty;
   rr->renrect.xmin = 0;
@@ -266,10 +266,10 @@ RenderResult *render_result_new(Render *re,
       }
     }
 
-    rl = MEM_callocN(sizeof(RenderLayer), "new render layer");
-    BLI_addtail(&rr->layers, rl);
+    rl = mem_callocn(sizeof(RenderLayer), "new render layer");
+    lib_addtail(&rr->layers, rl);
 
-    BLI_strncpy(rl->name, view_layer->name, sizeof(rl->name));
+    lib_strncpy(rl->name, view_layer->name, sizeof(rl->name));
     rl->layflag = view_layer->layflag;
 
     rl->passflag = view_layer->passflag;
