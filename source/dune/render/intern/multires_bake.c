@@ -467,39 +467,39 @@ static void do_multires_bake(MultiresBakeRender *bkr,
 
     void *bake_data = NULL;
 
-    Mesh *temp_mesh = BKE_mesh_new_nomain(
-        dm->getNumVerts(dm), dm->getNumEdges(dm), 0, dm->getNumLoops(dm), dm->getNumPolys(dm));
-    memcpy(temp_mesh->mvert, dm->getVertArray(dm), temp_mesh->totvert * sizeof(*temp_mesh->mvert));
-    memcpy(temp_mesh->medge, dm->getEdgeArray(dm), temp_mesh->totedge * sizeof(*temp_mesh->medge));
-    memcpy(temp_mesh->mpoly, dm->getPolyArray(dm), temp_mesh->totpoly * sizeof(*temp_mesh->mpoly));
-    memcpy(temp_mesh->mloop, dm->getLoopArray(dm), temp_mesh->totloop * sizeof(*temp_mesh->mloop));
-    const float(*vert_normals)[3] = BKE_mesh_vertex_normals_ensure(temp_mesh);
-    const float(*poly_normals)[3] = BKE_mesh_poly_normals_ensure(temp_mesh);
+    Mesh *temp_mesh = dune_mesh_new_nomain(
+        dm->getNumVerts(dune), mesh->getNumEdges(mesh), 0, mesh->getNumLoops(mesh), mesh->getNumPolys(mesh));
+    memcpy(temp_mesh->mvert, mesh->getVertArray(mesh), temp_mesh->totvert * sizeof(*temp_mesh->mvert));
+    memcpy(temp_mesh->medge, mesh->getEdgeArray(mesh), temp_mesh->totedge * sizeof(*temp_mesh->medge));
+    memcpy(temp_mesh->mpoly, mesh->getPolyArray(mesh), temp_mesh->totpoly * sizeof(*temp_mesh->mpoly));
+    memcpy(temp_mesh->mloop, mesh->getLoopArray(mesh), temp_mesh->totloop * sizeof(*temp_mesh->mloop));
+    const float(*vert_normals)[3] = dune_mesh_vertex_normals_ensure(temp_mesh);
+    const float(*poly_normals)[3] = dune_mesh_poly_normals_ensure(temp_mesh);
 
     if (require_tangent) {
       if (CustomData_get_layer_index(&dm->loopData, CD_TANGENT) == -1) {
-        BKE_mesh_calc_loop_tangent_ex(
-            dm->getVertArray(dm),
-            dm->getPolyArray(dm),
-            dm->getNumPolys(dm),
-            dm->getLoopArray(dm),
-            dm->getLoopTriArray(dm),
-            dm->getNumLoopTri(dm),
-            &dm->loopData,
+        dune_mesh_calc_loop_tangent_ex(
+            mesh->getVertArray(mesh),
+            mesh->getPolyArray(mesh),
+            mesh->getNumPolys(mesh),
+            mesh->getLoopArray(mesh),
+            mesh->getLoopTriArray(mesh),
+            mesh->getNumLoopTri(mesh),
+            &mesh->loopData,
             true,
             NULL,
             0,
             vert_normals,
             poly_normals,
-            (const float(*)[3])dm->getLoopDataArray(dm, CD_NORMAL),
-            (const float(*)[3])dm->getVertDataArray(dm, CD_ORCO), /* may be nullptr */
+            (const float(*)[3])mesh->getLoopDataArray(mesh, CD_NORMAL),
+            (const float(*)[3])mesh->getVertDataArray(mesh, CD_ORCO), /* may be nullptr */
             /* result */
-            &dm->loopData,
-            dm->getNumLoops(dm),
-            &dm->tangent_mask);
+            &mesh->loopData,
+            mesh->getNumLoops(mesh),
+            &mesh->tangent_mask);
       }
 
-      pvtangent = DM_get_loop_data_layer(dm, CD_TANGENT);
+      pvtangent = DM_get_loop_data_layer(mesh, CD_TANGENT);
     }
 
     /* all threads shares the same custom bake data */
@@ -508,17 +508,17 @@ static void do_multires_bake(MultiresBakeRender *bkr,
     }
 
     if (tot_thread > 1) {
-      BLI_threadpool_init(&threads, do_multires_bake_thread, tot_thread);
+      lib_threadpool_init(&threads, do_multires_bake_thread, tot_thread);
     }
 
-    handles = MEM_callocN(tot_thread * sizeof(MultiresBakeThread), "do_multires_bake handles");
+    handles = mem_callocn(tot_thread * sizeof(MultiresBakeThread), "do_multires_bake handles");
 
     init_ccgdm_arrays(bkr->hires_dm);
 
     /* faces queue */
     queue.cur_tri = 0;
     queue.tot_tri = tot_tri;
-    BLI_spin_init(&queue.spin);
+    lib_spin_init(&queue.spin);
 
     /* fill in threads handles */
     for (i = 0; i < tot_thread; i++) {
