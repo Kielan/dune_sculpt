@@ -490,24 +490,24 @@ RenderStats *RE_GetStats(Render *re)
   return &re->i;
 }
 
-Render *RE_NewRender(const char *name)
+Render *render_NewRender(const char *name)
 {
   Render *re;
 
   /* only one render per name exists */
-  re = RE_GetRender(name);
+  re = render_GetRender(name);
   if (re == NULL) {
 
     /* new render data struct */
-    re = MEM_callocN(sizeof(Render), "new render");
-    BLI_addtail(&RenderGlobal.renderlist, re);
-    BLI_strncpy(re->name, name, RE_MAXNAME);
-    BLI_rw_mutex_init(&re->resultmutex);
-    BLI_mutex_init(&re->engine_draw_mutex);
-    BLI_mutex_init(&re->highlighted_tiles_mutex);
+    re = mem_callocn(sizeof(Render), "new render");
+    lib_addtail(&RenderGlobal.renderlist, re);
+    lib_strncpy(re->name, name, RE_MAXNAME);
+    lib_rw_mutex_init(&re->resultmutex);
+    lib_mutex_init(&re->engine_draw_mutex);
+    lib_mutex_init(&re->highlighted_tiles_mutex);
   }
 
-  RE_InitRenderCB(re);
+  render_InitRenderCB(re);
 
   return re;
 }
