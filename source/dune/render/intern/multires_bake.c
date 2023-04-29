@@ -1496,20 +1496,20 @@ static void finish_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
 
     if (ibuf->userdata) {
       if (userdata->displacement_buffer) {
-        MEM_freeN(userdata->displacement_buffer);
+        mem_freen(userdata->displacement_buffer);
       }
 
-      MEM_freeN(userdata->mask_buffer);
-      MEM_freeN(userdata);
+      mem_freen(userdata->mask_buffer);
+      mem_freen(userdata);
       ibuf->userdata = NULL;
     }
 
-    BKE_image_release_ibuf(ima, ibuf, NULL);
-    DEG_id_tag_update(&ima->id, 0);
+    dune_image_release_ibuf(ima, ibuf, NULL);
+    graph_id_tag_update(&ima->id, 0);
   }
 }
 
-void RE_multires_bake_images(MultiresBakeRender *bkr)
+void render_multires_bake_images(MultiresBakeRender *bkr)
 {
   MultiresBakeResult result;
 
