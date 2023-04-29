@@ -1184,17 +1184,17 @@ static int trace_ao_ray(MAOBakeData *ao_data, float ray_start[3], float ray_dire
   return render_rayobject_raycast(ao_data->raytree, &isect);
 }
 
-static void apply_ao_callback(DerivedMesh *lores_dm,
-                              DerivedMesh *hires_dm,
-                              void *UNUSED(thread_data),
-                              void *bake_data,
-                              ImBuf *ibuf,
-                              const int tri_index,
-                              const int lvl,
-                              const float st[2],
-                              float UNUSED(tangmat[3][3]),
-                              const int x,
-                              const int y)
+static void apply_ao_cb(DerivedMesh *lores_dm,
+                        DerivedMesh *hires_dm,
+                        void *UNUSED(thread_data),
+                        void *bake_data,
+                        ImBuf *ibuf,
+                        const int tri_index,
+                        const int lvl,
+                        const float st[2],
+                        float UNUSED(tangmat[3][3]),
+                        const int x,
+                        const int y)
 {
   const MeshLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
   MeshPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
@@ -1314,12 +1314,12 @@ static void bake_ibuf_filter(
 
   if (margin) {
     switch (margin_type) {
-      case R_BAKE_ADJACENT_FACES:
+      case RENDER_BAKE_ADJACENT_FACES:
         render_generate_texturemargin_adjacentfaces_dm(ibuf, mask, margin, dm);
         break;
       default:
       /* fall through */
-      case R_BAKE_EXTEND:
+      case RENDER_BAKE_EXTEND:
         IMB_filter_extend(ibuf, mask, margin);
         break;
     }
@@ -1429,11 +1429,11 @@ static void bake_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
       ibuf->userdata = userdata;
 
       switch (bkr->mode) {
-        case RE_BAKE_NORMALS:
+        case RENDER_BAKE_NORMALS:
           do_multires_bake(
               bkr, ima, true, apply_tangmat_callback, init_normal_data, free_normal_data, result);
           break;
-        case RE_BAKE_DISPLACEMENT:
+        case RENDER_BAKE_DISPLACEMENT:
           do_multires_bake(bkr,
                            ima,
                            false,
@@ -1444,14 +1444,14 @@ static void bake_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
           break;
 /* TODO: restore ambient occlusion baking support. */
 #if 0
-        case RE_BAKE_AO:
-          do_multires_bake(bkr, ima, false, apply_ao_callback, init_ao_data, free_ao_data, result);
+        case RENDER_BAKE_AO:
+          do_multires_bake(bkr, ima, false, apply_ao_cb, init_ao_data, free_ao_data, result);
           break;
 #endif
       }
     }
 
-    BKE_image_release_ibuf(ima, ibuf, NULL);
+    dune_image_release_ibuf(ima, ibuf, NULL);
 
     ima->id.tag |= LIB_TAG_DOIT;
   }
@@ -1460,11 +1460,11 @@ static void bake_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
 static void finish_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
 {
   LinkData *link;
-  bool use_displacement_buffer = bkr->mode == RE_BAKE_DISPLACEMENT;
+  bool use_displacement_buffer = bkr->mode == RENDER_BAKE_DISPLACEMENT;
 
   for (link = bkr->image.first; link; link = link->next) {
     Image *ima = (Image *)link->data;
-    ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
+    ImBuf *ibuf = dune_image_acquire_ibuf(ima, NULL, NULL);
     BakeImBufuserData *userdata = (BakeImBufuserData *)ibuf->userdata;
 
     if (ibuf->x <= 0 || ibuf->y <= 0) {
@@ -1483,7 +1483,7 @@ static void finish_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
         ibuf, userdata->mask_buffer, bkr->bake_margin, bkr->bake_margin_type, bkr->lores_dm);
 
     ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;
-    BKE_image_mark_dirty(ima, ibuf);
+    dune_image_mark_dirty(ima, ibuf);
 
     if (ibuf->rect_float) {
       ibuf->userflags |= IB_RECT_INVALID;
