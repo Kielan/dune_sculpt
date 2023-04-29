@@ -3685,4 +3685,252 @@ void RE_PreviewRender(Render *re, Main *bmain, Scene *sce)
 
 /* NOTE: repeated win/disprect calc... solve that nicer, also in compo. */
 
+bool RE_ReadRenderResult(Scene *scene, Scene *scenode)
+{
+  Render *re;
+  int winx, winy;
+  bool success;
+  rcti disprect;
+
+  /* calculate actual render result and display size */
+  winx = (scene->r.size * scene->r.xsch) / 100;
+  winy = (scene->r.size * scene->r.ysch) / 100;
+
+  /* only in movie case we render smaller part */
+  if (scene->r.mode & R_BORDER) {
+    disprect.xmin = scene->r.border.xmin * winx;
+    disprect.xmax = scene->r.border.xmax * winx;
+
+    disprect.ymin = scene->r.border.ymin * winy;
+    disprect.ymax = scene->r.border.ymax * winy;
+  }
+  else {
+    disprect.xmin = disprect.ymin = 0;
+    disprect.xmax = winx;
+    disprect.ymax = winy;
+  }
+
+  if (scenode) {
+    scene = scenode;
+  }
+
+  /* get render: it can be called from UI with draw callbacks */
+  re = RE_GetSceneRender(scene);
+  if (re == NULL) {
+    re = RE_NewSceneRender(scene);
+  }
+  RE_InitState(re, NULL, &scene->r, &scene->view_layers, NULL, winx, winy, &disprect);
+  re->scene = scene;
+
+  BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+  success = render_result_exr_file_cache_read(re);
+  BLI_rw_mutex_unlock(&re->resultmutex);
+
+  render_result_uncrop(re);
+
+  return success;
+}
+
+void RE_layer_load_from_file(
+    RenderLayer *layer, ReportList *reports, const char *filename, int x, int y)
+{
+  /* OCIO_TODO: assume layer was saved in default color space */
+  ImBuf *ibuf = IMB_loadiffname(filename, IB_rect, NULL);
+  RenderPass *rpass = NULL;
+
+  /* multiview: since the API takes no 'view', we use the first combined pass found */
+  for (rpass = layer->passes.first; rpass; rpass = rpass->next) {
+    if (STREQ(rpass->name, RE_PASSNAME_COMBINED)) {
+      break;
+    }
+  }
+
+  if (rpass == NULL) {
+    BKE_reportf(reports,
+                RPT_ERROR,
+                "%s: no Combined pass found in the render layer '%s'",
+                __func__,
+                filename);
+  }
+
+  if (ibuf && (ibuf->rect || ibuf->rect_float)) {
+    if (ibuf->x == layer->rectx && ibuf->y == layer->recty) {
+      if (ibuf->rect_float == NULL) {
+        IMB_float_from_rect(ibuf);
+      }
+
+      memcpy(rpass->rect, ibuf->rect_float, sizeof(float[4]) * layer->rectx * layer->recty);
+    }
+    else {
+      if ((ibuf->x - x >= layer->rectx) && (ibuf->y - y >= layer->recty)) {
+        ImBuf *ibuf_clip;
+
+        if (ibuf->rect_float == NULL) {
+          IMB_float_from_rect(ibuf);
+        }
+
+        ibuf_clip = IMB_allocImBuf(layer->rectx, layer->recty, 32, IB_rectfloat);
+        if (ibuf_clip) {
+          IMB_rectcpy(ibuf_clip, ibuf, 0, 0, x, y, layer->rectx, layer->recty);
+
+          memcpy(
+              rpass->rect, ibuf_clip->rect_float, sizeof(float[4]) * layer->rectx * layer->recty);
+          IMB_freeImBuf(ibuf_clip);
+        }
+        else {
+          BKE_reportf(
+              reports, RPT_ERROR, "%s: failed to allocate clip buffer '%s'", __func__, filename);
+        }
+      }
+      else {
+        BKE_reportf(reports,
+                    RPT_ERROR,
+                    "%s: incorrect dimensions for partial copy '%s'",
+                    __func__,
+                    filename);
+      }
+    }
+
+    IMB_freeImBuf(ibuf);
+  }
+  else {
+    BKE_reportf(reports, RPT_ERROR, "%s: failed to load '%s'", __func__, filename);
+  }
+}
+
+void RE_result_load_from_file(RenderResult *result, ReportList *reports, const char *filename)
+{
+  if (!render_result_exr_file_read_path(result, NULL, filename)) {
+    BKE_reportf(reports, RPT_ERROR, "%s: failed to load '%s'", __func__, filename);
+    return;
+  }
+}
+
+bool RE_layers_have_name(struct RenderResult *rr)
+{
+  switch (BLI_listbase_count_at_most(&rr->layers, 2)) {
+    case 0:
+      return false;
+    case 1:
+      return (((RenderLayer *)rr->layers.first)->name[0] != '\0');
+    default:
+      return true;
+  }
+  return false;
+}
+
+bool RE_passes_have_name(struct RenderLayer *rl)
+{
+  LISTBASE_FOREACH (RenderPass *, rp, &rl->passes) {
+    if (!STREQ(rp->name, "Combined")) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+RenderPass *RE_pass_find_by_name(RenderLayer *rl, const char *name, const char *viewname)
+{
+  RenderPass *rp = NULL;
+
+  for (rp = rl->passes.last; rp; rp = rp->prev) {
+    if (STREQ(rp->name, name)) {
+      if (viewname == NULL || viewname[0] == '\0') {
+        break;
+      }
+      if (STREQ(rp->view, viewname)) {
+        break;
+      }
+    }
+  }
+  return rp;
+}
+
+RenderPass *RE_pass_find_by_type(RenderLayer *rl, int passtype, const char *viewname)
+{
+#define CHECK_PASS(NAME) \
+  if (passtype == SCE_PASS_##NAME) { \
+    return RE_pass_find_by_name(rl, RE_PASSNAME_##NAME, viewname); \
+  } \
+  ((void)0)
+
+  CHECK_PASS(COMBINED);
+  CHECK_PASS(Z);
+  CHECK_PASS(VECTOR);
+  CHECK_PASS(NORMAL);
+  CHECK_PASS(UV);
+  CHECK_PASS(EMIT);
+  CHECK_PASS(SHADOW);
+  CHECK_PASS(AO);
+  CHECK_PASS(ENVIRONMENT);
+  CHECK_PASS(INDEXOB);
+  CHECK_PASS(INDEXMA);
+  CHECK_PASS(MIST);
+  CHECK_PASS(DIFFUSE_DIRECT);
+  CHECK_PASS(DIFFUSE_INDIRECT);
+  CHECK_PASS(DIFFUSE_COLOR);
+  CHECK_PASS(GLOSSY_DIRECT);
+  CHECK_PASS(GLOSSY_INDIRECT);
+  CHECK_PASS(GLOSSY_COLOR);
+  CHECK_PASS(TRANSM_DIRECT);
+  CHECK_PASS(TRANSM_INDIRECT);
+  CHECK_PASS(TRANSM_COLOR);
+  CHECK_PASS(SUBSURFACE_DIRECT);
+  CHECK_PASS(SUBSURFACE_INDIRECT);
+  CHECK_PASS(SUBSURFACE_COLOR);
+
+#undef CHECK_PASS
+
+  return NULL;
+}
+
+RenderPass *RE_create_gp_pass(RenderResult *rr, const char *layername, const char *viewname)
+{
+  RenderLayer *rl = BLI_findstring(&rr->layers, layername, offsetof(RenderLayer, name));
+  /* only create render layer if not exist */
+  if (!rl) {
+    rl = MEM_callocN(sizeof(RenderLayer), layername);
+    BLI_addtail(&rr->layers, rl);
+    BLI_strncpy(rl->name, layername, sizeof(rl->name));
+    rl->layflag = SCE_LAY_SOLID;
+    rl->passflag = SCE_PASS_COMBINED;
+    rl->rectx = rr->rectx;
+    rl->recty = rr->recty;
+  }
+
+  /* Clear previous pass if exist or the new image will be over previous one. */
+  RenderPass *rp = RE_pass_find_by_name(rl, RE_PASSNAME_COMBINED, viewname);
+  if (rp) {
+    if (rp->rect) {
+      MEM_freeN(rp->rect);
+    }
+    BLI_freelinkN(&rl->passes, rp);
+  }
+  /* create a totally new pass */
+  return render_layer_add_pass(rr, rl, 4, RE_PASSNAME_COMBINED, viewname, "RGBA", true);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Miscellaneous Public Render API
+ * \{ */
+
+bool RE_allow_render_generic_object(Object *ob)
+{
+  /* override not showing object when duplis are used with particles */
+  if (ob->transflag & OB_DUPLIPARTS) {
+    /* pass */ /* let particle system(s) handle showing vs. not showing */
+  }
+  else if (ob->transflag & OB_DUPLI) {
+    return false;
+  }
+  return true;
+}
+
+void RE_init_threadcount(Render *re)
+{
+  re->r.threads = BKE_render_num_threads(&re->r);
+}
 
