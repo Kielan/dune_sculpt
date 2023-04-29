@@ -22,17 +22,17 @@
 #include "dune_multires.h"
 #include "dune_subsurf.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
-#include "RE_multires_bake.h"
-#include "RE_pipeline.h"
-#include "RE_texture.h"
-#include "RE_texture_margin.h"
+#include "render_multires_bake.h"
+#include "render_pipeline.h"
+#include "render_texture.h"
+#include "render_texture_margin.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-typedef void (*MPassKnownData)(DerivedMesh *lores_dm,
+typedef void (*MeshPassKnownData)(DerivedMesh *lores_dm,
                                DerivedMesh *hires_dm,
                                void *thread_data,
                                void *bake_data,
@@ -44,19 +44,19 @@ typedef void (*MPassKnownData)(DerivedMesh *lores_dm,
                                const int x,
                                const int y);
 
-typedef void *(*MInitBakeData)(MultiresBakeRender *bkr, Image *ima);
-typedef void (*MFreeBakeData)(void *bake_data);
+typedef void *(*MeshInitBakeData)(MultiresBakeRender *bkr, Image *ima);
+typedef void (*MeshFreeBakeData)(void *bake_data);
 
 typedef struct MultiresBakeResult {
   float height_min, height_max;
 } MultiresBakeResult;
 
 typedef struct {
-  MVert *mvert;
+  MeshVert *mvert;
   const float (*vert_normals)[3];
-  MPoly *mpoly;
-  MLoop *mloop;
-  MLoopUV *mloopuv;
+  MeshPoly *mpoly;
+  MeshLoop *mloop;
+  MeshLoopUV *mloopuv;
   const MLoopTri *mlooptri;
   float *pvtangent;
   const float (*precomputed_normals)[3];
@@ -67,12 +67,12 @@ typedef struct {
   void *thread_data;
   void *bake_data;
   ImBuf *ibuf;
-  MPassKnownData pass_data;
+  MeshPassKnownData pass_data;
   /* material aligned UV array */
   Image **image_array;
-} MResolvePixelData;
+} MeshResolvePixelData;
 
-typedef void (*MFlushPixel)(const MResolvePixelData *data, const int x, const int y);
+typedef void (*MeshFlushPixel)(const MResolvePixelData *data, const int x, const int y);
 
 typedef struct {
   int w, h;
