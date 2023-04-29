@@ -65,22 +65,22 @@
 #include "IMB_metadata.h"
 #include "PIL_time.h"
 
-#include "RE_engine.h"
-#include "RE_pipeline.h"
-#include "RE_texture.h"
+#include "render_engine.h"
+#include "render_pipeline.h"
+#include "render_texture.h"
 
 #include "SEQ_relations.h"
 #include "SEQ_render.h"
 
-#include "../../windowmanager/WM_api.h"    /* XXX */
+#include "../../windowmanager/wm_api.h"    /* XXX */
 #include "../../windowmanager/wm_window.h" /* XXX */
-#include "GPU_context.h"
+#include "gpu_context.h"
 
 #ifdef WITH_FREESTYLE
 #  include "FRS_freestyle.h"
 #endif
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
 /* internal */
 #include "pipeline.h"
@@ -112,29 +112,25 @@
  */
 
 /* -------------------------------------------------------------------- */
-/** \name Globals
- * \{ */
+/** Globals */
 
 /* here we store all renders */
 static struct {
   ListBase renderlist;
 } RenderGlobal = {{NULL, NULL}};
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Callbacks
- * \{ */
+/** Callbacks **/
 
-static void render_callback_exec_null(Render *re, Main *bmain, eCbEvent evt)
+static void render_cb_ex_null(Render *re, Main *main, eCbEvent evt)
 {
   if (re->r.scemode & R_BUTS_PREVIEW) {
     return;
   }
-  BKE_callback_exec_null(bmain, evt);
+  dune_cb_ex_null(main, evt);
 }
 
-static void render_callback_exec_id(Render *re, Main *bmain, ID *id, eCbEvent evt)
+static void render_cb_ex_id(Render *re, Main *bmain, ID *id, eCbEvent evt)
 {
   if (re->r.scemode & R_BUTS_PREVIEW) {
     return;
@@ -142,11 +138,8 @@ static void render_callback_exec_id(Render *re, Main *bmain, ID *id, eCbEvent ev
   BKE_callback_exec_id(bmain, id, evt);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Allocation & Free
- * \{ */
+/** Allocation & Free */
 
 static int do_write_image_or_movie(Render *re,
                                    Main *bmain,
