@@ -576,25 +576,25 @@ static void generate_margin(ImBuf *ibuf,
    */
   IMB_filter_extend(ibuf, mask, margin);
 
-  MEM_freeN(mask);
+  mem_freen(mask);
 
   if (looptri_mem) {
-    MEM_freeN(looptri_mem);
+    mem_freen(looptri_mem);
   }
 }
 
-}  // namespace blender::render::texturemargin
+}  // namespace dune::render::texturemargin
 
-void RE_generate_texturemargin_adjacentfaces(
+void render_generate_texturemargin_adjacentfaces(
     ImBuf *ibuf, char *mask, const int margin, const Mesh *me, char const *uv_layer)
 {
-  blender::render::texturemargin::generate_margin(ibuf, mask, margin, me, nullptr, uv_layer);
+  dune::render::texturemargin::generate_margin(ibuf, mask, margin, me, nullptr, uv_layer);
 }
 
-void RE_generate_texturemargin_adjacentfaces_dm(ImBuf *ibuf,
+void render_generate_texturemargin_adjacentfaces_dm(ImBuf *ibuf,
                                                 char *mask,
                                                 const int margin,
                                                 DerivedMesh *dm)
 {
-  blender::render::texturemargin::generate_margin(ibuf, mask, margin, nullptr, dm, nullptr);
+  dune::render::texturemargin::generate_margin(ibuf, mask, margin, nullptr, dm, nullptr);
 }
