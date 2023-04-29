@@ -159,21 +159,21 @@ static int clouds(const Tex *tex, const float texvec[3], TexResult *texres)
 
   if (texres->nor != NULL) {
     /* calculate bumpnormal */
-    texres->nor[0] = BLI_noise_generic_turbulence(tex->noisesize,
+    texres->nor[0] = lib_noise_generic_turbulence(tex->noisesize,
                                                   texvec[0] + tex->nabla,
                                                   texvec[1],
                                                   texvec[2],
                                                   tex->noisedepth,
                                                   (tex->noisetype != TEX_NOISESOFT),
                                                   tex->noisebasis);
-    texres->nor[1] = BLI_noise_generic_turbulence(tex->noisesize,
+    texres->nor[1] = lib_noise_generic_turbulence(tex->noisesize,
                                                   texvec[0],
                                                   texvec[1] + tex->nabla,
                                                   texvec[2],
                                                   tex->noisedepth,
                                                   (tex->noisetype != TEX_NOISESOFT),
                                                   tex->noisebasis);
-    texres->nor[2] = BLI_noise_generic_turbulence(tex->noisesize,
+    texres->nor[2] = lib_noise_generic_turbulence(tex->noisesize,
                                                   texvec[0],
                                                   texvec[1],
                                                   texvec[2] + tex->nabla,
@@ -189,14 +189,14 @@ static int clouds(const Tex *tex, const float texvec[3], TexResult *texres)
     /* in this case, int. value should really be computed from color,
      * and bumpnormal from that, would be too slow, looks ok as is */
     texres->trgba[0] = texres->tin;
-    texres->trgba[1] = BLI_noise_generic_turbulence(tex->noisesize,
+    texres->trgba[1] = lib_noise_generic_turbulence(tex->noisesize,
                                                     texvec[1],
                                                     texvec[0],
                                                     texvec[2],
                                                     tex->noisedepth,
                                                     (tex->noisetype != TEX_NOISESOFT),
                                                     tex->noisebasis);
-    texres->trgba[2] = BLI_noise_generic_turbulence(tex->noisesize,
+    texres->trgba[2] = lib_noise_generic_turbulence(tex->noisesize,
                                                     texvec[1],
                                                     texvec[2],
                                                     texvec[0],
