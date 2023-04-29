@@ -635,20 +635,20 @@ static void *ml_addview_cb(void *base, const char *str)
    * STEREO_RIGHT_NAME == STEREO_RIGHT_ID */
 
   if (STREQ(str, STEREO_LEFT_NAME)) {
-    BLI_addhead(&rr->views, rv);
+    lib_addhead(&rr->views, rv);
   }
   else if (STREQ(str, STEREO_RIGHT_NAME)) {
-    RenderView *left_rv = BLI_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name));
+    RenderView *left_rv = lib_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name));
 
     if (left_rv == NULL) {
-      BLI_addhead(&rr->views, rv);
+      lib_addhead(&rr->views, rv);
     }
     else {
-      BLI_insertlinkafter(&rr->views, left_rv, rv);
+      lib_insertlinkafter(&rr->views, left_rv, rv);
     }
   }
   else {
-    BLI_addtail(&rr->views, rv);
+    lib_addtail(&rr->views, rv);
   }
 
   return rv;
@@ -712,7 +712,7 @@ static int order_render_passes(const void *a, const void *b)
 RenderResult *render_result_new_from_exr(
     void *exrhandle, const char *colorspace, bool predivide, int rectx, int recty)
 {
-  RenderResult *rr = MEM_callocN(sizeof(RenderResult), __func__);
+  RenderResult *rr = mem_callocn(sizeof(RenderResult), __func__);
   RenderLayer *rl;
   RenderPass *rpass;
   const char *to_colorspace = IMB_colormanagement_role_colorspace_name_get(
