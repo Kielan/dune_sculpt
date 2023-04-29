@@ -813,7 +813,7 @@ static int texnoise(const Tex *tex, TexResult *texres, int thread)
   float div = 3.0;
   int val, ran, loop, shift = 29;
 
-  ran = BLI_rng_thread_rand(random_tex_array, thread);
+  ran = lib_rng_thread_rand(random_tex_array, thread);
 
   loop = tex->noisedepth;
 
@@ -1299,19 +1299,19 @@ static int multitex_nodes_intern(Tex *tex,
                         use_nodes);
 
       if (mtex->mapto & MAP_COL) {
-        ImBuf *ibuf = BKE_image_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
+        ImBuf *ibuf = dune_image_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
 
         /* don't linearize float buffers, assumed to be linear */
         if (ibuf != NULL && ibuf->rect_float == NULL && (rgbnor & TEX_RGB) && scene_color_manage) {
           IMB_colormanagement_colorspace_to_scene_linear_v3(texres->trgba, ibuf->rect_colorspace);
         }
 
-        BKE_image_pool_release_ibuf(tex->ima, ibuf, pool);
+        dune_image_pool_release_ibuf(tex->ima, ibuf, pool);
       }
     }
     else {
       /* we don't have mtex, do default flat 2d projection */
-      MTex localmtex;
+      MeshTex localmtex;
       float texvec_l[3], dxt_l[3], dyt_l[3];
 
       localmtex.mapping = MTEX_FLAT;
@@ -1344,14 +1344,14 @@ static int multitex_nodes_intern(Tex *tex,
                         use_nodes);
 
       {
-        ImBuf *ibuf = BKE_image_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
+        ImBuf *ibuf = dune_image_pool_acquire_ibuf(tex->ima, &tex->iuser, pool);
 
         /* don't linearize float buffers, assumed to be linear */
         if (ibuf != NULL && ibuf->rect_float == NULL && (rgbnor & TEX_RGB) && scene_color_manage) {
           IMB_colormanagement_colorspace_to_scene_linear_v3(texres->trgba, ibuf->rect_colorspace);
         }
 
-        BKE_image_pool_release_ibuf(tex->ima, ibuf, pool);
+        dune_image_pool_release_ibuf(tex->ima, ibuf, pool);
       }
     }
 
@@ -1380,7 +1380,7 @@ int multitex_nodes(Tex *tex,
                    TexResult *texres,
                    const short thread,
                    short which_output,
-                   MTex *mtex,
+                   MeshTex *mtex,
                    struct ImagePool *pool)
 {
   return multitex_nodes_intern(tex,
@@ -1679,15 +1679,15 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
 
 /* ------------------------------------------------------------------------- */
 
-bool RE_texture_evaluate(const MTex *mtex,
-                         const float vec[3],
-                         const int thread,
-                         struct ImagePool *pool,
-                         const bool skip_load_image,
-                         const bool texnode_preview,
-                         /* Return arguments. */
-                         float *r_intensity,
-                         float r_rgba[4])
+bool render_texture_evaluate(const MeshTex *mtex,
+                             const float vec[3],
+                             const int thread,
+                             struct ImagePool *pool,
+                             const bool skip_load_image,
+                             const bool texnode_preview,
+                             /* Return arguments. */
+                             float *r_intensity,
+                             float r_rgba[4])
 {
   Tex *tex;
   TexResult texr;
