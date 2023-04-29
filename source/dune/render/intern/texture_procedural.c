@@ -467,13 +467,13 @@ static int stucci(const Tex *tex, const float texvec[3], TexResult *texres)
                                    texvec[2],
                                    (tex->noisetype != TEX_NOISESOFT),
                                    tex->noisebasis);
-  nor[1] = BLI_noise_generic_noise(tex->noisesize,
+  nor[1] = lib_noise_generic_noise(tex->noisesize,
                                    texvec[0],
                                    texvec[1] + ofs,
                                    texvec[2],
                                    (tex->noisetype != TEX_NOISESOFT),
                                    tex->noisebasis);
-  nor[2] = BLI_noise_generic_noise(tex->noisesize,
+  nor[2] = lib_noise_generic_noise(tex->noisesize,
                                    texvec[0],
                                    texvec[1],
                                    texvec[2] + ofs,
@@ -516,10 +516,10 @@ static int mg_mFractalOrfBmTex(const Tex *tex, const float texvec[3], TexResult 
   float (*mgravefunc)(float, float, float, float, float, float, int);
 
   if (tex->stype == TEX_MFRACTAL) {
-    mgravefunc = BLI_noise_mg_multi_fractal;
+    mgravefunc = lib_noise_mg_multi_fractal;
   }
   else {
-    mgravefunc = BLI_noise_mg_fbm;
+    mgravefunc = lib_noise_mg_fbm;
   }
 
   texres->tin = tex->ns_outscale * mgravefunc(texvec[0],
