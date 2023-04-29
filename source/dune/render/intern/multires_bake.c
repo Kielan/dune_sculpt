@@ -77,21 +77,21 @@ typedef void (*MeshFlushPixel)(const MResolvePixelData *data, const int x, const
 typedef struct {
   int w, h;
   char *texels;
-  const MResolvePixelData *data;
-  MFlushPixel flush_pixel;
+  const MeshResolvePixelData *data;
+  MeshFlushPixel flush_pixel;
   short *do_update;
-} MBakeRast;
+} MeshBakeRast;
 
 typedef struct {
   float *heights;
   Image *ima;
   DerivedMesh *ssdm;
   const int *orig_index_mp_to_orig;
-} MHeightBakeData;
+} MeshHeightBakeData;
 
 typedef struct {
   const int *orig_index_mp_to_orig;
-} MNormalBakeData;
+} MeshNormalBakeData;
 
 typedef struct BakeImBufuserData {
   float *displacement_buffer;
