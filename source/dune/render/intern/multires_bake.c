@@ -1130,13 +1130,13 @@ static void free_ao_data(void *bake_data)
 {
   MAOBakeData *ao_data = (MAOBakeData *)bake_data;
 
-  RE_rayobject_free(ao_data->raytree);
-  MEM_freeN(ao_data->rayfaces);
+  reder_rayobject_free(ao_data->raytree);
+  mem_freen(ao_data->rayfaces);
 
-  MEM_freeN(ao_data->permutation_table_1);
-  MEM_freeN(ao_data->permutation_table_2);
+  mem_freen(ao_data->permutation_table_1);
+  mem_freen(ao_data->permutation_table_2);
 
-  MEM_freeN(ao_data);
+  mem_freen(ao_data);
 }
 
 /* builds an X and a Y axis from the given Z axis */
@@ -1174,7 +1174,7 @@ static int trace_ao_ray(MAOBakeData *ao_data, float ray_start[3], float ray_dire
 {
   Isect isect = {{0}};
 
-  isect.dist = RE_RAYTRACE_MAXDIST;
+  isect.dist = RENDER_RAYTRACE_MAXDIST;
   copy_v3_v3(isect.start, ray_start);
   copy_v3_v3(isect.dir, ray_direction);
   isect.lay = -1;
@@ -1196,9 +1196,9 @@ static void apply_ao_callback(DerivedMesh *lores_dm,
                               const int x,
                               const int y)
 {
-  const MLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
-  MPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
-  MLoopUV *mloopuv = lores_dm->getLoopDataArray(lores_dm, CD_MLOOPUV);
+  const MeshLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
+  MeshPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
+  MeshLoopUV *mloopuv = lores_dm->getLoopDataArray(lores_dm, CD_MLOOPUV);
   MAOBakeData *ao_data = (MAOBakeData *)bake_data;
 
   int i, k, perm_ofs;
