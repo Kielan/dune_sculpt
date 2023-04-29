@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_ghash.h"
-#include "BLI_hash_md5.h"
+#include "lib_ghash.h"
+#include "lib_hash_md5.h"
 #include "BLI_listbase.h"
 #include "BLI_path_util.h"
 #include "BLI_rect.h"
