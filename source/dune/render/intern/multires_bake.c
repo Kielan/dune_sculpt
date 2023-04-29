@@ -898,10 +898,10 @@ static void apply_heights_callback(DerivedMesh *lores_dm,
 
 static void *init_normal_data(MultiresBakeRender *bkr, Image *UNUSED(ima))
 {
-  MNormalBakeData *normal_data;
+  MeshNormalBakeData *normal_data;
   DerivedMesh *lodm = bkr->lores_dm;
 
-  normal_data = MEM_callocN(sizeof(MNormalBakeData), "MultiresBake normalData");
+  normal_data = mem_callocn(sizeof(MeshNormalBakeData), "MultiresBake normalData");
 
   normal_data->orig_index_mp_to_orig = lodm->getPolyDataArray(lodm, CD_ORIGINDEX);
 
@@ -910,9 +910,9 @@ static void *init_normal_data(MultiresBakeRender *bkr, Image *UNUSED(ima))
 
 static void free_normal_data(void *bake_data)
 {
-  MNormalBakeData *normal_data = (MNormalBakeData *)bake_data;
+  MeshNormalBakeData *normal_data = (MeshNormalBakeData *)bake_data;
 
-  MEM_freeN(normal_data);
+  mem_freen(normal_data);
 }
 
 /**
@@ -923,22 +923,22 @@ static void free_normal_data(void *bake_data)
  * - Multiply it by tangmat.
  * - Vector in color space would be `norm(vec) / 2 + (0.5, 0.5, 0.5)`.
  */
-static void apply_tangmat_callback(DerivedMesh *lores_dm,
-                                   DerivedMesh *hires_dm,
-                                   void *UNUSED(thread_data),
-                                   void *bake_data,
-                                   ImBuf *ibuf,
-                                   const int tri_index,
-                                   const int lvl,
-                                   const float st[2],
-                                   float tangmat[3][3],
-                                   const int x,
-                                   const int y)
+static void apply_tangmat_cb(DerivedMesh *lores_dm,
+                             DerivedMesh *hires_dm,
+                             void *UNUSED(thread_data),
+                             void *bake_data,
+                             ImBuf *ibuf,
+                             const int tri_index,
+                             const int lvl,
+                             const float st[2],
+                             float tangmat[3][3],
+                             const int x,
+                             const int y)
 {
-  const MLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
-  MPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
-  MLoopUV *mloopuv = lores_dm->getLoopDataArray(lores_dm, CD_MLOOPUV);
-  MNormalBakeData *normal_data = (MNormalBakeData *)bake_data;
+  const MeshLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
+  MeshPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
+  MeshLoopUV *mloopuv = lores_dm->getLoopDataArray(lores_dm, CD_MLOOPUV);
+  MNormalBakeData *normal_data = (MeshNormalBakeData *)bake_data;
   float uv[2], *st0, *st1, *st2, *st3;
   int pixel = ibuf->x * y + x;
   float n[3], vec[3], tmp[3] = {0.5, 0.5, 0.5};
