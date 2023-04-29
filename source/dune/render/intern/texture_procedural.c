@@ -20,21 +20,20 @@
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf_types.h"
 
-#include "BKE_colorband.h"
-#include "BKE_image.h"
-#include "BKE_material.h"
-#include "BKE_node.h"
-#include "BKE_scene.h"
-#include "BKE_texture.h"
+#include "dune_colorband.h"
+#include "dune_image.h"
+#include "dune_material.h"
+#include "dune_node.h"
+#include "dune_scene.h"
+#include "dune_texture.h"
 
 #include "NOD_texture.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "render_types.h"
 #include "texture_common.h"
-
-#include "RE_texture.h"
+#include "render_texture.h"
 
 static RNG_THREAD_ARRAY *random_tex_array;
 
