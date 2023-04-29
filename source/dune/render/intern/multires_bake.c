@@ -1181,7 +1181,7 @@ static int trace_ao_ray(MAOBakeData *ao_data, float ray_start[3], float ray_dire
 
   normalize_v3(isect.dir);
 
-  return RE_rayobject_raycast(ao_data->raytree, &isect);
+  return render_rayobject_raycast(ao_data->raytree, &isect);
 }
 
 static void apply_ao_callback(DerivedMesh *lores_dm,
@@ -1315,7 +1315,7 @@ static void bake_ibuf_filter(
   if (margin) {
     switch (margin_type) {
       case R_BAKE_ADJACENT_FACES:
-        RE_generate_texturemargin_adjacentfaces_dm(ibuf, mask, margin, dm);
+        render_generate_texturemargin_adjacentfaces_dm(ibuf, mask, margin, dm);
         break;
       default:
       /* fall through */
@@ -1384,7 +1384,7 @@ static void bake_ibuf_normalize_displacement(ImBuf *ibuf,
 
 static void count_images(MultiresBakeRender *bkr)
 {
-  BLI_listbase_clear(&bkr->image);
+  lib_listbase_clear(&bkr->image);
   bkr->tot_image = 0;
 
   for (int i = 0; i < bkr->ob_image.len; i++) {
@@ -1398,8 +1398,8 @@ static void count_images(MultiresBakeRender *bkr)
     Image *ima = bkr->ob_image.array[i];
     if (ima) {
       if ((ima->id.tag & LIB_TAG_DOIT) == 0) {
-        LinkData *data = BLI_genericNodeN(ima);
-        BLI_addtail(&bkr->image, data);
+        LinkData *data = lib_genericNodeN(ima);
+        lib_addtail(&bkr->image, data);
         bkr->tot_image++;
         ima->id.tag |= LIB_TAG_DOIT;
       }
