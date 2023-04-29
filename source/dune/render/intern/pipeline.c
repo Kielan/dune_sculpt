@@ -144,7 +144,7 @@ static void render_cb_ex_id(Render *re, Main *bmain, ID *id, eCbEvent evt)
 static int do_write_image_or_movie(Render *re,
                                    Main *bmain,
                                    Scene *scene,
-                                   bMovieHandle *mh,
+                                   MovieHandle *mh,
                                    const int totvideos,
                                    const char *name_override);
 
@@ -181,8 +181,8 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
   float megs_used_memory, megs_peak_memory;
   char info_time_str[32];
 
-  mem_in_use = MEM_get_memory_in_use();
-  peak_memory = MEM_get_peak_memory();
+  mem_in_use = mem_get_memory_in_use();
+  peak_memory = mem_get_peak_memory();
 
   megs_used_memory = (mem_in_use) / (1024.0 * 1024.0);
   megs_peak_memory = (peak_memory) / (1024.0 * 1024.0);
@@ -193,7 +193,7 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
           megs_used_memory,
           megs_peak_memory);
 
-  BLI_timecode_string_from_time_simple(
+  lib_timecode_string_from_time_simple(
       info_time_str, sizeof(info_time_str), PIL_check_seconds_timer() - rs->starttime);
   fprintf(stdout, TIP_("| Time:%s | "), info_time_str);
 
@@ -204,38 +204,38 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
 
   /* NOTE: using G_MAIN seems valid here???
    * Not sure it's actually even used anyway, we could as well pass NULL? */
-  BKE_callback_exec_null(G_MAIN, BKE_CB_EVT_RENDER_STATS);
+  dune_cb_ex_null(G_MAIN, BKE_CB_EVT_RENDER_STATS);
 
   fputc('\n', stdout);
   fflush(stdout);
 }
 
-void RE_FreeRenderResult(RenderResult *rr)
+void render_FreeRenderResult(RenderResult *rr)
 {
   render_result_free(rr);
 }
 
-float *RE_RenderLayerGetPass(RenderLayer *rl, const char *name, const char *viewname)
+float *render_RenderLayerGetPass(RenderLayer *rl, const char *name, const char *viewname)
 {
-  RenderPass *rpass = RE_pass_find_by_name(rl, name, viewname);
+  RenderPass *rpass = render_pass_find_by_name(rl, name, viewname);
   return rpass ? rpass->rect : NULL;
 }
 
-RenderLayer *RE_GetRenderLayer(RenderResult *rr, const char *name)
+RenderLayer *render_GetRenderLayer(RenderResult *rr, const char *name)
 {
   if (rr == NULL) {
     return NULL;
   }
 
-  return BLI_findstring(&rr->layers, name, offsetof(RenderLayer, name));
+  return lib_findstring(&rr->layers, name, offsetof(RenderLayer, name));
 }
 
-bool RE_HasSingleLayer(Render *re)
+bool render_HasSingleLayer(Render *re)
 {
   return (re->r.scemode & R_SINGLE_LAYER);
 }
 
-RenderResult *RE_MultilayerConvert(
+RenderResult *render_MultilayerConvert(
     void *exrhandle, const char *colorspace, bool predivide, int rectx, int recty)
 {
   return render_result_new_from_exr(exrhandle, colorspace, predivide, rectx, recty);
@@ -243,10 +243,10 @@ RenderResult *RE_MultilayerConvert(
 
 RenderLayer *render_get_active_layer(Render *re, RenderResult *rr)
 {
-  ViewLayer *view_layer = BLI_findlink(&re->view_layers, re->active_view_layer);
+  ViewLayer *view_layer = lib_findlink(&re->view_layers, re->active_view_layer);
 
   if (view_layer) {
-    RenderLayer *rl = BLI_findstring(&rr->layers, view_layer->name, offsetof(RenderLayer, name));
+    RenderLayer *rl = lib_findstring(&rr->layers, view_layer->name, offsetof(RenderLayer, name));
 
     if (rl) {
       return rl;
@@ -271,13 +271,10 @@ static bool render_scene_has_layers_to_render(Scene *scene, ViewLayer *single_la
   return false;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Public Render API
- * \{ */
+/** Public Render API **/
 
-Render *RE_GetRender(const char *name)
+Render *render_GetRender(const char *name)
 {
   Render *re;
 
@@ -291,10 +288,10 @@ Render *RE_GetRender(const char *name)
   return re;
 }
 
-RenderResult *RE_AcquireResultRead(Render *re)
+RenderResult *render_AcquireResultRead(Render *re)
 {
   if (re) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
     return re->result;
   }
 
