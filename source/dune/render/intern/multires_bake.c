@@ -104,7 +104,7 @@ static void multiresbake_get_normal(const MResolvePixelData *data,
                                     float r_normal[3])
 {
   const int poly_index = data->mlooptri[tri_num].poly;
-  const MPoly *mp = &data->mpoly[poly_index];
+  const MeshPoly *mp = &data->mpoly[poly_index];
   const bool smoothnormal = (mp->flag & ME_SMOOTH) != 0;
 
   if (smoothnormal) {
@@ -116,15 +116,15 @@ static void multiresbake_get_normal(const MResolvePixelData *data,
       copy_v3_v3(r_normal, data->precomputed_normals[poly_index]);
     }
     else {
-      BKE_mesh_calc_poly_normal(mp, &data->mloop[mp->loopstart], data->mvert, r_normal);
+      dune_mesh_calc_poly_normal(mp, &data->mloop[mp->loopstart], data->mvert, r_normal);
     }
   }
 }
 
-static void init_bake_rast(MBakeRast *bake_rast,
+static void init_bake_rast(MeshBakeRast *bake_rast,
                            const ImBuf *ibuf,
                            const MResolvePixelData *data,
-                           MFlushPixel flush_pixel,
+                           MeshFlushPixel flush_pixel,
                            short *do_update)
 {
   BakeImBufuserData *userdata = (BakeImBufuserData *)ibuf->userdata;
