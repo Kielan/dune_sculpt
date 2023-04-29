@@ -3,19 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_math.h"
-#include "BLI_noise.h"
-#include "BLI_rand.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_noise.h"
+#include "lib_rand.h"
+#include "lib_utildefines.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_image_types.h"
-#include "DNA_light_types.h"
-#include "DNA_material_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_texture_types.h"
+#include "types_anim.h"
+#include "types_image.h"
+#include "types_light.h"
+#include "types_material.h"
+#include "types_meshdata.h"
+#include "types_node.h"
+#include "types_objects.h"
+#include "types_texture.h"
 
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf_types.h"
