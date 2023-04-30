@@ -663,7 +663,7 @@ static bool engine_keep_graph(RenderEngine *engine)
 /* Depsgraph */
 static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
 {
-  Main *bmain = engine->re->main;
+  Main *main = engine->re->main;
   Scene *scene = engine->re->scene;
   bool reuse_graph = false;
 
@@ -705,52 +705,52 @@ static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
       draw_render_ctx_enable(engine->re);
     }
 
-    DEG_evaluate_on_framechange(depsgraph, BKE_scene_frame_get(scene));
+    graph_evaluate_on_framechange(depsgraph, BKE_scene_frame_get(scene));
 
-    if (use_gpu_context) {
-      DRW_render_context_disable(engine->re);
+    if (use_gpu_ctx) {
+      draw_render_ctx_disable(engine->re);
     }
   }
   else {
     /* Go through update with full Python callbacks for regular render. */
-    BKE_scene_graph_update_for_newframe_ex(engine->depsgraph, false);
+    dune_scene_graph_update_for_newframe_ex(engine->graph, false);
   }
 
-  engine->has_grease_pencil = DRW_render_check_grease_pencil(engine->depsgraph);
+  engine->has_pen = draw_render_check_grease_pencil(engine->graph);
 }
 
-static void engine_depsgraph_exit(RenderEngine *engine)
+static void engine_graph_exit(RenderEngine *engine)
 {
-  if (engine->depsgraph) {
-    if (engine_keep_depsgraph(engine)) {
+  if (engine->graph) {
+    if (engine_keep_graph(engine)) {
       /* Clear recalc flags since the engine should have handled the updates for the currently
        * rendered framed by now. */
-      DEG_ids_clear_recalc(engine->depsgraph, false);
+      graph_ids_clear_recalc(engine->graph, false);
     }
     else {
       /* Free immediately to save memory. */
-      engine_depsgraph_free(engine);
+      engine_graph_free(engine);
     }
   }
 }
 
-void RE_engine_frame_set(RenderEngine *engine, int frame, float subframe)
+void render_engine_frame_set(RenderEngine *engine, int frame, float subframe)
 {
-  if (!engine->depsgraph) {
+  if (!engine->graph) {
     return;
   }
 
   /* Clear recalc flags before update so engine can detect what changed. */
-  DEG_ids_clear_recalc(engine->depsgraph, false);
+  graph_ids_clear_recalc(engine->depsgraph, false);
 
   Render *re = engine->re;
   double cfra = (double)frame + (double)subframe;
 
   CLAMP(cfra, MINAFRAME, MAXFRAME);
-  BKE_scene_frame_set(re->scene, cfra);
-  BKE_scene_graph_update_for_newframe_ex(engine->depsgraph, false);
+  dune_scene_frame_set(re->scene, cfra);
+  dune_scene_graph_update_for_newframe_ex(engine->depsgraph, false);
 
-  BKE_scene_camera_switch_update(re->scene);
+  dune_scene_camera_switch_update(re->scene);
 }
 
 /* Bake */
