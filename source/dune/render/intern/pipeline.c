@@ -16,7 +16,7 @@
 #include "types_space.h"
 #include "types_userdef.h"
 
-#include "msm_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "lib_fileops.h"
 #include "lib_listbase.h"
