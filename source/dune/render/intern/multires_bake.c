@@ -350,8 +350,7 @@ static int multires_bake_queue_next_tri(MultiresBakeQueue *queue)
   int face = -1;
 
   /* TODO: it could worth making it so thread will handle neighbor faces
-   *       for better memory cache utilization
-   */
+   *       for better memory cache utilization **/
 
   lib_spin_lock(&queue->spin);
   if (queue->cur_tri < queue->tot_tri) {
