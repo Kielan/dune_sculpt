@@ -120,7 +120,7 @@ static void store_bake_pixel(void *handle, int x, int y, float u, float v)
   pixel->seed = i;
 }
 
-void RE_bake_mask_fill(const BakePixel pixel_array[], const size_t num_pixels, char *mask)
+void render_bake_mask_fill(const BakePixel pixel_array[], const size_t num_pixels, char *mask)
 {
   size_t i;
   if (!mask) {
@@ -135,7 +135,7 @@ void RE_bake_mask_fill(const BakePixel pixel_array[], const size_t num_pixels, c
   }
 }
 
-void RE_bake_margin(ImBuf *ibuf,
+void render_bake_margin(ImBuf *ibuf,
                     char *mask,
                     const int margin,
                     const char margin_type,
@@ -435,7 +435,7 @@ static bool cast_ray_highpoly(BVHTreeFromMesh *treeData,
     pixel_array[pixel_id].seed = 0;
   }
 
-  MEM_freeN(hits);
+  mem_freen(hits);
   return hit_mesh != -1;
 }
 
@@ -446,12 +446,12 @@ static bool cast_ray_highpoly(BVHTreeFromMesh *treeData,
 static TriTessFace *mesh_calc_tri_tessface(Mesh *me, bool tangent, Mesh *me_eval)
 {
   int i;
-  MVert *mvert;
+  MeshVert *mvert;
   TSpace *tspace = NULL;
   float(*loop_normals)[3] = NULL;
 
   const int tottri = poly_to_tri_count(me->totpoly, me->totloop);
-  MLoopTri *looptri;
+  MeshLoopTri *looptri;
   TriTessFace *triangles;
 
   /* calculate normal for each polygon only once */
