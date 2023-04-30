@@ -834,8 +834,8 @@ void render_display_clear_cb(Render *re, void *handle, void (*f)(void *handle, R
   re->dch = handle;
 }
 void render_display_update_cb(Render *re,
-                          void *handle,
-                          void (*f)(void *handle, RenderResult *rr, rcti *rect))
+                              void *handle,
+                              void (*f)(void *handle, RenderResult *rr, rcti *rect))
 {
   re->display_update = f;
   re->duh = handle;
@@ -871,7 +871,7 @@ void render_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
 /* -------------------------------------------------------------------- */
 /** OpenGL Context **/
 
-void RE_gl_context_create(Render *re)
+void render_gl_ctx_create(Render *re)
 {
   /* Needs to be created in the main ogl thread. */
   re->gl_context = WM_opengl_context_create();
@@ -879,46 +879,44 @@ void RE_gl_context_create(Render *re)
   wm_window_reset_drawable();
 }
 
-void RE_gl_context_destroy(Render *re)
+void render_gl_ctx_destroy(Render *re)
 {
   /* Needs to be called from the thread which used the ogl context for rendering. */
-  if (re->gl_context) {
-    if (re->gpu_context) {
-      WM_opengl_context_activate(re->gl_context);
-      GPU_context_active_set(re->gpu_context);
-      GPU_context_discard(re->gpu_context);
-      re->gpu_context = NULL;
+  if (re->gl_ctx) {
+    if (re->gpu_ctx) {
+      wm_opengl_context_activate(re->gl_ctx);
+      gpu_ctx_active_set(re->gpu_ctx);
+      gpu_ctx_discard(re->gpu_ctx);
+      re->gpu_ctx = NULL;
     }
 
-    WM_opengl_context_dispose(re->gl_context);
-    re->gl_context = NULL;
+    wm_opengl_ctx_dispose(re->gl_ctx);
+    re->gl_ctx = NULL;
   }
 }
 
-void *RE_gl_context_get(Render *re)
+void *render_gl_ctx_get(Render *re)
 {
-  return re->gl_context;
+  return re->gl_ctx;
 }
 
-void *RE_gpu_context_get(Render *re)
+void *render_gpu_ctx_get(Render *re)
 {
-  if (re->gpu_context == NULL) {
-    re->gpu_context = GPU_context_create(NULL);
+  if (re->gpu_ctx == NULL) {
+    re->gpu_ctx = gpu_ctx_create(NULL);
   }
-  return re->gpu_context;
+  return re->gpu_ctx;
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Render & Composite Scenes (Implementation & Public API)
+/** Render & Composite Scenes (Implementation & Public API)
  *
  * Main high-level functions defined here are:
- * - #RE_RenderFrame
- * - #RE_RenderAnim
- * \{ */
+ * - render_RenderFrame
+ * - render_RenderAnim
+ **/
 
-/* ************  This part uses API, for rendering Blender scenes ********** */
+/* ************  This part uses API, for rendering Dune scenes ********** */
 
 /* make sure disprect is not affected by the render border */
 static void render_result_disprect_to_full_resolution(Render *re)
@@ -942,7 +940,7 @@ static void render_result_uncrop(Render *re)
       const rcti orig_disprect = re->disprect;
       const int orig_rectx = re->rectx, orig_recty = re->recty;
 
-      BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+      lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
       /* sub-rect for merge call later on */
       re->result->tilerect = re->disprect;
@@ -951,7 +949,7 @@ static void render_result_uncrop(Render *re)
       render_result_disprect_to_full_resolution(re);
 
       rres = render_result_new(re, &re->disprect, RR_ALL_LAYERS, RR_ALL_VIEWS);
-      rres->stamp_data = BKE_stamp_data_copy(re->result->stamp_data);
+      rres->stamp_data = dune_stamp_data_copy(re->result->stamp_data);
 
       render_result_clone_passes(re, rres, NULL);
       render_result_passes_allocated_ensure(rres);
@@ -963,7 +961,7 @@ static void render_result_uncrop(Render *re)
       /* weak... the display callback wants an active renderlayer pointer... */
       re->result->renlay = render_get_active_layer(re, re->result);
 
-      BLI_rw_mutex_unlock(&re->resultmutex);
+      lib_rw_mutex_unlock(&re->resultmutex);
 
       re->display_init(re->dih, re->result);
       re->display_update(re->duh, re->result, NULL);
@@ -984,19 +982,19 @@ static void render_result_uncrop(Render *re)
 /* Render scene into render result, with a render engine. */
 static void do_render_engine(Render *re)
 {
-  Object *camera = RE_GetCamera(re);
+  Object *camera = render_GetCamera(re);
   /* also check for camera here */
   if (camera == NULL) {
-    BKE_report(re->reports, RPT_ERROR, "Cannot render, no camera");
+    dune_report(re->reports, RPT_ERROR, "Cannot render, no camera");
     G.is_break = true;
     return;
   }
 
   /* now use renderdata and camera to set viewplane */
-  RE_SetCamera(re, camera);
+  render_SetCamera(re, camera);
 
   re->current_scene_update(re->suh, re->scene);
-  RE_engine_render(re, false);
+  render_engine_render(re, false);
 
   /* when border render, check if we have to insert it in black */
   render_result_uncrop(re);
@@ -1006,12 +1004,12 @@ static void do_render_engine(Render *re)
  * Uses the same image dimensions, does not recursively perform compositing. */
 static void do_render_compositor_scene(Render *re, Scene *sce, int cfra)
 {
-  Render *resc = RE_NewSceneRender(sce);
+  Render *resc = render_NewSceneRender(sce);
   int winx = re->winx, winy = re->winy;
 
   sce->r.cfra = cfra;
 
-  BKE_scene_camera_switch_update(sce);
+  dune_scene_camera_switch_update(sce);
 
   /* exception: scene uses own size (unfinished code) */
   if (0) {
@@ -1020,7 +1018,7 @@ static void do_render_compositor_scene(Render *re, Scene *sce, int cfra)
   }
 
   /* initial setup */
-  RE_InitState(resc, re, &sce->r, &sce->view_layers, NULL, winx, winy, &re->disprect);
+  render_InitState(resc, re, &sce->r, &sce->view_layers, NULL, winx, winy, &re->disprect);
 
   /* We still want to use 'rendercache' setting from org (main) scene... */
   resc->r.scemode = (resc->r.scemode & ~R_EXR_CACHE_FILE) | (re->r.scemode & R_EXR_CACHE_FILE);
@@ -1046,8 +1044,8 @@ static void do_render_compositor_scene(Render *re, Scene *sce, int cfra)
  * or if there's a any render layer to render. */
 static int compositor_needs_render(Scene *sce, int this_scene)
 {
-  bNodeTree *ntree = sce->nodetree;
-  bNode *node;
+  NodeTree *ntree = sce->nodetree;
+  Node *node;
 
   if (ntree == NULL) {
     return 1;
@@ -1233,143 +1231,18 @@ static void renderresult_stampinfo(Render *re)
   }
 }
 
-
-/* SPDX-License-Identifier: GPL-2.0-or-later
- * Copyright 2006 Blender Foundation. All rights reserved. */
-
-/** \file
- * \ingroup render
- */
-
-#include <errno.h>
-#include <limits.h>
-#include <math.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "DNA_anim_types.h"
-#include "DNA_collection_types.h"
-#include "DNA_image_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_sequence_types.h"
-#include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
-
-#include "MEM_guardedalloc.h"
-
-#include "BLI_fileops.h"
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-#include "BLI_path_util.h"
-#include "BLI_rect.h"
-#include "BLI_string.h"
-#include "BLI_threads.h"
-#include "BLI_timecode.h"
-
-#include "BLT_translation.h"
-
-#include "BKE_anim_data.h"
-#include "BKE_animsys.h" /* <------ should this be here?, needed for sequencer update */
-#include "BKE_callbacks.h"
-#include "BKE_camera.h"
-#include "BKE_colortools.h"
-#include "BKE_context.h" /* XXX needed by wm_window.h */
-#include "BKE_global.h"
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_image_save.h"
-#include "BKE_layer.h"
-#include "BKE_lib_id.h"
-#include "BKE_lib_remap.h"
-#include "BKE_mask.h"
-#include "BKE_modifier.h"
-#include "BKE_node.h"
-#include "BKE_object.h"
-#include "BKE_pointcache.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_sound.h"
-#include "BKE_writeavi.h" /* <------ should be replaced once with generic movie module */
-
-#include "NOD_composite.h"
-
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_build.h"
-#include "DEG_depsgraph_debug.h"
-#include "DEG_depsgraph_query.h"
-
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
-#include "IMB_metadata.h"
-#include "PIL_time.h"
-
-#include "RE_engine.h"
-#include "RE_pipeline.h"
-#include "RE_texture.h"
-
-#include "SEQ_relations.h"
-#include "SEQ_render.h"
-
-#include "../../windowmanager/WM_api.h"    /* XXX */
-#include "../../windowmanager/wm_window.h" /* XXX */
-#include "GPU_context.h"
-
-#ifdef WITH_FREESTYLE
-#  include "FRS_freestyle.h"
-#endif
-
-#include "DEG_depsgraph.h"
-
-/* internal */
-#include "pipeline.h"
-#include "render_result.h"
-#include "render_types.h"
-
-/* render flow
- *
- * 1) Initialize state
- * - state data, tables
- * - movie/image file init
- * - everything that doesn't change during animation
- *
- * 2) Initialize data
- * - camera, world, matrices
- * - make render verts, faces, halos, strands
- * - everything can change per frame/field
- *
- * 3) Render Processor
- * - multiple layers
- * - tiles, rect, baking
- * - layers/tiles optionally to disk or directly in Render Result
- *
- * 4) Composite Render Result
- * - also read external files etc
- *
- * 5) Image Files
- * - save file or append in movie
- */
-
 /* -------------------------------------------------------------------- */
-/** \name Globals
- * \{ */
+/** Globalsv*/
 
 /* here we store all renders */
 static struct {
   ListBase renderlist;
 } RenderGlobal = {{NULL, NULL}};
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Callbacks
- * \{ */
+/** Callbacks **/
 
-static void render_callback_exec_null(Render *re, Main *bmain, eCbEvent evt)
+static void render_cb_exec_null(Render *re, Main *bmain, eCbEvent evt)
 {
   if (re->r.scemode & R_BUTS_PREVIEW) {
     return;
