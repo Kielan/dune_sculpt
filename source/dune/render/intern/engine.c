@@ -755,21 +755,21 @@ void RE_engine_frame_set(RenderEngine *engine, int frame, float subframe)
 
 /* Bake */
 
-void RE_bake_engine_set_engine_parameters(Render *re, Main *bmain, Scene *scene)
+void render_bake_engine_set_engine_parameters(Render *re, Main *bmain, Scene *scene)
 {
   re->scene = scene;
   re->main = bmain;
   render_copy_renderdata(&re->r, &scene->r);
 }
 
-bool RE_bake_has_engine(const Render *re)
+bool render_bake_has_engine(const Render *re)
 {
   const RenderEngineType *type = RE_engines_find(re->r.engine);
   return (type->bake != NULL);
 }
 
-bool RE_bake_engine(Render *re,
-                    Depsgraph *depsgraph,
+bool render_bake_engine(Render *re,
+                    Graph *depsgraph,
                     Object *object,
                     const int object_id,
                     const BakePixel pixel_array[],
@@ -783,17 +783,17 @@ bool RE_bake_engine(Render *re,
 
   /* set render info */
   re->i.cfra = re->scene->r.cfra;
-  BLI_strncpy(re->i.scene_name, re->scene->id.name + 2, sizeof(re->i.scene_name) - 2);
+  lib_strncpy(re->i.scene_name, re->scene->id.name + 2, sizeof(re->i.scene_name) - 2);
 
   /* render */
   engine = re->engine;
 
   if (!engine) {
-    engine = RE_engine_create(type);
+    engine = render_engine_create(type);
     re->engine = engine;
   }
 
-  engine->flag |= RE_ENGINE_RENDERING;
+  engine->flag |= RENDER_ENGINE_RENDERING;
 
   /* TODO: actually link to a parent which shouldn't happen */
   engine->re = re;
@@ -802,7 +802,7 @@ bool RE_bake_engine(Render *re,
   engine->resolution_y = re->winy;
 
   if (type->bake) {
-    engine->depsgraph = depsgraph;
+    engine->graph = graph;
 
     /* update is only called so we create the engine.session */
     if (type->update) {
