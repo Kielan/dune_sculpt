@@ -52,20 +52,20 @@
 #include "types_mesh.h"
 #include "types_meshdata.h"
 
-#include "BKE_bvhutils.h"
-#include "BKE_customdata.h"
-#include "BKE_image.h"
-#include "BKE_lib_id.h"
-#include "BKE_mesh.h"
-#include "BKE_mesh_runtime.h"
-#include "BKE_mesh_tangent.h"
-#include "BKE_node.h"
+#include "dune_bvhutils.h"
+#include "dune_customdata.h"
+#include "dune_image.h"
+#include "dune_lib_id.h"
+#include "dune_mesh.h"
+#include "dune_mesh_runtime.h"
+#include "dune_mesh_tangent.h"
+#include "dune_node.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "RE_bake.h"
-#include "RE_texture_margin.h"
+#include "render_bake.h"
+#include "render_texture_margin.h"
 
 /* local include */
 #include "render_types.h"
@@ -80,9 +80,7 @@ typedef struct BakeDataZSpan {
   float dv_dx, dv_dy;
 } BakeDataZSpan;
 
-/**
- * struct wrapping up tangent space data
- */
+/** struct wrapping up tangent space data */
 typedef struct TSpace {
   float tangent[3];
   float sign;
