@@ -89,7 +89,7 @@ RenderEngineType *render_engines_find(const char *idname)
 
   type = lib_findstring(&R_engines, idname, offsetof(RenderEngineType, idname));
   if (!type) {
-    type = lib_findstring(&R_engines, "BLENDER_EEVEE", offsetof(RenderEngineType, idname));
+    type = lib_findstring(&R_engines, "DUNE_EEVEE", offsetof(RenderEngineType, idname));
   }
 
   return type;
@@ -537,7 +537,7 @@ RenderPass *render_engine_pass_by_index_get(RenderEngine *engine, const char *la
   if (rr != NULL) {
     const RenderLayer *layer = render_GetRenderLayer(rr, layer_name);
     if (layer != NULL) {
-      pass = BLI_findlink(&layer->passes, index);
+      pass = lib_findlink(&layer->passes, index);
     }
   }
   render_ReleaseResult(re);
@@ -554,22 +554,22 @@ const char *render_engine_active_view_get(RenderEngine *engine)
 void render_engine_active_view_set(RenderEngine *engine, const char *viewname)
 {
   Render *re = engine->re;
-  RE_SetActiveRenderView(re, viewname);
+  render_SetActiveRenderView(re, viewname);
 }
 
-float RE_engine_get_camera_shift_x(RenderEngine *engine, Object *camera, bool use_spherical_stereo)
+float render_engine_get_camera_shift_x(RenderEngine *engine, Object *camera, bool use_spherical_stereo)
 {
   /* When using spherical stereo, get camera shift without multiview,
    * leaving stereo to be handled by the engine. */
   Render *re = engine->re;
   if (use_spherical_stereo || re == NULL) {
-    return BKE_camera_multiview_shift_x(NULL, camera, NULL);
+    return dune_camera_multiview_shift_x(NULL, camera, NULL);
   }
 
-  return BKE_camera_multiview_shift_x(&re->r, camera, re->viewname);
+  return dune_camera_multiview_shift_x(&re->r, camera, re->viewname);
 }
 
-void RE_engine_get_camera_model_matrix(RenderEngine *engine,
+void dune_engine_get_camera_model_matrix(RenderEngine *engine,
                                        Object *camera,
                                        bool use_spherical_stereo,
                                        float r_modelmat[16])
@@ -578,51 +578,51 @@ void RE_engine_get_camera_model_matrix(RenderEngine *engine,
    * leaving stereo to be handled by the engine. */
   Render *re = engine->re;
   if (use_spherical_stereo || re == NULL) {
-    BKE_camera_multiview_model_matrix(NULL, camera, NULL, (float(*)[4])r_modelmat);
+    dune_camera_multiview_model_matrix(NULL, camera, NULL, (float(*)[4])r_modelmat);
   }
   else {
-    BKE_camera_multiview_model_matrix(&re->r, camera, re->viewname, (float(*)[4])r_modelmat);
+    dune_camera_multiview_model_matrix(&re->r, camera, re->viewname, (float(*)[4])r_modelmat);
   }
 }
 
-bool RE_engine_get_spherical_stereo(RenderEngine *engine, Object *camera)
+bool dune_engine_get_spherical_stereo(RenderEngine *engine, Object *camera)
 {
   Render *re = engine->re;
-  return BKE_camera_multiview_spherical_stereo(re ? &re->r : NULL, camera) ? 1 : 0;
+  return dune_camera_multiview_spherical_stereo(re ? &re->r : NULL, camera) ? 1 : 0;
 }
 
-rcti *RE_engine_get_current_tiles(Render *re, int *r_total_tiles, bool *r_needs_free)
+rcti *render_engine_get_current_tiles(Render *re, int *r_total_tiles, bool *r_needs_free)
 {
-  static rcti tiles_static[BLENDER_MAX_THREADS];
-  const int allocation_step = BLENDER_MAX_THREADS;
+  static rcti tiles_static[DUNE_MAX_THREADS];
+  const int allocation_step = DUNE_MAX_THREADS;
   int total_tiles = 0;
   rcti *tiles = tiles_static;
-  int allocation_size = BLENDER_MAX_THREADS;
+  int allocation_size = DUNE_MAX_THREADS;
 
-  BLI_mutex_lock(&re->highlighted_tiles_mutex);
+  lib_mutex_lock(&re->highlighted_tiles_mutex);
 
   *r_needs_free = false;
 
   if (re->highlighted_tiles == NULL) {
     *r_total_tiles = 0;
-    BLI_mutex_unlock(&re->highlighted_tiles_mutex);
+    lib_mutex_unlock(&re->highlighted_tiles_mutex);
     return NULL;
   }
 
   GSET_FOREACH_BEGIN (HighlightedTile *, tile, re->highlighted_tiles) {
     if (total_tiles >= allocation_size) {
       /* Just in case we're using crazy network rendering with more
-       * workers than BLENDER_MAX_THREADS.
+       * workers than DUNE_MAX_THREADS.
        */
       allocation_size += allocation_step;
       if (tiles == tiles_static) {
         /* Can not realloc yet, tiles are pointing to a
          * stack memory.
          */
-        tiles = MEM_mallocN(allocation_size * sizeof(rcti), "current engine tiles");
+        tiles = mem_mallocn(allocation_size * sizeof(rcti), "current engine tiles");
       }
       else {
-        tiles = MEM_reallocN(tiles, allocation_size * sizeof(rcti));
+        tiles = mem_reallocn(tiles, allocation_size * sizeof(rcti));
       }
       *r_needs_free = true;
     }
@@ -632,14 +632,14 @@ rcti *RE_engine_get_current_tiles(Render *re, int *r_total_tiles, bool *r_needs_
   }
   GSET_FOREACH_END();
 
-  BLI_mutex_unlock(&re->highlighted_tiles_mutex);
+  lib_mutex_unlock(&re->highlighted_tiles_mutex);
 
   *r_total_tiles = total_tiles;
 
   return tiles;
 }
 
-RenderData *RE_engine_get_render_data(Render *re)
+RenderData *render_engine_get_render_data(Render *re)
 {
   return &re->r;
 }
