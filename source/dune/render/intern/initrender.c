@@ -146,12 +146,12 @@ struct Object *render_GetCamera(Render *re)
   return dune_camera_multiview_render(re->scene, camera, re->viewname);
 }
 
-void RE_SetOverrideCamera(Render *re, Object *cam_ob)
+void render_SetOverrideCamera(Render *re, Object *cam_ob)
 {
   re->camera_override = cam_ob;
 }
 
-void RE_SetCamera(Render *re, const Object *cam_ob)
+void render_SetCamera(Render *re, const Object *cam_ob)
 {
   CameraParams params;
 
@@ -173,11 +173,11 @@ void RE_SetCamera(Render *re, const Object *cam_ob)
 
 void render_GetCameraWindow(struct Render *re, const struct Object *camera, float r_winmat[4][4])
 {
-  RE_SetCamera(re, camera);
+  render_SetCamera(re, camera);
   copy_m4_m4(r_winmat, re->winmat);
 }
 
-void RE_GetCameraWindowWithOverscan(const struct Render *re, float overscan, float r_winmat[4][4])
+void render_GetCameraWindowWithOverscan(const struct Render *re, float overscan, float r_winmat[4][4])
 {
   CameraParams params;
   params.is_ortho = re->winmat[3][3] != 0.0f;
@@ -185,22 +185,22 @@ void RE_GetCameraWindowWithOverscan(const struct Render *re, float overscan, flo
   params.clip_end = re->clip_end;
   params.viewplane = re->viewplane;
 
-  overscan *= max_ff(BLI_rctf_size_x(&params.viewplane), BLI_rctf_size_y(&params.viewplane));
+  overscan *= max_ff(lib_rctf_size_x(&params.viewplane), lib_rctf_size_y(&params.viewplane));
 
   params.viewplane.xmin -= overscan;
   params.viewplane.xmax += overscan;
   params.viewplane.ymin -= overscan;
   params.viewplane.ymax += overscan;
-  BKE_camera_params_compute_matrix(&params);
+  dune_camera_params_compute_matrix(&params);
   copy_m4_m4(r_winmat, params.winmat);
 }
 
-void RE_GetCameraModelMatrix(const Render *re, const struct Object *camera, float r_modelmat[4][4])
+void render_GetCameraModelMatrix(const Render *re, const struct Object *camera, float r_modelmat[4][4])
 {
-  BKE_camera_multiview_model_matrix(&re->r, camera, re->viewname, r_modelmat);
+  dune_camera_multiview_model_matrix(&re->r, camera, re->viewname, r_modelmat);
 }
 
-void RE_GetViewPlane(Render *re, rctf *r_viewplane, rcti *r_disprect)
+void render_GetViewPlane(Render *re, rctf *r_viewplane, rcti *r_disprect)
 {
   *r_viewplane = re->viewplane;
 
@@ -209,6 +209,6 @@ void RE_GetViewPlane(Render *re, rctf *r_viewplane, rcti *r_disprect)
     *r_disprect = re->disprect;
   }
   else {
-    BLI_rcti_init(r_disprect, 0, 0, 0, 0);
+    lib_rcti_init(r_disprect, 0, 0, 0, 0);
   }
 }
