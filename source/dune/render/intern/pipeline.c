@@ -588,10 +588,10 @@ void render_FreeRender(Render *re)
   mem_freen(re);
 }
 
-void RE_FreeAllRender(void)
+void render_FreeAllRender(void)
 {
   while (RenderGlobal.renderlist.first) {
-    RE_FreeRender(RenderGlobal.renderlist.first);
+    render_FreeRender(RenderGlobal.renderlist.first);
   }
 
 #ifdef WITH_FREESTYLE
@@ -600,7 +600,7 @@ void RE_FreeAllRender(void)
 #endif
 }
 
-void RE_FreeAllRenderResults(void)
+void render_FreeAllRenderResults(void)
 {
   Render *re;
 
@@ -613,32 +613,32 @@ void RE_FreeAllRenderResults(void)
   }
 }
 
-void RE_FreeAllPersistentData(void)
+void render_FreeAllPersistentData(void)
 {
   Render *re;
   for (re = RenderGlobal.renderlist.first; re != NULL; re = re->next) {
     if (re->engine != NULL) {
-      BLI_assert(!(re->engine->flag & RE_ENGINE_RENDERING));
-      RE_engine_free(re->engine);
+      lib_assert(!(re->engine->flag & RE_ENGINE_RENDERING));
+      render_engine_free(re->engine);
       re->engine = NULL;
     }
   }
 }
 
-static void re_free_persistent_data(Render *re)
+static void render_free_persistent_data(Render *re)
 {
   /* If engine is currently rendering, just wait for it to be freed when it finishes rendering. */
   if (re->engine && !(re->engine->flag & RE_ENGINE_RENDERING)) {
-    RE_engine_free(re->engine);
+    render_engine_free(re->engine);
     re->engine = NULL;
   }
 }
 
-void RE_FreePersistentData(const Scene *scene)
+void render_FreePersistentData(const Scene *scene)
 {
   /* Render engines can be kept around for quick re-render, this clears all or one scene. */
   if (scene) {
-    Render *re = RE_GetSceneRender(scene);
+    Render *re = render_GetSceneRender(scene);
     if (re) {
       re_free_persistent_data(re);
     }
@@ -650,19 +650,16 @@ void RE_FreePersistentData(const Scene *scene)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Initialize State
- * \{ */
+/** Initialize State **/
 
 static void re_init_resolution(Render *re, Render *source, int winx, int winy, rcti *disprect)
 {
   re->winx = winx;
   re->winy = winy;
   if (source && (source->r.mode & R_BORDER)) {
-    /* NOTE(@sergey): doesn't seem original bordered `disprect` is storing anywhere
-     * after insertion on black happening in #do_render_engine(),
+    /* NOTE: doesn't seem original bordered `disprect` is storing anywhere
+     * after insertion on black happening in do_render_engine(),
      * so for now simply re-calculate `disprect` using border from source renderer. */
 
     re->disprect.xmin = source->r.border.xmin * winx;
@@ -671,16 +668,16 @@ static void re_init_resolution(Render *re, Render *source, int winx, int winy, r
     re->disprect.ymin = source->r.border.ymin * winy;
     re->disprect.ymax = source->r.border.ymax * winy;
 
-    re->rectx = BLI_rcti_size_x(&re->disprect);
-    re->recty = BLI_rcti_size_y(&re->disprect);
+    re->rectx = lib_rcti_size_x(&re->disprect);
+    re->recty = lib_rcti_size_y(&re->disprect);
 
     /* copy border itself, since it could be used by external engines */
     re->r.border = source->r.border;
   }
   else if (disprect) {
     re->disprect = *disprect;
-    re->rectx = BLI_rcti_size_x(&re->disprect);
-    re->recty = BLI_rcti_size_y(&re->disprect);
+    re->rectx = lib_rcti_size_x(&re->disprect);
+    re->recty = lib_rcti_size_y(&re->disprect);
   }
   else {
     re->disprect.xmin = re->disprect.ymin = 0;
@@ -693,8 +690,8 @@ static void re_init_resolution(Render *re, Render *source, int winx, int winy, r
 
 void render_copy_renderdata(RenderData *to, RenderData *from)
 {
-  BLI_freelistN(&to->views);
-  BKE_curvemapping_free_data(&to->mblur_shutter_curve);
+  lib_freelistn(&to->views);
+  dune_curvemapping_free_data(&to->mblur_shutter_curve);
 
   *to = *from;
 
