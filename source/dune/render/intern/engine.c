@@ -135,8 +135,8 @@ static void engine_graph_free(RenderEngine *engine)
 {
   if (engine->graph) {
     /* Need GPU context since this might free GPU buffers. */
-    const bool use_gpu_context = (engine->type->flag & RE_USE_GPU_CONTEXT);
-    if (use_gpu_context) {
+    const bool use_gpu_ctx = (engine->type->flag & RE_USE_GPU_CONTEXT);
+    if (use_gpu_ctx) {
       render_ctx_enable(engine->re);
     }
 
@@ -291,7 +291,7 @@ static void engine_tile_highlight_set(RenderEngine *engine,
     }
   }
   else {
-    lib_gset_remove(re->highlighted_tiles, tile, MEM_freeN);
+    lib_gset_remove(re->highlighted_tiles, tile, mem_freen);
   }
 
   lib_mutex_unlock(&re->highlighted_tiles_mutex);
@@ -648,10 +648,10 @@ bool render_engine_use_persistent_data(RenderEngine *engine)
 {
   /* Re-rendering is not supported with GPU contexts, since the GPU context
    * is destroyed when the render thread exists. */
-  return (engine->re->r.mode & R_PERSISTENT_DATA) && !(engine->type->flag & RE_USE_GPU_CONTEXT);
+  return (engine->re->r.mode & R_PERSISTENT_DATA) && !(engine->type->flag & RENDER_USE_GPU_CONTEXT);
 }
 
-static bool engine_keep_depsgraph(RenderEngine *engine)
+static bool engine_keep_graph(RenderEngine *engine)
 {
   /* For persistent data or GPU engines like Eevee, reuse the depsgraph between
    * view layers and animation frames. For renderers like Cycles that create
@@ -661,7 +661,7 @@ static bool engine_keep_depsgraph(RenderEngine *engine)
 }
 
 /* Depsgraph */
-static void engine_depsgraph_init(RenderEngine *engine, ViewLayer *view_layer)
+static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
 {
   Main *bmain = engine->re->main;
   Scene *scene = engine->re->scene;
