@@ -1,4 +1,3 @@
-
 /* Global includes */
 
 #include <math.h>
@@ -157,13 +156,13 @@ void RE_SetCamera(Render *re, const Object *cam_ob)
   CameraParams params;
 
   /* setup parameters */
-  BKE_camera_params_init(&params);
-  BKE_camera_params_from_object(&params, cam_ob);
-  BKE_camera_multiview_params(&re->r, &params, cam_ob, re->viewname);
+  dune_camera_params_init(&params);
+  dune_camera_params_from_object(&params, cam_ob);
+  dune_camera_multiview_params(&re->r, &params, cam_ob, re->viewname);
 
   /* Compute matrix, view-plane, etc. */
-  BKE_camera_params_compute_viewplane(&params, re->winx, re->winy, re->r.xasp, re->r.yasp);
-  BKE_camera_params_compute_matrix(&params);
+  dune_camera_params_compute_viewplane(&params, re->winx, re->winy, re->r.xasp, re->r.yasp);
+  dune_camera_params_compute_matrix(&params);
 
   /* extract results */
   copy_m4_m4(re->winmat, params.winmat);
@@ -172,7 +171,7 @@ void RE_SetCamera(Render *re, const Object *cam_ob)
   re->viewplane = params.viewplane;
 }
 
-void RE_GetCameraWindow(struct Render *re, const struct Object *camera, float r_winmat[4][4])
+void render_GetCameraWindow(struct Render *re, const struct Object *camera, float r_winmat[4][4])
 {
   RE_SetCamera(re, camera);
   copy_m4_m4(r_winmat, re->winmat);
