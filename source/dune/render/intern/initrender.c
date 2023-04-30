@@ -98,7 +98,7 @@ static float filt_mitchell(float x) /* Mitchell & Netravali's two-param cubic */
   return 0.0f;
 }
 
-float RE_filter_value(int type, float x)
+float render_filter_value(int type, float x)
 {
   float gaussfac = 1.6f;
 
