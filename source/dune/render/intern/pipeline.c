@@ -1075,7 +1075,7 @@ static int compositor_needs_render(Scene *sce, int this_scene)
 /* Render all scenes within a compositor node tree. */
 static void do_render_compositor_scenes(Render *re)
 {
-  bNode *node;
+  Node *node;
   int cfra = re->scene->r.cfra;
   Scene *restore_scene = re->scene;
 
@@ -1087,16 +1087,16 @@ static void do_render_compositor_scenes(Render *re)
 
   /* now foreach render-result node we do a full render */
   /* results are stored in a way compositor will find it */
-  GSet *scenes_rendered = BLI_gset_ptr_new(__func__);
+  GSet *scenes_rendered = id_gset_ptr_new(__func__);
   for (node = re->scene->nodetree->nodes.first; node; node = node->next) {
     if (node->type == CMP_NODE_R_LAYERS && (node->flag & NODE_MUTED) == 0) {
-      if (node->id && node->id != (ID *)re->scene) {
+      if (node->id && node->id != (Id *)re->scene) {
         Scene *scene = (Scene *)node->id;
-        if (!BLI_gset_haskey(scenes_rendered, scene) &&
+        if (!lib_gset_haskey(scenes_rendered, scene) &&
             render_scene_has_layers_to_render(scene, false)) {
           do_render_compositor_scene(re, scene, cfra);
-          BLI_gset_add(scenes_rendered, scene);
-          node->typeinfo->updatefunc(restore_scene->nodetree, node);
+          lib_gset_add(scenes_rendered, scene);
+          node->typeinfo->updatefn(restore_scene->nodetree, node);
 
           if (scene != re->scene) {
             changed_scene = true;
@@ -1105,7 +1105,7 @@ static void do_render_compositor_scenes(Render *re)
       }
     }
   }
-  BLI_gset_free(scenes_rendered, NULL);
+  lib_gset_free(scenes_rendered, NULL);
 
   if (changed_scene) {
     /* If rendered another scene, switch back to the current scene with compositing nodes. */
@@ -1128,7 +1128,7 @@ static void render_compositor_stats(void *arg, const char *str)
  * The result will be output into a compositing render layer in the render result. */
 static void do_render_compositor(Render *re)
 {
-  bNodeTree *ntree = re->pipeline_scene_eval->nodetree;
+  NodeTree *ntree = re->pipeline_scene_eval->nodetree;
   int update_newframe = 0;
 
   if (compositor_needs_render(re->pipeline_scene_eval, 1)) {
@@ -1145,7 +1145,7 @@ static void do_render_compositor(Render *re)
     re->i.cfra = re->r.cfra;
 
     /* ensure new result gets added, like for regular renders */
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
     render_result_free(re->result);
     if ((re->r.mode & R_CROP) == 0) {
@@ -1153,7 +1153,7 @@ static void do_render_compositor(Render *re)
     }
     re->result = render_result_new(re, &re->disprect, RR_ALL_LAYERS, RR_ALL_VIEWS);
 
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
 
     /* scene render process already updates animsys */
     update_newframe = 1;
@@ -1161,9 +1161,9 @@ static void do_render_compositor(Render *re)
 
   /* swap render result */
   if (re->r.scemode & R_SINGLE_LAYER) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
     render_result_single_layer_end(re);
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 
   if (!re->test_break(re->tbh)) {
@@ -1220,11 +1220,11 @@ static void renderresult_stampinfo(Render *re)
   /* this is the basic trick to get the displayed float or char rect from render result */
   nr = 0;
   for (rv = re->result->views.first; rv; rv = rv->next, nr++) {
-    RE_SetActiveRenderView(re, rv->name);
-    RE_AcquireResultImage(re, &rres, nr);
+    render_SetActiveRenderView(re, rv->name);
+    render_AcquireResultImage(re, &rres, nr);
 
-    Object *ob_camera_eval = DEG_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
-    BKE_image_stamp_buf(re->scene,
+    Object *ob_camera_eval = graph_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
+    dune_image_stamp_buf(re->scene,
                         ob_camera_eval,
                         (re->r.stamp & R_STAMP_STRIPMETA) ? rres.stamp_data : NULL,
                         (unsigned char *)rres.rect32,
@@ -1232,7 +1232,7 @@ static void renderresult_stampinfo(Render *re)
                         rres.rectx,
                         rres.recty,
                         4);
-    RE_ReleaseResultImage(re);
+    render_ReleaseResultImage(re);
   }
 }
 
