@@ -1,14 +1,9 @@
-
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup render
- *
- * \brief The API itself is simple.
- * Blender sends a populated array of BakePixels to the renderer,
+/*
+ * The API itself is simple.
+ * Dune sends a populated array of BakePixels to the renderer,
  * and gets back an array of floats with the result.
  *
- * \section bake_api Development Notes for External Engines
+ * section bake_api Development Notes for External Engines
  *
  * The Bake API is fully implemented with Python rna functions.
  * The operator expects/call a function:
@@ -24,38 +19,38 @@
  * - depth: depth of pixels to return (int, assuming always 4 now)
  * - result: array to be populated by the engine (float array, PyLong_AsVoidPtr)
  *
- * \note Normals are expected to be in World Space and in the +X, +Y, +Z orientation.
+ * Normals are expected to be in World Space and in the +X, +Y, +Z orientation.
  *
- * \subsection bake_pixel BakePixel data structure
+ * bake_pixel BakePixel data structure
  *
  * pixel_array is a Python object storing BakePixel elements:
  *
- * \code{.c}
+ * code.c
  * struct BakePixel {
  *     int primitive_id, object_id;
  *     float uv[2];
  *     float du_dx, du_dy;
  *     float dv_dx, dv_dy;
  * };
- * \endcode
+ * endcode
  *
  * In python you have access to:
  * - `primitive_id`, `object_id`, `uv`, `du_dx`, `du_dy`, `next`.
  * - `next()` is a function that returns the next #BakePixel in the array.
  *
- * \note Pixels that should not be baked have `primitive_id == -1`.
+ * note Pixels that should not be baked have `primitive_id == -1`.
  *
  * For a complete implementation example look at the Cycles Bake commit.
  */
 
 #include <limits.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
 
 #include "BKE_bvhutils.h"
 #include "BKE_customdata.h"
