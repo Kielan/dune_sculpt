@@ -947,7 +947,7 @@ bool render_engine_render(Render *re, bool do_all)
 
     re->result = render_result_new(re, &re->disprect, RR_ALL_LAYERS, RR_ALL_VIEWS);
   }
-  BLI_rw_mutex_unlock(&re->resultmutex);
+  lib_rw_mutex_unlock(&re->resultmutex);
 
   if (re->result == NULL) {
     /* Clear UI drawing locks. */
@@ -970,7 +970,7 @@ bool render_engine_render(Render *re, bool do_all)
   RenderEngine *engine = re->engine;
 
   if (!engine) {
-    engine = RE_engine_create(type);
+    engine = render_engine_create(type);
     re->engine = engine;
   }
 
@@ -996,18 +996,18 @@ bool render_engine_render(Render *re, bool do_all)
   }
 
   /* Render view layers. */
-  bool delay_grease_pencil = false;
+  bool delay_pen = false;
 
   if (type->render) {
     FOREACH_VIEW_LAYER_TO_RENDER_BEGIN (re, view_layer_iter) {
       engine_render_view_layer(re, engine, view_layer_iter, true, true);
 
       /* If render passes are not allocated the render engine deferred final pixels write for
-       * later. Need to defer the grease pencil for until after the engine has written the
-       * render result to Blender. */
-      delay_grease_pencil = engine->has_grease_pencil && !re->result->passes_allocated;
+       * later. Need to defer the dune pen for until after the engine has written the
+       * render result to Dune. */
+      delay_pen = engine->has_grease_pencil && !re->result->passes_allocated;
 
-      if (RE_engine_test_break(engine)) {
+      if (render_engine_test_break(engine)) {
         break;
       }
     }
@@ -1019,10 +1019,10 @@ bool render_engine_render(Render *re, bool do_all)
   }
 
   /* Perform delayed grease pencil rendering. */
-  if (delay_grease_pencil) {
+  if (delay_pen) {
     FOREACH_VIEW_LAYER_TO_RENDER_BEGIN (re, view_layer_iter) {
       engine_render_view_layer(re, engine, view_layer_iter, false, true);
-      if (RE_engine_test_break(engine)) {
+      if (render_engine_test_break(engine)) {
         break;
       }
     }
@@ -1038,30 +1038,30 @@ bool render_engine_render(Render *re, bool do_all)
   if (!engine_keep_depsgraph(engine) || !re->engine) {
     engine_depsgraph_free(engine);
 
-    RE_engine_free(engine);
+    render_engine_free(engine);
     re->engine = NULL;
   }
 
   if (re->r.scemode & R_EXR_CACHE_FILE) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
     render_result_exr_file_cache_write(re);
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 
-  if (BKE_reports_contain(re->reports, RPT_ERROR)) {
+  if (dune_reports_contain(re->reports, RPT_ERROR)) {
     G.is_break = true;
   }
 
 #ifdef WITH_FREESTYLE
   if (re->r.mode & R_EDGE_FRS) {
-    RE_RenderFreestyleExternal(re);
+    render_RenderFreestyleExternal(re);
   }
 #endif
 
   return true;
 }
 
-void RE_engine_update_render_passes(struct RenderEngine *engine,
+void render_engine_update_render_passes(struct RenderEngine *engine,
                                     struct Scene *scene,
                                     struct ViewLayer *view_layer,
                                     update_render_passes_cb_t callback,
@@ -1071,10 +1071,10 @@ void RE_engine_update_render_passes(struct RenderEngine *engine,
     return;
   }
 
-  BLI_mutex_lock(&engine->update_render_passes_mutex);
+  lib_mutex_lock(&engine->update_render_passes_mutex);
 
-  engine->update_render_passes_cb = callback;
-  engine->update_render_passes_data = callback_data;
+  engine->update_render_passes_cb = cb;
+  engine->update_render_passes_data = cb_data;
   engine->type->update_render_passes(engine, scene, view_layer);
   engine->update_render_passes_cb = NULL;
   engine->update_render_passes_data = NULL;
