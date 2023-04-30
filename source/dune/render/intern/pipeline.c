@@ -695,11 +695,11 @@ void render_copy_renderdata(RenderData *to, RenderData *from)
 
   *to = *from;
 
-  BLI_duplicatelist(&to->views, &from->views);
-  BKE_curvemapping_copy_data(&to->mblur_shutter_curve, &from->mblur_shutter_curve);
+  lib_duplicatelist(&to->views, &from->views);
+  dune_curvemapping_copy_data(&to->mblur_shutter_curve, &from->mblur_shutter_curve);
 }
 
-void RE_InitState(Render *re,
+void render_InitState(Render *re,
                   Render *source,
                   RenderData *rd,
                   ListBase *render_layers,
@@ -823,56 +823,53 @@ void render_update_anim_renderdata(Render *re, RenderData *rd, ListBase *render_
   lib_duplicatelist(&re->r.views, &rd->views);
 }
 
-void RE_display_init_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
+void render_display_init_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
 {
   re->display_init = f;
   re->dih = handle;
 }
-void RE_display_clear_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
+void render_display_clear_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
 {
   re->display_clear = f;
   re->dch = handle;
 }
-void RE_display_update_cb(Render *re,
+void render_display_update_cb(Render *re,
                           void *handle,
                           void (*f)(void *handle, RenderResult *rr, rcti *rect))
 {
   re->display_update = f;
   re->duh = handle;
 }
-void RE_current_scene_update_cb(Render *re, void *handle, void (*f)(void *handle, Scene *scene))
+void render_current_scene_update_cb(Render *re, void *handle, void (*f)(void *handle, Scene *scene))
 {
   re->current_scene_update = f;
   re->suh = handle;
 }
-void RE_stats_draw_cb(Render *re, void *handle, void (*f)(void *handle, RenderStats *rs))
+void render_stats_draw_cb(Render *re, void *handle, void (*f)(void *handle, RenderStats *rs))
 {
   re->stats_draw = f;
   re->sdh = handle;
 }
-void RE_progress_cb(Render *re, void *handle, void (*f)(void *handle, float))
+void render_progress_cb(Render *re, void *handle, void (*f)(void *handle, float))
 {
   re->progress = f;
   re->prh = handle;
 }
 
-void RE_draw_lock_cb(Render *re, void *handle, void (*f)(void *handle, bool lock))
+void render_draw_lock_cb(Render *re, void *handle, void (*f)(void *handle, bool lock))
 {
   re->draw_lock = f;
   re->dlh = handle;
 }
 
-void RE_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
+void render_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
 {
   re->test_break = f;
   re->tbh = handle;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name OpenGL Context
- * \{ */
+/** OpenGL Context **/
 
 void RE_gl_context_create(Render *re)
 {
