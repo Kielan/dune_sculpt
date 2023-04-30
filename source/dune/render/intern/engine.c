@@ -1005,7 +1005,7 @@ bool render_engine_render(Render *re, bool do_all)
       /* If render passes are not allocated the render engine deferred final pixels write for
        * later. Need to defer the dune pen for until after the engine has written the
        * render result to Dune. */
-      delay_pen = engine->has_grease_pencil && !re->result->passes_allocated;
+      delay_pen = engine->has_pen && !re->result->passes_allocated;
 
       if (render_engine_test_break(engine)) {
         break;
@@ -1018,7 +1018,7 @@ bool render_engine_render(Render *re, bool do_all)
     type->render_frame_finish(engine);
   }
 
-  /* Perform delayed grease pencil rendering. */
+  /* Perform delayed pen rendering. */
   if (delay_pen) {
     FOREACH_VIEW_LAYER_TO_RENDER_BEGIN (re, view_layer_iter) {
       engine_render_view_layer(re, engine, view_layer_iter, false, true);
@@ -1035,8 +1035,8 @@ bool render_engine_render(Render *re, bool do_all)
   render_result_free_list(&engine->fullresult, engine->fullresult.first);
 
   /* re->engine becomes zero if user changed active render engine during render */
-  if (!engine_keep_depsgraph(engine) || !re->engine) {
-    engine_depsgraph_free(engine);
+  if (!engine_keep_graph(engine) || !re->engine) {
+    engine_graph_free(engine);
 
     render_engine_free(engine);
     re->engine = NULL;
@@ -1079,16 +1079,16 @@ void render_engine_update_render_passes(struct RenderEngine *engine,
   engine->update_render_passes_cb = NULL;
   engine->update_render_passes_data = NULL;
 
-  BLI_mutex_unlock(&engine->update_render_passes_mutex);
+  lib_mutex_unlock(&engine->update_render_passes_mutex);
 }
 
-void RE_engine_register_pass(struct RenderEngine *engine,
-                             struct Scene *scene,
-                             struct ViewLayer *view_layer,
-                             const char *name,
-                             int channels,
-                             const char *chanid,
-                             eNodeSocketDatatype type)
+void render_engine_register_pass(struct RenderEngine *engine,
+                                 struct Scene *scene,
+                                 struct ViewLayer *view_layer,
+                                 const char *name,
+                                 int channels,
+                                 const char *chanid,
+                                 eNodeSocketDatatype type)
 {
   if (!(scene && view_layer && engine && engine->update_render_passes_cb)) {
     return;
@@ -1098,16 +1098,16 @@ void RE_engine_register_pass(struct RenderEngine *engine,
       engine->update_render_passes_data, scene, view_layer, name, channels, chanid, type);
 }
 
-void RE_engine_free_blender_memory(RenderEngine *engine)
+void render_engine_free_blender_memory(RenderEngine *engine)
 {
   /* Weak way to save memory, but not crash grease pencil.
    *
-   * TODO(sergey): Find better solution for this.
+   * TODO: Find better solution for this.
    */
-  if (engine->has_grease_pencil || engine_keep_depsgraph(engine)) {
+  if (engine->has_pen || engine_keep_graph(engine)) {
     return;
   }
-  engine_depsgraph_free(engine);
+  engine_graph_free(engine);
 }
 
 struct RenderEngine *RE_engine_get(const Render *re)
