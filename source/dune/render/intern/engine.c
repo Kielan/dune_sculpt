@@ -667,42 +667,42 @@ static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
   Scene *scene = engine->re->scene;
   bool reuse_graph = false;
 
-  /* Reuse depsgraph from persistent data if possible. */
+  /* Reuse graph from persistent data if possible. */
   if (engine->graph) {
     if (graph_get_main(engine->graph) != main ||
         graph_get_input_scene(engine->graph) != scene) {
       /* If main or scene changes, we need a completely new graph. */
       engine_graph_free(engine);
     }
-    else if (graph_get_input_view_layer(engine->depsgraph) != view_layer) {
+    else if (graph_get_input_view_layer(engine->graph) != view_layer) {
       /* If only view layer changed, reuse depsgraph in the hope of reusing
        * objects shared between view layers. */
-      graph_replace_owners(engine->graph, bmain, scene, view_layer);
-      graph_tag_relations_update(engine->depsgraph);
+      graph_replace_owners(engine->graph, main, scene, view_layer);
+      graph_tag_relations_update(engine->graph);
     }
 
     reuse_graph = true;
   }
 
-  if (!engine->depsgraph) {
+  if (!engine->graph) {
     /* Ensure we only use persistent data for one scene / view layer at a time,
      * to avoid excessive memory usage. */
-    RE_FreePersistentData(NULL);
+    render_FreePersistentData(NULL);
 
-    /* Create new depsgraph if not cached with persistent data. */
-    engine->depsgraph = DEG_graph_new(bmain, scene, view_layer, DAG_EVAL_RENDER);
-    DEG_debug_name_set(engine->depsgraph, "RENDER");
+    /* Create new graph if not cached with persistent data. */
+    engine->graph = graph_new(main, scene, view_layer, DAG_EVAL_RENDER);
+    graph_debug_name_set(engine->graph, "RENDER");
   }
 
   if (engine->re->r.scemode & R_BUTS_PREVIEW) {
     /* Update for preview render. */
-    Depsgraph *depsgraph = engine->depsgraph;
-    DEG_graph_relations_update(depsgraph);
+    Graph *graph = engine->graph;
+    graph_relations_update(graph);
 
     /* Need GPU context since this might free GPU buffers. */
-    const bool use_gpu_context = (engine->type->flag & RE_USE_GPU_CONTEXT) && reuse_depsgraph;
-    if (use_gpu_context) {
-      DRW_render_context_enable(engine->re);
+    const bool use_gpu_ctx = (engine->type->flag & RENDER_USE_GPU_CTX) && reuse_depsgraph;
+    if (use_gpu_ctx) {
+      draw_render_ctx_enable(engine->re);
     }
 
     DEG_evaluate_on_framechange(depsgraph, BKE_scene_frame_get(scene));
