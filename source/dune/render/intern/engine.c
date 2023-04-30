@@ -848,7 +848,7 @@ static void engine_render_view_layer(Render *re,
                                      RenderEngine *engine,
                                      ViewLayer *view_layer_iter,
                                      const bool use_engine,
-                                     const bool use_grease_pencil)
+                                     const bool use_pen)
 {
   /* Lock UI so scene can't be edited while we read from it in this render thread. */
   if (re->draw_lock) {
@@ -856,7 +856,7 @@ static void engine_render_view_layer(Render *re,
   }
 
   /* Create depsgraph with scene evaluated at render resolution. */
-  ViewLayer *view_layer = BLI_findstring(
+  ViewLayer *view_layer = lib_findstring(
       &re->scene->view_layers, view_layer_iter->name, offsetof(ViewLayer, name));
   engine_depsgraph_init(engine, view_layer);
 
@@ -873,20 +873,20 @@ static void engine_render_view_layer(Render *re,
 
   /* Perform render with engine. */
   if (use_engine) {
-    const bool use_gpu_context = (engine->type->flag & RE_USE_GPU_CONTEXT);
+    const bool use_gpu_ctx = (engine->type->flag & RE_USE_GPU_CONTEXT);
     if (use_gpu_context) {
-      DRW_render_context_enable(engine->re);
+      draw_render_ctx_enable(engine->re);
     }
 
-    BLI_mutex_lock(&engine->re->engine_draw_mutex);
-    re->engine->flag |= RE_ENGINE_CAN_DRAW;
-    BLI_mutex_unlock(&engine->re->engine_draw_mutex);
+    lib_mutex_lock(&engine->re->engine_draw_mutex);
+    re->engine->flag |= RENDER_ENGINE_CAN_DRAW;
+    lib_mutex_unlock(&engine->re->engine_draw_mutex);
 
     engine->type->render(engine, engine->depsgraph);
 
-    BLI_mutex_lock(&engine->re->engine_draw_mutex);
-    re->engine->flag &= ~RE_ENGINE_CAN_DRAW;
-    BLI_mutex_unlock(&engine->re->engine_draw_mutex);
+    lib_mutex_lock(&engine->re->engine_draw_mutex);
+    re->engine->flag &= ~RENDER_ENGINE_CAN_DRAW;
+    lib_mutex_unlock(&engine->re->engine_draw_mutex);
 
     if (use_gpu_context) {
       DRW_render_context_disable(engine->re);
