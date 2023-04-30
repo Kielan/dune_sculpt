@@ -27,7 +27,7 @@
 #include "lib_threads.h"
 #include "lib_timecode.h"
 
-#include "BLT_translation.h"
+#include "translation.h"
 
 #include "dune_anim_data.h"
 #include "dune_animsys.h" /* <------ should this be here?, needed for sequencer update */
@@ -373,13 +373,13 @@ void render_AcquireResultImageViews(Render *re, RenderResult *rr)
       if (rl) {
         if (rv->rectf == NULL) {
           for (rview = (RenderView *)rr->views.first; rview; rview = rview->next) {
-            rview->rectf = RE_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rview->name);
+            rview->rectf = render_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rview->name);
           }
         }
 
         if (rv->rectz == NULL) {
           for (rview = (RenderView *)rr->views.first; rview; rview = rview->next) {
-            rview->rectz = RE_RenderLayerGetPass(rl, RE_PASSNAME_Z, rview->name);
+            rview->rectz = render_RenderLayerGetPass(rl, RE_PASSNAME_Z, rview->name);
           }
         }
       }
@@ -392,17 +392,17 @@ void render_AcquireResultImageViews(Render *re, RenderResult *rr)
   }
 }
 
-void RE_ReleaseResultImageViews(Render *re, RenderResult *rr)
+void render_ReleaseResultImageViews(Render *re, RenderResult *rr)
 {
   if (re) {
     if (rr) {
       render_result_views_shallowdelete(rr);
     }
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 }
 
-void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
+void render_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 {
   memset(rr, 0, sizeof(RenderResult));
 
@@ -417,7 +417,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
       rr->recty = re->result->recty;
 
       /* actview view */
-      rv = RE_RenderViewGetById(re->result, view_id);
+      rv = render_RenderViewGetById(re->result, view_id);
       rr->have_combined = (rv->rectf != NULL);
 
       rr->rectf = rv->rectf;
@@ -429,11 +429,11 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 
       if (rl) {
         if (rv->rectf == NULL) {
-          rr->rectf = RE_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rv->name);
+          rr->rectf = render_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rv->name);
         }
 
         if (rv->rectz == NULL) {
-          rr->rectz = RE_RenderLayerGetPass(rl, RE_PASSNAME_Z, rv->name);
+          rr->rectz = render_RenderLayerGetPass(rl, RE_PASSNAME_Z, rv->name);
         }
       }
 
@@ -448,19 +448,19 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
   }
 }
 
-void RE_ReleaseResultImage(Render *re)
+void render_ReleaseResultImage(Render *re)
 {
   if (re) {
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 }
 
-void RE_ResultGet32(Render *re, unsigned int *rect)
+void render_ResultGet32(Render *re, unsigned int *rect)
 {
   RenderResult rres;
-  const int view_id = BKE_scene_multiview_view_id_get(&re->r, re->viewname);
+  const int view_id = dune_scene_multiview_view_id_get(&re->r, re->viewname);
 
-  RE_AcquireResultImageViews(re, &rres);
+  render_AcquireResultImageViews(re, &rres);
   render_result_rect_get_pixels(&rres,
                                 rect,
                                 re->rectx,
@@ -468,13 +468,13 @@ void RE_ResultGet32(Render *re, unsigned int *rect)
                                 &re->scene->view_settings,
                                 &re->scene->display_settings,
                                 view_id);
-  RE_ReleaseResultImageViews(re, &rres);
+  render_ReleaseResultImageViews(re, &rres);
 }
 
-void RE_AcquiredResultGet32(Render *re,
-                            RenderResult *result,
-                            unsigned int *rect,
-                            const int view_id)
+void render_AcquiredResultGet32(Render *re,
+                                RenderResult *result,
+                                unsigned int *rect,
+                                const int view_id)
 {
   render_result_rect_get_pixels(result,
                                 rect,
@@ -485,7 +485,7 @@ void RE_AcquiredResultGet32(Render *re,
                                 view_id);
 }
 
-RenderStats *RE_GetStats(Render *re)
+RenderStats *render_GetStats(Render *re)
 {
   return &re->i;
 }
@@ -518,21 +518,21 @@ Render *render_NewRender(const char *name)
 static void scene_render_name_get(const Scene *scene, const size_t max_size, char *render_name)
 {
   if (ID_IS_LINKED(scene)) {
-    BLI_snprintf(render_name, max_size, "%s %s", scene->id.lib->id.name, scene->id.name);
+    lib_snprintf(render_name, max_size, "%s %s", scene->id.lib->id.name, scene->id.name);
   }
   else {
-    BLI_snprintf(render_name, max_size, "%s", scene->id.name);
+    lib_snprintf(render_name, max_size, "%s", scene->id.name);
   }
 }
 
-Render *RE_GetSceneRender(const Scene *scene)
+Render *render_GetSceneRender(const Scene *scene)
 {
   char render_name[MAX_SCENE_RENDER_NAME];
   scene_render_name_get(scene, sizeof(render_name), render_name);
-  return RE_GetRender(render_name);
+  return render_GetRender(render_name);
 }
 
-Render *RE_NewSceneRender(const Scene *scene)
+Render *render_NewSceneRender(const Scene *scene)
 {
   char render_name[MAX_SCENE_RENDER_NAME];
   scene_render_name_get(scene, sizeof(render_name), render_name);
