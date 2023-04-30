@@ -716,8 +716,8 @@ void RE_InitState(Render *re,
 
   /* copy render data and render layers for thread safety */
   render_copy_renderdata(&re->r, rd);
-  BLI_freelistN(&re->view_layers);
-  BLI_duplicatelist(&re->view_layers, render_layers);
+  lib_freelistn(&re->view_layers);
+  lib_duplicatelist(&re->view_layers, render_layers);
   re->active_view_layer = 0;
 
   if (source) {
@@ -740,14 +740,14 @@ void RE_InitState(Render *re,
   }
 
   if (re->rectx < 1 || re->recty < 1 ||
-      (BKE_imtype_is_movie(rd->im_format.imtype) && (re->rectx < 16 || re->recty < 16))) {
-    BKE_report(re->reports, RPT_ERROR, "Image too small");
+      (dune_imtype_is_movie(rd->im_format.imtype) && (re->rectx < 16 || re->recty < 16))) {
+    dune_report(re->reports, RPT_ERROR, "Image too small");
     re->ok = 0;
     return;
   }
 
   if (single_layer) {
-    int index = BLI_findindex(render_layers, single_layer);
+    int index = lib_findindex(render_layers, single_layer);
     if (index != -1) {
       re->active_view_layer = index;
       re->r.scemode |= R_SINGLE_LAYER;
@@ -755,7 +755,7 @@ void RE_InitState(Render *re,
   }
 
   /* if preview render, we try to keep old result */
-  BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+  lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
   if (re->r.scemode & R_BUTS_PREVIEW) {
     if (had_freestyle || (re->r.mode & R_EDGE_FRS)) {
@@ -764,7 +764,7 @@ void RE_InitState(Render *re,
       re->result = NULL;
     }
     else if (re->result) {
-      ViewLayer *active_render_layer = BLI_findlink(&re->view_layers, re->active_view_layer);
+      ViewLayer *active_render_layer = lib_findlink(&re->view_layers, re->active_view_layer);
       RenderLayer *rl;
       bool have_layer = false;
 
@@ -789,17 +789,17 @@ void RE_InitState(Render *re,
 
     /* make empty render result, so display callbacks can initialize */
     render_result_free(re->result);
-    re->result = MEM_callocN(sizeof(RenderResult), "new render result");
+    re->result = mem_callocn(sizeof(RenderResult), "new render result");
     re->result->rectx = re->rectx;
     re->result->recty = re->recty;
     render_result_view_new(re->result, "");
   }
 
-  BLI_rw_mutex_unlock(&re->resultmutex);
+  lib_rw_mutex_unlock(&re->resultmutex);
 
-  RE_init_threadcount(re);
+  render_init_threadcount(re);
 
-  RE_point_density_fix_linking();
+  render_point_density_fix_linking();
 }
 
 void render_update_anim_renderdata(Render *re, RenderData *rd, ListBase *render_layers)
@@ -815,12 +815,12 @@ void render_update_anim_renderdata(Render *re, RenderData *rd, ListBase *render_
   re->r.unit_line_thickness = rd->unit_line_thickness;
 
   /* render layers */
-  BLI_freelistN(&re->view_layers);
-  BLI_duplicatelist(&re->view_layers, render_layers);
+  lib_freelistn(&re->view_layers);
+  lib_duplicatelist(&re->view_layers, render_layers);
 
   /* render views */
-  BLI_freelistN(&re->r.views);
-  BLI_duplicatelist(&re->r.views, &rd->views);
+  lib_freelistn(&re->r.views);
+  lib_duplicatelist(&re->r.views, &rd->views);
 }
 
 void RE_display_init_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
