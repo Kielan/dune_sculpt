@@ -536,10 +536,10 @@ Render *render_NewSceneRender(const Scene *scene)
 {
   char render_name[MAX_SCENE_RENDER_NAME];
   scene_render_name_get(scene, sizeof(render_name), render_name);
-  return RE_NewRender(render_name);
+  return render_NewRender(render_name);
 }
 
-void RE_InitRenderCB(Render *re)
+void render_InitRenderCB(Render *re)
 {
   /* set default empty callbacks */
   re->display_init = result_nothing;
@@ -558,23 +558,23 @@ void RE_InitRenderCB(Render *re)
   re->dih = re->dch = re->duh = re->sdh = re->prh = re->tbh = NULL;
 }
 
-void RE_FreeRender(Render *re)
+void render_FreeRender(Render *re)
 {
   if (re->engine) {
-    RE_engine_free(re->engine);
+    render_engine_free(re->engine);
   }
 
-  BLI_rw_mutex_end(&re->resultmutex);
-  BLI_mutex_end(&re->engine_draw_mutex);
-  BLI_mutex_end(&re->highlighted_tiles_mutex);
+  lib_rw_mutex_end(&re->resultmutex);
+  lib_mutex_end(&re->engine_draw_mutex);
+  lib_mutex_end(&re->highlighted_tiles_mutex);
 
-  BLI_freelistN(&re->view_layers);
-  BLI_freelistN(&re->r.views);
+  lib_freelistn(&re->view_layers);
+  lib_freelistn(&re->r.views);
 
-  BKE_curvemapping_free_data(&re->r.mblur_shutter_curve);
+  dune_curvemapping_free_data(&re->r.mblur_shutter_curve);
 
   if (re->highlighted_tiles != NULL) {
-    BLI_gset_free(re->highlighted_tiles, MEM_freeN);
+    lib_gset_free(re->highlighted_tiles, mem_freen);
   }
 
   /* main dbase can already be invalid now, some database-free code checks it */
@@ -584,8 +584,8 @@ void RE_FreeRender(Render *re)
   render_result_free(re->result);
   render_result_free(re->pushedresult);
 
-  BLI_remlink(&RenderGlobal.renderlist, re);
-  MEM_freeN(re);
+  lib_remlink(&RenderGlobal.renderlist, re);
+  mem_freen(re);
 }
 
 void RE_FreeAllRender(void)
