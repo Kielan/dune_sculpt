@@ -142,7 +142,7 @@ static void render_cb_ex_id(Render *re, Main *bmain, ID *id, eCbEvent evt)
 /** Allocation & Free */
 
 static int do_write_image_or_movie(Render *re,
-                                   Main *bmain,
+                                   Main *main,
                                    Scene *scene,
                                    MovieHandle *mh,
                                    const int totvideos,
@@ -204,7 +204,7 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
 
   /* NOTE: using G_MAIN seems valid here???
    * Not sure it's actually even used anyway, we could as well pass NULL? */
-  dune_cb_ex_null(G_MAIN, BKE_CB_EVT_RENDER_STATS);
+  dune_cb_ex_null(G_MAIN, DUNE_CB_EVT_RENDER_STATS);
 
   fputc('\n', stdout);
   fflush(stdout);
