@@ -280,7 +280,7 @@ static void engine_tile_highlight_set(RenderEngine *engine,
 
   if (re->highlighted_tiles == NULL) {
     re->highlighted_tiles = lib_gset_new(
-        lib_ghashutil_inthash_v4_p, BLI_ghashutil_inthash_v4_cmp, "highlighted tiles");
+        lib_ghashutil_inthash_v4_p, lib_ghashutil_inthash_v4_cmp, "highlighted tiles");
   }
 
   if (highlight) {
@@ -665,23 +665,23 @@ static void engine_depsgraph_init(RenderEngine *engine, ViewLayer *view_layer)
 {
   Main *bmain = engine->re->main;
   Scene *scene = engine->re->scene;
-  bool reuse_depsgraph = false;
+  bool reuse_graph = false;
 
   /* Reuse depsgraph from persistent data if possible. */
-  if (engine->depsgraph) {
-    if (DEG_get_bmain(engine->depsgraph) != bmain ||
-        DEG_get_input_scene(engine->depsgraph) != scene) {
-      /* If bmain or scene changes, we need a completely new graph. */
-      engine_depsgraph_free(engine);
+  if (engine->graph) {
+    if (graph_get_main(engine->graph) != main ||
+        graph_get_input_scene(engine->graph) != scene) {
+      /* If main or scene changes, we need a completely new graph. */
+      engine_graph_free(engine);
     }
-    else if (DEG_get_input_view_layer(engine->depsgraph) != view_layer) {
+    else if (graph_get_input_view_layer(engine->depsgraph) != view_layer) {
       /* If only view layer changed, reuse depsgraph in the hope of reusing
        * objects shared between view layers. */
-      DEG_graph_replace_owners(engine->depsgraph, bmain, scene, view_layer);
-      DEG_graph_tag_relations_update(engine->depsgraph);
+      graph_replace_owners(engine->graph, bmain, scene, view_layer);
+      graph_tag_relations_update(engine->depsgraph);
     }
 
-    reuse_depsgraph = true;
+    reuse_graph = true;
   }
 
   if (!engine->depsgraph) {
