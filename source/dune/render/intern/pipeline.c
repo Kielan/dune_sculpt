@@ -407,7 +407,7 @@ void render_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
   memset(rr, 0, sizeof(RenderResult));
 
   if (re) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
 
     if (re->result) {
       RenderLayer *rl;
@@ -539,7 +539,7 @@ Render *render_NewSceneRender(const Scene *scene)
   return render_NewRender(render_name);
 }
 
-void render_InitRenderCB(Render *re)
+void render_InitRenderCb(Render *re)
 {
   /* set default empty callbacks */
   re->display_init = result_nothing;
@@ -700,13 +700,13 @@ void render_copy_renderdata(RenderData *to, RenderData *from)
 }
 
 void render_InitState(Render *re,
-                  Render *source,
-                  RenderData *rd,
-                  ListBase *render_layers,
-                  ViewLayer *single_layer,
-                  int winx,
-                  int winy,
-                  rcti *disprect)
+                      Render *source,
+                      RenderData *rd,
+                      ListBase *render_layers,
+                      ViewLayer *single_layer,
+                      int winx,
+                      int winy,
+                      rcti *disprect)
 {
   bool had_freestyle = (re->r.mode & R_EDGE_FRS) != 0;
 
@@ -1232,173 +1232,7 @@ static void renderresult_stampinfo(Render *re)
 }
 
 /* -------------------------------------------------------------------- */
-/** Globalsv*/
-
-/* here we store all renders */
-static struct {
-  ListBase renderlist;
-} RenderGlobal = {{NULL, NULL}};
-
-/* -------------------------------------------------------------------- */
-/** Callbacks **/
-
-static void render_cb_exec_null(Render *re, Main *bmain, eCbEvent evt)
-{
-  if (re->r.scemode & R_BUTS_PREVIEW) {
-    return;
-  }
-  BKE_callback_exec_null(bmain, evt);
-}
-
-static void render_callback_exec_id(Render *re, Main *bmain, ID *id, eCbEvent evt)
-{
-  if (re->r.scemode & R_BUTS_PREVIEW) {
-    return;
-  }
-  BKE_callback_exec_id(bmain, id, evt);
-}
-
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Allocation & Free
- * \{ */
-
-static int do_write_image_or_movie(Render *re,
-                                   Main *bmain,
-                                   Scene *scene,
-                                   bMovieHandle *mh,
-                                   const int totvideos,
-                                   const char *name_override);
-
-/* default callbacks, set in each new render */
-static void result_nothing(void *UNUSED(arg), RenderResult *UNUSED(rr))
-{
-}
-static void result_rcti_nothing(void *UNUSED(arg),
-                                RenderResult *UNUSED(rr),
-                                struct rcti *UNUSED(rect))
-{
-}
-static void current_scene_nothing(void *UNUSED(arg), Scene *UNUSED(scene))
-{
-}
-static void stats_nothing(void *UNUSED(arg), RenderStats *UNUSED(rs))
-{
-}
-static void float_nothing(void *UNUSED(arg), float UNUSED(val))
-{
-}
-static int default_break(void *UNUSED(arg))
-{
-  return G.is_break == true;
-}
-
-static void stats_background(void *UNUSED(arg), RenderStats *rs)
-{
-  if (rs->infostr == NULL) {
-    return;
-  }
-
-  uintptr_t mem_in_use, peak_memory;
-  float megs_used_memory, megs_peak_memory;
-  char info_time_str[32];
-
-  mem_in_use = MEM_get_memory_in_use();
-  peak_memory = MEM_get_peak_memory();
-
-  megs_used_memory = (mem_in_use) / (1024.0 * 1024.0);
-  megs_peak_memory = (peak_memory) / (1024.0 * 1024.0);
-
-  fprintf(stdout,
-          TIP_("Fra:%d Mem:%.2fM (Peak %.2fM) "),
-          rs->cfra,
-          megs_used_memory,
-          megs_peak_memory);
-
-  BLI_timecode_string_from_time_simple(
-      info_time_str, sizeof(info_time_str), PIL_check_seconds_timer() - rs->starttime);
-  fprintf(stdout, TIP_("| Time:%s | "), info_time_str);
-
-  fprintf(stdout, "%s", rs->infostr);
-
-  /* Flush stdout to be sure python callbacks are printing stuff after blender. */
-  fflush(stdout);
-
-  /* NOTE: using G_MAIN seems valid here???
-   * Not sure it's actually even used anyway, we could as well pass NULL? */
-  BKE_callback_exec_null(G_MAIN, BKE_CB_EVT_RENDER_STATS);
-
-  fputc('\n', stdout);
-  fflush(stdout);
-}
-
-void RE_FreeRenderResult(RenderResult *rr)
-{
-  render_result_free(rr);
-}
-
-float *RE_RenderLayerGetPass(RenderLayer *rl, const char *name, const char *viewname)
-{
-  RenderPass *rpass = RE_pass_find_by_name(rl, name, viewname);
-  return rpass ? rpass->rect : NULL;
-}
-
-RenderLayer *RE_GetRenderLayer(RenderResult *rr, const char *name)
-{
-  if (rr == NULL) {
-    return NULL;
-  }
-
-  return BLI_findstring(&rr->layers, name, offsetof(RenderLayer, name));
-}
-
-bool RE_HasSingleLayer(Render *re)
-{
-  return (re->r.scemode & R_SINGLE_LAYER);
-}
-
-RenderResult *RE_MultilayerConvert(
-    void *exrhandle, const char *colorspace, bool predivide, int rectx, int recty)
-{
-  return render_result_new_from_exr(exrhandle, colorspace, predivide, rectx, recty);
-}
-
-RenderLayer *render_get_active_layer(Render *re, RenderResult *rr)
-{
-  ViewLayer *view_layer = BLI_findlink(&re->view_layers, re->active_view_layer);
-
-  if (view_layer) {
-    RenderLayer *rl = BLI_findstring(&rr->layers, view_layer->name, offsetof(RenderLayer, name));
-
-    if (rl) {
-      return rl;
-    }
-  }
-
-  return rr->layers.first;
-}
-
-static bool render_scene_has_layers_to_render(Scene *scene, ViewLayer *single_layer)
-{
-  if (single_layer) {
-    return true;
-  }
-
-  ViewLayer *view_layer;
-  for (view_layer = scene->view_layers.first; view_layer; view_layer = view_layer->next) {
-    if (view_layer->flag & VIEW_LAYER_RENDER) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Public Render API
- * \{ */
+/** Public Render API **/
 
 Render *RE_GetRender(const char *name)
 {
