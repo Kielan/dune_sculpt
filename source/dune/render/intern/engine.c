@@ -570,9 +570,9 @@ float render_engine_get_camera_shift_x(RenderEngine *engine, Object *camera, boo
 }
 
 void dune_engine_get_camera_model_matrix(RenderEngine *engine,
-                                       Object *camera,
-                                       bool use_spherical_stereo,
-                                       float r_modelmat[16])
+                                         Object *camera,
+                                         bool use_spherical_stereo,
+                                         float r_modelmat[16])
 {
   /* When using spherical stereo, get model matrix without multiview,
    * leaving stereo to be handled by the engine. */
@@ -644,7 +644,7 @@ RenderData *render_engine_get_render_data(Render *re)
   return &re->r;
 }
 
-bool RE_engine_use_persistent_data(RenderEngine *engine)
+bool render_engine_use_persistent_data(RenderEngine *engine)
 {
   /* Re-rendering is not supported with GPU contexts, since the GPU context
    * is destroyed when the render thread exists. */
