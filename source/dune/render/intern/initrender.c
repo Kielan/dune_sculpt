@@ -6,16 +6,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_ghash.h"
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_blenlib.h"
+#include "lib_ghash.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "DNA_camera_types.h"
+#include "types_camera.h"
 
-#include "BKE_camera.h"
+#include "dune_camera.h"
 
 /* this module */
 #include "pipeline.h"
@@ -141,10 +141,10 @@ float RE_filter_value(int type, float x)
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-struct Object *RE_GetCamera(Render *re)
+struct Object *render_GetCamera(Render *re)
 {
   Object *camera = re->camera_override ? re->camera_override : re->scene->camera;
-  return BKE_camera_multiview_render(re->scene, camera, re->viewname);
+  return dune_camera_multiview_render(re->scene, camera, re->viewname);
 }
 
 void RE_SetOverrideCamera(Render *re, Object *cam_ob)
