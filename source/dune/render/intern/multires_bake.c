@@ -420,17 +420,17 @@ static void *do_multires_bake_thread(void *data_v)
  * require lock around accessing such data
  * this function will ensure all arrays are allocated before threading started
  */
-static void init_ccgdm_arrays(DerivedMesh *dm)
+static void init_ccgdm_arrays(DerivedMesh *mesh)
 {
   CCGElem **grid_data;
   CCGKey key;
   int grid_size;
   const int *grid_offset;
 
-  grid_size = dm->getGridSize(dm);
-  grid_data = dm->getGridData(dm);
-  grid_offset = dm->getGridOffset(dm);
-  dm->getGridKey(dm, &key);
+  grid_size = mesh->getGridSize(mesh);
+  grid_data = mesh->getGridData(mesh);
+  grid_offset = mesh->getGridOffset(mesh);
+  mesh->getGridKey(mesh, &key);
 
   (void)grid_size;
   (void)grid_data;
