@@ -508,15 +508,15 @@ static void generate_margin(ImBuf *ibuf,
   else {
     lib_assert(mesh != nullptr);
     lib_assert(me == nullptr);
-    totpoly = dm->getNumPolys(dm);
-    totedge = dm->getNumEdges(dm);
-    totloop = dm->getNumLoops(dm);
-    mpoly = dm->getPolyArray(dm);
-    mloop = dm->getLoopArray(dm);
-    mloopuv = (MLoopUV const *)dm->getLoopDataArray(dm, CD_MLOOPUV);
+    totpoly = mesh->getNumPolys(mesh);
+    totedge = mesh->getNumEdges(mesh);
+    totloop = mesh->getNumLoops(mesh);
+    mpoly = mesh->getPolyArray(mesh);
+    mloop = mesh->getLoopArray(mesh);
+    mloopuv = (MeshLoopUV const *)mesh->getLoopDataArray(mesh, CD_MLOOPUV);
 
-    looptri = dm->getLoopTriArray(dm);
-    tottri = dm->getNumLoopTri(dm);
+    looptri = mesh->getLoopTriArray(mesh);
+    tottri = mesh->getNumLoopTri(mesh);
   }
 
   TextureMarginMap map(ibuf->x, ibuf->y, mpoly, mloop, mloopuv, totpoly, totloop, totedge);
@@ -525,21 +525,21 @@ static void generate_margin(ImBuf *ibuf,
   /* Now the map contains 3 sorts of values: 0xFFFFFFFF for empty pixels, `0x80000000 + polyindex`
    * for margin pixels, just `polyindex` for poly pixels. */
   if (mask) {
-    mask = (char *)MEM_dupallocN(mask);
+    mask = (char *)mem_dupallocn(mask);
   }
   else {
-    mask = (char *)MEM_callocN(sizeof(char) * ibuf->x * ibuf->y, __func__);
+    mask = (char *)mem_callocn(sizeof(char) * ibuf->x * ibuf->y, __func__);
     draw_new_mask = true;
   }
 
   for (int i = 0; i < tottri; i++) {
-    const MLoopTri *lt = &looptri[i];
+    const MeshLoopTri *lt = &looptri[i];
     float vec[3][2];
 
     for (int a = 0; a < 3; a++) {
       const float *uv = mloopuv[lt->tri[a]].uv;
 
-      /* NOTE(campbell): workaround for pixel aligned UVs which are common and can screw up our
+      /* NOTE: workaround for pixel aligned UVs which are common and can screw up our
        * intersection tests where a pixel gets in between 2 faces or the middle of a quad,
        * camera aligned quads also have this problem but they are less common.
        * Add a small offset to the UVs, fixes bug T18685. */
@@ -548,16 +548,16 @@ static void generate_margin(ImBuf *ibuf,
     }
 
     /* NOTE: we need the top bit for the dijkstra distance map. */
-    BLI_assert(lt->poly < 0x80000000);
+    lib_assert(lt->poly < 0x80000000);
 
     map.rasterize_tri(vec[0], vec[1], vec[2], lt->poly, draw_new_mask ? mask : nullptr);
   }
 
-  char *tmpmask = (char *)MEM_dupallocN(mask);
+  char *tmpmask = (char *)mem_dupallocn(mask);
   /* Extend (with averaging) by 2 pixels. Those will be overwritten, but it
    *  helps linear interpolations on the edges of polygons. */
   IMB_filter_extend(ibuf, tmpmask, 2);
-  MEM_freeN(tmpmask);
+  mem_freen(tmpmask);
 
   map.grow_dijkstra(margin);
 
@@ -586,10 +586,10 @@ void render_generate_texturemargin_adjacentfaces(
   dune::render::texturemargin::generate_margin(ibuf, mask, margin, me, nullptr, uv_layer);
 }
 
-void render_generate_texturemargin_adjacentfaces_dm(ImBuf *ibuf,
+void render_generate_texturemargin_adjacentfaces_derived_mesh(ImBuf *ibuf,
                                                 char *mask,
                                                 const int margin,
-                                                DerivedMesh *dm)
+                                                DerivedMesh *mesh)
 {
-  dune::render::texturemargin::generate_margin(ibuf, mask, margin, nullptr, dm, nullptr);
+  dune::render::texturemargin::generate_margin(ibuf, mask, margin, nullptr, mesh, nullptr);
 }
