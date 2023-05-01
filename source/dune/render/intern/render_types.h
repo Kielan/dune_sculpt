@@ -4,14 +4,14 @@
 /* exposed internal in render module only! */
 /* ------------------------------------------------------------------------- */
 
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "BLI_threads.h"
+#include "lib_threads.h"
 
-#include "BKE_main.h"
+#include "dune_main.h"
 
-#include "RE_pipeline.h"
+#include "render_pipeline.h"
 
 struct GHash;
 struct GSet;
@@ -41,7 +41,7 @@ struct Render {
   RenderResult *result;
   /* if render with single-layer option, other rendered layers are stored here */
   RenderResult *pushedresult;
-  /** A list of #RenderResults, for full-samples. */
+  /** A list of RenderResults, for full-samples. */
   ListBase fullresult;
   /* read/write mutex, all internal code that writes to re->result must use a
    * write lock, all external code must use a read lock. internal code is assumed
@@ -52,7 +52,7 @@ struct Render {
   ThreadMutex engine_draw_mutex;
 
   /** Window size, display rect, viewplane.
-   * \note Buffer width and height with percentage applied
+   * note Buffer width and height with percentage applied
    * without border & crop. convert to long before multiplying together to avoid overflow. */
   int winx, winy;
   rcti disprect;  /* part within winx winy */
@@ -84,7 +84,7 @@ struct Render {
 
   /* NOTE: This is a minimal dependency graph and evaluated scene which is enough to access view
    * layer visibility and use for postprocessing (compositor and sequencer). */
-  Depsgraph *pipeline_depsgraph;
+  Graph *pipeline_graph;
   Scene *pipeline_scene_eval;
 
   /* callbacks */
@@ -115,8 +115,8 @@ struct Render {
   char viewname[MAX_NAME];
 
   /* TODO: replace by a whole draw manager. */
-  void *gl_context;
-  void *gpu_context;
+  void *gl_ctx;
+  void *gpu_ctx;
 };
 
 /* **************** defines ********************* */
