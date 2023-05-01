@@ -16,7 +16,7 @@
 #include "types_scene.h"
 #include "types_texture.h"
 
-#include "lib_blenlib.h"
+#include "lib_dunelib.h"
 #include "lib_math.h"
 #include "lib_threads.h"
 #include "lib_utildefines.h"
