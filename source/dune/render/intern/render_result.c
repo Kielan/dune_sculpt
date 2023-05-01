@@ -964,16 +964,16 @@ static void render_result_exr_file_cache_path(Scene *sce, const char *root, char
 
   /* Default to *non-volatile* tmp dir. */
   if (*root == '\0') {
-    root = BKE_tempdir_base();
+    root = dune_tempdir_base();
   }
 
-  BLI_snprintf(filename_full,
+  lib_snprintf(filename_full,
                sizeof(filename_full),
                "cached_RR_%s_%s_%s.exr",
                filename,
                sce->id.name + 2,
                path_hexdigest);
-  BLI_make_file_string(dirname, r_path, root, filename_full);
+  lib_make_file_string(dirname, r_path, root, filename_full);
 }
 
 void render_result_exr_file_cache_write(Render *re)
@@ -985,7 +985,7 @@ void render_result_exr_file_cache_write(Render *re)
   render_result_exr_file_cache_path(re->scene, root, str);
   printf("Caching exr file, %dx%d, %s\n", rr->rectx, rr->recty, str);
 
-  BKE_image_render_write_exr(NULL, rr, str, NULL, NULL, -1);
+  dune_image_render_write_exr(NULL, rr, str, NULL, NULL, -1);
 }
 
 bool render_result_exr_file_cache_read(Render *re)
@@ -1009,7 +1009,7 @@ bool render_result_exr_file_cache_read(Render *re)
 
   /* Read file contents into render result. */
   const char *colorspace = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
-  RE_FreeRenderResult(re->result);
+  render_FreeRenderResult(re->result);
 
   IMB_exr_read_channels(exrhandle);
   re->result = render_result_new_from_exr(exrhandle, colorspace, false, rectx, recty);
@@ -1021,15 +1021,15 @@ bool render_result_exr_file_cache_read(Render *re)
 
 /*************************** Combined Pixel Rect *****************************/
 
-ImBuf *RE_render_result_rect_to_ibuf(RenderResult *rr,
+ImBuf *render_result_rect_to_ibuf(RenderResult *rr,
                                      const ImageFormatData *imf,
                                      const float dither,
                                      const int view_id)
 {
   ImBuf *ibuf = IMB_allocImBuf(rr->rectx, rr->recty, imf->planes, 0);
-  RenderView *rv = RE_RenderViewGetById(rr, view_id);
+  RenderView *rv = render_RenderViewGetById(rr, view_id);
 
-  /* if not exists, BKE_imbuf_write makes one */
+  /* if not exists, dune_imbuf_write makes one */
   ibuf->rect = (unsigned int *)rv->rect32;
   ibuf->rect_float = rv->rectf;
   ibuf->zbuf_float = rv->rectz;
