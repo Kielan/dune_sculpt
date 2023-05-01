@@ -237,7 +237,7 @@ static void pointdensity_cache_psys(
       /* TEX_PD_WORLDSPACE */
     }
 
-    BLI_bvhtree_insert(pd->point_tree, i, partco, 1);
+    lib_bvhtree_insert(pd->point_tree, i, partco, 1);
 
     if (data_vel) {
       data_vel[i * 3 + 0] = state.vel[0];
@@ -464,7 +464,7 @@ static void free_pointdensity(PointDensity *pd)
     pd->point_tree = NULL;
   }
 
-  MEM_SAFE_FREE(pd->point_data);
+  mem_safe_free(pd->point_data);
   pd->totpoints = 0;
 }
 
@@ -640,7 +640,7 @@ static int pointdensity(PointDensity *pd,
   }
 
   /* BVH query with the potentially perturbed coordinates */
-  num = BLI_bvhtree_range_query(pd->point_tree, co, pd->radius, accum_density, &pdr);
+  num = lib_bvhtree_range_query(pd->point_tree, co, pd->radius, accum_density, &pdr);
   if (num > 0) {
     age /= num;
     mul_v3_fl(vec, 1.0f / num);
@@ -684,7 +684,7 @@ static void pointdensity_color(
         float speed = len_v3(vec) * pd->speed_scale;
 
         if (pd->coba) {
-          if (BKE_colorband_evaluate(pd->coba, speed, rgba)) {
+          if (dune_colorband_evaluate(pd->coba, speed, rgba)) {
             texres->talpha = true;
             copy_v3_v3(texres->trgba, rgba);
             texres->tin *= rgba[3];
@@ -759,17 +759,17 @@ static void particle_system_minmax(Depsgraph *depsgraph,
 
   INIT_MINMAX(min, max);
   if (part->type == PART_HAIR) {
-    /* TODO(sergey): Not supported currently. */
+    /* TODO: Not supported currently. */
     return;
   }
 
   unit_m4(mat);
 
-  sim.depsgraph = depsgraph;
+  sim.graph = graph;
   sim.scene = scene;
   sim.ob = object;
   sim.psys = psys;
-  sim.psmd = psys_get_modifier(object, psys);
+  sim.psmd = psys_get_mod(object, psys);
 
   invert_m4_m4(imat, object->obmat);
   total_particles = psys->totpart + psys->totchild;
@@ -790,27 +790,27 @@ static void particle_system_minmax(Depsgraph *depsgraph,
   }
 
   if (psys->lattice_deform_data) {
-    BKE_lattice_deform_data_destroy(psys->lattice_deform_data);
+    dune_lattice_deform_data_destroy(psys->lattice_deform_data);
     psys->lattice_deform_data = NULL;
   }
 }
 
-void RE_point_density_cache(struct Depsgraph *depsgraph, PointDensity *pd)
+void RE_point_density_cache(struct Graph *graph, PointDensity *pd)
 {
-  Scene *scene = DEG_get_evaluated_scene(depsgraph);
+  Scene *scene = graph_get_evaluated_scene(graph);
 
   /* Same matrices/resolution as dupli_render_particle_set(). */
-  BLI_mutex_lock(&sample_mutex);
-  cache_pointdensity(depsgraph, scene, pd);
-  BLI_mutex_unlock(&sample_mutex);
+  lib_mutex_lock(&sample_mutex);
+  cache_pointdensity(graph, scene, pd);
+  lib_mutex_unlock(&sample_mutex);
 }
 
-void RE_point_density_minmax(struct Depsgraph *depsgraph,
+void RE_point_density_minmax(struct Graph *graph,
                              struct PointDensity *pd,
                              float r_min[3],
                              float r_max[3])
 {
-  Scene *scene = DEG_get_evaluated_scene(depsgraph);
+  Scene *scene = DEG_get_evaluated_scene(graph);
   Object *object = pd->object;
   if (object == NULL) {
     zero_v3(r_min);
