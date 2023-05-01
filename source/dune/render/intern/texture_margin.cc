@@ -1,34 +1,32 @@
-#include "BLI_assert.h"
-#include "BLI_math_geom.h"
-#include "BLI_math_vec_types.hh"
-#include "BLI_math_vector.hh"
-#include "BLI_vector.hh"
+#include "lib_assert.h"
+#include "lib_math_geom.h"
+#include "lib_math_vec_types.hh"
+#include "lib_math_vector.hh"
+#include "lib_vector.hh"
 
-#include "BKE_DerivedMesh.h"
-#include "BKE_mesh.h"
+#include "dune_DerivedMesh.h"
+#include "dune_mesh.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #include "zbuf.h"  // for rasterizer
 
-#include "RE_texture_margin.h"
+#include "render_texture_margin.h"
 
 #include <algorithm>
 #include <cmath>
 #include <valarray>
 
-namespace blender::render::texturemargin {
+namespace dune::render::texturemargin {
 
-/**
- * The map class contains both a pixel map which maps out polygon indices for all UV-polygons and
- * adjacency tables.
- */
+/** The map class contains both a pixel map which maps out polygon indices for all UV-polygons and
+ ** adjacency tables. **/
 class TextureMarginMap {
   static const int directions[8][2];
   static const int distances[8];
@@ -44,9 +42,9 @@ class TextureMarginMap {
   uint32_t value_to_store_;
   char *mask_;
 
-  MPoly const *mpoly_;
-  MLoop const *mloop_;
-  MLoopUV const *mloopuv_;
+  MeshPoly const *mpoly_;
+  MeshLoop const *mloop_;
+  MeshLoopUV const *mloopuv_;
   int totpoly_;
   int totloop_;
   int totedge_;
@@ -54,9 +52,9 @@ class TextureMarginMap {
  public:
   TextureMarginMap(size_t w,
                    size_t h,
-                   MPoly const *mpoly,
-                   MLoop const *mloop,
-                   MLoopUV const *mloopuv,
+                   MeshPoly const *mpoly,
+                   MeshLoop const *mloop,
+                   MeshLoopUV const *mloopuv,
                    int totpoly,
                    int totloop,
                    int totedge)
@@ -83,8 +81,8 @@ class TextureMarginMap {
 
   inline void set_pixel(int x, int y, uint32_t value)
   {
-    BLI_assert(x < w_);
-    BLI_assert(x >= 0);
+    lib_assert(x < w_);
+    lib_assert(x >= 0);
     pixel_data_[y * w_ + x] = value;
   }
 
@@ -183,7 +181,7 @@ class TextureMarginMap {
           if (x >= 0 && x < w_ && y >= 0 && y < h_) {
             uint32_t dp = get_pixel(x, y);
             if (IsDijkstraPixel(dp) && (DijkstraPixelGetDistance(dp) > dist + distances[i])) {
-              BLI_assert(DijkstraPixelGetDirection(dp) != i);
+              lib_assert(DijkstraPixelGetDirection(dp) != i);
               set_pixel(x, y, PackDijkstraPixel(dist + distances[i], i));
               active_pixels.append(DijkstraActivePixel(dist + distances[i], x, y));
               std::push_heap(active_pixels.begin(), active_pixels.end(), cmp_dijkstrapixel_fun);
@@ -217,13 +215,13 @@ class TextureMarginMap {
             yy -= directions[direction][1];
             dp = get_pixel(xx, yy);
             dist -= distances[direction];
-            BLI_assert(!dist || (dist == DijkstraPixelGetDistance(dp)));
+            lib_assert(!dist || (dist == DijkstraPixelGetDistance(dp)));
             direction = DijkstraPixelGetDirection(dp);
           }
 
           uint32_t poly = get_pixel(xx, yy);
 
-          BLI_assert(!IsDijkstraPixel(poly));
+          lib_assert(!IsDijkstraPixel(poly));
 
           float destX, destY;
 
@@ -267,7 +265,7 @@ class TextureMarginMap {
   }
 
  private:
-  float2 uv_to_xy(MLoopUV const &mloopuv) const
+  float2 uv_to_xy(MeshLoopUV const &mloopuv) const
   {
     float2 ret;
     ret.x = ((mloopuv.uv[0] * w_) - (0.5f + 0.001f));
@@ -297,7 +295,7 @@ class TextureMarginMap {
         tmpmap[edge] = i;
       }
       else {
-        BLI_assert(tmpmap[edge] >= 0);
+        lib_assert(tmpmap[edge] >= 0);
         loop_adjacency_map_[i] = tmpmap[edge];
         loop_adjacency_map_[tmpmap[edge]] = i;
       }
@@ -352,12 +350,10 @@ class TextureMarginMap {
     return mindist >= 0.f;
   }
 
-  /**
-   * Find which edge of the src_poly is closest to x,y. Look up its adjacent UV-edge and polygon.
-   * Then return the location of the equivalent pixel in the other polygon.
-   * Returns true if a new pixel location was found, false if it wasn't, which can happen if the
-   * margin pixel is on a corner, or the UV-edge doesn't have an adjacent polygon.
-   */
+  /** Find which edge of the src_poly is closest to x,y. Look up its adjacent UV-edge and polygon.
+    * Then return the location of the equivalent pixel in the other polygon.
+    * Returns true if a new pixel location was found, false if it wasn't, which can happen if the
+    * margin pixel is on a corner, or the UV-edge doesn't have an adjacent polygon. */
   bool lookup_pixel(float x,
                     float y,
                     int src_poly,
@@ -374,8 +370,7 @@ class TextureMarginMap {
     float found_dist = -1;
     float found_t = 0;
 
-    /* Find the closest edge on which the point x,y can be projected.
-     */
+    /* Find the closest edge on which the point x,y can be projected. */
     for (size_t i = 0; i < mpoly_[src_poly].totloop; i++) {
       int l1 = mpoly_[src_poly].loopstart + i;
       int l2 = l1 + 1;
@@ -474,21 +469,21 @@ static void generate_margin(ImBuf *ibuf,
                             char *mask,
                             const int margin,
                             const Mesh *me,
-                            DerivedMesh *dm,
+                            DerivedMesh *mesh,
                             char const *uv_layer)
 {
 
-  MPoly *mpoly;
-  MLoop *mloop;
-  MLoopUV const *mloopuv;
+  MeshPoly *mpoly;
+  MeshLoop *mloop;
+  MeshLoopUV const *mloopuv;
   int totpoly, totloop, totedge;
 
   int tottri;
-  MLoopTri const *looptri;
-  MLoopTri *looptri_mem = nullptr;
+  MeshLoopTri const *looptri;
+  MeshLoopTri *looptri_mem = nullptr;
 
   if (me) {
-    BLI_assert(dm == nullptr);
+    lib_assert(mesh == nullptr);
     totpoly = me->totpoly;
     totloop = me->totloop;
     totedge = me->totedge;
@@ -496,23 +491,23 @@ static void generate_margin(ImBuf *ibuf,
     mloop = me->mloop;
 
     if ((uv_layer == nullptr) || (uv_layer[0] == '\0')) {
-      mloopuv = static_cast<MLoopUV const *>(CustomData_get_layer(&me->ldata, CD_MLOOPUV));
+      mloopuv = static_cast<MeshLoopUV const *>(CustomData_get_layer(&me->ldata, CD_MLOOPUV));
     }
     else {
       int uv_id = CustomData_get_named_layer(&me->ldata, CD_MLOOPUV, uv_layer);
-      mloopuv = static_cast<MLoopUV const *>(
+      mloopuv = static_cast<MeshLoopUV const *>(
           CustomData_get_layer_n(&me->ldata, CD_MLOOPUV, uv_id));
     }
 
     tottri = poly_to_tri_count(me->totpoly, me->totloop);
-    looptri_mem = static_cast<MLoopTri *>(MEM_mallocN(sizeof(*looptri) * tottri, __func__));
-    BKE_mesh_recalc_looptri(
+    looptri_mem = static_cast<MeshLoopTri *>(mem_mallocn(sizeof(*looptri) * tottri, __func__));
+    dune_mesh_recalc_looptri(
         me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri_mem);
     looptri = looptri_mem;
   }
   else {
-    BLI_assert(dm != nullptr);
-    BLI_assert(me == nullptr);
+    lib_assert(mesh != nullptr);
+    lib_assert(me == nullptr);
     totpoly = dm->getNumPolys(dm);
     totedge = dm->getNumEdges(dm);
     totloop = dm->getNumLoops(dm);
