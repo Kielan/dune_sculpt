@@ -404,8 +404,8 @@ RenderResult *render_result_new(Render *re,
 
   /* Border render; calculate offset for use in compositor. compo is centralized coords. */
   /* XXX: obsolete? I now use it for drawing border render offset. */
-  rr->xof = re->disprect.xmin + BLI_rcti_cent_x(&re->disprect) - (re->winx / 2);
-  rr->yof = re->disprect.ymin + BLI_rcti_cent_y(&re->disprect) - (re->winy / 2);
+  rr->xof = re->disprect.xmin + lib_rcti_cent_x(&re->disprect) - (re->winx / 2);
+  rr->yof = re->disprect.ymin + lib_rcti_cent_y(&re->disprect) - (re->winy / 2);
 
   /* Preview does not support deferred render result allocation. */
   if (re->r.scemode & R_BUTS_PREVIEW) {
@@ -764,7 +764,7 @@ void render_result_views_new(RenderResult *rr, const RenderData *rd)
   /* check renderdata for amount of views */
   if (rd->scemode & R_MULTIVIEW) {
     for (srv = rd->views.first; srv; srv = srv->next) {
-      if (BKE_scene_multiview_is_render_view_active(rd, srv) == false) {
+      if (dune_scene_multiview_is_render_view_active(rd, srv) == false) {
         continue;
       }
       render_result_view_new(rr, srv->name);
@@ -772,7 +772,7 @@ void render_result_views_new(RenderResult *rr, const RenderData *rd)
   }
 
   /* we always need at least one view */
-  if (BLI_listbase_count_at_most(&rr->views, 1) == 0) {
+  if (lib_listbase_count_at_most(&rr->views, 1) == 0) {
     render_result_view_new(rr, "");
   }
 }
@@ -866,25 +866,25 @@ void render_result_single_layer_end(Render *re)
     rl = re->result->layers.first;
 
     /* render result should be empty after this */
-    BLI_remlink(&re->result->layers, rl);
+    lib_remlink(&re->result->layers, rl);
 
     /* reconstruct render result layers */
     for (nr = 0, view_layer = re->view_layers.first; view_layer;
          view_layer = view_layer->next, nr++) {
       if (nr == re->active_view_layer) {
-        BLI_addtail(&re->result->layers, rl);
+        lib_addtail(&re->result->layers, rl);
       }
       else {
-        rlpush = RE_GetRenderLayer(re->pushedresult, view_layer->name);
+        rlpush = render_GetRenderLayer(re->pushedresult, view_layer->name);
         if (rlpush) {
-          BLI_remlink(&re->pushedresult->layers, rlpush);
-          BLI_addtail(&re->result->layers, rlpush);
+          lib_remlink(&re->pushedresult->layers, rlpush);
+          lib_addtail(&re->result->layers, rlpush);
         }
       }
     }
   }
 
-  RE_FreeRenderResult(re->pushedresult);
+  render_FreeRenderResult(re->pushedresult);
   re->pushedresult = NULL;
 }
 
@@ -926,13 +926,13 @@ int render_result_exr_file_read_path(RenderResult *rr,
       char fullname[EXR_PASS_MAXNAME];
 
       for (a = 0; a < xstride; a++) {
-        RE_render_result_full_channel_name(
+        render_result_full_channel_name(
             fullname, NULL, rpass->name, rpass->view, rpass->chan_id, a);
         IMB_exr_set_channel(
             exrhandle, rl->name, fullname, xstride, xstride * rectx, rpass->rect + a);
       }
 
-      RE_render_result_full_channel_name(
+      render_result_full_channel_name(
           rpass->fullname, NULL, rpass->name, rpass->view, rpass->chan_id, -1);
     }
   }
@@ -950,17 +950,17 @@ static void render_result_exr_file_cache_path(Scene *sce, const char *root, char
   char path_hexdigest[33];
 
   /* If root is relative, use either current .blend file dir, or temp one if not saved. */
-  const char *blendfile_path = BKE_main_blendfile_path_from_global();
-  if (blendfile_path[0] != '\0') {
-    BLI_split_dirfile(blendfile_path, dirname, filename, sizeof(dirname), sizeof(filename));
-    BLI_path_extension_replace(filename, sizeof(filename), ""); /* strip '.blend' */
-    BLI_hash_md5_buffer(blendfile_path, strlen(blendfile_path), path_digest);
+  const char *dunefile_path = dune_main_dunefile_path_from_global();
+  if (dunefile_path[0] != '\0') {
+    lib_split_dirfile(dunefile_path, dirname, filename, sizeof(dirname), sizeof(filename));
+    lib_path_extension_replace(filename, sizeof(filename), ""); /* strip '.dune' */
+    lib_hash_md5_buffer(dunefile_path, strlen(dunefile_path), path_digest);
   }
   else {
-    BLI_strncpy(dirname, BKE_tempdir_base(), sizeof(dirname));
-    BLI_strncpy(filename, "UNSAVED", sizeof(filename));
+    lib_strncpy(dirname, dune_tempdir_base(), sizeof(dirname));
+    lib_strncpy(filename, "UNSAVED", sizeof(filename));
   }
-  BLI_hash_md5_to_hexdigest(path_digest, path_hexdigest);
+  lib_hash_md5_to_hexdigest(path_digest, path_hexdigest);
 
   /* Default to *non-volatile* tmp dir. */
   if (*root == '\0') {
