@@ -280,7 +280,7 @@ static void pointdensity_cache_vertex_color(PointDensity *pd,
   }
 
   /* Stores the number of MLoops using the same vertex, so we can normalize colors. */
-  int *mcorners = MEM_callocN(sizeof(int) * pd->totpoints, "point density corner count");
+  int *mcorners = mem_callocn(sizeof(int) * pd->totpoints, "point density corner count");
 
   for (i = 0; i < totloop; i++) {
     int v = mloop[i].v;
@@ -306,7 +306,7 @@ static void pointdensity_cache_vertex_color(PointDensity *pd,
     }
   }
 
-  MEM_freeN(mcorners);
+  mem_freen(mcorners);
 }
 
 static void pointdensity_cache_vertex_weight(PointDensity *pd,
@@ -315,26 +315,26 @@ static void pointdensity_cache_vertex_weight(PointDensity *pd,
                                              float *data_color)
 {
   const int totvert = mesh->totvert;
-  const MDeformVert *mdef, *dv;
+  const MeshDeformVert *mdef, *dv;
   int mdef_index;
   int i;
 
-  BLI_assert(data_color);
+  lib_assert(data_color);
 
   mdef = CustomData_get_layer(&mesh->vdata, CD_MDEFORMVERT);
   if (!mdef) {
     return;
   }
-  mdef_index = BKE_id_defgroup_name_index(&mesh->id, pd->vertex_attribute_name);
+  mdef_index = dune_id_defgroup_name_index(&mesh->id, pd->vertex_attribute_name);
   if (mdef_index < 0) {
-    mdef_index = BKE_object_defgroup_active_index_get(ob) - 1;
+    mdef_index = dune_object_defgroup_active_index_get(ob) - 1;
   }
   if (mdef_index < 0) {
     return;
   }
 
   for (i = 0, dv = mdef; i < totvert; i++, dv++, data_color += 3) {
-    MDeformWeight *dw;
+    MeshDeformWeight *dw;
     int j;
 
     for (j = 0, dw = dv->dw; j < dv->totweight; j++, dw++) {
@@ -348,8 +348,8 @@ static void pointdensity_cache_vertex_weight(PointDensity *pd,
 
 static void pointdensity_cache_vertex_normal(Mesh *mesh, float *data_color)
 {
-  BLI_assert(data_color);
-  const float(*vert_normals)[3] = BKE_mesh_vertex_normals_ensure(mesh);
+  lib_assert(data_color);
+  const float(*vert_normals)[3] = dune_mesh_vertex_normals_ensure(mesh);
   memcpy(data_color, vert_normals, sizeof(float[3]) * mesh->totvert);
 }
 
@@ -379,7 +379,7 @@ static void pointdensity_cache_object(PointDensity *pd, Object *ob)
     return;
   }
 
-  pd->point_tree = BLI_bvhtree_new(pd->totpoints, 0.0, 4, 6);
+  pd->point_tree = lib_bvhtree_new(pd->totpoints, 0.0, 4, 6);
   alloc_point_data(pd);
   point_data_pointers(pd, NULL, NULL, &data_color);
 
@@ -401,7 +401,7 @@ static void pointdensity_cache_object(PointDensity *pd, Object *ob)
         break;
     }
 
-    BLI_bvhtree_insert(pd->point_tree, i, co, 1);
+    lib_bvhtree_insert(pd->point_tree, i, co, 1);
   }
 
   switch (pd->ob_color_source) {
@@ -416,17 +416,17 @@ static void pointdensity_cache_object(PointDensity *pd, Object *ob)
       break;
   }
 
-  BLI_bvhtree_balance(pd->point_tree);
+  lib_bvhtree_balance(pd->point_tree);
 }
 
-static void cache_pointdensity(Depsgraph *depsgraph, Scene *scene, PointDensity *pd)
+static void cache_pointdensity(Graph *graph, Scene *scene, PointDensity *pd)
 {
   if (pd == NULL) {
     return;
   }
 
   if (pd->point_tree) {
-    BLI_bvhtree_free(pd->point_tree);
+    lib_bvhtree_free(pd->point_tree);
     pd->point_tree = NULL;
   }
 
@@ -438,12 +438,12 @@ static void cache_pointdensity(Depsgraph *depsgraph, Scene *scene, PointDensity 
       return;
     }
 
-    psys = BLI_findlink(&ob->particlesystem, pd->psys - 1);
+    psys = lib_findlink(&ob->particlesystem, pd->psys - 1);
     if (!psys) {
       return;
     }
 
-    pointdensity_cache_psys(depsgraph, scene, pd, ob, psys);
+    pointdensity_cache_psys(graph, scene, pd, ob, psys);
   }
   else if (pd->source == TEX_PD_OBJECT) {
     Object *ob = pd->object;
@@ -460,7 +460,7 @@ static void free_pointdensity(PointDensity *pd)
   }
 
   if (pd->point_tree) {
-    BLI_bvhtree_free(pd->point_tree);
+    lib_bvhtree_free(pd->point_tree);
     pd->point_tree = NULL;
   }
 
@@ -524,8 +524,8 @@ static float density_falloff(PointDensityRangeData *pdr, int index, float square
   }
 
   if (pdr->density_curve && dist != 0.0f) {
-    BKE_curvemapping_init(pdr->density_curve);
-    density = BKE_curvemapping_evaluateF(pdr->density_curve, 0, density / dist) * dist;
+    dune_curvemapping_init(pdr->density_curve);
+    density = dune_curvemapping_evaluateF(pdr->density_curve, 0, density / dist) * dist;
   }
 
   return density;
@@ -609,7 +609,7 @@ static int pointdensity(PointDensity *pd,
   if (point_data_used(pd)) {
     /* does a BVH lookup to find accumulated density and additional point data *
      * stores particle velocity vector in 'vec', and particle lifetime in 'time' */
-    num = BLI_bvhtree_range_query(pd->point_tree, co, pd->radius, accum_density, &pdr);
+    num = lib_bvhtree_range_query(pd->point_tree, co, pd->radius, accum_density, &pdr);
     if (num > 0) {
       age /= num;
       mul_v3_fl(vec, 1.0f / num);
@@ -623,7 +623,7 @@ static int pointdensity(PointDensity *pd,
   }
 
   if (pd->flag & TEX_PD_TURBULENCE) {
-    turb = BLI_noise_generic_turbulence(pd->noise_size,
+    turb = lib_noise_generic_turbulence(pd->noise_size,
                                         texvec[0] + vec[0],
                                         texvec[1] + vec[1],
                                         texvec[2] + vec[2],
@@ -672,7 +672,7 @@ static void pointdensity_color(
     switch (pd->color_source) {
       case TEX_PD_COLOR_PARTAGE:
         if (pd->coba) {
-          if (BKE_colorband_evaluate(pd->coba, age, rgba)) {
+          if (dune_colorband_evaluate(pd->coba, age, rgba)) {
             texres->talpha = true;
             copy_v3_v3(texres->trgba, rgba);
             texres->tin *= rgba[3];
