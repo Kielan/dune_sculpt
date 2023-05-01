@@ -2,16 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_kdopbvh.h"
-#include "BLI_math.h"
-#include "BLI_noise.h"
-#include "BLI_task.h"
-#include "BLI_utildefines.h"
+#include "lib_blenlib.h"
+#include "lib_kdopbvh.h"
+#include "lib_math.h"
+#include "lib_noise.h"
+#include "lib_task.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
