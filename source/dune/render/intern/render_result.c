@@ -40,21 +40,21 @@ static void render_result_views_free(RenderResult *rr)
 {
   while (rr->views.first) {
     RenderView *rv = rr->views.first;
-    BLI_remlink(&rr->views, rv);
+    lib_remlink(&rr->views, rv);
 
     if (rv->rect32) {
-      MEM_freeN(rv->rect32);
+      mem_freen(rv->rect32);
     }
 
     if (rv->rectz) {
-      MEM_freeN(rv->rectz);
+      mem_freen(rv->rectz);
     }
 
     if (rv->rectf) {
-      MEM_freeN(rv->rectf);
+      mem_freen(rv->rectf);
     }
 
-    MEM_freeN(rv);
+    mem_freen(rv);
   }
 
   rr->have_combined = false;
@@ -72,36 +72,36 @@ void render_result_free(RenderResult *rr)
     while (rl->passes.first) {
       RenderPass *rpass = rl->passes.first;
       if (rpass->rect) {
-        MEM_freeN(rpass->rect);
+        mem_freen(rpass->rect);
       }
-      BLI_remlink(&rl->passes, rpass);
-      MEM_freeN(rpass);
+      lib_remlink(&rl->passes, rpass);
+      mem_freen(rpass);
     }
-    BLI_remlink(&rr->layers, rl);
-    MEM_freeN(rl);
+    lib_remlink(&rr->layers, rl);
+    mem_freen(rl);
   }
 
   render_result_views_free(rr);
 
   if (rr->rect32) {
-    MEM_freeN(rr->rect32);
+    mem_freen(rr->rect32);
   }
   if (rr->rectz) {
-    MEM_freeN(rr->rectz);
+    mem_freen(rr->rectz);
   }
   if (rr->rectf) {
-    MEM_freeN(rr->rectf);
+    mem_freen(rr->rectf);
   }
   if (rr->text) {
-    MEM_freeN(rr->text);
+    mem_freen(rr->text);
   }
   if (rr->error) {
-    MEM_freeN(rr->error);
+    mem_freen(rr->error);
   }
 
-  BKE_stamp_data_free(rr->stamp_data);
+  dune_stamp_data_free(rr->stamp_data);
 
-  MEM_freeN(rr);
+  mem_freen(rr);
 }
 
 void render_result_free_list(ListBase *lb, RenderResult *rr)
@@ -112,7 +112,7 @@ void render_result_free_list(ListBase *lb, RenderResult *rr)
     rrnext = rr->next;
 
     if (lb && lb->first) {
-      BLI_remlink(lb, rr);
+      lib_remlink(lb, rr);
     }
 
     render_result_free(rr);
@@ -132,10 +132,10 @@ void render_result_views_shallowcopy(RenderResult *dst, RenderResult *src)
   for (rview = src->views.first; rview; rview = rview->next) {
     RenderView *rv;
 
-    rv = MEM_mallocN(sizeof(RenderView), "new render view");
-    BLI_addtail(&dst->views, rv);
+    rv = mem_mallocn(sizeof(RenderView), "new render view");
+    lib_addtail(&dst->views, rv);
 
-    BLI_strncpy(rv->name, rview->name, sizeof(rv->name));
+    lib_strncpy(rv->name, rview->name, sizeof(rv->name));
     rv->rectf = rview->rectf;
     rv->rectz = rview->rectz;
     rv->rect32 = rview->rect32;
@@ -150,8 +150,8 @@ void render_result_views_shallowdelete(RenderResult *rr)
 
   while (rr->views.first) {
     RenderView *rv = rr->views.first;
-    BLI_remlink(&rr->views, rv);
-    MEM_freeN(rv);
+    lib_remlink(&rr->views, rv);
+    mem_freen(rv);
   }
 }
 
@@ -164,7 +164,7 @@ static void render_layer_allocate_pass(RenderResult *rr, RenderPass *rp)
   }
 
   const size_t rectsize = ((size_t)rr->rectx) * rr->recty * rp->channels;
-  rp->rect = MEM_callocN(sizeof(float) * rectsize, rp->name);
+  rp->rect = mem_callocn(sizeof(float) * rectsize, rp->name);
 
   if (STREQ(rp->name, RE_PASSNAME_VECTOR)) {
     /* initialize to max speed */
@@ -189,30 +189,30 @@ RenderPass *render_layer_add_pass(RenderResult *rr,
                                   const char *chan_id,
                                   const bool allocate)
 {
-  const int view_id = BLI_findstringindex(&rr->views, viewname, offsetof(RenderView, name));
-  RenderPass *rpass = MEM_callocN(sizeof(RenderPass), name);
+  const int view_id = lib_findstringindex(&rr->views, viewname, offsetof(RenderView, name));
+  RenderPass *rpass = mem_callocn(sizeof(RenderPass), name);
 
   rpass->channels = channels;
   rpass->rectx = rl->rectx;
   rpass->recty = rl->recty;
   rpass->view_id = view_id;
 
-  BLI_strncpy(rpass->name, name, sizeof(rpass->name));
-  BLI_strncpy(rpass->chan_id, chan_id, sizeof(rpass->chan_id));
-  BLI_strncpy(rpass->view, viewname, sizeof(rpass->view));
-  RE_render_result_full_channel_name(
+  lib_strncpy(rpass->name, name, sizeof(rpass->name));
+  lib_strncpy(rpass->chan_id, chan_id, sizeof(rpass->chan_id));
+  lib_strncpy(rpass->view, viewname, sizeof(rpass->view));
+  render_result_full_channel_name(
       rpass->fullname, NULL, rpass->name, rpass->view, rpass->chan_id, -1);
 
   if (rl->exrhandle) {
     int a;
     for (a = 0; a < channels; a++) {
       char passname[EXR_PASS_MAXNAME];
-      RE_render_result_full_channel_name(passname, NULL, rpass->name, NULL, rpass->chan_id, a);
+      render_result_full_channel_name(passname, NULL, rpass->name, NULL, rpass->chan_id, a);
       IMB_exr_add_channel(rl->exrhandle, rl->name, passname, viewname, 0, 0, NULL, false);
     }
   }
 
-  BLI_addtail(&rl->passes, rpass);
+  lib_addtail(&rl->passes, rpass);
 
   if (allocate) {
     render_layer_allocate_pass(rr, rpass);
@@ -235,8 +235,8 @@ RenderResult *render_result_new(Render *re,
   RenderView *rv;
   int rectx, recty;
 
-  rectx = BLI_rcti_size_x(partrct);
-  recty = BLI_rcti_size_y(partrct);
+  rectx = lib_rcti_size_x(partrct);
+  recty = lib_rcti_size_y(partrct);
 
   if (rectx <= 0 || recty <= 0) {
     return NULL;
@@ -375,9 +375,9 @@ RenderResult *render_result_new(Render *re,
   FOREACH_VIEW_LAYER_TO_RENDER_END;
 
   /* Preview-render doesn't do layers, so we make a default one. */
-  if (BLI_listbase_is_empty(&rr->layers) && !(layername && layername[0])) {
-    rl = MEM_callocN(sizeof(RenderLayer), "new render layer");
-    BLI_addtail(&rr->layers, rl);
+  if (lib_listbase_is_empty(&rr->layers) && !(layername && layername[0])) {
+    rl = mem_callocn(sizeof(RenderLayer), "new render layer");
+    lib_addtail(&rr->layers, rl);
 
     rl->rectx = rectx;
     rl->recty = recty;
@@ -403,7 +403,7 @@ RenderResult *render_result_new(Render *re,
   }
 
   /* Border render; calculate offset for use in compositor. compo is centralized coords. */
-  /* XXX(ton): obsolete? I now use it for drawing border render offset. */
+  /* XXX: obsolete? I now use it for drawing border render offset. */
   rr->xof = re->disprect.xmin + BLI_rcti_cent_x(&re->disprect) - (re->winx / 2);
   rr->yof = re->disprect.ymin + BLI_rcti_cent_y(&re->disprect) - (re->winy / 2);
 
@@ -418,8 +418,7 @@ RenderResult *render_result_new(Render *re,
 void render_result_passes_allocated_ensure(RenderResult *rr)
 {
   if (rr == NULL) {
-    /* Happens when the result was not yet allocated for the current scene or slot configuration.
-     */
+    /* Happens when the result was not yet allocated for the current scene or slot configuration. */
     return;
   }
 
@@ -442,7 +441,7 @@ void render_result_clone_passes(Render *re, RenderResult *rr, const char *viewna
   RenderPass *main_rp;
 
   for (rl = rr->layers.first; rl; rl = rl->next) {
-    RenderLayer *main_rl = BLI_findstring(
+    RenderLayer *main_rl = lib_findstring(
         &re->result->layers, rl->name, offsetof(RenderLayer, name));
     if (!main_rl) {
       continue;
@@ -454,7 +453,7 @@ void render_result_clone_passes(Render *re, RenderResult *rr, const char *viewna
       }
 
       /* Compare fullname to make sure that the view also is equal. */
-      RenderPass *rp = BLI_findstring(
+      RenderPass *rp = lib_findstring(
           &rl->passes, main_rp->fullname, offsetof(RenderPass, fullname));
       if (!rp) {
         render_layer_add_pass(
@@ -464,13 +463,13 @@ void render_result_clone_passes(Render *re, RenderResult *rr, const char *viewna
   }
 }
 
-void RE_create_render_pass(RenderResult *rr,
-                           const char *name,
-                           int channels,
-                           const char *chan_id,
-                           const char *layername,
-                           const char *viewname,
-                           const bool allocate)
+void render_create_render_pass(RenderResult *rr,
+                               const char *name,
+                               int channels,
+                               const char *chan_id,
+                               const char *layername,
+                               const char *viewname,
+                               const bool allocate)
 {
   RenderLayer *rl;
   RenderPass *rp;
@@ -506,12 +505,12 @@ void RE_create_render_pass(RenderResult *rr,
   }
 }
 
-void RE_render_result_full_channel_name(char *fullname,
-                                        const char *layname,
-                                        const char *passname,
-                                        const char *viewname,
-                                        const char *chan_id,
-                                        const int channel)
+void render_result_full_channel_name(char *fullname,
+                                     const char *layname,
+                                     const char *passname,
+                                     const char *viewname,
+                                     const char *chan_id,
+                                     const int channel)
 {
   /* OpenEXR compatible full channel name. */
   const char *strings[4];
@@ -533,14 +532,14 @@ void RE_render_result_full_channel_name(char *fullname,
     strings[strings_len++] = token;
   }
 
-  BLI_string_join_array_by_sep_char(fullname, EXR_PASS_MAXNAME, '.', strings, strings_len);
+  lib_string_join_array_by_sep_char(fullname, EXR_PASS_MAXNAME, '.', strings, strings_len);
 }
 
 static int passtype_from_name(const char *name)
 {
   const char delim[] = {'.', '\0'};
   const char *sep, *suf;
-  int len = BLI_str_partition(name, delim, &sep, &suf);
+  int len = lib_str_partition(name, delim, &sep, &suf);
 
 #define CHECK_PASS(NAME) \
   if (STREQLEN(name, RE_PASSNAME_##NAME, len)) { \
@@ -583,10 +582,10 @@ static void *ml_addlayer_cb(void *base, const char *str)
   RenderResult *rr = base;
   RenderLayer *rl;
 
-  rl = MEM_callocN(sizeof(RenderLayer), "new render layer");
-  BLI_addtail(&rr->layers, rl);
+  rl = mem_callocn(sizeof(RenderLayer), "new render layer");
+  lib_addtail(&rr->layers, rl);
 
-  BLI_strncpy(rl->name, str, EXR_LAY_MAXNAME);
+  lib_strncpy(rl->name, str, EXR_LAY_MAXNAME);
   return rl;
 }
 
@@ -600,22 +599,22 @@ static void ml_addpass_cb(void *base,
 {
   RenderResult *rr = base;
   RenderLayer *rl = lay;
-  RenderPass *rpass = MEM_callocN(sizeof(RenderPass), "loaded pass");
+  RenderPass *rpass = mem_callocn(sizeof(RenderPass), "loaded pass");
 
-  BLI_addtail(&rl->passes, rpass);
+  lib_addtail(&rl->passes, rpass);
   rpass->channels = totchan;
   rl->passflag |= passtype_from_name(name);
 
   /* channel id chars */
-  BLI_strncpy(rpass->chan_id, chan_id, sizeof(rpass->chan_id));
+  lib_strncpy(rpass->chan_id, chan_id, sizeof(rpass->chan_id));
 
   rpass->rect = rect;
-  BLI_strncpy(rpass->name, name, EXR_PASS_MAXNAME);
-  BLI_strncpy(rpass->view, view, sizeof(rpass->view));
-  RE_render_result_full_channel_name(rpass->fullname, NULL, name, view, rpass->chan_id, -1);
+  lib_strncpy(rpass->name, name, EXR_PASS_MAXNAME);
+  lib_strncpy(rpass->view, view, sizeof(rpass->view));
+  render_result_full_channel_name(rpass->fullname, NULL, name, view, rpass->chan_id, -1);
 
   if (view[0] != '\0') {
-    rpass->view_id = BLI_findstringindex(&rr->views, view, offsetof(RenderView, name));
+    rpass->view_id = lib_findstringindex(&rr->views, view, offsetof(RenderView, name));
   }
   else {
     rpass->view_id = 0;
@@ -627,8 +626,8 @@ static void *ml_addview_cb(void *base, const char *str)
   RenderResult *rr = base;
   RenderView *rv;
 
-  rv = MEM_callocN(sizeof(RenderView), "new render view");
-  BLI_strncpy(rv->name, str, EXR_VIEW_MAXNAME);
+  rv = mem_callocn(sizeof(RenderView), "new render view");
+  lib_strncpy(rv->name, str, EXR_VIEW_MAXNAME);
 
   /* For stereo drawing we need to ensure:
    * STEREO_LEFT_NAME  == STEREO_LEFT_ID and
@@ -727,7 +726,7 @@ RenderResult *render_result_new_from_exr(
     rl->rectx = rectx;
     rl->recty = recty;
 
-    BLI_listbase_sort(&rl->passes, order_render_passes);
+    lib_listbase_sort(&rl->passes, order_render_passes);
 
     for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
       rpass->rectx = rectx;
@@ -750,9 +749,9 @@ RenderResult *render_result_new_from_exr(
 
 void render_result_view_new(RenderResult *rr, const char *viewname)
 {
-  RenderView *rv = MEM_callocN(sizeof(RenderView), "new render view");
-  BLI_addtail(&rr->views, rv);
-  BLI_strncpy(rv->name, viewname, sizeof(rv->name));
+  RenderView *rv = mem_callocn(sizeof(RenderView), "new render view");
+  lib_addtail(&rr->views, rv);
+  lib_strncpy(rv->name, viewname, sizeof(rv->name));
 }
 
 void render_result_views_new(RenderResult *rr, const RenderData *rd)
