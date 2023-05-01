@@ -13,29 +13,29 @@
 
 #include "lang.h"
 
-#include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_texture_types.h"
+#include "types_mesh.h"
+#include "types_meshdata.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_texture.h"
 
-#include "BKE_colorband.h"
-#include "BKE_colortools.h"
-#include "BKE_customdata.h"
-#include "BKE_deform.h"
-#include "BKE_lattice.h"
-#include "BKE_mesh.h"
-#include "BKE_object.h"
-#include "BKE_particle.h"
-#include "BKE_scene.h"
+#include "dune_colorband.h"
+#include "dune_colortools.h"
+#include "dune_customdata.h"
+#include "dune_deform.h"
+#include "dune_lattice.h"
+#include "dune_mesh.h"
+#include "dune_object.h"
+#include "dune_particle.h"
+#include "dune_scene.h"
 
-#include "DEG_depsgraph.h"
-#include "DEG_depsgraph_query.h"
+#include "graph.h"
+#include "graph_query.h"
 
 #include "render_types.h"
 #include "texture_common.h"
 
-#include "RE_texture.h"
+#include "render_texture.h"
 
 static ThreadMutex sample_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -66,10 +66,10 @@ static int point_data_used(PointDensity *pd)
   return pd_bitflag;
 }
 
-static void point_data_pointers(PointDensity *pd,
-                                float **r_data_velocity,
-                                float **r_data_life,
-                                float **r_data_color)
+static void point_data_ptrs(PointDensity *pd,
+                            float **r_data_velocity,
+                            float **r_data_life,
+                            float **r_data_color)
 {
   const int data_used = point_data_used(pd);
   const int totpoint = pd->totpoints;
@@ -136,24 +136,24 @@ static void alloc_point_data(PointDensity *pd)
   }
 
   if (data_size) {
-    pd->point_data = MEM_callocN(sizeof(float) * data_size * totpoints, "particle point data");
+    pd->point_data = mem_callocn(sizeof(float) * data_size * totpoints, "particle point data");
   }
 }
 
 static void pointdensity_cache_psys(
-    Depsgraph *depsgraph, Scene *scene, PointDensity *pd, Object *ob, ParticleSystem *psys)
+   Graph *graph, Scene *scene, PointDensity *pd, Object *ob, ParticleSystem *psys)
 {
   ParticleKey state;
   ParticleCacheKey *cache;
   ParticleSimulationData sim = {NULL};
   ParticleData *pa = NULL;
-  float cfra = BKE_scene_ctime_get(scene);
+  float cfra = dune_scene_ctime_get(scene);
   int i /*, Childexists*/ /* UNUSED */;
   int total_particles;
   int data_used;
   float *data_vel, *data_life;
   float partco[3];
-  const bool use_render_params = (DEG_get_mode(depsgraph) == DAG_EVAL_RENDER);
+  const bool use_render_params = (graph_get_mode(graph) == GRAPH_EVAL_RENDER);
 
   data_used = point_data_used(pd);
 
@@ -906,18 +906,17 @@ void RE_point_density_sample(Depsgraph *depsgraph,
   Object *object = pd->object;
   float min[3], max[3], dim[3];
 
-  /* TODO(sergey): Implement some sort of assert() that point density
-   * was cached already.
-   */
+  /* TODO: Implement some sort of assert() that point density
+   * was cached already. */
 
   if (object == NULL) {
     sample_dummy_point_density(resolution, values);
     return;
   }
 
-  BLI_mutex_lock(&sample_mutex);
-  RE_point_density_minmax(depsgraph, pd, min, max);
-  BLI_mutex_unlock(&sample_mutex);
+  lib_mutex_lock(&sample_mutex);
+  render_point_density_minmax(graph, pd, min, max);
+  lib_mutex_unlock(&sample_mutex);
   sub_v3_v3v3(dim, max, min);
   if (dim[0] <= 0.0f || dim[1] <= 0.0f || dim[2] <= 0.0f) {
     sample_dummy_point_density(resolution, values);
@@ -931,9 +930,9 @@ void RE_point_density_sample(Depsgraph *depsgraph,
   data.dim = dim;
   data.values = values;
   TaskParallelSettings settings;
-  BLI_parallel_range_settings_defaults(&settings);
+  lib_parallel_range_settings_defaults(&settings);
   settings.use_threading = (resolution > 32);
-  BLI_task_parallel_range(0, resolution, &data, point_density_sample_func, &settings);
+  lib_task_parallel_range(0, resolution, &data, point_density_sample_func, &settings);
 
   free_pointdensity(pd);
 }
