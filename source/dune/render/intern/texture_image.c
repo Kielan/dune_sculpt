@@ -12,18 +12,18 @@
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "DNA_image_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_texture_types.h"
+#include "types_image.h"
+#include "types_scene.h"
+#include "types_texture.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_blenlib.h"
+#include "lib_math.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
-#include "BKE_image.h"
+#include "dune_image.h"
 
-#include "RE_texture.h"
+#include "render_texture.h"
 
 #include "render_types.h"
 #include "texture_common.h"
@@ -96,7 +96,7 @@ int imagewrap(Tex *tex,
   }
 
   /* hack for icon render */
-  if (skip_load_image && !BKE_image_has_loaded_ibuf(ima)) {
+  if (skip_load_image && !dune_image_has_loaded_ibuf(ima)) {
     return retval;
   }
 
@@ -108,7 +108,7 @@ int imagewrap(Tex *tex,
     iuser = &local_iuser;
 
     float new_uv[2];
-    iuser->tile = BKE_image_get_tile_from_pos(ima, texvec, new_uv, NULL);
+    iuser->tile = dune_image_get_tile_from_pos(ima, texvec, new_uv, NULL);
     fx = new_uv[0];
     fy = new_uv[1];
   }
@@ -117,12 +117,12 @@ int imagewrap(Tex *tex,
     fy = texvec[1];
   }
 
-  ImBuf *ibuf = BKE_image_pool_acquire_ibuf(ima, iuser, pool);
+  ImBuf *ibuf = dune_image_pool_acquire_ibuf(ima, iuser, pool);
 
   ima->flag |= IMA_USED_FOR_RENDER;
 
   if (ibuf == NULL || (ibuf->rect == NULL && ibuf->rect_float == NULL)) {
-    BKE_image_pool_release_ibuf(ima, ibuf, pool);
+    dune_image_pool_release_ibuf(ima, ibuf, pool);
     return retval;
   }
 
@@ -145,7 +145,7 @@ int imagewrap(Tex *tex,
       }
       else {
         if (ima) {
-          BKE_image_pool_release_ibuf(ima, ibuf, pool);
+          dune_image_pool_release_ibuf(ima, ibuf, pool);
         }
         return retval;
       }
@@ -153,7 +153,7 @@ int imagewrap(Tex *tex,
     if ((tex->flag & TEX_CHECKER_EVEN) == 0) {
       if ((xs + ys) & 1) {
         if (ima) {
-          BKE_image_pool_release_ibuf(ima, ibuf, pool);
+          dune_image_pool_release_ibuf(ima, ibuf, pool);
         }
         return retval;
       }
@@ -171,7 +171,7 @@ int imagewrap(Tex *tex,
   if (tex->extend == TEX_CLIPCUBE) {
     if (x < 0 || y < 0 || x >= ibuf->x || y >= ibuf->y || texvec[2] < -1.0f || texvec[2] > 1.0f) {
       if (ima) {
-        BKE_image_pool_release_ibuf(ima, ibuf, pool);
+        dune_image_pool_release_ibuf(ima, ibuf, pool);
       }
       return retval;
     }
@@ -179,7 +179,7 @@ int imagewrap(Tex *tex,
   else if (ELEM(tex->extend, TEX_CLIP, TEX_CHECKER)) {
     if (x < 0 || y < 0 || x >= ibuf->x || y >= ibuf->y) {
       if (ima) {
-        BKE_image_pool_release_ibuf(ima, ibuf, pool);
+        dune_image_pool_release_ibuf(ima, ibuf, pool);
       }
       return retval;
     }
@@ -314,7 +314,7 @@ int imagewrap(Tex *tex,
   }
 
   if (ima) {
-    BKE_image_pool_release_ibuf(ima, ibuf, pool);
+    dune_image_pool_release_ibuf(ima, ibuf, pool);
   }
 
   BRICONTRGB;
@@ -446,8 +446,8 @@ static float square_rctf(rctf *rf)
 {
   float x, y;
 
-  x = BLI_rctf_size_x(rf);
-  y = BLI_rctf_size_y(rf);
+  x = lib_rctf_size_x(rf);
+  y = lib_rctf_size_y(rf);
   return x * y;
 }
 
@@ -455,7 +455,7 @@ static float clipx_rctf(rctf *rf, float x1, float x2)
 {
   float size;
 
-  size = BLI_rctf_size_x(rf);
+  size = lib_rctf_size_x(rf);
 
   if (rf->xmin < x1) {
     rf->xmin = x1;
@@ -468,7 +468,7 @@ static float clipx_rctf(rctf *rf, float x1, float x2)
     return 0.0;
   }
   if (size != 0.0f) {
-    return BLI_rctf_size_x(rf) / size;
+    return lib_rctf_size_x(rf) / size;
   }
   return 1.0;
 }
@@ -477,7 +477,7 @@ static float clipy_rctf(rctf *rf, float y1, float y2)
 {
   float size;
 
-  size = BLI_rctf_size_y(rf);
+  size = lib_rctf_size_y(rf);
 
   if (rf->ymin < y1) {
     rf->ymin = y1;
@@ -491,7 +491,7 @@ static float clipy_rctf(rctf *rf, float y1, float y2)
     return 0.0;
   }
   if (size != 0.0f) {
-    return BLI_rctf_size_y(rf) / size;
+    return lib_rctf_size_y(rf) / size;
   }
   return 1.0;
 }
@@ -561,7 +561,7 @@ static void boxsampleclip(struct ImBuf *ibuf, rctf *rf, TexResult *texres)
           }
 
           ibuf_get_color(col, ibuf, x, y);
-          /* TODO(jbakker): No need to do manual optimization. Branching is slower than multiplying
+          /* TODO: No need to do manual optimization. Branching is slower than multiplying
            * with 1. */
           if (mulx == 1.0f) {
             add_v4_v4(texres->trgba, col);
