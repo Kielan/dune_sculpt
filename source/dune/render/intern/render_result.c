@@ -808,7 +808,7 @@ void render_result_merge(RenderResult *rr, RenderResult *rrpart)
   RenderPass *rpass, *rpassp;
 
   for (rl = rr->layers.first; rl; rl = rl->next) {
-    rlp = RE_GetRenderLayer(rrpart, rl->name);
+    rlp = render_GetRenderLayer(rrpart, rl->name);
     if (rlp) {
       /* Passes are allocated in sync. */
       for (rpass = rl->passes.first, rpassp = rlp->passes.first; rpass && rpassp;
@@ -838,7 +838,7 @@ void render_result_single_layer_begin(Render *re)
   /* all layers except the active one get temporally pushed away */
 
   /* officially pushed result should be NULL... error can happen with do_seq */
-  RE_FreeRenderResult(re->pushedresult);
+  render_FreeRenderResult(re->pushedresult);
 
   re->pushedresult = re->result;
   re->result = NULL;
