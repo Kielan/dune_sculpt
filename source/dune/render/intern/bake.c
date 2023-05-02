@@ -486,7 +486,7 @@ static TriTessFace *mesh_calc_tri_tessface(Mesh *me, bool tangent, Mesh *me_eval
     loop_normals = CustomData_get_layer(&me_eval->ldata, CD_NORMAL);
   }
 
-  const float(*vert_normals)[3] = BKE_mesh_vertex_normals_ensure(me);
+  const float(*vert_normals)[3] = dune_mesh_vertex_normals_ensure(me);
   for (i = 0; i < tottri; i++) {
     const MeshLoopTri *lt = &looptri[i];
     const MeshPoly *mp = &me->mpoly[lt->poly];
@@ -832,7 +832,7 @@ void RE_bake_normal_world_to_tangent(const BakePixel pixel_array[],
 
   triangles = mesh_calc_tri_tessface(me, true, me_eval);
 
-  BLI_assert(num_pixels >= 3);
+  lib_assert(num_pixels >= 3);
 
   for (i = 0; i < num_pixels; i++) {
     TriTessFace *triangle;
