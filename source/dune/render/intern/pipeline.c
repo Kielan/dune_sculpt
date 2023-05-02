@@ -1598,7 +1598,7 @@ void render_FreePersistentData(const Scene *scene)
 {
   /* Render engines can be kept around for quick re-render, this clears all or one scene. */
   if (scene) {
-    Render *re = RE_GetSceneRender(scene);
+    Render *re = render_GetSceneRender(scene);
     if (re) {
       re_free_persistent_data(re);
     }
@@ -1610,18 +1610,15 @@ void render_FreePersistentData(const Scene *scene)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Initialize State
- * \{ */
+/** Initialize State **/
 
 static void re_init_resolution(Render *re, Render *source, int winx, int winy, rcti *disprect)
 {
   re->winx = winx;
   re->winy = winy;
   if (source && (source->r.mode & R_BORDER)) {
-    /* NOTE(@sergey): doesn't seem original bordered `disprect` is storing anywhere
+    /* NOTE: doesn't seem original bordered `disprect` is storing anywhere
      * after insertion on black happening in #do_render_engine(),
      * so for now simply re-calculate `disprect` using border from source renderer. */
 
@@ -1631,16 +1628,16 @@ static void re_init_resolution(Render *re, Render *source, int winx, int winy, r
     re->disprect.ymin = source->r.border.ymin * winy;
     re->disprect.ymax = source->r.border.ymax * winy;
 
-    re->rectx = BLI_rcti_size_x(&re->disprect);
-    re->recty = BLI_rcti_size_y(&re->disprect);
+    re->rectx = lib_rcti_size_x(&re->disprect);
+    re->recty = lib_rcti_size_y(&re->disprect);
 
     /* copy border itself, since it could be used by external engines */
     re->r.border = source->r.border;
   }
   else if (disprect) {
     re->disprect = *disprect;
-    re->rectx = BLI_rcti_size_x(&re->disprect);
-    re->recty = BLI_rcti_size_y(&re->disprect);
+    re->rectx = lib_rcti_size_x(&re->disprect);
+    re->recty = lib_rcti_size_y(&re->disprect);
   }
   else {
     re->disprect.xmin = re->disprect.ymin = 0;
@@ -1653,16 +1650,16 @@ static void re_init_resolution(Render *re, Render *source, int winx, int winy, r
 
 void render_copy_renderdata(RenderData *to, RenderData *from)
 {
-  BLI_freelistN(&to->views);
-  BKE_curvemapping_free_data(&to->mblur_shutter_curve);
+  lib_freelistn(&to->views);
+  dune_curvemapping_free_data(&to->mblur_shutter_curve);
 
   *to = *from;
 
-  BLI_duplicatelist(&to->views, &from->views);
-  BKE_curvemapping_copy_data(&to->mblur_shutter_curve, &from->mblur_shutter_curve);
+  lib_duplicatelist(&to->views, &from->views);
+  dune_curvemapping_copy_data(&to->mblur_shutter_curve, &from->mblur_shutter_curve);
 }
 
-void RE_InitState(Render *re,
+void render_InitState(Render *re,
                   Render *source,
                   RenderData *rd,
                   ListBase *render_layers,
@@ -1679,8 +1676,8 @@ void RE_InitState(Render *re,
 
   /* copy render data and render layers for thread safety */
   render_copy_renderdata(&re->r, rd);
-  BLI_freelistN(&re->view_layers);
-  BLI_duplicatelist(&re->view_layers, render_layers);
+  lib_freelistn(&re->view_layers);
+  lib_duplicatelist(&re->view_layers, render_layers);
   re->active_view_layer = 0;
 
   if (source) {
