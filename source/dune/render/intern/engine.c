@@ -699,7 +699,7 @@ static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
     Graph *graph = engine->graph;
     graph_relations_update(graph);
 
-    /* Need GPU context since this might free GPU buffers. */
+    /* Need gpu context since this might free GPU buffers. */
     const bool use_gpu_ctx = (engine->type->flag & RENDER_USE_GPU_CTX) && reuse_depsgraph;
     if (use_gpu_ctx) {
       draw_render_ctx_enable(engine->re);
