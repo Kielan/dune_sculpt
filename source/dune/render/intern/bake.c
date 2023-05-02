@@ -87,7 +87,7 @@ typedef struct TSpace {
 } TSpace;
 
 typedef struct TriTessFace {
-  const MVert *mverts[3];
+  const MeshVert *mverts[3];
   const float *vert_normals[3];
   const TSpace *tspace[3];
   float *loop_normal[3];
@@ -145,7 +145,7 @@ void render_bake_margin(ImBuf *ibuf,
   /* margin */
   switch (margin_type) {
     case R_BAKE_ADJACENT_FACES:
-      RE_generate_texturemargin_adjacentfaces(ibuf, mask, margin, me, uv_layer);
+      render_generate_texturemargin_adjacentfaces(ibuf, mask, margin, me, uv_layer);
       break;
     default:
     /* fall through */
@@ -330,7 +330,7 @@ static bool cast_ray_highpoly(BVHTreeFromMesh *treeData,
   }
 
   BVHTreeRayHit *hits;
-  hits = MEM_mallocN(sizeof(BVHTreeRayHit) * tot_highpoly, "Bake Highpoly to Lowpoly: BVH Rays");
+  hits = mem_mallocn(sizeof(BVHTreeRayHit) * tot_highpoly, "Bake Highpoly to Lowpoly: BVH Rays");
 
   for (i = 0; i < tot_highpoly; i++) {
     float co_high[3], dir_high[3];
@@ -348,7 +348,7 @@ static bool cast_ray_highpoly(BVHTreeFromMesh *treeData,
 
     /* cast ray */
     if (treeData[i].tree) {
-      BLI_bvhtree_ray_cast(treeData[i].tree,
+      lib_bvhtree_ray_cast(treeData[i].tree,
                            co_high,
                            dir_high,
                            0.0f,
