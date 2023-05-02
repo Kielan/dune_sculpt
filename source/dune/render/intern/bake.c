@@ -720,7 +720,7 @@ void render_bake_pixels_populate(Mesh *me,
 
   BakeDataZSpan bd;
   bd.pixel_array = pixel_array;
-  bd.zspan = MEM_callocN(sizeof(ZSpan) * targets->num_images, "bake zspan");
+  bd.zspan = mem_callocn(sizeof(ZSpan) * targets->num_images, "bake zspan");
 
   /* initialize all pixel arrays so we know which ones are 'blank' */
   for (int i = 0; i < num_pixels; i++) {
@@ -770,8 +770,8 @@ void render_bake_pixels_populate(Mesh *me,
     zbuf_free_span(&bd.zspan[i]);
   }
 
-  MEM_freeN(looptri);
-  MEM_freeN(bd.zspan);
+  mem_freen(looptri);
+  mem_freen(bd.zspan);
 }
 
 /* ******************** NORMALS ************************ */
@@ -828,7 +828,7 @@ void RE_bake_normal_world_to_tangent(const BakePixel pixel_array[],
 
   TriTessFace *triangles;
 
-  Mesh *me_eval = BKE_mesh_copy_for_eval(me, false);
+  Mesh *me_eval = dune_mesh_copy_for_eval(me, false);
 
   triangles = mesh_calc_tri_tessface(me, true, me_eval);
 
@@ -934,14 +934,14 @@ void RE_bake_normal_world_to_tangent(const BakePixel pixel_array[],
   }
 
   /* garbage collection */
-  MEM_freeN(triangles);
+  mem_freen(triangles);
 
   if (me_eval) {
-    BKE_id_free(NULL, me_eval);
+    dune_id_free(NULL, me_eval);
   }
 }
 
-void RE_bake_normal_world_to_object(const BakePixel pixel_array[],
+void render_bake_normal_world_to_object(const BakePixel pixel_array[],
                                     const size_t num_pixels,
                                     const int depth,
                                     float result[],
@@ -973,7 +973,7 @@ void RE_bake_normal_world_to_object(const BakePixel pixel_array[],
   }
 }
 
-void RE_bake_normal_world_to_world(const BakePixel pixel_array[],
+void render_bake_normal_world_to_world(const BakePixel pixel_array[],
                                    const size_t num_pixels,
                                    const int depth,
                                    float result[],
@@ -997,7 +997,7 @@ void RE_bake_normal_world_to_world(const BakePixel pixel_array[],
   }
 }
 
-void RE_bake_ibuf_clear(Image *image, const bool is_tangent)
+void render_bake_ibuf_clear(Image *image, const bool is_tangent)
 {
   ImBuf *ibuf;
   void *lock;
@@ -1007,8 +1007,8 @@ void RE_bake_ibuf_clear(Image *image, const bool is_tangent)
   const float nor_alpha[4] = {0.5f, 0.5f, 1.0f, 0.0f};
   const float nor_solid[4] = {0.5f, 0.5f, 1.0f, 1.0f};
 
-  ibuf = BKE_image_acquire_ibuf(image, NULL, &lock);
-  BLI_assert(ibuf);
+  ibuf = dune_image_acquire_ibuf(image, NULL, &lock);
+  lib_assert(ibuf);
 
   if (is_tangent) {
     IMB_rectfill(ibuf, (ibuf->planes == R_IMF_PLANES_RGBA) ? nor_alpha : nor_solid);
@@ -1017,12 +1017,12 @@ void RE_bake_ibuf_clear(Image *image, const bool is_tangent)
     IMB_rectfill(ibuf, (ibuf->planes == R_IMF_PLANES_RGBA) ? vec_alpha : vec_solid);
   }
 
-  BKE_image_release_ibuf(image, ibuf, lock);
+  dune_image_release_ibuf(image, ibuf, lock);
 }
 
 /* ************************************************************* */
 
-int RE_pass_depth(const eScenePassType pass_type)
+int render_pass_depth(const eScenePassType pass_type)
 {
   /* IMB_buffer_byte_from_float assumes 4 channels
    * making it work for now - XXX */
