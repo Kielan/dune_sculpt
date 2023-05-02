@@ -7,7 +7,7 @@
 
 #include "mem_guardedalloc.h"
 
-#include "lib_blenlib.h"
+#include "lib_dunelib.h"
 #include "lib_ghash.h"
 #include "lib_math.h"
 #include "lib_utildefines.h"
