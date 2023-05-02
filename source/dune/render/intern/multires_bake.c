@@ -476,7 +476,7 @@ static void do_multires_bake(MultiresBakeRender *bkr,
     const float(*poly_normals)[3] = dune_mesh_poly_normals_ensure(temp_mesh);
 
     if (require_tangent) {
-      if (CustomData_get_layer_index(&dm->loopData, CD_TANGENT) == -1) {
+      if (CustomData_get_layer_index(&mesh->loopData, CD_TANGENT) == -1) {
         dune_mesh_calc_loop_tangent_ex(
             mesh->getVertArray(mesh),
             mesh->getPolyArray(mesh),
@@ -537,7 +537,7 @@ static void do_multires_bake(MultiresBakeRender *bkr,
       handle->data.precomputed_normals = poly_normals; /* don't strictly need this */
       handle->data.w = ibuf->x;
       handle->data.h = ibuf->y;
-      handle->data.lores_dm = dm;
+      handle->data.lores_dm = mesh;
       handle->data.hires_dm = bkr->hires_dm;
       handle->data.lvl = lvl;
       handle->data.pass_data = passKnownData;
@@ -551,13 +551,13 @@ static void do_multires_bake(MultiresBakeRender *bkr,
       init_bake_rast(&handle->bake_rast, ibuf, &handle->data, flush_pixel, bkr->do_update);
 
       if (tot_thread > 1) {
-        BLI_threadpool_insert(&threads, handle);
+        lib_threadpool_insert(&threads, handle);
       }
     }
 
     /* run threads */
     if (tot_thread > 1) {
-      BLI_threadpool_end(&threads);
+      lib_threadpool_end(&threads);
     }
     else {
       do_multires_bake_thread(&handles[0]);
@@ -625,7 +625,7 @@ static void get_ccgdm_data(DerivedMesh *lodm,
                            DerivedMesh *hidm,
                            const int *index_mp_to_orig,
                            const int lvl,
-                           const MLoopTri *lt,
+                           const MeshLoopTri *lt,
                            const float u,
                            const float v,
                            float co[3],
@@ -937,7 +937,7 @@ static void apply_tangmat_cb(DerivedMesh *lores_dm,
   const MeshLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
   MeshPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
   MeshLoopUV *mloopuv = lores_dm->getLoopDataArray(lores_dm, CD_MLOOPUV);
-  MNormalBakeData *normal_data = (MeshNormalBakeData *)bake_data;
+  MeshNormalBakeData *normal_data = (MeshNormalBakeData *)bake_data;
   float uv[2], *st0, *st1, *st2, *st3;
   int pixel = ibuf->x * y + x;
   float n[3], vec[3], tmp[3] = {0.5, 0.5, 0.5};
