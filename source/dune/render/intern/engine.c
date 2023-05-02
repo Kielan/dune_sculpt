@@ -858,7 +858,7 @@ static void engine_render_view_layer(Render *re,
   /* Create depsgraph with scene evaluated at render resolution. */
   ViewLayer *view_layer = lib_findstring(
       &re->scene->view_layers, view_layer_iter->name, offsetof(ViewLayer, name));
-  engine_depsgraph_init(engine, view_layer);
+  engine_graph_init(engine, view_layer);
 
   /* Sync data to engine, within draw lock so scene data can be accessed safely. */
   if (use_engine) {
@@ -874,7 +874,7 @@ static void engine_render_view_layer(Render *re,
   /* Perform render with engine. */
   if (use_engine) {
     const bool use_gpu_ctx = (engine->type->flag & RE_USE_GPU_CONTEXT);
-    if (use_gpu_context) {
+    if (use_gpu_ctx) {
       draw_render_ctx_enable(engine->re);
     }
 
@@ -882,7 +882,7 @@ static void engine_render_view_layer(Render *re,
     re->engine->flag |= RENDER_ENGINE_CAN_DRAW;
     lib_mutex_unlock(&engine->re->engine_draw_mutex);
 
-    engine->type->render(engine, engine->depsgraph);
+    engine->type->render(engine, engine->graph);
 
     lib_mutex_lock(&engine->re->engine_draw_mutex);
     re->engine->flag &= ~RENDER_ENGINE_CAN_DRAW;
@@ -895,12 +895,12 @@ static void engine_render_view_layer(Render *re,
 
   /* Optionally composite grease pencil over render result.
    * Only do it if the passes are allocated (and the engine will not override the grease pencil
-   * when reading its result from EXR file and writing to the Blender side. */
+   * when reading its result from EXR file and writing to the Dune side. */
   if (engine->has_grease_pencil && use_grease_pencil && re->result->passes_allocated) {
     /* NOTE: External engine might have been requested to free its
      * dependency graph, which is only allowed if there is no grease
      * pencil (pipeline is taking care of that). */
-    if (!render_engine_test_break(engine) && engine->depsgraph != NULL) {
+    if (!render_engine_test_break(engine) && engine->graph != NULL) {
       draw_render_pen(engine, engine->depsgraph);
     }
   }
