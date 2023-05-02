@@ -1248,20 +1248,20 @@ Render *RE_GetRender(const char *name)
   return re;
 }
 
-RenderResult *RE_AcquireResultRead(Render *re)
-{
+RenderResult *render_AcquireResultRead(Render *re)
+
   if (re) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
     return re->result;
   }
 
   return NULL;
 }
 
-RenderResult *RE_AcquireResultWrite(Render *re)
+RenderResult *render_AcquireResultWrite(Render *re)
 {
   if (re) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
     render_result_passes_allocated_ensure(re->result);
     return re->result;
   }
@@ -1269,7 +1269,7 @@ RenderResult *RE_AcquireResultWrite(Render *re)
   return NULL;
 }
 
-void RE_ClearResult(Render *re)
+void render_ClearResult(Render *re)
 {
   if (re) {
     render_result_free(re->result);
@@ -1277,7 +1277,7 @@ void RE_ClearResult(Render *re)
   }
 }
 
-void RE_SwapResult(Render *re, RenderResult **rr)
+void render_SwapResult(Render *re, RenderResult **rr)
 {
   /* for keeping render buffers */
   if (re) {
@@ -1285,14 +1285,14 @@ void RE_SwapResult(Render *re, RenderResult **rr)
   }
 }
 
-void RE_ReleaseResult(Render *re)
+void render_ReleaseResult(Render *re)
 {
   if (re) {
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 }
 
-Scene *RE_GetScene(Render *re)
+Scene *render_GetScene(Render *re)
 {
   if (re) {
     return re->scene;
@@ -1300,7 +1300,7 @@ Scene *RE_GetScene(Render *re)
   return NULL;
 }
 
-void RE_SetScene(Render *re, Scene *sce)
+void render_SetScene(Render *re, Scene *sce)
 {
   if (re) {
     re->scene = sce;
