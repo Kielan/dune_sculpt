@@ -572,18 +572,18 @@ static void do_multires_bake(MultiresBakeRender *bkr,
       result->height_max = max_ff(result->height_max, handles[i].height_max);
     }
 
-    BLI_spin_end(&queue.spin);
+    lib_spin_end(&queue.spin);
 
     /* finalize baking */
     if (freeBakeData) {
       freeBakeData(bake_data);
     }
 
-    MEM_freeN(handles);
+    mem_freen(handles);
 
-    BKE_id_free(NULL, temp_mesh);
+    dune_id_free(NULL, temp_mesh);
 
-    BKE_image_release_ibuf(ima, ibuf, NULL);
+    dune_image_release_ibuf(ima, ibuf, NULL);
   }
 }
 
@@ -644,7 +644,7 @@ static void get_ccgdm_data(DerivedMesh *lodm,
   hidm->getGridKey(hidm, &key);
 
   if (lvl == 0) {
-    MPoly *mpoly;
+    MeshPoly *mpoly;
     face_side = (grid_size << 1) - 1;
 
     mpoly = lodm->getPolyArray(lodm) + poly_index;
@@ -753,8 +753,8 @@ static void interp_barycentric_mlooptri(DerivedMesh *mesh,
 static void *init_heights_data(MultiresBakeRender *bkr, Image *ima)
 {
   MeshHeightBakeData *height_data;
-  ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
-  DerivedMesh *lodm = bkr->lores_dm;
+  ImBuf *ibuf = dune_image_acquire_ibuf(ima, NULL, NULL);
+  DerivedMesh *lodm = bkr->lores_dune;
   BakeImBufuserData *userdata = ibuf->userdata;
 
   if (userdata->displacement_buffer == NULL) {
@@ -778,9 +778,9 @@ static void *init_heights_data(MultiresBakeRender *bkr, Image *ima)
       smd.uv_smooth = SUBSURF_UV_SMOOTH_PRESERVE_BOUNDARIES;
       smd.quality = 3;
 
-      height_data->ssdm = subsurf_make_derived_from_derived(
-          bkr->lores_dm, &smd, bkr->scene, NULL, 0);
-      init_ccgdm_arrays(height_data->ssdm);
+      height_data->ssmesh = subsurf_make_derived_from_derived(
+          bkr->lores_mesh, &smd, bkr->scene, NULL, 0);
+      init_ccgdm_arrays(height_data->ssmesh);
     }
   }
 
@@ -793,10 +793,10 @@ static void *init_heights_data(MultiresBakeRender *bkr, Image *ima)
 
 static void free_heights_data(void *bake_data)
 {
-  MHeightBakeData *height_data = (MHeightBakeData *)bake_data;
+  MeshHeightBakeData *height_data = (MeshHeightBakeData *)bake_data;
 
-  if (height_data->ssdm) {
-    height_data->ssdm->release(height_data->ssdm);
+  if (height_data->ssmesh) {
+    height_data->ssmesh->release(height_data->ssmesh);
   }
 
   mem_freen(height_data);
@@ -808,17 +808,17 @@ static void free_heights_data(void *bake_data)
  *   - find coord of point and normal with specified UV in lo-res mesh (or subdivided lo-res
  *     mesh to make texture smoother) let's call this point p0 and n.
  *   - height wound be dot(n, p1-p0) */
-static void apply_heights_callback(DerivedMesh *lores_dm,
-                                   DerivedMesh *hires_dm,
-                                   void *thread_data_v,
-                                   void *bake_data,
-                                   ImBuf *ibuf,
-                                   const int tri_index,
-                                   const int lvl,
-                                   const float st[2],
-                                   float UNUSED(tangmat[3][3]),
-                                   const int x,
-                                   const int y)
+static void apply_heights_cb(DerivedMesh *lores_dm,
+                             DerivedMesh *hires_dm,
+                             void *thread_data_v,
+                             void *bake_data,
+                             ImBuf *ibuf,
+                             const int tri_index,
+                             const int lvl,
+                             const float st[2],
+                             float UNUSED(tangmat[3][3]),
+                             const int x,
+                             const int y)
 {
   const MLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
   MeshLoop *mloop = lores_dm->getLoopArray(lores_dm);
