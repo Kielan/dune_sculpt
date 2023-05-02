@@ -1428,13 +1428,13 @@ void render_ResultGet32(Render *re, unsigned int *rect)
                                 &re->scene->view_settings,
                                 &re->scene->display_settings,
                                 view_id);
-  RE_ReleaseResultImageViews(re, &rres);
+  render_ReleaseResultImageViews(re, &rres);
 }
 
-void RE_AcquiredResultGet32(Render *re,
-                            RenderResult *result,
-                            unsigned int *rect,
-                            const int view_id)
+void render_AcquiredResultGet32(Render *re,
+                                RenderResult *result,
+                                unsigned int *rect,
+                                const int view_id)
 {
   render_result_rect_get_pixels(result,
                                 rect,
@@ -1445,29 +1445,29 @@ void RE_AcquiredResultGet32(Render *re,
                                 view_id);
 }
 
-RenderStats *RE_GetStats(Render *re)
+RenderStats *render_GetStats(Render *re)
 {
   return &re->i;
 }
 
-Render *RE_NewRender(const char *name)
+Render *render_NewRender(const char *name)
 {
   Render *re;
 
   /* only one render per name exists */
-  re = RE_GetRender(name);
+  re = render_GetRender(name);
   if (re == NULL) {
 
     /* new render data struct */
-    re = MEM_callocN(sizeof(Render), "new render");
-    BLI_addtail(&RenderGlobal.renderlist, re);
-    BLI_strncpy(re->name, name, RE_MAXNAME);
-    BLI_rw_mutex_init(&re->resultmutex);
-    BLI_mutex_init(&re->engine_draw_mutex);
-    BLI_mutex_init(&re->highlighted_tiles_mutex);
+    re = mem_callocn(sizeof(Render), "new render");
+    lib_addtail(&RenderGlobal.renderlist, re);
+    lib_strncpy(re->name, name, RE_MAXNAME);
+    lib_rw_mutex_init(&re->resultmutex);
+    lib_mutex_init(&re->engine_draw_mutex);
+    lib_mutex_init(&re->highlighted_tiles_mutex);
   }
 
-  RE_InitRenderCB(re);
+  render_InitRenderCB(re);
 
   return re;
 }
@@ -1478,14 +1478,14 @@ Render *RE_NewRender(const char *name)
 static void scene_render_name_get(const Scene *scene, const size_t max_size, char *render_name)
 {
   if (ID_IS_LINKED(scene)) {
-    BLI_snprintf(render_name, max_size, "%s %s", scene->id.lib->id.name, scene->id.name);
+    lib_snprintf(render_name, max_size, "%s %s", scene->id.lib->id.name, scene->id.name);
   }
   else {
-    BLI_snprintf(render_name, max_size, "%s", scene->id.name);
+    lib_snprintf(render_name, max_size, "%s", scene->id.name);
   }
 }
 
-Render *RE_GetSceneRender(const Scene *scene)
+Render *render_GetSceneRender(const Scene *scene)
 {
   char render_name[MAX_SCENE_RENDER_NAME];
   scene_render_name_get(scene, sizeof(render_name), render_name);
