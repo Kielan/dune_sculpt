@@ -1872,8 +1872,8 @@ void *render_gpu_ctx_get(Render *re)
 /** Render & Composite Scenes (Implementation & Public API)
  *
  * Main high-level functions defined here are:
- * - #RE_RenderFrame
- * - #RE_RenderAnim
+ * - render_RenderFrame
+ * - render_RenderAnim
  **/
 
 /* ************  This part uses API, for rendering Blender scenes ********** */
