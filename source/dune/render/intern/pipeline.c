@@ -1333,13 +1333,13 @@ void render_AcquireResultImageViews(Render *re, RenderResult *rr)
       if (rl) {
         if (rv->rectf == NULL) {
           for (rview = (RenderView *)rr->views.first; rview; rview = rview->next) {
-            rview->rectf = RE_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rview->name);
+            rview->rectf = render_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rview->name);
           }
         }
 
         if (rv->rectz == NULL) {
           for (rview = (RenderView *)rr->views.first; rview; rview = rview->next) {
-            rview->rectz = RE_RenderLayerGetPass(rl, RE_PASSNAME_Z, rview->name);
+            rview->rectz = render_RenderLayerGetPass(rl, RE_PASSNAME_Z, rview->name);
           }
         }
       }
@@ -1408,19 +1408,19 @@ void render_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
   }
 }
 
-void RE_ReleaseResultImage(Render *re)
+void render_ReleaseResultImage(Render *re)
 {
   if (re) {
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 }
 
-void RE_ResultGet32(Render *re, unsigned int *rect)
+void render_ResultGet32(Render *re, unsigned int *rect)
 {
   RenderResult rres;
-  const int view_id = BKE_scene_multiview_view_id_get(&re->r, re->viewname);
+  const int view_id = dune_scene_multiview_view_id_get(&re->r, re->viewname);
 
-  RE_AcquireResultImageViews(re, &rres);
+  render_AcquireResultImageViews(re, &rres);
   render_result_rect_get_pixels(&rres,
                                 rect,
                                 re->rectx,
