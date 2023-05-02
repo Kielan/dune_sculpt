@@ -1921,7 +1921,7 @@ static void render_result_uncrop(Render *re)
       /* weak... the display callback wants an active renderlayer pointer... */
       re->result->renlay = render_get_active_layer(re, re->result);
 
-      BLI_rw_mutex_unlock(&re->resultmutex);
+      lib_rw_mutex_unlock(&re->resultmutex);
 
       re->display_init(re->dih, re->result);
       re->display_update(re->duh, re->result, NULL);
