@@ -715,10 +715,10 @@ static void interp_bilinear_mpoly(DerivedMesh *dm,
     mesh->getVertNo(mesh, mloop[mpoly->loopstart + 3].v, data[3]);
   }
   else {
-    mesh->getVertCo(dm, mloop[mpoly->loopstart].v, data[0]);
-    mesh->getVertCo(dm, mloop[mpoly->loopstart + 1].v, data[1]);
-    mesh->getVertCo(dm, mloop[mpoly->loopstart + 2].v, data[2]);
-    mesh->getVertCo(dm, mloop[mpoly->loopstart + 3].v, data[3]);
+    mesh->getVertCo(mesh, mloop[mpoly->loopstart].v, data[0]);
+    mesh->getVertCo(mesh, mloop[mpoly->loopstart + 1].v, data[1]);
+    mesh->getVertCo(mesh, mloop[mpoly->loopstart + 2].v, data[2]);
+    mesh->getVertCo(mesh, mloop[mpoly->loopstart + 3].v, data[3]);
   }
 
   interp_bilinear_quad_v3(data, u, v, res);
@@ -752,17 +752,17 @@ static void interp_barycentric_mlooptri(DerivedMesh *mesh,
 
 static void *init_heights_data(MultiresBakeRender *bkr, Image *ima)
 {
-  MHeightBakeData *height_data;
+  MeshHeightBakeData *height_data;
   ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
   DerivedMesh *lodm = bkr->lores_dm;
   BakeImBufuserData *userdata = ibuf->userdata;
 
   if (userdata->displacement_buffer == NULL) {
-    userdata->displacement_buffer = MEM_callocN(sizeof(float) * ibuf->x * ibuf->y,
+    userdata->displacement_buffer = mem_callocn(sizeof(float) * ibuf->x * ibuf->y,
                                                 "MultiresBake heights");
   }
 
-  height_data = MEM_callocN(sizeof(MHeightBakeData), "MultiresBake heightData");
+  height_data = mem_callocn(sizeof(MeshHeightBakeData), "MultiresBake heightData");
 
   height_data->ima = ima;
   height_data->heights = userdata->displacement_buffer;
@@ -786,7 +786,7 @@ static void *init_heights_data(MultiresBakeRender *bkr, Image *ima)
 
   height_data->orig_index_mp_to_orig = lodm->getPolyDataArray(lodm, CD_ORIGINDEX);
 
-  BKE_image_release_ibuf(ima, ibuf, NULL);
+  dune_image_release_ibuf(ima, ibuf, NULL);
 
   return (void *)height_data;
 }
@@ -799,7 +799,7 @@ static void free_heights_data(void *bake_data)
     height_data->ssdm->release(height_data->ssdm);
   }
 
-  MEM_freeN(height_data);
+  mem_freen(height_data);
 }
 
 /* MultiresBake callback for heights baking
@@ -821,10 +821,10 @@ static void apply_heights_callback(DerivedMesh *lores_dm,
                                    const int y)
 {
   const MLoopTri *lt = lores_dm->getLoopTriArray(lores_dm) + tri_index;
-  MLoop *mloop = lores_dm->getLoopArray(lores_dm);
-  MPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
-  MLoopUV *mloopuv = lores_dm->getLoopDataArray(lores_dm, CD_MLOOPUV);
-  MHeightBakeData *height_data = (MHeightBakeData *)bake_data;
+  MeshLoop *mloop = lores_dm->getLoopArray(lores_dm);
+  MeshPoly *mpoly = lores_dm->getPolyArray(lores_dm) + lt->poly;
+  MeshLoopUV *mloopuv = lores_dm->getLoopDataArray(lores_dm, CD_MLOOPUV);
+  MeshHeightBakeData *height_data = (MeshHeightBakeData *)bake_data;
   MultiresBakeThread *thread_data = (MultiresBakeThread *)thread_data_v;
   float uv[2], *st0, *st1, *st2, *st3;
   int pixel = ibuf->x * y + x;
@@ -1419,7 +1419,7 @@ static void bake_images(MultiresBakeRender *bkr, MultiresBakeResult *result)
 
   for (link = bkr->image.first; link; link = link->next) {
     Image *ima = (Image *)link->data;
-    ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, NULL);
+    ImBuf *ibuf = dune_image_acquire_ibuf(ima, NULL, NULL);
 
     if (ibuf->x > 0 && ibuf->y > 0) {
       BakeImBufuserData *userdata = MEM_callocN(sizeof(BakeImBufuserData),
