@@ -894,14 +894,14 @@ static void engine_render_view_layer(Render *re,
   }
 
   /* Optionally composite grease pencil over render result.
-   * Only do it if the passes are allocated (and the engine will not override the grease pencil
+   * Only do it if the passes are allocated (and the engine will not override the pen
    * when reading its result from EXR file and writing to the Dune side. */
-  if (engine->has_grease_pencil && use_grease_pencil && re->result->passes_allocated) {
+  if (engine->has_pen && use_grease_pencil && re->result->passes_allocated) {
     /* NOTE: External engine might have been requested to free its
      * dependency graph, which is only allowed if there is no grease
      * pencil (pipeline is taking care of that). */
     if (!render_engine_test_break(engine) && engine->graph != NULL) {
-      draw_render_pen(engine, engine->depsgraph);
+      draw_render_pen(engine, engine->graph);
     }
   }
 
@@ -1167,7 +1167,7 @@ void render_engine_tile_highlight_clear_all(RenderEngine *engine)
  * for re-consideration. Do not use this functionality.
  **/
 
-bool render_engine_has_render_context(RenderEngine *engine)
+bool render_engine_has_render_ctx(RenderEngine *engine)
 {
   if (engine->re == NULL) {
     return false;
