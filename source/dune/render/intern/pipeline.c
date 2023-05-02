@@ -1377,7 +1377,7 @@ void render_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
       rr->recty = re->result->recty;
 
       /* actview view */
-      rv = RE_RenderViewGetById(re->result, view_id);
+      rv = render_RenderViewGetById(re->result, view_id);
       rr->have_combined = (rv->rectf != NULL);
 
       rr->rectf = rv->rectf;
@@ -1389,7 +1389,7 @@ void render_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 
       if (rl) {
         if (rv->rectf == NULL) {
-          rr->rectf = RE_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rv->name);
+          rr->rectf = render_RenderLayerGetPass(rl, RE_PASSNAME_COMBINED, rv->name);
         }
 
         if (rv->rectz == NULL) {
@@ -1800,39 +1800,36 @@ void render_display_update_cb(Render *re,
   re->display_update = f;
   re->duh = handle;
 }
-void RE_current_scene_update_cb(Render *re, void *handle, void (*f)(void *handle, Scene *scene))
+void render_current_scene_update_cb(Render *re, void *handle, void (*f)(void *handle, Scene *scene))
 {
   re->current_scene_update = f;
   re->suh = handle;
 }
-void RE_stats_draw_cb(Render *re, void *handle, void (*f)(void *handle, RenderStats *rs))
+void render_stats_draw_cb(Render *re, void *handle, void (*f)(void *handle, RenderStats *rs))
 {
   re->stats_draw = f;
   re->sdh = handle;
 }
-void RE_progress_cb(Render *re, void *handle, void (*f)(void *handle, float))
+void render_progress_cb(Render *re, void *handle, void (*f)(void *handle, float))
 {
   re->progress = f;
   re->prh = handle;
 }
 
-void RE_draw_lock_cb(Render *re, void *handle, void (*f)(void *handle, bool lock))
+void render_draw_lock_cb(Render *re, void *handle, void (*f)(void *handle, bool lock))
 {
   re->draw_lock = f;
   re->dlh = handle;
 }
 
-void RE_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
+void render_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
 {
   re->test_break = f;
   re->tbh = handle;
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name OpenGL Context
- * \{ */
+/** OpenGL Context **/
 
 void RE_gl_context_create(Render *re)
 {
