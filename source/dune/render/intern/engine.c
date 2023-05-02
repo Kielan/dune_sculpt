@@ -660,7 +660,7 @@ static bool engine_keep_graph(RenderEngine *engine)
   return (engine->re->r.mode & R_PERSISTENT_DATA) || (engine->type->flag & RE_USE_GPU_CONTEXT);
 }
 
-/* Depsgraph */
+/* Graph */
 static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
 {
   Main *main = engine->re->main;
@@ -705,7 +705,7 @@ static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
       draw_render_ctx_enable(engine->re);
     }
 
-    graph_evaluate_on_framechange(depsgraph, BKE_scene_frame_get(scene));
+    graph_evaluate_on_framechange(graph, dune_scene_frame_get(scene));
 
     if (use_gpu_ctx) {
       draw_render_ctx_disable(engine->re);
@@ -741,7 +741,7 @@ void render_engine_frame_set(RenderEngine *engine, int frame, float subframe)
   }
 
   /* Clear recalc flags before update so engine can detect what changed. */
-  graph_ids_clear_recalc(engine->depsgraph, false);
+  graph_ids_clear_recalc(engine->graph, false);
 
   Render *re = engine->re;
   double cfra = (double)frame + (double)subframe;
@@ -758,18 +758,18 @@ void render_engine_frame_set(RenderEngine *engine, int frame, float subframe)
 void render_bake_engine_set_engine_parameters(Render *re, Main *bmain, Scene *scene)
 {
   re->scene = scene;
-  re->main = bmain;
+  re->main = main;
   render_copy_renderdata(&re->r, &scene->r);
 }
 
 bool render_bake_has_engine(const Render *re)
 {
-  const RenderEngineType *type = RE_engines_find(re->r.engine);
+  const RenderEngineType *type = render_engines_find(re->r.engine);
   return (type->bake != NULL);
 }
 
 bool render_bake_engine(Render *re,
-                    Graph *depsgraph,
+                    Graph *graph,
                     Object *object,
                     const int object_id,
                     const BakePixel pixel_array[],
@@ -778,7 +778,7 @@ bool render_bake_engine(Render *re,
                     const int pass_filter,
                     float result[])
 {
-  RenderEngineType *type = RE_engines_find(re->r.engine);
+  RenderEngineType *type = render_engines_find(re->r.engine);
   RenderEngine *engine;
 
   /* set render info */
@@ -820,22 +820,22 @@ bool render_bake_engine(Render *re,
       engine->bake.object_id = object_id;
 
       type->bake(
-          engine, engine->depsgraph, object, pass_type, pass_filter, image->width, image->height);
+          engine, engine->graph, object, pass_type, pass_filter, image->width, image->height);
 
       memset(&engine->bake, 0, sizeof(engine->bake));
     }
 
-    engine->depsgraph = NULL;
+    engine->graph = NULL;
   }
 
   engine->flag &= ~RE_ENGINE_RENDERING;
 
-  engine_depsgraph_free(engine);
+  engine_graph_free(engine);
 
-  RE_engine_free(engine);
+  render_engine_free(engine);
   re->engine = NULL;
 
-  if (BKE_reports_contain(re->reports, RPT_ERROR)) {
+  if (dune_reports_contain(re->reports, RPT_ERROR)) {
     G.is_break = true;
   }
 
@@ -889,7 +889,7 @@ static void engine_render_view_layer(Render *re,
     lib_mutex_unlock(&engine->re->engine_draw_mutex);
 
     if (use_gpu_context) {
-      DRW_render_context_disable(engine->re);
+      draw_render_context_disable(engine->re);
     }
   }
 
@@ -900,8 +900,8 @@ static void engine_render_view_layer(Render *re,
     /* NOTE: External engine might have been requested to free its
      * dependency graph, which is only allowed if there is no grease
      * pencil (pipeline is taking care of that). */
-    if (!RE_engine_test_break(engine) && engine->depsgraph != NULL) {
-      DRW_render_gpencil(engine, engine->depsgraph);
+    if (!render_engine_test_break(engine) && engine->depsgraph != NULL) {
+      draw_render_pen(engine, engine->depsgraph);
     }
   }
 
@@ -1110,35 +1110,35 @@ void render_engine_free_blender_memory(RenderEngine *engine)
   engine_graph_free(engine);
 }
 
-struct RenderEngine *RE_engine_get(const Render *re)
+struct RenderEngine *render_engine_get(const Render *re)
 {
   return re->engine;
 }
 
-bool RE_engine_draw_acquire(Render *re)
+bool render_engine_draw_acquire(Render *re)
 {
-  BLI_mutex_lock(&re->engine_draw_mutex);
+  lib_mutex_lock(&re->engine_draw_mutex);
 
   RenderEngine *engine = re->engine;
 
   if (engine == NULL || engine->type->draw == NULL || (engine->flag & RE_ENGINE_CAN_DRAW) == 0) {
-    BLI_mutex_unlock(&re->engine_draw_mutex);
+    lib_mutex_unlock(&re->engine_draw_mutex);
     return false;
   }
 
   return true;
 }
 
-void RE_engine_draw_release(Render *re)
+void render_engine_draw_release(Render *re)
 {
-  BLI_mutex_unlock(&re->engine_draw_mutex);
+  lib_mutex_unlock(&re->engine_draw_mutex);
 }
 
-void RE_engine_tile_highlight_set(
+void render_engine_tile_highlight_set(
     RenderEngine *engine, int x, int y, int width, int height, bool highlight)
 {
   HighlightedTile tile;
-  BLI_rcti_init(&tile.rect, x, x + width, y, y + height);
+  lib_rcti_init(&tile.rect, x, x + width, y, y + height);
 
   engine_tile_highlight_set(engine, &tile, highlight);
 }
