@@ -271,7 +271,7 @@ static float wood_int(const Tex *tex, float x, float y, float z)
   }
   else if (wt == TEX_BANDNOISE) {
     wi = tex->turbul *
-         BLI_noise_generic_noise(
+         lib_noise_generic_noise(
              tex->noisesize, x, y, z, (tex->noisetype != TEX_NOISESOFT), tex->noisebasis);
     wi = waveform[wf]((x + y + z) * 10.0f + wi);
   }
@@ -571,10 +571,10 @@ static int mg_ridgedOrHybridMFTex(const Tex *tex, const float texvec[3], TexResu
   float (*mgravefunc)(float, float, float, float, float, float, float, float, int);
 
   if (tex->stype == TEX_RIDGEDMF) {
-    mgravefunc = BLI_noise_mg_ridged_multi_fractal;
+    mgravefunc = lib_noise_mg_ridged_multi_fractal;
   }
   else {
-    mgravefunc = BLI_noise_mg_hybrid_multi_fractal;
+    mgravefunc = lib_noise_mg_hybrid_multi_fractal;
   }
 
   texres->tin = tex->ns_outscale * mgravefunc(texvec[0],
@@ -683,26 +683,26 @@ static int mg_distNoiseTex(const Tex *tex, const float texvec[3], TexResult *tex
 {
   int rv = TEX_INT;
 
-  texres->tin = BLI_noise_mg_variable_lacunarity(
+  texres->tin = lib_noise_mg_variable_lacunarity(
       texvec[0], texvec[1], texvec[2], tex->dist_amount, tex->noisebasis, tex->noisebasis2);
 
   if (texres->nor != NULL) {
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
     /* calculate bumpnormal */
-    texres->nor[0] = BLI_noise_mg_variable_lacunarity(texvec[0] + ofs,
+    texres->nor[0] = lib_noise_mg_variable_lacunarity(texvec[0] + ofs,
                                                       texvec[1],
                                                       texvec[2],
                                                       tex->dist_amount,
                                                       tex->noisebasis,
                                                       tex->noisebasis2);
-    texres->nor[1] = BLI_noise_mg_variable_lacunarity(texvec[0],
+    texres->nor[1] = lib_noise_mg_variable_lacunarity(texvec[0],
                                                       texvec[1] + ofs,
                                                       texvec[2],
                                                       tex->dist_amount,
                                                       tex->noisebasis,
                                                       tex->noisebasis2);
-    texres->nor[2] = BLI_noise_mg_variable_lacunarity(texvec[0],
+    texres->nor[2] = lib_noise_mg_variable_lacunarity(texvec[0],
                                                       texvec[1],
                                                       texvec[2] + ofs,
                                                       tex->dist_amount,
@@ -737,24 +737,24 @@ static int voronoiTex(const Tex *tex, const float texvec[3], TexResult *texres)
     sc = tex->ns_outscale / sc;
   }
 
-  BLI_noise_voronoi(texvec[0], texvec[1], texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
+  lib_noise_voronoi(texvec[0], texvec[1], texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
   texres->tin = sc * fabsf(dot_v4v4(&tex->vn_w1, da));
 
   if (tex->vn_coltype) {
     float ca[3]; /* cell color */
-    BLI_noise_cell_v3(pa[0], pa[1], pa[2], ca);
+    lib_noise_cell_v3(pa[0], pa[1], pa[2], ca);
     texres->trgba[0] = aw1 * ca[0];
     texres->trgba[1] = aw1 * ca[1];
     texres->trgba[2] = aw1 * ca[2];
-    BLI_noise_cell_v3(pa[3], pa[4], pa[5], ca);
+    lib_noise_cell_v3(pa[3], pa[4], pa[5], ca);
     texres->trgba[0] += aw2 * ca[0];
     texres->trgba[1] += aw2 * ca[1];
     texres->trgba[2] += aw2 * ca[2];
-    BLI_noise_cell_v3(pa[6], pa[7], pa[8], ca);
+    lib_noise_cell_v3(pa[6], pa[7], pa[8], ca);
     texres->trgba[0] += aw3 * ca[0];
     texres->trgba[1] += aw3 * ca[1];
     texres->trgba[2] += aw3 * ca[2];
-    BLI_noise_cell_v3(pa[9], pa[10], pa[11], ca);
+    lib_noise_cell_v3(pa[9], pa[10], pa[11], ca);
     texres->trgba[0] += aw4 * ca[0];
     texres->trgba[1] += aw4 * ca[1];
     texres->trgba[2] += aw4 * ca[2];
@@ -784,11 +784,11 @@ static int voronoiTex(const Tex *tex, const float texvec[3], TexResult *texres)
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
     /* calculate bumpnormal */
-    BLI_noise_voronoi(texvec[0] + ofs, texvec[1], texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
+    lib_noise_voronoi(texvec[0] + ofs, texvec[1], texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
     texres->nor[0] = sc * fabsf(dot_v4v4(&tex->vn_w1, da));
-    BLI_noise_voronoi(texvec[0], texvec[1] + ofs, texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
+    lib_noise_voronoi(texvec[0], texvec[1] + ofs, texvec[2], da, pa, tex->vn_mexp, tex->vn_distm);
     texres->nor[1] = sc * fabsf(dot_v4v4(&tex->vn_w1, da));
-    BLI_noise_voronoi(texvec[0], texvec[1], texvec[2] + ofs, da, pa, tex->vn_mexp, tex->vn_distm);
+    lib_noise_voronoi(texvec[0], texvec[1], texvec[2] + ofs, da, pa, tex->vn_mexp, tex->vn_distm);
     texres->nor[2] = sc * fabsf(dot_v4v4(&tex->vn_w1, da));
 
     tex_normal_derivate(tex, texres);
@@ -873,26 +873,26 @@ static int cubemap_glob(const float n[3], float x, float y, float z, float *adr1
 /* ------------------------------------------------------------------------- */
 
 static void do_2d_mapping(
-    const MTex *mtex, float texvec[3], const float n[3], float dxt[3], float dyt[3])
+    const MeshTex *mtex, float texvec[3], const float n[3], float dxt[3], float dyt[3])
 {
   Tex *tex;
   float fx, fy, fac1, area[8];
   int ok, proj, areaflag = 0, wrap;
 
-  /* #MTex variables localized, only cube-map doesn't cooperate yet. */
+  /* MeshTex variables localized, only cube-map doesn't cooperate yet. */
   wrap = mtex->mapping;
   tex = mtex->tex;
 
   if (!(dxt && dyt)) {
 
-    if (wrap == MTEX_FLAT) {
+    if (wrap == MESH_TEX_FLAT) {
       fx = (texvec[0] + 1.0f) / 2.0f;
       fy = (texvec[1] + 1.0f) / 2.0f;
     }
-    else if (wrap == MTEX_TUBE) {
+    else if (wrap == MESH_TEX_TUBE) {
       map_to_tube(&fx, &fy, texvec[0], texvec[1], texvec[2]);
     }
-    else if (wrap == MTEX_SPHERE) {
+    else if (wrap == MESH_TEX_SPHERE) {
       map_to_sphere(&fx, &fy, texvec[0], texvec[1], texvec[2]);
     }
     else {
@@ -951,7 +951,7 @@ static void do_2d_mapping(
   }
   else {
 
-    if (wrap == MTEX_FLAT) {
+    if (wrap == MESH_TEX_FLAT) {
       fx = (texvec[0] + 1.0f) / 2.0f;
       fy = (texvec[1] + 1.0f) / 2.0f;
       dxt[0] /= 2.0f;
@@ -961,7 +961,7 @@ static void do_2d_mapping(
       dyt[1] /= 2.0f;
       dyt[2] /= 2.0f;
     }
-    else if (ELEM(wrap, MTEX_TUBE, MTEX_SPHERE)) {
+    else if (ELEM(wrap, MESH_TEX_TUBE, MESH_TEX_SPHERE)) {
       /* exception: the seam behind (y<0.0) */
       ok = 1;
       if (texvec[1] <= 0.0f) {
@@ -979,7 +979,7 @@ static void do_2d_mapping(
       }
 
       if (ok) {
-        if (wrap == MTEX_TUBE) {
+        if (wrap == MESH_TEX_TUBE) {
           map_to_tube(area, area + 1, texvec[0], texvec[1], texvec[2]);
           map_to_tube(
               area + 2, area + 3, texvec[0] + dxt[0], texvec[1] + dxt[1], texvec[2] + dxt[2]);
@@ -996,7 +996,7 @@ static void do_2d_mapping(
         areaflag = 1;
       }
       else {
-        if (wrap == MTEX_TUBE) {
+        if (wrap == MESH_TEX_TUBE) {
           map_to_tube(&fx, &fy, texvec[0], texvec[1], texvec[2]);
         }
         else {
@@ -1261,7 +1261,7 @@ static int multitex_nodes_intern(Tex *tex,
                                  TexResult *texres,
                                  const short thread,
                                  short which_output,
-                                 MTex *mtex,
+                                 MeshTex *mtex,
                                  struct ImagePool *pool,
                                  const bool scene_color_manage,
                                  const bool skip_load_image,
@@ -1457,7 +1457,7 @@ void texture_rgb_blend(
   float facm;
 
   switch (blendtype) {
-    case MTEX_BLEND:
+    case MESH_TEX_BLEND:
       fact *= facg;
       facm = 1.0f - fact;
 
@@ -1466,7 +1466,7 @@ void texture_rgb_blend(
       in[2] = (fact * tex[2] + facm * out[2]);
       break;
 
-    case MTEX_MUL:
+    case MESH_TEX_MUL:
       fact *= facg;
       facm = 1.0f - fact;
       in[0] = (facm + fact * tex[0]) * out[0];
@@ -1474,7 +1474,7 @@ void texture_rgb_blend(
       in[2] = (facm + fact * tex[2]) * out[2];
       break;
 
-    case MTEX_SCREEN:
+    case MESH_TEX_SCREEN:
       fact *= facg;
       facm = 1.0f - fact;
       in[0] = 1.0f - (facm + fact * (1.0f - tex[0])) * (1.0f - out[0]);
@@ -1482,7 +1482,7 @@ void texture_rgb_blend(
       in[2] = 1.0f - (facm + fact * (1.0f - tex[2])) * (1.0f - out[2]);
       break;
 
-    case MTEX_OVERLAY:
+    case MESH_TEX_OVERLAY:
       fact *= facg;
       facm = 1.0f - fact;
 
@@ -1506,17 +1506,17 @@ void texture_rgb_blend(
       }
       break;
 
-    case MTEX_SUB:
+    case MESH_TEX_SUB:
       fact = -fact;
       ATTR_FALLTHROUGH;
-    case MTEX_ADD:
+    case MESH_TEX_ADD:
       fact *= facg;
       in[0] = (fact * tex[0] + out[0]);
       in[1] = (fact * tex[1] + out[1]);
       in[2] = (fact * tex[2] + out[2]);
       break;
 
-    case MTEX_DIV:
+    case MESH_TEX_DIV:
       fact *= facg;
       facm = 1.0f - fact;
 
@@ -1532,7 +1532,7 @@ void texture_rgb_blend(
 
       break;
 
-    case MTEX_DIFF:
+    case MESH_TEX_DIFF:
       fact *= facg;
       facm = 1.0f - fact;
       in[0] = facm * out[0] + fact * fabsf(tex[0] - out[0]);
@@ -1540,7 +1540,7 @@ void texture_rgb_blend(
       in[2] = facm * out[2] + fact * fabsf(tex[2] - out[2]);
       break;
 
-    case MTEX_DARK:
+    case MESH_TEX_DARK:
       fact *= facg;
       facm = 1.0f - fact;
 
@@ -1549,7 +1549,7 @@ void texture_rgb_blend(
       in[2] = min_ff(out[2], tex[2]) * fact + out[2] * facm;
       break;
 
-    case MTEX_LIGHT:
+    case MESH_TEX_LIGHT:
       fact *= facg;
 
       in[0] = max_ff(fact * tex[0], out[0]);
@@ -1557,27 +1557,27 @@ void texture_rgb_blend(
       in[2] = max_ff(fact * tex[2], out[2]);
       break;
 
-    case MTEX_BLEND_HUE:
+    case MESH_TEX_BLEND_HUE:
       fact *= facg;
       copy_v3_v3(in, out);
       ramp_blend(MA_RAMP_HUE, in, fact, tex);
       break;
-    case MTEX_BLEND_SAT:
+    case MESH_TEX_BLEND_SAT:
       fact *= facg;
       copy_v3_v3(in, out);
       ramp_blend(MA_RAMP_SAT, in, fact, tex);
       break;
-    case MTEX_BLEND_VAL:
+    case MESH_TEX_BLEND_VAL:
       fact *= facg;
       copy_v3_v3(in, out);
       ramp_blend(MA_RAMP_VAL, in, fact, tex);
       break;
-    case MTEX_BLEND_COLOR:
+    case MESH_TEX_BLEND_COLOR:
       fact *= facg;
       copy_v3_v3(in, out);
       ramp_blend(MA_RAMP_COLOR, in, fact, tex);
       break;
-    case MTEX_SOFT_LIGHT:
+    case MESH_TEX_SOFT_LIGHT:
       fact *= facg;
       copy_v3_v3(in, out);
       ramp_blend(MA_RAMP_SOFT, in, fact, tex);
@@ -1604,21 +1604,21 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
   }
 
   switch (blendtype) {
-    case MTEX_BLEND:
+    case MESH_TEX_BLEND:
       in = fact * tex + facm * out;
       break;
 
-    case MTEX_MUL:
+    case MESH_TEX_MUL:
       facm = 1.0f - facg;
       in = (facm + fact * tex) * out;
       break;
 
-    case MTEX_SCREEN:
+    case MESH_TEX_SCREEN:
       facm = 1.0f - facg;
       in = 1.0f - (facm + fact * (1.0f - tex)) * (1.0f - out);
       break;
 
-    case MTEX_OVERLAY:
+    case MESH_TEX_OVERLAY:
       facm = 1.0f - facg;
       if (out < 0.5f) {
         in = out * (facm + 2.0f * fact * tex);
@@ -1628,14 +1628,14 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
       }
       break;
 
-    case MTEX_SUB:
+    case MESH_TEX_SUB:
       fact = -fact;
       ATTR_FALLTHROUGH;
-    case MTEX_ADD:
+    case MESH_TEX_ADD:
       in = fact * tex + out;
       break;
 
-    case MTEX_DIV:
+    case MESH_TEX_DIV:
       if (tex != 0.0f) {
         in = facm * out + fact * out / tex;
       }
@@ -1659,12 +1659,12 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
       }
       break;
 
-    case MTEX_SOFT_LIGHT:
+    case MESH_TEX_SOFT_LIGHT:
       scf = 1.0f - (1.0f - tex) * (1.0f - out);
       in = facm * out + fact * ((1.0f - out) * tex * out) + (out * scf);
       break;
 
-    case MTEX_LIN_LIGHT:
+    case MESH_TEX_LIN_LIGHT:
       if (tex > 0.5f) {
         in = out + fact * (2.0f * (tex - 0.5f));
       }
