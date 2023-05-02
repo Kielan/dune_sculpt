@@ -459,8 +459,8 @@ static TriTessFace *mesh_calc_tri_tessface(Mesh *me, bool tangent, Mesh *me_eval
   float no[3];
 
   mvert = CustomData_get_layer(&me->vdata, CD_MVERT);
-  looptri = MEM_mallocN(sizeof(*looptri) * tottri, __func__);
-  triangles = MEM_callocN(sizeof(TriTessFace) * tottri, __func__);
+  looptri = mem_mallocn(sizeof(*looptri) * tottri, __func__);
+  triangles = mem_callocn(sizeof(TriTessFace) * tottri, __func__);
 
   const float(*precomputed_normals)[3] = BKE_mesh_poly_normals_are_dirty(me) ?
                                              NULL :
@@ -468,28 +468,28 @@ static TriTessFace *mesh_calc_tri_tessface(Mesh *me, bool tangent, Mesh *me_eval
   const bool calculate_normal = precomputed_normals ? false : true;
 
   if (precomputed_normals != NULL) {
-    BKE_mesh_recalc_looptri_with_normals(
+    dune_mesh_recalc_looptri_with_normals(
         me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri, precomputed_normals);
   }
   else {
-    BKE_mesh_recalc_looptri(me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri);
+    dune_mesh_recalc_looptri(me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri);
   }
 
   if (tangent) {
-    BKE_mesh_ensure_normals_for_display(me_eval);
-    BKE_mesh_calc_normals_split(me_eval);
-    BKE_mesh_calc_loop_tangents(me_eval, true, NULL, 0);
+    dune_mesh_ensure_normals_for_display(me_eval);
+    dune_mesh_calc_normals_split(me_eval);
+    dune_mesh_calc_loop_tangents(me_eval, true, NULL, 0);
 
     tspace = CustomData_get_layer(&me_eval->ldata, CD_TANGENT);
-    BLI_assert(tspace);
+    lib_assert(tspace);
 
     loop_normals = CustomData_get_layer(&me_eval->ldata, CD_NORMAL);
   }
 
   const float(*vert_normals)[3] = BKE_mesh_vertex_normals_ensure(me);
   for (i = 0; i < tottri; i++) {
-    const MLoopTri *lt = &looptri[i];
-    const MPoly *mp = &me->mpoly[lt->poly];
+    const MeshLoopTri *lt = &looptri[i];
+    const MeshPoly *mp = &me->mpoly[lt->poly];
 
     triangles[i].mverts[0] = &mvert[me->mloop[lt->tri[0]].v];
     triangles[i].mverts[1] = &mvert[me->mloop[lt->tri[1]].v];
@@ -513,7 +513,7 @@ static TriTessFace *mesh_calc_tri_tessface(Mesh *me, bool tangent, Mesh *me_eval
 
     if (calculate_normal) {
       if (lt->poly != mpoly_prev) {
-        BKE_mesh_calc_poly_normal(mp, &me->mloop[mp->loopstart], me->mvert, no);
+        dune_mesh_calc_poly_normal(mp, &me->mloop[mp->loopstart], me->mvert, no);
         mpoly_prev = lt->poly;
       }
       copy_v3_v3(triangles[i].normal, no);
@@ -523,12 +523,12 @@ static TriTessFace *mesh_calc_tri_tessface(Mesh *me, bool tangent, Mesh *me_eval
     }
   }
 
-  MEM_freeN(looptri);
+  mem_freen(looptri);
 
   return triangles;
 }
 
-bool RE_bake_pixels_populate_from_objects(struct Mesh *me_low,
+bool render_bake_pixels_populate_from_objects(struct Mesh *me_low,
                                           BakePixel pixel_array_from[],
                                           BakePixel pixel_array_to[],
                                           BakeHighPolyData highpoly[],
@@ -558,14 +558,14 @@ bool RE_bake_pixels_populate_from_objects(struct Mesh *me_low,
   TriTessFace **tris_high;
 
   /* Assume all low-poly tessfaces can be quads. */
-  tris_high = MEM_callocN(sizeof(TriTessFace *) * tot_highpoly, "MVerts Highpoly Mesh Array");
+  tris_high = mem_callocn(sizeof(TriTessFace *) * tot_highpoly, "MVerts Highpoly Mesh Array");
 
   /* Assume all high-poly tessfaces are triangles. */
-  me_highpoly = MEM_mallocN(sizeof(Mesh *) * tot_highpoly, "Highpoly Derived Meshes");
-  treeData = MEM_callocN(sizeof(BVHTreeFromMesh) * tot_highpoly, "Highpoly BVH Trees");
+  me_highpoly = mem_mallocn(sizeof(Mesh *) * tot_highpoly, "Highpoly Derived Meshes");
+  treeData = mem_callocn(sizeof(BVHTreeFromMesh) * tot_highpoly, "Highpoly BVH Trees");
 
   if (!is_cage) {
-    me_eval_low = BKE_mesh_copy_for_eval(me_low, false);
+    me_eval_low = dune_mesh_copy_for_eval(me_low, false);
     tris_low = mesh_calc_tri_tessface(me_low, true, me_eval_low);
   }
   else if (is_custom_cage) {
