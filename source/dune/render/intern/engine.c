@@ -889,7 +889,7 @@ static void engine_render_view_layer(Render *re,
     lib_mutex_unlock(&engine->re->engine_draw_mutex);
 
     if (use_gpu_context) {
-      draw_render_context_disable(engine->re);
+      draw_render_ctx_disable(engine->re);
     }
   }
 
@@ -1143,7 +1143,7 @@ void render_engine_tile_highlight_set(
   engine_tile_highlight_set(engine, &tile, highlight);
 }
 
-void RE_engine_tile_highlight_clear_all(RenderEngine *engine)
+void render_engine_tile_highlight_clear_all(RenderEngine *engine)
 {
   if ((engine->flag & RE_ENGINE_HIGHLIGHT_TILES) == 0) {
     return;
@@ -1151,23 +1151,23 @@ void RE_engine_tile_highlight_clear_all(RenderEngine *engine)
 
   Render *re = engine->re;
 
-  BLI_mutex_lock(&re->highlighted_tiles_mutex);
+  lib_mutex_lock(&re->highlighted_tiles_mutex);
 
   if (re->highlighted_tiles != NULL) {
-    BLI_gset_clear(re->highlighted_tiles, MEM_freeN);
+    lib_gset_clear(re->highlighted_tiles, MEM_freeN);
   }
 
-  BLI_mutex_unlock(&re->highlighted_tiles_mutex);
+  lib_mutex_unlock(&re->highlighted_tiles_mutex);
 }
 
 /* -------------------------------------------------------------------- */
-/** \name OpenGL context manipulation.
+/** OpenGL context manipulation.
  *
  * NOTE: Only used for Cycles's BLenderGPUDisplay integration with the draw manager. A subject
  * for re-consideration. Do not use this functionality.
- * \{ */
+ **/
 
-bool RE_engine_has_render_context(RenderEngine *engine)
+bool render_engine_has_render_context(RenderEngine *engine)
 {
   if (engine->re == NULL) {
     return false;
@@ -1176,12 +1176,12 @@ bool RE_engine_has_render_context(RenderEngine *engine)
   return RE_gl_context_get(engine->re) != NULL;
 }
 
-void RE_engine_render_context_enable(RenderEngine *engine)
+void render_engine_render_ctx_enable(RenderEngine *engine)
 {
-  DRW_render_context_enable(engine->re);
+  draw_render_ctx_enable(engine->re);
 }
 
-void RE_engine_render_context_disable(RenderEngine *engine)
+void render_engine_render_ctx_disable(RenderEngine *engine)
 {
-  DRW_render_context_disable(engine->re);
+  draw_render_ctx_disable(engine->re);
 }
