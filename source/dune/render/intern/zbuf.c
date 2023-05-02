@@ -1,7 +1,5 @@
-/** \file
- * \ingroup render
- *
- * \note Some of this logic has been duplicated in `COM_VectorBlurOperation.cc`
+/**
+ * Some of this logic has been duplicated in `COM_VectorBlurOperation.cc`
  * changes here may also apply also apply to that file.
  */
 
@@ -11,9 +9,9 @@
 
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math_base.h"
+#include "lib_math_base.h"
 
 /* own includes */
 #include "zbuf.h"
