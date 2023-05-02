@@ -653,22 +653,22 @@ cleanup:
     free_bvhtree_from_mesh(&treeData[i]);
 
     if (tris_high[i]) {
-      MEM_freeN(tris_high[i]);
+      mem_freen(tris_high[i]);
     }
   }
 
-  MEM_freeN(tris_high);
-  MEM_freeN(treeData);
-  MEM_freeN(me_highpoly);
+  mem_freen(tris_high);
+  mem_freen(treeData);
+  mem_freen(me_highpoly);
 
   if (me_eval_low) {
-    BKE_id_free(NULL, me_eval_low);
+    dune_id_free(NULL, me_eval_low);
   }
   if (tris_low) {
-    MEM_freeN(tris_low);
+    mem_freen(tris_low);
   }
   if (tris_cage) {
-    MEM_freeN(tris_cage);
+    mem_freen(tris_cage);
   }
 
   return result;
@@ -699,13 +699,13 @@ static void bake_differentials(BakeDataZSpan *bd,
   }
 }
 
-void RE_bake_pixels_populate(Mesh *me,
-                             BakePixel pixel_array[],
-                             const size_t num_pixels,
-                             const BakeTargets *targets,
-                             const char *uv_layer)
+void render_bake_pixels_populate(Mesh *me,
+                                 BakePixel pixel_array[],
+                                 const size_t num_pixels,
+                                 const BakeTargets *targets,
+                                 const char *uv_layer)
 {
-  const MLoopUV *mloopuv;
+  const MeshLoopUV *mloopuv;
   if ((uv_layer == NULL) || (uv_layer[0] == '\0')) {
     mloopuv = CustomData_get_layer(&me->ldata, CD_MLOOPUV);
   }
@@ -733,13 +733,13 @@ void RE_bake_pixels_populate(Mesh *me,
   }
 
   const int tottri = poly_to_tri_count(me->totpoly, me->totloop);
-  MLoopTri *looptri = MEM_mallocN(sizeof(*looptri) * tottri, __func__);
+  MeshLoopTri *looptri = mem_mallocn(sizeof(*looptri) * tottri, __func__);
 
-  BKE_mesh_recalc_looptri(me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri);
+  dune_mesh_recalc_looptri(me->mloop, me->mpoly, me->mvert, me->totloop, me->totpoly, looptri);
 
   for (int i = 0; i < tottri; i++) {
-    const MLoopTri *lt = &looptri[i];
-    const MPoly *mp = &me->mpoly[lt->poly];
+    const MeshLoopTri *lt = &looptri[i];
+    const MeshPoly *mp = &me->mpoly[lt->poly];
     float vec[3][2];
     int mat_nr = mp->mat_nr;
     int image_id = targets->material_to_image[mat_nr];
