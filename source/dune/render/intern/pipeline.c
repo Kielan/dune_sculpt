@@ -1778,25 +1778,25 @@ void render_update_anim_renderdata(Render *re, RenderData *rd, ListBase *render_
   re->r.unit_line_thickness = rd->unit_line_thickness;
 
   /* render layers */
-  BLI_freelistN(&re->view_layers);
-  BLI_duplicatelist(&re->view_layers, render_layers);
+  lib_freelistn(&re->view_layers);
+  lib_duplicatelist(&re->view_layers, render_layers);
 
   /* render views */
-  BLI_freelistN(&re->r.views);
-  BLI_duplicatelist(&re->r.views, &rd->views);
+  lib_freelistn(&re->r.views);
+  lib_duplicatelist(&re->r.views, &rd->views);
 }
 
-void RE_display_init_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
+void render_display_init_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
 {
   re->display_init = f;
   re->dih = handle;
 }
-void RE_display_clear_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
+void render_display_clear_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr))
 {
   re->display_clear = f;
   re->dch = handle;
 }
-void RE_display_update_cb(Render *re,
+void render_display_update_cb(Render *re,
                           void *handle,
                           void (*f)(void *handle, RenderResult *rr, rcti *rect))
 {
