@@ -855,7 +855,7 @@ static void engine_render_view_layer(Render *re,
     re->draw_lock(re->dlh, true);
   }
 
-  /* Create depsgraph with scene evaluated at render resolution. */
+  /* Create graph with scene evaluated at render resolution. */
   ViewLayer *view_layer = lib_findstring(
       &re->scene->view_layers, view_layer_iter->name, offsetof(ViewLayer, name));
   engine_graph_init(engine, view_layer);
@@ -1062,12 +1062,12 @@ bool render_engine_render(Render *re, bool do_all)
 }
 
 void render_engine_update_render_passes(struct RenderEngine *engine,
-                                    struct Scene *scene,
-                                    struct ViewLayer *view_layer,
-                                    update_render_passes_cb_t callback,
-                                    void *callback_data)
+                                        struct Scene *scene,
+                                        struct ViewLayer *view_layer,
+                                        update_render_passes_cb_t cb,
+                                        void *cb_data)
 {
-  if (!(scene && view_layer && engine && callback && engine->type->update_render_passes)) {
+  if (!(scene && view_layer && engine && cb && engine->type->update_render_passes)) {
     return;
   }
 
@@ -1173,7 +1173,7 @@ bool render_engine_has_render_context(RenderEngine *engine)
     return false;
   }
 
-  return RE_gl_context_get(engine->re) != NULL;
+  return render_gl_ctx_get(engine->re) != NULL;
 }
 
 void render_engine_render_ctx_enable(RenderEngine *engine)
