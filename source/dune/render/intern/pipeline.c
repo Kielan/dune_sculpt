@@ -1234,7 +1234,7 @@ static void renderresult_stampinfo(Render *re)
 /* -------------------------------------------------------------------- */
 /** Public Render API **/
 
-Render *RE_GetRender(const char *name)
+Render *render_GetRender(const char *name)
 {
   Render *re;
 
@@ -1307,12 +1307,12 @@ void render_SetScene(Render *re, Scene *sce)
   }
 }
 
-void RE_AcquireResultImageViews(Render *re, RenderResult *rr)
+void render_AcquireResultImageViews(Render *re, RenderResult *rr)
 {
   memset(rr, 0, sizeof(RenderResult));
 
   if (re) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
 
     if (re->result) {
       RenderLayer *rl;
@@ -1352,22 +1352,22 @@ void RE_AcquireResultImageViews(Render *re, RenderResult *rr)
   }
 }
 
-void RE_ReleaseResultImageViews(Render *re, RenderResult *rr)
+void render_ReleaseResultImageViews(Render *re, RenderResult *rr)
 {
   if (re) {
     if (rr) {
       render_result_views_shallowdelete(rr);
     }
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 }
 
-void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
+void render_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 {
   memset(rr, 0, sizeof(RenderResult));
 
   if (re) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
 
     if (re->result) {
       RenderLayer *rl;
