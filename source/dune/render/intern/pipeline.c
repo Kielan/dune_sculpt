@@ -1518,7 +1518,7 @@ void render_InitRenderCB(Render *re)
   re->dih = re->dch = re->duh = re->sdh = re->prh = re->tbh = NULL;
 }
 
-void RE_FreeRender(Render *re)
+void render_FreeRender(Render *re)
 {
   if (re->engine) {
     render_engine_free(re->engine);
@@ -1544,14 +1544,14 @@ void RE_FreeRender(Render *re)
   render_result_free(re->result);
   render_result_free(re->pushedresult);
 
-  BLI_remlink(&RenderGlobal.renderlist, re);
-  MEM_freeN(re);
+  lib_remlink(&RenderGlobal.renderlist, re);
+  mem_freen(re);
 }
 
-void RE_FreeAllRender(void)
+void render_FreeAllRender(void)
 {
   while (RenderGlobal.renderlist.first) {
-    RE_FreeRender(RenderGlobal.renderlist.first);
+    render_FreeRender(RenderGlobal.renderlist.first);
   }
 
 #ifdef WITH_FREESTYLE
@@ -1560,7 +1560,7 @@ void RE_FreeAllRender(void)
 #endif
 }
 
-void RE_FreeAllRenderResults(void)
+void render_FreeAllRenderResults(void)
 {
   Render *re;
 
@@ -1573,13 +1573,13 @@ void RE_FreeAllRenderResults(void)
   }
 }
 
-void RE_FreeAllPersistentData(void)
+void render_FreeAllPersistentData(void)
 {
   Render *re;
   for (re = RenderGlobal.renderlist.first; re != NULL; re = re->next) {
     if (re->engine != NULL) {
-      BLI_assert(!(re->engine->flag & RE_ENGINE_RENDERING));
-      RE_engine_free(re->engine);
+      lib_assert(!(re->engine->flag & RE_ENGINE_RENDERING));
+      render_engine_free(re->engine);
       re->engine = NULL;
     }
   }
@@ -1589,12 +1589,12 @@ static void re_free_persistent_data(Render *re)
 {
   /* If engine is currently rendering, just wait for it to be freed when it finishes rendering. */
   if (re->engine && !(re->engine->flag & RE_ENGINE_RENDERING)) {
-    RE_engine_free(re->engine);
+    render_engine_free(re->engine);
     re->engine = NULL;
   }
 }
 
-void RE_FreePersistentData(const Scene *scene)
+void render_FreePersistentData(const Scene *scene)
 {
   /* Render engines can be kept around for quick re-render, this clears all or one scene. */
   if (scene) {
