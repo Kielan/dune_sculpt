@@ -426,7 +426,7 @@ static bool cast_ray_highpoly(BVHTreeFromMesh *treeData,
                                             &pixel_high->dv_dy);
 
     /* verify we have valid uvs */
-    BLI_assert(pixel_high->uv[0] >= -1e-3f && pixel_high->uv[1] >= -1e-3f &&
+    lib_assert(pixel_high->uv[0] >= -1e-3f && pixel_high->uv[1] >= -1e-3f &&
                pixel_high->uv[0] + pixel_high->uv[1] <= 1.0f + 1e-3f);
   }
   else {
