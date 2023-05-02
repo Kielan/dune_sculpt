@@ -1700,14 +1700,14 @@ void render_InitState(Render *re,
   }
 
   if (re->rectx < 1 || re->recty < 1 ||
-      (BKE_imtype_is_movie(rd->im_format.imtype) && (re->rectx < 16 || re->recty < 16))) {
-    BKE_report(re->reports, RPT_ERROR, "Image too small");
+      (dune_imtype_is_movie(rd->im_format.imtype) && (re->rectx < 16 || re->recty < 16))) {
+    dune_report(re->reports, RPT_ERROR, "Image too small");
     re->ok = 0;
     return;
   }
 
   if (single_layer) {
-    int index = BLI_findindex(render_layers, single_layer);
+    int index = lib_findindex(render_layers, single_layer);
     if (index != -1) {
       re->active_view_layer = index;
       re->r.scemode |= R_SINGLE_LAYER;
@@ -1715,7 +1715,7 @@ void render_InitState(Render *re,
   }
 
   /* if preview render, we try to keep old result */
-  BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+  lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
   if (re->r.scemode & R_BUTS_PREVIEW) {
     if (had_freestyle || (re->r.mode & R_EDGE_FRS)) {
@@ -1749,17 +1749,17 @@ void render_InitState(Render *re,
 
     /* make empty render result, so display callbacks can initialize */
     render_result_free(re->result);
-    re->result = MEM_callocN(sizeof(RenderResult), "new render result");
+    re->result = mem_callocn(sizeof(RenderResult), "new render result");
     re->result->rectx = re->rectx;
     re->result->recty = re->recty;
     render_result_view_new(re->result, "");
   }
 
-  BLI_rw_mutex_unlock(&re->resultmutex);
+  lib_rw_mutex_unlock(&re->resultmutex);
 
-  RE_init_threadcount(re);
+  render_init_threadcount(re);
 
-  RE_point_density_fix_linking();
+  render_point_density_fix_linking();
 }
 
 void render_update_anim_renderdata(Render *re, RenderData *rd, ListBase *render_layers)
@@ -1831,7 +1831,7 @@ void render_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
 /* -------------------------------------------------------------------- */
 /** OpenGL Context **/
 
-void RE_gl_context_create(Render *re)
+void render_gl_ctx_create(Render *re)
 {
   /* Needs to be created in the main ogl thread. */
   re->gl_context = WM_opengl_context_create();
@@ -1839,44 +1839,42 @@ void RE_gl_context_create(Render *re)
   wm_window_reset_drawable();
 }
 
-void RE_gl_context_destroy(Render *re)
+void Structs render_gl_ctx_destroy(Render *re)
 {
   /* Needs to be called from the thread which used the ogl context for rendering. */
-  if (re->gl_context) {
-    if (re->gpu_context) {
-      WM_opengl_context_activate(re->gl_context);
-      GPU_context_active_set(re->gpu_context);
-      GPU_context_discard(re->gpu_context);
-      re->gpu_context = NULL;
+  if (re->gl_ctx) {
+    if (re->gpu_ctx) {
+      wm_opengl_ctx_activate(re->gl_ctx);
+      gpu_ctx_active_set(re->gpu_ctx);
+      gpu_ctx_discard(re->gpu_ctx);
+      re->gpu_ctx = NULL;
     }
 
-    WM_opengl_context_dispose(re->gl_context);
-    re->gl_context = NULL;
+    wm_opengl_ctx_dispose(re->gl_ctx);
+    re->gl_ctx = NULL;
   }
 }
 
-void *RE_gl_context_get(Render *re)
+void *render_gl_ctx_get(Render *re)
 {
-  return re->gl_context;
+  return re->gl_ctx;
 }
 
-void *RE_gpu_context_get(Render *re)
+void *render_gpu_ctx_get(Render *re)
 {
-  if (re->gpu_context == NULL) {
-    re->gpu_context = GPU_context_create(NULL);
+  if (re->gpu_ctx == NULL) {
+    re->gpu_ctx = gpu_ctx_create(NULL);
   }
-  return re->gpu_context;
+  return re->gpu_ctx;
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Render & Composite Scenes (Implementation & Public API)
+/** Render & Composite Scenes (Implementation & Public API)
  *
  * Main high-level functions defined here are:
  * - #RE_RenderFrame
  * - #RE_RenderAnim
- * \{ */
+ **/
 
 /* ************  This part uses API, for rendering Blender scenes ********** */
 
