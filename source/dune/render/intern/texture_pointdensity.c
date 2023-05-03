@@ -805,12 +805,12 @@ void render_point_density_cache(struct Graph *graph, PointDensity *pd)
   lib_mutex_unlock(&sample_mutex);
 }
 
-void RE_point_density_minmax(struct Graph *graph,
-                             struct PointDensity *pd,
-                             float r_min[3],
-                             float r_max[3])
+void render_point_density_minmax(struct Graph *graph,
+                                 struct PointDensity *pd,
+                                 float r_min[3],
+                                 float r_max[3])
 {
-  Scene *scene = DEG_get_evaluated_scene(graph);
+  Scene *scene = graph_get_evaluated_scene(graph);
   Object *object = pd->object;
   if (object == NULL) {
     zero_v3(r_min);
@@ -825,7 +825,7 @@ void RE_point_density_minmax(struct Graph *graph,
       zero_v3(r_max);
       return;
     }
-    psys = BLI_findlink(&object->particlesystem, pd->psys - 1);
+    psys = lib_findlink(&object->particlesystem, pd->psys - 1);
     if (psys == NULL) {
       zero_v3(r_min);
       zero_v3(r_max);
