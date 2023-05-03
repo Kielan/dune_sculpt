@@ -2540,19 +2540,19 @@ bool render_is_rendering_allowed(Scene *scene,
   else if ((scemode & R_DOCOMP) && scene->use_nodes) {
     /* Compositor */
     if (!scene->nodetree) {
-      BKE_report(reports, RPT_ERROR, "No node tree in scene");
+      dune_report(reports, RPT_ERROR, "No node tree in scene");
       return 0;
     }
 
     if (!check_compositor_output(scene)) {
-      BKE_report(reports, RPT_ERROR, "No render output node in scene");
+      dune_report(reports, RPT_ERROR, "No render output node in scene");
       return 0;
     }
   }
   else {
     /* Regular Render */
     if (!render_scene_has_layers_to_render(scene, single_layer)) {
-      BKE_report(reports, RPT_ERROR, "All render layers are disabled");
+      dune_report(reports, RPT_ERROR, "All render layers are disabled");
       return 0;
     }
   }
@@ -2573,32 +2573,32 @@ static void update_physics_cache(Render *re,
   PTCacheBaker baker;
 
   memset(&baker, 0, sizeof(baker));
-  baker.bmain = re->main;
+  baker.main = re->main;
   baker.scene = scene;
   baker.view_layer = view_layer;
-  baker.depsgraph = BKE_scene_ensure_depsgraph(re->main, scene, view_layer);
+  baker.depsgraph = dune_scene_ensure_depsgraph(re->main, scene, view_layer);
   baker.bake = 0;
   baker.render = 1;
   baker.anim_init = 1;
   baker.quick_step = 1;
 
-  BKE_ptcache_bake(&baker);
+  dune_ptcache_bake(&baker);
 }
 
-void RE_SetActiveRenderView(Render *re, const char *viewname)
+void render_SetActiveRenderView(Render *re, const char *viewname)
 {
-  BLI_strncpy(re->viewname, viewname, sizeof(re->viewname));
+  lib_strncpy(re->viewname, viewname, sizeof(re->viewname));
 }
 
-const char *RE_GetActiveRenderView(Render *re)
+const char *render_GetActiveRenderView(Render *re)
 {
   return re->viewname;
 }
 
-/* evaluating scene options for general Blender render */
+/* evaluating scene options for general Dune render */
 static int render_init_from_main(Render *re,
                                  const RenderData *rd,
-                                 Main *bmain,
+                                 Main *main,
                                  Scene *scene,
                                  ViewLayer *single_layer,
                                  Object *camera_override,
@@ -2649,17 +2649,17 @@ static int render_init_from_main(Render *re,
    */
   if (0) {
     /* make sure dynamics are up to date */
-    ViewLayer *view_layer = BKE_view_layer_context_active_PLACEHOLDER(scene);
+    ViewLayer *view_layer = dune_view_layer_context_active_PLACEHOLDER(scene);
     update_physics_cache(re, scene, view_layer, anim_init);
   }
 
   if (single_layer || scene->r.scemode & R_SINGLE_LAYER) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
     render_result_single_layer_begin(re);
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 
-  RE_InitState(re, NULL, &scene->r, &scene->view_layers, single_layer, winx, winy, &disprect);
+  render_InitState(re, NULL, &scene->r, &scene->view_layers, single_layer, winx, winy, &disprect);
   if (!re->ok) { /* if an error was printed, abort */
     return 0;
   }
@@ -2673,7 +2673,7 @@ static int render_init_from_main(Render *re,
   return 1;
 }
 
-void RE_SetReports(Render *re, ReportList *reports)
+void render_SetReports(Render *re, ReportList *reports)
 {
   re->reports = reports;
 }
@@ -2709,9 +2709,9 @@ static void render_pipeline_free(Render *re)
     render_engine_free(re->engine);
     re->engine = NULL;
   }
-  if (re->pipeline_depsgraph != NULL) {
+  if (re->pipeline_graph != NULL) {
     graph_free(re->pipeline_graph);
-    re->pipeline_depsgraph = NULL;
+    re->pipeline_graph = NULL;
     re->pipeline_scene_eval = NULL;
   }
   /* Destroy the opengl context in the correct thread. */
@@ -2789,10 +2789,10 @@ void render_RenderFrame(Render *re,
     }
   }
 
-  render_callback_exec_id(re,
-                          re->main,
-                          &scene->id,
-                          G.is_break ? BKE_CB_EVT_RENDER_CANCEL : BKE_CB_EVT_RENDER_COMPLETE);
+  render_cb_ex_id(re,
+                  re->main,
+                  &scene->id,
+                  G.is_break ? DUNE_CB_EVT_RENDER_CANCEL : BKE_CB_EVT_RENDER_COMPLETE);
 
   render_pipeline_free(re);
 
