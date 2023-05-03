@@ -2341,10 +2341,10 @@ static void do_render_full_pipeline(Render *re)
   dune_image_all_free_anim_ibufs(re->main, re->r.cfra);
   SEQ_cache_cleanup(re->scene);
 
-  if (RE_engine_render(re, true)) {
+  if (render_engine_render(re, true)) {
     /* in this case external render overrides all */
   }
-  else if (RE_seq_render_active(re->scene, &re->r)) {
+  else if (render_seq_render_active(re->scene, &re->r)) {
     /* NOTE: do_render_sequencer() frees rect32 when sequencer returns float images. */
     if (!re->test_break(re->tbh)) {
       do_render_sequencer(re);
