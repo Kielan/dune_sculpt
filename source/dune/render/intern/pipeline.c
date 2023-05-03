@@ -1660,13 +1660,13 @@ void render_copy_renderdata(RenderData *to, RenderData *from)
 }
 
 void render_InitState(Render *re,
-                  Render *source,
-                  RenderData *rd,
-                  ListBase *render_layers,
-                  ViewLayer *single_layer,
-                  int winx,
-                  int winy,
-                  rcti *disprect)
+                      Render *source,
+                      RenderData *rd,
+                      ListBase *render_layers,
+                      ViewLayer *single_layer,
+                      int winx,
+                      int winy,
+                      rcti *disprect)
 {
   bool had_freestyle = (re->r.mode & R_EDGE_FRS) != 0;
 
@@ -1724,7 +1724,7 @@ void render_InitState(Render *re,
       re->result = NULL;
     }
     else if (re->result) {
-      ViewLayer *active_render_layer = BLI_findlink(&re->view_layers, re->active_view_layer);
+      ViewLayer *active_render_layer = lib_findlink(&re->view_layers, re->active_view_layer);
       RenderLayer *rl;
       bool have_layer = false;
 
@@ -1964,12 +1964,12 @@ static void do_render_engine(Render *re)
  * Uses the same image dimensions, does not recursively perform compositing. */
 static void do_render_compositor_scene(Render *re, Scene *sce, int cfra)
 {
-  Render *resc = RE_NewSceneRender(sce);
+  Render *resc = render_NewSceneRender(sce);
   int winx = re->winx, winy = re->winy;
 
   sce->r.cfra = cfra;
 
-  BKE_scene_camera_switch_update(sce);
+  dune_scene_camera_switch_update(sce);
 
   /* exception: scene uses own size (unfinished code) */
   if (0) {
@@ -2175,10 +2175,10 @@ static void renderresult_stampinfo(Render *re)
   /* this is the basic trick to get the displayed float or char rect from render result */
   nr = 0;
   for (rv = re->result->views.first; rv; rv = rv->next, nr++) {
-    RE_SetActiveRenderView(re, rv->name);
-    RE_AcquireResultImage(re, &rres, nr);
+    render_SetActiveRenderView(re, rv->name);
+    render_AcquireResultImage(re, &rres, nr);
 
-    Object *ob_camera_eval = DEG_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
+    Object *ob_camera_eval = graph_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
     dune_image_stamp_buf(re->scene,
                         ob_camera_eval,
                         (re->r.stamp & R_STAMP_STRIPMETA) ? rres.stamp_data : NULL,
@@ -2816,22 +2816,22 @@ static void change_renderdata_engine(Render *re, const char *new_engine)
 
 static bool use_eevee_for_freestyle_render(Render *re)
 {
-  RenderEngineType *type = RE_engines_find(re->r.engine);
+  RenderEngineType *type = render_engines_find(re->r.engine);
   return !(type->flag & RE_USE_CUSTOM_FREESTYLE);
 }
 
-void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int render)
+void render_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int render)
 {
   re->result_ok = 0;
   if (render_init_from_main(re, &scene->r, bmain, scene, NULL, NULL, 0, 0)) {
     if (render) {
       char scene_engine[32];
-      BLI_strncpy(scene_engine, re->r.engine, sizeof(scene_engine));
+      lib_strncpy(scene_engine, re->r.engine, sizeof(scene_engine));
       if (use_eevee_for_freestyle_render(re)) {
         change_renderdata_engine(re, RE_engine_id_BLENDER_EEVEE);
       }
 
-      RE_engine_render(re, false);
+      render_engine_render(re, false);
 
       change_renderdata_engine(re, scene_engine);
     }
@@ -2839,7 +2839,7 @@ void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int render
   re->result_ok = 1;
 }
 
-void RE_RenderFreestyleExternal(Render *re)
+void render_RenderFreestyleExternal(Render *re)
 {
   if (re->test_break(re->tbh)) {
     return;
