@@ -2828,7 +2828,7 @@ void render_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int re
       char scene_engine[32];
       lib_strncpy(scene_engine, re->r.engine, sizeof(scene_engine));
       if (use_eevee_for_freestyle_render(re)) {
-        change_renderdata_engine(re, RE_engine_id_BLENDER_EEVEE);
+        change_renderdata_engine(re, render_engine_id_BLENDER_EEVEE);
       }
 
       render_engine_render(re, false);
@@ -2923,8 +2923,8 @@ bool render_WriteRenderViewsMovie(ReportList *reports,
     lib_assert((totvideos == 1) && (image_format.views_format == R_IMF_VIEWS_STEREO_3D));
 
     for (i = 0; i < 2; i++) {
-      int view_id = BLI_findstringindex(&rr->views, names[i], offsetof(RenderView, name));
-      ibuf_arr[i] = RE_render_result_rect_to_ibuf(rr, &rd->im_format, dither, view_id);
+      int view_id = lib_findstringindex(&rr->views, names[i], offsetof(RenderView, name));
+      ibuf_arr[i] = render_result_rect_to_ibuf(rr, &rd->im_format, dither, view_id);
 
       IMB_colormanagement_imbuf_for_write(ibuf_arr[i], true, false, &image_format);
     }
