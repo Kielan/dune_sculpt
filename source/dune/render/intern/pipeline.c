@@ -2284,8 +2284,8 @@ static void do_render_sequencer(Render *re)
 
       if (ibuf_arr[view_id]->metadata && (re->r.stamp & R_STAMP_STRIPMETA)) {
         /* ensure render stamp info first */
-        BKE_render_result_stamp_info(NULL, NULL, rr, true);
-        BKE_stamp_info_from_imbuf(rr, ibuf_arr[view_id]);
+        dune_render_result_stamp_info(NULL, NULL, rr, true);
+        dune_stamp_info_from_imbuf(rr, ibuf_arr[view_id]);
       }
 
       if (recurs_depth == 0) { /* With nested scenes, only free on top-level. */
@@ -2301,14 +2301,14 @@ static void do_render_sequencer(Render *re)
       render_result_rect_fill_zero(rr, view_id);
     }
 
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
 
     /* would mark display buffers as invalid */
-    RE_SetActiveRenderView(re, rv->name);
+    render_SetActiveRenderView(re, rv->name);
     re->display_update(re->duh, re->result, NULL);
   }
 
-  MEM_freeN(ibuf_arr);
+  mem_freen(ibuf_arr);
 
   recurs_depth--;
 
@@ -2333,12 +2333,12 @@ static void do_render_full_pipeline(Render *re)
 
   re->current_scene_update(re->suh, re->scene);
 
-  BKE_scene_camera_switch_update(re->scene);
+  dune_scene_camera_switch_update(re->scene);
 
   re->i.starttime = PIL_check_seconds_timer();
 
   /* ensure no images are in memory from previous animated sequences */
-  BKE_image_all_free_anim_ibufs(re->main, re->r.cfra);
+  dune_image_all_free_anim_ibufs(re->main, re->r.cfra);
   SEQ_cache_cleanup(re->scene);
 
   if (RE_engine_render(re, true)) {
@@ -2367,7 +2367,7 @@ static void do_render_full_pipeline(Render *re)
     /* sequence rendering should have taken care of that already */
     if (!(render_seq && (re->r.stamp & R_STAMP_STRIPMETA))) {
       Object *ob_camera_eval = DEG_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
-      BKE_render_result_stamp_info(re->scene, ob_camera_eval, re->result, false);
+      dune_render_result_stamp_info(re->scene, ob_camera_eval, re->result, false);
     }
 
     /* stamp image info here */
@@ -2413,17 +2413,17 @@ static bool check_valid_camera_multiview(Scene *scene, Object *camera, ReportLis
   }
 
   for (srv = scene->r.views.first; srv; srv = srv->next) {
-    if (BKE_scene_multiview_is_render_view_active(&scene->r, srv)) {
+    if (dune_scene_multiview_is_render_view_active(&scene->r, srv)) {
       active_view = true;
 
       if (scene->r.views_format == SCE_VIEWS_FORMAT_MULTIVIEW) {
         Object *view_camera;
-        view_camera = BKE_camera_multiview_render(scene, camera, srv->name);
+        view_camera = dune_camera_multiview_render(scene, camera, srv->name);
 
         if (view_camera == camera) {
           /* if the suffix is not in the camera, means we are using the fallback camera */
-          if (!BLI_str_endswith(view_camera->id.name + 2, srv->suffix)) {
-            BKE_reportf(reports,
+          if (!lib_str_endswith(view_camera->id.name + 2, srv->suffix)) {
+            dune_reportf(reports,
                         RPT_ERROR,
                         "Camera \"%s\" is not a multi-view camera",
                         camera->id.name + 2);
@@ -2435,7 +2435,7 @@ static bool check_valid_camera_multiview(Scene *scene, Object *camera, ReportLis
   }
 
   if (!active_view) {
-    BKE_reportf(reports, RPT_ERROR, "No active view found in scene \"%s\"", scene->id.name + 2);
+    dune_reportf(reports, RPT_ERROR, "No active view found in scene \"%s\"", scene->id.name + 2);
     return false;
   }
 
@@ -2447,7 +2447,7 @@ static int check_valid_camera(Scene *scene, Object *camera_override, ReportList 
   const char *err_msg = "No camera found in scene \"%s\"";
 
   if (camera_override == NULL && scene->camera == NULL) {
-    scene->camera = BKE_view_layer_camera_find(BKE_view_layer_default_render(scene));
+    scene->camera = dune_view_layer_camera_find(BKE_view_layer_default_render(scene));
   }
 
   if (!check_valid_camera_multiview(scene, scene->camera, reports)) {
