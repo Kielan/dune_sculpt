@@ -884,7 +884,7 @@ void render_gl_ctx_destroy(Render *re)
   /* Needs to be called from the thread which used the ogl context for rendering. */
   if (re->gl_ctx) {
     if (re->gpu_ctx) {
-      wm_opengl_context_activate(re->gl_ctx);
+      wm_opengl_ctx_activate(re->gl_ctx);
       gpu_ctx_active_set(re->gpu_ctx);
       gpu_ctx_discard(re->gpu_ctx);
       re->gpu_ctx = NULL;
@@ -2868,13 +2868,10 @@ void render_RenderFreestyleExternal(Render *re)
 }
 #endif
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Read/Write Render Result (Images & Movies)
- * \{ */
+/** Read/Write Render Result (Images & Movies) */
 
-bool RE_WriteRenderViewsMovie(ReportList *reports,
+bool render_WriteRenderViewsMovie(ReportList *reports,
                               RenderResult *rr,
                               Scene *scene,
                               RenderData *rd,
@@ -2890,16 +2887,16 @@ bool RE_WriteRenderViewsMovie(ReportList *reports,
   }
 
   ImageFormatData image_format;
-  BKE_image_format_init_for_write(&image_format, scene, NULL);
+  dune_image_format_init_for_write(&image_format, scene, NULL);
 
-  const bool is_mono = BLI_listbase_count_at_most(&rr->views, 2) < 2;
+  const bool is_mono = lib_listbase_count_at_most(&rr->views, 2) < 2;
   const float dither = scene->r.dither_intensity;
 
   if (is_mono || (image_format.views_format == R_IMF_VIEWS_INDIVIDUAL)) {
     int view_id;
     for (view_id = 0; view_id < totvideos; view_id++) {
       const char *suffix = BKE_scene_multiview_view_id_suffix_get(&scene->r, view_id);
-      ImBuf *ibuf = RE_render_result_rect_to_ibuf(rr, &rd->im_format, dither, view_id);
+      ImBuf *ibuf = render_result_rect_to_ibuf(rr, &rd->im_format, dither, view_id);
 
       IMB_colormanagement_imbuf_for_write(ibuf, true, false, &image_format);
 
@@ -2923,7 +2920,7 @@ bool RE_WriteRenderViewsMovie(ReportList *reports,
     ImBuf *ibuf_arr[3] = {NULL};
     int i;
 
-    BLI_assert((totvideos == 1) && (image_format.views_format == R_IMF_VIEWS_STEREO_3D));
+    lib_assert((totvideos == 1) && (image_format.views_format == R_IMF_VIEWS_STEREO_3D));
 
     for (i = 0; i < 2; i++) {
       int view_id = BLI_findstringindex(&rr->views, names[i], offsetof(RenderView, name));
