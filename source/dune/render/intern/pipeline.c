@@ -2724,17 +2724,17 @@ static void render_pipeline_free(Render *re)
 
     /* Rendering is supposed to be finished here, so no new tiles are expected to be written.
      * Only make it so possible read-only access to the highlighted tiles is thread-safe. */
-    BLI_assert(re->highlighted_tiles);
+    lib_assert(re->highlighted_tiles);
 
-    BLI_gset_free(re->highlighted_tiles, MEM_freeN);
+    lib_gset_free(re->highlighted_tiles, mem_freen);
     re->highlighted_tiles = NULL;
 
-    BLI_mutex_unlock(&re->highlighted_tiles_mutex);
+    lib_mutex_unlock(&re->highlighted_tiles_mutex);
   }
 }
 
-void RE_RenderFrame(Render *re,
-                    Main *bmain,
+void render_RenderFrame(Render *re,
+                    Main *main,
                     Scene *scene,
                     ViewLayer *single_layer,
                     Object *camera_override,
@@ -2742,7 +2742,7 @@ void RE_RenderFrame(Render *re,
                     const float subframe,
                     const bool write_still)
 {
-  render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_INIT);
+  render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_INIT);
 
   /* Ugly global still...
    * is to prevent preview events and signal subdivision-surface etc to make full resolution. */
@@ -2751,26 +2751,26 @@ void RE_RenderFrame(Render *re,
   scene->r.cfra = frame;
   scene->r.subframe = subframe;
 
-  if (render_init_from_main(re, &scene->r, bmain, scene, single_layer, camera_override, 0, 0)) {
+  if (render_init_from_main(re, &scene->r, main, scene, single_layer, camera_override, 0, 0)) {
     const RenderData rd = scene->r;
-    MEM_reset_peak_memory();
+    mem_reset_peak_memory();
 
-    render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_PRE);
+    render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_PRE);
 
-    render_init_depsgraph(re);
+    render_init_graph(re);
 
     do_render_full_pipeline(re);
 
     if (write_still && !G.is_break) {
-      if (BKE_imtype_is_movie(rd.im_format.imtype)) {
+      if (dune_imtype_is_movie(rd.im_format.imtype)) {
         /* operator checks this but in case its called from elsewhere */
         printf("Error: can't write single images with a movie format!\n");
       }
       else {
         char name[FILE_MAX];
-        BKE_image_path_from_imformat(name,
+        dune_image_path_from_imformat(name,
                                      rd.pic,
-                                     BKE_main_blendfile_path(bmain),
+                                     dune_main_dunefile_path(main),
                                      scene->r.cfra,
                                      &rd.im_format,
                                      (rd.scemode & R_EXTENSION) != 0,
@@ -2778,14 +2778,14 @@ void RE_RenderFrame(Render *re,
                                      NULL);
 
         /* reports only used for Movie */
-        do_write_image_or_movie(re, bmain, scene, NULL, 0, name);
+        do_write_image_or_movie(re, main, scene, NULL, 0, name);
       }
     }
 
     /* keep after file save */
-    render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_POST);
+    render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_POST);
     if (write_still) {
-      render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_WRITE);
+      render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_WRITE);
     }
   }
 
