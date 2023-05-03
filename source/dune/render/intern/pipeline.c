@@ -2705,22 +2705,22 @@ static void render_init_depsgraph(Render *re)
 /* Free data only needed during rendering operation. */
 static void render_pipeline_free(Render *re)
 {
-  if (re->engine && !RE_engine_use_persistent_data(re->engine)) {
-    RE_engine_free(re->engine);
+  if (re->engine && !render_engine_use_persistent_data(re->engine)) {
+    render_engine_free(re->engine);
     re->engine = NULL;
   }
   if (re->pipeline_depsgraph != NULL) {
-    DEG_graph_free(re->pipeline_depsgraph);
+    graph_free(re->pipeline_graph);
     re->pipeline_depsgraph = NULL;
     re->pipeline_scene_eval = NULL;
   }
   /* Destroy the opengl context in the correct thread. */
-  RE_gl_context_destroy(re);
+  render_gl_ctx_destroy(re);
 
   /* In the case the engine did not mark tiles as finished (un-highlight, which could happen in the
    * case of cancelled render) ensure the storage is empty. */
   if (re->highlighted_tiles != NULL) {
-    BLI_mutex_lock(&re->highlighted_tiles_mutex);
+    lib_mutex_lock(&re->highlighted_tiles_mutex);
 
     /* Rendering is supposed to be finished here, so no new tiles are expected to be written.
      * Only make it so possible read-only access to the highlighted tiles is thread-safe. */
