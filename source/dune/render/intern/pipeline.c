@@ -1187,7 +1187,7 @@ static void do_render_compositor(Render *re)
 
         RenderView *rv;
         for (rv = re->result->views.first; rv; rv = rv->next) {
-          ntreeCompositExecTree(
+          ntreeCompositExTree(
               re->pipeline_scene_eval, ntree, &re->r, true, G.background == 0, rv->name);
         }
 
@@ -1619,7 +1619,7 @@ static void render_init_resolution(Render *re, Render *source, int winx, int win
   re->winy = winy;
   if (source && (source->r.mode & R_BORDER)) {
     /* NOTE: doesn't seem original bordered `disprect` is storing anywhere
-     * after insertion on black happening in #do_render_engine(),
+     * after insertion on black happening in do_render_engine(),
      * so for now simply re-calculate `disprect` using border from source renderer. */
 
     re->disprect.xmin = source->r.border.xmin * winx;
@@ -2212,7 +2212,7 @@ int render_seq_render_active(Scene *scene, RenderData *rd)
 }
 
 /* Render sequencer strips into render result. */
-static void do_render_sequencer(Render *re)
+static void do_render_seq(Render *re)
 {
   static int recurs_depth = 0;
   struct ImBuf *out;
@@ -2345,7 +2345,7 @@ static void do_render_full_pipeline(Render *re)
     /* in this case external render overrides all */
   }
   else if (render_seq_render_active(re->scene, &re->r)) {
-    /* NOTE: do_render_sequencer() frees rect32 when sequencer returns float images. */
+    /* NOTE: do_render_seq() frees rect32 when sequencer returns float images. */
     if (!re->test_break(re->tbh)) {
       do_render_sequencer(re);
       render_seq = true;
@@ -2576,7 +2576,7 @@ static void update_physics_cache(Render *re,
   baker.main = re->main;
   baker.scene = scene;
   baker.view_layer = view_layer;
-  baker.depsgraph = dune_scene_ensure_depsgraph(re->main, scene, view_layer);
+  baker.graph = dune_scene_ensure_depsgraph(re->main, scene, view_layer);
   baker.bake = 0;
   baker.render = 1;
   baker.anim_init = 1;
@@ -2697,7 +2697,7 @@ static void render_init_graph(Render *re)
   graph_build_for_render_pipeline(re->pipeline_depsgraph);
 
   /* Update immediately so we have proper evaluated scene. */
-  render_update_depsgraph(re);
+  render_update_graph(re);
 
   re->pipeline_scene_eval = graph_get_evaluated_scene(re->pipeline_depsgraph);
 }
@@ -2807,10 +2807,10 @@ static void change_renderdata_engine(Render *re, const char *new_engine)
 {
   if (!STREQ(re->r.engine, new_engine)) {
     if (re->engine) {
-      RE_engine_free(re->engine);
+      render_engine_free(re->engine);
       re->engine = NULL;
     }
-    BLI_strncpy(re->r.engine, new_engine, sizeof(re->r.engine));
+    lib_strncpy(re->r.engine, new_engine, sizeof(re->r.engine));
   }
 }
 
@@ -2848,9 +2848,9 @@ void render_RenderFreestyleExternal(Render *re)
   FRS_init_stroke_renderer(re);
 
   LISTBASE_FOREACH (RenderView *, rv, &re->result->views) {
-    RE_SetActiveRenderView(re, rv->name);
+    render_SetActiveRenderView(re, rv->name);
 
-    ViewLayer *active_view_layer = BLI_findlink(&re->view_layers, re->active_view_layer);
+    ViewLayer *active_view_layer = lib_findlink(&re->view_layers, re->active_view_layer);
     FRS_begin_stroke_rendering(re);
 
     LISTBASE_FOREACH (ViewLayer *, view_layer, &re->view_layers) {
@@ -2875,7 +2875,7 @@ bool render_WriteRenderViewsMovie(ReportList *reports,
                               RenderResult *rr,
                               Scene *scene,
                               RenderData *rd,
-                              bMovieHandle *mh,
+                              MovieHandle *mh,
                               void **movie_ctx_arr,
                               const int totvideos,
                               bool preview)
@@ -2895,7 +2895,7 @@ bool render_WriteRenderViewsMovie(ReportList *reports,
   if (is_mono || (image_format.views_format == R_IMF_VIEWS_INDIVIDUAL)) {
     int view_id;
     for (view_id = 0; view_id < totvideos; view_id++) {
-      const char *suffix = BKE_scene_multiview_view_id_suffix_get(&scene->r, view_id);
+      const char *suffix = dune_scene_multiview_view_id_suffix_get(&scene->r, view_id);
       ImBuf *ibuf = render_result_rect_to_ibuf(rr, &rd->im_format, dither, view_id);
 
       IMB_colormanagement_imbuf_for_write(ibuf, true, false, &image_format);
@@ -2953,9 +2953,9 @@ bool render_WriteRenderViewsMovie(ReportList *reports,
 }
 
 static int do_write_image_or_movie(Render *re,
-                                   Main *bmain,
+                                   Main *main,
                                    Scene *scene,
-                                   bMovieHandle *mh,
+                                   MovieHandle *mh,
                                    const int totvideos,
                                    const char *name_override)
 {
@@ -2984,7 +2984,7 @@ static int do_write_image_or_movie(Render *re,
       else {
         dune_image_path_from_imformat(name,
                                      scene->r.pic,
-                                     BKE_main_blendfile_path(bmain),
+                                     dune_main_dunefile_path(bmain),
                                      scene->r.cfra,
                                      &scene->r.im_format,
                                      (scene->r.scemode & R_EXTENSION) != 0,
