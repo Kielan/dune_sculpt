@@ -1900,7 +1900,7 @@ static void render_result_uncrop(Render *re)
       const rcti orig_disprect = re->disprect;
       const int orig_rectx = re->rectx, orig_recty = re->recty;
 
-      BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+      lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
       /* sub-rect for merge call later on */
       re->result->tilerect = re->disprect;
@@ -2042,7 +2042,7 @@ static void do_render_compositor_scenes(Render *re)
 
   /* now foreach render-result node we do a full render */
   /* results are stored in a way compositor will find it */
-  GSet *scenes_rendered = BLI_gset_ptr_new(__func__);
+  GSet *scenes_rendered = lib_gset_ptr_new(__func__);
   for (node = re->scene->nodetree->nodes.first; node; node = node->next) {
     if (node->type == CMP_NODE_R_LAYERS && (node->flag & NODE_MUTED) == 0) {
       if (node->id && node->id != (Id *)re->scene) {
@@ -2147,7 +2147,7 @@ static void do_render_compositor(Render *re)
 
         RenderView *rv;
         for (rv = re->result->views.first; rv; rv = rv->next) {
-          ntreeCompositExecTree(
+          ntreeCompositExTree(
               re->pipeline_scene_eval, ntree, &re->r, true, G.background == 0, rv->name);
         }
 
@@ -2218,7 +2218,7 @@ static void do_render_sequencer(Render *re)
   struct ImBuf *out;
   RenderResult *rr; /* don't assign re->result here as it might change during give_ibuf_seq */
   int cfra = re->r.cfra;
-  SeqRenderData context;
+  SeqRenderData ctx;
   int view_id, tot_views;
   struct ImBuf **ibuf_arr;
   int re_x, re_y;
@@ -2241,27 +2241,27 @@ static void do_render_sequencer(Render *re)
   tot_views = dune_scene_multiview_num_views_get(&re->r);
   ibuf_arr = mem_mallocn(sizeof(ImBuf *) * tot_views, "Sequencer Views ImBufs");
 
-  SEQ_render_new_render_data(re->main,
-                             re->pipeline_depsgraph,
+  seq_render_new_render_data(re->main,
+                             re->pipeline_graph,
                              re->scene,
                              re_x,
                              re_y,
                              SEQ_RENDER_SIZE_SCENE,
                              true,
-                             &context);
+                             &ctx);
 
   /* the renderresult gets destroyed during the rendering, so we first collect all ibufs
    * and then we populate the final renderesult */
 
   for (view_id = 0; view_id < tot_views; view_id++) {
     context.view_id = view_id;
-    out = SEQ_render_give_ibuf(&context, cfra, 0);
+    out = seq_render_give_ibuf(&context, cfra, 0);
 
     if (out) {
       ibuf_arr[view_id] = IMB_dupImBuf(out);
       IMB_metadata_copy(ibuf_arr[view_id], out);
       IMB_freeImBuf(out);
-      SEQ_render_imbuf_from_sequencer_space(re->pipeline_scene_eval, ibuf_arr[view_id]);
+      seq_render_imbuf_from_seq_space(re->pipeline_scene_eval, ibuf_arr[view_id]);
     }
     else {
       ibuf_arr[view_id] = NULL;
@@ -2291,7 +2291,7 @@ static void do_render_sequencer(Render *re)
       if (recurs_depth == 0) { /* With nested scenes, only free on top-level. */
         Editing *ed = re->pipeline_scene_eval->ed;
         if (ed) {
-          SEQ_relations_free_imbuf(re->pipeline_scene_eval, &ed->seqbase, true);
+          seq_relations_free_imbuf(re->pipeline_scene_eval, &ed->seqbase, true);
         }
       }
       IMB_freeImBuf(ibuf_arr[view_id]);
@@ -2339,7 +2339,7 @@ static void do_render_full_pipeline(Render *re)
 
   /* ensure no images are in memory from previous animated sequences */
   dune_image_all_free_anim_ibufs(re->main, re->r.cfra);
-  SEQ_cache_cleanup(re->scene);
+  seq_cache_cleanup(re->scene);
 
   if (render_engine_render(re, true)) {
     /* in this case external render overrides all */
@@ -2366,7 +2366,7 @@ static void do_render_full_pipeline(Render *re)
   if (re->result != NULL) {
     /* sequence rendering should have taken care of that already */
     if (!(render_seq && (re->r.stamp & R_STAMP_STRIPMETA))) {
-      Object *ob_camera_eval = DEG_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
+      Object *ob_camera_eval = graph_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
       dune_render_result_stamp_info(re->scene, ob_camera_eval, re->result, false);
     }
 
@@ -2387,7 +2387,7 @@ static bool check_valid_compositing_camera(Scene *scene, Object *camera_override
       if (node->type == CMP_NODE_R_LAYERS && (node->flag & NODE_MUTED) == 0) {
         Scene *sce = node->id ? (Scene *)node->id : scene;
         if (sce->camera == NULL) {
-          sce->camera = BKE_view_layer_camera_find(BKE_view_layer_default_render(sce));
+          sce->camera = dune_view_layer_camera_find(BKE_view_layer_default_render(sce));
         }
         if (sce->camera == NULL) {
           /* all render layers nodes need camera */
