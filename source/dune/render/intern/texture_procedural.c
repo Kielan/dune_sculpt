@@ -632,7 +632,7 @@ static int mg_HTerrainTex(const Tex *tex, const float texvec[3], TexResult *texr
 {
   int rv = TEX_INT;
 
-  texres->tin = tex->ns_outscale * BLI_noise_mg_hetero_terrain(texvec[0],
+  texres->tin = tex->ns_outscale * lib_noise_mg_hetero_terrain(texvec[0],
                                                                texvec[1],
                                                                texvec[2],
                                                                tex->mg_H,
@@ -645,7 +645,7 @@ static int mg_HTerrainTex(const Tex *tex, const float texvec[3], TexResult *texr
     float ofs = tex->nabla / tex->noisesize; /* also scaling of texvec */
 
     /* calculate bumpnormal */
-    texres->nor[0] = tex->ns_outscale * BLI_noise_mg_hetero_terrain(texvec[0] + ofs,
+    texres->nor[0] = tex->ns_outscale * lib_noise_mg_hetero_terrain(texvec[0] + ofs,
                                                                     texvec[1],
                                                                     texvec[2],
                                                                     tex->mg_H,
@@ -653,7 +653,7 @@ static int mg_HTerrainTex(const Tex *tex, const float texvec[3], TexResult *texr
                                                                     tex->mg_octaves,
                                                                     tex->mg_offset,
                                                                     tex->noisebasis);
-    texres->nor[1] = tex->ns_outscale * BLI_noise_mg_hetero_terrain(texvec[0],
+    texres->nor[1] = tex->ns_outscale * lib_noise_mg_hetero_terrain(texvec[0],
                                                                     texvec[1] + ofs,
                                                                     texvec[2],
                                                                     tex->mg_H,
@@ -661,7 +661,7 @@ static int mg_HTerrainTex(const Tex *tex, const float texvec[3], TexResult *texr
                                                                     tex->mg_octaves,
                                                                     tex->mg_offset,
                                                                     tex->noisebasis);
-    texres->nor[2] = tex->ns_outscale * BLI_noise_mg_hetero_terrain(texvec[0],
+    texres->nor[2] = tex->ns_outscale * lib_noise_mg_hetero_terrain(texvec[0],
                                                                     texvec[1],
                                                                     texvec[2] + ofs,
                                                                     tex->mg_H,
@@ -1146,7 +1146,7 @@ static int multitex(Tex *tex,
 
   if (use_nodes && tex->use_nodes && tex->nodetree) {
     const float cfra = 1.0f; /* This was only set for Blender Internal render before. */
-    retval = ntreeTexExecTree(tex->nodetree,
+    retval = ntreeTexExTree(tex->nodetree,
                               texres,
                               texvec,
                               dxt,
@@ -1222,7 +1222,7 @@ static int multitex(Tex *tex,
         break;
       /* newnoise: voronoi type */
       case TEX_VORONOI:
-        /* ton: added this, for Blender convention reason.
+        /* ton: added this, for Dune convention reason.
          * artificer: added the use of tmpvec to avoid scaling texvec
          */
         copy_v3_v3(tmpvec, texvec);
@@ -1244,7 +1244,7 @@ static int multitex(Tex *tex,
 
   if (tex->flag & TEX_COLORBAND) {
     float col[4];
-    if (BKE_colorband_evaluate(tex->coba, texres->tin, col)) {
+    if (dune_colorband_evaluate(tex->coba, texres->tin, col)) {
       texres->talpha = true;
       copy_v4_v4(texres->trgba, col);
       retval |= TEX_RGB;
@@ -1641,15 +1641,15 @@ float texture_value_blend(float tex, float out, float fact, float facg, int blen
       }
       break;
 
-    case MTEX_DIFF:
+    case MESH_TEX_DIFF:
       in = facm * out + fact * fabsf(tex - out);
       break;
 
-    case MTEX_DARK:
+    case MESH_TEX_DARK:
       in = min_ff(out, tex) * fact + out * facm;
       break;
 
-    case MTEX_LIGHT:
+    case MESH_TEX_LIGHT:
       col = fact * tex;
       if (col > out) {
         in = col;
