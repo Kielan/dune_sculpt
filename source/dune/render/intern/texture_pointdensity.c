@@ -836,10 +836,10 @@ void RE_point_density_minmax(struct Graph *graph,
   }
   else {
     const float radius[3] = {pd->radius, pd->radius, pd->radius};
-    BoundBox *bb = BKE_object_boundbox_get(object);
+    BoundBox *bb = dune_object_boundbox_get(object);
 
     if (bb != NULL) {
-      BLI_assert((bb->flag & BOUNDBOX_DIRTY) == 0);
+      lib_assert((bb->flag & BOUNDBOX_DIRTY) == 0);
       copy_v3_v3(r_min, bb->vec[0]);
       copy_v3_v3(r_max, bb->vec[6]);
       /* Adjust texture space to include density points on the boundaries. */
@@ -853,18 +853,18 @@ void RE_point_density_minmax(struct Graph *graph,
   }
 }
 
-typedef struct SampleCallbackData {
+typedef struct SampleCbData {
   PointDensity *pd;
   int resolution;
   float *min, *dim;
   float *values;
-} SampleCallbackData;
+} SampleCbData;
 
 static void point_density_sample_func(void *__restrict data_v,
                                       const int iter,
                                       const TaskParallelTLS *__restrict UNUSED(tls))
 {
-  SampleCallbackData *data = (SampleCallbackData *)data_v;
+  SampleCbData *data = (SampleCbData *)data_v;
 
   const int resolution = data->resolution;
   const int resolution2 = resolution * resolution;
@@ -898,7 +898,7 @@ static void point_density_sample_func(void *__restrict data_v,
   }
 }
 
-void RE_point_density_sample(Depsgraph *depsgraph,
+void render_point_density_sample(Graph *graph,
                              PointDensity *pd,
                              const int resolution,
                              float *values)
@@ -923,7 +923,7 @@ void RE_point_density_sample(Depsgraph *depsgraph,
     return;
   }
 
-  SampleCallbackData data;
+  SampleCbData data;
   data.pd = pd;
   data.resolution = resolution;
   data.min = min;
@@ -937,11 +937,11 @@ void RE_point_density_sample(Depsgraph *depsgraph,
   free_pointdensity(pd);
 }
 
-void RE_point_density_free(struct PointDensity *pd)
+void render_point_density_free(struct PointDensity *pd)
 {
   free_pointdensity(pd);
 }
 
-void RE_point_density_fix_linking(void)
+void render_point_density_fix_linking(void)
 {
 }
