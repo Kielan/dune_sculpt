@@ -1041,7 +1041,7 @@ ImBuf *render_result_rect_to_ibuf(RenderResult *rr,
    * note that sequence editor can generate 8bpc render buffers
    */
   if (ibuf->rect) {
-    if (BKE_imtype_valid_depths(imf->imtype) &
+    if (dune_imtype_valid_depths(imf->imtype) &
         (R_IMF_CHAN_DEPTH_12 | R_IMF_CHAN_DEPTH_16 | R_IMF_CHAN_DEPTH_24 | R_IMF_CHAN_DEPTH_32)) {
       if (imf->depth == R_IMF_CHAN_DEPTH_8) {
         /* Higher depth bits are supported but not needed for current file output. */
@@ -1069,15 +1069,15 @@ ImBuf *render_result_rect_to_ibuf(RenderResult *rr,
   return ibuf;
 }
 
-void RE_render_result_rect_from_ibuf(RenderResult *rr, const ImBuf *ibuf, const int view_id)
+void render_result_rect_from_ibuf(RenderResult *rr, const ImBuf *ibuf, const int view_id)
 {
-  RenderView *rv = RE_RenderViewGetById(rr, view_id);
+  RenderView *rv = render_RenderViewGetById(rr, view_id);
 
   if (ibuf->rect_float) {
     rr->have_combined = true;
 
     if (!rv->rectf) {
-      rv->rectf = MEM_mallocN(sizeof(float[4]) * rr->rectx * rr->recty, "render_seq rectf");
+      rv->rectf = mem_mallocn(sizeof(float[4]) * rr->rectx * rr->recty, "render_seq rectf");
     }
 
     memcpy(rv->rectf, ibuf->rect_float, sizeof(float[4]) * rr->rectx * rr->recty);
@@ -1101,7 +1101,7 @@ void RE_render_result_rect_from_ibuf(RenderResult *rr, const ImBuf *ibuf, const 
 }
 void render_result_rect_fill_zero(RenderResult *rr, const int view_id)
 {
-  RenderView *rv = RE_RenderViewGetById(rr, view_id);
+  RenderView *rv = render_RenderViewGetById(rr, view_id);
 
   if (rv->rectf) {
     memset(rv->rectf, 0, sizeof(float[4]) * rr->rectx * rr->recty);
@@ -1110,7 +1110,7 @@ void render_result_rect_fill_zero(RenderResult *rr, const int view_id)
     memset(rv->rect32, 0, 4 * rr->rectx * rr->recty);
   }
   else {
-    rv->rect32 = MEM_callocN(sizeof(int) * rr->rectx * rr->recty, "render_seq rect");
+    rv->rect32 = mem_callocn(sizeof(int) * rr->rectx * rr->recty, "render_seq rect");
   }
 }
 
@@ -1122,7 +1122,7 @@ void render_result_rect_get_pixels(RenderResult *rr,
                                    const ColorManagedDisplaySettings *display_settings,
                                    const int view_id)
 {
-  RenderView *rv = RE_RenderViewGetById(rr, view_id);
+  RenderView *rv = render_RenderViewGetById(rr, view_id);
 
   if (rv && rv->rect32) {
     memcpy(rect, rv->rect32, sizeof(int) * rr->rectx * rr->recty);
@@ -1145,7 +1145,7 @@ void render_result_rect_get_pixels(RenderResult *rr,
 
 /*************************** multiview functions *****************************/
 
-bool RE_HasCombinedLayer(const RenderResult *rr)
+bool render_HasCombinedLayer(const RenderResult *rr)
 {
   if (rr == NULL) {
     return false;
@@ -1159,7 +1159,7 @@ bool RE_HasCombinedLayer(const RenderResult *rr)
   return (rv->rect32 || rv->rectf);
 }
 
-bool RE_HasFloatPixels(const RenderResult *rr)
+bool render_HasFloatPixels(const RenderResult *rr)
 {
   for (const RenderView *rview = rr->views.first; rview; rview = rview->next) {
     if (rview->rect32 && !rview->rectf) {
@@ -1170,91 +1170,91 @@ bool RE_HasFloatPixels(const RenderResult *rr)
   return true;
 }
 
-bool RE_RenderResult_is_stereo(const RenderResult *rr)
+bool render_RenderResult_is_stereo(const RenderResult *rr)
 {
-  if (!BLI_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name))) {
+  if (!lib_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name))) {
     return false;
   }
 
-  if (!BLI_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RenderView, name))) {
+  if (!lib_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RenderView, name))) {
     return false;
   }
 
   return true;
 }
 
-RenderView *RE_RenderViewGetById(RenderResult *rr, const int view_id)
+RenderView *render_RenderViewGetById(RenderResult *rr, const int view_id)
 {
-  RenderView *rv = BLI_findlink(&rr->views, view_id);
-  BLI_assert(rr->views.first);
+  RenderView *rv = lib_findlink(&rr->views, view_id);
+  lib_assert(rr->views.first);
   return rv ? rv : rr->views.first;
 }
 
-RenderView *RE_RenderViewGetByName(RenderResult *rr, const char *viewname)
+RenderView *render_RenderViewGetByName(RenderResult *rr, const char *viewname)
 {
-  RenderView *rv = BLI_findstring(&rr->views, viewname, offsetof(RenderView, name));
-  BLI_assert(rr->views.first);
+  RenderView *rv = lib_findstring(&rr->views, viewname, offsetof(RenderView, name));
+  lib_assert(rr->views.first);
   return rv ? rv : rr->views.first;
 }
 
 static RenderPass *duplicate_render_pass(RenderPass *rpass)
 {
-  RenderPass *new_rpass = MEM_mallocN(sizeof(RenderPass), "new render pass");
+  RenderPass *new_rpass = mem_mallocn(sizeof(RenderPass), "new render pass");
   *new_rpass = *rpass;
   new_rpass->next = new_rpass->prev = NULL;
   if (new_rpass->rect != NULL) {
-    new_rpass->rect = MEM_dupallocN(new_rpass->rect);
+    new_rpass->rect = mem_dupallocn(new_rpass->rect);
   }
   return new_rpass;
 }
 
 static RenderLayer *duplicate_render_layer(RenderLayer *rl)
 {
-  RenderLayer *new_rl = MEM_mallocN(sizeof(RenderLayer), "new render layer");
+  RenderLayer *new_rl = mem_mallocn(sizeof(RenderLayer), "new render layer");
   *new_rl = *rl;
   new_rl->next = new_rl->prev = NULL;
   new_rl->passes.first = new_rl->passes.last = NULL;
   new_rl->exrhandle = NULL;
   for (RenderPass *rpass = rl->passes.first; rpass != NULL; rpass = rpass->next) {
     RenderPass *new_rpass = duplicate_render_pass(rpass);
-    BLI_addtail(&new_rl->passes, new_rpass);
+    lib_addtail(&new_rl->passes, new_rpass);
   }
   return new_rl;
 }
 
 static RenderView *duplicate_render_view(RenderView *rview)
 {
-  RenderView *new_rview = MEM_mallocN(sizeof(RenderView), "new render view");
+  RenderView *new_rview = mem_mallocn(sizeof(RenderView), "new render view");
   *new_rview = *rview;
   if (new_rview->rectf != NULL) {
-    new_rview->rectf = MEM_dupallocN(new_rview->rectf);
+    new_rview->rectf = mem_dupallocn(new_rview->rectf);
   }
   if (new_rview->rectz != NULL) {
-    new_rview->rectz = MEM_dupallocN(new_rview->rectz);
+    new_rview->rectz = mem_dupallocn(new_rview->rectz);
   }
   if (new_rview->rect32 != NULL) {
-    new_rview->rect32 = MEM_dupallocN(new_rview->rect32);
+    new_rview->rect32 = mem_dupallocn(new_rview->rect32);
   }
   return new_rview;
 }
 
-RenderResult *RE_DuplicateRenderResult(RenderResult *rr)
+RenderResult *render_DuplicateRenderResult(RenderResult *rr)
 {
-  RenderResult *new_rr = MEM_mallocN(sizeof(RenderResult), "new duplicated render result");
+  RenderResult *new_rr = mem_mallocn(sizeof(RenderResult), "new duplicated render result");
   *new_rr = *rr;
   new_rr->next = new_rr->prev = NULL;
   new_rr->layers.first = new_rr->layers.last = NULL;
   new_rr->views.first = new_rr->views.last = NULL;
   for (RenderLayer *rl = rr->layers.first; rl != NULL; rl = rl->next) {
     RenderLayer *new_rl = duplicate_render_layer(rl);
-    BLI_addtail(&new_rr->layers, new_rl);
+    lib_addtail(&new_rr->layers, new_rl);
   }
   for (RenderView *rview = rr->views.first; rview != NULL; rview = rview->next) {
     RenderView *new_rview = duplicate_render_view(rview);
-    BLI_addtail(&new_rr->views, new_rview);
+    lib_addtail(&new_rr->views, new_rview);
   }
   if (new_rr->rect32 != NULL) {
-    new_rr->rect32 = MEM_dupallocN(new_rr->rect32);
+    new_rr->rect32 = mem_dupallocn(new_rr->rect32);
   }
   if (new_rr->rectf != NULL) {
     new_rr->rectf = MEM_dupallocN(new_rr->rectf);
