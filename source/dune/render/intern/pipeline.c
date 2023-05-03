@@ -2681,25 +2681,25 @@ void RE_SetReports(Render *re, ReportList *reports)
 static void render_update_depsgraph(Render *re)
 {
   Scene *scene = re->scene;
-  DEG_evaluate_on_framechange(re->pipeline_depsgraph, BKE_scene_frame_get(scene));
-  BKE_scene_update_sound(re->pipeline_depsgraph, re->main);
+  graph_evaluate_on_framechange(re->pipeline_depsgraph, BKE_scene_frame_get(scene));
+  dune_scene_update_sound(re->pipeline_depsgraph, re->main);
 }
 
-static void render_init_depsgraph(Render *re)
+static void render_init_graph(Render *re)
 {
   Scene *scene = re->scene;
-  ViewLayer *view_layer = BKE_view_layer_default_render(re->scene);
+  ViewLayer *view_layer = dune_view_layer_default_render(re->scene);
 
-  re->pipeline_depsgraph = DEG_graph_new(re->main, scene, view_layer, DAG_EVAL_RENDER);
-  DEG_debug_name_set(re->pipeline_depsgraph, "RENDER PIPELINE");
+  re->pipeline_graph = graph_new(re->main, scene, view_layer, DAG_EVAL_RENDER);
+  graph_debug_name_set(re->pipeline_graph, "RENDER PIPELINE");
 
   /* Make sure there is a correct evaluated scene pointer. */
-  DEG_graph_build_for_render_pipeline(re->pipeline_depsgraph);
+  graph_build_for_render_pipeline(re->pipeline_depsgraph);
 
   /* Update immediately so we have proper evaluated scene. */
   render_update_depsgraph(re);
 
-  re->pipeline_scene_eval = DEG_get_evaluated_scene(re->pipeline_depsgraph);
+  re->pipeline_scene_eval = graph_get_evaluated_scene(re->pipeline_depsgraph);
 }
 
 /* Free data only needed during rendering operation. */
