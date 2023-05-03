@@ -740,7 +740,7 @@ static void sample_dummy_point_density(int resolution, float *values)
   memset(values, 0, sizeof(float[4]) * resolution * resolution * resolution);
 }
 
-static void particle_system_minmax(Depsgraph *depsgraph,
+static void particle_system_minmax(Graph *graph,
                                    Scene *scene,
                                    Object *object,
                                    ParticleSystem *psys,
@@ -749,7 +749,7 @@ static void particle_system_minmax(Depsgraph *depsgraph,
                                    float max[3])
 {
   const float size[3] = {radius, radius, radius};
-  const float cfra = BKE_scene_ctime_get(scene);
+  const float cfra = dune_scene_ctime_get(scene);
   ParticleSettings *part = psys->part;
   ParticleSimulationData sim = {NULL};
   ParticleData *pa = NULL;
@@ -795,7 +795,7 @@ static void particle_system_minmax(Depsgraph *depsgraph,
   }
 }
 
-void RE_point_density_cache(struct Graph *graph, PointDensity *pd)
+void render_point_density_cache(struct Graph *graph, PointDensity *pd)
 {
   Scene *scene = graph_get_evaluated_scene(graph);
 
