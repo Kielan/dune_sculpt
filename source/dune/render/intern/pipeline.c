@@ -3457,12 +3457,12 @@ void RE_layer_load_from_file(
           IMB_freeImBuf(ibuf_clip);
         }
         else {
-          BKE_reportf(
+          dune_reportf(
               reports, RPT_ERROR, "%s: failed to allocate clip buffer '%s'", __func__, filename);
         }
       }
       else {
-        BKE_reportf(reports,
+        dune_reportf(reports,
                     RPT_ERROR,
                     "%s: incorrect dimensions for partial copy '%s'",
                     __func__,
@@ -3473,21 +3473,21 @@ void RE_layer_load_from_file(
     IMB_freeImBuf(ibuf);
   }
   else {
-    BKE_reportf(reports, RPT_ERROR, "%s: failed to load '%s'", __func__, filename);
+    dune_reportf(reports, RPT_ERROR, "%s: failed to load '%s'", __func__, filename);
   }
 }
 
-void RE_result_load_from_file(RenderResult *result, ReportList *reports, const char *filename)
+void render_result_load_from_file(RenderResult *result, ReportList *reports, const char *filename)
 {
   if (!render_result_exr_file_read_path(result, NULL, filename)) {
-    BKE_reportf(reports, RPT_ERROR, "%s: failed to load '%s'", __func__, filename);
+    dune_reportf(reports, RPT_ERROR, "%s: failed to load '%s'", __func__, filename);
     return;
   }
 }
 
-bool RE_layers_have_name(struct RenderResult *rr)
+bool render_layers_have_name(struct RenderResult *rr)
 {
-  switch (BLI_listbase_count_at_most(&rr->layers, 2)) {
+  switch (lib_listbase_count_at_most(&rr->layers, 2)) {
     case 0:
       return false;
     case 1:
@@ -3498,7 +3498,7 @@ bool RE_layers_have_name(struct RenderResult *rr)
   return false;
 }
 
-bool RE_passes_have_name(struct RenderLayer *rl)
+bool render_passes_have_name(struct RenderLayer *rl)
 {
   LISTBASE_FOREACH (RenderPass *, rp, &rl->passes) {
     if (!STREQ(rp->name, "Combined")) {
@@ -3509,7 +3509,7 @@ bool RE_passes_have_name(struct RenderLayer *rl)
   return false;
 }
 
-RenderPass *RE_pass_find_by_name(RenderLayer *rl, const char *name, const char *viewname)
+RenderPass *render_pass_find_by_name(RenderLayer *rl, const char *name, const char *viewname)
 {
   RenderPass *rp = NULL;
 
@@ -3526,11 +3526,11 @@ RenderPass *RE_pass_find_by_name(RenderLayer *rl, const char *name, const char *
   return rp;
 }
 
-RenderPass *RE_pass_find_by_type(RenderLayer *rl, int passtype, const char *viewname)
+RenderPass *render_pass_find_by_type(RenderLayer *rl, int passtype, const char *viewname)
 {
 #define CHECK_PASS(NAME) \
   if (passtype == SCE_PASS_##NAME) { \
-    return RE_pass_find_by_name(rl, RE_PASSNAME_##NAME, viewname); \
+    return render_pass_find_by_name(rl, RE_PASSNAME_##NAME, viewname); \
   } \
   ((void)0)
 
@@ -3564,14 +3564,14 @@ RenderPass *RE_pass_find_by_type(RenderLayer *rl, int passtype, const char *view
   return NULL;
 }
 
-RenderPass *RE_create_gp_pass(RenderResult *rr, const char *layername, const char *viewname)
+RenderPass *render_create_gp_pass(RenderResult *rr, const char *layername, const char *viewname)
 {
-  RenderLayer *rl = BLI_findstring(&rr->layers, layername, offsetof(RenderLayer, name));
+  RenderLayer *rl = lib_findstring(&rr->layers, layername, offsetof(RenderLayer, name));
   /* only create render layer if not exist */
   if (!rl) {
-    rl = MEM_callocN(sizeof(RenderLayer), layername);
-    BLI_addtail(&rr->layers, rl);
-    BLI_strncpy(rl->name, layername, sizeof(rl->name));
+    rl = mem_callocn(sizeof(RenderLayer), layername);
+    lib_addtail(&rr->layers, rl);
+    lib_strncpy(rl->name, layername, sizeof(rl->name));
     rl->layflag = SCE_LAY_SOLID;
     rl->passflag = SCE_PASS_COMBINED;
     rl->rectx = rr->rectx;
