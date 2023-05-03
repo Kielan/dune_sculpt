@@ -3013,7 +3013,7 @@ static int do_write_image_or_movie(Render *re,
 
   /* NOTE: using G_MAIN seems valid here???
    * Not sure it's actually even used anyway, we could as well pass NULL? */
-  render_callback_exec_null(re, G_MAIN, BKE_CB_EVT_RENDER_STATS);
+  render_cb_ex_null(re, G_MAIN, DUNE_CB_EVT_RENDER_STATS);
 
   if (do_write_file) {
     lib_timecode_string_from_time_simple(name, sizeof(name), re->i.lastframetime - render_time);
@@ -3076,21 +3076,21 @@ void render_RenderAnim(Render *re,
   render_cb_ex_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_INIT);
 
   const RenderData rd = scene->r;
-  bMovieHandle *mh = NULL;
+  MovieHandle *mh = NULL;
   const int cfra_old = rd.cfra;
   const float subframe_old = rd.subframe;
   int nfra, totrendered = 0, totskipped = 0;
-  const int totvideos = BKE_scene_multiview_num_videos_get(&rd);
-  const bool is_movie = BKE_imtype_is_movie(rd.im_format.imtype);
+  const int totvideos = dune_scene_multiview_num_videos_get(&rd);
+  const bool is_movie = dune_imtype_is_movie(rd.im_format.imtype);
   const bool is_multiview_name = ((rd.scemode & R_MULTIVIEW) != 0 &&
                                   (rd.im_format.views_format == R_IMF_VIEWS_INDIVIDUAL));
 
   /* do not fully call for each frame, it initializes & pops output window */
-  if (!render_init_from_main(re, &rd, bmain, scene, single_layer, camera_override, 0, 1)) {
+  if (!render_init_from_main(re, &rd, main, scene, single_layer, camera_override, 0, 1)) {
     return;
   }
 
-  RenderEngineType *re_type = RE_engines_find(re->r.engine);
+  RenderEngineType *re_type = render_engines_find(re->r.engine);
 
   /* Only disable file writing if postprocessing is also disabled. */
   const bool do_write_file = !(re_type->flag & RE_USE_NO_IMAGE_SAVE) ||
@@ -3105,16 +3105,16 @@ void render_RenderAnim(Render *re,
 
     get_videos_dimensions(re, &rd, &width, &height);
 
-    mh = BKE_movie_handle_get(rd.im_format.imtype);
+    mh = dune_movie_handle_get(rd.im_format.imtype);
     if (mh == NULL) {
-      BKE_report(re->reports, RPT_ERROR, "Movie format unsupported");
+      dune_report(re->reports, RPT_ERROR, "Movie format unsupported");
       return;
     }
 
-    re->movie_ctx_arr = MEM_mallocN(sizeof(void *) * totvideos, "Movies' Context");
+    re->movie_ctx_arr = mem_mallocn(sizeof(void *) * totvideos, "Movies' Context");
 
     for (i = 0; i < totvideos; i++) {
-      const char *suffix = BKE_scene_multiview_view_id_suffix_get(&re->r, i);
+      const char *suffix = dune_scene_multiview_view_id_suffix_get(&re->r, i);
 
       re->movie_ctx_arr[i] = mh->context_create();
 
@@ -3162,18 +3162,17 @@ void render_RenderAnim(Render *re,
        *                                                              -sergey-
        */
       {
-        float ctime = BKE_scene_ctime_get(scene);
-        AnimData *adt = BKE_animdata_from_id(&scene->id);
-        const AnimationEvalContext anim_eval_context = BKE_animsys_eval_context_construct(
-            re->pipeline_depsgraph, ctime);
-        BKE_animsys_evaluate_animdata(&scene->id, adt, &anim_eval_context, ADT_RECALC_ALL, false);
+        float ctime = dune_scene_ctime_get(scene);
+        AnimData *adt = dune_animdata_from_id(&scene->id);
+        const AnimationEvalCtx anim_eval_ctx = dune_animsys_eval_context_construct(
+            re->pipeline_graph, ctime);
+        dune_animsys_eval_animdata(&scene->id, adt, &anim_eval_context, ADT_RECALC_ALL, false);
       }
 
-      render_update_depsgraph(re);
+      render_update_graph(re);
 
-      /* Only border now, TODO(ton): camera lens. */
-      render_init_from_main(re, &rd, bmain, scene, single_layer, camera_override, 1, 0);
-
+      /* Only border now, TODO: camera lens. */
+      render_init_from_main(re, &rd, main, scene, single_layer, camera_override, 1, 0);
       if (nfra != scene->r.cfra) {
         /* Skip this frame, but could update for physics and particles system. */
         continue;
@@ -3184,7 +3183,7 @@ void render_RenderAnim(Render *re,
       /* Touch/NoOverwrite options are only valid for image's */
       if (is_movie == false && do_write_file) {
         if (rd.mode & (R_NO_OVERWRITE | R_TOUCH)) {
-          BKE_image_path_from_imformat(name,
+          dune_image_path_from_imformat(name,
                                        rd.pic,
                                        BKE_main_blendfile_path(bmain),
                                        scene->r.cfra,
@@ -3196,7 +3195,7 @@ void render_RenderAnim(Render *re,
 
         if (rd.mode & R_NO_OVERWRITE) {
           if (!is_multiview_name) {
-            if (BLI_exists(name)) {
+            if (lib_exists(name)) {
               printf("skipping existing frame \"%s\"\n", name);
               totskipped++;
               continue;
