@@ -3579,18 +3579,16 @@ RenderPass *render_create_gp_pass(RenderResult *rr, const char *layername, const
   }
 
   /* Clear previous pass if exist or the new image will be over previous one. */
-  RenderPass *rp = RE_pass_find_by_name(rl, RE_PASSNAME_COMBINED, viewname);
+  RenderPass *rp = render_pass_find_by_name(rl, RE_PASSNAME_COMBINED, viewname);
   if (rp) {
     if (rp->rect) {
-      MEM_freeN(rp->rect);
+      mem_freen(rp->rect);
     }
-    BLI_freelinkN(&rl->passes, rp);
+    lib_freelinkn(&rl->passes, rp);
   }
   /* create a totally new pass */
   return render_layer_add_pass(rr, rl, 4, RE_PASSNAME_COMBINED, viewname, "RGBA", true);
 }
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name Miscellaneous Public Render API
