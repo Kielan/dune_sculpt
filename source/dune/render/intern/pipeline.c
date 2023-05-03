@@ -2576,7 +2576,7 @@ static void update_physics_cache(Render *re,
   baker.main = re->main;
   baker.scene = scene;
   baker.view_layer = view_layer;
-  baker.graph = dune_scene_ensure_depsgraph(re->main, scene, view_layer);
+  baker.graph = dune_scene_ensure_graph(re->main, scene, view_layer);
   baker.bake = 0;
   baker.render = 1;
   baker.anim_init = 1;
@@ -2947,7 +2947,7 @@ bool render_WriteRenderViewsMovie(ReportList *reports,
     }
   }
 
-  BKE_image_format_free(&image_format);
+  dune_image_format_free(&image_format);
 
   return ok;
 }
@@ -3182,7 +3182,7 @@ void render_RenderAnim(Render *re,
         if (rd.mode & (R_NO_OVERWRITE | R_TOUCH)) {
           dune_image_path_from_imformat(name,
                                        rd.pic,
-                                       BKE_main_blendfile_path(bmain),
+                                       dune_main_dunefile_path(main),
                                        scene->r.cfra,
                                        &rd.im_format,
                                        (rd.scemode & R_EXTENSION) != 0,
@@ -3204,13 +3204,13 @@ void render_RenderAnim(Render *re,
             char filepath[FILE_MAX];
 
             for (srv = scene->r.views.first; srv; srv = srv->next) {
-              if (!BKE_scene_multiview_is_render_view_active(&scene->r, srv)) {
+              if (!dune_scene_multiview_is_render_view_active(&scene->r, srv)) {
                 continue;
               }
 
-              BKE_scene_multiview_filepath_get(srv, name, filepath);
+              dune_scene_multiview_filepath_get(srv, name, filepath);
 
-              if (BLI_exists(filepath)) {
+              if (lib_exists(filepath)) {
                 is_skip = true;
                 printf("skipping existing frame \"%s\" for view \"%s\"\n", filepath, srv->name);
               }
@@ -3235,15 +3235,15 @@ void render_RenderAnim(Render *re,
             char filepath[FILE_MAX];
 
             for (srv = scene->r.views.first; srv; srv = srv->next) {
-              if (!BKE_scene_multiview_is_render_view_active(&scene->r, srv)) {
+              if (!dune_scene_multiview_is_render_view_active(&scene->r, srv)) {
                 continue;
               }
 
-              BKE_scene_multiview_filepath_get(srv, name, filepath);
+              dune_scene_multiview_filepath_get(srv, name, filepath);
 
-              if (!BLI_exists(filepath)) {
-                BLI_make_existing_file(filepath); /* makes the dir if its not there */
-                BLI_file_touch(filepath);
+              if (!lib_exists(filepath)) {
+                lib_make_existing_file(filepath); /* makes the dir if its not there */
+                lib_file_touch(filepath);
               }
             }
           }
