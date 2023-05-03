@@ -1613,7 +1613,7 @@ void render_FreePersistentData(const Scene *scene)
 /* -------------------------------------------------------------------- */
 /** Initialize State **/
 
-static void re_init_resolution(Render *re, Render *source, int winx, int winy, rcti *disprect)
+static void render_init_resolution(Render *re, Render *source, int winx, int winy, rcti *disprect)
 {
   re->winx = winx;
   re->winy = winy;
@@ -1834,7 +1834,7 @@ void render_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
 void render_gl_ctx_create(Render *re)
 {
   /* Needs to be created in the main ogl thread. */
-  re->gl_context = WM_opengl_context_create();
+  re->gl_ctx = wm_opengl_ctz_create();
   /* So we activate the window's one afterwards. */
   wm_window_reset_drawable();
 }
@@ -2179,7 +2179,7 @@ static void renderresult_stampinfo(Render *re)
     RE_AcquireResultImage(re, &rres, nr);
 
     Object *ob_camera_eval = DEG_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
-    BKE_image_stamp_buf(re->scene,
+    dune_image_stamp_buf(re->scene,
                         ob_camera_eval,
                         (re->r.stamp & R_STAMP_STRIPMETA) ? rres.stamp_data : NULL,
                         (unsigned char *)rres.rect32,
@@ -2187,11 +2187,11 @@ static void renderresult_stampinfo(Render *re)
                         rres.rectx,
                         rres.recty,
                         4);
-    RE_ReleaseResultImage(re);
+    render_ReleaseResultImage(re);
   }
 }
 
-int RE_seq_render_active(Scene *scene, RenderData *rd)
+int render_seq_render_active(Scene *scene, RenderData *rd)
 {
   Editing *ed;
   Sequence *seq;
@@ -2275,7 +2275,7 @@ static void do_render_sequencer(Render *re)
   lib_rw_mutex_unlock(&re->resultmutex);
 
   for (view_id = 0; view_id < tot_views; view_id++) {
-    RenderView *rv = RE_RenderViewGetById(rr, view_id);
+    RenderView *rv = render_RenderViewGetById(rr, view_id);
     lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
     if (ibuf_arr[view_id]) {
@@ -2381,7 +2381,7 @@ static void do_render_full_pipeline(Render *re)
 static bool check_valid_compositing_camera(Scene *scene, Object *camera_override)
 {
   if (scene->r.scemode & R_DOCOMP && scene->use_nodes) {
-    bNode *node = scene->nodetree->nodes.first;
+    Node *node = scene->nodetree->nodes.first;
 
     while (node) {
       if (node->type == CMP_NODE_R_LAYERS && (node->flag & NODE_MUTED) == 0) {
@@ -2483,7 +2483,7 @@ static int check_valid_camera(Scene *scene, Object *camera_override, ReportList 
     }
   }
   else if (!check_valid_compositing_camera(scene, camera_override)) {
-    BKE_reportf(reports, RPT_ERROR, err_msg, scene->id.name + 2);
+    dune_reportf(reports, RPT_ERROR, err_msg, scene->id.name + 2);
     return false;
   }
 
