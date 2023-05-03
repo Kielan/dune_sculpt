@@ -2270,17 +2270,17 @@ static void do_render_sequencer(Render *re)
 
   rr = re->result;
 
-  BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+  lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
   render_result_views_new(rr, &re->r);
-  BLI_rw_mutex_unlock(&re->resultmutex);
+  lib_rw_mutex_unlock(&re->resultmutex);
 
   for (view_id = 0; view_id < tot_views; view_id++) {
     RenderView *rv = RE_RenderViewGetById(rr, view_id);
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
     if (ibuf_arr[view_id]) {
       /* copy ibuf into combined pixel rect */
-      RE_render_result_rect_from_ibuf(rr, ibuf_arr[view_id], view_id);
+      render_result_rect_from_ibuf(rr, ibuf_arr[view_id], view_id);
 
       if (ibuf_arr[view_id]->metadata && (re->r.stamp & R_STAMP_STRIPMETA)) {
         /* ensure render stamp info first */
