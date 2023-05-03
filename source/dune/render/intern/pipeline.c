@@ -1942,19 +1942,19 @@ static void render_result_uncrop(Render *re)
 /* Render scene into render result, with a render engine. */
 static void do_render_engine(Render *re)
 {
-  Object *camera = RE_GetCamera(re);
+  Object *camera = render_GetCamera(re);
   /* also check for camera here */
   if (camera == NULL) {
-    BKE_report(re->reports, RPT_ERROR, "Cannot render, no camera");
+    dune_report(re->reports, RPT_ERROR, "Cannot render, no camera");
     G.is_break = true;
     return;
   }
 
   /* now use renderdata and camera to set viewplane */
-  RE_SetCamera(re, camera);
+  render_SetCamera(re, camera);
 
   re->current_scene_update(re->suh, re->scene);
-  RE_engine_render(re, false);
+  render_engine_render(re, false);
 
   /* when border render, check if we have to insert it in black */
   render_result_uncrop(re);
