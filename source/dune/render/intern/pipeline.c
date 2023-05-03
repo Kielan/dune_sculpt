@@ -2238,8 +2238,8 @@ static void do_render_sequencer(Render *re)
     re_y = re->result->recty;
   }
 
-  tot_views = BKE_scene_multiview_num_views_get(&re->r);
-  ibuf_arr = MEM_mallocN(sizeof(ImBuf *) * tot_views, "Sequencer Views ImBufs");
+  tot_views = dune_scene_multiview_num_views_get(&re->r);
+  ibuf_arr = mem_mallocn(sizeof(ImBuf *) * tot_views, "Sequencer Views ImBufs");
 
   SEQ_render_new_render_data(re->main,
                              re->pipeline_depsgraph,
@@ -2454,7 +2454,7 @@ static int check_valid_camera(Scene *scene, Object *camera_override, ReportList 
     return false;
   }
 
-  if (RE_seq_render_active(scene, &scene->r)) {
+  if (render_seq_render_active(scene, &scene->r)) {
     if (scene->ed) {
       Sequence *seq = scene->ed->seqbase.first;
 
@@ -2463,12 +2463,12 @@ static int check_valid_camera(Scene *scene, Object *camera_override, ReportList 
             (seq->scene != NULL)) {
           if (!seq->scene_camera) {
             if (!seq->scene->camera &&
-                !BKE_view_layer_camera_find(BKE_view_layer_default_render(seq->scene))) {
+                !dune_view_layer_camera_find(BKE_view_layer_default_render(seq->scene))) {
               /* camera could be unneeded due to composite nodes */
               Object *override = (seq->scene == scene) ? camera_override : NULL;
 
               if (!check_valid_compositing_camera(seq->scene, override)) {
-                BKE_reportf(reports, RPT_ERROR, err_msg, seq->scene->id.name + 2);
+                dune_reportf(reports, RPT_ERROR, err_msg, seq->scene->id.name + 2);
                 return false;
               }
             }
@@ -2515,25 +2515,25 @@ static int check_compositor_output(Scene *scene)
   return node_tree_has_compositor_output(scene->nodetree);
 }
 
-bool RE_is_rendering_allowed(Scene *scene,
-                             ViewLayer *single_layer,
-                             Object *camera_override,
-                             ReportList *reports)
+bool render_is_rendering_allowed(Scene *scene,
+                                 ViewLayer *single_layer,
+                                 Object *camera_override,
+                                 ReportList *reports)
 {
   const int scemode = scene->r.scemode;
 
   if (scene->r.mode & R_BORDER) {
     if (scene->r.border.xmax <= scene->r.border.xmin ||
         scene->r.border.ymax <= scene->r.border.ymin) {
-      BKE_report(reports, RPT_ERROR, "No border area selected");
+      dune_report(reports, RPT_ERROR, "No border area selected");
       return 0;
     }
   }
 
-  if (RE_seq_render_active(scene, &scene->r)) {
+  if (render_seq_render_active(scene, &scene->r)) {
     /* Sequencer */
     if (scene->r.mode & R_BORDER) {
-      BKE_report(reports, RPT_ERROR, "Border rendering is not supported by sequencer");
+      dune_report(reports, RPT_ERROR, "Border rendering is not supported by sequencer");
       return false;
     }
   }
