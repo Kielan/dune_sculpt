@@ -2973,19 +2973,19 @@ static int do_write_image_or_movie(Render *re,
                              (re_type->flag & RE_USE_POSTPROCESS);
 
   if (do_write_file) {
-    RE_AcquireResultImageViews(re, &rres);
+    render_AcquireResultImageViews(re, &rres);
 
     /* write movie or image */
-    if (BKE_imtype_is_movie(scene->r.im_format.imtype)) {
-      RE_WriteRenderViewsMovie(
+    if dune_imtype_is_movie(scene->r.im_format.imtype)) {
+      render_WriteRenderViewsMovie(
           re->reports, &rres, scene, &re->r, mh, re->movie_ctx_arr, totvideos, false);
     }
     else {
       if (name_override) {
-        BLI_strncpy(name, name_override, sizeof(name));
+        dune_strncpy(name, name_override, sizeof(name));
       }
       else {
-        BKE_image_path_from_imformat(name,
+        dune_image_path_from_imformat(name,
                                      scene->r.pic,
                                      BKE_main_blendfile_path(bmain),
                                      scene->r.cfra,
@@ -2996,16 +2996,16 @@ static int do_write_image_or_movie(Render *re,
       }
 
       /* write images as individual images or stereo */
-      ok = BKE_image_render_write(re->reports, &rres, scene, true, name);
+      ok = dune_image_render_write(re->reports, &rres, scene, true, name);
     }
 
-    RE_ReleaseResultImageViews(re, &rres);
+    render_ReleaseResultImageViews(re, &rres);
   }
 
   render_time = re->i.lastframetime;
   re->i.lastframetime = PIL_check_seconds_timer() - re->i.starttime;
 
-  BLI_timecode_string_from_time_simple(name, sizeof(name), re->i.lastframetime);
+  lib_timecode_string_from_time_simple(name, sizeof(name), re->i.lastframetime);
   printf(" Time: %s", name);
 
   /* Flush stdout to be sure python callbacks are printing stuff after blender. */
@@ -3016,7 +3016,7 @@ static int do_write_image_or_movie(Render *re,
   render_callback_exec_null(re, G_MAIN, BKE_CB_EVT_RENDER_STATS);
 
   if (do_write_file) {
-    BLI_timecode_string_from_time_simple(name, sizeof(name), re->i.lastframetime - render_time);
+    lib_timecode_string_from_time_simple(name, sizeof(name), re->i.lastframetime - render_time);
     printf(" (Saving: %s)\n", name);
   }
 
@@ -3047,7 +3047,7 @@ static void get_videos_dimensions(const Render *re,
     height = re->recty;
   }
 
-  BKE_scene_multiview_videos_dimensions_get(rd, width, height, r_width, r_height);
+  dune_scene_multiview_videos_dimensions_get(rd, width, height, r_width, r_height);
 }
 
 static void re_movie_free_all(Render *re, bMovieHandle *mh, int totvideos)
@@ -3062,8 +3062,8 @@ static void re_movie_free_all(Render *re, bMovieHandle *mh, int totvideos)
   MEM_SAFE_FREE(re->movie_ctx_arr);
 }
 
-void RE_RenderAnim(Render *re,
-                   Main *bmain,
+void render_RenderAnim(Render *re,
+                   Main *main,
                    Scene *scene,
                    ViewLayer *single_layer,
                    Object *camera_override,
@@ -3073,7 +3073,7 @@ void RE_RenderAnim(Render *re,
 {
   /* Call hooks before taking a copy of scene->r, so user can alter the render settings prior to
    * copying (e.g. alter the output path). */
-  render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_INIT);
+  render_cb_ex_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_INIT);
 
   const RenderData rd = scene->r;
   bMovieHandle *mh = NULL;
