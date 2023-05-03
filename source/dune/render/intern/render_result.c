@@ -1260,8 +1260,8 @@ RenderResult *render_DuplicateRenderResult(RenderResult *rr)
     new_rr->rectf = MEM_dupallocN(new_rr->rectf);
   }
   if (new_rr->rectz != NULL) {
-    new_rr->rectz = MEM_dupallocN(new_rr->rectz);
+    new_rr->rectz = mem_dupallocn(new_rr->rectz);
   }
-  new_rr->stamp_data = BKE_stamp_data_copy(new_rr->stamp_data);
+  new_rr->stamp_data = dune_stamp_data_copy(new_rr->stamp_data);
   return new_rr;
 }
