@@ -1978,7 +1978,7 @@ static void do_render_compositor_scene(Render *re, Scene *sce, int cfra)
   }
 
   /* initial setup */
-  RE_InitState(resc, re, &sce->r, &sce->view_layers, NULL, winx, winy, &re->disprect);
+  render_InitState(resc, re, &sce->r, &sce->view_layers, NULL, winx, winy, &re->disprect);
 
   /* We still want to use 'rendercache' setting from org (main) scene... */
   resc->r.scemode = (resc->r.scemode & ~R_EXR_CACHE_FILE) | (re->r.scemode & R_EXR_CACHE_FILE);
@@ -2004,8 +2004,8 @@ static void do_render_compositor_scene(Render *re, Scene *sce, int cfra)
  * or if there's a any render layer to render. */
 static int compositor_needs_render(Scene *sce, int this_scene)
 {
-  bNodeTree *ntree = sce->nodetree;
-  bNode *node;
+  NodeTree *ntree = sce->nodetree;
+  Node *node;
 
   if (ntree == NULL) {
     return 1;
@@ -2030,7 +2030,7 @@ static int compositor_needs_render(Scene *sce, int this_scene)
 /* Render all scenes within a compositor node tree. */
 static void do_render_compositor_scenes(Render *re)
 {
-  bNode *node;
+  Node *node;
   int cfra = re->scene->r.cfra;
   Scene *restore_scene = re->scene;
 
@@ -2045,12 +2045,12 @@ static void do_render_compositor_scenes(Render *re)
   GSet *scenes_rendered = BLI_gset_ptr_new(__func__);
   for (node = re->scene->nodetree->nodes.first; node; node = node->next) {
     if (node->type == CMP_NODE_R_LAYERS && (node->flag & NODE_MUTED) == 0) {
-      if (node->id && node->id != (ID *)re->scene) {
+      if (node->id && node->id != (Id *)re->scene) {
         Scene *scene = (Scene *)node->id;
-        if (!BLI_gset_haskey(scenes_rendered, scene) &&
+        if (!lib_gset_haskey(scenes_rendered, scene) &&
             render_scene_has_layers_to_render(scene, false)) {
           do_render_compositor_scene(re, scene, cfra);
-          BLI_gset_add(scenes_rendered, scene);
+          lib_gset_add(scenes_rendered, scene);
           node->typeinfo->updatefunc(restore_scene->nodetree, node);
 
           if (scene != re->scene) {
@@ -2060,7 +2060,7 @@ static void do_render_compositor_scenes(Render *re)
       }
     }
   }
-  BLI_gset_free(scenes_rendered, NULL);
+  lib_gset_free(scenes_rendered, NULL);
 
   if (changed_scene) {
     /* If rendered another scene, switch back to the current scene with compositing nodes. */
@@ -2083,7 +2083,7 @@ static void render_compositor_stats(void *arg, const char *str)
  * The result will be output into a compositing render layer in the render result. */
 static void do_render_compositor(Render *re)
 {
-  bNodeTree *ntree = re->pipeline_scene_eval->nodetree;
+  NodeTree *ntree = re->pipeline_scene_eval->nodetree;
   int update_newframe = 0;
 
   if (compositor_needs_render(re->pipeline_scene_eval, 1)) {
@@ -2100,7 +2100,7 @@ static void do_render_compositor(Render *re)
     re->i.cfra = re->r.cfra;
 
     /* ensure new result gets added, like for regular renders */
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
     render_result_free(re->result);
     if ((re->r.mode & R_CROP) == 0) {
@@ -2108,7 +2108,7 @@ static void do_render_compositor(Render *re)
     }
     re->result = render_result_new(re, &re->disprect, RR_ALL_LAYERS, RR_ALL_VIEWS);
 
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
 
     /* scene render process already updates animsys */
     update_newframe = 1;
@@ -2116,9 +2116,9 @@ static void do_render_compositor(Render *re)
 
   /* swap render result */
   if (re->r.scemode & R_SINGLE_LAYER) {
-    BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+    lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
     render_result_single_layer_end(re);
-    BLI_rw_mutex_unlock(&re->resultmutex);
+    lib_rw_mutex_unlock(&re->resultmutex);
   }
 
   if (!re->test_break(re->tbh)) {
