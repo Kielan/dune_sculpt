@@ -25,7 +25,7 @@ extern "C" {
 
 /**
  * Called by main render as well for parts will read info from Render *re to define layers.
- * \note Called in threads.
+ * Called in threads.
  *
  * `re->winx`, `re->winy` is coordinate space of entire image, `partrct` the part within.
  */
@@ -62,22 +62,16 @@ void render_result_clone_passes(struct Render *re, struct RenderResult *rr, cons
 /* Free */
 
 void render_result_free(struct RenderResult *rr);
-/**
- * Version that's compatible with full-sample buffers.
- */
+/** Version that's compatible with full-sample buffers. */
 void render_result_free_list(struct ListBase *lb, struct RenderResult *rr);
 
 /* Single Layer Render */
 
 void render_result_single_layer_begin(struct Render *re);
-/**
- * If #RenderData.scemode is #R_SINGLE_LAYER, at end of rendering, merge the both render results.
- */
+/** If RenderData.scemode is R_SINGLE_LAYER, at end of rendering, merge the both render results. */
 void render_result_single_layer_end(struct Render *re);
 
-/**
- * Render pass wrapper for grease-pencil.
- */
+/** Render pass wrapper for a pen. */
 struct RenderPass *render_layer_add_pass(struct RenderResult *rr,
                                          struct RenderLayer *rl,
                                          int channels,
@@ -86,9 +80,7 @@ struct RenderPass *render_layer_add_pass(struct RenderResult *rr,
                                          const char *chan_id,
                                          bool allocate);
 
-/**
- * Called for reading temp files, and for external engines.
- */
+/** Called for reading temp files, and for external engines. */
 int render_result_exr_file_read_path(struct RenderResult *rr,
                                      struct RenderLayer *rl_single,
                                      const char *filepath);
@@ -96,9 +88,7 @@ int render_result_exr_file_read_path(struct RenderResult *rr,
 /* EXR cache */
 
 void render_result_exr_file_cache_write(struct Render *re);
-/**
- * For cache, makes exact copy of render result.
- */
+/** For cache, makes exact copy of render result. */
 bool render_result_exr_file_cache_read(struct Render *re);
 
 /* Combined Pixel Rect */
