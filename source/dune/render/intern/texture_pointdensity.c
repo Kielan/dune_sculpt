@@ -161,7 +161,7 @@ static void pointdensity_cache_psys(
     return;
   }
 
-  sim.depsgraph = depsgraph;
+  sim.graph = graph;
   sim.scene = scene;
   sim.ob = ob;
   sim.psys = psys;
@@ -173,7 +173,7 @@ static void pointdensity_cache_psys(
   total_particles = psys->totpart + psys->totchild;
   psys->lattice_deform_data = psys_create_lattice_deform_data(&sim);
 
-  pd->point_tree = BLI_bvhtree_new(total_particles, 0.0, 4, 6);
+  pd->point_tree = lib_bvhtree_new(total_particles, 0.0, 4, 6);
   pd->totpoints = total_particles;
   alloc_point_data(pd);
   point_data_pointers(pd, &data_vel, &data_life, NULL);
@@ -249,10 +249,10 @@ static void pointdensity_cache_psys(
     }
   }
 
-  BLI_bvhtree_balance(pd->point_tree);
+  lib_bvhtree_balance(pd->point_tree);
 
   if (psys->lattice_deform_data) {
-    BKE_lattice_deform_data_destroy(psys->lattice_deform_data);
+    dune_lattice_deform_data_destroy(psys->lattice_deform_data);
     psys->lattice_deform_data = NULL;
   }
 }
@@ -262,13 +262,13 @@ static void pointdensity_cache_vertex_color(PointDensity *pd,
                                             Mesh *mesh,
                                             float *data_color)
 {
-  const MLoop *mloop = mesh->mloop;
+  const MeshLoop *mloop = mesh->mloop;
   const int totloop = mesh->totloop;
-  const MLoopCol *mcol;
+  const MeshLoopCol *mcol;
   char layername[MAX_CUSTOMDATA_LAYER_NAME];
   int i;
 
-  BLI_assert(data_color);
+  lib_assert(data_color);
 
   if (!CustomData_has_layer(&mesh->ldata, CD_MLOOPCOL)) {
     return;
