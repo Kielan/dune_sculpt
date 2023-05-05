@@ -211,17 +211,17 @@ bool render_engine_is_external(const struct Render *re);
 void render_engine_frame_set(struct RenderEngine *engine, int frame, float subframe);
 
 void render_engine_update_render_passes(struct RenderEngine *engine,
-                                    struct Scene *scene,
-                                    struct ViewLayer *view_layer,
-                                    update_render_passes_cb_t callback,
-                                    void *cb_data);
+                                        struct Scene *scene,
+                                        struct ViewLayer *view_layer,
+                                        update_render_passes_cb_t callback,
+                                        void *cb_data);
 void render_engine_register_pass(struct RenderEngine *engine,
-                             struct Scene *scene,
-                             struct ViewLayer *view_layer,
-                             const char *name,
-                             int channels,
-                             const char *chanid,
-                             eNodeSocketDatatype type);
+                                 struct Scene *scene,
+                                 struct ViewLayer *view_layer,
+                                 const char *name,
+                                 int channels,
+                                 const char *chanid,
+                                 eNodeSocketDatatype type);
 
 bool render_engine_use_persistent_data(struct RenderEngine *engine);
 
