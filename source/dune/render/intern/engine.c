@@ -716,7 +716,7 @@ static void engine_graph_init(RenderEngine *engine, ViewLayer *view_layer)
     dune_scene_graph_update_for_newframe_ex(engine->graph, false);
   }
 
-  engine->has_pen = draw_render_check_grease_pencil(engine->graph);
+  engine->has_pen = draw_render_check_pen(engine->graph);
 }
 
 static void engine_graph_exit(RenderEngine *engine)
@@ -748,14 +748,14 @@ void render_engine_frame_set(RenderEngine *engine, int frame, float subframe)
 
   CLAMP(cfra, MINAFRAME, MAXFRAME);
   dune_scene_frame_set(re->scene, cfra);
-  dune_scene_graph_update_for_newframe_ex(engine->depsgraph, false);
+  dune_scene_graph_update_for_newframe_ex(engine->graph, false);
 
   dune_scene_camera_switch_update(re->scene);
 }
 
 /* Bake */
 
-void render_bake_engine_set_engine_parameters(Render *re, Main *bmain, Scene *scene)
+void render_bake_engine_set_engine_parameters(Render *re, Main *main, Scene *scene)
 {
   re->scene = scene;
   re->main = main;
