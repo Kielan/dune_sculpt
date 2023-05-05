@@ -1154,7 +1154,7 @@ void render_engine_tile_highlight_clear_all(RenderEngine *engine)
   lib_mutex_lock(&re->highlighted_tiles_mutex);
 
   if (re->highlighted_tiles != NULL) {
-    lib_gset_clear(re->highlighted_tiles, MEM_freeN);
+    lib_gset_clear(re->highlighted_tiles, mem_freen);
   }
 
   lib_mutex_unlock(&re->highlighted_tiles_mutex);
@@ -1163,7 +1163,7 @@ void render_engine_tile_highlight_clear_all(RenderEngine *engine)
 /* -------------------------------------------------------------------- */
 /** OpenGL context manipulation.
  *
- * NOTE: Only used for Cycles's BLenderGPUDisplay integration with the draw manager. A subject
+ * NOTE: Only used for Cycles's DuneGPUDisplay integration with the draw manager. A subject
  * for re-consideration. Do not use this functionality.
  **/
 
