@@ -3060,17 +3060,17 @@ static void re_movie_free_all(Render *re, bMovieHandle *mh, int totvideos)
 }
 
 void render_RenderAnim(Render *re,
-                   Main *main,
-                   Scene *scene,
-                   ViewLayer *single_layer,
-                   Object *camera_override,
-                   int sfra,
-                   int efra,
-                   int tfra)
+                       Main *main,
+                       Scene *scene,
+                       ViewLayer *single_layer,
+                       Object *camera_override,
+                       int sfra,
+                       int efra,
+                       int tfra)
 {
   /* Call hooks before taking a copy of scene->r, so user can alter the render settings prior to
    * copying (e.g. alter the output path). */
-  render_cb_ex_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_INIT);
+  render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_INIT);
 
   const RenderData rd = scene->r;
   MovieHandle *mh = NULL;
@@ -3317,7 +3317,7 @@ void render_RenderAnim(Render *re,
   }
 
   if (totskipped && totrendered == 0) {
-    BKE_report(re->reports, RPT_INFO, "No frames rendered, skipped to not overwrite");
+    dune_report(re->reports, RPT_INFO, "No frames rendered, skipped to not overwrite");
   }
 
   scene->r.cfra = cfra_old;
@@ -3325,11 +3325,11 @@ void render_RenderAnim(Render *re,
 
   re->flag &= ~R_ANIMATION;
 
-  render_callback_exec_id(re,
-                          re->main,
-                          &scene->id,
-                          G.is_break ? BKE_CB_EVT_RENDER_CANCEL : BKE_CB_EVT_RENDER_COMPLETE);
-  BKE_sound_reset_scene_specs(re->pipeline_scene_eval);
+  render_cb_ex_id(re,
+                  re->main,
+                  &scene->id,
+                  G.is_break ? DUNE_CB_EVT_RENDER_CANCEL : DUNE_CB_EVT_RENDER_COMPLETE);
+  dune_sound_reset_scene_specs(re->pipeline_scene_eval);
 
   render_pipeline_free(re);
 
@@ -3337,7 +3337,7 @@ void render_RenderAnim(Render *re,
   G.is_rendering = false;
 }
 
-void RE_PreviewRender(Render *re, Main *bmain, Scene *sce)
+void render_PreviewRender(Render *re, Main *bmain, Scene *sce)
 {
   Object *camera;
   int winx, winy;
@@ -3345,26 +3345,26 @@ void RE_PreviewRender(Render *re, Main *bmain, Scene *sce)
   winx = (sce->r.size * sce->r.xsch) / 100;
   winy = (sce->r.size * sce->r.ysch) / 100;
 
-  RE_InitState(re, NULL, &sce->r, &sce->view_layers, NULL, winx, winy, NULL);
+  render_InitState(re, NULL, &sce->r, &sce->view_layers, NULL, winx, winy, NULL);
 
-  re->main = bmain;
+  re->main = main;
   re->scene = sce;
 
-  camera = RE_GetCamera(re);
-  RE_SetCamera(re, camera);
+  camera = render_GetCamera(re);
+  render_SetCamera(re, camera);
 
-  RE_engine_render(re, false);
+  render_engine_render(re, false);
 
   /* No persistent data for preview render. */
   if (re->engine) {
-    RE_engine_free(re->engine);
+    render_engine_free(re->engine);
     re->engine = NULL;
   }
 }
 
 /* NOTE: repeated win/disprect calc... solve that nicer, also in compo. */
 
-bool RE_ReadRenderResult(Scene *scene, Scene *scenode)
+bool render_ReadRenderResult(Scene *scene, Scene *scenode)
 {
   Render *re;
   int winx, winy;
@@ -3398,19 +3398,19 @@ bool RE_ReadRenderResult(Scene *scene, Scene *scenode)
   if (re == NULL) {
     re = RE_NewSceneRender(scene);
   }
-  RE_InitState(re, NULL, &scene->r, &scene->view_layers, NULL, winx, winy, &disprect);
+  render_InitState(re, NULL, &scene->r, &scene->view_layers, NULL, winx, winy, &disprect);
   re->scene = scene;
 
-  BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+  lib_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
   success = render_result_exr_file_cache_read(re);
-  BLI_rw_mutex_unlock(&re->resultmutex);
+  lib_rw_mutex_unlock(&re->resultmutex);
 
   render_result_uncrop(re);
 
   return success;
 }
 
-void RE_layer_load_from_file(
+void render_layer_load_from_file(
     RenderLayer *layer, ReportList *reports, const char *filename, int x, int y)
 {
   /* OCIO_TODO: assume layer was saved in default color space */
@@ -3425,7 +3425,7 @@ void RE_layer_load_from_file(
   }
 
   if (rpass == NULL) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s: no Combined pass found in the render layer '%s'",
                 __func__,
@@ -3591,10 +3591,9 @@ RenderPass *render_create_gp_pass(RenderResult *rr, const char *layername, const
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Miscellaneous Public Render API
- * \{ */
+/** Miscellaneous Public Render API **/
 
-bool RE_allow_render_generic_object(Object *ob)
+bool render_allow_render_generic_object(Object *ob)
 {
   /* override not showing object when duplis are used with particles */
   if (ob->transflag & OB_DUPLIPARTS) {
