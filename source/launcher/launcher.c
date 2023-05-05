@@ -44,8 +44,8 @@
 
 #include "IMB_imbuf.h" /* For #IMB_init. */
 
-#include "RE_engine.h"
-#include "RE_texture.h"
+#include "render_engine.h"
+#include "render_texture.h"
 
 #include "ed_datafiles.h"
 
@@ -332,7 +332,7 @@ int main(int argc,
   graph_register_node_types();
 
   dune_brush_system_init();
-  RE_texture_rng_init();
+  render_texture_rng_init();
 
   dune_cb_global_init();
 
@@ -380,7 +380,7 @@ int main(int argc,
   /* After ARG_PASS_SETTINGS arguments, this is so #WM_main_playanim skips #RNA_init. */
   api_init();
 
-  RE_engines_init();
+  render_engines_init();
   dune_node_system_init();
   dune_particle_init_rng();
   /* End second initialization. */
