@@ -244,7 +244,6 @@ void render_engine_render_ctx_enable(struct RenderEngine *engine);
 void render_engine_render_ctx_disable(struct RenderEngine *engine);
 
 /* Engine Types */
-
 void render_engines_init(void);
 void render_engines_init_experimental(void);
 void render_engines_exit(void);
