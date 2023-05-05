@@ -130,7 +130,7 @@ static void render_cb_ex_null(Render *re, Main *main, eCbEvent evt)
   dune_cb_ex_null(main, evt);
 }
 
-static void render_cb_ex_id(Render *re, Main *bmain, ID *id, eCbEvent evt)
+static void render_cb_ex_id(Render *re, Main *main, Id *id, eCbEvent evt)
 {
   if (re->r.scemode & R_BUTS_PREVIEW) {
     return;
@@ -874,7 +874,7 @@ void render_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
 void render_gl_ctx_create(Render *re)
 {
   /* Needs to be created in the main ogl thread. */
-  re->gl_context = WM_opengl_context_create();
+  re->gl_context = wm_opengl_ctx_create();
   /* So we activate the window's one afterwards. */
   wm_window_reset_drawable();
 }
@@ -1218,7 +1218,7 @@ static void renderresult_stampinfo(Render *re)
     render_SetActiveRenderView(re, rv->name);
     render_AcquireResultImage(re, &rres, nr);
 
-    Object *ob_camera_eval = graph_get_evaluated_object(re->pipeline_depsgraph, RE_GetCamera(re));
+    Object *ob_camera_eval = graph_get_evaluated_object(re->pipeline_graph, render_GetCamera(re));
     dune_image_stamp_buf(re->scene,
                         ob_camera_eval,
                         (re->r.stamp & R_STAMP_STRIPMETA) ? rres.stamp_data : NULL,
@@ -1393,7 +1393,7 @@ void render_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
         }
 
         if (rv->rectz == NULL) {
-          rr->rectz = RE_RenderLayerGetPass(rl, RE_PASSNAME_Z, rv->name);
+          rr->rectz = render_RenderLayerGetPass(rl, RE_PASSNAME_Z, rv->name);
         }
       }
 
@@ -2051,7 +2051,7 @@ static void do_render_compositor_scenes(Render *re)
             render_scene_has_layers_to_render(scene, false)) {
           do_render_compositor_scene(re, scene, cfra);
           lib_gset_add(scenes_rendered, scene);
-          node->typeinfo->updatefunc(restore_scene->nodetree, node);
+          node->typeinfo->updatefn(restore_scene->nodetree, node);
 
           if (scene != re->scene) {
             changed_scene = true;
@@ -2447,7 +2447,7 @@ static int check_valid_camera(Scene *scene, Object *camera_override, ReportList 
   const char *err_msg = "No camera found in scene \"%s\"";
 
   if (camera_override == NULL && scene->camera == NULL) {
-    scene->camera = dune_view_layer_camera_find(BKE_view_layer_default_render(scene));
+    scene->camera = dune_view_layer_camera_find(dune_view_layer_default_render(scene));
   }
 
   if (!check_valid_camera_multiview(scene, scene->camera, reports)) {
@@ -2463,7 +2463,7 @@ static int check_valid_camera(Scene *scene, Object *camera_override, ReportList 
             (seq->scene != NULL)) {
           if (!seq->scene_camera) {
             if (!seq->scene->camera &&
-                !dune_view_layer_camera_find(BKE_view_layer_default_render(seq->scene))) {
+                !dune_view_layer_camera_find(dune_view_layer_default_render(seq->scene))) {
               /* camera could be unneeded due to composite nodes */
               Object *override = (seq->scene == scene) ? camera_override : NULL;
 
@@ -2490,9 +2490,9 @@ static int check_valid_camera(Scene *scene, Object *camera_override, ReportList 
   return true;
 }
 
-static bool node_tree_has_compositor_output(bNodeTree *ntree)
+static bool node_tree_has_compositor_output(NodeTree *ntree)
 {
-  bNode *node;
+  Node *node;
 
   for (node = ntree->nodes.first; node; node = node->next) {
     if (ELEM(node->type, CMP_NODE_COMPOSITE, CMP_NODE_OUTPUT_FILE)) {
@@ -2630,7 +2630,7 @@ static int render_init_from_main(Render *re,
     disprect.ymax = winy;
   }
 
-  re->main = bmain;
+  re->main = main;
   re->scene = scene;
   re->camera_override = camera_override;
   re->viewname[0] = '\0';
@@ -2678,11 +2678,11 @@ void render_SetReports(Render *re, ReportList *reports)
   re->reports = reports;
 }
 
-static void render_update_depsgraph(Render *re)
+static void render_update_graph(Render *re)
 {
   Scene *scene = re->scene;
-  graph_evaluate_on_framechange(re->pipeline_depsgraph, BKE_scene_frame_get(scene));
-  dune_scene_update_sound(re->pipeline_depsgraph, re->main);
+  graph_evaluate_on_framechange(re->pipeline_graph, dune_scene_frame_get(scene));
+  dune_scene_update_sound(re->pipeline_graph, re->main);
 }
 
 static void render_init_graph(Render *re)
@@ -2734,13 +2734,13 @@ static void render_pipeline_free(Render *re)
 }
 
 void render_RenderFrame(Render *re,
-                    Main *main,
-                    Scene *scene,
-                    ViewLayer *single_layer,
-                    Object *camera_override,
-                    const int frame,
-                    const float subframe,
-                    const bool write_still)
+                        Main *main,
+                        Scene *scene,
+                        ViewLayer *single_layer,
+                        Object *camera_override,
+                        const int frame,
+                        const float subframe,
+                        const bool write_still)
 {
   render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_INIT);
 
@@ -2820,7 +2820,7 @@ static bool use_eevee_for_freestyle_render(Render *re)
   return !(type->flag & RE_USE_CUSTOM_FREESTYLE);
 }
 
-void render_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int render)
+void render_RenderFreestyleStrokes(Render *re, Main *main, Scene *scene, int render)
 {
   re->result_ok = 0;
   if (render_init_from_main(re, &scene->r, bmain, scene, NULL, NULL, 0, 0)) {
@@ -2963,7 +2963,7 @@ static int do_write_image_or_movie(Render *re,
   RenderResult rres;
   double render_time;
   bool ok = true;
-  RenderEngineType *re_type = RE_engines_find(re->r.engine);
+  RenderEngineType *re_type = render_engines_find(re->r.engine);
 
   /* Only disable file writing if postprocessing is also disabled. */
   const bool do_write_file = !(re_type->flag & RE_USE_NO_IMAGE_SAVE) ||
@@ -3093,7 +3093,7 @@ void render_RenderAnim(Render *re,
   const bool do_write_file = !(re_type->flag & RE_USE_NO_IMAGE_SAVE) ||
                              (re_type->flag & RE_USE_POSTPROCESS);
 
-  render_init_depsgraph(re);
+  render_init_graph(re);
 
   if (is_movie && do_write_file) {
     size_t width, height;
@@ -3225,9 +3225,9 @@ void render_RenderAnim(Render *re,
 
         if (rd.mode & R_TOUCH) {
           if (!is_multiview_name) {
-            if (!BLI_exists(name)) {
-              BLI_make_existing_file(name); /* makes the dir if its not there */
-              BLI_file_touch(name);
+            if (!lib_exists(name)) {
+              lib_make_existing_file(name); /* makes the dir if its not there */
+              lib_file_touch(name);
             }
           }
           else {
@@ -3254,7 +3254,7 @@ void render_RenderAnim(Render *re,
       re->r.subframe = scene->r.subframe;
 
       /* run callbacks before rendering, before the scene is updated */
-      render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_PRE);
+      render_cb_ex_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_PRE);
 
       do_render_full_pipeline(re);
       totrendered++;
@@ -3275,9 +3275,9 @@ void render_RenderAnim(Render *re,
         if (is_movie == false && do_write_file) {
           if (rd.mode & R_TOUCH) {
             if (!is_multiview_name) {
-              if ((BLI_file_size(name) == 0)) {
-                /* BLI_exists(name) is implicit */
-                BLI_delete(name, false, false);
+              if ((lib_file_size(name) == 0)) {
+                /* lib_exists(name) is implicit */
+                lib_delete(name, false, false);
               }
             }
             else {
@@ -3285,15 +3285,15 @@ void render_RenderAnim(Render *re,
               char filepath[FILE_MAX];
 
               for (srv = scene->r.views.first; srv; srv = srv->next) {
-                if (!BKE_scene_multiview_is_render_view_active(&scene->r, srv)) {
+                if (!dune_scene_multiview_is_render_view_active(&scene->r, srv)) {
                   continue;
                 }
 
-                BKE_scene_multiview_filepath_get(srv, name, filepath);
+                dune_scene_multiview_filepath_get(srv, name, filepath);
 
-                if ((BLI_file_size(filepath) == 0)) {
-                  /* BLI_exists(filepath) is implicit */
-                  BLI_delete(filepath, false, false);
+                if ((lib_file_size(filepath) == 0)) {
+                  /* lib_exists(filepath) is implicit */
+                  lib_delete(filepath, false, false);
                 }
               }
             }
@@ -3305,8 +3305,8 @@ void render_RenderAnim(Render *re,
 
       if (G.is_break == false) {
         /* keep after file save */
-        render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_POST);
-        render_callback_exec_id(re, re->main, &scene->id, BKE_CB_EVT_RENDER_WRITE);
+        render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_POST);
+        render_cb_ex_id(re, re->main, &scene->id, DUNE_CB_EVT_RENDER_WRITE);
       }
     }
   }
@@ -3606,8 +3606,8 @@ bool RE_allow_render_generic_object(Object *ob)
   return true;
 }
 
-void RE_init_threadcount(Render *re)
+void render_init_threadcount(Render *re)
 {
-  re->r.threads = BKE_render_num_threads(&re->r);
+  re->r.threads = dune_render_num_threads(&re->r);
 }
 
