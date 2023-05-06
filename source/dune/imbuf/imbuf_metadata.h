@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-struct IDProperty;
+struct IdProp;
 struct ImBuf;
 struct anim;
 
