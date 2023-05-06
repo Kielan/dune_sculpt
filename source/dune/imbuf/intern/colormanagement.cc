@@ -1974,3 +1974,332 @@ static void display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle,
     *is_straight_alpha = false;
   }
 }
+static void curve_mapping_apply_pixel(CurveMapping *curve_mapping, float *pixel, int channels)
+{
+  if (channels == 1) {
+    pixel[0] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
+  }
+  else if (channels == 2) {
+    pixel[0] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
+    pixel[1] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[1]);
+  }
+  else {
+    BKE_curvemapping_evaluate_premulRGBF(curve_mapping, pixel, pixel);
+  }
+}
+
+void colorspace_set_default_role(char *colorspace, int size, int role)
+{
+  if (colorspace && colorspace[0] == '\0') {
+    const char *role_colorspace;
+
+    role_colorspace = IMB_colormanagement_role_colorspace_name_get(role);
+
+    BLI_strncpy(colorspace, role_colorspace, size);
+  }
+}
+
+void colormanage_imbuf_set_default_spaces(ImBuf *ibuf)
+{
+  ibuf->rect_colorspace = colormanage_colorspace_get_named(global_role_default_byte);
+}
+
+void colormanage_imbuf_make_linear(ImBuf *ibuf, const char *from_colorspace)
+{
+  ColorSpace *colorspace = colormanage_colorspace_get_named(from_colorspace);
+
+  if (colorspace && colorspace->is_data) {
+    ibuf->colormanage_flag |= IMB_COLORMANAGE_IS_DATA;
+    return;
+  }
+
+  if (ibuf->rect_float) {
+    const char *to_colorspace = global_role_scene_linear;
+    const bool predivide = IMB_alpha_affects_rgb(ibuf);
+
+    if (ibuf->rect) {
+      imb_freerectImBuf(ibuf);
+    }
+
+    IMB_colormanagement_transform(ibuf->rect_float,
+                                  ibuf->x,
+                                  ibuf->y,
+                                  ibuf->channels,
+                                  from_colorspace,
+                                  to_colorspace,
+                                  predivide);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Generic Functions
+ * \{ */
+
+static void colormanage_check_display_settings(ColorManagedDisplaySettings *display_settings,
+                                               const char *what,
+                                               const ColorManagedDisplay *default_display)
+{
+  if (display_settings->display_device[0] == '\0') {
+    BLI_strncpy(display_settings->display_device,
+                default_display->name,
+                sizeof(display_settings->display_device));
+  }
+  else {
+    ColorManagedDisplay *display = colormanage_display_get_named(display_settings->display_device);
+
+    if (!display) {
+      printf(
+          "Color management: display \"%s\" used by %s not found, setting to default (\"%s\").\n",
+          display_settings->display_device,
+          what,
+          default_display->name);
+
+      BLI_strncpy(display_settings->display_device,
+                  default_display->name,
+                  sizeof(display_settings->display_device));
+    }
+  }
+}
+
+static void colormanage_check_view_settings(ColorManagedDisplaySettings *display_settings,
+                                            ColorManagedViewSettings *view_settings,
+                                            const char *what)
+{
+  ColorManagedDisplay *display;
+  ColorManagedView *default_view = nullptr;
+  ColorManagedLook *default_look = (ColorManagedLook *)global_looks.first;
+
+  if (view_settings->view_transform[0] == '\0') {
+    display = colormanage_display_get_named(display_settings->display_device);
+
+    if (display) {
+      default_view = colormanage_view_get_default(display);
+    }
+
+    if (default_view) {
+      BLI_strncpy(view_settings->view_transform,
+                  default_view->name,
+                  sizeof(view_settings->view_transform));
+    }
+  }
+  else {
+    ColorManagedView *view = colormanage_view_get_named(view_settings->view_transform);
+
+    if (!view) {
+      display = colormanage_display_get_named(display_settings->display_device);
+
+      if (display) {
+        default_view = colormanage_view_get_default(display);
+      }
+
+      if (default_view) {
+        printf("Color management: %s view \"%s\" not found, setting default \"%s\".\n",
+               what,
+               view_settings->view_transform,
+               default_view->name);
+
+        BLI_strncpy(view_settings->view_transform,
+                    default_view->name,
+                    sizeof(view_settings->view_transform));
+      }
+    }
+  }
+
+  if (view_settings->look[0] == '\0') {
+    BLI_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
+  }
+  else {
+    ColorManagedLook *look = colormanage_look_get_named(view_settings->look);
+    if (look == nullptr) {
+      printf("Color management: %s look \"%s\" not found, setting default \"%s\".\n",
+             what,
+             view_settings->look,
+             default_look->name);
+
+      BLI_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
+    }
+  }
+
+  /* OCIO_TODO: move to do_versions() */
+  if (view_settings->exposure == 0.0f && view_settings->gamma == 0.0f) {
+    view_settings->exposure = 0.0f;
+    view_settings->gamma = 1.0f;
+  }
+}
+
+static void colormanage_check_colorspace_settings(
+    ColorManagedColorspaceSettings *colorspace_settings, const char *what)
+{
+  if (colorspace_settings->name[0] == '\0') {
+    /* pass */
+  }
+  else {
+    ColorSpace *colorspace = colormanage_colorspace_get_named(colorspace_settings->name);
+
+    if (!colorspace) {
+      printf("Color management: %s colorspace \"%s\" not found, will use default instead.\n",
+             what,
+             colorspace_settings->name);
+
+      BLI_strncpy(colorspace_settings->name, "", sizeof(colorspace_settings->name));
+    }
+  }
+
+  (void)what;
+}
+
+static bool seq_callback(Sequence *seq, void * /*user_data*/)
+{
+  if (seq->strip) {
+    colormanage_check_colorspace_settings(&seq->strip->colorspace_settings, "sequencer strip");
+  }
+  return true;
+}
+
+void IMB_colormanagement_check_file_config(Main *bmain)
+{
+  ColorManagedDisplay *default_display = colormanage_display_get_default();
+  if (!default_display) {
+    /* happens when OCIO configuration is incorrect */
+    return;
+  }
+
+  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+    ColorManagedColorspaceSettings *sequencer_colorspace_settings;
+
+    /* check scene color management settings */
+    colormanage_check_display_settings(&scene->display_settings, "scene", default_display);
+    colormanage_check_view_settings(&scene->display_settings, &scene->view_settings, "scene");
+
+    sequencer_colorspace_settings = &scene->sequencer_colorspace_settings;
+
+    colormanage_check_colorspace_settings(sequencer_colorspace_settings, "sequencer");
+
+    if (sequencer_colorspace_settings->name[0] == '\0') {
+      BLI_strncpy(
+          sequencer_colorspace_settings->name, global_role_default_sequencer, MAX_COLORSPACE_NAME);
+    }
+
+    /* check sequencer strip input color space settings */
+    if (scene->ed != nullptr) {
+      SEQ_for_each_callback(&scene->ed->seqbase, seq_callback, nullptr);
+    }
+  }
+
+  /* ** check input color space settings ** */
+
+  LISTBASE_FOREACH (Image *, image, &bmain->images) {
+    colormanage_check_colorspace_settings(&image->colorspace_settings, "image");
+  }
+
+  LISTBASE_FOREACH (MovieClip *, clip, &bmain->movieclips) {
+    colormanage_check_colorspace_settings(&clip->colorspace_settings, "clip");
+  }
+}
+
+void IMB_colormanagement_validate_settings(const ColorManagedDisplaySettings *display_settings,
+                                           ColorManagedViewSettings *view_settings)
+{
+  ColorManagedDisplay *display = colormanage_display_get_named(display_settings->display_device);
+  ColorManagedView *default_view = colormanage_view_get_default(display);
+
+  bool found = false;
+  LISTBASE_FOREACH (LinkData *, view_link, &display->views) {
+    ColorManagedView *view = static_cast<ColorManagedView *>(view_link->data);
+
+    if (STREQ(view->name, view_settings->view_transform)) {
+      found = true;
+      break;
+    }
+  }
+
+  if (!found && default_view) {
+    BLI_strncpy(
+        view_settings->view_transform, default_view->name, sizeof(view_settings->view_transform));
+  }
+}
+
+const char *IMB_colormanagement_role_colorspace_name_get(int role)
+{
+  switch (role) {
+    case COLOR_ROLE_DATA:
+      return global_role_data;
+    case COLOR_ROLE_SCENE_LINEAR:
+      return global_role_scene_linear;
+    case COLOR_ROLE_COLOR_PICKING:
+      return global_role_color_picking;
+    case COLOR_ROLE_TEXTURE_PAINTING:
+      return global_role_texture_painting;
+    case COLOR_ROLE_DEFAULT_SEQUENCER:
+      return global_role_default_sequencer;
+    case COLOR_ROLE_DEFAULT_FLOAT:
+      return global_role_default_float;
+    case COLOR_ROLE_DEFAULT_BYTE:
+      return global_role_default_byte;
+    default:
+      printf("Unknown role was passed to %s\n", __func__);
+      BLI_assert(0);
+      break;
+  }
+
+  return nullptr;
+}
+
+void IMB_colormanagement_check_is_data(ImBuf *ibuf, const char *name)
+{
+  ColorSpace *colorspace = colormanage_colorspace_get_named(name);
+
+  if (colorspace && colorspace->is_data) {
+    ibuf->colormanage_flag |= IMB_COLORMANAGE_IS_DATA;
+  }
+  else {
+    ibuf->colormanage_flag &= ~IMB_COLORMANAGE_IS_DATA;
+  }
+}
+
+void IMB_colormanagegent_copy_settings(ImBuf *ibuf_src, ImBuf *ibuf_dst)
+{
+  IMB_colormanagement_assign_rect_colorspace(ibuf_dst,
+                                             IMB_colormanagement_get_rect_colorspace(ibuf_src));
+  IMB_colormanagement_assign_float_colorspace(ibuf_dst,
+                                              IMB_colormanagement_get_float_colorspace(ibuf_src));
+  if (ibuf_src->flags & IB_alphamode_premul) {
+    ibuf_dst->flags |= IB_alphamode_premul;
+  }
+  else if (ibuf_src->flags & IB_alphamode_channel_packed) {
+    ibuf_dst->flags |= IB_alphamode_channel_packed;
+  }
+  else if (ibuf_src->flags & IB_alphamode_ignore) {
+    ibuf_dst->flags |= IB_alphamode_ignore;
+  }
+}
+
+void IMB_colormanagement_assign_float_colorspace(ImBuf *ibuf, const char *name)
+{
+  ColorSpace *colorspace = colormanage_colorspace_get_named(name);
+
+  ibuf->float_colorspace = colorspace;
+
+  if (colorspace && colorspace->is_data) {
+    ibuf->colormanage_flag |= IMB_COLORMANAGE_IS_DATA;
+  }
+  else {
+    ibuf->colormanage_flag &= ~IMB_COLORMANAGE_IS_DATA;
+  }
+}
+
+void IMB_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
+{
+  ColorSpace *colorspace = colormanage_colorspace_get_named(name);
+
+  ibuf->rect_colorspace = colorspace;
+
+  if (colorspace && colorspace->is_data) {
+    ibuf->colormanage_flag |= IMB_COLORMANAGE_IS_DATA;
+  }
+  else {
+    ibuf->colormanage_flag &= ~IMB_COLORMANAGE_IS_DATA;
+  }
+}
