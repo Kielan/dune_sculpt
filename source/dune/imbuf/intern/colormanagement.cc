@@ -1204,7 +1204,7 @@ static void colormanage_check_colorspace_settings(
              what,
              colorspace_settings->name);
 
-      BLI_strncpy(colorspace_settings->name, "", sizeof(colorspace_settings->name));
+      lib_strncpy(colorspace_settings->name, "", sizeof(colorspace_settings->name));
     }
   }
 
@@ -1675,7 +1675,7 @@ static void colormanage_check_display_settings(ColorManagedDisplaySettings *disp
                                                const ColorManagedDisplay *default_display)
 {
   if (display_settings->display_device[0] == '\0') {
-    BLI_strncpy(display_settings->display_device,
+    lib_strncpy(display_settings->display_device,
                 default_display->name,
                 sizeof(display_settings->display_device));
   }
@@ -1689,7 +1689,7 @@ static void colormanage_check_display_settings(ColorManagedDisplaySettings *disp
           what,
           default_display->name);
 
-      BLI_strncpy(display_settings->display_device,
+      lib_strncpy(display_settings->display_device,
                   default_display->name,
                   sizeof(display_settings->display_device));
     }
@@ -1712,7 +1712,7 @@ static void colormanage_check_view_settings(ColorManagedDisplaySettings *display
     }
 
     if (default_view) {
-      BLI_strncpy(view_settings->view_transform,
+      lib_strncpy(view_settings->view_transform,
                   default_view->name,
                   sizeof(view_settings->view_transform));
     }
