@@ -311,9 +311,9 @@ bool IMB_anim_can_produce_frames(const struct anim *anim)
   return false;
 }
 
-void IMB_suffix_anim(struct anim *anim, const char *suffix)
+void imbuf_suffix_anim(struct anim *anim, const char *suffix)
 {
-  BLI_strncpy(anim->suffix, suffix, sizeof(anim->suffix));
+  lib_strncpy(anim->suffix, suffix, sizeof(anim->suffix));
 }
 
 #ifdef WITH_AVI
@@ -463,14 +463,14 @@ static ImBuf *avi_fetchibuf(struct anim *anim, int position)
   else
 #  endif
   {
-    ibuf = IMB_allocImBuf(anim->x, anim->y, 24, IB_rect);
+    ibuf = imbuf_allocImBuf(anim->x, anim->y, 24, IB_rect);
 
     tmp = static_cast<int *>(AVI_read_frame(
         anim->avi, AVI_FORMAT_RGB32, position, AVI_get_stream(anim->avi, AVIST_VIDEO, 0)));
 
     if (tmp == nullptr) {
       printf("Error reading frame from AVI: '%s'\n", anim->filepath);
-      IMB_freeImBuf(ibuf);
+      imbuf_freeImBuf(ibuf);
       return nullptr;
     }
 
@@ -478,7 +478,7 @@ static ImBuf *avi_fetchibuf(struct anim *anim, int position)
       memcpy(&(ibuf->rect)[((anim->y - y) - 1) * anim->x], &tmp[y * anim->x], anim->x * 4);
     }
 
-    MEM_freeN(tmp);
+    mem_freen(tmp);
   }
 
   ibuf->rect_colorspace = colormanage_colorspace_get_named(anim->colorspace);
@@ -560,7 +560,7 @@ static int startffmpeg(struct anim *anim)
     pCodecCtx->thread_count = 0;
   }
   else {
-    pCodecCtx->thread_count = BLI_system_thread_count();
+    pCodecCtx->thread_count = lib_system_thread_count();
   }
 
   if (pCodec->capabilities & AV_CODEC_CAP_FRAME_THREADS) {
