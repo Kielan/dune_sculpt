@@ -370,7 +370,7 @@ bool imb_addrectImBuf(ImBuf *ibuf)
   /* Don't call imb_freerectImBuf, it frees mipmaps,
    * this call is used only too give float buffers display. */
   if (ibuf->rect && (ibuf->mall & IB_rect)) {
-    MEM_freeN(ibuf->rect);
+    mem_freen(ibuf->rect);
   }
   ibuf->rect = nullptr;
 
@@ -420,7 +420,7 @@ struct ImBuf *imbuf_allocFromBufferOwn(uint *rect, float *rectf, uint w, uint h,
   return ibuf;
 }
 
-struct ImBuf *IMB_allocFromBuffer(
+struct ImBuf *imbuf_allocFromBuffer(
     const uint *rect, const float *rectf, uint w, uint h, uint channels)
 {
   ImBuf *ibuf = nullptr;
@@ -429,7 +429,7 @@ struct ImBuf *IMB_allocFromBuffer(
     return nullptr;
   }
 
-  ibuf = IMB_allocImBuf(w, h, 32, 0);
+  ibuf = imbuf_allocImBuf(w, h, 32, 0);
 
   ibuf->channels = channels;
 
