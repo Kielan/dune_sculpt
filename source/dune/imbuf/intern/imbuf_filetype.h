@@ -69,17 +69,17 @@ void imb_filetypes_exit(void);
 /* -------------------------------------------------------------------- */
 /** Format: PNG (IMB_FTYPE_PNG) * */
 
-bool imb_is_a_png(const unsigned char *mem, size_t size);
+bool imbuf_is_a_png(const unsigned char *mem, size_t size);
 struct ImBuf *imb_load_png(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
-bool imb_save_png(struct ImBuf *ibuf, const char *filepath, int flags);
+bool imbuf_save_png(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
 /** Format: TARGA (IMB_FTYPE_TGA) **/
 
-bool imb_is_a_tga(const unsigned char *mem, size_t size);
+bool imbuf_is_a_tga(const unsigned char *mem, size_t size);
 struct ImBuf *imb_load_tga(const unsigned char *mem,
                            size_t size,
                            int flags,
@@ -93,7 +93,7 @@ bool imb_is_a_iris(const unsigned char *mem, size_t size);
 /**
  * Read in a B/W RGB or RGBA iris image file and return an image buffer.
  */
-struct ImBuf *imb_loadiris(const unsigned char *mem,
+struct ImBuf *imbuf_loadiris(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
@@ -102,7 +102,7 @@ bool imb_saveiris(struct ImBuf *ibuf, const char *filepath, int flags);
 /* -------------------------------------------------------------------- */
 /** Format: JP2 (IMB_FTYPE_JP2) **/
 
-bool imb_is_a_jp2(const unsigned char *buf, size_t size);
+bool imbuf_is_a_jp2(const unsigned char *buf, size_t size);
 struct ImBuf *imbuf_load_jp2(const unsigned char *mem,
                            size_t size,
                            int flags,
@@ -110,7 +110,7 @@ struct ImBuf *imbuf_load_jp2(const unsigned char *mem,
 struct ImBuf *imbuf_load_jp2_filepath(const char *filepath,
                                     int flags,
                                     char colorspace[IM_MAX_SPACE]);
-bool imb_save_jp2(struct ImBuf *ibuf, const char *filepath, int flags);
+bool imbuf_save_jp2(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
 /** Format: JPEG (IMB_FTYPE_JPG) */
