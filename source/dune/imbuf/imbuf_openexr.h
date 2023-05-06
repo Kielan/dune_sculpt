@@ -73,11 +73,11 @@ void imbuf_exr_write_channels(void *handle);
  * Temporary function, used for FSA and Save Buffers.
  * called once per `tile * view`.
  */
-void IMB_exrtile_write_channels(
+void imbuf_exrtile_write_channels(
     void *handle, int partx, int party, int level, const char *viewname, bool empty);
-void IMB_exr_clear_channels(void *handle);
+void imbuf_exr_clear_channels(void *handle);
 
-void IMB_exr_multilayer_convert(void *handle,
+void imbuf_exr_multilayer_convert(void *handle,
                                 void *base,
                                 void *(*addview)(void *base, const char *str),
                                 void *(*addlayer)(void *base, const char *str),
