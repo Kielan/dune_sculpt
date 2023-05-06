@@ -1,60 +1,56 @@
-/** \file
- * \ingroup imbuf
- */
-
 /* It's become a bit messy... Basically, only the IMB_ prefixed files
  * should remain. */
 
 #include <stddef.h>
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#include "IMB_allocimbuf.h"
-#include "IMB_colormanagement_intern.h"
-#include "IMB_filetype.h"
-#include "IMB_metadata.h"
+#include "imbuf_allocimbuf.h"
+#include "imbuf_colormanagement_intern.h"
+#include "imbuf_filetype.h"
+#include "imbuf_metadata.h"
 
 #include "imbuf.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
 static SpinLock refcounter_spin;
 
-void imb_refcounter_lock_init(void)
+void imbuf_refcounter_lock_init(void)
 {
-  BLI_spin_init(&refcounter_spin);
+  lib_spin_init(&refcounter_spin);
 }
 
-void imb_refcounter_lock_exit(void)
+void imbuf_refcounter_lock_exit(void)
 {
-  BLI_spin_end(&refcounter_spin);
+  lib_spin_end(&refcounter_spin);
 }
 
 #ifndef WIN32
 static SpinLock mmap_spin;
 
-void imb_mmap_lock_init(void)
+void imbuf_mmap_lock_init(void)
 {
-  BLI_spin_init(&mmap_spin);
+  lib_spin_init(&mmap_spin);
 }
 
-void imb_mmap_lock_exit(void)
+void imbuf_mmap_lock_exit(void)
 {
-  BLI_spin_end(&mmap_spin);
+  lib_spin_end(&mmap_spin);
 }
 
-void imb_mmap_lock(void)
+void imbuf_mmap_lock(void)
 {
-  BLI_spin_lock(&mmap_spin);
+  lib_spin_lock(&mmap_spin);
 }
 
-void imb_mmap_unlock(void)
+void imbuf_mmap_unlock(void)
 {
-  BLI_spin_unlock(&mmap_spin);
+  lib_spin_unlock(&mmap_spin);
 }
 #endif
 
@@ -62,11 +58,11 @@ void imb_freemipmapImBuf(ImBuf *ibuf)
 {
   int a;
 
-  /* Do not trust ibuf->miptot, in some cases IMB_remakemipmap can leave unfreed unused levels,
+  /* Do not trust ibuf->miptot, in some cases imbuf_remakemipmap can leave unfreed unused levels,
    * leading to memory leaks... */
   for (a = 0; a < IMB_MIPMAP_LEVELS; a++) {
     if (ibuf->mipmap[a] != nullptr) {
-      IMB_freeImBuf(ibuf->mipmap[a]);
+      imbuf_freeImBuf(ibuf->mipmap[a]);
       ibuf->mipmap[a] = nullptr;
     }
   }
@@ -81,7 +77,7 @@ void imb_freerectfloatImBuf(ImBuf *ibuf)
   }
 
   if (ibuf->rect_float && (ibuf->mall & IB_rectfloat)) {
-    MEM_freeN(ibuf->rect_float);
+    mem_freen(ibuf->rect_float);
     ibuf->rect_float = nullptr;
   }
 
