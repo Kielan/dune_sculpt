@@ -433,7 +433,7 @@ struct ImBuf *IMB_allocFromBuffer(
 
   ibuf->channels = channels;
 
-  /* Avoid #MEM_dupallocN since the buffers might not be allocated using guarded-allocation. */
+  /* Avoid mem_dupallocn since the buffers might not be allocated using guarded-allocation. */
   if (rectf) {
     const size_t size = sizeof(float[4]) * w * h;
     ibuf->rect_float = static_cast<float *>(MEM_mallocN(size, __func__));
@@ -454,12 +454,12 @@ struct ImBuf *IMB_allocFromBuffer(
   return ibuf;
 }
 
-ImBuf *IMB_allocImBuf(uint x, uint y, uchar planes, uint flags)
+ImBuf *imbuf_allocImBuf(uint x, uint y, uchar planes, uint flags)
 {
-  ImBuf *ibuf = MEM_cnew<ImBuf>("ImBuf_struct");
+  ImBuf *ibuf = mem_cnew<ImBuf>("ImBuf_struct");
 
   if (ibuf) {
-    if (!IMB_initImBuf(ibuf, x, y, planes, flags)) {
+    if (!imbuf_initImBuf(ibuf, x, y, planes, flags)) {
       IMB_freeImBuf(ibuf);
       return nullptr;
     }
@@ -468,7 +468,7 @@ ImBuf *IMB_allocImBuf(uint x, uint y, uchar planes, uint flags)
   return ibuf;
 }
 
-bool IMB_initImBuf(struct ImBuf *ibuf, uint x, uint y, uchar planes, uint flags)
+bool imbuf_initImBuf(struct ImBuf *ibuf, uint x, uint y, uchar planes, uint flags)
 {
   memset(ibuf, 0, sizeof(ImBuf));
 
