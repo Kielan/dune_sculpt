@@ -13,18 +13,18 @@ struct anim;
  * saved in the header of several image formats.
  * Apart from some common keys like
  * 'Software' and 'Description' (PNG standard) we'll use keys within the
- * Blender namespace, so should be called 'Blender::StampInfo' or 'Blender::FrameNum'
+ * Blender namespace, so should be called 'Dune::StampInfo' or 'Blender::FrameNum'
  * etc...
  *
- * The keys & values are stored in ID properties, in the group "metadata".
+ * The keys & values are stored in Id props, in the group "metadata".
  */
 
 /**
  * Ensure that the metadata property is a valid #IDProperty object.
  * This is a no-op when *metadata != NULL.
  */
-void IMB_metadata_ensure(struct IDProperty **metadata);
-void IMB_metadata_free(struct IDProperty *metadata);
+void imbuf_metadata_ensure(struct IdProp **metadata);
+void imbuf_metadata_free(struct IdProp *metadata);
 
 /**
  * Read the field from the image info into the field.
