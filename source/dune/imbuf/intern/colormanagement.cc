@@ -27,22 +27,21 @@
 #include "lib_task.h"
 #include "lib_threads.h"
 
-#include "BKE_appdir.h"
-#include "BKE_colortools.h"
-#include "BKE_context.h"
-#include "BKE_image.h"
-#include "BKE_image_format.h"
-#include "BKE_main.h"
+#include "dune_appdir.h"
+#include "dune_colortools.h"
+#include "dune_context.h"
+#include "dune_image.h"
+#include "dune_image_format.h"
+#include "dune_main.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
 #include "SEQ_iterator.h"
 
 #include <ocio_capi.h>
 
 /* -------------------------------------------------------------------- */
-/** \name Global declarations
- * \{ */
+/** Global declarations **/
 
 #define DISPLAY_BUFFER_CHANNELS 4
 
@@ -80,7 +79,7 @@ float imbuf_aces_to_scene_linear[3][3] = {{0.0f}};
  * LOCK_COLORMANAGE can not be used since this mutex could be needed to
  * be locked before pre-cached processor are creating
  */
-static pthread_mutex_t processor_lock = BLI_MUTEX_INITIALIZER;
+static pthread_mutex_t processor_lock = LIB_MUTEX_INITIALIZER;
 
 typedef struct ColormanageProcessor {
   OCIO_ConstCPUProcessorRcPtr *cpu_processor;
@@ -106,11 +105,8 @@ static struct global_color_picking_state {
   bool failed;
 } global_color_picking_state = {nullptr};
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Color Managed Cache
- * \{ */
+/** Color Managed Cache **/
 
 /**
  * Cache Implementation Notes
@@ -208,7 +204,6 @@ typedef struct ColormanageCacheData {
 
 typedef struct ColormanageCache {
   struct MovieCache *moviecache;
-
   ColormanageCacheData *data;
 } ColormanageCache;
 
@@ -250,13 +245,13 @@ static bool colormanage_hashcmp(const void *av, const void *bv)
 static struct MovieCache *colormanage_moviecache_ensure(ImBuf *ibuf)
 {
   if (!ibuf->colormanage_cache) {
-    ibuf->colormanage_cache = MEM_cnew<ColormanageCache>("imbuf colormanage cache");
+    ibuf->colormanage_cache = mem_cnew<ColormanageCache>("imbuf colormanage cache");
   }
 
   if (!ibuf->colormanage_cache->moviecache) {
     struct MovieCache *moviecache;
 
-    moviecache = IMB_moviecache_create("colormanage cache",
+    moviecache = imbuf_moviecache_create("colormanage cache",
                                        sizeof(ColormanageCacheKey),
                                        colormanage_hashhash,
                                        colormanage_hashcmp);
@@ -270,7 +265,7 @@ static struct MovieCache *colormanage_moviecache_ensure(ImBuf *ibuf)
 static void colormanage_cachedata_set(ImBuf *ibuf, ColormanageCacheData *data)
 {
   if (!ibuf->colormanage_cache) {
-    ibuf->colormanage_cache = MEM_cnew<ColormanageCache>("imbuf colormanage cache");
+    ibuf->colormanage_cache = mem_cnew<ColormanageCache>("imbuf colormanage cache");
   }
 
   ibuf->colormanage_cache->data = data;
@@ -280,8 +275,8 @@ static void colormanage_view_settings_to_cache(ImBuf *ibuf,
                                                ColormanageCacheViewSettings *cache_view_settings,
                                                const ColorManagedViewSettings *view_settings)
 {
-  int look = IMB_colormanagement_look_get_named_index(view_settings->look);
-  int view = IMB_colormanagement_view_get_named_index(view_settings->view_transform);
+  int look = imbuf_colormanagement_look_get_named_index(view_settings->look);
+  int view = imbuf_colormanagement_view_get_named_index(view_settings->view_transform);
 
   cache_view_settings->look = look;
   cache_view_settings->view = view;
@@ -296,7 +291,7 @@ static void colormanage_display_settings_to_cache(
     ColormanageCacheDisplaySettings *cache_display_settings,
     const ColorManagedDisplaySettings *display_settings)
 {
-  int display = IMB_colormanagement_display_get_named_index(display_settings->display_device);
+  int display = imbuf_colormanagement_display_get_named_index(display_settings->display_device);
 
   cache_display_settings->display = display;
 }
