@@ -190,7 +190,7 @@ static void free_anim_avi(struct anim *anim)
 static void free_anim_ffmpeg(struct anim *anim);
 #endif
 
-void IMB_free_anim(struct anim *anim)
+void imbuf_free_anim(struct anim *anim)
 {
   if (anim == nullptr) {
     printf("free anim, anim == nullptr\n");
@@ -212,32 +212,32 @@ void IMB_free_anim(struct anim *anim)
   mem_freen(anim);
 }
 
-void IMB_close_anim(struct anim *anim)
+void imbuf_close_anim(struct anim *anim)
 {
   if (anim == nullptr) {
     return;
   }
 
-  IMB_free_anim(anim);
+  imbuf_free_anim(anim);
 }
 
-void IMB_close_anim_proxies(struct anim *anim)
+void imbuf_close_anim_proxies(struct anim *anim)
 {
   if (anim == nullptr) {
     return;
   }
 
-  IMB_free_indices(anim);
+  imbuf_free_indices(anim);
 }
 
-struct IDProperty *IMB_anim_load_metadata(struct anim *anim)
+struct IdProp *imbuf_anim_load_metadata(struct anim *anim)
 {
   switch (anim->curtype) {
     case ANIM_FFMPEG: {
 #ifdef WITH_FFMPEG
       AVDictionaryEntry *entry = nullptr;
 
-      BLI_assert(anim->pFormatCtx != nullptr);
+      lib_assert(anim->pFormatCtx != nullptr);
       av_log(anim->pFormatCtx, AV_LOG_DEBUG, "METADATA FETCH\n");
 
       while (true) {
@@ -247,8 +247,8 @@ struct IDProperty *IMB_anim_load_metadata(struct anim *anim)
         }
 
         /* Delay creation of the property group until there is actual metadata to put in there. */
-        IMB_metadata_ensure(&anim->metadata);
-        IMB_metadata_set_field(anim->metadata, entry->key, entry->value);
+        imbuf_metadata_ensure(&anim->metadata);
+        imbuf_metadata_set_field(anim->metadata, entry->key, entry->value);
       }
 #endif
       break;
@@ -265,16 +265,16 @@ struct IDProperty *IMB_anim_load_metadata(struct anim *anim)
   return anim->metadata;
 }
 
-struct anim *IMB_open_anim(const char *filepath,
+struct anim *imbuf_open_anim(const char *filepath,
                            int ib_flags,
                            int streamindex,
                            char colorspace[IM_MAX_SPACE])
 {
   struct anim *anim;
 
-  BLI_assert(!BLI_path_is_rel(filepath));
+  lib_assert(!lib_path_is_rel(filepath));
 
-  anim = (struct anim *)MEM_callocN(sizeof(struct anim), "anim struct");
+  anim = (struct anim *)mem_callocn(sizeof(struct anim), "anim struct");
   if (anim != nullptr) {
     if (colorspace) {
       colorspace_set_default_role(colorspace, IM_MAX_SPACE, COLOR_ROLE_DEFAULT_BYTE);
