@@ -28,24 +28,24 @@ void imbuf_metadata_free(struct IdProp *metadata);
 
 /**
  * Read the field from the image info into the field.
- * \param metadata: the #IDProperty that contains the metadata
- * \param key: the key of the field
- * \param value: the data in the field, first one found with key is returned,
+ * param metadata: the #IDProperty that contains the metadata
+ * param key: the key of the field
+ * param value: the data in the field, first one found with key is returned,
  *                 memory has to be allocated by user.
- * \param len: length of value buffer allocated by user.
- * \return 1 (true) if metadata is present and value for the key found, 0 (false) otherwise.
+ * param len: length of value buffer allocated by user.
+ * return 1 (true) if metadata is present and value for the key found, 0 (false) otherwise.
  */
-bool IMB_metadata_get_field(struct IDProperty *metadata, const char *key, char *value, size_t len);
+bool imbuf_metadata_get_field(struct IdProp *metadata, const char *key, char *value, size_t len);
 
 /**
  * Set user data in the metadata.
  * If the field already exists its value is overwritten, otherwise the field
  * will be added with the given value.
- * param metadata: the #IDProperty that contains the metadata
+ * param metadata: the IdProp that contains the metadata
  * param key: the key of the field
  * param value: the data to be written to the field. zero terminated string
  */
-void imbuf_metadata_set_field(struct IDProperty *metadata, const char *key, const char *value);
+void imbuf_metadata_set_field(struct IdProp *metadata, const char *key, const char *value);
 
 void imbuf_metadata_copy(struct ImBuf *dimb, struct ImBuf *simb);
 struct IdProp *imbuf_anim_load_metadata(struct anim *anim);
