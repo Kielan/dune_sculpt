@@ -54,7 +54,7 @@ void imbuf_mmap_unlock(void)
 }
 #endif
 
-void imb_freemipmapImBuf(ImBuf *ibuf)
+void imbuf_freemipmapImBuf(ImBuf *ibuf)
 {
   int a;
 
@@ -70,7 +70,7 @@ void imb_freemipmapImBuf(ImBuf *ibuf)
   ibuf->miptot = 0;
 }
 
-void imb_freerectfloatImBuf(ImBuf *ibuf)
+void imbuf_freerectfloatImBuf(ImBuf *ibuf)
 {
   if (ibuf == nullptr) {
     return;
@@ -87,7 +87,7 @@ void imb_freerectfloatImBuf(ImBuf *ibuf)
   ibuf->mall &= ~IB_rectfloat;
 }
 
-void imb_freerectImBuf(ImBuf *ibuf)
+void imbuf_freerectImBuf(ImBuf *ibuf)
 {
   if (ibuf == nullptr) {
     return;
@@ -133,7 +133,7 @@ void imbuf_freezbufImBuf(ImBuf *ibuf)
   ibuf->mall &= ~IB_zbuf;
 }
 
-void IMB_freezbuffloatImBuf(ImBuf *ibuf)
+void imbuf_freezbuffloatImBuf(ImBuf *ibuf)
 {
   if (ibuf == nullptr) {
     return;
