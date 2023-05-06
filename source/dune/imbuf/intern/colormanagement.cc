@@ -2239,14 +2239,14 @@ static void *do_display_buffer_apply_thread(void *handle_v)
     }
     else {
       /* apply processor */
-      IMB_colormanagement_processor_apply(
+      imbuf_colormanagement_processor_apply(
           cm_processor, linear_buffer, width, height, channels, predivide);
     }
 
     /* copy result to output buffers */
     if (display_buffer_byte) {
       /* do conversion */
-      IMB_buffer_byte_from_float(display_buffer_byte,
+      imbuf_buffer_byte_from_float(display_buffer_byte,
                                  linear_buffer,
                                  channels,
                                  dither,
@@ -2386,11 +2386,8 @@ static void colormanage_display_buffer_process(ImBuf *ibuf,
       ibuf, nullptr, display_buffer, view_settings, display_settings);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Threaded Processor Transform Routines
- * \{ */
+/** \name Threaded Processor Transform Routines **/
 
 typedef struct ProcessorTransformThread {
   ColormanageProcessor *cm_processor;
