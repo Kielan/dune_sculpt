@@ -25,7 +25,7 @@
  * - ref types module
  *     The ListBase types are used for handling the memory management.
  * - ref dunelib module
- *     dunelib handles guarded memory management in blender-style.
+ *     dunelib handles guarded memory management in dune-style.
  *     lib_winstuff.h makes a few windows specific behaviors
  *     posix-compliant.
  */
