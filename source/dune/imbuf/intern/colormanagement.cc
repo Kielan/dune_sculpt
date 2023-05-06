@@ -1260,7 +1260,7 @@ void IMB_colormanagement_check_file_config(Main *bmain)
   }
 }
 
-void IMB_colormanagement_validate_settings(const ColorManagedDisplaySettings *display_settings,
+void imbuf_colormanagement_validate_settings(const ColorManagedDisplaySettings *display_settings,
                                            ColorManagedViewSettings *view_settings)
 {
   ColorManagedDisplay *display = colormanage_display_get_named(display_settings->display_device);
@@ -1277,12 +1277,12 @@ void IMB_colormanagement_validate_settings(const ColorManagedDisplaySettings *di
   }
 
   if (!found && default_view) {
-    BLI_strncpy(
+    lib_strncpy(
         view_settings->view_transform, default_view->name, sizeof(view_settings->view_transform));
   }
 }
 
-const char *IMB_colormanagement_role_colorspace_name_get(int role)
+const char *imbuf_colormanagement_role_colorspace_name_get(int role)
 {
   switch (role) {
     case COLOR_ROLE_DATA:
@@ -1308,7 +1308,7 @@ const char *IMB_colormanagement_role_colorspace_name_get(int role)
   return nullptr;
 }
 
-void IMB_colormanagement_check_is_data(ImBuf *ibuf, const char *name)
+void imbuf_colormanagement_check_is_data(ImBuf *ibuf, const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
 
@@ -1365,7 +1365,7 @@ void imbuf_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
   }
 }
 
-const char *IMB_colormanagement_get_float_colorspace(ImBuf *ibuf)
+const char *imbuf_colormanagement_get_float_colorspace(ImBuf *ibuf)
 {
   if (ibuf->float_colorspace) {
     return ibuf->float_colorspace->name;
@@ -1526,7 +1526,7 @@ static void display_buffer_init_handle(void *handle_v,
   handle->channels = channels;
   handle->dither = dither;
   handle->is_data = is_data;
-  handle->predivide = IMB_alpha_affects_rgb(ibuf);
+  handle->predivide = imbuf_alpha_affects_rgb(ibuf);
 
   handle->byte_colorspace = init_data->byte_colorspace;
   handle->float_colorspace = init_data->float_colorspace;
@@ -1613,14 +1613,14 @@ static void display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle,
 static void curve_mapping_apply_pixel(CurveMapping *curve_mapping, float *pixel, int channels)
 {
   if (channels == 1) {
-    pixel[0] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
+    pixel[0] = dune_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
   }
   else if (channels == 2) {
-    pixel[0] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
-    pixel[1] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[1]);
+    pixel[0] = dune_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
+    pixel[1] = dune_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[1]);
   }
   else {
-    BKE_curvemapping_evaluate_premulRGBF(curve_mapping, pixel, pixel);
+    dune_curvemapping_evaluate_premulRGBF(curve_mapping, pixel, pixel);
   }
 }
 
@@ -1631,7 +1631,7 @@ void colorspace_set_default_role(char *colorspace, int size, int role)
 
     role_colorspace = IMB_colormanagement_role_colorspace_name_get(role);
 
-    BLI_strncpy(colorspace, role_colorspace, size);
+    lib_strncpy(colorspace, role_colorspace, size);
   }
 }
 
