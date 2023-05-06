@@ -4,11 +4,11 @@
 #include <math.h>
 #include <string.h>
 
-#include "types_color_types.h"
-#include "types_image_types.h"
-#include "types_movieclip_types.h"
-#include "types_scene_types.h"
-#include "types_space_types.h"
+#include "types_color.h"
+#include "types_image.h"
+#include "types_movieclip.h"
+#include "types_scene.h"
+#include "types_space.h"
 
 #include "imbuf_filetype.h"
 #include "imbuf_filter.h"
@@ -790,26 +790,26 @@ void colormanage_cache_free(ImBuf *ibuf)
     struct MovieCache *moviecache = colormanage_moviecache_get(ibuf);
 
     if (cache_data) {
-      MEM_freeN(cache_data);
+      mem_freen(cache_data);
     }
 
     if (moviecache) {
-      IMB_moviecache_free(moviecache);
+      imbuf_moviecache_free(moviecache);
     }
 
-    MEM_freeN(ibuf->colormanage_cache);
+    mem_freen(ibuf->colormanage_cache);
 
     ibuf->colormanage_cache = nullptr;
   }
 }
 
-void IMB_colormanagement_display_settings_from_ctx(
-    const bContext *C,
+void imbuf_colormanagement_display_settings_from_ctx(
+    const Ctx *C,
     ColorManagedViewSettings **r_view_settings,
     ColorManagedDisplaySettings **r_display_settings)
 {
-  Scene *scene = CTX_data_scene(C);
-  SpaceImage *sima = CTX_wm_space_image(C);
+  Scene *scene = ctx_data_scene(C);
+  SpaceImage *sima = ctx_wm_space_image(C);
 
   *r_view_settings = &scene->view_settings;
   *r_display_settings = &scene->display_settings;
