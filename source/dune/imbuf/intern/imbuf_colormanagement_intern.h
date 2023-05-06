@@ -1,11 +1,7 @@
 #pragma once
 
-/** \file
- * \ingroup imbuf
- */
-
-#include "BLI_sys_types.h"
-#include "DNA_listBase.h"
+#include "lib_sys_types.h"
+#include "types_listBase.h"
 
 #ifdef __cplusplus
 extern "C" {
