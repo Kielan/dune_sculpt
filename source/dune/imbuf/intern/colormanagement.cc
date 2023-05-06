@@ -1909,7 +1909,7 @@ void IMB_colormanagegent_copy_settings(ImBuf *ibuf_src, ImBuf *ibuf_dst)
   }
 }
 
-void IMB_colormanagement_assign_float_colorspace(ImBuf *ibuf, const char *name)
+void imbuf_colormanagement_assign_float_colorspace(ImBuf *ibuf, const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
 
@@ -1923,7 +1923,7 @@ void IMB_colormanagement_assign_float_colorspace(ImBuf *ibuf, const char *name)
   }
 }
 
-void IMB_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
+void imbuf_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
 
@@ -1937,25 +1937,25 @@ void IMB_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
   }
 }
 
-const char *IMB_colormanagement_get_float_colorspace(ImBuf *ibuf)
+const char *imbuf_colormanagement_get_float_colorspace(ImBuf *ibuf)
 {
   if (ibuf->float_colorspace) {
     return ibuf->float_colorspace->name;
   }
 
-  return IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
+  return imbuf_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
 }
 
-const char *IMB_colormanagement_get_rect_colorspace(ImBuf *ibuf)
+const char *imbuf_colormanagement_get_rect_colorspace(ImBuf *ibuf)
 {
   if (ibuf->rect_colorspace) {
     return ibuf->rect_colorspace->name;
   }
 
-  return IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_BYTE);
+  return imbuf_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_BYTE);
 }
 
-bool IMB_colormanagement_space_is_data(ColorSpace *colorspace)
+bool imbuf_colormanagement_space_is_data(ColorSpace *colorspace)
 {
   return (colorspace && colorspace->is_data);
 }
@@ -1979,25 +1979,25 @@ static void colormanage_ensure_srgb_scene_linear_info(ColorSpace *colorspace)
   }
 }
 
-bool IMB_colormanagement_space_is_scene_linear(ColorSpace *colorspace)
+bool imbuf_colormanagement_space_is_scene_linear(ColorSpace *colorspace)
 {
   colormanage_ensure_srgb_scene_linear_info(colorspace);
   return (colorspace && colorspace->info.is_scene_linear);
 }
 
-bool IMB_colormanagement_space_is_srgb(ColorSpace *colorspace)
+bool imbuf_colormanagement_space_is_srgb(ColorSpace *colorspace)
 {
   colormanage_ensure_srgb_scene_linear_info(colorspace);
   return (colorspace && colorspace->info.is_srgb);
 }
 
-bool IMB_colormanagement_space_name_is_data(const char *name)
+bool imbuf_colormanagement_space_name_is_data(const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
   return (colorspace && colorspace->is_data);
 }
 
-bool IMB_colormanagement_space_name_is_scene_linear(const char *name)
+bool imbuf_colormanagement_space_name_is_scene_linear(const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
   return (colorspace && IMB_colormanagement_space_is_scene_linear(colorspace));
