@@ -219,28 +219,22 @@ struct ImBuf *imb_load_filepath_thumbnail_webp(const char *filepath,
                                                size_t *r_height);
 bool imb_savewebp(struct ImBuf *ibuf, const char *filepath, int flags);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: DDS (#IMB_FTYPE_DDS)
- * \{ */
+/** Format: DDS (IMB_FTYPE_DDS) **/
 
-bool imb_is_a_dds(const unsigned char *buf, size_t size);
+bool imbuf_is_a_dds(const unsigned char *buf, size_t size);
 
-struct ImBuf *imb_load_dds(const unsigned char *mem,
+struct ImBuf *imbuf_load_dds(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: PSD (#IMB_FTYPE_PSD)
- * \{ */
+/** Format: PSD (#IMB_FTYPE_PSD) **/
 
-bool imb_is_a_psd(const unsigned char *buf, size_t size);
+bool imbuf_is_a_psd(const unsigned char *buf, size_t size);
 
-struct ImBuf *imb_load_psd(const unsigned char *mem,
+struct ImBuf *imbuf_load_psd(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
