@@ -69,10 +69,7 @@ struct GPUTexture;
 void IMB_init(void);
 void IMB_exit(void);
 
-/**
- *
- * \attention Defined in readimage.c
- */
+/** attention Defined in readimage.c */
 struct ImBuf *IMB_ibImageFromMemory(const unsigned char *mem,
                                     size_t size,
                                     int flags,
