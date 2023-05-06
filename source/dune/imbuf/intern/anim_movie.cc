@@ -552,8 +552,8 @@ static int startffmpeg(struct anim *anim)
     return -1;
   }
 
-  pCodecCtx = avcodec_alloc_context3(nullptr);
-  avcodec_parameters_to_context(pCodecCtx, video_stream->codecpar);
+  pCodecCtx = avcodec_alloc_ctx3(nullptr);
+  avcodec_params_to_ctx(pCodecCtx, video_stream->codecpar);
   pCodecCtx->workaround_bugs = FF_BUG_AUTODETECT;
 
   if (pCodec->capabilities & AV_CODEC_CAP_OTHER_THREADS) {
@@ -1075,7 +1075,7 @@ static int match_format(const char *name, AVFormatContext *pFormatCtx)
     }
     names = p + 1;
   }
-  return !BLI_strcasecmp(name, names);
+  return !lib_strcasecmp(name, names);
 }
 
 static int ffmpeg_seek_by_byte(AVFormatContext *pFormatCtx)
@@ -1125,8 +1125,8 @@ static int64_t ffmpeg_get_pts_to_search(struct anim *anim,
   int64_t pts_to_search;
 
   if (tc_index) {
-    int new_frame_index = IMB_indexer_get_frame_index(tc_index, position);
-    pts_to_search = IMB_indexer_get_pts(tc_index, new_frame_index);
+    int new_frame_index = imbuf_indexer_get_frame_index(tc_index, position);
+    pts_to_search = imbuf_indexer_get_pts(tc_index, new_frame_index);
   }
   else {
     AVStream *v_st = anim->pFormatCtx->streams[anim->videoStream];
@@ -1303,16 +1303,16 @@ static int ffmpeg_seek_to_key_frame(struct anim *anim,
     int new_frame_index = IMB_indexer_get_frame_index(tc_index, position);
     int old_frame_index = IMB_indexer_get_frame_index(tc_index, anim->cur_position);
 
-    if (IMB_indexer_can_scan(tc_index, old_frame_index, new_frame_index)) {
+    if (imbuf_indexer_can_scan(tc_index, old_frame_index, new_frame_index)) {
       /* No need to seek, return early. */
       return 0;
     }
     uint64_t pts;
     uint64_t dts;
 
-    seek_pos = IMB_indexer_get_seek_pos(tc_index, new_frame_index);
-    pts = IMB_indexer_get_seek_pos_pts(tc_index, new_frame_index);
-    dts = IMB_indexer_get_seek_pos_dts(tc_index, new_frame_index);
+    seek_pos = imbuf_indexer_get_seek_pos(tc_index, new_frame_index);
+    pts = imbuf_indexer_get_seek_pos_pts(tc_index, new_frame_index);
+    dts = imbuf_indexer_get_seek_pos_dts(tc_index, new_frame_index);
 
     anim->cur_key_frame_pts = timestamp_from_pts_or_dts(pts, dts);
 
