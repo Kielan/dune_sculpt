@@ -91,8 +91,8 @@ void imbuf_indexer_close(struct anim_index *idx);
 
 void imbuf_free_indices(struct anim *anim);
 
-struct anim *IMB_anim_open_proxy(struct anim *anim, IMB_Proxy_Size preview_size);
-struct anim_index *IMB_anim_open_index(struct anim *anim, IMB_Timecode_Type tc);
+struct anim *imbuf_anim_open_proxy(struct anim *anim, imbuf_Proxy_Size preview_size);
+struct anim_index *imbuf_anim_open_index(struct anim *anim, imbuf_Timecode_Type tc);
 
-int IMB_proxy_size_to_array_index(IMB_Proxy_Size pr_size);
-int IMB_timecode_to_array_index(IMB_Timecode_Type tc);
+int imbuf_proxy_size_to_array_index(imbuf_Proxy_Size pr_size);
+int imbuf_timecode_to_array_index(imbuf_Timecode_Type tc);
