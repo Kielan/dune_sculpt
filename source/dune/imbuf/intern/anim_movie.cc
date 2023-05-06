@@ -37,10 +37,10 @@
 
 #include "DNA_scene_types.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
 #ifdef WITH_AVI
-#  include "AVI_avi.h"
+#  include "avi.h"
 #endif
 
 #include "imbuf.h"
