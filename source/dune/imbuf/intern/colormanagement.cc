@@ -640,11 +640,11 @@ static void colormanage_free_config(void)
 
     /* free color space itself */
     MEM_SAFE_FREE(colorspace->aliases);
-    MEM_freeN(colorspace);
+    mem_freen(colorspace);
 
     colorspace = colorspace_next;
   }
-  BLI_listbase_clear(&global_colorspaces);
+  lib_listbase_clear(&global_colorspaces);
   global_tot_colorspace = 0;
 
   /* free displays */
@@ -699,10 +699,10 @@ void colormanagement_init(void)
   }
 
   if (config == nullptr) {
-    configdir = BKE_appdir_folder_id(BLENDER_DATAFILES, "colormanagement");
+    configdir = dune_appdir_folder_id(BLENDER_DATAFILES, "colormanagement");
 
     if (configdir) {
-      BLI_path_join(configfile, sizeof(configfile), configdir, BCM_CONFIG_FILE);
+      lib_path_join(configfile, sizeof(configfile), configdir, BCM_CONFIG_FILE);
 
       config = OCIO_configCreateFromFile(configfile);
     }
@@ -734,18 +734,18 @@ void colormanagement_init(void)
     colormanage_load_config(config);
   }
 
-  BLI_init_srgb_conversion();
+  lib_init_srgb_conversion();
 }
 void colormanagement_exit(void)
 {
   OCIO_gpuCacheFree();
 
   if (global_gpu_state.curve_mapping) {
-    BKE_curvemapping_free(global_gpu_state.curve_mapping);
+    dune_curvemapping_free(global_gpu_state.curve_mapping);
   }
 
   if (global_gpu_state.curve_mapping_settings.lut) {
-    MEM_freeN(global_gpu_state.curve_mapping_settings.lut);
+    mem_freen(global_gpu_state.curve_mapping_settings.lut);
   }
 
   if (global_color_picking_state.cpu_processor_to) {
@@ -762,11 +762,8 @@ void colormanagement_exit(void)
   colormanage_free_config();
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Internal functions
- * \{ */
+/** Internal functions **/
 
 static bool colormanage_compatible_look(ColorManagedLook *look, const char *view_name)
 {
