@@ -1,5 +1,5 @@
 #ifdef _WIN32
-#  include "BLI_winstuff.h"
+#  include "lib_winstuff.h"
 #  include <vfw.h>
 
 #  undef AVIIF_KEYFRAME /* redefined in AVI_avi.h */
@@ -30,10 +30,10 @@
 #  include <io.h>
 #endif
 
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "lib_path_util.h"
+#include "lib_string.h"
+#include "lib_threads.h"
+#include "lib_utildefines.h"
 
 #include "DNA_scene_types.h"
 
