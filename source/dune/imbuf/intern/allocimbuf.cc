@@ -164,18 +164,18 @@ void kernel imbuf_freeImBuf(ImBuf *ibuf)
 
   bool needs_free = false;
 
-  BLI_spin_lock(&refcounter_spin);
+  lib_spin_lock(&refcounter_spin);
   if (ibuf->refcounter > 0) {
     ibuf->refcounter--;
   }
   else {
     needs_free = true;
   }
-  BLI_spin_unlock(&refcounter_spin);
+  lib_spin_unlock(&refcounter_spin);
 
   if (needs_free) {
     /* Include this check here as the path may be manipulated after creation. */
-    BLI_assert_msg(!(ibuf->filepath[0] == '/' && ibuf->filepath[1] == '/'),
+    lib_assert_msg(!(ibuf->filepath[0] == '/' && ibuf->filepath[1] == '/'),
                    "'.blend' relative \"//\" must not be used in ImBuf!");
 
     imb_freerectImbuf_all(ibuf);
@@ -186,26 +186,26 @@ void kernel imbuf_freeImBuf(ImBuf *ibuf)
       /* dds_data.data is allocated by DirectDrawSurface::readData(), so don't use MEM_freeN! */
       free(ibuf->dds_data.data);
     }
-    MEM_freeN(ibuf);
+    mem_freen(ibuf);
   }
 }
 
-void IMB_refImBuf(ImBuf *ibuf)
+void imbuf_refImBuf(ImBuf *ibuf)
 {
-  BLI_spin_lock(&refcounter_spin);
+  lib_spin_lock(&refcounter_spin);
   ibuf->refcounter++;
-  BLI_spin_unlock(&refcounter_spin);
+  lib_spin_unlock(&refcounter_spin);
 }
 
-ImBuf *IMB_makeSingleUser(ImBuf *ibuf)
+ImBuf *imbuf_makeSingleUser(ImBuf *ibuf)
 {
   if (ibuf == nullptr) {
     return nullptr;
   }
 
-  BLI_spin_lock(&refcounter_spin);
+  lib_spin_lock(&refcounter_spin);
   const bool is_single = (ibuf->refcounter == 0);
-  BLI_spin_unlock(&refcounter_spin);
+  lib_spin_unlock(&refcounter_spin);
   if (is_single) {
     return ibuf;
   }
