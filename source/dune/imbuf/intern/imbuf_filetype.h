@@ -84,10 +84,10 @@ struct ImBuf *imb_load_tga(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
-bool imb_save_tga(struct ImBuf *ibuf, const char *filepath, int flags);
+bool imbuf_save_tga(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
-/** Format: IRIS (#IMB_FTYPE_IMAGIC) **/
+/** Format: IRIS (IMB_FTYPE_IMAGIC) **/
 
 bool imb_is_a_iris(const unsigned char *mem, size_t size);
 /**
@@ -100,7 +100,7 @@ struct ImBuf *imb_loadiris(const unsigned char *mem,
 bool imb_saveiris(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
-/** Format: JP2 (#IMB_FTYPE_JP2) **/
+/** Format: JP2 (IMB_FTYPE_JP2) **/
 
 bool imb_is_a_jp2(const unsigned char *buf, size_t size);
 struct ImBuf *imbuf_load_jp2(const unsigned char *mem,
@@ -121,7 +121,7 @@ struct ImBuf *imbuf_load_jpeg(const unsigned char *buffer,
                             size_t size,
                             int flags,
                             char colorspace[IM_MAX_SPACE]);
-struct ImBuf *imb_thumbnail_jpeg(const char *filepath,
+struct ImBuf *imbuf_thumbnail_jpeg(const char *filepath,
                                  int flags,
                                  size_t max_thumb_size,
                                  char colorspace[IM_MAX_SPACE],
@@ -132,8 +132,8 @@ struct ImBuf *imb_thumbnail_jpeg(const char *filepath,
 /* -------------------------------------------------------------------- */
 /** Format: BMP (IMB_FTYPE_BMP) **/
 
-bool imb_is_a_bmp(const unsigned char *buf, size_t size);
-struct ImBuf *imb_load_bmp(const unsigned char *mem,
+bool imbuf_is_a_bmp(const unsigned char *buf, size_t size);
+struct ImBuf *imbuf_load_bmp(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
@@ -143,9 +143,9 @@ bool imb_save_bmp(struct ImBuf *ibuf, const char *filepath, int flags);
 /* -------------------------------------------------------------------- */
 /** Format: CINEON (IMB_FTYPE_CINEON) **/
 
-bool imb_is_a_cineon(const unsigned char *buf, size_t size);
-bool imb_save_cineon(struct ImBuf *buf, const char *filepath, int flags);
-struct ImBuf *imb_load_cineon(const unsigned char *mem,
+bool imbuf_is_a_cineon(const unsigned char *buf, size_t size);
+bool imbuf_save_cineon(struct ImBuf *buf, const char *filepath, int flags);
+struct ImBuf *imbuf_load_cineon(const unsigned char *mem,
                               size_t size,
                               int flags,
                               char colorspace[IM_MAX_SPACE]);
