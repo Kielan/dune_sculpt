@@ -28,7 +28,7 @@ void imbuf_metadata_free(struct IdProp *metadata);
 
 /**
  * Read the field from the image info into the field.
- * param metadata: the #IDProperty that contains the metadata
+ * param metadata: the IdProp that contains the metadata
  * param key: the key of the field
  * param value: the data in the field, first one found with key is returned,
  *                 memory has to be allocated by user.
@@ -52,7 +52,7 @@ struct IdProp *imbuf_anim_load_metadata(struct anim *anim);
 
 /* Invoke callback for every value stored in the metadata. */
 typedef void (*ImbufMetadataForeachCb)(const char *field, const char *value, void *userdata);
-void imbuf_metadata_foreach(struct ImBuf *ibuf, ImBufMetadataForeachCb callback, void *userdata);
+void imbuf_metadata_foreach(struct ImBuf *ibuf, ImBufMetadataForeachCb cb, void *userdata);
 
 #ifdef __cplusplus
 }
