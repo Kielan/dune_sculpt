@@ -61,8 +61,8 @@ extern const ImFileType *IMB_FILE_TYPES_LAST;
 const ImFileType *imbuf_file_type_from_ftype(int ftype);
 const ImFileType *imbuf_file_type_from_ibuf(const struct ImBuf *ibuf);
 
-void imb_filetypes_init(void);
-void imb_filetypes_exit(void);
+void imbuf_filetypes_init(void);
+void imbuf_filetypes_exit(void);
 
 /* Type Specific Functions */
 
@@ -90,14 +90,12 @@ bool imbuf_save_tga(struct ImBuf *ibuf, const char *filepath, int flags);
 /** Format: IRIS (IMB_FTYPE_IMAGIC) **/
 
 bool imb_is_a_iris(const unsigned char *mem, size_t size);
-/**
- * Read in a B/W RGB or RGBA iris image file and return an image buffer.
- */
+/** Read in a B/W RGB or RGBA iris image file and return an image buffer. */
 struct ImBuf *imbuf_loadiris(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
-bool imb_saveiris(struct ImBuf *ibuf, const char *filepath, int flags);
+bool imbuf_saveiris(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
 /** Format: JP2 (IMB_FTYPE_JP2) **/
@@ -153,9 +151,9 @@ struct ImBuf *imbuf_load_cineon(const unsigned char *mem,
 /* -------------------------------------------------------------------- */
 /** Format: DPX (IMB_FTYPE_DPX) **/
 
-bool imb_is_a_dpx(const unsigned char *buf, size_t size);
-bool imb_save_dpx(struct ImBuf *ibuf, const char *filepath, int flags);
-struct ImBuf *imb_load_dpx(const unsigned char *mem,
+bool imbuf_is_a_dpx(const unsigned char *buf, size_t size);
+bool imbuf_save_dpx(struct ImBuf *ibuf, const char *filepath, int flags);
+struct ImBuf *imbuf_load_dpx(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
@@ -163,17 +161,17 @@ struct ImBuf *imb_load_dpx(const unsigned char *mem,
 /* -------------------------------------------------------------------- */
 /** Format: HDR (IMB_FTYPE_RADHDR) **/
 
-bool imb_is_a_hdr(const unsigned char *buf, size_t size);
+bool imbuf_is_a_hdr(const unsigned char *buf, size_t size);
 struct ImBuf *imb_load_hdr(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
-bool imb_save_hdr(struct ImBuf *ibuf, const char *filepath, int flags);
+bool imbuf_save_hdr(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
 /** Format: TIFF (IMB_FTYPE_TIF) **/
 
-bool imb_is_a_tiff(const unsigned char *buf, size_t size);
+bool imbuf_is_a_tiff(const unsigned char *buf, size_t size);
 /**
  * Loads a TIFF file.
  * param mem: Memory containing the TIFF file.
@@ -195,23 +193,23 @@ struct ImBuf *imbuf_load_tiff(const unsigned char *mem,
  * pre-multiplied alpha, which can be achieved within Blender by setting `premul` alpha handling.
  * Other alpha conventions are not strictly correct, but are permitted anyhow.
  *
- * \param ibuf: Image buffer.
- * \param filepath: Name of the TIFF file to create.
- * \param flags: Currently largely ignored.
+ * param ibuf: Image buffer.
+ * param filepath: Name of the TIFF file to create.
+ * param flags: Currently largely ignored.
  *
- * \return 1 if the function is successful, 0 on failure.
+ * return 1 if the function is successful, 0 on failure.
  */
-bool imb_save_tiff(struct ImBuf *ibuf, const char *filepath, int flags);
+bool imbuf_save_tiff(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
-/** Format: WEBP (#IMB_FTYPE_WEBP) **/
+/** Format: WEBP (IMB_FTYPE_WEBP) **/
 
-bool imb_is_a_webp(const unsigned char *buf, size_t size);
-struct ImBuf *imb_loadwebp(const unsigned char *mem,
+bool imbuf_is_a_webp(const unsigned char *buf, size_t size);
+struct ImBuf *imbuf_loadwebp(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
-struct ImBuf *imb_load_filepath_thumbnail_webp(const char *filepath,
+struct ImBuf *imbuf_load_filepath_thumbnail_webp(const char *filepath,
                                                const int flags,
                                                const size_t max_thumb_size,
                                                char colorspace[],
