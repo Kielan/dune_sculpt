@@ -1091,3 +1091,308 @@ void colormanagement_init(void)
 
   BLI_init_srgb_conversion();
 }
+void colormanagement_exit(void)
+{
+  OCIO_gpuCacheFree();
+
+  if (global_gpu_state.curve_mapping) {
+    BKE_curvemapping_free(global_gpu_state.curve_mapping);
+  }
+
+  if (global_gpu_state.curve_mapping_settings.lut) {
+    MEM_freeN(global_gpu_state.curve_mapping_settings.lut);
+  }
+
+  if (global_color_picking_state.cpu_processor_to) {
+    OCIO_cpuProcessorRelease(global_color_picking_state.cpu_processor_to);
+  }
+
+  if (global_color_picking_state.cpu_processor_from) {
+    OCIO_cpuProcessorRelease(global_color_picking_state.cpu_processor_from);
+  }
+
+  memset(&global_gpu_state, 0, sizeof(global_gpu_state));
+  memset(&global_color_picking_state, 0, sizeof(global_color_picking_state));
+
+  colormanage_free_config();
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Internal functions
+ * \{ */
+
+static bool colormanage_compatible_look(ColorManagedLook *look, const char *view_name)
+{
+  if (look->is_noop) {
+    return true;
+  }
+
+  /* Skip looks only relevant to specific view transforms. */
+  return (look->view[0] == 0 || (view_name && STREQ(look->view, view_name)));
+}
+
+static bool colormanage_use_look(const char *look, const char *view_name)
+{
+  ColorManagedLook *look_descr = colormanage_look_get_named(look);
+  return (look_descr->is_noop == false && colormanage_compatible_look(look_descr, view_name));
+}
+
+void colormanage_cache_free(ImBuf *ibuf)
+{
+  MEM_SAFE_FREE(ibuf->display_buffer_flags);
+
+  if (ibuf->colormanage_cache) {
+    ColormanageCacheData *cache_data = colormanage_cachedata_get(ibuf);
+    struct MovieCache *moviecache = colormanage_moviecache_get(ibuf);
+
+    if (cache_data) {
+      MEM_freeN(cache_data);
+    }
+
+    if (moviecache) {
+      IMB_moviecache_free(moviecache);
+    }
+
+    MEM_freeN(ibuf->colormanage_cache);
+
+    ibuf->colormanage_cache = nullptr;
+  }
+}
+
+void IMB_colormanagement_display_settings_from_ctx(
+    const bContext *C,
+    ColorManagedViewSettings **r_view_settings,
+    ColorManagedDisplaySettings **r_display_settings)
+{
+  Scene *scene = CTX_data_scene(C);
+  SpaceImage *sima = CTX_wm_space_image(C);
+
+  *r_view_settings = &scene->view_settings;
+  *r_display_settings = &scene->display_settings;
+
+  if (sima && sima->image) {
+    if ((sima->image->flag & IMA_VIEW_AS_RENDER) == 0) {
+      *r_view_settings = nullptr;
+    }
+  }
+}
+
+static const char *get_display_colorspace_name(const ColorManagedViewSettings *view_settings,
+                                               const ColorManagedDisplaySettings *display_settings)
+{
+  OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
+
+  const char *display = display_settings->display_device;
+  const char *view = view_settings->view_transform;
+  const char *colorspace_name;
+
+  colorspace_name = OCIO_configGetDisplayColorSpaceName(config, display, view);
+
+  OCIO_configRelease(config);
+
+  return colorspace_name;
+}
+
+static ColorSpace *display_transform_get_colorspace(
+    const ColorManagedViewSettings *view_settings,
+    const ColorManagedDisplaySettings *display_settings)
+{
+  const char *colorspace_name = get_display_colorspace_name(view_settings, display_settings);
+
+  if (colorspace_name) {
+    return colormanage_colorspace_get_named(colorspace_name);
+  }
+
+  return nullptr;
+}
+
+static OCIO_ConstCPUProcessorRcPtr *create_display_buffer_processor(const char *look,
+                                                                    const char *view_transform,
+                                                                    const char *display,
+                                                                    float exposure,
+                                                                    float gamma,
+                                                                    const char *from_colorspace)
+{
+  OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
+  const bool use_look = colormanage_use_look(look, view_transform);
+  const float scale = (exposure == 0.0f) ? 1.0f : powf(2.0f, exposure);
+  const float exponent = (gamma == 1.0f) ? 1.0f : 1.0f / max_ff(FLT_EPSILON, gamma);
+
+  OCIO_ConstProcessorRcPtr *processor = OCIO_createDisplayProcessor(config,
+                                                                    from_colorspace,
+                                                                    view_transform,
+                                                                    display,
+                                                                    (use_look) ? look : "",
+                                                                    scale,
+                                                                    exponent,
+                                                                    false);
+
+  OCIO_configRelease(config);
+
+  if (processor == nullptr) {
+    return nullptr;
+  }
+
+  OCIO_ConstCPUProcessorRcPtr *cpu_processor = OCIO_processorGetCPUProcessor(processor);
+  OCIO_processorRelease(processor);
+
+  return cpu_processor;
+}
+
+static OCIO_ConstProcessorRcPtr *create_colorspace_transform_processor(const char *from_colorspace,
+                                                                       const char *to_colorspace)
+{
+  OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
+  OCIO_ConstProcessorRcPtr *processor;
+
+  processor = OCIO_configGetProcessorWithNames(config, from_colorspace, to_colorspace);
+
+  OCIO_configRelease(config);
+
+  return processor;
+}
+
+static OCIO_ConstCPUProcessorRcPtr *colorspace_to_scene_linear_cpu_processor(
+    ColorSpace *colorspace)
+{
+  if (colorspace->to_scene_linear == nullptr) {
+    BLI_mutex_lock(&processor_lock);
+
+    if (colorspace->to_scene_linear == nullptr) {
+      OCIO_ConstProcessorRcPtr *processor = create_colorspace_transform_processor(
+          colorspace->name, global_role_scene_linear);
+
+      if (processor != nullptr) {
+        colorspace->to_scene_linear = (OCIO_ConstCPUProcessorRcPtr *)OCIO_processorGetCPUProcessor(
+            processor);
+        OCIO_processorRelease(processor);
+      }
+    }
+
+    BLI_mutex_unlock(&processor_lock);
+  }
+
+  return (OCIO_ConstCPUProcessorRcPtr *)colorspace->to_scene_linear;
+}
+
+static OCIO_ConstCPUProcessorRcPtr *colorspace_from_scene_linear_cpu_processor(
+    ColorSpace *colorspace)
+{
+  if (colorspace->from_scene_linear == nullptr) {
+    BLI_mutex_lock(&processor_lock);
+
+    if (colorspace->from_scene_linear == nullptr) {
+      OCIO_ConstProcessorRcPtr *processor = create_colorspace_transform_processor(
+          global_role_scene_linear, colorspace->name);
+
+      if (processor != nullptr) {
+        colorspace->from_scene_linear = (OCIO_ConstCPUProcessorRcPtr *)
+            OCIO_processorGetCPUProcessor(processor);
+        OCIO_processorRelease(processor);
+      }
+    }
+
+    BLI_mutex_unlock(&processor_lock);
+  }
+
+  return (OCIO_ConstCPUProcessorRcPtr *)colorspace->from_scene_linear;
+}
+
+static OCIO_ConstCPUProcessorRcPtr *display_from_scene_linear_processor(
+    ColorManagedDisplay *display)
+{
+  if (display->from_scene_linear == nullptr) {
+    BLI_mutex_lock(&processor_lock);
+
+    if (display->from_scene_linear == nullptr) {
+      const char *view_name = colormanage_view_get_default_name(display);
+      OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
+      OCIO_ConstProcessorRcPtr *processor = nullptr;
+
+      if (view_name && config) {
+        processor = OCIO_createDisplayProcessor(config,
+                                                global_role_scene_linear,
+                                                view_name,
+                                                display->name,
+                                                nullptr,
+                                                1.0f,
+                                                1.0f,
+                                                false);
+
+        OCIO_configRelease(config);
+      }
+
+      if (processor != nullptr) {
+        display->from_scene_linear = (OCIO_ConstCPUProcessorRcPtr *)OCIO_processorGetCPUProcessor(
+            processor);
+        OCIO_processorRelease(processor);
+      }
+    }
+
+    BLI_mutex_unlock(&processor_lock);
+  }
+
+  return (OCIO_ConstCPUProcessorRcPtr *)display->from_scene_linear;
+}
+
+static OCIO_ConstCPUProcessorRcPtr *display_to_scene_linear_processor(ColorManagedDisplay *display)
+{
+  if (display->to_scene_linear == nullptr) {
+    BLI_mutex_lock(&processor_lock);
+
+    if (display->to_scene_linear == nullptr) {
+      const char *view_name = colormanage_view_get_default_name(display);
+      OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
+      OCIO_ConstProcessorRcPtr *processor = nullptr;
+
+      if (view_name && config) {
+        processor = OCIO_createDisplayProcessor(
+            config, global_role_scene_linear, view_name, display->name, nullptr, 1.0f, 1.0f, true);
+
+        OCIO_configRelease(config);
+      }
+
+      if (processor != nullptr) {
+        display->to_scene_linear = (OCIO_ConstCPUProcessorRcPtr *)OCIO_processorGetCPUProcessor(
+            processor);
+        OCIO_processorRelease(processor);
+      }
+    }
+
+    BLI_mutex_unlock(&processor_lock);
+  }
+
+  return (OCIO_ConstCPUProcessorRcPtr *)display->to_scene_linear;
+}
+
+void IMB_colormanagement_init_default_view_settings(
+    ColorManagedViewSettings *view_settings, const ColorManagedDisplaySettings *display_settings)
+{
+  /* First, try use "Standard" view transform of the requested device. */
+  ColorManagedView *default_view = colormanage_view_get_named_for_display(
+      display_settings->display_device, "Standard");
+  /* If that fails, we fall back to the default view transform of the display
+   * as per OCIO configuration. */
+  if (default_view == nullptr) {
+    ColorManagedDisplay *display = colormanage_display_get_named(display_settings->display_device);
+    if (display != nullptr) {
+      default_view = colormanage_view_get_default(display);
+    }
+  }
+  if (default_view != nullptr) {
+    BLI_strncpy(
+        view_settings->view_transform, default_view->name, sizeof(view_settings->view_transform));
+  }
+  else {
+    view_settings->view_transform[0] = '\0';
+  }
+  /* TODO(sergey): Find a way to safely/reliable un-hardcode this. */
+  BLI_strncpy(view_settings->look, "None", sizeof(view_settings->look));
+  /* Initialize rest of the settings. */
+  view_settings->flag = 0;
+  view_settings->gamma = 1.0f;
+  view_settings->exposure = 0.0f;
+  view_settings->curve_mapping = nullptr;
+}
