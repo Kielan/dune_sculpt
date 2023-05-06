@@ -210,11 +210,11 @@ ImBuf *imbuf_makeSingleUser(ImBuf *ibuf)
     return ibuf;
   }
 
-  ImBuf *rval = IMB_dupImBuf(ibuf);
+  ImBuf *rval = imbuf_dupImBuf(ibuf);
 
-  IMB_metadata_copy(rval, ibuf);
+  imbuf_metadata_copy(rval, ibuf);
 
-  IMB_freeImBuf(ibuf);
+  imbuf_freeImBuf(ibuf);
 
   return rval;
 }
@@ -225,7 +225,7 @@ bool addzbufImBuf(ImBuf *ibuf)
     return false;
   }
 
-  IMB_freezbufImBuf(ibuf);
+  imbuf_freezbufImBuf(ibuf);
 
   if ((ibuf->zbuf = static_cast<int *>(
            imb_alloc_pixels(ibuf->x, ibuf->y, 1, sizeof(uint), __func__))))
@@ -244,7 +244,7 @@ bool addzbuffloatImBuf(ImBuf *ibuf)
     return false;
   }
 
-  IMB_freezbuffloatImBuf(ibuf);
+  imbuf_freezbuffloatImBuf(ibuf);
 
   if ((ibuf->zbuf_float = static_cast<float *>(
            imb_alloc_pixels(ibuf->x, ibuf->y, 1, sizeof(float), __func__))))
@@ -257,7 +257,7 @@ bool addzbuffloatImBuf(ImBuf *ibuf)
   return false;
 }
 
-bool imb_addencodedbufferImBuf(ImBuf *ibuf)
+bool imbuf_addencodedbufferImBuf(ImBuf *ibuf)
 {
   if (ibuf == nullptr) {
     return false;
@@ -281,7 +281,7 @@ bool imb_addencodedbufferImBuf(ImBuf *ibuf)
   return false;
 }
 
-bool imb_enlargeencodedbufferImBuf(ImBuf *ibuf)
+bool imbuf_enlargeencodedbufferImBuf(ImBuf *ibuf)
 {
   uint newsize, encodedsize;
   void *newbuffer;
@@ -325,7 +325,7 @@ bool imb_enlargeencodedbufferImBuf(ImBuf *ibuf)
   return true;
 }
 
-void *imb_alloc_pixels(uint x, uint y, uint channels, size_t typesize, const char *alloc_name)
+void *imbuf_alloc_pixels(uint x, uint y, uint channels, size_t typesize, const char *alloc_name)
 {
   /* Protect against buffer overflow vulnerabilities from files specifying
    * a width and height that overflow and alloc too little memory. */
@@ -359,7 +359,7 @@ bool imb_addrectfloatImBuf(ImBuf *ibuf, const uint channels)
   return false;
 }
 
-bool imb_addrectImBuf(ImBuf *ibuf)
+bool imbuf_addrectImBuf(ImBuf *ibuf)
 {
   /* Question; why also add ZBUF (when `planes > 32`)? */
 
@@ -624,7 +624,7 @@ size_t imbuf_get_size_in_memory(ImBuf *ibuf)
   if (ibuf->miptot) {
     for (a = 0; a < ibuf->miptot; a++) {
       if (ibuf->mipmap[a]) {
-        size += IMB_get_size_in_memory(ibuf->mipmap[a]);
+        size += imbuf_get_size_in_memory(ibuf->mipmap[a]);
       }
     }
   }
