@@ -300,7 +300,7 @@ bool imb_enlargeencodedbufferImBuf(ImBuf *ibuf)
     newsize = 10000;
   }
 
-  newbuffer = MEM_mallocN(newsize, __func__);
+  newbuffer = mem_mallocn(newsize, __func__);
   if (newbuffer == nullptr) {
     return false;
   }
@@ -389,7 +389,7 @@ bool imb_addrectImBuf(ImBuf *ibuf)
   return false;
 }
 
-struct ImBuf *IMB_allocFromBufferOwn(uint *rect, float *rectf, uint w, uint h, uint channels)
+struct ImBuf *imbuf_allocFromBufferOwn(uint *rect, float *rectf, uint w, uint h, uint channels)
 {
   ImBuf *ibuf = nullptr;
 
@@ -397,20 +397,20 @@ struct ImBuf *IMB_allocFromBufferOwn(uint *rect, float *rectf, uint w, uint h, u
     return nullptr;
   }
 
-  ibuf = IMB_allocImBuf(w, h, 32, 0);
+  ibuf = imbuf_allocImBuf(w, h, 32, 0);
 
   ibuf->channels = channels;
 
-  /* Avoid #MEM_dupallocN since the buffers might not be allocated using guarded-allocation. */
+  /* Avoid mem_dupallocn since the buffers might not be allocated using guarded-allocation. */
   if (rectf) {
-    BLI_assert(MEM_allocN_len(rectf) == sizeof(float[4]) * w * h);
+    lib_assert(mem_allocn_len(rectf) == sizeof(float[4]) * w * h);
     ibuf->rect_float = rectf;
 
     ibuf->flags |= IB_rectfloat;
     ibuf->mall |= IB_rectfloat;
   }
   if (rect) {
-    BLI_assert(MEM_allocN_len(rect) == sizeof(uchar[4]) * w * h);
+    lib_assert(mem_allocn_len(rect) == sizeof(uchar[4]) * w * h);
     ibuf->rect = rect;
 
     ibuf->flags |= IB_rect;
