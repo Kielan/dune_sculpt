@@ -21,8 +21,8 @@ typedef struct ImFileType {
 
   /**
    * Check if the data matches this file types 'magic',
-   * \note that this may only read in a small part of the files header,
-   * see: #IMB_ispic_type for details.
+   * note that this may only read in a small part of the files header,
+   * see: imbuf_ispic_type for details.
    */
   bool (*is_a)(const unsigned char *buf, size_t size);
 
@@ -103,11 +103,11 @@ bool imb_saveiris(struct ImBuf *ibuf, const char *filepath, int flags);
 /** Format: JP2 (#IMB_FTYPE_JP2) **/
 
 bool imb_is_a_jp2(const unsigned char *buf, size_t size);
-struct ImBuf *imb_load_jp2(const unsigned char *mem,
+struct ImBuf *imbuf_load_jp2(const unsigned char *mem,
                            size_t size,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
-struct ImBuf *imb_load_jp2_filepath(const char *filepath,
+struct ImBuf *imbuf_load_jp2_filepath(const char *filepath,
                                     int flags,
                                     char colorspace[IM_MAX_SPACE]);
 bool imb_save_jp2(struct ImBuf *ibuf, const char *filepath, int flags);
@@ -115,9 +115,9 @@ bool imb_save_jp2(struct ImBuf *ibuf, const char *filepath, int flags);
 /* -------------------------------------------------------------------- */
 /** Format: JPEG (IMB_FTYPE_JPG) */
 
-bool imb_is_a_jpeg(const unsigned char *mem, size_t size);
-bool imb_savejpeg(struct ImBuf *ibuf, const char *filepath, int flags);
-struct ImBuf *imb_load_jpeg(const unsigned char *buffer,
+bool imbuf_is_a_jpeg(const unsigned char *mem, size_t size);
+bool imbuf_savejpeg(struct ImBuf *ibuf, const char *filepath, int flags);
+struct ImBuf *imbuf_load_jpeg(const unsigned char *buffer,
                             size_t size,
                             int flags,
                             char colorspace[IM_MAX_SPACE]);
