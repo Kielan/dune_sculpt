@@ -1,14 +1,14 @@
-#include "IMB_colormanagement.h"
-#include "IMB_colormanagement_intern.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf_colormanagement_intern.h"
 
 #include <math.h>
 #include <string.h>
 
-#include "DNA_color_types.h"
-#include "DNA_image_types.h"
-#include "DNA_movieclip_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_space_types.h"
+#include "types_color_types.h"
+#include "types_image_types.h"
+#include "types_movieclip_types.h"
+#include "types_scene_types.h"
+#include "types_space_types.h"
 
 #include "IMB_filetype.h"
 #include "IMB_filter.h"
