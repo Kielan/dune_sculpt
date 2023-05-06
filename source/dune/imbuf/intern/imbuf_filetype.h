@@ -7,8 +7,7 @@ extern "C" {
 #endif
 
 /* -------------------------------------------------------------------- */
-/** \name Generic File Type
- * \{ */
+/** Generic File Type **/
 
 struct ImBuf;
 
