@@ -94,7 +94,7 @@ void imb_freerectImBuf(ImBuf *ibuf)
   }
 
   if (ibuf->rect && (ibuf->mall & IB_rect)) {
-    MEM_freeN(ibuf->rect);
+    mem_freen(ibuf->rect);
   }
   ibuf->rect = nullptr;
 
@@ -110,7 +110,7 @@ static void freeencodedbufferImBuf(ImBuf *ibuf)
   }
 
   if (ibuf->encodedbuffer && (ibuf->mall & IB_mem)) {
-    MEM_freeN(ibuf->encodedbuffer);
+    mem_freen(ibuf->encodedbuffer);
   }
 
   ibuf->encodedbuffer = nullptr;
@@ -119,14 +119,14 @@ static void freeencodedbufferImBuf(ImBuf *ibuf)
   ibuf->mall &= ~IB_mem;
 }
 
-void IMB_freezbufImBuf(ImBuf *ibuf)
+void imbuf_freezbufImBuf(ImBuf *ibuf)
 {
   if (ibuf == nullptr) {
     return;
   }
 
   if (ibuf->zbuf && (ibuf->mall & IB_zbuf)) {
-    MEM_freeN(ibuf->zbuf);
+    mem_freen(ibuf->zbuf);
   }
 
   ibuf->zbuf = nullptr;
@@ -140,7 +140,7 @@ void IMB_freezbuffloatImBuf(ImBuf *ibuf)
   }
 
   if (ibuf->zbuf_float && (ibuf->mall & IB_zbuffloat)) {
-    MEM_freeN(ibuf->zbuf_float);
+    mem_freen(ibuf->zbuf_float);
   }
 
   ibuf->zbuf_float = nullptr;
@@ -149,14 +149,14 @@ void IMB_freezbuffloatImBuf(ImBuf *ibuf)
 
 void imb_freerectImbuf_all(ImBuf *ibuf)
 {
-  imb_freerectImBuf(ibuf);
-  imb_freerectfloatImBuf(ibuf);
-  IMB_freezbufImBuf(ibuf);
-  IMB_freezbuffloatImBuf(ibuf);
+  imbuf_freerectImBuf(ibuf);
+  imbuf_freerectfloatImBuf(ibuf);
+  imbuf_freezbufImBuf(ibuf);
+  imbuf_freezbuffloatImBuf(ibuf);
   freeencodedbufferImBuf(ibuf);
 }
 
-void IMB_freeImBuf(ImBuf *ibuf)
+void kernel imbuf_freeImBuf(ImBuf *ibuf)
 {
   if (ibuf == nullptr) {
     return;
