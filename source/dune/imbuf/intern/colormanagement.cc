@@ -1407,46 +1407,43 @@ static void colormanage_ensure_srgb_scene_linear_info(ColorSpace *colorspace)
   }
 }
 
-bool IMB_colormanagement_space_is_scene_linear(ColorSpace *colorspace)
+bool imbuf_colormanagement_space_is_scene_linear(ColorSpace *colorspace)
 {
   colormanage_ensure_srgb_scene_linear_info(colorspace);
   return (colorspace && colorspace->info.is_scene_linear);
 }
 
-bool IMB_colormanagement_space_is_srgb(ColorSpace *colorspace)
+bool imbuf_colormanagement_space_is_srgb(ColorSpace *colorspace)
 {
   colormanage_ensure_srgb_scene_linear_info(colorspace);
   return (colorspace && colorspace->info.is_srgb);
 }
 
-bool IMB_colormanagement_space_name_is_data(const char *name)
+bool imbuf_colormanagement_space_name_is_data(const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
   return (colorspace && colorspace->is_data);
 }
 
-bool IMB_colormanagement_space_name_is_scene_linear(const char *name)
+bool imbuf_colormanagement_space_name_is_scene_linear(const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
   return (colorspace && IMB_colormanagement_space_is_scene_linear(colorspace));
 }
 
-bool IMB_colormanagement_space_name_is_srgb(const char *name)
+bool imbuf_colormanagement_space_name_is_srgb(const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
-  return (colorspace && IMB_colormanagement_space_is_srgb(colorspace));
+  return (colorspace && imbuf_colormanagement_space_is_srgb(colorspace));
 }
 
-const float *IMB_colormanagement_get_xyz_to_scene_linear(void)
+const float *imbuf_colormanagement_get_xyz_to_scene_linear(void)
 {
   return &imbuf_xyz_to_scene_linear[0][0];
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Threaded Display Buffer Transform Routines
- * \{ */
+/** Threaded Display Buffer Transform Routines **/
 
 typedef struct DisplayBufferThread {
   ColormanageProcessor *cm_processor;
@@ -1570,13 +1567,13 @@ static void display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle,
         rgba_uchar_to_float(fp, cp);
       }
       else {
-        BLI_assert_msg(0, "Buffers of 3 or 4 channels are only supported here");
+        lib_assert_msg(0, "Buffers of 3 or 4 channels are only supported here");
       }
     }
 
     if (!is_data && !is_data_display) {
       /* convert float buffer to scene linear space */
-      IMB_colormanagement_transform(
+      imbuf_colormanagement_transform(
           linear_buffer, width, height, channels, from_colorspace, to_colorspace, false);
     }
 
@@ -1595,7 +1592,7 @@ static void display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle,
     memcpy(linear_buffer, handle->buffer, buffer_size * sizeof(float));
 
     if (!is_data && !is_data_display) {
-      IMB_colormanagement_transform(
+      imbuf_colormanagement_transform(
           linear_buffer, width, height, channels, from_colorspace, to_colorspace, predivide);
     }
 
@@ -1670,11 +1667,8 @@ void colormanage_imbuf_make_linear(ImBuf *ibuf, const char *from_colorspace)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Generic Functions
- * \{ */
+/** Generic Functions **/
 
 static void colormanage_check_display_settings(ColorManagedDisplaySettings *display_settings,
                                                const char *what,
