@@ -113,8 +113,7 @@ struct ImBuf *imb_load_jp2_filepath(const char *filepath,
 bool imb_save_jp2(struct ImBuf *ibuf, const char *filepath, int flags);
 
 /* -------------------------------------------------------------------- */
-/** \name Format: JPEG (#IMB_FTYPE_JPG)
- * \{ */
+/** Format: JPEG (IMB_FTYPE_JPG) */
 
 bool imb_is_a_jpeg(const unsigned char *mem, size_t size);
 bool imb_savejpeg(struct ImBuf *ibuf, const char *filepath, int flags);
@@ -129,11 +128,9 @@ struct ImBuf *imb_thumbnail_jpeg(const char *filepath,
                                  size_t *r_width,
                                  size_t *r_height);
 
-/** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Format: BMP (#IMB_FTYPE_BMP)
- * \{ */
+/** Format: BMP (IMB_FTYPE_BMP) **/
 
 bool imb_is_a_bmp(const unsigned char *buf, size_t size);
 struct ImBuf *imb_load_bmp(const unsigned char *mem,
@@ -143,11 +140,8 @@ struct ImBuf *imb_load_bmp(const unsigned char *mem,
 /* Found write info at http://users.ece.gatech.edu/~slabaugh/personal/c/bitmapUnix.c */
 bool imb_save_bmp(struct ImBuf *ibuf, const char *filepath, int flags);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: CINEON (#IMB_FTYPE_CINEON)
- * \{ */
+/** Format: CINEON (IMB_FTYPE_CINEON) **/
 
 bool imb_is_a_cineon(const unsigned char *buf, size_t size);
 bool imb_save_cineon(struct ImBuf *buf, const char *filepath, int flags);
@@ -156,11 +150,8 @@ struct ImBuf *imb_load_cineon(const unsigned char *mem,
                               int flags,
                               char colorspace[IM_MAX_SPACE]);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: DPX (#IMB_FTYPE_DPX)
- * \{ */
+/** Format: DPX (IMB_FTYPE_DPX) **/
 
 bool imb_is_a_dpx(const unsigned char *buf, size_t size);
 bool imb_save_dpx(struct ImBuf *ibuf, const char *filepath, int flags);
@@ -169,11 +160,8 @@ struct ImBuf *imb_load_dpx(const unsigned char *mem,
                            int flags,
                            char colorspace[IM_MAX_SPACE]);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: HDR (#IMB_FTYPE_RADHDR)
- * \{ */
+/** Format: HDR (IMB_FTYPE_RADHDR) **/
 
 bool imb_is_a_hdr(const unsigned char *buf, size_t size);
 struct ImBuf *imb_load_hdr(const unsigned char *mem,
@@ -182,23 +170,20 @@ struct ImBuf *imb_load_hdr(const unsigned char *mem,
                            char colorspace[IM_MAX_SPACE]);
 bool imb_save_hdr(struct ImBuf *ibuf, const char *filepath, int flags);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: TIFF (#IMB_FTYPE_TIF)
- * \{ */
+/** Format: TIFF (IMB_FTYPE_TIF) **/
 
 bool imb_is_a_tiff(const unsigned char *buf, size_t size);
 /**
  * Loads a TIFF file.
- * \param mem: Memory containing the TIFF file.
- * \param size: Size of the mem buffer.
- * \param flags: If flags has IB_test set then the file is not actually loaded,
+ * param mem: Memory containing the TIFF file.
+ * param size: Size of the mem buffer.
+ * param flags: If flags has IB_test set then the file is not actually loaded,
  * but all other operations take place.
  *
- * \return A newly allocated #ImBuf structure if successful, otherwise NULL.
+ * return A newly allocated #ImBuf structure if successful, otherwise NULL.
  */
-struct ImBuf *imb_load_tiff(const unsigned char *mem,
+struct ImBuf *imbuf_load_tiff(const unsigned char *mem,
                             size_t size,
                             int flags,
                             char colorspace[IM_MAX_SPACE]);
@@ -218,11 +203,8 @@ struct ImBuf *imb_load_tiff(const unsigned char *mem,
  */
 bool imb_save_tiff(struct ImBuf *ibuf, const char *filepath, int flags);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: WEBP (#IMB_FTYPE_WEBP)
- * \{ */
+/** Format: WEBP (#IMB_FTYPE_WEBP) **/
 
 bool imb_is_a_webp(const unsigned char *buf, size_t size);
 struct ImBuf *imb_loadwebp(const unsigned char *mem,
