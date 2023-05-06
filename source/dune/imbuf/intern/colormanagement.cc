@@ -1239,23 +1239,23 @@ void IMB_colormanagement_check_file_config(Main *bmain)
     colormanage_check_colorspace_settings(sequencer_colorspace_settings, "sequencer");
 
     if (sequencer_colorspace_settings->name[0] == '\0') {
-      BLI_strncpy(
+      lib_strncpy(
           sequencer_colorspace_settings->name, global_role_default_sequencer, MAX_COLORSPACE_NAME);
     }
 
     /* check sequencer strip input color space settings */
     if (scene->ed != nullptr) {
-      SEQ_for_each_callback(&scene->ed->seqbase, seq_callback, nullptr);
+      seq_for_each_cb(&scene->ed->seqbase, seq_cb, nullptr);
     }
   }
 
   /* ** check input color space settings ** */
 
-  LISTBASE_FOREACH (Image *, image, &bmain->images) {
+  LISTBASE_FOREACH (Image *, image, &main->images) {
     colormanage_check_colorspace_settings(&image->colorspace_settings, "image");
   }
 
-  LISTBASE_FOREACH (MovieClip *, clip, &bmain->movieclips) {
+  LISTBASE_FOREACH (MovieClip *, clip, &main->movieclips) {
     colormanage_check_colorspace_settings(&clip->colorspace_settings, "clip");
   }
 }
