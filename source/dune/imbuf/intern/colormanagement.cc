@@ -466,7 +466,7 @@ static void colormanage_cache_put(ImBuf *ibuf,
 
   *cache_handle = cache_ibuf;
 
-  IMB_moviecache_put(moviecache, &key, cache_ibuf);
+  imbuf_moviecache_put(moviecache, &key, cache_ibuf);
 }
 
 static void colormanage_cache_handle_release(void *cache_handle)
@@ -699,7 +699,7 @@ void colormanagement_init(void)
   }
 
   if (config == nullptr) {
-    configdir = dune_appdir_folder_id(BLENDER_DATAFILES, "colormanagement");
+    configdir = dune_appdir_folder_id(DUNE_DATAFILES, "colormanagement");
 
     if (configdir) {
       lib_path_join(configfile, sizeof(configfile), configdir, BCM_CONFIG_FILE);
@@ -900,7 +900,7 @@ static OCIO_ConstCPUProcessorRcPtr *colorspace_to_scene_linear_cpu_processor(
     ColorSpace *colorspace)
 {
   if (colorspace->to_scene_linear == nullptr) {
-    BLI_mutex_lock(&processor_lock);
+    lib_mutex_lock(&processor_lock);
 
     if (colorspace->to_scene_linear == nullptr) {
       OCIO_ConstProcessorRcPtr *processor = create_colorspace_transform_processor(
@@ -913,7 +913,7 @@ static OCIO_ConstCPUProcessorRcPtr *colorspace_to_scene_linear_cpu_processor(
       }
     }
 
-    BLI_mutex_unlock(&processor_lock);
+    lib_mutex_unlock(&processor_lock);
   }
 
   return (OCIO_ConstCPUProcessorRcPtr *)colorspace->to_scene_linear;
@@ -923,7 +923,7 @@ static OCIO_ConstCPUProcessorRcPtr *colorspace_from_scene_linear_cpu_processor(
     ColorSpace *colorspace)
 {
   if (colorspace->from_scene_linear == nullptr) {
-    BLI_mutex_lock(&processor_lock);
+    lib_mutex_lock(&processor_lock);
 
     if (colorspace->from_scene_linear == nullptr) {
       OCIO_ConstProcessorRcPtr *processor = create_colorspace_transform_processor(
@@ -936,7 +936,7 @@ static OCIO_ConstCPUProcessorRcPtr *colorspace_from_scene_linear_cpu_processor(
       }
     }
 
-    BLI_mutex_unlock(&processor_lock);
+    lib_mutex_unlock(&processor_lock);
   }
 
   return (OCIO_ConstCPUProcessorRcPtr *)colorspace->from_scene_linear;
@@ -946,7 +946,7 @@ static OCIO_ConstCPUProcessorRcPtr *display_from_scene_linear_processor(
     ColorManagedDisplay *display)
 {
   if (display->from_scene_linear == nullptr) {
-    BLI_mutex_lock(&processor_lock);
+    lib_mutex_lock(&processor_lock);
 
     if (display->from_scene_linear == nullptr) {
       const char *view_name = colormanage_view_get_default_name(display);
@@ -973,7 +973,7 @@ static OCIO_ConstCPUProcessorRcPtr *display_from_scene_linear_processor(
       }
     }
 
-    BLI_mutex_unlock(&processor_lock);
+    lib_mutex_unlock(&processor_lock);
   }
 
   return (OCIO_ConstCPUProcessorRcPtr *)display->from_scene_linear;
@@ -982,7 +982,7 @@ static OCIO_ConstCPUProcessorRcPtr *display_from_scene_linear_processor(
 static OCIO_ConstCPUProcessorRcPtr *display_to_scene_linear_processor(ColorManagedDisplay *display)
 {
   if (display->to_scene_linear == nullptr) {
-    BLI_mutex_lock(&processor_lock);
+    lib_mutex_lock(&processor_lock);
 
     if (display->to_scene_linear == nullptr) {
       const char *view_name = colormanage_view_get_default_name(display);
@@ -1003,13 +1003,13 @@ static OCIO_ConstCPUProcessorRcPtr *display_to_scene_linear_processor(ColorManag
       }
     }
 
-    BLI_mutex_unlock(&processor_lock);
+    lib_mutex_unlock(&processor_lock);
   }
 
   return (OCIO_ConstCPUProcessorRcPtr *)display->to_scene_linear;
 }
 
-void IMB_colormanagement_init_default_view_settings(
+void imbuf_colormanagement_init_default_view_settings(
     ColorManagedViewSettings *view_settings, const ColorManagedDisplaySettings *display_settings)
 {
   /* First, try use "Standard" view transform of the requested device. */
@@ -1024,14 +1024,14 @@ void IMB_colormanagement_init_default_view_settings(
     }
   }
   if (default_view != nullptr) {
-    BLI_strncpy(
+    lib_strncpy(
         view_settings->view_transform, default_view->name, sizeof(view_settings->view_transform));
   }
   else {
     view_settings->view_transform[0] = '\0';
   }
-  /* TODO(sergey): Find a way to safely/reliable un-hardcode this. */
-  BLI_strncpy(view_settings->look, "None", sizeof(view_settings->look));
+  /* TODO: Find a way to safely/reliable un-hardcode this. */
+  lib_strncpy(view_settings->look, "None", sizeof(view_settings->look));
   /* Initialize rest of the settings. */
   view_settings->flag = 0;
   view_settings->gamma = 1.0f;
