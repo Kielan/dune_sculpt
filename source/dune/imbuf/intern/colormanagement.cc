@@ -1041,14 +1041,14 @@ void imbuf_colormanagement_init_default_view_settings(
 static void curve_mapping_apply_pixel(CurveMapping *curve_mapping, float *pixel, int channels)
 {
   if (channels == 1) {
-    pixel[0] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
+    pixel[0] = dune_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
   }
   else if (channels == 2) {
-    pixel[0] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
-    pixel[1] = BKE_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[1]);
+    pixel[0] = dune_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[0]);
+    pixel[1] = dune_curvemap_evaluateF(curve_mapping, curve_mapping->cm, pixel[1]);
   }
   else {
-    BKE_curvemapping_evaluate_premulRGBF(curve_mapping, pixel, pixel);
+    dune_curvemapping_evaluate_premulRGBF(curve_mapping, pixel, pixel);
   }
 }
 
@@ -1057,9 +1057,9 @@ void colorspace_set_default_role(char *colorspace, int size, int role)
   if (colorspace && colorspace[0] == '\0') {
     const char *role_colorspace;
 
-    role_colorspace = IMB_colormanagement_role_colorspace_name_get(role);
+    role_colorspace = imbuf_colormanagement_role_colorspace_name_get(role);
 
-    BLI_strncpy(colorspace, role_colorspace, size);
+    lib_strncpy(colorspace, role_colorspace, size);
   }
 }
 
@@ -1079,13 +1079,13 @@ void colormanage_imbuf_make_linear(ImBuf *ibuf, const char *from_colorspace)
 
   if (ibuf->rect_float) {
     const char *to_colorspace = global_role_scene_linear;
-    const bool predivide = IMB_alpha_affects_rgb(ibuf);
+    const bool predivide = imbuf_alpha_affects_rgb(ibuf);
 
     if (ibuf->rect) {
       imb_freerectImBuf(ibuf);
     }
 
-    IMB_colormanagement_transform(ibuf->rect_float,
+    imbuf_colormanagement_transform(ibuf->rect_float,
                                   ibuf->x,
                                   ibuf->y,
                                   ibuf->channels,
@@ -1095,18 +1095,15 @@ void colormanage_imbuf_make_linear(ImBuf *ibuf, const char *from_colorspace)
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Generic Functions
- * \{ */
+/** Generic Functions **/
 
 static void colormanage_check_display_settings(ColorManagedDisplaySettings *display_settings,
                                                const char *what,
                                                const ColorManagedDisplay *default_display)
 {
   if (display_settings->display_device[0] == '\0') {
-    BLI_strncpy(display_settings->display_device,
+    lib_strncpy(display_settings->display_device,
                 default_display->name,
                 sizeof(display_settings->display_device));
   }
