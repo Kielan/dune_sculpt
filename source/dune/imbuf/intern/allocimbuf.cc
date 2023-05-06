@@ -513,7 +513,7 @@ bool imbuf_initImBuf(struct ImBuf *ibuf, uint x, uint y, uchar planes, uint flag
   return true;
 }
 
-ImBuf *IMB_dupImBuf(const ImBuf *ibuf1)
+ImBuf *imbuf_dupImBuf(const ImBuf *ibuf1)
 {
   ImBuf *ibuf2, tbuf;
   int flags = 0;
@@ -539,7 +539,7 @@ ImBuf *IMB_dupImBuf(const ImBuf *ibuf1)
   x = ibuf1->x;
   y = ibuf1->y;
 
-  ibuf2 = IMB_allocImBuf(x, y, ibuf1->planes, flags);
+  ibuf2 = imbuf_allocImBuf(x, y, ibuf1->planes, flags);
   if (ibuf2 == nullptr) {
     return nullptr;
   }
@@ -563,7 +563,7 @@ ImBuf *IMB_dupImBuf(const ImBuf *ibuf1)
   if (ibuf1->encodedbuffer) {
     ibuf2->encodedbuffersize = ibuf1->encodedbuffersize;
     if (imb_addencodedbufferImBuf(ibuf2) == false) {
-      IMB_freeImBuf(ibuf2);
+      imbuf_freeImBuf(ibuf2);
       return nullptr;
     }
 
