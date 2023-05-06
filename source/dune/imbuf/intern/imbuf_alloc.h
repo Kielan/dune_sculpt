@@ -1,7 +1,3 @@
-/** \file
- * \ingroup imbuf
- * \brief Header file for allocimbuf.c
- */
 #pragma once
 
 #ifdef __cplusplus
