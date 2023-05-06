@@ -1629,7 +1629,7 @@ void colorspace_set_default_role(char *colorspace, int size, int role)
   if (colorspace && colorspace[0] == '\0') {
     const char *role_colorspace;
 
-    role_colorspace = IMB_colormanagement_role_colorspace_name_get(role);
+    role_colorspace = imbuf_colormanagement_role_colorspace_name_get(role);
 
     lib_strncpy(colorspace, role_colorspace, size);
   }
@@ -1651,13 +1651,13 @@ void colormanage_imbuf_make_linear(ImBuf *ibuf, const char *from_colorspace)
 
   if (ibuf->rect_float) {
     const char *to_colorspace = global_role_scene_linear;
-    const bool predivide = IMB_alpha_affects_rgb(ibuf);
+    const bool predivide = imbuf_alpha_affects_rgb(ibuf);
 
     if (ibuf->rect) {
       imb_freerectImBuf(ibuf);
     }
 
-    IMB_colormanagement_transform(ibuf->rect_float,
+    imbuf_colormanagement_transform(ibuf->rect_float,
                                   ibuf->x,
                                   ibuf->y,
                                   ibuf->channels,
