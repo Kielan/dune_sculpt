@@ -19,7 +19,7 @@
 
 #include "mem_guardedalloc.h"
 
-#include "lib_blenlib.h"
+#include "lib_dunelib.h"
 #include "lib_math.h"
 #include "lib_math_color.h"
 #include "lib_rect.h"
