@@ -1,39 +1,39 @@
 /**
- * \brief IMage Buffer module.
+ * IMage Buffer module.
  *
  * This module offers import/export of several graphical file formats.
- * \ingroup imbuf
+ * ingroup imbuf
  *
- * \page IMB ImBuf module external interface
- * \section imb_about About the IMB module
+ * page IMB ImBuf module external interface
+ * section imb_about About the IMB module
  *
  * External interface of the IMage Buffer module. This module offers
  * import/export of several graphical file formats. It offers the
  * ImBuf type as a common structure to refer to different graphical
  * file formats, and to enable a uniform way of handling them.
  *
- * \section imb_issues Known issues with IMB
+ * section imb_issues Known issues with IMB
  *
  * - imbuf is written in C.
  * - Endianness issues are dealt with internally.
  * - File I/O must be done externally. The module uses FILE*'s to
  *   direct input/output.
  *
- * \section imb_dependencies Dependencies
+ * section imb_dependencies Dependencies
  *
  * IMB needs:
- * - \ref DNA module
- *     The #ListBase types are used for handling the memory management.
- * - \ref blenlib module
+ * - ref types module
+ *     The ListBase types are used for handling the memory management.
+ * - ref dunelib module
  *     blenlib handles guarded memory management in blender-style.
- *     BLI_winstuff.h makes a few windows specific behaviors
+ *     lib_winstuff.h makes a few windows specific behaviors
  *     posix-compliant.
  */
 
 #pragma once
 
 /* for bool */
-#include "../blenlib/BLI_sys_types.h"
+#include "../blenlib/lib_sys_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,27 +41,18 @@ extern "C" {
 
 #define IM_MAX_SPACE 64
 
-/**
- *
- * \attention defined in ???
- */
+/** \attention defined in ??? */
 struct ImBuf;
 struct rctf;
 struct rcti;
 
-/**
- *
- * \attention defined in ???
- */
+/** attention defined in ??? */
 struct anim;
 
 struct ColorManagedDisplay;
 
 struct GSet;
-/**
- *
- * \attention defined in DNA_scene_types.h
- */
+/* \attention defined in DNA_scene_types.h */
 struct ImageFormatData;
 struct Stereo3dFormat;
 
