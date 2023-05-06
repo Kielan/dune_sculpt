@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IMB_imbuf.h"
+#include "imbuf.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,13 +58,11 @@ typedef struct ImFileType {
 extern const ImFileType IMB_FILE_TYPES[];
 extern const ImFileType *IMB_FILE_TYPES_LAST;
 
-const ImFileType *IMB_file_type_from_ftype(int ftype);
-const ImFileType *IMB_file_type_from_ibuf(const struct ImBuf *ibuf);
+const ImFileType *imbuf_file_type_from_ftype(int ftype);
+const ImFileType *imbuf_file_type_from_ibuf(const struct ImBuf *ibuf);
 
 void imb_filetypes_init(void);
 void imb_filetypes_exit(void);
-
-/** \} */
 
 /* Type Specific Functions */
 
@@ -79,11 +77,8 @@ struct ImBuf *imb_load_png(const unsigned char *mem,
                            char colorspace[IM_MAX_SPACE]);
 bool imb_save_png(struct ImBuf *ibuf, const char *filepath, int flags);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: TARGA (#IMB_FTYPE_TGA)
- * \{ */
+/** Format: TARGA (IMB_FTYPE_TGA) **/
 
 bool imb_is_a_tga(const unsigned char *mem, size_t size);
 struct ImBuf *imb_load_tga(const unsigned char *mem,
