@@ -1320,12 +1320,12 @@ void IMB_colormanagement_check_is_data(ImBuf *ibuf, const char *name)
   }
 }
 
-void IMB_colormanagegent_copy_settings(ImBuf *ibuf_src, ImBuf *ibuf_dst)
+void imbuf_colormanagegent_copy_settings(ImBuf *ibuf_src, ImBuf *ibuf_dst)
 {
-  IMB_colormanagement_assign_rect_colorspace(ibuf_dst,
-                                             IMB_colormanagement_get_rect_colorspace(ibuf_src));
-  IMB_colormanagement_assign_float_colorspace(ibuf_dst,
-                                              IMB_colormanagement_get_float_colorspace(ibuf_src));
+  imbuf_colormanagement_assign_rect_colorspace(ibuf_dst,
+                                             imbuf_colormanagement_get_rect_colorspace(ibuf_src));
+  imbuf_colormanagement_assign_float_colorspace(ibuf_dst,
+                                              imbuf_colormanagement_get_float_colorspace(ibuf_src));
   if (ibuf_src->flags & IB_alphamode_premul) {
     ibuf_dst->flags |= IB_alphamode_premul;
   }
@@ -1337,7 +1337,7 @@ void IMB_colormanagegent_copy_settings(ImBuf *ibuf_src, ImBuf *ibuf_dst)
   }
 }
 
-void IMB_colormanagement_assign_float_colorspace(ImBuf *ibuf, const char *name)
+void imbuf_colormanagement_assign_float_colorspace(ImBuf *ibuf, const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
 
@@ -1351,7 +1351,7 @@ void IMB_colormanagement_assign_float_colorspace(ImBuf *ibuf, const char *name)
   }
 }
 
-void IMB_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
+void imbuf_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
 
@@ -1371,19 +1371,19 @@ const char *IMB_colormanagement_get_float_colorspace(ImBuf *ibuf)
     return ibuf->float_colorspace->name;
   }
 
-  return IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
+  return imbuf_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
 }
 
-const char *IMB_colormanagement_get_rect_colorspace(ImBuf *ibuf)
+const char *imbuf_colormanagement_get_rect_colorspace(ImBuf *ibuf)
 {
   if (ibuf->rect_colorspace) {
     return ibuf->rect_colorspace->name;
   }
 
-  return IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_BYTE);
+  return imbuf_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_BYTE);
 }
 
-bool IMB_colormanagement_space_is_data(ColorSpace *colorspace)
+bool imbuf_colormanagement_space_is_data(ColorSpace *colorspace)
 {
   return (colorspace && colorspace->is_data);
 }
