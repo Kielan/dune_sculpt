@@ -16,15 +16,15 @@ extern "C" {
 
 struct StampData;
 
-void *IMB_exr_get_handle(void);
-void *IMB_exr_get_handle_name(const char *name);
+void *imbuf_exr_get_handle(void);
+void *imbuf_exr_get_handle_name(const char *name);
 
 /**
- * Adds flattened #ExrChannel's
+ * Adds flattened ExrChannel's
  * `xstride`, `ystride` and `rect` can be done in set_channel too, for tile writing.
- * \param passname: Does not include view.
+ * param passname: Does not include view.
  */
-void IMB_exr_add_channel(void *handle,
+void imbuf_exr_add_channel(void *handle,
                          const char *layname,
                          const char *passname,
                          const char *view,
@@ -33,15 +33,12 @@ void IMB_exr_add_channel(void *handle,
                          float *rect,
                          bool use_half_float);
 
-/**
- * Read from file.
- */
-bool IMB_exr_begin_read(
+/** Read from file. **/
+bool imbuf_exr_begin_read(
     void *handle, const char *filepath, int *width, int *height, bool parse_channels);
 /**
- * Used for output files (from #RenderResult) (single and multi-layer, single and multi-view).
- */
-bool IMB_exr_begin_write(void *handle,
+ * Used for output files (from RenderResult) (single and multi-layer, single and multi-view). */
+bool imbuf_exr_begin_write(void *handle,
                          const char *filepath,
                          int width,
                          int height,
@@ -51,27 +48,27 @@ bool IMB_exr_begin_write(void *handle,
  * Only used for writing temp. render results (not image files)
  * (FSA and Save Buffers).
  */
-void IMB_exrtile_begin_write(
+void imbuf_exrtile_begin_write(
     void *handle, const char *filepath, int mipmap, int width, int height, int tilex, int tiley);
 
 /**
  * Still clumsy name handling, layers/channels can be ordered as list in list later.
  *
- * \param passname: Here is the raw channel name without the layer.
+ * param passname: Here is the raw channel name without the layer.
  */
-void IMB_exr_set_channel(void *handle,
+void imbuf_exr_set_channel(void *handle,
                          const char *layname,
                          const char *passname,
                          int xstride,
                          int ystride,
                          float *rect);
-float *IMB_exr_channel_rect(void *handle,
+float *imbuf_exr_channel_rect(void *handle,
                             const char *layname,
                             const char *passname,
                             const char *view);
 
-void IMB_exr_read_channels(void *handle);
-void IMB_exr_write_channels(void *handle);
+void imbuf_exr_read_channels(void *handle);
+void imbuf_exr_write_channels(void *handle);
 /**
  * Temporary function, used for FSA and Save Buffers.
  * called once per `tile * view`.
