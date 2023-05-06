@@ -43,18 +43,18 @@
 #  include "AVI_avi.h"
 #endif
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_colormanagement_intern.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf_colormanagement_intern.h"
 
-#include "IMB_anim.h"
-#include "IMB_indexer.h"
-#include "IMB_metadata.h"
+#include "imbuf_anim.h"
+#include "imbuf_indexer.h"
+#include "imbuf_metadata.h"
 
 #ifdef WITH_FFMPEG
-#  include "BKE_global.h" /* ENDIAN_ORDER */
+#  include "dune_global.h" /* ENDIAN_ORDER */
 
 extern "C" {
 #  include <libavcodec/avcodec.h>
@@ -142,7 +142,7 @@ static void an_stringenc(char *string,
                          ushort numlen,
                          int pic)
 {
-  BLI_path_sequence_encode(string, string_maxncpy, head, tail, numlen, pic);
+  lib_path_sequence_encode(string, string_maxncpy, head, tail, numlen, pic);
 }
 
 #ifdef WITH_AVI
@@ -206,10 +206,10 @@ void IMB_free_anim(struct anim *anim)
 #ifdef WITH_FFMPEG
   free_anim_ffmpeg(anim);
 #endif
-  IMB_free_indices(anim);
-  IMB_metadata_free(anim->metadata);
+  imbuf_free_indices(anim);
+  imbuf_metadata_free(anim->metadata);
 
-  MEM_freeN(anim);
+  mem_freen(anim);
 }
 
 void IMB_close_anim(struct anim *anim)
