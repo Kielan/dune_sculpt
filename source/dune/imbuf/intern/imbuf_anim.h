@@ -30,10 +30,10 @@
 #  include "AVI_avi.h"
 #endif
 
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf.h"
+#include "imbuf_types.h"
 
-#include "IMB_allocimbuf.h"
+#include "imbuf_allocimbuf.h"
 
 #ifdef WITH_FFMPEG
 extern "C" {
