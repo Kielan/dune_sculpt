@@ -1,18 +1,18 @@
 /**
- * IMage Buffer module.
+ * Image Buffer module.
  *
  * This module offers import/export of several graphical file formats.
  * ingroup imbuf
  *
- * page IMB ImBuf module external interface
- * section imb_about About the IMB module
+ * ImBuf module external interface
+ * section imbuf_about about the module
  *
  * External interface of the IMage Buffer module. This module offers
  * import/export of several graphical file formats. It offers the
  * ImBuf type as a common structure to refer to different graphical
  * file formats, and to enable a uniform way of handling them.
  *
- * section imb_issues Known issues with IMB
+ * section imbuf_issues Known issues with IMB
  *
  * - imbuf is written in C.
  * - Endianness issues are dealt with internally.
@@ -25,7 +25,7 @@
  * - ref types module
  *     The ListBase types are used for handling the memory management.
  * - ref dunelib module
- *     blenlib handles guarded memory management in blender-style.
+ *     dunelib handles guarded memory management in blender-style.
  *     lib_winstuff.h makes a few windows specific behaviors
  *     posix-compliant.
  */
@@ -33,7 +33,7 @@
 #pragma once
 
 /* for bool */
-#include "../blenlib/lib_sys_types.h"
+#include "../dunelib/lib_sys_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +41,7 @@ extern "C" {
 
 #define IM_MAX_SPACE 64
 
-/** \attention defined in ??? */
+/** attention defined in ??? */
 struct ImBuf;
 struct rctf;
 struct rcti;
@@ -52,7 +52,7 @@ struct anim;
 struct ColorManagedDisplay;
 
 struct GSet;
-/* \attention defined in DNA_scene_types.h */
+/* \attention defined in types_scene.h */
 struct ImageFormatData;
 struct Stereo3dFormat;
 
