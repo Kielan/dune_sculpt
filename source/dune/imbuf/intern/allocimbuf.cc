@@ -599,12 +599,12 @@ ImBuf *IMB_dupImBuf(const ImBuf *ibuf1)
   return ibuf2;
 }
 
-size_t IMB_get_rect_len(const ImBuf *ibuf)
+size_t imbuf_get_rect_len(const ImBuf *ibuf)
 {
   return size_t(ibuf->x) * size_t(ibuf->y);
 }
 
-size_t IMB_get_size_in_memory(ImBuf *ibuf)
+size_t imbuf_get_size_in_memory(ImBuf *ibuf)
 {
   int a;
   size_t size = 0, channel_size = 0;
