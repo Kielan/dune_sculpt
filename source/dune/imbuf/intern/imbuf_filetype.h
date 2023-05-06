@@ -67,8 +67,7 @@ void imb_filetypes_exit(void);
 /* Type Specific Functions */
 
 /* -------------------------------------------------------------------- */
-/** \name Format: PNG (#IMB_FTYPE_PNG)
- * \{ */
+/** Format: PNG (IMB_FTYPE_PNG) * */
 
 bool imb_is_a_png(const unsigned char *mem, size_t size);
 struct ImBuf *imb_load_png(const unsigned char *mem,
@@ -87,11 +86,8 @@ struct ImBuf *imb_load_tga(const unsigned char *mem,
                            char colorspace[IM_MAX_SPACE]);
 bool imb_save_tga(struct ImBuf *ibuf, const char *filepath, int flags);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: IRIS (#IMB_FTYPE_IMAGIC)
- * \{ */
+/** Format: IRIS (#IMB_FTYPE_IMAGIC) **/
 
 bool imb_is_a_iris(const unsigned char *mem, size_t size);
 /**
@@ -103,11 +99,8 @@ struct ImBuf *imb_loadiris(const unsigned char *mem,
                            char colorspace[IM_MAX_SPACE]);
 bool imb_saveiris(struct ImBuf *ibuf, const char *filepath, int flags);
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Format: JP2 (#IMB_FTYPE_JP2)
- * \{ */
+/** Format: JP2 (#IMB_FTYPE_JP2) **/
 
 bool imb_is_a_jp2(const unsigned char *buf, size_t size);
 struct ImBuf *imb_load_jp2(const unsigned char *mem,
@@ -118,8 +111,6 @@ struct ImBuf *imb_load_jp2_filepath(const char *filepath,
                                     int flags,
                                     char colorspace[IM_MAX_SPACE]);
 bool imb_save_jp2(struct ImBuf *ibuf, const char *filepath, int flags);
-
-/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name Format: JPEG (#IMB_FTYPE_JPG)
