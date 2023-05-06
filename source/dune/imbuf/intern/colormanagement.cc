@@ -3316,3 +3316,456 @@ void IMB_colormanagement_imbuf_to_float_texture(float *out_buffer,
     BLI_task_parallel_range(0, height, &data, imbuf_byte_to_float_cb, &settings);
   }
 }
+
+void IMB_colormanagement_scene_linear_to_color_picking_v3(float color_picking[3],
+                                                          const float scene_linear[3])
+{
+  if (!global_color_picking_state.cpu_processor_to && !global_color_picking_state.failed) {
+    /* Create processor if none exists. */
+    BLI_mutex_lock(&processor_lock);
+
+    if (!global_color_picking_state.cpu_processor_to && !global_color_picking_state.failed) {
+      OCIO_ConstProcessorRcPtr *processor = create_colorspace_transform_processor(
+          global_role_scene_linear, global_role_color_picking);
+
+      if (processor != nullptr) {
+        global_color_picking_state.cpu_processor_to = OCIO_processorGetCPUProcessor(processor);
+        OCIO_processorRelease(processor);
+      }
+      else {
+        global_color_picking_state.failed = true;
+      }
+    }
+
+    BLI_mutex_unlock(&processor_lock);
+  }
+
+  copy_v3_v3(color_picking, scene_linear);
+
+  if (global_color_picking_state.cpu_processor_to) {
+    OCIO_cpuProcessorApplyRGB(global_color_picking_state.cpu_processor_to, color_picking);
+  }
+}
+
+void IMB_colormanagement_color_picking_to_scene_linear_v3(float scene_linear[3],
+                                                          const float color_picking[3])
+{
+  if (!global_color_picking_state.cpu_processor_from && !global_color_picking_state.failed) {
+    /* Create processor if none exists. */
+    BLI_mutex_lock(&processor_lock);
+
+    if (!global_color_picking_state.cpu_processor_from && !global_color_picking_state.failed) {
+      OCIO_ConstProcessorRcPtr *processor = create_colorspace_transform_processor(
+          global_role_color_picking, global_role_scene_linear);
+
+      if (processor != nullptr) {
+        global_color_picking_state.cpu_processor_from = OCIO_processorGetCPUProcessor(processor);
+        OCIO_processorRelease(processor);
+      }
+      else {
+        global_color_picking_state.failed = true;
+      }
+    }
+
+    BLI_mutex_unlock(&processor_lock);
+  }
+
+  copy_v3_v3(scene_linear, color_picking);
+
+  if (global_color_picking_state.cpu_processor_from) {
+    OCIO_cpuProcessorApplyRGB(global_color_picking_state.cpu_processor_from, scene_linear);
+  }
+}
+
+void IMB_colormanagement_scene_linear_to_display_v3(float pixel[3], ColorManagedDisplay *display)
+{
+  OCIO_ConstCPUProcessorRcPtr *processor = display_from_scene_linear_processor(display);
+
+  if (processor != nullptr) {
+    OCIO_cpuProcessorApplyRGB(processor, pixel);
+  }
+}
+
+void IMB_colormanagement_display_to_scene_linear_v3(float pixel[3], ColorManagedDisplay *display)
+{
+  OCIO_ConstCPUProcessorRcPtr *processor = display_to_scene_linear_processor(display);
+
+  if (processor != nullptr) {
+    OCIO_cpuProcessorApplyRGB(processor, pixel);
+  }
+}
+
+void IMB_colormanagement_pixel_to_display_space_v4(
+    float result[4],
+    const float pixel[4],
+    const ColorManagedViewSettings *view_settings,
+    const ColorManagedDisplaySettings *display_settings)
+{
+  ColormanageProcessor *cm_processor;
+
+  copy_v4_v4(result, pixel);
+
+  cm_processor = IMB_colormanagement_display_processor_new(view_settings, display_settings);
+  IMB_colormanagement_processor_apply_v4(cm_processor, result);
+  IMB_colormanagement_processor_free(cm_processor);
+}
+
+void IMB_colormanagement_pixel_to_display_space_v3(
+    float result[3],
+    const float pixel[3],
+    const ColorManagedViewSettings *view_settings,
+    const ColorManagedDisplaySettings *display_settings)
+{
+  ColormanageProcessor *cm_processor;
+
+  copy_v3_v3(result, pixel);
+
+  cm_processor = IMB_colormanagement_display_processor_new(view_settings, display_settings);
+  IMB_colormanagement_processor_apply_v3(cm_processor, result);
+  IMB_colormanagement_processor_free(cm_processor);
+}
+
+static void colormanagement_imbuf_make_display_space(
+    ImBuf *ibuf,
+    const ColorManagedViewSettings *view_settings,
+    const ColorManagedDisplaySettings *display_settings,
+    bool make_byte)
+{
+  if (!ibuf->rect && make_byte) {
+    imb_addrectImBuf(ibuf);
+  }
+
+  colormanage_display_buffer_process_ex(
+      ibuf, ibuf->rect_float, (uchar *)ibuf->rect, view_settings, display_settings);
+}
+
+void IMB_colormanagement_imbuf_make_display_space(
+    ImBuf *ibuf,
+    const ColorManagedViewSettings *view_settings,
+    const ColorManagedDisplaySettings *display_settings)
+{
+  colormanagement_imbuf_make_display_space(ibuf, view_settings, display_settings, false);
+}
+
+static ImBuf *imbuf_ensure_editable(ImBuf *ibuf, ImBuf *colormanaged_ibuf, bool allocate_result)
+{
+  if (colormanaged_ibuf != ibuf) {
+    /* Is already an editable copy. */
+    return colormanaged_ibuf;
+  }
+
+  if (allocate_result) {
+    /* Copy full image buffer. */
+    colormanaged_ibuf = IMB_dupImBuf(ibuf);
+    IMB_metadata_copy(colormanaged_ibuf, ibuf);
+    return colormanaged_ibuf;
+  }
+
+  /* Render pipeline is constructing image buffer itself,
+   * but it's re-using byte and float buffers from render result make copy of this buffers
+   * here sine this buffers would be transformed to other color space here. */
+  if (ibuf->rect && (ibuf->mall & IB_rect) == 0) {
+    ibuf->rect = static_cast<uint *>(MEM_dupallocN(ibuf->rect));
+    ibuf->mall |= IB_rect;
+  }
+
+  if (ibuf->rect_float && (ibuf->mall & IB_rectfloat) == 0) {
+    ibuf->rect_float = static_cast<float *>(MEM_dupallocN(ibuf->rect_float));
+    ibuf->mall |= IB_rectfloat;
+  }
+
+  return ibuf;
+}
+
+ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf,
+                                           bool save_as_render,
+                                           bool allocate_result,
+                                           const ImageFormatData *image_format)
+{
+  ImBuf *colormanaged_ibuf = ibuf;
+
+  /* Update byte buffer if exists but invalid. */
+  if (ibuf->rect_float && ibuf->rect &&
+      (ibuf->userflags & (IB_DISPLAY_BUFFER_INVALID | IB_RECT_INVALID)) != 0)
+  {
+    IMB_rect_from_float(ibuf);
+    ibuf->userflags &= ~(IB_RECT_INVALID | IB_DISPLAY_BUFFER_INVALID);
+  }
+
+  /* Detect if we are writing to a file format that needs a linear float buffer. */
+  const bool linear_float_output = BKE_imtype_requires_linear_float(image_format->imtype);
+
+  /* Detect if we are writing output a byte buffer, which we would need to create
+   * with color management conversions applied. This may be for either applying the
+   * display transform for renders, or a user specified color space for the file. */
+  const bool byte_output = BKE_image_format_is_byte(image_format);
+
+  BLI_assert(!(byte_output && linear_float_output));
+
+  /* If we're saving from RGBA to RGB buffer then it's not so much useful to just ignore alpha --
+   * it leads to bad artifacts especially when saving byte images.
+   *
+   * What we do here is we're overlaying our image on top of background color (which is currently
+   * black). This is quite much the same as what Gimp does and it seems to be what artists expects
+   * from saving.
+   *
+   * Do a conversion here, so image format writers could happily assume all the alpha tricks were
+   * made already. helps keep things locally here, not spreading it to all possible image writers
+   * we've got.
+   */
+  if (image_format->planes != R_IMF_PLANES_RGBA) {
+    float color[3] = {0, 0, 0};
+
+    colormanaged_ibuf = imbuf_ensure_editable(ibuf, colormanaged_ibuf, allocate_result);
+
+    if (colormanaged_ibuf->rect_float && colormanaged_ibuf->channels == 4) {
+      IMB_alpha_under_color_float(
+          colormanaged_ibuf->rect_float, colormanaged_ibuf->x, colormanaged_ibuf->y, color);
+    }
+
+    if (colormanaged_ibuf->rect) {
+      IMB_alpha_under_color_byte(
+          (uchar *)colormanaged_ibuf->rect, colormanaged_ibuf->x, colormanaged_ibuf->y, color);
+    }
+  }
+
+  if (save_as_render && !linear_float_output) {
+    /* Render output: perform conversion to display space using view transform. */
+    colormanaged_ibuf = imbuf_ensure_editable(ibuf, colormanaged_ibuf, allocate_result);
+
+    colormanagement_imbuf_make_display_space(colormanaged_ibuf,
+                                             &image_format->view_settings,
+                                             &image_format->display_settings,
+                                             byte_output);
+
+    if (colormanaged_ibuf->rect_float) {
+      /* Float buffer isn't linear anymore,
+       * image format write callback should check for this flag and assume
+       * no space conversion should happen if ibuf->float_colorspace != nullptr. */
+      colormanaged_ibuf->float_colorspace = display_transform_get_colorspace(
+          &image_format->view_settings, &image_format->display_settings);
+      if (byte_output) {
+        colormanaged_ibuf->rect_colorspace = colormanaged_ibuf->float_colorspace;
+      }
+    }
+  }
+  else {
+    /* Linear render or regular file output: conversion between two color spaces. */
+
+    /* Detect which color space we need to convert between. */
+    const char *from_colorspace = (ibuf->rect_float && !(byte_output && ibuf->rect)) ?
+                                      /* From float buffer. */
+                                      (ibuf->float_colorspace) ? ibuf->float_colorspace->name :
+                                                                 global_role_scene_linear :
+                                      /* From byte buffer. */
+                                      (ibuf->rect_colorspace) ? ibuf->rect_colorspace->name :
+                                                                global_role_default_byte;
+
+    const char *to_colorspace = image_format->linear_colorspace_settings.name;
+
+    /* TODO: can we check with OCIO if color spaces are the same but have different names? */
+    if (to_colorspace[0] == '\0' || STREQ(from_colorspace, to_colorspace)) {
+      /* No conversion needed, but may still need to allocate byte buffer for output. */
+      if (byte_output && !ibuf->rect) {
+        ibuf->rect_colorspace = ibuf->float_colorspace;
+        IMB_rect_from_float(ibuf);
+      }
+    }
+    else {
+      /* Color space conversion needed. */
+      colormanaged_ibuf = imbuf_ensure_editable(ibuf, colormanaged_ibuf, allocate_result);
+
+      if (byte_output) {
+        colormanaged_ibuf->rect_colorspace = colormanage_colorspace_get_named(to_colorspace);
+
+        if (colormanaged_ibuf->rect) {
+          /* Byte to byte. */
+          IMB_colormanagement_transform_byte_threaded((uchar *)colormanaged_ibuf->rect,
+                                                      colormanaged_ibuf->x,
+                                                      colormanaged_ibuf->y,
+                                                      colormanaged_ibuf->channels,
+                                                      from_colorspace,
+                                                      to_colorspace);
+        }
+        else {
+          /* Float to byte. */
+          IMB_rect_from_float(colormanaged_ibuf);
+        }
+      }
+      else {
+        if (!colormanaged_ibuf->rect_float) {
+          /* Byte to float. */
+          IMB_float_from_rect(colormanaged_ibuf);
+          imb_freerectImBuf(colormanaged_ibuf);
+
+          /* This conversion always goes to scene linear. */
+          from_colorspace = global_role_scene_linear;
+        }
+
+        if (colormanaged_ibuf->rect_float) {
+          /* Float to float. */
+          IMB_colormanagement_transform(colormanaged_ibuf->rect_float,
+                                        colormanaged_ibuf->x,
+                                        colormanaged_ibuf->y,
+                                        colormanaged_ibuf->channels,
+                                        from_colorspace,
+                                        to_colorspace,
+                                        false);
+
+          colormanaged_ibuf->float_colorspace = colormanage_colorspace_get_named(to_colorspace);
+        }
+      }
+    }
+  }
+
+  return colormanaged_ibuf;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Public Display Buffers Interfaces
+ * \{ */
+
+uchar *IMB_display_buffer_acquire(ImBuf *ibuf,
+                                  const ColorManagedViewSettings *view_settings,
+                                  const ColorManagedDisplaySettings *display_settings,
+                                  void **cache_handle)
+{
+  uchar *display_buffer;
+  size_t buffer_size;
+  ColormanageCacheViewSettings cache_view_settings;
+  ColormanageCacheDisplaySettings cache_display_settings;
+  ColorManagedViewSettings default_view_settings;
+  const ColorManagedViewSettings *applied_view_settings;
+
+  *cache_handle = nullptr;
+
+  if (!ibuf->x || !ibuf->y) {
+    return nullptr;
+  }
+
+  if (view_settings) {
+    applied_view_settings = view_settings;
+  }
+  else {
+    /* If no view settings were specified, use default ones, which will
+     * attempt not to do any extra color correction. */
+    IMB_colormanagement_init_default_view_settings(&default_view_settings, display_settings);
+    applied_view_settings = &default_view_settings;
+  }
+
+  /* early out: no float buffer and byte buffer is already in display space,
+   * let's just use if
+   */
+  if (ibuf->rect_float == nullptr && ibuf->rect_colorspace && ibuf->channels == 4) {
+    if (is_ibuf_rect_in_display_space(ibuf, applied_view_settings, display_settings)) {
+      return (uchar *)ibuf->rect;
+    }
+  }
+
+  colormanage_view_settings_to_cache(ibuf, &cache_view_settings, applied_view_settings);
+  colormanage_display_settings_to_cache(&cache_display_settings, display_settings);
+
+  if (ibuf->invalid_rect.xmin != ibuf->invalid_rect.xmax) {
+    if ((ibuf->userflags & IB_DISPLAY_BUFFER_INVALID) == 0) {
+      IMB_partial_display_buffer_update_threaded(ibuf,
+                                                 ibuf->rect_float,
+                                                 (uchar *)ibuf->rect,
+                                                 ibuf->x,
+                                                 0,
+                                                 0,
+                                                 applied_view_settings,
+                                                 display_settings,
+                                                 ibuf->invalid_rect.xmin,
+                                                 ibuf->invalid_rect.ymin,
+                                                 ibuf->invalid_rect.xmax,
+                                                 ibuf->invalid_rect.ymax);
+    }
+
+    BLI_rcti_init(&ibuf->invalid_rect, 0, 0, 0, 0);
+  }
+
+  BLI_thread_lock(LOCK_COLORMANAGE);
+
+  /* ensure color management bit fields exists */
+  if (!ibuf->display_buffer_flags) {
+    ibuf->display_buffer_flags = static_cast<uint *>(
+        MEM_callocN(sizeof(uint) * global_tot_display, "imbuf display_buffer_flags"));
+  }
+  else if (ibuf->userflags & IB_DISPLAY_BUFFER_INVALID) {
+    /* all display buffers were marked as invalid from other areas,
+     * now propagate this flag to internal color management routines
+     */
+    memset(ibuf->display_buffer_flags, 0, global_tot_display * sizeof(uint));
+
+    ibuf->userflags &= ~IB_DISPLAY_BUFFER_INVALID;
+  }
+
+  display_buffer = colormanage_cache_get(
+      ibuf, &cache_view_settings, &cache_display_settings, cache_handle);
+
+  if (display_buffer) {
+    BLI_thread_unlock(LOCK_COLORMANAGE);
+    return display_buffer;
+  }
+
+  buffer_size = DISPLAY_BUFFER_CHANNELS * size_t(ibuf->x) * ibuf->y * sizeof(char);
+  display_buffer = static_cast<uchar *>(MEM_callocN(buffer_size, "imbuf display buffer"));
+
+  colormanage_display_buffer_process(
+      ibuf, display_buffer, applied_view_settings, display_settings);
+
+  colormanage_cache_put(
+      ibuf, &cache_view_settings, &cache_display_settings, display_buffer, cache_handle);
+
+  BLI_thread_unlock(LOCK_COLORMANAGE);
+
+  return display_buffer;
+}
+
+uchar *IMB_display_buffer_acquire_ctx(const bContext *C, ImBuf *ibuf, void **cache_handle)
+{
+  ColorManagedViewSettings *view_settings;
+  ColorManagedDisplaySettings *display_settings;
+
+  IMB_colormanagement_display_settings_from_ctx(C, &view_settings, &display_settings);
+
+  return IMB_display_buffer_acquire(ibuf, view_settings, display_settings, cache_handle);
+}
+
+void IMB_display_buffer_transform_apply(uchar *display_buffer,
+                                        float *linear_buffer,
+                                        int width,
+                                        int height,
+                                        int channels,
+                                        const ColorManagedViewSettings *view_settings,
+                                        const ColorManagedDisplaySettings *display_settings,
+                                        bool predivide)
+{
+  float *buffer;
+  ColormanageProcessor *cm_processor = IMB_colormanagement_display_processor_new(view_settings,
+                                                                                 display_settings);
+
+  buffer = static_cast<float *>(MEM_mallocN(size_t(channels) * width * height * sizeof(float),
+                                            "display transform temp buffer"));
+  memcpy(buffer, linear_buffer, size_t(channels) * width * height * sizeof(float));
+
+  IMB_colormanagement_processor_apply(cm_processor, buffer, width, height, channels, predivide);
+
+  IMB_colormanagement_processor_free(cm_processor);
+
+  IMB_buffer_byte_from_float(display_buffer,
+                             buffer,
+                             channels,
+                             0.0f,
+                             IB_PROFILE_SRGB,
+                             IB_PROFILE_SRGB,
+                             false,
+                             width,
+                             height,
+                             width,
+                             width);
+
+  MEM_freeN(buffer);
+}
