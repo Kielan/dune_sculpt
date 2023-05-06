@@ -1892,12 +1892,12 @@ void imbuf_colormanagement_check_is_data(ImBuf *ibuf, const char *name)
   }
 }
 
-void IMB_colormanagegent_copy_settings(ImBuf *ibuf_src, ImBuf *ibuf_dst)
+void imbuf_colormanagegent_copy_settings(ImBuf *ibuf_src, ImBuf *ibuf_dst)
 {
-  IMB_colormanagement_assign_rect_colorspace(ibuf_dst,
-                                             IMB_colormanagement_get_rect_colorspace(ibuf_src));
-  IMB_colormanagement_assign_float_colorspace(ibuf_dst,
-                                              IMB_colormanagement_get_float_colorspace(ibuf_src));
+  imbuf_colormanagement_assign_rect_colorspace(ibuf_dst,
+                                             imbuf_colormanagement_get_rect_colorspace(ibuf_src));
+  imbuf_colormanagement_assign_float_colorspace(ibuf_dst,
+                                              imbuf_colormanagement_get_float_colorspace(ibuf_src));
   if (ibuf_src->flags & IB_alphamode_premul) {
     ibuf_dst->flags |= IB_alphamode_premul;
   }
