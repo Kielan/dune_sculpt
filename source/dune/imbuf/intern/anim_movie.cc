@@ -35,7 +35,7 @@
 #include "lib_threads.h"
 #include "lib_utildefines.h"
 
-#include "DNA_scene_types.h"
+#include "types_scene.h"
 
 #include "mem_guardedalloc.h"
 
@@ -159,26 +159,26 @@ static void free_anim_avi(struct anim *anim)
     return;
   }
 
-  AVI_close(anim->avi);
-  MEM_freeN(anim->avi);
+  avi_close(anim->avi);
+  mem_freen(anim->avi);
   anim->avi = nullptr;
 
 #  if defined(_WIN32)
 
   if (anim->pgf) {
-    AVIStreamGetFrameClose(anim->pgf);
+    AviStreamGetFrameClose(anim->pgf);
     anim->pgf = nullptr;
   }
 
   for (i = 0; i < anim->avistreams; i++) {
-    AVIStreamRelease(anim->pavi[i]);
+    AviStreamRelease(anim->pavi[i]);
   }
   anim->avistreams = 0;
 
   if (anim->pfileopen) {
-    AVIFileRelease(anim->pfile);
+    AviFileRelease(anim->pfile);
     anim->pfileopen = 0;
-    AVIFileExit();
+    AviFileExit();
   }
 #  endif
 
@@ -278,21 +278,21 @@ struct anim *imbuf_open_anim(const char *filepath,
   if (anim != nullptr) {
     if (colorspace) {
       colorspace_set_default_role(colorspace, IM_MAX_SPACE, COLOR_ROLE_DEFAULT_BYTE);
-      BLI_strncpy(anim->colorspace, colorspace, sizeof(anim->colorspace));
+      lib_strncpy(anim->colorspace, colorspace, sizeof(anim->colorspace));
     }
     else {
       colorspace_set_default_role(
           anim->colorspace, sizeof(anim->colorspace), COLOR_ROLE_DEFAULT_BYTE);
     }
 
-    BLI_strncpy(anim->filepath, filepath, sizeof(anim->filepath));
+    lib_strncpy(anim->filepath, filepath, sizeof(anim->filepath));
     anim->ib_flags = ib_flags;
     anim->streamindex = streamindex;
   }
   return anim;
 }
 
-bool IMB_anim_can_produce_frames(const struct anim *anim)
+bool imbuf_anim_can_produce_frames(const struct anim *anim)
 {
 #if !(defined(WITH_AVI) || defined(WITH_FFMPEG))
   UNUSED_VARS(anim);
@@ -333,14 +333,14 @@ static int startavi(struct anim *anim)
   streamcount = anim->streamindex;
 #  endif
 
-  anim->avi = MEM_cnew<AviMovie>("animavi");
+  anim->avi = mem_cnew<AviMovie>("animavi");
 
   if (anim->avi == nullptr) {
     printf("Can't open avi: %s\n", anim->filepath);
     return -1;
   }
 
-  avierror = AVI_open_movie(anim->filepath, anim->avi);
+  avierror = avi_open_movie(anim->filepath, anim->avi);
 
 #  if defined(_WIN32)
   if (avierror == AVI_ERROR_COMPRESSION) {
@@ -404,7 +404,7 @@ static int startavi(struct anim *anim)
 #  endif
 
   if (avierror != AVI_ERROR_NONE) {
-    AVI_print_error(avierror);
+    avi_print_error(avierror);
     printf("Error loading avi: %s\n", anim->filepath);
     free_anim_avi(anim);
     return -1;
@@ -452,9 +452,9 @@ static ImBuf *avi_fetchibuf(struct anim *anim, int position)
 
     if (anim->pgf) {
       lpbi = static_cast<LPBITMAPINFOHEADER>(
-          AVIStreamGetFrame(anim->pgf, position + AVIStreamStart(anim->pavi[anim->firstvideo])));
+          AviStreamGetFrame(anim->pgf, position + AviStreamStart(anim->pavi[anim->firstvideo])));
       if (lpbi) {
-        ibuf = IMB_ibImageFromMemory(
+        ibuf = imbuf_ibImageFromMemory(
             (const uchar *)lpbi, 100, IB_rect, anim->colorspace, "<avi_fetchibuf>");
         /* Oh brother... */
       }
