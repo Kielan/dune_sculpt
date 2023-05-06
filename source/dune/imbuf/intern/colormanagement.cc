@@ -3769,3 +3769,401 @@ void IMB_display_buffer_transform_apply(uchar *display_buffer,
 
   MEM_freeN(buffer);
 }
+
+void IMB_display_buffer_release(void *cache_handle)
+{
+  if (cache_handle) {
+    BLI_thread_lock(LOCK_COLORMANAGE);
+
+    colormanage_cache_handle_release(cache_handle);
+
+    BLI_thread_unlock(LOCK_COLORMANAGE);
+  }
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Display Functions
+ * \{ */
+
+const char *colormanage_display_get_default_name(void)
+{
+  OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
+  const char *display_name;
+
+  display_name = OCIO_configGetDefaultDisplay(config);
+
+  OCIO_configRelease(config);
+
+  return display_name;
+}
+
+ColorManagedDisplay *colormanage_display_get_default(void)
+{
+  const char *display_name = colormanage_display_get_default_name();
+
+  if (display_name[0] == '\0') {
+    return nullptr;
+  }
+
+  return colormanage_display_get_named(display_name);
+}
+
+ColorManagedDisplay *colormanage_display_add(const char *name)
+{
+  ColorManagedDisplay *display;
+  int index = 0;
+
+  if (global_displays.last) {
+    ColorManagedDisplay *last_display = static_cast<ColorManagedDisplay *>(global_displays.last);
+
+    index = last_display->index;
+  }
+
+  display = MEM_cnew<ColorManagedDisplay>("ColorManagedDisplay");
+
+  display->index = index + 1;
+
+  BLI_strncpy(display->name, name, sizeof(display->name));
+
+  BLI_addtail(&global_displays, display);
+
+  return display;
+}
+
+ColorManagedDisplay *colormanage_display_get_named(const char *name)
+{
+  LISTBASE_FOREACH (ColorManagedDisplay *, display, &global_displays) {
+    if (STREQ(display->name, name)) {
+      return display;
+    }
+  }
+
+  return nullptr;
+}
+
+ColorManagedDisplay *colormanage_display_get_indexed(int index)
+{
+  /* display indices are 1-based */
+  return static_cast<ColorManagedDisplay *>(BLI_findlink(&global_displays, index - 1));
+}
+
+int IMB_colormanagement_display_get_named_index(const char *name)
+{
+  ColorManagedDisplay *display;
+
+  display = colormanage_display_get_named(name);
+
+  if (display) {
+    return display->index;
+  }
+
+  return 0;
+}
+
+const char *IMB_colormanagement_display_get_indexed_name(int index)
+{
+  ColorManagedDisplay *display;
+
+  display = colormanage_display_get_indexed(index);
+
+  if (display) {
+    return display->name;
+  }
+
+  return nullptr;
+}
+
+const char *IMB_colormanagement_display_get_default_name(void)
+{
+  ColorManagedDisplay *display = colormanage_display_get_default();
+
+  return display->name;
+}
+
+ColorManagedDisplay *IMB_colormanagement_display_get_named(const char *name)
+{
+  return colormanage_display_get_named(name);
+}
+
+const char *IMB_colormanagement_display_get_none_name(void)
+{
+  if (colormanage_display_get_named("None") != nullptr) {
+    return "None";
+  }
+
+  return colormanage_display_get_default_name();
+}
+
+const char *IMB_colormanagement_display_get_default_view_transform_name(
+    struct ColorManagedDisplay *display)
+{
+  return colormanage_view_get_default_name(display);
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name View Functions
+ * \{ */
+
+const char *colormanage_view_get_default_name(const ColorManagedDisplay *display)
+{
+  OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
+  const char *name = OCIO_configGetDefaultView(config, display->name);
+
+  OCIO_configRelease(config);
+
+  return name;
+}
+
+ColorManagedView *colormanage_view_get_default(const ColorManagedDisplay *display)
+{
+  const char *name = colormanage_view_get_default_name(display);
+
+  if (!name || name[0] == '\0') {
+    return nullptr;
+  }
+
+  return colormanage_view_get_named(name);
+}
+
+ColorManagedView *colormanage_view_add(const char *name)
+{
+  ColorManagedView *view;
+  int index = global_tot_view;
+
+  view = MEM_cnew<ColorManagedView>("ColorManagedView");
+  view->index = index + 1;
+  BLI_strncpy(view->name, name, sizeof(view->name));
+
+  BLI_addtail(&global_views, view);
+
+  global_tot_view++;
+
+  return view;
+}
+
+ColorManagedView *colormanage_view_get_named(const char *name)
+{
+  LISTBASE_FOREACH (ColorManagedView *, view, &global_views) {
+    if (STREQ(view->name, name)) {
+      return view;
+    }
+  }
+
+  return nullptr;
+}
+
+ColorManagedView *colormanage_view_get_indexed(int index)
+{
+  /* view transform indices are 1-based */
+  return static_cast<ColorManagedView *>(BLI_findlink(&global_views, index - 1));
+}
+
+ColorManagedView *colormanage_view_get_named_for_display(const char *display_name,
+                                                         const char *name)
+{
+  ColorManagedDisplay *display = colormanage_display_get_named(display_name);
+  if (display == nullptr) {
+    return nullptr;
+  }
+  LISTBASE_FOREACH (LinkData *, view_link, &display->views) {
+    ColorManagedView *view = static_cast<ColorManagedView *>(view_link->data);
+    if (STRCASEEQ(name, view->name)) {
+      return view;
+    }
+  }
+  return nullptr;
+}
+
+int IMB_colormanagement_view_get_named_index(const char *name)
+{
+  ColorManagedView *view = colormanage_view_get_named(name);
+
+  if (view) {
+    return view->index;
+  }
+
+  return 0;
+}
+
+const char *IMB_colormanagement_view_get_indexed_name(int index)
+{
+  ColorManagedView *view = colormanage_view_get_indexed(index);
+
+  if (view) {
+    return view->name;
+  }
+
+  return nullptr;
+}
+
+const char *IMB_colormanagement_view_get_default_name(const char *display_name)
+{
+  ColorManagedDisplay *display = colormanage_display_get_named(display_name);
+  ColorManagedView *view = nullptr;
+
+  if (display) {
+    view = colormanage_view_get_default(display);
+  }
+
+  if (view) {
+    return view->name;
+  }
+
+  return nullptr;
+}
+
+/** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Color Space Functions
+ * \{ */
+
+static void colormanage_description_strip(char *description)
+{
+  int i, n;
+
+  for (i = int(strlen(description)) - 1; i >= 0; i--) {
+    if (ELEM(description[i], '\r', '\n')) {
+      description[i] = '\0';
+    }
+    else {
+      break;
+    }
+  }
+
+  for (i = 0, n = strlen(description); i < n; i++) {
+    if (ELEM(description[i], '\r', '\n')) {
+      description[i] = ' ';
+    }
+  }
+}
+
+ColorSpace *colormanage_colorspace_add(const char *name,
+                                       const char *description,
+                                       bool is_invertible,
+                                       bool is_data)
+{
+  ColorSpace *colorspace, *prev_space;
+  int counter = 1;
+
+  colorspace = MEM_cnew<ColorSpace>("ColorSpace");
+
+  BLI_strncpy(colorspace->name, name, sizeof(colorspace->name));
+
+  if (description) {
+    BLI_strncpy(colorspace->description, description, sizeof(colorspace->description));
+
+    colormanage_description_strip(colorspace->description);
+  }
+
+  colorspace->is_invertible = is_invertible;
+  colorspace->is_data = is_data;
+
+  for (prev_space = static_cast<ColorSpace *>(global_colorspaces.first); prev_space;
+       prev_space = prev_space->next)
+  {
+    if (BLI_strcasecmp(prev_space->name, colorspace->name) > 0) {
+      break;
+    }
+
+    prev_space->index = counter++;
+  }
+
+  if (!prev_space) {
+    BLI_addtail(&global_colorspaces, colorspace);
+  }
+  else {
+    BLI_insertlinkbefore(&global_colorspaces, prev_space, colorspace);
+  }
+
+  colorspace->index = counter++;
+  for (; prev_space; prev_space = prev_space->next) {
+    prev_space->index = counter++;
+  }
+
+  global_tot_colorspace++;
+
+  return colorspace;
+}
+
+ColorSpace *colormanage_colorspace_get_named(const char *name)
+{
+  LISTBASE_FOREACH (ColorSpace *, colorspace, &global_colorspaces) {
+    if (STREQ(colorspace->name, name)) {
+      return colorspace;
+    }
+
+    for (int i = 0; i < colorspace->num_aliases; i++) {
+      if (STREQ(colorspace->aliases[i], name)) {
+        return colorspace;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+ColorSpace *colormanage_colorspace_get_roled(int role)
+{
+  const char *role_colorspace = IMB_colormanagement_role_colorspace_name_get(role);
+
+  return colormanage_colorspace_get_named(role_colorspace);
+}
+
+ColorSpace *colormanage_colorspace_get_indexed(int index)
+{
+  /* color space indices are 1-based */
+  return static_cast<ColorSpace *>(BLI_findlink(&global_colorspaces, index - 1));
+}
+
+int IMB_colormanagement_colorspace_get_named_index(const char *name)
+{
+  ColorSpace *colorspace = colormanage_colorspace_get_named(name);
+
+  if (colorspace) {
+    return colorspace->index;
+  }
+
+  return 0;
+}
+
+const char *IMB_colormanagement_colorspace_get_indexed_name(int index)
+{
+  ColorSpace *colorspace = colormanage_colorspace_get_indexed(index);
+
+  if (colorspace) {
+    return colorspace->name;
+  }
+
+  return "";
+}
+
+const char *IMB_colormanagement_colorspace_get_name(const ColorSpace *colorspace)
+{
+  return colorspace->name;
+}
+
+void IMB_colormanagement_colorspace_from_ibuf_ftype(
+    ColorManagedColorspaceSettings *colorspace_settings, ImBuf *ibuf)
+{
+  /* Don't modify non-color data space, it does not change with file type. */
+  ColorSpace *colorspace = colormanage_colorspace_get_named(colorspace_settings->name);
+
+  if (colorspace && colorspace->is_data) {
+    return;
+  }
+
+  /* Get color space from file type. */
+  const ImFileType *type = IMB_file_type_from_ibuf(ibuf);
+  if (type != nullptr) {
+    if (type->save != nullptr) {
+      const char *role_colorspace = IMB_colormanagement_role_colorspace_name_get(
+          type->default_save_role);
+      BLI_strncpy(colorspace_settings->name, role_colorspace, sizeof(colorspace_settings->name));
+    }
+  }
+}
