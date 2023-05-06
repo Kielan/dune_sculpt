@@ -1562,3 +1562,168 @@ static bool anim_getnew(struct anim *anim)
   }
   return true;
 }
+
+struct ImBuf *IMB_anim_previewframe(struct anim *anim)
+{
+  struct ImBuf *ibuf = nullptr;
+  int position = 0;
+
+  ibuf = IMB_anim_absolute(anim, 0, IMB_TC_NONE, IMB_PROXY_NONE);
+  if (ibuf) {
+    IMB_freeImBuf(ibuf);
+    position = anim->duration_in_frames / 2;
+    ibuf = IMB_anim_absolute(anim, position, IMB_TC_NONE, IMB_PROXY_NONE);
+  }
+  return ibuf;
+}
+
+struct ImBuf *IMB_anim_absolute(struct anim *anim,
+                                int position,
+                                IMB_Timecode_Type tc,
+                                IMB_Proxy_Size preview_size)
+{
+  struct ImBuf *ibuf = nullptr;
+  char head[256], tail[256];
+  ushort digits;
+  int pic;
+  int filter_y;
+  if (anim == nullptr) {
+    return nullptr;
+  }
+
+  filter_y = (anim->ib_flags & IB_animdeinterlace);
+
+  if (preview_size == IMB_PROXY_NONE) {
+    if (anim->curtype == ANIM_NONE) {
+      if (!anim_getnew(anim)) {
+        return nullptr;
+      }
+    }
+
+    if (position < 0) {
+      return nullptr;
+    }
+    if (position >= anim->duration_in_frames) {
+      return nullptr;
+    }
+  }
+  else {
+    struct anim *proxy = IMB_anim_open_proxy(anim, preview_size);
+
+    if (proxy) {
+      position = IMB_anim_index_get_frame_index(anim, tc, position);
+
+      return IMB_anim_absolute(proxy, position, IMB_TC_NONE, IMB_PROXY_NONE);
+    }
+  }
+
+  switch (anim->curtype) {
+    case ANIM_SEQUENCE:
+      pic = an_stringdec(anim->filepath_first, head, tail, &digits);
+      pic += position;
+      an_stringenc(anim->filepath, sizeof(anim->filepath), head, tail, digits, pic);
+      ibuf = IMB_loadiffname(anim->filepath, IB_rect, anim->colorspace);
+      if (ibuf) {
+        anim->cur_position = position;
+      }
+      break;
+    case ANIM_MOVIE:
+      ibuf = movie_fetchibuf(anim, position);
+      if (ibuf) {
+        anim->cur_position = position;
+        IMB_convert_rgba_to_abgr(ibuf);
+      }
+      break;
+#ifdef WITH_AVI
+    case ANIM_AVI:
+      ibuf = avi_fetchibuf(anim, position);
+      if (ibuf) {
+        anim->cur_position = position;
+      }
+      break;
+#endif
+#ifdef WITH_FFMPEG
+    case ANIM_FFMPEG:
+      ibuf = ffmpeg_fetchibuf(anim, position, tc);
+      if (ibuf) {
+        anim->cur_position = position;
+      }
+      filter_y = 0; /* done internally */
+      break;
+#endif
+  }
+
+  if (ibuf) {
+    if (filter_y) {
+      IMB_filtery(ibuf);
+    }
+    BLI_snprintf(
+        ibuf->filepath, sizeof(ibuf->filepath), "%s.%04d", anim->filepath, anim->cur_position + 1);
+  }
+  return ibuf;
+}
+
+/***/
+
+int IMB_anim_get_duration(struct anim *anim, IMB_Timecode_Type tc)
+{
+  struct anim_index *idx;
+  if (tc == IMB_TC_NONE) {
+    return anim->duration_in_frames;
+  }
+
+  idx = IMB_anim_open_index(anim, tc);
+  if (!idx) {
+    return anim->duration_in_frames;
+  }
+
+  return IMB_indexer_get_duration(idx);
+}
+
+double IMD_anim_get_offset(struct anim *anim)
+{
+  return anim->start_offset;
+}
+
+bool IMB_anim_get_fps(struct anim *anim, short *frs_sec, float *frs_sec_base, bool no_av_base)
+{
+  double frs_sec_base_double;
+  if (anim->frs_sec) {
+    if (anim->frs_sec > SHRT_MAX) {
+      /* We cannot store original rational in our short/float format,
+       * we need to approximate it as best as we can... */
+      *frs_sec = SHRT_MAX;
+      frs_sec_base_double = anim->frs_sec_base * double(SHRT_MAX) / double(anim->frs_sec);
+    }
+    else {
+      *frs_sec = anim->frs_sec;
+      frs_sec_base_double = anim->frs_sec_base;
+    }
+#ifdef WITH_FFMPEG
+    if (no_av_base) {
+      *frs_sec_base = float(frs_sec_base_double / AV_TIME_BASE);
+    }
+    else {
+      *frs_sec_base = float(frs_sec_base_double);
+    }
+#else
+    UNUSED_VARS(no_av_base);
+    *frs_sec_base = float(frs_sec_base_double);
+#endif
+    BLI_assert(*frs_sec > 0);
+    BLI_assert(*frs_sec_base > 0.0f);
+
+    return true;
+  }
+  return false;
+}
+
+int IMB_anim_get_image_width(struct anim *anim)
+{
+  return anim->x;
+}
+
+int IMB_anim_get_image_height(struct anim *anim)
+{
+  return anim->y;
+}
