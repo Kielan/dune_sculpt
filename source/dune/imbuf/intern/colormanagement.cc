@@ -1733,7 +1733,7 @@ static void colormanage_check_view_settings(ColorManagedDisplaySettings *display
                view_settings->view_transform,
                default_view->name);
 
-        BLI_strncpy(view_settings->view_transform,
+        lib_strncpy(view_settings->view_transform,
                     default_view->name,
                     sizeof(view_settings->view_transform));
       }
@@ -1741,7 +1741,7 @@ static void colormanage_check_view_settings(ColorManagedDisplaySettings *display
   }
 
   if (view_settings->look[0] == '\0') {
-    BLI_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
+    lib_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
   }
   else {
     ColorManagedLook *look = colormanage_look_get_named(view_settings->look);
@@ -1751,7 +1751,7 @@ static void colormanage_check_view_settings(ColorManagedDisplaySettings *display
              view_settings->look,
              default_look->name);
 
-      BLI_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
+      lib_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
     }
   }
 
@@ -1776,14 +1776,14 @@ static void colormanage_check_colorspace_settings(
              what,
              colorspace_settings->name);
 
-      BLI_strncpy(colorspace_settings->name, "", sizeof(colorspace_settings->name));
+      lib_strncpy(colorspace_settings->name, "", sizeof(colorspace_settings->name));
     }
   }
 
   (void)what;
 }
 
-static bool seq_callback(Sequence *seq, void * /*user_data*/)
+static bool seq_cb(Sequence *seq, void * /*user_data*/)
 {
   if (seq->strip) {
     colormanage_check_colorspace_settings(&seq->strip->colorspace_settings, "sequencer strip");
@@ -1791,7 +1791,7 @@ static bool seq_callback(Sequence *seq, void * /*user_data*/)
   return true;
 }
 
-void IMB_colormanagement_check_file_config(Main *bmain)
+void imbuf_colormanagement_check_file_config(Main *bmain)
 {
   ColorManagedDisplay *default_display = colormanage_display_get_default();
   if (!default_display) {
@@ -1811,19 +1811,19 @@ void IMB_colormanagement_check_file_config(Main *bmain)
     colormanage_check_colorspace_settings(sequencer_colorspace_settings, "sequencer");
 
     if (sequencer_colorspace_settings->name[0] == '\0') {
-      BLI_strncpy(
+      lib_strncpy(
           sequencer_colorspace_settings->name, global_role_default_sequencer, MAX_COLORSPACE_NAME);
     }
 
     /* check sequencer strip input color space settings */
     if (scene->ed != nullptr) {
-      SEQ_for_each_callback(&scene->ed->seqbase, seq_callback, nullptr);
+      seq_for_each_cb(&scene->ed->seqbase, seq_cb, nullptr);
     }
   }
 
   /* ** check input color space settings ** */
 
-  LISTBASE_FOREACH (Image *, image, &bmain->images) {
+  LISTBASE_FOREACH (Image *, image, &main->images) {
     colormanage_check_colorspace_settings(&image->colorspace_settings, "image");
   }
 
@@ -1832,7 +1832,7 @@ void IMB_colormanagement_check_file_config(Main *bmain)
   }
 }
 
-void IMB_colormanagement_validate_settings(const ColorManagedDisplaySettings *display_settings,
+void imbuf_colormanagement_validate_settings(const ColorManagedDisplaySettings *display_settings,
                                            ColorManagedViewSettings *view_settings)
 {
   ColorManagedDisplay *display = colormanage_display_get_named(display_settings->display_device);
@@ -1849,12 +1849,12 @@ void IMB_colormanagement_validate_settings(const ColorManagedDisplaySettings *di
   }
 
   if (!found && default_view) {
-    BLI_strncpy(
+    lib_strncpy(
         view_settings->view_transform, default_view->name, sizeof(view_settings->view_transform));
   }
 }
 
-const char *IMB_colormanagement_role_colorspace_name_get(int role)
+const char *imbuf_colormanagement_role_colorspace_name_get(int role)
 {
   switch (role) {
     case COLOR_ROLE_DATA:
@@ -1873,14 +1873,14 @@ const char *IMB_colormanagement_role_colorspace_name_get(int role)
       return global_role_default_byte;
     default:
       printf("Unknown role was passed to %s\n", __func__);
-      BLI_assert(0);
+      lib_assert(0);
       break;
   }
 
   return nullptr;
 }
 
-void IMB_colormanagement_check_is_data(ImBuf *ibuf, const char *name)
+void imbuf_colormanagement_check_is_data(ImBuf *ibuf, const char *name)
 {
   ColorSpace *colorspace = colormanage_colorspace_get_named(name);
 
