@@ -624,7 +624,7 @@ typedef struct UserDefExperimental {
   char enable_eevee_next;
   char _pad[1];
   /** `types` does not allow empty structs. */
-} UserDef_Experimental;
+} UserDefExperimental;
 
 #define USER_EXPERIMENTAL_TEST(userdef, member) \
   (((userdef)->flag & USER_DEVELOPER_UI) && ((userdef)->experimental).member)
@@ -994,10 +994,10 @@ typedef enum eViewZoomStyle {
 } eViewZoomStyle;
 
 /** UserDef.navigation_mode */
-typedef enum eViewNavigation_Method {
+typedef enum eViewNavigationMethod {
   VIEW_NAVIGATION_WALK = 0,
   VIEW_NAVIGATION_FLY = 1,
-} eViewNavigation_Method;
+} eViewNavigationMethod;
 
 /** UserDef.uiflag */
 typedef enum eUserprefMiniAxisType {
