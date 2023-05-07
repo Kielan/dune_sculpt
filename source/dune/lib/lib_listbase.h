@@ -6,10 +6,8 @@
 // struct ListBase;
 // struct LinkData;
 
-/**
- * Returns the position of a vlink within a listbase, numbering from 0, or -1 if not found.
- */
-int LIB_findindex(const struct ListBase *listbase, const void *vlink) ATTR_WARN_UNUSED_RESULT
+/** Returns the position of a vlink within a listbase, numbering from 0, or -1 if not found. */
+int lib_findindex(const struct ListBase *listbase, const void *vlink) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1);
 /**
  * Returns the 0-based index of the first element of listbase which contains the specified
