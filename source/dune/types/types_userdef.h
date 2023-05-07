@@ -16,14 +16,14 @@ struct ColorBand;
  * Default offered by Dune.
  * uiFont.uifont_id
  */
-typedef enum eUIFont_ID {
+typedef enum eUIFontId {
   UIFONT_DEFAULT = 0,
   /*  UIFONT_BITMAP   = 1 */ /* UNUSED */
 
   /* free slots */
   UIFONT_CUSTOM1 = 2,
   /* UIFONT_CUSTOM2 = 3, */ /* UNUSED */
-} eUIFont_ID;
+} eUIFontId;
 
 /** Default fonts to load/initialize.
  * First font is the default (index 0), others optional. */
@@ -31,7 +31,7 @@ typedef struct uiFont {
   struct uiFont *next, *prev;
   /** 1024 = FILE_MAX. */
   char filepath[1024];
-  /** From blfont lib. */
+  /** From dlfont lib. */
   short blf_id;
   /** Own id (eUIFontId). */
   short uifont_id;
@@ -520,13 +520,13 @@ typedef struct duneUserMenuItem {
   char _pad0[7];
 } duneUserMenuItem;
 
-typedef struct duneUserMenuItem_Op {
+typedef struct duneUserMenuItemOp {
   duneUserMenuItem item;
   char op_idname[64];
-  struct IDProperty *prop;
-  char opcontext; /* wmOperatorCallContext */
+  struct IdProp *prop;
+  char opcontext; /* wmOpCallCtx */
   char _pad0[7];
-} duneUserMenuItem_Op;
+} duneUserMenuItemOp;
 
 typedef struct duneUserMenuItem_Menu {
   duneUserMenuItem item;
