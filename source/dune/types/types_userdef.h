@@ -1139,19 +1139,17 @@ typedef enum eAutokey_Flag {
   AUTOKEY_FLAG_NOWARNING = (1 << 7),
   AUTOKEY_FLAG_CYCLEAWARE = (1 << 8),
   ANIMRECORD_FLAG_WITHNLA = (1 << 10),
-} eAutokey_Flag;
+} eAutokeyFlag;
 
-/**
- * Animation flags
+/** Animation flags
  * UserDef.animation_flag, used for animation flags that aren't covered by more specific flags
- * (like eAutokey_Flag).
- */
-typedef enum eUserpref_Anim_Flags {
+ * (like eAutokey_Flag). */
+typedef enum eUserprefAnimFlags {
   USER_ANIM_SHOW_CHANNEL_GROUP_COLORS = (1 << 0),
-} eUserpref_Anim_Flags;
+} eUserprefAnimFlags;
 
 /** UserDef.transopts */
-typedef enum eUserpref_Translation_Flags {
+typedef enum eUserprefTranslationFlags {
   USER_TR_TOOLTIPS = (1 << 0),
   USER_TR_IFACE = (1 << 1),
   USER_TR_UNUSED_2 = (1 << 2),            /* cleared */
@@ -1161,31 +1159,28 @@ typedef enum eUserpref_Translation_Flags {
   USER_TR_UNUSED_6 = (1 << 6),            /* cleared */
   USER_TR_UNUSED_7 = (1 << 7),            /* cleared */
   USER_TR_NEWDATANAME = (1 << 8),
-} eUserpref_Translation_Flags;
+} eUserprefTranslationFlags;
 
 /** Text Editor options
  * UserDef.text_flag */
-typedef enum eTextEdit_Flags {
+typedef enum eTextEditFlags {
   USER_TEXT_EDIT_AUTO_CLOSE = (1 << 0),
-} eTextEdit_Flags;
+} eTextEditFlags;
 
-/**
- * Text draw options
- * UserDef.text_render
- */
-typedef enum eText_Draw_Options {
+/** Text draw options
+ * UserDef.text_render */
+typedef enum eTextDrawOptions {
   USER_TEXT_DISABLE_AA = (1 << 0),
-
   USER_TEXT_HINTING_NONE = (1 << 1),
   USER_TEXT_HINTING_SLIGHT = (1 << 2),
   USER_TEXT_HINTING_FULL = (1 << 3),
-} eText_Draw_Options;
+} eTextDrawOptions;
 
 /* Pen Settings.
  * UserDef.gp_settings */
-typedef enum eGP_UserdefSettings {
-  GP_PAINT_UNUSED_0 = (1 << 0),
-} eGP_UserdefSettings;
+typedef enum ePenUserdefSettings {
+  PEN_PAINT_UNUSED_0 = (1 << 0),
+} ePenUserdefSettings;
 
 enum {
   USER_GIZMO_DRAW = (1 << 0),
@@ -1201,10 +1196,8 @@ typedef enum eColorPickerTypes {
   USER_CP_CIRCLE_HSL = 4,
 } eColorPicker_Types;
 
-/**
- * Time-code display styles.
- * UserDef.timecode_style
- */
+/** Time-code display styles.
+ * UserDef.timecode_style */
 typedef enum eTimecodeStyles {
   /**
    * As little info as is necessary to show relevant info with '+' to denote the frames
