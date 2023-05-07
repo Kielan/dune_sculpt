@@ -308,14 +308,14 @@ enum {
 
 /** Status used and counters created during id-remapping. */
 typedef struct IdRuntimeRemap {
-  /** Status during ID remapping. */
+  /** Status during id remapping. */
   int status;
-  /** During ID remapping the number of skipped use cases that refcount the data-block. */
+  /** During id remapping the number of skipped use cases that refcount the data-block. */
   int skipped_refcounted;
-  /** During ID remapping the number of direct use cases that could be remapped (e.g. obdata when
+  /** During id remapping the number of direct use cases that could be remapped (e.g. obdata when
 in edit mode). */
   int skipped_direct;
-  /** During ID remapping, the number of indirect use cases that could not be remapped. */
+  /** During id remapping, the number of indirect use cases that could not be remapped. */
   int skipped_indirect;
 } IdRuntimeRemap;
 
@@ -337,7 +337,7 @@ typedef struct Id {
   /** MAX_ID_NAME. */
   char name[66];
   /**
-   * LIB_... flags report on status of the data-block this ID belongs to
+   * lib_... flags report on status of the data-block this ID belongs to
    * (persistent, saved to and read from .blend).
    */
   short flag;
@@ -402,15 +402,15 @@ typedef struct Id {
    */
   struct LibWeakRef *lib_weak_ref;
 
-  struct ID_Runtime runtime;
+  struct IdRuntime runtime;
 } ID;
 
 /**
- * For each library file used, a Library struct is added to Main
+ * For each lib file used, a Lib struct is added to Main
  * WARNING: readfile.c, expand_doit() reads this struct without DNA check!
  */
-typedef struct Library {
-  ID id;
+typedef struct Lib {
+  Id id;
   struct FileData *filedata;
   /** Path name used for reading, can be relative and edited in the outliner. */
   char filepath[1024];
@@ -420,7 +420,7 @@ typedef struct Library {
    * This is only for convenience, `filepath` is the real path
    * used on file read but in some cases its useful to access the absolute one.
    *
-   * Use DUNE_library_filepath_set() rather than setting `filepath`
+   * Use dune_lib_filepath_set() rather than setting `filepath`
    * directly and it will be kept in sync
    */
   char filepath_abs[1024];
@@ -437,12 +437,12 @@ typedef struct Library {
   int temp_index;
   /** See DUNE_FILE_VERSION, DUNE_FILE_SUBVERSION, needed for do_versions. */
   short versionfile, subversionfile;
-} Library;
+} Lib;
 
 /* Library.tag */
-enum eLibrary_Tag {
+enum eLibTag {
   /* Automatic recursive resync was needed when linking/loading data from that library. */
-  LIBRARY_TAG_RESYNC_REQUIRED = 1 << 0,
+  LIB_TAG_RESYNC_REQUIRED = 1 << 0,
 };
 
 /**
