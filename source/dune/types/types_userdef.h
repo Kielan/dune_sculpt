@@ -575,11 +575,11 @@ typedef struct WalkNavigation {
   char _pad0[6];
 } WalkNavigation;
 
-typedef struct UserDef_Runtime {
+typedef struct UserDefRuntime {
   /** Mark as changed so the preferences are saved on exit. */
   char is_dirty;
   char _pad0[7];
-} UserDef_Runtime;
+} UserDefRuntime;
 
 /**
  * Store UI data here instead of the space
@@ -637,7 +637,6 @@ typedef struct UserDefExperimental {
 typedef struct UserDef {
   /** UserDef has separate do-version handling, and can be read from other files. */
   int versionfile, subversionfile;
-
   /** eUserPref_Flag. */
   int flag;
   /** eDupli_ID_Flags. */
@@ -684,10 +683,8 @@ typedef struct UserDef {
   short v2d_min_gridsize;
   /** eTimecodeStyles, style of time-code display. */
   short timecode_style;
-
   short versions;
   short dbl_click_time;
-
   char _pad0[3];
   char mini_axis_type;
   /** eUserpref_UI_Flag. */
@@ -701,13 +698,11 @@ typedef struct UserDef {
   char app_flag;
   char viewzoom;
   short language;
-
   int mixbufsize;
   int audiodevice;
   int audiorate;
   int audioformat;
   int audiochannels;
-
   /** Setting for UI scale (fractional), before screen DPI has been applied. */
   float ui_scale;
   /** Setting for UI line width. */
@@ -722,7 +717,6 @@ typedef struct UserDef {
   float pixelsize;
   /** Deprecated, for forward compatibility. */
   int virtual_pixel;
-
   /** Console scroll-back limit. */
   int scrollback;
   /** Node insert offset (aka auto-offset) margin, but might be useful for later stuff as well. */
@@ -731,10 +725,8 @@ typedef struct UserDef {
   /** eUserpref_Translation_Flags. */
   short transopts;
   short menuthreshold1, menuthreshold2;
-
   /** Startup application template. */
   char app_template[64];
-
   struct ListBase themes;
   struct ListBase uifonts;
   struct ListBase uistyles;
@@ -742,7 +734,7 @@ typedef struct UserDef {
   /** wmKeyConfigPref. */
   struct ListBase user_keyconfig_prefs;
   struct ListBase addons;
-  struct ListBase autoexec_paths;
+  struct ListBase autoex_paths;
   /** duneUserMenu. */
   struct ListBase user_menus;
   /** duneUserAssetLibrary */
@@ -753,9 +745,9 @@ typedef struct UserDef {
   short undosteps;
   char _pad1[2];
   int undomemory;
-  float gpu_viewport_quality DNA_DEPRECATED;
+  float gpu_viewport_quality TYPES_DEPRECATED;
   short gp_manhattandist, gp_euclideandist, gp_eraser;
-  /** eGP_UserdefSettings. */
+  /** ePenUserdefSettings. */
   short gp_settings;
   char _pad13[4];
   struct SolidLight light_param[4];
@@ -796,26 +788,20 @@ typedef struct UserDef {
   char _pad11[4];
   /** eZoomFrame_Mode. */
   char view_frame_type;
-
   /** Number of keyframes to zoom around current frame. */
   int view_frame_keyframes;
   /** Seconds to zoom around current frame. */
   float view_frame_seconds;
-
   char _pad7[6];
-
   /** Private, defaults to 20 for 72 DPI setting. */
   short widget_unit;
   short anisotropic_filter;
-
   /** Tablet API to use (Windows only). */
   short tablet_api;
-
   /** Raw tablet pressure that maps to 100%. */
   float pressure_threshold_max;
   /** Curve non-linearity parameter. */
   float pressure_softness;
-
   /** Overall sensitivity of 3D mouse. */
   float ndof_sensitivity;
   float ndof_orbit_sensitivity;
@@ -823,54 +809,41 @@ typedef struct UserDef {
   float ndof_deadzone;
   /** eNdof_Flag, flags for 3D mouse. */
   int ndof_flag;
-
   /** eMultiSample_Type, amount of samples for OpenGL FSA, if zero no FSA. */
   short ogl_multisamples;
-
   /** eImageDrawMethod, Method to be used to draw the images
    * (AUTO, GLSL, Textures or DrawPixels) */
   short image_draw_method;
-
   float glalphaclip;
-
   /** eAutokey_Mode, autokeying mode. */
   short autokey_mode;
   /** Flags for autokeying. */
   short autokey_flag;
   /** Flags for animation. */
   short animation_flag;
-
   /** Options for text rendering. */
   char text_render;
   char navigation_mode;
-
   /** Turn-table rotation amount per-pixel in radians. Scaled with DPI. */
   float view_rotate_sensitivity_turntable;
   /** Track-ball rotation scale. */
   float view_rotate_sensitivity_trackball;
-
   /** From texture.h. */
   struct ColorBand coba_weight;
-
   float sculpt_paint_overlay_col[3];
   /** Default color for newly created Grease Pencil layers. */
   float pen_new_layer_col[4];
-
   /** Drag pixels (scaled by DPI). */
   char drag_threshold_mouse;
   char drag_threshold_tablet;
   char drag_threshold;
   char move_threshold;
-
   char font_path_ui[1024];
   char font_path_ui_mono[1024];
-
   /** Legacy, for backwards compatibility only. */
   int compute_device_type;
-
   /** Opacity of inactive F-Curves in F-Curve Editor. */
   float fcu_inactive_alpha;
-
   /* If keeping a pie menu spawn button pressed after this time,
    * it turns into a drag/release pie menu. */
   short pie_tap_timeout;
@@ -910,8 +883,8 @@ typedef struct UserDef {
   struct WalkNavigation walk_navigation;
 
   /** The UI for the user preferences. */
-  UserDef_SpaceData space_data;
-  UserDef_FileSpaceData file_space_data;
+  UserDefSpaceData space_data;
+  UserDefFileSpaceData file_space_data;
 
   UserDef_Experimental experimental;
 
