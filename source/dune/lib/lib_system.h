@@ -2,12 +2,12 @@
 
 #include <stdio.h>
 
-int LIB_cpu_support_sse2(void);
-int LIB_cpu_support_sse41(void);
-void LIB_system_backtrace(FILE *fp);
+int lib_cpu_support_sse2(void);
+int lib_cpu_support_sse41(void);
+void lib_system_backtrace(FILE *fp);
 
 /** Get CPU brand, result is to be MEM_freeN()-ed. */
-char *LIB_cpu_brand_string(void);
+char *lib_cpu_brand_string(void);
 
 /**
  * Obtain the hostname from the system.
@@ -19,12 +19,12 @@ char *LIB_cpu_brand_string(void);
  * param buffer: Character buffer to write the hostname into.
  * param bufsize: Size of the character buffer, including trailing '\0'.
  */
-void LIB_hostname_get(char *buffer, size_t bufsize);
+void lib_hostname_get(char *buffer, size_t bufsize);
 
 /** Get maximum addressable memory in megabytes. */
-size_t LIB_system_memory_max_in_megabytes(void);
+size_t lib_system_memory_max_in_megabytes(void);
 /** Get maximum addressable memory in megabytes (clamped to #INT_MAX). */
-int LIB_system_memory_max_in_megabytes_int(void);
+int lib_system_memory_max_in_megabytes_int(void);
 
 /* For `getpid`. */
 #ifdef WIN32
@@ -34,7 +34,7 @@ int LIB_system_memory_max_in_megabytes_int(void);
  * Use `void *` for `exception` since we really do not want to drag Windows.h
  * in to get the proper `typedef`.
  */
-void LIB_windows_handle_exception(void *exception);
+void lib_windows_handle_exception(void *exception);
 
 #else
 #  define LIB_SYSTEM_PID_H <unistd.h>
