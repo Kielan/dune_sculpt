@@ -1,7 +1,7 @@
 #pragma once
 
-#include "LIB_compiler_attrs.h"
-#include "LIB_utildefines.h"
+#include "lib_compiler_attrs.h"
+#include "lib_utildefines.h"
 #include "STRUCTS_listBase.h"
 // struct ListBase;
 // struct LinkData;
@@ -15,54 +15,48 @@ int LIB_findindex(const struct ListBase *listbase, const void *vlink) ATTR_WARN_
  * Returns the 0-based index of the first element of listbase which contains the specified
  * null-terminated string at the specified offset, or -1 if not found.
  */
-int LIB_findstringindex(const struct ListBase *listbase,
+int lib_findstringindex(const struct ListBase *listbase,
                         const char *id,
                         int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 
-/**
- * Return a ListBase representing the entire list the given Link is in.
- */
-ListBase LIB_listbase_from_link(struct Link *some_link);
+/** Return a ListBase representing the entire list the given Link is in. */
+ListBase lib_listbase_from_link(struct Link *some_link);
 
 /* Find forwards. */
 
-/**
- * Returns the nth element of a listbase, numbering from 0.
- */
-void *LIB_findlink(const struct ListBase *listbase, int number) ATTR_WARN_UNUSED_RESULT
+/** Returns the nth element of a listbase, numbering from 0. */
+void *lib_findlink(const struct ListBase *listbase, int number) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1);
 
-/**
- * Returns the nth element after a link, numbering from 0.
- */
-void *LIB_findlinkfrom(struct Link *start, int number) ATTR_WARN_UNUSED_RESULT;
+/** Returns the nth element after a link, numbering from 0. */
+void *lib_findlinkfrom(struct Link *start, int number) ATTR_WARN_UNUSED_RESULT;
 
 /**
  * Finds the first element of a listbase which contains the null-terminated
  * string a id at the specified offset, returning NULL if not found.
  */
-void *LIB_findstring(const struct ListBase *listbase,
+void *lib_findstring(const struct ListBase *listbase,
                      const char *id,
                      int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 /**
  * Finds the first element of a listbase which contains a pointer to the
  * null-terminated string a id at the specified offset, returning NULL if not found.
  */
-void *LIB_findstring_ptr(const struct ListBase *listbase,
+void *lib_findstring_ptr(const struct ListBase *listbase,
                          const char *id,
                          int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 /**
  * Finds the first element of listbase which contains the specified pointer value
  * at the specified offset, returning NULL if not found.
  */
-void *LIB_findptr(const struct ListBase *listbase,
+void *lib_findptr(const struct ListBase *listbase,
                   const void *ptr,
                   int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 /**
  * Finds the first element of listbase which contains the specified bytes
  * at the specified offset, returning NULL if not found.
  */
-void *LIB_listbase_bytes_find(const ListBase *listbase,
+void *lib_listbase_bytes_find(const ListBase *listbase,
                               const void *bytes,
                               size_t bytes_size,
                               int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2);
@@ -73,88 +67,79 @@ void *LIB_listbase_bytes_find(const ListBase *listbase,
  *
  * return The found item, or NULL.
  */
-void *LIB_listbase_string_or_index_find(const struct ListBase *listbase,
+void *lib_listbase_string_or_index_find(const struct ListBase *listbase,
                                         const char *string,
                                         size_t string_offset,
                                         int index) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 
 /* Find backwards. */
 
-/**
- * Returns the nth-last element of \a listbase, numbering from 0.
- */
-void *LIB_rfindlink(const struct ListBase *listbase, int number) ATTR_WARN_UNUSED_RESULT
+/** Returns the nth-last element of \a listbase, numbering from 0. */
+void *lib_rfindlink(const struct ListBase *listbase, int number) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1);
 /**
  * Finds the last element of \a listbase which contains the
  * null-terminated string \a id at the specified offset, returning NULL if not found.
  */
-void *LIB_rfindstring(const struct ListBase *listbase,
+void *lib_rfindstring(const struct ListBase *listbase,
                       const char *id,
                       int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 /**
- * Finds the last element of \a listbase which contains a pointer to the
- * null-terminated string \a id at the specified offset, returning NULL if not found.
+ * Finds the last element of listbase which contains a pointer to the
+ * null-terminated string id at the specified offset, returning NULL if not found.
  */
-void *LIB_rfindstring_ptr(const struct ListBase *listbase,
+void *lib_rfindstring_ptr(const struct ListBase *listbase,
                           const char *id,
                           int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 /**
  * Finds the last element of listbase which contains the specified pointer value
  * at the specified offset, returning NULL if not found.
  */
-void *LIB_rfindptr(const struct ListBase *listbase,
+void *lib_rfindptr(const struct ListBase *listbase,
                    const void *ptr,
                    int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
 /**
  * Finds the last element of listbase which contains the specified bytes
  * at the specified offset, returning NULL if not found.
  */
-void *LIB_listbase_bytes_rfind(const ListBase *listbase,
+void *lib_listbase_bytes_rfind(const ListBase *listbase,
                                const void *bytes,
                                size_t bytes_size,
                                int offset) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1, 2);
 
-/**
- * Removes and disposes of the entire contents of a listbase using guardedalloc.
- */
-void LIB_freelistN(struct ListBase *listbase) ATTR_NONNULL(1);
+/** Removes and disposes of the entire contents of a listbase using guardedalloc. */
+void lib_freelistn(struct ListBase *listbase) ATTR_NONNULL(1);
 /**
  * Appends a vlink (assumed to begin with a Link) onto listbase.
  */
-void LIB_addtail(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
+void lib_addtail(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
 /**
  * Removes a vlink from a listbase. Assumes it is linked into there!
  */
 void LIB_remlink(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
 /**
- * Checks that a vlink is linked into listbase, removing it from there if so.
- */
-bool LIB_remlink_safe(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
+ * Checks that a vlink is linked into listbase, removing it from there if so. */
+bool lib_remlink_safe(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
 /**
  * Removes the head from a listbase and returns it.
  */
-void *LIB_pophead(ListBase *listbase) ATTR_NONNULL(1);
-/**
- * Removes the tail from a listbase and returns it.
- */
-void *LIB_poptail(ListBase *listbase) ATTR_NONNULL(1);
+void *lib_pophead(ListBase *listbase) ATTR_NONNULL(1);
+/** Removes the tail from a listbase and returns it. */
+void *lib_poptail(ListBase *listbase) ATTR_NONNULL(1);
 
-/**
- * Prepends a vlink (assumed to begin with a Link) onto listbase.
- */
-void LIB_addhead(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
+/*** Prepends a vlink (assumed to begin with a Link) onto listbase. */
+void lib_addhead(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
 /**
  * Inserts a vnewlink immediately preceding a vnextlink in listbase.
  * Or, if a vnextlink is NULL, puts a vnewlink at the end of the list.
  */
-void LIB_insertlinkbefore(struct ListBase *listbase, void *vnextlink, void *vnewlink)
+void lib_insertlinkbefore(struct ListBase *listbase, void *vnextlink, void *vnewlink)
     ATTR_NONNULL(1);
 /**
  * Inserts a vnewlink immediately following a vprevlink in a listbase.
  * Or, if a vprevlink is NULL, puts a vnewlink at the front of the list.
  */
-void LIB_insertlinkafter(struct ListBase *listbase, void *vprevlink, void *vnewlink)
+void lib_insertlinkafter(struct ListBase *listbase, void *vprevlink, void *vnewlink)
     ATTR_NONNULL(1);
 /**
  * Insert a link in place of another, without changing its position in the list.
@@ -163,16 +148,16 @@ void LIB_insertlinkafter(struct ListBase *listbase, void *vprevlink, void *vnewl
  * - `vreplacelink` *must* be in the list.
  * - `vnewlink` *must not* be in the list.
  */
-void LIB_insertlinkreplace(ListBase *listbase, void *vreplacelink, void *vnewlink)
+void lib_insertlinkreplace(ListBase *listbase, void *vreplacelink, void *vnewlink)
     ATTR_NONNULL(1, 2, 3);
 /**
  * Sorts the elements of listbase into the order defined by cmp
  * (which should return 1 if its first arg should come after its second arg).
  * This uses insertion sort, so NOT ok for large list.
  */
-void LIB_listbase_sort(struct ListBase *listbase, int (*cmp)(const void *, const void *))
+void lib_listbase_sort(struct ListBase *listbase, int (*cmp)(const void *, const void *))
     ATTR_NONNULL(1, 2);
-void LIB_listbase_sort_r(ListBase *listbase,
+void lib_listbase_sort_r(ListBase *listbase,
                          int (*cmp)(void *, const void *, const void *),
                          void *thunk) ATTR_NONNULL(1, 2);
 /**
