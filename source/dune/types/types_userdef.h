@@ -922,14 +922,14 @@ typedef enum eUserPref_Section {
 } eUserPref_Section;
 
 /** UserDef_SpaceData.flag (State of the user preferences UI). */
-typedef enum eUserPref_SpaceData_Flag {
+typedef enum eUserPrefSpaceDataFlag {
   /** Hide/expand key-map preferences. */
   USER_SPACEDATA_INPUT_HIDE_UI_KEYCONFIG = (1 << 0),
   USER_SPACEDATA_ADDONS_SHOW_ONLY_ENABLED = (1 << 1),
-} eUserPref_SpaceData_Flag;
+} eUserPrefSpaceDataFlag;
 
 /** UserDef.flag */
-typedef enum eUserPref_Flag {
+typedef enum eUserPrefFlag {
   USER_AUTOSAVE = (1 << 0),
   USER_FLAG_NUMINPUT_ADVANCED = (1 << 1),
   USER_FLAG_UNUSED_2 = (1 << 2), /* cleared */
@@ -958,7 +958,7 @@ typedef enum eUserPref_Flag {
   USER_TXT_TABSTOSPACES_DISABLE = (1 << 25),
   USER_TOOLTIPS_PYTHON = (1 << 26),
   USER_FLAG_UNUSED_27 = (1 << 27), /* dirty */
-} eUserPref_Flag;
+} eUserPrefFlag;
 
 /** UserDef.file_preview_type */
 typedef enum eUserpref_File_Preview_Type {
@@ -968,14 +968,14 @@ typedef enum eUserpref_File_Preview_Type {
   USER_FILE_PREVIEW_CAMERA,
 } eUserpref_File_Preview_Type;
 
-typedef enum eUserPref_PrefFlag {
+typedef enum eUserPrefPrefFlag {
   USER_PREF_FLAG_SAVE = (1 << 0),
-} eUserPref_PrefFlag;
+} eUserPrefPrefFlag;
 
 /** dunePathCompare.flag */
-typedef enum ePathCompare_Flag {
+typedef enum ePathCompareFlag {
   USER_PATHCMP_GLOB = (1 << 0),
-} ePathCompare_Flag;
+} ePathCompareFlag;
 
 /* Helper macro for checking frame clamping */
 #define FRAMENUMBER_MIN_CLAMP(cfra) \
