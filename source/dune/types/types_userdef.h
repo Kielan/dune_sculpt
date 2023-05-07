@@ -525,18 +525,18 @@ typedef struct duneUserMenuItemOp {
   char _pad0[7];
 } duneUserMenuItemOp;
 
-typedef struct duneUserMenuItem_Menu {
+typedef struct duneUserMenuItemMenu {
   duneUserMenuItem item;
   char mt_idname[64];
-} duneUserMenuItem_Menu;
+} duneUserMenuItemMenu;
 
-typedef struct duneUserMenuItem_Prop {
+typedef struct duneUserMenuItemProp {
   duneUserMenuItem item;
   char context_data_path[256];
   char prop_id[64];
   int prop_index;
   char _pad0[4];
-} duneUserMenuItem_Prop;
+} duneUserMenuItemProp;
 
 enum {
   USER_MENU_TYPE_SEP = 1,
@@ -582,7 +582,7 @@ typedef struct UserDefRuntime {
  * since the space is typically a window which is freed. */
 typedef struct UserDefSpaceData {
   char section_active;
-  /** eUserPref_SpaceData_Flag UI options. */
+  /** eUserPrefSpaceDataFlag UI options. */
   char flag;
   char _pad0[6];
 } UserDefSpaceData;
@@ -682,9 +682,9 @@ typedef struct UserDef {
   short dbl_click_time;
   char _pad0[3];
   char mini_axis_type;
-  /** eUserpref_UI_Flag. */
+  /** eUserprefUIFlag. */
   int uiflag;
-  /** eUserpref_UI_Flag2. */
+  /** eUserprefUIFlag2. */
   char uiflag2;
   char gpu_flag;
   char _pad8[6];
@@ -717,7 +717,7 @@ typedef struct UserDef {
   /** Node insert offset (aka auto-offset) margin, but might be useful for later stuff as well. */
   char node_margin;
   char _pad2[1];
-  /** eUserpref_Translation_Flags. */
+  /** eUserprefTranslationFlags. */
   short transopts;
   short menuthreshold1, menuthreshold2;
   /** Startup application template. */
@@ -733,7 +733,7 @@ typedef struct UserDef {
   /** duneUserMenu. */
   struct ListBase user_menus;
   /** duneUserAssetLibrary */
-  struct ListBase asset_libraries;
+  struct ListBase asset_libs;
 
   char keyconfigstr[64];
 
@@ -896,7 +896,7 @@ extern UserDef U;
 //#define WITH_USERDEF_WORKSPACES
 
 /** UserDef_SpaceData.section_active (UI active_section) */
-typedef enum eUserPref_Section {
+typedef enum eUserPrefSection {
   USER_SECTION_INTERFACE = 0,
   USER_SECTION_EDITING = 1,
   USER_SECTION_SAVE_LOAD = 2,
@@ -916,9 +916,9 @@ typedef enum eUserPref_Section {
   USER_SECTION_NAVIGATION = 14,
   USER_SECTION_FILE_PATHS = 15,
   USER_SECTION_EXPERIMENTAL = 16,
-} eUserPref_Section;
+} eUserPrefSection;
 
-/** UserDef_SpaceData.flag (State of the user preferences UI). */
+/** UserDefSpaceData.flag (State of the user preferences UI). */
 typedef enum eUserPrefSpaceDataFlag {
   /** Hide/expand key-map preferences. */
   USER_SPACEDATA_INPUT_HIDE_UI_KEYCONFIG = (1 << 0),
@@ -958,12 +958,12 @@ typedef enum eUserPrefFlag {
 } eUserPrefFlag;
 
 /** UserDef.file_preview_type */
-typedef enum eUserpref_File_Preview_Type {
+typedef enum eUserprefFilePreview_Type {
   USER_FILE_PREVIEW_NONE = 0,
   USER_FILE_PREVIEW_AUTO,
   USER_FILE_PREVIEW_SCREENSHOT,
   USER_FILE_PREVIEW_CAMERA,
-} eUserpref_File_Preview_Type;
+} eUserprefFilePreviewType;
 
 typedef enum eUserPrefPrefFlag {
   USER_PREF_FLAG_SAVE = (1 << 0),
@@ -1000,20 +1000,20 @@ typedef enum eViewNavigation_Method {
 } eViewNavigation_Method;
 
 /** UserDef.uiflag */
-typedef enum eUserpref_MiniAxisType {
+typedef enum eUserprefMiniAxisType {
   USER_MINI_AXIS_TYPE_GIZMO = 0,
   USER_MINI_AXIS_TYPE_MINIMAL = 1,
   USER_MINI_AXIS_TYPE_NONE = 2,
-} eUserpref_MiniAxisType;
+} eUserprefMiniAxisType;
 
 /** UserDef.flag */
-typedef enum eWalkNavigation_Flag {
+typedef enum eWalkNavigationFlag {
   USER_WALK_GRAVITY = (1 << 0),
   USER_WALK_MOUSE_REVERSE = (1 << 1),
-} eWalkNavigation_Flag;
+} eWalkNavigationFlag;
 
 /** UserDef.uiflag */
-typedef enum eUserpref_UI_Flag {
+typedef enum eUserprefUIFlag {
   USER_UIFLAG_UNUSED_0 = (1 << 0), /* cleared */
   USER_UIFLAG_UNUSED_1 = (1 << 1), /* cleared */
   USER_WHEELZOOMDIR = (1 << 2),
