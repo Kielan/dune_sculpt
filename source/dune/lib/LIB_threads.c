@@ -2,13 +2,13 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "LIB_gsqueue.h"
-#include "LIB_listbase.h"
-#include "LIB_system.h"
-#include "LIB_task.h"
-#include "LIB_threads.h"
+#include "lib_gsqueue.h"
+#include "lib_listbase.h"
+#include "lib_system.h"
+#include "lib_task.h"
+#include "lib_threads.h"
 
 #include "PIL_time.h"
 
@@ -59,13 +59,13 @@ static void *thread_tls_data;
  *   int max_threads = 2;
  *   int cont = 1;
  *
- *   LIB_threadpool_init(&lb, do_something_func, max_threads);
+ *   lib_threadpool_init(&lb, do_something_func, max_threads);
  *
  *   while (cont) {
- *     if (LIB_available_threads(&lb) && !(escape loop event)) {
+ *     if (lib_available_threads(&lb) && !(escape loop event)) {
  *       // get new job (data pointer)
  *       // tag job 'processed
- *       LIB_threadpool_insert(&lb, job);
+ *       lib_threadpool_insert(&lb, job);
  *     }
  *     else PIL_sleep_ms(50);
  *
@@ -74,20 +74,20 @@ static void *thread_tls_data;
  *     for (go over all jobs)
  *       if (job is ready) {
  *         if (job was not removed) {
- *           LIB_threadpool_remove(&lb, job);
+ *           lib_threadpool_remove(&lb, job);
  *         }
  *       }
  *       else cont = 1;
  *     }
  *     // Conditions to exit loop.
  *     if (if escape loop event) {
- *       if (LIB_available_threadslots(&lb) == max_threads) {
+ *       if (lib_available_threadslots(&lb) == max_threads) {
  *         break;
  *       }
  *     }
  *   }
  *
- *   LIB_threadpool_end(&lb);
+ *   lib_threadpool_end(&lb);
  *
  */
 static pthread_mutex_t _image_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -114,21 +114,21 @@ struct ThreadSlot {
   int avail;
 };
 
-void LIB_threadapi_init()
+void lib_threadapi_init()
 {
   mainid = pthread_self();
 }
 
-void LIB_threadapi_exit()
+void lib_threadapi_exit()
 {
 }
 
-void LIB_threadpool_init(ListBase *threadbase, void *(*do_thread)(void *), int tot)
+void lib_threadpool_init(ListBase *threadbase, void *(*do_thread)(void *), int tot)
 {
   int a;
 
   if (threadbase != nullptr && tot > 0) {
-    LIB_listbase_clear(threadbase);
+    lib_listbase_clear(threadbase);
 
     if (tot > RE_MAX_THREAD) {
       tot = RE_MAX_THREAD;
@@ -139,7 +139,7 @@ void LIB_threadpool_init(ListBase *threadbase, void *(*do_thread)(void *), int t
 
     for (a = 0; a < tot; a++) {
       ThreadSlot *tslot = static_cast<ThreadSlot *>(MEM_callocN(sizeof(ThreadSlot), "threadslot"));
-      LIB_addtail(threadbase, tslot);
+      lib_addtail(threadbase, tslot);
       tslot->do_thread = do_thread;
       tslot->avail = 1;
     }
@@ -156,7 +156,7 @@ void LIB_threadpool_init(ListBase *threadbase, void *(*do_thread)(void *), int t
   }
 }
 
-int LIB_available_threads(ListBase *threadbase)
+int lib_available_threads(ListBase *threadbase)
 {
   int counter = 0;
 
@@ -169,7 +169,7 @@ int LIB_available_threads(ListBase *threadbase)
   return counter;
 }
 
-int LIB_threadpool_available_thread_index(ListBase *threadbase)
+int lib_threadpool_available_thread_index(ListBase *threadbase)
 {
   int counter = 0;
 
@@ -196,12 +196,12 @@ static void *tslot_thread_start(void *tslot_p)
   return tslot->do_thread(tslot->callerdata);
 }
 
-int LIB_thread_is_main()
+int lib_thread_is_main()
 {
   return pthread_equal(pthread_self(), mainid);
 }
 
-void LIB_threadpool_insert(ListBase *threadbase, void *callerdata)
+void lib_threadpool_insert(ListBase *threadbase, void *callerdata)
 {
   LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail) {
@@ -214,7 +214,7 @@ void LIB_threadpool_insert(ListBase *threadbase, void *callerdata)
   printf("ERROR: could not insert thread slot\n");
 }
 
-void LIB_threadpool_remove(ListBase *threadbase, void *callerdata)
+void lib_threadpool_remove(ListBase *threadbase, void *callerdata)
 {
   LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->callerdata == callerdata) {
@@ -225,7 +225,7 @@ void LIB_threadpool_remove(ListBase *threadbase, void *callerdata)
   }
 }
 
-void LIB_threadpool_remove_index(ListBase *threadbase, int index)
+void lib_threadpool_remove_index(ListBase *threadbase, int index)
 {
   int counter = 0;
 
@@ -240,7 +240,7 @@ void LIB_threadpool_remove_index(ListBase *threadbase, int index)
   }
 }
 
-void LIB_threadpool_clear(ListBase *threadbase)
+void lib_threadpool_clear(ListBase *threadbase)
 {
   LISTBASE_FOREACH (ThreadSlot *, tslot, threadbase) {
     if (tslot->avail == 0) {
@@ -251,7 +251,7 @@ void LIB_threadpool_clear(ListBase *threadbase)
   }
 }
 
-void LIB_threadpool_end(ListBase *threadbase)
+void lib_threadpool_end(ListBase *threadbase)
 {
 
   /* Only needed if there's actually some stuff to end
@@ -265,7 +265,7 @@ void LIB_threadpool_end(ListBase *threadbase)
       pthread_join(tslot->pthread, nullptr);
     }
   }
-  LIB_freelistN(threadbase);
+  lib_freelistn(threadbase);
 }
 
 /* System Information */
@@ -306,12 +306,12 @@ int LIB_system_thread_count()
   return t;
 }
 
-void LIB_system_num_threads_override_set(int num)
+void lib_system_num_threads_override_set(int num)
 {
   num_threads_override = num;
 }
 
-int LIB_system_num_threads_override_get()
+int lib_system_num_threads_override_get()
 {
   return num_threads_override;
 }
@@ -345,24 +345,24 @@ static ThreadMutex *global_mutex_from_type(const int type)
   }
 }
 
-void LIB_thread_lock(int type)
+void lib_thread_lock(int type)
 {
   pthread_mutex_lock(global_mutex_from_type(type));
 }
 
-void LIB_thread_unlock(int type)
+void lib_thread_unlock(int type)
 {
   pthread_mutex_unlock(global_mutex_from_type(type));
 }
 
 /* Mutex Locks */
 
-void LIB_mutex_init(ThreadMutex *mutex)
+void lib_mutex_init(ThreadMutex *mutex)
 {
   pthread_mutex_init(mutex, nullptr);
 }
 
-void LIB_mutex_lock(ThreadMutex *mutex)
+void lib_mutex_lock(ThreadMutex *mutex)
 {
   pthread_mutex_lock(mutex);
 }
