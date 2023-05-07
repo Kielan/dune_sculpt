@@ -535,21 +535,21 @@ typedef struct PreviewImage {
  * currently. */
 /* TODO: add `_EDITABLE` versions of those macros (that would check if ID is linked or not)? */
 #define ID_IS_OVERRIDE_LIBRARY_REAL(_id) \
-  (((const ID *)(_id))->override_library != NULL && \
-   ((const ID *)(_id))->override_library->reference != NULL)
+  (((const ID *)(_id))->override_lib != NULL && \
+   ((const ID *)(_id))->override_lib->ref != NULL)
 
-#define ID_IS_OVERRIDE_LIBRARY_VIRTUAL(_id) \
-  ((((const ID *)(_id))->flag & LIB_EMBEDDED_DATA_LIB_OVERRIDE) != 0)
+#define ID_IS_OVERRIDE_LIB_VIRTUAL(_id) \
+  ((((const Id *)(_id))->flag & LIB_EMBEDDED_DATA_LIB_OVERRIDE) != 0)
 
-#define ID_IS_OVERRIDE_LIBRARY(_id) \
-  (ID_IS_OVERRIDE_LIBRARY_REAL(_id) || ID_IS_OVERRIDE_LIBRARY_VIRTUAL(_id))
+#define ID_IS_OVERRIDE_LIB(_id) \
+  (ID_IS_OVERRIDE_LIB_REAL(_id) || ID_IS_OVERRIDE_LIBRARY_VIRTUAL(_id))
 
-#define ID_IS_OVERRIDE_LIBRARY_HIERARCHY_ROOT(_id) \
-  (!ID_IS_OVERRIDE_LIBRARY_REAL(_id) || \
-   ((ID *)(_id))->override_library->hierarchy_root == ((ID *)(_id)))
+#define ID_IS_OVERRIDE_LIB_HIERARCHY_ROOT(_id) \
+  (!ID_IS_OVERRIDE_LIB_REAL(_id) || \
+   ((Id *)(_id))->override_lib->hierarchy_root == ((ID *)(_id)))
 
 #define ID_IS_OVERRIDE_LIBRARY_TEMPLATE(_id) \
-  (((ID *)(_id))->override_library != NULL && ((ID *)(_id))->override_library->reference == NULL)
+  (((Id *)(_id))->override_lib != NULL && ((ID *)(_id))->override_library->reference == NULL)
 
 #define ID_IS_ASSET(_id) (((const ID *)(_id))->asset_data != NULL)
 
