@@ -1051,18 +1051,18 @@ typedef enum eUserprefUIFlag {
 #endif
   USER_SAVE_PROMPT = (1 << 30),
   USER_HIDE_SYSTEM_BOOKMARKS = (1u << 31),
-} eUserpref_UI_Flag;
+} eUserprefUIFlag;
 
 /** UserDef.uiflag2
  * note don't add new flags here, use 'uiflag' which has flags free. */
-typedef enum eUserpref_UI_Flag2 {
+typedef enum eUserprefUIFlag2 {
   USER_UIFLAG2_UNUSED_0 = (1 << 0), /* cleared */
   USER_REGION_OVERLAP = (1 << 1),
   USER_UIFLAG2_UNUSED_2 = (1 << 2),
   USER_UIFLAG2_UNUSED_3 = (1 << 3), /* dirty */
-} eUserpref_UI_Flag2;
+} eUserprefUIFlag2;
 
-/** UserDef.gpu_flag */
+/** UserDef.gpuflag */
 typedef enum eUserprefGPUFlag {
   USER_GPU_FLAG_NO_DEPT_PICK = (1 << 0),
   USER_GPU_FLAG_NO_EDIT_MODE_SMOOTH_WIRE = (1 << 1),
@@ -1212,7 +1212,7 @@ typedef enum eTimecodeStyles {
 } eTimecodeStyles;
 
 /** UserDef.ndof_flag (3D mouse options) */
-typedef enum eNdof_Flag {
+typedef enum eNdofFlag {
   NDOF_SHOW_GUIDE = (1 << 0),
   NDOF_FLY_HELICOPTER = (1 << 1),
   NDOF_LOCK_HORIZON = (1 << 2),
@@ -1240,7 +1240,7 @@ typedef enum eNdof_Flag {
   NDOF_PANZ_INVERT_AXIS = (1 << 14),
   NDOF_TURNTABLE = (1 << 15),
   NDOF_CAMERA_PAN_ZOOM = (1 << 16),
-} eNdof_Flag;
+} eNdofFlag;
 
 #define NDOF_PIXELS_PER_SECOND 600.0f
 
