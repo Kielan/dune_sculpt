@@ -2,7 +2,7 @@
 
 #include <pthread.h>
 
-#include "LIB_sys_types.h"
+#include "lib_sys_types.h"
 
 /** For tables, button in UI, etc. */
 #define DUNE_MAX_THREADS 1024
@@ -12,21 +12,17 @@ struct ListBase;
 /* Threading API */
 
 /* This is run once at startup. */
-void LIB_threadapi_init(void);
-void LIB_threadapi_exit(void);
+void lib_threadapi_init(void);
+void lib_threadapi_exit(void);
 
 /**
  * param tot: When 0 only initializes malloc mutex in a safe way (see sequence.c)
  * problem otherwise: scene render will kill of the mutex!
  */
-void LIB_threadpool_init(struct ListBase *threadbase, void *(*do_thread)(void *), int tot);
-/**
- * Amount of available threads.
- */
-int LIB_available_threads(struct ListBase *threadbase);
-/**
- * Returns thread number, for sample patterns or threadsafe tables.
- */
+void lib_threadpool_init(struct ListBase *threadbase, void *(*do_thread)(void *), int tot);
+/** Amount of available threads. */
+int lib_available_threads(struct ListBase *threadbase);
+/** Returns thread number, for sample patterns or threadsafe tables. */
 int LIB_threadpool_available_thread_index(struct ListBase *threadbase);
 void LIB_threadpool_insert(struct ListBase *threadbase, void *callerdata);
 void LIB_threadpool_remove(struct ListBase *threadbase, void *callerdata);
