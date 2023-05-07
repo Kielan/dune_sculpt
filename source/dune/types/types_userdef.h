@@ -881,10 +881,10 @@ typedef struct UserDef {
   UserDefSpaceData space_data;
   UserDefFileSpaceData file_space_data;
 
-  UserDef_Experimental experimental;
+  UserDefExperimental experimental;
 
   /** Runtime data (keep last). */
-  UserDef_Runtime runtime;
+  UserDefRuntime runtime;
 } UserDef;
 
 /** From dune_kernel `dune.c`. */
@@ -895,7 +895,7 @@ extern UserDef U;
 /* Toggles for unfinished 2.8 UserPref design. */
 //#define WITH_USERDEF_WORKSPACES
 
-/** UserDef_SpaceData.section_active (UI active_section) */
+/** UserDefSpaceData.section_active (UI active_section) */
 typedef enum eUserPrefSection {
   USER_SECTION_INTERFACE = 0,
   USER_SECTION_EDITING = 1,
@@ -958,7 +958,7 @@ typedef enum eUserPrefFlag {
 } eUserPrefFlag;
 
 /** UserDef.file_preview_type */
-typedef enum eUserprefFilePreview_Type {
+typedef enum eUserprefFilePreviewType {
   USER_FILE_PREVIEW_NONE = 0,
   USER_FILE_PREVIEW_AUTO,
   USER_FILE_PREVIEW_SCREENSHOT,
@@ -984,14 +984,14 @@ typedef enum ePathCompareFlag {
   (void)0
 
 /** UserDef.viewzoom */
-typedef enum eViewZoom_Style {
+typedef enum eViewZoomStyle {
   /** Update zoom continuously with a timer while dragging the cursor. */
   USER_ZOOM_CONTINUE = 0,
   /** Map changes in distance from the view center to zoom. */
   USER_ZOOM_SCALE = 1,
   /** Map horizontal/vertical motion to zoom. */
   USER_ZOOM_DOLLY = 2,
-} eViewZoom_Style;
+} eViewZoomStyle;
 
 /** UserDef.navigation_mode */
 typedef enum eViewNavigation_Method {
