@@ -1,8 +1,8 @@
 #pragma once
 
-#include "TYPES_listBase.h"
-#include "TYPES_texture.h" /* ColorBand */
-#include "TYPES_userdef_enums.h"
+#include "types_list.h"
+#include "types_texture.h" /* ColorBand */
+#include "types_userdef_enums.h"
 
 /* Themes; defines in `BIF_resource.h`. */
 
@@ -13,7 +13,7 @@ struct ColorBand;
 #define MAX_STYLE_NAME 64
 
 /**
- * Default offered by Blender.
+ * Default offered by Dune.
  * uiFont.uifont_id
  */
 typedef enum eUIFont_ID {
