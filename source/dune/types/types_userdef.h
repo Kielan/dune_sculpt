@@ -581,10 +581,8 @@ typedef struct UserDefRuntime {
   char _pad0[7];
 } UserDefRuntime;
 
-/**
- * Store UI data here instead of the space
- * since the space is typically a window which is freed.
- */
+/* Store UI data here instead of the space
+ * since the space is typically a window which is freed. */
 typedef struct UserDefSpaceData {
   char section_active;
   /** eUserPref_SpaceData_Flag UI options. */
