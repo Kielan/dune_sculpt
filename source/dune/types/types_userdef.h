@@ -25,17 +25,15 @@ typedef enum eUIFont_ID {
   /* UIFONT_CUSTOM2 = 3, */ /* UNUSED */
 } eUIFont_ID;
 
-/**
- * Default fonts to load/initialize.
- * First font is the default (index 0), others optional.
- */
+/** Default fonts to load/initialize.
+ * First font is the default (index 0), others optional. */
 typedef struct uiFont {
   struct uiFont *next, *prev;
   /** 1024 = FILE_MAX. */
   char filepath[1024];
   /** From blfont lib. */
   short blf_id;
-  /** Own id (eUIFont_ID). */
+  /** Own id (eUIFontId). */
   short uifont_id;
 } uiFont;
 
@@ -444,12 +442,8 @@ typedef struct ThemeStripColor {
   unsigned char color[4];
 } ThemeStripColor;
 
-/**
- * A theme.
- *
- * Currently only a single theme is ever used at once.
- * Different theme presets are stored as external files now.
- */
+/* Currently only a single theme is ever used at once.
+ * Different theme presets are stored as external files now. */
 typedef struct duneTheme {
   struct duneTheme *next, *prev;
   char name[32];
@@ -472,7 +466,7 @@ typedef struct duneTheme {
   ThemeSpace space_text;
   ThemeSpace space_outliner;
   ThemeSpace space_node;
-  ThemeSpace space_preferences;
+  ThemeSpace space_prefs;
   ThemeSpace space_console;
   ThemeSpace space_clip;
   ThemeSpace space_topbar;
@@ -501,7 +495,7 @@ typedef struct duneAddon {
   struct duneAddon *next, *prev;
   char module[64];
   /** User-Defined Properties on this add-on (for storing preferences). */
-  IDProperty *prop;
+  IdProp *prop;
 } duneAddon;
 
 typedef struct dunePathCompare {
