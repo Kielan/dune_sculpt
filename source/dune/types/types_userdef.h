@@ -722,18 +722,18 @@ typedef struct UserDef {
   short menuthreshold1, menuthreshold2;
   /** Startup application template. */
   char app_template[64];
-  struct ListBase themes;
-  struct ListBase uifonts;
-  struct ListBase uistyles;
-  struct ListBase user_keymaps;
+  struct List themes;
+  struct List uifonts;
+  struct List uistyles;
+  struct List user_keymaps;
   /** wmKeyConfigPref. */
-  struct ListBase user_keyconfig_prefs;
-  struct ListBase addons;
-  struct ListBase autoex_paths;
+  struct List user_keyconfig_prefs;
+  struct List addons;
+  struct List autoex_paths;
   /** duneUserMenu. */
-  struct ListBase user_menus;
+  struct List user_menus;
   /** duneUserAssetLibrary */
-  struct ListBase asset_libs;
+  struct List asset_libs;
 
   char keyconfigstr[64];
 
