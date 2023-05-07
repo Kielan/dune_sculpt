@@ -1,16 +1,15 @@
-
-/** brief ID and Library types, which are fundamental for api. **/
+/** brief id and lib types, which are fundamental for api. **/
 #pragma once
 
-#include "TYPES_ID_enums.h"
-#include "TYPES_defs.h"
-#include "TYPES_listBase.h"
+#include "types_id_enums.h"
+#include "types_defs.h"
+#include "types_listBase.h"
 
 struct FileData;
 struct GHash;
 struct GPUTexture;
-struct ID;
-struct Library;
+struct Id;
+struct Lib;
 struct PackedFile;
 
 /* Runtime display data */
@@ -38,10 +37,10 @@ typedef struct IDPropertyUIData {
   int rna_subtype;
 
   char _pad[4];
-} IDPropertyUIData;
+} IdPropUIData;
 
 /* IDP_UI_DATA_TYPE_INT */
-typedef struct IDPropertyUIDataInt {
+typedef struct IdPropUIDataInt {
   IDPropertyUIData base;
   int *default_array; /* Only for array properties. */
   int default_array_len;
@@ -53,10 +52,10 @@ typedef struct IDPropertyUIDataInt {
   int soft_max;
   int step;
   int default_value;
-} IDPropertyUIDataInt;
+} IdPropUIDataInt;
 
 /* IDP_UI_DATA_TYPE_FLOAT */
-typedef struct IDPropertyUIDataFloat {
+typedef struct IdPropUIDataFloat {
   IDPropertyUIData base;
   double *default_array; /* Only for array properties. */
   int default_array_len;
@@ -70,7 +69,7 @@ typedef struct IDPropertyUIDataFloat {
   double soft_min;
   double soft_max;
   double default_value;
-} IDPropertyUIDataFloat;
+} IdPropUIDataFloat;
 
 /* IDP_UI_DATA_TYPE_STRING */
 typedef struct IDPropertyUIDataString {
