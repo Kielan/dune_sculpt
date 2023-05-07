@@ -30,22 +30,20 @@ typedef struct DrawDataList {
   struct DrawData *first, *last;
 } DrawDataList;
 
-typedef struct IDPropertyUIData {
+typedef struct IDPropUIData {
   /** Tooltip / property description pointer. Owned by the IDProperty. */
   char *description;
   /** API subtype, used for every type except string properties (PropertySubType). */
-  int rna_subtype;
-
+  int api_subtype;
   char _pad[4];
 } IdPropUIData;
 
 /* IDP_UI_DATA_TYPE_INT */
 typedef struct IdPropUIDataInt {
-  IDPropertyUIData base;
+  IdPropUIData base;
   int *default_array; /* Only for array properties. */
   int default_array_len;
   char _pad[4];
-
   int min;
   int max;
   int soft_min;
@@ -56,14 +54,12 @@ typedef struct IdPropUIDataInt {
 
 /* IDP_UI_DATA_TYPE_FLOAT */
 typedef struct IdPropUIDataFloat {
-  IDPropertyUIData base;
+  IdPropyUIData base;
   double *default_array; /* Only for array properties. */
   int default_array_len;
   char _pad[4];
-
   float step;
   int precision;
-
   double min;
   double max;
   double soft_min;
@@ -72,53 +68,49 @@ typedef struct IdPropUIDataFloat {
 } IdPropUIDataFloat;
 
 /* IDP_UI_DATA_TYPE_STRING */
-typedef struct IDPropertyUIDataString {
-  IDPropertyUIData base;
+typedef struct IdPropUIDataString {
+  IdPropUIData base;
   char *default_value;
-} IDPropertyUIDataString;
+} IdPropUIDataString;
 
 /* IDP_UI_DATA_TYPE_ID */
-typedef struct IDPropertyUIDataID {
+typedef struct IdPropUIDataId {
   IDPropertyUIData base;
-} IDPropertyUIDataID;
+} IdPropUIDataId;
 
-typedef struct IDPropertyData {
-  void *pointer;
+typedef struct IdPropData {
+  void *ptr;
   ListBase group;
   /** NOTE: we actually fit a double into these two 32bit integers. */
   int val, val2;
-} IDPropertyData;
+} IdPropData;
 
-typedef struct IDProperty {
-  struct IDProperty *next, *prev;
+typedef struct IdProp {
+  struct IdProp *next, *prev;
   char type, subtype;
   short flag;
   /** MAX_IDPROP_NAME. */
   char name[64];
-
   /* saved is used to indicate if this struct has been saved yet.
    * seemed like a good idea as a '_pad' var was needed anyway :) */
   int saved;
   /** NOTE: alignment for 64 bits. */
-  IDPropertyData data;
-
+  IdPropData data;
   /* Array length, also (this is important!) string length + 1.
    * the idea is to be able to reuse array realloc functions on strings. */
   int len;
-
   /* Strings and arrays are both buffered, though the buffer isn't saved. */
   /* totallen is total length of allocated array/string, including a buffer.
    * Note that the buffering is mild; the code comes from python's list implementation. */
   int totallen;
-
-  IDPropertyUIData *ui_data;
-} IDProperty;
+  IdPropUIData *ui_data;
+} IdProp;
 
 #define MAX_IDPROP_NAME 64
 #define DEFAULT_ALLOC_FOR_NULL_STRINGS 64
 
 /*->type*/
-typedef enum eIDPropertyType {
+typedef enum eIdPropType {
   IDP_STRING = 0,
   IDP_INT = 1,
   IDP_FLOAT = 2,
@@ -128,7 +120,7 @@ typedef enum eIDPropertyType {
   IDP_ID = 7,
   IDP_DOUBLE = 8,
   IDP_IDPARRAY = 9,
-} eIDPropertyType;
+} eIdPropType;
 #define IDP_NUMTYPES 10
 
 /** Used by some IDP utils, keep values in sync with type enum above. */
