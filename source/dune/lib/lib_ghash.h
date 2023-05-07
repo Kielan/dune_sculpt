@@ -243,10 +243,10 @@ void lib_ghashIterator_free(GHashIterator *ghi);
  */
 void LIB_ghashIterator_step(GHashIterator *ghi);
 
-LIB_INLINE void *LIB_ghashIterator_getKey(GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
-LIB_INLINE void *LIB_ghashIterator_getValue(GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
-LIB_INLINE void **LIB_ghashIterator_getValue_p(GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
-LIB_INLINE bool LIB_ghashIterator_done(const GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
+LIB_INLINE void *lib_ghashIterator_getKey(GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
+LIB_INLINE void *lib_ghashIterator_getValue(GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
+LIB_INLINE void **lib_ghashIterator_getValue_p(GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
+LIB_INLINE bool lib_ghashIterator_done(const GHashIterator *ghi) ATTR_WARN_UNUSED_RESULT;
 
 struct _gh_Entry {
   void *next, *key, *val;
