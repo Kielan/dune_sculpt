@@ -1183,10 +1183,8 @@ typedef enum eText_Draw_Options {
   USER_TEXT_HINTING_FULL = (1 << 3),
 } eText_Draw_Options;
 
-/**
- * Grease Pencil Settings.
- * UserDef.gp_settings
- */
+/* Pen Settings.
+ * UserDef.gp_settings */
 typedef enum eGP_UserdefSettings {
   GP_PAINT_UNUSED_0 = (1 << 0),
 } eGP_UserdefSettings;
@@ -1195,11 +1193,9 @@ enum {
   USER_GIZMO_DRAW = (1 << 0),
 };
 
-/**
- * Color Picker Types.
- * UserDef.color_picker_type
- */
-typedef enum eColorPicker_Types {
+/** Color Picker Types.
+ * UserDef.color_picker_type */
+typedef enum eColorPickerTypes {
   USER_CP_CIRCLE_HSV = 0,
   USER_CP_SQUARE_SV = 1,
   USER_CP_SQUARE_HS = 2,
