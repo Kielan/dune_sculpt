@@ -1,12 +1,9 @@
-/** \file
- * \ingroup bli
- * \brief Utility defines for timing/benchmarks.
- */
+/** Utility defines for timing/benchmarks. */
 
 #pragma once
 
-#include "BLI_utildefines.h" /* for AT */
-#include "PIL_time.h"        /* for PIL_check_seconds_timer */
+#include "lib_utildefines.h" /* for AT */
+#include "lib_time.h"        /* for PIL_check_seconds_timer */
 
 #define TIMEIT_START(var) \
   { \
