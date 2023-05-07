@@ -251,19 +251,19 @@ LIB_INLINE bool lib_ghashIterator_done(const GHashIterator *ghi) ATTR_WARN_UNUSE
 struct _gh_Entry {
   void *next, *key, *val;
 };
-LIB_INLINE void *LIB_ghashIterator_getKey(GHashIterator *ghi)
+LIB_INLINE void *lib_ghashIterator_getKey(GHashIterator *ghi)
 {
   return ((struct _gh_Entry *)ghi->curEntry)->key;
 }
-LIB_INLINE void *LIB_ghashIterator_getValue(GHashIterator *ghi)
+LIB_INLINE void *lib_ghashIterator_getValue(GHashIterator *ghi)
 {
   return ((struct _gh_Entry *)ghi->curEntry)->val;
 }
-LIB_INLINE void **LIB_ghashIterator_getValue_p(GHashIterator *ghi)
+LIB_INLINE void **lib_ghashIterator_getValue_p(GHashIterator *ghi)
 {
   return &((struct _gh_Entry *)ghi->curEntry)->val;
 }
-LIB_INLINE bool LIB_ghashIterator_done(const GHashIterator *ghi)
+LIB_INLINE bool lib_ghashIterator_done(const GHashIterator *ghi)
 {
   return !ghi->curEntry;
 }
@@ -275,10 +275,10 @@ LIB_INLINE bool LIB_ghashIterator_done(const GHashIterator *ghi)
 #endif
 
 #define GHASH_ITER(gh_iter_, ghash_) \
-  for (LIB_ghashIterator_init(&gh_iter_, ghash_); LIB_ghashIterator_done(&gh_iter_) == false; \
-       LIB_ghashIterator_step(&gh_iter_))
+  for (lib_ghashIterator_init(&gh_iter_, ghash_); LIB_ghashIterator_done(&gh_iter_) == false; \
+       lib_ghashIterator_step(&gh_iter_))
 
 #define GHASH_ITER_INDEX(gh_iter_, ghash_, i_) \
-  for (LIB_ghashIterator_init(&gh_iter_, ghash_), i_ = 0; \
-       LIB_ghashIterator_done(&gh_iter_) == false; \
-       LIB_ghashIterator_step(&gh_iter_), i_++)
+  for (lib_ghashIterator_init(&gh_iter_, ghash_), i_ = 0; \
+       lib_ghashIterator_done(&gh_iter_) == false; \
+       lib_ghashIterator_step(&gh_iter_), i_++)
