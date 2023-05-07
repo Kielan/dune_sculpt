@@ -31,7 +31,7 @@ void _LIB_assert_unreachable_print(const char *file, int line, const char *funct
 #    define _LIB_ASSERT_ABORT() (void)0
 #  endif
 /* LIB_assert */
-#  define LIB_assert(a) \
+#  define lib_assert(a) \
     (void)((!(a)) ? ((_LIB_assert_print_backtrace(), \
                       _LIB_ASSERT_PRINT_POS(a), \
                       _LIB_ASSERT_ABORT(), \
