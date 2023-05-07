@@ -859,7 +859,7 @@ typedef struct UserDef {
 
   float sculpt_paint_overlay_col[3];
   /** Default color for newly created Grease Pencil layers. */
-  float gpencil_new_layer_col[4];
+  float pen_new_layer_col[4];
 
   /** Drag pixels (scaled by DPI). */
   char drag_threshold_mouse;
@@ -876,15 +876,11 @@ typedef struct UserDef {
   /** Opacity of inactive F-Curves in F-Curve Editor. */
   float fcu_inactive_alpha;
 
-  /**
-   * If keeping a pie menu spawn button pressed after this time,
-   * it turns into a drag/release pie menu.
-   */
+  /* If keeping a pie menu spawn button pressed after this time,
+   * it turns into a drag/release pie menu. */
   short pie_tap_timeout;
-  /**
-   * Direction in the pie menu will always be calculated from the
-   * initial position within this time limit.
-   */
+  /* Direction in the pie menu will always be calculated from the
+   * initial position within this time limit.   */
   short pie_initial_timeout;
   short pie_animation_timeout;
   short pie_menu_confirm;
