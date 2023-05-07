@@ -637,11 +637,11 @@ typedef struct UserDefExperimental {
 typedef struct UserDef {
   /** UserDef has separate do-version handling, and can be read from other files. */
   int versionfile, subversionfile;
-  /** eUserPref_Flag. */
+  /** eUserPrefFlag. */
   int flag;
-  /** eDupli_ID_Flags. */
+  /** eDupliIdFlags. */
   unsigned int dupflag;
-  /** eUserPref_PrefFlag preferences for the preferences. */
+  /** eUserPrefPrefFlag preferences for the preferences. */
   char pref_flag;
   char savetime;
   char mouse_emulate_3_button_modifier;
@@ -1079,18 +1079,18 @@ typedef enum eUserpref_GPU_Flag {
 } eUserpref_GPU_Flag;
 
 /** UserDef.tablet_api */
-typedef enum eUserpref_TableAPI {
+typedef enum eUserprefTableAPI {
   USER_TABLET_AUTOMATIC = 0,
   USER_TABLET_NATIVE = 1,
   USER_TABLET_WINTAB = 2,
-} eUserpref_TabletAPI;
+} eUserprefTabletAPI;
 
 /** UserDef.app_flag */
-typedef enum eUserpref_APP_Flag {
+typedef enum eUserprefAPPFlag {
   USER_APP_LOCK_CORNER_SPLIT = (1 << 0),
   USER_APP_HIDE_REGION_TOGGLE = (1 << 1),
   USER_APP_LOCK_EDGE_RESIZE = (1 << 2),
-} eUserpref_APP_Flag;
+} eUserprefAPPFlag;
 
 /** UserDef.statusbar_flag */
 typedef enum eUserpref_StatusBar_Flag {
@@ -1100,10 +1100,8 @@ typedef enum eUserpref_StatusBar_Flag {
   STATUSBAR_SHOW_VERSION = (1 << 3),
 } eUserpref_StatusBar_Flag;
 
-/**
- * Auto-Keying mode.
- * UserDef.autokey_mode
- */
+/** Auto-Keying mode.
+ * UserDef.autokey_mode */
 typedef enum eAutokey_Mode {
   /* AUTOKEY_ON is a bitflag */
   AUTOKEY_ON = 1,
