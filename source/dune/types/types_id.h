@@ -231,26 +231,26 @@ typedef struct IdOverrideLibProp {
   char *api_path;
 
   /** List of overriding operations (IdOverrideLibraryPropOp) applied to this property. */
-  ListBase operations;
+  List ops;
 
   /**
-   * Runtime, tags are common to both IDOverrideLibraryProperty and
-   * IDOverrideLibraryPropertyOperation. */
+   * Runtime, tags are common to both IdOverrideLibProp and
+   * IdOverrideLibPropOp. */
   short tag;
   char _pad[2];
 
   /** The property type matching the rna_path. */
-  unsigned int rna_prop_type;
-} IDOverrideLibraryProperty;
+  unsigned int api_prop_type;
+} IdOverrideLibProp;
 
-/* IdOverrideLibProp->tag and IDOverrideLibraryPropertyOperation->tag. */
+/* IdOverrideLibProp->tag and IdOverrideLibPropOp->tag. */
 enum {
   /** This override property (operation) is unused and should be removed by cleanup process. */
-  IDOVERRIDE_LIBRARY_TAG_UNUSED = 1 << 0,
+  IDOVERRIDE_LIB_TAG_UNUSED = 1 << 0,
 };
 
-typedef struct IDOverrideLibraryRuntime {
-  struct GHash *rna_path_to_override_properties;
+typedef struct IdOverrideLibRuntime {
+  struct GHash *api_path_to_override_props;
   uint tag;
 } IdOverrideLibRuntime;
 
