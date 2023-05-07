@@ -1261,12 +1261,12 @@ typedef enum eImageDrawMethod {
 } eImageDrawMethod;
 
 /** UserDef.virtual_pixel */
-typedef enum eUserpref_VirtualPixel {
+typedef enum eUserprefVirtualPixel {
   VIRTUAL_PIXEL_NATIVE = 0,
   VIRTUAL_PIXEL_DOUBLE = 1,
-} eUserpref_VirtualPixel;
+} eUserprefVirtualPixel;
 
-typedef enum eOpensubdiv_Computee_Type {
+typedef enum eOpensubdivComputeType {
   USER_OPENSUBDIV_COMPUTE_NONE = 0,
   USER_OPENSUBDIV_COMPUTE_CPU = 1,
   USER_OPENSUBDIV_COMPUTE_OPENMP = 2,
@@ -1274,41 +1274,41 @@ typedef enum eOpensubdiv_Computee_Type {
   USER_OPENSUBDIV_COMPUTE_CUDA = 4,
   USER_OPENSUBDIV_COMPUTE_GLSL_TRANSFORM_FEEDBACK = 5,
   USER_OPENSUBDIV_COMPUTE_GLSL_COMPUTE = 6,
-} eOpensubdiv_Computee_Type;
+} eOpensubdivComputeType;
 
 /** UserDef.factor_display_type */
-typedef enum eUserpref_FactorDisplay {
+typedef enum eUserprefFactorDisplay {
   USER_FACTOR_AS_FACTOR = 0,
   USER_FACTOR_AS_PERCENTAGE = 1,
-} eUserpref_FactorDisplay;
+} eUserprefFactorDisplay;
 
-typedef enum eUserpref_RenderDisplayType {
+typedef enum eUserprefRenderDisplayType {
   USER_RENDER_DISPLAY_NONE = 0,
   USER_RENDER_DISPLAY_SCREEN = 1,
   USER_RENDER_DISPLAY_AREA = 2,
   USER_RENDER_DISPLAY_WINDOW = 3
-} eUserpref_RenderDisplayType;
+} eUserprefRenderDisplayType;
 
-typedef enum eUserpref_TempSpaceDisplayType {
+typedef enum eUserprefTempSpaceDisplayType {
   USER_TEMP_SPACE_DISPLAY_FULLSCREEN = 0,
   USER_TEMP_SPACE_DISPLAY_WINDOW = 1,
-} eUserpref_TempSpaceDisplayType;
+} eUserprefTempSpaceDisplayType;
 
-typedef enum eUserpref_EmulateMMBMod {
+typedef enum eUserprefEmulateMMBMod {
   USER_EMU_MMB_MOD_ALT = 0,
   USER_EMU_MMB_MOD_OSKEY = 1,
-} eUserpref_EmulateMMBMod;
+} eUserprefEmulateMMBMod;
 
-typedef enum eUserpref_DiskCacheCompression {
+typedef enum eUserprefDiskCacheCompression {
   USER_SEQ_DISK_CACHE_COMPRESSION_NONE = 0,
   USER_SEQ_DISK_CACHE_COMPRESSION_LOW = 1,
   USER_SEQ_DISK_CACHE_COMPRESSION_HIGH = 2,
-} eUserpref_DiskCacheCompression;
+} eUserprefDiskCacheCompression;
 
-typedef enum eUserpref_SeqProxySetup {
+typedef enum eUserprefSeqProxySetup {
   USER_SEQ_PROXY_SETUP_MANUAL = 0,
   USER_SEQ_PROXY_SETUP_AUTOMATIC = 1,
-} eUserpref_SeqProxySetup;
+} eUserprefSeqProxySetup;
 
 /* Locale Ids. Auto will try to get local from OS. Our default is English though. */
 /** UserDef.language */
