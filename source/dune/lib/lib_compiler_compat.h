@@ -3,9 +3,7 @@
 
 #pragma once
 
-/**
- * Use to help with cross platform portability.
- */
+/** Use to help with cross platform portability. */
 
 #if defined(_MSC_VER)
 #  define alloca _alloca
