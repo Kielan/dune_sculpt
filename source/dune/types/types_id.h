@@ -30,7 +30,7 @@ typedef struct DrawDataList {
   struct DrawData *first, *last;
 } DrawDataList;
 
-typedef struct IDPropUIData {
+typedef struct IdPropUIData {
   /** Tooltip / property description pointer. Owned by the IDProperty. */
   char *description;
   /** API subtype, used for every type except string properties (PropertySubType). */
@@ -208,7 +208,7 @@ enum {
   /* We can add more if needed (move, delete, ...). */
 };
 
-/* IDOverrideLibraryPropertyOperation->flag. */
+/* IdOverrideLibPropOp->flag. */
 enum {
   /** User cannot remove that override operation. */
   IDOVERRIDE_LIB_FLAG_MANDATORY = 1 << 0,
@@ -221,18 +221,16 @@ enum {
 };
 
 /** A single overridden property, contain all operations on this one. */
-typedef struct IDOverrideLibraryProperty {
-  struct IDOverrideLibraryProperty *next, *prev;
+typedef struct IdOverrideLibProp {
+  struct IdOverrideLibProp *next, *prev;
 
   /**
-   * Path from ID to overridden property.
+   * Path from id to overridden prop.
    * *Does not* include indices/names for final arrays/collections items.
    */
-  char *rna_path;
+  char *api_path;
 
-  /**
-   * List of overriding operations (IDOverrideLibraryPropertyOperation) applied to this property.
-   */
+  /** List of overriding operations (IdOverrideLibraryPropOp) applied to this property. */
   ListBase operations;
 
   /**
