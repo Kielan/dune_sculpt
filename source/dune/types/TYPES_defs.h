@@ -1,8 +1,4 @@
-/**
- * TYPES
- *
- * Group generic defines for all structs headers may use in this file.
- */
+/** Group generic defines for all structs headers may use in this file. */
 
 #pragma once
 
@@ -40,7 +36,7 @@
 #endif
 
 /* hrmf, we need a better include then this */
-#include "../dunelib/LIB_sys_types.h" /* needed for int64_t only! */
+#include "../dunelib/lib_sys_types.h" /* needed for int64_t only! */
 
 /* non-id name variables should use this length */
 #define MAX_NAME 64
