@@ -1,9 +1,5 @@
-/* file
- * ingroup lib
- *
- * A general (pointer -> pointer) chaining hash table
- * for 'Abstract Data Types' (known as an ADT Hash Table).
- */
+/* A general (pointer -> pointer) chaining hash table
+ * for 'Abstract Data Types' (known as an ADT Hash Table). */
 
 #include <limits.h>
 #include <stdarg.h>
