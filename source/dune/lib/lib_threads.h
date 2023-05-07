@@ -23,22 +23,22 @@ void lib_threadpool_init(struct ListBase *threadbase, void *(*do_thread)(void *)
 /** Amount of available threads. */
 int lib_available_threads(struct ListBase *threadbase);
 /** Returns thread number, for sample patterns or threadsafe tables. */
-int LIB_threadpool_available_thread_index(struct ListBase *threadbase);
-void LIB_threadpool_insert(struct ListBase *threadbase, void *callerdata);
-void LIB_threadpool_remove(struct ListBase *threadbase, void *callerdata);
-void LIB_threadpool_remove_index(struct ListBase *threadbase, int index);
-void LIB_threadpool_clear(struct ListBase *threadbase);
-void LIB_threadpool_end(struct ListBase *threadbase);
-int LIB_thread_is_main(void);
+int lib_threadpool_available_thread_index(struct ListBase *threadbase);
+void lib_threadpool_insert(struct ListBase *threadbase, void *callerdata);
+void lib_threadpool_remove(struct ListBase *threadbase, void *callerdata);
+void lib_threadpool_remove_index(struct ListBase *threadbase, int index);
+void lib_threadpool_clear(struct ListBase *threadbase);
+void lib_threadpool_end(struct ListBase *threadbase);
+int lin_thread_is_main(void);
 
 /* System Information */
 
 /**
  * return the number of threads the system can make use of.
  */
-int LIB_system_thread_count(void);
-void LIB_system_num_threads_override_set(int num);
-int LIB_system_num_threads_override_get(void);
+int lib_system_thread_count(void);
+void lib_system_num_threads_override_set(int num);
+int lib_system_num_threads_override_get(void);
 
 /**
  * Global Mutex Locks
@@ -57,8 +57,8 @@ enum {
   LOCK_VIEW3D,
 };
 
-void LIB_thread_lock(int type);
-void LIB_thread_unlock(int type);
+void lib_thread_lock(int type);
+void lib_thread_unlock(int type);
 
 /* Mutex Lock */
 
