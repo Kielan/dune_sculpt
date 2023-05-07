@@ -76,8 +76,8 @@ void *lib_listbase_string_or_index_find(const struct ListBase *listbase,
 void *lib_rfindlink(const struct ListBase *listbase, int number) ATTR_WARN_UNUSED_RESULT
     ATTR_NONNULL(1);
 /**
- * Finds the last element of \a listbase which contains the
- * null-terminated string \a id at the specified offset, returning NULL if not found.
+ * Finds the last element of listbase which contains the
+ * null-terminated string id at the specified offset, returning NULL if not found.
  */
 void *lib_rfindstring(const struct ListBase *listbase,
                       const char *id,
@@ -114,7 +114,7 @@ void lib_addtail(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
 /**
  * Removes a vlink from a listbase. Assumes it is linked into there!
  */
-void LIB_remlink(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
+void lib_remlink(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
 /**
  * Checks that a vlink is linked into listbase, removing it from there if so. */
 bool lib_remlink_safe(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
@@ -166,43 +166,37 @@ void lib_listbase_sort_r(ListBase *listbase,
  *              to move a vlink before previous, or 1 to move behind next.
  * return If position of a vlink has changed.
  */
-bool LIB_listbase_link_move(ListBase *listbase, void *vlink, int step) ATTR_NONNULL();
+bool lib_listbase_link_move(ListBase *listbase, void *vlink, int step) ATTR_NONNULL();
 /**
  * Move the link at the index a from to the position at index a to.
  *
  * return If the move was successful.
  */
-bool LIB_listbase_move_index(ListBase *listbase, int from, int to) ATTR_NONNULL();
+bool lib_listbase_move_index(ListBase *listbase, int from, int to) ATTR_NONNULL();
 /**
  * Removes and disposes of the entire contents of listbase using direct free(3).
  */
-void LIB_freelist(struct ListBase *listbase) ATTR_NONNULL(1);
+void lib_freelist(struct ListBase *listbase) ATTR_NONNULL(1);
 /**
  * Returns the number of elements in a listbase, up until (and including count_max)
  *
  * note Use to avoid redundant looping.
  */
-int LIB_listbase_count_at_most(const struct ListBase *listbase,
+int lib_listbase_count_at_most(const struct ListBase *listbase,
                                int count_max) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
-/**
- * Returns the number of elements in \a listbase.
- */
-int LIB_listbase_count(const struct ListBase *listbase) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
-/**
- * Removes a vlink from listbase and disposes of it. Assumes it is linked into there!
- */
-void LIB_freelinkN(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
+/** Returns the number of elements in \a listbase. */
+int lib_listbase_count(const struct ListBase *listbase) ATTR_WARN_UNUSED_RESULT ATTR_NONNULL(1);
+/** Removes a vlink from listbase and disposes of it. Assumes it is linked into there! */
+void lib_freelinkn(struct ListBase *listbase, void *vlink) ATTR_NONNULL(1);
 
-/**
- * Swaps a vlinka and a vlinkb in the list. Assumes they are both already in the list!
- */
-void LIB_listbase_swaplinks(struct ListBase *listbase, void *vlinka, void *vlinkb)
+/** Swaps a vlinka and a vlinkb in the list. Assumes they are both already in the list! */
+void lib_listbase_swaplinks(struct ListBase *listbase, void *vlinka, void *vlinkb)
     ATTR_NONNULL(1, 2);
 /**
  * Swaps a vlinka and a vlinkb from their respective lists.
  * Assumes they are both already in their a listbasea!
  */
-void LIB_listbases_swaplinks(struct ListBase *listbasea,
+void lib_listbases_swaplinks(struct ListBase *listbasea,
                              struct ListBase *listbaseb,
                              void *vlinka,
                              void *vlinkb) ATTR_NONNULL(2, 3);
