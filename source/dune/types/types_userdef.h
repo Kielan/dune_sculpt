@@ -588,18 +588,16 @@ typedef struct UserDef_Runtime {
  * Store UI data here instead of the space
  * since the space is typically a window which is freed.
  */
-typedef struct UserDef_SpaceData {
+typedef struct UserDefSpaceData {
   char section_active;
   /** eUserPref_SpaceData_Flag UI options. */
   char flag;
   char _pad0[6];
-} UserDef_SpaceData;
+} UserDefSpaceData;
 
-/**
- * Storage for UI data that to keep it even after the window was closed. (Similar to
- * UserDef_SpaceData.)
- */
-typedef struct UserDef_FileSpaceData {
+/** Storage for UI data that to keep it even after the window was closed. (Similar to
+ * UserDef_SpaceData.) */
+typedef struct UserDefFileSpaceData {
   int display_type;   /* FileSelectParams.display */
   int thumbnail_size; /* FileSelectParams.thumbnail_size */
   int sort_type;      /* FileSelectParams.sort */
@@ -611,9 +609,9 @@ typedef struct UserDef_FileSpaceData {
   /** Info used when creating the file browser in a temporary window. */
   int temp_win_sizex;
   int temp_win_sizey;
-} UserDef_FileSpaceData;
+} UserDefFileSpaceData;
 
-typedef struct UserDef_Experimental {
+typedef struct UserDefExperimental {
   /* Debug options, always available. */
   char use_undo_legacy;
   char no_override_auto_resync;
