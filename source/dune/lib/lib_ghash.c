@@ -8,14 +8,12 @@
 
 typedef struct Entry {
   struct Entry *next;
-
   void *key;
 } Entry;
 
 struct GHash {
   GHashHashFP hashfp;
   GHashCmpFP cmpfp;
-
   Entry **buckets;
   struct lib_mempool *entrypool;
   uint nbuckets;
@@ -30,9 +28,7 @@ struct GHash {
   uint flag;
 };
 
-/**
- * Expand buckets to the next size up or down.
- */
+/** Expand buckets to the next size up or down. */
 static void ghash_buckets_resize(GHash *gh, const uint nbuckets)
 {
   Entry **buckets_old = gh->buckets;
@@ -49,7 +45,7 @@ static void ghash_buckets_resize(GHash *gh, const uint nbuckets)
   gh->bucket_mask = nbuckets - 1;
 #endif
 
-  buckets_new = (Entry **)MEM_callocN(sizeof(*gh->buckets) * gh->nbuckets, __func__);
+  buckets_new = (Entry **mem_callocn(sizeof(*gh->buckets) * gh->nbuckets, __func__);
 
   if (buckets_old) {
     if (nbuckets > nbuckets_old) {
@@ -174,7 +170,7 @@ static GHash *ghash_new(GHashHashFP hashfp,
                         const uint nentries_reserve,
                         const uint flag)
 {
-  GHash *gh = MEM_mallocN(sizeof(*gh), info);
+  GHash *gh = mem_mallocn(sizeof(*gh), info);
 
   gh->hashfp = hashfp;
   gh->cmpfp = cmpfp;
@@ -183,7 +179,7 @@ static GHash *ghash_new(GHashHashFP hashfp,
   gh->flag = flag;
 
   ghash_buckets_reset(gh, nentries_reserve);
-  gh->entrypool = LIB_mempool_create(
+  gh->entrypool = lib_mempool_create(
       GHASH_ENTRY_SIZE(flag & GHASH_FLAG_IS_GSET), 64, 64, LIB_MEMPOOL_NOP);
 
   return gh;
@@ -201,7 +197,7 @@ static GHash *ghash_new(GHashHashFP hashfp,
  * Use this to avoid resizing buckets if the size is known or can be closely approximated.
  * return  An empty GHash.
  */
-GHash *LIB_ghash_new_ex(GHashHashFP hashfp,
+GHash *lib_ghash_new_ex(GHashHashFP hashfp,
                         GHashCmpFP cmpfp,
                         const char *info,
                         const uint nentries_reserve)
