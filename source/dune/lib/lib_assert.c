@@ -1,19 +1,17 @@
-/**
- * Helper functions for LIB_assert.h header.
- */
+/** Helper functions for lib_assert.h header. */
 
-#include "LIB_assert.h" /* Own include. */
-#include "LIB_system.h"
+#include "lib_assert.h" /* Own include. */
+#include "lib_system.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-void _LIB_assert_print_pos(const char *file, const int line, const char *function, const char *id)
+void _lib_assert_print_pos(const char *file, const int line, const char *function, const char *id)
 {
-  fprintf(stderr, "LIB_assert failed: %s:%d, %s(), at \'%s\'\n", file, line, function, id);
+  fprintf(stderr, "lib_assert failed: %s:%d, %s(), at \'%s\'\n", file, line, function, id);
 }
 
-void _LIB_assert_print_extra(const char *str)
+void _lib_assert_print_extra(const char *str)
 {
   fprintf(stderr, "  %s\n", str);
 }
