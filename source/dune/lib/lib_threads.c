@@ -67,7 +67,7 @@ static void *thread_tls_data;
  *       // tag job 'processed
  *       lib_threadpool_insert(&lb, job);
  *     }
- *     else PIL_sleep_ms(50);
+ *     else time_sleep_ms(50);
  *
  *     // Find if a job is ready, this the do_something_func() should write in job somewhere.
  *     cont = 0;
@@ -270,7 +270,7 @@ void lib_threadpool_end(ListBase *threadbase)
 
 /* System Information */
 
-int LIB_system_thread_count()
+int lib_system_thread_count()
 {
   static int t = -1;
 
@@ -340,7 +340,7 @@ static ThreadMutex *global_mutex_from_type(const int type)
     case LOCK_VIEW3D:
       return &_view3d_lock;
     default:
-      LIB_assert(0);
+      lib_assert(0);
       return nullptr;
   }
 }
@@ -367,32 +367,32 @@ void lib_mutex_lock(ThreadMutex *mutex)
   pthread_mutex_lock(mutex);
 }
 
-void LIB_mutex_unlock(ThreadMutex *mutex)
+void lib_mutex_unlock(ThreadMutex *mutex)
 {
   pthread_mutex_unlock(mutex);
 }
 
-bool LIB_mutex_trylock(ThreadMutex *mutex)
+bool lib_mutex_trylock(ThreadMutex *mutex)
 {
   return (pthread_mutex_trylock(mutex) == 0);
 }
 
-void LIB_mutex_end(ThreadMutex *mutex)
+void lib_mutex_end(ThreadMutex *mutex)
 {
   pthread_mutex_destroy(mutex);
 }
 
-ThreadMutex *LIB_mutex_alloc()
+ThreadMutex *lib_mutex_alloc()
 {
   ThreadMutex *mutex = static_cast<ThreadMutex *>(MEM_callocN(sizeof(ThreadMutex), "ThreadMutex"));
-  LIB_mutex_init(mutex);
+  lib_mutex_init(mutex);
   return mutex;
 }
 
-void LIB_mutex_free(ThreadMutex *mutex)
+void lib_mutex_free(ThreadMutex *mutex)
 {
-  LIB_mutex_end(mutex);
-  MEM_freeN(mutex);
+  lib_mutex_end(mutex);
+  mem_freen(mutex);
 }
 
 /* Spin Locks */
@@ -422,13 +422,13 @@ void LIB_spin_init(SpinLock *spin)
 #endif
 }
 
-void LIB_spin_lock(SpinLock *spin)
+void lib_spin_lock(SpinLock *spin)
 {
 #ifdef WITH_TBB
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
   spin_mutex->lock();
 #elif defined(__APPLE__)
-  LIB_mutex_lock(spin);
+  lib_mutex_lock(spin);
 #elif defined(_MSC_VER)
   while (InterlockedExchangeAcquire(spin, 1)) {
     while (*spin) {
@@ -441,13 +441,13 @@ void LIB_spin_lock(SpinLock *spin)
 #endif
 }
 
-void LIB_spin_unlock(SpinLock *spin)
+void lib_spin_unlock(SpinLock *spin)
 {
 #ifdef WITH_TBB
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
   spin_mutex->unlock();
 #elif defined(__APPLE__)
-  LIB_mutex_unlock(spin);
+  lib_mutex_unlock(spin);
 #elif defined(_MSC_VER)
   _ReadWriteBarrier();
   *spin = 0;
@@ -456,7 +456,7 @@ void LIB_spin_unlock(SpinLock *spin)
 #endif
 }
 
-void LIB_spin_end(SpinLock *spin)
+void lib_spin_end(SpinLock *spin)
 {
 #ifdef WITH_TBB
   tbb::spin_mutex *spin_mutex = tbb_spin_mutex_cast(spin);
