@@ -422,7 +422,6 @@ typedef struct ThemeWireColor {
   unsigned char solid[4];
   unsigned char select[4];
   unsigned char active[4];
-
   /** eWireColor_Flags. */
   short flag;
   char _pad0[2];
@@ -447,14 +446,12 @@ typedef struct ThemeStripColor {
 typedef struct duneTheme {
   struct duneTheme *next, *prev;
   char name[32];
-
   ThemeUI tui;
-
   /**
    * Individual Spacetypes:
    * Ensure UI_THEMESPACE_END is updated when adding.
    */
-  ThemeSpace space_properties;
+  ThemeSpace space_props;
   ThemeSpace space_view3d;
   ThemeSpace space_file;
   ThemeSpace space_graph;
@@ -551,12 +548,12 @@ enum {
   USER_MENU_TYPE_PROP = 4,
 };
 
-typedef struct duneUserAssetLibrary {
-  struct duneUserAssetLibrary *next, *prev;
+typedef struct duneUserAssetLib {
+  struct duneUserAssetLib *next, *prev;
 
   char name[64];   /* MAX_NAME */
   char path[1024]; /* FILE_MAX */
-} duneUserAssetLibrary;
+} duneUserAssetLib;
 
 typedef struct SolidLight {
   int flag;
