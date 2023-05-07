@@ -16,20 +16,20 @@ void _lib_assert_print_extra(const char *str)
   fprintf(stderr, "  %s\n", str);
 }
 
-void _LIB_assert_unreachable_print(const char *file, const int line, const char *function)
+void _lib_assert_unreachable_print(const char *file, const int line, const char *function)
 {
   fprintf(stderr, "Code marked as unreachable has been executed. Please report this as a bug.\n");
   fprintf(stderr, "Error found at %s:%d in %s.\n", file, line, function);
 }
 
-void _LIB_assert_print_backtrace(void)
+void _lib_assert_print_backtrace(void)
 {
 #ifndef NDEBUG
-  LIB_system_backtrace(stderr);
+  lib_system_backtrace(stderr);
 #endif
 }
 
-void _LIB_assert_abort(void)
+void _lib_assert_abort(void)
 {
   /* Wrap to remove 'noreturn' attribute since this suppresses missing return statements,
    * allowing changes to debug builds to accidentally to break release builds.
