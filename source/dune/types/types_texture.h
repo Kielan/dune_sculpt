@@ -13,7 +13,7 @@ struct Object;
 struct PreviewImage;
 struct Tex;
 
-typedef struct MTex {
+typedef struct MeshTex {
   short texco, mapto, maptoneg, blendtype;
   struct Object *object;
   struct Tex *tex;
@@ -50,7 +50,7 @@ typedef struct MTex {
 
   /* world */
   float zenupfac, zendownfac, blendfac;
-} MTex;
+} MeshTex;
 
 #ifndef TYPES_USHORT_FIX
 #  define TYPES_USHORT_FIX
@@ -167,7 +167,7 @@ typedef struct Tex {
 
   struct ImageUser iuser;
 
-  struct bNodeTree *nodetree;
+  struct NodeTree *nodetree;
   /* old animation system, deprecated for 2.5 */
   struct Ipo *ipo TYPES_DEPRECATED;
   struct Image *ima;
