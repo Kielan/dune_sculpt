@@ -208,35 +208,34 @@ void lib_ghash_flag_set(GHash *gh, unsigned int flag);
 /**
  * Clear a GHash flag.
  */
-void LIB_ghash_flag_clear(GHash *gh, unsigned int flag);
-/** GHash Iterator
- */
+void lib_ghash_flag_clear(GHash *gh, unsigned int flag);
+/** GHash Iterator */
 
 /**
  * Create a new GHashIterator. The hash table must not be mutated
  * while the iterator is in use, and the iterator will step exactly
- * #LIB_ghash_len(gh) times before becoming done.
+ * lib_ghash_len(gh) times before becoming done.
  *
  * param gh: The GHash to iterate over.
  * return Pointer to a new iterator.
  */
-GHashIterator *LIB_ghashIterator_new(GHash *gh) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT;
+GHashIterator *lib_ghashIterator_new(GHash *gh) ATTR_MALLOC ATTR_WARN_UNUSED_RESULT;
 
 /**
  * Init an already allocated GHashIterator. The hash table must not
  * be mutated while the iterator is in use, and the iterator will
- * step exactly #LIB_ghash_len(gh) times before becoming done.
+ * step exactly lib_ghash_len(gh) times before becoming done.
  *
  * param ghi: The GHashIterator to initialize.
  * param gh: The GHash to iterate over.
  */
-void LIB_ghashIterator_init(GHashIterator *ghi, GHash *gh);
+void lib_ghashIterator_init(GHashIterator *ghi, GHash *gh);
 /**
  * Free a GHashIterator.
  *
  * param ghi: The iterator to free.
  */
-void LIB_ghashIterator_free(GHashIterator *ghi);
+void lib_ghashIterator_free(GHashIterator *ghi);
 /**
  * Steps the iterator to the next index.
  *
