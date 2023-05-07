@@ -1197,10 +1197,8 @@ typedef enum eUserpref_Translation_Flags {
   USER_TR_NEWDATANAME = (1 << 8),
 } eUserpref_Translation_Flags;
 
-/**
- * Text Editor options
- * UserDef.text_flag
- */
+/** Text Editor options
+ * UserDef.text_flag */
 typedef enum eTextEdit_Flags {
   USER_TEXT_EDIT_AUTO_CLOSE = (1 << 0),
 } eTextEdit_Flags;
