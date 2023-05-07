@@ -262,24 +262,23 @@ enum {
 
 /* Main container for all overriding data info of a data-block. */
 typedef struct IdOverrideLib {
-  /** Reference linked ID which this one overrides. */
-  struct ID *ref;
+  /** Reference linked id which this one overrides. */
+  struct Id *ref;
   /** List of IdOverrideLibProp structs. */
   ListBase properties;
   /** Override hierarchy root ID. Usually the actual root of the hierarchy, but not always
    * in degenerated cases.
    *
-   * All liboverrides of a same hierarchy (e.g. a character collection) share the same root.
-   */
-  struct ID *hierarchy_root;
+   * All liboverrides of a same hierarchy (e.g. a character collection) share the same root. */
+  struct Id *hierarchy_root;
   /* Read/write data. */
   /* Temp ID storing extra override data (used for differential operations only currently).
    * Always NULL outside of read/write context. */
-  struct ID *storage;
-  IDOverrideLibRuntime *runtime;
+  struct Id *storage;
+  IdOverrideLibRuntime *runtime;
   unsigned int flag;
   char _pad_1[4];
-} IDOverrideLib;
+} IdOverrideLib;
 
 /* IDOverrideLib->flag */
 enum {
