@@ -9,11 +9,11 @@
 
 /* Utility functions. */
 
-void _LIB_assert_print_pos(const char *file, int line, const char *function, const char *id);
-void _LIB_assert_print_extra(const char *str);
-void _LIB_assert_print_backtrace(void);
-void _LIB_assert_abort(void);
-void _LIB_assert_unreachable_print(const char *file, int line, const char *function);
+void _lib_assert_print_pos(const char *file, int line, const char *function, const char *id);
+void _lib_assert_print_extra(const char *str);
+void _lib_assert_print_backtrace(void);
+void _lib_assert_abort(void);
+void _lib_assert_unreachable_print(const char *file, int line, const char *function);
 
 #ifndef NDEBUG
 /* _LIB_ASSERT_PRINT_POS */
@@ -39,8 +39,8 @@ void _LIB_assert_unreachable_print(const char *file, int line, const char *funct
                     NULL)
 /** A version of #LIB_assert() to pass an additional message to be printed on failure */
 #else
-#  define LIB_assert(a) ((void)0)
-#  define LIB_assert_msg(a, msg) ((void)0)
+#  define lib_assert(a) ((void)0)
+#  define lib_assert_msg(a, msg) ((void)0)
 #endif
 
 #if defined(_MSC_VER)
@@ -68,9 +68,9 @@ void _LIB_assert_unreachable_print(const char *file, int line, const char *funct
  * Indicates that this line of code should never be executed. If it is reached, it will abort in
  * debug builds and print an error in release builds.
  */
-#define LIB_assert_unreachable() \
+#define lib_assert_unreachable() \
   { \
-    _LIB_assert_unreachable_print(__FILE__, __LINE__, __func__); \
-    LIB_assert_msg(0, "This line of code is marked to be unreachable."); \
+    _lib_assert_unreachable_print(__FILE__, __LINE__, __func__); \
+    lib_assert_msg(0, "This line of code is marked to be unreachable."); \
   } \
   ((void)0)
