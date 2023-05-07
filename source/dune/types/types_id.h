@@ -54,7 +54,7 @@ typedef struct IdPropUIDataInt {
 
 /* IDP_UI_DATA_TYPE_FLOAT */
 typedef struct IdPropUIDataFloat {
-  IdPropyUIData base;
+  IdPropUIData base;
   double *default_array; /* Only for array properties. */
   int default_array_len;
   char _pad[4];
@@ -75,7 +75,7 @@ typedef struct IdPropUIDataString {
 
 /* IDP_UI_DATA_TYPE_ID */
 typedef struct IdPropUIDataId {
-  IDPropertyUIData base;
+  IdPropUIData base;
 } IdPropUIDataId;
 
 typedef struct IdPropData {
@@ -155,7 +155,7 @@ enum {
   IDP_FLAG_OVERRIDELIBRARY_LOCAL = 1 << 1,
 
   /** This means the property is set but RNA will return false when checking
-   * 'RNA_property_is_set', currently this is a runtime flag */
+   * 'api_prop_is_set', currently this is a runtime flag */
   IDP_FLAG_GHOST = 1 << 7,
 };
 
