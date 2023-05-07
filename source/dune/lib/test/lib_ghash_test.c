@@ -156,8 +156,8 @@ TEST(ghash, Copy)
   EXPECT_EQ(lib_ghash_buckets_len(ghash_copy), LIB_ghash_buckets_len(ghash));
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    void *v = BLI_ghash_lookup(ghash_copy, POINTER_FROM_UINT(*k));
-    EXPECT_EQ(POINTER_AS_UINT(v), *k);
+    void *v = lib_ghash_lookup(ghash_copy, POINTER_FROM_UINT(*k));
+    EXPECT_EQ(PTR_AS_UINT(v), *k);
   }
 
   LIB_ghash_free(ghash, nullptr, nullptr);
@@ -167,15 +167,15 @@ TEST(ghash, Copy)
 /* Check pop. */
 TEST(ghash, Pop)
 {
-  GHash *ghash = LIB_ghash_new(BLI_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
+  GHash *ghash = lib_ghash_new(lib_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
   unsigned int keys[TESTCASE_SIZE], *k;
   int i;
 
-  LIB_ghash_flag_set(ghash, GHASH_FLAG_ALLOW_SHRINK);
+  lib_ghash_flag_set(ghash, GHASH_FLAG_ALLOW_SHRINK);
   init_keys(keys, 30);
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    LIB_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
+    lib_ghash_insert(ghash, PTR_FROM_UINT(*k), POINTER_FROM_UINT(*k));
   }
 
   EXPECT_EQ(LIB_ghash_len(ghash), TESTCASE_SIZE);
