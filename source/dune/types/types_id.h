@@ -147,28 +147,27 @@ enum {
 enum {
   /** This IDProp may be statically overridden.
    * Should only be used/be relevant for custom properties. */
-  IDP_FLAG_OVERRIDABLE_LIBRARY = 1 << 0,
+  IDP_FLAG_OVERRIDABLE_LIB = 1 << 0,
 
   /** This collection item IDProp has been inserted in a local override.
    * This is used by internal code to distinguish between library-originated items and
    * local-inserted ones, as many operations are not allowed on the former. */
-  IDP_FLAG_OVERRIDELIBRARY_LOCAL = 1 << 1,
+  IDP_FLAG_OVERRIDELIB_LOCAL = 1 << 1,
 
   /** This means the property is set but RNA will return false when checking
    * 'api_prop_is_set', currently this is a runtime flag */
   IDP_FLAG_GHOST = 1 << 7,
 };
 
-/* add any future new id property types here. */
+/* add any future new id prop types here. */
 
-/* Static ID override structs. */
+/* Static id override structs. */
 
 typedef struct IdOverrideLibPropOp {
   struct IdOverrideLibPropOp *next, *prev;
   /* Type of override. */
-  short operation;
+  short op;
   short flag;
-
   /** Runtime, tags are common to both IDOverrideProperty and IDOverridePropertyOperation. */
   short tag;
   char _pad0[2];
@@ -183,42 +182,42 @@ typedef struct IdOverrideLibPropOp {
    * NOTE: For insertion operations in RNA collections, reference may not actually exist in the
    * linked reference data. It is used to identify the anchor of the insertion operation (i.e. the
    * item after or before which the new local item should be inserted), in the local override. */
-  char *subitem_reference_name;
+  char *subitem_ref_name;
   char *subitem_local_name;
-  int subitem_reference_index;
+  int subitem_ref_index;
   int subitem_local_index;
-} IDOverrideLibraryPropertyOperation;
+} IdOverrideLibPropOp;
 
-/* IDOverrideLibraryPropertyOperation->operation. */
+/* IdOverrideLibPropOp->operation. */
 enum {
   /* Basic operations. */
-  IDOVERRIDE_LIBRARY_OP_NOOP = 0, /* Special value, forbids any overriding. */
+  IDOVERRIDE_LIB_OP_NOOP = 0, /* Special value, forbids any overriding. */
 
-  IDOVERRIDE_LIBRARY_OP_REPLACE = 1, /* Fully replace local value by reference one. */
+  IDOVERRIDE_LIB_OP_REPLACE = 1, /* Fully replace local value by reference one. */
 
   /* Numeric-only operations. */
-  IDOVERRIDE_LIBRARY_OP_ADD = 101, /* Add local value to reference one. */
+  IDOVERRIDE_LIB_OP_ADD = 101, /* Add local value to reference one. */
   /* Subtract local value from reference one (needed due to unsigned values etc.). */
-  IDOVERRIDE_LIBRARY_OP_SUBTRACT = 102,
+  IDOVERRIDE_LIB_OP_SUBTRACT = 102,
   /* Multiply reference value by local one (more useful than diff for scales and the like). */
-  IDOVERRIDE_LIBRARY_OP_MULTIPLY = 103,
+  IDOVERRIDE_LIB_OP_MULTIPLY = 103,
 
   /* Collection-only operations. */
-  IDOVERRIDE_LIBRARY_OP_INSERT_AFTER = 201,  /* Insert after given reference's subitem. */
-  IDOVERRIDE_LIBRARY_OP_INSERT_BEFORE = 202, /* Insert before given reference's subitem. */
+  IDOVERRIDE_LIB_OP_INSERT_AFTER = 201,  /* Insert after given reference's subitem. */
+  IDOVERRIDE_LIB_OP_INSERT_BEFORE = 202, /* Insert before given reference's subitem. */
   /* We can add more if needed (move, delete, ...). */
 };
 
 /* IDOverrideLibraryPropertyOperation->flag. */
 enum {
   /** User cannot remove that override operation. */
-  IDOVERRIDE_LIBRARY_FLAG_MANDATORY = 1 << 0,
+  IDOVERRIDE_LIB_FLAG_MANDATORY = 1 << 0,
   /** User cannot change that override operation. */
-  IDOVERRIDE_LIBRARY_FLAG_LOCKED = 1 << 1,
+  IDOVERRIDE_LIB_FLAG_LOCKED = 1 << 1,
 
   /** For overrides of ID pointers: this override still matches (follows) the hierarchy of the
    *  reference linked data. */
-  IDOVERRIDE_LIBRARY_FLAG_IDPOINTER_MATCH_REFERENCE = 1 << 8,
+  IDOVERRIDE_LIB_FLAG_IDPTR_MATCH_REFERENCE = 1 << 8,
 };
 
 /** A single overridden property, contain all operations on this one. */
@@ -927,7 +926,7 @@ typedef enum IDRecalcFlag {
  * relationships in a non-recursive pattern: in typical cases, a vast majority of those
  * relationships can be processed fine in the first pass, and only few additional passes are
  * required to address all remaining relationship cases.
- * See e.g. how DUNE_library_unused_linked_data_set_tag is doing this.
+ * See e.g. how dune_lib_unused_linked_data_set_tag is doing this.
  */
 enum {
   /* Special case: Library, should never ever depend on any other type. */
