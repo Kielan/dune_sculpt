@@ -243,7 +243,7 @@ typedef struct IdOverrideLibProp {
   unsigned int rna_prop_type;
 } IDOverrideLibraryProperty;
 
-/* IDOverrideLibraryProperty->tag and IDOverrideLibraryPropertyOperation->tag. */
+/* IdOverrideLibProp->tag and IDOverrideLibraryPropertyOperation->tag. */
 enum {
   /** This override property (operation) is unused and should be removed by cleanup process. */
   IDOVERRIDE_LIBRARY_TAG_UNUSED = 1 << 0,
@@ -252,7 +252,7 @@ enum {
 typedef struct IDOverrideLibraryRuntime {
   struct GHash *rna_path_to_override_properties;
   uint tag;
-} IDOverrideLibraryRuntime;
+} IdOverrideLibRuntime;
 
 /* IDOverrideLibraryRuntime->tag. */
 enum {
