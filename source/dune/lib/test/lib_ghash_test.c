@@ -34,14 +34,14 @@
 
 static void init_keys(unsigned int keys[TESTCASE_SIZE], const int seed)
 {
-  RNG *rng = LIB_rng_new(seed);
+  RNG *rng = lib_rng_new(seed);
   unsigned int *k;
   int i;
 
   for (i = 0, k = keys; i < TESTCASE_SIZE;) {
     /* Risks of collision are low, but they do exist.
      * And we cannot use a GSet, since we test that here! */
-    int j, t = LIB_rng_get_uint(rng);
+    int j, t = lib_rng_get_uint(rng);
     for (j = i; j--;) {
       if (keys[j] == t) {
         continue;
@@ -51,21 +51,21 @@ static void init_keys(unsigned int keys[TESTCASE_SIZE], const int seed)
     i++;
     k++;
   }
-  LIB_rng_free(rng);
+  lib_rng_free(rng);
 }
 
 /* Here we simply insert and then lookup all keys, ensuring we do get back the expected stored
  * 'data'. */
 TEST(ghash, InsertLookup)
 {
-  GHash *ghash = LIB_ghash_new(LIB_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
+  GHash *ghash = lib_ghash_new(lib_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
   unsigned int keys[TESTCASE_SIZE], *k;
   int i;
 
   init_keys(keys, 0);
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    LIB_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
+    lib_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
   }
 
   EXPECT_EQ(LIB_ghash_len(ghash), TESTCASE_SIZE);
@@ -75,69 +75,69 @@ TEST(ghash, InsertLookup)
     EXPECT_EQ(POINTER_AS_UINT(v), *k);
   }
 
-  LIB_ghash_free(ghash, nullptr, nullptr);
+  lib_ghash_free(ghash, nullptr, nullptr);
 }
 
 /* Here we simply insert and then remove all keys, ensuring we do get an empty,
  * ghash that has not been shrunk. */
 TEST(ghash, InsertRemove)
 {
-  GHash *ghash = LIB_ghash_new(LIB_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
+  GHash *ghash = lib_ghash_new(lib_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
   unsigned int keys[TESTCASE_SIZE], *k;
   int i, bkt_size;
 
   init_keys(keys, 10);
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    LIB_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
+    lib_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
   }
 
-  EXPECT_EQ(LIB_ghash_len(ghash), TESTCASE_SIZE);
-  bkt_size = LIB_ghash_buckets_len(ghash);
+  EXPECT_EQ(lib_ghash_len(ghash), TESTCASE_SIZE);
+  bkt_size = lib_ghash_buckets_len(ghash);
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    void *v = LIB_ghash_popkey(ghash, POINTER_FROM_UINT(*k), nullptr);
-    EXPECT_EQ(POINTER_AS_UINT(v), *k);
+    void *v = lib_ghash_popkey(ghash, POINTER_FROM_UINT(*k), nullptr);
+    EXPECT_EQ(PTR_AS_UINT(v), *k);
   }
 
-  EXPECT_EQ(LIB_ghash_len(ghash), 0);
-  EXPECT_EQ(LIB_ghash_buckets_len(ghash), bkt_size);
+  EXPECT_EQ(lib_ghash_len(ghash), 0);
+  EXPECT_EQ(lib_ghash_buckets_len(ghash), bkt_size);
 
-  LIB_ghash_free(ghash, nullptr, nullptr);
+  lib_ghash_free(ghash, nullptr, nullptr);
 }
 
 /* Same as above, but this time we allow ghash to shrink. */
 TEST(ghash, InsertRemoveShrink)
 {
-  GHash *ghash = LIB_ghash_new(LIB_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
+  GHash *ghash = lib_ghash_new(lib_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
   unsigned int keys[TESTCASE_SIZE], *k;
   int i, bkt_size;
 
-  LIB_ghash_flag_set(ghash, GHASH_FLAG_ALLOW_SHRINK);
+  lib_ghash_flag_set(ghash, GHASH_FLAG_ALLOW_SHRINK);
   init_keys(keys, 20);
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    LIB_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
+    lib_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
   }
 
-  EXPECT_EQ(LIB_ghash_len(ghash), TESTCASE_SIZE);
-  bkt_size = LIB_ghash_buckets_len(ghash);
+  EXPECT_EQ(lib_ghash_len(ghash), TESTCASE_SIZE);
+  bkt_size = lib_ghash_buckets_len(ghash);
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    void *v = LIB_ghash_popkey(ghash, POINTER_FROM_UINT(*k), nullptr);
-    EXPECT_EQ(POINTER_AS_UINT(v), *k);
+    void *v = lib_ghash_popkey(ghash, POINTER_FROM_UINT(*k), nullptr);
+    EXPECT_EQ(PTR_AS_UINT(v), *k);
   }
 
-  EXPECT_EQ(LIB_ghash_len(ghash), 0);
-  EXPECT_LT(LIB_ghash_buckets_len(ghash), bkt_size);
+  EXPECT_EQ(lib_ghash_len(ghash), 0);
+  EXPECT_LT(lib_ghash_buckets_len(ghash), bkt_size);
 
-  LIB_ghash_free(ghash, nullptr, nullptr);
+  lib_ghash_free(ghash, nullptr, nullptr);
 }
 
 /* Check copy. */
 TEST(ghash, Copy)
 {
-  GHash *ghash = LIB_ghash_new(LIB_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
+  GHash *ghash = lib_ghash_new(lib_ghashutil_inthash_p, LIB_ghashutil_intcmp, __func__);
   GHash *ghash_copy;
   unsigned int keys[TESTCASE_SIZE], *k;
   int i;
@@ -145,15 +145,15 @@ TEST(ghash, Copy)
   init_keys(keys, 30);
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
-    LIB_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
+    lib_ghash_insert(ghash, POINTER_FROM_UINT(*k), POINTER_FROM_UINT(*k));
   }
 
-  EXPECT_EQ(LIB_ghash_len(ghash), TESTCASE_SIZE);
+  EXPECT_EQ(lib_ghash_len(ghash), TESTCASE_SIZE);
 
-  ghash_copy = LIB_ghash_copy(ghash, nullptr, nullptr);
+  ghash_copy = lib_ghash_copy(ghash, nullptr, nullptr);
 
-  EXPECT_EQ(LIB_ghash_len(ghash_copy), TESTCASE_SIZE);
-  EXPECT_EQ(LIB_ghash_buckets_len(ghash_copy), LIB_ghash_buckets_len(ghash));
+  EXPECT_EQ(lib_ghash_len(ghash_copy), TESTCASE_SIZE);
+  EXPECT_EQ(lib_ghash_buckets_len(ghash_copy), LIB_ghash_buckets_len(ghash));
 
   for (i = TESTCASE_SIZE, k = keys; i--; k++) {
     void *v = BLI_ghash_lookup(ghash_copy, POINTER_FROM_UINT(*k));
