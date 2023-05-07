@@ -741,9 +741,9 @@ typedef struct UserDef {
   char _pad1[2];
   int undomemory;
   float gpu_viewport_quality TYPES_DEPRECATED;
-  short gp_manhattandist, gp_euclideandist, gp_eraser;
+  short pen_manhattandist, pen_euclideandist, pen_eraser;
   /** ePenUserdefSettings. */
-  short gp_settings;
+  short pen_settings;
   char _pad13[4];
   struct SolidLight light_param[4];
   float light_ambient[3];
