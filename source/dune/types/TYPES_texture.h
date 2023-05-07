@@ -1,8 +1,8 @@
 #pragma once
 
-#include "TYPES_ID.h"
-#include "TYPES_defs.h"
-#include "TYPES_image.h" /* ImageUser */
+#include "types_id.h"
+#include "types_defs.h"
+#include "types_image.h" /* ImageUser */
 
 struct AnimData;
 struct ColorBand;
@@ -14,18 +14,15 @@ struct PreviewImage;
 struct Tex;
 
 typedef struct MTex {
-
   short texco, mapto, maptoneg, blendtype;
   struct Object *object;
   struct Tex *tex;
   /** MAX_CUSTOMDATA_LAYER_NAME. */
   char uvname[64];
-
   char projx, projy, projz, mapping;
   char brush_map_mode, brush_angle_mode;
   char _pad[2];
   float ofs[3], size[3], rot, random_angle;
-
   char _pad0[2];
   short colormodel;
   short normapspace, which_output;
@@ -34,7 +31,6 @@ typedef struct MTex {
 
   /* common */
   float colfac, varfac;
-
   /* material */
   float norfac, dispfac, warpfac;
   float colspecfac, mirrfac, alphafac;
@@ -80,25 +76,20 @@ typedef struct ColorBand {
   char ipotype, ipotype_hue;
   char color_mode;
   char _pad[1];
-
   CBData data[32];
 } ColorBand;
 
 typedef struct PointDensity {
   short flag;
-
   short falloff_type;
   float falloff_softness;
   float radius;
   short source;
   char _pad0[2];
-
   /** psys_color_source */
   short color_source;
   short ob_color_source;
-
   int totpoints;
-
   /** for 'Object' or 'Particle system' type - source object */
   struct Object *object;
   /** `index + 1` in ob.particlesystem, non-ID pointer not allowed */
@@ -109,33 +100,28 @@ typedef struct PointDensity {
   short ob_cache_space;
   /** vertex attribute layer for color source, MAX_CUSTOMDATA_LAYER_NAME */
   char vertex_attribute_name[64];
-
   /** The acceleration tree containing points. */
   void *point_tree;
   /** Dynamically allocated extra for extra information, like particle age. */
   float *point_data;
-
   float noise_size;
   short noise_depth;
   short noise_influence;
   short noise_basis;
   char _pad1[6];
   float noise_fac;
-
   float speed_scale, falloff_speed_scale;
   char _pad2[4];
   /** For time -> color */
   struct ColorBand *coba;
-
   /** Falloff density curve. */
   struct CurveMapping *falloff_curve;
 } PointDensity;
 
 typedef struct Tex {
-  ID id;
+  Id id;
   /** Animation data (must be immediately after id for utilities to use it). */
   struct AnimData *adt;
-
   float noisesize, turbul;
   float bright, contrast, saturation, rfac, gfac, bfac;
   float filtersize;
@@ -211,10 +197,8 @@ typedef struct TexMapping {
 
 typedef struct ColorMapping {
   struct ColorBand coba;
-
   float bright, contrast, saturation;
   int flag;
-
   float dune_color[3];
   float dune_factor;
   int dune_type;
