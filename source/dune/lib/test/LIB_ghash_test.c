@@ -2,9 +2,9 @@
 
 #define GHASH_INTERNAL_API
 
-#include "LIB_ghash.h"
-#include "LIB_rand.h"
-#include "LIB_utildefines.h"
+#include "lib_ghash.h"
+#include "lib_rand.h"
+#include "lib_utildefines.h"
 
 #define TESTCASE_SIZE 10000
 
@@ -13,13 +13,13 @@
   { \
     double q, lf, var, pempty, poverloaded; \
     int bigb; \
-    q = LIB_ghash_calc_quality_ex((_gh), &lf, &var, &pempty, &poverloaded, &bigb); \
+    q = lib_ghash_calc_quality_ex((_gh), &lf, &var, &pempty, &poverloaded, &bigb); \
     printf( \
         "GHash stats (%d entries):\n\t" \
         "Quality (the lower the better): %f\n\tVariance (the lower the better): %f\n\tLoad: " \
         "%f\n\t" \
         "Empty buckets: %.2f%%\n\tOverloaded buckets: %.2f%% (biggest bucket: %d)\n", \
-        LIB_ghash_len(_gh), \
+        lib_ghash_len(_gh), \
         q, \
         var, \
         lf, \
