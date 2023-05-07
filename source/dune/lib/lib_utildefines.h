@@ -3,15 +3,15 @@
 #define __LIB_UTILDEFINES_H__
 
 /* avoid many includes for now */
-#include "LIB_compiler_compat.h"
-#include "LIB_sys_types.h"
-#include "LIB_utildefines_variadic.h"
+#include "lib_compiler_compat.h"
+#include "lib_sys_types.h"
+#include "lib_utildefines_variadic.h"
 
 /* We could remove in future. */
-#include "LIB_assert.h"
+#include "lib_assert.h"
 
 /* include after _VA_NARGS macro */
-#include "LIB_compiler_typecheck.h"
+#include "lib_compiler_typecheck.h"
 
 /** Min/Max Macros */
 
@@ -578,11 +578,11 @@
 /**
  * Check if memory is zeroed, as with `memset(arr, 0, arr_size)`.
  */
-extern bool LIB_memory_is_zero(const void *arr, size_t arr_size);
+extern bool lib_memory_is_zero(const void *arr, size_t arr_size);
 #endif
 
 #define MEMCMP_STRUCT_AFTER_IS_ZERO(struct_var, member) \
-  (BLI_memory_is_zero((const char *)(struct_var) + OFFSETOF_STRUCT_AFTER(struct_var, member), \
+  (lib_memory_is_zero((const char *)(struct_var) + OFFSETOF_STRUCT_AFTER(struct_var, member), \
                       sizeof(*(struct_var)) - OFFSETOF_STRUCT_AFTER(struct_var, member)))
 
 
