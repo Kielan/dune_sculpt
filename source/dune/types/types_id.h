@@ -163,9 +163,8 @@ enum {
 
 /* Static ID override structs. */
 
-typedef struct IDOverrideLibraryPropertyOperation {
-  struct IDOverrideLibraryPropertyOperation *next, *prev;
-
+typedef struct IdOverrideLibPropOp {
+  struct IdOverrideLibPropOp *next, *prev;
   /* Type of override. */
   short operation;
   short flag;
