@@ -17,7 +17,7 @@ struct GHash {
   GHashCmpFP cmpfp;
 
   Entry **buckets;
-  struct LIB_mempool *entrypool;
+  struct lib_mempool *entrypool;
   uint nbuckets;
   uint limit_grow, limit_shrink;
 #ifdef GHASH_USE_MODULO_BUCKETS
@@ -40,7 +40,7 @@ static void ghash_buckets_resize(GHash *gh, const uint nbuckets)
   const uint nbuckets_old = gh->nbuckets;
   uint i;
 
-  BLI_assert((gh->nbuckets != nbuckets) || !gh->buckets);
+  lib_assert((gh->nbuckets != nbuckets) || !gh->buckets);
   //  printf("%s: %d -> %d\n", __func__, nbuckets_old, nbuckets);
 
   gh->nbuckets = nbuckets;
@@ -77,7 +77,7 @@ static void ghash_buckets_resize(GHash *gh, const uint nbuckets)
         /* No need to recompute hashes in this case, since our mask is just smaller,
          * all items in old bucket 'i' will go in same new bucket (i & new_mask)! */
         const uint bucket_index = ghash_bucket_index(gh, i);
-        LIB_assert(!buckets_old[i] ||
+        lib_assert(!buckets_old[i] ||
                    (bucket_index == ghash_bucket_index(gh, ghash_entryhash(gh, buckets_old[i]))));
         Entry *e;
         for (e = buckets_old[i]; e && e->next; e = e->next) {
@@ -94,7 +94,7 @@ static void ghash_buckets_resize(GHash *gh, const uint nbuckets)
 
   gh->buckets = buckets_new;
   if (buckets_old) {
-    MEM_freeN(buckets_old);
+    mem_freen(buckets_old);
   }
 }
 
