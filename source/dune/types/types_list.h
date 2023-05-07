@@ -1,9 +1,6 @@
-/* file
- * These structs are the foundation for all linked lists in the library system.
- *
+/* These structs are the foundation for all linked lists in the library system.
  * Doubly-linked lists start from a ListBase and contain elements beginning
- * with Link.
- */
+ * with Link. */
 
 #pragma once
 
@@ -19,8 +16,8 @@ typedef struct LinkData {
 } LinkData;
 
 /* Never change the size of this! structs_genfile.c detects pointer_size with it. */
-typedef struct ListBase {
+typedef struct List {
   void *first, *last;
-} ListBase;
+} List;
 
 /* 8 byte alignment! */
