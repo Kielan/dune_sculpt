@@ -263,37 +263,33 @@ enum {
 };
 
 /* Main container for all overriding data info of a data-block. */
-typedef struct IDOverrideLibrary {
+typedef struct IdOverrideLib {
   /** Reference linked ID which this one overrides. */
-  struct ID *reference;
-  /** List of IDOverrideLibraryProperty structs. */
+  struct ID *ref;
+  /** List of IdOverrideLibProp structs. */
   ListBase properties;
-
   /** Override hierarchy root ID. Usually the actual root of the hierarchy, but not always
    * in degenerated cases.
    *
    * All liboverrides of a same hierarchy (e.g. a character collection) share the same root.
    */
   struct ID *hierarchy_root;
-
   /* Read/write data. */
   /* Temp ID storing extra override data (used for differential operations only currently).
    * Always NULL outside of read/write context. */
   struct ID *storage;
-
-  IDOverrideLibraryRuntime *runtime;
-
+  IDOverrideLibRuntime *runtime;
   unsigned int flag;
   char _pad_1[4];
-} IDOverrideLibrary;
+} IDOverrideLib;
 
-/* IDOverrideLibrary->flag */
+/* IDOverrideLib->flag */
 enum {
   /**
    * The override data-block should not be considered as part of an override hierarchy (generally
    * because it was created as an single override, outside of any hierarchy consideration).
    */
-  IDOVERRIDE_LIBRARY_FLAG_NO_HIERARCHY = 1 << 0,
+  IDOVERRIDE_LIB_FLAG_NO_HIERARCHY = 1 << 0,
 };
 
 /* watch it: Sequence has identical beginning. */
@@ -314,7 +310,7 @@ enum {
 };
 
 /** Status used and counters created during id-remapping. */
-typedef struct ID_Runtime_Remap {
+typedef struct IdRuntimeRemap {
   /** Status during ID remapping. */
   int status;
   /** During ID remapping the number of skipped use cases that refcount the data-block. */
@@ -324,19 +320,19 @@ in edit mode). */
   int skipped_direct;
   /** During ID remapping, the number of indirect use cases that could not be remapped. */
   int skipped_indirect;
-} ID_Runtime_Remap;
+} IdRuntimeRemap;
 
-typedef struct ID_Runtime {
-  ID_Runtime_Remap remap;
-} ID_Runtime;
+typedef struct IdRuntime {
+  IdRuntimeRemap remap;
+} IdRuntime;
 
 /* There's a nasty circular dependency here.... 'void *' to the rescue! I
  * really wonder why this is needed. */
-typedef struct ID {
+typedef struct Id {
   void *next, *prev;
-  struct ID *newid;
+  struct Id *newid;
 
-  struct Library *lib;
+  struct Lib *lib;
 
   /** If the ID is an asset, this pointer is set. Owning pointer. */
   struct AssetMetaData *asset_data;
@@ -358,7 +354,7 @@ typedef struct ID {
   /**
    * Used by undo code. recalc_after_undo_push contains the changes between the
    * last undo push and the current state. This is accumulated as IDs are tagged
-   * for update in the depsgraph, and only cleared on undo push.
+   * for update in the graph, and only cleared on undo push.
    *
    * recalc_up_to_undo_push is saved to undo memory, and is the value of
    * recalc_after_undo_push at the time of the undo push. This means it can be
@@ -373,17 +369,17 @@ typedef struct ID {
    */
   unsigned int session_uuid;
 
-  IDProperty *properties;
+  IdProp *props;
 
-  /** Reference linked ID which this one overrides. */
-  IDOverrideLibrary *override_library;
+  /** Ref linked id which this one overrides. */
+  IdOverrideLib *override_lib;
 
   /**
    * Only set for data-blocks which are coming from copy-on-write, points to
    * the original version of it.
    * Also used temporarily during memfile undo to keep a reference to old ID when found.
    */
-  struct ID *orig_id;
+  struct Id *orig_id;
 
   /**
    * Holds the PyObject reference to the ID (initialized on demand).
@@ -402,12 +398,12 @@ typedef struct ID {
   void *py_instance;
 
   /**
-   * Weak reference to an ID in a given library file, used to allow re-using already appended data
+   * Weak reference to an id in a given lib file, used to allow re-using already appended data
    * in some cases, instead of appending it again.
    *
    * May be NULL.
    */
-  struct LibraryWeakReference *library_weak_reference;
+  struct LibWeakRef *lib_weak_ref;
 
   struct ID_Runtime runtime;
 } ID;
