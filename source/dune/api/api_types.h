@@ -1,22 +1,22 @@
 /* Use a define instead of `#pragma once` because of `BKE_addon.h`, `ED_object.h` & others. */
-#ifndef __RNA_TYPES_H__
-#define __RNA_TYPES_H__
+#ifndef __API_TYPES_H__
+#define __API_TYPES_H__
 
-#include "../blenlib/BLI_sys_types.h"
+#include "../dunelib/lib_sys_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct BlenderRNA;
-struct FunctionRNA;
-struct ID;
+struct DuneApi;
+struct FnApi;
+struct Id;
 struct Main;
-struct ParameterList;
-struct PropertyRNA;
+struct ParamList;
+struct ApiProp;
 struct ReportList;
-struct StructRNA;
-struct bContext;
+struct ApiStruct;
+struct Ctx;
 
 /**
  * Pointer
@@ -26,16 +26,16 @@ struct bContext;
  * in some cases this information is needed to correctly get/set
  * the properties and validate them. */
 
-typedef struct PointerRNA {
-  struct ID *owner_id;
-  struct StructRNA *type;
+typedef struct ApiPtr {
+  struct Id *owner_id;
+  struct ApiStruct *type;
   void *data;
-} PointerRNA;
+} ApiPtr;
 
-typedef struct PropertyPointerRNA {
-  PointerRNA ptr;
-  struct PropertyRNA *prop;
-} PropertyPointerRNA;
+typedef struct ApiPropPtr {
+  ApiPtr ptr;
+  struct ApiProp *prop;
+} ApiPropPtr;
 
 /**
  * Stored result of a RNA path lookup (as used by anim-system)
