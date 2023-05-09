@@ -335,10 +335,8 @@ typedef enum PropOverrideFlag {
   PROPOVERRIDE_NO_PROP_NAME = (1 << 11),
 } PropOverrideFlag;
 
-/**
- * Function params flags.
- * warning 16bits only.
- */
+/* Function params flags.
+ * warning 16bits only */
 typedef enum ParamFlag {
   PARM_REQUIRED = (1 << 0),
   PARM_OUTPUT = (1 << 1),
@@ -357,7 +355,7 @@ struct CollectionPropIterator;
 struct Link;
 typedef int (*IteratorSkipFn)(struct CollectionPropertyIterator *iter, void *data);
 
-typedef struct ListBaseIterator {
+typedef struct ListIterator {
   struct Link *link;
   int flag;
   IteratorSkipFn skip;
@@ -563,56 +561,50 @@ typedef enum FnFlag {
    * Pass ID owning 'self' data
    * (i.e. ptr->owner_id, might be same as self in case data is an ID...).
    */
-  FUNC_USE_SELF_ID = (1 << 11),
+  FN_USE_SELF_ID = (1 << 11),
 
-  /**
-   * Do not pass the object (DNA struct pointer) from which it is called,
-   * used to define static or class functions.
-   */
-  FUNC_NO_SELF = (1 << 0),
-  /** Pass RNA type, used to define class functions, only valid when #FUNC_NO_SELF is set. */
-  FUNC_USE_SELF_TYPE = (1 << 1),
+  /** Do not pass the object (struct pointer) from which it is called,
+   * used to define static or class functions. */
+  FN_NO_SELF = (1 << 0),
+  /** Pass API type, used to define class functions, only valid when #FUNC_NO_SELF is set. */
+  FN_USE_SELF_TYPE = (1 << 1),
 
-  /* Pass Main, bContext and/or ReportList. */
-  FUNC_USE_MAIN = (1 << 2),
-  FUNC_USE_CONTEXT = (1 << 3),
-  FUNC_USE_REPORTS = (1 << 4),
+  /* Pass Main, Context and/or ReportList. */
+  FN_USE_MAIN = (1 << 2),
+  FN_USE_CONTEXT = (1 << 3),
+  FN_USE_REPORTS = (1 << 4),
 
   /***** Registering of Python subclasses. *****/
   /**
    * This function is part of the registerable class' interface,
-   * and can be implemented/redefined in Python.
-   */
-  FUNC_REGISTER = (1 << 5),
+   * and can be implemented/redefined in Python. */
+  FN_REGISTER = (1 << 5),
   /** Subclasses can choose not to implement this function. */
-  FUNC_REGISTER_OPTIONAL = FUNC_REGISTER | (1 << 6),
+  FN_REGISTER_OPTIONAL = FUNC_REGISTER | (1 << 6),
   /**
    * If not set, the Python function implementing this call
    * is not allowed to write into data-blocks.
-   * Except for WindowManager and Screen currently, see rna_id_write_error() in bpy_rna.c
-   */
-  FUNC_ALLOW_WRITE = (1 << 12),
+   * Except for WindowManager and Screen currently, see api_id_write_error() in bpy_rna.  */
+  FN_ALLOW_WRITE = (1 << 12),
 
   /***** Internal flags. *****/
   /** UNUSED CURRENTLY? ??? */
-  FUNC_BUILTIN = (1 << 7),
+  FN_BUILTIN = (1 << 7),
   /** UNUSED CURRENTLY. ??? */
-  FUNC_EXPORT = (1 << 8),
+  FN_EXPORT = (1 << 8),
   /** Function has been defined at runtime, not statically in RNA source code. */
-  FUNC_RUNTIME = (1 << 9),
-  /**
-   * UNUSED CURRENTLY? Function owns its identifier and description strings,
-   * and has to free them when deleted.
-   */
-  FUNC_FREE_POINTERS = (1 << 10),
-} FunctionFlag;
+  FN_RUNTIME = (1 << 9),
+  /** UNUSED CURRENTLY? Function owns its identifier and description strings,
+   * and has to free them when deleted */
+  FN_FREE_PTRS = (1 << 10),
+} FnFlag;
 
-typedef void (*CallFunc)(struct bContext *C,
+typedef void (*CallFn)(struct Ctx *C,
                          struct ReportList *reports,
-                         PointerRNA *ptr,
-                         ParameterList *parms);
+                         ApiPtr *ptr,
+                         ParamList *parms);
 
-typedef struct FunctionRNA FunctionRNA;
+typedef struct ApiFn ApiFn;
 
 /* Struct */
 
