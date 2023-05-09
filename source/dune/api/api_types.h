@@ -21,8 +21,8 @@ struct Ctx;
 /**
  * Pointer
  *
- * RNA pointers are not a single C pointer but include the type,
- * and a pointer to the ID struct that owns the struct, since
+ * api pointers are not a single C pointer but include the type,
+ * and a pointer to the id struct that owns the struct, since
  * in some cases this information is needed to correctly get/set
  * the properties and validate them. */
 
@@ -36,31 +36,28 @@ typedef struct ApiPropPtr {
   ApiPtr ptr;
   struct ApiProp *prop;
 } ApiPropPtr;
-
-/**
- * Stored result of a RNA path lookup (as used by anim-system)
- */
-typedef struct PathResolvedRNA {
-  struct PointerRNA ptr;
-  struct PropertyRNA *prop;
+  
+  /** Stored result of an api path lookup (as used by anim-system) */
+typedef struct ApiPathResolved {
+  struct ApiPtr ptr;
+  struct ApiProp *prop;
   /** -1 for non-array access. */
   int prop_index;
-} PathResolvedRNA;
+} ApiPathResolved;
 
 /* Property */
-
-typedef enum PropertyType {
-  PROP_BOOLEAN = 0,
+typedef enum PropType {
+  PROP_BOOL = 0,
   PROP_INT = 1,
   PROP_FLOAT = 2,
   PROP_STRING = 3,
   PROP_ENUM = 4,
   PROP_POINTER = 5,
   PROP_COLLECTION = 6,
-} PropertyType;
+} PropType;
 
 /* also update rna_property_subtype_unit when you change this */
-typedef enum PropertyUnit {
+typedef enum PropUnit {
   PROP_UNIT_NONE = (0 << 16),
   PROP_UNIT_LENGTH = (1 << 16),        /* m */
   PROP_UNIT_AREA = (2 << 16),          /* m^2 */
@@ -74,7 +71,7 @@ typedef enum PropertyUnit {
   PROP_UNIT_CAMERA = (10 << 16),       /* mm */
   PROP_UNIT_POWER = (11 << 16),        /* W */
   PROP_UNIT_TEMPERATURE = (12 << 16),  /* C */
-} PropertyUnit;
+} PropUnit;
 
 /**
  * Use values besides #PROP_SCALE_LINEAR
@@ -87,7 +84,7 @@ typedef enum PropertyUnit {
  * Sliders with logarithmic scale and value bar must have a range > 0
  * while logarithmic sliders without the value bar can have a range of >= 0.
  */
-typedef enum PropertyScaleType {
+typedef enum PropScaleType {
   /** Linear scale (default). */
   PROP_SCALE_LINEAR = 0,
   /**
@@ -100,23 +97,23 @@ typedef enum PropertyScaleType {
    * - Maximum range: `-inf < x < inf`
    */
   PROP_SCALE_CUBIC = 2,
-} PropertyScaleType;
+} PropScaleType;
 
-#define RNA_SUBTYPE_UNIT(subtype) ((subtype)&0x00FF0000)
-#define RNA_SUBTYPE_VALUE(subtype) ((subtype) & ~0x00FF0000)
-#define RNA_SUBTYPE_UNIT_VALUE(subtype) ((subtype) >> 16)
+#define API_SUBTYPE_UNIT(subtype) ((subtype)&0x00FF0000)
+#define API_SUBTYPE_VALUE(subtype) ((subtype) & ~0x00FF0000)
+#define API_SUBTYPE_UNIT_VALUE(subtype) ((subtype) >> 16)
 
-#define RNA_ENUM_BITFLAG_SIZE 32
+#define API_ENUM_BITFLAG_SIZE 32
 
-#define RNA_TRANSLATION_PREC_DEFAULT 5
+#define API_TRANSLATION_PREC_DEFAULT 5
 
-#define RNA_STACK_ARRAY 32
+#define API_STACK_ARRAY 32
 
 /**
- * \note Also update enums in bpy_props.c and rna_rna.c when adding items here.
+ * note Also update enums in bpy_props.c and rna_rna.c when adding items here.
  * Watch it: these values are written to files as part of node socket button subtypes!
  */
-typedef enum PropertySubType {
+typedef enum PropSubType {
   PROP_NONE = 0,
 
   /* strings */
@@ -169,12 +166,12 @@ typedef enum PropertySubType {
 
   /* temperature */
   PROP_TEMPERATURE = 43 | PROP_UNIT_TEMPERATURE,
-} PropertySubType;
+} PropSubType;
 
 /* Make sure enums are updated with these */
 /* HIGHEST FLAG IN USE: 1 << 31
  * FREE FLAGS: 2, 9, 11, 13, 14, 15, 30 */
-typedef enum PropertyFlag {
+typedef enum PropFlag {
   /**
    * Editable means the property is editable in the user
    * interface, properties are editable by default except
@@ -255,13 +252,13 @@ typedef enum PropertyFlag {
    * NOTE: not to be confused with `prop->enumbitflags`
    * this exposes the flag as multiple options in python and the UI.
    *
-   * \note These can't be animated so use with care.
+   * note These can't be animated so use with care.
    */
   PROP_ENUM_FLAG = (1 << 21),
 
   /* need context for update function */
-  PROP_CONTEXT_UPDATE = (1 << 22),
-  PROP_CONTEXT_PROPERTY_UPDATE = PROP_CONTEXT_UPDATE | (1 << 27),
+  PROP_CTX_UPDATE = (1 << 22),
+  PROP_CTX_PROP_UPDATE = PROP_CTX_UPDATE | (1 << 27),
 
   /* registering */
   PROP_REGISTER = (1 << 4),
@@ -273,17 +270,17 @@ typedef enum PropertyFlag {
    *
    * It can be used for properties which are dynamically allocated too.
    *
-   * \note Currently dynamic sized thick wrapped data isn't supported.
+   * note Currently dynamic sized thick wrapped data isn't supported.
    * This would be a useful addition and avoid a fixed maximum sized as in done at the moment.
    */
   PROP_THICK_WRAP = (1 << 23),
 
   /** This is an IDProperty, not a DNA one. */
-  PROP_IDPROPERTY = (1 << 10),
+  PROP_IDPROP = (1 << 10),
   /** For dynamic arrays, and retvals of type string. */
   PROP_DYNAMIC = (1 << 17),
   /** For enum that shouldn't be contextual */
-  PROP_ENUM_NO_CONTEXT = (1 << 24),
+  PROP_ENUM_NO_CTX = (1 << 24),
   /** For enums not to be translated (e.g. viewlayers' names in nodes). */
   PROP_ENUM_NO_TRANSLATE = (1 << 29),
 
@@ -292,8 +289,8 @@ typedef enum PropertyFlag {
    * Use this for properties which defines interface state, for example,
    * properties which denotes whether modifier panel is collapsed or not.
    */
-  PROP_NO_DEG_UPDATE = (1 << 30),
-} PropertyFlag;
+  PROP_NO_GRAPH_UPDATE = (1 << 30),
+} PropFlag;
 
 /**
  * Flags related to comparing and overriding RNA properties.
@@ -301,9 +298,9 @@ typedef enum PropertyFlag {
  *
  * FREE FLAGS: 2, 3, 4, 5, 6, 7, 8, 9, 12 and above.
  */
-typedef enum PropertyOverrideFlag {
+typedef enum PropOverrideFlag {
   /** Means that the property can be overridden by a local override of some linked datablock. */
-  PROPOVERRIDE_OVERRIDABLE_LIBRARY = (1 << 0),
+  PROPOVERRIDE_OVERRIDABLE_LIB = (1 << 0),
 
   /**
    * Forbid usage of this property in comparison (& hence override) code.
@@ -328,7 +325,7 @@ typedef enum PropertyOverrideFlag {
   /*** Collections-related ***/
 
   /** The property supports insertion (collections only). */
-  PROPOVERRIDE_LIBRARY_INSERTION = (1 << 10),
+  PROPOVERRIDE_LIB_INSERTION = (1 << 10),
 
   /** Only use indices to compare items in the property, never names (collections only).
    *
@@ -336,13 +333,13 @@ typedef enum PropertyOverrideFlag {
    * (e.g. name of material slots is actually name of assigned material).
    */
   PROPOVERRIDE_NO_PROP_NAME = (1 << 11),
-} PropertyOverrideFlag;
+} PropOverrideFlag;
 
 /**
- * Function parameters flags.
- * \warning 16bits only.
+ * Function params flags.
+ * warning 16bits only.
  */
-typedef enum ParameterFlag {
+typedef enum ParamFlag {
   PARM_REQUIRED = (1 << 0),
   PARM_OUTPUT = (1 << 1),
   PARM_RNAPTR = (1 << 2),
@@ -351,20 +348,20 @@ typedef enum ParameterFlag {
    * when adding non-critical new parameter to a callback function.
    * This way, old py code defining funcs without that parameter would still work.
    * WARNING: any parameter after the first PYFUNC_OPTIONAL one will be considered as optional!
-   * \note only for input parameters!
+   * note only for input parameters!
    */
   PARM_PYFUNC_OPTIONAL = (1 << 3),
-} ParameterFlag;
+} ParamFlag;
 
-struct CollectionPropertyIterator;
+struct CollectionPropIterator;
 struct Link;
-typedef int (*IteratorSkipFunc)(struct CollectionPropertyIterator *iter, void *data);
+typedef int (*IteratorSkipFn)(struct CollectionPropertyIterator *iter, void *data);
 
 typedef struct ListBaseIterator {
   struct Link *link;
   int flag;
-  IteratorSkipFunc skip;
-} ListBaseIterator;
+  IteratorSkipFn skip;
+} ListIterator;
 
 typedef struct ArrayIterator {
   char *ptr;
@@ -376,15 +373,12 @@ typedef struct ArrayIterator {
 
   /**
    * Array length with no skip functions applied,
-   * take care not to compare against index from animsys or Python indices.
-   */
+   * take care not to compare against index from animsys or Python indice  */
   int length;
 
-  /**
-   * Optional skip function,
+  /* Optional skip function,
    * when set the array as viewed by rna can contain only a subset of the members.
-   * this changes indices so quick array index lookups are not possible when skip function is used.
-   */
+   * this changes indices so quick array index lookups are not possible when skip function is used.  */
   IteratorSkipFunc skip;
 } ArrayIterator;
 
@@ -393,11 +387,11 @@ typedef struct CountIterator {
   int item;
 } CountIterator;
 
-typedef struct CollectionPropertyIterator {
+typedef struct CollectionPropIterator {
   /* internal */
-  PointerRNA parent;
-  PointerRNA builtin_parent;
-  struct PropertyRNA *prop;
+  ApiPtr parent;
+  ApiPtr builtin_parent;
+  struct ApiProp *prop;
   union {
     ArrayIterator array;
     ListBaseIterator listbase;
@@ -408,21 +402,21 @@ typedef struct CollectionPropertyIterator {
   int level;
 
   /* external */
-  PointerRNA ptr;
+  ApiPtr ptr;
   int valid;
-} CollectionPropertyIterator;
+} CollectionPropIterator;
 
-typedef struct CollectionPointerLink {
-  struct CollectionPointerLink *next, *prev;
-  PointerRNA ptr;
-} CollectionPointerLink;
+typedef struct CollectionPtrLink {
+  struct CollectionPtrLink *next, *prev;
+  ApiPtr ptr;
+} CollectionPtrLink;
 
 /** Copy of ListBase for RNA. */
-typedef struct CollectionListBase {
-  struct CollectionPointerLink *first, *last;
+typedef struct CollectionList {
+  struct CollectionPtrLink *first, *last;
 } CollectionListBase;
 
-typedef enum RawPropertyType {
+typedef enum RawPropType {
   PROP_RAW_UNSET = -1,
   PROP_RAW_INT, /* XXX: abused for types that are not set, eg. MFace.verts, needs fixing. */
   PROP_RAW_SHORT,
@@ -430,20 +424,18 @@ typedef enum RawPropertyType {
   PROP_RAW_BOOLEAN,
   PROP_RAW_DOUBLE,
   PROP_RAW_FLOAT,
-} RawPropertyType;
+} RawPropType;
 
 typedef struct RawArray {
   void *array;
-  RawPropertyType type;
+  RawPropType type;
   int len;
   int stride;
 } RawArray;
 
-/**
- * This struct is are typically defined in arrays which define an *enum* for RNA,
- * which is used by the RNA API both for user-interface and the Python API.
- */
-typedef struct EnumPropertyItem {
+/** This struct is are typically defined in arrays which define an *enum* for RNA,
+ * which is used by the api api both for user-interface and the Python AP */
+typedef struct EnumPropItem {
   /** The internal value of the enum, not exposed to users. */
   int value;
   /**
@@ -452,18 +444,18 @@ typedef struct EnumPropertyItem {
    * - An empty string is used to define menu separators.
    * - NULL denotes the end of the array of items.
    */
-  const char *identifier;
+  const char *id;
   /** Optional icon, typically 'ICON_NONE' */
   int icon;
   /** Name displayed in the interface. */
   const char *name;
   /** Longer description used in the interface. */
   const char *description;
-} EnumPropertyItem;
+} EnumPropItem;
 
 /* extended versions with PropertyRNA argument */
-typedef bool (*BooleanPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
-typedef void (*BooleanPropertySetFunc)(struct PointerRNA *ptr,
+typedef bool (*BoolPropGetFn)(struct ApiPtr *ptr, struct PropertyRNA *prop);
+typedef void (*BoolPropSetFn)(struct ApiPtr *ptr,
                                        struct PropertyRNA *prop,
                                        bool value);
 typedef void (*BooleanArrayPropertyGetFunc)(struct PointerRNA *ptr,
