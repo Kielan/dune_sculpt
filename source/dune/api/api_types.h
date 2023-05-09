@@ -645,31 +645,28 @@ typedef enum StructFlag {
   STRUCT_NO_CONTEXT_WITHOUT_OWNER_ID = (1 << 11),
 } StructFlag;
 
-typedef int (*StructValidateFunc)(struct PointerRNA *ptr, void *data, int *have_function);
-typedef int (*StructCallbackFunc)(struct bContext *C,
-                                  struct PointerRNA *ptr,
-                                  struct FunctionRNA *func,
-                                  ParameterList *list);
+typedef int (*StructValidateFn)(struct ApiPtr *ptr, void *data, int *have_function);
+typedef int (*StructCbFn)(struct Ctx *C,
+                          struct ApiPtr *ptr,
+                          struct ApiFn *fn,
+                          ParameterList *list);
 typedef void (*StructFreeFunc)(void *data);
-typedef struct StructRNA *(*StructRegisterFunc)(struct Main *bmain,
+typedef struct ApiStruct *(*StructRegisterFunc)(struct Main *bmain,
                                                 struct ReportList *reports,
                                                 void *data,
                                                 const char *identifier,
-                                                StructValidateFunc validate,
-                                                StructCallbackFunc call,
-                                                StructFreeFunc free);
+                                                StructValidateFn validate,
+                                                StructCallbackFn call,
+                                                StructFreeFn free);
 
-typedef void (*StructUnregisterFunc)(struct Main *bmain, struct StructRNA *type);
-typedef void **(*StructInstanceFunc)(PointerRNA *ptr);
+typedef void (*StructUnregisterFn)(struct Main *main, struct ApiStruct *type);m
+typedef void **(*StructInstanceFn)(ApiPtr *ptr);
 
-typedef struct StructRNA StructRNA;
+typedef struct ApiStruct ApiStruct;
 
-/**
- * Blender RNA
- *
- * Root RNA data structure that lists all struct types.
- */
-typedef struct BlenderRNA BlenderRNA;
+/* Dune Api
+ * Root RNA data structure that lists all struct types. */
+typedef struct ApiDune ApiDune;
 
 /**
  * Extending
@@ -677,12 +674,12 @@ typedef struct BlenderRNA BlenderRNA;
  * This struct must be embedded in *Type structs in
  * order to make them definable through RNA.
  */
-typedef struct ExtensionRNA {
+typedef struct ApiExtension {
   void *data;
-  StructRNA *srna;
-  StructCallbackFunc call;
-  StructFreeFunc free;
-} ExtensionRNA;
+  ApiStruct *api;
+  StructCbFb call;
+  StructFreeFn free;
+} ApiExtension;
 
 #ifdef __cplusplus
 }
