@@ -454,94 +454,94 @@ typedef struct EnumPropItem {
 } EnumPropItem;
 
 /* extended versions with PropertyRNA argument */
-typedef bool (*BoolPropGetFn)(struct ApiPtr *ptr, struct PropertyRNA *prop);
+typedef bool (*BoolPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
 typedef void (*BoolPropSetFn)(struct ApiPtr *ptr,
-                                       struct PropertyRNA *prop,
+                                       struct ApiProp *prop,
                                        bool value);
-typedef void (*BooleanArrayPropertyGetFunc)(struct PointerRNA *ptr,
-                                            struct PropertyRNA *prop,
+typedef void (*BoolArrayPropGetFn)(struct ApiPtr *ptr,
+                                            struct ApiProp *prop,
                                             bool *values);
-typedef void (*BooleanArrayPropertySetFunc)(struct PointerRNA *ptr,
-                                            struct PropertyRNA *prop,
+typedef void (*BoolArrayPropSetFn)(struct ApiPtr *ptr,
+                                            struct ApiProp *prop,
                                             const bool *values);
-typedef int (*IntPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
-typedef void (*IntPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int value);
-typedef void (*IntArrayPropertyGetFunc)(struct PointerRNA *ptr,
-                                        struct PropertyRNA *prop,
+typedef int (*IntPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
+typedef void (*IntPropSetFn)(struct ApiPtr *ptr, struct ApiProp *prop, int value);
+typedef void (*IntArrayPropGetFn)(struct ApiPtr *ptr,
+                                        struct ApiProp *prop,
                                         int *values);
-typedef void (*IntArrayPropertySetFunc)(struct PointerRNA *ptr,
-                                        struct PropertyRNA *prop,
+typedef void (*IntArrayPropSetFn)(struct ApiPtr *ptr,
+                                        struct ApiProp *prop,
                                         const int *values);
-typedef void (*IntPropertyRangeFunc)(struct PointerRNA *ptr,
-                                     struct PropertyRNA *prop,
+typedef void (*IntPropRangeFn)(struct ApiPtr *ptr,
+                                     struct ApiProp *prop,
                                      int *min,
                                      int *max,
                                      int *softmin,
                                      int *softmax);
-typedef float (*FloatPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
-typedef void (*FloatPropertySetFunc)(struct PointerRNA *ptr,
-                                     struct PropertyRNA *prop,
+typedef float (*FloatPropGetFn)(struct ApiPtr *ptr, struct ApiProp *prop);
+typedef void (*FloatPropSetFn)(struct ApiPtr *ptr,
+                                     struct ApiProp *prop,
                                      float value);
-typedef void (*FloatArrayPropertyGetFunc)(struct PointerRNA *ptr,
-                                          struct PropertyRNA *prop,
+typedef void (*FloatArrayPropGetFn)(struct ApiPtr *ptr,
+                                          struct ApiProp *prop,
                                           float *values);
-typedef void (*FloatArrayPropertySetFunc)(struct PointerRNA *ptr,
-                                          struct PropertyRNA *prop,
+typedef void (*FloatArrayPropSetFn)(struct ApiPtr *ptr,
+                                          struct ApiProp *prop,
                                           const float *values);
-typedef void (*FloatPropertyRangeFunc)(struct PointerRNA *ptr,
-                                       struct PropertyRNA *prop,
+typedef void (*FloatPropRangeFn)(struct ApiPtr *ptr,
+                                       struct ApiProp *prop,
                                        float *min,
                                        float *max,
                                        float *softmin,
                                        float *softmax);
-typedef void (*StringPropertyGetFunc)(struct PointerRNA *ptr,
-                                      struct PropertyRNA *prop,
+typedef void (*StringPropGetFn)(struct ApiPtr *ptr,
+                                      struct ApiProp *prop,
                                       char *value);
-typedef int (*StringPropertyLengthFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
-typedef void (*StringPropertySetFunc)(struct PointerRNA *ptr,
-                                      struct PropertyRNA *prop,
+typedef int (*StringPropLengthFn)(struct ApiPtr *ptr, struct ApiProp *prop);
+typedef void (*StringPropSetFunc)(struct ApiPtr *ptr,
+                                      struct ApiProp *prop,
                                       const char *value);
-typedef int (*EnumPropertyGetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop);
-typedef void (*EnumPropertySetFunc)(struct PointerRNA *ptr, struct PropertyRNA *prop, int value);
+typedef int (*EnumPropGetFn)(struct ApiPtr *ptr, struct ApiPropA *prop);
+typedef void (*EnumPropSetFn)(struct ApiPtr *ptr, struct ApiProp *prop, int value);
 /* same as PropEnumItemFunc */
-typedef const EnumPropertyItem *(*EnumPropertyItemFunc)(struct bContext *C,
+typedef const EnumPropItem *(*EnumPropItemFn)(struct bContext *C,
                                                         PointerRNA *ptr,
                                                         struct PropertyRNA *prop,
                                                         bool *r_free);
 
-typedef struct PropertyRNA PropertyRNA;
+typedef struct ApiProp ApiProp;
 
 /* Parameter List */
 
-typedef struct ParameterList {
+typedef struct ParamList {
   /** Storage for parameters*. */
   void *data;
 
   /** Function passed at creation time. */
-  struct FunctionRNA *func;
+  struct ApiFn *fn;
 
   /** Store the parameter size. */
   int alloc_size;
 
   int arg_count, ret_count;
-} ParameterList;
+} ParamList;
 
-typedef struct ParameterIterator {
-  struct ParameterList *parms;
-  // PointerRNA funcptr; /* UNUSED */
+typedef struct ParamIterator {
+  struct ParamList *parms;
+  // ApiPtr fncptr; /* UNUSED */
   void *data;
   int size, offset;
 
-  PropertyRNA *parm;
+  ApiProp *parm;
   int valid;
-} ParameterIterator;
+} ParamIterator;
 
 /** Mainly to avoid confusing casts. */
-typedef struct ParameterDynAlloc {
+typedef struct ParamDynAlloc {
   /** Important, this breaks when set to an int. */
   intptr_t array_tot;
   void *array;
-} ParameterDynAlloc;
+} ParamDynAlloc;
 
 /* Function */
 
@@ -550,15 +550,15 @@ typedef struct ParameterDynAlloc {
  *
  * Those add additional parameters at the beginning of the C callback, like that:
  * <pre>
- * rna_my_func([ID *_selfid],
- *             [<DNA_STRUCT> *self|StructRNA *type],
- *             [Main *bmain],
- *             [bContext *C],
+ * rna_my_fn([Id *_selfid],
+ *             [<TYPE_STRUCT> *self|ApiStruct *type],
+ *             [Main *main],
+ *             [Ctx *C],
  *             [ReportList *reports],
- *             <other RNA-defined parameters>);
+ *             <other Api-defined parameters>);
  * </pre>
  */
-typedef enum FunctionFlag {
+typedef enum FnFlag {
   /**
    * Pass ID owning 'self' data
    * (i.e. ptr->owner_id, might be same as self in case data is an ID...).
