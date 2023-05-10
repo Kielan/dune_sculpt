@@ -518,17 +518,17 @@ static int rna_find_sdna_member(SDNA *sdna,
   return 0;
 }
 
-static int rna_validate_identifier(const char *identifier, char *error, bool property)
+static int api_validate_identifier(const char *identifier, char *error, bool property)
 {
   int a = 0;
 
   /** List is from:
-   * \code{.py}
+   * code.py
    * ", ".join([
    *     '"%s"' % kw for kw in __import__("keyword").kwlist
    *     if kw not in {"False", "None", "True"}
    * ])
-   * \endcode
+   * endcode
    */
   static const char *kwlist[] = {
       /* "False", "None", "True", */
@@ -538,20 +538,20 @@ static int rna_validate_identifier(const char *identifier, char *error, bool pro
       "return", "try",  "while",  "with",   "yield",    NULL,
   };
 
-  if (!isalpha(identifier[0])) {
+  if (!isalpha(id[0])) {
     strcpy(error, "first character failed isalpha() check");
     return 0;
   }
 
-  for (a = 0; identifier[a]; a++) {
-    if (DefRNA.preprocess && property) {
-      if (isalpha(identifier[a]) && isupper(identifier[a])) {
-        strcpy(error, "property names must contain lower case characters only");
+  for (a = 0; id[a]; a++) {
+    if (ApiDef.preprocess && prop) {
+      if (isalpha(id[a]) && isupper(id[a])) {
+        strcpy(error, "prop names must contain lower case characters only");
         return 0;
       }
     }
 
-    if (identifier[a] == '_') {
+    if (id[a] == '_') {
       continue;
     }
 
