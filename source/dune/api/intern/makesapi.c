@@ -758,14 +758,14 @@ static char *api_def_prop_get_fn(
       fprintf(f, "}\n\n");
       break;
     }
-    case PROP_POINTER: {
-      fprintf(f, "PointerRNA %s(PointerRNA *ptr)\n", func);
+    case PROP_PTR: {
+      fprintf(f, "ApiPtr %s(ApiPtr *ptr)\n", func);
       fprintf(f, "{\n");
-      if (manualfunc) {
+      if (manualfn) {
         fprintf(f, "    return %s(ptr);\n", manualfunc);
       }
       else {
-        PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
+        ApiPtrProp *pprop = (PointerPropertyRNA *)prop;
         rna_print_data_get(f, dp);
         if (dp->dnapointerlevel == 0) {
           fprintf(f,
