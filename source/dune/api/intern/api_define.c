@@ -197,20 +197,20 @@ static void api_brna_structs_remove_and_free(BlenderRNA *brna, StructRNA *srna)
 }
 #endif
 
-static int DNA_struct_find_nr_wrapper(const struct SDNA *sdna, const char *struct_name)
+static int types_struct_find_nr_wrapper(const struct SDNA *sdna, const char *struct_name)
 {
-  struct_name = DNA_struct_rename_legacy_hack_static_from_alias(struct_name);
-#ifdef RNA_RUNTIME
+  struct_name = types_struct_rename_legacy_hack_static_from_alias(struct_name);
+#ifdef API_RUNTIME
   /* We may support this at some point but for now we don't. */
-  BLI_assert(0);
+  lib_assert(0);
 #else
-  struct_name = BLI_ghash_lookup_default(
+  struct_name = lib_ghash_lookup_default(
       g_version_data.struct_map_static_from_alias, struct_name, (void *)struct_name);
 #endif
-  return DNA_struct_find_nr(sdna, struct_name);
+  return types_struct_find_nr(sdna, struct_name);
 }
 
-StructDefRNA *rna_find_struct_def(StructRNA *srna)
+ApiStructDef *api_find_struct_def(ApiStruct *srna)
 {
   StructDefRNA *dsrna;
 
