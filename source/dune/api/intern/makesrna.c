@@ -7,17 +7,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_string.h"
-#include "BLI_system.h" /* for 'BLI_system_backtrace' stub. */
-#include "BLI_utildefines.h"
+#include "lib_string.h"
+#include "lib_system.h" /* for 'BLI_system_backtrace' stub. */
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-#include "RNA_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
+#include "api_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 #ifdef _WIN32
 #  ifndef snprintf
@@ -25,9 +25,9 @@
 #  endif
 #endif
 
-#include "CLG_log.h"
+#include "log.h"
 
-static CLG_LogRef LOG = {"makesrna"};
+static LogRef LOG = {"api"};
 
 /**
  * Variable to control debug output of makesrna.
@@ -39,7 +39,7 @@ static int debugSRNA = 0;
 
 /* stub for BLI_abort() */
 #ifndef NDEBUG
-void BLI_system_backtrace(FILE *fp)
+void lib_system_backtrace(FILE *fp)
 {
   (void)fp;
 }
@@ -69,11 +69,11 @@ static int file_older(const char *file1, const char *file2)
 static const char *makesrna_path = NULL;
 
 /* forward declarations */
-static void rna_generate_static_parameter_prototypes(FILE *f,
-                                                     StructRNA *srna,
-                                                     FunctionDefRNA *dfunc,
-                                                     const char *name_override,
-                                                     int close_prototype);
+static void api_generate_static_param_prototypes(FILE *f,
+                                                 StructRNA *srna,
+                                                 FunctionDefRNA *dfunc,
+                                                 const char *name_override,
+                                                 int close_prototype);
 
 /* helpers */
 #define WRITE_COMMA \
