@@ -2556,3 +2556,796 @@ static void rna_def_property_funcs_header_cpp(FILE *f, StructRNA *srna, Property
 
   fprintf(f, "\n");
 }
+
+static const char *rna_parameter_type_cpp_name(PropertyRNA *prop)
+{
+  if (prop->type == PROP_POINTER) {
+    /* for cpp api we need to use RNA structures names for pointers */
+    PointerPropertyRNA *pprop = (PointerPropertyRNA *)prop;
+
+    return (const char *)pprop->type;
+  }
+  return rna_parameter_type_name(prop);
+}
+
+static void rna_def_struct_function_prototype_cpp(FILE *f,
+                                                  StructRNA *UNUSED(srna),
+                                                  FunctionDefRNA *dfunc,
+                                                  const char *namespace,
+                                                  int close_prototype)
+{
+  PropertyDefRNA *dp;
+  FunctionRNA *func = dfunc->func;
+
+  int first = 1;
+  const char *retval_type = "void";
+
+  if (func->c_ret) {
+    dp = rna_find_parameter_def(func->c_ret);
+    retval_type = rna_parameter_type_cpp_name(dp->prop);
+  }
+
+  if (namespace && namespace[0]) {
+    fprintf(f, "\tinline %s %s::%s(", retval_type, namespace, rna_safe_id(func->identifier));
+  }
+  else {
+    fprintf(f, "\tinline %s %s(", retval_type, rna_safe_id(func->identifier));
+  }
+
+  if (func->flag & FUNC_USE_MAIN) {
+    WRITE_PARAM("void *main");
+  }
+
+  if (func->flag & FUNC_USE_CONTEXT) {
+    WRITE_PARAM("Context C");
+  }
+
+  for (dp = dfunc->cont.properties.first; dp; dp = dp->next) {
+    int type, flag, flag_parameter, pout;
+    const char *ptrstr;
+
+    if (dp->prop == func->c_ret) {
+      continue;
+    }
+
+    type = dp->prop->type;
+    flag = dp->prop->flag;
+    flag_parameter = dp->prop->flag_parameter;
+    pout = (flag_parameter & PARM_OUTPUT);
+
+    if (flag & PROP_DYNAMIC) {
+      if (type == PROP_STRING) {
+        ptrstr = pout ? "*" : "";
+      }
+      else {
+        ptrstr = pout ? "**" : "*";
+      }
+    }
+    else if (type == PROP_POINTER) {
+      ptrstr = pout ? "*" : "";
+    }
+    else if (dp->prop->arraydimension) {
+      ptrstr = "*";
+    }
+    else if (type == PROP_STRING && (flag & PROP_THICK_WRAP)) {
+      ptrstr = "";
+    }
+    else {
+      ptrstr = pout ? "*" : "";
+    }
+
+    WRITE_COMMA;
+
+    if (flag & PROP_DYNAMIC) {
+      fprintf(
+          f, "int %s%s_len, ", (flag_parameter & PARM_OUTPUT) ? "*" : "", dp->prop->identifier);
+    }
+
+    if (!(flag & PROP_DYNAMIC) && dp->prop->arraydimension) {
+      fprintf(f,
+              "%s %s[%u]",
+              rna_parameter_type_cpp_name(dp->prop),
+              rna_safe_id(dp->prop->identifier),
+              dp->prop->totarraylength);
+    }
+    else {
+      fprintf(f,
+              "%s%s%s%s",
+              rna_parameter_type_cpp_name(dp->prop),
+              (dp->prop->type == PROP_POINTER && ptrstr[0] == '\0') ? "& " : " ",
+              ptrstr,
+              rna_safe_id(dp->prop->identifier));
+    }
+  }
+
+  fprintf(f, ")");
+  if (close_prototype) {
+    fprintf(f, ";\n");
+  }
+}
+
+static void rna_def_struct_function_header_cpp(FILE *f, StructRNA *srna, FunctionDefRNA *dfunc)
+{
+  if (dfunc->call) {
+    /* Disabled for now to avoid MSVC compiler error due to large file size. */
+#if 0
+    FunctionRNA *func = dfunc->func;
+    fprintf(f, "\n\t/* %s */\n", func->description);
+#endif
+
+    rna_def_struct_function_prototype_cpp(f, srna, dfunc, NULL, 1);
+  }
+}
+
+static void rna_def_property_funcs_impl_cpp(FILE *f, StructRNA *srna, PropertyDefRNA *dp)
+{
+  PropertyRNA *prop;
+
+  prop = dp->prop;
+
+  if (prop->flag & PROP_IDPROPERTY || prop->flag_internal & PROP_INTERN_BUILTIN) {
+    return;
+  }
+
+  switch (prop->type) {
+    case PROP_BOOLEAN: {
+      if (!prop->arraydimension) {
+        fprintf(f, "\tBOOLEAN_PROPERTY(%s, %s)", srna->identifier, rna_safe_id(prop->identifier));
+      }
+      else if (prop->totarraylength) {
+        fprintf(f,
+                "\tBOOLEAN_ARRAY_PROPERTY(%s, %u, %s)",
+                srna->identifier,
+                prop->totarraylength,
+                rna_safe_id(prop->identifier));
+      }
+      else if (prop->getlength) {
+        fprintf(f,
+                "\tBOOLEAN_DYNAMIC_ARRAY_PROPERTY(%s, %s)",
+                srna->identifier,
+                rna_safe_id(prop->identifier));
+      }
+      break;
+    }
+    case PROP_INT: {
+      if (!prop->arraydimension) {
+        fprintf(f, "\tINT_PROPERTY(%s, %s)", srna->identifier, rna_safe_id(prop->identifier));
+      }
+      else if (prop->totarraylength) {
+        fprintf(f,
+                "\tINT_ARRAY_PROPERTY(%s, %u, %s)",
+                srna->identifier,
+                prop->totarraylength,
+                rna_safe_id(prop->identifier));
+      }
+      else if (prop->getlength) {
+        fprintf(f,
+                "\tINT_DYNAMIC_ARRAY_PROPERTY(%s, %s)",
+                srna->identifier,
+                rna_safe_id(prop->identifier));
+      }
+      break;
+    }
+    case PROP_FLOAT: {
+      if (!prop->arraydimension) {
+        fprintf(f, "\tFLOAT_PROPERTY(%s, %s)", srna->identifier, rna_safe_id(prop->identifier));
+      }
+      else if (prop->totarraylength) {
+        fprintf(f,
+                "\tFLOAT_ARRAY_PROPERTY(%s, %u, %s)",
+                srna->identifier,
+                prop->totarraylength,
+                rna_safe_id(prop->identifier));
+      }
+      else if (prop->getlength) {
+        fprintf(f,
+                "\tFLOAT_DYNAMIC_ARRAY_PROPERTY(%s, %s)",
+                srna->identifier,
+                rna_safe_id(prop->identifier));
+      }
+      break;
+    }
+    case PROP_ENUM: {
+      fprintf(f,
+              "\tENUM_PROPERTY(%s_enum, %s, %s)",
+              rna_safe_id(prop->identifier),
+              srna->identifier,
+              rna_safe_id(prop->identifier));
+
+      break;
+    }
+    case PROP_STRING: {
+      fprintf(f, "\tSTRING_PROPERTY(%s, %s)", srna->identifier, rna_safe_id(prop->identifier));
+      break;
+    }
+    case PROP_POINTER: {
+      PointerPropertyRNA *pprop = (PointerPropertyRNA *)dp->prop;
+
+      if (pprop->type) {
+        fprintf(f,
+                "\tPOINTER_PROPERTY(%s, %s, %s)",
+                (const char *)pprop->type,
+                srna->identifier,
+                rna_safe_id(prop->identifier));
+      }
+      else {
+        fprintf(f,
+                "\tPOINTER_PROPERTY(%s, %s, %s)",
+                "UnknownType",
+                srna->identifier,
+                rna_safe_id(prop->identifier));
+      }
+      break;
+    }
+    case PROP_COLLECTION: {
+#if 0
+      CollectionPropertyRNA *cprop = (CollectionPropertyRNA *)dp->prop;
+
+      if (cprop->type) {
+        fprintf(f,
+                "\tCOLLECTION_PROPERTY(%s, %s, %s, %s, %s, %s)",
+                (const char *)cprop->type,
+                srna->identifier,
+                prop->identifier,
+                (cprop->length ? "true" : "false"),
+                (cprop->lookupint ? "true" : "false"),
+                (cprop->lookupstring ? "true" : "false"));
+      }
+      else {
+        fprintf(f,
+                "\tCOLLECTION_PROPERTY(%s, %s, %s, %s, %s, %s)",
+                "UnknownType",
+                srna->identifier,
+                prop->identifier,
+                (cprop->length ? "true" : "false"),
+                (cprop->lookupint ? "true" : "false"),
+                (cprop->lookupstring ? "true" : "false"));
+      }
+#endif
+      break;
+    }
+  }
+
+  fprintf(f, "\n");
+}
+
+static void rna_def_struct_function_call_impl_cpp(FILE *f, StructRNA *srna, FunctionDefRNA *dfunc)
+{
+  PropertyDefRNA *dp;
+  StructDefRNA *dsrna;
+  FunctionRNA *func = dfunc->func;
+  char funcname[2048];
+
+  int first = 1;
+
+  rna_construct_wrapper_function_name(
+      funcname, sizeof(funcname), srna->identifier, func->identifier, "func");
+
+  fprintf(f, "%s(", funcname);
+
+  dsrna = rna_find_struct_def(srna);
+
+  if (func->flag & FUNC_USE_SELF_ID) {
+    WRITE_PARAM("(::ID *) ptr.owner_id");
+  }
+
+  if ((func->flag & FUNC_NO_SELF) == 0) {
+    WRITE_COMMA;
+    if (dsrna->dnafromprop) {
+      fprintf(f, "(::%s *) this->ptr.data", dsrna->dnafromname);
+    }
+    else if (dsrna->dnaname) {
+      fprintf(f, "(::%s *) this->ptr.data", dsrna->dnaname);
+    }
+    else {
+      fprintf(f, "(::%s *) this->ptr.data", srna->identifier);
+    }
+  }
+  else if (func->flag & FUNC_USE_SELF_TYPE) {
+    WRITE_COMMA;
+    fprintf(f, "this->ptr.type");
+  }
+
+  if (func->flag & FUNC_USE_MAIN) {
+    WRITE_PARAM("(::Main *) main");
+  }
+
+  if (func->flag & FUNC_USE_CONTEXT) {
+    WRITE_PARAM("(::bContext *) C.ptr.data");
+  }
+
+  if (func->flag & FUNC_USE_REPORTS) {
+    WRITE_PARAM("NULL");
+  }
+
+  dp = dfunc->cont.properties.first;
+  for (; dp; dp = dp->next) {
+    if (dp->prop == func->c_ret) {
+      continue;
+    }
+
+    WRITE_COMMA;
+
+    if (dp->prop->flag & PROP_DYNAMIC) {
+      fprintf(f, "%s_len, ", dp->prop->identifier);
+    }
+
+    if (dp->prop->type == PROP_POINTER) {
+      if ((dp->prop->flag_parameter & PARM_RNAPTR) && !(dp->prop->flag & PROP_THICK_WRAP)) {
+        fprintf(f,
+                "(::%s *) &%s.ptr",
+                rna_parameter_type_name(dp->prop),
+                rna_safe_id(dp->prop->identifier));
+      }
+      else if (dp->prop->flag_parameter & PARM_OUTPUT) {
+        if (dp->prop->flag_parameter & PARM_RNAPTR) {
+          fprintf(f, "&%s->ptr", rna_safe_id(dp->prop->identifier));
+        }
+        else {
+          fprintf(f,
+                  "(::%s **) &%s->ptr.data",
+                  rna_parameter_type_name(dp->prop),
+                  rna_safe_id(dp->prop->identifier));
+        }
+      }
+      else if (dp->prop->flag_parameter & PARM_RNAPTR) {
+        fprintf(f,
+                "(::%s *) &%s",
+                rna_parameter_type_name(dp->prop),
+                rna_safe_id(dp->prop->identifier));
+      }
+      else {
+        fprintf(f,
+                "(::%s *) %s.ptr.data",
+                rna_parameter_type_name(dp->prop),
+                rna_safe_id(dp->prop->identifier));
+      }
+    }
+    else {
+      fprintf(f, "%s", rna_safe_id(dp->prop->identifier));
+    }
+  }
+
+  fprintf(f, ");\n");
+}
+
+static void rna_def_struct_function_impl_cpp(FILE *f, StructRNA *srna, FunctionDefRNA *dfunc)
+{
+  PropertyDefRNA *dp;
+  PointerPropertyRNA *pprop;
+
+  FunctionRNA *func = dfunc->func;
+
+  if (!dfunc->call) {
+    return;
+  }
+
+  rna_def_struct_function_prototype_cpp(f, srna, dfunc, srna->identifier, 0);
+
+  fprintf(f, " {\n");
+
+  if (func->c_ret) {
+    dp = rna_find_parameter_def(func->c_ret);
+
+    if (dp->prop->type == PROP_POINTER) {
+      pprop = (PointerPropertyRNA *)dp->prop;
+
+      fprintf(f, "\t\tPointerRNA result;\n");
+
+      if ((dp->prop->flag_parameter & PARM_RNAPTR) == 0) {
+        StructRNA *ret_srna = rna_find_struct((const char *)pprop->type);
+        fprintf(f, "\t\t::%s *retdata = ", rna_parameter_type_name(dp->prop));
+        rna_def_struct_function_call_impl_cpp(f, srna, dfunc);
+        if (ret_srna->flag & STRUCT_ID) {
+          fprintf(f, "\t\tRNA_id_pointer_create((::ID *) retdata, &result);\n");
+        }
+        else {
+          fprintf(f,
+                  "\t\tRNA_pointer_create((::ID *) ptr.owner_id, &RNA_%s, retdata, &result);\n",
+                  (const char *)pprop->type);
+        }
+      }
+      else {
+        fprintf(f, "\t\tresult = ");
+        rna_def_struct_function_call_impl_cpp(f, srna, dfunc);
+      }
+
+      fprintf(f, "\t\treturn %s(result);\n", (const char *)pprop->type);
+    }
+    else {
+      fprintf(f, "\t\treturn ");
+      rna_def_struct_function_call_impl_cpp(f, srna, dfunc);
+    }
+  }
+  else {
+    fprintf(f, "\t\t");
+    rna_def_struct_function_call_impl_cpp(f, srna, dfunc);
+  }
+
+  fprintf(f, "\t}\n\n");
+}
+
+static void rna_def_property_wrapper_funcs(FILE *f, StructDefRNA *dsrna, PropertyDefRNA *dp)
+{
+  if (dp->prop->getlength) {
+    char funcname[2048];
+    rna_construct_wrapper_function_name(
+        funcname, sizeof(funcname), dsrna->srna->identifier, dp->prop->identifier, "get_length");
+    fprintf(f, "int %s(PointerRNA *ptr, int *arraylen)\n", funcname);
+    fprintf(f, "{\n");
+    fprintf(f, "\treturn %s(ptr, arraylen);\n", rna_function_string(dp->prop->getlength));
+    fprintf(f, "}\n\n");
+  }
+}
+
+static void rna_def_function_wrapper_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA *dfunc)
+{
+  StructRNA *srna = dsrna->srna;
+  FunctionRNA *func = dfunc->func;
+  PropertyDefRNA *dparm;
+
+  int first;
+  char funcname[2048];
+
+  if (!dfunc->call) {
+    return;
+  }
+
+  rna_construct_wrapper_function_name(
+      funcname, sizeof(funcname), srna->identifier, func->identifier, "func");
+
+  rna_generate_static_parameter_prototypes(f, srna, dfunc, funcname, 0);
+
+  fprintf(f, "\n{\n");
+
+  if (func->c_ret) {
+    fprintf(f, "\treturn %s(", dfunc->call);
+  }
+  else {
+    fprintf(f, "\t%s(", dfunc->call);
+  }
+
+  first = 1;
+
+  if (func->flag & FUNC_USE_SELF_ID) {
+    WRITE_PARAM("_selfid");
+  }
+
+  if ((func->flag & FUNC_NO_SELF) == 0) {
+    WRITE_PARAM("_self");
+  }
+  else if (func->flag & FUNC_USE_SELF_TYPE) {
+    WRITE_PARAM("_type");
+  }
+
+  if (func->flag & FUNC_USE_MAIN) {
+    WRITE_PARAM("bmain");
+  }
+
+  if (func->flag & FUNC_USE_CONTEXT) {
+    WRITE_PARAM("C");
+  }
+
+  if (func->flag & FUNC_USE_REPORTS) {
+    WRITE_PARAM("reports");
+  }
+
+  dparm = dfunc->cont.properties.first;
+  for (; dparm; dparm = dparm->next) {
+    if (dparm->prop == func->c_ret) {
+      continue;
+    }
+
+    WRITE_COMMA;
+
+    if (dparm->prop->flag & PROP_DYNAMIC) {
+      fprintf(f, "%s_len, %s", dparm->prop->identifier, dparm->prop->identifier);
+    }
+    else {
+      fprintf(f, "%s", rna_safe_id(dparm->prop->identifier));
+    }
+  }
+
+  fprintf(f, ");\n");
+  fprintf(f, "}\n\n");
+}
+
+static void rna_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA *dfunc)
+{
+  StructRNA *srna;
+  FunctionRNA *func;
+  PropertyDefRNA *dparm;
+  PropertyType type;
+  const char *funcname, *valstr;
+  const char *ptrstr;
+  const bool has_data = (dfunc->cont.properties.first != NULL);
+  int flag, flag_parameter, pout, cptr, first;
+
+  srna = dsrna->srna;
+  func = dfunc->func;
+
+  if (!dfunc->call) {
+    return;
+  }
+
+  funcname = rna_alloc_function_name(srna->identifier, func->identifier, "call");
+
+  /* function definition */
+  fprintf(f,
+          "void %s(bContext *C, ReportList *reports, PointerRNA *_ptr, ParameterList *_parms)",
+          funcname);
+  fprintf(f, "\n{\n");
+
+  /* variable definitions */
+
+  if (func->flag & FUNC_USE_SELF_ID) {
+    fprintf(f, "\tstruct ID *_selfid;\n");
+  }
+
+  if ((func->flag & FUNC_NO_SELF) == 0) {
+    if (dsrna->dnafromprop) {
+      fprintf(f, "\tstruct %s *_self;\n", dsrna->dnafromname);
+    }
+    else if (dsrna->dnaname) {
+      fprintf(f, "\tstruct %s *_self;\n", dsrna->dnaname);
+    }
+    else {
+      fprintf(f, "\tstruct %s *_self;\n", srna->identifier);
+    }
+  }
+  else if (func->flag & FUNC_USE_SELF_TYPE) {
+    fprintf(f, "\tstruct StructRNA *_type;\n");
+  }
+
+  dparm = dfunc->cont.properties.first;
+  for (; dparm; dparm = dparm->next) {
+    type = dparm->prop->type;
+    flag = dparm->prop->flag;
+    flag_parameter = dparm->prop->flag_parameter;
+    pout = (flag_parameter & PARM_OUTPUT);
+    cptr = ((type == PROP_POINTER) && !(flag_parameter & PARM_RNAPTR));
+
+    if (dparm->prop == func->c_ret) {
+      ptrstr = cptr || dparm->prop->arraydimension ? "*" : "";
+      /* XXX only arrays and strings are allowed to be dynamic, is this checked anywhere? */
+    }
+    else if (cptr || (flag & PROP_DYNAMIC)) {
+      if (type == PROP_STRING) {
+        ptrstr = pout ? "*" : "";
+      }
+      else {
+        ptrstr = pout ? "**" : "*";
+      }
+      /* Fixed size arrays and RNA pointers are pre-allocated on the ParameterList stack,
+       * pass a pointer to it. */
+    }
+    else if (type == PROP_POINTER || dparm->prop->arraydimension) {
+      ptrstr = "*";
+    }
+    else if ((type == PROP_POINTER) && (flag_parameter & PARM_RNAPTR) &&
+             !(flag & PROP_THICK_WRAP)) {
+      ptrstr = "*";
+      /* PROP_THICK_WRAP strings are pre-allocated on the ParameterList stack,
+       * but type name for string props is already (char *), so leave empty */
+    }
+    else if (type == PROP_STRING && (flag & PROP_THICK_WRAP)) {
+      ptrstr = "";
+    }
+    else {
+      ptrstr = pout ? "*" : "";
+    }
+
+    /* for dynamic parameters we pass an additional int for the length of the parameter */
+    if (flag & PROP_DYNAMIC) {
+      fprintf(f, "\tint %s%s_len;\n", pout ? "*" : "", dparm->prop->identifier);
+    }
+
+    fprintf(f,
+            "\t%s%s %s%s;\n",
+            rna_type_struct(dparm->prop),
+            rna_parameter_type_name(dparm->prop),
+            ptrstr,
+            dparm->prop->identifier);
+  }
+
+  if (has_data) {
+    fprintf(f, "\tchar *_data");
+    if (func->c_ret) {
+      fprintf(f, ", *_retdata");
+    }
+    fprintf(f, ";\n");
+    fprintf(f, "\t\n");
+  }
+
+  /* assign self */
+  if (func->flag & FUNC_USE_SELF_ID) {
+    fprintf(f, "\t_selfid = (struct ID *)_ptr->owner_id;\n");
+  }
+
+  if ((func->flag & FUNC_NO_SELF) == 0) {
+    if (dsrna->dnafromprop) {
+      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", dsrna->dnafromname);
+    }
+    else if (dsrna->dnaname) {
+      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", dsrna->dnaname);
+    }
+    else {
+      fprintf(f, "\t_self = (struct %s *)_ptr->data;\n", srna->identifier);
+    }
+  }
+  else if (func->flag & FUNC_USE_SELF_TYPE) {
+    fprintf(f, "\t_type = _ptr->type;\n");
+  }
+
+  if (has_data) {
+    fprintf(f, "\t_data = (char *)_parms->data;\n");
+  }
+
+  dparm = dfunc->cont.properties.first;
+  for (; dparm; dparm = dparm->next) {
+    type = dparm->prop->type;
+    flag = dparm->prop->flag;
+    flag_parameter = dparm->prop->flag_parameter;
+    pout = (flag_parameter & PARM_OUTPUT);
+    cptr = ((type == PROP_POINTER) && !(flag_parameter & PARM_RNAPTR));
+
+    if (dparm->prop == func->c_ret) {
+      fprintf(f, "\t_retdata = _data;\n");
+    }
+    else {
+      const char *data_str;
+      if (cptr || (flag & PROP_DYNAMIC)) {
+        if (type == PROP_STRING) {
+          ptrstr = "*";
+          valstr = "";
+        }
+        else {
+          ptrstr = "**";
+          valstr = "*";
+        }
+      }
+      else if ((type == PROP_POINTER) && !(flag & PROP_THICK_WRAP)) {
+        ptrstr = "**";
+        valstr = "*";
+      }
+      else if (type == PROP_POINTER || dparm->prop->arraydimension) {
+        ptrstr = "*";
+        valstr = "";
+      }
+      else if (type == PROP_STRING && (flag & PROP_THICK_WRAP)) {
+        ptrstr = "";
+        valstr = "";
+      }
+      else {
+        ptrstr = "*";
+        valstr = "*";
+      }
+
+      /* This must be kept in sync with RNA_parameter_dynamic_length_get_data and
+       * RNA_parameter_get, we could just call the function directly, but this is faster. */
+      if (flag & PROP_DYNAMIC) {
+        fprintf(f,
+                "\t%s_len = %s((ParameterDynAlloc *)_data)->array_tot;\n",
+                dparm->prop->identifier,
+                pout ? "(int *)&" : "(int)");
+        data_str = "(&(((ParameterDynAlloc *)_data)->array))";
+      }
+      else {
+        data_str = "_data";
+      }
+      fprintf(f, "\t%s = ", dparm->prop->identifier);
+
+      if (!pout) {
+        fprintf(f, "%s", valstr);
+      }
+
+      fprintf(f,
+              "((%s%s %s)%s);\n",
+              rna_type_struct(dparm->prop),
+              rna_parameter_type_name(dparm->prop),
+              ptrstr,
+              data_str);
+    }
+
+    if (dparm->next) {
+      fprintf(f, "\t_data += %d;\n", rna_parameter_size(dparm->prop));
+    }
+  }
+
+  if (dfunc->call) {
+    fprintf(f, "\t\n");
+    fprintf(f, "\t");
+    if (func->c_ret) {
+      fprintf(f, "%s = ", func->c_ret->identifier);
+    }
+    fprintf(f, "%s(", dfunc->call);
+
+    first = 1;
+
+    if (func->flag & FUNC_USE_SELF_ID) {
+      fprintf(f, "_selfid");
+      first = 0;
+    }
+
+    if ((func->flag & FUNC_NO_SELF) == 0) {
+      if (!first) {
+        fprintf(f, ", ");
+      }
+      fprintf(f, "_self");
+      first = 0;
+    }
+    else if (func->flag & FUNC_USE_SELF_TYPE) {
+      if (!first) {
+        fprintf(f, ", ");
+      }
+      fprintf(f, "_type");
+      first = 0;
+    }
+
+    if (func->flag & FUNC_USE_MAIN) {
+      if (!first) {
+        fprintf(f, ", ");
+      }
+      first = 0;
+      fprintf(f, "CTX_data_main(C)"); /* may have direct access later */
+    }
+
+    if (func->flag & FUNC_USE_CONTEXT) {
+      if (!first) {
+        fprintf(f, ", ");
+      }
+      first = 0;
+      fprintf(f, "C");
+    }
+
+    if (func->flag & FUNC_USE_REPORTS) {
+      if (!first) {
+        fprintf(f, ", ");
+      }
+      first = 0;
+      fprintf(f, "reports");
+    }
+
+    dparm = dfunc->cont.properties.first;
+    for (; dparm; dparm = dparm->next) {
+      if (dparm->prop == func->c_ret) {
+        continue;
+      }
+
+      if (!first) {
+        fprintf(f, ", ");
+      }
+      first = 0;
+
+      if (dparm->prop->flag & PROP_DYNAMIC) {
+        fprintf(f, "%s_len, %s", dparm->prop->identifier, dparm->prop->identifier);
+      }
+      else {
+        fprintf(f, "%s", dparm->prop->identifier);
+      }
+    }
+
+    fprintf(f, ");\n");
+
+    if (func->c_ret) {
+      dparm = rna_find_parameter_def(func->c_ret);
+      ptrstr = (((dparm->prop->type == PROP_POINTER) &&
+                 !(dparm->prop->flag_parameter & PARM_RNAPTR)) ||
+                (dparm->prop->arraydimension)) ?
+                   "*" :
+                   "";
+      fprintf(f,
+              "\t*((%s%s %s*)_retdata) = %s;\n",
+              rna_type_struct(dparm->prop),
+              rna_parameter_type_name(dparm->prop),
+              ptrstr,
+              func->c_ret->identifier);
+    }
+  }
+
+  fprintf(f, "}\n\n");
+
+  dfunc->gencall = funcname;
+}
+
+
