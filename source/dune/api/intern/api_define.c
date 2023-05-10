@@ -334,7 +334,7 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
   dsapi = api_find_struct_def(ApiDef.laststruct);
   dfn = dsrna->fns.last;
   for (; dfn; dfn = dfn->cont.prev) {
-    dparm = dfunc->cont.props.last;
+    dparm = dfn->cont.props.last;
     for (; dparm; dparm = dparm->prev) {
       if (dparm->prop == parm) {
         return dparm;
@@ -342,10 +342,10 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
     }
   }
 
-  dsapi = DefRNA.structs.last;
-  for (; dsrna; dsrna = dsrna->cont.prev) {
+  dsapi = ApiDef.structs.last;
+  for (; dsapi; dsapi = dsapi->cont.prev) {
     dfunc = dsrna->functions.last;
-    for (; dfunc; dfunc = dfunc->cont.prev) {
+    for (; dfn; dfn = df ->cont.prev) {
       dparm = dfunc->cont.properties.last;
       for (; dparm; dparm = dparm->prev) {
         if (dparm->prop == parm) {
