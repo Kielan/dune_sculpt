@@ -183,7 +183,7 @@ static void api_brna_structs_add(DuneApi *brna, ApiStruct *srna)
 static void api_brna_structs_remove_and_free(BlenderRNA *brna, StructRNA *srna)
 {
   if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && brna->structs_map) {
-    if (srna->identifier[0] != '\0') {
+    if (srna->id[0] != '\0') {
       lib_ghash_remove(brna->structs_map, (void *)srna->identifier, NULL, NULL);
     }
   }
@@ -319,11 +319,11 @@ ApiFnDef *api_find_fn_def(ApiFn *fn)
   return NULL;
 }
 
-PropertyDefRNA *rna_find_parameter_def(PropertyRNA *parm)
+ApiPropDef *api_find_param_def(ApiProp *parm)
 {
-  StructDefRNA *dsrna;
-  FunctionDefRNA *dfunc;
-  PropertyDefRNA *dparm;
+  ApiStructDef *dsrna;
+  ApiFnDef *dfn;
+  ApiPropDef *dparm;
 
   if (!DefRNA.preprocess) {
     /* we should never get here */
