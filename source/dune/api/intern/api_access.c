@@ -12,7 +12,7 @@
 #include "types_windowmanager.h"
 
 #include "lib_alloca.h"
-#include "lib_blenlib.h"
+#include "lib_dunelib.h"
 #include "lib_dynstr.h"
 #include "lib_ghash.h"
 #include "lib_math.h"
@@ -61,39 +61,39 @@ void api_init(void)
   DUNE_API.structs_map = lib_ghash_str_new_ex(__func__, 2048);
   DUNE_API.structs_len = 0;
 
-  for (srna = BLENDER_RNA.structs.first; srna; srna = srna->cont.next) {
+  for (srna = DUNE_API.structs.first; srna; srna = srna->cont.next) {
     if (!srna->cont.prophash) {
-      srna->cont.prophash = BLI_ghash_str_new("RNA_init gh");
+      srna->cont.prophash = lib_ghash_str_new("RNA_init gh");
 
       for (prop = srna->cont.properties.first; prop; prop = prop->next) {
         if (!(prop->flag_internal & PROP_INTERN_BUILTIN)) {
-          BLI_ghash_insert(srna->cont.prophash, (void *)prop->identifier, prop);
+          lib_ghash_insert(srna->cont.prophash, (void *)prop->id, prop);
         }
       }
     }
-    BLI_assert(srna->flag & STRUCT_PUBLIC_NAMESPACE);
-    BLI_ghash_insert(BLENDER_RNA.structs_map, (void *)srna->identifier, srna);
-    BLENDER_RNA.structs_len += 1;
+    lib_assert(srna->flag & STRUCT_PUBLIC_NAMESPACE);
+    lib_ghash_insert(DUNE_API.structs_map, (void *)srna->identifier, srna);
+    DUNE_API.structs_len += 1;
   }
 }
 
-void RNA_exit(void)
+void api_exit(void)
 {
-  StructRNA *srna;
+  ApiStruct *srna;
 
-  for (srna = BLENDER_RNA.structs.first; srna; srna = srna->cont.next) {
+  for (srna = DUNE_API.structs.first; srna; srna = srna->cont.next) {
     if (srna->cont.prophash) {
-      BLI_ghash_free(srna->cont.prophash, NULL, NULL);
+      lib_ghash_free(srna->cont.prophash, NULL, NULL);
       srna->cont.prophash = NULL;
     }
   }
 
-  RNA_free(&BLENDER_RNA);
+  api_free(&DUNE_API);
 }
 
 /* Pointer */
 
-void RNA_main_pointer_create(struct Main *main, PointerRNA *r_ptr)
+void api_main_ptr_create(struct Main *main, PointerRNA *r_ptr)
 {
   r_ptr->owner_id = NULL;
   r_ptr->type = &RNA_BlendData;
