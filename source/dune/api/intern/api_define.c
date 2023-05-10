@@ -151,47 +151,47 @@ PropertyDefRNA *rna_findlink(ListBase *listbase, const char *identifier)
 
 void api_freelinkn(List *list, void *vlink)
 {
-  api_remlink(listbase, vlink);
+  api_remlink(list, vlink);
   mem_freen(vlink);
 }
 
-void rna_freelistN(ListBase *listbase)
+void api_freelistn(List *list)
 {
   Link *link, *next;
 
-  for (link = listbase->first; link; link = next) {
+  for (link = list->first; link; link = next) {
     next = link->next;
-    MEM_freeN(link);
+    mem_freen(link);
   }
 
-  listbase->first = listbase->last = NULL;
+  list->first = list->last = NULL;
 }
 
-static void rna_brna_structs_add(BlenderRNA *brna, StructRNA *srna)
+static void api_brna_structs_add(DuneApi *brna, ApiStruct *srna)
 {
-  rna_addtail(&brna->structs, srna);
+  api_addtail(&brna->structs, srna);
   brna->structs_len += 1;
 
   /* This exception is only needed for pre-processing.
    * otherwise we don't allow empty names. */
-  if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && (srna->identifier[0] != '\0')) {
-    BLI_ghash_insert(brna->structs_map, (void *)srna->identifier, srna);
+  if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && (srna->id[0] != '\0')) {
+    lib_ghash_insert(brna->structs_map, (void *)srna->id, srna);
   }
 }
 
-#ifdef RNA_RUNTIME
-static void rna_brna_structs_remove_and_free(BlenderRNA *brna, StructRNA *srna)
+#ifdef API_RUNTIME
+static void api_brna_structs_remove_and_free(BlenderRNA *brna, StructRNA *srna)
 {
   if ((srna->flag & STRUCT_PUBLIC_NAMESPACE) && brna->structs_map) {
     if (srna->identifier[0] != '\0') {
-      BLI_ghash_remove(brna->structs_map, (void *)srna->identifier, NULL, NULL);
+      lib_ghash_remove(brna->structs_map, (void *)srna->identifier, NULL, NULL);
     }
   }
 
-  RNA_def_struct_free_pointers(NULL, srna);
+  api_def_struct_free_ptrs(NULL, srna);
 
   if (srna->flag & STRUCT_RUNTIME) {
-    rna_freelinkN(&brna->structs, srna);
+    api_freelinkn(&brna->structs, srna);
   }
   brna->structs_len -= 1;
 }
