@@ -691,14 +691,14 @@ BlenderRNA *RNA_create(void)
   /* We need both alias and static (on-disk) DNA names. */
   DNA_sdna_alias_data_ensure(DefRNA.sdna);
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
   DNA_alias_maps(DNA_RENAME_STATIC_FROM_ALIAS, &g_version_data.struct_map_static_from_alias, NULL);
 #endif
 
   return brna;
 }
 
-void RNA_define_free(BlenderRNA *UNUSED(brna))
+void api_define_free(BlenderRNA *UNUSED(brna))
 {
   StructDefRNA *ds;
   FunctionDefRNA *dfunc;
