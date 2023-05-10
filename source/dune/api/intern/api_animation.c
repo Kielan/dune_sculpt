@@ -105,7 +105,7 @@ const EnumPropItem api_enum_keying_flag_items_api[] = {
 
 #  include "ed_anim_api.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
 static void api_AnimData_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
@@ -124,7 +124,7 @@ static void api_AnimData_dependency_update(Main *bmain, Scene *scene, PointerRNA
 static int api_AnimData_action_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   AnimData *adt = (AnimData *)ptr->data;
-  return dunr_animdata_action_editable(adt) ? PROP_EDITABLE : 0;
+  return dune_animdata_action_editable(adt) ? PROP_EDITABLE : 0;
 }
 
 static void api_AnimData_action_set(ApiPtr *ptr,
@@ -234,7 +234,7 @@ static void RKS_GEN_api_internal(KeyingSetInfo *ksi, Ctx *C, KeyingSet *ks, ApiP
     api_param_set_lookup(&list, "data", data);
 
     /* execute the function */
-    ksi->api_ext.call(C, &ptr, func, &list);
+    ksi->api_ext.call(C, &ptr, fn, &list);
   }
   api_param_list_free(&list);
 }
@@ -243,23 +243,23 @@ static void RKS_GEN_api_internal(KeyingSetInfo *ksi, Ctx *C, KeyingSet *ks, ApiP
 
 /* XXX: the exact purpose of this is not too clear...
  * maybe we want to revise this at some point? */
-static StructRNA *rna_KeyingSetInfo_refine(PointerRNA *ptr)
+static ApiStruct *api_KeyingSetInfo_refine(ApiPtr *ptr)
 {
   KeyingSetInfo *ksi = (KeyingSetInfo *)ptr->data;
-  return (ksi->rna_ext.srna) ? ksi->rna_ext.srna : &RNA_KeyingSetInfo;
+  return (ksi->api_ext.srna) ? ksi->api_ext.srna : &ApiKeyingSetInfo;
 }
 
-static void rna_KeyingSetInfo_unregister(Main *bmain, StructRNA *type)
+static void api_KeyingSetInfo_unregister(Main *bmain, StructRNA *type)
 {
-  KeyingSetInfo *ksi = RNA_struct_blender_type_get(type);
+  KeyingSetInfo *ksi = api_struct_blender_type_get(type);
 
   if (ksi == NULL) {
     return;
   }
 
   /* free RNA data referencing this */
-  RNA_struct_free_extension(type, &ksi->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &ksi->rna_ext);
+  api_struct_free(&DUNE_API, type);
 
   WM_main_add_notifier(NC_WINDOW, NULL);
 
