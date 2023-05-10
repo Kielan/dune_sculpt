@@ -273,12 +273,12 @@ static ApiPropDef *api_find_prop_def(ApiProp *prop)
     return NULL;
   }
 
-  dprop = api_find_struct_property_def(DefRNA.laststruct, prop);
+  dprop = api_find_struct_prop_def(ApiDef.laststruct, prop);
   if (dprop) {
     return dprop;
   }
 
-  dprop = api_find_parameter_def(prop);
+  dprop = api_find_param_def(prop);
   if (dprop) {
     return dprop;
   }
@@ -298,8 +298,8 @@ ApiFnDef *api_find_fn_def(ApiFn *fn)
     return NULL;
   }
 
-  dsrna = api_find_struct_def(DefRNA.laststruct);
-  dfunc = dsrna->functions.last;
+  dsapi = api_find_struct_def(DefRNA.laststruct);
+  dfn = dsrna->fns.last;
   for (; dfunc; dfunc = dfunc->cont.prev) {
     if (dfunc->func == func) {
       return dfunc;
