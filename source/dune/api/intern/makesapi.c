@@ -176,7 +176,7 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
 
   if (fp_new == NULL) {
     /* shouldn't happen, just to be safe */
-    CLOG_ERROR(&LOG, "open error: \"%s\"", tmpfile);
+    LOG_ERROR(&LOG, "open error: \"%s\"", tmpfile);
     fclose(fp_org);
     return -1;
   }
@@ -233,8 +233,8 @@ static const char *rna_safe_id(const char *id)
   if (STREQ(id, "default")) {
     return "default_value";
   }
-  if (STREQ(id, "operator")) {
-    return "operator_value";
+  if (STREQ(id, "op")) {
+    return "op_alue";
   }
   if (STREQ(id, "new")) {
     return "create";
@@ -323,12 +323,12 @@ static void api_sortlist(List *list, int (*cmp)(const void *, const void *))
     rna_addtail(listbase, link);
   }
 
-  MEM_freeN(array);
+  mem_freen(array);
 }
 
 /* Preprocessing */
 
-static void rna_print_c_string(FILE *f, const char *str)
+static void api_print_c_string(FILE *f, const char *str)
 {
   static const char *escape[] = {
       "\''", "\"\"", "\??", "\\\\", "\aa", "\bb", "\ff", "\nn", "\rr", "\tt", "\vv", NULL};
@@ -357,33 +357,33 @@ static void rna_print_c_string(FILE *f, const char *str)
   fprintf(f, "\"");
 }
 
-static void rna_print_data_get(FILE *f, PropertyDefRNA *dp)
+static void api_print_data_get(FILE *f, ApiPropDef *dp)
 {
-  if (dp->dnastructfromname && dp->dnastructfromprop) {
+  if (dp->typestructfromname && dp->yyprstructfromprop) {
     fprintf(f,
             "    %s *data = (%s *)(((%s *)ptr->data)->%s);\n",
-            dp->dnastructname,
-            dp->dnastructname,
-            dp->dnastructfromname,
-            dp->dnastructfromprop);
+            dp->typestructname,
+            dp->typestructname,
+            dp->typestructfromname,
+            dp->typestructfromprop);
   }
   else {
-    fprintf(f, "    %s *data = (%s *)(ptr->data);\n", dp->dnastructname, dp->dnastructname);
+    fprintf(f, "    %s *data = (%s *)(ptr->data);\n", dp->typestructname, dp->typestructname);
   }
 }
 
-static void rna_print_id_get(FILE *f, PropertyDefRNA *UNUSED(dp))
+static void api_print_id_get(FILE *f, ApiPropDef *UNUSED(dp))
 {
-  fprintf(f, "    ID *id = ptr->owner_id;\n");
+  fprintf(f, "    Id *id = ptr->owner_id;\n");
 }
 
-static void rna_construct_function_name(
+static void api_construct_fn_name(
     char *buffer, int size, const char *structname, const char *propname, const char *type)
 {
   snprintf(buffer, size, "%s_%s_%s", structname, propname, type);
 }
 
-static void rna_construct_wrapper_function_name(
+static void api_construct_wrapper_fn_name(
     char *buffer, int size, const char *structname, const char *propname, const char *type)
 {
   if (type == NULL || type[0] == '\0') {
@@ -394,38 +394,38 @@ static void rna_construct_wrapper_function_name(
   }
 }
 
-void *rna_alloc_from_buffer(const char *buffer, int buffer_len)
+void *api_alloc_from_buffer(const char *buffer, int buffer_len)
 {
-  AllocDefRNA *alloc = MEM_callocN(sizeof(AllocDefRNA), "AllocDefRNA");
-  alloc->mem = MEM_mallocN(buffer_len, __func__);
+  AllocDefRNA *alloc = mem_callocn(sizeof(ApiAllocDef), "ApiAllocDef");
+  alloc->mem = mem_mallocn(buffer_len, __func__);
   memcpy(alloc->mem, buffer, buffer_len);
-  rna_addtail(&DefRNA.allocs, alloc);
+  api_addtail(&ApiDef.allocs, alloc);
   return alloc->mem;
 }
 
 void *rna_calloc(int buffer_len)
 {
-  AllocDefRNA *alloc = MEM_callocN(sizeof(AllocDefRNA), "AllocDefRNA");
-  alloc->mem = MEM_callocN(buffer_len, __func__);
-  rna_addtail(&DefRNA.allocs, alloc);
+  ApiAllocDef *alloc = mem_callocn(sizeof(ApiAllocDef), "ApiAllocDef");
+  alloc->mem = mem_callocn(buffer_len, __func__);
+  rna_addtail(&ApiDef.allocs, alloc);
   return alloc->mem;
 }
 
-static char *rna_alloc_function_name(const char *structname,
-                                     const char *propname,
-                                     const char *type)
+static char *api_alloc_fn_name(const char *structname,
+                               const char *propname,
+                               const char *type)
 {
   char buffer[2048];
-  rna_construct_function_name(buffer, sizeof(buffer), structname, propname, type);
-  return rna_alloc_from_buffer(buffer, strlen(buffer) + 1);
+  api_construct_fn_name(buffer, sizeof(buffer), structname, propname, type);
+  return api_alloc_from_buffer(buffer, strlen(buffer) + 1);
 }
 
-static StructRNA *rna_find_struct(const char *identifier)
+static ApiStruct *api_find_struct(const char *id)
 {
-  StructDefRNA *ds;
+  ApiStructDef *ds;
 
-  for (ds = DefRNA.structs.first; ds; ds = ds->cont.next) {
-    if (STREQ(ds->srna->identifier, identifier)) {
+  for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
+    if (STREQ(ds->srna->id, id)) {
       return ds->srna;
     }
   }
@@ -433,11 +433,11 @@ static StructRNA *rna_find_struct(const char *identifier)
   return NULL;
 }
 
-static const char *rna_find_type(const char *type)
+static const char *api_find_type(const char *type)
 {
-  StructDefRNA *ds;
+  ApiStructDef *ds;
 
-  for (ds = DefRNA.structs.first; ds; ds = ds->cont.next) {
+  for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
     if (ds->dnaname && STREQ(ds->dnaname, type)) {
       return ds->srna->identifier;
     }
