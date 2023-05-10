@@ -321,7 +321,7 @@ ApiFnDef *api_find_fn_def(ApiFn *fn)
 
 ApiPropDef *api_find_param_def(ApiProp *parm)
 {
-  ApiStructDef *dsrna;
+  ApiStructDef *dsapi;
   ApiFnDef *dfn;
   ApiPropDef *dparm;
 
@@ -332,7 +332,7 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
   }
 
   dsapi = api_find_struct_def(ApiDef.laststruct);
-  dfn = dsrna->fns.last;
+  dfn = dsapi->fns.last;
   for (; dfn; dfn = dfn->cont.prev) {
     dparm = dfn->cont.props.last;
     for (; dparm; dparm = dparm->prev) {
@@ -344,9 +344,9 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
 
   dsapi = ApiDef.structs.last;
   for (; dsapi; dsapi = dsapi->cont.prev) {
-    dfunc = dsrna->functions.last;
+    dfunc = dsapi->fns.last;
     for (; dfn; dfn = df ->cont.prev) {
-      dparm = dfunc->cont.properties.last;
+      dparm = dfn->cont.props.last;
       for (; dparm; dparm = dparm->prev) {
         if (dparm->prop == parm) {
           return dparm;
@@ -360,8 +360,8 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
 
 static ApiContainerDef *api_find_container_def(ApiContainer *cont)
 {
-  StructDefRNA *ds;
-  FunctionDefRNA *dfunc;
+  ApiStructDef *ds;
+  ApiFnDef *dfn;
 
   if (!ApiDef.preprocess) {
     /* we should never get here */
@@ -369,20 +369,20 @@ static ApiContainerDef *api_find_container_def(ApiContainer *cont)
     return NULL;
   }
 
-  ds = rna_find_struct_def((ApiStruct *)cont);
+  ds = api_find_struct_def((ApiStruct *)cont);
   if (ds) {
     return &ds->cont;
   }
 
-  dfunc = api_find_fn_def((ApiFn *)cont);
-  if (dfunc) {
-    return &dfunc->cont;
+  dfn = api_find_fn_def((ApiFn *)cont);
+  if (dfn) {
+    return &dfn->cont;
   }
 
   return NULL;
 }
 
-/* DNA utility function for looking up members */
+/* types utility function for looking up members */
 
 typedef struct TypeStructMember {
   const char *type;
@@ -393,7 +393,7 @@ typedef struct TypeStructMember {
   int size;
 } TupeStructMember;
 
-static int rna_member_cmp(const char *name, const char *oname)
+static int api_member_cmp(const char *name, const char *oname)
 {
   int a = 0;
 
@@ -430,10 +430,10 @@ static int rna_member_cmp(const char *name, const char *oname)
   return (name[a] == oname[a]);
 }
 
-static int rna_find_sdna_member(SDNA *sdna,
+static int api_find_sdna_member(SDNA *sdna,
                                 const char *structname,
                                 const char *membername,
-                                DNAStructMember *smember,
+                                TypeStructMember *smember,
                                 int *offset)
 {
   const char *dnaname;
@@ -573,7 +573,7 @@ static int api_validate_identifier(const char *identifier, char *error, bool pro
     }
   }
 
-  if (property) {
+  if (prop) {
     static const char *kwlist_prop[] = {
         /* not keywords but reserved all the same because py uses */
         "keys",
@@ -768,63 +768,63 @@ void RNA_struct_free_extension(StructRNA *srna, ExtensionRNA *rna_ext)
 #endif
 }
 
-void RNA_struct_free(BlenderRNA *brna, StructRNA *srna)
+void api_struct_free(DuneApi *dapi, StructRNA *srna)
 {
-#ifdef RNA_RUNTIME
-  FunctionRNA *func, *nextfunc;
-  PropertyRNA *prop, *nextprop;
-  PropertyRNA *parm, *nextparm;
+#ifdef API_RUNTIME
+  ApiFn *fn, *nextfn;
+  ApiProp *prop, *nextprop;
+  ApiProp *parm, *nextparm;
 
 #  if 0
   if (srna->flag & STRUCT_RUNTIME) {
-    if (RNA_struct_py_type_get(srna)) {
+    if (api_struct_py_type_get(srna)) {
       fprintf(stderr, "%s '%s' freed while holding a python reference.", srna->identifier);
     }
   }
 #  endif
 
-  for (prop = srna->cont.properties.first; prop; prop = nextprop) {
+  for (prop = srna->cont.props.first; prop; prop = nextprop) {
     nextprop = prop->next;
 
-    RNA_def_property_free_pointers(prop);
+    api_def_prop_free_ptrs(prop);
 
     if (prop->flag_internal & PROP_INTERN_RUNTIME) {
-      rna_freelinkN(&srna->cont.properties, prop);
+      api_freelinkn(&srna->cont.props, prop);
     }
   }
 
-  for (func = srna->functions.first; func; func = nextfunc) {
-    nextfunc = func->cont.next;
+  for (func = srna->fns.first; fn; fn = nextfn) {
+    nextfunc = fn->cont.next;
 
-    for (parm = func->cont.properties.first; parm; parm = nextparm) {
+    for (parm = fn->cont.properties.first; parm; parm = nextparm) {
       nextparm = parm->next;
 
-      RNA_def_property_free_pointers(parm);
+      api_def_prop_free_ptrs(parm);
 
       if (parm->flag_internal & PROP_INTERN_RUNTIME) {
-        rna_freelinkN(&func->cont.properties, parm);
+        api_freelinkn(&fn->cont.props, parm);
       }
     }
 
-    RNA_def_func_free_pointers(func);
+    api_def_fn_free_pointers(func);
 
     if (func->flag & FUNC_RUNTIME) {
-      rna_freelinkN(&srna->functions, func);
+      api_freelinkN(&srna->functions, func);
     }
   }
 
-  rna_brna_structs_remove_and_free(brna, srna);
+  api_brna_structs_remove_and_free(brna, srna);
 #else
   UNUSED_VARS(brna, srna);
 #endif
 }
 
-void RNA_free(BlenderRNA *brna)
+void api_free(DuneApi *brna)
 {
-  StructRNA *srna, *nextsrna;
-  FunctionRNA *func;
+  ApiStruct *sapi, *nextsrna;
+  ApiFn *fn;
 
-  BLI_ghash_free(brna->structs_map, NULL, NULL);
+  lib_ghash_free(brna->structs_map, NULL, NULL);
   brna->structs_map = NULL;
 
   if (DefRNA.preprocess) {
