@@ -14,7 +14,7 @@
 #include "api_define.h"
 #include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 #include "wm_types.h"
 
@@ -251,7 +251,7 @@ static ApiStruct *api_KeyingSetInfo_refine(ApiPtr *ptr)
 
 static void api_KeyingSetInfo_unregister(Main *bmain, StructRNA *type)
 {
-  KeyingSetInfo *ksi = api_struct_blender_type_get(type);
+  KeyingSetInfo *ksi = api_struct_dune_type_get(type);
 
   if (ksi == NULL) {
     return;
@@ -261,91 +261,91 @@ static void api_KeyingSetInfo_unregister(Main *bmain, StructRNA *type)
   api_struct_free_extension(type, &ksi->rna_ext);
   api_struct_free(&DUNE_API, type);
 
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
   /* unlink Blender-side data */
-  ANIM_keyingset_info_unregister(bmain, ksi);
+  anim_keyingset_info_unregister(bmain, ksi);
 }
 
-static StructRNA *rna_KeyingSetInfo_register(Main *bmain,
+static ApiStruct *api_KeyingSetInfo_register(Main *bmain,
                                              ReportList *reports,
                                              void *data,
-                                             const char *identifier,
-                                             StructValidateFunc validate,
-                                             StructCallbackFunc call,
-                                             StructFreeFunc free)
+                                             const char *id,
+                                             StructValidateFn validate,
+                                             StructCallbackFn call,
+                                             StructFreeFn free)
 {
   KeyingSetInfo dummyksi = {NULL};
   KeyingSetInfo *ksi;
-  PointerRNA dummyptr = {NULL};
+  ApiPtr dummyptr = {NULL};
   int have_function[3];
 
   /* setup dummy type info to store static properties in */
   /* TODO: perhaps we want to get users to register
    * as if they're using 'KeyingSet' directly instead? */
-  RNA_pointer_create(NULL, &RNA_KeyingSetInfo, &dummyksi, &dummyptr);
+  api_ptr_create(NULL, &ApiKeyingSetInfo, &dummyksi, &dummyptr);
 
   /* validate the python class */
-  if (validate(&dummyptr, data, have_function) != 0) {
+  if (validate(&dummyptr, data, have_fn) != 0) {
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummyksi.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummyksi.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Registering keying set info class: '%s' is too long, maximum length is %d",
-                identifier,
+                id,
                 (int)sizeof(dummyksi.idname));
     return NULL;
   }
 
   /* check if we have registered this info before, and remove it */
-  ksi = ANIM_keyingset_info_find_name(dummyksi.idname);
-  if (ksi && ksi->rna_ext.srna) {
-    rna_KeyingSetInfo_unregister(bmain, ksi->rna_ext.srna);
+  ksi = anim_keyingset_info_find_name(dummyksi.idname);
+  if (ksi && ksi->api_ext.srna) {
+    api_KeyingSetInfo_unregister(bmain, ksi->api_ext.srna);
   }
 
   /* create a new KeyingSetInfo type */
-  ksi = MEM_mallocN(sizeof(KeyingSetInfo), "python keying set info");
+  ksi = mem_mallocn(sizeof(KeyingSetInfo), "python keying set info");
   memcpy(ksi, &dummyksi, sizeof(KeyingSetInfo));
 
   /* set RNA-extensions info */
-  ksi->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, ksi->idname, &RNA_KeyingSetInfo);
-  ksi->rna_ext.data = data;
-  ksi->rna_ext.call = call;
-  ksi->rna_ext.free = free;
-  RNA_struct_blender_type_set(ksi->rna_ext.srna, ksi);
+  ksi->api_ext.srna = api_def_struct_ptr(&DUNE_API, ksi->idname, &RNA_KeyingSetInfo);
+  ksi->api_ext.data = data;
+  ksi->api_ext.call = call;
+  ksi->api_ext.free = free;
+  api_struct_dune_type_set(ksi->api_ext.srna, ksi);
 
   /* set callbacks */
   /* NOTE: we really should have all of these... */
-  ksi->poll = (have_function[0]) ? RKS_POLL_rna_internal : NULL;
-  ksi->iter = (have_function[1]) ? RKS_ITER_rna_internal : NULL;
-  ksi->generate = (have_function[2]) ? RKS_GEN_rna_internal : NULL;
+  ksi->poll = (have_fn[0]) ? RKS_POLL_api_internal : NULL;
+  ksi->iter = (have_fn[1]) ? RKS_ITER_api_internal : NULL;
+  ksi->generate = (have_fn[2]) ? RKS_GEN_api_internal : NULL;
 
   /* add and register with other info as needed */
-  ANIM_keyingset_info_register(ksi);
+  anim_keyingset_info_register(ksi);
 
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
   /* return the struct-rna added */
-  return ksi->rna_ext.srna;
+  return ksi->api_ext.srna;
 }
 
 /* ****************************** */
 
-static StructRNA *rna_ksPath_id_typef(PointerRNA *ptr)
+static ApiStruct *api_ksPath_id_typef(ApiPtr *ptr)
 {
   KS_Path *ksp = (KS_Path *)ptr->data;
-  return ID_code_to_RNA_type(ksp->idtype);
+  return id_code_to_api_type(ksp->idtype);
 }
 
-static int rna_ksPath_id_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int rna_ksPath_id_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   KS_Path *ksp = (KS_Path *)ptr->data;
   return (ksp->idtype) ? PROP_EDITABLE : 0;
 }
 
-static void rna_ksPath_id_type_set(PointerRNA *ptr, int value)
+static void api_ksPath_id_type_set(ApiPtr *ptr, int value)
 {
   KS_Path *data = (KS_Path *)(ptr->data);
 
@@ -356,12 +356,12 @@ static void rna_ksPath_id_type_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_ksPath_RnaPath_get(PointerRNA *ptr, char *value)
+static void api_ksPath_ApiPath_get(ApiPtr *ptr, char *value)
 {
   KS_Path *ksp = (KS_Path *)ptr->data;
 
-  if (ksp->rna_path) {
-    strcpy(value, ksp->rna_path);
+  if (ksp->api_path) {
+    strcpy(value, ksp->api_path);
   }
   else {
     value[0] = '\0';
