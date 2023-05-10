@@ -325,16 +325,16 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
   ApiFnDef *dfn;
   ApiPropDef *dparm;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     /* we should never get here */
-    CLOG_ERROR(&LOG, "only at preprocess time.");
+    LOG_ERROR(&LOG, "only at preprocess time.");
     return NULL;
   }
 
-  dsrna = rna_find_struct_def(DefRNA.laststruct);
-  dfunc = dsrna->functions.last;
-  for (; dfunc; dfunc = dfunc->cont.prev) {
-    dparm = dfunc->cont.properties.last;
+  dsapi = api_find_struct_def(ApiDef.laststruct);
+  dfn = dsrna->fns.last;
+  for (; dfn; dfn = dfn->cont.prev) {
+    dparm = dfunc->cont.props.last;
     for (; dparm; dparm = dparm->prev) {
       if (dparm->prop == parm) {
         return dparm;
@@ -342,7 +342,7 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
     }
   }
 
-  dsrna = DefRNA.structs.last;
+  dsapi = DefRNA.structs.last;
   for (; dsrna; dsrna = dsrna->cont.prev) {
     dfunc = dsrna->functions.last;
     for (; dfunc; dfunc = dfunc->cont.prev) {
