@@ -30,7 +30,7 @@
 static LogRef LOG = {"api"};
 
 /**
- * Variable to control debug output of makesrna.
+ * Variable to control debug output of makesapi.
  * debugSRNA:
  * - 0 = no output, except errors
  * - 1 = detail actions
@@ -114,7 +114,7 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
     } \
   } \
   if (rename(tmpfile, orgfile) != 0) { \
-    CLOG_ERROR(&LOG, "rename error (%s): \"%s\" -> \"%s\"", strerror(errno), tmpfile, orgfile); \
+    LOG_ERROR(&LOG, "rename error (%s): \"%s\" -> \"%s\"", strerror(errno), tmpfile, orgfile); \
     return -1; \
   } \
   remove(tmpfile); \
@@ -197,14 +197,14 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
   }
 
   /* now compare the files... */
-  arr_new = MEM_mallocN(sizeof(char) * len_new, "rna_cmp_file_new");
-  arr_org = MEM_mallocN(sizeof(char) * len_org, "rna_cmp_file_org");
+  arr_new = mem_mallocn(sizeof(char) * len_new, "api_cmp_file_new")
+  arr_org = mem_mallocn(sizeof(char) * len_org, "api_cmp_file_org");
 
   if (fread(arr_new, sizeof(char), len_new, fp_new) != len_new) {
-    CLOG_ERROR(&LOG, "unable to read file %s for comparison.", tmpfile);
+    LOG_ERROR(&LOG, "unable to read file %s for comparison.", tmpfile);
   }
   if (fread(arr_org, sizeof(char), len_org, fp_org) != len_org) {
-    CLOG_ERROR(&LOG, "unable to read file %s for comparison.", orgfile);
+    LOG_ERROR(&LOG, "unable to read file %s for comparison.", orgfile);
   }
 
   fclose(fp_new);
@@ -214,8 +214,8 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
 
   cmp = memcmp(arr_new, arr_org, len_new);
 
-  MEM_freeN(arr_new);
-  MEM_freeN(arr_org);
+  mem_freen(arr_new);
+  mem_freen(arr_org);
 
   if (cmp) {
     REN_IF_DIFF;
@@ -251,28 +251,28 @@ static const char *rna_safe_id(const char *id)
 
 static int cmp_struct(const void *a, const void *b)
 {
-  const StructRNA *structa = *(const StructRNA **)a;
-  const StructRNA *structb = *(const StructRNA **)b;
+  const ApiStruct *structa = *(const ApiStruct **)a;
+  const ApiStruct *structb = *(const ApiStruct **)b;
 
-  return strcmp(structa->identifier, structb->identifier);
+  return strcmp(structa->id, structb->id);
 }
 
-static int cmp_property(const void *a, const void *b)
+static int cmp_prop(const void *a, const void *b)
 {
-  const PropertyRNA *propa = *(const PropertyRNA **)a;
-  const PropertyRNA *propb = *(const PropertyRNA **)b;
+  const ApiProp *propa = *(const ApiProp **)a;
+  const ApiProp *propb = *(const ApiProp **)b;
 
-  if (STREQ(propa->identifier, "rna_type")) {
+  if (STREQ(propa->id, "api_type")) {
     return -1;
   }
-  if (STREQ(propb->identifier, "rna_type")) {
+  if (STREQ(propb->id, "api_type")) {
     return 1;
   }
 
-  if (STREQ(propa->identifier, "name")) {
+  if (STREQ(propa->id, "name")) {
     return -1;
   }
-  if (STREQ(propb->identifier, "name")) {
+  if (STREQ(propb->id, "name")) {
     return 1;
   }
 
@@ -281,21 +281,21 @@ static int cmp_property(const void *a, const void *b)
 
 static int cmp_def_struct(const void *a, const void *b)
 {
-  const StructDefRNA *dsa = *(const StructDefRNA **)a;
-  const StructDefRNA *dsb = *(const StructDefRNA **)b;
+  const ApiStructDef *dsa = *(const ApiStructDef **)a;
+  const ApiStructDef *dsb = *(const ApiStructDef **)b;
 
   return cmp_struct(&dsa->srna, &dsb->srna);
 }
 
-static int cmp_def_property(const void *a, const void *b)
+static int cmp_def_prop(const void *a, const void *b)
 {
-  const PropertyDefRNA *dpa = *(const PropertyDefRNA **)a;
-  const PropertyDefRNA *dpb = *(const PropertyDefRNA **)b;
+  const ApiPropDef *dpa = *(const PropDefRNA **)a;
+  const ApiPropDef *dpb = *(const PropDefRNA **)b;
 
-  return cmp_property(&dpa->prop, &dpb->prop);
+  return cmp_prop(&dpa->prop, &dpb->prop);
 }
 
-static void rna_sortlist(ListBase *listbase, int (*cmp)(const void *, const void *))
+static void api_sortlist(List *list, int (*cmp)(const void *, const void *))
 {
   Link *link;
   void **array;
