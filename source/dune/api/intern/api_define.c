@@ -230,14 +230,14 @@ ApiStructDef *api_find_struct_def(ApiStruct *srna)
   return NULL;
 }
 
-PropertyDefRNA *rna_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
+ApiPropDef *api_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
 {
-  StructDefRNA *dsrna;
-  PropertyDefRNA *dprop;
+  ApiStructDef *dsrna;
+  ApiPropDef *dprop;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     /* we should never get here */
-    CLOG_ERROR(&LOG, "only at preprocess time.");
+    LOG_ERROR(&LOG, "only at preprocess time.");
     return NULL;
   }
 
