@@ -228,7 +228,7 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
 
 /* Helper to solve keyword problems with C/C++ */
 
-static const char *rna_safe_id(const char *id)
+static const char *api_safe_id(const char *id)
 {
   if (STREQ(id, "default")) {
     return "default_value";
@@ -622,36 +622,36 @@ static void rna_int_print(FILE *f, int64_t num)
   }
 }
 
-static char *rna_def_property_get_func(
-    FILE *f, StructRNA *srna, PropertyRNA *prop, PropertyDefRNA *dp, const char *manualfunc)
+static char *api_def_prop_get_fn(
+    FILE *f, ApiStruct *apistruct, ApiProp *prop, ApiPropDef *dp, const char *manualfn)
 {
-  char *func;
+  char *fn;
 
-  if (prop->flag & PROP_IDPROPERTY && manualfunc == NULL) {
+  if (prop->flag & PROP_IDPROP && manualfn == NULL) {
     return NULL;
   }
 
-  if (!manualfunc) {
-    if (!dp->dnastructname || !dp->dnaname) {
-      CLOG_ERROR(&LOG, "%s.%s has no valid dna info.", srna->identifier, prop->identifier);
-      DefRNA.error = true;
+  if (!manualfn) {
+    if (!dp->typestructname || !dp->typename) {
+      LOG_ERROR(&LOG, "%s.%s has no valid dna info.", srna->identifier, prop->identifier);
+      ApiDef.error = true;
       return NULL;
     }
 
     /* Type check. */
-    if (dp->dnatype && *dp->dnatype) {
+    if (dp->type && *dp->type) {
 
       if (prop->type == PROP_FLOAT) {
-        if (IS_DNATYPE_FLOAT_COMPAT(dp->dnatype) == 0) {
+        if (IS_TYPE_FLOAT_COMPAT(dp->type) == 0) {
           /* Colors are an exception. these get translated. */
           if (prop->subtype != PROP_COLOR_GAMMA) {
-            CLOG_ERROR(&LOG,
+            LOG_ERROR(&LOG,
                        "%s.%s is a '%s' but wrapped as type '%s'.",
-                       srna->identifier,
-                       prop->identifier,
-                       dp->dnatype,
-                       RNA_property_typename(prop->type));
-            DefRNA.error = true;
+                       api->id,
+                       prop->id,
+                       dp->type,
+                       api_prop_typename(prop->type));
+            ApiDef.error = true;
             return NULL;
           }
         }
