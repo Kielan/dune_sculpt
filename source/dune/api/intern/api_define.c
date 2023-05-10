@@ -31,8 +31,8 @@ static LogRef LOG = {"api.define"};
 #ifdef DEBUG
 #  define ASSERT_SOFT_HARD_LIMITS \
     if (softmin < hardmin || softmax > hardmax) { \
-      CLOG_ERROR(&LOG, "error with soft/hard limits: %s.%s", CONTAINER_RNA_ID(cont), identifier); \
-      BLI_assert_msg(0, "invalid soft/hard limits"); \
+      LOG_ERROR(&LOG, "error with soft/hard limits: %s.%s", CONTAINER_API_ID(cont), identifier);
+      lib_assert_msg(0, "invalid soft/hard limits"); \
     } \
     (void)0
 #else
@@ -41,7 +41,7 @@ static LogRef LOG = {"api.define"};
 
 /* Global used during defining */
 
-BlenderDefRNA DefRNA = {
+DuneApiDef ApiDef = {
     .sdna = NULL,
     .structs = {NULL, NULL},
     .allocs = {NULL, NULL},
@@ -54,20 +54,20 @@ BlenderDefRNA DefRNA = {
     .make_overridable = false,
 };
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
 static struct {
   GHash *struct_map_static_from_alias;
 } g_version_data;
 #endif
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
 /**
  * When set, report details about which defaults are used.
  * Noisy but handy when investigating default extraction.
  */
 static bool debugSRNA_defaults = false;
 
-static void print_default_info(const PropertyDefRNA *dp)
+static void print_default_info(const ApiPropDef *dp)
 {
   fprintf(stderr,
           "dna_type=%s, dna_offset=%d, dna_struct=%s, dna_name=%s, id=%s\n",
@@ -87,7 +87,7 @@ static void print_default_info(const PropertyDefRNA *dp)
     if (description && (description)[0]) { \
       int i = strlen(description); \
       if (i > 3 && (description)[i - 1] == '.' && (description)[i - 3] != '.') { \
-        CLOG_WARN(&LOG, \
+        LOG_WARN(&LOG, \
                   "'%s' description from '%s' '%s' ends with a '.' !", \
                   description, \
                   id1 ? id1 : "", \
@@ -100,23 +100,23 @@ static void print_default_info(const PropertyDefRNA *dp)
 #  define DESCR_CHECK(description, id1, id2)
 #endif
 
-void rna_addtail(ListBase *listbase, void *vlink)
+void api_addtail(List *list, void *vlink)
 {
   Link *link = vlink;
 
   link->next = NULL;
-  link->prev = listbase->last;
+  link->prev = list->last;
 
-  if (listbase->last) {
-    ((Link *)listbase->last)->next = link;
+  if (list->last) {
+    ((Link *)list->last)->next = link;
   }
-  if (listbase->first == NULL) {
-    listbase->first = link;
+  if (list->first == NULL) {
+    list->first = link;
   }
-  listbase->last = link;
+  list->last = link;
 }
 
-static void rna_remlink(ListBase *listbase, void *vlink)
+static void api_remlink(ListBase *listbase, void *vlink)
 {
   Link *link = vlink;
 
