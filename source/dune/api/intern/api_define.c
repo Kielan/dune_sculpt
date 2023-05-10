@@ -212,15 +212,15 @@ static int types_struct_find_nr_wrapper(const struct SDNA *sdna, const char *str
 
 ApiStructDef *api_find_struct_def(ApiStruct *srna)
 {
-  StructDefRNA *dsrna;
+  ApiStructDef *dsrna;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     /* we should never get here */
-    CLOG_ERROR(&LOG, "only at preprocess time.");
+    COG_ERROR(&LOG, "only at preprocess time.");
     return NULL;
   }
 
-  dsrna = DefRNA.structs.last;
+  dsrna = ApuDef.structs.last;
   for (; dsrna; dsrna = dsrna->cont.prev) {
     if (dsrna->srna == srna) {
       return dsrna;
@@ -242,16 +242,16 @@ ApiPropDef *api_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
   }
 
   dsrna = rna_find_struct_def(srna);
-  dprop = dsrna->cont.properties.last;
+  dprop = dsrna->cont.props.last;
   for (; dprop; dprop = dprop->prev) {
     if (dprop->prop == prop) {
       return dprop;
     }
   }
 
-  dsrna = DefRNA.structs.last;
+  dsrna = ApiDef.structs.last;
   for (; dsrna; dsrna = dsrna->cont.prev) {
-    dprop = dsrna->cont.properties.last;
+    dprop = dsrna->cont.props.last;
     for (; dprop; dprop = dprop->prev) {
       if (dprop->prop == prop) {
         return dprop;
@@ -263,7 +263,7 @@ ApiPropDef *api_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
 }
 
 #if 0
-static PropertyDefRNA *rna_find_property_def(PropertyRNA *prop)
+static ApiPropDef *api_find_prop_def(ApiProp *prop)
 {
   PropertyDefRNA *dprop;
 
