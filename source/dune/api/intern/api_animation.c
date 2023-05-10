@@ -1,27 +1,27 @@
 #include <stdlib.h>
 
-#include "DNA_action_types.h"
-#include "DNA_anim_types.h"
-#include "DNA_scene_types.h"
+#include "types_action.h"
+#include "types_anim.h"
+#include "types_scene.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "translation.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
 #include "rna_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#include "ED_keyframing.h"
+#include "ed_keyframing.h"
 
 /* exported for use in API */
-const EnumPropertyItem rna_enum_keyingset_path_grouping_items[] = {
+const EnumPropItem api_enum_keyingset_path_grouping_items[] = {
     {KSP_GROUP_NAMED, "NAMED", 0, "Named Group", ""},
     {KSP_GROUP_NONE, "NONE", 0, "None", ""},
     {KSP_GROUP_KSNAME, "KEYINGSET", 0, "Keying Set Name", ""},
@@ -32,7 +32,7 @@ const EnumPropertyItem rna_enum_keyingset_path_grouping_items[] = {
  * but it would break existing
  * exported keyingset... :/
  */
-const EnumPropertyItem rna_enum_keying_flag_items[] = {
+const EnumPropItem rna_enum_keying_flag_items[] = {
     {INSERTKEY_NEEDED,
      "INSERTKEY_NEEDED",
      0,
@@ -53,8 +53,8 @@ const EnumPropertyItem rna_enum_keying_flag_items[] = {
 };
 
 /* Contains additional flags suitable for use in Python API functions. */
-const EnumPropertyItem rna_enum_keying_flag_items_api[] = {
-    {INSERTKEY_NEEDED,
+const EnumPropItem api_enum_keying_flag_items_api[] = {
+    {INSERTKEY_NEEDE
      "INSERTKEY_NEEDED",
      0,
      "Only Needed",
@@ -64,7 +64,7 @@ const EnumPropertyItem rna_enum_keying_flag_items_api[] = {
      0,
      "Visual Keying",
      "Insert keyframes based on 'visual transforms'"},
-    {INSERTKEY_XYZ2RGB,
+    {INSERTKEY_XYZ2R
      "INSERTKEY_XYZ_TO_RGB",
      0,
      "XYZ=RGB Colors",
@@ -89,55 +89,55 @@ const EnumPropertyItem rna_enum_keying_flag_items_api[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math_base.h"
+#  include "lib_math_base.h"
 
-#  include "BKE_anim_data.h"
-#  include "BKE_animsys.h"
-#  include "BKE_fcurve.h"
-#  include "BKE_nla.h"
+#  include "dune_anim_data.h"
+#  include "dune_animsys.h"
+#  include "dune_fcurve.h"
+#  include "dune_nla.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "DNA_object_types.h"
+#  include "types_object_types.h"
 
-#  include "ED_anim_api.h"
+#  include "ed_anim_api.h"
 
 #  include "WM_api.h"
 
-static void rna_AnimData_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_AnimData_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
-  ANIM_id_update(bmain, id);
+  anim_id_update(bmain, id);
 }
 
-static void rna_AnimData_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_AnimData_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  DEG_relations_tag_update(bmain);
+  graph_relations_tag_update(bmain);
 
-  rna_AnimData_update(bmain, scene, ptr);
+  api_AnimData_update(bmain, scene, ptr);
 }
 
-static int rna_AnimData_action_editable(PointerRNA *ptr, const char **UNUSED(r_info))
+static int api_AnimData_action_editable(ApiPtr *ptr, const char **UNUSED(r_info))
 {
   AnimData *adt = (AnimData *)ptr->data;
-  return BKE_animdata_action_editable(adt) ? PROP_EDITABLE : 0;
+  return dunr_animdata_action_editable(adt) ? PROP_EDITABLE : 0;
 }
 
-static void rna_AnimData_action_set(PointerRNA *ptr,
-                                    PointerRNA value,
+static void api_AnimData_action_set(ApiPtr *ptr,
+                                    ApiPtr value,
                                     struct ReportList *UNUSED(reports))
 {
-  ID *ownerId = ptr->owner_id;
+  Id *ownerId = ptr->owner_id;
 
   /* set action */
-  BKE_animdata_set_action(NULL, ownerId, value.data);
+  dune_animdata_set_action(NULL, ownerId, value.data);
 }
 
-static void rna_AnimData_tweakmode_set(PointerRNA *ptr, const bool value)
+static void api_AnimData_tweakmode_set(PointerRNA *ptr, const bool value)
 {
   AnimData *adt = (AnimData *)ptr->data;
 
@@ -147,10 +147,10 @@ static void rna_AnimData_tweakmode_set(PointerRNA *ptr, const bool value)
    * dealt with at some point. */
 
   if (value) {
-    BKE_nla_tweakmode_enter(adt);
+    dune_nla_tweakmode_enter(adt);
   }
   else {
-    BKE_nla_tweakmode_exit(adt);
+    dune_nla_tweakmode_exit(adt);
   }
 }
 
@@ -159,84 +159,84 @@ static void rna_AnimData_tweakmode_set(PointerRNA *ptr, const bool value)
 /* wrapper for poll callback */
 static bool RKS_POLL_rna_internal(KeyingSetInfo *ksi, bContext *C)
 {
-  extern FunctionRNA rna_KeyingSetInfo_poll_func;
+  extern ApiFn api_KeyingSetInfo_poll_func;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   int ok;
 
-  RNA_pointer_create(NULL, ksi->rna_ext.srna, ksi, &ptr);
-  func = &rna_KeyingSetInfo_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, ksi->rna_ext.srna, ksi, &ptr);
+  func = &api_KeyingSetInfo_poll_fn; /* RNA_struct_find_function(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
+  api_param_list_create(&list, &ptr, fn);
   {
     /* hook up arguments */
-    RNA_parameter_set_lookup(&list, "ksi", &ksi);
-    RNA_parameter_set_lookup(&list, "context", &C);
+    api_param_set_lookup(&list, "ksi", &ksi);
+    api_param_set_lookup(&list, "context", &C);
 
     /* execute the function */
-    ksi->rna_ext.call(C, &ptr, func, &list);
+    ksi->api_ext.call(C, &ptr, func, &list);
 
     /* read the result */
-    RNA_parameter_get_lookup(&list, "ok", &ret);
+    api_param_get_lookup(&list, "ok", &ret);
     ok = *(bool *)ret;
   }
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return ok;
 }
 
 /* wrapper for iterator callback */
-static void RKS_ITER_rna_internal(KeyingSetInfo *ksi, bContext *C, KeyingSet *ks)
+static void RKS_ITER_api_internal(KeyingSetInfo *ksi, bContext *C, KeyingSet *ks)
 {
-  extern FunctionRNA rna_KeyingSetInfo_iterator_func;
+  extern ApiFn api_KeyingSetInfo_iterator_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, ksi->rna_ext.srna, ksi, &ptr);
-  func = &rna_KeyingSetInfo_iterator_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, ksi->api_ext.srna, ksi, &ptr);
+  func = &api_KeyingSetInfo_iterator_fn; /* api_struct_find_function(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
+  api_param_list_create(&list, &ptr, fn);
   {
     /* hook up arguments */
-    RNA_parameter_set_lookup(&list, "ksi", &ksi);
-    RNA_parameter_set_lookup(&list, "context", &C);
-    RNA_parameter_set_lookup(&list, "ks", &ks);
+    api_param_set_lookup(&list, "ksi", &ksi);
+    api_param_set_lookup(&list, "context", &C);
+    api_param_set_lookup(&list, "ks", &ks);
 
     /* execute the function */
-    ksi->rna_ext.call(C, &ptr, func, &list);
+    ksi->api_ext.call(C, &ptr, fn, &list);
   }
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 /* wrapper for generator callback */
-static void RKS_GEN_rna_internal(KeyingSetInfo *ksi, bContext *C, KeyingSet *ks, PointerRNA *data)
+static void RKS_GEN_api_internal(KeyingSetInfo *ksi, Ctx *C, KeyingSet *ks, ApiPtr *data)
 {
-  extern FunctionRNA rna_KeyingSetInfo_generate_func;
+  extern ApiFn api_KeyingSetInfo_gen_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, ksi->rna_ext.srna, ksi, &ptr);
-  func = &rna_KeyingSetInfo_generate_func; /* RNA_struct_find_generate(&ptr, "poll"); */
+  api_ptr_create(NULL, ksi->api_ext.srna, ksi, &ptr);
+  fn = &api_KeyingSetInfo_gen_fb; /* api_struct_find_gen(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
+  api_param_list_create(&list, &ptr, fn);
   {
     /* hook up arguments */
-    RNA_parameter_set_lookup(&list, "ksi", &ksi);
-    RNA_parameter_set_lookup(&list, "context", &C);
-    RNA_parameter_set_lookup(&list, "ks", &ks);
-    RNA_parameter_set_lookup(&list, "data", data);
+    api_param_set_lookup(&list, "ksi", &ksi);
+    api_param_set_lookup(&list, "context", &C);
+    api_param_set_lookup(&list, "ks", &ks);
+    api_param_set_lookup(&list, "data", data);
 
     /* execute the function */
-    ksi->rna_ext.call(C, &ptr, func, &list);
+    ksi->api_ext.call(C, &ptr, func, &list);
   }
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 /* ------ */
