@@ -6,27 +6,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_utildefines.h"
-#include "MEM_guardedalloc.h"
+#include "lib_utildefines.h"
+#include "mem_guardedalloc.h"
 
-#include "DNA_defaults.h"
-#include "DNA_genfile.h"
-#include "DNA_sdna_types.h"
+#include "types_defaults.h"
+#include "types_genfile.h"
+#include "types_sdna_types.h"
 
-#include "BLI_ghash.h"
-#include "BLI_listbase.h"
+#include "lib_ghash.h"
+#include "lib_list.h"
 
-#include "BLT_translation.h"
+#include "translation.h"
 
-#include "UI_interface.h" /* For things like UI_PRECISION_FLOAT_MAX... */
+#include "ui.h" /* For things like UI_PRECISION_FLOAT_MAX... */
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "CLG_log.h"
+#include "log.h"
 
-static CLG_LogRef LOG = {"rna.define"};
+static LogRef LOG = {"api.define"};
 
 #ifdef DEBUG
 #  define ASSERT_SOFT_HARD_LIMITS \
