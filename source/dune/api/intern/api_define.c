@@ -720,36 +720,36 @@ void api_define_free(BlenderRNA *UNUSED(brna))
 
   rna_freelistN(&DefRNA.structs);
 
-  if (DefRNA.sdna) {
-    DNA_sdna_free(DefRNA.sdna);
-    DefRNA.sdna = NULL;
+  if (ApiDef.sdna) {
+    api_sdna_free(ApiDef.sdna);
+    ApiDef.sdna = NULL;
   }
 
-  DefRNA.error = false;
+  ApiDef.error = false;
 }
 
-void RNA_define_verify_sdna(bool verify)
+void api_define_verify_sdna(bool verify)
 {
-  DefRNA.verify = verify;
+  ApiDef.verify = verify;
 }
 
-void RNA_define_lib_overridable(const bool make_overridable)
+void api_define_lib_overridable(const bool make_overridable)
 {
-  DefRNA.make_overridable = make_overridable;
+  ApiDef.make_overridable = make_overridable;
 }
 
-#ifndef RNA_RUNTIME
-void RNA_define_animate_sdna(bool animate)
+#ifndef API_RUNTIME
+void api_define_animate_sdna(bool animate)
 {
-  DefRNA.animate = animate;
+  ApiDef.animate = animate;
 }
 #endif
 
-#ifndef RNA_RUNTIME
-void RNA_define_fallback_property_update(int noteflag, const char *updatefunc)
+#ifndef API_RUNTIME
+void api_define_fallback_prop_update(int noteflag, const char *updatefunc)
 {
-  DefRNA.fallback.property_update.noteflag = noteflag;
-  DefRNA.fallback.property_update.updatefunc = updatefunc;
+  ApiDef.fallback.prop_update.noteflag = noteflag;
+  ApiDef.fallback.prop_update.updatefunc = updatefn;
 }
 #endif
 
