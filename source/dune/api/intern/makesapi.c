@@ -66,12 +66,12 @@ static int file_older(const char *file1, const char *file2)
 
   return (st1.st_mtime < st2.st_mtime);
 }
-static const char *makesrna_path = NULL;
+static const char *makesapi_path = NULL;
 
 /* forward declarations */
 static void api_generate_static_param_prototypes(FILE *f,
-                                                 StructRNA *srna,
-                                                 FunctionDefRNA *dfunc,
+                                                 ApiStruct *sapi,
+                                                 ApiFnDef *dfn,
                                                  const char *name_override,
                                                  int close_prototype);
 
@@ -108,7 +108,7 @@ static int replace_if_different(const char *tmpfile, const char *dep_files[])
         fclose(fp_new); \
       } \
       if (remove(orgfile) != 0) { \
-        CLOG_ERROR(&LOG, "remove error (%s): \"%s\"", strerror(errno), orgfile); \
+        LOG_ERROR(&LOG, "remove error (%s): \"%s\"", strerror(errno), orgfile); \
         return -1; \
       } \
     } \
@@ -301,16 +301,16 @@ static void api_sortlist(List *list, int (*cmp)(const void *, const void *))
   void **array;
   int a, size;
 
-  if (listbase->first == listbase->last) {
+  if (list->first == list->last) {
     return;
   }
 
-  for (size = 0, link = listbase->first; link; link = link->next) {
+  for (size = 0, link = list->first; link; link = link->next) {
     size++;
   }
 
-  array = MEM_mallocN(sizeof(void *) * size, "rna_sortlist");
-  for (a = 0, link = listbase->first; link; link = link->next, a++) {
+  array = mem_mallocn(sizeof(void *) * size, "rna_sortlist");
+  for (a = 0, link = list->first; link; link = link->next, a++) {
     array[a] = link;
   }
 
@@ -320,7 +320,7 @@ static void api_sortlist(List *list, int (*cmp)(const void *, const void *))
   for (a = 0; a < size; a++) {
     link = array[a];
     link->next = link->prev = NULL;
-    rna_addtail(listbase, link);
+    api_addtail(listbase, link);
   }
 
   mem_freen(array);
@@ -396,7 +396,7 @@ static void api_construct_wrapper_fn_name(
 
 void *api_alloc_from_buffer(const char *buffer, int buffer_len)
 {
-  AllocDefRNA *alloc = mem_callocn(sizeof(ApiAllocDef), "ApiAllocDef");
+  ApiAllocDef *alloc = mem_callocn(sizeof(ApiAllocDef), "ApiAllocDef");
   alloc->mem = mem_mallocn(buffer_len, __func__);
   memcpy(alloc->mem, buffer, buffer_len);
   api_addtail(&ApiDef.allocs, alloc);
@@ -446,12 +446,12 @@ static const char *api_find_type(const char *type)
   return NULL;
 }
 
-static const char *rna_find_dna_type(const char *type)
+static const char *api_find_dna_type(const char *type)
 {
-  StructDefRNA *ds;
+  ApiStructDef *ds;
 
-  for (ds = DefRNA.structs.first; ds; ds = ds->cont.next) {
-    if (STREQ(ds->srna->identifier, type)) {
+  for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
+    if (STREQ(ds->srna->id, type)) {
       return ds->dnaname;
     }
   }
@@ -459,15 +459,15 @@ static const char *rna_find_dna_type(const char *type)
   return NULL;
 }
 
-static const char *rna_type_type_name(PropertyRNA *prop)
+static const char *api_type_type_name(ApiProp *prop)
 {
   switch (prop->type) {
-    case PROP_BOOLEAN:
+    case PROP_BOOL:
       return "bool";
     case PROP_INT:
       return "int";
     case PROP_ENUM: {
-      EnumPropertyRNA *eprop = (EnumPropertyRNA *)prop;
+      EnumSpiProp *eprop = (EnumApiProp *)prop;
       if (eprop->native_enum_type) {
         return eprop->native_enum_type;
       }
@@ -487,24 +487,24 @@ static const char *rna_type_type_name(PropertyRNA *prop)
   }
 }
 
-static const char *rna_type_type(PropertyRNA *prop)
+static const char *api_type_type(ApiProp *prop)
 {
   const char *type;
 
-  type = rna_type_type_name(prop);
+  type = api_type_type_name(prop);
 
   if (type) {
     return type;
   }
 
-  return "PointerRNA";
+  return "ApiPtr";
 }
 
-static const char *rna_type_struct(PropertyRNA *prop)
+static const char *api_type_struct(ApiProp *prop)
 {
   const char *type;
 
-  type = rna_type_type_name(prop);
+  type = api_type_type_name(prop);
 
   if (type) {
     return "";
@@ -513,7 +513,7 @@ static const char *rna_type_struct(PropertyRNA *prop)
   return "struct ";
 }
 
-static const char *rna_parameter_type_name(PropertyRNA *parm)
+static const char *api_param_type_name(ApiProp *parm)
 {
   const char *type;
 
