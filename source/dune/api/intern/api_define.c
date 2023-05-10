@@ -75,7 +75,7 @@ static void print_default_info(const ApiPropDef *dp)
           dp->dnaoffset,
           dp->dnastructname,
           dp->dnaname,
-          dp->prop->identifier);
+          dp->prop->id);
 }
 #endif /* RNA_RUNTIME */
 
@@ -127,15 +127,15 @@ static void api_remlink(ListBase *listbase, void *vlink)
     link->prev->next = link->next;
   }
 
-  if (listbase->last == link) {
-    listbase->last = link->prev;
+  if (list->last == link) {
+    list->last = link->prev;
   }
-  if (listbase->first == link) {
-    listbase->first = link->next;
+  if (list->first == link) {
+    list->first = link->next;
   }
 }
 
-PropertyDefRNA *rna_findlink(ListBase *listbase, const char *identifier)
+ApiPropDef *api_findlink(ListBase *listbase, const char *identifier)
 {
   Link *link;
 
