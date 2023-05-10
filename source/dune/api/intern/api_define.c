@@ -363,18 +363,18 @@ static ContainerDefRNA *rna_find_container_def(ContainerRNA *cont)
   StructDefRNA *ds;
   FunctionDefRNA *dfunc;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     /* we should never get here */
-    CLOG_ERROR(&LOG, "only at preprocess time.");
+    LOG_ERROR(&LOG, "only at preprocess time.");
     return NULL;
   }
 
-  ds = rna_find_struct_def((StructRNA *)cont);
+  ds = rna_find_struct_def((ApiStruct *)cont);
   if (ds) {
     return &ds->cont;
   }
 
-  dfunc = rna_find_function_def((FunctionRNA *)cont);
+  dfunc = api_find_fn_def((ApiFn *)cont);
   if (dfunc) {
     return &dfunc->cont;
   }
@@ -384,14 +384,14 @@ static ContainerDefRNA *rna_find_container_def(ContainerRNA *cont)
 
 /* DNA utility function for looking up members */
 
-typedef struct DNAStructMember {
+typedef struct TypeStructMember {
   const char *type;
   const char *name;
   int arraylength;
-  int pointerlevel;
+  int ptrlevel;
   int offset;
   int size;
-} DNAStructMember;
+} TupeStructMember;
 
 static int rna_member_cmp(const char *name, const char *oname)
 {
