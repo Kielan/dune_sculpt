@@ -298,16 +298,16 @@ ApiFnDef *api_find_fn_def(ApiFn *fn)
     return NULL;
   }
 
-  dsapi = api_find_struct_def(DefRNA.laststruct);
-  dfn = dsrna->fns.last;
-  for (; dfunc; dfunc = dfunc->cont.prev) {
-    if (dfunc->func == func) {
-      return dfunc;
+  dsapi = api_find_struct_def(ApiDef.laststruct);
+  dfn = dsapi->fns.last;
+  for (; dfn; dfn = dfn->cont.prev) {
+    if (dfn->fn == fn) {
+      return dfn;
     }
   }
 
-  dsrna = DefRNA.structs.last;
-  for (; dsrna; dsrna = dsrna->cont.prev) {
+  dsapi = ApiDef.structs.last;
+  for (; dsapi; dsapi = dsapi->cont.prev) {
     dfunc = dsrna->functions.last;
     for (; dfunc; dfunc = dfunc->cont.prev) {
       if (dfunc->func == func) {
