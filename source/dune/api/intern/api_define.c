@@ -607,12 +607,12 @@ void RNA_identifier_sanitize(char *identifier, int property)
       "raise",  "return", "try",    "while",   "with",     "yield",    NULL,
   };
 
-  if (!isalpha(identifier[0])) {
+  if (!isalpha(id[0])) {
     /* first character failed isalpha() check */
-    identifier[0] = '_';
+    id[0] = '_';
   }
 
-  for (a = 0; identifier[a]; a++) {
+  for (a = 0; idr[a]; a++) {
     if (DefRNA.preprocess && property) {
       if (isalpha(identifier[a]) && isupper(identifier[a])) {
         /* property names must contain lower case characters only */
