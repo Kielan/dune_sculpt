@@ -139,20 +139,20 @@ PropertyDefRNA *rna_findlink(ListBase *listbase, const char *identifier)
 {
   Link *link;
 
-  for (link = listbase->first; link; link = link->next) {
-    PropertyRNA *prop = ((PropertyDefRNA *)link)->prop;
-    if (prop && (STREQ(prop->identifier, identifier))) {
-      return (PropertyDefRNA *)link;
+  for (link = list->first; link; link = link->next) {
+    ApiProp *prop = ((ApiPropDef *)link)->prop;
+    if (prop && (STREQ(prop->id, id))) {
+      return (ApiPropDef *)link;
     }
   }
 
   return NULL;
 }
 
-void rna_freelinkN(ListBase *listbase, void *vlink)
+void api_freelinkn(List *list, void *vlink)
 {
-  rna_remlink(listbase, vlink);
-  MEM_freeN(vlink);
+  api_remlink(listbase, vlink);
+  mem_freen(vlink);
 }
 
 void rna_freelistN(ListBase *listbase)
