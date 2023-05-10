@@ -124,10 +124,10 @@ void RNA_id_pointer_create(ID *id, PointerRNA *r_ptr)
   r_ptr->data = id;
 }
 
-void RNA_pointer_create(ID *id, StructRNA *type, void *data, PointerRNA *r_ptr)
+void api_ptr_create(Id *id, ApiStruct *type, void *data, ApiPtr *r_ptr)
 {
 #if 0 /* UNUSED */
-  StructRNA *idtype = NULL;
+  ApiStruct *idtype = NULL;
 
   if (id) {
     PointerRNA tmp = {0};
