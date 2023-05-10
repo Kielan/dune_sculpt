@@ -241,7 +241,7 @@ ApiPropDef *api_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
     return NULL;
   }
 
-  dsrna = rna_find_struct_def(srna);
+  dsrna = api_find_struct_def(srna);
   dprop = dsrna->cont.props.last;
   for (; dprop; dprop = dprop->prev) {
     if (dprop->prop == prop) {
@@ -265,20 +265,20 @@ ApiPropDef *api_find_struct_property_def(StructRNA *srna, PropertyRNA *prop)
 #if 0
 static ApiPropDef *api_find_prop_def(ApiProp *prop)
 {
-  PropertyDefRNA *dprop;
+  ApiPropDef *dprop;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     /* we should never get here */
-    CLOG_ERROR(&LOG, "only at preprocess time.");
+    LOG_ERROR(&LOG, "only at preprocess time.");
     return NULL;
   }
 
-  dprop = rna_find_struct_property_def(DefRNA.laststruct, prop);
+  dprop = api_find_struct_property_def(DefRNA.laststruct, prop);
   if (dprop) {
     return dprop;
   }
 
-  dprop = rna_find_parameter_def(prop);
+  dprop = api_find_parameter_def(prop);
   if (dprop) {
     return dprop;
   }
@@ -287,18 +287,18 @@ static ApiPropDef *api_find_prop_def(ApiProp *prop)
 }
 #endif
 
-FunctionDefRNA *rna_find_function_def(FunctionRNA *func)
+ApiFnDef *api_find_fn_def(ApiFn *fn)
 {
-  StructDefRNA *dsrna;
-  FunctionDefRNA *dfunc;
+  ApiStructDef *dsapi;
+  ApiFnDef *dfn;
 
-  if (!DefRNA.preprocess) {
+  if (!ApiDef.preprocess) {
     /* we should never get here */
-    CLOG_ERROR(&LOG, "only at preprocess time.");
+    LOG_ERROR(&LOG, "only at preprocess time.");
     return NULL;
   }
 
-  dsrna = rna_find_struct_def(DefRNA.laststruct);
+  dsrna = api_find_struct_def(DefRNA.laststruct);
   dfunc = dsrna->functions.last;
   for (; dfunc; dfunc = dfunc->cont.prev) {
     if (dfunc->func == func) {
