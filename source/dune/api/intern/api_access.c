@@ -35,31 +35,31 @@
 #include "graph.h"
 #include "graph_build.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "WM_api.h"
-#include "WM_message.h"
+#include "wm_api.h"
+#include "wm_message.h"
 
 /* flush updates */
-#include "DNA_object_types.h"
-#include "WM_types.h"
+#include "types_object.h"
+#include "wm_types.h"
 
-#include "rna_access_internal.h"
-#include "rna_internal.h"
+#include "api_access_internal.h
+#include "api_internal.h"
 
-const PointerRNA PointerRNA_NULL = {NULL};
+const ApiPtt ApiPtr_NULL = {NULL};
 
 /* Init/Exit */
 
-void RNA_init(void)
+void api_init(void)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  BLENDER_RNA.structs_map = BLI_ghash_str_new_ex(__func__, 2048);
-  BLENDER_RNA.structs_len = 0;
+  DUNE_API.structs_map = lib_ghash_str_new_ex(__func__, 2048);
+  DUNE_API.structs_len = 0;
 
   for (srna = BLENDER_RNA.structs.first; srna; srna = srna->cont.next) {
     if (!srna->cont.prophash) {
