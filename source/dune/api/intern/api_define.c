@@ -308,10 +308,10 @@ ApiFnDef *api_find_fn_def(ApiFn *fn)
 
   dsapi = ApiDef.structs.last;
   for (; dsapi; dsapi = dsapi->cont.prev) {
-    dfunc = dsrna->functions.last;
-    for (; dfunc; dfunc = dfunc->cont.prev) {
-      if (dfunc->func == func) {
-        return dfunc;
+    dfn = dsapi->fns.last;
+    for (; dfn; dfn = dfn->cont.prev) {
+      if (dfn->fn == fn) {
+        return dfn;
       }
     }
   }
@@ -358,7 +358,7 @@ ApiPropDef *api_find_param_def(ApiProp *parm)
   return NULL;
 }
 
-static ContainerDefRNA *rna_find_container_def(ContainerRNA *cont)
+static ApiContainerDef *api_find_container_def(ApiContainer *cont)
 {
   StructDefRNA *ds;
   FunctionDefRNA *dfunc;
