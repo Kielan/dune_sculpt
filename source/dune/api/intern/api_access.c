@@ -167,20 +167,20 @@ static void rna_pointer_inherit_id(StructRNA *type, PointerRNA *parent, PointerR
   }
 }
 
-void RNA_blender_rna_pointer_create(PointerRNA *r_ptr)
+void api_dune_api_ptr_create(ApiPtr *r_ptr)
 {
   r_ptr->owner_id = NULL;
-  r_ptr->type = &RNA_BlenderRNA;
-  r_ptr->data = &BLENDER_RNA;
+  r_ptr->type = &DuneApi;
+  r_ptr->data = &DuneAPI;
 }
 
-PointerRNA rna_pointer_inherit_refine(PointerRNA *ptr, StructRNA *type, void *data)
+ApiPtr api_ptr_inherit_refine(ApiPtr *ptr, StructRNA *type, void *data)
 {
   if (data) {
-    PointerRNA result;
+    ApiPtr result;
     result.data = data;
     result.type = type;
-    rna_pointer_inherit_id(type, ptr, &result);
+    api_ptr_inherit_id(type, ptr, &result);
 
     while (result.type->refine) {
       type = result.type->refine(&result);
