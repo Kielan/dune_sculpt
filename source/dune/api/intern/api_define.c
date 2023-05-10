@@ -216,7 +216,7 @@ ApiStructDef *api_find_struct_def(ApiStruct *srna)
 
   if (!ApiDef.preprocess) {
     /* we should never get here */
-    COG_ERROR(&LOG, "only at preprocess time.");
+    LOG_ERROR(&LOG, "only at preprocess time.");
     return NULL;
   }
 
@@ -555,19 +555,19 @@ static int api_validate_identifier(const char *identifier, char *error, bool pro
       continue;
     }
 
-    if (identifier[a] == ' ') {
+    if (id[a] == ' ') {
       strcpy(error, "spaces are not okay in identifier names");
       return 0;
     }
 
-    if (isalnum(identifier[a]) == 0) {
+    if (isalnum(id[a]) == 0) {
       strcpy(error, "one of the characters failed an isalnum() check and is not an underscore");
       return 0;
     }
   }
 
   for (a = 0; kwlist[a]; a++) {
-    if (STREQ(identifier, kwlist[a])) {
+    if (STREQ(id, kwlist[a])) {
       strcpy(error, "this keyword is reserved by python");
       return 0;
     }
@@ -584,7 +584,7 @@ static int api_validate_identifier(const char *identifier, char *error, bool pro
     };
 
     for (a = 0; kwlist_prop[a]; a++) {
-      if (STREQ(identifier, kwlist_prop[a])) {
+      if (STREQ(id, kwlist_prop[a])) {
         strcpy(error, "this keyword is reserved by python");
         return 0;
       }
@@ -594,7 +594,7 @@ static int api_validate_identifier(const char *identifier, char *error, bool pro
   return 1;
 }
 
-void RNA_identifier_sanitize(char *identifier, int property)
+void api_id_sanitize(char *id, int prop)
 {
   int a = 0;
 
@@ -613,39 +613,39 @@ void RNA_identifier_sanitize(char *identifier, int property)
   }
 
   for (a = 0; idr[a]; a++) {
-    if (DefRNA.preprocess && property) {
-      if (isalpha(identifier[a]) && isupper(identifier[a])) {
+    if (ApiDef.preprocess && prop) {
+      if (isalpha(id[a]) && isupper(id[a])) {
         /* property names must contain lower case characters only */
-        identifier[a] = tolower(identifier[a]);
+        id[a] = tolower(id[a]);
       }
     }
 
-    if (identifier[a] == '_') {
+    if (id[a] == '_') {
       continue;
     }
 
-    if (identifier[a] == ' ') {
+    if (id[a] == ' ') {
       /* spaces are not okay in identifier names */
-      identifier[a] = '_';
+      id[a] = '_';
     }
 
-    if (isalnum(identifier[a]) == 0) {
+    if (isalnum(id[a]) == 0) {
       /* one of the characters failed an isalnum() check and is not an underscore */
-      identifier[a] = '_';
+      id[a] = '_';
     }
   }
 
   for (a = 0; kwlist[a]; a++) {
-    if (STREQ(identifier, kwlist[a])) {
+    if (STREQ(id, kwlist[a])) {
       /* this keyword is reserved by python.
        * just replace the last character by '_' to keep it readable.
        */
-      identifier[strlen(identifier) - 1] = '_';
+      id[strlen(id) - 1] = '_';
       break;
     }
   }
 
-  if (property) {
+  if (prop) {
     static const char *kwlist_prop[] = {
         /* not keywords but reserved all the same because py uses */
         "keys",
@@ -656,11 +656,11 @@ void RNA_identifier_sanitize(char *identifier, int property)
     };
 
     for (a = 0; kwlist_prop[a]; a++) {
-      if (STREQ(identifier, kwlist_prop[a])) {
+      if (STREQ(id, kwlist_prop[a])) {
         /* this keyword is reserved by python.
          * just replace the last character by '_' to keep it readable.
          */
-        identifier[strlen(identifier) - 1] = '_';
+        id[strlen(id) - 1] = '_';
         break;
       }
     }
@@ -669,15 +669,15 @@ void RNA_identifier_sanitize(char *identifier, int property)
 
 /* Blender Data Definition */
 
-BlenderRNA *RNA_create(void)
+DuneApi *api_create(void)
 {
-  BlenderRNA *brna;
+  DuneApi *brna;
 
-  brna = MEM_callocN(sizeof(BlenderRNA), "BlenderRNA");
+  brna = mem_callocn(sizeof(DuneApi), "DuneApi");
   const char *error_message = NULL;
 
   BLI_listbase_clear(&DefRNA.structs);
-  brna->structs_map = BLI_ghash_str_new_ex(__func__, 2048);
+  brna->structs_map = lib_ghash_str_new_ex(__func__, 2048);
 
   DefRNA.error = false;
   DefRNA.preprocess = true;
