@@ -671,51 +671,51 @@ void api_id_sanitize(char *id, int prop)
 
 DuneApi *api_create(void)
 {
-  DuneApi *brna;
+  DuneApi *bapi;
 
-  brna = mem_callocn(sizeof(DuneApi), "DuneApi");
+  bapi = mem_callocn(sizeof(DuneApi), "DuneApi");
   const char *error_message = NULL;
 
-  BLI_listbase_clear(&DefRNA.structs);
+  lib_list_clear(&ApiDef.structs);
   brna->structs_map = lib_ghash_str_new_ex(__func__, 2048);
 
-  DefRNA.error = false;
-  DefRNA.preprocess = true;
+  ApiDef.error = false;
+  ApiDef.preprocess = true;
 
-  DefRNA.sdna = DNA_sdna_from_data(DNAstr, DNAlen, false, false, &error_message);
-  if (DefRNA.sdna == NULL) {
-    CLOG_ERROR(&LOG, "Failed to decode SDNA: %s.", error_message);
-    DefRNA.error = true;
+  ApiDef.sdna = types_sdna_from_data(typestr, typelen, false, false, &error_message);
+  if (ApiDef.sdna == NULL) {
+    LOG_ERROR(&LOG, "Failed to decode SDNA: %s.", error_message);
+    ApiDef.error = true;
   }
 
   /* We need both alias and static (on-disk) DNA names. */
-  DNA_sdna_alias_data_ensure(DefRNA.sdna);
+  types_sdna_alias_data_ensure(ApiDef.sdna);
 
 #ifndef API_RUNTIME
-  DNA_alias_maps(DNA_RENAME_STATIC_FROM_ALIAS, &g_version_data.struct_map_static_from_alias, NULL);
+  types_alias_maps(TYPE_RENAME_STATIC_FROM_ALIAS, &g_version_data.struct_map_static_from_alias, NULL);
 #endif
 
-  return brna;
+  return bapi;
 }
 
 void api_define_free(BlenderRNA *UNUSED(brna))
 {
-  StructDefRNA *ds;
-  FunctionDefRNA *dfunc;
-  AllocDefRNA *alloc;
+  ApiStructDef *ds;
+  ApiFn *dfn;
+  ApiAllocDef *alloc;
 
-  for (alloc = DefRNA.allocs.first; alloc; alloc = alloc->next) {
-    MEM_freeN(alloc->mem);
+  for (alloc = ApiDef.allocs.first; alloc; alloc = alloc->next) {
+    mem_freen(alloc->mem);
   }
-  rna_freelistN(&DefRNA.allocs);
+  api_freelistn(&ApiDef.allocs);
 
-  for (ds = DefRNA.structs.first; ds; ds = ds->cont.next) {
-    for (dfunc = ds->functions.first; dfunc; dfunc = dfunc->cont.next) {
-      rna_freelistN(&dfunc->cont.properties);
+  for (ds = ApiDef.structs.first; ds; ds = ds->cont.next) {
+    for (dfn = ds->functions.first; dfn; dfn = dfn->cont.next) {
+      api_freelistn(&dfn->cont.props);
     }
 
-    rna_freelistN(&ds->cont.properties);
-    rna_freelistN(&ds->functions);
+    api_freelistn(&ds->cont.properties);
+    api_freelistn(&ds->functions);
   }
 
   rna_freelistN(&DefRNA.structs);
