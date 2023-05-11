@@ -354,3 +354,313 @@ void rna_ViewLayer_active_aov_index_set(PointerRNA *ptr, int value);
  *  `rna_path_buffer_size` should be at least `sizeof(ViewLayer.name) * 3`.
  *  \return actual length of the generated RNA path.
  */
+size_t rna_ViewLayer_path_buffer_get(struct ViewLayer *view_layer,
+                                     char *r_rna_path,
+                                     const size_t rna_path_buffer_size);
+
+/* named internal so as not to conflict with obj.update() rna func */
+void rna_Object_internal_update_data(struct Main *bmain,
+                                     struct Scene *scene,
+                                     struct PointerRNA *ptr);
+void rna_Mesh_update_draw(struct Main *bmain, struct Scene *scene, struct PointerRNA *ptr);
+void rna_TextureSlot_update(struct bContext *C, struct PointerRNA *ptr);
+
+/* basic poll functions for object types */
+bool rna_Armature_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool rna_Camera_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool rna_Curve_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool rna_GPencil_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool rna_Light_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool rna_Lattice_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool rna_Mesh_object_poll(struct PointerRNA *ptr, struct PointerRNA value);
+
+/* basic poll functions for actions (to prevent actions getting set in wrong places) */
+bool rna_Action_id_poll(struct PointerRNA *ptr, struct PointerRNA value);
+bool rna_Action_actedit_assign_poll(struct PointerRNA *ptr, struct PointerRNA value);
+
+/* Grease Pencil datablock polling functions - for filtering GP Object vs Annotation datablocks */
+bool rna_GPencil_datablocks_annotations_poll(struct PointerRNA *ptr,
+                                             const struct PointerRNA value);
+bool rna_GPencil_datablocks_obdata_poll(struct PointerRNA *ptr, const struct PointerRNA value);
+
+char *rna_TextureSlot_path(struct PointerRNA *ptr);
+char *rna_Node_ImageUser_path(struct PointerRNA *ptr);
+
+/* Set U.is_dirty and redraw. */
+void rna_userdef_is_dirty_update_impl(void);
+void rna_userdef_is_dirty_update(struct Main *bmain, struct Scene *scene, struct PointerRNA *ptr);
+
+/* API functions */
+
+void RNA_api_action(StructRNA *srna);
+void RNA_api_animdata(struct StructRNA *srna);
+void RNA_api_armature_edit_bone(StructRNA *srna);
+void RNA_api_bone(StructRNA *srna);
+void RNA_api_camera(StructRNA *srna);
+void RNA_api_curve(StructRNA *srna);
+void RNA_api_curve_nurb(StructRNA *srna);
+void RNA_api_fcurves(StructRNA *srna);
+void RNA_api_drivers(StructRNA *srna);
+void RNA_api_image_packed_file(struct StructRNA *srna);
+void RNA_api_image(struct StructRNA *srna);
+void RNA_api_lattice(struct StructRNA *srna);
+void RNA_api_operator(struct StructRNA *srna);
+void RNA_api_macro(struct StructRNA *srna);
+void RNA_api_gizmo(struct StructRNA *srna);
+void RNA_api_gizmogroup(struct StructRNA *srna);
+void RNA_api_keyconfig(struct StructRNA *srna);
+void RNA_api_keyconfigs(struct StructRNA *srna);
+void RNA_api_keyingset(struct StructRNA *srna);
+void RNA_api_keymap(struct StructRNA *srna);
+void RNA_api_keymaps(struct StructRNA *srna);
+void RNA_api_keymapitem(struct StructRNA *srna);
+void RNA_api_keymapitems(struct StructRNA *srna);
+void RNA_api_main(struct StructRNA *srna);
+void RNA_api_material(StructRNA *srna);
+void RNA_api_mesh(struct StructRNA *srna);
+void RNA_api_meta(struct StructRNA *srna);
+void RNA_api_object(struct StructRNA *srna);
+void RNA_api_pose(struct StructRNA *srna);
+void RNA_api_pose_channel(struct StructRNA *srna);
+void RNA_api_scene(struct StructRNA *srna);
+void RNA_api_scene_render(struct StructRNA *srna);
+void RNA_api_sequence_strip(StructRNA *srna);
+void RNA_api_text(struct StructRNA *srna);
+void RNA_api_ui_layout(struct StructRNA *srna);
+void RNA_api_window(struct StructRNA *srna);
+void RNA_api_wm(struct StructRNA *srna);
+void RNA_api_space_node(struct StructRNA *srna);
+void RNA_api_space_text(struct StructRNA *srna);
+void RNA_api_space_filebrowser(struct StructRNA *srna);
+void RNA_api_region_view3d(struct StructRNA *srna);
+void RNA_api_texture(struct StructRNA *srna);
+void RNA_api_sequences(BlenderRNA *brna, PropertyRNA *cprop, bool metastrip);
+void RNA_api_sequence_elements(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_api_sound(struct StructRNA *srna);
+void RNA_api_vfont(struct StructRNA *srna);
+void RNA_api_workspace(struct StructRNA *srna);
+void RNA_api_workspace_tool(struct StructRNA *srna);
+
+/* main collection functions */
+void RNA_def_main_cameras(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_scenes(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_objects(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_materials(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_node_groups(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_meshes(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_lights(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_libraries(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_screens(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_window_managers(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_images(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_lattices(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_curves(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_metaballs(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_fonts(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_textures(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_brushes(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_worlds(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_collections(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_texts(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_speakers(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_sounds(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_armatures(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_actions(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_particles(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_palettes(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_gpencil(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_movieclips(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_masks(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_linestyles(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_cachefiles(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_paintcurves(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_workspaces(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_lightprobes(BlenderRNA *brna, PropertyRNA *cprop);
+#ifdef WITH_NEW_CURVES_TYPE
+void RNA_def_main_hair_curves(BlenderRNA *brna, PropertyRNA *cprop);
+#endif
+void RNA_def_main_pointclouds(BlenderRNA *brna, PropertyRNA *cprop);
+void RNA_def_main_volumes(BlenderRNA *brna, PropertyRNA *cprop);
+#ifdef WITH_SIMULATION_DATABLOCK
+void RNA_def_main_simulations(BlenderRNA *brna, PropertyRNA *cprop);
+#endif
+
+/* ID Properties */
+
+#ifndef __RNA_ACCESS_H__
+extern StructRNA RNA_PropertyGroupItem;
+extern StructRNA RNA_PropertyGroup;
+#endif
+
+/**
+ * This function only returns an #IDProperty,
+ * or NULL (in case IDProp could not be found, or prop is a real RNA property).
+ */
+struct IDProperty *rna_idproperty_check(struct PropertyRNA **prop,
+                                        struct PointerRNA *ptr) ATTR_WARN_UNUSED_RESULT;
+/**
+ * This function always return the valid, real data pointer, be it a regular RNA property one,
+ * or an #IDProperty one.
+ */
+struct PropertyRNA *rna_ensure_property_realdata(struct PropertyRNA **prop,
+                                                 struct PointerRNA *ptr) ATTR_WARN_UNUSED_RESULT;
+struct PropertyRNA *rna_ensure_property(struct PropertyRNA *prop) ATTR_WARN_UNUSED_RESULT;
+
+/* Override default callbacks. */
+/* Default override callbacks for all types. */
+/* TODO: Maybe at some point we'll want to write that in direct RNA-generated code instead
+ *       (like we do for default get/set/etc.)?
+ *       Not obvious though, those are fairly more complicated than basic SDNA access.
+ */
+int rna_property_override_diff_default(struct Main *bmain,
+                                       struct PropertyRNAOrID *prop_a,
+                                       struct PropertyRNAOrID *prop_b,
+                                       int mode,
+                                       struct IDOverrideLibrary *override,
+                                       const char *rna_path,
+                                       size_t rna_path_len,
+                                       int flags,
+                                       bool *r_override_changed);
+
+bool rna_property_override_store_default(struct Main *bmain,
+                                         struct PointerRNA *ptr_local,
+                                         struct PointerRNA *ptr_reference,
+                                         struct PointerRNA *ptr_storage,
+                                         struct PropertyRNA *prop_local,
+                                         struct PropertyRNA *prop_reference,
+                                         struct PropertyRNA *prop_storage,
+                                         int len_local,
+                                         int len_reference,
+                                         int len_storage,
+                                         struct IDOverrideLibraryPropertyOperation *opop);
+
+bool rna_property_override_apply_default(struct Main *bmain,
+                                         struct PointerRNA *ptr_dst,
+                                         struct PointerRNA *ptr_src,
+                                         struct PointerRNA *ptr_storage,
+                                         struct PropertyRNA *prop_dst,
+                                         struct PropertyRNA *prop_src,
+                                         struct PropertyRNA *prop_storage,
+                                         int len_dst,
+                                         int len_src,
+                                         int len_storage,
+                                         struct PointerRNA *ptr_item_dst,
+                                         struct PointerRNA *ptr_item_src,
+                                         struct PointerRNA *ptr_item_storage,
+                                         struct IDOverrideLibraryPropertyOperation *opop);
+
+/* Builtin Property Callbacks */
+
+void rna_builtin_properties_begin(struct CollectionPropertyIterator *iter, struct PointerRNA *ptr);
+void rna_builtin_properties_next(struct CollectionPropertyIterator *iter);
+PointerRNA rna_builtin_properties_get(struct CollectionPropertyIterator *iter);
+PointerRNA rna_builtin_type_get(struct PointerRNA *ptr);
+int rna_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr);
+
+/* Iterators */
+
+void rna_iterator_listbase_begin(struct CollectionPropertyIterator *iter,
+                                 struct ListBase *lb,
+                                 IteratorSkipFunc skip);
+void rna_iterator_listbase_next(struct CollectionPropertyIterator *iter);
+void *rna_iterator_listbase_get(struct CollectionPropertyIterator *iter);
+void rna_iterator_listbase_end(struct CollectionPropertyIterator *iter);
+PointerRNA rna_listbase_lookup_int(PointerRNA *ptr,
+                                   StructRNA *type,
+                                   struct ListBase *lb,
+                                   int index);
+
+void rna_iterator_array_begin(struct CollectionPropertyIterator *iter,
+                              void *ptr,
+                              int itemsize,
+                              int length,
+                              bool free_ptr,
+                              IteratorSkipFunc skip);
+void rna_iterator_array_next(struct CollectionPropertyIterator *iter);
+void *rna_iterator_array_get(struct CollectionPropertyIterator *iter);
+void *rna_iterator_array_dereference_get(struct CollectionPropertyIterator *iter);
+void rna_iterator_array_end(struct CollectionPropertyIterator *iter);
+PointerRNA rna_array_lookup_int(
+    PointerRNA *ptr, StructRNA *type, void *data, int itemsize, int length, int index);
+
+/* Duplicated code since we can't link in blenlib */
+
+#ifndef RNA_RUNTIME
+void *rna_alloc_from_buffer(const char *buffer, int buffer_len);
+void *rna_calloc(int buffer_len);
+#endif
+
+void rna_addtail(struct ListBase *listbase, void *vlink);
+void rna_freelinkN(struct ListBase *listbase, void *vlink);
+void rna_freelistN(struct ListBase *listbase);
+PropertyDefRNA *rna_findlink(ListBase *listbase, const char *identifier);
+
+StructDefRNA *rna_find_struct_def(StructRNA *srna);
+FunctionDefRNA *rna_find_function_def(FunctionRNA *func);
+PropertyDefRNA *rna_find_parameter_def(PropertyRNA *parm);
+PropertyDefRNA *rna_find_struct_property_def(StructRNA *srna, PropertyRNA *prop);
+
+/* Pointer Handling */
+
+PointerRNA rna_pointer_inherit_refine(struct PointerRNA *ptr, struct StructRNA *type, void *data);
+
+/* Functions */
+
+int rna_parameter_size(struct PropertyRNA *parm);
+
+/* XXX, these should not need to be defined here~! */
+struct MTex *rna_mtex_texture_slots_add(struct ID *self,
+                                        struct bContext *C,
+                                        struct ReportList *reports);
+struct MTex *rna_mtex_texture_slots_create(struct ID *self,
+                                           struct bContext *C,
+                                           struct ReportList *reports,
+                                           int index);
+void rna_mtex_texture_slots_clear(struct ID *self,
+                                  struct bContext *C,
+                                  struct ReportList *reports,
+                                  int index);
+
+int rna_IDMaterials_assign_int(struct PointerRNA *ptr,
+                               int key,
+                               const struct PointerRNA *assign_ptr);
+
+const char *rna_translate_ui_text(const char *text,
+                                  const char *text_ctxt,
+                                  struct StructRNA *type,
+                                  struct PropertyRNA *prop,
+                                  bool translate);
+
+/* Internal functions that cycles uses so we need to declare (tsk!). */
+void rna_RenderPass_rect_set(PointerRNA *ptr, const float *values);
+
+#ifdef RNA_RUNTIME
+#  ifdef __GNUC__
+#    pragma GCC diagnostic ignored "-Wredundant-decls"
+#  endif
+#endif
+
+/* C11 for compile time range checks */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)
+#  define USE_RNA_RANGE_CHECK
+#  define TYPEOF_MAX(x) \
+    _Generic((x), bool : 1, char \
+             : CHAR_MAX, signed char \
+             : SCHAR_MAX, unsigned char \
+             : UCHAR_MAX, signed short \
+             : SHRT_MAX, unsigned short \
+             : USHRT_MAX, signed int \
+             : INT_MAX, unsigned int \
+             : UINT_MAX, float \
+             : FLT_MAX, double \
+             : DBL_MAX)
+
+#  define TYPEOF_MIN(x) \
+    _Generic((x), bool : 0, char \
+             : CHAR_MIN, signed char \
+             : SCHAR_MIN, unsigned char : 0, signed short \
+             : SHRT_MIN, unsigned short : 0, signed int \
+             : INT_MIN, unsigned int : 0, float \
+             : -FLT_MAX, double \
+             : -DBL_MAX)
+#endif
