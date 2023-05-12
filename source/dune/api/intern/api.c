@@ -343,7 +343,7 @@ static void api_Struct_fns_begin(CollectionPropIter *iter, ApiPtr *ptr)
     srna = srna->base;
   }
 
-  rna_inheritance_fns_list_begin(iter, &srna->fns, api_fn_builtin);
+  api_inheritance_fns_list_begin(iter, &srna->fns, api_fn_builtin);
 }
 
 static ApiPtr api_Struct_fns_get(CollectionPropIter *iter)
@@ -518,16 +518,16 @@ static int rna_Property_translation_context_length(PointerRNA *ptr)
   return strlen(RNA_property_translation_context(prop));
 }
 
-static int rna_Property_type_get(PointerRNA *ptr)
+static int rna_Property_type_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  PropertyRNA *prop = (ApiProp *)ptr->data;
   return RNA_property_type(prop);
 }
 
-static int rna_Property_subtype_get(PointerRNA *ptr)
+static int api_prop_subtype_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return RNA_property_subtype(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return api_prop_subtype(prop);
 }
 
 static PointerRNA rna_Property_srna_get(PointerRNA *ptr)
