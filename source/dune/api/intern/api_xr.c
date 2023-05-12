@@ -505,56 +505,56 @@ static void rna_XrActionMapItem_pose_is_controller_aim_set(PointerRNA *ptr, bool
 #  endif
 }
 
-static void rna_XrActionMapItem_bindings_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_XrActionMapItem_bindings_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = (XrActionMapItem *)ptr->data;
-  rna_iterator_listbase_begin(iter, &ami->bindings, NULL);
+  rna_iter_list_begin(iter, &ami->bindings, NULL);
 #  else
   UNUSED_VARS(iter, ptr);
 #  endif
 }
 
-static int rna_XrActionMapItem_bindings_length(PointerRNA *ptr)
+static int api_XrActionMapItem_bindings_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = (XrActionMapItem *)ptr->data;
-  return BLI_listbase_count(&ami->bindings);
+  return lib_list_count(&ami->bindings);
 #  else
   UNUSED_VARS(ptr);
   return 0;
 #  endif
 }
 
-static void rna_XrActionMapItem_name_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_XrActionMapItem_name_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = bmain->wm.first;
+  wmWindowManager *wm = main->wm.first;
   if (wm && wm->xr.runtime) {
-    ListBase *actionmaps = WM_xr_actionmaps_get(wm->xr.runtime);
-    short idx = WM_xr_actionmap_selected_index_get(wm->xr.runtime);
-    XrActionMap *actionmap = BLI_findlink(actionmaps, idx);
+    List *actionmaps = wm_xr_actionmaps_get(wm->xr.runtime);
+    short idx = wm_xr_actionmap_selected_index_get(wm->xr.runtime);
+    XrActionMap *actionmap = lib_findlink(actionmaps, idx);
     if (actionmap) {
       XrActionMapItem *ami = ptr->data;
-      WM_xr_actionmap_item_ensure_unique(actionmap, ami);
+      wm_xr_actionmap_item_ensure_unique(actionmap, ami);
     }
   }
 #  else
-  UNUSED_VARS(bmain, ptr);
+  UNUSED_VARS(main, ptr);
 #  endif
 }
 
-static void rna_XrActionMapItem_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_XrActionMapItem_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
-  WM_xr_actionmap_item_properties_update_ot(ami);
+  wm_xr_actionmap_item_props_update_ot(ami);
 #  else
   UNUSED_VARS(ptr);
 #  endif
 }
 
-static XrActionMap *rna_XrActionMap_new(PointerRNA *ptr, const char *name, bool replace_existing)
+static XrActionMap *api_XrActionMap_new(ApiPtr *ptr, const char *name, bool replace_existing)
 {
 #  ifdef WITH_XR_OPENXR
   wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
