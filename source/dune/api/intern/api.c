@@ -29,19 +29,19 @@ const EnumPropItem DummyApi_DEFAULT_items[] = {
 /* -------------------------------------------------------------------- */
 /** Api Enum's **/
 
-const EnumPropItem rna_enum_property_type_items[] = {
-    {PROP_BOOL, "BOOL", 0, "Boolean", ""},
-    {PROP_INT, "INT", 0, "Integer", ""},
+const EnumPropItem api_enum_prop_type_items[] = {
+    {PROP_BOOL, "BOOL", 0, "Bool", ""},
+    {PROP_INT, "INT", 0, "Int", ""},
     {PROP_FLOAT, "FLOAT", 0, "Float", ""},
     {PROP_STRING, "STRING", 0, "String", ""},
-    {PROP_ENUM, "ENUM", 0, "Enumeration", ""},
-    {PROP_POINTER, "POINTER", 0, "Pointer", ""},
+    {PROP_ENUM, "ENUM", 0, "Enum", ""},
+    {PROP_PTR, "PTR", 0, "Ptr", ""},
     {PROP_COLLECTION, "COLLECTION", 0, "Collection", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
 /* Keep in sync with RNA_types.h PropertySubType and bpy_props.c's property_subtype_xxx_items */
-const EnumPropertyItem rna_enum_property_subtype_items[] = {
+const EnumPropItem api_enum_prop_subtype_items[] = {
     {PROP_NONE, "NONE", 0, "None", ""},
 
     /* strings */
@@ -110,68 +110,66 @@ const EnumPropertyItem rna_enum_property_unit_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-/** \} */
+#ifdef API_RUNTIME
+#  include "lib_ghash.h"
+#  include "lib_string.h"
+#  include "mem_guardedalloc.h"
 
-#ifdef RNA_RUNTIME
-#  include "BLI_ghash.h"
-#  include "BLI_string.h"
-#  include "MEM_guardedalloc.h"
+#  include "dune_idprop.h"
+#  include "dune_lib_override.h"
 
-#  include "BKE_idprop.h"
-#  include "BKE_lib_override.h"
-
-static CLG_LogRef LOG_COMPARE_OVERRIDE = {"rna.rna_compare_override"};
+static LogRef LOG_COMPARE_OVERRIDE = {"api.api_compare_override"};
 
 /* Struct */
 
-static void rna_Struct_identifier_get(PointerRNA *ptr, char *value)
+static void api_Struct_id_get(ApiPtr *ptr, char *value)
 {
-  strcpy(value, ((StructRNA *)ptr->data)->identifier);
+  strcpy(value, ((ApiStruct *)ptr->data)->id);
 }
 
-static int rna_Struct_identifier_length(PointerRNA *ptr)
+static int api_Struct_id_length(ApiPtr *ptr)
 {
-  return strlen(((StructRNA *)ptr->data)->identifier);
+  return strlen(((ApiStruct *)ptr->data)->id);
 }
 
-static void rna_Struct_description_get(PointerRNA *ptr, char *value)
+static void api_Struct_description_get(ApiPtr *ptr, char *value)
 {
   strcpy(value, ((StructRNA *)ptr->data)->description);
 }
 
-static int rna_Struct_description_length(PointerRNA *ptr)
+static int api_Struct_description_length(ApiPtr *ptr)
 {
   return strlen(((StructRNA *)ptr->data)->description);
 }
 
-static void rna_Struct_name_get(PointerRNA *ptr, char *value)
+static void api_Struct_name_get(ApiPtr *ptr, char *value)
 {
-  strcpy(value, ((StructRNA *)ptr->data)->name);
+  strcpy(value, ((ApiStruct *)ptr->data)->name);
 }
 
-static int rna_Struct_name_length(PointerRNA *ptr)
+static int api_Struct_name_length(ApiPtr *ptr)
 {
-  return strlen(((StructRNA *)ptr->data)->name);
+  return strlen(((ApiStruct *)ptr->data)->name);
 }
 
-static void rna_Struct_translation_context_get(PointerRNA *ptr, char *value)
+static void api_Struct_translation_ctx_get(ApiPtr *ptr, char *value)
 {
-  strcpy(value, ((StructRNA *)ptr->data)->translation_context);
+  strcpy(value, ((ApiStruct *)ptr->data)->translation_ctx);
 }
 
-static int rna_Struct_translation_context_length(PointerRNA *ptr)
+static int api_Struct_translation_ctx_length(ApiPtr *ptr)
 {
-  return strlen(((StructRNA *)ptr->data)->translation_context);
+  return strlen(((ApiStruct *)ptr->data)->translation_ctx);
 }
 
-static PointerRNA rna_Struct_base_get(PointerRNA *ptr)
+static ApiPtr api_Struct_base_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_Struct, ((StructRNA *)ptr->data)->base);
+  return api_ptr_inherit_refine(ptr, &ApiStruct, ((ApiStruct *)ptr->data)->base);
 }
 
-static PointerRNA rna_Struct_nested_get(PointerRNA *ptr)
+static ApiPtr api_Struct_nested_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_Struct, ((StructRNA *)ptr->data)->nested);
+  return api_pointer_inherit_refine(ptr, &RNA_Struct, ((StructRNA *)ptr->data)->nested);
 }
 
 static PointerRNA rna_Struct_name_property_get(PointerRNA *ptr)
