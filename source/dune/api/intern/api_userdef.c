@@ -295,13 +295,13 @@ static void api_userdef_font_update(Main *UNUSED(bmain),
   ui_reinit_font();
 }
 
-static void api_userdef_language_update(Main *UNUSED(bmain),
-                                        Scene *UNUSED(scene),
-                                        PointerRNA *UNUSED(ptr))
+static void api_userdef_lang_update(Main *UNUSED(main),
+                                    Scene *UNUSED(scene),
+                                    ApiPtr *UNUSED(ptr))
 {
   lang_set(NULL);
 
-  const char *uilng = BLT_lang_get();
+  const char *uilng = lang_get();
   if (STREQ(uilng, "en_US")) {
     U.transopts &= ~(USER_TR_IFACE | USER_TR_TOOLTIPS | USER_TR_NEWDATANAME);
   }
@@ -312,36 +312,36 @@ static void api_userdef_language_update(Main *UNUSED(bmain),
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_asset_library_name_set(PointerRNA *ptr, const char *value)
+static void api_userdef_asset_lib_name_set(PointerRNA *ptr, const char *value)
 {
-  bUserAssetLibrary *library = (bUserAssetLibrary *)ptr->data;
-  BKE_preferences_asset_library_name_set(&U, library, value);
+  UserAssetLib *lib = (UserAssetLib *)ptr->data;
+  dune_pref_asset_lib_name_set(&U, library, value);
 }
 
-static void rna_userdef_asset_library_path_set(PointerRNA *ptr, const char *value)
+static void api_userdef_asset_lib_path_set(PointerRNA *ptr, const char *value)
 {
-  bUserAssetLibrary *library = (bUserAssetLibrary *)ptr->data;
-  BKE_preferences_asset_library_path_set(library, value);
+  UserAssetLib *lib = UserAssetLib *)ptr->data;
+  dune_pref_asset_lib_path_set(lib, value);
 }
 
-static void rna_userdef_script_autoexec_update(Main *UNUSED(bmain),
+static void api_userdef_script_autoexec_update(Main *UNUSED(main),
                                                Scene *UNUSED(scene),
-                                               PointerRNA *ptr)
+                                               ApiPtr *ptr)
 {
   UserDef *userdef = (UserDef *)ptr->data;
-  if (userdef->flag & USER_SCRIPT_AUTOEXEC_DISABLE) {
-    G.f &= ~G_FLAG_SCRIPT_AUTOEXEC;
+  if (userdef->flag & USER_SCRIPT_AUTOEX_DISABLE) {
+    G.f &= ~G_FLAG_SCRIPT_AUTOEX;
   }
   else {
-    G.f |= G_FLAG_SCRIPT_AUTOEXEC;
+    G.f |= G_FLAG_SCRIPT_AUTOEX;
   }
 
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_script_directory_name_set(PointerRNA *ptr, const char *value)
+static void api_userdef_script_dir_name_set(ApiPtr *ptr, const char *value)
 {
-  bUserScriptDirectory *script_dir = ptr->data;
+  UserScriptDir *script_dir = ptr->data;
   bool value_invalid = false;
 
   if (!value[0]) {
@@ -356,18 +356,18 @@ static void rna_userdef_script_directory_name_set(PointerRNA *ptr, const char *v
   }
 
   STRNCPY_UTF8(script_dir->name, value);
-  BLI_uniquename(&U.script_directories,
+  lib_uniquename(&U.script_dirs,
                  script_dir,
                  value,
                  '.',
-                 offsetof(bUserScriptDirectory, name),
+                 offsetof(UserScriptDir, name),
                  sizeof(script_dir->name));
 }
 
-static bUserScriptDirectory *rna_userdef_script_directory_new(void)
+static UserScriptDir *api_userdef_script_directory_new(void)
 {
-  bUserScriptDirectory *script_dir = MEM_callocN(sizeof(*script_dir), __func__);
-  BLI_addtail(&U.script_directories, script_dir);
+  UserScriptDir *script_dir = mem_callocn(sizeof(*script_dir), __func__);
+  lib_addtail(&U.script_directories, script_dir);
   USERDEF_TAG_DIRTY;
   return script_dir;
 }
@@ -380,12 +380,12 @@ static void rna_userdef_script_directory_remove(ReportList *reports, PointerRNA 
     return;
   }
 
-  BLI_freelinkN(&U.script_directories, script_dir);
-  RNA_POINTER_INVALIDATE(ptr);
+  lib_freelinkn(&U.script_directories, script_dir);
+  API_PTR_INVALIDATE(ptr);
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_load_ui_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_userdef_load_ui_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPointerRNA *ptr)
 {
   UserDef *userdef = (UserDef *)ptr->data;
   if (userdef->flag & USER_FILENOUI) {
@@ -398,10 +398,10 @@ static void rna_userdef_load_ui_update(Main *UNUSED(bmain), Scene *UNUSED(scene)
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_anisotropic_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_anisotropic_update(Main *main, Scene *scene, PointerRNA *ptr)
 {
-  GPU_samplers_update();
-  rna_userdef_update(bmain, scene, ptr);
+  gpu_samplers_update();
+  api_userdef_update(main, scene, ptr);
 }
 
 static void rna_userdef_gl_texture_limit_update(Main *bmain, Scene *scene, PointerRNA *ptr)
