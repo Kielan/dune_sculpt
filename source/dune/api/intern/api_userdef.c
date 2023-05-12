@@ -555,39 +555,39 @@ static const EnumPropertyItem *rna_UseDef_active_section_itemf(bContext *UNUSED(
   return items;
 }
 
-static ApiPtr api_UserDef_view_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_view_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_PreferencesView, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiPrefsView, ptr->data);
 }
 
-static ApiPtr api_UserDef_edit_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_edit_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_PreferencesEdit, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiPrefsEdit, ptr->data);
 }
 
-static ApiPtr api_UserDef_input_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_input_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_PreferencesInput, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiPrefsInput, ptr->data);
 }
 
-static ApiPtr api_UserDef_keymap_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_keymap_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_PreferencesKeymap, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiPrefsKeymap, ptr->data);
 }
 
-static ApiPtt api_UserDef_filepaths_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_filepaths_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_PreferencesFilePaths, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiPrefsFilePaths, ptr->data);
 }
 
-static ApiPtr api_UserDef_system_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_system_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_PreferencesSystem, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiPrefsSystem, ptr->data);
 }
 
-static PointerRNA rna_UserDef_apps_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_apps_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_PreferencesApps, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiPrefsApps, ptr->data);
 }
 
 /* Reevaluate objects with a subsurf modifier as the last in their modifiers stacks. */
