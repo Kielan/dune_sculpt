@@ -1,73 +1,73 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "DNA_brush_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
-#include "DNA_view3d_types.h"
+#include "types_brush.h"
+#include "types_curve.h"
+#include "types_scene.h"
+#include "types_space.h"
+#include "types_userdef.h"
+#include "types_view3d.h"
 
-#include "BLI_math_base.h"
-#include "BLI_math_rotation.h"
-#include "BLI_utildefines.h"
+#include "lib_math_base.h"
+#include "lib_math_rotation.h"
+#include "lib_utildefines.h"
 
 #include "BLT_translation.h"
 
-#include "BKE_addon.h"
-#include "BKE_appdir.h"
-#include "BKE_sound.h"
-#include "BKE_studiolight.h"
+#include "dune_addon.h"
+#include "dune_appdir.h"
+#include "dune_sound.h"
+#include "dune_studiolight.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "GPU_platform.h"
+#include "gpu_platform.h"
 
-#include "UI_interface_icons.h"
+#include "ui_icons.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "BLT_lang.h"
+#include "lang.h"
 
-const EnumPropertyItem rna_enum_preference_section_items[] = {
+const EnumPropItem api_enum_pref_section_items[] = {
     {USER_SECTION_INTERFACE, "INTERFACE", 0, "Interface", ""},
     {USER_SECTION_THEME, "THEMES", 0, "Themes", ""},
     {USER_SECTION_VIEWPORT, "VIEWPORT", 0, "Viewport", ""},
     {USER_SECTION_LIGHT, "LIGHTS", 0, "Lights", ""},
     {USER_SECTION_EDITING, "EDITING", 0, "Editing", ""},
     {USER_SECTION_ANIMATION, "ANIMATION", 0, "Animation", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {USER_SECTION_ADDONS, "ADDONS", 0, "Add-ons", ""},
 #if 0 /* def WITH_USERDEF_WORKSPACES */
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {USER_SECTION_WORKSPACE_CONFIG, "WORKSPACE_CONFIG", 0, "Configuration File", ""},
     {USER_SECTION_WORKSPACE_ADDONS, "WORKSPACE_ADDONS", 0, "Add-on Overrides", ""},
     {USER_SECTION_WORKSPACE_KEYMAPS, "WORKSPACE_KEYMAPS", 0, "Keymap Overrides", ""},
 #endif
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {USER_SECTION_INPUT, "INPUT", 0, "Input", ""},
     {USER_SECTION_NAVIGATION, "NAVIGATION", 0, "Navigation", ""},
     {USER_SECTION_KEYMAP, "KEYMAP", 0, "Keymap", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {USER_SECTION_SYSTEM, "SYSTEM", 0, "System", ""},
     {USER_SECTION_SAVE_LOAD, "SAVE_LOAD", 0, "Save & Load", ""},
     {USER_SECTION_FILE_PATHS, "FILE_PATHS", 0, "File Paths", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {USER_SECTION_EXPERIMENTAL, "EXPERIMENTAL", 0, "Experimental", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem audio_device_items[] = {
+static const EnumPropItem audio_device_items[] = {
     {0, "None", 0, "None", "No device - there will be no audio output"},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_navigation_mode_items[] = {
+const EnumPropItem api_enum_navigation_mode_items[] = {
     {VIEW_NAVIGATION_WALK,
      "WALK",
      0,
@@ -77,8 +77,8 @@ const EnumPropertyItem rna_enum_navigation_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#if defined(WITH_INTERNATIONAL) || !defined(RNA_RUNTIME)
-static const EnumPropertyItem rna_enum_language_default_items[] = {
+#if defined(WITH_INTERNATIONAL) || !defined(API_RUNTIME)
+static const EnumPropItem api_enum_language_default_items[] = {
     {0,
      "DEFAULT",
      0,
@@ -88,14 +88,14 @@ static const EnumPropertyItem rna_enum_language_default_items[] = {
 };
 #endif
 
-static const EnumPropertyItem rna_enum_studio_light_type_items[] = {
+static const EnumPropItem api_enum_studio_light_type_items[] = {
     {STUDIOLIGHT_TYPE_STUDIO, "STUDIO", 0, "Studio", ""},
     {STUDIOLIGHT_TYPE_WORLD, "WORLD", 0, "World", ""},
     {STUDIOLIGHT_TYPE_MATCAP, "MATCAP", 0, "MatCap", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_userdef_viewport_aa_items[] = {
+static const EnumPropItem api_enum_userdef_viewport_aa_items[] = {
     {SCE_DISPLAY_AA_OFF,
      "OFF",
      0,
@@ -134,7 +134,7 @@ static const EnumPropertyItem rna_enum_userdef_viewport_aa_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_preference_gpu_backend_items[] = {
+static const EnumPropItem api_enum_pref_gpu_backend_items[] = {
     {GPU_BACKEND_OPENGL, "OPENGL", 0, "OpenGL", "Use OpenGL backend"},
     {GPU_BACKEND_METAL, "METAL", 0, "Metal", "Use Metal backend"},
     {GPU_BACKEND_VULKAN, "VULKAN", 0, "Vulkan", "Use Vulkan backend"},
