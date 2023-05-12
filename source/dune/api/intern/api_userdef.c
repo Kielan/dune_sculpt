@@ -875,7 +875,7 @@ static ApiStruct *api_AddonPref_register(Main *main,
   }
 
   STRNCPY(dummy_apt.idname, dummy_addon.module);
-  if (strlen(identifier) >= sizeof(dummy_apt.idname)) {
+  if (strlen(id) >= sizeof(dummy_apt.idname)) {
     dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
@@ -889,7 +889,7 @@ static ApiStruct *api_AddonPref_register(Main *main,
   apt = dune_addon_pref_type_find(dummy_addon.module, true);
   if (apt) {
     ApiStruct *srna = apt->api_ext.srna;
-    if (!(srna && rna_AddonPref_unregister(main, srna))) {
+    if (!(srna && api_AddonPref_unregister(main, srna))) {
       dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
@@ -927,34 +927,34 @@ static ApiStruct *api_AddonPref_refine(PointerRNA *ptr)
   return (ptr->type) ? ptr->type : &RNA_AddonPreferences;
 }
 
-static float rna_ThemeUI_roundness_get(PointerRNA *ptr)
+static float rna_ThemeUI_roundness_get(ApiPtr *ptr)
 {
   /* Remap from relative radius to 0..1 range. */
   uiWidgetColors *tui = (uiWidgetColors *)ptr->data;
   return tui->roundness * 2.0f;
 }
 
-static void rna_ThemeUI_roundness_set(PointerRNA *ptr, float value)
+static void api_ThemeUI_roundness_set(ApiPtr *ptr, float value)
 {
   uiWidgetColors *tui = (uiWidgetColors *)ptr->data;
   tui->roundness = value * 0.5f;
 }
 
 /* Studio Light */
-static void rna_UserDef_studiolight_begin(CollectionPropertyIterator *iter,
-                                          PointerRNA *UNUSED(ptr))
+static void api_UserDef_studiolight_begin(CollectionPropIter *iter,
+                                          ApiPtr *UNUSED(ptr))
 {
-  rna_iterator_listbase_begin(iter, BKE_studiolight_listbase(), NULL);
+  api_iter_list_begin(iter, dune_studiolight_listbase(), NULL);
 }
 
-static void rna_StudioLights_refresh(UserDef *UNUSED(userdef))
+static void api_StudioLights_refresh(UserDef *UNUSED(userdef))
 {
-  BKE_studiolight_refresh();
+  dune_studiolight_refresh();
 }
 
-static void rna_StudioLights_remove(UserDef *UNUSED(userdef), StudioLight *studio_light)
+static void api_StudioLights_remove(UserDef *UNUSED(userdef), StudioLight *studio_light)
 {
-  BKE_studiolight_remove(studio_light);
+  dune_studiolight_remove(studio_light);
 }
 
 static StudioLight *rna_StudioLights_load(UserDef *UNUSED(userdef), const char *filepath, int type)
