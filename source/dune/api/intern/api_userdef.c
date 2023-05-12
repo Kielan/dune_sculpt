@@ -364,19 +364,19 @@ static void api_userdef_script_dir_name_set(ApiPtr *ptr, const char *value)
                  sizeof(script_dir->name));
 }
 
-static UserScriptDir *api_userdef_script_directory_new(void)
+static UserScriptDir *api_userdef_script_dir_new(void)
 {
   UserScriptDir *script_dir = mem_callocn(sizeof(*script_dir), __func__);
-  lib_addtail(&U.script_directories, script_dir);
+  lib_addtail(&U.script_dirs, script_dir);
   USERDEF_TAG_DIRTY;
   return script_dir;
 }
 
-static void rna_userdef_script_directory_remove(ReportList *reports, PointerRNA *ptr)
+static void api_userdef_script_dir_remove(ReportList *reports, ApiPtr *ptr)
 {
-  bUserScriptDirectory *script_dir = ptr->data;
-  if (BLI_findindex(&U.script_directories, script_dir) == -1) {
-    BKE_report(reports, RPT_ERROR, "Script directory not found");
+  UserScriptDir *script_dir = ptr->data;
+  if (lib_findindex(&U.script_dirs, script_dir) == -1) {
+    dune_report(reports, RPT_ERROR, "Script directory not found");
     return;
   }
 
@@ -404,7 +404,7 @@ static void api_userdef_anisotropic_update(Main *main, Scene *scene, PointerRNA 
   api_userdef_update(main, scene, ptr);
 }
 
-static void a_userdef_gl_texture_limit_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void a_userdef_gl_texture_limit_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   dune_image_free_all_gputextures(main);
   api_userdef_update(main, scene, ptr);
@@ -444,16 +444,16 @@ static void api_userdef_autokeymode_set(ApiPtr *ptr, int value)
   }
 }
 
-static void rna_userdef_anim_update(Main *UNUSED(bmain),
+static void api_userdef_anim_update(Main *UNUSED(main),
                                     Scene *UNUSED(scene),
-                                    PointerRNA *UNUSED(ptr))
+                                    ApiPtr *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_SPACE | ND_SPACE_GRAPH, NULL);
-  WM_main_add_notifier(NC_SPACE | ND_SPACE_DOPESHEET, NULL);
+  wm_main_add_notifier(NC_SPACE | ND_SPACE_GRAPH, NULL);
+  wm_main_add_notifier(NC_SPACE | ND_SPACE_DOPESHEET, NULL);
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_input_devices(Main *UNUSED(bmain),
+static void api_userdef_input_devices(Main *UNUSED(bmain),
                                       Scene *UNUSED(scene),
                                       PointerRNA *UNUSED(ptr))
 {
