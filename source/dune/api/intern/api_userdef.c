@@ -276,7 +276,7 @@ static void api_userdef_screen_update(Main *UNUSED(bmain),
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_screen_update_header_default(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_screen_update_header_default(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   if (U.uiflag & USER_HEADER_FROM_PREF) {
     for (Screen *screen = main->screens.first; screen; screen = screen->id.next) {
@@ -404,7 +404,7 @@ static void api_userdef_anisotropic_update(Main *main, Scene *scene, PointerRNA 
   api_userdef_update(main, scene, ptr);
 }
 
-static void a_userdef_gl_texture_limit_update(Main *main, Scene *scene, ApiPtr *ptr)
+static void api_userdef_gl_texture_limit_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   dune_image_free_all_gputextures(main);
   api_userdef_update(main, scene, ptr);
@@ -555,32 +555,32 @@ static const EnumPropertyItem *rna_UseDef_active_section_itemf(bContext *UNUSED(
   return items;
 }
 
-static PointerRNA rna_UserDef_view_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_view_get(PointerRNA *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_PreferencesView, ptr->data);
+  return api_ptr_inherit_refine(ptr, &RNA_PreferencesView, ptr->data);
 }
 
-static PointerRNA rna_UserDef_edit_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_edit_get(PointerRNA *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_PreferencesEdit, ptr->data);
+  return api_ptr_inherit_refine(ptr, &RNA_PreferencesEdit, ptr->data);
 }
 
-static PointerRNA rna_UserDef_input_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_input_get(PointerRNA *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_PreferencesInput, ptr->data);
+  return api_ptr_inherit_refine(ptr, &RNA_PreferencesInput, ptr->data);
 }
 
-static PointerRNA rna_UserDef_keymap_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_keymap_get(PointerRNA *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_PreferencesKeymap, ptr->data);
+  return api_ptr_inherit_refine(ptr, &RNA_PreferencesKeymap, ptr->data);
 }
 
-static PointerRNA rna_UserDef_filepaths_get(PointerRNA *ptr)
+static ApiPtt api_UserDef_filepaths_get(PointerRNA *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_PreferencesFilePaths, ptr->data);
+  return api_ptr_inherit_refine(ptr, &RNA_PreferencesFilePaths, ptr->data);
 }
 
-static PointerRNA rna_UserDef_system_get(PointerRNA *ptr)
+static ApiPtr api_UserDef_system_get(PointerRNA *ptr)
 {
   return rna_pointer_inherit_refine(ptr, &RNA_PreferencesSystem, ptr->data);
 }
