@@ -655,8 +655,8 @@ static void api_UserDef_viewport_lights_update(Main *bmain, Scene *scene, Pointe
     light->flag |= 1;
   }
 
-  WM_main_add_notifier(NC_SPACE | ND_SPACE_VIEW3D | NS_VIEW3D_GPU, NULL);
-  rna_userdef_update(bmain, scene, ptr);
+  wm_main_add_notifier(NC_SPACE | ND_SPACE_VIEW3D | NS_VIEW3D_GPU, NULL);
+  api_userdef_update(bmain, scene, ptr);
 }
 
 static void api_userdef_autosave_update(Main *main, Scene *scene, ApiPtr *ptr)
