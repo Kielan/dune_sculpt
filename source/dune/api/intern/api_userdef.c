@@ -535,21 +535,21 @@ static const EnumPropertyItem *rna_UseDef_active_section_itemf(bContext *UNUSED(
 
   if ((userdef->flag & USER_DEVELOPER_UI) != 0) {
     *r_free = false;
-    return rna_enum_preference_section_items;
+    return api_enum_pref_section_items;
   }
 
-  EnumPropertyItem *items = NULL;
+  EnumPropItem *items = NULL;
   int totitem = 0;
 
-  for (const EnumPropertyItem *it = rna_enum_preference_section_items; it->identifier != NULL;
+  for (const EnumPropItem *it = api_enum_pref_section_items; it->identifier != NULL;
        it++) {
     if (it->value == USER_SECTION_EXPERIMENTAL) {
       continue;
     }
-    RNA_enum_item_add(&items, &totitem, it);
+    api_enum_item_add(&items, &totitem, it);
   }
 
-  RNA_enum_item_end(&items, &totitem);
+  apu_enum_item_end(&items, &totitem);
 
   *r_free = true;
   return items;
