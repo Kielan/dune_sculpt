@@ -161,26 +161,26 @@ static const EnumPropItem api_enum_pref_gpu_backend_items[] = {
 #  include "BKE_preferences.h"
 #  include "BKE_screen.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "GPU_capabilities.h"
-#  include "GPU_select.h"
-#  include "GPU_texture.h"
+#  include "gpu_capabilities.h"
+#  include "gpu_select.h"
+#  include "gpu_texture.h"
 
 #  include "BLF_api.h"
 
-#  include "BLI_path_util.h"
+#  include "lib_path_util.h"
 
-#  include "MEM_CacheLimiterC-Api.h"
-#  include "MEM_guardedalloc.h"
+#  include "mem_CacheLimiterC-Api.h"
+#  include "mem_guardedalloc.h"
 
-#  include "UI_interface.h"
+#  include "ui_interface.h"
 
 #  ifdef WITH_SDL_DYNLOAD
 #    include "sdlew.h"
 #  endif
 
-static void rna_userdef_version_get(PointerRNA *ptr, int *value)
+static void api_userdef_version_get(PointerRNA *ptr, int *value)
 {
   UserDef *userdef = (UserDef *)ptr->data;
   value[0] = userdef->versionfile / 100;
@@ -191,115 +191,115 @@ static void rna_userdef_version_get(PointerRNA *ptr, int *value)
 /** Mark the preferences as being changed so they are saved on exit. */
 #  define USERDEF_TAG_DIRTY rna_userdef_is_dirty_update_impl()
 
-void rna_userdef_is_dirty_update_impl(void)
+void api_userdef_is_dirty_update_impl(void)
 {
   /* We can't use 'ptr->data' because this update function
    * is used for themes and other nested data. */
   if (U.runtime.is_dirty == false) {
     U.runtime.is_dirty = true;
-    WM_main_add_notifier(NC_WINDOW, NULL);
+    wm_main_add_notifier(NC_WINDOW, NULL);
   }
 }
 
-void rna_userdef_is_dirty_update(Main *UNUSED(bmain),
+void api_userdef_is_dirty_update(Main *UNUSED(bmain),
                                  Scene *UNUSED(scene),
                                  PointerRNA *UNUSED(ptr))
 {
   /* WARNING: never use 'ptr' unless its type is checked. */
-  rna_userdef_is_dirty_update_impl();
+  api_userdef_is_dirty_update_impl();
 }
 
 /** Take care not to use this if we expect 'is_dirty' to be tagged. */
-static void rna_userdef_ui_update(Main *UNUSED(bmain),
+static void api_userdef_ui_update(Main *UNUSED(bmain),
                                   Scene *UNUSED(scene),
                                   PointerRNA *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 }
 
-static void rna_userdef_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *UNUSED(ptr))
+static void api_userdef_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_theme_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_theme_update(Main *main, Scene *scene, PointerRNA *ptr)
 {
   /* Recreate gizmos when changing themes. */
-  WM_reinit_gizmomap_all(bmain);
+  wm_reinit_gizmomap_all(main);
 
-  rna_userdef_update(bmain, scene, ptr);
+  api_userdef_update(main, scene, ptr);
 }
 
-static void rna_userdef_theme_text_style_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_theme_text_style_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   const uiStyle *style = UI_style_get();
   BLF_default_size(style->widgetlabel.points);
 
-  rna_userdef_update(bmain, scene, ptr);
+  api_userdef_update(bmain, scene, ptr);
 }
 
-static void rna_userdef_gizmo_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_gizmo_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  WM_reinit_gizmomap_all(bmain);
+  wm_reinit_gizmomap_all(bmain);
 
-  rna_userdef_update(bmain, scene, ptr);
+  api_userdef_update(bmain, scene, ptr);
 }
 
-static void rna_userdef_theme_update_icons(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_theme_update_icons(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   if (!G.background) {
-    UI_icons_reload_internal_textures();
+    ui_icons_reload_internal_textures();
   }
-  rna_userdef_theme_update(bmain, scene, ptr);
+  api_userdef_theme_update(bmain, scene, ptr);
 }
 
 /* also used by buffer swap switching */
-static void rna_userdef_dpi_update(Main *UNUSED(bmain),
+static void api_userdef_dpi_update(Main *UNUSED(bmain),
                                    Scene *UNUSED(scene),
                                    PointerRNA *UNUSED(ptr))
 {
   /* font's are stored at each DPI level, without this we can easy load 100's of fonts */
   BLF_cache_clear();
 
-  WM_main_add_notifier(NC_WINDOW, NULL);             /* full redraw */
-  WM_main_add_notifier(NC_SCREEN | NA_EDITED, NULL); /* refresh region sizes */
+  wm_main_add_notifier(NC_WINDOW, NULL);             /* full redraw */
+  wm_main_add_notifier(NC_SCREEN | NA_EDITED, NULL); /* refresh region sizes */
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_screen_update(Main *UNUSED(bmain),
+static void api_userdef_screen_update(Main *UNUSED(bmain),
                                       Scene *UNUSED(scene),
                                       PointerRNA *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_WINDOW, NULL);
-  WM_main_add_notifier(NC_SCREEN | NA_EDITED, NULL); /* refresh region sizes */
+  wm_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_SCREEN | NA_EDITED, NULL); /* refresh region sizes */
   USERDEF_TAG_DIRTY;
 }
 
 static void rna_userdef_screen_update_header_default(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   if (U.uiflag & USER_HEADER_FROM_PREF) {
-    for (bScreen *screen = bmain->screens.first; screen; screen = screen->id.next) {
-      BKE_screen_header_alignment_reset(screen);
+    for (Screen *screen = main->screens.first; screen; screen = screen->id.next) {
+      dune_screen_header_alignment_reset(screen);
     }
-    rna_userdef_screen_update(bmain, scene, ptr);
+    api_userdef_screen_update(bmain, scene, ptr);
   }
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_font_update(Main *UNUSED(bmain),
+static void api_userdef_font_update(Main *UNUSED(bmain),
                                     Scene *UNUSED(scene),
                                     PointerRNA *UNUSED(ptr))
 {
   BLF_cache_clear();
-  UI_reinit_font();
+  ui_reinit_font();
 }
 
-static void rna_userdef_language_update(Main *UNUSED(bmain),
+static void api_userdef_language_update(Main *UNUSED(bmain),
                                         Scene *UNUSED(scene),
                                         PointerRNA *UNUSED(ptr))
 {
-  BLT_lang_set(NULL);
+  lang_set(NULL);
 
   const char *uilng = BLT_lang_get();
   if (STREQ(uilng, "en_US")) {
