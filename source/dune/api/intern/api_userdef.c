@@ -591,22 +591,22 @@ static PointerRNA rna_UserDef_apps_get(PointerRNA *ptr)
 }
 
 /* Reevaluate objects with a subsurf modifier as the last in their modifiers stacks. */
-static void rna_UserDef_subdivision_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_UserDef_subdivision_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob;
 
-  for (ob = bmain->objects.first; ob; ob = ob->id.next) {
-    if (BKE_object_get_last_subsurf_modifier(ob) != NULL) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+  for (ob = main->objects.first; ob; ob = ob->id.next) {
+    if (dune_object_get_last_subsurf_mod(ob) != NULL) {
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
   }
 
-  rna_userdef_update(bmain, scene, ptr);
+  api_userdef_update(main, scene, ptr);
 }
 
-static void rna_UserDef_audio_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *UNUSED(ptr))
+static void api_UserDef_audio_update(Main *main, Scene *UNUSED(scene), ApiPtr *UNUSED(ptr))
 {
-  BKE_sound_init(bmain);
+  dune_sound_init(main);
   USERDEF_TAG_DIRTY;
 }
 
