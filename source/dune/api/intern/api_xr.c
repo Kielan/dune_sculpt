@@ -27,7 +27,7 @@ static wmXrData *api_XrSession_wm_xr_data_get(ApiPtr *ptr)
   /* Callers could also get XrSessionState pointer through ptr->data, but prefer if we just
    * consistently pass wmXrData pointers to the wm_xr_xxx() API. */
 
-  lib_assert(ELEM(ptr->type, &RNA_XrSessionSettings, &api_XrSessionState));
+  lib_assert(ELEM(ptr->type, &api_XrSessionSettings, &api_XrSessionState));
 
   wmWindowManager *wm = (wmWindowManager *)ptr->owner_id;
   lib_assert(wm && (GS(wm->id.name) == ID_WM));
@@ -66,17 +66,17 @@ static void api_XrComponentPath_remove(XrActionMapBinding *amb, PointerRNA *comp
 #  endif
 }
 
-static XrComponentPath *rna_XrComponentPath_find(XrActionMapBinding *amb, const char *path_str)
+static XrComponentPath *api_XrComponentPath_find(XrActionMapBinding *amb, const char *path_str)
 {
 #  ifdef WITH_XR_OPENXR
-  return BLI_findstring(&amb->component_paths, path_str, offsetof(XrComponentPath, path));
+  return lib_findstring(&amb->component_paths, path_str, offsetof(XrComponentPath, path));
 #  else
   UNUSED_VARS(amb, path_str);
   return NULL;
 #  endif
 }
 
-static XrActionMapBinding *rna_XrActionMapBinding_new(XrActionMapItem *ami,
+static XrActionMapBinding *api_XrActionMapBinding_new(XrActionMapItem *ami,
                                                       const char *name,
                                                       bool replace_existing)
 {
@@ -88,7 +88,7 @@ static XrActionMapBinding *rna_XrActionMapBinding_new(XrActionMapItem *ami,
 #  endif
 }
 
-static XrActionMapBinding *rna_XrActionMapBinding_new_from_binding(XrActionMapItem *ami,
+static XrActionMapBinding *api_XrActionMapBinding_new_from_binding(XrActionMapItem *ami,
                                                                    XrActionMapBinding *amb_src)
 {
 #  ifdef WITH_XR_OPENXR
@@ -119,32 +119,32 @@ static void api_XrActionMapBinding_remove(XrActionMapItem *ami,
 #  endif
 }
 
-static XrActionMapBinding *rna_XrActionMapBinding_find(XrActionMapItem *ami, const char *name)
+static XrActionMapBinding *api_XrActionMapBinding_find(XrActionMapItem *ami, const char *name)
 {
 #  ifdef WITH_XR_OPENXR
-  return WM_xr_actionmap_binding_find(ami, name);
+  return wm_xr_actionmap_binding_find(ami, name);
 #  else
   UNUSED_VARS(ami, name);
   return NULL;
 #  endif
 }
 
-static void rna_XrActionMapBinding_component_paths_begin(CollectionPropertyIterator *iter,
-                                                         PointerRNA *ptr)
+static void api_XrActionMapBinding_component_paths_begin(CollectionPropIter *iter,
+                                                         ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = (XrActionMapBinding *)ptr->data;
-  rna_iterator_listbase_begin(iter, &amb->component_paths, NULL);
+  api_iterator_list_begin(iter, &amb->component_paths, NULL);
 #  else
   UNUSED_VARS(iter, ptr);
 #  endif
 }
 
-static int rna_XrActionMapBinding_component_paths_length(PointerRNA *ptr)
+static int api_XrActionMapBinding_component_paths_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = (XrActionMapBinding *)ptr->data;
-  return BLI_listbase_count(&amb->component_paths);
+  return lib_list_count(&amb->component_paths);
 #  else
   UNUSED_VARS(ptr);
   return 0;
