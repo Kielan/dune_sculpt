@@ -81,7 +81,7 @@ static XrActionMapBinding *rna_XrActionMapBinding_new(XrActionMapItem *ami,
                                                       bool replace_existing)
 {
 #  ifdef WITH_XR_OPENXR
-  return WM_xr_actionmap_binding_new(ami, name, replace_existing);
+  return wm_xr_actionmap_binding_new(ami, name, replace_existing);
 #  else
   UNUSED_VARS(ami, name, replace_existing);
   return NULL;
@@ -92,28 +92,28 @@ static XrActionMapBinding *rna_XrActionMapBinding_new_from_binding(XrActionMapIt
                                                                    XrActionMapBinding *amb_src)
 {
 #  ifdef WITH_XR_OPENXR
-  return WM_xr_actionmap_binding_add_copy(ami, amb_src);
+  return wm_xr_actionmap_binding_add_copy(ami, amb_src);
 #  else
   UNUSED_VARS(ami, amb_src);
   return NULL;
 #  endif
 }
 
-static void rna_XrActionMapBinding_remove(XrActionMapItem *ami,
+static void api_XrActionMapBinding_remove(XrActionMapItem *ami,
                                           ReportList *reports,
-                                          PointerRNA *amb_ptr)
+                                          ApiPtr *amb_ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = amb_ptr->data;
-  if (WM_xr_actionmap_binding_remove(ami, amb) == false) {
-    BKE_reportf(reports,
+  if (wm_xr_actionmap_binding_remove(ami, amb) == false) {
+    dunr_reportf(reports,
                 RPT_ERROR,
                 "ActionMapBinding '%s' cannot be removed from '%s'",
                 amb->name,
                 ami->name);
     return;
   }
-  RNA_POINTER_INVALIDATE(amb_ptr);
+  API_PTR_INVALIDATE(amb_ptr);
 #  else
   UNUSED_VARS(ami, reports, amb_ptr);
 #  endif
