@@ -659,18 +659,18 @@ static void rna_UserDef_viewport_lights_update(Main *bmain, Scene *scene, Pointe
   rna_userdef_update(bmain, scene, ptr);
 }
 
-static void rna_userdef_autosave_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_userdef_autosave_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  wmWindowManager *wm = bmain->wm.first;
+  wmWindowManager *wm = main->wm.first;
 
   if (wm) {
-    WM_file_autosave_init(wm);
+    wm_file_autosave_init(wm);
   }
-  rna_userdef_update(bmain, scene, ptr);
+  api_userdef_update(main, scene, ptr);
 }
 
-#  define RNA_USERDEF_EXPERIMENTAL_BOOLEAN_GET(member) \
-    static bool rna_userdef_experimental_##member##_get(PointerRNA *ptr) \
+#  define API_USERDEF_EXPERIMENTAL_BOOL_GET(member) \
+    static bool api_userdef_experimental_##member##_get(ApiPtr *ptr) \
     { \
       UserDef *userdef = POINTER_OFFSET(ptr->data, -offsetof(UserDef, experimental)); \
       return USER_EXPERIMENTAL_TEST(userdef, member); \
@@ -6786,34 +6786,34 @@ void RNA_def_userdef(BlenderRNA *brna)
   RNA_def_property_pointer_funcs(prop, "rna_UserDef_keymap_get", NULL, NULL, NULL);
   RNA_def_property_ui_text(prop, "Keymap", "Shortcut setup for keyboards and other input devices");
 
-  prop = RNA_def_property(srna, "filepaths", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesFilePaths");
-  RNA_def_property_pointer_funcs(prop, "rna_UserDef_filepaths_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "File Paths", "Default paths for external files");
+  prop = api_def_prop(srna, "filepaths", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PreferencesFilePaths");
+  api_def_prop_ptr_fns(prop, "rna_UserDef_filepaths_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "File Paths", "Default paths for external files");
 
-  prop = RNA_def_property(srna, "system", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesSystem");
-  RNA_def_property_pointer_funcs(prop, "rna_UserDef_system_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "system", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PreferencesSystem");
+  api_def_prop_ptr_fns(prop, "rna_UserDef_system_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(
       prop, "System & OpenGL", "Graphics driver and operating system settings");
 
-  prop = RNA_def_property(srna, "apps", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesApps");
-  RNA_def_property_pointer_funcs(prop, "rna_UserDef_apps_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Apps", "Preferences that work only for apps");
+  prop = api_def_prop(srna, "apps", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PreferencesApps");
+  api_def_prop_ptr_fns(prop, "rna_UserDef_apps_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Apps", "Preferences that work only for apps");
 
-  prop = RNA_def_property(srna, "experimental", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesExperimental");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "experimental", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PreferencesExperimental");
+  api_def_prop_ui_text(
       prop,
       "Experimental",
       "Settings for features that are still early in their development stage");
 
-  prop = RNA_def_int_vector(srna,
+  prop = api_def_int_vector(srna,
                             "version",
                             3,
                             NULL,
@@ -6823,15 +6823,15 @@ void RNA_def_userdef(BlenderRNA *brna)
                             "Version of Blender the userpref.blend was saved with",
                             0,
                             INT_MAX);
-  RNA_def_property_int_funcs(prop, "rna_userdef_version_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_THICK_WRAP);
+  api_def_prop_int_fn(prop, "api_userdef_version_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_THICK_WRAP);
 
   /* StudioLight Collection */
-  prop = RNA_def_property(srna, "studio_lights", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "StudioLight");
-  RNA_def_property_srna(prop, "StudioLights");
-  RNA_def_property_collection_funcs(prop,
+  prop = api_def_prop(srna, "studio_lights", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "StudioLight");
+  api_def_prop_srna(prop, "StudioLights");
+  api_def_prop_collection_funcs(prop,
                                     "rna_UserDef_studiolight_begin",
                                     "rna_iterator_listbase_next",
                                     "rna_iterator_listbase_end",
@@ -6840,34 +6840,34 @@ void RNA_def_userdef(BlenderRNA *brna)
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_ui_text(prop, "Studio Lights", "");
+  api_def_prop_ui_text(prop, "Studio Lights", "");
 
   /* Preferences Flags */
-  prop = RNA_def_property(srna, "use_preferences_save", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "pref_flag", USER_PREF_FLAG_SAVE);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(srna, "use_preferences_save", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "pref_flag", USER_PREF_FLAG_SAVE);
+  api_def_prop_ui_text(prop,
                            "Save on Exit",
                            "Save preferences on exit when modified "
                            "(unless factory settings have been loaded)");
 
-  prop = RNA_def_property(srna, "is_dirty", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "runtime.is_dirty", 0);
-  RNA_def_property_ui_text(prop, "Dirty", "Preferences have changed");
-  RNA_def_property_update(prop, 0, "rna_userdef_ui_update");
+  prop = api_def_prop(srna, "is_dirty", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "runtime.is_dirty", 0);
+  RNA_def_prop_ui_text(prop, "Dirty", "Preferences have changv
+  RNA_def_prop_update(prop, 0, "rna_userdef_ui_update");
 
-  rna_def_userdef_view(brna);
-  rna_def_userdef_edit(brna);
-  rna_def_userdef_input(brna);
-  rna_def_userdef_keymap(brna);
-  rna_def_userdef_filepaths(brna);
-  rna_def_userdef_system(brna);
-  rna_def_userdef_addon(brna);
-  rna_def_userdef_addon_pref(brna);
-  rna_def_userdef_studiolights(brna);
-  rna_def_userdef_studiolight(brna);
-  rna_def_userdef_pathcompare(brna);
-  rna_def_userdef_apps(brna);
-  rna_def_userdef_experimental(brna);
+  api_def_userdef_view(brna);
+  api_def_userdef_edit(brna);
+  api_def_userdef_input(brna);
+  api_def_userdef_keymap(brna);
+  api_def_userdef_filepaths(brna);
+  api_def_userdef_system(brna);
+  api_def_userdef_addon(brna);
+  api_def_userdef_addon_pref(brna);
+  api_def_userdef_studiolights(brna);
+  api_def_userdef_studiolight(brna);
+  api_def_userdef_pathcompare(brna);
+  api_def_userdef_apps(brna);
+  api_def_userdef_experimental(brna);
 
   USERDEF_TAG_DIRTY_PROPERTY_UPDATE_DISABLE;
 }
