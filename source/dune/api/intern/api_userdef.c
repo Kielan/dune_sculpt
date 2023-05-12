@@ -12,7 +12,7 @@
 #include "lib_math_rotation.h"
 #include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
 #include "dune_addon.h"
 #include "dune_appdir.h"
@@ -141,10 +141,10 @@ static const EnumPropItem api_enum_pref_gpu_backend_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math_vector.h"
-#  include "BLI_string_utils.h"
+#  include "lib_math_vector.h"
+#  include "lib_string_utils.h"
 
 #  include "types_object.h"
 #  include "types_screen.h"
@@ -404,13 +404,13 @@ static void api_userdef_anisotropic_update(Main *main, Scene *scene, PointerRNA 
   api_userdef_update(main, scene, ptr);
 }
 
-static void rna_userdef_gl_texture_limit_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void a_userdef_gl_texture_limit_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   BKE_image_free_all_gputextures(bmain);
   rna_userdef_update(bmain, scene, ptr);
 }
 
-static void rna_userdef_undo_steps_set(PointerRNA *ptr, int value)
+static void api_userdef_undo_steps_set(ApiPtr *ptr, int value)
 {
   UserDef *userdef = (UserDef *)ptr->data;
 
