@@ -223,7 +223,7 @@ static void api_inheritance_next_level_restart(CollectionPropertyIterator *iter,
                                                IteratorSkipFunc skip,
                                                int funcs)
 {
-  /* RNA struct inheritance */
+  /* Api struct inheritance */
   while (!iter->valid && iter->level > 0) {
     ApiStruct *srna;
     int i;
@@ -249,14 +249,14 @@ static void api_inheritance_props_list_begin(CollectionPropIter *iter,
                                              List *lb,
                                              IterSkipFn skip)
 {
-  api_iterator_list_begin(iter, lb, skip);
+  api_iter_list_begin(iter, lb, skip);
   api_inheritance_next_level_restart(iter, skip, 0);
 }
 
 static void api_inheritance_props_list_next(CollectionPropIter *iter,
                                             IterSkipFn skip)
 {
-  api_iterator_list_next(iter);
+  api_iter_list_next(iter);
   api_inheritance_next_level_restart(iter, skip, 0);
 }
 
@@ -264,7 +264,7 @@ static void api_inheritance_fns_list_begin(CollectionPropIter *iter,
                                            List *lb,
                                            IterSkipFn skip)
 {
-  api_iterator_list_begin(iter, lb, skip);
+  api_iter_list_begin(iter, lb, skip);
   api_inheritance_next_level_restart(iter, skip, 1);
 }
 
@@ -499,29 +499,29 @@ static void api_Prop_description_get(ApiPtr *ptr, char *value)
   const char *description = api_prop_ui_description_raw(prop);
   strcpy(value, description ? description : "");
 }
-static int rna_Property_description_length(PointerRNA *ptr)
+static int api_prop_description_length(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  const char *description = RNA_property_ui_description_raw(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  const char *description = api_prop_ui_description_raw(prop);
   return description ? strlen(description) : 0;
 }
 
-static void rna_Property_translation_context_get(PointerRNA *ptr, char *value)
+static void api_prop_translation_context_get(PointerRNA *ptr, char *value)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  strcpy(value, RNA_property_translation_context(prop));
+  ApiProp *prop = (ApiProp *)ptr->data;
+  strcpy(value, api_prop_translation_context(prop));
 }
 
-static int rna_Property_translation_context_length(PointerRNA *ptr)
+static int api_prop_translation_ctx_length(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return strlen(RNA_property_translation_context(prop));
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return strlen(api_prop_translation_ctx(prop));
 }
 
-static int rna_Property_type_get(ApiPtr *ptr)
+static int api_prop_type_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (ApiProp *)ptr->data;
-  return RNA_property_type(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return api_prop_type(prop);
 }
 
 static int api_prop_subtype_get(ApiPtr *ptr)
@@ -530,17 +530,17 @@ static int api_prop_subtype_get(ApiPtr *ptr)
   return api_prop_subtype(prop);
 }
 
-static PointerRNA rna_Property_srna_get(PointerRNA *ptr)
+static ApiPtr api_prop_srna_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  prop = rna_ensure_property(prop);
-  return rna_pointer_inherit_refine(ptr, &RNA_Struct, prop->srna);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  prop = api_ensure_prop(prop);
+  return api_ptr_inherit_refine(ptr, &ApiStruct, prop->srna);
 }
 
-static int rna_Property_unit_get(PointerRNA *ptr)
+static int api_prop_unit_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return RNA_property_unit(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return api_prop_unit(prop);
 }
 
 static int rna_Property_icon_get(PointerRNA *ptr)
