@@ -793,19 +793,19 @@ static const EnumPropertyItem *rna_userdef_audio_device_itemf(bContext *UNUSED(C
 }
 
 #  ifdef WITH_INTERNATIONAL
-static const EnumPropertyItem *rna_lang_enum_properties_itemf(bContext *UNUSED(C),
-                                                              PointerRNA *UNUSED(ptr),
-                                                              PropertyRNA *UNUSED(prop),
-                                                              bool *UNUSED(r_free))
+static const EnumPropItem *api_lang_enum_properties_itemf(Ctx *UNUSED(C),
+                                                          ApiPtr *UNUSED(ptr),
+                                                          ApiProp *UNUSED(prop),
+                                                          bool *UNUSED(r_free))
 {
-  const EnumPropertyItem *items = BLT_lang_RNA_enum_properties();
+  const EnumPropItem *items = lang_api_enum_prop();
   if (items == NULL) {
-    items = rna_enum_language_default_items;
+    items = api_enum_language_default_items;
   }
   return items;
 }
 #  else
-static int rna_lang_enum_properties_get_no_international(PointerRNA *UNUSED(ptr))
+static int api_lang_enum_props_get_no_international(ApiPtr *UNUSED(ptr))
 {
   /* This simply prevents warnings when accessing language
    * (since the actual value wont be in the enum, unless already `DEFAULT`). */
@@ -813,9 +813,9 @@ static int rna_lang_enum_properties_get_no_international(PointerRNA *UNUSED(ptr)
 }
 #  endif
 
-static IDProperty **rna_AddonPref_idprops(PointerRNA *ptr)
+static IdProp **api_AddonPref_idprops(ApiPtr *ptr)
 {
-  return (IDProperty **)&ptr->data;
+  return (IdProp **)&ptr->data;
 }
 
 static PointerRNA rna_Addon_preferences_get(PointerRNA *ptr)
