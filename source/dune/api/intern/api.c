@@ -6,35 +6,31 @@
 
 #include "lib_utildefines.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 /* -------------------------------------------------------------------- */
-/** \name Generic Enum's
- * \{ */
+/** Generic Enum's **/
 
 /* Reuse for dynamic types. */
-const EnumPropertyItem DummyRNA_NULL_items[] = {
+const EnumPropItem DummyApi_NULL_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
 /* Reuse for dynamic types with default value */
-const EnumPropertyItem DummyRNA_DEFAULT_items[] = {
+const EnumPropItem DummyApi_DEFAULT_items[] = {
     {0, "DEFAULT", 0, "Default", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name RNA Enum's
- * \{ */
+/** Api Enum's **/
 
-const EnumPropertyItem rna_enum_property_type_items[] = {
-    {PROP_BOOLEAN, "BOOLEAN", 0, "Boolean", ""},
+const EnumPropItem rna_enum_property_type_items[] = {
+    {PROP_BOOL, "BOOL", 0, "Boolean", ""},
     {PROP_INT, "INT", 0, "Integer", ""},
     {PROP_FLOAT, "FLOAT", 0, "Float", ""},
     {PROP_STRING, "STRING", 0, "String", ""},
