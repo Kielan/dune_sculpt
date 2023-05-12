@@ -957,45 +957,45 @@ static void api_StudioLights_remove(UserDef *UNUSED(userdef), StudioLight *studi
   dune_studiolight_remove(studio_light);
 }
 
-static StudioLight *rna_StudioLights_load(UserDef *UNUSED(userdef), const char *filepath, int type)
+static StudioLight *api_StudioLights_load(UserDef *UNUSED(userdef), const char *filepath, int type)
 {
-  return BKE_studiolight_load(filepath, type);
+  return dune_studiolight_load(filepath, type);
 }
 
 /* TODO: Make it accept arguments. */
-static StudioLight *rna_StudioLights_new(UserDef *userdef, const char *filepath)
+static StudioLight *api_StudioLights_new(UserDef *userdef, const char *filepath)
 {
-  return BKE_studiolight_create(filepath, userdef->light_param, userdef->light_ambient);
+  return dune_studiolight_create(filepath, userdef->light_param, userdef->light_ambient);
 }
 
 /* StudioLight.name */
-static void rna_UserDef_studiolight_name_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_name_get(PointerRNA *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   strcpy(value, sl->name);
 }
 
-static int rna_UserDef_studiolight_name_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_name_length(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return strlen(sl->name);
 }
 
 /* StudioLight.path */
-static void rna_UserDef_studiolight_path_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_path_get(PointerRNA *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   strcpy(value, sl->filepath);
 }
 
-static int rna_UserDef_studiolight_path_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_path_length(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return strlen(sl->filepath);
 }
 
 /* StudioLight.path_irr_cache */
-static void rna_UserDef_studiolight_path_irr_cache_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_path_irr_cache_get(PointerRNA *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_irr_cache) {
@@ -1006,7 +1006,7 @@ static void rna_UserDef_studiolight_path_irr_cache_get(PointerRNA *ptr, char *va
   }
 }
 
-static int rna_UserDef_studiolight_path_irr_cache_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_path_irr_cache_length(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_irr_cache) {
@@ -1016,7 +1016,7 @@ static int rna_UserDef_studiolight_path_irr_cache_length(PointerRNA *ptr)
 }
 
 /* StudioLight.path_sh_cache */
-static void rna_UserDef_studiolight_path_sh_cache_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_path_sh_cache_get(PointerRNA *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_sh_cache) {
@@ -1027,7 +1027,7 @@ static void rna_UserDef_studiolight_path_sh_cache_get(PointerRNA *ptr, char *val
   }
 }
 
-static int rna_UserDef_studiolight_path_sh_cache_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_path_sh_cache_length(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_sh_cache) {
@@ -1037,21 +1037,21 @@ static int rna_UserDef_studiolight_path_sh_cache_length(PointerRNA *ptr)
 }
 
 /* StudioLight.index */
-static int rna_UserDef_studiolight_index_get(PointerRNA *ptr)
+static int api_UserDef_studiolight_index_get(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return sl->index;
 }
 
 /* StudioLight.is_user_defined */
-static bool rna_UserDef_studiolight_is_user_defined_get(PointerRNA *ptr)
+static bool api_UserDef_studiolight_is_user_defined_get(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return (sl->flag & STUDIOLIGHT_USER_DEFINED) != 0;
 }
 
 /* StudioLight.is_user_defined */
-static bool rna_UserDef_studiolight_has_specular_highlight_pass_get(PointerRNA *ptr)
+static bool api_UserDef_studiolight_has_specular_highlight_pass_get(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return sl->flag & STUDIOLIGHT_SPECULAR_HIGHLIGHT_PASS;
@@ -1059,13 +1059,13 @@ static bool rna_UserDef_studiolight_has_specular_highlight_pass_get(PointerRNA *
 
 /* StudioLight.type */
 
-static int rna_UserDef_studiolight_type_get(PointerRNA *ptr)
+static int api_UserDef_studiolight_type_get(PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return sl->flag & STUDIOLIGHT_FLAG_ORIENTATIONS;
 }
 
-static void rna_UserDef_studiolight_spherical_harmonics_coefficients_get(PointerRNA *ptr,
+static void api_UserDef_studiolight_spherical_harmonics_coefficients_get(PointerRNA *ptr,
                                                                          float *values)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
@@ -1078,7 +1078,7 @@ static void rna_UserDef_studiolight_spherical_harmonics_coefficients_get(Pointer
 
 /* StudioLight.solid_lights */
 
-static void rna_UserDef_studiolight_solid_lights_begin(CollectionPropertyIterator *iter,
+static void api_UserDef_studiolight_solid_lights_begin(CollectionPropertyIterator *iter,
                                                        PointerRNA *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
