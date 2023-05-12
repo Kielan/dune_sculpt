@@ -545,8 +545,8 @@ static int api_prop_unit_get(ApiPtr *ptr)
 
 static int rna_Property_icon_get(PointerRNA *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return RNA_property_ui_icon(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return api_prop_ui_icon(prop);
 }
 
 static bool rna_Property_readonly_get(PointerRNA *ptr)
