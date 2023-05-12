@@ -169,23 +169,23 @@ static ApiPtr api_Struct_base_get(ApiPtr *ptr)
 
 static ApiPtr api_Struct_nested_get(ApiPtr *ptr)
 {
-  return api_pointer_inherit_refine(ptr, &RNA_Struct, ((StructRNA *)ptr->data)->nested);
+  return api_ptr_inherit_refine(ptr, &ApiStruct, ((ApiStruct *)ptr->data)->nested);
 }
 
-static PointerRNA rna_Struct_name_property_get(PointerRNA *ptr)
+static ApiPtr api_Struct_name_prop_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_Property, ((StructRNA *)ptr->data)->nameproperty);
+  return api_ptr_inherit_refine(ptr, &ApiProp, ((StructRNA *)ptr->data)->nameproperty);
 }
 
 /* Struct property iteration. This is quite complicated, the purpose is to
  * iterate over properties of all inheritance levels, and for each struct to
  * also iterator over id properties not known by RNA. */
 
-static int rna_idproperty_known(CollectionPropertyIterator *iter, void *data)
+static int api_idprop_known(CollectionPropIter *iter, void *data)
 {
-  IDProperty *idprop = (IDProperty *)data;
-  PropertyRNA *prop;
-  StructRNA *ptype = iter->builtin_parent.type;
+  IdProp *idprop = (IdProp *)data;
+  ApiProp *prop;
+  ApiStruct *ptype = iter->builtin_parent.type;
 
   /* function to skip any id properties that are already known by RNA,
    * for the second loop where we go over unknown id properties */
@@ -201,88 +201,88 @@ static int rna_idproperty_known(CollectionPropertyIterator *iter, void *data)
   return 0;
 }
 
-static int rna_property_builtin(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_prop_builtin(CollectionPropertyIterator *UNUSED(iter), void *data)
 {
-  PropertyRNA *prop = (PropertyRNA *)data;
+  ApiProp *prop = (ApiProp *)data;
 
   /* function to skip builtin rna properties */
 
   return (prop->flag_internal & PROP_INTERN_BUILTIN);
 }
 
-static int rna_function_builtin(CollectionPropertyIterator *UNUSED(iter), void *data)
+static int api_fn_builtin(CollectionPropIter *UNUSED(iter), void *data)
 {
-  FunctionRNA *func = (FunctionRNA *)data;
+  ApiFn *fn = (ApiFn *)data;
 
   /* function to skip builtin rna functions */
 
-  return (func->flag & FUNC_BUILTIN);
+  return (fn->flag & FN_BUILTIN);
 }
 
-static void rna_inheritance_next_level_restart(CollectionPropertyIterator *iter,
+static void api_inheritance_next_level_restart(CollectionPropertyIterator *iter,
                                                IteratorSkipFunc skip,
                                                int funcs)
 {
   /* RNA struct inheritance */
   while (!iter->valid && iter->level > 0) {
-    StructRNA *srna;
+    ApiStruct *srna;
     int i;
 
-    srna = (StructRNA *)iter->parent.data;
+    srna = (ApiStruct *)iter->parent.data;
     iter->level--;
     for (i = iter->level; i > 0; i--) {
       srna = srna->base;
     }
 
-    rna_iterator_listbase_end(iter);
+    api_iter_list_end(iter);
 
-    if (funcs) {
-      rna_iterator_listbase_begin(iter, &srna->functions, skip);
+    if (fns) {
+      api_iter_list_begin(iter, &srna->fns, skip);
     }
     else {
-      rna_iterator_listbase_begin(iter, &srna->cont.properties, skip);
+      api_iter_list_begin(iter, &srna->cont.props, skip);
     }
   }
 }
 
-static void rna_inheritance_properties_listbase_begin(CollectionPropertyIterator *iter,
-                                                      ListBase *lb,
-                                                      IteratorSkipFunc skip)
+static void api_inheritance_props_list_begin(CollectionPropIter *iter,
+                                             List *lb,
+                                             IterSkipFn skip)
 {
-  rna_iterator_listbase_begin(iter, lb, skip);
-  rna_inheritance_next_level_restart(iter, skip, 0);
+  api_iterator_list_begin(iter, lb, skip);
+  api_inheritance_next_level_restart(iter, skip, 0);
 }
 
-static void rna_inheritance_properties_listbase_next(CollectionPropertyIterator *iter,
-                                                     IteratorSkipFunc skip)
+static void api_inheritance_props_list_next(CollectionPropIter *iter,
+                                            IterSkipFn skip)
 {
-  rna_iterator_listbase_next(iter);
-  rna_inheritance_next_level_restart(iter, skip, 0);
+  api_iterator_list_next(iter);
+  api_inheritance_next_level_restart(iter, skip, 0);
 }
 
-static void rna_inheritance_functions_listbase_begin(CollectionPropertyIterator *iter,
-                                                     ListBase *lb,
-                                                     IteratorSkipFunc skip)
+static void api_inheritance_fns_list_begin(CollectionPropIter *iter,
+                                           List *lb,
+                                           IterSkipFn skip)
 {
-  rna_iterator_listbase_begin(iter, lb, skip);
-  rna_inheritance_next_level_restart(iter, skip, 1);
+  api_iterator_list_begin(iter, lb, skip);
+  api_inheritance_next_level_restart(iter, skip, 1);
 }
 
-static void rna_inheritance_functions_listbase_next(CollectionPropertyIterator *iter,
-                                                    IteratorSkipFunc skip)
+static void api_inheritance_fns_list_next(CollectionPropIter *iter,
+                                          IterSkipFn skip)
 {
-  rna_iterator_listbase_next(iter);
-  rna_inheritance_next_level_restart(iter, skip, 1);
+  api_iter_list_next(iter);
+  api_inheritance_next_level_restart(iter, skip, 1);
 }
 
-static void rna_Struct_properties_next(CollectionPropertyIterator *iter)
+static void api_Struct_props_next(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
-  IDProperty *group;
+  ListIter *internal = &iter->internal.list;
+  IdProp *group;
 
   if (internal->flag) {
     /* id properties */
-    rna_iterator_listbase_next(iter);
+    api_iter_list_next(iter);
   }
   else {
     /* regular properties */
