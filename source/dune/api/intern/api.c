@@ -467,7 +467,7 @@ static ApiStruct *api_Prop_refine(ApiPtr *ptr)
   }
 }
 
-static void api_Prop_id_get(ApiPtr *ptr, char *value)
+static void api_prop_id_get(ApiPtr *ptr, char *value)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   strcpy(value, api_prop_id(prop));
@@ -481,22 +481,22 @@ static int api_prop_id_length(ApiPtr *ptr)
 
 static void api_prop_name_get(ApiPtr *ptr, char *value)
 {
-  ApiProp *prop = (PropertyRNA *)ptr->data;
-  const char *name = RNA_property_ui_name_raw(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  const char *name = api_prop_ui_name_raw(prop);
   strcpy(value, name ? name : "");
 }
 
-static int rna_Property_name_length(PointerRNA *ptr)
+static int api_prop_name_length(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  const char *name = RNA_property_ui_name_raw(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  const char *name = api_prop_ui_name_raw(prop);
   return name ? strlen(name) : 0;
 }
 
-static void rna_Property_description_get(PointerRNA *ptr, char *value)
+static void api_Prop_description_get(ApiPtr *ptr, char *value)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  const char *description = RNA_property_ui_description_raw(prop);
+  ApiProp *prop = (ApiProp *)ptr->data;
+  const char *description = api_prop_ui_description_raw(prop);
   strcpy(value, description ? description : "");
 }
 static int rna_Property_description_length(PointerRNA *ptr)
