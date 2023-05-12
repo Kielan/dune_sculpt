@@ -286,38 +286,38 @@ static void api_Struct_props_next(CollectionPropIter *iter)
   }
   else {
     /* regular properties */
-    rna_inheritance_properties_listbase_next(iter, rna_property_builtin);
+    api_inheritance_props_list_next(iter, api_prop_builtin);
 
     /* try id properties */
     if (!iter->valid) {
-      group = RNA_struct_idprops(&iter->builtin_parent, 0);
+      group = api_struct_idprops(&iter->builtin_parent, 0);
 
       if (group) {
-        rna_iterator_listbase_end(iter);
-        rna_iterator_listbase_begin(iter, &group->data.group, rna_idproperty_known);
-        internal = &iter->internal.listbase;
+        api_iter_list_end(iter);
+        api_iter_list_begin(iter, &group->data.group, rna_idproperty_known);
+        internal = &iter->internal.list;
         internal->flag = 1;
       }
     }
   }
 }
 
-static void rna_Struct_properties_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Struct_props_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  StructRNA *srna;
+  ApiStruct *srna;
 
   /* here ptr->data should always be the same as iter->parent.type */
-  srna = (StructRNA *)ptr->data;
+  srna = (ApiStruct *)ptr->data;
 
   while (srna->base) {
     iter->level++;
     srna = srna->base;
   }
 
-  rna_inheritance_properties_listbase_begin(iter, &srna->cont.properties, rna_property_builtin);
+  api_inheritance_props_list_begin(iter, &srna->cont.props, api_prop_builtin);
 }
 
-static PointerRNA rna_Struct_properties_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Struct_props_get(CollectionPropIter *iter)
 {
   ListBaseIterator *internal = &iter->internal.listbase;
 
@@ -343,19 +343,19 @@ static void rna_Struct_functions_begin(CollectionPropertyIterator *iter, Pointer
     srna = srna->base;
   }
 
-  rna_inheritance_functions_listbase_begin(iter, &srna->functions, rna_function_builtin);
+  rna_inheritance_fns_list_begin(iter, &srna->fns, api_fn_builtin);
 }
 
-static PointerRNA rna_Struct_functions_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Struct_fns_get(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.list;
 
   /* we return either PropertyRNA* or IDProperty*, the rna_access.c
    * functions can handle both as PropertyRNA* with some tricks */
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Function, internal->link);
+  return api_ptr_inherit_refine(&iter->parent, &ApiFn, internal->link);
 }
 
-static void rna_Struct_property_tags_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Struct_prop_tags_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   /* here ptr->data should always be the same as iter->parent.type */
   StructRNA *srna = (StructRNA *)ptr->data;
