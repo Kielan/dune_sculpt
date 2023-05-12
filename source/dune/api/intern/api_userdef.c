@@ -406,8 +406,8 @@ static void api_userdef_anisotropic_update(Main *main, Scene *scene, PointerRNA 
 
 static void a_userdef_gl_texture_limit_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  BKE_image_free_all_gputextures(bmain);
-  rna_userdef_update(bmain, scene, ptr);
+  dune_image_free_all_gputextures(main);
+  api_userdef_update(main, scene, ptr);
 }
 
 static void api_userdef_undo_steps_set(ApiPtr *ptr, int value)
@@ -418,7 +418,7 @@ static void api_userdef_undo_steps_set(ApiPtr *ptr, int value)
   userdef->undosteps = (value == 1) ? 2 : value;
 }
 
-static int rna_userdef_autokeymode_get(PointerRNA *ptr)
+static int api_userdef_autokeymode_get(ApiPtr *ptr)
 {
   UserDef *userdef = (UserDef *)ptr->data;
   short retval = userdef->autokey_mode;
@@ -430,7 +430,7 @@ static int rna_userdef_autokeymode_get(PointerRNA *ptr)
   return retval;
 }
 
-static void rna_userdef_autokeymode_set(PointerRNA *ptr, int value)
+static void api_userdef_autokeymode_set(ApiPtr *ptr, int value)
 {
   UserDef *userdef = (UserDef *)ptr->data;
 
