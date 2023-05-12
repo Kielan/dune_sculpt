@@ -1,28 +1,28 @@
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "DNA_space_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_windowmanager_types.h"
-#include "DNA_xr_types.h"
+#include "types_space_types.h"
+#include "types_view3d_types.h"
+#include "types_windowmanager_types.h"
+#include "typee_xr_types.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_listbase.h"
+#  include "lib_list.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
 /* -------------------------------------------------------------------- */
 
 #  ifdef WITH_XR_OPENXR
-static wmXrData *rna_XrSession_wm_xr_data_get(PointerRNA *ptr)
+static wmXrData *api_XrSession_wm_xr_data_get(PointerRNA *ptr)
 {
   /* Callers could also get XrSessionState pointer through ptr->data, but prefer if we just
    * consistently pass wmXrData pointers to the WM_xr_xxx() API. */
