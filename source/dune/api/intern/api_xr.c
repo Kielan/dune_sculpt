@@ -22,30 +22,29 @@
 /* -------------------------------------------------------------------- */
 
 #  ifdef WITH_XR_OPENXR
-static wmXrData *api_XrSession_wm_xr_data_get(PointerRNA *ptr)
+static wmXrData *api_XrSession_wm_xr_data_get(ApiPtr *ptr)
 {
   /* Callers could also get XrSessionState pointer through ptr->data, but prefer if we just
-   * consistently pass wmXrData pointers to the WM_xr_xxx() API. */
+   * consistently pass wmXrData pointers to the wm_xr_xxx() API. */
 
-  BLI_assert(ELEM(ptr->type, &RNA_XrSessionSettings, &RNA_XrSessionState));
+  lib_assert(ELEM(ptr->type, &RNA_XrSessionSettings, &api_XrSessionState));
 
   wmWindowManager *wm = (wmWindowManager *)ptr->owner_id;
-  BLI_assert(wm && (GS(wm->id.name) == ID_WM));
+  lib_assert(wm && (GS(wm->id.name) == ID_WM));
 
   return &wm->xr;
 }
 #  endif
 
 /* -------------------------------------------------------------------- */
-/** \name XR Action Map
- * \{ */
+/** XR Action Map **/
 
-static XrComponentPath *rna_XrComponentPath_new(XrActionMapBinding *amb, const char *path_str)
+static XrComponentPath *api_XrComponentPath_new(XrActionMapBinding *amb, const char *path_str)
 {
 #  ifdef WITH_XR_OPENXR
-  XrComponentPath *component_path = MEM_callocN(sizeof(XrComponentPath), __func__);
+  XrComponentPath *component_path = mem_callocn(sizeof(XrComponentPath), __func__);
   STRNCPY(component_path->path, path_str);
-  BLI_addtail(&amb->component_paths, component_path);
+  lib_addtail(&amb->component_paths, component_path);
   return component_path;
 #  else
   UNUSED_VARS(amb, path_str);
@@ -53,15 +52,15 @@ static XrComponentPath *rna_XrComponentPath_new(XrActionMapBinding *amb, const c
 #  endif
 }
 
-static void rna_XrComponentPath_remove(XrActionMapBinding *amb, PointerRNA *component_path_ptr)
+static void api_XrComponentPath_remove(XrActionMapBinding *amb, PointerRNA *component_path_ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrComponentPath *component_path = component_path_ptr->data;
-  int idx = BLI_findindex(&amb->component_paths, component_path);
+  int idx = lib_findindex(&amb->component_paths, component_path);
   if (idx != -1) {
-    BLI_freelinkN(&amb->component_paths, component_path);
+    lib_freelinkn(&amb->component_paths, component_path);
   }
-  RNA_POINTER_INVALIDATE(component_path_ptr);
+  API_PTR_INVALIDATE(component_path_ptr);
 #  else
   UNUSED_VARS(amb, component_path_ptr);
 #  endif
