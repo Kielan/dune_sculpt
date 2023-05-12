@@ -401,20 +401,20 @@ PointerRNA rna_builtin_properties_get(CollectionPropertyIterator *iter)
   return rna_Struct_properties_get(iter);
 }
 
-int rna_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr)
+int api_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  PointerRNA propptr = {NULL};
+  ApiStruct *srna;
+  ApiProp *prop;
+  ApiPtr propptr = {NULL};
 
   srna = ptr->type;
 
   do {
     if (srna->cont.prophash) {
-      prop = BLI_ghash_lookup(srna->cont.prophash, (void *)key);
+      prop = lib_ghash_lookup(srna->cont.prophash, (void *)key);
 
       if (prop) {
-        propptr.type = &RNA_Property;
+        propptr.type = &ApiProp;
         propptr.data = prop;
 
         *r_ptr = propptr;
@@ -424,7 +424,7 @@ int rna_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, Point
     else {
       for (prop = srna->cont.properties.first; prop; prop = prop->next) {
         if (!(prop->flag_internal & PROP_INTERN_BUILTIN) && STREQ(prop->identifier, key)) {
-          propptr.type = &RNA_Property;
+          propptr.type = &ApiProp;
           propptr.data = prop;
 
           *r_ptr = propptr;
@@ -436,14 +436,14 @@ int rna_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, Point
   return false;
 }
 
-PointerRNA rna_builtin_type_get(PointerRNA *ptr)
+ApiPtr api_builtin_type_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_Struct, ptr->type);
+  return api_ptr_inherit_refine(ptr, &ApiStruct, ptr->type);
 }
 
 /* Property */
 
-static StructRNA *rna_Property_refine(PointerRNA *ptr)
+static ApiStruct *api_Prop_refine(ApiPtr *ptr)
 {
   PropertyRNA *prop = (PropertyRNA *)ptr->data;
 
