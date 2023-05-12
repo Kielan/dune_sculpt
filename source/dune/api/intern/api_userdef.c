@@ -738,17 +738,17 @@ static void rna_userdef_text_update(Main *UNUSED(bmain),
   USERDEF_TAG_DIRTY;
 }
 
-static PointerRNA rna_Theme_space_generic_get(PointerRNA *ptr)
+static ApiPtr api_Theme_space_generic_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_ThemeSpaceGeneric, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiThemeSpaceGeneric, ptr->data);
 }
 
-static PointerRNA rna_Theme_gradient_colors_get(PointerRNA *ptr)
+static ApiPtr api_Theme_gradient_colors_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_ThemeGradientColors, ptr->data);
+  return api_ptr_inherit_refine(ptr, &RNA_ThemeGradientColors, ptr->data);
 }
 
-static PointerRNA rna_Theme_space_gradient_get(PointerRNA *ptr)
+static ApiPtr api_Theme_space_gradient_get(PointerRNA *ptr)
 {
   return rna_pointer_inherit_refine(ptr, &RNA_ThemeSpaceGradient, ptr->data);
 }
