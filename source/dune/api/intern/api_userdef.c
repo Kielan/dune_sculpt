@@ -526,8 +526,8 @@ static int api_UserDef_mouse_emulate_3_btn_mod_get(ApiPtr *ptr)
 #  endif
 }
 
-static const EnumPropertyItem *rna_UseDef_active_section_itemf(bContext *UNUSED(C),
-                                                               PointerRNA *ptr,
+static const EnumPropItem *api_UseDef_active_section_itemf(Ctx *UNUSED(C),
+                                                           ApiPtr *ptr,
                                                                PropertyRNA *UNUSED(prop),
                                                                bool *r_free)
 {
