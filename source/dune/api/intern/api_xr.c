@@ -1,9 +1,9 @@
 #include "lib_math.h"
 
-#include "types_space_types.h"
-#include "types_view3d_types.h"
-#include "types_windowmanager_types.h"
-#include "typee_xr_types.h"
+#include "types_space.h"
+#include "types_view3d.h"
+#include "types_windowmanager.h"
+#include "typee_xr.h"
 
 #include "api_access.h"
 #include "api_define.h"
