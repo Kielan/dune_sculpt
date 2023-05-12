@@ -319,21 +319,21 @@ static void api_Struct_props_begin(CollectionPropIter *iter, ApiPtr *ptr)
 
 static ApiPtr api_Struct_props_get(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.list;
 
   /* we return either PropertyRNA* or IDProperty*, the rna_access.c
    * functions can handle both as PropertyRNA* with some tricks */
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Property, internal->link);
+  return api_ptr_inherit_refine(&iter->parent, &ApiProp, internal->link);
 }
 
-static void rna_Struct_functions_next(CollectionPropertyIterator *iter)
+static void api_Struct_fns_next(CollectionPropIter *iter)
 {
-  rna_inheritance_functions_listbase_next(iter, rna_function_builtin);
+  api_inheritance_fns_list_next(iter, api_fn_builtin);
 }
 
-static void rna_Struct_functions_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Struct_fns_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  StructRNA *srna;
+  ApiStruct *srna;
 
   /* here ptr->data should always be the same as iter->parent.type */
   srna = (StructRNA *)ptr->data;
@@ -358,11 +358,11 @@ static ApiPtr api_Struct_fns_get(CollectionPropIter *iter)
 static void api_Struct_prop_tags_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   /* here ptr->data should always be the same as iter->parent.type */
-  StructRNA *srna = (StructRNA *)ptr->data;
-  const EnumPropertyItem *tag_defines = RNA_struct_property_tag_defines(srna);
-  unsigned int tag_count = tag_defines ? RNA_enum_items_count(tag_defines) : 0;
+  ApiStruct *srna = (ApiStruct *)ptr->data;
+  const EnumPropItem *tag_defines = api_struct_property_tag_defines(srna);
+  unsigned int tag_count = tag_defines ? api_enum_items_count(tag_defines) : 0;
 
-  rna_iterator_array_begin(
+  api_iterator_array_begin(
       iter, (void *)tag_defines, sizeof(EnumPropertyItem), tag_count, 0, NULL);
 }
 
@@ -370,12 +370,12 @@ static void api_Struct_prop_tags_begin(CollectionPropIter *iter, ApiPtr *ptr)
  * difference is that we need to set the ptr data to the type of the struct
  * whose properties we want to iterate over. */
 
-void rna_builtin_properties_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+void api_builtin_props_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
-  PointerRNA newptr;
+  ApiPtr newptr;
 
   /* we create a new pointer with the type as the data */
-  newptr.type = &RNA_Struct;
+  newptr.type = &ApiStruct;
   newptr.data = ptr->type;
 
   if (ptr->type->flag & STRUCT_ID) {
@@ -388,20 +388,20 @@ void rna_builtin_properties_begin(CollectionPropertyIterator *iter, PointerRNA *
   iter->parent = newptr;
   iter->builtin_parent = *ptr;
 
-  rna_Struct_properties_begin(iter, &newptr);
+  api_Struct_props_begin(iter, &newptr);
 }
 
-void rna_builtin_properties_next(CollectionPropertyIterator *iter)
+void api_builtin_props_next(CollectionPropIter *iter)
 {
-  rna_Struct_properties_next(iter);
+  api_Struct_props_next(iter);
 }
 
-PointerRNA rna_builtin_properties_get(CollectionPropertyIterator *iter)
+ApiPtr api_builtin_props_get(CollectionPropIter *iter)
 {
-  return rna_Struct_properties_get(iter);
+  return api_Struct_props_get(iter);
 }
 
-int api_builtin_properties_lookup_string(PointerRNA *ptr, const char *key, PointerRNA *r_ptr)
+int api_builtin_props_lookup_string(ApiPtr *ptr, const char *key, PointerRNA *r_ptr)
 {
   ApiStruct *srna;
   ApiProp *prop;
@@ -445,43 +445,43 @@ ApiPtr api_builtin_type_get(ApiPtr *ptr)
 
 static ApiStruct *api_Prop_refine(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (PropertyRNA *)ptr->data;
 
-  switch (RNA_property_type(prop)) {
-    case PROP_BOOLEAN:
-      return &RNA_BoolProperty;
+  switch (api_prop_type(prop)) {
+    case PROP_BOOL:
+      return &ApiBoolProp;
     case PROP_INT:
-      return &RNA_IntProperty;
+      return &ApiIntProp;
     case PROP_FLOAT:
-      return &RNA_FloatProperty;
+      return &ApiFloatProp;
     case PROP_STRING:
-      return &RNA_StringProperty;
+      return &ApiStringProp;
     case PROP_ENUM:
-      return &RNA_EnumProperty;
-    case PROP_POINTER:
-      return &RNA_PointerProperty;
+      return &ApiEnumProp;
+    case PROP_PTR:
+      return &ApiPtrProp;
     case PROP_COLLECTION:
-      return &RNA_CollectionProperty;
+      return &ApiCollectionProp;
     default:
-      return &RNA_Property;
+      return &ApiProp;
   }
 }
 
-static void rna_Property_identifier_get(PointerRNA *ptr, char *value)
+static void api_Prop_id_get(ApiPtr *ptr, char *value)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  strcpy(value, RNA_property_identifier(prop));
+  ApiProp *prop = (ApiProp *)ptr->data;
+  strcpy(value, api_prop_id(prop));
 }
 
-static int rna_Property_identifier_length(PointerRNA *ptr)
+static int api_prop_id_length(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return strlen(RNA_property_identifier(prop));
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return strlen(api_prop_id(prop));
 }
 
-static void rna_Property_name_get(PointerRNA *ptr, char *value)
+static void api_prop_name_get(ApiPtr *ptr, char *value)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (PropertyRNA *)ptr->data;
   const char *name = RNA_property_ui_name_raw(prop);
   strcpy(value, name ? name : "");
 }
