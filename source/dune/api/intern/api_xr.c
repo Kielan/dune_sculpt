@@ -315,24 +315,24 @@ static void rna_XrActionMapItem_user_paths_begin(CollectionPropertyIterator *ite
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = (XrActionMapItem *)ptr->data;
-  rna_iterator_listbase_begin(iter, &ami->user_paths, NULL);
+  api_iter_list_begin(iter, &ami->user_paths, NULL);
 #  else
   UNUSED_VARS(iter, ptr);
 #  endif
 }
 
-static int rna_XrActionMapItem_user_paths_length(PointerRNA *ptr)
+static int api_XrActionMapItem_user_paths_length(PointerRNA *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = (XrActionMapItem *)ptr->data;
-  return BLI_listbase_count(&ami->user_paths);
+  return lib_list_count(&ami->user_paths);
 #  else
   UNUSED_VARS(ptr);
   return 0;
 #  endif
 }
 
-static void rna_XrActionMapItem_op_name_get(PointerRNA *ptr, char *value)
+static void api_XrActionMapItem_op_name_get(PointerRNA *ptr, char *value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
