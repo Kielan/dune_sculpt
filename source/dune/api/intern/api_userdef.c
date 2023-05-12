@@ -610,41 +610,41 @@ static void api_UserDef_audio_update(Main *main, Scene *UNUSED(scene), ApiPtr *U
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_Userdef_memcache_update(Main *UNUSED(bmain),
+static void api_Userdef_memcache_update(Main *UNUSED(main),
                                         Scene *UNUSED(scene),
-                                        PointerRNA *UNUSED(ptr))
+                                        ApiPtr *UNUSED(ptr))
 {
-  MEM_CacheLimiter_set_maximum(((size_t)U.memcachelimit) * 1024 * 1024);
+  mem_CacheLimiter_set_maximum(((size_t)U.memcachelimit) * 1024 * 1024);
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_Userdef_disk_cache_dir_update(Main *UNUSED(bmain),
+static void api_Userdef_disk_cache_dir_update(Main *UNUSED(bmain),
                                               Scene *UNUSED(scene),
                                               PointerRNA *UNUSED(ptr))
 {
   if (U.sequencer_disk_cache_dir[0] != '\0') {
-    BLI_path_abs(U.sequencer_disk_cache_dir, BKE_main_blendfile_path_from_global());
-    BLI_path_slash_ensure(U.sequencer_disk_cache_dir, sizeof(U.sequencer_disk_cache_dir));
-    BLI_path_make_safe(U.sequencer_disk_cache_dir);
+    lib_path_abs(U.sequencer_disk_cache_dir, BKE_main_blendfile_path_from_global());
+    lib_path_slash_ensure(U.sequencer_disk_cache_dir, sizeof(U.sequencer_disk_cache_dir));
+    lib_path_make_safe(U.sequencer_disk_cache_dir);
   }
 
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_UserDef_weight_color_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_UserDef_weight_color_update(Main *main, Scene *scene, PointerRNA *ptr)
 {
   Object *ob;
 
-  for (ob = bmain->objects.first; ob; ob = ob->id.next) {
+  for (ob = main->objects.first; ob; ob = ob->id.next) {
     if (ob->mode & OB_MODE_WEIGHT_PAINT) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
   }
 
-  rna_userdef_update(bmain, scene, ptr);
+  api_userdef_update(main, scene, ptr);
 }
 
-static void rna_UserDef_viewport_lights_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_UserDef_viewport_lights_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
   /* If all lights are off gpu_draw resets them all, see: #27627,
    * so disallow them all to be disabled. */
