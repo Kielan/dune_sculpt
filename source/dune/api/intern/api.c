@@ -362,7 +362,7 @@ static void api_Struct_prop_tags_begin(CollectionPropIter *iter, ApiPtr *ptr)
   const EnumPropItem *tag_defines = api_struct_property_tag_defines(srna);
   unsigned int tag_count = tag_defines ? api_enum_items_count(tag_defines) : 0;
 
-  api_iterator_array_begin(
+  api_iter_array_begin(
       iter, (void *)tag_defines, sizeof(EnumPropertyItem), tag_count, 0, NULL);
 }
 
@@ -543,15 +543,15 @@ static int api_prop_unit_get(ApiPtr *ptr)
   return api_prop_unit(prop);
 }
 
-static int rna_Property_icon_get(PointerRNA *ptr)
+static int api_prop_icon_get(ApiPtr *ptr)
 {
   ApiProp *prop = (ApiProp *)ptr->data;
   return api_prop_ui_icon(prop);
 }
 
-static bool rna_Property_readonly_get(PointerRNA *ptr)
+static bool api_prop_readonly_get(PointerRNA *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
 
   /* don't use this because it will call functions that check the internal
    * data for introspection we only need to know if it can be edited so the
@@ -560,27 +560,27 @@ static bool rna_Property_readonly_get(PointerRNA *ptr)
   return (prop->flag & PROP_EDITABLE) == 0;
 }
 
-static bool rna_Property_animatable_get(PointerRNA *ptr)
+static bool api_prop_animatable_get(PointerRNA *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (PropertyRNA *)ptr->data;
 
   return (prop->flag & PROP_ANIMATABLE) != 0;
 }
 
 static bool rna_Property_overridable_get(PointerRNA *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
 
-  IDProperty *idprop = rna_idproperty_check(&prop, ptr);
+  IdProp *idprop = api_idprop_check(&prop, ptr);
 
   return idprop != NULL ? (idprop->flag & IDP_FLAG_OVERRIDABLE_LIBRARY) != 0 :
                           (prop->flag_override & PROPOVERRIDE_OVERRIDABLE_LIBRARY) != 0;
 }
 
-static bool rna_Property_use_output_get(PointerRNA *ptr)
+static bool api_prop_use_output_get(ApiPotr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
-  return (prop->flag_parameter & PARM_OUTPUT) != 0;
+  ApiProp *prop = (ApiProp *)ptr->data;
+  return (prop->flag_param & PARM_OUTPUT) != 0;
 }
 
 static bool rna_Property_is_required_get(PointerRNA *ptr)
