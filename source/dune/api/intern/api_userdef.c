@@ -688,53 +688,53 @@ static Addon *api_userdef_addon_new(void)
 static void api_userdef_addon_remove(ReportList *reports, ApiPtr *addon_ptr)
 {
   List *addons_list = &U.addons;
-  bAddon *addon = addon_ptr->data;
-  if (BLI_findindex(addons_list, addon) == -1) {
-    BKE_report(reports, RPT_ERROR, "Add-on is no longer valid");
+  Addon *addon = addon_ptr->data;
+  if (lib_findindex(addons_list, addon) == -1) {
+    dune_report(reports, RPT_ERROR, "Add-on is no longer valid");
     return;
   }
-  BLI_remlink(addons_list, addon);
-  BKE_addon_free(addon);
-  RNA_POINTER_INVALIDATE(addon_ptr);
+  lib_remlink(addons_list, addon);
+  dune_addon_free(addon);
+  API_PTR_INVALIDATE(addon_ptr);
   USERDEF_TAG_DIRTY;
 }
 
-static bPathCompare *rna_userdef_pathcompare_new(void)
+static PathCompare *api_userdef_pathcompare_new(void)
 {
-  bPathCompare *path_cmp = MEM_callocN(sizeof(bPathCompare), "bPathCompare");
-  BLI_addtail(&U.autoexec_paths, path_cmp);
+  PathCompare *path_cmp = mem_callocn(sizeof(PathCompare), "PathCompare");
+  lib_addtail(&U.autoex_paths, path_cmp);
   USERDEF_TAG_DIRTY;
   return path_cmp;
 }
 
-static void rna_userdef_pathcompare_remove(ReportList *reports, PointerRNA *path_cmp_ptr)
+static void api_userdef_pathcompare_remove(ReportList *reports, ApiPointer *path_cmp_ptr)
 {
-  bPathCompare *path_cmp = path_cmp_ptr->data;
-  if (BLI_findindex(&U.autoexec_paths, path_cmp) == -1) {
-    BKE_report(reports, RPT_ERROR, "Excluded path is no longer valid");
+  PathCompare *path_cmp = path_cmp_ptr->data;
+  if (lib_findindex(&U.autoex_paths, path_cmp) == -1) {
+    dune_report(reports, RPT_ERROR, "Excluded path is no longer valid");
     return;
   }
 
-  BLI_freelinkN(&U.autoexec_paths, path_cmp);
-  RNA_POINTER_INVALIDATE(path_cmp_ptr);
+  lib_freelinkn(&U.autoex_paths, path_cmp);
+  API_PTR_INVALIDATE(path_cmp_ptr);
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_temp_update(Main *UNUSED(bmain),
+static void api_userdef_temp_update(Main *UNUSED(main),
                                     Scene *UNUSED(scene),
-                                    PointerRNA *UNUSED(ptr))
+                                    ApiPtr *UNUSED(ptr))
 {
-  BKE_tempdir_init(U.tempdir);
+  dune_tempdir_init(U.tempdir);
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_text_update(Main *UNUSED(bmain),
+static void api_userdef_text_update(Main *UNUSED(main),
                                     Scene *UNUSED(scene),
-                                    PointerRNA *UNUSED(ptr))
+                                    ApiPtr *UNUSED(ptr))
 {
   BLF_cache_clear();
-  UI_reinit_font();
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  ui_reinit_font();
+  wm_main_add_notifier(NC_WINDOW, NULL);
   USERDEF_TAG_DIRTY;
 }
 
@@ -745,48 +745,48 @@ static ApiPtr api_Theme_space_generic_get(ApiPtr *ptr)
 
 static ApiPtr api_Theme_gradient_colors_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_ThemeGradientColors, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiThemeGradientColors, ptr->data);
 }
 
-static ApiPtr api_Theme_space_gradient_get(PointerRNA *ptr)
+static ApiPtr api_Theme_space_gradient_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_ThemeSpaceGradient, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiThemeSpaceGradient, ptr->data);
 }
 
-static PointerRNA rna_Theme_space_list_generic_get(PointerRNA *ptr)
+static ApiPtr rna_Theme_space_list_generic_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_ThemeSpaceListGeneric, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiThemeSpaceListGeneric, ptr->data);
 }
 
-static const EnumPropertyItem *rna_userdef_audio_device_itemf(bContext *UNUSED(C),
-                                                              PointerRNA *UNUSED(ptr),
-                                                              PropertyRNA *UNUSED(prop),
-                                                              bool *r_free)
+static const EnumPropItem *api_userdef_audio_device_itemf(Ctx *UNUSED(C),
+                                                          ApiPtr *UNUSED(ptr),
+                                                          ApiProp *UNUSED(prop),
+                                                          bool *r_free)
 {
   int index = 0;
   int totitem = 0;
-  EnumPropertyItem *item = NULL;
+  EnumPropItem *item = NULL;
 
   int i;
 
-  char **names = BKE_sound_get_device_names();
+  char **names = dune_sound_get_device_names();
 
   for (i = 0; names[i]; i++) {
-    EnumPropertyItem new_item = {i, names[i], 0, names[i], names[i]};
-    RNA_enum_item_add(&item, &totitem, &new_item);
+    EnumPropItem new_item = {i, names[i], 0, names[i], names[i]};
+    api_enum_item_add(&item, &totitem, &new_item);
   }
 
 #  if !defined(NDEBUG) || !defined(WITH_AUDASPACE)
   if (i == 0) {
-    EnumPropertyItem new_item = {i, "SOUND_NONE", 0, "No Sound", ""};
-    RNA_enum_item_add(&item, &totitem, &new_item);
+    EnumPropItem new_item = {i, "SOUND_NONE", 0, "No Sound", ""};
+    api_enum_item_add(&item, &totitem, &new_item);
   }
 #  endif
 
   /* may be unused */
   UNUSED_VARS(index, audio_device_items);
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
@@ -818,56 +818,56 @@ static IdProp **api_AddonPref_idprops(ApiPtr *ptr)
   return (IdProp **)&ptr->data;
 }
 
-static PointerRNA rna_Addon_preferences_get(PointerRNA *ptr)
+static ApiPtr api_Addon_pref_get(ApiPtr *ptr)
 {
-  bAddon *addon = (bAddon *)ptr->data;
-  bAddonPrefType *apt = BKE_addon_pref_type_find(addon->module, true);
+  Addon *addon = (Addon *)ptr->data;
+  AddonPrefType *apt = dune_addon_pref_type_find(addon->module, true);
   if (apt) {
     if (addon->prop == NULL) {
-      IDPropertyTemplate val = {0};
+      IdPropTemplate val = {0};
       addon->prop = IDP_New(IDP_GROUP, &val, addon->module); /* name is unimportant. */
     }
-    return rna_pointer_inherit_refine(ptr, apt->rna_ext.srna, addon->prop);
+    return api_ptr_inherit_refine(ptr, apt->api_ext.srna, addon->prop);
   }
   else {
-    return PointerRNA_NULL;
+    return ApiPtr_NULL;
   }
 }
 
-static bool rna_AddonPref_unregister(Main *UNUSED(bmain), StructRNA *type)
+static bool api_AddonPref_unregister(Main *UNUSED(main), ApiStruct *type)
 {
-  bAddonPrefType *apt = RNA_struct_blender_type_get(type);
+  AddonPrefType *apt = api_struct_dune_type_get(type);
 
   if (!apt) {
     return false;
   }
 
-  RNA_struct_free_extension(type, &apt->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &apt->api_ext);
+  api_struct_free(&DUNE_API, type);
 
-  BKE_addon_pref_type_remove(apt);
+  dune_addon_pref_type_remove(apt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   return true;
 }
 
-static StructRNA *rna_AddonPref_register(Main *bmain,
+static ApiStruct *api_AddonPref_register(Main *main,
                                          ReportList *reports,
                                          void *data,
-                                         const char *identifier,
-                                         StructValidateFunc validate,
-                                         StructCallbackFunc call,
-                                         StructFreeFunc free)
+                                         const char *id,
+                                         StructValidateFn validate,
+                                         StructCbFn call,
+                                         StructFreeFb free)
 {
   const char *error_prefix = "Registering add-on preferences class:";
-  bAddonPrefType *apt, dummy_apt = {{'\0'}};
-  bAddon dummy_addon = {NULL};
-  PointerRNA dummy_addon_ptr;
+  AddonPrefType *apt, dummy_apt = {{'\0'}};
+  Addon dummy_addon = {NULL};
+  ApiPtr dummy_addon_ptr;
   // bool have_function[1];
 
   /* Setup dummy add-on preference and it's type to store static properties in. */
-  RNA_pointer_create(NULL, &RNA_AddonPreferences, &dummy_addon, &dummy_addon_ptr);
+  api_ptr_create(NULL, &ApiAddonPrefs, &dummy_addon, &dummy_addon_ptr);
 
   /* validate the python class */
   if (validate(&dummy_addon_ptr, data, NULL /* have_function */) != 0) {
@@ -876,25 +876,25 @@ static StructRNA *rna_AddonPref_register(Main *bmain,
 
   STRNCPY(dummy_apt.idname, dummy_addon.module);
   if (strlen(identifier) >= sizeof(dummy_apt.idname)) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
                 error_prefix,
-                identifier,
+                id,
                 (int)sizeof(dummy_apt.idname));
     return NULL;
   }
 
   /* Check if we have registered this add-on preference type before, and remove it. */
-  apt = BKE_addon_pref_type_find(dummy_addon.module, true);
+  apt = dune_addon_pref_type_find(dummy_addon.module, true);
   if (apt) {
-    StructRNA *srna = apt->rna_ext.srna;
-    if (!(srna && rna_AddonPref_unregister(bmain, srna))) {
-      BKE_reportf(reports,
+    ApiStruct *srna = apt->api_ext.srna;
+    if (!(srna && rna_AddonPref_unregister(main, srna))) {
+      dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
                   error_prefix,
-                  identifier,
+                  id,
                   dummy_apt.idname,
                   srna ? "is built-in" : "could not be unregistered");
 
@@ -903,26 +903,26 @@ static StructRNA *rna_AddonPref_register(Main *bmain,
   }
 
   /* Create a new add-on preference type. */
-  apt = MEM_mallocN(sizeof(bAddonPrefType), "addonpreftype");
+  apt = mem_mallocn(sizeof(AddonPrefType), "addonpreftype");
   memcpy(apt, &dummy_apt, sizeof(dummy_apt));
-  BKE_addon_pref_type_add(apt);
+  dune_addon_pref_type_add(apt);
 
-  apt->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, identifier, &RNA_AddonPreferences);
-  apt->rna_ext.data = data;
-  apt->rna_ext.call = call;
-  apt->rna_ext.free = free;
-  RNA_struct_blender_type_set(apt->rna_ext.srna, apt);
+  apt->api_ext.srna = api_def_struct_ptr(&DUNE_API, id, &ApiAddonPreferences);
+  apt->api_ext.data = data;
+  apt->api_ext.call = call;
+  apt->api_ext.free = free;
+  api_struct_dune_type_set(apt->api_ext.srna, apt);
 
   //  apt->draw = (have_function[0]) ? header_draw : NULL;
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
-  return apt->rna_ext.srna;
+  return apt->api_ext.srna;
 }
 
 /* placeholder, doesn't do anything useful yet */
-static StructRNA *rna_AddonPref_refine(PointerRNA *ptr)
+static ApiStruct *api_AddonPref_refine(PointerRNA *ptr)
 {
   return (ptr->type) ? ptr->type : &RNA_AddonPreferences;
 }
