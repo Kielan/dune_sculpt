@@ -1092,21 +1092,21 @@ static int rna_UserDef_studiolight_solid_lights_length(PointerRNA *UNUSED(ptr))
 
 /* StudioLight.light_ambient */
 
-static void rna_UserDef_studiolight_light_ambient_get(PointerRNA *ptr, float *values)
+static void api_UserDef_studiolight_light_ambient_get(PointerRNA *ptr, float *values)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   copy_v3_v3(values, sl->light_ambient);
 }
 
-int rna_show_statusbar_vram_editable(struct PointerRNA *UNUSED(ptr), const char **UNUSED(r_info))
+int api_show_statusbar_vram_editable(struct ApiPtr *UNUSED(ptr), const char **UNUSED(r_info))
 {
-  return GPU_mem_stats_supported() ? PROP_EDITABLE : 0;
+  return gpu_mem_stats_supported() ? PROP_EDITABLE : 0;
 }
 
-static const EnumPropertyItem *rna_preference_gpu_backend_itemf(struct bContext *UNUSED(C),
-                                                                PointerRNA *UNUSED(ptr),
-                                                                PropertyRNA *UNUSED(prop),
-                                                                bool *r_free)
+static const EnumPropItem *api_pref_gpu_backend_itemf(struct Ctx *UNUSED(C),
+                                                      ApiPtr *UNUSED(ptr),
+                                                      PropertyRNA *UNUSED(prop),
+                                                      bool *r_free)
 {
   int totitem = 0;
   EnumPropertyItem *result = NULL;
