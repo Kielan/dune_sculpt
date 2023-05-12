@@ -676,18 +676,18 @@ static void api_userdef_autosave_update(Main *main, Scene *scene, ApiPtr *ptr)
       return USER_EXPERIMENTAL_TEST(userdef, member); \
     }
 
-static bAddon *rna_userdef_addon_new(void)
+static Addon *api_userdef_addon_new(void)
 {
-  ListBase *addons_list = &U.addons;
-  bAddon *addon = BKE_addon_new();
-  BLI_addtail(addons_list, addon);
+  List *addons_list = &U.addons;
+  Addon *addon = dune_addon_new();
+  lib_addtail(addons_list, addon);
   USERDEF_TAG_DIRTY;
   return addon;
 }
 
-static void rna_userdef_addon_remove(ReportList *reports, PointerRNA *addon_ptr)
+static void api_userdef_addon_remove(ReportList *reports, ApiPtr *addon_ptr)
 {
-  ListBase *addons_list = &U.addons;
+  List *addons_list = &U.addons;
   bAddon *addon = addon_ptr->data;
   if (BLI_findindex(addons_list, addon) == -1) {
     BKE_report(reports, RPT_ERROR, "Add-on is no longer valid");
