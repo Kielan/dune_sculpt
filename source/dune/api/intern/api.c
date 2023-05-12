@@ -683,15 +683,15 @@ static bool rna_Property_is_registered_get(PointerRNA *ptr)
   return (prop->flag & PROP_REGISTER) != 0;
 }
 
-static bool rna_Property_is_registered_optional_get(PointerRNA *ptr)
+static bool api_prop_is_registered_optional_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag & PROP_REGISTER_OPTIONAL) != 0;
 }
 
-static bool rna_Property_is_runtime_get(PointerRNA *ptr)
+static bool api_prop_is_runtime_get(ApiPtr *ptr)
 {
-  PropertyRNA *prop = (PropertyRNA *)ptr->data;
+  ApiProp *prop = (ApiProp *)ptr->data;
   return (prop->flag_internal & PROP_INTERN_RUNTIME) != 0;
 }
 
