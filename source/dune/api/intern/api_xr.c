@@ -205,33 +205,33 @@ static void rna_XrActionMapBinding_axis1_region_set(PointerRNA *ptr, int value)
 #  endif
 }
 
-static void rna_XrActionMapBinding_name_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_XrActionMapBinding_name_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = bmain->wm.first;
+  wmWindowManager *wm = main->wm.first;
   if (wm && wm->xr.runtime) {
-    ListBase *actionmaps = WM_xr_actionmaps_get(wm->xr.runtime);
-    short idx = WM_xr_actionmap_selected_index_get(wm->xr.runtime);
-    XrActionMap *actionmap = BLI_findlink(actionmaps, idx);
+    List *actionmaps = WM_xr_actionmaps_get(wm->xr.runtime);
+    short idx = wm_xr_actionmap_selected_index_get(wm->xr.runtime);
+    XrActionMap *actionmap = lib_findlink(actionmaps, idx);
     if (actionmap) {
       XrActionMapItem *ami = BLI_findlink(&actionmap->items, actionmap->selitem);
       if (ami) {
         XrActionMapBinding *amb = ptr->data;
-        WM_xr_actionmap_binding_ensure_unique(ami, amb);
+        wm_xr_actionmap_binding_ensure_unique(ami, amb);
       }
     }
   }
 #  else
-  UNUSED_VARS(bmain, ptr);
+  UNUSED_VARS(main, ptr);
 #  endif
 }
 
 static XrUserPath *rna_XrUserPath_new(XrActionMapItem *ami, const char *path_str)
 {
 #  ifdef WITH_XR_OPENXR
-  XrUserPath *user_path = MEM_callocN(sizeof(XrUserPath), __func__);
+  XrUserPath *user_path = mem_callocn(sizeof(XrUserPath), __func__);
   STRNCPY(user_path->path, path_str);
-  BLI_addtail(&ami->user_paths, user_path);
+  lib_addtail(&ami->user_paths, user_path);
   return user_path;
 #  else
   UNUSED_VARS(ami, path_str);
