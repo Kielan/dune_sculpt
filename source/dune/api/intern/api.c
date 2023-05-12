@@ -1,10 +1,10 @@
 #include <stdlib.h>
 
-#include <CLG_log.h>
+#include <log.h>
 
-#include "DNA_ID.h"
+#include "types_id.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
