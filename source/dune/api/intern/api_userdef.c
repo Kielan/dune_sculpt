@@ -453,35 +453,35 @@ static void api_userdef_anim_update(Main *UNUSED(main),
   USERDEF_TAG_DIRTY;
 }
 
-static void api_userdef_input_devices(Main *UNUSED(bmain),
+static void api_userdef_input_devices(Main *UNUSED(main),
                                       Scene *UNUSED(scene),
                                       PointerRNA *UNUSED(ptr))
 {
-  WM_init_input_devices();
+  wm_init_input_devices();
   USERDEF_TAG_DIRTY;
 }
 
 #  ifdef WITH_INPUT_NDOF
-static void rna_userdef_ndof_deadzone_update(Main *UNUSED(bmain),
+static void api_userdef_ndof_deadzone_update(Main *UNUSED(main),
                                              Scene *UNUSED(scene),
-                                             PointerRNA *ptr)
+                                             ApiPtr *ptr)
 {
   UserDef *userdef = ptr->data;
-  WM_ndof_deadzone_set(userdef->ndof_deadzone);
+  wm_ndof_deadzone_set(userdef->ndof_deadzone);
   USERDEF_TAG_DIRTY;
 }
 #  endif
 
-static void rna_userdef_keyconfig_reload_update(bContext *C,
-                                                Main *UNUSED(bmain),
+static void api_userdef_keyconfig_reload_update(Ctx *C,
+                                                Main *UNUSED(main),
                                                 Scene *UNUSED(scene),
-                                                PointerRNA *UNUSED(ptr))
+                                                ApiPtr *UNUSED(ptr))
 {
-  WM_keyconfig_reload(C);
+  wm_keyconfig_reload(C);
   USERDEF_TAG_DIRTY;
 }
 
-static void rna_userdef_timecode_style_set(PointerRNA *ptr, int value)
+static void api_userdef_timecode_style_set(ApiPtr *ptr, int value)
 {
   UserDef *userdef = (UserDef *)ptr->data;
   int required_size = userdef->v2d_min_gridsize;
@@ -515,7 +515,7 @@ static void rna_userdef_timecode_style_set(PointerRNA *ptr, int value)
   }
 }
 
-static int rna_UserDef_mouse_emulate_3_button_modifier_get(PointerRNA *ptr)
+static int api_UserDef_mouse_emulate_3_btn_mod_get(ApiPtr *ptr)
 {
 #  if !defined(WIN32)
   UserDef *userdef = ptr->data;
