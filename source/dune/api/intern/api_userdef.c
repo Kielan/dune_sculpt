@@ -656,7 +656,7 @@ static void api_UserDef_viewport_lights_update(Main *bmain, Scene *scene, Pointe
   }
 
   wm_main_add_notifier(NC_SPACE | ND_SPACE_VIEW3D | NS_VIEW3D_GPU, NULL);
-  api_userdef_update(bmain, scene, ptr);
+  api_userdef_update(main, scene, ptr);
 }
 
 static void api_userdef_autosave_update(Main *main, Scene *scene, ApiPtr *ptr)
@@ -1230,7 +1230,7 @@ static void api_def_userdef_theme_ui_style(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Widget Label Style", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "widget", PROP_PTR, PROP_NONE);
+  prop = api_def_prop(sapi, "widget", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ptr_sapi(prop, NULL, "widget");
   api_def_prop_struct_type(prop, "ThemeFontStyle");
@@ -1244,7 +1244,7 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ThemeWidgetColors", NULL);
-  api_def_struct_sdna(sapi, "uiWidgetColors");
+  api_def_struct_stype(sapi, "uiWidgetColors");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Theme Widget Color Set", "Theme settings for widget color sets");
 
@@ -1306,7 +1306,7 @@ static void api_def_userdef_theme_ui_wcol_state(BlenderRNA *brna)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ThemeWidgetStateColors", NULL);
-  api_def_struct_sdna(sapi, "uiWidgetStateColors");
+  api_def_struct_stype(sapi, "uiWidgetStateColors");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(
       sapi, "Theme Widget State Color", "Theme settings for widget state colors");
@@ -1563,41 +1563,41 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   prop = api_def_prop(sapi, "wcol_tab", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Tab Colors", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "menu_shadow_fac", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(prop, "Menu Shadow Strength", "Blending factor for menu shadows");
   api_def_prop_range(prop, 0.01f, 1.0f);
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "menu_shadow_width", PROP_INT, PROP_PIXEL);
   api_def_property_ui_text(
       prop, "Menu Shadow Width", "Width of menu shadows, set to zero to disable");
   api_def_prop_range(prop, 0.0f, 24.0f);
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_alpha", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(
       prop, "Icon Alpha", "Transparency of icons in the interface, to reduce contrast");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_saturation", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_ui_text(prop, "Icon Saturation", "Saturation of icons in the interface");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "widget_emboss", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_sapi(prop, NULL, "widget_emboss");
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(
       prop, "Widget Emboss", "Color of the 1px shadow line underlying widgets");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "editor_outline", PROP_FLOAT, PROP_COLOR_GAMMA);m
   api_def_prop_float_sapi(prop, NULL, "editor_outline");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(
       prop, "Editor Outline", "Color of the outline of the editors and their round corners");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "widget_text_cursor", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_property_float_sapi(prop, NULL, "widget_text_cursor");
@@ -1618,7 +1618,7 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(
       prop, "Primary Color", "Primary color of checkerboard pattern indicating transparent areas");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "transparent_checker_secondary", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_sdna(prop, NULL, "transparent_checker_secondary");
@@ -1626,82 +1626,82 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_ui_text(prop,
                            "Secondary Color",
                            "Secondary color of checkerboard pattern indicating transparent areas");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "transparent_checker_size", PROP_INT, PROP_PIXEL);
   api_def_prop_ui_text(
       prop, "Checkerboard Size", "Size of checkerboard pattern indicating transparent areas");
   api_def_prop_range(prop, 2, 48);
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* axis */
-  prop = RNA_def_property(srna, "axis_x", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "xaxis");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "X Axis", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "axis_x", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "xaxis");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "X Axis", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "axis_y", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "yaxis");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Y Axis", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "axis_y", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "yaxis");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Y Axis", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update"
 
-  prop = RNA_def_property(srna, "axis_z", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "zaxis");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Z Axis", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "axis_z", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "zaxis");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Z Axis", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Generic gizmo colors. */
-  prop = RNA_def_property(srna, "gizmo_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "gizmo_hi");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gizmo Highlight", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "gizmo_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "gizmo_hi");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gizmo Highlight", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "gizmo_primary", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "gizmo_primary");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gizmo Primary", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "gizmo_primary", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_sdna(prop, NULL, "gizmo_primary");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gizmo Primary", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "gizmo_secondary", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "gizmo_secondary");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Gizmo Secondary", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "gizmo_view_align", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "gizmo_view_align");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Gizmo View Align", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "gizmo_a", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "gizmo_a");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Gizmo A", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "gizmo_b", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "gizmo_b");
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Gizmo B", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   /* Icon colors. */
   prop = RNA_def_property(srna, "icon_scene", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "icon_scene");
   RNA_def_property_array(prop, 4);
   RNA_def_property_ui_text(prop, "Scene", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "icon_collection", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "icon_collection");
   RNA_def_property_array(prop, 4);
   RNA_def_property_ui_text(prop, "Collection", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "icon_object", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "icon_object");
