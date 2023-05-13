@@ -375,22 +375,22 @@ static ApiPtr api_uiItemMenuEnumO(uiLayout *layout,
                                   bool translate,
                                   int icon)
 {
-  wmOpType *ot = WM_operatortype_find(opname, false); /* print error next */
+  wmOpType *ot = wm_optype_find(opname, false); /* print error next */
 
-  if (!ot || !ot->srna) {
-    RNA_warning("%s '%s'", ot ? "unknown operator" : "operator missing srna", opname);
-    return PointerRNA_NULL;
+  if (!ot || !ot->sapi) {
+    api_warning("%s '%s'", ot ? "unknown operator" : "operator missing srna", opname);
+    return ApiPtr_NULL;
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, ot->srna, NULL, translate);
+  name = api_translate_ui_text(name, text_ctxt, ot->srna, NULL, translate);
 
-  PointerRNA opptr;
+  ApiPtr opptr;
   uiItemMenuEnumFullO_ptr(layout, C, ot, propname, name, icon, &opptr);
   return opptr;
 }
 
-static void rna_uiItemL(uiLayout *layout,
+static void api_uiItemL(uiLayout *layout,
                         const char *name,
                         const char *text_ctxt,
                         bool translate,
@@ -398,7 +398,7 @@ static void rna_uiItemL(uiLayout *layout,
                         int icon_value)
 {
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
+  name = api_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -407,7 +407,7 @@ static void rna_uiItemL(uiLayout *layout,
   uiItemL(layout, name, icon);
 }
 
-static void rna_uiItemM(uiLayout *layout,
+static void api_uiItemM(uiLayout *layout,
                         const char *menuname,
                         const char *name,
                         const char *text_ctxt,
@@ -416,7 +416,7 @@ static void rna_uiItemM(uiLayout *layout,
                         int icon_value)
 {
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
+  name = api_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -425,12 +425,12 @@ static void rna_uiItemM(uiLayout *layout,
   uiItemM(layout, menuname, name, icon);
 }
 
-static void rna_uiItemM_contents(uiLayout *layout, const char *menuname)
+static void api_uiItemM_contents(uiLayout *layout, const char *menuname)
 {
   uiItemMContents(layout, menuname);
 }
 
-static void rna_uiItemPopoverPanel(uiLayout *layout,
+static void api_uiItemPopoverPanel(uiLayout *layout,
                                    bContext *C,
                                    const char *panel_type,
                                    const char *name,
@@ -440,7 +440,7 @@ static void rna_uiItemPopoverPanel(uiLayout *layout,
                                    int icon_value)
 {
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
+  name = api_translate_ui_text(name, text_ctxt, NULL, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -449,7 +449,7 @@ static void rna_uiItemPopoverPanel(uiLayout *layout,
   uiItemPopoverPanel(layout, C, panel_type, name, icon);
 }
 
-static void rna_uiItemPopoverPanelFromGroup(uiLayout *layout,
+static void api_uiItemPopoverPanelFromGroup(uiLayout *layout,
                                             bContext *C,
                                             int space_id,
                                             int region_id,
@@ -459,7 +459,7 @@ static void rna_uiItemPopoverPanelFromGroup(uiLayout *layout,
   uiItemPopoverPanelFromGroup(layout, C, space_id, region_id, context, category);
 }
 
-static void rna_uiTemplateID(uiLayout *layout,
+static void api_uiTemplateID(uiLayout *layout,
                              bContext *C,
                              PointerRNA *ptr,
                              const char *propname,
@@ -472,10 +472,10 @@ static void rna_uiTemplateID(uiLayout *layout,
                              const char *text_ctxt,
                              bool translate)
 {
-  PropertyRNA *prop = RNA_struct_find_property(ptr, propname);
+  ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
