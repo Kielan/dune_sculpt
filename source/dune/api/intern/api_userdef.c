@@ -1691,35 +1691,35 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Icon colors. */
-  prop = RNA_def_property(srna, "icon_scene", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "icon_scene");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Scene", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "icon_scene", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "icon_scene");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Scene", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "icon_collection", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "icon_collection");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Collection", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "icon_collection", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "icon_collection");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Collection", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "icon_object", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "icon_object");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Object", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "icon_object", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "icon_object");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Object", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_object_data", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "icon_object_data");
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Object Data", ""
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_modifier", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_sdna(prop, NULL, "icon_modifier");
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Modifier", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_shading", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_stype(prop, NULL, "icon_shading");
