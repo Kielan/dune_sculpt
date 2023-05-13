@@ -151,12 +151,12 @@ static void panel_draw_header_preset(const Ctx *C, Panel *panel)
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->rna_ext.srna, panel, &ptr);
-  fn = &api_Panel_draw_header_preset_func;
+  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
+  fn = &api_Panel_draw_header_preset_fn;
 
-  api_param_list_create(&list, &ptr, func);
+  api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  panel->type->api_ext.call((bContext *)C, &ptr, func, &list);
+  panel->type->api_ext.call((Ctx *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
 }
@@ -254,10 +254,10 @@ static ApiStruct *api_Panel_register(Main *main,
   api_ptr_create(NULL, &ApiPanel, &dummy_panel, &dummy_panel_ptr);
 
   /* We have to set default context! Else we get a void string... */
-  strcpy(dummy_pt.translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  strcpy(dummy_pt.translation_context, LANG_CTX_DEFAULT_BPYRNA);
 
   /* validate the python class */
-  if (validate(&dummy_panel_ptr, data, have_function) != 0) {
+  if (validate(&dummy_panel_ptr, data, have_fn) != 0) {
     return NULL;
   }
 
@@ -548,10 +548,10 @@ static void uilist_filter_items(uiList *ui_list,
   int *filter_flags, *filter_neworder;
   void *ret1, *ret2;
   int ret_len;
-  int len = flt_data->items_len = RNA_collection_length(dataptr, propname);
+  int len = flt_data->items_len = api_collection_length(dataptr, propname);
 
   api_ptr_create(&ctx_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
-  fn = &api_UIList_filter_items_func; /* api_struct_find_fn(&ul_ptr, "filter_items"); */
+  fn = &api_UIList_filter_items_fn; /* api_struct_find_fn(&ul_ptr, "filter_items"); */
 
   api_param_list_create(&list, &ul_ptr, fn);
   api_param_set_lookup(&list, "context", &C);
@@ -840,7 +840,7 @@ static ApiStruct *api_Header_register(Main *main,
   /* check if we have registered this header type before, and remove it */
   ht = lib_findstring(&art->headertypes, dummy_ht.idname, offsetof(HeaderType, idname));
   if (ht) {
-    ApiStruct *sapi = ht->api_ext.srna;
+    ApiStruct *sapi = ht->api_ext.sapi;
     if (!(sapi && api_Header_unregister(main, sapi))) {
       dune_reportf(reports,
                   RPT_ERROR,
@@ -861,45 +861,44 @@ static ApiStruct *api_Header_register(Main *main,
   }
 
   /* create a new header type */
-  ht = MEM_mallocN(sizeof(HeaderType), "python buttons header");
+  ht = mem_mallocn(sizeof(HeaderType), "python buttons header");
   memcpy(ht, &dummy_ht, sizeof(dummy_ht));
 
-  ht->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, ht->idname, &RNA_Header);
-  ht->rna_ext.data = data;
-  ht->rna_ext.call = call;
-  ht->rna_ext.free = free;
-  RNA_struct_blender_type_set(ht->rna_ext.srna, ht);
+  ht->api_ext.sapi = api_def_struct_ptr(&BLENDER_RNA, ht->idname, &RNA_Header);
+  ht->api_ext.data = data;
+  ht->api_ext.call = call;
+  ht->api_ext.free = free;
+  api_struct_dune_type_set(ht->api_ext.sapi, ht);
 
-  ht->draw = (have_function[0]) ? header_draw : NULL;
-
-  BLI_addtail(&art->headertypes, ht);
+  ht->draw = (have_fn[0]) ? header_draw : NULL
+  lib_addtail(&art->headertypes, ht);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
-  return ht->rna_ext.srna;
+  return ht->api_ext.sapi;
 }
 
-static StructRNA *rna_Header_refine(PointerRNA *htr)
+static ApiStruct *api_Header_refine(ApiPtr *htr)
 {
   Header *hdr = (Header *)htr->data;
-  return (hdr->type && hdr->type->rna_ext.srna) ? hdr->type->rna_ext.srna : &RNA_Header;
+  return (hdr->type && hdr->type->api_ext.sapi) ? hdr->type->rna_ext.srna : &RNA_Header;
 }
 
 /* Menu */
 
-static bool menu_poll(const bContext *C, MenuType *pt)
+static bool menu_poll(const Ctx *C, MenuType *pt)
 {
-  extern FunctionRNA rna_Menu_poll_func;
+  extern ApiFn api_Menu_poll_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool visible;
 
-  RNA_pointer_create(NULL, pt->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &rna_Menu_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, pt->api_ext.sapi, NULL, &ptr); /* dummy */
+  fn = &api_Menu_poll_fn; /* api_struct_find_fn(&ptr, "poll"); */
 
   RNA_parameter_list_create(&list, &ptr, func);
   RNA_parameter_set_lookup(&list, "context", &C);
