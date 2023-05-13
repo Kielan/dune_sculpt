@@ -900,28 +900,28 @@ static bool menu_poll(const Ctx *C, MenuType *pt)
   api_ptr_create(NULL, pt->api_ext.sapi, NULL, &ptr); /* dummy */
   fn = &api_Menu_poll_fn; /* api_struct_find_fn(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  pt->rna_ext.call((bContext *)C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, func);
+  api_param_set_lookup(&list, "context", &C);
+  pt->api_ext.call((bContext *)C, &ptr, func, &list);
 
-  RNA_parameter_get_lookup(&list, "visible", &ret);
+  api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return visible;
 }
 
-static void menu_draw(const bContext *C, Menu *menu)
+static void menu_draw(const Ctx *C, Menu *menu)
 {
-  extern FunctionRNA rna_Menu_draw_func;
+  extern ApiFn api_Menu_draw_fn;
 
-  PointerRNA mtr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr mtr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, menu->type->rna_ext.srna, menu, &mtr);
-  func = &rna_Menu_draw_func; /* RNA_struct_find_function(&mtr, "draw"); */
+  api_ptr_create(&ctx_wm_screen(C)->id, menu->type->rna_ext.srna, menu, &mtr);
+  fn = &api_Menu_draw_fn; /* RNA_struct_find_function(&mtr, "draw"); */
 
   api_param_list_create(&list, &mtr, fn);
   api_param_set_lookup(&list, "context", &C);
