@@ -1165,21 +1165,21 @@ static void api_def_userdef_theme_ui_font_style(DuneApi *dapi)
 
   srna = api_def_struct(sapi, "ThemeFontStyle", NULL);
   api_def_struct_sapi(sapi, "uiFontStyle");
-  api_def_struct_clear_flag(srna, STRUCT_UNDO);
-  api_def_struct_ui_text(srna, "Font Style", "Theme settings for Font");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Font Style", "Theme settings for Font");
 
-  prop = api_def_prop(srna, "points", PROP_FLOAT, PROP_UNSIGNED);
+  prop = api_def_prop(sapi, "points", PROP_FLOAT, PROP_UNSIGNED);
   api_def_prop_range(prop, 6.0f, 32.0f);
   api_def_prop_ui_range(prop, 8.0f, 20.0f, 10.0f, 1);
   api_def_prop_ui_text(prop, "Points", "Font size in points");
   api_def_prop_update(prop, 0, "rna_userdef_dpi_update");
 
-  prop = api_def_prop(srna, "shadow", PROP_INT, PROP_PIXEL);
+  prop = api_def_prop(sapi, "shadow", PROP_INT, PROP_PIXEL);
   api_def_prop_range(prop, 0, 5);
   api_def_prop_ui_text(prop, "Shadow Size", "Shadow size (0, 3 and 5 supported)");
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
-  prop = api_def_prop(srna, "shadow_offset_x", PROP_INT, PROP_PIXEL);
+  prop = api_def_prop(sapi, "shadow_offset_x", PROP_INT, PROP_PIXEL);
   api_def_prop_int_stype(prop, NULL, "shadx");
   api_def_prop(prop, -10, 10);
   api_def_prop_ui_text(prop, "Shadow X Offset", "Shadow offset in pixels");
@@ -1197,7 +1197,7 @@ static void api_def_userdef_theme_ui_font_style(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Shadow Alpha", "")
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
-  prop = api_def_prop(srna, "shadow_value", PROP_FLOAT, PROP_FACTOR);
+  prop = api_def_prop(sapi, "shadow_value", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_sdna(prop, NULL, "shadowcolor");
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop, "Shadow Brightness", "Shadow color in gray value");
@@ -1427,7 +1427,7 @@ static void api_def_userdef_theme_ui_gradient(DuneApi *sapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "high_gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
-  api_def_prop_float_sdna(prop, NULL, "back");
+  api_def_prop_float_stype(prop, NULL, "back");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Gradient High/Off", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1709,13 +1709,13 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   RNA_def_property_ui_text(prop, "Object", "");
   RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "icon_object_data", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "icon_object_data");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Object Data", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "icon_object_data", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "icon_object_data");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Object Data", ""
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "icon_modifier", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "icon_modifier", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "icon_modifier");
   RNA_def_property_array(prop, 4);
   RNA_def_property_ui_text(prop, "Modifier", "");
