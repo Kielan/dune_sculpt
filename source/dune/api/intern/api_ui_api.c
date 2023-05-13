@@ -207,33 +207,33 @@ static void api_uiItemTabsEnumR(uiLayout *layout,
   ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
-  if (RNA_property_type(prop) != PROP_ENUM) {
-    RNA_warning("property is not an enum: %s.%s", RNA_struct_identifier(ptr->type), propname);
+  if (api_prop_type(prop) != PROP_ENUM) {
+    apu_warning("prop is not an enum: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
   /* Get the highlight property used to gray out some of the tabs. */
-  PropertyRNA *prop_highlight = NULL;
-  if (!RNA_pointer_is_null(ptr_highlight)) {
-    prop_highlight = RNA_struct_find_property(ptr_highlight, propname_highlight);
+  ApuProp *prop_highlight = NULL;
+  if (!api_ptr_is_null(ptr_highlight)) {
+    prop_highlight = api_struct_find_prop(ptr_highlight, propname_highlight);
     if (!prop_highlight) {
-      RNA_warning("property not found: %s.%s",
-                  RNA_struct_identifier(ptr_highlight->type),
+      api_warning("property not found: %s.%s",
+                  api_struct_id(ptr_highlight->type),
                   propname_highlight);
       return;
     }
-    if (RNA_property_type(prop_highlight) != PROP_BOOLEAN) {
-      RNA_warning("property is not a boolean: %s.%s",
-                  RNA_struct_identifier(ptr_highlight->type),
+    if (api_prop_type(prop_highlight) != PROP_BOOL) {
+      api_warning("prop is not a bool: %s.%s",
+                  api_struct_id(ptr_highlight->type),
                   propname_highlight);
       return;
     }
-    if (!RNA_property_array_check(prop_highlight)) {
-      RNA_warning("property is not an array: %s.%s",
-                  RNA_struct_identifier(ptr_highlight->type),
+    if (!api_prop_array_check(prop_highlight)) {
+      api_warning("prop is not an array: %s.%s",
+                  api_struct_id(ptr_highlight->type),
                   propname_highlight);
       return;
     }
@@ -242,8 +242,8 @@ static void api_uiItemTabsEnumR(uiLayout *layout,
   uiItemTabsEnumR_prop(layout, C, ptr, prop, ptr_highlight, prop_highlight, icon_only);
 }
 
-static void rna_uiItemEnumR_string(uiLayout *layout,
-                                   struct PointerRNA *ptr,
+static void api_uiItemEnumR_string(uiLayout *layout,
+                                   struct ApiPtr *ptr,
                                    const char *propname,
                                    const char *value,
                                    const char *name,
@@ -251,23 +251,23 @@ static void rna_uiItemEnumR_string(uiLayout *layout,
                                    bool translate,
                                    int icon)
 {
-  PropertyRNA *prop = RNA_struct_find_property(ptr, propname);
+  ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
 
   uiItemEnumR_string_prop(layout, ptr, prop, value, name, icon);
 }
 
-static void rna_uiItemPointerR(uiLayout *layout,
-                               struct PointerRNA *ptr,
+static void api_uiItemPtrR(uiLayout *layout,
+                           struct ApiPtr *ptr,
                                const char *propname,
-                               struct PointerRNA *searchptr,
+                               struct ApiPtr *searchptr,
                                const char *searchpropname,
                                const char *name,
                                const char *text_ctxt,
