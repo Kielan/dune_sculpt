@@ -128,7 +128,7 @@ static void api_uiItemR_with_popover(uiLayout *layout,
   ApiProp *prop = api_struct_find_prop(ptr, propname);
 
   if (!prop) {
-    api_warning("property not found: %s.%s", api_struct_id(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
   if ((api_prop_type(prop) != PROP_ENUM) &&
@@ -266,54 +266,54 @@ static void api_uiItemEnumR_string(uiLayout *layout,
 
 static void api_uiItemPtrR(uiLayout *layout,
                            struct ApiPtr *ptr,
-                               const char *propname,
-                               struct ApiPtr *searchptr,
-                               const char *searchpropname,
-                               const char *name,
-                               const char *text_ctxt,
-                               bool translate,
-                               int icon,
-                               const bool results_are_suggestions)
+                           const char *propname,
+                           struct ApiPtr *searchptr,
+                           const char *searchpropname,
+                           const char *name,
+                           const char *text_ctxt,
+                           bool translate,
+                           int icon,
+                           const bool results_are_suggestions)
 {
-  PropertyRNA *prop = RNA_struct_find_property(ptr, propname);
+  ApiProp *prop = api_struct_find_prop(ptr, propname);
   if (!prop) {
-    RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
+    api_warning("prop not found: %s.%s", api_struct_id(ptr->type), propname);
     return;
   }
-  PropertyRNA *searchprop = RNA_struct_find_property(searchptr, searchpropname);
+  ApiProp *searchprop = api_struct_find_prop(searchptr, searchpropname);
   if (!searchprop) {
-    RNA_warning(
-        "property not found: %s.%s", RNA_struct_identifier(searchptr->type), searchpropname);
+    api_warning(
+        "prop not found: %s.%s", api_struct_id(searchptr->type), searchpropname);
     return;
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, NULL, prop, translate);
+  name = api_translate_ui_text(name, text_ctxt, NULL, prop, translate);
 
-  uiItemPointerR_prop(
+  uiItemPtrR_prop(
       layout, ptr, prop, searchptr, searchprop, name, icon, results_are_suggestions);
 }
 
-static PointerRNA rna_uiItemO(uiLayout *layout,
-                              const char *opname,
-                              const char *name,
-                              const char *text_ctxt,
-                              bool translate,
-                              int icon,
-                              bool emboss,
-                              bool depress,
-                              int icon_value)
+static ApiPtr api_uiItemO(uiLayout *layout,
+                          const char *opname,
+                          const char *name,
+                          const char *text_ctxt,
+                          bool translate,
+                          int icon,
+                          bool emboss,
+                          bool depress,
+                          int icon_value)
 {
-  wmOperatorType *ot;
+  wmOpType *ot;
 
-  ot = WM_operatortype_find(opname, false); /* print error next */
-  if (!ot || !ot->srna) {
-    RNA_warning("%s '%s'", ot ? "unknown operator" : "operator missing srna", opname);
-    return PointerRNA_NULL;
+  ot = wm_optype_find(opname, false); /* print error next */
+  if (!ot || !ot->sapi) {
+    api_warning("%s '%s'", ot ? "unknown op" : "op missing sapi", opname);
+    return ApiPtr_NULL;
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, ot->srna, NULL, translate);
+  name = api_translate_ui_text(name, text_ctxt, ot->sapi, NULL, translate);
 
   if (icon_value && !icon) {
     icon = icon_value;
@@ -321,43 +321,43 @@ static PointerRNA rna_uiItemO(uiLayout *layout,
   int flag = (emboss) ? 0 : UI_ITEM_R_NO_BG;
   flag |= (depress) ? UI_ITEM_O_DEPRESS : 0;
 
-  PointerRNA opptr;
+  ApiPtr opptr;
   uiItemFullO_ptr(layout, ot, name, icon, NULL, uiLayoutGetOperatorContext(layout), flag, &opptr);
   return opptr;
 }
 
-static PointerRNA rna_uiItemOMenuHold(uiLayout *layout,
-                                      const char *opname,
-                                      const char *name,
-                                      const char *text_ctxt,
-                                      bool translate,
-                                      int icon,
-                                      bool emboss,
-                                      bool depress,
-                                      int icon_value,
-                                      const char *menu)
+static ApiPtr api_uiItemOMenuHold(uiLayout *layout,
+                                 const char *opname,
+                                 const char *name,
+                                 const char *text_ctxt,
+                                 bool translate,
+                                 int icon,
+                                 bool emboss,
+                                 bool depress,
+                                 int icon_value,
+                                 const char *menu)
 {
-  wmOperatorType *ot = WM_operatortype_find(opname, false); /* print error next */
-  if (!ot || !ot->srna) {
-    RNA_warning("%s '%s'", ot ? "unknown operator" : "operator missing srna", opname);
-    return PointerRNA_NULL;
+  wmOpType *ot = wm_optype_find(opname, false); /* print error next */
+  if (!ot || !ot->sapi) {
+    api_warning("%s '%s'", ot ? "unknown op" : "op missing sapi", opname);
+    return ApiPtr_NULL;
   }
 
   /* Get translated name (label). */
-  name = rna_translate_ui_text(name, text_ctxt, ot->srna, NULL, translate);
+  name = api_translate_ui_text(name, text_ctxt, ot->sapi, NULL, translate);
   if (icon_value && !icon) {
     icon = icon_value;
   }
   int flag = (emboss) ? 0 : UI_ITEM_R_NO_BG;
   flag |= (depress) ? UI_ITEM_O_DEPRESS : 0;
 
-  PointerRNA opptr;
+  ApiPtr opptr;
   uiItemFullOMenuHold_ptr(
-      layout, ot, name, icon, NULL, uiLayoutGetOperatorContext(layout), flag, menu, &opptr);
+      layout, ot, name, icon, NULL, uiLayoutGetOpCtx(layout), flag, menu, &opptr);
   return opptr;
 }
 
-static void rna_uiItemsEnumO(uiLayout *layout,
+static void api_uiItemsEnumO(uiLayout *layout,
                              const char *opname,
                              const char *propname,
                              const bool icon_only)
@@ -366,16 +366,16 @@ static void rna_uiItemsEnumO(uiLayout *layout,
   uiItemsFullEnumO(layout, opname, propname, NULL, uiLayoutGetOperatorContext(layout), flag);
 }
 
-static PointerRNA rna_uiItemMenuEnumO(uiLayout *layout,
-                                      bContext *C,
-                                      const char *opname,
-                                      const char *propname,
-                                      const char *name,
-                                      const char *text_ctxt,
-                                      bool translate,
-                                      int icon)
+static ApiPtr api_uiItemMenuEnumO(uiLayout *layout,
+                                  Ctx *C,
+                                  const char *opname,
+                                  const char *propname,
+                                  const char *name,
+                                  const char *text_ctxt,
+                                  bool translate,
+                                  int icon)
 {
-  wmOperatorType *ot = WM_operatortype_find(opname, false); /* print error next */
+  wmOpType *ot = WM_operatortype_find(opname, false); /* print error next */
 
   if (!ot || !ot->srna) {
     RNA_warning("%s '%s'", ot ? "unknown operator" : "operator missing srna", opname);
