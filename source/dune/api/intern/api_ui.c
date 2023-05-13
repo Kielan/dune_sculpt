@@ -924,53 +924,53 @@ static void menu_draw(const bContext *C, Menu *menu)
   RNA_pointer_create(&CTX_wm_screen(C)->id, menu->type->rna_ext.srna, menu, &mtr);
   func = &rna_Menu_draw_func; /* RNA_struct_find_function(&mtr, "draw"); */
 
-  RNA_parameter_list_create(&list, &mtr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  menu->type->rna_ext.call((bContext *)C, &mtr, func, &list);
+  api_param_list_create(&list, &mtr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  menu->type->api_ext.call((Ctx *)C, &mtr, fx, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static bool rna_Menu_unregister(Main *UNUSED(bmain), StructRNA *type)
+static bool api_Menu_unregister(Main *UNUSED(main), ApiStruct *type)
 {
-  MenuType *mt = RNA_struct_blender_type_get(type);
+  MenuType *mt = api_struct_dune_type_get(type);
 
   if (!mt) {
     return false;
   }
 
-  RNA_struct_free_extension(type, &mt->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &mt->api_ext);
+  api_struct_free(&DUNE_API, type);
 
-  WM_menutype_freelink(mt);
+  wm_menutype_freelink(mt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   return true;
 }
 
-static StructRNA *rna_Menu_register(Main *bmain,
+static ApiStruct *api_Menu_register(Main *main,
                                     ReportList *reports,
                                     void *data,
-                                    const char *identifier,
-                                    StructValidateFunc validate,
-                                    StructCallbackFunc call,
-                                    StructFreeFunc free)
+                                    const char *id,
+                                    StructValidateFn validate,
+                                    StructCbFn call,
+                                    StructFreeFn free)
 {
   const char *error_prefix = "Registering menu class:";
   MenuType *mt, dummy_mt = {NULL};
   Menu dummy_menu = {NULL};
-  PointerRNA dummy_menu_ptr;
-  bool have_function[2];
+  ApiPtr dummy_menu_ptr;
+  bool have_fn[2];
   size_t over_alloc = 0; /* Warning, if this becomes a mess, we better do another allocation. */
   size_t description_size = 0;
-  char _menu_descr[RNA_DYN_DESCR_MAX];
+  char _menu_descr[API_DYN_DESCR_MAX];
 
   /* setup dummy menu & menu type to store static properties in */
   dummy_menu.type = &dummy_mt;
   _menu_descr[0] = '\0';
   dummy_menu.type->description = _menu_descr;
-  RNA_pointer_create(NULL, &RNA_Menu, &dummy_menu, &dummy_menu_ptr);
+  api_ptr_create(NULL, &ApiMenu, &dummy_menu, &dummy_menu_ptr);
 
   /* We have to set default context! Else we get a void string... */
   strcpy(dummy_mt.translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
@@ -980,35 +980,35 @@ static StructRNA *rna_Menu_register(Main *bmain,
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummy_mt.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummy_mt.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
                 error_prefix,
-                identifier,
+                id,
                 (int)sizeof(dummy_mt.idname));
     return NULL;
   }
 
   /* check if we have registered this menu type before, and remove it */
-  mt = WM_menutype_find(dummy_mt.idname, true);
+  mt = wm_menutype_find(dummy_mt.idname, true);
   if (mt) {
-    StructRNA *srna = mt->rna_ext.srna;
-    if (!(srna && rna_Menu_unregister(bmain, srna))) {
-      BKE_reportf(reports,
+    ApiStruct *sapi = mt->api_ext.sapi;
+    if (!(sapi && api_Menu_unregisterbmain, sapi))) {
+      dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
                   error_prefix,
-                  identifier,
+                  id,
                   dummy_mt.idname,
                   srna ? "is built-in" : "could not be unregistered");
       return NULL;
     }
   }
-  if (!RNA_struct_available_or_report(reports, dummy_mt.idname)) {
+  if (!api_struct_available_or_report(reports, dummy_mt.idname)) {
     return NULL;
   }
-  if (!RNA_struct_bl_idname_ok_or_report(reports, dummy_mt.idname, "_MT_")) {
+  if (!api_struct_bl_idname_ok_or_report(reports, dummy_mt.idname, "_MT_")) {
     return NULL;
   }
 
@@ -1018,7 +1018,7 @@ static StructRNA *rna_Menu_register(Main *bmain,
     over_alloc += description_size;
   }
 
-  mt = MEM_callocN(sizeof(MenuType) + over_alloc, "python buttons menu");
+  mt = mem_callocn(sizeof(MenuType) + over_alloc, "python buttons menu");
   memcpy(mt, &dummy_mt, sizeof(dummy_mt));
 
   if (_menu_descr[0]) {
@@ -1030,19 +1030,19 @@ static StructRNA *rna_Menu_register(Main *bmain,
     mt->description = NULL;
   }
 
-  mt->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, mt->idname, &RNA_Menu);
-  RNA_def_struct_translation_context(mt->rna_ext.srna, mt->translation_context);
-  mt->rna_ext.data = data;
-  mt->rna_ext.call = call;
-  mt->rna_ext.free = free;
-  RNA_struct_blender_type_set(mt->rna_ext.srna, mt);
-  RNA_def_struct_flag(mt->rna_ext.srna, STRUCT_NO_IDPROPERTIES);
+  mt->api_ext.sapi = api_def_struct_ptr(&BLENDER_RNA, mt->idname, &RNA_Menu);
+  api_def_struct_translation_ctx(mt->api_ext.srna, mt->translation_context);
+  mt->api_ext.data = data;
+  mt->api_ext.call = call;
+  mt->api_ext.free = free;
+  api_struct_dune_type_set(mt->api_ext.sapi, mt);
+  api_def_struct_flag(mt->api_ext.sapi, STRUCT_NO_IDPROPERTIES);
 
-  mt->poll = (have_function[0]) ? menu_poll : NULL;
-  mt->draw = (have_function[1]) ? menu_draw : NULL;
+  mt->poll = (have_fn[0]) ? menu_poll : NULL;
+  mt->draw = (have_fn[1]) ? menu_draw : NULL;
 
   {
-    const char *owner_id = RNA_struct_state_owner_get();
+    const char *owner_id = api_struct_state_owner_get();
     if (owner_id) {
       STRNCPY(mt->owner_id, owner_id);
     }
@@ -1051,79 +1051,79 @@ static StructRNA *rna_Menu_register(Main *bmain,
   WM_menutype_add(mt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
-  return mt->rna_ext.srna;
+  return mt->api_ext.sapi;
 }
 
-static StructRNA *rna_Menu_refine(PointerRNA *mtr)
+static ApiStruct *api_Menu_refine(ApiPtr *mtr)
 {
   Menu *menu = (Menu *)mtr->data;
-  return (menu->type && menu->type->rna_ext.srna) ? menu->type->rna_ext.srna : &RNA_Menu;
+  return (menu->type && menu->type->api_ext.sapi) ? menu->type->api_ext.sapi : &ApiMenu;
 }
 
-static void rna_Panel_bl_description_set(PointerRNA *ptr, const char *value)
+static void api_Panel_bl_description_set(ApiPtr *ptr, const char *value)
 {
   Panel *data = (Panel *)(ptr->data);
   char *str = (char *)data->type->description;
   if (!str[0]) {
-    BLI_strncpy(str, value, RNA_DYN_DESCR_MAX); /* utf8 already ensured */
+    lib_strncpy(str, value, API_DYN_DESCR_MAX); /* utf8 already ensured */
   }
   else {
-    BLI_assert_msg(0, "setting the bl_description on a non-builtin panel");
+    lib_assert_msg(0, "setting the bl_description on a non-builtin panel");
   }
 }
 
-static void rna_Menu_bl_description_set(PointerRNA *ptr, const char *value)
+static void api_Menu_bl_description_set(ApiPtr *ptr, const char *value)
 {
   Menu *data = (Menu *)(ptr->data);
   char *str = (char *)data->type->description;
   if (!str[0]) {
-    BLI_strncpy(str, value, RNA_DYN_DESCR_MAX); /* utf8 already ensured */
+    lib_strncpy(str, value, API_DYN_DESCR_MAX); /* utf8 already ensured */
   }
   else {
-    BLI_assert_msg(0, "setting the bl_description on a non-builtin menu");
+    lib_assert_msg(0, "setting the bl_description on a non-builtin menu");
   }
 }
 
 /* UILayout */
 
-static bool rna_UILayout_active_get(PointerRNA *ptr)
+static bool api_UILayout_active_get(PointerRNA *ptr)
 {
   return uiLayoutGetActive(ptr->data);
 }
 
-static void rna_UILayout_active_set(PointerRNA *ptr, bool value)
+static void api_UILayout_active_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetActive(ptr->data, value);
 }
 
-static bool rna_UILayout_active_default_get(PointerRNA *ptr)
+static bool api_UILayout_active_default_get(ApiPtr *ptr)
 {
   return uiLayoutGetActiveDefault(ptr->data);
 }
 
-static void rna_UILayout_active_default_set(PointerRNA *ptr, bool value)
+static void api_UILayout_active_default_set(PointerRNA *ptr, bool value)
 {
   uiLayoutSetActiveDefault(ptr->data, value);
 }
 
-static bool rna_UILayout_activate_init_get(PointerRNA *ptr)
+static bool api_UILayout_activate_init_get(PointerRNA *ptr)
 {
   return uiLayoutGetActivateInit(ptr->data);
 }
 
-static void rna_UILayout_activate_init_set(PointerRNA *ptr, bool value)
+static void api_UILayout_activate_init_set(PointerRNA *ptr, bool value)
 {
   uiLayoutSetActivateInit(ptr->data, value);
 }
 
-static bool rna_UILayout_alert_get(PointerRNA *ptr)
+static bool api_UILayout_alert_get(ApiPtr *ptr)
 {
   return uiLayoutGetRedAlert(ptr->data);
 }
 
-static void rna_UILayout_alert_set(PointerRNA *ptr, bool value)
+static vna_UILayout_alert_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetRedAlert(ptr->data, value);
 }
