@@ -1861,7 +1861,7 @@ static void api_def_userdef_theme_space_generic(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(sapi, "ThemeSpaceGeneric", NULL);
+  sapi = api_def_struct(sapi, "ThemeSpaceGeneric", NULL);
   api_def_struct_stype(sapi, "ThemeSpace");
   api_def_struct_ui_text(sapi, "Theme Space Settings", "");
 
@@ -1870,7 +1870,7 @@ static void api_def_userdef_theme_space_generic(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Window Background", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  rna_def_userdef_theme_space_common(srna);
+  api_def_userdef_theme_space_common(sapi);
 }
 
 /* list / channels */
@@ -1888,12 +1888,12 @@ static void api_def_userdef_theme_space_list_generic(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Source List", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "list_title", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Source List Title", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "list_title", PROP_FLOAT, PROP_COLOR_GAMMA);
+  RNA_def_prop_array(prop, 3);
+  RNA_def_prop_ui_text(prop, "Source List Title", "");
+  RNA_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "list_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "list_text", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Source List Text", "");
   RNA_def_property_update(prop, 0, "api_userdef_theme_update");
