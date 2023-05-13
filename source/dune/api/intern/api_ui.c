@@ -650,28 +650,28 @@ static void uilist_filter_items(uiList *ui_list,
     }
   }
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static bool rna_UIList_unregister(Main *bmain, StructRNA *type)
+static bool api_UIList_unregister(Main *main, ApiStruct *type)
 {
-  uiListType *ult = RNA_struct_blender_type_get(type);
+  uiListType *ult = api_struct_dune_type_get(type);
 
   if (!ult) {
     return false;
   }
 
-  RNA_struct_free_extension(type, &ult->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &ult->api_ext);
+  api_struct_free(&DUNE_API, type);
 
-  WM_uilisttype_remove_ptr(bmain, ult);
+  wm_uilisttype_remove_ptr(main, ult);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   return true;
 }
 
-static StructRNA *rna_UIList_register(Main *bmain,
+static ApiStruct *api_UIList_register(Main *bmain,
                                       ReportList *reports,
                                       void *data,
                                       const char *identifier,
@@ -682,74 +682,74 @@ static StructRNA *rna_UIList_register(Main *bmain,
   const char *error_prefix = "Registering uilist class:";
   uiListType *ult, dummy_ult = {NULL};
   uiList dummy_uilist = {NULL};
-  PointerRNA dummy_ul_ptr;
-  bool have_function[3];
+  ApiPtr dummy_ul_ptr;
+  bool have_fn[3];
   size_t over_alloc = 0; /* Warning, if this becomes a mess, we better do another allocation. */
 
   /* setup dummy menu & menu type to store static properties in */
   dummy_uilist.type = &dummy_ult;
-  RNA_pointer_create(NULL, &RNA_UIList, &dummy_uilist, &dummy_ul_ptr);
+  api_ptr_create(NULL, &RNA_UIList, &dummy_uilist, &dummy_ul_ptr);
 
   /* validate the python class */
-  if (validate(&dummy_ul_ptr, data, have_function) != 0) {
+  if (validate(&dummy_ul_ptr, data, have_fn) != 0) {
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummy_ult.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummy_ult.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
                 error_prefix,
-                identifier,
+                id,
                 (int)sizeof(dummy_ult.idname));
     return NULL;
   }
 
   /* Check if we have registered this UI-list type before, and remove it. */
-  ult = WM_uilisttype_find(dummy_ult.idname, true);
+  ult = wm_uilisttype_find(dummy_ult.idname, true);
   if (ult) {
-    StructRNA *srna = ult->rna_ext.srna;
-    if (!(srna && rna_UIList_unregister(bmain, srna))) {
-      BKE_reportf(reports,
+    ApiStruct *sapi = ult->api_ext.sapi;
+    if (!(sapi && api_UIList_unregister(main, sapi))) {
+      dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
                   error_prefix,
-                  identifier,
+                  id,
                   dummy_ult.idname,
-                  srna ? "is built-in" : "could not be unregistered");
+                  sapi ? "is built-in" : "could not be unregistered");
       return NULL;
     }
   }
-  if (!RNA_struct_available_or_report(reports, dummy_ult.idname)) {
+  if (!api_struct_available_or_report(reports, dummy_ult.idname)) {
     return NULL;
   }
-  if (!RNA_struct_bl_idname_ok_or_report(reports, dummy_ult.idname, "_UL_")) {
+  if (!api_struct_bl_idname_ok_or_report(reports, dummy_ult.idname, "_UL_")) {
     return NULL;
   }
 
   /* create a new menu type */
-  ult = MEM_callocN(sizeof(uiListType) + over_alloc, "python uilist");
+  ult = mem_callocn(sizeof(uiListType) + over_alloc, "python uilist");
   memcpy(ult, &dummy_ult, sizeof(dummy_ult));
 
-  ult->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, ult->idname, &RNA_UIList);
+  ult->rna_ext.sapi = api_def_struct_ptr(&DUNE_API, ult->idname, &ApiUIList);
   ult->rna_ext.data = data;
   ult->rna_ext.call = call;
   ult->rna_ext.free = free;
-  RNA_struct_blender_type_set(ult->rna_ext.srna, ult);
+  api_struct_dune_type_set(ult->api_ext.sapi, ult);
 
-  ult->draw_item = (have_function[0]) ? uilist_draw_item : NULL;
-  ult->draw_filter = (have_function[1]) ? uilist_draw_filter : NULL;
-  ult->filter_items = (have_function[2]) ? uilist_filter_items : NULL;
+  ult->draw_item = (have_fn[0]) ? uilist_draw_item : NULL;
+  ult->draw_filter = (have_fn[1]) ? uilist_draw_filter : NULL;
+  ult->filter_items = (have_fn[2]) ? uilist_filter_items : NULL;
 
-  WM_uilisttype_add(ult);
+  wm_uilisttype_add(ult);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
-  return ult->rna_ext.srna;
+  return ult->api_ext.sapi;
 }
 
-static StructRNA *rna_UIList_refine(PointerRNA *ptr)
+static ApiStruct *api_UIList_refine(PointerRNA *ptr)
 {
   uiList *ui_list = (uiList *)ptr->data;
   return (ui_list->type && ui_list->type->rna_ext.srna) ? ui_list->type->rna_ext.srna :
