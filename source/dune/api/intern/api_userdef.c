@@ -1825,27 +1825,25 @@ static void api_def_userdef_theme_space_common(ApiStruct *sapi)
   api_def_prop_ui_text(prop, "Tab Inactive", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "tab_back", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Tab Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "tab_back", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Tab Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "tab_outline", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Tab Outline", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  // }
+  prop = api_def_prop(sapi, "tab_outline", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Tab Outline", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_gradient(BlenderRNA *brna)
+static void api_def_userdef_theme_space_gradient(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeSpaceGradient", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_ui_text(srna, "Theme Space Settings", "");
+  srna = api_def_struct(dapi, "ThemeSpaceGradient", NULL);
+  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_ui_text(sapi, "Theme Space Settings", "");
 
   /* gradient/background settings */
   prop = RNA_def_property(srna, "gradients", PROP_POINTER, PROP_NONE);
