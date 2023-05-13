@@ -1874,37 +1874,37 @@ static void api_def_userdef_theme_space_generic(DuneApi *dapi)
 }
 
 /* list / channels */
-static void rna_def_userdef_theme_space_list_generic(BlenderRNA *brna)
+static void api_def_userdef_theme_space_list_generic(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeSpaceListGeneric", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_ui_text(srna, "Theme Space List Settings", "");
+  sapi = api_def_struct(dapi, "ThemeSpaceListGeneric", NULL);
+  api_def_struct_stype(sapi, "ThemeSpace");
+  api_def_struct_ui_text(sapi, "Theme Space List Settings", "");
 
-  prop = RNA_def_property(srna, "list", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Source List", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "list", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Source List", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "list_title", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Source List Title", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "list_text", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Source List Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "list_text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 3);
   RNA_def_property_ui_text(prop, "Source List Text Highlight", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_spaces_main(StructRNA *srna)
+static void api_def_userdef_theme_spaces_main(StructRNA *srna)
 {
   PropertyRNA *prop;
 
