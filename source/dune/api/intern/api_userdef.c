@@ -1158,13 +1158,13 @@ static int max_memory_in_megabytes_int(void)
   return (int)min_zz(limit_megabytes, (size_t)INT_MAX);
 }
 
-static void api_def_userdef_theme_ui_font_style(DunrApi *dapi)
+static void api_def_userdef_theme_ui_font_style(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(brna, "ThemeFontStyle", NULL);
-  api_def_struct_sdna(srna, "uiFontStyle");
+  srna = api_def_struct(sapi, "ThemeFontStyle", NULL);
+  api_def_struct_sapi(sapi, "uiFontStyle");
   api_def_struct_clear_flag(srna, STRUCT_UNDO);
   api_def_struct_ui_text(srna, "Font Style", "Theme settings for Font");
 
@@ -1180,19 +1180,19 @@ static void api_def_userdef_theme_ui_font_style(DunrApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
   prop = api_def_prop(srna, "shadow_offset_x", PROP_INT, PROP_PIXEL);
-  api_def_prop_int_sdna(prop, NULL, "shadx");
+  api_def_prop_int_stype(prop, NULL, "shadx");
   api_def_prop(prop, -10, 10);
   api_def_prop_ui_text(prop, "Shadow X Offset", "Shadow offset in pixels");
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
-  prop = api_def_prop(srna, "shadow_offset_y", PROP_INT, PROP_PIXEL);
-  api_def_prop_int_sdna(prop, NULL, "shady");
+  prop = api_def_prop(sapi, "shadow_offset_y", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "shady");
   api_def_prop_range(prop, -10, 10);
   api_def_prop_ui_text(prop, "Shadow Y Offset", "Shadow offset in pixels");
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
-  prop = api_def_prop(srna, "shadow_alpha", PROP_FLOAT, PROP_FACTOR);
-  api_def_prop_float_sdna(prop, NULL, "shadowalpha");
+  prop = api_def_prop(sapi, "shadow_alpha", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "shadowalpha");
   api_def_prop_range(prop, 0.0f, 1.0
   api_def_prop_ui_text(prop, "Shadow Alpha", "")
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
@@ -1204,7 +1204,7 @@ static void api_def_userdef_theme_ui_font_style(DunrApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 }
 
-static void api_def_userdef_theme_ui_style(DuneApi *brna)
+static void api_def_userdef_theme_ui_style(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -1243,7 +1243,7 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "ThemeWidgetColors", NULL);
+  sapi = api_def_struct(dapi, "ThemeWidgetColors", NULL);
   api_def_struct_sdna(sapi, "uiWidgetColors");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Theme Widget Color Set", "Theme settings for widget color sets");
@@ -1279,7 +1279,7 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "show_shaded", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "shaded", 1);
+  api_def_prop_bool_stype(prop, NULL, "shaded", 1);
   api_def_prop_ui_text(prop, "Shaded", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
@@ -1500,15 +1500,15 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_ui_text(prop, "Slider Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_box", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Box Backdrop Colors", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_box", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Box Backdrop Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(sapi, "wcol_menu", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Menu Widget Colors", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_menu", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Menu Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "wcol_pulldown", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
@@ -1621,18 +1621,18 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   prop = RNA_def_property(srna, "transparent_checker_secondary", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "transparent_checker_secondary");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop,
+  api_def_prop_float_sdna(prop, NULL, "transparent_checker_secondary");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop,
                            "Secondary Color",
                            "Secondary color of checkerboard pattern indicating transparent areas");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "transparent_checker_size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "transparent_checker_size", PROP_INT, PROP_PIXEL);
+  api_def_prop_ui_text(
       prop, "Checkerboard Size", "Size of checkerboard pattern indicating transparent areas");
-  RNA_def_property_range(prop, 2, 48);
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_range(prop, 2, 48);
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   /* axis */
   prop = RNA_def_property(srna, "axis_x", PROP_FLOAT, PROP_COLOR_GAMMA);
