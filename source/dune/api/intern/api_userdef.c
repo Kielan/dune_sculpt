@@ -1372,7 +1372,7 @@ static void api_def_userdef_theme_ui_panel(DuneApi *dapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ThemePanelColors", NULL);
-  api_def_struct_sdna(sapi, "uiPanelColors");
+  api_def_struct_sapi(sapi, "uiPanelColors");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Theme Panel Color", "Theme settings for panel colors");
 
@@ -1426,39 +1426,39 @@ static void api_def_userdef_theme_ui_gradient(DuneApi *sapi)
   api_def_prop_ui_text(prop, "Background Type", "Type of background in the 3D viewport");
   api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "high_gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "back");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gradient High/Off", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "high_gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_sdna(prop, NULL, "back");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gradient High/Off", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "back_grad");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gradient Low", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_sdna(prop, NULL, "back_grad");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gradient Low", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_ui(BlenderRNA *brna)
+static void api_def_userdef_theme_ui(DuneApi *bapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_userdef_theme_ui_wcol(brna);
-  rna_def_userdef_theme_ui_wcol_state(brna);
-  rna_def_userdef_theme_ui_panel(brna);
-  rna_def_userdef_theme_ui_gradient(brna);
+  api_def_userdef_theme_ui_wcol(brna);
+  api_def_userdef_theme_ui_wcol_state(brna);
+  api_def_userdef_theme_ui_panel(brna);
+  api_def_userdef_theme_ui_gradient(brna);
 
-  srna = RNA_def_struct(brna, "ThemeUserInterface", NULL);
-  RNA_def_struct_sdna(srna, "ThemeUI");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(
-      srna, "Theme User Interface", "Theme settings for user interface elements");
+  sapi = api_def_struct(dapi, "ThemeUserInterface", NULL);
+  api_def_struct_sapi(sapi, "ThemeUI");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(
+      sapi, "Theme User Interface", "Theme settings for user interface elements");
 
-  prop = RNA_def_property(srna, "wcol_regular", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Regular Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_regular", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Regular Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "wcol_tool", PROP_POINTER, PROP_NONE);
   RNA_def_property_flag(prop, PROP_NEVER_NULL);
