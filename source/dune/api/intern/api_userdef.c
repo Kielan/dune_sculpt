@@ -2215,251 +2215,251 @@ static void api_def_userdef_theme_spaces_pen(ApiStruct *sapi)
   api_def_prop_ui_text(prop, "Pen Vertex Select", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(sap[i, "gp_vertex_size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 10);
-  RNA_def_property_ui_text(prop, "Grease Pencil Vertex Size", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sap[i, "pen_vertex_size", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 10);
+  api_def_prop_ui_text(prop, "Pen Vertex Size", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_view3d(BlenderRNA *brna)
+static void api_def_userdef_theme_space_view3d(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_view3d */
 
-  srna = RNA_def_struct(brna, "ThemeView3D", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme 3D Viewport", "Theme settings for the 3D viewport");
+  sapi = api_def_struct(dapi, "ThemeView3D", NULL);
+  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme 3D Viewport", "Theme settings for the 3D viewport");
 
-  rna_def_userdef_theme_spaces_gradient(srna);
+  api_def_userdef_theme_spaces_gradient(srna);
 
   /* General Viewport options */
 
-  prop = RNA_def_property(srna, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Grid", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "grid", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Grid", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "clipping_border_3d", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Clipping Border", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "clipping_border_3d", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Clipping Border", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wire", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Wire", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wire", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Wire", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wire_edit", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "wire_edit", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
       prop, "Wire Edit", "Color for wireframe when in edit mode, but edge selection is active");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "edge_width", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 32);
-  RNA_def_property_ui_text(prop, "Edge Width", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "edge_width", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 32);
+  api_def_prop_ui_text(prop, "Edge Width", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Grease Pencil */
 
-  rna_def_userdef_theme_spaces_gpencil(srna);
+  api_def_userdef_theme_spaces_pen(sapi);
 
-  prop = RNA_def_property(srna, "text_grease_pencil", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "time_gp_keyframe");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(
-      prop, "Grease Pencil Keyframe", "Color for indicating Grease Pencil keyframes");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "text_pen", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "time_pen_keyframe");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(
+      prop, "Pen Keyframe", "Color for indicating Pen keyframes");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Object specific options */
 
-  prop = RNA_def_property(srna, "object_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "select");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Object Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "object_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "select");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Object Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "object_active", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "active");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Active Object", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "object_active", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_sdna(prop, NULL, "active");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Active Object", "");
+  api_def_prop_update(prop, 0, "apiserdef_theme_update");
 
-  prop = RNA_def_property(srna, "text_keyframe", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "time_keyframe");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Object Keyframe", "Color for indicating object keyframes");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_prop(sapi"text_keyframe", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "time_keyframe");
+  apif_prop_array(prop, 3);
+  apif_prop_ui_text(prop, "Object Keyframe", "Color for indicating object keyframes");
+  apif_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Object type options */
 
-  prop = RNA_def_property(srna, "camera", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Camera", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "camera", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Camera", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "empty", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Empty", "");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_ID);
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "empty", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Empty", "");
+  api_def_prop_translation_context(prop, BLT_I18NCONTEXT_ID_ID);
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "light", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "lamp");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Light", "");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_LIGHT);
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "light", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "lamp");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Light", "");
+  api_def_prop_translation_context(prop, BLT_I18NCONTEXT_ID_LIGHT);
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "speaker", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Speaker", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "speaker", PROP_FLOAT, PROP_COLOR_GAMMA);
+  type_def_prop_array(prop, 3);
+  type_def_prop_ui_text(prop, "Speaker", "");
+  type__def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Mesh Object specific */
 
-  rna_def_userdef_theme_spaces_vertex(srna);
-  rna_def_userdef_theme_spaces_edge(srna);
-  rna_def_userdef_theme_spaces_face(srna);
+  api_def_userdef_theme_spaces_vertex(sapi);
+  api_def_userdef_theme_spaces_edge(sapi);
+  api_def_userdef_theme_spaces_face(sapi);
 
   /* Mesh Object specific curves. */
 
-  rna_def_userdef_theme_spaces_curves(srna, true, true, true, false);
+  api_def_userdef_theme_spaces_curves(srna, true, true, true, false);
 
-  prop = RNA_def_property(srna, "extra_edge_len", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Edge Length Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "extra_edge_len", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Edge Length Text", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "extra_edge_angle", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Edge Angle Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "extra_edge_angle", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Edge Angle Text", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "extra_face_angle", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Face Angle Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "extra_face_angle", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Face Angle Text", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "extra_face_area", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Face Area Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "extra_face_area", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Face Area Text", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "editmesh_active", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Active Vertex/Edge/Face", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "editmesh_active", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Active Vertex/Edge/Face", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "normal", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Face Normal", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "normal", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Face Normal", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "vertex_normal", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Vertex Normal", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "vertex_normal", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Vertex Normal", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "split_normal", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "loop_normal");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Split Normal", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "split_normal", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "loop_normal");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Split Normal", "");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* Armature Object specific. */
 
-  prop = RNA_def_property(srna, "bone_pose", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Bone Pose", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "bone_pose", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Bone Pose", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "bone_pose_active", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Bone Pose Active", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "bone_pose_active", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Bone Pose Active", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "bone_solid", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Bone Solid", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "bone_solid", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Bone Solid", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "bone_locked_weight", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bone_locked_weight", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(
       prop,
       "Bone Locked Weight",
       "Shade for bones corresponding to a locked weight group during painting");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* misc */
 
-  prop = RNA_def_property(srna, "bundle_solid", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "bundle_solid");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Bundle Solid", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "bundle_solid", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "bundle_solid");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Bundle Solid", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "camera_path", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "camera_path");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Camera Path", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "camera_path", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "camera_path");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Camera Path", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "camera_passepartout", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Camera Passepartout", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "camera_passepartout", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Camera Passepartout", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "skin_root", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Skin Root", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "skin_root", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Skin Root", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "view_overlay", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "View Overlay", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "view_overlay", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "View Overlay", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "transform", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Transform", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "transform", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Transform", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "frame_current", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "cframe");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Current Frame", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "frame_current", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "cframe");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Current Frame", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  rna_def_userdef_theme_spaces_paint_curves(srna);
+  api_def_userdef_theme_spaces_paint_curves(sapi);
 
-  prop = RNA_def_property(srna, "outline_width", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 5);
-  RNA_def_property_ui_text(prop, "Outline Width", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "outline_width", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 5);
+  api_def_prop_ui_text(prop, "Outline Width", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "object_origin_size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "obcenter_dia");
-  RNA_def_property_range(prop, 4, 10);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "object_origin_size", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_sdna(prop, NULL, "obcenter_dia");
+  api_def_prop_range(prop, 4, 10);
+  api_def_prop_ui_text(
       prop, "Object Origin Size", "Diameter in pixels for object/light origin display");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
-
-static void rna_def_userdef_theme_space_graph(BlenderRNA *brna)
+                          
+static void api_def_userdef_theme_space_graph(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_graph */
-  srna = RNA_def_struct(brna, "ThemeGraphEditor", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Graph Editor", "Theme settings for the graph editor");
+  srna = api_def_struct(dapi, "ThemeGraphEditor", NULL);
+  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sa[o, "Theme Graph Editor", "Theme settings for the graph editor");
 
   rna_def_userdef_theme_spaces_main(srna);
   rna_def_userdef_theme_spaces_list_main(srna);
