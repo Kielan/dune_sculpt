@@ -1716,114 +1716,114 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   prop = api_def_prop(sapi, "icon_modifier", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "icon_modifier");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Modifier", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_float_sdna(prop, NULL, "icon_modifier");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Modifier", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "icon_shading", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "icon_shading");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Shading", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "icon_shading", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "icon_shading");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Shading", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "icon_folder", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "icon_folder");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "File Folders", "Color of folders in the file browser");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "icon_folder", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "icon_folder");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "File Folders", "Color of folders in the file browser");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "icon_border_intensity", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "icon_border_intensity");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "icon_border_intensity", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "icon_border_intensity");
+  api_def_prop_ui_text(
       prop, "Icon Border", "Control the intensity of the border around themes icons");
-  RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 2);
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update_icons");
+  api_def_prop_ui_range(prop, 0.0, 1.0, 0.1, 2);
+  api_def_prop_update(prop, 0, "api_userdef_theme_update_icons");
 }
 
-static void rna_def_userdef_theme_space_common(StructRNA *srna)
+static void api_def_userdef_theme_space_common(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_property(srna, "title", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Title", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "title", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Title", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Text", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Text Highlight", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Text Highlight", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   /* header */
-  prop = RNA_def_property(srna, "header", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Header", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "header", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Header", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "header_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Header Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "header_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Header Text", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "header_text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Header Text Highlight", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "header_text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Header Text Highlight", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* panel settings */
-  prop = RNA_def_property(srna, "panelcolors", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Panel Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "panelcolors", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Panel Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* buttons */
   // if (!ELEM(spacetype, SPACE_PROPERTIES, SPACE_OUTLINER)) {
-  prop = RNA_def_property(srna, "button", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Region Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "button", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Region Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "button_title", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Region Text Titles", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "button_title", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Region Text Titles", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "button_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Region Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "button_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Region Text", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "button_text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Region Text Highlight", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "button_text_hi", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Region Text Highlight", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "navigation_bar", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Navigation Bar Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "navigation_bar", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Navigation Bar Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "execution_buts", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 4);
   RNA_def_property_ui_text(prop, "Execution Region Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   /* tabs */
-  prop = RNA_def_property(srna, "tab_active", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Tab Active", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "tab_active", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Tab Active", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "tab_inactive", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Tab Inactive", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "tab_inactive", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Tab Inactive", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "tab_back", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 4);
