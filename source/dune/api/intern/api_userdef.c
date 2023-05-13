@@ -158,7 +158,7 @@ static const EnumPropItem api_enum_pref_gpu_backend_items[] = {
 #  include "dune_object.h"
 #  include "dune_paint.h"
 #  include "dune_pbvh.h"
-#  include "dune_preferences.h"
+#  include "dune_prefs.h"
 #  include "dune_screen.h"
 
 #  include "graph.h"
@@ -672,7 +672,7 @@ static void api_userdef_autosave_update(Main *main, Scene *scene, ApiPtr *ptr)
 #  define API_USERDEF_EXPERIMENTAL_BOOL_GET(member) \
     static bool api_userdef_experimental_##member##_get(ApiPtr *ptr) \
     { \
-      UserDef *userdef = POINTER_OFFSET(ptr->data, -offsetof(UserDef, experimental)); \
+      UserDef *userdef = PTR_OFFSET(ptr->data, -offsetof(UserDef, experimental)); \
       return USER_EXPERIMENTAL_TEST(userdef, member); \
     }
 
@@ -927,7 +927,7 @@ static ApiStruct *api_AddonPref_refine(PointerRNA *ptr)
   return (ptr->type) ? ptr->type : &RNA_AddonPreferences;
 }
 
-static float rna_ThemeUI_roundness_get(ApiPtr *ptr)
+static float api_ThemeUI_roundness_get(ApiPtr *ptr)
 {
   /* Remap from relative radius to 0..1 range. */
   uiWidgetColors *tui = (uiWidgetColors *)ptr->data;
@@ -975,14 +975,14 @@ static void api_UserDef_studiolight_name_get(PointerRNA *ptr, char *value)
   strcpy(value, sl->name);
 }
 
-static int api_UserDef_studiolight_name_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_name_length(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return strlen(sl->name);
 }
 
 /* StudioLight.path */
-static void api_UserDef_studiolight_path_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_path_get(ApiPtr *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   strcpy(value, sl->filepath);
@@ -1006,7 +1006,7 @@ static void api_UserDef_studiolight_path_irr_cache_get(PointerRNA *ptr, char *va
   }
 }
 
-static int api_UserDef_studiolight_path_irr_cache_length(PointerRNA *ptr)
+static int api_UserDef_studiolight_path_irr_cache_length(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_irr_cache) {
@@ -1016,7 +1016,7 @@ static int api_UserDef_studiolight_path_irr_cache_length(PointerRNA *ptr)
 }
 
 /* StudioLight.path_sh_cache */
-static void api_UserDef_studiolight_path_sh_cache_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_path_sh_cache_get(ApiPtr *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_sh_cache) {
@@ -1037,21 +1037,21 @@ static int api_UserDef_studiolight_path_sh_cache_length(PointerRNA *ptr)
 }
 
 /* StudioLight.index */
-static int api_UserDef_studiolight_index_get(PointerRNA *ptr)
+static int api_UserDef_studiolight_index_get(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return sl->index;
 }
 
 /* StudioLight.is_user_defined */
-static bool api_UserDef_studiolight_is_user_defined_get(PointerRNA *ptr)
+static bool api_UserDef_studiolight_is_user_defined_get(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return (sl->flag & STUDIOLIGHT_USER_DEFINED) != 0;
 }
 
 /* StudioLight.is_user_defined */
-static bool api_UserDef_studiolight_has_specular_highlight_pass_get(PointerRNA *ptr)
+static bool api_UserDef_studiolight_has_specular_highlight_pass_get(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return sl->flag & STUDIOLIGHT_SPECULAR_HIGHLIGHT_PASS;
@@ -1059,13 +1059,13 @@ static bool api_UserDef_studiolight_has_specular_highlight_pass_get(PointerRNA *
 
 /* StudioLight.type */
 
-static int api_UserDef_studiolight_type_get(PointerRNA *ptr)
+static int api_UserDef_studiolight_type_get(ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   return sl->flag & STUDIOLIGHT_FLAG_ORIENTATIONS;
 }
 
-static void api_UserDef_studiolight_spherical_harmonics_coefficients_get(PointerRNA *ptr,
+static void api_UserDef_studiolight_spherical_harmonics_coefficients_get(ApiPtr *ptr,
                                                                          float *values)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
@@ -1078,21 +1078,21 @@ static void api_UserDef_studiolight_spherical_harmonics_coefficients_get(Pointer
 
 /* StudioLight.solid_lights */
 
-static void api_UserDef_studiolight_solid_lights_begin(CollectionPropertyIterator *iter,
-                                                       PointerRNA *ptr)
+static void api_UserDef_studiolight_solid_lights_begin(CollectionPropIter *iter,
+                                                       ApiPtr *ptr)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
-  rna_iterator_array_begin(iter, sl->light, sizeof(*sl->light), ARRAY_SIZE(sl->light), 0, NULL);
+  api_iter_array_begin(iter, sl->light, sizeof(*sl->light), ARRAY_SIZE(sl->light), 0, NULL);
 }
 
-static int rna_UserDef_studiolight_solid_lights_length(PointerRNA *UNUSED(ptr))
+static int api_UserDef_studiolight_solid_lights_length(ApiPtr *UNUSED(ptr))
 {
   return ARRAY_SIZE(((StudioLight *)NULL)->light);
 }
 
 /* StudioLight.light_ambient */
 
-static void api_UserDef_studiolight_light_ambient_get(PointerRNA *ptr, float *values)
+static void api_UserDef_studiolight_light_ambient_get(SpuPtr *ptr, float *values)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   copy_v3_v3(values, sl->light_ambient);
@@ -1105,13 +1105,13 @@ int api_show_statusbar_vram_editable(struct ApiPtr *UNUSED(ptr), const char **UN
 
 static const EnumPropItem *api_pref_gpu_backend_itemf(struct Ctx *UNUSED(C),
                                                       ApiPtr *UNUSED(ptr),
-                                                      PropertyRNA *UNUSED(prop),
+                                                      ApiProp *UNUSED(prop),
                                                       bool *r_free)
 {
   int totitem = 0;
-  EnumPropertyItem *result = NULL;
-  for (int i = 0; rna_enum_preference_gpu_backend_items[i].identifier != NULL; i++) {
-    const EnumPropertyItem *item = &rna_enum_preference_gpu_backend_items[i];
+  EnumPropItem *result = NULL;
+  for (int i = 0; api_enum_pref_gpu_backend_items[i].id != NULL; i++) {
+    const EnumPropItem *item = &api_enum_pref_gpu_backend_items[i];
 #  ifndef WITH_METAL_BACKEND
     if (item->value == GPU_BACKEND_METAL) {
       continue;
@@ -1122,23 +1122,23 @@ static const EnumPropItem *api_pref_gpu_backend_itemf(struct Ctx *UNUSED(C),
       continue;
     }
 #  endif
-    RNA_enum_item_add(&result, &totitem, item);
+    api_enum_item_add(&result, &totitem, item);
   }
 
-  RNA_enum_item_end(&result, &totitem);
+  api_enum_item_end(&result, &totitem);
   *r_free = true;
   return result;
 }
 
 #else
 
-#  define USERDEF_TAG_DIRTY_PROPERTY_UPDATE_ENABLE \
-    RNA_define_fallback_property_update(0, "rna_userdef_is_dirty_update")
+#  define USERDEF_TAG_DIRTY_PROP_UPDATE_ENABLE \
+    api_define_fallback_prop_update(0, "api_userdef_is_dirty_update")
 
-#  define USERDEF_TAG_DIRTY_PROPERTY_UPDATE_DISABLE RNA_define_fallback_property_update(0, NULL)
+#  define USERDEF_TAG_DIRTY_PROP_UPDATE_DISABLE api_define_fallback_prop_update(0, NULL)
 
-/* TODO(sergey): This technically belongs to blenlib, but we don't link
- * makesrna against it.
+/* TODO: This technically belongs to blenlib, but we don't link
+ * makesapi against it.
  */
 
 /* Get maximum addressable memory in megabytes, */
@@ -1158,135 +1158,135 @@ static int max_memory_in_megabytes_int(void)
   return (int)min_zz(limit_megabytes, (size_t)INT_MAX);
 }
 
-static void rna_def_userdef_theme_ui_font_style(BlenderRNA *brna)
+static void api_def_userdef_theme_ui_font_style(DunrApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeFontStyle", NULL);
-  RNA_def_struct_sdna(srna, "uiFontStyle");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Font Style", "Theme settings for Font");
+  srna = api_def_struct(brna, "ThemeFontStyle", NULL);
+  api_def_struct_sdna(srna, "uiFontStyle");
+  api_def_struct_clear_flag(srna, STRUCT_UNDO);
+  api_def_struct_ui_text(srna, "Font Style", "Theme settings for Font");
 
-  prop = RNA_def_property(srna, "points", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_range(prop, 6.0f, 32.0f);
-  RNA_def_property_ui_range(prop, 8.0f, 20.0f, 10.0f, 1);
-  RNA_def_property_ui_text(prop, "Points", "Font size in points");
-  RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
+  prop = api_def_prop(srna, "points", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_range(prop, 6.0f, 32.0f);
+  api_def_prop_ui_range(prop, 8.0f, 20.0f, 10.0f, 1);
+  api_def_prop_ui_text(prop, "Points", "Font size in points");
+  api_def_prop_update(prop, 0, "rna_userdef_dpi_update");
 
-  prop = RNA_def_property(srna, "shadow", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 0, 5);
-  RNA_def_property_ui_text(prop, "Shadow Size", "Shadow size (0, 3 and 5 supported)");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_text_style_update");
+  prop = api_def_prop(srna, "shadow", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 0, 5);
+  api_def_prop_ui_text(prop, "Shadow Size", "Shadow size (0, 3 and 5 supported)");
+  api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
-  prop = RNA_def_property(srna, "shadow_offset_x", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "shadx");
-  RNA_def_property_range(prop, -10, 10);
-  RNA_def_property_ui_text(prop, "Shadow X Offset", "Shadow offset in pixels");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_text_style_update");
+  prop = api_def_prop(srna, "shadow_offset_x", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_sdna(prop, NULL, "shadx");
+  api_def_prop(prop, -10, 10);
+  api_def_prop_ui_text(prop, "Shadow X Offset", "Shadow offset in pixels");
+  api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
-  prop = RNA_def_property(srna, "shadow_offset_y", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "shady");
-  RNA_def_property_range(prop, -10, 10);
-  RNA_def_property_ui_text(prop, "Shadow Y Offset", "Shadow offset in pixels");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_text_style_update");
+  prop = api_def_prop(srna, "shadow_offset_y", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_sdna(prop, NULL, "shady");
+  api_def_prop_range(prop, -10, 10);
+  api_def_prop_ui_text(prop, "Shadow Y Offset", "Shadow offset in pixels");
+  api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
   prop = api_def_prop(srna, "shadow_alpha", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_sdna(prop, NULL, "shadowalpha");
   api_def_prop_range(prop, 0.0f, 1.0
   api_def_prop_ui_text(prop, "Shadow Alpha", "")
-  api_def_prop_update(prop, 0, "rna_userdef_theme_text_style_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 
   prop = api_def_prop(srna, "shadow_value", PROP_FLOAT, PROP_FACTOR);
   api_def_prop_float_sdna(prop, NULL, "shadowcolor");
   api_def_prop_range(prop, 0.0f, 1.0f);
   api_def_prop_ui_text(prop, "Shadow Brightness", "Shadow color in gray value");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_text_style_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_text_style_update");
 }
 
-static void rna_def_userdef_theme_ui_style(BlenderRNA *brna)
+static void api_def_userdef_theme_ui_style(DuneApi *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  rna_def_userdef_theme_ui_font_style(brna);
+  api_def_userdef_theme_ui_font_style(bapi);
 
-  srna = RNA_def_struct(brna, "ThemeStyle", NULL);
-  RNA_def_struct_sdna(srna, "uiStyle");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Style", "Theme settings for style sets");
+  srna = api_def_struct(bapi, "ThemeStyle", NULL);
+  api_def_struct_sdna(srna, "uiStyle");
+  api_def_struct_clear_flag(srna, STRUCT_UNDO);
+  api_def_struct_ui_text(srna, "Style", "Theme settings for style sets");
 
-  prop = RNA_def_property(srna, "panel_title", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "paneltitle");
-  RNA_def_property_struct_type(prop, "ThemeFontStyle");
-  RNA_def_property_ui_text(prop, "Panel Title Font", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "panel_title", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_sdna(prop, NULL, "paneltitle");
+  api_def_prop_struct_type(prop, "ThemeFontStyle");
+  api_def_prop_ui_text(prop, "Panel Title Font", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "widget_label", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "widgetlabel");
-  RNA_def_property_struct_type(prop, "ThemeFontStyle");
-  RNA_def_property_ui_text(prop, "Widget Label Style", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "widget_label", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_sdna(prop, NULL, "widgetlabel");
+  api_def_prop_struct_type(prop, "ThemeFontStyle");
+  api_def_prop_ui_text(prop, "Widget Label Style", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "widget", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "widget");
-  RNA_def_property_struct_type(prop, "ThemeFontStyle");
-  RNA_def_property_ui_text(prop, "Widget Style", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "widget", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_sdna(prop, NULL, "widget");
+  api_def_prop_struct_type(prop, "ThemeFontStyle");
+  api_def_prop_ui_text(prop, "Widget Style", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_ui_wcol(BlenderRNA *brna)
+static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeWidgetColors", NULL);
-  RNA_def_struct_sdna(srna, "uiWidgetColors");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Widget Color Set", "Theme settings for widget color sets");
+  srna = api_def_struct(dapi, "ThemeWidgetColors", NULL);
+  api_def_struct_sdna(srna, "uiWidgetColors");
+  api_def_struct_clear_flag(srna, STRUCT_UNDO);
+  api_def_struct_ui_text(srna, "Theme Widget Color Set", "Theme settings for widget color sets");
 
-  prop = RNA_def_property(srna, "outline", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Outline", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "outline", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Outline", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "inner", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Inner", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "inner", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Inner", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "inner_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Inner Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "inner_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Inner Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "item", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Item", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "item", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Item", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "text", PROP_FLOAT, PROP_COLOR_GAMMA
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Text", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "text_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Text Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "text_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Text Selected", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "show_shaded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "shaded", 1);
-  RNA_def_property_ui_text(prop, "Shaded", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "show_shaded", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "shaded", 1);
+  api_def_prop_ui_text(prop, "Shaded", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "shadetop", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, -100, 100);
-  RNA_def_property_ui_text(prop, "Shade Top", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "shadetop", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, -100, 100);
+  api_def_prop_ui_text(prop, "Shade Top", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   prop = RNA_def_property(srna, "shadedown", PROP_INT, PROP_NONE);
   RNA_def_property_range(prop, -100, 100);
