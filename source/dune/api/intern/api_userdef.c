@@ -1666,29 +1666,29 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_ui_text(prop, "Gizmo Primary", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "gizmo_secondary", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "gizmo_secondary");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gizmo Secondary", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "gizmo_secondary", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "gizmo_secondary");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gizmo Secondary", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "gizmo_view_align", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "gizmo_view_align");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gizmo View Align", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "gizmo_view_align", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "gizmo_view_align");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gizmo View Align", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "gizmo_a", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "gizmo_a");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gizmo A", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "gizmo_a", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "gizmo_a");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gizmo A", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "gizmo_b", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "gizmo_b");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Gizmo B", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapi, "gizmo_b", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "gizmo_b");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Gizmo B", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* Icon colors. */
   prop = RNA_def_property(srna, "icon_scene", PROP_FLOAT, PROP_COLOR_GAMMA);
