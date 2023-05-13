@@ -527,17 +527,17 @@ static void uilist_draw_filter(uiList *ui_list, const bContext *C, uiLayout *lay
   api_param_list_create(&list, &ul_ptr, func);
   api_param_set_lookup(&list, "context", &C);
   api_param_set_lookup(&list, "layout", &layout);
-  ui_list->type->rna_ext.call((bContext *)C, &ul_ptr, func, &list);
+  ui_list->type->rna_ext.call((Ctx *)C, &ul_ptr, func, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void uilist_filter_items(uiList *ui_list,
-                                const bContext *C,
-                                PointerRNA *dataptr,
+                                const Ctx *C,
+                                ApiPtr *dataptr,
                                 const char *propname)
 {
-  extern FunctionRNA rna_UIList_filter_items_func;
+  extern ApiFn api_UIList_filter_items_fn;
 
   ApiPtr ul_ptr;
   ParamList list;
@@ -550,22 +550,22 @@ static void uilist_filter_items(uiList *ui_list,
   int ret_len;
   int len = flt_data->items_len = RNA_collection_length(dataptr, propname);
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, ui_list->type->rna_ext.srna, ui_list, &ul_ptr);
-  func = &rna_UIList_filter_items_func; /* RNA_struct_find_function(&ul_ptr, "filter_items"); */
+  api_ptr_create(&ctx_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
+  fn = &api_UIList_filter_items_func; /* api_struct_find_fn(&ul_ptr, "filter_items"); */
 
-  RNA_parameter_list_create(&list, &ul_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "data", dataptr);
-  RNA_parameter_set_lookup(&list, "property", &propname);
+  api_param_list_create(&list, &ul_ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "data", dataptr);
+  api_param_set_lookup(&list, "property", &propname);
 
-  ui_list->type->rna_ext.call((bContext *)C, &ul_ptr, func, &list);
+  ui_list->type->api_ext.call((Ctx *)C, &ul_ptr, fn, &list);
 
-  parm = RNA_function_find_parameter(NULL, func, "filter_flags");
-  ret_len = RNA_parameter_dynamic_length_get(&list, parm);
+  parm = api_fn_find_param(NULL, fn, "filter_flags");
+  ret_len = api_param_dynamic_length_get(&list, parm);
   if (!ELEM(ret_len, len, 0)) {
     printf("%s: Error, py func returned %d items in %s, %d or none were expected.\n",
            __func__,
-           RNA_parameter_dynamic_length_get(&list, parm),
+           api_param_dynamic_length_get(&list, parm),
            "filter_flags",
            len);
     /* NOTE: we cannot return here, we would let flt_data in inconsistent state... see #38356. */
