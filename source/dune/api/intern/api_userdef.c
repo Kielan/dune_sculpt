@@ -1809,10 +1809,10 @@ static void api_def_userdef_theme_space_common(ApiStruct *sapi)
   api_def_prop_ui_text(prop, "Navigation Bar Background", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "execution_buts", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Execution Region Background", "");
-  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
+  prop = api_def_prop(sapo, "execution_buts", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Execution Region Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* tabs */
   prop = api_def_prop(sapi, "tab_active", PROP_FLOAT, PROP_COLOR_GAMMA);
@@ -1841,7 +1841,7 @@ static void api_def_userdef_theme_space_gradient(BlenderRNA *brna)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "ThemeSpaceGradient", NULL);
+  sapi = api_def_struct(dapi, "ThemeSpaceGradient", NULL);
   api_def_struct_sdna(sapi, "ThemeSpace");
   api_def_struct_ui_text(sapi, "Theme Space Settings", "");
 
@@ -1926,30 +1926,30 @@ static void api_def_userdef_theme_spaces_gradient(StructRNA *srna)
   api_def_prop_ui_text(prop, "Theme Space", "Settings for space");
 }
 
-static void rna_def_userdef_theme_spaces_list_main(StructRNA *srna)
+static void api_def_userdef_theme_spaces_list_main(StructRNA *srna)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_property(srna, "space_list", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "ThemeSpaceListGeneric");
-  RNA_def_property_pointer_funcs(prop, "rna_Theme_space_list_generic_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Theme Space List", "Settings for space list");
+  prop = api_def_prop(sapi, "space_list", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NUL
+  api_def_prop_struct_type(prop, "ThemeSpaceListGeneric");
+  api_def_prop_ptr_fns(prop, "rna_Theme_space_list_generic_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Theme Space List", "Settings for space list");
 }
 
-static void rna_def_userdef_theme_spaces_vertex(StructRNA *srna)
+static void api_def_userdef_theme_spaces_vertex(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_property(srna, "vertex", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Vertex", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "vertex", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Vertex", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "vertex_select", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Vertex Select", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "vertex_select", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Vertex Select", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   prop = RNA_def_property(srna, "vertex_active", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_array(prop, 3);
