@@ -136,9 +136,9 @@ static void panel_draw_header(const Ctx *C, Panel *panel)
   api_ptr_create(&ctx_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
   fn = &api_Panel_draw_header_fn; /* RNA_struct_find_function(&ptr, "draw_header"); */
 
-  api_param_list_create(&list, &ptr, func);
+  api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  panel->type->api_ext.call((Ctx *)C, &ptr, func, &list);
+  panel->type->api_ext.call((Ctx *)C, &ptr, fn, &list);
 
   api_param_list_free(&list);
 }
@@ -539,10 +539,10 @@ static void uilist_filter_items(uiList *ui_list,
 {
   extern FunctionRNA rna_UIList_filter_items_func;
 
-  PointerRNA ul_ptr;
-  ParameterList list;
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiPtr ul_ptr;
+  ParamList list;
+  ApiFn *fn;
+  ApiProp *parm;
 
   uiListDyn *flt_data = ui_list->dyn_data;
   int *filter_flags, *filter_neworder;
