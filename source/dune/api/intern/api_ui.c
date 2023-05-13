@@ -406,11 +406,11 @@ static ApiStruct *api_Panel_register(Main *main,
         break;
       }
     }
-    lib_insertlinkafter(&parent->children, pt_child_iter, BLI_genericNodeN(pt));
+    lib_insertlinkafter(&parent->children, pt_child_iter, lib_genericnoden(pt));
   }
 
   {
-    const char *owner_id = RNA_struct_state_owner_get();
+    const char *owner_id = api_struct_state_owner_get();
     if (owner_id) {
       STRNCPY(pt->owner_id, owner_id);
     }
@@ -427,7 +427,7 @@ static ApiStruct *api_Panel_register(Main *main,
 static ApiStruct *api_Panel_refine(ApiPtr *ptr)
 {
   Panel *menu = (Panel *)ptr->data;
-  return (menu->type && menu->type->api_ext.sapi) ? menu->type->rna_ext.srna : &RNA_Panel;
+  return (menu->type && menu->type->api_ext.sapi) ? menu->type->api_ext.sapi : &ApiPanel;
 }
 
 static ApiStruct *api_Panel_custom_data_typef(ApiPtr *ptr)
@@ -572,23 +572,23 @@ static void uilist_filter_items(uiList *ui_list,
     filter_flags = NULL;
   }
   else {
-    RNA_parameter_get(&list, parm, &ret1);
+    api_param_get(&list, parm, &ret1);
     filter_flags = (int *)ret1;
   }
 
-  parm = RNA_function_find_parameter(NULL, func, "filter_neworder");
-  ret_len = RNA_parameter_dynamic_length_get(&list, parm);
+  parm = api_fn_find_param(NULL, func, "filter_neworder");
+  ret_len = api_param_dynamic_length_get(&list, parm);
   if (!ELEM(ret_len, len, 0)) {
-    printf("%s: Error, py func returned %d items in %s, %d or none were expected.\n",
+    printf("%s: Error, py fn returned %d items in %s, %d or none were expected.\n",
            __func__,
-           RNA_parameter_dynamic_length_get(&list, parm),
+           api_param_dynamic_length_get(&list, parm),
            "filter_neworder",
            len);
     /* NOTE: we cannot return here, we would let flt_data in inconsistent state... see #38356. */
     filter_neworder = NULL;
   }
   else {
-    RNA_parameter_get(&list, parm, &ret2);
+    api_param_get(&list, parm, &ret2);
     filter_neworder = (int *)ret2;
   }
 
@@ -688,7 +688,7 @@ static ApiStruct *api_UIList_register(Main *bmain,
 
   /* setup dummy menu & menu type to store static properties in */
   dummy_uilist.type = &dummy_ult;
-  api_ptr_create(NULL, &RNA_UIList, &dummy_uilist, &dummy_ul_ptr);
+  api_ptr_create(NULL, &ApiUIList, &dummy_uilist, &dummy_ul_ptr);
 
   /* validate the python class */
   if (validate(&dummy_ul_ptr, data, have_fn) != 0) {
@@ -731,10 +731,10 @@ static ApiStruct *api_UIList_register(Main *bmain,
   ult = mem_callocn(sizeof(uiListType) + over_alloc, "python uilist");
   memcpy(ult, &dummy_ult, sizeof(dummy_ult));
 
-  ult->rna_ext.sapi = api_def_struct_ptr(&DUNE_API, ult->idname, &ApiUIList);
-  ult->rna_ext.data = data;
-  ult->rna_ext.call = call;
-  ult->rna_ext.free = free;
+  ult->api_ext.sapi = api_def_struct_ptr(&DUNE_API, ult->idname, &ApiUIList);
+  ult->api_ext.data = data;
+  ult->api_ext.call = call;
+  ult->api_ext.free = free;
   api_struct_dune_type_set(ult->api_ext.sapi, ult);
 
   ult->draw_item = (have_fn[0]) ? uilist_draw_item : NULL;
@@ -749,37 +749,37 @@ static ApiStruct *api_UIList_register(Main *bmain,
   return ult->api_ext.sapi;
 }
 
-static ApiStruct *api_UIList_refine(PointerRNA *ptr)
+static ApiStruct *api_UIList_refine(ApiPtr *ptr)
 {
   uiList *ui_list = (uiList *)ptr->data;
-  return (ui_list->type && ui_list->type->rna_ext.srna) ? ui_list->type->rna_ext.srna :
-                                                          &RNA_UIList;
+  return (ui_list->type && ui_list->type->api_ext.sapi) ? ui_list->type->api_ext.srna :
+                                                          &ApiUIList;
 }
 
 /* Header */
 
-static void header_draw(const bContext *C, Header *hdr)
+static void header_draw(const Ctx *C, Header *hdr)
 {
-  extern FunctionRNA rna_Header_draw_func;
+  extern ApiFn api_Header_draw_fn;
 
-  PointerRNA htr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr htr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, hdr->type->rna_ext.srna, hdr, &htr);
-  func = &rna_Header_draw_func; /* RNA_struct_find_function(&htr, "draw"); */
+  api_ptr_create(&ctx_wm_screen(C)->id, hdr->type->api_ext.sapi, hdr, &htr);
+  func = &api_Header_draw_fn; /* api_struct_find_fn(&htr, "draw"); */
 
-  RNA_parameter_list_create(&list, &htr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  hdr->type->rna_ext.call((bContext *)C, &htr, func, &list);
+  api_param_list_create(&list, &htr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  hdr->type->api_ext.call((Ctx *)C, &htr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static bool rna_Header_unregister(Main *UNUSED(bmain), StructRNA *type)
+static bool api_Header_unregister(Main *UNUSED(main), ApiStruct *type)
 {
   ARegionType *art;
-  HeaderType *ht = RNA_struct_blender_type_get(type);
+  HeaderType *ht = api_struct_blender_type_get(type);
 
   if (!ht) {
     return false;
@@ -788,47 +788,47 @@ static bool rna_Header_unregister(Main *UNUSED(bmain), StructRNA *type)
     return false;
   }
 
-  RNA_struct_free_extension(type, &ht->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &ht->api_ext);
+  api_struct_free(&DUNE_API, type);
 
-  BLI_freelinkN(&art->headertypes, ht);
+  lib_freelinkn(&art->headertypes, ht);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   return true;
 }
 
-static StructRNA *rna_Header_register(Main *bmain,
+static ApiStruct *api_Header_register(Main *main,
                                       ReportList *reports,
                                       void *data,
-                                      const char *identifier,
-                                      StructValidateFunc validate,
-                                      StructCallbackFunc call,
-                                      StructFreeFunc free)
+                                      const char *id,
+                                      StructValidateFn validate,
+                                      StructCbF call,
+                                      StructFreeFn free)
 {
   const char *error_prefix = "Registering header class:";
   ARegionType *art;
   HeaderType *ht, dummy_ht = {NULL};
   Header dummy_header = {NULL};
-  PointerRNA dummy_header_ptr;
-  bool have_function[1];
+  ApiPtr dummy_header_ptr;
+  bool have_fn[1];
 
   /* setup dummy header & header type to store static properties in */
   dummy_header.type = &dummy_ht;
   dummy_ht.region_type = RGN_TYPE_HEADER; /* RGN_TYPE_HEADER by default, may be overridden */
-  RNA_pointer_create(NULL, &RNA_Header, &dummy_header, &dummy_header_ptr);
+  api_ptr_create(NULL, &ApiHeader, &dummy_header, &dummy_header_ptr);
 
   /* validate the python class */
-  if (validate(&dummy_header_ptr, data, have_function) != 0) {
+  if (validate(&dummy_header_ptr, data, have_fn) != 0) {
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummy_ht.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummy_ht.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
                 error_prefix,
-                identifier,
+                id,
                 (int)sizeof(dummy_ht.idname));
     return NULL;
   }
@@ -838,25 +838,25 @@ static StructRNA *rna_Header_register(Main *bmain,
   }
 
   /* check if we have registered this header type before, and remove it */
-  ht = BLI_findstring(&art->headertypes, dummy_ht.idname, offsetof(HeaderType, idname));
+  ht = lib_findstring(&art->headertypes, dummy_ht.idname, offsetof(HeaderType, idname));
   if (ht) {
-    StructRNA *srna = ht->rna_ext.srna;
-    if (!(srna && rna_Header_unregister(bmain, srna))) {
-      BKE_reportf(reports,
+    ApiStruct *sapi = ht->api_ext.srna;
+    if (!(sapi && api_Header_unregister(main, sapi))) {
+      dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
                   error_prefix,
-                  identifier,
+                  id,
                   dummy_ht.idname,
-                  srna ? "is built-in" : "could not be unregistered");
+                  sapi ? "is built-in" : "could not be unregistered");
       return NULL;
     }
   }
 
-  if (!RNA_struct_available_or_report(reports, dummy_ht.idname)) {
+  if (!api_struct_available_or_report(reports, dummy_ht.idname)) {
     return NULL;
   }
-  if (!RNA_struct_bl_idname_ok_or_report(reports, dummy_ht.idname, "_HT_")) {
+  if (!api_struct_bl_idname_ok_or_report(reports, dummy_ht.idname, "_HT_")) {
     return NULL;
   }
 
