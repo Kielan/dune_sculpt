@@ -1468,62 +1468,62 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   prop = api_def_prop(sapi, "wcol_toolbar_item", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Toolbar Item Widget Colors", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "wcol_radio", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Radio Widget Colors", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "wcol_text", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "Text Widget Colors", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "wcol_option", PROP_POINTER, PROP_NONE);
-  apidef_prop_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Option Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Option Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_toggle", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Toggle Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_toggle", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Toggle Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_num", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Number Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_num", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Number Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_numslider", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Slider Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapo, "wcol_numslider", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Slider Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "wcol_box", PROP_POINTER, PROP_NONE);
   RNA_def_property_flag(prop, PROP_NEVER_NULL);
   RNA_def_property_ui_text(prop, "Box Backdrop Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "wcol_menu", PROP_POINTER, PROP_NONE);
   RNA_def_property_flag(prop, PROP_NEVER_NULL);
   RNA_def_property_ui_text(prop, "Menu Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  RNA_def_property_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_pulldown", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Pulldown Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(srna, "wcol_pulldown", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Pulldown Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_menu_back", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Menu Backdrop Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_menu_back", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Menu Backdrop Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_pie_menu", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Pie Menu Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = RNA_def_prop(sapi, "wcol_pie_menu", PROP_POINTER, PROP_NONE);
+  RNA_def_prop_flag(prop, PROP_NEVER_NULL);
+  RNA_def_prop_ui_text(prop, "Pie Menu Colors", "");
+  RNA_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = RNA_def_property(srna, "wcol_tooltip", PROP_POINTER, PROP_NONE);
   RNA_def_property_flag(prop, PROP_NEVER_NULL);
