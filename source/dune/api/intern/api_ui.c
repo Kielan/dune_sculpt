@@ -140,25 +140,25 @@ static void panel_draw_header(const Ctx *C, Panel *panel)
   api_param_set_lookup(&list, "context", &C);
   panel->type->api_ext.call((Ctx *)C, &ptr, func, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void panel_draw_header_preset(const bContext *C, Panel *panel)
+static void panel_draw_header_preset(const Ctx *C, Panel *panel)
 {
-  extern FunctionRNA rna_Panel_draw_header_preset_func;
+  extern ApiFn api_Panel_draw_header_preset_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, panel->type->rna_ext.srna, panel, &ptr);
-  func = &rna_Panel_draw_header_preset_func;
+  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->rna_ext.srna, panel, &ptr);
+  fn = &api_Panel_draw_header_preset_func;
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  panel->type->rna_ext.call((bContext *)C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, func);
+  api_param_set_lookup(&list, "context", &C);
+  panel->type->api_ext.call((bContext *)C, &ptr, func, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void panel_type_clear_recursive(Panel *panel, const PanelType *type)
@@ -167,15 +167,15 @@ static void panel_type_clear_recursive(Panel *panel, const PanelType *type)
     panel->type = NULL;
   }
 
-  LISTBASE_FOREACH (Panel *, child_panel, &panel->children) {
+  LIST_FOREACH (Panel *, child_panel, &panel->children) {
     panel_type_clear_recursive(child_panel, type);
   }
 }
 
-static bool rna_Panel_unregister(Main *bmain, StructRNA *type)
+static bool api_Panel_unregister(Main *main, ApiStruc *type)
 {
   ARegionType *art;
-  PanelType *pt = RNA_struct_blender_type_get(type);
+  PanelType *pt = api_struct_dunr_type_get(type);
 
   if (!pt) {
     return false;
@@ -184,40 +184,40 @@ static bool rna_Panel_unregister(Main *bmain, StructRNA *type)
     return false;
   }
 
-  RNA_struct_free_extension(type, &pt->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &pt->api_ext);
+  api_struct_free(&DUNE_API, type);
 
   if (pt->parent) {
-    LinkData *link = BLI_findptr(&pt->parent->children, pt, offsetof(LinkData, data));
-    BLI_freelinkN(&pt->parent->children, link);
+    LinkData *link = lib_findptr(&pt->parent->children, pt, offsetof(LinkData, data));
+    lib_freelinkn(&pt->parent->children, link);
   }
 
-  WM_paneltype_remove(pt);
+  wm_paneltype_remove(pt);
 
-  LISTBASE_FOREACH (LinkData *, link, &pt->children) {
+  LIST_FOREACH (LinkData *, link, &pt->children) {
     PanelType *child_pt = link->data;
     child_pt->parent = NULL;
   }
 
   const char space_type = pt->space_type;
-  BLI_freelistN(&pt->children);
-  BLI_freelinkN(&art->paneltypes, pt);
+  lib_freelistn(&pt->children);
+  lib_freelinkn(&art->paneltypes, pt);
 
-  for (bScreen *screen = bmain->screens.first; screen; screen = screen->id.next) {
-    LISTBASE_FOREACH (ScrArea *, area, &screen->areabase) {
-      LISTBASE_FOREACH (SpaceLink *, sl, &area->spacedata) {
+  for (Screen *screen = main->screens.first; screen; screen = screen->id.next) {
+    LIST_FOREACH (ScrArea *, area, &screen->areabase) {
+      LIST_FOREACH (SpaceLink *, sl, &area->spacedata) {
         if (sl->spacetype == space_type) {
-          ListBase *regionbase = (sl == area->spacedata.first) ? &area->regionbase :
+          List *regionbase = (sl == area->spacedata.first) ? &area->regionbase :
                                                                  &sl->regionbase;
-          LISTBASE_FOREACH (ARegion *, region, regionbase) {
+          LIST_FOREACH (ARegion *, region, regionbase) {
             if (region->type == art) {
-              LISTBASE_FOREACH (Panel *, panel, &region->panels) {
+              LIST_FOREACH (Panel *, panel, &region->panels) {
                 panel_type_clear_recursive(panel, pt);
               }
             }
             /* The unregistered panel might have had a template that added instanced panels,
              * so remove them just in case. They can be re-added on redraw anyway. */
-            UI_panels_free_instanced(NULL, region);
+            ui_panels_free_instanced(NULL, region);
           }
         }
       }
@@ -225,33 +225,33 @@ static bool rna_Panel_unregister(Main *bmain, StructRNA *type)
   }
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   return true;
 }
 
-static StructRNA *rna_Panel_register(Main *bmain,
+static ApiStruct *api_Panel_register(Main *main,
                                      ReportList *reports,
                                      void *data,
-                                     const char *identifier,
-                                     StructValidateFunc validate,
-                                     StructCallbackFunc call,
-                                     StructFreeFunc free)
+                                     const char *id,
+                                     StructValidateFn validate,
+                                     StructCbFn call,
+                                     StructFreeFn free)
 {
   const char *error_prefix = "Registering panel class:";
   ARegionType *art;
   PanelType *pt, *parent = NULL, dummy_pt = {NULL};
   Panel dummy_panel = {NULL};
-  PointerRNA dummy_panel_ptr;
-  bool have_function[4];
+  ApiPtr dummy_panel_ptr;
+  bool have_fn[4];
   size_t over_alloc = 0; /* Warning, if this becomes a mess, we better do another allocation. */
-  char _panel_descr[RNA_DYN_DESCR_MAX];
+  char _panel_descr[API_DYN_DESCR_MAX];
   size_t description_size = 0;
 
   /* setup dummy panel & panel type to store static properties in */
   dummy_panel.type = &dummy_pt;
   _panel_descr[0] = '\0';
   dummy_panel.type->description = _panel_descr;
-  RNA_pointer_create(NULL, &RNA_Panel, &dummy_panel, &dummy_panel_ptr);
+  api_ptr_create(NULL, &ApiPanel, &dummy_panel, &dummy_panel_ptr);
 
   /* We have to set default context! Else we get a void string... */
   strcpy(dummy_pt.translation_context, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
@@ -261,12 +261,12 @@ static StructRNA *rna_Panel_register(Main *bmain,
     return NULL;
   }
 
-  if (strlen(identifier) >= sizeof(dummy_pt.idname)) {
-    BKE_reportf(reports,
+  if (strlen(id) >= sizeof(dummy_pt.idname)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
                 error_prefix,
-                identifier,
+                id,
                 (int)sizeof(dummy_pt.idname));
     return NULL;
   }
@@ -283,7 +283,7 @@ static StructRNA *rna_Panel_register(Main *bmain,
   else {
     if (dummy_pt.category[0] != '\0') {
       if ((1 << dummy_pt.space_type) & WM_TOOLSYSTEM_SPACE_MASK) {
-        BKE_reportf(reports,
+        dune_reportf(reports,
                     RPT_ERROR,
                     "%s '%s' has category '%s'",
                     error_prefix,
@@ -302,19 +302,19 @@ static StructRNA *rna_Panel_register(Main *bmain,
   for (pt = art->paneltypes.first; pt; pt = pt->next) {
     if (STREQ(pt->idname, dummy_pt.idname)) {
       PanelType *pt_next = pt->next;
-      StructRNA *srna = pt->rna_ext.srna;
-      if (srna) {
-        if (!rna_Panel_unregister(bmain, srna)) {
-          BKE_reportf(reports,
+      ApiStruct *srna = pt->api_ext.sapi;
+      if (sapi) {
+        if (!api_Panel_unregister(main, sapi)) {
+          dune_reportf(reports,
                       RPT_ERROR,
                       "%s '%s', bl_idname '%s' could not be unregistered",
                       error_prefix,
-                      identifier,
+                      id,
                       dummy_pt.idname);
         }
       }
       else {
-        BLI_freelinkN(&art->paneltypes, pt);
+        lib_freelinkn(&art->paneltypes, pt);
       }
 
       /* The order of panel types will be altered on re-registration. */
@@ -335,14 +335,14 @@ static StructRNA *rna_Panel_register(Main *bmain,
     }
   }
 
-  if (!RNA_struct_available_or_report(reports, dummy_pt.idname)) {
+  if (!api_struct_available_or_report(reports, dummy_pt.idname)) {
     return NULL;
   }
-  if (!RNA_struct_bl_idname_ok_or_report(reports, dummy_pt.idname, "_PT_")) {
+  if (!api_struct_bl_idname_ok_or_report(reports, dummy_pt.idname, "_PT_")) {
     return NULL;
   }
   if (dummy_pt.parent_id[0] && !parent) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s parent '%s' for '%s' not found",
                 error_prefix,
@@ -356,7 +356,7 @@ static StructRNA *rna_Panel_register(Main *bmain,
     description_size = strlen(_panel_descr) + 1;
     over_alloc += description_size;
   }
-  pt = MEM_callocN(sizeof(PanelType) + over_alloc, "python buttons panel");
+  pt = mem_callocn(sizeof(PanelType) + over_alloc, "python buttons panel");
   memcpy(pt, &dummy_pt, sizeof(dummy_pt));
 
   if (_panel_descr[0]) {
@@ -368,18 +368,18 @@ static StructRNA *rna_Panel_register(Main *bmain,
     pt->description = NULL;
   }
 
-  pt->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, pt->idname, &RNA_Panel);
-  RNA_def_struct_translation_context(pt->rna_ext.srna, pt->translation_context);
-  pt->rna_ext.data = data;
-  pt->rna_ext.call = call;
-  pt->rna_ext.free = free;
-  RNA_struct_blender_type_set(pt->rna_ext.srna, pt);
-  RNA_def_struct_flag(pt->rna_ext.srna, STRUCT_NO_IDPROPERTIES);
+  pt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, pt->idname, &ApiPanel);
+  api_def_struct_translation_ctx(pt->api_ext.sapi, pt->translation_ctx);
+  pt->api_ext.data = data;
+  pt->api_ext.call = call;
+  pt->api_ext.free = free;
+  api_struct_dune_type_set(pt->api_ext.sapi, pt);
+  api_def_struct_flag(pt->api_ext.sapi, STRUCT_NO_IDPROPS);
 
-  pt->poll = (have_function[0]) ? panel_poll : NULL;
-  pt->draw = (have_function[1]) ? panel_draw : NULL;
-  pt->draw_header = (have_function[2]) ? panel_draw_header : NULL;
-  pt->draw_header_preset = (have_function[3]) ? panel_draw_header_preset : NULL;
+  pt->poll = (have_fn[0]) ? panel_poll : NULL;
+  pt->draw = (have_fn[1]) ? panel_draw : NULL;
+  pt->draw_header = (have_fn[2]) ? panel_draw_header : NULL;
+  pt->draw_header_preset = (have_fn[3]) ? panel_draw_header_preset : NULL;
 
   /* Find position to insert panel based on order. */
   PanelType *pt_iter = art->paneltypes.last;
@@ -395,7 +395,7 @@ static StructRNA *rna_Panel_register(Main *bmain,
   }
 
   /* Insert into list. */
-  BLI_insertlinkafter(&art->paneltypes, pt_iter, pt);
+  lib_insertlinkafter(&art->paneltypes, pt_iter, pt);
 
   if (parent) {
     pt->parent = parent;
@@ -406,7 +406,7 @@ static StructRNA *rna_Panel_register(Main *bmain,
         break;
       }
     }
-    BLI_insertlinkafter(&parent->children, pt_child_iter, BLI_genericNodeN(pt));
+    lib_insertlinkafter(&parent->children, pt_child_iter, BLI_genericNodeN(pt));
   }
 
   {
@@ -416,48 +416,48 @@ static StructRNA *rna_Panel_register(Main *bmain,
     }
   }
 
-  WM_paneltype_add(pt);
+  wm_paneltype_add(pt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
-  return pt->rna_ext.srna;
+  return pt->api_ext.sapi;
 }
 
-static StructRNA *rna_Panel_refine(PointerRNA *ptr)
+static ApiStruct *api_Panel_refine(ApiPtr *ptr)
 {
   Panel *menu = (Panel *)ptr->data;
-  return (menu->type && menu->type->rna_ext.srna) ? menu->type->rna_ext.srna : &RNA_Panel;
+  return (menu->type && menu->type->api_ext.sapi) ? menu->type->rna_ext.srna : &RNA_Panel;
 }
 
-static StructRNA *rna_Panel_custom_data_typef(PointerRNA *ptr)
+static ApiStruct *api_Panel_custom_data_typef(ApiPtr *ptr)
 {
   Panel *panel = (Panel *)ptr->data;
 
-  return UI_panel_custom_data_get(panel)->type;
+  return ui_panel_custom_data_get(panel)->type;
 }
 
-static PointerRNA rna_Panel_custom_data_get(PointerRNA *ptr)
+static ApiPtr api_Panel_custom_data_get(ApiPtr *ptr)
 {
   Panel *panel = (Panel *)ptr->data;
 
   /* Because the panel custom data is general we can't refine the pointer type here. */
-  return *UI_panel_custom_data_get(panel);
+  return *ui_panel_custom_data_get(panel);
 }
 
 /* UIList */
-static int rna_UIList_filter_const_FILTER_ITEM_get(PointerRNA *UNUSED(ptr))
+static int api_UIList_filter_const_FILTER_ITEM_get(ApiPtr *UNUSED(ptr))
 {
   return UILST_FLT_ITEM;
 }
 
-static IDProperty **rna_UIList_idprops(PointerRNA *ptr)
+static IdProp **api_UIList_idprops(ApiPtr *ptr)
 {
   uiList *ui_list = (uiList *)ptr->data;
-  return &ui_list->properties;
+  return &ui_list->props;
 }
 
-static void rna_UIList_list_id_get(PointerRNA *ptr, char *value)
+static void api_UIList_list_id_get(ApiPtr *ptr, char *value)
 {
   uiList *ui_list = (uiList *)ptr->data;
   if (!ui_list->type) {
@@ -465,68 +465,68 @@ static void rna_UIList_list_id_get(PointerRNA *ptr, char *value)
     return;
   }
 
-  strcpy(value, WM_uilisttype_list_id_get(ui_list->type, ui_list));
+  strcpy(value, wm_uilisttype_list_id_get(ui_list->type, ui_list));
 }
 
-static int rna_UIList_list_id_length(PointerRNA *ptr)
+static int api_UIList_list_id_length(ApiPtr *ptr)
 {
   uiList *ui_list = (uiList *)ptr->data;
   if (!ui_list->type) {
     return 0;
   }
 
-  return strlen(WM_uilisttype_list_id_get(ui_list->type, ui_list));
+  return strlen(wm_uilisttype_list_id_get(ui_list->type, ui_list));
 }
 
 static void uilist_draw_item(uiList *ui_list,
-                             const bContext *C,
+                             const Ctx *C,
                              uiLayout *layout,
-                             PointerRNA *dataptr,
-                             PointerRNA *itemptr,
+                             ApiPtr *dataptr,
+                             ApiPtr *itemptr,
                              int icon,
-                             PointerRNA *active_dataptr,
+                             ApiPtr *active_dataptr,
                              const char *active_propname,
                              int index,
                              int flt_flag)
 {
-  extern FunctionRNA rna_UIList_draw_item_func;
+  extern ApiFn api_UIList_draw_item_fn;
 
-  PointerRNA ul_ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ul_ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, ui_list->type->rna_ext.srna, ui_list, &ul_ptr);
-  func = &rna_UIList_draw_item_func; /* RNA_struct_find_function(&ul_ptr, "draw_item"); */
+  api_ptr_create(&ctx_wm_screen(C)->id, ui_list->type->rna_ext.srna, ui_list, &ul_ptr);
+  func = &api_UIList_draw_item_func; /* RNA_struct_find_function(&ul_ptr, "draw_item"); */
 
-  RNA_parameter_list_create(&list, &ul_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "layout", &layout);
-  RNA_parameter_set_lookup(&list, "data", dataptr);
-  RNA_parameter_set_lookup(&list, "item", itemptr);
-  RNA_parameter_set_lookup(&list, "icon", &icon);
-  RNA_parameter_set_lookup(&list, "active_data", active_dataptr);
-  RNA_parameter_set_lookup(&list, "active_property", &active_propname);
-  RNA_parameter_set_lookup(&list, "index", &index);
-  RNA_parameter_set_lookup(&list, "flt_flag", &flt_flag);
-  ui_list->type->rna_ext.call((bContext *)C, &ul_ptr, func, &list);
+  api_param_list_create(&list, &ul_ptr, func);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "layout", &layout);
+  api_param_set_lookup(&list, "data", dataptr);
+  api_param_set_lookup(&list, "item", itemptr);
+  api_param_set_lookup(&list, "icon", &icon);
+  api_param_set_lookup(&list, "active_data", active_dataptr);
+  api_param_set_lookup(&list, "active_property", &active_propname);
+  api_param_set_lookup(&list, "index", &index);
+  api_param_set_lookup(&list, "flt_flag", &flt_flag);
+  ui_list->type->api_ext.call((Ctx *)C, &ul_ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 static void uilist_draw_filter(uiList *ui_list, const bContext *C, uiLayout *layout)
 {
-  extern FunctionRNA rna_UIList_draw_filter_func;
+  extern ApiFn api_UIList_draw_filter_func;
 
-  PointerRNA ul_ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ul_ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, ui_list->type->rna_ext.srna, ui_list, &ul_ptr);
-  func = &rna_UIList_draw_filter_func; /* RNA_struct_find_function(&ul_ptr, "draw_filter"); */
+  api_ptr_create(&ctx_wm_screen(C)->id, ui_list->type->api_ext.sapi, ui_list, &ul_ptr);
+  fn = &api_UIList_draw_filter_fn; /* RNA_struct_find_function(&ul_ptr, "draw_filter"); */
 
-  RNA_parameter_list_create(&list, &ul_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "layout", &layout);
+  api_param_list_create(&list, &ul_ptr, func);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "layout", &layout);
   ui_list->type->rna_ext.call((bContext *)C, &ul_ptr, func, &list);
 
   RNA_parameter_list_free(&list);
