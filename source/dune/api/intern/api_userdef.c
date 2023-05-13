@@ -995,7 +995,7 @@ static int api_UserDef_studiolight_path_length(PointerRNA *ptr)
 }
 
 /* StudioLight.path_irr_cache */
-static void api_UserDef_studiolight_path_irr_cache_get(PointerRNA *ptr, char *value)
+static void api_UserDef_studiolight_path_irr_cache_get(ApiPtr *ptr, char *value)
 {
   StudioLight *sl = (StudioLight *)ptr->data;
   if (sl->path_irr_cache) {
@@ -1211,28 +1211,28 @@ static void api_def_userdef_theme_ui_style(DuneApi *brna)
 
   api_def_userdef_theme_ui_font_style(bapi);
 
-  srna = api_def_struct(bapi, "ThemeStyle", NULL);
-  api_def_struct_sdna(srna, "uiStyle");
-  api_def_struct_clear_flag(srna, STRUCT_UNDO);
-  api_def_struct_ui_text(srna, "Style", "Theme settings for style sets");
+  srna = api_def_struct(dapi, "ThemeStyle", NULL);
+  api_def_struct_sapi(sapi, "uiStyle");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Style", "Theme settings for style sets");
 
-  prop = api_def_prop(srna, "panel_title", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "panel_title", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_ptr_sdna(prop, NULL, "paneltitle");
+  api_def_prop_ptr_sapi(prop, NULL, "paneltitle");
   api_def_prop_struct_type(prop, "ThemeFontStyle");
   api_def_prop_ui_text(prop, "Panel Title Font", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "widget_label", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "widget_label", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_ptr_sdna(prop, NULL, "widgetlabel");
+  api_def_prop_ptr_sapi(prop, NULL, "widgetlabel");
   api_def_prop_struct_type(prop, "ThemeFontStyle");
   api_def_prop_ui_text(prop, "Widget Label Style", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(srna, "widget", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  api_def_prop_ptr_sdna(prop, NULL, "widget");
+  api_def_prop_ptr_sapi(prop, NULL, "widget");
   api_def_prop_struct_type(prop, "ThemeFontStyle");
   api_def_prop_ui_text(prop, "Widget Style", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
@@ -1248,47 +1248,47 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(sapi, "Theme Widget Color Set", "Theme settings for widget color sets");
 
-  prop = api_def_prop(srna, "outline", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "outline", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Outline", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "inner", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "inner", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Inner", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "inner_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "inner_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Inner Selected", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "item", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "item", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Item", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "text", PROP_FLOAT, PROP_COLOR_GAMMA
+  prop = api_def_prop(sapi, "text", PROP_FLOAT, PROP_COLOR_GAMMA
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "text_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  prop = api_def_prop(sapi, "text_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text Selected", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "show_shaded", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_shaded", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_sdna(prop, NULL, "shaded", 1);
   api_def_prop_ui_text(prop, "Shaded", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "shadetop", PROP_INT, PROP_NONE);
+  prop = api_def_prop(sapi, "shadetop", PROP_INT, PROP_NONE);
   api_def_prop_range(prop, -100, 100);
   api_def_prop_ui_text(prop, "Shade Top", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = api_def_prop(srna, "shadedown", PROP_INT, PROP_NONE);
+  prop = api_def_prop(sapi, "shadedown", PROP_INT, PROP_NONE);
   api_def_prop_range(prop, -100, 100);
   api_def_prop_ui_text(prop, "Shade Down", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
