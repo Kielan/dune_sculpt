@@ -4739,76 +4739,76 @@ static void rna_def_userdef_view(BlenderRNA *brna)
       "Top Level Menu Open Delay",
       "Time delay in 1/10 seconds before automatically opening top level menus");
 
-  prop = RNA_def_property(srna, "open_sublevel_delay", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "menuthreshold2");
-  RNA_def_property_range(prop, 1, 40);
-  RNA_def_property_ui_text(
+  prop = pief_prop(sapi, "open_sublevel_delay", PROP_INT, PROP_NONE);
+  api_def_prop_int_sdna(prop, NULL, "menuthreshold2");
+  api_def_prop_range(prop, 1, 40);
+  api_def_prop_ui_text(
       prop,
       "Sub Level Menu Open Delay",
       "Time delay in 1/10 seconds before automatically opening sub level menus");
 
-  prop = RNA_def_property(srna, "color_picker_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, color_picker_types);
-  RNA_def_property_enum_sdna(prop, NULL, "color_picker_type");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "color_picker_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, color_picker_types);
+  api_def_prop_enum_sdna(prop, NULL, "color_picker_type");
+  api_def_prop_ui_text(
       prop, "Color Picker Type", "Different styles of displaying the color picker widget");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* pie menus */
-  prop = RNA_def_property(srna, "pie_initial_timeout", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pie_initial_timeout", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(
       prop,
       "Recenter Timeout",
       "Pie menus will use the initial mouse position as center for this amount of time "
       "(in 1/100ths of sec)");
 
-  prop = RNA_def_property(srna, "pie_tap_timeout", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(prop,
-                           "Tap Key Timeout",
-                           "Pie menu button held longer than this will dismiss menu on release."
-                           "(in 1/100ths of sec)");
+  prop = api_def_prop(sapi, "pie_tap_timeout", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(prop,
+                       "Tap Key Timeout",
+                       "Pie menu button held longer than this will dismiss menu on release."
+                       "(in 1/100ths of sec)");
 
-  prop = RNA_def_property(srna, "pie_animation_timeout", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pie_animation_timeout", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(
       prop,
       "Animation Timeout",
       "Time needed to fully animate the pie to unfolded state (in 1/100ths of sec)");
 
-  prop = RNA_def_property(srna, "pie_menu_radius", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(prop, "Radius", "Pie menu size in pixels");
+  prop = api_def_prop(sapi, "pie_menu_radius", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(prop, "Radius", "Pie menu size in pixels");
 
-  prop = RNA_def_property(srna, "pie_menu_threshold", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pie_menu_threshold", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(
       prop, "Threshold", "Distance from center needed before a selection can be made");
 
-  prop = RNA_def_property(srna, "pie_menu_confirm", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "pie_menu_confirm", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(prop,
                            "Confirm Threshold",
                            "Distance threshold after which selection is made (zero to disable)");
 
-  prop = RNA_def_property(srna, "use_save_prompt", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_SAVE_PROMPT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_save_prompt", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_SAVE_PROMPT);
+  api_def_prop_ui_text(
       prop, "Save Prompt", "Ask for confirmation when quitting with unsaved changes");
 
-  prop = RNA_def_property(srna, "show_column_layout", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_PLAINMENUS);
-  RNA_def_property_ui_text(prop, "Toolbox Column Layout", "Use a column layout for toolbox");
+  prop = api_def_prop(sapi, "show_column_layout", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_PLAINMENUS);
+  api_def_prop_ui_text(prop, "Toolbox Column Layout", "Use a column layout for toolbox");
 
-  prop = RNA_def_property(srna, "use_directional_menus", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "uiflag", USER_MENUFIXEDORDER);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_directional_menus", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "uiflag", USER_MENUFIXEDORDER);
+  api_def_prop_ui_text(prop,
                            "Contents Follow Opening Direction",
                            "Otherwise menus, etc will always be top to bottom, left to right, "
                            "no matter opening direction");
 
-  static const EnumPropertyItem header_align_items[] = {
+  static const EnumPropItem header_align_items[] = {
       {0, "NONE", 0, "Keep Existing", "Keep existing header alignment"},
       {USER_HEADER_FROM_PREF, "TOP", 0, "Top", "Top aligned on load"},
       {USER_HEADER_FROM_PREF | USER_HEADER_BOTTOM,
@@ -4818,24 +4818,24 @@ static void rna_def_userdef_view(BlenderRNA *brna)
        "Bottom align on load (except for property editors)"},
       {0, NULL, 0, NULL, NULL},
   };
-  prop = RNA_def_property(srna, "header_align", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, header_align_items);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "uiflag");
-  RNA_def_property_ui_text(prop, "Header Position", "Default header position for new space-types");
-  RNA_def_property_update(prop, 0, "rna_userdef_screen_update_header_default");
+  prop = api_def_prop(sapi, "header_align", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, header_align_items);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "uiflag");
+  api_def_prop_ui_text(prop, "Header Position", "Default header position for new space-types");
+  api_def_prop_update(prop, 0, "api_userdef_screen_update_header_default");
 
-  prop = RNA_def_property(srna, "render_display_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, render_display_types);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "render_display_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, render_display_types);
+  api_def_prop_ui_text(
       prop, "Render Display Type", "Default location where rendered images will be displayed in");
 
-  prop = RNA_def_property(srna, "filebrowser_display_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, temp_space_display_types);
-  RNA_def_property_ui_text(prop,
-                           "File Browser Display Type",
-                           "Default location where the File Editor will be displayed in");
+  prop = api_def_prop(sapi, "filebrowser_display_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, temp_space_display_types);
+  api_def_prop_ui_text(prop,
+                       "File Browser Display Type",
+                       "Default location where the File Editor will be displayed in");
 
-  static const EnumPropertyItem text_hinting_items[] = {
+  static const EnumPropItem text_hinting_items[] = {
       {0, "AUTO", 0, "Auto", ""},
       {USER_TEXT_HINTING_NONE, "NONE", 0, "None", ""},
       {USER_TEXT_HINTING_SLIGHT, "SLIGHT", 0, "Slight", ""},
@@ -4844,205 +4844,204 @@ static void rna_def_userdef_view(BlenderRNA *brna)
   };
 
   /* mini axis */
-  static const EnumPropertyItem mini_axis_type_items[] = {
+  static const EnumPropItem mini_axis_type_items[] = {
       {USER_MINI_AXIS_TYPE_NONE, "NONE", 0, "Off", ""},
       {USER_MINI_AXIS_TYPE_MINIMAL, "MINIMAL", 0, "Simple Axes", ""},
       {USER_MINI_AXIS_TYPE_GIZMO, "GIZMO", 0, "Interactive Navigation", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "mini_axis_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, mini_axis_type_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mini_axis_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, mini_axis_type_items);
+  api_def_prop_ui_text(
       prop,
       "Mini Axes Type",
       "Show small rotating 3D axes in the top right corner of the 3D viewport");
-  RNA_def_property_update(prop, 0, "rna_userdef_gizmo_update");
+  api_def_prop_update(prop, 0, "api_userdef_gizmo_update");
 
-  prop = RNA_def_property(srna, "mini_axis_size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "rvisize");
-  RNA_def_property_range(prop, 10, 64);
-  RNA_def_property_ui_text(prop, "Mini Axes Size", "The axes icon's size");
-  RNA_def_property_update(prop, 0, "rna_userdef_gizmo_update");
+  prop = api_def_property(srna, "mini_axis_size", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "rvisize");
+  api_def_prop_range(prop, 10, 64);
+  api_def_prop_ui_text(prop, "Mini Axes Size", "The axes icon's size");
+  api_def_prop_update(prop, 0, "api_userdef_gizmo_update");
 
-  prop = RNA_def_property(srna, "mini_axis_brightness", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "rvibright");
-  RNA_def_property_range(prop, 0, 10);
-  RNA_def_property_ui_text(prop, "Mini Axes Brightness", "Brightness of the icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "mini_axis_brightness", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "rvibright");
+  api_def_prop_range(prop, 0, 10);
+  api_def_prop_ui_text(prop, "Mini Axes Brightness", "Brightness of the icon");
+  api_def_prop_update(prop, 0, "rna_userdef_update");
 
-  prop = RNA_def_property(srna, "smooth_view", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "smooth_viewtx");
-  RNA_def_property_range(prop, 0, 1000);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "smooth_view", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "smooth_viewtx");
+  api_def_prop_range(prop, 0, 1000);
+  api_def_prop_ui_text(
       prop, "Smooth View", "Time to animate the view in milliseconds, zero to disable");
 
-  prop = RNA_def_property(srna, "rotation_angle", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "pad_rot_angle");
-  RNA_def_property_range(prop, 0, 90);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "rotation_angle", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "pad_rot_angle");
+  api_def_prop_range(prop, 0, 90);
+  api_def_prop_ui_text(
       prop, "Rotation Angle", "Rotation step for numerical pad keys (2 4 6 8)");
 
   /* 3D transform widget */
-  prop = RNA_def_property(srna, "show_gizmo", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "gizmo_flag", USER_GIZMO_DRAW);
-  RNA_def_property_ui_text(prop, "Gizmos", "Use transform gizmos by default");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "show_gizmo", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "gizmo_flag", USER_GIZMO_DRAW);
+  api_def_prop_ui_text(prop, "Gizmos", "Use transform gizmos by default");
+  api_def_prop_update(prop, 0, "pia_userdef_update");
 
-  prop = RNA_def_property(srna, "gizmo_size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "gizmo_size");
-  RNA_def_property_range(prop, 10, 200);
-  RNA_def_property_ui_text(prop, "Gizmo Size", "Diameter of the gizmo");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "gizmo_size", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_sdna(prop, NULL, "gizmo_size");
+  api_def_prop_range(prop, 10, 200);
+  api_def_prop_ui_text(prop, "Gizmo Size", "Diameter of the gizmo");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "gizmo_size_navigate_v3d", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 30, 200);
-  RNA_def_property_ui_text(prop, "Navigate Gizmo Size", "The Navigate Gizmo size");
-  RNA_def_property_update(prop, 0, "rna_userdef_gizmo_update");
+  prop = api_def_prop(sapi, "gizmo_size_navigate_v3d", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 30, 200);
+  api_def_prop_ui_text(prop, "Navigate Gizmo Size", "The Navigate Gizmo size");
+  api_def_prop_update(prop, 0, "api_userdef_gizmo_update");
 
   /* Lookdev */
-  prop = RNA_def_property(srna, "lookdev_sphere_size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "lookdev_sphere_size");
-  RNA_def_property_range(prop, 50, 400);
-  RNA_def_property_ui_text(prop, "HDRI Preview Size", "Diameter of the HDRI preview spheres");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "lookdev_sphere_size", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "lookdev_sphere_size");
+  api_def_prop_range(prop, 50, 400);
+  api_def_prop_ui_text(prop, "HDRI Preview Size", "Diameter of the HDRI preview spheres");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* View2D Grid Displays */
-  prop = RNA_def_property(srna, "view2d_grid_spacing_min", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "v2d_min_gridsize");
-  RNA_def_property_range(
+  prop = api_def_prop(sapi, "view2d_grid_spacing_min", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_sdna(prop, NULL, "v2d_min_gridsize");
+  api_def_prop_range(
       prop, 1, 500); /* XXX: perhaps the lower range should only go down to 5? */
-  RNA_def_property_ui_text(prop,
+  api_def_prop_ui_text(prop,
                            "2D View Minimum Grid Spacing",
                            "Minimum number of pixels between each gridline in 2D Viewports");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* TODO: add a setter for this, so that we can bump up the minimum size as necessary... */
-  prop = RNA_def_property(srna, "timecode_style", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, timecode_styles);
-  RNA_def_property_enum_sdna(prop, NULL, "timecode_style");
-  RNA_def_property_enum_funcs(prop, NULL, "rna_userdef_timecode_style_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "timecode_style", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, timecode_styles);
+  api_def_prop_enum_sdna(prop, NULL, "timecode_style");
+  api_def_prop_enum_funcs(prop, NULL, "api_userdef_timecode_style_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Timecode Style",
       "Format of timecode displayed when not displaying timing in terms of frames");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "rna_userdef_update");
 
-  prop = RNA_def_property(srna, "view_frame_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, zoom_frame_modes);
-  RNA_def_property_enum_sdna(prop, NULL, "view_frame_type");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "view_frame_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, zoom_frame_modes);
+  api_def_prop_enum_stype(prop, NULL, "view_frame_type");
+  api_def_prop_ui_text(
       prop, "Zoom to Frame Type", "How zooming to frame focuses around current frame");
 
-  prop = RNA_def_property(srna, "view_frame_keyframes", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, 1, 500);
-  RNA_def_property_ui_text(prop, "Zoom Keyframes", "Keyframes around cursor that we zoom around");
+  prop = api_def_prop(sapi, "view_frame_keyframes", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, 1, 500);
+  api_def_prop_ui_text(prop, "Zoom Keyframes", "Keyframes around cursor that we zoom around");
 
-  prop = RNA_def_property(srna, "view_frame_seconds", PROP_FLOAT, PROP_TIME);
-  RNA_def_property_range(prop, 0.0, 10000.0);
-  RNA_def_property_ui_text(prop, "Zoom Seconds", "Seconds around cursor that we zoom around");
+  prop = api_def_prop(sapi, "view_frame_seconds", PROP_FLOAT, PROP_TIME);
+  api_def_prop_range(prop, 0.0, 10000.0);
+  api_def_prop_ui_text(prop, "Zoom Seconds", "Seconds around cursor that we zoom around");
 
   /* Text. */
 
-  prop = RNA_def_property(srna, "use_text_antialiasing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "text_render", USER_TEXT_DISABLE_AA);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_text_antialiasing", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "text_render", USER_TEXT_DISABLE_AA);
+  api_def_prop_ui_text(
       prop, "Text Anti-Aliasing", "Smooth jagged edges of user interface text");
-  RNA_def_property_update(prop, 0, "rna_userdef_text_update");
+  api_def_prop_update(prop, 0, "api_userdef_text_update");
 
-  prop = RNA_def_property(srna, "text_hinting", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "text_render");
-  RNA_def_property_enum_items(prop, text_hinting_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "text_hinting", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "text_render");
+  api_def_prop_enum_items(prop, text_hinting_items);
+  api_def_prop_ui_text(
       prop, "Text Hinting", "Method for making user interface text render sharp");
-  RNA_def_property_update(prop, 0, "rna_userdef_text_update");
+  api_def_prop_update(prop, 0, "api_userdef_text_update");
 
-  prop = RNA_def_property(srna, "font_path_ui", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_sdna(prop, NULL, "font_path_ui");
-  RNA_def_property_ui_text(prop, "Interface Font", "Path to interface font");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_userdef_font_update");
+  prop = api_def_prop(sapi, "font_path_ui", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_stype(prop, NULL, "font_path_ui");
+  api_def_prop_ui_text(prop, "Interface Font", "Path to interface font");
+  api_def_prop_update(prop, NC_WINDOW, "api_userdef_font_update");
 
-  prop = RNA_def_property(srna, "font_path_ui_mono", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_string_sdna(prop, NULL, "font_path_ui_mono");
-  RNA_def_property_ui_text(prop, "Monospaced Font", "Path to interface monospaced Font");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_userdef_font_update");
+  prop = api_def_prop(sapi, "font_path_ui_mono", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_string_stype(prop, NULL, "font_path_ui_mono");
+  api_def_prop_ui_text(prop, "Monospaced Font", "Path to interface monospaced Font");
+  api_def_prop_update(prop, NC_WINDOW, "api_userdef_font_update");
 
   /* Language. */
 
-  prop = RNA_def_property(srna, "language", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_language_default_items);
+  prop = api_def_prop(sapi, "language", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_language_default_items);
 #  ifdef WITH_INTERNATIONAL
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_lang_enum_properties_itemf");
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_lang_enum_properties_itemf");
 #  else
-  RNA_def_property_enum_funcs(prop, "rna_lang_enum_properties_get_no_international", NULL, NULL);
+  api_def_prop_enum_fns(prop, "api_lang_enum_props_get_no_international", NULL, NULL);
 #  endif
-  RNA_def_property_ui_text(prop, "Language", "Language used for translation");
-  RNA_def_property_update(prop, NC_WINDOW, "rna_userdef_language_update");
+  api_def_prop_ui_text(prop, "Language", "Language used for translation");
+  api_def_prop_update(prop, NC_WINDOW, "api_userdef_language_update");
 
-  prop = RNA_def_property(srna, "use_translate_tooltips", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "transopts", USER_TR_TOOLTIPS);
-  RNA_def_property_ui_text(prop,
-                           "Translate Tooltips",
-                           "Translate the descriptions when hovering UI elements (recommended)");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "use_translate_tooltips", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "transopts", USER_TR_TOOLTIPS);
+  api_def_prop_ui_text(prop,
+                       "Translate Tooltips",
+                       "Translate the descriptions when hovering UI elements (recommended)");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "use_translate_interface", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "transopts", USER_TR_IFACE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_translate_interface", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "transopts", USER_TR_IFACE);
+  api_def_prop_ui_text(
       prop,
       "Translate Interface",
       "Translate all labels in menus, buttons and panels "
       "(note that this might make it hard to follow tutorials or the manual)");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "use_translate_new_dataname", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "transopts", USER_TR_NEWDATANAME);
-  RNA_def_property_ui_text(prop,
-                           "Translate New Names",
-                           "Translate the names of new data-blocks (objects, materials...)");
-  RNA_def_property_update(prop, 0, "rna_userdef_update");
+  prop = api_def_prop(sapi, "use_translate_new_dataname", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "transopts", USER_TR_NEWDATANAME);
+  api_def_prop_ui_text(prop,
+                       "Translate New Names",
+                       "Translate the names of new data-blocks (objects, materials...)");
+  api_def_prop_update(prop, 0, "api_userdef_update");
 
   /* Status-bar. */
+  prop = api_def_prop(sapi, "show_statusbar_memory", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_MEMORY);
+  api_def_prope_ui_text(prop, "Show Memory", "Show Blender memory usage");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_INFO, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "show_statusbar_memory", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_MEMORY);
-  RNA_def_property_ui_text(prop, "Show Memory", "Show Blender memory usage");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_INFO, "rna_userdef_update");
+  prop = api_def_prop(sapi, "show_statusbar_vram", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_VRAM);
+  api_def_prop_ui_text(prop, "Show VRAM", "Show GPU video memory usage");
+  api_def_prop_editable_fn(prop, "api_show_statusbar_vram_editable");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_INFO, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "show_statusbar_vram", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_VRAM);
-  RNA_def_property_ui_text(prop, "Show VRAM", "Show GPU video memory usage");
-  RNA_def_property_editable_func(prop, "rna_show_statusbar_vram_editable");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_INFO, "rna_userdef_update");
+  prop = api_def_prop(sapi, "show_statusbar_version", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_VERSION);
+  api_def_prop_ui_text(prop, "Show Version", "Show Dune version string");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_INFO, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "show_statusbar_version", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_VERSION);
-  RNA_def_property_ui_text(prop, "Show Version", "Show Blender version string");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_INFO, "rna_userdef_update");
+  prop = api_def_prop(sapi, "show_statusbar_stats", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_STATS);
+  api_def_prop_ui_text(prop, "Show Statistics", "Show scene statistics");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_INFO, "api_userdef_update");
 
-  prop = RNA_def_property(srna, "show_statusbar_stats", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_STATS);
-  RNA_def_property_ui_text(prop, "Show Statistics", "Show scene statistics");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_INFO, "rna_userdef_update");
-
-  prop = RNA_def_property(srna, "show_statusbar_scene_duration", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_SCENE_DURATION);
-  RNA_def_property_ui_text(prop, "Show Scene Duration", "Show scene duration");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_INFO, "rna_userdef_update");
+  prop = api_def_prop(sapi, "show_statusbar_scene_duration", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "statusbar_flag", STATUSBAR_SHOW_SCENE_DURATION);
+  api_def_prop_ui_text(prop, "Show Scene Duration", "Show scene duration");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_INFO, "api_userdef_update");
 }
 
-static void rna_def_userdef_edit(BlenderRNA *brna)
+static void api_def_userdef_edit(DuneApi *dapi)
 {
-  PropertyRNA *prop;
-  StructRNA *srna;
+  ApiProp *prop;
+  ApiStruct *sapi;
 
-  static const EnumPropertyItem auto_key_modes[] = {
+  static const EnumPropItem auto_key_modes[] = {
       {AUTOKEY_MODE_NORMAL, "ADD_REPLACE_KEYS", 0, "Add/Replace", ""},
       {AUTOKEY_MODE_EDITKEYS, "REPLACE_KEYS", 0, "Replace", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem material_link_items[] = {
+  static const EnumPropItem material_link_items[] = {
       {0,
        "OBDATA",
        0,
@@ -5056,7 +5055,7 @@ static void rna_def_userdef_edit(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem object_align_items[] = {
+  static const EnumPropItem object_align_items[] = {
       {0, "WORLD", 0, "World", "Align newly added objects to the world coordinate system"},
       {USER_ADD_VIEWALIGNED,
        "VIEW",
@@ -5071,114 +5070,114 @@ static void rna_def_userdef_edit(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "PreferencesEdit", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Edit Methods", "Settings for interacting with Blender data");
+  sapi = api_def_struct(dapi, "PreferencesEdit", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Preferences");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Edit Methods", "Settings for interacting with Blender data");
 
   /* Edit Methods */
 
-  prop = RNA_def_property(srna, "material_link", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, material_link_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "material_link", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, material_link_items);
+  api_def_prop_ui_text(
       prop,
       "Material Link To",
       "Toggle whether the material is linked to object data or the object block");
 
-  prop = RNA_def_property(srna, "object_align", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, object_align_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "object_align", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, object_align_items);
+  api_def_prop_ui_text(
       prop, "Align Object To", "The default alignment for objects added from a 3D viewport menu");
 
-  prop = RNA_def_property(srna, "use_enter_edit_mode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_ADD_EDITMODE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_enter_edit_mode", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_ADD_EDITMODE);
+  api_def_prop_ui_text(
       prop, "Enter Edit Mode", "Enter edit mode automatically after adding a new object");
 
-  prop = RNA_def_property(srna, "collection_instance_empty_size", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.001f, FLT_MAX);
-  RNA_def_property_ui_text(prop,
-                           "Collection Instance Empty Size",
-                           "Display size of the empty when new collection instances are created");
+  prop = api_def_prop(sapi, "collection_instance_empty_size", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.001f, FLT_MAX);
+  api_def_prop_ui_text(prop,
+                       "Collection Instance Empty Size",
+                       "Display size of the empty when new collection instances are created");
 
   /* Text Editor */
 
-  prop = RNA_def_property(srna, "use_text_edit_auto_close", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "text_flag", USER_TEXT_EDIT_AUTO_CLOSE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_text_edit_auto_close", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "text_flag", USER_TEXT_EDIT_AUTO_CLOSE);
+  api_def_prop_ui_text(
       prop,
       "Auto Close Character Pairs",
       "Automatically close relevant character pairs when typing in the text editor");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TEXT, NULL);
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TEXT, NULL);
 
   /* Undo */
 
-  prop = RNA_def_property(srna, "undo_steps", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "undosteps");
-  RNA_def_property_range(prop, 0, 256);
-  RNA_def_property_int_funcs(prop, NULL, "rna_userdef_undo_steps_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "undo_steps", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "undosteps");
+  api_def_prop_range(prop, 0, 256);
+  api_def_prop_int_fns(prop, NULL, "rna_userdef_undo_steps_set", NULL);
+  api_def_prop_ui_text(
       prop, "Undo Steps", "Number of undo steps available (smaller values conserve memory)");
 
-  prop = RNA_def_property(srna, "undo_memory_limit", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "undomemory");
-  RNA_def_property_range(prop, 0, max_memory_in_megabytes_int());
-  RNA_def_property_ui_text(
+  prop = api_def_property(sapi, "undo_memory_limit", PROP_INT, PROP_NONE);
+  api_def_prop_int_sdna(prop, NULL, "undomemory");
+  api_def_prop_range(prop, 0, max_memory_in_megabytes_int());
+  api_def_prop_ui_text(
       prop, "Undo Memory Size", "Maximum memory usage in megabytes (0 means unlimited)");
 
-  prop = RNA_def_property(srna, "use_global_undo", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_GLOBALUNDO);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_global_undo", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_GLOBALUNDO);
+  api_def_prop_ui_text(
       prop,
       "Global Undo",
       "Global undo works by keeping a full copy of the file itself in memory, "
       "so takes extra memory");
 
   /* auto keyframing */
-  prop = RNA_def_property(srna, "use_auto_keying", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_mode", AUTOKEY_ON);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_auto_keying", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_mode", AUTOKEY_ON);
+  api_def_prop_ui_text(prop,
                            "Auto Keying Enable",
                            "Automatic keyframe insertion for Objects and Bones "
                            "(default setting used for new Scenes)");
 
-  prop = RNA_def_property(srna, "auto_keying_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, auto_key_modes);
-  RNA_def_property_enum_funcs(
-      prop, "rna_userdef_autokeymode_get", "rna_userdef_autokeymode_set", NULL);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "auto_keying_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, auto_key_modes);
+  api_def_prop_enum_fns(
+      prop, "api_userdef_autokeymode_get", "api_userdef_autokeymode_set", NULL);
+  api_def_prop_ui_text(prop,
                            "Auto Keying Mode",
                            "Mode of automatic keyframe insertion for Objects and Bones "
                            "(default setting used for new Scenes)");
 
-  prop = RNA_def_property(srna, "use_keyframe_insert_available", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_INSERTAVAIL);
-  RNA_def_property_ui_text(prop,
-                           "Auto Keyframe Insert Available",
-                           "Automatic keyframe insertion in available F-Curves");
+  prop = api_def_prop(sapi, "use_keyframe_insert_available", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_INSERTAVAIL);
+  api_def_prop_ui_text(prop,
+                       "Auto Keyframe Insert Available",
+                       "Automatic keyframe insertion in available F-Curves");
 
-  prop = RNA_def_property(srna, "use_auto_keying_warning", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_NOWARNING);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_auto_keying_warning", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "autokey_flag", AUTOKEY_FLAG_NOWARNING);
+  api_def_prop_ui_text(
       prop,
       "Show Auto Keying Warning",
       "Show warning indicators when transforming objects and bones if auto keying is enabled");
 
   /* keyframing settings */
-  prop = RNA_def_property(srna, "use_keyframe_insert_needed", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_keyframe_insert_needed", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_INSERTNEEDED);
   RNA_def_property_ui_text(
       prop, "Keyframe Insert Needed", "Keyframe insertion only when keyframe needed");
 
-  prop = RNA_def_property(srna, "use_visual_keying", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_visual_keying", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_AUTOMATKEY);
   RNA_def_property_ui_text(
       prop, "Visual Keying", "Use Visual keying automatically for constrained objects");
 
-  prop = RNA_def_property(srna, "use_insertkey_xyz_to_rgb", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_insertkey_xyz_to_rgb", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "autokey_flag", AUTOKEY_FLAG_XYZ2RGB);
   RNA_def_property_ui_text(
       prop,
@@ -5186,7 +5185,7 @@ static void rna_def_userdef_edit(BlenderRNA *brna)
       "Color for newly added transformation F-Curves (Location, Rotation, Scale) "
       "and also Color is based on the transform axis");
 
-  prop = RNA_def_property(srna, "use_anim_channel_group_colors", PROP_BOOLEAN, PROP_NONE);
+  prop = RNA_def_property(srna, "use_anim_channel_group_colors", PROP_BOOL, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "animation_flag", USER_ANIM_SHOW_CHANNEL_GROUP_COLORS);
   RNA_def_property_ui_text(
       prop,
@@ -5208,71 +5207,71 @@ static void rna_def_userdef_edit(BlenderRNA *brna)
                            "New Interpolation Type",
                            "Interpolation mode used for first keyframe on newly added F-Curves "
                            "(subsequent keyframes take interpolation from preceding keyframe)");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_ACTION);
+  api_def_prop_translation_ctx(prop, LANG_CTX_ID_ACTION);
 
-  prop = RNA_def_property(srna, "keyframe_new_handle_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_keyframe_handle_type_items);
-  RNA_def_property_enum_sdna(prop, NULL, "keyhandles_new");
-  RNA_def_property_ui_text(prop, "New Handles Type", "Handle type for handles of new keyframes");
+  prop = api_def_prop(sapi, "keyframe_new_handle_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_keyframe_handle_type_items);
+  api_def_prop_enum_stype(prop, NULL, "keyhandles_new");
+  api_def_prop_ui_text(prop, "New Handles Type", "Handle type for handles of new keyframes");
 
   /* frame numbers */
-  prop = RNA_def_property(srna, "use_negative_frames", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", USER_NONEGFRAMES);
-  RNA_def_property_ui_text(prop,
-                           "Allow Negative Frames",
-                           "Current frame number can be manually set to a negative value");
+  prop = api_def_prop(sapi, "use_negative_frames", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", USER_NONEGFRAMES);
+  api_def_prop_ui_text(prop,
+                       "Allow Negative Frames",
+                       "Current frame number can be manually set to a negative value");
 
   /* fcurve opacity */
-  prop = RNA_def_property(srna, "fcurve_unselected_alpha", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "fcu_inactive_alpha");
-  RNA_def_property_range(prop, 0.001f, 1.0f);
-  RNA_def_property_ui_text(prop,
-                           "Unselected F-Curve Opacity",
-                           "The opacity of unselected F-Curves against the "
-                           "background of the Graph Editor");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
+  prop = api_def_prop(sapi, "fcurve_unselected_alpha", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "fcu_inactive_alpha");
+  api_def_prop_range(prop, 0.001f, 1.0f);
+  api_def_prop_ui_text(prop,
+                       "Unselected F-Curve Opacity",
+                       "The opacity of unselected F-Curves against the "
+                       "background of the Graph Editor");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
 
   /* FCurve keyframe visibility. */
-  prop = RNA_def_property(srna, "show_only_selected_curve_keyframes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(
+  prop = api_def_prop(sapi, "show_only_selected_curve_keyframes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(
       prop, NULL, "animation_flag", USER_ANIM_ONLY_SHOW_SELECTED_CURVE_KEYS);
-  RNA_def_property_ui_text(prop,
-                           "Only Show Selected F-Curve Keyframes",
-                           "Only keyframes of selected F-Curves are visible and editable");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
+  api_def_prop_ui_text(prop,
+                       "Only Show Selected F-Curve Keyframes",
+                       "Only keyframes of selected F-Curves are visible and editable");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
 
   /* Graph Editor line drawing quality. */
-  prop = RNA_def_property(srna, "use_fcurve_high_quality_drawing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "animation_flag", USER_ANIM_HIGH_QUALITY_DRAWING);
-  RNA_def_property_ui_text(prop,
-                           "F-Curve High Quality Drawing",
-                           "Draw F-Curves using Anti-Aliasing (disable for better performance)");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
+  prop = api_def_prop(sapi, "use_fcurve_high_quality_drawing", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "animation_flag", USER_ANIM_HIGH_QUALITY_DRAWING);
+  api_def_prop_ui_text(prop,
+                       "F-Curve High Quality Drawing",
+                       "Draw F-Curves using Anti-Aliasing (disable for better performance)");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
 
   /* grease pencil */
-  prop = RNA_def_property(srna, "grease_pencil_manhattan_distance", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "gp_manhattandist");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop,
-                           "Grease Pencil Manhattan Distance",
-                           "Pixels moved by mouse per axis when drawing stroke");
+  prop = api_def_prop(sapi, "dune_pen_manhattan_distance", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "pen_manhattandist");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop,
+                       "Dune Pen Manhattan Distance",
+                       "Pixels moved by mouse per axis when drawing stroke");
 
-  prop = RNA_def_property(srna, "grease_pencil_euclidean_distance", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "gp_euclideandist");
-  RNA_def_property_range(prop, 0, 100);
-  RNA_def_property_ui_text(prop,
-                           "Grease Pencil Euclidean Distance",
+  prop = api_def_prop(sapi, "grease_pencil_euclidean_distance", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "pen_euclideandist");
+  api_def_prop_range(prop, 0, 100);
+  api_def_prop_ui_text(prop,
+                           "Pen Euclidean Distance",
                            "Distance moved by mouse when drawing stroke to include");
 
-  prop = RNA_def_property(srna, "grease_pencil_eraser_radius", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "gp_eraser");
-  RNA_def_property_range(prop, 1, 500);
-  RNA_def_property_ui_text(prop, "Grease Pencil Eraser Radius", "Radius of eraser 'brush'");
+  prop = api_def_prop(sapi, "pen_eraser_radius", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "gp_eraser");
+  api_def_prop_range(prop, 1, 500);
+  api_def_prop_ui_text(prop, "Grease Pencil Eraser Radius", "Radius of eraser 'brush'");
 
-  prop = RNA_def_property(srna, "grease_pencil_default_color", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "gpencil_new_layer_col");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Annotation Default Color", "Color of new annotation layers");
+  prop = api_def_prop(sapi, "pen_default_color", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "pen_new_layer_col");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Annotation Default Color", "Color of new annotation layers");
 
   /* sculpt and paint */
 
@@ -5400,25 +5399,25 @@ static void rna_def_userdef_edit(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_userdef_update");
 
   /* cursor */
-  prop = RNA_def_property(srna, "use_cursor_lock_adjust", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_LOCK_CURSOR_ADJUST);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_cursor_lock_adjust", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_LOCK_CURSOR_ADJUST);
+  api_def_prop_ui_text(
       prop,
       "Cursor Lock Adjust",
       "Place the cursor without 'jumping' to the new location (when lock-to-cursor is used)");
 
-  prop = RNA_def_property(srna, "use_mouse_depth_cursor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_DEPTH_CURSOR);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mouse_depth_cursor", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "uiflag", USER_DEPTH_CURSOR);
+  api_def_prop_ui_text(
       prop, "Cursor Surface Project", "Use the surface depth for cursor placement");
 }
 
-static void rna_def_userdef_system(BlenderRNA *brna)
+static void api_def_userdef_system(DuneApi *dapi)
 {
-  PropertyRNA *prop;
-  StructRNA *srna;
+  ApiProp *prop;
+  ApiStruct *sapi;
 
-  static const EnumPropertyItem gl_texture_clamp_items[] = {
+  static const EnumPropItem gl_texture_clamp_items[] = {
       {0, "CLAMP_OFF", 0, "Off", ""},
       {8192, "CLAMP_8192", 0, "8192", ""},
       {4096, "CLAMP_4096", 0, "4096", ""},
@@ -5430,7 +5429,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem anisotropic_items[] = {
+  static const EnumPropItem anisotropic_items[] = {
       {1, "FILTER_0", 0, "Off", ""},
       {2, "FILTER_2", 0, "2x", ""},
       {4, "FILTER_4", 0, "4x", ""},
@@ -5439,7 +5438,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem audio_mixing_samples_items[] = {
+  static const EnumPropItem audio_mixing_samples_items[] = {
       {256, "SAMPLES_256", 0, "256 Samples", "Set audio mixing buffer size to 256 samples"},
       {512, "SAMPLES_512", 0, "512 Samples", "Set audio mixing buffer size to 512 samples"},
       {1024, "SAMPLES_1024", 0, "1024 Samples", "Set audio mixing buffer size to 1024 samples"},
@@ -5459,7 +5458,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem audio_rate_items[] = {
+  static const EnumPropItem audio_rate_items[] = {
 #  if 0
     {8000, "RATE_8000", 0, "8 kHz", "Set audio sampling rate to 8000 samples per second"},
     {11025, "RATE_11025", 0, "11.025 kHz", "Set audio sampling rate to 11025 samples per second"},
@@ -5477,7 +5476,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
     {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem audio_format_items[] = {
+  static const EnumPropItem audio_format_items[] = {
       {0x01, "U8", 0, "8-bit Unsigned", "Set audio sample format to 8-bit unsigned integer"},
       {0x12, "S16", 0, "16-bit Signed", "Set audio sample format to 16-bit signed integer"},
       {0x13, "S24", 0, "24-bit Signed", "Set audio sample format to 24-bit signed integer"},
@@ -5487,7 +5486,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem audio_channel_items[] = {
+  static const EnumPropItem audio_channel_items[] = {
       {1, "MONO", 0, "Mono", "Set audio channels to mono"},
       {2, "STEREO", 0, "Stereo", "Set audio channels to stereo"},
       {4, "SURROUND4", 0, "4 Channels", "Set audio channels to 4 channels"},
@@ -5496,7 +5495,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem image_draw_methods[] = {
+  static const EnumPropItem image_draw_methods[] = {
       {IMAGE_DRAW_METHOD_AUTO,
        "AUTO",
        0,
@@ -5515,7 +5514,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem seq_disk_cache_compression_levels[] = {
+  static const EnumPropItem seq_disk_cache_compression_levels[] = {
       {USER_SEQ_DISK_CACHE_COMPRESSION_NONE,
        "NONE",
        0,
@@ -5534,7 +5533,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem seq_proxy_setup_options[] = {
+  static const EnumPropItem seq_proxy_setup_options[] = {
       {USER_SEQ_PROXY_SETUP_MANUAL, "MANUAL", 0, "Manual", "Set up proxies manually"},
       {USER_SEQ_PROXY_SETUP_AUTOMATIC,
        "AUTOMATIC",
@@ -5544,16 +5543,16 @@ static void rna_def_userdef_system(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "PreferencesSystem", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "System & OpenGL", "Graphics driver and operating system settings");
+  sapi = api_def_struct(dapi, "PreferencesSystem", NULL);
+  api_def_struct_sdna(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Preferences");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "System & OpenGL", "Graphics driver and operating system settings");
 
   /* UI settings. */
 
-  prop = RNA_def_property(srna, "ui_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "ui_scale", PROP_FLOAT, PROP_NONE);
+  api_def_property_clear_flag(prop, PROP_EDITABLE);
   RNA_def_property_float_sdna(prop, NULL, "scale_factor");
   RNA_def_property_ui_text(
       prop,
