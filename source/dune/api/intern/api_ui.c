@@ -1,9 +1,9 @@
 #include <stdlib.h>
 
-#include "types_screen_types.h"
-#include "types_space_types.h"
+#include "types_screen.h"
+#include "types_space.h"
 
-#include "lang_translation.h"
+#include "lang.h"
 
 #include "dune_idprop.h"
 #include "dune_screen.h"
