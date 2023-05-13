@@ -1415,28 +1415,28 @@ static void api_def_userdef_theme_ui_gradient(DuneApi *sapi)
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ThemeGradientColors", NULL);
-  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_sapi(sapi, "ThemeSpace");
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
   api_def_struct_ui_text(
-      srna, "Theme Background Color", "Theme settings for background colors and gradient");
+      sapi, "Theme Background Color", "Theme settings for background colors and gradient");
 
   prop = api_def_prop(sapi, "background_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_sapi(prop, NULL, "background_type");
-  api_def_prop_enum_items(prop, rna_enum_userdef_theme_background_types_items);
+  api_def_prop_enum_items(prop, api_enum_userdef_theme_background_types_items);
   api_def_prop_ui_text(prop, "Background Type", "Type of background in the 3D viewport");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "high_gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_sdna(prop, NULL, "back");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Gradient High/Off", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(sapi, "gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_float_sdna(prop, NULL, "back_grad");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Gradient Low", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
 static void api_def_userdef_theme_ui(DuneApi *bapi)
@@ -1444,10 +1444,10 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  api_def_userdef_theme_ui_wcol(brna);
-  api_def_userdef_theme_ui_wcol_state(brna);
-  api_def_userdef_theme_ui_panel(brna);
-  api_def_userdef_theme_ui_gradient(brna);
+  api_def_userdef_theme_ui_wcol(dapi);
+  api_def_userdef_theme_ui_wcol_state(dapi);
+  api_def_userdef_theme_ui_panel(dapi);
+  api_def_userdef_theme_ui_gradient(dapi);
 
   sapi = api_def_struct(dapi, "ThemeUserInterface", NULL);
   api_def_struct_sapi(sapi, "ThemeUI");
@@ -1460,15 +1460,15 @@ static void api_def_userdef_theme_ui(DuneApi *bapi)
   api_def_prop_ui_text(prop, "Regular Widget Colors", "");
   api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_tool", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Tool Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_tool", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Tool Widget Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "wcol_toolbar_item", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "Toolbar Item Widget Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "wcol_toolbar_item", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "Toolbar Item Widget Colors", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   prop = api_def_prop(sapi, "wcol_radio", PROP_POINTER, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
