@@ -1240,13 +1240,13 @@ static void api_def_userdef_theme_ui_style(DuneApi *brna)
 
 static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
   srna = api_def_struct(dapi, "ThemeWidgetColors", NULL);
-  api_def_struct_sdna(srna, "uiWidgetColors");
-  api_def_struct_clear_flag(srna, STRUCT_UNDO);
-  api_def_struct_ui_text(srna, "Theme Widget Color Set", "Theme settings for widget color sets");
+  api_def_struct_sdna(sapi, "uiWidgetColors");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Widget Color Set", "Theme settings for widget color sets");
 
   prop = api_def_prop(srna, "outline", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
@@ -1266,130 +1266,130 @@ static void api_def_userdef_theme_ui_wcol(DuneApi *dapi)
   prop = api_def_prop(srna, "item", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 4);
   api_def_prop_ui_text(prop, "Item", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(srna, "text", PROP_FLOAT, PROP_COLOR_GAMMA
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(srna, "text_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Text Selected", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(srna, "show_shaded", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_sdna(prop, NULL, "shaded", 1);
   api_def_prop_ui_text(prop, "Shaded", "");
-  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   prop = api_def_prop(srna, "shadetop", PROP_INT, PROP_NONE);
   api_def_prop_range(prop, -100, 100);
   api_def_prop_ui_text(prop, "Shade Top", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(srna, "shadedown", PROP_INT, PROP_NONE);
+  api_def_prop_range(prop, -100, 100);
+  api_def_prop_ui_text(prop, "Shade Down", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "roundness", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_fns(
+      prop, "api_ThemeUI_roundness_get", "api_ThemeUI_roundness_set", NULL);
+  api_def_prop_ui_text(prop, "Roundness", "Amount of edge rounding");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+}
+
+static void api_def_userdef_theme_ui_wcol_state(BlenderRNA *brna)
+{
+  ApiStruct *sapi;
+  ApiProp *prop;
+
+  sapi = api_def_struct(dapi, "ThemeWidgetStateColors", NULL);
+  api_def_struct_sdna(sapi, "uiWidgetStateColors");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(
+      sapi, "Theme Widget State Color", "Theme settings for widget state colors");
+
+  prop = api_def_prop(sapi, "inner_anim", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Animated", "");
   api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "shadedown", PROP_INT, PROP_NONE);
-  RNA_def_property_range(prop, -100, 100);
-  RNA_def_property_ui_text(prop, "Shade Down", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "inner_anim_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Animated Selected", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "roundness", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_funcs(
-      prop, "rna_ThemeUI_roundness_get", "rna_ThemeUI_roundness_set", NULL);
-  RNA_def_property_ui_text(prop, "Roundness", "Amount of edge rounding");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "inner_key", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Keyframe", "");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "inner_key_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Keyframe Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "inner_driven", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Driven", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "inner_driven_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Driven Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "inner_overridden", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Overridden", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "inner_overridden_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Overridden Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "inner_changed", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Changed", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "inner_changed_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Changed Selected", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
+
+  prop = api_def_prop(sapi, "dune", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_ui_text(prop, "Dune", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_ui_wcol_state(BlenderRNA *brna)
+static void api_def_userdef_theme_ui_panel(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeWidgetStateColors", NULL);
-  RNA_def_struct_sdna(srna, "uiWidgetStateColors");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(
-      srna, "Theme Widget State Color", "Theme settings for widget state colors");
+  sapi = api_def_struct(dapi, "ThemePanelColors", NULL);
+  api_def_struct_sdna(sapi, "uiPanelColors");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Panel Color", "Theme settings for panel colors");
 
-  prop = RNA_def_property(srna, "inner_anim", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Animated", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "header", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_ui_text(prop, "Header", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "inner_anim_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Animated Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "back", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_ui_text(prop, "Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "inner_key", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Keyframe", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "inner_key_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Keyframe Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "inner_driven", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Driven", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "inner_driven_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Driven Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "inner_overridden", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Overridden", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "inner_overridden_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Overridden Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "inner_changed", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Changed", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "inner_changed_sel", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Changed Selected", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "blend", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_ui_text(prop, "Blend", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "sub_back", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_ui_text(prop, "Sub Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_ui_panel(BlenderRNA *brna)
-{
-  StructRNA *srna;
-  PropertyRNA *prop;
-
-  srna = RNA_def_struct(brna, "ThemePanelColors", NULL);
-  RNA_def_struct_sdna(srna, "uiPanelColors");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Panel Color", "Theme settings for panel colors");
-
-  prop = RNA_def_property(srna, "header", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_ui_text(prop, "Header", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "back", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_ui_text(prop, "Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-
-  prop = RNA_def_property(srna, "sub_back", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_ui_text(prop, "Sub Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
-}
-
-static const EnumPropertyItem rna_enum_userdef_theme_background_types_items[] = {
+static const EnumPropItem api_enum_userdef_theme_background_types_items[] = {
     {TH_BACKGROUND_SINGLE_COLOR,
      "SINGLE_COLOR",
      0,
@@ -1408,23 +1408,23 @@ static const EnumPropertyItem rna_enum_userdef_theme_background_types_items[] = 
     {0, NULL, 0, NULL, NULL},
 };
 
-static void rna_def_userdef_theme_ui_gradient(BlenderRNA *brna)
+static void api_def_userdef_theme_ui_gradient(DuneApi *sapi)
 {
   /* Fake struct, keep this for compatible theme presets. */
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeGradientColors", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(
+  sapi = api_def_struct(dapi, "ThemeGradientColors", NULL);
+  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(
       srna, "Theme Background Color", "Theme settings for background colors and gradient");
 
-  prop = RNA_def_property(srna, "background_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "background_type");
-  RNA_def_property_enum_items(prop, rna_enum_userdef_theme_background_types_items);
-  RNA_def_property_ui_text(prop, "Background Type", "Type of background in the 3D viewport");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "background_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sapi(prop, NULL, "background_type");
+  api_def_prop_enum_items(prop, rna_enum_userdef_theme_background_types_items);
+  api_def_prop_ui_text(prop, "Background Type", "Type of background in the 3D viewport");
+  api_def_prop_update(prop, 0, "rna_userdef_theme_update");
 
   prop = RNA_def_property(srna, "high_gradient", PROP_FLOAT, PROP_COLOR_GAMMA);
   RNA_def_property_float_sdna(prop, NULL, "back");
