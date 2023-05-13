@@ -2677,191 +2677,191 @@ static void rna_def_userdef_theme_space_console(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_info(BlenderRNA *brna)
+static void api_def_userdef_theme_space_info(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_info */
 
-  srna = RNA_def_struct(brna, "ThemeInfo", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Info", "Theme settings for Info");
+  srna = api_def_struct(dapi, "ThemeInfo", NULL);
+  api_def_struct_sdna(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Info", "Theme settings for Info");
 
-  rna_def_userdef_theme_spaces_main(srna);
+  api_def_userdef_theme_spaces_main(sapi);
 
-  prop = RNA_def_property(srna, "info_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Selected Line Background", "Background color of selected line");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_selected", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Selected Line Background", "Background color of selected line");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_selected_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Selected Line Text Color", "Text color of selected line");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_selected_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Selected Line Text Color", "Text color of selected line");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_error", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Error Icon Background", "Background color of Error icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_error", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Error Icon Background", "Background color of Error icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_error_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Error Icon Foreground", "Foreground color of Error icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_error_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Error Icon Foreground", "Foreground color of Error icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_warning", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Warning Icon Background", "Background color of Warning icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_warning", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Warning Icon Background", "Background color of Warning icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_warning_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Warning Icon Foreground", "Foreground color of Warning icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_warning_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Warning Icon Foreground", "Foreground color of Warning icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_info", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Info Icon Background", "Background color of Info icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_info", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Info Icon Background", "Background color of Info icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_info_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Info Icon Foreground", "Foreground color of Info icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_info_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Info Icon Foreground", "Foreground color of Info icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_debug", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Debug Icon Background", "Background color of Debug icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_debug", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Debug Icon Background", "Background color of Debug icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_debug_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Debug Icon Foreground", "Foreground color of Debug icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_debug_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Debug Icon Foreground", "Foreground color of Debug icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_property", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Property Icon Background", "Background color of Property icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_prop", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Prop Icon Background", "Background color of Prop icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_property_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Property Icon Foreground", "Foreground color of Property icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_prop_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Prop Icon Foreground", "Foreground color of Prop icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_operator", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Operator Icon Background", "Background color of Operator icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_operator", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Operator Icon Background", "Background color of Operator icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "info_operator_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Operator Icon Foreground", "Foreground color of Operator icon");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "info_operator_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Operator Icon Foreground", "Foreground color of Operator icon");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_text(BlenderRNA *brna)
+static void api_def_userdef_theme_space_text(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_text */
 
-  srna = RNA_def_struct(brna, "ThemeTextEditor", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Theme Text Editor", "Theme settings for the Text Editor");
+  srna = api_def_struct(dapi, "ThemeTextEditor", NULL);
+  api_def_struct_stype(sapi, "ThemeSpace");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Theme Text Editor", "Theme settings for the Text Editor");
 
-  rna_def_userdef_theme_spaces_main(srna);
+  api_def_userdef_theme_spaces_main(sapi);
 
-  prop = RNA_def_property(srna, "line_numbers", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "line_numbers");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Line Numbers", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "line_numbers", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "line_numbers");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Line Numbers", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "line_numbers_background", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "grid");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Line Numbers Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "line_numbers_background", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "grid");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Line Numbers Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   /* no longer used */
 #  if 0
-  prop = RNA_def_property(srna, "scroll_bar", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "shade1");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Scroll Bar", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "scroll_bar", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "shade1");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Scroll Bar", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 #  endif
 
-  prop = RNA_def_property(srna, "selected_text", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "shade2");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Selected Text", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "selected_text", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "shade2");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Selected Text", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "cursor", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "hilite");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Cursor", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "cursor", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "hilite");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Cursor", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_builtin", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxb");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax Built-In", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_builtin", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "syntaxb");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax Built-In", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_symbols", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxs");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax Symbols", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_symbols", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "syntaxs");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax Symbols", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_special", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxv");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax Special", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_special", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_sdna(prop, NULL, "syntaxv");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax Special", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_preprocessor", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxd");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax Preprocessor", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_preprocessor", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "syntaxd");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax Preprocessor", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_reserved", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxr");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax Reserved", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_reserved", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "syntaxr");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax Reserved", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_comment", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxc");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax Comment", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_comment", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_sdna(prop, NULL, "syntaxc");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax Comment", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_string", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxl");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax String", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_string", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "syntaxl");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax String", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  prop = RNA_def_property(srna, "syntax_numbers", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_float_sdna(prop, NULL, "syntaxn");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Syntax Numbers", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "syntax_numbers", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_float_stype(prop, NULL, "syntaxn");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Syntax Numbers", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 }
 
-static void rna_def_userdef_theme_space_node(BlenderRNA *brna)
+static void api_def_userdef_theme_space_node(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* space_node */
 
