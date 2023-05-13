@@ -1029,8 +1029,8 @@ static ApiStruct *api_Menu_register(Main *main,
     mt->description = NULL;
   }
 
-  mt->api_ext.sapi = api_def_struct_ptr(&BLENDER_RNA, mt->idname, &RNA_Menu);
-  api_def_struct_translation_ctx(mt->api_ext.srna, mt->translation_context);
+  mt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, mt->idname, &RNA_Menu);
+  api_def_struct_translation_ctx(mt->api_ext.sapi, mt->translation_context);
   mt->api_ext.data = data;
   mt->api_ext.call = call;
   mt->api_ext.free = free;
@@ -1047,7 +1047,7 @@ static ApiStruct *api_Menu_register(Main *main,
     }
   }
 
-  WM_menutype_add(mt);
+  wm_menutype_add(mt);
 
   /* update while blender is running */
   wm_main_add_notifier(NC_WINDOW, NULL);
@@ -1127,109 +1127,109 @@ static vna_UILayout_alert_set(ApiPtr *ptr, bool value)
   uiLayoutSetRedAlert(ptr->data, value);
 }
 
-static void rna_UILayout_op_context_set(PointerRNA *ptr, int value)
+static void api_UILayout_op_ctx_set(ApiPtr *ptr, int value)
 {
-  uiLayoutSetOperatorContext(ptr->data, value);
+  uiLayoutSetOpCtx(ptr->data, value);
 }
 
-static int rna_UILayout_op_context_get(PointerRNA *ptr)
+static int api_UILayout_op_ctx_get(ApiPtr *ptr)
 {
-  return uiLayoutGetOperatorContext(ptr->data);
+  return uiLayoutGetOpCtx(ptr->data);
 }
 
-static bool rna_UILayout_enabled_get(PointerRNA *ptr)
+static bool api_UILayout_enabled_get(PointerRNA *ptr)
 {
   return uiLayoutGetEnabled(ptr->data);
 }
 
-static void rna_UILayout_enabled_set(PointerRNA *ptr, bool value)
+static void api_UILayout_enabled_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetEnabled(ptr->data, value);
 }
 
 #  if 0
-static int rna_UILayout_red_alert_get(PointerRNA *ptr)
+static int api_UILayout_red_alert_get(ApiPtr *ptr)
 {
   return uiLayoutGetRedAlert(ptr->data);
 }
 
-static void rna_UILayout_red_alert_set(PointerRNA *ptr, bool value)
+static void api_UILayout_red_alert_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetRedAlert(ptr->data, value);
 }
 
-static bool rna_UILayout_keep_aspect_get(PointerRNA *ptr)
+static bool api_UILayout_keep_aspect_get(ApiPtr *ptr)
 {
   return uiLayoutGetKeepAspect(ptr->data);
 }
 
-static void rna_UILayout_keep_aspect_set(PointerRNA *ptr, int value)
+static void api_UILayout_keep_aspect_set(ApiPtr *ptr, int value)
 {
   uiLayoutSetKeepAspect(ptr->data, value);
 }
 #  endif
 
-static int rna_UILayout_alignment_get(PointerRNA *ptr)
+static int api_UILayout_alignment_get(ApiPtr *ptr)
 {
   return uiLayoutGetAlignment(ptr->data);
 }
 
-static void rna_UILayout_alignment_set(PointerRNA *ptr, int value)
+static void api_UILayout_alignment_set(ApiPtr *ptr, int value)
 {
   uiLayoutSetAlignment(ptr->data, value);
 }
 
-static int rna_UILayout_direction_get(PointerRNA *ptr)
+static int api_UILayout_direction_get(ApiPtr *ptr)
 {
   return uiLayoutGetLocalDir(ptr->data);
 }
 
-static float rna_UILayout_scale_x_get(PointerRNA *ptr)
+static float api_UILayout_scale_x_get(ApiPtr *ptr)
 {
   return uiLayoutGetScaleX(ptr->data);
 }
 
-static void rna_UILayout_scale_x_set(PointerRNA *ptr, float value)
+static void api_UILayout_scale_x_set(ApiPtr *ptr, float value)
 {
   uiLayoutSetScaleX(ptr->data, value);
 }
 
-static float rna_UILayout_scale_y_get(PointerRNA *ptr)
+static float api_UILayout_scale_y_get(ApiPtr *ptr)
 {
   return uiLayoutGetScaleY(ptr->data);
 }
 
-static void rna_UILayout_scale_y_set(PointerRNA *ptr, float value)
+static void api_UILayout_scale_y_set(ApiPtr *ptr, float value)
 {
   uiLayoutSetScaleY(ptr->data, value);
 }
 
-static float rna_UILayout_units_x_get(PointerRNA *ptr)
+static float rna_UILayout_units_x_get(ApiPtr *ptr)
 {
   return uiLayoutGetUnitsX(ptr->data);
 }
 
-static void rna_UILayout_units_x_set(PointerRNA *ptr, float value)
+static void api_UILayout_units_x_set(ApiPtr *ptr, float value)
 {
   uiLayoutSetUnitsX(ptr->data, value);
 }
 
-static float rna_UILayout_units_y_get(PointerRNA *ptr)
+static float api_UILayout_units_y_get(ApiPtr *ptr)
 {
   return uiLayoutGetUnitsY(ptr->data);
 }
 
-static void rna_UILayout_units_y_set(PointerRNA *ptr, float value)
+static void api_UILayout_units_y_set(ApiPtr *ptr, float value)
 {
   uiLayoutSetUnitsY(ptr->data, value);
 }
 
-static int rna_UILayout_emboss_get(PointerRNA *ptr)
+static int api_UILayout_emboss_get(ApiPtr *ptr)
 {
   return uiLayoutGetEmboss(ptr->data);
 }
 
-static void rna_UILayout_emboss_set(PointerRNA *ptr, int value)
+static void rna_UILayout_emboss_set(ApiPtr *ptr, int value)
 {
   uiLayoutSetEmboss(ptr->data, value);
 }
