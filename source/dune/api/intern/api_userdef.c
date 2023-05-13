@@ -1846,29 +1846,29 @@ static void api_def_userdef_theme_space_gradient(BlenderRNA *brna)
   api_def_struct_ui_text(sapi, "Theme Space Settings", "");
 
   /* gradient/background settings */
-  prop = RNA_def_property(srna, "gradients", PROP_POINTER, PROP_NONE);
-  api_def_property_flag(prop, PROP_NEVER_NULL);
-  api_def_property_struct_type(prop, "ThemeGradientColors");
-  RNA_def_property_ptr_fns(prop, "rna_Theme_gradient_colors_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Gradient Colors", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "gradients", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "ThemeGradientColors");
+  api_def_prop_ptr_fns(prop, "api_Theme_gradient_colors_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Gradient Colors", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
-  rna_def_userdef_theme_space_common(srna);
+  api_def_userdef_theme_space_common(sapi);
 }
 
-static void rna_def_userdef_theme_space_generic(BlenderRNA *brna)
+static void api_def_userdef_theme_space_generic(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ThemeSpaceGeneric", NULL);
-  RNA_def_struct_sdna(srna, "ThemeSpace");
-  RNA_def_struct_ui_text(srna, "Theme Space Settings", "");
+  srna = api_def_struct(sapi, "ThemeSpaceGeneric", NULL);
+  api_def_struct_stype(sapi, "ThemeSpace");
+  api_def_struct_ui_text(sapi, "Theme Space Settings", "");
 
-  prop = RNA_def_property(srna, "back", PROP_FLOAT, PROP_COLOR_GAMMA);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Window Background", "");
-  RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
+  prop = api_def_prop(sapi, "back", PROP_FLOAT, PROP_COLOR_GAMMA);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Window Background", "");
+  api_def_prop_update(prop, 0, "api_userdef_theme_update");
 
   rna_def_userdef_theme_space_common(srna);
 }
