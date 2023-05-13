@@ -1849,9 +1849,9 @@ static void rna_def_userdef_theme_space_gradient(BlenderRNA *brna)
 
   /* gradient/background settings */
   prop = RNA_def_property(srna, "gradients", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "ThemeGradientColors");
-  RNA_def_property_pointer_funcs(prop, "rna_Theme_gradient_colors_get", NULL, NULL, NULL);
+  api_def_property_flag(prop, PROP_NEVER_NULL);
+  api_def_property_struct_type(prop, "ThemeGradientColors");
+  RNA_def_property_ptr_fns(prop, "rna_Theme_gradient_colors_get", NULL, NULL, NULL);
   RNA_def_property_ui_text(prop, "Gradient Colors", "");
   RNA_def_property_update(prop, 0, "rna_userdef_theme_update");
 
