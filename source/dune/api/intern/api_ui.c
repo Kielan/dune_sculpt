@@ -28,10 +28,10 @@ const EnumPropItem api_enum_op_ctx_items[] = {
     {WM_OP_INVOKE_REGION_PREVIEW, "INVOKE_REGION_PREVIEW", 0, "Invoke Region Preview", ""},
     {WM_OP_INVOKE_AREA, "INVOKE_AREA", 0, "Invoke Area", ""},
     {WM_OP_INVOKE_SCREEN, "INVOKE_SCREEN", 0, "Invoke Screen", ""},
-    {WM_OP_EX_DEFAULT, "EX_DEFAULT", 0, "Exec Default", ""},
-    {WM_OP_EX_REGION_WIN, "EX_REGION_WIN", 0, "Exec Region Window", ""},
-    {WM_OP_EX_REGION_CHANNELS, "EX_REGION_CHANNELS", 0, "Exec Region Channels", ""},
-    {WM_OP_EX_REGION_PREVIEW, "EX_REGION_PREVIEW", 0, "Exec Region Preview", ""},
+    {WM_OP_EX_DEFAULT, "EX_DEFAULT", 0, "Ex Default", ""},
+    {WM_OP_EX_REGION_WIN, "EX_REGION_WIN", 0, "Ex Region Window", ""},
+    {WM_OP_EX_REGION_CHANNELS, "EX_REGION_CHANNELS", 0, "Ex Region Channels", ""},
+    {WM_OP_EX_REGION_PREVIEW, "EX_REGION_PREVIEW", 0, "Ex Region Preview", ""},
     {WM_OP_EX_AREA, "EX_AREA", 0, "Ex Area", ""},
     {WM_OP_EX_SCREEN, "EX_SCREEN", 0, "Ex Screen", ""},
     {0, NULL, 0, NULL, NULL},
@@ -44,26 +44,26 @@ const EnumPropertyItem rna_enum_uilist_layout_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "BLI_dynstr.h"
+#  include "lib_dynstr.h"
 
-#  include "BKE_context.h"
-#  include "BKE_report.h"
-#  include "BKE_screen.h"
+#  include "dune_ctx.h"
+#  include "dune_report.h"
+#  include "dune_screen.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
 static ARegionType *region_type_find(ReportList *reports, int space_type, int region_type)
 {
   SpaceType *st;
   ARegionType *art;
 
-  st = BKE_spacetype_from_id(space_type);
+  st = dune_spacetype_from_id(space_type);
 
   for (art = (st) ? st->regiontypes.first : NULL; art; art = art->next) {
     if (art->regionid == region_type) {
@@ -73,7 +73,7 @@ static ARegionType *region_type_find(ReportList *reports, int space_type, int re
 
   /* region type not found? abort */
   if (art == NULL) {
-    BKE_report(reports, RPT_ERROR, "Region not found in space type");
+    dune_report(reports, RPT_ERROR, "Region not found in space type");
     return NULL;
   }
 
@@ -82,63 +82,63 @@ static ARegionType *region_type_find(ReportList *reports, int space_type, int re
 
 /* Panel */
 
-static bool panel_poll(const bContext *C, PanelType *pt)
+static bool panel_poll(const Ctx *C, PanelType *pt)
 {
-  extern FunctionRNA rna_Panel_poll_func;
+  extern ApiFn api_Panel_poll_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool visible;
 
-  RNA_pointer_create(NULL, pt->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &rna_Panel_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, pt->api_ext.sapi, NULL, &ptr); /* dummy */
+  fn = &api_Panel_poll_fn; /* api_struct_find_fun(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  pt->rna_ext.call((bContext *)C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  pt->api_ext.call((Ctx *)C, &ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "visible", &ret);
+  api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return visible;
 }
 
-static void panel_draw(const bContext *C, Panel *panel)
+static void panel_draw(const Ctx *C, Panel *panel)
 {
-  extern FunctionRNA rna_Panel_draw_func;
+  extern ApiFn api_Panel_draw_func;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, panel->type->rna_ext.srna, panel, &ptr);
-  func = &rna_Panel_draw_func; /* RNA_struct_find_function(&ptr, "draw"); */
+  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
+  fn = &api_Panel_draw_fn; /* api_struct_find_function(&ptr, "draw"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  panel->type->rna_ext.call((bContext *)C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  panel->type->api_ext.call((Ctx *)C, &ptr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static void panel_draw_header(const bContext *C, Panel *panel)
+static void panel_draw_header(const Ctx *C, Panel *panel)
 {
-  extern FunctionRNA rna_Panel_draw_header_func;
+  extern ApiFn api_Panel_draw_header_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(&CTX_wm_screen(C)->id, panel->type->rna_ext.srna, panel, &ptr);
-  func = &rna_Panel_draw_header_func; /* RNA_struct_find_function(&ptr, "draw_header"); */
+  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
+  fn = &api_Panel_draw_header_fn; /* RNA_struct_find_function(&ptr, "draw_header"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  panel->type->rna_ext.call((bContext *)C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, func);
+  api_param_set_lookup(&list, "context", &C);
+  panel->type->api_ext.call((Ctx *)C, &ptr, func, &list);
 
   RNA_parameter_list_free(&list);
 }
