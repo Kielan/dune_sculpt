@@ -1,39 +1,39 @@
 #include <stdlib.h>
 
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
+#include "types_screen_types.h"
+#include "types_space_types.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_idprop.h"
-#include "BKE_screen.h"
+#include "dune_idprop.h"
+#include "dune_screen.h"
 
-#include "BLI_listbase.h"
+#include "lib_list.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "RNA_enum_types.h"
-#include "rna_internal.h"
+#include "api_enum_types.h"
+#include "api_internal.h"
 
-#include "UI_interface.h"
+#include "ui.h"
 
-#include "WM_toolsystem.h"
-#include "WM_types.h"
+#include "wm_toolsystem.h"
+#include "wm_types.h"
 
 /* see WM_types.h */
-const EnumPropertyItem rna_enum_operator_context_items[] = {
+const EnumPropItem api_enum_op_ctx_items[] = {
     {WM_OP_INVOKE_DEFAULT, "INVOKE_DEFAULT", 0, "Invoke Default", ""},
     {WM_OP_INVOKE_REGION_WIN, "INVOKE_REGION_WIN", 0, "Invoke Region Window", ""},
     {WM_OP_INVOKE_REGION_CHANNELS, "INVOKE_REGION_CHANNELS", 0, "Invoke Region Channels", ""},
     {WM_OP_INVOKE_REGION_PREVIEW, "INVOKE_REGION_PREVIEW", 0, "Invoke Region Preview", ""},
     {WM_OP_INVOKE_AREA, "INVOKE_AREA", 0, "Invoke Area", ""},
     {WM_OP_INVOKE_SCREEN, "INVOKE_SCREEN", 0, "Invoke Screen", ""},
-    {WM_OP_EXEC_DEFAULT, "EXEC_DEFAULT", 0, "Exec Default", ""},
-    {WM_OP_EXEC_REGION_WIN, "EXEC_REGION_WIN", 0, "Exec Region Window", ""},
-    {WM_OP_EXEC_REGION_CHANNELS, "EXEC_REGION_CHANNELS", 0, "Exec Region Channels", ""},
-    {WM_OP_EXEC_REGION_PREVIEW, "EXEC_REGION_PREVIEW", 0, "Exec Region Preview", ""},
-    {WM_OP_EXEC_AREA, "EXEC_AREA", 0, "Exec Area", ""},
-    {WM_OP_EXEC_SCREEN, "EXEC_SCREEN", 0, "Exec Screen", ""},
+    {WM_OP_EX_DEFAULT, "EX_DEFAULT", 0, "Exec Default", ""},
+    {WM_OP_EX_REGION_WIN, "EX_REGION_WIN", 0, "Exec Region Window", ""},
+    {WM_OP_EX_REGION_CHANNELS, "EX_REGION_CHANNELS", 0, "Exec Region Channels", ""},
+    {WM_OP_EX_REGION_PREVIEW, "EX_REGION_PREVIEW", 0, "Exec Region Preview", ""},
+    {WM_OP_EX_AREA, "EX_AREA", 0, "Ex Area", ""},
+    {WM_OP_EX_SCREEN, "EX_SCREEN", 0, "Ex Screen", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
