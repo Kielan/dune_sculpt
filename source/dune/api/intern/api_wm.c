@@ -7,24 +7,24 @@
 
 #include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "BKE_keyconfig.h"
-#include "BKE_screen.h"
-#include "BKE_workspace.h"
+#include "dune_keyconfig.h"
+#include "dune_screen.h"
+#include "dune_workspace.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef api_RUNTIME
 
-static const EnumPropertyItem event_mouse_type_items[] = {
+static const EnumPropItem event_mouse_type_items[] = {
     {LEFTMOUSE, "LEFTMOUSE", 0, "Left", ""},
     {MIDDLEMOUSE, "MIDDLEMOUSE", 0, "Middle", ""},
     {RIGHTMOUSE, "RIGHTMOUSE", 0, "Right", ""},
