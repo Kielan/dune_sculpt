@@ -1244,24 +1244,24 @@ static void rna_UILayout_property_split_set(PointerRNA *ptr, bool value)
   uiLayoutSetPropSep(ptr->data, value);
 }
 
-static bool rna_UILayout_property_decorate_get(PointerRNA *ptr)
+static bool rna_UILayout_property_decorate_get(ApiPtr *ptr)
 {
   return uiLayoutGetPropDecorate(ptr->data);
 }
 
-static void rna_UILayout_property_decorate_set(PointerRNA *ptr, bool value)
+static void api_UILayout_prop_decorate_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetPropDecorate(ptr->data, value);
 }
 
-#else /* RNA_RUNTIME */
+#else /* API_RUNTIME */
 
-static void rna_def_ui_layout(BlenderRNA *brna)
+static void api_def_ui_layout(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem alignment_items[] = {
+  static const EnumPropItem alignment_items[] = {
       {UI_LAYOUT_ALIGN_EXPAND, "EXPAND", 0, "Expand", ""},
       {UI_LAYOUT_ALIGN_LEFT, "LEFT", 0, "Left", ""},
       {UI_LAYOUT_ALIGN_CENTER, "CENTER", 0, "Center", ""},
@@ -1269,13 +1269,13 @@ static void rna_def_ui_layout(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem direction_items[] = {
+  static const EnumPropItem direction_items[] = {
       {UI_LAYOUT_HORIZONTAL, "HORIZONTAL", 0, "Horizontal", ""},
       {UI_LAYOUT_VERTICAL, "VERTICAL", 0, "Vertical", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem emboss_items[] = {
+  static const EnumPropItem emboss_items[] = {
       {UI_EMBOSS, "NORMAL", 0, "Regular", "Draw standard button emboss style"},
       {UI_EMBOSS_NONE, "NONE", 0, "None", "Draw only text and icons"},
       {UI_EMBOSS_PULLDOWN, "PULLDOWN_MENU", 0, "Pulldown Menu", "Draw pulldown menu style"},
@@ -1290,12 +1290,12 @@ static void rna_def_ui_layout(BlenderRNA *brna)
 
   /* layout */
 
-  srna = RNA_def_struct(brna, "UILayout", NULL);
-  RNA_def_struct_sdna(srna, "uiLayout");
-  RNA_def_struct_ui_text(srna, "UI Layout", "User interface layout in a panel or header");
+  sapi = api_def_struct(dapi, "UILayout", NULL);
+  api_def_struct_stype(sapi, "uiLayout");
+  api_def_struct_ui_text(sapi, "UI Layout", "User interface layout in a panel or header");
 
-  prop = RNA_def_property(srna, "active", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_UILayout_active_get", "rna_UILayout_active_set");
+  prop = api_def_prop(sapi, "active", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(prop, "rna_UILayout_active_get", "rna_UILayout_active_set");
 
   prop = RNA_def_property(srna, "active_default", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_funcs(
