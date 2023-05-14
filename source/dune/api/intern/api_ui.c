@@ -1087,7 +1087,7 @@ static void api_Menu_bl_description_set(ApiPtr *ptr, const char *value)
 
 /* UILayout */
 
-static bool api_UILayout_active_get(PointerRNA *ptr)
+static bool api_UILayout_active_get(ApiPtr *ptr)
 {
   return uiLayoutGetActive(ptr->data);
 }
@@ -1348,23 +1348,23 @@ static void api_def_ui_layout(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Scale X", "Scale factor along the X for items in this (sub)layout");
 
-  prop = RNA_def_property(srna, "scale_y", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_funcs(prop, "rna_UILayout_scale_y_get", "rna_UILayout_scale_y_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "scale_y", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_fns(prop, "rna_UILayout_scale_y_get", "rna_UILayout_scale_y_set", NULL);
+  api_def_prop_ui_text(
       prop, "Scale Y", "Scale factor along the Y for items in this (sub)layout");
 
-  prop = RNA_def_property(srna, "ui_units_x", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_funcs(prop, "rna_UILayout_units_x_get", "rna_UILayout_units_x_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ui_units_x", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_fns(prop, "api_UILayout_units_x_get", "rna_UILayout_units_x_set", NULL);
+  api_def_prop_ui_text(
       prop, "Units X", "Fixed size along the X for items in this (sub)layout");
 
-  prop = RNA_def_property(srna, "ui_units_y", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_funcs(prop, "rna_UILayout_units_y_get", "rna_UILayout_units_y_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ui_units_y", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_fns(prop, "rna_UILayout_units_y_get", "rna_UILayout_units_y_set", NULL);
+  api_def_prop_ui_text(
       prop, "Units Y", "Fixed size along the Y for items in this (sub)layout");
-  RNA_api_ui_layout(srna);
+  api_api_ui_layout(srna);
 
-  prop = RNA_def_property(srna, "emboss", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "emboss", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, emboss_items);
   RNA_def_property_enum_funcs(prop, "rna_UILayout_emboss_get", "rna_UILayout_emboss_set", NULL);
 
