@@ -1122,7 +1122,7 @@ static bool api_UILayout_alert_get(ApiPtr *ptr)
   return uiLayoutGetRedAlert(ptr->data);
 }
 
-static vna_UILayout_alert_set(ApiPtr *ptr, bool value)
+static void api_UILayout_alert_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetRedAlert(ptr->data, value);
 }
@@ -1633,60 +1633,60 @@ static void api_def_uilist(DuneApi *dapi)
    * avoids having to define custom setters/getters using UILST_FLT_SORT_MASK to mask out
    * actual bitflags on same var, etc.
    */
-  prop = RNA_def_property(srna, "use_filter_sort_alpha", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filter_sort_flag", UILST_FLT_SORT_ALPHA);
-  RNA_def_property_ui_icon(prop, ICON_SORTALPHA, 0);
-  RNA_def_property_ui_text(prop, "Sort by Name", "Sort items by their name");
+  prop = api_def_prop(sapi, "use_filter_sort_alpha", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "filter_sort_flag", UILST_FLT_SORT_ALPHA);
+  api_def_prop_ui_icon(prop, ICON_SORTALPHA, 0);
+  api_def_prop_ui_text(prop, "Sort by Name", "Sort items by their name");
 
-  prop = RNA_def_property(srna, "use_filter_sort_reverse", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filter_sort_flag", UILST_FLT_SORT_REVERSE);
-  RNA_def_property_ui_text(prop, "Reverse", "Reverse the order of shown items");
+  prop = api_def_prop(sapi, "use_filter_sort_reverse", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "filter_sort_flag", UILST_FLT_SORT_REVERSE);
+  api_def_prop_ui_text(prop, "Reverse", "Reverse the order of shown items");
 
-  prop = RNA_def_property(srna, "use_filter_sort_lock", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filter_sort_flag", UILST_FLT_SORT_LOCK);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_filter_sort_lock", PROP_BOOL, PROP_NONE);
+  api_def_prop_boolean_stype(prop, NULL, "filter_sort_flag", UILST_FLT_SORT_LOCK);
+  api_def_prop_ui_text(
       prop, "Lock Order", "Lock the order of shown items (user cannot change it)");
 
   /* draw_item */
-  func = RNA_def_function(srna, "draw_item", NULL);
-  RNA_def_function_ui_description(
-      func,
+  func = api_def_fn(sapi, "draw_item", NULL);
+  api_def_fn_ui_description(
+      fn,
       "Draw an item in the list (NOTE: when you define your own draw_item "
       "function, you may want to check given 'item' is of the right type...)");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "layout", "UILayout", "", "Layout to draw the item");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "data", "AnyType", "", "Data from which to take Collection property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_pointer(func, "item", "AnyType", "", "Item of the collection property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_int(
-      func, "icon", 0, 0, INT_MAX, "", "Icon of the item in the collection", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func,
-                         "active_data",
-                         "AnyType",
-                         "",
-                         "Data from which to take property for the active element");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func,
-                        "active_property",
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "layout", "UILayout", "", "Layout to draw the item");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_pt(
+      fn, "data", "AnyType", "", "Data from which to take Collection property");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_ptr(fn, "item", "AnyType", "", "Item of the collection property");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_int(
+      fn, "icon", 0, 0, INT_MAX, "", "Icon of the item in the collection", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn,
+                     "active_data",
+                     "AnyType",
+                     "",
+                     "Data from which to take prop for the active element");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  parm = api_def_string(fn,
+                        "active_prop",
                         NULL,
                         0,
                         "",
-                        "Identifier of property in active_data, for the active element");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func, "index", 0, 0, INT_MAX, "", "Index of the item in the collection", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_PYFUNC_OPTIONAL);
-  prop = RNA_def_property(func, "flt_flag", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_ui_text(prop, "", "The filter-flag result for this item");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_PYFUNC_OPTIONAL);
+                        "Identifier of prop in active_data, for the active element");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn, "index", 0, 0, INT_MAX, "", "Index of the item in the collection", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFUNC_OPTIONAL);
+  prop = api_def_prop(fn, "flt_flag", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_ui_text(prop, "", "The filter-flag result for this item");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFUNC_OPTIONAL);
 
   /* draw_filter */
-  func = RNA_def_function(srna, "draw_filter", NULL);
+  func = api_def_fn(sapi, "draw_filter", NULL);
   RNA_def_function_ui_description(func, "Draw filtering options");
   RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
   parm = RNA_def_pointer(func, "context", "Context", "", "");
