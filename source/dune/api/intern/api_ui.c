@@ -1463,15 +1463,15 @@ static void api_def_panel(DuneApi *dapi)
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   /* registration */
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->idname");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(prop,
-                           "ID Name",
-                           "If this is set, the panel gets a custom ID, otherwise it takes the "
-                           "name of the class used to define the panel. For example, if the "
-                           "class name is \"OBJECT_PT_hello\", and bl_idname is not set by the "
-                           "script, then bl_idname = \"OBJECT_PT_hello\"");
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->idname");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(prop,
+                       "ID Name",
+                       "If this is set, the panel gets a custom ID, otherwise it takes the "
+                       "name of the class used to define the panel. For example, if the "
+                       "class name is \"OBJECT_PT_hello\", and bl_idname is not set by the "
+                       "script, then bl_idname = \"OBJECT_PT_hello\"");
 
   prop = api_def_prop(sapi, "bl_label", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "type->label");
@@ -1490,9 +1490,9 @@ static void api_def_panel(DuneApi *dapi)
                            "Specific translation context, only define when the label needs to be "
                            "disambiguated from others using the exact same label");
 
-  api_define_verify_sdna(true);
+  api_define_verify_stype(true);
 
-  prop = api_def_prop(sapo, "bl_description", PROP_STRING, PROP_NONE);
+  prop = api_def_prop(sapi, "bl_description", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "type->description");
   api_def_prop_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
   api_def_prop_string_fns(prop, NULL, NULL, "rna_Panel_bl_description_set");
@@ -1587,10 +1587,10 @@ static void api_def_uilist(DuneApi *dapi)
   spo_def_struct_flag(srna, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* Registration */
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->idname");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->idname");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(prop,
                            "ID Name",
                            "If this is set, the uilist gets a custom ID, otherwise it takes the "
                            "name of the class used to define the uilist (for example, if the "
@@ -1600,27 +1600,27 @@ static void api_def_uilist(DuneApi *dapi)
   /* Data */
   /* Note that this is the "non-full" list-ID as obtained through #WM_uilisttype_list_id_get(),
    * which differs from the (internal) `uiList.list_id`. */
-  prop = RNA_def_property(srna, "list_id", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(prop, "rna_UIList_list_id_get", "rna_UIList_list_id_length", NULL);
-  RNA_def_property_ui_text(prop,
-                           "List Name",
-                           "Identifier of the list, if any was passed to the \"list_id\" "
-                           "parameter of \"template_list()\"");
+  prop = api_def_prop(sapi, "list_id", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_fns(prop, "api_UIList_list_id_get", "rna_UIList_list_id_length", NULL);
+  api_def_prop_ui_text(prop,
+                       "List Name",
+                       "Id of the list, if any was passed to the \"list_id\" "
+                       "parameter of \"template_list()\"");
 
-  prop = RNA_def_property(srna, "layout_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_uilist_layout_type_items);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "layout_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_uilist_layout_type_items);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   /* Filter options */
-  prop = RNA_def_property(srna, "use_filter_show", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filter_flag", UILST_FLT_SHOW);
-  RNA_def_property_ui_text(prop, "Show Filter", "Show filtering options");
+  prop = api_def_prop(sapi, "use_filter_show", PROP_BOOL, PROP_NONE);
+  apu_def_prop_bool_stype(prop, NULL, "filter_flag", UILST_FLT_SHOW);
+  api_def_prop_ui_text(prop, "Show Filter", "Show filtering options");
 
-  prop = RNA_def_property(srna, "filter_name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "filter_byname");
-  RNA_def_property_flag(prop, PROP_TEXTEDIT_UPDATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "filter_name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_sdna(prop, NULL, "filter_byname");
+  api_def_prop_flag(prop, PROP_TEXTEDIT_UPDATE);
+  api_def_prop_ui_text(
       prop, "Filter by Name", "Only show items matching this name (use '*' as wildcard)");
 
   prop = RNA_def_property(srna, "use_filter_invert", PROP_BOOLEAN, PROP_NONE);
