@@ -136,7 +136,7 @@ static const EnumPropertyItem event_ndof_type_items[] = {
  *
  * This array can be expanded on a case-by-case basis, when there is a clear and testable use case.
  */
-const EnumPropertyItem rna_enum_wm_job_type_items[] = {
+const EnumPropItem api_enum_wm_job_type_items[] = {
     {WM_JOB_TYPE_RENDER, "RENDER", 0, "Regular rendering", ""},
     {WM_JOB_TYPE_RENDER_PREVIEW, "RENDER_PREVIEW", 0, "Rendering previews", ""},
     {WM_JOB_TYPE_OBJECT_BAKE, "OBJECT_BAKE", 0, "Object Baking", ""},
@@ -145,7 +145,7 @@ const EnumPropertyItem rna_enum_wm_job_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_event_type_items[] = {
+const EnumPropItem api_enum_event_type_items[] = {
     /* - Note we abuse 'tooltip' message here to store a 'compact' form of some (too) long names.
      * - Intentionally excluded: #CAPSLOCKKEY, #UNKNOWNKEY.
      */
@@ -167,12 +167,12 @@ const EnumPropertyItem rna_enum_event_type_items[] = {
     {MOUSEZOOM, "TRACKPADZOOM", 0, "Mouse/Trackpad Zoom", "MsZoom"},
     {MOUSEROTATE, "MOUSEROTATE", 0, "Mouse/Trackpad Rotate", "MsRot"},
     {MOUSESMARTZOOM, "MOUSESMARTZOOM", 0, "Mouse/Trackpad Smart Zoom", "MsSmartZoom"},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {WHEELUPMOUSE, "WHEELUPMOUSE", 0, "Wheel Up", "WhUp"},
     {WHEELDOWNMOUSE, "WHEELDOWNMOUSE", 0, "Wheel Down", "WhDown"},
     {WHEELINMOUSE, "WHEELINMOUSE", 0, "Wheel In", "WhIn"},
     {WHEELOUTMOUSE, "WHEELOUTMOUSE", 0, "Wheel Out", "WhOut"},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {EVT_AKEY, "A", 0, "A", ""},
     {EVT_BKEY, "B", 0, "B", ""},
     {EVT_CKEY, "C", 0, "C", ""},
@@ -199,7 +199,7 @@ const EnumPropertyItem rna_enum_event_type_items[] = {
     {EVT_XKEY, "X", 0, "X", ""},
     {EVT_YKEY, "Y", 0, "Y", ""},
     {EVT_ZKEY, "Z", 0, "Z", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {EVT_ZEROKEY, "ZERO", 0, "0", ""},
     {EVT_ONEKEY, "ONE", 0, "1", ""},
     {EVT_TWOKEY, "TWO", 0, "2", ""},
@@ -210,7 +210,7 @@ const EnumPropertyItem rna_enum_event_type_items[] = {
     {EVT_SEVENKEY, "SEVEN", 0, "7", ""},
     {EVT_EIGHTKEY, "EIGHT", 0, "8", ""},
     {EVT_NINEKEY, "NINE", 0, "9", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {EVT_LEFTCTRLKEY, "LEFT_CTRL", 0, "Left Ctrl", "CtrlL"},
     {EVT_LEFTALTKEY, "LEFT_ALT", 0, "Left Alt", "AltL"},
     {EVT_LEFTSHIFTKEY, "LEFT_SHIFT", 0, "Left Shift", "ShiftL"},
@@ -374,14 +374,14 @@ const EnumPropertyItem rna_enum_event_type_items[] = {
 };
 
 /**
- * \note This contains overlapping items from:
- * - #rna_enum_event_value_keymouse_items
- * - #rna_enum_event_value_tweak_items
+ * This contains overlapping items from:
+ * - api_enum_event_value_keymouse_items
+ * - api_enum_event_value_tweak_items
  *
  * This is needed for `km.keymap_items.new` value argument,
  * to accept values from different types.
  */
-const EnumPropertyItem rna_enum_event_value_items[] = {
+const EnumPropItem api_enum_event_value_items[] = {
     {KM_ANY, "ANY", 0, "Any", ""},
     {KM_PRESS, "PRESS", 0, "Press", ""},
     {KM_RELEASE, "RELEASE", 0, "Release", ""},
@@ -393,7 +393,7 @@ const EnumPropertyItem rna_enum_event_value_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_event_direction_items[] = {
+const EnumPropItem api_enum_event_direction_items[] = {
     {KM_ANY, "ANY", 0, "Any", ""},
     {KM_DIRECTION_N, "NORTH", 0, "North", ""},
     {KM_DIRECTION_NE, "NORTH_EAST", 0, "North-East", ""},
