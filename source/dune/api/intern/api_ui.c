@@ -1204,7 +1204,7 @@ static void api_UILayout_scale_y_set(ApiPtr *ptr, float value)
   uiLayoutSetScaleY(ptr->data, value);
 }
 
-static float rna_UILayout_units_x_get(ApiPtr *ptr)
+static float api_UILayout_units_x_get(ApiPtr *ptr)
 {
   return uiLayoutGetUnitsX(ptr->data);
 }
@@ -1294,12 +1294,12 @@ static void api_def_ui_layout(DuneApi *dapi)
   api_def_struct_stype(sapi, "uiLayout");
   api_def_struct_ui_text(sapi, "UI Layout", "User interface layout in a panel or header");
 
-  prop = api_def_prop(sapi, "active", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_fns(prop, "rna_UILayout_active_get", "rna_UILayout_active_set");
+  prop = api_def_prop(sapi, "active", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_UILayout_active_get", "api_UILayout_active_set");
 
-  prop = api_def_prop(sapi, "active_default", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "active_default", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "rna_UILayout_active_default_get", "rna_UILayout_active_default_set");
+      prop, "api_UILayout_active_default_get", "api_UILayout_active_default_set");
   api_def_prop_ui_text(
       prop,
       "Active Default",
@@ -1308,7 +1308,7 @@ static void api_def_ui_layout(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "activate_init", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_fns(
-      prop, "rna_UILayout_activate_init_get", "rna_UILayout_activate_init_set");
+      prop, "api_UILayout_activate_init_get", "rna_UILayout_activate_init_set");
   api_def_prop_ui_text(
       prop,
       "Activate on Init",
@@ -1318,7 +1318,7 @@ static void api_def_ui_layout(DuneApi *dapi)
   prop = api_def_prop(sapi, "op_ctx", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_items(prop, api_enum_op_ctx_items);
   api_def_prop_enum_fns(
-      prop, "rna_UILayout_op_context_get", "api_UILayout_op_ctx_set", NULL);
+      prop, "api_UILayout_op_ctx_get", "api_UILayout_op_ctx_set", NULL);
 
   prop = api_def_prop(sapi, "enabled", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_fns(prop, "api_UILayout_enabled_get", "api_UILayout_enabled_set");
@@ -1580,22 +1580,22 @@ static void api_def_uilist(DuneApi *dapi)
 
   srna = api_def_struct(dapi, "UIList", NULL);
   api_def_struct_ui_text(dapi, "UIList", "UI list containing the elements of a collection");
-  api_def_struct_sdna(srna, "uiList");
-  api_def_struct_refine_func(srna, "rna_UIList_refine");
-  api_def_struct_register_funcs(srna, "rna_UIList_register", "rna_UIList_unregister", NULL);
-  api_def_struct_idprops_func(srna, "rna_UIList_idprops");
-  spo_def_struct_flag(srna, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  api_def_struct_stype(sapi, "uiList");
+  api_def_struct_refine_func(sapi, "api_UIList_refine");
+  api_def_struct_register_fns(sapi, "api_UIList_register", "api_UIList_unregister", NULL);
+  api_def_struct_idprops_fn(sapi, "api_UIList_idprops");
+  api_def_struct_flag(sapi, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* Registration */
   prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
   api_def_prop_string_stype(prop, NULL, "type->idname");
   api_def_prop_flag(prop, PROP_REGISTER);
   api_def_prop_ui_text(prop,
-                           "ID Name",
-                           "If this is set, the uilist gets a custom ID, otherwise it takes the "
-                           "name of the class used to define the uilist (for example, if the "
-                           "class name is \"OBJECT_UL_vgroups\", and bl_idname is not set by the "
-                           "script, then bl_idname = \"OBJECT_UL_vgroups\")");
+                       "ID Name",
+                       "If this is set, the uilist gets a custom ID, otherwise it takes the "
+                       "name of the class used to define the uilist (for example, if the "
+                       "class name is \"OBJECT_UL_vgroups\", and bl_idname is not set by the "
+                       "script, then bl_idname = \"OBJECT_UL_vgroups\")");
 
   /* Data */
   /* Note that this is the "non-full" list-ID as obtained through #WM_uilisttype_list_id_get(),
@@ -1614,7 +1614,7 @@ static void api_def_uilist(DuneApi *dapi)
 
   /* Filter options */
   prop = api_def_prop(sapi, "use_filter_show", PROP_BOOL, PROP_NONE);
-  apu_def_prop_bool_stype(prop, NULL, "filter_flag", UILST_FLT_SHOW);
+  api_def_prop_bool_stype(prop, NULL, "filter_flag", UILST_FLT_SHOW);
   api_def_prop_ui_text(prop, "Show Filter", "Show filtering options");
 
   prop = api_def_prop(sapi, "filter_name", PROP_STRING, PROP_NONE);
@@ -1623,9 +1623,9 @@ static void api_def_uilist(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "Filter by Name", "Only show items matching this name (use '*' as wildcard)");
 
-  prop = RNA_def_property(srna, "use_filter_invert", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "filter_flag", UILST_FLT_EXCLUDE);
-  RNA_def_property_ui_text(prop, "Invert", "Invert filtering (show hidden items, and vice versa)");
+  prop = api_def_prop(sapi, "use_filter_invert", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "filter_flag", UILST_FLT_EXCLUDE);
+  api_def_prop_ui_text(prop, "Invert", "Invert filtering (show hidden items, and vice versa)");
 
   /* WARNING: This is sort of an abuse, sort-by-alpha is actually a value,
    * should even be an enum in full logic (of two values, sort by index and sort by name).
