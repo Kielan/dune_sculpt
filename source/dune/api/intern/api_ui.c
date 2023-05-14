@@ -1229,22 +1229,22 @@ static int api_UILayout_emboss_get(ApiPtr *ptr)
   return uiLayoutGetEmboss(ptr->data);
 }
 
-static void rna_UILayout_emboss_set(ApiPtr *ptr, int value)
+static void api_UILayout_emboss_set(ApiPtr *ptr, int value)
 {
   uiLayoutSetEmboss(ptr->data, value);
 }
 
-static bool rna_UILayout_property_split_get(PointerRNA *ptr)
+static bool api_UILayout_prop_split_get(ApiPtr *ptr)
 {
   return uiLayoutGetPropSep(ptr->data);
 }
 
-static void rna_UILayout_property_split_set(PointerRNA *ptr, bool value)
+static void api_UILayout_prop_split_set(ApiPtr *ptr, bool value)
 {
   uiLayoutSetPropSep(ptr->data, value);
 }
 
-static bool rna_UILayout_property_decorate_get(ApiPtr *ptr)
+static bool api_UILayout_prop_decorate_get(ApiPtr *ptr)
 {
   return uiLayoutGetPropDecorate(ptr->data);
 }
@@ -1362,22 +1362,22 @@ static void api_def_ui_layout(DuneApi *dapi)
   api_def_prop_float_fns(prop, "rna_UILayout_units_y_get", "rna_UILayout_units_y_set", NULL);
   api_def_prop_ui_text(
       prop, "Units Y", "Fixed size along the Y for items in this (sub)layout");
-  api_api_ui_layout(srna);
+  api_api_ui_layout(sapi);
 
   prop = api_def_prop(sapi, "emboss", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, emboss_items);
-  RNA_def_property_enum_funcs(prop, "rna_UILayout_emboss_get", "rna_UILayout_emboss_set", NULL);
+  api_def_prop_enum_items(prop, emboss_items);
+  api_def_prop_enum_fns(prop, "api_UILayout_emboss_get", "rna_UILayout_emboss_set", NULL);
 
-  prop = RNA_def_property(srna, "use_property_split", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_UILayout_property_split_get", "rna_UILayout_property_split_set");
+  prop = api_def_prop(sapi, "use_prop_split", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_UILayout_prop_split_get", "rna_UILayout_property_split_set");
 
-  prop = RNA_def_property(srna, "use_property_decorate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_UILayout_property_decorate_get", "rna_UILayout_property_decorate_set");
+  prop = api_def_prop(sapi, "use_prop_decorate", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_UILayout_prop_decorate_get", "rna_UILayout_property_decorate_set");
 }
 
-static void rna_def_panel(BlenderRNA *brna)
+static void api_def_panel(DuneApi *dapi)
 {
   StructRNA *srna;
   PropertyRNA *prop;
