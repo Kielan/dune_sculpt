@@ -1379,12 +1379,12 @@ static void api_def_ui_layout(DuneApi *dapi)
 
 static void api_def_panel(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  static const EnumPropertyItem panel_flag_items[] = {
+  static const EnumPropItem panel_flag_items[] = {
       {PANEL_TYPE_DEFAULT_CLOSED,
        "DEFAULT_CLOSED",
        0,
@@ -1410,57 +1410,57 @@ static void api_def_panel(DuneApi *dapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "Panel", NULL);
-  RNA_def_struct_ui_text(srna, "Panel", "Panel containing UI elements");
-  RNA_def_struct_sdna(srna, "Panel");
-  RNA_def_struct_refine_func(srna, "rna_Panel_refine");
-  RNA_def_struct_register_funcs(srna, "rna_Panel_register", "rna_Panel_unregister", NULL);
-  RNA_def_struct_translation_context(srna, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
-  RNA_def_struct_flag(srna, STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  sapi = api_def_struct(dapi, "Panel", NULL);
+  api_def_struct_ui_text(sapi, "Panel", "Panel containing UI elements");
+  api_def_struct_stype(sapi, "Panel");
+  api_def_struct_refine_fn(sapi, "rna_Panel_refine");
+  api_def_struct_register_fns(sapi, "rna_Panel_register", "rna_Panel_unregister", NULL);
+  api_def_struct_translation_ctx(sapi, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* poll */
-  func = RNA_def_function(srna, "poll", NULL);
-  RNA_def_function_ui_description(
-      func, "If this method returns a non-null output, then the panel can be drawn");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_REGISTER_OPTIONAL);
-  RNA_def_function_return(func, RNA_def_boolean(func, "visible", 1, "", ""));
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "poll", NULL);
+  api_def_fn_ui_description(
+      fn, "If this method returns a non-null output, then the panel can be drawn");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_REGISTER_OPTIONAL);
+  api_def_fn_return(fn, api_def_bool(fn, "visible", 1, "", ""));
+  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* draw */
-  func = RNA_def_function(srna, "draw", NULL);
-  RNA_def_function_ui_description(func, "Draw UI elements into the panel UI layout");
-  RNA_def_function_flag(func, FUNC_REGISTER);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "draw", NULL);
+  api_def_fn_ui_description(fn, "Draw UI elements into the panel UI layout");
+  api_def_fn_flag(fn, FN_REGISTER);
+  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "draw_header", NULL);
-  RNA_def_function_ui_description(func, "Draw UI elements into the panel's header UI layout");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  func = api_def_fn(sapi, "draw_header", NULL);
+  api_def_fn_ui_description(fn, "Draw UI elements into the panel's header UI layout");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "draw_header_preset", NULL);
-  RNA_def_function_ui_description(func, "Draw UI elements for presets in the panel's header");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  func = api_def_fn(sapi, "draw_header_preset", NULL);
+  api_def_fn_ui_description(fn, "Draw UI elements for presets in the panel's header");
+  api_def_fn_flag(func, FN_REGISTER_OPTIONAL);
+  parm = api_def_pointer(fn, "ctx", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  prop = RNA_def_property(srna, "layout", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "UILayout");
-  RNA_def_property_ui_text(prop, "Layout", "Defines the structure of the panel in the UI");
+  prop = api_def_prop(sapi, "layout", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "UILayout");
+  api_def_prop_ui_text(prop, "Layout", "Defines the structure of the panel in the UI");
 
-  prop = RNA_def_property(srna, "text", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "drawname");
-  RNA_def_property_ui_text(prop, "Text", "XXX todo");
+  prop = api_def_prop(sapi, "text", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "drawname");
+  api_def_prop_ui_text(prop, "Text", "XXX todo");
 
-  prop = RNA_def_property(srna, "custom_data", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Constraint");
-  RNA_def_property_pointer_sdna(prop, NULL, "runtime.custom_data_ptr");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_Panel_custom_data_get", NULL, "rna_Panel_custom_data_typef", NULL);
-  RNA_def_property_ui_text(prop, "Custom Data", "Panel data");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "custom_data", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Constraint");
+  api_def_prop_ptr_stype(prop, NULL, "runtime.custom_data_ptr");
+  api_def_prop_ptr_fns(
+      prop, "api_Panel_custom_data_get", NULL, "api_Panel_custom_data_typef", NULL);
+  api_def_prop_ui_text(prop, "Custom Data", "Panel data");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
   /* registration */
   prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
@@ -1473,118 +1473,118 @@ static void api_def_panel(DuneApi *dapi)
                            "class name is \"OBJECT_PT_hello\", and bl_idname is not set by the "
                            "script, then bl_idname = \"OBJECT_PT_hello\"");
 
-  prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->label");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "bl_label", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->label");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(prop,
                            "Label",
                            "The panel label, shows up in the panel header at the right of the "
                            "triangle used to collapse the panel");
 
-  prop = RNA_def_property(srna, "bl_translation_context", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->translation_context");
-  RNA_def_property_string_default(prop, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "bl_translation_context", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->translation_context");
+  api_def_prop_string_default(prop, BLT_I18NCONTEXT_DEFAULT_BPYRNA);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop,
                            "",
                            "Specific translation context, only define when the label needs to be "
                            "disambiguated from others using the exact same label");
 
-  RNA_define_verify_sdna(true);
+  api_define_verify_sdna(true);
 
-  prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->description");
-  RNA_def_property_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Panel_bl_description_set");
+  prop = api_def_prop(sapo, "bl_description", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->description");
+  api_def_prop_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
+  api_def_prop_string_fns(prop, NULL, NULL, "rna_Panel_bl_description_set");
   // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_clear_flag(prop, PROP_NEVER_NULL); /* check for NULL */
-  RNA_def_property_ui_text(prop, "", "The panel tooltip");
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_clear_flag(prop, PROP_NEVER_NULL); /* check for NULL */
+  api_def_prop_ui_text(prop, "", "The panel tooltip");
 
-  prop = RNA_def_property(srna, "bl_category", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->category");
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_category", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->category");
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop, "", "The category (tab) in which the panel will be displayed, when applicable");
 
-  prop = RNA_def_property(srna, "bl_owner_id", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->owner_id");
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop, "", "The ID owning the data displayed in the panel, if any");
+  prop = api_def_prop(sapi, "bl_owner_id", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->owner_id");
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop, "", "The ID owning the data displayed in the panel, if any");
 
-  prop = RNA_def_property(srna, "bl_space_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type->space_type");
-  RNA_def_property_enum_items(prop, rna_enum_space_type_items);
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(prop, "Space Type", "The space where the panel is going to be used in");
+  prop = api_def_prop(sapi, "bl_space_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type->space_type");
+  api_def_prop_enum_items(prop, api_enum_space_type_items);
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(prop, "Space Type", "The space where the panel is going to be used in");
 
-  prop = RNA_def_property(srna, "bl_region_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type->region_type");
-  RNA_def_property_enum_items(prop, rna_enum_region_type_items);
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_region_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type->region_type");
+  api_def_prop_enum_items(prop, api_enum_region_type_items);
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_prop_ui_text(
       prop, "Region Type", "The region where the panel is going to be used in");
 
-  prop = RNA_def_property(srna, "bl_context", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->context");
-  RNA_def_property_flag(
+  prop = api_def_prop(sapi, "bl_context", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->context");
+  apu_def_prop_flag(
       prop, PROP_REGISTER_OPTIONAL); /* Only used in Properties Editor and 3D View - Thomas */
-  RNA_def_property_ui_text(prop,
-                           "Context",
-                           "The context in which the panel belongs to. (TODO: explain the "
-                           "possible combinations bl_context/bl_region_type/bl_space_type)");
+  api_def_prop_ui_text(prop,
+                       "Context",
+                       "The context in which the panel belongs to. (TODO: explain the "
+                       "possible combinations bl_context/bl_region_type/bl_space_type)");
 
-  prop = RNA_def_property(srna, "bl_options", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type->flag");
-  RNA_def_property_enum_items(prop, panel_flag_items);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL | PROP_ENUM_FLAG);
-  RNA_def_property_ui_text(prop, "Options", "Options for this panel type");
+  prop = api_def_prop(sapi, "bl_options", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "type->flag");
+  api_def_prop_enum_items(prop, panel_flag_items);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL | PROP_ENUM_FLAG);
+  api_def_prop_ui_text(prop, "Options", "Options for this panel type");
 
-  prop = RNA_def_property(srna, "bl_parent_id", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->parent_id");
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_parent_id", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->parent_id");
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop, "Parent ID Name", "If this is set, the panel becomes a sub-panel");
 
-  prop = RNA_def_property(srna, "bl_ui_units_x", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "type->ui_units_x");
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(prop, "Units X", "When set, defines popup panel width");
+  prop = api_def_prop(sapi, "bl_ui_units_x", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "type->ui_units_x");
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(prop, "Units X", "When set, defines popup panel width");
 
-  prop = RNA_def_property(srna, "bl_order", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "type->order");
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_order", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "type->order");
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop,
       "Order",
       "Panels with lower numbers are default ordered before panels with higher numbers");
 
-  prop = RNA_def_property(srna, "use_pin", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PNL_PIN);
-  RNA_def_property_ui_text(prop, "Pin", "Show the panel on all tabs");
+  prop = api_def_prop(sapi, "use_pin", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PNL_PIN);
+  api_def_prop_ui_text(prop, "Pin", "Show the panel on all tabs");
   /* XXX, should only tag region for redraw */
-  RNA_def_property_update(prop, NC_WINDOW, NULL);
+  api_def_prop_update(prop, NC_WINDOW, NULL);
 
-  prop = RNA_def_property(srna, "is_popover", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", PNL_POPOVER);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Popover", "");
+  prop = api_def_prop(sapi, "is_popover", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", PNL_POPOVER);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Popover", "");
 }
 
-static void rna_def_uilist(BlenderRNA *brna)
+static void api_def_uilist(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *prop;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  srna = RNA_def_struct(brna, "UIList", NULL);
-  RNA_def_struct_ui_text(srna, "UIList", "UI list containing the elements of a collection");
-  RNA_def_struct_sdna(srna, "uiList");
-  RNA_def_struct_refine_func(srna, "rna_UIList_refine");
-  RNA_def_struct_register_funcs(srna, "rna_UIList_register", "rna_UIList_unregister", NULL);
-  RNA_def_struct_idprops_func(srna, "rna_UIList_idprops");
-  RNA_def_struct_flag(srna, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  srna = api_def_struct(dapi, "UIList", NULL);
+  api_def_struct_ui_text(dapi, "UIList", "UI list containing the elements of a collection");
+  api_def_struct_sdna(srna, "uiList");
+  api_def_struct_refine_func(srna, "rna_UIList_refine");
+  api_def_struct_register_funcs(srna, "rna_UIList_register", "rna_UIList_unregister", NULL);
+  api_def_struct_idprops_func(srna, "rna_UIList_idprops");
+  spo_def_struct_flag(srna, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
   /* Registration */
   prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
