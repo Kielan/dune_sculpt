@@ -1535,7 +1535,7 @@ static void api_def_panel(DuneApi *dapi)
                        "possible combinations bl_context/bl_region_type/bl_space_type)");
 
   prop = api_def_prop(sapi, "bl_options", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "type->flag");
+  api_def_prop_enum_stype(prop, NULL, "type->flag");
   api_def_prop_enum_items(prop, panel_flag_items);
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL | PROP_ENUM_FLAG);
   api_def_prop_ui_text(prop, "Options", "Options for this panel type");
@@ -1581,7 +1581,7 @@ static void api_def_uilist(DuneApi *dapi)
   srna = api_def_struct(dapi, "UIList", NULL);
   api_def_struct_ui_text(dapi, "UIList", "UI list containing the elements of a collection");
   api_def_struct_stype(sapi, "uiList");
-  api_def_struct_refine_func(sapi, "api_UIList_refine");
+  api_def_struct_refine_fn(sapi, "api_UIList_refine");
   api_def_struct_register_fns(sapi, "api_UIList_register", "api_UIList_unregister", NULL);
   api_def_struct_idprops_fn(sapi, "api_UIList_idprops");
   api_def_struct_flag(sapi, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_PUBLIC_NAMESPACE_INHERIT);
@@ -1683,19 +1683,19 @@ static void api_def_uilist(DuneApi *dapi)
   api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFUNC_OPTIONAL);
   prop = api_def_prop(fn, "flt_flag", PROP_INT, PROP_UNSIGNED);
   api_def_prop_ui_text(prop, "", "The filter-flag result for this item");
-  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFUNC_OPTIONAL);
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_PYFN_OPTIONAL);
 
   /* draw_filter */
   func = api_def_fn(sapi, "draw_filter", NULL);
-  RNA_def_function_ui_description(func, "Draw filtering options");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "layout", "UILayout", "", "Layout to draw the item");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_fn_ui_description(fn, "Draw filtering options");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "layout", "UILayout", "", "Layout to draw the item");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* filter */
-  func = RNA_def_function(srna, "filter_items", NULL);
+  func = api_def_fn(srna, "filter_items", NULL);
   RNA_def_function_ui_description(
       func,
       "Filter and/or re-order items of the collection (output filter results in "
