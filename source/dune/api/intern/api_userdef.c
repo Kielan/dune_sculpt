@@ -5729,92 +5729,92 @@ static void api_def_userdef_system(DuneApi *dapi)
       "Time since last access of a GL vertex buffer object in seconds after which it is freed "
       "(set to 0 to keep VBO allocated)");
 
-  prop = RNA_def_property(srna, "vbo_collection_rate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "vbocollectrate");
-  RNA_def_property_range(prop, 1, 3600);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "vbo_collection_rate", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "vbocollectrate");
+  api_def_prop_range(prop, 1, 3600);
+  api_def_prop_ui_text(
       prop,
       "VBO Collection Rate",
       "Number of seconds between each run of the GL vertex buffer object garbage collector");
 
   /* Select */
 
-  prop = RNA_def_property(srna, "use_select_pick_depth", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "gpu_flag", USER_GPU_FLAG_NO_DEPT_PICK);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_select_pick_depth", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "gpu_flag", USER_GPU_FLAG_NO_DEPT_PICK);
+  api_def_prop_ui_text(prop,
                            "GPU Depth Picking",
                            "When making a selection in 3D View, use the GPU depth buffer to "
                            "ensure the frontmost object is selected first");
 
   /* GPU subdivision evaluation. */
 
-  prop = RNA_def_property(srna, "use_gpu_subdivision", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "gpu_flag", USER_GPU_FLAG_SUBDIVISION_EVALUATION);
-  RNA_def_property_ui_text(prop,
-                           "GPU Subdivision",
-                           "Enable GPU acceleration for evaluating the last subdivision surface "
-                           "modifiers in the stack");
-  RNA_def_property_update(prop, 0, "rna_UserDef_subdivision_update");
+  prop = api_def_prop(sapi, "use_gpu_subdivision", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "gpu_flag", USER_GPU_FLAG_SUBDIVISION_EVALUATION);
+  api_def_prop_ui_text(prop,
+                       "GPU Subdivision",
+                       "Enable GPU acceleration for evaluating the last subdivision surface "
+                       "modifiers in the stack");
+  api_def_prop_update(prop, 0, "api_UserDef_subdivision_update");
 
   /* GPU backend selection */
-  prop = RNA_def_property(srna, "gpu_backend", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "gpu_backend");
-  RNA_def_property_enum_items(prop, rna_enum_preference_gpu_backend_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_preference_gpu_backend_itemf");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "gpu_backend", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "gpu_backend");
+  api_def_prop_enum_items(prop, api_enum_pref_gpu_backend_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_pref_gpu_backend_itemf");
+  api_def_prop_ui_text(
       prop,
       "GPU Backend",
       "GPU backend to use (requires restarting Blender for changes to take effect)");
 
   /* Audio */
 
-  prop = RNA_def_property(srna, "audio_mixing_buffer", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mixbufsize");
-  RNA_def_property_enum_items(prop, audio_mixing_samples_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "audio_mixing_buffer", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mixbufsize");
+  api_def_prop_enum_items(prop, audio_mixing_samples_items);
+  api_def_prop_ui_text(
       prop, "Audio Mixing Buffer", "Number of samples used by the audio mixing buffer");
-  RNA_def_property_update(prop, 0, "rna_UserDef_audio_update");
+  api_def_prop_update(prop, 0, "api_UserDef_audio_update");
 
-  prop = RNA_def_property(srna, "audio_device", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "audiodevice");
-  RNA_def_property_enum_items(prop, audio_device_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_userdef_audio_device_itemf");
-  RNA_def_property_ui_text(prop, "Audio Device", "Audio output device");
-  RNA_def_property_update(prop, 0, "rna_UserDef_audio_update");
+  prop = api_def_prop(sapi, "audio_device", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "audiodevice");
+  api_def_prop_enum_items(prop, audio_device_items);
+  api_def_prop_enum_funcs(prop, NULL, NULL, "api_userdef_audio_device_itemf");
+  api_def_prop_ui_text(prop, "Audio Device", "Audio output device");
+  api_def_prop_update(prop, 0, "api_UserDef_audio_update");
 
-  prop = RNA_def_property(srna, "audio_sample_rate", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "audiorate");
-  RNA_def_property_enum_items(prop, audio_rate_items);
-  RNA_def_property_ui_text(prop, "Audio Sample Rate", "Audio sample rate");
-  RNA_def_property_update(prop, 0, "rna_UserDef_audio_update");
+  prop = api_def_prop(sapi, "audio_sample_rate", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "audiorate");
+  api_def_prop_enum_items(prop, audio_rate_items);
+  api_def_prop_ui_text(prop, "Audio Sample Rate", "Audio sample rate");
+  api_def_prop_update(prop, 0, "api_UserDef_audio_update");
 
-  prop = RNA_def_property(srna, "audio_sample_format", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "audioformat");
-  RNA_def_property_enum_items(prop, audio_format_items);
-  RNA_def_property_ui_text(prop, "Audio Sample Format", "Audio sample format");
-  RNA_def_property_update(prop, 0, "rna_UserDef_audio_update");
+  prop = api_def_prop(sapi, "audio_sample_format", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "audioformat");
+  api_def_prop_enum_items(prop, audio_format_items);
+  api_def_prop_ui_text(prop, "Audio Sample Format", "Audio sample format");
+  api_def_prop_update(prop, 0, "api_UserDef_audio_update");
 
-  prop = RNA_def_property(srna, "audio_channels", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "audiochannels");
-  RNA_def_property_enum_items(prop, audio_channel_items);
-  RNA_def_property_ui_text(prop, "Audio Channels", "Audio channel count");
-  RNA_def_property_update(prop, 0, "rna_UserDef_audio_update");
+  prop = api_def_prop(sapi, "audio_channels", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "audiochannels");
+  api_def_prop_enum_items(prop, audio_channel_items);
+  api_def_prop_ui_text(prop, "Audio Channels", "Audio channel count");
+  api_def_prop_update(prop, 0, "api_UserDef_audio_update");
 
 #  ifdef WITH_CYCLES
-  prop = RNA_def_property(srna, "legacy_compute_device_type", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "compute_device_type");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_HIDDEN);
-  RNA_def_property_ui_text(prop, "Legacy Compute Device Type", "For backwards compatibility only");
+  prop = api_def_prop(sapi, "legacy_compute_device_type", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "compute_device_type");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_HIDDEN);
+  api_def_prop_ui_text(prop, "Legacy Compute Device Type", "For backwards compatibility only");
 #  endif
 }
 
-static void rna_def_userdef_input(BlenderRNA *brna)
+static void api_def_userdef_input(DuneApi *dapi)
 {
-  PropertyRNA *prop;
-  StructRNA *srna;
+  ApiProp *prop;
+  ApiStruct *sapi;
 
-  static const EnumPropertyItem view_rotation_items[] = {
+  static const EnumPropItem view_rotation_items[] = {
       {0, "TURNTABLE", 0, "Turntable", "Turntable keeps the Z-axis upright while orbiting"},
       {USER_TRACKBALL,
        "TRACKBALL",
@@ -5825,13 +5825,13 @@ static void rna_def_userdef_input(BlenderRNA *brna)
   };
 
 #  ifdef WITH_INPUT_NDOF
-  static const EnumPropertyItem ndof_view_navigation_items[] = {
+  static const EnumPropItem ndof_view_navigation_items[] = {
       {0, "FREE", 0, "Free", "Use full 6 degrees of freedom by default"},
       {NDOF_MODE_ORBIT, "ORBIT", 0, "Orbit", "Orbit about the view center by default"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem ndof_view_rotation_items[] = {
+  static const EnumPropItem ndof_view_rotation_items[] = {
       {NDOF_TURNTABLE,
        "TURNTABLE",
        0,
@@ -5842,7 +5842,7 @@ static void rna_def_userdef_input(BlenderRNA *brna)
   };
 #  endif /* WITH_INPUT_NDOF */
 
-  static const EnumPropertyItem tablet_api[] = {
+  static const EnumPropItem tablet_api[] = {
       {USER_TABLET_AUTOMATIC,
        "AUTOMATIC",
        0,
@@ -5862,7 +5862,7 @@ static void rna_def_userdef_input(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem view_zoom_styles[] = {
+  static const EnumPropItem view_zoom_styles[] = {
       {USER_ZOOM_CONTINUE,
        "CONTINUE",
        0,
@@ -5882,7 +5882,7 @@ static void rna_def_userdef_input(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem view_zoom_axes[] = {
+  static const EnumPropItem view_zoom_axes[] = {
       {0, "VERTICAL", 0, "Vertical", "Zoom in and out based on vertical mouse movement"},
       {USER_ZOOM_HORIZ,
        "HORIZONTAL",
@@ -5892,325 +5892,325 @@ static void rna_def_userdef_input(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "PreferencesInput", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Input", "Settings for input devices");
+  sapi = api_def_struct(dapi, "PreferencesInput", NULL);
+  api_def_struct_stype(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Prefs");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Input", "Settings for input devices");
 
-  prop = RNA_def_property(srna, "view_zoom_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "viewzoom");
-  RNA_def_property_enum_items(prop, view_zoom_styles);
-  RNA_def_property_ui_text(prop, "Zoom Style", "Which style to use for viewport scaling");
+  prop = api_def_prop(sapi, "view_zoom_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "viewzoom");
+  api_def_prop_enum_items(prop, view_zoom_styles);
+  api_def_prop_ui_text(prop, "Zoom Style", "Which style to use for viewport scaling");
 
-  prop = RNA_def_property(srna, "view_zoom_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "uiflag");
-  RNA_def_property_enum_items(prop, view_zoom_axes);
-  RNA_def_property_ui_text(prop, "Zoom Axis", "Axis of mouse movement to zoom in or out on");
+  prop = api_def_prop(sapi, "view_zoom_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "uiflag");
+  api_def_prop_enum_items(prop, view_zoom_axes);
+  api_def_prop_ui_text(prop, "Zoom Axis", "Axis of mouse movement to zoom in or out on");
 
-  prop = RNA_def_property(srna, "use_multitouch_gestures", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "uiflag", USER_NO_MULTITOUCH_GESTURES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_multitouch_gestures", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "uiflag", USER_NO_MULTITOUCH_GESTURES);
+  api_def_prop_ui_text(
       prop,
       "Multi-touch Gestures",
       "Use multi-touch gestures for navigation with touchpad, instead of scroll wheel emulation");
-  RNA_def_property_update(prop, 0, "rna_userdef_input_devices");
+  api_def_prop_update(prop, 0, "api_userdef_input_devices");
 
-  prop = RNA_def_property(srna, "invert_mouse_zoom", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_ZOOM_INVERT);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "invert_mouse_zoom", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_ZOOM_INVERT);
+  api_def_prop_ui_text(
       prop, "Invert Zoom Direction", "Invert the axis of mouse movement for zooming");
 
-  prop = RNA_def_property(srna, "use_mouse_depth_navigate", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_DEPTH_NAVIGATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mouse_depth_navigate", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_DEPTH_NAVIGATE);
+  api_def_prop_ui_text(
       prop,
       "Auto Depth",
       "Use the depth under the mouse to improve view pan/rotate/zoom functionality");
 
   /* view zoom */
-  prop = RNA_def_property(srna, "use_zoom_to_mouse", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_ZOOM_TO_MOUSEPOS);
-  RNA_def_property_ui_text(prop,
-                           "Zoom to Mouse Position",
-                           "Zoom in towards the mouse pointer's position in the 3D view, "
-                           "rather than the 2D window center");
+  prop = api_def_prop(sapi, "use_zoom_to_mouse", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_ZOOM_TO_MOUSEPOS);
+  api_def_prop_ui_text(prop,
+                       "Zoom to Mouse Position",
+                       "Zoom in towards the mouse pointer's position in the 3D view, "
+                        "rather than the 2D window center");
 
   /* view rotation */
-  prop = RNA_def_property(srna, "use_auto_perspective", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_AUTOPERSP);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_auto_perspective", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_AUTOPERSP);
+  api_def_prop_ui_text(
       prop,
       "Auto Perspective",
       "Automatically switch between orthographic and perspective when changing "
       "from top/front/side views");
 
-  prop = RNA_def_property(srna, "use_rotate_around_active", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_ORBIT_SELECTION);
-  RNA_def_property_ui_text(prop, "Orbit Around Selection", "Use selection as the pivot point");
+  prop = api_def_prop(sapi, "use_rotate_around_active", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_ORBIT_SELECTION);
+  api_def_prop_ui_text(prop, "Orbit Around Selection", "Use selection as the pivot point");
 
-  prop = RNA_def_property(srna, "view_rotate_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, view_rotation_items);
-  RNA_def_property_ui_text(prop, "Orbit Method", "Orbit method in the viewport");
+  prop = api_def_prop(sapi, "view_rotate_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, view_rotation_items);
+  api_def_prop_ui_text(prop, "Orbit Method", "Orbit method in the viewport");
 
-  prop = RNA_def_property(srna, "use_mouse_continuous", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_CONTINUOUS_MOUSE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mouse_continuous", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_CONTINUOUS_MOUSE);
+  api_def_prop_ui_text(
       prop,
       "Continuous Grab",
       "Let the mouse wrap around the view boundaries so mouse movements are not limited by the "
       "screen size (used by transform, dragging of UI controls, etc.)");
 
-  prop = RNA_def_property(srna, "use_drag_immediately", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_RELEASECONFIRM);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_drag_immediately", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_RELEASECONFIRM);
+  api_def_prop_ui_text(prop,
                            "Release Confirms",
                            "Moving things with a mouse drag confirms when releasing the button");
 
-  prop = RNA_def_property(srna, "use_numeric_input_advanced", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_FLAG_NUMINPUT_ADVANCED);
-  RNA_def_property_ui_text(prop,
-                           "Default to Advanced Numeric Input",
-                           "When entering numbers while transforming, "
-                           "default to advanced mode for full math expression evaluation");
+  prop = api_def_prop(sapi, "use_numeric_input_advanced", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_FLAG_NUMINPUT_ADVANCED);
+  api_def_prop_ui_text(prop,
+                       "Default to Advanced Numeric Input",
+                       "When entering numbers while transforming, "
+                        "default to advanced mode for full math expression evaluation");
 
   /* View Navigation */
-  prop = RNA_def_property(srna, "navigation_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "navigation_mode");
-  RNA_def_property_enum_items(prop, rna_enum_navigation_mode_items);
-  RNA_def_property_ui_text(prop, "View Navigation", "Which method to use for viewport navigation");
+  prop = api_def_prop(sapi, "navigation_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "navigation_mode");
+  api_def_prop_enum_items(prop, api_enum_navigation_mode_items);
+  api_def_prop_ui_text(prop, "View Navigation", "Which method to use for viewport navigation");
 
-  prop = RNA_def_property(srna, "walk_navigation", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "walk_navigation");
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "WalkNavigation");
-  RNA_def_property_ui_text(prop, "Walk Navigation", "Settings for walk navigation mode");
+  prop = api_def_prop(sapi, "walk_navigation", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "walk_navigation");
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "WalkNavigation");
+  api_def_prop_ui_text(prop, "Walk Navigation", "Settings for walk navigation mode");
 
-  prop = RNA_def_property(srna, "view_rotate_sensitivity_turntable", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_range(prop, DEG2RADF(0.001f), DEG2RADF(15.0f));
-  RNA_def_property_ui_range(prop, DEG2RADF(0.001f), DEG2RADF(15.0f), 1.0f, 2);
-  RNA_def_property_ui_text(prop,
-                           "Orbit Sensitivity",
-                           "Rotation amount per pixel to control how fast the viewport orbits");
+  prop = api_def_prop(sapi, "view_rotate_sensitivity_turntable", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_range(prop, DEG2RADF(0.001f), DEG2RADF(15.0f));
+  api_def_prop_ui_range(prop, DEG2RADF(0.001f), DEG2RADF(15.0f), 1.0f, 2);
+  api_def_prop_ui_text(prop,
+                       "Orbit Sensitivity",
+                       "Rotation amount per pixel to control how fast the viewport orbits");
 
-  prop = RNA_def_property(srna, "view_rotate_sensitivity_trackball", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.1f, 10.0f);
-  RNA_def_property_ui_range(prop, 0.1f, 2.0f, 0.01f, 2);
-  RNA_def_property_ui_text(prop, "Orbit Sensitivity", "Scale trackball orbit sensitivity");
+  prop = api_def_prop(sapi, "view_rotate_sensitivity_trackball", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.1f, 10.0f);
+  api_def_prop_ui_range(prop, 0.1f, 2.0f, 0.01f, 2);
+  api_def_prop_ui_text(prop, "Orbit Sensitivity", "Scale trackball orbit sensitivity");
 
   /* Click-drag threshold for tablet & mouse. */
-  prop = RNA_def_property(srna, "drag_threshold_mouse", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 255);
-  RNA_def_property_ui_text(prop,
-                           "Mouse Drag Threshold",
-                           "Number of pixels to drag before a drag event is triggered "
-                           "for mouse/track-pad input "
-                           "(otherwise click events are detected)");
+  prop = api_def_prop(sapi, "drag_threshold_mouse", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 255);
+  api_def_prop_ui_text(prop,
+                       "Mouse Drag Threshold",
+                       "Number of pixels to drag before a drag event is triggered "
+                       "for mouse/track-pad input "
+                       "(otherwise click events are detected)");
 
-  prop = RNA_def_property(srna, "drag_threshold_tablet", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 255);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "drag_threshold_tablet", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 255);
+  api_def_prop_ui_text(prop,
                            "Tablet Drag Threshold",
                            "Number of pixels to drag before a drag event is triggered "
                            "for tablet input "
                            "(otherwise click events are detected)");
 
-  prop = RNA_def_property(srna, "drag_threshold", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 1, 255);
-  RNA_def_property_ui_text(prop,
-                           "Drag Threshold",
-                           "Number of pixels to drag before a drag event is triggered "
-                           "for keyboard and other non mouse/tablet input "
-                           "(otherwise click events are detected)");
+  prop = api_def_prop(sapi, "drag_threshold", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 1, 255);
+  api_def_prop_ui_text(prop,
+                       "Drag Threshold",
+                       "Number of pixels to drag before a drag event is triggered "
+                       "for keyboard and other non mouse/tablet input "
+                       "(otherwise click events are detected)");
 
-  prop = RNA_def_property(srna, "move_threshold", PROP_INT, PROP_PIXEL);
-  RNA_def_property_range(prop, 0, 255);
-  RNA_def_property_ui_range(prop, 0, 10, 1, -1);
-  RNA_def_property_ui_text(prop,
-                           "Motion Threshold",
-                           "Number of pixels to before the cursor is considered to have moved "
-                           "(used for cycling selected items on successive clicks)");
+  prop = api_def_prop(sapi, "move_threshold", PROP_INT, PROP_PIXEL);
+  api_def_prop_range(prop, 0, 255);
+  api_def_prop_ui_range(prop, 0, 10, 1, -1);
+  api_def_prop_ui_text(prop,
+                       "Motion Threshold",
+                       "Number of pixels to before the cursor is considered to have moved "
+                       "(used for cycling selected items on successive clicks)");
 
   /* tablet pressure curve */
-  prop = RNA_def_property(srna, "pressure_threshold_max", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.01f, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pressure_threshold_max", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_range(prop, 0.0f, 1.0f, 0.01f, 3);
+  api_def_prop_ui_text(
       prop, "Max Threshold", "Raw input pressure value that is interpreted as 100% by Blender");
 
-  prop = RNA_def_property(srna, "pressure_softness", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -1.0f, 1.0f, 0.1f, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pressure_softness", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_range(prop, -1.0f, 1.0f, 0.1f, 2);
+  api_def_prop_ui_text(
       prop, "Softness", "Adjusts softness of the low pressure response onset using a gamma curve");
 
-  prop = RNA_def_property(srna, "tablet_api", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, tablet_api);
-  RNA_def_property_ui_text(prop,
-                           "Tablet API",
-                           "Select the tablet API to use for pressure sensitivity (may require "
-                           "restarting Blender for changes to take effect)");
-  RNA_def_property_update(prop, 0, "rna_userdef_input_devices");
+  prop = api_def_prop(sapi, "tablet_api", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, tablet_api);
+  api_def_prop_ui_text(prop,
+                       "Tablet API",
+                       "Select the tablet API to use for pressure sensitivity (may require "
+                       "restarting Dune for changes to take effect)");
+  api_def_prop_update(prop, 0, "api_userdef_input_devices");
 
 #  ifdef WITH_INPUT_NDOF
   /* 3D mouse settings */
   /* global options */
-  prop = RNA_def_property(srna, "ndof_sensitivity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.01f, 40.0f);
-  RNA_def_property_ui_text(prop, "Sensitivity", "Overall sensitivity of the 3D Mouse for panning");
+  prop = api_def_prop(sapi, "ndof_sensitivity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.01f, 40.0f);
+  api_def_prop_ui_text(prop, "Sensitivity", "Overall sensitivity of the 3D Mouse for panning");
 
-  prop = RNA_def_property(srna, "ndof_orbit_sensitivity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.01f, 40.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ndof_orbit_sensitivity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.01f, 40.0f);
+  api_def_prop_ui_text(
       prop, "Orbit Sensitivity", "Overall sensitivity of the 3D Mouse for orbiting");
 
-  prop = RNA_def_property(srna, "ndof_deadzone", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ndof_deadzone", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Deadzone", "Threshold of initial movement needed from the device's rest position");
-  RNA_def_property_update(prop, 0, "rna_userdef_ndof_deadzone_update");
+  api_def_prop_update(prop, 0, "api_userdef_ndof_deadzone_update");
 
-  prop = RNA_def_property(srna, "ndof_pan_yz_swap_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_PAN_YZ_SWAP_AXIS);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ndof_pan_yz_swap_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_PAN_YZ_SWAP_AXIS);
+  api_def_prop_ui_text(
       prop, "Y/Z Swap Axis", "Pan using up/down on the device (otherwise forward/backward)");
 
-  prop = RNA_def_property(srna, "ndof_zoom_invert", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_ZOOM_INVERT);
-  RNA_def_property_ui_text(prop, "Invert Zoom", "Zoom using opposite direction");
+  prop = api_def_prop(sapi, "ndof_zoom_invert", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_ZOOM_INVERT);
+  api_def_prop_ui_text(prop, "Invert Zoom", "Zoom using opposite direction");
 
   /* 3D view */
-  prop = RNA_def_property(srna, "ndof_show_guide", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_SHOW_GUIDE);
+  prop = api_def_prop(sapi, "ndof_show_guide", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_SHOW_GUIDE);
 
   /* TODO: update description when fly-mode visuals are in place
    * ("projected position in fly mode"). */
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop, "Show Navigation Guide", "Display the center and axis during rotation");
 
   /* 3D view */
-  prop = RNA_def_property(srna, "ndof_view_navigate_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "ndof_flag");
-  RNA_def_property_enum_items(prop, ndof_view_navigation_items);
-  RNA_def_property_ui_text(prop, "NDOF View Navigate", "Navigation style in the viewport");
+  prop = api_def_prop(sapi, "ndof_view_navigate_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "ndof_flag");
+  api_def_prop_enum_items(prop, ndof_view_navigation_items);
+  api_def_prop_ui_text(prop, "NDOF View Navigate", "Navigation style in the viewport");
 
-  prop = RNA_def_property(srna, "ndof_view_rotate_method", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "ndof_flag");
-  RNA_def_property_enum_items(prop, ndof_view_rotation_items);
-  RNA_def_property_ui_text(prop, "NDOF View Rotation", "Rotation style in the viewport");
+  prop = api_def_prop(sapi, "ndof_view_rotate_method", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "ndof_flag");
+  api_def_prop_enum_items(prop, ndof_view_rotation_items);
+  api_def_prop_ui_text(prop, "NDOF View Rotation", "Rotation style in the viewport");
 
   /* 3D view: yaw */
-  prop = RNA_def_property(srna, "ndof_rotx_invert_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_ROTX_INVERT_AXIS);
-  RNA_def_property_ui_text(prop, "Invert Pitch (X) Axis", "");
+  prop = api_def_prop(sapi, "ndof_rotx_invert_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_ROTX_INVERT_AXIS);
+  api_def_prop_ui_text(prop, "Invert Pitch (X) Axis", "");
 
   /* 3D view: pitch */
-  prop = RNA_def_property(srna, "ndof_roty_invert_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_ROTY_INVERT_AXIS);
-  RNA_def_property_ui_text(prop, "Invert Yaw (Y) Axis", "");
+  prop = api_def_prop(sapi, "ndof_roty_invert_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_ROTY_INVERT_AXIS);
+  api_def_prop_ui_text(prop, "Invert Yaw (Y) Axis", "");
 
   /* 3D view: roll */
-  prop = RNA_def_property(srna, "ndof_rotz_invert_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_ROTZ_INVERT_AXIS);
-  RNA_def_property_ui_text(prop, "Invert Roll (Z) Axis", "");
+  prop = api_def_prop(sapi, "ndof_rotz_invert_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_ROTZ_INVERT_AXIS);
+  api_def_prop_ui_text(prop, "Invert Roll (Z) Axis", "");
 
   /* 3D view: pan x */
-  prop = RNA_def_property(srna, "ndof_panx_invert_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_PANX_INVERT_AXIS);
-  RNA_def_property_ui_text(prop, "Invert X Axis", "");
+  prop = api_def_prop(sapi, "ndof_panx_invert_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_PANX_INVERT_AXIS);
+  api_def_prop_ui_text(prop, "Invert X Axis", "");
 
   /* 3D view: pan y */
-  prop = RNA_def_property(srna, "ndof_pany_invert_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_PANY_INVERT_AXIS);
-  RNA_def_property_ui_text(prop, "Invert Y Axis", "");
+  prop = api_def_prop(sapi, "ndof_pany_invert_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_PANY_INVERT_AXIS);
+  api_def_prop_ui_text(prop, "Invert Y Axis", "");
 
   /* 3D view: pan z */
-  prop = RNA_def_property(srna, "ndof_panz_invert_axis", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_PANZ_INVERT_AXIS);
-  RNA_def_property_ui_text(prop, "Invert Z Axis", "");
+  prop = api_def_prop(sapi, "ndof_panz_invert_axis", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_PANZ_INVERT_AXIS);
+  api_def_prop_ui_text(prop, "Invert Z Axis", "");
 
   /* 3D view: fly */
-  prop = RNA_def_property(srna, "ndof_lock_horizon", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_LOCK_HORIZON);
-  RNA_def_property_ui_text(prop, "Lock Horizon", "Keep horizon level while flying with 3D Mouse");
+  prop = api_def_prop(sapi, "ndof_lock_horizon", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_LOCK_HORIZON);
+  api_def_prop_ui_text(prop, "Lock Horizon", "Keep horizon level while flying with 3D Mouse");
 
-  prop = RNA_def_property(srna, "ndof_fly_helicopter", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_FLY_HELICOPTER);
-  RNA_def_property_ui_text(prop,
-                           "Helicopter Mode",
-                           "Device up/down directly controls the Z position of the 3D viewport");
+  prop = api_def_prop(sapi, "ndof_fly_helicopter", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_FLY_HELICOPTER);
+  api_def_prop_ui_text(prop,
+                       "Helicopter Mode",
+                       "Device up/down directly controls the Z position of the 3D viewport");
 
-  prop = RNA_def_property(srna, "ndof_lock_camera_pan_zoom", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "ndof_flag", NDOF_CAMERA_PAN_ZOOM);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "ndof_lock_camera_pan_zoom", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "ndof_flag", NDOF_CAMERA_PAN_ZOOM);
+  api_def_prop_ui_text(
       prop,
       "Lock Camera Pan/Zoom",
       "Pan/zoom the camera view instead of leaving the camera view when orbiting");
 
   /* let Python know whether NDOF is enabled */
-  prop = RNA_def_boolean(srna, "use_ndof", true, "", "");
+  prop = api_def_bool(sapi, "use_ndof", true, "", "");
 #  else
-  prop = RNA_def_boolean(srna, "use_ndof", false, "", "");
+  prop = api_def_bool(sapi, "use_ndof", false, "", "");
 #  endif /* WITH_INPUT_NDOF */
-  RNA_def_property_flag(prop, PROP_IDPROPERTY);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_IDPROP);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "mouse_double_click_time", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "dbl_click_time");
-  RNA_def_property_range(prop, 1, 1000);
-  RNA_def_property_ui_text(prop, "Double Click Timeout", "Time/delay (in ms) for a double click");
+  prop = api_def_prop(sapi, "mouse_double_click_time", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "dbl_click_time");
+  api_def_prop_range(prop, 1, 1000);
+  api_def_prop_ui_text(prop, "Double Click Timeout", "Time/delay (in ms) for a double click");
 
-  prop = RNA_def_property(srna, "use_mouse_emulate_3_button", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_TWOBUTTONMOUSE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mouse_emulate_3_btn", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_TWOBTNMOUSE);
+  api_def_prop_ui_text(
       prop, "Emulate 3 Button Mouse", "Emulate Middle Mouse with Alt+Left Mouse");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_userdef_keyconfig_reload_update");
+  api_def_prop_flag(prop, PROP_CTX_UPDATE);
+  api_def_prop_update(prop, 0, "api_userdef_keyconfig_reload_update");
 
-  static const EnumPropertyItem mouse_emulate_3_button_modifier[] = {
+  static const EnumPropItem mouse_emulate_3_btn_mod[] = {
       {USER_EMU_MMB_MOD_ALT, "ALT", 0, "Alt", ""},
       {USER_EMU_MMB_MOD_OSKEY, "OSKEY", 0, "OS-Key", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  prop = RNA_def_property(srna, "mouse_emulate_3_button_modifier", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "mouse_emulate_3_btn_mod", PROP_ENUM, PROP_NONE);
   /* Only needed because of WIN32 inability to support the option. */
-  RNA_def_property_enum_funcs(prop, "rna_UserDef_mouse_emulate_3_button_modifier_get", NULL, NULL);
-  RNA_def_property_enum_items(prop, mouse_emulate_3_button_modifier);
-  RNA_def_property_ui_text(
+  api_def_prop_enum_fns(prop, "rna_UserDef_mouse_emulate_3_button_modifier_get", NULL, NULL);
+  api_def_prop_enum_items(prop, mouse_emulate_3_btn_mod);
+  api_def_prop_ui_text(
       prop, "Emulate 3 Button Modifier", "Hold this modifier to emulate the middle mouse button");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_userdef_keyconfig_reload_update");
+  api_def_prop_flag(prop, PROP_CTX_UPDATE);
+  api_def_prop_update(prop, 0, "rna_userdef_keyconfig_reload_update");
 
-  prop = RNA_def_property(srna, "use_emulate_numpad", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", USER_NONUMPAD);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_emulate_numpad", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", USER_NONUMPAD);
+  api_def_prop_ui_text(
       prop, "Emulate Numpad", "Main 1 to 0 keys act as the numpad ones (useful for laptops)");
 
-  prop = RNA_def_property(srna, "invert_zoom_wheel", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "uiflag", USER_WHEELZOOMDIR);
-  RNA_def_property_ui_text(prop, "Wheel Invert Zoom", "Swap the Mouse Wheel zoom direction");
+  prop = api_def_prop(sapi, "invert_zoom_wheel", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "uiflag", USER_WHEELZOOMDIR);
+  api_def_prop_ui_text(prop, "Wheel Invert Zoom", "Swap the Mouse Wheel zoom direction");
 }
 
-static void rna_def_userdef_keymap(BlenderRNA *brna)
+static void api_def_userdef_keymap(DuneApi *dapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  StructRNA *srna = RNA_def_struct(brna, "PreferencesKeymap", NULL);
-  RNA_def_struct_sdna(srna, "UserDef");
-  RNA_def_struct_nested(brna, srna, "Preferences");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Keymap", "Shortcut setup for keyboards and other input devices");
+  ApiStruct *sapi = api_def_struct(dapi, "PreferencesKeymap", NULL);
+  api_def_struct_sdna(sapi, "UserDef");
+  api_def_struct_nested(dapi, sapi, "Preferences");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Keymap", "Shortcut setup for keyboards and other input devices");
 
-  prop = RNA_def_property(srna, "show_ui_keyconfig", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(
+  prop = api_def_prop(sapi, "show_ui_keyconfig", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(
       prop, NULL, "space_data.flag", USER_SPACEDATA_INPUT_HIDE_UI_KEYCONFIG);
-  RNA_def_property_ui_text(prop, "Show UI Key-Config", "");
+  api_def_prop_ui_text(prop, "Show UI Key-Config", "");
 
-  prop = RNA_def_property(srna, "active_keyconfig", PROP_STRING, PROP_DIRPATH);
-  RNA_def_property_string_sdna(prop, NULL, "keyconfigstr");
-  RNA_def_property_ui_text(prop, "Key Config", "The name of the active key configuration");
+  prop = api_def_prop(sapi, "active_keyconfig", PROP_STRING, PROP_DIRPATH);
+  api_def_prop_string_stype(prop, NULL, "keyconfigstr");
+  api_def_prop_ui_text(prop, "Key Config", "The name of the active key configuration");
 }
 
 static void rna_def_userdef_filepaths_asset_library(BlenderRNA *brna)
@@ -6775,31 +6775,31 @@ void RNA_def_userdef(BlenderRNA *brna)
   RNA_def_property_flag(prop, PROP_NEVER_NULL);
   RNA_def_property_struct_type(prop, "PreferencesInput");
   RNA_def_property_pointer_funcs(prop, "rna_UserDef_input_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Inputs", "Settings for input devices");
+  api_def_prop_ui_text(prop, "Inputs", "Settings for input devices");
 
-  prop = RNA_def_property(srna, "keymap", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "PreferencesKeymap");
-  RNA_def_property_pointer_funcs(prop, "rna_UserDef_keymap_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Keymap", "Shortcut setup for keyboards and other input devices");
+  prop = api_def_prop(sapi, "keymap", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "PreferencesKeymap");
+  api_def_prop_ptr_fns(prop, "api_UserDef_keymap_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Keymap", "Shortcut setup for keyboards and other input devices");
 
-  prop = api_def_prop(srna, "filepaths", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "filepaths", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "PreferencesFilePaths");
-  api_def_prop_ptr_fns(prop, "rna_UserDef_filepaths_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_UserDef_filepaths_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "File Paths", "Default paths for external files");
 
-  prop = api_def_prop(srna, "system", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "system", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "PreferencesSystem");
-  api_def_prop_ptr_fns(prop, "rna_UserDef_system_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_UserDef_system_get", NULL, NULL, NULL);
   api_def_prop_ui_text(
       prop, "System & OpenGL", "Graphics driver and operating system settings");
 
-  prop = api_def_prop(srna, "apps", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "apps", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_struct_type(prop, "PreferencesApps");
-  api_def_prop_ptr_fns(prop, "rna_UserDef_apps_get", NULL, NULL, NULL);
+  api_def_prop_ptr_fns(prop, "api_UserDef_apps_get", NULL, NULL, NULL);
   api_def_prop_ui_text(prop, "Apps", "Preferences that work only for apps");
 
   prop = api_def_prop(srna, "experimental", PROP_POINTER, PROP_NONE);
@@ -6810,14 +6810,14 @@ void RNA_def_userdef(BlenderRNA *brna)
       "Experimental",
       "Settings for features that are still early in their development stage");
 
-  prop = api_def_int_vector(srna,
+  prop = api_def_int_vector(sapi,
                             "version",
                             3,
                             NULL,
                             0,
                             INT_MAX,
                             "Version",
-                            "Version of Blender the userpref.blend was saved with",
+                            "Version of Dune the userpref.dune was saved with",
                             0,
                             INT_MAX);
   api_def_prop_int_fn(prop, "api_userdef_version_get", NULL, NULL);
@@ -6825,48 +6825,48 @@ void RNA_def_userdef(BlenderRNA *brna)
   api_def_prop_flag(prop, PROP_THICK_WRAP);
 
   /* StudioLight Collection */
-  prop = api_def_prop(srna, "studio_lights", PROP_COLLECTION, PROP_NONE);
+  prop = api_def_prop(sapi, "studio_lights", PROP_COLLECTION, PROP_NONE);
   api_def_prop_struct_type(prop, "StudioLight");
-  api_def_prop_srna(prop, "StudioLights");
-  api_def_prop_collection_funcs(prop,
-                                    "rna_UserDef_studiolight_begin",
-                                    "rna_iterator_listbase_next",
-                                    "rna_iterator_listbase_end",
-                                    "rna_iterator_listbase_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
+  api_def_prop_sapi(prop, "StudioLights");
+  api_def_prop_collection_fns(prop,
+                                "api_UserDef_studiolight_begin",
+                                "api_iter_list_next",
+                                "api_iter_list_end",
+                                "api_iter_list_get",
+                                NULL,
+                                NULL,
+                                NULL,
+                                NULL);
   api_def_prop_ui_text(prop, "Studio Lights", "");
 
   /* Preferences Flags */
-  prop = api_def_prop(srna, "use_preferences_save", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "pref_flag", USER_PREF_FLAG_SAVE);
+  prop = api_def_prop(sapi, "use_prefs_save", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "pref_flag", USER_PREF_FLAG_SAVE);
   api_def_prop_ui_text(prop,
-                           "Save on Exit",
-                           "Save preferences on exit when modified "
-                           "(unless factory settings have been loaded)");
+                       "Save on Exit",
+                        "Save preferences on exit when modified "
+                        "(unless factory settings have been loaded)");
 
-  prop = api_def_prop(srna, "is_dirty", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_bool_sdna(prop, NULL, "runtime.is_dirty", 0);
-  RNA_def_prop_ui_text(prop, "Dirty", "Preferences have changv
-  RNA_def_prop_update(prop, 0, "rna_userdef_ui_update");
+  prop = api_def_prop(sapi, "is_dirty", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "runtime.is_dirty", 0);
+  api_def_prop_ui_text(prop, "Dirty", "Preferences have changv
+  api_def_prop_update(prop, 0, "rna_userdef_ui_update");
 
-  api_def_userdef_view(brna);
-  api_def_userdef_edit(brna);
-  api_def_userdef_input(brna);
-  api_def_userdef_keymap(brna);
-  api_def_userdef_filepaths(brna);
-  api_def_userdef_system(brna);
-  api_def_userdef_addon(brna);
-  api_def_userdef_addon_pref(brna);
-  api_def_userdef_studiolights(brna);
-  api_def_userdef_studiolight(brna);
-  api_def_userdef_pathcompare(brna);
-  api_def_userdef_apps(brna);
-  api_def_userdef_experimental(brna);
+  api_def_userdef_view(dapi);
+  api_def_userdef_edit(dapi);
+  api_def_userdef_input(dapi);
+  api_def_userdef_keymap(dapi);
+  api_def_userdef_filepaths(dapi);
+  api_def_userdef_system(dapi);
+  api_def_userdef_addon(dapi);
+  api_def_userdef_addon_pref(dapi);
+  api_def_userdef_studiolights(dapi);
+  api_def_userdef_studiolight(dapi);
+  api_def_userdef_pathcompare(dapi);
+  api_def_userdef_apps(dapi);
+  api_def_userdef_experimental(dapi);
 
-  USERDEF_TAG_DIRTY_PROPERTY_UPDATE_DISABLE;
+  USERDEF_TAG_DIRTY_PROP_UPDATE_DISABLE;
 }
 
 #endif
