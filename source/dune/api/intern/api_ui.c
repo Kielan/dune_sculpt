@@ -1695,33 +1695,33 @@ static void api_def_uilist(DuneApi *dapi)
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* filter */
-  func = api_def_fn(srna, "filter_items", NULL);
-  RNA_def_function_ui_description(
-      func,
+  func = api_def_fn(sapi, "filter_items", NULL);
+  api_def_fn_ui_description(
+      fn,
       "Filter and/or re-order items of the collection (output filter results in "
       "filter_flags, and reorder results in filter_neworder arrays)");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
-      func, "data", "AnyType", "", "Data from which to take Collection property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(
-      func, "property", NULL, 0, "", "Identifier of property in data, for the collection");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  prop = RNA_def_property(func, "filter_flags", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_flag(prop, PARM_REQUIRED | PROP_DYNAMIC);
-  RNA_def_property_array(prop, 1); /* XXX Dummy value, default 0 does not work */
-  RNA_def_property_ui_text(
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
+      fn, "data", "AnyType", "", "Data from which to take Collection property");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
+  parm = api_def_string(
+      fn, "prop", NULL, 0, "", "Identifier of property in data, for the collection");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  prop = api_def_prop(fn, "filter_flags", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_flag(prop, PARM_REQUIRED | PROP_DYNAMIC);
+  api_def_prop_array(prop, 1); /* XXX Dummy value, default 0 does not work */
+  api_def_prop_ui_text(
       prop,
       "",
       "An array of filter flags, one for each item in the collection (NOTE: "
       "FILTER_ITEM bit is reserved, it defines whether the item is shown or not)");
-  RNA_def_function_output(func, prop);
-  prop = RNA_def_property(func, "filter_neworder", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_flag(prop, PARM_REQUIRED | PROP_DYNAMIC);
-  RNA_def_property_array(prop, 1); /* XXX Dummy value, default 0 does not work */
-  RNA_def_property_ui_text(
+  api_def_fn_output(fn, prop);
+  prop = api_def_prop(fn, "filter_neworder", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_flag(prop, PARM_REQUIRED | PROP_DYNAMIC);
+  api_def_prop_array(prop, 1); /* XXX Dummy value, default 0 does not work */
+  api_def_prop_ui_text(
       prop,
       "",
       "An array of indices, one for each item in the collection, mapping the org "
