@@ -1324,28 +1324,28 @@ static void api_def_ui_layout(DuneApi *dapi)
   api_def_prop_bool_fns(prop, "api_UILayout_enabled_get", "api_UILayout_enabled_set");
   api_def_prop_ui_text(prop, "Enabled", "When false, this (sub)layout is grayed out");
 
-  prop = RNA_def_prop(sapi, "alert", PROP_BOOL, PROP_NONE);
-  RNA_def_property_boolean_fns(prop, "api_UILayout_alert_get", "api_UILayout_alert_set");
+  prop = api_def_prop(sapi, "alert", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_UILayout_alert_get", "api_UILayout_alert_set");
 
-  prop = RNA_def_property(sapi, "alignment", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, alignment_items);
-  RNA_def_property_enum_funcs(
-      prop, "rna_UILayout_alignment_get", "rna_UILayout_alignment_set", NULL);
+  prop = api_def_prop(sapi, "alignment", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, alignment_items);
+  api_def_prop_enum_fns(
+      prop, "api_UILayout_alignment_get", "rna_UILayout_alignment_set", NULL);
 
-  prop = RNA_def_property(srna, "direction", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, direction_items);
-  RNA_def_property_enum_funcs(prop, "rna_UILayout_direction_get", NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, direction_items);
+  api_def_prop_enum_fns(prop, "rna_UILayout_direction_get", NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
 #  if 0
-  prop = RNA_def_property(srna, "keep_aspect", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
-      prop, "rna_UILayout_keep_aspect_get", "rna_UILayout_keep_aspect_set");
+  prop = api_def_prop(sapi, "keep_aspect", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(
+      prop, "api_UILayout_keep_aspect_get", "api_UILayout_keep_aspect_set");
 #  endif
 
-  prop = RNA_def_property(srna, "scale_x", PROP_FLOAT, PROP_UNSIGNED);
-  RNA_def_property_float_funcs(prop, "rna_UILayout_scale_x_get", "rna_UILayout_scale_x_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "scale_x", PROP_FLOAT, PROP_UNSIGNED);
+  api_def_prop_float_fns(prop, "rna_UILayout_scale_x_get", "rna_UILayout_scale_x_set", NULL);
+  api_def_prop_ui_text(
       prop, "Scale X", "Scale factor along the X for items in this (sub)layout");
 
   prop = RNA_def_property(srna, "scale_y", PROP_FLOAT, PROP_UNSIGNED);
