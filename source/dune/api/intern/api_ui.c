@@ -900,9 +900,9 @@ static bool menu_poll(const Ctx *C, MenuType *pt)
   api_ptr_create(NULL, pt->api_ext.sapi, NULL, &ptr); /* dummy */
   fn = &api_Menu_poll_fn; /* api_struct_find_fn(&ptr, "poll"); */
 
-  api_param_list_create(&list, &ptr, func);
+  api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
-  pt->api_ext.call((bContext *)C, &ptr, func, &list);
+  pt->api_ext.call((Ctx *)C, &ptr, fn, &list);
 
   api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
@@ -1297,37 +1297,37 @@ static void api_def_ui_layout(DuneApi *dapi)
   prop = api_def_prop(sapi, "active", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_fns(prop, "rna_UILayout_active_get", "rna_UILayout_active_set");
 
-  prop = RNA_def_property(srna, "active_default", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
+  prop = api_def_prop(sapi, "active_default", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
       prop, "rna_UILayout_active_default_get", "rna_UILayout_active_default_set");
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Active Default",
       "When true, an operator button defined after this will be activated when pressing return"
       "(use with popup dialogs)");
 
-  prop = RNA_def_property(srna, "activate_init", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(
+  prop = api_def_prop(sapi, "activate_init", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_fns(
       prop, "rna_UILayout_activate_init_get", "rna_UILayout_activate_init_set");
-  RNA_def_property_ui_text(
+  api_def_prop_ui_text(
       prop,
       "Activate on Init",
       "When true, buttons defined in popups will be activated on first display "
       "(use so you can type into a field without having to click on it first)");
 
-  prop = RNA_def_property(srna, "operator_context", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_operator_context_items);
-  RNA_def_property_enum_funcs(
-      prop, "rna_UILayout_op_context_get", "rna_UILayout_op_context_set", NULL);
+  prop = api_def_prop(sapi, "op_ctx", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_op_ctx_items);
+  api_def_prop_enum_fns(
+      prop, "rna_UILayout_op_context_get", "api_UILayout_op_ctx_set", NULL);
 
-  prop = RNA_def_property(srna, "enabled", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_UILayout_enabled_get", "rna_UILayout_enabled_set");
-  RNA_def_property_ui_text(prop, "Enabled", "When false, this (sub)layout is grayed out");
+  prop = api_def_prop(sapi, "enabled", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "api_UILayout_enabled_get", "api_UILayout_enabled_set");
+  api_def_prop_ui_text(prop, "Enabled", "When false, this (sub)layout is grayed out");
 
-  prop = RNA_def_property(srna, "alert", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_UILayout_alert_get", "rna_UILayout_alert_set");
+  prop = RNA_def_prop(sapi, "alert", PROP_BOOL, PROP_NONE);
+  RNA_def_property_boolean_fns(prop, "api_UILayout_alert_get", "api_UILayout_alert_set");
 
-  prop = RNA_def_property(srna, "alignment", PROP_ENUM, PROP_NONE);
+  prop = RNA_def_property(sapi, "alignment", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, alignment_items);
   RNA_def_property_enum_funcs(
       prop, "rna_UILayout_alignment_get", "rna_UILayout_alignment_set", NULL);
