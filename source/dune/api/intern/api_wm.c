@@ -61,12 +61,12 @@ static const EnumPropertyItem event_timer_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem event_textinput_type_items[] = {
+static const EnumPropItem event_textinput_type_items[] = {
     {KM_TEXTINPUT, "TEXTINPUT", 0, "Text Input", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem event_ndof_type_items[] = {
+static const EnumPropItem event_ndof_type_items[] = {
     {NDOF_MOTION, "NDOF_MOTION", 0, "Motion", ""},
     /* buttons on all 3dconnexion devices */
     {NDOF_BUTTON_MENU, "NDOF_BUTTON_MENU", 0, "Menu", ""},
@@ -125,7 +125,7 @@ static const EnumPropertyItem event_ndof_type_items[] = {
 #  endif
     {0, NULL, 0, NULL, NULL},
 };
-#endif /* RNA_RUNTIME */
+#endif /* API_RUNTIME */
 
 /**
  * Job types for use in the `bpy.app.is_job_running(job_type)` call.
@@ -157,10 +157,10 @@ const EnumPropItem api_enum_event_type_items[] = {
     {BUTTON5MOUSE, "BUTTON5MOUSE", 0, "Button5 Mouse", "MB5"},
     {BUTTON6MOUSE, "BUTTON6MOUSE", 0, "Button6 Mouse", "MB6"},
     {BUTTON7MOUSE, "BUTTON7MOUSE", 0, "Button7 Mouse", "MB7"},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {TABLET_STYLUS, "PEN", 0, "Pen", ""},
     {TABLET_ERASER, "ERASER", 0, "Eraser", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {MOUSEMOVE, "MOUSEMOVE", 0, "Mouse Move", "MsMov"},
     {INBETWEEN_MOUSEMOVE, "INBETWEEN_MOUSEMOVE", 0, "In-between Move", "MsSubMov"},
     {MOUSEPAN, "TRACKPADPAN", 0, "Mouse/Trackpad Pan", "MsPan"},
@@ -217,7 +217,7 @@ const EnumPropItem api_enum_event_type_items[] = {
     {EVT_RIGHTALTKEY, "RIGHT_ALT", 0, "Right Alt", "AltR"},
     {EVT_RIGHTCTRLKEY, "RIGHT_CTRL", 0, "Right Ctrl", "CtrlR"},
     {EVT_RIGHTSHIFTKEY, "RIGHT_SHIFT", 0, "Right Shift", "ShiftR"},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {EVT_OSKEY, "OSKEY", 0, "OS Key", "Cmd"},
     {EVT_APPKEY, "APP", 0, "Application", "App"},
     {EVT_GRLESSKEY, "GRLESS", 0, "Grless", ""},
@@ -290,14 +290,14 @@ const EnumPropItem api_enum_event_type_items[] = {
     {EVT_PAGEUPKEY, "PAGE_UP", 0, "Page Up", "PgUp"},
     {EVT_PAGEDOWNKEY, "PAGE_DOWN", 0, "Page Down", "PgDown"},
     {EVT_ENDKEY, "END", 0, "End", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {EVT_MEDIAPLAY, "MEDIA_PLAY", 0, "Media Play/Pause", ">/||"},
     {EVT_MEDIASTOP, "MEDIA_STOP", 0, "Media Stop", "Stop"},
     {EVT_MEDIAFIRST, "MEDIA_FIRST", 0, "Media First", "|<<"},
     {EVT_MEDIALAST, "MEDIA_LAST", 0, "Media Last", ">>|"},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {KM_TEXTINPUT, "TEXTINPUT", 0, "Text Input", "TxtIn"},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {WINDEACTIVATE, "WINDOW_DEACTIVATE", 0, "Window Deactivate", ""},
     {TIMER, "TIMER", 0, "Timer", "Tmr"},
     {TIMER0, "TIMER0", 0, "Timer 0", "Tmr0"},
@@ -307,7 +307,7 @@ const EnumPropItem api_enum_event_type_items[] = {
     {TIMERAUTOSAVE, "TIMER_AUTOSAVE", 0, "Timer Autosave", "TmrSave"},
     {TIMERREPORT, "TIMER_REPORT", 0, "Timer Report", "TmrReport"},
     {TIMERREGION, "TIMERREGION", 0, "Timer Region", "TmrReg"},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {NDOF_MOTION, "NDOF_MOTION", 0, "NDOF Motion", "NdofMov"},
     /* buttons on all 3dconnexion devices */
     {NDOF_BUTTON_MENU, "NDOF_BUTTON_MENU", 0, "NDOF Menu", "NdofMenu"},
@@ -406,13 +406,13 @@ const EnumPropItem api_enum_event_direction_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_keymap_propvalue_items[] = {
+const EnumPropItem api_enum_keymap_propvalue_items[] = {
     {0, "NONE", 0, "", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
 /* Mask event types used in keymap items. */
-const EnumPropertyItem rna_enum_event_type_mask_items[] = {
+const EnumPropItem rna_enum_event_type_mask_items[] = {
     {EVT_TYPE_MASK_KEYBOARD_MODIFIER, "KEYBOARD_MODIFIER", 0, "Keyboard Modifier", ""},
     {EVT_TYPE_MASK_KEYBOARD, "KEYBOARD", 0, "Keyboard", ""},
     {EVT_TYPE_MASK_MOUSE_WHEEL, "MOUSE_WHEEL", 0, "Mouse Wheel", ""},
@@ -425,7 +425,7 @@ const EnumPropertyItem rna_enum_event_type_mask_items[] = {
 };
 
 #if 0
-static const EnumPropertyItem keymap_modifiers_items[] = {
+static const EnumPropItem keymap_modifiers_items[] = {
     {KM_ANY, "ANY", 0, "Any", ""},
     {0, "NONE", 0, "None", ""},
     {KM_MOD_HELD, "HELD", 0, "Held", ""},
@@ -433,7 +433,7 @@ static const EnumPropertyItem keymap_modifiers_items[] = {
 };
 #endif
 
-const EnumPropertyItem rna_enum_operator_type_flag_items[] = {
+const EnumPropItem api_enum_op_type_flag_items[] = {
     {OPTYPE_REGISTER,
      "REGISTER",
      0,
@@ -467,43 +467,43 @@ const EnumPropertyItem rna_enum_operator_type_flag_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_operator_return_items[] = {
-    {OPERATOR_RUNNING_MODAL,
+const EnumPropItem api_enum_op_return_items[] = {
+    {OP_RUNNING_MODAL,
      "RUNNING_MODAL",
      0,
      "Running Modal",
      "Keep the operator running with blender"},
-    {OPERATOR_CANCELLED,
+    {OP_CANCELLED,
      "CANCELLED",
      0,
      "Cancelled",
      "The operator exited without doing anything, so no undo entry should be pushed"},
-    {OPERATOR_FINISHED,
+    {OP_FINISHED,
      "FINISHED",
      0,
      "Finished",
      "The operator exited after completing its action"},
     /* used as a flag */
-    {OPERATOR_PASS_THROUGH, "PASS_THROUGH", 0, "Pass Through", "Do nothing and pass the event on"},
-    {OPERATOR_INTERFACE, "INTERFACE", 0, "Interface", "Handled but not executed (popup menus)"},
+    {OP_PASS_THROUGH, "PASS_THROUGH", 0, "Pass Through", "Do nothing and pass the event on"},
+    {OP_INTERFACE, "INTERFACE", 0, "Interface", "Handled but not executed (popup menus)"},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_operator_property_tags[] = {
+const EnumPropItem api_enum_op_prop_tags[] = {
     {OP_PROP_TAG_ADVANCED,
      "ADVANCED",
      0,
      "Advanced",
-     "The property is advanced so UI is suggested to hide it"},
+     "The prop is advanced so UI is suggested to hide it"},
     {0, NULL, 0, NULL, NULL},
 };
 
 /* flag/enum */
-const EnumPropertyItem rna_enum_wm_report_items[] = {
+const EnumPropItem api_enum_wm_report_items[] = {
     {RPT_DEBUG, "DEBUG", 0, "Debug", ""},
     {RPT_INFO, "INFO", 0, "Info", ""},
-    {RPT_OPERATOR, "OPERATOR", 0, "Operator", ""},
-    {RPT_PROPERTY, "PROPERTY", 0, "Property", ""},
+    {RPT_OP, "OPERATOR", 0, "Operator", ""},
+    {RPT_PROP, "PROPERTY", 0, "Property", ""},
     {RPT_WARNING, "WARNING", 0, "Warning", ""},
     {RPT_ERROR, "ERROR", 0, "Error", ""},
     {RPT_ERROR_INVALID_INPUT, "ERROR_INVALID_INPUT", 0, "Invalid Input", ""},
@@ -512,36 +512,36 @@ const EnumPropertyItem rna_enum_wm_report_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_string_utils.h"
+#  include "lib_string_utils.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-#  include "DNA_object_types.h"
-#  include "DNA_workspace_types.h"
+#  include "types_object.h"
+#  include "types_workspace.h"
 
-#  include "ED_screen.h"
+#  include "ed_screen.h"
 
-#  include "UI_interface.h"
+#  include "ui.h"
 
-#  include "BKE_global.h"
-#  include "BKE_idprop.h"
+#  include "dune_global.h"
+#  include "dune_idprop.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
-static wmOperator *rna_OperatorProperties_find_operator(PointerRNA *ptr)
+static wmOp *api_OpProps_find_op(ApiPtr *ptr)
 {
   wmWindowManager *wm = (wmWindowManager *)ptr->owner_id;
 
   if (wm) {
-    IDProperty *properties = (IDProperty *)ptr->data;
-    for (wmOperator *op = wm->operators.last; op; op = op->prev) {
-      if (op->properties == properties) {
+    IdProp *props = (IdProp *)ptr->data;
+    for (wmOp *op = wm->ops.last; op; op = op->prev) {
+      if (op->props == props) {
         return op;
       }
     }
@@ -550,47 +550,47 @@ static wmOperator *rna_OperatorProperties_find_operator(PointerRNA *ptr)
   return NULL;
 }
 
-static StructRNA *rna_OperatorProperties_refine(PointerRNA *ptr)
+static ApiStruct *api_OpProps_refine(ApiPtr *ptr)
 {
-  wmOperator *op = rna_OperatorProperties_find_operator(ptr);
+  WMOp *op = api_OpProps_find_op(ptr);
 
   if (op) {
-    return op->type->srna;
+    return op->type->sapi;
   }
   else {
     return ptr->type;
   }
 }
 
-static IDProperty **rna_OperatorProperties_idprops(PointerRNA *ptr)
+static IdProp **api_opprops_idprops(ApiPtr *ptr)
 {
-  return (IDProperty **)&ptr->data;
+  return (IdProp **)&ptr->data;
 }
 
-static void rna_Operator_name_get(PointerRNA *ptr, char *value)
+static void api_op_name_get(ApiPtrApi *ptr, char *value)
 {
-  wmOperator *op = (wmOperator *)ptr->data;
+  WMOp *op = (WMOp *)ptr->data;
   strcpy(value, op->type->name);
 }
 
-static int rna_Operator_name_length(PointerRNA *ptr)
+static int api_op_name_length(ApiPtr *ptr)
 {
-  wmOperator *op = (wmOperator *)ptr->data;
+  WMOp *op = (WMOp *)ptr->data;
   return strlen(op->type->name);
 }
 
-static bool rna_Operator_has_reports_get(PointerRNA *ptr)
+static bool api_op_has_reports_get(PointerRNA *ptr)
 {
-  wmOperator *op = (wmOperator *)ptr->data;
+  WMOp *op = (WMOp *)ptr->data;
   return (op->reports && op->reports->list.first);
 }
 
-static PointerRNA rna_Operator_options_get(PointerRNA *ptr)
+static ApiPtr api_op_options_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_OperatorOptions, ptr->data);
+  return api_ptr_inherit_refine(ptr, &RNA_OperatorOptions, ptr->data);
 }
 
-static PointerRNA rna_Operator_properties_get(PointerRNA *ptr)
+static ApiPtr api_op_props_get(PointerRNA *ptr)
 {
   wmOperator *op = (wmOperator *)ptr->data;
 
