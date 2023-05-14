@@ -1,11 +1,11 @@
 #include <stdlib.h>
 
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_userdef.h"
+#include "types_windowmanager.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
 #include "BLT_translation.h"
 
