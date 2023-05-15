@@ -832,7 +832,7 @@ static void api_window_screen_set(ApiPtr *ptr,
   }
 
   /* exception: can't set screens inside of area/region handlers */
-  layout_new = dunr_workspace_layout_find(workspace, value.data);
+  layout_new = dune_workspace_layout_find(workspace, value.data);
   win->workspace_hook->temp_layout_store = layout_new;
 }
 
@@ -892,7 +892,7 @@ static void api_KeyMap_modal_event_values_items_begin(CollectionPropIter *iter,
   api_iter_array_begin(iter, (void *)items, sizeof(EnumPropItem), totitem, false, NULL);
 }
 
-static ApiPtrRNA api_KeyMapItem_props_get(ApiPtr *ptr)
+static ApiPtr api_KeyMapItem_props_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
 
@@ -1088,62 +1088,61 @@ static void api_WindowManager_active_keyconfig_set(ApiPtr *ptr,
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Key Config Preferences
- * \{ */
+/** Key Config Preferences **/
 
-static PointerRNA rna_wmKeyConfig_preferences_get(PointerRNA *ptr)
+static ApiPtr api_wmKeyConfig_prefs_get(ApiPtr *ptr)
 {
   wmKeyConfig *kc = ptr->data;
-  wmKeyConfigPrefType_Runtime *kpt_rt = BKE_keyconfig_pref_type_find(kc->idname, true);
+  wmKeyConfigPrefType_Runtime *kpt_rt = dune_keyconfig_pref_type_find(kc->idname, true);
   if (kpt_rt) {
-    wmKeyConfigPref *kpt = BKE_keyconfig_pref_ensure(&U, kc->idname);
-    return rna_pointer_inherit_refine(ptr, kpt_rt->rna_ext.srna, kpt->prop);
+    wmKeyConfigPref *kpt = dune_keyconfig_pref_ensure(&U, kc->idname);
+    return api_ptr_inherit_refine(ptr, kpt_rt->api_ext.sapi, kpt->prop);
   }
   else {
-    return PointerRNA_NULL;
+    return ApiPtr_NULL;
   }
 }
 
-static IDProperty **rna_wmKeyConfigPref_idprops(PointerRNA *ptr)
+static IdProp **api_wmKeyConfigPref_idprops(ApiPtr *ptr)
 {
-  return (IDProperty **)&ptr->data;
+  return (IdProp **)&ptr->data;
 }
 
-static bool rna_wmKeyConfigPref_unregister(Main *UNUSED(bmain), StructRNA *type)
+static bool api_wmKeyConfigPref_unregister(Main *UNUSED(main), ApiStruct *type)
 {
-  wmKeyConfigPrefType_Runtime *kpt_rt = RNA_struct_blender_type_get(type);
+  wmKeyConfigPrefType_Runtime *kpt_rt = api_struct_dune_type_get(type);
 
   if (!kpt_rt) {
     return false;
   }
 
-  RNA_struct_free_extension(type, &kpt_rt->rna_ext);
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free_extension(type, &kpt_rt->api_ext);
+  api_struct_free(&DUNE_API, type);
 
   /* Possible we're not in the preferences if they have been reset. */
-  BKE_keyconfig_pref_type_remove(kpt_rt);
+  dune_keyconfig_pref_type_remove(kpt_rt);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   return true;
 }
 
-static StructRNA *rna_wmKeyConfigPref_register(Main *bmain,
+static ApiStruct *api_wmKeyConfigPref_register(Main *main,
                                                ReportList *reports,
                                                void *data,
-                                               const char *identifier,
-                                               StructValidateFunc validate,
-                                               StructCallbackFunc call,
-                                               StructFreeFunc free)
+                                               const char *id,
+                                               StructValidateFn validate,
+                                               StructCbFn call,
+                                               StructFreeFn free)
 {
   const char *error_prefix = "Registering key-config preferences class:";
   wmKeyConfigPrefType_Runtime *kpt_rt, dummy_kpt_rt = {{'\0'}};
   wmKeyConfigPref dummy_kpt = {NULL};
-  PointerRNA dummy_kpt_ptr;
+  ApiPtr dummy_kpt_ptr;
   // bool have_function[1];
 
   /* setup dummy keyconf-prefs & keyconf-prefs type to store static properties in */
-  RNA_pointer_create(NULL, &RNA_KeyConfigPreferences, &dummy_kpt, &dummy_kpt_ptr);
+  api_ptr_create(NULL, &ApiKeyConfigPrefs, &dummy_kpt, &dummy_kpt_ptr);
 
   /* validate the python class */
   if (validate(&dummy_kpt_ptr, data, NULL /* have_function */) != 0) {
@@ -1152,25 +1151,25 @@ static StructRNA *rna_wmKeyConfigPref_register(Main *bmain,
 
   STRNCPY(dummy_kpt_rt.idname, dummy_kpt.idname);
   if (strlen(identifier) >= sizeof(dummy_kpt_rt.idname)) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
                 error_prefix,
-                identifier,
+                id,
                 (int)sizeof(dummy_kpt_rt.idname));
     return NULL;
   }
 
   /* check if we have registered this keyconf-prefs type before, and remove it */
-  kpt_rt = BKE_keyconfig_pref_type_find(dummy_kpt.idname, true);
+  kpt_rt = dune_keyconfig_pref_type_find(dummy_kpt.idname, true);
   if (kpt_rt) {
-    StructRNA *srna = kpt_rt->rna_ext.srna;
-    if (!(srna && rna_wmKeyConfigPref_unregister(bmain, srna))) {
-      BKE_reportf(reports,
+    ApiStruct *sapi = kpt_rt->rna_ext.srna;
+    if (!(sapi && api_wmKeyConfigPref_unregister(main, sapi))) {
+      dune_reportf(reports,
                   RPT_ERROR,
                   "%s '%s', bl_idname '%s' %s",
                   error_prefix,
-                  identifier,
+                  id,
                   dummy_kpt.idname,
                   srna ? "is built-in" : "could not be unregistered");
       return NULL;
@@ -1178,71 +1177,69 @@ static StructRNA *rna_wmKeyConfigPref_register(Main *bmain,
   }
 
   /* create a new keyconf-prefs type */
-  kpt_rt = MEM_mallocN(sizeof(wmKeyConfigPrefType_Runtime), "keyconfigpreftype");
+  kpt_rt = mem_mallocn(sizeof(wmKeyConfigPrefType_Runtime), "keyconfigpreftype");
   memcpy(kpt_rt, &dummy_kpt_rt, sizeof(dummy_kpt_rt));
 
-  BKE_keyconfig_pref_type_add(kpt_rt);
+  dune_keyconfig_pref_type_add(kpt_rt);
 
-  kpt_rt->rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, identifier, &RNA_KeyConfigPreferences);
-  kpt_rt->rna_ext.data = data;
-  kpt_rt->rna_ext.call = call;
-  kpt_rt->rna_ext.free = free;
-  RNA_struct_blender_type_set(kpt_rt->rna_ext.srna, kpt_rt);
+  kpt_rt->api_ext.srna = api_def_struct_ptr(&DUNE_API, id, &APIKeyConfigPrefs);
+  kpt_rt->api_ext.data = data;
+  kpt_rt->api_ext.call = call;
+  kpt_rt->api_ext.free = free;
+  api_struct_dune_type_set(kpt_rt->api_ext.sapi, kpt_rt);
 
   //  kpt_rt->draw = (have_function[0]) ? header_draw : NULL;
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 
-  return kpt_rt->rna_ext.srna;
+  return kpt_rt->api_ext.sapi;
 }
 
 /* placeholder, doesn't do anything useful yet */
-static StructRNA *rna_wmKeyConfigPref_refine(PointerRNA *ptr)
+static ApiStruct *api_wmKeyConfigPref_refine(ApiPtr *ptr)
 {
-  return (ptr->type) ? ptr->type : &RNA_KeyConfigPreferences;
+  return (ptr->type) ? ptr->type : &ApiKeyConfigPrefs;
 }
 
-/** \} */
-
-static void rna_wmKeyMapItem_idname_get(PointerRNA *ptr, char *value)
+static void api_wmKeyMapItem_idname_get(ApiPtr *ptr, char *value)
 {
   wmKeyMapItem *kmi = ptr->data;
   /* Pass in a fixed size buffer as the value may be allocated based on the callbacks length. */
   char value_buf[OP_MAX_TYPENAME];
-  int len = WM_operator_py_idname(value_buf, kmi->idname);
+  int len = wm_op_py_idname(value_buf, kmi->idname);
   memcpy(value, value_buf, len + 1);
 }
 
-static int rna_wmKeyMapItem_idname_length(PointerRNA *ptr)
+static int api_wmKeyMapItem_idname_length(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
   char pyname[OP_MAX_TYPENAME];
-  return WM_operator_py_idname(pyname, kmi->idname);
+  return wm_op_py_idname(pyname, kmi->idname);
 }
 
-static void rna_wmKeyMapItem_idname_set(PointerRNA *ptr, const char *value)
+static void api_wmKeyMapItem_idname_set(ApiPtr *ptr, const char *value)
 {
   wmKeyMapItem *kmi = ptr->data;
   char idname[OP_MAX_TYPENAME];
 
-  WM_operator_bl_idname(idname, value);
+  wm_op_bl_idname(idname, value);
 
   if (!STREQ(idname, kmi->idname)) {
     STRNCPY(kmi->idname, idname);
 
-    WM_keymap_item_properties_reset(kmi, NULL);
+    wm_keymap_item_props_reset(kmi, NULL);
   }
 }
 
-static void rna_wmKeyMapItem_name_get(PointerRNA *ptr, char *value)
+static void api_wmKeyMapItem_name_get(ApiPtr *ptr, char *value)
 {
   wmKeyMapItem *kmi = ptr->data;
-  wmOperatorType *ot = WM_operatortype_find(kmi->idname, 1);
-  strcpy(value, ot ? WM_operatortype_name(ot, kmi->ptr) : kmi->idname);
+  wmOpType *ot = wm_optype_find(kmi->idname, 1);
+  strcpy(value, ot ? wm_optype_name(ot, kmi->ptr) : kmi->idname);
 }
 
-static int rna_wmKeyMapItem_name_length(PointerRNA *ptr)
+static int api_wmKeyMapItem_name_length(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
   wmOperatorType *ot = WM_operatortype_find(kmi->idname, 1);
