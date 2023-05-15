@@ -716,19 +716,19 @@ static ApiPtr api_PopoverMenu_layout_get(ApiPtr *ptr)
   return rptr;
 }
 
-static PointerRNA rna_PieMenu_layout_get(ApiPtr *ptr)
+static ApiPtr api_PieMenu_layout_get(ApiPtr *ptr)
 {
   struct uiPieMenu *pie = ptr->data;
-  uiLayout *layout = UI_pie_menu_layout(pie);
+  uiLayout *layout = ui_pie_menu_layout(pie);
 
-  PointerRNA rptr;
-  RNA_pointer_create(ptr->owner_id, &RNA_UILayout, layout, &rptr);
+  ApiPtr rptr;
+  api_ptr_create(ptr->owner_id, &ApiUILayout, layout, &rptr);
 
   return rptr;
 }
 
-static void rna_Window_scene_set(PointerRNA *ptr,
-                                 PointerRNA value,
+static void api_Window_scene_set(ApiPtr *ptr,
+                                 ApiPtr value,
                                  struct ReportList *UNUSED(reports))
 {
   wmWindow *win = ptr->data;
