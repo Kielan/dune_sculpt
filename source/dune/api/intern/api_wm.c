@@ -740,9 +740,9 @@ static void api_Window_scene_set(ApiPtr *ptr,
   win->new_scene = value.data;
 }
 
-static void rna_Window_scene_update(bContext *C, PointerRNA *ptr)
+static void api_Window_scene_update(Ctx *C, PointerRNA *ptr)
 {
-  Main *bmain = CTX_data_main(C);
+  Main *main = ctx_data_main(C);
   wmWindow *win = ptr->data;
 
   /* Exception: must use context so notifier gets to the right window. */
@@ -751,14 +751,14 @@ static void rna_Window_scene_update(bContext *C, PointerRNA *ptr)
     BPy_BEGIN_ALLOW_THREADS;
 #  endif
 
-    WM_window_set_active_scene(bmain, C, win, win->new_scene);
+    wm_window_set_active_scene(main, C, win, win->new_scene);
 
 #  ifdef WITH_PYTHON
     BPy_END_ALLOW_THREADS;
 #  endif
 
-    wmWindowManager *wm = CTX_wm_manager(C);
-    WM_event_add_notifier_ex(wm, win, NC_SCENE | ND_SCENEBROWSE, win->new_scene);
+    wmWindowManager *wm = ctx_wm_manager(C);
+    wm_event_add_notifier_ex(wm, win, NC_SCENE | ND_SCENEBROWSE, win->new_scene);
 
     if (G.debug & G_DEBUG) {
       printf("scene set %p\n", win->new_scene);
@@ -768,21 +768,21 @@ static void rna_Window_scene_update(bContext *C, PointerRNA *ptr)
   }
 }
 
-static PointerRNA rna_Window_workspace_get(PointerRNA *ptr)
+static ApiPtr api_Window_workspace_get(ApiPtr *ptr)
 {
   wmWindow *win = ptr->data;
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_WorkSpace, BKE_workspace_active_get(win->workspace_hook));
+  return api_ptr_inherit_refine(
+      ptr, &ApiWorkSpace, dune_workspace_active_get(win->workspace_hook));
 }
 
-static void rna_Window_workspace_set(PointerRNA *ptr,
-                                     PointerRNA value,
+static void api_Window_workspace_set(ApiPtr *ptr,
+                                     ApiPtr value,
                                      struct ReportList *UNUSED(reports))
 {
   wmWindow *win = (wmWindow *)ptr->data;
 
   /* disallow ID-browsing away from temp screens */
-  if (WM_window_is_temp_screen(win)) {
+  if (wm_window_is_temp_screen(win)) {
     return;
   }
   if (value.data == NULL) {
@@ -793,7 +793,7 @@ static void rna_Window_workspace_set(PointerRNA *ptr,
   win->workspace_hook->temp_workspace_store = value.data;
 }
 
-static void rna_Window_workspace_update(bContext *C, PointerRNA *ptr)
+static void api_Window_workspace_update(Ctx *C, ApiPtr *ptr)
 {
   wmWindow *win = ptr->data;
   WorkSpace *new_workspace = win->workspace_hook->temp_workspace_store;
@@ -801,27 +801,27 @@ static void rna_Window_workspace_update(bContext *C, PointerRNA *ptr)
   /* exception: can't set screens inside of area/region handlers,
    * and must use context so notifier gets to the right window */
   if (new_workspace) {
-    wmWindowManager *wm = CTX_wm_manager(C);
-    WM_event_add_notifier_ex(wm, win, NC_SCREEN | ND_WORKSPACE_SET, new_workspace);
+    wmWindowManager *wm = ctx_wm_manager(C);
+    wm_event_add_notifier_ex(wm, win, NC_SCREEN | ND_WORKSPACE_SET, new_workspace);
     win->workspace_hook->temp_workspace_store = NULL;
   }
 }
 
-PointerRNA rna_Window_screen_get(PointerRNA *ptr)
+ApiPtr api_window_screen_get(ApiPtr *ptr)
 {
   wmWindow *win = ptr->data;
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_Screen, BKE_workspace_active_screen_get(win->workspace_hook));
+  return api_pointer_inherit_refine(
+      ptr, &ApiScreen, dune_workspace_active_screen_get(win->workspace_hook));
 }
 
-static void rna_Window_screen_set(PointerRNA *ptr,
-                                  PointerRNA value,
+static void api_window_screen_set(ApiPtr *ptr,
+                                  ApiPtr value,
                                   struct ReportList *UNUSED(reports))
 {
   wmWindow *win = ptr->data;
-  WorkSpace *workspace = BKE_workspace_active_get(win->workspace_hook);
+  WorkSpace *workspace = dune_workspace_active_get(win->workspace_hook);
   WorkSpaceLayout *layout_new;
-  const bScreen *screen = BKE_workspace_active_screen_get(win->workspace_hook);
+  const Screen *screen = dune_workspace_active_screen_get(win->workspace_hook);
 
   /* disallow ID-browsing away from temp screens */
   if (screen->temp) {
@@ -832,17 +832,17 @@ static void rna_Window_screen_set(PointerRNA *ptr,
   }
 
   /* exception: can't set screens inside of area/region handlers */
-  layout_new = BKE_workspace_layout_find(workspace, value.data);
+  layout_new = dunr_workspace_layout_find(workspace, value.data);
   win->workspace_hook->temp_layout_store = layout_new;
 }
 
-static bool rna_Window_screen_assign_poll(PointerRNA *UNUSED(ptr), PointerRNA value)
+static bool api_Window_screen_assign_poll(ApiPtr *UNUSED(ptr), ApiPtr value)
 {
-  bScreen *screen = (bScreen *)value.owner_id;
+  Screen *screen = (Screen *)value.owner_id;
   return !screen->temp;
 }
 
-static void rna_workspace_screen_update(bContext *C, PointerRNA *ptr)
+static void api_workspace_screen_update(Ctx *C, ApiPtr *ptr)
 {
   wmWindow *win = ptr->data;
   WorkSpaceLayout *layout_new = win->workspace_hook->temp_layout_store;
@@ -850,66 +850,66 @@ static void rna_workspace_screen_update(bContext *C, PointerRNA *ptr)
   /* exception: can't set screens inside of area/region handlers,
    * and must use context so notifier gets to the right window */
   if (layout_new) {
-    wmWindowManager *wm = CTX_wm_manager(C);
-    WM_event_add_notifier_ex(wm, win, NC_SCREEN | ND_LAYOUTBROWSE, layout_new);
+    wmWindowManager *wm = ctx_wm_manager(C);
+    wm_event_add_notifier_ex(wm, win, NC_SCREEN | ND_LAYOUTBROWSE, layout_new);
     win->workspace_hook->temp_layout_store = NULL;
   }
 }
 
-static PointerRNA rna_Window_view_layer_get(PointerRNA *ptr)
+static ApiPtr api_Window_view_layer_get(ApiPtr *ptr)
 {
   wmWindow *win = ptr->data;
-  Scene *scene = WM_window_get_active_scene(win);
-  ViewLayer *view_layer = WM_window_get_active_view_layer(win);
-  PointerRNA scene_ptr;
+  Scene *scene = wm_window_get_active_scene(win);
+  ViewLayer *view_layer = wm_window_get_active_view_layer(win);
+  ApiPtr scene_ptr;
 
-  RNA_id_pointer_create(&scene->id, &scene_ptr);
-  return rna_pointer_inherit_refine(&scene_ptr, &RNA_ViewLayer, view_layer);
+  api_id_ptr_create(&scene->id, &scene_ptr);
+  return api_ptr_inherit_refine(&scene_ptr, &ApiViewLayer, view_layer);
 }
 
-static void rna_Window_view_layer_set(PointerRNA *ptr,
-                                      PointerRNA value,
+static void api_Window_view_layer_set(ApiPtr *ptr,
+                                      ApiPtr value,
                                       struct ReportList *UNUSED(reports))
 {
   wmWindow *win = ptr->data;
   ViewLayer *view_layer = value.data;
 
-  WM_window_set_active_view_layer(win, view_layer);
+  wm_window_set_active_view_layer(win, view_layer);
 }
 
-static void rna_KeyMap_modal_event_values_items_begin(CollectionPropertyIterator *iter,
-                                                      PointerRNA *ptr)
+static void api_KeyMap_modal_event_values_items_begin(CollectionPropIter *iter,
+                                                      ApiPtr *ptr)
 {
   wmKeyMap *km = ptr->data;
 
-  const EnumPropertyItem *items = rna_enum_keymap_propvalue_items;
+  const EnumPropItem *items = api_enum_keymap_propvalue_ite
   if ((km->flag & KEYMAP_MODAL) != 0 && km->modal_items != NULL) {
     items = km->modal_items;
   }
 
-  const int totitem = RNA_enum_items_count(items);
+  const int totitem = api_enum_items_count(items);
 
-  rna_iterator_array_begin(iter, (void *)items, sizeof(EnumPropertyItem), totitem, false, NULL);
+  api_iter_array_begin(iter, (void *)items, sizeof(EnumPropItem), totitem, false, NULL);
 }
 
-static PointerRNA rna_KeyMapItem_properties_get(PointerRNA *ptr)
+static ApiPtrRNA api_KeyMapItem_props_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
 
   if (kmi->ptr) {
-    BLI_assert(kmi->ptr->owner_id == NULL);
+    lib_assert(kmi->ptr->owner_id == NULL);
     return *(kmi->ptr);
   }
 
-  // return rna_pointer_inherit_refine(ptr, &RNA_OperatorProperties, op->properties);
-  return PointerRNA_NULL;
+  // return rna_pointer_inherit_refine(ptr, &ApiOpProps, op->props);
+  return ApiPtr_NULL;
 }
 
-static int rna_wmKeyMapItem_map_type_get(PointerRNA *ptr)
+static int api_wmKeyMapItem_map_type_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
 
-  return WM_keymap_item_map_type_get(kmi);
+  return wm_keymap_item_map_type_get(kmi);
 }
 
 static void rna_wmKeyMapItem_map_type_set(PointerRNA *ptr, int value)
