@@ -1313,180 +1313,180 @@ static int api_op_execute_cb(Ctx *C, wmOp *op)
   api_param_get_lookup(&list, "result", &ret);
   result = *(int *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return result;
 }
 
 /* same as execute() but no return value */
-static bool rna_operator_check_cb(bContext *C, wmOperator *op)
+static bool api_op_check_cb(Ctx *C, wmOp *op)
 {
-  extern FunctionRNA rna_Operator_check_func;
+  extern ApiFn api_op_check_fn;
 
-  PointerRNA opr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr opr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool result;
 
-  RNA_pointer_create(NULL, op->type->rna_ext.srna, op, &opr);
-  func = &rna_Operator_check_func; /* RNA_struct_find_function(&opr, "check"); */
+  api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
+  fn = &api_op_check_fn; /* RNA_struct_find_function(&opr, "check"); */
 
-  RNA_parameter_list_create(&list, &opr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  op->type->rna_ext.call(C, &opr, func, &list);
+  api_param_list_create(&list, &opr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  op->type->api_ext.call(C, &opr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "result", &ret);
+  api_param_get_lookup(&list, "result", &ret);
   result = (*(bool *)ret) != 0;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return result;
 }
 
-static int rna_operator_invoke_cb(bContext *C, wmOperator *op, const wmEvent *event)
+static int api_op_invoke_cb(Ctx *C, wmOp *op, const wmEvent *event)
 {
-  extern FunctionRNA rna_Operator_invoke_func;
+  extern ApiFn api_op_invoke_fb;
 
-  PointerRNA opr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr opr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   int result;
 
-  RNA_pointer_create(NULL, op->type->rna_ext.srna, op, &opr);
-  func = &rna_Operator_invoke_func; /* RNA_struct_find_function(&opr, "invoke"); */
+  api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
+  fn = &ap_op_invoke_fn; /* api_struct_find_fn(&opr, "invoke"); */
 
-  RNA_parameter_list_create(&list, &opr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "event", &event);
-  op->type->rna_ext.call(C, &opr, func, &list);
+  api_param_list_create(&list, &opr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "event", &event);
+  op->type->api_ext.call(C, &opr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "result", &ret);
+  api_param_get_lookup(&list, "result", &ret);
   result = *(int *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return result;
 }
 
 /* same as invoke */
-static int rna_operator_modal_cb(bContext *C, wmOperator *op, const wmEvent *event)
+static int api_op_modal_cb(Ctx *C, wmOp *op, const wmEvent *event)
 {
-  extern FunctionRNA rna_Operator_modal_func;
+  extern ApiFn api_op_modal_fn;
 
-  PointerRNA opr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr opr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   int result;
 
-  RNA_pointer_create(NULL, op->type->rna_ext.srna, op, &opr);
-  func = &rna_Operator_modal_func; /* RNA_struct_find_function(&opr, "modal"); */
+  api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
+  fn = &api_op_modal_fn; /* api_struct_find_fn(&opr, "modal"); */
 
-  RNA_parameter_list_create(&list, &opr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "event", &event);
-  op->type->rna_ext.call(C, &opr, func, &list);
+  api_param_list_create(&list, &opr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "event", &event);
+  op->type->api_ext.call(C, &opr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "result", &ret);
+  api_param_get_lookup(&list, "result", &ret);
   result = *(int *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return result;
 }
 
-static void rna_operator_draw_cb(bContext *C, wmOperator *op)
+static void api_op_draw_cb(Ctx *C, wmOp *op)
 {
-  extern FunctionRNA rna_Operator_draw_func;
+  extern ApiFn api_op_draw_fn;
 
-  PointerRNA opr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr opr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, op->type->rna_ext.srna, op, &opr);
-  func = &rna_Operator_draw_func; /* RNA_struct_find_function(&opr, "draw"); */
+  api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
+  fn = &api_op_draw_fn; /* api_struct_find_function(&opr, "draw"); */
 
-  RNA_parameter_list_create(&list, &opr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  op->type->rna_ext.call(C, &opr, func, &list);
+  api_param_list_create(&list, &opr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  op->type->api_ext.call(C, &opr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
 /* same as exec(), but call cancel */
-static void rna_operator_cancel_cb(bContext *C, wmOperator *op)
+static void api_op_cancel_cb(Ctx *C, wmOp *op)
 {
-  extern FunctionRNA rna_Operator_cancel_func;
+  extern ApiFn api_op_cancel_fn;
 
-  PointerRNA opr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr opr;
+  ParamList list;
+  ApiFn *fn;
 
-  RNA_pointer_create(NULL, op->type->rna_ext.srna, op, &opr);
-  func = &rna_Operator_cancel_func; /* RNA_struct_find_function(&opr, "cancel"); */
+  api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
+  fn = &api_op_cancel_fn; /* api_struct_find_fn(&opr, "cancel"); */
 
-  RNA_parameter_list_create(&list, &opr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  op->type->rna_ext.call(C, &opr, func, &list);
+  api_param_list_create(&list, &opr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  op->type->api_ext.call(C, &opr, fn, &list);
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 }
 
-static char *rna_operator_description_cb(bContext *C, wmOperatorType *ot, PointerRNA *prop_ptr)
+static char *api_op_description_cb(Ctx *C, wmOpType *ot, ApiPtr *prop_ptr)
 {
-  extern FunctionRNA rna_Operator_description_func;
+  extern ApiFn api_op_description_fn;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   char *result;
 
-  RNA_pointer_create(NULL, ot->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &rna_Operator_description_func; /* RNA_struct_find_function(&ptr, "description"); */
+  api_ptr_create(NULL, ot->api_ext.sapi, NULL, &ptr); /* dummy */
+  fn = &api_op_description_fn; /* RNA_struct_find_function(&ptr, "description"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "properties", prop_ptr);
-  ot->rna_ext.call(C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "properties", prop_ptr);
+  ot->api_ext.call(C, &ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "result", &ret);
+  api_param_get_lookup(&list, "result", &ret);
   result = (char *)ret;
 
   if (result && result[0]) {
-    result = BLI_strdup(result);
+    result = lib_strdup(result);
   }
   else {
     result = NULL;
   }
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return result;
 }
 
-static bool rna_Operator_unregister(struct Main *bmain, StructRNA *type);
+static bool api_op_unregister(struct Main *main, ApiStruct *type);
 
-/* bpy_operator_wrap.c */
+/* bpy_oper_wrap.c */
 
-extern void BPY_RNA_operator_wrapper(wmOperatorType *ot, void *userdata);
-extern void BPY_RNA_operator_macro_wrapper(wmOperatorType *ot, void *userdata);
+extern void BPY_api_op_wrapper(wmOpType *ot, void *userdata);
+extern void BPY_api_op_macro_wrapper(wmOpType *ot, void *userdata);
 
-static StructRNA *rna_Operator_register(Main *bmain,
-                                        ReportList *reports,
-                                        void *data,
-                                        const char *identifier,
-                                        StructValidateFunc validate,
-                                        StructCallbackFunc call,
-                                        StructFreeFunc free)
+static ApiStruct *api_op_register(Main *main,
+                                  ReportList *reports,
+                                  void *data,
+                                  const char *id,
+                                  StructValidateFn validate,
+                                  StructCbFn call,
+                                  StructFreeFn free)
 {
   const char *error_prefix = "Registering operator class:";
-  wmOperatorType dummy_ot = {NULL};
-  wmOperator dummy_operator = {NULL};
-  PointerRNA dummy_operator_ptr;
-  bool have_function[8];
+  wmOpType dummy_ot = {NULL};
+  wmOp dummy_op = {NULL};
+  ApiPtr dummy_op_ptr;
+  bool have_fn[8];
 
   struct {
     char idname[OP_MAX_TYPENAME];
@@ -1497,35 +1497,35 @@ static StructRNA *rna_Operator_register(Main *bmain,
   } temp_buffers;
 
   /* setup dummy operator & operator type to store static properties in */
-  dummy_operator.type = &dummy_ot;
+  dummy_op.type = &dummy_ot;
   dummy_ot.idname = temp_buffers.idname;           /* only assign the pointer, string is NULL'd */
   dummy_ot.name = temp_buffers.name;               /* only assign the pointer, string is NULL'd */
   dummy_ot.description = temp_buffers.description; /* only assign the pointer, string is NULL'd */
-  dummy_ot.translation_context =
+  dummy_ot.translation_ctx =
       temp_buffers.translation_context;          /* only assign the pointer, string is NULL'd */
   dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the pointer, string is NULL'd */
-  RNA_pointer_create(NULL, &RNA_Operator, &dummy_operator, &dummy_operator_ptr);
+  api_ptr_create(NULL, &ApiOp, &dummy_op, &dummy_operator_ptr);
 
   /* clear in case they are left unset */
   temp_buffers.idname[0] = temp_buffers.name[0] = temp_buffers.description[0] =
-      temp_buffers.undo_group[0] = temp_buffers.translation_context[0] = '\0';
+      temp_buffers.undo_group[0] = temp_buffers.translation_ctx[0] = '\0';
 
   /* validate the python class */
-  if (validate(&dummy_operator_ptr, data, have_function) != 0) {
+  if (validate(&dummy_op_ptr, data, have_fn) != 0) {
     return NULL;
   }
 
   /* check if we have registered this operator type before, and remove it */
   {
-    wmOperatorType *ot = WM_operatortype_find(dummy_ot.idname, true);
+    wmOpType *ot = wm_optype_find(dummy_ot.idname, true);
     if (ot) {
-      StructRNA *srna = ot->rna_ext.srna;
-      if (!(srna && rna_Operator_unregister(bmain, srna))) {
-        BKE_reportf(reports,
+      ApiStruct *sapi = ot->api_ext.sapi;
+      if (!(sapi && api_op_unregister(main, sapi))) {
+        dune_reportf(reports,
                     RPT_ERROR,
                     "%s '%s', bl_idname '%s' %s",
                     error_prefix,
-                    identifier,
+                    id,
                     dummy_ot.idname,
                     srna ? "is built-in" : "could not be unregistered");
         return NULL;
@@ -1533,20 +1533,20 @@ static StructRNA *rna_Operator_register(Main *bmain,
     }
   }
 
-  if (!WM_operator_py_idname_ok_or_report(reports, identifier, dummy_ot.idname)) {
+  if (!wm_op_py_idname_ok_or_report(reports, id, dummy_ot.idname)) {
     return NULL;
   }
 
-  char idname_conv[sizeof(dummy_operator.idname)];
-  WM_operator_bl_idname(idname_conv, dummy_ot.idname); /* convert the idname from python */
+  char idname_conv[sizeof(dummy_op.idname)];
+  wm_op_bl_idname(idname_conv, dummy_ot.idname); /* convert the idname from python */
 
-  if (!RNA_struct_available_or_report(reports, idname_conv)) {
+  if (!api_struct_available_or_report(reports, idname_conv)) {
     return NULL;
   }
 
   /* We have to set default context if the class doesn't define it. */
-  if (temp_buffers.translation_context[0] == '\0') {
-    STRNCPY(temp_buffers.translation_context, BLT_I18NCONTEXT_OPERATOR_DEFAULT);
+  if (temp_buffers.translation_ctx[0] == '\0') {
+    STRNCPY(temp_buffers.translation_ctx, LANG_OP_DEFAULT);
   }
 
   /* Convert foo.bar to FOO_OT_bar
@@ -1560,7 +1560,7 @@ static StructRNA *rna_Operator_register(Main *bmain,
         temp_buffers.undo_group,
     };
     char *strings_table[ARRAY_SIZE(strings)];
-    BLI_string_join_array_by_sep_char_with_tableN(
+    lib_string_join_array_by_sep_char_with_tablen(
         '\0', strings_table, strings, ARRAY_SIZE(strings));
 
     dummy_ot.idname = strings_table[0]; /* allocated string stored here */
@@ -1568,44 +1568,44 @@ static StructRNA *rna_Operator_register(Main *bmain,
     dummy_ot.description = *strings_table[2] ? strings_table[2] : NULL;
     dummy_ot.translation_context = strings_table[3];
     dummy_ot.undo_group = strings_table[4];
-    BLI_assert(ARRAY_SIZE(strings) == 5);
+    lib_assert(ARRAY_SIZE(strings) == 5);
   }
 
-  /* XXX, this doubles up with the operator name #29666.
+  /* XXX, this doubles up with the op name #29666.
    * for now just remove from dir(bpy.types) */
 
   /* create a new operator type */
-  dummy_ot.rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, dummy_ot.idname, &RNA_Operator);
+  dummy_ot.api_ext.sapi = api_def_struct_ptr(&DUNE_API, dummy_ot.idname, &RNA_Operator);
 
   /* Operator properties are registered separately. */
-  RNA_def_struct_flag(dummy_ot.rna_ext.srna, STRUCT_NO_IDPROPERTIES);
+  api_def_struct_flag(dummy_ot.api_ext.sapi, STRUCT_NO_IDPROPS);
 
-  RNA_def_struct_property_tags(dummy_ot.rna_ext.srna, rna_enum_operator_property_tags);
-  RNA_def_struct_translation_context(dummy_ot.rna_ext.srna, dummy_ot.translation_context);
-  dummy_ot.rna_ext.data = data;
-  dummy_ot.rna_ext.call = call;
-  dummy_ot.rna_ext.free = free;
+  api_def_struct_pr_tags(dummy_ot.api_ext.sapi, api_enum_operator_property_tags);
+  api_def_struct_translation_context(dummy_ot.api_ext.sapi, dummy_ot.translation_context);
+  dummy_ot.api_ext.data = data;
+  dummy_ot.api_ext.call = call;
+  dummy_ot.api_ext.free = free;
 
-  dummy_ot.pyop_poll = (have_function[0]) ? rna_operator_poll_cb : NULL;
-  dummy_ot.exec = (have_function[1]) ? rna_operator_execute_cb : NULL;
-  dummy_ot.check = (have_function[2]) ? rna_operator_check_cb : NULL;
-  dummy_ot.invoke = (have_function[3]) ? rna_operator_invoke_cb : NULL;
-  dummy_ot.modal = (have_function[4]) ? rna_operator_modal_cb : NULL;
-  dummy_ot.ui = (have_function[5]) ? rna_operator_draw_cb : NULL;
-  dummy_ot.cancel = (have_function[6]) ? rna_operator_cancel_cb : NULL;
-  dummy_ot.get_description = (have_function[7]) ? rna_operator_description_cb : NULL;
-  WM_operatortype_append_ptr(BPY_RNA_operator_wrapper, (void *)&dummy_ot);
+  dummy_ot.pyop_poll = (have_fn[0]) ? api_op_poll_cb : NULL;
+  dummy_ot.exec = (have_fn[1]) ? api_op_ex_cb : NULL;
+  dummy_ot.check = (have_fn[2]) ? api_op_check_cb : NULL;
+  dummy_ot.invoke = (have_fn[3]) ? api_op_invoke_cb : NULL;
+  dummy_ot.modal = (have_fn[4]) ? api_op_modal_cb : NULL;
+  dummy_ot.ui = (have_fn[5]) ? api_op_draw_cb : NULL;
+  dummy_ot.cancel = (have_fn[6]) ? api_op_cancel_cb : NULL;
+  dummy_ot.get_description = (have_fn[7]) ? api_op_description_cb : NULL;
+  wm_optype_append_ptr(BPY_api_op_wrapper, (void *)&dummy_ot);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_SCREEN | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_SCREEN | NA_EDITED, NULL);
 
-  return dummy_ot.rna_ext.srna;
+  return dummy_ot.api_ext.sapi;
 }
 
-static bool rna_Operator_unregister(struct Main *bmain, StructRNA *type)
+static bool api_op_unregister(struct Main *bmain, StructRNA *type)
 {
   const char *idname;
-  wmOperatorType *ot = RNA_struct_blender_type_get(type);
+  wmOpType *ot = api_struct_blender_type_get(type);
   wmWindowManager *wm;
 
   if (!ot) {
@@ -1613,106 +1613,106 @@ static bool rna_Operator_unregister(struct Main *bmain, StructRNA *type)
   }
 
   /* update while blender is running */
-  wm = bmain->wm.first;
+  wm = main->wm.first;
   if (wm) {
-    WM_operator_stack_clear(wm);
+    wm_op_stack_clear(wm);
 
-    WM_operator_handlers_clear(wm, ot);
+    wm_op_handlers_clear(wm, ot);
   }
-  WM_main_add_notifier(NC_SCREEN | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_SCREEN | NA_EDITED, NULL);
 
-  RNA_struct_free_extension(type, &ot->rna_ext);
+  api_struct_free_extension(type, &ot->rna_ext);
 
   idname = ot->idname;
-  WM_operatortype_remove_ptr(ot);
+  wm_optype_remove_ptr(ot);
 
   /* Not to be confused with the RNA_struct_free that WM_operatortype_remove calls,
    * they are 2 different srna's. */
-  RNA_struct_free(&BLENDER_RNA, type);
+  api_struct_free(&DUNE_API, type);
 
-  MEM_freeN((void *)idname);
+  mem_freen((void *)idname);
   return true;
 }
 
-static void **rna_Operator_instance(PointerRNA *ptr)
+static void **api_op_instance(ApiPtr *ptr)
 {
-  wmOperator *op = ptr->data;
+  wmOp *op = ptr->data;
   return &op->py_instance;
 }
 
-static StructRNA *rna_MacroOperator_register(Main *bmain,
-                                             ReportList *reports,
-                                             void *data,
-                                             const char *identifier,
-                                             StructValidateFunc validate,
-                                             StructCallbackFunc call,
-                                             StructFreeFunc free)
+static ApiStruct *api_MacroOp_register(Main *main,
+                                       ReportList *reports,
+                                       void *data,
+                                       const char *id,
+                                       StructValidateFn validate,
+                                       StructCbFn call,
+                                       StructFreeFn free)
 {
   const char *error_prefix = "Registering operator macro class:";
-  wmOperatorType dummy_ot = {NULL};
-  wmOperator dummy_operator = {NULL};
-  PointerRNA dummy_operator_ptr;
-  bool have_function[4];
+  wmOpType dummy_ot = {NULL};
+  wmOp dummy_op = {NULL};
+  ApiPtr dummy_op_ptr;
+  bool have_fn[4];
 
   struct {
     char idname[OP_MAX_TYPENAME];
     char name[OP_MAX_TYPENAME];
-    char description[RNA_DYN_DESCR_MAX];
-    char translation_context[BKE_ST_MAXNAME];
+    char description[API_DYN_DESCR_MAX];
+    char translation_ctx[DUNE_ST_MAXNAME];
     char undo_group[OP_MAX_TYPENAME];
   } temp_buffers;
 
   /* setup dummy operator & operator type to store static properties in */
-  dummy_operator.type = &dummy_ot;
+  dummy_op.type = &dummy_ot;
   dummy_ot.idname = temp_buffers.idname;           /* only assign the pointer, string is NULL'd */
   dummy_ot.name = temp_buffers.name;               /* only assign the pointer, string is NULL'd */
   dummy_ot.description = temp_buffers.description; /* only assign the pointer, string is NULL'd */
-  dummy_ot.translation_context =
-      temp_buffers.translation_context;          /* only assign the pointer, string is NULL'd */
+  dummy_ot.translation_ctx =
+      temp_buffers.translation_ctx;          /* only assign the pointer, string is NULL'd */
   dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the pointer, string is NULL'd */
-  RNA_pointer_create(NULL, &RNA_Macro, &dummy_operator, &dummy_operator_ptr);
+  api_ptr_create(NULL, &ApiMacro, &dummy_op, &dummy_op_ptr);
 
   /* clear in case they are left unset */
   temp_buffers.idname[0] = temp_buffers.name[0] = temp_buffers.description[0] =
-      temp_buffers.undo_group[0] = temp_buffers.translation_context[0] = '\0';
+      temp_buffers.undo_group[0] = temp_buffers.translation_ctx[0] = '\0';
 
   /* validate the python class */
-  if (validate(&dummy_operator_ptr, data, have_function) != 0) {
+  if (validate(&dummy_op_ptr, data, have_fn) != 0) {
     return NULL;
   }
 
-  if (!WM_operator_py_idname_ok_or_report(reports, identifier, dummy_ot.idname)) {
+  if (!wm_op_py_idname_ok_or_report(reports, id, dummy_ot.idname)) {
     return NULL;
   }
 
   /* check if we have registered this operator type before, and remove it */
   {
-    wmOperatorType *ot = WM_operatortype_find(dummy_ot.idname, true);
+    wmOpType *ot = wm_optype_find(dummy_ot.idname, true);
     if (ot) {
-      StructRNA *srna = ot->rna_ext.srna;
-      if (!(srna && rna_Operator_unregister(bmain, srna))) {
-        BKE_reportf(reports,
+      ApiStruct *sapi = ot->api_ext.sapi;
+      if (!(sapi && api_op_unregister(main, sapi))) {
+        dune_reportf(reports,
                     RPT_ERROR,
                     "%s '%s', bl_idname '%s' %s",
                     error_prefix,
-                    identifier,
+                    id,
                     dummy_ot.idname,
-                    srna ? "is built-in" : "could not be unregistered");
+                    sapi ? "is built-in" : "could not be unregistered");
         return NULL;
       }
     }
   }
 
-  char idname_conv[sizeof(dummy_operator.idname)];
-  WM_operator_bl_idname(idname_conv, dummy_ot.idname); /* convert the idname from python */
+  char idname_conv[sizeof(dummy_op.idname)];
+  wm_op_bl_idname(idname_conv, dummy_ot.idname); /* convert the idname from python */
 
-  if (!RNA_struct_available_or_report(reports, idname_conv)) {
+  if (!api_struct_available_or_report(reports, idname_conv)) {
     return NULL;
   }
 
   /* We have to set default context if the class doesn't define it. */
-  if (temp_buffers.translation_context[0] == '\0') {
-    STRNCPY(temp_buffers.translation_context, BLT_I18NCONTEXT_OPERATOR_DEFAULT);
+  if (temp_buffers.translation_ctx[0] == '\0') {
+    STRNCPY(temp_buffers.translation_ctx, LANG_OP_DEFAULT);
   }
 
   /* Convert foo.bar to FOO_OT_bar
@@ -1722,50 +1722,50 @@ static StructRNA *rna_MacroOperator_register(Main *bmain,
         idname_conv,
         temp_buffers.name,
         temp_buffers.description,
-        temp_buffers.translation_context,
+        temp_buffers.translation_ctx,
         temp_buffers.undo_group,
     };
     char *strings_table[ARRAY_SIZE(strings)];
-    BLI_string_join_array_by_sep_char_with_tableN(
+    lib_string_join_array_by_sep_char_with_tablen(
         '\0', strings_table, strings, ARRAY_SIZE(strings));
 
     dummy_ot.idname = strings_table[0]; /* allocated string stored here */
     dummy_ot.name = strings_table[1];
     dummy_ot.description = *strings_table[2] ? strings_table[2] : NULL;
-    dummy_ot.translation_context = strings_table[3];
+    dummy_ot.translation_ctx = strings_table[3];
     dummy_ot.undo_group = strings_table[4];
-    BLI_assert(ARRAY_SIZE(strings) == 5);
+    lib_assert(ARRAY_SIZE(strings) == 5);
   }
 
   /* XXX, this doubles up with the operator name #29666.
    * for now just remove from dir(bpy.types) */
 
   /* create a new operator type */
-  dummy_ot.rna_ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, dummy_ot.idname, &RNA_Operator);
-  RNA_def_struct_translation_context(dummy_ot.rna_ext.srna, dummy_ot.translation_context);
-  dummy_ot.rna_ext.data = data;
-  dummy_ot.rna_ext.call = call;
-  dummy_ot.rna_ext.free = free;
+  dummy_ot.api_ext.sapi = api_def_struct_ptr(&DUNE_API, dummy_ot.idname, &ApiOp);
+  api_def_struct_translation_ctx(dummy_ot.api_ext.sapi, dummy_ot.translation_ctx);
+  dummy_ot.api_ext.data = data;
+  dummy_ot.api_ext.call = call;
+  dummy_ot.api_ext.free = free;
 
   dummy_ot.pyop_poll = (have_function[0]) ? rna_operator_poll_cb : NULL;
-  dummy_ot.ui = (have_function[3]) ? rna_operator_draw_cb : NULL;
+  dummy_ot.ui = (have_function[3]) ? rna_op_draw_cb : NULL;
 
-  WM_operatortype_append_macro_ptr(BPY_RNA_operator_macro_wrapper, (void *)&dummy_ot);
+  wm_optype_append_macro_ptr(BPY_api_op_macro_wrapper, (void *)&dummy_ot);
 
   /* update while blender is running */
-  WM_main_add_notifier(NC_SCREEN | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_SCREEN | NA_EDITED, NULL);
 
-  return dummy_ot.rna_ext.srna;
+  return dummy_ot.api_ext.sapi;
 }
 #  endif /* WITH_PYTHON */
 
-static StructRNA *rna_Operator_refine(PointerRNA *opr)
+static ApiStrut *api_op_refine(ApiPtr *ptr)
 {
-  wmOperator *op = (wmOperator *)opr->data;
-  return (op->type && op->type->rna_ext.srna) ? op->type->rna_ext.srna : &RNA_Operator;
+  wmOperator *op = (wmOp *)opr->data;
+  return (op->type && op->type->api_ext.sapi) ? op->type->api_ext.sapi : &ApiOp;
 }
 
-static StructRNA *rna_MacroOperator_refine(PointerRNA *opr)
+static ApiStruct *api_MacroOp_refine(PointerRNA *opr)
 {
   wmOperator *op = (wmOperator *)opr->data;
   return (op->type && op->type->rna_ext.srna) ? op->type->rna_ext.srna : &RNA_Macro;
