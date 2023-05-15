@@ -1242,17 +1242,17 @@ static void api_wmKeyMapItem_name_get(ApiPtr *ptr, char *value)
 static int api_wmKeyMapItem_name_length(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
-  wmOperatorType *ot = WM_operatortype_find(kmi->idname, 1);
-  return strlen(ot ? WM_operatortype_name(ot, kmi->ptr) : kmi->idname);
+  wmOpType *ot = wm_optype_find(kmi->idname, 1);
+  return strlen(ot ? wm_optype_name(ot, kmi->ptr) : kmi->idname);
 }
 
-static bool rna_KeyMapItem_userdefined_get(PointerRNA *ptr)
+static bool api_KeyMapItem_userdefined_get(PointerRNA *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
   return kmi->id < 0;
 }
 
-static PointerRNA rna_WindowManager_xr_session_state_get(PointerRNA *ptr)
+static ApiPtr api_WindowManager_xr_session_state_get(PointerRNA *ptr)
 {
   wmWindowManager *wm = ptr->data;
   struct wmXrSessionState *state =
@@ -1263,54 +1263,54 @@ static PointerRNA rna_WindowManager_xr_session_state_get(PointerRNA *ptr)
   UNUSED_VARS(wm);
 #  endif
 
-  return rna_pointer_inherit_refine(ptr, &RNA_XrSessionState, state);
+  return api_ptr_inherit_refine(ptr, &ApiXrSessionState, state);
 }
 
 #  ifdef WITH_PYTHON
 
-static bool rna_operator_poll_cb(bContext *C, wmOperatorType *ot)
+static bool api_op_poll_cb(Ctx *C, wmOpType *ot)
 {
-  extern FunctionRNA rna_Operator_poll_func;
+  extern ApiFn api_ap_poll_fb;
 
-  PointerRNA ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr ptr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   bool visible;
 
-  RNA_pointer_create(NULL, ot->rna_ext.srna, NULL, &ptr); /* dummy */
-  func = &rna_Operator_poll_func; /* RNA_struct_find_function(&ptr, "poll"); */
+  api_ptr_create(NULL, ot->api_ext.sapi, NULL, &ptr); /* dummy */
+  func = &api_op_poll_fn; /* RNA_struct_find_function(&ptr, "poll"); */
 
-  RNA_parameter_list_create(&list, &ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  ot->rna_ext.call(C, &ptr, func, &list);
+  api_param_list_create(&list, &ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  ot->api_ext.call(C, &ptr, fn, &list);
 
-  RNA_parameter_get_lookup(&list, "visible", &ret);
+  api_param_get_lookup(&list, "visible", &ret);
   visible = *(bool *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
 
   return visible;
 }
 
-static int rna_operator_execute_cb(bContext *C, wmOperator *op)
+static int api_op_execute_cb(Ctx *C, wmOp *op)
 {
-  extern FunctionRNA rna_Operator_execute_func;
+  extern apiFn api_op_ex_fn;
 
-  PointerRNA opr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr opr;
+  ParamList list;
+  ApiFn *fn;
   void *ret;
   int result;
 
-  RNA_pointer_create(NULL, op->type->rna_ext.srna, op, &opr);
-  func = &rna_Operator_execute_func; /* RNA_struct_find_function(&opr, "execute"); */
+  api_ptr_create(NULL, op->type->api_ext.sapi, op, &opr);
+  fn = &api_op_ex_fn; /* api_struct_find_fn(&opr, "execute"); */
 
-  RNA_parameter_list_create(&list, &opr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  op->type->rna_ext.call(C, &opr, func, &list);
+  api_param_list_create(&list, &opr, func);
+  api_param_set_lookup(&list, "context", &C);
+  op->type->api_ext.call(C, &opr, func, &list);
 
-  RNA_parameter_get_lookup(&list, "result", &ret);
+  api_param_get_lookup(&list, "result", &ret);
   result = *(int *)ret;
 
   RNA_parameter_list_free(&list);
