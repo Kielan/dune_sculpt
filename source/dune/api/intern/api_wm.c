@@ -49,7 +49,7 @@ static const EnumPropItem event_mouse_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem event_timer_type_items[] = {
+static const EnumPropItem event_timer_type_items[] = {
     {TIMER, "TIMER", 0, "Timer", ""},
     {TIMER0, "TIMER0", 0, "Timer 0", ""},
     {TIMER1, "TIMER1", 0, "Timer 1", ""},
@@ -579,7 +579,7 @@ static int api_op_name_length(ApiPtr *ptr)
   return strlen(op->type->name);
 }
 
-static bool api_op_has_reports_get(PointerRNA *ptr)
+static bool api_op_has_reports_get(ApiPtr *ptr)
 {
   WMOp *op = (WMOp *)ptr->data;
   return (op->reports && op->reports->list.first);
@@ -587,93 +587,93 @@ static bool api_op_has_reports_get(PointerRNA *ptr)
 
 static ApiPtr api_op_options_get(ApiPtr *ptr)
 {
-  return api_ptr_inherit_refine(ptr, &RNA_OperatorOptions, ptr->data);
+  return api_ptr_inherit_refine(ptr, &ApiOpOptions, ptr->data);
 }
 
-static ApiPtr api_op_props_get(PointerRNA *ptr)
+static ApiPtr api_op_props_get(ApiPtr *ptr)
 {
-  wmOperator *op = (wmOperator *)ptr->data;
+  wmOp *op = (WMOp *)ptr->data;
 
-  PointerRNA result;
-  WM_operator_properties_create_ptr(&result, op->type);
+  ApiPtr result;
+  wm_op_props_create_ptr(&result, op->type);
   result.data = op->properties;
   return result;
 }
 
-static PointerRNA rna_OperatorMacro_properties_get(PointerRNA *ptr)
+static ApiPtr api_op_macro_props_get(ApiPtr *ptr)
 {
-  wmOperatorTypeMacro *otmacro = (wmOperatorTypeMacro *)ptr->data;
-  wmOperatorType *ot = WM_operatortype_find(otmacro->idname, true);
+  wmOpTypeMacro *otmacro = (WMOpTypeMacro *)ptr->data;
+  wmOpType *ot = wm_optype_find(otmacro->idname, true);
 
-  PointerRNA result;
-  WM_operator_properties_create_ptr(&result, ot);
-  result.data = otmacro->properties;
+  ApiPtr result;
+  wm_op_props_create_ptr(&result, ot);
+  result.data = otmacro->props;
   return result;
 }
 
-static void rna_Event_ascii_get(PointerRNA *ptr, char *value)
+static void api_Event_ascii_get(ApiPtr *ptr, char *value)
 {
   const wmEvent *event = ptr->data;
-  value[0] = WM_event_utf8_to_ascii(event);
+  value[0] = wm_event_utf8_to_ascii(event);
   value[1] = '\0';
 }
 
-static int rna_Event_ascii_length(PointerRNA *ptr)
+static int api_Event_ascii_length(PointerRNA *ptr)
 {
   const wmEvent *event = ptr->data;
-  return WM_event_utf8_to_ascii(event) ? 1 : 0;
+  return wm_event_utf8_to_ascii(event) ? 1 : 0;
 }
 
-static void rna_Event_unicode_get(PointerRNA *ptr, char *value)
+static void api_Event_unicode_get(PointerRNA *ptr, char *value)
 {
   /* utf8 buf isn't \0 terminated */
   const wmEvent *event = ptr->data;
   size_t len = 0;
 
   if (event->utf8_buf[0]) {
-    if (BLI_str_utf8_as_unicode_step_or_error(event->utf8_buf, sizeof(event->utf8_buf), &len) !=
-        BLI_UTF8_ERR)
+    if (lib_str_utf8_as_unicode_step_or_error(event->utf8_buf, sizeof(event->utf8_buf), &len) !=
+        lib_UTF8_ERR)
       memcpy(value, event->utf8_buf, len);
   }
 
   value[len] = '\0';
 }
 
-static int rna_Event_unicode_length(PointerRNA *ptr)
+static int api_Event_unicode_length(ApiPtr *ptr)
 {
 
   const wmEvent *event = ptr->data;
   if (event->utf8_buf[0]) {
     /* invalid value is checked on assignment so we don't need to account for this */
-    return BLI_str_utf8_size(event->utf8_buf);
+    return lib_str_utf8_size(event->utf8_buf);
   }
   else {
     return 0;
   }
 }
 
-static bool rna_Event_is_repeat_get(PointerRNA *ptr)
+static bool api_Event_is_repeat_get(ApiPtr *ptr)
 {
   const wmEvent *event = ptr->data;
   return (event->flag & WM_EVENT_IS_REPEAT) != 0;
 }
 
-static bool rna_Event_is_consecutive_get(PointerRNA *ptr)
+static bool api_Event_is_consecutive_get(ApiPtr *ptr)
 {
   const wmEvent *event = ptr->data;
   return (event->flag & WM_EVENT_IS_CONSECUTIVE) != 0;
 }
 
-static float rna_Event_pressure_get(PointerRNA *ptr)
+static float api_Event_pressure_get(PointerRNA *ptr)
 {
   const wmEvent *event = ptr->data;
-  return WM_event_tablet_data(event, NULL, NULL);
+  return wm_event_tablet_data(event, NULL, NULL);
 }
 
-static bool rna_Event_is_tablet_get(PointerRNA *ptr)
+static bool api_Event_is_tablet_get(PointerRNA *ptr)
 {
   const wmEvent *event = ptr->data;
-  return WM_event_is_tablet(event);
+  return wm_event_is_tablet(event);
 }
 
 static void rna_Event_tilt_get(PointerRNA *ptr, float *values)
