@@ -912,10 +912,10 @@ static int api_wmKeyMapItem_map_type_get(ApiPtr *ptr)
   return wm_keymap_item_map_type_get(kmi);
 }
 
-static void rna_wmKeyMapItem_map_type_set(PointerRNA *ptr, int value)
+static void api_wmKeyMapItem_map_type_set(ApiPtr *ptr, int value)
 {
   wmKeyMapItem *kmi = ptr->data;
-  int map_type = rna_wmKeyMapItem_map_type_get(ptr);
+  int map_type = api_wmKeyMapItem_map_type_get(ptr);
 
   if (value != map_type) {
     switch (value) {
@@ -943,11 +943,9 @@ static void rna_wmKeyMapItem_map_type_set(PointerRNA *ptr, int value)
   }
 }
 
-/**
- * Assumes value to be an enum from rna_enum_event_type_items.
- * Function makes sure key-modifiers are only valid keys, ESC keeps it unaltered.
- */
-static void rna_wmKeyMapItem_keymodifier_set(PointerRNA *ptr, int value)
+/** Assumes value to be an enum from rna_enum_event_type_items.
+ * Function makes sure key-modifiers are only valid keys, ESC keeps it unaltered */
+static void api_wmKeyMapItem_keymod_set(ApiPtr *ptr, int value)
 {
   wmKeyMapItem *kmi = ptr->data;
 
@@ -958,10 +956,10 @@ static void rna_wmKeyMapItem_keymodifier_set(PointerRNA *ptr, int value)
     /* pass */
   }
   else if (ISKEYBOARD(value) && !ISKEYMODIFIER(value)) {
-    kmi->keymodifier = value;
+    kmi->keymod = value;
   }
   else {
-    kmi->keymodifier = 0;
+    kmi->keymod = 0;
   }
 }
 
@@ -1039,46 +1037,46 @@ static void api_KeyMapItem_any_set(PointerRNA *ptr, bool value)
   }
 }
 
-static bool rna_KeyMapItem_shift_get(PointerRNA *ptr)
+static bool api_KeyMapItem_shift_get(PointerRNA *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
   return kmi->shift != 0;
 }
 
-static bool rna_KeyMapItem_ctrl_get(PointerRNA *ptr)
+static bool api_KeyMapItem_ctrl_get(PointerRNA *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
   return kmi->ctrl != 0;
 }
 
-static bool rna_KeyMapItem_alt_get(PointerRNA *ptr)
+static bool api_KeyMapItem_alt_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
   return kmi->alt != 0;
 }
 
-static bool rna_KeyMapItem_oskey_get(PointerRNA *ptr)
+static bool api_KeyMapItem_oskey_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
   return kmi->oskey != 0;
 }
 
-static PointerRNA rna_WindowManager_active_keyconfig_get(PointerRNA *ptr)
+static ApiPtr api_WindowManager_active_keyconfig_get(ApiPtr *ptr)
 {
   wmWindowManager *wm = ptr->data;
   wmKeyConfig *kc;
 
-  kc = BLI_findstring(&wm->keyconfigs, U.keyconfigstr, offsetof(wmKeyConfig, idname));
+  kc = lib_findstring(&wm->keyconfigs, U.keyconfigstr, offsetof(wmKeyConfig, idname));
 
   if (!kc) {
     kc = wm->defaultconf;
   }
 
-  return rna_pointer_inherit_refine(ptr, &RNA_KeyConfig, kc);
+  return api_ptr_inherit_refine(ptr, &ApiKeyConfig, kc);
 }
 
-static void rna_WindowManager_active_keyconfig_set(PointerRNA *ptr,
-                                                   PointerRNA value,
+static void api_WindowManager_active_keyconfig_set(ApiPtr *ptr,
+                                                   ApiPtr value,
                                                    struct ReportList *UNUSED(reports))
 {
   wmWindowManager *wm = ptr->data;
