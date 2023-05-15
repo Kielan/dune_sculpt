@@ -670,53 +670,53 @@ static float api_Event_pressure_get(PointerRNA *ptr)
   return wm_event_tablet_data(event, NULL, NULL);
 }
 
-static bool api_Event_is_tablet_get(PointerRNA *ptr)
+static bool api_Event_is_tablet_get(ApiPtr *ptr)
 {
   const wmEvent *event = ptr->data;
   return wm_event_is_tablet(event);
 }
 
-static void rna_Event_tilt_get(PointerRNA *ptr, float *values)
+static void api_Event_tilt_get(ApiPtr *ptr, float *values)
 {
   wmEvent *event = ptr->data;
-  WM_event_tablet_data(event, NULL, values);
+  wm_event_tablet_data(event, NULL, values);
 }
 
-static PointerRNA rna_Event_xr_get(PointerRNA *ptr)
+static ApiPtr api_Event_xr_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   wmEvent *event = ptr->data;
-  wmXrActionData *actiondata = WM_event_is_xr(event) ? event->customdata : NULL;
-  return rna_pointer_inherit_refine(ptr, &RNA_XrEventData, actiondata);
+  wmXrActionData *actiondata = wm_event_is_xr(event) ? event->customdata : NULL;
+  return api_ptr_inherit_refine(ptr, &ApiXrEventData, actiondata);
 #  else
   UNUSED_VARS(ptr);
-  return PointerRNA_NULL;
+  return ApiPtrNULL;
 #  endif
 }
 
-static PointerRNA rna_PopupMenu_layout_get(PointerRNA *ptr)
+static ApiPtr api_PopupMenu_layout_get(ApiPtr *ptr)
 {
   struct uiPopupMenu *pup = ptr->data;
-  uiLayout *layout = UI_popup_menu_layout(pup);
+  uiLayout *layout = ui_popup_menu_layout(pup);
 
-  PointerRNA rptr;
-  RNA_pointer_create(ptr->owner_id, &RNA_UILayout, layout, &rptr);
+  ApiPtr rptr;
+  api_ptr_create(ptr->owner_id, &ApiUILayout, layout, &rptr);
 
   return rptr;
 }
 
-static PointerRNA rna_PopoverMenu_layout_get(PointerRNA *ptr)
+static ApiPtr api_PopoverMenu_layout_get(ApiPtr *ptr)
 {
   struct uiPopover *pup = ptr->data;
-  uiLayout *layout = UI_popover_layout(pup);
+  uiLayout *layout = ui_popover_layout(pup);
 
-  PointerRNA rptr;
-  RNA_pointer_create(ptr->owner_id, &RNA_UILayout, layout, &rptr);
+  ApiPtr rptr;
+  api_ptr_create(ptr->owner_id, &ApiUILayout, layout, &rptr);
 
   return rptr;
 }
 
-static PointerRNA rna_PieMenu_layout_get(PointerRNA *ptr)
+static PointerRNA rna_PieMenu_layout_get(ApiPtr *ptr)
 {
   struct uiPieMenu *pie = ptr->data;
   uiLayout *layout = UI_pie_menu_layout(pie);
