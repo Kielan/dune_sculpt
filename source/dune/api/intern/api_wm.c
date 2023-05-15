@@ -965,12 +965,12 @@ static void rna_wmKeyMapItem_keymodifier_set(PointerRNA *ptr, int value)
   }
 }
 
-static const EnumPropertyItem *rna_KeyMapItem_type_itemf(bContext *UNUSED(C),
-                                                         PointerRNA *ptr,
-                                                         PropertyRNA *UNUSED(prop),
-                                                         bool *UNUSED(r_free))
+static const EnumPropItem *api_KeyMapItem_type_itemf(Ctx *UNUSED(C),
+                                                     ApiPtr *ptr,
+                                                     ApiProp *UNUSED(prop),
+                                                     bool *UNUSED(r_free))
 {
-  int map_type = rna_wmKeyMapItem_map_type_get(ptr);
+  int map_type = api_wmKeyMapItem_map_type_get(ptr);
 
   if (map_type == KMI_TYPE_MOUSE) {
     return event_mouse_type_items;
@@ -985,16 +985,16 @@ static const EnumPropertyItem *rna_KeyMapItem_type_itemf(bContext *UNUSED(C),
     return event_textinput_type_items;
   }
   else {
-    return rna_enum_event_type_items;
+    return api_enum_event_type_items;
   }
 }
 
-static const EnumPropertyItem *rna_KeyMapItem_propvalue_itemf(bContext *C,
+static const EnumPropItem *rna_KeyMapItem_propvalue_itemf(bContext *C,
                                                               PointerRNA *ptr,
                                                               PropertyRNA *UNUSED(prop),
                                                               bool *UNUSED(r_free))
 {
-  wmWindowManager *wm = CTX_wm_manager(C);
+  wmWindowManager *wm = ctx_wm_manager(C);
   wmKeyConfig *kc;
   wmKeyMap *km;
 
@@ -1012,10 +1012,10 @@ static const EnumPropertyItem *rna_KeyMapItem_propvalue_itemf(bContext *C,
     }
   }
 
-  return rna_enum_keymap_propvalue_items; /* ERROR */
+  return api_enum_keymap_propvalue_items; /* ERROR */
 }
 
-static bool rna_KeyMapItem_any_get(PointerRNA *ptr)
+static bool api_KeyMapItem_any_get(PointerRNA *ptr)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
 
@@ -1027,7 +1027,7 @@ static bool rna_KeyMapItem_any_get(PointerRNA *ptr)
   }
 }
 
-static void rna_KeyMapItem_any_set(PointerRNA *ptr, bool value)
+static void api_KeyMapItem_any_set(PointerRNA *ptr, bool value)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
 
