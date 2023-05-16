@@ -2083,233 +2083,233 @@ static void api_def_op_filelist_element(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = api_def_struct(dapi, "OpFileListElement", "PropertyGroup");
+  sapi = api_def_struct(dapi, "OpFileListElement", "PropGroup");
   api_def_struct_ui_text(sapi, "Op File List Element", "");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_FILENAME);
-  RNA_def_property_flag(prop, PROP_IDPROPERTY);
-  RNA_def_property_ui_text(prop, "Name", "Name of a file or directory within a file list");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_FILENAME);
+  api_def_prop_flag(prop, PROP_IDPROP);
+  api_def_prop_ui_text(prop, "Name", "Name of a file or directory within a file list");
 }
 
-static void rna_def_event(BlenderRNA *brna)
+static void api_def_event(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Event", NULL);
-  RNA_def_struct_ui_text(srna, "Event", "Window Manager Event");
-  RNA_def_struct_sdna(srna, "wmEvent");
+  sapi = api_def_struct(dapi, "Event", NULL);
+  api_def_struct_ui_text(sapi, "Event", "Window Manager Event");
+  api_def_struct_stype(sapi, "wmEvent");
 
-  RNA_define_verify_sdna(0); /* not in sdna */
+  spi_define_verify_sapi(0); /* not in sdna */
 
   /* strings */
-  prop = RNA_def_property(srna, "ascii", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(prop, "rna_Event_ascii_get", "rna_Event_ascii_length", NULL);
-  RNA_def_property_ui_text(prop, "ASCII", "Single ASCII character for this event");
+  prop = api_def_prop(sapi, "ascii", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_fns(prop, "rna_Event_ascii_get", "api_Event_ascii_length", NULL);
+  api_def_prop_ui_text(prop, "ASCII", "Single ASCII character for this event");
 
-  prop = RNA_def_property(srna, "unicode", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(prop, "rna_Event_unicode_get", "rna_Event_unicode_length", NULL);
+  prop = api_def_prop(sapi, "unicode", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_funcs(prop, "api_Event_unicode_get", "api_Event_unicode_length", NULL);
   RNA_def_property_ui_text(prop, "Unicode", "Single unicode character for this event");
 
   /* enums */
-  prop = RNA_def_property(srna, "value", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "val");
-  RNA_def_property_enum_items(prop, rna_enum_event_value_items);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Value", "The type of event, only applies to some");
+  prop = api_def_prop(sapi, "value", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "val");
+  api_def_prop_enum_items(prop, api_enum_event_value_items);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Value", "The type of event, only applies to some");
 
-  prop = RNA_def_property(srna, "value_prev", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "prev_val");
-  RNA_def_property_enum_items(prop, rna_enum_event_value_items);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Previous Value", "The type of event, only applies to some");
+  prop = api_def_prop(sapi, "value_prev", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "prev_val");
+  api_def_prop_enum_items(prop, api_enum_event_value_items);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Previous Value", "The type of event, only applies to some");
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_event_type_items);
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_UI_EVENTS);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Type", "");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_event_type_items);
+  api_def_prop_translation_context(prop, BLT_I18NCONTEXT_UI_EVENTS);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Type", "");
 
-  prop = RNA_def_property(srna, "type_prev", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "prev_type");
-  RNA_def_property_enum_items(prop, rna_enum_event_type_items);
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_UI_EVENTS);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Previous Type", "");
+  prop = api_def_prop(sapi, "type_prev", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "prev_type");
+  api_def_prop_enum_items(prop, api_enum_event_type_items);
+  api_def_prop_translation_ctx(prop, LANG_UI_EVENTS);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Previous Type", "");
 
-  prop = RNA_def_property(srna, "direction", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "direction");
-  RNA_def_property_enum_items(prop, rna_enum_event_direction_items);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Direction", "The direction (only applies to drag events)");
+  prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "direction");
+  api_def_prop_enum_items(prop, api_enum_event_direction_items);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Direction", "The direction (only applies to drag events)");
 
   /* keyboard */
-  prop = RNA_def_property(srna, "is_repeat", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Event_is_repeat_get", NULL);
-  RNA_def_property_ui_text(prop, "Is Repeat", "The event is generated by holding a key down");
+  prop = api_def_prop(sapo, "is_repeat", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Event_is_repeat_get", NULL);
+  api_def_prop_ui_text(prop, "Is Repeat", "The event is generated by holding a key down");
 
   /* Track-pad & NDOF. */
-  prop = RNA_def_property(srna, "is_consecutive", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Event_is_consecutive_get", NULL);
-  RNA_def_property_ui_text(prop,
-                           "Is Consecutive",
-                           "Part of a track-pad or NDOF motion, "
-                           "interrupted by cursor motion, button or key press events");
+  prop = api_def_prop(sapi, "is_consecutive", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Event_is_consecutive_get", NULL);
+  api_def_prop_ui_text(prop,
+                       "Is Consecutive",
+                       "Part of a track-pad or NDOF motion, "
+                       "interrupted by cursor motion, button or key press events");
 
   /* mouse */
-  prop = RNA_def_property(srna, "mouse_x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "xy[0]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mouse_x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "xy[0]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Mouse X Position", "The window relative horizontal location of the mouse");
 
-  prop = RNA_def_property(srna, "mouse_y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "xy[1]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mouse_y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "xy[1]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Mouse Y Position", "The window relative vertical location of the mouse");
 
-  prop = RNA_def_property(srna, "mouse_region_x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "mval[0]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mouse_region_x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "mval[0]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Mouse X Position", "The region relative horizontal location of the mouse");
 
-  prop = RNA_def_property(srna, "mouse_region_y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "mval[1]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mouse_region_y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "mval[1]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Mouse Y Position", "The region relative vertical location of the mouse");
 
-  prop = RNA_def_property(srna, "mouse_prev_x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "prev_xy[0]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mouse_prev_x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "prev_xy[0]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Mouse Previous X Position", "The window relative horizontal location of the mouse");
 
-  prop = RNA_def_property(srna, "mouse_prev_y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "prev_xy[1]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "mouse_prev_y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "prev_xy[1]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Mouse Previous Y Position", "The window relative vertical location of the mouse");
 
-  prop = RNA_def_property(srna, "mouse_prev_press_x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "prev_press_xy[0]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "mouse_prev_press_x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "prev_press_xy[0]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop,
                            "Mouse Previous X Press Position",
                            "The window relative horizontal location of the last press event");
 
-  prop = RNA_def_property(srna, "mouse_prev_press_y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "prev_press_xy[1]");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop,
-                           "Mouse Previous Y Press Position",
-                           "The window relative vertical location of the last press event");
+  prop = apo_def_prop(sapi, "mouse_prev_press_y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "prev_press_xy[1]");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop,
+                       "Mouse Previous Y Press Position",
+                       "The window relative vertical location of the last press event");
 
-  prop = RNA_def_property(srna, "pressure", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_Event_pressure_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pressure", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_default(prop, 1.0f);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_Event_pressure_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Tablet Pressure", "The pressure of the tablet or 1.0 if no tablet present");
 
-  prop = RNA_def_property(srna, "tilt", PROP_FLOAT, PROP_XYZ_LENGTH);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_float_funcs(prop, "rna_Event_tilt_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "tilt", PROP_FLOAT, PROP_XYZ_LENGTH);
+  api_def_prop_array(prop, 2);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_float_fns(prop, "api_Event_tilt_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Tablet Tilt", "The pressure of the tablet or zeroes if no tablet present");
 
-  prop = RNA_def_property(srna, "is_tablet", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Event_is_tablet_get", NULL);
-  RNA_def_property_ui_text(prop, "Is Tablet", "The event has tablet data");
+  prop = api_def_prop(sapi, "is_tablet", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Event_is_tablet_get", NULL);
+  api_def_prop_ui_text(prop, "Is Tablet", "The event has tablet data");
 
-  prop = RNA_def_property(srna, "is_mouse_absolute", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "tablet.is_motion_absolute", 1);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Absolute Motion", "The last motion event was an absolute input");
+  prop = api_def_prop(sapi, "is_mouse_absolute", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "tablet.is_motion_absolute", 1);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Absolute Motion", "The last motion event was an absolute input");
 
   /* xr */
-  prop = RNA_def_property(srna, "xr", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "XrEventData");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop, "rna_Event_xr_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "XR", "XR event data");
+  prop = api_def_prop(sapi, "xr", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "XrEventData");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop, "api_Event_xr_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "XR", "XR event data");
 
   /* modifiers */
-  prop = RNA_def_property(srna, "shift", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "modifier", KM_SHIFT);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Shift", "True when the Shift key is held");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_WINDOWMANAGER);
+  prop = api_def_prop(sapi, "shift", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "modifier", KM_SHIFT);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Shift", "True when the Shift key is held");
+  api_def_prop_translation_ctx(prop, LANG_ID_WINDOWMANAGER);
 
-  prop = RNA_def_property(srna, "ctrl", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "modifier", KM_CTRL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Ctrl", "True when the Ctrl key is held");
+  prop = api_def_prop(sapi, "ctrl", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "modifier", KM_CTRL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Ctrl", "True when the Ctrl key is held");
 
-  prop = RNA_def_property(srna, "alt", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "modifier", KM_ALT);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Alt", "True when the Alt/Option key is held");
+  prop = api_def_prop(sapi, "alt", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "modifier", KM_ALT);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Alt", "True when the Alt/Option key is held");
 
-  prop = RNA_def_property(srna, "oskey", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "modifier", KM_OSKEY);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "OS Key", "True when the Cmd key is held");
+  prop = api_def_prop(sapi, "oskey", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "modifier", KM_OSKEY);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "OS Key", "True when the Cmd key is held");
 
-  RNA_define_verify_sdna(1); /* not in sdna */
+  api_define_verify_stype(1); /* not in sdna */
 }
 
-static void rna_def_timer(BlenderRNA *brna)
+static void api_def_timer(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Timer", NULL);
-  RNA_def_struct_ui_text(srna, "Timer", "Window event timer");
-  RNA_def_struct_sdna(srna, "wmTimer");
+  sapi = api_def_struct(dapi, "Timer", NULL);
+  api_def_struct_ui_text(sapi, "Timer", "Window event timer");
+  api_def_struct_stype(sapi, "wmTimer");
 
-  RNA_define_verify_sdna(0); /* not in sdna */
+  api_define_verify_stype(0); /* not in sdna */
 
   /* could wrap more, for now this is enough */
-  prop = RNA_def_property(srna, "time_step", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "timestep");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Time Step", "");
+  prop = api_def_prop(sapi, "time_step", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "timestep");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Time Step", "");
 
-  prop = RNA_def_property(srna, "time_delta", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "delta");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Delta", "Time since last step in seconds");
+  prop = api_def_prop(sapi, "time_delta", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "delta");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Delta", "Time since last step in seconds");
 
-  prop = RNA_def_property(srna, "time_duration", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "duration");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Delta", "Time since last step in seconds");
+  prop = api_def_prop(sapi, "time_duration", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "duration");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Delta", "Time since last step in seconds");
 
-  RNA_define_verify_sdna(1); /* not in sdna */
+  api_define_verify_stype(1); /* not in sdna */
 }
 
-static void rna_def_popup_menu_wrapper(BlenderRNA *brna,
-                                       const char *rna_type,
+static void api_def_popup_menu_wrapper(DuneApi *dapi,
+                                       const char *api_type,
                                        const char *c_type,
                                        const char *layout_get_fn)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, rna_type, NULL);
+  sapi = api_def_struct(dapi, api_type, NULL);
   /* UI name isn't visible, name same as type. */
-  RNA_def_struct_ui_text(srna, rna_type, "");
-  RNA_def_struct_sdna(srna, c_type);
+  RNA_def_struct_ui_text(sapi, api_type, "");
+  RNA_def_struct_sdna(sapi, c_type);
 
   RNA_define_verify_sdna(0); /* not in sdna */
 
