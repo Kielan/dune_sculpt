@@ -727,7 +727,7 @@ static ApiPtr api_PieMenu_layout_get(ApiPtr *ptr)
   return rptr;
 }
 
-static void api_Window_scene_set(ApiPtr *ptr,
+static void api_window_scene_set(ApiPtr *ptr,
                                  ApiPtr value,
                                  struct ReportList *UNUSED(reports))
 {
@@ -1025,7 +1025,7 @@ static bool api_KeyMapItem_any_get(PointerRNA *ptr)
   }
 }
 
-static void api_KeyMapItem_any_set(PointerRNA *ptr, bool value)
+static void api_KeyMapItem_any_set(ApiPtr *ptr, bool value)
 {
   wmKeyMapItem *kmi = (wmKeyMapItem *)ptr->data;
 
@@ -1083,7 +1083,7 @@ static void api_WindowManager_active_keyconfig_set(ApiPtr *ptr,
   wmKeyConfig *kc = value.data;
 
   if (kc) {
-    WM_keyconfig_set_active(wm, kc->idname);
+    wm_keyconfig_set_active(wm, kc->idname);
   }
 }
 
@@ -1587,7 +1587,7 @@ static ApiStruct *api_op_register(Main *main,
   dummy_ot.api_ext.free = free;
 
   dummy_ot.pyop_poll = (have_fn[0]) ? api_op_poll_cb : NULL;
-  dummy_ot.exec = (have_fn[1]) ? api_op_ex_cb : NULL;
+  dummy_ot.ex = (have_fn[1]) ? api_op_ex_cb : NULL;
   dummy_ot.check = (have_fn[2]) ? api_op_check_cb : NULL;
   dummy_ot.invoke = (have_fn[3]) ? api_op_invoke_cb : NULL;
   dummy_ot.modal = (have_fn[4]) ? api_op_modal_cb : NULL;
@@ -1602,10 +1602,10 @@ static ApiStruct *api_op_register(Main *main,
   return dummy_ot.api_ext.sapi;
 }
 
-static bool api_op_unregister(struct Main *bmain, StructRNA *type)
+static bool api_op_unregister(struct Main *main, ApiStruct *type)
 {
   const char *idname;
-  wmOpType *ot = api_struct_blender_type_get(type);
+  wmOpType *ot = api_struct_dune_type_get(type);
   wmWindowManager *wm;
 
   if (!ot) {
@@ -1648,7 +1648,7 @@ static ApiStruct *api_MacroOp_register(Main *main,
                                        StructCbFn call,
                                        StructFreeFn free)
 {
-  const char *error_prefix = "Registering operator macro class:";
+  const char *error_prefix = "Registering op macro class:";
   wmOpType dummy_ot = {NULL};
   wmOp dummy_op = {NULL};
   ApiPtr dummy_op_ptr;
@@ -1747,8 +1747,8 @@ static ApiStruct *api_MacroOp_register(Main *main,
   dummy_ot.api_ext.call = call;
   dummy_ot.api_ext.free = free;
 
-  dummy_ot.pyop_poll = (have_function[0]) ? rna_operator_poll_cb : NULL;
-  dummy_ot.ui = (have_function[3]) ? rna_op_draw_cb : NULL;
+  dummy_ot.pyop_poll = (have_fn[0]) ? api_op_poll_cb : NULL;
+  dummy_ot.ui = (have_fn[3]) ? api_op_draw_cb : NULL;
 
   wm_optype_append_macro_ptr(BPY_api_op_macro_wrapper, (void *)&dummy_ot);
 
@@ -1761,38 +1761,38 @@ static ApiStruct *api_MacroOp_register(Main *main,
 
 static ApiStrut *api_op_refine(ApiPtr *ptr)
 {
-  wmOperator *op = (wmOp *)opr->data;
+  wmOp *op = (wmOp *)opr->data;
   return (op->type && op->type->api_ext.sapi) ? op->type->api_ext.sapi : &ApiOp;
 }
 
-static ApiStruct *api_MacroOp_refine(PointerRNA *opr)
+static ApiStruct *api_MacroOp_refine(ApiPtr *opr)
 {
-  wmOperator *op = (wmOperator *)opr->data;
-  return (op->type && op->type->rna_ext.srna) ? op->type->rna_ext.srna : &RNA_Macro;
+  wmOp *op = (wmOp *)opr->data;
+  return (op->type && op->type->api_ext.sapi) ? op->type->api_ext.sapi : &ApiMacro;
 }
 
 /* just to work around 'const char *' warning and to ensure this is a python op */
-static void rna_Operator_bl_idname_set(PointerRNA *ptr, const char *value)
+static void api_op_bl_idname_set(ApiPtr *ptr, const char *value)
 {
-  wmOperator *data = (wmOperator *)(ptr->data);
+  wmOp *data = (wmOp *)(ptr->data);
   char *str = (char *)data->type->idname;
   if (!str[0]) {
-    BLI_strncpy(str, value, OP_MAX_TYPENAME); /* utf8 already ensured */
+    lib_strncpy(str, value, OP_MAX_TYPENAME); /* utf8 already ensured */
   }
   else {
-    BLI_assert_msg(0, "setting the bl_idname on a non-builtin operator");
+    lib_assert_msg(0, "setting the bl_idname on a non-builtin op");
   }
 }
 
-static void rna_Operator_bl_label_set(PointerRNA *ptr, const char *value)
+static void api_op_bl_label_set(ApiPtr *ptr, const char *value)
 {
-  wmOperator *data = (wmOperator *)(ptr->data);
+  wmOp *data = (wmOp *)(ptr->data);
   char *str = (char *)data->type->name;
   if (!str[0]) {
-    BLI_strncpy(str, value, OP_MAX_TYPENAME); /* utf8 already ensured */
+    lib_strncpy(str, value, OP_MAX_TYPENAME); /* utf8 already ensured */
   }
   else {
-    BLI_assert_msg(0, "setting the bl_label on a non-builtin operator");
+    lib_assert_msg(0, "setting the bl_label on a non-builtin operator");
   }
 }
 
@@ -1801,160 +1801,160 @@ static void rna_Operator_bl_label_set(PointerRNA *ptr, const char *value)
  * so the internal value may be NULL, without allowing Python to assign `None` which doesn't
  * make any sense in this case.
  */
-#  define OPERATOR_STR_MAYBE_NULL_GETSET(attr, len) \
-    static void rna_Operator_bl_##attr##_set(PointerRNA *ptr, const char *value) \
+#  define OP_STR_MAYBE_NULL_GETSET(attr, len) \
+    static void rna_Operator_bl_##attr##_set(ApiPtr *ptr, const char *value) \
     { \
-      wmOperator *data = (wmOperator *)(ptr->data); \
+      wmOp *data = (wmOp *)(ptr->data); \
       char *str = (char *)data->type->attr; \
       if (str && !str[0]) { \
-        BLI_strncpy(str, value, len); /* utf8 already ensured */ \
+        lib_strncpy(str, value, len); /* utf8 already ensured */ \
       } \
       else { \
-        BLI_assert( \
-            !"setting the bl_" STRINGIFY(translation_context) " on a non-builtin operator"); \
+        lib_assert( \
+            !"setting the bl_" STRINGIFY(translation_ctx) " on a non-builtin operator"); \
       } \
     } \
-    static void rna_Operator_bl_##attr##_get(PointerRNA *ptr, char *value) \
+    static void api_op_bl_##attr##_get(ApiPtr *ptr, char *value) \
     { \
-      const wmOperator *data = (wmOperator *)(ptr->data); \
+      const wmOp *data = (wmOp *)(ptr->data); \
       const char *str = data->type->attr; \
       strcpy(value, str ? str : ""); \
     } \
-    static int rna_Operator_bl_##attr##_length(PointerRNA *ptr) \
+    static int api_op_bl_##attr##_length(ApiPtr *ptr) \
     { \
-      const wmOperator *data = (wmOperator *)(ptr->data); \
+      const wmOp *data = (ApiPtr *)(ptr->data); \
       const char *str = data->type->attr; \
       return str ? strlen(str) : 0; \
     }
 
-OPERATOR_STR_MAYBE_NULL_GETSET(translation_context, BKE_ST_MAXNAME)
-OPERATOR_STR_MAYBE_NULL_GETSET(description, RNA_DYN_DESCR_MAX)
-OPERATOR_STR_MAYBE_NULL_GETSET(undo_group, OP_MAX_TYPENAME)
+OP_STR_MAYBE_NULL_GETSET(translation_ctx, DUNE_ST_MAXNAME)
+OP_STR_MAYBE_NULL_GETSET(description, API_DYN_DESCR_MAX)
+OP_STR_MAYBE_NULL_GETSET(undo_group, OP_MAX_TYPENAME)
 
-static void rna_KeyMapItem_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_KeyMapItem_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
-  WM_keyconfig_update_tag(NULL, kmi);
+  wm_keyconfig_update_tag(NULL, kmi);
 }
 
-#else /* RNA_RUNTIME */
+#else /* API_RUNTIME */
 
 /**
- * expose `Operator.options` as its own type so we can control each flags use
+ * expose `Op.options` as its own type so we can control each flags use
  * (some are read-only).
  */
-static void rna_def_operator_options_runtime(BlenderRNA *brna)
+static void api_def_op_options_runtime(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "OperatorOptions", NULL);
-  RNA_def_struct_ui_text(srna, "Operator Options", "Runtime options");
-  RNA_def_struct_sdna(srna, "wmOperator");
+  sapi = api_def_struct(dapi, "OpOptions", NULL);
+  api_def_struct_ui_text(sapi, "Op Options", "Runtime options");
+  api_def_struct_stype(sapi, "wmOp");
 
-  prop = RNA_def_property(srna, "is_grab_cursor", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", OP_IS_MODAL_GRAB_CURSOR);
-  RNA_def_property_ui_text(prop, "Grab Cursor", "True when the cursor is grabbed");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "is_grab_cursor", PROP_BOOL, PROP_BOOL);
+  api_def_prop_bool_stypr(prop, NULL, "flag", OP_IS_MODAL_GRAB_CURSOR);
+  api_def_prop_ui_text(prop, "Grab Cursor", "True when the cursor is grabbed");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "is_invoke", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", OP_IS_INVOKE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_invoke", PROP_BOOL, PROP_BOOL);
+  api_def_prop_bool_stype(prop, NULL, "flag", OP_IS_INVOKE);
+  api_def_prop_ui_text(
       prop, "Invoke", "True when invoked (even if only the execute callbacks available)");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "is_repeat", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", OP_IS_REPEAT);
-  RNA_def_property_ui_text(prop, "Repeat", "True when run from the 'Adjust Last Operation' panel");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "is_repeat", PROP_BOOL, PROP_BOOL);
+  api_def_prop_bool_stype(prop, NULL, "flag", OP_IS_REPEAT);
+  api_def_prop_ui_text(prop, "Repeat", "True when run from the 'Adjust Last Operation' panel");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "is_repeat_last", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", OP_IS_REPEAT_LAST);
-  RNA_def_property_ui_text(prop, "Repeat Call", "True when run from the operator 'Repeat Last'");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  prop = api_def_prop(sapi, "is_repeat_last", PROP_BOOL, PROP_BOOL);
+  api_def_prop_bool_stype(prop, NULL, "flag", OP_IS_REPEAT_LAST);
+  api_def_prop_ui_text(prop, "Repeat Call", "True when run from the operator 'Repeat Last'");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "use_cursor_region", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", OP_IS_MODAL_CURSOR_REGION);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_cursor_region", PROP_BOOLEAN, PROP_BOOLEAN);
+  api_def_prop_bool_stype(prop, NULL, "flag", OP_IS_MODAL_CURSOR_REGION);
+  api_def_prop_ui_text(
       prop, "Focus Region", "Enable to use the region under the cursor for modal execution");
 }
 
-static void rna_def_operator_common(StructRNA *srna)
+static void api_def_op_common(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(prop, "rna_Operator_name_get", "rna_Operator_name_length", NULL);
-  RNA_def_property_ui_text(prop, "Name", "");
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_fns(prop, "api_op_name_get", "api_op_name_length", NULL);
+  api_def_prop_ui_text(prop, "Name", "");
 
-  prop = RNA_def_property(srna, "properties", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "OperatorProperties");
-  RNA_def_property_ui_text(prop, "Properties", "");
-  RNA_def_property_pointer_funcs(prop, "rna_Operator_properties_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "props", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "OpProps");
+  api_def_prop_ui_text(prop, "Props", "");
+  api_def_prop_ptr_fns(prop, "api_op_props_get", NULL, NULL, NULL);
 
-  prop = RNA_def_property(srna, "has_reports", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE); /* this is 'virtual' property */
-  RNA_def_property_boolean_funcs(prop, "rna_Operator_has_reports_get", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "has_reports", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE); /* this is 'virtual' property */
+  api_def_prop_bool_fns(prop, "api_Op_has_reports_get", NULL);
+  api_def_prop_ui_text(
       prop,
       "Has Reports",
       "Operator has a set of reports (warnings and errors) from last execution");
 
   /* Registration */
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->idname");
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->idname");
   /* String stored here is the 'BL' identifier (`OPMODULE_OT_my_op`),
    * not the 'python' identifier (`opmodule.my_op`). */
-  RNA_def_property_string_maxlength(prop, OP_MAX_TYPENAME);
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Operator_bl_idname_set");
+  api_def_prop_string_maxlength(prop, OP_MAX_TYPENAME);
+  api_def_prop_string_fns(prop, NULL, NULL, "api_op_bl_idname_set");
   // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_def_struct_name_property(srna, prop);
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->name");
-  RNA_def_property_string_maxlength(prop, OP_MAX_TYPENAME); /* else it uses the pointer size! */
-  RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Operator_bl_label_set");
+  prop = api_def_prop(sapi, "bl_label", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->name");
+  api_def_prop_string_maxlength(prop, OP_MAX_TYPENAME); /* else it uses the pointer size! */
+  api_def_prop_string_fns(prop, NULL, NULL, "api_op_bl_label_set");
   // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_REGISTER);
+  api_def_prop_flag(prop, PROP_REGISTER);
 
-  prop = RNA_def_property(srna, "bl_translation_context", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->translation_context");
-  RNA_def_property_string_maxlength(prop, BKE_ST_MAXNAME); /* else it uses the pointer size! */
-  RNA_def_property_string_funcs(prop,
-                                "rna_Operator_bl_translation_context_get",
-                                "rna_Operator_bl_translation_context_length",
-                                "rna_Operator_bl_translation_context_set");
-  RNA_def_property_string_default(prop, BLT_I18NCONTEXT_OPERATOR_DEFAULT);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+  prop = api_def_prop(sapi, "bl_translation_ctx", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->translation_ctx");
+  api_def_prop_string_maxlength(prop, DUNE_ST_MAXNAME); /* else it uses the pointer size! */
+  api_def_prop_string_fns(prop,
+                          "api_op_bl_translation_ctx_get",
+                          "api_op_bl_translation_ctx_length",
+                          "api_op_bl_translation_ctx_set");
+  api_def_prop_flag(prop, LANG_OP_DEFAULT);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
 
-  prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->description");
-  RNA_def_property_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
-  RNA_def_property_string_funcs(prop,
-                                "rna_Operator_bl_description_get",
-                                "rna_Operator_bl_description_length",
-                                "rna_Operator_bl_description_set");
-  // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+  prop = api_def_prop(sapi, "bl_description", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->description");
+  api_def_prop_string_maxlength(prop, API_DYN_DESCR_MAX); /* else it uses the pointer size! */
+  api_def_prop_string_fns(prop,
+                          "api_op_bl_description_get",
+                          "api_op_bl_description_length
+                          "api_op_bl_description_set");
+  // api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
 
-  prop = RNA_def_property(srna, "bl_undo_group", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->undo_group");
-  RNA_def_property_string_maxlength(prop, OP_MAX_TYPENAME); /* else it uses the pointer size! */
-  RNA_def_property_string_funcs(prop,
-                                "rna_Operator_bl_undo_group_get",
-                                "rna_Operator_bl_undo_group_length",
-                                "rna_Operator_bl_undo_group_set");
-  // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+  prop = api_def_prop(sapi, "bl_undo_group", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "type->undo_group");
+  api_def_prop_string_maxlength(prop, OP_MAX_TYPENAME); /* else it uses the pointer size! */
+  api_def_prop_string_fns(prop,
+                          "api_op_bl_undo_group_get",
+                          "api_op_bl_undo_group_length",
+                          "api_op_bl_undo_group_set");
+  // api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
 
-  prop = RNA_def_property(srna, "bl_options", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type->flag");
-  RNA_def_property_enum_items(prop, rna_enum_operator_type_flag_items);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL | PROP_ENUM_FLAG);
-  RNA_def_property_ui_text(prop, "Options", "Options for this operator type");
+  prop = api_def_prop(sapi, "bl_options", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type->flag");
+  api_def_prop_enum_items(prop, api_enum_operator_type_flag_items);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL | PROP_ENUM_FLAG);
+  api_def_prop_ui_text(prop, "Options", "Options for this operator type");
 
   prop = RNA_def_property(srna, "bl_cursor_pending", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "type->cursor_pending");
