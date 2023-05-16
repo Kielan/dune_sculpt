@@ -1491,8 +1491,8 @@ static ApiStruct *api_op_register(Main *main,
   struct {
     char idname[OP_MAX_TYPENAME];
     char name[OP_MAX_TYPENAME];
-    char description[RNA_DYN_DESCR_MAX];
-    char translation_context[BKE_ST_MAXNAME];
+    char description[API_DYN_DESCR_MAX];
+    char translation_ctx[DUNE_ST_MAXNAME];
     char undo_group[OP_MAX_TYPENAME];
   } temp_buffers;
 
@@ -1504,7 +1504,7 @@ static ApiStruct *api_op_register(Main *main,
   dummy_ot.translation_ctx =
       temp_buffers.translation_context;          /* only assign the pointer, string is NULL'd */
   dummy_ot.undo_group = temp_buffers.undo_group; /* only assign the pointer, string is NULL'd */
-  api_ptr_create(NULL, &ApiOp, &dummy_op, &dummy_operator_ptr);
+  api_ptr_create(NULL, &ApiOp, &dummy_op, &dummy_op_ptr);
 
   /* clear in case they are left unset */
   temp_buffers.idname[0] = temp_buffers.name[0] = temp_buffers.description[0] =
@@ -1527,7 +1527,7 @@ static ApiStruct *api_op_register(Main *main,
                     error_prefix,
                     id,
                     dummy_ot.idname,
-                    srna ? "is built-in" : "could not be unregistered");
+                    sapi ? "is built-in" : "could not be unregistered");
         return NULL;
       }
     }
@@ -1917,7 +1917,7 @@ static void api_def_op_common(ApiStruct *sapi)
   api_def_prop_string_stype(prop, NULL, "type->name");
   api_def_prop_string_maxlength(prop, OP_MAX_TYPENAME); /* else it uses the pointer size! */
   api_def_prop_string_fns(prop, NULL, NULL, "api_op_bl_label_set");
-  // RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  // api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_flag(prop, PROP_REGISTER);
 
   prop = api_def_prop(sapi, "bl_translation_ctx", PROP_STRING, PROP_NONE);
@@ -1956,43 +1956,43 @@ static void api_def_op_common(ApiStruct *sapi)
   api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL | PROP_ENUM_FLAG);
   api_def_prop_ui_text(prop, "Options", "Options for this operator type");
 
-  prop = RNA_def_property(srna, "bl_cursor_pending", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type->cursor_pending");
-  RNA_def_property_enum_items(prop, rna_enum_window_cursor_items);
-  RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "bl_cursor_pending", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type->cursor_pending");
+  api_def_prop_enum_items(prop, rna_enum_window_cursor_items);
+  api_def_prop_flag(prop, PROP_REGISTER_OPTIONAL);
+  api_def_prop_ui_text(
       prop,
       "Idle Cursor",
       "Cursor to use when waiting for the user to select a location to activate the operator "
       "(when ``bl_options`` has ``DEPENDS_ON_CURSOR`` set)");
 }
 
-static void rna_def_operator(BlenderRNA *brna)
+static void api_def_op(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Operator", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Operator", "Storage of an operator being executed, or registered after execution");
-  RNA_def_struct_sdna(srna, "wmOperator");
-  RNA_def_struct_refine_func(srna, "rna_Operator_refine");
+  sapi = api_def_struct(dapi, "Op", NULL);
+  api_def_struct_ui_text(
+      sapi, "Op", "Storage of an op being executed, or registered after execution");
+  api_def_struct_stype(sapi, "wmOp");
+  api_def_struct_refine_fn(sapi, "api_op_refine");
 #  ifdef WITH_PYTHON
-  RNA_def_struct_register_funcs(
-      srna, "rna_Operator_register", "rna_Operator_unregister", "rna_Operator_instance");
+  api_def_struct_register_fns(
+      sapi, "api_op_register", "api_op_unregister", "api_op_instance");
 #  endif
-  RNA_def_struct_translation_context(srna, BLT_I18NCONTEXT_OPERATOR_DEFAULT);
-  RNA_def_struct_flag(srna, STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  api_def_struct_translation_ctx(sapi, LANG_OP_DEFAULT);
+  api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
-  rna_def_operator_common(srna);
+  api_def_op_common(dapi);
 
-  prop = RNA_def_property(srna, "layout", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "UILayout");
+  prop = api_def_prop(sapi, "layout", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "UILayout");
 
-  prop = RNA_def_property(srna, "options", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "OperatorOptions");
-  RNA_def_property_pointer_funcs(prop, "rna_Operator_options_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "options", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  RNA_def_property_struct_type(prop, "OpOptions");
+  RNA_def_property_pointer_funcs(prop, "api_op_options_get", NULL, NULL, NULL);
   RNA_def_property_ui_text(prop, "Options", "Runtime options");
 
   prop = RNA_def_property(srna, "macros", PROP_COLLECTION, PROP_NONE);
