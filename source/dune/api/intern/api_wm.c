@@ -1150,7 +1150,7 @@ static ApiStruct *api_wmKeyConfigPref_register(Main *main,
   }
 
   STRNCPY(dummy_kpt_rt.idname, dummy_kpt.idname);
-  if (strlen(identifier) >= sizeof(dummy_kpt_rt.idname)) {
+  if (strlen(id) >= sizeof(dummy_kpt_rt.idname)) {
     dune_reportf(reports,
                 RPT_ERROR,
                 "%s '%s' is too long, maximum length is %d",
@@ -1163,7 +1163,7 @@ static ApiStruct *api_wmKeyConfigPref_register(Main *main,
   /* check if we have registered this keyconf-prefs type before, and remove it */
   kpt_rt = dune_keyconfig_pref_type_find(dummy_kpt.idname, true);
   if (kpt_rt) {
-    ApiStruct *sapi = kpt_rt->rna_ext.srna;
+    ApiStruct *sapi = kpt_rt->api_ext.srna;
     if (!(sapi && api_wmKeyConfigPref_unregister(main, sapi))) {
       dune_reportf(reports,
                   RPT_ERROR,
@@ -1171,7 +1171,7 @@ static ApiStruct *api_wmKeyConfigPref_register(Main *main,
                   error_prefix,
                   id,
                   dummy_kpt.idname,
-                  srna ? "is built-in" : "could not be unregistered");
+                  sapi ? "is built-in" : "could not be unregistered");
       return NULL;
     }
   }
@@ -1566,7 +1566,7 @@ static ApiStruct *api_op_register(Main *main,
     dummy_ot.idname = strings_table[0]; /* allocated string stored here */
     dummy_ot.name = strings_table[1];
     dummy_ot.description = *strings_table[2] ? strings_table[2] : NULL;
-    dummy_ot.translation_context = strings_table[3];
+    dummy_ot.translation_ctx = strings_table[3];
     dummy_ot.undo_group = strings_table[4];
     lib_assert(ARRAY_SIZE(strings) == 5);
   }
@@ -2011,80 +2011,80 @@ static void api_def_op(DuneApi *dapi)
   api_def_struct_clear_flag(sapi, STRUCT_UNDO);
 }
 
-static void rna_def_macro_operator(BlenderRNA *brna)
+static void api_def_macro_op(DuneApi *dapi)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  srna = RNA_def_struct(brna, "Macro", NULL);
-  RNA_def_struct_ui_text(
-      srna,
-      "Macro Operator",
+  sapi = api_def_struct(dapi, "Macro", NULL);
+  api_def_struct_ui_text(
+      sapi,
+      "Macro Op",
       "Storage of a macro operator being executed, or registered after execution");
-  RNA_def_struct_sdna(srna, "wmOperator");
-  RNA_def_struct_refine_func(srna, "rna_MacroOperator_refine");
+  api_def_struct_stype(sapi, "wmOp");
+  api_def_struct_refine_fn(sapi, "api_MacroOp_refine");
 #  ifdef WITH_PYTHON
-  RNA_def_struct_register_funcs(
-      srna, "rna_MacroOperator_register", "rna_Operator_unregister", "rna_Operator_instance");
+  api_def_struct_register_fns(
+      sapi, "api_MacroOp_register", "api_op_unregister", "api_op_instance");
 #  endif
-  RNA_def_struct_translation_context(srna, BLT_I18NCONTEXT_OPERATOR_DEFAULT);
-  RNA_def_struct_flag(srna, STRUCT_PUBLIC_NAMESPACE_INHERIT);
+  api_def_struct_translation_context(sapi, LANG_OP_DEFAULT);
+  api_def_struct_flag(sapi, STRUCT_PUBLIC_NAMESPACE_INHERIT);
 
-  rna_def_operator_common(srna);
+  api_def_op_common(sapi);
 
   RNA_api_macro(srna);
 }
 
-static void rna_def_operator_type_macro(BlenderRNA *brna)
+static void api_def_op_type_macro(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "OperatorMacro", NULL);
-  RNA_def_struct_ui_text(
-      srna, "Operator Macro", "Storage of a sub operator in a macro after it has been added");
-  RNA_def_struct_sdna(srna, "wmOperatorTypeMacro");
+  srna = api_def_struct(dapi, "OpMacro", NULL);
+  api_def_struct_ui_text(
+      sapi, "Operator Macro", "Storage of a sub operator in a macro after it has been added");
+  api_def_struct_stype(sapi, "wmOperatorTypeMacro");
 
 #  if 0
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_sdna(prop, NULL, "idname");
-  RNA_def_property_ui_text(prop, "Name", "Name of the sub operator");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_stype(prop, NULL, "idname");
+  api_def_prop_ui_text(prop, "Name", "Name of the sub operator");
+  api_def_struct_name_prop(sapi, prop);
 #  endif
 
-  prop = RNA_def_property(srna, "properties", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "OperatorProperties");
-  RNA_def_property_ui_text(prop, "Properties", "");
-  RNA_def_property_pointer_funcs(prop, "rna_OperatorMacro_properties_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "props", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "OpProps");
+  api_def_prop_ui_text(prop, "Props", "");
+  api_def_prop_ptr_fns(prop, "api_OpMacro_props_get", NULL, NULL, NULL);
 }
 
-static void rna_def_operator_utils(BlenderRNA *brna)
+static void api_def_op_utils(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "OperatorMousePath", "PropertyGroup");
-  RNA_def_struct_ui_text(
-      srna, "Operator Mouse Path", "Mouse path values for operators that record such paths");
+  srna = api_def_struct(dapi, "OperatorMousePath", "PropertyGroup");
+  api_def_struct_ui_text(
+      sapi, "Op Mouse Path", "Mouse path values for operators that record such paths");
 
-  prop = RNA_def_property(srna, "loc", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_flag(prop, PROP_IDPROPERTY);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Location", "Mouse location");
+  prop = api_def_prop(sapi, "loc", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_flag(prop, PROP_IDPROPERTY);
+  api_def_prop_array(prop, 2);
+  api_def_prop_ui_text(prop, "Location", "Mouse location");
 
-  prop = RNA_def_property(srna, "time", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_IDPROPERTY);
-  RNA_def_property_ui_text(prop, "Time", "Time of mouse location");
+  prop = api_def_prop(sapi, "time", PROP_FLOAT, PROP_NONE);
+  api_def_prop_flag(prop, PROP_IDPROPERTY);
+  api_def_prop_ui_text(prop, "Time", "Time of mouse location");
 }
 
-static void rna_def_operator_filelist_element(BlenderRNA *brna)
+static void api_def_op_filelist_element(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "OperatorFileListElement", "PropertyGroup");
-  RNA_def_struct_ui_text(srna, "Operator File List Element", "");
+  sapi = api_def_struct(dapi, "OpFileListElement", "PropertyGroup");
+  api_def_struct_ui_text(sapi, "Op File List Element", "");
 
   prop = RNA_def_property(srna, "name", PROP_STRING, PROP_FILENAME);
   RNA_def_property_flag(prop, PROP_IDPROPERTY);
