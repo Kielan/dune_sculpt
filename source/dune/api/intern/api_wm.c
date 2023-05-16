@@ -2482,77 +2482,77 @@ static void rna_def_wm_keyconfigs(BlenderRNA *brna, PropertyRNA *cprop)
       "Key configuration that can be extended by add-ons, and is added to the active "
       "configuration when handling events");
 
-  prop = RNA_def_property(srna, "user", PROP_POINTER, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "userconf");
-  RNA_def_property_struct_type(prop, "KeyConfig");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "user", PROP_PTR, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "userconf");
+  api_def_prop_struct_type(prop, "KeyConfig");
+  api_def_prop_ui_text(
       prop,
       "User Key Configuration",
       "Final key configuration that combines keymaps from the active and add-on configurations, "
       "and can be edited by the user");
 
-  RNA_api_keyconfigs(srna);
+  api_keyconfigs(sapi);
 }
 
-static void rna_def_windowmanager(BlenderRNA *brna)
+static void api_def_windowmanager(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "WindowManager", "ID");
-  RNA_def_struct_ui_text(
-      srna,
+  sapi = api_def_struct(dapi, "WindowManager", "ID");
+  api_def_struct_ui_text(
+      sapi,
       "Window Manager",
       "Window manager data-block defining open windows and other user interface data");
-  RNA_def_struct_clear_flag(srna, STRUCT_ID_REFCOUNT);
-  RNA_def_struct_sdna(srna, "wmWindowManager");
+  api_def_struct_clear_flag(sapi, STRUCT_ID_REFCOUNT);
+  api_def_struct_stype(sapi, "wmWindowManager");
 
-  prop = RNA_def_property(srna, "operators", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Operator");
-  RNA_def_property_ui_text(prop, "Operators", "Operator registry");
+  prop = api_def_prop(sapi, "operators", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Operator");
+  api_def_prop_ui_text(prop, "Operators", "Operator registry");
 
-  prop = RNA_def_property(srna, "windows", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Window");
-  RNA_def_property_ui_text(prop, "Windows", "Open windows");
+  prop = api_def_prop(sapi, "windows", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "Window");
+  api_def_prop_ui_text(prop, "Windows", "Open windows");
 
-  prop = RNA_def_property(srna, "keyconfigs", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "KeyConfig");
-  RNA_def_property_ui_text(prop, "Key Configurations", "Registered key configurations");
-  rna_def_wm_keyconfigs(brna, prop);
+  prop = api_def_prop(sapi, "keyconfigs", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "KeyConfig");
+  api_def_prop_ui_text(prop, "Key Configurations", "Registered key configurations");
+  api_def_wm_keyconfigs(dapi, prop);
 
-  prop = RNA_def_property(srna, "xr_session_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "xr.session_settings");
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "XR Session Settings", "");
+  prop = api_def_prop(sapi, "xr_session_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_sapi(prop, NULL, "xr.session_settings");
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "XR Session Settings", "");
 
-  prop = RNA_def_property(srna, "xr_session_state", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "XrSessionState");
-  RNA_def_property_pointer_funcs(prop, "rna_WindowManager_xr_session_state_get", NULL, NULL, NULL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "xr_session_state", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "XrSessionState");
+  api_def_prop_ptr_fns(prop, "rna_WindowManager_xr_session_state_get", NULL, NULL, NULL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "XR Session State", "Runtime state information about the VR session");
 
-  RNA_api_wm(srna);
+  api_api_wm(sapi);
 }
 
 /* keyconfig.items */
-static void rna_def_keymap_items(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_keymap_items(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  RNA_def_property_srna(cprop, "KeyMapItems");
-  srna = RNA_def_struct(brna, "KeyMapItems", NULL);
-  RNA_def_struct_sdna(srna, "wmKeyMap");
-  RNA_def_struct_ui_text(srna, "KeyMap Items", "Collection of keymap items");
+  api_def_prop_sapi(cprop, "KeyMapItems");
+  sapi = api_def_struct(sapi, "KeyMapItems", NULL);
+  api_def_struct_stype(sapi, "wmKeyMap");
+  api_def_struct_ui_text(sapi, "KeyMap Items", "Collection of keymap items");
 
-  RNA_api_keymapitems(srna);
+  api_api_keymapitems(sapi);
 }
 
-static void rna_def_wm_keymaps(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_wm_keymaps(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  RNA_def_property_srna(cprop, "KeyMaps");
+  api_def_prop_sapi(cprop, "KeyMaps");
   srna = RNA_def_struct(brna, "KeyMaps", NULL);
   RNA_def_struct_sdna(srna, "wmKeyConfig");
   RNA_def_struct_ui_text(srna, "Key Maps", "Collection of keymaps");
@@ -2583,12 +2583,12 @@ static void rna_def_keyconfig_prefs(BlenderRNA *brna)
   RNA_define_verify_sdna(1);
 }
 
-static void rna_def_keyconfig(BlenderRNA *brna)
+static void api_def_keyconfig(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem map_type_items[] = {
+  static const EnumPropItem map_type_items[] = {
       {KMI_TYPE_KEYBOARD, "KEYBOARD", 0, "Keyboard", ""},
       {KMI_TYPE_MOUSE, "MOUSE", 0, "Mouse", ""},
       {KMI_TYPE_NDOF, "NDOF", 0, "NDOF", ""},
@@ -2598,64 +2598,64 @@ static void rna_def_keyconfig(BlenderRNA *brna)
   };
 
   /* KeyConfig */
-  srna = RNA_def_struct(brna, "KeyConfig", NULL);
-  RNA_def_struct_sdna(srna, "wmKeyConfig");
-  RNA_def_struct_ui_text(srna, "Key Configuration", "Input configuration, including keymaps");
+  sapi = api_def_struct(dapi, "KeyConfig", NULL);
+  api_def_struct_sdna(sapi, "wmKeyConfig");
+  api_def_struct_ui_text(sapi, "Key Configuration", "Input configuration, including keymaps");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "idname");
-  RNA_def_property_ui_text(prop, "Name", "Name of the key configuration");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "idname");
+  api_def_prop_ui_text(prop, "Name", "Name of the key configuration");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "keymaps", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "KeyMap");
-  RNA_def_property_ui_text(prop, "Key Maps", "Key maps configured as part of this configuration");
-  rna_def_wm_keymaps(brna, prop);
+  prop = api_def_prop(sapi, "keymaps", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "KeyMap");
+  api_def_prop_ui_text(prop, "Key Maps", "Key maps configured as part of this configuration");
+  api_def_wm_keymaps(dapi, prop);
 
-  prop = RNA_def_property(srna, "is_user_defined", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", KEYCONF_USER);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_user_defined", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", KEYCONF_USER);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "User Defined", "Indicates that a keyconfig was defined by the user");
 
   /* Collection active property */
-  prop = RNA_def_property(srna, "preferences", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "KeyConfigPreferences");
-  RNA_def_property_pointer_funcs(prop, "rna_wmKeyConfig_preferences_get", NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "prefs", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "KeyConfigPrefs");
+  api_def_prop_ptr_fns(prop, "api_wmKeyConfig_prefs_get", NULL, NULL, NULL);
 
-  RNA_api_keyconfig(srna);
+  api_api_keyconfig(sapi);
 
   /* KeyMap */
-  srna = RNA_def_struct(brna, "KeyMap", NULL);
-  RNA_def_struct_sdna(srna, "wmKeyMap");
-  RNA_def_struct_ui_text(srna, "Key Map", "Input configuration, including keymaps");
+  sapi = api_def_struct(dapi, "KeyMap", NULL);
+  api_def_struct_stype(sapi, "wmKeyMap");
+  api_def_struct_ui_text(sapi, "Key Map", "Input configuration, including keymaps");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "idname");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Name", "Name of the key map");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "idname");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Name", "Name of the key map");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "bl_owner_id", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "owner_id");
-  RNA_def_property_ui_text(prop, "Owner", "Internal owner");
+  prop = api_def_prop(sapi, "bl_owner_id", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "owner_id");
+  api_def_prop_ui_text(prop, "Owner", "Internal owner");
 
-  prop = RNA_def_property(srna, "space_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "spaceid");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_items(prop, rna_enum_space_type_items);
-  RNA_def_property_ui_text(prop, "Space Type", "Optional space type keymap is associated with");
+  prop = api_def_prop(sapi, "space_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "spaceid");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_items(prop, rna_enum_space_type_items);
+  api_def_prop_ui_text(prop, "Space Type", "Optional space type keymap is associated with");
 
-  prop = RNA_def_property(srna, "region_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "regionid");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_items(prop, rna_enum_region_type_items);
-  RNA_def_property_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
+  prop = api_def_prop(sapi, "region_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "regionid");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_items(prop, api_enum_region_type_items);
+  RNA_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
 
-  prop = RNA_def_property(srna, "keymap_items", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "items", NULL);
-  RNA_def_property_struct_type(prop, "KeyMapItem");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(srna, "keymap_items", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_sdna(prop, NULL, "items", NULL);
+  api_def_prop_struct_type(prop, "KeyMapItem");
+  api_def_prop_ui_text(
       prop, "Items", "Items in the keymap, linking an operator to an input event");
   rna_def_keymap_items(brna, prop);
 
