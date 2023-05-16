@@ -32,16 +32,16 @@ static const EnumPropItem event_mouse_type_items[] = {
     {BUTTON5MOUSE, "BUTTON5MOUSE", 0, "Button5", ""},
     {BUTTON6MOUSE, "BUTTON6MOUSE", 0, "Button6", ""},
     {BUTTON7MOUSE, "BUTTON7MOUSE", 0, "Button7", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {TABLET_STYLUS, "PEN", 0, "Pen", ""},
     {TABLET_ERASER, "ERASER", 0, "Eraser", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {MOUSEMOVE, "MOUSEMOVE", 0, "Move", ""},
     {MOUSEPAN, "TRACKPADPAN", 0, "Mouse/Trackpad Pan", ""},
     {MOUSEZOOM, "TRACKPADZOOM", 0, "Mouse/Trackpad Zoom", ""},
     {MOUSEROTATE, "MOUSEROTATE", 0, "Mouse/Trackpad Rotate", ""},
     {MOUSESMARTZOOM, "MOUSESMARTZOOM", 0, "Mouse/Trackpad Smart Zoom", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {WHEELUPMOUSE, "WHEELUPMOUSE", 0, "Wheel Up", ""},
     {WHEELDOWNMOUSE, "WHEELDOWNMOUSE", 0, "Wheel Down", ""},
     {WHEELINMOUSE, "WHEELINMOUSE", 0, "Wheel In", ""},
@@ -1182,7 +1182,7 @@ static ApiStruct *api_wmKeyConfigPref_register(Main *main,
 
   dune_keyconfig_pref_type_add(kpt_rt);
 
-  kpt_rt->api_ext.srna = api_def_struct_ptr(&DUNE_API, id, &APIKeyConfigPrefs);
+  kpt_rt->api_ext.sapi = api_def_struct_ptr(&DUNE_API, id, &APIKeyConfigPrefs);
   kpt_rt->api_ext.data = data;
   kpt_rt->api_ext.call = call;
   kpt_rt->api_ext.free = free;
@@ -2031,7 +2031,7 @@ static void api_def_macro_op(DuneApi *dapi)
 
   api_def_op_common(sapi);
 
-  RNA_api_macro(srna);
+  api_api_macro(sapi);
 }
 
 static void api_def_op_type_macro(DuneApi *dapi)
@@ -2650,7 +2650,8 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_enum_stype(prop, NULL, "regionid");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_enum_items(prop, api_enum_region_type_items);
-  api_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
+
+    api_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
 
   prop = api_def_prop(sapi, "keymap_items", PROP_COLLECTION, PROP_NONE);
   api_def_prop_collection_stype(prop, NULL, "items", NULL);
@@ -2672,19 +2673,19 @@ static void api_def_keyconfig(DuneApi *dapi)
       "Indicates that a keymap is used for translate modal events for an operator");
 
   prop = api_def_prop(sapi, "show_expanded_items", PROP_BOOLEAN, PROP_NONE);
-  api_def_prop_boolean_sdna(prop, NULL, "flag", KEYMAP_EXPANDED);
+  api_def_prop_bool_stype(prop, NULL, "flag", KEYMAP_EXPANDED);
   api_def_prop_ui_text(prop, "Items Expanded", "Expanded in the user interface");
   api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
 
-  prop = api_def_prop(sapi, "show_expanded_children", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "show_expanded_children", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", KEYMAP_CHILDREN_EXPANDED);
-  RNA_def_prop_ui_text(prop, "Children Expanded", "Children expanded in the user interface");
-  RNA_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+  api_def_prop_ui_text(prop, "Children Expanded", "Children expanded in the user interface");
+  api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
 
-  prop = RNA_def_property(srna, "modal_event_values", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_struct_type(prop, "EnumPropertyItem");
-  RNA_def_property_collection_funcs(prop,
+  prop = api_def_prop(sapi, "modal_event_values", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_struct_type(prop, "EnumPropertyItem");
+  api_def_prop_collection_funcs(prop,
                                     "rna_KeyMap_modal_event_values_items_begin",
                                     "rna_iterator_array_next",
                                     "rna_iterator_array_end",
@@ -2693,100 +2694,100 @@ static void api_def_keyconfig(DuneApi *dapi)
                                     NULL,
                                     NULL,
                                     NULL);
-  RNA_def_property_ui_text(prop,
-                           "Modal Events",
-                           "Give access to the possible event values of this modal keymap's items "
-                           "(#KeyMapItem.propvalue), for API introspection");
+  api_def_prop_ui_text(prop,
+                       "Modal Events",
+                       "Give access to the possible event values of this modal keymap's items "
+                       "(#KeyMapItem.propvalue), for API introspection");
 
-  RNA_api_keymap(srna);
+  api_api_keymap(sapi);
 
   /* KeyMapItem */
-  srna = RNA_def_struct(brna, "KeyMapItem", NULL);
-  RNA_def_struct_sdna(srna, "wmKeyMapItem");
-  RNA_def_struct_ui_text(srna, "Key Map Item", "Item in a Key Map");
+  sapi = api_def_struct(dapi, "KeyMapItem", NULL);
+  api_def_struct_stype(sapi, "wmKeyMapItem");
+  api_def_struct_ui_text(sapi, "Key Map Item", "Item in a Key Map");
 
-  prop = RNA_def_property(srna, "idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "idname");
-  RNA_def_property_ui_text(prop, "Identifier", "Identifier of operator to call on input event");
-  RNA_def_property_string_funcs(prop,
-                                "rna_wmKeyMapItem_idname_get",
-                                "rna_wmKeyMapItem_idname_length",
-                                "rna_wmKeyMapItem_idname_set");
-  RNA_def_property_string_search_func(prop,
-                                      "WM_operatortype_idname_visit_for_search",
-                                      PROP_STRING_SEARCH_SORT | PROP_STRING_SEARCH_SUGGESTION);
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "idname");
+  api_def_prop_ui_text(prop, "Identifier", "Identifier of operator to call on input event");
+  api_def_prop_string_fns(prop,
+                          "api_wmKeyMapItem_idname_get",
+                          "api_wmKeyMapItem_idname_length",
+                          "api_wmKeyMapItem_idname_set");
+  api_def_prop_string_search_fn(prop,
+                               "WM_operatortype_idname_visit_for_search",
+                                PROP_STRING_SEARCH_SORT | PROP_STRING_SEARCH_SUGGESTION);
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
 
   /* this is in fact the operator name, but if the operator can't be found we
    * fallback on the operator ID */
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Name", "Name of operator (translated) to call on input event");
-  RNA_def_property_string_funcs(
-      prop, "rna_wmKeyMapItem_name_get", "rna_wmKeyMapItem_name_length", NULL);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Name", "Name of op (translated) to call on input event");
+  api_def_prop_string_fns(
+      prop, "api_wmKeyMapItem_name_get", "api_wmKeyMapItem_name_length", NULL);
 
-  prop = RNA_def_property(srna, "properties", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "OperatorProperties");
-  RNA_def_property_pointer_funcs(prop, "rna_KeyMapItem_properties_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Properties", "Properties to set when the operator is called");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "props", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "OpProps");
+  api_def_prop_ptr_fns(prop, "api_KeyMapItem_properties_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Properties", "Properties to set when the operator is called");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "map_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "maptype");
-  RNA_def_property_enum_items(prop, map_type_items);
-  RNA_def_property_enum_funcs(
-      prop, "rna_wmKeyMapItem_map_type_get", "rna_wmKeyMapItem_map_type_set", NULL);
-  RNA_def_property_ui_text(prop, "Map Type", "Type of event mapping");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "map_type", PROP_ENUM, PROP_NONE)(
+  api_def_prop_enum_stype(prop, NULL, "maptype");
+  api_def_prop_enum_items(prop, map_type_items);
+  api_def_prop_enum_fns(
+      prop, "api_wmKeyMapItem_map_type_get", "rna_wmKeyMapItem_map_type_set", NULL);
+  api_def_prop_ui_text(prop, "Map Type", "Type of event mapping");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_event_type_items);
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_UI_EVENTS);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_KeyMapItem_type_itemf");
-  RNA_def_property_ui_text(prop, "Type", "Type of event");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_event_type_items);
+  api_def_prop_translation_ctx(prop, LANG_CTX_UI_EVENTS);
+  api_def_prop_enum_fns(prop, NULL, NULL, "rna_KeyMapItem_type_itemf");
+  api_def_prop_ui_text(prop, "Type", "Type of event");
+  api_def_property_update(prop, 0, "rna_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "value", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "val");
-  RNA_def_property_enum_items(prop, rna_enum_event_value_items);
-  RNA_def_property_ui_text(prop, "Value", "");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "value", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "val");
+  api_def_prop_enum_items(prop, api_enum_event_value_items);
+  api_def_prop_ui_text(prop, "Value", "");
+  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "direction", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "direction");
-  RNA_def_property_enum_items(prop, rna_enum_event_direction_items);
-  RNA_def_property_ui_text(prop, "Direction", "The direction (only applies to drag events)");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "direction", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "direction");
+  api_def_prop_enum_items(prop, api_enum_event_direction_items);
+  api_def_prop_ui_text(prop, "Direction", "The direction (only applies to drag events)");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "id", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "id");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "ID", "ID of the item");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "id", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "id");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "ID", "ID of the item");
+  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "any", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_funcs(prop, "rna_KeyMapItem_any_get", "rna_KeyMapItem_any_set");
-  RNA_def_property_ui_text(prop, "Any", "Any modifier keys pressed");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "any", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_fns(prop, "rna_KeyMapItem_any_get", "rna_KeyMapItem_any_set");
+  api_def_prop_ui_text(prop, "Any", "Any modifier keys pressed");
+  api_def_prop_update(prop, 0, "api_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "shift", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "shift");
-  RNA_def_property_range(prop, KM_ANY, KM_MOD_HELD);
-  RNA_def_property_ui_text(prop, "Shift", "Shift key pressed, -1 for any state");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_WINDOWMANAGER);
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "shift", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "shift");
+  api_def_prop_range(prop, KM_ANY, KM_MOD_HELD);
+  api_def_prop_ui_text(prop, "Shift", "Shift key pressed, -1 for any state");
+  api_def_prop_translation_context(prop, LANG_CTX_ID_WINDOWMANAGER);
+  api_def_prop_update(prop, 0, "rna_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "ctrl", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "ctrl");
-  RNA_def_property_range(prop, KM_ANY, KM_MOD_HELD);
-  RNA_def_property_ui_text(prop, "Ctrl", "Control key pressed, -1 for any state");
-  RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
+  prop = api_def_prop(sapi, "ctrl", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "ctrl");
+  api_def_prop_range(prop, KM_ANY, KM_MOD_HELD);
+  api_def_prop_ui_text(prop, "Ctrl", "Control key pressed, -1 for any state");
+  update_def_prop_update(prop, 0, "rna_KeyMapItem_update");
 
-  prop = RNA_def_property(srna, "alt", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "alt");
-  RNA_def_property_range(prop, KM_ANY, KM_MOD_HELD);
+  prop = api_def_prop(sapi, "alt", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "alt");
+  api_def_prop_range(prop, KM_ANY, KM_MOD_HELD);
   RNA_def_property_ui_text(prop, "Alt", "Alt key pressed, -1 for any state");
   RNA_def_property_update(prop, 0, "rna_KeyMapItem_update");
 
