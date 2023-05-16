@@ -2308,103 +2308,103 @@ static void api_def_popup_menu_wrapper(DuneApi *dapi,
 
   sapi = api_def_struct(dapi, api_type, NULL);
   /* UI name isn't visible, name same as type. */
-  RNA_def_struct_ui_text(sapi, api_type, "");
-  RNA_def_struct_sdna(sapi, c_type);
+  api_def_struct_ui_text(sapi, api_type, "");
+  api_def_struct_stype(sapi, c_type);
 
-  RNA_define_verify_sdna(0); /* not in sdna */
+  api_define_verify_stype(0); /* not in sdna */
 
   /* could wrap more, for now this is enough */
-  prop = RNA_def_property(srna, "layout", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "UILayout");
-  RNA_def_property_pointer_funcs(prop, layout_get_fn, NULL, NULL, NULL);
+  prop = api_def_prop(sapi, "layout", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "UILayout");
+  api_def_prop_ptr_fns(prop, layout_get_fn, NULL, NULL, NULL);
 
-  RNA_define_verify_sdna(1); /* not in sdna */
+  api_define_verify_sdna(1); /* not in sdna */
 }
 
-static void rna_def_popupmenu(BlenderRNA *brna)
+static void soi_def_popupmenu(DuneApi *dapi)
 {
-  rna_def_popup_menu_wrapper(brna, "UIPopupMenu", "uiPopupMenu", "rna_PopupMenu_layout_get");
+  api_def_popup_menu_wrapper(dapi, "UIPopupMenu", "uiPopupMenu", "rna_PopupMenu_layout_get");
 }
 
-static void rna_def_popovermenu(BlenderRNA *brna)
+static void api_def_popovermenu(DuneApi *dapi)
 {
-  rna_def_popup_menu_wrapper(brna, "UIPopover", "uiPopover", "rna_PopoverMenu_layout_get");
+  api_def_popup_menu_wrapper(dapi, "UIPopover", "uiPopover", "rna_PopoverMenu_layout_get");
 }
 
-static void rna_def_piemenu(BlenderRNA *brna)
+static void api_def_piemenu(DuneApi *dapi)
 {
-  rna_def_popup_menu_wrapper(brna, "UIPieMenu", "uiPieMenu", "rna_PieMenu_layout_get");
+  api_def_popup_menu_wrapper(dapi, "UIPieMenu", "uiPieMenu", "rna_PieMenu_layout_get");
 }
 
-static void rna_def_window_stereo3d(BlenderRNA *brna)
+static void api_def_window_stereo3d(DuneApi dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Stereo3dDisplay", NULL);
-  RNA_def_struct_sdna(srna, "Stereo3dFormat");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Stereo 3D Display", "Settings for stereo 3D display");
+  srna = api_def_struct(dapi, "Stereo3dDisplay", NULL);
+  api_def_struct_stupe(sapi, "Stereo3dFormat");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Stereo 3D Display", "Settings for stereo 3D display");
 
-  prop = RNA_def_property(srna, "display_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_stereo3d_display_items);
-  RNA_def_property_ui_text(prop, "Display Mode", "");
+  prop = api_def_prop(sapi, "display_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_stereo3d_display_items);
+  api_def_prop_ui_text(prop, "Display Mode", "");
 
-  prop = RNA_def_property(srna, "anaglyph_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_stereo3d_anaglyph_type_items);
-  RNA_def_property_ui_text(prop, "Anaglyph Type", "");
+  prop = api_def_prop(sapi, "anaglyph_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_stereo3d_anaglyph_type_items);
+  api_def_prop_ui_text(prop, "Anaglyph Type", "");
 
-  prop = RNA_def_property(srna, "interlace_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_stereo3d_interlace_type_items);
-  RNA_def_property_ui_text(prop, "Interlace Type", "");
+  prop = api_def_prop(sapi, "interlace_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_stereo3d_interlace_type_items);
+  api_def_prop_ui_text(prop, "Interlace Type", "");
 
-  prop = RNA_def_property(srna, "use_interlace_swap", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", S3D_INTERLACE_SWAP);
-  RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
+  prop = api_def_prop(sapi, "use_interlace_swap", PROP_BOOLEAN, PROP_BOOL);
+  api_def_prop_bool_stype(prop, NULL, "flag", S3D_INTERLACE_SWAP);
+  api_def_prop_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
 
-  prop = RNA_def_property(srna, "use_sidebyside_crosseyed", PROP_BOOLEAN, PROP_BOOLEAN);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", S3D_SIDEBYSIDE_CROSSEYED);
-  RNA_def_property_ui_text(prop, "Cross-Eyed", "Right eye should see left image and vice versa");
+  prop = api_def_prop(sapi, "use_sidebyside_crosseyed", PROP_BOOL, PROP_BOOL);
+  api_def_prop_bool_stype(prop, NULL, "flag", S3D_SIDEBYSIDE_CROSSEYED);
+  api_def_prop_ui_text(prop, "Cross-Eyed", "Right eye should see left image and vice versa");
 }
 
-static void rna_def_window(BlenderRNA *brna)
+static void api_def_window(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Window", NULL);
-  RNA_def_struct_ui_text(srna, "Window", "Open window");
-  RNA_def_struct_sdna(srna, "wmWindow");
+  sapi = api_def_struct(dapi, "Window", NULL);
+  api_def_struct_ui_text(sapi, "Window", "Open window");
+  api_def_struct_stype(sapi, "wmWindow");
 
-  prop = RNA_def_property(srna, "parent", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Parent Window", "Active workspace and scene follow this window");
+  prop = api_def_prop(sapi, "parent", PROP_PTR, PROP_NONE);
+  api_def_prop_ui_text(prop, "Parent Window", "Active workspace and scene follow this window");
 
-  rna_def_window_stereo3d(brna);
+  api_def_window_stereo3d(brna);
 
-  prop = RNA_def_property(srna, "scene", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
-  RNA_def_property_pointer_funcs(prop, NULL, "rna_Window_scene_set", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Scene", "Active scene to be edited in the window");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_Window_scene_update");
+  prop = api_def_prop(sapi, "scene", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
+  api_def_prop_ptr_fns(prop, NULL, "rna_Window_scene_set", NULL, NULL);
+  api_def_prop_ui_text(prop, "Scene", "Active scene to be edited in the window");
+  api_def_prop_flag(prop, PROP_CTX_UPDATE);
+  api_def_prop_update(prop, 0, "api_Window_scene_update");
 
-  prop = RNA_def_property(srna, "workspace", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "WorkSpace");
-  RNA_def_property_ui_text(prop, "Workspace", "Active workspace showing in the window");
-  RNA_def_property_pointer_funcs(
+  prop = api_def_prop(sapi, "workspace", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "WorkSpace");
+  api_def_prop_ui_text(prop, "Workspace", "Active workspace showing in the window");
+  api_def_prop_ptr_fns(
       prop, "rna_Window_workspace_get", "rna_Window_workspace_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_Window_workspace_update");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
+  api_def_prop_update(prop, 0, "rna_Window_workspace_update");
 
-  prop = RNA_def_property(srna, "screen", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Screen");
-  RNA_def_property_ui_text(prop, "Screen", "Active workspace screen showing in the window");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_Window_screen_get",
-                                 "rna_Window_screen_set",
-                                 NULL,
-                                 "rna_Window_screen_assign_poll");
+  prop = api_def_prop(sapi, "screen", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "Screen");
+  api_def_prop_ui_text(prop, "Screen", "Active workspace screen showing in the window");
+  api_def_prop_ptr_fns(prop,
+                       "api_Window_screen_get",
+                       "api_Window_screen_set",
+                       NULL,
+                       "rna_Window_screen_assign_poll");
   RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SCREEN);
   RNA_def_property_flag(prop, PROP_NEVER_NULL | PROP_EDITABLE | PROP_CONTEXT_UPDATE);
   RNA_def_property_update(prop, 0, "rna_workspace_screen_update");
