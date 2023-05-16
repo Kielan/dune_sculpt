@@ -1279,7 +1279,7 @@ static bool api_op_poll_cb(Ctx *C, wmOpType *ot)
   bool visible;
 
   api_ptr_create(NULL, ot->api_ext.sapi, NULL, &ptr); /* dummy */
-  func = &api_op_poll_fn; /* RNA_struct_find_function(&ptr, "poll"); */
+  fn = &api_op_poll_fn; /* RNA_struct_find_function(&ptr, "poll"); */
 
   api_param_list_create(&list, &ptr, fn);
   api_param_set_lookup(&list, "context", &C);
@@ -2404,79 +2404,79 @@ static void api_def_window(DuneApi *dapi)
                        "api_Window_screen_get",
                        "api_Window_screen_set",
                        NULL,
-                       "rna_Window_screen_assign_poll");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SCREEN);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL | PROP_EDITABLE | PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(prop, 0, "rna_workspace_screen_update");
+                       "api_Window_screen_assign_poll");
+  api_def_prop_translation_ctx(prop, BLT_I18NCONTEXT_ID_SCREEN);
+  api_def_prop_flag(prop, PROP_NEVER_NULL | PROP_EDITABLE | PROP_CONTEXT_UPDATE);
+  api_def_prop_update(prop, 0, "rna_workspace_screen_update");
 
-  prop = RNA_def_property(srna, "view_layer", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "ViewLayer");
-  RNA_def_property_pointer_funcs(
-      prop, "rna_Window_view_layer_get", "rna_Window_view_layer_set", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "view_layer", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(prop, "ViewLayer");
+  api_def_prop_ptr_fns(
+      prop, "api_Window_view_layer_get", "rna_Window_view_layer_set", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Active View Layer", "The active workspace view layer showing in the window");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
-  RNA_def_property_update(prop, NC_SCREEN | ND_LAYER, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
+  api_def_prop_update(prop, NC_SCREEN | ND_LAYER, NULL);
 
-  prop = RNA_def_property(srna, "x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "posx");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "X Position", "Horizontal location of the window");
+  prop = api_def_prop(sapi, "x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "posx");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "X Position", "Horizontal location of the window");
 
-  prop = RNA_def_property(srna, "y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "posy");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Y Position", "Vertical location of the window");
+  prop = api_def_prop(sapi, "y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "posy");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Y Position", "Vertical location of the window");
 
-  prop = RNA_def_property(srna, "width", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "sizex");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Width", "Window width");
+  prop = api_def_prop(sapi, "width", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "sizex");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Width", "Window width");
 
-  prop = RNA_def_property(srna, "height", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "sizey");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Height", "Window height");
+  prop = api_def_prop(sapi, "height", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "sizey");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Height", "Window height");
 
-  prop = RNA_def_property(srna, "stereo_3d_display", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "stereo3d_format");
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "Stereo3dDisplay");
-  RNA_def_property_ui_text(prop, "Stereo 3D Display", "Settings for stereo 3D display");
+  prop = api_def_prop(sapi, "stereo_3d_display", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "stereo3d_format");
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "Stereo3dDisplay");
+  api_def_prop_ui_text(prop, "Stereo 3D Display", "Settings for stereo 3D display");
 
-  RNA_api_window(srna);
+  api_window(sapi);
 }
 
 /* curve.splines */
-static void rna_def_wm_keyconfigs(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_wm_keyconfigs(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  RNA_def_property_srna(cprop, "KeyConfigurations");
-  srna = RNA_def_struct(brna, "KeyConfigurations", NULL);
-  RNA_def_struct_sdna(srna, "wmWindowManager");
-  RNA_def_struct_ui_text(srna, "KeyConfigs", "Collection of KeyConfigs");
+  api_def_prop_sapi(cprop, "KeyConfigurations");
+  sapi = api_def_struct(dapi, "KeyConfigurations", NULL);
+  api_def_struct_stype(sapi, "wmWindowManager");
+  api_def_struct_ui_text(srna, "KeyConfigs", "Collection of KeyConfigs");
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "KeyConfig");
-  RNA_def_property_pointer_funcs(prop,
-                                 "rna_WindowManager_active_keyconfig_get",
-                                 "rna_WindowManager_active_keyconfig_set",
-                                 NULL,
-                                 NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Active KeyConfig", "Active key configuration (preset)");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "KeyConfig");
+  api_def_prop_ptr_fns(prop,
+                       "api_WindowManager_active_keyconfig_get",
+                       "api_WindowManager_active_keyconfig_set",
+                       NULL,
+                       NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Active KeyConfig", "Active key configuration (preset)");
 
-  prop = RNA_def_property(srna, "default", PROP_POINTER, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "defaultconf");
-  RNA_def_property_struct_type(prop, "KeyConfig");
-  RNA_def_property_ui_text(prop, "Default Key Configuration", "Default builtin key configuration");
+  prop = api_def_prop(sapi, "default", PROP_PTR, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "defaultconf");
+  api_def_prop_struct_type(prop, "KeyConfig");
+  api_def_prop_ui_text(prop, "Default Key Configuration", "Default builtin key configuration");
 
-  prop = RNA_def_property(srna, "addon", PROP_POINTER, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "addonconf");
-  RNA_def_property_struct_type(prop, "KeyConfig");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "addon", PROP_POINTER, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "addonconf");
+  api_def_prop_struct_type(prop, "KeyConfig");
+  api_def_prop_ui_text(
       prop,
       "Add-on Key Configuration",
       "Key configuration that can be extended by add-ons, and is added to the active "
@@ -2548,14 +2548,14 @@ static void api_def_keymap_items(DuneApi *dapi, ApiProp *cprop)
   api_api_keymapitems(sapi);
 }
 
-static void api_def_wm_keymaps(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_wm_keymaps(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
 
   api_def_prop_sapi(cprop, "KeyMaps");
-  srna = RNA_def_struct(brna, "KeyMaps", NULL);
-  RNA_def_struct_sdna(srna, "wmKeyConfig");
-  RNA_def_struct_ui_text(srna, "Key Maps", "Collection of keymaps");
+  srna = api_def_struct(dapi, "KeyMaps", NULL);
+  RNA_def_struct_stype(sapi, "wmKeyConfig");
+  RNA_def_struct_ui_text(sapi, "Key Maps", "Collection of keymaps");
 
   RNA_api_keymaps(srna);
 }
