@@ -2553,34 +2553,34 @@ static void api_def_wm_keymaps(DuneApi *dapi, ApiProp *cprop)
   ApiStruct *sapi;
 
   api_def_prop_sapi(cprop, "KeyMaps");
-  srna = api_def_struct(dapi, "KeyMaps", NULL);
-  RNA_def_struct_stype(sapi, "wmKeyConfig");
-  RNA_def_struct_ui_text(sapi, "Key Maps", "Collection of keymaps");
+  sapi = api_def_struct(dapi, "KeyMaps", NULL);
+  api_def_struct_stype(sapi, "wmKeyConfig");
+  api_def_struct_ui_text(sapi, "Key Maps", "Collection of keymaps");
 
-  RNA_api_keymaps(srna);
+  api_api_keymaps(sapi);
 }
 
-static void rna_def_keyconfig_prefs(BlenderRNA *brna)
+static void api_def_keyconfig_prefs(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "KeyConfigPreferences", NULL);
-  RNA_def_struct_ui_text(srna, "Key-Config Preferences", "");
-  RNA_def_struct_sdna(srna, "wmKeyConfigPref"); /* WARNING: only a bAddon during registration */
+  srna = api_def_struct(dapi, "KeyConfigPrefs", NULL);
+  api_def_struct_ui_text(sapi, "Key-Config Prefs", "");
+  api_def_struct_stype(sapi, "wmKeyConfigPref"); /* WARNING: only a bAddon during registration */
 
-  RNA_def_struct_refine_func(srna, "rna_wmKeyConfigPref_refine");
-  RNA_def_struct_register_funcs(
-      srna, "rna_wmKeyConfigPref_register", "rna_wmKeyConfigPref_unregister", NULL);
-  RNA_def_struct_idprops_func(srna, "rna_wmKeyConfigPref_idprops");
-  RNA_def_struct_flag(srna, STRUCT_NO_DATABLOCK_IDPROPERTIES); /* Mandatory! */
+  api_def_struct_refine_fn(sapi, "rna_wmKeyConfigPref_refine");
+  api_def_struct_register_fns(
+      sapi, "api_wmKeyConfigPref_register", "rna_wmKeyConfigPref_unregister", NULL);
+  api_def_struct_idprops_fns(sapi, "rna_wmKeyConfigPref_idprops");
+  api_def_struct_flag(sapi, STRUCT_NO_DATABLOCK_IDPROPS); /* Mandatory! */
 
   /* registration */
-  RNA_define_verify_sdna(0);
-  prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "idname");
-  RNA_def_property_flag(prop, PROP_REGISTER);
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(0);
+  prop = api_def_prop(sapi, "bl_idname", PROP_STRING, PROP_NONE);
+  api_def_prop_string_stype(prop, NULL, "idname");
+  api_def_prop_flag(prop, PROP_REGISTER);
+  api_define_verify_stype(1);
 }
 
 static void api_def_keyconfig(DuneApi *dapi)
@@ -2599,7 +2599,7 @@ static void api_def_keyconfig(DuneApi *dapi)
 
   /* KeyConfig */
   sapi = api_def_struct(dapi, "KeyConfig", NULL);
-  api_def_struct_sdna(sapi, "wmKeyConfig");
+  api_def_struct_stype(sapi, "wmKeyConfig");
   api_def_struct_ui_text(sapi, "Key Configuration", "Input configuration, including keymaps");
 
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
@@ -2650,36 +2650,36 @@ static void api_def_keyconfig(DuneApi *dapi)
   api_def_prop_enum_stype(prop, NULL, "regionid");
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_enum_items(prop, api_enum_region_type_items);
-  RNA_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
+  api_def_prop_ui_text(prop, "Region Type", "Optional region type keymap is associated with");
 
-  prop = api_def_prop(srna, "keymap_items", PROP_COLLECTION, PROP_NONE);
-  api_def_prop_collection_sdna(prop, NULL, "items", NULL);
+  prop = api_def_prop(sapi, "keymap_items", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "items", NULL);
   api_def_prop_struct_type(prop, "KeyMapItem");
   api_def_prop_ui_text(
       prop, "Items", "Items in the keymap, linking an operator to an input event");
-  rna_def_keymap_items(brna, prop);
+  api_def_keymap_items(dapi, prop);
 
-  prop = RNA_def_property(srna, "is_user_modified", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", KEYMAP_USER_MODIFIED);
-  RNA_def_property_ui_text(prop, "User Defined", "Keymap is defined by the user");
+  prop = api_def_prop(sapi, "is_user_modified", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", KEYMAP_USER_MODIFIED);
+  api_def_prop_ui_text(prop, "User Defined", "Keymap is defined by the user");
 
-  prop = RNA_def_property(srna, "is_modal", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", KEYMAP_MODAL);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_modal", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", KEYMAP_MODAL);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop,
       "Modal Keymap",
       "Indicates that a keymap is used for translate modal events for an operator");
 
-  prop = RNA_def_property(srna, "show_expanded_items", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", KEYMAP_EXPANDED);
-  RNA_def_property_ui_text(prop, "Items Expanded", "Expanded in the user interface");
-  RNA_def_property_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+  prop = api_def_prop(sapi, "show_expanded_items", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_boolean_sdna(prop, NULL, "flag", KEYMAP_EXPANDED);
+  api_def_prop_ui_text(prop, "Items Expanded", "Expanded in the user interface");
+  api_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
 
-  prop = RNA_def_property(srna, "show_expanded_children", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", KEYMAP_CHILDREN_EXPANDED);
-  RNA_def_property_ui_text(prop, "Children Expanded", "Children expanded in the user interface");
-  RNA_def_property_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+  prop = api_def_prop(sapi, "show_expanded_children", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", KEYMAP_CHILDREN_EXPANDED);
+  RNA_def_prop_ui_text(prop, "Children Expanded", "Children expanded in the user interface");
+  RNA_def_prop_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
 
   prop = RNA_def_property(srna, "modal_event_values", PROP_COLLECTION, PROP_NONE);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
