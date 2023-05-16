@@ -987,7 +987,7 @@ static const EnumPropItem *api_KeyMapItem_type_itemf(Ctx *UNUSED(C),
   }
 }
 
-static const EnumPropItem *rna_KeyMapItem_propvalue_itemf(bContext *C,
+static const EnumPropItem *api_KeyMapItem_propvalue_itemf(bContext *C,
                                                               PointerRNA *ptr,
                                                               PropertyRNA *UNUSED(prop),
                                                               bool *UNUSED(r_free))
@@ -1246,18 +1246,18 @@ static int api_wmKeyMapItem_name_length(ApiPtr *ptr)
   return strlen(ot ? wm_optype_name(ot, kmi->ptr) : kmi->idname);
 }
 
-static bool api_KeyMapItem_userdefined_get(PointerRNA *ptr)
+static bool api_KeyMapItem_userdefined_get(ApiPtr *ptr)
 {
   wmKeyMapItem *kmi = ptr->data;
   return kmi->id < 0;
 }
 
-static ApiPtr api_WindowManager_xr_session_state_get(PointerRNA *ptr)
+static ApiPtr api_WindowManager_xr_session_state_get(ApiPtr *ptr)
 {
   wmWindowManager *wm = ptr->data;
   struct wmXrSessionState *state =
 #  ifdef WITH_XR_OPENXR
-      WM_xr_session_state_handle_get(&wm->xr);
+      wm_xr_session_state_handle_get(&wm->xr);
 #  else
       NULL;
   UNUSED_VARS(wm);
@@ -1293,7 +1293,7 @@ static bool api_op_poll_cb(Ctx *C, wmOpType *ot)
   return visible;
 }
 
-static int api_op_execute_cb(Ctx *C, wmOp *op)
+static int api_op_ex_cb(Ctx *C, wmOp *op)
 {
   extern apiFn api_op_ex_fn;
 
@@ -1612,7 +1612,7 @@ static bool api_op_unregister(struct Main *main, ApiStruct *type)
     return false;
   }
 
-  /* update while blender is running */
+  /* update while dune is running */
   wm = main->wm.first;
   if (wm) {
     wm_op_stack_clear(wm);
@@ -1802,7 +1802,7 @@ static void api_op_bl_label_set(ApiPtr *ptr, const char *value)
  * make any sense in this case.
  */
 #  define OP_STR_MAYBE_NULL_GETSET(attr, len) \
-    static void rna_Operator_bl_##attr##_set(ApiPtr *ptr, const char *value) \
+    static void api_op_bl_##attr##_set(ApiPtr *ptr, const char *value) \
     { \
       wmOp *data = (wmOp *)(ptr->data); \
       char *str = (char *)data->type->attr; \
@@ -1991,24 +1991,24 @@ static void api_def_op(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "options", PROP_PTR, PROP_NONE);
   api_def_prop_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "OpOptions");
-  RNA_def_property_pointer_funcs(prop, "api_op_options_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Options", "Runtime options");
+  api_def_prop_struct_type(prop, "OpOptions");
+  api_def_prop_ptr_fns(prop, "api_op_options_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Options", "Runtime options");
 
-  prop = RNA_def_property(srna, "macros", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "macro", NULL);
-  RNA_def_property_struct_type(prop, "Macro");
-  RNA_def_property_ui_text(prop, "Macros", "");
+  prop = api_def_prop(sapi, "macros", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "macro", NULL);
+  api_def_prop_struct_type(prop, "Macro");
+  api_def_prop_ui_text(prop, "Macros", "");
 
-  RNA_api_operator(srna);
+  api_api_op(sapi);
 
-  srna = RNA_def_struct(brna, "OperatorProperties", NULL);
-  RNA_def_struct_ui_text(srna, "Operator Properties", "Input properties of an operator");
-  RNA_def_struct_refine_func(srna, "rna_OperatorProperties_refine");
-  RNA_def_struct_idprops_func(srna, "rna_OperatorProperties_idprops");
-  RNA_def_struct_property_tags(srna, rna_enum_operator_property_tags);
-  RNA_def_struct_flag(srna, STRUCT_NO_DATABLOCK_IDPROPERTIES | STRUCT_NO_CONTEXT_WITHOUT_OWNER_ID);
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
+  srna = api_def_struct(dapi, "OpProps", NULL);
+  api_def_struct_ui_text(dapi, "Op Props", "Input props of an op");
+  api_def_struct_refine_fn(sapi, "api_OpProps_refine");
+  api_def_struct_idprops_fn(sapi, "api_OpProps_idprops");
+  api_def_struct_prop_tags(sapi, api_enum_op_prop_tags);
+  api_def_struct_flag(sapi, STRUCT_NO_DATABLOCK_IDPROPS | STRUCT_NO_CONTEXT_WITHOUT_OWNER_ID);
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
 }
 
 static void rna_def_macro_operator(BlenderRNA *brna)
