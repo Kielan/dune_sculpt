@@ -509,89 +509,89 @@ static ApiPtr api_KeyConfig_find_item_from_op(wmWindowManager *wm,
   return kmi_ptr;
 }
 
-static void rna_KeyConfig_update(wmWindowManager *wm)
+static void api_KeyConfig_update(wmWindowManager *wm)
 {
-  WM_keyconfig_update(wm);
+  wm_keyconfig_update(wm);
 }
 
 /* popup menu wrapper */
-static PointerRNA rna_PopMenuBegin(bContext *C, const char *title, int icon)
+static ApiPtr api_PopMenuBegin(Ctx *C, const char *title, int icon)
 {
-  PointerRNA r_ptr;
+  ApiPtr r_ptr;
   void *data;
 
-  data = (void *)UI_popup_menu_begin(C, title, icon);
+  data = (void *)ui_popup_menu_begin(C, title, icon);
 
-  RNA_pointer_create(NULL, &RNA_UIPopupMenu, data, &r_ptr);
+  api_ptr_create(NULL, &ApiUIPopupMenu, data, &r_ptr);
 
   return r_ptr;
 }
 
-static void rna_PopMenuEnd(bContext *C, PointerRNA *handle)
+static void api_PopMenuEnd(Ctx *C, ApiPtr *handle)
 {
-  UI_popup_menu_end(C, handle->data);
+  ui_popup_menu_end(C, handle->data);
 }
 
 /* popover wrapper */
-static PointerRNA rna_PopoverBegin(bContext *C, int ui_units_x, bool from_active_button)
+static ApiPtr api_PopoverBegin(Ctx *C, int ui_units_x, bool from_active_btn)
 {
-  PointerRNA r_ptr;
+  ApiPtr r_ptr;
   void *data;
 
-  data = (void *)UI_popover_begin(C, U.widget_unit * ui_units_x, from_active_button);
+  data = (void *)ui_popover_begin(C, U.widget_unit * ui_units_x, from_active_button);
 
-  RNA_pointer_create(NULL, &RNA_UIPopover, data, &r_ptr);
+  api_ptr_create(NULL, &ApiUIPopover, data, &r_ptr);
 
   return r_ptr;
 }
 
-static void rna_PopoverEnd(bContext *C, PointerRNA *handle, wmKeyMap *keymap)
+static void api_PopoverEnd(Ctx *C, ApiPtr *handle, wmKeyMap *keymap)
 {
-  UI_popover_end(C, handle->data, keymap);
+  ui_popover_end(C, handle->data, keymap);
 }
 
 /* pie menu wrapper */
-static PointerRNA rna_PieMenuBegin(bContext *C, const char *title, int icon, PointerRNA *event)
+static ApiPtr api_PieMenuBegin(Ctx *C, const char *title, int icon, ApiPtr *event)
 {
-  PointerRNA r_ptr;
+  ApiPtr r_ptr;
   void *data;
 
-  data = (void *)UI_pie_menu_begin(C, title, icon, event->data);
+  data = (void *)ui_pie_menu_begin(C, title, icon, event->data);
 
-  RNA_pointer_create(NULL, &RNA_UIPieMenu, data, &r_ptr);
+  api_ptr_create(NULL, &ApiUIPieMenu, data, &r_ptr);
 
   return r_ptr;
 }
 
-static void rna_PieMenuEnd(bContext *C, PointerRNA *handle)
+static void api_PieMenuEnd(Ctx *C, ApiPtr *handler)
 {
-  UI_pie_menu_end(C, handle->data);
+  ui_pie_menu_end(C, handle->data);
 }
 
-static void rna_WindowManager_print_undo_steps(wmWindowManager *wm)
+static void api_WindowManager_print_undo_steps(wmWindowManager *wm)
 {
-  BKE_undosys_print(wm->undo_stack);
+  dune_undosys_print(wm->undo_stack);
 }
 
-static void rna_WindowManager_tag_script_reload(void)
+static void api_WindowManager_tag_script_reload(void)
 {
-  WM_script_tag_reload();
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_script_tag_reload();
+  wm_main_add_notifier(NC_WINDOW, NULL);
 }
 
-static PointerRNA rna_WindoManager_operator_properties_last(const char *idname)
+static ApiPtr api_WindoManager_oper_props_last(const char *idname)
 {
-  wmOperatorType *ot = WM_operatortype_find(idname, true);
+  wmOpType *ot = wm_optype_find(idname, true);
 
   if (ot != NULL) {
-    PointerRNA ptr;
-    WM_operator_last_properties_ensure(ot, &ptr);
+    ApiPtr ptr;
+    wm_op_last_props_ensure(ot, &ptr);
     return ptr;
   }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
-static wmEvent *rna_Window_event_add_simulate(wmWindow *win,
+static wmEvent *api_Window_event_add_simulate(wmWindow *win,
                                               ReportList *reports,
                                               int type,
                                               int value,
@@ -604,17 +604,17 @@ static wmEvent *rna_Window_event_add_simulate(wmWindow *win,
                                               bool oskey)
 {
   if ((G.f & G_FLAG_EVENT_SIMULATE) == 0) {
-    BKE_report(reports, RPT_ERROR, "Not running with '--enable-event-simulate' enabled");
+    dune_report(reports, RPT_ERROR, "Not running with '--enable-event-simulate' enabled");
     return NULL;
   }
 
   if (!ELEM(value, KM_PRESS, KM_RELEASE, KM_NOTHING)) {
-    BKE_report(reports, RPT_ERROR, "Value: only 'PRESS/RELEASE/NOTHING' are supported");
+    dune_report(reports, RPT_ERROR, "Value: only 'PRESS/RELEASE/NOTHING' are supported");
     return NULL;
   }
   if (ISKEYBOARD(type) || ISMOUSE_BUTTON(type)) {
     if (!ELEM(value, KM_PRESS, KM_RELEASE)) {
-      BKE_report(reports, RPT_ERROR, "Value: must be 'PRESS/RELEASE' for keyboard/buttons");
+      dune_report(reports, RPT_ERROR, "Value: must be 'PRESS/RELEASE' for keyboard/buttons");
       return NULL;
     }
   }
@@ -626,16 +626,16 @@ static wmEvent *rna_Window_event_add_simulate(wmWindow *win,
   }
   if (unicode != NULL) {
     if (value != KM_PRESS) {
-      BKE_report(reports, RPT_ERROR, "Value: must be 'PRESS' when unicode is set");
+      dune_report(reports, RPT_ERROR, "Value: must be 'PRESS' when unicode is set");
       return NULL;
     }
   }
   /* TODO: validate NDOF. */
 
   if (unicode != NULL) {
-    int len = BLI_str_utf8_size(unicode);
+    int len = lib_str_utf8_size(unicode);
     if (len == -1 || unicode[len] != '\0') {
-      BKE_report(reports, RPT_ERROR, "Only a single character supported");
+      dune_report(reports, RPT_ERROR, "Only a single character supported");
       return NULL;
     }
   }
@@ -647,18 +647,18 @@ static wmEvent *rna_Window_event_add_simulate(wmWindow *win,
   e.xy[0] = x;
   e.xy[1] = y;
 
-  e.modifier = 0;
+  e.mod = 0;
   if (shift) {
-    e.modifier |= KM_SHIFT;
+    e.mod |= KM_SHIFT;
   }
   if (ctrl) {
-    e.modifier |= KM_CTRL;
+    e.mod |= KM_CTRL;
   }
   if (alt) {
-    e.modifier |= KM_ALT;
+    e.mod |= KM_ALT;
   }
   if (oskey) {
-    e.modifier |= KM_OSKEY;
+    e.mod |= KM_OSKEY;
   }
 
   e.utf8_buf[0] = '\0';
@@ -667,9 +667,9 @@ static wmEvent *rna_Window_event_add_simulate(wmWindow *win,
   }
 
   /* Until we expose setting tablet values here. */
-  WM_event_tablet_data_default_set(&e.tablet);
+  wm_event_tablet_data_default_set(&e.tablet);
 
-  return WM_event_add_simulate(win, &e);
+  return wm_event_add_simulate(win, &e);
 }
 
 #else
@@ -678,80 +678,80 @@ static wmEvent *rna_Window_event_add_simulate(wmWindow *win,
 #  define WM_GEN_INVOKE_SIZE (1 << 1)
 #  define WM_GEN_INVOKE_RETURN (1 << 2)
 
-static void rna_generic_op_invoke(FunctionRNA *func, int flag)
+static void api_generic_op_invoke(ApiFn *fn, int flag)
 {
-  PropertyRNA *parm;
+  ApiProp *parm;
 
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "operator", "Operator", "", "Operator to call");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  parm = api_def_ptr(fn, "op", "Op", "", "Op to call");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   if (flag & WM_GEN_INVOKE_EVENT) {
-    parm = RNA_def_pointer(func, "event", "Event", "", "Event");
-    RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+    parm = api_def_ptr(fn, "event", "Event", "", "Event");
+    api_def_param_flags(parm, 0, PARM_REQUIRED);
   }
 
   if (flag & WM_GEN_INVOKE_SIZE) {
-    RNA_def_int(func, "width", 300, 0, INT_MAX, "", "Width of the popup", 0, INT_MAX);
+    api_def_int(fn, "width", 300, 0, INT_MAX, "", "Width of the popup", 0, INT_MAX);
   }
 
   if (flag & WM_GEN_INVOKE_RETURN) {
-    parm = RNA_def_enum_flag(
-        func, "result", rna_enum_operator_return_items, OPERATOR_FINISHED, "result", "");
-    RNA_def_function_return(func, parm);
+    parm = api_def_enum_flag(
+        fn, "result", api_enum_op_return_items, OP_FINISHED, "result", "");
+    api_def_fn_return(fn, parm);
   }
 }
 
-void RNA_api_window(StructRNA *srna)
+void api_window(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "cursor_warp", "WM_cursor_warp");
-  parm = RNA_def_int(func, "x", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "y", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_ui_description(func, "Set the cursor position");
+  fn = api_def_fn(sapi, "cursor_warp", "wm_cursor_warp");
+  parm = api_def_int(fn, "x", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "y", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_ui_description(fn, "Set the cursor position");
 
-  func = RNA_def_function(srna, "cursor_set", "WM_cursor_set");
-  parm = RNA_def_property(func, "cursor", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(parm, rna_enum_window_cursor_items);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_ui_description(func, "Set the cursor");
+  fn = api_def_fn(sapi, "cursor_set", "wm_cursor_set");
+  parm = api_def_prop(fn, "cursor", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(parm, api_enum_window_cursor_items);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  pi_def_fn_ui_description(func, "Set the cursor");
 
-  func = RNA_def_function(srna, "cursor_modal_set", "WM_cursor_modal_set");
-  parm = RNA_def_property(func, "cursor", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(parm, rna_enum_window_cursor_items);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_ui_description(func, "Set the cursor, so the previous cursor can be restored");
+  fn = api_def_fn(sapi, "cursor_modal_set", "wm_cursor_modal_set");
+  parm = api_def_prop(fn, "cursor", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(parm, api_enum_window_cursor_items);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_ui_description(fn, "Set the cursor, so the previous cursor can be restored");
 
-  RNA_def_function(srna, "cursor_modal_restore", "WM_cursor_modal_restore");
-  RNA_def_function_ui_description(
-      func, "Restore the previous cursor after calling ``cursor_modal_set``");
+  api_def_fn(sapi, "cursor_modal_restore", "WM_cursor_modal_restore");
+  api_def_fn_ui_description(
+      fn, "Restore the previous cursor after calling ``cursor_modal_set``");
 
   /* Arguments match 'rna_KeyMap_item_new'. */
-  func = RNA_def_function(srna, "event_simulate", "rna_Window_event_add_simulate");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_enum(func, "type", rna_enum_event_type_items, 0, "Type", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "value", rna_enum_event_value_items, 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "unicode", NULL, 0, "", "");
-  RNA_def_parameter_clear_flags(parm, PROP_NEVER_NULL, 0);
+  fn = api_def_fn(sapi, "event_simulate", "api_Window_event_add_simulate");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_enum(fn, "type", api_enum_event_type_items, 0, "Type", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "value", api_enum_event_value_items, 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "unicode", NULL, 0, "", "");
+  api_def_param_clear_flags(parm, PROP_NEVER_NULL, 0);
 
-  RNA_def_int(func, "x", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
-  RNA_def_int(func, "y", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
+  api_def_int(fn, "x", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
+  api_def_int(fn, "y", 0, INT_MIN, INT_MAX, "", "", INT_MIN, INT_MAX);
 
-  RNA_def_boolean(func, "shift", 0, "Shift", "");
-  RNA_def_boolean(func, "ctrl", 0, "Ctrl", "");
-  RNA_def_boolean(func, "alt", 0, "Alt", "");
-  RNA_def_boolean(func, "oskey", 0, "OS Key", "");
-  parm = RNA_def_pointer(func, "event", "Event", "Item", "Added key map item");
-  RNA_def_function_return(func, parm);
+  api_def_bool(fn, "shift", 0, "Shift", "");
+  api_def_bool(fn, "ctrl", 0, "Ctrl", "");
+  api_def_bool(fn, "alt", 0, "Alt", "");
+  api_def_bool(fn, "oskey", 0, "OS Key", "");
+  parm = api_def_ptr(fn, "event", "Event", "Item", "Added key map item");
+  api_def_fn_return(fn, parm);
 }
 
-void RNA_api_wm(StructRNA *srna)
+void api_wm(StructRNA *srna)
 {
   FunctionRNA *func;
   PropertyRNA *parm;
