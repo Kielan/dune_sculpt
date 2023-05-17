@@ -265,7 +265,7 @@ static wmKeyMapItem *api_KeyMap_item_new(wmKeyMap *km,
   // wmWindowManager *wm = CTX_wm_manager(C);
   wmKeyMapItem *kmi = NULL;
   char idname_bl[OP_MAX_TYPENAME];
-  const int mod = keymap_item_modifier_flag_from_args(any, shift, ctrl, alt, oskey);
+  const int mod = keymap_item_mod_flag_from_args(any, shift, ctrl, alt, oskey);
 
   wm_op_bl_idname(idname_bl, idname);
 
@@ -288,14 +288,14 @@ static wmKeyMapItem *api_KeyMap_item_new(wmKeyMap *km,
    *          so that they stand a chance against catch-all defines later on
    */
   if (head) {
-    BLI_remlink(&km->items, kmi);
-    BLI_addhead(&km->items, kmi);
+    lib_remlink(&km->items, kmi);
+    lib_addhead(&km->items, kmi);
   }
 
   return kmi;
 }
 
-static wmKeyMapItem *rna_KeyMap_item_new_from_item(wmKeyMap *km,
+static wmKeyMapItem *api_KeyMap_item_new_from_item(wmKeyMap *km,
                                                    ReportList *reports,
                                                    wmKeyMapItem *kmi_src,
                                                    bool head)
@@ -326,7 +326,7 @@ static wmKeyMapItem *api_KeyMap_item_new_modal(wmKeyMap *km,
                                                int ctrl,
                                                int alt,
                                                int oskey,
-                                               int keymodifier,
+                                               int keymod,
                                                int direction,
                                                bool repeat)
 {
@@ -356,7 +356,7 @@ static wmKeyMapItem *api_KeyMap_item_new_modal(wmKeyMap *km,
     if (api_enum_value_from_id(km->modal_items, propvalue_str, &propvalue) == 0) {
       dune_report(reports, RPT_WARNING, "Property value not in enumeration");
     }
-    kmi = wn_modalkeymap_add_item(km, &params, propvalue);
+    kmi = wm_modalkeymap_add_item(km, &params, propvalue);
   }
 
   if (!repeat) {
@@ -399,15 +399,15 @@ static ApiPtr api_KeyMap_item_find_from_op(Id *id,
   return kmi_ptr;
 }
 
-static ApiPtr api_KeyMap_item_match_event(ID *id, wmKeyMap *km, bContext *C, wmEvent *event)
+static ApiPtr api_KeyMap_item_match_event(Id *id, wmKeyMap *km, bContext *C, wmEvent *event)
 {
   wmKeyMapItem *kmi = wm_event_match_keymap_item(C, km, event);
   PointerRNA kmi_ptr;
-  RNA_pointer_create(id, &ApiKeyMapItem, kmi, &kmi_ptr);
+  api_ptr_create(id, &ApiKeyMapItem, kmi, &kmi_ptr);
   return kmi_ptr;
 }
 
-static wmKeyMap *rna_keymap_new(wmKeyConfig *keyconf,
+static wmKeyMap *api_keymap_new(wmKeyConfig *keyconf,
                                 ReportList *reports,
                                 const char *idname,
                                 int spaceid,
@@ -423,7 +423,7 @@ static wmKeyMap *rna_keymap_new(wmKeyConfig *keyconf,
      * which is not the intended use for add-on keymaps. */
     wmWindowManager *wm = G_MAIN->wm.first;
     if (keyconf == wm->addonconf) {
-      BKE_reportf(reports, RPT_ERROR, "Modal key-maps not supported for add-on key-config");
+      dune_reportf(reports, RPT_ERROR, "Modal key-maps not supported for add-on key-config");
       return NULL;
     }
   }
@@ -431,10 +431,10 @@ static wmKeyMap *rna_keymap_new(wmKeyConfig *keyconf,
   wmKeyMap *keymap;
 
   if (modal == 0) {
-    keymap = WM_keymap_ensure(keyconf, idname, spaceid, regionid);
+    keymap = wm_keymap_ensure(keyconf, idname, spaceid, regionid);
   }
   else {
-    keymap = WM_modalkeymap_ensure(keyconf, idname, NULL); /* items will be lazy init */
+    keymap = wm_modalkeymap_ensure(keyconf, idname, NULL); /* items will be lazy init */
   }
 
   if (keymap && tool) {
@@ -444,17 +444,17 @@ static wmKeyMap *rna_keymap_new(wmKeyConfig *keyconf,
   return keymap;
 }
 
-static wmKeyMap *rna_keymap_find(wmKeyConfig *keyconf,
+static wmKeyMap *api_keymap_find(wmKeyConfig *keyconf,
                                  const char *idname,
                                  int spaceid,
                                  int regionid)
 {
-  return WM_keymap_list_find(&keyconf->keymaps, idname, spaceid, regionid);
+  return wm_keymap_list_find(&keyconf->keymaps, idname, spaceid, regionid);
 }
 
-static wmKeyMap *rna_keymap_find_modal(wmKeyConfig *UNUSED(keyconf), const char *idname)
+static wmKeyMap *api_keymap_find_modal(wmKeyConfig *UNUSED(keyconf), const char *idname)
 {
-  wmOperatorType *ot = WM_operatortype_find(idname, 0);
+  wmOpType *ot = wm_optype_find(idname, 0);
 
   if (!ot) {
     return NULL;
@@ -464,48 +464,48 @@ static wmKeyMap *rna_keymap_find_modal(wmKeyConfig *UNUSED(keyconf), const char 
   }
 }
 
-static void rna_KeyMap_remove(wmKeyConfig *keyconfig, ReportList *reports, PointerRNA *keymap_ptr)
+static void api_KeyMap_remove(wmKeyConfig *keyconfig, ReportList *reports, ApiPtr *keymap_ptr)
 {
   wmKeyMap *keymap = keymap_ptr->data;
 
-  if (WM_keymap_remove(keyconfig, keymap) == false) {
-    BKE_reportf(reports, RPT_ERROR, "KeyConfig '%s' cannot be removed", keymap->idname);
+  if (wm_keymap_remove(keyconfig, keymap) == false) {
+    dune_reportf(reports, RPT_ERROR, "KeyConfig '%s' cannot be removed", keymap->idname);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(keymap_ptr);
+  API_PTR_INVALIDATE(keymap_ptr);
 }
 
-static void rna_KeyConfig_remove(wmWindowManager *wm, ReportList *reports, PointerRNA *keyconf_ptr)
+static void api_KeyConfig_remove(wmWindowManager *wm, ReportList *reports, ApiPtr *keyconf_ptr)
 {
   wmKeyConfig *keyconf = keyconf_ptr->data;
 
-  if (WM_keyconfig_remove(wm, keyconf) == false) {
-    BKE_reportf(reports, RPT_ERROR, "KeyConfig '%s' cannot be removed", keyconf->idname);
+  if (wm_keyconfig_remove(wm, keyconf) == false) {
+    dune_reportf(reports, RPT_ERROR, "KeyConfig '%s' cannot be removed", keyconf->idname);
     return;
   }
 
-  RNA_POINTER_INVALIDATE(keyconf_ptr);
+  API_PTR_INVALIDATE(keyconf_ptr);
 }
 
-static PointerRNA rna_KeyConfig_find_item_from_operator(wmWindowManager *wm,
-                                                        bContext *C,
-                                                        const char *idname,
-                                                        int opcontext,
-                                                        PointerRNA *properties,
-                                                        int include_mask,
-                                                        int exclude_mask,
-                                                        PointerRNA *km_ptr)
+static ApiPtr api_KeyConfig_find_item_from_op(wmWindowManager *wm,
+                                              Ctx *C,
+                                              const char *idname,
+                                              int opctx,
+                                              ApiPtr *props,
+                                              int include_mask,
+                                              int exclude_mask,
+                                              ApiPtr *km_ptr)
 {
   char idname_bl[OP_MAX_TYPENAME];
-  WM_operator_bl_idname(idname_bl, idname);
+  wm_op_bl_idname(idname_bl, idname);
 
   wmKeyMap *km = NULL;
-  wmKeyMapItem *kmi = WM_key_event_operator(
-      C, idname_bl, opcontext, properties->data, include_mask, exclude_mask, &km);
-  PointerRNA kmi_ptr;
-  RNA_pointer_create(&wm->id, &RNA_KeyMap, km, km_ptr);
-  RNA_pointer_create(&wm->id, &RNA_KeyMapItem, kmi, &kmi_ptr);
+  wmKeyMapItem *kmi = wm_key_event_op(
+      C, idname_bl, opctx, props->data, include_mask, exclude_mask, &km);
+  ApiPtr kmi_ptr;
+  api_ptr_create(&wm->id, &ApiKeyMap, km, km_ptr);
+  api_ptr_create(&wm->id, &ApiKeyMapItem, kmi, &kmi_ptr);
   return kmi_ptr;
 }
 
