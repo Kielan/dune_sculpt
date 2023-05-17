@@ -1043,23 +1043,23 @@ void RNA_api_operator(StructRNA *srna)
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* description */
-  func = RNA_def_function(srna, "description", NULL);
-  RNA_def_function_ui_description(func, "Compute a description string that depends on parameters");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_string(func, "result", NULL, 4096, "result", "");
-  RNA_def_parameter_clear_flags(parm, PROP_NEVER_NULL, 0);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "properties", "OperatorProperties", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  fn = api_def_fn(sapi, "description", NULL);
+  api_def_fn_ui_description(fn, "Compute a description string that depends on parameters");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_REGISTER_OPTIONAL);
+  parm = api_def_string(fn, "result", NULL, 4096, "result", "");
+  api_def_param_clear_flags(parm, PROP_NEVER_NULL, 0);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(func, parm);
+  parm = api_def_ptr(func, "context", "Context", "", "");
+  api_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "properties", "OperatorProperties", "", "");
+  api_def_par_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
 }
 
-void RNA_api_macro(StructRNA *srna)
+void api_macro(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
   /* utility, not for registering */
   func = RNA_def_function(srna, "report", "rna_Operator_report");
