@@ -265,18 +265,18 @@ static wmKeyMapItem *api_KeyMap_item_new(wmKeyMap *km,
   // wmWindowManager *wm = CTX_wm_manager(C);
   wmKeyMapItem *kmi = NULL;
   char idname_bl[OP_MAX_TYPENAME];
-  const int modifier = keymap_item_modifier_flag_from_args(any, shift, ctrl, alt, oskey);
+  const int mod = keymap_item_modifier_flag_from_args(any, shift, ctrl, alt, oskey);
 
-  WM_operator_bl_idname(idname_bl, idname);
+  wm_op_bl_idname(idname_bl, idname);
 
   /* create keymap item */
-  kmi = WM_keymap_add_item(km,
+  kmi = wm_keymap_add_item(km,
                            idname_bl,
                            &(const KeyMapItem_Params){
                                .type = type,
                                .value = value,
-                               .modifier = modifier,
-                               .keymodifier = keymodifier,
+                               .mod = mod,
+                               .keymod = keymod,
                                .direction = direction,
                            });
 
@@ -303,20 +303,20 @@ static wmKeyMapItem *rna_KeyMap_item_new_from_item(wmKeyMap *km,
   // wmWindowManager *wm = CTX_wm_manager(C);
 
   if ((km->flag & KEYMAP_MODAL) == (kmi_src->idname[0] != '\0')) {
-    BKE_report(reports, RPT_ERROR, "Can not mix modal/non-modal items");
+    dune_report(reports, RPT_ERROR, "Can not mix modal/non-modal items");
     return NULL;
   }
 
   /* create keymap item */
-  wmKeyMapItem *kmi = WM_keymap_add_item_copy(km, kmi_src);
+  wmKeyMapItem *kmi = em_keymap_add_item_copy(km, kmi_src);
   if (head) {
-    BLI_remlink(&km->items, kmi);
-    BLI_addhead(&km->items, kmi);
+    lib_remlink(&km->items, kmi);
+    lib_addhead(&km->items, kmi);
   }
   return kmi;
 }
 
-static wmKeyMapItem *rna_KeyMap_item_new_modal(wmKeyMap *km,
+static wmKeyMapItem *api_KeyMap_item_new_modal(wmKeyMap *km,
                                                ReportList *reports,
                                                const char *propvalue_str,
                                                int type,
@@ -332,31 +332,31 @@ static wmKeyMapItem *rna_KeyMap_item_new_modal(wmKeyMap *km,
 {
   /* only modal maps */
   if ((km->flag & KEYMAP_MODAL) == 0) {
-    BKE_report(reports, RPT_ERROR, "Not a modal keymap");
+    dune_report(reports, RPT_ERROR, "Not a modal keymap");
     return NULL;
   }
 
   wmKeyMapItem *kmi = NULL;
-  const int modifier = keymap_item_modifier_flag_from_args(any, shift, ctrl, alt, oskey);
+  const int mod = keymap_item_mod_flag_from_args(any, shift, ctrl, alt, oskey);
   int propvalue = 0;
 
   KeyMapItem_Params params = {
       .type = type,
       .value = value,
-      .modifier = modifier,
-      .keymodifier = keymodifier,
+      .mod = mod,
+      .keymod = keymod,
       .direction = direction,
   };
 
   /* not initialized yet, do delayed lookup */
   if (!km->modal_items) {
-    kmi = WM_modalkeymap_add_item_str(km, &params, propvalue_str);
+    kmi = wm_modalkeymap_add_item_str(km, &params, propvalue_str);
   }
   else {
-    if (RNA_enum_value_from_id(km->modal_items, propvalue_str, &propvalue) == 0) {
-      BKE_report(reports, RPT_WARNING, "Property value not in enumeration");
+    if (api_enum_value_from_id(km->modal_items, propvalue_str, &propvalue) == 0) {
+      dune_report(reports, RPT_WARNING, "Property value not in enumeration");
     }
-    kmi = WM_modalkeymap_add_item(km, &params, propvalue);
+    kmi = wn_modalkeymap_add_item(km, &params, propvalue);
   }
 
   if (!repeat) {
@@ -366,12 +366,12 @@ static wmKeyMapItem *rna_KeyMap_item_new_modal(wmKeyMap *km,
   return kmi;
 }
 
-static void rna_KeyMap_item_remove(wmKeyMap *km, ReportList *reports, PointerRNA *kmi_ptr)
+static void api_KeyMap_item_remove(wmKeyMap *km, ReportList *reports, ApiPtr *kmi_ptr)
 {
   wmKeyMapItem *kmi = kmi_ptr->data;
 
-  if (WM_keymap_remove_item(km, kmi) == false) {
-    BKE_reportf(reports,
+  if (wm_keymap_remove_item(km, kmi) == false)
+    dune_reportf(reports,
                 RPT_ERROR,
                 "KeyMapItem '%s' cannot be removed from '%s'",
                 kmi->idname,
@@ -379,31 +379,31 @@ static void rna_KeyMap_item_remove(wmKeyMap *km, ReportList *reports, PointerRNA
     return;
   }
 
-  RNA_POINTER_INVALIDATE(kmi_ptr);
+  API_PTR_INVALIDATE(kmi_ptr);
 }
 
-static PointerRNA rna_KeyMap_item_find_from_operator(ID *id,
-                                                     wmKeyMap *km,
-                                                     const char *idname,
-                                                     PointerRNA *properties,
-                                                     int include_mask,
-                                                     int exclude_mask)
+static ApiPtr api_KeyMap_item_find_from_op(Id *id,
+                                           wmKeyMap *km,
+                                           const char *idname,
+                                           ApiPtr *props,
+                                           int include_mask,
+                                           int exclude_mask)
 {
   char idname_bl[OP_MAX_TYPENAME];
-  WM_operator_bl_idname(idname_bl, idname);
+  wn_op_bl_idname(idname_bl, idname);
 
-  wmKeyMapItem *kmi = WM_key_event_operator_from_keymap(
-      km, idname_bl, properties->data, include_mask, exclude_mask);
-  PointerRNA kmi_ptr;
-  RNA_pointer_create(id, &RNA_KeyMapItem, kmi, &kmi_ptr);
+  wmKeyMapItem *kmi = wm_key_event_op_from_keymap(
+      km, idname_bl, props->data, include_mask, exclude_mask);
+  ApiPtr kmi_ptr;
+  api_ptr_create(id, &ApiKeyMapItem, kmi, &kmi_ptr);
   return kmi_ptr;
 }
 
-static PointerRNA rna_KeyMap_item_match_event(ID *id, wmKeyMap *km, bContext *C, wmEvent *event)
+static ApiPtr api_KeyMap_item_match_event(ID *id, wmKeyMap *km, bContext *C, wmEvent *event)
 {
-  wmKeyMapItem *kmi = WM_event_match_keymap_item(C, km, event);
+  wmKeyMapItem *kmi = wm_event_match_keymap_item(C, km, event);
   PointerRNA kmi_ptr;
-  RNA_pointer_create(id, &RNA_KeyMapItem, kmi, &kmi_ptr);
+  RNA_pointer_create(id, &ApiKeyMapItem, kmi, &kmi_ptr);
   return kmi_ptr;
 }
 
@@ -1116,17 +1116,17 @@ void RNA_api_keymapitem(StructRNA *srna)
   FunctionRNA *func;
   PropertyRNA *parm;
 
-  func = RNA_def_function(srna, "compare", "rna_KeyMapItem_compare");
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_boolean(func, "result", 0, "Comparison result", "");
-  RNA_def_function_return(func, parm);
+  func = api_def_fn(srna, "compare", "rna_KeyMapItem_compare");
+  parm = api_def_ptr(func, "item", "KeyMapItem", "Item", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_bool(fn, "result", 0, "Comparison result", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "to_string", "rna_KeyMapItem_to_string");
-  RNA_def_boolean(func, "compact", false, "Compact", "");
-  parm = RNA_def_string(func, "result", NULL, UI_MAX_SHORTCUT_STR, "result", "");
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
+  func = api_def_fn(sapi, "to_string", "rna_KeyMapItem_to_string");
+  api_def_bool(fn, "compact", false, "Compact", "");
+  parm = api_def_string(fn, "result", NULL, UI_MAX_SHORTCUT_STR, "result", "");
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
 }
 
 void RNA_api_keymapitems(StructRNA *srna)
