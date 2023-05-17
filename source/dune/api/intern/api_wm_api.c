@@ -2,27 +2,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_windowmanager.h"
 
-#include "UI_interface.h"
+#include "ui.h"
 
 #include "wm_cursors.h"
 #include "wm_event_types.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
 /* confusing 2 enums mixed up here */
-const EnumPropertyItem rna_enum_window_cursor_items[] = {
+const EnumPropItem api_enum_window_cursor_items[] = {
     {WM_CURSOR_DEFAULT, "DEFAULT", 0, "Default", ""},
     {WM_CURSOR_NONE, "NONE", 0, "None", ""},
     {WM_CURSOR_WAIT, "WAIT", 0, "Wait", ""},
@@ -54,94 +54,94 @@ const EnumPropertyItem rna_enum_window_cursor_items[] = {
 
 #ifdef RNA_RUNTIME
 
-#  include "BKE_context.h"
-#  include "BKE_undo_system.h"
+#  include "dune_ctx.h"
+#  include "dune_undo_system.h"
 
-#  include "WM_types.h"
+#  include "wm_types.h"
 
-/* Needed since RNA doesn't use `const` in function signatures. */
-static bool rna_KeyMapItem_compare(struct wmKeyMapItem *k1, struct wmKeyMapItem *k2)
+/* Needed since api doesn't use `const` in function signatures. */
+static bool api_KeyMapItem_compare(struct wmKeyMapItem *k1, struct wmKeyMapItem *k2)
 {
-  return WM_keymap_item_compare(k1, k2);
+  return wm_keymap_item_compare(k1, k2);
 }
 
-static void rna_KeyMapItem_to_string(wmKeyMapItem *kmi, bool compact, char *result)
+static void api_KeyMapItem_to_string(wmKeyMapItem *kmi, bool compact, char *result)
 {
-  WM_keymap_item_to_string(kmi, compact, result, UI_MAX_SHORTCUT_STR);
+  wm_keymap_item_to_string(kmi, compact, result, UI_MAX_SHORTCUT_STR);
 }
 
-static wmKeyMap *rna_keymap_active(wmKeyMap *km, bContext *C)
+static wmKeyMap *api_keymap_active(wmKeyMap *km, Ctx *C)
 {
-  wmWindowManager *wm = CTX_wm_manager(C);
-  return WM_keymap_active(wm, km);
+  wmWindowManager *wm = ctx_wm_manager(C);
+  return wm_keymap_active(wm, km);
 }
 
-static void rna_keymap_restore_to_default(wmKeyMap *km, bContext *C)
+static void api_keymap_restore_to_default(wmKeyMap *km, bContext *C)
 {
-  WM_keymap_restore_to_default(km, CTX_wm_manager(C));
+  wm_keymap_restore_to_default(km, ctx_wm_manager(C));
 }
 
-static void rna_keymap_restore_item_to_default(wmKeyMap *km, bContext *C, wmKeyMapItem *kmi)
+static void api_keymap_restore_item_to_default(wmKeyMap *km, Ctx *C, wmKeyMapItem *kmi)
 {
-  WM_keymap_item_restore_to_default(CTX_wm_manager(C), km, kmi);
+  wm_keymap_item_restore_to_default(ctx_wm_manager(C), km, kmi);
 }
 
-static void rna_Operator_report(wmOperator *op, int type, const char *msg)
+static void api_op_report(wmOp *op, int type, const char *msg)
 {
-  BKE_report(op->reports, type, msg);
+  dune_report(op->reports, type, msg);
 }
 
-static bool rna_Operator_is_repeat(wmOperator *op, bContext *C)
+static bool api_op_is_repeat(wmOp *op, Ctx *C)
 {
-  return WM_operator_is_repeat(C, op);
+  return wm_op_is_repeat(C, op);
 }
 
 /* since event isn't needed... */
-static void rna_Operator_enum_search_invoke(bContext *C, wmOperator *op)
+static void api_op_enum_search_invoke(Ctx *C, wmOp *op)
 {
-  WM_enum_search_invoke(C, op, NULL);
+  w_enum_search_invoke(C, op, NULL);
 }
 
-static bool rna_event_modal_handler_add(struct bContext *C, struct wmOperator *operator)
+static bool api_event_modal_handler_add(struct Ctx *C, struct wmOp *op)
 {
-  return WM_event_add_modal_handler(C, operator) != NULL;
+  return wm_event_add_modal_handler(C, op) != NULL;
 }
 
 /* XXX, need a way for python to know event types, 0x0110 is hard coded */
-static wmTimer *rna_event_timer_add(struct wmWindowManager *wm, float time_step, wmWindow *win)
+static wmTimer *api_event_timer_add(struct wmWindowManager *wm, float time_step, wmWindow *win)
 {
-  return WM_event_add_timer(wm, win, 0x0110, time_step);
+  return wm_event_add_timer(wm, win, 0x0110, time_step);
 }
 
-static void rna_event_timer_remove(struct wmWindowManager *wm, wmTimer *timer)
+static void api_event_timer_remove(struct wmWindowManager *wm, wmTimer *timer)
 {
-  WM_event_remove_timer(wm, timer->win, timer);
+  wm_event_remove_timer(wm, timer->win, timer);
 }
 
 static wmGizmoGroupType *wm_gizmogrouptype_find_for_add_remove(ReportList *reports,
                                                                const char *idname)
 {
-  wmGizmoGroupType *gzgt = WM_gizmogrouptype_find(idname, true);
+  wmGizmoGroupType *gzgt = wm_gizmogrouptype_find(idname, true);
   if (gzgt == NULL) {
-    BKE_reportf(reports, RPT_ERROR, "Gizmo group type '%s' not found!", idname);
+    dune_reportf(reports, RPT_ERROR, "Gizmo group type '%s' not found!", idname);
     return NULL;
   }
   if (gzgt->flag & WM_GIZMOGROUPTYPE_PERSISTENT) {
-    BKE_reportf(reports, RPT_ERROR, "Gizmo group '%s' has 'PERSISTENT' option set!", idname);
+    dube_reportf(reports, RPT_ERROR, "Gizmo group '%s' has 'PERSISTENT' option set!", idname);
     return NULL;
   }
   return gzgt;
 }
 
-static void rna_gizmo_group_type_ensure(ReportList *reports, const char *idname)
+static void api_gizmo_group_type_ensure(ReportList *reports, const char *idname)
 {
   wmGizmoGroupType *gzgt = wm_gizmogrouptype_find_for_add_remove(reports, idname);
   if (gzgt != NULL) {
-    WM_gizmo_group_type_ensure_ptr(gzgt);
+    wm_gizmo_group_type_ensure_ptr(gzgt);
   }
 }
 
-static void rna_gizmo_group_type_unlink_delayed(ReportList *reports, const char *idname)
+static void api_gizmo_group_type_unlink_delayed(ReportList *reports, const char *idname)
 {
   wmGizmoGroupType *gzgt = wm_gizmogrouptype_find_for_add_remove(reports, idname);
   if (gzgt != NULL) {
@@ -156,7 +156,7 @@ static struct wmStaticProgress {
   bool is_valid;
 } wm_progress_state = {0, 0, false};
 
-static void rna_progress_begin(struct wmWindowManager *UNUSED(wm), float min, float max)
+static void api_progress_begin(struct wmWindowManager *UNUSED(wm), float min, float max)
 {
   float range = max - min;
   if (range != 0) {
@@ -169,7 +169,7 @@ static void rna_progress_begin(struct wmWindowManager *UNUSED(wm), float min, fl
   }
 }
 
-static void rna_progress_update(struct wmWindowManager *wm, float value)
+static void api_progress_update(struct wmWindowManager *wm, float value)
 {
   if (wm_progress_state.is_valid) {
     /* Map to cursor_time range [0,9999] */
@@ -177,71 +177,71 @@ static void rna_progress_update(struct wmWindowManager *wm, float value)
     if (win) {
       int val = (int)(10000 * (value - wm_progress_state.min) /
                       (wm_progress_state.max - wm_progress_state.min));
-      WM_cursor_time(win, val);
+      wm_cursor_time(win, val);
     }
   }
 }
 
-static void rna_progress_end(struct wmWindowManager *wm)
+static void api_progress_end(struct wmWindowManager *wm)
 {
   if (wm_progress_state.is_valid) {
     wmWindow *win = wm->winactive;
     if (win) {
-      WM_cursor_modal_restore(win);
+      wm_cursor_modal_restore(win);
       wm_progress_state.is_valid = false;
     }
   }
 }
 
 /* wrap these because of 'const wmEvent *' */
-static int rna_Operator_confirm(bContext *C, wmOperator *op, wmEvent *event)
+static int api_op_confirm(Ctx *C, wmOp *op, wmEvent *event)
 {
-  return WM_operator_confirm(C, op, event);
+  return wm_op_confirm(C, op, event);
 }
-static int rna_Operator_props_popup(bContext *C, wmOperator *op, wmEvent *event)
+static int api_op_props_popup(Ctx *C, wmOp *op, wmEvent *event)
 {
-  return WM_operator_props_popup(C, op, event);
+  return wm_op_props_popup(C, op, event);
 }
 
-static int keymap_item_modifier_flag_from_args(bool any, int shift, int ctrl, int alt, int oskey)
+static int keymap_item_mod_flag_from_args(bool any, int shift, int ctrl, int alt, int oskey)
 {
-  int modifier = 0;
+  int mod = 0;
   if (any) {
-    modifier = KM_ANY;
+    mod = KM_ANY;
   }
   else {
     if (shift == KM_MOD_HELD) {
-      modifier |= KM_SHIFT;
+      mod |= KM_SHIFT;
     }
     else if (shift == KM_ANY) {
-      modifier |= KM_SHIFT_ANY;
+      mod |= KM_SHIFT_ANY;
     }
 
     if (ctrl == KM_MOD_HELD) {
-      modifier |= KM_CTRL;
+      mod |= KM_CTRL;
     }
     else if (ctrl == KM_ANY) {
-      modifier |= KM_CTRL_ANY;
+      mod |= KM_CTRL_ANY;
     }
 
     if (alt == KM_MOD_HELD) {
-      modifier |= KM_ALT;
+      mod |= KM_ALT;
     }
     else if (alt == KM_ANY) {
-      modifier |= KM_ALT_ANY;
+      mod |= KM_ALT_ANY;
     }
 
     if (oskey == KM_MOD_HELD) {
-      modifier |= KM_OSKEY;
+      mod |= KM_OSKEY;
     }
     else if (oskey == KM_ANY) {
-      modifier |= KM_OSKEY_ANY;
+      mod |= KM_OSKEY_ANY;
     }
   }
-  return modifier;
+  return mod;
 }
 
-static wmKeyMapItem *rna_KeyMap_item_new(wmKeyMap *km,
+static wmKeyMapItem *api_KeyMap_item_new(wmKeyMap *km,
                                          ReportList *reports,
                                          const char *idname,
                                          int type,
@@ -251,14 +251,14 @@ static wmKeyMapItem *rna_KeyMap_item_new(wmKeyMap *km,
                                          int ctrl,
                                          int alt,
                                          int oskey,
-                                         int keymodifier,
+                                         int keymod,
                                          int direction,
                                          bool repeat,
                                          bool head)
 {
   /* only on non-modal maps */
   if (km->flag & KEYMAP_MODAL) {
-    BKE_report(reports, RPT_ERROR, "Not a non-modal keymap");
+    dune_report(reports, RPT_ERROR, "Not a non-modal keymap");
     return NULL;
   }
 
