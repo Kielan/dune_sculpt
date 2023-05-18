@@ -99,7 +99,7 @@ static bool api_op_is_repeat(wmOp *op, Ctx *C)
 /* since event isn't needed... */
 static void api_op_enum_search_invoke(Ctx *C, wmOp *op)
 {
-  w_enum_search_invoke(C, op, NULL);
+  wm_enum_search_invoke(C, op, NULL);
 }
 
 static bool api_event_modal_handler_add(struct Ctx *C, struct wmOp *op)
@@ -145,7 +145,7 @@ static void api_gizmo_group_type_unlink_delayed(ReportList *reports, const char 
 {
   wmGizmoGroupType *gzgt = wm_gizmogrouptype_find_for_add_remove(reports, idname);
   if (gzgt != NULL) {
-    WM_gizmo_group_type_unlink_delayed_ptr(gzgt);
+    wm_gizmo_group_type_unlink_delayed_ptr(gzgt);
   }
 }
 
@@ -399,10 +399,10 @@ static ApiPtr api_KeyMap_item_find_from_op(Id *id,
   return kmi_ptr;
 }
 
-static ApiPtr api_KeyMap_item_match_event(Id *id, wmKeyMap *km, bContext *C, wmEvent *event)
+static ApiPtr api_KeyMap_item_match_event(Id *id, wmKeyMap *km, Ctx *C, wmEvent *event)
 {
   wmKeyMapItem *kmi = wm_event_match_keymap_item(C, km, event);
-  PointerRNA kmi_ptr;
+  ApiPtr kmi_ptr;
   api_ptr_create(id, &ApiKeyMapItem, kmi, &kmi_ptr);
   return kmi_ptr;
 }
@@ -620,7 +620,7 @@ static wmEvent *api_Window_event_add_simulate(wmWindow *win,
   }
   if (ISMOUSE_MOTION(type)) {
     if (value != KM_NOTHING) {
-      BKE_report(reports, RPT_ERROR, "Value: must be 'NOTHING' for motion");
+      dune_report(reports, RPT_ERROR, "Value: must be 'NOTHING' for motion");
       return NULL;
     }
   }
@@ -751,28 +751,28 @@ void api_window(ApiStruct *sapi)
   api_def_fn_return(fn, parm);
 }
 
-void api_wm(StructRNA *srna)
+void api_wm(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "fileselect_add", "WM_event_add_fileselect");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "fileselect_add", "wm_event_add_fileselect");
+  api_def_fn_ui_description(
+      fn,
       "Opens a file selector with an operator. "
       "The string properties 'filepath', 'filename', 'directory' and a 'files' "
       "collection are assigned when present in the operator");
-  rna_generic_op_invoke(func, 0);
+  api_generic_op_invoke(fn, 0);
 
-  func = RNA_def_function(srna, "modal_handler_add", "rna_event_modal_handler_add");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "modal_handler_add", "api_event_modal_handler_add");
+  api_def_fn_ui_description(
+      fn,
       "Add a modal handler to the window manager, for the given modal operator "
       "(called by invoke() with self, just before returning {'RUNNING_MODAL'})");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "operator", "Operator", "", "Operator to call");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_return(
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  parm = api_def_ptr(fn, "operator", "Operator", "", "Op to call");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_return(
       fn, api_def_bool(fn, "handle", 1, "", "Whether adding the handler was successful"));
 
   fn = api_def_fn(sapi, "event_timer_add", "rna_event_timer_add");
