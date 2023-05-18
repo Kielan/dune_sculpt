@@ -1078,85 +1078,85 @@ void api_macro(ApiStruct *sapi)
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* draw */
-  func = api_def_fn(sapi, "draw", NULL);
-  RNA_def_fn_ui_description(func, "Draw function for the operator");
-  RNA_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
-  parm = api_def_ptr(fn, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "draw", NULL);
+  api_def_fn_ui_description(fn, "Draw function for the operator");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "ctx", "Cyx", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 }
 
-void RNA_api_keyconfig(StructRNA *UNUSED(srna))
+void api_keyconfig(ApiStruct *UNUSED(sapi))
 {
-  /* FunctionRNA *func; */
-  /* PropertyRNA *parm; */
+  /* ApiFn *func; */
+  /* ApiProp *parm; */
 }
 
-void RNA_api_keymap(StructRNA *srna)
+void api_keymap(ApiStruct *sapi
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "active", "rna_keymap_active");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "keymap", "KeyMap", "Key Map", "Active key map");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "active", "api_keymap_active");
+  api_def_fn_flag(fn, FN_USE_CTX);
+  parm = api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Active key map");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "restore_to_default", "rna_keymap_restore_to_default");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_fn(sapi, "restore_to_default", "api_keymap_restore_to_default");
+  api_def_fn_flag(fn, FN_USE_CTX);
 
-  func = RNA_def_function(srna, "restore_item_to_default", "rna_keymap_restore_item_to_default");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "restore_item_to_default", "api_keymap_restore_item_to_default");
+  api_def_fn_flag(fn, FN_USE_CTX);
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 }
 
-void RNA_api_keymapitem(StructRNA *srna)
+void api_keymapitem(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = api_def_fn(srna, "compare", "rna_KeyMapItem_compare");
-  parm = api_def_ptr(func, "item", "KeyMapItem", "Item", "");
+  fn = api_def_fn(sapi, "compare", "api_KeyMapItem_compare");
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_bool(fn, "result", 0, "Comparison result", "");
   api_def_fn_return(fn, parm);
 
-  func = api_def_fn(sapi, "to_string", "rna_KeyMapItem_to_string");
+  fn = api_def_fn(sapi, "to_string", "api_KeyMapItem_to_string");
   api_def_bool(fn, "compact", false, "Compact", "");
   parm = api_def_string(fn, "result", NULL, UI_MAX_SHORTCUT_STR, "result", "");
   api_def_param_flags(parm, PROP_THICK_WRAP, 0);
   api_def_fn_output(fn, parm);
 }
 
-void RNA_api_keymapitems(StructRNA *srna)
+void api_api_keymapitems(StructRNA *srna)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "new", "rna_KeyMap_item_new");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "idname", NULL, 0, "Operator Identifier", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "type", rna_enum_event_type_items, 0, "Type", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "value", rna_enum_event_value_items, 0, "Value", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "any", 0, "Any", "");
-  RNA_def_int(func, "shift", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Shift", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_int(func, "ctrl", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Ctrl", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_int(func, "alt", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Alt", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_int(func, "oskey", KM_NOTHING, KM_ANY, KM_MOD_HELD, "OS Key", "", KM_ANY, KM_MOD_HELD);
-  RNA_def_enum(func, "key_modifier", rna_enum_event_type_items, 0, "Key Modifier", "");
-  RNA_def_enum(func, "direction", rna_enum_event_direction_items, KM_ANY, "Direction", "");
-  RNA_def_boolean(func, "repeat", false, "Repeat", "When set, accept key-repeat events");
-  RNA_def_boolean(func,
+  fn = api_def_fn(sapi, "new", "rna_KeyMap_item_new");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "idname", NULL, 0, "Operator Identifier", "");
+  ap_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "type", api_enum_event_type_items, 0, "Type", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "value", api_enum_event_value_items, 0, "Value", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "any", 0, "Any", "");
+  apj_def_int(fn, "shift", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Shift", "", KM_ANY, KM_MOD_HELD);
+  api_def_int(fn, "ctrl", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Ctrl", "", KM_ANY, KM_MOD_HELD);
+  api_def_int(fn, "alt", KM_NOTHING, KM_ANY, KM_MOD_HELD, "Alt", "", KM_ANY, KM_MOD_HELD);
+  api_def_int(fn, "oskey", KM_NOTHING, KM_ANY, KM_MOD_HELD, "OS Key", "", KM_ANY, KM_MOD_HELD);
+  api_def_enum(fn, "key_modifier", api_enum_event_type_items, 0, "Key Modifier", "");
+  api_def_enum(fn, "direction", api_enum_event_direction_items, KM_ANY, "Direction", "");
+  api_def_bool(fn, "repeat", false, "Repeat", "When set, accept key-repeat events");
+  api_def_bool(fn,
                   "head",
                   0,
                   "At Head",
                   "Force item to be added at start (not end) of key map so that "
                   "it doesn't get blocked by an existing key map item");
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "Item", "Added key map item");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "Added key map item");
+  api_def_fn_return(fn, parm);
 
   func = RNA_def_function(srna, "new_modal", "rna_KeyMap_item_new_modal");
   RNA_def_function_flag(func, FUNC_USE_REPORTS);
