@@ -10,94 +10,93 @@
 
 #include "types_windowmanager.h"
 
-#include "WM_api.h"
+#include "wm_api.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_context.h"
-#  include "UI_interface.h"
+#  include "dune_ctx.h"
+#  include "ui.h"
 
-#  include "ED_gizmo_library.h"
+#  include "ed_gizmo_lib.h"
 
-static void rna_gizmo_draw_preset_box(wmGizmo *gz, float matrix[16], int select_id)
+static void api_gizmo_draw_preset_box(wmGizmo *gz, float matrix[16], int select_id)
 {
-  ED_gizmo_draw_preset_box(gz, (float(*)[4])matrix, select_id);
+  ed_gizmo_draw_preset_box(gz, (float(*)[4])matrix, select_id);
 }
 
-static void rna_gizmo_draw_preset_arrow(wmGizmo *gz, float matrix[16], int axis, int select_id)
+static void api_gizmo_draw_preset_arrow(wmGizmo *gz, float matrix[16], int axis, int select_id)
 {
-  ED_gizmo_draw_preset_arrow(gz, (float(*)[4])matrix, axis, select_id);
+  ed_gizmo_draw_preset_arrow(gz, (float(*)[4])matrix, axis, select_id);
 }
 
-static void rna_gizmo_draw_preset_circle(wmGizmo *gz, float matrix[16], int axis, int select_id)
+static void api_gizmo_draw_preset_circle(wmGizmo *gz, float matrix[16], int axis, int select_id)
 {
-  ED_gizmo_draw_preset_circle(gz, (float(*)[4])matrix, axis, select_id);
+  ed_gizmo_draw_preset_circle(gz, (float(*)[4])matrix, axis, select_id);
 }
 
-static void rna_gizmo_draw_preset_facemap(
-    wmGizmo *gz, struct bContext *C, struct Object *ob, int facemap, int select_id)
+static void api_gizmo_draw_preset_facemap(
+    wmGizmo *gz, struct Ctx *C, struct Object *ob, int facemap, int select_id)
 {
-  ED_gizmo_draw_preset_facemap(C, gz, ob, facemap, select_id);
+  ed_gizmo_draw_preset_facemap(C, gz, ob, facemap, select_id);
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Gizmo Property Define
- * \{ */
+/** Gizmo Prop Define **/
 
-static void rna_gizmo_target_set_prop(wmGizmo *gz,
+static void api_gizmo_target_set_prop(wmGizmo *gz,
                                       ReportList *reports,
                                       const char *target_propname,
-                                      PointerRNA *ptr,
+                                      ApiPtr *ptr,
                                       const char *propname,
                                       int index)
 {
-  const wmGizmoPropertyType *gz_prop_type = WM_gizmotype_target_property_find(gz->type,
+  const wmGizmoPropType *gz_prop_type = wm_gizmotype_target_property_find(gz->type,
                                                                               target_propname);
   if (gz_prop_type == NULL) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
-                "Gizmo target property '%s.%s' not found",
+                "Gizmo target prop '%s.%s' not found",
                 gz->type->idname,
                 target_propname);
     return;
   }
 
-  PropertyRNA *prop = RNA_struct_find_property(ptr, propname);
+  ApiProp *prop = api_struct_find_prop(ptr, propname);
   if (prop == NULL) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Property '%s.%s' not found",
-                RNA_struct_identifier(ptr->type),
+                api_struct_id(ptr->type),
                 propname);
     return;
   }
 
-  if (gz_prop_type->data_type != RNA_property_type(prop)) {
-    const int gizmo_type_index = RNA_enum_from_value(rna_enum_property_type_items,
+  if (gz_prop_type->data_type != api_prop_type(prop)) {
+    const int gizmo_type_index = api_enum_from_value(api_enum_prop_type_items,
                                                      gz_prop_type->data_type);
-    const int prop_type_index = RNA_enum_from_value(rna_enum_property_type_items,
-                                                    RNA_property_type(prop));
-    BLI_assert((gizmo_type_index != -1) && (prop_type_index == -1));
+    const int prop_type_index = api_enum_from_value(api_enum_prop_type_items,
+                                                    api_prop_type(prop));
+    lib_assert((gizmo_type_index != -1) && (prop_type_index == -1));
 
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Gizmo target '%s.%s' expects '%s', '%s.%s' is '%s'",
                 gz->type->idname,
                 target_propname,
-                rna_enum_property_type_items[gizmo_type_index].identifier,
-                RNA_struct_identifier(ptr->type),
+                api_enum_prop_type_items[gizmo_type_index].id,
+                api_struct_id(ptr->type),
                 propname,
-                rna_enum_property_type_items[prop_type_index].identifier);
+                api_enum_prop_type_items[prop_type_index].id);
     return;
   }
 
-  if (RNA_property_array_check(prop)) {
+  if (api_prop_array_check(prop)) {
     if (index == -1) {
-      const int prop_array_length = RNA_property_array_length(ptr, prop);
+      const int prop_array_length = api_prop_array_length(ptr, prop);
       if (gz_prop_type->array_length != prop_array_length) {
-        BKE_reportf(reports,
+        dune_reportf(reports,
                     RPT_ERROR,
                     "Gizmo target property '%s.%s' expects an array of length %d, found %d",
                     gz->type->idname,
@@ -121,9 +120,9 @@ static void rna_gizmo_target_set_prop(wmGizmo *gz,
   }
 
   if (index >= gz_prop_type->array_length) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
-                "Gizmo target property '%s.%s', index %d must be below %d",
+                "Gizmo target prop '%s.%s', index %d must be below %d",
                 gz->type->idname,
                 target_propname,
                 index,
@@ -131,60 +130,55 @@ static void rna_gizmo_target_set_prop(wmGizmo *gz,
     return;
   }
 
-  WM_gizmo_target_property_def_rna_ptr(gz, gz_prop_type, ptr, prop, index);
+  wm_gizmo_target_prop_def_api_ptr(gz, gz_prop_type, ptr, prop, index);
 }
 
-static PointerRNA rna_gizmo_target_set_operator(wmGizmo *gz,
+static ApiPtr api_gizmo_target_set_operator(wmGizmo *gz,
                                                 ReportList *reports,
                                                 const char *opname,
                                                 int part_index)
 {
-  wmOperatorType *ot;
+  wmOpType *ot;
 
-  ot = WM_operatortype_find(opname, false); /* print error next */
-  if (!ot || !ot->srna) {
-    BKE_reportf(
+  ot = wm_optype_find(opname, false); /* print error next */
+  if (!ot || !ot->sapi) {
+    dune_reportf(
         reports, RPT_ERROR, "%s '%s'", ot ? "unknown operator" : "operator missing srna", opname);
     return PointerRNA_NULL;
   }
 
-  /* For the return value to be usable, we need 'PointerRNA.data' to be set. */
-  IDProperty *properties;
+  /* For the return value to be usable, we need 'ApiPtr.data' to be set. */
+  IdProp *props;
   {
-    IDPropertyTemplate val = {0};
-    properties = IDP_New(IDP_GROUP, &val, "wmGizmoProperties");
+    IdPropTemplate val = {0};
+    props = IDP_New(IDP_GROUP, &val, "wmGizmoProps");
   }
 
-  return *WM_gizmo_operator_set(gz, part_index, ot, properties);
+  return *wm_gizmo_op_set(gz, part_index, ot, props);
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Gizmo Property Access
- * \{ */
+/** Gizmo Prop Access **/
 
-static bool rna_gizmo_target_is_valid(wmGizmo *gz,
+static bool api_gizmo_target_is_valid(wmGizmo *gz,
                                       ReportList *reports,
                                       const char *target_propname)
 {
-  wmGizmoProperty *gz_prop = WM_gizmo_target_property_find(gz, target_propname);
+  wmGizmoProp *gz_prop = wm_gizmo_target_prop_find(gz, target_propname);
   if (gz_prop == NULL) {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
-                "Gizmo target property '%s.%s' not found",
+                "Gizmo target prop '%s.%s' not found",
                 gz->type->idname,
                 target_propname);
     return false;
   }
-  return WM_gizmo_target_property_is_valid(gz_prop);
+  return wm_gizmo_target_prop_is_valid(gz_prop);
 }
-
-/** \} */
 
 #else
 
-void RNA_api_gizmo(StructRNA *srna)
+void api_gizmo(ApiStruct *sapi)
 {
   /* Utility draw functions, since we don't expose new OpenGL drawing wrappers via Python yet.
    * exactly how these should be exposed isn't totally clear.
@@ -192,17 +186,17 @@ void RNA_api_gizmo(StructRNA *srna)
    * Just note that this could be re-worked once tests are done.
    */
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *func;
+  ApiProp *parm;
 
   /* -------------------------------------------------------------------- */
   /* Primitive Shapes */
 
   /* draw_preset_box */
-  func = RNA_def_function(srna, "draw_preset_box", "rna_gizmo_draw_preset_box");
-  RNA_def_function_ui_description(func, "Draw a box");
-  parm = RNA_def_property(func, "matrix", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(srna, "draw_preset_box", "rna_gizmo_draw_preset_box");
+  api_def_fn_ui_description(fn, "Draw a box");
+  parm = api_def_prop(fn, "matrix", PROP_FLOAT, PROP_MATRIX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   RNA_def_property_multi_array(parm, 2, rna_matrix_dimsize_4x4);
   RNA_def_property_ui_text(parm, "", "The matrix to transform");
   RNA_def_int(func,
