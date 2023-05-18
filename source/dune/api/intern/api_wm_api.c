@@ -52,7 +52,7 @@ const EnumPropItem api_enum_window_cursor_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  include "dune_ctx.h"
 #  include "dune_undo_system.h"
@@ -285,8 +285,7 @@ static wmKeyMapItem *api_KeyMap_item_new(wmKeyMap *km,
   }
 
   /* #32437 allow scripts to define hotkeys that get added to start of keymap
-   *          so that they stand a chance against catch-all defines later on
-   */
+   *          so that they stand a chance against catch-all defines later on*/
   if (head) {
     lib_remlink(&km->items, kmi);
     lib_addhead(&km->items, kmi);
@@ -779,7 +778,7 @@ void api_wm(ApiStruct *sapi)
   api_def_fn_ui_description(
       fn, "Add a timer to the given window, to generate periodic 'TIMER' events");
   parm = api_def_prop(fn, "time_step", PROP_FLOAT, PROP_NONE);
-  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   api_def_prop_range(parm, 0.0, FLT_MAX);
   api_def_prop_ui_text(parm, "Time Step", "Interval in seconds between timer events");
   api_def_ptr(fn, "window", "Window", "", "Window to attach the timer to, or None");
@@ -901,146 +900,146 @@ void api_wm(ApiStruct *sapi)
   api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Active key map");
 
   /* wrap uiPieMenuBegin */
-  func = RNA_def_function(sapi, "piemenu_begin__internal", "api_PieMenuBegin");
-  RNA_def_function_flag(fn, FN_NO_SELF | FN_USE_CONTEXT);
-  parm = RNA_def_string(fn, "title", NULL, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_property(fn, "icon", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(parm, api_enum_icon_items);
-  parm = RNA_def_pointer(func, "event", "Event", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
+  fb = api_def_fn(sapi, "piemenu_begin__internal", "api_PieMenuBegin");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CONTEXT);
+  parm = api_def_string(fn, "title", NULL, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_prop(fn, "icon", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(parm, api_enum_icon_items);
+  parm = api_def_ptr(fn, "event", "Event", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
   /* return */
-  parm = RNA_def_pointer(func, "menu_pie", "UIPieMenu", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "menu_pie", "UIPieMenu", "", "");
+  api_def_patam_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
+  api_def_fn_return(fn, parm);
 
   /* wrap uiPieMenuEnd */
-  func = RNA_def_function(srna, "piemenu_end__internal", "rna_PieMenuEnd");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "menu", "UIPieMenu", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR | PARM_REQUIRED);
+  fn = api_def_fn(sapi, "piemenu_end__internal", "rna_PieMenuEnd");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  parm = api_def_ptr(fn, "menu", "UIPieMenu", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR | PARM_REQUIRED);
 
   /* access last operator options (optionally create). */
-  func = RNA_def_function(
-      srna, "operator_properties_last", "rna_WindoManager_operator_properties_last");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
-  parm = RNA_def_string(func, "operator", NULL, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(
+      sapi, "op_props_last", "api_WindoManager_op_props_last");
+  api_def_fn_flag(fn, FN_NO_SELF);
+  parm = api_def_string(fn, "operator", NULL, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return */
-  parm = RNA_def_pointer(func, "result", "OperatorProperties", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "result", "OperatorProperties", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
+  api_def_fn_return(fn, parm);
 
-  RNA_def_function(srna, "print_undo_steps", "rna_WindowManager_print_undo_steps");
+  api_def_fn(sapi, "print_undo_steps", "rna_WindowManager_print_undo_steps");
 
   /* Used by (#SCRIPT_OT_reload). */
-  func = RNA_def_function(srna, "tag_script_reload", "rna_WindowManager_tag_script_reload");
-  RNA_def_function_ui_description(
+  fn = api_def_fn(sapi, "tag_script_reload", "rna_WindowManager_tag_script_reload");
+  api_def_fn_ui_description(
       func, "Tag for refreshing the interface after scripts have been reloaded");
-  RNA_def_function_flag(func, FUNC_NO_SELF);
+  api_def_fn_flag(fb, FN_NO_SELF);
 
-  parm = RNA_def_property(srna, "is_interface_locked", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_ui_text(
+  parm = api_def_prop(sapi, "is_interface_locked", PROP_BOOL, PROP_NONE);
+  api_def_prop_ui_text(
       parm,
       "Is Interface Locked",
       "If true, the interface is currently locked by a running job and data shouldn't be modified "
       "from application timers. Otherwise, the running job might conflict with the handler "
       "causing unexpected results or even crashes");
-  RNA_def_property_clear_flag(parm, PROP_EDITABLE);
+  api_def_prop_clear_flag(parm, PROP_EDITABLE);
 }
 
-void RNA_api_operator(StructRNA *srna)
+void api_op(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
   /* utility, not for registering */
-  func = RNA_def_function(srna, "report", "rna_Operator_report");
-  parm = RNA_def_enum_flag(func, "type", rna_enum_wm_report_items, 0, "Type", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "message", NULL, 0, "Report Message", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "report", "api_op_report");
+  parm = api_def_enum_flag(fb, "type", api_enum_wm_report_items, 0, "Type", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fb, "message", NULL, 0, "Report Message", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* utility, not for registering */
-  func = RNA_def_function(srna, "is_repeat", "rna_Operator_is_repeat");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  fn = api_def_fn(sapi, "is_repeat", "api_op_is_repeat");
+  api_def_fn_flag(fn, FN_USE_CTX);
   /* return */
-  parm = RNA_def_boolean(func, "result", 0, "result", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_bool(fn, "result", 0, "result", "");
+  api_def_fn_return(fn, parm);
 
   /* Registration */
 
   /* poll */
-  func = RNA_def_function(srna, "poll", NULL);
-  RNA_def_function_ui_description(func, "Test if the operator can be called or not");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_REGISTER_OPTIONAL);
-  RNA_def_function_return(func, RNA_def_boolean(func, "visible", 1, "", ""));
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
+  fn = api_def_fn(sapi, "poll", NULL);
+  api_def_fn_ui_description(fn, "Test if the operator can be called or not");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_REGISTER_OPTIONAL);
+  api_def_fn_return(fn, api_def_bool(fn, "visible", 1, "", ""));
+  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* exec */
-  func = RNA_def_function(srna, "execute", NULL);
-  RNA_def_function_ui_description(func, "Execute the operator");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "execute", NULL);
+  api_def_fn_ui_description(fn, "Execute the operator");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* better name? */
-  parm = RNA_def_enum_flag(
-      func, "result", rna_enum_operator_return_items, OPERATOR_FINISHED, "result", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_enum_flag(
+      func, "result", api_enum_op_return_items, OPERATOR_FINISHED, "result", "");
+  api_def_fn_return(func, parm);
 
   /* check */
-  func = RNA_def_function(srna, "check", NULL);
-  RNA_def_function_ui_description(
-      func, "Check the operator settings, return True to signal a change to redraw");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "check", NULL);
+  api_def_fn_ui_description(
+      fn, "Check the operator settings, return True to signal a change to redraw");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  parm = RNA_def_boolean(func, "result", 0, "result", ""); /* better name? */
-  RNA_def_function_return(func, parm);
+  parm = api_def_bool(fn, "result", 0, "result", ""); /* better name? */
+  api_def_fn_return(fn, parm);
 
   /* invoke */
-  func = RNA_def_function(srna, "invoke", NULL);
-  RNA_def_function_ui_description(func, "Invoke the operator");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "event", "Event", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  func = api_def_fn(srna, "invoke", NULL);
+  api_def_fn_ui_description(fn, "Invoke the operator");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "event", "Event", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* better name? */
-  parm = RNA_def_enum_flag(
-      func, "result", rna_enum_operator_return_items, OPERATOR_FINISHED, "result", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_enum_flag(
+      fn, "result", api_enum_op_return_items, OP_FINISHED, "result", "n");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "modal", NULL); /* same as invoke */
-  RNA_def_function_ui_description(func, "Modal operator function");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "event", "Event", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "modal", NULL); /* same as invoke */
+  api_def_fn_ui_description(fn, "Modal operator function");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "event", "Event", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* better name? */
-  parm = RNA_def_enum_flag(
-      func, "result", rna_enum_operator_return_items, OPERATOR_FINISHED, "result", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_enum_flag(
+      fn, "result", api_enum_op_return_items, OP_FINISHED, "result", "");
+  api_def_fn_return(fn, parm);
 
   /* draw */
-  func = RNA_def_function(srna, "draw", NULL);
-  RNA_def_function_ui_description(func, "Draw function for the operator");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "draw", NULL);
+  api_def_fn_ui_description(fn, "Draw function for the operator");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* cancel */
-  func = RNA_def_function(srna, "cancel", NULL);
-  RNA_def_function_ui_description(func, "Called when the operator is canceled");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL | FUNC_ALLOW_WRITE);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  func = api_def_fn(sapi, "cancel", NULL);
+  api_def_fn_ui_description(fn, "Called when the operator is canceled");
+  api_def_fn_flag(fn, FN_REGISTER_OPTIONAL | FN_ALLOW_WRITE);
+  parm = api_def_ptr(fn, "ctx", "Ctx", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* description */
   fn = api_def_fn(sapi, "description", NULL);
@@ -1049,9 +1048,9 @@ void RNA_api_operator(StructRNA *srna)
   parm = api_def_string(fn, "result", NULL, 4096, "result", "");
   api_def_param_clear_flags(parm, PROP_NEVER_NULL, 0);
   api_def_param_flags(parm, PROP_THICK_WRAP, 0);
-  api_def_fn_output(func, parm);
-  parm = api_def_ptr(func, "context", "Context", "", "");
-  api_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_fn_output(fn, parm);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   parm = api_def_ptr(fn, "properties", "OperatorProperties", "", "");
   api_def_par_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
 }
@@ -1062,27 +1061,27 @@ void api_macro(ApiStruct *sapi)
   ApiProp *parm;
 
   /* utility, not for registering */
-  func = RNA_def_function(srna, "report", "rna_Operator_report");
-  parm = RNA_def_enum_flag(func, "type", rna_enum_wm_report_items, 0, "Type", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_string(func, "message", NULL, 0, "Report Message", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  func = api_def_fn(sapi, "report", "rna_Operator_report");
+  parm = api_def_enum_flag(fn, "type", rna_enum_wm_report_items, 0, "Type", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_string(fn, "message", NULL, 0, "Report Message", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* Registration */
 
   /* poll */
-  func = RNA_def_function(srna, "poll", NULL);
-  RNA_def_function_ui_description(func, "Test if the operator can be called or not");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_REGISTER_OPTIONAL);
-  RNA_def_function_return(func, RNA_def_boolean(func, "visible", 1, "", ""));
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "poll", NULL);
+  api_def_fn_ui_description(fn, "Test if the operator can be called or not");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_REGISTER_OPTIONAL);
+  api_def_fn_return(fn, api_def_bool(fn, "visible", 1, "", ""));
+  parm = api_def_ptr(fn, "context", "Context", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   /* draw */
-  func = RNA_def_function(srna, "draw", NULL);
-  RNA_def_function_ui_description(func, "Draw function for the operator");
-  RNA_def_function_flag(func, FUNC_REGISTER_OPTIONAL);
-  parm = RNA_def_pointer(func, "context", "Context", "", "");
+  func = api_def_fn(sapi, "draw", NULL);
+  RNA_def_fn_ui_description(func, "Draw function for the operator");
+  RNA_def_fn_flag(fn, FN_REGISTER_OPTIONAL);
+  parm = api_def_ptr(fn, "context", "Context", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 }
 
