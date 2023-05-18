@@ -55,78 +55,78 @@ static void api_gizmo_draw_cb(const struct Ctx *C, struct wmGizmo *gz)
 {
   extern ApiFn api_Gizmo_draw_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
-  /* Reference `RNA_struct_find_function(&gz_ptr, "draw")` directly. */
-  func = &rna_Gizmo_draw_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
-  RNA_parameter_list_free(&list);
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
+  api_ptr_create(NULL, gz->type->rna_ext.sapi, gz, &gz_ptr);
+  /* Reference `api_struct_find_fn(&gz_ptr, "draw")` directly. */
+  fn = &api_Gizmo_draw_fn;
+  api_param_list_create(&list, &gz_ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  gzgroup->type->api_ext.call((Ctx *)C, &gz_ptr, fn, &list);
+  api_param_list_free(&list);
   /* This callback may have called bgl functions. */
-  GPU_bgl_end();
+  gpu_bgl_end();
 }
 
-static void rna_gizmo_draw_select_cb(const struct bContext *C, struct wmGizmo *gz, int select_id)
+static void api_gizmo_draw_select_cb(const struct Ctx *C, struct wmGizmo *gz, int select_id)
 {
-  extern FunctionRNA rna_Gizmo_draw_select_func;
+  extern ApiFn api_Gizmo_draw_select_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
+  api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "draw_select")` directly. */
-  func = &rna_Gizmo_draw_select_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "select_id", &select_id);
-  gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
-  RNA_parameter_list_free(&list);
+  func = &api_Gizmo_draw_select_fn;
+  (&list, &gz_ptr, fn);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "select_id", &select_id);
+  gzgroup->type->api_ext.call((Ctx *)C, &gz_ptr, fn, &list);
+  api_param_list_free(&list);
   /* This callback may have called bgl functions. */
-  GPU_bgl_end();
+  gpu_bgl_end();
 }
 
-static int rna_gizmo_test_select_cb(struct bContext *C, struct wmGizmo *gz, const int location[2])
+static int api_gizmo_test_select_cb(struct Ctx *C, struct wmGizmo *gz, const int location[2])
 {
-  extern FunctionRNA rna_Gizmo_test_select_func;
+  extern ApiFn api_Gizmo_test_select_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
+  api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "test_select")` directly. */
-  func = &rna_Gizmo_test_select_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "location", location);
-  gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
+  fn = &api_Gizmo_test_select_fn;
+  api_param_list_create(&list, &gz_ptr, func);
+  api_param_set_lookup(&list, "context", &C);
+  api_param_set_lookup(&list, "location", location);
+  gzgroup->type->api_ext.call((Ctx *)C, &gz_ptr, fn, &list);
 
   void *ret;
-  RNA_parameter_get_lookup(&list, "intersect_id", &ret);
+  api_param_get_lookup(&list, "intersect_id", &ret);
   int intersect_id = *(int *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
   return intersect_id;
 }
 
-static int rna_gizmo_modal_cb(struct bContext *C,
+static int api_gizmo_modal_cb(struct Ctx *C,
                               struct wmGizmo *gz,
                               const struct wmEvent *event,
                               eWM_GizmoFlagTweak tweak_flag)
 {
-  extern FunctionRNA rna_Gizmo_modal_func;
+  extern ApiFn api_Gizmo_modal_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
   const int tweak_flag_int = tweak_flag;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
+  api_ptr_create(NULL, gz->type->api_ext.sapi, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "modal")` directly. */
-  func = &rna_Gizmo_modal_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
+  fn = &rna_Gizmo_modal_func;
+  api_param_list_create(&list, &gz_ptr, func);
+  api_param_set_lookup(&list, "context", &C);
   RNA_parameter_set_lookup(&list, "event", &event);
   RNA_parameter_set_lookup(&list, "tweak", &tweak_flag_int);
   gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
@@ -166,68 +166,68 @@ static int rna_gizmo_invoke_cb(struct bContext *C, struct wmGizmo *gz, const str
   func = &rna_Gizmo_invoke_func;
   RNA_parameter_list_create(&list, &gz_ptr, func);
   RNA_parameter_set_lookup(&list, "context", &C);
-  RNA_parameter_set_lookup(&list, "event", &event);
+  api_param_set_lookup(&list, "event", &event);
   gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
 
   void *ret;
-  RNA_parameter_get_lookup(&list, "result", &ret);
+  api_param_get_lookup(&list, "result", &ret);
   int ret_enum = *(int *)ret;
 
-  RNA_parameter_list_free(&list);
+  api_param_list_free(&list);
   return ret_enum;
 }
 
-static void rna_gizmo_exit_cb(struct bContext *C, struct wmGizmo *gz, bool cancel)
+static void api_gizmo_exit_cb(struct Ctx *C, struct wmGizmo *gz, bool cancel)
 {
-  extern FunctionRNA rna_Gizmo_exit_func;
+  extern ApiFn api_Gizmo_exit_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
+  api_ptr_create(NULL, gz->type->rna_ext.sapi, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "exit")` directly. */
-  func = &rna_Gizmo_exit_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  RNA_parameter_set_lookup(&list, "context", &C);
+  fn = &api_Gizmo_exit_func;
+  api_param_list_create(&list, &gz_ptr, func);
+  api_param_set_lookup(&list, "context", &C);
   {
     int cancel_i = cancel;
-    RNA_parameter_set_lookup(&list, "cancel", &cancel_i);
+    api_param_set_lookup(&list, "cancel", &cancel_i);
   }
-  gzgroup->type->rna_ext.call((bContext *)C, &gz_ptr, func, &list);
-  RNA_parameter_list_free(&list);
+  gzgroup->type->api_ext.call((bContext *)C, &gz_ptr, fn, &list);
+  api_param_list_free(&list);
 }
 
-static void rna_gizmo_select_refresh_cb(struct wmGizmo *gz)
+static void api_gizmo_select_refresh_cb(struct wmGizmo *gz)
 {
-  extern FunctionRNA rna_Gizmo_select_refresh_func;
+  extern ApiFn api_Gizmo_select_refresh_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
-  PointerRNA gz_ptr;
-  ParameterList list;
-  FunctionRNA *func;
-  RNA_pointer_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
+  ApiPtr gz_ptr;
+  ParamList list;
+  ApiFn *fn;
+  api_ptr_create(NULL, gz->type->rna_ext.srna, gz, &gz_ptr);
   /* Reference `RNA_struct_find_function(&gz_ptr, "select_refresh")` directly. */
-  func = &rna_Gizmo_select_refresh_func;
-  RNA_parameter_list_create(&list, &gz_ptr, func);
-  gzgroup->type->rna_ext.call((bContext *)NULL, &gz_ptr, func, &list);
-  RNA_parameter_list_free(&list);
+  fn = &rna_Gizmo_select_refresh_func;
+  api_param_list_create(&list, &gz_ptr, func);
+  gzgroup->type->api_ext.call((bContext *)NULL, &gz_ptr, func, &list);
+  api_param_list_free(&list);
 }
 
 #  endif /* WITH_PYTHON */
 
 /* just to work around 'const char *' warning and to ensure this is a python op */
-static void rna_Gizmo_bl_idname_set(PointerRNA *ptr, const char *value)
+static void api_Gizmo_bl_idname_set(ApiPtr *ptr, const char *value)
 {
   wmGizmo *data = ptr->data;
   char *str = (char *)data->type->idname;
   if (!str[0]) {
-    BLI_strncpy(str, value, MAX_NAME); /* utf8 already ensured */
+    lib_strncpy(str, value, MAX_NAME); /* utf8 already ensured */
   }
   else {
-    BLI_assert_msg(0, "setting the bl_idname on a non-builtin operator");
+    lib_assert_msg(0, "setting the bl_idname on a non-builtin operator");
   }
 }
 
-static void rna_Gizmo_update_redraw(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Gizmo_update_redraw(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   wmGizmo *gizmo = ptr->data;
   gizmo->do_draw = true;
