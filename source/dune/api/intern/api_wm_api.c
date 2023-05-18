@@ -773,140 +773,140 @@ void api_wm(StructRNA *srna)
   parm = RNA_def_pointer(func, "operator", "Operator", "", "Operator to call");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   RNA_def_function_return(
-      func, RNA_def_boolean(func, "handle", 1, "", "Whether adding the handler was successful"));
+      fn, api_def_bool(fn, "handle", 1, "", "Whether adding the handler was successful"));
 
-  func = RNA_def_function(srna, "event_timer_add", "rna_event_timer_add");
-  RNA_def_function_ui_description(
-      func, "Add a timer to the given window, to generate periodic 'TIMER' events");
-  parm = RNA_def_property(func, "time_step", PROP_FLOAT, PROP_NONE);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_property_range(parm, 0.0, FLT_MAX);
-  RNA_def_property_ui_text(parm, "Time Step", "Interval in seconds between timer events");
-  RNA_def_pointer(func, "window", "Window", "", "Window to attach the timer to, or None");
-  parm = RNA_def_pointer(func, "result", "Timer", "", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "event_timer_add", "rna_event_timer_add");
+  api_def_fn_ui_description(
+      fn, "Add a timer to the given window, to generate periodic 'TIMER' events");
+  parm = api_def_prop(fn, "time_step", PROP_FLOAT, PROP_NONE);
+  RNA_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_prop_range(parm, 0.0, FLT_MAX);
+  api_def_prop_ui_text(parm, "Time Step", "Interval in seconds between timer events");
+  api_def_ptr(fn, "window", "Window", "", "Window to attach the timer to, or None");
+  parm = api_def_ptr(fn, "result", "Timer", "", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "event_timer_remove", "rna_event_timer_remove");
-  parm = RNA_def_pointer(func, "timer", "Timer", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "event_timer_remove", "api_event_timer_remove"
+  parm = api_def_ptr(fn, "timer", "Timer", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "gizmo_group_type_ensure", "rna_gizmo_group_type_ensure");
-  RNA_def_function_ui_description(
-      func, "Activate an existing widget group (when the persistent option isn't set)");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "identifier", NULL, 0, "", "Gizmo group type name");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "gizmo_group_type_ensure", "rna_gizmo_group_type_ensure");
+  api_def_fn_ui_description(
+      fn, "Activate an existing widget group (when the persistent option isn't set)");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_REPORTS);
+  parm = api_def_string(fn, "identifier", NULL, 0, "", "Gizmo group type name");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(
-      srna, "gizmo_group_type_unlink_delayed", "rna_gizmo_group_type_unlink_delayed");
-  RNA_def_function_ui_description(func,
-                                  "Unlink a widget group (when the persistent option is set)");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "identifier", NULL, 0, "", "Gizmo group type name");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(
+      sapi, "gizmo_group_type_unlink_delayed", "api_gizmo_group_type_unlink_delayed");
+  api_def_fn_ui_description(fn,
+                            "Unlink a widget group (when the persistent option is set)");
+  api_def_fn_flag(func, FN_NO_SELF | FN_USE_REPORTS);
+  parm = api_def_string(fn, "identifier", NULL, 0, "", "Gizmo group type name");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* Progress bar interface */
-  func = RNA_def_function(srna, "progress_begin", "rna_progress_begin");
-  RNA_def_function_ui_description(func, "Start progress report");
-  parm = RNA_def_property(func, "min", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_ui_text(parm, "min", "any value in range [0,9999]");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_property(func, "max", PROP_FLOAT, PROP_NONE);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_property_ui_text(parm, "max", "any value in range [min+1,9998]");
+  fn = api_def_fn(sapi, "progress_begin", "rna_progress_begin");
+  api_def_fn_ui_description(fn, "Start progress report");
+  parm = api_def_prop(fn, "min", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_text(parm, "min", "any value in range [0,9999]");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_prop(fn, "max", PROP_FLOAT, PROP_NONE);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_prop_ui_text(parm, "max", "any value in range [min+1,9998]");
 
-  func = RNA_def_function(srna, "progress_update", "rna_progress_update");
-  RNA_def_function_ui_description(func, "Update the progress feedback");
-  parm = RNA_def_property(func, "value", PROP_FLOAT, PROP_NONE);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_property_ui_text(
+  fn = api_def_fn(sapi, "progress_update", "api_progress_update");
+  api_def_fn_ui_description(fn, "Update the progress feedback");
+  parm = api_def_prop(fn, "value", PROP_FLOAT, PROP_NONE);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_prop_ui_text(
       parm, "value", "Any value between min and max as set in progress_begin()");
 
-  func = RNA_def_function(srna, "progress_end", "rna_progress_end");
-  RNA_def_function_ui_description(func, "Terminate progress report");
+  fn = api_def_fn(sapi, "progress_end", "api_progress_end");
+  api_def_fn_ui_description(fn, "Terminate progress report");
 
   /* invoke functions, for use with python */
-  func = RNA_def_function(srna, "invoke_props_popup", "rna_Operator_props_popup");
-  RNA_def_function_ui_description(
-      func,
-      "Operator popup invoke "
-      "(show operator properties and execute it automatically on changes)");
-  rna_generic_op_invoke(func, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
+  fn = api_def_fn(sapi, "invoke_props_popup", "api_op_props_popup");
+  api_def_fn_ui_description(
+      fn,
+      "Op popup invoke "
+      "(show op props and execute it automatically on changes)");
+  api_generic_op_invoke(fn, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
 
   /* invoked dialog opens popup with OK button, does not auto-exec operator. */
-  func = RNA_def_function(srna, "invoke_props_dialog", "WM_operator_props_dialog_popup");
-  RNA_def_function_ui_description(
-      func,
-      "Operator dialog (non-autoexec popup) invoke "
-      "(show operator properties and only execute it on click on OK button)");
-  rna_generic_op_invoke(func, WM_GEN_INVOKE_SIZE | WM_GEN_INVOKE_RETURN);
+  fn = api_def_fn(sapi, "invoke_props_dialog", "wm_op_props_dialog_popup");
+  api_def_fn_ui_description(
+      fn,
+      "Op dialog (non-autoexec popup) invoke "
+      "(show op props and only execute it on click on OK button)");
+  api_generic_op_invoke(fn, WM_GEN_INVOKE_SIZE | WM_GEN_INVOKE_RETURN);
 
   /* invoke enum */
-  func = RNA_def_function(srna, "invoke_search_popup", "rna_Operator_enum_search_invoke");
-  RNA_def_function_ui_description(
+  fn = api_def_fn(sapi, "invoke_search_popup", "rna_Operator_enum_search_invoke");
+  api_def_fn_ui_description(
       func,
       "Operator search popup invoke which "
       "searches values of the operator's :class:`bpy.types.Operator.bl_property` "
-      "(which must be an EnumProperty), executing it on confirmation");
-  rna_generic_op_invoke(func, 0);
+      "(which must be an EnumProp), executing it on confirmation");
+  api_generic_op_invoke(fn, 0);
 
   /* invoke functions, for use with python */
-  func = RNA_def_function(srna, "invoke_popup", "WM_operator_ui_popup");
-  RNA_def_function_ui_description(func,
-                                  "Operator popup invoke "
-                                  "(only shows operator's properties, without executing it)");
-  rna_generic_op_invoke(func, WM_GEN_INVOKE_SIZE | WM_GEN_INVOKE_RETURN);
+  fn = api_def_fn(sapi, "invoke_popup", "wm_op_ui_popup");
+  api_def_fn_ui_description(fn,
+                            "Op popup invoke "
+                            "(only shows op's props, without executing it)");
+  api_generic_op_invoke(fn, WM_GEN_INVOKE_SIZE | WM_GEN_INVOKE_RETURN);
 
-  func = RNA_def_function(srna, "invoke_confirm", "rna_Operator_confirm");
-  RNA_def_function_ui_description(
-      func,
+  fn = api_def_fn(sapi, "invoke_confirm", "api_op_confirm");
+  api_def_fn_ui_description(
+      fn,
       "Operator confirmation popup "
-      "(only to let user confirm the execution, no operator properties shown)");
-  rna_generic_op_invoke(func, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
+      "(only to let user confirm the execution, no op props shown)");
+  api_generic_op_invoke(fn, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
 
   /* wrap UI_popup_menu_begin */
-  func = RNA_def_function(srna, "popmenu_begin__internal", "rna_PopMenuBegin");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_string(func, "title", NULL, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_property(func, "icon", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(parm, rna_enum_icon_items);
+  fn = api_def_fn(sapi, "popmenu_begin__internal", "api_PopMenuBegin");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CONTEXT);
+  parm = api_def_string(fn, "title", NULL, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_prop(fn, "icon", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(parm, api_enum_icon_items);
   /* return */
-  parm = RNA_def_pointer(func, "menu", "UIPopupMenu", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "menu", "UIPopupMenu", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
+  api_def_fn_return(fn, parm);
 
   /* wrap UI_popup_menu_end */
-  func = RNA_def_function(srna, "popmenu_end__internal", "rna_PopMenuEnd");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "menu", "UIPopupMenu", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR | PARM_REQUIRED);
+  fn = api_def_fn(sapi, "popmenu_end__internal", "api_PopMenuEnd");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  parm = api_def_ptr(fn, "menu", "UIPopupMenu", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR | PARM_REQUIRED);
 
   /* wrap UI_popover_begin */
-  func = RNA_def_function(srna, "popover_begin__internal", "rna_PopoverBegin");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  RNA_def_property(func, "ui_units_x", PROP_INT, PROP_UNSIGNED);
+  sapi = api_def_fn(sapi, "popover_begin__internal", "api_PopoverBegin");
+  api_def_fn_flag(fn, FUNC_NO_SELF | FN_USE_CTX);
+  api_def_prop(fn, "ui_units_x", PROP_INT, PROP_UNSIGNED);
   /* return */
-  parm = RNA_def_pointer(func, "menu", "UIPopover", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
-  RNA_def_boolean(
-      func, "from_active_button", 0, "Use Button", "Use the active button for positioning");
+  parm = api_def_ptr(fn, "menu", "UIPopover", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_APIPTR);
+  api_def_fn_return(fn, parm);
+  api_def_bool(
+      fn, "from_active_button", 0, "Use Button", "Use the active button for positioning");
 
   /* wrap UI_popover_end */
-  func = RNA_def_function(srna, "popover_end__internal", "rna_PopoverEnd");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "menu", "UIPopover", "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR | PARM_REQUIRED);
-  RNA_def_pointer(func, "keymap", "KeyMap", "Key Map", "Active key map");
+  func = api_def_fn(sapi, "popover_end__internal", "api_PopoverEnd");
+  api_def_fn_flag(fn, FN_NO_SELF | FN_USE_CTX);
+  parm = api_def_ptr(fn, "menu", "UIPopover", "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR | PARM_REQUIRED);
+  api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Active key map");
 
   /* wrap uiPieMenuBegin */
-  func = RNA_def_function(srna, "piemenu_begin__internal", "rna_PieMenuBegin");
-  RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
-  parm = RNA_def_string(func, "title", NULL, 0, "", "");
+  func = RNA_def_function(sapi, "piemenu_begin__internal", "api_PieMenuBegin");
+  RNA_def_function_flag(fn, FN_NO_SELF | FN_USE_CONTEXT);
+  parm = RNA_def_string(fn, "title", NULL, 0, "", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_property(func, "icon", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(parm, rna_enum_icon_items);
+  parm = RNA_def_property(fn, "icon", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(parm, api_enum_icon_items);
   parm = RNA_def_pointer(func, "event", "Event", "", "");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_RNAPTR);
   /* return */
