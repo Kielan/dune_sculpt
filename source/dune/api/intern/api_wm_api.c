@@ -1158,9 +1158,9 @@ void api_api_keymapitems(StructRNA *srna)
   parm = api_def_ptr(fn, "item", "KeyMapItem", "Item", "Added key map item");
   api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_modal", "rna_KeyMap_item_new_modal");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "propvalue", NULL, 0, "Property Value", "");
+  fn = api_def_fn(sapi, "new_modal", "rna_KeyMap_item_new_modal");
+  api_def_fn_flag(fn, FUNC_USE_REPORTS);
+  parm = api_def_string(fn, "propvalue", NULL, 0, "Property Value", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   parm = RNA_def_enum(func, "type", rna_enum_event_type_items, 0, "Type", "");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
@@ -1234,11 +1234,11 @@ void RNA_api_keymaps(StructRNA *srna)
       "Ensure the keymap exists. This will return the one with the given name/space type/region "
       "type, or create a new one if it does not exist yet.");
 
-  parm = RNA_def_string(func, "name", NULL, 0, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_enum(func, "space_type", rna_enum_space_type_items, SPACE_EMPTY, "Space Type", "");
-  RNA_def_enum(
-      func, "region_type", rna_enum_region_type_items, RGN_TYPE_WINDOW, "Region Type", "");
+  parm = api_def_string(fn, "name", NULL, 0, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_enum(fn, "space_type", rna_enum_space_type_items, SPACE_EMPTY, "Space Type", "");
+  api_def_enum(
+      fn, "region_type", api_enum_region_type_items, RGN_TYPE_WINDOW, "Region Type", "");
   api_def_bool(fb, "modal", 0, "Modal", "Keymap for modal operators");
   api_def_bool(fn, "tool", 0, "Tool", "Keymap for active tools");
   parm = api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Added key map");
