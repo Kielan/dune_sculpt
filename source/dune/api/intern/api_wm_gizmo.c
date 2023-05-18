@@ -1,60 +1,59 @@
 #include <stdlib.h>
 
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_windowmanager_types.h"
+#include "types_screen.h"
+#include "types_space.h"
+#include "types_userdef.h"
+#include "types_view3d.h"
+#include "types_windowmanager.h"
 
-#include "BLI_listbase.h"
-#include "BLI_utildefines.h"
+#include "lib_list.h"
+#include "lib_utildefines.h"
 
-#include "BLT_translation.h"
+#include "lang.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 /* enum definitions */
-#endif /* RNA_RUNTIME */
+#endif /* API_RUNTIME */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_string_utils.h"
+#  include "lib_string_utils.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-#  include "DNA_workspace_types.h"
+#  include "types_workspace.h"
 
-#  include "ED_screen.h"
+#  include "ed_screen.h"
 
-#  include "UI_interface.h"
+#  include "ui.h"
 
-#  include "BKE_global.h"
-#  include "BKE_idprop.h"
-#  include "BKE_workspace.h"
+#  include "dune_global.h"
+#  include "dune_idprop.h"
+#  include "dune_workspace.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "GPU_state.h"
+#  include "gpu_state.h"
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
 /* -------------------------------------------------------------------- */
-/** \name Gizmo API
- * \{ */
+/** Gizmo API **/
 
 #  ifdef WITH_PYTHON
-static void rna_gizmo_draw_cb(const struct bContext *C, struct wmGizmo *gz)
+static void api_gizmo_draw_cb(const struct Ctx *C, struct wmGizmo *gz)
 {
-  extern FunctionRNA rna_Gizmo_draw_func;
+  extern ApiFn api_Gizmo_draw_fn;
   wmGizmoGroup *gzgroup = gz->parent_gzgroup;
   PointerRNA gz_ptr;
   ParameterList list;
