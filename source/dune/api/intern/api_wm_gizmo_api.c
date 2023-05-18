@@ -248,14 +248,14 @@ void api_gizmo(ApiStruct *sapi)
   /* Other Shapes */
 
   /* draw_preset_facemap */
-  func = RNA_def_function(srna, "draw_preset_facemap", "rna_gizmo_draw_preset_facemap");
-  RNA_def_function_ui_description(func, "Draw the face-map of a mesh object");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_pointer(func, "object", "Object", "", "Object");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_int(func, "face_map", 0, 0, INT_MAX, "Face map index", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func,
+  func = api_def_fn(sapi, "draw_preset_facemap", "rna_gizmo_draw_preset_facemap");
+  api_def_fn_ui_description(fn, "Draw the face-map of a mesh object");
+  api_def_fn_flag(fn, FN_USE_CTX);
+  parm = api_def_ptr(fn, "object", "Object", "", "Object");
+  apu_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_int(fn, "face_map", 0, 0, INT_MAX, "Face map index", "", 0, INT_MAX);
+  api_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn,
               "select_id",
               -1,
               -1,
@@ -270,45 +270,45 @@ void api_gizmo(ApiStruct *sapi)
 
   /* Define Properties */
   /* NOTE: 'target_set_handler' is defined in `bpy_rna_gizmo.c`. */
-  func = RNA_def_function(srna, "target_set_prop", "rna_gizmo_target_set_prop");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "");
-  parm = RNA_def_string(func, "target", NULL, 0, "", "Target property");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "target_set_prop", "rna_gizmo_target_set_prop");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "");
+  parm = api_def_string(fn, "target", NULL, 0, "", "Target property");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* similar to UILayout.prop */
-  parm = RNA_def_pointer(func, "data", "AnyType", "", "Data from which to take property");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Identifier of property in data");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func, "index", -1, -1, INT_MAX, "", "", -1, INT_MAX); /* RNA_NO_INDEX == -1 */
+  parm = api_def_ptr(fn, "data", "AnyType", "", "Data from which to take property");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Identifier of property in data");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn, "index", -1, -1, INT_MAX, "", "", -1, INT_MAX); /* RNA_NO_INDEX == -1 */
 
-  func = RNA_def_function(srna, "target_set_operator", "rna_gizmo_target_set_operator");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func,
-                                  "Operator to run when activating the gizmo "
-                                  "(overrides property targets)");
-  parm = RNA_def_string(func, "operator", NULL, 0, "", "Target operator");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_int(func, "index", 0, 0, 255, "Part index", "", 0, 255);
+  fn = api_def_fn(sapi, "target_set_op", "api_gizmo_target_set_operator");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn,
+                            "Operator to run when activating the gizmo "
+                            "(overrides prop targets)");
+  parm = api_def_string(fn, "op", NULL, 0, "", "Target op");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_int(fn, "index", 0, 0, 255, "Part index", "", 0, 255);
 
   /* similar to UILayout.operator */
-  parm = RNA_def_pointer(
-      func, "properties", "OperatorProperties", "", "Operator properties to fill in");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(
+      fn, "props", "OpProps", "", "Op props to fill in");
+  api_def_param_flags(parm, 0, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_fn_return(fn, parm);
 
   /* Access Properties */
   /* NOTE: 'target_get', 'target_set' is defined in `bpy_rna_gizmo.c`. */
-  func = RNA_def_function(srna, "target_is_valid", "rna_gizmo_target_is_valid");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_string(func, "property", NULL, 0, "", "Property identifier");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_ui_description(func, "");
-  parm = RNA_def_boolean(func, "result", 0, "", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "target_is_valid", "api_gizmo_target_is_valid");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_string(fn, "prop", NULL, 0, "", "Prop id");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_ui_description(fn, "");
+  parm = api_def_bool(fn, "result", 0, "", "");
+  api_def_fn_return(fn, parm);
 }
 
-void RNA_api_gizmogroup(StructRNA *UNUSED(srna))
+void api_gizmogroup(ApiStruct *UNUSED(sapi))
 {
   /* nothing yet */
 }
