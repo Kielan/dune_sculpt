@@ -1240,74 +1240,74 @@ void RNA_api_keymaps(StructRNA *srna)
   RNA_def_enum(func, "space_type", rna_enum_space_type_items, SPACE_EMPTY, "Space Type", "");
   RNA_def_enum(
       func, "region_type", rna_enum_region_type_items, RGN_TYPE_WINDOW, "Region Type", "");
-  RNA_def_boolean(func, "modal", 0, "Modal", "Keymap for modal operators");
-  RNA_def_boolean(func, "tool", 0, "Tool", "Keymap for active tools");
-  parm = RNA_def_pointer(func, "keymap", "KeyMap", "Key Map", "Added key map");
-  RNA_def_function_return(func, parm);
+  api_def_bool(fb, "modal", 0, "Modal", "Keymap for modal operators");
+  api_def_bool(fn, "tool", 0, "Tool", "Keymap for active tools");
+  parm = api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Added key map");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_KeyMap_remove"); /* remove_keymap */
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "keymap", "KeyMap", "Key Map", "Removed key map");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(srna, "remove", "rna_KeyMap_remove"); /* remove_keymap */
+  api_def_fn_flag(fn, FN_USE_REPORT
+  parm = api_def_ptr(func, "keymap", "KeyMap", "Key Map", "Removed key map");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
-  func = RNA_def_function(srna, "find", "rna_keymap_find"); /* find_keymap */
-  parm = RNA_def_string(func, "name", NULL, 0, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_enum(func, "space_type", rna_enum_space_type_items, SPACE_EMPTY, "Space Type", "");
-  RNA_def_enum(
-      func, "region_type", rna_enum_region_type_items, RGN_TYPE_WINDOW, "Region Type", "");
-  parm = RNA_def_pointer(func, "keymap", "KeyMap", "Key Map", "Corresponding key map");
-  RNA_def_function_return(func, parm);
+  fn = api_def_function(sapi, "find", "rna_keymap_find"); /* find_keymap */
+  parm = api_def_string(fn, "name", NULL, 0, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_enum(fn, "space_type", rna_enum_space_type_items, SPACE_EMPTY, "Space Type", "");
+  api_def_enum(
+      func, "region_type", api_enum_region_type_items, RGN_TYPE_WINDOW, "Region Type", "");
+  parm = api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Corresponding key map");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "find_modal", "rna_keymap_find_modal"); /* find_keymap_modal */
-  parm = RNA_def_string(func, "name", NULL, 0, "Operator Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "keymap", "KeyMap", "Key Map", "Corresponding key map");
-  RNA_def_function_return(func, parm);
+  func = api_def_fn(sapi, "find_modal", "rna_keymap_find_modal"); /* find_keymap_modal */
+  parm = api_def_string(fn, "name", NULL, 0, "Operator Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "keymap", "KeyMap", "Key Map", "Corresponding key map");
+  api_def_fn_return(fn, parm);
 }
 
-void RNA_api_keyconfigs(StructRNA *srna)
+void api_keyconfigs(ApiStruct *sapi)
 {
   FunctionRNA *func;
   PropertyRNA *parm;
 
-  func = RNA_def_function(srna, "new", "WM_keyconfig_new_user"); /* add_keyconfig */
-  parm = RNA_def_string(func, "name", NULL, 0, "Name", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(
+  func = api_def_fn(sapi, "new", "WM_keyconfig_new_user"); /* add_keyconfig */
+  parm = api_def_string(fn, "name", NULL, 0, "Name", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(
       func, "keyconfig", "KeyConfig", "Key Configuration", "Added key configuration");
-  RNA_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "remove", "rna_KeyConfig_remove"); /* remove_keyconfig */
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(
-      func, "keyconfig", "KeyConfig", "Key Configuration", "Removed key configuration");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  func = api_def_fn(sapi, "remove", "api_KeyConfig_remove"); /* remove_keyconfig */
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(
+      fn, "keyconfig", "KeyConfig", "Key Configuration", "Removed key configuration"
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_APIPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* Helper functions */
 
   /* Keymap introspection */
-  func = RNA_def_function(
-      srna, "find_item_from_operator", "rna_KeyConfig_find_item_from_operator");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_string(func, "idname", NULL, 0, "Operator Identifier", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_property(func, "context", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(parm, rna_enum_operator_context_items);
-  parm = RNA_def_pointer(func, "properties", "OperatorProperties", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
-  RNA_def_enum_flag(
-      func, "include", rna_enum_event_type_mask_items, EVT_TYPE_MASK_ALL, "Include", "");
-  RNA_def_enum_flag(func, "exclude", rna_enum_event_type_mask_items, 0, "Exclude", "");
-  parm = RNA_def_pointer(func, "keymap", "KeyMap", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR | PARM_OUTPUT);
-  parm = RNA_def_pointer(func, "item", "KeyMapItem", "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_RNAPTR);
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(
+      sapi, "find_item_from_op", "api_KeyConfig_find_item_from_op");
+  api_def_fn_flag(fn, FN_USE_CTX);
+  parm = api_def_string(fn, "idname", NULL, 0, "Op Id", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_prop(fn, "context", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(parm, api_enum_oper_ctx_items);
+  parm = api_def_ptr(fn, "properties", "OperatorProperties", "", "");
+  api_def_param_flags(parm, 0, PARM_RNAPTR);
+  api_def_enum_flag(
+      fn, "include", api_enum_event_type_mask_items, EVT_TYPE_MASK_ALL, "Include", "");
+  api_def_enum_flag(fn, "exclude", api_enum_event_type_mask_items, 0, "Exclude", "");
+  parm = api_def_ptr(fn, "keymap", "KeyMap", "", "");
+  api_def_param_flags(parm, 0, PARM_APIPTR | PARM_OUTPUT);
+  parm = api_def_ptr(fn, "item", "KeyMapItem", "", "");
+  api_def_param_flags(parm, 0, PARM_APIPTR);
+  api_def_fn_return(fn, parm);
 
-  RNA_def_function(srna, "update", "rna_KeyConfig_update"); /* WM_keyconfig_update */
+  api_def_fn(sapi, "update", "api_KeyConfig_update"); /* WM_keyconfig_update */
 }
 
 #endif
