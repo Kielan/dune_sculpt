@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_report.h"
+#include "dune_report.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "DNA_windowmanager_types.h"
+#include "types_windowmanager.h"
 
 #include "WM_api.h"
 
