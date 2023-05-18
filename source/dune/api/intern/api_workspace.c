@@ -48,29 +48,29 @@ void api_workspace_screens_begin(CollectionPropIter *iter, ApiPtr *ptr)
 static ApiPtr api_workspace_screens_item_get(CollectionPropertyIterator *iter)
 {
   WorkSpaceLayout *layout = rna_iterator_listbase_get(iter);
-  bScreen *screen = BKE_workspace_layout_screen_get(layout);
+  Screen *screen = dune_workspace_layout_screen_get(layout);
 
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Screen, screen);
+  return api_ptr_inherit_refine(&iter->parent, &ApiScreen, screen);
 }
 
 /* workspace.owner_ids */
 
-static wmOwnerID *rna_WorkSpace_owner_ids_new(WorkSpace *workspace, const char *name)
+static wmOwnerID *api_WorkSpace_owner_ids_new(WorkSpace *workspace, const char *name)
 {
-  wmOwnerID *owner_id = MEM_callocN(sizeof(*owner_id), __func__);
-  BLI_addtail(&workspace->owner_ids, owner_id);
+  wmOwnerID *owner_id = mem_callocn(sizeof(*owner_id), __func__);
+  lib_addtail(&workspace->owner_ids, owner_id);
   STRNCPY(owner_id->name, name);
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
   return owner_id;
 }
 
-static void rna_WorkSpace_owner_ids_remove(WorkSpace *workspace,
+static void api_WorkSpace_owner_ids_remove(WorkSpace *workspace,
                                            ReportList *reports,
-                                           PointerRNA *wstag_ptr)
+                                           ApiPtr *wstag_ptr)
 {
-  wmOwnerID *owner_id = wstag_ptr->data;
-  if (BLI_remlink_safe(&workspace->owner_ids, owner_id) == false) {
-    BKE_reportf(reports,
+  wmOwnerId *owner_id = wstag_ptr->data;
+  if (lib_remlink_safe(&workspace->owner_ids, owner_id) == false) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "wmOwnerID '%s' not in workspace '%s'",
                 owner_id->name,
@@ -78,15 +78,15 @@ static void rna_WorkSpace_owner_ids_remove(WorkSpace *workspace,
     return;
   }
 
-  MEM_freeN(owner_id);
-  RNA_POINTER_INVALIDATE(wstag_ptr);
+  mem_freen(owner_id);
+  API_PTR_INVALIDATE(wstag_ptr);
 
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 }
 
-static void rna_WorkSpace_owner_ids_clear(WorkSpace *workspace)
+static void api_WorkSpace_owner_ids_clear(WorkSpace *workspace)
 {
-  BLI_freelistN(&workspace->owner_ids);
+  lib_freelistN(&workspace->owner_ids);
   WM_main_add_notifier(NC_OBJECT | ND_MODIFIER | NA_REMOVED, workspace);
 }
 
