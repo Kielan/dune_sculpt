@@ -1,51 +1,51 @@
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-#include "RNA_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
+#include "api_types.h"
 
-#include "BKE_workspace.h"
+#include "dune_workspace.h"
 
-#include "ED_render.h"
+#include "ed_render.h"
 
-#include "RE_engine.h"
+#include "render_engine.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_workspace_types.h"
+#include "types_workspace.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_listbase.h"
+#  include "lib_list.h"
 
-#  include "BKE_global.h"
+#  include "dune_global.h"
 
-#  include "DNA_object_types.h"
-#  include "DNA_screen_types.h"
-#  include "DNA_space_types.h"
+#  include "types_object.h"
+#  include "types_screen.h"
+#  include "types_space.h"
 
-#  include "ED_asset.h"
-#  include "ED_paint.h"
+#  include "ed_asset.h"
+#  include "ed_paint.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "WM_toolsystem.h"
+#  include "wm_toolsystem.h"
 
-static void rna_window_update_all(Main *UNUSED(bmain),
+static void api_window_update_all(Main *UNUSED(main),
                                   Scene *UNUSED(scene),
-                                  PointerRNA *UNUSED(ptr))
+                                  ApiPtr *UNUSED(ptr))
 {
-  WM_main_add_notifier(NC_WINDOW, NULL);
+  wm_main_add_notifier(NC_WINDOW, NULL);
 }
 
-void rna_workspace_screens_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+void api_workspace_screens_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   WorkSpace *workspace = (WorkSpace *)ptr->owner_id;
-  rna_iterator_listbase_begin(iter, &workspace->layouts, NULL);
+  api_iter_list_begin(iter, &workspace->layouts, NULL);
 }
 
-static PointerRNA rna_workspace_screens_item_get(CollectionPropertyIterator *iter)
+static ApiPtr api_workspace_screens_item_get(CollectionPropertyIterator *iter)
 {
   WorkSpaceLayout *layout = rna_iterator_listbase_get(iter);
   bScreen *screen = BKE_workspace_layout_screen_get(layout);
