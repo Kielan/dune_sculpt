@@ -277,120 +277,120 @@ static IDProperty **rna_GizmoProperties_idprops(PointerRNA *ptr)
   return (IDProperty **)&ptr->data;
 }
 
-static PointerRNA rna_Gizmo_properties_get(PointerRNA *ptr)
+static ApiPtr api_Gizmo_props_get(ApiPtr *ptr)
 {
   wmGizmo *gz = ptr->data;
-  return rna_pointer_inherit_refine(ptr, gz->type->srna, gz->properties);
+  return rna_pointer_inherit_refine(ptr, gz->type->sapi, gz->properties);
 }
 
 /* wmGizmo.float */
-#  define RNA_GIZMO_GENERIC_FLOAT_RW_DEF(func_id, member_id) \
-    static float rna_Gizmo_##func_id##_get(PointerRNA *ptr) \
+#  define API_GIZMO_GENERIC_FLOAT_RW_DEF(fn_id, member_id) \
+    static float api_Gizmo_##fn_id##_get(ApiPtr *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
       return gz->member_id; \
     } \
-    static void rna_Gizmo_##func_id##_set(PointerRNA *ptr, float value) \
+    static void api_Gizmo_##fn_id##_set(ApiPtr *ptr, float value) \
     { \
       wmGizmo *gz = ptr->data; \
       gz->member_id = value; \
     }
 #  define RNA_GIZMO_GENERIC_FLOAT_ARRAY_INDEX_RW_DEF(func_id, member_id, index) \
-    static float rna_Gizmo_##func_id##_get(PointerRNA *ptr) \
+    static float api_Gizmo_##func_id##_get(ApiPtr *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
       return gz->member_id[index]; \
     } \
-    static void rna_Gizmo_##func_id##_set(PointerRNA *ptr, float value) \
+    static void api_Gizmo_##func_id##_set(PointerRNA *ptr, float value) \
     { \
       wmGizmo *gz = ptr->data; \
       gz->member_id[index] = value; \
     }
 /* wmGizmo.float[len] */
-#  define RNA_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(func_id, member_id, len) \
-    static void rna_Gizmo_##func_id##_get(PointerRNA *ptr, float value[len]) \
+#  define APi_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(fn_id, member_id, len) \
+    static void api_Gizmo_##fn_id##_get(ApiPtr *ptr, float value[len]) \
     { \
       wmGizmo *gz = ptr->data; \
       memcpy(value, gz->member_id, sizeof(float[len])); \
     } \
-    static void rna_Gizmo_##func_id##_set(PointerRNA *ptr, const float value[len]) \
+    static void api_Gizmo_##fn_id##_set(ApiPtr *ptr, const float value[len]) \
     { \
       wmGizmo *gz = ptr->data; \
       memcpy(gz->member_id, value, sizeof(float[len])); \
     }
 
 /* wmGizmo.flag */
-#  define RNA_GIZMO_GENERIC_FLAG_RW_DEF(func_id, member_id, flag_value) \
-    static bool rna_Gizmo_##func_id##_get(PointerRNA *ptr) \
+#  define API_GIZMO_GENERIC_FLAG_RW_DEF(func_id, member_id, flag_value) \
+    static bool api_Gizmo_##fn_id##_get(ApiPtr *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
       return (gz->member_id & flag_value) != 0; \
     } \
-    static void rna_Gizmo_##func_id##_set(PointerRNA *ptr, bool value) \
+    static void api_Gizmo_##fn_id##_set(ApiPtr *ptr, bool value) \
     { \
       wmGizmo *gz = ptr->data; \
       SET_FLAG_FROM_TEST(gz->member_id, value, flag_value); \
     }
 
 /* wmGizmo.flag (negative) */
-#  define RNA_GIZMO_GENERIC_FLAG_NEG_RW_DEF(func_id, member_id, flag_value) \
-    static bool rna_Gizmo_##func_id##_get(PointerRNA *ptr) \
+#  define API_GIZMO_GENERIC_FLAG_NEG_RW_DEF(fn_id, member_id, flag_value) \
+    static bool api_Gizmo_##fn_id##_get(ApiPtr *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
       return (gz->member_id & flag_value) == 0; \
     } \
-    static void rna_Gizmo_##func_id##_set(PointerRNA *ptr, bool value) \
+    static void API_Gizmo_##func_id##_set(PointerRNA *ptr, bool value) \
     { \
       wmGizmo *gz = ptr->data; \
       SET_FLAG_FROM_TEST(gz->member_id, !value, flag_value); \
     }
 
-#  define RNA_GIZMO_FLAG_RO_DEF(func_id, member_id, flag_value) \
-    static bool rna_Gizmo_##func_id##_get(PointerRNA *ptr) \
+#  define API_GIZMO_FLAG_RO_DEF(func_id, member_id, flag_value) \
+    static bool api_Gizmo_##func_id##_get(PointerRNA *ptr) \
     { \
       wmGizmo *gz = ptr->data; \
       return (gz->member_id & flag_value) != 0; \
     }
 
-RNA_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(color, color, 3);
-RNA_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(color_hi, color_hi, 3);
+API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(color, color, 3);
+API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(color_hi, color_hi, 3);
 
-RNA_GIZMO_GENERIC_FLOAT_ARRAY_INDEX_RW_DEF(alpha, color, 3);
-RNA_GIZMO_GENERIC_FLOAT_ARRAY_INDEX_RW_DEF(alpha_hi, color_hi, 3);
+API_GIZMO_GENERIC_FLOAT_ARRAY_INDEX_RW_DEF(alpha, color, 3);
+API_GIZMO_GENERIC_FLOAT_ARRAY_INDEX_RW_DEF(alpha_hi, color_hi, 3);
 
-RNA_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_space, matrix_space, 16);
-RNA_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_basis, matrix_basis, 16);
-RNA_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_offset, matrix_offset, 16);
+API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_space, matrix_space, 16);
+API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_basis, matrix_basis, 16);
+API_GIZMO_GENERIC_FLOAT_ARRAY_RW_DEF(matrix_offset, matrix_offset, 16);
 
-static void rna_Gizmo_matrix_world_get(PointerRNA *ptr, float value[16])
+static void api_Gizmo_matrix_world_get(PointerRNA *ptr, float value[16])
 {
   wmGizmo *gz = ptr->data;
-  WM_gizmo_calc_matrix_final(gz, (float(*)[4])value);
+  wm_gizmo_calc_matrix_final(gz, (float(*)[4])value);
 }
 
-RNA_GIZMO_GENERIC_FLOAT_RW_DEF(scale_basis, scale_basis);
-RNA_GIZMO_GENERIC_FLOAT_RW_DEF(line_width, line_width);
-RNA_GIZMO_GENERIC_FLOAT_RW_DEF(select_bias, select_bias);
+API_GIZMO_GENERIC_FLOAT_RW_DEF(scale_basis, scale_basis);
+API_GIZMO_GENERIC_FLOAT_RW_DEF(line_width, line_width);
+API_GIZMO_GENERIC_FLOAT_RW_DEF(select_bias, select_bias);
 
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_hover, flag, WM_GIZMO_DRAW_HOVER);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_modal, flag, WM_GIZMO_DRAW_MODAL);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_value, flag, WM_GIZMO_DRAW_VALUE);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_offset_scale, flag, WM_GIZMO_DRAW_OFFSET_SCALE);
-RNA_GIZMO_GENERIC_FLAG_NEG_RW_DEF(flag_use_draw_scale, flag, WM_GIZMO_DRAW_NO_SCALE);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_hide, flag, WM_GIZMO_HIDDEN);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_hide_select, flag, WM_GIZMO_HIDDEN_SELECT);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_hide_keymap, flag, WM_GIZMO_HIDDEN_KEYMAP);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_grab_cursor, flag, WM_GIZMO_MOVE_CURSOR);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_select_background, flag, WM_GIZMO_SELECT_BACKGROUND);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_operator_tool_properties,
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_hover, flag, WM_GIZMO_DRAW_HOVER);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_modal, flag, WM_GIZMO_DRAW_MODAL);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_value, flag, WM_GIZMO_DRAW_VALUE);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_draw_offset_scale, flag, WM_GIZMO_DRAW_OFFSET_SCALE);
+API_GIZMO_GENERIC_FLAG_NEG_RW_DEF(flag_use_draw_scale, flag, WM_GIZMO_DRAW_NO_SCALE);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_hide, flag, WM_GIZMO_HIDDEN);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_hide_select, flag, WM_GIZMO_HIDDEN_SELECT);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_hide_keymap, flag, WM_GIZMO_HIDDEN_KEYMAP);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_grab_cursor, flag, WM_GIZMO_MOVE_CURSOR);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_select_background, flag, WM_GIZMO_SELECT_BACKGROUND);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_op_tool_properties,
                               flag,
-                              WM_GIZMO_OPERATOR_TOOL_INIT);
-RNA_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_event_handle_all, flag, WM_GIZMO_EVENT_HANDLE_ALL);
-RNA_GIZMO_GENERIC_FLAG_NEG_RW_DEF(flag_use_tooltip, flag, WM_GIZMO_NO_TOOLTIP);
+                              WM_GIZMO_OP_TOOL_INIT);
+API_GIZMO_GENERIC_FLAG_RW_DEF(flag_use_event_handle_all, flag, WM_GIZMO_EVENT_HANDLE_ALL);
+API_GIZMO_GENERIC_FLAG_NEG_RW_DEF(flag_use_tooltip, flag, WM_GIZMO_NO_TOOLTIP);
 
 /* wmGizmo.state */
-RNA_GIZMO_FLAG_RO_DEF(state_is_highlight, state, WM_GIZMO_STATE_HIGHLIGHT);
-RNA_GIZMO_FLAG_RO_DEF(state_is_modal, state, WM_GIZMO_STATE_MODAL);
+API_GIZMO_FLAG_RO_DEF(state_is_highlight, state, WM_GIZMO_STATE_HIGHLIGHT);
+API_GIZMO_FLAG_RO_DEF(state_is_modal, state, WM_GIZMO_STATE_MODAL);
 RNA_GIZMO_FLAG_RO_DEF(state_select, state, WM_GIZMO_STATE_SELECT);
 
 static void rna_Gizmo_state_select_set(struct PointerRNA *ptr, bool value)
