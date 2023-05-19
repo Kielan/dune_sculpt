@@ -210,11 +210,11 @@ static void api_XrActionMapBinding_name_update(Main *main, Scene *UNUSED(scene),
 #  ifdef WITH_XR_OPENXR
   wmWindowManager *wm = main->wm.first;
   if (wm && wm->xr.runtime) {
-    List *actionmaps = WM_xr_actionmaps_get(wm->xr.runtime);
+    List *actionmaps = wm_xr_actionmaps_get(wm->xr.runtime);
     short idx = wm_xr_actionmap_selected_index_get(wm->xr.runtime);
     XrActionMap *actionmap = lib_findlink(actionmaps, idx);
     if (actionmap) {
-      XrActionMapItem *ami = BLI_findlink(&actionmap->items, actionmap->selitem);
+      XrActionMapItem *ami = lib_findlink(&actionmap->items, actionmap->selitem);
       if (ami) {
         XrActionMapBinding *amb = ptr->data;
         wm_xr_actionmap_binding_ensure_unique(ami, amb);
@@ -263,55 +263,55 @@ static XrUserPath *api_XrUserPath_find(XrActionMapItem *ami, const char *path_st
 #  endif
 }
 
-static XrActionMapItem *rna_XrActionMapItem_new(XrActionMap *am,
+static XrActionMapItem *api_XrActionMapItem_new(XrActionMap *am,
                                                 const char *name,
                                                 bool replace_existing)
 {
 #  ifdef WITH_XR_OPENXR
-  return WM_xr_actionmap_item_new(am, name, replace_existing);
+  return wm_xr_actionmap_item_new(am, name, replace_existing);
 #  else
   UNUSED_VARS(am, name, replace_existing);
   return NULL;
 #  endif
 }
 
-static XrActionMapItem *rna_XrActionMapItem_new_from_item(XrActionMap *am,
+static XrActionMapItem *api_XrActionMapItem_new_from_item(XrActionMap *am,
                                                           XrActionMapItem *ami_src)
 {
 #  ifdef WITH_XR_OPENXR
-  return WM_xr_actionmap_item_add_copy(am, ami_src);
+  return wm_xr_actionmap_item_add_copy(am, ami_src);
 #  else
   UNUSED_VARS(am, ami_src);
   return NULL;
 #  endif
 }
 
-static void rna_XrActionMapItem_remove(XrActionMap *am, ReportList *reports, PointerRNA *ami_ptr)
+static void api_XrActionMapItem_remove(XrActionMap *am, ReportList *reports, PointerRNA *ami_ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ami_ptr->data;
-  if (WM_xr_actionmap_item_remove(am, ami) == false) {
-    BKE_reportf(
+  if (wm_xr_actionmap_item_remove(am, ami) == false) {
+    dune_reportf(
         reports, RPT_ERROR, "ActionMapItem '%s' cannot be removed from '%s'", ami->name, am->name);
     return;
   }
-  RNA_POINTER_INVALIDATE(ami_ptr);
+  API_PTR_INVALIDATE(ami_ptr);
 #  else
   UNUSED_VARS(am, reports, ami_ptr);
 #  endif
 }
 
-static XrActionMapItem *rna_XrActionMapItem_find(XrActionMap *am, const char *name)
+static XrActionMapItem *api_XrActionMapItem_find(XrActionMap *am, const char *name)
 {
 #  ifdef WITH_XR_OPENXR
-  return WM_xr_actionmap_item_find(am, name);
+  return wm_xr_actionmap_item_find(am, name);
 #  else
   UNUSED_VARS(am, name);
   return NULL;
 #  endif
 }
 
-static void rna_XrActionMapItem_user_paths_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_XrActionMapItem_user_paths_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = (XrActionMapItem *)ptr->data;
@@ -332,15 +332,15 @@ static int api_XrActionMapItem_user_paths_length(PointerRNA *ptr)
 #  endif
 }
 
-static void api_XrActionMapItem_op_name_get(PointerRNA *ptr, char *value)
+static void api_XrActionMapItem_op_name_get(ApiPtr *ptr, char *value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
   if (ami->op[0]) {
-    if (ami->op_properties_ptr) {
-      wmOperatorType *ot = WM_operatortype_find(ami->op, 1);
+    if (ami->op_props_ptr) {
+      wmOpType *ot = wm_optype_find(ami->op, 1);
       if (ot) {
-        strcpy(value, WM_operatortype_name(ot, ami->op_properties_ptr));
+        strcpy(value, wm_optype_name(ot, ami->op_props_ptr));
         return;
       }
     }
@@ -353,13 +353,13 @@ static void api_XrActionMapItem_op_name_get(PointerRNA *ptr, char *value)
   value[0] = '\0';
 }
 
-static int rna_XrActionMapItem_op_name_length(PointerRNA *ptr)
+static int api_XrActionMapItem_op_name_length(PointerRNA *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
   if (ami->op[0]) {
-    if (ami->op_properties_ptr) {
-      wmOperatorType *ot = WM_operatortype_find(ami->op, 1);
+    if (ami->op_props_ptr) {
+      wmOpType *ot = wm_optype_find(ami->op, 1);
       if (ot) {
         return strlen(WM_operatortype_name(ot, ami->op_properties_ptr));
       }
