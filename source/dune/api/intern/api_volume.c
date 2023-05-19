@@ -254,11 +254,11 @@ static void api_def_volume_grid(DuneApi *api)
   api_def_struct_name_prop(sapi, prop);
 
   prop = api_def_prop(sapi, "data_type", PROP_ENUM, PROP_NONE);
-  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_prop_enum_fns(prop, "rna_VolumeGrid_data_type_get", NULL, NULL);
-  RNA_def_prop_enum_items(prop, api_enum_volume_grid_data_type_items);
-  RNA_def_prop_ui_text(prop, "Data Type", "Data type of voxel values");
-  RNA_def_prop_translation_cxt(prop, LANG_CXT_ID_VOLUME);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_fns(prop, "api_VolumeGrid_data_type_get", NULL, NULL);
+  api_def_prop_enum_items(prop, api_enum_volume_grid_data_type_items);
+  api_def_prop_ui_text(prop, "Data Type", "Data type of voxel values");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_VOLUME);
 
   prop = api_def_prop(sapi, "channels", PROP_INT, PROP_UNSIGNED);
   RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
@@ -308,32 +308,32 @@ static void api_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
                              "rna_VolumeGrids_active_index_get",
                              "rna_VolumeGrids_active_index_set",
                              "rna_VolumeGrids_active_index_range");
-  RNA_def_property_ui_text(prop, "Active Grid Index", "Index of active volume grid");
-  RNA_def_property_update(prop, 0, "rna_Volume_update_display");
+  api_def_property_ui_text(prop, "Active Grid Index", "Index of active volume grid");
+  api_def_property_update(prop, 0, "rna_Volume_update_display");
 
-  prop = RNA_def_property(srna, "error_message", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(
-      prop, "rna_VolumeGrids_error_message_get", "rna_VolumeGrids_error_message_length", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "error_message", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_fns(
+      prop, "rna_VolumeGrids_error_message_get", "api_VolumeGrids_error_message_length", NULL);
+  api_def_prop_ui_text(
       prop, "Error Message", "If loading grids failed, error message with details");
 
-  prop = RNA_def_property(srna, "is_loaded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_VolumeGrids_is_loaded_get", NULL);
-  RNA_def_property_ui_text(prop, "Is Loaded", "List of grids and metadata are loaded in memory");
+  prop = api_def_prop(sapo, "is_loaded", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_VolumeGrids_is_loaded_get", NULL);
+  api_def_prop_ui_text(prop, "Is Loaded", "List of grids and metadata are loaded in memory");
 
-  prop = RNA_def_property(srna, "frame", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "runtime.frame");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop,
-                           "Frame",
-                           "Frame number that volume grids will be loaded at, based on scene time "
-                           "and volume parameters");
+  prop = api_def_prop(sapi, "frame", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "runtime.frame");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop,
+                       "Frame",
+                       "Frame number that volume grids will be loaded at, based on scene time "
+                       "and volume parameters");
 
-  prop = RNA_def_property(srna, "frame_filepath", PROP_STRING, PROP_FILEPATH);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(
+  prop = api_def_prop(sapi, "frame_filepath", PROP_STRING, PROP_FILEPATH);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_fns(
       prop, "rna_VolumeGrids_frame_filepath_get", "rna_VolumeGrids_frame_filepath_length", NULL);
 
   RNA_def_property_ui_text(prop,
