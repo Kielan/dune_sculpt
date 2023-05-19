@@ -235,61 +235,61 @@ static void rna_def_workspace_owner_ids(BlenderRNA *brna, PropertyRNA *cprop)
   RNA_def_struct_ui_text(srna, "WorkSpace UI Tags", "");
 
   /* add owner_id */
-  func = RNA_def_function(srna, "new", "rna_WorkSpace_owner_ids_new");
-  RNA_def_function_ui_description(func, "Add ui tag");
-  parm = RNA_def_string(func, "name", "Name", 0, "", "New name for the tag");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "new", "api_WorkSpace_owner_ids_new");
+  api_def_fn_ui_description(fn, "Add ui tag");
+  parm = api_def_string(fn, "name", "Name", 0, "", "New name for the tag");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "owner_id", "wmOwnerID", "", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "owner_id", "wmOwnerID", "", "");
+  api_def_fn_return(fn, parm);
 
   /* remove owner_id */
-  func = RNA_def_function(srna, "remove", "rna_WorkSpace_owner_ids_remove");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  RNA_def_function_ui_description(func, "Remove ui tag");
+  fn = api_def_fn(sapi, "remove", "api_WorkSpace_owner_ids_remove");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  api_def_fn_ui_description(fn, "Remove ui tag");
   /* owner_id to remove */
-  parm = RNA_def_pointer(func, "owner_id", "wmOwnerID", "", "Tag to remove");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  parm = api_def_ptr(fn, "owner_id", "wmOwnerID", "", "Tag to remove");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* clear all modifiers */
   func = RNA_def_function(srna, "clear", "rna_WorkSpace_owner_ids_clear");
   RNA_def_function_ui_description(func, "Remove all tags");
 }
 
-static void rna_def_workspace_tool(BlenderRNA *brna)
+static void api_def_workspace_tool(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "WorkSpaceTool", NULL);
-  RNA_def_struct_sdna(srna, "bToolRef");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Work Space Tool", "");
+  sapi = api_def_struct(sapi, "WorkSpaceTool", NULL);
+  api_def_struct_stype(sapi, "bToolRef");m
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Work Space Tool", "");
 
-  prop = RNA_def_property(srna, "idname", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Identifier", "");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "idname", PROP_STRING, PROP_NONE);
+  api_def_property_ui_text(prop, "Identifier", "");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "idname_fallback", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Identifier Fallback", "");
+  prop = api_def_prop(sapi, "idname_fallback", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Identifier Fallback", "");
 
-  prop = RNA_def_property(srna, "index", PROP_INT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Index", "");
-  RNA_def_property_int_funcs(prop, "rna_WorkSpaceTool_index_get", NULL, NULL);
+  prop = api_def_prop(sapi, "index", PROP_INT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Index", "");
+  api_def_prop_int_fns(prop, "api_WorkSpaceTool_index_get", NULL, NULL);
 
-  prop = RNA_def_property(srna, "space_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "space_type");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_items(prop, rna_enum_space_type_items);
-  RNA_def_property_ui_text(prop, "Space Type", "");
+  prop = api_def_prop(sapi, "space_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "space_type");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_items(prop, api_enum_space_type_items);
+  api_def_prop_ui_text(prop, "Space Type", "");
 
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mode");
-  RNA_def_property_enum_items(prop, DummyRNA_DEFAULT_items);
-  RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_WorkSpace_tools_mode_itemf");
-  RNA_def_property_ui_text(prop, "Tool Mode", "");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mode");
+  api_def_prop_enum_items(prop, DummyRNA_DEFAULT_items);
+  api_def_prop_enum_fns(prop, NULL, NULL, "rna_WorkSpace_tools_mode_itemf");
+  api_def_prop_ui_text(prop, "Tool Mode", "");
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 
   prop = RNA_def_property(srna, "use_paint_canvas", PROP_BOOLEAN, PROP_NONE);
