@@ -1,24 +1,24 @@
 #include <float.h>
 #include <stdlib.h>
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_material_types.h"
-#include "DNA_texture_types.h"
-#include "DNA_world_types.h"
+#include "types_material_types.h"
+#include "types_texture_types.h"
+#include "types_world_types.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_context.h"
-#  include "BKE_layer.h"
-#  include "BKE_main.h"
-#  include "BKE_texture.h"
+#  include "dune_ctx.h"
+#  include "dune_layer.h"
+#  include "dune_main.h"
+#  include "dune_texture.h"
 
 #  include "DEG_depsgraph.h"
 #  include "DEG_depsgraph_build.h"
