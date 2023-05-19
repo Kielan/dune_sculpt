@@ -370,75 +370,75 @@ static void api_def_workspace(DuneApi *dapi)
   ApiStruct *srna;
   ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "WorkSpace", "ID");
-  RNA_def_struct_sdna(srna, "WorkSpace");
-  RNA_def_struct_ui_text(
-      srna, "Workspace", "Workspace data-block, defining the working environment for the user");
+  sapi = api_def_struct(dapi, "WorkSpace", "Id");
+  api_def_struct_sdna(srna, "WorkSpace");
+  api_def_struct_ui_text(
+      sapi, "Workspace", "Workspace data-block, defining the working environment for the user");
   /* TODO: real icon, just to show something */
-  RNA_def_struct_ui_icon(srna, ICON_WORKSPACE);
+  api_def_struct_ui_icon(srna, ICON_WORKSPACE);
 
-  prop = RNA_def_property(srna, "screens", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "layouts", NULL);
-  RNA_def_property_struct_type(prop, "Screen");
-  RNA_def_property_collection_funcs(prop,
-                                    "rna_workspace_screens_begin",
-                                    NULL,
-                                    NULL,
-                                    "rna_workspace_screens_item_get",
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL);
-  RNA_def_property_ui_text(prop, "Screens", "Screen layouts of a workspace");
+  prop = api_def_prop(sapi, "screens", PROP_COLLECTION, PROP_NONE);
+  RNA_def_prop_collection_stype(prop, NULL, "layouts", NULL);
+  RNA_def_prop_struct_type(prop, "Screen");
+  RNA_def_prop_collection_fns(prop,
+                              "api_workspace_screens_begin",
+                              NULL,
+                              NULL,
+                              "api_workspace_screens_item_get",
+                              NULL,
+                              NULL,
+                              NULL,
+                              NULL);
+  api_def_prop_ui_text(prop, "Screens", "Screen layouts of a workspace");
 
-  prop = RNA_def_property(srna, "owner_ids", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_struct_type(prop, "wmOwnerID");
-  RNA_def_property_ui_text(prop, "UI Tags", "");
-  rna_def_workspace_owner_ids(brna, prop);
+  prop = api_def_prop(sapi, "owner_ids", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_struct_type(prop, "wmOwnerID");
+  api_def_prop_ui_text(prop, "UI Tags", "");
+  api_def_workspace_owner_ids(brna, prop);
 
-  prop = RNA_def_property(srna, "tools", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "tools", NULL);
-  RNA_def_property_struct_type(prop, "WorkSpaceTool");
-  RNA_def_property_ui_text(prop, "Tools", "");
-  rna_def_workspace_tools(brna, prop);
+  prop = api_def_prop(sapi, "tools", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "tools", NULL);
+  api_def_prop_struct_type(prop, "WorkSpaceTool"
+  api_def_prop_ui_text(prop, "Tools", "");
+  api_def_workspace_tools(dapi, prop);
 
-  prop = RNA_def_property(srna, "object_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, rna_enum_workspace_object_mode_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "object_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, api_enum_workspace_object_mode_items);
+  api_def_prop_ui_text(
       prop, "Object Mode", "Switch to this object mode when activating the workspace");
 
-  prop = RNA_def_property(srna, "use_pin_scene", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", WORKSPACE_USE_PIN_SCENE);
-  RNA_def_property_ui_text(prop,
-                           "Pin Scene",
-                           "Remember the last used scene for the workspace and switch to it "
-                           "whenever this workspace is activated again");
-  RNA_def_property_update(prop, NC_WORKSPACE, NULL);
+  prop = api_def_prop(sapi, "use_pin_scene", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", WORKSPACE_USE_PIN_SCENE);
+  api_def_prop_ui_text(prop,
+                       "Pin Scene",
+                       "Remember the last used scene for the workspace and switch to it "
+                       "whenever this workspace is activated again");
+  api_def_prop_update(prop, NC_WORKSPACE, NULL);
 
   /* Flags */
-  prop = RNA_def_property(srna, "use_filter_by_owner", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", WORKSPACE_USE_FILTER_BY_ORIGIN);
-  RNA_def_property_ui_text(prop, "Use UI Tags", "Filter the UI by tags");
-  RNA_def_property_update(prop, 0, "rna_window_update_all");
+  prop = api_def_prop(sapi, "use_filter_by_owner", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_stype(prop, NULL, "flags", WORKSPACE_USE_FILTER_BY_ORIGIN);
+  api_def_prop_ui_text(prop, "Use UI Tags", "Filter the UI by tags");
+  api_def_prop_update(prop, 0, "api_window_update_all");
 
-  prop = rna_def_asset_library_reference_common(
-      srna, "rna_WorkSpace_asset_library_get", "rna_WorkSpace_asset_library_set");
-  RNA_def_property_ui_text(prop,
-                           "Asset Library",
-                           "Active asset library to show in the UI, not used by the Asset Browser "
-                           "(which has its own active asset library)");
-  RNA_def_property_update(prop, NC_ASSET | ND_ASSET_LIST_READING, NULL);
+  prop = api_def_asset_lib_ref_common(
+      sapi, "api_WorkSpace_asset_lib_get", "api_WorkSpace_asset_lib_set");
+  api_def_prop_ui_text(prop,
+                       "Asset Lib",
+                       "Active asset lib to show in the UI, not used by the Asset Browser "
+                       "(which has its own active asset library)");
+  api_def_prop_update(prop, NC_ASSET | ND_ASSET_LIST_READING, NULL);
 
-  RNA_api_workspace(srna);
+  api_workspace(sapi);
 }
 
-void RNA_def_workspace(BlenderRNA *brna)
+void api_def_workspace(DuneApi *dapi)
 {
-  rna_def_workspace_owner(brna);
-  rna_def_workspace_tool(brna);
+  api_def_workspace_owner(dapi);
+  api_def_workspace_tool(dapi);
 
-  rna_def_workspace(brna);
+  api_def_workspace(dapi);
 }
 
 #endif /* RNA_RUNTIME */
