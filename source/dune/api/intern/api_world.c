@@ -46,95 +46,95 @@ static void api_World_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerR
 }
 
 #  if 0
-static void rna_World_draw_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_World_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   World *wo = (World *)ptr->owner_id;
 
-  DEG_id_tag_update(&wo->id, 0);
-  WM_main_add_notifier(NC_WORLD | ND_WORLD_DRAW, wo);
+  graph_id_tag_update(&wo->id, 0);
+  wm_main_add_notifier(NC_WORLD | ND_WORLD_DRAW, wo);
 }
 #  endif
 
-static void rna_World_draw_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_World_draw_update(Main *UNUSED(main), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   World *wo = (World *)ptr->owner_id;
 
-  DEG_id_tag_update(&wo->id, 0);
-  WM_main_add_notifier(NC_WORLD | ND_WORLD_DRAW, wo);
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+  graph_id_tag_update(&wo->id, 0);
+  wm_main_add_notifier(NC_WORLD | ND_WORLD_DRAW, wo);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
 }
 
-static void rna_World_use_nodes_update(bContext *C, PointerRNA *ptr)
+static void api_World_use_nodes_update(bContext *C, PointerRNA *ptr)
 {
   World *wrld = (World *)ptr->data;
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
+  Main *main = cxt_data_main(C);
+  Scene *scene = ctx_data_scene(C);
 
   if (wrld->use_nodes && wrld->nodetree == NULL) {
-    ED_node_shader_default(C, &wrld->id);
+    ed_node_shader_default(C, &wrld->id);
   }
 
-  DEG_relations_tag_update(bmain);
-  rna_World_update(bmain, scene, ptr);
-  rna_World_draw_update(bmain, scene, ptr);
+  graph_relations_tag_update(pmain);
+  apo_World_update(main, scene, ptr);
+  api_World_draw_update(main, scene, ptr);
 }
 
 void rna_World_lightgroup_get(PointerRNA *ptr, char *value)
 {
   LightgroupMembership *lgm = ((World *)ptr->owner_id)->lightgroup;
   char value_buf[sizeof(lgm->name)];
-  int len = BKE_lightgroup_membership_get(lgm, value_buf);
+  int len = dune_lightgroup_membership_get(lgm, value_buf);
   memcpy(value, value_buf, len + 1);
 }
 
 int rna_World_lightgroup_length(PointerRNA *ptr)
 {
   LightgroupMembership *lgm = ((World *)ptr->owner_id)->lightgroup;
-  return BKE_lightgroup_membership_length(lgm);
+  return dune_lightgroup_membership_length(lgm);
 }
 
-void rna_World_lightgroup_set(PointerRNA *ptr, const char *value)
+void api_World_lightgroup_set(PointerRNA *ptr, const char *value)
 {
-  BKE_lightgroup_membership_set(&((World *)ptr->owner_id)->lightgroup, value);
+  dune_lightgroup_membership_set(&((World *)ptr->owner_id)->lightgroup, value);
 }
 
 #else
 
-static void rna_def_lighting(BlenderRNA *brna)
+static void api_def_lighting(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "WorldLighting", NULL);
-  RNA_def_struct_sdna(srna, "World");
-  RNA_def_struct_nested(brna, srna, "World");
-  RNA_def_struct_ui_text(srna, "Lighting", "Lighting for a World data-block");
+  sapi = api_def_struct(sapi, "WorldLighting", NULL);
+  api_def_struct_sdna(sapi, "World");
+  api_def_struct_nested(dapi, sapi, "World");
+  api_def_struct_ui_text(sapi, "Lighting", "Lighting for a World data-block");
 
   /* ambient occlusion */
-  prop = RNA_def_property(srna, "use_ambient_occlusion", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mode", WO_AMB_OCC);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_ambient_occlusion", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "mode", WO_AMB_OCC);
+  api_def_prop_ui_text(
       prop,
       "Use Ambient Occlusion",
       "Use Ambient Occlusion to add shadowing based on distance between objects");
-  RNA_def_property_update(prop, 0, "rna_World_update");
+  api_def_prop_update(prop, 0, "rna_World_update");
 
-  prop = RNA_def_property(srna, "ao_factor", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_float_sdna(prop, NULL, "aoenergy");
-  RNA_def_property_range(prop, 0, INT_MAX);
-  RNA_def_property_ui_range(prop, 0, 1, 0.1, 2);
-  RNA_def_property_ui_text(prop, "Factor", "Factor for ambient occlusion blending");
-  RNA_def_property_update(prop, 0, "rna_World_update");
+  prop = api_def_prop(sapi, "ao_factor", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_float_stype(prop, NULL, "aoenergy");
+  api_def_prope_range(prop, 0, INT_MAX);
+  api_def_prop_ui_range(prop, 0, 1, 0.1, 2);
+  api_def_prop_ui_text(prop, "Factor", "Factor for ambient occlusion blending");
+  api_def_prop_update(prop, 0, "rna_World_update");
 
-  prop = RNA_def_property(srna, "distance", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "aodist");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "distance", PROP_FLOAT, PROP_DISTANCE);
+  api_def_pro_float_sdna(prop, NULL, "aodist");
+  api_def_prop_range(prop, 0, FLT_M
+  api_def_prop_ui_text(
       prop, "Distance", "Length of rays, defines how far away other faces give occlusion effect");
-  RNA_def_property_update(prop, 0, "rna_World_update");
+  api_def_prop_update(prop, 0, "rna_World_update");
 }
 
-static void rna_def_world_mist(BlenderRNA *brna)
+static void api_def_world_mist(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -156,22 +156,22 @@ static void rna_def_world_mist(BlenderRNA *brna)
   api_def_struct_ui_text(sapi, "World Mist", "Mist settings for a World data-block");
 
   prop = api_def_prop(sapi, "use_mist", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "mode", WO_MIST);
-  RNA_def_property_ui_text(
+  api_def_prop_bool_stype(prop, NULL, "mode", WO_MIST);
+  api_def_prop_ui_text(
       prop, "Use Mist", "Occlude objects with the environment color as they are further away");
-  RNA_def_property_update(prop, 0, "rna_World_draw_update");
+  api_def_prop_update(prop, 0, "rna_World_draw_update");
 
-  prop = RNA_def_property(srna, "intensity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "misi");
-  RNA_def_property_range(prop, 0, 1);
-  RNA_def_property_ui_text(prop, "Minimum", "Overall minimum intensity of the mist effect");
-  RNA_def_property_update(prop, 0, "rna_World_draw_update");
+  prop = api_def_prop(spia, "intensity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "misi")
+  api_def_prop_range(prop, 0, 1);
+  api_def_prop_ui_text(prop, "Minimum", "Overall minimum intensity of the mist effect");
+  api_def_prop_update(prop, 0, "rna_World_draw_update");
 
-  prop = RNA_def_property(srna, "start", PROP_FLOAT, PROP_DISTANCE);
-  RNA_def_property_float_sdna(prop, NULL, "miststa");
-  RNA_def_property_range(prop, 0, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0, 10000, 10, 2);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "start", PROP_FLOAT, PROP_DISTANCE);
+  api_def_prop_float_sdna(prop, NULL, "miststa");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_range(prop, 0, 10000, 10, 2);
+  api_def_prop_ui_text(
       prop, "Start", "Starting distance of the mist, measured from the camera");
   RNA_def_property_update(prop, 0, "rna_World_draw_update");
 
