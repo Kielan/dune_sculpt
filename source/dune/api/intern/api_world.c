@@ -136,10 +136,10 @@ static void rna_def_lighting(BlenderRNA *brna)
 
 static void rna_def_world_mist(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem falloff_items[] = {
+  static const EnumPropItem falloff_items[] = {
       {WO_MIST_QUADRATIC, "QUADRATIC", 0, "Quadratic", "Use quadratic progression"},
       {WO_MIST_LINEAR, "LINEAR", 0, "Linear", "Use linear progression"},
       {WO_MIST_INVERSE_QUADRATIC,
@@ -150,12 +150,12 @@ static void rna_def_world_mist(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "WorldMistSettings", NULL);
-  RNA_def_struct_sdna(srna, "World");
-  RNA_def_struct_nested(brna, srna, "World");
-  RNA_def_struct_ui_text(srna, "World Mist", "Mist settings for a World data-block");
+  sapi = api_def_struct(dapi, "WorldMistSettings", NULL);
+  api_def_struct_stype(sapi, "World");
+  api_def_struct_nested(dapi, sapi, "World");
+  api_def_struct_ui_text(sapi, "World Mist", "Mist settings for a World data-block");
 
-  prop = RNA_def_property(srna, "use_mist", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_mist", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "mode", WO_MIST);
   RNA_def_property_ui_text(
       prop, "Use Mist", "Occlude objects with the environment color as they are further away");
