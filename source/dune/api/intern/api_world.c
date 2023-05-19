@@ -212,7 +212,7 @@ void api_def_world(DuneApi *dapi)
   api_def_animdata_common(srna);
 
   /* colors */
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
   RNA_def_property_float_sdna(prop, NULL, "horr");
   RNA_def_property_array(prop, 3);
   RNA_def_property_float_array_default(prop, default_world_color);
