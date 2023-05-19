@@ -1,27 +1,27 @@
 #include <stdlib.h>
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_scene_types.h"
-#include "DNA_volume_types.h"
+#include "types_scene.h"
+#include "types_volume.h"
 
-#include "BKE_volume.h"
+#include "dune_volume.h"
 
-#include "BLI_math_base.h"
+#include "lib_math_base.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-const EnumPropertyItem rna_enum_volume_grid_data_type_items[] = {
-    {VOLUME_GRID_BOOLEAN, "BOOLEAN", 0, "Boolean", "Boolean"},
+const EnumPropItem api_enum_volume_grid_data_type_items[] = {
+    {VOLUME_GRID_BOOL, "BOOL", 0, "Bool", "Bool"},
     {VOLUME_GRID_FLOAT, "FLOAT", 0, "Float", "Single precision float"},
     {VOLUME_GRID_DOUBLE, "DOUBLE", 0, "Double", "Double precision"},
     {VOLUME_GRID_INT, "INT", 0, "Integer", "32-bit integer"},
     {VOLUME_GRID_INT64, "INT64", 0, "Integer 64-bit", "64-bit integer"},
-    {VOLUME_GRID_MASK, "MASK", 0, "Mask", "No data, boolean mask of active voxels"},
+    {VOLUME_GRID_MASK, "MASK", 0, "Mask", "No data, bool mask of active voxels"},
     {VOLUME_GRID_VECTOR_FLOAT, "VECTOR_FLOAT", 0, "Float Vector", "3D float vector"},
     {VOLUME_GRID_VECTOR_DOUBLE, "VECTOR_DOUBLE", 0, "Double Vector", "3D double vector"},
     {VOLUME_GRID_VECTOR_INT, "VECTOR_INT", 0, "Integer Vector", "3D integer vector"},
@@ -34,157 +34,157 @@ const EnumPropertyItem rna_enum_volume_grid_data_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
-static char *rna_VolumeRender_path(const PointerRNA *UNUSED(ptr))
+static char *api_VolumeRender_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("render");
+  return lib_strdup("render");
 }
 
-static char *rna_VolumeDisplay_path(const PointerRNA *UNUSED(ptr))
+static char *api_VolumeDisplay_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("display");
+  return lib_strdup("display");
 }
 
 /* Updates */
 
-static void rna_Volume_update_display(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Volume_update_display(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Volume *volume = (Volume *)ptr->owner_id;
-  WM_main_add_notifier(NC_GEOM | ND_DATA, volume);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, volume);
 }
 
-static void rna_Volume_update_filepath(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Volume_update_filepath(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Volume *volume = (Volume *)ptr->owner_id;
-  BKE_volume_unload(volume);
-  DEG_id_tag_update(&volume->id, ID_RECALC_COPY_ON_WRITE);
-  WM_main_add_notifier(NC_GEOM | ND_DATA, volume);
+  dune_volume_unload(volume);
+  graph_id_tag_update(&volume->id, ID_RECALC_COPY_ON_WRITE);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, volume);
 }
 
-static void rna_Volume_update_is_sequence(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Volume_update_is_sequence(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  rna_Volume_update_filepath(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_Volume_update_filepath(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
-static void rna_Volume_velocity_grid_set(PointerRNA *ptr, const char *value)
+static void api_Volume_velocity_grid_set(ApiPtr *ptr, const char *value)
 {
   Volume *volume = (Volume *)ptr->data;
-  if (!BKE_volume_set_velocity_grid_by_name(volume, value)) {
-    WM_reportf(RPT_ERROR, "Could not find grid with name %s", value);
+  if (!dune_volume_set_velocity_grid_by_name(volume, value)) {
+    wm_reportf(RPT_ERROR, "Could not find grid with name %s", value);
   }
-  WM_main_add_notifier(NC_GEOM | ND_DATA, volume);
+  wm_main_add_notifier(NC_GEOM | ND_DATA, volume);
 }
 
 /* Grid */
 
-static void rna_VolumeGrid_name_get(PointerRNA *ptr, char *value)
+static void api_VolumeGrid_name_get(ApiPtr *ptr, char *value)
 {
   VolumeGrid *grid = ptr->data;
-  strcpy(value, BKE_volume_grid_name(grid));
+  strcpy(value, dune_volume_grid_name(grid));
 }
 
-static int rna_VolumeGrid_name_length(PointerRNA *ptr)
+static int api_VolumeGrid_name_length(ApiPtr *ptr)
 {
   VolumeGrid *grid = ptr->data;
-  return strlen(BKE_volume_grid_name(grid));
+  return strlen(dune_volume_grid_name(grid));
 }
 
-static int rna_VolumeGrid_data_type_get(PointerRNA *ptr)
+static int api_VolumeGrid_data_type_get(ApiPtr *ptr
 {
   const VolumeGrid *grid = ptr->data;
-  return BKE_volume_grid_type(grid);
+  return dune_volume_grid_type(grid);
 }
 
-static int rna_VolumeGrid_channels_get(PointerRNA *ptr)
+static int api_VolumeGrid_channels_get(ApiPtr *ptr)
 {
   const VolumeGrid *grid = ptr->data;
-  return BKE_volume_grid_channels(grid);
+  return dune_volume_grid_channels(grid);
 }
 
-static void rna_VolumeGrid_matrix_object_get(PointerRNA *ptr, float *value)
+static void api_VolumeGrid_matrix_object_get(ApiPtr *ptr, float *value)
 {
   VolumeGrid *grid = ptr->data;
-  BKE_volume_grid_transform_matrix(grid, (float(*)[4])value);
+  dune_volume_grid_transform_matrix(grid, (float(*)[4])value);
 }
 
-static bool rna_VolumeGrid_is_loaded_get(PointerRNA *ptr)
+static bool api_VolumeGrid_is_loaded_get(ApiPtr *ptr)
 {
   VolumeGrid *grid = ptr->data;
-  return BKE_volume_grid_is_loaded(grid);
+  return dune_volume_grid_is_loaded(grid);
 }
 
-static bool rna_VolumeGrid_load(ID *id, VolumeGrid *grid)
+static bool api_VolumeGrid_load(Id *id, VolumeGrid *grid)
 {
-  return BKE_volume_grid_load((Volume *)id, grid);
+  return dune_volume_grid_load((Volume *)id, grid);
 }
 
-static void rna_VolumeGrid_unload(ID *id, VolumeGrid *grid)
+static void api_VolumeGrid_unload(Id *id, VolumeGrid *grid)
 {
-  BKE_volume_grid_unload((Volume *)id, grid);
+  dune_volume_grid_unload((Volume *)id, grid);
 }
 
 /* Grids Iterator */
 
-static void rna_Volume_grids_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Volume_grids_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Volume *volume = ptr->data;
-  int num_grids = BKE_volume_num_grids(volume);
+  int num_grids = dune_volume_num_grids(volume);
   iter->internal.count.ptr = volume;
   iter->internal.count.item = 0;
   iter->valid = (iter->internal.count.item < num_grids);
 }
 
-static void rna_Volume_grids_next(CollectionPropertyIterator *iter)
+static void api_Volume_grids_next(CollectionPropIter *iter)
 {
   Volume *volume = iter->internal.count.ptr;
-  int num_grids = BKE_volume_num_grids(volume);
+  int num_grids = dune_volume_num_grids(volume);
   iter->internal.count.item++;
   iter->valid = (iter->internal.count.item < num_grids);
 }
 
-static void rna_Volume_grids_end(CollectionPropertyIterator *UNUSED(iter)) {}
+static void api_Volume_grids_end(CollectionPropIter *UNUSED(iter)) {}
 
-static PointerRNA rna_Volume_grids_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Volume_grids_get(CollectionPropIter *iter)
 {
   Volume *volume = iter->internal.count.ptr;
-  const VolumeGrid *grid = BKE_volume_grid_get_for_read(volume, iter->internal.count.item);
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_VolumeGrid, (void *)grid);
+  const VolumeGrid *grid = dune_volume_grid_get_for_read(volume, iter->internal.count.item);
+  return api_ptr_inherit_refine(&iter->parent, &Api_VolumeGrid, (void *)grid);
 }
 
-static int rna_Volume_grids_length(PointerRNA *ptr)
+static int api_Volume_grids_length(ApiPtr *ptr)
 {
   Volume *volume = ptr->data;
-  return BKE_volume_num_grids(volume);
+  return dune_volume_num_grids(volume);
 }
 
 /* Active Grid */
 
-static void rna_VolumeGrids_active_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_VolumeGrids_active_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   Volume *volume = (Volume *)ptr->data;
-  int num_grids = BKE_volume_num_grids(volume);
+  int num_grids = dune_volume_num_grids(volume);
 
   *min = 0;
   *max = max_ii(0, num_grids - 1);
 }
 
-static int rna_VolumeGrids_active_index_get(PointerRNA *ptr)
+static int api_VolumeGrids_active_index_get(ApiPtr *ptr)
 {
   Volume *volume = (Volume *)ptr->data;
-  int num_grids = BKE_volume_num_grids(volume);
+  int num_grids = dune_volume_num_grids(volume);
   return clamp_i(volume->active_grid, 0, max_ii(num_grids - 1, 0));
 }
 
-static void rna_VolumeGrids_active_index_set(PointerRNA *ptr, int value)
+static void api_VolumeGrids_active_index_set(ApiPtr *ptr, int value)
 {
   Volume *volume = (Volume *)ptr->data;
   volume->active_grid = value;
@@ -192,47 +192,47 @@ static void rna_VolumeGrids_active_index_set(PointerRNA *ptr, int value)
 
 /* Loading */
 
-static bool rna_VolumeGrids_is_loaded_get(PointerRNA *ptr)
+static bool api_VolumeGrids_is_loaded_get(ApiPtr *ptr)
 {
   Volume *volume = (Volume *)ptr->data;
-  return BKE_volume_is_loaded(volume);
+  return dune_volume_is_loaded(volume);
 }
 
 /* Error Message */
 
-static void rna_VolumeGrids_error_message_get(PointerRNA *ptr, char *value)
+static void api_VolumeGrids_error_message_get(ApiPtr *ptr, char *value)
 {
   Volume *volume = (Volume *)ptr->data;
-  strcpy(value, BKE_volume_grids_error_msg(volume));
+  strcpy(value, dune_volume_grids_error_msg(volume));
 }
 
-static int rna_VolumeGrids_error_message_length(PointerRNA *ptr)
+static int api_VolumeGrids_error_message_length(ApiPtr *ptr)
 {
   Volume *volume = (Volume *)ptr->data;
-  return strlen(BKE_volume_grids_error_msg(volume));
+  return strlen(dune_volume_grids_error_msg(volume));
 }
 
 /* Frame Filepath */
-static void rna_VolumeGrids_frame_filepath_get(PointerRNA *ptr, char *value)
+static void api_VolumeGrids_frame_filepath_get(ApiPtr *ptr, char *value)
 {
   Volume *volume = (Volume *)ptr->data;
-  strcpy(value, BKE_volume_grids_frame_filepath(volume));
+  strcpy(value, dune_volume_grids_frame_filepath(volume));
 }
 
-static int rna_VolumeGrids_frame_filepath_length(PointerRNA *ptr)
+static int api_VolumeGrids_frame_filepath_length(ApiPtr *ptr)
 {
   Volume *volume = (Volume *)ptr->data;
-  return strlen(BKE_volume_grids_frame_filepath(volume));
+  return strlen(dune_volume_grids_frame_filepath(volume));
 }
 
-static bool rna_Volume_load(Volume *volume, Main *bmain)
+static bool api_Volume_load(Volume *volume, Main *main)
 {
-  return BKE_volume_load(volume, bmain);
+  return dune_volume_load(volume, main);
 }
 
-static bool rna_Volume_save(Volume *volume, Main *bmain, ReportList *reports, const char *filepath)
+static bool api_Volume_save(Volume *volume, Main *main, ReportList *reports, const char *filepath)
 {
-  return BKE_volume_save(volume, bmain, reports, filepath);
+  return dune_volume_save(volume, main, reports, filepath);
 }
 
 #else
