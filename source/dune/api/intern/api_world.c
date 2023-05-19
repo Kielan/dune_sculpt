@@ -32,17 +32,17 @@ static PointerRNA rna_World_lighting_get(PointerRNA *ptr)
   return rna_pointer_inherit_refine(ptr, &RNA_WorldLighting, ptr->owner_id);
 }
 
-static PointerRNA rna_World_mist_get(PointerRNA *ptr)
+static ApiPtr api_World_mist_get(PointerRNA *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_WorldMistSettings, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &RNA_WorldMistSettings, ptr->owner_id);
 }
 
-static void rna_World_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_World_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
   World *wo = (World *)ptr->owner_id;
 
-  DEG_id_tag_update(&wo->id, 0);
-  WM_main_add_notifier(NC_WORLD | ND_WORLD, wo);
+  graph_id_tag_update(&wo->id, 0);
+  wm_main_add_notifier(NC_WORLD | ND_WORLD, wo);
 }
 
 #  if 0
