@@ -321,7 +321,7 @@ static void api_XrActionMapItem_user_paths_begin(CollectionPropertyIterator *ite
 #  endif
 }
 
-static int api_XrActionMapItem_user_paths_length(PointerRNA *ptr)
+static int api_XrActionMapItem_user_paths_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = (XrActionMapItem *)ptr->data;
@@ -353,7 +353,7 @@ static void api_XrActionMapItem_op_name_get(ApiPtr *ptr, char *value)
   value[0] = '\0';
 }
 
-static int api_XrActionMapItem_op_name_length(PointerRNA *ptr)
+static int api_XrActionMapItem_op_name_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -361,7 +361,7 @@ static int api_XrActionMapItem_op_name_length(PointerRNA *ptr)
     if (ami->op_props_ptr) {
       wmOpType *ot = wm_optype_find(ami->op, 1);
       if (ot) {
-        return strlen(WM_operatortype_name(ot, ami->op_properties_ptr));
+        return strlen(wm_optype_name(ot, ami->op_props_ptr));
       }
     }
     return strlen(ami->op);
@@ -372,20 +372,20 @@ static int api_XrActionMapItem_op_name_length(PointerRNA *ptr)
   return 0;
 }
 
-static PointerRNA rna_XrActionMapItem_op_properties_get(PointerRNA *ptr)
+static ApiPtr api_XrActionMapItem_op_properties_get(PointerRNA *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
-  if (ami->op_properties_ptr) {
-    return *(ami->op_properties_ptr);
+  if (ami->op_props_ptr) {
+    return *(ami->op_props_ptr);
   }
 #  else
   UNUSED_VARS(ptr);
 #  endif
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
-static bool rna_XrActionMapItem_bimanual_get(PointerRNA *ptr)
+static bool api_XrActionMapItem_bimanual_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -398,7 +398,7 @@ static bool rna_XrActionMapItem_bimanual_get(PointerRNA *ptr)
   return false;
 }
 
-static void rna_XrActionMapItem_bimanual_set(PointerRNA *ptr, bool value)
+static void api_XrActionMapItem_bimanual_set(ApiPtr *ptr, bool value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -408,7 +408,7 @@ static void rna_XrActionMapItem_bimanual_set(PointerRNA *ptr, bool value)
 #  endif
 }
 
-static bool rna_XrActionMapItem_haptic_match_user_paths_get(PointerRNA *ptr)
+static bool api_XrActionMapItem_haptic_match_user_paths_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -421,7 +421,7 @@ static bool rna_XrActionMapItem_haptic_match_user_paths_get(PointerRNA *ptr)
   return false;
 }
 
-static void rna_XrActionMapItem_haptic_match_user_paths_set(PointerRNA *ptr, bool value)
+static void api_XrActionMapItem_haptic_match_user_paths_set(ApiPtr *ptr, bool value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -431,7 +431,7 @@ static void rna_XrActionMapItem_haptic_match_user_paths_set(PointerRNA *ptr, boo
 #  endif
 }
 
-static int rna_XrActionMapItem_haptic_mode_get(PointerRNA *ptr)
+static int api_XrActionMapItem_haptic_mode_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -448,7 +448,7 @@ static int rna_XrActionMapItem_haptic_mode_get(PointerRNA *ptr)
   return XR_HAPTIC_PRESS;
 }
 
-static void rna_XrActionMapItem_haptic_mode_set(PointerRNA *ptr, int value)
+static void api_XrActionMapItem_haptic_mode_set(ApiPtr *ptr, int value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -459,7 +459,7 @@ static void rna_XrActionMapItem_haptic_mode_set(PointerRNA *ptr, int value)
 #  endif
 }
 
-static bool rna_XrActionMapItem_pose_is_controller_grip_get(PointerRNA *ptr)
+static bool api_XrActionMapItem_pose_is_controller_grip_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -472,7 +472,7 @@ static bool rna_XrActionMapItem_pose_is_controller_grip_get(PointerRNA *ptr)
   return false;
 }
 
-static void rna_XrActionMapItem_pose_is_controller_grip_set(PointerRNA *ptr, bool value)
+static void api_XrActionMapItem_pose_is_controller_grip_set(PointerRNA *ptr, bool value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -482,7 +482,7 @@ static void rna_XrActionMapItem_pose_is_controller_grip_set(PointerRNA *ptr, boo
 #  endif
 }
 
-static bool rna_XrActionMapItem_pose_is_controller_aim_get(PointerRNA *ptr)
+static bool api_XrActionMapItem_pose_is_controller_aim_get(PointerRNA *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -495,7 +495,7 @@ static bool rna_XrActionMapItem_pose_is_controller_aim_get(PointerRNA *ptr)
   return false;
 }
 
-static void rna_XrActionMapItem_pose_is_controller_aim_set(PointerRNA *ptr, bool value)
+static void api_XrActionMapItem_pose_is_controller_aim_set(ApiPtr *ptr, bool value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = ptr->data;
@@ -509,7 +509,7 @@ static void api_XrActionMapItem_bindings_begin(CollectionPropIter *iter, ApiPtr 
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapItem *ami = (XrActionMapItem *)ptr->data;
-  rna_iter_list_begin(iter, &ami->bindings, NULL);
+  api_iter_list_begin(iter, &ami->bindings, NULL);
 #  else
   UNUSED_VARS(iter, ptr);
 #  endif
@@ -558,94 +558,91 @@ static XrActionMap *api_XrActionMap_new(ApiPtr *ptr, const char *name, bool repl
 {
 #  ifdef WITH_XR_OPENXR
   wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  return WM_xr_actionmap_new(xr->runtime, name, replace_existing);
+  return wm_xr_actionmap_new(xr->runtime, name, replace_existing);
 #  else
   UNUSED_VARS(ptr, name, replace_existing);
   return NULL;
 #  endif
 }
 
-static XrActionMap *rna_XrActionMap_new_from_actionmap(PointerRNA *ptr, XrActionMap *am_src)
+static XrActionMap *api_XrActionMap_new_from_actionmap(ApiPtr *ptr, XrActionMap *am_src)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  return WM_xr_actionmap_add_copy(xr->runtime, am_src);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  return wm_xr_actionmap_add_copy(xr->runtime, am_src);
 #  else
   UNUSED_VARS(ptr, am_src);
   return NULL;
 #  endif
 }
 
-static void rna_XrActionMap_remove(ReportList *reports, PointerRNA *ptr, PointerRNA *actionmap_ptr)
+static void rna_XrActionMap_remove(ReportList *reports, ApiPtr *ptr, ApiPtr *actionmap_ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   XrActionMap *actionmap = actionmap_ptr->data;
-  if (WM_xr_actionmap_remove(xr->runtime, actionmap) == false) {
-    BKE_reportf(reports, RPT_ERROR, "ActionMap '%s' cannot be removed", actionmap->name);
+  if (wm_xr_actionmap_remove(xr->runtime, actionmap) == false) {
+    dune_reportf(reports, RPT_ERROR, "ActionMap '%s' cannot be removed", actionmap->name);
     return;
   }
-  RNA_POINTER_INVALIDATE(actionmap_ptr);
+  API_PTR_INVALIDATE(actionmap_ptr);
 #  else
   UNUSED_VARS(ptr, reports, actionmap_ptr);
 #  endif
 }
 
-static XrActionMap *rna_XrActionMap_find(PointerRNA *ptr, const char *name)
+static XrActionMap *rna_XrActionMap_find(ApiPtr *ptr, const char *name)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  return WM_xr_actionmap_find(xr->runtime, name);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  return wm_xr_actionmap_find(xr->runtime, name);
 #  else
   UNUSED_VARS(ptr, name);
   return NULL;
 #  endif
 }
 
-static void rna_XrActionMap_items_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_XrActionMap_items_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMap *actionmap = (XrActionMap *)ptr->data;
-  rna_iterator_listbase_begin(iter, &actionmap->items, NULL);
+  api_iter_list_begin(iter, &actionmap->items, NULL);
 #  else
   UNUSED_VARS(iter, ptr);
 #  endif
 }
 
-static int rna_XrActionMap_items_length(PointerRNA *ptr)
+static int api_XrActionMap_items_length(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMap *actionmap = (XrActionMap *)ptr->data;
-  return BLI_listbase_count(&actionmap->items);
+  return lib_list_count(&actionmap->items);
 #  else
   UNUSED_VARS(ptr);
   return 0;
 #  endif
 }
 
-static void rna_XrActionMap_name_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_XrActionMap_name_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   wmWindowManager *wm = bmain->wm.first;
   if (wm && wm->xr.runtime) {
     XrActionMap *actionmap = ptr->data;
-    WM_xr_actionmap_ensure_unique(wm->xr.runtime, actionmap);
+    wm_xr_actionmap_ensure_unique(wm->xr.runtime, actionmap);
   }
 #  else
-  UNUSED_VARS(bmain, ptr);
+  UNUSED_VARS(main, ptr);
 #  endif
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name XR Session Settings
- * \{ */
+/** XR Session Settings **/
 
-static bool rna_XrSessionSettings_use_positional_tracking_get(PointerRNA *ptr)
+static bool api_XrSessionSettings_use_positional_tracking_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   return (xr->session_settings.flag & XR_SESSION_USE_POSITION_TRACKING) != 0;
 #  else
   UNUSED_VARS(ptr);
@@ -653,20 +650,20 @@ static bool rna_XrSessionSettings_use_positional_tracking_get(PointerRNA *ptr)
 #  endif
 }
 
-static void rna_XrSessionSettings_use_positional_tracking_set(PointerRNA *ptr, bool value)
+static void api_XrSessionSettings_use_positional_tracking_set(ApiPtr *ptr, bool value)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   SET_FLAG_FROM_TEST(xr->session_settings.flag, value, XR_SESSION_USE_POSITION_TRACKING);
 #  else
   UNUSED_VARS(ptr, value);
 #  endif
 }
 
-static bool rna_XrSessionSettings_use_absolute_tracking_get(PointerRNA *ptr)
+static bool api_XrSessionSettings_use_absolute_tracking_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   return (xr->session_settings.flag & XR_SESSION_USE_ABSOLUTE_TRACKING) != 0;
 #  else
   UNUSED_VARS(ptr);
@@ -674,21 +671,21 @@ static bool rna_XrSessionSettings_use_absolute_tracking_get(PointerRNA *ptr)
 #  endif
 }
 
-static void rna_XrSessionSettings_use_absolute_tracking_set(PointerRNA *ptr, bool value)
+static void api_XrSessionSettings_use_absolute_tracking_set(ApiPtr *ptr, bool value)
 {
 #  ifdef WITH_XR_OPENXR
-  wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
+  wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
   SET_FLAG_FROM_TEST(xr->session_settings.flag, value, XR_SESSION_USE_ABSOLUTE_TRACKING);
 #  else
   UNUSED_VARS(ptr, value);
 #  endif
 }
 
-static int rna_XrSessionSettings_icon_from_show_object_viewport_get(PointerRNA *ptr)
+static int api_XrSessionSettings_icon_from_show_object_viewport_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmXrData *xr = rna_XrSession_wm_xr_data_get(ptr);
-  return rna_object_type_visibility_icon_get_common(
+  const wmXrData *xr = api_XrSession_wm_xr_data_get(ptr);
+  return api_object_type_visibility_icon_get_common(
       xr->session_settings.object_type_exclude_viewport,
 #    if 0
     /* For the future when selection in VR is reliably supported. */
@@ -703,84 +700,81 @@ static int rna_XrSessionSettings_icon_from_show_object_viewport_get(PointerRNA *
 #  endif
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name XR Session State
- * \{ */
+/** XR Session State **/
 
-static bool rna_XrSessionState_is_running(bContext *C)
+static bool api_XrSessionState_is_running(Ctx *C)
 {
 #  ifdef WITH_XR_OPENXR
-  const wmWindowManager *wm = CTX_wm_manager(C);
-  return WM_xr_session_exists(&wm->xr);
+  const wmWindowManager *wm = ctx_wm_manager(C);
+  return wm_xr_session_exists(&wm->xr);
 #  else
   UNUSED_VARS(C);
   return false;
 #  endif
 }
 
-static void rna_XrSessionState_reset_to_base_pose(bContext *C)
+static void api_XrSessionState_reset_to_base_pose(Cxt *C)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = CTX_wm_manager(C);
-  WM_xr_session_base_pose_reset(&wm->xr);
+  wmWindowManager *wm = cxt_wm_manager(C);
+  wm_xr_session_base_pose_reset(&wm->xr);
 #  else
   UNUSED_VARS(C);
 #  endif
 }
 
-static bool rna_XrSessionState_action_set_create(bContext *C, XrActionMap *actionmap)
+static bool api_XrSessionState_action_set_create(Cxt *C, XrActionMap *actionmap)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = CTX_wm_manager(C);
-  return WM_xr_action_set_create(&wm->xr, actionmap->name);
+  wmWindowManager *wm = cxt_wm_manager(C);
+  return wm_xr_action_set_create(&wm->xr, actionmap->name);
 #  else
   UNUSED_VARS(C, actionmap);
   return false;
 #  endif
 }
 
-static bool rna_XrSessionState_action_create(bContext *C,
+static bool api_XrSessionState_action_create(Cxt *C,
                                              XrActionMap *actionmap,
                                              XrActionMapItem *ami)
 {
 #  ifdef WITH_XR_OPENXR
-  wmWindowManager *wm = CTX_wm_manager(C);
-  if (BLI_listbase_is_empty(&ami->user_paths)) {
+  wmWindowManager *wm = cxt_wm_manager(C);
+  if (lib_lib_is_empty(&ami->user_paths)) {
     return false;
   }
 
   const bool is_float_action = ELEM(ami->type, XR_FLOAT_INPUT, XR_VECTOR2F_INPUT);
-  const bool is_button_action = (is_float_action || ami->type == XR_BOOLEAN_INPUT);
-  wmOperatorType *ot = NULL;
-  IDProperty *op_properties = NULL;
+  const bool is_byn_action = (is_float_action || ami->type == XR_BOOL_INPUT);
+  wmOpType *ot = NULL;
+  IdProp *op_props = NULL;
   int64_t haptic_duration_msec;
 
   if (is_button_action) {
     if (ami->op[0]) {
       char idname[OP_MAX_TYPENAME];
-      WM_operator_bl_idname(idname, ami->op);
-      ot = WM_operatortype_find(idname, true);
+      wm_op_bl_idname(idname, ami->op);
+      ot = wm_optype_find(idname, true);
       if (ot) {
-        op_properties = ami->op_properties;
+        op_props = ami->op_props;
       }
     }
 
     haptic_duration_msec = (int64_t)(ami->haptic_duration * 1000.0f);
   }
 
-  return WM_xr_action_create(&wm->xr,
+  return wm_xr_action_create(&wm->xr,
                              actionmap->name,
                              ami->name,
                              ami->type,
                              &ami->user_paths,
                              ot,
                              op_properties,
-                             is_button_action ? ami->haptic_name : NULL,
-                             is_button_action ? &haptic_duration_msec : NULL,
-                             is_button_action ? &ami->haptic_frequency : NULL,
-                             is_button_action ? &ami->haptic_amplitude : NULL,
+                             is_btn_action ? ami->haptic_name : NULL,
+                             is_btn_action ? &haptic_duration_msec : NULL,
+                             is_btn_action ? &ami->haptic_frequency : NULL,
+                             is_btn_action ? &ami->haptic_amplitude : NULL,
                              ami->op_flag,
                              ami->action_flag,
                              ami->haptic_flag);
@@ -790,7 +784,7 @@ static bool rna_XrSessionState_action_create(bContext *C,
 #  endif
 }
 
-static bool rna_XrSessionState_action_binding_create(bContext *C,
+static bool api_XrSessionState_action_binding_create(Cxt *C,
                                                      XrActionMap *actionmap,
                                                      XrActionMapItem *ami,
                                                      XrActionMapBinding *amb)
