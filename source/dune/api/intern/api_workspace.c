@@ -57,7 +57,7 @@ static ApiPtr api_workspace_screens_item_get(CollectionPropertyIterator *iter)
 
 static wmOwnerID *api_WorkSpace_owner_ids_new(WorkSpace *workspace, const char *name)
 {
-  wmOwnerID *owner_id = mem_callocn(sizeof(*owner_id), __func__);
+  wmOwnerId *owner_id = mem_callocn(sizeof(*owner_id), __func__);
   lib_addtail(&workspace->owner_ids, owner_id);
   STRNCPY(owner_id->name, name);
   wm_main_add_notifier(NC_WINDOW, NULL);
@@ -96,10 +96,10 @@ static int api_WorkSpace_asset_library_get(ApiPtr *ptr)
   return ed_asset_lib_ref_to_enum_value(&workspace->asset_lib_ref);
 }
 
-static void rna_WorkSpace_asset_library_set(ApiPtr *ptr, int value)
+static void api_WorkSpace_asset_lib_set(ApiPtr *ptr, int value)
 {
   WorkSpace *workspace = ptr->data;
-  workspace->asset_lib_ref = ED_asset_libr_ref_from_enum_value(value);
+  workspace->asset_lib_ref = ed_asset_libr_ref_from_enum_value(value);
 }
 
 static ToolRef *api_WorkSpace_tools_from_tkey(WorkSpace *workspace,
@@ -127,11 +127,11 @@ static ToolRef *api_WorkSpace_tools_from_space_view3d_mode(WorkSpace *workspace,
 }
 
 static ToolRef *api_WorkSpace_tools_from_space_image_mode(WorkSpace *workspace,
-                                                           int mode,
-                                                           bool create)
+                                                          int mode,
+                                                          bool create)
 {
   return api_WorkSpace_tools_from_tkey(workspace,
-                                       &(bToolKey){
+                                       &(ToolKey){
                                            .space_type = SPACE_IMAGE,
                                            .mode = mode,
                                        },
@@ -147,92 +147,92 @@ static ToolRef *api_WorkSpace_tools_from_space_node(WorkSpace *workspace, bool c
                                        },
                                        create);
 }
-static bToolRef *api_WorkSpace_tools_from_space_sequencer(WorkSpace *workspace,
-                                                          int mode,
-                                                          bool create)
+static ToolRef *api_WorkSpace_tools_from_space_sequencer(WorkSpace *workspace,
+                                                         int mode,
+                                                         bool create)
 {
   return api_WorkSpace_tools_from_tkey(workspace,
-                                       &(bToolKey){
+                                       &(ToolKey){
                                            .space_type = SPACE_SEQ,
                                            .mode = mode,
                                        },
                                        create);
 }
-const EnumPropertyItem *rna_WorkSpace_tools_mode_itemf(bContext *UNUSED(C),
-                                                       PointerRNA *ptr,
-                                                       PropertyRNA *UNUSED(prop),
-                                                       bool *UNUSED(r_free))
+const EnumPropItem *api_WorkSpace_tools_mode_itemf(Ctx *UNUSED(C),
+                                                   ApiPtr *ptr,
+                                                   ApiProp *UNUSED(prop),
+                                                   bool *UNUSED(r_free))
 {
-  bToolRef *tref = ptr->data;
+  ToolRef *tref = ptr->data;
   switch (tref->space_type) {
     case SPACE_VIEW3D:
-      return rna_enum_context_mode_items;
+      return api_enum_ctx_mode_items;
     case SPACE_IMAGE:
-      return rna_enum_space_image_mode_all_items;
+      return api_enum_space_image_mode_all_items;
     case SPACE_SEQ:
-      return rna_enum_space_sequencer_view_type_items;
+      return api_enum_space_sequencer_view_type_items;
   }
-  return DummyRNA_DEFAULT_items;
+  return ApiDummy_DEFAULT_items;
 }
 
-static bool rna_WorkSpaceTool_use_paint_canvas_get(PointerRNA *ptr)
+static bool api_WorkSpaceTool_use_paint_canvas_get(ApiPtr *ptr)
 {
-  bToolRef *tref = ptr->data;
-  return ED_paint_tool_use_canvas(NULL, tref);
+  ToolRef *tref = ptr->data;
+  return ed_paint_tool_use_canvas(NULL, tref);
 }
 
-static int rna_WorkSpaceTool_index_get(PointerRNA *ptr)
+static int api_WorkSpaceTool_index_get(ApiPtr *ptr)
 {
-  bToolRef *tref = ptr->data;
+  ToolRef *tref = ptr->data;
   return (tref->runtime) ? tref->runtime->index : 0;
 }
 
-static bool rna_WorkSpaceTool_has_datablock_get(PointerRNA *ptr)
+static bool api_WorkSpaceTool_has_datablock_get(ApiPtr *ptr)
 {
-  bToolRef *tref = ptr->data;
+  ToolRef *tref = ptr->data;
   return (tref->runtime) ? (tref->runtime->data_block[0] != '\0') : false;
 }
 
-static void rna_WorkSpaceTool_widget_get(PointerRNA *ptr, char *value)
+static void api_WorkSpaceTool_widget_get(ApiPtr *ptr, char *value)
 {
-  bToolRef *tref = ptr->data;
+  ToolRef *tref = ptr->data;
   strcpy(value, tref->runtime ? tref->runtime->gizmo_group : "");
 }
 
-static int rna_WorkSpaceTool_widget_length(PointerRNA *ptr)
+static int api_WorkSpaceTool_widget_length(ApiPtr *ptr)
 {
-  bToolRef *tref = ptr->data;
+  ToolRef *tref = ptr->data;
   return tref->runtime ? strlen(tref->runtime->gizmo_group) : 0;
 }
 
-#else /* RNA_RUNTIME */
+#else /* API_RUNTIME */
 
-static void rna_def_workspace_owner(BlenderRNA *brna)
+static void api_def_workspace_owner(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "wmOwnerID", NULL);
-  RNA_def_struct_sdna(srna, "wmOwnerID");
-  RNA_def_struct_clear_flag(srna, STRUCT_UNDO);
-  RNA_def_struct_ui_text(srna, "Work Space UI Tag", "");
+  sapi = api_def_struct(dapi, "wmOwnerID", NULL);
+  api_def_struct_stype(sapi, "wmOwnerID");
+  api_def_struct_clear_flag(sapi, STRUCT_UNDO);
+  api_def_struct_ui_text(sapi, "Work Space UI Tag", "");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Name", "");
-  RNA_def_struct_name_property(srna, prop);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_ui_text(prop, "Name", "");
+  api_def_struct_name_prop(sapi, prop);
 }
 
-static void rna_def_workspace_owner_ids(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_workspace_owner_ids(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "wmOwnerIDs");
-  srna = RNA_def_struct(brna, "wmOwnerIDs", NULL);
-  RNA_def_struct_sdna(srna, "WorkSpace");
-  RNA_def_struct_ui_text(srna, "WorkSpace UI Tags", "");
+  api_def_prop_sapi(cprop, "wmOwnerIds");
+  sapi = api_def_struct(dapi, "wmOwnerIds", NULL);
+  api_def_struct_sdna(sapi, "WorkSpace");
+  api_def_struct_ui_text(sapi, "WorkSpace UI Tags", "");
 
   /* add owner_id */
   fn = api_def_fn(sapi, "new", "api_WorkSpace_owner_ids_new");
@@ -253,11 +253,11 @@ static void rna_def_workspace_owner_ids(BlenderRNA *brna, PropertyRNA *cprop)
   api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
 
   /* clear all modifiers */
-  func = RNA_def_function(srna, "clear", "rna_WorkSpace_owner_ids_clear");
-  RNA_def_function_ui_description(func, "Remove all tags");
+  fn = api_def_fn(sapi, "clear", "api_WorkSpace_owner_ids_clear
+  api_def_fn_ui_description(fn, "Remove all tags");
 }
 
-static void api_def_workspace_tool(BlenderRNA *brna)
+static void api_def_workspace_tool(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
@@ -288,87 +288,87 @@ static void api_def_workspace_tool(BlenderRNA *brna)
   prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "mode");
   api_def_prop_enum_items(prop, DummyRNA_DEFAULT_items);
-  api_def_prop_enum_fns(prop, NULL, NULL, "rna_WorkSpace_tools_mode_itemf");
+  api_def_prop_enum_fns(prop, NULL, NULL, "api_WorkSpace_tools_mode_itemf");
   api_def_prop_ui_text(prop, "Tool Mode", "");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
 
-  prop = RNA_def_property(srna, "use_paint_canvas", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Index", "");
-  RNA_def_property_boolean_funcs(prop, "rna_WorkSpaceTool_use_paint_canvas_get", NULL);
-  RNA_def_property_ui_text(prop, "Use Paint Canvas", "Does this tool use a painting canvas");
+  prop = api_def_prop(sapi, "use_paint_canvas", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Index", "");
+  api_def_prop_bool_fns(prop, "api_WorkSpaceTool_use_paint_canvas_get", NULL);
+  api_def_prop_ui_text(prop, "Use Paint Canvas", "Does this tool use a painting canvas");
 
-  RNA_define_verify_sdna(0);
-  prop = RNA_def_property(srna, "has_datablock", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Has Data-Block", "");
-  RNA_def_property_boolean_funcs(prop, "rna_WorkSpaceTool_has_datablock_get", NULL);
-  RNA_define_verify_sdna(1);
+  api_define_verify_stype(0);
+  prop = api_def_prop(sapi, "has_datablock", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Has Data-Block", "");
+  api_def_prop_bool_fns(prop, "rna_WorkSpaceTool_has_datablock_get", NULL
+  api_define_verify_stype(1);
 
-  prop = RNA_def_property(srna, "widget", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Widget", "");
-  RNA_def_property_string_funcs(
-      prop, "rna_WorkSpaceTool_widget_get", "rna_WorkSpaceTool_widget_length", NULL);
+  prop = api_def_prop(sapi, "widget", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Widget", "");
+  api_def_prop_string_fns(
+      prop, "api_WorkSpaceTool_widget_get", "api_WorkSpaceTool_widget_length", NULL);
 
-  RNA_api_workspace_tool(srna);
+  api_api_workspace_tool(sapi);
 }
 
-static void rna_def_workspace_tools(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_workspace_tools(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_property_srna(cprop, "wmTools");
-  srna = RNA_def_struct(brna, "wmTools", NULL);
-  RNA_def_struct_sdna(srna, "WorkSpace");
-  RNA_def_struct_ui_text(srna, "WorkSpace UI Tags", "");
+  api_def_prop_sapi(cprop, "wmTools");
+  sapi = api_def_struct(dapi, "wmTools", NULL);
+  api_def_struct_stype(sapi, "WorkSpace");
+  RNA_def_struct_ui_text(sapi, "WorkSpace UI Tags", "");
 
   /* add owner_id */
-  func = RNA_def_function(
-      srna, "from_space_view3d_mode", "rna_WorkSpace_tools_from_space_view3d_mode");
-  RNA_def_function_ui_description(func, "");
-  parm = RNA_def_enum(func, "mode", rna_enum_context_mode_items, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "create", false, "Create", "");
+  fn = api_def_fn(
+      sapi, "from_space_view3d_mode", "api_WorkSpace_tools_from_space_view3d_mode"
+  api_def_fn_ui_description(fn, "");
+  parm = wm_def_enum(fn, "mode", api_enum_ctx_mode_items, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "create", false, "Create", "");
   /* return type */
-  parm = RNA_def_pointer(func, "result", "WorkSpaceTool", "", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "result", "WorkSpaceTool", "", "");
+  api_def_fn_return(fb, parm);
 
-  func = RNA_def_function(
-      srna, "from_space_image_mode", "rna_WorkSpace_tools_from_space_image_mode");
-  RNA_def_function_ui_description(func, "");
-  parm = RNA_def_enum(func, "mode", rna_enum_space_image_mode_all_items, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "create", false, "Create", "");
+  fn = api_def_fn(
+      sapi, "from_space_image_mode", "rna_WorkSpace_tools_from_space_image_mode");
+  api_def_fn_ui_description(fn, "");
+  parm = api_def_enum(fn, "mode", api_enum_space_image_mode_all_items, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "create", false, "Create", "");
   /* return type */
-  parm = RNA_def_pointer(func, "result", "WorkSpaceTool", "", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "result", "WorkSpaceTool", "", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "from_space_node", "rna_WorkSpace_tools_from_space_node");
-  RNA_def_function_ui_description(func, "");
-  RNA_def_boolean(func, "create", false, "Create", "");
+  fn = api_def_fn(sapi, "from_space_node", "rna_WorkSpace_tools_from_space_node");
+  api_def_fn_ui_description(fn, "");
+  api_def_bool(fn, "create", false, "Create", "");
   /* return type */
-  parm = RNA_def_pointer(func, "result", "WorkSpaceTool", "", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "result", "WorkSpaceTool", "", "");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(
-      srna, "from_space_sequencer", "rna_WorkSpace_tools_from_space_sequencer");
-  RNA_def_function_ui_description(func, "");
-  parm = RNA_def_enum(func, "mode", rna_enum_space_sequencer_view_type_items, 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "create", false, "Create", "");
+  fn = api_def_fn(
+      sapi, "from_space_sequencer", "api_WorkSpace_tools_from_space_sequencer");
+  api_def_fn_ui_description(fn, "");
+  parm = api_def_enum(fn, "mode", api_enum_space_sequencer_view_type_items, 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "create", false, "Create", "");
   /* return type */
-  parm = RNA_def_pointer(func, "result", "WorkSpaceTool", "", "");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "result", "WorkSpaceTool", "", "");
+  api_def_fn_return(fn, parm);
 }
 
-static void rna_def_workspace(BlenderRNA *brna)
+static void api_def_workspace(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
   srna = RNA_def_struct(brna, "WorkSpace", "ID");
   RNA_def_struct_sdna(srna, "WorkSpace");
