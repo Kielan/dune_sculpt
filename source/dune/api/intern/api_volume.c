@@ -237,73 +237,73 @@ static bool api_Volume_save(Volume *volume, Main *main, ReportList *reports, con
 
 #else
 
-static void rna_def_volume_grid(BlenderRNA *brna)
+static void api_def_volume_grid(DuneApi *api)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "VolumeGrid", NULL);
-  RNA_def_struct_ui_text(srna, "Volume Grid", "3D volume grid");
-  RNA_def_struct_ui_icon(srna, ICON_VOLUME_DATA);
+  sapi = api_def_struct(api, "VolumeGrid", NULL);
+  api_def_struct_ui_text(sapi, "Volume Grid", "3D volume grid");
+  api_def_struct_ui_icon(sapi, ICON_VOLUME_DATA);
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_string_funcs(
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_string_fns(
       prop, "rna_VolumeGrid_name_get", "rna_VolumeGrid_name_length", NULL);
-  RNA_def_property_ui_text(prop, "Name", "Volume grid name");
-  RNA_def_struct_name_property(srna, prop);
+  api_def_prop_ui_text(prop, "Name", "Volume grid name");
+  api_def_struct_name_prop(sapi, prop);
 
-  prop = RNA_def_property(srna, "data_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_funcs(prop, "rna_VolumeGrid_data_type_get", NULL, NULL);
-  RNA_def_property_enum_items(prop, rna_enum_volume_grid_data_type_items);
-  RNA_def_property_ui_text(prop, "Data Type", "Data type of voxel values");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_VOLUME);
+  prop = api_def_prop(sapi, "data_type", PROP_ENUM, PROP_NONE);
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_prop_enum_fns(prop, "rna_VolumeGrid_data_type_get", NULL, NULL);
+  RNA_def_prop_enum_items(prop, api_enum_volume_grid_data_type_items);
+  RNA_def_prop_ui_text(prop, "Data Type", "Data type of voxel values");
+  RNA_def_prop_translation_cxt(prop, LANG_CXT_ID_VOLUME);
 
-  prop = RNA_def_property(srna, "channels", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_int_funcs(prop, "rna_VolumeGrid_channels_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Channels", "Number of dimensions of the grid data type");
+  prop = api_def_prop(sapi, "channels", PROP_INT, PROP_UNSIGNED);
+  RNA_def_prop_clear_flag(prop, PROP_EDITABLE);
+  RNA_def_prop_int_fns(prop, "rna_VolumeGrid_channels_get", NULL, NULL);
+  RNA_def_prop_ui_text(prop, "Channels", "Number of dimensions of the grid data type");
 
-  prop = RNA_def_property(srna, "matrix_object", PROP_FLOAT, PROP_MATRIX);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
-  RNA_def_property_float_funcs(prop, "rna_VolumeGrid_matrix_object_get", NULL, NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "matrix_object", PROP_FLOAT, PROP_MATRIX);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_multi_array(prop, 2, rna_matrix_dimsize_4x4);
+  api_def_prop_float_fns(prop, "rna_VolumeGrid_matrix_object_get", NULL, NULL);
+  api_def_prop_ui_text(
       prop, "Matrix Object", "Transformation matrix from voxel index to object space");
 
-  prop = RNA_def_property(srna, "is_loaded", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_VolumeGrid_is_loaded_get", NULL);
-  RNA_def_property_ui_text(prop, "Is Loaded", "Grid tree is loaded in memory");
+  prop = api_def_prop(sapi, "is_loaded", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "rna_VolumeGrid_is_loaded_get", NULL);
+  api_def_prop_ui_text(prop, "Is Loaded", "Grid tree is loaded in memory");
 
   /* API */
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "load", "rna_VolumeGrid_load");
-  RNA_def_function_ui_description(func, "Load grid tree from file");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  parm = RNA_def_boolean(func, "success", 0, "", "True if grid tree was successfully loaded");
-  RNA_def_function_return(func, parm);
+  fb = api_def_fn(sapi, "load", "api_VolumeGrid_load");
+  api_def_fn_ui_description(fn, "Load grid tree from file");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  parm = api_def_bool(fm, "success", 0, "", "True if grid tree was successfully loaded");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "unload", "rna_VolumeGrid_unload");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(
-      func, "Unload grid tree and voxel data from memory, leaving only metadata");
+  fn = api_def_fn(sapi, "unload", "apu_VolumeGrid_unload");
+  api_def_fn_flag(fb, FN_USE_SELF_ID);
+  api_def_fn_ui_description(
+      fn, "Unload grid tree and voxel data from memory, leaving only metadata");
 }
 
-static void rna_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApuProp *prop;
 
-  RNA_def_property_srna(cprop, "VolumeGrids");
-  srna = RNA_def_struct(brna, "VolumeGrids", NULL);
-  RNA_def_struct_sdna(srna, "Volume");
-  RNA_def_struct_ui_text(srna, "Volume Grids", "3D volume grids");
+  api_def_prop_sapi(cprop, "VolumeGrids");
+  srna = api_def_struct(dapi, "VolumeGrids", NULL);
+  RNA_def_struct_sdna(sapi, "Volume");
+  RNA_def_struct_ui_text(sapi, "Volume Grids", "3D volume grids");
 
-  prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
+  prop = RNA_def_property(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
   RNA_def_property_int_funcs(prop,
                              "rna_VolumeGrids_active_index_get",
                              "rna_VolumeGrids_active_index_set",
