@@ -27,9 +27,9 @@
 
 #  include "wm_api.h"
 
-static ApiPointerRNA rna_World_lighting_get(PointerRNA *ptr)
+static ApiPtr api_world_lighting_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_WorldLighting, ptr->owner_id);
+  return api_ptr_inherit_refine(ptr, &ApiWorldLighting, ptr->owner_id);
 }
 
 static ApiPtr api_World_mist_get(PointerRNA *ptr)
@@ -79,7 +79,7 @@ static void api_World_use_nodes_update(bContext *C, PointerRNA *ptr)
   api_World_draw_update(main, scene, ptr);
 }
 
-void rna_World_lightgroup_get(PointerRNA *ptr, char *value)
+void api_World_lightgroup_get(ApiPtr *ptr, char *value)
 {
   LightgroupMembership *lgm = ((World *)ptr->owner_id)->lightgroup;
   char value_buf[sizeof(lgm->name)];
@@ -87,7 +87,7 @@ void rna_World_lightgroup_get(PointerRNA *ptr, char *value)
   memcpy(value, value_buf, len + 1);
 }
 
-int rna_World_lightgroup_length(PointerRNA *ptr)
+int api_world_lightgroup_length(ApiPtr *ptr)
 {
   LightgroupMembership *lgm = ((World *)ptr->owner_id)->lightgroup;
   return dune_lightgroup_membership_length(lgm);
@@ -161,14 +161,14 @@ static void api_def_world_mist(DuneApi *dapi)
       prop, "Use Mist", "Occlude objects with the environment color as they are further away");
   api_def_prop_update(prop, 0, "rna_World_draw_update");
 
-  prop = api_def_prop(spia, "intensity", PROP_FLOAT, PROP_NONE);
+  prop = api_def_prop(sapi, "intensity", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "misi")
   api_def_prop_range(prop, 0, 1);
   api_def_prop_ui_text(prop, "Minimum", "Overall minimum intensity of the mist effect");
   api_def_prop_update(prop, 0, "rna_World_draw_update");
 
   prop = api_def_prop(sapi, "start", PROP_FLOAT, PROP_DISTANCE);
-  api_def_prop_float_sdna(prop, NULL, "miststa");
+  api_def_prop_float_stype(prop, NULL, "miststa");
   api_def_prop_range(prop, 0, FLT_MAX);
   api_def_prop_ui_range(prop, 0, 10000, 10, 2);
   api_def_prop_ui_text(
@@ -213,40 +213,40 @@ void api_def_world(DuneApi *dapi)
 
   /* colors */
   prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "horr");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_float_array_default(prop, default_world_color);
-  RNA_def_property_ui_text(prop, "Color", "Color of the background");
+  api_def_prop_float_sdna(prop, NULL, "horr");
+  api_def_prop_array(prop, 3);
+  api_def_prop_float_array_default(prop, default_world_color);
+  api_def_prop_ui_text(prop, "Color", "Color of the background");
   // RNA_def_property_update(prop, 0, "rna_World_update");
   /* render-only uses this */
-  RNA_def_property_update(prop, 0, "rna_World_draw_update");
+  api_def_prop_update(prop, 0, "api_world_draw_update");
 
   /* nested structs */
-  prop = RNA_def_property(srna, "light_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "WorldLighting");
-  RNA_def_property_pointer_funcs(prop, "rna_World_lighting_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Lighting", "World lighting settings");
+  prop = api_def_prop(sapi, "light_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "WorldLighting");
+  api_def_prop_ptr_fns(prop, "api_World_lighting_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Lighting", "World lighting settings");
 
-  prop = RNA_def_property(srna, "mist_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_struct_type(prop, "WorldMistSettings");
-  RNA_def_property_pointer_funcs(prop, "rna_World_mist_get", NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Mist", "World mist settings");
+  prop = api_def_prop(sapi, "mist_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_struct_type(prop, "WorldMistSettings");
+  api_def_prop_ptr_fns(prop, "api_World_mist_get", NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Mist", "World mist settings");
 
   /* nodes */
-  prop = RNA_def_property(srna, "node_tree", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "nodetree");
-  RNA_def_property_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Node Tree", "Node tree for node based worlds");
+  prop = api_def_prop(sapi, "node_tree", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "nodetree");
+  api_def_prop_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Node Tree", "Node tree for node based worlds");
 
-  prop = RNA_def_property(srna, "use_nodes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_nodes", 1);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(prop, "Use Nodes", "Use shader nodes to render the world");
-  RNA_def_property_update(prop, 0, "rna_World_use_nodes_update");
+  prop = api_def_prop(sapi, "use_nodes", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "use_nodes", 1);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_ui_text(prop, "Use Nodes", "Use shader nodes to render the world");
+  api_def_prop_update(prop, 0, "api_World_use_nodes_update");
 
   /* Lightgroup Membership */
   prop = RNA_def_property(srna, "lightgroup", PROP_STRING, PROP_NONE);
