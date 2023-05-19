@@ -5,9 +5,9 @@
 
 #include "api_internal.h"
 
-#include "types_material_types.h"
-#include "types_texture_types.h"
-#include "types_world_types.h"
+#include "types_material.h"
+#include "types_texture.h"
+#include "types_world.h"
 
 #include "wm_types.h"
 
@@ -249,14 +249,14 @@ void api_def_world(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_World_use_nodes_update");
 
   /* Lightgroup Membership */
-  prop = RNA_def_property(srna, "lightgroup", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(
-      prop, "rna_World_lightgroup_get", "rna_World_lightgroup_length", "rna_World_lightgroup_set");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Lightgroup", "Lightgroup that the world belongs to");
+  prop = api_def_prop(sapi, "lightgroup", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(
+      prop, "api_World_lightgroup_get", "api_world_lightgroup_length", "api_World_lightgroup_set");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Lightgroup", "Lightgroup that the world belongs to");
 
-  rna_def_lighting(brna);
-  rna_def_world_mist(brna);
+  api_def_lighting(dapi);
+  api_def_world_mist(dapi);
 }
 
 #endif
