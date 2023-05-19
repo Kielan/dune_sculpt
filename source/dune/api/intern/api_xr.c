@@ -151,7 +151,7 @@ static int api_XrActionMapBinding_component_paths_length(ApiPtr *ptr)
 #  endif
 }
 
-static int rna_XrActionMapBinding_axis0_region_get(PointerRNA *ptr)
+static int api_XrActionMapBinding_axis0_region_get(PointerRNA *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = ptr->data;
@@ -167,7 +167,7 @@ static int rna_XrActionMapBinding_axis0_region_get(PointerRNA *ptr)
   return 0;
 }
 
-static void rna_XrActionMapBinding_axis0_region_set(PointerRNA *ptr, int value)
+static void api_XrActionMapBinding_axis0_region_set(ApiPtr *ptr, int value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = ptr->data;
@@ -178,7 +178,7 @@ static void rna_XrActionMapBinding_axis0_region_set(PointerRNA *ptr, int value)
 #  endif
 }
 
-static int rna_XrActionMapBinding_axis1_region_get(PointerRNA *ptr)
+static int api_XrActionMapBinding_axis1_region_get(ApiPtr *ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = ptr->data;
@@ -194,7 +194,7 @@ static int rna_XrActionMapBinding_axis1_region_get(PointerRNA *ptr)
   return 0;
 }
 
-static void rna_XrActionMapBinding_axis1_region_set(PointerRNA *ptr, int value)
+static void api_XrActionMapBinding_axis1_region_set(ApiPtr *ptr, int value)
 {
 #  ifdef WITH_XR_OPENXR
   XrActionMapBinding *amb = ptr->data;
@@ -226,7 +226,7 @@ static void api_XrActionMapBinding_name_update(Main *main, Scene *UNUSED(scene),
 #  endif
 }
 
-static XrUserPath *rna_XrUserPath_new(XrActionMapItem *ami, const char *path_str)
+static XrUserPath *api_XrUserPath_new(XrActionMapItem *ami, const char *path_str)
 {
 #  ifdef WITH_XR_OPENXR
   XrUserPath *user_path = mem_callocn(sizeof(XrUserPath), __func__);
@@ -239,24 +239,24 @@ static XrUserPath *rna_XrUserPath_new(XrActionMapItem *ami, const char *path_str
 #  endif
 }
 
-static void rna_XrUserPath_remove(XrActionMapItem *ami, PointerRNA *user_path_ptr)
+static void api_XrUserPath_remove(XrActionMapItem *ami, ApiPtr *user_path_ptr)
 {
 #  ifdef WITH_XR_OPENXR
   XrUserPath *user_path = user_path_ptr->data;
-  int idx = BLI_findindex(&ami->user_paths, user_path);
+  int idx = lib_findindex(&ami->user_paths, user_path);
   if (idx != -1) {
-    BLI_freelinkN(&ami->user_paths, user_path);
+    lib_freelinkn(&ami->user_paths, user_path);
   }
-  RNA_POINTER_INVALIDATE(user_path_ptr);
+  API_PTR_INVALIDATE(user_path_ptr);
 #  else
   UNUSED_VARS(ami, user_path_ptr);
 #  endif
 }
 
-static XrUserPath *rna_XrUserPath_find(XrActionMapItem *ami, const char *path_str)
+static XrUserPath *api_XrUserPath_find(XrActionMapItem *ami, const char *path_str)
 {
 #  ifdef WITH_XR_OPENXR
-  return BLI_findstring(&ami->user_paths, path_str, offsetof(XrUserPath, path));
+  return lib_findstring(&ami->user_paths, path_str, offsetof(XrUserPath, path));
 #  else
   UNUSED_VARS(ami, path_str);
   return NULL;
