@@ -86,51 +86,51 @@ static void api_WorkSpace_owner_ids_remove(WorkSpace *workspace,
 
 static void api_WorkSpace_owner_ids_clear(WorkSpace *workspace)
 {
-  lib_freelistN(&workspace->owner_ids);
-  WM_main_add_notifier(NC_OBJECT | ND_MODIFIER | NA_REMOVED, workspace);
+  lib_freelistn(&workspace->owner_ids);
+  wm_main_add_notifier(NC_OBJECT | ND_MODIFIER | NA_REMOVED, workspace);
 }
 
-static int rna_WorkSpace_asset_library_get(PointerRNA *ptr)
+static int api_WorkSpace_asset_library_get(ApiPtr *ptr)
 {
   const WorkSpace *workspace = ptr->data;
-  return ED_asset_library_reference_to_enum_value(&workspace->asset_library_ref);
+  return ed_asset_lib_ref_to_enum_value(&workspace->asset_lib_ref);
 }
 
-static void rna_WorkSpace_asset_library_set(PointerRNA *ptr, int value)
+static void rna_WorkSpace_asset_library_set(ApiPtr *ptr, int value)
 {
   WorkSpace *workspace = ptr->data;
-  workspace->asset_library_ref = ED_asset_library_reference_from_enum_value(value);
+  workspace->asset_lib_ref = ED_asset_libr_ref_from_enum_value(value);
 }
 
-static bToolRef *rna_WorkSpace_tools_from_tkey(WorkSpace *workspace,
-                                               const bToolKey *tkey,
+static ToolRef *api_WorkSpace_tools_from_tkey(WorkSpace *workspace,
+                                               const ToolKey *tkey,
                                                bool create)
 {
   if (create) {
-    bToolRef *tref;
-    WM_toolsystem_ref_ensure(workspace, tkey, &tref);
+    ToolRef *tref;
+    wm_toolsystem_ref_ensure(workspace, tkey, &tref);
     return tref;
   }
-  return WM_toolsystem_ref_find(workspace, tkey);
+  return wm_toolsystem_ref_find(workspace, tkey);
 }
 
-static bToolRef *rna_WorkSpace_tools_from_space_view3d_mode(WorkSpace *workspace,
+static ToolRef *api_WorkSpace_tools_from_space_view3d_mode(WorkSpace *workspace,
                                                             int mode,
                                                             bool create)
 {
-  return rna_WorkSpace_tools_from_tkey(workspace,
-                                       &(bToolKey){
+  return api_WorkSpace_tools_from_tkey(workspace,
+                                       &(ToolKey){
                                            .space_type = SPACE_VIEW3D,
                                            .mode = mode,
                                        },
                                        create);
 }
 
-static bToolRef *rna_WorkSpace_tools_from_space_image_mode(WorkSpace *workspace,
+static ToolRef *api_WorkSpace_tools_from_space_image_mode(WorkSpace *workspace,
                                                            int mode,
                                                            bool create)
 {
-  return rna_WorkSpace_tools_from_tkey(workspace,
+  return api_WorkSpace_tools_from_tkey(workspace,
                                        &(bToolKey){
                                            .space_type = SPACE_IMAGE,
                                            .mode = mode,
@@ -138,20 +138,20 @@ static bToolRef *rna_WorkSpace_tools_from_space_image_mode(WorkSpace *workspace,
                                        create);
 }
 
-static bToolRef *rna_WorkSpace_tools_from_space_node(WorkSpace *workspace, bool create)
+static ToolRef *api_WorkSpace_tools_from_space_node(WorkSpace *workspace, bool create)
 {
-  return rna_WorkSpace_tools_from_tkey(workspace,
+  return api_WorkSpace_tools_from_tkey(workspace,
                                        &(bToolKey){
                                            .space_type = SPACE_NODE,
                                            .mode = 0,
                                        },
                                        create);
 }
-static bToolRef *rna_WorkSpace_tools_from_space_sequencer(WorkSpace *workspace,
+static bToolRef *api_WorkSpace_tools_from_space_sequencer(WorkSpace *workspace,
                                                           int mode,
                                                           bool create)
 {
-  return rna_WorkSpace_tools_from_tkey(workspace,
+  return api_WorkSpace_tools_from_tkey(workspace,
                                        &(bToolKey){
                                            .space_type = SPACE_SEQ,
                                            .mode = mode,
