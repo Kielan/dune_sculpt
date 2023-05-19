@@ -20,14 +20,14 @@
 #  include "dune_main.h"
 #  include "dune_texture.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "ED_node.h"
+#  include "ed_node.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static PointerRNA rna_World_lighting_get(PointerRNA *ptr)
+static ApiPointerRNA rna_World_lighting_get(PointerRNA *ptr)
 {
   return rna_pointer_inherit_refine(ptr, &RNA_WorldLighting, ptr->owner_id);
 }
