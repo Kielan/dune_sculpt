@@ -95,20 +95,20 @@ static void api_trackingPlaneTracks_begin(CollectionPropIter *iter, PointerRNA *
   api_iter_list_begin(iter, &tracking_camera_object->plane_tracks, NULL);
 }
 
-static PointerRNA rna_trackingReconstruction_get(PointerRNA *ptr)
+static ApiPtt api_trackingReconstruction_get(ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
-  MovieTrackingObject *tracking_camera_object = BKE_tracking_object_get_camera(&clip->tracking);
+  MovieTrackingObject *tracking_camera_object = dune_tracking_object_get_camera(&clip->tracking);
 
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_MovieTrackingReconstruction, &tracking_camera_object->reconstruction);
+  return api_ptr_inherit_refine(
+      ptr, &Api_MovieTrackingReconstruction, &tracking_camera_object->reconstruction);
 }
 
-static void rna_trackingObjects_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_trackingObjects_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
 
-  rna_iterator_listbase_begin(iter, &clip->tracking.objects, NULL);
+  api_iter_list_begin(iter, &clip->tracking.objects, NULL);
 }
 
 static int rna_tracking_active_object_index_get(PointerRNA *ptr)
@@ -118,16 +118,16 @@ static int rna_tracking_active_object_index_get(PointerRNA *ptr)
   return clip->tracking.objectnr;
 }
 
-static void rna_tracking_active_object_index_set(PointerRNA *ptr, int value)
+static void api_tracking_active_object_index_set(PointerRNA *ptr, int value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
 
   clip->tracking.objectnr = value;
-  BKE_tracking_dopesheet_tag_update(&clip->tracking);
+  dune_tracking_dopesheet_tag_update(&clip->tracking);
 }
 
-static void rna_tracking_active_object_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_tracking_active_object_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
 
@@ -135,7 +135,7 @@ static void rna_tracking_active_object_index_range(
   *max = max_ii(0, clip->tracking.tot_object - 1);
 }
 
-static PointerRNA rna_tracking_active_track_get(PointerRNA *ptr)
+static ApiPtr api_tracking_active_track_get(ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   const MovieTrackingObject *tracking_object = BKE_tracking_object_get_active(&clip->tracking);
