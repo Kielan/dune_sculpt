@@ -202,7 +202,7 @@ static ApiPtr api_tracking_object_active_track_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(ptr, &Api_MovieTrackingTrack, tracking_object->active_track);
 }
 
-static void rna_tracking_object_active_track_set(ApiPtr *ptr,
+static void api_tracking_object_active_track_set(ApiPtr *ptr,
                                                  ApiPtr value,
                                                  struct ReportList *reports)
 {
@@ -230,7 +230,7 @@ static ApiPtr api_tracking_object_active_plane_track_get(ApiPtr *ptr)
       ptr, &Api_MovieTrackingPlaneTrack, tracking_object->active_plane_track);
 }
 
-static void rna_tracking_object_active_plane_track_set(ApiPtr *ptr,
+static void api_tracking_object_active_plane_track_set(ApiPtr *ptr,
                                                        ApiPtr value,
                                                        struct ReportList *reports)
 {
@@ -271,14 +271,14 @@ static void api_trackingTrack_name_set(ApiPtr *ptr, const char *value)
   }
 }
 
-static bool api_trackingTrack_select_get(PointerRNA *ptr)
+static bool api_trackingTrack_select_get(ApiPtr *ptr)
 {
   MovieTrackingTrack *track = (MovieTrackingTrack *)ptr->data;
 
   return TRACK_SELECTED(track);
 }
 
-static void rna_trackingTrack_select_set(PointerRNA *ptr, bool value)
+static void api_trackingTrack_select_set(ApiPtr *ptr, bool value)
 {
   MovieTrackingTrack *track = (MovieTrackingTrack *)ptr->data;
 
@@ -294,15 +294,15 @@ static void rna_trackingTrack_select_set(PointerRNA *ptr, bool value)
   }
 }
 
-static void rna_trackingPlaneMarker_frame_set(PointerRNA *ptr, int value)
+static void api_trackingPlaneMarker_frame_set(ApiPtr *ptr, int value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTracking *tracking = &clip->tracking;
   MovieTrackingPlaneMarker *plane_marker = (MovieTrackingPlaneMarker *)ptr->data;
   MovieTrackingPlaneTrack *plane_track_of_marker = NULL;
 
-  LISTBASE_FOREACH (MovieTrackingObject *, tracking_object, &tracking->objects) {
-    LISTBASE_FOREACH (MovieTrackingPlaneTrack *, plane_track, &tracking_object->plane_tracks) {
+  LIST_FOREACH (MovieTrackingObject *, tracking_object, &tracking->objects) {
+    LIST_FOREACH (MovieTrackingPlaneTrack *, plane_track, &tracking_object->plane_tracks) {
       if (plane_marker >= plane_track->markers &&
           plane_marker < plane_track->markers + plane_track->markersnr)
       {
@@ -320,46 +320,46 @@ static void rna_trackingPlaneMarker_frame_set(PointerRNA *ptr, int value)
     MovieTrackingPlaneMarker new_plane_marker = *plane_marker;
     new_plane_marker.framenr = value;
 
-    BKE_tracking_plane_marker_delete(plane_track_of_marker, plane_marker->framenr);
-    BKE_tracking_plane_marker_insert(plane_track_of_marker, &new_plane_marker);
+    dune_tracking_plane_marker_delete(plane_track_of_marker, plane_marker->framenr);
+    dune_tracking_plane_marker_insert(plane_track_of_marker, &new_plane_marker);
   }
 }
 
-static char *rna_trackingPlaneTrack_path(const PointerRNA *ptr)
+static char *api_trackingPlaneTrack_path(const ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingPlaneTrack *plane_track = (MovieTrackingPlaneTrack *)ptr->data;
   /* Escaped object name, escaped track name, rest of the path. */
-  char rna_path[MAX_NAME * 4 + 64];
-  BKE_tracking_get_rna_path_for_plane_track(
-      &clip->tracking, plane_track, rna_path, sizeof(rna_path));
-  return BLI_strdup(rna_path);
+  char api_path[MAX_NAME * 4 + 64];
+  dune_tracking_get_api_path_for_plane_track(
+      &clip->tracking, plane_track, api_path, sizeof(api_path));
+  return lib_strdup(api_path);
 }
 
-static void rna_trackingPlaneTrack_name_set(PointerRNA *ptr, const char *value)
+static void api_trackingPlaneTrack_name_set(ApiPtr *ptr, const char *value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingPlaneTrack *plane_track = (MovieTrackingPlaneTrack *)ptr->data;
-  MovieTrackingObject *tracking_object = BKE_tracking_find_object_for_plane_track(&clip->tracking,
+  MovieTrackingObject *tracking_object = dune_tracking_find_object_for_plane_track(&clip->tracking,
                                                                                   plane_track);
   /* Store old name, for the animation fix later. */
   char old_name[sizeof(plane_track->name)];
   STRNCPY(old_name, plane_track->name);
   /* Update the name, */
   STRNCPY(plane_track->name, value);
-  BKE_tracking_plane_track_unique_name(&tracking_object->plane_tracks, plane_track);
+  dune_tracking_plane_track_unique_name(&tracking_object->plane_tracks, plane_track);
   /* Fix animation paths. */
-  AnimData *adt = BKE_animdata_from_id(&clip->id);
+  AnimData *adt = dune_animdata_from_id(&clip->id);
   if (adt != NULL) {
-    char rna_path[MAX_NAME * 2 + 64];
-    BKE_tracking_get_rna_path_prefix_for_plane_track(
-        &clip->tracking, plane_track, rna_path, sizeof(rna_path));
-    BKE_animdata_fix_paths_rename(
-        &clip->id, adt, NULL, rna_path, old_name, plane_track->name, 0, 0, 1);
+    char api_path[MAX_NAME * 2 + 64];
+    dune_tracking_get_api_path_prefix_for_plane_track(
+        &clip->tracking, plane_track, api_path, sizeof(rna_path));
+    dune_animdata_fix_paths_rename(
+        &clip->id, adt, NULL, api_path, old_name, plane_track->name, 0, 0, 1);
   }
 }
 
-static char *rna_trackingCamera_path(const PointerRNA *UNUSED(ptr))
+static char *api_trackingCamera_path(const PointerRNA *UNUSED(ptr))
 {
   return BLI_strdup("tracking.camera");
 }
