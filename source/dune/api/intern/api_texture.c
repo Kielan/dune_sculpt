@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "DNA_brush_types.h"
-#include "DNA_light_types.h"
-#include "DNA_material_types.h"
-#include "DNA_node_types.h"
-#include "DNA_object_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_scene_types.h" /* MAXFRAME only */
+#include "types_brush_types.h"
+#include "types_light_types.h"
+#include "types_material_types.h"
+#include "types_node_types.h"
+#include "types_object_types.h"
+#include "types_particle_types.h"
+#include "types_scene_types.h" /* MAXFRAME only */
 #include "DNA_texture_types.h"
 #include "DNA_world_types.h"
 
