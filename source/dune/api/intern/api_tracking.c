@@ -560,35 +560,35 @@ static void rna_tracking_active_object_set(PointerRNA *ptr,
   }
 }
 
-static void rna_trackingObject_name_set(PointerRNA *ptr, const char *value)
+static void api_trackingObject_name_set(PointerRNA *ptr, const char *value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)ptr->data;
 
   STRNCPY(tracking_object->name, value);
 
-  BKE_tracking_object_unique_name(&clip->tracking, tracking_object);
+  dune_tracking_object_unique_name(&clip->tracking, tracking_object);
 }
 
-static void rna_trackingObject_flushUpdate(Main *UNUSED(bmain),
+static void api_trackingObject_flushUpdate(Main *UNUSED(main),
                                            Scene *UNUSED(scene),
-                                           PointerRNA *ptr)
+                                           ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
 
-  WM_main_add_notifier(NC_OBJECT | ND_TRANSFORM, NULL);
-  DEG_id_tag_update(&clip->id, 0);
+  wm_main_add_notifier(NC_OBJECT | ND_TRANSFORM, NULL);
+  graph_id_tag_update(&clip->id, 0);
 }
 
-static void rna_trackingMarker_frame_set(PointerRNA *ptr, int value)
+static void api_trackingMarker_frame_set(ApiPtr *ptr, int value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTracking *tracking = &clip->tracking;
   MovieTrackingMarker *marker = (MovieTrackingMarker *)ptr->data;
   MovieTrackingTrack *track_of_marker = NULL;
 
-  LISTBASE_FOREACH (MovieTrackingObject *, tracking_object, &tracking->objects) {
-    LISTBASE_FOREACH (MovieTrackingTrack *, track, &tracking_object->tracks) {
+  LIST_FOREACH (MovieTrackingObject *, tracking_object, &tracking->objects) {
+    LIST_FOREACH (MovieTrackingTrack *, track, &tracking_object->tracks) {
       if (marker >= track->markers && marker < track->markers + track->markersnr) {
         track_of_marker = track;
         break;
@@ -604,18 +604,18 @@ static void rna_trackingMarker_frame_set(PointerRNA *ptr, int value)
     MovieTrackingMarker new_marker = *marker;
     new_marker.framenr = value;
 
-    BKE_tracking_marker_delete(track_of_marker, marker->framenr);
-    BKE_tracking_marker_insert(track_of_marker, &new_marker);
+    dune_tracking_marker_delete(track_of_marker, marker->framenr);
+    dune_tracking_marker_insert(track_of_marker, &new_marker);
   }
 }
 
-static void rna_tracking_markerPattern_update(Main *UNUSED(bmain),
+static void api_tracking_markerPattern_update(Main *UNUSED(main),
                                               Scene *UNUSED(scene),
-                                              PointerRNA *ptr)
+                                              ApiPtr *ptr)
 {
   MovieTrackingMarker *marker = (MovieTrackingMarker *)ptr->data;
 
-  BKE_tracking_marker_clamp_search_size(marker);
+  dune_tracking_marker_clamp_search_size(marker);
 }
 
 static void rna_tracking_markerSearch_update(Main *UNUSED(bmain),
@@ -624,10 +624,10 @@ static void rna_tracking_markerSearch_update(Main *UNUSED(bmain),
 {
   MovieTrackingMarker *marker = (MovieTrackingMarker *)ptr->data;
 
-  BKE_tracking_marker_clamp_search_size(marker);
+  dune_tracking_marker_clamp_search_size(marker);
 }
 
-static void rna_tracking_markerPattern_boundbox_get(PointerRNA *ptr, float *values)
+static void api_tracking_markerPattern_boundbox_get(ApiPtr *ptr, float *values)
 {
   MovieTrackingMarker *marker = (MovieTrackingMarker *)ptr->data;
   float min[2], max[2];
@@ -638,7 +638,7 @@ static void rna_tracking_markerPattern_boundbox_get(PointerRNA *ptr, float *valu
   copy_v2_v2(values + 2, max);
 }
 
-static void rna_trackingDopesheet_tagUpdate(Main *UNUSED(bmain),
+static void api_trackingDopesheet_tagUpdate(Main *UNUSED(bmain),
                                             Scene *UNUSED(scene),
                                             PointerRNA *ptr)
 {
