@@ -15,7 +15,7 @@
 #include "api_internal.h"
 
 #include "types_defaults.h"
-#include "types_movieclip.h
+#include "types_movieclip.h"
 #include "types_object.h" /* SELECT */
 #include "types_scene.h"
 
@@ -34,7 +34,7 @@
 
 #  include "graph.h"
 
-#  include "IMB_imbuf.h"
+#  include "imbuf.h"
 
 #  include "wm_api.h"
 
