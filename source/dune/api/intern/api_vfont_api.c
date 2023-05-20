@@ -11,7 +11,7 @@
 
 static void api_VectorFont_pack(VFont *vfont, Main *main, ReportList *reports)
 {
-  vfont->packedfile = BKE_packedfile_new(
+  vfont->packedfile = dune_packedfile_new(
       reports, vfont->filepath, ID_DUNE_PATH(main, &vfont->id));
 }
 
