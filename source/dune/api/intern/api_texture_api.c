@@ -2,22 +2,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_context.h"
-#  include "BKE_global.h"
-#  include "BLI_math.h"
-#  include "DNA_scene_types.h"
-#  include "IMB_imbuf.h"
-#  include "IMB_imbuf_types.h"
-#  include "RE_pipeline.h"
-#  include "RE_texture.h"
+#  include "dune_cxt.h"
+#  include "dune_global.h"
+#  include "lib_math.h"
+#  include "type_scene_types.h"
+#  include "imbuf.h"
+#  include "imbuf_types.h"
+#  include "render_pipeline.h"
+#  include "render_texture.h"
 
 static void texture_evaluate(struct Tex *tex, float value[3], float r_color[4])
 {
