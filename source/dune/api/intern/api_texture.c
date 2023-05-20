@@ -2,34 +2,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "types_brush_types.h"
-#include "types_light_types.h"
-#include "types_material_types.h"
-#include "types_node_types.h"
-#include "types_object_types.h"
-#include "types_particle_types.h"
-#include "types_scene_types.h" /* MAXFRAME only */
-#include "DNA_texture_types.h"
-#include "DNA_world_types.h"
+#include "types_brush.h"
+#include "types_light.h"
+#include "types_material.h"
+#include "types_node.h"
+#include "types_object.h"
+#include "types_particle.h"
+#include "types_scene.h" /* MAXFRAME only */
+#include "types_texture.h"
+#include "types_world.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "BKE_node.h"
-#include "BKE_node_tree_update.h"
-#include "BKE_paint.h"
+#include "dune_node.h"
+#include "dune_node_tree_update.h"
+#include "dune_paint.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem texture_filter_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem texture_filter_items[] = {
     {TXF_BOX, "BOX", 0, "Box", ""},
     {TXF_EWA, "EWA", 0, "EWA", ""},
     {TXF_FELINE, "FELINE", 0, "FELINE", ""},
@@ -38,7 +38,7 @@ static const EnumPropertyItem texture_filter_items[] = {
 };
 #endif
 
-const EnumPropertyItem rna_enum_texture_type_items[] = {
+const EnumPropItem api_enum_texture_type_items[] = {
     {0, "NONE", 0, "None", ""},
     {TEX_BLEND, "BLEND", ICON_TEXTURE, "Blend", "Procedural - create a ramp texture"},
     {TEX_CLOUDS,
@@ -91,25 +91,25 @@ const EnumPropertyItem rna_enum_texture_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem blend_type_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem blend_type_items[] = {
     {MTEX_BLEND, "MIX", 0, "Mix", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {MTEX_DARK, "DARKEN", 0, "Darken", ""},
     {MTEX_MUL, "MULTIPLY", 0, "Multiply", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {MTEX_LIGHT, "LIGHTEN", 0, "Lighten", ""},
     {MTEX_SCREEN, "SCREEN", 0, "Screen", ""},
     {MTEX_ADD, "ADD", 0, "Add", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {MTEX_OVERLAY, "OVERLAY", 0, "Overlay", ""},
     {MTEX_SOFT_LIGHT, "SOFT_LIGHT", 0, "Soft Light", ""},
     {MTEX_LIN_LIGHT, "LINEAR_LIGHT", 0, "Linear Light", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {MTEX_DIFF, "DIFFERENCE", 0, "Difference", ""},
     {MTEX_SUB, "SUBTRACT", 0, "Subtract", ""},
     {MTEX_DIV, "DIVIDE", 0, "Divide", ""},
-    RNA_ENUM_ITEM_SEPR,
+    API_ENUM_ITEM_SEPR,
     {MTEX_BLEND_HUE, "HUE", 0, "Hue", ""},
     {MTEX_BLEND_SAT, "SATURATION", 0, "Saturation", ""},
     {MTEX_BLEND_COLOR, "COLOR", 0, "Color", ""},
@@ -118,53 +118,53 @@ static const EnumPropertyItem blend_type_items[] = {
 };
 #endif
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "BKE_colorband.h"
-#  include "BKE_context.h"
-#  include "BKE_image.h"
-#  include "BKE_main.h"
-#  include "BKE_texture.h"
+#  include "dune_colorband.h"
+#  include "dune_cxt.h"
+#  include "dune_image.h"
+#  include "dune_main.h"
+#  include "dune_texture.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "ED_node.h"
-#  include "ED_render.h"
+#  include "ed_node.h"
+#  include "ed_render.h"
 
-static StructRNA *rna_Texture_refine(struct PointerRNA *ptr)
+static ApiStruct *api_Texture_refine(struct PointerRNA *ptr)
 {
   Tex *tex = (Tex *)ptr->data;
 
   switch (tex->type) {
     case TEX_BLEND:
-      return &RNA_BlendTexture;
+      return &Api_BlendTexture;
     case TEX_CLOUDS:
-      return &RNA_CloudsTexture;
+      return &Api_CloudsTexture;
     case TEX_DISTNOISE:
-      return &RNA_DistortedNoiseTexture;
+      return &Api_DistortedNoiseTexture;
     case TEX_IMAGE:
-      return &RNA_ImageTexture;
+      return &Api_ImageTexture;
     case TEX_MAGIC:
-      return &RNA_MagicTexture;
+      return &Api_MagicTexture;
     case TEX_MARBLE:
-      return &RNA_MarbleTexture;
+      return &Api_MarbleTexture;
     case TEX_MUSGRAVE:
-      return &RNA_MusgraveTexture;
+      return &Api_MusgraveTexture;
     case TEX_NOISE:
-      return &RNA_NoiseTexture;
+      return &Api_NoiseTexture;
     case TEX_STUCCI:
-      return &RNA_StucciTexture;
+      return &Api_StucciTexture;
     case TEX_VORONOI:
-      return &RNA_VoronoiTexture;
+      return &Api_VoronoiTexture;
     case TEX_WOOD:
-      return &RNA_WoodTexture;
+      return &Api_WoodTexture;
     default:
-      return &RNA_Texture;
+      return &Api_Texture;
   }
 }
 
