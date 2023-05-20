@@ -1,18 +1,18 @@
-#include "DNA_packedFile_types.h"
+#include "types_packedFile.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "BKE_packedFile.h"
+#include "dune_packedFile.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef api_RUNTIME
 
-static void rna_VectorFont_pack(VFont *vfont, Main *bmain, ReportList *reports)
+static void api_VectorFont_pack(VFont *vfont, Main *main, ReportList *reports)
 {
   vfont->packedfile = BKE_packedfile_new(
-      reports, vfont->filepath, ID_BLEND_PATH(bmain, &vfont->id));
+      reports, vfont->filepath, ID_DUNE_PATH(main, &vfont->id));
 }
 
 static void rna_VectorFont_unpack(VFont *vfont, Main *bmain, ReportList *reports, int method)
