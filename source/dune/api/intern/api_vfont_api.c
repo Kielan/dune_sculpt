@@ -18,11 +18,11 @@ static void api_VectorFont_pack(VFont *vfont, Main *main, ReportList *reports)
 static void rna_VectorFont_unpack(VFont *vfont, Main *bmain, ReportList *reports, int method)
 {
   if (!vfont->packedfile) {
-    BKE_report(reports, RPT_ERROR, "Font not packed");
+    dune_report(reports, RPT_ERROR, "Font not packed");
   }
   else {
     /* reports its own error on failure */
-    BKE_packedfile_unpack_vfont(bmain, reports, vfont, method);
+    dune_packedfile_unpack_vfont(main, reports, vfont, method);
   }
 }
 
