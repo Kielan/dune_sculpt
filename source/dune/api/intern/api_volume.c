@@ -299,17 +299,17 @@ static void api_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
   ApuProp *prop;
 
   api_def_prop_sapi(cprop, "VolumeGrids");
-  srna = api_def_struct(dapi, "VolumeGrids", NULL);
-  RNA_def_struct_sdna(sapi, "Volume");
-  RNA_def_struct_ui_text(sapi, "Volume Grids", "3D volume grids");
+  sapi = api_def_struct(dapi, "VolumeGrids", NULL);
+  api_def_struct_stype(sapi, "Volume");
+  api_def_struct_ui_text(sapi, "Volume Grids", "3D volume grids");
 
-  prop = RNA_def_property(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_funcs(prop,
+  prop = api_def_prop(sapi, "active_index", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_fns(prop,
                              "rna_VolumeGrids_active_index_get",
                              "rna_VolumeGrids_active_index_set",
                              "rna_VolumeGrids_active_index_range");
-  api_def_property_ui_text(prop, "Active Grid Index", "Index of active volume grid");
-  api_def_property_update(prop, 0, "rna_Volume_update_display");
+  api_def_prop_ui_text(prop, "Active Grid Index", "Index of active volume grid");
+  api_def_prop_update(prop, 0, "rna_Volume_update_display");
 
   prop = api_def_prop(sapi, "error_message", PROP_STRING, PROP_NONE);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
@@ -334,25 +334,25 @@ static void api_def_volume_grids(BlenderRNA *brna, PropertyRNA *cprop)
   prop = api_def_prop(sapi, "frame_filepath", PROP_STRING, PROP_FILEPATH);
   api_def_prop_clear_flag(prop, PROP_EDITABLE);
   api_def_prop_string_fns(
-      prop, "rna_VolumeGrids_frame_filepath_get", "rna_VolumeGrids_frame_filepath_length", NULL);
+      prop, "api_VolumeGrids_frame_filepath_get", "rna_VolumeGrids_frame_filepath_length", NULL);
 
-  RNA_def_property_ui_text(prop,
-                           "Frame File Path",
-                           "Volume file used for loading the volume at the current frame. Empty "
-                           "if the volume has not be loaded or the frame only exists in memory");
+  api_def_prop_ui_text(prop
+                       "Frame File Path",
+                       "Volume file used for loading the volume at the current frame. Empty "
+                       "if the volume has not be loaded or the frame only exists in memory");
 
   /* API */
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "load", "rna_Volume_load");
-  RNA_def_function_ui_description(func, "Load list of grids and metadata from file");
-  RNA_def_function_flag(func, FUNC_USE_MAIN);
-  parm = RNA_def_boolean(func, "success", 0, "", "True if grid list was successfully loaded");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "load", "rna_Volume_load");
+  api_def_fn_ui_description(fn, "Load list of grids and metadata from file");
+  api_def_fn_flag(fn, FN_USE_MAIN);
+  parm = api_def_bool(fn, "success", 0, "", "True if grid list was successfully loaded");
+  api_def_fn_return(fn parm);
 
-  func = RNA_def_function(srna, "unload", "BKE_volume_unload");
-  RNA_def_function_ui_description(func, "Unload all grid and voxel data from memory");
+  fn = api_def_fn(srna, "unload", "BKE_volume_unload");
+  api_def_fn_ui_description(func, "Unload all grid and voxel data from memory");
 
   func = RNA_def_function(srna, "save", "rna_Volume_save");
   RNA_def_function_ui_description(func, "Save grids and metadata to file");
