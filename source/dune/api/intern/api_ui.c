@@ -37,7 +37,7 @@ const EnumPropItem api_enum_op_ctx_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_uilist_layout_type_items[] = {
+const EnumPropItem api_enum_uilist_layout_type_items[] = {
     {UILST_LAYOUT_DEFAULT, "DEFAULT", 0, "Default Layout", "Use the default, multi-rows layout"},
     {UILST_LAYOUT_COMPACT, "COMPACT", 0, "Compact Layout", "Use the compact, single-row layout"},
     {UILST_LAYOUT_GRID, "GRID", 0, "Grid Layout", "Use the grid-based layout"},
@@ -133,7 +133,7 @@ static void panel_draw_header(const Ctx *C, Panel *panel)
   ParamList list;
   ApiFn *fn;
 
-  api_ptr_create(&ctx_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
+  api_ptr_create(&cxt_wm_screen(C)->id, panel->type->api_ext.sapi, panel, &ptr);
   fn = &api_Panel_draw_header_fn; /* RNA_struct_find_function(&ptr, "draw_header"); */
 
   api_param_list_create(&list, &ptr, fn);
@@ -671,13 +671,13 @@ static bool api_UIList_unregister(Main *main, ApiStruct *type)
   return true;
 }
 
-static ApiStruct *api_UIList_register(Main *bmain,
+static ApiStruct *api_UIList_register(Main *main,
                                       ReportList *reports,
                                       void *data,
-                                      const char *identifier,
-                                      StructValidateFunc validate,
-                                      StructCallbackFunc call,
-                                      StructFreeFunc free)
+                                      const char *id,
+                                      StructValidateFn validate,
+                                      StructCbFn call,
+                                      StructFreeFn free)
 {
   const char *error_prefix = "Registering uilist class:";
   uiListType *ult, dummy_ult = {NULL};
@@ -1867,19 +1867,19 @@ static void rna_def_menu(BlenderRNA *brna)
   RNA_def_property_clear_flag(prop, PROP_NEVER_NULL); /* check for NULL */
 
   prop = RNA_def_property(srna, "bl_owner_id", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_sdna(prop, NULL, "type->owner_id");
+  RNA_def_property_string_stype(prop, NULL, "type->owner_id");
   RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
 
   RNA_define_verify_sdna(1);
 }
 
-void RNA_def_ui(BlenderRNA *brna)
+void RNA_def_ui(Api *api)
 {
-  rna_def_ui_layout(brna);
-  rna_def_panel(brna);
-  rna_def_uilist(brna);
-  rna_def_header(brna);
-  rna_def_menu(brna);
+  rna_def_ui_layout(api);
+  rna_def_panel(api);
+  rna_def_uilist(api);
+  rna_def_header(api);
+  rna_def_menu(api);
 }
 
 #endif /* RNA_RUNTIME */
