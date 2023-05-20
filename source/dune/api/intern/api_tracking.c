@@ -1,51 +1,51 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BKE_movieclip.h"
-#include "BKE_node_tree_update.h"
-#include "BKE_tracking.h"
+#include "dune_movieclip.h"
+#include "dune_node_tree_update.h"
+#include "dune_tracking.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_defaults.h"
-#include "DNA_movieclip_types.h"
-#include "DNA_object_types.h" /* SELECT */
-#include "DNA_scene_types.h"
+#include "types_defaults.h"
+#include "types_movieclip.h
+#include "types_object.h" /* SELECT */
+#include "types_scene.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_math.h"
+#  include "lib_math.h"
 
-#  include "DNA_anim_types.h"
+#  include "types_anim.h"
 
-#  include "BKE_anim_data.h"
-#  include "BKE_animsys.h"
-#  include "BKE_node.h"
-#  include "BKE_report.h"
+#  include "dune_anim_data.h"
+#  include "dune_animsys.h"
+#  include "dune_node.h"
+#  include "dune_report.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
 #  include "IMB_imbuf.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static char *rna_tracking_path(const PointerRNA *UNUSED(ptr))
+static char *api_tracking_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tracking");
+  return lib_strdup("tracking");
 }
 
-static void rna_tracking_defaultSettings_patternUpdate(Main *UNUSED(bmain),
+static void api_tracking_defaultSettings_patternUpdate(Main *UNUSED(main),
                                                        Scene *UNUSED(scene),
-                                                       PointerRNA *ptr)
+                                                       ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTracking *tracking = &clip->tracking;
@@ -56,9 +56,9 @@ static void rna_tracking_defaultSettings_patternUpdate(Main *UNUSED(bmain),
   }
 }
 
-static void rna_tracking_defaultSettings_searchUpdate(Main *UNUSED(bmain),
+static void api_tracking_defaultSettings_searchUpdate(Main *UNUSED(main),
                                                       Scene *UNUSED(scene),
-                                                      PointerRNA *ptr)
+                                                      ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTracking *tracking = &clip->tracking;
@@ -69,30 +69,30 @@ static void rna_tracking_defaultSettings_searchUpdate(Main *UNUSED(bmain),
   }
 }
 
-static char *rna_trackingTrack_path(const PointerRNA *ptr)
+static char *api_trackingTrack_path(const ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingTrack *track = (MovieTrackingTrack *)ptr->data;
   /* Escaped object name, escaped track name, rest of the path. */
-  char rna_path[MAX_NAME * 4 + 64];
-  BKE_tracking_get_rna_path_for_track(&clip->tracking, track, rna_path, sizeof(rna_path));
-  return BLI_strdup(rna_path);
+  char api_path[MAX_NAME * 4 + 64];
+  dune_tracking_get_api_path_for_track(&clip->tracking, track, api_path, sizeof(api_path));
+  return lib_strdup(api_path);
 }
 
-static void rna_trackingTracks_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_trackingTracks_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
-  MovieTrackingObject *tracking_camera_object = BKE_tracking_object_get_camera(&clip->tracking);
+  MovieTrackingObject *tracking_camera_object = dune_tracking_object_get_camera(&clip->tracking);
 
-  rna_iterator_listbase_begin(iter, &tracking_camera_object->tracks, NULL);
+  api_iter_list_begin(iter, &tracking_camera_object->tracks, NULL);
 }
 
-static void rna_trackingPlaneTracks_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_trackingPlaneTracks_begin(CollectionPropIter *iter, PointerRNA *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
-  MovieTrackingObject *tracking_camera_object = BKE_tracking_object_get_camera(&clip->tracking);
+  MovieTrackingObject *tracking_camera_object = dune_tracking_object_get_camera(&clip->tracking);
 
-  rna_iterator_listbase_begin(iter, &tracking_camera_object->plane_tracks, NULL);
+  api_iter_list_begin(iter, &tracking_camera_object->plane_tracks, NULL);
 }
 
 static PointerRNA rna_trackingReconstruction_get(PointerRNA *ptr)
