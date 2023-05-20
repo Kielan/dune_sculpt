@@ -618,7 +618,7 @@ static void api_tracking_markerPattern_update(Main *UNUSED(main),
   dune_tracking_marker_clamp_search_size(marker);
 }
 
-static void rna_tracking_markerSearch_update(Main *UNUSED(bmain),
+static void api_tracking_markerSearch_update(Main *UNUSED(bmain),
                                              Scene *UNUSED(scene),
                                              PointerRNA *ptr)
 {
@@ -632,15 +632,15 @@ static void api_tracking_markerPattern_boundbox_get(ApiPtr *ptr, float *values)
   MovieTrackingMarker *marker = (MovieTrackingMarker *)ptr->data;
   float min[2], max[2];
 
-  BKE_tracking_marker_pattern_minmax(marker, min, max);
+  dune_tracking_marker_pattern_minmax(marker, min, max);
 
   copy_v2_v2(values, min);
   copy_v2_v2(values + 2, max);
 }
 
-static void api_trackingDopesheet_tagUpdate(Main *UNUSED(bmain),
+static void api_trackingDopesheet_tagUpdate(Main *UNUSED(main),
                                             Scene *UNUSED(scene),
-                                            PointerRNA *ptr)
+                                            ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingDopesheet *dopesheet = &clip->tracking.dopesheet;
@@ -651,42 +651,42 @@ static void api_trackingDopesheet_tagUpdate(Main *UNUSED(bmain),
 /* API */
 
 static MovieTrackingTrack *add_track_to_base(
-    MovieClip *clip, MovieTracking *tracking, ListBase *tracksbase, const char *name, int frame)
+    MovieClip *clip, MovieTracking *tracking, List *tracksbase, const char *name, int frame)
 {
   int width, height;
-  MovieClipUser user = *DNA_struct_default_get(MovieClipUser);
+  MovieClipUser user = *type_struct_default_get(MovieClipUser);
   MovieTrackingTrack *track;
 
   user.framenr = 1;
 
-  BKE_movieclip_get_size(clip, &user, &width, &height);
+  dune_movieclip_get_size(clip, &user, &width, &height);
 
-  track = BKE_tracking_track_add(tracking, tracksbase, 0, 0, frame, width, height);
+  track = dune_tracking_track_add(tracking, tracksbase, 0, 0, frame, width, height);
 
   if (name && name[0]) {
     STRNCPY(track->name, name);
-    BKE_tracking_track_unique_name(tracksbase, track);
+    dune_tracking_track_unique_name(tracksbase, track);
   }
 
   return track;
 }
 
-static MovieTrackingTrack *rna_trackingTracks_new(ID *id,
+static MovieTrackingTrack *api_trackingTracks_new(Id *id,
                                                   MovieTracking *tracking,
                                                   const char *name,
                                                   int frame)
 {
   MovieClip *clip = (MovieClip *)id;
-  MovieTrackingObject *tracking_camera_object = BKE_tracking_object_get_camera(&clip->tracking);
+  MovieTrackingObject *tracking_camera_object = dune_tracking_object_get_camera(&clip->tracking);
   MovieTrackingTrack *track = add_track_to_base(
       clip, tracking, &tracking_camera_object->tracks, name, frame);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, clip);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, clip);
 
   return track;
 }
 
-static MovieTrackingTrack *rna_trackingObject_tracks_new(ID *id,
+static MovieTrackingTrack *api_trackingObject_tracks_new(Id *id,
                                                          MovieTrackingObject *tracking_object,
                                                          const char *name,
                                                          int frame)
@@ -695,23 +695,23 @@ static MovieTrackingTrack *rna_trackingObject_tracks_new(ID *id,
   MovieTrackingTrack *track = add_track_to_base(
       clip, &clip->tracking, &tracking_object->tracks, name, frame);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
 
   return track;
 }
 
-static MovieTrackingObject *rna_trackingObject_new(MovieTracking *tracking, const char *name)
+static MovieTrackingObject *api_trackingObject_new(MovieTracking *tracking, const char *name)
 {
-  MovieTrackingObject *tracking_object = BKE_tracking_object_add(tracking, name);
+  MovieTrackingObject *tracking_object = dune_tracking_object_add(tracking, name);
 
-  WM_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
+  wm_main_add_notifier(NC_MOVIECLIP | NA_EDITED, NULL);
 
   return tracking_object;
 }
 
-static void rna_trackingObject_remove(MovieTracking *tracking,
+static void api_trackingObject_remove(MovieTracking *tracking,
                                       ReportList *reports,
-                                      PointerRNA *object_ptr)
+                                      ApiPtr *object_ptr)
 {
   MovieTrackingObject *tracking_object = object_ptr->data;
   if (BKE_tracking_object_delete(tracking, tracking_object) == false) {
