@@ -23,7 +23,7 @@ static void texture_evaluate(struct Tex *tex, float value[3], float r_color[4])
 {
   TexResult texres = {0.0f};
 
-  /* TODO(sergey): always use color management now. */
+  /* TODO: always use color management now. */
   multitex_ext(tex, value, NULL, NULL, 1, &texres, 0, NULL, true, false);
 
   copy_v3_v3(r_color, texres.trgba);
@@ -32,17 +32,17 @@ static void texture_evaluate(struct Tex *tex, float value[3], float r_color[4])
 
 #else
 
-void api_texture(StructRNA *srna)
+void api_texture(ApiStruct *sapi)
 {
   ApiFn *fn;
   ApiProp *parm;
 
-  func = api_def_fn(sapi, "evaluate", "texture_evaluate");
+  fn = api_def_fn(sapi, "evaluate", "texture_evaluate");
   api_def_fn_ui_description(
       fn, "Evaluate the texture at the a given coordinate and returns the result");
 
   parm = api_def_float_vector(
-      func,
+      fn,
       "value",
       3,
       NULL,
@@ -68,8 +68,8 @@ void api_texture(StructRNA *srna)
       NULL,
       -1e4,
       1e4);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
 }
 
 #endif
