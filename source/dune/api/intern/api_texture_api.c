@@ -32,16 +32,16 @@ static void texture_evaluate(struct Tex *tex, float value[3], float r_color[4])
 
 #else
 
-void RNA_api_texture(StructRNA *srna)
+void api_texture(StructRNA *srna)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "evaluate", "texture_evaluate");
-  RNA_def_function_ui_description(
-      func, "Evaluate the texture at the a given coordinate and returns the result");
+  func = api_def_fn(sapi, "evaluate", "texture_evaluate");
+  api_def_fn_ui_description(
+      fn, "Evaluate the texture at the a given coordinate and returns the result");
 
-  parm = RNA_def_float_vector(
+  parm = api_def_float_vector(
       func,
       "value",
       3,
@@ -53,10 +53,10 @@ void RNA_api_texture(StructRNA *srna)
       "",
       -1e4,
       1e4);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   /* return location and normal */
-  parm = RNA_def_float_vector(
+  parm = api_def_float_vector(
       func,
       "result",
       4,
