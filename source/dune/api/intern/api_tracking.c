@@ -111,14 +111,14 @@ static void api_trackingObjects_begin(CollectionPropIter *iter, ApiPtr *ptr)
   api_iter_list_begin(iter, &clip->tracking.objects, NULL);
 }
 
-static int rna_tracking_active_object_index_get(PointerRNA *ptr)
+static int api_tracking_active_object_index_get(ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
 
   return clip->tracking.objectnr;
 }
 
-static void api_tracking_active_object_index_set(PointerRNA *ptr, int value)
+static void api_tracking_active_object_index_set(ApiPtr *ptr, int value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
 
@@ -138,83 +138,83 @@ static void api_tracking_active_object_index_range(
 static ApiPtr api_tracking_active_track_get(ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
-  const MovieTrackingObject *tracking_object = BKE_tracking_object_get_active(&clip->tracking);
+  const MovieTrackingObject *tracking_object = dune_tracking_object_get_active(&clip->tracking);
 
-  return rna_pointer_inherit_refine(ptr, &RNA_MovieTrackingTrack, tracking_object->active_track);
+  return api_ptr_inherit_refine(ptr, &Api_MovieTrackingTrack, tracking_object->active_track);
 }
 
-static void rna_tracking_active_track_set(PointerRNA *ptr,
-                                          PointerRNA value,
+static void api_tracking_active_track_set(ApiPtr *ptr,
+                                          ApiPtr value,
                                           struct ReportList *reports)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingTrack *track = (MovieTrackingTrack *)value.data;
-  MovieTrackingObject *tracking_object = BKE_tracking_object_get_active(&clip->tracking);
-  int index = BLI_findindex(&tracking_object->tracks, track);
+  MovieTrackingObject *tracking_object = dune_tracking_object_get_active(&clip->tracking);
+  int index = lib_findindex(&tracking_object->tracks, track);
 
   if (index != -1) {
     tracking_object->active_track = track;
   }
   else {
-    BKE_reportf(reports,
-                RPT_ERROR,
-                "Track '%s' is not found in the tracking object %s",
-                track->name,
-                tracking_object->name);
+    dunr_reportf(reports,
+                 RPT_ERROR,
+                 "Track '%s' is not found in the tracking object %s",
+                 track->name,
+                 tracking_object->name);
   }
 }
 
-static PointerRNA rna_tracking_active_plane_track_get(PointerRNA *ptr)
+static ApiPtr api_tracking_active_plane_track_get(ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
-  const MovieTrackingObject *tracking_object = BKE_tracking_object_get_active(&clip->tracking);
+  const MovieTrackingObject *tracking_object = dune_tracking_object_get_active(&clip->tracking);
 
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_MovieTrackingPlaneTrack, tracking_object->active_plane_track);
+  return api_ptr_inherit_refine(
+      ptr, &Api_MovieTrackingPlaneTrack, tracking_object->active_plane_track);
 }
 
-static void rna_tracking_active_plane_track_set(PointerRNA *ptr,
-                                                PointerRNA value,
+static void api_tracking_active_plane_track_set(ApiPtr *ptr,
+                                                ApiPtr value,
                                                 struct ReportList *reports)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingPlaneTrack *plane_track = (MovieTrackingPlaneTrack *)value.data;
-  MovieTrackingObject *tracking_object = BKE_tracking_object_get_active(&clip->tracking);
-  int index = BLI_findindex(&tracking_object->plane_tracks, plane_track);
+  MovieTrackingObject *tracking_object = dune_tracking_object_get_active(&clip->tracking);
+  int index = lib_findindex(&tracking_object->plane_tracks, plane_track);
 
   if (index != -1) {
     tracking_object->active_plane_track = plane_track;
   }
   else {
-    BKE_reportf(reports,
-                RPT_ERROR,
-                "Plane track '%s' is not found in the tracking object %s",
-                plane_track->name,
-                tracking_object->name);
+    dune_reportf(reports,
+                 RPT_ERROR,
+                 "Plane track '%s' is not found in the tracking object %s",
+                 plane_track->name,
+                 tracking_object->name);
   }
 }
 
-static PointerRNA rna_tracking_object_active_track_get(PointerRNA *ptr)
+static ApiPtr api_tracking_object_active_track_get(ApiPtr *ptr)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
-  const MovieTrackingObject *tracking_object = BKE_tracking_object_get_active(&clip->tracking);
+  const MovieTrackingObject *tracking_object = dune_tracking_object_get_active(&clip->tracking);
 
-  return rna_pointer_inherit_refine(ptr, &RNA_MovieTrackingTrack, tracking_object->active_track);
+  return api_ptr_inherit_refine(ptr, &Api_MovieTrackingTrack, tracking_object->active_track);
 }
 
-static void rna_tracking_object_active_track_set(PointerRNA *ptr,
-                                                 PointerRNA value,
+static void rna_tracking_object_active_track_set(ApiPtr *ptr,
+                                                 ApiPtr value,
                                                  struct ReportList *reports)
 {
   MovieTrackingTrack *track = (MovieTrackingTrack *)value.data;
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)ptr->data;
-  int index = BLI_findindex(&tracking_object->tracks, track);
+  int index = lib_findindex(&tracking_object->tracks, track);
 
   if (index != -1) {
     tracking_object->active_track = track;
   }
   else {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Track '%s' is not found in the tracking object %s",
                 track->name,
@@ -222,27 +222,27 @@ static void rna_tracking_object_active_track_set(PointerRNA *ptr,
   }
 }
 
-static PointerRNA rna_tracking_object_active_plane_track_get(PointerRNA *ptr)
+static ApiPtr api_tracking_object_active_plane_track_get(ApiPtr *ptr)
 {
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)ptr->data;
 
-  return rna_pointer_inherit_refine(
-      ptr, &RNA_MovieTrackingPlaneTrack, tracking_object->active_plane_track);
+  return api_ptr_inherit_refine(
+      ptr, &Api_MovieTrackingPlaneTrack, tracking_object->active_plane_track);
 }
 
-static void rna_tracking_object_active_plane_track_set(PointerRNA *ptr,
-                                                       PointerRNA value,
+static void rna_tracking_object_active_plane_track_set(ApiPtr *ptr,
+                                                       ApiPtr value,
                                                        struct ReportList *reports)
 {
   MovieTrackingPlaneTrack *plane_track = (MovieTrackingPlaneTrack *)value.data;
   MovieTrackingObject *tracking_object = (MovieTrackingObject *)ptr->data;
-  int index = BLI_findindex(&tracking_object->plane_tracks, plane_track);
+  int index = lib_findindex(&tracking_object->plane_tracks, plane_track);
 
   if (index != -1) {
     tracking_object->active_plane_track = plane_track;
   }
   else {
-    BKE_reportf(reports,
+    dune_reportf(reports,
                 RPT_ERROR,
                 "Plane track '%s' is not found in the tracking object %s",
                 plane_track->name,
@@ -250,28 +250,28 @@ static void rna_tracking_object_active_plane_track_set(PointerRNA *ptr,
   }
 }
 
-static void rna_trackingTrack_name_set(PointerRNA *ptr, const char *value)
+static void api_trackingTrack_name_set(ApiPtr *ptr, const char *value)
 {
   MovieClip *clip = (MovieClip *)ptr->owner_id;
   MovieTrackingTrack *track = (MovieTrackingTrack *)ptr->data;
-  MovieTrackingObject *tracking_object = BKE_tracking_find_object_for_track(&clip->tracking,
+  MovieTrackingObject *tracking_object = dune_tracking_find_object_for_track(&clip->tracking,
                                                                             track);
   /* Store old name, for the animation fix later. */
   char old_name[sizeof(track->name)];
   STRNCPY(old_name, track->name);
   /* Update the name, */
   STRNCPY(track->name, value);
-  BKE_tracking_track_unique_name(&tracking_object->tracks, track);
+  dune_tracking_track_unique_name(&tracking_object->tracks, track);
   /* Fix animation paths. */
-  AnimData *adt = BKE_animdata_from_id(&clip->id);
+  AnimData *adt = dune_animdata_from_id(&clip->id);
   if (adt != NULL) {
-    char rna_path[MAX_NAME * 2 + 64];
-    BKE_tracking_get_rna_path_prefix_for_track(&clip->tracking, track, rna_path, sizeof(rna_path));
-    BKE_animdata_fix_paths_rename(&clip->id, adt, NULL, rna_path, old_name, track->name, 0, 0, 1);
+    char api_path[MAX_NAME * 2 + 64];
+    dune_tracking_get_api_path_prefix_for_track(&clip->tracking, track, api_path, sizeof(api_path));
+    dune_animdata_fix_paths_rename(&clip->id, adt, NULL, api_path, old_name, track->name, 0, 0, 1);
   }
 }
 
-static bool rna_trackingTrack_select_get(PointerRNA *ptr)
+static bool api_trackingTrack_select_get(PointerRNA *ptr)
 {
   MovieTrackingTrack *track = (MovieTrackingTrack *)ptr->data;
 
