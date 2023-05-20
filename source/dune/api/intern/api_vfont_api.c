@@ -28,19 +28,19 @@ static void rna_VectorFont_unpack(VFont *vfont, Main *bmain, ReportList *reports
 
 #else
 
-void RNA_api_vfont(StructRNA *srna)
+void api_vfont(ApiStruct *sapi)
 {
-  FunctionRNA *func;
+  ApiFn *fn;
 
-  func = RNA_def_function(srna, "pack", "rna_VectorFont_pack");
-  RNA_def_function_ui_description(func, "Pack the font into the current blend file");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS);
+  fn = api_def_fn(sapi, "pack", "rna_VectorFont_pack");
+  api_def_fn_ui_description(fn, "Pack the font into the current dune file");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
 
-  func = RNA_def_function(srna, "unpack", "rna_VectorFont_unpack");
-  RNA_def_function_ui_description(func, "Unpack the font to the samples filename");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS);
-  RNA_def_enum(
-      func, "method", rna_enum_unpack_method_items, PF_USE_LOCAL, "method", "How to unpack");
+  func = api_def_fn(sapi, "unpack", "rna_VectorFont_unpack");
+  api_def_fn_ui_description(fn, "Unpack the font to the samples filename");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_REPORTS);
+  api_def_enum(
+      fn, "method", api_enum_unpack_method_items, PF_USE_LOCAL, "method", "How to unpack");
 }
 
 #endif
