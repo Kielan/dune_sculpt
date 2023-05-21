@@ -474,37 +474,37 @@ const EnumPropertyItem rna_enum_clip_editor_mode_items[] = {
 
 /* Actually populated dynamically through a function,
  * but helps for context-less access (e.g. doc, i18n...). */
-static const EnumPropertyItem buttons_context_items[] = {
-    {BCONTEXT_TOOL, "TOOL", ICON_TOOL_SETTINGS, "Tool", "Active Tool and Workspace settings"},
-    {BCONTEXT_SCENE, "SCENE", ICON_SCENE_DATA, "Scene", "Scene Properties"},
-    {BCONTEXT_RENDER, "RENDER", ICON_SCENE, "Render", "Render Properties"},
-    {BCONTEXT_OUTPUT, "OUTPUT", ICON_OUTPUT, "Output", "Output Properties"},
-    {BCONTEXT_VIEW_LAYER, "VIEW_LAYER", ICON_RENDER_RESULT, "View Layer", "View Layer Properties"},
-    {BCONTEXT_WORLD, "WORLD", ICON_WORLD, "World", "World Properties"},
-    {BCONTEXT_COLLECTION, "COLLECTION", ICON_GROUP, "Collection", "Collection Properties"},
-    {BCONTEXT_OBJECT, "OBJECT", ICON_OBJECT_DATA, "Object", "Object Properties"},
-    {BCONTEXT_CONSTRAINT,
+static const EnumPropItem buttons_context_items[] = {
+    {CXT_TOOL, "TOOL", ICON_TOOL_SETTINGS, "Tool", "Active Tool and Workspace settings"},
+    {CXT_SCENE, "SCENE", ICON_SCENE_DATA, "Scene", "Scene Properties"},
+    {CXT_RENDER, "RENDER", ICON_SCENE, "Render", "Render Properties"},
+    {CXT_OUTPUT, "OUTPUT", ICON_OUTPUT, "Output", "Output Properties"},
+    {CXT_VIEW_LAYER, "VIEW_LAYER", ICON_RENDER_RESULT, "View Layer", "View Layer Properties"},
+    {CXT_WORLD, "WORLD", ICON_WORLD, "World", "World Properties"},
+    {CXT_COLLECTION, "COLLECTION", ICON_GROUP, "Collection", "Collection Properties"},
+    {CXT_OBJECT, "OBJECT", ICON_OBJECT_DATA, "Object", "Object Properties"},
+    {CXT_CONSTRAINT,
      "CONSTRAINT",
      ICON_CONSTRAINT,
      "Constraints",
      "Object Constraint Properties"},
-    {BCONTEXT_MODIFIER, "MODIFIER", ICON_MODIFIER, "Modifiers", "Modifier Properties"},
-    {BCONTEXT_DATA, "DATA", ICON_NONE, "Data", "Object Data Properties"},
-    {BCONTEXT_BONE, "BONE", ICON_BONE_DATA, "Bone", "Bone Properties"},
-    {BCONTEXT_BONE_CONSTRAINT,
+    {CXT_MODIFIER, "MODIFIER", ICON_MODIFIER, "Modifiers", "Modifier Properties"},
+    {CXT_DATA, "DATA", ICON_NONE, "Data", "Object Data Properties"},
+    {CXT_BONE, "BONE", ICON_BONE_DATA, "Bone", "Bone Properties"},
+    {CXT_BONE_CONSTRAINT,
      "BONE_CONSTRAINT",
      ICON_CONSTRAINT_BONE,
      "Bone Constraints",
      "Bone Constraint Properties"},
-    {BCONTEXT_MATERIAL, "MATERIAL", ICON_MATERIAL, "Material", "Material Properties"},
-    {BCONTEXT_TEXTURE, "TEXTURE", ICON_TEXTURE, "Texture", "Texture Properties"},
-    {BCONTEXT_PARTICLE, "PARTICLES", ICON_PARTICLES, "Particles", "Particle Properties"},
-    {BCONTEXT_PHYSICS, "PHYSICS", ICON_PHYSICS, "Physics", "Physics Properties"},
-    {BCONTEXT_SHADERFX, "SHADERFX", ICON_SHADERFX, "Effects", "Visual Effects Properties"},
+    {CXT_MATERIAL, "MATERIAL", ICON_MATERIAL, "Material", "Material Properties"},
+    {CXT_TEXTURE, "TEXTURE", ICON_TEXTURE, "Texture", "Texture Properties"},
+    {CXT_PARTICLE, "PARTICLES", ICON_PARTICLES, "Particles", "Particle Properties"},
+    {CXT_PHYSICS, "PHYSICS", ICON_PHYSICS, "Physics", "Physics Properties"},
+    {CXT_SHADERFX, "SHADERFX", ICON_SHADERFX, "Effects", "Visual Effects Properties"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem fileselectparams_recursion_level_items[] = {
+static const EnumPropItem fileselectparams_recursion_level_items[] = {
     {0, "NONE", 0, "None", "Only list current directory's content, with no recursion"},
     {1, "BLEND", 0, "Blend File", "List .blend files' content"},
     {2, "ALL_1", 0, "One Level", "List all sub-directories' content, one level of recursion"},
@@ -517,21 +517,21 @@ static const EnumPropertyItem fileselectparams_recursion_level_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_curve_display_handle_items[] = {
+static const EnumPropItem api_enum_curve_display_handle_items[] = {
     {CURVE_HANDLE_NONE, "NONE", 0, "None", ""},
     {CURVE_HANDLE_SELECTED, "SELECTED", 0, "Selected", ""},
     {CURVE_HANDLE_ALL, "ALL", 0, "All", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  include "AS_asset_representation.h"
 
-#  include "DNA_anim_types.h"
-#  include "DNA_asset_types.h"
-#  include "DNA_scene_types.h"
-#  include "DNA_screen_types.h"
+#  include "types_anim.h"
+#  include "types_asset.h"
+#  include "types_scene.h"
+#  include "types_screen.h"
 #  include "DNA_userdef_types.h"
 
 #  include "BLI_path_util.h"
