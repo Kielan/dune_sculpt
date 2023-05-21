@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  ifdef ARRAY_SIZE
 #    undef ARRAY_SIZE
@@ -34,12 +34,12 @@
       (void)0
 
 #    define DEF_GET_SET(type, arr) \
-      void rna_Test_##arr##_get(PointerRNA *ptr, type *values) \
+      void api_Test_##arr##_get(ApiPtr *ptr, type *values) \
       { \
         memcpy(values, arr, sizeof(arr)); \
       } \
 \
-      void rna_Test_##arr##_set(PointerRNA *ptr, const type *values) \
+      void rna_Test_##arr##_set(ApiPtr *ptr, const type *values) \
       { \
         memcpy(arr, values, sizeof(arr)); \
       } \
