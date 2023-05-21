@@ -672,28 +672,28 @@ static void api_def_mtex(DuneApi *api)
   api_def_prop_ui_text(prop, "Blend Type", "Mode used to apply the texture
   api_def_prop_update(prop, 0, "rna_TextureSlot_update");
 
-  prop = RNA_def_property(srna, "default_value", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "def_var");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_range(prop, 0, 1, 10, 3);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "default_value", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "def_var");
+  api_def_prop_flag(prop, PROP_CCT_UPDATE);
+  api_def_prop_ui_range(prop, 0, 1, 10, 3);
+  api_def_prop_ui_text(
       prop,
       "Default Value",
       "Value to use for Ref, Spec, Amb, Emit, Alpha, RayMir, TransLu and Hard");
-  RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+  api_def_prop_update(prop, 0, "api_TextureSlot_update");
 
-  prop = RNA_def_property(srna, "output_node", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "which_output");
-  RNA_def_property_enum_items(prop, output_node_items);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_enum_funcs(
-      prop, "rna_TextureSlot_output_node_get", NULL, "rna_TextureSlot_output_node_itemf");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "output_node", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "which_output");
+  api_def_prop_enum_items(prop, output_node_items);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_enum_fns(
+      prop, "api_TextureSlot_output_node_get", NULL, "rna_TextureSlot_output_node_itemf");
+  api_def_prop_ui_text(
       prop, "Output Node", "Which output node to use, for node-based textures");
-  RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+  api_def_prop_update(prop, 0, "api_TextureSlot_update");
 }
 
-static void rna_def_filter_common(StructRNA *srna)
+static void api_def_filter_common(ApiStruct *srna)
 {
   PropertyRNA *prop;
 
