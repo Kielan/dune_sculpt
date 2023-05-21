@@ -1,9 +1,9 @@
-#include "DNA_object_types.h"
+#include "types_object.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 #ifdef RNA_RUNTIME
 
