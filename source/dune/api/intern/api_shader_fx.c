@@ -2,29 +2,29 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_shader_fx_types.h"
+#include "types_pen_legacy.h"
+#include "types_object.h"
+#include "types_scene.h"
+#include "types_shader_fx.h"
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLI_math.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_animsys.h"
+#include "dune_animsys.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-const EnumPropertyItem rna_enum_object_shaderfx_type_items[] = {
+const EnumPropItem api_enum_object_shaderfx_type_items[] = {
     {eShaderFxType_Blur, "FX_BLUR", ICON_SHADERFX, "Blur", "Apply Gaussian Blur to object"},
     {eShaderFxType_Colorize,
      "FX_COLORIZE",
@@ -45,7 +45,7 @@ const EnumPropertyItem rna_enum_object_shaderfx_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_shaderfx_rim_modes_items[] = {
+static const EnumPropItem api_enum_shaderfx_rim_modes_items[] = {
     {eShaderFxRimMode_Normal, "NORMAL", 0, "Regular", ""},
     {eShaderFxRimMode_Overlay, "OVERLAY", 0, "Overlay", ""},
     {eShaderFxRimMode_Add, "ADD", 0, "Add", ""},
@@ -54,12 +54,12 @@ static const EnumPropertyItem rna_enum_shaderfx_rim_modes_items[] = {
     {eShaderFxRimMode_Divide, "DIVIDE", 0, "Divide", ""},
     {0, NULL, 0, NULL, NULL}};
 
-static const EnumPropertyItem rna_enum_shaderfx_glow_modes_items[] = {
+static const EnumPropItem api_enum_shaderfx_glow_modes_items[] = {
     {eShaderFxGlowMode_Luminance, "LUMINANCE", 0, "Luminance", ""},
     {eShaderFxGlowMode_Color, "COLOR", 0, "Color", ""},
     {0, NULL, 0, NULL, NULL}};
 
-static const EnumPropertyItem rna_enum_shaderfx_colorize_modes_items[] = {
+static const EnumPropItem api_enum_shaderfx_colorize_modes_items[] = {
     {eShaderFxColorizeMode_GrayScale, "GRAYSCALE", 0, "Gray Scale", ""},
     {eShaderFxColorizeMode_Sepia, "SEPIA", 0, "Sepia", ""},
     {eShaderFxColorizeMode_Duotone, "DUOTONE", 0, "Duotone", ""},
@@ -67,7 +67,7 @@ static const EnumPropertyItem rna_enum_shaderfx_colorize_modes_items[] = {
     {eShaderFxColorizeMode_Custom, "CUSTOM", 0, "Custom", ""},
     {0, NULL, 0, NULL, NULL}};
 
-static const EnumPropertyItem rna_enum_glow_blend_modes_items[] = {
+static const EnumPropItem api_enum_glow_blend_modes_items[] = {
     {eGplBlendMode_Regular, "REGULAR", 0, "Regular", ""},
     {eGplBlendMode_Add, "ADD", 0, "Add", ""},
     {eGplBlendMode_Subtract, "SUBTRACT", 0, "Subtract", ""},
@@ -75,47 +75,47 @@ static const EnumPropertyItem rna_enum_glow_blend_modes_items[] = {
     {eGplBlendMode_Divide, "DIVIDE", 0, "Divide", ""},
     {0, NULL, 0, NULL, NULL}};
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_shader_fx.h"
+#  include "dune_shader_fx.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-static StructRNA *rna_ShaderFx_refine(struct PointerRNA *ptr)
+static StructRNA *api_ShaderFx_refine(struct ApiPtr *ptr)
 {
   ShaderFxData *md = (ShaderFxData *)ptr->data;
 
   switch ((ShaderFxType)md->type) {
     case eShaderFxType_Blur:
-      return &RNA_ShaderFxBlur;
+      return &Api_ShaderFxBlur;
     case eShaderFxType_Colorize:
-      return &RNA_ShaderFxColorize;
+      return &Api_ShaderFxColorize;
     case eShaderFxType_Wave:
-      return &RNA_ShaderFxWave;
+      return &Api_ShaderFxWave;
     case eShaderFxType_Pixel:
-      return &RNA_ShaderFxPixel;
+      return &Api_ShaderFxPixel;
     case eShaderFxType_Rim:
-      return &RNA_ShaderFxRim;
+      return &Api_ShaderFxRim;
     case eShaderFxType_Shadow:
       return &RNA_ShaderFxShadow;
     case eShaderFxType_Swirl:
-      return &RNA_ShaderFxSwirl;
+      return &Api_ShaderFxSwirl;
     case eShaderFxType_Flip:
-      return &RNA_ShaderFxFlip;
+      return &Api_ShaderFxFlip;
     case eShaderFxType_Glow:
-      return &RNA_ShaderFxGlow;
+      return &Api_ShaderFxGlow;
       /* Default */
     case eShaderFxType_None:
     case NUM_SHADER_FX_TYPES:
     default:
-      return &RNA_ShaderFx;
+      return &Api_ShaderFx;
   }
 
-  return &RNA_ShaderFx;
+  return &Api_ShaderFx;
 }
 
-static void rna_ShaderFx_name_set(PointerRNA *ptr, const char *value)
+static void api_ShaderFx_name_set(ApiPtr *ptr, const char *value)
 {
   ShaderFxData *gmd = ptr->data;
   char oldname[sizeof(gmd->name)];
@@ -129,14 +129,14 @@ static void rna_ShaderFx_name_set(PointerRNA *ptr, const char *value)
   /* make sure the name is truly unique */
   if (ptr->owner_id) {
     Object *ob = (Object *)ptr->owner_id;
-    BKE_shaderfx_unique_name(&ob->shader_fx, gmd);
+    dune_shaderfx_unique_name(&ob->shader_fx, gmd);
   }
 
   /* fix all the animation data which may link to this */
-  BKE_animdata_fix_paths_rename_all(NULL, "shader_effects", oldname, gmd->name);
+  dune_animdata_fix_paths_rename_all(NULL, "shader_effects", oldname, gmd->name);
 }
 
-static char *rna_ShaderFx_path(const PointerRNA *ptr)
+static char *api_ShaderFx_path(const ApiPtr *ptr)
 {
   const ShaderFxData *gmd = ptr->data;
   char name_esc[sizeof(gmd->name) * 2];
