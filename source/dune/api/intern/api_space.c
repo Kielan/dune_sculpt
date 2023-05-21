@@ -52,9 +52,9 @@
 #include "render_engine.h"
 #include "render_pipeline.h"
 
-#include "RNA_enum_types.h"
+#include "api_enum_types.h"
 
-const EnumPropertyItem rna_enum_geometry_component_type_items[] = {
+const EnumPropItem rna_enum_geometry_component_type_items[] = {
     {GEO_COMPONENT_TYPE_MESH,
      "MESH",
      ICON_MESH_DATA,
@@ -78,12 +78,12 @@ const EnumPropertyItem rna_enum_geometry_component_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_space_type_items[] = {
+const EnumPropItem api_enum_space_type_items[] = {
     /* empty must be here for python, is skipped for UI */
     {SPACE_EMPTY, "EMPTY", ICON_NONE, "Empty", ""},
 
     /* General. */
-    RNA_ENUM_ITEM_HEADING(N_("General"), NULL),
+    API_ENUM_ITEM_HEADING(N_("General"), NULL),
     {SPACE_VIEW3D,
      "VIEW_3D",
      ICON_VIEW3D,
@@ -103,7 +103,7 @@ const EnumPropertyItem rna_enum_space_type_items[] = {
     {SPACE_CLIP, "CLIP_EDITOR", ICON_TRACKER, "Movie Clip Editor", "Motion tracking tools"},
 
     /* Animation. */
-    RNA_ENUM_ITEM_HEADING(N_("Animation"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Animation"), NULL),
 #if 0
     {SPACE_ACTION,
      "TIMELINE",
@@ -120,7 +120,7 @@ const EnumPropertyItem rna_enum_space_type_items[] = {
     {SPACE_NLA, "NLA_EDITOR", ICON_NLA, "Nonlinear Animation", "Combine and layer Actions"},
 
     /* Scripting. */
-    RNA_ENUM_ITEM_HEADING(N_("Scripting"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Scripting"), NULL),
     {SPACE_TEXT,
      "TEXT_EDITOR",
      ICON_TEXT,
@@ -148,17 +148,17 @@ const EnumPropertyItem rna_enum_space_type_items[] = {
      "screen for general status information"},
 
     /* Data. */
-    RNA_ENUM_ITEM_HEADING(N_("Data"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Data"), NULL),
     {SPACE_OUTLINER,
      "OUTLINER",
      ICON_OUTLINER,
      "Outliner",
      "Overview of scene graph and all available data-blocks"},
-    {SPACE_PROPERTIES,
+    {SPACE_PROPS,
      "PROPERTIES",
-     ICON_PROPERTIES,
+     ICON_PROPS,
      "Properties",
-     "Edit properties of active object and related data-blocks"},
+     "Edit props of active object and related data-blocks"},
     {SPACE_FILE, "FILE_BROWSER", ICON_FILEBROWSER, "File Browser", "Browse for files and assets"},
     {SPACE_SPREADSHEET,
      "SPREADSHEET",
@@ -173,7 +173,7 @@ const EnumPropertyItem rna_enum_space_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_space_graph_mode_items[] = {
+const EnumPropItem api_enum_space_graph_mode_items[] = {
     {SIPO_MODE_ANIMATION,
      "FCURVES",
      ICON_GRAPH,
@@ -183,10 +183,10 @@ const EnumPropertyItem rna_enum_space_graph_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_space_sequencer_view_type_items[] = {
-    {SEQ_VIEW_SEQUENCE, "SEQUENCER", ICON_SEQ_SEQUENCER, "Sequencer", ""},
+const EnumPropItem api_enum_space_seq_view_type_items[] = {
+    {SEQ_VIEW_SEQUENCE, "SEQUENCER", ICON_SEQ_SEQ, "Sequencer", ""},
     {SEQ_VIEW_PREVIEW, "PREVIEW", ICON_SEQ_PREVIEW, "Preview", ""},
-    {SEQ_VIEW_SEQUENCE_PREVIEW,
+    {SEQ_VIEW_SEQ_PREVIEW,
      "SEQUENCER_PREVIEW",
      ICON_SEQ_SPLITVIEW,
      "Sequencer & Preview",
@@ -194,7 +194,7 @@ const EnumPropertyItem rna_enum_space_sequencer_view_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_space_file_browse_mode_items[] = {
+const EnumProypItem api_enum_space_file_browse_mode_items[] = {
     {FILE_BROWSE_MODE_FILES, "FILES", ICON_FILEBROWSER, "File Browser", ""},
     {FILE_BROWSE_MODE_ASSETS, "ASSETS", ICON_ASSET_MANAGER, "Asset Browser", ""},
     {0, NULL, 0, NULL, NULL},
@@ -218,10 +218,10 @@ const EnumPropertyItem rna_enum_space_file_browse_mode_items[] = {
     SACTCONT_SHAPEKEY, "SHAPEKEY", ICON_SHAPEKEY_DATA, "Shape Key Editor", \
         "Edit keyframes in active object's Shape Keys action" \
   }
-#define SACT_ITEM_GPENCIL \
+#define SACT_ITEM_PEN \
   { \
-    SACTCONT_GPENCIL, "GPENCIL", ICON_GREASEPENCIL, "Grease Pencil", \
-        "Edit timings for all Grease Pencil sketches in file" \
+    SACTCONT_PEN, "PEN", ICON_PEN, "Pen", \
+        "Edit timings for all Pen sketches in file" \
   }
 #define SACT_ITEM_MASK \
   { \
@@ -233,25 +233,25 @@ const EnumPropertyItem rna_enum_space_file_browse_mode_items[] = {
         "Edit timings for Cache File data-blocks" \
   }
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
 /* XXX: action-editor is currently for object-level only actions,
  * so show that using object-icon hint */
-static EnumPropertyItem rna_enum_space_action_mode_all_items[] = {
+static EnumPropItem api_enum_space_action_mode_all_items[] = {
     SACT_ITEM_DOPESHEET,
     SACT_ITEM_TIMELINE,
     SACT_ITEM_ACTION,
     SACT_ITEM_SHAPEKEY,
-    SACT_ITEM_GPENCIL,
+    SACT_ITEM_PEN,
     SACT_ITEM_MASK,
     SACT_ITEM_CACHEFILE,
     {0, NULL, 0, NULL, NULL},
 };
-static EnumPropertyItem rna_enum_space_action_ui_mode_items[] = {
+static EnumPropItem api_enum_space_action_ui_mode_items[] = {
     SACT_ITEM_DOPESHEET,
     /* SACT_ITEM_TIMELINE, */
     SACT_ITEM_ACTION,
     SACT_ITEM_SHAPEKEY,
-    SACT_ITEM_GPENCIL,
+    SACT_ITEM_PEN,
     SACT_ITEM_MASK,
     SACT_ITEM_CACHEFILE,
     {0, NULL, 0, NULL, NULL},
@@ -260,7 +260,7 @@ static EnumPropertyItem rna_enum_space_action_ui_mode_items[] = {
 
 /* Expose as `ui_mode`. */
 
-const EnumPropertyItem rna_enum_space_action_mode_items[] = {
+const EnumPropItem api_enum_space_action_mode_items[] = {
     SACT_ITEM_DOPESHEET,
     SACT_ITEM_TIMELINE,
     {0, NULL, 0, NULL, NULL},
@@ -270,13 +270,13 @@ const EnumPropertyItem rna_enum_space_action_mode_items[] = {
 #undef SACT_ITEM_TIMELINE
 #undef SACT_ITEM_ACTION
 #undef SACT_ITEM_SHAPEKEY
-#undef SACT_ITEM_GPENCIL
+#undef SACT_ITEM_PEN
 #undef SACT_ITEM_MASK
 #undef SACT_ITEM_CACHEFILE
 
-#define SI_ITEM_VIEW(identifier, name, icon) \
+#define SI_ITEM_VIEW(id, name, icon) \
   { \
-    SI_MODE_VIEW, identifier, icon, name, "View the image" \
+    SI_MODE_VIEW, id, icon, name, "View the image" \
   }
 #define SI_ITEM_UV \
   { \
@@ -291,7 +291,7 @@ const EnumPropertyItem rna_enum_space_action_mode_items[] = {
     SI_MODE_MASK, "MASK", ICON_MOD_MASK, "Mask", "Mask editing" \
   }
 
-const EnumPropertyItem rna_enum_space_image_mode_all_items[] = {
+const EnumPropItem api_enum_space_image_mode_all_items[] = {
     SI_ITEM_VIEW("VIEW", "View", ICON_FILE_IMAGE),
     SI_ITEM_UV,
     SI_ITEM_PAINT,
@@ -299,14 +299,14 @@ const EnumPropertyItem rna_enum_space_image_mode_all_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_space_image_mode_ui_items[] = {
+static const EnumPropItem api_enum_space_image_mode_ui_items[] = {
     SI_ITEM_VIEW("VIEW", "View", ICON_FILE_IMAGE),
     SI_ITEM_PAINT,
     SI_ITEM_MASK,
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_space_image_mode_items[] = {
+const EnumPropItem api_enum_space_image_mode_items[] = {
     SI_ITEM_VIEW("IMAGE_EDITOR", "Image Editor", ICON_IMAGE),
     SI_ITEM_UV,
     {0, NULL, 0, NULL, NULL},
@@ -324,12 +324,12 @@ const EnumPropertyItem rna_enum_space_image_mode_items[] = {
 #  define V3D_S3D_CAMERA_VIEWS {STEREO_MONO_ID, "MONO", ICON_RESTRICT_RENDER_OFF, "Views", ""},
 #endif
 
-static const EnumPropertyItem stereo3d_camera_items[] = {
+static const EnumPropItem stereo3d_camera_items[] = {
     V3D_S3D_CAMERA_LEFT V3D_S3D_CAMERA_RIGHT V3D_S3D_CAMERA_S3D{0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-static const EnumPropertyItem multiview_camera_items[] = {
+#ifdef API_RUNTIME
+static const EnumPropItem multiview_camera_items[] = {
     V3D_S3D_CAMERA_VIEWS V3D_S3D_CAMERA_S3D{0, NULL, 0, NULL, NULL},
 };
 #endif
@@ -339,7 +339,7 @@ static const EnumPropertyItem multiview_camera_items[] = {
 #undef V3D_S3D_CAMERA_S3D
 #undef V3D_S3D_CAMERA_VIEWS
 
-const EnumPropertyItem rna_enum_fileselect_params_sort_items[] = {
+const EnumPropItem api_enum_fileselect_params_sort_items[] = {
     {FILE_SORT_ALPHA, "FILE_SORT_ALPHA", ICON_NONE, "Name", "Sort the file list alphabetically"},
     {FILE_SORT_EXTENSION,
      "FILE_SORT_EXTENSION",
@@ -355,15 +355,15 @@ const EnumPropertyItem rna_enum_fileselect_params_sort_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem stereo3d_eye_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem stereo3d_eye_items[] = {
     {STEREO_LEFT_ID, "LEFT_EYE", ICON_NONE, "Left Eye"},
     {STEREO_RIGHT_ID, "RIGHT_EYE", ICON_NONE, "Right Eye"},
     {0, NULL, 0, NULL, NULL},
 };
 #endif
 
-static const EnumPropertyItem display_channels_items[] = {
+static const EnumPropItem display_channels_items[] = {
     {SI_USE_ALPHA,
      "COLOR_ALPHA",
      ICON_IMAGE_RGB_ALPHA,
@@ -382,8 +382,8 @@ static const EnumPropertyItem display_channels_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem autosnap_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem autosnap_items[] = {
     {SACTSNAP_OFF, "NONE", 0, "No Auto-Snap", ""},
     /* {-1, "", 0, "", ""}, */
     {SACTSNAP_STEP, "STEP", 0, "Frame Step", "Snap to 1.0 frame intervals"},
@@ -397,7 +397,7 @@ static const EnumPropertyItem autosnap_items[] = {
 };
 #endif
 
-const EnumPropertyItem rna_enum_shading_type_items[] = {
+const EnumPropItem api_enum_shading_type_items[] = {
     {OB_WIRE, "WIREFRAME", ICON_SHADING_WIRE, "Wireframe", "Display the object as wire edges"},
     {OB_SOLID, "SOLID", ICON_SHADING_SOLID, "Solid", "Display in solid mode"},
     {OB_MATERIAL,
@@ -409,14 +409,14 @@ const EnumPropertyItem rna_enum_shading_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_viewport_lighting_items[] = {
+static const EnumPropItem api_enum_viewport_lighting_items[] = {
     {V3D_LIGHTING_STUDIO, "STUDIO", 0, "Studio", "Display using studio lighting"},
     {V3D_LIGHTING_MATCAP, "MATCAP", 0, "MatCap", "Display using matcap material and lighting"},
     {V3D_LIGHTING_FLAT, "FLAT", 0, "Flat", "Display using flat lighting"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_shading_color_type_items[] = {
+static const EnumPropItem api_enum_shading_color_type_items[] = {
     {V3D_SHADING_MATERIAL_COLOR, "MATERIAL", 0, "Material", "Show material color"},
     {V3D_SHADING_SINGLE_COLOR, "SINGLE", 0, "Single", "Show scene in a single color"},
     {V3D_SHADING_OBJECT_COLOR, "OBJECT", 0, "Object", "Show object color"},
@@ -430,43 +430,43 @@ static const EnumPropertyItem rna_enum_shading_color_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_studio_light_items[] = {
+static const EnumPropItem api_enum_studio_light_items[] = {
     {0, "DEFAULT", 0, "Default", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_view3dshading_render_pass_type_items[] = {
-    RNA_ENUM_ITEM_HEADING(N_("General"), NULL),
+static const EnumPropItem api_enum_view3dshading_render_pass_type_items[] = {
+    API_ENUM_ITEM_HEADING(N_("General"), NULL),
     {EEVEE_RENDER_PASS_COMBINED, "COMBINED", 0, "Combined", ""},
     {EEVEE_RENDER_PASS_EMIT, "EMISSION", 0, "Emission", ""},
     {EEVEE_RENDER_PASS_ENVIRONMENT, "ENVIRONMENT", 0, "Environment", ""},
     {EEVEE_RENDER_PASS_AO, "AO", 0, "Ambient Occlusion", ""},
     {EEVEE_RENDER_PASS_SHADOW, "SHADOW", 0, "Shadow", ""},
 
-    RNA_ENUM_ITEM_HEADING(N_("Light"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Light"), NULL),
     {EEVEE_RENDER_PASS_DIFFUSE_LIGHT, "DIFFUSE_LIGHT", 0, "Diffuse Light", ""},
     {EEVEE_RENDER_PASS_DIFFUSE_COLOR, "DIFFUSE_COLOR", 0, "Diffuse Color", ""},
     {EEVEE_RENDER_PASS_SPECULAR_LIGHT, "SPECULAR_LIGHT", 0, "Specular Light", ""},
     {EEVEE_RENDER_PASS_SPECULAR_COLOR, "SPECULAR_COLOR", 0, "Specular Color", ""},
     {EEVEE_RENDER_PASS_VOLUME_LIGHT, "VOLUME_LIGHT", 0, "Volume Light", ""},
 
-    RNA_ENUM_ITEM_HEADING(N_("Effects"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Effects"), NULL),
     {EEVEE_RENDER_PASS_BLOOM, "BLOOM", 0, "Bloom", ""},
 
-    RNA_ENUM_ITEM_HEADING(N_("Data"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Data"), NULL),
     {EEVEE_RENDER_PASS_NORMAL, "NORMAL", 0, "Normal", ""},
     {EEVEE_RENDER_PASS_MIST, "MIST", 0, "Mist", ""},
     {EEVEE_RENDER_PASS_CRYPTOMATTE_OBJECT, "CryptoObject", 0, "CryptoObject", ""},
     {EEVEE_RENDER_PASS_CRYPTOMATTE_ASSET, "CryptoAsset", 0, "CryptoAsset", ""},
     {EEVEE_RENDER_PASS_CRYPTOMATTE_MATERIAL, "CryptoMaterial", 0, "CryptoMaterial", ""},
 
-    RNA_ENUM_ITEM_HEADING(N_("Shader AOV"), NULL),
+    API_ENUM_ITEM_HEADING(N_("Shader AOV"), NULL),
     {EEVEE_RENDER_PASS_AOV, "AOV", 0, "AOV", ""},
 
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_clip_editor_mode_items[] = {
+const EnumPropItem api_enum_clip_editor_mode_items[] = {
     {SC_MODE_TRACKING, "TRACKING", ICON_ANIM_DATA, "Tracking", "Show tracking and solving tools"},
     {SC_MODE_MASKEDIT, "MASK", ICON_MOD_MASK, "Mask", "Show mask editing tools"},
     {0, NULL, 0, NULL, NULL},
@@ -661,10 +661,9 @@ static void rna_area_region_from_regiondata(PointerRNA *ptr, ScrArea **r_area, A
 }
 
 /* -------------------------------------------------------------------- */
-/** \name Generic Region Flag Access
- * \{ */
+/** Generic Region Flag Access* */
 
-static bool rna_Space_bool_from_region_flag_get_by_type(PointerRNA *ptr,
+static bool api_Space_bool_from_region_flag_get_by_type(PointerRNA *ptr,
                                                         const int region_type,
                                                         const int region_flag)
 {
