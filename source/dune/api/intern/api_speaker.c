@@ -26,48 +26,48 @@ static void api_def_speaker(DuneApi *dapi)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Speaker", "ID");
-  RNA_def_struct_ui_text(srna, "Speaker", "Speaker data-block for 3D audio speaker objects");
-  RNA_def_struct_ui_icon(srna, ICON_SPEAKER);
+  sapi = api_def_struct(dapi, "Speaker", "ID");
+  api_def_struct_ui_text(sapi, "Speaker", "Speaker data-block for 3D audio speaker objects");
+  api_def_struct_ui_icon(sapi, ICON_SPEAKER);
 
-  prop = RNA_def_property(srna, "muted", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", SPK_MUTED);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Mute", "Mute the speaker");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SOUND);
+  prop = api_def_prop(sapi, "muted", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", SPK_MUTED);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Mute", "Mute the speaker");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_SOUND);
 #  if 0
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "sound", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Sound");
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Sound", "Sound data-block used by this speaker");
+  prop = api_def_prop(sapi, "sound", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Sound");
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_prop_ui_text(prop, "Sound", "Sound data-block used by this speaker");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_sound_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_sound_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "volume_max", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "volume_max", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Maximum Volume", "Maximum volume, no matter how near the object is");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_volume_max_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_volume_max_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "volume_min", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "volume_min", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(
       prop, "Minimum Volume", "Minimum volume, no matter how far away the object is");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_volume_min_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_volume_min_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
   prop = RNA_def_property(srna, "distance_max", PROP_FLOAT, PROP_NONE);
