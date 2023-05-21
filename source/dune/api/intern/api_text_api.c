@@ -67,42 +67,42 @@ void api_text(ApiStruct *sapi)
   parm = api_def_string(fn, "text", "Text", 0, "", "New text for this data-block");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "from_string", "rna_Text_from_string");
-  RNA_def_function_ui_description(func, "Replace text with this string.");
-  parm = RNA_def_string(func, "text", "Text", 0, "", "");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "from_string", "rna_Text_from_string");
+  api_def_fn_ui_description(fn, "Replace text with this string.");
+  parm = api_def_string(fn, "text", "Text", 0, "", "");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "as_string", "rna_Text_as_string");
-  RNA_def_function_ui_description(func, "Return the text as a string");
-  parm = RNA_def_string(func, "text", "Text", 0, "", "");
-  RNA_def_parameter_flags(parm, PROP_DYNAMIC, PARM_OUTPUT);
+  fn = api_def_fn(sapi, "as_string", "rna_Text_as_string");
+  api_def_fn_ui_description(fn, "Return the text as a string");
+  parm = api_def_string(fn, "text", "Text", 0, "", "");
+  api_def_param_flags(parm, PROP_DYNAMIC, PARM_OUTPUT);
 
-  func = RNA_def_function(
-      srna, "is_syntax_highlight_supported", "ED_text_is_syntax_highlight_supported");
-  RNA_def_function_return(func,
-                          RNA_def_boolean(func, "is_syntax_highlight_supported", false, "", ""));
-  RNA_def_function_ui_description(func,
+  fn = api_def_fn(
+      sapi, "is_syntax_highlight_supported", "ed_text_is_syntax_highlight_supported");
+  api_def_fn_return(fn,
+                          api_def_bool(fn, "is_syntax_highlight_supported", false, "", ""));
+  api_def_fn_ui_description(fn,
                                   "Returns True if the editor supports syntax highlighting "
                                   "for the current text datablock");
 
-  func = RNA_def_function(srna, "select_set", "rna_Text_select_set");
-  RNA_def_function_ui_description(func, "Set selection range by line and character index");
-  parm = RNA_def_int(func, "line_start", 0, INT_MIN, INT_MAX, "Start Line", "", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(
-      func, "char_start", 0, INT_MIN, INT_MAX, "Start Character", "", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "line_end", 0, INT_MIN, INT_MAX, "End Line", "", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "char_end", 0, INT_MIN, INT_MAX, "End Character", "", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "select_set", "rna_Text_select_set");
+  api_def_fn_ui_description(fn, "Set selection range by line and character index");
+  parm = api_def_int(fn, "line_start", 0, INT_MIN, INT_MAX, "Start Line", "", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(
+      fn, "char_start", 0, INT_MIN, INT_MAX, "Start Character", "", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(func, "line_end", 0, INT_MIN, INT_MAX, "End Line", "", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(func, "char_end", 0, INT_MIN, INT_MAX, "End Character", "", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "cursor_set", "rna_Text_cursor_set");
-  RNA_def_function_ui_description(func, "Set cursor by line and (optionally) character index");
-  parm = RNA_def_int(func, "line", 0, 0, INT_MAX, "Line", "", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "character", 0, 0, INT_MAX, "Character", "", 0, INT_MAX);
-  RNA_def_boolean(func, "select", false, "", "Select when moving the cursor");
+  fn = api_def_fn(sapi, "cursor_set", "rna_Text_cursor_set");
+  api_def_fn_ui_description(fn, "Set cursor by line and (optionally) character index");
+  parm = api_def_int(fn, "line", 0, 0, INT_MAX, "Line", "", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "character", 0, 0, INT_MAX, "Character", "", 0, INT_MAX);
+  api_def_bool(fn, "select", false, "", "Select when moving the cursor");
 }
 
 #endif
