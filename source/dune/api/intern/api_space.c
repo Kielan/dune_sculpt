@@ -884,7 +884,7 @@ static void rna_Space_view2d_sync_set(PointerRNA *ptr, bool value)
     return;
   }
 
-  region = BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
+  region = dune_area_find_region_type(area, RGN_TYPE_WINDOW);
   if (region) {
     View2D *v2d = &region->v2d;
     if (value) {
@@ -896,61 +896,61 @@ static void rna_Space_view2d_sync_set(PointerRNA *ptr, bool value)
   }
 }
 
-static void rna_Space_view2d_sync_update(Main *UNUSED(bmain),
+static void api_Space_view2d_sync_update(Main *UNUSED(main),
                                          Scene *UNUSED(scene),
-                                         PointerRNA *ptr)
+                                         ApiPtr *ptr)
 {
   ScrArea *area;
   ARegion *region;
 
-  area = rna_area_from_space(ptr); /* can be NULL */
-  region = BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
+  area = api_area_from_space(ptr); /* can be NULL */
+  region = dune_area_find_region_type(area, RGN_TYPE_WINDOW);
 
   if (region) {
-    bScreen *screen = (bScreen *)ptr->owner_id;
+    Screen *screen = (Screen *)ptr->owner_id;
     View2D *v2d = &region->v2d;
 
-    UI_view2d_sync(screen, area, v2d, V2D_LOCK_SET);
+    ui_view2d_sync(screen, area, v2d, V2D_LOCK_SET);
   }
 }
 
-static void rna_GPencil_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *UNUSED(ptr))
+static void api_Pen_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *UNUSED(ptr))
 {
   bool changed = false;
   /* need set all caches as dirty to recalculate onion skinning */
-  for (Object *ob = bmain->objects.first; ob; ob = ob->id.next) {
-    if (ob->type == OB_GPENCIL_LEGACY) {
+  for (Object *ob = main->objects.first; ob; ob = ob->id.next) {
+    if (ob->type == OB_PEN_LEGACY) {
       bGPdata *gpd = (bGPdata *)ob->data;
-      DEG_id_tag_update(&gpd->id, ID_RECALC_GEOMETRY);
+      graph_id_tag_update(&gpd->id, ID_RECALC_GEOMETRY);
       changed = true;
     }
   }
   if (changed) {
-    WM_main_add_notifier(NC_GPENCIL | NA_EDITED, NULL);
+    wm_main_add_notifier(NC_GPENCIL | NA_EDITED, NULL);
   }
 }
 
 /* Space 3D View */
-static void rna_SpaceView3D_camera_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_SpaceView3D_camera_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   View3D *v3d = (View3D *)(ptr->data);
   if (v3d->scenelock && scene != NULL) {
-    wmWindowManager *wm = bmain->wm.first;
+    wmWindowManager *wm = main->wm.first;
 
     scene->camera = v3d->camera;
-    WM_windows_scene_data_sync(&wm->windows, scene);
+    wm_windows_scene_data_sync(&wm->windows, scene);
   }
 }
 
-static void rna_SpaceView3D_use_local_camera_set(PointerRNA *ptr, bool value)
+static void api_SpaceView3D_use_local_camera_set(PointerRNA *ptr, bool value)
 {
   View3D *v3d = (View3D *)(ptr->data);
-  bScreen *screen = (bScreen *)ptr->owner_id;
+  Screen *screen = (Screen *)ptr->owner_id;
 
   v3d->scenelock = !value;
 
   if (!value) {
-    Scene *scene = ED_screen_scene_find(screen, G_MAIN->wm.first);
+    Scene *scene = ed_screen_scene_find(screen, G_MAIN->wm.first);
     /* NULL if the screen isn't in an active window (happens when setting from Python).
      * This could be moved to the update function, in that case the scene won't relate to the
      * screen so keep it working this way. */
@@ -960,13 +960,13 @@ static void rna_SpaceView3D_use_local_camera_set(PointerRNA *ptr, bool value)
   }
 }
 
-static float rna_View3DOverlay_GridScaleUnit_get(PointerRNA *ptr)
+static float api_View3DOverlay_GridScaleUnit_get(ApiPtr *ptr)
 {
   View3D *v3d = (View3D *)(ptr->data);
-  bScreen *screen = (bScreen *)ptr->owner_id;
-  Scene *scene = ED_screen_scene_find(screen, G_MAIN->wm.first);
+  Screen *screen = (Screen *)ptr->owner_id;
+  Scene *scene = ed_screen_scene_find(screen, G_MAIN->wm.first);
   if (scene != NULL) {
-    return ED_view3d_grid_scale(scene, v3d, NULL);
+    return ed_view3d_grid_scale(scene, v3d, NULL);
   }
   else {
     /* When accessed from non-active screen. */
@@ -974,18 +974,18 @@ static float rna_View3DOverlay_GridScaleUnit_get(PointerRNA *ptr)
   }
 }
 
-static PointerRNA rna_SpaceView3D_region_3d_get(PointerRNA *ptr)
+static ApiPtr api_SpaceView3D_region_3d_get(PointerRNA *ptr)
 {
   View3D *v3d = (View3D *)(ptr->data);
-  ScrArea *area = rna_area_from_space(ptr);
+  ScrArea *area = api_area_from_space(ptr);
   void *regiondata = NULL;
   if (area) {
-    ListBase *regionbase = (area->spacedata.first == v3d) ? &area->regionbase : &v3d->regionbase;
+    List *regionbase = (area->spacedata.first == v3d) ? &area->regionbase : &v3d->regionbase;
     ARegion *region = regionbase->last; /* always last in list, weak. */
     regiondata = region->regiondata;
   }
 
-  return rna_pointer_inherit_refine(ptr, &RNA_RegionView3D, regiondata);
+  return api_ptr_inherit_refine(ptr, &Api_RegionView3D, regiondata);
 }
 
 static void rna_SpaceView3D_object_type_visibility_update(Main *UNUSED(bmain),
