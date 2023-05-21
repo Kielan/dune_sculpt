@@ -886,11 +886,11 @@ static void api_def_texture_wood(DuneApi *dapi)
   api_def_struct_sdna(sapi, "Tex");
 
   prop = api_def_prop(sapi, "noise_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_stype(prop, NULL, "noisesize");
-  RNA_def_prop_range(prop, 0.0001, FLT_MAX);
-  RNA_def_prop_ui_range(prop, 0.0001, 2, 1, 2);
-  RNA_def_prop_ui_text(prop, "Noise Size", "Scaling for noise input");
-  RNA_def_prop_update(prop, 0, "api_Texture_update");
+  api_def_prop_float_stype(prop, NULL, "noisesize");
+  api_def_prop_range(prop, 0.0001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001, 2, 1, 2);
+  api_def_prop_ui_text(prop, "Noise Size", "Scaling for noise input");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "turbulence", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "turbul");
@@ -984,13 +984,13 @@ static void api_def_texture_marble(DuneApi *dapi)
   api_def_prop_enum_sdna(prop, NULL, "stype");
   api_def_prop_enum_items(prop, prop_marble_stype);
   api_def_prop_ui_text(prop, "Pattern", "");
-  RNA_def_property_update(prop, 0, "api_Texture_nodes_update");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 
-  prop = RNA_def_property(srna, "noise_basis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisebasis");
-  RNA_def_property_enum_items(prop, prop_noise_basis_items);
-  RNA_def_property_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
-  RNA_def_property_update(prop, 0, "api_Texture_nodes_update");
+  prop = api_def_prop(sapi, "noise_basis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stypes(prop, NULL, "noisebasis");
+  api_def_prop_enum_items(prop, prop_noise_basis_items);
+  api_def_prop_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 
   prop = api_def_prop(srna, "noise_basis_2", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_sdna(prop, NULL, "noisebasis2");
@@ -1016,25 +1016,25 @@ static void api_def_texture_magic(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "turbulence", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "turbul");
-  RNA_def_property_range(prop, 0.0001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0001, 200, 10, 2);
-  RNA_def_property_ui_text(prop, "Turbulence", "Turbulence of the noise");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  api_def_property_range(prop, 0.0001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001, 200, 10, 2);
+  api_def_prop_ui_text(prop, "Turbulence", "Turbulence of the noise");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_depth", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "noisedepth");
-  RNA_def_property_range(prop, 0, 30);
-  RNA_def_property_ui_range(prop, 0, 24, 1, 2);
-  RNA_def_property_ui_text(prop, "Noise Depth", "Depth of the noise");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_depth", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "noisedepth");
+  api_def_prop_range(prop, 0, 30);
+  api_def_prop_ui_range(prop, 0, 24, 1, 2);
+  api_def_prop_ui_text(prop, "Noise Depth", "Depth of the noise");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 }
 
-static void rna_def_texture_blend(BlenderRNA *brna)
+static void api_def_texture_blend(DuneApu *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_blend_progression[] = {
+  static const EnumPropItem prop_blend_progression[] = {
       {TEX_LIN, "LINEAR", 0, "Linear", "Create a linear progression"},
       {TEX_QUAD, "QUADRATIC", 0, "Quadratic", "Create a quadratic progression"},
       {TEX_EASE, "EASING", 0, "Easing", "Create a progression easing from one step to the next"},
@@ -1049,56 +1049,56 @@ static void rna_def_texture_blend(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_flip_axis_items[] = {
+  static const EnumPropItem prop_flip_axis_items[] = {
       {0, "HORIZONTAL", 0, "Horizontal", "No flipping"},
       {TEX_FLIPBLEND, "VERTICAL", 0, "Vertical", "Flip the texture's X and Y axis"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "BlendTexture", "Texture");
-  RNA_def_struct_ui_text(srna, "Blend Texture", "Procedural color blending texture");
-  RNA_def_struct_sdna(srna, "Tex");
+  sapi = api_def_struct(dapi, "BlendTexture", "Texture");
+  api_def_struct_ui_text(sapi, "Blend Texture", "Procedural color blending texture");
+  api_def_struct_stype(sapi, "Tex");
 
-  prop = RNA_def_property(srna, "progression", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "stype");
-  RNA_def_property_enum_items(prop, prop_blend_progression);
-  RNA_def_property_ui_text(prop, "Progression", "Style of the color blending");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(sapi, "progression", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "stype");
+  api_def_prop_enum_items(prop, prop_blend_progression);
+  api_def_prop_ui_text(prop, "Progression", "Style of the color blending");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 
-  prop = RNA_def_property(srna, "use_flip_axis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "flag");
-  RNA_def_property_enum_items(prop, prop_flip_axis_items);
-  RNA_def_property_ui_text(prop, "Flip Axis", "Flip the texture's X and Y axis");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(sapi, "use_flip_axis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "flag");
+  api_def_prop_enum_items(prop, prop_flip_axis_items);
+  api_def_prop_ui_text(prop, "Flip Axis", "Flip the texture's X and Y axis");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 }
 
-static void rna_def_texture_stucci(BlenderRNA *brna)
+static void api_def_texture_stucci(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_stucci_stype[] = {
+  static const EnumPropItem prop_stucci_stype[] = {
       {TEX_PLASTIC, "PLASTIC", 0, "Plastic", "Use standard stucci"},
       {TEX_WALLIN, "WALL_IN", 0, "Wall In", "Create Dimples"},
       {TEX_WALLOUT, "WALL_OUT", 0, "Wall Out", "Create Ridges"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "StucciTexture", "Texture");
-  RNA_def_struct_ui_text(srna, "Stucci Texture", "Procedural noise texture");
-  RNA_def_struct_sdna(srna, "Tex");
+  sapi = api_def_struct(dapi, "StucciTexture", "Texture");
+  api_def_struct_ui_text(sapi, "Stucci Texture", "Procedural noise texture");
+  api_def_struct_sdna(sapi, "Tex");
 
-  prop = RNA_def_property(srna, "turbulence", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "turbul");
-  RNA_def_property_range(prop, 0.0001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0001, 200, 10, 2);
-  RNA_def_property_ui_text(prop, "Turbulence", "Turbulence of the noise");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "turbulence", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "turbul");
+  api_def_prop_range(prop, 0.0001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001, 200, 10, 2);
+  api_def_prop_ui_text(prop, "Turbulence", "Turbulence of the noise");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_basis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisebasis");
-  RNA_def_property_enum_items(prop, prop_noise_basis_items);
-  RNA_def_property_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
+  prop = api_def_prop(sapi, "noise_basis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "noisebasis");
+  api_def_prop_enum_items(prop, prop_noise_basis_items);
+  api_def_prop_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 
   prop = RNA_def_property(srna, "noise_scale", PROP_FLOAT, PROP_NONE);
