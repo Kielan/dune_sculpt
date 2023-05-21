@@ -1,25 +1,25 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include "MEM_guardedalloc.h"
+#include "mem_guardedalloc.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_text.h"
+#include "dune_text.h"
 
-#include "ED_text.h"
+#include "ed_text.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_text_types.h"
+#include "api_text_types.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-static void rna_Text_filepath_get(PointerRNA *ptr, char *value)
+static void api_Text_filepath_get(ApiPtr *ptr, char *value)
 {
   Text *text = (Text *)ptr->data;
 
@@ -31,32 +31,32 @@ static void rna_Text_filepath_get(PointerRNA *ptr, char *value)
   }
 }
 
-static int rna_Text_filepath_length(PointerRNA *ptr)
+static int api_Text_filepath_length(ApiPtr *ptr)
 {
   Text *text = (Text *)ptr->data;
   return (text->filepath) ? strlen(text->filepath) : 0;
 }
 
-static void rna_Text_filepath_set(PointerRNA *ptr, const char *value)
+static void api_Text_filepath_set(ApiPtr *ptr, const char *value)
 {
   Text *text = (Text *)ptr->data;
 
   if (text->filepath) {
-    MEM_freeN(text->filepath);
+    mem_freen(text->filepath);
   }
 
   if (value[0]) {
-    text->filepath = BLI_strdup(value);
+    text->filepath = lib_strdup(value);
   }
   else {
     text->filepath = NULL;
   }
 }
 
-static bool rna_Text_modified_get(PointerRNA *ptr)
+static bool api_Text_modified_get(ApiPtr *ptr)
 {
   Text *text = (Text *)ptr->data;
-  return BKE_text_file_modified_check(text) != 0;
+  return dune_text_file_modified_check(text) != 0;
 }
 
 static int rna_Text_current_line_index_get(PointerRNA *ptr)
