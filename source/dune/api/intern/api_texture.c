@@ -168,104 +168,104 @@ static ApiStruct *api_Texture_refine(struct PointerRNA *ptr)
   }
 }
 
-static void rna_Texture_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Texture_update(Main *main, Scene *UNUSED(scene), PointerRNA *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   if (GS(id->name) == ID_TE) {
     Tex *tex = (Tex *)ptr->owner_id;
 
-    DEG_id_tag_update(&tex->id, 0);
-    DEG_id_tag_update(&tex->id, ID_RECALC_EDITORS);
-    WM_main_add_notifier(NC_TEXTURE, tex);
-    WM_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, NULL);
+    graph_id_tag_update(&tex->id, 0);
+    graph_id_tag_update(&tex->id, ID_RECALC_EDITORS);
+    wm_main_add_notifier(NC_TEXTURE, tex);
+    wm_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, NULL);
   }
   else if (GS(id->name) == ID_NT) {
-    bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
-    ED_node_tree_propagate_change(NULL, bmain, ntree);
+    NodeTree *ntree = (NodeTree *)ptr->owner_id;
+    ed_node_tree_propagate_change(NULL, main, ntree);
   }
 }
 
-static void rna_Texture_mapping_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_Texture_mapping_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   TexMapping *texmap = ptr->data;
-  BKE_texture_mapping_init(texmap);
+  dune_texture_mapping_init(texmap);
 
   if (GS(id->name) == ID_NT) {
-    bNodeTree *ntree = (bNodeTree *)ptr->owner_id;
+    NodeTree *ntree = (NodeTree *)ptr->owner_id;
     /* Try to find and tag the node that this #TexMapping belongs to. */
-    LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
+    LIST_FOREACH (Node *, node, &ntree->nodes) {
       /* This assumes that the #TexMapping is stored at the beginning of the node storage. This is
        * generally true, see #NodeTexBase. If the assumption happens to be false, there might be a
        * missing update. */
       if (node->storage == texmap) {
-        BKE_ntree_update_tag_node_property(ntree, node);
+        dune_ntree_update_tag_node_prop(ntree, node);
       }
     }
   }
 
-  rna_Texture_update(bmain, scene, ptr);
+  api_Texture_update(main, scene, ptr);
 }
 
-static void rna_Color_mapping_update(Main *UNUSED(bmain),
+static void api_Color_mapping_update(Main *UNUSED(main),
                                      Scene *UNUSED(scene),
-                                     PointerRNA *UNUSED(ptr))
+                                     ApiPtr *UNUSED(ptr))
 {
   /* nothing to do */
 }
 
 /* Used for Texture Properties, used (also) for/in Nodes */
-static void rna_Texture_nodes_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Texture_nodes_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Tex *tex = (Tex *)ptr->owner_id;
 
-  DEG_id_tag_update(&tex->id, 0);
-  DEG_id_tag_update(&tex->id, ID_RECALC_EDITORS);
-  WM_main_add_notifier(NC_TEXTURE | ND_NODES, tex);
+  graph_id_tag_update(&tex->id, 0);
+  graph_id_tag_update(&tex->id, ID_RECALC_EDITORS);
+  wm_main_add_notifier(NC_TEXTURE | ND_NODES, tex);
 }
 
-static void rna_Texture_type_set(PointerRNA *ptr, int value)
+static void api_Texture_type_set(ApiPtr *ptr, int value)
 {
   Tex *tex = (Tex *)ptr->data;
 
-  BKE_texture_type_set(tex, value);
+  dune_texture_type_set(tex, value);
 }
 
-void rna_TextureSlotTexture_update(bContext *C, PointerRNA *ptr)
+void api_TextureSlotTexture_update(Cxt *C, ApiPtr *ptr)
 {
-  DEG_relations_tag_update(CTX_data_main(C));
-  rna_TextureSlot_update(C, ptr);
+  graph_relations_tag_update(cxt_data_main(C));
+  api_TextureSlot_update(C, ptr);
 }
 
-void rna_TextureSlot_update(bContext *C, PointerRNA *ptr)
+void api_TextureSlot_update(Cxt *C, ApiPtr *ptr)
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
-  DEG_id_tag_update(id, 0);
+  graph_id_tag_update(id, 0);
 
   switch (GS(id->name)) {
     case ID_MA:
-      WM_main_add_notifier(NC_MATERIAL | ND_SHADING, id);
-      WM_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, id);
+      wm_main_add_notifier(NC_MATERIAL | ND_SHADING, id);
+      wm_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, id);
       break;
     case ID_WO:
-      WM_main_add_notifier(NC_WORLD, id);
+      wm_main_add_notifier(NC_WORLD, id);
       break;
     case ID_LA:
-      WM_main_add_notifier(NC_LAMP | ND_LIGHTING, id);
-      WM_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, id);
+      wm_main_add_notifier(NC_LAMP | ND_LIGHTING, id);
+      wm_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, id);
       break;
     case ID_BR: {
-      Scene *scene = CTX_data_scene(C);
+      Scene *scene = cxt_data_scene(C);
       MTex *mtex = ptr->data;
-      ViewLayer *view_layer = CTX_data_view_layer(C);
-      BKE_paint_invalidate_overlay_tex(scene, view_layer, mtex->tex);
-      WM_main_add_notifier(NC_BRUSH, id);
+      ViewLayer *view_layer = cxt_data_view_layer(C);
+      dune_paint_invalidate_overlay_tex(scene, view_layer, mtex->tex);
+      wm_main_add_notifier(NC_BRUSH, id);
       break;
     }
     case ID_LS:
-      WM_main_add_notifier(NC_LINESTYLE, id);
+      wm_main_add_notifier(NC_LINESTYLE, id);
       break;
     case ID_PA: {
       MTex *mtex = ptr->data;
@@ -278,8 +278,8 @@ void rna_TextureSlot_update(bContext *C, PointerRNA *ptr)
         recalc |= ID_RECALC_PSYS_CHILD;
       }
 
-      DEG_id_tag_update(id, recalc);
-      WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
+      graph_id_tag_update(id, recalc);
+      wm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
       break;
     }
     default:
@@ -287,7 +287,7 @@ void rna_TextureSlot_update(bContext *C, PointerRNA *ptr)
   }
 }
 
-char *rna_TextureSlot_path(const PointerRNA *ptr)
+char *api_TextureSlot_path(const ApiPtr *ptr)
 {
   MTex *mtex = ptr->data;
 
@@ -297,22 +297,22 @@ char *rna_TextureSlot_path(const PointerRNA *ptr)
    */
   if (ptr->owner_id) {
     if (GS(ptr->owner_id->name) == ID_BR) {
-      return BLI_strdup("texture_slot");
+      return lib_strdup("texture_slot");
     }
     else {
-      PointerRNA id_ptr;
-      PropertyRNA *prop;
+      ApiPtr id_ptr;
+      ApiProp *prop;
 
       /* find the 'textures' property of the ID-struct */
-      RNA_id_pointer_create(ptr->owner_id, &id_ptr);
-      prop = RNA_struct_find_property(&id_ptr, "texture_slots");
+      api_id_ptr_create(ptr->owner_id, &id_ptr);
+      prop = api_struct_find_prop(&id_ptr, "texture_slots");
 
       /* get an iterator for this property, and try to find the relevant index */
       if (prop) {
-        int index = RNA_property_collection_lookup_index(&id_ptr, prop, ptr);
+        int index = apu_prop_collection_lookup_index(&id_ptr, prop, ptr);
 
         if (index != -1) {
-          return BLI_sprintfN("texture_slots[%d]", index);
+          return lib_sprintfN("texture_slots[%d]", index);
         }
       }
     }
@@ -322,15 +322,15 @@ char *rna_TextureSlot_path(const PointerRNA *ptr)
   if (mtex->tex) {
     char name_esc[(sizeof(mtex->tex->id.name) - 2) * 2];
 
-    BLI_str_escape(name_esc, mtex->tex->id.name + 2, sizeof(name_esc));
-    return BLI_sprintfN("texture_slots[\"%s\"]", name_esc);
+    lib_str_escape(name_esc, mtex->tex->id.name + 2, sizeof(name_esc));
+    return lib_sprintfN("texture_slots[\"%s\"]", name_esc);
   }
   else {
-    return BLI_strdup("texture_slots[0]");
+    return lib_strdup("texture_slots[0]");
   }
 }
 
-static int rna_TextureSlot_name_length(PointerRNA *ptr)
+static int api_TextureSlot_name_length(ApiPtr *ptr)
 {
   MTex *mtex = ptr->data;
 
@@ -341,7 +341,7 @@ static int rna_TextureSlot_name_length(PointerRNA *ptr)
   return 0;
 }
 
-static void rna_TextureSlot_name_get(PointerRNA *ptr, char *str)
+static void api_TextureSlot_name_get(ApiPtr *ptr, char *str)
 {
   MTex *mtex = ptr->data;
 
@@ -353,15 +353,15 @@ static void rna_TextureSlot_name_get(PointerRNA *ptr, char *str)
   }
 }
 
-static int rna_TextureSlot_output_node_get(PointerRNA *ptr)
+static int api_TextureSlot_output_node_get(ApiPtr *ptr)
 {
   MTex *mtex = ptr->data;
   Tex *tex = mtex->tex;
   int cur = mtex->which_output;
 
   if (tex) {
-    bNodeTree *ntree = tex->nodetree;
-    bNode *node;
+    NodeTree *ntree = tex->nodetree;
+    Node *node;
     if (ntree) {
       for (node = ntree->nodes.first; node; node = node->next) {
         if (node->type == TEX_NODE_OUTPUT) {
@@ -377,45 +377,45 @@ static int rna_TextureSlot_output_node_get(PointerRNA *ptr)
   return 0;
 }
 
-static const EnumPropertyItem *rna_TextureSlot_output_node_itemf(bContext *UNUSED(C),
-                                                                 PointerRNA *ptr,
-                                                                 PropertyRNA *UNUSED(prop),
-                                                                 bool *r_free)
+static const EnumPropItem *api_TextureSlot_output_node_itemf(Cxt *UNUSED(C),
+                                                             ApiPtr *ptr,
+                                                             ApiProp *UNUSED(prop),
+                                                             bool *r_free)
 {
   MTex *mtex = ptr->data;
   Tex *tex = mtex->tex;
-  EnumPropertyItem *item = NULL;
+  EnumPropItem *item = NULL;
   int totitem = 0;
 
   if (tex) {
-    bNodeTree *ntree = tex->nodetree;
+    NodeTree *ntree = tex->nodetree;
     if (ntree) {
-      EnumPropertyItem tmp = {0, "", 0, "", ""};
-      bNode *node;
+      EnumPropItem tmp = {0, "", 0, "", ""};
+      Node *node;
 
       tmp.value = 0;
       tmp.name = "Not Specified";
-      tmp.identifier = "NOT_SPECIFIED";
-      RNA_enum_item_add(&item, &totitem, &tmp);
+      tmp.id = "NOT_SPECIFIED";
+      api_enum_item_add(&item, &totitem, &tmp);
 
       for (node = ntree->nodes.first; node; node = node->next) {
         if (node->type == TEX_NODE_OUTPUT) {
           tmp.value = node->custom1;
           tmp.name = ((TexNodeOutput *)node->storage)->name;
-          tmp.identifier = tmp.name;
-          RNA_enum_item_add(&item, &totitem, &tmp);
+          tmp.id = tmp.name;
+          api_enum_item_add(&item, &totitem, &tmp);
         }
       }
     }
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static void rna_Texture_use_color_ramp_set(PointerRNA *ptr, bool value)
+static void api_Texture_use_color_ramp_set(ApiPtr *ptr, bool value)
 {
   Tex *tex = (Tex *)ptr->data;
 
@@ -427,11 +427,11 @@ static void rna_Texture_use_color_ramp_set(PointerRNA *ptr, bool value)
   }
 
   if ((tex->flag & TEX_COLORBAND) && tex->coba == NULL) {
-    tex->coba = BKE_colorband_add(false);
+    tex->coba = dune_colorband_add(false);
   }
 }
 
-static void rna_Texture_use_nodes_update(bContext *C, PointerRNA *ptr)
+static void api_Texture_use_nodes_update(Cxt *C, ApiPtr *ptr)
 {
   Tex *tex = (Tex *)ptr->data;
 
@@ -439,14 +439,14 @@ static void rna_Texture_use_nodes_update(bContext *C, PointerRNA *ptr)
     tex->type = 0;
 
     if (tex->nodetree == NULL) {
-      ED_node_texture_default(C, tex);
+      ed_node_texture_default(C, tex);
     }
   }
 
-  rna_Texture_nodes_update(CTX_data_main(C), CTX_data_scene(C), ptr);
+  api_Texture_nodes_update(cxt_data_main(C), cxt_data_scene(C), ptr);
 }
 
-static void rna_ImageTexture_mipmap_set(PointerRNA *ptr, bool value)
+static void api_ImageTexture_mipmap_set(ApiPtr *ptr, bool value)
 {
   Tex *tex = (Tex *)ptr->data;
 
@@ -460,9 +460,9 @@ static void rna_ImageTexture_mipmap_set(PointerRNA *ptr, bool value)
 
 #else
 
-static void rna_def_texmapping(BlenderRNA *brna)
+static void api_def_texmapping(DuneApi *dapi)
 {
-  static const EnumPropertyItem prop_mapping_items[] = {
+  static const EnumPropItem prop_mapping_items[] = {
       {MTEX_FLAT, "FLAT", 0, "Flat", "Map X and Y coordinates directly"},
       {MTEX_CUBE, "CUBE", 0, "Cube", "Map using the normal vector"},
       {MTEX_TUBE, "TUBE", 0, "Tube", "Map with Z as central axis"},
@@ -470,7 +470,7 @@ static void rna_def_texmapping(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_xyz_mapping_items[] = {
+  static const EnumPropItem prop_xyz_mapping_items[] = {
       {0, "NONE", 0, "None", ""},
       {1, "X", 0, "X", ""},
       {2, "Y", 0, "Y", ""},
@@ -478,29 +478,29 @@ static void rna_def_texmapping(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "TexMapping", NULL);
-  RNA_def_struct_ui_text(srna, "Texture Mapping", "Texture coordinate mapping settings");
+  sapi = api_def_struct(dapi, "TexMapping", NULL);
+  api_def_struct_ui_text(sapi, "Texture Mapping", "Texture coordinate mapping settings");
 
-  prop = RNA_def_property(srna, "vector_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "type");
-  RNA_def_property_enum_items(prop, rna_enum_mapping_type_items);
-  RNA_def_property_ui_text(prop, "Type", "Type of vector that the mapping transforms");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "vector_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "type");
+  api_def_prop_enum_items(prop, api_enum_mapping_type_items);
+  api_def_prop_ui_text(prop, "Type", "Type of vector that the mapping transforms");
+  api_def_prop_update(prop, 0, "api_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "translation", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "loc");
-  RNA_def_property_ui_text(prop, "Location", "");
-  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "translation", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "loc");
+  api_def_prop_ui_text(prop, "Location", "");
+  api_def_prop_ui_range(prop, -FLT_MAX, FLT_MAX, 1, API_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_update(prop, 0, "api_Texture_mapping_update");
 
   /* Not PROP_XYZ, this is now in radians, no more degrees */
-  prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_EULER);
-  RNA_def_property_float_sdna(prop, NULL, "rot");
-  RNA_def_property_ui_text(prop, "Rotation", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_EULER);
+  api_def_prop_float_stype(prop, NULL, "rot");
+  api_def_prop_ui_text(prop, "Rotation", "");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
   prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
   RNA_def_property_float_sdna(prop, NULL, "size");
