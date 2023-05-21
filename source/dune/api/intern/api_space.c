@@ -721,13 +721,13 @@ static void api_Space_bool_from_region_flag_update_by_type(Cxt *C,
 /** Region Flag Access (Typed Callbacks) **/
 
 /* Header Region. */
-static bool rna_Space_show_region_header_get(PointerRNA *ptr)
+static bool api_Space_show_region_header_get(ApiPtr *ptr)
 {
-  return !rna_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_HEADER, RGN_FLAG_HIDDEN);
+  return !api_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_HEADER, RGN_FLAG_HIDDEN);
 }
-static void rna_Space_show_region_header_set(PointerRNA *ptr, bool value)
+static void api_Space_show_region_header_set(ApiPtr *ptr, bool value)
 {
-  rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_HEADER, RGN_FLAG_HIDDEN, !value);
+  api_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_HEADER, RGN_FLAG_HIDDEN, !value);
 
   /* Special case, never show the tool properties when the header is invisible. */
   bool value_for_tool_header = value;
@@ -738,24 +738,24 @@ static void rna_Space_show_region_header_set(PointerRNA *ptr, bool value)
       value_for_tool_header = !(region_tool_header->flag & RGN_FLAG_HIDDEN_BY_USER);
     }
   }
-  rna_Space_bool_from_region_flag_set_by_type(
+  api_Space_bool_from_region_flag_set_by_type(
       ptr, RGN_TYPE_TOOL_HEADER, RGN_FLAG_HIDDEN, !value_for_tool_header);
 }
-static void rna_Space_show_region_header_update(bContext *C, PointerRNA *ptr)
+static void api_Space_show_region_header_update(Cxt *C, ApiPtr *ptr)
 {
-  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_HEADER, RGN_FLAG_HIDDEN);
+  api_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_HEADER, RGN_FLAG_HIDDEN);
 }
 
 /* Footer Region. */
-static bool rna_Space_show_region_footer_get(PointerRNA *ptr)
+static bool api_Space_show_region_footer_get(ApiPtr *ptr)
 {
-  return !rna_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN);
+  return !api_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN);
 }
-static void rna_Space_show_region_footer_set(PointerRNA *ptr, bool value)
+static void api_Space_show_region_footer_set(ApiPtr *ptr, bool value)
 {
-  rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN, !value);
+  api_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN, !value);
 }
-static void rna_Space_show_region_footer_update(bContext *C, PointerRNA *ptr)
+static void rna_Space_show_region_footer_update(Cxt *C, ApiPtr *ptr)
 {
   rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN);
 }
