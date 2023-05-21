@@ -5,15 +5,15 @@
 
 #include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_global.h"
+#  include "dune_global.h"
 
-#  include "ED_fileselect.h"
-#  include "ED_screen.h"
-#  include "ED_text.h"
+#  include "ed_fileselect.h"
+#  include "ed_screen.h"
+#  include "ed_text.h"
 
-int rna_object_type_visibility_icon_get_common(int object_type_exclude_viewport,
+int api_object_type_visibility_icon_get_common(int object_type_exclude_viewport,
                                                const int *object_type_exclude_select)
 {
   const int view_value = (object_type_exclude_viewport != 0);
@@ -28,9 +28,9 @@ int rna_object_type_visibility_icon_get_common(int object_type_exclude_viewport,
   return view_value ? ICON_HIDE_ON : ICON_HIDE_OFF;
 }
 
-static void rna_RegionView3D_update(ID *id, RegionView3D *rv3d, bContext *C)
+static void api_RegionView3D_update(Id *id, RegionView3D *rv3d, Cxt *C)
 {
-  bScreen *screen = (bScreen *)id;
+  Screen *screen = (Screen *)id;
 
   ScrArea *area;
   ARegion *region;
@@ -38,86 +38,86 @@ static void rna_RegionView3D_update(ID *id, RegionView3D *rv3d, bContext *C)
   area_region_from_regiondata(screen, rv3d, &area, &region);
 
   if (area && region && area->spacetype == SPACE_VIEW3D) {
-    Main *bmain = CTX_data_main(C);
+    Main *main = ctx_data_main(C);
     View3D *v3d = area->spacedata.first;
-    wmWindowManager *wm = CTX_wm_manager(C);
+    wmWindowManager *wm = cxt_wm_manager(C);
     wmWindow *win;
 
     for (win = wm->windows.first; win; win = win->next) {
-      if (WM_window_get_active_screen(win) == screen) {
-        Scene *scene = WM_window_get_active_scene(win);
-        ViewLayer *view_layer = WM_window_get_active_view_layer(win);
-        Depsgraph *depsgraph = BKE_scene_ensure_depsgraph(bmain, scene, view_layer);
+      if (wm_window_get_active_screen(win) == screen) {
+        Scene *scene = wm_window_get_active_scene(win);
+        ViewLayer *view_layer = wm_window_get_active_view_layer(win);
+        Graph *graph = dune_scene_ensure_graph(main, scene, view_layer);
 
-        ED_view3d_update_viewmat(depsgraph, scene, v3d, region, NULL, NULL, NULL, false);
+        ed_view3d_update_viewmat(graph, scene, v3d, region, NULL, NULL, NULL, false);
         break;
       }
     }
   }
 }
 
-static void rna_SpaceTextEditor_region_location_from_cursor(
-    ID *id, SpaceText *st, int line, int column, int r_pixel_pos[2])
+static void api_SpaceTextEditor_region_location_from_cursor(
+    Id *id, SpaceText *st, int line, int column, int r_pixel_pos[2])
 {
-  bScreen *screen = (bScreen *)id;
-  ScrArea *area = BKE_screen_find_area_from_space(screen, (SpaceLink *)st);
+  Screen *screen = (Screen *)id;
+  ScrArea *area = dune_screen_find_area_from_space(screen, (SpaceLink *)st);
   if (area) {
-    ARegion *region = BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
+    ARegion *region = dune_area_find_region_type(area, RGN_TYPE_WINDOW);
     const int cursor_co[2] = {line, column};
-    ED_text_region_location_from_cursor(st, region, cursor_co, r_pixel_pos);
+    ed_text_region_location_from_cursor(st, region, cursor_co, r_pixel_pos);
   }
 }
 
 #else
 
-void RNA_api_region_view3d(StructRNA *srna)
+void api_region_view3d(ApiStruct *sapi)
 {
-  FunctionRNA *func;
+  ApiFn *fn;
 
-  func = RNA_def_function(srna, "update", "rna_RegionView3D_update");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_CONTEXT);
-  RNA_def_function_ui_description(func, "Recalculate the view matrices");
+  fn = api_def_fn(sapi, "update", "api_RegionView3D_update");
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_CXT);
+  api_def_fn_ui_description(fn, "Recalculate the view matrices");
 }
 
-void RNA_api_space_node(StructRNA *srna)
+void api_space_node(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(
-      srna, "cursor_location_from_region", "rna_SpaceNodeEditor_cursor_location_from_region");
-  RNA_def_function_ui_description(func, "Set the cursor location using region coordinates");
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
-  parm = RNA_def_int(func, "x", 0, INT_MIN, INT_MAX, "x", "Region x coordinate", -10000, 10000);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "y", 0, INT_MIN, INT_MAX, "y", "Region y coordinate", -10000, 10000);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(
+      sapi, "cursor_location_from_region", "api_SpaceNodeEditor_cursor_location_from_region");
+  api_def_fn_ui_description(fb, "Set the cursor location using region coordinates");
+  api_def_fn_flag(fn, FN_USE_CXT);
+  parm = api_def_int(fn, "x", 0, INT_MIN, INT_MAX, "x", "Region x coordinate", -10000, 10000);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "y", 0, INT_MIN, INT_MAX, "y", "Region y coordinate", -10000, 10000);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_api_space_text(StructRNA *srna)
+void api_space_text(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(
-      srna, "region_location_from_cursor", "rna_SpaceTextEditor_region_location_from_cursor");
-  RNA_def_function_ui_description(
-      func, "Retrieve the region position from the given line and character position");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  parm = RNA_def_int(func, "line", 0, INT_MIN, INT_MAX, "Line", "Line index", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func, "column", 0, INT_MIN, INT_MAX, "Column", "Column index", 0, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int_array(
-      func, "result", 2, NULL, -1, INT_MAX, "", "Region coordinates", -1, INT_MAX);
-  RNA_def_function_output(func, parm);
+  fn = api_def_fn(
+      sapi, "region_location_from_cursor", "api_SpaceTextEditor_region_location_from_cursor");
+  api_def_fn_ui_description(
+      fn, "Retrieve the region position from the given line and character position");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  parm = api_def_int(fn, "line", 0, INT_MIN, INT_MAX, "Line", "Line index", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn, "column", 0, INT_MIN, INT_MAX, "Column", "Column index", 0, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int_array(
+      fn, "result", 2, NULL, -1, INT_MAX, "", "Region coordinates", -1, INT_MAX);
+  api_def_fn_output(fn, parm);
 }
 
-void rna_def_object_type_visibility_flags_common(StructRNA *srna,
+void api_def_object_type_visibility_flags_common(ApiStruct *sapi,
                                                  int noteflag,
-                                                 const char *update_func)
+                                                 const char *update_fn)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
   struct {
     const char *name;
@@ -164,28 +164,28 @@ void rna_def_object_type_visibility_flags_common(StructRNA *srna,
   };
   for (int mask_index = 0; mask_index < 2; mask_index++) {
     for (int type_index = 0; type_index < ARRAY_SIZE(info); type_index++) {
-      prop = RNA_def_property(
-          srna, info[type_index].identifier[mask_index], PROP_BOOLEAN, PROP_NONE);
-      RNA_def_property_boolean_negative_sdna(
+      prop = api_def_prop(
+          sapi, info[type_index].id[mask_index], PROP_BOOL, PROP_NONE);
+      api_def_prop_bool_negative_stype(
           prop, NULL, view_mask_member[mask_index], info[type_index].type_mask);
-      RNA_def_property_ui_text(prop, info[type_index].name, "");
-      RNA_def_property_update(prop, noteflag, update_func);
+      api_def_prop_ui_text(prop, info[type_index].name, "");
+      api_def_prop_update(prop, noteflag, update_func);
     }
   }
 }
 
-void RNA_api_space_filebrowser(StructRNA *srna)
+void api_space_filebrowser(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "activate_asset_by_id", "ED_fileselect_activate_by_id");
-  RNA_def_function_ui_description(
-      func, "Activate and select the asset entry that represents the given ID");
+  fn = api_def_fn(sapi, "activate_asset_by_id", "ED_fileselect_activate_by_id");
+  api_def_fn_ui_description(
+      fn, "Activate and select the asset entry that represents the given ID");
 
-  parm = RNA_def_property(func, "id_to_activate", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(parm, "ID");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_prop(fn, "id_to_activate", PROP_POINTER, PROP_NONE);
+  api_def_prop_struct_type(parm, "ID");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   parm = RNA_def_boolean(
       func,
