@@ -70,97 +70,97 @@ static void api_def_speaker(DuneApi *dapi)
   api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "distance_max", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "distance_max", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(
       prop,
       "Maximum Distance",
       "Maximum distance for volume calculation, no matter how far away the object is");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_distance_max_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_distance_max_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "distance_reference", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "distance_reference", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(
       prop, "Reference Distance", "Reference distance at which volume is 100%");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_distance_reference_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_distance_reference_set", NULL
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "attenuation", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "attenuation", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(
       prop, "Attenuation", "How strong the distance affects volume, depending on distance model");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_attenuation_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_attenuation_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "cone_angle_outer", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 360.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cone_angle_outer", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 360.0f);
+  api_def_prop_ui_text(
       prop,
       "Outer Cone Angle",
       "Angle of the outer cone, in degrees, outside this cone the volume is "
       "the outer cone volume, between inner and outer cone the volume is interpolated");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_cone_angle_outer_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_cone_angle_outer_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "cone_angle_inner", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 360.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "cone_angle_inner", PROP_FLOAT, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 360.0f);
+  api_def_prop_ui_text(
       prop,
       "Inner Cone Angle",
       "Angle of the inner cone, in degrees, inside the cone the volume is 100%");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_cone_angle_inner_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "rna_Speaker_cone_angle_inner_set", NULL
+  api_def_prop_update(prop, 0, "rna_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "cone_volume_outer", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Outer Cone Volume", "Volume outside the outer cone");
+  prop = api_def_prop(sapi, "cone_volume_outer", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Outer Cone Volume", "Volume outside the outer cone");
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_cone_volume_outer_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_cone_volume_outer_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "volume", PROP_FLOAT, PROP_FACTOR);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Volume", "How loud the sound is");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SOUND);
+  prop = api_def_prop(sapi, "volume", PROP_FLOAT, PROP_FACTOR);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Volume", "How loud the sound is");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_SOUND);
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_volume_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_volume_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
-  prop = RNA_def_property(srna, "pitch", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.1f, 10.0f);
-  RNA_def_property_ui_text(prop, "Pitch", "Playback pitch of the sound");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SOUND);
+  prop = api_def_prop(sapi, "pitch", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.1f, 10.0f);
+  api_def_prop_ui_text(prop, "Pitch", "Playback pitch of the sound");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_SOUND);
 #  if 0
-  RNA_def_property_float_funcs(prop, NULL, "rna_Speaker_pitch_set", NULL);
-  RNA_def_property_update(prop, 0, "rna_Speaker_update");
+  api_def_prop_float_fns(prop, NULL, "api_Speaker_pitch_set", NULL);
+  api_def_prop_update(prop, 0, "api_Speaker_update");
 #  endif
 
   /* common */
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(sapi);
 }
 
-void RNA_def_speaker(BlenderRNA *brna)
+void api_def_speaker(DuneApi *dapi)
 {
-  rna_def_speaker(brna);
+  api_def_speaker(dapi);
 }
 
 #endif
