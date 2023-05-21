@@ -693,27 +693,27 @@ static void api_def_mtex(DuneApi *api)
   api_def_prop_update(prop, 0, "api_TextureSlot_update");
 }
 
-static void api_def_filter_common(ApiStruct *srna)
+static void api_def_filter_common(ApiStruct *sapi)
 {
-  PropertyRNA *prop;
+  ApiProp *prop;
 
-  prop = RNA_def_property(srna, "use_mipmap", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "imaflag", TEX_MIPMAP);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_ImageTexture_mipmap_set");
-  RNA_def_property_ui_text(prop, "MIP Map", "Use auto-generated MIP maps for the image");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "use_mipmap", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypes(prop, NULL, "imaflag", TEX_MIPMAP);
+  api_def_prop_bool_fns(prop, NULL, "api_ImageTexture_mipmap_set");
+  api_def_prop_ui_text(prop, "MIP Map", "Use auto-generated MIP maps for the image");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "use_mipmap_gauss", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "imaflag", TEX_GAUSS_MIP);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_mipmap_gauss", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stypes(prop, NULL, "imaflag", TEX_GAUSS_MIP);
+  api_def_prop_ui_text(
       prop, "MIP Map Gaussian filter", "Use Gauss filter to sample down MIP maps");
-  api_def_prop_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = api_def_property(srna, "filter_type", PROP_ENUM, PROP_NONE);
+  prop = api_def_prop(sapi, "filter_type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_sdna(prop, NULL, "texfilter");
-  api_def_property_enum_items(prop, texture_filter_items);
-  api_def_property_ui_text(prop, "Filter", "Texture filter to use for sampling image");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  api_def_prop_enum_items(prop, texture_filter_items);
+  api_def_prop_ui_text(prop, "Filter", "Texture filter to use for sampling image");
+  RNA_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "filter_lightprobes", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "afmax");
@@ -965,52 +965,52 @@ static void api_def_texture_marble(DuneApi *dapi)
   api_def_prop_range(prop, 0.0001, FLT_MAX);
   api_def_prop_ui_range(prop, 0.0001, 200, 10, 2);
   api_def_prop_ui_text(prop, "Turbulence", "Turbulence of the bandnoise and ringnoise types");
-  api_def_prop_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   prop = api_def_prop(sapi, "noise_depth", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "noisedepth");
   api_def_prop_range(prop, 0, 30);
   api_def_prop_ui_range(prop, 0, 24, 1, 2);
   api_def_prop_ui_text(prop, "Noise Depth", "Depth of the cloud calculation");
-  api_def_prop_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisetype");
-  RNA_def_property_enum_items(prop, prop_noise_type);
-  RNA_def_property_ui_text(prop, "Noise Type", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(sapi, "noise_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stypes(prop, NULL, "noisetype");
+  apo_def_prop_enum_items(prop, prop_noise_type);
+  api_def_prop_ui_text(prop, "Noise Type", "");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 
-  prop = RNA_def_property(srna, "marble_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "stype");
-  RNA_def_property_enum_items(prop, prop_marble_stype);
-  RNA_def_property_ui_text(prop, "Pattern", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(sapi, "marble_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "stype");
+  api_def_prop_enum_items(prop, prop_marble_stype);
+  api_def_prop_ui_text(prop, "Pattern", "");
+  RNA_def_property_update(prop, 0, "api_Texture_nodes_update");
 
   prop = RNA_def_property(srna, "noise_basis", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "noisebasis");
   RNA_def_property_enum_items(prop, prop_noise_basis_items);
   RNA_def_property_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  RNA_def_property_update(prop, 0, "api_Texture_nodes_update");
 
   prop = api_def_prop(srna, "noise_basis_2", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_sdna(prop, NULL, "noisebasis2");
   api_def_prop_enum_items(prop, prop_marble_noisebasis2);
   api_def_prop_ui_text(prop, "Noise Basis 2", "");
-  api_def_prop_update(prop, 0, "rna_Texture_nodes_update");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 
   prop = api_def_prop(sapi, "nabla", PROP_FLOAT, PROP_NONE);
   api_def_prop_range(prop, 0.001, 0.1);
   api_def_prop_ui_range(prop, 0.001, 0.1, 1, 2);
   api_def_prop_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
-  api_def_prop_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 }
 
-static void api_def_texture_magic(DuneApi *brna)
+static void api_def_texture_magic(DuneApi *dapi)
 {
-  ApiStruct *srna;
+  ApiStruct *sapi;
   ApiProp *prop;
 
-  srna = api_def_struct(dapi, "MagicTexture", "Texture
+  sapi = api_def_struct(dapi, "MagicTexture", "Texture
   api_def_struct_ui_text(sapi, "Magic Texture", "Procedural noise texture");
   api_def_struct_stype(sapi, "Tex");
 
