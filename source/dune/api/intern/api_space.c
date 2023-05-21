@@ -31,26 +31,26 @@
 #include "types_mask.h"
 #include "types_material.h"
 #include "types_node.h"
-#include "typee_object_types.h"
-#include "DNA_sequence_types.h"
-#include "DNA_space_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_workspace_types.h"
+#include "types_object.h"
+#include "types_sequence.h"
+#include "types_space.h"
+#include "types_view3d.h"
+#include "types_workspace.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "SEQ_proxy.h"
-#include "SEQ_relations.h"
-#include "SEQ_sequencer.h"
+#include "seq_proxy.h"
+#include "seq_relations.h"
+#include "seq_sequencer.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "RE_engine.h"
-#include "RE_pipeline.h"
+#include "render_engine.h"
+#include "render_pipeline.h"
 
 #include "RNA_enum_types.h"
 
