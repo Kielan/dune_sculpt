@@ -992,17 +992,17 @@ static void api_def_texture_marble(DuneApi *dapi)
   RNA_def_property_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
   RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
 
-  prop = RNA_def_property(srna, "noise_basis_2", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisebasis2");
-  RNA_def_property_enum_items(prop, prop_marble_noisebasis2);
-  RNA_def_property_ui_text(prop, "Noise Basis 2", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(srna, "noise_basis_2", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "noisebasis2");
+  api_def_prop_enum_items(prop, prop_marble_noisebasis2);
+  api_def_prop_ui_text(prop, "Noise Basis 2", "");
+  api_def_prop_update(prop, 0, "rna_Texture_nodes_update");
 
-  prop = RNA_def_property(srna, "nabla", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.001, 0.1);
-  RNA_def_property_ui_range(prop, 0.001, 0.1, 1, 2);
-  RNA_def_property_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "nabla", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.001, 0.1);
+  api_def_prop_ui_range(prop, 0.001, 0.1, 1, 2);
+  api_def_prop_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 }
 
 static void api_def_texture_magic(DuneApi *brna)
@@ -1010,12 +1010,12 @@ static void api_def_texture_magic(DuneApi *brna)
   ApiStruct *srna;
   ApiProp *prop;
 
-  srna = api_def_struct(brna, "MagicTexture", "Texture");
-  api_def_struct_ui_text(srna, "Magic Texture", "Procedural noise texture");
-  api_def_struct_stype(srna, "Tex");
+  srna = api_def_struct(dapi, "MagicTexture", "Texture
+  api_def_struct_ui_text(sapi, "Magic Texture", "Procedural noise texture");
+  api_def_struct_stype(sapi, "Tex");
 
-  prop = RNA_def_property(srna, "turbulence", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "turbul");
+  prop = api_def_prop(sapi, "turbulence", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "turbul");
   RNA_def_property_range(prop, 0.0001, FLT_MAX);
   RNA_def_property_ui_range(prop, 0.0001, 200, 10, 2);
   RNA_def_property_ui_text(prop, "Turbulence", "Turbulence of the noise");
