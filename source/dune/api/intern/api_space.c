@@ -194,7 +194,7 @@ const EnumPropItem api_enum_space_seq_view_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumProypItem api_enum_space_file_browse_mode_items[] = {
+const EnumPropItem api_enum_space_file_browse_mode_items[] = {
     {FILE_BROWSE_MODE_FILES, "FILES", ICON_FILEBROWSER, "File Browser", ""},
     {FILE_BROWSE_MODE_ASSETS, "ASSETS", ICON_ASSET_MANAGER, "Asset Browser", ""},
     {0, NULL, 0, NULL, NULL},
@@ -755,37 +755,37 @@ static void api_Space_show_region_footer_set(ApiPtr *ptr, bool value)
 {
   api_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN, !value);
 }
-static void rna_Space_show_region_footer_update(Cxt *C, ApiPtr *ptr)
+static void api_Space_show_region_footer_update(Cxt *C, ApiPtr *ptr)
 {
-  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN);
+  apu_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_FOOTER, RGN_FLAG_HIDDEN);
 }
 
 /* Tool Header Region.
  *
  * This depends on the 'RGN_TYPE_TOOL_HEADER'
  */
-static bool rna_Space_show_region_tool_header_get(PointerRNA *ptr)
+static bool api_Space_show_region_tool_header_get(ApiPtr *ptr)
 {
-  return !rna_Space_bool_from_region_flag_get_by_type(
+  return !api_Space_bool_from_region_flag_get_by_type(
       ptr, RGN_TYPE_TOOL_HEADER, RGN_FLAG_HIDDEN_BY_USER);
 }
-static void rna_Space_show_region_tool_header_set(PointerRNA *ptr, bool value)
+static void api_Space_show_region_tool_header_set(ApiPtr *ptr, bool value)
 {
-  rna_Space_bool_from_region_flag_set_by_type(
+  api_Space_bool_from_region_flag_set_by_type(
       ptr, RGN_TYPE_TOOL_HEADER, RGN_FLAG_HIDDEN_BY_USER, !value);
-  rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_TOOL_HEADER, RGN_FLAG_HIDDEN, !value);
+  api_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_TOOL_HEADER, RGN_FLAG_HIDDEN, !value);
 }
-static void rna_Space_show_region_tool_header_update(bContext *C, PointerRNA *ptr)
+static void api_Space_show_region_tool_header_update(bContext *C, PointerRNA *ptr)
 {
-  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_TOOL_HEADER, RGN_FLAG_HIDDEN);
+  api_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_TOOL_HEADER, RGN_FLAG_HIDDEN);
 }
 
 /* Tools Region. */
-static bool rna_Space_show_region_toolbar_get(PointerRNA *ptr)
+static bool api_Space_show_region_toolbar_get(PointerRNA *ptr)
 {
-  return !rna_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_TOOLS, RGN_FLAG_HIDDEN);
+  return !api_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_TOOLS, RGN_FLAG_HIDDEN);
 }
-static void rna_Space_show_region_toolbar_set(PointerRNA *ptr, bool value)
+static void api_Space_show_region_toolbar_set(PointerRNA *ptr, bool value)
 {
   rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_TOOLS, RGN_FLAG_HIDDEN, !value);
 }
