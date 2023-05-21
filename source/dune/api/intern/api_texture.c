@@ -502,13 +502,13 @@ static void api_def_texmapping(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Rotation", "");
   api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "size");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_ui_text(prop, "Scale", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "scale", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "size");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_ui_text(prop, "Scale", "");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "min", PROP_FLOAT, PROP_XYZ);
+  prop = api_def_prop(sapi, "min", PROP_FLOAT, PROP_XYZ);
   RNA_def_property_float_sdna(prop, NULL, "min");
   RNA_def_property_ui_text(prop, "Minimum", "Minimum value for clipping");
   RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
