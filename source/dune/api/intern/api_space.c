@@ -652,9 +652,9 @@ static void area_region_from_regiondata(Screen *screen,
   }
 }
 
-static void rna_area_region_from_regiondata(PointerRNA *ptr, ScrArea **r_area, ARegion **r_region)
+static void api_area_region_from_regiondata(ApiPtr *ptr, ScrArea **r_area, ARegion **r_region)
 {
-  bScreen *screen = (bScreen *)ptr->owner_id;
+  Screen *screen = (Screen *)ptr->owner_id;
   void *regiondata = ptr->data;
 
   area_region_from_regiondata(screen, regiondata, r_area, r_region);
@@ -663,65 +663,62 @@ static void rna_area_region_from_regiondata(PointerRNA *ptr, ScrArea **r_area, A
 /* -------------------------------------------------------------------- */
 /** Generic Region Flag Access* */
 
-static bool api_Space_bool_from_region_flag_get_by_type(PointerRNA *ptr,
+static bool api_Space_bool_from_region_flag_get_by_type(ApiPtr *ptr,
                                                         const int region_type,
                                                         const int region_flag)
 {
-  ScrArea *area = rna_area_from_space(ptr);
-  ARegion *region = BKE_area_find_region_type(area, region_type);
+  ScrArea *area = api_area_from_space(ptr);
+  ARegion *region = dune_area_find_region_type(area, region_type);
   if (region) {
     return (region->flag & region_flag);
   }
   return false;
 }
 
-static void rna_Space_bool_from_region_flag_set_by_type(PointerRNA *ptr,
+static void api_Space_bool_from_region_flag_set_by_type(ApiPtr *ptr,
                                                         const int region_type,
                                                         const int region_flag,
                                                         bool value)
 {
-  ScrArea *area = rna_area_from_space(ptr);
-  ARegion *region = BKE_area_find_region_type(area, region_type);
+  ScrArea *area = api_area_from_space(ptr);
+  ARegion *region = dune_area_find_region_type(area, region_type);
   if (region && (region->alignment != RGN_ALIGN_NONE)) {
     SET_FLAG_FROM_TEST(region->flag, value, region_flag);
   }
-  ED_region_tag_redraw(region);
+  ed_region_tag_redraw(region);
 }
 
-static void rna_Space_bool_from_region_flag_update_by_type(bContext *C,
-                                                           PointerRNA *ptr,
+static void api_Space_bool_from_region_flag_update_by_type(Cxt *C,
+                                                           ApiPtr *ptr,
                                                            const int region_type,
                                                            const int region_flag)
 {
-  ScrArea *area = rna_area_from_space(ptr);
-  ARegion *region = BKE_area_find_region_type(area, region_type);
+  ScrArea *area = api_area_from_space(ptr);
+  ARegion *region = dune_area_find_region_type(area, region_type);
   if (region) {
     if (region_flag == RGN_FLAG_HIDDEN) {
       /* Only support animation when the area is in the current context. */
-      if (region->overlap && (area == CTX_wm_area(C))) {
-        ED_region_visibility_change_update_animated(C, area, region);
+      if (region->overlap && (area == cxt_wm_area(C))) {
+        ed_region_visibility_change_update_animated(C, area, region);
       }
       else {
-        ED_region_visibility_change_update(C, area, region);
+        ed_region_visibility_change_update(C, area, region);
       }
     }
     else if (region_flag == RGN_FLAG_HIDDEN_BY_USER) {
       if (!(region->flag & RGN_FLAG_HIDDEN_BY_USER) != !(region->flag & RGN_FLAG_HIDDEN)) {
-        ED_region_toggle_hidden(C, region);
+        ed_region_toggle_hidden(C, region);
 
         if ((region->flag & RGN_FLAG_HIDDEN_BY_USER) == 0) {
-          ED_area_type_hud_ensure(C, area);
+          ed_area_type_hud_ensure(C, area);
         }
       }
     }
   }
 }
 
-/** \} */
-
 /* -------------------------------------------------------------------- */
-/** \name Region Flag Access (Typed Callbacks)
- * \{ */
+/** Region Flag Access (Typed Callbacks) **/
 
 /* Header Region. */
 static bool rna_Space_show_region_header_get(PointerRNA *ptr)
