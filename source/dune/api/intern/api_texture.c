@@ -1196,26 +1196,26 @@ static void rna_def_texture_image(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Repeat X", "Repetition multiplier in the X direction");
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "repeat_y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "yrepeat");
-  RNA_def_property_range(prop, 1, 512);
-  RNA_def_property_ui_text(prop, "Repeat Y", "Repetition multiplier in the Y direction");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "repeat_y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "yrepeat");
+  api_def_prop_range(prop, 1, 512);
+  api_def_prop_ui_text(prop, "Repeat Y", "Repetition multiplier in the Y direction");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "use_mirror_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEX_REPEAT_XMIR);
-  RNA_def_property_ui_text(prop, "Mirror X", "Mirror the image repetition on the X direction");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "use_mirror_x", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TEX_REPEAT_XMIR)
+  api_def_prop_ui_text(prop, "Mirror X", "Mirror the image repetition on the X direction");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "use_mirror_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEX_REPEAT_YMIR);
-  RNA_def_property_ui_text(prop, "Mirror Y", "Mirror the image repetition on the Y direction");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "use_mirror_y", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TEX_REPEAT_YMIR);
+  api_def_prop_ui_text(prop, "Mirror Y", "Mirror the image repetition on the Y direction");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "use_checker_odd", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEX_CHECKER_ODD);
-  RNA_def_property_ui_text(prop, "Checker Odd", "Odd checker tiles");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "use_checker_odd", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sdna(prop, NULL, "flag", TEX_CHECKER_ODD);
+  api_def_prop_ui_text(prop, "Checker Odd", "Odd checker tiles");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
   prop = RNA_def_property(srna, "use_checker_even", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", TEX_CHECKER_EVEN);
