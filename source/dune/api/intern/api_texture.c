@@ -579,16 +579,16 @@ static void rna_def_colormapping(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
 
   prop = RNA_def_property(srna, "contrast", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.0, 5);
-  RNA_def_property_ui_range(prop, 0, 5, 1, 3);
-  RNA_def_property_ui_text(prop, "Contrast", "Adjust the contrast of the texture");
-  RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
+  api_def_prop_range(prop, 0.0, 5);
+  api_def_prop_ui_range(prop, 0, 5, 1, 3);
+  api_def_prop_ui_text(prop, "Contrast", "Adjust the contrast of the texture");
+  api_def_prop_update(prop, 0, "rna_Color_mapping_update");
 
-  prop = RNA_def_property(srna, "saturation", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0, 2);
-  RNA_def_property_ui_range(prop, 0, 2, 1, 3);
-  RNA_def_property_ui_text(prop, "Saturation", "Adjust the saturation of colors in the texture");
-  RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
+  prop = api_def_prop(srna, "saturation", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0, 2);
+  api_def_prop_ui_range(prop, 0, 2, 1, 3);
+  api_def_prop_ui_text(prop, "Saturation", "Adjust the saturation of colors in the texture");
+  api_def_prop_update(prop, 0, "rna_Color_mapping_update");
 
   prop = RNA_def_property(srna, "blend_type", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, blend_type_items);
