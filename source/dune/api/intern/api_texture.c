@@ -509,42 +509,42 @@ static void api_def_texmapping(DuneApi *dapi)
   api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
   prop = api_def_prop(sapi, "min", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "min");
-  RNA_def_property_ui_text(prop, "Minimum", "Minimum value for clipping");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  api_def_prop_float_sdna(prop, NULL, "min");
+  api_def_prop_ui_text(prop, "Minimum", "Minimum value for clipping");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "max", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "max");
-  RNA_def_property_ui_text(prop, "Maximum", "Maximum value for clipping");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "max", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "max");
+  api_def_prop_ui_text(prop, "Maximum", "Maximum value for clipping");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "use_min", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEXMAP_CLIP_MIN);
-  RNA_def_property_ui_text(prop, "Has Minimum", "Whether to use minimum clipping value");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "use_min", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TEXMAP_CLIP_MIN);
+  api_def_prop_ui_text(prop, "Has Minimum", "Whether to use minimum clipping value");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "use_max", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEXMAP_CLIP_MAX);
-  RNA_def_property_ui_text(prop, "Has Maximum", "Whether to use maximum clipping value");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "use_max", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_sapi(prop, NULL, "flag", TEXMAP_CLIP_MAX);
+  api_def_prop_ui_text(prop, "Has Maximum", "Whether to use maximum clipping value");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "mapping_x", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "projx");
-  RNA_def_property_enum_items(prop, prop_xyz_mapping_items);
-  RNA_def_property_ui_text(prop, "X Mapping", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "mapping_x", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "projx");
+  api_def_prop_enum_items(prop, prop_xyz_mapping_items);
+  api_def_prop_ui_text(prop, "X Mapping", "");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "mapping_y", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "projy");
-  RNA_def_property_enum_items(prop, prop_xyz_mapping_items);
-  RNA_def_property_ui_text(prop, "Y Mapping", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_prop(sapi, "mapping_y", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "projy");
+  api_def_prop_enum_items(prop, prop_xyz_mapping_items);
+  api_def_prop_ui_text(prop, "Y Mapping", "");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
-  prop = RNA_def_property(srna, "mapping_z", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "projz");
-  RNA_def_property_enum_items(prop, prop_xyz_mapping_items);
-  RNA_def_property_ui_text(prop, "Z Mapping", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_mapping_update");
+  prop = api_def_property(srna, "mapping_z", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "projz");
+  api_def_prop_enum_items(prop, prop_xyz_mapping_items);
+  api_def_prop_ui_text(prop, "Z Mapping", "");
+  api_def_prop_update(prop, 0, "rna_Texture_mapping_update");
 
   prop = RNA_def_property(srna, "mapping", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, prop_mapping_items);
