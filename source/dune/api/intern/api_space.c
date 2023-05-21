@@ -532,85 +532,85 @@ static const EnumPropItem api_enum_curve_display_handle_items[] = {
 #  include "types_asset.h"
 #  include "types_scene.h"
 #  include "types_screen.h"
-#  include "DNA_userdef_types.h"
+#  include "types_userdef_types.h"
 
-#  include "BLI_path_util.h"
-#  include "BLI_string.h"
+#  include "lib_path_util.h"
+#  include "lib_string.h"
 
-#  include "BKE_anim_data.h"
-#  include "BKE_brush.h"
-#  include "BKE_colortools.h"
-#  include "BKE_context.h"
-#  include "BKE_global.h"
-#  include "BKE_icons.h"
-#  include "BKE_idprop.h"
-#  include "BKE_layer.h"
-#  include "BKE_nla.h"
-#  include "BKE_paint.h"
-#  include "BKE_preferences.h"
-#  include "BKE_scene.h"
-#  include "BKE_screen.h"
-#  include "BKE_workspace.h"
+#  include "dune_anim_data.h"
+#  include "dune_brush.h"
+#  include "dune_colortools.h"
+#  include "dune_context.h"
+#  include "dune_global.h"
+#  include "dune_icons.h"
+#  include "dune_idprop.h"
+#  include "dune_layer.h"
+#  include "dune_nla.h"
+#  include "dune_paint.h"
+#  include "dune_preferences.h"
+#  include "dune_scene.h"
+#  include "dune_screen.h"
+#  include "dune_workspace.h"
 
-#  include "DEG_depsgraph.h"
-#  include "DEG_depsgraph_build.h"
+#  include "graph.h"
+#  include "graph_build.h"
 
-#  include "ED_anim_api.h"
-#  include "ED_asset.h"
-#  include "ED_buttons.h"
-#  include "ED_clip.h"
-#  include "ED_fileselect.h"
-#  include "ED_image.h"
-#  include "ED_node.h"
-#  include "ED_screen.h"
-#  include "ED_sequencer.h"
-#  include "ED_transform.h"
-#  include "ED_view3d.h"
+#  include "ed_anim_api.h"
+#  include "ed_asset.h"
+#  include "ed_buttons.h"
+#  include "ed_clip.h"
+#  include "ed_fileselect.h"
+#  include "ed_image.h"
+#  include "ed_node.h"
+#  include "ed_screen.h"
+#  include "ed_sequencer.h"
+#  include "ed_transform.h"
+#  include "ed_view3d.h"
 
-#  include "GPU_material.h"
+#  include "gpu_material.h"
 
-#  include "IMB_imbuf_types.h"
+#  include "imbuf_types.h"
 
-#  include "UI_interface.h"
-#  include "UI_view2d.h"
+#  include "ui.h"
+#  include "ui_view2d.h"
 
-static StructRNA *rna_Space_refine(struct PointerRNA *ptr)
+static ApiStruct *api_Space_refine(struct PointerRNA *ptr)
 {
   SpaceLink *space = (SpaceLink *)ptr->data;
 
   switch ((eSpace_Type)space->spacetype) {
     case SPACE_VIEW3D:
-      return &RNA_SpaceView3D;
+      return &Api_SpaceView3D;
     case SPACE_GRAPH:
-      return &RNA_SpaceGraphEditor;
+      return &Api_SpaceGraphEditor;
     case SPACE_OUTLINER:
-      return &RNA_SpaceOutliner;
-    case SPACE_PROPERTIES:
-      return &RNA_SpaceProperties;
+      return &Api_SpaceOutliner;
+    case SPACE_PROPS:
+      return &Api_SpaceProps;
     case SPACE_FILE:
-      return &RNA_SpaceFileBrowser;
+      return &Api_SpaceFileBrowser;
     case SPACE_IMAGE:
-      return &RNA_SpaceImageEditor;
+      return &Api_SpaceImageEditor;
     case SPACE_INFO:
-      return &RNA_SpaceInfo;
+      return &Api_SpaceInfo;
     case SPACE_SEQ:
-      return &RNA_SpaceSequenceEditor;
+      return &Api_SpaceSequenceEditor;
     case SPACE_TEXT:
-      return &RNA_SpaceTextEditor;
+      return &Api_SpaceTextEditor;
     case SPACE_ACTION:
-      return &RNA_SpaceDopeSheetEditor;
+      return &Api_SpaceDopeSheetEditor;
     case SPACE_NLA:
-      return &RNA_SpaceNLA;
+      return &Api_SpaceNLA;
     case SPACE_NODE:
-      return &RNA_SpaceNodeEditor;
+      return &Api_SpaceNodeEditor;
     case SPACE_CONSOLE:
-      return &RNA_SpaceConsole;
+      return &Api_SpaceConsole;
     case SPACE_USERPREF:
-      return &RNA_SpacePreferences;
+      return &Api_SpacePreferences;
     case SPACE_CLIP:
-      return &RNA_SpaceClipEditor;
+      return &Api_SpaceClipEditor;
     case SPACE_SPREADSHEET:
-      return &RNA_SpaceSpreadsheet;
+      return &Api_SpaceSpreadsheet;
 
       /* Currently no type info. */
     case SPACE_SCRIPT:
@@ -620,17 +620,17 @@ static StructRNA *rna_Space_refine(struct PointerRNA *ptr)
       break;
   }
 
-  return &RNA_Space;
+  return &Api_Space;
 }
 
-static ScrArea *rna_area_from_space(PointerRNA *ptr)
+static ScrArea *rna_area_from_space(PtrRNA *ptr)
 {
-  bScreen *screen = (bScreen *)ptr->owner_id;
+  Screen *screen = (Screen *)ptr->owner_id;
   SpaceLink *link = (SpaceLink *)ptr->data;
-  return BKE_screen_find_area_from_space(screen, link);
+  return dune_screen_find_area_from_space(screen, link);
 }
 
-static void area_region_from_regiondata(bScreen *screen,
+static void area_region_from_regiondata(Screen *screen,
                                         void *regiondata,
                                         ScrArea **r_area,
                                         ARegion **r_region)
