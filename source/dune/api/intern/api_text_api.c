@@ -1,71 +1,71 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "ED_text.h"
+#include "ed_text.h"
 
-#include "RNA_define.h"
+#include "api_define.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
-static void rna_Text_clear(Text *text)
+static void api_Text_clear(Text *text)
 {
-  BKE_text_clear(text);
-  WM_main_add_notifier(NC_TEXT | NA_EDITED, text);
+  dune_text_clear(text);
+  api_main_add_notifier(NC_TEXT | NA_EDITED, text);
 }
 
-static void rna_Text_write(Text *text, const char *str)
+static void api_Text_write(Text *text, const char *str)
 {
-  BKE_text_write(text, str, strlen(str));
-  WM_main_add_notifier(NC_TEXT | NA_EDITED, text);
+  dune_text_write(text, str, strlen(str));
+  wm_main_add_notifier(NC_TEXT | NA_EDITED, text);
 }
 
-static void rna_Text_from_string(Text *text, const char *str)
+static void api_Text_from_string(Text *text, const char *str)
 {
-  BKE_text_clear(text);
-  BKE_text_write(text, str, strlen(str));
+  dune_text_clear(text);
+  dune_text_write(text, str, strlen(str));
 }
 
-static void rna_Text_as_string(Text *text, int *r_result_len, const char **result)
+static void api_Text_as_string(Text *text, int *r_result_len, const char **result)
 {
   size_t result_len;
   *result = txt_to_buf(text, &result_len);
   *r_result_len = result_len;
 }
 
-static void rna_Text_select_set(Text *text, int startl, int startc, int endl, int endc)
+static void api_Text_select_set(Text *text, int startl, int startc, int endl, int endc)
 {
   txt_sel_set(text, startl, startc, endl, endc);
-  WM_main_add_notifier(NC_TEXT | NA_EDITED, text);
+  wm_main_add_notifier(NC_TEXT | NA_EDITED, text);
 }
 
-static void rna_Text_cursor_set(Text *text, int line, int ch, bool select)
+static void api_Text_cursor_set(Text *text, int line, int ch, bool select)
 {
   txt_move_to(text, line, ch, select);
-  WM_main_add_notifier(NC_TEXT | NA_EDITED, text);
+  wm_main_add_notifier(NC_TEXT | NA_EDITED, text);
 }
 
 #else
 
-void RNA_api_text(StructRNA *srna)
+void api_text(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "clear", "rna_Text_clear");
-  RNA_def_function_ui_description(func, "clear the text block");
+  fn = api_def_fn(sapi, "clear", "rna_Text_clear");
+  api_def_fn_ui_description(fn, "clear the text block");
 
-  func = RNA_def_function(srna, "write", "rna_Text_write");
-  RNA_def_function_ui_description(
-      func, "write text at the cursor location and advance to the end of the text block");
-  parm = RNA_def_string(func, "text", "Text", 0, "", "New text for this data-block");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "write", "rna_Text_write");
+  api_def_fn_ui_description(
+      fn, "write text at the cursor location and advance to the end of the text block");
+  parm = api_def_string(fn, "text", "Text", 0, "", "New text for this data-block");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 
   func = RNA_def_function(srna, "from_string", "rna_Text_from_string");
   RNA_def_function_ui_description(func, "Replace text with this string.");
