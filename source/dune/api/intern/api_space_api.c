@@ -187,24 +187,24 @@ void api_space_filebrowser(ApiStruct *sapi)
   api_def_prop_struct_type(parm, "ID");
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 
-  parm = RNA_def_boolean(
-      func,
+  parm = api_def_bool(
+      fn,
       "deferred",
       0,
       "",
       "Whether to activate the ID immediately (false) or after the file browser refreshes (true)");
 
   /* Select file by relative path. */
-  func = RNA_def_function(
-      srna, "activate_file_by_relative_path", "ED_fileselect_activate_by_relpath");
-  RNA_def_function_ui_description(func,
+  fn = api_def_fn(
+      sapi, "activate_file_by_relative_path", "ed_fileselect_activate_by_relpath");
+  api_def_fn_ui_description(func,
                                   "Set active file and add to selection based on relative path to "
                                   "current File Browser directory");
-  RNA_def_property(func, "relative_path", PROP_STRING, PROP_FILEPATH);
+  api_def_prop(fn, "relative_path", PROP_STRING, PROP_FILEPATH);
 
   /* Deselect all files. */
-  func = RNA_def_function(srna, "deselect_all", "ED_fileselect_deselect_all");
-  RNA_def_function_ui_description(func, "Deselect all files");
+  fn = api_def_fn(sapi, "deselect_all", "ED_fileselect_deselect_all");
+  api_def_fn_ui_description(fn, "Deselect all files");
 }
 
 #endif
