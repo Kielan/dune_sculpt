@@ -1099,31 +1099,31 @@ static void api_def_texture_stucci(DuneApi *dapi)
   api_def_prop_enum_sdna(prop, NULL, "noisebasis");
   api_def_prop_enum_items(prop, prop_noise_basis_items);
   api_def_prop_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "noisesize");
-  RNA_def_property_range(prop, 0.0001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0001, 2, 1, 2);
-  RNA_def_property_ui_text(prop, "Noise Size", "Scaling for noise input");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "noisesize");
+  api_def_prop_range(prop, 0.0001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001, 2, 1, 2);
+  api_def_prop_ui_text(prop, "Noise Size", "Scaling for noise input");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisetype");
-  RNA_def_property_enum_items(prop, prop_noise_type);
-  RNA_def_property_ui_text(prop, "Noise Type", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "noisetype");
+  api_def_prop_enum_items(prop, prop_noise_type);
+  api_def_prop_ui_text(prop, "Noise Type", "");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "stucci_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "stype");
-  RNA_def_property_enum_items(prop, prop_stucci_stype);
+  prop = api_def_property(srna, "stucci_type", PROP_ENUM, PROP_NONE
+  RNA_def_prop_enum_sdna(prop, NULL, "stype");
+  RNA_def_prop_enum_items(prop, prop_stucci_stype);
   RNA_def_property_ui_text(prop, "Pattern", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 }
 
-static void rna_def_texture_noise(BlenderRNA *brna)
+static void api_def_texture_noise(DuneApi *dapi)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
   srna = RNA_def_struct(brna, "NoiseTexture", "Texture");
   RNA_def_struct_ui_text(srna, "Noise Texture", "Procedural noise texture");
@@ -1175,12 +1175,12 @@ static void rna_def_texture_image(BlenderRNA *brna)
       prop, "Calculate Alpha", "Calculate an alpha channel based on RGB values in the image");
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "invert_alpha", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEX_NEGALPHA);
-  RNA_def_property_ui_text(prop, "Invert Alpha", "Invert all the alpha values in the image");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "invert_alpha", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", TEX_NEGALPHA);
+  api_def_prop_ui_text(prop, "Invert Alpha", "Invert all the alpha values in the image");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  rna_def_filter_common(srna);
+  api_def_filter_common(sapi);
 
   prop = RNA_def_property(srna, "extension", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "extend");
@@ -1272,7 +1272,7 @@ static void rna_def_texture_image(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 
   prop = RNA_def_property(srna, "image", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "ima");
+  RNA_def_prop_pointer_sdna(prop, NULL, "ima");
   RNA_def_property_struct_type(prop, "Image");
   RNA_def_property_flag(prop, PROP_EDITABLE);
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
@@ -1625,35 +1625,35 @@ static void rna_def_texture(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 
   /* Alpha for preview render */
-  prop = RNA_def_property(srna, "use_preview_alpha", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", TEX_PRV_ALPHA);
-  RNA_def_property_ui_text(prop, "Show Alpha", "Show Alpha in Preview Render");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "use_preview_alpha", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_boolean_stype(prop, NULL, "flag", TEX_PRV_ALPHA);
+  api_def_prop_ui_text(prop, "Show Alpha", "Show Alpha in Preview Render");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
   /* nodetree */
   prop = RNA_def_property(srna, "use_nodes", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "use_nodes", 1);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(prop, "Use Nodes", "Make this a node-based texture");
-  RNA_def_property_update(prop, 0, "rna_Texture_use_nodes_update");
+  api_def_prop_boolean_sdna(prop, NULL, "use_nodes", 1);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_ui_text(prop, "Use Nodes", "Make this a node-based texture");
+  api_def_prop_update(prop, 0, "rna_Texture_use_nodes_update");
 
   prop = RNA_def_property(srna, "node_tree", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "nodetree");
-  RNA_def_property_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Node Tree", "Node tree for node-based textures");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  api_def_property_pointer_sdna(prop, NULL, "nodetree");
+  api_def_property_clear_flag(prop, PROP_PTR_NO_OWNERSHIP);
+  api_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
+  api_def_property_ui_text(prop, "Node Tree", "Node tree for node-based textures");
+  api_def_property_update(prop, 0, "rna_Texture_nodes_update");
 
-  rna_def_animdata_common(srna);
+  api_def_animdata_common(srna);
 
   /* specific types */
-  rna_def_texture_clouds(brna);
-  rna_def_texture_wood(brna);
-  rna_def_texture_marble(brna);
-  rna_def_texture_magic(brna);
-  rna_def_texture_blend(brna);
-  rna_def_texture_stucci(brna);
-  rna_def_texture_noise(brna);
+  api_def_texture_clouds(brna);
+  a_def_texture_wood(brna);
+  a_def_texture_marble(brna);
+  a_def_texture_magic(brna);
+  api_def_texture_blend(brna);
+  api_def_texture_stucci(brna);
+  a_def_texture_noise(brna);
   rna_def_texture_image(brna);
   rna_def_texture_musgrave(brna);
   rna_def_texture_voronoi(brna);
