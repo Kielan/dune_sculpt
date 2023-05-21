@@ -619,20 +619,20 @@ static void api_def_mtex(DuneApi *api)
   api_def_struct_stype(sapi, "MTex");
   api_def_struct_ui_text(
       sapi, "Texture Slot", "Texture slot defining the mapping and influence of a texture");
-  api_def_struct_path_func(srna, "rna_TextureSlot_path");
-  api_def_struct_ui_icon(srna, ICON_TEXTURE_DATA);
+  api_def_struct_path_func(sapi, "rna_TextureSlot_path");
+  api_def_struct_ui_icon(sapi, ICON_TEXTURE_DATA);
 
-  prop = api_def_prop(srna, "texture", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "texture", PROP_PTR, PROP_NONE);
   api_def_prop_ptr_stype(prop, NULL, "tex");
   api_def_prop_struct_type(prop, "Texture");
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Texture", "Texture data-block used by this texture slot");
-  RNA_def_property_update(prop, NC_MATERIAL | ND_SHADING_LINKS, "rna_TextureSlotTexture_update");
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_CXT_UPDATE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Texture", "Texture data-block used by this texture slot");
+  api_def_prop_update(prop, NC_MATERIAL | ND_SHADING_LINKS, "rna_TextureSlotTexture_update");
 
-  prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-  RNA_def_property_string_funcs(
-      prop, "rna_TextureSlot_name_get", "rna_TextureSlot_name_length", NULL);
+  prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
+  api_def_prop_string_fns(
+      prop, "api_TextureSlot_name_get", "rna_TextureSlot_name_length", NULL);
   RNA_def_property_ui_text(prop, "Name", "Texture slot name");
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
   RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
