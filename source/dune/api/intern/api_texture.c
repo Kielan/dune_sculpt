@@ -1348,52 +1348,52 @@ static void rna_def_texture_musgrave(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 
   prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "mg_offset");
-  RNA_def_property_range(prop, 0, 6);
-  RNA_def_property_ui_range(prop, 0, 6, 1, 2);
-  RNA_def_property_ui_text(prop, "Offset", "The fractal offset");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  api_def_prop_float_sdna(prop, NULL, "mg_offset");
+  api_def_prop_range(prop, 0, 6);
+  api_def_prop_ui_range(prop, 0, 6, 1, 2);
+  api_def_prop_ui_text(prop, "Offset", "The fractal offset");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "gain", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "mg_gain");
-  RNA_def_property_range(prop, 0, 6);
-  RNA_def_property_ui_range(prop, 0, 6, 1, 2);
-  RNA_def_property_ui_text(prop, "Gain", "The gain multiplier");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "gain", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "mg_gain");
+  api_def_prop_range(prop, 0, 6);
+  api_def_prop_ui_range(prop, 0, 6, 1, 2);
+  api_def_prop_ui_text(prop, "Gain", "The gain multiplier");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_intensity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "ns_outscale");
-  RNA_def_property_range(prop, 0, 10);
-  RNA_def_property_ui_range(prop, 0, 10, 1, 2);
-  RNA_def_property_ui_text(prop, "Noise Intensity", "Intensity of the noise");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_intensity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "ns_outscale");
+  api_def_prop_range(prop, 0, 10);
+  api_def_prop_ui_range(prop, 0, 10, 1, 2);
+  api_def_prop_ui_text(prop, "Noise Intensity", "Intensity of the noise");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "noisesize");
-  RNA_def_property_range(prop, 0.0001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0001, 2, 1, 2);
-  RNA_def_property_ui_text(prop, "Noise Size", "Scaling for noise input");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "noisesize");
+  api_def_prop_range(prop, 0.0001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001, 2, 1, 2);
+  api_def_prop_ui_text(prop, "Noise Size", "Scaling for noise input");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_basis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisebasis");
-  RNA_def_property_enum_items(prop, prop_noise_basis_items);
-  RNA_def_property_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_basis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "noisebasis");
+  api_def_prop_enum_items(prop, prop_noise_basis_items);
+  api_def_prop_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "nabla", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.001, 0.1);
-  RNA_def_property_ui_range(prop, 0.001, 0.1, 1, 2);
-  RNA_def_property_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "nabla", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.001, 0.1);
+  api_def_prop_ui_range(prop, 0.001, 0.1, 1, 2);
+  api_def_prop_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 }
 
-static void rna_def_texture_voronoi(BlenderRNA *brna)
+static void api_def_texture_voronoi(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem prop_distance_metric_items[] = {
+  static const EnumPropItem prop_distance_metric_items[] = {
       {TEX_DISTANCE, "DISTANCE", 0, "Actual Distance", "sqrt(x*x+y*y+z*z)"},
       {TEX_DISTANCE_SQUARED, "DISTANCE_SQUARED", 0, "Distance Squared", "(x*x+y*y+z*z)"},
       {TEX_MANHATTAN,
@@ -1413,7 +1413,7 @@ static void rna_def_texture_voronoi(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem prop_coloring_items[] = {
+  static const EnumPropItem prop_coloring_items[] = {
       /* XXX: OK names / descriptions? */
       {TEX_INTENSITY, "INTENSITY", 0, "Intensity", "Only calculate intensity"},
       {TEX_COL1, "POSITION", 0, "Position", "Color cells by position"},
@@ -1430,114 +1430,113 @@ static void rna_def_texture_voronoi(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "VoronoiTexture", "Texture");
-  RNA_def_struct_ui_text(srna, "Voronoi", "Procedural voronoi texture");
-  RNA_def_struct_sdna(srna, "Tex");
+  sapi = api_def_struct(dapi, "VoronoiTexture", "Texture");
+  api_def_struct_ui_text(sapi, "Voronoi", "Procedural voronoi texture");
+  api_def_struct_stype(sapi, "Tex");
+  prop = api_def_prop(sapi, "weight_1", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "vn_w1");
+  api_def_prop_range(prop, -2, 2);
+  api_def_prop_ui_text(prop, "Weight 1", "Voronoi feature weight 1");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "weight_1", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "vn_w1");
-  RNA_def_property_range(prop, -2, 2);
-  RNA_def_property_ui_text(prop, "Weight 1", "Voronoi feature weight 1");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "weight_2", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "vn_w2
+  api_def_prop_range(prop, -2, 2);
+  api_def_prop_ui_text(prop, "Weight 2", "Voronoi feature weight 2");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "weight_2", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "vn_w2");
-  RNA_def_property_range(prop, -2, 2);
-  RNA_def_property_ui_text(prop, "Weight 2", "Voronoi feature weight 2");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "weight_3", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "vn_w3");
+  api_def_prop_range(prop, -2, 2);
+  api_def_prop_ui_text(prop, "Weight 3", "Voronoi feature weight 3");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "weight_3", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "vn_w3");
-  RNA_def_property_range(prop, -2, 2);
-  RNA_def_property_ui_text(prop, "Weight 3", "Voronoi feature weight 3");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "weight_4", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "vn_w4");
+  api_def_prop_range(prop, -2, 2);
+  api_def_prop_ui_text(prop, "Weight 4", "Voronoi feature weight 4");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "weight_4", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "vn_w4");
-  RNA_def_property_range(prop, -2, 2);
-  RNA_def_property_ui_text(prop, "Weight 4", "Voronoi feature weight 4");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "minkovsky_exponent", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "vn_mexp");
+  api_def_prop_range(prop, 0.01, 10);
+  api_def_prop_ui_text(prop, "Minkowski Exponent", "Minkowski exponent");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "minkovsky_exponent", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "vn_mexp");
-  RNA_def_property_range(prop, 0.01, 10);
-  RNA_def_property_ui_text(prop, "Minkowski Exponent", "Minkowski exponent");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
-
-  prop = RNA_def_property(srna, "distance_metric", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "vn_distm");
-  RNA_def_property_enum_items(prop, prop_distance_metric_items);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "distance_metric", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_styp(prop, NULL, "vn_distm");
+  api_def_prop_enum_items(prop, prop_distance_metric_items);
+  api_def_prop_ui_text(
       prop,
       "Distance Metric",
       "Algorithm used to calculate distance of sample points to feature points");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "color_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "vn_coltype");
-  RNA_def_property_enum_items(prop, prop_coloring_items);
-  RNA_def_property_ui_text(prop, "Coloring", "");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "color_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "vn_coltype");
+  api_def_prop_enum_items(prop, prop_coloring_items);
+  api_def_prop_ui_text(prop, "Coloring", "");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_intensity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "ns_outscale");
-  RNA_def_property_range(prop, 0.01, 10);
-  RNA_def_property_ui_text(prop, "Noise Intensity", "Scales the intensity of the noise");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_intensity", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "ns_outscale");
+  api_def_prop_range(prop, 0.01, 10);
+  api_def_prop_ui_text(prop, "Noise Intensity", "Scales the intensity of the noise");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "noisesize");
-  RNA_def_property_range(prop, 0.0001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0001, 2, 1, 2);
-  RNA_def_property_ui_text(prop, "Noise Size", "Scaling for noise input");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "noisesize");
+  api_def_prop_range(prop, 0.0001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001, 2, 1, 2);
+  api_def_prop_ui_text(prop, "Noise Size", "Scaling for noise input");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "nabla", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.001, 0.1);
-  RNA_def_property_ui_range(prop, 0.001, 0.1, 1, 2);
-  RNA_def_property_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "nabla", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.001, 0.1);
+  api_def_prop_ui_range(prop, 0.001, 0.1, 1, 2);
+  api_def_prop_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 }
 
-static void rna_def_texture_distorted_noise(BlenderRNA *brna)
+static void api_def_texture_distorted_noise(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "DistortedNoiseTexture", "Texture");
-  RNA_def_struct_ui_text(srna, "Distorted Noise", "Procedural distorted noise texture");
-  RNA_def_struct_sdna(srna, "Tex");
+  srna = api_def_struct(dapi, "DistortedNoiseTexture", "Texture");
+  api_def_struct_ui_text(sapi, "Distorted Noise", "Procedural distorted noise texture");
+  api_def_struct_stype(sapi, "Tex");
 
-  prop = RNA_def_property(srna, "distortion", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "dist_amount");
-  RNA_def_property_range(prop, 0, 10);
-  RNA_def_property_ui_text(prop, "Distortion Amount", "Amount of distortion");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "distortion", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "dist_amount");
+  api_def_prop_range(prop, 0, 10);
+  api_def_prop_ui_text(prop, "Distortion Amount", "Amount of distortion");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_scale", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "noisesize");
-  RNA_def_property_range(prop, 0.0001, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0001, 2, 1, 2);
-  RNA_def_property_ui_text(prop, "Noise Size", "Scaling for noise input");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "noise_scale", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "noisesize");
+  api_def_prop_range(prop, 0.0001, FLT_MAX);
+  api_def_prop_ui_range(prop, 0.0001, 2, 1, 2);
+  api_def_prop_ui_text(prop, "Noise Size", "Scaling for noise input");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "noise_basis", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisebasis2");
-  RNA_def_property_enum_items(prop, prop_noise_basis_items);
-  RNA_def_property_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(sapi, "noise_basis", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "noisebasis2");
+  api_def_prop_enum_items(prop, prop_noise_basis_items);
+  api_def_prop_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
+  api_def_prop_update(prop, 0, "rna_Texture_nodes_update");
 
-  prop = RNA_def_property(srna, "noise_distortion", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "noisebasis");
-  RNA_def_property_enum_items(prop, prop_noise_basis_items);
-  RNA_def_property_ui_text(prop, "Noise Distortion", "Noise basis for the distortion");
-  RNA_def_property_update(prop, 0, "rna_Texture_nodes_update");
+  prop = api_def_prop(sapi, "noise_distortion", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "noisebasis");
+  api_def_prop_enum_items(prop, prop_noise_basis_items);
+  api_def_prop_ui_text(prop, "Noise Distortion", "Noise basis for the distortion");
+  api_def_prop_update(prop, 0, "api_Texture_nodes_update");
 
-  prop = RNA_def_property(srna, "nabla", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_range(prop, 0.001, 0.1);
-  RNA_def_property_ui_range(prop, 0.001, 0.1, 1, 2);
-  RNA_def_property_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  prop = api_def_prop(sapi, "nabla", PROP_FLOAT, PROP_NONE);
+  api_def_prop_range(prop, 0.001, 0.1);
+  api_def_prop_ui_range(prop, 0.001, 0.1, 1, 2);
+  api_def_prop_ui_text(prop, "Nabla", "Size of derivative offset used for calculating normal");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 }
 
 static void rna_def_texture(BlenderRNA *brna)
