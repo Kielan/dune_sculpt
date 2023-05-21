@@ -593,38 +593,38 @@ static void rna_def_colormapping(BlenderRNA *brna)
   prop = RNA_def_property(srna, "blend_type", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_items(prop, blend_type_items);
   RNA_def_property_ui_text(prop, "Blend Type", "Mode used to mix with texture output color");
-  RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
+  RNA_def_property_update(prop, 0, "api_Color_mapping_update");
 
-  prop = RNA_def_property(srna, "blend_color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Color", "Blend color to mix with texture output color");
-  RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
+  prop = api_def_prop(sapi, "blend_color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Color", "Blend color to mix with texture output color");
+  api_def_prop_update(prop, 0, "api_Color_mapping_update");
 
-  prop = RNA_def_property(srna, "blend_factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Blend Factor", "");
-  RNA_def_property_update(prop, 0, "rna_Color_mapping_update");
+  prop = apk_def_prop(srna, "blend_factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_ui_text(prop, "Blend Factor", "");
+  api_def_prop_update(prop, 0, "rna_Color_mapping_update");
 }
 
-static void rna_def_mtex(BlenderRNA *brna)
+static void api_def_mtex(DuneApi *api)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   static const EnumPropertyItem output_node_items[] = {
       {0, "DUMMY", 0, "Dummy", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "TextureSlot", NULL);
-  RNA_def_struct_sdna(srna, "MTex");
-  RNA_def_struct_ui_text(
-      srna, "Texture Slot", "Texture slot defining the mapping and influence of a texture");
-  RNA_def_struct_path_func(srna, "rna_TextureSlot_path");
-  RNA_def_struct_ui_icon(srna, ICON_TEXTURE_DATA);
+  srna = api_def_struct(dapi, "TextureSlot", NULL);
+  api_def_struct_stype(sapi, "MTex");
+  api_def_struct_ui_text(
+      sapi, "Texture Slot", "Texture slot defining the mapping and influence of a texture");
+  api_def_struct_path_func(srna, "rna_TextureSlot_path");
+  api_def_struct_ui_icon(srna, ICON_TEXTURE_DATA);
 
-  prop = RNA_def_property(srna, "texture", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "tex");
-  RNA_def_property_struct_type(prop, "Texture");
+  prop = api_def_prop(srna, "texture", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "tex");
+  api_def_prop_struct_type(prop, "Texture");
   RNA_def_property_flag(prop, PROP_EDITABLE | PROP_CONTEXT_UPDATE);
   RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
   RNA_def_property_ui_text(prop, "Texture", "Texture data-block used by this texture slot");
