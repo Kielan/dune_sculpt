@@ -633,44 +633,44 @@ static void api_def_mtex(DuneApi *api)
   prop = api_def_prop(sapi, "name", PROP_STRING, PROP_NONE);
   api_def_prop_string_fns(
       prop, "api_TextureSlot_name_get", "rna_TextureSlot_name_length", NULL);
-  RNA_def_property_ui_text(prop, "Name", "Texture slot name");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_struct_name_property(srna, prop);
-  RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+  api_def_prop_ui_text(prop, "Name", "Texture slot name");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_struct_name_prop(sapi, prop);
+  api_def_prop_update(prop, 0, "rna_TextureSlot_update");
 
   /* mapping */
-  prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_TRANSLATION);
-  RNA_def_property_float_sdna(prop, NULL, "ofs");
-  RNA_def_property_ui_range(prop, -10, 10, 10, RNA_TRANSLATION_PREC_DEFAULT);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "offset", PROP_FLOAT, PROP_TRANSLATION);
+  api_def_prop_float_stype(prop, NULL, "ofs");
+  api_def_prop_ui_range(prop, -10, 10, 10, RNA_TRANSLATION_PREC_DEFAULT);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_ui_text(
       prop, "Offset", "Fine tune of the texture mapping X, Y and Z locations");
-  RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+  api_def_prop_update(prop, 0, "rna_TextureSlot_update");
 
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "size");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL | PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_range(prop, -100, 100, 10, 2);
-  RNA_def_property_ui_text(prop, "Size", "Set scaling for the texture's X, Y and Z sizes");
-  RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+  prop = api_def_prop(sapi, "scale", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stypes(prop, NULL, "size");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL | PROP_CONTEXT_UPDATE);
+  api_def_prop_ui_range(prop, -100, 100, 10, 2);
+  api_def_prop_ui_text(prop, "Size", "Set scaling for the texture's X, Y and Z sizes");
+  api_def_prop_update(prop, 0, "rna_TextureSlot_update");
 
-  prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_float_sdna(prop, NULL, "r");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_float_stype(prop, NULL, "r");
+  api_def_prop_array(prop, 3);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE
+  api_def_prop_ui_text(
       prop,
       "Color",
       "Default color for textures that don't return RGB or when RGB to intensity is enabled");
-  RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+  api_def_prop_update(prop, 0, "rna_TextureSlot_update");
 
-  prop = RNA_def_property(srna, "blend_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "blendtype");
-  RNA_def_property_enum_items(prop, blend_type_items);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_ui_text(prop, "Blend Type", "Mode used to apply the texture");
-  RNA_def_property_update(prop, 0, "rna_TextureSlot_update");
+  prop = api_def_prop(sapi, "blend_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "blendtype");
+  api_def_prop_enum_items(prop, blend_type_items);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_ui_text(prop, "Blend Type", "Mode used to apply the texture
+  api_def_prop_update(prop, 0, "rna_TextureSlot_update");
 
   prop = RNA_def_property(srna, "default_value", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "def_var");
