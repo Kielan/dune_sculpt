@@ -804,60 +804,58 @@ static void api_Space_show_region_tool_props_set(PointerRNA *ptr, bool value)
 }
 static void api_Space_show_region_tool_props_update(bContext *C, PointerRNA *ptr)
 {
-  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_TOOL_PROPS, RGN_FLAG_HIDDEN);
+  api_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_TOOL_PROPS, RGN_FLAG_HIDDEN);
 }
 
 /* Channels Region. */
-static bool rna_Space_show_region_channels_get(PointerRNA *ptr)
+static bool api_Space_show_region_channels_get(ApiPtr *ptr)
 {
-  return !rna_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_CHANNELS, RGN_FLAG_HIDDEN);
+  return !api_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_CHANNELS, RGN_FLAG_HIDDEN);
 }
-static void rna_Space_show_region_channels_set(PointerRNA *ptr, bool value)
+static void api_Space_show_region_channels_set(PointerRNA *ptr, bool value)
 {
-  rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_CHANNELS, RGN_FLAG_HIDDEN, !value);
+  api_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_CHANNELS, RGN_FLAG_HIDDEN, !value);
 }
-static void rna_Space_show_region_channels_update(bContext *C, PointerRNA *ptr)
+static void api_Space_show_region_channels_update(Cxt *C, ApiPtr *ptr)
 {
-  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_CHANNELS, RGN_FLAG_HIDDEN);
+  api_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_CHANNELS, RGN_FLAG_HIDDEN);
 }
 
 /* UI Region */
-static bool rna_Space_show_region_ui_get(PointerRNA *ptr)
+static bool api_Space_show_region_ui_get(ApiPtr *ptr)
 {
-  return !rna_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_UI, RGN_FLAG_HIDDEN);
+  return !api_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_UI, RGN_FLAG_HIDDEN);
 }
-static void rna_Space_show_region_ui_set(PointerRNA *ptr, bool value)
+static void api_Space_show_region_ui_set(ApiPtr *ptr, bool value)
 {
-  rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_UI, RGN_FLAG_HIDDEN, !value);
+  api_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_UI, RGN_FLAG_HIDDEN, !value);
 }
-static void rna_Space_show_region_ui_update(bContext *C, PointerRNA *ptr)
+static void api_Space_show_region_ui_update(bContext *C, PointerRNA *ptr)
 {
-  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_UI, RGN_FLAG_HIDDEN);
+  api_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_UI, RGN_FLAG_HIDDEN);
 }
 
 /* Redo (HUD) Region */
-static bool rna_Space_show_region_hud_get(PointerRNA *ptr)
+static bool api_Space_show_region_hud_get(PointerRNA *ptr)
 {
-  return !rna_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_HUD, RGN_FLAG_HIDDEN_BY_USER);
+  return !api_Space_bool_from_region_flag_get_by_type(ptr, RGN_TYPE_HUD, RGN_FLAG_HIDDEN_BY_USER);
 }
-static void rna_Space_show_region_hud_set(PointerRNA *ptr, bool value)
+static void api_Space_show_region_hud_set(PointerRNA *ptr, bool value)
 {
-  rna_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_HUD, RGN_FLAG_HIDDEN_BY_USER, !value);
+  api_Space_bool_from_region_flag_set_by_type(ptr, RGN_TYPE_HUD, RGN_FLAG_HIDDEN_BY_USER, !value);
 }
-static void rna_Space_show_region_hud_update(bContext *C, PointerRNA *ptr)
+static void api_Space_show_region_hud_update(bContext *C, PointerRNA *ptr)
 {
-  rna_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_HUD, RGN_FLAG_HIDDEN_BY_USER);
+  api_Space_bool_from_region_flag_update_by_type(C, ptr, RGN_TYPE_HUD, RGN_FLAG_HIDDEN_BY_USER);
 }
 
-/** \} */
-
-static bool rna_Space_view2d_sync_get(PointerRNA *ptr)
+static bool api_Space_view2d_sync_get(ApiPtr *ptr)
 {
   ScrArea *area;
   ARegion *region;
 
-  area = rna_area_from_space(ptr); /* can be NULL */
-  region = BKE_area_find_region_type(area, RGN_TYPE_WINDOW);
+  area = api_area_from_space(ptr); /* can be NULL */
+  region = dune_area_find_region_type(area, RGN_TYPE_WINDOW);
   if (region) {
     View2D *v2d = &region->v2d;
     return (v2d->flag & V2D_VIEWSYNC_SCREEN_TIME) != 0;
@@ -866,7 +864,7 @@ static bool rna_Space_view2d_sync_get(PointerRNA *ptr)
   return false;
 }
 
-static void rna_Space_view2d_sync_set(PointerRNA *ptr, bool value)
+static void rna_Space_view2d_sync_set(ApiPtr *ptr, bool value)
 {
   ScrArea *area;
   ARegion *region;
