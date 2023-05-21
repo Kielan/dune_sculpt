@@ -1,12 +1,12 @@
 #include <stdlib.h>
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_sound_types.h"
-#include "DNA_speaker_types.h"
+#include "types_sound.h"
+#include "types_speaker.h"
 
 #include "BLT_translation.h"
 
