@@ -725,17 +725,17 @@ static void api_def_filter_common(ApiStruct *srna)
       "but is also slower)");
   api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = RNA_def_property(srna, "filter_eccentricity", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "afmax");
-  RNA_def_property_range(prop, 1, 256);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "filter_eccentricity", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "afmax");
+  api_def_prop_range(prop, 1, 256);
+  api_def_prop_ui_text(
       prop,
       "Filter Eccentricity",
       "Maximum eccentricity (higher gives less blur at distant/oblique angles, "
       "but is also slower)");
-  RNA_def_property_update(prop, 0, "api_Texture_update");
+  api_def_prop_update(prop, 0, "api_Texture_update");
 
-  prop = api_def_prop(sapi, "use_filter_size_min", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_filter_size_min", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "imaflag", TEX_FILTER_MIN);
   api_def_prop_ui_text(
       prop, "Minimum Filter Size", "Use Filter Size as a minimal filter value in pixels");
@@ -1005,14 +1005,14 @@ static void api_def_texture_marble(DuneApi *dapi)
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 }
 
-static void rna_def_texture_magic(BlenderRNA *brna)
+static void api_def_texture_magic(DuneApi *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "MagicTexture", "Texture");
-  RNA_def_struct_ui_text(srna, "Magic Texture", "Procedural noise texture");
-  RNA_def_struct_sdna(srna, "Tex");
+  srna = api_def_struct(brna, "MagicTexture", "Texture");
+  api_def_struct_ui_text(srna, "Magic Texture", "Procedural noise texture");
+  api_def_struct_stype(srna, "Tex");
 
   prop = RNA_def_property(srna, "turbulence", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "turbul");
