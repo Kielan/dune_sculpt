@@ -707,12 +707,12 @@ static void rna_def_filter_common(StructRNA *srna)
   RNA_def_property_boolean_sdna(prop, NULL, "imaflag", TEX_GAUSS_MIP);
   RNA_def_property_ui_text(
       prop, "MIP Map Gaussian filter", "Use Gauss filter to sample down MIP maps");
-  RNA_def_property_update(prop, 0, "rna_Texture_update");
+  api_def_prop_update(prop, 0, "rna_Texture_update");
 
-  prop = RNA_def_property(srna, "filter_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "texfilter");
-  RNA_def_property_enum_items(prop, texture_filter_items);
-  RNA_def_property_ui_text(prop, "Filter", "Texture filter to use for sampling image");
+  prop = api_def_property(srna, "filter_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "texfilter");
+  api_def_property_enum_items(prop, texture_filter_items);
+  api_def_property_ui_text(prop, "Filter", "Texture filter to use for sampling image");
   RNA_def_property_update(prop, 0, "rna_Texture_update");
 
   prop = api_def_prop(sapi, "filter_lightprobes", PROP_INT, PROP_NONE);
