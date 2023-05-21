@@ -8,23 +8,23 @@
 #include "types_sound.h"
 #include "types_speaker.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_main.h"
+#  include "dune_main.h"
 
-#  include "WM_api.h"
-#  include "WM_types.h"
+#  include "wm_api.h"
+#  include "wm_types.h"
 
 #else
 
-static void rna_def_speaker(BlenderRNA *brna)
+static void api_def_speaker(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   srna = RNA_def_struct(brna, "Speaker", "ID");
   RNA_def_struct_ui_text(srna, "Speaker", "Speaker data-block for 3D audio speaker objects");
