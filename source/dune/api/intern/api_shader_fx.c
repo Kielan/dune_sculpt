@@ -141,20 +141,20 @@ static char *api_ShaderFx_path(const ApiPtr *ptr)
   const ShaderFxData *gmd = ptr->data;
   char name_esc[sizeof(gmd->name) * 2];
 
-  BLI_str_escape(name_esc, gmd->name, sizeof(name_esc));
-  return BLI_sprintfN("shader_effects[\"%s\"]", name_esc);
+  lib_str_escape(name_esc, gmd->name, sizeof(name_esc));
+  return lib_sprintfn("shader_effects[\"%s\"]", name_esc);
 }
 
-static void rna_ShaderFx_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_ShaderFx_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
-  WM_main_add_notifier(NC_OBJECT | ND_SHADERFX, ptr->owner_id);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_GEOMETRY);
+  wm_main_add_notifier(NC_OBJECT | ND_SHADERFX, ptr->owner_id);
 }
 
-static void rna_ShaderFx_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ShaderFx_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-  rna_ShaderFx_update(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_ShaderFx_update(main, scene, ptr);
+  graph_relations_tag_update(main);
 }
 
 /* Objects */
@@ -171,38 +171,38 @@ static void shaderfx_object_set(Object *self, Object **ob_p, int type, PointerRN
   }
 }
 
-#  define RNA_FX_OBJECT_SET(_type, _prop, _obtype) \
-    static void rna_##_type##ShaderFx_##_prop##_set( \
-        PointerRNA *ptr, PointerRNA value, struct ReportList *UNUSED(reports)) \
+#  define API_FX_OBJECT_SET(_type, _prop, _obtype) \
+    static void api_##_type##ShaderFx_##_prop##_set( \
+        ApiPtr *ptr, ApiPtr value, struct ReportList *UNUSED(reports)) \
     { \
       _type##ShaderFxData *tmd = (_type##ShaderFxData *)ptr->data; \
       shaderfx_object_set((Object *)ptr->owner_id, &tmd->_prop, _obtype, value); \
     }
 
-RNA_FX_OBJECT_SET(Shadow, object, OB_EMPTY);
-RNA_FX_OBJECT_SET(Swirl, object, OB_EMPTY);
+API_FX_OBJECT_SET(Shadow, object, OB_EMPTY);
+API_FX_OBJECT_SET(Swirl, object, OB_EMPTY);
 
-#  undef RNA_FX_OBJECT_SET
+#  undef API_FX_OBJECT_SET
 
 #else
 
-static void rna_def_shader_fx_blur(BlenderRNA *brna)
+static void api_def_shader_fx_blur(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ShaderFxBlur", "ShaderFx");
-  RNA_def_struct_ui_text(srna, "Gaussian Blur Effect", "Gaussian Blur effect");
-  RNA_def_struct_sdna(srna, "BlurShaderFxData");
-  RNA_def_struct_ui_icon(srna, ICON_SHADERFX);
+  sapi = api_def_struct(dapi, "ShaderFxBlur", "ShaderFx");
+  api_def_struct_ui_text(sapi, "Gaussian Blur Effect", "Gaussian Blur effect");
+  api_def_struct_sdna(sapi, "BlurShaderFxData");
+  api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "size", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "radius");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Size", "Factor of Blur");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(srna, "size", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_sdna(prop, NULL, "radius");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_ui_text(prop, "Size", "Factor of Blur");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   prop = RNA_def_property(srna, "samples", PROP_INT, PROP_NONE);
   RNA_def_property_int_sdna(prop, NULL, "samples");
