@@ -198,11 +198,11 @@ static void api_def_shader_fx_blur(BlenderRNA *brna)
 
   api_define_lib_overridable(true);
 
-  prop = api_def_prop(srna, "size", PROP_FLOAT, PROP_XYZ);
-  api_def_prop_float_sdna(prop, NULL, "radius");
+  prop = api_def_prop(sapi, "size", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "radius");
   api_def_prop_range(prop, 0.0f, FLT_MAX);
   api_def_prop_ui_text(prop, "Size", "Factor of Blur");
-  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
   prop = api_def_prop(sapi, "samples", PROP_INT, PROP_NONE);
   api_def_prop_int_stype(prop, NULL, "samples");
@@ -210,18 +210,18 @@ static void api_def_shader_fx_blur(BlenderRNA *brna)
   api_def_prop_ui_range(prop, 0, 32, 2, -1);
   api_def_prop_int_default(prop, 4);
   api_def_prop_ui_text(prop, "Samples", "Number of Blur Samples (zero, disable blur)");
-  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_sdna(prop, NULL, "rotation");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Rotation", "Rotation of the effect");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "rotation", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "rotation");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_text(prop, "Rotation", "Rotation of the effect");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update"
 
-  prop = RNA_def_property(srna, "use_dof_mode", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", FX_BLUR_DOF_MODE);
-  RNA_def_property_ui_text(prop, "Use as Depth Of Field", "Blur using camera depth of field");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "use_dof_mode", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", FX_BLUR_DOF_MODE);
+  api_def_prop_ui_text(prop, "Use as Depth Of Field", "Blur using camera depth of field");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
   RNA_define_lib_overridable(false);
 }
