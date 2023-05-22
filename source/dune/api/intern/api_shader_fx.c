@@ -204,13 +204,13 @@ static void api_def_shader_fx_blur(BlenderRNA *brna)
   api_def_prop_ui_text(prop, "Size", "Factor of Blur");
   api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "samples", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "samples");
-  RNA_def_property_range(prop, 0, 32);
-  RNA_def_property_ui_range(prop, 0, 32, 2, -1);
-  RNA_def_property_int_default(prop, 4);
-  RNA_def_property_ui_text(prop, "Samples", "Number of Blur Samples (zero, disable blur)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "samples", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "samples");
+  api_def_prop_range(prop, 0, 32);
+  api_def_prop_ui_range(prop, 0, 32, 2, -1);
+  api_def_prop_int_default(prop, 4);
+  api_def_prop_ui_text(prop, "Samples", "Number of Blur Samples (zero, disable blur)");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   prop = RNA_def_property(srna, "rotation", PROP_FLOAT, PROP_ANGLE);
   RNA_def_property_float_sdna(prop, NULL, "rotation");
