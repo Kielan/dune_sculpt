@@ -291,10 +291,10 @@ static void api_def_shader_fx_wave(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   prop = api_def_prop(sapi, "amplitude", PROP_FLOAT, PROP_NONE);
-  RNA_def_prop_float_sdna(prop, NULL, "amplitude");
-  RNA_def_prop_range(prop, 0, FLT_MAX);
-  RNA_def_prop_ui_text(prop, "Amplitude", "Amplitude of Wave");
-  RNA_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  api_def_prop_float_stype(prop, NULL, "amplitude");
+  api_def_prop_range(prop, 0, FLT_MAX);
+  api_def_prop_ui_text(prop, "Amplitude", "Amplitude of Wave");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   prop = api_def_prop(sapi, "period", PROP_FLOAT, PROP_NONE);
   api_def_prop_float_stype(prop, NULL, "period");
@@ -311,42 +311,42 @@ static void api_def_shader_fx_wave(DuneApi *dapi)
   api_define_lib_overridable(false);
 }
 
-static void rna_def_shader_fx_pixel(BlenderRNA *brna)
+static void api_def_shader_fx_pixel(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ShaderFxPixel", "ShaderFx");
-  RNA_def_struct_ui_text(srna, "Pixelate Effect", "Pixelate effect");
-  RNA_def_struct_sdna(srna, "PixelShaderFxData");
-  RNA_def_struct_ui_icon(srna, ICON_SHADERFX);
+  sapi = api_def_struct(dapi, "ShaderFxPixel", "ShaderFx");
+  api_def_struct_ui_text(sapi, "Pixelate Effect", "Pixelate effect");
+  api_def_struct_stype(sapi, "PixelShaderFxData");
+  api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "size", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "size");
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_array(prop, 2);
-  RNA_def_property_ui_text(prop, "Size", "Pixel size");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "size", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "size");
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_array(prop, 2)
+  api_def_prop_ui_text(prop, "Size", "Pixel size");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "use_antialiasing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", FX_PIXEL_FILTER_NEAREST);
-  RNA_def_property_ui_text(prop, "Antialiasing", "Antialias pixels");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "use_antialiasing", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", FX_PIXEL_FILTER_NEAREST);
+  api_def_prop_ui_text(prop, "Antialiasing", "Antialias pixels");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   RNA_define_lib_overridable(false);
 }
 
 static void rna_def_shader_fx_rim(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProperty *prop;
 
-  srna = RNA_def_struct(brna, "ShaderFxRim", "ShaderFx");
-  RNA_def_struct_ui_text(srna, "Rim Effect", "Rim effect");
-  RNA_def_struct_sdna(srna, "RimShaderFxData");
-  RNA_def_struct_ui_icon(srna, ICON_SHADERFX);
+  sapi = api_def_struct(dapi, "ShaderFxRim", "ShaderFx");
+  api_def_struct_ui_text(sapi, "Rim Effect", "Rim effect");
+  api_def_struct_stype(sapi, "RimShaderFxData");
+  api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
   RNA_define_lib_overridable(true);
 
