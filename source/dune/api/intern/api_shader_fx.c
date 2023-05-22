@@ -251,36 +251,36 @@ static void rna_def_shader_fx_colorize(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Low Color", "First color used for effect");
   RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "high_color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "high_color");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "High Color", "Second color used for effect");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "high_color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_stype(prop, NULL, "high_color");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "High Color", "Second color used for effect");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mode");
-  RNA_def_property_enum_items(prop, rna_enum_shaderfx_colorize_modes_items);
-  RNA_def_property_ui_text(prop, "Mode", "Effect mode");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mode");
+  api_def_prop_enum_items(prop, rna_enum_shaderfx_colorize_modes_items);
+  api_def_prop_ui_text(prop, "Mode", "Effect mode");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_shader_fx_wave(BlenderRNA *brna)
+static void api_def_shader_fx_wave(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static EnumPropertyItem prop_shaderfx_wave_type_items[] = {
+  static EnumPropItem prop_shaderfx_wave_type_items[] = {
       {0, "HORIZONTAL", 0, "Horizontal", ""},
       {1, "VERTICAL", 0, "Vertical", ""},
       {0, NULL, 0, NULL, NULL}};
 
-  srna = RNA_def_struct(brna, "ShaderFxWave", "ShaderFx");
-  RNA_def_struct_ui_text(srna, "Wave Deformation Effect", "Wave Deformation effect");
-  RNA_def_struct_sdna(srna, "WaveShaderFxData");
-  RNA_def_struct_ui_icon(srna, ICON_SHADERFX);
+  srna = api_def_struct(dapi, "ShaderFxWave", "ShaderFx");
+  RNA_def_struct_ui_text(sapi, "Wave Deformation Effect", "Wave Deformation effect");
+  RNA_def_struct_sdna(sapi, "WaveShaderFxData");
+  RNA_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
   RNA_define_lib_overridable(true);
 
