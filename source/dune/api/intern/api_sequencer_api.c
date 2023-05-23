@@ -637,27 +637,27 @@ static void rna_Sequence_invalidate_cache_rnafunc(ID *id, Sequence *self, int ty
   }
 }
 
-static SeqRetimingHandle *rna_Sequence_retiming_handles_add(ID *id,
-                                                            Sequence *seq,
-                                                            int timeline_frame)
+static SeqRetimingHandle *api_seq_retiming_handles_add(Id *id,
+                                                       Seq *seq,
+                                                       int timeline_frame)
 {
   Scene *scene = (Scene *)id;
 
-  SeqRetimingHandle *handle = SEQ_retiming_add_handle(scene, seq, timeline_frame);
+  SeqRetimingHandle *handle = seq_retiming_add_handle(scene, seq, timeline_frame);
 
-  SEQ_relations_invalidate_cache_raw(scene, seq);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
+  seq_relations_invalidate_cache_raw(scene, seq);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, NULL);
   return handle;
 }
 
-static void rna_Sequence_retiming_handles_reset(ID *id, Sequence *seq)
+static void api_seq_retiming_handles_reset(Id *id, Seq *seq)
 {
   Scene *scene = (Scene *)id;
 
-  SEQ_retiming_data_clear(seq);
+  seq_retiming_data_clear(seq);
 
-  SEQ_relations_invalidate_cache_raw(scene, seq);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, NULL);
+  seq_relations_invalidate_cache_raw(scene, seq);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, NULL);
 }
 
 #else
@@ -680,10 +680,10 @@ void api_seq_strip(ApiStruct *sapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  func = RNA_def_function(srna, "strip_elem_from_frame", "rna_Sequence_strip_elem_from_frame");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Return the strip element from a given frame or None");
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "strip_elem_from_frame", "rna_Sequence_strip_elem_from_frame");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Return the strip element from a given frame or None");
+  parm = api_def_int(fn,
                      "frame",
                      0,
                      -MAXFRAME,
@@ -692,18 +692,18 @@ void api_seq_strip(ApiStruct *sapi)
                      "The frame to get the strip element from",
                      -MAXFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_function_return(
-      func,
-      RNA_def_pointer(func, "elem", "SequenceElement", "", "strip element of the current frame"));
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_fn_return(
+      fn,
+      api_def_ptr(fn, "elem", "SequenceElement", "", "strip element of the current frame"));
 
-  func = RNA_def_function(srna, "swap", "rna_Sequence_swap_internal");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_SELF_ID);
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(func, "other", "Sequence", "Other", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "swap", "api_seq_swap_internal");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_SELF_ID);
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(fn, "other", "Sequence", "Other", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "move_to_meta", "rna_Sequences_move_strip_to_meta");
+  func = api_def_fn(sapi, "move_to_meta", "rna_Sequences_move_strip_to_meta");
   RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_SELF_ID | FUNC_USE_MAIN);
   parm = RNA_def_pointer(func,
                          "meta_sequence",
