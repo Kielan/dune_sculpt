@@ -619,20 +619,20 @@ static void api_SequenceElements_pop(ID *id, Sequence *seq, ReportList *reports,
   mem_freen(seq->strip->stripdata);
   seq->strip->stripdata = new_seq;
 
-  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, scene);
 }
 
-static void api_seq_invalidate_cache_rnafunc(ID *id, Sequence *self, int type)
+static void api_seq_invalidate_cache_apifn(Id *id, Sequence *self, int type)
 {
   switch (type) {
-    case seq_CACHE_STORE_RAW:
+    case SEQ_CACHE_STORE_RAW:
       seq_relations_invalidate_cache_raw((Scene *)id, self);
       break;
     case SEQ_CACHE_STORE_PREPROCESSED:
       seq_relations_invalidate_cache_preprocessed((Scene *)id, self);
       break;
     case SEQ_CACHE_STORE_COMPOSITE:
-      SEQ_relations_invalidate_cache_composite((Scene *)id, self);
+      seq_relations_invalidate_cache_composite((Scene *)id, self);
       break;
   }
 }
@@ -739,11 +739,11 @@ void api_seq_strip(ApiStruct *sapi)
   api_def_fn_return(fn, parm);
 }
 
-void api_seq_elements(BlenderRNA *brna, PropertyRNA *cprop)
+void api_seq_elements(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *parm;
+  ApiFn *fn;
 
   RNA_def_property_srna(cprop, "SequenceElements");
   srna = RNA_def_struct(brna, "SequenceElements", NULL);
