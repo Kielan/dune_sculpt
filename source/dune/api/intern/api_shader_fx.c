@@ -361,11 +361,11 @@ static void api_def_shader_fx_rim(DuneApi *dapi)
   api_def_prop_float_style(prop, NULL, "rim_rgb");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Rim Color", "Color used for Rim");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
-  prop = RNA_def_prop(srna, "mask_color", PROP_FLOAT, PROP_COLOR);
+  prop = api_def_prop(sapo, "mask_color", PROP_FLOAT, PROP_COLOR);
   api_def_prop_range(prop, 0.0, 1.0);
-  api_def_prop_float_sdna(prop, NULL, "mask_rgb");
+  api_def_prop_float_stype(prop, NULL, "mask_rgb");
   api_def_prop_array(prop, 3);
   api_def_prop_ui_text(prop, "Mask Color", "Color that must be kept");
   api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
@@ -374,10 +374,10 @@ static void api_def_shader_fx_rim(DuneApi *dapi)
   api_def_prop_enum_stype(prop, NULL, "mode");
   api_def_prop_enum_items(prop, rna_enum_shaderfx_rim_modes_items);
   api_def_prop_ui_text(prop, "Mode", "Blend mode");
-  RNA_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   prop = api_def_prop(sapi, "blur", PROP_INT, PROP_PIXEL);
-  api_def_prop_int_sdna(prop, NULL, "blur");
+  api_def_prop_int_stype(prop, NULL, "blur");
   api_def_prop_range(prop, 0, SHRT_MAX);
   api_def_prop_ui_text(
       prop, "Blur", "Number of pixels for blurring rim (set to 0 to disable)");
