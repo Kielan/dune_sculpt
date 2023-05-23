@@ -322,109 +322,109 @@ static Seq *api_seq_editing_new_movie(Id *id,
                                       int frame_start,
                                       int fit_method)
 {
-  return rna_Sequences_new_movie(
-      id, &ed->seqbase, bmain, name, file, channel, frame_start, fit_method);
+  return api_seq_new_movie(
+      id, &ed->seqbase, main, name, file, channel, frame_start, fit_method);
 }
 
-static Sequence *rna_Sequences_meta_new_movie(ID *id,
-                                              Sequence *seq,
-                                              Main *bmain,
-                                              const char *name,
-                                              const char *file,
-                                              int channel,
-                                              int frame_start,
-                                              int fit_method)
+static Seq *api_seq_meta_new_movie(Id *id,
+                                   Seq *seq,
+                                   Main *main,
+                                   const char *name,
+                                   const char *file,
+                                   int channel,
+                                   int frame_start,
+                                   int fit_method)
 {
-  return rna_Sequences_new_movie(
-      id, &seq->seqbase, bmain, name, file, channel, frame_start, fit_method);
+  return api_seq_new_movie(
+      id, &seq->seqbase, main, name, file, channel, frame_start, fit_method);
 }
 
 #  ifdef WITH_AUDASPACE
-static Sequence *rna_Sequences_new_sound(ID *id,
-                                         ListBase *seqbase,
-                                         Main *bmain,
-                                         ReportList *reports,
-                                         const char *name,
-                                         const char *file,
-                                         int channel,
-                                         int frame_start)
+static Seq *api_seq_new_sound(Id *id,
+                              List *seqbase,
+                              Main *main,
+                              ReportList *reports,
+                              const char *name,
+                              const char *file,
+                              int channel,
+                              int frame_start)
 {
   Scene *scene = (Scene *)id;
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, file, frame_start, channel);
+  seq_add_load_data_init(&load_data, name, file, frame_start, channel);
   load_data.allow_invalid_file = true;
-  Sequence *seq = SEQ_add_sound_strip(bmain, scene, seqbase, &load_data);
+  Seq *seq = seq_add_sound_strip(main, scene, seqbase, &load_data);
 
   if (seq == NULL) {
-    BKE_report(reports, RPT_ERROR, "Sequences.new_sound: unable to open sound file");
+    dune_report(reports, RPT_ERROR, "Sequences.new_sound: unable to open sound file");
     return NULL;
   }
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, scene);
 
   return seq;
 }
 #  else  /* WITH_AUDASPACE */
-static Sequence *rna_Sequences_new_sound(ID *UNUSED(id),
-                                         ListBase *UNUSED(seqbase),
-                                         Main *UNUSED(bmain),
+static Seq *api_seq_new_sound(Id *UNUSED(id),
+                                         List *UNUSED(seqbase),
+                                         Main *UNUSED(main),
                                          ReportList *reports,
                                          const char *UNUSED(name),
                                          const char *UNUSED(file),
                                          int UNUSED(channel),
                                          int UNUSED(frame_start))
 {
-  BKE_report(reports, RPT_ERROR, "Blender compiled without Audaspace support");
+  dune_report(reports, RPT_ERROR, "Blender compiled without Audaspace support");
   return NULL;
 }
 #  endif /* WITH_AUDASPACE */
 
-static Sequence *rna_Sequences_editing_new_sound(ID *id,
-                                                 Editing *ed,
-                                                 Main *bmain,
-                                                 ReportList *reports,
-                                                 const char *name,
-                                                 const char *file,
-                                                 int channel,
-                                                 int frame_start)
+static Seq *api_seq_editing_new_sound(Id *id,
+                                      Editing *ed,
+                                      Main *main,
+                                      ReportList *reports,
+                                      const char *name,
+                                      const char *file,
+                                      int channel,
+                                      int frame_start)
 {
-  return rna_Sequences_new_sound(
-      id, &ed->seqbase, bmain, reports, name, file, channel, frame_start);
+  return api_seq_new_sound(
+      id, &ed->seqbase, main, reports, name, file, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_meta_new_sound(ID *id,
-                                              Sequence *seq,
-                                              Main *bmain,
-                                              ReportList *reports,
-                                              const char *name,
-                                              const char *file,
-                                              int channel,
-                                              int frame_start)
+static Seq *api_seq_meta_new_sound(Id *id,
+                                   Seq *seq,
+                                   Main *main,
+                                   ReportList *reports,
+                                   const char *name,
+                                   const char *file,
+                                   int channel,
+                                   int frame_start)
 {
-  return rna_Sequences_new_sound(
-      id, &seq->seqbase, bmain, reports, name, file, channel, frame_start);
+  return api_seq_new_sound(
+      id, &seq->seqbase, main, reports, name, file, channel, frame_start);
 }
 
 /* Meta sequence
  * Possibility to create an empty meta to avoid plenty of meta toggling
  * Created meta have a length equal to 1, must be set through the API. */
-static Sequence *rna_Sequences_new_meta(
-    ID *id, ListBase *seqbase, const char *name, int channel, int frame_start)
+static Seq *api_seq_new_m(
+    Id *id, List *seqbase, const char *name, int channel, int frame_start)
 {
   Scene *scene = (Scene *)id;
   SeqLoadData load_data;
   SEQ_add_load_data_init(&load_data, name, NULL, frame_start, channel);
-  Sequence *seqm = SEQ_add_meta_strip(scene, seqbase, &load_data);
+  Sequence *seqm = seq_add_meta_strip(scene, seqbase, &load_data);
 
   return seqm;
 }
 
-static Sequence *rna_Sequences_editing_new_meta(
-    ID *id, Editing *ed, const char *name, int channel, int frame_start)
+static Seq *api_seq_editing_new_meta(
+    Id *id, Editing *ed, const char *name, int channel, int frame_start)
 {
-  return rna_Sequences_new_meta(id, &ed->seqbase, name, channel, frame_start);
+  return api_seq_new_meta(id, &ed->seqbase, name, channel, frame_start);
 }
 
 static Sequence *rna_Sequences_meta_new_meta(
