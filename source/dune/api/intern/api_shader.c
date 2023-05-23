@@ -27,12 +27,12 @@ static void api_def_simulation(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Node Tree", "Node tree defining the simulation");
 
   /* common */
-  rna_def_animdata_common(sapi);
+  api_def_animdata_common(sapi);
 }
 
-void RNA_def_simulation(DuneApi *dapi)
+void api_def_simulation(DuneApi *dapi)
 {
-  rna_def_simulation(brna);
+  api_def_simulation(dapi);
 }
 
 #endif
