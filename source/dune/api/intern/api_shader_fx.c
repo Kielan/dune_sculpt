@@ -363,56 +363,56 @@ static void api_def_shader_fx_rim(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Rim Color", "Color used for Rim");
   RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "mask_color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "mask_rgb");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Mask Color", "Color that must be kept");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = RNA_def_prop(srna, "mask_color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_sdna(prop, NULL, "mask_rgb");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Mask Color", "Color that must be kept");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "mode");
-  RNA_def_property_enum_items(prop, rna_enum_shaderfx_rim_modes_items);
-  RNA_def_property_ui_text(prop, "Mode", "Blend mode");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "mode");
+  api_def_prop_enum_items(prop, rna_enum_shaderfx_rim_modes_items);
+  api_def_prop_ui_text(prop, "Mode", "Blend mode");
+  RNA_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "blur", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "blur");
-  RNA_def_property_range(prop, 0, SHRT_MAX);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "blur", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_sdna(prop, NULL, "blur");
+  api_def_prop_range(prop, 0, SHRT_MAX);
+  api_def_prop_ui_text(
       prop, "Blur", "Number of pixels for blurring rim (set to 0 to disable)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "samples", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "samples");
-  RNA_def_property_range(prop, 0, 32);
-  RNA_def_property_ui_range(prop, 0, 32, 2, -1);
-  RNA_def_property_int_default(prop, 4);
-  RNA_def_property_ui_text(prop, "Samples", "Number of Blur Samples (zero, disable blur)");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "samples", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "samples");
+  api_def_prop_range(prop, 0, 32);
+  api_def_prop_ui_range(prop, 0, 32, 2, -1);
+  api_def_prop_int_default(prop, 4);
+  api_def_prop_ui_text(prop, "Samples", "Number of Blur Samples (zero, disable blur)");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_shader_fx_shadow(BlenderRNA *brna)
+static void api_def_shader_fx_shadow(BlenderRNA *brna)
 {
-  static EnumPropertyItem prop_shaderfx_shadow_type_items[] = {
+  static EnumPropItem prop_shaderfx_shadow_type_items[] = {
       {0, "HORIZONTAL", 0, "Horizontal", ""},
       {1, "VERTICAL", 0, "Vertical", ""},
       {0, NULL, 0, NULL, NULL}};
 
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ShaderFxShadow", "ShaderFx");
-  RNA_def_struct_ui_text(srna, "Shadow Effect", "Shadow effect");
-  RNA_def_struct_sdna(srna, "ShadowShaderFxData");
-  RNA_def_struct_ui_icon(srna, ICON_SHADERFX);
+  sapi = RNA_def_struct(brna, "ShaderFxShadow", "ShaderFx");
+  api_def_struct_ui_text(srna, "Shadow Effect", "Shadow effect");
+  api_def_struct_sdna(srna, "ShadowShaderFxData");
+  api_def_struct_ui_icon(srna, ICON_SHADERFX);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
-  RNA_def_property_ui_text(prop, "Object", "Object to determine center of rotation");
+  prop = api_def_property(srna, "object", PROP_POINTER, PROP_NONE);
+  api_def_prop_ui_text(prop, "Object", "Object to determine center of rotation");
   RNA_def_property_pointer_funcs(prop, NULL, "rna_ShadowShaderFx_object_set", NULL, NULL);
   RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
   RNA_def_property_update(prop, 0, "rna_ShaderFx_dependency_update");
