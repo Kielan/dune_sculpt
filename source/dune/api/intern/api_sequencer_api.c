@@ -745,36 +745,36 @@ void api_seq_elements(DuneApi *dapi, ApiProp *cprop)
   ApiProp *parm;
   ApiFn *fn;
 
-  RNA_def_property_srna(cprop, "SequenceElements");
-  srna = RNA_def_struct(brna, "SequenceElements", NULL);
-  RNA_def_struct_sdna(srna, "Sequence");
-  RNA_def_struct_ui_text(srna, "SequenceElements", "Collection of SequenceElement");
+  api_def_prop_sapi(cprop, "SequenceElements");
+  srna = api_def_struct(dapi, "SequenceElements", NULL);
+  api_def_struct_sdna(sapi, "Sequence");
+  api_def_struct_ui_text(sapi, "SequenceElements", "Collection of SequenceElement");
 
-  func = RNA_def_function(srna, "append", "rna_SequenceElements_append");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Push an image from ImageSequence.directory");
-  parm = RNA_def_string(func, "filename", "File", 0, "", "Filepath to image");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "append", "rna_SequenceElements_append");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Push an image from ImageSequence.directory");
+  parm = api_def_string(fn, "filename", "File", 0, "", "Filepath to image");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "elem", "SequenceElement", "", "New SequenceElement");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "elem", "SequenceElement", "", "New SequenceElement");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "pop", "rna_SequenceElements_pop");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Pop an image off the collection");
-  parm = RNA_def_int(
-      func, "index", -1, INT_MIN, INT_MAX, "", "Index of image to remove", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "pop", "api_SequenceElements_pop");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Pop an image off the collection");
+  parm = api_def_int(
+      fn, "index", -1, INT_MIN, INT_MAX, "", "Index of image to remove", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void RNA_api_sequence_retiming_handles(BlenderRNA *brna, PropertyRNA *cprop)
+void api_seq_retiming_handles(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  RNA_def_property_srna(cprop, "RetimingHandles");
-  srna = RNA_def_struct(brna, "RetimingHandles", NULL);
-  RNA_def_struct_sdna(srna, "Sequence");
-  RNA_def_struct_ui_text(srna, "RetimingHandles", "Collection of RetimingHandle");
+  api_def_prop_sapi(cprop, "RetimingHandles");
+  sapi = api_def_struct(brna, "RetimingHandles", NULL);
+  api_def_struct_sdna(srna, "Sequence");
+  api_def_struct_ui_text(srna, "RetimingHandles", "Collection of RetimingHandle");
 
   FunctionRNA *func = RNA_def_function(srna, "add", "rna_Sequence_retiming_handles_add");
   RNA_def_function_flag(func, FUNC_USE_SELF_ID);
