@@ -662,19 +662,19 @@ static void rna_Sequence_retiming_handles_reset(ID *id, Sequence *seq)
 
 #else
 
-void RNA_api_sequence_strip(StructRNA *srna)
+void api_seq_strip(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  static const EnumPropertyItem seq_cahce_type_items[] = {
+  static const EnumPropItem seq_cahce_type_items[] = {
       {SEQ_CACHE_STORE_RAW, "RAW", 0, "Raw", ""},
       {SEQ_CACHE_STORE_PREPROCESSED, "PREPROCESSED", 0, "Preprocessed", ""},
       {SEQ_CACHE_STORE_COMPOSITE, "COMPOSITE", 0, "Composite", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem seq_split_method_items[] = {
+  static const EnumPropItem seq_split_method_items[] = {
       {SEQ_SPLIT_SOFT, "SOFT", 0, "Soft", ""},
       {SEQ_SPLIT_HARD, "HARD", 0, "Hard", ""},
       {0, NULL, 0, NULL, NULL},
