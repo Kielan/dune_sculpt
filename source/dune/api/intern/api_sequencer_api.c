@@ -108,12 +108,12 @@ static Seq *api_seq_split(
 static Seq *api_seq_parent_meta(Id *id, Seq *seq_self)
 {
   Scene *scene = (Scene *)id;
-  Editing *ed = SEQ_editing_get(scene);
+  Editing *ed = seq_editing_get(scene);
 
-  return SEQ_find_metastrip_by_sequence(&ed->seqbase, NULL, seq_self);
+  return seq_find_metastrip_by_sequence(&ed->seqbase, NULL, seq_self);
 }
 
-static Sequence *rna_Sequences_new_clip(ID *id,
+static Seq *api_seq_new_clip(Id *id,
                                         ListBase *seqbase,
                                         Main *bmain,
                                         const char *name,
@@ -123,22 +123,22 @@ static Sequence *rna_Sequences_new_clip(ID *id,
 {
   Scene *scene = (Scene *)id;
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, NULL, frame_start, channel);
+  seq_add_load_data_init(&load_data, name, NULL, frame_start, channel);
   load_data.clip = clip;
-  Sequence *seq = SEQ_add_movieclip_strip(scene, seqbase, &load_data);
+  Seq *seq = seq_add_movieclip_strip(scene, seqbase, &load_data);
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_relations_tag_update(bmain);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, scene);
 
   return seq;
 }
 
-static Sequence *rna_Sequences_editing_new_clip(ID *id,
-                                                Editing *ed,
-                                                Main *bmain,
-                                                const char *name,
-                                                MovieClip *clip,
+static Seq *api_seq_editing_new_clip(Id *id,
+                                     Editing *ed,
+                                     Main *main,
+                                     const char *name,
+                                     MovieClip *clip,
                                                 int channel,
                                                 int frame_start)
 {
