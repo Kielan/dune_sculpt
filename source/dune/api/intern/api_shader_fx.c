@@ -236,13 +236,13 @@ static void api_def_shader_fx_colorize(BlenderRNA *brna)
   api_def_struct_stype(sapi, "ColorizeShaderFxData");
   api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "factor", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "factor");
-  RNA_def_property_range(prop, 0, 1.0);
-  RNA_def_property_ui_text(prop, "Factor", "Mix factor");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "factor", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "factor");
+  api_def_prop_range(prop, 0, 1.0);
+  api_def_prop_ui_text(prop, "Factor", "Mix factor");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   prop = api_def_prop(sapi, "low_color", PROP_FLOAT, PROP_COLOR);
   api_def_prop_range(prop, 0.0, 1.0);
@@ -404,37 +404,37 @@ static void api_def_shader_fx_shadow(BlenderRNA *brna)
   ApiStruct *sapi;
   ApiProp *prop;
 
-  sapi = RNA_def_struct(brna, "ShaderFxShadow", "ShaderFx");
-  api_def_struct_ui_text(srna, "Shadow Effect", "Shadow effect");
-  api_def_struct_sdna(srna, "ShadowShaderFxData");
-  api_def_struct_ui_icon(srna, ICON_SHADERFX);
+  sapi = api_def_struct(dapi, "ShaderFxShadow", "ShaderFx");
+  api_def_struct_ui_text(sapi, "Shadow Effect", "Shadow effect");
+  api_def_struct_sdna(sapi, "ShadowShaderFxData");
+  api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
   api_define_lib_overridable(true);
 
-  prop = api_def_property(srna, "object", PROP_POINTER, PROP_NONE);
+  prop = api_def_prop(sapi, "object", PROP_PTR, PROP_NONE);
   api_def_prop_ui_text(prop, "Object", "Object to determine center of rotation");
-  RNA_def_property_pointer_funcs(prop, NULL, "rna_ShadowShaderFx_object_set", NULL, NULL);
-  RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
-  RNA_def_property_update(prop, 0, "rna_ShaderFx_dependency_update");
+  api_def_prop_ptr_fns(prop, NULL, "api_ShadowShaderFx_object_set", NULL, NULL);
+  api_def_prop_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+  api_def_prop_update(prop, 0, "api_ShaderFx_dependency_update");
 
-  prop = RNA_def_property(srna, "offset", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "offset");
-  RNA_def_property_range(prop, SHRT_MIN, SHRT_MAX);
-  RNA_def_property_ui_text(prop, "Offset", "Offset of the shadow");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "offset", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "offset");
+  api_def_prop_range(prop, SHRT_MIN, SHRT_MAX);
+  api_def_prop_ui_text(prop, "Offset", "Offset of the shadow");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_XYZ);
-  RNA_def_property_float_sdna(prop, NULL, "scale");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_text(prop, "Scale", "Scale of the shadow");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(srna, "scale", PROP_FLOAT, PROP_XYZ);
+  api_def_prop_float_stype(prop, NULL, "scale");
+  api_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  api_def_prop_ui_text(prop, "Scale", "Scale of the shadow");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "shadow_color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "shadow_rgba");
-  RNA_def_property_array(prop, 4);
-  RNA_def_property_ui_text(prop, "Shadow Color", "Color used for Shadow");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "shadow_color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_stype(prop, NULL, "shadow_rgba");
+  api_def_prop_array(prop, 4);
+  api_def_prop_ui_text(prop, "Shadow Color", "Color used for Shadow");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
   prop = RNA_def_property(srna, "orientation", PROP_ENUM, PROP_NONE);
   RNA_def_property_enum_sdna(prop, NULL, "orientation");
