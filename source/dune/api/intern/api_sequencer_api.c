@@ -580,13 +580,13 @@ static StripElem *api_SequenceElements_append(ID *id, Sequence *seq, const char 
   return se;
 }
 
-static void rna_SequenceElements_pop(ID *id, Sequence *seq, ReportList *reports, int index)
+static void api_SequenceElements_pop(ID *id, Sequence *seq, ReportList *reports, int index)
 {
   Scene *scene = (Scene *)id;
   StripElem *new_seq, *se;
 
   if (seq->len == 1) {
-    BKE_report(reports, RPT_ERROR, "SequenceElements.pop: cannot pop the last element");
+    dune_report(reports, RPT_ERROR, "SequenceElements.pop: cannot pop the last element");
     return;
   }
 
@@ -596,11 +596,11 @@ static void rna_SequenceElements_pop(ID *id, Sequence *seq, ReportList *reports,
   }
 
   if (seq->len <= index || index < 0) {
-    BKE_report(reports, RPT_ERROR, "SequenceElements.pop: index out of range");
+    dune_report(reports, RPT_ERROR, "SequenceElements.pop: index out of range");
     return;
   }
 
-  new_seq = MEM_callocN(sizeof(StripElem) * (seq->len - 1), "SequenceElements_pop");
+  new_seq = mem_callocn(sizeof(StripElem) * (seq->len - 1), "SequenceElements_pop");
   seq->len--;
 
   if (seq->len == 1) {
@@ -616,20 +616,20 @@ static void rna_SequenceElements_pop(ID *id, Sequence *seq, ReportList *reports,
     memcpy(&new_seq[index], &se[index + 1], sizeof(StripElem) * (seq->len - index));
   }
 
-  MEM_freeN(seq->strip->stripdata);
+  mem_freen(seq->strip->stripdata);
   seq->strip->stripdata = new_seq;
 
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 }
 
-static void rna_Sequence_invalidate_cache_rnafunc(ID *id, Sequence *self, int type)
+static void api_seq_invalidate_cache_rnafunc(ID *id, Sequence *self, int type)
 {
   switch (type) {
-    case SEQ_CACHE_STORE_RAW:
-      SEQ_relations_invalidate_cache_raw((Scene *)id, self);
+    case seq_CACHE_STORE_RAW:
+      seq_relations_invalidate_cache_raw((Scene *)id, self);
       break;
     case SEQ_CACHE_STORE_PREPROCESSED:
-      SEQ_relations_invalidate_cache_preprocessed((Scene *)id, self);
+      seq_relations_invalidate_cache_preprocessed((Scene *)id, self);
       break;
     case SEQ_CACHE_STORE_COMPOSITE:
       SEQ_relations_invalidate_cache_composite((Scene *)id, self);
