@@ -703,13 +703,13 @@ void api_seq_strip(ApiStruct *sapi)
   parm = api_def_ptr(fn, "other", "Sequence", "Other", "");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = api_def_fn(sapi, "move_to_meta", "rna_Sequences_move_strip_to_meta");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_SELF_ID | FUNC_USE_MAIN);
-  parm = RNA_def_pointer(func,
-                         "meta_sequence",
-                         "Sequence",
-                         "Destination Meta Sequence",
-                         "Meta to move the strip into");
+  fn = api_def_fn(sapi, "move_to_meta", "api_seq_move_strip_to_meta");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_SELF_ID | FN_USE_MAIN);
+  parm = api_def_ptr(fn,
+                     "meta_sequence",
+                     "Sequence",
+                     "Destination Meta Sequence",
+                     "Meta to move the strip into");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
   func = RNA_def_function(srna, "parent_meta", "rna_Sequence_parent_meta");
