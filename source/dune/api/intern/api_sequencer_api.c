@@ -262,65 +262,65 @@ static Sequence *rna_Sequences_new_image(ID *id,
   return seq;
 }
 
-static Sequence *rna_Sequences_editing_new_image(ID *id,
-                                                 Editing *ed,
-                                                 Main *bmain,
-                                                 ReportList *reports,
-                                                 const char *name,
-                                                 const char *file,
-                                                 int channel,
-                                                 int frame_start,
-                                                 int fit_method)
+static Seq *api_seq_editing_new_image(Id *id,
+                                      Editing *ed,
+                                      Main *main,
+                                      ReportList *reports,
+                                      const char *name,
+                                      const char *file,
+                                      int channel,
+                                      int frame_start,
+                                      int fit_method)
 {
-  return rna_Sequences_new_image(
-      id, &ed->seqbase, bmain, reports, name, file, channel, frame_start, fit_method);
+  return api_seq_new_image(
+      id, &ed->seqbase, main, reports, name, file, channel, frame_start, fit_method);
 }
 
-static Sequence *rna_Sequences_meta_new_image(ID *id,
-                                              Sequence *seq,
-                                              Main *bmain,
-                                              ReportList *reports,
-                                              const char *name,
-                                              const char *file,
-                                              int channel,
-                                              int frame_start,
-                                              int fit_method)
+static Sequence *api_seq_meta_new_image(Id *id,
+                                        Seq *seq,
+                                        Main *main,
+                                        ReportList *reports,
+                                        const char *name,
+                                        const char *file,
+                                        int channel,
+                                        int frame_start,
+                                        int fit_method)
 {
-  return rna_Sequences_new_image(
-      id, &seq->seqbase, bmain, reports, name, file, channel, frame_start, fit_method);
+  return api_seq_new_image(
+      id, &seq->seqbase, main, reports, name, file, channel, frame_start, fit_method);
 }
 
-static Sequence *rna_Sequences_new_movie(ID *id,
-                                         ListBase *seqbase,
-                                         Main *bmain,
-                                         const char *name,
-                                         const char *file,
-                                         int channel,
-                                         int frame_start,
-                                         int fit_method)
+static Seq *api_seq_new_movie(Id *id,
+                              List *seqbase,
+                              Main *main,
+                              const char *name
+                              const char *file,
+                              int channel,
+                              int frame_start,
+                              int fit_method)
 {
   Scene *scene = (Scene *)id;
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, file, frame_start, channel);
+  seq_add_load_data_init(&load_data, name, file, frame_start, channel);
   load_data.fit_method = fit_method;
   load_data.allow_invalid_file = true;
-  Sequence *seq = SEQ_add_movie_strip(bmain, scene, seqbase, &load_data);
+  Seq *seq = seq_add_movie_strip(main, scene, seqbase, &load_data);
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQU, scene);
 
   return seq;
 }
 
-static Sequence *rna_Sequences_editing_new_movie(ID *id,
-                                                 Editing *ed,
-                                                 Main *bmain,
-                                                 const char *name,
-                                                 const char *file,
-                                                 int channel,
-                                                 int frame_start,
-                                                 int fit_method)
+static Seq *api_seq_editing_new_movie(Id *id,
+                                      Editing *ed,
+                                      Main *bmain,
+                                      const char *name,
+                                      const char *file,
+                                      int channel,
+                                      int frame_start,
+                                      int fit_method)
 {
   return rna_Sequences_new_movie(
       id, &ed->seqbase, bmain, name, file, channel, frame_start, fit_method);
