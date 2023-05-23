@@ -98,7 +98,7 @@ static ApiStruct *api_ShaderFx_refine(struct ApiPtr *ptr)
     case eShaderFxType_Rim:
       return &Api_ShaderFxRim;
     case eShaderFxType_Shadow:
-      return &RNA_ShaderFxShadow;
+      return &Api_ShaderFxShadow;
     case eShaderFxType_Swirl:
       return &Api_ShaderFxSwirl;
     case eShaderFxType_Flip:
@@ -151,7 +151,7 @@ static void api_ShaderFx_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr
   wm_main_add_notifier(NC_OBJECT | ND_SHADERFX, ptr->owner_id);
 }
 
-static void api_ShaderFx_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_ShaderFx_dependency_update(Main *main, Scene *scene, PointerRNA *ptr)
 {
   api_ShaderFx_update(main, scene, ptr);
   graph_relations_tag_update(main);
@@ -165,7 +165,7 @@ static void shaderfx_object_set(Object *self, Object **ob_p, int type, PointerRN
 
   if (!self || ob != self) {
     if (!ob || type == OB_EMPTY || ob->type == type) {
-      id_lib_extern((ID *)ob);
+      id_lib_extern((Id *)ob);
       *ob_p = ob;
     }
   }
@@ -186,14 +186,14 @@ API_FX_OBJECT_SET(Swirl, object, OB_EMPTY);
 
 #else
 
-static void api_def_shader_fx_blur(BlenderRNA *brna)
+static void api_def_shader_fx_blur(DuneApi *dapi)
 {
   ApiStruct *sapi;
   ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ShaderFxBlur", "ShaderFx");
   api_def_struct_ui_text(sapi, "Gaussian Blur Effect", "Gaussian Blur effect");
-  api_def_struct_sdna(sapi, "BlurShaderFxData");
+  api_def_struct_stype(sapi, "BlurShaderFxData");
   api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
   api_define_lib_overridable(true);
