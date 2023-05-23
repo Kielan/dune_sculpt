@@ -710,16 +710,16 @@ void api_seq_strip(ApiStruct *sapi)
                      "Sequence",
                      "Destination Meta Sequence",
                      "Meta to move the strip into");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "parent_meta", "rna_Sequence_parent_meta");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Parent meta");
+  fn = api_def_fn(sapi, "parent_meta", "api_seq_parent_meta");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_function_ui_description(func, "Parent meta");
   /* return type */
-  parm = RNA_def_pointer(func, "sequence", "Sequence", "", "Parent Meta");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "sequence", "Sequence", "", "Parent Meta");
+  api_def_fn_return(fn, parm);
 
-  func = api_def_fn(sapi, "invalidate_cache", "rna_Sequence_invalidate_cache_rnafunc");
+  func = api_def_fn(sapi, "invalidate_cache", "api_Sequence_invalidate_cache_rnafunc");
   api_def_fn_flag(fn, FN_USE_SELF_ID);
   api_def_fn_ui_description(fn,
                                   "Invalidate cached images for strip and all dependent strips");
@@ -728,7 +728,7 @@ void api_seq_strip(ApiStruct *sapi)
 
   fn = api_def_fn(sapi, "split", "rna_Sequence_split");
   api_def_fn_flag(fn, FN_USE_REPORTS | FUNC_USE_SELF_ID | FUNC_USE_MAIN);
-  api_def_fn_ui_description(func, "Split Sequence");
+  api_def_fn_ui_description(fn, "Split Sequence");
   parm = api_def_int(
       fn, "frame", 0, INT_MIN, INT_MAX, "", "Frame where to split the strip", INT_MIN, INT_MAX);
   api_def_param_flags(parm, 0, PARM_REQUIRED);
