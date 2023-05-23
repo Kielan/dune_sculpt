@@ -470,12 +470,12 @@ static Seq *api_seq_new_effect(Id *id,
       break;
     case 3:
       if (seq1 == NULL || seq2 == NULL || seq3 == NULL) {
-        BKE_report(reports, RPT_ERROR, "Seq.new_effect: effect takes 3 input sequences");
+        dune_report(reports, RPT_ERROR, "Seq.new_effect: effect takes 3 input sequences");
         return NULL;
       }
       break;
     default:
-      BKE_reportf(
+      dune_reportf(
           reports,
           RPT_ERROR,
           "Seq.new_effect: effect expects more than 3 inputs (%d, should never happen!)",
@@ -525,7 +525,7 @@ static Seq *api_seq_meta_new_effect(ID *id,
                                                Sequence *seq2,
                                                Sequence *seq3)
 {
-  return rna_Sequences_new_effect(
+  return api_seq_new_effect(
       id, &seq->seqbase, reports, name, type, channel, frame_start, frame_end, seq1, seq2, seq3);
 }
 
@@ -545,9 +545,9 @@ static void api_seq_remove(
   seq_edit_remove_flagged_seq(scene, seqbase);
   API_PTR_INVALIDATE(seq_ptr);
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQU, scene);
 }
 
 static void api_seq_editing_remove(
@@ -556,18 +556,18 @@ static void api_seq_editing_remove(
   api_seq_remove(id, &ed->seqbase, main, reports, seq_ptr);
 }
 
-static void api_Sequences_meta_remove(
+static void api_seq_meta_remove(
     Id *id, Seq *seq, Main *main, ReportList *reports, ApiPtr *seq_ptr)
 {
   api_seq_remove(id, &seq->seqbase, main, reports, seq_ptr);
 }
 
-static StripElem *rna_SequenceElements_append(ID *id, Sequence *seq, const char *filename)
+static StripElem *api_SequenceElements_append(ID *id, Sequence *seq, const char *filename)
 {
   Scene *scene = (Scene *)id;
   StripElem *se;
 
-  seq->strip->stripdata = se = MEM_reallocN(seq->strip->stripdata,
+  seq->strip->stripdata = se = mem_reallocn(seq->strip->stripdata,
                                             sizeof(StripElem) * (seq->len + 1));
   se += seq->len;
   STRNCPY(se->name, filename);
@@ -575,7 +575,7 @@ static StripElem *rna_SequenceElements_append(ID *id, Sequence *seq, const char 
 
   seq->flag &= ~SEQ_SINGLE_FRAME_CONTENT;
 
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 
   return se;
 }
