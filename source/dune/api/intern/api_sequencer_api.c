@@ -2,33 +2,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "DNA_scene_types.h"
-#include "DNA_sequence_types.h"
+#include "types_scene_types.h"
+#include "types_sequence_types.h"
 
-#include "BLI_utildefines.h"
+#include "lib_utildefines.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
+#include "api_access.h"
+#include "api_define.h"
 
-#include "SEQ_edit.h"
+#include "seq_edit.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-// #include "DNA_anim_types.h"
-#  include "DNA_image_types.h"
-#  include "DNA_mask_types.h"
-#  include "DNA_sound_types.h"
+// #include "types_anim_types.h"
+#  include "types_image_types.h"
+#  include "types_mask_types.h"
+#  include "types_sound_types.h"
 
-#  include "BLI_path_util.h" /* #BLI_path_split_dir_file */
+#  include "lib_path_util.h" /* #BLI_path_split_dir_file */
 
-#  include "BKE_image.h"
-#  include "BKE_mask.h"
-#  include "BKE_movieclip.h"
+#  include "dune_image.h"
+#  include "dune_mask.h"
+#  include "dune_movieclip.h"
 
-#  include "BKE_report.h"
-#  include "BKE_sound.h"
+#  include "dune_report.h"
+#  include "dune_sound.h"
 
 #  include "IMB_imbuf.h"
 #  include "IMB_imbuf_types.h"
