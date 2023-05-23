@@ -550,16 +550,16 @@ static void rna_Sequences_remove(
   WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 }
 
-static void rna_Sequences_editing_remove(
-    ID *id, Editing *ed, Main *bmain, ReportList *reports, PointerRNA *seq_ptr)
+static void api_seq_editing_remove(
+    Id *id, Editing *ed, Main *main, ReportList *reports, ApiPtr *seq_ptr)
 {
-  rna_Sequences_remove(id, &ed->seqbase, bmain, reports, seq_ptr);
+  api_seq_remove(id, &ed->seqbase, main, reports, seq_ptr);
 }
 
-static void rna_Sequences_meta_remove(
-    ID *id, Sequence *seq, Main *bmain, ReportList *reports, PointerRNA *seq_ptr)
+static void api_Sequences_meta_remove(
+    Id *id, Seq *seq, Main *main, ReportList *reports, ApiPtr *seq_ptr)
 {
-  rna_Sequences_remove(id, &seq->seqbase, bmain, reports, seq_ptr);
+  api_seq_remove(id, &seq->seqbase, main, reports, seq_ptr);
 }
 
 static StripElem *rna_SequenceElements_append(ID *id, Sequence *seq, const char *filename)
