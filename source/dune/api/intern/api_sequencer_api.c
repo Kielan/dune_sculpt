@@ -719,27 +719,27 @@ void api_seq_strip(ApiStruct *sapi)
   parm = RNA_def_pointer(func, "sequence", "Sequence", "", "Parent Meta");
   RNA_def_function_return(func, parm);
 
-  func = RNA_def_function(srna, "invalidate_cache", "rna_Sequence_invalidate_cache_rnafunc");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func,
+  func = api_def_fn(sapi, "invalidate_cache", "rna_Sequence_invalidate_cache_rnafunc");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn,
                                   "Invalidate cached images for strip and all dependent strips");
-  parm = RNA_def_enum(func, "type", seq_cahce_type_items, 0, "Type", "Cache Type");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_enum(fn, "type", seq_cahce_type_items, 0, "Type", "Cache Type");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  func = RNA_def_function(srna, "split", "rna_Sequence_split");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_SELF_ID | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Split Sequence");
-  parm = RNA_def_int(
-      func, "frame", 0, INT_MIN, INT_MAX, "", "Frame where to split the strip", INT_MIN, INT_MAX);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(func, "split_method", seq_split_method_items, 0, "", "");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  fn = api_def_fn(sapi, "split", "rna_Sequence_split");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FUNC_USE_SELF_ID | FUNC_USE_MAIN);
+  api_def_fn_ui_description(func, "Split Sequence");
+  parm = api_def_int(
+      fn, "frame", 0, INT_MIN, INT_MAX, "", "Frame where to split the strip", INT_MIN, INT_MAX);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(fn, "split_method", seq_split_method_items, 0, "", "");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   /* Return type. */
-  parm = RNA_def_pointer(func, "sequence", "Sequence", "", "Right side Sequence");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "sequence", "Sequence", "", "Right side Sequence");
+  api_def_fn_return(fn, parm);
 }
 
-void RNA_api_sequence_elements(BlenderRNA *brna, PropertyRNA *cprop)
+void api_seq_elements(BlenderRNA *brna, PropertyRNA *cprop)
 {
   StructRNA *srna;
   PropertyRNA *parm;
