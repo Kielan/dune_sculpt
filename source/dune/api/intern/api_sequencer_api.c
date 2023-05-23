@@ -782,16 +782,16 @@ void RNA_api_sequence_retiming_handles(BlenderRNA *brna, PropertyRNA *cprop)
       func, "timeline_frame", 0, -MAXFRAME, MAXFRAME, "Timeline Frame", "", -MAXFRAME, MAXFRAME);
   RNA_def_function_ui_description(func, "Add retiming handle");
   /* return type */
-  PropertyRNA *parm = RNA_def_pointer(
-      func, "retiming_handle", "RetimingHandle", "", "New RetimingHandle");
-  RNA_def_function_return(func, parm);
+  ApiProp *parm = api_def_ptr(
+      fn, "retiming_handle", "RetimingHandle", "", "New RetimingHandle");
+  api_def_function_return(func, parm);
 
-  func = RNA_def_function(srna, "reset", "rna_Sequence_retiming_handles_reset");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_function_ui_description(func, "Remove all retiming handles");
+  fn = api_def_fn(sapi, "reset", "rna_Sequence_retiming_handles_reset");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_fn_ui_description(fn, "Remove all retiming handles");
 }
 
-void RNA_api_sequences(BlenderRNA *brna, PropertyRNA *cprop, const bool metastrip)
+void api_sequences(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
 {
   StructRNA *srna;
   PropertyRNA *parm;
