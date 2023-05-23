@@ -188,9 +188,9 @@ static Sequence *rna_Sequences_meta_new_mask(
   return api_Sequences_new_mask(id, &seq->seqbase, main, name, mask, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_new_scene(ID *id,
-                                         ListBase *seqbase,
-                                         Main *bmain,
+static Sequence *rna_Sequences_new_scene(Id *id,
+                                         List *seqbase,
+                                         Main *main,
                                          const char *name,
                                          Scene *sce_seq,
                                          int channel,
@@ -198,24 +198,24 @@ static Sequence *rna_Sequences_new_scene(ID *id,
 {
   Scene *scene = (Scene *)id;
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, NULL, frame_start, channel);
+  seq_add_load_data_init(&load_data, name, NULL, frame_start, channel);
   load_data.scene = sce_seq;
-  Sequence *seq = SEQ_add_scene_strip(scene, seqbase, &load_data);
+  Seq *seq = seq_add_scene_strip(scene, seqbase, &load_data);
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 
   return seq;
 }
 
-static Sequence *rna_Sequences_editing_new_scene(ID *id,
-                                                 Editing *ed,
-                                                 Main *bmain,
-                                                 const char *name,
-                                                 Scene *sce_seq,
-                                                 int channel,
-                                                 int frame_start)
+static Seq *api_Seq_editing_new_scene(Id *id,
+                                      Editing *ed,
+                                      Main *main,
+                                      const char *name,
+                                      Scene *sce_seq,
+                                      int channel,
+                                      int frame_start)
 {
   return api_seq_new_scene(id, &ed->seqbase, main, name, sce_seq, channel, frame_start);
 }
@@ -247,7 +247,7 @@ static Seq *api_seq_new_image(Id *id,
   seq_add_load_data_init(&load_data, name, file, frame_start, channel);
   load_data.image.len = 1;
   load_data.fit_method = fit_method;
-  Sequence *seq = seq_add_image_strip(main, scene, seqbase, &load_data);
+  Seq *seq = seq_add_image_strip(main, scene, seqbase, &load_data);
 
   char dir[FILE_MAX], filename[FILE_MAX];
   lib_path_split_dir_file(file, dir, sizeof(dir), filename, sizeof(filename));
@@ -415,8 +415,8 @@ static Seq *api_seq_new_m(
 {
   Scene *scene = (Scene *)id;
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, NULL, frame_start, channel);
-  Sequence *seqm = seq_add_meta_strip(scene, seqbase, &load_data);
+  seq_add_load_data_init(&load_data, name, NULL, frame_start, channel);
+  Seq *seqm = seq_add_meta_strip(scene, seqbase, &load_data);
 
   return seqm;
 }
@@ -430,47 +430,47 @@ static Seq *api_seq_editing_new_meta(
 static Sequence *rna_Sequences_meta_new_meta(
     ID *id, Sequence *seq, const char *name, int channel, int frame_start)
 {
-  return rna_Sequences_new_meta(id, &seq->seqbase, name, channel, frame_start);
+  return api_seq_new_meta(id, &seq->seqbase, name, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_new_effect(ID *id,
-                                          ListBase *seqbase,
-                                          ReportList *reports,
-                                          const char *name,
-                                          int type,
-                                          int channel,
-                                          int frame_start,
-                                          int frame_end,
-                                          Sequence *seq1,
-                                          Sequence *seq2,
-                                          Sequence *seq3)
+static Seq *api_seq_new_effect(Id *id,
+                               List *seqbase,
+                               ReportList *reports,
+                               const char *name,
+                               int type,
+                               int channel,
+                               int frame_start,
+                               int frame_end,
+                               Seq *seq1,
+                               Seq *seq2,
+                               Seq *seq3)
 {
   Scene *scene = (Scene *)id;
-  Sequence *seq;
-  const int num_inputs = SEQ_effect_get_num_inputs(type);
+  Seq *seq;
+  const int num_inputs = seq_effect_get_num_inputs(type);
 
   switch (num_inputs) {
     case 0:
       if (frame_end <= frame_start) {
-        BKE_report(reports, RPT_ERROR, "Sequences.new_effect: end frame not set");
+        dune_report(reports, RPT_ERROR, "Seq.new_effect: end frame not set");
         return NULL;
       }
       break;
     case 1:
       if (seq1 == NULL) {
-        BKE_report(reports, RPT_ERROR, "Sequences.new_effect: effect takes 1 input sequence");
+        dune_report(reports, RPT_ERROR, "Seq.new_effect: effect takes 1 input sequence");
         return NULL;
       }
       break;
     case 2:
       if (seq1 == NULL || seq2 == NULL) {
-        BKE_report(reports, RPT_ERROR, "Sequences.new_effect: effect takes 2 input sequences");
+        dune_report(reports, RPT_ERROR, "Seq.new_effect: effect takes 2 input sequences");
         return NULL;
       }
       break;
     case 3:
       if (seq1 == NULL || seq2 == NULL || seq3 == NULL) {
-        BKE_report(reports, RPT_ERROR, "Sequences.new_effect: effect takes 3 input sequences");
+        BKE_report(reports, RPT_ERROR, "Seq.new_effect: effect takes 3 input sequences");
         return NULL;
       }
       break;
@@ -478,43 +478,42 @@ static Sequence *rna_Sequences_new_effect(ID *id,
       BKE_reportf(
           reports,
           RPT_ERROR,
-          "Sequences.new_effect: effect expects more than 3 inputs (%d, should never happen!)",
+          "Seq.new_effect: effect expects more than 3 inputs (%d, should never happen!)",
           num_inputs);
       return NULL;
   }
 
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, NULL, frame_start, channel);
+  seq_add_load_data_init(&load_data, name, NULL, frame_start, channel);
   load_data.effect.end_frame = frame_end;
   load_data.effect.type = type;
   load_data.effect.seq1 = seq1;
   load_data.effect.seq2 = seq2;
   load_data.effect.seq3 = seq3;
-  seq = SEQ_add_effect_strip(scene, seqbase, &load_data);
+  seq = seq_add_effect_strip(scene, seqbase, &load_data);
 
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 
   return seq;
-}
-
-static Sequence *rna_Sequences_editing_new_effect(ID *id,
-                                                  Editing *ed,
-                                                  ReportList *reports,
-                                                  const char *name,
-                                                  int type,
-                                                  int channel,
-                                                  int frame_start,
-                                                  int frame_end,
-                                                  Sequence *seq1,
-                                                  Sequence *seq2,
-                                                  Sequence *seq3)
+};
+static Seq *api_seq_editing_new_effect(Id *id,
+                                       Editing *ed,
+                                       ReportList *reports,
+                                       const char *name,
+                                       int type,
+                                       int channel,
+                                       int frame_start,
+                                       int frame_end,
+                                       Seq *seq1,
+                                       Seq *seq2,
+                                       Seq *seq3)
 {
-  return rna_Sequences_new_effect(
+  return api_seq_new_effect(
       id, &ed->seqbase, reports, name, type, channel, frame_start, frame_end, seq1, seq2, seq3);
 }
 
-static Sequence *rna_Sequences_meta_new_effect(ID *id,
+static Seq *api_seq_meta_new_effect(ID *id,
                                                Sequence *seq,
                                                ReportList *reports,
                                                const char *name,
