@@ -142,41 +142,41 @@ static Seq *api_seq_editing_new_clip(Id *id,
                                                 int channel,
                                                 int frame_start)
 {
-  return rna_Sequences_new_clip(id, &ed->seqbase, main, name, clip, channel, frame_start);
+  return api_seq_new_clip(id, &ed->seqbase, main, name, clip, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_meta_new_clip(Id *id,
-                                             Seq *seq,
-                                             Main *main,
-                                             const char *name,
-                                             MovieClip *clip,
-                                             int channel,
-                                             int frame_start)
+static Seq *api_seq_meta_new_clip(Id *id,
+                                  Seq *seq,
+                                  Main *main,
+                                  const char *name,
+                                  MovieClip *clip,
+                                  int channel,
+                                  int frame_start)
 {
   return api_seq_new_clip(id, &seq->seqbase, main, name, clip, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_new_mask(ID *id,
-                                        ListBase *seqbase,
-                                        Main *bmain,
-                                        const char *name,
-                                        Mask *mask,
-                                        int channel,
-                                        int frame_start)
+static Seq *api_Sequences_new_mask(Id *id,
+                                   List *seqbase,
+                                   Main *main,
+                                   const char *name,
+                                   Mask *mask,
+                                   int channel,
+                                   int frame_start)
 {
   Scene *scene = (Scene *)id;
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, NULL, frame_start, channel);
+  seq_add_load_data_init(&load_data, name, NULL, frame_start, channel);
   load_data.mask = mask;
-  Sequence *seq = SEQ_add_mask_strip(scene, seqbase, &load_data);
+  Seq *seq = seq_add_mask_strip(scene, seqbase, &load_data);
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_relations_tag_update(bmain);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
 
   return seq;
 }
-static Sequence *rna_Sequences_editing_new_mask(
+static Seq *api_seq_editing_new_mask(
     ID *id, Editing *ed, Main *bmain, const char *name, Mask *mask, int channel, int frame_start)
 {
   return rna_Sequences_new_mask(id, &ed->seqbase, bmain, name, mask, channel, frame_start);
