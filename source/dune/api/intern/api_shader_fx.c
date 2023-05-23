@@ -226,15 +226,15 @@ static void api_def_shader_fx_blur(DuneApi *dapi)
   RNA_define_lib_overridable(false);
 }
 
-static void rna_def_shader_fx_colorize(BlenderRNA *brna)
+static void api_def_shader_fx_colorize(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "ShaderFxColorize", "ShaderFx");
-  RNA_def_struct_ui_text(srna, "Colorize Effect", "Colorize effect");
-  RNA_def_struct_sdna(srna, "ColorizeShaderFxData");
-  RNA_def_struct_ui_icon(srna, ICON_SHADERFX);
+  sapi = api_def_struct(dapi, "ShaderFxColorize", "ShaderFx");
+  api_def_struct_ui_text(sapi, "Colorize Effect", "Colorize effect");
+  api_def_struct_stype(sapi, "ColorizeShaderFxData");
+  api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
   RNA_define_lib_overridable(true);
 
