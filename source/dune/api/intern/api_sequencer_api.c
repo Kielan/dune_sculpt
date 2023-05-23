@@ -276,15 +276,15 @@ static Seq *api_seq_editing_new_image(Id *id,
       id, &ed->seqbase, main, reports, name, file, channel, frame_start, fit_method);
 }
 
-static Sequence *api_seq_meta_new_image(Id *id,
-                                        Seq *seq,
-                                        Main *main,
-                                        ReportList *reports,
-                                        const char *name,
-                                        const char *file,
-                                        int channel,
-                                        int frame_start,
-                                        int fit_method)
+static Seq *api_seq_meta_new_image(Id *id,
+                                   Seq *seq,
+                                   Main *main,
+                                   ReportList *reports,
+                                   const char *name,
+                                   const char *file,
+                                   int channel,
+                                   int frame_start,
+                                   int fit_method)
 {
   return api_seq_new_image(
       id, &seq->seqbase, main, reports, name, file, channel, frame_start, fit_method);
