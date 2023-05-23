@@ -335,33 +335,33 @@ static void api_def_shader_fx_pixel(BlenderRNA *brna)
   api_def_prop_ui_text(prop, "Antialiasing", "Antialias pixels");
   api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
 
-  RNA_define_lib_overridable(false);
+  api_define_lib_overridable(false);
 }
 
-static void rna_def_shader_fx_rim(BlenderRNA *brna)
+static void api_def_shader_fx_rim(DuneApi *dapi)
 {
   ApiStruct *sapi;
-  ApiProperty *prop;
+  ApiProp *prop;
 
   sapi = api_def_struct(dapi, "ShaderFxRim", "ShaderFx");
   api_def_struct_ui_text(sapi, "Rim Effect", "Rim effect");
   api_def_struct_stype(sapi, "RimShaderFxData");
   api_def_struct_ui_icon(sapi, ICON_SHADERFX);
 
-  RNA_define_lib_overridable(true);
+  api_define_lib_overridable(true);
 
-  prop = RNA_def_property(srna, "offset", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "offset");
-  RNA_def_property_range(prop, SHRT_MIN, SHRT_MAX);
-  RNA_def_property_ui_text(prop, "Offset", "Offset of the rim");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_property(srna, "offset", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "offset");
+  api_def_prop_range(prop, SHRT_MIN, SHRT_MAX);
+  api_def_prop_ui_text(prop, "Offset", "Offset of the rim");
+  api_def_prop_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
-  prop = RNA_def_property(srna, "rim_color", PROP_FLOAT, PROP_COLOR);
-  RNA_def_property_range(prop, 0.0, 1.0);
-  RNA_def_property_float_sdna(prop, NULL, "rim_rgb");
-  RNA_def_property_array(prop, 3);
-  RNA_def_property_ui_text(prop, "Rim Color", "Color used for Rim");
-  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "rna_ShaderFx_update");
+  prop = api_def_prop(sapi, "rim_color", PROP_FLOAT, PROP_COLOR);
+  api_def_prop_range(prop, 0.0, 1.0);
+  api_def_prop_float_style(prop, NULL, "rim_rgb");
+  api_def_prop_array(prop, 3);
+  api_def_prop_ui_text(prop, "Rim Color", "Color used for Rim");
+  RNA_def_property_update(prop, NC_OBJECT | ND_SHADERFX, "api_ShaderFx_update");
 
   prop = RNA_def_property(srna, "mask_color", PROP_FLOAT, PROP_COLOR);
   RNA_def_property_range(prop, 0.0, 1.0);
