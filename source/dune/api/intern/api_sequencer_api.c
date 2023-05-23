@@ -30,82 +30,82 @@
 #  include "dune_report.h"
 #  include "dune_sound.h"
 
-#  include "IMB_imbuf.h"
-#  include "IMB_imbuf_types.h"
+#  include "imbuf.h"
+#  include "imbuf_types.h"
 
-#  include "SEQ_add.h"
-#  include "SEQ_edit.h"
-#  include "SEQ_effects.h"
-#  include "SEQ_relations.h"
-#  include "SEQ_render.h"
-#  include "SEQ_retiming.h"
-#  include "SEQ_sequencer.h"
-#  include "SEQ_time.h"
+#  include "seq_add.h"
+#  include "seq_edit.h"
+#  include "seq_effects.h"
+#  include "seq_relations.h"
+#  include "seq_render.h"
+#  include "seq_retiming.h"
+#  include "seq_sequencer.h"
+#  include "seq_time.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
-static StripElem *rna_Sequence_strip_elem_from_frame(ID *id, Sequence *self, int timeline_frame)
+static StripElem *api_seq_strip_elem_from_frame(Id *id, Seq *self, int timeline_frame)
 {
   Scene *scene = (Scene *)id;
-  return SEQ_render_give_stripelem(scene, self, timeline_frame);
+  return seq_render_give_stripelem(scene, self, timeline_frame);
 }
 
-static void rna_Sequence_swap_internal(ID *id,
-                                       Sequence *seq_self,
-                                       ReportList *reports,
-                                       Sequence *seq_other)
+static void api_seq_swap_internal(Id *id,
+                                  Seq *seq_self,
+                                  ReportList *reports,
+                                  Seq *seq_other)
 {
   const char *error_msg;
   Scene *scene = (Scene *)id;
 
-  if (SEQ_edit_sequence_swap(scene, seq_self, seq_other, &error_msg) == false) {
-    BKE_report(reports, RPT_ERROR, error_msg);
+  if (seq_edit_seq_swap(scene, seq_self, seq_other, &error_msg) == false) {
+    dune_report(reports, RPT_ERROR, error_msg);
   }
 }
 
-static void rna_Sequences_move_strip_to_meta(
-    ID *id, Sequence *seq_self, Main *bmain, ReportList *reports, Sequence *meta_dst)
+static void api_seq_move_strip_to_meta(
+    Id *id, Seq *seq_self, Main *main, ReportList *reports, Seq *meta_dst)
 {
   Scene *scene = (Scene *)id;
   const char *error_msg;
 
   /* Move strip to meta. */
-  if (!SEQ_edit_move_strip_to_meta(scene, seq_self, meta_dst, &error_msg)) {
-    BKE_report(reports, RPT_ERROR, error_msg);
+  if (!seq_edit_move_strip_to_meta(scene, seq_self, meta_dst, &error_msg)) {
+    dune_report(reports, RPT_ERROR, error_msg);
   }
 
   /* Update depsgraph. */
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
+  grap_relations_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
 
-  SEQ_sequence_lookup_tag(scene, SEQ_LOOKUP_TAG_INVALID);
+  seq_lookup_tag(scene, SEQ_LOOKUP_TAG_INVALID);
 
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, scene);
 }
 
-static Sequence *rna_Sequence_split(
-    ID *id, Sequence *seq, Main *bmain, ReportList *reports, int frame, int split_method)
+static Seq *api_seq_split(
+    Id *id, Seq *seq, Main *main, ReportList *reports, int frame, int split_method)
 {
   Scene *scene = (Scene *)id;
-  ListBase *seqbase = SEQ_get_seqbase_by_seq(scene, seq);
+  List *seqbase = seq_get_seqbase_by_seq(scene, seq);
 
   const char *error_msg = NULL;
-  Sequence *r_seq = SEQ_edit_strip_split(
-      bmain, scene, seqbase, seq, frame, split_method, &error_msg);
+  Seq *r_seq = seq_edit_strip_split(
+      main, scene, seqbase, seq, frame, split_method, &error_msg);
   if (error_msg != NULL) {
-    BKE_report(reports, RPT_ERROR, error_msg);
+    dune_report(reports, RPT_ERROR, error_msg);
   }
 
   /* Update depsgraph. */
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
 
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, scene);
 
   return r_seq;
 }
 
-static Sequence *rna_Sequence_parent_meta(ID *id, Sequence *seq_self)
+static Seq *api_seq_parent_meta(Id *id, Seq *seq_self)
 {
   Scene *scene = (Scene *)id;
   Editing *ed = SEQ_editing_get(scene);
