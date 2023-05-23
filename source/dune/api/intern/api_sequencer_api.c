@@ -142,18 +142,18 @@ static Seq *api_seq_editing_new_clip(Id *id,
                                                 int channel,
                                                 int frame_start)
 {
-  return rna_Sequences_new_clip(id, &ed->seqbase, bmain, name, clip, channel, frame_start);
+  return rna_Sequences_new_clip(id, &ed->seqbase, main, name, clip, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_meta_new_clip(ID *id,
-                                             Sequence *seq,
-                                             Main *bmain,
+static Sequence *rna_Sequences_meta_new_clip(Id *id,
+                                             Seq *seq,
+                                             Main *main,
                                              const char *name,
                                              MovieClip *clip,
                                              int channel,
                                              int frame_start)
 {
-  return rna_Sequences_new_clip(id, &seq->seqbase, bmain, name, clip, channel, frame_start);
+  return api_seq_new_clip(id, &seq->seqbase, main, name, clip, channel, frame_start);
 }
 
 static Sequence *rna_Sequences_new_mask(ID *id,
