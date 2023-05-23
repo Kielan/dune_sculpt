@@ -864,17 +864,17 @@ void api_sequences(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
 
   RNA_def_struct_ui_text(srna, "Sequences", "Collection of Sequences");
 
-  func = RNA_def_function(srna, "new_clip", new_clip_func_name);
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Add a new movie clip sequence");
-  parm = RNA_def_string(func, "name", "Name", 0, "", "Name for the new sequence");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "clip", "MovieClip", "", "Movie clip to add");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_int(
-      func, "channel", 0, 1, MAXSEQ, "Channel", "The channel for the new sequence", 1, MAXSEQ);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "new_clip", new_clip_func_name);
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FUNC_USE_MAIN);
+  api_def_fn_ui_description(fn, "Add a new movie clip sequence");
+  parm = api_def_string(fn, "name", "Name", 0, "", "Name for the new sequence");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "clip", "MovieClip", "", "Movie clip to add");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_int(
+      fn, "channel", 0, 1, MAXSEQ, "Channel", "The channel for the new sequence", 1, MAXSEQ);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn,
                      "frame_start",
                      0,
                      -MAXFRAME,
@@ -883,22 +883,22 @@ void api_sequences(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
                      "The start frame for the new sequence",
                      -MAXFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "sequence", "Sequence", "", "New Sequence");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "sequence", "Sequence", "", "New Sequence");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_mask", new_mask_func_name);
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Add a new mask sequence");
-  parm = RNA_def_string(func, "name", "Name", 0, "", "Name for the new sequence");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_pointer(func, "mask", "Mask", "", "Mask to add");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_int(
-      func, "channel", 0, 1, MAXSEQ, "Channel", "The channel for the new sequence", 1, MAXSEQ);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_int(func,
+  fn = api_def_fn(sapi, "new_mask", new_mask_fn_name);
+  api_def_fn_flag(fn, FN_USE_SELF_ID | FN_USE_MAIN);
+  api_def_fn_ui_description(fn, "Add a new mask sequence");
+  parm = api_def_string(fn, "name", "Name", 0, "", "Name for the new sequence");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "mask", "Mask", "", "Mask to add");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_int(
+      fn, "channel", 0, 1, MAXSEQ, "Channel", "The channel for the new sequence", 1, MAXSEQ);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_int(fn,
                      "frame_start",
                      0,
                      -MAXFRAME,
@@ -907,15 +907,15 @@ void api_sequences(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
                      "The start frame for the new sequence",
                      -MAXFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   /* return type */
-  parm = RNA_def_pointer(func, "sequence", "Sequence", "", "New Sequence");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "sequence", "Sequence", "", "New Sequence");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_scene", new_scene_func_name);
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Add a new scene sequence");
-  parm = RNA_def_string(func, "name", "Name", 0, "", "Name for the new sequence");
+  fn = api_def_fn(srna, "new_scene", new_scene_func_name);
+  api_def_fn_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
+  api_def_fn_ui_description(func, "Add a new scene sequence");
+  parm = api_def_string(func, "name", "Name", 0, "", "Name for the new sequence");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   parm = RNA_def_pointer(func, "scene", "Scene", "", "Scene to add");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
