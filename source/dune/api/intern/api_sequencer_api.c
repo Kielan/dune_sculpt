@@ -529,21 +529,21 @@ static Seq *api_seq_meta_new_effect(ID *id,
       id, &seq->seqbase, reports, name, type, channel, frame_start, frame_end, seq1, seq2, seq3);
 }
 
-static void rna_Sequences_remove(
-    ID *id, ListBase *seqbase, Main *bmain, ReportList *reports, PointerRNA *seq_ptr)
+static void api_seq_remove(
+    Id *id, List *seqbase, Main *main, ReportList *reports, ApiPtr *seq_ptr)
 {
-  Sequence *seq = seq_ptr->data;
+  Seq *seq = seq_ptr->data;
   Scene *scene = (Scene *)id;
 
-  if (BLI_findindex(seqbase, seq) == -1) {
-    BKE_reportf(
+  if (lib_findindex(seqbase, seq) == -1) {
+    dune_reportf(
         reports, RPT_ERROR, "Sequence '%s' not in scene '%s'", seq->name + 2, scene->id.name + 2);
     return;
   }
 
-  SEQ_edit_flag_for_removal(scene, seqbase, seq);
-  SEQ_edit_remove_flagged_sequences(scene, seqbase);
-  RNA_POINTER_INVALIDATE(seq_ptr);
+  seq_edit_flag_for_removal(scene, seqbase, seq);
+  seq_edit_remove_flagged_seq(scene, seqbase);
+  API_PTR_INVALIDATE(seq_ptr);
 
   DEG_relations_tag_update(bmain);
   DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
