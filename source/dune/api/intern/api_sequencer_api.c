@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "types_scene_types.h"
-#include "types_sequence_types.h"
+#include "types_scene.h"
+#include "types_sequence.h"
 
 #include "lib_utildefines.h"
 
@@ -17,9 +17,9 @@
 #ifdef API_RUNTIME
 
 // #include "types_anim_types.h"
-#  include "types_image_types.h"
-#  include "types_mask_types.h"
-#  include "types_sound_types.h"
+#  include "types_image.h"
+#  include "types_mask.h"
+#  include "types_sound.h"
 
 #  include "lib_path_util.h" /* #BLI_path_split_dir_file */
 
