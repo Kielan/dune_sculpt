@@ -217,47 +217,47 @@ static Sequence *rna_Sequences_editing_new_scene(ID *id,
                                                  int channel,
                                                  int frame_start)
 {
-  return rna_Sequences_new_scene(id, &ed->seqbase, bmain, name, sce_seq, channel, frame_start);
+  return api_seq_new_scene(id, &ed->seqbase, main, name, sce_seq, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_meta_new_scene(ID *id,
-                                              Sequence *seq,
-                                              Main *bmain,
-                                              const char *name,
-                                              Scene *sce_seq,
-                                              int channel,
-                                              int frame_start)
+static Seq *api_seq_meta_new_scene(Id *id,
+                                   Seq *seq,
+                                   Main *main,
+                                   const char *name,
+                                   Scene *sce_seq,
+                                   int channel,
+                                   int frame_start)
 {
-  return rna_Sequences_new_scene(id, &seq->seqbase, bmain, name, sce_seq, channel, frame_start);
+  return api_seq_new_scene(id, &seq->seqbase, main, name, sce_seq, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_new_image(ID *id,
-                                         ListBase *seqbase,
-                                         Main *bmain,
-                                         ReportList *UNUSED(reports),
-                                         const char *name,
-                                         const char *file,
-                                         int channel,
-                                         int frame_start,
-                                         int fit_method)
+static Seq *api_seq_new_image(Id *id,
+                              List *seqbase,
+                              Main *main,
+                              ReportList *UNUSED(reports)
+                              const char *name,
+                              const char *file,
+                              int channel,
+                              int frame_start,
+                              int fit_method)
 {
   Scene *scene = (Scene *)id;
 
   SeqLoadData load_data;
-  SEQ_add_load_data_init(&load_data, name, file, frame_start, channel);
+  seq_add_load_data_init(&load_data, name, file, frame_start, channel);
   load_data.image.len = 1;
   load_data.fit_method = fit_method;
-  Sequence *seq = SEQ_add_image_strip(bmain, scene, seqbase, &load_data);
+  Sequence *seq = seq_add_image_strip(main, scene, seqbase, &load_data);
 
   char dir[FILE_MAX], filename[FILE_MAX];
-  BLI_path_split_dir_file(file, dir, sizeof(dir), filename, sizeof(filename));
-  SEQ_add_image_set_directory(seq, dir);
-  SEQ_add_image_load_file(scene, seq, 0, filename);
-  SEQ_add_image_init_alpha_mode(seq);
+  lib_path_split_dir_file(file, dir, sizeof(dir), filename, sizeof(filename));
+  seq_add_image_set_directory(seq, dir);
+  seq_add_image_load_file(scene, seq, 0, filename);
+  seq_add_image_init_alpha_mode(seq);
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update(&scene->id, ID_RECALC_SEQUENCER_STRIPS);
-  WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, scene);
+  graph_relations_tag_update(main);
+  graph_id_tag_update(&scene->id, ID_RECALC_SEQ_STRIPS);
+  wm_main_add_notifier(NC_SCENE | ND_SEQ, scene);
 
   return seq;
 }
