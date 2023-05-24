@@ -156,7 +156,7 @@ static Seq *api_seq_meta_new_clip(Id *id,
   return api_seq_new_clip(id, &seq->seqbase, main, name, clip, channel, frame_start);
 }
 
-static Seq *api_Sequences_new_mask(Id *id,
+static Seq *api_seq_new_mask(Id *id,
                                    List *seqbase,
                                    Main *main,
                                    const char *name,
@@ -177,15 +177,15 @@ static Seq *api_Sequences_new_mask(Id *id,
   return seq;
 }
 static Seq *api_seq_editing_new_mask(
-    Id *id, Editing *ed, Main *bmain, const char *name, Mask *mask, int channel, int frame_start)
+    Id *id, Editing *ed, Main *main, const char *name, Mask *mask, int channel, int frame_start)
 {
   return api_seq_new_mask(id, &ed->seqbase, main, name, mask, channel, frame_start);
 }
 
-static Sequence *api_Sequences_meta_new_mask(
+static Seq *api_seq_meta_new_mask(
     Id *id, Seq *seq, Main *main, const char *name, Mask *mask, int channel, int frame_start)
 {
-  return api_Sequences_new_mask(id, &seq->seqbase, main, name, mask, channel, frame_start);
+  return api_seq_new_mask(id, &seq->seqbase, main, name, mask, channel, frame_start);
 }
 
 static Seq *api_seq_new_scene(Id *id,
@@ -209,7 +209,7 @@ static Seq *api_seq_new_scene(Id *id,
   return seq;
 }
 
-static Seq *api_Seq_editing_new_scene(Id *id,
+static Seq *api_seq_editing_new_scene(Id *id,
                                       Editing *ed,
                                       Main *main,
                                       const char *name,
@@ -315,7 +315,7 @@ static Seq *api_seq_new_movie(Id *id,
 
 static Seq *api_seq_editing_new_movie(Id *id,
                                       Editing *ed,
-                                      Main *bmain,
+                                      Main *main,
                                       const char *name,
                                       const char *file,
                                       int channel,
@@ -368,15 +368,15 @@ static Seq *api_seq_new_sound(Id *id,
 }
 #  else  /* WITH_AUDASPACE */
 static Seq *api_seq_new_sound(Id *UNUSED(id),
-                                         List *UNUSED(seqbase),
-                                         Main *UNUSED(main),
-                                         ReportList *reports,
-                                         const char *UNUSED(name),
-                                         const char *UNUSED(file),
-                                         int UNUSED(channel),
-                                         int UNUSED(frame_start))
+                              List *UNUSED(seqbase),
+                              Main *UNUSED(main),
+                              ReportList *reports,
+                              const char *UNUSED(name),
+                              const char *UNUSED(file),
+                              int UNUSED(channel),
+                              int UNUSED(frame_start))
 {
-  dune_report(reports, RPT_ERROR, "Blender compiled without Audaspace support");
+  dune_report(reports, RPT_ERROR, "Dune compiled without Audaspace support");
   return NULL;
 }
 #  endif /* WITH_AUDASPACE */
@@ -622,7 +622,7 @@ static void api_SequenceElements_pop(ID *id, Sequence *seq, ReportList *reports,
   wm_main_add_notifier(NC_SCENE | ND_SEQ, scene);
 }
 
-static void api_seq_invalidate_cache_apifn(Id *id, Sequence *self, int type)
+static void api_seq_invalidate_cache_apifn(Id *id, Seq *self, int type)
 {
   switch (type) {
     case SEQ_CACHE_STORE_RAW:
@@ -680,7 +680,7 @@ void api_seq_strip(ApiStruct *sapi)
       {0, NULL, 0, NULL, NULL},
   };
 
-  fn = api_def_fn(sapi, "strip_elem_from_frame", "rna_Sequence_strip_elem_from_frame");
+  fn = api_def_fn(sapi, "strip_elem_from_frame", "api_seq_strip_elem_from_frame");
   api_def_fn_flag(fn, FN_USE_SELF_ID);
   api_def_fn_ui_description(fn, "Return the strip element from a given frame or None");
   parm = api_def_int(fn,
@@ -726,8 +726,8 @@ void api_seq_strip(ApiStruct *sapi)
   parm = api_def_enum(fn, "type", seq_cahce_type_items, 0, "Type", "Cache Type");
   api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
 
-  fn = api_def_fn(sapi, "split", "rna_Sequence_split");
-  api_def_fn_flag(fn, FN_USE_REPORTS | FUNC_USE_SELF_ID | FUNC_USE_MAIN);
+  fn = api_def_fn(sapi, "split", "api_seq_split");
+  api_def_fn_flag(fn, FN_USE_REPORTS | FN_USE_SELF_ID | FN_USE_MAIN);
   api_def_fn_ui_description(fn, "Split Sequence");
   parm = api_def_int(
       fn, "frame", 0, INT_MIN, INT_MAX, "", "Frame where to split the strip", INT_MIN, INT_MAX);
@@ -746,7 +746,7 @@ void api_seq_elements(DuneApi *dapi, ApiProp *cprop)
   ApiFn *fn;
 
   api_def_prop_sapi(cprop, "SequenceElements");
-  srna = api_def_struct(dapi, "SequenceElements", NULL);
+  sapi = api_def_struct(dapi, "SequenceElements", NULL);
   api_def_struct_stype(sapi, "Sequence");
   api_def_struct_ui_text(sapi, "SequenceElements", "Collection of SequenceElement");
 
@@ -831,22 +831,22 @@ void api_seq(DuneApi *dapi, ApiProp *cprop, const bool metastrip)
       {0, NULL, 0, NULL, NULL},
   };
 
-  const char *new_clip_fn_name = "rna_Sequences_editing_new_clip";
-  const char *new_mask_fn_name = "rna_Sequences_editing_new_mask";
-  const char *new_scene_fn_name = "rna_Sequences_editing_new_scene";
-  const char *new_image_fn_name = "rna_Sequences_editing_new_image";
-  const char *new_movie_fn_name = "rna_Sequences_editing_new_movie";
-  const char *new_sound_fn_name = "rna_Sequences_editing_new_sound";
-  const char *new_meta_fn_name = "rna_Sequences_editing_new_meta";
-  const char *new_effect_fn_name = "rna_Sequences_editing_new_effect";
-  const char *remove_fn_name = "rna_Sequences_editing_remove";
+  const char *new_clip_fn_name = "api_seq_editing_new_clip";
+  const char *new_mask_fn_name = "api_seq_editing_new_mask";
+  const char *new_scene_fn_name = "api_seq_editing_new_scene";
+  const char *new_image_fn_name = "api_seq_editing_new_image";
+  const char *new_movie_fn_name = "api_seq_editing_new_movie";
+  const char *new_sound_fn_name = "api_seq_editing_new_sound";
+  const char *new_meta_fn_name = "api_seq_editing_new_meta";
+  const char *new_effect_fn_name = "api_seq_editing_new_effect";
+  const char *remove_fn_name = "api_seq_editing_remove";
 
   if (metastrip) {
-    api_def_prop_sapi(cprop, "SequencesMeta");
-    sapi = api_def_struct(dapi, "SequencesMeta", NULL);
-    api_def_struct_stype(sapi, "Sequence");
+    api_def_prop_sapi(cprop, "SeqMeta");
+    sapi = api_def_struct(dapi, "SeqMeta", NULL);
+    api_def_struct_stype(sapi, "Seq");
 
-    new_clip_fn_name = "rna_Sequences_meta_new_clip";
+    new_clip_fn_name = "api_seq_meta_new_clip";
     new_mask_fn_name = "rna_Sequences_meta_new_mask";
     new_scene_fn_name = "rna_Sequences_meta_new_scene";
     new_image_fn_name = "rna_Sequences_meta_new_image";
