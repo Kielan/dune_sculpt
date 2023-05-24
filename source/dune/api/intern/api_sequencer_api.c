@@ -427,8 +427,8 @@ static Seq *api_seq_editing_new_meta(
   return api_seq_new_meta(id, &ed->seqbase, name, channel, frame_start);
 }
 
-static Sequence *rna_Sequences_meta_new_meta(
-    ID *id, Sequence *seq, const char *name, int channel, int frame_start)
+static Seq *api_seq_meta_new_meta(
+    Id *id, Seq *seq, const char *name, int channel, int frame_start)
 {
   return api_seq_new_meta(id, &seq->seqbase, name, channel, frame_start);
 }
@@ -772,32 +772,32 @@ void api_seq_retiming_handles(BlenderRNA *brna, PropertyRNA *cprop)
   ApiStruct *sapi;
 
   api_def_prop_sapi(cprop, "RetimingHandles");
-  sapi = api_def_struct(brna, "RetimingHandles", NULL);
-  api_def_struct_sdna(srna, "Sequence");
-  api_def_struct_ui_text(srna, "RetimingHandles", "Collection of RetimingHandle");
+  sapi = api_def_struct(dapi, "RetimingHandles", NULL);
+  api_def_struct_stype(sapi, "Sequence");
+  api_def_struct_ui_text(sapi, "RetimingHandles", "Collection of RetimingHandle");
 
-  FunctionRNA *func = RNA_def_function(srna, "add", "rna_Sequence_retiming_handles_add");
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-  RNA_def_int(
-      func, "timeline_frame", 0, -MAXFRAME, MAXFRAME, "Timeline Frame", "", -MAXFRAME, MAXFRAME);
-  RNA_def_function_ui_description(func, "Add retiming handle");
+  ApiFn *fn = api_def_fn(sapi, "add", "api_Sequence_retiming_handles_add");
+  api_def_fn_flag(fn, FN_USE_SELF_ID);
+  api_def_int(
+      fn, "timeline_frame", 0, -MAXFRAME, MAXFRAME, "Timeline Frame", "", -MAXFRAME, MAXFRAME);
+  api_def_fn_ui_description(fn, "Add retiming handle");
   /* return type */
   ApiProp *parm = api_def_ptr(
       fn, "retiming_handle", "RetimingHandle", "", "New RetimingHandle");
-  api_def_function_return(func, parm);
+  api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "reset", "rna_Sequence_retiming_handles_reset");
+  fn = api_def_fn(sapi, "reset", "api_Sequence_retiming_handles_reset");
   api_def_fn_flag(fn, FN_USE_SELF_ID);
   api_def_fn_ui_description(fn, "Remove all retiming handles");
 }
 
-void api_sequences(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
+void api_seq(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
 {
-  StructRNA *srna;
-  PropertyRNA *parm;
-  FunctionRNA *func;
+  ApiStruct *sapi;
+  ApiProp *parm;
+  ApiFn *fn;
 
-  static const EnumPropertyItem seq_effect_items[] = {
+  static const EnumPropItem seq_effect_items[] = {
       {SEQ_TYPE_CROSS, "CROSS", 0, "Cross", ""},
       {SEQ_TYPE_ADD, "ADD", 0, "Add", ""},
       {SEQ_TYPE_SUB, "SUBTRACT", 0, "Subtract", ""},
@@ -819,7 +819,7 @@ void api_sequences(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem scale_fit_methods[] = {
+  static const EnumPropItem scale_fit_methods[] = {
       {SEQ_SCALE_TO_FIT, "FIT", 0, "Scale to Fit", "Scale image so fits in preview"},
       {SEQ_SCALE_TO_FILL,
        "FILL",
@@ -831,15 +831,15 @@ void api_sequences(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
       {0, NULL, 0, NULL, NULL},
   };
 
-  const char *new_clip_func_name = "rna_Sequences_editing_new_clip";
-  const char *new_mask_func_name = "rna_Sequences_editing_new_mask";
-  const char *new_scene_func_name = "rna_Sequences_editing_new_scene";
-  const char *new_image_func_name = "rna_Sequences_editing_new_image";
-  const char *new_movie_func_name = "rna_Sequences_editing_new_movie";
-  const char *new_sound_func_name = "rna_Sequences_editing_new_sound";
-  const char *new_meta_func_name = "rna_Sequences_editing_new_meta";
-  const char *new_effect_func_name = "rna_Sequences_editing_new_effect";
-  const char *remove_func_name = "rna_Sequences_editing_remove";
+  const char *new_clip_fn_name = "rna_Sequences_editing_new_clip";
+  const char *new_mask_fn_name = "rna_Sequences_editing_new_mask";
+  const char *new_scene_fn_name = "rna_Sequences_editing_new_scene";
+  const char *new_image_fn_name = "rna_Sequences_editing_new_image";
+  const char *new_movie_fn_name = "rna_Sequences_editing_new_movie";
+  const char *new_sound_fn_name = "rna_Sequences_editing_new_sound";
+  const char *new_meta_fn_name = "rna_Sequences_editing_new_meta";
+  const char *new_effect_fn_name = "rna_Sequences_editing_new_effect";
+  const char *remove_fn_name = "rna_Sequences_editing_remove";
 
   if (metastrip) {
     RNA_def_property_srna(cprop, "SequencesMeta");
