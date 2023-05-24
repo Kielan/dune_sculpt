@@ -747,7 +747,7 @@ void api_seq_elements(DuneApi *dapi, ApiProp *cprop)
 
   api_def_prop_sapi(cprop, "SequenceElements");
   srna = api_def_struct(dapi, "SequenceElements", NULL);
-  api_def_struct_sdna(sapi, "Sequence");
+  api_def_struct_stype(sapi, "Sequence");
   api_def_struct_ui_text(sapi, "SequenceElements", "Collection of SequenceElement");
 
   fn = api_def_fn(sapi, "append", "rna_SequenceElements_append");
@@ -791,7 +791,7 @@ void api_seq_retiming_handles(DuneApi *dapi, ApiProp *cprop)
   api_def_fn_ui_description(fn, "Remove all retiming handles");
 }
 
-void api_seq(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
+void api_seq(DuneApi *dapi, ApiProp *cprop, const bool metastrip)
 {
   ApiStruct *sapi;
   ApiProp *parm;
@@ -842,15 +842,15 @@ void api_seq(DuneApi *dapi, PropertyRNA *cprop, const bool metastrip)
   const char *remove_fn_name = "rna_Sequences_editing_remove";
 
   if (metastrip) {
-    RNA_def_property_srna(cprop, "SequencesMeta");
-    srna = RNA_def_struct(brna, "SequencesMeta", NULL);
-    RNA_def_struct_sdna(srna, "Sequence");
+    api_def_prop_sapi(cprop, "SequencesMeta");
+    sapi = api_def_struct(dapi, "SequencesMeta", NULL);
+    api_def_struct_stype(sapi, "Sequence");
 
-    new_clip_func_name = "rna_Sequences_meta_new_clip";
-    new_mask_func_name = "rna_Sequences_meta_new_mask";
-    new_scene_func_name = "rna_Sequences_meta_new_scene";
-    new_image_func_name = "rna_Sequences_meta_new_image";
-    new_movie_func_name = "rna_Sequences_meta_new_movie";
+    new_clip_fn_name = "rna_Sequences_meta_new_clip";
+    new_mask_fn_name = "rna_Sequences_meta_new_mask";
+    new_scene_fn_name = "rna_Sequences_meta_new_scene";
+    new_image_fn_name = "rna_Sequences_meta_new_image";
+    new_movie_fn_name = "rna_Sequences_meta_new_movie";
     new_sound_func_name = "rna_Sequences_meta_new_sound";
     new_meta_func_name = "rna_Sequences_meta_new_meta";
     new_effect_func_name = "rna_Sequences_meta_new_effect";
