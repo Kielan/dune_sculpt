@@ -767,7 +767,7 @@ void api_seq_elements(DuneApi *dapi, ApiProp *cprop)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
 }
 
-void api_seq_retiming_handles(BlenderRNA *brna, PropertyRNA *cprop)
+void api_seq_retiming_handles(DuneApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
 
@@ -776,7 +776,7 @@ void api_seq_retiming_handles(BlenderRNA *brna, PropertyRNA *cprop)
   api_def_struct_stype(sapi, "Sequence");
   api_def_struct_ui_text(sapi, "RetimingHandles", "Collection of RetimingHandle");
 
-  ApiFn *fn = api_def_fn(sapi, "add", "api_Sequence_retiming_handles_add");
+  ApiFn *fn = api_def_fn(sapi, "add", "api_seq_retiming_handles_add");
   api_def_fn_flag(fn, FN_USE_SELF_ID);
   api_def_int(
       fn, "timeline_frame", 0, -MAXFRAME, MAXFRAME, "Timeline Frame", "", -MAXFRAME, MAXFRAME);
@@ -786,7 +786,7 @@ void api_seq_retiming_handles(BlenderRNA *brna, PropertyRNA *cprop)
       fn, "retiming_handle", "RetimingHandle", "", "New RetimingHandle");
   api_def_fn_return(fn, parm);
 
-  fn = api_def_fn(sapi, "reset", "api_Sequence_retiming_handles_reset");
+  fn = api_def_fn(sapi, "reset", "api_seq_retiming_handles_reset");
   api_def_fn_flag(fn, FN_USE_SELF_ID);
   api_def_fn_ui_description(fn, "Remove all retiming handles");
 }
