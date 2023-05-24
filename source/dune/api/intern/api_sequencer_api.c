@@ -513,8 +513,8 @@ static Seq *api_seq_editing_new_effect(Id *id,
       id, &ed->seqbase, reports, name, type, channel, frame_start, frame_end, seq1, seq2, seq3);
 }
 
-static Seq *api_seq_meta_new_effect(ID *id,
-                                               Sequence *seq,
+static Seq *api_seq_meta_new_effect(Id *id,
+                                    Seq *seq,
                                                ReportList *reports,
                                                const char *name,
                                                int type,
@@ -562,7 +562,7 @@ static void api_seq_meta_remove(
   api_seq_remove(id, &seq->seqbase, main, reports, seq_ptr);
 }
 
-static StripElem *api_SequenceElements_append(ID *id, Sequence *seq, const char *filename)
+static StripElem *api_SequenceElements_append(Id *id, Sequence *seq, const char *filename)
 {
   Scene *scene = (Scene *)id;
   StripElem *se;
