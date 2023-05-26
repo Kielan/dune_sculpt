@@ -16,15 +16,15 @@
 #include "types_screen.h"
 #include "types_space.h"
 
-#include "BKE_brush.h"
-#include "BKE_layer.h"
-#include "BKE_material.h"
-#include "BKE_paint.h"
+#include "dune_brush.h"
+#include "dune_layer.h"
+#include "dune_material.h"
+#include "dune_paint.h"
 
-#include "ED_image.h"
+#include "ed_image.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
 const EnumPropertyItem rna_enum_particle_edit_hair_brush_items[] = {
     {PE_BRUSH_COMB, "COMB", 0, "Comb", "Comb hairs"},
