@@ -85,7 +85,7 @@ static const EnumPropertyItem rna_enum_canvas_source_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_symmetrize_direction_items[] = {
+const EnumPropItem api_enum_symmetrize_direction_items[] 
     {BMO_SYMMETRIZE_NEGATIVE_X, "NEGATIVE_X", 0, "-X to +X", ""},
     {BMO_SYMMETRIZE_POSITIVE_X, "POSITIVE_X", 0, "+X to -X", ""},
 
@@ -97,32 +97,32 @@ const EnumPropertyItem rna_enum_symmetrize_direction_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
-#  include "MEM_guardedalloc.h"
+#ifdef API_RUNTIME
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_collection.h"
-#  include "BKE_context.h"
-#  include "BKE_gpencil_legacy.h"
-#  include "BKE_object.h"
-#  include "BKE_particle.h"
-#  include "BKE_pbvh.h"
-#  include "BKE_pointcache.h"
+#  include "dune_collection.h"
+#  include "dune_context.h"
+#  include "dune_gpencil_legacy.h"
+#  include "dune_object.h"
+#  include "dune_particle.h"
+#  include "dune_pbvh.h"
+#  include "dune_pointcache.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "ED_gpencil_legacy.h"
-#  include "ED_paint.h"
-#  include "ED_particle.h"
+#  include "pen_legacy.h"
+#  include "ed_paint.h"
+#  include "ed_particle.h"
 
-static void rna_GPencil_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *UNUSED(ptr))
+static void api_pen_update(Main *UNUSED(main), Scene *scene, ApiPtr *UNUSED(ptr))
 {
   /* mark all grease pencil datablocks of the scene */
   if (scene != NULL) {
-    ED_gpencil_tag_scene_gpencil(scene);
+    ed_pen_tag_scene_pen(scene);
   }
 }
 
-const EnumPropertyItem rna_enum_particle_edit_disconnected_hair_brush_items[] = {
+const EnumPropItem api_enum_particle_edit_disconnected_hair_brush_items[] = {
     {PE_BRUSH_COMB, "COMB", 0, "Comb", "Comb hairs"},
     {PE_BRUSH_SMOOTH, "SMOOTH", 0, "Smooth", "Smooth hairs"},
     {PE_BRUSH_LENGTH, "LENGTH", 0, "Length", "Make hairs longer or shorter"},
@@ -131,66 +131,66 @@ const EnumPropertyItem rna_enum_particle_edit_disconnected_hair_brush_items[] = 
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem particle_edit_cache_brush_items[] = {
+static const EnumPropItem particle_edit_cache_brush_items[] = {
     {PE_BRUSH_COMB, "COMB", 0, "Comb", "Comb paths"},
     {PE_BRUSH_SMOOTH, "SMOOTH", 0, "Smooth", "Smooth paths"},
     {PE_BRUSH_LENGTH, "LENGTH", 0, "Length", "Make paths longer or shorter"},
     {0, NULL, 0, NULL, NULL},
 };
 
-static PointerRNA rna_ParticleEdit_brush_get(PointerRNA *ptr)
+static ApiPtr api_ParticleEdit_brush_get(ApiPtr *ptr)
 {
   ParticleEditSettings *pset = (ParticleEditSettings *)ptr->data;
   ParticleBrushData *brush = NULL;
 
   brush = &pset->brush[pset->brushtype];
 
-  return rna_pointer_inherit_refine(ptr, &RNA_ParticleBrush, brush);
+  return api_ptr_inherit_refine(ptr, &Api_ParticleBrush, brush);
 }
 
-static PointerRNA rna_ParticleBrush_curve_get(PointerRNA *ptr)
+static ApiPtr api_ParticleBrush_curve_get(ApiPtr *ptr)
 {
-  return rna_pointer_inherit_refine(ptr, &RNA_CurveMapping, NULL);
+  return api_ptr_inherit_refine(ptr, &Api_CurveMapping, NULL);
 }
 
-static void rna_ParticleEdit_redo(bContext *C, PointerRNA *UNUSED(ptr))
+static void rna_ParticleEdit_redo(Ctx *C, ApiPtr *UNUSED(ptr))
 {
-  Depsgraph *depsgraph = CTX_data_depsgraph_pointer(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
-  PTCacheEdit *edit = PE_get_current(depsgraph, scene, ob);
+  Graph *graph = ctx_data_graph_ptr(C);
+  Scene *scene = ctx_data_scene(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
+  PTCacheEdit *edit = PE_get_current(graph, scene, ob);
 
   if (!edit) {
     return;
   }
 
   if (ob) {
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
   }
 
-  BKE_particle_batch_cache_dirty_tag(edit->psys, BKE_PARTICLE_BATCH_DIRTY_ALL);
+  dune_particle_batch_cache_dirty_tag(edit->psys, DUNE_PARTICLE_BATCH_DIRTY_ALL);
   psys_free_path_cache(edit->psys, edit);
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  dune_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 }
 
-static void rna_ParticleEdit_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_ParticleEdit_update(Ctx *C, ApiPtr *UNUSED(ptr))
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
+  Scene *scene = ctx_data_scene(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
 
   if (ob) {
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
   }
 
   /* Sync tool setting changes from original to evaluated scenes. */
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
 }
 
-static void rna_ParticleEdit_tool_set(PointerRNA *ptr, int value)
+static void api_ParticleEdit_tool_set(ApiPtr *ptr, int value)
 {
   ParticleEditSettings *pset = (ParticleEditSettings *)ptr->data;
 
@@ -198,17 +198,16 @@ static void rna_ParticleEdit_tool_set(PointerRNA *ptr, int value)
   if ((pset->brushtype == PE_BRUSH_WEIGHT || value == PE_BRUSH_WEIGHT) && pset->object) {
     Object *ob = pset->object;
     if (ob) {
-      DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-      WM_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
+      graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+      sm_main_add_notifier(NC_OBJECT | ND_PARTICLE | NA_EDITED, NULL);
     }
   }
 
   pset->brushtype = value;
 }
-static const EnumPropertyItem *rna_ParticleEdit_tool_itemf(bContext *C,
-                                                           PointerRNA *UNUSED(ptr),
-                                                           PropertyRNA *UNUSED(prop),
-                                                           bool *UNUSED(r_free))
+static const EnumPropItem *api_ParticleEdit_tool_itemf(Ctx *C,
+                                                       ApiPtr *UNUSED(ptr),
+                                                       ApiProp *UNUSED(prop)                                                      bool *UNUSED(r_free))
 {
   const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
@@ -231,20 +230,20 @@ static const EnumPropertyItem *rna_ParticleEdit_tool_itemf(bContext *C,
       return rna_enum_particle_edit_disconnected_hair_brush_items;
     }
     else {
-      return rna_enum_particle_edit_hair_brush_items;
+      return api_enum_particle_edit_hair_brush_items;
     }
   }
 
   return particle_edit_cache_brush_items;
 }
 
-static bool rna_ParticleEdit_editable_get(PointerRNA *ptr)
+static bool api_ParticleEdit_editable_get(ApiPtr *ptr)
 {
   ParticleEditSettings *pset = (ParticleEditSettings *)ptr->data;
 
   return (pset->object && pset->scene && PE_get_current(NULL, pset->scene, pset->object));
 }
-static bool rna_ParticleEdit_hair_get(PointerRNA *ptr)
+static bool api_ParticleEdit_hair_get(ApiPtr *ptr)
 {
   ParticleEditSettings *pset = (ParticleEditSettings *)ptr->data;
 
@@ -257,23 +256,23 @@ static bool rna_ParticleEdit_hair_get(PointerRNA *ptr)
   return 0;
 }
 
-static char *rna_ParticleEdit_path(const PointerRNA *UNUSED(ptr))
+static char *api_ParticleEdit_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.particle_edit");
+  return lib_strdup("tool_settings.particle_edit");
 }
 
-static bool rna_Brush_mode_poll(PointerRNA *ptr, PointerRNA value)
+static bool api_Brush_mode_poll(ApiPtr *ptr, ApiPtr value)
 {
   const Paint *paint = ptr->data;
   Brush *brush = (Brush *)value.owner_id;
   const uint tool_offset = paint->runtime.tool_offset;
   const eObjectMode ob_mode = paint->runtime.ob_mode;
   UNUSED_VARS_NDEBUG(tool_offset);
-  BLI_assert(tool_offset && ob_mode);
+  lib_assert(tool_offset && ob_mode);
 
   if (brush->ob_mode & ob_mode) {
     if (paint->brush) {
-      if (BKE_brush_tool_get(paint->brush, paint) == BKE_brush_tool_get(brush, paint)) {
+      if (dune_brush_tool_get(paint->brush, paint) == BKE_brush_tool_get(brush, paint)) {
         return true;
       }
     }
@@ -294,7 +293,7 @@ static bool paint_contains_brush_slot(const Paint *paint, const PaintToolSlot *t
   return false;
 }
 
-static bool rna_Brush_mode_with_tool_poll(PointerRNA *ptr, PointerRNA value)
+static bool api_Brush_mode_with_tool_poll(ApiPtr *ptr, ApiPtr value)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   const PaintToolSlot *tslot = ptr->data;
@@ -367,47 +366,47 @@ static bool rna_Brush_mode_with_tool_poll(PointerRNA *ptr, PointerRNA value)
   return brush->ob_mode & mode;
 }
 
-static void rna_Sculpt_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_Sculpt_update(Ctx *C, ApiPtr *UNUSED(ptr))
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
+  Scene *scene = ctx_data_scene(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
 
   if (ob) {
-    DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
-    WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
+    graph_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
+    wm_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
 
     if (ob->sculpt) {
-      BKE_object_sculpt_dyntopo_smooth_shading_set(
+      dune_object_sculpt_dyntopo_smooth_shading_set(
           ob, ((scene->toolsettings->sculpt->flags & SCULPT_DYNTOPO_SMOOTH_SHADING) != 0));
     }
   }
 }
 
-static char *rna_Sculpt_path(const PointerRNA *UNUSED(ptr))
+static char *api_Sculpt_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.sculpt");
+  return lib_strdup("tool_settings.sculpt");
 }
 
-static char *rna_VertexPaint_path(const PointerRNA *ptr)
+static char *api_VertexPaint_path(const ApiPtr *ptr)
 {
   const Scene *scene = (Scene *)ptr->owner_id;
   const ToolSettings *ts = scene->toolsettings;
   if (ptr->data == ts->vpaint) {
-    return BLI_strdup("tool_settings.vertex_paint");
+    return lib_strdup("tool_settings.vertex_paint");
   }
   else {
-    return BLI_strdup("tool_settings.weight_paint");
+    return lib_strdup("tool_settings.weight_paint");
   }
 }
 
-static char *rna_ImagePaintSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_ImagePaintSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.image_paint");
+  return lib_strdup("tool_settings.image_paint");
 }
 
-static char *rna_PaintModeSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_PaintModeSettings_path(const PointerRNA *UNUSED(ptr))
 {
   return BLI_strdup("tool_settings.paint_mode");
 }
