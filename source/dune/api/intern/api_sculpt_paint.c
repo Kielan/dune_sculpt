@@ -227,7 +227,7 @@ static const EnumPropItem *api_ParticleEdit_tool_itemf(Ctx *C,
 
   if (psys) {
     if (psys->flag & PSYS_GLOBAL_HAIR) {
-      return rna_enum_particle_edit_disconnected_hair_brush_items;
+      return api_enum_particle_edit_disconnected_hair_brush_items;
     }
     else {
       return api_enum_particle_edit_hair_brush_items;
@@ -581,36 +581,36 @@ static void api_Sculpt_automasking_cavity_set(PointerRNA *ptr, bool val)
 }
 #else
 
-static void rna_def_paint_curve(BlenderRNA *brna)
+static void api_def_paint_curve(DuneApi *dapi)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  srna = RNA_def_struct(brna, "PaintCurve", "ID");
-  RNA_def_struct_ui_text(srna, "Paint Curve", "");
-  RNA_def_struct_ui_icon(srna, ICON_CURVE_BEZCURVE);
+  srna = api_def_struct(dapi, "PaintCurve", "ID");
+  api_def_struct_ui_text(sapi, "Paint Curve", "");
+  api_def_struct_ui_icon(sapi, ICON_CURVE_BEZCURVE);
 }
 
-static void rna_def_paint_tool_slot(BlenderRNA *brna)
+static void api_def_paint_tool_slot(BlenderRNA *brna)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "PaintToolSlot", NULL);
-  RNA_def_struct_ui_text(srna, "Paint Tool Slot", "");
+  srna = api_def_struct(dapi, "PaintToolSlot", NULL);
+  api_def_struct_ui_text(sapi, "Paint Tool Slot", "");
 
-  prop = RNA_def_property(srna, "brush", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Brush_mode_with_tool_poll");
-  RNA_def_property_ui_text(prop, "Brush", "");
+  prop = api_def_prop(sapi, "brush", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop, NULL, NULL, NULL, "apu_brush_mode_with_tool_poll");
+  api_def_prop_ui_text(prop, "Brush", "");
 }
 
-static void rna_def_paint(BlenderRNA *brna)
+static void api_def_paint(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *srna;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Paint", NULL);
-  RNA_def_struct_ui_text(srna, "Paint", "");
+  sapi = api_def_struct(brna, "Paint", NULL);
+  api_def_struct_ui_text(srna, "Paint", "");
 
   /* Global Settings */
   prop = RNA_def_property(srna, "brush", PROP_POINTER, PROP_NONE);
