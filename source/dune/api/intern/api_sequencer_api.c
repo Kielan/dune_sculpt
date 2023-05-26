@@ -945,7 +945,7 @@ void api_seq(DuneApi *dapi, ApiProp *cprop, const bool metastrip)
   api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_int(
       fn, "channel", 0, 1, MAXSEQ, "Channel", "The channel for the new sequence", 1, MAXSEQ);
-  api_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
   parm = api_def_int(fn,
                      "frame_start",
                      0,
@@ -955,17 +955,17 @@ void api_seq(DuneApi *dapi, ApiProp *cprop, const bool metastrip)
                      "The start frame for the new sequence",
                      -MAXFRAME,
                      MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_enum(
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_enum(
       func, "fit_method", scale_fit_methods, SEQ_USE_ORIGINAL_SIZE, "Image Fit Method", NULL);
-  RNA_def_parameter_flags(parm, 0, PARM_PYFUNC_OPTIONAL);
+  api_def_param_flags(parm, 0, PARM_PYFUNC_OPTIONAL);
   /* return type */
-  parm = RNA_def_pointer(func, "sequence", "Sequence", "", "New Sequence");
-  RNA_def_function_return(func, parm);
+  parm = api_def_ptr(fn, "sequence", "Sequence", "", "New Sequence");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "new_movie", new_movie_func_name);
-  RNA_def_function_flag(func, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
-  RNA_def_function_ui_description(func, "Add a new movie sequence");
+  fn = api_def_fn(sapi, "new_movie", new_movie_func_name
+  api_def_fn_flag(fn, FUNC_USE_SELF_ID | FUNC_USE_MAIN);
+  api_def_fn_ui_description(func, "Add a new movie sequence");
   parm = RNA_def_string(func, "name", "Name", 0, "", "Name for the new sequence");
   RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
   parm = RNA_def_string(func, "filepath", "File", 0, "", "Filepath to movie");
