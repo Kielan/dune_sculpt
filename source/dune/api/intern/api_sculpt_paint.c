@@ -153,7 +153,7 @@ static ApiPtr api_ParticleBrush_curve_get(ApiPtr *ptr)
   return api_ptr_inherit_refine(ptr, &Api_CurveMapping, NULL);
 }
 
-static void rna_ParticleEdit_redo(Ctx *C, ApiPtr *UNUSED(ptr))
+static void api_ParticleEdit_redo(Ctx *C, ApiPtr *UNUSED(ptr))
 {
   Graph *graph = ctx_data_graph_ptr(C);
   Scene *scene = ctx_data_scene(C);
@@ -243,7 +243,7 @@ static bool api_ParticleEdit_editable_get(ApiPtr *ptr)
 
   return (pset->object && pset->scene && PE_get_current(NULL, pset->scene, pset->object));
 }
-static bool api_ParticleEdit_hair_get(ApiPtr *ptr)
+static bool api_particlesdit_hair_get(ApiPtr *ptr)
 {
   ParticleEditSettings *pset = (ParticleEditSettings *)ptr->data;
 
@@ -256,12 +256,12 @@ static bool api_ParticleEdit_hair_get(ApiPtr *ptr)
   return 0;
 }
 
-static char *api_ParticleEdit_path(const ApiPtr *UNUSED(ptr))
+static char *api_particleedit_path(const ApiPtr *UNUSED(ptr))
 {
   return lib_strdup("tool_settings.particle_edit");
 }
 
-static bool api_Brush_mode_poll(ApiPtr *ptr, ApiPtr value)
+static bool api_brush_mode_poll(ApiPtr *ptr, ApiPtr value)
 {
   const Paint *paint = ptr->data;
   Brush *brush = (Brush *)value.owner_id;
@@ -293,7 +293,7 @@ static bool paint_contains_brush_slot(const Paint *paint, const PaintToolSlot *t
   return false;
 }
 
-static bool api_Brush_mode_with_tool_poll(ApiPtr *ptr, ApiPtr value)
+static bool api_brush_mode_with_tool_poll(ApiPtr *ptr, ApiPtr value)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   const PaintToolSlot *tslot = ptr->data;
@@ -510,7 +510,7 @@ static void api_ImaPaint_canvas_update(Ctx *C, ApiPtr *UNUSED(ptr))
   Object *ob = dune_view_layer_active_object_get(view_layer);
   Image *ima = scene->toolsettings->imapaint.canvas;
 
-  ED_space_image_sync(bmain, ima, false);
+  ed_space_image_sync(bmain, ima, false);
 
   if (ob && ob->type == OB_MESH) {
     ed_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
@@ -546,15 +546,15 @@ static bool api_ImaPaint_detect_data(ImagePaintSettings *imapaint)
 
 static char *api_pensculptsettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.gpencil_sculpt");
+  return lib_strdup("tool_settings.pen_sculpt");
 }
 
-static char *rna_GPencilSculptGuide_path(const PointerRNA *UNUSED(ptr))
+static char *api_PenSculptGuide_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.gpencil_sculpt.guide");
+  return lib_strdup("tool_settings.pen_sculpt.guide");
 }
 
-static void rna_Sculpt_automasking_invert_cavity_set(PointerRNA *ptr, bool val)
+static void api_Sculpt_automasking_invert_cavity_set(ApiPtr *ptr, bool val)
 {
   Sculpt *sd = (Sculpt *)ptr->data;
 
@@ -567,7 +567,7 @@ static void rna_Sculpt_automasking_invert_cavity_set(PointerRNA *ptr, bool val)
   }
 }
 
-static void rna_Sculpt_automasking_cavity_set(PointerRNA *ptr, bool val)
+static void api_Sculpt_automasking_cavity_set(PointerRNA *ptr, bool val)
 {
   Sculpt *sd = (Sculpt *)ptr->data;
 
