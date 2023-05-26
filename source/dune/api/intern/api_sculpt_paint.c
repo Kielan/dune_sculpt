@@ -1,26 +1,20 @@
-/* SPDX-License-Identifier: GPL-2.0-or-later */
-
-/** \file
- * \ingroup RNA
- */
-
 #include <stdlib.h>
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_access.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_ID.h"
-#include "DNA_brush_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_space_types.h"
+#include "types_id.h"
+#include "types_brush.h"
+#include "types_gpencil_legacy_types.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_space.h"
 
 #include "BKE_brush.h"
 #include "BKE_layer.h"
