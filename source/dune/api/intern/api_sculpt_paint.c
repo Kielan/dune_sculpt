@@ -510,7 +510,7 @@ static void api_ImaPaint_canvas_update(Ctx *C, ApiPtr *UNUSED(ptr))
   Object *ob = dune_view_layer_active_object_get(view_layer);
   Image *ima = scene->toolsettings->imapaint.canvas;
 
-  ed_space_image_sync(bmain, ima, false);
+  ed_space_image_sync(main, ima, false);
 
   if (ob && ob->type == OB_MESH) {
     ed_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
@@ -620,38 +620,38 @@ static void rna_def_paint(BlenderRNA *brna)
   RNA_def_property_update(prop, 0, "rna_Paint_brush_update");
 
   /* paint_tool_slots */
-  prop = RNA_def_property(srna, "tool_slots", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "tool_slots", "tool_slots_len");
-  RNA_def_property_struct_type(prop, "PaintToolSlot");
+  prop = api_def_prop(sapi, "tool_slots", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "tool_slots", "tool_slots_len");
+  api_def_prop_struct_type(prop, "PaintToolSlot");
   /* don't dereference pointer! */
-  RNA_def_property_collection_funcs(
+  api_def_prop_collection_funcs(
       prop, NULL, NULL, NULL, "rna_iterator_array_get", NULL, NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Paint Tool Slots", "");
+  api_def_prop_ui_text(prop, "Paint Tool Slots", "");
 
-  prop = RNA_def_property(srna, "palette", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_EDITABLE);
-  RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, NULL);
-  RNA_def_property_ui_text(prop, "Palette", "Active Palette");
+  prop = api_def_prop(sapi, "palette", PROP_POINTER, PROP_NONE);
+  api_def_prop_flag(prop, PROP_EDITABLE);
+  api_def_prop_ptr_fns(prop, NULL, NULL, NULL, NULL);
+  api_def_prop_ui_text(prop, "Palette", "Active Palette");
 
-  prop = RNA_def_property(srna, "show_brush", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", PAINT_SHOW_BRUSH);
-  RNA_def_property_ui_text(prop, "Show Brush", "");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "show_brush", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", PAINT_SHOW_BRUSH);
+  api_def_prop_ui_text(prop, "Show Brush", "");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "show_brush_on_surface", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", PAINT_SHOW_BRUSH_ON_SURFACE);
-  RNA_def_property_ui_text(prop, "Show Brush On Surface", "");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapu, "show_brush_on_surface", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", PAINT_SHOW_BRUSH_ON_SURFACE);
+  api_def_prop_ui_text(prop, "Show Brush On Surface", "");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "show_low_resolution", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", PAINT_FAST_NAVIGATE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "show_low_resolution", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", PAINT_FAST_NAVIGATE);
+  api_def_prop_ui_text(
       prop, "Fast Navigate", "For multires, show low resolution while navigating the view");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  apu_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_sculpt_delay_updates", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", PAINT_SCULPT_DELAY_UPDATES);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_sculpt_delay_updates", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", PAINT_SCULPT_DELAY_UPDATES);
+  api_def_prop_ui_text(
       prop,
       "Delay Viewport Updates",
       "Update the geometry when it enters the view, providing faster view navigation");
