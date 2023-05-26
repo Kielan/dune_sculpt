@@ -11,7 +11,7 @@
 
 #include "types_id.h"
 #include "types_brush.h"
-#include "types_gpencil_legacy_types.h"
+#include "types_pen_legacy_types.h"
 #include "types_scene.h"
 #include "types_screen.h"
 #include "types_space.h"
@@ -37,8 +37,8 @@ const EnumPropertyItem rna_enum_particle_edit_hair_brush_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem rna_enum_gpencil_lock_axis_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem api_enum_pen_lock_axis_items[] = {
     {GP_LOCKAXIS_VIEW,
      "VIEW",
      ICON_RESTRICT_VIEW_ON,
@@ -49,13 +49,13 @@ static const EnumPropertyItem rna_enum_gpencil_lock_axis_items[] = {
      ICON_AXIS_FRONT,
      "Front (X-Z)",
      "Project strokes to plane locked to Y"},
-    {GP_LOCKAXIS_X,
+    {PEN_LOCKAXIS_X,
      "AXIS_X",
      ICON_AXIS_SIDE,
      "Side (Y-Z)",
      "Project strokes to plane locked to X"},
-    {GP_LOCKAXIS_Z, "AXIS_Z", ICON_AXIS_TOP, "Top (X-Y)", "Project strokes to plane locked to Z"},
-    {GP_LOCKAXIS_CURSOR,
+    {PEN_LOCKAXIS_Z, "AXIS_Z", ICON_AXIS_TOP, "Top (X-Y)", "Project strokes to plane locked to Z"},
+    {PEN_LOCKAXIS_CURSOR,
      "CURSOR",
      ICON_PIVOT_CURSOR,
      "Cursor",
@@ -63,13 +63,13 @@ static const EnumPropertyItem rna_enum_gpencil_lock_axis_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_gpencil_paint_mode[] = {
-    {GPPAINT_FLAG_USE_MATERIAL,
+static const EnumPropItem api_enum_pen_paint_mode[] = {
+    {PPAINT_FLAG_USE_MATERIAL,
      "MATERIAL",
      0,
      "Material",
      "Paint using the active material base color"},
-    {GPPAINT_FLAG_USE_VERTEXCOLOR,
+    {PPAINT_FLAG_USE_VERTEXCOLOR,
      "VERTEXCOLOR",
      0,
      "Color Attribute",
@@ -78,7 +78,7 @@ static const EnumPropertyItem rna_enum_gpencil_paint_mode[] = {
 };
 #endif
 
-static const EnumPropertyItem rna_enum_canvas_source_items[] = {
+static const EnumPropItem api_enum_canvas_source_items[] = {
     {PAINT_CANVAS_SOURCE_COLOR_ATTRIBUTE, "COLOR_ATTRIBUTE", 0, "Color Attribute", ""},
     {PAINT_CANVAS_SOURCE_MATERIAL, "MATERIAL", 0, "Material", ""},
     {PAINT_CANVAS_SOURCE_IMAGE, "IMAGE", 0, "Image", ""},
@@ -86,14 +86,14 @@ static const EnumPropertyItem rna_enum_canvas_source_items[] = {
 };
 
 const EnumPropItem api_enum_symmetrize_direction_items[] 
-    {BMO_SYMMETRIZE_NEGATIVE_X, "NEGATIVE_X", 0, "-X to +X", ""},
-    {BMO_SYMMETRIZE_POSITIVE_X, "POSITIVE_X", 0, "+X to -X", ""},
+    {MO_SYMMETRIZE_NEGATIVE_X, "NEGATIVE_X", 0, "-X to +X", ""},
+    {MO_SYMMETRIZE_POSITIVE_X, "POSITIVE_X", 0, "+X to -X", ""},
 
-    {BMO_SYMMETRIZE_NEGATIVE_Y, "NEGATIVE_Y", 0, "-Y to +Y", ""},
-    {BMO_SYMMETRIZE_POSITIVE_Y, "POSITIVE_Y", 0, "+Y to -Y", ""},
+    {MO_SYMMETRIZE_NEGATIVE_Y, "NEGATIVE_Y", 0, "-Y to +Y", ""},
+    {MO_SYMMETRIZE_POSITIVE_Y, "POSITIVE_Y", 0, "+Y to -Y", ""},
 
-    {BMO_SYMMETRIZE_NEGATIVE_Z, "NEGATIVE_Z", 0, "-Z to +Z", ""},
-    {BMO_SYMMETRIZE_POSITIVE_Z, "POSITIVE_Z", 0, "+Z to -Z", ""},
+    {MO_SYMMETRIZE_NEGATIVE_Z, "NEGATIVE_Z", 0, "-Z to +Z", ""},
+    {MO_SYMMETRIZE_POSITIVE_Z, "POSITIVE_Z", 0, "+Z to -Z", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
@@ -406,148 +406,145 @@ static char *api_ImagePaintSettings_path(const ApiPtr *UNUSED(ptr))
   return lib_strdup("tool_settings.image_paint");
 }
 
-static char *api_PaintModeSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_PaintModeSettings_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.paint_mode");
+  return lib_strdup("tool_settings.paint_mode");
 }
 
-static char *rna_UvSculpt_path(const PointerRNA *UNUSED(ptr))
+static char *api_UvSculpt_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.uv_sculpt");
+  return lib_strdup("tool_settings.uv_sculpt");
 }
 
-static char *rna_CurvesSculpt_path(const PointerRNA *UNUSED(ptr))
+static char *api_CurvesSculpt_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.curves_sculpt");
+  return lib_strdup("tool_settings.curves_sculpt");
 }
 
-static char *rna_GpPaint_path(const PointerRNA *UNUSED(ptr))
+static char *api_GpPaint_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.gpencil_paint");
+  return lib_strdup("tool_settings.pen_paint");
 }
 
-static char *rna_GpVertexPaint_path(const PointerRNA *UNUSED(ptr))
+static char *api_GpVertexPaint_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.gpencil_vertex_paint");
+  return lib_strdup("tool_settings.pen_vertex_paint");
 }
 
-static char *rna_GpSculptPaint_path(const PointerRNA *UNUSED(ptr))
+static char *api_GpSculptPaint_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.gpencil_sculpt_paint");
+  return lib_strdup("tool_settings.pen_sculpt_paint");
 }
 
-static char *rna_GpWeightPaint_path(const PointerRNA *UNUSED(ptr))
+static char *api_PenWeightPaint_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.gpencil_weight_paint");
+  return lib_strdup("tool_settings.pen_weight_paint");
 }
 
-static char *rna_ParticleBrush_path(const PointerRNA *UNUSED(ptr))
+static char *ai_particlebrush_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("tool_settings.particle_edit.brush");
+  return lib_strdup("tool_settings.particle_edit.brush");
 }
 
-static void rna_Paint_brush_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_paint_brush_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Paint *paint = ptr->data;
   Brush *br = paint->brush;
-  BKE_paint_invalidate_overlay_all();
+  dune_paint_invalidate_overlay_all();
   /* Needed because we're not calling 'BKE_paint_brush_set' which handles this. */
-  BKE_paint_toolslots_brush_update(paint);
-  WM_main_add_notifier(NC_BRUSH | NA_SELECTED, br);
+  dune_paint_toolslots_brush_update(paint);
+  wm_main_add_notifier(NC_BRUSH | NA_SELECTED, br);
 }
 
-static void rna_ImaPaint_viewport_update(Main *UNUSED(bmain),
+static void api_ImaPaint_viewport_update(Main *UNUSED(main),
                                          Scene *UNUSED(scene),
-                                         PointerRNA *UNUSED(ptr))
+                                         ApiPtr *UNUSED(ptr))
 {
   /* not the best solution maybe, but will refresh the 3D viewport */
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
 }
 
-static void rna_ImaPaint_mode_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_ImaPaint_mode_update(Ctx *C, ApiPtr *UNUSED(ptr))
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
+  Scene *scene = ctx_data_scene(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
 
   if (ob && ob->type == OB_MESH) {
     /* of course we need to invalidate here */
-    BKE_texpaint_slots_refresh_object(scene, ob);
+    dune_texpaint_slots_refresh_object(scene, ob);
 
     /* We assume that changing the current mode will invalidate the uv layers
      * so we need to refresh display. */
-    ED_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+    ed_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
   }
 }
 
-static void rna_ImaPaint_stencil_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_ImaPaint_stencil_update(Ctx *C, ApiPtr *UNUSED(ptr))
 {
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
+  Scene *scene = ctx_data_scene(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
 
   if (ob && ob->type == OB_MESH) {
-    ED_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+    ed_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
   }
 }
 
-static bool rna_ImaPaint_imagetype_poll(PointerRNA *UNUSED(ptr), PointerRNA value)
+static bool api_ImaPaint_imagetype_poll(ApiPtr *UNUSED(ptr), ApiPtr value)
 {
   Image *image = (Image *)value.owner_id;
   return image->type != IMA_TYPE_R_RESULT && image->type != IMA_TYPE_COMPOSITE;
 }
 
-static void rna_ImaPaint_canvas_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_ImaPaint_canvas_update(Ctx *C, ApiPtr *UNUSED(ptr))
 {
-  Main *bmain = CTX_data_main(C);
-  Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
+  Main *main = ctx_data_main(C);
+  Scene *scene = ctx_data_scene(C);
+  ViewLayer *view_layer = ctx_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
   Image *ima = scene->toolsettings->imapaint.canvas;
 
   ED_space_image_sync(bmain, ima, false);
 
   if (ob && ob->type == OB_MESH) {
-    ED_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
-    WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
+    ed_paint_proj_mesh_data_check(scene, ob, NULL, NULL, NULL, NULL);
+    wm_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
   }
 }
 
-/** \name Paint mode settings
- * \{ */
+/** Paint mode setting **/
 
-static bool rna_PaintModeSettings_canvas_image_poll(PointerRNA *UNUSED(ptr), PointerRNA value)
+static bool api_PaintModeSettings_canvas_image_poll(ApiPtr *UNUSED(ptr), ApiPtr value)
 {
   Image *image = (Image *)value.owner_id;
   return !ELEM(image->type, IMA_TYPE_COMPOSITE, IMA_TYPE_R_RESULT);
 }
 
-static void rna_PaintModeSettings_canvas_source_update(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_PaintModeSettings_canvas_source_update(Ctx *C, ApiPtr *UNUSED(ptr))
 {
-  Scene *scene = CTX_data_scene(C);
-  Object *ob = CTX_data_active_object(C);
+  Scene *scene = ctx_data_scene(C);
+  Object *ob = ctx_data_active_object(C);
   /* When canvas source changes the PBVH would require updates when switching between color
    * attributes. */
   if (ob && ob->type == OB_MESH) {
-    BKE_texpaint_slots_refresh_object(scene, ob);
-    DEG_id_tag_update(&ob->id, 0);
-    WM_main_add_notifier(NC_GEOM | ND_DATA, &ob->id);
+    dune_texpaint_slots_refresh_object(scene, ob);
+    graph_id_tag_update(&ob->id, 0);
+    wm_main_add_notifier(NC_GEOM | ND_DATA, &ob->id);
   }
 }
 
-/* \} */
-
-static bool rna_ImaPaint_detect_data(ImagePaintSettings *imapaint)
+static bool api_ImaPaint_detect_data(ImagePaintSettings *imapaint)
 {
   return imapaint->missing_data == 0;
 }
 
-static char *rna_GPencilSculptSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_pensculptsettings_path(const ApiPtr *UNUSED(ptr))
 {
   return BLI_strdup("tool_settings.gpencil_sculpt");
 }
