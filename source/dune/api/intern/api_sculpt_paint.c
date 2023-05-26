@@ -655,29 +655,29 @@ static void api_def_paint(DuneApi *dapi)
       prop,
       "Delay Viewport Updates",
       "Update the geometry when it enters the view, providing faster view navigation");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "input_samples", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "num_input_samples");
-  RNA_def_property_ui_range(prop, 1, PAINT_MAX_INPUT_SAMPLES, 1, -1);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "input_samples", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "num_input_samples");
+  api_def_prop_ui_range(prop, 1, PAINT_MAX_INPUT_SAMPLES, 1, -1);
+  api_def_prop_ui_text(
       prop, "Input Samples", "Average multiple input samples together to smooth the brush stroke");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_symmetry_x", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "symmetry_flags", PAINT_SYMM_X);
-  RNA_def_property_ui_text(prop, "Symmetry X", "Mirror brush across the X axis");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "use_symmetry_x", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "symmetry_flags", PAINT_SYMM_X);
+  api_def_prop_ui_text(prop, "Symmetry X", "Mirror brush across the X axis");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_symmetry_y", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "symmetry_flags", PAINT_SYMM_Y);
-  RNA_def_property_ui_text(prop, "Symmetry Y", "Mirror brush across the Y axis");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "use_symmetry_y", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "symmetry_flags", PAINT_SYMM_Y);
+  api_def_prop_ui_text(prop, "Symmetry Y", "Mirror brush across the Y axis");
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
-  prop = RNA_def_property(srna, "use_symmetry_z", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "symmetry_flags", PAINT_SYMM_Z);
-  RNA_def_property_ui_text(prop, "Symmetry Z", "Mirror brush across the Z axis");
-  RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
+  prop = api_def_prop(sapi, "use_symmetry_z", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "symmetry_flags", PAINT_SYMM_Z);
+  api_def_prop_ui_text(prop, "Symmetry Z", "Mirror brush across the Z axis
+  api_def_prop_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL);
 
   prop = RNA_def_property(srna, "use_symmetry_feather", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "symmetry_flags", PAINT_SYMMETRY_FEATHER);
