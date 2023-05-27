@@ -483,15 +483,15 @@ static const EnumPropItem api_enum_bake_view_from_items[] = {
 #define R_IMF_VIEWS_ENUM_MV \
   {R_IMF_VIEWS_MULTIVIEW, "MULTIVIEW", 0, "Multi-View", "Single file with all the views"},
 
-const EnumPropertyItem rna_enum_views_format_items[] = {
+const EnumPropItem api_enum_views_format_items[] = {
     R_IMF_VIEWS_ENUM_IND R_IMF_VIEWS_ENUM_S3D{0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_views_format_multilayer_items[] = {
+const EnumPropItem api_enum_views_format_multilayer_items[] = {
     R_IMF_VIEWS_ENUM_IND R_IMF_VIEWS_ENUM_MV{0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_views_format_multiview_items[] = {
+const EnumPropItem api_enum_views_format_multiview_items[] = {
     R_IMF_VIEWS_ENUM_IND R_IMF_VIEWS_ENUM_S3D R_IMF_VIEWS_ENUM_MV{0, NULL, 0, NULL, NULL},
 };
 
@@ -643,14 +643,14 @@ const EnumPropItem api_enum_transform_orientation_items[] = {
 #  include "types_text_types.h"
 #  include "types_workspace_types.h"
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "MEM_guardedalloc.h"
+#  include "mem_guardedalloc.h"
 
-#  include "BKE_animsys.h"
-#  include "BKE_brush.h"
-#  include "BKE_collection.h"
-#  include "BKE_colortools.h"
+#  include "dune_animsys.h"
+#  include "dune_brush.h"
+#  include "dune_collection.h"
+#  include "fune_colortools.h"
 #  include "BKE_context.h"
 #  include "BKE_freestyle.h"
 #  include "BKE_global.h"
