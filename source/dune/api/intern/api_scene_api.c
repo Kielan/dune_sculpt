@@ -1,47 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "BLI_kdopbvh.h"
-#include "BLI_path_util.h"
-#include "BLI_utildefines.h"
+#include "lib_kdopbvh.h"
+#include "lib_path_util.h"
+#include "lib_utildefines.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "DNA_anim_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
+#include "types_anim.h"
+#include "types_object.h"
+#include "types_scene.h"
 
-#include "rna_internal.h" /* own include */
+#include "api_internal.h" /* own include */
 
 #ifdef WITH_ALEMBIC
 #  include "ABC_alembic.h"
 #endif
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BKE_editmesh.h"
-#  include "BKE_global.h"
-#  include "BKE_image.h"
-#  include "BKE_scene.h"
-#  include "BKE_writeavi.h"
+#  include "dune_editmesh.h"
+#  include "dune_global.h"
+#  include "dune_image.h"
+#  include "dune_scene.h"
+#  include "dune_writeavi.h"
 
-#  include "DEG_depsgraph_query.h"
+#  include "graph_query.h"
 
-#  include "ED_transform.h"
-#  include "ED_transform_snap_object_context.h"
-#  include "ED_uvedit.h"
+#  include "ed_transform.h"
+#  include "ed_transform_snap_object_context.h"
+#  include "ed_uvedit.h"
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
-static void rna_Scene_frame_set(Scene *scene, Main *bmain, int frame, float subframe)
+static void api_Scene_frame_set(Scene *scene, Main *main, int frame, float subframe)
 {
   double cfra = (double)frame + (double)subframe;
 
   CLAMP(cfra, MINAFRAME, MAXFRAME);
-  BKE_scene_frame_set(scene, cfra);
+  dune_scene_frame_set(scene, cfra);
 
 #  ifdef WITH_PYTHON
   BPy_BEGIN_ALLOW_THREADS;
@@ -50,17 +50,17 @@ static void rna_Scene_frame_set(Scene *scene, Main *bmain, int frame, float subf
   for (ViewLayer *view_layer = scene->view_layers.first; view_layer != NULL;
        view_layer = view_layer->next)
   {
-    Depsgraph *depsgraph = BKE_scene_ensure_depsgraph(bmain, scene, view_layer);
-    BKE_scene_graph_update_for_newframe(depsgraph);
+    Graph *graph = dune_scene_ensure_graph(main, scene, view_layer);
+    dune_scene_graph_update_for_newframe(graph);
   }
 
 #  ifdef WITH_PYTHON
   BPy_END_ALLOW_THREADS;
 #  endif
 
-  if (BKE_scene_camera_switch_update(scene)) {
-    for (bScreen *screen = bmain->screens.first; screen; screen = screen->id.next) {
-      BKE_screen_view3d_scene_sync(screen, scene);
+  if (dune_scene_camera_switch_update(scene)) {
+    for (Screen *screen = main->screens.first; screen; screen = screen->id.next) {
+      dune_screen_view3d_scene_sync(screen, scene);
     }
   }
 
@@ -68,21 +68,21 @@ static void rna_Scene_frame_set(Scene *scene, Main *bmain, int frame, float subf
    * redrawing while the data is being modified for render */
   if (!G.is_rendering) {
     /* can't use NC_SCENE|ND_FRAME because this causes wm_event_do_notifiers to call
-     * BKE_scene_graph_update_for_newframe which will lose any un-keyed changes #24690. */
-    // WM_main_add_notifier(NC_SCENE|ND_FRAME, scene);
+     * dune_scene_graph_update_for_newframe which will lose any un-keyed changes #24690. */
+    // wm_main_add_notifier(NC_SCENE|ND_FRAME, scene);
 
     /* instead just redraw the views */
-    WM_main_add_notifier(NC_WINDOW, NULL);
+    wm_main_add_notifier(NC_WINDOW, NULL);
   }
 }
 
-static void rna_Scene_uvedit_aspect(Scene *UNUSED(scene), Object *ob, float aspect[2])
+static void api_Scene_uvedit_aspect(Scene *UNUSED(scene), Object *ob, float aspect[2])
 {
   if ((ob->type == OB_MESH) && (ob->mode == OB_MODE_EDIT)) {
-    BMEditMesh *em;
-    em = BKE_editmesh_from_object(ob);
+    MeshEditMesh *em;
+    em = dune_editmesh_from_object(ob);
     if (EDBM_uv_check(em)) {
-      ED_uvedit_get_aspect(ob, aspect, aspect + 1);
+      ed_uvedit_get_aspect(ob, aspect, aspect + 1);
       return;
     }
   }
@@ -90,23 +90,23 @@ static void rna_Scene_uvedit_aspect(Scene *UNUSED(scene), Object *ob, float aspe
   aspect[0] = aspect[1] = 1.0f;
 }
 
-static void rna_SceneRender_get_frame_path(
-    RenderData *rd, Main *bmain, int frame, bool preview, const char *view, char *filepath)
+static void api_SceneRender_get_frame_path(
+    RenderData *rd, Main *main, int frame, bool preview, const char *view, char *filepath)
 {
-  const char *suffix = BKE_scene_multiview_view_suffix_get(rd, view);
+  const char *suffix = dune_scene_multiview_view_suffix_get(rd, view);
 
   /* avoid NULL pointer */
   if (!suffix) {
     suffix = "";
   }
 
-  if (BKE_imtype_is_movie(rd->im_format.imtype)) {
-    BKE_movie_filepath_get(filepath, rd, preview != 0, suffix);
+  if (dune_imtype_is_movie(rd->im_format.imtype)) {
+    dune_movie_filepath_get(filepath, rd, preview != 0, suffix);
   }
   else {
-    BKE_image_path_from_imformat(filepath,
+    dune_image_path_from_imformat(filepath,
                                  rd->pic,
-                                 BKE_main_blendfile_path(bmain),
+                                 dune_main_dunefile_path(main),
                                  (frame == INT_MIN) ? rd->cfra : frame,
                                  &rd->im_format,
                                  (rd->scemode & R_EXTENSION) != 0,
@@ -115,8 +115,8 @@ static void rna_SceneRender_get_frame_path(
   }
 }
 
-static void rna_Scene_ray_cast(Scene *scene,
-                               Depsgraph *depsgraph,
+static void api_Scene_ray_cast(Scene *scene,
+                               Graph *graph,
                                float origin[3],
                                float direction[3],
                                float ray_dist,
@@ -128,10 +128,10 @@ static void rna_Scene_ray_cast(Scene *scene,
                                float r_obmat[16])
 {
   normalize_v3(direction);
-  SnapObjectContext *sctx = ED_transform_snap_object_context_create(scene, 0);
+  SnapObjectCxt *scxt = ed_transform_snap_object_context_create(scene, 0);
 
-  bool ret = ED_transform_snap_object_project_ray_ex(sctx,
-                                                     depsgraph,
+  bool ret = ed_transform_snap_object_project_ray_ex(sctx,
+                                                     graph,
                                                      NULL,
                                                      &(const struct SnapObjectParams){
                                                          .snap_target_select = SCE_SNAP_TARGET_ALL,
@@ -145,10 +145,10 @@ static void rna_Scene_ray_cast(Scene *scene,
                                                      r_ob,
                                                      (float(*)[4])r_obmat);
 
-  ED_transform_snap_object_context_destroy(sctx);
+  ed_transform_snap_object_context_destroy(scxt);
 
   if (r_ob != NULL && *r_ob != NULL) {
-    *r_ob = DEG_get_original_object(*r_ob);
+    *r_ob = graph_get_original_object(*r_ob);
   }
 
   if (ret) {
@@ -163,14 +163,14 @@ static void rna_Scene_ray_cast(Scene *scene,
   }
 }
 
-static void rna_Scene_sequencer_editing_free(Scene *scene)
+static void api_Scene_seq_editing_free(Scene *scene)
 {
-  SEQ_editing_free(scene, true);
+  seq_editing_free(scene, true);
 }
 
 #  ifdef WITH_ALEMBIC
 
-static void rna_Scene_alembic_export(Scene *scene,
+static void api_Scene_alembic_export(Scene *scene,
                                      bContext *C,
                                      const char *filepath,
                                      int frame_start,
@@ -242,40 +242,40 @@ static void rna_Scene_alembic_export(Scene *scene,
 
 #else
 
-void RNA_api_scene(StructRNA *srna)
+void api_scene(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "frame_set", "rna_Scene_frame_set");
-  RNA_def_function_ui_description(func, "Set scene frame updating all objects immediately");
-  parm = RNA_def_int(
-      func, "frame", 0, MINAFRAME, MAXFRAME, "", "Frame number to set", MINAFRAME, MAXFRAME);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_float(
-      func, "subframe", 0.0, 0.0, 1.0, "", "Subframe time, between 0.0 and 1.0", 0.0, 1.0);
-  RNA_def_function_flag(func, FUNC_USE_MAIN);
+  fn = api_def_fn(sapi, "frame_set", "api_Scene_frame_set");
+  api_def_fn_ui_description(fn, "Set scene frame updating all objects immediately");
+  parm = api_def_int(
+      fn, "frame", 0, MINAFRAME, MAXFRAME, "", "Frame number to set", MINAFRAME, MAXFRAME);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_float(
+      fn, "subframe", 0.0, 0.0, 1.0, "", "Subframe time, between 0.0 and 1.0", 0.0, 1.0);
+  api_def_fn_flag(fn, FN_USE_MAIN);
 
-  func = RNA_def_function(srna, "uvedit_aspect", "rna_Scene_uvedit_aspect");
-  RNA_def_function_ui_description(func, "Get uv aspect for current object");
-  parm = RNA_def_pointer(func, "object", "Object", "", "Object");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  parm = RNA_def_float_vector(func, "result", 2, NULL, 0.0f, FLT_MAX, "", "aspect", 0.0f, FLT_MAX);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
+  fn = apj_def_fn(sapi, "uvedit_aspect", "rna_Scene_uvedit_aspect");
+  api_def_fn_ui_description(fn, "Get uv aspect for current object");
+  parm = apj_def_ptr(fn, "object", "Object", "", "Object");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_float_vector(fn, "result", 2, NULL, 0.0f, FLT_MAX, "", "aspect", 0.0f, FLT_MAX);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
 
   /* Ray Cast */
-  func = RNA_def_function(srna, "ray_cast", "rna_Scene_ray_cast");
-  RNA_def_function_ui_description(func, "Cast a ray onto in object space");
+  fn = api_def_fn(sapi, "ray_cast", "rna_Scene_ray_cast");
+  api_def_fn_ui_description(fn, "Cast a ray onto in object space");
 
-  parm = RNA_def_pointer(func, "depsgraph", "Depsgraph", "", "The current dependency graph");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  parm = api_def_ptr(fn, "graph", "Graph", "", "The current dependency graph");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
   /* ray start and end */
-  parm = RNA_def_float_vector(func, "origin", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_vector(func, "direction", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_float(func,
+  parm = api_def_float_vector(func, "origin", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_vector(func, "direction", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_float(fn,
                 "distance",
                 BVH_RAYCAST_DIST_MAX,
                 0.0,
