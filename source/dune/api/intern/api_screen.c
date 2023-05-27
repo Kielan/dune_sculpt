@@ -545,129 +545,129 @@ static void api_def_region(DuneApi *dapi)
   api_def_prop_flag(prop, PROP_NEVER_NULL);
   api_def_prop_ui_text(prop, "View2D", "2D view of the region");
 
-  prop = RNA_def_property(srna, "alignment", PROP_ENUM, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_enum_items(prop, alignment_types);
-  RNA_def_property_enum_funcs(prop, "rna_region_alignment_get", NULL, NULL);
-  RNA_def_property_ui_text(prop, "Alignment", "Alignment of the region within the area");
+  prop = api_def_prop(sapi, "alignment", PROP_ENUM, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_enum_items(prop, alignment_types);
+  api_def_prop_enum_funcs(prop, "api_region_alignment_get", NULL, NULL);
+  api_def_prop_ui_text(prop, "Alignment", "Alignment of the region within the area");
 
-  prop = RNA_def_property(srna, "data", PROP_POINTER, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "data", PROP_POINTER, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Region Data", "Region specific data (the type depends on the region type)");
-  RNA_def_property_struct_type(prop, "AnyType");
-  RNA_def_property_pointer_funcs(prop, "rna_Region_data_get", NULL, NULL, NULL);
+  api_def_prop_struct_type(prop, "AnyType");
+  api_def_prop_ptr_fns(prop, "api_Region_data_get", NULL, NULL, NULL);
 
-  RNA_def_function(srna, "tag_redraw", "ED_region_tag_redraw");
+  api_def_fn(sapi, "tag_redraw", "ed_region_tag_redraw");
 }
 
-static void rna_def_screen(BlenderRNA *brna)
+static void api_def_screen(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  srna = RNA_def_struct(brna, "Screen", "ID");
-  RNA_def_struct_sdna(srna, "Screen"); /* it is actually bScreen but for 2.5 the dna is patched! */
-  RNA_def_struct_ui_text(
-      srna, "Screen", "Screen data-block, defining the layout of areas in a window");
-  RNA_def_struct_ui_icon(srna, ICON_WORKSPACE);
+  sapi = api_def_struct(dapi, "Screen", "ID");
+  api_def_struct_stype(sapi, "Screen"); /* it is actually bScreen but for 2.5 the dna is patched! */
+  api_def_struct_ui_text(
+      sapi, "Screen", "Screen data-block, defining the layout of areas in a window");
+  api_def_struct_ui_icon(sapi, ICON_WORKSPACE);
 
   /* collections */
-  prop = RNA_def_property(srna, "areas", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "areabase", NULL);
-  RNA_def_property_struct_type(prop, "Area");
-  RNA_def_property_ui_text(prop, "Areas", "Areas the screen is subdivided into");
+  prop = api_def_prop(sapi, "areas", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_sdna(prop, NULL, "areabase", NULL);
+  api_def_prop_struct_type(prop, "Area");
+  api_def_prop_ui_text(prop, "Areas", "Areas the screen is subdivided into");
 
   /* readonly status indicators */
-  prop = RNA_def_property(srna, "is_animation_playing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Screen_is_animation_playing_get", NULL);
-  RNA_def_property_ui_text(prop, "Animation Playing", "Animation playback is active");
+  prop = api_def_prop(sapi, "is_animation_playing", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Screen_is_animation_playing_get", NULL);
+  api_def_prop_ui_text(prop, "Animation Playing", "Animation playback is active");
 
-  prop = RNA_def_property(srna, "is_scrubbing", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Screen_is_scrubbing_get", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "is_scrubbing", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);l
+  api_def_prop_bool_fns(prop, "api_Screen_is_scrubbing_get", NULL);
+  api_def_prop_ui_text(
       prop, "User is Scrubbing", "True when the user is scrubbing through time");
 
-  prop = RNA_def_property(srna, "is_temporary", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_sdna(prop, NULL, "temp", 1);
-  RNA_def_property_ui_text(prop, "Temporary", "");
+  prop = api_def_prop(sapi, "is_temporary", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_stype(prop, NULL, "temp", 1);
+  api_def_prop_ui_text(prop, "Temporary", "");
 
-  prop = RNA_def_property(srna, "show_fullscreen", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_boolean_funcs(prop, "rna_Screen_fullscreen_get", NULL);
-  RNA_def_property_ui_text(prop, "Maximize", "An area is maximized, filling this screen");
+  prop = api_def_prop(sapi, "show_fullscreen", PROP_BOOL, PROP_NONE);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_bool_fns(prop, "api_Screen_fullscreen_get", NULL);
+  api_def_prop_ui_text(prop, "Maximize", "An area is maximized, filling this screen");
 
   /* Status Bar. */
 
-  prop = RNA_def_property(srna, "show_statusbar", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", SCREEN_COLLAPSE_STATUSBAR);
-  RNA_def_property_ui_text(prop, "Show Status Bar", "Show status bar");
-  RNA_def_property_update(prop, 0, "rna_Screen_bar_update");
+  prop = api_def_prop(sapi, "show_statusbar", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_styoe(prop, NULL, "flag", SCREEN_COLLAPSE_STATUSBAR);
+  api_def_prop_ui_text(prop, "Show Status Bar", "Show status bar");
+  api_def_prop_update(prop, 0, "api_Screen_bar_update");
 
-  func = RNA_def_function(srna, "statusbar_info", "rna_Screen_statusbar_info_get");
-  RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_CONTEXT);
-  parm = RNA_def_string(func, "statusbar_info", NULL, 0, "Status Bar Info", "");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(sapi, "statusbar_info", "rna_Screen_statusbar_info_get");
+  api_def_fn_flag(fn, FN_USE_MAIN | FN_USE_CXT);
+  parm = api_def_string(fn, "statusbar_info", NULL, 0, "Status Bar Info", "");
+  api_def_fn_return(fn, parm);
 
   /* Define Anim Playback Areas */
-  prop = RNA_def_property(srna, "use_play_top_left_3d_editor", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_REGION);
-  RNA_def_property_ui_text(prop, "Top-Left 3D Editor", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_play_top_left_3d_editor", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_REGION);
+  api_def_prop_ui_text(prop, "Top-Left 3D Editor", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
 
-  prop = RNA_def_property(srna, "use_play_3d_editors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_ALL_3D_WIN);
-  RNA_def_property_ui_text(prop, "All 3D Viewports", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_play_3d_editors", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_ALL_3D_WIN);
+  api_def_prop_ui_text(prop, "All 3D Viewports", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
 
-  prop = RNA_def_property(srna, "use_follow", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_FOLLOW);
-  RNA_def_property_ui_text(prop, "Follow", "Follow current frame in editors");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_follow", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_FOLLOW);
+  api_def_prop_ui_text(prop, "Follow", "Follow current frame in editors");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
 
-  prop = RNA_def_property(srna, "use_play_animation_editors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_ALL_ANIM_WIN);
-  RNA_def_property_ui_text(prop, "Animation Editors", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_play_animation_editors", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_ALL_ANIM_WIN);
+  api_def_prop_ui_text(prop, "Animation Editors", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "api_Screen_redraw_update");
 
-  prop = RNA_def_property(srna, "use_play_properties_editors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_ALL_BUTS_WIN);
-  RNA_def_property_ui_text(prop, "Property Editors", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_play_properties_editors", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_ALL_BUTS_WIN);
+  api_def_prop_ui_text(prop, "Property Editors", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
 
-  prop = RNA_def_property(srna, "use_play_image_editors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_ALL_IMAGE_WIN);
-  RNA_def_property_ui_text(prop, "Image Editors", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_play_image_editors", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_ALL_IMAGE_WIN);
+  api_def_prop_ui_text(prop, "Image Editors", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
 
-  prop = RNA_def_property(srna, "use_play_sequence_editors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_SEQ);
-  RNA_def_property_ui_text(prop, "Sequencer Editors", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_play_sequence_editors", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_SEQ);
+  api_def_prop_ui_text(prop, "Sequencer Editors", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "api_Screen_redraw_update");
+    
+  prop = api_def_prop(sapi, "use_play_node_editors", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_NODES);
+  api_def_prop_ui_text(prop, "Node Editors", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "api_Screen_redraw_update");
 
-  prop = RNA_def_property(srna, "use_play_node_editors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_NODES);
-  RNA_def_property_ui_text(prop, "Node Editors", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
-
-  prop = RNA_def_property(srna, "use_play_clip_editors", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "redraws_flag", TIME_CLIPS);
-  RNA_def_property_ui_text(prop, "Clip Editors", "");
-  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TIME, "rna_Screen_redraw_update");
+  prop = api_def_prop(sapi, "use_play_clip_editors", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "redraws_flag", TIME_CLIPS);
+  api_def_prop_ui_text(prop, "Clip Editors", "");
+  api_def_prop_update(prop, NC_SPACE | ND_SPACE_TIME, "api_Screen_redraw_update");
 }
 
-void RNA_def_screen(BlenderRNA *brna)
+void api_def_screen(DuneApi *api)
 {
-  rna_def_screen(brna);
-  rna_def_area(brna);
-  rna_def_region(brna);
-  rna_def_view2d(brna);
+  api_def_screen(api);
+  api_def_area(api);
+  api_def_region(api);
+  api_def_view2d(api);
 }
 
 #endif
