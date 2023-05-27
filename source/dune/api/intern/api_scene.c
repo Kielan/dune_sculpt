@@ -253,8 +253,7 @@ const EnumPropItem api_enum_curve_fit_method_items[] = {
 };
 
 /* workaround for duplicate enums,
- * have each enum line as a define then conditionally set it or not
- */
+ * have each enum line as a define then conditionally set it or no */
 
 #define R_IMF_ENUM_BMP \
   {R_IMF_IMTYPE_BMP, "BMP", ICON_FILE_IMAGE, "BMP", "Output image in bitmap format"},
@@ -343,11 +342,11 @@ const EnumPropItem api_enum_curve_fit_method_items[] = {
   R_IMF_ENUM_JPEG2K \
   R_IMF_ENUM_TAGA \
   R_IMF_ENUM_TAGA_RAW \
-  RNA_ENUM_ITEM_SEPR_COLUMN, R_IMF_ENUM_CINEON R_IMF_ENUM_DPX R_IMF_ENUM_EXR_MULTILAYER \
+  API_ENUM_ITEM_SEPR_COLUMN, R_IMF_ENUM_CINEON R_IMF_ENUM_DPX R_IMF_ENUM_EXR_MULTILAYER \
                                  R_IMF_ENUM_EXR R_IMF_ENUM_HDR R_IMF_ENUM_TIFF R_IMF_ENUM_WEBP
 
-#ifdef RNA_RUNTIME
-static const EnumPropertyItem image_only_type_items[] = {
+#ifdef API_RUNTIME
+static const EnumPropItem image_only_type_items[] = {
 
     IMAGE_TYPE_ITEMS_IMAGE_ONLY
 
@@ -355,12 +354,12 @@ static const EnumPropertyItem image_only_type_items[] = {
 };
 #endif
 
-const EnumPropertyItem rna_enum_image_type_items[] = {
-    RNA_ENUM_ITEM_HEADING(N_("Image"), NULL),
+const EnumPropItem api_enum_image_type_items[] = {
+    API_ENUM_ITEM_HEADING(N_("Image"), NULL),
 
     IMAGE_TYPE_ITEMS_IMAGE_ONLY
 
-        RNA_ENUM_ITEM_HEADING(N_("Movie"), NULL),
+        API_ENUM_ITEM_HEADING(N_("Movie"), NULL),
     {R_IMF_IMTYPE_AVIJPEG,
      "AVI_JPEG",
      ICON_FILE_MOVIE,
@@ -377,7 +376,7 @@ const EnumPropertyItem rna_enum_image_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_image_color_mode_items[] = {
+const EnumPropItem api_enum_image_color_mode_items[] = {
     {R_IMF_PLANES_BW,
      "BW",
      0,
@@ -392,13 +391,13 @@ const EnumPropertyItem rna_enum_image_color_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 #  define IMAGE_COLOR_MODE_BW rna_enum_image_color_mode_items[0]
 #  define IMAGE_COLOR_MODE_RGB rna_enum_image_color_mode_items[1]
 #  define IMAGE_COLOR_MODE_RGBA rna_enum_image_color_mode_items[2]
 #endif
 
-const EnumPropertyItem rna_enum_image_color_depth_items[] = {
+const EnumPropItem api_enum_image_color_depth_items[] = {
     /* 1 (monochrome) not used */
     {R_IMF_CHAN_DEPTH_8, "8", 0, "8", "8-bit color channels"},
     {R_IMF_CHAN_DEPTH_10, "10", 0, "10", "10-bit color channels"},
@@ -409,7 +408,7 @@ const EnumPropertyItem rna_enum_image_color_depth_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_normal_space_items[] = {
+const EnumPropItem api_enum_normal_space_items[] = {
     {R_BAKE_SPACE_OBJECT, "OBJECT", 0, "Object", "Bake the normals in object space"},
     {R_BAKE_SPACE_TANGENT, "TANGENT", 0, "Tangent", "Bake the normals in tangent space"},
     {0, NULL, 0, NULL, NULL},
