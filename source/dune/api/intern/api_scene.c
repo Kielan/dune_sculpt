@@ -1,18 +1,18 @@
 #include <stdlib.h>
 
-#include "DNA_brush_types.h"
-#include "DNA_collection_types.h"
-#include "DNA_gpencil_legacy_types.h"
-#include "DNA_layer_types.h"
-#include "DNA_linestyle_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_particle_types.h"
-#include "DNA_rigidbody_types.h"
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h" /* TransformOrientation */
-#include "DNA_userdef_types.h"
-#include "DNA_view3d_types.h"
-#include "DNA_world_types.h"
+#include "types_brush.h"
+#include "types_collection.h"
+#include "types_gpencil_legacy.h"
+#include "types_layer.h"
+#include "types_linestyle.h"
+#include "types_mod.h"
+#include "types_particle.h"
+#include "types_rigidbody.h"
+#include "types_scene.h"
+#include "types_screen.h" /* TransformOrientation */
+#include "types_userdef.h"
+#include "types_view3d.h"
+#include "types_world.h"
 
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf_types.h"
