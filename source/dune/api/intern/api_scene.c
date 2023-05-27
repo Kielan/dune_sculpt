@@ -14,10 +14,10 @@
 #include "types_view3d.h"
 #include "types_world.h"
 
-#include "IMB_colormanagement.h"
-#include "IMB_imbuf_types.h"
+#include "imbuf_colormanagement.h"
+#include "imbuf_types.h"
 
-#include "lib_listbase.h"
+#include "lib_list.h"
 #include "lib_math.h"
 
 #include "lang_translation.h"
@@ -48,18 +48,18 @@
 #  include <libavformat/avformat.h>
 #endif
 
-#include "ED_render.h"
-#include "ED_transform.h"
+#include "ed_render.h"
+#include "ed_transform.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#include "BLI_threads.h"
+#include "lib_threads.h"
 
-#include "DEG_depsgraph.h"
+#include "graph.h"
 
 #ifdef WITH_OPENEXR
-const EnumPropertyItem rna_enum_exr_codec_items[] = {
+const EnumPropItem api_enum_exr_codec_items[] = {
     {R_IMF_EXR_CODEC_NONE, "NONE", 0, "None", ""},
     {R_IMF_EXR_CODEC_PXR24, "PXR24", 0, "Pxr24 (lossy)", ""},
     {R_IMF_EXR_CODEC_ZIP, "ZIP", 0, "ZIP (lossless)", ""},
@@ -74,8 +74,8 @@ const EnumPropertyItem rna_enum_exr_codec_items[] = {
 };
 #endif
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem uv_sculpt_relaxation_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem uv_sculpt_relaxation_items[] = {
     {UV_SCULPT_TOOL_RELAX_LAPLACIAN,
      "LAPLACIAN",
      0,
@@ -91,7 +91,7 @@ static const EnumPropertyItem uv_sculpt_relaxation_items[] = {
 };
 #endif
 
-const EnumPropertyItem rna_enum_snap_source_items[] = {
+const EnumPropItem apu_enum_snap_source_items[] = {
     {SCE_SNAP_SOURCE_CLOSEST, "CLOSEST", 0, "Closest", "Snap closest point onto target"},
     {SCE_SNAP_SOURCE_CENTER, "CENTER", 0, "Center", "Snap transformation center onto target"},
     {SCE_SNAP_SOURCE_MEDIAN, "MEDIAN", 0, "Median", "Snap median onto target"},
@@ -99,7 +99,7 @@ const EnumPropertyItem rna_enum_snap_source_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_proportional_falloff_items[] = {
+const EnumPropItem api_enum_proportional_falloff_items[] = {
     {PROP_SMOOTH, "SMOOTH", ICON_SMOOTHCURVE, "Smooth", "Smooth falloff"},
     {PROP_SPHERE, "SPHERE", ICON_SPHERECURVE, "Sphere", "Spherical falloff"},
     {PROP_ROOT, "ROOT", ICON_ROOTCURVE, "Root", "Root falloff"},
@@ -116,7 +116,7 @@ const EnumPropertyItem rna_enum_proportional_falloff_items[] = {
 };
 
 /* subset of the enum - only curves, missing random and const */
-const EnumPropertyItem rna_enum_proportional_falloff_curve_only_items[] = {
+const EnumPropItem api_enum_proportional_falloff_curve_only_items[] = {
     {PROP_SMOOTH, "SMOOTH", ICON_SMOOTHCURVE, "Smooth", "Smooth falloff"},
     {PROP_SPHERE, "SPHERE", ICON_SPHERECURVE, "Sphere", "Spherical falloff"},
     {PROP_ROOT, "ROOT", ICON_ROOTCURVE, "Root", "Root falloff"},
@@ -128,14 +128,14 @@ const EnumPropertyItem rna_enum_proportional_falloff_curve_only_items[] = {
 
 /* Keep for operators, not used here. */
 
-const EnumPropertyItem rna_enum_mesh_select_mode_items[] = {
+const EnumPropItem api_enum_mesh_select_mode_items[] = {
     {SCE_SELECT_VERTEX, "VERT", ICON_VERTEXSEL, "Vertex", "Vertex selection mode"},
     {SCE_SELECT_EDGE, "EDGE", ICON_EDGESEL, "Edge", "Edge selection mode"},
     {SCE_SELECT_FACE, "FACE", ICON_FACESEL, "Face", "Face selection mode"},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_mesh_select_mode_uv_items[] = {
+const EnumPropItem api_enum_mesh_select_mode_uv_items[] = {
     {UV_SELECT_VERTEX, "VERTEX", ICON_UV_VERTEXSEL, "Vertex", "Vertex selection mode"},
     {UV_SELECT_EDGE, "EDGE", ICON_UV_EDGESEL, "Edge", "Edge selection mode"},
     {UV_SELECT_FACE, "FACE", ICON_UV_FACESEL, "Face", "Face selection mode"},
@@ -143,7 +143,7 @@ const EnumPropertyItem rna_enum_mesh_select_mode_uv_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_snap_element_items[] = {
+const EnumPropItem api_enum_snap_element_items[] = {
     {SCE_SNAP_MODE_INCREMENT,
      "INCREMENT",
      ICON_SNAP_INCREMENT,
@@ -175,7 +175,7 @@ const EnumPropertyItem rna_enum_snap_element_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_snap_node_element_items[] = {
+const EnumPropItem api_enum_snap_node_element_items[] = {
     {SCE_SNAP_MODE_GRID, "GRID", ICON_SNAP_GRID, "Grid", "Snap to grid"},
     {SCE_SNAP_MODE_NODE_X, "NODE_X", ICON_NODE_SIDE, "Node X", "Snap to left/right node border"},
     {SCE_SNAP_MODE_NODE_Y, "NODE_Y", ICON_NODE_TOP, "Node Y", "Snap to top/bottom node border"},
@@ -187,8 +187,8 @@ const EnumPropertyItem rna_enum_snap_node_element_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
-static const EnumPropertyItem snap_uv_element_items[] = {
+#ifndef API_RUNTIME
+static const EnumPropItem snap_uv_element_items[] = {
     {SCE_SNAP_MODE_INCREMENT,
      "INCREMENT",
      ICON_SNAP_INCREMENT,
@@ -198,7 +198,7 @@ static const EnumPropertyItem snap_uv_element_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_scene_display_aa_methods[] = {
+static const EnumPropItem api_enum_scene_display_aa_methods[] = {
     {SCE_DISPLAY_AA_OFF,
      "OFF",
      0,
@@ -238,7 +238,7 @@ static const EnumPropertyItem rna_enum_scene_display_aa_methods[] = {
 };
 #endif
 
-const EnumPropertyItem rna_enum_curve_fit_method_items[] = {
+const EnumPropItem api_enum_curve_fit_method_items[] = {
     {CURVE_PAINT_FIT_METHOD_REFIT,
      "REFIT",
      0,
