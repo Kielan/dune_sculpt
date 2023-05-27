@@ -382,35 +382,35 @@ void api_scene(ApiStruct *sapi)
       "Value by which to enlarge or shrink the objects with respect to the world's origin",
       0.0001f,
       1000.0f);
-  RNA_def_boolean(
-      func, "triangulate", 0, "Triangulate", "Export polygons (quads and n-gons) as triangles");
-  RNA_def_enum(func,
+  api_def_bool(
+      fn, "triangulate", 0, "Triangulate", "Export polygons (quads and n-gons) as triangles");
+  api_def_enum(fn,
                "quad_method",
-               rna_enum_modifier_triangulate_quad_method_items,
+               api_enum_mod_triangulate_quad_method_items,
                0,
                "Quad Method",
                "Method for splitting the quads into triangles");
-  RNA_def_enum(func,
+  api_def_enum(fn,
                "ngon_method",
-               rna_enum_modifier_triangulate_ngon_method_items,
+               api_enum_mod_triangulate_ngon_method_items,
                0,
                "N-gon Method",
                "Method for splitting the n-gons into triangles");
 
-  RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+  api_def_fn_flag(fb, FN_USE_CXT);
 #  endif
 }
 
-void RNA_api_scene_render(StructRNA *srna)
+void api_scene_render(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  func = RNA_def_function(srna, "frame_path", "rna_SceneRender_get_frame_path");
-  RNA_def_function_flag(func, FUNC_USE_MAIN);
-  RNA_def_function_ui_description(
-      func, "Return the absolute path to the filename to be written for a given frame");
-  RNA_def_int(func,
+  fn = api_def_fn(sapi, "frame_path", "rna_SceneRender_get_frame_path
+  api_def_fn_flag(fn, FN_USE_MAIN);
+  api_def_fn_ui_description(
+      fn, "Return the absolute path to the filename to be written for a given frame");
+  api_def_int(fn,
               "frame",
               INT_MIN,
               INT_MIN,
@@ -419,8 +419,8 @@ void RNA_api_scene_render(StructRNA *srna)
               "Frame number to use, if unset the current frame will be used",
               MINAFRAME,
               MAXFRAME);
-  RNA_def_boolean(func, "preview", 0, "Preview", "Use preview range");
-  RNA_def_string_file_path(func,
+  api_def_bool(fn, "preview", 0, "Preview", "Use preview range");
+  api_def_string_file_path(func,
                            "view",
                            NULL,
                            FILE_MAX,
