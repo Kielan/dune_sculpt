@@ -630,18 +630,18 @@ const EnumPropItem api_enum_transform_orientation_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "BLI_string_utils.h"
+#  include "lib_string_utils.h"
 
-#  include "DNA_anim_types.h"
-#  include "DNA_cachefile_types.h"
-#  include "DNA_color_types.h"
-#  include "DNA_mesh_types.h"
-#  include "DNA_node_types.h"
-#  include "DNA_object_types.h"
-#  include "DNA_text_types.h"
-#  include "DNA_workspace_types.h"
+#  include "type_anim_types.h"
+#  include "types_cachefile_types.h"
+#  include "type_color_types.h"
+#  include "types_mesh_types.h"
+#  include "types_node_types.h"
+#  include "types_object_types.h"
+#  include "types_text_types.h"
+#  include "types_workspace_types.h"
 
 #  include "RNA_access.h"
 
