@@ -98,7 +98,7 @@ static int api_Area_type_get(ApiPtr *ptr)
   ScrArea *area = (ScrArea *)ptr->data;
   /* Usually 'spacetype' is used. It lags behind a bit while switching area
    * type though, then we use 'butspacetype' instead (#41435). */
-  return (area->butspacetype == SPACE_EMPTY) ? area->spacetype : area->butspacetype;
+  return (area->btnspacetype == SPACE_EMPTY) ? area->spacetype : area->butspacetype;
 }
 
 static void api_Area_type_set(ApiPtr *ptr, int value)
@@ -271,46 +271,46 @@ static ApiPtr api_Region_data_get(ApiPtr *ptr)
     if (region->regiontype == RGN_TYPE_WINDOW) {
       /* We could make this static, it won't change at run-time. */
       SpaceType *st = dune_spacetype_from_id(SPACE_VIEW3D);
-      if (region->type == dunr_regiontype_from_id(st, region->regiontype)) {
+      if (region->type == dune_regiontype_from_id(st, region->regiontype)) {
         ApiPtr newptr;
         api_ptr_create(&screen->id, &Api_RegionView3D, region->regiondata, &newptr);
         return newptr;
       }
     }
   }
-  return PointerRNA_NULL;
+  return ApiPtr_NULL;
 }
 
-static void rna_View2D_region_to_view(struct View2D *v2d, float x, float y, float result[2])
+static void api_View2D_region_to_view(struct View2D *v2d, float x, float y, float result[2])
 {
-  UI_view2d_region_to_view(v2d, x, y, &result[0], &result[1]);
+  ui_view2d_region_to_view(v2d, x, y, &result[0], &result[1]);
 }
 
-static void rna_View2D_view_to_region(
+static void api_View2D_view_to_region(
     struct View2D *v2d, float x, float y, bool clip, int result[2])
 {
   if (clip) {
-    UI_view2d_view_to_region_clip(v2d, x, y, &result[0], &result[1]);
+    ui_view2d_view_to_region_clip(v2d, x, y, &result[0], &result[1]);
   }
   else {
-    UI_view2d_view_to_region(v2d, x, y, &result[0], &result[1]);
+    ui_view2d_view_to_region(v2d, x, y, &result[0], &result[1]);
   }
 }
 
-static const char *rna_Screen_statusbar_info_get(struct bScreen *UNUSED(screen),
-                                                 Main *bmain,
-                                                 bContext *C)
+static const char *api_Screen_statusbar_info_get(struct Screen *UNUSED(screen),
+                                                 Main *main,
+                                                 Cxt *C)
 {
-  return ED_info_statusbar_string(bmain, CTX_data_scene(C), CTX_data_view_layer(C));
+  return ed_info_statusbar_string(main, cxt_data_scene(C), cxt_data_view_layer(C));
 }
 
 #else
 
 /* Area.spaces */
-static void rna_def_area_spaces(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_area_spaces(BlenderRNA *brna, PropertyRNA *cprop)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   RNA_def_property_srna(cprop, "AreaSpaces");
   srna = RNA_def_struct(brna, "AreaSpaces", NULL);
