@@ -119,7 +119,7 @@ static void api_Area_type_set(ApiPtr *ptr, int value)
   area->butspacetype = value;
 }
 
-static void api_Area_type_update(Cct *C, ApiPtr *ptr)
+static void api_Area_type_update(Cxt *C, ApiPtr *ptr)
 {
   Screen *screen = (Screen *)ptr->owner_id;
   ScrArea *area = (ScrArea *)ptr->data;
@@ -129,58 +129,58 @@ static void api_Area_type_update(Cct *C, ApiPtr *ptr)
     return;
   }
 
-  wmWindowManager *wm = CTX_wm_manager(C);
+  wmWindowManager *wm = cxt_wm_manager(C);
   wmWindow *win;
   /* XXX this call still use context, so we trick it to work in the right context */
   for (win = wm->windows.first; win; win = win->next) {
-    if (screen == WM_window_get_active_screen(win)) {
-      wmWindow *prevwin = CTX_wm_window(C);
-      ScrArea *prevsa = CTX_wm_area(C);
-      ARegion *prevar = CTX_wm_region(C);
+    if (screen == wm_window_get_active_screen(win)) {
+      wmWindow *prevwin = cxt_wm_window(C);
+      ScrArea *prevsa = cxt_wm_area(C);
+      ARegion *prevar = cxt_wm_region(C);
 
-      CTX_wm_window_set(C, win);
-      CTX_wm_area_set(C, area);
-      CTX_wm_region_set(C, NULL);
+      cxt_wm_window_set(C, win);
+      cxt_wm_area_set(C, area);
+      cxt_wm_region_set(C, NULL);
 
-      ED_area_newspace(C, area, area->butspacetype, true);
-      ED_area_tag_redraw(area);
+      ed_area_newspace(C, area, area->btnspacetype, true);
+      ed_area_tag_redraw(area);
 
       /* Unset so that rna_Area_type_get uses spacetype instead. */
-      area->butspacetype = SPACE_EMPTY;
+      area->btnspacetype = SPACE_EMPTY;
 
       /* It is possible that new layers becomes visible. */
       if (area->spacetype == SPACE_VIEW3D) {
-        DEG_tag_on_visible_update(CTX_data_main(C), false);
+        graph_tag_on_visible_update(cxt_data_main(C), false);
       }
 
-      CTX_wm_window_set(C, prevwin);
-      CTX_wm_area_set(C, prevsa);
-      CTX_wm_region_set(C, prevar);
+      cxt_wm_window_set(C, prevwin);
+      cxt_wm_area_set(C, prevsa);
+      cxt_wm_region_set(C, prevar);
       break;
     }
   }
 }
 
-static const EnumPropertyItem *rna_Area_ui_type_itemf(bContext *C,
-                                                      PointerRNA *ptr,
-                                                      PropertyRNA *UNUSED(prop),
-                                                      bool *r_free)
+static const EnumPropItem *api_Area_ui_type_itemf(Cxt *C,
+                                                  ApiPtr *ptr,
+                                                  ApiProp *UNUSED(prop),
+                                                  bool *r_free)
 {
-  EnumPropertyItem *item = NULL;
+  EnumPropItem *item = NULL;
   int totitem = 0;
 
   ScrArea *area = (ScrArea *)ptr->data;
-  const EnumPropertyItem *item_from = rna_enum_space_type_items;
+  const EnumPropItem *item_from = api_enum_space_type_items;
   if (area->spacetype != SPACE_EMPTY) {
     item_from += 1; /* +1 to skip SPACE_EMPTY */
   }
 
-  for (; item_from->identifier; item_from++) {
+  for (; item_from->id; item_from++) {
     if (ELEM(item_from->value, SPACE_TOPBAR, SPACE_STATUSBAR)) {
       continue;
     }
 
-    SpaceType *st = item_from->identifier[0] ? BKE_spacetype_from_id(item_from->value) : NULL;
+    SpaceType *st = item_from->id[0] ? dune_spacetype_from_id(item_from->value) : NULL;
     int totitem_prev = totitem;
     if (st && st->space_subtype_item_extend != NULL) {
       st->space_subtype_item_extend(C, &item, &totitem);
@@ -189,25 +189,25 @@ static const EnumPropertyItem *rna_Area_ui_type_itemf(bContext *C,
       }
     }
     else {
-      RNA_enum_item_add(&item, &totitem, item_from);
+      api_enum_item_add(&item, &totitem, item_from);
       item[totitem_prev++].value = item_from->value << 16;
     }
   }
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
 }
 
-static int rna_Area_ui_type_get(PointerRNA *ptr)
+static int api_Area_ui_type_get(ApiPtr *ptr)
 {
   ScrArea *area = ptr->data;
   /* This is for the Python API which may inspect empty areas. */
   if (UNLIKELY(area->spacetype == SPACE_EMPTY)) {
     return SPACE_EMPTY;
   }
-  const int area_type = rna_Area_type_get(ptr);
-  const bool area_changing = area->butspacetype != SPACE_EMPTY;
+  const int area_type = api_Area_type_get(ptr);
+  const bool area_changing = area->btnspacetype != SPACE_EMPTY;
   int value = area_type << 16;
 
   /* Area->type can be NULL when not yet initialized (for example when accessed
@@ -218,19 +218,19 @@ static int rna_Area_ui_type_get(PointerRNA *ptr)
    * Logic copied from `ED_area_init()`. */
   SpaceType *type = area->type;
   if (type == NULL || area_changing) {
-    type = BKE_spacetype_from_id(area_type);
+    type = dune_spacetype_from_id(area_type);
     if (type == NULL) {
-      type = BKE_spacetype_from_id(SPACE_VIEW3D);
+      type = dune_spacetype_from_id(SPACE_VIEW3D);
     }
-    BLI_assert(type != NULL);
+    lib_assert(type != NULL);
   }
   if (type->space_subtype_item_extend != NULL) {
-    value |= area_changing ? area->butspacetype_subtype : type->space_subtype_get(area);
+    value |= area_changing ? area->btnspacetype_subtype : type->space_subtype_get(area);
   }
   return value;
 }
 
-static void rna_Area_ui_type_set(PointerRNA *ptr, int value)
+static void api_Area_ui_type_set(ApiPtr *ptr, int value)
 {
   ScrArea *area = ptr->data;
   const int space_type = value >> 16;
@@ -238,16 +238,16 @@ static void rna_Area_ui_type_set(PointerRNA *ptr, int value)
   if ((space_type == SPACE_EMPTY) || (area->spacetype == SPACE_EMPTY)) {
     return;
   }
-  SpaceType *st = BKE_spacetype_from_id(space_type);
+  SpaceType *st = dune_spacetype_from_id(space_type);
 
-  rna_Area_type_set(ptr, space_type);
+  api_Area_type_set(ptr, space_type);
 
   if (st && st->space_subtype_item_extend != NULL) {
-    area->butspacetype_subtype = value & 0xffff;
+    area->btnspacetype_subtype = value & 0xffff;
   }
 }
 
-static void rna_Area_ui_type_update(bContext *C, PointerRNA *ptr)
+static void api_Area_ui_type_update(Cxt *C, ApiPtr *ptr)
 {
   ScrArea *area = ptr->data;
   SpaceType *st = BKE_spacetype_from_id(area->butspacetype);
