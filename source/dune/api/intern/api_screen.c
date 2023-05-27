@@ -250,30 +250,30 @@ static void api_Area_ui_type_set(ApiPtr *ptr, int value)
 static void api_Area_ui_type_update(Cxt *C, ApiPtr *ptr)
 {
   ScrArea *area = ptr->data;
-  SpaceType *st = BKE_spacetype_from_id(area->butspacetype);
+  SpaceType *st = dune_spacetype_from_id(area->btnspacetype);
 
-  rna_Area_type_update(C, ptr);
+  api_Area_type_update(C, ptr);
 
   if ((area->type == st) && (st->space_subtype_item_extend != NULL)) {
-    st->space_subtype_set(area, area->butspacetype_subtype);
+    st->space_subtype_set(area, area->btnspacetype_subtype);
   }
-  area->butspacetype_subtype = 0;
+  area->btnspacetype_subtype = 0;
 
-  ED_area_tag_refresh(area);
+  ed_area_tag_refresh(area);
 }
 
-static PointerRNA rna_Region_data_get(PointerRNA *ptr)
+static ApiPtr api_Region_data_get(ApiPtr *ptr)
 {
-  bScreen *screen = (bScreen *)ptr->owner_id;
+  Screen *screen = (Screen *)ptr->owner_id;
   ARegion *region = ptr->data;
 
   if (region->regiondata != NULL) {
     if (region->regiontype == RGN_TYPE_WINDOW) {
       /* We could make this static, it won't change at run-time. */
-      SpaceType *st = BKE_spacetype_from_id(SPACE_VIEW3D);
-      if (region->type == BKE_regiontype_from_id(st, region->regiontype)) {
-        PointerRNA newptr;
-        RNA_pointer_create(&screen->id, &RNA_RegionView3D, region->regiondata, &newptr);
+      SpaceType *st = dune_spacetype_from_id(SPACE_VIEW3D);
+      if (region->type == dunr_regiontype_from_id(st, region->regiontype)) {
+        ApiPtr newptr;
+        api_ptr_create(&screen->id, &Api_RegionView3D, region->regiondata, &newptr);
         return newptr;
       }
     }
