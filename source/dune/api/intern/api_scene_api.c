@@ -360,20 +360,20 @@ void api_scene(ApiStruct *sapi)
                   0,
                   "Visible layers only",
                   "Export only objects in visible layers");
-  RNA_def_boolean(func, "face_sets", 0, "Facesets", "Export face sets");
-  RNA_def_boolean(func,
+  api_def_bool(fn, "face_sets", 0, "Facesets", "Export face sets");
+  api_def_bool(fn,
                   "subdiv_schema",
                   0,
                   "Use Alembic subdivision Schema",
                   "Use Alembic subdivision Schema");
-  RNA_def_boolean(
-      func, "export_hair", 1, "Export Hair", "Exports hair particle systems as animated curves");
-  RNA_def_boolean(
-      func, "export_particles", 1, "Export Particles", "Exports non-hair particle systems");
-  RNA_def_boolean(
-      func, "packuv", 0, "Export with packed UV islands", "Export with packed UV islands");
-  RNA_def_float(
-      func,
+  api_def_bool(
+      fn, "export_hair", 1, "Export Hair", "Exports hair particle systems as animated curves");
+  api_def_bool(
+      fn, "export_particles", 1, "Export Particles", "Exports non-hair particle systems");
+  api_def_bool(
+      fn, "packuv", 0, "Export with packed UV islands", "Export with packed UV islands");
+  api_def_float(
+      fn,
       "scale",
       1.0f,
       0.0001f,
@@ -420,20 +420,20 @@ void api_scene_render(ApiStruct *sapi)
               MINAFRAME,
               MAXFRAME);
   api_def_bool(fn, "preview", 0, "Preview", "Use preview range");
-  api_def_string_file_path(func,
+  api_def_string_file_path(fn,
                            "view",
                            NULL,
                            FILE_MAX,
                            "View",
                            "The name of the view to use to replace the \"%\" chars");
-  parm = RNA_def_string_file_path(func,
+  parm = api_def_string_file_path(fn,
                                   "filepath",
                                   NULL,
                                   FILE_MAX,
                                   "File Path",
                                   "The resulting filepath from the scenes render settings");
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0); /* needed for string return value */
+  api_def_fn_output(fn, parm);
 }
 
 #endif
