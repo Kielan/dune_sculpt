@@ -309,15 +309,15 @@ void api_scene(ApiStruct *sapi)
                               "The face normal at the ray cast hit location",
                               -1e4,
                               1e4);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_int(
-      func, "index", 0, 0, 0, "", "The face index, -1 when original data isn't available", 0, 0);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_pointer(func, "object", "Object", "", "Ray cast object");
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_float_matrix(func, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
+  parm = api_def_int(
+      fn, "index", 0, 0, 0, "", "The face index, -1 when original data isn't available", 0, 0);
+  api_def_fn_output(fn, parm);
+  parm = api_def_ptr(fn, "object", "Object", "", "Ray cast object");
+  api_def_fn_output(fn, parm);
+  parm = api_def_float_matrix(fn, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
+  api_def_fn_output(fn, parm);
 
   /* Sequencer. */
   func = RNA_def_function(srna, "sequence_editor_create", "SEQ_editing_ensure");
