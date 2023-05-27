@@ -307,35 +307,35 @@ static const char *api_Screen_statusbar_info_get(struct Screen *UNUSED(screen),
 #else
 
 /* Area.spaces */
-static void api_def_area_spaces(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_area_spaces(DunrApi *dapi, ApiProp *cprop)
 {
   ApiStruct *sapi;
   ApiProp *prop;
 
-  RNA_def_property_srna(cprop, "AreaSpaces");
-  srna = RNA_def_struct(brna, "AreaSpaces", NULL);
-  RNA_def_struct_sdna(srna, "ScrArea");
-  RNA_def_struct_ui_text(srna, "Area Spaces", "Collection of spaces");
+  api_def_prop_sapi(cprop, "AreaSpaces");
+  sapi = api_def_struct(dapi, "AreaSpaces", NULL);
+  api_def_struct_sdna(sapi, "ScrArea");
+  api_def_struct_ui_text(sapi, "Area Spaces", "Collection of spaces");
 
-  prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "spacedata.first");
-  RNA_def_property_struct_type(prop, "Space");
-  RNA_def_property_ui_text(prop, "Active Space", "Space currently being displayed in this area");
+  prop = api_def_prop(sapi, "active", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_sdna(prop, NULL, "spacedata.first");
+  api_def_prop_struct_type(prop, "Space");
+  api_def_prop_ui_text(prop, "Active Space", "Space currently being displayed in this area");
 }
 
-static void rna_def_area_api(StructRNA *srna)
+static void api_def_area_api(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
-  RNA_def_function(srna, "tag_redraw", "ED_area_tag_redraw");
+  api_def_fn(sapi, "tag_redraw", "ed_area_tag_redraw");
 
-  func = RNA_def_function(srna, "header_text_set", "ED_area_status_text");
-  RNA_def_function_ui_description(func, "Set the header status text");
-  parm = RNA_def_string(
-      func, "text", NULL, 0, "Text", "New string for the header, None clears the text");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_property_clear_flag(parm, PROP_NEVER_NULL);
+  fn = api_def_fn(sapi, "header_text_set", "ed_area_status_text");
+  api_def_fn_ui_description(fn, "Set the header status text")
+  parm = api_def_string(
+      fn, "text", NULL, 0, "Text", "New string for the header, None clears the text");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_prop_clear_flag(parm, PROP_NEVER_NULL);
 }
 
 static void api_def_area(DuneApi *dapi)
@@ -398,40 +398,40 @@ static void api_def_area(DuneApi *dapi)
   api_def_prop_ui_text(
       prop, "X Position", "The window relative vertical location of the area");
 
-  prop = RNA_def_property(srna, "y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "totrct.ymin");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "totrct.ymin");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Y Position", "The window relative horizontal location of the area");
 
-  prop = RNA_def_property(srna, "width", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "winx");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Width", "Area width");
+  prop = api_def_prop(sapi, "width", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "winx");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Width", "Area width");
 
-  prop = RNA_def_property(srna, "height", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "winy");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Height", "Area height");
+  prop = api_def_prop(sapi, "height", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_sapi(prop, NULL, "winy");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Height", "Area height");
 
-  rna_def_area_api(srna);
+  api_def_area_api(sapi);
 }
 
-static void rna_def_view2d_api(StructRNA *srna)
+static void api_def_view2d_api(ApiStruct *sapi)
 {
-  FunctionRNA *func;
-  PropertyRNA *parm;
+  ApiFn *fn;
+  ApiProp *parm;
 
   static const float view_default[2] = {0.0f, 0.0f};
   static const int region_default[2] = {0.0f, 0.0f};
 
-  func = RNA_def_function(srna, "region_to_view", "rna_View2D_region_to_view");
-  RNA_def_function_ui_description(func, "Transform region coordinates to 2D view");
-  parm = RNA_def_float(func, "x", 0, -FLT_MAX, FLT_MAX, "x", "Region x coordinate", -10000, 10000);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(func, "y", 0, -FLT_MAX, FLT_MAX, "y", "Region y coordinate", -10000, 10000);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_array(func,
+  fn = api_def_fn(sapi, "region_to_view", "rna_View2D_region_to_view");
+  api_def_fn_ui_description(fn, "Transform region coordinates to 2D view");
+  parm = api_def_float(fn, "x", 0, -FLT_MAX, FLT_MAX, "x", "Region x coordinate", -10000, 10000);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(fn, "y", 0, -FLT_MAX, FLT_MAX, "y", "Region y coordinate", -10000, 10000);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_array(fun,
                              "result",
                              2,
                              view_default,
@@ -441,19 +441,19 @@ static void rna_def_view2d_api(StructRNA *srna)
                              "View coordinates",
                              -10000.0f,
                              10000.0f);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
 
-  func = RNA_def_function(srna, "view_to_region", "rna_View2D_view_to_region");
-  RNA_def_function_ui_description(func, "Transform 2D view coordinates to region");
-  parm = RNA_def_float(
-      func, "x", 0.0f, -FLT_MAX, FLT_MAX, "x", "2D View x coordinate", -10000.0f, 10000.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float(
-      func, "y", 0.0f, -FLT_MAX, FLT_MAX, "y", "2D View y coordinate", -10000.0f, 10000.0f);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_boolean(func, "clip", 1, "Clip", "Clip coordinates to the visible region");
-  parm = RNA_def_int_array(func,
+  fn = api_def_fn(sapi, "view_to_region", "api_View2D_view_to_region");
+  api_def_fn_ui_description(fn, "Transform 2D view coordinates to region");
+  parm = api_def_float(
+      fn, "x", 0.0f, -FLT_MAX, FLT_MAX, "x", "2D View x coordinate", -10000.0f, 10000.0f);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float(
+      fn, "y", 0.0f, -FLT_MAX, FLT_MAX, "y", "2D View y coordinate", -10000.0f, 10000.0f);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_bool(fn, "clip", 1, "Clip", "Clip coordinates to the visible region");
+  parm = api_def_int_array(fn,
                            "result",
                            2,
                            region_default,
@@ -463,30 +463,30 @@ static void rna_def_view2d_api(StructRNA *srna)
                            "Region coordinates",
                            -10000,
                            10000);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
 }
 
-static void rna_def_view2d(BlenderRNA *brna)
+static void api_def_view2d(DuneApi *dapi)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
   /* PropertyRNA *prop; */
 
-  srna = RNA_def_struct(brna, "View2D", NULL);
-  RNA_def_struct_ui_text(srna, "View2D", "Scroll and zoom for a 2D region");
-  RNA_def_struct_sdna(srna, "View2D");
+  sapi = api_def_struct(dapi, "View2D", NULL);
+  api_def_struct_ui_text(sapi, "View2D", "Scroll and zoom for a 2D region");
+  api_def_struct_stype(sqpi, "View2D");
 
   /* TODO: more View2D properties could be exposed here (read-only). */
 
-  rna_def_view2d_api(srna);
+  api_def_view2d_api(api);
 }
 
-static void rna_def_region(BlenderRNA *brna)
+static void api_def_region(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  static const EnumPropertyItem alignment_types[] = {
+  static const EnumPropItem alignment_types[] = {
       {RGN_ALIGN_NONE, "NONE", 0, "None", "Don't use any fixed alignment, fill available space"},
       {RGN_ALIGN_TOP, "TOP", 0, "Top", ""},
       {RGN_ALIGN_BOTTOM, "BOTTOM", 0, "Bottom", ""},
@@ -507,43 +507,43 @@ static void rna_def_region(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "Region", NULL);
-  RNA_def_struct_ui_text(srna, "Region", "Region in a subdivided screen area");
-  RNA_def_struct_sdna(srna, "ARegion");
+  sapi = api_def_struct(dapi, "Region", NULL);
+  api_def_struct_ui_text(sapi, "Region", "Region in a subdivided screen area");
+  api_def_struct_stype(sapi, "ARegion");
 
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "regiontype");
-  RNA_def_property_enum_items(prop, rna_enum_region_type_items);
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Region Type", "Type of this region");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "regiontype");
+  api_def_prop_enum_items(prop, rna_enum_region_type_items);
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Region Type", "Type of this region");
 
-  prop = RNA_def_property(srna, "x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "winrct.xmin");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "winrct.xmin");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "X Position", "The window relative vertical location of the region");
 
-  prop = RNA_def_property(srna, "y", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "winrct.ymin");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "y", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "winrct.ymin");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "Y Position", "The window relative horizontal location of the region");
 
-  prop = RNA_def_property(srna, "width", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "winx");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Width", "Region width");
+  prop = api_def_prop(sapi, "width", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_sdna(prop, NULL, "winx");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Width", "Region width");
 
-  prop = RNA_def_property(srna, "height", PROP_INT, PROP_UNSIGNED);
-  RNA_def_property_int_sdna(prop, NULL, "winy");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(prop, "Height", "Region height");
+  prop = api_def_prop(sapi, "height", PROP_INT, PROP_UNSIGNED);
+  api_def_prop_int_stype(prop, NULL, "winy");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(prop, "Height", "Region height");
 
-  prop = RNA_def_property(srna, "view2d", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "v2d");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_ui_text(prop, "View2D", "2D view of the region");
+  prop = api_def_prop(sapi, "view2d", PROP_POINTER, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "v2d");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ui_text(prop, "View2D", "2D view of the region");
 
   prop = RNA_def_property(srna, "alignment", PROP_ENUM, PROP_NONE);
   RNA_def_property_clear_flag(prop, PROP_EDITABLE);
