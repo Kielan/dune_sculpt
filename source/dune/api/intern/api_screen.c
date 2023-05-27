@@ -1,18 +1,18 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
-#include "DNA_workspace_types.h"
+#include "types_scene.h"
+#include "types_screen.h"
+#include "types_workspace.h"
 
-#include "ED_info.h"
+#include "ed_info.h"
 
-const EnumPropertyItem rna_enum_region_type_items[] = {
+const EnumPropItem api_enum_region_type_items[] = {
     {RGN_TYPE_WINDOW, "WINDOW", 0, "Window", ""},
     {RGN_TYPE_HEADER, "HEADER", 0, "Header", ""},
     {RGN_TYPE_CHANNELS, "CHANNELS", 0, "Channels", ""},
@@ -30,70 +30,70 @@ const EnumPropertyItem rna_enum_region_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-#include "ED_screen.h"
+#include "ed_screen.h"
 
-#include "WM_api.h"
-#include "WM_types.h"
+#include "wm_api.h"
+#include "wm_types.h"
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
-#  include "RNA_access.h"
+#  include "api_access.h"
 
-#  include "BKE_global.h"
-#  include "BKE_screen.h"
-#  include "BKE_workspace.h"
+#  include "dune_global.h"
+#  include "dune_screen.h"
+#  include "dune_workspace.h"
 
-#  include "DEG_depsgraph.h"
+#  include "graph.h"
 
-#  include "UI_view2d.h"
+#  include "ui_view2d.h"
 
 #  ifdef WITH_PYTHON
 #    include "BPY_extern.h"
 #  endif
 
-static void rna_Screen_bar_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Screen_bar_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  bScreen *screen = (bScreen *)ptr->data;
+  Screen *screen = (Screen *)ptr->data;
   screen->do_draw = true;
   screen->do_refresh = true;
 }
 
-static void rna_Screen_redraw_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Screen_redraw_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  bScreen *screen = (bScreen *)ptr->data;
+  Screen *screen = (Screen *)ptr->data;
 
   /* the settings for this are currently only available from a menu in the TimeLine,
    * hence refresh=SPACE_ACTION, as timeline is now in there
    */
-  ED_screen_animation_timer_update(screen, screen->redraws_flag);
+  ed_screen_animation_timer_update(screen, screen->redraws_flag);
 }
 
-static bool rna_Screen_is_animation_playing_get(PointerRNA *UNUSED(ptr))
+static bool api_Screen_is_animation_playing_get(ApiPtr *UNUSED(ptr))
 {
   /* can be NULL on file load, #42619 */
   wmWindowManager *wm = G_MAIN->wm.first;
-  return wm ? (ED_screen_animation_playing(wm) != NULL) : 0;
+  return wm ? (ed_screen_animation_playing(wm) != NULL) : 0;
 }
 
-static bool rna_Screen_is_scrubbing_get(PointerRNA *ptr)
+static bool api_Screen_is_scrubbing_get(ApiPtr *ptr)
 {
-  bScreen *screen = (bScreen *)ptr->data;
+  Screen *screen = (Screen *)ptr->data;
   return screen->scrubbing;
 }
 
-static int rna_region_alignment_get(PointerRNA *ptr)
+static int api_region_alignment_get(ApiPtr *ptr)
 {
   ARegion *region = ptr->data;
   return RGN_ALIGN_ENUM_FROM_MASK(region->alignment);
 }
 
-static bool rna_Screen_fullscreen_get(PointerRNA *ptr)
+static bool api_Screen_fullscreen_get(ApiPtr *ptr)
 {
-  bScreen *screen = (bScreen *)ptr->data;
+  Screen *screen = (Screen *)ptr->data;
   return (screen->state == SCREENMAXIMIZED);
 }
 
-static int rna_Area_type_get(PointerRNA *ptr)
+static int api_Area_type_get(ApiPtr *ptr)
 {
   ScrArea *area = (ScrArea *)ptr->data;
   /* Usually 'spacetype' is used. It lags behind a bit while switching area
@@ -101,7 +101,7 @@ static int rna_Area_type_get(PointerRNA *ptr)
   return (area->butspacetype == SPACE_EMPTY) ? area->spacetype : area->butspacetype;
 }
 
-static void rna_Area_type_set(PointerRNA *ptr, int value)
+static void api_Area_type_set(ApiPtr *ptr, int value)
 {
   if (ELEM(value, SPACE_TOPBAR, SPACE_STATUSBAR)) {
     /* Special case: An area can not be set to show the top-bar editor (or
@@ -119,9 +119,9 @@ static void rna_Area_type_set(PointerRNA *ptr, int value)
   area->butspacetype = value;
 }
 
-static void rna_Area_type_update(bContext *C, PointerRNA *ptr)
+static void api_Area_type_update(Cct *C, ApiPtr *ptr)
 {
-  bScreen *screen = (bScreen *)ptr->owner_id;
+  Screen *screen = (Screen *)ptr->owner_id;
   ScrArea *area = (ScrArea *)ptr->data;
 
   /* Running update without having called 'set', see: #64049 */
