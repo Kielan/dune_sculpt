@@ -414,7 +414,7 @@ const EnumPropItem api_enum_normal_space_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_normal_swizzle_items[] = {
+const EnumPropItem api_enum_normal_swizzle_items[] = {
     {R_BAKE_POSX, "POS_X", 0, "+X", ""},
     {R_BAKE_POSY, "POS_Y", 0, "+Y", ""},
     {R_BAKE_POSZ, "POS_Z", 0, "+Z", ""},
@@ -424,7 +424,7 @@ const EnumPropertyItem rna_enum_normal_swizzle_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_bake_margin_type_items[] = {
+const EnumPropItem api_enum_bake_margin_type_items[] = {
     {R_BAKE_ADJACENT_FACES,
      "ADJACENT_FACES",
      0,
@@ -434,7 +434,7 @@ const EnumPropertyItem rna_enum_bake_margin_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_bake_target_items[] = {
+const EnumPropItem api_enum_bake_target_items[] = {
     {R_BAKE_TARGET_IMAGE_TEXTURES,
      "IMAGE_TEXTURES",
      0,
@@ -448,7 +448,7 @@ const EnumPropertyItem rna_enum_bake_target_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_bake_save_mode_items[] = {
+const EnumPropItem api_enum_bake_save_mode_items[] = {
     {R_BAKE_SAVE_INTERNAL,
      "INTERNAL",
      0,
@@ -458,7 +458,7 @@ const EnumPropertyItem rna_enum_bake_save_mode_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_bake_view_from_items[] = {
+static const EnumPropItem api_enum_bake_view_from_items[] = {
     {R_BAKE_VIEW_FROM_ABOVE_SURFACE,
      "ABOVE_SURFACE",
      0,
