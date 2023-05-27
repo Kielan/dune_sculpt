@@ -320,42 +320,42 @@ void api_scene(ApiStruct *sapi)
   api_def_fn_output(fn, parm);
 
   /* Sequencer. */
-  func = RNA_def_function(srna, "sequence_editor_create", "SEQ_editing_ensure");
-  RNA_def_function_ui_description(func, "Ensure sequence editor is valid in this scene");
-  parm = RNA_def_pointer(
-      func, "sequence_editor", "SequenceEditor", "", "New sequence editor data or NULL");
-  RNA_def_function_return(func, parm);
+  fn = api_def_fn(srna, "sequence_editor_create", "SEQ_editing_ensure");
+  api_def_fn_ui_description(fn, "Ensure sequence editor is valid in this scene");
+  parm = api_def_ptr(
+      fn, "sequence_editor", "SequenceEditor", "", "New sequence editor data or NULL");
+  api_def_fn_return(fn, parm);
 
-  func = RNA_def_function(srna, "sequence_editor_clear", "rna_Scene_sequencer_editing_free");
-  RNA_def_function_ui_description(func, "Clear sequence editor in this scene");
+  fn = api_def_fn(sapi, "sequence_editor_clear", "rna_Scene_sequencer_editing_free");
+  api_def_fn_ui_description(fn, "Clear sequence editor in this scene");
 
 #  ifdef WITH_ALEMBIC
   /* XXX Deprecated, will be removed in 2.8 in favor of calling the export operator. */
-  func = RNA_def_function(srna, "alembic_export", "rna_Scene_alembic_export");
-  RNA_def_function_ui_description(
-      func, "Export to Alembic file (deprecated, use the Alembic export operator)");
+  func = api_def_function(sapi, "alembic_export", "api_Scene_alembic_export");
+  apu_def_fn_ui_description(
+      fn, "Export to Alembic file (deprecated, use the Alembic export operator)");
 
-  parm = RNA_def_string(
-      func, "filepath", NULL, FILE_MAX, "File Path", "File path to write Alembic file");
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  RNA_def_property_subtype(parm, PROP_FILEPATH); /* allow non utf8 */
+  parm = api_def_string(
+      fn, "filepath", NULL, FILE_MAX, "File Path", "File path to write Alembic file");
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  api_def_prop_subtype(parm, PROP_FILEPATH); /* allow non utf8 */
 
-  RNA_def_int(func, "frame_start", 1, INT_MIN, INT_MAX, "Start", "Start Frame", INT_MIN, INT_MAX);
-  RNA_def_int(func, "frame_end", 1, INT_MIN, INT_MAX, "End", "End Frame", INT_MIN, INT_MAX);
-  RNA_def_int(
-      func, "xform_samples", 1, 1, 128, "Xform samples", "Transform samples per frame", 1, 128);
-  RNA_def_int(
-      func, "geom_samples", 1, 1, 128, "Geom samples", "Geometry samples per frame", 1, 128);
-  RNA_def_float(func, "shutter_open", 0.0f, -1.0f, 1.0f, "Shutter open", "", -1.0f, 1.0f);
-  RNA_def_float(func, "shutter_close", 1.0f, -1.0f, 1.0f, "Shutter close", "", -1.0f, 1.0f);
-  RNA_def_boolean(func, "selected_only", 0, "Selected only", "Export only selected objects");
-  RNA_def_boolean(func, "uvs", 1, "UVs", "Export UVs");
-  RNA_def_boolean(func, "normals", 1, "Normals", "Export normals");
-  RNA_def_boolean(func, "vcolors", 0, "Color Attributes", "Export color attributes");
-  RNA_def_boolean(
-      func, "apply_subdiv", 1, "Subsurfs as meshes", "Export subdivision surfaces as meshes");
-  RNA_def_boolean(func, "flatten", 0, "Flatten hierarchy", "Flatten hierarchy");
-  RNA_def_boolean(func,
+  api_def_int(fn, "frame_start", 1, INT_MIN, INT_MAX, "Start", "Start Frame", INT_MIN, INT_MAX);
+  api_def_int(fn, "frame_end", 1, INT_MIN, INT_MAX, "End", "End Frame", INT_MIN, INT_MAX);
+  api_def_int(
+      fn, "xform_samples", 1, 1, 128, "Xform samples", "Transform samples per frame", 1, 128);
+  api_def_int(
+      fn, "geom_samples", 1, 1, 128, "Geom samples", "Geometry samples per frame", 1, 128);
+  api_def_float(fn, "shutter_open", 0.0f, -1.0f, 1.0f, "Shutter open", "", -1.0f, 1.0f);
+  api_def_float(fn, "shutter_close", 1.0f, -1.0f, 1.0f, "Shutter close", "", -1.0f, 1.0f);
+  api_def_bool(fn, "selected_only", 0, "Selected only", "Export only selected objects");
+  api_def_bool(fn, "uvs", 1, "UVs", "Export UVs");
+  api_def_bool(fn, "normals", 1, "Normals", "Export normals");
+  api_def_bool(fn, "vcolors", 0, "Color Attributes", "Export color attributes");
+  api_def_bool(
+      fn, "apply_subdiv", 1, "Subsurfs as meshes", "Export subdivision surfaces as meshes");
+  api_def_bool(fn, "flatten", 0, "Flatten hierarchy", "Flatten hierarchy");
+  api_def_bool(fn,
                   "visible_objects_only",
                   0,
                   "Visible layers only",
