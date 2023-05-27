@@ -499,7 +499,7 @@ const EnumPropertyItem rna_enum_views_format_multiview_items[] = {
 #undef R_IMF_VIEWS_ENUM_S3D
 #undef R_IMF_VIEWS_ENUM_MV
 
-const EnumPropertyItem rna_enum_stereo3d_display_items[] = {
+const EnumPropItem api_enum_stereo3d_display_items[] = {
     {S3D_DISPLAY_ANAGLYPH,
      "ANAGLYPH",
      0,
@@ -531,21 +531,21 @@ const EnumPropertyItem rna_enum_stereo3d_display_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_stereo3d_anaglyph_type_items[] = {
+const EnumPropItem api_enum_stereo3d_anaglyph_type_items[] = {
     {S3D_ANAGLYPH_REDCYAN, "RED_CYAN", 0, "Red-Cyan", ""},
     {S3D_ANAGLYPH_GREENMAGENTA, "GREEN_MAGENTA", 0, "Green-Magenta", ""},
     {S3D_ANAGLYPH_YELLOWBLUE, "YELLOW_BLUE", 0, "Yellow-Blue", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_stereo3d_interlace_type_items[] = {
+const EnumPropItem api_enum_stereo3d_interlace_type_items[] = {
     {S3D_INTERLACE_ROW, "ROW_INTERLEAVED", 0, "Row Interleaved", ""},
     {S3D_INTERLACE_COLUMN, "COLUMN_INTERLEAVED", 0, "Column Interleaved", ""},
     {S3D_INTERLACE_CHECKERBOARD, "CHECKERBOARD_INTERLEAVED", 0, "Checkerboard Interleaved", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_bake_pass_filter_type_items[] = {
+const EnumPropItem api_enum_bake_pass_filter_type_items[] = {
     {R_BAKE_PASS_FILTER_NONE, "NONE", 0, "None", ""},
     {R_BAKE_PASS_FILTER_EMIT, "EMIT", 0, "Emit", ""},
     {R_BAKE_PASS_FILTER_DIRECT, "DIRECT", 0, "Direct", ""},
@@ -557,13 +557,13 @@ const EnumPropertyItem rna_enum_bake_pass_filter_type_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
-static const EnumPropertyItem rna_enum_view_layer_aov_type_items[] = {
+static const EnumPropItem api_enum_view_layer_aov_type_items[] = {
     {AOV_TYPE_COLOR, "COLOR", 0, "Color", ""},
     {AOV_TYPE_VALUE, "VALUE", 0, "Value", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
-const EnumPropertyItem rna_enum_transform_pivot_items_full[] = {
+const EnumPropItem api_enum_transform_pivot_items_full[] = {
     {V3D_AROUND_CENTER_BOUNDS,
      "BOUNDING_BOX_CENTER",
      ICON_PIVOT_BOUNDBOX,
@@ -589,7 +589,7 @@ const EnumPropertyItem rna_enum_transform_pivot_items_full[] = {
 };
 
 /* Icons could be made a consistent set of images. */
-const EnumPropertyItem rna_enum_transform_orientation_items[] = {
+const EnumPropItem api_enum_transform_orientation_items[] = {
     {V3D_ORIENT_GLOBAL,
      "GLOBAL",
      ICON_ORIENTATION_GLOBAL,
