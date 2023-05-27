@@ -338,33 +338,33 @@ static void rna_def_area_api(StructRNA *srna)
   RNA_def_property_clear_flag(parm, PROP_NEVER_NULL);
 }
 
-static void rna_def_area(BlenderRNA *brna)
+static void api_def_area(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
-  srna = RNA_def_struct(brna, "Area", NULL);
-  RNA_def_struct_ui_text(srna, "Area", "Area in a subdivided screen, containing an editor");
-  RNA_def_struct_sdna(srna, "ScrArea");
+  sapi = api_def_struct(dapi, "Area", NULL);
+  api_def_struct_ui_text(sapi, "Area", "Area in a subdivided screen, containing an editor");
+  api_def_struct_stype(sapi, "ScrArea");
 
-  prop = RNA_def_property(srna, "spaces", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "spacedata", NULL);
-  RNA_def_property_struct_type(prop, "Space");
-  RNA_def_property_ui_text(prop,
-                           "Spaces",
-                           "Spaces contained in this area, the first being the active space "
-                           "(NOTE: Useful for example to restore a previously used 3D view space "
-                           "in a certain area to get the old view orientation)");
-  rna_def_area_spaces(brna, prop);
+  prop = api_def_prop(sapi, "spaces", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "spacedata", NULL);
+  api_def_prop_struct_type(prop, "Space");
+  api_def_prop_ui_text(prop,
+                       "Spaces",
+                       "Spaces contained in this area, the first being the active space "
+                       "(NOTE: Useful for example to restore a previously used 3D view space "
+                       "in a certain area to get the old view orientation)");
+  api_def_area_spaces(dapi, prop);
 
-  prop = RNA_def_property(srna, "regions", PROP_COLLECTION, PROP_NONE);
-  RNA_def_property_collection_sdna(prop, NULL, "regionbase", NULL);
-  RNA_def_property_struct_type(prop, "Region");
-  RNA_def_property_ui_text(prop, "Regions", "Regions this area is subdivided in");
+  prop = api_def_prop(sapi, "regions", PROP_COLLECTION, PROP_NONE);
+  api_def_prop_collection_stype(prop, NULL, "regionbase", NULL);
+  api_def_prop_struct_type(prop, "Region");
+  api_def_prop_ui_text(prop, "Regions", "Regions this area is subdivided in");
 
-  prop = RNA_def_property(srna, "show_menus", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", HEADER_NO_PULLDOWN);
-  RNA_def_property_ui_text(prop, "Show Menus", "Show menus in the header");
+  prop = api_def_prop(sapi, "show_menus", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_negative_stype(prop, NULL, "flag", HEADER_NO_PULLDOWN);
+  api_def_prop_ui_text(prop, "Show Menus", "Show menus in the header");
 
   /* Note on space type use of #SPACE_EMPTY, this is not visible to the user,
    * and script authors should be able to assign this value, however the value may be set
@@ -372,30 +372,30 @@ static void rna_def_area(BlenderRNA *brna)
    *
    * This happens when an area is full-screen (when #ScrArea.full is set).
    * in this case reading the empty value is needed, but it should never be set, see: #87187. */
-  prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "spacetype");
-  RNA_def_property_enum_items(prop, rna_enum_space_type_items);
-  RNA_def_property_enum_default(prop, SPACE_VIEW3D);
-  RNA_def_property_enum_funcs(prop, "rna_Area_type_get", "rna_Area_type_set", NULL);
-  RNA_def_property_ui_text(prop, "Editor Type", "Current editor type for this area");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Area_type_update");
+  prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "spacetype");
+  api_def_prop_enum_items(prop, api_enum_space_type_items);
+  api_def_prop_enum_default(prop, SPACE_VIEW3D
+  api_def_prop_enum_fns(prop, "rna_Area_type_get", "rna_Area_type_set", NULL);
+  api_def_prop_ui_text(prop, "Editor Type", "Current editor type for this area");
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "rna_Area_type_update");
 
-  prop = RNA_def_property(srna, "ui_type", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_items(prop, DummyRNA_NULL_items); /* in fact dummy */
-  RNA_def_property_enum_default(prop, SPACE_VIEW3D << 16);
-  RNA_def_property_enum_funcs(
-      prop, "rna_Area_ui_type_get", "rna_Area_ui_type_set", "rna_Area_ui_type_itemf");
-  RNA_def_property_ui_text(prop, "Editor Type", "Current editor type for this area");
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_update(prop, 0, "rna_Area_ui_type_update");
+  prop = api_def_prop(sapi, "ui_type", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_items(prop, DummyApi_NULL_items); /* in fact dummy */
+  api_def_prop_enum_default(prop, SPACE_VIEW3D << 16);
+  api_def_prop_enum_fns(
+      prop, "api_Area_ui_type_get", "rna_Area_ui_type_set", "rna_Area_ui_type_itemf");
+  api_def_prop_ui_text(prop, "Editor Type", "Current editor type for this area");
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  apo_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_update(prop, 0, "rna_Area_ui_type_update");
 
-  prop = RNA_def_property(srna, "x", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "totrct.xmin");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "x", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "totrct.xmin");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_ui_text(
       prop, "X Position", "The window relative vertical location of the area");
 
   prop = RNA_def_property(srna, "y", PROP_INT, PROP_NONE);
