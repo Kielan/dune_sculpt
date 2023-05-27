@@ -2,7 +2,7 @@
 
 #include "types_brush.h"
 #include "types_collection.h"
-#include "types_gpencil_legacy.h"
+#include "types_pen_legacy.h"
 #include "types_layer.h"
 #include "types_linestyle.h"
 #include "types_mod.h"
@@ -17,32 +17,32 @@
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf_types.h"
 
-#include "BLI_listbase.h"
-#include "BLI_math.h"
+#include "lib_listbase.h"
+#include "lib_math.h"
 
-#include "BLT_translation.h"
+#include "lang_translation.h"
 
-#include "BKE_armature.h"
-#include "BKE_editmesh.h"
-#include "BKE_idtype.h"
-#include "BKE_paint.h"
-#include "BKE_volume.h"
+#include "dune_armature.h"
+#include "dune_editmesh.h"
+#include "dune_idtype.h"
+#include "dune_paint.h"
+#include "dune_volume.h"
 
-#include "ED_gpencil_legacy.h"
-#include "ED_object.h"
-#include "ED_uvedit.h"
+#include "ed_pen_legacy.h"
+#include "ed_object.h"
+#include "ed_uvedit.h"
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
 /* Include for Bake Options */
-#include "RE_engine.h"
-#include "RE_pipeline.h"
+#include "render_engine.h"
+#include "render_pipeline.h"
 
 #ifdef WITH_FFMPEG
-#  include "BKE_writeffmpeg.h"
+#  include "dune_writeffmpeg.h"
 #  include "ffmpeg_compat.h"
 #  include <libavcodec/avcodec.h>
 #  include <libavformat/avformat.h>
