@@ -285,9 +285,9 @@ void api_scene(ApiStruct *sapi)
                 0.0,
                 BVH_RAYCAST_DIST_MAX);
   /* return location and normal */
-  parm = RNA_def_boolean(func, "result", 0, "", "");
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_float_vector(func,
+  parm = api_def_bool(fn, "result", 0, "", "");
+  api_def_fn_output(fn, parm);
+  parm = api_def_float_vector(fn,
                               "location",
                               3,
                               NULL,
@@ -297,9 +297,9 @@ void api_scene(ApiStruct *sapi)
                               "The hit location of this ray cast",
                               -1e4,
                               1e4);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_float_vector(func,
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
+  parm = api_def_float_vector(fn,
                               "normal",
                               3,
                               NULL,
