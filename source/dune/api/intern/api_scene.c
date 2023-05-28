@@ -650,45 +650,45 @@ const EnumPropItem api_enum_transform_orientation_items[] = {
 #  include "dune_animsys.h"
 #  include "dune_brush.h"
 #  include "dune_collection.h"
-#  include "fune_colortools.h"
-#  include "BKE_context.h"
-#  include "BKE_freestyle.h"
-#  include "BKE_global.h"
-#  include "BKE_gpencil_legacy.h"
-#  include "BKE_idprop.h"
-#  include "BKE_image.h"
-#  include "BKE_image_format.h"
-#  include "BKE_layer.h"
-#  include "BKE_main.h"
-#  include "BKE_mesh.h"
-#  include "BKE_node.h"
-#  include "BKE_pointcache.h"
-#  include "BKE_scene.h"
-#  include "BKE_screen.h"
-#  include "BKE_unit.h"
+#  include "dune_colortools.h"
+#  include "dune_context.h"
+#  include "dune_freestyle.h"
+#  include "dune_global.h"
+#  include "dune_pen_legacy.h"
+#  include "dune_idprop.h"
+#  include "dune_image.h"
+#  include "dune_image_format.h"
+#  include "dune_layer.h"
+#  include "dune_main.h"
+#  include "dune_mesh.h"
+#  include "dune_node.h"
+#  include "dune_pointcache.h"
+#  include "dune_scene.h"
+#  include "dune_screen.h"
+#  include "dune_unit.h"
 
 #  include "NOD_composite.h"
 
-#  include "ED_image.h"
-#  include "ED_info.h"
-#  include "ED_keyframing.h"
-#  include "ED_mesh.h"
-#  include "ED_node.h"
-#  include "ED_scene.h"
-#  include "ED_view3d.h"
+#  include "ed_image.h"
+#  include "ed_info.h"
+#  include "ed_keyframing.h"
+#  include "ed_mesh.h"
+#  include "ed_node.h"
+#  include "ed_scene.h"
+#  include "ed_view3d.h"
 
-#  include "DEG_depsgraph_build.h"
-#  include "DEG_depsgraph_query.h"
+#  include "graph_build.h"
+#  include "graph_query.h"
 
-#  include "SEQ_relations.h"
-#  include "SEQ_sequencer.h"
-#  include "SEQ_sound.h"
+#  include "seq_relations.h"
+#  include "seq.h"
+#  include "seq_sound.h"
 
 #  ifdef WITH_FREESTYLE
 #    include "FRS_freestyle.h"
 #  endif
 
-static void rna_ToolSettings_snap_mode_set(struct PointerRNA *ptr, int value)
+static void api_ToolSettings_snap_mode_set(struct ApiPtr *ptr, int value)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
   if (value != 0) {
@@ -696,59 +696,59 @@ static void rna_ToolSettings_snap_mode_set(struct PointerRNA *ptr, int value)
   }
 }
 
-/* Grease Pencil update cache */
-static void rna_GPencil_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *UNUSED(ptr))
+/* Pen update cache */
+static void api_Pen_update(Main *UNUSED(main), Scene *scene, ApiPtr *UNUSED(ptr))
 {
   if (scene != NULL) {
-    ED_gpencil_tag_scene_gpencil(scene);
+    ed_pen_tag_scene_pen(scene);
   }
 }
 
-static void rna_Gpencil_extend_selection(bContext *C, PointerRNA *UNUSED(ptr))
+static void api_pen_extend_selection(Cxt *C, ApiPtr *UNUSED(ptr))
 {
   /* Extend selection to all points in all selected strokes. */
-  const Scene *scene = CTX_data_scene(C);
-  ViewLayer *view_layer = CTX_data_view_layer(C);
-  BKE_view_layer_synced_ensure(scene, view_layer);
-  Object *ob = BKE_view_layer_active_object_get(view_layer);
-  if ((ob) && (ob->type == OB_GPENCIL_LEGACY)) {
-    bGPdata *gpd = (bGPdata *)ob->data;
-    CTX_DATA_BEGIN (C, bGPDstroke *, gps, editable_gpencil_strokes) {
-      if ((gps->flag & GP_STROKE_SELECT) && (gps->totpoints > 1)) {
-        bGPDspoint *pt;
-        for (int i = 0; i < gps->totpoints; i++) {
-          pt = &gps->points[i];
-          pt->flag |= GP_SPOINT_SELECT;
+  const Scene *scene = cxt_data_scene(C);
+  ViewLayer *view_layer = cxt_data_view_layer(C);
+  dune_view_layer_synced_ensure(scene, view_layer);
+  Object *ob = dune_view_layer_active_object_get(view_layer);
+  if ((ob) && (ob->type == OB_PEN_LEGACY)) {
+    PenData *pd = (PenData *)ob->data;
+    CXT_DATA_BEGIN (C, PenStroke *, ps, editable_pen_strokes) {
+      if ((ps->flag & PEN_STROKE_SELECT) && (ps->totpoints > 1)) {
+        PenPoint *pt;
+        for (int i = 0; i < ps->totpoints; i++) {
+          pt = &ps->points[i];
+          pt->flag |= PEN_SPOINT_SELECT;
         }
       }
     }
-    CTX_DATA_END;
+    CXT_DATA_END;
 
-    gpd->flag |= GP_DATA_CACHE_IS_DIRTY;
-    DEG_id_tag_update(&gpd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
+    pd->flag |= PEN_DATA_CACHE_IS_DIRTY;
+    graph_id_tag_update(&pd->id, ID_RECALC_TRANSFORM | ID_RECALC_GEOMETRY);
   }
 }
 
-static void rna_Gpencil_selectmode_update(bContext *C, PointerRNA *ptr)
+static void api_pen_selectmode_update(Cxt *C, ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
   /* If the mode is not Stroke, don't extend selection. */
-  if ((ts->gpencil_selectmode_edit & GP_SELECTMODE_STROKE) == 0) {
+  if ((ts->pen_selectmode_edit & PEN_SELECTMODE_STROKE) == 0) {
     return;
   }
 
-  rna_Gpencil_extend_selection(C, ptr);
+  api_pen_extend_selection(C, ptr);
 }
 
-static void rna_Gpencil_mask_point_update(bContext *UNUSED(C), PointerRNA *ptr)
+static void api_pen_mask_point_update(Cxt *UNUSED(C), ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
-  ts->gpencil_selectmode_sculpt &= ~GP_SCULPT_MASK_SELECTMODE_STROKE;
-  ts->gpencil_selectmode_sculpt &= ~GP_SCULPT_MASK_SELECTMODE_SEGMENT;
+  ts->pen_selectmode_sculpt &= ~PEN_SCULPT_MASK_SELECTMODE_STROKE;
+  ts->pen_selectmode_sculpt &= ~PEN_SCULPT_MASK_SELECTMODE_SEGMENT;
 }
 
-static void rna_Gpencil_mask_stroke_update(bContext *C, PointerRNA *ptr)
+static void rna_Gpencil_mask_stroke_update(Cxt *C, ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
