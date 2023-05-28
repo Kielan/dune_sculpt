@@ -795,7 +795,7 @@ static void api_pen_vertex_mask_segment_update(Cxt *C, ApiPtr *ptr)
   ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_POINT;
   ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_STROKE;
 
-  ED_gpencil_tag_scene_gpencil(cxt_data_scene(C));
+  ED_gpencil_tag_scene_pen(cxt_data_scene(C));
 }
 
 /* Read-only Iterator of all the scene objects. */
@@ -803,34 +803,34 @@ static void api_pen_vertex_mask_segment_update(Cxt *C, ApiPtr *ptr)
 static void rna_Scene_objects_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
-  iter->internal.custom = MEM_callocN(sizeof(BLI_Iterator), __func__);
+  iter->internal.custom = mem_callocn(sizeof(LibIter), __func__);
 
-  BKE_scene_objects_iterator_begin(iter->internal.custom, (void *)scene);
-  iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
+  dune_scene_objects_iter_begin(iter->internal.custom, (void *)scene);
+  iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
-static void rna_Scene_objects_next(CollectionPropertyIterator *iter)
+static void api_Scene_objects_next(CollectionPropIter *iter)
 {
-  BKE_scene_objects_iterator_next(iter->internal.custom);
-  iter->valid = ((BLI_Iterator *)iter->internal.custom)->valid;
+  dune_scene_objects_iter_next(iter->internal.custom);
+  iter->valid = ((LibIter *)iter->internal.custom)->valid;
 }
 
-static void rna_Scene_objects_end(CollectionPropertyIterator *iter)
+static void api_Scene_objects_end(CollectionPropIter *iter)
 {
-  BKE_scene_objects_iterator_end(iter->internal.custom);
-  MEM_freeN(iter->internal.custom);
+  dune_scene_objects_iter_end(iter->internal.custom);
+  mem_freen(iter->internal.custom);
 }
 
-static PointerRNA rna_Scene_objects_get(CollectionPropertyIterator *iter)
+static ApiPtr api_Scene_objects_get(CollectionPropIter *iter)
 {
-  Object *ob = ((BLI_Iterator *)iter->internal.custom)->current;
-  return rna_pointer_inherit_refine(&iter->parent, &RNA_Object, ob);
+  Object *ob = ((LibIter *)iter->internal.custom)->current;
+  return api_ptr_inherit_refine(&iter->parent, &ApiObject, ob);
 }
 
 /* End of read-only Iterator of all the scene objects. */
 
-static void rna_Scene_set_set(PointerRNA *ptr,
-                              PointerRNA value,
+static void api_Scene_set_set(ApiPtr *ptr,
+                              ApiPtr value,
                               struct ReportList *UNUSED(reports))
 {
   Scene *scene = (Scene *)ptr->data;
@@ -847,62 +847,62 @@ static void rna_Scene_set_set(PointerRNA *ptr,
     }
   }
 
-  id_lib_extern((ID *)set);
+  id_lib_extern((Id *)set);
   scene->set = set;
 }
 
-void rna_Scene_set_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
+void api_Scene_set_update(Main *main, Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
 
-  DEG_relations_tag_update(bmain);
-  DEG_id_tag_update_ex(bmain, &scene->id, ID_RECALC_BASE_FLAGS);
+  graph_relations_tag_update(main);
+  graph_id_tag_update_ex(main, &scene->id, ID_RECALC_BASE_FLAGS);
   if (scene->set != NULL) {
     /* Objects which are pulled into main scene's depsgraph needs to have
      * their base flags updated.
      */
-    DEG_id_tag_update_ex(bmain, &scene->set->id, ID_RECALC_BASE_FLAGS);
+    graph_id_tag_update_ex(main, &scene->set->id, ID_RECALC_BASE_FLAGS);
   }
 }
 
-static void rna_Scene_camera_update(Main *bmain, Scene *UNUSED(scene_unused), PointerRNA *ptr)
+static void api_Scene_camera_update(Main *main, Scene *UNUSED(scene_unused), ApiPtr *ptr)
 {
-  wmWindowManager *wm = bmain->wm.first;
+  WindowManager *wm = main->wm.first;
   Scene *scene = (Scene *)ptr->data;
 
-  WM_windows_scene_data_sync(&wm->windows, scene);
-  DEG_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
-  DEG_relations_tag_update(bmain);
+  wm_windows_scene_data_sync(&wm->windows, scene);
+  graph_id_tag_update(&scene->id, ID_RECALC_COPY_ON_WRITE);
+  graph_relations_tag_update(bmain);
 }
 
-static void rna_Scene_fps_update(Main *bmain, Scene *UNUSED(active_scene), PointerRNA *ptr)
+static void api_Scene_fps_update(Main *main, Scene *UNUSED(active_scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
-  DEG_id_tag_update(&scene->id, ID_RECALC_AUDIO_FPS | ID_RECALC_SEQUENCER_STRIPS);
+  graph_id_tag_update(&scene->id, ID_RECALC_AUDIO_FPS | ID_RECALC_SEQ_STRIPS);
   /* NOTE: Tag via dependency graph will take care of all the updates ion the evaluated domain,
    * however, changes in FPS actually modifies an original skip length,
    * so this we take care about here. */
-  SEQ_sound_update_length(bmain, scene);
+  seq_sound_update_length(main, scene);
 }
 
-static void rna_Scene_listener_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Scene_listener_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
-  DEG_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO_LISTENER);
+  graph_id_tag_update(ptr->owner_id, ID_RECALC_AUDIO_LISTENER);
 }
 
-static void rna_Scene_volume_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_Scene_volume_update(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
-  DEG_id_tag_update(&scene->id, ID_RECALC_AUDIO_VOLUME | ID_RECALC_SEQUENCER_STRIPS);
+  graph_id_tag_update(&scene->id, ID_RECALC_AUDIO_VOLUME | ID_RECALC_SEQ_STRIPS);
 }
 
-static const char *rna_Scene_statistics_string_get(Scene *scene,
-                                                   Main *bmain,
+static const char *api_Scene_statistics_string_get(Scene *scene,
+                                                   Main *main,
                                                    ReportList *reports,
                                                    ViewLayer *view_layer)
 {
-  if (!BKE_scene_has_view_layer(scene, view_layer)) {
-    BKE_reportf(reports,
+  if (!dune_scene_has_view_layer(scene, view_layer)) {
+    dune_reportf(reports,
                 RPT_ERROR,
                 "View Layer '%s' not found in scene '%s'",
                 view_layer->name,
@@ -910,18 +910,18 @@ static const char *rna_Scene_statistics_string_get(Scene *scene,
     return "";
   }
 
-  return ED_info_statistics_string(bmain, scene, view_layer);
+  return ed_info_statistics_string(main, scene, view_layer);
 }
 
-static void rna_Scene_framelen_update(Main *UNUSED(bmain),
+static void api_Scene_framelen_update(Main *UNUSED(main),
                                       Scene *UNUSED(active_scene),
-                                      PointerRNA *ptr)
+                                      ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   scene->r.framelen = (float)scene->r.framapto / (float)scene->r.images;
 }
 
-static void rna_Scene_frame_current_set(PointerRNA *ptr, int value)
+static void api_Scene_frame_current_set(ApiPtr *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
 
@@ -930,13 +930,13 @@ static void rna_Scene_frame_current_set(PointerRNA *ptr, int value)
   data->r.cfra = value;
 }
 
-static float rna_Scene_frame_float_get(PointerRNA *ptr)
+static float api_Scene_frame_float_get(ApiPtr *ptr)
 {
   Scene *data = (Scene *)ptr->data;
   return (float)data->r.cfra + data->r.subframe;
 }
 
-static void rna_Scene_frame_float_set(PointerRNA *ptr, float value)
+static void api_Scene_frame_float_set(ApiPtr *ptr, float value)
 {
   Scene *data = (Scene *)ptr->data;
   /* if negative frames aren't allowed, then we can't use them */
@@ -945,14 +945,14 @@ static void rna_Scene_frame_float_set(PointerRNA *ptr, float value)
   data->r.subframe = value - data->r.cfra;
 }
 
-static float rna_Scene_frame_current_final_get(PointerRNA *ptr)
+static float api_Scene_frame_current_final_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
 
-  return BKE_scene_frame_to_ctime(scene, (float)scene->r.cfra);
+  return dune_scene_frame_to_ctime(scene, (float)scene->r.cfra);
 }
 
-static void rna_Scene_start_frame_set(PointerRNA *ptr, int value)
+static void api_Scene_start_frame_set(ApiPtr *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
   /* MINFRAME not MINAFRAME, since some output formats can't taken negative frames */
@@ -964,7 +964,7 @@ static void rna_Scene_start_frame_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_Scene_end_frame_set(PointerRNA *ptr, int value)
+static void api_Scene_end_frame_set(ApiPointer *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
   CLAMP(value, MINFRAME, MAXFRAME);
@@ -975,7 +975,7 @@ static void rna_Scene_end_frame_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_Scene_use_preview_range_set(PointerRNA *ptr, bool value)
+static void api_Scene_use_preview_range_set(ApiPtr *ptr, bool value)
 {
   Scene *data = (Scene *)ptr->data;
 
@@ -993,7 +993,7 @@ static void rna_Scene_use_preview_range_set(PointerRNA *ptr, bool value)
   }
 }
 
-static void rna_Scene_preview_range_start_frame_set(PointerRNA *ptr, int value)
+static void api_Scene_preview_range_start_frame_set(ApiPtr *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
 
@@ -1011,7 +1011,7 @@ static void rna_Scene_preview_range_start_frame_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_Scene_preview_range_end_frame_set(PointerRNA *ptr, int value)
+static void api_Scene_preview_range_end_frame_set(ApiPtr *ptr, int value)
 {
   Scene *data = (Scene *)ptr->data;
 
@@ -1029,53 +1029,51 @@ static void rna_Scene_preview_range_end_frame_set(PointerRNA *ptr, int value)
   }
 }
 
-static void rna_Scene_show_subframe_update(Main *UNUSED(bmain),
+static void api_Scene_show_subframe_update(Main *UNUSED(main),
                                            Scene *UNUSED(current_scene),
-                                           PointerRNA *ptr)
+                                           ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   scene->r.subframe = 0.0f;
 }
 
-static void rna_Scene_frame_update(Main *UNUSED(bmain),
+static void api_Scene_frame_update(Main *UNUSED(main),
                                    Scene *UNUSED(current_scene),
-                                   PointerRNA *ptr)
+                                   ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->owner_id;
-  DEG_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
-  WM_main_add_notifier(NC_SCENE | ND_FRAME, scene);
+  graph_id_tag_update(&scene->id, ID_RECALC_FRAME_CHANGE);
+  wm_main_add_notifier(NC_SCENE | ND_FRAME, scene);
 }
 
-static PointerRNA rna_Scene_active_keying_set_get(PointerRNA *ptr)
+static ApiPtr api_Scene_active_keying_set_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
-  return rna_pointer_inherit_refine(ptr, &RNA_KeyingSet, ANIM_scene_get_active_keyingset(scene));
+  return api_pr_inherit_refine(ptr, &ApiKeyingSet, ANIM_scene_get_active_keyingset(scene));
 }
 
-static void rna_Scene_active_keying_set_set(PointerRNA *ptr,
-                                            PointerRNA value,
+static void api_Scene_active_keying_set_set(ApiPtr *ptr,
+                                            ApiPtr value,
                                             struct ReportList *UNUSED(reports))
 {
   Scene *scene = (Scene *)ptr->data;
   KeyingSet *ks = (KeyingSet *)value.data;
 
-  scene->active_keyingset = ANIM_scene_get_keyingset_index(scene, ks);
+  scene->active_keyingset = anim_scene_get_keyingset_index(scene, ks);
 }
 
 /* get KeyingSet index stuff for list of Keying Sets editing UI
  * - active_keyingset-1 since 0 is reserved for 'none'
- * - don't clamp, otherwise can never set builtin's types as active...
- */
-static int rna_Scene_active_keying_set_index_get(PointerRNA *ptr)
+ * - don't clamp, otherwise can never set builtin's types as active... */
+static int api_Scene_active_keying_set_index_get(ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
   return scene->active_keyingset - 1;
 }
 
 /* get KeyingSet index stuff for list of Keying Sets editing UI
- * - value+1 since 0 is reserved for 'none'
- */
-static void rna_Scene_active_keying_set_index_set(PointerRNA *ptr, int value)
+ * - value+1 since 0 is reserved for 'none */
+static void api_Scene_active_keying_set_index_set(ApiPtr *ptr, int value)
 {
   Scene *scene = (Scene *)ptr->data;
   scene->active_keyingset = value + 1;
@@ -1083,9 +1081,9 @@ static void rna_Scene_active_keying_set_index_set(PointerRNA *ptr, int value)
 
 /* XXX: evil... builtin_keyingsets is defined in keyingsets.c! */
 /* TODO: make API function to retrieve this... */
-extern ListBase builtin_keyingsets;
+extern List builtin_keyingsets;
 
-static void rna_Scene_all_keyingsets_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_Scene_all_keyingsets_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
 
@@ -1093,16 +1091,16 @@ static void rna_Scene_all_keyingsets_begin(CollectionPropertyIterator *iter, Poi
    * but only if we have any Keying Sets to use...
    */
   if (scene->keyingsets.first) {
-    rna_iterator_listbase_begin(iter, &scene->keyingsets, NULL);
+    api_iter_list_begin(iter, &scene->keyingsets, NULL);
   }
   else {
-    rna_iterator_listbase_begin(iter, &builtin_keyingsets, NULL);
+    api_iter_list_begin(iter, &builtin_keyingsets, NULL);
   }
 }
 
-static void rna_Scene_all_keyingsets_next(CollectionPropertyIterator *iter)
+static void api_Scene_all_keyingsets_next(CollectionPropIter *iter)
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.list;
   KeyingSet *ks = (KeyingSet *)internal->link;
 
   /* If we've run out of links in Scene list,
@@ -1117,20 +1115,20 @@ static void rna_Scene_all_keyingsets_next(CollectionPropertyIterator *iter)
   iter->valid = (internal->link != NULL);
 }
 
-static char *rna_SceneEEVEE_path(const PointerRNA *UNUSED(ptr))
+static char *api_SceneEEVEE_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("eevee");
+  return lib_strdup("eevee");
 }
 
-static char *rna_SceneGpencil_path(const PointerRNA *UNUSED(ptr))
+static char *api_ScenePen_path(const ApiPtr *UNUSED(ptr))
 {
-  return BLI_strdup("grease_pencil_settings");
+  return lib_strdup("pen_settings");
 }
 
-static int rna_RenderSettings_stereoViews_skip(CollectionPropertyIterator *iter,
+static int api_RenderSettings_stereoViews_skip(CollectionPropIter *iter,
                                                void *UNUSED(data))
 {
-  ListBaseIterator *internal = &iter->internal.listbase;
+  ListIter *internal = &iter->internal.list;
   SceneRenderView *srv = (SceneRenderView *)internal->link;
 
   if (STR_ELEM(srv->name, STEREO_LEFT_NAME, STEREO_RIGHT_NAME)) {
@@ -1140,52 +1138,52 @@ static int rna_RenderSettings_stereoViews_skip(CollectionPropertyIterator *iter,
   return 1;
 };
 
-static void rna_RenderSettings_stereoViews_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void api_RenderSettings_stereoViews_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
-  rna_iterator_listbase_begin(iter, &rd->views, rna_RenderSettings_stereoViews_skip);
+  api_iter_list_begin(iter, &rd->views, api_RenderSettings_stereoViews_skip);
 }
 
-static char *rna_RenderSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_RenderSettings_path(const PointerRNA *UNUSED(ptr))
 {
-  return BLI_strdup("render");
+  return lib_strdup("render");
 }
 
-static char *rna_BakeSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_BakeSettings_path(const PointerRNA *UNUSED(ptr))
 {
-  return BLI_strdup("render.bake");
+  return lib_strdup("render.bake");
 }
 
-static char *rna_ImageFormatSettings_path(const PointerRNA *ptr)
+static char *api_ImageFormatSettings_path(const ApiPtr *ptr)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
 
   switch (GS(id->name)) {
     case ID_SCE: {
       Scene *scene = (Scene *)id;
 
       if (&scene->r.im_format == imf) {
-        return BLI_strdup("render.image_settings");
+        return lib_strdup("render.image_settings");
       }
       else if (&scene->r.bake.im_format == imf) {
-        return BLI_strdup("render.bake.image_settings");
+        return lib_strdup("render.bake.image_settings");
       }
-      return BLI_strdup("..");
+      return lib_strdup("..");
     }
     case ID_NT: {
-      bNodeTree *ntree = (bNodeTree *)id;
-      bNode *node;
+      NodeTree *ntree = (NodeTree *)id;
+      Node *node;
 
       for (node = ntree->nodes.first; node; node = node->next) {
         if (node->type == CMP_NODE_OUTPUT_FILE) {
           if (&((NodeImageMultiFile *)node->storage)->format == imf) {
             char node_name_esc[sizeof(node->name) * 2];
-            BLI_str_escape(node_name_esc, node->name, sizeof(node_name_esc));
-            return BLI_sprintfN("nodes[\"%s\"].format", node_name_esc);
+            lib_str_escape(node_name_esc, node->name, sizeof(node_name_esc));
+            return lib_sprintfN("nodes[\"%s\"].format", node_name_esc);
           }
           else {
-            bNodeSocket *sock;
+            NodeSocket *sock;
 
             for (sock = node->inputs.first; sock; sock = sock->next) {
               NodeImageMultiFileSocket *sockdata = sock->storage;
