@@ -146,7 +146,7 @@ static char *api_RigidBodyWorld_path(ApiPtr *UNUSED(ptr))
   return BLI_strdup("rigidbody_world");
 }
 
-static void rna_RigidBodyWorld_num_solver_iterations_set(PointerRNA *ptr, int value)
+static void api_RigidBodyWorld_num_solver_iterations_set(PointerRNA *ptr, int value)
 {
   RigidBodyWorld *rbw = (RigidBodyWorld *)ptr->data;
 
@@ -159,7 +159,7 @@ static void rna_RigidBodyWorld_num_solver_iterations_set(PointerRNA *ptr, int va
 #  endif
 }
 
-static void rna_RigidBodyWorld_split_impulse_set(PointerRNA *ptr, bool value)
+static void api_RigidBodyWorld_split_impulse_set(ApiPtr *ptr, bool value)
 {
   RigidBodyWorld *rbw = (RigidBodyWorld *)ptr->data;
 
@@ -172,49 +172,49 @@ static void rna_RigidBodyWorld_split_impulse_set(PointerRNA *ptr, bool value)
 #  endif
 }
 
-static void rna_RigidBodyWorld_objects_collection_update(Main *bmain,
+static void api_RigidBodyWorld_objects_collection_update(Main *main,
                                                          Scene *scene,
-                                                         PointerRNA *ptr)
+                                                         ApiPtr *ptr)
 {
   RigidBodyWorld *rbw = (RigidBodyWorld *)ptr->data;
-  BKE_rigidbody_objects_collection_validate(scene, rbw);
-  rna_RigidBodyWorld_reset(bmain, scene, ptr);
+  dune_rigidbody_objects_collection_validate(scene, rbw);
+  api_RigidBodyWorld_reset(main, scene, ptr);
 }
 
-static void rna_RigidBodyWorld_constraints_collection_update(Main *bmain,
+static void api_RigidBodyWorld_constraints_collection_update(Main *main,
                                                              Scene *scene,
-                                                             PointerRNA *ptr)
+                                                             ApiPtr *ptr)
 {
   RigidBodyWorld *rbw = (RigidBodyWorld *)ptr->data;
-  BKE_rigidbody_constraints_collection_validate(scene, rbw);
-  rna_RigidBodyWorld_reset(bmain, scene, ptr);
+  dune_rigidbody_constraints_collection_validate(scene, rbw);
+  api_RigidBodyWorld_reset(main, scene, ptr);
 }
 
 /* ******************************** */
 
-static void rna_RigidBodyOb_reset(Main *UNUSED(bmain), Scene *scene, PointerRNA *UNUSED(ptr))
+static void api_RigidBodyOb_reset(Main *UNUSED(main), Scene *scene, ApiPtr *UNUSED(ptr))
 {
   if (scene != NULL) {
     RigidBodyWorld *rbw = scene->rigidbody_world;
-    BKE_rigidbody_cache_reset(rbw);
+    dune_rigidbody_cache_reset(rbw);
   }
 }
 
-static void rna_RigidBodyOb_shape_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_RigidBodyOb_shape_update(Main *main, Scene *scene, PointerRNA *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
 
-  rna_RigidBodyOb_reset(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_RigidBodyOb_reset(main, scene, ptr);
+  graph_relations_tag_update(main);
 
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 }
 
-static void rna_RigidBodyOb_shape_reset(Main *UNUSED(bmain), Scene *scene, PointerRNA *ptr)
+static void api_RigidBodyOb_shape_reset(Main *UNUSED(main), Scene *scene, ApiPtr *ptr)
 {
   if (scene != NULL) {
     RigidBodyWorld *rbw = scene->rigidbody_world;
-    BKE_rigidbody_cache_reset(rbw);
+    dune_rigidbody_cache_reset(rbw);
   }
 
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
@@ -223,23 +223,23 @@ static void rna_RigidBodyOb_shape_reset(Main *UNUSED(bmain), Scene *scene, Point
   }
 }
 
-static void rna_RigidBodyOb_mesh_source_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void api_RigidBodyOb_mesh_source_update(Main *main, Scene *scene, ApiPtr *ptr)
 {
   Object *ob = (Object *)ptr->owner_id;
 
-  rna_RigidBodyOb_reset(bmain, scene, ptr);
-  DEG_relations_tag_update(bmain);
+  api_RigidBodyOb_reset(main, scene, ptr);
+  graph_relations_tag_update(main);
 
-  WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
+  wm_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 }
 
-static char *rna_RigidBodyOb_path(PointerRNA *UNUSED(ptr))
+static char *api_RigidBodyOb_path(ApiPtr *UNUSED(ptr))
 {
   /* NOTE: this hardcoded path should work as long as only Objects have this */
-  return BLI_strdup("rigid_body");
+  return lib_strdup("rigid_body");
 }
 
-static void rna_RigidBodyOb_type_set(PointerRNA *ptr, int value)
+static void api_RigidBodyOb_type_set(ApiPtr *ptr, int value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -247,7 +247,7 @@ static void rna_RigidBodyOb_type_set(PointerRNA *ptr, int value)
   rbo->flag |= RBO_FLAG_NEEDS_VALIDATE;
 }
 
-static void rna_RigidBodyOb_shape_set(PointerRNA *ptr, int value)
+static void api_RigidBodyOb_shape_set(ApiPtr *ptr, int value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -255,7 +255,7 @@ static void rna_RigidBodyOb_shape_set(PointerRNA *ptr, int value)
   rbo->flag |= RBO_FLAG_NEEDS_VALIDATE;
 }
 
-static void rna_RigidBodyOb_disabled_set(PointerRNA *ptr, bool value)
+static void api_RigidBodyOb_disabled_set(ApiPtr *ptr, bool value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -271,7 +271,7 @@ static void rna_RigidBodyOb_disabled_set(PointerRNA *ptr, bool value)
 #  endif
 }
 
-static void rna_RigidBodyOb_mass_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_mass_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -285,7 +285,7 @@ static void rna_RigidBodyOb_mass_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static void rna_RigidBodyOb_friction_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_friction_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -298,7 +298,7 @@ static void rna_RigidBodyOb_friction_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static void rna_RigidBodyOb_restitution_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_restitution_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -310,7 +310,7 @@ static void rna_RigidBodyOb_restitution_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static void rna_RigidBodyOb_collision_margin_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_collision_margin_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -323,7 +323,7 @@ static void rna_RigidBodyOb_collision_margin_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static void rna_RigidBodyOb_collision_collections_set(PointerRNA *ptr, const bool *values)
+static void api_RigidBodyOb_collision_collections_set(ApiPtr *ptr, const bool *values)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
   int i;
@@ -339,7 +339,7 @@ static void rna_RigidBodyOb_collision_collections_set(PointerRNA *ptr, const boo
   rbo->flag |= RBO_FLAG_NEEDS_VALIDATE;
 }
 
-static void rna_RigidBodyOb_kinematic_state_set(PointerRNA *ptr, bool value)
+static void api_RigidBodyOb_kinematic_state_set(ApiPtr *ptr, bool value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -355,7 +355,7 @@ static void rna_RigidBodyOb_kinematic_state_set(PointerRNA *ptr, bool value)
 #  endif
 }
 
-static void rna_RigidBodyOb_activation_state_set(PointerRNA *ptr, bool value)
+static void api_RigidBodyOb_activation_state_set(ApiPtr *ptr, bool value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -369,7 +369,7 @@ static void rna_RigidBodyOb_activation_state_set(PointerRNA *ptr, bool value)
 #  endif
 }
 
-static void rna_RigidBodyOb_linear_sleepThresh_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_linear_sleepThresh_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -383,7 +383,7 @@ static void rna_RigidBodyOb_linear_sleepThresh_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static void rna_RigidBodyOb_angular_sleepThresh_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_angular_sleepThresh_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -397,7 +397,7 @@ static void rna_RigidBodyOb_angular_sleepThresh_set(PointerRNA *ptr, float value
 #  endif
 }
 
-static void rna_RigidBodyOb_linear_damping_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_linear_damping_set(PointerRNA *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -411,7 +411,7 @@ static void rna_RigidBodyOb_linear_damping_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static void rna_RigidBodyOb_angular_damping_set(PointerRNA *ptr, float value)
+static void api_RigidBodyOb_angular_damping_set(ApiPtr *ptr, float value)
 {
   RigidBodyOb *rbo = (RigidBodyOb *)ptr->data;
 
@@ -425,10 +425,10 @@ static void rna_RigidBodyOb_angular_damping_set(PointerRNA *ptr, float value)
 #  endif
 }
 
-static char *rna_RigidBodyCon_path(PointerRNA *UNUSED(ptr))
+static char *api_RigidBodyCon_path(ApiPtr *UNUSED(ptr))
 {
   /* NOTE: this hardcoded path should work as long as only Objects have this */
-  return BLI_strdup("rigid_body_constraint");
+  return lib_strdup("rigid_body_constraint");
 }
 
 static void rna_RigidBodyCon_type_set(PointerRNA *ptr, int value)
@@ -1543,39 +1543,39 @@ static void rna_def_rigidbody_constraint(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Target Velocity", "Target linear motor velocity");
   RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "motor_lin_max_impulse", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "motor_lin_max_impulse");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_lin_max_impulse_set", NULL);
-  RNA_def_property_ui_text(prop, "Max Impulse", "Maximum linear motor impulse");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = RNA_def_props(sapi, "motor_lin_max_impulse", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_sdna(prop, NULL, "motor_lin_max_impulse");
+  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
+  RNA_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  RNA_def_prop_float_default(prop, 1.0f);
+  RNA_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_lin_max_impulse_set", NULL);
+  RNA_def_prop_ui_text(prop, "Max Impulse", "Maximum linear motor impulse");
+  RNA_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "motor_ang_target_velocity", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "motor_ang_target_velocity");
-  RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-  RNA_def_property_ui_range(prop, -100.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_ang_target_velocity_set", NULL);
-  RNA_def_property_ui_text(prop, "Target Velocity", "Target angular motor velocity");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = RNA_def_prop(srna, "motor_ang_target_velocity", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_sdna(prop, NULL, "motor_ang_target_velocity");
+  RNA_def_prop_range(prop, -FLT_MAX, FLT_MAX);
+  RNA_def_prop_ui_range(prop, -100.0f, 100.0f, 1, 3);
+  RNA_def_prop_float_default(prop, 1.0f);
+  RNA_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_ang_target_velocity_set", NULL);
+  RNA_def_prop_ui_text(prop, "Target Velocity", "Target angular motor velocity");
+  RNA_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "motor_ang_max_impulse", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "motor_ang_max_impulse");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_ui_range(prop, 0.0f, 100.0f, 1, 3);
-  RNA_def_property_float_default(prop, 1.0f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_ang_max_impulse_set", NULL);
-  RNA_def_property_ui_text(prop, "Max Impulse", "Maximum angular motor impulse");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = RNA_def_prop(srna, "motor_ang_max_impulse", PROP_FLOAT, PROP_NONE);
+  RNA_def_prop_float_sdna(prop, NULL, "motor_ang_max_impulse");
+  RNA_def_prop_range(prop, 0.0f, FLT_MAX);
+  RNA_def_prop_ui_range(prop, 0.0f, 100.0f, 1, 3);
+  RNA_def_prop_float_default(prop, 1.0f);
+  RNA_def_prop_float_funcs(prop, NULL, "rna_RigidBodyCon_motor_ang_max_impulse_set", NULL);
+  RNA_def_prop_ui_text(prop, "Max Impulse", "Maximum angular motor impulse");
+  RNA_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 }
 
-void RNA_def_rigidbody(BlenderRNA *brna)
+void api_def_rigidbody(DuneApi *dapi)
 {
-  rna_def_rigidbody_world(brna);
-  rna_def_rigidbody_object(brna);
-  rna_def_rigidbody_constraint(brna);
+  api_def_rigidbody_world(dapi);
+  api_def_rigidbody_object(br
+  api_def_rigidbody_constraint(dapi);
 }
 
 #endif
