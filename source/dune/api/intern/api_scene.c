@@ -5962,7 +5962,7 @@ static void rna_def_scene_ffmpeg_settings(BlenderRNA *brna)
   /* Recommendations come from the FFmpeg wiki, https://trac.ffmpeg.org/wiki/Encode/VP9.
    * The label for BEST has been changed to "Slowest" so that it fits the "Encoding Speed"
    * property label in the UI. */
-  static const EnumPropertyItem ffmpeg_preset_items[] = {
+  static const EnumPropItem ffmpeg_preset_items[] = {
       {FFM_PRESET_BEST,
        "BEST",
        0,
@@ -5973,7 +5973,7 @@ static void rna_def_scene_ffmpeg_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem ffmpeg_crf_items[] = {
+  static const EnumPropItem ffmpeg_crf_items[] = {
       {FFM_CRF_NONE,
        "NONE",
        0,
@@ -5989,7 +5989,7 @@ static void rna_def_scene_ffmpeg_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem ffmpeg_audio_codec_items[] = {
+  static const EnumPropItem ffmpeg_audio_codec_items[] = {
       {AV_CODEC_ID_NONE, "NONE", 0, "No Audio", "Disables audio output, for video-only renders"},
       {AV_CODEC_ID_AAC, "AAC", 0, "AAC", ""},
       {AV_CODEC_ID_AC3, "AC3", 0, "AC3", ""},
@@ -6003,7 +6003,7 @@ static void rna_def_scene_ffmpeg_settings(BlenderRNA *brna)
   };
 #  endif
 
-  static const EnumPropertyItem audio_channel_items[] = {
+  static const EnumPropItem audio_channel_items[] = {
       {FFM_CHANNELS_MONO, "MONO", 0, "Mono", "Set audio channels to mono"},
       {FFM_CHANNELS_STEREO, "STEREO", 0, "Stereo", "Set audio channels to stereo"},
       {FFM_CHANNELS_SURROUND4, "SURROUND4", 0, "4 Channels", "Set audio channels to 4 channels"},
@@ -6020,179 +6020,179 @@ static void rna_def_scene_ffmpeg_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "FFmpegSettings", NULL);
-  RNA_def_struct_sdna(srna, "FFMpegCodecData");
-  RNA_def_struct_path_func(srna, "rna_FFmpegSettings_path");
-  RNA_def_struct_ui_text(srna, "FFmpeg Settings", "FFmpeg related settings for the scene");
+  srna = api_def_struct(dapi, "FFmpegSettings", NULL);
+  api_def_struct_stype(sapi, "FFMpegCodecData");
+  api_def_struct_path_func(sapi, "api_FFmpegSettings_path");
+  api_def_struct_ui_text(sapi, "FFmpeg Settings", "FFmpeg related settings for the scene");
 
 #  ifdef WITH_FFMPEG
-  prop = RNA_def_property(srna, "format", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "type");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, ffmpeg_format_items);
-  RNA_def_property_enum_default(prop, FFMPEG_MKV);
-  RNA_def_property_ui_text(prop, "Container", "Output file container");
+  prop = api_def_prop(sapi, "format", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_sdna(prop, NULL, "type");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  aou_def_prop_enum_items(prop, ffmpeg_format_items);
+  api_def_prop_enum_default(prop, FFMPEG_MKV);
+  api_def_prop_ui_text(prop, "Container", "Output file container");
 
-  prop = RNA_def_property(srna, "codec", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "codec");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, ffmpeg_codec_items);
-  RNA_def_property_enum_default(prop, AV_CODEC_ID_H264);
-  RNA_def_property_ui_text(prop, "Video Codec", "FFmpeg codec to use for video output");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_FFmpegSettings_codec_update");
+  prop = api_def_prop(sapi, "codec", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "codec");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, ffmpeg_codec_items);
+  api_def_prop_enum_default(prop, AV_CODEC_ID_H264);
+  api_def_prop_ui_text(prop, "Video Codec", "FFmpeg codec to use for video output");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_FFmpegSettings_codec_update");
 
-  prop = RNA_def_property(srna, "video_bitrate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "video_bitrate");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Bitrate", "Video bitrate (kbit/s)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "video_bitrate", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "video_bitrate");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Bitrate", "Video bitrate (kbit/s)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "minrate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "rc_min_rate");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Min Rate", "Rate control: min rate (kbit/s)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "minrate", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "rc_min_rate");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Min Rate", "Rate control: min rate (kbit/s)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "maxrate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "rc_max_rate");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Max Rate", "Rate control: max rate (kbit/s)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "maxrate", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "rc_max_rate");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Max Rate", "Rate control: max rate (kbit/s)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "muxrate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "mux_rate");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0, 100000000);
-  RNA_def_property_ui_text(prop, "Mux Rate", "Mux rate (bits/second)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "muxrate", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "mux_rate");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0, 100000000);
+  api_def_prop_ui_text(prop, "Mux Rate", "Mux rate (bits/second)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "gopsize", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "gop_size");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0, 500);
-  RNA_def_property_int_default(prop, 25);
-  RNA_def_property_ui_text(prop,
-                           "Keyframe Interval",
-                           "Distance between key frames, also known as GOP size; "
-                           "influences file size and seekability");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "gopsize", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "gop_size");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0, 500);
+  api_def_prop_int_default(prop, 25);
+  api_def_prop_ui_text(prop,
+                       "Keyframe Interval",
+                       "Distance between key frames, also known as GOP size; "
+                       "influences file size and seekability");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "max_b_frames", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "max_b_frames");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0, 16);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "max_b_frames", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "max_b_frames");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0, 16);
+  api_def_prop_ui_text(
       prop,
       "Max B-Frames",
       "Maximum number of B-frames between non-B-frames; influences file size and seekability");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "use_max_b_frames", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FFMPEG_USE_MAX_B_FRAMES);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Use Max B-Frames", "Set a maximum number of B-frames");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "use_max_b_frames", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", FFMPEG_USE_MAX_B_FRAMES);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Use Max B-Frames", "Set a maximum number of B-frames");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "buffersize", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "rc_buffer_size");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0, 2000);
-  RNA_def_property_ui_text(prop, "Buffersize", "Rate control: buffer size (kb)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "buffersize", PROP_INT, PROP_NONE);
+  api_def_property_int_sdna(prop, NULL, "rc_buffer_size");
+  api_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_property_range(prop, 0, 2000);
+  api_def_property_ui_text(prop, "Buffersize", "Rate control: buffer size (kb)");
+  api_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = RNA_def_property(srna, "packetsize", PROP_INT, PROP_NONE);
   RNA_def_property_int_sdna(prop, NULL, "mux_packet_size");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0, 16384);
-  RNA_def_property_ui_text(prop, "Mux Packet Size", "Mux packet size (byte)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_property_range(prop, 0, 16384);
+  api_def_property_ui_text(prop, "Mux Packet Size", "Mux packet size (byte)");
+  api_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = RNA_def_property(srna, "constant_rate_factor", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "constant_rate_factor");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, ffmpeg_crf_items);
-  RNA_def_property_enum_default(prop, FFM_CRF_MEDIUM);
-  RNA_def_property_ui_text(
+  api_def_property_enum_sdna(prop, NULL, "constant_rate_factor");
+  api_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_property_enum_items(prop, ffmpeg_crf_items);
+  api_def_property_enum_default(prop, FFM_CRF_MEDIUM);
+  api_def_property_ui_text(
       prop,
       "Output Quality",
       "Constant Rate Factor (CRF); tradeoff between video quality and file size");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = RNA_def_property(srna, "ffmpeg_preset", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "ffmpeg_preset");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, ffmpeg_preset_items);
-  RNA_def_property_enum_default(prop, FFM_PRESET_GOOD);
-  RNA_def_property_ui_text(
+  api_def_property_enum_bitflag_sdna(prop, NULL, "ffmpeg_preset");
+  api_def_property_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_property_enum_items(prop, ffmpeg_preset_items);
+  api_def_property_enum_default(prop, FFM_PRESET_GOOD);
+  api_def_property_ui_text(
       prop, "Encoding Speed", "Tradeoff between encoding speed and compression ratio");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "use_autosplit", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FFMPEG_AUTOSPLIT_OUTPUT);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_ui_text(prop, "Autosplit Output", "Autosplit output at 2GB boundary");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "use_autosplit", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", FFMPEG_AUTOSPLIT_OUTPUT);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_ui_text(prop, "Autosplit Output", "Autosplit output at 2GB boundary");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "use_lossless_output", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flags", FFMPEG_LOSSLESS_OUTPUT);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_FFmpegSettings_lossless_output_set");
-  RNA_def_property_ui_text(prop, "Lossless Output", "Use lossless output for video streams");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "use_lossless_output", PROP_BOOL, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flags", FFMPEG_LOSSLESS_OUTPUT);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_bool_fns(prop, NULL, "rna_FFmpegSettings_lossless_output_set");
+  api_def_prop_ui_text(prop, "Lossless Output", "Use lossless output for video streams");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   /* FFMPEG Audio. */
-  prop = RNA_def_property(srna, "audio_codec", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "audio_codec");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, ffmpeg_audio_codec_items);
-  RNA_def_property_ui_text(prop, "Audio Codec", "FFmpeg audio codec to use");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "audio_codec", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_sdna(prop, NULL, "audio_codec");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, ffmpeg_audio_codec_items);
+  api_def_prop_ui_text(prop, "Audio Codec", "FFmpeg audio codec to use");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "audio_bitrate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "audio_bitrate");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 32, 384);
-  RNA_def_property_ui_text(prop, "Bitrate", "Audio bitrate (kb/s)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "audio_bitrate", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "audio_bitrate");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 32, 384);
+  api_def_prop_ui_text(prop, "Bitrate", "Audio bitrate (kb/s)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "audio_volume", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "audio_volume");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 0.0f, 1.0f);
-  RNA_def_property_ui_text(prop, "Volume", "Audio volume");
-  RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_SOUND);
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "audio_volume", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "audio_volume");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0.0f, 1.0f);
+  api_def_prop_ui_text(prop, "Volume", "Audio volume");
+  api_def_prop_translation_cxt(prop, LANG_CXT_ID_SOUND);
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 #  endif
 
   /* the following two "ffmpeg" settings are general audio settings */
-  prop = RNA_def_property(srna, "audio_mixrate", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "audio_mixrate");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 8000, 192000);
-  RNA_def_property_ui_text(prop, "Samplerate", "Audio samplerate(samples/s)");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "audio_mixrate", PROP_INT, PROP_NONE);
+  api_def_prop_int_sdna(prop, NULL, "audio_mixrate");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 8000, 192000);
+  api_def_prop_ui_text(prop, "Samplerate", "Audio samplerate(samples/s)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "audio_channels", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "audio_channels");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_enum_items(prop, audio_channel_items);
-  RNA_def_property_ui_text(prop, "Audio Channels", "Audio channel count");
+  prop = api_def_prop(sapi, "audio_channels", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "audio_channels");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, audio_channel_items);
+  api_def_prop_ui_text(prop, "Audio Channels", "Audio channel count");
 }
 
-static void rna_def_scene_render_data(BlenderRNA *brna)
+static void api_def_scene_render_data(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApiProp *prop;
 
   /* Bake */
-  static const EnumPropertyItem bake_mode_items[] = {
+  static const EnumPropItem bake_mode_items[] = {
       //{RE_BAKE_AO, "AO", 0, "Ambient Occlusion", "Bake ambient occlusion"},
       {RE_BAKE_NORMALS, "NORMALS", 0, "Normals", "Bake normals"},
       {RE_BAKE_DISPLACEMENT, "DISPLACEMENT", 0, "Displacement", "Bake displacement"},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem bake_margin_type_items[] = {
+  static const EnumPropItem bake_margin_type_items[] = {
       {R_BAKE_ADJACENT_FACES,
        "ADJACENT_FACES",
        0,
@@ -6202,7 +6202,7 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem pixel_size_items[] = {
+  static const EnumPropItem pixel_size_items[] = {
       {0, "AUTO", 0, "Automatic", "Automatic pixel size, depends on the user interface scale"},
       {1, "1", 0, "1x", "Render at full resolution"},
       {2, "2", 0, "2x", "Render at 50% resolution"},
@@ -6211,7 +6211,7 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem threads_mode_items[] = {
+  static const EnumPropItem threads_mode_items[] = {
       {0,
        "AUTO",
        0,
@@ -6221,12 +6221,12 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem engine_items[] = {
+  static const EnumPropItem engine_items[] = {
       {0, "BLENDER_EEVEE", 0, "Eevee", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem freestyle_thickness_items[] = {
+  static const EnumPropItem freestyle_thickness_items[] = {
       {R_LINE_THICKNESS_ABSOLUTE,
        "ABSOLUTE",
        0,
@@ -6241,7 +6241,7 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem views_format_items[] = {
+  static const EnumPropItem views_format_items[] = {
       {SCE_VIEWS_FORMAT_STEREO_3D,
        "STEREO_3D",
        0,
@@ -6255,13 +6255,13 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem hair_shape_type_items[] = {
+  static const EnumPropItem hair_shape_type_items[] = {
       {SCE_HAIR_SHAPE_STRAND, "STRAND", 0, "Strand", ""},
       {SCE_HAIR_SHAPE_STRIP, "STRIP", 0, "Strip", ""},
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem meta_input_items[] = {
+  static const EnumPropItem meta_input_items[] = {
       {0, "SCENE", 0, "Scene", "Use metadata from the current scene"},
       {R_STAMP_STRIPMETA,
        "STRIPS",
@@ -6271,40 +6271,40 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  rna_def_scene_ffmpeg_settings(brna);
+  api_def_scene_ffmpeg_settings(dapi);
 
-  srna = RNA_def_struct(brna, "RenderSettings", NULL);
-  RNA_def_struct_sdna(srna, "RenderData");
-  RNA_def_struct_nested(brna, srna, "Scene");
-  RNA_def_struct_path_func(srna, "rna_RenderSettings_path");
-  RNA_def_struct_ui_text(srna, "Render Data", "Rendering settings for a Scene data-block");
+  sapi = api_def_struct(dapi, "RenderSettings", NULL);
+  api_def_struct_stype(sapi, "RenderData");
+  api_def_struct_nested(dapi, sapi, "Scene");
+  api_def_struct_path_fn(sapi, "rna_RenderSettings_path");
+  api_def_struct_ui_text(sapi, "Render Data", "Rendering settings for a Scene data-block");
 
   /* Render Data */
-  prop = RNA_def_property(srna, "image_settings", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_sdna(prop, NULL, "im_format");
-  RNA_def_property_struct_type(prop, "ImageFormatSettings");
-  RNA_def_property_ui_text(prop, "Image Format", "");
+  prop = api_def_prop(sapi, "image_settings", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_ptr_stype(prop, NULL, "im_format");
+  api_def_prop_struct_type(prop, "ImageFormatSettings");
+  api_def_prop_ui_text(prop, "Image Format", "");
 
-  prop = RNA_def_property(srna, "resolution_x", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "xsch");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 4, 65536);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "resolution_x", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "xsch");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 4, 65536);
+  api_def_prop_ui_text(
       prop, "Resolution X", "Number of horizontal pixels in the rendered image");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "api_SceneCamera_update");
 
-  prop = RNA_def_property(srna, "resolution_y", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "ysch");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 4, 65536);
-  RNA_def_property_ui_text(
+  prop = api_def_property(srna, "resolution_y", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_sdna(prop, NULL, "ysch");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 4, 65536);
+  api_def_prop_ui_text(
       prop, "Resolution Y", "Number of vertical pixels in the rendered image");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
 
-  prop = RNA_def_property(srna, "resolution_percentage", PROP_INT, PROP_PERCENTAGE);
+  prop = api_def_property(srna, "resolution_percentage", PROP_INT, PROP_PERCENTAGE);
   RNA_def_property_int_sdna(prop, NULL, "size");
   RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
   RNA_def_property_range(prop, 1, SHRT_MAX);
@@ -7008,18 +7008,18 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 }
 
 /* scene.objects */
-static void rna_def_scene_objects(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_scene_objects(DuneApi *dapi, ApiProp *cprop)
 {
-  StructRNA *srna;
+  ApiStruct *sapi;
 
-  RNA_def_property_srna(cprop, "SceneObjects");
-  srna = RNA_def_struct(brna, "SceneObjects", NULL);
-  RNA_def_struct_sdna(srna, "Scene");
-  RNA_def_struct_ui_text(srna, "Scene Objects", "All of the scene objects");
+  api_def_prop_sapi(cprop, "SceneObjects");
+  sapi = api_def_struct(dapi, "SceneObjects", NULL);
+  api_def_struct_stype(sapi, "Scene");
+  api_def_struct_ui_text(sapi, "Scene Objects", "All of the scene objects");
 }
 
 /* scene.timeline_markers */
-static void rna_def_timeline_markers(BlenderRNA *brna, PropertyRNA *cprop)
+static void api_def_timeline_markers(DuneApi *dapi, ApiProp *cprop)
 {
   StructRNA *srna;
 
