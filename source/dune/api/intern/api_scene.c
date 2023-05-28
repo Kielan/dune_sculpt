@@ -91,7 +91,7 @@ static const EnumPropItem uv_sculpt_relaxation_items[] = {
 };
 #endif
 
-const EnumPropItem apu_enum_snap_source_items[] = {
+const EnumPropItem api_enum_snap_source_items[] = {
     {SCE_SNAP_SOURCE_CLOSEST, "CLOSEST", 0, "Closest", "Snap closest point onto target"},
     {SCE_SNAP_SOURCE_CENTER, "CENTER", 0, "Center", "Snap transformation center onto target"},
     {SCE_SNAP_SOURCE_MEDIAN, "MEDIAN", 0, "Median", "Snap median onto target"},
@@ -634,14 +634,14 @@ const EnumPropItem api_enum_transform_orientation_items[] = {
 
 #  include "lib_string_utils.h"
 
-#  include "type_anim_types.h"
-#  include "types_cachefile_types.h"
-#  include "type_color_types.h"
-#  include "types_mesh_types.h"
-#  include "types_node_types.h"
-#  include "types_object_types.h"
-#  include "types_text_types.h"
-#  include "types_workspace_types.h"
+#  include "type_anim.h"
+#  include "types_cachefile.h"
+#  include "type_color.h"
+#  include "types_mesh.h"
+#  include "types_node.h"
+#  include "types_object.h"
+#  include "types_text.h"
+#  include "types_workspace.h"
 
 #  include "api_access.h"
 
@@ -748,59 +748,59 @@ static void api_pen_mask_point_update(Cxt *UNUSED(C), ApiPtr *ptr)
   ts->pen_selectmode_sculpt &= ~PEN_SCULPT_MASK_SELECTMODE_SEGMENT;
 }
 
-static void rna_Gpencil_mask_stroke_update(Cxt *C, ApiPtr *ptr)
+static void api_pen_mask_stroke_update(Cxt *C, ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
-  ts->gpencil_selectmode_sculpt &= ~GP_SCULPT_MASK_SELECTMODE_POINT;
-  ts->gpencil_selectmode_sculpt &= ~GP_SCULPT_MASK_SELECTMODE_SEGMENT;
+  ts->pen_selectmode_sculpt &= ~PEN_SCULPT_MASK_SELECTMODE_POINT;
+  ts->pen_selectmode_sculpt &= ~PEN_SCULPT_MASK_SELECTMODE_SEGMENT;
 
-  rna_Gpencil_extend_selection(C, ptr);
+  api_pen_extend_selection(C, ptr);
 }
 
-static void rna_Gpencil_mask_segment_update(bContext *UNUSED(C), PointerRNA *ptr)
+static void api_pen_mask_segment_update(bContext *UNUSED(C), PointerRNA *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
-  ts->gpencil_selectmode_sculpt &= ~GP_SCULPT_MASK_SELECTMODE_POINT;
-  ts->gpencil_selectmode_sculpt &= ~GP_SCULPT_MASK_SELECTMODE_STROKE;
+  ts->pen_selectmode_sculpt &= ~PEN_SCULPT_MASK_SELECTMODE_POINT;
+  ts->pen_selectmode_sculpt &= ~PEN_SCULPT_MASK_SELECTMODE_STROKE;
 }
 
-static void rna_Gpencil_vertex_mask_point_update(bContext *C, PointerRNA *ptr)
+static void api_pen_vertex_mask_point_update(Cxt *C, ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
-  ts->gpencil_selectmode_vertex &= ~GP_VERTEX_MASK_SELECTMODE_STROKE;
-  ts->gpencil_selectmode_vertex &= ~GP_VERTEX_MASK_SELECTMODE_SEGMENT;
+  ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_STROKE;
+  ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_SEGMENT;
 
-  ED_gpencil_tag_scene_gpencil(CTX_data_scene(C));
+  ed_pen_tag_scene_pen(cxt_data_scene(C));
 }
 
-static void rna_Gpencil_vertex_mask_stroke_update(bContext *C, PointerRNA *ptr)
+static void api_pen_vertex_mask_stroke_update(Cxt *C, ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
-  ts->gpencil_selectmode_vertex &= ~GP_VERTEX_MASK_SELECTMODE_POINT;
-  ts->gpencil_selectmode_vertex &= ~GP_VERTEX_MASK_SELECTMODE_SEGMENT;
+  ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_POINT;
+  ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_SEGMENT;
 
-  rna_Gpencil_extend_selection(C, ptr);
+  api_pen_extend_selection(C, ptr);
 
-  ED_gpencil_tag_scene_gpencil(CTX_data_scene(C));
+  ed_pen_tag_scene_pen(cxt_data_scene(C));
 }
 
-static void rna_Gpencil_vertex_mask_segment_update(bContext *C, PointerRNA *ptr)
+static void api_pen_vertex_mask_segment_update(Cxt *C, ApiPtr *ptr)
 {
   ToolSettings *ts = (ToolSettings *)ptr->data;
 
-  ts->gpencil_selectmode_vertex &= ~GP_VERTEX_MASK_SELECTMODE_POINT;
-  ts->gpencil_selectmode_vertex &= ~GP_VERTEX_MASK_SELECTMODE_STROKE;
+  ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_POINT;
+  ts->pen_selectmode_vertex &= ~PEN_VERTEX_MASK_SELECTMODE_STROKE;
 
-  ED_gpencil_tag_scene_gpencil(CTX_data_scene(C));
+  ED_gpencil_tag_scene_gpencil(cxt_data_scene(C));
 }
 
 /* Read-only Iterator of all the scene objects. */
 
-static void rna_Scene_objects_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void rna_Scene_objects_begin(CollectionPropIter *iter, ApiPtr *ptr)
 {
   Scene *scene = (Scene *)ptr->data;
   iter->internal.custom = MEM_callocN(sizeof(BLI_Iterator), __func__);
