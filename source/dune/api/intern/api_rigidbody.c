@@ -1,25 +1,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
+#include "api_define.h"
+#include "api_enum_types.h"
 
-#include "rna_internal.h"
+#include "api_internal.h"
 
-#include "DNA_collection_types.h"
-#include "DNA_object_types.h"
-#include "DNA_rigidbody_types.h"
-#include "DNA_scene_types.h"
+#include "types_collection.h"
+#include "types_object.h"
+#include "types_rigidbody.h"
+#include "types_scene.h"
 
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
+#include "lib_math.h"
+#include "lib_utildefines.h"
 
-#include "DEG_depsgraph_build.h"
+#include "graph_build.h"
 
-#include "WM_types.h"
+#include "wm_types.h"
 
 /* roles of objects in RigidBody Sims */
-const EnumPropertyItem rna_enum_rigidbody_object_type_items[] = {
+const EnumPropItem api_enum_rigidbody_object_type_items[] = {
     {RBO_TYPE_ACTIVE,
      "ACTIVE",
      0,
@@ -34,7 +34,7 @@ const EnumPropertyItem rna_enum_rigidbody_object_type_items[] = {
 };
 
 /* collision shapes of objects in rigid body sim */
-const EnumPropertyItem rna_enum_rigidbody_object_shape_items[] = {
+const EnumPropItem api_enum_rigidbody_object_shape_items[] = {
     {RB_SHAPE_BOX,
      "BOX",
      ICON_MESH_CUBE,
@@ -98,23 +98,23 @@ const EnumPropertyItem rna_enum_rigidbody_constraint_type_items[] = {
 };
 
 /* bullet spring type */
-static const EnumPropertyItem rna_enum_rigidbody_constraint_spring_type_items[] = {
+static const EnumPropItem api_enum_rigidbody_constraint_spring_type_items[] = {
     {RBC_SPRING_TYPE1,
      "SPRING1",
      ICON_NONE,
-     "Blender 2.7",
+     "Dune 2.7",
      "Spring implementation used in blender 2.7. Damping is capped at 1.0"},
     {RBC_SPRING_TYPE2,
      "SPRING2",
      ICON_NONE,
-     "Blender 2.8",
+     "Dune 2.8",
      "New implementation available since 2.8"},
     {0, NULL, 0, NULL, NULL},
 };
 
-#ifndef RNA_RUNTIME
+#ifndef API_RUNTIME
 /* mesh source for collision shape creation */
-static const EnumPropertyItem rigidbody_mesh_source_items[] = {
+static const EnumPropItem rigidbody_mesh_source_items[] = {
     {RBO_MESH_BASE, "BASE", 0, "Base", "Base mesh"},
     {RBO_MESH_DEFORM, "DEFORM", 0, "Deform", "Deformations (shape keys, deform modifiers)"},
     {RBO_MESH_FINAL, "FINAL", 0, "Final", "All modifiers"},
@@ -122,26 +122,26 @@ static const EnumPropertyItem rigidbody_mesh_source_items[] = {
 };
 #endif
 
-#ifdef RNA_RUNTIME
+#ifdef API_RUNTIME
 
 #  ifdef WITH_BULLET
 #    include "RBI_api.h"
 #  endif
 
-#  include "BKE_rigidbody.h"
+#  include "dune_rigidbody.h"
 
-#  include "WM_api.h"
+#  include "wm_api.h"
 
 /* ******************************** */
 
-static void rna_RigidBodyWorld_reset(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void api_RigidBodyWorld_reset(Main *UNUSED(main), Scene *UNUSED(scene), ApiPtr *ptr)
 {
   RigidBodyWorld *rbw = (RigidBodyWorld *)ptr->data;
 
   BKE_rigidbody_cache_reset(rbw);
 }
 
-static char *rna_RigidBodyWorld_path(PointerRNA *UNUSED(ptr))
+static char *api_RigidBodyWorld_path(ApiPtr *UNUSED(ptr))
 {
   return BLI_strdup("rigidbody_world");
 }
