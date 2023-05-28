@@ -3008,15 +3008,15 @@ static void rna_def_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem annotation_stroke_placement_view3d_items[] = {
-      {GP_PROJECT_VIEWSPACE | GP_PROJECT_CURSOR,
+  static const EnumPropItem annotation_stroke_placement_view3d_items[] = {
+      {PEN_PROJECT_VIEWSPACE | PEN_PROJECT_CURSOR,
        "CURSOR",
        ICON_PIVOT_CURSOR,
        "3D Cursor",
        "Draw stroke at 3D cursor location"},
       /* Weird, GP_PROJECT_VIEWALIGN is inverted. */
       {0, "VIEW", ICON_RESTRICT_VIEW_ON, "View", "Stick stroke to the view"},
-      {GP_PROJECT_VIEWSPACE | GP_PROJECT_DEPTH_VIEW,
+      {PEN_PROJECT_VIEWSPACE | PEN_PROJECT_DEPTH_VIEW,
        "SURFACE",
        ICON_FACESEL,
        "Surface",
@@ -3024,7 +3024,7 @@ static void rna_def_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  static const EnumPropertyItem uv_sticky_mode_items[] = {
+  static const EnumPropItem uv_sticky_mode_items[] = {
       {SI_STICKY_DISABLE,
        "DISABLED",
        ICON_STICKY_UVS_DISABLE,
@@ -3043,70 +3043,70 @@ static void rna_def_tool_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = RNA_def_struct(brna, "ToolSettings", NULL);
-  RNA_def_struct_path_func(srna, "rna_ToolSettings_path");
-  RNA_def_struct_ui_text(srna, "Tool Settings", "");
+  srna = api_def_struct(dapi, "ToolSettings", NULL);
+  api_def_struct_path_fn(sapi, "api_ToolSettings_path");
+  api_def_struct_ui_text(sapi, "Tool Settings", "");
 
-  prop = RNA_def_property(srna, "sculpt", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "Sculpt");
-  RNA_def_property_ui_text(prop, "Sculpt", "");
+  prop = api_def_prop(sapi, "sculpt", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "Sculpt");
+  api_def_prop_ui_text(prop, "Sculpt", "");
 
-  prop = RNA_def_property(srna, "curves_sculpt", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "CurvesSculpt");
-  RNA_def_property_ui_text(prop, "Curves Sculpt", "");
+  prop = api_def_prop(sapi, "curves_sculpt", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "CurvesSculpt");
+  api_def_prop_ui_text(prop, "Curves Sculpt", "");
 
-  prop = RNA_def_property(srna, "use_auto_normalize", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "auto_normalize", 1);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_auto_normalize", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "auto_normalize", 1);
+  api_def_prop_ui_text(prop,
                            "Weight Paint Auto-Normalize",
                            "Ensure all bone-deforming vertex groups add up "
                            "to 1.0 while weight painting");
-  RNA_def_property_update(prop, 0, "rna_Scene_update_active_object_data");
+  api_def_prop_update(prop, 0, "api_scene_update_active_object_data");
 
-  prop = RNA_def_property(srna, "use_lock_relative", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "wpaint_lock_relative", 1);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_lock_relative", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "wpaint_lock_relative", 1);
+  api_def_prop_ui_text(prop,
                            "Weight Paint Lock-Relative",
                            "Display bone-deforming groups as if all locked deform groups "
                            "were deleted, and the remaining ones were re-normalized");
-  RNA_def_property_update(prop, 0, "rna_Scene_update_active_object_data");
+  api_def_prop_update(prop, 0, "api_Scene_update_active_object_data");
 
-  prop = RNA_def_property(srna, "use_multipaint", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_boolean_sdna(prop, NULL, "multipaint", 1);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "use_multipaint", PROP_BOOL, PROP_NONE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_bool_stype(prop, NULL, "multipaint", 1);
+  api_def_prop_ui_text(prop,
                            "Weight Paint Multi-Paint",
                            "Paint across the weights of all selected bones, "
                            "maintaining their relative influence");
-  RNA_def_property_update(prop, 0, "rna_Scene_update_active_object_data");
+  api_def_prop_update(prop, 0, "api_Scene_update_active_object_data");
 
-  prop = RNA_def_property(srna, "vertex_group_user", PROP_ENUM, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_enum_sdna(prop, NULL, "weightuser");
-  RNA_def_property_enum_items(prop, draw_groupuser_items);
-  RNA_def_property_ui_text(prop, "Mask Non-Group Vertices", "Display unweighted vertices");
-  RNA_def_property_update(prop, 0, "rna_Scene_update_active_object_data");
+  prop = api_def_prop(sapi, "vertex_group_user", PROP_ENUM, PROP_NONE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_enum_sdna(prop, NULL, "weightuser");
+  api_def_prop_enum_items(prop, draw_groupuser_items);
+  api_def_prop_ui_text(prop, "Mask Non-Group Vertices", "Display unweighted vertices");
+  api_def_prop_update(prop, 0, "api_Scene_update_active_object_data");
 
-  prop = RNA_def_property(srna, "vertex_group_subset", PROP_ENUM, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_enum_sdna(prop, NULL, "vgroupsubset");
-  RNA_def_property_enum_items(prop, vertex_group_select_items);
-  RNA_def_property_ui_text(prop, "Subset", "Filter Vertex groups for Display");
-  RNA_def_property_update(prop, 0, "rna_Scene_update_active_object_data");
+  prop = api_def_prop(sapi, "vertex_group_subset", PROP_ENUM, PROP_NONE);
+  api_def_prop_flag(prop, PROP_CXT_UPDATE);
+  api_def_prop_enum_stype(prop, NULL, "vgroupsubset");
+  api_def_prop_enum_items(prop, vertex_group_select_items);
+  api_def_prop_ui_text(prop, "Subset", "Filter Vertex groups for Display");
+  api_def_prop_update(prop, 0, "api_Scene_update_active_object_data");
 
-  prop = RNA_def_property(srna, "vertex_paint", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "vpaint");
-  RNA_def_property_ui_text(prop, "Vertex Paint", "");
+  prop = api_def_prop(sapi, "vertex_paint", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "vpaint");
+  api_def_prop_ui_text(prop, "Vertex Paint", "");
 
-  prop = RNA_def_property(srna, "weight_paint", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "wpaint");
-  RNA_def_property_ui_text(prop, "Weight Paint", "");
+  prop = api_def_prop(sapi, "weight_paint", PROP_PTR, PROP_NONE);
+  api_def_prop_pointer_stype(prop, NULL, "wpaint");
+  api_def_prop_ui_text(prop, "Weight Paint", "");
 
-  prop = RNA_def_property(srna, "image_paint", PROP_POINTER, PROP_NONE);
-  RNA_def_property_pointer_sdna(prop, NULL, "imapaint");
-  RNA_def_property_ui_text(prop, "Image Paint", "");
+  prop = api_def_prop(sapi, "image_paint", PROP_PTR, PROP_NONE);
+  api_def_prop_ptr_stype(prop, NULL, "imapaint");
+  api_def_prop_ui_text(prop, "Image Paint", "");
 
   prop = RNA_def_property(srna, "paint_mode", PROP_POINTER, PROP_NONE);
   RNA_def_property_pointer_sdna(prop, NULL, "paint_mode");
@@ -3602,47 +3602,47 @@ static void rna_def_tool_settings(BlenderRNA *brna)
   RNA_def_property_ui_text(
       prop, "Selection Mask", "Only paint selected stroke points between other strokes");
   RNA_def_property_ui_icon(prop, ICON_GP_SELECT_BETWEEN_STROKES, 0);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_flag(prop, PROP_CONTEXT_UPDATE);
-  RNA_def_property_update(
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_flag(prop, PROP_CONTEXT_UPDATE);
+  api_def_prop_update(
       prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_Gpencil_vertex_mask_segment_update");
 
   /* Annotations - 2D Views Stroke Placement */
   prop = RNA_def_property(srna, "annotation_stroke_placement_view2d", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "gpencil_v2d_align");
-  RNA_def_property_enum_items(prop, annotation_stroke_placement_view2d_items);
-  RNA_def_property_ui_text(prop, "Stroke Placement (2D View)", "");
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  api_def_property_enum_bitflag_sdna(prop, NULL, "gpencil_v2d_align");
+  api_def_prop_enum_items(prop, annotation_stroke_placement_view2d_items);
+  api_def_prop_ui_text(prop, "Stroke Placement (2D View)", "");
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
   /* Annotations - 3D View Stroke Placement */
   /* XXX: Do we need to decouple the stroke_endpoints setting too? */
-  prop = RNA_def_property(srna, "annotation_stroke_placement_view3d", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "annotate_v3d_align");
-  RNA_def_property_enum_items(prop, annotation_stroke_placement_view3d_items);
-  RNA_def_property_enum_default(prop, GP_PROJECT_VIEWSPACE | GP_PROJECT_CURSOR);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "annotation_stroke_placement_view3d", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "annotate_v3d_align");
+  api_def_prop_enum_items(prop, annotation_stroke_placement_view3d_items);
+  api_def_prop_enum_default(prop, PEN_PROJECT_VIEWSPACE | GP_PROJECT_CURSOR);
+  api_def_prop_ui_text(prop,
                            "Annotation Stroke Placement (3D View)",
                            "How annotation strokes are orientated in 3D space");
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, NULL);
+  api_def_prop_update(prop, NC_PEN | ND_DATA, NULL);
 
   /* Annotations - Stroke Thickness */
-  prop = RNA_def_property(srna, "annotation_thickness", PROP_INT, PROP_PIXEL);
-  RNA_def_property_int_sdna(prop, NULL, "annotate_thickness");
-  RNA_def_property_range(prop, 1, 10);
-  RNA_def_property_ui_text(prop, "Annotation Stroke Thickness", "Thickness of annotation strokes");
-  RNA_def_property_update(prop, NC_GPENCIL | ND_DATA, "rna_GPencil_update");
+  prop = api_def_prop(sapi, "annotation_thickness", PROP_INT, PROP_PIXEL);
+  api_def_prop_int_stype(prop, NULL, "annotate_thickness");
+  api_def_prop_range(prop, 1, 10);
+  api_def_prop_ui_text(prop, "Annotation Stroke Thickness", "Thickness of annotation strokes");
+  api_def_prop_update(prop, NC_PEN | ND_DATA, "api_pen_update");
 
   /* Auto Keying */
-  prop = RNA_def_property(srna, "use_keyframe_insert_auto", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "autokey_mode", AUTOKEY_ON);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_keyframe_insert_auto", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "autokey_mode", AUTOKEY_ON);
+  api_def_property_ui_text(
       prop, "Auto Keying", "Automatic keyframe insertion for Objects, Bones and Masks");
-  RNA_def_property_ui_icon(prop, ICON_REC, 0);
+  api_def_property_ui_icon(prop, ICON_REC, 0);
 
-  prop = RNA_def_property(srna, "auto_keying_mode", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_bitflag_sdna(prop, NULL, "autokey_mode");
-  RNA_def_property_enum_items(prop, auto_key_items);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(sapi, "auto_keying_mode", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_bitflag_stype(prop, NULL, "autokey_mode");
+  api_def_prop_enum_items(prop, auto_key_items);
+  api_def_prop_ui_text(prop,
                            "Auto-Keying Mode",
                            "Mode of automatic keyframe insertion for Objects, Bones and Masks");
 
