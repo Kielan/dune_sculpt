@@ -1149,7 +1149,7 @@ static char *api_RenderSettings_path(const PointerRNA *UNUSED(ptr))
   return lib_strdup("render");
 }
 
-static char *api_BakeSettings_path(const PointerRNA *UNUSED(ptr))
+static char *api_BakeSettings_path(const ApiPtr *UNUSED(ptr))
 {
   return lib_strdup("render.bake");
 }
@@ -1180,7 +1180,7 @@ static char *api_ImageFormatSettings_path(const ApiPtr *ptr)
           if (&((NodeImageMultiFile *)node->storage)->format == imf) {
             char node_name_esc[sizeof(node->name) * 2];
             lib_str_escape(node_name_esc, node->name, sizeof(node_name_esc));
-            return lib_sprintfN("nodes[\"%s\"].format", node_name_esc);
+            return lib_sprintfn("nodes[\"%s\"].format", node_name_esc);
           }
           else {
             NodeSocket *sock;
@@ -1189,35 +1189,35 @@ static char *api_ImageFormatSettings_path(const ApiPtr *ptr)
               NodeImageMultiFileSocket *sockdata = sock->storage;
               if (&sockdata->format == imf) {
                 char node_name_esc[sizeof(node->name) * 2];
-                BLI_str_escape(node_name_esc, node->name, sizeof(node_name_esc));
+                lib_str_escape(node_name_esc, node->name, sizeof(node_name_esc));
 
                 char socketdata_path_esc[sizeof(sockdata->path) * 2];
-                BLI_str_escape(socketdata_path_esc, sockdata->path, sizeof(socketdata_path_esc));
+                lib_str_escape(socketdata_path_esc, sockdata->path, sizeof(socketdata_path_esc));
 
-                return BLI_sprintfN(
+                return lib_sprintfN(
                     "nodes[\"%s\"].file_slots[\"%s\"].format", node_name_esc, socketdata_path_esc);
               }
             }
           }
         }
       }
-      return BLI_strdup("..");
+      return lib_strdup("..");
     }
     default:
-      return BLI_strdup("..");
+      return lib_strdup("..");
   }
 }
 
-static int rna_RenderSettings_threads_get(PointerRNA *ptr)
+static int api_RenderSettings_threads_get(PointerRNA *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
-  return BKE_render_num_threads(rd);
+  return dune_render_num_threads(rd);
 }
 
-static int rna_RenderSettings_threads_mode_get(PointerRNA *ptr)
+static int api_RenderSettings_threads_mode_get(ApiPtr *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
-  int override = BLI_system_num_threads_override_get();
+  int override = lib_system_num_threads_override_get();
 
   if (override > 0) {
     return R_FIXED_THREADS;
@@ -1227,13 +1227,13 @@ static int rna_RenderSettings_threads_mode_get(PointerRNA *ptr)
   }
 }
 
-static bool rna_RenderSettings_is_movie_format_get(PointerRNA *ptr)
+static bool api_RenderSettings_is_movie_format_get(ApiPtr *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
-  return BKE_imtype_is_movie(rd->im_format.imtype);
+  return dune_imtype_is_movie(rd->im_format.imtype);
 }
 
-static void rna_ImageFormatSettings_file_format_set(PointerRNA *ptr, int value)
+static void api_ImageFormatSettings_file_format_set(ApiPtr *ptr, int value)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
   ID *id = ptr->owner_id;
@@ -1241,7 +1241,7 @@ static void rna_ImageFormatSettings_file_format_set(PointerRNA *ptr, int value)
 
   const bool is_render = (id && GS(id->name) == ID_SCE);
   /* see note below on why this is */
-  const char chan_flag = BKE_imtype_valid_channels(imf->imtype, true) |
+  const char chan_flag = dune_imtype_valid_channels(imf->imtype, true) |
                          (is_render ? IMA_CHAN_FLAG_BW : 0);
 
   /* ensure depth and color settings match */
@@ -1254,7 +1254,7 @@ static void rna_ImageFormatSettings_file_format_set(PointerRNA *ptr, int value)
 
   /* ensure usable depth */
   {
-    const int depth_ok = BKE_imtype_valid_depths(imf->imtype);
+    const int depth_ok = dune_imtype_valid_depths(imf->imtype);
     if ((imf->depth & depth_ok) == 0) {
       /* set first available depth */
       char depth_ls[] = {
@@ -1282,7 +1282,7 @@ static void rna_ImageFormatSettings_file_format_set(PointerRNA *ptr, int value)
     Scene *scene = (Scene *)ptr->owner_id;
     RenderData *rd = &scene->r;
 #  ifdef WITH_FFMPEG
-    BKE_ffmpeg_image_type_verify(rd, imf);
+    dune_ffmpeg_image_type_verify(rd, imf);
 #  endif
     (void)rd;
   }
@@ -1302,20 +1302,20 @@ static const EnumPropertyItem *rna_ImageFormatSettings_file_format_itemf(bContex
   }
 }
 
-static const EnumPropertyItem *rna_ImageFormatSettings_color_mode_itemf(bContext *UNUSED(C),
-                                                                        PointerRNA *ptr,
-                                                                        PropertyRNA *UNUSED(prop),
-                                                                        bool *r_free)
+static const EnumPropItem *api_ImageFormatSettings_color_mode_itemf(Cxt *UNUSED(C),
+                                                                    ApiPtr *ptr,
+                                                                    ApiProp *UNUSED(prop),
+                                                                    bool *r_free)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   const bool is_render = (id && GS(id->name) == ID_SCE);
 
-  /* NOTE(@ideasman42): we need to act differently for render
+  /* NOTE: we need to act differently for render
    * where 'BW' will force grayscale even if the output format writes
    * as RGBA, this is age old blender convention and not sure how useful
    * it really is but keep it for now. */
-  char chan_flag = BKE_imtype_valid_channels(imf->imtype, true) |
+  char chan_flag = dune_imtype_valid_channels(imf->imtype, true) |
                    (is_render ? IMA_CHAN_FLAG_BW : 0);
 
 #  ifdef WITH_FFMPEG
@@ -1327,56 +1327,56 @@ static const EnumPropertyItem *rna_ImageFormatSettings_color_mode_itemf(bContext
     Scene *scene = (Scene *)ptr->owner_id;
     RenderData *rd = &scene->r;
 
-    if (BKE_ffmpeg_alpha_channel_is_supported(rd)) {
+    if (dune_ffmpeg_alpha_channel_is_supported(rd)) {
       chan_flag |= IMA_CHAN_FLAG_RGBA;
     }
   }
 #  endif
 
   if (chan_flag == (IMA_CHAN_FLAG_BW | IMA_CHAN_FLAG_RGB | IMA_CHAN_FLAG_RGBA)) {
-    return rna_enum_image_color_mode_items;
+    return api_enum_image_color_mode_items;
   }
   else {
     int totitem = 0;
-    EnumPropertyItem *item = NULL;
+    EnumPropItem *item = NULL;
 
     if (chan_flag & IMA_CHAN_FLAG_BW) {
-      RNA_enum_item_add(&item, &totitem, &IMAGE_COLOR_MODE_BW);
+      api_enum_item_add(&item, &totitem, &IMAGE_COLOR_MODE_BW);
     }
     if (chan_flag & IMA_CHAN_FLAG_RGB) {
-      RNA_enum_item_add(&item, &totitem, &IMAGE_COLOR_MODE_RGB);
+      api_enum_item_add(&item, &totitem, &IMAGE_COLOR_MODE_RGB);
     }
     if (chan_flag & IMA_CHAN_FLAG_RGBA) {
-      RNA_enum_item_add(&item, &totitem, &IMAGE_COLOR_MODE_RGBA);
+      api_enum_item_add(&item, &totitem, &IMAGE_COLOR_MODE_RGBA);
     }
 
-    RNA_enum_item_end(&item, &totitem);
+    api_enum_item_end(&item, &totitem);
     *r_free = true;
 
     return item;
   }
 }
 
-static const EnumPropertyItem *rna_ImageFormatSettings_color_depth_itemf(bContext *UNUSED(C),
-                                                                         PointerRNA *ptr,
-                                                                         PropertyRNA *UNUSED(prop),
-                                                                         bool *r_free)
+static const EnumPropItem *api_ImageFormatSettings_color_depth_itemf(Cxt *UNUSED(C),
+                                                                     ApiPtr *ptr,
+                                                                     ApiProp *UNUSED(prop),
+                                                                     bool *r_free)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
 
   if (imf == NULL) {
-    return rna_enum_image_color_depth_items;
+    return api_enum_image_color_depth_items;
   }
   else {
-    const int depth_ok = BKE_imtype_valid_depths(imf->imtype);
+    const int depth_ok = dune_imtype_valid_depths(imf->imtype);
     const int is_float = ELEM(
         imf->imtype, R_IMF_IMTYPE_RADHDR, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER);
 
-    const EnumPropertyItem *item_8bit = &rna_enum_image_color_depth_items[0];
-    const EnumPropertyItem *item_10bit = &rna_enum_image_color_depth_items[1];
-    const EnumPropertyItem *item_12bit = &rna_enum_image_color_depth_items[2];
-    const EnumPropertyItem *item_16bit = &rna_enum_image_color_depth_items[3];
-    const EnumPropertyItem *item_32bit = &rna_enum_image_color_depth_items[4];
+    const EnumPropItem *item_8bit = &api_enum_image_color_depth_items[0];
+    const EnumPropItem *item_10bit = &api_enum_image_color_depth_items[1];
+    const EnumPropItem *item_12bit = &api_enum_image_color_depth_items[2];
+    const EnumPropItem *item_16bit = &api_enum_image_color_depth_items[3];
+    const EnumPropItem *item_32bit = &api_enum_image_color_depth_items[4];
 
     int totitem = 0;
     EnumPropertyItem *item = NULL;
