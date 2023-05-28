@@ -1288,14 +1288,14 @@ static void api_ImageFormatSettings_file_format_set(ApiPtr *ptr, int value)
   }
 }
 
-static const EnumPropertyItem *rna_ImageFormatSettings_file_format_itemf(bContext *UNUSED(C),
-                                                                         PointerRNA *ptr,
-                                                                         PropertyRNA *UNUSED(prop),
-                                                                         bool *UNUSED(r_free))
+static const EnumPropItem *api_ImageFormatSettings_file_format_itemf(Cxt *UNUSED(C),
+                                                                     ApiPtr *ptr,
+                                                                     ApiProp *UNUSED(prop),
+                                                                     bool *UNUSED(r_free))
 {
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   if (id && GS(id->name) == ID_SCE) {
-    return rna_enum_image_type_items;
+    return api_enum_image_type_items;
   }
   else {
     return image_only_type_items;
@@ -1475,13 +1475,13 @@ static const EnumPropItem *api_ImageFormatSettings_exr_codec_itemf(Cxt *UNUSED(C
 
 #  endif
 
-static bool api_ImageFormatSettings_has_linear_colorspace_get(PointerRNA *ptr)
+static bool api_ImageFormatSettings_has_linear_colorspace_get(ApiPtr *ptr)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
   return dune_imtype_requires_linear_float(imf->imtype);
 }
 
-static void rna_ImageFormatSettings_color_management_set(PointerRNA *ptr, int value)
+static void api_ImageFormatSettings_color_management_set(ApiPtr *ptr, int value)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
 
@@ -1490,36 +1490,36 @@ static void rna_ImageFormatSettings_color_management_set(PointerRNA *ptr, int va
 
     /* Copy from scene when enabling override. */
     if (imf->color_management == R_IMF_COLOR_MANAGEMENT_OVERRIDE) {
-      ID *owner_id = ptr->owner_id;
+      Id *owner_id = ptr->owner_id;
       if (owner_id && GS(owner_id->name) == ID_NT) {
         /* For compositing nodes, find the corresponding scene. */
-        owner_id = BKE_id_owner_get(owner_id);
+        owner_id = dune_id_owner_get(owner_id);
       }
       if (owner_id && GS(owner_id->name) == ID_SCE) {
-        BKE_image_format_color_management_copy_from_scene(imf, (Scene *)owner_id);
+        dune_image_format_color_management_copy_from_scene(imf, (Scene *)owner_id);
       }
     }
   }
 }
 
-static int rna_SceneRender_file_ext_length(PointerRNA *ptr)
+static int api_SceneRender_file_ext_length(ApiPtr *ptr)
 {
   const RenderData *rd = (RenderData *)ptr->data;
-  const char *ext_array[BKE_IMAGE_PATH_EXT_MAX];
-  int ext_num = BKE_image_path_ext_from_imformat(&rd->im_format, ext_array);
+  const char *ext_array[DUNE_IMAGE_PATH_EXT_MAX];
+  int ext_num = dune_image_path_ext_from_imformat(&rd->im_format, ext_array);
   return ext_num ? strlen(ext_array[0]) : 0;
 }
 
-static void rna_SceneRender_file_ext_get(PointerRNA *ptr, char *value)
+static void api_SceneRender_file_ext_get(ApiPtr *ptr, char *value)
 {
   const RenderData *rd = (RenderData *)ptr->data;
-  const char *ext_array[BKE_IMAGE_PATH_EXT_MAX];
-  int ext_num = BKE_image_path_ext_from_imformat(&rd->im_format, ext_array);
+  const char *ext_array[DUNE_IMAGE_PATH_EXT_MAX];
+  int ext_num = dune_image_path_ext_from_imformat(&rd->im_format, ext_array);
   strcpy(value, ext_num ? ext_array[0] : "");
 }
 
 #  ifdef WITH_FFMPEG
-static void rna_FFmpegSettings_lossless_output_set(PointerRNA *ptr, bool value)
+static void api_FFmpegSettings_lossless_output_set(ApiPtr *ptr, bool value)
 {
   Scene *scene = (Scene *)ptr->owner_id;
   RenderData *rd = &scene->r;
@@ -1533,48 +1533,48 @@ static void rna_FFmpegSettings_lossless_output_set(PointerRNA *ptr, bool value)
 }
 #  endif
 
-static int rna_RenderSettings_active_view_index_get(PointerRNA *ptr)
+static int api_RenderSettings_active_view_index_get(ApiPtr *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
   return rd->actview;
 }
 
-static void rna_RenderSettings_active_view_index_set(PointerRNA *ptr, int value)
+static void api_RenderSettings_active_view_index_set(ApiPtr *ptr, int value)
 {
   RenderData *rd = (RenderData *)ptr->data;
   rd->actview = value;
 }
 
-static void rna_RenderSettings_active_view_index_range(
-    PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
+static void api_RenderSettings_active_view_index_range(
+    ApiPtr *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
   RenderData *rd = (RenderData *)ptr->data;
 
   *min = 0;
-  *max = max_ii(0, BLI_listbase_count(&rd->views) - 1);
+  *max = max_ii(0, lib_list_count(&rd->views) - 1);
 }
 
-static PointerRNA rna_RenderSettings_active_view_get(PointerRNA *ptr)
+static ApiPtr api_RenderSettings_active_view_get(ApiPtr *ptr)
 {
   RenderData *rd = (RenderData *)ptr->data;
-  SceneRenderView *srv = BLI_findlink(&rd->views, rd->actview);
+  SceneRenderView *srv = lib_findlink(&rd->views, rd->actview);
 
-  return rna_pointer_inherit_refine(ptr, &RNA_SceneRenderView, srv);
+  return api_ptr_inherit_refine(ptr, &Api_SceneRenderView, srv);
 }
 
-static void rna_RenderSettings_active_view_set(PointerRNA *ptr,
-                                               PointerRNA value,
+static void api_RenderSettings_active_view_set(ApiPtr *ptr,
+                                               ApiPtr value,
                                                struct ReportList *UNUSED(reports))
 {
   RenderData *rd = (RenderData *)ptr->data;
   SceneRenderView *srv = (SceneRenderView *)value.data;
-  const int index = BLI_findindex(&rd->views, srv);
+  const int index = lib_findindex(&rd->views, srv);
   if (index != -1) {
     rd->actview = index;
   }
 }
 
-static SceneRenderView *rna_RenderView_new(ID *id, RenderData *UNUSED(rd), const char *name)
+static SceneRenderView *api_RenderView_new(ID *id, RenderData *UNUSED(rd), const char *name)
 {
   Scene *scene = (Scene *)id;
   SceneRenderView *srv = BKE_scene_add_render_view(scene, name);
