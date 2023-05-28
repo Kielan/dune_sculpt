@@ -1236,7 +1236,7 @@ static bool api_RenderSettings_is_movie_format_get(ApiPtr *ptr)
 static void api_ImageFormatSettings_file_format_set(ApiPtr *ptr, int value)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
-  ID *id = ptr->owner_id;
+  Id *id = ptr->owner_id;
   imf->imtype = value;
 
   const bool is_render = (id && GS(id->name) == ID_SCE);
@@ -1379,29 +1379,29 @@ static const EnumPropItem *api_ImageFormatSettings_color_depth_itemf(Cxt *UNUSED
     const EnumPropItem *item_32bit = &api_enum_image_color_depth_items[4];
 
     int totitem = 0;
-    EnumPropertyItem *item = NULL;
-    EnumPropertyItem tmp = {0, "", 0, "", ""};
+    EnumPropItem *item = NULL;
+    EnumPropItem tmp = {0, "", 0, "", ""};
 
     if (depth_ok & R_IMF_CHAN_DEPTH_8) {
-      RNA_enum_item_add(&item, &totitem, item_8bit);
+      api_enum_item_add(&item, &totitem, item_8bit);
     }
 
     if (depth_ok & R_IMF_CHAN_DEPTH_10) {
-      RNA_enum_item_add(&item, &totitem, item_10bit);
+      api_enum_item_add(&item, &totitem, item_10bit);
     }
 
     if (depth_ok & R_IMF_CHAN_DEPTH_12) {
-      RNA_enum_item_add(&item, &totitem, item_12bit);
+      api_enum_item_add(&item, &totitem, item_12bit);
     }
 
     if (depth_ok & R_IMF_CHAN_DEPTH_16) {
       if (is_float) {
         tmp = *item_16bit;
         tmp.name = "Float (Half)";
-        RNA_enum_item_add(&item, &totitem, &tmp);
+        api_enum_item_add(&item, &totitem, &tmp);
       }
       else {
-        RNA_enum_item_add(&item, &totitem, item_16bit);
+        api_enum_item_add(&item, &totitem, item_16bit);
       }
     }
 
@@ -1409,50 +1409,50 @@ static const EnumPropItem *api_ImageFormatSettings_color_depth_itemf(Cxt *UNUSED
       if (is_float) {
         tmp = *item_32bit;
         tmp.name = "Float (Full)";
-        RNA_enum_item_add(&item, &totitem, &tmp);
+        api_enum_item_add(&item, &totitem, &tmp);
       }
       else {
-        RNA_enum_item_add(&item, &totitem, item_32bit);
+        api_enum_item_add(&item, &totitem, item_32bit);
       }
     }
 
-    RNA_enum_item_end(&item, &totitem);
+    api_enum_item_end(&item, &totitem);
     *r_free = true;
 
     return item;
   }
 }
 
-static const EnumPropertyItem *rna_ImageFormatSettings_views_format_itemf(
-    bContext *UNUSED(C), PointerRNA *ptr, PropertyRNA *UNUSED(prop), bool *UNUSED(r_free))
+static const EnumPropItem *api_ImageFormatSettings_views_format_itemf(
+    Cxt *UNUSED(C), ApiPtr *ptr, ApiProp *UNUSED(prop), bool *UNUSED(r_free))
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
 
   if (imf == NULL) {
-    return rna_enum_views_format_items;
+    return api_enum_views_format_items;
   }
   else if (imf->imtype == R_IMF_IMTYPE_OPENEXR) {
-    return rna_enum_views_format_multiview_items;
+    return api_enum_views_format_multiview_items;
   }
   else if (imf->imtype == R_IMF_IMTYPE_MULTILAYER) {
-    return rna_enum_views_format_multilayer_items;
+    return api_enum_views_format_multilayer_items;
   }
   else {
-    return rna_enum_views_format_items;
+    return api_enum_views_format_items;
   }
 }
 
 #  ifdef WITH_OPENEXR
 /* OpenEXR */
 
-static const EnumPropertyItem *rna_ImageFormatSettings_exr_codec_itemf(bContext *UNUSED(C),
-                                                                       PointerRNA *ptr,
-                                                                       PropertyRNA *UNUSED(prop),
-                                                                       bool *r_free)
+static const EnumPropItem *api_ImageFormatSettings_exr_codec_itemf(Cxt *UNUSED(C),
+                                                                   ApiPtr *ptr,
+                                                                   ApiProp *UNUSED(prop),
+                                                                   bool *r_free)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
 
-  EnumPropertyItem *item = NULL;
+  EnumPropItem *item = NULL;
   int i = 1, totitem = 0;
 
   if (imf->depth == 16) {
@@ -1464,10 +1464,10 @@ static const EnumPropertyItem *rna_ImageFormatSettings_exr_codec_itemf(bContext 
       continue; /* B44 and B44A are not defined for 32 bit floats */
     }
 
-    RNA_enum_item_add(&item, &totitem, &rna_enum_exr_codec_items[i]);
+    api_enum_item_add(&item, &totitem, &api_enum_exr_codec_items[i]);
   }
 
-  RNA_enum_item_end(&item, &totitem);
+  api_enum_item_end(&item, &totitem);
   *r_free = true;
 
   return item;
@@ -1475,10 +1475,10 @@ static const EnumPropertyItem *rna_ImageFormatSettings_exr_codec_itemf(bContext 
 
 #  endif
 
-static bool rna_ImageFormatSettings_has_linear_colorspace_get(PointerRNA *ptr)
+static bool api_ImageFormatSettings_has_linear_colorspace_get(PointerRNA *ptr)
 {
   ImageFormatData *imf = (ImageFormatData *)ptr->data;
-  return BKE_imtype_requires_linear_float(imf->imtype);
+  return dune_imtype_requires_linear_float(imf->imtype);
 }
 
 static void rna_ImageFormatSettings_color_management_set(PointerRNA *ptr, int value)
