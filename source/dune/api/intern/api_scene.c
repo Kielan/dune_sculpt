@@ -6020,14 +6020,14 @@ static void rna_def_scene_ffmpeg_settings(BlenderRNA *brna)
       {0, NULL, 0, NULL, NULL},
   };
 
-  srna = api_def_struct(dapi, "FFmpegSettings", NULL);
+  sapi = api_def_struct(dapi, "FFmpegSettings", NULL);
   api_def_struct_stype(sapi, "FFMpegCodecData");
   api_def_struct_path_func(sapi, "api_FFmpegSettings_path");
   api_def_struct_ui_text(sapi, "FFmpeg Settings", "FFmpeg related settings for the scene");
 
 #  ifdef WITH_FFMPEG
   prop = api_def_prop(sapi, "format", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_bitflag_sdna(prop, NULL, "type");
+  api_def_prop_enum_bitflag_stype(prop, NULL, "type");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   aou_def_prop_enum_items(prop, ffmpeg_format_items);
   api_def_prop_enum_default(prop, FFMPEG_MKV);
@@ -6094,25 +6094,25 @@ static void rna_def_scene_ffmpeg_settings(BlenderRNA *brna)
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
   prop = api_def_prop(sapi, "buffersize", PROP_INT, PROP_NONE);
-  api_def_property_int_sdna(prop, NULL, "rc_buffer_size");
-  api_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_property_range(prop, 0, 2000);
-  api_def_property_ui_text(prop, "Buffersize", "Rate control: buffer size (kb)");
-  api_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  api_def_prop_int_stype(prop, NULL, "rc_buffer_size");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0, 2000);
+  api_def_prop_ui_text(prop, "Buffersize", "Rate control: buffer size (kb)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "packetsize", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "mux_packet_size");
-  api_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_property_range(prop, 0, 16384);
-  api_def_property_ui_text(prop, "Mux Packet Size", "Mux packet size (byte)");
-  api_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "packetsize", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "mux_packet_size");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 0, 16384);
+  api_def_prop_ui_text(prop, "Mux Packet Size", "Mux packet size (byte)");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "constant_rate_factor", PROP_ENUM, PROP_NONE);
-  api_def_property_enum_sdna(prop, NULL, "constant_rate_factor");
-  api_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  api_def_property_enum_items(prop, ffmpeg_crf_items);
-  api_def_property_enum_default(prop, FFM_CRF_MEDIUM);
-  api_def_property_ui_text(
+  prop = api_def_prop(sapi, "constant_rate_factor", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_stype(prop, NULL, "constant_rate_factor");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_enum_items(prop, ffmpeg_crf_items);
+  api_def_prop_enum_default(prop, FFM_CRF_MEDIUM);
+  api_def_prop_ui_text(
       prop,
       "Output Quality",
       "Constant Rate Factor (CRF); tradeoff between video quality and file size");
@@ -6276,7 +6276,7 @@ static void api_def_scene_render_data(DuneApi *dapi)
   sapi = api_def_struct(dapi, "RenderSettings", NULL);
   api_def_struct_stype(sapi, "RenderData");
   api_def_struct_nested(dapi, sapi, "Scene");
-  api_def_struct_path_fn(sapi, "rna_RenderSettings_path");
+  api_def_struct_path_fn(sapi, "api_RenderSettings_path");
   api_def_struct_ui_text(sapi, "Render Data", "Rendering settings for a Scene data-block");
 
   /* Render Data */
@@ -6304,74 +6304,74 @@ static void api_def_scene_render_data(DuneApi *dapi)
       prop, "Resolution Y", "Number of vertical pixels in the rendered image");
   api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
 
-  prop = api_def_property(srna, "resolution_percentage", PROP_INT, PROP_PERCENTAGE);
-  RNA_def_property_int_sdna(prop, NULL, "size");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_range(prop, 1, 100, 10, 1);
-  RNA_def_property_ui_text(prop, "Resolution %", "Percentage scale for render resolution");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneSequencer_update");
+  prop = api_def_prop(sapi, "resolution_percentage", PROP_INT, PROP_PERCENTAGE);
+  api_def_prop_int_stype(prop, NULL, "size");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_range(prop, 1, 100, 10, 1);
+  api_def_prop_ui_text(prop, "Resolution %", "Percentage scale for render resolution");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneSequencer_update");
 
-  prop = RNA_def_property(srna, "preview_pixel_size", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "preview_pixel_size");
-  RNA_def_property_enum_items(prop, pixel_size_items);
-  RNA_def_property_ui_text(prop, "Pixel Size", "Pixel size for viewport rendering");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+  prop = api_def_prop(sapi, "preview_pixel_size", PROP_ENUM, PROP_NONE);
+  api_def_prop_enum_sdna(prop, NULL, "preview_pixel_size");
+  api_def_prop_enum_items(prop, pixel_size_items);
+  api_def_prop_ui_text(prop, "Pixel Size", "Pixel size for viewport rendering");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-  prop = RNA_def_property(srna, "pixel_aspect_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "xasp");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1.0f, 200.0f);
-  RNA_def_property_ui_text(prop,
+  prop = api_def_prop(srna, "pixel_aspect_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "xasp");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1.0f, 200.0f);
+  api_def_prop_ui_text(prop,
                            "Pixel Aspect X",
                            "Horizontal aspect ratio - for anamorphic or non-square pixel output");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
 
-  prop = RNA_def_property(srna, "pixel_aspect_y", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "yasp");
-  RNA_def_property_flag(prop, PROP_PROPORTIONAL);
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1.0f, 200.0f);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "pixel_aspect_y", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "yasp");
+  api_def_prop_flag(prop, PROP_PROPORTIONAL);
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1.0f, 200.0f);
+  api_def_prop_ui_text(
       prop, "Pixel Aspect Y", "Vertical aspect ratio - for anamorphic or non-square pixel output");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_SceneCamera_update");
 
-  prop = RNA_def_property(srna, "ffmpeg", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "FFmpegSettings");
-  RNA_def_property_pointer_sdna(prop, NULL, "ffcodecdata");
-  RNA_def_property_flag(prop, PROP_NEVER_UNLINK);
-  RNA_def_property_ui_text(prop, "FFmpeg Settings", "FFmpeg related settings for the scene");
+  prop = api_def_prop(sapi, "ffmpeg", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "FFmpegSettings");
+  api_def_prop_ptr_stype(prop, NULL, "ffcodecdata");
+  api_def_prop_flag(prop, PROP_NEVER_UNLINK);
+  api_def_prop_ui_text(prop, "FFmpeg Settings", "FFmpeg related settings for the scene");
 
-  prop = RNA_def_property(srna, "fps", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "frs_sec");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1, SHRT_MAX);
-  RNA_def_property_ui_range(prop, 1, 240, 1, -1);
-  RNA_def_property_ui_text(prop, "FPS", "Framerate, expressed in frames per second");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_fps_update");
+  prop = api_def_prop(sapi, "fps", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "frs_sec");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1, SHRT_MAX);
+  api_def_prop_ui_range(prop, 1, 240, 1, -1);
+  api_def_prop_ui_text(prop, "FPS", "Framerate, expressed in frames per second");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_fps_update");
 
-  prop = RNA_def_property(srna, "fps_base", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "frs_sec_base");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1e-5f, 1e6f);
+  prop = api_def_prop(srna, "fps_base", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_sdna(prop, NULL, "frs_sec_base");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prop_range(prop, 1e-5f, 1e6f);
   /* Important to show at least 3 decimal points because multiple presets set this to 1.001. */
-  RNA_def_property_ui_range(prop, 0.1f, 120.0f, 2, 3);
-  RNA_def_property_ui_text(prop, "FPS Base", "Framerate base");
-  RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_fps_update");
+  api_def_prop_ui_range(prop, 0.1f, 120.0f, 2, 3);
+  api_def_prop_ui_text(prop, "FPS Base", "Framerate base");
+  api_def_prop_update(prop, NC_SCENE | ND_RENDER_OPTIONS, "rna_Scene_fps_update");
 
   /* frame mapping */
-  prop = RNA_def_property(srna, "frame_map_old", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "framapto");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1, 900);
-  RNA_def_property_ui_text(prop, "Frame Map Old", "Old mapping value in frames");
-  RNA_def_property_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_framelen_update");
+  prop = api_def_prop(sapi, "frame_map_old", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "framapto");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_prope_range(prop, 1, 900);
+  api_def_prop_ui_text(prop, "Frame Map Old", "Old mapping value in frames");
+  api_def_prop_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_framelen_update");
 
-  prop = RNA_def_property(srna, "frame_map_new", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "images");
-  RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-  RNA_def_property_range(prop, 1, 900);
+  prop = api_def_prop(sapi, "frame_map_new", PROP_INT, PROP_NONE);
+  api_def_prop_int_sdna(prop, NULL, "images");
+  api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
+  api_def_property_range(prop, 1, 900);
   RNA_def_property_ui_text(prop, "Frame Map New", "How many frames the Map Old will last");
   RNA_def_property_update(prop, NC_SCENE | ND_FRAME, "rna_Scene_framelen_update");
 
