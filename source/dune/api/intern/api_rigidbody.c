@@ -279,8 +279,8 @@ static void api_RigidBodyOb_mass_set(ApiPtr *ptr, float value)
 
 #  ifdef WITH_BULLET
   /* only active bodies need mass update */
-  if ((rbo->shared->physics_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
-    RB_body_set_mass(rbo->shared->physics_object, RBO_GET_MASS(rbo));
+  if ((rbo->shared->phys_object) && (rbo->type == RBO_TYPE_ACTIVE)) {
+    RB_body_set_mass(rbo->shared->phys_object, RBO_GET_MASS(rbo));
   }
 #  endif
 }
@@ -741,7 +741,7 @@ static void api_RigidBodyCon_use_motor_ang_set(ApiPtr *ptr, bool value)
   SET_FLAG_FROM_TEST(rbc->flag, value, RBC_FLAG_USE_MOTOR_ANG);
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint) {
+  if (rbc->phys_constraint) {
     RB_constraint_set_enable_motor(rbc->physics_constraint,
                                    rbc->flag & RBC_FLAG_USE_MOTOR_LIN,
                                    rbc->flag & RBC_FLAG_USE_MOTOR_ANG);
@@ -758,7 +758,7 @@ static void api_RigidBodyCon_motor_lin_target_velocity_set(ApiPtr *ptr, float va
 #  ifdef WITH_BULLET
   if (rbc->physics_constraint && rbc->type == RBC_TYPE_MOTOR) {
     RB_constraint_set_target_velocity_motor(
-        rbc->physics_constraint, value, rbc->motor_ang_target_velocity);
+        rbc->phys_constraint, value, rbc->motor_ang_target_velocity);
   }
 #  endif
 }
@@ -770,9 +770,9 @@ static void api_RigidBodyCon_motor_ang_max_impulse_set(PointerRNA *ptr, float va
   rbc->motor_ang_max_impulse = value;
 
 #  ifdef WITH_BULLET
-  if (rbc->physics_constraint && rbc->type == RBC_TYPE_MOTOR) {
+  if (rbc->phys_constraint && rbc->type == RBC_TYPE_MOTOR) {
     RB_constraint_set_max_impulse_motor(
-        rbc->physics_constraint, rbc->motor_lin_max_impulse, value);
+        rbc->phys_constraint, rbc->motor_lin_max_impulse, value);
   }
 #  endif
 }
@@ -786,7 +786,7 @@ static void api_RigidBodyCon_motor_ang_target_velocity_set(ApiPtr *ptr, float va
 #  ifdef WITH_BULLET
   if (rbc->physics_constraint && rbc->type == RBC_TYPE_MOTOR) {
     RB_constraint_set_target_velocity_motor(
-        rbc->physics_constraint, rbc->motor_lin_target_velocity, value);
+        rbc->phys_constraint, rbc->motor_lin_target_velocity, value);
   }
 #  endif
 }
@@ -898,62 +898,62 @@ static void api_def_rigidbody_world(DuneApi *dapi)
       "Substeps Per Frame",
       "Number of simulation steps taken per frame (higher values are more accurate "
       "but slower)");
-  RNA_def_property_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
+  api_def_prop_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
 
   /* constraint solver iterations */
-  prop = RNA_def_property(srna, "solver_iterations", PROP_INT, PROP_NONE);
-  RNA_def_property_int_sdna(prop, NULL, "num_solver_iterations");
-  RNA_def_property_range(prop, 1, 1000);
-  RNA_def_property_ui_range(prop, 10, 100, 1, -1);
-  RNA_def_property_int_default(prop, 10);
-  RNA_def_property_int_funcs(prop, NULL, "rna_RigidBodyWorld_num_solver_iterations_set", NULL);
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "solver_iterations", PROP_INT, PROP_NONE);
+  api_def_prop_int_stype(prop, NULL, "num_solver_iterations");
+  api_def_prop_range(prop, 1, 1000);
+  api_def_prop_ui_range(prop, 10, 100, 1, -1);
+  api_def_prop_int_default(prop, 10);
+  api_def_prop_int_fns(prop, NULL, "rna_RigidBodyWorld_num_solver_iterations_set", NULL);
+  api_def_prop_ui_text(
       prop,
       "Solver Iterations",
       "Number of constraint solver iterations made per simulation step (higher values are more "
       "accurate but slower)");
-  RNA_def_property_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
+  api_def_prop_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
 
   /* split impulse */
-  prop = RNA_def_property(srna, "use_split_impulse", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", RBW_FLAG_USE_SPLIT_IMPULSE);
-  RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyWorld_split_impulse_set");
-  RNA_def_property_ui_text(
+  prop = api_def_prop(sapi, "use_split_impulse", PROP_BOOLEAN, PROP_NONE);
+  api_def_prop_bool_stype(prop, NULL, "flag", RBW_FLAG_USE_SPLIT_IMPULSE);
+  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyWorld_split_impulse_set");
+  api_def_prop_ui_text(
       prop,
       "Split Impulse",
       "Reduce extra velocity that can build up when objects collide (lowers simulation "
       "stability a little so use only when necessary)");
-  RNA_def_property_update(prop, NC_SCENE, "rna_RigidBodyWorld_reset");
+  api_def_prop_update(prop, NC_SCENE, "api_RigidBodyWorld_reset");
 
   /* cache */
-  prop = RNA_def_property(srna, "point_cache", PROP_POINTER, PROP_NONE);
-  RNA_def_property_flag(prop, PROP_NEVER_NULL);
-  RNA_def_property_pointer_funcs(prop, "rna_RigidBodyWorld_PointCache_get", NULL, NULL, NULL);
-  RNA_def_property_struct_type(prop, "PointCache");
-  RNA_def_property_ui_text(prop, "Point Cache", "");
+  prop = api_def_prop(sapi, "point_cache", PROP_PTR, PROP_NONE);
+  api_def_prop_flag(prop, PROP_NEVER_NULL);
+  api_def_prop_pointer_fns(prop, "api_RigidBodyWorld_PointCache_get", NULL, NULL, NULL);
+  api_def_prop_struct_type(prop, "PointCache");
+  api_def_prop_ui_text(prop, "Point Cache", "");
 
   /* effector weights */
-  prop = RNA_def_property(srna, "effector_weights", PROP_POINTER, PROP_NONE);
-  RNA_def_property_struct_type(prop, "EffectorWeights");
-  RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-  RNA_def_property_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIBRARY);
-  RNA_def_property_ui_text(prop, "Effector Weights", "");
+  prop = api_def_prop(sapi, "effector_weights", PROP_PTR, PROP_NONE);
+  api_def_prop_struct_type(prop, "EffectorWeights");
+  api_def_prop_clear_flag(prop, PROP_EDITABLE);
+  api_def_prop_override_flag(prop, PROPOVERRIDE_OVERRIDABLE_LIB);
+  api_def_prop_ui_text(prop, "Effector Weights", "");
 
   /* Sweep test */
-  func = RNA_def_function(srna, "convex_sweep_test", "rna_RigidBodyWorld_convex_sweep_test");
-  RNA_def_function_ui_description(
-      func, "Sweep test convex rigidbody against the current rigidbody world");
-  RNA_def_function_flag(func, FUNC_USE_REPORTS);
-  parm = RNA_def_pointer(
-      func, "object", "Object", "", "Rigidbody object with a convex collision shape");
-  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
-  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  fn = api_def_fn(sapi, "convex_sweep_test", "api_RigidBodyWorld_convex_sweep_test");
+  api_def_fn_ui_description(
+      fn, "Sweep test convex rigidbody against the current rigidbody world");
+  api_def_fn_flag(fn, FN_USE_REPORTS);
+  parm = api_def_ptr(
+      fn, "object", "Object", "", "Rigidbody object with a convex collision shape");
+  api_def_param_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED);
+  api_def_param_clear_flags(parm, PROP_THICK_WRAP, 0);
   /* ray start and end */
-  parm = RNA_def_float_vector(func, "start", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_vector(func, "end", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
-  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
-  parm = RNA_def_float_vector(func,
+  parm = api_def_float_vector(fb, "start", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_vector(fn, "end", 3, NULL, -FLT_MAX, FLT_MAX, "", "", -1e4, 1e4);
+  api_def_param_flags(parm, 0, PARM_REQUIRED);
+  parm = api_def_float_vector(fn,
                               "object_location",
                               3,
                               NULL,
@@ -963,9 +963,9 @@ static void api_def_rigidbody_world(DuneApi *dapi)
                               "The hit location of this sweep test",
                               -1e4,
                               1e4);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_float_vector(func,
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
+  parm = api_def_float_vector(fn,
                               "hitpoint",
                               3,
                               NULL,
@@ -975,9 +975,9 @@ static void api_def_rigidbody_world(DuneApi *dapi)
                               "The hit location of this sweep test",
                               -1e4,
                               1e4);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_float_vector(func,
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
+  parm = api_def_float_vector(fn,
                               "normal",
                               3,
                               NULL,
@@ -987,9 +987,9 @@ static void api_def_rigidbody_world(DuneApi *dapi)
                               "The face normal at the sweep test hit location",
                               -1e4,
                               1e4);
-  RNA_def_parameter_flags(parm, PROP_THICK_WRAP, 0);
-  RNA_def_function_output(func, parm);
-  parm = RNA_def_int(func,
+  api_def_param_flags(parm, PROP_THICK_WRAP, 0);
+  api_def_fn_output(fn, parm);
+  parm = api_def_int(fn,
                      "has_hit",
                      0,
                      0,
@@ -998,13 +998,13 @@ static void api_def_rigidbody_world(DuneApi *dapi)
                      "If the function has found collision point, value is 1, otherwise 0",
                      0,
                      0);
-  RNA_def_function_output(func, parm);
+  api_def_fn_output(fn, parm);
 }
 
-static void rna_def_rigidbody_object(BlenderRNA *brna)
+static void api_def_rigidbody_object(DuneApi *dapi)
 {
-  StructRNA *srna;
-  PropertyRNA *prop;
+  ApiStruct *sapi;
+  ApuProp *prop;
 
   srna = RNA_def_struct(brna, "RigidBodyObject", NULL);
   RNA_def_struct_sdna(srna, "RigidBodyOb");
