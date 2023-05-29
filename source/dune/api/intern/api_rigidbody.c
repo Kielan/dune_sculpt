@@ -1016,7 +1016,7 @@ static void api_def_rigidbody_object(DuneApi *dapi)
   prop = api_def_prop(sapi, "type", PROP_ENUM, PROP_NONE);
   api_def_prop_enum_stype(prop, NULL, "type");
   api_def_prop_enum_items(prop, api_enum_rigidbody_object_type_items);
-  api_def_prop_enum_funcs(prop, NULL, "api_RigidBodyOb_type_set", NULL);
+  api_def_prop_enum_fns(prop, NULL, "api_RigidBodyOb_type_set", NULL);
   api_def_prop_ui_text(prop, "Type", "Role of object in Rigid Body Simulations");
   api_def_prop_clear_flag(prop, PROP_ANIMATABLE);
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
@@ -1206,7 +1206,7 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prope_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "spring_type", PROP_ENUM, PROP_NONE);
-  api_def_prop_enum_sdna(prop, NULL, "spring_type");
+  api_def_prop_enum_stype(prop, NULL, "spring_type");
   api_def_prop_enum_items(prop, api_enum_rigidbody_constraint_spring_type_items);
   api_def_prop_enum_fns(prop, NULL, "rna_RigidBodyCon_spring_type_set", NULL);
   api_def_prop_ui_text(prop, "Spring Type", "Which implementation of spring to use");
@@ -1221,7 +1221,7 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
 
   prop = api_def_prop(sapi, "disable_collisions", PROP_BOOLEAN, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_DISABLE_COLLISIONS);
-  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_disable_collisions_set");
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_disable_collisions_set");
   api_def_prop_ui_text(
       prop, "Disable Collisions", "Disable collisions between constrained rigid bodies");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
@@ -1241,9 +1241,9 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "api_RigidBodyOb_reset");
 
   /* Breaking Threshold */
-  prop = api_def_prop(sapi, "use_breaking", PROP_BOOLEAN, PROP_NONE);
+  prop = api_def_prop(sapi, "use_breaking", PROP_BOOL, PROP_NONE);
   api_def_prop_bool_stype(prop, NULL, "flag", RBC_FLAG_USE_BREAKING);
-  api_def_prop_bool_fns(prop, NULL, "rna_RigidBodyCon_use_breaking_set");
+  api_def_prop_bool_fns(prop, NULL, "api_RigidBodyCon_use_breaking_set");
   api_def_prop_ui_text(
       prop, "Breakable", "Constraint can be broken if it receives an impulse above the threshold");
   api_def_prop_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
@@ -1404,18 +1404,18 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "limit_ang_y_lower", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_property_float_stype(prop, NULL, "limit_ang_y_lower");
-  RNA_def_property_range(prop, -M_PI * 2, M_PI * 2);
-  RNA_def_property_float_default(prop, -M_PI_4);
-  RNA_def_property_ui_text(prop, "Lower Y Angle Limit", "Lower limit of Y axis rotation");
-  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
+  api_def_prop_float_stype(prop, NULL, "limit_ang_y_lower");
+  api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
+  api_def_prop_float_default(prop, -M_PI_4);
+  api_def_prop_ui_text(prop, "Lower Y Angle Limit", "Lower limit of Y axis rotation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "api_RigidBodyOb_reset");
 
-  prop = RNA_def_prop(sapi, "limit_ang_y_upper", PROP_FLOAT, PROP_ANGLE);
-  RNA_def_prop_float_stype(prop, NULL, "limit_ang_y_upper");
-  RNA_def_prop_range(prop, -M_PI * 2, M_PI * 2);
-  RNA_def_prop_float_default(prop, M_PI_4);
-  RNA_def_prop_ui_text(prop, "Upper Y Angle Limit", "Upper limit of Y axis rotation");
-  RNA_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "limit_ang_y_upper", PROP_FLOAT, PROP_ANGLE);
+  api_def_prop_float_stype(prop, NULL, "limit_ang_y_upper");
+  api_def_prop_range(prop, -M_PI * 2, M_PI * 2);
+  api_def_prop_float_default(prop, M_PI_4);
+  api_def_prop_ui_text(prop, "Upper Y Angle Limit", "Upper limit of Y axis rotation");
+  api_def_prop_update(prop, NC_OBJECT | ND_DRAW, "rna_RigidBodyOb_reset");
 
   prop = api_def_prop(sapi, "limit_ang_z_lower", PROP_FLOAT, PROP_ANGLE);
   api_def_prop_float_stype(prop, NULL, "limit_ang_z_lower");
@@ -1501,21 +1501,21 @@ static void api_def_rigidbody_constraint(DuneApi *dapi)
   api_def_prop_ui_text(prop, "Damping Y", "Damping on the Y axis");
   api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_damping_z", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_damping_z");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_damping_z_set", NULL);
-  RNA_def_property_ui_text(prop, "Damping Z", "Damping on the Z axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_damping_z", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_damping_z");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_float_default(prop, 0.5f
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_damping_z_set", NULL);
+  api_def_prop_ui_text(prop, "Damping Z", "Damping on the Z axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
-  prop = RNA_def_property(srna, "spring_damping_ang_x", PROP_FLOAT, PROP_NONE);
-  RNA_def_property_float_sdna(prop, NULL, "spring_damping_ang_x");
-  RNA_def_property_range(prop, 0.0f, FLT_MAX);
-  RNA_def_property_float_default(prop, 0.5f);
-  RNA_def_property_float_funcs(prop, NULL, "rna_RigidBodyCon_spring_damping_ang_x_set", NULL);
-  RNA_def_property_ui_text(prop, "Damping X Angle", "Damping on the X rotational axis");
-  RNA_def_property_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
+  prop = api_def_prop(sapi, "spring_damping_ang_x", PROP_FLOAT, PROP_NONE);
+  api_def_prop_float_stype(prop, NULL, "spring_damping_ang_x");
+  api_def_prop_range(prop, 0.0f, FLT_MAX);
+  api_def_prop_float_default(prop, 0.5f);
+  api_def_prop_float_fns(prop, NULL, "rna_RigidBodyCon_spring_damping_ang_x_set", NULL);
+  api_def_prop_ui_text(prop, "Damping X Angle", "Damping on the X rotational axis");
+  api_def_prop_update(prop, NC_OBJECT, "rna_RigidBodyOb_reset");
 
   prop = RNA_def_property(srna, "spring_damping_ang_y", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "spring_damping_ang_y");
